@@ -109,8 +109,10 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **#218** | OP-25-Kapazität, konkurrierende Analyse | Codeänderung auf dem Branch bereits zurückgenommen; Ursache/Fix kamen über #219 nach `main`. **Empfehlung: schließen, nicht mergen** |
 | **#216** | flackernden `werkzeug-lesefehler-test.js` stabilisieren (F-PORT) | offen, reserviert als OP-28; unabhängig von OP-25 |
 
-Alle übrigen früher geführten PRs sind gemergt oder geschlossen (zuletzt #226 gemergt
-2026-08-05; #203 geschlossen 2026-08-03). Historie: Archiv.
+Dazu kommt **#228** — der PR dieses Doku-Sprints (Statuskompaktierung + Archiv +
+Größenkontrolle, Branch `claude/helmut-docs-sprint-dsemo7`). Alle übrigen früher
+geführten PRs sind gemergt oder geschlossen (zuletzt #226 gemergt 2026-08-05;
+#203 geschlossen 2026-08-03). Historie: Archiv.
 
 ## 7 · Offene Blocker
 
