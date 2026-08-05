@@ -43,7 +43,12 @@
 //   WATCHDOG_STATUS_POLL_INTERVAL_MS  Default 30000
 //   WATCHDOG_CLOCK_SKEW_MS            Default 60000 (Toleranz Runner- vs. Server-Uhr)
 
+const fs = require("fs");
+const path = require("path");
 const { evaluatePipelineResponse } = require("./watchdog-eval");
+// K7: Slot-Rechnung mit den PUREN Vertragsfunktionen des OP-25-Kerns (kein IO dort) —
+// Watchdog und Nachweis rechnen die Regel-Slots damit identisch.
+const vertrag = require("../lib/helmut/op25-nachweis");
 
 const CLIENT_TIMEOUT_MS = envInt("WATCHDOG_CLIENT_TIMEOUT_MS", 330000);
 const POLL_ATTEMPTS = envInt("WATCHDOG_STATUS_POLL_ATTEMPTS", 6);
@@ -76,6 +81,90 @@ function describeHttpFailure(status) {
   if (status === 503) return `Dienst nicht verfuegbar (HTTP 503) — Endpoint deaktiviert oder Deployment nicht bereit.`;
   if (status >= 500) return `Serverfehler (HTTP ${status}) — die Pipeline ist serverseitig FEHLGESCHLAGEN oder der Server ist gestoert.`;
   return `Unerwarteter HTTP-Status ${status}.`;
+}
+
+// --- K7 (OP-25, Ursachenanalyse §7.7.6 Befund 3): BEDINGTER Ersatzlauf -------------------
+// Der Watchdog feuerte bisher BEDINGUNGSLOS die volle Pipeline (ein planmaessiger vierter
+// schwerer Lauf pro Tag, der Laufbelege aus der Retention verdraengte). Jetzt prueft er
+// VOR dem Trigger rein lesend, ob der regulaere Erfolg, den er absichern soll, bereits
+// vorhanden und gueltig ist:
+//   * Referenz ist der JUENGSTE regulaere schwere Slot (vercel.json, crawl/pipeline) vor
+//     jetzt — beim planmaessigen 05:30-UTC-Lauf also der 04:00-Crawl, bei GitHub-Verzug
+//     entsprechend spaeter.
+//   * VORHANDEN + brauchbar (Lauf nach dem Slot abgeschlossen, nicht 0 erfolgreiche
+//     Quellen) -> der Watchdog endet ERFOLGREICH ohne Ersatzlauf (Exit 0).
+//   * FEHLT / VERALTET / UNBRAUCHBAR -> der Ersatzlauf startet (bisheriges Verhalten).
+//   * LESEFEHLER (Netz, Auth, 404, unlesbare Antwort, keine Kadenz) -> FAIL CLOSED:
+//     KEIN blinder schwerer Ersatzlauf, Exit 1 mit ehrlicher Meldung (E-Mail an den
+//     Betreiber) — ein Ersatzlauf auf unbekannter Faktenlage koennte einen laufenden
+//     Lauf doppeln und verdraengt sicher Laufbelege.
+// Der aeussere Zeitplan (05:30 UTC, briefing-watchdog.yml) bleibt UNVERAENDERT.
+// WATCHDOG_FORCE_RUN=1 (manueller workflow_dispatch) ueberspringt die Vorpruefung bewusst.
+
+function juengsterRegelSlotMs(nowMs) {
+  const datei = path.join(__dirname, "..", "vercel.json");
+  const crons = JSON.parse(fs.readFileSync(datei, "utf8")).crons;
+  const kadenz = vertrag.schwereKadenz(Array.isArray(crons) ? crons : []);
+  if (!kadenz.length || kadenz.some((k) => !k.plan)) return null;
+  // Slots der letzten 48 h bis jetzt: der juengste vergangene ist die Referenz.
+  const slots = vertrag.erwarteteLaeufe({ vonMs: nowMs - 48 * 3600 * 1000, bisMs: nowMs, crons });
+  if (!slots || !slots.length) return null;
+  return slots[slots.length - 1].geplantMs;
+}
+
+async function pruefeRegulaerenErfolg(baseUrl, headers, nowMs, { fetchJsonFn = fetchJson, slotFn = juengsterRegelSlotMs } = {}) {
+  let slotMs;
+  try {
+    slotMs = slotFn(nowMs);
+  } catch (error) {
+    return { ausgang: "lesefehler", grund: `vercel.json nicht lesbar (${error && error.message})` };
+  }
+  if (slotMs == null) return { ausgang: "lesefehler", grund: "Regel-Kadenz aus vercel.json nicht ermittelbar" };
+  let res;
+  try {
+    res = await fetchJsonFn(`${baseUrl}/api/cron/pipeline-status`, { headers, timeoutMs: 30000 });
+  } catch (error) {
+    return { ausgang: "lesefehler", grund: `Statuspfad nicht erreichbar (${error && error.name}: ${String(error && error.message).slice(0, 120)})` };
+  }
+  if (res.status !== 200 || !res.data || res.data.ok !== true) {
+    return { ausgang: "lesefehler", grund: `Statuspfad HTTP ${res.status} — Zustand nicht belegbar` };
+  }
+  const latest = res.data.latestRun || null;
+  if (!latest || !latest.createdAt) {
+    return { ausgang: "fehlt", grund: "kein abgeschlossener Lauf sichtbar", slotMs };
+  }
+  const createdMs = Date.parse(latest.createdAt);
+  if (!Number.isFinite(createdMs)) {
+    return { ausgang: "lesefehler", grund: `createdAt des letzten Laufs nicht lesbar (${latest.createdAt})` };
+  }
+  if (createdMs < slotMs - CLOCK_SKEW_MS) {
+    return {
+      ausgang: "veraltet", slotMs, latest,
+      grund: `letzter Lauf ${latest.createdAt} liegt VOR dem juengsten Regel-Slot ${new Date(slotMs).toISOString()}`
+    };
+  }
+  const successful = Number(latest.successfulSources);
+  if (Number.isFinite(successful) && successful <= 0) {
+    return {
+      ausgang: "unbrauchbar", slotMs, latest,
+      grund: `letzter Lauf ${latest.createdAt} ohne erfolgreiche Quelle (successfulSources=${latest.successfulSources})`
+    };
+  }
+  // Ein Lauf mit FATALEM Fehlerschritt (kontextvertrag/erfassung/sperre) hat KEINE
+  // Mandatsprojektion erzeugt — frisches createdAt und erfolgreiche Quellen taeuschen
+  // dann einen brauchbaren Erfolg nur vor. Aeltere Deployments liefern das Feld nicht
+  // (undefined) — dann gilt weiter die bisherige Bewertung (kein Fail-closed auf Altstand).
+  if (latest.fatalerFehlerschritt === true) {
+    return {
+      ausgang: "unbrauchbar", slotMs, latest,
+      grund: `letzter Lauf ${latest.createdAt} endete mit fatalem Fehlerschritt — kein brauchbarer regulaerer Erfolg`
+    };
+  }
+  return {
+    ausgang: "vorhanden", slotMs, latest,
+    grund: `letzter Lauf ${latest.createdAt} (runId=${latest.runId || "?"}, successfulSources=${latest.successfulSources ?? "?"})`
+      + ` deckt den juengsten Regel-Slot ${new Date(slotMs).toISOString()}`
+  };
 }
 
 // Prueft nach einem Client-Timeout ueber den rein lesenden Statuspfad, ob der
@@ -119,6 +208,26 @@ async function main() {
   const headers = { Authorization: `Bearer ${secret}` };
 
   const startedAtMs = Date.now();
+
+  // K7: VORPRUEFUNG — nur bei fehlendem/veraltetem/unbrauchbarem regulaerem Erfolg
+  // startet der schwere Ersatzlauf. Die Entscheidung wird IMMER protokolliert.
+  if (String(process.env.WATCHDOG_FORCE_RUN || "") === "1") {
+    log("Vorpruefung UEBERSPRUNGEN (WATCHDOG_FORCE_RUN=1, manueller Betreiberlauf) — Ersatzlauf startet.");
+  } else {
+    const vorpruefung = await pruefeRegulaerenErfolg(baseUrl, headers, startedAtMs);
+    if (vorpruefung.ausgang === "vorhanden") {
+      notice(`Watchdog OK — regulaerer Erfolg vorhanden, KEIN Ersatzlauf gestartet: ${vorpruefung.grund}.`);
+      return 0;
+    }
+    if (vorpruefung.ausgang === "lesefehler") {
+      fail(`Watchdog LESEFEHLER (fail closed) — ${vorpruefung.grund}. Es wurde bewusst KEIN schwerer`
+        + " Ersatzlauf gestartet: auf unbekannter Faktenlage koennte er einen laufenden Lauf doppeln."
+        + " Bitte Statuspfad/Deployment pruefen.");
+      return 1;
+    }
+    log(`Vorpruefung: regulaerer Erfolg ${vorpruefung.ausgang.toUpperCase()} (${vorpruefung.grund}) — Ersatzlauf startet.`);
+  }
+
   log(`Rufe Pipeline auf: ${baseUrl}/api/cron/pipeline (Client-Timeout ${Math.round(CLIENT_TIMEOUT_MS / 1000)} s; Vercel-Serverdeckel 300 s)`);
 
   let res = null;
@@ -176,4 +285,4 @@ if (require.main === module) {
   );
 }
 
-module.exports = { main, confirmViaStatusPath, describeHttpFailure };
+module.exports = { main, confirmViaStatusPath, describeHttpFailure, pruefeRegulaerenErfolg, juengsterRegelSlotMs };

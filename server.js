@@ -941,7 +941,15 @@ async function handleRequest(request, response) {
           durationMs: latest.durationMs ?? null,
           runId: latest.runId ?? null,
           sourceMode: latest.sourceMode ?? null,
-          understanding: latest.understanding ?? null
+          understanding: latest.understanding ?? null,
+          // K7 (OP-25): der Watchdog prueft VOR einem Ersatzlauf, ob der juengste Lauf
+          // fachlich brauchbar war. Ein FATALER Fehlerschritt (kontextvertrag/erfassung/
+          // sperre) heisst: keine Mandatsprojektion, keine frische Morgenlage — trotz
+          // frischem createdAt und erfolgreicher Quellen. Additiv, rein lesend.
+          mode: latest.mode ?? null,
+          fatalerFehlerschritt: Boolean(latest.datenstandDetail
+            && Array.isArray(latest.datenstandDetail.fehlerSchritte)
+            && latest.datenstandDetail.fehlerSchritte.some((f) => f && f.fatal))
         } : null
       };
     });
