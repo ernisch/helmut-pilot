@@ -1,6 +1,72 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-04, 10. Durchgang (**OP-25-Nachtragskorrektur nach dem Merge
+**Letzte Aktualisierung:** 2026-08-05, 11. Durchgang (**OP-25: Erster regulärer
+Production-Nachweis nach §7.7.5 vollständig durchgeführt — Aktivierung und Startbaseline
+GÜLTIG, Auswertung ehrlich NICHT BESTANDEN (Exit 1, 7 Befunde). Der Nachweis ist damit
+GESCHEITERT und beginnt von vorn; OP-25 bleibt TEILWEISE ABGESCHLOSSEN.** **ABLAUF (alle
+Production-Schreibschritte waren Betreiberaktionen; die Sitzung hat Production ausschließlich
+GELESEN, 0 Writes):** (1) Betreiber setzte `HELMUT_CRON_GLOBALABRUF=on` (nur Production) und
+redeployte den unveränderten Merge-Commit `2e4e00e9ecd19e059e2cd73b9dfb6da59082f4f5` (PR #223);
+Aktivierung = READY des Deployments `dpl_4gCKkwSFfagHnCxs2jj4RCWLfviW` = **2026-08-04
+18:23:57.472 UTC** (20:23:57 Berlin; Production-Domain zeigt darauf, Asset-Rotation
+`?v=2e4e00e9` bestätigt, Vercel-`ready`-Feld millisekundengenau gelesen). (2) **Startbaseline
+65 s nach READY** erhoben (`belege/op25-startbaseline.json`, Commit `4bb5e7d` auf dem Branch,
+SHA256 `0dd4cedf9fd84b8033551bb40530f2875264f1444a4d449999fffa8cf5abe1ae`): 5 aktive reale
+Mandate, Signatur `m5-9aee228dbf2c9f13`, erwarteter Commit verbindlich gespeichert; Leseprobe
+über den echten Lesepfad ehrlich `noch_nicht_auswertbar` (Exit 3, einziger Befund
+`fenster-noch-nicht-vergangen`); Querschnitt: 3 deaktivierte Demos, 0 Testmandate. (3) Fenster
+24 h ohne Production-Deployment (Vercel-belegt: im Fenster nur Preview-Builds mit
+`target: null`; `origin/main` unverändert `2e4e00e`); Baseline am Fensterende byte-identisch
+(SHA256 lokal = origin). (4) **Auswertung 2026-08-05 18:30 UTC: `nicht_bestanden` (Exit 1)**,
+in zwei identischen Läufen reproduziert (`belege/op25-auswertung-2026-08-05.log`). **DER
+COMMITNACHWEIS AUS §7.7.5 IST BESTANDEN:** alle vier `globalphase`-Fensterzeilen tragen exakt
+`2e4e00e9…` — crawl 04.08. 20:04:23 (`cron-crawl-20260804200041-c5a6c-global`) · crawl 05.08.
+04:04:00 (`cron-crawl-20260805040019-qfcqz-global`) · außerplanmäßig pipeline 05.08. 08:03:49
+(`cron-pipeline-20260805080005-2z8bb-global`) · pipeline 05.08. 16:03:48
+(`cron-pipeline-20260805160005-23ls6-global`); die Vor-Fenster-Zeile (04.08. 16:04, `3fa8830`)
+wurde vertragsgemäß nicht gewertet. **DIE 7 BEFUNDE:** (a) `laufbeleg-verdraengt` ×2
+(blockiert) — crawl@20:00 und crawl@04:00 sind dauerhaft belegt, ihre reichen Laufdatensätze
+wurden aber von der Blob-Retention (20) verdrängt; Ursache: der **außerplanmäßige globale
+Watchdog-Lauf 08:03 UTC** (briefing-watchdog löst `pipeline` aus — bekannter Befund D-2,
+`cron-fairness.md` §14.9) und die Sechs-Mandate-Planung des 16:00-Laufs hoben den Bedarf über
+den Aufbewahrungsvertrag (18 von 20; Warnung „Aufbewahrung knapp" im Protokoll). (b)
+`fenster-ungueltig-mandatsmenge-veraendert` (blockiert) — der 16:00-Lauf plante **sechs**
+Mandate inkl. **`max-mustermann`** (`m6-4705b9f9aac98cd4`), eingefroren sind fünf
+(`m5-9aee228dbf2c9f13`); am Fensterende waren es wieder fünf ⇒ das am 2026-08-04 deaktivierte
+Demo-Mandat war im Fenster zwischenzeitlich **reaktiviert und wieder deaktiviert** —
+**OFFENE BETREIBERKLÄRUNG**, wer/was das Profil umschaltete (Production-Datenänderung während
+des Fensters; nicht aus dieser Sitzung, 0 Writes). (c) `mandatslauf-fehlt` (nicht_bestanden) —
+zum 16:00-Lauf existiert für keines der fünf realen Mandate ein abgeschlossener
+`mode:"mandat"`-Datensatz; die Globalphase verbrauchte das gesamte Cron-Budget. (d)
+`globalphase-budget-ueberzogen` (nicht_bestanden) — versiegelt 221 981 ms > Budget 221 668 ms
+(+313 ms). (e) `rueckstand-nicht-dauerhaft` (nicht_bestanden) — zurückgestellte Cluster ohne
+pending-Vormerkung (lazy 372/1213, übersprungene Stapel 2; eager nichtVorgemerkt 479,
+übersprungene Stapel 14): **die E3-Zusage der dauerhaften Vormerkung wird in Production nicht
+erfüllt, obwohl sie offline bewiesen war** (`op25-e3-dauerhaftigkeit-test` 52/52) ⇒ eigener
+Analysesprint nötig. (f) `auffaellige-kontextzahl-ohne-erklaerung` (nicht_bestanden) —
+kontexte=15 > Aufgreifschwelle 11, unerklärt. Warnungen: Aufbewahrung knapp (18/20) ·
+außerplanmäßiger Lauf 08:03 nicht als Beleg verwendet · 1 Quellen-Timeout im 16:00-Lauf.
+**KOSTEN:** 0,1892 USD LLM im Fenster (Rahmen 2 USD, vollständig, 0 unbepreist); die
+Auswertung selbst rein lesend, **0 KI-Aufrufe, 0,00 USD**. **STATUSGRENZEN:** Production und
+`main` durch diese Sitzung unverändert; **`HELMUT_CRON_GLOBALABRUF` steht weiterhin `on`**
+(Wirkung lesend belegt durch die Fensterläufe) — Belassen oder Rückbau (§7.2 Stufe 1) ist
+Betreiberentscheidung und aus einer Sitzung weiterhin nicht ausführbar
+(`vorgangskontext.md` §7.3; der Egress zu `api.vercel.com` blieb auch am 2026-08-04 gesperrt,
+`CONNECT → 403`, und der Vercel-MCP hat weiterhin kein Env-Werkzeug und keinen Git-Redeploy).
+**NÄCHSTE SCHRITTE (vor jedem neuen Nachweis):** (1) Betreiberklärung `max-mustermann`-Toggle;
+(2) Entscheidung zu D-2: Watchdog-Störlauf einplanen — Retention erhöhen
+(`HELMUT_CRAWL_RUN_RETENTION`, Vercel-Env, freigabepflichtig) oder Vertrag/Watchdog anpassen
+(Code-Sprint); (3) Analysesprint Rückstands-Vormerkung (e) + Budget-Randfall (d) +
+Kontextzahl-Erklärung (f); erst danach neuer Nachweis von vorn nach §7.7.5. **TESTS:**
+`run-offline-tests` **190/205 in 90 s** — exakt dieselbe bekannte 15er-Umgebungs-
+Fehlschlagliste wie im 10. Durchgang (Netz-Guard/kein DB-Zugang; keine Codeänderung in diesem
+Sprint). **GEÄNDERTE DATEIEN:** `belege/op25-startbaseline.json` (neu, 04.08.) ·
+`belege/op25-auswertung-2026-08-05.log` (neu) · `docs/datenmotor-restliste.md`
+(OP-25-Nachtrag 2026-08-05) · `docs/betrieb/vorgangskontext.md` (R1 nachgeführt) ·
+`docs/CURRENT_STATE.md`. **Branch/PR:** `claude/op-25-production-nachweis-tg44mz`,
+**PR #226** gegen `main` — **kein Merge, kein Deployment, Merge-Entscheidung beim
+Betreiber.**) ·
+(10. Durchgang: **OP-25-Nachtragskorrektur nach dem Merge
 von PR #222: deploymentgebundene Startbaseline und verbindlicher Commitnachweis. KEIN
 Production-Eingriff, kein Merge.** **STATUSKORREKTUR ZUERST, weil die bisherigen Angaben sich
 widersprachen:** (1) **PR #222 IST GEMERGT** — `origin/main` = Merge-Commit `3fa8830`; die
