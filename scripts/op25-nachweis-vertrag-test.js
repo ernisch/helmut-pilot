@@ -49,6 +49,9 @@ const CRONS = [
   { path: "/api/cron/crawl", schedule: "0 20 * * *" }
 ];
 const MANDATE = ["mandat-a", "mandat-b", "mandat-c", "mandat-d", "mandat-e"];
+// K3: die Watchdog-Kadenz (briefing-watchdog.yml, taeglich 05:30 UTC) — ein moeglicher
+// vierter schwerer Lauf je Tag, der in den Aufbewahrungsbedarf gehoert.
+const WATCHDOG_CRONS = ["30 5 * * *"];
 const SLOTS = [
   { cronName: "pipeline", stamp: "20260810160003", slotIso: "2026-08-10T16:00:00Z", kuerzel: "aaaaa" },
   { cronName: "crawl", stamp: "20260810200002", slotIso: "2026-08-10T20:00:00Z", kuerzel: "bbbbb" },
@@ -124,7 +127,12 @@ function baueMandat(slot, politicianId, { status = "abgeschlossen", dauerMs = VE
   return {
     mode: "mandat",
     politicianId,
-    runId: laufkennung,
+    // K1: die ECHTE Scheduler-Konvention (Falschbefund `mandatslauf-fehlt` des Nachweises
+    // 2026-08-05). `runMandatsProjektion` vergibt eine EIGENE Kennung (`projektion-…`,
+    // makeRunId) und bindet ueber das persistierte `globalLaufId` — die fruehere Fixture
+    // (`runId: laufkennung`) kodierte eine Konvention, die es in Produktion nie gab, und
+    // hielt damit genau den falschen Join des Bewertungskerns gruen.
+    runId: `projektion-${slot.stamp}-${slot.kuerzel}${politicianId.slice(-2)}`,
     createdAt: new Date(Date.parse(slot.slotIso) + 230000).toISOString(),
     durationMs: 8000,
     matching: { candidates: 12, saved: 3 },
@@ -205,7 +213,10 @@ function baueEingaben(overrides = {}) {
     crons: CRONS,
     laeufe: baueLaeufe(),
     prozessLaeufe: SLOTS.map((s) => baueProzessZeile(s)),
-    laufRetention: 20,
+    // K3: der Mindestbedarf rechnet jetzt (3 Regel-Slots + 1 Watchdog-Slot) x (1+5) +
+    // Puffer 6 = 30; 40 liegt sauber oberhalb der Knapp-Zone (< 36 wuerde warnen).
+    laufRetention: 40,
+    watchdogCrons: [...WATCHDOG_CRONS],
     aktiveMandate: [...MANDATE],
     erwarteteMandatszahl: 5,
     kosten: baueKosten(),
@@ -493,14 +504,19 @@ console.log("\n== 17 · Neue Fehlerklasse faellt durch (Fall 17) ==");
     b2.ausgang === "nicht_bestanden" && hatBefund(b2, "neue-fehlerklasse"));
 }
 
-console.log("\n== 18/19 · Auffaellige Kontextzahl: unerklaert faellt durch, erklaert besteht ==");
+console.log("\n== 18/19 · Auffaellige Kontextzahl (K5): unbelegt = Diagnosebedarf, erklaert/zusammengesetzt besteht ==");
 {
   const auffaellig = (r) => {
     r.datenstandDetail.kontext = { kontexte: 40, geteilt: 34, mandatseigen: 6, unbekannt: 0, dokumente: 2000, ohneSichtbarkeit: 0 };
   };
+  // K5 (Produktentscheidung 9): eine dokumentgetriebene Kontextzahl wird NICHT mehr per
+  // blinder `2n+1`-Formel als fachlicher Fehler bewertet. Ohne belegbare Zusammensetzung
+  // ist sie DIAGNOSEBEDARF (blockiert) — kein bewiesener Vertragsbruch, aber auch nie gruen.
   const b = V.bewerteNachweisfenster(baueEingaben({ laeufe: mitGlobalPatch(auffaellig) }));
-  check("18.1 kontexte=40 (> 2n+1=11) ohne Erklaerung => nicht_bestanden",
-    b.ausgang === "nicht_bestanden" && hatBefund(b, "auffaellige-kontextzahl-ohne-erklaerung"));
+  check("18.1 kontexte=40 (> 2n+1=11) ohne Zusammensetzung/Erklaerung => blockiert (Diagnosebedarf, kein Fehlurteil)",
+    b.ausgang === "blockiert" && hatBefund(b, "kontextzahl-diagnosebedarf")
+    && !hatBefund(b, "auffaellige-kontextzahl-ohne-erklaerung"),
+    JSON.stringify(b.befunde.slice(0, 2)));
   const b2 = V.bewerteNachweisfenster(baueEingaben({
     laeufe: mitGlobalPatch(auffaellig),
     kontextErklaerungen: { "*": "Viele echte Teilmengen durch neue Regionalquellen — geprueft, Partition und Grenzen halten." }
@@ -813,12 +829,15 @@ console.log("\n== 30 · REVIEW-HAERTUNG 3: dauerhafte Belegquelle, Aufbewahrung,
   check("30.2 Beide Belege fehlen => nicht_bestanden (fehlender-lauf)",
     bNieGelaufen.ausgang === "nicht_bestanden" && hatBefund(bNieGelaufen, "fehlender-lauf"));
 
-  // (b) Aufbewahrungsvertrag, reproduzierbar: 3 Laeufe x (1 global + 5 Mandate) = 18.
-  const bKnapp = V.bewerteNachweisfenster(baueEingaben());
-  check("30.3 Benoetigte Datensaetze werden ausgewiesen (3 x (1+5) = 18)",
-    bKnapp.benoetigteDatensaetze === 18, String(bKnapp.benoetigteDatensaetze));
-  check("30.4 Retention 20 bei Bedarf 18 => Warnung 'Aufbewahrung knapp'",
-    bKnapp.warnungen.some((w) => w.includes("Aufbewahrung knapp")));
+  // (b) K3-Aufbewahrungsvertrag, reproduzierbar: (3 Regel-Slots + 1 Watchdog-Slot)
+  //     x (1 global + 5 Mandate) + Puffer 6 = 30 — nicht mehr die alte 18er-Formel.
+  const bStandard = V.bewerteNachweisfenster(baueEingaben());
+  check("30.3 Benoetigte Datensaetze werden ausgewiesen ((3+1) x (1+5) + 6 = 30)",
+    bStandard.benoetigteDatensaetze === 30, String(bStandard.benoetigteDatensaetze));
+  const bKnapp = V.bewerteNachweisfenster(baueEingaben({ laufRetention: 32 }));
+  check("30.4 Retention 32 bei Mindestbedarf 30 => besteht, aber Warnung 'Aufbewahrung knapp'",
+    bKnapp.ausgang === "bestanden" && bKnapp.warnungen.some((w) => w.includes("Aufbewahrung knapp")),
+    JSON.stringify(bKnapp.befunde.slice(0, 2)));
   const bZuKlein = V.bewerteNachweisfenster(baueEingaben({ laufRetention: 12 }));
   check("30.5 Retention kleiner als der Bedarf => blockiert (Aufbewahrungsvertrag verletzt)",
     bZuKlein.ausgang === "blockiert" && hatBefund(bZuKlein, "aufbewahrung-reicht-nicht"));
@@ -1534,6 +1553,319 @@ console.log("\n== 37 · Fenster-Sweep: Zuordenbarkeit fail closed + kanonische B
   check("37.6 Vorrang bleibt: Lesefehler + BEWIESENE Verletzung => nicht_bestanden (kein frueher Abbruch)",
     b6.ausgang === "nicht_bestanden" && hatBefund(b6, "prozesszeilen-quelle-nicht-lesbar")
     && hatBefund(b6, "llm-kosten-ueber-rahmen"));
+}
+
+// =============================================================================================
+console.log("\n== 38 · K1: Bindung AUSSCHLIESSLICH ueber globalLaufId — fail closed ==");
+// =============================================================================================
+{
+  // (a) Die ALTE Konvention (runId == Laufkennung, kein globalLaufId) bindet NICHT mehr:
+  //     genau sie hielt den Falschbefund `mandatslauf-fehlt` des Nachweises 2026-08-05 gruen.
+  const alteKonvention = baueLaeufe().map((r) => (r.mode === "mandat"
+    ? { ...r, runId: r.globalLaufId.replace(/-global$/, ""), globalLaufId: undefined }
+    : r));
+  const b1 = V.bewerteNachweisfenster(baueEingaben({ laeufe: alteKonvention }));
+  check("38.1 Alte runId-Konvention OHNE globalLaufId => mandatslauf-fehlt UND mandatslauf-ohne-bindung",
+    b1.ausgang === "nicht_bestanden" && hatBefund(b1, "mandatslauf-fehlt") && hatBefund(b1, "mandatslauf-ohne-bindung"),
+    JSON.stringify(b1.befunde.slice(0, 3)));
+  // (b) MEHRDEUTIGKEIT: zwei Datensaetze desselben Mandats am selben globalen Lauf.
+  const laeufeDoppelt = baueLaeufe();
+  const erster = laeufeDoppelt.find((r) => r.mode === "mandat");
+  laeufeDoppelt.push({ ...erster, runId: `${erster.runId}-doppel` });
+  const b2 = V.bewerteNachweisfenster(baueEingaben({ laeufe: laeufeDoppelt }));
+  check("38.2 Doppelte Bindung desselben Mandats => blockiert (mandatslauf-mehrdeutig)",
+    hatBefund(b2, "mandatslauf-mehrdeutig"), JSON.stringify(b2.befunde.slice(0, 3)));
+  // (c) FREMDES globalLaufId: der Datensatz gehoert zu einem anderen Lauf => er fehlt hier.
+  const fremdeBindung = baueLaeufe().map((r) => (r.mode === "mandat" && r.politicianId === "mandat-a"
+    ? { ...r, globalLaufId: "cron-pipeline-20260701160000-fremd-global" }
+    : r));
+  const b3 = V.bewerteNachweisfenster(baueEingaben({ laeufe: fremdeBindung }));
+  check("38.3 Fremdes globalLaufId => Mandat gilt als fehlend (keine unscharfe zeitliche Zuordnung)",
+    b3.ausgang === "nicht_bestanden" && hatBefund(b3, "mandatslauf-fehlt"),
+    JSON.stringify(b3.befunde.slice(0, 3)));
+  // (d) Die EIGENE runId der Projektion ist irrelevant fuer die Bindung (nur globalLaufId zaehlt).
+  const andereRunIds = baueLaeufe().map((r) => (r.mode === "mandat"
+    ? { ...r, runId: `projektion-voellig-anders-${Math.abs(r.politicianId.length)}-${r.politicianId}` }
+    : r));
+  const b4 = V.bewerteNachweisfenster(baueEingaben({ laeufe: andereRunIds }));
+  check("38.4 Beliebige eigene runId mit korrektem globalLaufId bindet weiterhin (bestanden)",
+    b4.ausgang === "bestanden", JSON.stringify(b4.befunde.slice(0, 3)));
+}
+
+// =============================================================================================
+console.log("\n== 39 · K2: EINE Mandatswahrheit — Widerspruch blockiert, Blob verkleinert nie ==");
+// =============================================================================================
+{
+  const SECHS = [...MANDATE, "mandat-f"];
+  // (a) Der REALE Widerspruch des gescheiterten Nachweises: relational 6, Blob 5.
+  const w1 = V.pruefeMandatsWahrheit({ kanonisch: SECHS, blob: MANDATE });
+  check("39.1 Relational 6 vs. Blob 5 => blockiert (mandatswahrheiten-widerspruechlich)",
+    w1.befunde.some((b) => b.grund === "mandatswahrheiten-widerspruechlich" && b.schwere === "blockiert"),
+    JSON.stringify(w1.befunde));
+  check("39.2 Kanonische Menge nicht lesbar => blockiert, KEIN Rueckfall auf den Blob",
+    V.pruefeMandatsWahrheit({ kanonisch: null, blob: MANDATE }).befunde
+      .some((b) => b.grund === "mandatswahrheit-nicht-lesbar"));
+  check("39.3 Laufzeitplanung widerspricht der kanonischen Menge => blockiert",
+    V.pruefeMandatsWahrheit({ kanonisch: SECHS, laufzeitPlanung: MANDATE, laufzeitLaufId: "cron-crawl-x" })
+      .befunde.some((b) => b.grund === "laufzeitplanung-widerspricht-mandatswahrheit"));
+  const w4 = V.pruefeMandatsWahrheit({ kanonisch: SECHS, blob: [...SECHS], laufzeitPlanung: [...SECHS] });
+  check("39.4 Widerspruchsfreie Sichten => keine Befunde, Signatur der kanonischen Menge",
+    w4.befunde.length === 0 && w4.signatur && w4.signatur.anzahl === 6);
+  // (b) In der GESAMTBEWERTUNG: der Blob kann die Menge nicht mehr auf fuenf verkleinern —
+  //     bewertet wird die kanonische 6er-Menge; sein Widerspruch wird BENANNT (blockiert).
+  const bWiderspruch = V.bewerteNachweisfenster(baueEingaben({
+    startbaseline: baueStartbaseline(SECHS),
+    laeufe: baueLaeufe({ mandate: SECHS }),
+    aktiveMandate: [...SECHS],
+    erwarteteMandatszahl: 6,
+    laufRetention: 60,
+    mandatsWahrheit: { kanonisch: SECHS, blob: MANDATE, laufzeitPlanung: [...SECHS], laufzeitLaufId: null }
+  }));
+  check("39.5 Gesamtbewertung: 6er-Menge bleibt massgeblich (Signatur n=6), Blob-Widerspruch blockiert benannt",
+    bWiderspruch.ausgang === "blockiert" && hatBefund(bWiderspruch, "mandatswahrheiten-widerspruechlich")
+    && bWiderspruch.mandatsmenge && bWiderspruch.mandatsmenge.anzahl === 6,
+    JSON.stringify({ ausgang: bWiderspruch.ausgang, menge: bWiderspruch.mandatsmenge && bWiderspruch.mandatsmenge.anzahl }));
+  const bKonsistent = V.bewerteNachweisfenster(baueEingaben({
+    mandatsWahrheit: { kanonisch: [...MANDATE], blob: [...MANDATE], laufzeitPlanung: [...MANDATE], laufzeitLaufId: null }
+  }));
+  check("39.6 Widerspruchsfreie Sichten in der Gesamtbewertung => bestanden",
+    bKonsistent.ausgang === "bestanden", JSON.stringify(bKonsistent.befunde.slice(0, 2)));
+  // (c) Ergaenzende Quelltextpruefung (Verhalten ist oben belegt): das CLI liest die
+  //     kanonische Menge relational und faellt fuer sie NIE auf den Blob zurueck.
+  const cliQuelle = fs.readFileSync(path.join(__dirname, "op25-production-nachweis.js"), "utf8");
+  check("39.7 CLI: kanonische Menge aus leseAktiveMandateRelational, kein Blob-Fallback",
+    /const aktiveMandate = relational\.aktive;/.test(cliQuelle)
+    && /listActiveTenantIds/.test(cliQuelle)
+    && /relationalesProfilLebenszyklus/.test(cliQuelle));
+  check("39.8 CLI verdrahtet die Wahrheitspruefung: Start-Gate UND Auswertung erhalten mandatsWahrheit",
+    /vertrag\.pruefeMandatsWahrheit\(mandatsWahrheit\)/.test(cliQuelle)
+    && /watchdogCrons: leseWatchdogCrons\(\),\s*\n\s*mandatsWahrheit/.test(cliQuelle));
+}
+
+// =============================================================================================
+console.log("\n== 40 · K3: Aufbewahrungs-Grenztests — exakt, -1, +Mandat, +Watchdog ==");
+// =============================================================================================
+{
+  check("40.1 Bedarfsformel: (3 Regel + 1 Watchdog) x (1+5) + Puffer 6 = 30",
+    V.aufbewahrungsBedarf({ regelSlots: 3, watchdogSlots: 1, mandatszahl: 5 }).mindest === 30);
+  const bExakt = V.bewerteNachweisfenster(baueEingaben({ laufRetention: 30 }));
+  check("40.2 GENAU ausreichend (30) => kein Aufbewahrungs-Blocker (Warnung 'knapp' erlaubt)",
+    bExakt.ausgang === "bestanden" && !hatBefund(bExakt, "aufbewahrung-reicht-nicht"),
+    JSON.stringify(bExakt.befunde.slice(0, 2)));
+  const bZuKlein = V.bewerteNachweisfenster(baueEingaben({ laufRetention: 29 }));
+  const meldung = bZuKlein.befunde.find((b) => b.grund === "aufbewahrung-reicht-nicht");
+  check("40.3 EIN Datensatz zu wenig (29) => harte Blockade", bZuKlein.ausgang === "blockiert" && Boolean(meldung));
+  check("40.4 Die Meldung nennt Ist, Mindest, Mandatszahl, Laufslots UND Betreiberaktion",
+    meldung && /Ist 29/.test(meldung.detail) && /Mindestbedarf 30/.test(meldung.detail)
+    && /5 Mandate/.test(meldung.detail) && /3 Regel-Slots/.test(meldung.detail)
+    && /1 Watchdog-Slots/.test(meldung.detail) && /HELMUT_CRAWL_RUN_RETENTION auf >= 30/.test(meldung.detail),
+    meldung && meldung.detail);
+  // Zusaetzliches Mandat: n=6 => (3+1) x 7 + 7 = 35. KEINE eingefrorene Mandatszahl.
+  const SECHS = [...MANDATE, "mandat-f"];
+  const sechsEingaben = (retention) => baueEingaben({
+    startbaseline: baueStartbaseline(SECHS),
+    laeufe: baueLaeufe({ mandate: SECHS }),
+    aktiveMandate: [...SECHS],
+    erwarteteMandatszahl: 6,
+    laufRetention: retention
+  });
+  check("40.5 Zusaetzliches Mandat hebt den Bedarf auf 35 — Retention 34 blockiert",
+    V.bewerteNachweisfenster(sechsEingaben(34)).befunde.some((b) => b.grund === "aufbewahrung-reicht-nicht"));
+  check("40.6 Retention 35 traegt die 6er-Menge (kein Aufbewahrungs-Blocker)",
+    !V.bewerteNachweisfenster(sechsEingaben(35)).befunde.some((b) => b.grund === "aufbewahrung-reicht-nicht"));
+  // Zusaetzlicher Watchdog-Slot: 2 Plaene => (3+2) x 6 + 6 = 36.
+  const bZweiWatchdogs = V.bewerteNachweisfenster(baueEingaben({
+    watchdogCrons: ["30 5 * * *", "0 9 * * *"], laufRetention: 35
+  }));
+  check("40.7 Zweiter Watchdog-Slot hebt den Bedarf auf 36 — Retention 35 blockiert",
+    hatBefund(bZweiWatchdogs, "aufbewahrung-reicht-nicht"),
+    JSON.stringify(bZweiWatchdogs.befunde.slice(0, 2)));
+  check("40.8 Watchdog-Kadenz nicht ermittelbar => blockiert (nichts wird geraten)",
+    V.bewerteNachweisfenster(baueEingaben({ watchdogCrons: null })).befunde
+      .some((b) => b.grund === "watchdog-kadenz-nicht-ermittelbar"));
+  check("40.9 Aufbewahrung selbst nicht belegt => blockiert (aufbewahrung-nicht-belegt)",
+    V.bewerteNachweisfenster(baueEingaben({ laufRetention: null })).befunde
+      .some((b) => b.grund === "aufbewahrung-nicht-belegt"));
+}
+
+// =============================================================================================
+console.log("\n== 41 · K5: erklaerbare Kontextzahl — Zusammensetzung statt blinder Formel ==");
+// =============================================================================================
+{
+  const mitZusammensetzung = (kontext) => mitGlobalPatch((r) => { r.datenstandDetail.kontext = kontext; });
+  // Der REALE Fall des Nachweises: 15 Kontexte bei Schwelle 2n+1=11 — statisch nur 7,
+  // der Rest dokumentgetrieben (Mehrfachherkunft/DIP). Mit persistierter Zusammensetzung
+  // ist die Zahl ERKLAERT und besteht.
+  const fall15 = {
+    kontexte: 15, geteilt: 9, mandatseigen: 6, unbekannt: 0, dokumente: 2100, ohneSichtbarkeit: 0,
+    zusammensetzung: {
+      statisch: 7, dokumentgetrieben: 8, unbekannt: 0, statischMoeglich: 7,
+      dipDokumente: 40, mehrfachHerkunft: 12, groessen: { "1": 6, "3": 4, "5": 5 }
+    }
+  };
+  const b1 = V.bewerteNachweisfenster(baueEingaben({ laeufe: mitZusammensetzung(fall15) }));
+  check("41.1 kontexte=15 > Schwelle 11, Zusammensetzung geht auf => bestanden mit erklaerter Warnung",
+    b1.ausgang === "bestanden" && b1.warnungen.some((w) => w.includes("statisch=7") && w.includes("dokumentgetrieben=8")),
+    JSON.stringify({ ausgang: b1.ausgang, befunde: b1.befunde.slice(0, 2) }));
+  const inkonsistent = JSON.parse(JSON.stringify(fall15));
+  inkonsistent.zusammensetzung.dokumentgetrieben = 5; // 7+5+0 != 15
+  const b2 = V.bewerteNachweisfenster(baueEingaben({ laeufe: mitZusammensetzung(inkonsistent) }));
+  check("41.2 Zusammensetzung geht NICHT auf => nicht_bestanden (kontextzusammensetzung-inkonsistent)",
+    b2.ausgang === "nicht_bestanden" && hatBefund(b2, "kontextzusammensetzung-inkonsistent"));
+  const unplausibel = JSON.parse(JSON.stringify(fall15));
+  unplausibel.zusammensetzung.statisch = 9;           // > statischMoeglich 7
+  unplausibel.zusammensetzung.dokumentgetrieben = 6;  // Summe stimmt weiterhin (9+6=15)
+  const b3 = V.bewerteNachweisfenster(baueEingaben({ laeufe: mitZusammensetzung(unplausibel) }));
+  check("41.3 Mehr 'statische' Kontexte als der Plan hergibt => nicht_bestanden (unplausibel)",
+    b3.ausgang === "nicht_bestanden" && hatBefund(b3, "kontextzusammensetzung-unplausibel"));
+  const unvollstaendig = JSON.parse(JSON.stringify(fall15));
+  delete unvollstaendig.zusammensetzung.statisch;
+  const b4 = V.bewerteNachweisfenster(baueEingaben({ laeufe: mitZusammensetzung(unvollstaendig) }));
+  check("41.4 Unvollstaendige Zusammensetzung => blockiert (Diagnosebedarf, kein Fehlurteil)",
+    b4.ausgang === "blockiert" && hatBefund(b4, "kontextzusammensetzung-unvollstaendig"));
+  // Sechs Mandate (Schwelle 13): dieselbe Mechanik, KEINE eingefrorene Mandatszahl.
+  const SECHS = [...MANDATE, "mandat-f"];
+  const b5 = V.bewerteNachweisfenster(baueEingaben({
+    startbaseline: baueStartbaseline(SECHS),
+    laeufe: baueLaeufe({ mandate: SECHS }).map((r) => (r.mode === "global"
+      ? { ...r, datenstandDetail: { ...r.datenstandDetail, kontext: JSON.parse(JSON.stringify(fall15)) } }
+      : r)),
+    aktiveMandate: [...SECHS],
+    erwarteteMandatszahl: 6,
+    laufRetention: 60
+  }));
+  check("41.5 Sechs Mandate (Schwelle 13), kontexte=15 mit Zusammensetzung => bestanden",
+    b5.ausgang === "bestanden", JSON.stringify(b5.befunde.slice(0, 2)));
+  // Unterhalb der Schwelle stoert eine konsistente Zusammensetzung nichts.
+  const klein = {
+    kontexte: 10, geteilt: 4, mandatseigen: 6, unbekannt: 0, dokumente: 2000, ohneSichtbarkeit: 0,
+    zusammensetzung: { statisch: 10, dokumentgetrieben: 0, unbekannt: 0, statischMoeglich: 11, dipDokumente: 0, mehrfachHerkunft: 0, groessen: { "1": 6, "5": 4 } }
+  };
+  check("41.6 Konsistente Zusammensetzung unterhalb der Schwelle => bestanden ohne Kontextwarnung",
+    V.bewerteNachweisfenster(baueEingaben({ laeufe: mitZusammensetzung(klein) })).ausgang === "bestanden");
+}
+
+// =============================================================================================
+console.log("\n== 42 · K8: Versiegelungstoleranz — Messartefakt ja, struktureller Ueberzug nie ==");
+// =============================================================================================
+{
+  const mitVersiegelterDauer = (dauerMs) => baueEingaben({
+    laeufe: baueLaeufe().map((r) => (r.mode === "mandat"
+      ? { ...r, datenstand: { ...r.datenstand, dauerMs } }
+      : r)),
+    prozessLaeufe: SLOTS.map((s) => baueProzessZeile(s, { durationMs: dauerMs }))
+  });
+  const budget = VERSIEGELT_BUDGET_MS;
+  const b313 = V.bewerteNachweisfenster(mitVersiegelterDauer(budget + 313));
+  check("42.1 Der BEKANNTE Wert +313 ms => bestanden, als Messartefakt benannt (Warnung)",
+    b313.ausgang === "bestanden" && !hatBefund(b313, "globalphase-budget-ueberzogen")
+    && b313.warnungen.some((w) => w.includes("Versiegelungstoleranz")),
+    JSON.stringify({ ausgang: b313.ausgang, befunde: b313.befunde.slice(0, 2) }));
+  check("42.2 Direkt UNTERHALB der Toleranzgrenze (+999 ms) => bestanden",
+    V.bewerteNachweisfenster(mitVersiegelterDauer(budget + V.VERSIEGELUNGS_TOLERANZ_MS - 1)).ausgang === "bestanden");
+  check("42.3 GENAU an der Toleranzgrenze (+1000 ms) => bestanden (inklusiv)",
+    V.bewerteNachweisfenster(mitVersiegelterDauer(budget + V.VERSIEGELUNGS_TOLERANZ_MS)).ausgang === "bestanden");
+  const bDrueber = V.bewerteNachweisfenster(mitVersiegelterDauer(budget + V.VERSIEGELUNGS_TOLERANZ_MS + 1));
+  check("42.4 EIN Millisekunde darueber => nicht_bestanden (globalphase-budget-ueberzogen)",
+    bDrueber.ausgang === "nicht_bestanden" && hatBefund(bDrueber, "globalphase-budget-ueberzogen"),
+    JSON.stringify(bDrueber.befunde.slice(0, 2)));
+  const bStrukturell = V.bewerteNachweisfenster(mitVersiegelterDauer(budget + 267000));
+  check("42.5 Struktureller Ueberzug (+267 s, der 03.08.-Fall) bleibt eine bewiesene Verletzung",
+    bStrukturell.ausgang === "nicht_bestanden" && hatBefund(bStrukturell, "globalphase-budget-ueberzogen"));
+  check("42.6 Die Toleranz ist KLEIN und technisch begruendet (1 s, nie still vergroesserbar)",
+    V.VERSIEGELUNGS_TOLERANZ_MS === 1000, String(V.VERSIEGELUNGS_TOLERANZ_MS));
+}
+
+// =============================================================================================
+console.log("\n== 43 · K4: die GESAMT-Vormerkbilanz im Vertrag — Bilanz geht auf oder faellt ==");
+// =============================================================================================
+{
+  const detailMitVormerkung = () => {
+    const d = detailAbgeschlossen();
+    d.lazy = { cluster: 1242, verarbeitet: 60, uebersprungeneStapel: 2, uebersprungeneDokumente: 300 };
+    d.eager = { stapel: 14, verarbeitet: 30, zurueckgestellt: 100, vorgemerkt: 100, bereitsVorhanden: 0, vormerkFehlgeschlagen: 0, nichtVorgemerkt: 0, uebersprungeneStapel: 1, uebersprungeneDokumente: 120, andereSkips: 0 };
+    d.vormerkung = {
+      lazyRestCluster: 1182, lazyRestKandidaten: 1182,
+      // ROH = lazy 300 + eager 120 (dieselbe Zaehlbasis wie die Stapel-Zaehler);
+      // dedupliziert bleiben 390 Zeilen — Mehrfachherkunft ist kein Vertragsbruch.
+      uebersprungeneDokumenteRoh: 420, uebersprungeneDokumente: 390, clusterAusUebersprungenen: 290,
+      kandidaten: 1472, vorgemerkt: 1400, bereitsVorhanden: 72, fehlgeschlagen: 0,
+      nichtVorgemerkt: 0, anfragen: 16, dauerMs: 12000
+    };
+    return d;
+  };
+  const mitVormerkung = (patch) => {
+    const d = detailMitVormerkung();
+    if (patch) patch(d);
+    return baueEingaben({ laeufe: baueLaeufe({ status: "teilweise", detail: d }) });
+  };
+  const b1 = V.bewerteNachweisfenster(mitVormerkung());
+  check("43.1 Lazy-Rest (1182) + uebersprungene Stapel VOLLSTAENDIG vorgemerkt => bestanden (vorher unmoeglich)",
+    b1.ausgang === "bestanden" && b1.warnungen.some((w) => w.includes("dauerhaft vorgemerkt") && w.includes("lazyRest=1182")),
+    JSON.stringify(b1.befunde.slice(0, 3)));
+  const b2 = V.bewerteNachweisfenster(mitVormerkung((d) => {
+    d.vormerkung.fehlgeschlagen = 5; d.vormerkung.vorgemerkt = 1395;
+  }));
+  check("43.2 Speicherfehler der Abschlussphase => nicht_bestanden (rueckstand-nicht-dauerhaft)",
+    b2.ausgang === "nicht_bestanden" && hatBefund(b2, "rueckstand-nicht-dauerhaft"));
+  const b3 = V.bewerteNachweisfenster(mitVormerkung((d) => {
+    d.vormerkung.nichtVorgemerkt = 3; d.vormerkung.vorgemerkt = 1397;
+  }));
+  check("43.3 nichtVorgemerkt > 0 bei regulaerem Laufende => nicht_bestanden",
+    b3.ausgang === "nicht_bestanden" && hatBefund(b3, "rueckstand-nicht-dauerhaft"));
+  const b4 = V.bewerteNachweisfenster(mitVormerkung((d) => { d.eager.vormerkFehlgeschlagen = 2; }));
+  check("43.4 Speicherfehler in der VERSTEHENSPHASE => ebenfalls nicht_bestanden",
+    b4.ausgang === "nicht_bestanden" && hatBefund(b4, "rueckstand-nicht-dauerhaft"));
+  const b5 = V.bewerteNachweisfenster(mitVormerkung((d) => { d.vormerkung.kandidaten = 1500; }));
+  check("43.5 Bilanz geht nicht auf (kandidaten != Summe) => blockiert (vormerkbilanz-inkonsistent)",
+    b5.ausgang === "blockiert" && hatBefund(b5, "vormerkbilanz-inkonsistent"));
+  const b6 = V.bewerteNachweisfenster(mitVormerkung((d) => { d.vormerkung.lazyRestCluster = 1000; }));
+  check("43.6 Vormerkbilanz widerspricht der Lazy-Zaehlung => blockiert",
+    b6.ausgang === "blockiert" && hatBefund(b6, "vormerkbilanz-widerspricht-lazyzaehlung"));
+  const b7 = V.bewerteNachweisfenster(mitVormerkung((d) => {
+    // Abschlussphase deckt den Lazy-Rest NICHT ab (gemessene Abdeckung 0, Bilanz in sich stimmig).
+    d.vormerkung.lazyRestKandidaten = 0;
+    d.vormerkung.kandidaten = 290; d.vormerkung.vorgemerkt = 290; d.vormerkung.bereitsVorhanden = 0;
+  }));
+  check("43.7 Lazy-Rest ohne Abdeckung in der Kandidatenmenge => blockiert (fehlender Lazy-Pfad faellt auf)",
+    b7.ausgang === "blockiert" && hatBefund(b7, "vormerkbilanz-inkonsistent"),
+    JSON.stringify(b7.befunde.slice(0, 2)));
+  // Dedup-Gegenprobe (Review-Befund): weniger KANDIDATEN als rohe Rest-Cluster sind KEIN
+  // Fehler, solange die gemessene Abdeckung stimmt — zwei Rest-Cluster desselben Vorgangs
+  // sind ein Kandidat. Ein ehrlicher Lauf darf daran nicht scheitern.
+  const b7b = V.bewerteNachweisfenster(mitVormerkung((d) => {
+    d.vormerkung.lazyRestKandidaten = 1180;   // 2 Rest-Cluster teilen sich je einen Vorgang
+    d.vormerkung.kandidaten = 1470; d.vormerkung.vorgemerkt = 1398;
+  }));
+  check("43.7b vorgangId-Dedup im Lazy-Rest (Kandidaten < Cluster) besteht weiterhin",
+    b7b.ausgang === "bestanden", JSON.stringify(b7b.befunde.slice(0, 2)));
+  const b8 = V.bewerteNachweisfenster(mitVormerkung((d) => { d.vormerkung.uebersprungeneDokumenteRoh = 100; }));
+  check("43.8 Rohe Dokumentzaehlung der Abschlussphase widerspricht den Stapel-Zaehlern => blockiert",
+    b8.ausgang === "blockiert" && hatBefund(b8, "vormerkbilanz-widerspricht-stapelzaehlung"),
+    JSON.stringify(b8.befunde.slice(0, 2)));
+  // Dedup an den DOKUMENTEN ist dagegen zulaessig: dedupliziert (390) < roh (420) besteht —
+  // gefordert wird die rohe Gleichung, nicht die deduplizierte (Review-Befund).
+  const b8b = V.bewerteNachweisfenster(mitVormerkung((d) => { d.vormerkung.uebersprungeneDokumente = 300; }));
+  check("43.8b deduplizierte Dokumentzahl < roher Zaehlung ist KEIN Vertragsbruch",
+    b8b.ausgang === "bestanden", JSON.stringify(b8b.befunde.slice(0, 2)));
+  const b8c = V.bewerteNachweisfenster(mitVormerkung((d) => {
+    // Uebersprungene Dokumente, aber die Abschlussphase hat nie geclustert (Deadline vorab
+    // verbraucht): 0 Kandidaten aus den Stapeln => nachweislich nicht dauerhaft.
+    d.vormerkung.clusterAusUebersprungenen = 0;
+    d.vormerkung.kandidaten = 1182; d.vormerkung.vorgemerkt = 1110;
+  }));
+  check("43.8c uebersprungene Dokumente ohne einen einzigen Abschluss-Cluster => blockiert",
+    b8c.ausgang === "blockiert" && hatBefund(b8c, "vormerkbilanz-widerspricht-stapelzaehlung"),
+    JSON.stringify(b8c.befunde.slice(0, 2)));
+  const b9 = V.bewerteNachweisfenster(mitVormerkung((d) => { delete d.vormerkung.vorgemerkt; }));
+  check("43.9 Unvollstaendige Vormerkbilanz => blockiert (vormerkbilanz-unvollstaendig)",
+    b9.ausgang === "blockiert" && hatBefund(b9, "vormerkbilanz-unvollstaendig"));
+  const b10 = V.bewerteNachweisfenster(mitVormerkung((d) => {
+    d.lazy.uebersprungeneStapel = 3; d.lazy.uebersprungeneDokumente = 0;
+  }));
+  check("43.10 uebersprungene Stapel mit 0 Dokumenten (unmoegliche Zaehlung) => blockiert",
+    b10.ausgang === "blockiert" && hatBefund(b10, "rueckstand-nicht-vollstaendig-gezaehlt"),
+    JSON.stringify(b10.befunde.slice(0, 2)));
 }
 
 console.log(`\n${passed + failed} Pruefpunkte · ${passed} PASS · ${failed} FAIL`);

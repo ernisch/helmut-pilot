@@ -59,7 +59,7 @@ function json(res, status, body) {
 // NICHT spawnSync — der Mock-Server lebt im selben Prozess und muss waehrend
 // des Kindlaufs Requests bedienen koennen (spawnSync wuerde den Event-Loop
 // blockieren und JEDEN Mock-Request kuenstlich in den Timeout treiben).
-function runCheck(baseUrl) {
+function runCheck(baseUrl, extraEnv = {}) {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, [CHECK], {
       env: {
@@ -69,7 +69,8 @@ function runCheck(baseUrl) {
         WATCHDOG_CLIENT_TIMEOUT_MS: "1500",
         WATCHDOG_STATUS_POLL_ATTEMPTS: "3",
         WATCHDOG_STATUS_POLL_INTERVAL_MS: "150",
-        WATCHDOG_CLOCK_SKEW_MS: "60000"
+        WATCHDOG_CLOCK_SKEW_MS: "60000",
+        ...extraEnv
       }
     });
     let out = "";
@@ -128,24 +129,33 @@ const hang = () => { /* Antwort absichtlich nie senden -> Client-Timeout */ };
   }
 
   // ── 5) DER PRODUCTION-VORFALL: Client-Timeout, serverseitig erfolgreich ──
+  //     K7-integriert: die VORPRUEFUNG sieht zuerst einen VERALTETEN Lauf (deterministisch
+  //     weit vor jedem Regel-Slot) => Ersatzlauf startet; nach dem Client-Timeout
+  //     bestaetigt der Statuspfad den frischen Abschluss.
   {
     const startedIso = new Date().toISOString();
     const mock = await startMock({
       pipeline: hang, // Server "braucht laenger als der Client wartet"
-      status: (req, res) => json(res, 200, { ok: true, latestRun: { createdAt: new Date().toISOString(), checkedSources: 140, successfulSources: 118, failedSources: 22, savedItems: 12 } })
+      status: (req, res, counts) => json(res, 200, {
+        ok: true,
+        latestRun: counts.status === 1
+          ? { createdAt: "2020-01-01T00:00:00.000Z", successfulSources: 100 } // Vorpruefung: veraltet
+          : { createdAt: new Date().toISOString(), checkedSources: 140, successfulSources: 118, failedSources: 22, savedItems: 12 }
+      })
     });
     const r = await runCheck(mock.url); const c = mock.counts; await mock.close();
-    check("5 Client-Timeout + Statuspfad bestaetigt Abschluss: exit 0 (GRUEN)", r.code === 0 && /serverseitig ERFOLGREICH/.test(r.out), r.out.slice(-400));
+    check("5 Vorpruefung 'veraltet' -> Trigger -> Timeout -> Statuspfad bestaetigt: exit 0 (GRUEN)",
+      r.code === 0 && /VERALTET/.test(r.out) && /serverseitig ERFOLGREICH/.test(r.out), r.out.slice(-400));
     check("5b DOPPEL-TRIGGER-SCHUTZ: Pipeline exakt 1x angestossen", c.pipeline === 1, `pipeline-calls=${c.pipeline}`);
-    check("5c Statuspfad wurde tatsaechlich befragt", c.status >= 1, `status-calls=${c.status} (seit ${startedIso})`);
+    check("5c Statuspfad wurde tatsaechlich befragt", c.status >= 2, `status-calls=${c.status} (seit ${startedIso})`);
   }
 
   // ── 6) Client-Timeout + kein neuer Lauf sichtbar: UNBEKANNT, ehrlich ─────
   {
-    const alt = new Date(Date.now() - 6 * 3600 * 1000).toISOString(); // alter Lauf (06:00 vorher)
+    const uralt = "2020-01-01T00:00:00.000Z"; // deterministisch VOR jedem Regel-Slot
     const mock = await startMock({
       pipeline: hang,
-      status: (req, res) => json(res, 200, { ok: true, latestRun: { createdAt: alt, successfulSources: 100 } })
+      status: (req, res) => json(res, 200, { ok: true, latestRun: { createdAt: uralt, successfulSources: 100 } })
     });
     const r = await runCheck(mock.url); const c = mock.counts; await mock.close();
     check("6 Timeout + kein Abschluss: exit 1, Meldung 'LAEUFT MOEGLICHERWEISE NOCH'", r.code === 1 && /LAEUFT MOEGLICHERWEISE NOCH/.test(r.out), r.out.slice(-400));
@@ -154,15 +164,27 @@ const hang = () => { /* Antwort absichtlich nie senden -> Client-Timeout */ };
     check("6d Statuspfad mehrfach gepollt (Poll-Schleife lebt)", c.status >= 2, `status-calls=${c.status}`);
   }
 
-  // ── 7) Client-Timeout + Statuspfad noch nicht deployed (404): UNBEKANNT ──
+  // ── 7) K7: Statuspfad 404 VOR dem Trigger = LESEFEHLER -> fail closed, KEIN Ersatzlauf ──
   {
     const mock = await startMock({
       pipeline: hang,
       status: (req, res) => json(res, 404, { error: "not found" })
     });
     const r = await runCheck(mock.url); const c = mock.counts; await mock.close();
-    check("7 Timeout + Statuspfad 404: exit 1, ehrlich 'kann erfolgreich gewesen sein'", r.code === 1 && /kann serverseitig erfolgreich gewesen sein/.test(r.out), r.out.slice(-400));
-    check("7b kein zweiter Pipeline-Trigger", c.pipeline === 1, `pipeline-calls=${c.pipeline}`);
+    check("7 Vorpruefung 404: exit 1, LESEFEHLER fail closed", r.code === 1 && /LESEFEHLER \(fail closed\)/.test(r.out), r.out.slice(-400));
+    check("7b KEIN blinder schwerer Ersatzlauf auf unbekannter Faktenlage", c.pipeline === 0, `pipeline-calls=${c.pipeline}`);
+  }
+
+  // ── 7c) Der ALTE 404-Nachlauf-Pfad bleibt erreichbar (Betreiber-Force) ───
+  {
+    const mock = await startMock({
+      pipeline: hang,
+      status: (req, res) => json(res, 404, { error: "not found" })
+    });
+    const r = await runCheck(mock.url, { WATCHDOG_FORCE_RUN: "1" }); const c = mock.counts; await mock.close();
+    check("7c FORCE: Timeout + Statuspfad 404: exit 1, ehrlich 'kann erfolgreich gewesen sein'",
+      r.code === 1 && /kann serverseitig erfolgreich gewesen sein/.test(r.out), r.out.slice(-400));
+    check("7d FORCE: kein zweiter Pipeline-Trigger", c.pipeline === 1, `pipeline-calls=${c.pipeline}`);
   }
 
   // ── 8) Lock/Skip-Antwort ist KEIN Fehler (paralleler Lauf arbeitet) ──────
@@ -183,6 +205,79 @@ const hang = () => { /* Antwort absichtlich nie senden -> Client-Timeout */ };
     });
     const r = await runCheck(mock.url); await mock.close();
     check("9 HTTP 403: exit 1 + CRON_SECRET-Hinweis", r.code === 1 && /CRON_SECRET pruefen/.test(r.out), r.out.slice(-300));
+  }
+
+  // ── 10) K7: REGULAERER ERFOLG VORHANDEN -> KEIN Ersatzlauf, exit 0 ───────
+  {
+    const mock = await startMock({
+      pipeline: (req, res) => json(res, 200, { successfulSources: 100 }),
+      status: (req, res) => json(res, 200, {
+        ok: true,
+        latestRun: { createdAt: new Date().toISOString(), runId: "cron-crawl-x", successfulSources: 96, checkedSources: 140 }
+      })
+    });
+    const r = await runCheck(mock.url); const c = mock.counts; await mock.close();
+    check("10 Frischer regulaerer Erfolg: exit 0 OHNE schweren Ersatzlauf",
+      r.code === 0 && /regulaerer Erfolg vorhanden/.test(r.out) && c.pipeline === 0,
+      `pipeline-calls=${c.pipeline} · ${r.out.slice(-300)}`);
+    check("10b Die Entscheidung ist protokolliert (Slot + letzter Lauf benannt)",
+      /deckt den juengsten Regel-Slot/.test(r.out), r.out.slice(-300));
+  }
+
+  // ── 11) K7: frischer, aber UNBRAUCHBARER Lauf (0 Quellen) -> Ersatzlauf startet ──
+  {
+    const mock = await startMock({
+      pipeline: (req, res) => json(res, 200, { checkedSources: 140, successfulSources: 120, understanding: { processed: 3 } }),
+      status: (req, res) => json(res, 200, {
+        ok: true,
+        latestRun: { createdAt: new Date().toISOString(), successfulSources: 0, checkedSources: 140 }
+      })
+    });
+    const r = await runCheck(mock.url); const c = mock.counts; await mock.close();
+    check("11 Unbrauchbarer Erfolg (0 Quellen): Ersatzlauf startet und besteht",
+      r.code === 0 && /UNBRAUCHBAR/.test(r.out) && c.pipeline === 1,
+      `pipeline-calls=${c.pipeline} · ${r.out.slice(-300)}`);
+  }
+
+  // ── 11b) K7: frischer Lauf mit FATALEM Fehlerschritt -> unbrauchbar, Ersatzlauf startet ──
+  {
+    const mock = await startMock({
+      pipeline: (req, res) => json(res, 200, { checkedSources: 140, successfulSources: 120, understanding: { processed: 3 } }),
+      status: (req, res) => json(res, 200, {
+        ok: true,
+        latestRun: { createdAt: new Date().toISOString(), successfulSources: 181, checkedSources: 181, fatalerFehlerschritt: true }
+      })
+    });
+    const r = await runCheck(mock.url); const c = mock.counts; await mock.close();
+    check("11b Fataler Fehlerschritt trotz frischem Lauf + Quellen ok: Ersatzlauf startet",
+      r.code === 0 && /UNBRAUCHBAR/.test(r.out) && /fatalem Fehlerschritt/.test(r.out) && c.pipeline === 1,
+      `pipeline-calls=${c.pipeline} · ${r.out.slice(-300)}`);
+  }
+
+  // ── 12) K7: Lesefehler des Statuspfads (HTTP 500) -> fail closed, KEIN Ersatzlauf ──
+  {
+    const mock = await startMock({
+      pipeline: (req, res) => json(res, 200, { successfulSources: 100 }),
+      status: (req, res) => json(res, 500, { error: "kaputt" })
+    });
+    const r = await runCheck(mock.url); const c = mock.counts; await mock.close();
+    check("12 Statuspfad 500: exit 1, LESEFEHLER fail closed, KEIN Ersatzlauf",
+      r.code === 1 && /LESEFEHLER \(fail closed\)/.test(r.out) && c.pipeline === 0,
+      `pipeline-calls=${c.pipeline} · ${r.out.slice(-300)}`);
+  }
+
+  // ── 13) K7: PARALLELER START — Vorpruefung 'veraltet', Server-Lock verweigert ──
+  //     Der Ersatzlauf trifft auf einen bereits laufenden Lauf: skipped ist KEIN Fehler,
+  //     KEIN weiterer Trigger (genau ein Anstoss, der Server schuetzt sich selbst).
+  {
+    const mock = await startMock({
+      pipeline: (req, res) => json(res, 200, { skipped: true, reason: "already-running" }),
+      status: (req, res) => json(res, 200, { ok: true, latestRun: { createdAt: "2020-01-01T00:00:00.000Z", successfulSources: 100 } })
+    });
+    const r = await runCheck(mock.url); const c = mock.counts; await mock.close();
+    check("13 Paralleler Start: Vorpruefung veraltet -> genau 1 Trigger -> Lock-Skip ist kein Fehler (exit 0)",
+      r.code === 0 && /uebersprungen/.test(r.out) && c.pipeline === 1,
+      `pipeline-calls=${c.pipeline} · ${r.out.slice(-300)}`);
   }
 
   console.log(`\n${passed} PASS, ${failed} FAIL`);
