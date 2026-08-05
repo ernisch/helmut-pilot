@@ -166,14 +166,35 @@ Befunde verifiziert. Eingearbeitet:
    Vormerkungen (keine Doppelzählung über `bereitsVorhanden`); unmögliche Zählungen
    (übersprungene Stapel ohne Dokumente) blockieren.
 
+**Zweite Runde (Verifikation der übrigen Blickwinkel), ebenfalls eingearbeitet:**
+
+6. **K7 wäre wirkungslos gewesen:** im globalen Pfad ist die jüngste Laufzeile nach jedem
+   Erfolg eine `mode:"mandat"`-Projektion — kompaktiert mit `successfulSources=0`. Die
+   Vorprüfung hätte genau den Erfolg, den sie absichern soll, als „unbrauchbar" gelesen
+   und **jeden Tag** den redundanten vierten Lauf gestartet (Befund D-2). Jetzt: eine
+   frische Mandatsprojektion ist der **stärkste** Erfolgsbeleg (setzt eine versiegelte
+   globale Phase voraus); `successfulSources` wird nur bewertet, wenn es wirklich
+   vorliegt (`null`-Guard — `Number(null)===0` hätte fail open zum Ersatzlauf geführt).
+7. **K5-Selbstauskunft war tautologisch:** Producer-Gleichungen galten per Konstruktion
+   für jede Ausgabe. Neu: Mechanismus-Grenze `dokumentgetrieben ≤ dipDokumente +
+   mehrfachHerkunft` (je dokumentgetriebenem Kontext mindestens ein solches Dokument,
+   Partition) — die 500-Kontexte-Explosion aus dem Review-Repro fällt jetzt hart durch;
+   dazu Widerspruchsprüfung `zusammensetzung.unbekannt == kontext.unbekannt`.
+8. **andereSkips-Lücke:** Dokumente gesperrter/fehlgeschlagener Eager-Stapel erreichen
+   keine Vormerkung und fehlten in jeder Bilanzzahl — der Bilanz-Zweig wertet
+   `eager.andereSkips > 0` jetzt wie die Alt-Regel als `rueckstand-nicht-dauerhaft`.
+9. **Betreiber-Force existierte nicht:** `WATCHDOG_FORCE_RUN` war per `workflow_dispatch`
+   nicht setzbar — die Workflow-Datei hat jetzt den Input `force_run` (Default „0";
+   der **Zeitplan ist unverändert**, nur der manuelle Dispatch erhält den Schalter).
+
 ## 3 · Testergebnisse (echte Zahlen, offline)
 
 | Suite | Ergebnis |
 |---|---|
-| `op25-nachweis-vertrag-test.js` | **268/268** (vorher 222; §18/19 neu, §38–§43 inkl. Review-Gegenproben) |
+| `op25-nachweis-vertrag-test.js` | **271/271** (vorher 222; §18/19 neu, §38–§43 inkl. Review-Gegenproben) |
 | `op25-e3-dauerhaftigkeit-test.js` | **55/55** (3b verschärft, 3b2 neu) |
 | `op25-laufpaar-test.js` (neu) | **29/29** (echtes Scheduler-Paar, 1 250 echte Cluster) |
-| `watchdog-pipeline-check-test.js` | **25/25** (Szenarien 5–13 + fataler Fehlerschritt) |
+| `watchdog-pipeline-check-test.js` | **26/26** (Szenarien 5–13 + fataler Fehlerschritt + Mandatsprojektions-Beleg) |
 | `op25-nachweis-mutationsprobe.js` | **87 von 87 rot** (M70–M87 neu; M24 nachgeführt) |
 | Kanonische Offline-Suite (`run-offline-tests.js`) | siehe CURRENT_STATE/PR (Lauf am Sprintende) |
 

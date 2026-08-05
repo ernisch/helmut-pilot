@@ -693,8 +693,8 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   (unbelegt = Diagnosebedarf statt Fehlurteil), **K6** Persistenzfehler der Projektion
   ⇒ `failed:true` (nie stilles Grün), **K7** Watchdog nur noch bedingt (Lesefehler fail
   closed, Zeitplan unverändert), **K8** Abschlussreserve 10 s + Versiegelungstoleranz 1 s
-  (+313 ms korrekt als Messartefakt). Tests: Vertrag **268/268** · Dauerhaftigkeit
-  **55/55** · Laufpaar **29/29** · Watchdog **25/25** · Mutationsprobe **87 von 87 rot**
+  (+313 ms korrekt als Messartefakt). Tests: Vertrag **271/271** · Dauerhaftigkeit
+  **55/55** · Laufpaar **29/29** · Watchdog **26/26** · Mutationsprobe **87 von 87 rot**
   (M70–M87 neu). Kein Production-Write, 0 KI, keine Migration. **Offene Betreiberschritte
   vor dem neuen Nachweis:** `max-mustermann` relational deaktivieren (nie löschen) und
   `HELMUT_CRAWL_RUN_RETENTION=36` setzen — Ablauf, empfohlene Werte und kleinste sichere

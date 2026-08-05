@@ -1311,8 +1311,8 @@ F-RT-Muster, reservierte Vormerk- und Abschlusszeit, Vormerkpfad auch für Lazy-
 Code: Signatur-Assertion und Aufbewahrungs-Gate blockieren den Start
 (`--startbaseline-schreiben`), der Vertragstest bewertet ein echtes Scheduler-Laufpaar
 (`scripts/op25-laufpaar-test.js`), die Versiegelungstoleranz ist festgelegt (1 s,
-`VERSIEGELUNGS_TOLERANZ_MS`). Vollständiger Bericht, Testzahlen (Vertrag 268/268 ·
-Dauerhaftigkeit 55/55 · Laufpaar 29/29 · Watchdog 25/25 · Mutationsprobe 87/87 rot),
+`VERSIEGELUNGS_TOLERANZ_MS`). Vollständiger Bericht, Testzahlen (Vertrag 271/271 ·
+Dauerhaftigkeit 55/55 · Laufpaar 29/29 · Watchdog 26/26 · Mutationsprobe 87/87 rot),
 Verhaltensänderungen der Verträge, empfohlener Aufbewahrungswert (36 bei n=5) und die
 kleinste sichere Betreiberaktion für die relationale Deaktivierung von `max-mustermann`
 (nie löschen): [`op25-korrektursprint-2026-08-05.md`](op25-korrektursprint-2026-08-05.md).

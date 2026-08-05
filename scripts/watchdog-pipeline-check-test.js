@@ -224,6 +224,24 @@ const hang = () => { /* Antwort absichtlich nie senden -> Client-Timeout */ };
       /deckt den juengsten Regel-Slot/.test(r.out), r.out.slice(-300));
   }
 
+  // ── 10c) K7: juengste Zeile ist eine MANDATSPROJEKTION (successfulSources=0 kompaktiert) ──
+  //     Sie setzt eine versiegelte globale Phase voraus und ist der staerkste Erfolgsbeleg —
+  //     ohne diese Regel wuerde die Vorpruefung jeden erfolgreichen OP-25-Lauf als
+  //     "unbrauchbar" lesen und den redundanten vierten schweren Lauf starten (D-2).
+  {
+    const mock = await startMock({
+      pipeline: (req, res) => json(res, 200, { successfulSources: 100 }),
+      status: (req, res) => json(res, 200, {
+        ok: true,
+        latestRun: { createdAt: new Date().toISOString(), mode: "mandat", runId: "projektion-20260810160400-abcde", successfulSources: 0, fatalerFehlerschritt: false }
+      })
+    });
+    const r = await runCheck(mock.url); const c = mock.counts; await mock.close();
+    check("10c Frische Mandatsprojektion (successfulSources=0): exit 0 OHNE Ersatzlauf",
+      r.code === 0 && /Mandatsprojektion/.test(r.out) && c.pipeline === 0,
+      `pipeline-calls=${c.pipeline} · ${r.out.slice(-300)}`);
+  }
+
   // ── 11) K7: frischer, aber UNBRAUCHBARER Lauf (0 Quellen) -> Ersatzlauf startet ──
   {
     const mock = await startMock({

@@ -143,13 +143,6 @@ async function pruefeRegulaerenErfolg(baseUrl, headers, nowMs, { fetchJsonFn = f
       grund: `letzter Lauf ${latest.createdAt} liegt VOR dem juengsten Regel-Slot ${new Date(slotMs).toISOString()}`
     };
   }
-  const successful = Number(latest.successfulSources);
-  if (Number.isFinite(successful) && successful <= 0) {
-    return {
-      ausgang: "unbrauchbar", slotMs, latest,
-      grund: `letzter Lauf ${latest.createdAt} ohne erfolgreiche Quelle (successfulSources=${latest.successfulSources})`
-    };
-  }
   // Ein Lauf mit FATALEM Fehlerschritt (kontextvertrag/erfassung/sperre) hat KEINE
   // Mandatsprojektion erzeugt — frisches createdAt und erfolgreiche Quellen taeuschen
   // dann einen brauchbaren Erfolg nur vor. Aeltere Deployments liefern das Feld nicht
@@ -158,6 +151,29 @@ async function pruefeRegulaerenErfolg(baseUrl, headers, nowMs, { fetchJsonFn = f
     return {
       ausgang: "unbrauchbar", slotMs, latest,
       grund: `letzter Lauf ${latest.createdAt} endete mit fatalem Fehlerschritt — kein brauchbarer regulaerer Erfolg`
+    };
+  }
+  // MANDATSPROJEKTION = der STAERKSTE Erfolgsbeleg (Review-Befund der K7-Nachpruefung):
+  // im globalen Pfad ist die juengste Zeile nach einem erfolgreichen Lauf eine
+  // `mode:"mandat"`-Zeile — sie entsteht NUR NACH einer versiegelten globalen Phase und
+  // traegt bewusst KEINE Quellenzaehler (kompaktierte 0). Ohne diese Regel wuerde die
+  // Vorpruefung genau den Erfolg, den sie absichern soll, als "unbrauchbar" lesen und
+  // JEDEN Tag den redundanten vierten schweren Lauf starten (Befund D-2).
+  if (latest.mode === "mandat") {
+    return {
+      ausgang: "vorhanden", slotMs, latest,
+      grund: `letzter Lauf ${latest.createdAt} ist eine Mandatsprojektion (runId=${latest.runId || "?"})`
+        + ` — sie setzt eine versiegelte globale Phase voraus und deckt den Regel-Slot ${new Date(slotMs).toISOString()}`
+    };
+  }
+  // Quellenzaehler NUR bewerten, wenn er wirklich vorliegt: `Number(null) === 0` wuerde
+  // ein fehlendes Feld sonst still zu "0 erfolgreiche Quellen" umdeuten (fail open zum
+  // Ersatzlauf) — gleicher null-Guard wie in confirmViaStatusPath.
+  const successful = latest.successfulSources == null ? null : Number(latest.successfulSources);
+  if (successful !== null && Number.isFinite(successful) && successful <= 0) {
+    return {
+      ausgang: "unbrauchbar", slotMs, latest,
+      grund: `letzter Lauf ${latest.createdAt} ohne erfolgreiche Quelle (successfulSources=${latest.successfulSources})`
     };
   }
   return {

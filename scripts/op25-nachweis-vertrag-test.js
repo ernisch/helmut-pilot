@@ -1743,6 +1743,27 @@ console.log("\n== 41 · K5: erklaerbare Kontextzahl — Zusammensetzung statt bl
   };
   check("41.6 Konsistente Zusammensetzung unterhalb der Schwelle => bestanden ohne Kontextwarnung",
     V.bewerteNachweisfenster(baueEingaben({ laeufe: mitZusammensetzung(klein) })).ausgang === "bestanden");
+  // Review-Gegenprobe (Tautologie-Befund): eine Kontext-EXPLOSION kann sich nicht selbst
+  // als "dokumentgetrieben" erklaeren — je dokumentgetriebenem Kontext braucht es mindestens
+  // ein DIP-/Mehrfachherkunft-Dokument (Partition). 500 Kontexte bei 0 solcher Dokumente
+  // sind mechanisch unmoeglich und fallen hart durch (kein Warn-Downgrade mehr).
+  const explosion = {
+    kontexte: 500, geteilt: 494, mandatseigen: 6, unbekannt: 0, dokumente: 2000, ohneSichtbarkeit: 0,
+    zusammensetzung: { statisch: 0, dokumentgetrieben: 500, unbekannt: 0, statischMoeglich: 7, dipDokumente: 0, mehrfachHerkunft: 0, groessen: { "5": 500 } }
+  };
+  const b7 = V.bewerteNachweisfenster(baueEingaben({ laeufe: mitZusammensetzung(explosion) }));
+  check("41.7 Kontext-Explosion (500) ohne Mechanismus-Dokumente => nicht_bestanden (unplausibel)",
+    b7.ausgang === "nicht_bestanden" && hatBefund(b7, "kontextzusammensetzung-unplausibel"),
+    JSON.stringify(b7.befunde.slice(0, 2)));
+  // Review-Gegenprobe: der Producer schreibt kontext.unbekannt und zusammensetzung.unbekannt
+  // aus derselben Quelle — ein Widerspruch ist manipulierte/kaputte Telemetrie.
+  const widerspruch = JSON.parse(JSON.stringify(fall15));
+  widerspruch.zusammensetzung.unbekannt = 8;
+  widerspruch.zusammensetzung.dokumentgetrieben = 0; // Summe 7+0+8 = 15 bleibt stimmig
+  const b8 = V.bewerteNachweisfenster(baueEingaben({ laeufe: mitZusammensetzung(widerspruch) }));
+  check("41.8 zusammensetzung.unbekannt widerspricht kontext.unbekannt => nicht_bestanden (inkonsistent)",
+    b8.ausgang === "nicht_bestanden" && hatBefund(b8, "kontextzusammensetzung-inkonsistent"),
+    JSON.stringify(b8.befunde.slice(0, 2)));
 }
 
 // =============================================================================================
@@ -1866,6 +1887,13 @@ console.log("\n== 43 · K4: die GESAMT-Vormerkbilanz im Vertrag — Bilanz geht 
   check("43.10 uebersprungene Stapel mit 0 Dokumenten (unmoegliche Zaehlung) => blockiert",
     b10.ausgang === "blockiert" && hatBefund(b10, "rueckstand-nicht-vollstaendig-gezaehlt"),
     JSON.stringify(b10.befunde.slice(0, 2)));
+  // Review-Gegenprobe: ANDERE Skips (Sperre/Store aus/Eager-Fehler) — ihre Dokumente
+  // erreichen keine Vormerkung und fehlen in jeder Bilanzzahl. Der Bilanz-Zweig muss sie
+  // wie die Alt-Regel als nicht dauerhaft werten.
+  const b11 = V.bewerteNachweisfenster(mitVormerkung((d) => { d.eager.andereSkips = 1; }));
+  check("43.11 eager.andereSkips > 0 => nicht_bestanden (Dokumente ohne jeden Vormerkpfad)",
+    b11.ausgang === "nicht_bestanden" && hatBefund(b11, "rueckstand-nicht-dauerhaft"),
+    JSON.stringify(b11.befunde.slice(0, 2)));
 }
 
 console.log(`\n${passed + failed} Pruefpunkte · ${passed} PASS · ${failed} FAIL`);
