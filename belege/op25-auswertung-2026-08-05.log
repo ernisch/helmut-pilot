@@ -1,0 +1,47 @@
+OP-25 — rein lesender Production-Nachweis (E3-Fassung, 2026-08-04)
+==============================================================================
+Schreibschutz: GET-Literal + Tabellen-Allowlist; storage.js nicht geladen;
+kein Cron-Trigger, keine Flag-/Env-Aenderung, 0 KI-Aufrufe.
+Messzeitpunkt: 2026-08-05T18:34:52.020Z
+
+== EINGABEN (rein lesend) ==
+aktive Mandate am Fensterende (dynamisch): m5-9aee228dbf2c9f13 (annika-klose, cem-ince, helmut-kleebank, ottilie-paola-klein-2, ruppert-st-we)
+eingefrorene Startbaseline: m5-9aee228dbf2c9f13 (erhoben 2026-08-04T18:25:02.716Z, Datei-Signatur m5-9aee228dbf2c9f13)
+Laufdatensaetze im Blob: 20 (Retention 20) · dauerhafte globalphase-Zeilen: 5
+Aktivierung (READY des neuen Deployments): 2026-08-04 18:23:57Z · Fenster: 2026-08-04 18:23:57Z → 2026-08-05 18:23:57Z
+erwarteter Deployment-Commit (aus der Baseline): 2e4e00e9ecd19e059e2cd73b9dfb6da59082f4f5
+Kosten im Fenster: 0.1892 USD (Rahmen 2 USD, vollstaendig=true, unbepreist=0)
+
+== BEWERTUNG JE ERWARTETEM LAUF ==
+  crawl@2026-08-04T20:00:00.000Z → belegluecke
+      [blockiert] laufbeleg-verdraengt — crawl@2026-08-04T20:00:00.000Z: der Lauf ist dauerhaft belegt (cron-crawl-20260804200041-c5a6c-global), sein reicher Laufdatensatz wurde aber von der Blob-Retention verdraengt — nicht bewertbar.
+  crawl@2026-08-05T04:00:00.000Z → belegluecke
+      [blockiert] laufbeleg-verdraengt — crawl@2026-08-05T04:00:00.000Z: der Lauf ist dauerhaft belegt (cron-crawl-20260805040019-qfcqz-global), sein reicher Laufdatensatz wurde aber von der Blob-Retention verdraengt — nicht bewertbar.
+  pipeline@2026-08-05T16:00:00.000Z → vertragsverletzung · versiegelt 221981 ms
+      [nicht_bestanden] auffaellige-kontextzahl-ohne-erklaerung — pipeline@2026-08-05T16:00:00.000Z: kontexte=15 > Aufgreifschwelle 11 (kein Fehlwert an sich — aber unerklaert)
+      [blockiert] fenster-ungueltig-mandatsmenge-veraendert — pipeline@2026-08-05T16:00:00.000Z: Lauf plante m6-4705b9f9aac98cd4 (annika-klose, cem-ince, helmut-kleebank, max-mustermann, ottilie-paola-klein-2, ruppert-st-we), eingefroren ist m5-9aee228dbf2c9f13 (annika-klose, cem-ince, helmut-kleebank, ottilie-paola-klein-2, ruppert-st-we).
+      [nicht_bestanden] mandatslauf-fehlt — pipeline@2026-08-05T16:00:00.000Z: annika-klose, cem-ince, helmut-kleebank, ottilie-paola-klein-2, ruppert-st-we
+      [nicht_bestanden] globalphase-budget-ueberzogen — pipeline@2026-08-05T16:00:00.000Z: versiegelt 221981 ms > Budget 221668 ms
+      [nicht_bestanden] rueckstand-nicht-dauerhaft — pipeline@2026-08-05T16:00:00.000Z: zurueckgestellte Cluster ohne pending-Vormerkung (lazy 372/1213, uebersprungeneStapel=2; eager nichtVorgemerkt=479, uebersprungeneStapel=14)
+
+== AUSGESCHLOSSENE LAEUFE (mit Grund gezaehlt) ==
+  cron-pipeline-20260805080005-2z8bb-global: kein-regulaerer-cron-termin (manuell/ausserplanmaessig)
+
+== WARNUNGEN ==
+  Aufbewahrung knapp: 18 von 20 Datensaetzen belegt — schon EIN weiterer schwerer Lauf verdraengt fruehe Belege. Zeitnah auswerten.
+  Ausserplanmaessiger globaler Lauf im Fenster: cron-pipeline-20260805080005-2z8bb-global — nicht als Beleg verwendet.
+  pipeline@2026-08-05T16:00:00.000Z: 1 fehlgeschlagene Quellen (klassifiziert: timeout)
+
+== BEFUNDE ==
+  [blockiert] laufbeleg-verdraengt — crawl@2026-08-04T20:00:00.000Z: der Lauf ist dauerhaft belegt (cron-crawl-20260804200041-c5a6c-global), sein reicher Laufdatensatz wurde aber von der Blob-Retention verdraengt — nicht bewertbar.
+  [blockiert] laufbeleg-verdraengt — crawl@2026-08-05T04:00:00.000Z: der Lauf ist dauerhaft belegt (cron-crawl-20260805040019-qfcqz-global), sein reicher Laufdatensatz wurde aber von der Blob-Retention verdraengt — nicht bewertbar.
+  [nicht_bestanden] auffaellige-kontextzahl-ohne-erklaerung — pipeline@2026-08-05T16:00:00.000Z: kontexte=15 > Aufgreifschwelle 11 (kein Fehlwert an sich — aber unerklaert)
+  [blockiert] fenster-ungueltig-mandatsmenge-veraendert — pipeline@2026-08-05T16:00:00.000Z: Lauf plante m6-4705b9f9aac98cd4 (annika-klose, cem-ince, helmut-kleebank, max-mustermann, ottilie-paola-klein-2, ruppert-st-we), eingefroren ist m5-9aee228dbf2c9f13 (annika-klose, cem-ince, helmut-kleebank, ottilie-paola-klein-2, ruppert-st-we).
+  [nicht_bestanden] mandatslauf-fehlt — pipeline@2026-08-05T16:00:00.000Z: annika-klose, cem-ince, helmut-kleebank, ottilie-paola-klein-2, ruppert-st-we
+  [nicht_bestanden] globalphase-budget-ueberzogen — pipeline@2026-08-05T16:00:00.000Z: versiegelt 221981 ms > Budget 221668 ms
+  [nicht_bestanden] rueckstand-nicht-dauerhaft — pipeline@2026-08-05T16:00:00.000Z: zurueckgestellte Cluster ohne pending-Vormerkung (lazy 372/1213, uebersprungeneStapel=2; eager nichtVorgemerkt=479, uebersprungeneStapel=14)
+
+== ERGEBNIS: NICHT_BESTANDEN (Exit 1) ==
+Ausschliesslich lesende Zugriffe (GET), 0 KI-Aufrufe, 0,00 USD, kein Trigger.
+
+[op25-nachweis/json] {"ausgang":"nicht_bestanden","exitCode":1,"fenster":{"von":"2026-08-04 18:23:57Z","bis":"2026-08-05 18:23:57Z"},"mandatsmenge":"m5-9aee228dbf2c9f13","endzustand":"m5-9aee228dbf2c9f13","erwarteterCommit":"2e4e00e9ecd19e059e2cd73b9dfb6da59082f4f5","benoetigteDatensaetze":18,"dauerhafteZeilen":5,"relationalFehler":null,"befunde":[{"schwere":"blockiert","grund":"laufbeleg-verdraengt"},{"schwere":"blockiert","grund":"laufbeleg-verdraengt"},{"schwere":"nicht_bestanden","grund":"auffaellige-kontextzahl-ohne-erklaerung"},{"schwere":"blockiert","grund":"fenster-ungueltig-mandatsmenge-veraendert"},{"schwere":"nicht_bestanden","grund":"mandatslauf-fehlt"},{"schwere":"nicht_bestanden","grund":"globalphase-budget-ueberzogen"},{"schwere":"nicht_bestanden","grund":"rueckstand-nicht-dauerhaft"}],"warnungen":3,"ausgeschlossen":1}

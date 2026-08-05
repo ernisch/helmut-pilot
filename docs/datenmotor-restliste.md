@@ -627,6 +627,33 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   `blockiert` (Exit 2). Branch `claude/op25-startbaseline-commitnachweis-mqjixo`, **PR #223**
   (offen, kein Merge). Kanonisch (inkl. verbindlichem Betreiberablauf):
   [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.5**.
+- **Nachtrag 2026-08-05 (Erster regulärer Production-Nachweis nach §7.7.5 — ausgeführt und
+  NICHT BESTANDEN; der Nachweis beginnt von vorn):** Aktivierung durch den Betreiber
+  (`HELMUT_CRON_GLOBALABRUF=on`, nur Production, + Redeploy des unveränderten Merge-Commits
+  `2e4e00e9…`/PR #223); Aktivierungszeitpunkt = READY `dpl_4gCKkwSFfagHnCxs2jj4RCWLfviW`
+  **2026-08-04 18:23:57.472 UTC**. **Startbaseline gültig** (65 s nach READY, 5 aktive reale
+  Mandate `m5-9aee228dbf2c9f13`, voller erwarteter Commit gespeichert; am Fensterende
+  byte-identisch) — der Ablauf aus §7.7.5 hat damit erstmals real funktioniert, ebenso der
+  **Commitnachweis: alle vier `globalphase`-Fensterzeilen tragen exakt `2e4e00e9…`**, die
+  Vor-Fenster-Zeile (`3fa8830`) wurde nicht gewertet, kein Production-Deployment im Fenster
+  (Vercel-belegt). **Auswertung 2026-08-05 18:30 UTC: `nicht_bestanden` (Exit 1), 7 Befunde:**
+  `laufbeleg-verdraengt` ×2 (crawl 20:00/04:00 dauerhaft belegt, reiche Datensätze von der
+  Blob-Retention 20 verdrängt — Ursache: außerplanmäßiger globaler **Watchdog-Lauf 08:03 UTC**
+  (D-2) + Sechs-Mandate-Planung des 16:00-Laufs) · `fenster-ungueltig-mandatsmenge-veraendert`
+  (der 16:00-Lauf plante **sechs** Mandate inkl. `max-mustermann` — das deaktivierte
+  Demo-Mandat war im Fenster zwischenzeitlich reaktiviert, am Fensterende wieder fünf ⇒
+  **offene Betreiberklärung**) · `mandatslauf-fehlt` (alle fünf realen Mandate ohne
+  abgeschlossenen `mode:"mandat"`-Datensatz zum 16:00-Lauf) · `globalphase-budget-ueberzogen`
+  (221 981 ms > 221 668 ms) · `rueckstand-nicht-dauerhaft` (lazy 372/1213 ohne
+  pending-Vormerkung, eager 479 nicht vorgemerkt — **E3-Zusage in Production nicht erfüllt**,
+  eigener Analysesprint) · `auffaellige-kontextzahl-ohne-erklaerung` (15 > 11). Kosten im
+  Fenster 0,1892 USD (Rahmen 2 USD, vollständig); Auswertung rein lesend, 0 KI-Aufrufe.
+  Flag steht weiterhin `on` — Belassen/Rückbau ist Betreiberentscheidung. Belege:
+  `belege/op25-startbaseline.json` + `belege/op25-auswertung-2026-08-05.log`; Protokoll:
+  `CURRENT_STATE.md` 2026-08-05 (11. Durchgang). Branch
+  `claude/op-25-production-nachweis-tg44mz`, **PR #226** (kein Merge). **OP-25 bleibt
+  TEILWEISE ABGESCHLOSSEN**; vor einem neuen Nachweis: Betreiberklärung Mandats-Toggle ·
+  D-2-Entscheidung (Retention/Watchdog) · Analysesprint Vormerkung/Budget/Kontextzahl.
 - **Nachtrag 2026-08-04 (Profilreparatursprint):** Künftige OP-25-Production-Nachweise arbeiten
   mit **fünf aktiven realen Mandaten** statt sechs — das Demo-Mandat `max-mustermann` ist seit
   2026-08-04 deaktiviert (nicht gelöscht, OP-04-Teilschritt), sofern bis zum Nachweis keine
