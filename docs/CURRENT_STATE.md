@@ -1,9 +1,52 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung:** 2026-08-05, 11. Durchgang (**OP-25: Erster regulärer
+**Letzte Aktualisierung:** 2026-08-05, 12. Durchgang (**OP-25-Ursachenanalyse des
+gescheiterten Nachweises — ERFOLGREICH ABGESCHLOSSEN, rein lesend. Der echte
+Production-Kontrollfluss wurde aus den dauerhaften Belegen rekonstruiert
+(`process_runs`, `helmut_store` `main`/`main-auth`/`main-cron-fairness`, Profiltabellen,
+`belege/*`); mehrere Kernaussagen des 11. Durchgangs sind damit WIDERLEGT:** (1)
+`mandatslauf-fehlt` ist ein **Falschbefund** — alle 6 Mandatsprojektionen des 16:00-Laufs
+liefen und sind dauerhaft belegt (Fairnesszeile `laeufe.pipeline`: 6/6 `erfolgreich`,
+16:03:50–16:04:06; sechs `mode:"mandat"`-Datensätze `projektion-…` mit
+`globalLaufId=…23ls6-global`); der Bewertungskern joint über `runId` statt `globalLaufId`
+(`op25-nachweis.js:764–765`), die Testfixtures kodieren dieselbe falsche Konvention —
+**der Kapazitätsblocker war im Fenster real gelöst** (crawl 04:00 UND pipeline 16:00 je
+6/6, auch der Watchdog-Lauf 08:03). (2) **Kein Mandats-Toggle im Fenster:** die Laufzeit
+liest relational (`mandate_profiles.max-mustermann` seit 20.07. unverändert `aktiv=true`
+→ jeder Lauf plante 6 Mandate), das Nachweis-CLI liest den `main`-Blob, in dem die
+„Deaktivierung" vom 04.08. (10:26 UTC, kein Audit-Eintrag) allein landete — **zwei
+divergierende Mandatswahrheiten**, die Betreiberklärung ist neu gefasst (eine Wahrheit
+festlegen, relational nach-deaktivieren, CLI umstellen). (3) Blob-Verdrängung war
+vorhersagbar: Bedarf 4 schwere Läufe × 7 Datensätze = 28 > Retention 20; der Vertrag
+rechnete 18 (ohne den planmäßigen, bedingungslosen Watchdog-Slot 05:30 UTC + Verzögerung,
+mit eingefrorenem n=5) und warnte statt zu blockieren. (4) Budget +313 ms =
+Abschlussschreiben nach der Vormerk-Deadline (Budget − 5 s) — Randartefakt. (5) **Echt und
+systemisch ist `rueckstand-nicht-dauerhaft`** (nv=479–812 in allen 5 globalen Läufen seit
+Aktivierung): keine reservierte Vormerkzeit, 2 serielle Round-Trips je Cluster
+(~1,7 Cluster/s), übersprungene Stapel und Lazy-Rest ganz ohne Vormerkpfad — der
+E3-Nachweisvertrag verlangt mehr, als der Code je zugesagt hat (`op25-e3-…-test` 3b
+schreibt das schwächere Verhalten als Soll fest). (6) Kontextzahl 15 erklärt: statischer
+Quellenplan liefert 7 Signaturen (Diagnoselauf gegen den echten Katalog, 6 vs. 5 Mandate),
+der Rest entsteht dokumentgetrieben (Mehrfachherkunft/DIP); Schwelle `2n+1` strukturell
+blind, wäre sehr wahrscheinlich auch mit 5 Mandaten gerissen worden; überwiegend
+unabhängiger Befund, nicht Ursache der übrigen. Neuer Nebenbefund: stiller
+`.catch(() => null)` am Mandats-`saveCrawlRun` (`scheduler.js:2700`, §4.10-Widerspruch).
+**Korrekturen K1–K8, Reihenfolge und neue Abnahmekriterien: kanonisch
+[`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.6.** **STATUSGRENZEN:**
+Production durch diese Sitzung unverändert (ausschließlich GET/SELECT, 0 Writes, 0
+KI-Aufrufe, 0,00 USD); `HELMUT_CRON_GLOBALABRUF` laut Betreiberangabe nach dem Nachweis
+auf `off` gestellt + Redeploy (Altpfad aktiv); PR #226 ist gemergt. **GEÄNDERTE DATEIEN:**
+`docs/betrieb/vorgangskontext.md` (§7.7.6 neu, R1 korrigiert) ·
+`docs/datenmotor-restliste.md` (OP-25-Nachtrag 2026-08-05/2) · `docs/CURRENT_STATE.md`.
+**Branch/PR:** `claude/op25-production-nachweis-eg5e9i`, PR gegen `main` — kein Merge,
+Merge-Entscheidung beim Betreiber. OP-25 bleibt TEILWEISE ABGESCHLOSSEN; nächster Schritt:
+Betreiberentscheidung K2 (Mandatswahrheit), dann Werkzeugsprint K1/K5/K6.**) ·
+(11. Durchgang: **OP-25: Erster regulärer
 Production-Nachweis nach §7.7.5 vollständig durchgeführt — Aktivierung und Startbaseline
 GÜLTIG, Auswertung ehrlich NICHT BESTANDEN (Exit 1, 7 Befunde). Der Nachweis ist damit
-GESCHEITERT und beginnt von vorn; OP-25 bleibt TEILWEISE ABGESCHLOSSEN.** **ABLAUF (alle
+GESCHEITERT und beginnt von vorn; OP-25 bleibt TEILWEISE ABGESCHLOSSEN.
+Befunde (b) und (c) sowie die Toggle-These sind durch den 12. Durchgang widerlegt —
+maßgeblich ist `vorgangskontext.md` §7.7.6.** **ABLAUF (alle
 Production-Schreibschritte waren Betreiberaktionen; die Sitzung hat Production ausschließlich
 GELESEN, 0 Writes):** (1) Betreiber setzte `HELMUT_CRON_GLOBALABRUF=on` (nur Production) und
 redeployte den unveränderten Merge-Commit `2e4e00e9ecd19e059e2cd73b9dfb6da59082f4f5` (PR #223);
@@ -4553,7 +4596,10 @@ zehn offenen PRs (#184, #178, #177, #175, #155, #154, #132, #117, #115, #112, #1
   isolierter Rückweg bewiesen.
 - **Flags:** `HELMUT_SOURCE_MODE=on` · `HELMUT_UNDERSTANDING_GATE=shadow` ·
   `HELMUT_PARDOK_DISPATCH=shadow` · Scoring `off` ·
-  **`HELMUT_CRON_GLOBALABRUF` steht wieder auf `off` (Stand 2026-08-04).** Es war am
+  **`HELMUT_CRON_GLOBALABRUF` steht wieder auf `off` (Betreiberangabe, Stand 2026-08-05 nach
+  dem gescheiterten OP-25-Nachweis + Redeploy; zweiter Zyklus: `on` per Redeploy READY
+  2026-08-04 18:23:57 UTC für das Nachweisfenster, Auswertung `nicht_bestanden`, danach
+  Rückbau — Ursachenanalyse: `betrieb/vorgangskontext.md` §7.7.6).** Erster Zyklus: Es war am
   2026-08-03, 13:15:11 UTC in Production auf `on` gesetzt; der erste reguläre Wirkungslauf ist am
   Kapazitätsnachweis gescheitert (globale Phase 267,12 s bei Budget 221,674 s, **0 von 6**
   Mandaten), ein späterer Crawl (20:00 UTC) lief ebenfalls ins äußere Zeitlimit — er schrieb

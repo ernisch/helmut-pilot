@@ -654,6 +654,32 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   `claude/op-25-production-nachweis-tg44mz`, **PR #226** (kein Merge). **OP-25 bleibt
   TEILWEISE ABGESCHLOSSEN**; vor einem neuen Nachweis: Betreiberklärung Mandats-Toggle ·
   D-2-Entscheidung (Retention/Watchdog) · Analysesprint Vormerkung/Budget/Kontextzahl.
+- **Nachtrag 2026-08-05/2 (Ursachenanalyse des gescheiterten Nachweises — ERFOLGREICH
+  ABGESCHLOSSEN, rein lesend):** Der echte Production-Kontrollfluss wurde aus den dauerhaften
+  Belegen rekonstruiert; **mehrere Kernaussagen des Abschlussberichts sind widerlegt:**
+  **(1)** `mandatslauf-fehlt` ist ein **Falschbefund** — alle 6 Mandatsprojektionen des
+  16:00-Laufs liefen (16:03:50–16:04:06, 6/6 `erfolgreich`, Fairnesszeile + 6
+  `mode:"mandat"`-Datensätze); der Bewertungskern sucht mit dem falschen Schlüssel
+  (`runId` statt `globalLaufId`), die Testfixtures kodieren dieselbe falsche Konvention.
+  **Der Kapazitätsblocker war im Fenster real gelöst** (crawl UND pipeline je 6/6).
+  **(2)** `max-mustermann` wurde **nie im Fenster reaktiviert**: die Laufzeit liest relational
+  (`mandate_profiles.aktiv=true`, unverändert seit 20.07.), die Deaktivierung vom 04.08.
+  landete nur im `main`-Blob (10:26 UTC), den nur das Nachweis-CLI liest — zwei divergierende
+  Mandatswahrheiten, kein Toggle. **(3)** Die Blob-Verdrängung war vorhersagbar: realer Bedarf
+  4 Läufe × 7 Datensätze = 28 > Retention 20; der Vertrag rechnete 18 (ohne Watchdog-Slot,
+  mit eingefrorenem n=5) und warnte nur. **(4)** Budget +313 ms = Abschlussschreiben nach der
+  Vormerk-Deadline (Budget − 5 s), Randartefakt, kein Kapazitätsproblem. **(5)** Echt und
+  systemisch ist allein `rueckstand-nicht-dauerhaft` (nv=479–812 in allen 5 globalen Läufen):
+  es gibt keine reservierte Vormerkzeit, 2 serielle Round-Trips je Cluster, Lazy-Rest ganz
+  ohne Vormerkpfad — der E3-Vertrag verlangt mehr, als der Code je zugesagt hat (Test 3b
+  schreibt das schwächere Verhalten als Soll fest). **(6)** Kontextzahl 15 ist erklärt
+  (statischer Plan: 7; Rest dokumentgetrieben durch Mehrfachherkunft/DIP; Schwelle `2n+1`
+  strukturell blind, wäre wohl auch mit 5 Mandaten gerissen worden). Korrekturen **K1–K8**
+  (Werkzeug-Join, eine Mandatswahrheit, Retention/Vertrag, E3-Entscheidung, Kontextvertrag,
+  stiller `saveCrawlRun`-Catch, Watchdog-Entscheidung, Abschlussreserve) samt Reihenfolge und
+  neuen Abnahmekriterien: kanonisch
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.6**. Production
+  unverändert (nur GET/SELECT, 0 KI); Flag laut Betreiber inzwischen `off` + Redeploy.
 - **Nachtrag 2026-08-04 (Profilreparatursprint):** Künftige OP-25-Production-Nachweise arbeiten
   mit **fünf aktiven realen Mandaten** statt sechs — das Demo-Mandat `max-mustermann` ist seit
   2026-08-04 deaktiviert (nicht gelöscht, OP-04-Teilschritt), sofern bis zum Nachweis keine
