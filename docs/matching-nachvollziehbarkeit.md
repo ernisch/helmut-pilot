@@ -3813,14 +3813,16 @@ zuverlässig (pilot 95/96, brandenburg 97/98, berlin 75/76).
 
 ### 54.3 Regressionsschutz
 
-`scripts/lage-rangfolge-determinismus-test.js` (19 Prüfpunkte, offline; §A–D = 15 aus diesem
-Sprint, §E = 4 aus der Reviewrunde §54.5): identische
+`scripts/lage-rangfolge-determinismus-test.js` (21 Prüfpunkte, offline; §A–D = 17 —
+15 aus diesem Sprint plus A6/B4 aus der Nacharbeit §54.6 —, §E = 4 aus der Reviewrunde
+§54.5): identische
 `created_at` · zeilenweise tickende `created_at` in der **alten** Lieferreihenfolge ·
 umgekehrte Lieferung · „jüngste Zeile mit schlechtestem Rang" · **alle 24
-Lieferreihenfolgen ergeben genau eine Ausgabe** · Rangloser Altbestand · unlesbarer
-Rang · der Endpunktvertrag (Rang statt `created_at`) · der byte-stabile Tiebreak des
-reinen Matchings. Gegen den Stand **vor** dem Fix (`2e4e00e`) ist die Suite **11 von
-15 rot**.
+Lieferreihenfolgen ergeben genau eine Ausgabe** · fehlende/leere `created_at`-Werte ·
+Rangloser Altbestand · unlesbarer Rang · der direkte Vertrag der zentralen
+Vergleichsfunktion · der Endpunktvertrag (Rang statt `created_at`) · der byte-stabile
+Tiebreak des reinen Matchings. Gegen den Stand **vor** dem Fix (`2e4e00e`) war die
+ursprüngliche 15er-Fassung **11 von 15 rot**.
 
 ### 54.4 Verbleibendes Risiko (bewusst offen, freigabepflichtig)
 
@@ -3904,3 +3906,29 @@ Rückfall die Liste auffüllt** — genau deshalb prüft E3 zusätzlich, dass di
 - **Historienzugang** (`includeAbgeloest: true`) sortiert jetzt ebenfalls nach Rang statt nach
   Zeit und verschränkt damit Laufgenerationen. Es gibt dafür **keinen produktiven Konsumenten**
   (nur Tests; der Backup-Export liest die Tabelle direkt), deshalb keine Änderung.
+
+### 54.6 Nacharbeit vor dem Merge (2026-08-06)
+
+PR #224 wurde auf den aktuellen `main`-Stand `d8bf68f` gebracht (Merge; einziger Konflikt
+`docs/CURRENT_STATE.md`, aufgelöst zugunsten der auf `main` kompaktierten Fassung — der
+PR-seitige Langformat-Abschnitt entfiel, kanonisch bleibt dieser §54). Inhaltliche
+Nacharbeit:
+
+- **Eine Rangfolge-Definition statt drei Kopien:** die Rang-Extraktion (rangloser/unlesbarer
+  Rang → hinten, nie als 0) lag identisch in `lage.js` und im E2E-Testdoppel. Sie ist jetzt
+  zentral als `matching-contract.compareStoredMatchingRows` definiert; beide Aufrufer nutzen
+  dieselbe Funktion und können nicht mehr auseinanderlaufen.
+- **Testerweiterung:** A6 (fehlende/leere `created_at`-Werte → kein Fehler, Reihenfolge
+  unverändert) und B4 (direkter Vertrag der zentralen Vergleichsfunktion, inkl. numerischem
+  Rangvergleich 2 < 10) — die Suite hat damit 21 Prüfpunkte (§54.3).
+- **Veraltete Vertragskommentare nachgezogen** (adversariale Reviewrunde 2026-08-06): der
+  Funktions-Header von `storage.listMatchingResults` sicherte noch `created_at.desc` zu;
+  die rein lesenden Analyse-Skripte `matching-schwellenwert-analyse.js` und
+  `matching-erklaerungsluecke-analyse.js` beschrifteten ihr sichtbares Fenster noch mit dem
+  alten Lesevertrag. Nur Kommentare/Beschriftungen, keine Logikänderung.
+
+Nicht übernommene Reviewbefunde derselben Runde (mit Begründung widerlegt): eine angebliche
+Mandantensicherheits-Testlücke (der `userId`-Durchgriff ist in
+`matching-aktualitaet-test.js` D2 bereits bewiesen) und ein angeblicher
+§54.2-Widerspruch nach der Zentralisierung (der Tiebreak **ist** weiterhin `compareIds`,
+`compareStoredMatchingRows` delegiert dorthin).

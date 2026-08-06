@@ -113,7 +113,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#224** (Draft) | F-E2E: Lage-Rangfolge aus berechnetem Rang statt Ablage | behauptet die Behebung des CI-Nichtdeterminismus F-E2E; **nicht reviewt, nicht abgenommen** |
+| **#224** (Draft) | F-E2E: Lage-Rangfolge aus berechnetem Rang statt Ablage | 2026-08-06 fertiggestellt: auf main `d8bf68f` gemergt (Konflikt nur diese Datei), Rang-Vergleich zentralisiert (`matching-contract.compareStoredMatchingRows`), veraltete Vertragskommentare nachgezogen; Determinismus-Suite 21/21, Offline 193/208 = main-Basislinie im selben Container + neue grüne Suite ([`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §54.6). **Merge erst nach Ende des laufenden OP-25-Nachweisfensters; Review/Abnahme beim Betreiber** |
 | **#225** (Draft) | „Produktroadmap für LINIE" | nicht aus dem Helmut-Arbeitsstrang; Einordnung beim Betreiber |
 | **#218** | OP-25-Kapazität, konkurrierende Analyse | Codeänderung auf dem Branch zurückgenommen; Ursache/Fix kamen über #219. **Empfehlung: schließen** |
 | **#216** | flackernden `werkzeug-lesefehler-test.js` stabilisieren (F-PORT) | offen, reserviert als OP-28 |
@@ -172,8 +172,10 @@ damit nur noch durch die **separate Startfreigabe** blockiert (§9/§11).
   Abnahmekriterien aus §7.7.6 (Signatur-Assertion, harter Aufbewahrungsvertrag inkl.
   Watchdog, echtes Laufpaar, E3 `nichtVorgemerkt = 0`, Versiegelungstoleranz 1 s) sind
   Code und prüfen den Start technisch (§7.7.7).
-- **F-E2E** (nichtdeterministische E2E-Rangfolge im CI, belegt 2026-08-04) — Ursache offen;
-  PR #224 (Draft) liegt vor, nicht abgenommen.
+- **F-E2E** (nichtdeterministische E2E-Rangfolge im CI, belegt 2026-08-04) — Ursache belegt
+  und auf dem PR-#224-Branch behoben (Rangfolge kam aus der Ablage statt aus `rank`;
+  [`matching-nachvollziehbarkeit.md`](matching-nachvollziehbarkeit.md) §54); 2026-08-06 auf
+  main-Stand gebracht, testgrün. Offen: Betreiber-Review + Merge nach dem OP-25-Fenster.
 - **29B** — wartet auf natürlich auftretende Fehlerzustände (künstliche Fehler verboten).
 - **27A-2-Abnahme** — Wiederholungsmessung nach Deployment.
 - **OP-09/OP-10** (Lock-Deny/Fehlerpfad) — brauchen ein echtes Störereignis.
@@ -256,6 +258,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
+| 2026-08-06 | **PR #224 fertiggestellt** (F-E2E-Rangfolgefix): main `d8bf68f` eingemergt (Konflikt nur CURRENT_STATE), Rang-Comparator in `matching-contract` zentralisiert, Tests A6/B4 ergänzt, veraltete Vertragskommentare nachgezogen (adversariale Reviewrunde: 3 Befunde behoben, 3 widerlegt, §54.6); Suiten grün: Determinismus 21/21 · E2E 96/98/76 + 3 Mutationsproben · lage 138 · Matching 65/29/178 · Offline 193/208 (= main-Basislinie 192/207 im selben Container + neue Suite, identische 15er-Umgebungs-Fehlschlagliste) · Smoke 32/32 | **teilweise** (Branch fertig; Merge bewusst erst nach dem OP-25-Fenster; Abnahme beim Betreiber) |
 | 2026-08-06 | **OP-25-Betreiberschritte K2/K3** nach Merge PR #229 (`f4f4500b`): Vorprüfung rein lesend; `max-mustermann` relational deaktiviert (konditionales Update, 1 Zeile, 08:01:31Z, kein Delete); Retention 36 + Betreiber-Redeploy `dpl_3y5n…` READY 07:50:22Z; alle drei Sichten + Blob `m5-9aee228dbf2c9f13`, K2-Gate widerspruchsfrei; Doku-Korrekturen (Belegdatei §6 `user_id`, Env-Inventar) | **erfolgreich** (Nachweisstart bleibt separat freigabepflichtig; kein Lauf, keine Baseline) |
 | 2026-08-05 | **Korrektursprint K1–K8** (PR #229, Branch `claude/op25-corrections-k1-k8-kc1tdw`): alle acht Korrekturen umgesetzt + getestet; Beleg [`betrieb/op25-korrektursprint-2026-08-05.md`](betrieb/op25-korrektursprint-2026-08-05.md) | **teilweise** (Code vollständig + grün; Review/Merge + 2 Betreiberschritte + Production-Nachweis offen) — **Merge + Betreiberschritte am 2026-08-06 erfolgt** |
 | 2026-08-05 | **OP-25-Ursachenanalyse** des gescheiterten Nachweises (PR #227, rein lesend aus dauerhaften Belegen) | **erfolgreich**; widerlegt 2 der 7 Befunde, ordnet die übrigen ein, definiert K1–K8; OP-25 bleibt teilweise |
