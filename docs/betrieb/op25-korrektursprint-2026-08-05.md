@@ -241,10 +241,17 @@ auditierter **vorhandener** Weg für den relationalen Toggle existiert damit nic
 wird **kein verdeckter Bypass** gebaut. Kleinste sichere Betreiberaktion (freigabepflichtige
 Production-Datenänderung):
 
-1. **Vorprüfung** (lesend): `select id, aktiv, updated_at from mandate_profiles where id
-   = 'max-mustermann';` — erwartet `aktiv = true` (Stand seit 20.07.).
+1. **Vorprüfung** (lesend): `select user_id, aktiv, updated_at from mandate_profiles
+   where user_id = 'max-mustermann';` — erwartet `aktiv = true` (Stand seit 20.07.).
 2. **Write** (genau eine Zeile, kein Delete):
-   `update mandate_profiles set aktiv = false, updated_at = now() where id = 'max-mustermann';`
+   `update mandate_profiles set aktiv = false, updated_at = now() where user_id = 'max-mustermann';`
+
+   > **Korrektur 2026-08-06:** Die Schlüsselspalte von `mandate_profiles` heißt
+   > `user_id`, nicht `id` — die hier ursprünglich dokumentierten Statements hätten
+   > mit einem Spaltenfehler abgebrochen (in der Production-Vorprüfung am Schema
+   > belegt). Ausgeführt wurde die Aktion am 2026-08-06 als **konditionales** Update
+   > (`… where user_id = 'max-mustermann' and aktiv = true and geloescht_at is null
+   > returning …`), exakt 1 Zeile: [`production_beweisprotokoll.md`](production_beweisprotokoll.md) §9.
 3. **Auditnachweis:** Ausführung mit Zeitstempel/Ausführendem in
    `docs/betrieb/production_beweisprotokoll.md` protokollieren (die auditierte
    Admin-Route schreibt diesen Pfad heute nicht; der manuelle Protokolleintrag ist der

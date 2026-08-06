@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-05/3** (nach PR #227 Ursachenanalyse + Korrektursprint K1–K8, §7.7.7). Diese Datei enthält
+**Stand: 2026-08-06** (nach Merge PR #229 und den OP-25-Betreiberschritten K2/K3, Beweisprotokoll §9). Diese Datei enthält
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -21,10 +21,14 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 ## 2 · Stand auf `main`
 
-- **HEAD `6cce829`** = Merge von **PR #227** (2026-08-05): **Ursachenanalyse des
-  gescheiterten OP-25-Nachweises**, rein lesend aus dauerhaften Belegen rekonstruiert —
-  kanonisch [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.6**.
-  Sie **widerlegt mehrere Befunde** des Abschlussberichts (§8/§10).
+- **HEAD `f4f4500b`** = Merge von **PR #229** (2026-08-06): **Korrektursprint K1–K8**
+  (eine Mandatswahrheit, harter Aufbewahrungsvertrag inkl. Watchdog, E3-Einlösung,
+  bedingter Watchdog, Abschlussreserve) — Beleg
+  [`betrieb/op25-korrektursprint-2026-08-05.md`](betrieb/op25-korrektursprint-2026-08-05.md),
+  kanonisch [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.7.
+- Davor `dbb86b4` = **PR #228** (CURRENT_STATE kompaktiert) und `6cce829` = **PR #227**
+  (**Ursachenanalyse §7.7.6**, rein lesend; widerlegt mehrere Befunde des
+  Abschlussberichts).
 - Davor `4594fea` = **PR #226** (Durchführung und Auswertung des Nachweisfensters
   2026-08-04/05, Ergebnis `nicht_bestanden`; Belege `belege/op25-startbaseline.json`,
   `belege/op25-auswertung-2026-08-05.log`).
@@ -40,15 +44,19 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
   Vollsicherung (40/40 Tabellen) und isolierter Restore seit 2026-07-28 geübt
   ([`betrieb/restore-uebung-2026-07-28.md`](betrieb/restore-uebung-2026-07-28.md));
   Restrisiko RPO bis 24 h.
-- **Mandate — zwei divergierende Wahrheiten (offene Entscheidung K2, §7.7):**
-  **relational** (per Exklusivmodus die Systemwahrheit, von der Laufzeit gelesen) steht
-  `mandate_profiles.max-mustermann` seit dem 20.07. unverändert auf `aktiv=true` ⇒ jeder
-  Lauf plant **6 Mandate**; im **`main`-Blob** (den nur das Nachweis-CLI liest) steht seit
-  2026-08-04 10:26 UTC `profileActive=false` ⇒ dort **5**. Die Deaktivierung des
-  Profilreparatursprints landete also **nur im Blob** (kein Audit-Eintrag seit 03.08.).
-  **Es gab keinen Mandats-Toggle im Nachweisfenster** — die frühere Betreiberklärung ist
-  gegenstandslos. Insgesamt 8 Profile; `angela-merkel`/`james-brown` deaktiviert
-  (OP-04-Rest); **0 Testmandate, 0 Landtagsprofile**.
+- **Mandate — eine Wahrheit (K2-Betreiberschritt erledigt 2026-08-06):** `max-mustermann`
+  wurde am 2026-08-06T08:01:31Z **relational deaktiviert** — konditionales Update, exakt
+  1 Zeile, **kein Löschen** ([`betrieb/production_beweisprotokoll.md`](betrieb/production_beweisprotokoll.md) §9).
+  Aktiv sind **5 Mandate**, identisch in relationaler DB, Laufzeitprojektion,
+  Nachweiswerkzeug und Blob-Vergleichssicht, Signatur **`m5-9aee228dbf2c9f13`**;
+  das K2-Gate meldet keinen Widerspruch mehr. Insgesamt 8 Profile;
+  `angela-merkel`/`james-brown`/`max-mustermann` deaktiviert (OP-04-Rest);
+  **0 Testmandate, 0 Landtagsprofile**.
+- **Aufbewahrung Crawl-Läufe (K3-Betreiberschritt erledigt 2026-08-06):**
+  `HELMUT_CRAWL_RUN_RETENTION=36` (Betreiber-Sichtprüfung in Vercel, nur Production;
+  zuvor Default 20), wirksam mit Redeploy **`dpl_3y5nBCiQtHnUnVuqh1SFr2X2ranu`**
+  (READY 07:50:22 UTC, Commit `f4f4500b`). Mindestbedarf bei n=5: 30; ab 36 keine
+  Knapp-Warnung.
 - **Kapazität im Fenster real gelöst** (belegt, §7.7.6): crawl 04:00, Watchdog-pipeline
   08:03 und pipeline 16:00 haben je **6 von 6** Mandatsprojektionen abgeschlossen; der
   16:00-Lauf endete regulär nach ~4 min, weit vor dem 270/280-s-Limit.
@@ -88,7 +96,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 | Funktion | Zustand |
 |---|---|
-| **`HELMUT_CRON_GLOBALABRUF`** | **wieder `off`** (Betreiberangabe: nach dem gescheiterten Nachweis auf `off` gesetzt + Redeploy) ⇒ es läuft wieder der **Altpfad**. Zweiter Zyklus war `on` von READY 2026-08-04 18:23:57 UTC bis zum Rückbau; Wirkung im Fenster lesend belegt |
+| **`HELMUT_CRON_GLOBALABRUF`** | **`off`** — 2026-08-06 per **Betreiber-Sichtprüfung in Vercel direkt bestätigt** (aus Sitzungen nicht API-lesbar, §3) ⇒ es läuft der **Altpfad**. Zweiter Zyklus war `on` von READY 2026-08-04 18:23:57 UTC bis zum Rückbau; Wirkung im Fenster lesend belegt |
 | **Berlin (Landesmodul)** | inaktiv. `HELMUT_LANDESMODULE=berlin` seit 2026-07-26 gesetzt, aber **wirkungslos**: 0 berechtigte Berliner Mandate seit dem Rollback ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22). Ob das Flag wirkt, ist **unbewiesen** |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt); PR #132 vor Merge Gate-Name vereinheitlichen |
 | **M8 / `HELMUT_MATCHING_RELEVANZ_GATE`** | aus (Default aus, nie aktiviert) |
@@ -98,20 +106,20 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | Mailversand Resend | gebaut, **nicht aktiviert** (AVV/DNS/Betreiberschritte offen) |
 | Retention/Löschung (`HELMUT_RETENTION_EXECUTE`) | nicht scharf (OP-12, braucht OP-02-Fristen) |
 | `HELMUT_TENANT_LLM_CAP` | aus (OP-03) |
-| `HELMUT_PROFILE_DB_MODE` | nicht gesetzt; **Achtung:** die Laufzeit liest Profile trotzdem relational (§3), der Blob ist **nicht** die wirksame Sicht |
+| `HELMUT_PROFILE_DB_MODE` | **Wirkung AN** — die frühere Angabe „nicht gesetzt" ist durch Laufzeitbelege widerlegt (alle Läufe bis 05.08. planten die relationale 6er-Menge, die nur der Stufe-D-Merge liefert; Code-Default wäre AUS). Direkte Env-Einsicht aus Sitzungen nicht möglich; Wert/Setzzeitpunkt nicht Betreiber-bestätigt (offener Klärpunkt). Der Blob ist **nicht** die wirksame Sicht |
 | 5 Offline-Testmandate (`test-mdb-*`) | deaktivierte Repo-Daten, **nicht aktivieren** |
 
 ## 6 · Offene Pull Requests (gegen GitHub geprüft 2026-08-05)
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#229** | **Korrektursprint K1–K8** (Werkzeug-Join, eine Mandatswahrheit, Aufbewahrung, E3-Einlösung, Kontextvertrag, Persistenzfehler, bedingter Watchdog, Abschlussreserve), Branch `claude/op25-corrections-k1-k8-kc1tdw` | offen; Beleg [`betrieb/op25-korrektursprint-2026-08-05.md`](betrieb/op25-korrektursprint-2026-08-05.md); **nicht mergen ohne Freigabe** (Merge = Deployment) |
 | **#224** (Draft) | F-E2E: Lage-Rangfolge aus berechnetem Rang statt Ablage | behauptet die Behebung des CI-Nichtdeterminismus F-E2E; **nicht reviewt, nicht abgenommen** |
 | **#225** (Draft) | „Produktroadmap für LINIE" | nicht aus dem Helmut-Arbeitsstrang; Einordnung beim Betreiber |
 | **#218** | OP-25-Kapazität, konkurrierende Analyse | Codeänderung auf dem Branch zurückgenommen; Ursache/Fix kamen über #219. **Empfehlung: schließen** |
 | **#216** | flackernden `werkzeug-lesefehler-test.js` stabilisieren (F-PORT) | offen, reserviert als OP-28 |
 
-Alle übrigen früher geführten PRs sind gemergt oder geschlossen (zuletzt #228 und #227
+Alle übrigen früher geführten PRs sind gemergt oder geschlossen (zuletzt **#229 gemergt
+2026-08-06** — Production-Deployment der K1–K8-Korrekturen; davor #228 und #227
 gemergt 2026-08-05; #203 geschlossen 2026-08-03). Historie: Archiv.
 
 ## 7 · Offene Blocker
@@ -128,22 +136,16 @@ gemergt 2026-08-05; #203 geschlossen 2026-08-03). Historie: Archiv.
    und jede Landesmodul-Aktivierung.
 6. **OP-11** Branch Protection — Aktivierungsstand unbestätigt; ohne sie blockiert das
    CI-Gate nicht ([`betrieb/branch-protection.md`](betrieb/branch-protection.md)).
-7. **K2-Betreiberschritt (blockiert den nächsten OP-25-Nachweis).** Der Code-Teil ist
-   umgesetzt (PR #229: CLI liest die kanonische relationale Wahrheit, Widerspruch blockiert
-   den Start). Offen ist allein die freigabepflichtige **relationale Deaktivierung von
-   `max-mustermann`** (nie löschen; kleinste sichere Betreiberaktion mit Vor-/Nachprüfung
-   und Rückweg: [`betrieb/op25-korrektursprint-2026-08-05.md`](betrieb/op25-korrektursprint-2026-08-05.md) §6) —
-   solange relational 6 ≠ Blob 5 gilt, blockiert die Startprüfung jeden Nachweis.
-8. **K3-Betreiberschritt.** Der Aufbewahrungsvertrag rechnet jetzt (Regel+Watchdog)×(1+n)+Puffer
-   und blockiert hart (PR #229). Offen: **`HELMUT_CRAWL_RUN_RETENTION=36`** setzen
-   (Mindestwert 30 bei n=5; Vercel-Env, freigabepflichtig; Blob wächst ~1,3 → ~2 MB) —
-   ohne Anhebung verweigert das Start-Gate die Startbaseline (Ist 20 < Mindest 30).
+Die früheren Blocker 7/8 (K2-/K3-Betreiberschritte) sind seit 2026-08-06 **erledigt**
+(Beweisprotokoll §9): `max-mustermann` relational deaktiviert (eine 5er-Mandatswahrheit,
+`m5-9aee228dbf2c9f13`), Retention 36 gesetzt + Redeploy. Der nächste OP-25-Nachweis ist
+damit nur noch durch die **separate Startfreigabe** blockiert (§9/§11).
 
 ## 8 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
 | Punkt | Was fehlt |
 |---|---|
-| **OP-25** Fairness/Zeitdeckelung — Rotation, K1, K2.1, Nachweisvertrag §7.7.5 + Werkzeug gemergt, teils Production-belegt; **Korrekturen K1–K8 umgesetzt (PR #229, offen)** | Nachweis 2026-08-04/05 `nicht_bestanden`; Ursachenanalyse §7.7.6 (2 Befunde unzutreffend, 1 vorhersagbar, 1 Randartefakt, 1 erklärt, 1 echt: `rueckstand-nicht-dauerhaft` → K4). **Alle acht Korrekturen sind im Repo umgesetzt und grün** (§7.7.7; Vertrag 271/271 · E3 55/55 · Laufpaar 29/29 · Watchdog 26/26 · Mutationsprobe 87/87 rot). Es fehlen: Review/Merge von PR #229, die zwei Betreiberschritte (§7 Punkt 7/8) und der neue Nachweis von vorn. Offen bleiben zudem Abdeckungsmessung, Abdeckungsalarm, R-1, R-3 |
+| **OP-25** Fairness/Zeitdeckelung — Rotation, K1, K2.1, Nachweisvertrag §7.7.5 + Werkzeug; **Korrekturen K1–K8 gemergt (PR #229, 2026-08-06)**; beide Betreiberschritte K2/K3 erledigt (Beweisprotokoll §9) | Nachweis 2026-08-04/05 `nicht_bestanden`; Ursachenanalyse §7.7.6 (2 Befunde unzutreffend, 1 vorhersagbar, 1 Randartefakt, 1 erklärt, 1 echt: `rueckstand-nicht-dauerhaft` → K4). Alle acht Korrekturen grün (§7.7.7; Vertrag 271/271 · E3 55/55 · Laufpaar 29/29 · Watchdog 26/26 · Mutationsprobe 87/87 rot). **Es fehlt nur noch der neue Nachweis von vorn (separate Startfreigabe, §11).** Offen bleiben zudem Abdeckungsmessung, Abdeckungsalarm, R-1, R-3 |
 | Profilreife (OP-29/OP-04-Teil) — 5 Profile am 2026-08-04 repariert | 29B (lesender Fehlerzustands-Nachweis); relationale Profilzeilen bleiben veraltete Schnappschüsse (F-P6); K2 |
 | Google-News-Härtung (OP-15) | Production-Beweislauf unter echter Drosselung |
 | Monitoring-Zweitkanal (OP-07) | `HELMUT_MONITORING_WEBHOOK_URL` unset → No-Op |
@@ -162,11 +164,14 @@ gemergt 2026-08-05; #203 geschlossen 2026-08-03). Historie: Archiv.
 
 ## 9 · Ausstehende Production-Nachweise
 
-- **OP-25-Nachweis nach §7.7.5 — beginnt von vorn**, erst nach Merge von PR #229 und den
-  zwei Betreiberschritten (§7 Punkt 7/8). Die neuen Abnahmekriterien aus §7.7.6
-  (Signatur-Assertion, harter Aufbewahrungsvertrag inkl. Watchdog, echtes Laufpaar,
-  E3 `nichtVorgemerkt = 0`, Versiegelungstoleranz 1 s) sind seit dem Korrektursprint Code
-  und blockieren den Start technisch (§7.7.7).
+- **OP-25-Nachweis nach §7.7.5 — beginnt von vorn; alle Vorbedingungen sind seit
+  2026-08-06 erfüllt** (PR #229 gemergt; K2: eine 5er-Mandatswahrheit
+  `m5-9aee228dbf2c9f13`; K3: Retention 36). Es fehlt **ausschließlich die separate
+  Startfreigabe** (Flag `on` → neues Deployment → Baseline binnen 15 min mit vollem
+  Commit → 24 h ohne weiteres Deployment → Auswertung unmittelbar danach). Die
+  Abnahmekriterien aus §7.7.6 (Signatur-Assertion, harter Aufbewahrungsvertrag inkl.
+  Watchdog, echtes Laufpaar, E3 `nichtVorgemerkt = 0`, Versiegelungstoleranz 1 s) sind
+  Code und prüfen den Start technisch (§7.7.7).
 - **F-E2E** (nichtdeterministische E2E-Rangfolge im CI, belegt 2026-08-04) — Ursache offen;
   PR #224 (Draft) liegt vor, nicht abgenommen.
 - **29B** — wartet auf natürlich auftretende Fehlerzustände (künstliche Fehler verboten).
@@ -200,14 +205,12 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-Die Code-Sprints K1–K8 sind erledigt (PR #229). Reihenfolge jetzt:
-
-1. **Review + Merge-Entscheidung PR #229** (Merge = Deployment, Betreiber).
-2. **Betreiberschritte:** `max-mustermann` relational deaktivieren (§7 Punkt 7) und
-   `HELMUT_CRAWL_RUN_RETENTION=36` setzen (§7 Punkt 8) — beides freigabepflichtig.
-3. **Erst danach** neuer §7.7.5-Nachweis von vorn (Flag → neues Deployment → Baseline
-   binnen 15 min mit vollem Commit → 24 h ohne weiteres Deployment → Auswertung
-   unmittelbar danach). Start-Gates blockieren, solange 2. fehlt.
+PR #229 ist gemergt und beide Betreiberschritte K2/K3 sind erledigt (2026-08-06,
+Beweisprotokoll §9). **Der einzige nächste OP-25-Schritt ist die separate
+Startfreigabe für den neuen §7.7.5-Nachweis** (Flag `HELMUT_CRON_GLOBALABRUF=on` →
+neues Deployment → Startbaseline binnen 15 min mit vollem Commit → 24 h ohne weiteres
+Deployment → Auswertung unmittelbar danach). Ohne ausdrücklichen Auftrag wird nichts
+gestartet.
 
 Parallel und unabhängig: **OP-01-Entscheidung** (Pro + PITR); **OP-11** Branch Protection
 verifizieren (2 Minuten); Empfehlung zu **#218** umsetzen (schließen).
@@ -253,7 +256,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-05 | **Korrektursprint K1–K8** (PR #229, Branch `claude/op25-corrections-k1-k8-kc1tdw`): alle acht Korrekturen umgesetzt + getestet; Beleg [`betrieb/op25-korrektursprint-2026-08-05.md`](betrieb/op25-korrektursprint-2026-08-05.md) | **teilweise** (Code vollständig + grün; Review/Merge + 2 Betreiberschritte + Production-Nachweis offen) |
+| 2026-08-06 | **OP-25-Betreiberschritte K2/K3** nach Merge PR #229 (`f4f4500b`): Vorprüfung rein lesend; `max-mustermann` relational deaktiviert (konditionales Update, 1 Zeile, 08:01:31Z, kein Delete); Retention 36 + Betreiber-Redeploy `dpl_3y5n…` READY 07:50:22Z; alle drei Sichten + Blob `m5-9aee228dbf2c9f13`, K2-Gate widerspruchsfrei; Doku-Korrekturen (Belegdatei §6 `user_id`, Env-Inventar) | **erfolgreich** (Nachweisstart bleibt separat freigabepflichtig; kein Lauf, keine Baseline) |
+| 2026-08-05 | **Korrektursprint K1–K8** (PR #229, Branch `claude/op25-corrections-k1-k8-kc1tdw`): alle acht Korrekturen umgesetzt + getestet; Beleg [`betrieb/op25-korrektursprint-2026-08-05.md`](betrieb/op25-korrektursprint-2026-08-05.md) | **teilweise** (Code vollständig + grün; Review/Merge + 2 Betreiberschritte + Production-Nachweis offen) — **Merge + Betreiberschritte am 2026-08-06 erfolgt** |
 | 2026-08-05 | **OP-25-Ursachenanalyse** des gescheiterten Nachweises (PR #227, rein lesend aus dauerhaften Belegen) | **erfolgreich**; widerlegt 2 der 7 Befunde, ordnet die übrigen ein, definiert K1–K8; OP-25 bleibt teilweise |
 | 2026-08-05 | Doku-Sprint: `CURRENT_STATE.md` kompaktiert, Historie archiviert, Größenkontrolle (PR #228) | dieser Stand |
 | 2026-08-05 | OP-25: 1. regulärer Production-Nachweis §7.7.5 (Fenster 04.–05.08.), PR #226 | **gescheitert** (Exit 1, 7 Befunde); Ablauf und Commitnachweis selbst haben funktioniert |
