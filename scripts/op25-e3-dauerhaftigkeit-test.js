@@ -373,19 +373,81 @@ async function laufGlobal(welt, extra = {}) {
       welt.saveSourcesCalls.length === ergebnis.deferred && welt.saveSourcesCalls.every((c) => c.n >= 1));
   }
 
-  // ---- 3b: erschoepftes Vormerkbudget ist eine GEZAEHLTE, benannte Luecke -------------------
+  // ---- 3b: E3-NEUFASSUNG (K4, Korrektursprint 2026-08-05) -----------------------------------
+  // Die ALTE Fassung dieses Teils schrieb das schwaechere Verhalten („vormerken, solange
+  // Restzeit reicht, sonst ehrlich zaehlen") als SOLL fest — genau damit war die E3-Zusage
+  // in Production strukturell unerfuellbar (§7.7.6, Befund 5). JETZT gilt: die Vormerkung
+  // hat eine RESERVIERTE Abschlusszeit (scheduler.VORMERK_RESERVE_MS/ABSCHLUSS_RESERVE_MS);
+  // ein Lauf, dessen Deadline vor der Vormerkung verstrichen ist, ist ABNORMAL und BESTEHT
+  // DEN VERTRAG NICHT — die ehrliche Zaehlung bleibt, aber sie ist ein Fehlbefund, kein Soll.
   {
     const welt = baueUnderstandingWelt();
     const ergebnis = await U.runUnderstandingShadow(DOKUMENTE, {
       ...welt.deps,
       budgetMs: 1,
-      vormerkDeadlineMs: Date.now() - 1000 // Deadline bereits verstrichen
+      vormerkDeadlineMs: Date.now() - 1000 // Deadline bereits verstrichen (abnormal)
     });
-    check("3b.1 Verstrichene Vormerk-Deadline: NICHTS wird vorgemerkt",
-      ergebnis.vorgemerkt === 0 && [...welt.kos.values()].length === 0);
-    check("3b.2 Die Luecke ist GEZAEHLT: nichtVorgemerkt = alle zurueckgestellten Cluster",
-      ergebnis.nichtVorgemerkt === ergebnis.deferred && ergebnis.deferred >= 1,
+    check("3b.1 Verstrichene Vormerk-Deadline (abnormal): nichts behauptet, Luecke GEZAEHLT",
+      ergebnis.vorgemerkt === 0 && [...welt.kos.values()].length === 0
+      && ergebnis.nichtVorgemerkt === ergebnis.deferred && ergebnis.deferred >= 1,
       JSON.stringify({ nichtVorgemerkt: ergebnis.nichtVorgemerkt, deferred: ergebnis.deferred }));
+    // NEU: der Nachweisvertrag AKZEPTIERT diesen Zustand nicht mehr — ein Lauf mit
+    // nichtVorgemerkt > 0 ist `rueckstand-nicht-dauerhaft`, kein bestehensfaehiges Ergebnis.
+    const V = require(path.join(__dirname, "..", "lib", "helmut", "op25-nachweis.js"));
+    const kernErgebnis = V.bewerteLauf({
+      slot: { cronName: "pipeline", geplantMs: Date.parse("2026-08-10T16:00:00Z") },
+      globalerLauf: {
+        mode: "global", runId: "cron-pipeline-20260810160003-abn01-global",
+        savedItems: 100, newRawDocuments: 50, failedSources: 0, runState: "gesund",
+        quellenVereinigung: { mandate: 2, mandateIds: ["t-1", "t-2"] },
+        datenstandDetail: {
+          budgetMs: 221000, nichtAbgerufen: 0, fehlerSchritte: [], fehlerhafteProfile: [],
+          persistenz: { ergebnis: "ok", zaehlerVerfehlt: 0 },
+          lazy: { cluster: 10, verarbeitet: 5, uebersprungeneStapel: 0, uebersprungeneDokumente: 0 },
+          eager: { stapel: 1, verarbeitet: 0, zurueckgestellt: ergebnis.deferred, vorgemerkt: 0, nichtVorgemerkt: ergebnis.nichtVorgemerkt, uebersprungeneStapel: 0, uebersprungeneDokumente: 0, andereSkips: 0 },
+          kontext: { kontexte: 3, geteilt: 1, mandatseigen: 2, unbekannt: 0, dokumente: 100, ohneSichtbarkeit: 0 },
+          buendelung: "kontext"
+        }
+      },
+      prozessLauf: { runId: "cron-pipeline-20260810160003-abn01-global", status: "partial", durationMs: 200000 },
+      mandatsLaeufe: [],
+      frozen: V.mandatsSignatur([]),
+      jetztMs: Date.parse("2026-08-12T13:00:00Z")
+    });
+    check("3b.2 NEU: der Vertrag wertet die verstrichene Deadline als rueckstand-nicht-dauerhaft (kein Soll mehr)",
+      kernErgebnis.befunde.some((b) => b.grund === "rueckstand-nicht-dauerhaft"),
+      JSON.stringify(kernErgebnis.befunde.slice(0, 3)));
+  }
+
+  // ---- 3b2: REGULAERER Lauf (K4-Soll): Bulk-Vormerkung, keine seriellen Einzelwrites --------
+  {
+    const welt = baueUnderstandingWelt();
+    const bulkAufrufe = [];
+    const ergebnis = await U.runUnderstandingShadow(DOKUMENTE, {
+      ...welt.deps,
+      budgetMs: 1,
+      vormerkDeadlineMs: Date.now() + 60000, // Deadline NICHT verstrichen (Regelfall)
+      savePendingBulk: async (eintraege) => {
+        bulkAufrufe.push(eintraege.length);
+        for (const e of eintraege) welt.kos.set(e.vorgangId, { id: `ko-${e.vorgangId}`, vorgang_id: e.vorgangId, status: "pending" });
+        return { vorgemerkt: eintraege.length, bereitsVorhanden: 0, fehlgeschlagen: 0, verknuepfteDokumente: eintraege.length, anfragen: 2 };
+      }
+    });
+    check("3b2.1 Regulaerer Lauf: der GESAMTE Rueckstand ist vorgemerkt (nichtVorgemerkt=0)",
+      ergebnis.deferred >= 1 && ergebnis.vorgemerkt === ergebnis.deferred && ergebnis.nichtVorgemerkt === 0,
+      JSON.stringify({ deferred: ergebnis.deferred, vorgemerkt: ergebnis.vorgemerkt, nichtVorgemerkt: ergebnis.nichtVorgemerkt }));
+    check("3b2.2 GEBUENDELT: genau EIN Bulk-Aufruf, NULL serielle savePending-Einzelwrites",
+      bulkAufrufe.length === 1 && welt.savePendingCalls.length === 0,
+      JSON.stringify({ bulk: bulkAufrufe, seriell: welt.savePendingCalls.length }));
+    check("3b2.3 Ein Speicherfehler im Bulk wird GEZAEHLT, nie als vorgemerkt gewertet",
+      await (async () => {
+        const w2 = baueUnderstandingWelt();
+        const r2 = await U.runUnderstandingShadow(DOKUMENTE, {
+          ...w2.deps, budgetMs: 1, vormerkDeadlineMs: Date.now() + 60000,
+          savePendingBulk: async (eintraege) => ({ vorgemerkt: 0, bereitsVorhanden: 0, fehlgeschlagen: eintraege.length, verknuepfteDokumente: 0, anfragen: 1 })
+        });
+        return r2.vormerkFehlgeschlagen === r2.deferred && r2.vorgemerkt === 0 && r2.deferred >= 1;
+      })());
   }
 
   // ---- 3c: Wiederholtes Vormerken erzeugt NIE Duplikate (idempotent) ------------------------
