@@ -167,20 +167,14 @@ function neuerStore(opts) {
     listMatchingResults: ({ userId, limit = 50, includeAbgeloest = false } = {}) => {
       if (!userId) throw new Error("[tenant-guard] listMatchingResults: kein Mandant");
       // Sortiert wie der ECHTE Lesepfad (storage.listMatchingResults):
-      // order=rank.asc.nullslast,knowledge_object_id.asc. Vorher stand hier
-      // created_at.desc — dieselbe Sortierung wie im Produktivpfad, aber mit
+      // order=rank.asc.nullslast,knowledge_object_id.asc — dieselbe zentrale
+      // Vergleichsfunktion wie in lage.js, damit Testdoppel und Produktivpfad
+      // nicht auseinanderlaufen koennen. Vorher stand hier created_at.desc mit
       // ZEILENWEISE gesetztem created_at; ueberschritt der Publish-Lauf eine
       // Millisekundengrenze, kehrte sich die Rangfolge um (Befund F-E2E).
-      const rang = (r) => {
-        const roh = r ? r.rank : null;
-        if (roh == null || roh === "" || typeof roh === "boolean") return Number.POSITIVE_INFINITY;
-        const n = Number(roh);
-        return Number.isFinite(n) ? n : Number.POSITIVE_INFINITY;
-      };
       return [...st.matchingResults.values()]
         .filter((r) => r.user_id === userId && (includeAbgeloest || r.aktuell === true))
-        .sort((a, b) => (rang(a) - rang(b))
-          || contract.compareIds(a.knowledge_object_id, b.knowledge_object_id))
+        .sort(contract.compareStoredMatchingRows)
         .slice(0, limit);
     },
     getSourcesForVorgang: (vorgangId) => {

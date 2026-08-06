@@ -123,6 +123,17 @@ async function rangfolge(rows) {
       && [...ergebnisse][0] === JSON.stringify(RANGFOLGE),
     `${ergebnisse.size} verschiedene: ${[...ergebnisse].join(" | ")}`);
 
+  // Der Lesevertrag haengt nicht mehr an created_at — fehlende oder leere
+  // Zeitwerte duerfen weder einen Fehler ausloesen noch die Reihenfolge aendern.
+  const ohneZeit = zeilen().map((r, i) => {
+    const kopie = { ...r };
+    if (i % 2 === 0) delete kopie.created_at; else kopie.created_at = null;
+    return kopie;
+  }).reverse();
+  check("A6 fehlende/leere created_at-Werte: kein Fehler, Rangfolge = rank 1..4",
+    JSON.stringify(await rangfolge(ohneZeit)) === JSON.stringify(RANGFOLGE),
+    JSON.stringify(await rangfolge(ohneZeit)));
+
   // ── B · Tiebreak und Altbestand ohne Rang ─────────────────────────────────
   abschnitt("B · Tiebreak (byte-stabil) und Zeilen ohne Rang");
 
@@ -141,6 +152,14 @@ async function rangfolge(rows) {
   check("B3 unlesbarer Rang wird wie 'kein Rang' behandelt (hinten), nicht wie 0",
     (await rangfolge(kaputterRang)).indexOf("ko-mittel") === 3,
     JSON.stringify(await rangfolge(kaputterRang)));
+
+  // Lage und E2E-Testdoppel nutzen DIESELBE zentrale Vergleichsfunktion
+  // (matching-contract.compareStoredMatchingRows) — hier ihr direkter Vertrag.
+  const csr = contract.compareStoredMatchingRows;
+  check("B4 zentraler Vergleich: zwei ranglose Zeilen -> byte-stabiler Tiebreak, boolescher Rang zaehlt nicht als 0",
+    csr({ rank: null, knowledge_object_id: "b" }, { rank: null, knowledge_object_id: "a" }) > 0
+      && csr({ rank: true, knowledge_object_id: "a" }, { rank: 1, knowledge_object_id: "b" }) > 0
+      && csr({ rank: 2, knowledge_object_id: "a" }, { rank: 10, knowledge_object_id: "b" }) < 0);
 
   // ── C · Der Lesevertrag der Ablage sortiert selbst nach Rang ──────────────
   abschnitt("C · storage.listMatchingResults: Sortier- und Abschneidevertrag");
