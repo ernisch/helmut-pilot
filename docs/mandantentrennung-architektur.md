@@ -79,3 +79,18 @@ Statt Nutzer-JWTs: pro Request eine kurzlebige Postgres-Einstellung
 
 **Freigabepunkt:** Entscheidung A/B/C/D durch den Gründer; bis dahin darf kein
 zweiter echter Mandant freigeschaltet werden (Auftragskontext Nr. 7).
+
+## Nachtrag OP-03-Sprint (2026-08-06) — unabhängig von A/B/C/D verbindlich
+
+Egal welche Option gewählt wird: **Konten-Modus (`HELMUT_AUTH_MODE=accounts`) ist
+harte Vorbedingung für den Zweitmandanten.** Im Legacy-Pilotgate (geteiltes
+`PILOT_SECRET`) ist jedes aktive Mandat für jeden Code-Inhaber wählbar
+(`tenant-context.resolveActiveTenant`) — mit zwei echten Mandanten wäre das ein
+Fremdzugriff per Design. Technisch durchgesetzt seit dem OP-03-Sprint:
+`provisioning.provisionTenant` lehnt gegen eine Supabase-gebundene Ablage
+fail-closed ab, wenn der Konten-Modus nicht bestätigt ist oder kein Admin-Konto
+existiert (`pruefeKontenVorbedingung`; Beweis:
+`scripts/op03-mehrmandanten-test.js` §9). Zusätzlich gilt seitdem: genau **ein**
+Abgeordneten-Konto je Mandat (`accounts.updateUser`, 409 bei Dublette). Der
+aktuelle Production-Wert von `HELMUT_AUTH_MODE` ist aus Claude-Sitzungen nicht
+lesbar — die Verifikation ist ein Betreiberschritt vor der Freigabe.

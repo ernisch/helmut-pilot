@@ -149,7 +149,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 | `HELMUT_UNDERSTANDING_PRIORITY` | AUS | OP-14 |
 | `HELMUT_CRAWL_RUNS_RELATIONAL` + Migration `20260720` (nicht angewandt) | AUS | OP-17 |
 | `HELMUT_RETENTION_EXECUTE` (echte Löschung) | AUS (nur Trockenlauf) | OP-12 |
-| Migration `20260721` (DB-Härtung, Advisor-Fixes) | vorbereitet, nicht angewandt | OP-03 |
+| Migration `20260721` (DB-Härtung, Advisor-Fixes) | ✅ **angewendet seit 2026-07-16** (`CLAUDE.md` §5, in Production gegengeprüft; frühere Angabe „nicht angewandt" war falsch) | OP-03 ✅ (Teil a) |
 | `HELMUT_TENANT_LLM_CAP` (+ Limit-Envs) — Per-Mandant-Kostendeckel | AUS (verhaltensneutral) | OP-03 |
 | `HELMUT_V3_LAZY_UNDERSTANDING` (Lazy-Pfad; Feldbug inzwischen gefixt) | AUS | — (nur bei Reaktivierung relevant) |
 | Gate **on** / Cheap-Triage | shadow / aus | OP-18 |
@@ -196,12 +196,37 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Freigabe:** **JA** (Gründer + Anwalt/DSB).
 
 #### OP-03 · Zweitmandanten-Freigabepaket (Sicherheits-Scharfschaltung vor dem ersten zahlenden Zweitmandanten)
-- **Status:** offen; Provisionierung, Guards und Per-Mandant-Deckel sind gebaut und getestet (PR #96), aber: Migration `20260721` (DB-Härtung) **nicht angewandt**, `HELMUT_TENANT_LLM_CAP` **AUS**, DB-seitige Durchsetzung (RLS-Backstop vs. stillgelegter JWT-Modus, `main-auth`-Blob-Restlücke) nur als App-Schicht wirksam.
-- **Fehlender Schritt:** (a) Migration `20260721` einspielen (Rollback + Runbook vorhanden), (b) `HELMUT_TENANT_LLM_CAP=1` + Limits setzen, (c) dokumentierte Entscheidung zur DB-seitigen Durchsetzung (Nachfolgekonzept für den stillgelegten JWT-Modus bzw. bewusste App-Guard-Akzeptanz) inkl. Schließung der `main-auth`-Blob-Restlücke, (d) Provisionierungs-Probelauf für einen Testmandanten dokumentieren.
+- **Status (geschärft 2026-08-06, OP-03-Sprint):** offen, aber technisch weiter vorbereitet.
+  Provisionierung, Guards und Per-Mandant-Deckel sind gebaut und getestet (PR #96). **Korrektur:**
+  Migration `20260721` (DB-Härtung/Advisor-Fixes) ist **seit 2026-07-16 angewendet** (`CLAUDE.md` §5,
+  in Production gegengeprüft) — der frühere Punkt (a) ist erledigt. Die einzige offene Migration
+  `20260720` gehört laut Datei-Header zur Blob-Entlastung (P0-5), **nicht** zur OP-03-Sicherheits-
+  Scharfschaltung. `HELMUT_TENANT_LLM_CAP` bleibt **AUS** (Code fail-closed: aktiver Deckel ohne
+  konfiguriertes Limit fällt auf 40 Calls/Tag zurück, nie „unbegrenzt"). DB-seitige Durchsetzung
+  (RLS-Backstop vs. App-Guard-Akzeptanz, `main-auth`-Blob-Restlücke) weiterhin nur App-Schicht.
+  **Neu im OP-03-Sprint (Branch `claude/op-03-multi-tenant-security-rmbwpq`):**
+  (1) Konten-Vorbedingung in der Provisionierung — gegen eine Supabase-gebundene Ablage lehnt
+  `provisionTenant` fail-closed ab, solange nicht `HELMUT_AUTH_MODE=accounts` bestätigt ist und ein
+  Admin-Konto existiert (Grund: im Legacy-Pilotgate mit geteiltem `PILOT_SECRET` ist **jedes aktive
+  Mandat für jeden Code-Inhaber wählbar** — mit einem zweiten zahlenden Mandanten unhaltbar);
+  (2) genau **ein** Abgeordneten-Konto je Mandat (`accounts.updateUser` erzwingt Eindeutigkeit, 409);
+  (3) vollständiger lokaler Mehrmandantentest `scripts/op03-mehrmandanten-test.js` (43 Prüfungen,
+  HTTP-Ebene, zwei provisionierte synthetische Mandanten: Sichtbarkeit, ID-Manipulation, fremde
+  Objekt-IDs, Sessions, Rollen, Referenten-Scoping, Invite/Reset-Mandantenbindung, Fehler-Leaks,
+  Schlüsselmaterial-Freiheit des Clients).
+- **Fehlender Schritt:** (a) ~~Migration `20260721`~~ **erledigt** (s. o.); (b) `HELMUT_TENANT_LLM_CAP=1`
+  + Limitwerte setzen (Betreiber; konkrete Zahlen sind eine offene Betreiberentscheidung — keine
+  Werte im Repo erfunden); (c) dokumentierte **Grundsatzentscheidung** DB-seitige Durchsetzung
+  (GoTrue+RLS) vs. bewusste App-Guard-Akzeptanz inkl. `main-auth`-Blob-Restlücke
+  (Entscheidungsvorlage: [`mandantentrennung-architektur.md`](mandantentrennung-architektur.md));
+  (d) Provisionierungs-Probelauf: **lokal belegt** (`op03-mehrmandanten-test.js` §0 +
+  `provision-tenant-test.js`), Production-Probelauf bleibt freigabepflichtig; (e) **neu:**
+  Betreiber-Verifikation, dass Production `HELMUT_AUTH_MODE=accounts` fährt (aus Claude-Sitzungen
+  nicht lesbar, §3 CURRENT_STATE) — verbindliche Vorbedingung vor dem Zweitmandanten.
 - **Abhängigkeiten:** OP-01 empfohlen vorher (Backups vor Migrationen); OP-04 (saubere Mandantenbasis).
-- **Risiko:** mittel — Migration additiv mit Rollback; zu niedrige Limits könnten Mandanten drosseln (bewusst freigabepflichtig).
-- **Parallelisierbarkeit:** (a)–(d) untereinander sequenziell sinnvoll; als Paket parallel zu OP-05…OP-10.
-- **Freigabe:** **JA** (Migration + Env + Grundsatzentscheidung).
+- **Risiko:** mittel — zu niedrige Limits könnten Mandanten drosseln (bewusst freigabepflichtig).
+- **Parallelisierbarkeit:** (b)–(e) untereinander sequenziell sinnvoll; als Paket parallel zu OP-05…OP-10.
+- **Freigabe:** **JA** (Env + Grundsatzentscheidung + Production-Probelauf).
 
 #### OP-04 · Demo-Mandate deaktivieren/entfernen (Daten-Hygiene, Audit: „vor Vertrieb löschen")
 - **Status (2026-08-04, Profilreparatursprint): teilerledigt — die AKTIVE Demo-Vermischung ist
