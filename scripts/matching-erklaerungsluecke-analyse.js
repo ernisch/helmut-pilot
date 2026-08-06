@@ -129,8 +129,10 @@ function prozent(a, b) {
     const m = { userId, zeilen: rows.length, mitBeleg: 0, gewinnt: 0, bleibtLeer: 0, koFehlt: 0, profilLeer: 0,
       lageHeute: 0, lageNachFix: 0, lageFenster: Math.min(LAGE_FENSTER, rows.length) };
 
-    // Das sichtbare Fenster zuerst getrennt bewerten: `listMatchingResults`
-    // liefert `created_at.desc` und lage.js zeigt davon die ersten LAGE_FENSTER.
+    // Das sichtbare Fenster zuerst getrennt bewerten (Naeherung):
+    // `listMatchingResults` liefert seit Befund F-E2E (PR #224) die Zeilen nach
+    // BERECHNETEM Rang; lage.js zeigt davon die ersten LAGE_FENSTER, verwirft
+    // vor der Kappung aber noch Zeilen ohne Wissensobjekt im KO-Scanfenster.
     for (const row of rows.slice(0, LAGE_FENSTER)) {
       if (erklaerung.erklaerungAusErgebnis(row) !== null) { m.lageHeute += 1; m.lageNachFix += 1; continue; }
       const ko = koById.get(row.knowledge_object_id);

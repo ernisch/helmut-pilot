@@ -3752,3 +3752,183 @@ Datenkorrektur · keine Migration · keine Sonderbehandlung des Pilotmandanten (
 Anhebung wirkt mandantenneutral für **alle**) · keine künstlichen Fehler für 29B ·
 keine Änderung an Cron, Flags, Budget, Quellen oder Env · Berlin/Brandenburg/M8
 unverändert AUS · kein Merge.
+
+---
+
+## 54 · Befund F-E2E: die sichtbare Rangfolge kam aus der Ablage statt aus dem Rang (2026-08-04)
+
+**Ausgangslage.** Zwei Rangfolge-Zusicherungen schlugen im CI **ohne Codeänderung**
+fehl (`pilot-e2e-vertrag-test.js` I10, `brandenburg-e2e-vertrag-test.js` J8, Commit
+`8cfcaa1`), der Wiederholungslauf **desselben** Commits war grün. Dieselbe Signatur
+war schon als **B29-F1** notiert (`berlin-e2e-vertrag-test.js` J8, „flaky unter
+Last"). Der damalige Verdacht — `localeCompare` ohne feste Locale — war **nicht** die
+Ursache; die beobachtete Reihenfolge war nicht alphabetisch.
+
+### 54.1 Die bewiesene Ursache
+
+Die sichtbare Rangfolge der Lage kam aus der **Reihenfolge der Ablage**, nicht aus
+dem **berechneten Rang**: `storage.listMatchingResults` las
+`matching_results` mit `order=created_at.desc`, und `lage.loadRankedVorgaenge`
+übernahm diese Reihenfolge **unverändert** als Ausgabereihenfolge. `matching_results.rank`
+— das einzige Feld, das die fachliche Relevanzreihenfolge trägt — wurde im Lesepfad
+**nie** verwendet.
+
+Damit hing die Ausgabe an einem Wert, der die Rangfolge gar nicht abbildet:
+
+| Weg | Was `created_at` dort tut | Folge |
+|---|---|---|
+| Production (`helmut_publish_matching_run`) | ein Insert-Statement, ein `now()` → **alle Zeilen eines Laufs teilen denselben Wert**; beim Upsert bleibt `created_at` bewusst unangetastet und friert beim **ersten** Auftreten einer Zeile ein | Reihenfolge gleicher Werte ist in PostgreSQL **nicht zugesichert**; über mehrere Läufe sortiert die Liste faktisch nach „zuerst gesehen" statt nach Relevanz, und `limit` schneidet die **jüngsten** statt der **relevantesten** Zeilen ab |
+| E2E-Gerüst (`scripts/e2e-vertrag-geruest.js`) | `created_at` wurde **zeilenweise** mit `new Date()` gesetzt | überschritt der Publish-Lauf unter Last eine **Millisekundengrenze**, bekamen die schlechter platzierten Zeilen einen **späteren** Zeitstempel und standen nach `created_at.desc` **vorne** → I10/J8 fielen um |
+
+Das erklärt den Kern des Befunds: **derselbe Commit, zwei Ergebnisse.** Es entschied
+nicht die Eingabe, sondern ob der Publish-Lauf zufällig eine Millisekundengrenze
+überschritt (lokal reproduziert: 1 roter Lauf in 72 unter 36-facher Parallellast).
+
+**Deterministischer Nachweis statt Zufallstreffer:** mit einer vorgeschalteten Uhr,
+die bei jedem `new Date()` um 1 ms weiterläuft, kippten **alle drei** Suiten
+zuverlässig (pilot 95/96, brandenburg 97/98, berlin 75/76).
+
+### 54.2 Der Fix
+
+1. **`lib/helmut/lage.js`** — die Reihenfolge wird im Lesepfad **selbst** festgelegt:
+   `rank` aufsteigend, Zeilen ohne lesbaren Rang hinten, Tiebreak byte-stabil über
+   `knowledge_object_id` (`matching-contract.compareIds`). Die Ausgabe hängt damit
+   **nicht mehr** davon ab, in welcher Reihenfolge die Ablage liefert.
+2. **`lib/helmut/storage.js`** — der Lesevertrag sortiert selbst nach Rang
+   (`order=rank.asc.nullslast,knowledge_object_id.asc`), damit auch `limit` die
+   **relevantesten** und nicht die jüngsten Zeilen behält.
+3. **`lib/helmut/matching.js`** — der Tiebreak bei Punktgleichstand nutzt
+   `compareIds` statt `localeCompare` (§14: „bewusst kein `localeCompare`"). Das war
+   nicht die Ursache, aber dieselbe Fehlerklasse: ein Ergebnis, das an der
+   Laufzeitumgebung hängt (`"Bx"` vs `"ax"` sortiert unter ICU anders als byteweise).
+4. **`scripts/e2e-vertrag-geruest.js`** — das Testdoppel bildet den echten
+   Lesevertrag nach (Rang statt `created_at`).
+
+**Nicht angefasst:** Punktwerte, Schwellen, Rezeptversion, Gate.
+
+> **Korrektur der ersten Fassung (Reviewrunde 2026-08-04, §54.5):** hier stand zusätzlich
+> „Auswahl". Das war **falsch**. Wenn die Ablage nach Rang abschneidet, ändert sich
+> zwangsläufig auch, **welche** der gespeicherten Zeilen die sichtbaren Plätze bekommen —
+> und genau daraus entstand ein messbarer Verlust sichtbarer Vorgänge (§54.5).
+
+### 54.3 Regressionsschutz
+
+`scripts/lage-rangfolge-determinismus-test.js` (21 Prüfpunkte, offline; §A–D = 17 —
+15 aus diesem Sprint plus A6/B4 aus der Nacharbeit §54.6 —, §E = 4 aus der Reviewrunde
+§54.5): identische
+`created_at` · zeilenweise tickende `created_at` in der **alten** Lieferreihenfolge ·
+umgekehrte Lieferung · „jüngste Zeile mit schlechtestem Rang" · **alle 24
+Lieferreihenfolgen ergeben genau eine Ausgabe** · fehlende/leere `created_at`-Werte ·
+Rangloser Altbestand · unlesbarer Rang · der direkte Vertrag der zentralen
+Vergleichsfunktion · der Endpunktvertrag (Rang statt `created_at`) · der byte-stabile
+Tiebreak des reinen Matchings. Gegen den Stand **vor** dem Fix (`2e4e00e`) war die
+ursprüngliche 15er-Fassung **11 von 15 rot**.
+
+### 54.4 Verbleibendes Risiko (bewusst offen, freigabepflichtig)
+
+Der **Schreibpfad** bleibt an einer Stelle unbestimmt: die pgvector-RPC
+`match_knowledge_objects` sortiert `order by ko.embedding <=> query_embedding`
+**ohne** Tiebreak — bei exakt gleicher Distanz ist die Trefferreihenfolge und damit
+der vergebene `rank` nicht zugesichert. Das zu schließen erfordert eine **Migration**
+(RPC-Änderung) und ist damit freigabepflichtig; es ist in diesem Sprint bewusst
+**nicht** enthalten. Der Lesepfad ist davon unabhängig deterministisch: er gibt
+denselben gespeicherten Rang immer in derselben Reihenfolge aus.
+
+### 54.5 Reviewbefund F-E2E-2: das Lesefenster kappte **vor** dem KO-Scanfenster (2026-08-04)
+
+Unabhängige adversariale Reviewrunde zu Draft-PR #224. Der Fix aus §54.2 ist in der Sache
+richtig — er hatte aber eine **nicht gemeldete Nebenwirkung**, die die Lage **leerer** macht.
+
+**Mechanik.** `lage.loadRankedVorgaenge` liest die Matching-Zeilen mit `limit = MAX_VORGAENGE`
+(12) und verwirft **danach** jede Zeile, deren Wissensobjekt nicht im KO-Scanfenster liegt
+(`HELMUT_KO_SCAN_LIMIT`, Default 500 der zuletzt **geänderten** von aktuell 2 422). Solange die
+Ablage nach `created_at.desc` sortierte, zeigten die gelesenen 12 Zeilen überwiegend auf
+**kürzlich erfasste** Wissensobjekte und lagen damit meist im Scanfenster. Nach dem Wechsel auf
+`rank.asc` sind es die **bestplatzierten** Zeilen — und die zeigen oft auf **ältere**
+Wissensobjekte außerhalb des Fensters. Die schlechter platzierten Zeilen desselben Laufs, die
+noch im Fenster liegen, wurden vom `limit` bereits abgeschnitten und sind unerreichbar.
+
+**Am Production-Bestand gemessen** (2026-08-04, rein lesend, keine Änderung; 7 Mandate mit je
+20 aktuellen Zeilen, 2 422 Wissensobjekte, davon 243 im Scanfenster verstanden):
+
+| Lesevertrag | sichtbare Vorgänge über alle 7 Mandate |
+|---|---|
+| vorher `created_at.desc`, Lesefenster 12 | **30** |
+| PR #224 `rank.asc…`, Lesefenster 12 | **15** |
+| PR #224 `rank.asc…`, Lesefenster > Bestand | **31** |
+
+Ein Mandat fiel von 2 auf **0** sichtbare Vorgänge und damit still in den
+**unpersonalisierten Rückfall** (`understood.slice(0, MAX_VORGAENGE)`) — ohne jeden Hinweis,
+dass die Personalisierung ausgefallen ist. Das ist genau die Klasse „falsches Grün", die die
+Lage nicht zeigen darf.
+
+**Korrektur (kleinste Fassung, keine Migration, keine Ranglogik).** In `lib/helmut/lage.js`
+liest der Pfad jetzt mit einem eigenen, hart begrenzten Lesefenster
+`MATCHING_LESEFENSTER = min(200, max(60, MAX_VORGAENGE × 5))` und schneidet auf `MAX_VORGAENGE`
+**nach** dem KO-Fenster statt davor: sortieren → Zeilen ohne ladbares Wissensobjekt verwerfen →
+kappen. Reihenfolge, Mandantenfilter, Aktualitätsfilter, Punktwerte und Ränge bleiben
+unverändert. Mehrkosten: höchstens 8 zusätzliche Zeilen je Abruf gegenüber vorher (je Mandat
+existieren 20 aktuelle Zeilen), keine zusätzliche Abfrage.
+
+**Regressionsschutz:** `scripts/lage-rangfolge-determinismus-test.js` §E (E1–E4). Das Testdoppel
+bildet dort den echten Lesevertrag nach (**sortieren → dann `limit`**, wie PostgREST). Gegen den
+PR-Stand `47b3532` sind **E1 und E3 rot**; E2 ist dort grün, **weil der unpersonalisierte
+Rückfall die Liste auffüllt** — genau deshalb prüft E3 zusätzlich, dass die Ausgabe die
+**Rangfolge** und nicht die Rückfallreihenfolge ist.
+
+**Weitere Prüfergebnisse derselben Reviewrunde (keine Korrektur nötig):**
+
+- **`order=rank.asc.nullslast,knowledge_object_id.asc` gegen den echten PostgREST geprüft**
+  (rein lesend): **HTTP 200**. Gegenproben belegen, dass die Probe greift: erfundene Spalte ⇒
+  `400 / 42703`, erfundenes Schlüsselwort ⇒ `400 / PGRST100` („expecting nullsfirst or
+  nullslast"). Ein stiller `[]`-Rückfall über den `catch` in `storage.listMatchingResults` ist
+  damit ausgeschlossen.
+- **Datenmodell:** `rank` ist `integer`; im Bestand 140 aktuelle Zeilen, davon **0 ohne Rang**,
+  **0 doppelte `(user_id, rank)`-Paare**, **0 Ränge < 1**. `nullslast` und der Tiebreak sind
+  heute reine Schutzschichten. `matching_results_tenant_ko_uidx` (unique auf
+  `user_id, knowledge_object_id`) existiert in Production ⇒ doppelte Objektkennungen je Mandat
+  sind ausgeschlossen, der Tiebreak ist total.
+- **Semantikunterschied, bewusst offen:** `storage.js` sortiert den Tiebreak in der Datenbank
+  mit deren Kollation (`en_US.UTF-8`), `lage.js` byteweise (`compareIds`). Bei Umlaut-Kennungen
+  (im Bestand vorhanden) ordnen beide unterschiedlich. Wirksam wird das **nur** bei
+  Rangdubletten — die es heute nicht gibt — und nur für den Schnitt des `limit`; die sichtbare
+  Reihenfolge legt ohnehin `lage.js` fest. Eine Kollation lässt sich über PostgREST nicht
+  erzwingen; eine Angleichung wäre eine Migration und ist hier bewusst nicht enthalten.
+- **Kein Index auf `(user_id, rank)`** — der vorhandene `matching_results_user_idx` deckt
+  `(user_id, created_at)` ab. Bei 140 aktuellen Zeilen ist die Sortierung im Speicher
+  vernachlässigbar; ein Index wäre eine Migration und bleibt bewusst offen.
+- **Restrisiko `HELMUT_MATCHING_AUDIT=off`:** ohne Auditpfad setzt `saveMatchingResults` keine
+  Zeile auf `aktuell=false`. Dann stehen mehrere Laufgenerationen gleichzeitig auf
+  `aktuell=true`, Ränge wiederholen sich, und eine **veraltete** Zeile mit Rang 1 stünde nach
+  `rank.asc` **vorne** (nach `created_at.desc` stand sie hinten). Heute nicht wirksam (Flag seit
+  2026-07-28 an, 0 Rangdubletten gemessen), aber der dokumentierte Rückweg
+  `HELMUT_MATCHING_AUDIT=off` würde diesen Zustand herstellen.
+- **Historienzugang** (`includeAbgeloest: true`) sortiert jetzt ebenfalls nach Rang statt nach
+  Zeit und verschränkt damit Laufgenerationen. Es gibt dafür **keinen produktiven Konsumenten**
+  (nur Tests; der Backup-Export liest die Tabelle direkt), deshalb keine Änderung.
+
+### 54.6 Nacharbeit vor dem Merge (2026-08-06)
+
+PR #224 wurde auf den aktuellen `main`-Stand `d8bf68f` gebracht (Merge; einziger Konflikt
+`docs/CURRENT_STATE.md`, aufgelöst zugunsten der auf `main` kompaktierten Fassung — der
+PR-seitige Langformat-Abschnitt entfiel, kanonisch bleibt dieser §54). Inhaltliche
+Nacharbeit:
+
+- **Eine Rangfolge-Definition statt drei Kopien:** die Rang-Extraktion (rangloser/unlesbarer
+  Rang → hinten, nie als 0) lag identisch in `lage.js` und im E2E-Testdoppel. Sie ist jetzt
+  zentral als `matching-contract.compareStoredMatchingRows` definiert; beide Aufrufer nutzen
+  dieselbe Funktion und können nicht mehr auseinanderlaufen.
+- **Testerweiterung:** A6 (fehlende/leere `created_at`-Werte → kein Fehler, Reihenfolge
+  unverändert) und B4 (direkter Vertrag der zentralen Vergleichsfunktion, inkl. numerischem
+  Rangvergleich 2 < 10) — die Suite hat damit 21 Prüfpunkte (§54.3).
+- **Veraltete Vertragskommentare nachgezogen** (adversariale Reviewrunde 2026-08-06): der
+  Funktions-Header von `storage.listMatchingResults` sicherte noch `created_at.desc` zu;
+  die rein lesenden Analyse-Skripte `matching-schwellenwert-analyse.js` und
+  `matching-erklaerungsluecke-analyse.js` beschrifteten ihr sichtbares Fenster noch mit dem
+  alten Lesevertrag. Nur Kommentare/Beschriftungen, keine Logikänderung.
+
+Nicht übernommene Reviewbefunde derselben Runde (mit Begründung widerlegt): eine angebliche
+Mandantensicherheits-Testlücke (der `userId`-Durchgriff ist in
+`matching-aktualitaet-test.js` D2 bereits bewiesen) und ein angeblicher
+§54.2-Widerspruch nach der Zentralisierung (der Tiebreak **ist** weiterhin `compareIds`,
+`compareStoredMatchingRows` delegiert dorthin).

@@ -167,8 +167,11 @@ function varianteG(treffer) {
       mitBegruendung: rows.filter((r) => erklaerung.erklaerungAusErgebnis(r) !== null).length,
       verteilung: kennzahlen(rows.map((r) => Number(r.similarity) || 0))
     };
-    // Sichtbares Fenster: `listMatchingResults` liefert created_at.desc,
-    // lage.js zeigt davon die ersten LAGE_FENSTER — NICHT die besten.
+    // Sichtbares Fenster (Naeherung): `listMatchingResults` liefert seit
+    // Befund F-E2E (PR #224) die Zeilen nach BERECHNETEM Rang — die ersten
+    // LAGE_FENSTER sind also die BESTEN. lage.js verwirft vor der Kappung
+    // zusaetzlich Zeilen ohne Wissensobjekt im KO-Scanfenster; die Zahl hier
+    // ist deshalb eine Obergrenze des tatsaechlich Sichtbaren.
     const fenster = rows.slice(0, LAGE_FENSTER);
     bestand.fenster = {
       n: fenster.length,
