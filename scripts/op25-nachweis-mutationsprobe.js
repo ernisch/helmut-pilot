@@ -76,6 +76,10 @@ const STORE = path.join("lib", "helmut", "storage.js");
 const UNDER = path.join("lib", "helmut", "understanding.js");
 const VERTRAG_SUITE = "op25-nachweis-vertrag-test.js";
 const E3_SUITE = "op25-e3-dauerhaftigkeit-test.js";
+// Korrektursprint K1-K8 (2026-08-05): zwei weitere Suiten als Mutationsziele.
+const LAUFPAAR_SUITE = "op25-laufpaar-test.js";
+const WATCHDOG_SUITE = "watchdog-pipeline-check-test.js";
+const WATCHDOG_SKRIPT = path.join("scripts", "watchdog-pipeline-check.js");
 
 const PROBEN = [
   {
@@ -259,8 +263,8 @@ const PROBEN = [
     name: "M24 Aufbewahrungsvertrag faellt weg (Retention kleiner als Bedarf passiert)",
     suite: VERTRAG_SUITE,
     mutiere: (b) => ersetze(b, KERN,
-      "    if (benoetigteDatensaetze > retention) {",
-      "    if (false) {")
+      "  } else if (benoetigteDatensaetze > retention) {",
+      "  } else if (false) {")
   },
   {
     name: "M25 Budget wird wieder am VOR dem Versiegeln gebildeten durationMs geprueft",
@@ -594,6 +598,136 @@ const PROBEN = [
     suite: VERTRAG_SUITE,
     mutiere: (b) => ersetze(b, CLI_DATEI,
       "    if (!Number.isFinite(aktivierungFruehMs)) {",
+      "    if (false) {")
+  },
+  // ------------------------------------------------------------------------------------------
+  // Korrektursprint K1-K8 (2026-08-05): jede Korrektur hat mindestens eine Probe, die ihre
+  // Ruecknahme zuverlaessig rot macht.
+  // ------------------------------------------------------------------------------------------
+  {
+    name: "M70 K1: Rueckkehr zum alten Join (m.runId === laufkennung) — echtes Laufpaar faellt durch",
+    suite: LAUFPAAR_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      '&& typeof m.globalLaufId === "string" && m.globalLaufId === globalerLauf.runId);',
+      '&& m.runId === String(globalerLauf.runId || "").replace(/-global$/, ""));')
+  },
+  {
+    name: "M71 K1: Mehrdeutigkeitspruefung der Bindung entfernt",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    if (anzahl > 1) {",
+      "    if (false) {")
+  },
+  {
+    name: "M72 K1: Sweep fuer ungebundene Mandatszeilen entfernt",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      '    if (typeof m.globalLaufId !== "string" || !m.globalLaufId.trim()) {',
+      "    if (false) {")
+  },
+  {
+    name: "M73 K2: Blob-Widerspruch der Mandatswahrheit wird ignoriert",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (Array.isArray(blob) && !mengeGleich(blob, kanonisch)) {",
+      "  if (false) {")
+  },
+  {
+    name: "M74 K2: unlesbare kanonische Menge blockiert nicht mehr (stiller Weiterlauf)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "  if (!Array.isArray(kanonisch) || !kanonisch.length) {",
+      "  if (false) {")
+  },
+  {
+    name: "M75 K3: Watchdog-Slots fallen aus der Bedarfsformel",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "    mindest: (regel + watchdog) * jeLauf + puffer",
+      "    mindest: regel * jeLauf + puffer")
+  },
+  {
+    name: "M76 K3: harte Blockade wird wieder zur Warnung",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      '    befunde.push(befund(AUSGANG_BLOCKIERT, "aufbewahrung-reicht-nicht", aufbewahrungsMeldung(bedarf, retention)));',
+      "    warnungen.push(aufbewahrungsMeldung(bedarf, retention));")
+  },
+  {
+    name: "M77 K8: Versiegelungstoleranz still aufgeblaeht (313 ms bis 300 s alles gruen)",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "const VERSIEGELUNGS_TOLERANZ_MS = 1000;",
+      "const VERSIEGELUNGS_TOLERANZ_MS = 300000;")
+  },
+  {
+    name: "M78 K8/K4: fachliche Schleife frisst die Vormerkreserve (zu spaete Vormerkung)",
+    suite: LAUFPAAR_SUITE,
+    mutiere: (b) => ersetze(b, SCHED,
+      "      Math.max(0, verbleibendMs() - VORMERK_RESERVE_MS - ABSCHLUSS_RESERVE_MS)",
+      "      Math.max(0, verbleibendMs() - ABSCHLUSS_RESERVE_MS)")
+  },
+  {
+    name: "M79 K4: Lazy-Rest faellt aus der Abschluss-Vormerkung (fehlender Lazy-Pfad)",
+    suite: LAUFPAAR_SUITE,
+    mutiere: (b) => ersetze(b, SCHED,
+      "    for (const cluster of [...lazyRestClusterListe, ...clusterAusUebersprungenen]) {",
+      "    for (const cluster of [...clusterAusUebersprungenen]) {")
+  },
+  {
+    name: "M80 K4: Bulk-Pfad stillgelegt — serielle Einzelwrites kehren zurueck",
+    suite: E3_SUITE,
+    mutiere: (b) => ersetze(b, UNDER,
+      '    if (zurueckgestellt.length && typeof deps.savePendingBulk === "function") {',
+      "    if (false) {")
+  },
+  {
+    name: "M81 K4: Speicherfehler des Bulks wird verschluckt (understanding)",
+    suite: E3_SUITE,
+    mutiere: (b) => ersetze(b, UNDER,
+      "          vormerkFehlgeschlagen = Number(bulk.fehlgeschlagen) || 0;",
+      "          vormerkFehlgeschlagen = 0;")
+  },
+  {
+    name: "M82 K4: Vertrag ignoriert Speicherfehler der Abschlussphase",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "        || nichtVorgemerkt > 0 || fehlgeschlagen > 0) {",
+      "        || nichtVorgemerkt > 0 || false) {")
+  },
+  {
+    name: "M83 K5: Zusammensetzungsgleichung wird nicht mehr geprueft",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      "      } else if (statisch + dokumentgetrieben + zUnbekannt !== Number(k.kontexte)) {",
+      "      } else if (false) {")
+  },
+  {
+    name: "M84 K5: Diagnosebedarf wird still herabgestuft",
+    suite: VERTRAG_SUITE,
+    mutiere: (b) => ersetze(b, KERN,
+      'befunde.push(befund(AUSGANG_BLOCKIERT, "kontextzahl-diagnosebedarf",',
+      'befunde.push(befund(AUSGANG_NOCH_NICHT_AUSWERTBAR, "kontextzahl-diagnosebedarf",')
+  },
+  {
+    name: "M85 K6: nicht gespeicherter Mandatslauf meldet wieder Erfolg",
+    suite: LAUFPAAR_SUITE,
+    mutiere: (b) => ersetze(b, SCHED,
+      "        failed: true,\n        persistenz: \"fehlgeschlagen\",",
+      "        persistenz: \"fehlgeschlagen\",")
+  },
+  {
+    name: "M86 K7: Vorpruefung 'Erfolg vorhanden' entfernt (Watchdog feuert wieder bedingungslos)",
+    suite: WATCHDOG_SUITE,
+    mutiere: (b) => ersetze(b, WATCHDOG_SKRIPT,
+      '    if (vorpruefung.ausgang === "vorhanden") {',
+      "    if (false) {")
+  },
+  {
+    name: "M87 K7: Lesefehler startet wieder blind einen schweren Ersatzlauf (fail open)",
+    suite: WATCHDOG_SUITE,
+    mutiere: (b) => ersetze(b, WATCHDOG_SKRIPT,
+      '    if (vorpruefung.ausgang === "lesefehler") {',
       "    if (false) {")
   }
 ];

@@ -27,7 +27,15 @@ on:
   schedule:
     # 05:30 UTC = 07:30 Berlin (Sommer) — kurz NACH Vercels morning-briefing (05:00 UTC).
     - cron: "30 5 * * *"
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      # K7: Betreiber-Übersteuerung der bedingten Vorprüfung. "1" überspringt die
+      # Vorprüfung und erzwingt den Ersatzlauf (z. B. wenn der Statuspfad kaputt ist
+      # und der tägliche Lauf deshalb fail closed endet). Default: Vorprüfung aktiv.
+      force_run:
+        description: "Vorpruefung ueberspringen und Ersatzlauf erzwingen (1 = ja)"
+        required: false
+        default: "0"
 
 concurrency:
   group: briefing-watchdog
@@ -51,6 +59,9 @@ jobs:
         env:
           BASE_URL: ${{ vars.HELMUT_PROD_URL || 'https://helmut-pilot.vercel.app' }}
           CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+          # K7: nur ein manueller Dispatch mit force_run=1 setzt die Übersteuerung;
+          # der planmäßige 05:30-Lauf bleibt bedingt (Vorprüfung aktiv).
+          WATCHDOG_FORCE_RUN: ${{ github.event.inputs.force_run || '0' }}
         run: |
           set -euo pipefail
           if [ -z "${CRON_SECRET:-}" ]; then

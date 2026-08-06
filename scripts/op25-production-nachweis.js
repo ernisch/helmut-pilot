@@ -65,10 +65,17 @@ const https = require("https");
 const fs = require("fs");
 const path = require("path");
 const vertrag = require("../lib/helmut/op25-nachweis");
+// K2 (eine Mandatswahrheit): tenant-context ist PUR (kein IO, kein Netz; storage.js wird
+// dort nur lazy geladen und hier NIE ausgeloest, weil listProfiles injiziert wird). Damit
+// entscheidet EXAKT dieselbe Funktion wie in der Laufzeitplanung (resolveCronTenants ->
+// listActiveTenantIds) ueber die aktive Mandatsmenge — der Schreibschutz bleibt unberuehrt.
+const tenantContext = require("../lib/helmut/tenant-context");
 
 const HTTP_METHODE = "GET"; // Literal, nicht konfigurierbar
 const ERLAUBTE_TABELLEN = Object.freeze([
-  "helmut_store", "process_runs", "knowledge_objects", "retrieval_paths"
+  // K2: `profiles` (mit eingebettetem mandate_profiles) ist die KANONISCHE relationale
+  // Mandatswahrheit — der Blob ist fuer die Mandatsplanung keine Wahrheit mehr.
+  "helmut_store", "process_runs", "knowledge_objects", "retrieval_paths", "profiles"
 ]);
 
 // Heute dokumentierter Bestand (Baseline-Querschnitt 2026-08-04): fuenf aktive reale
@@ -162,17 +169,53 @@ function istAktivesMandat(profil) {
   return true;
 }
 
-function aktiveMandateAus(mainStore) {
+// K2: die BLOB-Profilsicht. Sie ist NICHT mehr die Mandatswahrheit des Nachweises —
+// sie wird nur noch als Vergleichssicht gelesen, damit ein Widerspruch zur kanonischen
+// relationalen Menge (zwei Mandatswahrheiten, genau der Befund des gescheiterten
+// Nachweises) den Start blockieren kann statt still eine kleinere Menge zu planen.
+function blobMandateAus(mainStore) {
   if (!mainStore || typeof mainStore !== "object") return null;
   const profile = Object.values(mainStore.profiles || {});
   if (!profile.length) return null;
   return profile.filter(istAktivesMandat).map((p) => String(p.id)).sort();
 }
 
+// K2: die KANONISCHE Mandatswahrheit — relational (`profiles` + `mandate_profiles`),
+// gefiltert und sortiert von EXAKT der Laufzeitfunktion `listActiveTenantIds` mit der
+// gemeinsamen puren Zeilenprojektion. Lesefehler => `aktive: null` (fail closed, KEIN
+// stiller Rueckfall auf den Blob — der Nachweis blockiert dann verstaendlich).
+async function leseAktiveMandateRelational() {
+  try {
+    const rows = await holen("/rest/v1/profiles?select=id,mandate_profiles(aktiv,geloescht_at)&order=id.asc&limit=5000");
+    if (!Array.isArray(rows)) return { aktive: null, fehler: "unerwartete-antwort" };
+    const aktive = await tenantContext.listActiveTenantIds({
+      listProfiles: async () => rows.map(tenantContext.relationalesProfilLebenszyklus).filter(Boolean)
+    });
+    return { aktive, fehler: aktive === null ? "projektion-fehlgeschlagen" : null };
+  } catch (fehler) {
+    return { aktive: null, fehler: String((fehler && fehler.message) || fehler).slice(0, 160) };
+  }
+}
+
 function leseCrons() {
   const datei = path.join(__dirname, "..", "vercel.json");
   const inhalt = JSON.parse(fs.readFileSync(datei, "utf8"));
   return Array.isArray(inhalt.crons) ? inhalt.crons : [];
+}
+
+// K3: die Watchdog-Kadenz aus der WIRKSAMEN Workflow-Datei (`briefing-watchdog.yml`) —
+// geparst, nicht geraten. Der Watchdog war im gescheiterten Fenster ein realer vierter
+// schwerer Lauf; ohne seine Slots ist der Aufbewahrungsbedarf nicht belegbar. Nicht
+// lesbar/parsebar => `null` (der Vertrag blockiert dann fail closed).
+function leseWatchdogCrons() {
+  try {
+    const datei = path.join(__dirname, "..", ".github", "workflows", "briefing-watchdog.yml");
+    const inhalt = fs.readFileSync(datei, "utf8");
+    const treffer = [...inhalt.matchAll(/-\s*cron:\s*["']([^"']+)["']/g)].map((m) => m[1]);
+    return treffer.length ? treffer : null;
+  } catch (_) {
+    return null;
+  }
 }
 
 // DAUERHAFTE Laufbelege der globalen Phase. Zwei Quellen, dedupliziert ueber die
@@ -313,6 +356,9 @@ function schreibeStartbaseline(datei, { aktivierungAtMs, aktiveMandate, prozessC
     // der Auswertung — alle `globalphase`-Fensterlaeufe muessen exakt diesen Commit tragen.
     erwarteterDeploymentCommit: vollerCommit,
     commitPruefung: "erst in der Auswertung: alle globalphase-Fensterlaeufe muessen commit_ref == erwarteterDeploymentCommit tragen",
+    // K2: die Menge stammt aus der KANONISCHEN relationalen Mandatswahrheit (profiles +
+    // mandate_profiles, gelesen ueber die gemeinsame Laufzeitfunktion) — nie aus dem Blob.
+    mandatsquelle: "relational",
     anzahl: sig.anzahl,
     mandate: sig.mandate,
     signatur: sig.signatur
@@ -332,9 +378,11 @@ function leseStartbaseline(datei) {
 
 // --- Baseline (rein lesend, PII-frei) --------------------------------------------------------
 
-async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte }) {
+async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte, relationalAktive = null }) {
   const profile = Object.values((mainStore && mainStore.profiles) || {});
-  const aktive = profile.filter(istAktivesMandat).map((p) => String(p.id)).sort();
+  // K2: kanonisch ist die RELATIONALE Menge; die Blob-Zaehlung bleibt als Vergleichssicht.
+  const blobAktive = profile.filter(istAktivesMandat).map((p) => String(p.id)).sort();
+  const aktive = Array.isArray(relationalAktive) ? relationalAktive : blobAktive;
   const inaktive = profile.filter((p) => !istAktivesMandat(p)).map((p) => String(p.id)).sort();
   const testmandate = profile.filter((p) => /^test-mdb-/.test(String(p && p.id)));
 
@@ -380,14 +428,19 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
     hinweisProzessCommit: "kein Deployment-Beleg: Commit des juengsten gespeicherten Laufs",
     mandate: {
       gesamt: profile.length, aktiv: sig.mandate, signatur: sig.signatur,
+      quelle: Array.isArray(relationalAktive) ? "relational" : "blob (relational nicht lesbar!)",
+      blobVergleich: vertrag.mandatsSignatur(blobAktive).signatur,
       inaktiv: inaktive, testmandateInProduction: testmandate.length
     },
     cronKadenz: vertrag.schwereKadenz(leseCrons()).map((k) => `${k.cronName}: ${k.schedule}`),
     laufdatensaetze: {
       retention: LAUF_RETENTION, gelesen: laeufe.length, nachModus,
       juengsterGlobalerLauf: juengsterGlobal ? juengsterGlobal.runId : null,
-      // Aufbewahrungsvertrag: was ein 24-h-Fenster bei dieser Mandatszahl braucht.
-      benoetigtFuer24hFenster: 3 * (1 + sig.anzahl)
+      // K3-Aufbewahrungsvertrag: was ein 24-h-Fenster bei dieser Mandatszahl braucht —
+      // inklusive Watchdog-Slot und Puffer, nicht mehr die alte 3x(1+n)-Formel.
+      benoetigtFuer24hFenster: vertrag.aufbewahrungsBedarf({
+        regelSlots: 3, watchdogSlots: 1, mandatszahl: sig.anzahl
+      }).mindest
     },
     dauerhafteGlobalphasenZeilen: {
       gefunden: (dauerhafte && dauerhafte.zeilen.length) || 0,
@@ -449,10 +502,31 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
   const dauerhafte = await leseDauerhafteLaufzeilen(authStore);
 
   const aktivierungAtMs = parseIsoMs(args.aktivierung ?? process.env.HELMUT_OP25_AKTIVIERUNG_AT, "--aktivierung");
-  const aktiveMandate = aktiveMandateAus(mainStore);
+  // K2: die KANONISCHE Mandatsmenge kommt relational — der Blob ist nur noch Vergleichssicht.
+  const relational = await leseAktiveMandateRelational();
+  const aktiveMandate = relational.aktive;
+  const blobMandate = blobMandateAus(mainStore);
+  if (aktiveMandate === null) {
+    console.error("HINWEIS: relationale Mandatswahrheit nicht lesbar"
+      + `${relational.fehler ? ` (${relational.fehler})` : ""} — es gibt KEINEN Rueckfall auf den`
+      + " Blob (eine Mandatswahrheit, fail closed). Ohne sie blockiert jeder Nachweisschritt.");
+  }
+  // Laufzeitbeleg: was der juengste globale Lauf TATSAECHLICH geplant hat.
+  const juengsterGlobalerLauf = ((mainStore && Array.isArray(mainStore.crawlRuns)) ? mainStore.crawlRuns : [])
+    .find((r) => r && r.mode === "global") || null;
+  const laufzeitPlanung = juengsterGlobalerLauf && juengsterGlobalerLauf.quellenVereinigung
+    && Array.isArray(juengsterGlobalerLauf.quellenVereinigung.mandateIds)
+    ? juengsterGlobalerLauf.quellenVereinigung.mandateIds
+    : null;
+  const mandatsWahrheit = {
+    kanonisch: aktiveMandate,
+    blob: blobMandate,
+    laufzeitPlanung,
+    laufzeitLaufId: juengsterGlobalerLauf ? juengsterGlobalerLauf.runId : null
+  };
 
   if (args.baseline) {
-    const baseline = await erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte });
+    const baseline = await erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte, relationalAktive: aktiveMandate });
     console.log("== BASELINE (rein lesend, PII-frei) ==");
     console.log(JSON.stringify(baseline, null, 2));
     process.exit(0);
@@ -461,7 +535,42 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
   // ---- Schritt 1: Startbaseline erheben (Production nur gelesen) ---------------------------
   if (args["startbaseline-schreiben"]) {
     if (!Array.isArray(aktiveMandate) || !aktiveMandate.length) {
-      console.error("MESSFEHLER: aktive Mandatsmenge nicht lesbar — keine Startbaseline geschrieben.");
+      console.error("MESSFEHLER: kanonische (relationale) Mandatsmenge nicht lesbar — keine"
+        + " Startbaseline geschrieben. KEIN Rueckfall auf den Blob (eine Mandatswahrheit).");
+      process.exit(2);
+    }
+    // K2-STARTPRUEFUNG: die Signaturen aller beobachtbaren Mandatssichten muessen
+    // uebereinstimmen, BEVOR ein Nachweisfenster beginnt. Ein Widerspruch (z. B. Blob 5
+    // vs. relational 6 — exakt der Zustand des gescheiterten Nachweises) blockiert den
+    // Start; der Blob kann die Menge nie mehr still verkleinern.
+    const wahrheit = vertrag.pruefeMandatsWahrheit(mandatsWahrheit);
+    if (wahrheit.befunde.length) {
+      console.error("MESSFEHLER: Mandatswahrheiten widersprechen sich — keine Startbaseline geschrieben:");
+      for (const b of wahrheit.befunde) console.error(`  [${b.schwere}] ${b.grund} — ${b.detail}`);
+      process.exit(2);
+    }
+    // K3-STARTPRUEFUNG: die Aufbewahrung muss das kommende 24-h-Fenster rechnerisch tragen
+    // (Regel-Slots + Watchdog-Slots + Puffer, reale Mandatszahl) — sonst beginnt KEIN Fenster.
+    const fensterVonMs = aktivierungAtMs;
+    const fensterBisMs = aktivierungAtMs + vertrag.MIN_FENSTER_MS;
+    const regelSlots = vertrag.erwarteteLaeufe({ vonMs: fensterVonMs, bisMs: fensterBisMs, crons: leseCrons() });
+    const watchdogSlots = vertrag.erwarteteWatchdogLaeufe({
+      vonMs: fensterVonMs, bisMs: fensterBisMs, watchdogCrons: leseWatchdogCrons()
+    });
+    if (!regelSlots || !regelSlots.length || watchdogSlots === null) {
+      console.error("MESSFEHLER: Regel- oder Watchdog-Kadenz nicht ermittelbar — der"
+        + " Aufbewahrungsbedarf des Fensters ist nicht belegbar, keine Startbaseline geschrieben.");
+      process.exit(2);
+    }
+    const bedarf = vertrag.aufbewahrungsBedarf({
+      regelSlots: regelSlots.length,
+      watchdogSlots: watchdogSlots.length,
+      mandatszahl: aktiveMandate.length
+    });
+    if (LAUF_RETENTION < bedarf.mindest) {
+      console.error(`MESSFEHLER: ${vertrag.aufbewahrungsMeldung(bedarf, LAUF_RETENTION)}`);
+      console.error("Keine Startbaseline geschrieben — ein Fenster, dessen Belege rechnerisch"
+        + " verdraengt wuerden, darf nicht beginnen.");
       process.exit(2);
     }
     // Die Pflichtparameter (Aktivierung + voller erwarteter Commit) sind bereits an den
@@ -540,12 +649,19 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte 
     // FAIL CLOSED (Review-Nachprobe): ein Lesefehler der KANONISCHEN Belegquelle
     // process_runs geht in die Bewertung ein (blockiert), statt nur als Konsolentext zu
     // erscheinen — sonst koennte der Commitnachweis allein auf dem Blob-Spiegel bestehen.
-    prozessLaeufeLesefehler: dauerhafte.relationalFehler
+    prozessLaeufeLesefehler: dauerhafte.relationalFehler,
+    // K3: der Watchdog ist ein moeglicher zusaetzlicher schwerer Lauf und gehoert in den
+    // Aufbewahrungsbedarf; K2: die Widerspruchsfreiheit der Mandatssichten wird mitbewertet.
+    watchdogCrons: leseWatchdogCrons(),
+    mandatsWahrheit
   });
 
   const endSig = Array.isArray(aktiveMandate) ? vertrag.mandatsSignatur(aktiveMandate) : null;
+  const blobSig = Array.isArray(blobMandate) ? vertrag.mandatsSignatur(blobMandate) : null;
   console.log("== EINGABEN (rein lesend) ==");
-  console.log(`aktive Mandate am Fensterende (dynamisch): ${endSig ? `${endSig.signatur} (${endSig.mandate.join(", ")})` : "NICHT LESBAR"}`);
+  console.log(`aktive Mandate am Fensterende (KANONISCH relational): ${endSig ? `${endSig.signatur} (${endSig.mandate.join(", ")})` : "NICHT LESBAR — kein Blob-Rueckfall"}`);
+  console.log(`Blob-Vergleichssicht: ${blobSig ? blobSig.signatur : "—"}`
+    + ` · Laufzeitplanung (juengster global-Lauf): ${laufzeitPlanung ? vertrag.mandatsSignatur(laufzeitPlanung).signatur : "—"}`);
   console.log(`eingefrorene Startbaseline: ${startbaseline
     ? `${Array.isArray(startbaseline.mandate) ? vertrag.mandatsSignatur(startbaseline.mandate).signatur : "(ohne Mandatsliste)"}`
       + ` (erhoben ${startbaseline.erhobenAt || "?"}, Datei-Signatur ${startbaseline.signatur || "fehlt"})`

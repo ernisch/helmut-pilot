@@ -1175,11 +1175,155 @@ geschlossen — alle fail closed:**
    — beide unbelegt. Der Kopf verweist jetzt auf die offene Betreiberprüfung (§7.4-Vermerk);
    historisch Belegtes bleibt als Historie gekennzeichnet.
 
+### 7.7.6 Ursachenanalyse des Nachweises vom 2026-08-04/05 (2026-08-05/2) — kanonisch
+
+> **Analysesprint, rein lesend.** Rekonstruiert wurde der echte Production-Kontrollfluss aus den
+> **dauerhaften** Belegen (relationale `process_runs`-Zeilen, `helmut_store`-Zeilen `main` /
+> `main-auth` / `main-cron-fairness`, Profiltabellen, Baseline-/Auswertungsdateien in `belege/`),
+> ergänzt um einen lokalen, rein lesenden Diagnoselauf (Kontextsignaturen der Quellenpläne mit
+> 6 vs. 5 Mandaten gegen den echten Katalog). **Keine** Production-Mutation, 0 KI-Aufrufe.
+> Mehrere Aussagen des Abschlussberichts (11. Durchgang) sind damit **widerlegt** — sie bleiben
+> dort als Historie stehen, maßgeblich ist dieser Abschnitt.
+
+**Der echte Kontrollfluss des 16:00-Laufs (`cron-pipeline-20260805160005-23ls6`), belegt:**
+
+| Zeit (UTC) | Ereignis | Beleg |
+|---|---|---|
+| 16:00:06,2 | Globalphase startet; Budget `269 668 − 6·8 000 = 221 668 ms` — **für 6 Mandate** gerechnet | `process_runs.globalphase.started_at`; `budgetAufteilung` |
+| bis ~16:02:07 | Abruf (181 Wege, 1 Timeout) + Persistenz (**27 Requests**, `cas=0` — die F-RT-Reparatur wirkt) + Bündelung (**15 Kontexte**) + Lazy (372/1213 Cluster, 2 Stapel übersprungen) | `datenstandDetail` im Blob-Laufdatensatz |
+| 16:02:07–16:03:43 | Eager: **1** Cluster verstanden, 840 zurückgestellt; Vormerkschleife läuft bis exakt zur `vormerkDeadline` (= Budget − 5 s = 16:03:42,9): **361 vorgemerkt, 479 nicht**, 14 Stapel nie erreicht | `process_runs.understanding-eager` (95 957 ms); `understanding.js:1289–1326`; `scheduler.js:2377` |
+| 16:03:43–16:03:48 | Abschlussschreiben (Telemetrie, globaler Laufdatensatz 16:03:46) — Versiegelung **221 981 ms = Budget + 313 ms** | `process_runs.globalphase.finished_at` |
+| 16:03:50–16:04:06 | **Mandatsphase läuft und schließt ab: 6 von 6 `erfolgreich`** (je ~0,8–2,7 s), `kapazitaet=6`, `obergrenzeLaeufe=1` | Fairnesszeile `laeufe.pipeline`; 6 `mode:"mandat"`-Blob-Datensätze `projektion-…` mit `globalLaufId=…23ls6-global` |
+| ~16:04:06 | Lauf endet regulär, weit vor dem 270/280-s-Limit | dito |
+
+Dasselbe Bild in **allen** drei noch blob-belegten Läufen des Fensters (crawl 04:00, Watchdog-
+pipeline 08:03, pipeline 16:00): Globalphase `teilweise` mit `nv=479–812`, danach **6/6
+abgeschlossene Mandatsprojektionen**. **Der Kapazitätsblocker war im Fenster real gelöst.**
+
+**Bewertung der sieben Befunde — jede Aussage gegen dauerhafte Belege geprüft:**
+
+1. **`mandatslauf-fehlt` — FALSCHBEFUND (Zuordnungsfehler des Bewertungskerns).** Der Kern
+   sucht Mandatsdatensätze über `m.runId === laufkennung` (`op25-nachweis.js:764–765`).
+   Production schreibt aber `runId: "projektion-<ts>"` und verweist per **`globalLaufId`** auf
+   den globalen Lauf (`scheduler.js:2667, 2695`; `server.js:6501` übergibt **keine** runId).
+   Die sechs Mandatsdatensätze des 16:00-Laufs standen zur Auswertungszeit im Blob. Die
+   Vertragstests waren grün, weil die **Fixtures dieselbe falsche Konvention** kodieren
+   (`op25-nachweis-vertrag-test.js:127, 436`: `runId: laufkennung`). Folgefehler: der
+   Fremde-Mandate-Check (`op25-nachweis.js:796–800`) lief ins Leere, und die Erzählung „die
+   Globalphase verbrauchte das gesamte Cron-Budget" ist **widerlegt** (Rest nach Versiegelung
+   ~47,7 s; Mandatsphase brauchte ~16 s).
+2. **`fenster-ungueltig-mandatsmenge-veraendert` — FEHLDEUTUNG: kein Toggle im Fenster,
+   sondern ZWEI divergierende Mandatswahrheiten.** Die Laufzeit liest relational
+   (`tenant-context.listActiveTenantIds` → `storage.listFullProfiles`, SQL gewinnt):
+   `mandate_profiles.max-mustermann` steht dort **seit dem 20.07. unverändert `aktiv=true`**
+   → jeder Lauf im Fenster plante 6 Mandate (auch crawl 04:00 und Watchdog 08:03 projizierten
+   `max-mustermann`; `morning-briefing` 05:00: 6/6). Das Nachweis-CLI liest dagegen
+   **`main`-Blob `profiles`** (`aktiveMandateAus`, `scripts/op25-production-nachweis.js:165–170`)
+   — dort steht `profileActive=false` seit dem **04.08. 10:26 UTC**: die „Deaktivierung" des
+   Profilreparatursprints landete **nur im Blob**, den die Laufzeit nicht liest (die Fixture
+   `scripts/fixtures/profil-reparatur-2026-08-04.js:20` nennt den Blob ausdrücklich die
+   „wirksame Profilsicht" — das ist durch das Fensterverhalten widerlegt). Kein Audit-Eintrag
+   seit 03.08. (`main-auth.auditEvents`) → der Schreibweg war nicht die auditierte Admin-Route.
+   **Betreiberklärung neu gefasst:** nicht „wer schaltete um", sondern (a) verbindliche
+   Festlegung der einen Mandatswahrheit (relational ist per Exklusivmodus die Systemwahrheit),
+   (b) freigabepflichtige Nachholung der Deaktivierung **relational**, (c) CLI auf dieselbe
+   Quelle umstellen.
+3. **`laufbeleg-verdraengt` ×2 — ZUTREFFEND, aber vorhersagbar.** Realer Bedarf im Fenster:
+   4 schwere Läufe × (1 global + 6 Mandate) = **28** Datensätze gegen Retention **20**; schon
+   ohne Watchdog wären es 3 × 7 = **21 > 20**. Der Aufbewahrungsvertrag rechnete **18** =
+   3 × (1 + 5): er kennt nur `vercel.json`-Slots (`op25-nachweis.js:260–276`; Watchdog fehlt)
+   und rechnet fix mit der eingefrorenen Mandatszahl (`op25-nachweis.js:1067`) — und **warnt**
+   bei Knappheit statt zu blockieren (`1075–1077`). Der Watchdog-Lauf 08:03 ist zudem
+   **planmäßig**: `briefing-watchdog.yml` feuert täglich 05:30 UTC **bedingungslos** die volle
+   Pipeline (`watchdog-pipeline-check.js:119–127`, keine Vorprüfung), GitHub verzögert
+   regelmäßig um 2–3 h (`cron-fairness.md` §14.2) — er ist ein nicht modellierter Regel-Slot,
+   kein Störfall.
+4. **`globalphase-budget-ueberzogen` (+313 ms) — REAL, aber Randartefakt, kein
+   Kapazitätsproblem.** Die Vormerkschleife stoppt vertragsgemäß bei Budget − 5 s
+   (`scheduler.js:2377`); die danach fälligen Abschlussschreiben (Telemetrie + globaler
+   Laufdatensatz auf der ~1,3-MB-Blob-Zeile) brauchten ~5,3 s statt 5 → Versiegelung 313 ms
+   über Budget. Ein Lauf, der sein Budget planmäßig ausschöpft, versiegelt mit dieser
+   Vertragsfassung fast zwangsläufig knapp darüber; die Offline-Kapazitätsmessung (197 s < 222 s)
+   erreichte die Stopplinie nie.
+5. **`rueckstand-nicht-dauerhaft` — ECHT und SYSTEMISCH; Vertrag verlangt mehr, als der Code je
+   zugesagt hat.** Alle fünf globalen Läufe seit Aktivierung tragen `nv=479–812`. Implementiert
+   (und mit `op25-e3-dauerhaftigkeit-test` 3b als Sollverhalten **festgeschrieben**) ist:
+   „vormerken, solange Restzeit reicht, sonst ehrlich zählen" — es gibt **keine reservierte
+   Vormerkzeit** (Deadline = Phasenbudget − 5 s), die Vormerkung macht **2 serielle
+   Round-Trips je Cluster** (~1,7 Cluster/s; 361 Vormerkungen ≈ 70 s), übersprungene
+   Eager-Stapel erreichen die Schleife **nie**, und der **Lazy-Pfad hat für zurückgestellte
+   Cluster gar keinen Vormerkpfad**. Bei ~1 213 Clustern Rückstand (OP-14) ist die
+   E3-Zusage des Nachweisvertrags so strukturell unerfüllbar.
+6. **`auffaellige-kontextzahl-ohne-erklaerung` (15 > 11) — Zahl real, Schwelle strukturell
+   blind; überwiegend unabhängiger Befund.** Diagnoselauf gegen den echten Katalog: die
+   **statischen** Quellenpläne erzeugen nur **7** Kontextsignaturen (1 geteilt + 6 eigene; ohne
+   `max-mustermann` 6). Die beobachteten 15 (9 geteilt + 6 eigene) entstehen **dokumentgetrieben**
+   — Mehrfachherkunft eines Dokuments über mehrere Quellen und DIP-je-Dokument-Sichtbarkeit
+   bilden Teilmengen-Signaturen (`vorgangskontext.js:130–158`), tagesabhängig und durch
+   `2n+1` (`op25-nachweis.js:108–110`, mit eingefrorenem n=5 → 11; selbst mit n=6 → 13 < 15)
+   nicht modelliert. Anteil des 6. Mandats: +1 eigener Kontext, breitere Signaturen — auch mit
+   5 Mandaten wäre die Schwelle sehr wahrscheinlich gerissen worden. Kosten der Kontexte
+   (~1 Sperr-Roundtrip je Kontext) sind **nicht** ursächlich für Budget- oder Mandatsbefunde.
+7. **Nebenbefund (neu):** `runMandatsProjektion` schluckt einen fehlgeschlagenen
+   `saveCrawlRun` still (`scheduler.js:2700`, `.catch(() => null)`) und meldet trotzdem Erfolg
+   — Widerspruch zu CLAUDE.md §4.10 (im Fenster ohne Wirkung, alle 18 Datensätze wurden
+   geschrieben).
+
+**Warum die Offline-Tests grün waren, in einem Satz je Befund:** (1) Fixtures kodieren die
+falsche runId-Konvention statt der echten Scheduler-Ausgabe · (2) die Tests modellieren nur
+**eine** Profilwahrheit · (3) der Vertragstest kennt nur `vercel.json`-Slots und festes n ·
+(4) die Kapazitätsmessung lief nie an der Stopplinie · (5) Teil 2 mockt die Vormerkschleife,
+Teil 3b wertet die verstrichene Deadline als PASS · (6) Schwellen-Tests nutzen synthetische
+Kontexte ohne Mehrfachherkunft/DIP.
+
+**Minimal notwendige Korrekturen (Zuordnung · Risiko):**
+
+| # | Korrektur | Art | Risiko |
+|---|---|---|---|
+| K1 | Mandatslauf-Zuordnung im Bewertungskern auf `globalLaufId` (plus Fixtures aus echter Scheduler-Ausgabe, Mutationsprobe „Join gelockert → rot") | Code (Nachweiswerkzeug) | gering; ohne Fixture-Härtung erneute Konventionsdrift |
+| K2 | **Eine** Mandatswahrheit: Betreiberentscheidung; `max-mustermann` **relational** deaktivieren (freigabepflichtige Production-Datenänderung); CLI-Mandatsleser auf `tenant-context`/relational | Betrieb + DB + Code | Rückweg trivial (`aktiv=true`); vorher alle verbliebenen Blob-Profil-Leser inventarisieren |
+| K3 | Aufbewahrung: `HELMUT_CRAWL_RUN_RETENTION` ≥ 4·(1+n)+Puffer (bei n=6: ≥ 35) **und** Vertrag: Watchdog-Slot + reale Mandatszahl je Lauf + harte Blockade statt Warnung | Konfig (Vercel-Env, freigabepflichtig) + Code | `main`-Blob wächst (~1,3 MB → grob 2 MB); LWW-Schreiblast steigt; Alternativ-Sprint: Laufdatensätze relational |
+| K4 | E3 einlösen ODER Vertrag beschließen abschwächen. Einlösen = Bulk-Vormerkung (F-RT-Technik), reservierte Vormerk-Zeitscheibe, Vormerkpfad auch für Lazy-Rest und übersprungene Stapel | Code (aktiver Verstehenspfad) | größter Eingriff; Idempotenz-/Duplikatschutz ist belegt, Mengenlimit nötig |
+| K5 | Kontextvertrag: Lauf persistiert Kontext-Zusammensetzung (Signaturgrößen); Schwelle dokumentgetrieben begründen oder Ex-ante-Erklärung | Code (Telemetrie + Nachweiswerkzeug) | gering; zu weiche Schwelle entwertet den Schutz |
+| K6 | `saveCrawlRun`-Fehler in der Projektion sichtbar machen (kein stilles `null`) | Code | gering |
+| K7 | Watchdog: bedingt auslösen (fehlendes Briefing/alter Datenstand) ODER als 4. Regel-Slot akzeptieren (dann K3 entsprechend) | Betrieb (+ ggf. Code) | Abschalten schwächt den Backstop |
+| K8 | Abschlussreserve der Globalphase: Vormerk-Deadline ≈ Budget − 10 s oder definierte Versiegelungstoleranz im Vertrag | Code (klein) + Vertragsentscheidung | gering |
+
+**Empfohlene Reihenfolge:** K2-Entscheidung (Betreiber) → Werkzeugsprint K1+K5+K6 (+CLI-Teil
+von K2) → K3 + K7 (eine Entscheidung, ein Sprint) → K4 (eigener Sprint, vor dem nächsten
+Nachweis nur, wenn E3 unverändert gelten soll) → K8 im selben Zug wie K4. **Erst danach**
+neuer Nachweis von vorn nach §7.7.5.
+
+**Zusätzliche Abnahmekriterien für den nächsten Nachweis:** Vorab-Assertion „CLI-Mandatssignatur
+== Laufzeit-Planungssignatur" (ein Widerspruch blockiert den Start) · Aufbewahrungsvertrag
+inkl. Watchdog-Slots und realer Mandatszahl, hart blockierend · Vertragstest bewertet ein
+**echtes** vom Scheduler erzeugtes Laufpaar (global + mandat) · E3: `nichtVorgemerkt = 0`
+**und** Lazy-Rest vorgemerkt, oder dokumentiert beschlossene Abschwächung · Versiegelungs-
+toleranz vor Fensterstart festgelegt · Auswertung unmittelbar nach Fensterende (Verdrängungs-
+fenster minimieren).
+
+### 7.7.7 Umsetzung der Korrekturen K1–K8 (2026-08-05/3) — Repo-Stand
+
+Alle acht Korrekturen aus §7.7.6 sind im Repository umgesetzt und grün geprüft; die
+E3-Zusage wurde **nicht** abgeschwächt, sondern eingelöst (Bulk-Vormerkung nach
+F-RT-Muster, reservierte Vormerk- und Abschlusszeit, Vormerkpfad auch für Lazy-Rest und
+übersprungene Stapel, aufgehende Laufbilanz). Die Abnahmekriterien aus §7.7.6 sind damit
+Code: Signatur-Assertion und Aufbewahrungs-Gate blockieren den Start
+(`--startbaseline-schreiben`), der Vertragstest bewertet ein echtes Scheduler-Laufpaar
+(`scripts/op25-laufpaar-test.js`), die Versiegelungstoleranz ist festgelegt (1 s,
+`VERSIEGELUNGS_TOLERANZ_MS`). Vollständiger Bericht, Testzahlen (Vertrag 271/271 ·
+Dauerhaftigkeit 55/55 · Laufpaar 29/29 · Watchdog 26/26 · Mutationsprobe 87/87 rot),
+Verhaltensänderungen der Verträge, empfohlener Aufbewahrungswert (36 bei n=5) und die
+kleinste sichere Betreiberaktion für die relationale Deaktivierung von `max-mustermann`
+(nie löschen): [`op25-korrektursprint-2026-08-05.md`](op25-korrektursprint-2026-08-05.md).
+**Offen bleiben die Betreiberschritte** (Deaktivierung relational, Retention-Anhebung,
+danach neuer Nachweis von vorn nach §7.7.5) — nichts davon wurde ausgeführt.
+
 ## 8 · Verbleibende Risiken
 
 | # | Risiko | Bewertung |
 |---|---|---|
-| R1 | **Kein Production-Nachweis.** Alle fachlichen Aussagen sind offline erhoben. | **Unverändert offen — das einzige verbleibende Risiko dieser Liste, das eine Handlung verlangt.** Der Nachweis wurde **nicht gestartet**, es existiert **keine gültige Startbaseline**. Der aktuelle Flagzustand ist aus einer Sitzung **nicht lesbar** und damit eine **offene Betreiberprüfung** (§7.4-Vermerk); die Aktivierung selbst verlangt seit §7.7.5 ein **neues** READY-Deployment, dessen Zeitpunkt der Aktivierungszeitpunkt ist. Verschärfend: der **Rückbau ist aus einer Agenten-Sitzung nicht ausführbar** (§7.3) — zeigt ein regulärer Lauf ein Problem, muss der Betreiber zurückrollen. |
+| R1 | **Kein bestandener Production-Nachweis.** Alle fachlichen Aussagen sind offline erhoben. | **Weiterhin offen, Stand nachgeführt 2026-08-05:** Der erste reguläre Nachweis nach §7.7.5 wurde am 2026-08-04/05 **vollständig durchgeführt** (Aktivierung = READY `dpl_4gCK…` 2026-08-04 18:23:57.472 UTC, Commit `2e4e00e9…`; Startbaseline gültig, 65 s nach READY) und endete **`nicht_bestanden` (Exit 1, 7 Befunde)** — Ablauf und Commitnachweis aus §7.7.5 haben funktioniert, gescheitert ist der Lauf-/Fairnessvertrag (Blob-Verdrängung durch den Watchdog-Störlauf/D-2 · Mandatsmenge im Fenster verändert (`max-mustermann` zwischenzeitlich reaktiviert — offene Betreiberklärung) · Mandatsläufe fehlen · Budget +313 ms überzogen · Rückstand nicht dauerhaft vorgemerkt · Kontextzahl 15 unerklärt). Details: `CURRENT_STATE.md` 2026-08-05 (11. Durchgang), Restliste OP-25-Nachtrag 2026-08-05, `belege/op25-auswertung-2026-08-05.log`. Die frühere offene Flagprüfung (§7.4-Vermerk) ist damit **wirkungsseitig beantwortet**: die vier Fensterläufe belegen `HELMUT_CRON_GLOBALABRUF=on` auf `2e4e00e9…`. **Nachtrag 2026-08-05/2:** Der Betreiber hat das Flag nach dem gescheiterten Nachweis auf `off` gestellt und neu deployt (Betreiberangabe; es läuft wieder der Altpfad). **Zwei Aussagen dieser Zeile sind durch die Ursachenanalyse §7.7.6 widerlegt:** „Mandatsläufe fehlen" (alle 6 Projektionen liefen und sind belegt — Zuordnungsfehler des Bewertungskerns) und „`max-mustermann` zwischenzeitlich reaktiviert" (kein Toggle; zwei divergierende Mandatswahrheiten Blob vs. relational). Maßgeblich: **§7.7.6**. Der Nachweis **beginnt von vorn**, erst nach den dort gelisteten Korrekturen K1–K8. |
 | R2 | **Die Fallfamilien sind konstruiert.** Wie oft die Muster real auftreten, ist unbekannt. | Bewusst so (Auftrag Phase 4). Die Gleichheit mit dem heutigen Pfad gilt unabhängig von der Häufigkeit. |
 | R3 | **Bestandsbefund F10/Z2** — Formularvokabular verschmilzt auch heute falsch. | Nicht durch K2.1 verursacht und nicht durch K2.1 verschlimmert. Eigener Sprint, freigabepflichtig. |
 | R4 | **Reihenfolgeempfindlichkeit** des strengen Regimes (F3, F7, F13). | Bestand, unverändert. K2.1 ist nicht empfindlicher als heute (4.4b). |

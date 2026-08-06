@@ -585,7 +585,68 @@ Härtungs-Sprints (kein pauschales „betriebsreif", Begründung dort).
 
 ---
 
-_Letzte Aktualisierung: 2026-07-18 nach den Härtungs-Beweisläufen (§8).
+## 9 · OP-25-Betreiberschritte K2/K3 (2026-08-06): relationale Deaktivierung `max-mustermann` + Aufbewahrung 36
+
+Ausgeführt nach Merge von **PR #229** (Korrektursprint K1–K8, Merge-Commit
+`f4f4500b1fa46108f607d2e3eb16f2416f6c7325`, Production-Deployment
+`dpl_9hcvNVbYhDQFEqBpcG79cD8w5bqm` READY 2026-08-06T01:24:44.682Z) und nach
+erfolgreicher rein lesender Production-Vorprüfung (drei Mandatssichten, K2-Gate,
+Retention-Gate). Freigebender Betreiber: `ernisch`; technische Ausführung der
+Datenbankaktion durch die beauftragte Claude-Code-Sitzung über den autorisierten
+Supabase-Verwaltungszugang. **Kein OP-25-Nachweis gestartet, keine Baseline erzeugt.**
+
+**9.1 · Vercel-Betreiberaktion (Sichtprüfung, keine API-Einsicht).** Der Betreiber hat
+per direkter Sichtprüfung in Vercel bestätigt: `HELMUT_CRON_GLOBALABRUF=off` (unverändert)
+und `HELMUT_CRAWL_RUN_RETENTION=36` (neu, ausschließlich Production; zuvor griff der
+Code-Default 20 — der `main`-Blob hielt exakt 20 Laufzeilen). Anschließend Redeploy vom
+aktuellen `main`-Stand: **`dpl_3y5nBCiQtHnUnVuqh1SFr2X2ranu`** (Redeploy von
+`dpl_9hcv…`), Commit `f4f4500b1fa46108f607d2e3eb16f2416f6c7325`, Target `production`,
+**READY 2026-08-06T07:50:22.777Z**, Alias `helmut-pilot.vercel.app`. Aus der
+Claude-Sitzung sind die Env-Werte wegen der Egress-Sperre (`api.vercel.com`,
+CONNECT → 403) **nicht** über die Vercel-API lesbar — die Werte sind
+Betreiberbestätigung; Deployment-Metadaten (ID, Commit, Status, Ready, Alias) wurden
+unabhängig über den Vercel-MCP-Lesezugang gemessen.
+
+**9.2 · Relationale Deaktivierung (genau eine Zeile, kein Löschen).**
+Zeitpunkt: **2026-08-06T08:01:31.744589Z**. Konditionales Update mit Rückgabe:
+
+```sql
+update mandate_profiles
+set aktiv = false, updated_at = now()
+where user_id = 'max-mustermann' and aktiv = true and geloescht_at is null
+returning user_id, aktiv, geloescht_at, updated_at;
+```
+
+Rückgabe: **exakt 1 Zeile** (`max-mustermann`, `aktiv=false`, `geloescht_at=null`).
+Kein `DELETE`; der Datensatz bleibt vollständig erhalten (Produktentscheidung: niemals
+löschen). Vorprüfung unmittelbar davor: genau 1 Zeile, `aktiv=true`, `geloescht_at=null`
+(unverändert seit 2026-07-20T23:42:31Z).
+
+**9.3 · Mandatsmengen und Signaturen (gemessen).**
+- Vorher: **6** aktive relational (`annika-klose, cem-ince, helmut-kleebank,
+  max-mustermann, ottilie-paola-klein-2, ruppert-st-we`) = **`m6-4705b9f9aac98cd4`**;
+  Blob-Sicht 5.
+- Nachher: **5** aktive (`annika-klose, cem-ince, helmut-kleebank,
+  ottilie-paola-klein-2, ruppert-st-we`) = **`m5-9aee228dbf2c9f13`** — identisch in
+  allen drei Sichten (relationale DB per SQL, Laufzeitprojektion per purer
+  Merge-Projektion, korrigiertes Nachweiswerkzeug per gemeinsamer
+  `relationalesProfilLebenszyklus`-Projektion) **und** in der Blob-Vergleichssicht.
+- **K2-Gate:** `pruefeMandatsWahrheit` mit den Nachher-Mengen → **keine Befunde**
+  (der Widerspruch relational 6 ≠ Blob 5 ist aufgelöst).
+- **K3:** Mindestbedarf bei n=5 = (3 Regel-Slots + 1 Watchdog-Slot) × 6 + Puffer 6 =
+  **30** ≤ 36; Knapp-Warnungs-Schwelle = Mindest + Datensätze je Lauf = 30 + 6 = 36 ⇒
+  mit 36 **keine Knapp-Warnung** (36 ist der kleinste warnungsfreie Wert).
+
+**9.4 · Nicht geschehen.** Keine Baseline, kein neuer OP-25-Nachweis, kein
+Beobachtungsfenster, kein manuell ausgelöster Crawl/Cron/Pipeline-Lauf/Watchdog, keine
+weitere Env-/Flag-Änderung, kein weiteres Deployment, keine Änderung an Benutzerkonten
+oder anderen Mandaten; Berlin, Brandenburg und M8 unverändert deaktiviert. Der neue
+Nachweis nach §7.7.5 benötigt eine **separate Startfreigabe**.
+
+---
+
+_Letzte Aktualisierung: 2026-08-06 (§9, OP-25-Betreiberschritte K2/K3). Davor:
+2026-07-18 nach den Härtungs-Beweisläufen (§8).
 Befunde: B1 (Ursache belegt, Härtung deployt und in 3 Läufen gesund beobachtet),
 B2 (Rückstand, erste natürliche Auflösung `vg-einkommensteuer`), B3 (Quellenzahl
 mandatsabhängig; Invariante Zeilen = distinct source_id, live bestätigt),
