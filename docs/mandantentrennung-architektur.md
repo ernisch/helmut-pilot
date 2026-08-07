@@ -94,3 +94,25 @@ existiert (`pruefeKontenVorbedingung`; Beweis:
 Abgeordneten-Konto je Mandat (`accounts.updateUser`, 409 bei Dublette). Der
 aktuelle Production-Wert von `HELMUT_AUTH_MODE` ist aus Claude-Sitzungen nicht
 lesbar — die Verifikation ist ein Betreiberschritt vor der Freigabe.
+
+### Grenzen dieser Härtung (unabhängiges Review 2026-08-07, PR #231)
+
+Damit kein falsches Grün entsteht, ausdrücklich:
+
+- **Die Konten-Vorbedingung schützt nur den Provisionierungsweg**
+  (`provisionTenant`, aufgerufen ausschließlich vom CLI `scripts/provision-tenant.js`;
+  kein HTTP-Weg). Sie schließt **nicht** die laufende Legacy-Cross-Tenant-Lücke:
+  `tenant-context.resolveActiveTenant` akzeptiert weiterhin jede vom Client
+  benannte **aktive** Mandats-ID — diese Datei ist von PR #231 unberührt. Erst der
+  Betreiberschritt „`HELMUT_AUTH_MODE=accounts` in Production" macht den Laufzeitpfad
+  mandantensicher; der PR bereitet das vor, erzwingt es aber nicht.
+- **Die 409-Eindeutigkeit ist ein App-Guard, nicht race-sicher.** Sie ist ein
+  nicht-atomares Read-Modify-Write auf dem Last-Write-Wins-Auth-Store (kein
+  Compare-and-Set, `storage.writeAuthStore`). Zwei gleichzeitige Admin-`PATCH`
+  auf getrennten Serverless-Instanzen können beide gegen denselben Altstand prüfen
+  und beide schreiben → zwei Abgeordneten-Konten auf **demselben** Mandat (rein
+  intra-mandantlich: `politicianId` **ist** die Mandats-ID; die Cross-Tenant-Guards
+  bleiben unberührt). Eine race-sichere Garantie „genau ein Konto je Mandat" braucht
+  eine **DB-`UNIQUE`-Bedingung auf `politicianId`** (Migration) — das ist Teil der
+  offenen Grundsatzentscheidung OP-03(c), nicht dieses PRs. Der App-Guard bleibt
+  trotzdem eine echte Verbesserung gegenüber `main` (dort gab es gar keine Prüfung).

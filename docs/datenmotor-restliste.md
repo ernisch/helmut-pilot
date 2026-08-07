@@ -223,6 +223,23 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   `provision-tenant-test.js`), Production-Probelauf bleibt freigabepflichtig; (e) **neu:**
   Betreiber-Verifikation, dass Production `HELMUT_AUTH_MODE=accounts` fährt (aus Claude-Sitzungen
   nicht lesbar, §3 CURRENT_STATE) — verbindliche Vorbedingung vor dem Zweitmandanten.
+- **Unabhängiges Sicherheitsreview PR #231 (2026-08-07):** Diff gegen `main`-Kopf `d8bf68f`
+  geprüft (Branch basiert exakt darauf). Ergebnis: **beide Codeänderungen sind korrekte,
+  eng begrenzte fail-closed-Härtungen, kein neuer Cross-Tenant-Defekt, Netto-Verbesserung.**
+  Tests eigenständig unter bereinigter Env reproduziert: Offline **208/208**, `op03-mehrmandanten`
+  **43/43**, Browser-Smoke **32/32** (Hinweis: die deklarierte Dev-Dependency `ical.js@2.2.1`
+  fehlte in der Cloud-Sitzung → `kalender-ics-test.js` scheiterte **identisch auf `main`**, kein
+  OP-03-Bezug; nach lokaler Installation grün). **Zwei verbleibende Low-Restlücken (beide
+  Herkunft `main`, keine Merge-Blocker):** (i) die 409-Eindeutigkeit ist app-seitig, **nicht
+  race-sicher** (nicht-atomares RMW auf dem Last-Write-Wins-Auth-Store, kein CAS) — rein
+  intra-mandantlich, eine race-sichere Garantie braucht eine DB-`UNIQUE`-Bedingung auf
+  `politicianId` (= Teil von (c)); (ii) das Provisionierungs-Gate keyt auf `useSupabase()`/
+  `getStorageStatus().backend` und deckt den additiven relationalen Profil-Write `saveProfileToDb`
+  (separat über `HELMUT_PROFILE_DB_MODE` gegatet) nicht mit ab — nur in einer widersprüchlichen
+  Flag-Konfiguration relevant, ohne Cross-Tenant-Wirkung, und der CLI-`refuseProductionBackend()`
+  bricht ohnehin vorher ab. Ausdrücklich: die Konten-Vorbedingung schützt **nur den CLI-Provisionierungsweg**,
+  nicht den Laufzeit-Legacy-Pfad (`tenant-context.resolveActiveTenant` unberührt) — Punkt (e) bleibt zwingend.
+  Details: [`mandantentrennung-architektur.md`](mandantentrennung-architektur.md) („Grenzen dieser Härtung").
 - **Abhängigkeiten:** OP-01 empfohlen vorher (Backups vor Migrationen); OP-04 (saubere Mandantenbasis).
 - **Risiko:** mittel — zu niedrige Limits könnten Mandanten drosseln (bewusst freigabepflichtig).
 - **Parallelisierbarkeit:** (b)–(e) untereinander sequenziell sinnvoll; als Paket parallel zu OP-05…OP-10.
