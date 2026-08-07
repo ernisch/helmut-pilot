@@ -680,6 +680,34 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   neuen Abnahmekriterien: kanonisch
   [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.6**. Production
   unverändert (nur GET/SELECT, 0 KI); Flag laut Betreiber inzwischen `off` + Redeploy.
+- **Nachtrag 2026-08-07 (zweiter regulärer Nachweis 2026-08-06/07 — `blockiert`, Exit 2,
+  genau 1 Befund; alle Betriebskriterien erstmals grün):** Beide Betreiberschritte wurden am
+  2026-08-06 ausgeführt (relationale Deaktivierung `max-mustermann` 08:01:31 UTC, 1 Zeile,
+  kein Delete; Retention **36** + Redeploy — Beweisprotokoll §9). Fenster: Aktivierung READY
+  `dpl_DJCLHxHjKkM3sgCbLB99Vqf6C92c` (Commit `d8bf68fa…`) 2026-08-06T16:24:42.320Z → +24 h;
+  Baseline 44 s nach READY (`belege/op25-startbaseline-2026-08-06-neustart.json`, SHA256
+  `3b781764…`, m5-9aee228dbf2c9f13); Schutzfenster gehalten (kein Merge/Deployment/
+  Mandatswechsel/manueller Lauf). Auswertung unmittelbar nach Fensterende
+  (2026-08-07T16:35 UTC, `belege/op25-auswertung-2026-08-07.log`): **`blockiert` (Exit 2)**
+  mit genau **einem** Befund `kosten-nicht-bepreisbar` — 1 von 72 Nutzungseinträgen
+  (2026-08-07T12:37:40.812Z, interaktive Nutzung, `politicianId=angela-merkel`,
+  `model/estimatedCost="unknown"`) trägt keinen brauchbaren Kostenwert; die 71 bepreisten
+  summieren 0,1908 USD (Rahmen 2 USD). **Erstmals grün:** 3/3 Läufe vollständig + im Budget
+  versiegelt · Commitnachweis (alle Läufe `d8bf68fa…`) · Mandatsmenge konstant m5 auf allen
+  Ebenen · K1-Bindung · **E3 `nv=0` in allen drei Läufen** · Kontextzahl 13 erklärt · kein
+  Watchdog-Ersatzlauf (K7) · Retention 36 wirksam (36 Blob-Zeilen, Bedarf 30). Einordnung:
+  **`nicht_pruefbar`** — kein Kriterium nachweislich verletzt, Kostenvollständigkeit nicht
+  belegt. Kanonisch: §7.7.8. **Befundsprint 2026-08-07/2 (Ursache behoben, lokal):** der
+  Blocker war ein **Budget-Skip-Marker ohne KI-Aufruf** (`skipped-lage-narrativ`,
+  `budget-check-failed-closed`; interaktive Nutzung des Kontos von `angela-merkel` —
+  dokumentierte Trennung Konto ↔ Mandat, keine Zugriffslücke). Fix zentral in
+  `buildLlmUsageRecord`: explizit gekennzeichnete Nicht-Aufrufe (`keinAufruf: true`, ohne
+  Token-Angabe) speichern estimatedCost **0** (Zahl) + Modell-Marker; unbekannte Modelle /
+  echte Aufrufe ohne usage bleiben ehrlich blockierend, Kostenvertrag unverändert,
+  historischer Eintrag unangetastet. Tests: neue Suite `llm-nutzungsprotokoll-test.js`
+  27/27 · Vertrag 271/271 · Kostenmessung 128/128 · Offline 193/208 (baseline-identisch).
+  Nächster Schritt: Paket committen/PR → Merge (= Deployment) → neues Fenster von vorn
+  (§7.7.5). **OP-25 bleibt TEILWEISE ABGESCHLOSSEN.**
 - **Nachtrag 2026-08-05/3 (Korrektursprint K1–K8 — Repo-Umsetzung vollständig, Production-
   Schritte offen):** Alle acht Korrekturen aus §7.7.6 sind umgesetzt und grün geprüft —
   **K1** Bindung über `globalLaufId` (+ Fixture-Härtung, echtes Scheduler-Laufpaar in
