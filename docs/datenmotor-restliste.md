@@ -706,8 +706,9 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   echte Aufrufe ohne usage bleiben ehrlich blockierend, Kostenvertrag unverändert,
   historischer Eintrag unangetastet. Tests: neue Suite `llm-nutzungsprotokoll-test.js`
   27/27 · Vertrag 271/271 · Kostenmessung 128/128 · Offline 193/208 (baseline-identisch).
-  Nächster Schritt: Paket committen/PR → Merge (= Deployment) → neues Fenster von vorn
-  (§7.7.5). **OP-25 bleibt TEILWEISE ABGESCHLOSSEN.**
+  Veröffentlicht als **PR #232** (Commit `0716a4e` + Review-Härtung, CI grün, Suite
+  38/38); nach Merge (= Deployment) neues Fenster von vorn (§7.7.5); das alte Fenster
+  bleibt `nicht_pruefbar`. **OP-25 bleibt TEILWEISE ABGESCHLOSSEN.**
 - **Nachtrag 2026-08-05/3 (Korrektursprint K1–K8 — Repo-Umsetzung vollständig, Production-
   Schritte offen):** Alle acht Korrekturen aus §7.7.6 sind umgesetzt und grün geprüft —
   **K1** Bindung über `globalLaufId` (+ Fixture-Härtung, echtes Scheduler-Laufpaar in

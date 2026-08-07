@@ -173,12 +173,15 @@ damit nur noch durch die **separate Startfreigabe** blockiert (§9/§11).
   36 wirksam. Blocker: **1 von 72** Nutzungseinträgen (interaktiv, 07.08. 12:37 UTC,
   `angela-merkel`, `model/estimatedCost="unknown"`) ohne brauchbaren Kostenwert —
   Kostenvollständigkeit fail closed nicht belegbar. Kanonisch **§7.7.8**; Beleg
-  `belege/op25-auswertung-2026-08-07.log` (lokal). **Ursache im Befundsprint 2026-08-07/2
-  geklärt und lokal behoben:** der Eintrag war ein Budget-Skip-Marker **ohne KI-Aufruf**
-  (`skipped-lage-narrativ`, `budget-check-failed-closed`; interaktive Nutzung des Kontos
-  des cron-deaktivierten `angela-merkel` — dokumentierte Trennung Konto ↔ Mandat, keine
-  Zugriffslücke). Fix: `keinAufruf: true`-Kennzeichnung ⇒ estimatedCost 0 (Zahl); alles
-  andere unverändert streng. Tests 27/27 neu · Offline 193/208 baseline-identisch.
+  `belege/op25-auswertung-2026-08-07.log`. **Ursache im Befundsprint 2026-08-07/2 geklärt
+  und behoben — committed und über PR #232 veröffentlicht** (Commit `0716a4e` +
+  Review-Härtungscommit; CI-Pflichtchecks grün, Preview READY): der Eintrag war ein
+  Budget-Skip-Marker **ohne KI-Aufruf** (`skipped-lage-narrativ`,
+  `budget-check-failed-closed`; interaktive Nutzung des Kontos des cron-deaktivierten
+  `angela-merkel` — dokumentierte Trennung Konto ↔ Mandat, keine Zugriffslücke). Fix:
+  `keinAufruf`-Kennzeichnung mit fünf harten Invarianten ⇒ estimatedCost 0 (Zahl); alles
+  andere unverändert streng. Der Fix ist **noch nicht in Production nachgewiesen** —
+  wirksam erst nach Merge (= Deployment). Das alte Fenster bleibt `nicht_pruefbar`.
 - **F-E2E** (nichtdeterministische E2E-Rangfolge im CI, belegt 2026-08-04) — Ursache offen;
   PR #224 (Draft) liegt vor, nicht abgenommen.
 - **29B** — wartet auf natürlich auftretende Fehlerzustände (künstliche Fehler verboten).
@@ -212,15 +215,17 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-Das zweite Nachweisfenster ist ausgewertet (`blockiert`, §7.7.8); der Befundsprint zur
-Kostenlücke ist erledigt (Fix + Tests lokal, §7.7.8). Reihenfolge jetzt:
+Das zweite Nachweisfenster ist ausgewertet (`blockiert`, §7.7.8); das Korrekturpaket zur
+Kostenlücke ist **committed und über PR #232 veröffentlicht** (CI + Preview gelaufen).
+Reihenfolge jetzt (übergangssicher):
 
-1. **Betreiber-Review des lokalen Pakets** (Fix + neue Suite + Doku), dann Commit + PR
-   durch ausdrücklichen Auftrag; Merge = Deployment mit dem Fix.
-2. Danach **neuer §7.7.5-Nachweis von vorn**: das Merge-READY (oder ein späteres
-   Redeploy) ist der Aktivierungszeitpunkt, Baseline binnen 15 min; keine Mandatsänderung
-   seit dem letzten globalen Lauf ⇒ K2-Gate offen. `HELMUT_CRON_GLOBALABRUF` bis dahin
-   unverändert `on` lassen. Ohne ausdrücklichen Auftrag wird nichts gestartet.
+1. Solange PR #232 **offen** ist: Review + Merge-Entscheidung (Betreiber; Merge =
+   Production-Deployment mit dem Fix).
+2. Sobald der Fix in `main` und das Production-Deployment READY ist: **Startbaseline
+   binnen 15 min** nach READY, dann vollständig **neues 24-h-Fenster** nach §7.7.5;
+   keine Mandatsänderung seit dem letzten globalen Lauf ⇒ K2-Gate offen.
+   `HELMUT_CRON_GLOBALABRUF` bis dahin unverändert `on` lassen. Ohne ausdrücklichen
+   Auftrag wird nichts gestartet.
 
 Parallel und unabhängig: **OP-01-Entscheidung** (Pro + PITR); **OP-11** Branch Protection
 verifizieren (2 Minuten); Empfehlung zu **#218** umsetzen (schließen).
@@ -266,7 +271,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-07 | **OP-25 Befundsprint Kostenlücke** (nach der Fensterauswertung): Ursache reproduziert (Budget-Skip-Marker ohne KI-Aufruf, 5 Stellen), kleinste sichere Korrektur (`keinAufruf`-Kennzeichnung ⇒ estimatedCost 0, zentral in `buildLlmUsageRecord`), neue Suite `llm-nutzungsprotokoll-test.js` 27/27, Offline 193/208 baseline-identisch; Kostenvertrag + historischer Eintrag unverändert | **erfolgreich** (lokal; Commit/PR nach Betreiber-Review) |
+| 2026-08-07 | **OP-25 Befundsprint Kostenlücke** (nach der Fensterauswertung): Ursache reproduziert (Budget-Skip-Marker ohne KI-Aufruf, 5 Stellen), kleinste sichere Korrektur (`keinAufruf`-Kennzeichnung mit 5 Invarianten ⇒ estimatedCost 0, zentral in `buildLlmUsageRecord`), Suite `llm-nutzungsprotokoll-test.js` 38/38, Offline baseline-identisch; Kostenvertrag + historischer Eintrag unverändert; **veröffentlicht als PR #232** (Commit `0716a4e` + Review-Härtung, CI-Pflichtchecks grün) | **erfolgreich** (Merge = Betreiberentscheidung; Fix noch nicht Production-nachgewiesen) |
 | 2026-08-07 | **OP-25 zweites Nachweisfenster + Auswertung**: Aktivierung `dpl_DJCLHxHjKkM3sgCbLB99Vqf6C92c` (`d8bf68fa…`) 16:24:42Z am 06.08., Baseline +44 s (SHA256 `3b781764…`), Schutzfenster gehalten, Auswertung unmittelbar nach Fensterende → **`blockiert`** (Exit 2, genau 1 Befund `kosten-nicht-bepreisbar`); alle Betriebskriterien erstmals grün, E3 `nv=0` in allen 3 Läufen | **teilweise** (Nachweis `nicht_pruefbar`; Doku nur lokal, kein Commit — Betreiberentscheidung zur Kostenlücke aussteht) |
 | 2026-08-06 | **OP-25-Betreiberschritte K2/K3** nach Merge PR #229 (`f4f4500b`): Vorprüfung rein lesend; `max-mustermann` relational deaktiviert (konditionales Update, 1 Zeile, 08:01:31Z, kein Delete); Retention 36 + Betreiber-Redeploy `dpl_3y5n…` READY 07:50:22Z; alle drei Sichten + Blob `m5-9aee228dbf2c9f13`, K2-Gate widerspruchsfrei; Doku-Korrekturen (Belegdatei §6 `user_id`, Env-Inventar) | **erfolgreich** (Nachweisstart bleibt separat freigabepflichtig; kein Lauf, keine Baseline) |
 | 2026-08-05 | **Korrektursprint K1–K8** (PR #229, Branch `claude/op25-corrections-k1-k8-kc1tdw`): alle acht Korrekturen umgesetzt + getestet; Beleg [`betrieb/op25-korrektursprint-2026-08-05.md`](betrieb/op25-korrektursprint-2026-08-05.md) | **teilweise** (Code vollständig + grün; Review/Merge + 2 Betreiberschritte + Production-Nachweis offen) — **Merge + Betreiberschritte am 2026-08-06 erfolgt** |

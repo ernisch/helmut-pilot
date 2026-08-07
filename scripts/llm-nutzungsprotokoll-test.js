@@ -10,11 +10,12 @@
 // OP-25-Kostenvertrag (`kostenAusNutzung`) kann einen so gespeicherten NICHT-Aufruf nicht
 // von einem unbepreisbaren ECHTEN Aufruf unterscheiden.
 //
-// Fix (kleinste sichere Korrektur, zentral in buildLlmUsageRecord):
-//   * Ein Aufrufer kennzeichnet einen NICHT ausgeführten Aufruf ausdrücklich mit
-//     `keinAufruf: true`. Nur dann — und nur OHNE jede Token-Angabe — wird der Eintrag
-//     als technisch belegt kostenfrei gespeichert: estimatedCost = 0 (Zahl), Token = 0,
-//     model = übergebener Marker oder "kein-aufruf", Audit-Feld `keinAufruf: true`.
+// Fix (kleinste sichere Korrektur, zentral in buildLlmUsageRecord; Invarianten nach
+// Review-Härtung PR #232, Befund 1):
+//   * Kostenfrei NUR wenn ALLE Bedingungen zusammen gelten: `keinAufruf: true` UND
+//     `success === false` UND `callType` mit Präfix `skipped-` UND kein echtes Modell
+//     (fehlend/"none"/"kein-aufruf") UND keinerlei Token-Angaben. Dann: estimatedCost
+//     = 0 (Zahl), Token = 0, model = Marker, Audit-Feld `keinAufruf: true`.
 //   * Alles andere bleibt byte-identisch: echte Aufrufe ohne usage-Block oder mit
 //     unbekanntem Modell bleiben der ehrliche Fehlerzustand "unknown" (der Vertrag
 //     blockiert dann zu Recht); ein unbekanntes Modell wird NIE still mit 0 bewertet.
@@ -129,6 +130,41 @@ const aktive = tenantContext.aktiveMandateAusRelationalenZeilen(zeilen);
 check("10.1 Deaktiviertes Mandat ist aus der Cron-Auflösung ausgeschlossen", Array.isArray(aktive) && !aktive.includes("angela-merkel") && aktive.includes("cem-ince"), JSON.stringify(aktive));
 check("10.2 Deaktivierung ist kein Löschen (Lebenszyklus-Projektion liefert die Zeile mit profileActive=false)",
   (() => { const l = tenantContext.relationalesProfilLebenszyklus(zeilen[0]); return l && l.profileActive === false; })());
+
+// --- 11 · Adversariale Härtung (Review PR #232, Befund 1): Widersprüche fallen ehrlich ---
+// Ein falsch gekennzeichneter ECHTER Aufruf darf unter keiner Kombination still mit 0
+// gespeichert werden. Jeder Verstoß gegen eine der fünf Invarianten => "unknown"-Pfad,
+// kein Audit-Feld, nie 0.
+const advFrei = (r) => r.estimatedCost === 0 || ("keinAufruf" in r);
+const adv1 = bau({ callType: "skipped-x", keinAufruf: true, success: true });
+check("11.1 keinAufruf + success:true ist NICHT kostenfrei", !advFrei(adv1) && adv1.estimatedCost === "unknown", JSON.stringify(adv1.estimatedCost));
+const adv2 = bau({ callType: "understanding", keinAufruf: true, success: false });
+check("11.2 keinAufruf + normaler callType ist NICHT kostenfrei", !advFrei(adv2) && adv2.estimatedCost === "unknown");
+const adv2b = bau({ keinAufruf: true, success: false });
+check("11.2b keinAufruf ohne callType ist NICHT kostenfrei", !advFrei(adv2b));
+const adv3 = bau({ callType: "skipped-x", model: "gpt-5-mini", keinAufruf: true, success: false });
+check("11.3 keinAufruf + echter Modellname ist NICHT kostenfrei (Modell bleibt ehrlich erhalten)",
+  !advFrei(adv3) && adv3.model === "gpt-5-mini" && adv3.estimatedCost === "unknown");
+const adv4 = bau({ callType: "skipped-x", keinAufruf: true, success: false, usage: { input_tokens: 10, output_tokens: 5 } });
+check("11.4 keinAufruf + Token-Angaben ist NICHT kostenfrei", !advFrei(adv4));
+// 11.5 Alle fünf vorgesehenen Skip-Stellen bleiben in ihrer ECHTEN Aufrufform kostenfrei:
+const stellen = [
+  ["lage.js skipped-lage-narrativ", { callType: "skipped-lage-narrativ", politicianId: "m", keinAufruf: true, success: false, error: "budget-check-failed-closed" }],
+  ["ai.js skipped-communicationDraft", { callType: "skipped-communicationDraft", politicianId: "m", keinAufruf: true, success: false, error: "budget" }],
+  ["ai.js skipped-parliamentAssessment", { callType: "skipped-parliamentAssessment", politicianId: "m", keinAufruf: true, success: false, error: "budget" }],
+  ["ai.js Budget-Choke-Point", { callType: "skipped-understanding", model: "none", keinAufruf: true, success: false, error: "daily-llm-budget-reached" }],
+  ["understanding.js logSkip", { callType: "skipped-understanding-budget", model: "none", politicianId: null, keinAufruf: true, success: false, runId: "r1" }]
+];
+for (const [name, form] of stellen) {
+  const r = bau(form);
+  check(`11.5 Skip-Stelle bleibt kostenfrei: ${name}`,
+    r.estimatedCost === 0 && r.keinAufruf === true && typeof r.estimatedCost === "number",
+    JSON.stringify({ model: r.model, estimatedCost: r.estimatedCost }));
+}
+// 11.6 Echte unbekannte Kosten blockieren weiterhin (Gegenprobe nach der Härtung):
+const adv6 = vertrag.kostenAusNutzung({ authStore: { llmUsage: [{ ...bau({ callType: "understanding", model: "super-neu-9000", usage: { input_tokens: 5, output_tokens: 5 }, success: true }), createdAt: "2026-08-07T12:00:00.000Z" }] }, vonMs: fensterVon, bisMs: fensterBis, rahmenUsd: 2 });
+check("11.6 Echter Aufruf mit unbekanntem Modell blockiert weiterhin",
+  adv6.unbepreisteEintraege === 1 && vertrag.pruefeKosten(adv6).some((b) => b.grund === "kosten-nicht-bepreisbar"));
 
 console.log(`\n${pass} PASS, ${fail} FAIL`);
 if (fail > 0) process.exit(1);

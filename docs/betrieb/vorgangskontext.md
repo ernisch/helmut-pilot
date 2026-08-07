@@ -1378,8 +1378,12 @@ das alte Fenster korrekt `nicht_pruefbar` (testgesichert). Tests:
 `scripts/llm-nutzungsprotokoll-test.js` **27/27** (Repro, Fix, „nie still 0",
 Widerspruchsschutz, Statusvertrag deaktivierter Mandate) · Vertrag 271/271 ·
 Kostenmessung 128/128 · Offline-Suite 193/208 (Fehlschlagmenge baseline-identisch).
-Nächster Schritt: Paket committen/PR (Betreiber), Merge (= Deployment mit Fix), dann
-neues §7.7.5-Fenster von vorn — `HELMUT_CRON_GLOBALABRUF` bis dahin unverändert lassen.
+Veröffentlicht als **PR #232** (Commit `0716a4e`; Review-Härtung der
+Kostenfrei-Invarianten — `keinAufruf` nur mit `success:false` + `skipped-`-Präfix +
+ohne echtes Modell + ohne Token — als Folgecommit; CI-Pflichtchecks grün, Suite 38/38).
+Nach Merge (= Production-Deployment mit dem Fix) folgt das neue §7.7.5-Fenster von vorn
+(Baseline binnen 15 min nach READY) — `HELMUT_CRON_GLOBALABRUF` bis dahin unverändert
+lassen. Das alte Fenster bleibt `nicht_pruefbar`.
 
 ## 8 · Verbleibende Risiken
 
