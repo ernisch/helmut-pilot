@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-06** (nach Merge PR #229 und den OP-25-Betreiberschritten K2/K3, Beweisprotokoll §9). Diese Datei enthält
+**Stand: 2026-08-07** (nach dem zweiten OP-25-Nachweisfenster 2026-08-06/07 — Auswertung `blockiert`, genau 1 Befund; kanonisch §7.7.8). Diese Datei enthält
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -96,7 +96,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 | Funktion | Zustand |
 |---|---|
-| **`HELMUT_CRON_GLOBALABRUF`** | **`off`** — 2026-08-06 per **Betreiber-Sichtprüfung in Vercel direkt bestätigt** (aus Sitzungen nicht API-lesbar, §3) ⇒ es läuft der **Altpfad**. Zweiter Zyklus war `on` von READY 2026-08-04 18:23:57 UTC bis zum Rückbau; Wirkung im Fenster lesend belegt |
+| **`HELMUT_CRON_GLOBALABRUF`** | **`on`** seit 2026-08-06 ~08:15 UTC (Betreiber-Sichtprüfung, für das Nachweisfenster) ⇒ **Kontextpfad aktiv** — laufzeitbelegt: die drei Fensterläufe 06./07.08. liefen global auf `d8bf68fa…` mit E3 `nv=0`. Ob das Flag nach dem ausgewerteten Fenster `on` bleibt, ist Betreiberentscheidung (das nächste Fenster braucht ohnehin ein neues Deployment). Dritter Zyklus; zweiter war `on` 2026-08-04 18:23 → Rückbau 2026-08-05 |
 | **Berlin (Landesmodul)** | inaktiv. `HELMUT_LANDESMODULE=berlin` seit 2026-07-26 gesetzt, aber **wirkungslos**: 0 berechtigte Berliner Mandate seit dem Rollback ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22). Ob das Flag wirkt, ist **unbewiesen** |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt); PR #132 vor Merge Gate-Name vereinheitlichen |
 | **M8 / `HELMUT_MATCHING_RELEVANZ_GATE`** | aus (Default aus, nie aktiviert) |
@@ -164,14 +164,24 @@ damit nur noch durch die **separate Startfreigabe** blockiert (§9/§11).
 
 ## 9 · Ausstehende Production-Nachweise
 
-- **OP-25-Nachweis nach §7.7.5 — beginnt von vorn; alle Vorbedingungen sind seit
-  2026-08-06 erfüllt** (PR #229 gemergt; K2: eine 5er-Mandatswahrheit
-  `m5-9aee228dbf2c9f13`; K3: Retention 36). Es fehlt **ausschließlich die separate
-  Startfreigabe** (Flag `on` → neues Deployment → Baseline binnen 15 min mit vollem
-  Commit → 24 h ohne weiteres Deployment → Auswertung unmittelbar danach). Die
-  Abnahmekriterien aus §7.7.6 (Signatur-Assertion, harter Aufbewahrungsvertrag inkl.
-  Watchdog, echtes Laufpaar, E3 `nichtVorgemerkt = 0`, Versiegelungstoleranz 1 s) sind
-  Code und prüfen den Start technisch (§7.7.7).
+- **OP-25-Nachweis nach §7.7.5 — zweites Fenster 2026-08-06/07 durchgeführt und
+  unmittelbar ausgewertet: `blockiert` (Exit 2, genau 1 Befund `kosten-nicht-bepreisbar`;
+  Kategorie `nicht_pruefbar`).** Alle Betriebskriterien waren **erstmals grün**: 3/3
+  erwartete Läufe vollständig und im Budget versiegelt, Commitnachweis (alle Läufe
+  `d8bf68fa…`), Mandatsmenge konstant m5 auf allen Ebenen, K1-Bindung, **E3 `nv=0` in
+  allen drei Läufen**, Kontextzahl 13 erklärt, kein Watchdog-Ersatzlauf (K7), Retention
+  36 wirksam. Blocker: **1 von 72** Nutzungseinträgen (interaktiv, 07.08. 12:37 UTC,
+  `angela-merkel`, `model/estimatedCost="unknown"`) ohne brauchbaren Kostenwert —
+  Kostenvollständigkeit fail closed nicht belegbar. Kanonisch **§7.7.8**; Beleg
+  `belege/op25-auswertung-2026-08-07.log`. **Ursache im Befundsprint 2026-08-07/2 geklärt
+  und behoben — committed und über PR #232 veröffentlicht** (Commit `0716a4e` +
+  Review-Härtungscommit; CI-Pflichtchecks grün, Preview READY): der Eintrag war ein
+  Budget-Skip-Marker **ohne KI-Aufruf** (`skipped-lage-narrativ`,
+  `budget-check-failed-closed`; interaktive Nutzung des Kontos des cron-deaktivierten
+  `angela-merkel` — dokumentierte Trennung Konto ↔ Mandat, keine Zugriffslücke). Fix:
+  `keinAufruf`-Kennzeichnung mit fünf harten Invarianten ⇒ estimatedCost 0 (Zahl); alles
+  andere unverändert streng. Der Fix ist **noch nicht in Production nachgewiesen** —
+  wirksam erst nach Merge (= Deployment). Das alte Fenster bleibt `nicht_pruefbar`.
 - **F-E2E** (nichtdeterministische E2E-Rangfolge im CI, belegt 2026-08-04) — Ursache offen;
   PR #224 (Draft) liegt vor, nicht abgenommen.
 - **29B** — wartet auf natürlich auftretende Fehlerzustände (künstliche Fehler verboten).
@@ -205,12 +215,17 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-PR #229 ist gemergt und beide Betreiberschritte K2/K3 sind erledigt (2026-08-06,
-Beweisprotokoll §9). **Der einzige nächste OP-25-Schritt ist die separate
-Startfreigabe für den neuen §7.7.5-Nachweis** (Flag `HELMUT_CRON_GLOBALABRUF=on` →
-neues Deployment → Startbaseline binnen 15 min mit vollem Commit → 24 h ohne weiteres
-Deployment → Auswertung unmittelbar danach). Ohne ausdrücklichen Auftrag wird nichts
-gestartet.
+Das zweite Nachweisfenster ist ausgewertet (`blockiert`, §7.7.8); das Korrekturpaket zur
+Kostenlücke ist **committed und über PR #232 veröffentlicht** (CI + Preview gelaufen).
+Reihenfolge jetzt (übergangssicher):
+
+1. Solange PR #232 **offen** ist: Review + Merge-Entscheidung (Betreiber; Merge =
+   Production-Deployment mit dem Fix).
+2. Sobald der Fix in `main` und das Production-Deployment READY ist: **Startbaseline
+   binnen 15 min** nach READY, dann vollständig **neues 24-h-Fenster** nach §7.7.5;
+   keine Mandatsänderung seit dem letzten globalen Lauf ⇒ K2-Gate offen.
+   `HELMUT_CRON_GLOBALABRUF` bis dahin unverändert `on` lassen. Ohne ausdrücklichen
+   Auftrag wird nichts gestartet.
 
 Parallel und unabhängig: **OP-01-Entscheidung** (Pro + PITR); **OP-11** Branch Protection
 verifizieren (2 Minuten); Empfehlung zu **#218** umsetzen (schließen).
@@ -256,6 +271,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
+| 2026-08-07 | **OP-25 Befundsprint Kostenlücke** (nach der Fensterauswertung): Ursache reproduziert (Budget-Skip-Marker ohne KI-Aufruf, 5 Stellen), kleinste sichere Korrektur (`keinAufruf`-Kennzeichnung mit 5 Invarianten ⇒ estimatedCost 0, zentral in `buildLlmUsageRecord`), Suite `llm-nutzungsprotokoll-test.js` 38/38, Offline baseline-identisch; Kostenvertrag + historischer Eintrag unverändert; **veröffentlicht als PR #232** (Commit `0716a4e` + Review-Härtung, CI-Pflichtchecks grün) | **erfolgreich** (Merge = Betreiberentscheidung; Fix noch nicht Production-nachgewiesen) |
+| 2026-08-07 | **OP-25 zweites Nachweisfenster + Auswertung**: Aktivierung `dpl_DJCLHxHjKkM3sgCbLB99Vqf6C92c` (`d8bf68fa…`) 16:24:42Z am 06.08., Baseline +44 s (SHA256 `3b781764…`), Schutzfenster gehalten, Auswertung unmittelbar nach Fensterende → **`blockiert`** (Exit 2, genau 1 Befund `kosten-nicht-bepreisbar`); alle Betriebskriterien erstmals grün, E3 `nv=0` in allen 3 Läufen | **teilweise** (Nachweis `nicht_pruefbar`; Doku nur lokal, kein Commit — Betreiberentscheidung zur Kostenlücke aussteht) |
 | 2026-08-06 | **OP-25-Betreiberschritte K2/K3** nach Merge PR #229 (`f4f4500b`): Vorprüfung rein lesend; `max-mustermann` relational deaktiviert (konditionales Update, 1 Zeile, 08:01:31Z, kein Delete); Retention 36 + Betreiber-Redeploy `dpl_3y5n…` READY 07:50:22Z; alle drei Sichten + Blob `m5-9aee228dbf2c9f13`, K2-Gate widerspruchsfrei; Doku-Korrekturen (Belegdatei §6 `user_id`, Env-Inventar) | **erfolgreich** (Nachweisstart bleibt separat freigabepflichtig; kein Lauf, keine Baseline) |
 | 2026-08-05 | **Korrektursprint K1–K8** (PR #229, Branch `claude/op25-corrections-k1-k8-kc1tdw`): alle acht Korrekturen umgesetzt + getestet; Beleg [`betrieb/op25-korrektursprint-2026-08-05.md`](betrieb/op25-korrektursprint-2026-08-05.md) | **teilweise** (Code vollständig + grün; Review/Merge + 2 Betreiberschritte + Production-Nachweis offen) — **Merge + Betreiberschritte am 2026-08-06 erfolgt** |
 | 2026-08-05 | **OP-25-Ursachenanalyse** des gescheiterten Nachweises (PR #227, rein lesend aus dauerhaften Belegen) | **erfolgreich**; widerlegt 2 der 7 Befunde, ordnet die übrigen ein, definiert K1–K8; OP-25 bleibt teilweise |

@@ -1319,6 +1319,72 @@ kleinste sichere Betreiberaktion für die relationale Deaktivierung von `max-mus
 **Offen bleiben die Betreiberschritte** (Deaktivierung relational, Retention-Anhebung,
 danach neuer Nachweis von vorn nach §7.7.5) — nichts davon wurde ausgeführt.
 
+### 7.7.8 Zweiter regulärer Nachweis 2026-08-06/07 — blockiert (kosten-nicht-bepreisbar), alle Betriebskriterien erstmals grün
+
+**Vorlauf (2026-08-06, Beweisprotokoll §9):** beide Betreiberschritte ausgeführt
+(relationale Deaktivierung `max-mustermann` 08:01:31 UTC, exakt 1 Zeile, kein Delete;
+`HELMUT_CRAWL_RUN_RETENTION=36` + Redeploy). Ein erster Startversuch 08:25 UTC wurde vom
+K2-Gate **korrekt** abgewiesen (`laufzeitplanung-widerspricht-mandatswahrheit`: der jüngste
+globale Lauf plante noch die 6er-Menge) — daraus folgt die **Reihenfolge-Regel**: zwischen
+Mandatsänderung und Fensterstart muss ein globaler Lauf mit der neuen Menge liegen. Der
+16:00-Lauf plante erstmals die 5er-Menge (Bilanz exakt: 995 = 116+879+0+0, `nv=0`).
+
+**Fenster:** Aktivierung = READY `dpl_DJCLHxHjKkM3sgCbLB99Vqf6C92c` (Redeploy `main`,
+Commit `d8bf68fa…`) **2026-08-06T16:24:42.320Z** → 2026-08-07T16:24:42.320Z; Startbaseline
+44 s nach READY (`belege/op25-startbaseline-2026-08-06-neustart.json`, SHA256 `3b781764…`,
+m5-9aee228dbf2c9f13). Schutzfenster gehalten: kein Merge (main unverändert `d8bf68fa`),
+kein Production-Deployment (nur Branch-Previews paralleler Arbeiten), keine Mandats-/
+Profiländerung (letzte 08:01:31Z), kein manueller Lauf, keine zweite Baseline.
+
+**Auswertung (2026-08-07T16:35:03–08 UTC, unmittelbar nach Fensterende):**
+`HELMUT_CRAWL_RUN_RETENTION=36 node scripts/op25-production-nachweis.js --aktivierung
+"2026-08-06T16:24:42.320Z" --erwarteter-commit d8bf68fa… --startbaseline belege/op25-startbaseline-2026-08-06-neustart.json`
+→ **`blockiert` (Exit 2), genau 1 Befund:** `kosten-nicht-bepreisbar`. Ursache exakt
+belegt: **ein** Nutzungseintrag von 72 im Fenster (2026-08-07T12:37:40.812Z, kein
+Cron-Zeitpunkt ⇒ interaktive Nutzung; `politicianId=angela-merkel` — deaktiviertes
+Demo-Mandat mit Benutzerkonto; `model:"unknown"`, `estimatedCost:"unknown"` als
+Zeichenkette) ist streng unbrauchbar — der Kostenvertrag meldet die Summe fail-closed als
+nicht belegbar. Die 71 bepreisten Einträge summieren 0,1908 USD (Rahmen 2 USD).
+
+**Erstmals grün (alle Betriebskriterien):** 3/3 erwartete Läufe vollständig und im
+Budget versiegelt (199,6 s · 212,3 s · 202,9 s) · Commitnachweis: alle Fensterläufe
+tragen `d8bf68fa…` · Mandatsmenge konstant m5 auf allen Ebenen inkl. Endzustand ·
+K1-Bindung der Mandatsläufe · **E3: `nv=0` in allen drei Läufen** (Kandidaten
+976/1016/916 vollständig vorgemerkt oder vorhanden) · Kontextzahl 13 durch persistierte
+Zusammensetzung erklärt · kein Watchdog-Ersatzlauf (K7-Vorprüfung griff) · Retention 36
+wirksam (36 Zeilen im Blob, Bedarf 30) · 8 benannte Warnungen (u. a. OP-14-Rückstand
+bleibt offen, fehlgeschlagene Quellen klassifiziert), keine davon wertend kaschiert.
+
+**Einordnung:** Ergebnis-Kategorie **`nicht_pruefbar`** — kein verbindliches Kriterium
+nachweislich verletzt; es fehlt die belegte Kostenvollständigkeit. Der Nachweis beginnt
+nach Klärung der Kostenlücke **von vorn** (§7.7.5).
+
+**Befundsprint 2026-08-07/2 (Ursache geklärt und behoben, lokal):** Der blockierende
+Eintrag war **kein KI-Aufruf**, sondern der Budget-Skip-Marker aus `lage.js`
+(`callType: skipped-lage-narrativ`, `error: budget-check-failed-closed` — das Budget-Gate
+hat fail closed übersprungen; interaktive Lage-Nutzung des Kontos des cron-deaktivierten
+Demo-Mandats `angela-merkel`, was der dokumentierten Trennung Konto ↔ Mandat entspricht
+und **keine** Zugriffslücke ist). Solche Marker übergaben weder Modell noch usage-Block;
+`buildLlmUsageRecord` machte daraus `model/estimatedCost="unknown"` — vom unbepreisbaren
+ECHTEN Aufruf nicht unterscheidbar. Fünf gleichartige Marker-Stellen existierten (lage,
+communicationDraft, parliamentAssessment, Budget-Choke-Point, Understanding-Skip).
+**Kleinste sichere Korrektur:** ausdrücklich gekennzeichnete Nicht-Aufrufe
+(`keinAufruf: true`, nur ohne jede Token-Angabe) werden als technisch belegt kostenfrei
+gespeichert (estimatedCost **0**, Token 0, Modell-Marker `kein-aufruf`/`none`,
+Audit-Feld); alles andere bleibt byte-identisch — ein unbekanntes Modell oder ein echter
+Aufruf ohne usage-Block bleibt der ehrliche, blockierende `unknown`-Zustand. Der
+OP-25-Kostenvertrag ist **unverändert**; der historische Eintrag bleibt unangetastet und
+das alte Fenster korrekt `nicht_pruefbar` (testgesichert). Tests:
+`scripts/llm-nutzungsprotokoll-test.js` **27/27** (Repro, Fix, „nie still 0",
+Widerspruchsschutz, Statusvertrag deaktivierter Mandate) · Vertrag 271/271 ·
+Kostenmessung 128/128 · Offline-Suite 193/208 (Fehlschlagmenge baseline-identisch).
+Veröffentlicht als **PR #232** (Commit `0716a4e`; Review-Härtung der
+Kostenfrei-Invarianten — `keinAufruf` nur mit `success:false` + `skipped-`-Präfix +
+ohne echtes Modell + ohne Token — als Folgecommit; CI-Pflichtchecks grün, Suite 38/38).
+Nach Merge (= Production-Deployment mit dem Fix) folgt das neue §7.7.5-Fenster von vorn
+(Baseline binnen 15 min nach READY) — `HELMUT_CRON_GLOBALABRUF` bis dahin unverändert
+lassen. Das alte Fenster bleibt `nicht_pruefbar`.
+
 ## 8 · Verbleibende Risiken
 
 | # | Risiko | Bewertung |
