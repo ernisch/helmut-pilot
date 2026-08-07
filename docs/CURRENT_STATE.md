@@ -71,8 +71,10 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
   GitHub-Actions-Watchdog (`briefing-watchdog.yml`) feuert täglich 05:30 UTC
   **bedingungslos** die volle Pipeline; GitHub verzögert regelmäßig um 2–3 h. Er ist
   **kein Störfall**, aber im Aufbewahrungsvertrag nicht modelliert (→ K3/K7).
-- **Migrationen:** offen ist **nur noch `20260720`** (gehört zu OP-03). `20260721` seit
-  2026-07-16 angewendet, `20260727` und beide `20260728` angewendet und verifiziert.
+- **Migrationen:** offen ist **nur noch `20260720`** (laut Datei-Header Blob-Entlastung
+  P0-5/OP-17 — die frühere Zuordnung „gehört zu OP-03" war falsch; die OP-03-Migration
+  `20260721` ist seit 2026-07-16 angewendet). `20260727` und beide `20260728` angewendet
+  und verifiziert.
 - **Kosten:** LLM im Mittel ~0,14 USD/Betriebstag (Untergrenze, Preisbasis unbelegt,
   [`betrieb/kostenmessung.md`](betrieb/kostenmessung.md)); Nachweisfenster 0,1892 USD
   bei Rahmen 2 USD.
@@ -113,6 +115,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
+| **#231** (Draft, 2026-08-06) | **OP-03-Sprint:** Konten-Vorbedingung der Provisionierung (fail-closed gegen echte DB ohne `HELMUT_AUTH_MODE=accounts`/Admin-Konto), 1 Abgeordneten-Konto je Mandat (409), lokaler Mehrmandantentest `op03-mehrmandanten-test.js` (43 Prüfungen), Restliste-/Doku-Schärfung | **unabhängig reviewt 2026-08-07:** korrekte fail-closed-Härtung, kein neuer Cross-Tenant-Defekt, Netto-Verbesserung; Tests reproduziert (208/208 · 43/43 · Smoke 32/32); 2 Low-Restlücken (Herkunft `main`, keine Blocker: nicht-race-sichere App-Eindeutigkeit → DB-`UNIQUE` nötig; Gate deckt `saveProfileToDb` nicht). **Kein Merge, solange OP-25 nicht ausdrücklich bestanden — auch nach Fensterende.** CI-Gate am Branch noch nicht grün belegt (Lauf `queued`) |
 | **#224** (Draft) | F-E2E: Lage-Rangfolge aus berechnetem Rang statt Ablage | behauptet die Behebung des CI-Nichtdeterminismus F-E2E; **nicht reviewt, nicht abgenommen** |
 | **#225** (Draft) | „Produktroadmap für LINIE" | nicht aus dem Helmut-Arbeitsstrang; Einordnung beim Betreiber |
 | **#218** | OP-25-Kapazität, konkurrierende Analyse | Codeänderung auf dem Branch zurückgenommen; Ursache/Fix kamen über #219. **Empfehlung: schließen** |
@@ -130,7 +133,10 @@ gemergt 2026-08-05; #203 geschlossen 2026-08-03). Historie: Archiv.
    Art.-9-Daten. Blockiert OP-12 und echten Mailbetrieb.
 3. **OP-03** Zweitmandanten-Freigabepaket — Grundsatzentscheidung „DB-seitige Durchsetzung
    vs. dokumentierte App-Guard-Akzeptanz"
-   ([`mandantentrennung-architektur.md`](mandantentrennung-architektur.md)).
+   ([`mandantentrennung-architektur.md`](mandantentrennung-architektur.md)). Technisch
+   weiter vorbereitet durch PR #231 (ungemergt): Konten-Vorbedingung, 1 Konto je Mandat,
+   Mehrmandantentest. Zusätzlich offen: Betreiber-Verifikation `HELMUT_AUTH_MODE=accounts`
+   in Production, `HELMUT_TENANT_LLM_CAP`-Limitwerte, Production-Probelauf (Restliste OP-03).
 4. **OP-04-Rest** — Entscheidung über die deaktivierten Demo-Mandate; hängt mit K2 zusammen.
 5. **Kein Vercel-Schreibweg aus Sitzungen** (§3) — blockiert jede Flag-Aktivierung/-Rücknahme
    und jede Landesmodul-Aktivierung.
@@ -256,6 +262,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
+| 2026-08-07 | **Unabhängiges Sicherheitsreview PR #231** (OP-03): Diff gegen `main`-Kopf `d8bf68f` adversarial geprüft (Bedrohungsmodell + Implementierung + Testrigorosität). Ergebnis: korrekte, eng begrenzte fail-closed-Härtung, **kein branch-eingeführter Cross-Tenant-Defekt**, Netto-Verbesserung; alle Kandidatenbefunde nach Verifikation widerlegt. Tests eigenständig reproduziert (Offline 208/208 · op03 43/43 · Smoke 32/32; `ical.js`-Dev-Dependency fehlte in der Cloud-Sitzung → `kalender-ics-test` scheiterte identisch auf `main`, nach Install grün). 2 Low-Restlücken (Herkunft `main`): App-Eindeutigkeit nicht race-sicher (→ DB-`UNIQUE`), Gate deckt `saveProfileToDb` nicht. Nur Doku aktualisiert. **Nichts gemergt, main/Production/OP-25/PR #224 unberührt** | **erfolgreich geprüft** (teilweise abgeschlossen: Merge/CI-grün/Betreiberwerte/Production-Probelauf offen; Merge erst nach bestandenem OP-25) |
+| 2026-08-06 | **OP-03-Sprint** (Branch `claude/op-03-multi-tenant-security-rmbwpq`, PR #231 Draft): Sicherheitsinventar + Angriffsprüfung gegen aktuellen `main` (12 Angriffsklassen App-seitig abgewehrt, testbelegt); Befunde behoben: Konten-Vorbedingung der Provisionierung (Legacy-Pilotgate = Fremdzugriff bei ≥2 Mandaten), `updateUser`-Mandatsdublette; neuer Mehrmandantentest 43/43; Offline 208/208, Smoke 32/32; Doku-Korrekturen (20260721 längst angewendet, 20260720→OP-17). **Nichts gemergt, Production/OP-25 unberührt, keine Migration ausgeführt** | **teilweise** (Code+lokale Beweise fertig; Review/Merge nach OP-25-Fenster; Grundsatzentscheidung, Env-Schritte und Production-Probelauf offen) |
 | 2026-08-06 | **OP-25-Betreiberschritte K2/K3** nach Merge PR #229 (`f4f4500b`): Vorprüfung rein lesend; `max-mustermann` relational deaktiviert (konditionales Update, 1 Zeile, 08:01:31Z, kein Delete); Retention 36 + Betreiber-Redeploy `dpl_3y5n…` READY 07:50:22Z; alle drei Sichten + Blob `m5-9aee228dbf2c9f13`, K2-Gate widerspruchsfrei; Doku-Korrekturen (Belegdatei §6 `user_id`, Env-Inventar) | **erfolgreich** (Nachweisstart bleibt separat freigabepflichtig; kein Lauf, keine Baseline) |
 | 2026-08-05 | **Korrektursprint K1–K8** (PR #229, Branch `claude/op25-corrections-k1-k8-kc1tdw`): alle acht Korrekturen umgesetzt + getestet; Beleg [`betrieb/op25-korrektursprint-2026-08-05.md`](betrieb/op25-korrektursprint-2026-08-05.md) | **teilweise** (Code vollständig + grün; Review/Merge + 2 Betreiberschritte + Production-Nachweis offen) — **Merge + Betreiberschritte am 2026-08-06 erfolgt** |
 | 2026-08-05 | **OP-25-Ursachenanalyse** des gescheiterten Nachweises (PR #227, rein lesend aus dauerhaften Belegen) | **erfolgreich**; widerlegt 2 der 7 Befunde, ordnet die übrigen ein, definiert K1–K8; OP-25 bleibt teilweise |
