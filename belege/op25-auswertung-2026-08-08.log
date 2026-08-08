@@ -1,0 +1,40 @@
+OP-25 — rein lesender Production-Nachweis (E3-Fassung, 2026-08-04)
+==============================================================================
+Schreibschutz: GET-Literal + Tabellen-Allowlist; storage.js nicht geladen;
+kein Cron-Trigger, keine Flag-/Env-Aenderung, 0 KI-Aufrufe.
+Messzeitpunkt: 2026-08-08T20:39:44.583Z
+
+== EINGABEN (rein lesend) ==
+aktive Mandate am Fensterende (KANONISCH relational): m5-9aee228dbf2c9f13 (annika-klose, cem-ince, helmut-kleebank, ottilie-paola-klein-2, ruppert-st-we)
+Blob-Vergleichssicht: m5-9aee228dbf2c9f13 · Laufzeitplanung (juengster global-Lauf): m5-9aee228dbf2c9f13
+eingefrorene Startbaseline: m5-9aee228dbf2c9f13 (erhoben 2026-08-07T20:21:46.472Z, Datei-Signatur m5-9aee228dbf2c9f13)
+Laufdatensaetze im Blob: 36 (Retention 36) · dauerhafte globalphase-Zeilen: 13
+Aktivierung (READY des neuen Deployments): 2026-08-07 20:19:06Z · Fenster: 2026-08-07 20:19:06Z → 2026-08-08 20:19:06Z
+erwarteter Deployment-Commit (aus der Baseline): a07954df049df52657ee9fac2a63ca2efd6b1d7d
+Kosten im Fenster: 0.2106 USD (Rahmen 2 USD, vollstaendig=true, unbepreist=0)
+
+== BEWERTUNG JE ERWARTETEM LAUF ==
+  crawl@2026-08-08T04:00:00.000Z → vollstaendig (datenstand=teilweise) · versiegelt 188121 ms
+  pipeline@2026-08-08T16:00:00.000Z → vollstaendig (datenstand=teilweise) · versiegelt 206550 ms
+  crawl@2026-08-08T20:00:00.000Z → vollstaendig (datenstand=teilweise) · versiegelt 212576 ms
+
+== AUSGESCHLOSSENE LAEUFE (mit Grund gezaehlt) ==
+  cron-crawl-20260807200123-98mx7-global: ausserhalb-des-fensters
+  cron-pipeline-20260807160139-jyazl-global: ausserhalb-des-fensters
+  cron-crawl-20260807040024-tteiq-global: ausserhalb-des-fensters
+
+== WARNUNGEN ==
+  crawl@2026-08-08T04:00:00.000Z: kontexte=12 ueber Aufgreifschwelle 11 — durch die Laufzusammensetzung erklaert (statisch=6, dokumentgetrieben=6, unbekannt=0, dipDokumente=32, mehrfachHerkunft=0)
+  crawl@2026-08-08T04:00:00.000Z: datenstand=teilweise — regulaer zurueckgestellte Verstehensarbeit, vollstaendig gezaehlt und dauerhaft vorgemerkt (kandidaten=897, neu=13, bereitsVorhanden=884, lazyRest=851). Der fachliche Verstehensrueckstand bleibt offen (OP-14) und gilt NICHT als geloest.
+  pipeline@2026-08-08T16:00:00.000Z: kontexte=12 ueber Aufgreifschwelle 11 — durch die Laufzusammensetzung erklaert (statisch=6, dokumentgetrieben=6, unbekannt=0, dipDokumente=32, mehrfachHerkunft=0)
+  pipeline@2026-08-08T16:00:00.000Z: datenstand=teilweise — regulaer zurueckgestellte Verstehensarbeit, vollstaendig gezaehlt und dauerhaft vorgemerkt (kandidaten=1061, neu=37, bereitsVorhanden=1024, lazyRest=845). Der fachliche Verstehensrueckstand bleibt offen (OP-14) und gilt NICHT als geloest.
+  crawl@2026-08-08T20:00:00.000Z: kontexte=12 ueber Aufgreifschwelle 11 — durch die Laufzusammensetzung erklaert (statisch=6, dokumentgetrieben=6, unbekannt=0, dipDokumente=32, mehrfachHerkunft=0)
+  crawl@2026-08-08T20:00:00.000Z: datenstand=teilweise — regulaer zurueckgestellte Verstehensarbeit, vollstaendig gezaehlt und dauerhaft vorgemerkt (kandidaten=970, neu=15, bereitsVorhanden=955, lazyRest=853). Der fachliche Verstehensrueckstand bleibt offen (OP-14) und gilt NICHT als geloest.
+
+== BEFUNDE ==
+  (keine)
+
+== ERGEBNIS: BESTANDEN (Exit 0) ==
+Ausschliesslich lesende Zugriffe (GET), 0 KI-Aufrufe, 0,00 USD, kein Trigger.
+
+[op25-nachweis/json] {"ausgang":"bestanden","exitCode":0,"fenster":{"von":"2026-08-07 20:19:06Z","bis":"2026-08-08 20:19:06Z"},"mandatsmenge":"m5-9aee228dbf2c9f13","endzustand":"m5-9aee228dbf2c9f13","erwarteterCommit":"a07954df049df52657ee9fac2a63ca2efd6b1d7d","benoetigteDatensaetze":30,"dauerhafteZeilen":13,"relationalFehler":null,"befunde":[],"warnungen":6,"ausgeschlossen":3}

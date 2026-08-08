@@ -1,6 +1,14 @@
 # Phase 1 — Checkliste (operative Wahrheit)
 
-**Letzte Prüfung:** 2026-08-02 (**Punkt 25 vollständig abgeschlossen — 25B ERFÜLLT.** Der Nachweis
+**Letzte Prüfung:** 2026-08-08 (**OP-25-Production-Nachweis BESTANDEN** — drittes
+Nachweisfenster 2026-08-07T20:19:06Z → 2026-08-08T20:19:06Z, verbindlicher Auswerter
+Exit 0, **null Befunde**; Kosten 0,2106 USD / unbepreist 0; kanonisch
+[`../betrieb/vorgangskontext.md`](../betrieb/vorgangskontext.md) §7.7.9. Die weiter unten
+stehende Angabe „**Unverändert offen bleibt der Production-Nachweis nach PR #208** …
+OP-25 der Restliste" ist damit **überholt** — der Nachweis ist erbracht, inkl. ≥ 24 h
+regulärer Kadenz und äußerem Zeitlimit-Verhalten in den Fensterläufen. **Geltung: nur die
+aktuelle Architektur mit fünf Mandaten; nach Aktivierung der OP-30-Architektur muss
+OP-25 vollständig wiederholt werden.** · davor 2026-08-02: **Punkt 25 vollständig abgeschlossen — 25B ERFÜLLT.** Der Nachweis
 ist der reguläre `crawl`-Cron-Lauf des Pilotmandanten am **2026-07-31, 16:04:28 UTC**
 (`vollstaendig`, `wiederholungen=0` = echte neue Generation, 20 veröffentlicht), **23 von 23
 Prüfungen grün** mit dem rein lesenden Werkzeug

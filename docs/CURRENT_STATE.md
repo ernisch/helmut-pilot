@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-07** (nach dem zweiten OP-25-Nachweisfenster 2026-08-06/07 — Auswertung `blockiert`, genau 1 Befund; kanonisch §7.7.8). Diese Datei enthält
+**Stand: 2026-08-08** (OP-25-Production-Nachweis **BESTANDEN** — drittes Fenster 2026-08-07/08, Exit 0, null Befunde; kanonisch §7.7.9). Diese Datei enthält
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -164,24 +164,18 @@ damit nur noch durch die **separate Startfreigabe** blockiert (§9/§11).
 
 ## 9 · Ausstehende Production-Nachweise
 
-- **OP-25-Nachweis nach §7.7.5 — zweites Fenster 2026-08-06/07 durchgeführt und
-  unmittelbar ausgewertet: `blockiert` (Exit 2, genau 1 Befund `kosten-nicht-bepreisbar`;
-  Kategorie `nicht_pruefbar`).** Alle Betriebskriterien waren **erstmals grün**: 3/3
-  erwartete Läufe vollständig und im Budget versiegelt, Commitnachweis (alle Läufe
-  `d8bf68fa…`), Mandatsmenge konstant m5 auf allen Ebenen, K1-Bindung, **E3 `nv=0` in
-  allen drei Läufen**, Kontextzahl 13 erklärt, kein Watchdog-Ersatzlauf (K7), Retention
-  36 wirksam. Blocker: **1 von 72** Nutzungseinträgen (interaktiv, 07.08. 12:37 UTC,
-  `angela-merkel`, `model/estimatedCost="unknown"`) ohne brauchbaren Kostenwert —
-  Kostenvollständigkeit fail closed nicht belegbar. Kanonisch **§7.7.8**; Beleg
-  `belege/op25-auswertung-2026-08-07.log`. **Ursache im Befundsprint 2026-08-07/2 geklärt
-  und behoben — committed und über PR #232 veröffentlicht** (Commit `0716a4e` +
-  Review-Härtungscommit; CI-Pflichtchecks grün, Preview READY): der Eintrag war ein
-  Budget-Skip-Marker **ohne KI-Aufruf** (`skipped-lage-narrativ`,
-  `budget-check-failed-closed`; interaktive Nutzung des Kontos des cron-deaktivierten
-  `angela-merkel` — dokumentierte Trennung Konto ↔ Mandat, keine Zugriffslücke). Fix:
-  `keinAufruf`-Kennzeichnung mit fünf harten Invarianten ⇒ estimatedCost 0 (Zahl); alles
-  andere unverändert streng. Der Fix ist **noch nicht in Production nachgewiesen** —
-  wirksam erst nach Merge (= Deployment). Das alte Fenster bleibt `nicht_pruefbar`.
+- **OP-25-Nachweis nach §7.7.5: BESTANDEN — drittes Fenster 2026-08-07/08 (Exit 0,
+  null Befunde), kanonisch §7.7.9.** Aktivierung `dpl_AdZ4JJJZUAT27X72SWzVeFyJu49a`
+  (Merge PR #232, Commit `a07954df…` mit dem Kostenlücken-Fix), READY 20:19:06.409Z,
+  Baseline +160 s (`belege/op25-startbaseline-2026-08-07-fixfenster.json`, SHA256
+  `8414fab3…`). Alle Kriterien grün: 3/3 Läufe vollständig + versiegelt, Commitnachweis,
+  m5 konstant, K1-Bindung, E3 `nv=0`, Kontextzahl erklärt, kein Watchdog-Ersatzlauf,
+  Retention 36, **Kosten 0,2106 USD / unbepreist 0** (Fix wirkte). Beleg
+  `belege/op25-auswertung-2026-08-08.log` (SHA256 `17ed0f83…`). Historie: Fenster 1
+  (04./05.08.) `nicht_bestanden`, Fenster 2 (06./07.08.) `nicht_pruefbar` — beide bleiben
+  unverändert dokumentiert. **Geltung: nur die aktuelle Architektur mit 5 Mandaten —
+  beweist weder OP-30 noch 200 Mandate; nach OP-30-Aktivierung vollständige Wiederholung
+  erforderlich.** OP-14 (Verstehensrückstand) bleibt ausdrücklich offen.
 - **F-E2E** (nichtdeterministische E2E-Rangfolge im CI, belegt 2026-08-04) — Ursache offen;
   PR #224 (Draft) liegt vor, nicht abgenommen.
 - **29B** — wartet auf natürlich auftretende Fehlerzustände (künstliche Fehler verboten).
@@ -215,17 +209,14 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-Das zweite Nachweisfenster ist ausgewertet (`blockiert`, §7.7.8); das Korrekturpaket zur
-Kostenlücke ist **committed und über PR #232 veröffentlicht** (CI + Preview gelaufen).
-Reihenfolge jetzt (übergangssicher):
+**Der OP-25-Production-Nachweis ist bestanden** (drittes Fenster, §7.7.9). Nächste
+Entscheidungen liegen beim Betreiber:
 
-1. Solange PR #232 **offen** ist: Review + Merge-Entscheidung (Betreiber; Merge =
-   Production-Deployment mit dem Fix).
-2. Sobald der Fix in `main` und das Production-Deployment READY ist: **Startbaseline
-   binnen 15 min** nach READY, dann vollständig **neues 24-h-Fenster** nach §7.7.5;
-   keine Mandatsänderung seit dem letzten globalen Lauf ⇒ K2-Gate offen.
-   `HELMUT_CRON_GLOBALABRUF` bis dahin unverändert `on` lassen. Ohne ausdrücklichen
-   Auftrag wird nichts gestartet.
+1. Diese Auswertungs-Doku + Belege committen/als PR einreichen (separater Auftrag).
+2. Entscheidung, ob `HELMUT_CRON_GLOBALABRUF` dauerhaft `on` bleibt (der Kontextpfad
+   ist jetzt Production-belegt) — jede Änderung ist freigabepflichtig.
+3. OP-25-Restpunkte (Abdeckungsmessung, Abdeckungsalarm, R-1, R-3) und OP-14 weiter
+   in der Restliste; **nach OP-30-Aktivierung: OP-25 vollständig wiederholen**.
 
 Parallel und unabhängig: **OP-01-Entscheidung** (Pro + PITR); **OP-11** Branch Protection
 verifizieren (2 Minuten); Empfehlung zu **#218** umsetzen (schließen).
@@ -271,6 +262,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
+| 2026-08-08 | **OP-25 drittes Nachweisfenster + finale Auswertung**: Aktivierung `dpl_AdZ4JJ…` (`a07954df`, Merge PR #232 mit Kostenlücken-Fix) READY 07.08. 20:19:06Z, Baseline +160 s, Schutzfenster gehalten (nur PR-#233-Preview, kein Production-Deployment), Auswertung 21 min nach Fensterende → **BESTANDEN (Exit 0, null Befunde)**; Kosten 0,2106 USD, unbepreist 0 | **erfolgreich** — Nachweis gilt nur für die 5-Mandate-Architektur; nach OP-30-Aktivierung Wiederholung nötig; Doku lokal, kein Commit |
 | 2026-08-07 | **OP-25 Befundsprint Kostenlücke** (nach der Fensterauswertung): Ursache reproduziert (Budget-Skip-Marker ohne KI-Aufruf, 5 Stellen), kleinste sichere Korrektur (`keinAufruf`-Kennzeichnung mit 5 Invarianten ⇒ estimatedCost 0, zentral in `buildLlmUsageRecord`), Suite `llm-nutzungsprotokoll-test.js` 38/38, Offline baseline-identisch; Kostenvertrag + historischer Eintrag unverändert; **veröffentlicht als PR #232** (Commit `0716a4e` + Review-Härtung, CI-Pflichtchecks grün) | **erfolgreich** (Merge = Betreiberentscheidung; Fix noch nicht Production-nachgewiesen) |
 | 2026-08-07 | **OP-25 zweites Nachweisfenster + Auswertung**: Aktivierung `dpl_DJCLHxHjKkM3sgCbLB99Vqf6C92c` (`d8bf68fa…`) 16:24:42Z am 06.08., Baseline +44 s (SHA256 `3b781764…`), Schutzfenster gehalten, Auswertung unmittelbar nach Fensterende → **`blockiert`** (Exit 2, genau 1 Befund `kosten-nicht-bepreisbar`); alle Betriebskriterien erstmals grün, E3 `nv=0` in allen 3 Läufen | **teilweise** (Nachweis `nicht_pruefbar`; Doku nur lokal, kein Commit — Betreiberentscheidung zur Kostenlücke aussteht) |
 | 2026-08-06 | **OP-25-Betreiberschritte K2/K3** nach Merge PR #229 (`f4f4500b`): Vorprüfung rein lesend; `max-mustermann` relational deaktiviert (konditionales Update, 1 Zeile, 08:01:31Z, kein Delete); Retention 36 + Betreiber-Redeploy `dpl_3y5n…` READY 07:50:22Z; alle drei Sichten + Blob `m5-9aee228dbf2c9f13`, K2-Gate widerspruchsfrei; Doku-Korrekturen (Belegdatei §6 `user_id`, Env-Inventar) | **erfolgreich** (Nachweisstart bleibt separat freigabepflichtig; kein Lauf, keine Baseline) |
