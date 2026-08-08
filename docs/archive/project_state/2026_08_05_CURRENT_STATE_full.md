@@ -5981,3 +5981,46 @@ Markierung in einer mandantenneutralen Tabelle wirkt für alle künftigen Mandan
   Negativkontrolle umbenannter Workflow.
 - **Offener Folgepunkt:** die OP-06-Fachfrage (§3) — nicht blockierend, da OP-06
   Default AUS ist und ein eigenes Token braucht.
+
+
+## Nachtrag 2026-08-08 — aus CURRENT_STATE ausgelagerte Sprintzeilen
+
+Diese Zeilen standen bis zum 2026-08-08 in der Sprinttabelle von `CURRENT_STATE.md` und
+wurden beim Abnahmesprint OP-30 ins Archiv verschoben, damit der Status die Groessengrenze
+haelt (CLAUDE.md §9). Inhaltlich unveraendert uebernommen.
+
+| Datum | Sprint | Ergebnis |
+|---|---|---|
+| 2026-08-04 | PR #223: Startbaseline deploymentgebunden + Commitnachweis (inkl. adversarialer Nachprobe) | erfolgreich, gemergt |
+| 2026-08-04 | PR #222: OP-25-Nachweisvertrag + Werkzeug, 4 Reviewdurchgänge | erfolgreich, gemergt; dabei F-E2E entdeckt (offen) |
+| 2026-08-04 | Production-Profilreparatur (Betreiberfreigabe): 5 Profile repariert, `max-mustermann` deaktiviert — **wirkte nur im Blob** (§3) | erfolgreich mit Einschränkung |
+| 2026-08-03/04 | PR #219: Kapazitätsfehler globaler Abrufpfad (F-RT/F-CL) behoben | gemergt; Wirkung im Fenster belegt (`cas=0`, 27 Requests) |
+| 2026-08-03 | OP-25-Fairness-Production-Nachweis (Rotation, R-6, F-CAS) | bestanden; Befund F-POS |
+
+
+## Nachtrag 2026-08-08/2 — weitere ausgelagerte Sprintzeilen
+
+Beim Korrektursprint OP-30 aus `CURRENT_STATE.md` ins Archiv verschoben, damit der
+Status die Groessengrenze haelt (CLAUDE.md §9). Inhaltlich unveraendert.
+
+| Datum | Sprint | Ergebnis |
+|---|---|---|
+| 2026-08-05 | **OP-25-Ursachenanalyse** des gescheiterten Nachweises (PR #227, rein lesend aus dauerhaften Belegen) | **erfolgreich**; widerlegt 2 der 7 Befunde, ordnet die übrigen ein, definiert K1–K8; OP-25 bleibt teilweise |
+| 2026-08-05 | Doku-Sprint: `CURRENT_STATE.md` kompaktiert, Historie archiviert, Größenkontrolle (PR #228) | dieser Stand |
+| 2026-08-05 | OP-25: 1. regulärer Production-Nachweis §7.7.5 (Fenster 04.–05.08.), PR #226 | **gescheitert** (Exit 1, 7 Befunde); Ablauf und Commitnachweis selbst haben funktioniert |
+
+
+## Nachtrag 2026-08-08/3 — weitere ausgelagerte Sprintzeilen
+
+Beim Commit-/PR-Sprint OP-30 ausgelagert (CLAUDE.md §9). Inhaltlich unveraendert.
+
+| Datum | Sprint | Ergebnis |
+|---|---|---|
+| 2026-08-06 | **OP-25-Betreiberschritte K2/K3** nach Merge PR #229 (`f4f4500b`): Vorprüfung rein lesend; `max-mustermann` relational deaktiviert (konditionales Update, 1 Zeile, 08:01:31Z, kein Delete); Retention 36 + Betreiber-Redeploy `dpl_3y5n…` READY 07:50:22Z; alle drei Sichten + Blob `m5-9aee228dbf2c9f13`, K2-Gate widerspruchsfrei; Doku-Korrekturen (Belegdatei §6 `user_id`, Env-Inventar) | **erfolgreich** (Nachweisstart bleibt separat freigabepflichtig; kein Lauf, keine Baseline) |
+| 2026-08-05 | **Korrektursprint K1–K8** (PR #229, Branch `claude/op25-corrections-k1-k8-kc1tdw`): alle acht Korrekturen umgesetzt + getestet; Beleg [`betrieb/op25-korrektursprint-2026-08-05.md`](betrieb/op25-korrektursprint-2026-08-05.md) | **teilweise** (Code vollständig + grün; Review/Merge + 2 Betreiberschritte + Production-Nachweis offen) — **Merge + Betreiberschritte am 2026-08-06 erfolgt** |
+
+
+| Datum | Sprint | Ergebnis |
+|---|---|---|
+| 2026-08-07 | **OP-25 Befundsprint Kostenlücke**: Ursache reproduziert (Budget-Skip-Marker ohne KI-Aufruf), kleinste sichere Korrektur (`keinAufruf` zentral in `buildLlmUsageRecord`), Suite 38/38; **PR #232**, CI-Pflichtchecks grün | **erfolgreich** (Merge = Betreiberentscheidung; Production-Nachweis offen) |
+| 2026-08-07 | **OP-25 zweites Nachweisfenster + Auswertung**: Fenster gehalten, Auswertung → **`blockiert`** (genau 1 Befund `kosten-nicht-bepreisbar`); alle Betriebskriterien erstmals grün | **teilweise** (Nachweis `nicht_pruefbar`; Betreiberentscheidung zur Kostenlücke offen) |

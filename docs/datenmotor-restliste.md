@@ -14,7 +14,7 @@
 
 | | |
 |---|---|
-| **Stand / Prüfdatum** | **2026-07-29** (Basisstand 2026-07-17, re-verankert 2026-07-22, siehe Banner; OP-05/06/08/13/14 nachgezogen durch den Pending/Understanding/KO-Sprint — Belege: `docs/betrieb/datenmotor_sprint_pending_understanding_ko.md`; §4 und §6 nachgezogen durch Sprint 23B-1 — neue Befunde **B5**/**B6** und neue Punkte **OP-25**/**OP-26**; §4 zusaetzlich nachgezogen durch Sprint 23C-2A — neue Befunde **B7**/**B8**; **B7 nachgemessen und entschieden in Sprint M-8 → neuer Punkt OP-27**, B8 bleibt bei OP-04; §6 ergänzt **2026-08-04** durch Sprint „Profilreife" → neuer Punkt **OP-29** (OP-28 bleibt für PR #216 reserviert); **OP-04/OP-25/OP-29 nachgeführt 2026-08-04** durch den Production-Profilreparatursprint (Reparaturpaket angewendet, `max-mustermann` deaktiviert, 5 aktive reale Mandate); **OP-25 erneut nachgeführt 2026-08-04/2** durch den E3-Sprint (verbindliche E3-Entscheidung, ausführbarer Nachweisvertrag `betrieb/vorgangskontext.md` §7.7, rein lesendes Werkzeug `scripts/op25-production-nachweis.js`, Dry-Run ehrlich `noch_nicht_auswertbar`). *Die übrigen Abschnitte tragen weiterhin den Stand 2026-07-18 und wurden in diesem Sprint nicht nachgemessen.*) |
+| **Stand / Prüfdatum** | **2026-07-29** (Basisstand 2026-07-17, re-verankert 2026-07-22, siehe Banner; OP-05/06/08/13/14 nachgezogen durch den Pending/Understanding/KO-Sprint — Belege: `docs/betrieb/datenmotor_sprint_pending_understanding_ko.md`; §4 und §6 nachgezogen durch Sprint 23B-1 — neue Befunde **B5**/**B6** und neue Punkte **OP-25**/**OP-26**; §4 zusaetzlich nachgezogen durch Sprint 23C-2A — neue Befunde **B7**/**B8**; **B7 nachgemessen und entschieden in Sprint M-8 → neuer Punkt OP-27**, B8 bleibt bei OP-04; §6 ergänzt **2026-08-04** durch Sprint „Profilreife" → neuer Punkt **OP-29** (OP-28 bleibt für PR #216 reserviert); **§6 ergänzt 2026-08-08** durch die V3-Skalierungsprüfung → neuer Punkt **OP-30** (mandatseigene Abrufwege, P1; Beleg `betrieb/v3-skalierungspruefung-2026-08-08.md`); **OP-04/OP-25/OP-29 nachgeführt 2026-08-04** durch den Production-Profilreparatursprint (Reparaturpaket angewendet, `max-mustermann` deaktiviert, 5 aktive reale Mandate); **OP-25 erneut nachgeführt 2026-08-04/2** durch den E3-Sprint (verbindliche E3-Entscheidung, ausführbarer Nachweisvertrag `betrieb/vorgangskontext.md` §7.7, rein lesendes Werkzeug `scripts/op25-production-nachweis.js`, Dry-Run ehrlich `noch_nicht_auswertbar`). *Die übrigen Abschnitte tragen weiterhin den Stand 2026-07-18 und wurden in diesem Sprint nicht nachgemessen.*) |
 | **Geprüfter Stand** | historisch `main`-HEAD `ca7e404` (Merge PR #102); Re-Anker (siehe Banner) `d6d9063` (#113); seither weiter nachgezogen (Pending/Understanding/KO-Sprint + Recovery-Stilllegung PR #105, Kontextstruktur PR #119, Doku-Nachzug PR #121) — **aktuell `045393c` (#121)** |
 | **Grundlagen** | PR #95–#102, `docs/betrieb/production_beweisprotokoll.md` (inkl. §7 Google-News-Härtung), `docs/betrieb/google_news_haertung.md`, `docs/betrieb/health_report_rollierend.md`, `docs/betrieb/f5_freigabe.md`, `docs/helmut_datenmotor_thread2_handoff.md` §0a, `docs/quellenarchitektur/00-master-status.md` (Nachtrag 2026-07-17), Audit-Serie |
 
@@ -339,7 +339,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Freigabe:** **JA** (Migration + Env).
 
 #### OP-18 · Understanding-Gate scharfschalten (shadow → on) + Cheap-Triage
-- **Status:** offen; Shadow-Betrieb seit Wochen fehlerfrei (0 amtliche fehlbehandelt, Ersparnispotenzial ~54 % der Dokumente belegt).
+- **Status:** offen. **Statuszeile am 2026-08-08 entschärft (OP-30-Abnahmesprint):** belegt ist der **Dauerbetrieb** des Shadow-Modus über rund zwei Wochen (37 792 Zeilen am 2026-07-28 gegen 1 000 am 2026-07-15) und ein Ersparnispotenzial von ~54 % der Dokumente. **Nicht belegt ist die Fehlerfreiheit dieses Zeitraums:** ausgewertet wurden nur zwei Läufe vom 14./15.07., und `gate_shadow_events` wurde bis dahin von **keiner** Stelle im Repository gelesen. Zwischen „es ist nichts aufgefallen" und „es ist nichts passiert" lag genau diese fehlende Auswertung. **Neu (additiv, rein lesend, fail closed):** `scripts/gate-shadow-auswertung.js` liefert die Messbasis — Verteilung, Gründe, Herkunft und die entscheidende Frage, ob je ein amtliches Dokument blockiert worden wäre. Es läuft nur mit ausdrücklichem `HELMUT_GATE_AUSWERTUNG_ZUGRIFF=ja` und ändert nichts.
 - **Fehlender Schritt:** Gate-Flag auf `on` (Datei-Flag oder Env) + definiertes Beobachtungsfenster (Understanding-Zahl darf nicht unplausibel sinken); Cheap-Triage separat entscheiden.
 - **Abhängigkeiten:** keine technischen; Telemetrie/Beweisprotokoll als Messbasis.
 - **Risiko:** mittel — erstmals blockierende Wirkung auf KI-Verarbeitung; Rollback per Flag.
@@ -1400,6 +1400,194 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   91/91. Reparaturpaket der sechs Bestandsprofile unverändert (kein neuer belegter Fehler).
   Ehrliche Grenze dokumentiert: Offline-Tests sichern interne Konsistenz, die amtliche
   Wahrheit braucht weiterhin menschliche Quellenprüfung.
+
+#### OP-30 · Mandatseigene Abrufwege vervielfachen den Quellenabruf linear (neu, Sprint „V3-Skalierungsprüfung" 2026-08-08; Prioritätsklasse P1)
+
+- **Stand 2026-08-08/2 (Korrektur- und Abnahmesprint):** Belege
+  [`betrieb/skalierung-200-mandate.md`](betrieb/skalierung-200-mandate.md) und
+  [`betrieb/lokaler-production-schutz.md`](betrieb/lokaler-production-schutz.md).
+  **Drei kritische Luecken geschlossen:**
+  (1) **200 Mandate innerhalb von 24 h bewiesen** (`lokal simuliert`, letzte Pflichtarbeit
+  **21:38:00**). Ursache der frueheren 25 h: das Briefingfenster reichte bis 98 % des Tages
+  und liess keinen Platz fuer die Arbeit — jetzt 90 %; dazu ein Abtastfehler der Simulation.
+  **Kein** Kapazitaets-, Budget-, Parallelitaets- oder Wiederholungsbefund.
+  (2) **`HELMUT_RELEVANZORDNUNG` ist default AUS**, fail closed; Merge-Neutralitaet in vier
+  unabhaengigen Beweisen belegt (`scripts/relevanzordnung-mergeneutralitaet-test.js`, 24 PASS).
+  (3) **Lokaler Production-Schutz an der Ursache behoben** — der alte Guard griff nur im
+  Preload-Pfad des Test-Runners, jeder Direktaufruf war ungeschuetzt (90 Nicht-Test-Skripte,
+  ~25 netzfaehig). Neu: zwei Schichten + Starter, 76 PASS ueber alle zwoelf geforderten Faelle.
+  **Neuer Befund:** `HELMUT_LLM_GLOBAL_ANTEIL` (0,5) passt nicht zum gemessenen Bedarf
+  (80–98 % global) ⇒ der Deckel muss 1,6–2,0x groesser sein als noetig; passend waeren 0,87.
+  Nicht gesetzt. **Tests:** Offline 220/225 + Browser 32/32, **keine neue Regression**
+  (Baseline `a07954d`: 203/208, dieselben 5 roten Suiten).
+- **Stand 2026-08-08 (finaler lokaler Abnahmesprint):** Beleg
+  [`betrieb/op30-abnahme-2026-08-08.md`](betrieb/op30-abnahme-2026-08-08.md).
+  **Lokal bewiesen:** zentrale Rechengrundlage fuer 5/200/1000 (`scripts/skalierungsmodell.js`),
+  Relevanzordnung (Gruendervorgabe „Relevanz vor Aktualitaet", Default AN), Workerdurchsatz
+  (1 Worker 1 064,6 Auftraege/s, 8 Worker 4 093,1), Bereinigung von 66 000 Zeilen in 814 ms ohne
+  Verlust bei gleichzeitigem Worker, alle vier Migrationspaare anwendbar/rollbar/wiederholbar,
+  Flagmatrix (6 Kombinationen). **Drei echte Produktfehler behoben** (unbegrenztes Warten aufs
+  Briefing, eine Frist die nie ablaufen konnte, Leerlauf bei erschoepftem Budget).
+  **Korrigiert:** die Deckelangabe „100" war unbelegt — der Code faellt fail-closed auf **50**
+  zurueck; die Admin-Anzeige behauptete faelschlich „unbegrenzt (Infinity)".
+  **Weiterhin offen:** echte Google-/KI-Laufzeit · Rueckstand ≤ 24 h unter echten Bedingungen ·
+  wirksamer Production-Deckel · **190 fehlende echte Profile** (es gibt 10, nicht 200) ·
+  Migration/Aktivierung/Production-Nachweis. **Vercel traegt keinen langlaufenden Worker**
+  (`maxDuration 300`) — mehr Durchsatz ist eine Betreiberentscheidung.
+- **Kanonischer Beleg (Ursache):** [`betrieb/v3-skalierungspruefung-2026-08-08.md`](betrieb/v3-skalierungspruefung-2026-08-08.md).
+  **Abgrenzung zu OP-25:** OP-25 beschreibt das *Symptom* (je Lauf wird nur ein Teil der
+  Mandanten erreicht) und wird über Fairness/Zeitdeckelung geführt. OP-30 ist die belegte
+  *Ursache* auf der Eingangsseite und hat eigene Lösung, eigene Freigabe und eigenen Nachweis.
+  **Namenskollision beachten:** „Punkt 30" in [`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md)
+  ist die Phase-1-Abnahme und hat mit OP-30 nichts zu tun.
+- **Befund (Code, 2026-08-08).** `scheduler.getSourcesForProfile` (`lib/helmut/scheduler.js:848`
+  und `:876`) stellt jedem Profil zusätzlich zum geteilten relationalen Plan
+  `[personNewsSource(profile), ...mandateNewsSources(profile)]` voran. Offline aus dem
+  Produktionscode gemessen: **7 eigene Quellen / 8 Feed-URLs je Bundestagsmandat**, **8 / 9 je
+  Landtagsmandat** (`lib/helmut/scheduler.js:977` und `:1011`). Diese Wege gehören
+  **ausdrücklich zu keinem Paket** und unterliegen damit nicht der Ein-Mal-Crawl-
+  Referenzzählung (`lib/helmut/quellenarchitektur/paket-inventur.js:605–609`, Abschnitt „3.8
+  Laufzeitquellen"). Sie sind **keine V3-Komponente**: `docs/V3_MIGRATION_PLAN.md` erwähnt
+  weder `personNewsSource` noch `mandateNewsSources`.
+- **Kapazitätsfolge (rechnerisch plausibel, nicht gemessen).** Basis ist der gemessene
+  Production-Lauf **181 Quellen in 112,11 s** = 0,619 s/Quelle amortisiert
+  ([`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.6; Google-Gate Parallelität 5,
+  Mindestabstand 200 ms). Mit 140 geteilten Wegen ergibt sich der Kipppunkt bei
+  **n ≈ 14–15 Bundestagsmandaten** — dort überschreitet allein der Quellenabruf das Budget der
+  globalen Phase. Zweite, unabhängige Schranke: `budgetAufteilung`
+  (`lib/helmut/cron-globalphase.js:239`, `DEFAULT_PROJEKTION_MS = 8000`,
+  `MIN_GLOBAL_ANTEIL = 0.5`) begrenzt die Projektionszeit auf **135 s**, also **max. ~16–17
+  Mandate je schwerem Lauf**, unabhängig von der Gesamtzahl. Bei 200 Mandaten: 1 540 Quellen
+  ≈ **953 s** Abruf gegen 135 s Budget.
+- **Kein Absturz, aber kein Produkt.** Erschöpftes Abrufbudget wird ehrlich gezählt
+  („Abrufbudget erschoepft", `lib/helmut/scheduler.js:2201`), der Datenstand versiegelt
+  `teilweise` und bleibt projizierbar (`datenstandVerwendbar`,
+  `lib/helmut/cron-globalphase.js:316`). Die Mandate erhalten unvollständige Lage.
+- **Zweite Grenze derselben Klasse (KI, nicht Abruf).** Das Lagenarrativ ist per Entwurf ein
+  **Pro-Mandant-Aufruf** (`lib/helmut/lage.js:539–544`, `:571`) gegen einen **globalen**
+  Tagesdeckel `HELMUT_MAX_LLM_CALLS_PER_DAY = 100` (`lib/helmut/storage.js:1116`, `:1208`) mit
+  Understanding-Reserve 30 (`:1589`). Rechnerisch ist damit bei **~70 Mandaten** Schluss, fail
+  closed (ehrlicher Leerzustand, `lage.js:556` `skipped-lage-narrativ`). **Das Verstehen selbst
+  ist davon nicht betroffen** — es ist nachweislich global und einmal je Vorgang
+  (`lib/helmut/understanding.js:560`, `:765–859`).
+- **Kleinste Lösung (Reihenfolge nach Wirkung/Risiko).**
+  1. **M1** — die fünf merkmalsbasierten Suchen (Regierungsvorhaben, Fraktion/Partei,
+     Ministerien, Ausschuss, Themenmedien) in **geteilte Merkmalspakete** überführen. Das
+     Muster ist gebaut und aktiv („hundert Profile mit demselben Paket → ein Crawl",
+     [`quellenarchitektur/07-paketaktivierung-profil-resolver.md`](quellenarchitektur/07-paketaktivierung-profil-resolver.md));
+     es fehlt die Kanonisierung der heute profileigenen Top-5-Themen. Wirkung: eigene Wege je
+     Bundestagsmandat **7 → 2**, Kipppunkt **n ≈ 15 → n ≈ 45–50**. Nebenbedingung: der
+     K2.1-Kontextvertrag (`vorgangskontext.pruefeAlleKontextgrenzen`) muss grün bleiben —
+     ein geteilter Weg darf nie mandatsspezifische Inhalte in fremde Sichtbarkeit heben.
+  2. **M2** — Personensuche seltener (nur erster schwerer Lauf des Tages; Archivfeed `when:3m`
+     wöchentlich). Sie ist die teuerste Quellenklasse: **~98 Anfragen je Personenquelle**
+     gegen 37 je Suchquelle (§7.6, `scripts/quellen-mehrfachabruf-test.js`).
+  3. **M3** — `HELMUT_TENANT_LLM_CAP` aktivieren (`lib/helmut/storage.js:1428`), damit ein
+     Mandant nicht den globalen Deckel aller verbraucht. Gehört zu **OP-03**.
+  4. **M4** — `HELMUT_UNDERSTANDING_GATE` `shadow → on` (**OP-18**), senkt KI-Aufrufe.
+  5. **Neu zu bauen** (nicht vorhanden): dauerhafte Auftragswarteschlange mit Worker
+     (löst das 300-s-Cronfenster, **nicht** die Google-Drosselung); kanonische
+     Merkmalspakete als Datenbestand; ein Kapazitätswerkzeug, das über n variiert.
+- **Werkzeuglücke.** `scripts/globalabruf-kapazitaet-test.js` ist auf **n = 6** festgelegt,
+  läuft mit `HELMUT_GOOGLE_HARDENING = "off"` und benennt im Kopfkommentar selbst, dass es
+  Regressionen der Abruf-Nebenläufigkeit (`HELMUT_GOOGLE_CONCURRENCY`,
+  `HELMUT_GOOGLE_MIN_SPACING_MS`, `CRAWLER_TIMEOUT_MS`, `HELMUT_GLOBALPHASE_ABRUF_STUFE`)
+  **nicht** bemerkt — genau diese Parameter sind die Skalierungsgrenze. Ein
+  Skalierungswerkzeug für 200 Mandate existiert im Repository **nicht**.
+- **Abnahmekriterium.** (a) Eigene Abrufwege je Bundestagsmandat ≤ 2, offline am echten
+  `getSourcesForProfile` gemessen; (b) ein Kapazitätswerkzeug über n mit dokumentierter,
+  belegter Obergrenze; (c) ein vollständiges OP-25-Fenster **nach** der Änderung bestanden;
+  (d) K2.1-Kontextvertrag und Mandantentrennung unverändert grün.
+- **Berührt OP-25 zwingend.** M1–M4 verändern jeweils `quellenVereinigung`, die
+  K2.1-Sichtbarkeitsmengen, den Kostenvertrag oder E3. Der OP-25-Nachweis ist
+  deploymentgebunden ([`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5) und
+  muss **nach jeder** dieser Maßnahmen **vollständig von vorn** laufen. Ein laufendes Fenster
+  darf keine davon enthalten.
+- **UMSETZUNGSSTAND 2026-08-08 (Sprint „Skalierungsgrundlage 1000", lokal, kein Commit):**
+  M1/M2 sind **gebaut und lokal getestet** — nicht als Umbau der Bestandssuchen, sondern als
+  eigener, standardmäßig ausgeschalteter Pfad. Kanonisch:
+  [`betrieb/skalierungsgrundlage-1000.md`](betrieb/skalierungsgrundlage-1000.md).
+  - **Neu:** `public.helmut_jobs` (Migration `20260808_scalable_job_queue.sql` + Rollback),
+    `lib/helmut/source-demand.js` (Compiler), `lib/helmut/scalable-pipeline.js`
+    (Scheduler/Worker/Handler), RPC-Hüllen in `storage.js`, Anbindung und rein lesender
+    Betriebsstatus `/api/ops/jobqueue` in `server.js`. Flag **`HELMUT_SCALABLE_PIPELINE`**,
+    Default AUS, nicht in der Datei-Allowlist.
+  - **Wirkung, an 1000 synthetischen Profilen gemessen:** 7 125 profileigene Quellen →
+    **3 190 Aufträge**; **4 713** externe Abrufe/Tag gegen **21 795** im Bestandspfad
+    (**4,6× weniger**). Mandatsabhängige KI-Aufrufe aus diesem Pfad: **0**.
+  - **Tests (Stand nach dem Nachweissprint 2026-08-08):** Datenbanknachweis gegen echten
+    PostgreSQL 16.13 **52/52** · Vertrag **100/100** · Compiler **59/59** · 1000-Profile
+    **69 PASS / 0 FAIL / 2 offen** · Sicherheit **69/69** mit Server (ohne Server 58/58 +
+    1 ausdrücklich offen) · Aktivierungsschutz **50/50** · **Belastungstest 19/19** ·
+    **Mutationsprobe 10 rot / 0 grün** · Gesamtlauf **199/214, baseline-identisch**
+    (gegen frischen `git archive HEAD`-Baum gegengeprüft) · Browser-Smoke **32/32**.
+  - **Kapazität lokal gemessen** (echte Prozesse, echter Server, Attrappen für Netz/KI):
+    5 190 Aufträge; 1 Worker ≈ 950/s, 8 Worker ≈ 2 750/s; harter `SIGKILL` mitten im Lauf
+    verliert **keinen** Auftrag (genau die reservierten Aufträge werden wieder vergeben).
+    Rechnerisch **1 Worker** für den Tagesbedarf von 1 000 Mandaten (Auslastung ≈ 0,02 %)
+    ⇒ **die Warteschlange ist nicht der Engpass**.
+  - **Neuer Befund, behoben:** Briefingmaterialisierung lag bei **37 von 1 000** Mandaten
+    zeitlich **vor** den eigenen Abrufen (unnötiger Leerzustand). Projektion und Briefing
+    liegen jetzt in **Phasenfenstern** (ab 50 % / 75 % des Fensters), Streuung weiterhin
+    deterministisch. Danach **1 000 von 1 000 belegte Briefingstände**.
+  - **Erste echte Wand bei 1 000 Mandaten ist der globale KI-Deckel**
+    (`HELMUT_MAX_LLM_CALLS_PER_DAY` = 100/Tag, global über alle Mandanten), nicht die
+    Warteschlange und nicht der Motor. **In diesem Sprint nichts daran geändert** — das
+    gehört zu **OP-03** (`HELMUT_TENANT_LLM_CAP`). Bewertung: Sprintdoku §12.
+  - **Google-Abhängigkeit gemessen statt geschätzt:** **100 %** der 3 190 profileigenen
+    Abrufwege laufen über `news.google.com` (Sprintdoku §13). Keine neue externe Technik
+    gebaut; die Absicherung ist benannt, nicht umgesetzt.
+  - **Nicht bewiesen (ausdrücklich):** Rückstand in ≤ 24 h abarbeitbar; Kapazitätsreserve
+    Faktor zwei unter **echter** Google-Drosselung; jede reale Google- oder KI-Laufzeit.
+    Die lokalen Stubs beweisen die Warteschlange, nicht die Außenwelt.
+  - **Abnahmekriterium (a) ist damit NICHT erfüllt**, sondern umgangen: die eigenen Wege je
+    Mandat bleiben im **Bestandspfad** unverändert bei 7. Der neue Pfad reduziert sie auf
+    effektiv ~3,2 Aufträge je Mandat — aber nur, wenn er aktiviert wird. (b), (c) und (d)
+    bleiben vollständig offen.
+  - **Verbleibende Stellschraube:** die Regionalsuche ist strukturell fast eindeutig und
+    trägt 1 000 der 1 190 geteilten Aufträge. Ein eigenes, längeres Fenster ist über
+    `HELMUT_DEMAND_*` bereits konfigurierbar — aber eine **Produktentscheidung**.
+- **NACHTRAG 2026-08-08/2 (Sprint „V3-Anbindung und skalierbares KI-Budget", lokal):**
+  - **Die Kette ist geschlossen.** Bis dahin reihte **niemand** `document_understanding` ein —
+    der Warteschlangenpfad endete faktisch beim Rohdokument. Jetzt reiht jeder erfolgreiche
+    Abruf einen Verstehensauftrag ein; der Schlüssel ist der **Inhaltsfingerabdruck** der
+    Dokumentmenge, nicht die Zeit. Damit ist Punkt 4 der Restliste dieses OP-Eintrags
+    („`document_understanding` wird noch von niemandem eingereiht") **geschlossen**.
+  - **Reihenfolge geprüft statt angenommen:** `helmut_jobs_offen` zählt offene Vorbedingungen;
+    Projektion und Briefing werden **ehrlich zurückgestellt** (`helmut_defer_job`, nimmt den
+    Versuch zurück — Warten ist kein Fehlversuch). Ein **endgültig** gescheiterter Abruf
+    blockiert das Briefing nicht.
+  - **Skalierbares KI-Budget** (`HELMUT_LLM_FAIRNESS`, **Default AUS**, zweites Flag getrennt
+    vom Warteschlangenflag): Reservierung je **beabsichtigtem Ergebnis** (Wiederholung kostet
+    nichts), Mandantenanteil **und** globales Notfalllimit in **einem** atomaren Schritt,
+    faire deterministische Rotation ohne Verhungern. **Kein Production-Deckel geändert**;
+    `helmut_reserve_llm_call`/`llm_budget_counters` aus 20260717 bleiben unangetastet.
+  - **KI-Modellzahlen für 1000 Profile** (`scripts/ki-modellzahlen-test.js`, rechnerisch mit
+    offengelegter Formel): realistisch **≈ 12 000 Aufrufe/Tag**, davon **91 % global**
+    (Verstehen) und **9 %** mandatsbezogen. Der **globale Sockel allein** ist **109×** so groß
+    wie der heutige Deckel 100. **Damit widerlegt:** die Erwartung, der mandatsbezogene Anteil
+    sei der teure Posten. Der wirksamste Kostenhebel ist das **Understanding-Gate (OP-18)**,
+    nicht ein höherer Deckel; die faire Verteilung löst eine andere Frage (Reihenfolge­schutz).
+  - **Anbieterrisiko:** jeder Auftrag trägt jetzt eine **Anbieterkennzeichnung** (additiv, aus
+    dem Host abgeleitet). Zwei Attrappen geprüft (`scripts/anbieterausfall-test.js`): bei einem
+    vollständigen Google-Ausfall scheitern die Abrufe **sichtbar**, es entsteht **kein**
+    Verstehensauftrag aus einem gescheiterten Abruf, das Briefing meldet einen **ehrlichen
+    Leerzustand**, und die Katalogquellen laufen unverändert weiter. **Kein neuer Anbieter
+    integriert** — Empfehlung mit Aufwand/Nutzen/Risiko in der Sprintdoku §15.
+  - **Neue lokale Migrationen** (nicht angewendet, je mit vollständigem Rollback):
+    `20260808_jobqueue_abhaengigkeiten.sql` (Vorbedingungszählung + `helmut_defer_job`) und
+    `20260808_llm_budget_fairness.sql` (`llm_reservations` + ergebnisbezogene Reservierung).
+  - **Tests:** V3-Anbindung **55 PASS / 2 offen** · KI-Budget **59/59** mit Server
+    (27 + 1 offen ohne) · Modellzahlen **9/9** · Anbieterausfall **17/17**. Gesamtlauf
+    **203/218** — **identischer Fehlschlagsatz wie die frisch erzeugte Baseline**, keine
+    Regression. Der zuvor einmal beobachtete Wackler in `berlin-e2e-vertrag-test.js` ist
+    **reproduziert, erklärt und behoben** (untreues Testgerüst); **offen bleibt** der dabei
+    entdeckte Production-Befund: die Reihenfolge der Matchingergebnisse ist bei gleichem
+    Zeitstempel **undefiniert** — eine Gründerentscheidung, siehe Sprintdoku §15.
+- **Zustand:** offen. Code liegt lokal auf `claude/helmut_scaling_foundation_1000`
+  (Arbeitsbaum `/home/user/helmut-scaling`), **kein Commit, kein PR**. Für den Einzelpiloten
+  (5–6 Mandate) **kein** Blocker; Blocker ab etwa zehn Mandaten und damit vor mehreren
+  zahlenden Kunden.
 
 ---
 

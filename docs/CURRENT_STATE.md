@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-07** (nach dem zweiten OP-25-Nachweisfenster 2026-08-06/07 — Auswertung `blockiert`, genau 1 Befund; kanonisch §7.7.8). Diese Datei enthält
+**Stand: 2026-08-08** (V3-Skalierungsprüfung + lokaler Umsetzungssprint OP-30, §7a/§7b; davor: zweites OP-25-Nachweisfenster 2026-08-06/07, Auswertung `blockiert`, genau 1 Befund, kanonisch §7.7.8). Diese Datei enthält
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -141,6 +141,57 @@ Die früheren Blocker 7/8 (K2-/K3-Betreiberschritte) sind seit 2026-08-06 **erle
 `m5-9aee228dbf2c9f13`), Retention 36 gesetzt + Redeploy. Der nächste OP-25-Nachweis ist
 damit nur noch durch die **separate Startfreigabe** blockiert (§9/§11).
 
+## 7a · Kapazitätsgrenze und OP-30 (Stand 2026-08-08)
+
+Fünf Sprints an einem Tag. Die Einzelheiten stehen in den Belegdateien; hier steht nur, was
+für eine Entscheidung zählt.
+
+| Beleg | Inhalt |
+|---|---|
+| [`betrieb/v3-skalierungspruefung-2026-08-08.md`](betrieb/v3-skalierungspruefung-2026-08-08.md) | Ursache: mandatseigene Abrufwege, Kipppunkt n ≈ 14–15 |
+| [`betrieb/skalierungsgrundlage-1000.md`](betrieb/skalierungsgrundlage-1000.md) | Warteschlange, Worker, Flag, erste Messung |
+| [`betrieb/op30-abnahme-2026-08-08.md`](betrieb/op30-abnahme-2026-08-08.md) | Rechengrundlage 5/200/1000, Relevanzordnung, Bereinigung, Profilinventar |
+| [`betrieb/skalierung-200-mandate.md`](betrieb/skalierung-200-mandate.md) | 200 Mandate im Tag, Deckel, Kosten |
+| [`betrieb/lokaler-production-schutz.md`](betrieb/lokaler-production-schutz.md) | Vorfall, Ursache, zweischichtiger Schutz |
+| [`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) | Endgültige Bewertung der fünf roten Suiten |
+| [`betrieb/workerbetrieb.md`](betrieb/workerbetrieb.md) | Worker, Bereinigung, Vercel-Entscheidung |
+
+**Befund.** Der V3-Motorkern skaliert (ein Dokument wird global **einmal** verstanden;
+Matching, Entscheidungen und Briefing sind KI-frei). Die Grenze liegt **davor**: jedem Profil
+werden 7–8 eigene Google-Wege vorangestellt; Kipppunkt **n ≈ 14–15**, zweite Schranke
+**~16–17 Mandate je Lauf**. **Zurückgezogen:** „V3 ist für 1000 Mandate konzipiert" und
+„Skalierungsnachweis für 200 Mandate liegt vor". **Folge:** empfohlene Obergrenze bis zur
+Umsetzung **10 Mandate**.
+
+**Was lokal gebaut und bewiesen ist** (Arbeitsbaum `/home/user/helmut-scaling`, Basis `a07954d`):
+
+- **Warteschlange, Worker, KI-Budget, Relevanzordnung** — vollständig, getestet, **alle Flags
+  aus**, vier Migrationspaare **nicht angewendet**. `main` ist unverändert.
+- **200 Mandate im simulierten Tag** (`lokal simuliert`): letzte Pflichtarbeit **21:38:00**.
+  Bedarf **1 645** KI-Aufrufe/Tag · Empfehlung mit 30 % Reserve **16 300** · **0,61 USD je
+  Mandat/Monat** (Preisbasis **unbelegt**). **Mit Deckel 100 reicht es nicht** — 100 von 200
+  bedient, der Rest bleibt sichtbar liegen.
+- **1 000 synthetische Mandate** (`lokal simuliert`): 1 000 Briefings, alle belegt,
+  Pflichtarbeit im Tag beendet, max. Warteschlange 7 839 Zeilen.
+- **Durchsatz** (`lokal bewiesen`): 1 Worker 1 064,6 Aufträge/s, 8 Worker 4 093,1; harter
+  Absturz ohne Verlust und ohne Doppelabschluss ⇒ **die Warteschlange ist nicht der Engpass**.
+- **Vercel trägt keinen langlaufenden Worker** (`maxDuration 300`) ⇒ nur begrenzte Durchläufe
+  je Cron-Fenster. Mehr Durchsatz ist eine **Betreiberentscheidung**.
+- **Lokaler Production-Schutz** (`lokal bewiesen`, 76 PASS): zwei Schichten, an alle
+  Unterprozesse vererbt. Anlass war ein **unbeabsichtigter lesender Production-Zugriff**, den
+  ich offengelegt habe. **Production lädt den Schutz nie.**
+- **`HELMUT_RELEVANZORDNUNG` ist default AUS**, fail closed; **Merge-Neutralität in vier
+  unabhängigen Beweisen** (24 PASS) — ein Merge verändert das Verhalten nicht.
+
+**Offen.** Echte Google-/KI-Laufzeit · wirksamer Production-Deckel (offline nicht lesbar) ·
+**190 fehlende echte Profile** (es gibt 10) · Migration, Aktivierung, Production-Nachweis ·
+**CI ist am Basisstand auf `main` bereits rot** (`berlin-e2e-vertrag`, `werkzeug-lesefehler`;
+beide lokal grün, nicht durch OP-30 verursacht).
+
+**Folge für OP-25:** eine spätere Aktivierung verändert `quellenVereinigung`, die
+K2.1-Sichtbarkeitsmengen und die Laufzeitbilanz ⇒ **OP-25 muss danach von vorn**.
+
+
 ## 8 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
 | Punkt | Was fehlt |
@@ -271,25 +322,11 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-07 | **OP-25 Befundsprint Kostenlücke** (nach der Fensterauswertung): Ursache reproduziert (Budget-Skip-Marker ohne KI-Aufruf, 5 Stellen), kleinste sichere Korrektur (`keinAufruf`-Kennzeichnung mit 5 Invarianten ⇒ estimatedCost 0, zentral in `buildLlmUsageRecord`), Suite `llm-nutzungsprotokoll-test.js` 38/38, Offline baseline-identisch; Kostenvertrag + historischer Eintrag unverändert; **veröffentlicht als PR #232** (Commit `0716a4e` + Review-Härtung, CI-Pflichtchecks grün) | **erfolgreich** (Merge = Betreiberentscheidung; Fix noch nicht Production-nachgewiesen) |
-| 2026-08-07 | **OP-25 zweites Nachweisfenster + Auswertung**: Aktivierung `dpl_DJCLHxHjKkM3sgCbLB99Vqf6C92c` (`d8bf68fa…`) 16:24:42Z am 06.08., Baseline +44 s (SHA256 `3b781764…`), Schutzfenster gehalten, Auswertung unmittelbar nach Fensterende → **`blockiert`** (Exit 2, genau 1 Befund `kosten-nicht-bepreisbar`); alle Betriebskriterien erstmals grün, E3 `nv=0` in allen 3 Läufen | **teilweise** (Nachweis `nicht_pruefbar`; Doku nur lokal, kein Commit — Betreiberentscheidung zur Kostenlücke aussteht) |
-| 2026-08-06 | **OP-25-Betreiberschritte K2/K3** nach Merge PR #229 (`f4f4500b`): Vorprüfung rein lesend; `max-mustermann` relational deaktiviert (konditionales Update, 1 Zeile, 08:01:31Z, kein Delete); Retention 36 + Betreiber-Redeploy `dpl_3y5n…` READY 07:50:22Z; alle drei Sichten + Blob `m5-9aee228dbf2c9f13`, K2-Gate widerspruchsfrei; Doku-Korrekturen (Belegdatei §6 `user_id`, Env-Inventar) | **erfolgreich** (Nachweisstart bleibt separat freigabepflichtig; kein Lauf, keine Baseline) |
-| 2026-08-05 | **Korrektursprint K1–K8** (PR #229, Branch `claude/op25-corrections-k1-k8-kc1tdw`): alle acht Korrekturen umgesetzt + getestet; Beleg [`betrieb/op25-korrektursprint-2026-08-05.md`](betrieb/op25-korrektursprint-2026-08-05.md) | **teilweise** (Code vollständig + grün; Review/Merge + 2 Betreiberschritte + Production-Nachweis offen) — **Merge + Betreiberschritte am 2026-08-06 erfolgt** |
-| 2026-08-05 | **OP-25-Ursachenanalyse** des gescheiterten Nachweises (PR #227, rein lesend aus dauerhaften Belegen) | **erfolgreich**; widerlegt 2 der 7 Befunde, ordnet die übrigen ein, definiert K1–K8; OP-25 bleibt teilweise |
-| 2026-08-05 | Doku-Sprint: `CURRENT_STATE.md` kompaktiert, Historie archiviert, Größenkontrolle (PR #228) | dieser Stand |
-| 2026-08-05 | OP-25: 1. regulärer Production-Nachweis §7.7.5 (Fenster 04.–05.08.), PR #226 | **gescheitert** (Exit 1, 7 Befunde); Ablauf und Commitnachweis selbst haben funktioniert |
-| 2026-08-04 | PR #223: Startbaseline deploymentgebunden + Commitnachweis (inkl. adversarialer Nachprobe) | erfolgreich, gemergt |
-| 2026-08-04 | PR #222: OP-25-Nachweisvertrag + Werkzeug, 4 Reviewdurchgänge | erfolgreich, gemergt; dabei F-E2E entdeckt (offen) |
-| 2026-08-04 | Production-Profilreparatur (Betreiberfreigabe): 5 Profile repariert, `max-mustermann` deaktiviert — **wirkte nur im Blob** (§3) | erfolgreich mit Einschränkung |
-| 2026-08-03/04 | PR #219: Kapazitätsfehler globaler Abrufpfad (F-RT/F-CL) behoben | gemergt; Wirkung im Fenster belegt (`cas=0`, 27 Requests) |
-| 2026-08-03 | K2.1-Aktivierung → erster Wirkungslauf scheitert am Kapazitätsvertrag → Betreiber-Rückbau | gescheitert/zurückgerollt |
-| 2026-08-03 | OP-25-Fairness-Production-Nachweis (Rotation, R-6, F-CAS) | bestanden; Befund F-POS |
-| 2026-08-01/02 | Mail-Reihe #204–#207, #208 F-CAS-Fix, #209 Kalender-Machbarkeit | gemergt; Resend bleibt aus |
-| 2026-07-31 | K1/K2/K2.1 gebaut (#199/#200/#201), Punkt 25 vollständig | teilweise/erfolgreich |
-| 2026-07-30 | Punkte 27A/29 (E2E-Verträge, Fehlervertrag, P29-Fixes) | teilweise; 29B offen |
-| 2026-07-28/29 | Matching-Audit 23B-1, Embeddings 22A–22C1 (Backfill 772/772), OP-24, OP-01-Restore-Übung, Punkt 24 | erfolgreich |
-| 2026-07-27 | W-1/W-2-Werkzeughärtung + Migration `20260727` + B4-3/B4-4-Hotfixes + CSD-Nachweis | erfolgreich |
-| 2026-07-26 | Berlin aktiviert und **am selben Abend zurückgerollt** (Abbruchkriterium 16) | zurückgerollt/teilweise |
+| 2026-08-08 | **OP-30 Prüf-, Commit- und PR-Sprint**: die fünf lokal roten Suiten endgültig bewertet (4 Baseline-Fehler + 1 fehlende lokale Voraussetzung, **keine Regression, keiner blockiert CI**); **eigene Regression behoben** — der Production-Schutz hätte das CI-Gate abgebrochen, `ci.yml` erklärt jetzt `HELMUT_SOURCE_MODE=off`; Befund: **CI ist am Basisstand auf `main` bereits rot** (andere Suiten, lokal grün, nicht durch OP-30); Offline 220/225 + Browser 32/32; Commits und PR erstellt · Beleg [`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) | **teilweise abgeschlossen** (reviewbereit; Merge, Production-Nachweis und CI-Klärung offen) |
+| 2026-08-08 | **OP-30 Korrektur- und Abnahmesprint** (isolierter Arbeitsbaum, kein Commit): **200 Mandate im Tag bewiesen** (letzte Pflichtarbeit 21:38:00) — Ursache der früheren 25 h war das Briefingfenster bis 98 % plus ein Abtastfehler der Simulation; **`HELMUT_RELEVANZORDNUNG` auf default AUS** mit vier unabhängigen Merge-Neutralitätsbeweisen; **lokaler Production-Schutz an der Ursache behoben** (zwei Schichten, 76 PASS); neuer Befund zur Deckelaufteilung; Offline 220/225 + Browser 32/32, **keine neue Regression** gegen Baseline 203/208 · Belege [`betrieb/skalierung-200-mandate.md`](betrieb/skalierung-200-mandate.md), [`betrieb/lokaler-production-schutz.md`](betrieb/lokaler-production-schutz.md) | **teilweise abgeschlossen** (lokal bewiesen; Production-Nachweis, Deckel und 190 echte Profile offen) |
+| 2026-08-08 | **OP-30 finaler lokaler Abnahmesprint** (isolierter Arbeitsbaum, kein Commit): zentrale Skalierungsrechnung 5/200/1000, Relevanzordnung (Gründervorgabe, Default AN), virtuelle 24 h, Bereinigung bei 66 000 Zeilen, Flagmatrix, Profilinventar; **drei echte Produktfehler behoben**, unbelegte Deckelangabe korrigiert, **ein unbeabsichtigter lesender Production-Zugriff offengelegt**; Offline 218/223 (5 rot auch am unveränderten `a07954d`); Beleg [`betrieb/op30-abnahme-2026-08-08.md`](betrieb/op30-abnahme-2026-08-08.md) | **teilweise abgeschlossen** (lokal bewiesen; Migration/Aktivierung/Production-Nachweis + 190 echte Profile offen) |
+| 2026-08-08 | **OP-30 Umsetzungssprint Skalierungsgrundlage 1000** (isolierter Arbeitsbaum, kein Commit): Arbeitswarteschlange + Migration/Rollback, Source-Demand-Compiler, Scheduler/Worker, Flag `HELMUT_SCALABLE_PIPELINE` (Default aus); 6 neue Suiten grün, Browser-Smoke 32/32; zwei echte Fehler gefunden und behoben; Beleg [`betrieb/skalierungsgrundlage-1000.md`](betrieb/skalierungsgrundlage-1000.md) | **erfolgreich** (lokal; Migration/Aktivierung/Production-Nachweis offen) |
+| 2026-08-08 | **V3-Skalierungsprüfung** (rein lesend): Productionpfad nachgezeichnet, Kapazität aus echtem Code hochgerechnet ⇒ neuer Punkt **OP-30**; zwei frühere Behauptungen zurückgezogen; Beleg [`betrieb/v3-skalierungspruefung-2026-08-08.md`](betrieb/v3-skalierungspruefung-2026-08-08.md) | **erfolgreich** (Umsetzung ist Gründerentscheidung) |
 
-Ältere Sprints, vollständige Berichte, Testzahlen und Beweisketten: **Archiv**
+Sprints bis einschließlich 2026-07-31, vollständige Berichte, Testzahlen und Beweisketten: **Archiv**
 ([`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)).
