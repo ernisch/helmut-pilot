@@ -86,6 +86,20 @@ function installNetGuard() {
   }
 }
 
+// Suiten, die die VERWEIGERUNGSLOGIK der Werkzeuge pruefen und dafuer absichtlich eine
+// Production-aussehende Umgebung aufbauen. Fuer sie wird die UMGEBUNGSPRUEFUNG des lokalen
+// Schutzes uebersprungen — die LAUFZEITSPERRE gegen nicht-lokale Verbindungen bleibt aktiv.
+// Ohne diese Liste wuerde der Schutz genau die Nachweise zerstoeren, die dieselbe Gefahr
+// abdecken (belegt am 2026-08-08: alle drei brachen mit Exit 3 ab, bevor das Werkzeug seine
+// eigene Verweigerung mit Exit 2 zeigen konnte).
+// Die Liste ist AUSDRUECKLICH und kurz zu halten. Jeder Eintrag ist eine Zusage, dass die
+// Suite keine echte Verbindung aufbaut.
+const WERKZEUG_VERWEIGERUNG = new Set([
+  "restore-drill-test.js",          // prueft: Restore lehnt Production als Ziel ab
+  "backup-export-test.js",          // prueft: Export laeuft nur gegen die vorgesehene Quelle
+  "understanding-recovery-test.js"  // prueft: Recovery-Pfad verweigert ohne klare Umgebung
+]);
+
 // Suiten, die NICHT offline lauffähig sind (Netz, Production-URL, Live-LLM, echte DB)
 // oder die keine Tests, sondern Werkzeuge/Backfills sind.
 const DENYLIST = new Set([
@@ -158,7 +172,14 @@ function main() {
       cwd: ROOT,
       encoding: "utf8",
       timeout: 180000,
-      env: { ...process.env, HELMUT_OFFLINE_TEST: "1", NO_NETWORK_TESTS: "1" }
+      env: {
+        ...process.env,
+        HELMUT_OFFLINE_TEST: "1",
+        NO_NETWORK_TESTS: "1",
+        // Nur fuer die Suiten aus WERKZEUG_VERWEIGERUNG: Umgebungspruefung aus,
+        // LAUFZEITSPERRE bleibt an (siehe scripts/lokaler-netzschutz.js).
+        ...(WERKZEUG_VERWEIGERUNG.has(suite) ? { HELMUT_SCHUTZ_SIMULIERTE_UMGEBUNG: "ja" } : {})
+      }
     });
     const ms = Date.now() - t0;
     // Blockierte Netz-Versuche einsammeln — auch wenn die Suite den Fehler
@@ -203,6 +224,13 @@ function main() {
 }
 
 if (require.main === module) {
+  // ZENTRALER SCHUTZ (OP-30-Korrektursprint, 2026-08-08). Der Runner-eigene Guard unten
+  // bleibt als zweite, unabhaengige Schicht bestehen — aber die ERSTE Schicht ist jetzt
+  // `scripts/lokaler-netzschutz.js`. Grund: der Runner-Guard griff ausschliesslich im
+  // Preload-Pfad und liess jeden Direktaufruf ungeschuetzt; genau dort entstand der
+  // versehentliche Production-Lesezugriff. Der zentrale Schutz prueft zusaetzlich die
+  // Umgebung (Zugangsdaten, Datenbankadressen, Quellenmodus) und bricht fail closed ab.
+  require("./lokaler-netzschutz.js");
   process.exit(main());
 } else if (process.env.NO_NETWORK_TESTS === "1") {
   // Als --require-Preload in einem Testprozess geladen -> Offline-Zwang aktiv.
