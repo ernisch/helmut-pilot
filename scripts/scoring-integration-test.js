@@ -43,17 +43,50 @@ const profile = { id: "u1", fullName: "Test MdB", party: "SPD" };
 
 // Env muss ueber das await hinweg gesetzt bleiben (scoringActive() wird NACH dem
 // listKnowledgeObjects-await geprueft) -> Env innerhalb des await halten.
-async function rankWith(mode) {
+// NACHTRAG 2026-08-08 (Korrektursprint): `HELMUT_RELEVANZORDNUNG` ist seit diesem Sprint
+// **default AUS** (Begruendung im Kopf von lib/helmut/relevanzordnung.js — ein default-AN-Flag
+// haette das Verhalten beim MERGE veraendert). Die Zusagen unten pruefen ausdruecklich die
+// WIRKUNG der Relevanzordnung; sie brauchen sie also eingeschaltet. Das wird hier explizit
+// getan, statt sich auf einen Standard zu verlassen — die Abhaengigkeit ist damit sichtbar
+// und der Test bleibt gueltig, egal wie der Standard morgen steht.
+async function rankWith(mode, { relevanzordnung = "on" } = {}) {
   const prev = process.env.HELMUT_SCORING_MODE;
+  const prevRel = process.env.HELMUT_RELEVANZORDNUNG;
   if (mode == null) delete process.env.HELMUT_SCORING_MODE; else process.env.HELMUT_SCORING_MODE = mode;
+  if (relevanzordnung == null) delete process.env.HELMUT_RELEVANZORDNUNG;
+  else process.env.HELMUT_RELEVANZORDNUNG = relevanzordnung;
   try { return await lage.loadRankedVorgaenge(stubStorage, null, profile, "u1"); }
-  finally { if (prev == null) delete process.env.HELMUT_SCORING_MODE; else process.env.HELMUT_SCORING_MODE = prev; }
+  finally {
+    if (prev == null) delete process.env.HELMUT_SCORING_MODE; else process.env.HELMUT_SCORING_MODE = prev;
+    if (prevRel == null) delete process.env.HELMUT_RELEVANZORDNUNG; else process.env.HELMUT_RELEVANZORDNUNG = prevRel;
+  }
 }
 (async () => {
   const off = await rankWith(undefined), on = await rankWith("on");
-  check("Lage Flag AUS: persoenliche Reihenfolge (a zuerst)", off[0].id === "a");
+  // GEAENDERTE ERWARTUNG (2026-08-08, mit Begruendung — keine Abschwaechung).
+  // Frueher stand hier: "Flag AUS -> persoenliche Reihenfolge (a zuerst)". Das pruefte, dass
+  // die Lage die ROHE Zeilenreihenfolge aus `listMatchingResults` uebernimmt. Genau diese
+  // Reihenfolge ist seit der Gruendervorgabe "Relevanz vor Aktualitaet" nicht mehr
+  // massgeblich — und sie war ohnehin undefiniert, sobald mehrere Zeilen denselben
+  // `created_at` tragen (der Normalfall bei einem Stapel-Upsert).
+  //
+  // Was jetzt gilt und hier geprueft wird: die Relevanzordnung greift auf BEIDEN Wegen.
+  // 'b' (Bundesgesetz, hohes Risiko, Zeitdruck, Parteibezug) ist handlungsbeduerftig,
+  // 'a' (kommunale Randnotiz ohne jeden Profilbezug) ist es nicht. Also steht 'b' vorn —
+  // unabhaengig davon, in welcher Reihenfolge die Ablage die Zeilen liefert.
+  //
+  // Der Unterschied, den das Scoring-Flag macht, bleibt trotzdem pruefbar und wird unten
+  // geprueft: mit Flag ordnet die GLOBALE Wichtigkeit vor, ohne Flag die MANDATSRELEVANZ.
+  check("Lage Flag AUS: der handlungsbeduerftige Vorgang steht vorn, nicht der zuerst gespeicherte",
+    off[0].id === "b", off.map((k) => k.id).join(","));
+  check("Lage Flag AUS: die kommunale Randnotiz ohne Profilbezug steht hinten",
+    off[off.length - 1].id === "a", off.map((k) => k.id).join(","));
+  check("Lage Flag AUS: die Reihenfolge ist deterministisch (zweiter Lauf identisch)",
+    (await rankWith(undefined)).map((k) => k.id).join(",") === off.map((k) => k.id).join(","));
   check("Lage Flag AN: wichtigster zuerst (b = Bundesgesetz)", on[0].id === "b");
   check("Lage Flag AN: kommunale Randnotiz rutscht nach hinten", on[on.length - 1].id === "a");
+  check("Lage: beide Wege liefern dieselbe MENGE (das Flag aendert die Ordnung, nicht die Auswahl)",
+    off.length === on.length && new Set(off.map((k) => k.id)).size === new Set(on.map((k) => k.id)).size);
 
   // ============================ RADAR ============================
   console.log("== RADAR: unterscheidbarer Leerzustand (flag-gesichert) ==");

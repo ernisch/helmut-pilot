@@ -62,6 +62,15 @@ jobs:
         # und NO_NETWORK_TESTS=1. browser-smoke-test.js darf hier mangels
         # Playwright SKIPpen (HELMUT_OFFLINE_TEST=1) — die Browser-Pflicht
         # liegt beim browser-smoke-Job unten (dort fail-closed).
+        #
+        # HELMUT_SOURCE_MODE=off ist seit dem lokalen Production-Schutz PFLICHT
+        # (scripts/lokaler-netzschutz.js, Bedingung 5). Der Schutz bricht fail closed ab,
+        # wenn der Quellenmodus nicht eindeutig "off" ist — im CI war er bisher gar nicht
+        # gesetzt. Ohne diese Zeile hätte der Schutz das gesamte Merge-Gate mit Exit 3
+        # abgebrochen (belegt am 2026-08-08). Die Zeile schwächt nichts ab: sie sagt
+        # ausdrücklich, was hier ohnehin gilt — dieser Lauf ist offline.
+        env:
+          HELMUT_SOURCE_MODE: "off"
         run: node scripts/run-offline-tests.js
 
   browser-smoke:
@@ -91,4 +100,6 @@ jobs:
         # zusätzlich explizit und unabhängig vom CI-Env-Verhalten.
         env:
           HELMUT_REQUIRE_BROWSER: "1"
+          # Gleicher Grund wie oben: der Quellenmodus wird ausdrücklich als "off" erklärt.
+          HELMUT_SOURCE_MODE: "off"
         run: node scripts/browser-smoke-test.js

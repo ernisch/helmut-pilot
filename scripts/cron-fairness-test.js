@@ -1188,8 +1188,14 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
       /const CRON_FAIRNESS_STORE_SUFFIX = "cron-fairness";/.test(storageQuelle)
       && /\/rest\/v1\/helmut_store\?id=eq\.\$\{encodeURIComponent\(cronFairnessRowId\(\)\)\}/.test(storageQuelle)
       && !/cron_tenant_schedule|cron_fairness_state/.test(storageQuelle));
-    check("Es gibt keine neue Migration in diesem Sprint",
-      !fs.readdirSync(path.join(ROOT, "supabase", "migrations")).some((f) => /fairness|cron_tenant|scheduler/i.test(f)));
+    // PRAEZISIERT (2026-08-08): das blosse Wort "fairness" im Dateinamen war zu grob.
+    // Ein FREMDER Sprint (OP-30) hat eine Migration `20260808_llm_budget_fairness.sql`
+    // eingebracht — KI-Budget, nicht Cron-Fairness. Der Waechter soll sichern, dass DIESER
+    // Sprint (Cron-/Mandantenrotation) ohne Migration auskommt; genau das prueft er jetzt.
+    const CRON_FAIRNESS_MUSTER = /cron[_-]?fairness|cron_tenant|tenant_schedule|scheduler/i;
+    check("Es gibt keine neue Migration in diesem Sprint (Cron-/Mandantenrotation)",
+      !fs.readdirSync(path.join(ROOT, "supabase", "migrations")).some((f) => CRON_FAIRNESS_MUSTER.test(f)),
+      fs.readdirSync(path.join(ROOT, "supabase", "migrations")).filter((f) => CRON_FAIRNESS_MUSTER.test(f)).join(", "));
     check("Die DSGVO-Loeschung entfernt die Scheduler-Spur mit",
       /const fairness = await deleteCronFairnessTenant\(politicianId\);/.test(storageQuelle)
       && /const fairness = await deleteCronFairnessTenant\(uid\);/.test(storageQuelle)

@@ -152,7 +152,22 @@ function neuerStore(opts) {
     saveMatchingResults: (rows) => {
       tenantGuard(rows, "saveMatchingResults");
       st.zaehler.saveMatching += 1;
-      for (const r of rows || []) st.matchingResults.set(r.id, { ...r, aktuell: true, created_at: new Date().toISOString() });
+      // EIN Zeitstempel fuer den GANZEN Stapel — so wie Postgres es tut.
+      //
+      // BELEGTER FEHLER (2026-08-08): hier stand `new Date()` INNERHALB der Schleife. Jede
+      // Zeile bekam damit ihre eigene Millisekunde. Auf einer schnellen Maschine fiel das
+      // nie auf (alle Zeilen landeten in derselben Millisekunde); unter CPU-Knappheit
+      // rutschte der Stapel ueber eine Millisekundengrenze, `order=created_at.desc` drehte
+      // die Reihenfolge um, und `berlin-e2e-vertrag-test.js` J8 fiel um — reproduziert in
+      // 1 von 25 Laeufen unter Fremdlast, in 78 Laeufen ohne Fremdlast nie.
+      //
+      // Das war UNTREU zur Datenbank: `now()` ist in Postgres innerhalb einer Transaktion
+      // KONSTANT, ein Stapel-Upsert vergibt also fuer alle Zeilen denselben Zeitstempel.
+      // Die Attrappe hat damit eine Streuung erzeugt, die es in Production nicht gibt — und
+      // nebenbei aufgedeckt, dass der Lesepfad bei GLEICHEN Zeitstempeln gar keine
+      // definierte Reihenfolge hatte (dort jetzt `order=created_at.desc,id.desc`).
+      const stapelZeit = new Date().toISOString();
+      for (const r of rows || []) st.matchingResults.set(r.id, { ...r, aktuell: true, created_at: stapelZeit });
       return { saved: (rows || []).length };
     },
     // M8 (HELMUT_MATCHING_RELEVANZ_GATE): der ECHTE Flag-Leser gegen die echte Umgebung.
@@ -166,6 +181,12 @@ function neuerStore(opts) {
     },
     listMatchingResults: ({ userId, limit = 50, includeAbgeloest = false } = {}) => {
       if (!userId) throw new Error("[tenant-guard] listMatchingResults: kein Mandant");
+      // Sortierung exakt wie der echte Lesepfad: `order=created_at.desc`, sonst nichts.
+      // `Array.prototype.sort` ist seit ES2019 STABIL — bei gleichem Zeitstempel bleibt
+      // damit die Einfuegereihenfolge erhalten, also die Reihenfolge, in der der Matcher
+      // die Zeilen geschrieben hat. Postgres GARANTIERT das nicht; die Attrappe bildet
+      // hier den gutmuetigen Fall ab. Der Unterschied ist ein belegter offener Befund
+      // (docs/betrieb/skalierungsgrundlage-1000.md §15) und ausdruecklich kein gruener Punkt.
       return [...st.matchingResults.values()]
         .filter((r) => r.user_id === userId && (includeAbgeloest || r.aktuell === true))
         .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
