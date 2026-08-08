@@ -1385,6 +1385,37 @@ Nach Merge (= Production-Deployment mit dem Fix) folgt das neue §7.7.5-Fenster 
 (Baseline binnen 15 min nach READY) — `HELMUT_CRON_GLOBALABRUF` bis dahin unverändert
 lassen. Das alte Fenster bleibt `nicht_pruefbar`.
 
+### 7.7.9 Dritter regulärer Nachweis 2026-08-07/08 — **BESTANDEN** (Exit 0, null Befunde)
+
+**Fenster:** Aktivierung = READY **`dpl_AdZ4JJJZUAT27X72SWzVeFyJu49a`** (automatisches
+Git-Deployment des Merges von **PR #232**, Commit **`a07954df049df52657ee9fac2a63ca2efd6b1d7d`**
+— enthält den Kostenlücken-Fix `0716a4e`+`4663a55`) **2026-08-07T20:19:06.409Z** →
+2026-08-08T20:19:06.409Z (22:19:06 → 22:19:06 Berlin). Startbaseline 160 s nach READY
+(`belege/op25-startbaseline-2026-08-07-fixfenster.json`, SHA256 `8414fab3…`,
+m5-9aee228dbf2c9f13). Schutzfenster gehalten: kein Merge (main unverändert `a07954d`),
+kein Production-Deployment (einzig ein Branch-Preview zu PR #233, target null), keine
+Mandats-/Profiländerung (letzte 2026-08-06 08:01Z), kein manueller Lauf.
+
+**Auswertung (2026-08-08T20:39:44–50 UTC, 21 min nach Fensterende):**
+`HELMUT_CRAWL_RUN_RETENTION=36 node scripts/op25-production-nachweis.js --aktivierung
+"2026-08-07T20:19:06.409Z" --erwarteter-commit a07954df… --startbaseline belege/op25-startbaseline-2026-08-07-fixfenster.json`
+→ **`bestanden` (Exit 0), null Befunde**; Beleg `belege/op25-auswertung-2026-08-08.log`
+(SHA256 `17ed0f83…`). Alle Vertragskriterien grün: 3/3 erwartete Läufe (04:00 · 16:00 ·
+20:00) vollständig und im Budget versiegelt (188,1 s · 206,6 s · 212,6 s) ·
+Commitnachweis (alle Fensterläufe `a07954df…`) · Mandatsmenge konstant
+**m5-9aee228dbf2c9f13** auf allen Ebenen inkl. Endzustand · K1-Bindung · E3 `nv=0` ·
+Kontextzahl 12 durch Zusammensetzung erklärt · kein Watchdog-Ersatzlauf (K7) ·
+Retention 36 (Bedarf 30) · **Kosten 0,2106 USD von 2 USD, unbepreist = 0** — der
+Kostenlücken-Fix hat in Production gewirkt. 6 benannte Warnungen (Kontextzahl erklärt,
+`datenstand=teilweise` mit dauerhafter Vormerkung — **OP-14 bleibt ausdrücklich offen**);
+3 Läufe korrekt als außerhalb des Fensters ausgeschlossen.
+
+**Geltungsbereich (verbindlich):** Der bestandene Nachweis gilt **ausschließlich für die
+aktuelle Production-Architektur mit fünf aktiven Mandaten**. Er beweist weder die
+OP-30-Architektur noch die Skalierung auf 200 Mandate. **Nach einer späteren Aktivierung
+der OP-30-Architektur muss OP-25 vollständig mit der neuen Architektur wiederholt
+werden.** Die Risikozeile R1 (§8) ist damit für die heutige Architektur geschlossen.
+
 ## 8 · Verbleibende Risiken
 
 | # | Risiko | Bewertung |
