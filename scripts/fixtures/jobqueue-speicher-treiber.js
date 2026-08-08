@@ -65,6 +65,10 @@ function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
       idempotency_key: auftrag.idempotencyKey,
       freshness_window: auftrag.freshnessWindow,
       due_at: auftrag.dueAt || jetzt,
+      // Urspruengliche Faelligkeit, wird NIE veraendert — exakt wie in der Migration
+      // (Abschlussreview 2026-08-08). Ohne sie waere jede Rueckstandsmessung durch
+      // Zurueckstellen loeschbar.
+      first_due_at: auftrag.dueAt || jetzt,
       priority: Number.isFinite(auftrag.priority) ? auftrag.priority : 100,
       status: "wartend",
       created_at: jetzt,
@@ -192,10 +196,10 @@ function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
         nach_typ: zaehleNach("job_type"),
         nach_status: zaehleNach("status"),
         ueberfaellige_mandate: new Set(mandate
-          .filter((z) => Date.parse(z.due_at) <= jetztMs - 24 * 3600 * 1000)
+          .filter((z) => Date.parse(z.first_due_at || z.due_at) <= jetztMs - 24 * 3600 * 1000)
           .map((z) => z.tenant_id)).size,
         max_mandatsalter_s: mandate.length
-          ? Math.max(...mandate.map((z) => (jetztMs - Date.parse(z.due_at)) / 1000)) : 0
+          ? Math.max(...mandate.map((z) => (jetztMs - Date.parse(z.first_due_at || z.due_at)) / 1000)) : 0
       }
     };
   }

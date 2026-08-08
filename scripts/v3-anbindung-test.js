@@ -24,6 +24,9 @@ process.env.HELMUT_SOURCE_MODE = "off";
 const { erzeugeMandate } = require(path.join(ROOT, "scripts/fixtures/synthetische-mandate-1000.js"));
 const { erzeugeSpeicherWarteschlange } = require(path.join(ROOT, "scripts/fixtures/jobqueue-speicher-treiber.js"));
 const SP = require(path.join(ROOT, "lib/helmut/scalable-pipeline.js"));
+// Die EINE Kennungswahrheit fuer raw_documents — dieselbe Funktion, die
+// `scheduler.persistRawDocumentsShadow` benutzt. Die Attrappe unten darf sie nicht nachbauen.
+const dedup = require(path.join(ROOT, "lib/helmut/dedup.js"));
 const SD = require(path.join(ROOT, "lib/helmut/source-demand.js"));
 const FAIR = require(path.join(ROOT, "lib/helmut/llm-budget-fair.js"));
 const sched = require(path.join(ROOT, "lib/helmut/scheduler.js"));
@@ -88,18 +91,40 @@ function welt({ dokumenteJeAbruf = 3 } = {}) {
       const items = [];
       for (const weg of wege) {
         for (let i = 1; i <= dokumenteJeAbruf; i += 1) {
-          items.push({ url: `${weg}#artikel-${i}`, title: `Titel ${i}`, sourceId: quelle.id, _weg: weg, _nr: i });
+          // KORREKTUR (Abschlussreview 2026-08-08): hier stand `${weg}#artikel-${i}`.
+          // `dedup.canonicalizeUrl` entfernt den Fragmentteil (`u.hash = ""`) — alle
+          // Artikel eines Abrufwegs fielen damit auf DIESELBE Dokumentkennung. Die
+          // Attrappe modellierte also drei Artikel und lieferte in Wahrheit einen.
+          // Echte Artikel unterscheiden sich im Pfad, nicht im Fragment.
+          const artikelUrl = `https://beispiel.invalid/artikel/${SD.streuwert(weg).toString(16)}-${i}`;
+          items.push({ url: artikelUrl, title: `Titel ${i}`, sourceId: quelle.id, _weg: weg, _nr: i });
         }
       }
       return { results: [{ ok: true }], rawItems: items };
     },
 
-    // Kennung = Inhaltsfingerabdruck, exakt wie `dedup.toRawDocumentRow` (`rd-<hash>`).
+    // KORREKTUR (Abschlussreview 2026-08-08): diese Attrappe hat die Kennung frueher SELBST
+    // gebaut (`rd-<sha256(url)[0..16]>`) und dabei behauptet, das sei „exakt wie
+    // dedup.toRawDocumentRow". Das war es nicht, und vor allem gab sie die `rd-…`-Kennung
+    // im Rueckgabewert von `saveRawItems` mit — was Production NICHT tut: dort kommen die
+    // BLOB-Zeilen mit `raw-<hash16>` zurueck (crawler.js). Die Attrappe hat damit genau den
+    // Fehler verdeckt, den sie haette finden muessen (der Handler las `d.id` und schickte
+    // Blob-Kennungen in einen Auftrag, der `raw_documents` liest).
+    //
+    // Jetzt liefert sie die BLOB-Form, und die Ablage wird unter der ECHTEN
+    // `raw_documents`-Kennung gefuehrt — der Handler muss sie selbst korrekt ableiten.
     saveRawItems: async (items) => items.map((it) => {
-      const id = `rd-${crypto.createHash("sha256").update(String(it.url)).digest("hex").slice(0, 16)}`;
-      const zeile = { id, url: it.url, title: it.title, source_id: it.sourceId, _vorgang: vorgangFuer(it._weg, it._nr) };
-      w.rohdokumente.set(id, zeile);
-      return zeile;
+      const zeile = dedup.toRawDocumentRow(it);
+      w.rohdokumente.set(zeile.id, {
+        id: zeile.id, url: it.url, title: it.title, source_id: it.sourceId,
+        // Herkunft (welcher Abrufweg hat dieses Dokument geliefert) wird ausdruecklich
+        // mitgefuehrt. Vorher leitete die Attrappe sie aus dem URL-PRAEFIX ab — das ging
+        // nur, solange die Artikel-URL den Feed enthielt (`<feed>#artikel-N`), und genau
+        // diese unrealistische Form war der Grund, warum die Kennungen kollabierten.
+        _weg: it._weg,
+        _vorgang: vorgangFuer(it._weg, it._nr)
+      });
+      return { ...it, id: `raw-${crypto.createHash("sha256").update(String(it.url)).digest("hex").slice(0, 16)}` };
     }),
     persistRawDocuments: async (docs) => ({ skipped: false, error: null, persisted: docs.length }),
     ladeRohdokumente: async (ids) => ids.map((i) => w.rohdokumente.get(i)).filter(Boolean),
@@ -129,7 +154,8 @@ function welt({ dokumenteJeAbruf = 3 } = {}) {
       const eigeneWege = new Set(eigeneQuellen(profil).flatMap((q) => SD.abrufwege(q)).map(SD.kanonischeUrl));
       const belege = [];
       for (const [id, d] of w.rohdokumente) {
-        const basis = SD.kanonischeUrl(String(d.url).split("#")[0]);
+        // Herkunft aus dem mitgefuehrten Abrufweg, nicht aus dem URL-Praefix (siehe oben).
+        const basis = SD.kanonischeUrl(d._weg || "");
         if (eigeneWege.has(basis) && w.verstandeneVorgaenge.has(d._vorgang)) belege.push({ dokument: id, weg: basis });
       }
       w.belegeJeMandat.set(mandatsId, belege);
@@ -160,11 +186,24 @@ async function main() {
     check("1.2 Der Abruf reiht einen Verstehensauftrag ein", ergebnis.verstehensAuftraege === 1, String(ergebnis.verstehensAuftraege));
     const verstehen = q.alle().filter((x) => x.job_type === "document_understanding");
     check("1.3 Der Verstehensauftrag steht in der Warteschlange", verstehen.length === 1);
+    // KORREKTUR (Abschlussreview 2026-08-08): die Erwartung war `rd-[0-9a-f]{16}` — die
+    // Kennung der frueheren Attrappe. `dedup.toRawDocumentRow` erzeugt den VOLLEN SHA-256
+    // (64 Zeichen). Die Erwartung wurde also gegen die Attrappe geprueft, nicht gegen die
+    // Ablage. Jetzt wird gegen die ECHTE Kennungsfunktion geprueft.
     check("1.4 Er traegt NUR Kennungen, keine Inhalte (Datensparsamkeit)",
       Array.isArray(verstehen[0].payload.dokumentIds)
-      && verstehen[0].payload.dokumentIds.every((i) => /^rd-[0-9a-f]{16}$/.test(i))
+      && verstehen[0].payload.dokumentIds.length === 3
+      && verstehen[0].payload.dokumentIds.every((i) => /^rd-[0-9a-f]{64}$/.test(i))
       && !JSON.stringify(verstehen[0].payload).includes("Titel"),
-      JSON.stringify(verstehen[0].payload).slice(0, 90));
+      JSON.stringify(verstehen[0].payload).slice(0, 120));
+    // NEU (Abschlussreview 2026-08-08): der eigentliche Nachweis — die Kennungen im Auftrag
+    // sind GENAU die, unter denen die Dokumente in `raw_documents` liegen. Vorher trug der
+    // Auftrag die Blob-Kennungen (`raw-…`), und `getRawDocumentsByIds` haette nie etwas
+    // gefunden. Ein reiner Formattest haette das nicht bemerkt.
+    check("1.4b Die Kennungen sind die der Ablage (rd-…), nicht die des Blobs (raw-…)",
+      verstehen[0].payload.dokumentIds.every((i) => w.rohdokumente.has(i))
+      && !verstehen[0].payload.dokumentIds.some((i) => String(i).startsWith("raw-")),
+      JSON.stringify(verstehen[0].payload.dokumentIds).slice(0, 120));
     check("1.5 Er ist GLOBAL — kein Mandatsbezug (CLAUDE.md §4.2)", verstehen[0].tenant_id === null);
     check("1.6 Er hat Vorrang vor Projektion (200) und Briefing (250)", verstehen[0].priority < 200,
       String(verstehen[0].priority));

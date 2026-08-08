@@ -79,6 +79,14 @@ create table if not exists public.helmut_jobs (
   freshness_window  text        not null,
   -- (4) Fälligkeit
   due_at            timestamptz not null default now(),
+  -- URSPRÜNGLICHE Fälligkeit — wird NIE verändert.
+  -- Ergänzt im Abschlussreview 2026-08-08: `due_at` wandert bei jedem Zurückstellen nach
+  -- vorn (`helmut_defer_job` setzt `due_at = now() + delay`), und zurückgestellt wird bei
+  -- offener Vorbedingung alle zwei Minuten, bei erschöpftem KI-Budget stündlich. Jede
+  -- Rückstandsmessung gegen `due_at` ist damit durch Warten löschbar — genau der Fall, den
+  -- sie melden soll, macht sie blind. `first_claimed_at` löst das NICHT: es wird erst beim
+  -- ersten Zugriff gesetzt und verliert damit die Wartezeit davor.
+  first_due_at      timestamptz not null default now(),
   -- (5) Priorität — KLEINER = WICHTIGER (wie `nice`). Default 100.
   priority          smallint    not null default 100,
   -- (6) Status
@@ -118,6 +126,12 @@ create table if not exists public.helmut_jobs (
   constraint helmut_jobs_lease_chk
     check (status <> 'laeuft' or (lease_owner is not null and lease_expires_at is not null))
 );
+
+-- Nachtragbar bleiben: `create table if not exists` ergänzt keine Spalte, wenn die Tabelle
+-- schon steht. Diese Zeile hält die Migration auch dann wiederholbar, wenn eine ältere
+-- Fassung der Tabelle bereits existiert (Advisor-Hygiene, gleiche Form wie 20260727).
+alter table public.helmut_jobs
+  add column if not exists first_due_at timestamptz not null default now();
 
 -- (3) Idempotenz — der zentrale Riegel gegen Doppelplanung.
 create unique index if not exists helmut_jobs_idem_uidx
@@ -212,10 +226,10 @@ declare
   v_neu boolean := false;
 begin
   insert into public.helmut_jobs
-    (job_type, idempotency_key, freshness_window, payload, due_at, priority, max_attempts, tenant_id)
+    (job_type, idempotency_key, freshness_window, payload, due_at, first_due_at, priority, max_attempts, tenant_id)
   values
     (p_job_type, p_idempotency_key, p_freshness_window, coalesce(p_payload, '{}'::jsonb),
-     coalesce(p_due_at, now()), coalesce(p_priority, 100::smallint),
+     coalesce(p_due_at, now()), coalesce(p_due_at, now()), coalesce(p_priority, 100::smallint),
      coalesce(p_max_attempts, 5), p_tenant_id)
   on conflict (idempotency_key) do nothing
   returning helmut_jobs.id into v_id;
@@ -465,10 +479,28 @@ as $$
        from (select job_type, count(*) as n from basis group by job_type) t),
     (select coalesce(jsonb_object_agg(status, n), '{}'::jsonb)
        from (select status, count(*) as n from basis group by status) t),
+    -- RUECKSTAND JE MANDAT — gemessen gegen `first_due_at`, NICHT gegen `due_at`.
+    --
+    -- BELEGTER FEHLER (Abschlussreview 2026-08-08, an echter PostgreSQL nachgemessen):
+    -- Hier stand `due_at`. Genau diesen Wert setzt `helmut_defer_job` bei JEDEM
+    -- Zurueckstellen neu (`due_at = now() + delay`) — und zurueckgestellt wird bei offener
+    -- Vorbedingung alle 2 Minuten, bei erschoepftem KI-Budget stuendlich. Gemessen: ein
+    -- Auftrag mit 72 h echtem Alter meldete `max_mandatsalter_s = 259 200` und
+    -- `ueberfaellige_mandate = 1`; nach EINER Zurueckstellung meldete dieselbe Zeile
+    -- `0` und `0`. Die 24-h-Schwelle in `scalable-pipeline.betriebsstatus` haette damit
+    -- NIE ausgeloest — der einzige Rueckstandsalarm des Pfades war strukturell blind,
+    -- und zwar ausgerechnet in dem Fall, den er melden soll. Das ist falsches Gruen
+    -- (CLAUDE.md §4.4).
+    --
+    -- Warum NICHT `first_claimed_at`: das wird erst beim ersten Zugriff gesetzt und
+    -- springt damit beim ersten Claim nach vorn — ein Auftrag, den 26 h lang niemand
+    -- angefasst hat, meldete danach 0 s Rueckstand. `first_due_at` steht beim Einreihen
+    -- fest und wandert nie; es misst genau das Richtige: „seit wann waere diese Arbeit
+    -- faellig gewesen".
     (select count(distinct tenant_id) from basis
       where tenant_id is not null and status in ('wartend', 'laeuft')
-        and due_at <= now() - interval '24 hours'),
-    (select coalesce(max(extract(epoch from (now() - due_at))), 0) from basis
+        and first_due_at <= now() - interval '24 hours'),
+    (select coalesce(max(extract(epoch from (now() - first_due_at))), 0) from basis
       where tenant_id is not null and status in ('wartend', 'laeuft'));
 $$;
 

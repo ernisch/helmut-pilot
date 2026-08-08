@@ -564,6 +564,188 @@ async function main() {
       isoliert.fehlerhafteProfile.length === 1 && isoliert.fehlerhafteProfile[0].mandatsId === "m1");
   }
 
+  // ═══ 12 · Befunde des unabhaengigen Abschlussreviews 2026-08-08 ════════════
+  // Regressionen zu Fehlern, die erst der Abschlussreview gefunden hat. Jede Pruefung
+  // hier hat vor der Korrektur NACHWEISLICH die falsche Antwort gegeben.
+  abschnitt("12 · Abschlussreview 2026-08-08: Kennungswahrheit, Stapelrest, ehrlicher Abschluss");
+  {
+    // ── 12.1–12.3 · Der Verstehensauftrag traegt die Kennung der ABLAGE ──────────────
+    // Vorher: `gespeichert.map((d) => d.id)`. `storage.saveRawItems` liefert aber die
+    // BLOB-Zeilen mit `raw-<hash16>` (crawler.js), waehrend dasselbe Dokument in
+    // `raw_documents` unter `rd-<inhaltsfingerabdruck>` steht (dedup.toRawDocumentRow).
+    // Der Verstehensauftrag haette damit Kennungen getragen, die
+    // `storage.getRawDocumentsByIds` nie findet — gemeldet als `ok:true`.
+    const dedup = require(path.join(ROOT, "lib", "helmut", "dedup.js"));
+    const rawItem = {
+      id: "raw-0123456789abcdef",                 // die Blob-Kennung, exakt wie im Crawler
+      sourceId: "q1", title: "Bundestag beschliesst Haushalt",
+      url: "https://beispiel.invalid/artikel/1", publishedAt: "2026-08-08T06:00:00.000Z"
+    };
+    const erwarteteKennung = dedup.toRawDocumentRow(rawItem).id;
+    let eingereiht = null;
+    const basisDeps = {
+      hardeningConfig: () => ({ enabled: false }),
+      crawlAllSources: async () => ({ results: [{ ok: true }], rawItems: [rawItem] }),
+      saveRawItems: async (items) => items,       // wie Production: dieselben Blob-Zeilen
+      persistRawDocuments: async () => ({ persisted: 1 }),
+      enqueue: async (a) => { eingereiht = a; return { verfuegbar: true, neu: true }; }
+    };
+    const sfErgebnis = await SP.HANDLER.source_fetch(
+      { id: "j-12", payload: { quelle: { id: "q1", rssUrl: "https://beispiel.invalid/feed" } }, freshnessWindow: "F1" },
+      basisDeps);
+    check("12.1 Der Verstehensauftrag traegt die raw_documents-Kennung (rd-…), nicht die Blob-Kennung",
+      Boolean(eingereiht) && eingereiht.payload.dokumentIds.length === 1
+      && eingereiht.payload.dokumentIds[0] === erwarteteKennung,
+      JSON.stringify(eingereiht && eingereiht.payload.dokumentIds));
+    check("12.2 Die Blob-Kennung taucht nirgends im Auftrag auf",
+      Boolean(eingereiht) && !JSON.stringify(eingereiht.payload).includes("raw-0123456789abcdef")
+      && sfErgebnis.ok === true);
+    check("12.3 rohdokumentKennungen leitet dieselbe Kennung ab wie persistRawDocumentsShadow",
+      JSON.stringify(SP.rohdokumentKennungen([rawItem])) === JSON.stringify([erwarteteKennung]));
+
+    // ── 12.4/12.5 · Ein nicht eingereihter Verstehensauftrag ist KEIN Erfolg ─────────
+    // Vorher: `verstehensAuftraege` wurde bedingungslos hochgezaehlt und `ok:true`
+    // gemeldet, auch bei `verfuegbar:false` (CLAUDE.md §4.10).
+    let fehlertext = null;
+    try {
+      await SP.HANDLER.source_fetch(
+        { id: "j-13", payload: { quelle: { id: "q1", rssUrl: "https://beispiel.invalid/feed" } }, freshnessWindow: "F1" },
+        { ...basisDeps, enqueue: async () => ({ verfuegbar: false, grund: "migration-fehlt" }) });
+    } catch (error) { fehlertext = error.message; }
+    check("12.4 Ein nicht eingereihter Verstehensauftrag scheitert ehrlich statt Erfolg zu melden",
+      /verstehen-nicht-eingereiht/.test(String(fehlertext)) && /migration-fehlt/.test(String(fehlertext)),
+      String(fehlertext));
+    check("12.5 Dieser Fehler ist VORUEBERGEHEND (Backoff), nicht endgueltig",
+      SP.istEndgueltig(fehlertext) === false);
+
+    // ── 12.6/12.7 · Der Rest eines reservierten Stapels verbrennt keine Versuche ─────
+    // `claim` erhoeht `attempts` fuer den GANZEN Stapel. Wer den Rest liegen liess,
+    // verbrauchte Versuche fuer Arbeit, die nie stattgefunden hat — nach `max_attempts`
+    // Laeufen starb der Auftrag als `versuche-erschoepft`, ohne je ausgefuehrt worden zu sein.
+    const u2 = uhr();
+    const q2 = erzeugeSpeicherWarteschlange({ now: u2.jetzt });
+    for (let i = 1; i <= 4; i += 1) {
+      await q2.enqueue({ jobType: "mandate_projection", idempotencyKey: `rest-${i}`,
+        freshnessWindow: "F1", tenantId: `m${i}`, payload: { mandatsId: `m${i}` },
+        dueAt: new Date(u2.jetzt()).toISOString(), priority: 100, maxAttempts: 5 });
+    }
+    // Der erste Auftrag verbraucht das gesamte Zeitbudget; die drei uebrigen kommen nicht dran.
+    const restBilanz = await SP.arbeite({
+      env: AN, owner: "w-rest", budgetMs: 60000, leaseMs: 600000, stapel: 4,
+      deps: {
+        now: u2.jetzt, claim: q2.claim, finish: q2.finish, extendLease: q2.extendLease,
+        zurueckstellen: q2.zurueckstellen,
+        handler: { mandate_projection: async () => { u2.vor(59000); return { ok: true }; } }
+      }
+    });
+    const rest = q2.alle().filter((z) => z.idempotency_key !== "rest-1");
+    check("12.6 Der nicht bearbeitete Stapelrest wird zurueckgegeben, nicht liegen gelassen",
+      restBilanz.stapelrestZurueckgegeben === 3 && restBilanz.stapelrestNichtZurueckgegeben === 0,
+      JSON.stringify({ zurueck: restBilanz.stapelrestZurueckgegeben, offen: restBilanz.stapelrestNichtZurueckgegeben }));
+    check("12.7 Er hat dadurch KEINEN Versuch verbraucht (attempts zurueck auf 0)",
+      rest.length === 3 && rest.every((z) => z.attempts === 0 && z.status === "wartend"),
+      JSON.stringify(rest.map((z) => ({ k: z.idempotency_key, a: z.attempts, s: z.status }))));
+
+    // ── 12.8 · Ein Auftrag darf nie laenger laufen duerfen als seine halbe Lease ─────
+    // Sonst uebernaehme ein zweiter Worker ihn MITTEN in der Ausfuehrung und derselbe
+    // Quellenabruf liefe doppelt. Die Lease wird nur VOR einem Auftrag verlaengert.
+    const u3 = uhr();
+    const q3 = erzeugeSpeicherWarteschlange({ now: u3.jetzt });
+    await q3.enqueue({ jobType: "mandate_projection", idempotencyKey: "lease-1",
+      freshnessWindow: "F1", tenantId: "m1", payload: { mandatsId: "m1" },
+      dueAt: new Date(u3.jetzt()).toISOString(), priority: 100, maxAttempts: 5 });
+    await SP.arbeite({
+      env: AN, owner: "w-lease", budgetMs: 600000, leaseMs: 20000, stapel: 1,
+      deps: {
+        now: () => Date.now(), claim: q3.claim, finish: q3.finish, extendLease: q3.extendLease,
+        zurueckstellen: q3.zurueckstellen,
+        // Der Handler kommt nie zurueck -> er muss am Auftragszeitlimit scheitern.
+        handler: { mandate_projection: () => new Promise(() => {}) }
+      }
+    });
+    const leaseZeile = q3.alle()[0];
+    check("12.8 Ein Auftrag laeuft nie laenger als die halbe Lease (kein Doppellauf)",
+      Boolean(leaseZeile) && /auftrag-zeitlimit \(mandate_projection, 10000 ms\)/.test(String(leaseZeile.last_error)),
+      String(leaseZeile && leaseZeile.last_error));
+
+    // ── 12.9/12.10 · JEDE Standardabhaengigkeit muss sich wirklich aufloesen ─────────
+    // BELEGTER FEHLER: `buildV3Briefing` wurde aus `lib/helmut/briefingContract.js` geholt,
+    // wo dieser Name gar nicht exportiert ist (die Funktion steht in `server.js`). Jeder
+    // Briefingauftrag scheiterte an `require(...)[name] is not a function`, fuenfmal
+    // wiederholt, dann `fehlgeschlagen` — die Briefingstufe des Pfads war tot. Ein Test,
+    // der nur Attrappen einreicht, sieht so etwas nie. Deshalb wird hier die ECHTE
+    // Standardverdrahtung geprueft.
+    const standard = SP.workerDeps();
+    const modulPaare = [
+      ["crawlAllSources", "crawler", "crawlAllSources"],
+      ["saveRawItems", "storage", "saveRawItems"],
+      ["persistRawDocuments", "scheduler", "persistRawDocumentsShadow"],
+      ["eagerUnderstanding", "understanding", "runUnderstandingShadow"],
+      ["matching", "matching", "runMatchingShadow"],
+      ["decisions", "decisions", "runDecisionShadow"],
+      ["getActiveProfile", "scheduler", "getActiveProfile"],
+      ["hardeningConfig", "google-news-hardening", "googleHardeningConfig"],
+      ["createGate", "google-news-hardening", "createGoogleNewsGate"],
+      ["sharedLedger", "google-news-hardening", "sharedFetchLedger"]
+    ];
+    const fehlende = modulPaare.filter(([, modul, fn]) =>
+      typeof require(path.join(ROOT, "lib", "helmut", `${modul}.js`))[fn] !== "function");
+    check("12.9 Jede per Modulnamen aufgeloeste Standardabhaengigkeit existiert wirklich",
+      fehlende.length === 0, fehlende.map(([d, m, f]) => `${d} -> ${m}.${f}`).join(", "));
+
+    let briefingFehler = null;
+    try { await standard.buildV3Briefing({ id: "m1" }, "m1"); }
+    catch (error) { briefingFehler = error.message; }
+    check("12.10 Ohne eingereichtes buildV3Briefing bricht der Handler EHRLICH ab (nicht mit TypeError)",
+      /nicht-implementiert/.test(String(briefingFehler))
+      && !/is not a function/.test(String(briefingFehler))
+      && SP.istEndgueltig(briefingFehler) === true,
+      String(briefingFehler));
+
+    // Und mit Einreichung — so wie `server.js runCronUeberWarteschlange` es tut — laeuft er.
+    const briefingErgebnis = await SP.HANDLER.briefing_materialization(
+      { id: "j-brief", payload: { mandatsId: "m1" }, freshnessWindow: null },
+      {
+        ...SP.workerDeps({ buildV3Briefing: async (p, id) => ({ available: true, items: [{ id }], reason: null }) }),
+        getActiveProfile: async (id) => ({ id })
+      });
+    check("12.11 Mit eingereichtem buildV3Briefing (wie in server.js) laeuft die Briefingstufe",
+      briefingErgebnis.ok === true && briefingErgebnis.verfuegbar === true && briefingErgebnis.positionen === 1,
+      JSON.stringify(briefingErgebnis));
+
+    // ── 12.12/12.13 · Deaktivierte Mandate werden NICHT geplant ─────────────────────
+    // BELEGTER FEHLER: der Filter war `p.disabled !== true`. Ein Profil traegt kein Feld
+    // `disabled` (das gibt es nur am Ergebnis von `profile-validation.validateProfile`),
+    // die Bedingung war also immer wahr. Deaktivierte (`profileActive === false`) und
+    // soft-geloeschte (`deletedAt`) Mandate waeren mitgeplant worden — inklusive ihrer
+    // personenbezogenen Nachrichtensuche.
+    const q4 = erzeugeSpeicherWarteschlange({ now: () => Date.parse("2026-08-08T00:00:00Z") });
+    const schedMod = require(path.join(ROOT, "lib", "helmut", "scheduler.js"));
+    const basisProfil = (id, extra = {}) => ({
+      id, fullName: `${id} Test`, party: "P", faction: "F", committee: "C",
+      focusTopics: ["T"], topicPriorities: { T: 1 }, state: "Bayern", constituency: "WK", ...extra
+    });
+    const gemischt = [
+      basisProfil("m-aktiv"),
+      basisProfil("m-deaktiviert", { profileActive: false }),
+      basisProfil("m-geloescht", { deletedAt: "2026-08-01T00:00:00Z" })
+    ];
+    const geplant = await SP.planeArbeit({
+      env: AN, jetztMs: Date.parse("2026-08-08T00:00:00Z"),
+      deps: {
+        listFullProfiles: async () => gemischt,
+        quellenFuerProfil: async (p) => [schedMod.personNewsSource(p)],
+        enqueue: q4.enqueue
+      }
+    });
+    const geplanteMandate = new Set(q4.alle().map((z) => z.tenant_id).filter(Boolean));
+    check("12.12 Nur das aktive Mandat wird geplant", geplant.profile === 1, String(geplant.profile));
+    check("12.13 Kein Auftrag traegt ein deaktiviertes oder geloeschtes Mandat",
+      !geplanteMandate.has("m-deaktiviert") && !geplanteMandate.has("m-geloescht")
+      && geplanteMandate.has("m-aktiv"),
+      [...geplanteMandate].join(", "));
+  }
+
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
   process.exit(fail === 0 ? 0 : 1);
 }

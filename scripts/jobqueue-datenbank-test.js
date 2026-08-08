@@ -35,6 +35,9 @@ const path = require("path");
 const ROOT = path.join(__dirname, "..");
 const MIGRATION = path.join(ROOT, "supabase", "migrations", "20260808_scalable_job_queue.sql");
 const ROLLBACK = path.join(ROOT, "supabase", "migrations", "20260808_scalable_job_queue_rollback.sql");
+// Nur fuer Abschnitt 11.7–11.9: die Rueckstandsmessung muss gegen die ECHTE
+// `helmut_defer_job` geprueft werden, und die steht in der aufbauenden Migration.
+const ABHAENGIGKEITEN = path.join(ROOT, "supabase", "migrations", "20260808_jobqueue_abhaengigkeiten.sql");
 
 const PG = {
   host: process.env.HELMUT_TEST_PG_HOST || "",
@@ -363,6 +366,28 @@ async function main() {
   check("11.4 Auftraege nach Status", m.nach_status && m.nach_status.wartend === 3, JSON.stringify(m.nach_status));
   check("11.5 Ueberfaellige Mandate (>24 h) werden erkannt", Number(m.ueberfaellige_mandate) === 1, String(m.ueberfaellige_mandate));
   check("11.6 Maximales Mandatsalter wird gemessen", Number(m.max_mandatsalter_s) > 90000, String(m.max_mandatsalter_s));
+
+  // ── 11.7/11.8 · BEFUND DES ABSCHLUSSREVIEWS 2026-08-08 ──────────────────────────────
+  // Die Rueckstandsmessung rechnete gegen `due_at` — genau den Wert, den `helmut_defer_job`
+  // bei JEDEM Zurueckstellen neu setzt. Zurueckgestellt wird bei offener Vorbedingung alle
+  // 2 Minuten und bei erschoepftem KI-Budget stuendlich. Gemessen VOR der Korrektur: ein
+  // Auftrag mit 26 h echtem Rueckstand meldete nach EINER Zurueckstellung 0 s und
+  // 0 ueberfaellige Mandate. Die 24-h-Schwelle in `scalable-pipeline.betriebsstatus` haette
+  // damit nie ausgeloest — falsches Gruen (CLAUDE.md §4.4).
+  //
+  // Der Nachweis braucht die ECHTE Funktion, nicht ihre Nachbildung: `helmut_defer_job`
+  // steht in der aufbauenden Migration, die hier zusaetzlich eingespielt wird.
+  psql(null, { datei: ABHAENGIGKEITEN });
+  const zeileId = psql("select id from public.helmut_jobs where idempotency_key='M-mandat'").out;
+  psql(`select public.helmut_claim_jobs('w-mess', 10, 60000, array['mandate_projection'])`);
+  const uebernommen = psql(`select uebernommen from public.helmut_defer_job('${zeileId}'::uuid, 'w-mess', 120000, 'vorbedingung-offen')`).out;
+  const m2 = JSON.parse(psql("select row_to_json(t) from public.helmut_job_metrics(1440) t").out);
+  check("11.7 Der Auftrag wurde tatsaechlich zurueckgestellt", uebernommen === "t", uebernommen);
+  check("11.8 Zurueckstellen setzt den gemessenen Rueckstand NICHT zurueck",
+    Number(m2.ueberfaellige_mandate) === 1 && Number(m2.max_mandatsalter_s) > 90000,
+    JSON.stringify({ ueberfaellig: m2.ueberfaellige_mandate, alter_s: m2.max_mandatsalter_s }));
+  check("11.9 …und die neue Faelligkeit liegt trotzdem in der Zukunft (der Auftrag wartet wirklich)",
+    psql("select count(*) from public.helmut_jobs where idempotency_key='M-mandat' and status='wartend' and due_at > now()").out === "1");
 
   abschnitt("12 · Aufraeumen bewahrt die Fehlerhistorie");
   psql("delete from public.helmut_jobs");

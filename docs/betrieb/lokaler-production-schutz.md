@@ -115,6 +115,33 @@ und der Schutz greift ohnehin vor der Namensauflösung.
 
 **Der Weg des Vorfalls endet jetzt im Abbruch** — eigens geprüft (14.x/13.2).
 
+**Grenze, ausdrücklich (Abschlussreview PR #233, 2026-08-08):** diese Datei wird von
+`run-offline-tests.js`, `lokal.js` und der eigenen Suite geladen — von **keinem** der übrigen
+netzfähigen Skripte selbst. Ein Direktaufruf ist also nur dann geschützt, wenn er über
+`scripts/lokal.js` läuft (§7a). Der Anlassfall `gate-shadow-auswertung.js` hat inzwischen
+zusätzlich ein **eigenes** Zugriffsgatter (`HELMUT_GATE_AUSWERTUNG_ZUGRIFF`). Die
+Laufzeitsperre erfasst `http`/`https`/`fetch`/`net.connect`/`net.createConnection`/`tls.connect`,
+**nicht** `net.Socket.prototype.connect`, nicht `dns` und keine Kindprozesse, die keine
+Node-Prozesse sind — dort trägt allein die Umgebungsprüfung.
+
+## 7a · Folge für den Pflicht-Testlauf (nachgetragen 2026-08-08, Abschlussreview PR #233)
+
+`CLAUDE.md` §6 nennt als kanonischen Lauf `node scripts/run-offline-tests.js`. Dieser Befehl
+bricht seit dem Schutz **mit Exit 3 ab**, sobald Production-Zugangsdaten in der Umgebung
+liegen — also in **jeder** Claude-Code-Cloud-Sitzung, in der die Secrets über die
+Environment-Einstellungen bereitstehen (`CLAUDE.md` §4.9). Das ist **richtig und
+beabsichtigt**: genau dieses Vorfinden war die Ursache des Vorfalls. Der Ersatzweg ist
+einzeilig und muss bekannt sein:
+
+```
+node scripts/lokal.js scripts/run-offline-tests.js
+```
+
+Der Starter entfernt die Zugangsdaten **aus der Umgebung des Kindprozesses** (nie dauerhaft,
+nie aus einer Datei), setzt `HELMUT_SOURCE_MODE=off` und lädt den Schutz als Preload. Der
+Abschlussreview zu PR #233 hat den vollständigen Offline-Lauf und alle Datenbanknachweise so
+ausgeführt. Dasselbe gilt für jeden Direktaufruf eines Skripts aus `scripts/`.
+
 ## 8 · Nebenbefund: die Offline-Suite war nie wirklich offline
 
 Mit gesetzten Production-Zugangsdaten scheiterten **20** Suiten, ohne sie **5** — der

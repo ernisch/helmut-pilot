@@ -1450,6 +1450,25 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   wirksamer Production-Deckel · **190 fehlende echte Profile** (es gibt 10, nicht 200) ·
   Migration/Aktivierung/Production-Nachweis. **Vercel traegt keinen langlaufenden Worker**
   (`maxDuration 300`) — mehr Durchsatz ist eine Betreiberentscheidung.
+- **Unabhaengiger adversarialer Abschlussreview von PR #233 (2026-08-08, `6d54dbb`).**
+  Verhaltensneutralitaet eigenstaendig belegt (Flagmatrix ueber 26 Werte 23/23, keine
+  Modul-Ladeeffekte, `planeArbeit`/`arbeite` bei Flag AUS mit 0 Beruehrungen, keine
+  automatische Migration). **12 Befunde behoben, davon 1 kritisch und 6 hoch** — saemtlich
+  im ausgeschalteten OP-30-Pfad: der Verstehensauftrag trug die Blob-Kennung `raw-…` statt
+  der Ablagekennung `rd-…` (**der Pfad haette nie ein Dokument verstanden und das als Erfolg
+  gemeldet**) · der Rueckstandsalarm war durch Zurueckstellen loeschbar (an echter DB
+  gemessen: 72 h Rueckstand ⇒ 0 h nach einer Zurueckstellung; behoben ueber die neue Spalte
+  `first_due_at`) · `buildV3Briefing` war nicht aufloesbar (Briefingstufe tot) · deaktivierte
+  und soft-geloeschte Mandate waeren geplant worden (`p.disabled` existiert an Profilen nicht)
+  · reservierte, nie bearbeitete Auftraege verbrannten Versuche · **drei der „vier
+  Merge-Neutralitaetsbeweise" waren Tautologien** (sie prueften `selectLageVorgaenge`, das mit
+  der Ordnung nichts zu tun hat). Migration → wiederholen → Rollback → wiederholen → erneut
+  anwenden: **21 Schritte fehlerfrei** an PostgreSQL 16.13; Mutationsproben zu jeder Korrektur
+  rot. **16 weitere Befunde benannt, aber bewusst nicht geaendert** — darunter: **Mandantenanteil
+  und faire Rotation sind gebaut, aber im Produktionspfad nicht verdrahtet** (`scopeMax` ist
+  immer `null`), und **`lib/helmut/worker-betrieb.js` ist im Betrieb tot**. Beides ist **vor
+  der ersten Aktivierung** zu entscheiden. Kanonischer Beleg:
+  [`betrieb/op30-abschlussreview-2026-08-08.md`](betrieb/op30-abschlussreview-2026-08-08.md).
 - **Kanonischer Beleg (Ursache):** [`betrieb/v3-skalierungspruefung-2026-08-08.md`](betrieb/v3-skalierungspruefung-2026-08-08.md).
   **Abgrenzung zu OP-25:** OP-25 beschreibt das *Symptom* (je Lauf wird nur ein Teil der
   Mandanten erreicht) und wird über Fairness/Zeitdeckelung geführt. OP-30 ist die belegte

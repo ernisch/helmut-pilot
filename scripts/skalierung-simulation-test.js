@@ -29,6 +29,8 @@ const { erzeugeMandate } = require(path.join(ROOT, "scripts/fixtures/synthetisch
 const { erzeugeSpeicherWarteschlange } = require(path.join(ROOT, "scripts/fixtures/jobqueue-speicher-treiber.js"));
 const SP = require(path.join(ROOT, "lib/helmut/scalable-pipeline.js"));
 const SD = require(path.join(ROOT, "lib/helmut/source-demand.js"));
+// Die EINE Kennungswahrheit fuer raw_documents — die Attrappe darf sie nicht nachbauen.
+const dedup = require(path.join(ROOT, "lib/helmut/dedup.js"));
 const FAIR = require(path.join(ROOT, "lib/helmut/llm-budget-fair.js"));
 const WORKER = require(path.join(ROOT, "lib/helmut/worker-betrieb.js"));
 const sched = require(path.join(ROOT, "lib/helmut/scheduler.js"));
@@ -128,17 +130,29 @@ function welt({ profile, ausfall = [], drosselung = 0, dokumenteJeWeg = 2, decke
       const items = [];
       for (const weg of wege) {
         for (let i = 1; i <= dokumenteJeWeg; i += 1) {
-          items.push({ url: `${weg}#a${i}`, title: `T${i}`, sourceId: quelle.id, _weg: weg, _nr: i });
+          // KORREKTUR (Abschlussreview 2026-08-08): hier stand `${weg}#a${i}`.
+          // `dedup.canonicalizeUrl` entfernt den Fragmentteil — alle Artikel eines
+          // Abrufwegs fielen damit auf DIESELBE Dokumentkennung. Echte Artikel
+          // unterscheiden sich im Pfad, nicht im Fragment.
+          items.push({ url: `https://beispiel.invalid/a/${SD.streuwert(weg).toString(16)}-${i}`,
+            title: `T${i}`, sourceId: quelle.id, _weg: weg, _nr: i });
         }
       }
       return { results: [{ ok: true }], rawItems: items };
     },
 
+    // KORREKTUR (Abschlussreview 2026-08-08): die Attrappe baute die Kennung selbst und gab
+    // sie im Rueckgabewert von `saveRawItems` mit. Production liefert dort die BLOB-Zeilen
+    // mit `raw-<hash16>`; die Ablage steht unter `rd-<inhaltsfingerabdruck>`
+    // (dedup.toRawDocumentRow). Die Attrappe hat damit genau den Fehler verdeckt, den sie
+    // haette finden muessen. Jetzt: echte Kennung in der Ablage, Blob-Form im Rueckgabewert.
     saveRawItems: async (items) => items.map((it) => {
-      const id = `rd-${crypto.createHash("sha256").update(String(it.url)).digest("hex").slice(0, 16)}`;
-      const zeile = { id, url: it.url, title: it.title, source_id: it.sourceId, _vorgang: vorgangFuer(it._weg, it._nr) };
-      w.rohdokumente.set(id, zeile);
-      return zeile;
+      const zeile = dedup.toRawDocumentRow(it);
+      w.rohdokumente.set(zeile.id, {
+        id: zeile.id, url: it.url, title: it.title, source_id: it.sourceId,
+        _weg: it._weg, _vorgang: vorgangFuer(it._weg, it._nr)
+      });
+      return { ...it, id: `raw-${crypto.createHash("sha256").update(String(it.url)).digest("hex").slice(0, 16)}` };
     }),
     persistRawDocuments: async (d) => ({ skipped: false, error: null, persisted: d.length }),
     ladeRohdokumente: async (ids) => ids.map((i) => w.rohdokumente.get(i)).filter(Boolean),
@@ -163,7 +177,8 @@ function welt({ profile, ausfall = [], drosselung = 0, dokumenteJeWeg = 2, decke
       const eigeneWege = new Set(eigeneQuellen(profil).flatMap((q) => SD.abrufwege(q)).map(SD.kanonischeUrl));
       const belege = [];
       for (const [id, d] of w.rohdokumente) {
-        const basis = SD.kanonischeUrl(String(d.url).split("#")[0]);
+        // Herkunft aus dem mitgefuehrten Abrufweg, nicht aus dem URL-Praefix (siehe oben).
+        const basis = SD.kanonischeUrl(d._weg || "");
         if (eigeneWege.has(basis) && w.verstandeneVorgaenge.has(d._vorgang)) belege.push(id);
       }
       if (!belege.length) w.leerzustaende += 1;

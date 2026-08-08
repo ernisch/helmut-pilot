@@ -53,6 +53,7 @@ function vorgaenge() {
   const mk = (id, tage, titel, extra = {}) => ({
     id,
     status: "understood",
+    understanding_status: "complete",
     was_ist_passiert: titel,
     warum_wichtig: `Einordnung zu ${titel}`,
     best_source_url: `https://beispiel.invalid/${id}`,
@@ -61,6 +62,9 @@ function vorgaenge() {
     updated_at: new Date(Date.UTC(2026, 7, 8) - tage * 86400000).toISOString(),
     ...extra
   });
+  // `understanding_status: "complete"` ist Pflicht, damit `loadRankedVorgaenge` die
+  // Vorgaenge ueberhaupt durchlaesst (lage.js: `understood`-Filter). Ohne das Feld waere
+  // jeder Vergleich unten trivial gleich — naemlich leer.
   return [
     mk("v-neu-rand", 0, "Randthema ohne Mandatsbezug"),
     // KORREKTUR 2026-08-08: hier standen zuerst `committees`/`regions`. Das sind NICHT die
@@ -73,6 +77,17 @@ function vorgaenge() {
       { mentioned_locations: ["Aschaffenburg"] }),
     mk("v-neu-allgemein", 1, "Allgemeine Bundespolitik ohne direkten Bezug")
   ];
+}
+
+// Minimale Ablage-Attrappe fuer `loadRankedVorgaenge`. Sie liefert genau den Vorgangssatz
+// oben und KEINE gespeicherten Matchingergebnisse — damit laeuft der Rueckfallweg (3), auf
+// dem `ordne(ranked)` steht. Kein Netz, keine Datenbank, keine KI.
+function stubStorage(gespeicherteMatches = []) {
+  return {
+    listKnowledgeObjects: async () => vorgaenge(),
+    listMatchingResults: async () => gespeicherteMatches,
+    v3StoreReady: () => true
+  };
 }
 
 const PROFIL_BUND = {
@@ -92,7 +107,7 @@ const PROFIL_BRANDENBURG = {
   constituency: "Potsdam", committees: ["Innenausschuss"], focusTopics: ["Sicherheit"]
 };
 
-function main() {
+async function main() {
   console.log("Helmut — Merge-Neutralitaet der Relevanzordnung (OP-30, Phase 3)");
   console.log("  Frage: veraendert ein Merge automatisch das Verhalten? Erwartete Antwort: NEIN.\n");
 
@@ -123,60 +138,96 @@ function main() {
   }
 
   // ═══ B · REFERENZGLEICH ════════════════════════════════════════════════════
-  abschnitt("B · Bei Flag AUS kommt DASSELBE Array zurueck (nicht einmal kopiert)");
+  abschnitt("B · Bei Flag AUS wird die Ordnung im ECHTEN Lage-Pfad nicht aufgerufen");
   {
+    // KORREKTUR (Abschlussreview 2026-08-08) — die Beweise B, C und D pruefen jetzt die
+    // richtige Funktion.
+    //
+    // BELEGTER FEHLER: B, C und D riefen `lage.selectLageVorgaenge(...)` auf. Diese Funktion
+    // nimmt EIN Argument, filtert nach echter Quelle und teilt in „modern"/„Rest" — sie hat
+    // mit der Relevanzordnung NICHTS zu tun (lage.js:474–479). Die Ordnung haengt
+    // ausschliesslich an `loadRankedVorgaenge`. Damit waren alle drei Beweise Tautologien:
+    // „die Ordnung wurde nicht aufgerufen" war trivial wahr, weil nichts aufgerufen wurde,
+    // was sie je aufrufen koennte; ebenso „die Falle wurde nicht betreten" und „byteweise
+    // gleich". Drei der vier zugesagten Beweise trugen also nichts.
+    // Sie laufen jetzt gegen `loadRankedVorgaenge` — den Weg, den die Lage wirklich geht.
     delete process.env.HELMUT_RELEVANZORDNUNG;
+    delete process.env.HELMUT_SCORING_MODE;
     const lage = frisch(LAGE);
-    const eingabe = vorgaenge();
-    // `loadRankedVorgaenge` ist der einzige Weg, auf dem die Ordnung wirkt. Wir pruefen die
-    // Helfer ueber ihn hinweg, indem wir die Ordnung selbst beobachten.
     const rel = frisch(REL);
     check("B.1 Flag ist ohne Zutun AUS", rel.relevanzordnungAktiv({}) === false);
+
     let aufgerufen = 0;
     const echteOrdne = rel.ordne;
     rel.ordne = function (...a) { aufgerufen += 1; return echteOrdne.apply(this, a); };
-    // Die Lage-Helfer sind nicht direkt exportiert; die Wirkung wird ueber den Zaehler belegt.
-    const ergebnis = lage.selectLageVorgaenge
-      ? lage.selectLageVorgaenge(eingabe, PROFIL_BUND)
-      : eingabe;
-    check("B.2 Die Ordnung wurde bei Flag AUS NICHT aufgerufen", aufgerufen === 0, `${aufgerufen} Aufrufe`);
-    check("B.3 Der Vorgangssatz bleibt vollstaendig", Array.isArray(ergebnis) ? ergebnis.length > 0 : true);
+    const ergebnis = await lage.loadRankedVorgaenge(stubStorage(), null, PROFIL_BUND, PROFIL_BUND.id);
     rel.ordne = echteOrdne;
+
+    check("B.2 Die Ordnung wurde bei Flag AUS NICHT aufgerufen — im echten Lage-Pfad",
+      aufgerufen === 0, `${aufgerufen} Aufrufe`);
+    check("B.3 Der Vorgangssatz bleibt vollstaendig",
+      Array.isArray(ergebnis) && ergebnis.length === vorgaenge().length,
+      `${ergebnis.length}/${vorgaenge().length}`);
+    // GEGENPROBE: mit `on` MUSS derselbe Weg die Ordnung aufrufen — sonst waere B.2 wieder
+    // nur eine Tautologie, diesmal eine gut versteckte.
+    process.env.HELMUT_RELEVANZORDNUNG = "on";
+    const lage2 = frisch(LAGE);
+    const rel2 = frisch(REL);
+    let aufgerufen2 = 0;
+    const echteOrdne2 = rel2.ordne;
+    rel2.ordne = function (...a) { aufgerufen2 += 1; return echteOrdne2.apply(this, a); };
+    await lage2.loadRankedVorgaenge(stubStorage(), null, PROFIL_BUND, PROFIL_BUND.id);
+    rel2.ordne = echteOrdne2;
+    delete process.env.HELMUT_RELEVANZORDNUNG;
+    check("B.4 Gegenprobe: mit `on` wird derselbe Weg sehr wohl durch die Ordnung geleitet",
+      aufgerufen2 > 0, `${aufgerufen2} Aufrufe`);
   }
 
   // ═══ C · UNERREICHBAR ══════════════════════════════════════════════════════
   abschnitt("C · Eine Falle im Ordnungscode wird bei Flag AUS nie ausgeloest");
   {
     delete process.env.HELMUT_RELEVANZORDNUNG;
-    // Die Ordnung wird durch eine Falle ersetzt: JEDER Aufruf wirft.
+    delete process.env.HELMUT_SCORING_MODE;
     const rel = frisch(REL);
     const falle = () => { throw new Error("FALLE: die Ordnung wurde betreten, obwohl das Flag AUS ist"); };
     const originalOrdne = rel.ordne;
     const originalOrdneKos = rel.ordneKos;
     rel.ordne = falle;
     rel.ordneKos = falle;
-    let gelaufen = false;
+    let ergebnis = null;
     let fehler = null;
     try {
       const lage = frisch(LAGE);
-      // Der Fallback-Pfad ist der, der `ordne(ranked)` benutzt.
-      lage.selectLageVorgaenge && lage.selectLageVorgaenge(vorgaenge(), PROFIL_BUND);
-      gelaufen = true;
+      // DER Weg, auf dem `ordne(ranked)` steht — nicht irgendein anderer Helfer.
+      ergebnis = await lage.loadRankedVorgaenge(stubStorage(), null, PROFIL_BUND, PROFIL_BUND.id);
     } catch (e) { fehler = e; }
     rel.ordne = originalOrdne;
     rel.ordneKos = originalOrdneKos;
-    check("C.1 Die Lage laeuft trotz Falle durch", gelaufen && !fehler,
-      fehler ? String(fehler.message).slice(0, 60) : "keine Ausloesung");
+    check("C.1 Die Lage laeuft trotz Falle durch und liefert Vorgaenge",
+      !fehler && Array.isArray(ergebnis) && ergebnis.length > 0,
+      fehler ? String(fehler.message).slice(0, 70) : `${ergebnis && ergebnis.length} Vorgaenge`);
     check("C.2 Die Falle wurde nachweislich nicht betreten", !/FALLE/.test(String(fehler && fehler.message)));
+    // GEGENPROBE: mit `on` MUSS die Falle zuschlagen. Genau das beweist, dass C.1/C.2 den
+    // richtigen Pfad treffen. `lage.js` faengt Ordnungsfehler ab (fail-safe), deshalb wird
+    // die Ausloesung an der bisherigen Reihenfolge abgelesen, nicht an einer Ausnahme.
+    process.env.HELMUT_RELEVANZORDNUNG = "on";
+    const rel2 = frisch(REL);
+    let getroffen = 0;
+    rel2.ordne = () => { getroffen += 1; throw new Error("FALLE"); };
+    const lage2 = frisch(LAGE);
+    await lage2.loadRankedVorgaenge(stubStorage(), null, PROFIL_BUND, PROFIL_BUND.id);
+    delete process.env.HELMUT_RELEVANZORDNUNG;
+    check("C.3 Gegenprobe: mit `on` wird die Falle sehr wohl betreten", getroffen > 0, `${getroffen}`);
   }
 
   // ═══ D · GLEICHES ERGEBNIS ═════════════════════════════════════════════════
   abschnitt("D · Flag AUS liefert dasselbe wie ein Helmut ganz OHNE die Ordnung");
   {
     delete process.env.HELMUT_RELEVANZORDNUNG;
+    delete process.env.HELMUT_SCORING_MODE;
     const lageMit = frisch(LAGE);
-    const mitAus = JSON.stringify(lageMit.selectLageVorgaenge
-      ? lageMit.selectLageVorgaenge(vorgaenge(), PROFIL_BUND) : vorgaenge());
+    const mitAus = JSON.stringify(
+      await lageMit.loadRankedVorgaenge(stubStorage(), null, PROFIL_BUND, PROFIL_BUND.id));
 
     // Jetzt dasselbe, aber die Ordnung ist gar nicht ladbar — wie vor diesem Sprint.
     const echterLoader = Module._load;
@@ -190,8 +241,8 @@ function main() {
     let ladefehler = null;
     try {
       const lageOhne = frisch(LAGE);
-      ohne = JSON.stringify(lageOhne.selectLageVorgaenge
-        ? lageOhne.selectLageVorgaenge(vorgaenge(), PROFIL_BUND) : vorgaenge());
+      ohne = JSON.stringify(
+        await lageOhne.loadRankedVorgaenge(stubStorage(), null, PROFIL_BUND, PROFIL_BUND.id));
     } catch (e) { ladefehler = e; }
     Module._load = echterLoader;
 
@@ -203,7 +254,7 @@ function main() {
         "Beweis C traegt die Aussage stattdessen");
     } else {
       check("D.1 Ergebnis mit Flag AUS ist byteweise gleich dem Ergebnis ohne die Ordnung",
-        mitAus === ohne, `${mitAus.length} vs ${ohne.length} Zeichen`);
+        mitAus === ohne && mitAus.length > 2, `${mitAus.length} vs ${ohne.length} Zeichen`);
     }
   }
 
@@ -278,4 +329,7 @@ function main() {
   process.exit(fail === 0 ? 0 : 1);
 }
 
-main();
+main().catch((error) => {
+  console.error("unerwarteter Fehler:", error && error.message);
+  process.exit(1);
+});

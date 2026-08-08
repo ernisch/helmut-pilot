@@ -6477,7 +6477,13 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     // im Abschlussschreiben in das aeussere Zeitlimit laufen.
     budgetMs: Math.max(0, verbleibend() - 10000),
     leaseMs: 300000,
-    stapel: Math.max(1, Number(process.env.HELMUT_WORKER_BATCH || 10))
+    stapel: Math.max(1, Number(process.env.HELMUT_WORKER_BATCH) || 10),
+    // BELEGTER FEHLER (Abschlussreview 2026-08-08): der Worker holte `buildV3Briefing` aus
+    // `lib/helmut/briefingContract.js`, wo dieser Name nicht existiert — die Funktion steht
+    // hier in `server.js`. Jeder Briefingauftrag scheiterte deshalb mit
+    // `require(...)[name] is not a function`. Sie wird jetzt eingereicht, statt sie zu
+    // suchen; verschoben wird nichts (kein Umbau bestehender V3-Logik).
+    deps: { buildV3Briefing }
   });
 
   const status = await scalablePipeline.betriebsstatus({ seitMinuten: 1440 }).catch(() => null);
