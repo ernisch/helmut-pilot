@@ -680,6 +680,22 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   neuen Abnahmekriterien: kanonisch
   [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) **§7.7.6**. Production
   unverändert (nur GET/SELECT, 0 KI); Flag laut Betreiber inzwischen `off` + Redeploy.
+- **Nachtrag 2026-08-08 (dritter regulärer Nachweis 2026-08-07/08 — `BESTANDEN`, Exit 0,
+  null Befunde):** Fenster 2026-08-07T20:19:06.409Z → 2026-08-08T20:19:06.409Z;
+  Aktivierung `dpl_AdZ4JJJZUAT27X72SWzVeFyJu49a` (Merge **PR #232**, Commit `a07954df…`
+  mit dem Kostenlücken-Fix), Baseline +160 s
+  (`belege/op25-startbaseline-2026-08-07-fixfenster.json`, SHA256 `8414fab3…`);
+  Schutzfenster gehalten (kein Merge/Production-Deployment/Mandatswechsel/manueller
+  Lauf; einzig ein PR-#233-Branch-Preview, target null). Auswertung 21 min nach
+  Fensterende (`belege/op25-auswertung-2026-08-08.log`, SHA256 `17ed0f83…`): alle
+  Vertragskriterien grün — 3/3 Läufe vollständig + im Budget versiegelt, Commitnachweis,
+  m5 konstant, K1-Bindung, **E3 `nv=0`**, Kontextzahl 12 erklärt, kein
+  Watchdog-Ersatzlauf, Retention 36, **Kosten 0,2106 USD / unbepreist 0** (der Fix aus
+  PR #232 wirkte in Production). Kanonisch: **§7.7.9**. **Geltung: ausschließlich die
+  aktuelle Architektur mit 5 aktiven Mandaten — beweist weder OP-30 noch 200 Mandate;
+  nach Aktivierung der OP-30-Architektur muss OP-25 vollständig wiederholt werden.**
+  Der Kern-Production-Nachweis von OP-25 ist damit erbracht; offen bleiben die
+  Teilpunkte Abdeckungsmessung, Abdeckungsalarm, R-1, R-3 (und OP-14 separat).
 - **Nachtrag 2026-08-07 (zweiter regulärer Nachweis 2026-08-06/07 — `blockiert`, Exit 2,
   genau 1 Befund; alle Betriebskriterien erstmals grün):** Beide Betreiberschritte wurden am
   2026-08-06 ausgeführt (relationale Deaktivierung `max-mustermann` 08:01:31 UTC, 1 Zeile,

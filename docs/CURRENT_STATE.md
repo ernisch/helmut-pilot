@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-08** (V3-Skalierungsprüfung + lokaler Umsetzungssprint OP-30, §7a/§7b; davor: zweites OP-25-Nachweisfenster 2026-08-06/07, Auswertung `blockiert`, genau 1 Befund, kanonisch §7.7.8). Diese Datei enthält
+**Stand: 2026-08-08** (zwei getrennte Stränge: **(a) OP-25-Production-Nachweis BESTANDEN** — drittes Fenster 2026-08-07/08, Exit 0, null Befunde, kanonisch §7.7.9; er gilt **ausschließlich für die heutige Architektur mit 5 Mandaten** und beweist weder OP-30 noch 200 Mandate. **(b) V3-Skalierungsprüfung + lokaler Umsetzungssprint OP-30**, §7a — alle Flags **aus**, keine Migration angewendet, nichts aktiviert). Diese Datei enthält
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -215,24 +215,18 @@ K2.1-Sichtbarkeitsmengen und die Laufzeitbilanz ⇒ **OP-25 muss danach von vorn
 
 ## 9 · Ausstehende Production-Nachweise
 
-- **OP-25-Nachweis nach §7.7.5 — zweites Fenster 2026-08-06/07 durchgeführt und
-  unmittelbar ausgewertet: `blockiert` (Exit 2, genau 1 Befund `kosten-nicht-bepreisbar`;
-  Kategorie `nicht_pruefbar`).** Alle Betriebskriterien waren **erstmals grün**: 3/3
-  erwartete Läufe vollständig und im Budget versiegelt, Commitnachweis (alle Läufe
-  `d8bf68fa…`), Mandatsmenge konstant m5 auf allen Ebenen, K1-Bindung, **E3 `nv=0` in
-  allen drei Läufen**, Kontextzahl 13 erklärt, kein Watchdog-Ersatzlauf (K7), Retention
-  36 wirksam. Blocker: **1 von 72** Nutzungseinträgen (interaktiv, 07.08. 12:37 UTC,
-  `angela-merkel`, `model/estimatedCost="unknown"`) ohne brauchbaren Kostenwert —
-  Kostenvollständigkeit fail closed nicht belegbar. Kanonisch **§7.7.8**; Beleg
-  `belege/op25-auswertung-2026-08-07.log`. **Ursache im Befundsprint 2026-08-07/2 geklärt
-  und behoben — committed und über PR #232 veröffentlicht** (Commit `0716a4e` +
-  Review-Härtungscommit; CI-Pflichtchecks grün, Preview READY): der Eintrag war ein
-  Budget-Skip-Marker **ohne KI-Aufruf** (`skipped-lage-narrativ`,
-  `budget-check-failed-closed`; interaktive Nutzung des Kontos des cron-deaktivierten
-  `angela-merkel` — dokumentierte Trennung Konto ↔ Mandat, keine Zugriffslücke). Fix:
-  `keinAufruf`-Kennzeichnung mit fünf harten Invarianten ⇒ estimatedCost 0 (Zahl); alles
-  andere unverändert streng. Der Fix ist **noch nicht in Production nachgewiesen** —
-  wirksam erst nach Merge (= Deployment). Das alte Fenster bleibt `nicht_pruefbar`.
+- **OP-25-Nachweis nach §7.7.5: BESTANDEN — drittes Fenster 2026-08-07/08 (Exit 0,
+  null Befunde), kanonisch §7.7.9.** Aktivierung `dpl_AdZ4JJJZUAT27X72SWzVeFyJu49a`
+  (Merge PR #232, Commit `a07954df…` mit dem Kostenlücken-Fix), READY 20:19:06.409Z,
+  Baseline +160 s (`belege/op25-startbaseline-2026-08-07-fixfenster.json`, SHA256
+  `8414fab3…`). Alle Kriterien grün: 3/3 Läufe vollständig + versiegelt, Commitnachweis,
+  m5 konstant, K1-Bindung, E3 `nv=0`, Kontextzahl erklärt, kein Watchdog-Ersatzlauf,
+  Retention 36, **Kosten 0,2106 USD / unbepreist 0** (Fix wirkte). Beleg
+  `belege/op25-auswertung-2026-08-08.log` (SHA256 `17ed0f83…`). Historie: Fenster 1
+  (04./05.08.) `nicht_bestanden`, Fenster 2 (06./07.08.) `nicht_pruefbar` — beide bleiben
+  unverändert dokumentiert. **Geltung: nur die aktuelle Architektur mit 5 Mandaten —
+  beweist weder OP-30 noch 200 Mandate; nach OP-30-Aktivierung vollständige Wiederholung
+  erforderlich.** OP-14 (Verstehensrückstand) bleibt ausdrücklich offen.
 - **F-E2E** (nichtdeterministische E2E-Rangfolge im CI, belegt 2026-08-04) — Ursache offen;
   PR #224 (Draft) liegt vor, nicht abgenommen.
 - **29B** — wartet auf natürlich auftretende Fehlerzustände (künstliche Fehler verboten).
@@ -266,17 +260,16 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-Das zweite Nachweisfenster ist ausgewertet (`blockiert`, §7.7.8); das Korrekturpaket zur
-Kostenlücke ist **committed und über PR #232 veröffentlicht** (CI + Preview gelaufen).
-Reihenfolge jetzt (übergangssicher):
+**Der OP-25-Production-Nachweis ist bestanden** (drittes Fenster, §7.7.9). Nächste
+Entscheidungen liegen beim Betreiber:
 
-1. Solange PR #232 **offen** ist: Review + Merge-Entscheidung (Betreiber; Merge =
-   Production-Deployment mit dem Fix).
-2. Sobald der Fix in `main` und das Production-Deployment READY ist: **Startbaseline
-   binnen 15 min** nach READY, dann vollständig **neues 24-h-Fenster** nach §7.7.5;
-   keine Mandatsänderung seit dem letzten globalen Lauf ⇒ K2-Gate offen.
-   `HELMUT_CRON_GLOBALABRUF` bis dahin unverändert `on` lassen. Ohne ausdrücklichen
-   Auftrag wird nichts gestartet.
+1. **PR #233 (OP-30-Skalierungsgrundlage) reviewen und über den Merge entscheiden** —
+   verhaltensneutral (alle Flags aus, keine Migration angewendet), aber der Merge ist ein
+   Production-Deployment. Die OP-25-Auswertungsdoku ist mit PR #234 bereits in `main`.
+2. Entscheidung, ob `HELMUT_CRON_GLOBALABRUF` dauerhaft `on` bleibt (der Kontextpfad
+   ist jetzt Production-belegt) — jede Änderung ist freigabepflichtig.
+3. OP-25-Restpunkte (Abdeckungsmessung, Abdeckungsalarm, R-1, R-3) und OP-14 weiter
+   in der Restliste; **nach OP-30-Aktivierung: OP-25 vollständig wiederholen**.
 
 Parallel und unabhängig: **OP-01-Entscheidung** (Pro + PITR); **OP-11** Branch Protection
 verifizieren (2 Minuten); Empfehlung zu **#218** umsetzen (schließen).
@@ -322,11 +315,12 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
+| 2026-08-08 | **OP-25 drittes Nachweisfenster + finale Auswertung**: Aktivierung `dpl_AdZ4JJ…` (`a07954df`, Merge PR #232 mit Kostenlücken-Fix) READY 07.08. 20:19:06Z, Baseline +160 s, Schutzfenster gehalten (nur PR-#233-Preview, kein Production-Deployment), Auswertung 21 min nach Fensterende → **BESTANDEN (Exit 0, null Befunde)**; Kosten 0,2106 USD, unbepreist 0 | **erfolgreich** — Nachweis gilt nur für die 5-Mandate-Architektur; nach OP-30-Aktivierung Wiederholung nötig; Doku über PR #234 in `main` |
 | 2026-08-08 | **OP-30 Prüf-, Commit- und PR-Sprint**: die fünf lokal roten Suiten endgültig bewertet (4 Baseline-Fehler + 1 fehlende lokale Voraussetzung, **keine Regression, keiner blockiert CI**); **eigene Regression behoben** — der Production-Schutz hätte das CI-Gate abgebrochen, `ci.yml` erklärt jetzt `HELMUT_SOURCE_MODE=off`; Befund: **CI ist am Basisstand auf `main` bereits rot** (andere Suiten, lokal grün, nicht durch OP-30); Offline 220/225 + Browser 32/32; Commits und PR erstellt · Beleg [`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) | **teilweise abgeschlossen** (reviewbereit; Merge, Production-Nachweis und CI-Klärung offen) |
 | 2026-08-08 | **OP-30 Korrektur- und Abnahmesprint** (isolierter Arbeitsbaum, kein Commit): **200 Mandate im Tag bewiesen** (letzte Pflichtarbeit 21:38:00) — Ursache der früheren 25 h war das Briefingfenster bis 98 % plus ein Abtastfehler der Simulation; **`HELMUT_RELEVANZORDNUNG` auf default AUS** mit vier unabhängigen Merge-Neutralitätsbeweisen; **lokaler Production-Schutz an der Ursache behoben** (zwei Schichten, 76 PASS); neuer Befund zur Deckelaufteilung; Offline 220/225 + Browser 32/32, **keine neue Regression** gegen Baseline 203/208 · Belege [`betrieb/skalierung-200-mandate.md`](betrieb/skalierung-200-mandate.md), [`betrieb/lokaler-production-schutz.md`](betrieb/lokaler-production-schutz.md) | **teilweise abgeschlossen** (lokal bewiesen; Production-Nachweis, Deckel und 190 echte Profile offen) |
 | 2026-08-08 | **OP-30 finaler lokaler Abnahmesprint** (isolierter Arbeitsbaum, kein Commit): zentrale Skalierungsrechnung 5/200/1000, Relevanzordnung (Gründervorgabe, Default AN), virtuelle 24 h, Bereinigung bei 66 000 Zeilen, Flagmatrix, Profilinventar; **drei echte Produktfehler behoben**, unbelegte Deckelangabe korrigiert, **ein unbeabsichtigter lesender Production-Zugriff offengelegt**; Offline 218/223 (5 rot auch am unveränderten `a07954d`); Beleg [`betrieb/op30-abnahme-2026-08-08.md`](betrieb/op30-abnahme-2026-08-08.md) | **teilweise abgeschlossen** (lokal bewiesen; Migration/Aktivierung/Production-Nachweis + 190 echte Profile offen) |
 | 2026-08-08 | **OP-30 Umsetzungssprint Skalierungsgrundlage 1000** (isolierter Arbeitsbaum, kein Commit): Arbeitswarteschlange + Migration/Rollback, Source-Demand-Compiler, Scheduler/Worker, Flag `HELMUT_SCALABLE_PIPELINE` (Default aus); 6 neue Suiten grün, Browser-Smoke 32/32; zwei echte Fehler gefunden und behoben; Beleg [`betrieb/skalierungsgrundlage-1000.md`](betrieb/skalierungsgrundlage-1000.md) | **erfolgreich** (lokal; Migration/Aktivierung/Production-Nachweis offen) |
 | 2026-08-08 | **V3-Skalierungsprüfung** (rein lesend): Productionpfad nachgezeichnet, Kapazität aus echtem Code hochgerechnet ⇒ neuer Punkt **OP-30**; zwei frühere Behauptungen zurückgezogen; Beleg [`betrieb/v3-skalierungspruefung-2026-08-08.md`](betrieb/v3-skalierungspruefung-2026-08-08.md) | **erfolgreich** (Umsetzung ist Gründerentscheidung) |
 
-Sprints bis einschließlich 2026-07-31, vollständige Berichte, Testzahlen und Beweisketten: **Archiv**
+Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 (Fenster 1–3, Korrektursprint K1–K8, Ursachenanalyse, Betreiberschritte K2/K3, Befundsprint Kostenlücke) stehen vollständig und kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 sowie ältere Berichte, Testzahlen und Beweisketten: **Archiv**
 ([`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)).
