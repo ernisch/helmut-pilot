@@ -149,11 +149,18 @@ function abbrechen(gruende, anlass) {
     "  Gruende:"
   ];
   gruende.forEach((g, i) => zeilen.push(`    ${i + 1}. ${g}`));
+  // Der Hinweis nennt GENAU die Variablen, die in DIESER Umgebung gefunden wurden. Eine feste
+  // Liste war hier falsch: der Riegel prueft elf Zugangsdaten, der Hinweis nannte fuenf — wer
+  // an VERCEL_TOKEN scheiterte, bekam einen Befehl, der nicht half (gefunden 2026-08-08 beim
+  // Integrationslauf). Erste Empfehlung bleibt `scripts/lokal.js`, weil Handarbeit vergessen wird.
+  const gefunden = REINE_ZUGANGSDATEN.filter((n) => String(process.env[n] || "").trim() !== "");
+  const unsetListe = (gefunden.length ? gefunden : REINE_ZUGANGSDATEN).map((n) => `-u ${n}`).join(" ");
   zeilen.push(
     "",
     "  So laeuft es lokal richtig (Zugangsdaten aus der Umgebung nehmen, nicht loeschen):",
-    "    env -u SUPABASE_URL -u SUPABASE_SERVICE_ROLE_KEY -u SUPABASE_SERVICE_KEY \\",
-    "        -u SUPABASE_ANON_KEY -u OPENAI_API_KEY HELMUT_SOURCE_MODE=off node <skript>",
+    "    node scripts/lokal.js -- node <skript>            # empfohlen: entfernt sie selbst",
+    "  oder von Hand — genau die hier gefundenen Kennungen:",
+    `    env ${unsetListe} HELMUT_SOURCE_MODE=off node <skript>`,
     "",
     "  Dieser Riegel ist ABSICHTLICH fail closed: er laesst im Zweifel nichts durch.",
     "  Er gilt NUR lokal — Production laedt diese Datei nie.",
