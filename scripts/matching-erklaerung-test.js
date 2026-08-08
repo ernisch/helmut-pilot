@@ -208,6 +208,15 @@ const deps = { ready: () => true, request: fakeRequest };
     { id: "ko-2", vorgang_id: "v-2", status: "neu", understanding_status: "complete", was_ist_passiert: "B", warum_wichtig: "W", headline: "H2" },
     { id: "ko-3", vorgang_id: "v-3", status: "neu", understanding_status: "complete", was_ist_passiert: "C", warum_wichtig: "W", headline: "H3" }
   ];
+  // NACHTRAG 2026-08-08 (Korrektursprint): die Zusagen dieses Abschnitts wurden fuer die
+  // Relevanzordnung geschrieben (C8/C8b/C8c/C9/C11/C11b pruefen ihre Determiniertheit ueber
+  // den stabilen Schluessel). Seit diesem Sprint ist `HELMUT_RELEVANZORDNUNG` **default AUS**.
+  // Die Ordnung wird deshalb hier ausdruecklich eingeschaltet — die Abhaengigkeit steht damit
+  // im Test statt in einem Standard, der sich aendern kann. Am Ende des Abschnitts wird der
+  // vorherige Zustand wiederhergestellt.
+  const relVorher = process.env.HELMUT_RELEVANZORDNUNG;
+  process.env.HELMUT_RELEVANZORDNUNG = "on";
+
   const mkStorage = (rows) => ({
     listKnowledgeObjects: async () => kos,
     listMatchingResults: async (args) => {
@@ -249,11 +258,32 @@ const deps = { ready: () => true, request: fakeRequest };
     { knowledge_object_id: "ko-1", matched_features: [] }
   ];
   const rankedLegacy = await lage.loadRankedVorgaenge(mkStorage(rowsLegacy), null, {}, "mdb-a");
-  check("C8 Bestand ohne Auditspalten funktioniert unveraendert weiter",
-    rankedLegacy.map((k) => k.id).join(",") === "ko-2,ko-1");
-  check("C9 Legacy-Zeile mit Merkmalstreffer bekommt eine Erklaerung",
-    rankedLegacy[0].relevanz_erklaerung
-    && rankedLegacy[0].relevanz_erklaerung.satz === "Betrifft deine Partei SPD.");
+  // GEAENDERTE ERWARTUNG (2026-08-08, mit Begruendung — keine Abschwaechung).
+  // Bis hierher pruefte C8 die ZEILENREIHENFOLGE der Ablage ("ko-2,ko-1"). Genau die ist
+  // seit der Gruendervorgabe "Relevanz vor Aktualitaet" nicht mehr massgeblich — und sie war
+  // vorher auch nicht verlaesslich: `listMatchingResults` ordnet nach `created_at desc`, und
+  // weil `now()` in einer Postgres-Transaktion konstant ist, tragen alle Zeilen eines Laufs
+  // denselben Zeitstempel. Die Reihenfolge war damit UNDEFINIERT (nachgewiesen: J8-Wackler
+  // in berlin-e2e-vertrag-test.js, 1 von 25 Laeufen unter Last).
+  // Neu geprueft wird deshalb, was jetzt zugesichert ist und STAERKER ist als vorher:
+  //   (a) beide Vorgaenge sind weiterhin da — der Bestandspfad funktioniert unveraendert,
+  //   (b) die Reihenfolge ist DETERMINISTISCH (hier: leeres Profil -> kein Relevanzsignal
+  //       -> stabiler technischer Schluessel entscheidet),
+  //   (c) die Erklaerung reist weiterhin am Vorgang mit, egal an welcher Position er steht.
+  check("C8 Bestand ohne Auditspalten funktioniert unveraendert weiter (beide Vorgaenge vorhanden)",
+    rankedLegacy.length === 2 && new Set(rankedLegacy.map((k) => k.id)).size === 2
+    && rankedLegacy.every((k) => ["ko-1", "ko-2"].includes(k.id)),
+    rankedLegacy.map((k) => k.id).join(","));
+  check("C8b Die Reihenfolge ist deterministisch (stabiler Schluessel bei Gleichstand)",
+    rankedLegacy.map((k) => k.id).join(",") === "ko-1,ko-2",
+    rankedLegacy.map((k) => k.id).join(","));
+  check("C8c Zwei Laeufe liefern dieselbe Reihenfolge",
+    (await lage.loadRankedVorgaenge(mkStorage(rowsLegacy), null, {}, "mdb-a")).map((k) => k.id).join(",")
+    === rankedLegacy.map((k) => k.id).join(","));
+  const legacyMitErklaerung = rankedLegacy.find((k) => k.id === "ko-2");
+  check("C9 Legacy-Zeile mit Merkmalstreffer bekommt eine Erklaerung (unabhaengig von der Position)",
+    legacyMitErklaerung && legacyMitErklaerung.relevanz_erklaerung
+    && legacyMitErklaerung.relevanz_erklaerung.satz === "Betrifft deine Partei SPD.");
 
   // Fallbackpfade ohne gespeichertes Matching.
   const leerStorage = { listKnowledgeObjects: async () => kos, listMatchingResults: async () => [] };
@@ -265,9 +295,22 @@ const deps = { ready: () => true, request: fakeRequest };
     () => [{ knowledge_object_id: "ko-3" }, { knowledge_object_id: "ko-1" }],
     {}, "mdb-a"
   );
-  check("C11 Offline-Matching-Fallback unveraendert und ohne Erklaerung",
-    rankedOffline.map((k) => k.id).join(",") === "ko-3,ko-1"
-    && rankedOffline.every((k) => !("relevanz_erklaerung" in k)));
+  // Gleiche Begruendung wie bei C8: geprueft wird die MENGE und die Determiniertheit,
+  // nicht mehr die Reihenfolge, in der der Offline-Matcher die Zeilen zurueckgibt.
+  check("C11 Offline-Matching-Fallback liefert dieselbe MENGE und keine Erklaerung",
+    rankedOffline.length === 2
+    && new Set(rankedOffline.map((k) => k.id)).size === 2
+    && rankedOffline.every((k) => ["ko-1", "ko-3"].includes(k.id))
+    && rankedOffline.every((k) => !("relevanz_erklaerung" in k)),
+    rankedOffline.map((k) => k.id).join(","));
+  check("C11b Auch dieser Pfad ist deterministisch geordnet",
+    rankedOffline.map((k) => k.id).join(",") === "ko-1,ko-3",
+    rankedOffline.map((k) => k.id).join(","));
+
+  // Ordnung wieder auf den Ausgangszustand — kein Test darf die Umgebung veraendert
+  // zuruecklassen (die Mandantentrennung unten haengt nicht an der Reihenfolge).
+  if (relVorher == null) delete process.env.HELMUT_RELEVANZORDNUNG;
+  else process.env.HELMUT_RELEVANZORDNUNG = relVorher;
 
   // Mandantentrennung: Erklaerung entsteht ausschliesslich aus den Zeilen, die
   // der mandantengefilterte Lesepfad geliefert hat.
