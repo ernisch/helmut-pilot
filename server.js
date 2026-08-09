@@ -1190,6 +1190,17 @@ async function handleRequest(request, response) {
       // ausschliesslich faellige `tenant_narrative`-Auftraege ab. Geplant werden die
       // Auftraege vom Scheduler der schweren Crons (`planeArbeit`), nicht hier.
       if (scalablePipeline.narrativUeberWarteschlange()) {
+        // BELEGTER FEHLER (Abschlussreview PR #236, Befund R2): hier fehlte der Tagesplan.
+        // Ohne ihn ist `scopeMax` in JEDER Reservierung null — der Mandantenanteil aus
+        // `llm-budget-fair` wird nie gezogen und es entsteht keine `tenant:<id>`-Zeile in
+        // `llm_budget_counters`. Genau Befund O1, bei dem Verbraucher, fuer den O1 gebaut
+        // wurde. `tagesplanFuerLauf` plant NICHTS — es liest die aktiven Profile und
+        // rechnet die Zuteilung; dieselbe eine Profilabfrage, die der Altpfad hier ohnehin
+        // machte. Schlaegt sie fehl, ist der Plan `null` und der Worker meldet das ehrlich
+        // als `budgetSchicht: "ohne-tagesplan"`.
+        const narrativTagesplan = await scalablePipeline
+          .tagesplanFuerLauf({ jetztMs: lageBriefingStartMs })
+          .catch(() => null);
         const durchlauf = await workerBetrieb.durchlauf({
           kennung: lageBriefingRunId,
           grenzen: {
@@ -1198,22 +1209,43 @@ async function handleRequest(request, response) {
             leaseMs: 300000,
             stapel: Math.max(1, Number(process.env.HELMUT_WORKER_BATCH) || 10)
           },
+          tagesplan: narrativTagesplan,
           typen: ["tenant_narrative"]
         });
+        // BELEGTER FEHLER (Abschlussreview PR #236, Befund R3): der Status stand auf
+        // `success`, sobald der Worker ueberhaupt STARTETE. Fehlte die Migration, war die
+        // Warteschlange unerreichbar, der Altpfad durch das Flag abgeschaltet und es entstand
+        // KEIN einziges Narrativ — gemeldet wurde trotzdem ein Erfolg. Das ist genau das
+        // falsche Gruen, das CLAUDE.md §4.4 verbietet, und `runCronUeberWarteschlange`
+        // vermeidet es an derselben Stelle bereits ausdruecklich. Jetzt hier auch.
+        const narrativBilanzen = Array.isArray(durchlauf.bilanzen) ? durchlauf.bilanzen : [];
+        const warteschlangeVerfuegbar = durchlauf.gestartet !== false
+          && narrativBilanzen.length > 0
+          && narrativBilanzen.some((b) => b && b.verfuegbar !== false);
+        const narrativGrund = warteschlangeVerfuegbar
+          ? null
+          : ((narrativBilanzen.find((b) => b && b.grund) || {}).grund
+            || durchlauf.grund || "warteschlange-nicht-verfuegbar");
         const lageTelemetrie = await recordProcessRun({
           process: "briefing-lage", runId: lageBriefingRunId, mode: "warteschlange", location: helmutExecLocation(),
           startedAt: new Date(lageBriefingStartMs).toISOString(), finishedAt: new Date().toISOString(),
           durationMs: Date.now() - lageBriefingStartMs,
           processed: durchlauf.erledigt || 0, deferred: durchlauf.zurueckgestellt || 0,
           zielmenge: durchlauf.reserviert || 0,
-          status: durchlauf.gestartet === false ? "partial" : "success"
+          status: warteschlangeVerfuegbar ? "success" : "partial"
         });
         console.log(`[cron/lage-briefing/warteschlange] ${Date.now() - lageBriefingStartMs}ms`
           + ` reserviert=${durchlauf.reserviert || 0} erledigt=${durchlauf.erledigt || 0}`
-          + ` zurueckgestellt=${durchlauf.zurueckgestellt || 0} lauf=${lageBriefingRunId}`);
+          + ` zurueckgestellt=${durchlauf.zurueckgestellt || 0}`
+          + ` verfuegbar=${warteschlangeVerfuegbar}${narrativGrund ? ` grund=${narrativGrund}` : ""}`
+          + ` tagesplan=${narrativTagesplan ? "ja" : "nein"} lauf=${lageBriefingRunId}`);
         return {
-          pfad: "warteschlange",
           ...durchlauf,
+          pfad: "warteschlange",
+          ok: warteschlangeVerfuegbar,
+          verfuegbar: warteschlangeVerfuegbar,
+          grund: narrativGrund,
+          tagesplanVorhanden: Boolean(narrativTagesplan),
           lauftelemetrie: { gespeichert: lageTelemetrie.ok, vollstaendig: lageTelemetrie.vollstaendig, fehler: lageTelemetrie.fehler }
         };
       }
