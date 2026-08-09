@@ -208,7 +208,15 @@ function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
   // Vorbedingungen zaehlen und einen Auftrag EHRLICH zurueckstellen.
   // Der Vertragstest prueft die Gleichheit von Attrappe und echter Datenbank.
   async function offeneVorbedingungen({ fenster = null, typen = null } = {}) {
-    const passt = (z) => (fenster == null || z.freshness_window === fenster)
+    // Befund O3: `helmut_jobs_offen` nimmt seit der Korrektur eine LISTE von Fenstern
+    // (`j.freshness_window = any(p_fenster)`), weil geteilte Abrufe in 8-h-Fenstern liegen,
+    // mandatsbezogene Arbeit aber in einem 24-h-Fenster. Die Attrappe MUSS dasselbe tun —
+    // eine Attrappe, die enger vergleicht als die Datenbank, meldet „keine Vorbedingung
+    // offen" und ist damit genau die Sorte falsches Gruen, die dieser Pfad ausschliessen soll.
+    const fensterListe = fenster == null
+      ? null
+      : (Array.isArray(fenster) ? fenster.map(String) : [String(fenster)]);
+    const passt = (z) => (fensterListe == null || fensterListe.includes(z.freshness_window))
       && (typen == null || !typen.length || typen.includes(z.job_type));
     const alle = [...zeilen.values()].filter(passt);
     return {

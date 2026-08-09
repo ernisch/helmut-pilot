@@ -73,6 +73,24 @@ function main() {
     // nicht rot werden — der fehlende Nachweis steht ausdruecklich im Text.
     process.exit(0);
   }
+  // BELEGTER FEHLER (Sprint Aktivierungsreife 2026-08-09, Befund B14): diese Suite legte
+  // ihre Datenbank NICHT an — anders als ihre Geschwister (`jobqueue-vertrag-test.js`
+  // Zeile ~370, `jobqueue-datenbank-test.js`). Sie setzte `helmut_test` als vorhanden
+  // voraus und brach sonst mit `TESTLAUF-FEHLER` und Exit 1 ab. Auf jeder Maschine, auf der
+  // `HELMUT_TEST_PG_HOST` gesetzt ist, ohne dass jemand vorher von Hand eine Datenbank
+  // dieses Namens angelegt hat, wurde damit das PFLICHT-GATE rot — und zwar mit einer
+  // Meldung, die wie ein Migrationsfehler aussieht und keiner ist. Gemessen in genau dieser
+  // Sitzung: frische PostgreSQL 16.13, vier Geschwistersuiten gruen, diese eine rot.
+  //
+  // Die Suite legt ihre Datenbank jetzt selbst an, wie ihre Geschwister. Ein bereits
+  // vorhandener Bestand bleibt unberuehrt (`create database` schlaegt dann fehl und wird
+  // bewusst verschluckt).
+  try {
+    execFileSync("psql", ["-h", PG.host, "-p", String(PG.port), "-U", PG.user, "-d", "postgres",
+      "-tAc", `create database ${PG.db}`], { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    console.log(`  Datenbank ${PG.db} angelegt.`);
+  } catch (_) { /* existiert bereits — genau der Normalfall */ }
+
   console.log(`  Server: ${PG.host}:${PG.port}/${PG.db} als ${PG.user}`);
   console.log(`  Zeilen im Test: ${z(ZEILEN)}\n`);
 

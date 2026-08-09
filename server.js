@@ -23,6 +23,12 @@ const cronGlobalphase = require("./lib/helmut/cron-globalphase");
 // OP-30: skalierbarer Pfad (Arbeitswarteschlange). DEFAULT AUS — ohne
 // HELMUT_SCALABLE_PIPELINE wird von hier nichts betreten.
 const scalablePipeline = require("./lib/helmut/scalable-pipeline");
+// OP-30 (Befund O2 des Abschlussreviews): der Workerbetrieb ist seit diesem Sprint die EINE
+// Betriebsform des Warteschlangenpfads — begrenzte Parallelitaet, Riegel gegen externen
+// Abruf bei ausgeschaltetem Quellenmodus, Health und Readiness. Er laedt nichts und startet
+// nichts beim Einbinden; ohne HELMUT_SCALABLE_PIPELINE gibt jede seiner Funktionen sofort
+// `flag-aus` zurueck.
+const workerBetrieb = require("./lib/helmut/worker-betrieb");
 
 // P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
 // (Cron-Understanding, Briefing-Aufbau). Reine technische Metadaten, nie PII.
@@ -935,11 +941,23 @@ async function handleRequest(request, response) {
     return handleAsync(response, async () => {
       const seit = Math.max(1, Math.min(10080, Number(url.searchParams.get("seitMinuten")) || 1440));
       const status = await scalablePipeline.betriebsstatus({ seitMinuten: seit });
+      // O2: die Readiness des Workerbetriebs gehoert hierher. `zustand` beantwortet
+      // "wie steht die Warteschlange?", `bereit` beantwortet "darf und kann ueberhaupt
+      // jemand sie abarbeiten?" — das sind zwei verschiedene Fragen, und ohne die zweite
+      // sieht ein stillstehender Betrieb wie ein leerer aus.
+      const bereitschaft = await workerBetrieb.readiness().catch((error) => ({
+        bereit: false, gruende: [`readiness-fehler:${String((error && error.message) || "fehler").slice(0, 80)}`]
+      }));
+      // Trockenlauf: was WUERDE wiedervorgelegt? Aendert nichts (Befund O5).
+      const wiedervorlage = await scalablePipeline.wiedervorlage({ trockenlauf: true })
+        .catch(() => ({ verfuegbar: false, grund: "fehler" }));
       return {
         // Der Flagzustand steht IMMER dabei: ein "gruener" Status bei ausgeschaltetem Flag
         // bedeutet nur "niemand arbeitet", nicht "alles in Ordnung".
         pfadAktiv: scalablePipeline.skalierbarerPfadAktiv(),
-        ...status
+        ...status,
+        worker: bereitschaft,
+        wiedervorlage
       };
     });
   }
@@ -6471,13 +6489,36 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     `cron-${cronName}-planung`
   ).catch((error) => ({ ok: false, grund: "planung-timeout", fehler: error && error.message, geplant: 0, neu: 0 }));
 
-  const bilanz = await scalablePipeline.arbeite({
-    owner: `${laufkennung}`,
-    // Abschlussreserve wie in der globalen Phase (K8): der letzte Auftrag darf nicht mitten
-    // im Abschlussschreiben in das aeussere Zeitlimit laufen.
-    budgetMs: Math.max(0, verbleibend() - 10000),
-    leaseMs: 300000,
-    stapel: Math.max(1, Number(process.env.HELMUT_WORKER_BATCH) || 10),
+  // WIEDERVORLAGE VOR DER ARBEIT (OP-30, Befund O5). Endgueltig gescheiterte Auftraege
+  // blockieren ihre Dokumentmenge dauerhaft, weil der Idempotenzschluessel des Verstehens
+  // kein Fenster traegt und die Bereinigung `fehlgeschlagen` bewusst stehen laesst. Sie
+  // werden deshalb BEGRENZT oft wieder vorgelegt — vor dem Arbeiten, damit sie noch in
+  // diesem Slot drankommen. Fehlt die Migration 20260809, meldet der Aufruf das ehrlich
+  // und aendert nichts.
+  const wieder = await scalablePipeline.wiedervorlage({ trockenlauf: false })
+    .catch((error) => ({ verfuegbar: false, grund: String((error && error.message) || "fehler").slice(0, 200) }));
+
+  // WORKERBETRIEB STATT DIREKTAUFRUF (OP-30, Befund O2). Bis hierher rief der Cron
+  // `scalable-pipeline.arbeite` direkt auf — `lib/helmut/worker-betrieb.js` war damit im
+  // Betrieb tot: begrenzte Parallelitaet, der Riegel gegen externen Abruf bei
+  // `HELMUT_SOURCE_MODE=off`, Health und Readiness waren gebaut, aber unerreichbar, und die
+  // vier `HELMUT_WORKER_*`-Variablen wirkungslos. Jetzt ist der Workerbetrieb die EINE
+  // Betriebsform; der Cron ist einer seiner beiden Aufrufer (der andere waere ein
+  // langlaufender Prozess — das bleibt Betreiberentscheidung, siehe workerbetrieb.md).
+  //
+  // Die Grenzen des Slots gibt der Cron vor: er allein kennt seine Restzeit. Sie laufen
+  // durch dieselbe Klemmung wie Umgebungswerte.
+  const durchlauf = await workerBetrieb.durchlauf({
+    kennung: laufkennung,
+    grenzen: {
+      // Abschlussreserve wie in der globalen Phase (K8): der letzte Auftrag darf nicht mitten
+      // im Abschlussschreiben in das aeussere Zeitlimit laufen.
+      budgetMs: Math.max(1, verbleibend() - 10000),
+      leaseMs: 300000,
+      stapel: Math.max(1, Number(process.env.HELMUT_WORKER_BATCH) || 10)
+    },
+    // OP-30/O1: der Tagesplan liefert die Bereichsdeckel (`scopeMax`) der Budgetschicht.
+    tagesplan: (plan && plan.tagesplan) || null,
     // BELEGTER FEHLER (Abschlussreview 2026-08-08): der Worker holte `buildV3Briefing` aus
     // `lib/helmut/briefingContract.js`, wo dieser Name nicht existiert — die Funktion steht
     // hier in `server.js`. Jeder Briefingauftrag scheiterte deshalb mit
@@ -6486,12 +6527,25 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     deps: { buildV3Briefing }
   });
 
+  // Die Gesamtbilanz des Durchlaufs — dieselben Felder wie zuvor der Einzelworker, damit
+  // Auswertung und Tests unveraendert lesen koennen.
+  const bilanz = {
+    ...durchlauf,
+    verfuegbar: Array.isArray(durchlauf.bilanzen) && durchlauf.bilanzen.length
+      ? durchlauf.bilanzen.some((b) => b && b.verfuegbar !== false)
+      : false,
+    verarbeitet: (durchlauf.erledigt || 0) + (durchlauf.wiederholt || 0)
+      + (durchlauf.endgueltigFehlgeschlagen || 0)
+  };
+
   const status = await scalablePipeline.betriebsstatus({ seitMinuten: 1440 }).catch(() => null);
 
   console.log(`[cron/${cronName}/warteschlange] ${Date.now() - start}ms`
     + ` geplant=${plan && plan.geplant} neu=${plan && plan.neu}`
-    + ` erledigt=${bilanz.erledigt} wiederholt=${bilanz.wiederholt}`
+    + ` worker=${durchlauf.worker} erledigt=${bilanz.erledigt} wiederholt=${bilanz.wiederholt}`
     + ` endgueltigFehler=${bilanz.endgueltigFehlgeschlagen}`
+    + ` wiedervorgelegt=${(wieder && wieder.wiedervorgelegt) ?? "n/v"}`
+    + ` rotation=${(plan && plan.tagesplan && plan.tagesplan.plaetze) || 0}`
     + ` zustand=${(status && status.zustand) || "unbekannt"} lauf=${laufkennung}`);
 
   // EHRLICHER GESAMTAUSGANG (CLAUDE.md §4.4): ein Lauf ist nur dann ok, wenn geplant UND
@@ -6504,6 +6558,7 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     lauf: { laufId: laufkennung },
     planung: plan,
     verarbeitung: bilanz,
+    wiedervorlage: wieder,
     betrieb: status
   };
 }
