@@ -207,6 +207,22 @@ async function main() {
       psql("select count(*) from pg_proc where proname='helmut_reserve_llm_call'").out === "1");
 
     const TAG = "2026-08-08";
+    // ── NACH DER R4-KORREKTUR: WO DIE WAHRHEIT STEHT ───────────────────────
+    // Bis 2026-08-09 erhoehte die Fairnessschicht `llm_budget_counters` SELBST — und der
+    // Choke-Point `helmut_reserve_llm_call` erhoehte dieselbe Zeile beim tatsaechlichen
+    // Aufruf ein zweites Mal (Befund R4, an echter PostgreSQL gemessen: `global.used = 2`
+    // fuer EINEN Aufruf). Seitdem gilt: EIN BUCH, EIN SCHREIBER.
+    //   `llm_budget_counters` = TATSAECHLICH getaetigte Aufrufe (nur der Choke-Point schreibt).
+    //   `llm_reservations`    = ABSICHTEN (Idempotenz, Bereichsverbrauch).
+    //   BELEGUNG des Tagesdeckels = getaetigt + laufend.
+    // Die Pruefungen unten messen deshalb die BELEGUNG statt der rohen Zaehlerzeile. Die
+    // Zusage ist dieselbe und genauso streng — sie wird nur an der richtigen Stelle gelesen.
+    const belegung = () => Number(psql(
+      `select coalesce((select used from public.llm_budget_counters where day='${TAG}' and scope='global'),0)`
+      + ` + (select count(*) from public.llm_reservations where day='${TAG}' and status='reserviert')`).out) || 0;
+    const bereichBelegt = (scope) => Number(psql(
+      `select count(*) from public.llm_reservations where day='${TAG}' and scope='${scope}'`
+      + " and status in ('reserviert','verbraucht','fehlgeschlagen')").out) || 0;
     const R = (key, scope, gmax, smax, klasse = "notwendig") =>
       `select erlaubt||'/'||coalesce(wiederverwendet::text,'')||'/'||coalesce(grund,'-') `
       + `from public.helmut_reserve_llm_result('${key}','${TAG}','${scope}','${klasse}',${gmax},${smax === null ? "null" : smax},900000)`;
@@ -218,24 +234,24 @@ async function main() {
     check("B1.1 Die erste Reservierung wird gewaehrt", e1.startsWith("true/false"), e1);
     check("B1.2 Die zweite mit DEMSELBEN Schluessel wird WIEDERVERWENDET, nicht neu gebucht",
       e2.startsWith("true/true"), e2);
-    check("B1.3 Der Zaehler stieg nur EINMAL",
-      psql(`select used from public.llm_budget_counters where day='${TAG}' and scope='global'`).out === "1");
+    check("B1.3 Die Belegung stieg nur EINMAL",
+      belegung() === 1, `Belegung ${belegung()}`);
+    check("B1.4 Der Zaehler der TATSAECHLICHEN Aufrufe steht auf 0 — reserviert ist nicht verbraucht",
+      psql(`select coalesce((select used from public.llm_budget_counters where day='${TAG}' and scope='global'),0)`).out === "0");
 
     // ── B2 Zwei Deckel in EINEM Schritt ────────────────────────────────────
     psql("delete from public.llm_reservations; delete from public.llm_budget_counters;");
     const b2 = psql(R("lage|m1|F", "tenant:m1", 100, 1, "optional")).out;
     const b2b = psql(R("lage|m1|F2", "tenant:m1", 100, 1, "optional")).out;
     check("B2.1 Der Mandantenanteil wird durchgesetzt", b2b.includes("mandantenanteil-erschoepft"), b2b);
-    check("B2.2 Eine abgelehnte Mandantenreservierung erhoeht den GLOBALEN Zaehler NICHT",
-      psql(`select used from public.llm_budget_counters where day='${TAG}' and scope='global'`).out === "1",
-      `global=${psql(`select used from public.llm_budget_counters where day='${TAG}' and scope='global'`).out}`);
+    check("B2.2 Eine abgelehnte Mandantenreservierung erhoeht die GLOBALE Belegung NICHT",
+      belegung() === 1, `Belegung ${belegung()}`);
     psql("delete from public.llm_reservations; delete from public.llm_budget_counters;");
     psql(R("x|a", "global", 100, null));   // globalen Zaehler auf 1
     const b2c = psql(R("lage|m9|F", "tenant:m9", 1, 50, "notwendig")).out;
-    check("B2.3 Reisst das globale Notfalllimit, wird der Mandantenanteil ZURUECKGENOMMEN",
-      b2c.includes("globales-notfalllimit-erreicht")
-      && psql(`select coalesce(max(used),0) from public.llm_budget_counters where day='${TAG}' and scope='tenant:m9'`).out === "0",
-      b2c);
+    check("B2.3 Reisst das globale Notfalllimit, wird KEIN Mandantenanteil verbraucht",
+      b2c.includes("globales-notfalllimit-erreicht") && bereichBelegt("tenant:m9") === 0,
+      `${b2c} · Bereich ${bereichBelegt("tenant:m9")}`);
 
     // ── B3 Abschluss und Rueckgabe ─────────────────────────────────────────
     psql("delete from public.llm_reservations; delete from public.llm_budget_counters;");
@@ -247,28 +263,29 @@ async function main() {
     const rel = psql("select zurueckgegeben from public.helmut_release_llm_reservation('understanding|vg-9')").out;
     check("B3.3 Eine bereits VERBRAUCHTE Reservierung kann nicht zurueckgegeben werden",
       rel === "f", rel);
-    check("B3.4 Der Zaehler bleibt dabei stehen (keine Budgetleckage)",
-      psql(`select used from public.llm_budget_counters where day='${TAG}' and scope='global'`).out === "1");
+    check("B3.4 Der Verbrauch bleibt im Buch stehen (keine Budgetleckage)",
+      psql("select count(*) from public.llm_reservations where status='verbraucht'").out === "1"
+      && psql("select count(*) from public.llm_reservations where status='zurueckgegeben'").out === "0");
 
     psql("delete from public.llm_reservations; delete from public.llm_budget_counters;");
     psql(R("understanding|vg-10", "global", 100, null));
     const rel2 = psql("select zurueckgegeben from public.helmut_release_llm_reservation('understanding|vg-10')").out;
     check("B3.5 Eine OFFENE Reservierung kann ausdruecklich zurueckgegeben werden", rel2 === "t", rel2);
-    check("B3.6 Danach ist der Zaehler wieder frei",
-      psql(`select used from public.llm_budget_counters where day='${TAG}' and scope='global'`).out === "0");
+    check("B3.6 Danach ist die Belegung wieder frei",
+      belegung() === 0 && psql("select count(*) from public.llm_reservations where status='zurueckgegeben'").out === "1");
 
     // ── B4 Absturz zwischen Reservierung und Abschluss ─────────────────────
     psql("delete from public.llm_reservations; delete from public.llm_budget_counters;");
     psql(R("understanding|vg-crash", "global", 100, null));
     // Kein Abschluss — der Prozess "stirbt". Die Reservierung bleibt bewusst gebucht.
-    const nachCrash = psql(`select used from public.llm_budget_counters where day='${TAG}' and scope='global'`).out;
+    const nachCrash = belegung();
     const wieder = psql(R("understanding|vg-crash", "global", 100, null)).out;
     check("B4.1 Nach einem Absturz bleibt die Reservierung gebucht (konservativ, kein Geldverlust)",
-      nachCrash === "1", nachCrash);
+      nachCrash === 1, String(nachCrash));
     check("B4.2 Der Wiederholungslauf findet sie wieder und bucht NICHT erneut",
       wieder.startsWith("true/true"), wieder);
-    check("B4.3 Der Zaehler steht immer noch auf genau 1",
-      psql(`select used from public.llm_budget_counters where day='${TAG}' and scope='global'`).out === "1");
+    check("B4.3 Die Belegung steht immer noch auf genau 1",
+      belegung() === 1, `Belegung ${belegung()}`);
     check("B4.4 Die Reservierung traegt eine Verfallszeit (auswertbar, nicht automatisch frei)",
       psql("select count(*) from public.llm_reservations where expires_at > now()").out === "1");
 
@@ -290,12 +307,12 @@ async function main() {
     const ergebnisse = await Promise.all(laeufe);
     const dauer = Date.now() - t0;
     const gewaehrt = ergebnisse.reduce((s, r) => s + (r.out.match(/^t$/gm) || []).length, 0);
-    const zaehler = Number(psql(`select used from public.llm_budget_counters where day='${TAG}' and scope='global'`).out);
+    const zaehler = belegung();
     const zeilenZahl = Number(psql("select count(*) from public.llm_reservations").out);
 
     check("B5.1 Alle acht Prozesse liefen fehlerfrei", ergebnisse.every((r) => r.code === 0));
     check("B5.2 Der Deckel wurde bei ECHTER Gleichzeitigkeit NICHT ueberschritten",
-      zaehler === DECKEL, `Zaehler ${zaehler} bei Deckel ${DECKEL}`);
+      zaehler === DECKEL, `Belegung ${zaehler} bei Deckel ${DECKEL}`);
     check("B5.3 Genau so viele Reservierungen wie gewaehrte Zusagen",
       gewaehrt === DECKEL && zeilenZahl === DECKEL,
       `gewaehrt ${gewaehrt} · Zeilen ${zeilenZahl} · Deckel ${DECKEL}`);
@@ -318,19 +335,23 @@ async function main() {
       laeufe2.push(psqlAsync(zeilen.join("\n")));
     }
     await Promise.all(laeufe2);
-    const ueber = Number(psql(`select count(*) from public.llm_budget_counters where day='${TAG}' and scope<>'global' and used > ${JE_MAND}`).out);
-    const summe = Number(psql(`select coalesce(sum(used),0) from public.llm_budget_counters where day='${TAG}' and scope<>'global'`).out);
-    const global = Number(psql(`select used from public.llm_budget_counters where day='${TAG}' and scope='global'`).out);
+    const ueber = Number(psql(`select count(*) from (select scope, count(*) n from public.llm_reservations `
+      + `where day='${TAG}' and scope<>'global' and status in ('reserviert','verbraucht','fehlgeschlagen') `
+      + `group by scope) t where n > ${JE_MAND}`).out);
+    const summe = Number(psql(`select count(*) from public.llm_reservations where day='${TAG}' and scope<>'global' `
+      + "and status in ('reserviert','verbraucht','fehlgeschlagen')").out);
+    const global = belegung();
     check("B6.1 KEIN Mandantenanteil wurde ueberschritten", ueber === 0, `${ueber} ueberschritten`);
     check("B6.2 Jeder der fuenf Mandanten hat genau seinen Anteil bekommen",
       summe === MAND * JE_MAND, `${summe} von ${MAND * JE_MAND}`);
-    check("B6.3 Der globale Zaehler stimmt mit der Summe ueberein (keine Geisterbuchung)",
+    check("B6.3 Die globale Belegung stimmt mit der Summe ueberein (keine Geisterbuchung)",
       global === summe, `global ${global} · Summe ${summe}`);
 
     // ── B7 Kennzahlen ─────────────────────────────────────────────────────
-    const k = psql("select global_verbraucht||'/'||mandanten_mit_verbrauch||'/'||reservierungen||'/'||groesster_mandantenanteil "
+    const k = psql("select global_verbraucht||'/'||global_belegt||'/'||mandanten_mit_verbrauch||'/'||reservierungen||'/'||groesster_mandantenanteil "
       + `from public.helmut_llm_budget_kennzahlen('${TAG}')`).out;
-    check("B7.1 Die Kennzahlen sind lesbar und plausibel", /^\d+\/\d+\/\d+\/\d+$/.test(k), k);
+    check("B7.1 Die Kennzahlen sind lesbar und trennen VERBRAUCHT von BELEGT",
+      /^\d+\/\d+\/\d+\/\d+\/\d+$/.test(k), k);
 
     // ── B8 Sicherheit ─────────────────────────────────────────────────────
     // psql stellt einen VERKETTETEN Wahrheitswert als `true`/`false` dar, eine blosse Spalte

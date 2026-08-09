@@ -41,6 +41,38 @@
 -- Deckel bleibt das Notfalllimit. Solange der App-Code diese Funktionen nicht ruft (Flag aus),
 -- ist diese Migration vollstaendig wirkungslos.
 --
+-- ── KORREKTUR 2026-08-09 (Befund R4 und R4b) ────────────────────────────────────────────────
+-- R4 (DOPPELTE VERBUCHUNG, an echter PostgreSQL 16.13 gemessen): die erste Fassung dieser
+-- Migration erhoehte `llm_budget_counters` SELBST — und der tatsaechliche Modellaufruf laeuft
+-- danach durch den Choke-Point `helmut_reserve_llm_call` (ai.js `requestOpenAI`, der EINZIGE
+-- Ort, an dem ein Modell gerufen wird), der DIESELBE Zeile ein zweites Mal erhoeht. Ein
+-- fachlicher Aufruf ergab `global.used = 2`. Der dokumentierte Deckelbedarf war damit in
+-- Zaehlereinheiten doppelt so hoch, und ein Tagesdeckel haette bei der HAELFTE der Aufrufe
+-- geschlossen.
+--
+-- DIE REGEL, DIE DARAUS FOLGT — EIN BUCH, EIN SCHREIBER:
+--   * `llm_budget_counters` ist das Buch der TATSAECHLICH GETAETIGTEN Modellaufrufe. Einziger
+--     Schreiber bleibt `helmut_reserve_llm_call` am Choke-Point. Diese Migration schreibt die
+--     Tabelle NICHT MEHR — sie liest sie nur und nimmt auf der globalen Zeile den Row-Lock,
+--     der alle Reservierer und den Choke-Point gegeneinander serialisiert.
+--   * `llm_reservations` ist das Buch der ABSICHTEN (Reservierungen). Es traegt die
+--     Idempotenz je Ergebnis und den Bereichsverbrauch (Mandantenanteil, Verstehensanteil).
+--   * BELEGUNG des Tagesdeckels = getaetigte Aufrufe (`llm_budget_counters.global`)
+--     + laufende Reservierungen (`status = 'reserviert'`). Nach dem Abschluss einer
+--     Reservierung steht die Buchung genau EINMAL im Buch — die des Choke-Points.
+--   * Es gibt KEINE ausgleichende Ruecknahme mehr (kein `used = used - 1`). Genau diese
+--     Lesen-Aendern-Schreiben-Kompensation ist die Bauform, vor der CLAUDE.md §4.10 warnt.
+--   * SELBSTKORRIGIEREND: scheiterte ein Auftrag VOR dem Modellaufruf, hat der Choke-Point
+--     nichts gebucht — die Belegung faellt beim Abschluss von selbst auf den wahren Stand
+--     zurueck. Ein Aufruf, der stattfand und scheiterte, bleibt gebucht (die Kosten sind
+--     entstanden und duerfen nicht verschwinden).
+--
+-- R4b (STILL WIRKUNGSLOSER DECKEL): `p_scope_max` wurde nur fuer `p_scope <> 'global'`
+-- ausgewertet. Der App-Code uebergibt fuer GLOBALE Arbeit (Verstehen) aber genau dort den
+-- `globalerTopf` — die Reserve, die verhindert, dass das Verstehen den Tagesdeckel leerraeumt
+-- und die sichtbaren Lage-Narrative ausfallen. Dieser Deckel wurde berechnet, uebergeben und
+-- in SQL verworfen. Er gilt jetzt fuer JEDEN Bereich, `global` eingeschlossen.
+--
 -- FREIGABEPFLICHTIG: NICHT automatisch angewendet. Idempotent.
 -- DSGVO: nur Schluessel, Zaehlstaende und Zeitpunkte — keine Inhalte, keine PII. Der
 -- `result_key` ist ein technischer Ableitungswert (Vorgangs-/Mandatskennung + Fenster).
@@ -82,10 +114,15 @@ comment on table public.llm_reservations is
   'OP-30: eine Zeile je BEABSICHTIGTEM KI-Ergebnis. Macht eine Wiederholung kostenneutral (Idempotenz ueber result_key) und bindet Mandantenanteil und globales Notfalllimit in EINEN atomaren Schritt. Nur Schluessel/Zaehler/Zeitpunkte — keine Inhalte.';
 
 -- ── Die atomare Reservierung ─────────────────────────────────────────────────────────────
--- p_scope_max  = fairer Anteil DIESES Mandanten am Tag (null = kein Mandantendeckel)
--- p_global_max = globales Notfalllimit           (null = kein globales Limit)
--- Beide Zaehler liegen in `llm_budget_counters` — derselben Tabelle wie 20260717, damit es
--- NICHT zwei konkurrierende Wahrheiten ueber den Tagesverbrauch gibt.
+-- p_scope_max  = Deckel DIESES Bereichs am Tag (Mandantenanteil bzw. Verstehensanteil;
+--                null = kein Bereichsdeckel)
+-- p_global_max = globales Notfalllimit         (null = kein globales Limit)
+--
+-- ATOMARITAET (beide Deckel in einem Schritt): die Funktion nimmt als ERSTES den Row-Lock auf
+-- `llm_budget_counters(p_day,'global')`. Ueber dieselbe Zeile laeuft der Choke-Point
+-- `helmut_reserve_llm_call`; damit sind Reservierer untereinander UND gegen den tatsaechlichen
+-- Aufruf serialisiert. Zwischen Pruefung und Eintrag der Reservierung kann niemand dazwischen.
+-- Geschrieben wird die Zaehlertabelle hier NICHT (Befund R4, siehe Kopf).
 create or replace function public.helmut_reserve_llm_result(
   p_result_key  text,
   p_day         text,
@@ -108,9 +145,10 @@ set search_path = public, pg_temp
 as $$
 declare
   v_vorhanden public.llm_reservations%rowtype;
-  v_global    integer := 0;
-  v_scope     integer := 0;
-  v_ok        boolean;
+  v_gebucht   integer := 0;   -- tatsaechlich getaetigte Aufrufe des Tages (Choke-Point)
+  v_offen     integer := 0;   -- laufende Reservierungen des Tages
+  v_global    integer := 0;   -- Belegung des Tagesdeckels = gebucht + offen
+  v_scope     integer := 0;   -- Belegung dieses Bereichs (aus dem Reservierungsbuch)
 begin
   if p_result_key is null or length(trim(p_result_key)) = 0 then
     raise exception 'helmut_reserve_llm_result: p_result_key ist Pflicht';
@@ -119,6 +157,20 @@ begin
     raise exception 'helmut_reserve_llm_result: p_day ist Pflicht';
   end if;
 
+  -- (0) SERIALISIERUNGSPUNKT. Die globale Tageszeile ist der EINE Punkt, an dem sich
+  --     Reservierer und Choke-Point treffen. Ein Row-Lock darauf macht alles Folgende
+  --     atomar — ohne dass hier ein Zaehler geschrieben wuerde. Die Zeile wird bei Bedarf
+  --     mit `used = 0` angelegt; das ist KEINE Buchung, sondern nur der Ankerpunkt des
+  --     Locks (`helmut_reserve_llm_call` verhaelt sich auf einer vorhandenen 0-Zeile exakt
+  --     wie auf einer fehlenden).
+  insert into public.llm_budget_counters (day, scope, used)
+  values (p_day, 'global', 0)
+  on conflict (day, scope) do nothing;
+
+  select c.used into v_gebucht from public.llm_budget_counters c
+   where c.day = p_day and c.scope = 'global'
+   for update;
+
   -- (1) IDEMPOTENZ. Existiert schon eine Reservierung fuer dieses Ergebnis, wird sie
   --     WIEDERVERWENDET — egal ob sie noch offen ist oder bereits verbraucht wurde. Eine
   --     Wiederholung desselben Auftrags kostet damit NICHTS zusaetzlich.
@@ -126,83 +178,58 @@ begin
    where r.result_key = p_result_key
    for update;
 
-  if found then
-    select coalesce(c.used, 0) into v_global from public.llm_budget_counters c
-      where c.day = p_day and c.scope = 'global';
-    select coalesce(c.used, 0) into v_scope from public.llm_budget_counters c
-      where c.day = p_day and c.scope = p_scope;
-    if v_vorhanden.status = 'zurueckgegeben' then
-      -- Ausdruecklich zurueckgegeben (der Aufrufer hat gemeldet: Aufruf fand NIE statt).
-      -- Dann darf und muss neu gebucht werden — dafuer faellt die Zeile unten wieder an.
-      delete from public.llm_reservations where result_key = p_result_key;
-    else
-      return query select true, true, 'bereits-reserviert'::text, coalesce(v_global,0), coalesce(v_scope,0);
-      return;
-    end if;
-  end if;
-
-  -- (2) MANDANTENANTEIL zuerst. Der engere Deckel wird zuerst gezogen: scheitert er, wurde
-  --     das globale Notfalllimit gar nicht erst angefasst.
-  if p_scope <> 'global' and p_scope_max is not null then
-    if p_scope_max <= 0 then
-      select coalesce(c.used, 0) into v_scope from public.llm_budget_counters c
-        where c.day = p_day and c.scope = p_scope;
-      select coalesce(c.used, 0) into v_global from public.llm_budget_counters c
-        where c.day = p_day and c.scope = 'global';
-      return query select false, false, 'mandantenanteil-erschoepft'::text, coalesce(v_global,0), coalesce(v_scope,0);
-      return;
-    end if;
-    insert into public.llm_budget_counters as c (day, scope, used)
-    values (p_day, p_scope, 1)
-    on conflict (day, scope) do update
-       set used = c.used + 1, updated_at = now()
-     where c.used < p_scope_max
-    returning c.used into v_scope;
-    if v_scope is null then
-      select coalesce(c.used, 0) into v_scope from public.llm_budget_counters c
-        where c.day = p_day and c.scope = p_scope;
-      select coalesce(c.used, 0) into v_global from public.llm_budget_counters c
-        where c.day = p_day and c.scope = 'global';
-      return query select false, false, 'mandantenanteil-erschoepft'::text, coalesce(v_global,0), coalesce(v_scope,0);
-      return;
-    end if;
-  end if;
-
-  -- (3) GLOBALES NOTFALLLIMIT. Scheitert es, wird der eben gezogene Mandantenanteil in
-  --     DERSELBEN Transaktion wieder zurueckgenommen — es darf kein Anteil verbraucht sein,
-  --     ohne dass daraus ein Aufruf werden durfte.
-  if p_global_max is not null and p_global_max <= 0 then
-    v_ok := false;
-  else
-    insert into public.llm_budget_counters as c (day, scope, used)
-    values (p_day, 'global', 1)
-    on conflict (day, scope) do update
-       set used = c.used + 1, updated_at = now()
-     where p_global_max is null or c.used < p_global_max
-    returning c.used into v_global;
-    v_ok := v_global is not null;
-  end if;
-
-  if not v_ok then
-    if p_scope <> 'global' and p_scope_max is not null then
-      update public.llm_budget_counters c set used = greatest(0, c.used - 1), updated_at = now()
-       where c.day = p_day and c.scope = p_scope;
-      select coalesce(c.used, 0) into v_scope from public.llm_budget_counters c
-        where c.day = p_day and c.scope = p_scope;
-    end if;
-    select coalesce(c.used, 0) into v_global from public.llm_budget_counters c
-      where c.day = p_day and c.scope = 'global';
-    return query select false, false, 'globales-notfalllimit-erreicht'::text, coalesce(v_global,0), coalesce(v_scope,0);
+  if found and v_vorhanden.status = 'zurueckgegeben' then
+    -- Ausdruecklich zurueckgegeben (der Aufrufer hat gemeldet: Aufruf fand NIE statt).
+    -- Dann darf und muss neu reserviert werden — dafuer faellt die Zeile unten wieder an.
+    delete from public.llm_reservations where result_key = p_result_key;
+  elsif found then
+    select count(*)::integer into v_offen from public.llm_reservations r
+     where r.day = p_day and r.status = 'reserviert';
+    select count(*)::integer into v_scope from public.llm_reservations r
+     where r.day = p_day and r.scope = p_scope
+       and r.status in ('reserviert','verbraucht','fehlgeschlagen');
+    return query select true, true, 'bereits-reserviert'::text,
+                        coalesce(v_gebucht,0) + v_offen, v_scope;
     return;
   end if;
 
-  -- (4) Die Reservierung festschreiben. Erst JETZT — beide Deckel haben getragen.
+  -- (2) BELEGUNG ERMITTELN. Zwei Zahlen, beide unter demselben Lock gelesen:
+  --     global = was heute wirklich gerufen wurde + was gerade laeuft;
+  --     bereich = was dieser Bereich heute an Absichten verbucht hat (laufend, verbraucht
+  --     oder gescheitert — eine zurueckgegebene Absicht zaehlt bewusst NICHT).
+  select count(*)::integer into v_offen from public.llm_reservations r
+   where r.day = p_day and r.status = 'reserviert';
+  v_global := coalesce(v_gebucht, 0) + v_offen;
+
+  select count(*)::integer into v_scope from public.llm_reservations r
+   where r.day = p_day and r.scope = p_scope
+     and r.status in ('reserviert','verbraucht','fehlgeschlagen');
+
+  -- (3) BEREICHSDECKEL zuerst. Der engere Deckel wird zuerst geprueft; er gilt fuer JEDEN
+  --     Bereich — auch fuer `global`, wo er den Verstehensanteil begrenzt (Befund R4b).
+  if p_scope_max is not null and v_scope >= greatest(p_scope_max, 0) then
+    return query select false, false,
+      (case when p_scope = 'global' then 'verstehensanteil-erschoepft'
+            else 'mandantenanteil-erschoepft' end)::text,
+      v_global, v_scope;
+    return;
+  end if;
+
+  -- (4) GLOBALES NOTFALLLIMIT.
+  if p_global_max is not null and v_global >= greatest(p_global_max, 0) then
+    return query select false, false, 'globales-notfalllimit-erreicht'::text, v_global, v_scope;
+    return;
+  end if;
+
+  -- (5) Die Reservierung festschreiben. Erst JETZT — beide Deckel haben getragen. Der Lock
+  --     aus (0) haelt bis zum Ende der Transaktion, deshalb kann zwischen Pruefung und
+  --     Eintrag kein zweiter Reservierer dazwischenkommen.
   insert into public.llm_reservations (result_key, day, scope, work_class, status, expires_at)
   values (p_result_key, p_day, p_scope, coalesce(p_work_class, 'notwendig'), 'reserviert',
           now() + (greatest(coalesce(p_ttl_ms, 900000), 1000) * interval '1 millisecond'))
   on conflict (result_key) do nothing;
 
-  return query select true, false, null::text, coalesce(v_global,0), coalesce(v_scope,0);
+  return query select true, false, null::text, v_global + 1, v_scope + 1;
 end;
 $$;
 
@@ -250,38 +277,39 @@ language plpgsql
 security invoker
 set search_path = public, pg_temp
 as $$
-declare
-  v_scope text;
-  v_day   text;
 begin
-  select r.scope, r.day into v_scope, v_day from public.llm_reservations r
-   where r.result_key = p_result_key and r.status = 'reserviert'
-   for update;
+  -- Seit der R4-Korrektur ist die Rueckgabe ein reiner Zustandswechsel: die Belegung
+  -- errechnet sich aus den Buechern, es gibt keinen Zaehler zurueckzudrehen. Damit
+  -- verschwindet auch die letzte Lesen-Aendern-Schreiben-Kompensation (CLAUDE.md §4.10) —
+  -- eine zurueckgegebene Absicht zaehlt weder global (`status <> 'reserviert'`) noch im
+  -- Bereich (`status not in ('reserviert','verbraucht','fehlgeschlagen')`).
+  update public.llm_reservations r
+     set status = 'zurueckgegeben', settled_at = now(), note = coalesce(p_note, r.note)
+   where r.result_key = p_result_key
+     and r.status = 'reserviert';
+
   if not found then
     return query select false;
     return;
   end if;
-
-  update public.llm_budget_counters c set used = greatest(0, c.used - 1), updated_at = now()
-   where c.day = v_day and c.scope = 'global';
-  if v_scope <> 'global' then
-    update public.llm_budget_counters c set used = greatest(0, c.used - 1), updated_at = now()
-     where c.day = v_day and c.scope = v_scope;
-  end if;
-
-  update public.llm_reservations r
-     set status = 'zurueckgegeben', settled_at = now(), note = coalesce(p_note, r.note)
-   where r.result_key = p_result_key;
 
   return query select true;
 end;
 $$;
 
 -- ── Kennzahlen (nur lesend) ──────────────────────────────────────────────────────────────
-create or replace function public.helmut_llm_budget_kennzahlen(p_day text default null)
+-- `global_verbraucht` ist seit der R4-Korrektur, was der Name sagt: die Zahl der
+-- TATSAECHLICH getaetigten Modellaufrufe des Tages (das Buch des Choke-Points). Die Belegung
+-- des Deckels steht daneben als `global_belegt` = verbraucht + laufende Reservierungen.
+-- Die Mandantenzahlen kommen aus dem Reservierungsbuch, nicht mehr aus der Zaehlertabelle —
+-- dort schreibt die Fairnessschicht nichts mehr.
+-- Rueckgabetyp geaendert -> `drop` vor `create` (`create or replace` kann ihn nicht aendern).
+drop function if exists public.helmut_llm_budget_kennzahlen(text);
+create function public.helmut_llm_budget_kennzahlen(p_day text default null)
 returns table(
   tag                    text,
   global_verbraucht      integer,
+  global_belegt          integer,
   mandanten_mit_verbrauch bigint,
   reservierungen         bigint,
   offen                  bigint,
@@ -297,11 +325,20 @@ stable
 security invoker
 set search_path = public, pg_temp
 as $$
-  with tag as (select coalesce(p_day, to_char(now() at time zone 'utc', 'YYYY-MM-DD')) as d)
+  with tag as (select coalesce(p_day, to_char(now() at time zone 'utc', 'YYYY-MM-DD')) as d),
+  bereich as (
+    select r.scope, count(*)::integer as belegt
+      from public.llm_reservations r, tag
+     where r.day = tag.d and r.scope <> 'global'
+       and r.status in ('reserviert','verbraucht','fehlgeschlagen')
+     group by r.scope
+  )
   select
     (select d from tag),
     coalesce((select c.used from public.llm_budget_counters c, tag where c.day = tag.d and c.scope = 'global'), 0),
-    (select count(*) from public.llm_budget_counters c, tag where c.day = tag.d and c.scope <> 'global' and c.used > 0),
+    coalesce((select c.used from public.llm_budget_counters c, tag where c.day = tag.d and c.scope = 'global'), 0)
+      + (select count(*)::integer from public.llm_reservations r, tag where r.day = tag.d and r.status = 'reserviert'),
+    (select count(*) from bereich),
     (select count(*) from public.llm_reservations r, tag where r.day = tag.d),
     (select count(*) from public.llm_reservations r, tag where r.day = tag.d and r.status = 'reserviert'),
     (select count(*) from public.llm_reservations r, tag where r.day = tag.d and r.status = 'verbraucht'),
@@ -309,7 +346,7 @@ as $$
     (select count(*) from public.llm_reservations r, tag where r.day = tag.d and r.status = 'zurueckgegeben'),
     (select count(*) from public.llm_reservations r, tag where r.day = tag.d and r.work_class = 'notwendig'),
     (select count(*) from public.llm_reservations r, tag where r.day = tag.d and r.work_class = 'optional'),
-    coalesce((select max(c.used) from public.llm_budget_counters c, tag where c.day = tag.d and c.scope <> 'global'), 0);
+    coalesce((select max(belegt) from bereich), 0);
 $$;
 
 -- ── Aufraeumen alter Zeilen (Aufbewahrung) ───────────────────────────────────────────────
