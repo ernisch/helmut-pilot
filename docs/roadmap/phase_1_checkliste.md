@@ -153,6 +153,20 @@ Eintrag `d9006c1` / Merge #182 war der Stand vom 2026-07-30) ·
 > **190 echte Profile**, und `HELMUT_RELEVANZORDNUNG` ist seit diesem Sprint **default AUS** —
 > ein Merge verändert das Verhalten damit nachweislich nicht.
 >
+> **Nachtrag 2026-08-09 — Aktivierungsreife für 200 Mandate**
+> ([`../betrieb/op30-aktivierungsreife-2026-08-09.md`](../betrieb/op30-aktivierungsreife-2026-08-09.md)):
+> PR #233 ist gemergt, das Deployment ist READY, und die fünf vor der Aktivierung zu
+> entscheidenden Punkte **O1–O5 sind gelöst** (faire Rotation im echten Planungspfad,
+> `scopeMax` wirksam, Workerbetrieb verdrahtet, Vorbedingungsprüfung über alle enthaltenen
+> Fenster, Budgetwarten begrenzt, begrenzte Wiedervorlage endgültig gescheiterter Aufträge).
+> Der Stufennachweis 5/25/50/100/200 (+ Stress 1 000) erfüllt **alle vierzehn**
+> Abnahmekriterien; die Kapazitätsreserve ist mit **250 statt 200** Mandaten nachgemessen.
+> **An dieser Checkliste ändert sich weiterhin keine Zeile.** Vier Dinge bleiben für die
+> Abnahme wichtig: es fehlen **190 echte Profile** (der Importvertrag dafür steht jetzt), der
+> wirksame Deckel ist **offline nicht lesbar**, **nichts ist aktiviert**, und der einzige
+> mandatsbezogene KI-Pfad (Lage-Narrativ) läuft **außerhalb** der Warteschlange in einem
+> 300-s-Slot — bei 200 Mandaten eine eigene Kapazitätsgrenze (Entscheidungsfrage E1).
+>
 > **Verwechslungsgefahr:** „Punkt 30" hier ist die Phase-1-Abnahme. **OP-30** der
 > [`../datenmotor-restliste.md`](../datenmotor-restliste.md) ist ein anderer Punkt.
 >

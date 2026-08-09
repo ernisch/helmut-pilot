@@ -1472,6 +1472,36 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   immer `null`), und **`lib/helmut/worker-betrieb.js` ist im Betrieb tot**. Beides ist **vor
   der ersten Aktivierung** zu entscheiden. Kanonischer Beleg:
   [`betrieb/op30-abschlussreview-2026-08-08.md`](betrieb/op30-abschlussreview-2026-08-08.md).
+- **Sprint „Aktivierungsreife für 200 Mandate" (2026-08-09, nach dem Merge von PR #233).**
+  **O1–O5 sind gelöst, nicht vertagt** — alles hinter unverändert ausgeschalteten Flags.
+  **O1:** der Befund ist reproduziert (zwei Planungen 17 Tage auseinander sind zeichengleich,
+  weil die Fälligkeit aus einem tagesunabhängigen Streuwert kam) und behoben — `planeArbeit`
+  ruft jetzt `llm-budget-fair.tagesplan` und reicht die Rotationsreihenfolge durch; sie
+  **ordnet, sie wählt nicht aus**. Nachgemessen: 60 Mandate bei Deckel 20 ⇒ nach **6 Tagen**
+  war jedes einmal vorn. `scopeMax` ist nicht mehr `null`: global bekommt `globalerTopf`
+  (Tagesdeckel **minus dem tatsächlichen** mandatsbezogenen Bedarf, höchstens der konfigurierte
+  Anteil — ein fester 50-%-Schnitt hätte verschenkt **und** das Falsche geschützt),
+  mandatsbezogen bekommt `mandantenDeckel`.
+  **O2:** `worker-betrieb.js` ist verdrahtet — `server.js` ruft `durchlauf` statt `arbeite`;
+  Parallelität, Quellenmodus-Riegel, Health und Readiness sind erreichbar, die vier
+  `HELMUT_WORKER_*` wirksam. **O3:** `helmut_jobs_offen` nimmt eine **Liste** von Fenstern
+  (vorher sah die Prüfung nur ein Drittel der geteilten Abrufe). **O4:** Budgetwarten endet
+  nach 48 h endgültig statt unbegrenzt zu pendeln. **O5:** neue Migration
+  `20260809_jobqueue_wiedervorlage.sql` (mit Rollback, **nicht angewendet**) trennt Beleg und
+  Blockade — begrenzte Wiedervorlage, der Rest wird als `dauerhaft-blockiert` **kritisch**
+  gemeldet statt grün verschwiegen.
+  **Neuer Befund B14 (mittel, behoben):** `jobqueue-bereinigung-test.js` legte seine Datenbank
+  nicht an und brach mit Exit 1 ab — auf jeder Maschine mit gesetztem `HELMUT_TEST_PG_HOST`
+  wäre das Pflicht-Gate rot geworden.
+  **Stufennachweis 5/25/50/100/200 (+ Stress 1 000):** alle vierzehn Abnahmekriterien erfüllt,
+  0 Verlust, 0 Doppelverarbeitung, 0 Budgetverletzung, 0 deaktivierte Mandate in Arbeit auf
+  jeder Stufe; Kapazitätsreserve **mit 250 statt 200 Mandaten nachgemessen** und gehalten.
+  **Importvertrag für Mandatsprofile** (Schema, Validator, synthetisches Beispiel, 58 PASS):
+  Import legt Profile **immer deaktiviert** an und lehnt `aktiv: true` ab.
+  **Offene Entscheidungsfrage E1:** der einzige mandatsbezogene KI-Pfad (Lage-Narrativ) läuft
+  außerhalb der Warteschlange in einem 300-s-Slot — bei 200 Mandaten ist das eine
+  Kapazitätsgrenze, die keiner der Nachweise berührt. Kanonischer Beleg:
+  [`betrieb/op30-aktivierungsreife-2026-08-09.md`](betrieb/op30-aktivierungsreife-2026-08-09.md).
 - **Kanonischer Beleg (Ursache):** [`betrieb/v3-skalierungspruefung-2026-08-08.md`](betrieb/v3-skalierungspruefung-2026-08-08.md).
   **Abgrenzung zu OP-25:** OP-25 beschreibt das *Symptom* (je Lauf wird nur ein Teil der
   Mandanten erreicht) und wird über Fairness/Zeitdeckelung geführt. OP-30 ist die belegte

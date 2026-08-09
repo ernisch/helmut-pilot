@@ -1418,6 +1418,29 @@ OP-30-Architektur noch die Skalierung auf 200 Mandate. **Nach einer späteren Ak
 der OP-30-Architektur muss OP-25 vollständig mit der neuen Architektur wiederholt
 werden.** Die Risikozeile R1 (§8) ist damit für die heutige Architektur geschlossen.
 
+### 7.7.10 Folge des OP-30-Sprints „Aktivierungsreife 200" (2026-08-09) — OP-25 unverändert
+
+Der Sprint vom 2026-08-09 hat die Befunde **O1–O5** des OP-30-Abschlussreviews gelöst (faire
+Rotation im echten Planungspfad, wirksames `scopeMax`, verdrahteter Workerbetrieb,
+Vorbedingungsprüfung über alle enthaltenen Fenster, begrenztes Budgetwarten, begrenzte
+Wiedervorlage endgültig gescheiterter Aufträge) und den Stufennachweis 5/25/50/100/200 geführt.
+
+**Für OP-25 ändert sich dadurch nichts.** Alle Änderungen liegen hinter
+`HELMUT_SCALABLE_PIPELINE` und `HELMUT_LLM_FAIRNESS`, beide unverändert **default AUS**; keine
+der fünf OP-30-Migrationen ist angewendet. Der bestandene Nachweis aus §7.7.9 bleibt gültig —
+und seine Geltungsgrenze ebenso:
+
+> **Nach einer Aktivierung des OP-30-Ausführungspfads muss OP-25 vollständig mit der neuen
+> Architektur wiederholt werden.** Die Aktivierung verändert `quellenVereinigung`, die
+> K2.1-Sichtbarkeitsmengen und die Laufzeitbilanz.
+
+Neu hinzugekommen ist eine **Entscheidungsfrage an den Betreiber (E1)**, die auch OP-25
+berührt: der einzige mandatsbezogene KI-Pfad (Lage-Narrativ, Cron `lage-briefing`) läuft
+**außerhalb** der Warteschlange in einem Slot mit `maxDuration 300`. Bei 200 Mandaten wären das
+200 KI-Aufrufe in einem 300-Sekunden-Fenster — eine Kapazitätsgrenze **unabhängig** von der
+Warteschlange, die kein Nachweis dieses Sprints berührt. Kanonisch:
+[`op30-aktivierungsreife-2026-08-09.md`](op30-aktivierungsreife-2026-08-09.md) §7.
+
 ## 8 · Verbleibende Risiken
 
 | # | Risiko | Bewertung |

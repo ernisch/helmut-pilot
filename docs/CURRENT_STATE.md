@@ -1,15 +1,12 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-08** (zwei getrennte Stränge: **(a) OP-25-Production-Nachweis BESTANDEN** — drittes Fenster 2026-08-07/08, Exit 0, null Befunde, kanonisch §7.7.9; er gilt **ausschließlich für die heutige Architektur mit 5 Mandaten** und beweist weder OP-30 noch 200 Mandate. **(b) V3-Skalierungsprüfung + lokaler Umsetzungssprint OP-30**, §7a — alle Flags **aus**, keine Migration angewendet, nichts aktiviert). Diese Datei enthält
+**Stand: 2026-08-09** (zwei getrennte Stränge: **(a) OP-25-Production-Nachweis BESTANDEN** — drittes Fenster 2026-08-07/08, Exit 0, null Befunde, kanonisch §7.7.9; er gilt **ausschließlich für die heutige Architektur mit 5 Mandaten** und beweist weder OP-30 noch 200 Mandate. **(b) OP-30**, §7a — PR #233 gemergt, Deployment READY, **O1–O5 gelöst**; alle Flags **aus**, keine Migration angewendet, nichts aktiviert). Diese Datei enthält
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
 [`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)
-— byte-identisch mit `docs/CURRENT_STATE.md` auf `main`-Commit `4594fea` (per `git mv`
-verschoben, SHA256 `bbc7cdd08824f49e596e3fc488973e49d5b4582961cd3948bb66e70c5732771d`,
-Historie über `git log --follow`). Der **danach** über PR #227 ergänzte 12. Durchgang steht
-hier verdichtet; kanonisch und vollständig ist er in
-[`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.6.
+(byte-identisch mit `main`-Commit `4594fea`; der danach ergänzte 12. Durchgang steht kanonisch
+in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.6).
 Ablageregeln: [`archive/README.md`](archive/README.md), `CLAUDE.md` §9.
 
 ## 1 · Aktive Produktphase
@@ -21,20 +18,13 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 ## 2 · Stand auf `main`
 
-- **HEAD `f4f4500b`** = Merge von **PR #229** (2026-08-06): **Korrektursprint K1–K8**
-  (eine Mandatswahrheit, harter Aufbewahrungsvertrag inkl. Watchdog, E3-Einlösung,
-  bedingter Watchdog, Abschlussreserve) — Beleg
-  [`betrieb/op25-korrektursprint-2026-08-05.md`](betrieb/op25-korrektursprint-2026-08-05.md),
-  kanonisch [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.7.
-- Davor `dbb86b4` = **PR #228** (CURRENT_STATE kompaktiert) und `6cce829` = **PR #227**
-  (**Ursachenanalyse §7.7.6**, rein lesend; widerlegt mehrere Befunde des
-  Abschlussberichts).
-- Davor `4594fea` = **PR #226** (Durchführung und Auswertung des Nachweisfensters
-  2026-08-04/05, Ergebnis `nicht_bestanden`; Belege `belege/op25-startbaseline.json`,
-  `belege/op25-auswertung-2026-08-05.log`).
-- Weiter enthalten: #223 (Commitnachweis-Härtung), #222 (Nachweisvertrag + Werkzeug,
-  4 Reviewdurchgänge), #219 (Kapazitätsfix globaler Abrufpfad), #220/#221 (Profilreife),
-  #211–#214 (Fairness/K2.1/Timing), #199–#201 (R-6/K1/K2.1), #204–#209 (Mail/F-CAS/Kalender).
+- **HEAD `559a3d9`** = Merge von **PR #233** (2026-08-09T00:35Z): **OP-30-Skalierungsgrundlage**
+  (Warteschlange, Worker, Relevanzordnung, Production-Schutz) — **alle Flags aus, keine
+  Migration angewendet**. Deployment `dpl_E9b2Lqa387JLRz85U88xEXJkbaDD` **READY**.
+- Davor `1f10d66` = **PR #234** (OP-25-Nachweis BESTANDEN gesichert), `a07954df` = **PR #232**
+  (Kostenlücken-Fix), `d8bf68fa` = **PR #230**, `f4f4500b` = **PR #229** (Korrektursprint
+  K1–K8, kanonisch [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.7).
+  Ältere PRs: Archiv.
 - Merge nach `main` = automatisches Production-Deployment (Vercel `fra1`,
   Projekt `helmut-pilot`). Rollback: [`betrieb/deploy-rollback.md`](betrieb/deploy-rollback.md).
 
@@ -109,7 +99,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | `HELMUT_PROFILE_DB_MODE` | **Wirkung AN** — die frühere Angabe „nicht gesetzt" ist durch Laufzeitbelege widerlegt (alle Läufe bis 05.08. planten die relationale 6er-Menge, die nur der Stufe-D-Merge liefert; Code-Default wäre AUS). Direkte Env-Einsicht aus Sitzungen nicht möglich; Wert/Setzzeitpunkt nicht Betreiber-bestätigt (offener Klärpunkt). Der Blob ist **nicht** die wirksame Sicht |
 | 5 Offline-Testmandate (`test-mdb-*`) | deaktivierte Repo-Daten, **nicht aktivieren** |
 
-## 6 · Offene Pull Requests (gegen GitHub geprüft 2026-08-05)
+## 6 · Offene Pull Requests (gegen GitHub geprüft 2026-08-09)
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
@@ -118,9 +108,10 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **#218** | OP-25-Kapazität, konkurrierende Analyse | Codeänderung auf dem Branch zurückgenommen; Ursache/Fix kamen über #219. **Empfehlung: schließen** |
 | **#216** | flackernden `werkzeug-lesefehler-test.js` stabilisieren (F-PORT) | offen, reserviert als OP-28 |
 
-Alle übrigen früher geführten PRs sind gemergt oder geschlossen (zuletzt **#229 gemergt
-2026-08-06** — Production-Deployment der K1–K8-Korrekturen; davor #228 und #227
-gemergt 2026-08-05; #203 geschlossen 2026-08-03). Historie: Archiv.
+Alle übrigen früher geführten PRs sind gemergt oder geschlossen (zuletzt **#233 gemergt
+2026-08-09**, davor #234/#232/#230/#229). **Neu offen:** der PR dieses Sprints
+(`claude/op30-aktivierungsreife-200-i10sv1`, O1–O5 + Stufennachweis + Profilvertrag).
+Historie: Archiv.
 
 ## 7 · Offene Blocker
 
@@ -141,7 +132,7 @@ Die früheren Blocker 7/8 (K2-/K3-Betreiberschritte) sind seit 2026-08-06 **erle
 `m5-9aee228dbf2c9f13`), Retention 36 gesetzt + Redeploy. Der nächste OP-25-Nachweis ist
 damit nur noch durch die **separate Startfreigabe** blockiert (§9/§11).
 
-## 7a · Kapazitätsgrenze und OP-30 (Stand 2026-08-08)
+## 7a · Kapazitätsgrenze und OP-30 (Stand 2026-08-09)
 
 Fünf Sprints an einem Tag. Die Einzelheiten stehen in den Belegdateien; hier steht nur, was
 für eine Entscheidung zählt.
@@ -164,46 +155,58 @@ werden 7–8 eigene Google-Wege vorangestellt; Kipppunkt **n ≈ 14–15**, zwei
 „Skalierungsnachweis für 200 Mandate liegt vor". **Folge:** empfohlene Obergrenze bis zur
 Umsetzung **10 Mandate**.
 
-**Was lokal gebaut und bewiesen ist** (Arbeitsbaum `/home/user/helmut-scaling`, Basis `a07954d`):
+**Was lokal gebaut und bewiesen ist** (Details in den Belegdateien oben):
 
 - **Warteschlange, Worker, KI-Budget, Relevanzordnung** — vollständig, getestet, **alle Flags
-  aus**, vier Migrationspaare **nicht angewendet**. `main` ist unverändert.
-- **200 Mandate im simulierten Tag** (`lokal simuliert`): letzte Pflichtarbeit **21:38:00**.
-  Bedarf **1 645** KI-Aufrufe/Tag · Empfehlung mit 30 % Reserve **16 300** · **0,61 USD je
-  Mandat/Monat** (Preisbasis **unbelegt**). **Mit Deckel 100 reicht es nicht** — 100 von 200
-  bedient, der Rest bleibt sichtbar liegen.
-- **1 000 synthetische Mandate** (`lokal simuliert`): 1 000 Briefings, alle belegt,
-  Pflichtarbeit im Tag beendet, max. Warteschlange 7 839 Zeilen.
+  aus**, jetzt **fünf** Migrationspaare **nicht angewendet**.
+- **200 Mandate im simulierten Tag**: letzte Pflichtarbeit **21:38**. Bedarf **1 645**
+  KI-Aufrufe/Tag · Empfehlung mit 30 % Reserve **16 300** · **0,61 USD je Mandat/Monat**
+  (Preisbasis **unbelegt**). **Mit Deckel 100 reicht es nicht** — 100 von 200 bedient.
 - **Durchsatz** (`lokal bewiesen`): 1 Worker 1 064,6 Aufträge/s, 8 Worker 4 093,1; harter
-  Absturz ohne Verlust und ohne Doppelabschluss ⇒ **die Warteschlange ist nicht der Engpass**.
+  Absturz ohne Verlust ⇒ **die Warteschlange ist nicht der Engpass**.
 - **Vercel trägt keinen langlaufenden Worker** (`maxDuration 300`) ⇒ nur begrenzte Durchläufe
   je Cron-Fenster. Mehr Durchsatz ist eine **Betreiberentscheidung**.
-- **Lokaler Production-Schutz** (`lokal bewiesen`, 76 PASS): zwei Schichten, an alle
-  Unterprozesse vererbt. Anlass war ein **unbeabsichtigter lesender Production-Zugriff**, den
-  ich offengelegt habe. **Production lädt den Schutz nie.**
-- **`HELMUT_RELEVANZORDNUNG` ist default AUS**, fail closed; **Merge-Neutralität belegt**
-  (26 PASS) — ein Merge verändert das Verhalten nicht.
+- **Lokaler Production-Schutz** (76 PASS): zwei Schichten. **Production lädt ihn nie.**
+- **`HELMUT_RELEVANZORDNUNG` ist default AUS**, fail closed; Merge-Neutralität belegt (26 PASS).
 
-**Abschlussreview (2026-08-08, unabhängig und adversarial, `6d54dbb`).** Verhaltensneutralität
-bestätigt (eigene Flagmatrix 23/23; Module ohne Ladeeffekte; `planeArbeit`/`arbeite` bei Flag
-AUS mit 0 Berührungen; keine automatische Migration). **13 Befunde behoben**, davon **einer
-kritisch und sieben hoch** — alle ausschließlich im ausgeschalteten OP-30-Pfad:
-Dokumentkennung `raw-…` statt `rd-…` (der Pfad hätte **nie** ein Dokument verstanden und das
-als Erfolg gemeldet) · Rückstandsalarm durch Zurückstellen löschbar (falsches Grün, an echter
-DB gemessen: 72 h ⇒ 0 h) · `buildV3Briefing` nicht auflösbar (Briefingstufe tot) · deaktivierte
-Mandate wären geplant worden · reservierte, nie bearbeitete Aufträge verbrannten Versuche ·
-**drei der „vier Merge-Neutralitätsbeweise" waren Tautologien** (falsche Funktion geprüft).
-Migration → wiederholen → Rollback → wiederholen → erneut anwenden: **21 Schritte fehlerfrei**;
-Reihenfolgefehler brechen vollständig ab. Mutationsproben zu jeder Korrektur **rot**.
-**26 weitere Befunde sind benannt, aber bewusst nicht geändert** (O1–O26, §2.2 des Belegs) —
-darunter: **Mandantenanteil und faire Rotation sind gebaut, aber im Produktionspfad nicht
-verdrahtet**, und **`worker-betrieb.js` ist im Betrieb tot**. Beides ist vor der ersten
-Aktivierung zu entscheiden.
+**Abschlussreview (2026-08-08, unabhängig und adversarial).** Verhaltensneutralität bestätigt.
+**13 Befunde behoben** (1 kritisch, 7 hoch) — u. a. Dokumentkennung `raw-…` statt `rd-…` (der
+Pfad hätte nie ein Dokument verstanden und das als Erfolg gemeldet), durch Zurückstellen
+löschbarer Rückstandsalarm, tote Briefingstufe, mitgeplante deaktivierte Mandate, drei
+tautologische Merge-Neutralitätsbeweise. **26 weitere benannt** (O1–O26); **O1–O5 sind im
+Sprint vom 2026-08-09 gelöst** (siehe unten). Vollständig im Beleg.
+
+**PR #233 ist am 2026-08-09T00:35Z gemergt** (Merge-Commit `559a3d9`), das Production-Deployment
+`dpl_E9b2Lqa387JLRz85U88xEXJkbaDD` ist **READY**. Lesend gegengeprüft: `helmut_jobs` existiert in
+Production **nicht** (keine OP-30-Migration angewendet), es sind unverändert **5 Mandate aktiv**.
+**Noch nicht beobachtbar:** zum Prüfzeitpunkt (00:43Z) hatte **kein Cron auf `559a3d9`** gelaufen —
+der nächste ist `crawl` 04:00Z. Eine Regression ist damit weder belegt noch ausgeschlossen.
+
+**Sprint „Aktivierungsreife 200" (2026-08-09, Branch `claude/op30-aktivierungsreife-200-i10sv1`).**
+**O1–O5 sind gelöst**, alles hinter unverändert ausgeschalteten Flags · Beleg
+[`betrieb/op30-aktivierungsreife-2026-08-09.md`](betrieb/op30-aktivierungsreife-2026-08-09.md).
+**O1** faire Rotation im echten Planungspfad verdrahtet (der Befund ist reproduziert: zwei
+Planungen 17 Tage auseinander waren zeichengleich; nachgemessen 60 Mandate/Deckel 20 ⇒ nach
+6 Tagen war jedes einmal vorn) und **`scopeMax` ist nicht mehr `null`** — global bedarfsgetrieben,
+mandatsbezogen aus dem Tagesplan · **O2** `worker-betrieb.js` verdrahtet (`server.js` ruft
+`durchlauf` statt `arbeite`) · **O3** Vorbedingungsprüfung sieht alle enthaltenen Fenster statt
+eines Drittels · **O4** Budgetwarten endet nach 48 h endgültig · **O5** neue Migration
+`20260809_jobqueue_wiedervorlage` (mit Rollback, **nicht angewendet**) trennt Fehlerbeleg und
+Blockade; der Rest wird als `dauerhaft-blockiert` **kritisch** gemeldet.
+**Neuer Befund B14 behoben:** `jobqueue-bereinigung-test.js` legte seine Datenbank nicht an und
+hätte das Pflicht-Gate rot gemacht. **Stufennachweis 5/25/50/100/200 (+ Stress 1 000):** alle
+**14 Abnahmekriterien erfüllt**, 0 Verlust · 0 Doppelverarbeitung · 0 Budgetverletzung ·
+0 deaktivierte Mandate in Arbeit auf jeder Stufe; die Kapazitätsreserve ist **mit 250 statt 200
+Mandaten nachgemessen** (die zuerst gebaute Messung „Zeit bis Tagesende" war eine Fehlmessung —
+sie liegt bei allen Stufen bei ~10 % und misst den Fälligkeitsfahrplan, nicht die Kapazität).
+**Importvertrag für Mandatsprofile** steht (Schema, Validator, synthetisches Beispiel);
+**Import legt Profile immer deaktiviert an** und lehnt `aktiv: true` ab.
 
 **Offen.** Echte Google-/KI-Laufzeit · wirksamer Production-Deckel (offline nicht lesbar) ·
 **190 fehlende echte Profile** (es gibt 10) · Migration, Aktivierung, Production-Nachweis ·
-O1–O5 vor der Aktivierung. **CI der PR ist grün — auf dem aktuellen Kopf** (`225/225` Offline-Suiten + Browser-Smoke); die früher
-notierte Rotstellung am Basisstand besteht dort nicht mehr.
+**Entscheidungsfrage E1**: der einzige mandatsbezogene KI-Pfad (Lage-Narrativ) läuft **außerhalb**
+der Warteschlange in einem 300-s-Slot — bei 200 Mandaten eine Kapazitätsgrenze, die kein
+Nachweis dieses Sprints berührt.
 
 **Folge für OP-25:** eine spätere Aktivierung verändert `quellenVereinigung`, die
 K2.1-Sichtbarkeitsmengen und die Laufzeitbilanz ⇒ **OP-25 muss danach von vorn**.
@@ -277,20 +280,20 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Der OP-25-Production-Nachweis ist bestanden** (drittes Fenster, §7.7.9). Nächste
-Entscheidungen liegen beim Betreiber:
+**PR #233 ist gemergt, das Deployment ist READY.** Nächste Entscheidungen liegen beim Betreiber:
 
-1. **Über den Merge von PR #233 (OP-30-Skalierungsgrundlage) entscheiden.** Der
-   unabhängige Abschlussreview ist durch (§7a): kein offener kritischer oder hoher Befund,
-   keine neue Regression, beide Pflichtchecks grün, konfliktfrei. Verhaltensneutral (alle
-   Flags aus, keine Migration angewendet) — der Merge bleibt trotzdem ein
-   Production-Deployment. **Aktivierung ist ein davon getrennter, späterer Schritt**; vorher
-   sind O1–O5 aus dem Reviewbeleg zu entscheiden.
-2. Entscheidung, ob `HELMUT_CRON_GLOBALABRUF` dauerhaft `on` bleibt (Betreiberbestätigung
-   2026-08-08: steht in Production auf `on`; der Kontextpfad ist Production-belegt) — jede
-   Änderung ist freigabepflichtig.
-3. OP-25-Restpunkte (Abdeckungsmessung, Abdeckungsalarm, R-1, R-3) und OP-14 weiter
-   in der Restliste; **nach OP-30-Aktivierung: OP-25 vollständig wiederholen**.
+1. **Nach 04:05Z einmal `process_runs` ansehen.** Der erste Cron-Lauf auf `559a3d9` hatte zum
+   Zeitpunkt der Prüfung (00:43Z) noch nicht stattgefunden — eine Regression ist damit weder
+   belegt noch ausgeschlossen.
+2. **Über den Merge des neuen PR entscheiden** (O1–O5 gelöst, Stufennachweis, Profilvertrag).
+   Verhaltensneutral (alle Flags aus, keine Migration angewendet) — der Merge bleibt trotzdem
+   ein Production-Deployment.
+3. **Entscheidungsfrage E1 beantworten:** gehört das Lage-Narrativ in die Warteschlange? Es
+   läuft heute außerhalb in einem 300-s-Slot; bei 200 Mandaten ist das eine eigene
+   Kapazitätsgrenze (Beleg §7 von
+   [`betrieb/op30-aktivierungsreife-2026-08-09.md`](betrieb/op30-aktivierungsreife-2026-08-09.md)).
+4. Danach: Migration anwenden, Aktivierung stufenweise (5 → 25 → 50 → 100 → 200), jede Stufe
+   einzeln freigegeben; **nach jeder Aktivierung OP-25 vollständig wiederholen**.
 
 Parallel und unabhängig: **OP-01-Entscheidung** (Pro + PITR); **OP-11** Branch Protection
 verifizieren (2 Minuten); Empfehlung zu **#218** umsetzen (schließen).
@@ -336,11 +339,10 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
+| 2026-08-09 | **OP-30 Aktivierungsreife für 200 Mandate** (nach dem Merge von PR #233): **O1–O5 gelöst** — faire Rotation im echten Planungspfad verdrahtet (Befund reproduziert: zwei Planungen 17 Tage auseinander waren zeichengleich), `scopeMax` nicht mehr `null` (global bedarfsgetrieben statt fester Anteil), `worker-betrieb.js` verdrahtet, Vorbedingungsprüfung über alle enthaltenen Fenster, Budgetwarten auf 48 h begrenzt, neue Migration `20260809_jobqueue_wiedervorlage` (Rollback, **nicht angewendet**) trennt Fehlerbeleg und Blockade; **neuer Befund B14 behoben** (`jobqueue-bereinigung-test.js` hätte das Pflicht-Gate rot gemacht); **Stufennachweis 5/25/50/100/200 + Stress 1 000** mit allen 14 Abnahmekriterien; **Importvertrag für Mandatsprofile** (Schema, Validator, synthetisches Beispiel); eigene Fehlmessung offengelegt und korrigiert (Zeitreserve ≠ Kapazitätsreserve) · Beleg [`betrieb/op30-aktivierungsreife-2026-08-09.md`](betrieb/op30-aktivierungsreife-2026-08-09.md) | **teilweise abgeschlossen** (lokal bewiesen und reviewbereit; Merge, Migration, Aktivierung, Production-Nachweis, 190 echte Profile und Entscheidungsfrage E1 offen) |
 | 2026-08-08 | **Unabhängiger adversarialer Abschlussreview von PR #233** (`6d54dbb`): Verhaltensneutralität eigenständig belegt (Flagmatrix 23/23, keine Ladeeffekte, keine automatische Migration); **13 Befunde behoben** (1 kritisch, 7 hoch) — u. a. Dokumentkennung `raw-…` statt `rd-…`, durch Zurückstellen löschbarer Rückstandsalarm, nicht auflösbares `buildV3Briefing`, mitgeplante deaktivierte Mandate, drei tautologische Merge-Neutralitätsbeweise; **26 Befunde benannt, nicht geändert** (O1–O26); Migration/Rollback **21 Schritte** an echter PostgreSQL 16.13; Mutationsproben rot; `HELMUT_CRON_GLOBALABRUF` im Env-Inventar auf **`on`** korrigiert (Betreiberbestätigung) · Beleg [`betrieb/op30-abschlussreview-2026-08-08.md`](betrieb/op30-abschlussreview-2026-08-08.md) | **teilweise abgeschlossen** (Merge-Empfehlung ausgesprochen; Merge, Aktivierung und Production-Nachweis bleiben Betreiberentscheidung) |
 | 2026-08-08 | **OP-25 drittes Nachweisfenster + finale Auswertung**: Aktivierung `dpl_AdZ4JJ…` (`a07954df`, Merge PR #232 mit Kostenlücken-Fix) READY 07.08. 20:19:06Z, Baseline +160 s, Schutzfenster gehalten (nur PR-#233-Preview, kein Production-Deployment), Auswertung 21 min nach Fensterende → **BESTANDEN (Exit 0, null Befunde)**; Kosten 0,2106 USD, unbepreist 0 | **erfolgreich** — Nachweis gilt nur für die 5-Mandate-Architektur; nach OP-30-Aktivierung Wiederholung nötig; Doku über PR #234 in `main` |
 | 2026-08-08 | **OP-30 Prüf-, Commit- und PR-Sprint**: die fünf lokal roten Suiten endgültig bewertet (4 Baseline-Fehler + 1 fehlende lokale Voraussetzung, **keine Regression, keiner blockiert CI**); **eigene Regression behoben** — der Production-Schutz hätte das CI-Gate abgebrochen, `ci.yml` erklärt jetzt `HELMUT_SOURCE_MODE=off`; Befund: **CI ist am Basisstand auf `main` bereits rot** (andere Suiten, lokal grün, nicht durch OP-30); Offline 220/225 + Browser 32/32; Commits und PR erstellt · Beleg [`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) | **teilweise abgeschlossen** (reviewbereit; Merge, Production-Nachweis und CI-Klärung offen) |
-| 2026-08-08 | **OP-30, drei lokale Sprints an einem Tag** (isolierte Arbeitsbäume, kein Commit): Umsetzung (Warteschlange, Migrationen, Source-Demand, Worker, Flag default aus) · Abnahme (Rechengrundlage 5/200/1000, Relevanzordnung, Bereinigung, Profilinventar; drei Produktfehler behoben; **ein unbeabsichtigter lesender Production-Zugriff offengelegt**) · Korrektur (**200 Mandate im Tag**, letzte Pflichtarbeit 21:38:00; Relevanzordnung auf default AUS; zweischichtiger Production-Schutz). Vollständige Berichte: die Belegdateien in §7a | **teilweise abgeschlossen** (lokal bewiesen; Migration, Aktivierung, Production-Nachweis und 190 echte Profile offen) |
-| 2026-08-08 | **V3-Skalierungsprüfung** (rein lesend): Productionpfad nachgezeichnet, Kapazität aus echtem Code hochgerechnet ⇒ neuer Punkt **OP-30**; zwei frühere Behauptungen zurückgezogen; Beleg [`betrieb/v3-skalierungspruefung-2026-08-08.md`](betrieb/v3-skalierungspruefung-2026-08-08.md) | **erfolgreich** (Umsetzung ist Gründerentscheidung) |
 
-Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 (Fenster 1–3, Korrektursprint K1–K8, Ursachenanalyse, Betreiberschritte K2/K3, Befundsprint Kostenlücke) stehen vollständig und kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 sowie ältere Berichte, Testzahlen und Beweisketten: **Archiv**
+Die OP-30-Sprints vom 2026-08-08 (V3-Skalierungsprüfung, Umsetzung, Abnahme, Korrektur) stehen vollständig in den Belegdateien aus §7a. Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 (Fenster 1–3, Korrektursprint K1–K8, Ursachenanalyse, Betreiberschritte K2/K3, Befundsprint Kostenlücke) stehen vollständig und kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 sowie ältere Berichte, Testzahlen und Beweisketten: **Archiv**
 ([`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)).
