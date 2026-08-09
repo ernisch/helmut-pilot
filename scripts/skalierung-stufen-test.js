@@ -211,10 +211,46 @@ async function main() {
   console.log(`\n  Reserveprobe: 250 Mandate (= 200 + 25 %) im selben Szenario`);
   console.log(`    beruecksichtigt ${z(reserveM.beruecksichtigt)}/250 · Pflichtarbeit fertig ${uhrzeit(reserveM.rueckstandAbbauMs)}`
     + ` · faellig offen ${z(reserveProbe.queue.wartendFaellig)} · Verlust ${z(reserveM.verloreneKandidaten)}`);
-  check("B12 Mindestens 25 % Kapazitaetsreserve — gemessen mit 250 statt 200 Mandaten",
+  check("B12 Der Tag haelt auch mit 250 statt 200 Mandaten (+25 % MANDATE)",
     reserveM.imTagFertig && reserveProbe.queue.wartendFaellig === 0
     && reserveM.beruecksichtigt === 250 && reserveM.verloreneKandidaten === 0,
     `250 Mandate vollstaendig im Tag, Pflichtarbeit fertig ${uhrzeit(reserveM.rueckstandAbbauMs)}`);
+
+  // B12b — WIEVIEL MEHR ARBEIT SIND 250 MANDATE WIRKLICH? (Befund B16, Review PR #235)
+  //
+  // B12 belegt „+25 % MANDATE werden getragen". Das ist NICHT dasselbe wie „+25 %
+  // Kapazitaetsreserve". Im V3-Motor wird ein Dokument global genau EINMAL verstanden;
+  // zusaetzliche Mandate teilen sich die geteilten Quellen. Ein Mandatszuwachs von 25 %
+  // schlaegt deshalb NICHT als 25 % Arbeitszuwachs durch. Wer die Reserve aus der
+  // Mandatszahl allein ableitet, ueberschaetzt sie.
+  //
+  // Deshalb wird der Zuwachs hier GEMESSEN statt unterstellt — und wenn er unter 25 %
+  // liegt, gilt die 25-%-Reserve ausdruecklich als NICHT BEWIESEN.
+  const zuwachs = (a, b) => (a > 0 ? Math.round(((b - a) / a) * 1000) / 10 : null);
+  const arbeitszuwachs = {
+    Auftraege: zuwachs(r.queue.gesamt, reserveProbe.queue.gesamt),
+    Erledigt: zuwachs(r.queue.erledigt, reserveProbe.queue.erledigt),
+    "KI-Aufrufe": zuwachs(r.ki.aufrufe, reserveProbe.ki.aufrufe),
+    Abrufversuche: zuwachs(r.abruf.versuche, reserveProbe.abruf.versuche),
+    Dokumente: zuwachs(r.dokumente, reserveProbe.dokumente)
+  };
+  console.log("\n    Tatsaechlicher ARBEITSzuwachs 200 -> 250 Mandate:");
+  for (const [k, v] of Object.entries(arbeitszuwachs)) {
+    console.log(`      ${k.padEnd(14)} ${String(v).padStart(6)} %${v != null && v >= 25 ? "  (>= 25 %)" : "  (UNTER 25 %)"}`);
+  }
+  const werte = Object.values(arbeitszuwachs).filter((v) => v != null);
+  const kleinster = Math.min(...werte);
+  if (werte.length && kleinster >= 25) {
+    check("B12b Der Arbeitszuwachs betraegt in JEDER Dimension mindestens 25 %",
+      true, Object.entries(arbeitszuwachs).map(([k, v]) => `${k} ${v} %`).join(" · "));
+  } else {
+    nichtBewiesen("B12b Kapazitaetsreserve von 25 % gegenueber der erwarteten ARBEITSLAST",
+      `+25 % Mandate erzeugen wegen der geteilten Quellen nur ${kleinster} bis `
+      + `${Math.max(...werte)} % mehr Arbeit (${Object.entries(arbeitszuwachs).map(([k, v]) => `${k} ${v} %`).join(" · ")}). `
+      + "Belegt ist damit eine Reserve von +25 % MANDATEN, nicht von +25 % ARBEIT. "
+      + "Ein Nachweis ueber die Arbeitsmenge braucht eine Stufe mit entsprechend mehr "
+      + "individuellen Quellen bzw. Dokumenten.");
+  }
   console.log(`    (Zeitreserve bis Tagesende bei 200 Mandaten: ${m.zeitreserveProzent} % — das ist der`);
   console.log("     Faelligkeitsfahrplan, NICHT die Kapazitaet; sie liegt bei allen Stufen bei rund 10 %.)");
   check("B13 Alle Aussagen sind durch gemessene Werte gedeckt",
