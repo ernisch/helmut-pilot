@@ -1190,64 +1190,7 @@ async function handleRequest(request, response) {
       // ausschliesslich faellige `tenant_narrative`-Auftraege ab. Geplant werden die
       // Auftraege vom Scheduler der schweren Crons (`planeArbeit`), nicht hier.
       if (scalablePipeline.narrativUeberWarteschlange()) {
-        // BELEGTER FEHLER (Abschlussreview PR #236, Befund R2): hier fehlte der Tagesplan.
-        // Ohne ihn ist `scopeMax` in JEDER Reservierung null — der Mandantenanteil aus
-        // `llm-budget-fair` wird nie gezogen und es entsteht keine `tenant:<id>`-Zeile in
-        // `llm_budget_counters`. Genau Befund O1, bei dem Verbraucher, fuer den O1 gebaut
-        // wurde. `tagesplanFuerLauf` plant NICHTS — es liest die aktiven Profile und
-        // rechnet die Zuteilung; dieselbe eine Profilabfrage, die der Altpfad hier ohnehin
-        // machte. Schlaegt sie fehl, ist der Plan `null` und der Worker meldet das ehrlich
-        // als `budgetSchicht: "ohne-tagesplan"`.
-        const narrativTagesplan = await scalablePipeline
-          .tagesplanFuerLauf({ jetztMs: lageBriefingStartMs })
-          .catch(() => null);
-        const durchlauf = await workerBetrieb.durchlauf({
-          kennung: lageBriefingRunId,
-          grenzen: {
-            // Abschlussreserve wie im Warteschlangen-Cron: 240 s Slotbudget minus Reserve.
-            budgetMs: 230000,
-            leaseMs: 300000,
-            stapel: Math.max(1, Number(process.env.HELMUT_WORKER_BATCH) || 10)
-          },
-          tagesplan: narrativTagesplan,
-          typen: ["tenant_narrative"]
-        });
-        // BELEGTER FEHLER (Abschlussreview PR #236, Befund R3): der Status stand auf
-        // `success`, sobald der Worker ueberhaupt STARTETE. Fehlte die Migration, war die
-        // Warteschlange unerreichbar, der Altpfad durch das Flag abgeschaltet und es entstand
-        // KEIN einziges Narrativ — gemeldet wurde trotzdem ein Erfolg. Das ist genau das
-        // falsche Gruen, das CLAUDE.md §4.4 verbietet, und `runCronUeberWarteschlange`
-        // vermeidet es an derselben Stelle bereits ausdruecklich. Jetzt hier auch.
-        const narrativBilanzen = Array.isArray(durchlauf.bilanzen) ? durchlauf.bilanzen : [];
-        const warteschlangeVerfuegbar = durchlauf.gestartet !== false
-          && narrativBilanzen.length > 0
-          && narrativBilanzen.some((b) => b && b.verfuegbar !== false);
-        const narrativGrund = warteschlangeVerfuegbar
-          ? null
-          : ((narrativBilanzen.find((b) => b && b.grund) || {}).grund
-            || durchlauf.grund || "warteschlange-nicht-verfuegbar");
-        const lageTelemetrie = await recordProcessRun({
-          process: "briefing-lage", runId: lageBriefingRunId, mode: "warteschlange", location: helmutExecLocation(),
-          startedAt: new Date(lageBriefingStartMs).toISOString(), finishedAt: new Date().toISOString(),
-          durationMs: Date.now() - lageBriefingStartMs,
-          processed: durchlauf.erledigt || 0, deferred: durchlauf.zurueckgestellt || 0,
-          zielmenge: durchlauf.reserviert || 0,
-          status: warteschlangeVerfuegbar ? "success" : "partial"
-        });
-        console.log(`[cron/lage-briefing/warteschlange] ${Date.now() - lageBriefingStartMs}ms`
-          + ` reserviert=${durchlauf.reserviert || 0} erledigt=${durchlauf.erledigt || 0}`
-          + ` zurueckgestellt=${durchlauf.zurueckgestellt || 0}`
-          + ` verfuegbar=${warteschlangeVerfuegbar}${narrativGrund ? ` grund=${narrativGrund}` : ""}`
-          + ` tagesplan=${narrativTagesplan ? "ja" : "nein"} lauf=${lageBriefingRunId}`);
-        return {
-          ...durchlauf,
-          pfad: "warteschlange",
-          ok: warteschlangeVerfuegbar,
-          verfuegbar: warteschlangeVerfuegbar,
-          grund: narrativGrund,
-          tagesplanVorhanden: Boolean(narrativTagesplan),
-          lauftelemetrie: { gespeichert: lageTelemetrie.ok, vollstaendig: lageTelemetrie.vollstaendig, fehler: lageTelemetrie.fehler }
-        };
+        return narrativSlotLauf({ slot: "morgen", startMs: lageBriefingStartMs, runId: lageBriefingRunId });
       }
       let profiles = await listProfiles().catch(() => []);
       if (!Array.isArray(profiles)) profiles = [];
@@ -1297,6 +1240,50 @@ async function handleRequest(request, response) {
         prewarmed: results.length, uebersprungen: skipped, results,
         lauftelemetrie: { gespeichert: lageTelemetrie.ok, vollstaendig: lageTelemetrie.vollstaendig, fehler: lageTelemetrie.fehler }
       };
+    });
+  }
+
+  // ═══ ZWEITER MORGENSLOT (Kapazitaetssprint 2026-08-09) ═══════════════════════════════════
+  // WOFUER: ein Morgenslot traegt begrenzt viele Lage-Narrative (230 s Arbeitsbudget je
+  // Worker, hoechstens 8 Worker). Fuer 200 Mandate mit Reserve reicht ein Slot nicht — die
+  // Rechnung steht in `docs/betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`. Der zweite
+  // Slot holt, was der erste nicht geschafft hat, und baut Rueckstand aus der Nacht ab.
+  //
+  // WARUM EINE EIGENE ROUTE UND NICHT EIN ZWEITER ZEITEINTRAG AUF `lage-briefing`:
+  // bei AUSGESCHALTETEN Flags liefe `lage-briefing` seine Direktschleife — ein zweiter
+  // Zeiteintrag wuerde die BESTEHENDE Production-Verarbeitung verdoppeln. Diese Route
+  // dagegen ist ein reiner Warteschlangen-Slot: sie hat KEINEN Altpfad.
+  //
+  // DIE DREI RIEGEL, in dieser Reihenfolge und VOR jedem Datenbankschreibzugriff und jedem
+  // Modellaufruf:
+  //   1. `authorizeCron` (fail closed: 503 ohne Secret, 403 bei falschem Secret),
+  //   2. `narrativUeberWarteschlange()` — beide Flags muessen an sein,
+  //   3. der Handler selbst prueft die Flaggrenze noch einmal (scalable-pipeline).
+  // Ein versehentlich ausgeloester Slot bei ausgeschalteten Flags schreibt NICHTS: keine
+  // Lauftelemetrie, keine Warteschlangenzeile, kein Modellaufruf. Er antwortet und endet.
+  //
+  // AUFTEILUNG DER ARBEIT: es gibt keine. Beide Slots ziehen aus DERSELBEN Warteschlange,
+  // und `helmut_claim_jobs` reserviert atomar mit `for update skip locked` — zwei Slots
+  // koennen denselben Auftrag nicht bekommen, auch wenn sie sich zeitlich ueberlappen. Eine
+  // Partitionierung waere zusaetzliche Mechanik ohne zusaetzliche Sicherheit.
+  if (url.pathname === "/api/cron/lage-briefing-nachlauf") {
+    if (!authorizeCron(request, url, response)) return;
+    return handleAsync(response, async () => {
+      if (!scalablePipeline.narrativUeberWarteschlange()) {
+        // KEIN Schreibvorgang, kein Modellaufruf, keine Telemetriezeile — und ein ehrliches
+        // Wort statt eines stillen 200ers.
+        console.log("[cron/lage-briefing-nachlauf] uebersprungen — OP-30-Flags aus, keine Verarbeitung");
+        return {
+          pfad: "aus", ok: true, uebersprungen: true, verarbeitet: 0,
+          grund: "flags-aus: HELMUT_SCALABLE_PIPELINE und HELMUT_NARRATIV_QUEUE muessen beide an sein"
+        };
+      }
+      const nachlaufStartMs = Date.now();
+      return narrativSlotLauf({
+        slot: "nachlauf",
+        startMs: nachlaufStartMs,
+        runId: helmutRunId("briefing-lage-nachlauf", nachlaufStartMs)
+      });
     });
   }
 
@@ -6542,6 +6529,98 @@ function cronSchwererPfad(cronName, { deadlineMs, runId, startedMs }) {
 //      in der Warteschlange und wird vom naechsten Slot oder einem parallelen Worker geholt.
 //      GENAU DAS ist der Unterschied zum Bestandspfad: dort war unerledigte Arbeit nach dem
 //      Slot verloren und musste im naechsten Lauf neu entdeckt werden.
+// ── DER NARRATIVSLOT — EINE Umsetzung fuer BEIDE Morgenslots ────────────────────────────────
+// Frueher stand dieser Ablauf inline in `/api/cron/lage-briefing`. Mit einem zweiten Slot
+// (`/api/cron/lage-briefing-nachlauf`) waere daraus eine Kopie geworden — und Kopien laufen
+// auseinander. Genau ein Ablauf, zwei Aufrufer; der einzige Unterschied ist der Name des
+// Slots in Telemetrie und Log.
+//
+// PARALLELITAET: die Morgenslots duerfen eine EIGENE bekommen. Der allgemeine Standard
+// (`HELMUT_WORKER_PARALLEL`, Vorgabe 2) ist bewusst klein, weil `source_fetch` gegen die
+// Google-Drosselung laeuft — dort schaden mehr Worker. Das Lage-Narrativ ruft kein Google
+// an; es wartet auf das Modell. `HELMUT_NARRATIV_PARALLEL` hebt deshalb NUR die Morgenslots
+// an, ohne die Crawl-/Pipeline-Slots zu beruehren. Ohne die Variable gilt unveraendert der
+// allgemeine Wert. Die harte Klemmung (1..8) von `worker-betrieb.grenzenAusEnv` gilt fuer
+// beide Wege — ein Aufrufer kann sie nicht umgehen.
+function narrativSlotGrenzen() {
+  const parallel = Number(String(process.env.HELMUT_NARRATIV_PARALLEL || "").trim());
+  return {
+    // SLOTBUDGET 270 s — dieselbe Zahl, die die schweren Crons (`crawl`, `pipeline`) seit
+    // jeher gegen `maxDuration: 300` fahren (`deadlineMs: 270000`). Vorher standen hier
+    // 230 s; die slotgenaue Simulation hat gezeigt, was diese 40 s wert sind: bei 200
+    // Mandaten, Parallelitaet 8 und zwei Morgenslots werden mit 230 s 199 von 200 Narrativen
+    // im Morgenfenster fertig, mit 270 s alle 200 (Reserve 39,5 % statt 35 %). Der eine
+    // fehlende war KEIN Kapazitaetsproblem, sondern eine Wiederholung, die kurz nach dem
+    // Slotende faellig wurde. 270 s sind gegenueber 300 s dieselbe Sicherheitsmarge, die der
+    // Bestand schon faehrt — kein neues Risiko, nur eine ungenutzte Reserve gehoben.
+    budgetMs: 270000,
+    leaseMs: 300000,
+    stapel: Math.max(1, Number(process.env.HELMUT_WORKER_BATCH) || 10),
+    // LEERLAUFWARTEN, nur hier: ein Worker, der selbst Arbeit zurueckgestellt hat, wartet
+    // 20 s und schaut noch einmal nach, statt den Slot mit ungenutztem Budget zu beenden.
+    // Der Wiederholungs-Backoff beginnt bei 15–30 s (`scalable-pipeline.backoffMs`) — genau
+    // die Spanne, die sonst zwischen zwei Morgenslots verlorenginge. Ohne eigene
+    // Zurueckstellung wartet niemand; ein leerer Morgen kostet keine Sekunde extra.
+    leerlaufWarteMs: 20000,
+    ...(Number.isFinite(parallel) && parallel > 0 ? { parallel } : {})
+  };
+}
+
+async function narrativSlotLauf({ slot = "morgen", startMs = Date.now(), runId = null } = {}) {
+  // BELEGTER FEHLER (Abschlussreview PR #236, Befund R2): hier fehlte der Tagesplan.
+  // Ohne ihn ist `scopeMax` in JEDER Reservierung null — der Mandantenanteil aus
+  // `llm-budget-fair` wird nie gezogen und es entsteht kein Bereichsverbrauch. Genau
+  // Befund O1, bei dem Verbraucher, fuer den O1 gebaut wurde. `tagesplanFuerLauf` plant
+  // NICHTS — es liest die aktiven Profile und rechnet die Zuteilung. Schlaegt es fehl, ist
+  // der Plan `null` und der Worker meldet das ehrlich als `budgetSchicht: "ohne-tagesplan"`.
+  const narrativTagesplan = await scalablePipeline
+    .tagesplanFuerLauf({ jetztMs: startMs })
+    .catch(() => null);
+  const durchlauf = await workerBetrieb.durchlauf({
+    kennung: runId,
+    grenzen: narrativSlotGrenzen(),
+    tagesplan: narrativTagesplan,
+    typen: ["tenant_narrative"]
+  });
+  // BELEGTER FEHLER (Abschlussreview PR #236, Befund R3): der Status stand auf `success`,
+  // sobald der Worker ueberhaupt STARTETE. Fehlte die Migration, war die Warteschlange
+  // unerreichbar, der Altpfad durch das Flag abgeschaltet und es entstand KEIN einziges
+  // Narrativ — gemeldet wurde trotzdem ein Erfolg. Das ist genau das falsche Gruen, das
+  // CLAUDE.md §4.4 verbietet.
+  const narrativBilanzen = Array.isArray(durchlauf.bilanzen) ? durchlauf.bilanzen : [];
+  const warteschlangeVerfuegbar = durchlauf.gestartet !== false
+    && narrativBilanzen.length > 0
+    && narrativBilanzen.some((b) => b && b.verfuegbar !== false);
+  const narrativGrund = warteschlangeVerfuegbar
+    ? null
+    : ((narrativBilanzen.find((b) => b && b.grund) || {}).grund
+      || durchlauf.grund || "warteschlange-nicht-verfuegbar");
+  const lageTelemetrie = await recordProcessRun({
+    process: slot === "nachlauf" ? "briefing-lage-nachlauf" : "briefing-lage",
+    runId, mode: "warteschlange", location: helmutExecLocation(),
+    startedAt: new Date(startMs).toISOString(), finishedAt: new Date().toISOString(),
+    durationMs: Date.now() - startMs,
+    processed: durchlauf.erledigt || 0, deferred: durchlauf.zurueckgestellt || 0,
+    zielmenge: durchlauf.reserviert || 0,
+    status: warteschlangeVerfuegbar ? "success" : "partial"
+  });
+  console.log(`[cron/lage-briefing/${slot}] ${Date.now() - startMs}ms`
+    + ` worker=${durchlauf.worker} reserviert=${durchlauf.reserviert || 0} erledigt=${durchlauf.erledigt || 0}`
+    + ` zurueckgestellt=${durchlauf.zurueckgestellt || 0}`
+    + ` verfuegbar=${warteschlangeVerfuegbar}${narrativGrund ? ` grund=${narrativGrund}` : ""}`
+    + ` tagesplan=${narrativTagesplan ? "ja" : "nein"} lauf=${runId}`);
+  return {
+    ...durchlauf,
+    pfad: "warteschlange",
+    slot,
+    ok: warteschlangeVerfuegbar,
+    verfuegbar: warteschlangeVerfuegbar,
+    grund: narrativGrund,
+    tagesplanVorhanden: Boolean(narrativTagesplan),
+    lauftelemetrie: { gespeichert: lageTelemetrie.ok, vollstaendig: lageTelemetrie.vollstaendig, fehler: lageTelemetrie.fehler }
+  };
+}
+
 async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId = null, startedMs = null } = {}) {
   const start = Number(startedMs) || Date.now();
   const laufkennung = runId || helmutRunId(`cron-${cronName}`, start);

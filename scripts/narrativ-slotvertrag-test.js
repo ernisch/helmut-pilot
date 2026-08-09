@@ -110,9 +110,13 @@ function setzeFlags(werte) {
 // Die verdrahteten Werte, gegen die geprueft wird — bewusst aus dem Quelltext gelesen und
 // NICHT hier noch einmal festgeschrieben, damit der Test bei einer Aenderung mitwandert.
 const serverQuelltext = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
+// KAPAZITAETSSPRINT 2026-08-09: der Narrativslot steht nicht mehr inline in der Route,
+// sondern in `narrativSlotGrenzen()` — EINE Umsetzung fuer alle drei Morgenslots. Gelesen
+// wird weiterhin aus dem Quelltext (kein hier festgeschriebener Wert), nur an der Stelle,
+// an der die Zahl jetzt wirklich steht.
 const narrativZweig = serverQuelltext.slice(
-  serverQuelltext.indexOf('if (scalablePipeline.narrativUeberWarteschlange())'),
-  serverQuelltext.indexOf('let profiles = await listProfiles()')
+  serverQuelltext.indexOf("function narrativSlotGrenzen()"),
+  serverQuelltext.indexOf("async function narrativSlotLauf(")
 );
 const SLOT_BUDGET_MS = Number((narrativZweig.match(/budgetMs:\s*(\d+)/) || [])[1]) || 0;
 

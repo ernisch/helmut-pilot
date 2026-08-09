@@ -1385,12 +1385,23 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
     const lies = (p) => fs.readFileSync(path.join(ROOT, p), "utf8");
     const vercel = JSON.parse(lies("vercel.json"));
     const plan = (vercel.crons || []).map((c) => `${c.path}@${c.schedule}`).sort().join("|");
-    check("Cron-Zeitplan unveraendert (9 Eintraege, unveraenderte Zeiten)",
-      (vercel.crons || []).length === 9 && plan === [
+    // KAPAZITAETSSPRINT 2026-08-09: ZWEI Eintraege kommen dazu — der zweite und dritte
+    // Morgenslot, beide auf DERSELBEN neuen Route `/api/cron/lage-briefing-nachlauf`
+    // (06:10 und 06:22 UTC; Vercel erlaubt mehrere Zeitplaene je Pfad). Warum zwei und nicht
+    // einer: mit nur einem zusaetzlichen Slot bleiben im unguenstigen Fall (dreifach langsame
+    // Modellantworten bzw. Ausfall des ersten Slots) 180 bzw. 179 von 200 Narrativen uebrig
+    // und die Reserve faellt auf 3 % — mit zwei Zusatzslots sind es je 200 von 200 bei 28,5 %
+    // bzw. 39,5 % Reserve (scripts/morgenkapazitaet-test.js). Die NEUN bestehenden Zeiten bleiben
+    // Zeichen fuer Zeichen unveraendert; die Pruefung bleibt ein exakter Mengenvergleich.
+    // Der neue Slot hat KEINEN Altpfad: bei ausgeschalteten OP-30-Flags bricht er ab, bevor
+    // er irgendetwas schreibt oder ein Modell ruft (server.js, eigener Riegel).
+    check("Cron-Zeitplan: 9 unveraenderte Zeiten + zwei flaggeschuetzte Nachlaufslots",
+      (vercel.crons || []).length === 11 && plan === [
         "/api/cron/crawl@0 4 * * *", "/api/cron/crawl@0 20 * * *", "/api/cron/health-report@0 6 * * *",
         "/api/cron/lage-briefing@45 5 * * *", "/api/cron/lage-check@0 10 * * *",
         "/api/cron/morning-briefing@0 5 * * *", "/api/cron/pipeline@0 16 * * *",
-        "/api/cron/understanding@30 21 * * *", "/api/cron/understanding@30 5 * * *"
+        "/api/cron/understanding@30 21 * * *", "/api/cron/understanding@30 5 * * *",
+        "/api/cron/lage-briefing-nachlauf@10 6 * * *", "/api/cron/lage-briefing-nachlauf@22 6 * * *"
       ].sort().join("|"), plan);
     check("Funktionslimit unveraendert (maxDuration 300)", vercel.functions["api/index.js"].maxDuration === 300);
 
