@@ -61,6 +61,9 @@ geworden — mehrere davon so, dass der Pfad stillschweigend nichts geleistet h�
 
 ### 2.2 Bestätigt, aber **nicht** geändert (Begründung jeweils)
 
+Zwanzig Punkte. Keiner davon wirkt bei ausgeschalteten Flags; O1–O5 sind vor der ersten
+Aktivierung zu entscheiden, O17–O19 vor dem nächsten Veröffentlichen der Skalierungszahlen.
+
 | # | Schwere | Befund | Warum nicht in diesem Review korrigiert |
 |---|---|---|---|
 | O1 | mittel | **Mandantenanteil und faire Rotation sind im Produktionspfad unbenutzt.** `llm-budget-fair.tagesplan`/`rotationsReihenfolge`/`mandantenDeckel` werden von `lib/` **nirgends** aufgerufen; `budgetAdapter.reserviere` übergibt `scopeMax` immer `null`. Wirksam ist nur die ergebnisbezogene Idempotenz plus der globale Deckel. Die PR-Beschreibung („ein faires KI-Budget", „faire Rotation") liest sich stärker, als die Verdrahtung ist. | Die Verdrahtung ist eine **Architektur-/Produktentscheidung** (wer bekommt welchen Anteil, ab wann), keine Aufräumarbeit. Gehört in den Aktivierungssprint. |
@@ -79,6 +82,10 @@ geworden — mehrere davon so, dass der Pfad stillschweigend nichts geleistet h�
 | O14 | niedrig | `HELMUT_RELEVANZORDNUNG` akzeptiert **nur** `on`, die Geschwisterflags auch `true`/`1`/`an`. Eine Freigabe mit `true` schlüge still fehl (immerhin mit Diagnosezeile). | Beide Verhalten sind dokumentiert; eine Vereinheitlichung ist eine Konventionsentscheidung. |
 | O15 | niedrig | `env-inventar.md` führt `HELMUT_LLM_GLOBAL_ANTEIL` und `HELMUT_VORBEDINGUNG_WARTE_MS` je **zweimal** (CLAUDE.md §7.7: nur eine kanonische Stelle). Die Angaben widersprechen sich nicht. | Reine Doppelpflege; Zusammenführung berührt fremde Abschnitte. |
 | O16 | niedrig | `llm-budget-fair.MIN_PRO_MANDAT` wird exportiert, aber nirgends benutzt. `relevanzordnung.ordne` nimmt `opts.now` entgegen und benutzt es nicht. | Toter Code ohne Wirkung. |
+| O17 | mittel | **`skalierungsmodell.rechneSzenario` leitet die geteilten Abrufe je Tag aus der FENSTERBREITE ab** (`geteilteAuftraege * 24 / geteiltStundenFenster`), nicht aus der tatsächlichen Planungskadenz. Das ist eine Modellannahme („in jedem 8-h-Fenster wird jeder geteilte Weg genau einmal geholt"), die im Text nicht als solche benannt ist. Sie geht in **1 645 KI-Aufrufe/Tag** und damit in die Deckelempfehlung ein. | Die Annahme zu ersetzen hieße, die veröffentlichten Zahlen neu abzuleiten — das ist Rechenarbeit mit eigenem Nachweisbedarf, keine Reviewkorrektur. Die Zahlen bleiben als **`berechnet`** gekennzeichnet. |
+| O18 | niedrig | **`rechneErstbefuellung` überschreibt nur einen Teil der abgeleiteten Werte** (`rohitems`, `dokumenteNachDedup`, `neueVorgaenge`, `ki`, `zumDeckel`); **Kosten, Speicher und Warteschlangenbestand stammen weiter aus dem Normaltag** und werden trotzdem unter „Erstbefüllung" ausgewiesen. Die einzige in der PR genannte Erstbefüllungszahl (**19 197** Aufrufe) ist von der Lücke **nicht** betroffen. | Latente Inkonsistenz ohne veröffentlichten Fehlwert. |
+| O19 | niedrig | Die Bündelgröße des Verstehens steht in `skalierungsmodell.js` als Literal `25` statt aus `scalable-pipeline.UNDERSTANDING_BUENDEL` gelesen — zwei Wahrheiten für denselben Wert. | Einzeiler, aber er verändert eine veröffentlichte Rechnung; gehört in denselben Schritt wie O17. |
+| O20 | niedrig | `scripts/skalierung-simulation-test.js` ändert sein Ergebnis abhängig von Umgebungsvariablen (`HELMUT_DEMAND_*`, `HELMUT_WORKER_*`), ohne das im Bericht auszuweisen. Im CI und in diesem Review sind sie ungesetzt. | Kennzeichnung wäre gut, ändert aber keinen Messwert. |
 
 ### 2.3 Geprüft und **kein** Problem
 
