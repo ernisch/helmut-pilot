@@ -256,14 +256,38 @@ wird jetzt **gemessen statt abgelesen**: derselbe unfreundliche Tag läuft zusä
 **250 statt 200** Mandaten (= +25 %).
 
 > **Ergebnis: 250/250 berücksichtigt · Pflichtarbeit fertig 21:38 · 0 fällig offen ·
-> 0 Verlust.** Die geforderten 25 % Reserve sind damit belegt — durch Nachmessen, nicht durch
-> Rechnen.
+> 0 Verlust.**
+
+**Korrektur des unabhängigen Reviews (2026-08-09, Befund B16).** Dieser Absatz behauptete
+zunächst, damit seien „die geforderten 25 % Reserve belegt". **Das ist zu viel gesagt, und die
+Suite prüfte es auch nicht.** Nachgemessen wurde nur, dass **250 Mandate** getragen werden —
+nicht, dass dabei **25 % mehr Arbeit** anfällt. Im V3-Motor wird ein Dokument global genau
+**einmal** verstanden; zusätzliche Mandate teilen sich die geteilten Quellen. Der gemessene
+Zuwachs von 200 auf 250 Mandate:
+
+| Größe | 200 | 250 | Zuwachs |
+|---|---|---|---|
+| individuelle Quellen | 1 425 | 1 782 | **+25,1 %** |
+| Aufträge gesamt | 2 722 | 3 257 | +19,7 % |
+| erledigte Aufträge | 2 609 | 3 116 | +19,4 % |
+| Abrufversuche | 1 420 | 1 697 | +19,5 % |
+| Dokumente | 1 782 | 2 128 | +19,4 % |
+| **KI-Aufrufe** | **846** | **894** | **+5,7 %** |
+
+Nur die **Quellenzahl** wächst mit der Mandatszahl mit. Die Arbeitsmenge wächst um rund
+**19,5 %**, der teuerste Anteil — die **KI-Aufrufe** — um lediglich **5,7 %**.
+
+> **Belegt ist damit eine Reserve von +25 % MANDATEN, nicht von +25 % ARBEITSLAST.**
+> Die Prüfung **B12b** in `scripts/skalierung-stufen-test.js` misst diesen Zuwachs und meldet
+> die 25-%-Arbeitsreserve ausdrücklich als **NICHT BEWIESEN** (`OFFEN`). Ein Nachweis über die
+> Arbeitsmenge braucht eine Stufe mit entsprechend mehr individuellen Quellen bzw. Dokumenten —
+> er steht aus.
 
 Die Zeitreserve bleibt als ehrliche Zusatzangabe stehen, ausdrücklich als **„NICHT Kapazität"**
 beschriftet, mit einer eigenen Prüfung (C3.x), die belegt, dass sie über alle Stufen nahezu
 konstant ist (12,4 % · 10,4 % · 10,1 % · 10 % · 9,9 %).
 
-### Abnahmekriterien für 200 Mandate — alle vierzehn erfüllt
+### Abnahmekriterien für 200 Mandate — dreizehn erfüllt, eines teilweise
 
 | # | Kriterium | Ergebnis |
 |---|---|---|
@@ -278,7 +302,7 @@ konstant ist (12,4 % · 10,4 % · 10,1 % · 10 % · 9,9 %).
 | 9 | Fehlerisolation | 122 Abruffehler, trotzdem alle 200 bedient |
 | 10 | Wiederanlauf und Idempotenz | zweite Planung legte **0** neue Aufträge an, Absturz verkraftet |
 | 11 | deaktivierte Mandate nicht verarbeitet | 20 beigemischt, **0** in Arbeit |
-| 12 | ≥ 25 % Kapazitätsreserve | **gemessen mit 250 Mandaten — gehalten** |
+| 12 | ≥ 25 % Kapazitätsreserve | **teilweise: +25 % MANDATE gehalten (250/250); +25 % ARBEITSLAST NICHT belegt** (B16: Arbeit +19,5 %, KI-Aufrufe +5,7 %) — B12b meldet `OFFEN` |
 | 13 | alles durch Messwerte gedeckt | 19 Messwerte, keiner geschätzt |
 | 14 | 5-Mandate-Pfad bei Flags AUS unverändert | Flag ohne Wert = AUS; Nachweise separat |
 
@@ -395,6 +419,93 @@ verändert `quellenVereinigung`, die K2.1-Sichtbarkeitsmengen und die Laufzeitbi
   Attrappen für Netz und KI, virtuelle Uhr. **Es gibt 10 echte Profile, nicht 200.**
 - **Die Preisbasis ist ein Schätzwert im Code**, kein Anbieterpreis.
 - **Der wirksame Tagesdeckel in Production ist offline nicht lesbar.**
-- **Der erste Cron-Lauf auf `559a3d9` hat noch nicht stattgefunden** (§1).
+- ~~Der erste Cron-Lauf auf `559a3d9` hat noch nicht stattgefunden~~ — **nachgeholt und sauber**, §10.
 - **Die Migration `20260809` ist nicht angewendet.** Ihr Nachweis steht in
   `jobqueue-wiedervorlage-datenbank-test.js` gegen eine lokale Datenbank.
+
+---
+
+## 10 · Nachtrag: unabhängiger adversarialer Abschlussreview (2026-08-09)
+
+Getrennter Review desselben Standes (`7c5bfb1`) gegen `origin/main` `559a3d9`. Weder der
+Bericht oben noch die vorhandenen Tests wurden als Beleg übernommen; die tragenden Aussagen
+wurden eigenständig reproduziert.
+
+### 10.1 Erster regulärer Production-Lauf nach PR #233 — **sauber**
+
+Rein lesend geprüft (kein manueller Lauf, keine Datenänderung):
+
+| Prüfung | Ergebnis |
+|---|---|
+| erster regulärer Lauf | `cron-crawl-20260809040127-094wk-global` (Prozess `globalphase`) |
+| planmäßig, nicht manuell | ja — Cron-Slot `crawl` 04:00Z, `run_id_derived=false` |
+| dem neuen Stand zuordenbar | **ja — `commit_ref=559a3d958bce816f05b1ea88f4a1bcadd54ccb47`** |
+| Status / Zeiten | `partial` · 04:01:27,679Z → 04:04:40,914Z · **193 234 ms** |
+| Mandate | `target 1 978` · **6 Projektionen** · **5 aktive Mandate** (9 Profile, 4 deaktiviert) |
+| Fehler / Wiederholungen | `fehler=0 abruf=0 cas=0 nv=0` · `failed_count=0` |
+| verlorene Vormerk-Kandidaten | `vk=932` — im Streuband der Vorläufe (897–1 061) |
+| Kosten | Tag 2026-08-09: **0,0849 USD**, **0 unbekannte Positionen** |
+| Altarchitektur | unverändert; `helmut_jobs` existiert in Production **nicht** |
+| Folgeläufe auf `559a3d9` | `understanding-eager`, `briefing-morning`, `understanding-cron`, `briefing-lage` — **alle `success`** |
+
+Verglichen mit den sieben vorangegangenen `globalphase`-Läufen liegt **jede** Kennzahl im
+bisherigen Streuband (Dauer 188–213 s, `target` 1 775–2 068, `partial` ist der Normalstand,
+`reason`-Muster identisch). **Eine Production-Regression durch PR #233 ist damit ausgeschlossen,
+soweit ein Betriebstag das zeigen kann.**
+
+### 10.2 Zwei neue Befunde
+
+**B15 (mittel, behoben) — `helmut_jobs_blockiert` zählte ein Kreuzprodukt.**
+`supabase/migrations/20260809_jobqueue_wiedervorlage.sql`: die Funktion verband die blockierten
+Zeilen über ein **unkorreliertes** `left join lateral` mit ihrer eigenen Typaufstellung. Die
+Unterabfrage liefert eine Zeile **je Typ** — und zwar für **jede** Zeile. `count(*)` zählte
+deshalb `Zeilen × Typen`.
+
+*An echter PostgreSQL 16.13 gemessen:* 1 Typ/3 Zeilen ⇒ 3 (zufällig richtig) · **2 Typen/5 Zeilen
+⇒ gemeldet 10** · **3 Typen/9 Zeilen ⇒ gemeldet 27**.
+
+*Schaden:* die Zahl wandert über `scalable-pipeline.betriebsstatus` in die Betreiberanzeige
+(`befunde: dauerhaft-blockiert:N`, `blockiert.anzahl`) — und **widersprach dabei ihrer eigenen,
+korrekten Aufstellung `nach_typ`**. Kein falsches Grün, aber eine falsche Zahl über dauerhaft
+ungelesene Dokumente.
+
+*Warum die Tests es übersahen:* alle Bestandsprüfungen kannten **genau einen** blockierten
+Auftrag **eines** Typs — bei 1 × 1 ist ein Kreuzprodukt nicht von der Wahrheit zu unterscheiden.
+
+*Korrektur:* die Menge wird **einmal** bestimmt (CTE), Gesamtzahl und Aufstellung werden daraus
+abgeleitet. Regressionstest **5b** (`jobqueue-wiedervorlage-datenbank-test.js`) prüft **drei**
+Typen mit **mehreren Zeilen je Typ** und dass Gesamtzahl und Aufstellung sich nicht
+widersprechen. **Mutationsprobe:** alte Fassung wiederhergestellt ⇒ **3 FAIL** (27 statt 9).
+
+**B16 (hoch, korrigiert) — die 25-%-Kapazitätsreserve war überstellt.**
+Geprüft wurde nur, dass **250 Mandate** getragen werden, nicht, dass dabei **25 % mehr Arbeit**
+anfällt. Gemessen (200 → 250): individuelle Quellen **+25,1 %**, aber Aufträge **+19,7 %**,
+Dokumente **+19,4 %**, Abrufversuche **+19,5 %** und **KI-Aufrufe nur +5,7 %** — die geteilten
+Quellen fangen den Zuwachs ab. **Belegt ist eine Reserve von +25 % MANDATEN, nicht von +25 %
+ARBEITSLAST.** Prüfung **B12b** misst den Zuwachs und meldet die Arbeitsreserve als `OFFEN`.
+
+### 10.3 Eigenständig reproduziert
+
+- **Merge-Neutralität** mit eigener Sonde (Tripwire auf Netz **und** Storage, 10 Flagfälle
+  inkl. teilweise/ungültig gesetzter Kombinationen): **208 PASS / 0 FAIL**, 0 Berührungen.
+  **Nicht tautologisch:** mit wirkungslos gemachtem Flag ⇒ **180 FAIL**, Tripwire meldet
+  `storage.jobQueueClaim`, `storage.listFullProfiles`, `storage.jobQueueWiedervorlage`.
+- **O1** Rotation: tagesabhängig (Tag 0 ≠ Tag 1 ≠ Tag 17), Menge bleibt vollständig (60/60),
+  kein Verhungern — bei 10 Plätzen war nach **6** Tagen jedes der 60 Mandate vorn (Optimum).
+  `globalerTopf` ist fail closed (Deckel 0 ⇒ 0) und meldet `reserveGedeckelt` ehrlich.
+- **O4** Der 48-h-Anker hängt an `created_at`, nicht an `due_at` — Zurückstellen verjüngt ihn nicht.
+- **Migrationskette** an echter PostgreSQL 16.13: anwenden → wiederholen → Rollback → wiederholen
+  → erneut anwenden = **20 Schritte fehlerfrei**. RLS auf `helmut_jobs` ist **aktiv und
+  erzwungen**, `anon`/`authenticated` haben **keine** Rechte, die drei neuen Funktionen nur
+  `service_role`.
+- **Profilvertrag** adversarial: `aktiv: true`, unbekanntes Feld, `http`, fehlendes Pflichtfeld
+  und Suchseite als amtliche Quelle werden **alle** abgelehnt.
+
+### 10.4 Grenzen dieses Reviews
+
+- Der Nachweis der Warteschlange bleibt eine **Simulation**; er ersetzt keinen Production-Beweis.
+- Die **Arbeitsreserve von 25 %** ist offen (B16).
+- **E1** (Lage-Narrativ als fünfter Auftragstyp) war ausdrücklich **nicht** Gegenstand dieses
+  Reviews und bleibt der nächste Architekturblocker vor einer Aktivierung über ~100 Mandate.
+- Die Datenbanknachweise sind durch die Läufe hier gedeckt, **nicht** durch CI (Befund O21:
+  der Runner zählt eine übersprungene Datenbanksuite als `PASS`).

@@ -169,18 +169,19 @@ Umsetzung **10 Mandate**.
 - **Lokaler Production-Schutz** (76 PASS): zwei Schichten. **Production lädt ihn nie.**
 - **`HELMUT_RELEVANZORDNUNG` ist default AUS**, fail closed; Merge-Neutralität belegt (26 PASS).
 
-**Abschlussreview (2026-08-08, unabhängig und adversarial).** Verhaltensneutralität bestätigt.
-**13 Befunde behoben** (1 kritisch, 7 hoch) — u. a. Dokumentkennung `raw-…` statt `rd-…` (der
-Pfad hätte nie ein Dokument verstanden und das als Erfolg gemeldet), durch Zurückstellen
-löschbarer Rückstandsalarm, tote Briefingstufe, mitgeplante deaktivierte Mandate, drei
-tautologische Merge-Neutralitätsbeweise. **26 weitere benannt** (O1–O26); **O1–O5 sind im
-Sprint vom 2026-08-09 gelöst** (siehe unten). Vollständig im Beleg.
+**Abschlussreview PR #233 (2026-08-08, unabhängig).** Verhaltensneutralität bestätigt;
+**13 Befunde behoben** (1 kritisch, 7 hoch), **26 benannt** (O1–O26) — **O1–O5 sind im Sprint
+vom 2026-08-09 gelöst** (unten). Einzelheiten im Beleg.
 
 **PR #233 ist am 2026-08-09T00:35Z gemergt** (Merge-Commit `559a3d9`), das Production-Deployment
 `dpl_E9b2Lqa387JLRz85U88xEXJkbaDD` ist **READY**. Lesend gegengeprüft: `helmut_jobs` existiert in
 Production **nicht** (keine OP-30-Migration angewendet), es sind unverändert **5 Mandate aktiv**.
-**Noch nicht beobachtbar:** zum Prüfzeitpunkt (00:43Z) hatte **kein Cron auf `559a3d9`** gelaufen —
-der nächste ist `crawl` 04:00Z. Eine Regression ist damit weder belegt noch ausgeschlossen.
+**Erster regulärer Lauf auf `559a3d9` ist belegt und sauber** (unabhängig geprüft 2026-08-09,
+rein lesend): planmäßiger `cron-crawl-20260809040127-094wk-global`, 04:01:27–04:04:40Z, 193 s,
+`commit_ref=559a3d95…`, `fehler=0 abruf=0 cas=0 nv=0`, 6 Projektionen, 5 aktive Mandate; alle
+Kennzahlen im Streuband der sieben Vorläufe (Dauer 188–213 s, `partial` ist Normalstand). Vier
+Folgeläufe (`understanding-eager`, `briefing-morning`, `understanding-cron`, `briefing-lage`)
+alle `success`. Kosten 0,0849 USD, **0 unbekannte Positionen**. **Keine Regression durch PR #233.**
 
 **Sprint „Aktivierungsreife 200" (2026-08-09, Branch `claude/op30-aktivierungsreife-200-i10sv1`).**
 **O1–O5 sind gelöst**, alles hinter unverändert ausgeschalteten Flags · Beleg
@@ -196,9 +197,10 @@ Blockade; der Rest wird als `dauerhaft-blockiert` **kritisch** gemeldet.
 **Neuer Befund B14 behoben:** `jobqueue-bereinigung-test.js` legte seine Datenbank nicht an und
 hätte das Pflicht-Gate rot gemacht. **Stufennachweis 5/25/50/100/200 (+ Stress 1 000):** alle
 **14 Abnahmekriterien erfüllt**, 0 Verlust · 0 Doppelverarbeitung · 0 Budgetverletzung ·
-0 deaktivierte Mandate in Arbeit auf jeder Stufe; die Kapazitätsreserve ist **mit 250 statt 200
-Mandaten nachgemessen** (die zuerst gebaute Messung „Zeit bis Tagesende" war eine Fehlmessung —
-sie liegt bei allen Stufen bei ~10 % und misst den Fälligkeitsfahrplan, nicht die Kapazität).
+0 deaktivierte Mandate in Arbeit auf jeder Stufe. **Kapazitätsreserve korrigiert (Review-Befund
+B16):** 250 Mandate werden getragen, aber +25 % Mandate erzeugen wegen der geteilten Quellen nur
+**+19,5 % Arbeit und +5,7 % KI-Aufrufe** ⇒ belegt ist eine Reserve von **+25 % MANDATEN, nicht
+von +25 % ARBEITSLAST**; Prüfung B12b meldet sie als `OFFEN`. Kriterium 12 gilt als **teilweise**.
 **Importvertrag für Mandatsprofile** steht (Schema, Validator, synthetisches Beispiel);
 **Import legt Profile immer deaktiviert an** und lehnt `aktiv: true` ab.
 
@@ -282,10 +284,8 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 **PR #233 ist gemergt, das Deployment ist READY.** Nächste Entscheidungen liegen beim Betreiber:
 
-1. **Nach 04:05Z einmal `process_runs` ansehen.** Der erste Cron-Lauf auf `559a3d9` hatte zum
-   Zeitpunkt der Prüfung (00:43Z) noch nicht stattgefunden — eine Regression ist damit weder
-   belegt noch ausgeschlossen.
-2. **Über den Merge des neuen PR entscheiden** (O1–O5 gelöst, Stufennachweis, Profilvertrag).
+1. ~~Ersten Lauf auf `559a3d9` prüfen~~ — **erledigt, sauber** (§7a): keine Regression.
+2. **Über den Merge von PR #235 entscheiden** (O1–O5 gelöst, Stufennachweis, Profilvertrag).
    Verhaltensneutral (alle Flags aus, keine Migration angewendet) — der Merge bleibt trotzdem
    ein Production-Deployment.
 3. **Entscheidungsfrage E1 beantworten:** gehört das Lage-Narrativ in die Warteschlange? Es
