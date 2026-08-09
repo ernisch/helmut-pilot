@@ -91,6 +91,14 @@
       "schedule": "45 5 * * *"
     },
     {
+      "path": "/api/cron/lage-briefing-nachlauf",
+      "schedule": "10 6 * * *"
+    },
+    {
+      "path": "/api/cron/lage-briefing-nachlauf",
+      "schedule": "22 6 * * *"
+    },
+    {
       "path": "/api/cron/understanding",
       "schedule": "30 21 * * *"
     }

@@ -125,13 +125,43 @@ function main() {
       const sched = require(path.join(ROOT, "lib/helmut/scheduler.js"));
       return typeof sched.runGlobaleErfassung === "function" && typeof sched.runMandatsProjektion === "function";
     })());
-  check("6.5 Die Cron-Zeiten in vercel.json sind unveraendert",
+  // KAPAZITAETSSPRINT 2026-08-09: hier stand "Die Cron-Zeiten sind unveraendert" (9 Eintraege)
+  // und "Es wurde KEIN neuer Cron-Eintrag ergaenzt". Beides waere jetzt eine unwahre Zusage:
+  // der zweite Morgenslot IST ein neuer Eintrag. Die Pruefung wird deshalb nicht abgeschwaecht,
+  // sondern auf das umgestellt, was wirklich gilt — die NEUN BESTANDSZEITEN sind unveraendert,
+  // und der einzige neue Eintrag ist der flaggeschuetzte Nachlaufslot.
+  check("6.5 Die neun bestehenden Cron-Zeiten sind unveraendert",
     (() => {
       const v = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
-      return Array.isArray(v.crons) && v.crons.length === 9;
-    })(), "erwartet 9 Cron-Eintraege");
-  check("6.6 Es wurde KEIN neuer Cron-Eintrag ergaenzt",
+      const bestand = (v.crons || []).map((c) => `${c.path}@${c.schedule}`)
+        .filter((s) => !s.startsWith("/api/cron/lage-briefing-nachlauf@")).sort().join("|");
+      return bestand === [
+        "/api/cron/crawl@0 4 * * *", "/api/cron/crawl@0 20 * * *", "/api/cron/health-report@0 6 * * *",
+        "/api/cron/lage-briefing@45 5 * * *", "/api/cron/lage-check@0 10 * * *",
+        "/api/cron/morning-briefing@0 5 * * *", "/api/cron/pipeline@0 16 * * *",
+        "/api/cron/understanding@30 21 * * *", "/api/cron/understanding@30 5 * * *"
+      ].sort().join("|");
+    })(), "die neun Bestandszeiten muessen zeichengleich bleiben");
+  check("6.6 Die einzigen neuen Cron-Eintraege sind die zwei flaggeschuetzten Nachlaufslots",
+    (() => {
+      const v = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
+      const neu = (v.crons || []).map((c) => `${c.path}@${c.schedule}`)
+        .filter((s) => !/^\/api\/cron\/(crawl|health-report|lage-briefing|lage-check|morning-briefing|pipeline|understanding)@/.test(s));
+      return v.crons.length === 11 && neu.length === 2
+        && neu.sort().join("|") === "/api/cron/lage-briefing-nachlauf@10 6 * * *|/api/cron/lage-briefing-nachlauf@22 6 * * *";
+    })());
+  check("6.7 Kein Cron ruft die OP-30-Maschinerie unmittelbar auf",
     !/jobqueue|scalable|worker/i.test(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8")));
+  check("6.8 Der zweite Morgenslot bricht bei ausgeschalteten Flags VOR jedem Schreibzugriff ab",
+    (() => {
+      const i = serverSrc.indexOf('url.pathname === "/api/cron/lage-briefing-nachlauf"');
+      if (i < 0) return false;
+      const block = serverSrc.slice(i, i + 1400);
+      const riegel = block.indexOf("narrativUeberWarteschlange()");
+      const schreibt = block.indexOf("narrativSlotLauf(");
+      // Der Riegel muss VOR dem einzigen Aufruf stehen, der ueberhaupt schreiben kann.
+      return riegel > 0 && schreibt > riegel && /flags-aus/.test(block);
+    })());
 
   abschnitt("7 · Betriebsstatus: lesend, autorisiert, ohne Nutzdaten");
   check("7.1 Der Statusendpunkt existiert", serverSrc.includes('url.pathname === "/api/ops/jobqueue"'));

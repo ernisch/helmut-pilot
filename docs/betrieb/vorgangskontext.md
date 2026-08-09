@@ -1427,14 +1427,24 @@ Wiedervorlage endgültig gescheiterter Aufträge) und den Stufennachweis 5/25/50
 
 **Für OP-25 ändert sich dadurch nichts.** Alle Änderungen liegen hinter
 `HELMUT_SCALABLE_PIPELINE` und `HELMUT_LLM_FAIRNESS`, beide unverändert **default AUS**; keine
-der fünf OP-30-Migrationen ist angewendet. Der bestandene Nachweis aus §7.7.9 bleibt gültig —
-und seine Geltungsgrenze ebenso:
+der inzwischen **sechs** OP-30-Migrationen ist angewendet (Stand 2026-08-09/3; die Zahl „fünf"
+oben war der Stand vor `20260809_jobqueue_narrativ`). Der bestandene Nachweis aus §7.7.9
+bleibt gültig — und seine Geltungsgrenze ebenso:
 
 > **Nach einer Aktivierung des OP-30-Ausführungspfads muss OP-25 vollständig mit der neuen
 > Architektur wiederholt werden.** Die Aktivierung verändert `quellenVereinigung`, die
 > K2.1-Sichtbarkeitsmengen und die Laufzeitbilanz.
 
-Neu hinzugekommen ist eine **Entscheidungsfrage an den Betreiber (E1)**, die auch OP-25
+> **Nachtrag 2026-08-09/3.** E1 ist entschieden, umgesetzt und gemergt (PR #236), und die
+> Kapazität der Morgenlage ist gelöst: Parallelität 8, Slotbudget 270 s und drei Morgenslots
+> tragen 200 Morgenlagen mit 59,6 % Reserve (lokal gemessen). **Für OP-25 ändert das nichts,
+> solange nichts aktiviert ist** — aber es macht die Wiederholungspflicht oben konkreter: nach
+> der Aktivierung laufen die Narrative über die Warteschlange und zusätzlich zwei neue
+> Cron-Slots, die der OP-25-Nachweisvertrag heute nicht kennt. Der Vertrag (§7.7.5) muss vor
+> dem Wiederholungsfenster um diese Slots ergänzt werden. Beleg:
+> [`op30-kapazitaet-morgenslots-2026-08-09.md`](op30-kapazitaet-morgenslots-2026-08-09.md).
+
+Die ursprüngliche **Entscheidungsfrage an den Betreiber (E1)**, die auch OP-25
 berührt: der einzige mandatsbezogene KI-Pfad (Lage-Narrativ, Cron `lage-briefing`) läuft
 **außerhalb** der Warteschlange in einem Slot mit `maxDuration 300`. Bei 200 Mandaten wären das
 200 KI-Aufrufe in einem 300-Sekunden-Fenster — eine Kapazitätsgrenze **unabhängig** von der

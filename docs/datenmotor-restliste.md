@@ -1542,6 +1542,42 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Morgenslot (beides Vercel-Konfiguration ⇒ Betreiberentscheidung, keine neue Infrastruktur).
   Ohne diese Entscheidung ist die Aktivierung auf **Stufe 1 (5 Mandate)** begrenzt.
   Kanonischer Beleg: [`betrieb/op30-e1-abschlussreview-2026-08-09.md`](betrieb/op30-e1-abschlussreview-2026-08-09.md).
+- **Sprint „Kapazität der Morgenlage" (2026-08-09/3, nach dem Merge von PR #236).**
+  Kanonischer Beleg: [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md).
+  **R4 (geerbt) behoben.** Ursache: zwei Schreiber auf `llm_budget_counters(day,'global')` —
+  die Fairnessschicht **und** der Choke-Point `helmut_reserve_llm_call` (`ai.js requestOpenAI`,
+  der einzige Ort mit Modellaufruf). An echter PostgreSQL 16.13 reproduziert (`global.used = 2`
+  für **einen** fachlichen Aufruf) und behoben nach der Regel **ein Buch, ein Schreiber**: die
+  Zählertabelle schreibt nur noch der Choke-Point, die Fairness führt Absichten
+  (`llm_reservations`); Belegung = getätigt + laufend; **keine ausgleichende Rücknahme mehr**
+  (die Bauform, vor der `CLAUDE.md` §4.10 warnt). Nachher `global.used = 1`.
+  **Neuer Befund R4b:** `p_scope_max` wurde für `scope='global'` still verworfen — der
+  `globalerTopf` (Schutz der Lage-Narrative vor dem Verstehen) war berechnet, übergeben und
+  **wirkungslos**. Beides in der **nicht angewendeten** Migration
+  `20260808_llm_budget_fairness.sql` korrigiert; es bleiben **sechs** Paare.
+  **Kapazität slotgenau gemessen statt aus einem Dauerbetriebsmodell abgeleitet** (neue
+  Fixture `scripts/fixtures/morgenslot.js`: echte `workerBetrieb.durchlauf`,
+  `scalable-pipeline.arbeite`, echter Handler, Production-Messreihe n = 134). **Die Zahlen des
+  Abschlussreviews von PR #236 (par 2 ≈ 14 / par 4 ≈ 52 / par 8 ≈ 127) sind damit
+  zurückgezogen**: eigene Messung **par 2 ≈ 39 / par 4 ≈ 88 / par 8 ≈ 179** Narrative je Slot.
+  Die **Richtung** des Vorreviews bleibt bestätigt — ein Morgenslot trägt 200 in keiner
+  Parallelität, die heutige Verdrahtung schafft **39 von 200**.
+  **Kleinste sichere Lösung umgesetzt (alles hinter geschlossenen Flags):** Parallelität **8**
+  über die neue, nur für die Morgenslots wirksame Variable `HELMUT_NARRATIV_PARALLEL` (damit
+  die Crawl-Slots und ihre Google-Drosselung unberührt bleiben) · Slotbudget **270 s** statt
+  230 s (dieselbe Marge zu `maxDuration 300`, die crawl/pipeline seit jeher fahren) · **zwei
+  zusätzliche Morgenslots** 06:10/06:22 UTC auf der neuen Route
+  `/api/cron/lage-briefing-nachlauf` — **ohne Altpfad**, dreifach geriegelt, bei
+  ausgeschalteten Flags **kein** Datenbankschreibzugriff und **kein** Modellaufruf · eigene
+  Zeitgrenze **45 s** für `tenant_narrative` (kann nur senken; in der gemessenen Reihe war
+  **kein** Aufruf über 20 s je erfolgreich) · Leerlaufwarten 20 s, Default **0 = aus**.
+  **Ergebnis:** 200 von 200 Morgenlagen im Fenster bis 06:30 UTC, **59,6 % Kapazitätsreserve
+  gegen Arbeitslast**; alle vierzehn Störfälle ohne Verlust, ohne Doppelverarbeitung, ohne
+  Budgetverletzung. 1 000 Mandate: 586 — Überlast, **ehrlich als Rückstand gemeldet**.
+  **R6 untersucht und im Testgerüst entschärft** (174,6 s → 140,5 s bei 180 s Runnerlimit;
+  Kennzahlen des Laufs zeichengleich, fachliche Belastung unverändert).
+  **Weiterhin offen:** Production-Verhalten · **190 fehlende echte Profile** · wirksamer
+  Production-Deckel · Vercel bei Parallelität 8 · Migration, Aktivierung, Production-Nachweis.
 - **Kanonischer Beleg (Ursache):** [`betrieb/v3-skalierungspruefung-2026-08-08.md`](betrieb/v3-skalierungspruefung-2026-08-08.md).
   **Abgrenzung zu OP-25:** OP-25 beschreibt das *Symptom* (je Lauf wird nur ein Teil der
   Mandanten erreicht) und wird über Fairness/Zeitdeckelung geführt. OP-30 ist die belegte

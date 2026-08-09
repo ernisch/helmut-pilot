@@ -502,7 +502,7 @@ async function simuliereTag({
     },
     finish: async (o) => {
       gehalten.delete(o.id);
-      const zeile = q.alle().find((x) => x.id === o.id);
+      const zeile = q.hole(o.id);
       const mandat = zeile && zeile.tenant_id;
       if (o.ok) {
         const start = ersteFaelligkeit.get(o.id);
@@ -573,16 +573,25 @@ async function simuliereTag({
     // und meldete "fertig". Abbruchkriterium ist deshalb: NICHTS Nicht-Archivisches mehr
     // wartend oder laufend.
     const istArchiv = (x) => x.payload && x.payload.art === "person-archiv";
-    const pflichtOffen = q.alle().filter((x) =>
-      (x.status === "wartend" || x.status === "laeuft") && !istArchiv(x)).length;
-    const offen = pflichtOffen;
-    maxQueue = Math.max(maxQueue, q.alle().length);
-    const faellige = q.nachStatus("wartend").filter((x) => Date.parse(x.due_at) <= u.jetzt());
-    if (faellige.length) {
-      maxRueckstandS = Math.max(maxRueckstandS,
-        Math.max(...faellige.map((x) => (u.jetzt() - Date.parse(x.due_at)) / 1000)));
+    // EIN Durchlauf statt vier (Befund R6, reine Ressourcenfrage — dieselben Zahlen):
+    // vorher entstanden hier je Takt vier vollstaendige Arrays ueber alle Zeilen.
+    let pflichtOffen = 0;
+    let fertig = 0;
+    let aeltesteFaelligS = 0;
+    const jetztMs = u.jetzt();
+    for (const x of q._zeilen.values()) {
+      if (x.status === "erledigt") fertig += 1;
+      else if (x.status === "wartend" || x.status === "laeuft") {
+        if (!istArchiv(x)) pflichtOffen += 1;
+        if (x.status === "wartend") {
+          const rueckstandS = (jetztMs - Date.parse(x.due_at)) / 1000;
+          if (rueckstandS > aeltesteFaelligS) aeltesteFaelligS = rueckstandS;
+        }
+      }
     }
-    const fertig = q.nachStatus("erledigt").length;
+    const offen = pflichtOffen;
+    maxQueue = Math.max(maxQueue, q.groesse());
+    if (aeltesteFaelligS > maxRueckstandS) maxRueckstandS = aeltesteFaelligS;
     if (((takt * taktMs) % STUNDE) === 0 || pflichtOffen === 0) verlauf.push({ stunde, offen, erledigt: fertig });
     if (pflichtOffen === 0 && fertigMs == null) {
       // EXAKTER Zeitpunkt, nicht auf volle Stunden aufgerundet. Die alte Zeile lautete

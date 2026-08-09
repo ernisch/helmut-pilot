@@ -69,7 +69,9 @@ const DYNAMIC_ENV_READS = [
   // vier Namen fehlten deshalb unbemerkt im Inventar, waehrend der Scanner „vollstaendig"
   // meldete. Genau dafuer existiert diese Liste.
   "HELMUT_WORKER_PARALLEL", "HELMUT_WORKER_BUDGET_MS",
-  "HELMUT_WORKER_LEASE_MS", "HELMUT_WORKER_STAPEL"
+  "HELMUT_WORKER_LEASE_MS", "HELMUT_WORKER_STAPEL",
+  // Kapazitaetssprint 2026-08-09: derselbe Helfer, dieselbe Blindstelle.
+  "HELMUT_WORKER_LEERLAUF_MS"
 ];
 for (const name of DYNAMIC_ENV_READS) envNames.add(name);
 
