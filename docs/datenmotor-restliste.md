@@ -1502,6 +1502,25 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   außerhalb der Warteschlange in einem 300-s-Slot — bei 200 Mandaten ist das eine
   Kapazitätsgrenze, die keiner der Nachweise berührt. Kanonischer Beleg:
   [`betrieb/op30-aktivierungsreife-2026-08-09.md`](betrieb/op30-aktivierungsreife-2026-08-09.md).
+- **Sprint „E1: Lage-Narrativ als fünfter Auftragstyp" (2026-08-09, nach dem Merge von
+  PR #235; Gründerentscheidung E1 = Warteschlange).** `tenant_narrative` ist als fünfter
+  Auftragstyp umgesetzt — der Handler ruft die **unveränderte** `lage.buildLageBriefing`
+  auf (Inhalt/Prompt/Modell/Qualität identisch); neues Flag **`HELMUT_NARRATIV_QUEUE`**
+  (default AUS, fail closed, wirksam nur mit `HELMUT_SCALABLE_PIPELINE`); neue additive
+  Migration **`20260809_jobqueue_narrativ.sql`** (CHECK-Menge + `tenant_narrative`, mit
+  Rollback, **nicht angewendet**). Ein Auftrag je Mandat und 24-h-Fenster, Morgenkorridor
+  [24 %, 33,3 %) (= 05:45–08:00 UTC, abgeleitet aus dem bestehenden Cron-Slot),
+  Vorbedingungen Abruf+Verstehen, Fairness-Reservierung `tenant:<mandat>` (der Verbraucher,
+  der O1 fehlte), Cron `lage-briefing` wird bei beiden Flags zum reinen Narrativ-Worker
+  (strukturell kein Doppelpfad). **Lokal belegt:** Vertragssuite 90 PASS · Fünf-Typen-Stufen
+  5/25/50/100/200/250 + Stress 1 000 mit Störprofil (5 % Fehler, 2 % Rate Limits, 3 % lange
+  Antworten): 210/210 bzw. 1 050/1 050 Narrative, 0 Verlust/Doppel/fremd · echte PostgreSQL
+  27 PASS + Kettenprobe 35 Schritte · Mutationsprobe 12/12 rot. **Kapazitätsentscheidung
+  200 Mandate: lokal nur teilweise belegt** — offen sind die 25-%-Arbeitslastreserve über
+  alle Dimensionen (strukturell, wie B16) und die **Slot-Kapazität der Morgenlage**
+  (Rechnung: 05:45-Slot trägt ~39 Aufrufe bei Parallelität 2; für 200 braucht es
+  `HELMUT_WORKER_PARALLEL`↑ oder einen weiteren Slot — Betreiberentscheidung). Kanonischer
+  Beleg: [`betrieb/lage-narrativ-warteschlange-2026-08-09.md`](betrieb/lage-narrativ-warteschlange-2026-08-09.md).
 - **Kanonischer Beleg (Ursache):** [`betrieb/v3-skalierungspruefung-2026-08-08.md`](betrieb/v3-skalierungspruefung-2026-08-08.md).
   **Abgrenzung zu OP-25:** OP-25 beschreibt das *Symptom* (je Lauf wird nur ein Teil der
   Mandanten erreicht) und wird über Fairness/Zeitdeckelung geführt. OP-30 ist die belegte
