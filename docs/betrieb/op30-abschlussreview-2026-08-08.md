@@ -58,6 +58,7 @@ geworden — mehrere davon so, dass der Pfad stillschweigend nichts geleistet h�
 | **B10** | **mittel** | `scripts/v3-anbindung-test.js`, `scripts/skalierung-simulation-test.js` | Beide Attrappen bauten die Dokumentkennung **selbst** (`rd-<sha256(url)[0..16]>`) und gaben sie im Rückgabewert von `saveRawItems` mit — was Production nicht tut. Genau dadurch blieb B1 unentdeckt. Zusätzlich unterschieden sich die Artikel-URLs nur im **Fragment** (`#artikel-N`), das `canonicalizeUrl` entfernt: drei modellierte Artikel waren in Wahrheit einer. | Beide Attrappen benutzen jetzt `dedup.toRawDocumentRow`, liefern die Blob-Form zurück, führen die Herkunft (`_weg`) ausdrücklich mit und verwenden pfad-unterscheidbare Artikel-URLs. |
 | **B11** | **niedrig** | `server.js` | `Number(process.env.HELMUT_WORKER_BATCH \|\| 10)` ⇒ ein unbrauchbarer Wert ergibt `NaN`, `Math.max(1, NaN)` ist `NaN`. | `Number(...) \|\| 10`. |
 | **B12** | **niedrig** | `docs/betrieb/env-inventar.md`, `scripts/env-inventar-test.js` | `HELMUT_WORKER_PARALLEL/_BUDGET_MS/_LEASE_MS/_STAPEL` fehlten im Inventar. Der Vollständigkeitsscanner sieht nur `process.env.NAME`, `flagValue("NAME")` und `env.NAME` — `worker-betrieb.js` liest über einen eigenen Helfer und war deshalb unsichtbar, während der Scanner „vollständig" meldete. | Vier Variablen dokumentiert; der Scanner kennt sie jetzt ausdrücklich. |
+| **B13** | **hoch** | `scripts/jobqueue-datenbank-test.js` (Abschnitt 8.1) | **Ein flackernder Nachweis.** Die Prüfung las die Reihenfolge über `row_number() over ()` aus der Rückgabe von `helmut_claim_jobs`. Ein **leeres Fensterfeld** hat in PostgreSQL keine definierte Sortierung, und `helmut_claim_jobs` sagt über die Reihenfolge seiner Rückgabe ohnehin nichts zu: die Sortierung steht im CTE `kandidaten` und bestimmt, **welche** Zeilen reserviert werden; das `update … returning j.*` liefert sie in Join-Reihenfolge. **Im vollständigen Offline-Lauf unter Last einmal rot geworden** (`P-spaet,P-frueh`); im Leerlauf 10/10 grün. Genau die Sorte Nichtdeterminismus, die dieser PR an anderer Stelle selbst benennt (`created_at desc`). Da die Suite im CI mangels Datenbank übersprungen wird (O21), hätte sie das Pflicht-Gate erst rot gemacht, sobald dort eine Datenbank steht. | Statt der Rückgabereihenfolge wird jetzt die Zusage geprüft, die die Funktion **wirklich** gibt: zwei aufeinanderfolgende Reservierungen mit `p_limit := 1`. Verifiziert über **5 Läufe, davon 3 unter künstlicher Fremdlast, 5/5 grün**. |
 
 ### 2.2 Bestätigt, aber **nicht** geändert (Begründung jeweils)
 
@@ -148,7 +149,7 @@ Alle Läufe über `node scripts/lokal.js …` (siehe §2.2 O9), `HELMUT_TEST_PG_
 | Prüfung | Ergebnis |
 |---|---|
 | Eigene Flagmatrix-/Neutralitätsprobe (nicht aus der PR) | **23 PASS / 0 FAIL** |
-| Warteschlange Datenbank (echte Migration + Rollback) | **55 PASS / 0 FAIL** (vorher 52; +3 neu) |
+| Warteschlange Datenbank (echte Migration + Rollback) | **55 PASS / 0 FAIL** (vorher 52; +3 neu) · zusätzlich **5 Läufe, 3 unter Fremdlast, 5/5 grün** (Flackern B13) |
 | Warteschlange Vertrag (mit Datenbank) | **113 PASS / 0 FAIL** (vorher 100; +13 neu) |
 | Warteschlange Vertrag **ohne** Datenbank (wie im CI) | **108 PASS / 0 FAIL** — Abschnitt 9 entfällt still (O23) |
 | Merge-Neutralität Relevanzordnung | **26 PASS / 0 FAIL** (vorher 24; B/C/D jetzt echt + 2 Gegenproben) |
@@ -179,7 +180,7 @@ Jede Korrektur wurde einzeln zurückgedreht; der zugehörige Nachweis muss dann 
 | Dokumentkennung zurück auf die Blob-`id` | **rot** (2 FAIL) |
 | Stapelrest wieder liegen lassen | **rot** (2 FAIL) |
 | Rückstandsmessung zurück auf `due_at` | **rot** (1 FAIL, gemessen `-119,96 s` statt `> 90 000 s`) |
-| Lease-Deckel entfernen | Verhalten ändert sich nachweisbar (Auftrag läuft 120 000 ms statt 10 000 ms; die Zusage in 12.8 trifft nicht mehr zu) |
+| Lease-Deckel entfernen | Verhalten ändert sich nachweisbar (der Auftrag läuft dann bis `HELMUT_JOB_TIMEOUT_MS` statt bis 2 000 ms; die Zusage in 12.8 trifft nicht mehr zu) |
 
 **Keine der neuen Prüfungen ist trivial grün.**
 

@@ -323,9 +323,25 @@ async function main() {
   psql("select public.helmut_enqueue_job('source_fetch','P-spaet','F1','{}'::jsonb, now(), 900::smallint)");
   psql("select public.helmut_enqueue_job('source_fetch','P-frueh','F1','{}'::jsonb, now(), 10::smallint)");
   psql("select public.helmut_enqueue_job('source_fetch','P-zukunft','F1','{}'::jsonb, now() + interval '1 hour', 1::smallint)");
-  const reihenfolge = psql(
-    "select string_agg(idempotency_key, ',' order by claimed_at) from (select idempotency_key, row_number() over () as claimed_at from public.helmut_claim_jobs('w-prio', 10, 60000)) t").out;
-  check("8.1 Hoehere Prioritaet (kleinere Zahl) kommt zuerst", reihenfolge === "P-frueh,P-spaet", reihenfolge);
+  // KORREKTUR (Abschlussreview 2026-08-08) — diese Pruefung war FLACKERND und ist im
+  // vollstaendigen Offline-Lauf unter Last einmal rot geworden (`P-spaet,P-frueh`).
+  //
+  // URSACHE: sie las die Reihenfolge ueber `row_number() over ()` aus der Rueckgabe von
+  // `helmut_claim_jobs`. Ein LEERES Fensterfeld hat in PostgreSQL keine definierte
+  // Sortierung — die Nummern folgen der Ausfuehrungsreihenfolge des Plans. Und
+  // `helmut_claim_jobs` sagt ueber die Reihenfolge seiner Rueckgabe ohnehin nichts zu:
+  // die Sortierung steht im CTE `kandidaten` und bestimmt, WELCHE Zeilen reserviert
+  // werden; das anschliessende `update … returning j.*` liefert sie in Join-Reihenfolge.
+  // Der Test hat also eine Zusage geprueft, die es nicht gibt — genau die Sorte
+  // Nichtdeterminismus, die dieser PR an anderer Stelle selbst benennt (`created_at desc`).
+  //
+  // JETZT wird die Zusage geprueft, die die Funktion WIRKLICH gibt: bei `p_limit := 1`
+  // entscheidet `order by priority, due_at, created_at` allein, welcher Auftrag herausgeht.
+  // Zwei aufeinanderfolgende Einzelreservierungen zeigen die Reihenfolge deterministisch.
+  const ersterAuftrag = psql("select idempotency_key from public.helmut_claim_jobs('w-prio-1', 1, 60000)").out;
+  const zweiterAuftrag = psql("select idempotency_key from public.helmut_claim_jobs('w-prio-2', 1, 60000)").out;
+  check("8.1 Hoehere Prioritaet (kleinere Zahl) kommt zuerst",
+    ersterAuftrag === "P-frueh" && zweiterAuftrag === "P-spaet", `${ersterAuftrag} dann ${zweiterAuftrag}`);
   check("8.2 Ein noch nicht faelliger Auftrag wird NICHT vergeben — auch nicht mit Prioritaet 1",
     psql("select status from public.helmut_jobs where idempotency_key='P-zukunft'").out === "wartend");
 

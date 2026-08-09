@@ -1456,7 +1456,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Unabhaengiger adversarialer Abschlussreview von PR #233 (2026-08-08, `6d54dbb`).**
   Verhaltensneutralitaet eigenstaendig belegt (Flagmatrix ueber 26 Werte 23/23, keine
   Modul-Ladeeffekte, `planeArbeit`/`arbeite` bei Flag AUS mit 0 Beruehrungen, keine
-  automatische Migration). **12 Befunde behoben, davon 1 kritisch und 6 hoch** — saemtlich
+  automatische Migration). **13 Befunde behoben, davon 1 kritisch und 7 hoch** — saemtlich
   im ausgeschalteten OP-30-Pfad: der Verstehensauftrag trug die Blob-Kennung `raw-…` statt
   der Ablagekennung `rd-…` (**der Pfad haette nie ein Dokument verstanden und das als Erfolg
   gemeldet**) · der Rueckstandsalarm war durch Zurueckstellen loeschbar (an echter DB
