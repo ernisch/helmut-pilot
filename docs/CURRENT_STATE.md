@@ -195,7 +195,7 @@ Mandate wären geplant worden · reservierte, nie bearbeitete Aufträge verbrann
 **drei der „vier Merge-Neutralitätsbeweise" waren Tautologien** (falsche Funktion geprüft).
 Migration → wiederholen → Rollback → wiederholen → erneut anwenden: **21 Schritte fehlerfrei**;
 Reihenfolgefehler brechen vollständig ab. Mutationsproben zu jeder Korrektur **rot**.
-**20 weitere Befunde sind benannt, aber bewusst nicht geändert** (O1–O20, §2.2 des Belegs) —
+**24 weitere Befunde sind benannt, aber bewusst nicht geändert** (O1–O24, §2.2 des Belegs) —
 darunter: **Mandantenanteil und faire Rotation sind gebaut, aber im Produktionspfad nicht
 verdrahtet**, und **`worker-betrieb.js` ist im Betrieb tot**. Beides ist vor der ersten
 Aktivierung zu entscheiden.

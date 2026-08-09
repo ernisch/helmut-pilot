@@ -61,7 +61,7 @@ geworden — mehrere davon so, dass der Pfad stillschweigend nichts geleistet h�
 
 ### 2.2 Bestätigt, aber **nicht** geändert (Begründung jeweils)
 
-Zwanzig Punkte. Keiner davon wirkt bei ausgeschalteten Flags; O1–O5 sind vor der ersten
+Vierundzwanzig Punkte. Keiner davon wirkt bei ausgeschalteten Flags; O1–O5 sind vor der ersten
 Aktivierung zu entscheiden, O17–O19 vor dem nächsten Veröffentlichen der Skalierungszahlen.
 
 | # | Schwere | Befund | Warum nicht in diesem Review korrigiert |
@@ -86,6 +86,10 @@ Aktivierung zu entscheiden, O17–O19 vor dem nächsten Veröffentlichen der Ska
 | O18 | niedrig | **`rechneErstbefuellung` überschreibt nur einen Teil der abgeleiteten Werte** (`rohitems`, `dokumenteNachDedup`, `neueVorgaenge`, `ki`, `zumDeckel`); **Kosten, Speicher und Warteschlangenbestand stammen weiter aus dem Normaltag** und werden trotzdem unter „Erstbefüllung" ausgewiesen. Die einzige in der PR genannte Erstbefüllungszahl (**19 197** Aufrufe) ist von der Lücke **nicht** betroffen. | Latente Inkonsistenz ohne veröffentlichten Fehlwert. |
 | O19 | niedrig | Die Bündelgröße des Verstehens steht in `skalierungsmodell.js` als Literal `25` statt aus `scalable-pipeline.UNDERSTANDING_BUENDEL` gelesen — zwei Wahrheiten für denselben Wert. | Einzeiler, aber er verändert eine veröffentlichte Rechnung; gehört in denselben Schritt wie O17. |
 | O20 | niedrig | `scripts/skalierung-simulation-test.js` ändert sein Ergebnis abhängig von Umgebungsvariablen (`HELMUT_DEMAND_*`, `HELMUT_WORKER_*`), ohne das im Bericht auszuweisen. Im CI und in diesem Review sind sie ungesetzt. | Kennzeichnung wäre gut, ändert aber keinen Messwert. |
+| O21 | **hoch** | **Übersprungene Datenbank-Suiten meldet der kanonische Runner als `PASS` und zählt sie in der Zeile „N/N Suiten grün" mit.** `jobqueue-datenbank-test.js` beendet sich ohne erreichbaren Server mit Exit 0 und der ehrlichen Zeile „übersprungen, Nachweis offen" — `run-offline-tests.js` sieht nur den Exit-Code. **Das CI-Grün `225/225` enthält den Datenbanknachweis deshalb NICHT.** Er wurde in diesem Review separat und mit echter Datenbank geführt (§3, §4). | Der Runner bräuchte einen dritten Zustand (`OFFEN`). Das ist eine Änderung am Pflicht-Gate selbst und gehört nicht in den Review dieses PR. **Bis dahin gilt: CI-Grün beweist den Datenbankteil nicht.** |
+| O22 | mittel | **`scripts/jobqueue-mutationsprobe.js` und `scripts/jobqueue-lasttest.js` werden von keinem Gate eingesammelt** — sie enden nicht auf `-test.js` und stehen auch nicht in der `DENYLIST`. Die in der PR genannte Zusage „Mutationsprobe 10/10 rot" wird also nie automatisch geprüft. In diesem Review manuell ausgeführt: **10/10 rot**. | Umbenennen holte sie ins Pflicht-Gate (der Lasttest braucht eine Datenbank) — das ist eine Gate-Entscheidung. |
+| O23 | mittel | **Abschnitt 9 von `jobqueue-vertrag-test.js` („Gleichheit der Attrappe mit der ECHTEN Datenbank") verschwindet ohne Server spurlos.** Ohne `HELMUT_TEST_PG_HOST` läuft die Suite mit **108** statt **113** Zusagen und meldet trotzdem `FAIL 0`. Die Gleichheitszusage, auf der alle übrigen Befunde dieser Suite ruhen, ist im CI also **nicht** geprüft. | Gleiche Ursache und gleiche Entscheidung wie O21. |
+| O24 | niedrig | `scripts/jobqueue-mutationsprobe.js` mutiert ausschließlich die SQL-Migration, nicht den neuen JavaScript-Produktionscode. Die JS-Seite ist in diesem Review durch **eigene** Mutationsproben abgedeckt (§4). | Erweiterung ist eigene Arbeit. |
 
 ### 2.3 Geprüft und **kein** Problem
 
@@ -143,7 +147,8 @@ Alle Läufe über `node scripts/lokal.js …` (siehe §2.2 O9), `HELMUT_TEST_PG_
 |---|---|
 | Eigene Flagmatrix-/Neutralitätsprobe (nicht aus der PR) | **23 PASS / 0 FAIL** |
 | Warteschlange Datenbank (echte Migration + Rollback) | **55 PASS / 0 FAIL** (vorher 52; +3 neu) |
-| Warteschlange Vertrag | **113 PASS / 0 FAIL** (vorher 100; +13 neu) |
+| Warteschlange Vertrag (mit Datenbank) | **113 PASS / 0 FAIL** (vorher 100; +13 neu) |
+| Warteschlange Vertrag **ohne** Datenbank (wie im CI) | **108 PASS / 0 FAIL** — Abschnitt 9 entfällt still (O23) |
 | Merge-Neutralität Relevanzordnung | **26 PASS / 0 FAIL** (vorher 24; B/C/D jetzt echt + 2 Gegenproben) |
 | V3-Anbindung | **56 PASS / 0 FAIL / 2 OFFEN** (vorher 55) |
 | Mandantentrennung Warteschlange | **69 PASS / 0 FAIL** |
@@ -175,6 +180,15 @@ Jede Korrektur wurde einzeln zurückgedreht; der zugehörige Nachweis muss dann 
 | Lease-Deckel entfernen | Verhalten ändert sich nachweisbar (Auftrag läuft 120 000 ms statt 10 000 ms; die Zusage in 12.8 trifft nicht mehr zu) |
 
 **Keine der neuen Prüfungen ist trivial grün.**
+
+**Ehrlichkeitsvorbehalt zum CI-Grün (O21/O23):** `225/225 Suiten grün` im CI schließt den
+Datenbanknachweis **nicht** ein — dort ist kein PostgreSQL erreichbar, `jobqueue-datenbank-test.js`
+überspringt sich mit Exit 0 und wird vom Runner als `PASS` gezählt. Der Datenbankteil ist
+ausschließlich durch die Läufe in §3 und §4 dieses Belegs gedeckt.
+
+Die neue Prüfung 12.8 kostet reale Wartezeit; sie wurde deshalb auf **2 s** verkürzt (Lease 4 000 ms)
+und über **12 Wiederholungen, davon 6 unter künstlicher Fremdlast, 12/12 grün** auf Determinismus
+geprüft — ein flackerndes Pflicht-Gate wäre schlimmer als kein Nachweis.
 
 ---
 

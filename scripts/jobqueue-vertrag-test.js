@@ -655,7 +655,9 @@ async function main() {
       freshnessWindow: "F1", tenantId: "m1", payload: { mandatsId: "m1" },
       dueAt: new Date(u3.jetzt()).toISOString(), priority: 100, maxAttempts: 5 });
     await SP.arbeite({
-      env: AN, owner: "w-lease", budgetMs: 600000, leaseMs: 20000, stapel: 1,
+      // Lease bewusst KLEIN: das Auftragsbudget ist dann 2 000 ms, der Nachweis kostet
+      // zwei Sekunden statt zehn. Das Pflicht-Gate soll nicht an einer Wartezeit haengen.
+      env: AN, owner: "w-lease", budgetMs: 600000, leaseMs: 4000, stapel: 1,
       deps: {
         now: () => Date.now(), claim: q3.claim, finish: q3.finish, extendLease: q3.extendLease,
         zurueckstellen: q3.zurueckstellen,
@@ -665,7 +667,7 @@ async function main() {
     });
     const leaseZeile = q3.alle()[0];
     check("12.8 Ein Auftrag laeuft nie laenger als die halbe Lease (kein Doppellauf)",
-      Boolean(leaseZeile) && /auftrag-zeitlimit \(mandate_projection, 10000 ms\)/.test(String(leaseZeile.last_error)),
+      Boolean(leaseZeile) && /auftrag-zeitlimit \(mandate_projection, 2000 ms\)/.test(String(leaseZeile.last_error)),
       String(leaseZeile && leaseZeile.last_error));
 
     // ── 12.9/12.10 · JEDE Standardabhaengigkeit muss sich wirklich aufloesen ─────────

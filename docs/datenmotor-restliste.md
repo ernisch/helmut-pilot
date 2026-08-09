@@ -1464,7 +1464,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Merge-Neutralitaetsbeweise" waren Tautologien** (sie prueften `selectLageVorgaenge`, das mit
   der Ordnung nichts zu tun hat). Migration → wiederholen → Rollback → wiederholen → erneut
   anwenden: **21 Schritte fehlerfrei** an PostgreSQL 16.13; Mutationsproben zu jeder Korrektur
-  rot. **20 weitere Befunde benannt, aber bewusst nicht geaendert** — darunter: **Mandantenanteil
+  rot. **24 weitere Befunde benannt, aber bewusst nicht geaendert** — darunter: **Mandantenanteil
   und faire Rotation sind gebaut, aber im Produktionspfad nicht verdrahtet** (`scopeMax` ist
   immer `null`), und **`lib/helmut/worker-betrieb.js` ist im Betrieb tot**. Beides ist **vor
   der ersten Aktivierung** zu entscheiden. Kanonischer Beleg:
