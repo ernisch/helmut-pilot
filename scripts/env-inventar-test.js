@@ -63,7 +63,13 @@ for (const file of productiveFiles) {
 // trotzdem im Inventar stehen — die Liste hier haelt den Scanner ehrlich.
 const DYNAMIC_ENV_READS = [
   "HELMUT_SOURCE_BLOCKLIST", "HELMUT_SOURCE_ALLOWLIST",          // sourceSafety.js process.env[name]
-  "HELMUT_SOURCE_MODE", "HELMUT_UNDERSTANDING_GATE", "HELMUT_PARDOK_DISPATCH" // flags.js flagValue(name)
+  "HELMUT_SOURCE_MODE", "HELMUT_UNDERSTANDING_GATE", "HELMUT_PARDOK_DISPATCH", // flags.js flagValue(name)
+  // Abschlussreview 2026-08-08: `lib/helmut/worker-betrieb.js` liest ueber einen eigenen
+  // Helfer (`zahl("NAME", …)` -> `env[name]`). Keines der drei Muster oben sieht das — die
+  // vier Namen fehlten deshalb unbemerkt im Inventar, waehrend der Scanner „vollstaendig"
+  // meldete. Genau dafuer existiert diese Liste.
+  "HELMUT_WORKER_PARALLEL", "HELMUT_WORKER_BUDGET_MS",
+  "HELMUT_WORKER_LEASE_MS", "HELMUT_WORKER_STAPEL"
 ];
 for (const name of DYNAMIC_ENV_READS) envNames.add(name);
 

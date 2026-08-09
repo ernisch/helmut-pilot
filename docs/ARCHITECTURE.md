@@ -1,6 +1,10 @@
 # ARCHITECTURE — Systemkarte Helmut
 
-**Letzte Aktualisierung:** 2026-07-28 (§7d ergänzt: Matching-Auditpersistenz,
+**Letzte Aktualisierung:** 2026-08-08/3 (§7e: V3-Anbindung des Warteschlangenpfads und
+KI-Budgetschicht, beide lokal und DEFAULT AUS); davor 2026-08-08/2 (§7e: Phasenfenster für Projektion und Briefing;
+zuvor am selben Tag §7e ergänzt: skalierbarer Pfad über eine dauerhafte
+Arbeitswarteschlange, OP-30 — **lokal gebaut, Default AUS, in Production weder angewendet noch
+aktiviert**) · davor 2026-07-28 (§7d ergänzt: Matching-Auditpersistenz,
 Roadmap-Punkt 23; Migrationsstand nach Production-Anwendung von
 `20260728_matching_audit` nachgezogen) · **verankert auf `main` @ `b1d450c`**
 
@@ -347,6 +351,95 @@ plus Redeploy. Details:
 
 Kostenwirkung: **null zusätzliche KI-Aufrufe.** Die Schreiblast **sinkt** — ein
 identischer Zweitlauf schrieb bisher 20 wirkungslose UPDATEs, jetzt eines.
+
+### 7e · Skalierbarer Pfad über eine dauerhafte Arbeitswarteschlange (OP-30, DEFAULT AUS)
+
+> **Zustand:** lokal gebaut und getestet. Migration **nicht angewendet**, Flag
+> `HELMUT_SCALABLE_PIPELINE` **nirgends gesetzt**, Worker **nie gelaufen**. Solange das Flag
+> aus ist, ist dieser gesamte Abschnitt für den Betrieb **wirkungslos** — §7a–§7d beschreiben
+> unverändert, was tatsächlich läuft.
+> Kanonisch: [`betrieb/skalierungsgrundlage-1000.md`](betrieb/skalierungsgrundlage-1000.md).
+
+**Warum er existiert.** Der schwere Cron erledigt Planung **und** Verarbeitung in einem
+300-s-Slot. Das begrenzt Helmut auf ~14–15 Mandate (Quellenabruf) bzw. ~16–17 Mandate je Lauf
+(Projektionsbudget) — eine Eigenschaft des Slots, nicht des V3-Motors
+([`betrieb/v3-skalierungspruefung-2026-08-08.md`](betrieb/v3-skalierungspruefung-2026-08-08.md)).
+
+**Was sich ändert — und was ausdrücklich nicht.**
+
+| | bisheriger Pfad | skalierbarer Pfad |
+|---|---|---|
+| Planung und Verarbeitung | in einem Slot | **getrennt** |
+| Unerledigte Arbeit nach dem Slot | verloren, wird neu entdeckt | **bleibt in der Warteschlange** |
+| Quellenmenge | Summe der Profilpläne (dedupliziert über `source.id`, die die Mandats-ID enthält) | **Menge der verschiedenen Abrufdefinitionen** |
+| Verstehen | global, 1× je Vorgang | **unverändert** |
+| Matching / Entscheidungen | deterministisch, 0 KI | **unverändert** |
+| Briefingausgabe | `buildV3Briefing`, 0 KI | **unverändert** |
+
+```
+/api/cron/crawl · /api/cron/pipeline
+  server.js cronSchwererPfad
+    ├─ HELMUT_SCALABLE_PIPELINE aus  → unveränderter Bestandspfad (§7a–§7d)
+    └─ HELMUT_SCALABLE_PIPELINE on   → runCronUeberWarteschlange
+         1. scalable-pipeline.planeArbeit      (billig, KEIN externer Abruf)
+              source-demand.kompiliereQuellenbedarf   ← scheduler.getSourcesForProfile
+              source-demand.planeMandatsarbeit
+              storage.jobQueueEnqueue                  ← helmut_enqueue_job (idempotent)
+         2. scalable-pipeline.arbeite          (teuer, zeitbudgetiert)
+              storage.jobQueueClaim                    ← helmut_claim_jobs
+                                                         (for update skip locked)
+              Handler → crawlAllSources · saveRawItems · persistRawDocumentsShadow
+                        runUnderstandingShadow · runMatchingShadow · runDecisionShadow
+                        buildV3Briefing            ← alles UNVERÄNDERTE Bestandsfunktionen
+              storage.jobQueueFinish                   ← helmut_finish_job (halterge­bunden)
+```
+
+**Datenmodell.** Eine Tabelle, `public.helmut_jobs`, mit vier Aufgabentypen (`source_fetch`,
+`document_understanding`, `mandate_projection`, `briefing_materialization`). Idempotenz über
+`unique(idempotency_key)`; der Schlüssel enthält das **Aktualitätsfenster**, deshalb erzeugt
+wiederholtes Planen im selben Fenster nie einen zweiten Auftrag, ein neues Fenster dagegen
+schon. Reservierung, Lease, Wiederaufnahme, Wiederholungsgrenze und Kennzahlen liegen in
+sechs SQL-Funktionen — die App hält keine Warteschlangenlogik.
+
+**Sicherheit.** RLS aktiviert **und erzwungen**, `anon`/`authenticated`/`PUBLIC` alle Rechte
+entzogen, **keine Policy** (zwei unabhängige Riegel). Keine SECURITY-DEFINER-Funktion;
+`search_path` überall fest. Geteilte Aufträge tragen **keinen** Mandatsbezug (CLAUDE.md §4.2).
+
+**Warum relational und nicht pgmq:** pgmq ist nirgends aktiviert, die Supabase-Version lokal
+nicht feststellbar, und pgmq deckt nur 5 der 14 geforderten Eigenschaften ab (Priorität,
+geplante Fälligkeit, Idempotenz, Rückstandsmessung und Auditierbarkeit fehlen). `for update
+skip locked` ist Kern-Postgres — keine neue Abhängigkeit, kein neuer Dienst.
+
+**Reihenfolge über Fälligkeit, nicht über Hoffnung.** Abruf, Projektion und Briefing sind
+entkoppelt — also muss die Reihenfolge aus der Fälligkeit kommen. Projektion und
+Briefingmaterialisierung liegen deshalb in **Phasenfenstern** des Aktualitätsfensters
+(Projektion ab 50 %, Briefing ab 75 %), innerhalb ihres Abschnitts weiterhin deterministisch
+gestreut. Anlass war ein gemessener Befund: bei Gleichverteilung lag das Briefing von 37 von
+1 000 Mandaten **vor** den eigenen Abrufen.
+
+**Die Kette ist geschlossen (2026-08-08/2).** `source_fetch` reiht nach erfolgreicher
+Persistenz einen `document_understanding`-Auftrag ein — vorher tat das **niemand**, und der
+Pfad endete faktisch beim Rohdokument. Der Auftragsschlüssel ist der **Inhaltsfingerabdruck**
+der Dokumentmenge (`rd-<hash>`), nicht das Aktualitätsfenster: derselbe Artikel erzeugt nie
+einen zweiten Verstehensauftrag. Der Auftrag trägt **nur Kennungen**, keine Inhalte; die
+minimierten Zeilen holt der Handler aus `raw_documents`.
+
+**Vorbedingungen werden geprüft, nicht angenommen.** `helmut_jobs_offen` zählt offene
+Vorbedingungen im selben Fenster; Projektion und Briefing werden über `helmut_defer_job`
+**zurückgestellt** statt dünn gerechnet — und Zurückstellen nimmt den Versuch zurück, damit
+reines Warten keinen gesunden Auftrag in den Fehlertod treibt. Ein **endgültig** gescheiterter
+Abruf zählt nicht als offen: ein Briefing wartet nicht auf etwas, das nie gelingt.
+
+**KI-Budget (`HELMUT_LLM_FAIRNESS`, DEFAULT AUS, zweite unabhängige Flaggrenze).** Ist es an,
+wird vor jedem KI-Aufruf des Pfads eine Reservierung je **beabsichtigtem Ergebnis** gezogen
+(`llm_reservations`, Migration `20260808_llm_budget_fairness.sql`): eine Wiederholung kostet
+nichts, Mandantenanteil und globales Notfalllimit werden in **einem** atomaren Schritt
+geprüft, und die Verteilung ist deterministisch fair (`lib/helmut/llm-budget-fair.js`:
+notwendig vor optional, gleicher Anteil, Rotation ohne Verhungern). Der bestehende globale
+Deckel bleibt unverändert das Notfalllimit — die Schicht kann nur **weniger** zulassen.
+
+**Rückweg:** Flag auf `off`, Redeploy. Der bisherige Pfad läuft unverändert weiter; die
+Tabelle darf stehen bleiben. Die Budgetschicht hat ihren eigenen Rückweg über das zweite Flag.
 
 ## 8 · Briefing, Lage, Radar, Büro
 

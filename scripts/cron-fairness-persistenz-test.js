@@ -522,8 +522,13 @@ function laufGegenAblage(storage, zeile, { cronName, tenantIds, runId, startedMs
       check("Die Reihenfolgelogik ist unangetastet (planTenantOrder unveraendert sortiert)",
         /if \(a\.nieVersucht !== b\.nieVersucht\) return a\.nieVersucht \? -1 : 1;/.test(fairnessQuelle)
         && /if \(a\.los !== b\.los\) return a\.los - b\.los;/.test(fairnessQuelle));
-      check("Keine neue Migration",
-        !fs.readdirSync(path.join(ROOT, "supabase", "migrations")).some((f) => /fairness|cron_|rev/i.test(f)));
+      // PRAEZISIERT (2026-08-08), gleicher Anlass wie in cron-fairness-test.js: der
+      // Waechter meint die Cron-/Mandantenrotation, nicht jedes Wort "fairness".
+      check("Keine neue Migration (Cron-/Mandantenrotation)",
+        !fs.readdirSync(path.join(ROOT, "supabase", "migrations"))
+          .some((f) => /cron[_-]?fairness|cron_tenant|tenant_schedule|scheduler/i.test(f)),
+        fs.readdirSync(path.join(ROOT, "supabase", "migrations"))
+          .filter((f) => /cron[_-]?fairness|cron_tenant|tenant_schedule|scheduler/i.test(f)).join(", "));
       check("Kein Feature-Flag wird gesetzt oder scharfgeschaltet",
         !/HELMUT_CRON_GLOBALPHASE\s*=/.test(fairnessQuelle) && !/process\.env\.HELMUT_CRON_GLOBALPHASE\s*=/.test(serverQuelle));
       check("Die Protokollzeile weist die Gegenprobe aus",

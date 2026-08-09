@@ -20,6 +20,9 @@ const cronFairness = require("./lib/helmut/cron-fairness");
 // OP-25 K1 (Schattenpfad, DEFAULT AUS): Trennung von globaler Erfassung und
 // mandatsbezogener Projektion. Ohne HELMUT_CRON_GLOBALPHASE wird davon nichts betreten.
 const cronGlobalphase = require("./lib/helmut/cron-globalphase");
+// OP-30: skalierbarer Pfad (Arbeitswarteschlange). DEFAULT AUS — ohne
+// HELMUT_SCALABLE_PIPELINE wird von hier nichts betreten.
+const scalablePipeline = require("./lib/helmut/scalable-pipeline");
 
 // P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
 // (Cron-Understanding, Briefing-Aufbau). Reine technische Metadaten, nie PII.
@@ -922,6 +925,25 @@ async function handleRequest(request, response) {
   // Frage "wurde der Lauf serverseitig abgeschlossen?" OHNE die Pipeline erneut
   // anzustossen. 0 Writes, 0 KI; nur whitelisted Zaehlerfelder (keine Rohdaten).
   // Autorisierung: dasselbe CRON_SECRET, das der Watchdog bereits besitzt.
+  // OP-30 — REIN LESENDER Betriebsstatus der Arbeitswarteschlange.
+  // KEINE neue Benutzeroberflaeche (Auftrag §11): eine serverseitige Funktion mit
+  // strukturierter, testbarer Ausgabe. 0 Writes, 0 KI, keine Nutzdaten — nur Zaehler,
+  // Zeitspannen und der Flagzustand. Autorisierung: dasselbe CRON_SECRET wie die uebrigen
+  // Betriebsendpunkte (fail closed, siehe authorizeCron).
+  if (url.pathname === "/api/ops/jobqueue") {
+    if (!authorizeCron(request, url, response)) return;
+    return handleAsync(response, async () => {
+      const seit = Math.max(1, Math.min(10080, Number(url.searchParams.get("seitMinuten")) || 1440));
+      const status = await scalablePipeline.betriebsstatus({ seitMinuten: seit });
+      return {
+        // Der Flagzustand steht IMMER dabei: ein "gruener" Status bei ausgeschaltetem Flag
+        // bedeutet nur "niemand arbeitet", nicht "alles in Ordnung".
+        pfadAktiv: scalablePipeline.skalierbarerPfadAktiv(),
+        ...status
+      };
+    });
+  }
+
   if (url.pathname === "/api/cron/pipeline-status") {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
@@ -4764,7 +4786,11 @@ async function buildSourceArchitectureReport(mandateProfiles = []) {
 const HELMUT_CONFIG_DIAGNOSE_WHITELIST = Object.freeze([
   Object.freeze({ name: "HELMUT_UNDERSTANDING_GATE", codeDefault: "off — Gate wird nie aufgerufen" }),
   Object.freeze({ name: "HELMUT_PARDOK_DISPATCH", codeDefault: "off — 0 Items (inert)" }),
-  Object.freeze({ name: "HELMUT_MAX_LLM_CALLS_PER_DAY", codeDefault: "unbegrenzt (Infinity)" }),
+  // KORREKTUR 2026-08-08 (OP-30): hier stand "unbegrenzt (Infinity)". Das war seit dem
+  // Budget-Rollout falsch und in einer Kostenanzeige die gefaehrlichste Richtung des Irrtums:
+  // der Code faellt NICHT auf "kein Limit" zurueck, sondern fail-closed auf das Schutzlimit
+  // (storage.js LLM_LIMIT_FALLBACK = 50).
+  Object.freeze({ name: "HELMUT_MAX_LLM_CALLS_PER_DAY", codeDefault: "50 — Schutzlimit, fail-closed (nicht unbegrenzt)" }),
   Object.freeze({ name: "HELMUT_V3_STORE", codeDefault: "aus — V3-Read/Understanding inaktiv" }),
   Object.freeze({ name: "HELMUT_SCORING_MODE", codeDefault: "off — Alt-Ranking byte-identisch" }),
   Object.freeze({ name: "HELMUT_V3_SHADOW_COMPARE", codeDefault: "aus — live nicht verdrahtet" }),
@@ -6396,6 +6422,16 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, run
 // Sind BEIDE Flaggen gesetzt, gewinnt der Altpfad — eine widerspruechliche Konfiguration darf
 // nie stillschweigend einen Schattenpfad scharf schalten.
 function cronSchwererPfad(cronName, { deadlineMs, runId, startedMs }) {
+  // ═══ OP-30: SKALIERBARER PFAD, DEFAULT AUS ═══════════════════════════════════════════════
+  // Ohne `HELMUT_SCALABLE_PIPELINE` ist dieser Block ein reiner No-Op: eine Flagabfrage ohne
+  // IO, ohne Zustand, ohne zusaetzliche Abfrage. Der gesamte Rest der Funktion ist unveraendert.
+  //
+  // KEINE DOPPELTE EXTERNE ARBEIT: die Rueckkehr ist ein `return` — ist das Flag an, laeuft
+  // AUSSCHLIESSLICH die Warteschlange und KEINE der bisherigen Verzweigungen. Es gibt keine
+  // Konstellation, in der beide Pfade dieselbe Quelle abrufen.
+  if (scalablePipeline.skalierbarerPfadAktiv()) {
+    return runCronUeberWarteschlange(cronName, { deadlineMs, runId, startedMs });
+  }
   const wahl = cronGlobalphase.waehleCronPfad();
   if (wahl.widerspruch) {
     console.error(`[cron/${cronName}/pfadwahl] HELMUT_CRON_GLOBALPHASE UND HELMUT_CRON_GLOBALABRUF`
@@ -6408,6 +6444,68 @@ function cronSchwererPfad(cronName, { deadlineMs, runId, startedMs }) {
     deadlineMs, runId, startedMs,
     buendelung: wahl.pfad === "kontext" ? "kontext" : "global"
   });
+}
+
+// OP-30 — SCHWERER CRON UEBER DIE ARBEITSWARTESCHLANGE.
+// Er aendert WEDER Cron-Zeiten NOCH Zeitbudgets: derselbe Slot, dasselbe `deadlineMs`. Was
+// sich aendert, ist die Aufteilung INNERHALB des Slots:
+//   1. PLANEN (billig, kein externer Abruf) — der Bedarf aller aktiven Mandate wird
+//      kompiliert und idempotent eingereiht. Das ist der Schritt, der nicht mehr an der
+//      Mandatszahl scheitert: er macht kein IO je Mandat ausser dem Quellenplan.
+//   2. ARBEITEN (teuer) — bis das Zeitbudget aufgebraucht ist. Was nicht mehr passt, bleibt
+//      in der Warteschlange und wird vom naechsten Slot oder einem parallelen Worker geholt.
+//      GENAU DAS ist der Unterschied zum Bestandspfad: dort war unerledigte Arbeit nach dem
+//      Slot verloren und musste im naechsten Lauf neu entdeckt werden.
+async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId = null, startedMs = null } = {}) {
+  const start = Number(startedMs) || Date.now();
+  const laufkennung = runId || helmutRunId(`cron-${cronName}`, start);
+  const verbleibend = () => Math.max(0, deadlineMs - (Date.now() - start));
+
+  // PLANUNGSANTEIL: gedeckelt, damit eine langsame Profil-/Quellenabfrage nie den gesamten
+  // Slot frisst. Reicht die Zeit nicht, wird EHRLICH gemeldet und trotzdem gearbeitet —
+  // die Warteschlange traegt ja bereits Auftraege aus frueheren Laeufen.
+  const planBudgetMs = Math.min(60000, Math.floor(deadlineMs * 0.25));
+  const plan = await withTimeout(
+    scalablePipeline.planeArbeit({ jetztMs: start }),
+    planBudgetMs,
+    `cron-${cronName}-planung`
+  ).catch((error) => ({ ok: false, grund: "planung-timeout", fehler: error && error.message, geplant: 0, neu: 0 }));
+
+  const bilanz = await scalablePipeline.arbeite({
+    owner: `${laufkennung}`,
+    // Abschlussreserve wie in der globalen Phase (K8): der letzte Auftrag darf nicht mitten
+    // im Abschlussschreiben in das aeussere Zeitlimit laufen.
+    budgetMs: Math.max(0, verbleibend() - 10000),
+    leaseMs: 300000,
+    stapel: Math.max(1, Number(process.env.HELMUT_WORKER_BATCH) || 10),
+    // BELEGTER FEHLER (Abschlussreview 2026-08-08): der Worker holte `buildV3Briefing` aus
+    // `lib/helmut/briefingContract.js`, wo dieser Name nicht existiert — die Funktion steht
+    // hier in `server.js`. Jeder Briefingauftrag scheiterte deshalb mit
+    // `require(...)[name] is not a function`. Sie wird jetzt eingereicht, statt sie zu
+    // suchen; verschoben wird nichts (kein Umbau bestehender V3-Logik).
+    deps: { buildV3Briefing }
+  });
+
+  const status = await scalablePipeline.betriebsstatus({ seitMinuten: 1440 }).catch(() => null);
+
+  console.log(`[cron/${cronName}/warteschlange] ${Date.now() - start}ms`
+    + ` geplant=${plan && plan.geplant} neu=${plan && plan.neu}`
+    + ` erledigt=${bilanz.erledigt} wiederholt=${bilanz.wiederholt}`
+    + ` endgueltigFehler=${bilanz.endgueltigFehlgeschlagen}`
+    + ` zustand=${(status && status.zustand) || "unbekannt"} lauf=${laufkennung}`);
+
+  // EHRLICHER GESAMTAUSGANG (CLAUDE.md §4.4): ein Lauf ist nur dann ok, wenn geplant UND
+  // gearbeitet werden konnte. Eine nicht erreichbare Warteschlange ist kein stiller Erfolg.
+  return {
+    ok: Boolean(plan && plan.ok !== false) && bilanz.verfuegbar !== false,
+    pfad: "warteschlange",
+    tenants: (plan && plan.profile) || 0,
+    durationMs: Date.now() - start,
+    lauf: { laufId: laufkennung },
+    planung: plan,
+    verarbeitung: bilanz,
+    betrieb: status
+  };
 }
 
 // Der neue Ablauf. Er aendert WEDER Cron-Zeiten NOCH Zeitbudgets: `deadlineMs` ist unveraendert

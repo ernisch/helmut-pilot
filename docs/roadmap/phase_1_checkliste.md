@@ -103,7 +103,7 @@ Eintrag `d9006c1` / Merge #182 war der Stand vom 2026-07-30) ·
 | 6 | Quellenpakete | Berlin Basis Paket vorhanden | ⏳ | Berliner Pflichtversorgung ist als Paket angelegt | **Klassenabdeckung korrigiert (Punkt-13-Sprint): 12 von 12 neutralen Pflichtklassen besetzt** — die frühere Lücke (10/15) war ein Artefakt der Id-Namensableitung, gemessen an `covers` deckt Berlin alle 12 Klassen mit 7 Wegen ab ([Vollständigkeitsnachweis §3.1](../quellenarchitektur/31-paketvollstaendigkeit.md)). Bleibt ⏳, weil das Paket in **Production** weiterhin **nicht mandantenneutral** ist (A-3): auf `main` seit #118 behoben, in der Datenbank erst nach dem freigabepflichtigen Seed-Einspielen |
 | 7 | Quellenpakete | Brandenburg Basis Paket vorhanden | ⏳ | Brandenburger Pflichtversorgung ist als Paket angelegt | **Klassenabdeckung korrigiert: 12 von 12 neutralen Pflichtklassen besetzt** (8 Wege, parldok-XML deckt 4 Klassen). Bleibt ⏳ wegen derselben Neutralitätslücke A-3 in der Datenbank. Das optionale `die-linke-brandenburg` besetzt 1 von 3 Klassen — die beiden anderen existieren in der 8. Wahlperiode **fachlich nicht** (keine Landtagsfraktion, kein MdL der Partei) und sind als solche ausgewiesen, nicht als offene Arbeit |
 | 8 | Profil | Technische Profilzuordnung zu Paketen vorhanden | ✅ | Profile können Pakete nach Ebene, Region und Themen erhalten | `resolveProfilePackages` ist über `buildRelationalCrawlPlan` in den Live-Crawl verdrahtet; 147/147 Tests, inkl. der Landes-Parteipakete aus #118 ([Inventur §6](../quellenarchitektur/30-paket-inventur-production.md)) |
-| 9 | Betrieb | KI Tagesdeckel gelöst | ✅ | Das frühere zu niedrige Tageslimit blockiert den Betrieb nicht mehr | Deckel 100 + Reserve 30, fail-closed, atomar (`CURRENT_STATE.md` §2). In diesem Sprint nicht erneut geprüft |
+| 9 | Betrieb | KI Tagesdeckel gelöst | ✅ | Das frühere zu niedrige Tageslimit blockiert den Betrieb nicht mehr | Deckel 100 + Reserve 30, fail-closed, atomar. **Korrektur 2026-08-08 (Abschlussreview PR #233):** „100" ist eine Runbook-Empfehlung, **kein belegter Wert** — der Code fällt fail-closed auf **50** zurück (`storage.js` `LLM_LIMIT_FALLBACK`), und der in Production wirksame Wert ist offline nicht lesbar. Siehe §145 derselben Datei. In diesem Sprint nicht erneut geprüft |
 | 10 | Qualität | Grundlage für Quellenüberwachung vorhanden | ✅ | Zustand, Ertrag und Fehler können grundsätzlich überwacht werden | `source_crawl_telemetry` 10 402 Zeilen / 85 Läufe, Ertrag und Fehlercodes je Abrufweg messbar |
 | 11 | Datenmotor | Gesamte Verarbeitungskette technisch gebaut | ✅ | Quelle bis Briefing ist technisch vorhanden | Crawl → `raw_documents` (8 472) → `document_findings` (4 857) → Understanding → Briefing läuft täglich |
 | 12 | Profil | Automatische Paketzuweisung in Production beweisen | ✅ | Ein neues Profil erhält ohne Codeänderung automatisch alle richtigen Pakete | **Dieser Sprint.** Drei Testprofile (Bund/Berlin/Brandenburg) durch den produktiven Resolver gegen den echten Production-Katalog, rein lesend; 6 Bestandsprofile korrekt zugeordnet; 147/147 Offline-Tests ([Inventur §6](../quellenarchitektur/30-paket-inventur-production.md)). **Grenze:** die Zuweisung steuert die **globale Aktivierung** (was überhaupt gecrawlt wird), nicht die Auslieferung je Mandat — die inhaltliche Trennung ist Punkt 28 |
@@ -125,6 +125,55 @@ Eintrag `d9006c1` / Merge #182 war der Stand vom 2026-07-30) ·
 | 28 | Tests | Inhaltliche Trennung Bund, Berlin und Brandenburg beweisen | ☐ | Die drei Profile erhalten nachweisbar unterschiedliche und passende Inhalte | blockiert durch Punkte 14/15. Zusätzlich offen: im Modus `on` crawlen alle Mandate **eine** gemeinsame Vereinigungsmenge; die Trennung entsteht erst im Matching und ist nicht belegt |
 | 29 | Betrieb | Fehlerpfade und Wiederholungen prüfen | ⏳ | Timeouts, Limits, fehlerhafte Inhalte und Wiederholungen funktionieren kontrolliert | **Sprint 29A (2026-07-30): geschnitten in 29A (deterministischer Belastungs- und Fehlervertrag, Repository) + 29B (rein lesender Production-Nachweis an regulären Läufen). 29A erfüllt.** Deterministischer Fehlervertrag `scripts/punkt29-fehlervertrag-test.js` (**79/79**, 3 Läufe identisch, mit und ohne Production-Secrets; Mutationsprobe `scripts/punkt29-mutationsprobe.js` **12/12 rot** — alle 12 Pflichtmutationen, jede gegen Produktionsdateien) gegen die **echten Produktionsfunktionen**: Cron-Fairness (Deadline vor Beginn/je Mandat, Reserve, Sperrverweigerung, Fehlerisolation), Understanding (Zeitbudget/Vormerk-Deadline/Ergebnisklassen/Telemetrie-Gruppen/Nachholpfad), Rohdokument-Vertrag (Deckelung, kaputte Zeitstempel/Kodierung), Circuit Breaker + Abkühlzeit + A-7-Zählvertrag (`circuit-open` ≠ Quellenfehler, `aggregator-gedrosselt`, echter Totalausfall bleibt `fehlgeschlagen`), Matching-Audit (Sperre, Fingerabdruck-Idempotenz, Publish-Abbruch ohne Verlust der alten Generation), Entscheidungen, Lage-Störungspfad, begrenzte Heilung (ko-recovery). Alle 15 Pflichtkonstellationen, Fehlerklassen A–F, Wiederaufnahme ohne fachliche Duplikate, Mandantentrennung inkl. Audit-Guard. **Vier echte Produktionsfehler GEFUNDEN — in PR #188 (Fix-Sprint) BEHOBEN und offline belegt (Befundproben 4/4, Exit 0; Fix-Regressionssuite 40/40, Fix-Mutationsprobe 7/7 rot; kanonisch [`punkt-29-fixsprint.md`](punkt-29-fixsprint.md)). Der 29A-Vertrag fordert seither das korrigierte Verhalten (B9/C9/D9 umgestellt, neuer Fall C9b für die Fehlerisolation je Cluster; jetzt 80/80 bei 12/12 Mutationen).** Befundbeschreibung (Zustand vor dem Fix): **P29-1** Fairness verbucht von den Cron-Routen **zurückgegebene** Timeout-/Fehlerobjekte als Erfolg (erfundener letzter Erfolg, Fehlerserie zurückgesetzt; Rotation selbst korrekt) · **P29-2** KI-Rückgabewert `null` endet als `cluster-error` ohne failed-Parkung (unbegrenzter Retry im Nachholpfad) · **P29-3** gescheiterte Aktualisierung wird beim identischen Neustart `duplicate` (Update unterbleibt dauerhaft unsichtbar) · **P29-4** ein Lesefehler beim Existenz-Check kann ein fertiges Wissensobjekt per pending-Upsert zurückstufen. Deterministisch reproduziert: `scripts/punkt29-befundproben.js` (**4/4 rot, erwartungsgemäß** — Abnahmewerkzeug der getrennten, freigabepflichtigen Fix-Sprints); heutiges Verhalten im Vertrag gepinnt (B9/C9/D9). Bestandsbelege wiederverwendet statt dupliziert (u. a. `cron-fairness` inkl. eigener 10/10-Mutationsprobe, `crawler-hardening`, `incident-crawl-amplifikation`, `google-news-hardening`, `source-failure`, `llm-reservation`, `matching-audit`, `stoerungswahrheit`, `werkzeug-lesefehler`, `prozesslauf-telemetrie`, Pilot-25A-Störfall). **Nicht grün, weil** (a) 29B offen ist (rein lesend, natürlich auftretende Fehlerzustände — künstliche Fehler in Production sind verboten, `betrieb/quellenstoerungen.md` §11) — das ist seit dem Fix-PR der EINZIGE verbleibende Grund; der frühere Grund (b) „vier belegte Fehlerpfad-Befunde offen“ ist mit PR #188 erledigt. Befund A-7 gehört weiterhin hierher und zu OP-15; die OP-25-Teilvorleistung (faire Rotation, offline belegt) bleibt unverändert, ihr **Production-Nachweis offen** (fließt in 29B ein, getrennt bewertet). Kanonisch: [`punkt-29-fehlervertrag.md`](punkt-29-fehlervertrag.md) · OP-25: [`../betrieb/cron-fairness.md`](../betrieb/cron-fairness.md) |
 | 30 | Abnahme | Phase 1 offiziell abnehmen | ☐ | Der gesamte Datenmotor arbeitet automatisch, stabil und ohne manuelle Eingriffe | erst nach 1–29 |
+
+> **Nachtrag 2026-08-08 — Kapazität (OP-30 der Restliste, NICHT Zeile 30 dieser Checkliste).**
+> Die V3-Skalierungsprüfung hat belegt: der heutige schwere Cronlauf trägt **~14–15 Mandate**
+> (Quellenabruf) bzw. **~16–17 Mandate je Lauf** (Projektionsbudget). Für den Einzelpiloten
+> und einen kontrollierten Zweitkunden ist das **kein** Blocker; ab etwa zehn Mandaten schon.
+> Der Sprint „Skalierungsgrundlage 1000" hat dafür **lokal** eine dauerhafte
+> Arbeitswarteschlange gebaut (Flag `HELMUT_SCALABLE_PIPELINE`, **Default AUS**, Migration
+> **nicht angewendet**). **Keine Zeile dieser Checkliste ändert sich dadurch** — die Punkte
+> 1–29 messen Funktionsreife, nicht Kapazität, und der aktive Productionpfad ist unverändert.
+> Kanonisch: [`../betrieb/skalierungsgrundlage-1000.md`](../betrieb/skalierungsgrundlage-1000.md)
+> und [`../betrieb/v3-skalierungspruefung-2026-08-08.md`](../betrieb/v3-skalierungspruefung-2026-08-08.md).
+>
+> **Nachtrag 2026-08-08/2 — finaler lokaler Abnahmesprint** ([`../betrieb/op30-abnahme-2026-08-08.md`](../betrieb/op30-abnahme-2026-08-08.md)):
+> die Skalierungsarbeit ist lokal abgenommen (Rechengrundlage 5/200/1000, Relevanzordnung,
+> Workerbetrieb, Bereinigung, Flagmatrix, Migrationen). **An dieser Checkliste ändert sich
+> weiterhin keine Zeile.** Zwei Dinge sind aber für die Abnahme wichtig: es gibt **10 echte
+> Mandatsprofile, nicht 200** (Lücke 190, eine Beschaffungsaufgabe), und der wirksame
+> KI-Tagesdeckel ist **offline nicht lesbar** — der Code-Standard ist fail-closed **50**.
+> Dieser Sprint erklärt Helmut **nicht** insgesamt SaaS-bereit.
+>
+> **Nachtrag 2026-08-08/3 — Korrektur- und Abnahmesprint**
+> ([`../betrieb/skalierung-200-mandate.md`](../betrieb/skalierung-200-mandate.md)):
+> **200 Mandate sind lokal innerhalb eines simulierten Tages bewiesen** (letzte Pflichtarbeit
+> **21:38:00**). **An dieser Checkliste ändert sich weiterhin keine Zeile.** Drei Dinge für die
+> Abnahme: der heutige Deckel trägt 200 Mandate **nicht** (Bedarf 1 645/Tag), es fehlen
+> **190 echte Profile**, und `HELMUT_RELEVANZORDNUNG` ist seit diesem Sprint **default AUS** —
+> ein Merge verändert das Verhalten damit nachweislich nicht.
+>
+> **Verwechslungsgefahr:** „Punkt 30" hier ist die Phase-1-Abnahme. **OP-30** der
+> [`../datenmotor-restliste.md`](../datenmotor-restliste.md) ist ein anderer Punkt.
+>
+> **Nachtrag 2026-08-08/2 — lokaler Nachweissprint.** Belastungstest und Kapazitätsmessung
+> gegen einen echten PostgreSQL zeigen: die neue Warteschlange trägt den Tagesbedarf von
+> 1 000 Mandaten mit **einem** Worker (Auslastung ≈ 0,02 %) und verliert bei einem harten
+> Workerabsturz **keinen** Auftrag. **Die Warteschlange ist damit nicht der Engpass.** Die
+> erste echte Wand bei 1 000 Mandaten ist der **globale KI-Deckel**
+> (`HELMUT_MAX_LLM_CALLS_PER_DAY` = 100/Tag) — das gehört zu **OP-03**, nicht hierher. Nach
+> wie vor gilt: **keine Zeile dieser Checkliste ändert sich**, es gibt **keinen**
+> Production-Nachweis, und Netz- und KI-Laufzeit sind in allen Messungen Attrappen.
+>
+> **Nachtrag 2026-08-08/3 — V3-Anbindung.** Der Warteschlangenpfad ist jetzt lokal
+> **vollständig** an V3 angebunden (Abruf → Verstehen → Matching → Projektion → Entscheidung
+> → Briefing); bis dahin endete er beim Rohdokument. Zusätzlich gebaut, aber **nicht
+> aktiviert**: eine faire, atomar durchgesetzte KI-Budgetschicht (`HELMUT_LLM_FAIRNESS`,
+> Default AUS). Auch das ändert **keine** Zeile dieser Checkliste — sie misst Funktionsreife,
+> nicht Kapazität, und der aktive Productionpfad bleibt unverändert. **Neu belegt und für die
+> Abnahme relevant:** der Bedarf von 1 000 Mandaten liegt rechnerisch bei ≈ 12 000 KI-Aufrufen
+> pro Tag, davon 91 % global — der heutige Deckel von 100 trägt nicht einmal den globalen
+> Sockel. Das ist ein **OP-03-Thema**, kein Punkt dieser Liste.
 
 ---
 

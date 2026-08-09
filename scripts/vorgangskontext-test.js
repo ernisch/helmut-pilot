@@ -558,8 +558,47 @@ const ALLE_FAMILIEN = [...G.FAMILIEN, ...G.ZUSATZFAMILIEN];
     check("8.7 keine Cron-Zeit veraendert",
       (vercel.crons || []).find((c) => c.path === "/api/cron/crawl").schedule === "0 4 * * *"
       && (vercel.crons || []).find((c) => c.path === "/api/cron/pipeline").schedule === "0 16 * * *");
-    check("8.8 keine Migration in diesem Sprint",
-      !fs.readdirSync(path.join(ROOT, "supabase", "migrations")).some((f) => /2026073|202608/.test(f)));
+    // 8.8 sagt zu: DER K2.1-SPRINT hat keine Migration mitgebracht. Die urspruengliche
+    // Fassung prueft das ueber das DATUM (`/2026073|202608/`) und wuerde damit jede spaetere
+    // Migration eines FREMDEN Sprints faelschlich als K2.1-Verstoss melden — sie ist an den
+    // Kalender gebunden, nicht an den Gegenstand. Belegt aufgefallen am 2026-08-08 durch
+    // 20260808_scalable_job_queue.sql (OP-30, eigener Sprint, eigener Freigabeweg).
+    // Die Zusage bleibt vollstaendig erhalten und wird zusaetzlich VERSCHAERFT: keine
+    // Migration darf den Kontextpfad ueberhaupt beruehren.
+    {
+      const FREMDE_SPRINTS = new Set([
+        // OP-30, Sprint "Skalierungsgrundlage 1000" — legt ausschliesslich public.helmut_jobs
+        // an, fasst keine K2.1-Struktur an (eigener Nachweis: scalable-pipeline-flag-test.js §6).
+        "20260808_scalable_job_queue.sql",
+        "20260808_scalable_job_queue_rollback.sql",
+        // OP-30, Sprint "V3-Anbindung": zaehlt offene Vorbedingungen der eigenen
+        // Warteschlangentabelle und stellt Auftraege zurueck. Keine K2.1-Struktur.
+        "20260808_jobqueue_abhaengigkeiten.sql",
+        "20260808_jobqueue_abhaengigkeiten_rollback.sql",
+        // OP-30, Sprint "V3-Anbindung": ergebnisbezogene KI-Budgetreservierung.
+        // Beruehrt nur llm_reservations/llm_budget_counters, keine K2.1-Struktur.
+        "20260808_llm_budget_fairness.sql",
+        "20260808_llm_budget_fairness_rollback.sql",
+        // OP-30, finaler Abnahmesprint: sichere Bereinigung der eigenen Warteschlangentabelle
+        // (Vorschau + Trockenlauf + stapelweises Loeschen). Beruehrt ausschliesslich
+        // public.helmut_jobs, keine K2.1-Struktur. Eigener Nachweis:
+        // scripts/jobqueue-bereinigung-test.js §12 (Rollback laesst helmut_jobs unberuehrt).
+        "20260808_jobqueue_bereinigung.sql",
+        "20260808_jobqueue_bereinigung_rollback.sql"
+      ]);
+      // Die Allowlist ist KEINE Abschwaechung: 8.8b prueft unabhaengig und INHALTLICH,
+      // dass keine Migration im Repository den Kontextpfad beruehrt — auch keine der
+      // hier zugelassenen.
+      const migrationen = fs.readdirSync(path.join(ROOT, "supabase", "migrations"));
+      check("8.8a der K2.1-Sprint selbst hat keine Migration mitgebracht",
+        !migrationen.filter((f) => !FREMDE_SPRINTS.has(f)).some((f) => /2026073|202608/.test(f)),
+        migrationen.filter((f) => !FREMDE_SPRINTS.has(f)).filter((f) => /2026073|202608/.test(f)).join(", "));
+      check("8.8b KEINE Migration im Repository beruehrt den Kontextpfad",
+        migrationen.every((f) => !/vorgangskontext|buendelung|kontextpfad|sichtbarkeitsmenge/i
+          .test(fs.readFileSync(path.join(ROOT, "supabase", "migrations", f), "utf8"))),
+        migrationen.filter((f) => /vorgangskontext|buendelung|kontextpfad/i
+          .test(fs.readFileSync(path.join(ROOT, "supabase", "migrations", f), "utf8"))).join(", "));
+    }
     check("8.9 keine Warteschlange, keine neue Infrastruktur, keine neue laufende Kostenquelle",
       !/queue|kafka|redis|sqs|rabbit/i.test(kSrc));
     check("8.10 das Modul ist rein und IO-frei (kein require von storage/ai/netz)",
