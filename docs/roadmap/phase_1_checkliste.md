@@ -179,6 +179,17 @@ Eintrag `d9006c1` / Merge #182 war der Stand vom 2026-07-30) ·
 > (Betreiberentscheidung). **An dieser Checkliste ändert sich weiterhin keine Zeile.** Beleg:
 > [`../betrieb/op30-e1-abschlussreview-2026-08-09.md`](../betrieb/op30-e1-abschlussreview-2026-08-09.md).
 >
+> **Nachtrag 2026-08-09/3 — Kapazität der Morgenlage gelöst und gemessen (PR offen).**
+> Die Zahlen des Nachtrags 2026-08-09/2 (par 2 ~14 · par 4 ~52 · par 8 ~127) sind durch eine
+> **slotgenaue** Messung ersetzt: par 2 ~39 · par 4 ~88 · par 8 ~179 Narrative je Morgenslot.
+> Die Aussage „ein Morgenslot trägt 200 nicht" bleibt richtig — die heutige Verdrahtung
+> schafft **39 von 200**. Mit Parallelität 8, Slotbudget 270 s und **drei** Morgenslots
+> (05:45 / 06:10 / 06:22 UTC) werden **200 von 200** im Morgenfenster fertig, bei **59,6 %
+> Kapazitätsreserve**; zusätzlich ist der geerbte Befund **R4** (ein KI-Aufruf zählte zweimal
+> gegen den Tagesdeckel) behoben. Alles bleibt hinter geschlossenen Flags, keine Migration ist
+> angewendet. **An dieser Checkliste ändert sich weiterhin keine Zeile.** Beleg:
+> [`../betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](../betrieb/op30-kapazitaet-morgenslots-2026-08-09.md).
+>
 > **Verwechslungsgefahr:** „Punkt 30" hier ist die Phase-1-Abnahme. **OP-30** der
 > [`../datenmotor-restliste.md`](../datenmotor-restliste.md) ist ein anderer Punkt.
 >
