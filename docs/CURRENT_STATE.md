@@ -244,8 +244,11 @@ K2.1-Sichtbarkeitsmengen und die Laufzeitbilanz ⇒ **OP-25 muss danach von vorn
   unverändert dokumentiert. **Geltung: nur die aktuelle Architektur mit 5 Mandaten —
   beweist weder OP-30 noch 200 Mandate; nach OP-30-Aktivierung vollständige Wiederholung
   erforderlich.** OP-14 (Verstehensrückstand) bleibt ausdrücklich offen.
-- **F-E2E** (nichtdeterministische E2E-Rangfolge im CI, belegt 2026-08-04) — Ursache offen;
-  PR #224 (Draft) liegt vor, nicht abgenommen.
+- **F-E2E** (nichtdeterministische E2E-Rangfolge, belegt 2026-08-04) — Ursache offen;
+  PR #224 (Draft) liegt vor, nicht abgenommen. **Nachtrag Abschlussreview 2026-08-08:** die
+  Nachbesserung am Testgerüst in PR #233 (ein Stapelzeitstempel) **verkleinert** das Flackern,
+  beseitigt es aber nicht — J8 fiel in 1 von 6 vollständigen Offline-Läufen
+  (`brandenburg-e2e-vertrag-test.js`); 12 Einzelläufe auf dem Branch und 8 auf `main` grün.
 - **29B** — wartet auf natürlich auftretende Fehlerzustände (künstliche Fehler verboten).
 - **27A-2-Abnahme** — Wiederholungsmessung nach Deployment.
 - **OP-09/OP-10** (Lock-Deny/Fehlerpfad) — brauchen ein echtes Störereignis.

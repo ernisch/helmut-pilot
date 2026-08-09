@@ -205,6 +205,36 @@ geprüft — ein flackerndes Pflicht-Gate wäre schlimmer als kein Nachweis.
 
 ---
 
+
+## 4a · Ein Nachweis, der weiterhin flackert — F-E2E ist **nicht** erledigt
+
+Im **sechsten** vollständigen Offline-Lauf dieses Reviews fiel
+`brandenburg-e2e-vertrag-test.js` **J8** („Rangfolge: der relevante Brandenburger Vorgang
+steht vor Kontroll- und Fremdfällen"). Das ist der dokumentierte offene Befund **F-E2E**
+([`../CURRENT_STATE.md`](../CURRENT_STATE.md) §9; Entwurf PR #224), nicht eine Regression:
+
+| Prüfung | Ergebnis |
+|---|---|
+| Berührt der Test eines der von mir geänderten Module? | **nein** — kein `scalable-pipeline`, `relevanzordnung`, `jobqueue`, `source-demand`, `llm-budget-fair` |
+| Habe ich `brandenburg-e2e-vertrag-test.js`, `e2e-vertrag-geruest.js`, `matching.js` oder `scoring.js` geändert? | **nein** (Kommentarkorrektur unten kam **danach**) |
+| Einzelläufe auf diesem Branch, davon 6 unter Fremdlast | **12 / 12 grün** |
+| Einzelläufe auf unverändertem `origin/main` unter Fremdlast | **8 / 8 grün** |
+| CI | grün |
+
+**Was der PR hier zu viel behauptet.** Der Kommentar in `scripts/e2e-vertrag-geruest.js`
+sagte, der Lesepfad ordne „jetzt `order=created_at.desc,id.desc`". Das ist **nicht** so:
+`storage.listMatchingResults` sendet unverändert nur `&order=created_at.desc`, und derselbe
+PR begründet in `storage.js` ausdrücklich, warum er das **nicht** ändert. Der Kommentar
+behauptete also eine Korrektur am Production-Lesepfad, die es nicht gibt (Befund O26,
+hier direkt gegengeprüft). Er ist berichtigt.
+
+**Und der Nichtdeterminismus ist nur verkleinert, nicht beseitigt:** der eine
+Stapelzeitstempel stabilisiert die Reihenfolge **innerhalb** eines Stapels. Schreibt der
+Matcher in **mehreren** Stapeln über eine Millisekundengrenze, kippt J8 weiterhin — genau
+das ist passiert. **F-E2E bleibt offen.**
+
+---
+
 ## 5 · Vergleich mit `origin/main`
 
 Die lokal roten Suiten wurden in einem **separaten Arbeitsbaum** auf unverändertem
