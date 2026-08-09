@@ -178,6 +178,44 @@ function main() {
   check("5.5 Die Vorschau weist ihn getrennt aus",
     zahl("select dauerhaft_blockiert from public.helmut_jobs_wiedervorlage_vorschau();") === 1);
 
+  // ── 5b · MEHRERE blockierte Auftragstypen (Befund B15, Review PR #235) ────────────────
+  // Abschnitt 5 kennt genau EINEN blockierten Auftrag EINES Typs. Bei 1x1 stimmt ein
+  // Kreuzprodukt zufaellig — und genau darin versteckte sich der Fehler: `helmut_jobs_blockiert`
+  // verband die blockierten Zeilen ueber ein UNKORRELIERTES `left join lateral` mit ihrer
+  // eigenen Typaufstellung und zaehlte deshalb `Zeilen x Typen`. Gemessen vor der Korrektur:
+  // 5 Zeilen / 2 Typen ⇒ gemeldet 10; 9 Zeilen / 3 Typen ⇒ gemeldet 27.
+  // Deshalb hier ausdruecklich MEHRERE Typen mit MEHREREN Zeilen je Typ.
+  abschnitt("5b · Mehrere blockierte Auftragstypen werden korrekt gezaehlt (B15)");
+  psql("truncate table public.helmut_jobs;");
+  const BLOCK = { document_understanding: 3, mandate_projection: 2, briefing_materialization: 4 };
+  let erwartet = 0;
+  for (const [typ, anzahl] of Object.entries(BLOCK)) {
+    for (let i = 0; i < anzahl; i += 1) {
+      auftrag({ schluessel: `${typ}|blockiert|${i}`, typ, wiedervorlagen: 2 });
+      erwartet += 1;
+    }
+  }
+  const gemeldet = zahl("select blockiert from public.helmut_jobs_blockiert(2);");
+  check("5b.1 Die Gesamtzahl ist die Zahl der Zeilen, NICHT Zeilen x Typen",
+    gemeldet === erwartet, `gemeldet ${gemeldet}, wahr ${erwartet}`);
+  const zeilen = zahl("select count(*) from public.helmut_jobs_blockiert(2);");
+  check("5b.2 Die Funktion liefert genau EINE Ergebniszeile", zeilen === 1, String(zeilen));
+  const nachTyp = JSON.parse(wert("select nach_typ::text from public.helmut_jobs_blockiert(2);"));
+  check("5b.3 Jeder Typ ist mit seiner eigenen Zahl aufgefuehrt",
+    Object.entries(BLOCK).every(([t, n]) => Number(nachTyp[t]) === n), JSON.stringify(nachTyp));
+  const summeNachTyp = Object.values(nachTyp).reduce((a, b) => a + Number(b), 0);
+  check("5b.4 Gesamtzahl und Aufstellung widersprechen sich nicht",
+    summeNachTyp === gemeldet, `Summe ${summeNachTyp} vs. Gesamt ${gemeldet}`);
+  // Eine nicht blockierte Zeile darf die Zaehlung nicht beruehren.
+  auftrag({ schluessel: "du|noch-nicht-erschoepft", typ: "document_understanding", wiedervorlagen: 0 });
+  check("5b.5 Ein Auftrag mit offenen Wiedervorlagen zaehlt NICHT als blockiert",
+    zahl("select blockiert from public.helmut_jobs_blockiert(2);") === erwartet,
+    String(zahl("select blockiert from public.helmut_jobs_blockiert(2);")));
+  check("5b.6 Der Leerfall meldet 0 und eine leere Aufstellung",
+    (() => { psql("truncate table public.helmut_jobs;");
+      return zahl("select blockiert from public.helmut_jobs_blockiert(2);") === 0
+        && wert("select nach_typ::text from public.helmut_jobs_blockiert(2);") === "{}"; })());
+
   // ── 6 · Was NICHT angefasst werden darf ───────────────────────────────────────────────
   abschnitt("6 · Geschuetzter Bestand");
   psql("truncate table public.helmut_jobs;");

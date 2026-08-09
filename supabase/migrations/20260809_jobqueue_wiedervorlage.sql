@@ -181,20 +181,28 @@ stable
 security invoker
 set search_path = public, pg_temp
 as $$
+  -- BEFUND B15 (Review PR #235). Die vorherige Fassung verband die blockierten Zeilen ueber
+  -- ein UNKORRELIERTES `left join lateral` mit ihrer eigenen Typaufstellung. Die Unterabfrage
+  -- liefert eine Zeile JE TYP — und zwar fuer JEDE Zeile von `j`. `count(*)` zaehlte damit
+  -- das Kreuzprodukt: bei zwei blockierten Auftragstypen das Doppelte, bei dreien das
+  -- Dreifache. Gemessen an echter PostgreSQL 16.13: 5 blockierte Zeilen ⇒ gemeldet 10,
+  -- 9 ⇒ 27. Bei genau EINEM Typ stimmte die Zahl zufaellig — deshalb blieb der Fehler
+  -- unentdeckt, denn alle Bestandstests kannten nur `document_understanding`.
+  -- Die Gesamtzahl widersprach dabei ihrer eigenen Aufstellung `nach_typ` (die korrekt war).
+  -- Jetzt wird die Menge EINMAL bestimmt und daraus beides abgeleitet — kein Join, kein
+  -- Kreuzprodukt, Gesamtzahl und Aufstellung koennen nicht mehr auseinanderlaufen.
+  with blockierte as (
+    select j.job_type, j.finished_at
+      from public.helmut_jobs j
+     where j.status = 'fehlgeschlagen'
+       and j.wiedervorlagen >= greatest(coalesce(p_max_wiedervorlagen, 2), 0)
+  ), je_typ as (
+    select b.job_type, count(*) as n from blockierte b group by b.job_type
+  )
   select
-    count(*),
-    coalesce(jsonb_object_agg(t.job_type, t.n) filter (where t.job_type is not null), '{}'::jsonb),
-    min(j.finished_at)
-    from public.helmut_jobs j
-    left join lateral (
-      select j2.job_type, count(*) as n
-        from public.helmut_jobs j2
-       where j2.status = 'fehlgeschlagen'
-         and j2.wiedervorlagen >= greatest(coalesce(p_max_wiedervorlagen, 2), 0)
-       group by j2.job_type
-    ) t on true
-   where j.status = 'fehlgeschlagen'
-     and j.wiedervorlagen >= greatest(coalesce(p_max_wiedervorlagen, 2), 0);
+    (select count(*) from blockierte),
+    coalesce((select jsonb_object_agg(je_typ.job_type, je_typ.n) from je_typ), '{}'::jsonb),
+    (select min(b.finished_at) from blockierte b);
 $$;
 
 comment on function public.helmut_jobs_blockiert(integer) is
