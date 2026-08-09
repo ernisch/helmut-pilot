@@ -1,0 +1,140 @@
+{
+  "version": "helmut-mandatsprofil/1",
+  "quelleDerRecherche": "VOLLSTÄNDIG SYNTHETISCH. Keines dieser Mandate existiert. Alle Namen sind erfunden, alle Quellen-URLs tragen den Marker /SYNTHETISCH/ und führen ins Leere — der Importvalidator warnt bei jedem einzelnen. Diese Datei zeigt ausschließlich die FORM des Importvertrags; sie ist keine Recherche und darf nie importiert werden.",
+  "profile": [
+    {
+      "mandatsId": "erika-beispiel",
+      "vollname": "Erika Beispiel",
+      "parlament": "bundestag",
+      "partei": "Beispielpartei",
+      "fraktion": "Beispielpartei",
+      "bundesland": "Niedersachsen",
+      "wahlkreis": "Beispielstadt — Beispielland",
+      "ausschuesse": [
+        "Ausschuss für Arbeit und Soziales",
+        "Ausschuss für Bildung, Forschung und Technikfolgenabschätzung"
+      ],
+      "stellvertretendeAusschuesse": ["Haushaltsausschuss"],
+      "themen": ["Arbeitsmarkt", "Berufliche Bildung", "Rente", "Fachkräftesicherung"],
+      "berichterstatterThemen": ["Berichterstatterin für berufliche Weiterbildung"],
+      "funktionen": ["Obfrau im Ausschuss für Arbeit und Soziales"],
+      "regionaleThemen": ["Hafenausbau Beispielstadt", "Werftenstandort"],
+      "relevanteMinisterien": ["Bundesministerium für Arbeit und Soziales"],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.bundestag.de/SYNTHETISCH/abgeordnete/erika-beispiel",
+          "geprueftAm": "2026-08-09"
+        },
+        {
+          "art": "eigene-website",
+          "url": "https://www.bundestag.de/SYNTHETISCH/web/erika-beispiel"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Direktmandat, vollständig befülltes Profil — der Regelfall."
+    },
+    {
+      "mandatsId": "jonas-musterhausen",
+      "vollname": "Jonas Musterhausen",
+      "namensvarianten": ["Jonas Musterhausen-Beispiel"],
+      "parlament": "bundestag",
+      "partei": "Zweite Beispielpartei",
+      "fraktion": "Zweite Beispielpartei",
+      "bundesland": "Bayern",
+      "listenmandat": true,
+      "regionHinweis": "Betreuungswahlkreis Beispielkreis-Süd",
+      "ausschuesse": ["Ausschuss für Verkehr"],
+      "themen": ["Schienenverkehr", "Ländlicher Raum", "Digitale Infrastruktur"],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.bundestag.de/SYNTHETISCH/abgeordnete/jonas-musterhausen"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Listenmandat — 'kein Wahlkreis' ist hier fachlich richtig und wird über regionHinweis belegt."
+    },
+    {
+      "mandatsId": "sabine-mustermann-nord",
+      "vollname": "Sabine Mustermann",
+      "parlament": "bundestag",
+      "fraktionslos": true,
+      "bundesland": "Schleswig-Holstein",
+      "wahlkreis": "Beispielküste",
+      "themen": ["Küstenschutz", "Fischerei"],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.bundestag.de/SYNTHETISCH/abgeordnete/sabine-mustermann"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Fraktionslos — Partei und Fraktion fehlen BEWUSST und ausdrücklich, nicht aus Nachlässigkeit."
+    },
+    {
+      "mandatsId": "tarek-beispielmann",
+      "vollname": "Tarek Beispielmann",
+      "parlament": "landtag-berlin",
+      "partei": "Beispielpartei",
+      "fraktion": "Beispielpartei",
+      "bundesland": "Berlin",
+      "wahlkreis": "Beispielbezirk 3",
+      "ausschuesse": ["Ausschuss für Stadtentwicklung und Wohnen"],
+      "themen": ["Mieten", "Wohnungsbau", "Verkehrswende"],
+      "regionaleThemen": ["Bebauungsplan Beispielstraße"],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.parlament-berlin.de/SYNTHETISCH/abgeordnete/tarek-beispielmann"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Abgeordnetenhaus von Berlin — amtlicher Host ist parlament-berlin.de."
+    },
+    {
+      "mandatsId": "leonie-probst-berlin",
+      "vollname": "Leonie Probst",
+      "parlament": "landtag-berlin",
+      "partei": "Dritte Beispielpartei",
+      "fraktion": "Dritte Beispielpartei",
+      "bundesland": "Berlin",
+      "listenmandat": true,
+      "regionHinweis": "Bezirk Beispielhain",
+      "themen": ["Bildung", "Kita-Ausbau"],
+      "kiBudgetTaeglichCent": 200,
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.parlament-berlin.de/SYNTHETISCH/abgeordnete/leonie-probst"
+        },
+        {
+          "art": "fraktion-profil",
+          "url": "https://www.parlament-berlin.de/SYNTHETISCH/fraktion/leonie-probst"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Mit gesetzter Kostenbegrenzung — positive ganze Zahl, sonst gilt das Profil als fehlerhaft."
+    },
+    {
+      "mandatsId": "matthias-exempel",
+      "vollname": "Matthias Exempel",
+      "parlament": "landtag-brandenburg",
+      "partei": "Beispielpartei",
+      "fraktion": "Beispielpartei",
+      "bundesland": "Brandenburg",
+      "wahlkreis": "Beispielland I",
+      "ausschuesse": ["Ausschuss für Landwirtschaft, Umwelt und Klimaschutz"],
+      "themen": ["Landwirtschaft", "Wasserhaushalt", "Strukturwandel Lausitz"],
+      "relevanteMinisterien": ["Ministerium für Landwirtschaft, Umwelt und Klimaschutz"],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.landtag.brandenburg.de/SYNTHETISCH/abgeordnete/matthias-exempel"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Landtag Brandenburg — amtlicher Host ist landtag.brandenburg.de."
+    }
+  ]
+}
