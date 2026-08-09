@@ -746,6 +746,40 @@ async function main() {
       !geplanteMandate.has("m-deaktiviert") && !geplanteMandate.has("m-geloescht")
       && geplanteMandate.has("m-aktiv"),
       [...geplanteMandate].join(", "));
+
+    // ── 12.14–12.16 · Ein UEBERSPRUNGENER V3-Lauf ist kein erledigter Auftrag ────────
+    // `runUnderstandingShadow`, `runMatchingShadow` und `runDecisionShadow` liefern in
+    // mehreren Faellen `{ skipped: true, reason }` — darunter `understanding-locked` und
+    // `matching-locked`, also VORUEBERGEHENDE Sperrkollisionen. Vorher wurde das als
+    // `ok:true` verbucht. Beim Verstehen traegt der Idempotenzschluessel bewusst kein
+    // Fenster: die Dokumente waeren damit DAUERHAFT unverstanden geblieben, gemeldet als
+    // Erfolg. Bei der Projektion haette das Mandat sein ganzes 24-h-Fenster verloren.
+    const uebersprungenesVerstehen = await SP.HANDLER.document_understanding(
+      { id: "j-skip", payload: { dokumente: [{ id: "rd-x" }] }, freshnessWindow: "F1" },
+      { eagerUnderstanding: async () => ({ skipped: true, reason: "understanding-locked" }) });
+    check("12.14 Ein uebersprungenes Verstehen wird zurueckgestellt, nicht als erledigt gemeldet",
+      uebersprungenesVerstehen.ok === false && uebersprungenesVerstehen.zurueckgestellt === true
+      && /understanding-locked/.test(String(uebersprungenesVerstehen.grund)),
+      JSON.stringify(uebersprungenesVerstehen));
+
+    const projektionDeps = {
+      getActiveProfile: async (id) => ({ id }),
+      decisions: async () => ({ saved: 1 })
+    };
+    const uebersprungeneProjektion = await SP.HANDLER.mandate_projection(
+      { id: "j-skip2", payload: { mandatsId: "m1" }, freshnessWindow: null },
+      { ...projektionDeps, matching: async () => ({ skipped: true, reason: "matching-locked" }) });
+    check("12.15 Ein uebersprungenes Matching wird zurueckgestellt, nicht als Projektion verbucht",
+      uebersprungeneProjektion.ok === false && uebersprungeneProjektion.zurueckgestellt === true
+      && /matching-locked/.test(String(uebersprungeneProjektion.grund)),
+      JSON.stringify(uebersprungeneProjektion));
+
+    const echteProjektion = await SP.HANDLER.mandate_projection(
+      { id: "j-ok", payload: { mandatsId: "m1" }, freshnessWindow: null },
+      { ...projektionDeps, matching: async () => ({ matched: 3 }) });
+    check("12.16 Eine echte Projektion bleibt unveraendert erfolgreich",
+      echteProjektion.ok === true && echteProjektion.matched === 3 && echteProjektion.entscheidungen === 1,
+      JSON.stringify(echteProjektion));
   }
 
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
