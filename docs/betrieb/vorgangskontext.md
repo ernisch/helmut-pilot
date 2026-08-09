@@ -1441,6 +1441,17 @@ berührt: der einzige mandatsbezogene KI-Pfad (Lage-Narrativ, Cron `lage-briefin
 Warteschlange, die kein Nachweis dieses Sprints berührt. Kanonisch:
 [`op30-aktivierungsreife-2026-08-09.md`](op30-aktivierungsreife-2026-08-09.md) §7.
 
+**Nachtrag 2026-08-09/2 — E1 ist entschieden und umgesetzt (PR #236, noch nicht gemergt).**
+Das Lage-Narrativ läuft als fünfter Auftragstyp `tenant_narrative` über die Warteschlange
+(Flag `HELMUT_NARRATIV_QUEUE`, default AUS; Migration `20260809_jobqueue_narrativ` **nicht
+angewendet**). **Für OP-25 ändert sich dadurch nichts:** solange nichts aktiviert ist, bleibt
+der bestandene Nachweis aus §7.7.9 gültig, und nach einer Aktivierung muss OP-25 ohnehin
+vollständig wiederholt werden. Der unabhängige Abschlussreview hat die Kapazitätsgrenze
+beziffert: ein Morgenslot trägt realistisch **par 2 ~14 · par 8 ~127** Narrative — **200
+Morgenlagen sind mit der heutigen Verdrahtung in keinem Szenario mit ≥ 25 % Reserve
+erreichbar**. Beleg:
+[`op30-e1-abschlussreview-2026-08-09.md`](op30-e1-abschlussreview-2026-08-09.md).
+
 ## 8 · Verbleibende Risiken
 
 | # | Risiko | Bewertung |

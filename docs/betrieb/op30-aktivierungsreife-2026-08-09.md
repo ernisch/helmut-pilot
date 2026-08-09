@@ -388,6 +388,13 @@ bestehende Architektur — er ist aber eine **Architekturerweiterung** und desha
 **nicht** umgesetzt. **Die Entscheidung liegt beim Gründer.** Bis dahin bleibt die
 Aktivierungsempfehlung auf die Stufen begrenzt, bei denen der Narrativ-Cron trägt.
 
+> **Nachtrag 2026-08-09/2: E1 ist entschieden (Gründerfreigabe: Warteschlange) und im
+> Folgesprint umgesetzt** — `tenant_narrative` als fünfter Auftragstyp, neues Flag
+> `HELMUT_NARRATIV_QUEUE` (default AUS), Migration `20260809_jobqueue_narrativ` (nicht
+> angewendet). Kanonischer Beleg und aktualisierte Aktivierungsreihenfolge:
+> [`lage-narrativ-warteschlange-2026-08-09.md`](lage-narrativ-warteschlange-2026-08-09.md)
+> (§11 dort ersetzt die E1-Zeilen des Plans in §8 unten).
+
 ---
 
 ## 8 · Sicherer Aktivierungsplan

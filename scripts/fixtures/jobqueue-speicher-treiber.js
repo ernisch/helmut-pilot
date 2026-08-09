@@ -26,8 +26,12 @@
 // Die Zeit ist INJIZIERBAR (`now`), damit Lease-Ablauf und Faelligkeit ohne echtes Warten
 // pruefbar sind.
 
+// `tenant_narrative` gehoert seit Migration 20260809_jobqueue_narrativ.sql zur CHECK-Menge —
+// die Attrappe MUSS dieselbe Menge kennen, sonst wiche sie von der Datenbank ab (der
+// Vertragstest prueft die Gleichheit in beide Richtungen).
 const AUFGABENTYPEN = new Set([
-  "source_fetch", "document_understanding", "mandate_projection", "briefing_materialization"
+  "source_fetch", "document_understanding", "mandate_projection", "briefing_materialization",
+  "tenant_narrative"
 ]);
 
 function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
