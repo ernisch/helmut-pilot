@@ -584,7 +584,13 @@ const ALLE_FAMILIEN = [...G.FAMILIEN, ...G.ZUSATZFAMILIEN];
         // public.helmut_jobs, keine K2.1-Struktur. Eigener Nachweis:
         // scripts/jobqueue-bereinigung-test.js §12 (Rollback laesst helmut_jobs unberuehrt).
         "20260808_jobqueue_bereinigung.sql",
-        "20260808_jobqueue_bereinigung_rollback.sql"
+        "20260808_jobqueue_bereinigung_rollback.sql",
+        // OP-30, Sprint "Aktivierungsreife 200" (Befund O5): begrenzte Wiedervorlage
+        // endgueltig gescheiterter Auftraege. Beruehrt ausschliesslich public.helmut_jobs
+        // (eine Zaehlspalte, ein Index, drei Funktionen) — keine K2.1-Struktur. Eigener
+        // Nachweis: scripts/jobqueue-wiedervorlage-datenbank-test.js an echter PostgreSQL.
+        "20260809_jobqueue_wiedervorlage.sql",
+        "20260809_jobqueue_wiedervorlage_rollback.sql"
       ]);
       // Die Allowlist ist KEINE Abschwaechung: 8.8b prueft unabhaengig und INHALTLICH,
       // dass keine Migration im Repository den Kontextpfad beruehrt — auch keine der

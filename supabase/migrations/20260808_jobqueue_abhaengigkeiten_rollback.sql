@@ -10,7 +10,12 @@ begin;
 
 drop function if exists public.helmut_defer_job(uuid, text, bigint, text);
 drop index  if exists public.helmut_jobs_fenster_typ_idx;
+-- BEIDE Signaturen. Die Fassung mit EINEM Fenster (`text`) stammt aus dem ersten Stand
+-- dieser Migration und wurde mit Befund O3 durch die Listenfassung (`text[]`) ersetzt.
+-- Eine Datenbank, auf der noch der erste Stand liegt, muss ebenfalls sauber zurueckgehen —
+-- sonst bliebe eine verwaiste Funktion stehen und die Nachpruefung unten waere falsch.
 drop function if exists public.helmut_jobs_offen(text, text[]);
+drop function if exists public.helmut_jobs_offen(text[], text[]);
 
 commit;
 

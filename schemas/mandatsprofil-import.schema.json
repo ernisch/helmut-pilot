@@ -1,0 +1,205 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://helmut.local/schemas/mandatsprofil-import.schema.json",
+  "title": "Helmut — Importvertrag für Mandatsprofile (OP-30)",
+  "description": "Verbindliches Schema für den Import echter Mandatsprofile (Bundestag, Abgeordnetenhaus von Berlin, Landtag Brandenburg). Abgeleitet aus dem TATSÄCHLICH verwendeten Code: lib/helmut/profile-validation.js (validateProfile), lib/helmut/config.js (parliamentTypeOf, profileCompleteness) und lib/helmut/scheduler.js (personNewsSource, mandateNewsSources). Ein Profil, das dieses Schema erfüllt, erreicht in validateProfile den Zustand 'vollstaendig'. Kanonische Prosa: docs/betrieb/op30-profilvertrag-200-mandate.md",
+  "type": "object",
+  "required": ["version", "profile"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "description": "Vertragsversion. Ein Importer weigert sich bei einer unbekannten Version, statt zu raten.",
+      "type": "string",
+      "const": "helmut-mandatsprofil/1"
+    },
+    "quelleDerRecherche": {
+      "description": "Optional: wie diese Datei entstanden ist (Freitext, für Nachvollziehbarkeit).",
+      "type": "string",
+      "maxLength": 500
+    },
+    "profile": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2000,
+      "items": { "$ref": "#/definitions/mandatsprofil" }
+    }
+  },
+  "definitions": {
+    "mandatsprofil": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mandatsId",
+        "vollname",
+        "parlament",
+        "bundesland",
+        "aktiv",
+        "offizielleQuellen"
+      ],
+      "properties": {
+        "mandatsId": {
+          "description": "STABILE technische Kennung. Sie ist der Mandantenschlüssel in jeder Query (user_id) und Bestandteil jedes Idempotenzschlüssels der Arbeitswarteschlange — sie darf sich NIE ändern. Kleinbuchstaben, Ziffern, Bindestriche; keine Umlaute, keine Leerzeichen.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+          "minLength": 3,
+          "maxLength": 64
+        },
+        "vollname": {
+          "description": "Vollständiger Name, exakt wie im amtlichen Verzeichnis. Er geht WÖRTLICH in die personenbezogene Nachrichtensuche ein (scheduler.personNewsSource baut daraus \"<Vollname>\"). Ein falscher Name ist deshalb kein Schönheitsfehler, sondern eine falsche Quelle.",
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 120
+        },
+        "namensvarianten": {
+          "description": "Optional: weitere Schreibweisen für die Namenserkennung (Doppelnamen, Titel, frühere Namen). KEINE erfundenen Varianten.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 2, "maxLength": 120 },
+          "maxItems": 10
+        },
+        "parlament": {
+          "description": "Das Parlament des Mandats. Bestimmt die Mandatsebene (config.parliamentTypeOf) und damit, welche Quellenpakete überhaupt in Frage kommen.",
+          "type": "string",
+          "enum": ["bundestag", "landtag-berlin", "landtag-brandenburg"]
+        },
+        "partei": {
+          "description": "Partei. Pflicht, AUSSER fraktionslos === true. Wird für die Fraktions-/Parteisuche verwendet.",
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "fraktion": {
+          "description": "Fraktion im Parlament. Kann von der Partei abweichen (z. B. CDU/CSU).",
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80
+        },
+        "fraktionslos": {
+          "description": "Ausdrücklich fraktionslos. Nur dann dürfen partei und fraktion fehlen — der Importer verlangt eine bewusste Angabe statt einer Lücke.",
+          "type": "boolean"
+        },
+        "bundesland": {
+          "description": "Bundesland des Mandats. Bei Landtagsmandaten zwingend das Land des Parlaments.",
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 40
+        },
+        "wahlkreis": {
+          "description": "Wahlkreis (Direktmandat). Entweder dieses Feld ODER listenmandat === true mit regionHinweis.",
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "listenmandat": {
+          "description": "Über die Landesliste eingezogen. Dann ist 'kein Wahlkreis' fachlich richtig und keine Lücke — regionHinweis ist dann Pflicht.",
+          "type": "boolean"
+        },
+        "regionHinweis": {
+          "description": "Regionaler Bezug bei Listenmandat (z. B. Betreuungswahlkreis oder Region). Ersetzt den Wahlkreis in der Regionalprüfung (profile-validation.hasRegion).",
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120
+        },
+        "ausschuesse": {
+          "description": "Ordentliche Ausschussmitgliedschaften, amtliche Bezeichnung. Mindestens ein Ausschuss ODER ein Thema ist Pflicht.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 3, "maxLength": 160 },
+          "maxItems": 20
+        },
+        "stellvertretendeAusschuesse": {
+          "description": "Stellvertretende Mitgliedschaften. Optional.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 3, "maxLength": 160 },
+          "maxItems": 20
+        },
+        "themen": {
+          "description": "Fachpolitische Schwerpunkte. Sie steuern die Themensuche (scheduler.topProfileTopics nimmt die ersten fünf). Mindestens ein Thema ODER ein Ausschuss ist Pflicht.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 2, "maxLength": 80 },
+          "maxItems": 25
+        },
+        "berichterstatterThemen": {
+          "description": "Berichterstattungen. Optional, aber wertvoll für die Relevanzordnung.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 2, "maxLength": 120 },
+          "maxItems": 20
+        },
+        "funktionen": {
+          "description": "Ämter und Funktionen (z. B. 'Obmann im Ausschuss für X', 'Sprecherin für Y'). Optional.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 3, "maxLength": 160 },
+          "maxItems": 20
+        },
+        "regierungsrolle": {
+          "description": "Optional: Regierungsamt, falls vorhanden.",
+          "type": "string",
+          "maxLength": 160
+        },
+        "regionaleThemen": {
+          "description": "Regionale Themen des Wahlkreises. Optional.",
+          "type": "array",
+          "items": { "type": "string", "minLength": 2, "maxLength": 120 },
+          "maxItems": 20
+        },
+        "relevanteMinisterien": {
+          "description": "Ministerien mit fachlichem Bezug. Optional; steuert eine eigene Quellenlinie (scheduler.mandateNewsSources).",
+          "type": "array",
+          "items": { "type": "string", "minLength": 3, "maxLength": 120 },
+          "maxItems": 15
+        },
+        "offizielleQuellen": {
+          "description": "PFLICHT: mindestens die amtliche Profilseite des Parlaments. Sie ist der Beleg dafür, dass dieses Mandat existiert und die Angaben nachprüfbar sind (CLAUDE.md §4.3 Belegpflicht). Der Importer prüft den Host gegen das Parlament.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 10,
+          "items": { "$ref": "#/definitions/quelle" }
+        },
+        "aktiv": {
+          "description": "MUSS beim Import false sein. Ein Import darf nie ein Mandat scharf schalten — das Aktivieren ist eine getrennte, freigabepflichtige Betreiberentscheidung (CLAUDE.md §5). Der Importer weist true zurück.",
+          "type": "boolean",
+          "const": false
+        },
+        "kiBudgetTaeglichCent": {
+          "description": "Optional. Nicht gesetzt = Systemdefault. Gesetzt muss es eine positive ganze Zahl sein (profile-validation.budgetCheck), sonst gilt das Profil als fehlerhaft.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "kiBudgetMonatlichCent": {
+          "description": "Optional, gleiche Regel wie das Tagesbudget.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 30000000
+        },
+        "notiz": {
+          "description": "Optional: Freitext für die Recherche (z. B. Stand der Erhebung). Geht in keine Query ein.",
+          "type": "string",
+          "maxLength": 500
+        }
+      }
+    },
+    "quelle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["art", "url"],
+      "properties": {
+        "art": {
+          "description": "parlament-profil = die amtliche Profilseite des Parlaments (mindestens eine ist Pflicht). Die übrigen Arten sind optional.",
+          "type": "string",
+          "enum": ["parlament-profil", "fraktion-profil", "eigene-website", "partei-profil"]
+        },
+        "url": {
+          "description": "Vollständige https-URL. Keine Suchseite, kein Weiterleitungsdienst, keine erfundene URL.",
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://",
+          "maxLength": 500
+        },
+        "geprueftAm": {
+          "description": "Optional: Datum der letzten manuellen Prüfung (ISO 8601, nur Datum).",
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+        }
+      }
+    }
+  }
+}

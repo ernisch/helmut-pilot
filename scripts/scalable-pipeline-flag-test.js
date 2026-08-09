@@ -136,11 +136,21 @@ function main() {
   abschnitt("7 · Betriebsstatus: lesend, autorisiert, ohne Nutzdaten");
   check("7.1 Der Statusendpunkt existiert", serverSrc.includes('url.pathname === "/api/ops/jobqueue"'));
   {
+    // BELEGTER FEHLER DIESER PRUEFUNG (Sprint Aktivierungsreife 2026-08-09): der Block war
+    // fest auf 900 Zeichen geschnitten. Als der Endpunkt um die Readiness des Workers und
+    // die Wiedervorlage-Vorschau ergaenzt wurde, rutschte `pfadAktiv` aus dem Fenster — und
+    // 7.3 wurde rot, OBWOHL der Flagzustand unveraendert gemeldet wird. Eine Pruefung, die
+    // an einer Zeichenzahl haengt, prueft die Laenge und nicht die Zusage.
+    // Jetzt wird bis zur NAECHSTEN Route geschnitten, also genau der Handler.
     const stelle = serverSrc.indexOf('url.pathname === "/api/ops/jobqueue"');
-    const block = serverSrc.slice(stelle, stelle + 900);
+    const naechste = serverSrc.indexOf("if (url.pathname ===", stelle + 10);
+    const block = serverSrc.slice(stelle, naechste > stelle ? naechste : stelle + 2000);
     check("7.2 Er ist mit dem CRON_SECRET autorisiert (fail closed)", /authorizeCron\(request, url, response\)/.test(block));
     check("7.3 Er meldet den Flagzustand mit", /pfadAktiv/.test(block));
-    check("7.4 Er schreibt nichts", !/save|insert|update|delete|enqueue|claim|finish/i.test(block));
+    // `wiedervorlage` steht hier ausdruecklich als TROCKENLAUF (`trockenlauf: true`) und
+    // aendert deshalb nichts — die Schreibvokabeln unten duerfen trotzdem nicht vorkommen.
+    check("7.4 Er schreibt nichts", !/save|insert|update|delete|enqueue|claim|finish/i.test(block)
+      && /trockenlauf:\s*true/.test(block));
   }
   check("7.5 Der Betriebsstatus gibt keine Nutzdaten aus (nur Zaehler und Zustaende)",
     (() => {

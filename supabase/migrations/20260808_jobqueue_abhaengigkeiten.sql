@@ -25,8 +25,27 @@ begin;
 -- wieder, und ein Briefing darf nicht ewig auf einen Abruf warten, der nie gelingt. Genau
 -- deshalb liefert die Funktion `fehlgeschlagen` mit — der Aufrufer soll den Unterschied
 -- zwischen "noch nicht fertig" und "wird nie fertig" sehen und ihn benennen koennen.
+-- BELEGTER FEHLER (Abschlussreview 2026-08-08, Befund O3 — hier behoben):
+-- Die erste Fassung nahm GENAU EIN Fenster (`p_fenster text`) und verglich mit `=`.
+-- Ein Projektions- oder Briefingauftrag traegt aber das 24-h-Mandatsfenster (`…T00Z`),
+-- waehrend die geteilten Abrufe in 8-h-Fenstern liegen (`…T00Z`, `…T08Z`, `…T16Z`) und die
+-- daraus entstehenden Verstehensauftraege das Fenster ihres Abrufs erben. Die Zaehlung sah
+-- damit nur EIN DRITTEL der geteilten Vorbedingungen; zwei Drittel waren unsichtbar. Folge:
+-- ein Briefing hielt sich fuer vorbedingungsfrei, obwohl 2/3 seiner Abrufe noch liefen —
+-- duennere Lage, aber ohne dass irgendetwas es gemeldet haette.
+--
+-- Deshalb nimmt die Funktion jetzt eine LISTE von Fenstern. Welche Fenster zu einem Auftrag
+-- gehoeren, entscheidet der App-Code (`scalable-pipeline.enthalteneFenster`): genau die
+-- Fenster der konfigurierten Breiten, die VOLLSTAENDIG im Fenster des Auftrags liegen. Das
+-- schliesst das 7-Tage-Archivfenster bewusst aus — ein Briefing darf nicht auf eine
+-- Hintergrundsuche mit Wochenkadenz warten.
+--
+-- Die alte Signatur wird ausdruecklich entfernt, damit kein Aufrufer versehentlich auf der
+-- Ein-Fenster-Fassung landet (`create or replace` kann den Parametertyp nicht aendern).
+drop function if exists public.helmut_jobs_offen(text, text[]);
+
 create or replace function public.helmut_jobs_offen(
-  p_fenster text default null,
+  p_fenster text[] default null,
   p_typen   text[] default null
 )
 returns table(
@@ -48,12 +67,12 @@ as $$
     count(*) filter (where j.status = 'fehlgeschlagen')       as fehlgeschlagen,
     count(*) filter (where j.status = 'erledigt')             as erledigt
     from public.helmut_jobs j
-   where (p_fenster is null or j.freshness_window = p_fenster)
+   where (p_fenster is null or j.freshness_window = any(p_fenster))
      and (p_typen   is null or j.job_type = any(p_typen));
 $$;
 
-comment on function public.helmut_jobs_offen(text, text[]) is
-  'OP-30: zaehlt offene/erledigte/fehlgeschlagene Auftraege je Aktualitaetsfenster und Typ. Nur lesend. Grundlage der Reihenfolgezusage "Projektion und Briefing erst nach ihren Voraussetzungen".';
+comment on function public.helmut_jobs_offen(text[], text[]) is
+  'OP-30: zaehlt offene/erledigte/fehlgeschlagene Auftraege ueber eine LISTE von Aktualitaetsfenstern und Typen. Nur lesend. Grundlage der Reihenfolgezusage "Projektion und Briefing erst nach ihren Voraussetzungen". Die Liste ist noetig, weil geteilte Abrufe in 8-h-Fenstern liegen, mandatsbezogene Arbeit aber in einem 24-h-Fenster (Befund O3).';
 
 -- Index fuer genau diese Abfrage. Ohne ihn liest die Zaehlung bei 1 000 Mandaten (Groessen-
 -- ordnung 66 000 Zeilen bei 14 Tagen Aufbewahrung) die ganze Tabelle, und zwar einmal je
@@ -114,13 +133,13 @@ comment on function public.helmut_defer_job(uuid, text, bigint, text) is
   'OP-30: stellt einen laufenden Auftrag EHRLICH zurueck (Vorbedingung offen, Budget erschoepft) ohne ihn als Fehlversuch zu zaehlen. Haltergebunden.';
 
 -- Kein Browserzugriff (identische Zusage wie die Basistabelle).
-revoke all on function public.helmut_jobs_offen(text, text[]) from public, anon, authenticated;
+revoke all on function public.helmut_jobs_offen(text[], text[]) from public, anon, authenticated;
 revoke all on function public.helmut_defer_job(uuid, text, bigint, text) from public, anon, authenticated;
 
 do $$
 begin
   if exists (select 1 from pg_roles where rolname = 'service_role') then
-    execute 'grant execute on function public.helmut_jobs_offen(text, text[]) to service_role';
+    execute 'grant execute on function public.helmut_jobs_offen(text[], text[]) to service_role';
     execute 'grant execute on function public.helmut_defer_job(uuid, text, bigint, text) to service_role';
   end if;
 end
@@ -129,5 +148,5 @@ $$;
 commit;
 
 -- Nachpruefung (lesend):
---   select * from public.helmut_jobs_offen('2026-08-08T00', array['source_fetch','document_understanding']);
+--   select * from public.helmut_jobs_offen(array['2026-08-08T00Z','2026-08-08T08Z','2026-08-08T16Z'], array['source_fetch','document_understanding']);
 --   select count(*) from pg_indexes where indexname = 'helmut_jobs_fenster_typ_idx';
