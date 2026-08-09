@@ -1181,6 +1181,42 @@ async function handleRequest(request, response) {
     return handleAsync(response, async () => {
       const lageBriefingStartMs = Date.now();
       const lageBriefingRunId = helmutRunId("briefing-lage", lageBriefingStartMs);
+      // ═══ FUENFTER AUFTRAGSTYP (E1, OP-30): NARRATIV UEBER DIE WARTESCHLANGE ═══════════
+      // DEFAULT AUS. Nur wenn BEIDE Flags gesetzt sind (`HELMUT_SCALABLE_PIPELINE` und
+      // `HELMUT_NARRATIV_QUEUE`), ersetzt dieser Zweig die Direktschleife unten — als
+      // `return`, damit es strukturell KEINE Konstellation gibt, in der beide Pfade
+      // dasselbe Narrativ erzeugen (dieselbe Bauform wie `cronSchwererPfad`).
+      // Der Slot bleibt derselbe (05:45Z, maxDuration 300); er arbeitet jetzt als Worker
+      // ausschliesslich faellige `tenant_narrative`-Auftraege ab. Geplant werden die
+      // Auftraege vom Scheduler der schweren Crons (`planeArbeit`), nicht hier.
+      if (scalablePipeline.narrativUeberWarteschlange()) {
+        const durchlauf = await workerBetrieb.durchlauf({
+          kennung: lageBriefingRunId,
+          grenzen: {
+            // Abschlussreserve wie im Warteschlangen-Cron: 240 s Slotbudget minus Reserve.
+            budgetMs: 230000,
+            leaseMs: 300000,
+            stapel: Math.max(1, Number(process.env.HELMUT_WORKER_BATCH) || 10)
+          },
+          typen: ["tenant_narrative"]
+        });
+        const lageTelemetrie = await recordProcessRun({
+          process: "briefing-lage", runId: lageBriefingRunId, mode: "warteschlange", location: helmutExecLocation(),
+          startedAt: new Date(lageBriefingStartMs).toISOString(), finishedAt: new Date().toISOString(),
+          durationMs: Date.now() - lageBriefingStartMs,
+          processed: durchlauf.erledigt || 0, deferred: durchlauf.zurueckgestellt || 0,
+          zielmenge: durchlauf.reserviert || 0,
+          status: durchlauf.gestartet === false ? "partial" : "success"
+        });
+        console.log(`[cron/lage-briefing/warteschlange] ${Date.now() - lageBriefingStartMs}ms`
+          + ` reserviert=${durchlauf.reserviert || 0} erledigt=${durchlauf.erledigt || 0}`
+          + ` zurueckgestellt=${durchlauf.zurueckgestellt || 0} lauf=${lageBriefingRunId}`);
+        return {
+          pfad: "warteschlange",
+          ...durchlauf,
+          lauftelemetrie: { gespeichert: lageTelemetrie.ok, vollstaendig: lageTelemetrie.vollstaendig, fehler: lageTelemetrie.fehler }
+        };
+      }
       let profiles = await listProfiles().catch(() => []);
       if (!Array.isArray(profiles)) profiles = [];
       // KEIN Fallback auf ein Default-Mandat: ohne gespeicherte Profile ist der
