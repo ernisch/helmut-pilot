@@ -113,19 +113,29 @@ function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
     }
 
     // (b)+(c) Reservieren.
-    const faellig = [...zeilen.values()].filter((z) => {
-      if (types && !types.includes(z.job_type)) return false;
-      if (z.attempts >= z.max_attempts) return false;
-      if (z.status === "wartend") return Date.parse(z.due_at) <= jetztMs;
-      if (z.status === "laeuft") return Date.parse(z.lease_expires_at || 0) < jetztMs;
-      return false;
-    }).sort((a, b) =>
-      (a.priority - b.priority)
-      || (Date.parse(a.due_at) - Date.parse(b.due_at))
-      || (Date.parse(a.created_at) - Date.parse(b.created_at))
-      || String(a.id).localeCompare(String(b.id)));
+    //
+    // RESSOURCENHINWEIS (Kapazitaetssprint 2026-08-09, Befund R6 — KEINE Semantikaenderung):
+    // die Sortierung stand frueher direkt auf den Zeilen und rief `Date.parse` INNERHALB des
+    // Vergleichs auf — bei m Kandidaten also bis zu 3·m·log(m) Zeichenkettenanalysen je
+    // Reservierung. Im 1000-Mandate-Stresstest (ueber 12 000 Zeilen, mehrere tausend
+    // Reservierungen) war das der groesste Einzelposten der Laufzeit, und zwar vollstaendig
+    // im TESTGERUEST, nicht in der geprueften Fachlogik. Jetzt wird jeder Schluessel GENAU
+    // EINMAL berechnet (decorate–sort–undecorate). Die Reihenfolge ist Feld fuer Feld
+    // dieselbe: Prioritaet, dann Faelligkeit, dann Anlagezeit, dann Kennung.
+    const kandidaten = [];
+    for (const z of zeilen.values()) {
+      if (types && !types.includes(z.job_type)) continue;
+      if (z.attempts >= z.max_attempts) continue;
+      if (z.status === "wartend") {
+        if (!(Date.parse(z.due_at) <= jetztMs)) continue;
+      } else if (z.status === "laeuft") {
+        if (!(Date.parse(z.lease_expires_at || 0) < jetztMs)) continue;
+      } else continue;
+      kandidaten.push([z.priority, Date.parse(z.due_at), Date.parse(z.created_at), String(z.id), z]);
+    }
+    kandidaten.sort((a, b) => (a[0] - b[0]) || (a[1] - b[1]) || (a[2] - b[2]) || a[3].localeCompare(b[3]));
 
-    const genommen = faellig.slice(0, Math.max(0, limit));
+    const genommen = kandidaten.slice(0, Math.max(0, limit)).map((k) => k[4]);
     for (const z of genommen) {
       z.status = "laeuft";
       z.lease_owner = owner;
@@ -217,19 +227,37 @@ function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
     // mandatsbezogene Arbeit aber in einem 24-h-Fenster. Die Attrappe MUSS dasselbe tun —
     // eine Attrappe, die enger vergleicht als die Datenbank, meldet „keine Vorbedingung
     // offen" und ist damit genau die Sorte falsches Gruen, die dieser Pfad ausschliessen soll.
-    const fensterListe = fenster == null
+    //
+    // RESSOURCENHINWEIS (Kapazitaetssprint 2026-08-09, Befund R6 — KEINE Semantikaenderung):
+    // diese Funktion baute frueher SECHS vollstaendige Arrays ueber alle Zeilen (einmal
+    // filtern, dann fuenfmal zaehlen) und verglich Fenster und Typ mit `Array.includes`.
+    // Sie wird einmal je Auftrag gerufen; im 1000-Mandate-Stresstest waren das ueber
+    // 12 000 Aufrufe auf ueber 12 000 Zeilen — im CPU-Profil der groesste Einzelposten des
+    // Testgeruests (22,6 s) und der Haupttreiber der Speicherbereinigung. Jetzt: EIN
+    // Durchlauf, `Set`-Vergleiche, keine Zwischenarrays. Dieselben fuenf Zahlen.
+    const fensterMenge = fenster == null
       ? null
-      : (Array.isArray(fenster) ? fenster.map(String) : [String(fenster)]);
-    const passt = (z) => (fensterListe == null || fensterListe.includes(z.freshness_window))
-      && (typen == null || !typen.length || typen.includes(z.job_type));
-    const alle = [...zeilen.values()].filter(passt);
+      : new Set((Array.isArray(fenster) ? fenster : [fenster]).map(String));
+    const typMenge = (typen == null || !typen.length) ? null : new Set(typen);
+    let wartend = 0;
+    let laufend = 0;
+    let fehlgeschlagen = 0;
+    let erledigt = 0;
+    for (const z of zeilen.values()) {
+      if (fensterMenge && !fensterMenge.has(z.freshness_window)) continue;
+      if (typMenge && !typMenge.has(z.job_type)) continue;
+      if (z.status === "wartend") wartend += 1;
+      else if (z.status === "laeuft") laufend += 1;
+      else if (z.status === "fehlgeschlagen") fehlgeschlagen += 1;
+      else if (z.status === "erledigt") erledigt += 1;
+    }
     return {
       verfuegbar: true,
-      offen: alle.filter((z) => z.status === "wartend" || z.status === "laeuft").length,
-      wartend: alle.filter((z) => z.status === "wartend").length,
-      laufend: alle.filter((z) => z.status === "laeuft").length,
-      fehlgeschlagen: alle.filter((z) => z.status === "fehlgeschlagen").length,
-      erledigt: alle.filter((z) => z.status === "erledigt").length
+      offen: wartend + laufend,
+      wartend,
+      laufend,
+      fehlgeschlagen,
+      erledigt
     };
   }
 
@@ -256,6 +284,20 @@ function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
     _zeilen: zeilen,
     alle: () => [...zeilen.values()],
     nachStatus: (s) => [...zeilen.values()].filter((z) => z.status === s),
+    // RESSOURCENSCHONENDE ZUGRIFFE (Kapazitaetssprint 2026-08-09, Befund R6).
+    // `alle()` baut bei JEDEM Aufruf ein neues Array ueber alle Zeilen. Im
+    // 1000-Mandate-Stresstest wurde es einmal je Auftragsabschluss aufgerufen, um EINE Zeile
+    // zu suchen — bei rund 12 000 Zeilen und 12 000 Abschluessen sind das ueber 10^8
+    // Objektkopien, allein fuer die Buchhaltung des Testgeruests. Die drei Zugriffe unten
+    // liefern dasselbe Ergebnis ohne Zwischenarray. Sie aendern WEDER die Warteschlangen-
+    // semantik NOCH die fachliche Belastung des Tests — nur seinen Speicher- und Rechenbedarf.
+    hole: (id) => zeilen.get(id) || null,
+    groesse: () => zeilen.size,
+    zaehle: (praedikat) => {
+      let n = 0;
+      for (const z of zeilen.values()) if (praedikat(z)) n += 1;
+      return n;
+    },
     zuruecksetzen: () => { zeilen.clear(); nachSchluessel.clear(); laufendeNummer = 0; }
   };
 }
