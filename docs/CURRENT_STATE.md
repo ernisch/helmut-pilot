@@ -283,12 +283,12 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 **Der OP-25-Production-Nachweis ist bestanden** (drittes Fenster, §7.7.9). Nächste
 Entscheidungen liegen beim Betreiber:
 
-1. **Über den Merge von PR #233 (OP-30-Skalierungsgrundlage) entscheiden.** Der
-   unabhängige Abschlussreview ist durch (§7a): kein offener kritischer oder hoher Befund,
-   keine neue Regression, beide Pflichtchecks grün, konfliktfrei. Verhaltensneutral (alle
-   Flags aus, keine Migration angewendet) — der Merge bleibt trotzdem ein
-   Production-Deployment. **Aktivierung ist ein davon getrennter, späterer Schritt**; vorher
-   sind O1–O5 aus dem Reviewbeleg zu entscheiden.
+1. **PR #233 ist am 2026-08-09 gemergt** (`559a3d9`, Stand `be29b6a`); alle Flags aus, keine
+   Migration angewendet. **Offen: B14 kam zu spät.** Der hohe Befund „ein übersprungener
+   V3-Lauf galt als erledigter Auftrag" und die F-E2E-Klarstellung wurden **nach** dem Merge
+   gepusht und sind **nicht in `main`** — sie liegen auf
+   `claude/pr-233-final-review-o75l81` (2 Commits) und brauchen einen eigenen Pull Request.
+   Heute kein Production-Risiko (ausgeschalteter Pfad), **vor jeder Aktivierung** aber Pflicht.
 2. Entscheidung, ob `HELMUT_CRON_GLOBALABRUF` dauerhaft `on` bleibt (Betreiberbestätigung
    2026-08-08: steht in Production auf `on`; der Kontextpfad ist Production-belegt) — jede
    Änderung ist freigabepflichtig.
