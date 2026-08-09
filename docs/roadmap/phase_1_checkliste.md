@@ -167,6 +167,18 @@ Eintrag `d9006c1` / Merge #182 war der Stand vom 2026-07-30) ·
 > mandatsbezogene KI-Pfad (Lage-Narrativ) läuft **außerhalb** der Warteschlange in einem
 > 300-s-Slot — bei 200 Mandaten eine eigene Kapazitätsgrenze (Entscheidungsfrage E1).
 >
+> **Nachtrag 2026-08-09/2 — E1 entschieden und umgesetzt (PR #236, noch offen).** Das
+> Lage-Narrativ läuft als fünfter Auftragstyp `tenant_narrative` über die Warteschlange
+> (Flag `HELMUT_NARRATIV_QUEUE`, default AUS; Migration nicht angewendet). Der unabhängige
+> Abschlussreview hat drei Befunde behoben (Fälligkeitsstreuung passte nicht in den einzigen
+> Slot · fehlender Tagesplan ⇒ `scopeMax` null · falsches Grün bei unerreichbarer
+> Warteschlange) und die Kapazitätsaussage korrigiert: **ein Morgenslot trägt realistisch
+> par 2 ~14 · par 4 ~52 · par 8 ~127 Narrative** ⇒ mit 25 % Reserve **11 · 41 · 101 Mandate**.
+> **200 Morgenlagen sind mit der heutigen Verdrahtung in keinem Szenario mit ≥ 25 % Reserve
+> erreichbar**; nötig sind Parallelität 8 **und** ein zweiter Morgenslot
+> (Betreiberentscheidung). **An dieser Checkliste ändert sich weiterhin keine Zeile.** Beleg:
+> [`../betrieb/op30-e1-abschlussreview-2026-08-09.md`](../betrieb/op30-e1-abschlussreview-2026-08-09.md).
+>
 > **Verwechslungsgefahr:** „Punkt 30" hier ist die Phase-1-Abnahme. **OP-30** der
 > [`../datenmotor-restliste.md`](../datenmotor-restliste.md) ist ein anderer Punkt.
 >
