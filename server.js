@@ -6546,7 +6546,7 @@ function narrativSlotGrenzen() {
   const parallel = Number(String(process.env.HELMUT_NARRATIV_PARALLEL || "").trim());
   return {
     // SLOTBUDGET 270 s — dieselbe Zahl, die die schweren Crons (`crawl`, `pipeline`) seit
-    // jeher gegen `maxDuration: 300` fahren (`deadlineMs: 270000`). Vorher standen hier
+    // jeher als Frist gegen `maxDuration: 300` fahren. Vorher standen hier
     // 230 s; die slotgenaue Simulation hat gezeigt, was diese 40 s wert sind: bei 200
     // Mandaten, Parallelitaet 8 und zwei Morgenslots werden mit 230 s 199 von 200 Narrativen
     // im Morgenfenster fertig, mit 270 s alle 200 (Reserve 39,5 % statt 35 %). Der eine

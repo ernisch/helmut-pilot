@@ -1564,7 +1564,7 @@ function sechsProfile() {
       && /280000,\s*\n\s*"cron-pipeline"/.test(serverSrc)
       // Und: die globale Phase erhoeht kein Budget, sie TEILT (Untergrenze 50 %).
       && /MIN_GLOBAL_ANTEIL = 0\.5/.test(fs.readFileSync(path.join(ROOT, "lib", "helmut", "cron-globalphase.js"), "utf8")));
-    check("9.11 kein Cron wurde still veraendert (Zeiten und Reihenfolge unveraendert)",
+    check("9.11 kein Bestandscron wurde still veraendert (nur die zwei neuen Nachlaufslots kamen dazu)",
       JSON.stringify(vercel.crons) === JSON.stringify([
         { path: "/api/cron/crawl", schedule: "0 4 * * *" },
         { path: "/api/cron/morning-briefing", schedule: "0 5 * * *" },
@@ -1574,6 +1574,10 @@ function sechsProfile() {
         { path: "/api/cron/crawl", schedule: "0 20 * * *" },
         { path: "/api/cron/understanding", schedule: "30 5 * * *" },
         { path: "/api/cron/lage-briefing", schedule: "45 5 * * *" },
+        // KAPAZITAETSSPRINT 2026-08-09: zweiter und dritter Morgenslot, neue Route ohne
+        // Altpfad, bei ausgeschalteten OP-30-Flags ohne jede Verarbeitung.
+        { path: "/api/cron/lage-briefing-nachlauf", schedule: "10 6 * * *" },
+        { path: "/api/cron/lage-briefing-nachlauf", schedule: "22 6 * * *" },
         { path: "/api/cron/understanding", schedule: "30 21 * * *" }
       ]) && vercel.functions["api/index.js"].maxDuration === 300);
     check("9.12 kein Production-Flag wird als aktiv behauptet: die Dokumentation nennt den Pfad ausdruecklich AUS",

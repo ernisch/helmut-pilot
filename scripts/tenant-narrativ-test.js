@@ -585,11 +585,23 @@ async function main() {
     check("8.1 Die Cron-Route prueft narrativUeberWarteschlange VOR der Direktschleife",
       /narrativUeberWarteschlange\(\)/.test(routenBlock)
       && routenBlock.indexOf("narrativUeberWarteschlange") < routenBlock.indexOf("listProfiles"));
+    // KAPAZITAETSSPRINT 2026-08-09: der Slotablauf steht nicht mehr inline in der Route,
+    // sondern in `narrativSlotLauf()` — EINE Umsetzung fuer alle drei Morgenslots (sonst
+    // waeren daraus Kopien geworden, und Kopien laufen auseinander). Die Zusagen sind
+    // dieselben; sie werden nur dort geprueft, wo der Code jetzt steht. Die Route selbst
+    // muss weiterhin ein `return` sein — sonst liefen beide Pfade.
+    const slotLauf = serverQuelltext.slice(
+      serverQuelltext.indexOf("function narrativSlotGrenzen()"),
+      serverQuelltext.indexOf("async function runCronUeberWarteschlange(")
+    );
     check("8.2 Der Warteschlangenzweig ist ein `return` (strukturell kein Doppelpfad)",
-      /if \(scalablePipeline\.narrativUeberWarteschlange\(\)\) \{/.test(routenBlock)
-      && /pfad: "warteschlange"/.test(routenBlock));
+      /if \(scalablePipeline\.narrativUeberWarteschlange\(\)\) \{\s*\n\s*return narrativSlotLauf\(/.test(routenBlock)
+      && /pfad: "warteschlange"/.test(slotLauf));
     check("8.3 Er arbeitet AUSSCHLIESSLICH tenant_narrative ab",
-      /typen: \["tenant_narrative"\]/.test(routenBlock));
+      /typen: \["tenant_narrative"\]/.test(slotLauf));
+    check("8.3b Beide Cron-Routen benutzen DIESELBE Umsetzung (keine Kopie)",
+      (serverQuelltext.match(/return narrativSlotLauf\(/g) || []).length === 2
+      && (serverQuelltext.match(/async function narrativSlotLauf/g) || []).length === 1);
     check("8.4 Der Altpfad (Direktschleife je Profil) bleibt vollstaendig erhalten",
       /buildLageBriefing\(profile, \{ politicianId: profile\.id \}\)/.test(routenBlock));
 

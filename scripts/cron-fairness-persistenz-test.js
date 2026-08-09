@@ -505,7 +505,11 @@ function laufGegenAblage(storage, zeile, { cronName, tenantIds, runId, startedMs
         && F.DEFAULT_TIEBREAK_BUCKET_MS === 6 * 60 * 60 * 1000);
       // Vollstaendiger Abgleich gegen den heutigen Stand — nicht nur der vier
       // Mehrmandanten-Crons: eine geaenderte ODER neu hinzugefuegte Zeile faellt auf.
-      check("Cron-Zeiten und -Reihenfolge unveraendert",
+        // KAPAZITAETSSPRINT 2026-08-09: die NEUN Bestandseintraege sind Zeichen fuer Zeichen
+        // unveraendert; hinzu kommen ZWEI Zeitplaene der neuen Route
+        // `/api/cron/lage-briefing-nachlauf` (zweiter und dritter Morgenslot). Sie hat KEINEN
+        // Altpfad und startet bei ausgeschalteten OP-30-Flags nichts (server.js, drei Riegel).
+      check("Cron-Zeiten: neun Bestandseintraege unveraendert + zwei geschuetzte Nachlaufslots",
         (vercel.crons || []).map((c) => `${c.path}=${c.schedule}`).join("|")
           === [
             "/api/cron/crawl=0 4 * * *",
@@ -516,6 +520,8 @@ function laufGegenAblage(storage, zeile, { cronName, tenantIds, runId, startedMs
             "/api/cron/crawl=0 20 * * *",
             "/api/cron/understanding=30 5 * * *",
             "/api/cron/lage-briefing=45 5 * * *",
+            "/api/cron/lage-briefing-nachlauf=10 6 * * *",
+            "/api/cron/lage-briefing-nachlauf=22 6 * * *",
             "/api/cron/understanding=30 21 * * *"
           ].join("|"),
         JSON.stringify(vercel.crons));
