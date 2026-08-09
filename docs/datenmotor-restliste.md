@@ -1517,10 +1517,31 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Antworten): 210/210 bzw. 1 050/1 050 Narrative, 0 Verlust/Doppel/fremd · echte PostgreSQL
   27 PASS + Kettenprobe 35 Schritte · Mutationsprobe 12/12 rot. **Kapazitätsentscheidung
   200 Mandate: lokal nur teilweise belegt** — offen sind die 25-%-Arbeitslastreserve über
-  alle Dimensionen (strukturell, wie B16) und die **Slot-Kapazität der Morgenlage**
-  (Rechnung: 05:45-Slot trägt ~39 Aufrufe bei Parallelität 2; für 200 braucht es
-  `HELMUT_WORKER_PARALLEL`↑ oder einen weiteren Slot — Betreiberentscheidung). Kanonischer
-  Beleg: [`betrieb/lage-narrativ-warteschlange-2026-08-09.md`](betrieb/lage-narrativ-warteschlange-2026-08-09.md).
+  alle Dimensionen (strukturell, wie B16) und die **Slot-Kapazität der Morgenlage**.
+  Kanonischer Beleg: [`betrieb/lage-narrativ-warteschlange-2026-08-09.md`](betrieb/lage-narrativ-warteschlange-2026-08-09.md).
+- **Unabhängiger adversarialer Abschlussreview von PR #236 (2026-08-09).** Der Doppelpfad ist
+  **ausführungsseitig widerlegt** (15 Flagkombinationen über die echte Route, nie beide Pfade);
+  der Budgetvertrag ist an echter PostgreSQL 16.13 nachgemessen (9 Proben: Cache-Rückgabe,
+  Idempotenz unter Nebenläufigkeit, keine Überbuchung bei 40 gleichzeitigen Workern).
+  **Drei Befunde behoben** — **R1 (kritisch):** die Fälligkeit war über 134 min gestreut,
+  abgearbeitet wird sie aber von **einem** 230-s-Slot; gemessen waren bei 5 Mandaten **1**
+  und bei 200 Mandaten **5** Aufträge im Slot fällig (Morgenlage wäre am Nachmittag
+  entstanden). **R2 (hoch):** der Narrativslot übergab keinen Tagesplan ⇒ `scopeMax` null,
+  `mandantenDeckel` unbenutzt, keine `tenant:`-Zeile in `llm_budget_counters` — Befund O1 beim
+  eigenen Verbraucher. **R3 (hoch):** eine unerreichbare Warteschlange meldete `success`.
+  Regressionssuite `scripts/narrativ-slotvertrag-test.js` (66 PASS) + 3 Mutationsproben (rot).
+  **Zwei Befunde benannt, nicht behoben:** **R4** ein KI-Aufruf zählt bei aktiver Fairness
+  **zweimal** gegen `HELMUT_MAX_LLM_CALLS_PER_DAY` (`helmut_reserve_llm_result` **und**
+  `helmut_reserve_llm_call` schreiben dieselbe Zählerzeile) — **geerbt von `main`**, der
+  Deckelbedarf ist entsprechend doppelt so hoch wie dokumentiert; **R6**
+  `narrativ-stress-1000-test.js` braucht hier 190–214 s gegen das 180-s-Limit des kanonischen
+  Runners (Flakerisiko am Pflicht-Gate). **Kapazität 200 ehrlich beantwortet:** ein Morgenslot
+  trägt realistisch **par 2: ~14 · par 4: ~52 · par 8: ~127** Narrative ⇒ mit 25 % Reserve
+  **11 · 41 · 101 Mandate**. **200 Morgenlagen sind mit der heutigen Verdrahtung in keinem
+  Szenario mit ≥ 25 % Reserve erreichbar**; nötig sind Parallelität 8 **und** ein zweiter
+  Morgenslot (beides Vercel-Konfiguration ⇒ Betreiberentscheidung, keine neue Infrastruktur).
+  Ohne diese Entscheidung ist die Aktivierung auf **Stufe 1 (5 Mandate)** begrenzt.
+  Kanonischer Beleg: [`betrieb/op30-e1-abschlussreview-2026-08-09.md`](betrieb/op30-e1-abschlussreview-2026-08-09.md).
 - **Kanonischer Beleg (Ursache):** [`betrieb/v3-skalierungspruefung-2026-08-08.md`](betrieb/v3-skalierungspruefung-2026-08-08.md).
   **Abgrenzung zu OP-25:** OP-25 beschreibt das *Symptom* (je Lauf wird nur ein Teil der
   Mandanten erreicht) und wird über Fairness/Zeitdeckelung geführt. OP-30 ist die belegte

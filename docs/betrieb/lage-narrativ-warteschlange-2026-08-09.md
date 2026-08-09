@@ -222,22 +222,45 @@ Positionen · reale Production-Metadaten als Adaptergrundlage · Annahmen dokume
 
 **Nicht belegt — deshalb „teilweise":**
 1. Die 25-%-**Arbeitslast**-Reserve über alle Dimensionen (§7, strukturell; wie B16).
-2. Die **Slot-Kapazität der Morgenlage** ist eine Rechnung, kein Simulationsnachweis: die
-   Simulation nimmt Worker alle 2 Minuten an, Production hat Cron-Slots. Rechnung mit
-   gemessenem Mittel 11,8 s Anbieterzeit je Aufruf (234 Aufrufe / 2 756 s, inkl.
-   Störungen): der 05:45-Slot (230 s Budget, Standard-Parallelität 2) schafft **~39**
-   Aufrufe; mit dem (regelmäßig 2–3 h verspäteten) Watchdog-Slot **~78 von 200** am
-   Vormittag — der Rest erst im 16:00-Slot. **Für die Morgenlage aller 200 Mandate ist
-   eine Betreiberentscheidung nötig:** `HELMUT_WORKER_PARALLEL` 2→8 hebt den 05:45-Slot
-   rechnerisch auf ~155 Aufrufe (zwei Morgenslots ≈ 200), Alternativen sind ein
-   zusätzlicher Cron-Slot oder der langlaufende Worker (`workerbetrieb.md`). Bis dahin
-   gilt: bis ~40 Mandate trägt der 05:45-Slot allein, bis ~80 mit Watchdog.
+2. Die **Slot-Kapazität der Morgenlage**.
+   > **KORRIGIERT im unabhängigen Abschlussreview 2026-08-09**
+   > ([`op30-e1-abschlussreview-2026-08-09.md`](op30-e1-abschlussreview-2026-08-09.md) §5,
+   > Befund R5). Die hier ursprünglich stehende Rechnung („~39 Aufrufe je 05:45-Slot,
+   > ~78 von 200 am Vormittag, par 8 ⇒ ~155") war **zu günstig** und wird zurückgezogen.
+   > Zwei Gründe: (a) ein Slot bedient nur, was **fällig** ist — die Fälligkeit war über
+   > 134 Minuten gestreut, sodass bei 5 Mandaten **1** und bei 200 Mandaten **5** Aufträge
+   > im Slot fällig waren (Befund R1, im Review behoben); (b) die Laufzeit ist stark
+   > rechtsschief (4/134 über 120 s, Max 472 s) — mit der **Verteilung** statt dem Mittel
+   > gerechnet trägt der Slot bei Parallelität 2 realistisch **~14**, nicht 39. Die
+   > Watchdog-Annahme trägt ebenfalls nicht: er ruft `/api/cron/pipeline` (typoffen), dort
+   > stehen `source_fetch` (60) und `document_understanding` (100) **vor** dem Narrativ (240).
+   >
+   > **Belastbare Werte nach der R1-Korrektur** (Rechnung/Simulation, realistisches Szenario):
+   > ein Morgenslot trägt **par 2: ~14 · par 4: ~52 · par 8: ~127** Narrative; mit der
+   > geforderten Reserve von 25 % entspricht das **11 · 41 · 101 Mandaten**.
+   > **200 Morgenlagen sind mit der heutigen Verdrahtung in keinem Szenario mit ≥ 25 %
+   > Reserve erreichbar** — auch nicht bei der harten Obergrenze `HELMUT_WORKER_PARALLEL=8`.
+   > Nötig sind **beides**: Parallelität 8 **und** mindestens ein zweiter Morgenslot. Beides
+   > ist Vercel-Konfiguration und damit **Betreiberentscheidung** (keine neue Infrastruktur,
+   > keine zusätzlichen Modellkosten). Ohne diese Entscheidung ist die Aktivierung auf
+   > **Stufe 1 (5 Mandate)** begrenzt — dort ist die Morgenlage in jedem Szenario vollständig.
 3. Eine lokale Simulation ist ohnehin **kein Production-Beweis**; es gibt 10 echte
    Profile, nicht 200.
 
 **Kein Stopp nötig:** die Architektur selbst reicht (Warteschlange trägt 1 000 im
 Stresslauf); der Engpass ist die Slot-Zuteilung — eine reversible Konfigurations- bzw.
 Betreiberentscheidung, keine neue Infrastruktur.
+
+> **Nachtrag 2026-08-09 (unabhängiger Abschlussreview, kanonisch für §8):** die Aussage
+> „kein Stopp nötig" gilt für den **Merge** — nicht für die **Aktivierung bei 200**. Für
+> 200 Morgenlagen mit 25 % Reserve reicht die heutige Verdrahtung nicht (siehe Kasten
+> oben). Drei Befunde des Reviews sind in dieser PR behoben: **R1** Fälligkeitsstreuung
+> (kritisch), **R2** fehlender Tagesplan im Narrativslot (`scopeMax` war `null` — Befund
+> O1 beim eigenen Verbraucher), **R3** falsches Grün bei unerreichbarer Warteschlange.
+> Zwei weitere sind benannt und **nicht** behoben: **R4** Doppelzählung im KI-Tagesdeckel
+> bei aktiver Fairness (geerbt von `main`), **R6** `narrativ-stress-1000-test.js` reißt das
+> 180-s-Zeitlimit des kanonischen Runners. Einzelheiten und Messwerte:
+> [`op30-e1-abschlussreview-2026-08-09.md`](op30-e1-abschlussreview-2026-08-09.md).
 
 ## 9 · Kosten (lokale Messung × Preisgrundlage, Stand 2026-08-09; Monat = 22 Nutzungstage)
 

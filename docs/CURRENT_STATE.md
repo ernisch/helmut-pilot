@@ -160,45 +160,51 @@ Umsetzung **10 Mandate**.
 
 - **Warteschlange, Worker, KI-Budget, Relevanzordnung** — vollständig, getestet, **alle Flags
   aus**, jetzt **fünf** Migrationspaare **nicht angewendet**.
-- **200 Mandate im simulierten Tag**: letzte Pflichtarbeit **21:38**. Bedarf **1 645**
-  KI-Aufrufe/Tag · Empfehlung mit 30 % Reserve **16 300** · **0,61 USD je Mandat/Monat**
-  (Preisbasis **unbelegt**). **Mit Deckel 100 reicht es nicht** — 100 von 200 bedient.
-- **Durchsatz** (`lokal bewiesen`): 1 Worker 1 064,6 Aufträge/s, 8 Worker 4 093,1; harter
-  Absturz ohne Verlust ⇒ **die Warteschlange ist nicht der Engpass**.
+- **200 Mandate im simulierten Tag**: Bedarf **1 645** KI-Aufrufe/Tag · Empfehlung mit 30 %
+  Reserve **16 300** · **0,61 USD je Mandat/Monat** (Preisbasis **unbelegt**). **Mit Deckel
+  100 reicht es nicht.** Achtung R4 unten: bei aktiver Fairness zählt jeder Aufruf doppelt.
+- **Durchsatz** (`lokal bewiesen`): 1 Worker 1 064,6 Aufträge/s, 8 Worker 4 093,1 ⇒ **die
+  Warteschlange ist nicht der Engpass**; der Engpass ist die Slot-Zuteilung.
 - **Vercel trägt keinen langlaufenden Worker** (`maxDuration 300`) ⇒ nur begrenzte Durchläufe
   je Cron-Fenster. Mehr Durchsatz ist eine **Betreiberentscheidung**.
-- **Lokaler Production-Schutz** (76 PASS): zwei Schichten. **Production lädt ihn nie.**
-- **`HELMUT_RELEVANZORDNUNG` ist default AUS**, fail closed; Merge-Neutralität belegt (26 PASS).
+- **Lokaler Production-Schutz** (76 PASS). **`HELMUT_RELEVANZORDNUNG` default AUS**, fail
+  closed; Merge-Neutralität belegt (26 PASS).
 
 **Abschlussreview PR #233 (2026-08-08, unabhängig):** Verhaltensneutralität bestätigt;
 13 Befunde behoben, 26 benannt (O1–O26; **O1–O5 im Sprint 2026-08-09 gelöst**, unten).
 
-**PR #233 (`559a3d9`) und PR #235 (`40e7708`) sind gemergt, beide Deployments READY.**
-Lesend gegengeprüft (zuletzt 2026-08-09/2): `helmut_jobs` existiert in Production **nicht**,
-0 OP-30-Funktionen, unverändert **5 Mandate aktiv**. **Erster regulärer Lauf auf `559a3d9`
-belegt und sauber** (Kennzahlen im Streuband der sieben Vorläufe, Kosten 0,0849 USD,
-0 unbekannte Positionen — Einzelheiten kanonisch `op30-aktivierungsreife-2026-08-09.md` §10);
-der erste Lauf auf `40e7708` ist ebenfalls belegt und sauber (§2). **Keine Regression durch PR #233.**
+**PR #233 (`559a3d9`) und PR #235 (`40e7708`) sind gemergt, beide Deployments READY.** Lesend
+gegengeprüft (zuletzt 2026-08-09/2): `helmut_jobs` existiert in Production **nicht**, 0
+OP-30-Funktionen, unverändert **5 Mandate aktiv**. Die ersten regulären Läufe auf beiden
+Ständen sind belegt und sauber (§2) — **keine Regression durch PR #233/#235**.
 
-**Sprint „Aktivierungsreife 200" (2026-08-09, über PR #235 gemergt).** **O1–O5 gelöst**
-(Rotation verdrahtet, `scopeMax` nicht mehr `null`, `worker-betrieb.js` verdrahtet,
-Vorbedingungs-Fensterliste, Budgetwarten 48 h, Migration `20260809_jobqueue_wiedervorlage`
-mit Rollback, **nicht angewendet**) · Befund B14 behoben · Stufennachweis 5–200 (+1 000)
-mit 14 Abnahmekriterien · **Reserve ehrlich (B16): +25 % MANDATE belegt, +25 % ARBEITSLAST
-offen** (Arbeit +19,5 %, KI +5,7 %; B12b `OFFEN`, Kriterium 12 teilweise) · Importvertrag
-für Mandatsprofile (Import legt Profile **immer deaktiviert** an). Einzelheiten kanonisch:
+**Sprint „Aktivierungsreife 200" (über PR #235 gemergt):** O1–O5 gelöst, B14 behoben,
+Stufennachweis 5–200 (+1 000), Importvertrag (Profile immer deaktiviert angelegt).
+**Reserve ehrlich (B16): +25 % MANDATE belegt, +25 % ARBEITSLAST offen.** Kanonisch:
 [`betrieb/op30-aktivierungsreife-2026-08-09.md`](betrieb/op30-aktivierungsreife-2026-08-09.md).
 
-**Sprint „E1: Lage-Narrativ als fünfter Auftragstyp" (2026-08-09/2).** E1 ist vom Gründer
-entschieden und umgesetzt: **`tenant_narrative`** läuft über die bestehende Warteschlange,
-der Handler ruft die **unveränderte** `lage.buildLageBriefing` auf. Neues Flag
-**`HELMUT_NARRATIV_QUEUE`** (default AUS, nur mit Pipeline wirksam), Migration
-**`20260809_jobqueue_narrativ`** (+ Rollback, **nicht angewendet**). Lokal belegt: Vertrag
-90 PASS · Fünf-Typen-Stufen 5–250 + 1 000 (0 Verlust/Doppel/fremd; Adapter aus echten
-Production-Metadaten) · echte PostgreSQL 27 PASS + Kettenprobe 35 Schritte · Mutationsprobe
-12/12 rot. **Kapazität 200: lokal nur teilweise belegt** — offen: 25-%-Arbeitslastreserve
-(wie B16) und **Slot-Kapazität der Morgenlage** (Betreiberentscheidung). Beleg
+**Sprint „E1: `tenant_narrative`" (2026-08-09/2, PR #236, offen).** E1 ist entschieden und
+umgesetzt: das Lage-Narrativ läuft als fünfter Auftragstyp über die Warteschlange, der Handler
+ruft die **unveränderte** `lage.buildLageBriefing`. Flag **`HELMUT_NARRATIV_QUEUE`** (default
+AUS, nur mit Pipeline wirksam), Migration **`20260809_jobqueue_narrativ`** (+ Rollback, **nicht
+angewendet**). Beleg
 [`betrieb/lage-narrativ-warteschlange-2026-08-09.md`](betrieb/lage-narrativ-warteschlange-2026-08-09.md).
+
+**Unabhängiger Abschlussreview PR #236 (2026-08-09/2).** Doppelpfad **ausführungsseitig
+widerlegt** (15 Flagkombinationen über die echte Route, nie beide Pfade); Budgetvertrag an
+echter PostgreSQL 16.13 nachgemessen. **Drei Befunde behoben:** **R1 (kritisch)** Fälligkeit
+über 134 min gestreut, bedient von **einem** 230-s-Slot ⇒ gemessen 1 von 5 bzw. 5 von 200
+Aufträgen im Slot fällig (Morgenlage wäre am Nachmittag entstanden); **R2 (hoch)** kein
+Tagesplan im Narrativslot ⇒ `scopeMax` null, `mandantenDeckel` unbenutzt (O1 beim eigenen
+Verbraucher); **R3 (hoch)** unerreichbare Warteschlange meldete `success`. Neue Suite
+`narrativ-slotvertrag-test.js` **66 PASS**, 3 Mutationsproben rot. **Benannt, nicht behoben:**
+**R4** ein KI-Aufruf zählt bei aktiver Fairness **zweimal** gegen den Tagesdeckel (geerbt von
+`main`); **R6** Stresssuite über dem 180-s-Runnerlimit. **Kapazität 200 ehrlich:** ein
+Morgenslot trägt realistisch par 2 ~14 · par 4 ~52 · par 8 ~127 ⇒ mit 25 % Reserve
+**11 · 41 · 101 Mandate**. **200 Morgenlagen sind mit der heutigen Verdrahtung in keinem
+Szenario mit ≥ 25 % Reserve erreichbar**; nötig sind Parallelität 8 **und** ein zweiter
+Morgenslot (Betreiberentscheidung). Ohne sie: Aktivierung nur **Stufe 1 (5 Mandate)**. Beleg
+[`betrieb/op30-e1-abschlussreview-2026-08-09.md`](betrieb/op30-e1-abschlussreview-2026-08-09.md).
 
 **Offen.** Echte Google-/KI-Laufzeit · wirksamer Production-Deckel (offline nicht lesbar) ·
 **190 fehlende echte Profile** (es gibt 10) · Migration (jetzt **sechs** Paare), Aktivierung,
@@ -279,13 +285,11 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 **PR #233 und #235 sind gemergt, die Deployments READY. E1 ist entschieden und umgesetzt.**
 Nächste Entscheidungen liegen beim Betreiber:
 
-1. ~~Ersten regulären Lauf auf `40e7708` prüfen~~ — **erledigt, sauber** (§2).
-2. **Über Review/Merge des E1-PR entscheiden** (`claude/lage-narrativ-fifth-job-type-4zm1za`,
-   fünfter Auftragstyp `tenant_narrative`). Verhaltensneutral (alle Flags aus, keine Migration
-   angewendet) — der Merge bleibt trotzdem ein Production-Deployment.
-3. **Betreiberentscheidung Slot-Kapazität der Morgenlage** vor Stufe 6 (200 Mandate):
-   `HELMUT_WORKER_PARALLEL` anheben, zusätzlicher Slot oder langlaufender Worker (Beleg §8).
-4. Danach: Migrationen anwenden (sechs Paare), Aktivierung stufenweise (5 → 25 → 50 → 100 →
+1. **Über den Merge von PR #236 entscheiden** (E1, `tenant_narrative`; unabhängig reviewt,
+   drei Befunde behoben). Verhaltensneutral — der Merge bleibt ein Production-Deployment.
+2. **Slot-Kapazität der Morgenlage entscheiden** (ab Stufe 2 nötig, für 200 zwingend):
+   `HELMUT_WORKER_PARALLEL` 2→8 **und** ein zweiter Morgenslot. Beleg §7a.
+3. Danach: Migrationen anwenden (sechs Paare), Aktivierung stufenweise (5 → 25 → 50 → 100 →
    200; `HELMUT_NARRATIV_QUEUE` ab Stufe 5), jede Stufe einzeln freigegeben; **nach jeder
    Aktivierung OP-25 vollständig wiederholen**.
 
@@ -333,9 +337,10 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-09/2 | **E1: Lage-Narrativ als fünfter Auftragstyp `tenant_narrative`** (nach dem Merge von PR #235, Gründerentscheidung E1 = Warteschlange): Handler ruft die **unveränderte** `lage.buildLageBriefing` auf (Inhalt/Prompt/Modell identisch); neues Flag `HELMUT_NARRATIV_QUEUE` (default AUS, nur mit Pipeline wirksam); Migration `20260809_jobqueue_narrativ` (+ Rollback, nicht angewendet); Morgenkorridor 05:45–08:00 UTC aus dem bestehenden Cron-Slot abgeleitet; Vorbedingungen Abruf+Verstehen; Fairness-Reservierung `tenant:<mandat>` (der O1-Verbraucher); Cron `lage-briefing` wird bei beiden Flags zum reinen Narrativ-Worker (kein Doppelpfad). Vertrag 90 PASS · Fünf-Typen-Stufen 5–250 + 1 000 (0 Verlust/Doppel/fremd) · echte PostgreSQL 27 PASS · Kettenprobe 35 Schritte · Mutationsprobe 12/12 rot · Kapazität 200: **lokal nur teilweise belegt** (Arbeitslastreserve + Slot-Kapazität offen) · Beleg [`betrieb/lage-narrativ-warteschlange-2026-08-09.md`](betrieb/lage-narrativ-warteschlange-2026-08-09.md) | **teilweise abgeschlossen** (reviewbereit; Merge, Migration, Aktivierung, Production-Nachweis, Slot-Entscheidung offen) |
-| 2026-08-09 | **OP-30 Aktivierungsreife für 200 Mandate** (nach dem Merge von PR #233): **O1–O5 gelöst** — faire Rotation im echten Planungspfad verdrahtet (Befund reproduziert: zwei Planungen 17 Tage auseinander waren zeichengleich), `scopeMax` nicht mehr `null` (global bedarfsgetrieben statt fester Anteil), `worker-betrieb.js` verdrahtet, Vorbedingungsprüfung über alle enthaltenen Fenster, Budgetwarten auf 48 h begrenzt, neue Migration `20260809_jobqueue_wiedervorlage` (Rollback, **nicht angewendet**) trennt Fehlerbeleg und Blockade; **neuer Befund B14 behoben** (`jobqueue-bereinigung-test.js` hätte das Pflicht-Gate rot gemacht); **Stufennachweis 5/25/50/100/200 + Stress 1 000** mit allen 14 Abnahmekriterien; **Importvertrag für Mandatsprofile** (Schema, Validator, synthetisches Beispiel); eigene Fehlmessung offengelegt und korrigiert (Zeitreserve ≠ Kapazitätsreserve) · Beleg [`betrieb/op30-aktivierungsreife-2026-08-09.md`](betrieb/op30-aktivierungsreife-2026-08-09.md) | **teilweise abgeschlossen** (lokal bewiesen und reviewbereit; Merge, Migration, Aktivierung, Production-Nachweis, 190 echte Profile und Entscheidungsfrage E1 offen) |
-| 2026-08-08 | **Unabhängiger adversarialer Abschlussreview von PR #233** (`6d54dbb`): Verhaltensneutralität eigenständig belegt (Flagmatrix 23/23, keine Ladeeffekte, keine automatische Migration); **13 Befunde behoben** (1 kritisch, 7 hoch) — u. a. Dokumentkennung `raw-…` statt `rd-…`, durch Zurückstellen löschbarer Rückstandsalarm, nicht auflösbares `buildV3Briefing`, mitgeplante deaktivierte Mandate, drei tautologische Merge-Neutralitätsbeweise; **26 Befunde benannt, nicht geändert** (O1–O26); Migration/Rollback **21 Schritte** an echter PostgreSQL 16.13; Mutationsproben rot; `HELMUT_CRON_GLOBALABRUF` im Env-Inventar auf **`on`** korrigiert (Betreiberbestätigung) · Beleg [`betrieb/op30-abschlussreview-2026-08-08.md`](betrieb/op30-abschlussreview-2026-08-08.md) | **teilweise abgeschlossen** (Merge-Empfehlung ausgesprochen; Merge, Aktivierung und Production-Nachweis bleiben Betreiberentscheidung) |
+| 2026-08-09/2 | **Unabhängiger adversarialer Abschlussreview PR #236** (E1, `tenant_narrative`): Doppelpfad ausführungsseitig widerlegt (15 Flagkombinationen über die echte Route), Budgetvertrag an echter PostgreSQL 16.13 (9 Proben); **3 Befunde behoben** (R1 kritisch: Fälligkeitsstreuung passte nicht in den einzigen Slot · R2 hoch: kein Tagesplan ⇒ `scopeMax` null · R3 hoch: falsches Grün bei unerreichbarer Warteschlange), neue Suite `narrativ-slotvertrag-test.js` 66 PASS + 3 Mutationsproben rot; **2 benannt** (R4 Doppelzählung im Tagesdeckel, geerbt · R6 Stresssuite über dem Runnerlimit); Kapazität 200 ehrlich beziffert · Beleg [`betrieb/op30-e1-abschlussreview-2026-08-09.md`](betrieb/op30-e1-abschlussreview-2026-08-09.md) | **teilweise abgeschlossen** (Merge-Empfehlung; Merge, Migration, Aktivierung, Slot-Entscheidung und Production-Nachweis offen) |
+| 2026-08-09/2 | **E1: Lage-Narrativ als fünfter Auftragstyp `tenant_narrative`** (Gründerentscheidung E1 = Warteschlange): Handler ruft die **unveränderte** `lage.buildLageBriefing`; Flag `HELMUT_NARRATIV_QUEUE` (default AUS); Migration `20260809_jobqueue_narrativ` (+ Rollback, nicht angewendet); Cron `lage-briefing` wird bei beiden Flags zum reinen Narrativ-Worker · Beleg [`betrieb/lage-narrativ-warteschlange-2026-08-09.md`](betrieb/lage-narrativ-warteschlange-2026-08-09.md) | **teilweise abgeschlossen** (reviewt; Merge und Aktivierung offen) |
+| 2026-08-09 | **OP-30 Aktivierungsreife für 200 Mandate** (nach dem Merge von PR #233): **O1–O5 gelöst** (faire Rotation im echten Planungspfad verdrahtet, `scopeMax` nicht mehr `null`, `worker-betrieb.js` verdrahtet, Vorbedingungsprüfung über alle enthaltenen Fenster, Budgetwarten auf 48 h begrenzt, Migration `20260809_jobqueue_wiedervorlage` mit Rollback, **nicht angewendet**); **Befund B14 behoben**; **Stufennachweis 5/25/50/100/200 + Stress 1 000** mit allen 14 Abnahmekriterien; **Importvertrag für Mandatsprofile**; eigene Fehlmessung offengelegt und korrigiert (Zeitreserve ≠ Kapazitätsreserve) · Beleg [`betrieb/op30-aktivierungsreife-2026-08-09.md`](betrieb/op30-aktivierungsreife-2026-08-09.md) | **teilweise abgeschlossen** (lokal bewiesen und reviewbereit; Merge, Migration, Aktivierung, Production-Nachweis, 190 echte Profile und E1 offen) |
+| 2026-08-08 | **Unabhängiger adversarialer Abschlussreview von PR #233** (`6d54dbb`): Verhaltensneutralität eigenständig belegt (Flagmatrix 23/23, keine automatische Migration); **13 Befunde behoben** (1 kritisch, 7 hoch), **26 benannt** (O1–O26); Migration/Rollback **21 Schritte** an echter PostgreSQL 16.13; Mutationsproben rot · Beleg [`betrieb/op30-abschlussreview-2026-08-08.md`](betrieb/op30-abschlussreview-2026-08-08.md) | **teilweise abgeschlossen** (Merge-Empfehlung; Merge, Aktivierung und Production-Nachweis blieben Betreiberentscheidung) |
 | 2026-08-08 | **OP-25 drittes Nachweisfenster + finale Auswertung** → **BESTANDEN (Exit 0, null Befunde)**; Kosten 0,2106 USD, unbepreist 0; Einzelheiten kanonisch [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.9 und §9 dieser Datei | **erfolgreich** — gilt nur für die 5-Mandate-Architektur; nach OP-30-Aktivierung Wiederholung nötig; Doku über PR #234 in `main` |
 
 Die OP-30-Sprints vom 2026-08-08 (V3-Skalierungsprüfung, Umsetzung, Abnahme, Korrektur, Prüf-/Commit-/PR-Sprint mit CI-Basisrot-Befund — Beleg [`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md)) stehen vollständig in den Belegdateien aus §7a. Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 (Fenster 1–3, Korrektursprint K1–K8, Ursachenanalyse, Betreiberschritte K2/K3, Befundsprint Kostenlücke) stehen vollständig und kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 sowie ältere Berichte, Testzahlen und Beweisketten: **Archiv**
