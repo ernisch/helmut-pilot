@@ -590,7 +590,13 @@ const ALLE_FAMILIEN = [...G.FAMILIEN, ...G.ZUSATZFAMILIEN];
         // (eine Zaehlspalte, ein Index, drei Funktionen) — keine K2.1-Struktur. Eigener
         // Nachweis: scripts/jobqueue-wiedervorlage-datenbank-test.js an echter PostgreSQL.
         "20260809_jobqueue_wiedervorlage.sql",
-        "20260809_jobqueue_wiedervorlage_rollback.sql"
+        "20260809_jobqueue_wiedervorlage_rollback.sql",
+        // OP-30/E1, Sprint "Lage-Narrativ als fuenfter Auftragstyp" (2026-08-09/2):
+        // erweitert AUSSCHLIESSLICH die CHECK-Menge von public.helmut_jobs um
+        // `tenant_narrative` — keine K2.1-Struktur. Eigener Nachweis:
+        // scripts/jobqueue-narrativ-datenbank-test.js an echter PostgreSQL.
+        "20260809_jobqueue_narrativ.sql",
+        "20260809_jobqueue_narrativ_rollback.sql"
       ]);
       // Die Allowlist ist KEINE Abschwaechung: 8.8b prueft unabhaengig und INHALTLICH,
       // dass keine Migration im Repository den Kontextpfad beruehrt — auch keine der
