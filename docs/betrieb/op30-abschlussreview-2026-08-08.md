@@ -61,7 +61,7 @@ geworden — mehrere davon so, dass der Pfad stillschweigend nichts geleistet h�
 
 ### 2.2 Bestätigt, aber **nicht** geändert (Begründung jeweils)
 
-Vierundzwanzig Punkte. Keiner davon wirkt bei ausgeschalteten Flags; O1–O5 sind vor der ersten
+Sechsundzwanzig Punkte. Keiner davon wirkt bei ausgeschalteten Flags; O1–O5 sind vor der ersten
 Aktivierung zu entscheiden, O17–O19 vor dem nächsten Veröffentlichen der Skalierungszahlen.
 
 | # | Schwere | Befund | Warum nicht in diesem Review korrigiert |
@@ -90,6 +90,8 @@ Aktivierung zu entscheiden, O17–O19 vor dem nächsten Veröffentlichen der Ska
 | O22 | mittel | **`scripts/jobqueue-mutationsprobe.js` und `scripts/jobqueue-lasttest.js` werden von keinem Gate eingesammelt** — sie enden nicht auf `-test.js` und stehen auch nicht in der `DENYLIST`. Die in der PR genannte Zusage „Mutationsprobe 10/10 rot" wird also nie automatisch geprüft. In diesem Review manuell ausgeführt: **10/10 rot**. | Umbenennen holte sie ins Pflicht-Gate (der Lasttest braucht eine Datenbank) — das ist eine Gate-Entscheidung. |
 | O23 | mittel | **Abschnitt 9 von `jobqueue-vertrag-test.js` („Gleichheit der Attrappe mit der ECHTEN Datenbank") verschwindet ohne Server spurlos.** Ohne `HELMUT_TEST_PG_HOST` läuft die Suite mit **108** statt **113** Zusagen und meldet trotzdem `FAIL 0`. Die Gleichheitszusage, auf der alle übrigen Befunde dieser Suite ruhen, ist im CI also **nicht** geprüft. | Gleiche Ursache und gleiche Entscheidung wie O21. |
 | O24 | niedrig | `scripts/jobqueue-mutationsprobe.js` mutiert ausschließlich die SQL-Migration, nicht den neuen JavaScript-Produktionscode. Die JS-Seite ist in diesem Review durch **eigene** Mutationsproben abgedeckt (§4). | Erweiterung ist eigene Arbeit. |
+| O25 | mittel | **`scripts/matching-erklaerung-test.js` prüft — wie `scoring-integration-test.js` (O6) — nur noch den Pfad mit eingeschalteter Relevanzordnung.** Die Änderung ist im Test begründet, aber die Doppelung ist in der PR-Beschreibung nicht als solche benannt. | Gleiche Begründung wie O6: ein Rückbau machte die Zusagen der Suite widersprüchlich. Hier benannt statt still gelassen. |
+| O26 | niedrig | `scripts/e2e-vertrag-geruest.js`: ein Kommentar behauptet eine Korrektur am Lesepfad, die im Diff nicht stattfindet. | Kommentarfehler ohne Wirkung. |
 
 ### 2.3 Geprüft und **kein** Problem
 
@@ -248,6 +250,21 @@ Zeile in [`production_beweisprotokoll.md`](production_beweisprotokoll.md) §9.1 
 Redeploys `dpl_3y5n…` (07:50:22Z) und kein Aussage über heute.
 
 **Kein Vercel-Zugriff, keine Environment-Änderung, kein Flag verändert.**
+
+## 8a · Weitere Dokumentationskorrekturen dieses Reviews
+
+Alle vier sind **veraltete oder widersprüchliche Statusangaben**, keine inhaltlichen Änderungen:
+
+| Datei | Vorher | Jetzt |
+|---|---|---|
+| [`vorgangskontext.md`](vorgangskontext.md) Kopf | „Zustand von `HELMUT_CRON_GLOBALABRUF` ist nicht lesbar — offene Betreiberprüfung" | `on`, Betreiberbestätigung 2026-08-08 (weiterhin keine API-Einsicht) |
+| [`../roadmap/phase_1_checkliste.md`](../roadmap/phase_1_checkliste.md) Zeile 106 | „Deckel 100 + Reserve 30" als belegter Zustand | „100" ist eine Runbook-Empfehlung; der Code fällt fail-closed auf **50** zurück, der wirksame Wert ist offline nicht lesbar — genau das, was derselbe PR an anderer Stelle bereits richtigstellt |
+| [`../datenmotor-restliste.md`](../datenmotor-restliste.md) OP-30-Block | „24 PASS" · „Relevanzordnung … Default AN" | „26 PASS" mit Hinweis auf Befund B6 · ausdrücklich als Stand **vor** der Umstellung auf Default AUS gekennzeichnet |
+| [`../CURRENT_STATE.md`](../CURRENT_STATE.md) §7a | „CI der PR ist grün (Lauf `31280498362`)" — dieser Lauf gehörte zu `6d54dbb`, nicht zum Kopf | „CI der PR ist grün — **auf dem aktuellen Kopf**", ohne Laufnummer |
+
+Der letzte Punkt war ein Fehler **dieses Reviews**: eine Grün-Aussage, die einen anderen Commit
+belegte als den, über den entschieden wird. Genau die Art Aussage, die dieser Review sonst
+beanstandet.
 
 ## 9 · Empfehlung
 

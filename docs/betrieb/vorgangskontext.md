@@ -4,7 +4,9 @@
 Nachweisvertrag nach der E3-Entscheidung; Mandatserwartung überall von sechs auf **fünf aktive
 reale Mandate / dynamisch ermittelt** korrigiert).
 Zustand: **gemergt und deployt. Der AKTUELLE Production-Zustand von `HELMUT_CRON_GLOBALABRUF`
-ist aus einer Sitzung nicht lesbar und wird hier nicht behauptet — offene Betreiberprüfung**
+ist `on` — Betreiberbestätigung vom 2026-08-08** (aus einer Sitzung weiterhin nicht lesbar; die
+Bestätigung ist eine Betreiber-Sichtprüfung, keine API-Einsicht. Bis dahin stand hier „offene
+Betreiberprüfung")
 (§7.4-Vermerk; frühere Fassungen dieses Kopfes enthielten sowohl „gesetzt seit 2026-08-03"
 als auch „wieder DEAKTIVIERT", beides unbelegt). Die Reparatur der
 Kapazitätsursachen ist als **PR #219** gemergt (`89427c5`) und ausgerollt; die erneute

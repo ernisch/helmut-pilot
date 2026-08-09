@@ -195,14 +195,14 @@ Mandate wären geplant worden · reservierte, nie bearbeitete Aufträge verbrann
 **drei der „vier Merge-Neutralitätsbeweise" waren Tautologien** (falsche Funktion geprüft).
 Migration → wiederholen → Rollback → wiederholen → erneut anwenden: **21 Schritte fehlerfrei**;
 Reihenfolgefehler brechen vollständig ab. Mutationsproben zu jeder Korrektur **rot**.
-**24 weitere Befunde sind benannt, aber bewusst nicht geändert** (O1–O24, §2.2 des Belegs) —
+**26 weitere Befunde sind benannt, aber bewusst nicht geändert** (O1–O26, §2.2 des Belegs) —
 darunter: **Mandantenanteil und faire Rotation sind gebaut, aber im Produktionspfad nicht
 verdrahtet**, und **`worker-betrieb.js` ist im Betrieb tot**. Beides ist vor der ersten
 Aktivierung zu entscheiden.
 
 **Offen.** Echte Google-/KI-Laufzeit · wirksamer Production-Deckel (offline nicht lesbar) ·
 **190 fehlende echte Profile** (es gibt 10) · Migration, Aktivierung, Production-Nachweis ·
-O1–O5 vor der Aktivierung. **CI der PR ist grün** (Lauf `31280498362`: `225/225`); die früher
+O1–O5 vor der Aktivierung. **CI der PR ist grün — auf dem aktuellen Kopf** (`225/225` Offline-Suiten + Browser-Smoke); die früher
 notierte Rotstellung am Basisstand besteht dort nicht mehr.
 
 **Folge für OP-25:** eine spätere Aktivierung verändert `quellenVereinigung`, die
@@ -336,7 +336,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-08 | **Unabhängiger adversarialer Abschlussreview von PR #233** (`6d54dbb`): Verhaltensneutralität eigenständig belegt (Flagmatrix 23/23, keine Ladeeffekte, keine automatische Migration); **12 Befunde behoben** (1 kritisch, 6 hoch) — u. a. Dokumentkennung `raw-…` statt `rd-…`, durch Zurückstellen löschbarer Rückstandsalarm, nicht auflösbares `buildV3Briefing`, mitgeplante deaktivierte Mandate, drei tautologische Merge-Neutralitätsbeweise; **16 Befunde benannt, nicht geändert**; Migration/Rollback **21 Schritte** an echter PostgreSQL 16.13; Mutationsproben rot; `HELMUT_CRON_GLOBALABRUF` im Env-Inventar auf **`on`** korrigiert (Betreiberbestätigung) · Beleg [`betrieb/op30-abschlussreview-2026-08-08.md`](betrieb/op30-abschlussreview-2026-08-08.md) | **teilweise abgeschlossen** (Merge-Empfehlung ausgesprochen; Merge, Aktivierung und Production-Nachweis bleiben Betreiberentscheidung) |
+| 2026-08-08 | **Unabhängiger adversarialer Abschlussreview von PR #233** (`6d54dbb`): Verhaltensneutralität eigenständig belegt (Flagmatrix 23/23, keine Ladeeffekte, keine automatische Migration); **12 Befunde behoben** (1 kritisch, 6 hoch) — u. a. Dokumentkennung `raw-…` statt `rd-…`, durch Zurückstellen löschbarer Rückstandsalarm, nicht auflösbares `buildV3Briefing`, mitgeplante deaktivierte Mandate, drei tautologische Merge-Neutralitätsbeweise; **26 Befunde benannt, nicht geändert** (O1–O26); Migration/Rollback **21 Schritte** an echter PostgreSQL 16.13; Mutationsproben rot; `HELMUT_CRON_GLOBALABRUF` im Env-Inventar auf **`on`** korrigiert (Betreiberbestätigung) · Beleg [`betrieb/op30-abschlussreview-2026-08-08.md`](betrieb/op30-abschlussreview-2026-08-08.md) | **teilweise abgeschlossen** (Merge-Empfehlung ausgesprochen; Merge, Aktivierung und Production-Nachweis bleiben Betreiberentscheidung) |
 | 2026-08-08 | **OP-25 drittes Nachweisfenster + finale Auswertung**: Aktivierung `dpl_AdZ4JJ…` (`a07954df`, Merge PR #232 mit Kostenlücken-Fix) READY 07.08. 20:19:06Z, Baseline +160 s, Schutzfenster gehalten (nur PR-#233-Preview, kein Production-Deployment), Auswertung 21 min nach Fensterende → **BESTANDEN (Exit 0, null Befunde)**; Kosten 0,2106 USD, unbepreist 0 | **erfolgreich** — Nachweis gilt nur für die 5-Mandate-Architektur; nach OP-30-Aktivierung Wiederholung nötig; Doku über PR #234 in `main` |
 | 2026-08-08 | **OP-30 Prüf-, Commit- und PR-Sprint**: die fünf lokal roten Suiten endgültig bewertet (4 Baseline-Fehler + 1 fehlende lokale Voraussetzung, **keine Regression, keiner blockiert CI**); **eigene Regression behoben** — der Production-Schutz hätte das CI-Gate abgebrochen, `ci.yml` erklärt jetzt `HELMUT_SOURCE_MODE=off`; Befund: **CI ist am Basisstand auf `main` bereits rot** (andere Suiten, lokal grün, nicht durch OP-30); Offline 220/225 + Browser 32/32; Commits und PR erstellt · Beleg [`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) | **teilweise abgeschlossen** (reviewbereit; Merge, Production-Nachweis und CI-Klärung offen) |
 | 2026-08-08 | **OP-30, drei lokale Sprints an einem Tag** (isolierte Arbeitsbäume, kein Commit): Umsetzung (Warteschlange, Migrationen, Source-Demand, Worker, Flag default aus) · Abnahme (Rechengrundlage 5/200/1000, Relevanzordnung, Bereinigung, Profilinventar; drei Produktfehler behoben; **ein unbeabsichtigter lesender Production-Zugriff offengelegt**) · Korrektur (**200 Mandate im Tag**, letzte Pflichtarbeit 21:38:00; Relevanzordnung auf default AUS; zweischichtiger Production-Schutz). Vollständige Berichte: die Belegdateien in §7a | **teilweise abgeschlossen** (lokal bewiesen; Migration, Aktivierung, Production-Nachweis und 190 echte Profile offen) |

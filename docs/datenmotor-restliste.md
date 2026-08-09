@@ -1428,7 +1428,9 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   und liess keinen Platz fuer die Arbeit — jetzt 90 %; dazu ein Abtastfehler der Simulation.
   **Kein** Kapazitaets-, Budget-, Parallelitaets- oder Wiederholungsbefund.
   (2) **`HELMUT_RELEVANZORDNUNG` ist default AUS**, fail closed; Merge-Neutralitaet in vier
-  unabhaengigen Beweisen belegt (`scripts/relevanzordnung-mergeneutralitaet-test.js`, 24 PASS).
+  unabhaengigen Beweisen belegt (`scripts/relevanzordnung-mergeneutralitaet-test.js`, **26 PASS**;
+  drei der vier Beweise prueften bis zum Abschlussreview 2026-08-08 die falsche Funktion und
+  wurden dort ersetzt — siehe Befund B6 im Reviewbeleg).
   (3) **Lokaler Production-Schutz an der Ursache behoben** — der alte Guard griff nur im
   Preload-Pfad des Test-Runners, jeder Direktaufruf war ungeschuetzt (90 Nicht-Test-Skripte,
   ~25 netzfaehig). Neu: zwei Schichten + Starter, 76 PASS ueber alle zwoelf geforderten Faelle.
@@ -1439,7 +1441,8 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Stand 2026-08-08 (finaler lokaler Abnahmesprint):** Beleg
   [`betrieb/op30-abnahme-2026-08-08.md`](betrieb/op30-abnahme-2026-08-08.md).
   **Lokal bewiesen:** zentrale Rechengrundlage fuer 5/200/1000 (`scripts/skalierungsmodell.js`),
-  Relevanzordnung (Gruendervorgabe „Relevanz vor Aktualitaet", Default AN), Workerdurchsatz
+  Relevanzordnung (Gruendervorgabe „Relevanz vor Aktualitaet"; **im selben Sprint auf Default AUS
+  umgestellt** — die Angabe „Default AN" hier ist der Stand VOR der Umstellung), Workerdurchsatz
   (1 Worker 1 064,6 Auftraege/s, 8 Worker 4 093,1), Bereinigung von 66 000 Zeilen in 814 ms ohne
   Verlust bei gleichzeitigem Worker, alle vier Migrationspaare anwendbar/rollbar/wiederholbar,
   Flagmatrix (6 Kombinationen). **Drei echte Produktfehler behoben** (unbegrenztes Warten aufs
@@ -1464,7 +1467,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Merge-Neutralitaetsbeweise" waren Tautologien** (sie prueften `selectLageVorgaenge`, das mit
   der Ordnung nichts zu tun hat). Migration → wiederholen → Rollback → wiederholen → erneut
   anwenden: **21 Schritte fehlerfrei** an PostgreSQL 16.13; Mutationsproben zu jeder Korrektur
-  rot. **24 weitere Befunde benannt, aber bewusst nicht geaendert** — darunter: **Mandantenanteil
+  rot. **26 weitere Befunde benannt, aber bewusst nicht geaendert** — darunter: **Mandantenanteil
   und faire Rotation sind gebaut, aber im Produktionspfad nicht verdrahtet** (`scopeMax` ist
   immer `null`), und **`lib/helmut/worker-betrieb.js` ist im Betrieb tot**. Beides ist **vor
   der ersten Aktivierung** zu entscheiden. Kanonischer Beleg:
