@@ -2,11 +2,13 @@
 
 // Helmut — FLAGMATRIX DES SKALIERUNGSSPRINTS (OP-30, Abnahmesprint, Phase 8).
 // =============================================================================================
-// DREI FLAGS, die dieser Sprint beruehrt, und die eine Zusage, die sie zusammen tragen muessen:
+// VIER FLAGS, die OP-30 beruehrt, und die eine Zusage, die sie zusammen tragen muessen:
 //
 //   HELMUT_SCALABLE_PIPELINE   default AUS, fail closed  — entscheidet, OB der Warteschlangenpfad laeuft
 //   HELMUT_LLM_FAIRNESS        default AUS, fail closed  — entscheidet, ob dabei die neue Budgetpolitik gilt
 //   HELMUT_RELEVANZORDNUNG     default AUS, fail closed  — Relevanz vor Aktualitaet in der Lage
+//   HELMUT_NARRATIV_QUEUE      default AUS, fail closed  — fuenfter Auftragstyp (E1, 2026-08-09);
+//                              wirksam NUR zusammen mit HELMUT_SCALABLE_PIPELINE
 //
 // DIE ZUSAGE: in JEDER Kombination verhaelt sich Helmut vorhersagbar, und in der
 // Standardstellung (beide neuen Flags aus) ist der Sprint verhaltensneutral.
@@ -156,6 +158,27 @@ function main() {
       check("5.5 Er nennt den abgeschalteten Quellenmodus als Grund",
         rq.gruende.includes("quellenmodus-aus"), JSON.stringify(rq.gruende));
 
+      abschnitt("5b · Der fuenfte Auftragstyp (HELMUT_NARRATIV_QUEUE, E1 2026-08-09)");
+      // Vier Kombinationen, dieselbe Zusage: NUR beide Flags zusammen aktivieren den
+      // Narrativpfad ueber die Warteschlange; jede andere Stellung ist wirkungslos.
+      check("5b.1 Standard (beide ungesetzt): AUS",
+        SP.narrativUeberWarteschlange(umgebung({})) === false);
+      check("5b.2 Nur Pipeline an: der fuenfte Typ bleibt AUS",
+        SP.narrativUeberWarteschlange(umgebung({ pipeline: "on" })) === false);
+      check("5b.3 GEFAEHRLICH: nur Narrativflag an (ohne Pipeline) — vollstaendig wirkungslos",
+        SP.narrativUeberWarteschlange({ HELMUT_NARRATIV_QUEUE: "on" }) === false
+        && SP.skalierbarerPfadAktiv({ HELMUT_NARRATIV_QUEUE: "on" }) === false);
+      check("5b.4 Beide an: der fuenfte Typ ist aktiv",
+        SP.narrativUeberWarteschlange({ ...umgebung({ pipeline: "on" }), HELMUT_NARRATIV_QUEUE: "on" }) === true);
+      for (const wert of ["", " ", "off", "0", "nein", "yes", "onn", "2", "narrativ"]) {
+        check(`5b.5 Narrativflag bei ${JSON.stringify(wert)} ist AUS (fail closed)`,
+          SP.narrativFlagAktiv({ HELMUT_NARRATIV_QUEUE: wert }) === false);
+      }
+      for (const wert of ["on", "true", "1", "an"]) {
+        check(`5b.6 Narrativflag bei ${JSON.stringify(wert)} ist AN (belegte Ja-Schreibweise)`,
+          SP.narrativFlagAktiv({ HELMUT_NARRATIV_QUEUE: wert }) === true);
+      }
+
       abschnitt("6 · Keine Zelle hat die Prozessumgebung veraendert");
       check("6.1 HELMUT_SCALABLE_PIPELINE ist im Prozess weiterhin ungesetzt",
         process.env.HELMUT_SCALABLE_PIPELINE === undefined, String(process.env.HELMUT_SCALABLE_PIPELINE));
@@ -163,6 +186,8 @@ function main() {
         process.env.HELMUT_LLM_FAIRNESS === undefined, String(process.env.HELMUT_LLM_FAIRNESS));
       check("6.3 HELMUT_RELEVANZORDNUNG ist im Prozess weiterhin ungesetzt",
         process.env.HELMUT_RELEVANZORDNUNG === undefined, String(process.env.HELMUT_RELEVANZORDNUNG));
+      check("6.4 HELMUT_NARRATIV_QUEUE ist im Prozess weiterhin ungesetzt",
+        process.env.HELMUT_NARRATIV_QUEUE === undefined, String(process.env.HELMUT_NARRATIV_QUEUE));
 
       console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
       console.log("\nIn der Standardstellung (Zelle 1) sind beide neuen Flags AUS.");

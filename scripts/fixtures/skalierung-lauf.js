@@ -31,6 +31,13 @@ const SD = require(path.join(ROOT, "lib/helmut/source-demand.js"));
 const dedup = require(path.join(ROOT, "lib/helmut/dedup.js"));
 const FAIR = require(path.join(ROOT, "lib/helmut/llm-budget-fair.js"));
 const sched = require(path.join(ROOT, "lib/helmut/scheduler.js"));
+// Fuenfter Auftragstyp (E1): der ECHTE Narrativpfad bis zur Modellgrenze. `lage.js` und
+// dessen Cache-/Sperr-/Auswahllogik laufen unveraendert; ersetzt werden ausschliesslich die
+// Aussenwelt (Ablage im Speicher) und der Anbieteraufruf (`ai.generateLageBriefing`).
+const lage = require(path.join(ROOT, "lib/helmut/lage.js"));
+const storage = require(path.join(ROOT, "lib/helmut/storage.js"));
+const ai = require(path.join(ROOT, "lib/helmut/ai.js"));
+const profilValidation = require(path.join(ROOT, "lib/helmut/profile-validation.js"));
 
 const AN = { HELMUT_SCALABLE_PIPELINE: "on" };
 const T0 = Date.parse("2026-08-08T00:00:00Z");
@@ -174,6 +181,180 @@ function welt({ profile, ausfall = [], drosselung = 0, dokumenteJeWeg = 2, decke
   return w;
 }
 
+// ── Fuenfter Auftragstyp: Narrativwelt (E1, 2026-08-09) ─────────────────────────────────
+//
+// AUFTRAGSVORGABE (§12): "Lokale Lasttests muessen den echten Produktionscode bis zur
+// Modellgrenze verwenden. Nur der externe Anbieteraufruf darf durch einen kontrollierten
+// Adapter ersetzt werden." Genau das passiert hier:
+//   * `lage.buildLageBriefing` laeuft WOERTLICH — Auswahl, Quarantaene-Guard, Tagescache,
+//     Datenstand-Fingerabdruck, Sperre, Budget-Vorpruefung, Veroeffentlichungsweg.
+//   * Ersetzt ist die ABLAGE (In-Speicher statt Supabase — dieselbe Grenze wie bei der
+//     Warteschlange selbst) und `ai.generateLageBriefing` (die Modellgrenze; dieselbe
+//     Ersetzungsstelle wie in `scripts/lage-cacheonly-test.js`).
+//   * Der Adapter reproduziert die PRODUCTION-METADATEN vom 2026-08-09 (134 Aufrufe,
+//     ausschliesslich gpt-5-mini): Median 5 052 ms, p95 24 278 ms, Fehlerquote 6 %
+//     (request-error/ECONNRESET), 4/134 ueber dem 120-s-Auftragslimit, ~1 735
+//     Eingabe-/~437 Ausgabetoken. Fehler- und Drosselquoten sind je Lauf konfigurierbar
+//     (Auftrag §14 verlangt 5 % Modellfehler und 2 % Rate Limits).
+//
+// Die Ueberschreibungen sind PROZESSWEIT (Modul-Singletons) und werden nach jedem Lauf
+// byte-genau zurueckgestellt (`aufraeumen`), damit keine zweite Suite sie erbt.
+function installiereNarrativWelt(w, u, konfig = {}) {
+  const fehlerRate = Math.max(0, Number(konfig.fehlerRate) || 0);
+  const rateLimitRate = Math.max(0, Number(konfig.rateLimitRate) || 0);
+  const timeoutRate = Math.max(0, Number(konfig.timeoutRate) || 0);
+  const tagIso = new Date(T0).toISOString();
+
+  w.narrativ = {
+    aufrufe: 0, erzeugt: 0, ausCache: 0, fehler: 0, rateLimits: 0, timeouts: 0,
+    anbieterZeitMs: 0, tokensEin: 0, tokensAus: 0,
+    doppeltErzeugt: 0, fremd: 0,
+    jeMandat: new Map(),                     // mandat -> { versuche, erzeugt }
+    veroeffentlichtMs: [],                   // Zeitpunkte der Cache-Schreibvorgaenge
+    cache: new Map()                         // bf-<mandat>-lage-<tag> -> Eintrag
+  };
+
+  const locks = new Map();
+  const streu = (schluessel, offset = 0) =>
+    (crypto.createHash("sha256").update(String(schluessel)).digest().readUInt32BE(offset) % 100000) / 100000;
+
+  // Latenzmodell aus den gemessenen Perzentilen (linear interpoliert, deterministisch).
+  // Der Schwanz ueber 120 s wird als eigener Timeout-Anteil gefuehrt (s. u.), nicht hier.
+  const latenzMs = (schluessel) => {
+    const t = streu(schluessel, 8);
+    if (t < 0.5) return Math.round(1500 + (t / 0.5) * (5052 - 1500));
+    if (t < 0.95) return Math.round(5052 + ((t - 0.5) / 0.45) * (24278 - 5052));
+    return Math.round(24278 + ((t - 0.95) / 0.05) * (110000 - 24278));
+  };
+
+  const originale = {
+    v3StoreReady: storage.v3StoreReady,
+    listKnowledgeObjects: storage.listKnowledgeObjects,
+    listMatchingResults: storage.listMatchingResults,
+    getSourcesForVorgang: storage.getSourcesForVorgang,
+    getRenderedBriefingV3: storage.getRenderedBriefingV3,
+    saveRenderedBriefingV3: storage.saveRenderedBriefingV3,
+    acquirePipelineLock: storage.acquirePipelineLock,
+    releasePipelineLock: storage.releasePipelineLock,
+    canSpendLlmForTenant: storage.canSpendLlmForTenant,
+    recordLlmUsage: storage.recordLlmUsage,
+    generateLageBriefing: ai.generateLageBriefing
+  };
+
+  storage.v3StoreReady = () => true;
+  // Verstandene Vorgaenge der Welt als Knowledge Objects — updated_at konstant, damit der
+  // Datenstand-Fingerabdruck (`hashKoSet`) nur von der MENGE abhaengt, wie in echt vom
+  // Verstehensfortschritt.
+  storage.listKnowledgeObjects = async ({ limit = 500 } = {}) =>
+    [...w.verstandeneVorgaenge].slice(0, limit).map((vg) => ({
+      id: `ko-${vg}`, vorgang_id: vg, status: "active", understanding_status: "complete",
+      headline: `Vorgang ${vg}`,
+      was_ist_passiert: `Zum Vorgang ${vg} liegt ein neuer Stand vor.`,
+      warum_wichtig: "Beruehrt laufende Mandatsarbeit.",
+      updated_at: tagIso
+    }));
+  // Gespeicherte, personalisierte Matches (die Projektion des Vortags): deterministische,
+  // mandatsabhaengige Auswahl — zwei Mandate sehen verschiedene Teilmengen.
+  storage.listMatchingResults = async ({ userId, limit = 12 } = {}) => {
+    const alle = [...w.verstandeneVorgaenge];
+    alle.sort((a, b) => {
+      const ha = crypto.createHash("sha256").update(`${userId}|${a}`).digest().readUInt32BE(0);
+      const hb = crypto.createHash("sha256").update(`${userId}|${b}`).digest().readUInt32BE(0);
+      return ha - hb || String(a).localeCompare(String(b));
+    });
+    return alle.slice(0, limit).map((vg) => ({ knowledge_object_id: `ko-${vg}`, user_id: userId }));
+  };
+  storage.getSourcesForVorgang = async (vg) => [{
+    url: `https://beispiel.invalid/beleg/${vg}`, source_name: "Beispielquelle",
+    published_at: tagIso, title: `Beleg zu ${vg}`
+  }];
+  storage.getRenderedBriefingV3 = async (userId, slot, day) =>
+    w.narrativ.cache.get(`bf-${userId}-${slot}-${day}`) || null;
+  storage.saveRenderedBriefingV3 = async (entry) => {
+    w.narrativ.cache.set(entry.id, { ...entry });
+    w.narrativ.veroeffentlichtMs.push(u.jetzt());
+    return { saved: true, id: entry.id };
+  };
+  storage.acquirePipelineLock = async (name, ttlMs) => {
+    const bis = locks.get(name);
+    if (bis != null && bis > u.jetzt()) return false;
+    locks.set(name, u.jetzt() + (Number(ttlMs) || 90000));
+    return true;
+  };
+  storage.releasePipelineLock = async (name) => { locks.delete(name); return true; };
+  // Das innere Budget-Gate bleibt DURCHLAESSIG: die Budgetknappheit wird in diesen Laeufen
+  // von der Fairness-Reservierung der Warteschlange getragen (dort ist sie messbar) —
+  // zwei gleichzeitig simulierte Deckel wuerden die Zurechnung unlesbar machen.
+  storage.canSpendLlmForTenant = async () => ({ allowed: true });
+  storage.recordLlmUsage = async () => null;
+
+  // DIE MODELLGRENZE. Deterministisch je (Mandat, Versuch); kein Math.random.
+  ai.generateLageBriefing = async (koLite, profil, meta) => {
+    const mandat = String((meta && meta.politicianId) || (profil && profil.id) || "");
+    if (profil && profil.id && meta && meta.politicianId && String(profil.id) !== String(meta.politicianId)) {
+      w.narrativ.fremd += 1;
+    }
+    w.narrativ.aufrufe += 1;
+    const stand = w.narrativ.jeMandat.get(mandat) || { versuche: 0, erzeugt: 0 };
+    stand.versuche += 1;
+    w.narrativ.jeMandat.set(mandat, stand);
+    const schluessel = `narrativ|${mandat}|${stand.versuche}`;
+    const wurf = streu(schluessel, 0);
+    if (wurf < rateLimitRate) {
+      w.narrativ.rateLimits += 1;
+      w.narrativ.anbieterZeitMs += 800;
+      return null;                                    // wie ein 429: kein Fake, kein Inhalt
+    }
+    if (wurf < rateLimitRate + fehlerRate) {
+      w.narrativ.fehler += 1;
+      w.narrativ.anbieterZeitMs += 2000;
+      return null;                                    // request-error/ECONNRESET
+    }
+    if (wurf < rateLimitRate + fehlerRate + timeoutRate) {
+      w.narrativ.timeouts += 1;
+      w.narrativ.anbieterZeitMs += 120000;            // das Auftragslimit kappt bei 120 s
+      return null;
+    }
+    w.narrativ.anbieterZeitMs += latenzMs(schluessel);
+    w.narrativ.tokensEin += 1435 + Math.round(streu(schluessel, 12) * 600);   // um 1 735
+    w.narrativ.tokensAus += 337 + Math.round(streu(schluessel, 16) * 200);    // um 437
+    w.narrativ.erzeugt += 1;
+    stand.erzeugt += 1;
+    if (stand.erzeugt > 1) w.narrativ.doppeltErzeugt += 1;
+    const ids = (Array.isArray(koLite) ? koLite : []).map((k) => k && k.vorgang_id).filter(Boolean);
+    return {
+      paragraphs: [
+        { text: "Die politische Lage des Tages, verdichtet auf das Wesentliche.", vorgang_ids: ids.slice(0, 6) },
+        ...(ids.length > 6 ? [{ text: "Weitere Entwicklungen im Blick.", vorgang_ids: ids.slice(6, 12) }] : [])
+      ],
+      model: "gpt-5-mini",
+      wordCount: 14
+    };
+  };
+
+  return {
+    // Der Handler-Einsprung: die ECHTE Produktionsfunktion, plus Cache-Zaehlung.
+    lageNarrativ: async (profil, meta) => {
+      const ergebnis = await lage.buildLageBriefing(profil, { ...meta });
+      if (ergebnis && ergebnis.available === true && ergebnis.fromCache === true) w.narrativ.ausCache += 1;
+      return ergebnis;
+    },
+    aufraeumen: () => {
+      storage.v3StoreReady = originale.v3StoreReady;
+      storage.listKnowledgeObjects = originale.listKnowledgeObjects;
+      storage.listMatchingResults = originale.listMatchingResults;
+      storage.getSourcesForVorgang = originale.getSourcesForVorgang;
+      storage.getRenderedBriefingV3 = originale.getRenderedBriefingV3;
+      storage.saveRenderedBriefingV3 = originale.saveRenderedBriefingV3;
+      storage.acquirePipelineLock = originale.acquirePipelineLock;
+      storage.releasePipelineLock = originale.releasePipelineLock;
+      storage.canSpendLlmForTenant = originale.canSpendLlmForTenant;
+      storage.recordLlmUsage = originale.recordLlmUsage;
+      ai.generateLageBriefing = originale.generateLageBriefing;
+    }
+  };
+}
+
 // Ein simulierter Tag. Gibt die volle Messreihe zurueck.
 //
 // URSACHE DER FRUEHEREN "25 STUNDEN" (gefunden und behoben am 2026-08-08, Korrektursprint).
@@ -216,9 +397,20 @@ async function simuliereTag({
   // ueberfaellig in der Warteschlange.
   vorlaufRueckstand = 0,
   // Ein besonders grosses Mandat (mehr eigene Quellen) neben vielen kleinen.
-  grossesMandat = false
+  grossesMandat = false,
+  // ── Fuenfter Auftragstyp (E1, 2026-08-09) — DEFAULT AUS ────────────────────────────────
+  // Ohne `narrativ: true` ist dieser Lauf byte-gleich zu vorher (bestehende Suiten bleiben
+  // unberuehrt). Mit `narrativ: true` laeuft der Tag mit ALLEN FUENF Auftragstypen:
+  // Flag `HELMUT_NARRATIV_QUEUE` an, `tenant_narrative` wird geplant, der Handler ruft das
+  // ECHTE `lage.buildLageBriefing` auf (Modellgrenze: Adapter, s. installiereNarrativWelt).
+  narrativ = false,
+  // Stoerprofil des Anbieter-Adapters (Auftrag §14): Anteile je Aufruf, deterministisch.
+  narrativStoerung = {},
+  // Kontrollierte Mehrlast (Reserveprobe): Dokumente je Abrufweg (Standard 2, wie bisher).
+  dokumenteJeWeg = 2
 }) {
   const u = uhr(startMs);
+  const ENV = narrativ ? { ...AN, HELMUT_NARRATIV_QUEUE: "on" } : AN;
   const q = erzeugeSpeicherWarteschlange({ now: u.jetzt });
   const aktive = erzeugeMandate(anzahlMandate);
   if (grossesMandat && aktive.length) {
@@ -239,11 +431,13 @@ async function simuliereTag({
   const spaetere = erzeugeMandate(neueMandate).map((p, i) => ({ ...p, id: `spaet-${i}-${p.id}` }));
 
   let profile = [...aktive, ...deaktiviert];
-  const w = welt({ profile: [...aktive, ...deaktiviert, ...spaetere], ausfall, drosselung, deckel });
+  const w = welt({ profile: [...aktive, ...deaktiviert, ...spaetere], ausfall, drosselung, deckel, dokumenteJeWeg });
+  // Narrativwelt NUR im Fuenf-Typen-Modus installieren (und am Ende IMMER zurueckstellen).
+  const narrativWelt = narrativ ? installiereNarrativWelt(w, u, narrativStoerung) : null;
 
   // Planung. Optional zweimal ausgeloest (doppelter Scheduler).
   const planen = () => SP.planeArbeit({
-    env: AN, jetztMs: u.jetzt(),
+    env: ENV, jetztMs: u.jetzt(),
     deps: { listFullProfiles: async () => profile, quellenFuerProfil: async (p) => eigeneQuellen(p), enqueue: q.enqueue }
   });
   // RUECKSTAND AUS EINEM VORHERIGEN LAUF. Er entsteht VOR der Planung, damit er wirklich
@@ -273,7 +467,7 @@ async function simuliereTag({
 
   const budget = fairness
     ? SP.budgetAdapter({
-      env: { ...AN, HELMUT_LLM_FAIRNESS: "on", HELMUT_MAX_LLM_CALLS_PER_DAY: String(deckel == null ? 100000 : deckel) },
+      env: { ...ENV, HELMUT_LLM_FAIRNESS: "on", HELMUT_MAX_LLM_CALLS_PER_DAY: String(deckel == null ? 100000 : deckel) },
       deps: { budgetSpeicher: w.budgetSpeicher, now: u.jetzt }
     })
     : null;
@@ -323,7 +517,14 @@ async function simuliereTag({
     extendLease: q.extendLease,
     enqueue: q.enqueue,
     offeneVorbedingungen: q.offeneVorbedingungen,
-    budget
+    budget,
+    // Fuenfter Auftragstyp: echter Narrativpfad (nur im Fuenf-Typen-Modus installiert;
+    // ohne ihn faellt ein — dann fehlerhaft eingereihter — Narrativauftrag ehrlich auf
+    // die Standardverdrahtung zurueck, die in dieser Umgebung keine Ablage findet).
+    ...(narrativWelt ? {
+      lageNarrativ: narrativWelt.lageNarrativ,
+      istDeaktiviert: (p) => profilValidation.isDisabled(p)
+    } : {})
   };
 
   let maxQueue = 0;
@@ -336,6 +537,7 @@ async function simuliereTag({
   // Anzahl der Takte fuer den gewuenschten Zeitraum.
   const takteGesamt = Math.max(1, Math.ceil((stunden * STUNDE) / taktMs));
   let fertigMs = null;
+  try {
   for (let takt = 0; takt < takteGesamt; takt += 1) {
     // `stunde` bleibt die Zeitachse der Auswertung: welche simulierte Stunde laeuft gerade.
     const stunde = Math.floor((takt * taktMs) / STUNDE);
@@ -350,7 +552,7 @@ async function simuliereTag({
     const n = abgestuerzt ? workerJeRunde - 1 : workerJeRunde;
     await Promise.all(Array.from({ length: n }, (_, i) =>
       SP.arbeite({
-        env: AN, owner: `w${stunde}-${i}`,
+        env: ENV, owner: `w${stunde}-${i}`,
         budgetMs: langsam ? 600000 : 3600000,
         leaseMs: 600000, stapel: langsam ? 20 : 200, deps
       })));
@@ -407,6 +609,12 @@ async function simuliereTag({
     // entscheidenden Teil des Tages nie gesehen. (Belegter Messfehler in dieser Suite:
     // A1 meldete 0 Briefings, weil der Lauf vorher endete.)
     if (ohneFortschritt >= 12 && stunde >= 36) break;
+  }
+  } finally {
+    // Die Modul-Ueberschreibungen der Narrativwelt IMMER zuruecknehmen — auch wenn der
+    // Lauf abbricht. Sonst erbte der naechste Lauf (oder eine andere Suite im selben
+    // Prozess) eine fremde Ablage.
+    if (narrativWelt) narrativWelt.aufraeumen();
   }
 
   const alle = q.alle();
@@ -502,7 +710,35 @@ async function simuliereTag({
     },
     fremdzugriffe: w.fremdzugriffe.length,
     dokumente: w.rohdokumente.size,
-    verlauf
+    verlauf,
+    // ── Fuenfter Auftragstyp (nur im Fuenf-Typen-Modus gefuellt) ─────────────────────────
+    narrativ: narrativ ? (() => {
+      const zeilen = alle.filter((x) => x.job_type === "tenant_narrative");
+      const zeiten = [...w.narrativ.veroeffentlichtMs].sort((a, b) => a - b);
+      return {
+        auftraege: zeilen.length,
+        erledigt: zeilen.filter((x) => x.status === "erledigt").length,
+        wartend: zeilen.filter((x) => x.status === "wartend").length,
+        laufend: zeilen.filter((x) => x.status === "laeuft").length,
+        fehlgeschlagen: zeilen.filter((x) => x.status === "fehlgeschlagen").length,
+        aufrufe: w.narrativ.aufrufe,
+        erzeugt: w.narrativ.erzeugt,
+        ausCache: w.narrativ.ausCache,
+        fehler: w.narrativ.fehler,
+        rateLimits: w.narrativ.rateLimits,
+        timeouts: w.narrativ.timeouts,
+        anbieterZeitMs: w.narrativ.anbieterZeitMs,
+        tokensEin: w.narrativ.tokensEin,
+        tokensAus: w.narrativ.tokensAus,
+        doppeltErzeugt: w.narrativ.doppeltErzeugt,
+        fremd: w.narrativ.fremd,
+        veroeffentlichteMandate: new Set(
+          [...w.narrativ.cache.keys()].map((k) => k.replace(/^bf-/, "").replace(/-lage-.*$/, ""))
+        ).size,
+        erstesFertigMs: zeiten.length ? zeiten[0] - startMs : null,
+        letztesFertigMs: zeiten.length ? zeiten[zeiten.length - 1] - startMs : null
+      };
+    })() : null
   };
 }
-module.exports = { AN, T0, STUNDE, eigeneQuellen, uhr, welt, simuliereTag };
+module.exports = { AN, T0, STUNDE, eigeneQuellen, uhr, welt, simuliereTag, installiereNarrativWelt };
