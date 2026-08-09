@@ -295,8 +295,14 @@ Aktivierungsplans angehoben werden (unverändert die Aussage aus `skalierung-200
 
 **Vorbehalt O21 unverändert:** übersprungene Datenbanksuiten zählt der Runner als PASS;
 die DB-Nachweise sind ausschließlich durch die dokumentierten Läufe an der lokalen
-PostgreSQL 16.13 gedeckt. **CI/Preview der Pull Request:** siehe Abschlussbericht des
-Sprints (nach dem Push geprüft).
+PostgreSQL 16.13 gedeckt.
+
+**Pull Request #236** (`claude/lage-narrativ-fifth-job-type-4zm1za` → `main`, Kopf
+`4f45bdf`, 4 Commits, kein Rebase, kein Force-Push): beide **Pflichtchecks grün**
+(„Syntax + Offline-Suiten" ✅, „Browser-/Mobile-Smoke (Chromium)" ✅), Vercel-Preview
+**Ready** (`DEtep7Px38fUm9wZANa341AjZ7h8`), `mergeable_state: clean` (keine Konflikte),
+keine Review-Kommentare zum Prüfzeitpunkt. **Nicht gemergt** — Merge = Production-
+Deployment, Entscheidung liegt beim Betreiber.
 
 ## 11 · Aktivierungsreihenfolge (ersetzt Zeile „E1 offen" im Plan aus `op30-aktivierungsreife-2026-08-09.md` §8)
 
