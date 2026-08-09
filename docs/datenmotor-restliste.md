@@ -1456,7 +1456,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Unabhaengiger adversarialer Abschlussreview von PR #233 (2026-08-08, `6d54dbb`).**
   Verhaltensneutralitaet eigenstaendig belegt (Flagmatrix ueber 26 Werte 23/23, keine
   Modul-Ladeeffekte, `planeArbeit`/`arbeite` bei Flag AUS mit 0 Beruehrungen, keine
-  automatische Migration). **13 Befunde behoben, davon 1 kritisch und 7 hoch** — saemtlich
+  automatische Migration). **14 Befunde behoben, davon 1 kritisch und 8 hoch** — saemtlich
   im ausgeschalteten OP-30-Pfad: der Verstehensauftrag trug die Blob-Kennung `raw-…` statt
   der Ablagekennung `rd-…` (**der Pfad haette nie ein Dokument verstanden und das als Erfolg
   gemeldet**) · der Rueckstandsalarm war durch Zurueckstellen loeschbar (an echter DB
@@ -1467,7 +1467,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Merge-Neutralitaetsbeweise" waren Tautologien** (sie prueften `selectLageVorgaenge`, das mit
   der Ordnung nichts zu tun hat). Migration → wiederholen → Rollback → wiederholen → erneut
   anwenden: **21 Schritte fehlerfrei** an PostgreSQL 16.13; Mutationsproben zu jeder Korrektur
-  rot. **26 weitere Befunde benannt, aber bewusst nicht geaendert** — darunter: **Mandantenanteil
+  rot. **34 weitere Befunde benannt, aber bewusst nicht geaendert** — darunter: **Mandantenanteil
   und faire Rotation sind gebaut, aber im Produktionspfad nicht verdrahtet** (`scopeMax` ist
   immer `null`), und **`lib/helmut/worker-betrieb.js` ist im Betrieb tot**. Beides ist **vor
   der ersten Aktivierung** zu entscheiden. Kanonischer Beleg:
