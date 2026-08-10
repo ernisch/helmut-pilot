@@ -1757,12 +1757,25 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Vortag, Wiederholungserkennung über eine Inhaltssignatur (kein zweiter Push, kein
   zusätzlicher Modellaufruf) und eine Abdeckungsmeldung des Morgenlaufs.
   Tests: `scripts/briefing-frische-test.js` **69/69**, `scripts/briefing-frische-e2e-test.js`
-  **68/68**, Gesamtlauf **236/241** (5 rot = nachgemessenes Basisrot).
+  **68/68**, `scripts/briefing-frische-audit-test.js` **34/34**, Gesamtlauf **238/242 in 530 s** (4 rot = Umgebungsartefakte, CI grün).
+- **Unabhängiger adversarialer Review desselben PR (2026-08-10/2, gleicher Branch):
+  sechs echte Befunde, alle behoben** — der Tagesbeleg war **nicht mandats- und
+  tagesscharf** (`getRenderedBriefingV3` wählt ohne `user_id`-Filter); ein wochenalter
+  Vorgang wurde durch einen Backfill-`updated_at` zu **„neu" mit dem Datum „Heute"**;
+  ein Vorgang von gestern stand unter der Überschrift „Morgenbriefing"; das
+  Wiederholungsfenster war so breit wie die Bauzeit; der Not-Aus erzeugte einen
+  Dauerfehlalarm; und die **Abdeckungszahl zählte FEHLER-Quittungen als „belegt"**, so
+  dass ein vollständig gescheiterter Morgenlauf `frischebelege=1/1` meldete — falsches
+  Grün an genau der Stelle, die es verhindern soll. Einzelheiten, Gegenbeweise und
+  verbleibende Risiken:
+  [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) §10.
 - **Fehlender Schritt:** (a) Review/Merge; (b) **Production-Nachweis**: erster Morgenlauf
   auf dem neuen Stand mit `frischevertrag.belegt == mandate` und ohne Zeile
   `FRISCHEBELEG NICHT PERSISTIERT`; (c) **Abdeckungsalarm** statt Logeintrag — gehört zu
   OP-07 und ist bewusst nicht Teil dieses Sprints; (d) empirische Justierung der
-  Schwellen (8 h / 14 Tage / 3 Tage / 24 h), die gesetzt und nicht gemessen sind.
+  Schwellen (8 h / 14 Tage / 3 Tage / 24 h), die gesetzt und nicht gemessen sind;
+  (e) **Wachstum von `briefings`** — bis zu zwei Quittungszeilen je Mandat und Tag; die
+  Aufbewahrung (90 Tage, `nutzer-ausgabe`) ist nicht scharf (OP-12).
 - **Abhängigkeiten:** OP-30 (die Abdeckungszahl ist die Messgröße der stufenweisen
   Aktivierung — OP-31 (b) sollte **vor** Stufe 2 mit 25 Mandaten stehen), OP-25 (c)
   (Abdeckungsalarm über eine Serie von Läufen), OP-07 (Alarmweg).

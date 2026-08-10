@@ -128,14 +128,18 @@ ausstellen. Testgesichert (`5d`).
 |---|---|
 | `node scripts/briefing-frische-test.js` | **69 bestanden, 0 fehlgeschlagen** |
 | `node scripts/briefing-frische-e2e-test.js` | **68 bestanden, 0 fehlgeschlagen** |
-| `node scripts/run-offline-tests.js` (kanonisch, offline erzwungen) | **236/241 Suiten grün in 483 s** |
+| `node scripts/briefing-frische-audit-test.js` (neu, §10) | **34 bestanden, 0 fehlgeschlagen** |
+| `node scripts/run-offline-tests.js` (kanonisch, offline erzwungen) | **238/242 Suiten grün in 530 s** (nach dem Audit und `npm ci`; davor 236/241 bzw. 237/242 ohne installierte Abhängigkeiten) |
 | `node scripts/browser-smoke-test.js` | **32 PASS, 0 FAIL** |
 
 **Die 5 roten Suiten sind Basisrot**, nachgemessen im selben Sprint gegen einen
 sauberen Arbeitsbaum auf `origin/main` (`ec2e208`) — dort **identisch rot**:
-`kalender-ics` (fehlendes Modul `ical.js`), `privacy-vollstaendigkeit`, `profile-db`,
-`provision-tenant`, `tenant-neutrality` (die letzten vier dokumentiert in
-[`op30-testbefunde-2026-08-08.md`](op30-testbefunde-2026-08-08.md)).
+`kalender-ics` (fehlendes Modul `ical.js` — **nach `npm ci` grün**),
+`privacy-vollstaendigkeit`, `profile-db`, `provision-tenant`, `tenant-neutrality`
+(die letzten vier dokumentiert in
+[`op30-testbefunde-2026-08-08.md`](op30-testbefunde-2026-08-08.md); sie scheitern am
+lokalen Netzriegel bzw. am Zustand des lokalen Datenverzeichnisses — die CI derselben
+Commit-Stände ist auf allen drei Pflichtprüfungen grün).
 
 **Drei Bestandswächter mussten nachgezogen werden** — ehrlich, nicht abgeschwächt:
 
@@ -215,3 +219,77 @@ Ein Merge ist ein Deployment. Danach gilt sofort:
 3. Erst danach die OP-30-Stufe 2 (25 Mandate) freigeben; die Abdeckungszahl des
    Morgenlaufs ist ab dann die Messgröße dafür, ob 25 Mandate wirklich täglich
    versorgt werden.
+
+---
+
+## 10 · Unabhängiger adversarialer Review (2026-08-10, nach dem PR)
+
+Eigene, vom Bericht oben unabhängige Gegenprobe an Diff, Datenwegen und Tests.
+Sie hat **sechs echte Befunde** ergeben; alle sind auf demselben Branch behoben und
+durch die neue Suite `scripts/briefing-frische-audit-test.js` (34 Prüfungen)
+gegengesichert. Jeder Befund war **vor** der Korrektur reproduzierbar rot.
+
+| Nr. | Befund | Schwere | Korrektur |
+|---|---|---|---|
+| **F1** | **Der Tagesbeleg war nicht mandatsscharf.** `storage.getRenderedBriefingV3` wählt allein über `id=eq.bf-<mandat>-<slot>-<tag>` — **ohne `user_id`-Filter** (der Tenant-JWT-Modus ist dauerhaft stillgelegt, F-1). Eine Zeile, die einem anderen Mandat oder einem anderen Berliner Tag gehört, wurde als eigener heutiger Beleg akzeptiert. Für einen Cache genügt das, für einen **Sicherheitsbeleg** nicht (CLAUDE.md §4.1) | **hoch** (Kern der Zusage „mandatsscharf"); Auslösung setzt eine Kennungskollision oder Datenverfälschung voraus | `briefing-lauf.ausZeile` prüft jede gelesene Zeile gegen den **angefragten** Mandanten (`row.user_id` **und** `payload.tenantId`) und den **angefragten** Berliner Tag. Abweichung ⇒ kein Beleg (ehrlich „noch nicht aktuell") + lautes Protokoll |
+| **F2** | **Ein wochenalter Vorgang wurde zu „Neu seit dem letzten Briefing" hochgestuft** und trug dort das Datum **„Heute"**. Ursache: die Frischeklasse folgte `item.lastUpdated`, und das ist ein Maximum über `ko.updated_at` — Helmuts **eigener Schreibzeitpunkt**. Jeder Backfill (`presentation-backfill`, `staff-backfill`) und jede Reklassifizierung hebt ihn auf „heute" | **hoch** (genau die alte Lage im Gewand der heutigen; verletzt „echtes Datum behalten") | Neuer, additiver **belegter Meldungszeitpunkt** `meldungAt` = jüngstes `published_at` der Quelldokumente, hilfsweise `ko.created_at` — **nie** `updated_at`. Klasse und Datumslabel folgen ihm; `lastUpdated`, Rangfolge und Auswahl bleiben unverändert. Eine echte neue Entwicklung an einem alten Vorgang (neues Dokument von heute) bleibt zu Recht „neu" |
+| **F3** | **Ein Vorgang von gestern stand unter der Überschrift „Morgenbriefing".** Das Briefingfenster ersetzt den Kalendertags-Guard; damit blieb der Kopf zu Recht `fresh`, verlor aber die bestehende Regel „bei nicht-heutigem Stand kein Slot-Name" | **mittel** (optisch die heutige Lage) | `currentHelmutState.datenstandVonHeute`/`datenstandTag` (Anzeige-Angabe, stuft nichts um); der Kopf zeigt dann „Letzter Stand · <echtes Datum>". Gegenprobe: ein heutiger Vorgang trägt weiterhin den Slot-Namen |
+| **F5** | **Bei gezogenem Not-Aus** (`HELMUT_BRIEFING_FRISCHE=off`) meldete der Morgen-Cron bei **jedem** Lauf „FRISCHEVERTRAG unvollständig" für **alle** Mandate | niedrig (Dauerfehlalarm, verdeckt echte Befunde) | Ohne Vertrag entsteht kein Beleg und keine Abdeckungsbehauptung; die Antwort weist `frischevertrag.vertrag: "not-aus"` aus |
+| **F6** | **Die Abdeckungszahl zählte auch eine FEHLER-Quittung als „belegt".** Ein vollständig gescheiterter Morgenlauf meldete `frischebelege=1/1` — **falsches Grün an genau der Stelle, die es verhindern soll** (vom neuen Integrationstest über die echte Cron-Route aufgedeckt) | **hoch** (Betreibersicht) | Als belegt zählt nur ein **verifizierter Erfolg** oder eine Wiederholung. Zusätzlich eine eigene Meldung `FRISCHEVERTRAG nicht erfuellt: nur X von Y …`, getrennt von der Persistenzmeldung |
+| **F4** | **Das Wiederholungsfenster war so breit wie die Bauzeit.** Der Beleg wurde **vor** dem bis zu 60 s dauernden Bau gelesen; ein überlappender Lauf (Watchdog trifft regulären Cron) sah dort ebenfalls „kein Beleg" und pushte ein zweites Mal | mittel | Zweite Lesung **unmittelbar vor** Push und Schreibvorgang. Das verkleinert das Fenster von der Bauzeit auf die Dauer eines Lesezugriffs. Es **beseitigt** das Rennen nicht (siehe Restrisiko unten) |
+
+### Was der Review **bestätigt** hat (keine Änderung nötig)
+
+- **Kein Rückfall auf den Vortag.** Ohne heutigen Erfolgsbeleg gibt es in Kopf,
+  Karte, Zustand und kompakter Antwort ausschließlich „Briefing noch nicht aktuell";
+  alle acht Fehlerklassen (fehlender Lauf, fehlgeschlagener Lauf, veralteter Lauf,
+  unbekannte Vertragsversion, veraltete Daten, unbekannter Datenstand, unbestimmbare
+  Zeitzone, nicht lesbarer Beleg) führen dorthin. Der Vertrag kann **nur herabstufen**.
+- **Der Lesepfad schreibt keine Quittung** — quelltextgesichert; ein fehlender
+  Morgenlauf wird gemeldet, nicht nachträglich behauptet.
+- **Fehler nach belegtem Erfolg** überschreibt den Erfolg nicht (getrennte Zeilen).
+- **Speicherfehlerkette:** `v3-store-disabled`/`store-error` ⇒ Fehlerquittung, kein
+  Erfolg. Über die **echte** Cron-Route nachgewiesen (INT3/INT4).
+- **Zeitzone:** Tageswechsel, Sommer-/Winterversatz und beide Umstellungstage
+  stimmen; Client, Server, Narrativ-Cache und Beleg nutzen denselben Tagesbegriff.
+  Nicht existierende Ortszeit (29.03. 02:30) liefert **deterministisch** den Zeitpunkt
+  **vor** der Lücke, doppelte Ortszeit (25.10. 02:30) deterministisch das **erste**
+  Vorkommen — beides folgenlos, weil nur Mitternacht abgefragt wird. Der Kommentar im
+  Modul, der etwas anderes behauptete, ist berichtigt.
+- **Datensparsamkeit:** die Quittung trägt Kennzahlen und Zeitpunkte, keine Texte,
+  keine URLs, keine Inhalte.
+
+### Verbleibende Risiken nach dem Review
+
+1. **Gleichzeitige Läufe bleiben theoretisch möglich.** Der Morgen-Cron nimmt keine
+   eigene Mandatssperre; die Absicherung ist der Versuchsvermerk der Fairnessschicht
+   (`HELMUT_CRON_FAIRNESS`, Default an). Bei **abgeschalteter** Fairness und exakt
+   überlappenden Läufen sind ein doppelter Push und ein doppelter Schreibvorgang
+   weiterhin möglich. Wirkung: doppelte Benachrichtigung, **kein** falsches Grün.
+2. **Der Datenstand bleibt global** (§8.5) — ein mandatsspezifischer Datenstillstand
+   wird nicht erkannt.
+3. **Zusätzliche Last** (gemessen an den Aufrufpfaden, nicht an Production):
+   Morgenlauf **6** kleine Zeilenzugriffe je Mandat beim ersten Lauf des Tages
+   (1 Beleg + 2 Rückblick + 1 Zweitlesung + 1 Schreibvorgang + 1 Gegenlesen),
+   **1** bei einem erkannten Wiederholungslauf; Lesepfad **1–4** je Briefing-Abruf.
+   Alle laufen als Primärschlüsselzugriff auf `briefings(id)` — kein fehlender Index,
+   keine Abfrage je Element, **kein zusätzlicher KI-Aufruf** (quelltextgesichert).
+   Hochrechnung Morgenfenster: 5 Mandate ≈ 30 · 25 ≈ 150 · 200 ≈ 1 200 · 1 000 ≈ 6 000
+   Zeilenzugriffe. Bei Parallelität 8 und ~45 ms je Zugriff sind das ~7 s bei 200
+   Mandaten (≈ 2,5 % des 270-s-Slotbudgets) und ~34 s bei 1 000 — bei 1 000 Mandaten
+   ist ohnehin schon der Motor überlastet (OP-30).
+4. **Wachstum von `briefings`:** bis zu zwei Quittungszeilen je Mandat und Tag
+   (≈ 146 000 Zeilen/Jahr bei 200 Mandaten). Die Tabelle ist im Aufbewahrungsvertrag
+   als `nutzer-ausgabe`, 90 Tage geführt — die Löschung ist aber **nicht scharf**
+   (OP-12). Bis dahin wächst die Tabelle unbegrenzt.
+5. **Die 5 roten Offline-Suiten sind Umgebungsartefakte dieser Sitzung**, nicht des
+   Repositorys: `kalender-ics` scheiterte nur an nicht installierten Abhängigkeiten
+   (nach `npm ci` grün, verbleibende Rote danach **4**); `privacy-vollstaendigkeit`, `profile-db`, `provision-tenant`
+   und `tenant-neutrality` scheitern am lokalen Netzriegel bzw. am Zustand des
+   lokalen Datenverzeichnisses. Unabhängig gegengeprüft: auf `origin/main` (`ec2e208`)
+   **identisch rot, mit identischer Fehlermeldung**; die CI derselben Commit-Stände
+   ist auf allen drei Prüfungen grün.
+
+**Urteil des Reviews:** Nach den sechs Korrekturen erfüllt der Vertrag die Zusage —
+ohne mandats- und tagesscharfen Erfolgsbeleg gibt es kein „Aktuell", und kein
+Datenstand vom Vortag erscheint als heutige Lage.

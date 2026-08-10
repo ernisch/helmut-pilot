@@ -6591,11 +6591,20 @@ function renderHstandHeader(state) {
   const st = vertragOffen
     ? HSTAND_STATUS_LABEL.nicht_aktuell
     : (HSTAND_STATUS_LABEL[state.status] || HSTAND_STATUS_LABEL.empty);
-  const when = hstandWhen(state.sourcesSummary && state.sourcesSummary.lastUpdated) || hstandWhen(state.generatedAt);
+  // Das Datum im Kopf ist das ECHTE Datum des gezeigten Vorgangs: bevorzugt sein
+  // belegtes Meldungsdatum (zeitLabel, Europe/Berlin) — nicht der Zeitpunkt, zu dem
+  // Helmut die Zeile zuletzt angefasst hat (Audit 2026-08-10, Befund F2).
+  const when = (state.primaryItem && state.primaryItem.zeitLabel)
+    || hstandWhen(state.sourcesSummary && state.sourcesSummary.lastUpdated)
+    || hstandWhen(state.generatedAt);
   // Bei STALE (angezeigter Datenstand nicht von heute) darf NICHT der aktuelle Slot-Name
   // (z. B. „Mittagsbriefing") mit einem alten Datum vermischt werden — das wirkt falsch.
   // Dann ehrlich „Letzter Stand · <Datum>" zeigen. Nur bei frischem Stand den Slot-Namen.
-  const isStale = vertragOffen || state.status === "stale" || state.staleState === true;
+  // Befund F3: das gilt AUCH, wenn der Frischevertrag den Stand zu Recht als „neu seit
+  // dem letzten Briefing" fuehrt, der Vorgang aber von gestern ist — sonst stuende
+  // „Morgenbriefing · Gestern, 22:40" da und saehe wie die heutige Lage aus.
+  const isStale = vertragOffen || state.status === "stale" || state.staleState === true
+    || state.datenstandVonHeute === false;
   const type = isStale
     ? "Letzter Stand"
     : (HSTAND_TYPE_LABEL[String(state.briefingType || "").toLowerCase()] || "Briefing");

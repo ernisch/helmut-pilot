@@ -902,7 +902,17 @@ async function handleRequest(request, response) {
         // Schreibvorgang. Das Narrativ dieses Tages liegt bereits im Tagescache
         // (bf-<mandat>-lage-<tag>) — es entsteht also auch kein weiterer KI-Aufruf.
         const signatur = briefingLauf.inhaltsSignatur(briefing);
-        const wiederholung = laufErfolg && briefingLauf.istWiederholung(heutiger.lauf, signatur);
+        // Der Beleg wurde VOR dem Bau gelesen, und der Bau darf bis zu 60 s dauern. Ein
+        // ueberlappender Lauf (Watchdog trifft auf den regulaeren Cron) haette in diesem
+        // Fenster ebenfalls "kein Beleg" gesehen und ein zweites Mal gepusht. Deshalb
+        // unmittelbar VOR Push und Schreibvorgang noch einmal nachsehen — das verkleinert
+        // das Zeitfenster von der Baudauer auf die Dauer eines Lesezugriffs. Es beseitigt
+        // das Rennen NICHT (dafuer braeuchte es eine Bedingung im Schreibvorgang selbst);
+        // die verbleibende Ueberlappung faengt die Mandatssperre der Fairnessschicht ab.
+        const belegVorPush = briefingFrische.vertragAktiv()
+          ? (heutiger.lauf ? heutiger : await briefingLauf.ladeErfolg(storageModul, tenantId, berlinTag))
+          : heutiger;
+        const wiederholung = laufErfolg && briefingLauf.istWiederholung(belegVorPush.lauf, signatur);
 
         const push = wiederholung
           ? { skipped: true, reason: "wiederholung-gleicher-inhalt" }
@@ -940,7 +950,10 @@ async function handleRequest(request, response) {
           available: Boolean(briefing && briefing.available),
           pushSkipped: Boolean(push && push.skipped),
           pushReason: (push && push.reason) || null,
-          frischeBeleg: {
+          // Bei gezogenem Not-Aus (`HELMUT_BRIEFING_FRISCHE=off`) gibt es bewusst KEINEN
+          // Beleg — dann darf auch keine Abdeckung gemeldet und kein Fehlalarm
+          // "Frischevertrag unvollstaendig" ausgeloest werden (Audit 2026-08-10, F5).
+          ...(briefingFrische.vertragAktiv() ? { frischeBeleg: {
             tag: berlinTag,
             status: laufErfolg ? briefingLauf.STATUS_ERFOLG : briefingLauf.STATUS_FEHLER,
             wiederholung,
@@ -948,26 +961,40 @@ async function handleRequest(request, response) {
             gespeichert: Boolean(quittung && quittung.gespeichert),
             verifiziert: Boolean(quittung && quittung.verifiziert),
             fehler: (quittung && quittung.fehler) || null
-          },
+          } } : {}),
           ...(buildTimeout || pushTimeout || speicherfehler
             ? { ok: false, bounded: true, reason: buildTimeout ? "build-timeout" : speicherfehler ? briefing.reason : "push-timeout" }
             : {})
         };
       }, { deadlineMs: 240000 });
-      // Abdeckung des Frischevertrags im heutigen Lauf: wie viele Mandate haben
-      // einen VERIFIZIERTEN heutigen Beleg? Ein uebersprungenes Mandat faellt hier
+      // Abdeckung des Frischevertrags im heutigen Lauf: fuer wie viele Mandate ist ein
+      // ERFOLGREICHES heutiges Briefing belegt? Ein uebersprungenes Mandat faellt hier
       // auf, statt still ohne aktuelles Briefing zu bleiben (kein falsches Gruen).
+      // WICHTIG (Audit 2026-08-10, Befund F6): `verifiziert` heisst nur „die Ablage
+      // traegt die Quittung" — auch eine FEHLER-Quittung ist verifizierbar. Wer sie
+      // mitzaehlt, meldet nach einem komplett gescheiterten Morgenlauf `belege=1/1`
+      // und damit exakt das falsche Gruen, das dieser Vertrag verhindern soll.
+      // Als belegt zaehlt deshalb ausschliesslich: verifizierter ERFOLG oder eine
+      // Wiederholung (die einen bereits persistierten Erfolg desselben Tages voraussetzt).
       const belegErgebnisse = (summary.results || []).filter((r) => r && r.frischeBeleg);
       const frischeAbdeckung = {
         berlinTag,
+        vertrag: briefingFrische.vertragAktiv() ? "aktiv" : "not-aus",
         mandate: Number(summary.tenants) || 0,
-        belegt: belegErgebnisse.filter((r) => r.frischeBeleg.verifiziert || r.frischeBeleg.wiederholung).length,
+        belegt: belegErgebnisse.filter((r) => r.frischeBeleg.wiederholung
+          || (r.frischeBeleg.status === briefingLauf.STATUS_ERFOLG && r.frischeBeleg.verifiziert)).length,
         wiederholungen: belegErgebnisse.filter((r) => r.frischeBeleg.wiederholung).length,
         nichtPersistiert: belegErgebnisse.filter((r) => !r.frischeBeleg.wiederholung && !r.frischeBeleg.verifiziert).length,
         fehlgeschlagen: belegErgebnisse.filter((r) => r.frischeBeleg.status === briefingLauf.STATUS_FEHLER).length
       };
       if (frischeAbdeckung.nichtPersistiert > 0) {
         console.error(`[cron/morning-briefing] FRISCHEVERTRAG unvollstaendig: ${frischeAbdeckung.nichtPersistiert} von ${frischeAbdeckung.mandate} Mandaten ohne verifizierten Beleg (tag=${berlinTag})`);
+      }
+      // Zweite, eigenstaendige Meldung: die Quittung kann persistiert UND der Tag trotzdem
+      // unversorgt sein (Fehllauf, Zeitbudget, deaktiviertes Profil). Diese Luecke ist der
+      // eigentliche Gegenstand von OP-31 und darf nicht in der Persistenzmeldung untergehen.
+      if (briefingFrische.vertragAktiv() && frischeAbdeckung.belegt < frischeAbdeckung.mandate) {
+        console.error(`[cron/morning-briefing] FRISCHEVERTRAG nicht erfuellt: nur ${frischeAbdeckung.belegt} von ${frischeAbdeckung.mandate} Mandaten haben heute ein belegtes Morgenbriefing (tag=${berlinTag}, fehlgeschlagen=${frischeAbdeckung.fehlgeschlagen}, nichtPersistiert=${frischeAbdeckung.nichtPersistiert})`);
       }
       // P0-1: Lauf-Kennzahlen persistieren (Zaehler/Status, KEIN Briefingtext).
       // W-2: kanonische Zustaende (failed/success statt error/ok/empty; der

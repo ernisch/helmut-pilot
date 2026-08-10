@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-10** (drei Stränge: **(a) OP-25-Production-Nachweis BESTANDEN** — drittes Fenster 2026-08-07/08, Exit 0, null Befunde, kanonisch §7.7.9; gilt **ausschließlich für die heutige Architektur mit 5 Mandaten** und beweist weder OP-30 noch 200 Mandate. **(b) OP-30**, §7a — PR #233/#235/#236/**#237** gemergt, Deployments READY; R4/R4b behoben, Kapazität der Morgenlage slotgenau gemessen, 200 Mandate lokal getragen; alle Flags **aus**, keine Migration angewendet, nichts aktiviert. **(c) neu: OP-31 Frischevertrag des Morgenbriefings**, §7a — lokal gebaut und getestet, **PR offen**, kein Production-Nachweis). Diese Datei enthält
+**Stand: 2026-08-10/2** (drei Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** — drittes Fenster 2026-08-07/08, Exit 0, null Befunde, kanonisch §7.7.9; gilt **ausschliesslich fuer die heutige Architektur mit 5 Mandaten** und beweist weder OP-30 noch 200 Mandate. **(b) OP-30**, §7a — PR #233/#235/#236/#237 gemergt; alle Flags **aus**, keine Migration angewendet. **(c) OP-31 Frischevertrag des Morgenbriefings**, §7a — gebaut, adversarial gegengeprueft (sechs Befunde behoben), **PR #238 offen**, kein Production-Nachweis). Diese Datei enthaelt
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -196,15 +196,13 @@ heute ueberhaupt ein Briefing bekommen?" — die Lauftelemetrie ist prozessweit,
 Zeitdeckelung uebersprungenes Mandat war von einem versorgten **nicht unterscheidbar**.
 Umgesetzt: eine Quelle fuer den Berliner Tageswechsel (inkl. Sommerzeit), mandatsscharfe
 **Lauf-Quittung** in der bestehenden `briefings`-Tabelle (**keine Migration**, Erfolg und
-Fehler in getrennten Zeilen, atomarer Upsert mit Gegenlesen), Briefingfenster „neu seit dem
-letzten erfolgreichen Morgenbriefing" inkl. spaetem Vorabend bei **unveraendertem echtem
-Datum**, getrennte Klassen neu/weiterhin relevant/Hintergrund, ehrliches **„Briefing noch
-nicht aktuell"** ohne Rueckfall auf den Vortag, Wiederholungserkennung (kein zweiter Push,
-kein zusaetzlicher Modellaufruf), Abdeckungsmeldung des Morgenlaufs. Tests 69/69 · 68/68 ·
-Gesamtlauf **236/241** (5 rot = nachgemessenes Basisrot) · Smoke 32/32.
-**Offen:** Review/Merge · Production-Nachweis des ersten Morgenlaufs · Abdeckungsalarm (OP-07).
-**Merge-Wirkung:** bis zum ersten Morgenlauf auf dem neuen Stand zeigt die App ehrlich
-„Briefing noch nicht aktuell".
+Fehler getrennt, atomarer Upsert mit Gegenlesen), Briefingfenster „neu seit dem letzten
+erfolgreichen Morgenbriefing", getrennte Klassen neu/weiterhin relevant/Hintergrund,
+ehrliches **„Briefing noch nicht aktuell"** ohne Vortagsrueckfall, Wiederholungserkennung
+(kein zweiter Push, kein zusaetzlicher Modellaufruf), Abdeckungsmeldung.
+
+**Unabhaengiger adversarialer Review (2026-08-10/2, gleicher Branch): sechs echte Befunde, alle behoben** — Beleg nicht mandats-/tagesscharf · alter Vorgang durch Backfill-`updated_at` als „neu" mit Datum „Heute" · gestriger Stand unter „Morgenbriefing" · Wiederholungsfenster so breit wie die Bauzeit · Dauerfehlalarm bei Not-Aus · **Abdeckungszahl zaehlte FEHLER-Quittungen als „belegt"** (`frischebelege=1/1` nach komplett gescheitertem Lauf). Einzelheiten und Restrisiken: Belegdatei §10. Tests 69/69 · 68/68 · **34/34** (neue adversariale Suite ueber die echte Cron-Route) · Gesamtlauf **238/242 in 530 s** (4 rot = Umgebungsartefakte, auf `origin/main` identisch rot, CI gruen) · Smoke 32/32.
+**Offen:** Review/Merge · Production-Nachweis des ersten Morgenlaufs · Alarmweg (OP-07). **Merge-Wirkung:** bis zum ersten Morgenlauf zeigt die App ehrlich „Briefing noch nicht aktuell". **Restrisiko:** ohne `HELMUT_CRON_FAIRNESS` koennen exakt ueberlappende Laeufe doppelt pushen (kein falsches Gruen); `briefings` waechst taeglich, Loeschung nicht scharf (OP-12).
 
 **Folge für OP-25:** eine spätere Aktivierung verändert `quellenVereinigung`, die
 K2.1-Sichtbarkeitsmengen und die Laufzeitbilanz ⇒ **OP-25 muss danach von vorn**.
@@ -330,7 +328,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 | PARDOK-Parser (Punkt 24) | [`quellenarchitektur/17-pardok-parser.md`](quellenarchitektur/17-pardok-parser.md) |
 | Paket-Inventur (wiederholbar) | [`quellenarchitektur/30-paket-inventur-production.md`](quellenarchitektur/30-paket-inventur-production.md) |
 | **OP-30: Kapazität der Morgenlage, R4/R4b, Aktivierungsplan** | [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) |
-| **OP-31: Frischevertrag des Morgenbriefings (Ursache, Vertrag, Tests, Merge-Wirkung)** | [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) |
+| **OP-31: Frischevertrag + adversarialer Review (§10)** | [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) |
 | Roadmap Phase 1 | [`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md) |
 | Mail | [`betrieb/mailversand-resend.md`](betrieb/mailversand-resend.md) · [`betrieb/lokale-mailtests-mailpit.md`](betrieb/lokale-mailtests-mailpit.md) |
 | **Vollständige Historie bis `4594fea`** | [`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md) |
@@ -339,9 +337,9 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-10 | **OP-31 Frischevertrag des Morgenbriefings**: belegte Ursache (kein mandatsscharfer Tagesbeleg, drei unabhängige Frischeaussagen, zu grober Kalendertag, gerätelokale Zeitzone, unerkannter Wiederholungslauf) und umgesetzter Vertrag (eine Berlin-Quelle inkl. Sommerzeit · Lauf-Quittung ohne Migration mit Gegenlesen · Fenster „neu seit dem letzten erfolgreichen Morgenbriefing" inkl. spätem Vorabend bei echtem Datum · getrennte Klassen neu/weiterhin relevant/Hintergrund · ehrliches „Briefing noch nicht aktuell" ohne Vortagsrückfall · Wiederholungserkennung ohne zweiten Push/Modellaufruf · Abdeckungsmeldung). Tests 69/69 · 68/68 · Gesamt 236/241 (5 rot = nachgemessenes Basisrot) · Smoke 32/32 · Beleg [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) | **teilweise abgeschlossen** (lokal bewiesen, PR offen; Merge und Production-Nachweis fehlen) |
+| 2026-08-10 | **OP-31 Frischevertrag des Morgenbriefings** (§7a): mandatsscharfe Lauf-Quittung ohne Migration, ehrliches „Briefing noch nicht aktuell" ohne Vortagsrückfall, Meldungsklassen, Wiederholungserkennung. **Anschließend unabhängiger adversarialer Review desselben PR: sechs echte Befunde, alle behoben** — darunter ein Tagesbeleg ohne Mandats-/Tagesprüfung und eine Abdeckungszahl, die FEHLER-Quittungen als „belegt" zählte. Tests 69/69 · 68/68 · **34/34** · Gesamt **238/242 in 530 s** · Smoke 32/32 · Beleg [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) §10 | **teilweise abgeschlossen** (lokal bewiesen und adversarial gegengeprüft; Merge und Production-Nachweis fehlen) |
 | 2026-08-09/3 | **OP-30 Kapazität der Morgenlage + R4/R4b** — doppelte Budgetzählung an echter PostgreSQL reproduziert und behoben, Kapazität slotgenau gemessen, kleinste sichere Lösung ⇒ 200/200 im Morgenfenster mit 59,6 % Reserve; R6 im Testgerüst entschärft · Beleg [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) | **teilweise abgeschlossen**, PR #237 gemergt (Migration, Aktivierung und Production-Nachweis offen) |
 | 2026-08-09/2 | **E1 `tenant_narrative` + unabhängiger Abschlussreview**: Lage-Narrativ als fünfter Auftragstyp über die Warteschlange (Flag default AUS, Migration nicht angewendet); Review behob R1–R3, benannte R4/R6 · Belege [`lage-narrativ-warteschlange-2026-08-09.md`](betrieb/lage-narrativ-warteschlange-2026-08-09.md) · [`op30-e1-abschlussreview-2026-08-09.md`](betrieb/op30-e1-abschlussreview-2026-08-09.md) | **abgeschlossen**, PR #236 gemergt |
-| 2026-08-09 | **OP-30 Aktivierungsreife für 200 Mandate**: O1–O5 gelöst, B14 behoben, Stufennachweis 5/25/50/100/200 (+1 000) mit 14 Abnahmekriterien, Importvertrag; eigene Fehlmessung offengelegt · Beleg [`betrieb/op30-aktivierungsreife-2026-08-09.md`](betrieb/op30-aktivierungsreife-2026-08-09.md) | **teilweise abgeschlossen**, PR #235 gemergt |
+| 2026-08-09 | **OP-30 Aktivierungsreife für 200 Mandate**: O1–O5 gelöst, B14 behoben, Stufennachweis 5/25/50/100/200 (+Stress 1 000) mit allen 14 Abnahmekriterien, Importvertrag für Mandatsprofile; eigene Fehlmessung offengelegt · Beleg [`betrieb/op30-aktivierungsreife-2026-08-09.md`](betrieb/op30-aktivierungsreife-2026-08-09.md) | **teilweise abgeschlossen** (lokal bewiesen; Merge, Migration, Aktivierung, Production-Nachweis und 190 echte Profile offen) |
 
 Die OP-30-Sprints vom 2026-08-08 stehen vollständig in den Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) trägt den CI-Basisrot-Befund). Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 stehen kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 und ältere Beweisketten: **Archiv** ([`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)).
