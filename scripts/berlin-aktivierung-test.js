@@ -650,7 +650,10 @@ function adversarialBefunde() {
     .split("\n")
     // Kommentarzeilen filtern nichts — nur ausführbarer Code zählt.
     .filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l))
-    .filter((l) => /berlin/i.test(l) && !/Europe\/Berlin|berlinDay|berlinDate|berlinTime|BerlinGreeting/i.test(l));
+    // Zeitzonen-/Tageswechsel-Helfer sind KEIN Landesfilter: der Frischevertrag
+    // fuehrt den Berliner Kalendertag (berlinTag*) als EINE Quelle — geprueft wird
+    // hier weiterhin ausschliesslich auf einen Filter auf das LAND Berlin.
+    .filter((l) => /berlin/i.test(l) && !/Europe\/Berlin|berlinDay|berlinDate|berlinTime|berlinTag|berlinZeit|berlinOffset|BerlinGreeting/i.test(l));
   check("11j Kein Berlin-Filter in Lage/Radar/Briefing/Push (die Kette bricht nicht still ab)",
     downstream.length === 0, downstream.slice(0, 2).join(" | "));
 }

@@ -1733,6 +1733,58 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   (5–6 Mandate) **kein** Blocker; Blocker ab etwa zehn Mandaten und damit vor mehreren
   zahlenden Kunden.
 
+#### OP-31 · Frischegarantie des Morgenbriefings (neu, Sprint „Frischevertrag" 2026-08-10; Prioritätsklasse P1)
+
+- **Status:** **teilweise erledigt.** Der verbindliche Frischevertrag ist gebaut und
+  offline vollständig belegt; der Production-Nachweis fehlt. Kanonisch:
+  [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md).
+- **Belegte Ursache (Code auf `main`, `ec2e208`):** es gab **keinen mandatsscharfen
+  Beleg**, dass an einem Berliner Kalendertag ein Morgenbriefing entstanden ist — die
+  Lauftelemetrie `briefing-morning` ist prozessweit. Ein wegen Zeitdeckelung
+  übersprungenes Mandat war von einem versorgten **nicht unterscheidbar**. Zusätzlich
+  lag die Frischeaussage in **drei** unabhängigen Implementierungen (Server-Kopf,
+  Contract-Tages-Guard, Lage-Cacheschlüssel), der reine Kalendertag stufte
+  Vorabendmeldungen fälschlich als „nicht aktuell" herab, die Oberfläche rechnete
+  Zeiten in der Zeitzone des Geräts, und ein Wiederholungslauf (Watchdog) löste einen
+  zweiten Push aus.
+- **Erledigt (lokal, PR offen):** eine Quelle für den Berliner Tageswechsel inkl.
+  Sommerzeit (`lib/helmut/briefing-frische.js`), mandatsscharfe **Lauf-Quittung** in der
+  bestehenden `briefings`-Tabelle (**keine Migration**, Erfolg und Fehler in getrennten
+  Zeilen, atomarer Upsert mit Gegenlesen, CLAUDE.md §4.10), Briefingfenster „neu seit
+  dem letzten erfolgreichen Morgenbriefing" inklusive spätem Vorabend bei
+  **unverändertem echtem Datum**, getrennte Klassen `neu` / `weiterhin relevant` /
+  `Hintergrund`, ehrliche Ansage **„Briefing noch nicht aktuell"** ohne Rückfall auf den
+  Vortag, Wiederholungserkennung über eine Inhaltssignatur (kein zweiter Push, kein
+  zusätzlicher Modellaufruf) und eine Abdeckungsmeldung des Morgenlaufs.
+  Tests: `scripts/briefing-frische-test.js` **69/69**, `scripts/briefing-frische-e2e-test.js`
+  **68/68**, `scripts/briefing-frische-audit-test.js` **34/34**, Gesamtlauf **238/242 in 530 s** (4 rot = Umgebungsartefakte, CI grün).
+- **Unabhängiger adversarialer Review desselben PR (2026-08-10/2, gleicher Branch):
+  sechs echte Befunde, alle behoben** — der Tagesbeleg war **nicht mandats- und
+  tagesscharf** (`getRenderedBriefingV3` wählt ohne `user_id`-Filter); ein wochenalter
+  Vorgang wurde durch einen Backfill-`updated_at` zu **„neu" mit dem Datum „Heute"**;
+  ein Vorgang von gestern stand unter der Überschrift „Morgenbriefing"; das
+  Wiederholungsfenster war so breit wie die Bauzeit; der Not-Aus erzeugte einen
+  Dauerfehlalarm; und die **Abdeckungszahl zählte FEHLER-Quittungen als „belegt"**, so
+  dass ein vollständig gescheiterter Morgenlauf `frischebelege=1/1` meldete — falsches
+  Grün an genau der Stelle, die es verhindern soll. Einzelheiten, Gegenbeweise und
+  verbleibende Risiken:
+  [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) §10.
+- **Fehlender Schritt:** (a) Review/Merge; (b) **Production-Nachweis**: erster Morgenlauf
+  auf dem neuen Stand mit `frischevertrag.belegt == mandate` und ohne Zeile
+  `FRISCHEBELEG NICHT PERSISTIERT`; (c) **Abdeckungsalarm** statt Logeintrag — gehört zu
+  OP-07 und ist bewusst nicht Teil dieses Sprints; (d) empirische Justierung der
+  Schwellen (8 h / 14 Tage / 3 Tage / 24 h), die gesetzt und nicht gemessen sind;
+  (e) **Wachstum von `briefings`** — bis zu zwei Quittungszeilen je Mandat und Tag; die
+  Aufbewahrung (90 Tage, `nutzer-ausgabe`) ist nicht scharf (OP-12).
+- **Abhängigkeiten:** OP-30 (die Abdeckungszahl ist die Messgröße der stufenweisen
+  Aktivierung — OP-31 (b) sollte **vor** Stufe 2 mit 25 Mandaten stehen), OP-25 (c)
+  (Abdeckungsalarm über eine Serie von Läufen), OP-07 (Alarmweg).
+- **Risiko ohne diesen Punkt:** hoch. Mit 25 Mandaten in einem gedeckelten Fenster ist
+  das übersprungene Mandat der Regelfall der Überlast; ohne Vertrag sieht der
+  Abgeordnete alte Daten mit frischem Etikett (`CLAUDE.md` §4.4).
+- **Freigabe:** **JA** für den Merge (= Deployment). **NEIN** für alles andere: keine
+  Migration, kein Flag-Wechsel, keine Cron-Änderung, kein KI-Pfad.
+
 ---
 
 ## 7 · Historisch markierte Dokumente

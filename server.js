@@ -17,6 +17,12 @@ const llmBudgetLib = require("./lib/helmut/llm-budget");
 // OP-25: faire Mandantenreihenfolge der Mehrmandanten-Crons (Rotation nach aeltestem
 // Versuch statt alphabetisch). Reine Planung + Ausfuehrungsschleife, offline testbar.
 const cronFairness = require("./lib/helmut/cron-fairness");
+// Verbindlicher Frischevertrag des Morgenbriefings (Berliner Tageswechsel inkl.
+// Sommerzeit, Briefingfenster, Meldungsklassen) und sein Beleg (Lauf-Quittung).
+// EINE Wahrheit fuer Cron, API, Cache und Oberflaeche — siehe lib/helmut/briefing-frische.js.
+const briefingFrische = require("./lib/helmut/briefing-frische");
+const briefingLauf = require("./lib/helmut/briefing-lauf");
+const storageModul = require("./lib/helmut/storage");
 // OP-25 K1 (Schattenpfad, DEFAULT AUS): Trennung von globaler Erfassung und
 // mandatsbezogener Projektion. Ohne HELMUT_CRON_GLOBALPHASE wird davon nichts betreten.
 const cronGlobalphase = require("./lib/helmut/cron-globalphase");
@@ -858,27 +864,138 @@ async function handleRequest(request, response) {
       // ALLE aktiven Mandate isoliert (kein Flag, kein bevorzugtes/geratenes Mandat):
       // jedes Mandat erhaelt seinen Morgen-Build + Push. 0 KI (reine Lese-Transformation);
       // Push nur bei echtem Inhalt; deaktivierte Profile werden uebersprungen.
+      const berlinTag = briefingFrische.berlinTagKey(new Date(t0));
       const summary = await runCronForTenants("morning-briefing", async (tenantId) => {
         const profile = await activeProfile(tenantId);
         const val = validateProfile(profile);
         if (val.disabled) return { skipped: true, reason: "profil-deaktiviert" };
-        const briefing = await withTimeout(buildV3Briefing(profile, tenantId), 60000, "cron-briefing-build")
+        // --- FRISCHEVERTRAG, Schritt 1: Fenster bestimmen ---------------------
+        // Liegt fuer HEUTE bereits ein Erfolg vor (zweiter Lauf, Watchdog, Neustart),
+        // gilt exakt dessen Fenster weiter — sonst waeren bereits ausgelieferte
+        // Meldungen im Wiederholungslauf ploetzlich nicht mehr "neu".
+        const heutiger = briefingFrische.vertragAktiv()
+          ? await briefingLauf.ladeErfolg(storageModul, tenantId, berlinTag)
+          : { lauf: null, fehler: "vertrag-aus" };
+        let fenster = null;
+        if (briefingFrische.vertragAktiv()) {
+          if (heutiger.lauf && heutiger.lauf.fensterStart) {
+            fenster = briefingFrische.frischeFenster({ letzterErfolgAt: heutiger.lauf.fensterStart });
+            fenster.quelle = "lauf-quittung";
+          } else {
+            const letzter = await briefingLauf.ladeLetztenErfolg(storageModul, tenantId, berlinTag, { maxTage: 2, inklusiveHeute: false });
+            fenster = briefingFrische.frischeFenster({ letzterErfolgAt: letzter.erzeugtAm });
+          }
+        }
+        const briefing = await withTimeout(buildV3Briefing(profile, tenantId, { frischeFenster: fenster }), 60000, "cron-briefing-build")
           .catch((error) => ({ available: false, reason: "build-timeout", error: error && error.message, items: [], personalizedRecommendations: [], personMentions: [] }));
-        const push = await withTimeout(sendBriefingReadyPush(briefing, profile), 30000, "cron-briefing-push")
-          .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
         // P29-1: ein Timeout ist KEIN Erfolg. Der Befund wird in die Mandats-
         // antwort gehoben, damit die Fairness-Buchfuehrung ihn sieht
         // (cron-fairness.ergebnisFehlgeschlagen): kein erfundener letzter
         // Erfolg, keine faelschlich zurueckgesetzte Fehlerserie.
         const buildTimeout = Boolean(briefing && briefing.reason === "build-timeout");
+        const speicherfehler = Boolean(briefing && ["store-error", "v3-store-disabled"].includes(briefing.reason));
+        const laufErfolg = !buildTimeout && !speicherfehler;
+
+        // --- FRISCHEVERTRAG, Schritt 2: Wiederholung erkennen -----------------
+        // Punkt 9: ein zweiter Lauf am selben Tag mit unveraendertem Inhalt erzeugt
+        // KEIN zweites Briefing, KEINEN zweiten Push und KEINEN weiteren
+        // Schreibvorgang. Das Narrativ dieses Tages liegt bereits im Tagescache
+        // (bf-<mandat>-lage-<tag>) — es entsteht also auch kein weiterer KI-Aufruf.
+        const signatur = briefingLauf.inhaltsSignatur(briefing);
+        // Der Beleg wurde VOR dem Bau gelesen, und der Bau darf bis zu 60 s dauern. Ein
+        // ueberlappender Lauf (Watchdog trifft auf den regulaeren Cron) haette in diesem
+        // Fenster ebenfalls "kein Beleg" gesehen und ein zweites Mal gepusht. Deshalb
+        // unmittelbar VOR Push und Schreibvorgang noch einmal nachsehen — das verkleinert
+        // das Zeitfenster von der Baudauer auf die Dauer eines Lesezugriffs. Es beseitigt
+        // das Rennen NICHT (dafuer braeuchte es eine Bedingung im Schreibvorgang selbst);
+        // die verbleibende Ueberlappung faengt die Mandatssperre der Fairnessschicht ab.
+        const belegVorPush = briefingFrische.vertragAktiv()
+          ? (heutiger.lauf ? heutiger : await briefingLauf.ladeErfolg(storageModul, tenantId, berlinTag))
+          : heutiger;
+        const wiederholung = laufErfolg && briefingLauf.istWiederholung(belegVorPush.lauf, signatur);
+
+        const push = wiederholung
+          ? { skipped: true, reason: "wiederholung-gleicher-inhalt" }
+          : await withTimeout(sendBriefingReadyPush(briefing, profile), 30000, "cron-briefing-push")
+            .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
         const pushTimeout = Boolean(push && push.ok === false && push.reason === "push-timeout");
+
+        // --- FRISCHEVERTRAG, Schritt 3: Beleg schreiben und GEGENLESEN --------
+        let quittung = { uebersprungen: true, grund: briefingFrische.vertragAktiv() ? "wiederholung" : "vertrag-aus" };
+        if (briefingFrische.vertragAktiv() && !wiederholung) {
+          const state = (briefing && briefing.currentHelmutState) || {};
+          const geschrieben = briefingLauf.quittung({
+            tenantId,
+            berlinTag,
+            status: laufErfolg ? briefingLauf.STATUS_ERFOLG : briefingLauf.STATUS_FEHLER,
+            ausloeser: briefingLauf.AUSLOESER_MORGENLAUF,
+            erzeugtAm: new Date(),
+            fensterStart: fenster && fenster.start,
+            vorherErfolgAt: (fenster && fenster.quelle === "letzter-lauf") ? fenster.letzterErfolgAt : null,
+            signatur,
+            kennzahlen: (state.frische && state.frische.kennzahlen) || null,
+            datenstand: (state.primaryItem && state.primaryItem.lastUpdated) || null,
+            grund: laufErfolg ? null : (briefing && briefing.reason) || "unbekannt"
+          });
+          const ergebnis = await briefingLauf.schreibeQuittung(storageModul, geschrieben);
+          quittung = { uebersprungen: false, ...ergebnis };
+          if (!ergebnis.verifiziert) {
+            // CLAUDE.md §4.10: ein Erfolg, den die Ablage nicht traegt, wird NICHT
+            // als Erfolg gemeldet — der Persistenzfehler steht ausdruecklich im Log.
+            console.error(`[cron/morning-briefing] FRISCHEBELEG NICHT PERSISTIERT mandat=${tenantId} tag=${berlinTag} fehler=${ergebnis.fehler || "unbekannt"}`);
+          }
+        }
+
         return {
           available: Boolean(briefing && briefing.available),
           pushSkipped: Boolean(push && push.skipped),
           pushReason: (push && push.reason) || null,
-          ...(buildTimeout || pushTimeout ? { ok: false, bounded: true, reason: buildTimeout ? "build-timeout" : "push-timeout" } : {})
+          // Bei gezogenem Not-Aus (`HELMUT_BRIEFING_FRISCHE=off`) gibt es bewusst KEINEN
+          // Beleg — dann darf auch keine Abdeckung gemeldet und kein Fehlalarm
+          // "Frischevertrag unvollstaendig" ausgeloest werden (Audit 2026-08-10, F5).
+          ...(briefingFrische.vertragAktiv() ? { frischeBeleg: {
+            tag: berlinTag,
+            status: laufErfolg ? briefingLauf.STATUS_ERFOLG : briefingLauf.STATUS_FEHLER,
+            wiederholung,
+            fensterStart: (fenster && fenster.start) || null,
+            gespeichert: Boolean(quittung && quittung.gespeichert),
+            verifiziert: Boolean(quittung && quittung.verifiziert),
+            fehler: (quittung && quittung.fehler) || null
+          } } : {}),
+          ...(buildTimeout || pushTimeout || speicherfehler
+            ? { ok: false, bounded: true, reason: buildTimeout ? "build-timeout" : speicherfehler ? briefing.reason : "push-timeout" }
+            : {})
         };
       }, { deadlineMs: 240000 });
+      // Abdeckung des Frischevertrags im heutigen Lauf: fuer wie viele Mandate ist ein
+      // ERFOLGREICHES heutiges Briefing belegt? Ein uebersprungenes Mandat faellt hier
+      // auf, statt still ohne aktuelles Briefing zu bleiben (kein falsches Gruen).
+      // WICHTIG (Audit 2026-08-10, Befund F6): `verifiziert` heisst nur „die Ablage
+      // traegt die Quittung" — auch eine FEHLER-Quittung ist verifizierbar. Wer sie
+      // mitzaehlt, meldet nach einem komplett gescheiterten Morgenlauf `belege=1/1`
+      // und damit exakt das falsche Gruen, das dieser Vertrag verhindern soll.
+      // Als belegt zaehlt deshalb ausschliesslich: verifizierter ERFOLG oder eine
+      // Wiederholung (die einen bereits persistierten Erfolg desselben Tages voraussetzt).
+      const belegErgebnisse = (summary.results || []).filter((r) => r && r.frischeBeleg);
+      const frischeAbdeckung = {
+        berlinTag,
+        vertrag: briefingFrische.vertragAktiv() ? "aktiv" : "not-aus",
+        mandate: Number(summary.tenants) || 0,
+        belegt: belegErgebnisse.filter((r) => r.frischeBeleg.wiederholung
+          || (r.frischeBeleg.status === briefingLauf.STATUS_ERFOLG && r.frischeBeleg.verifiziert)).length,
+        wiederholungen: belegErgebnisse.filter((r) => r.frischeBeleg.wiederholung).length,
+        nichtPersistiert: belegErgebnisse.filter((r) => !r.frischeBeleg.wiederholung && !r.frischeBeleg.verifiziert).length,
+        fehlgeschlagen: belegErgebnisse.filter((r) => r.frischeBeleg.status === briefingLauf.STATUS_FEHLER).length
+      };
+      if (frischeAbdeckung.nichtPersistiert > 0) {
+        console.error(`[cron/morning-briefing] FRISCHEVERTRAG unvollstaendig: ${frischeAbdeckung.nichtPersistiert} von ${frischeAbdeckung.mandate} Mandaten ohne verifizierten Beleg (tag=${berlinTag})`);
+      }
+      // Zweite, eigenstaendige Meldung: die Quittung kann persistiert UND der Tag trotzdem
+      // unversorgt sein (Fehllauf, Zeitbudget, deaktiviertes Profil). Diese Luecke ist der
+      // eigentliche Gegenstand von OP-31 und darf nicht in der Persistenzmeldung untergehen.
+      if (briefingFrische.vertragAktiv() && frischeAbdeckung.belegt < frischeAbdeckung.mandate) {
+        console.error(`[cron/morning-briefing] FRISCHEVERTRAG nicht erfuellt: nur ${frischeAbdeckung.belegt} von ${frischeAbdeckung.mandate} Mandaten haben heute ein belegtes Morgenbriefing (tag=${berlinTag}, fehlgeschlagen=${frischeAbdeckung.fehlgeschlagen}, nichtPersistiert=${frischeAbdeckung.nichtPersistiert})`);
+      }
       // P0-1: Lauf-Kennzahlen persistieren (Zaehler/Status, KEIN Briefingtext).
       // W-2: kanonische Zustaende (failed/success statt error/ok/empty; der
       // erfolgreiche Leerlauf bleibt success mit reason "keine-mandate") und
@@ -893,8 +1010,8 @@ async function handleRequest(request, response) {
         status: (summary.ok === false || ((summary.results || []).length > 0 && (summary.results || []).every((r) => r && r.failed)))
           ? "failed" : "success"
       });
-      console.log(`[cron/morning-briefing] ${Date.now() - t0}ms tenants=${summary.tenants} reason=${summary.reason || "ok"}${morningTelemetrie.ok ? "" : " LAUFTELEMETRIE-NICHT-GESPEICHERT"}`);
-      return { ...summary, lauftelemetrie: { gespeichert: morningTelemetrie.ok, vollstaendig: morningTelemetrie.vollstaendig, fehler: morningTelemetrie.fehler } };
+      console.log(`[cron/morning-briefing] ${Date.now() - t0}ms tenants=${summary.tenants} reason=${summary.reason || "ok"} frischebelege=${frischeAbdeckung.belegt}/${frischeAbdeckung.mandate}${morningTelemetrie.ok ? "" : " LAUFTELEMETRIE-NICHT-GESPEICHERT"}`);
+      return { ...summary, frischevertrag: frischeAbdeckung, lauftelemetrie: { gespeichert: morningTelemetrie.ok, vollstaendig: morningTelemetrie.vollstaendig, fehler: morningTelemetrie.fehler } };
     });
   }
 
@@ -2292,10 +2409,47 @@ function isCompactResponse(url) {
   return value === "1" || value === "true" || value === "yes";
 }
 
-function prepareBriefingResponse(briefing, { previewMode = false, compact = false } = {}) {
-  const decorated = decorateBriefingFreshness(briefing);
+function prepareBriefingResponse(briefing, { previewMode = false, compact = false, frischeKontext = null } = {}) {
+  const decorated = decorateBriefingFreshness(briefing, frischeKontext);
   const payload = compact ? compactBriefingPayload(decorated) : decorated;
   return withPreviewMode(payload, previewMode);
+}
+
+// FRISCHEVERTRAG — Lesekontext eines Mandats fuer den heutigen Berliner Tag.
+// Liefert (a) den BELEG, dass heute ein Briefing erzeugt wurde (Lauf-Quittung),
+// (b) das Briefingfenster ("neu seit dem letzten erfolgreichen Morgenbriefing")
+// und (c) den echten Datenstand des Motors. Rein LESEND — der Lesepfad erzeugt
+// KEINE Quittung: ein fehlender Morgenlauf wird ehrlich gemeldet, nicht still
+// nachtraeglich behauptet. Fail-safe: jeder Fehler ergibt einen Kontext ohne
+// Beleg (=> "Briefing noch nicht aktuell"), nie eine erfundene Frische.
+async function ladeFrischeKontext(tenantId, jetzt = new Date()) {
+  if (!briefingFrische.vertragAktiv()) return null;
+  const berlinTag = briefingFrische.berlinTagKey(jetzt);
+  const leer = { jetzt, berlinTag, lauf: null, fenster: briefingFrische.frischeFenster({ jetzt }), datenstand: null, speicherFehler: null };
+  if (!tenantId || !berlinTag) return leer;
+  try {
+    const [tageslauf, datenstand] = await Promise.all([
+      briefingLauf.ladeTageslauf(storageModul, tenantId, berlinTag),
+      getLatestCompleteKnowledgeObjectAt().catch(() => null)
+    ]);
+    const lauf = tageslauf && tageslauf.lauf ? tageslauf.lauf : null;
+    // Fenster: liegt ein heutiger Lauf vor, gilt GENAU das Fenster, mit dem er
+    // gebaut wurde (sonst waeren die heute ausgelieferten Meldungen ab dem naechsten
+    // Aufruf "nicht mehr neu"). Sonst: letzter Erfolg der zwei Vortage, sonst
+    // Vorabend-Standard.
+    let fenster = null;
+    if (lauf && lauf.fensterStart) {
+      fenster = briefingFrische.frischeFenster({ jetzt, letzterErfolgAt: lauf.fensterStart });
+      fenster.quelle = "lauf-quittung";
+    } else {
+      const letzter = await briefingLauf.ladeLetztenErfolg(storageModul, tenantId, berlinTag, { maxTage: 2, inklusiveHeute: false });
+      fenster = briefingFrische.frischeFenster({ jetzt, letzterErfolgAt: letzter.erzeugtAm });
+    }
+    return { jetzt, berlinTag, lauf, fenster, datenstand: datenstand || null, speicherFehler: (tageslauf && tageslauf.fehler) || null };
+  } catch (error) {
+    console.error("[frischevertrag] Lesekontext fehlgeschlagen:", error && error.message);
+    return { ...leer, speicherFehler: (error && error.message) || "unbekannt" };
+  }
 }
 
 // V3-Read-Path: das Briefing (Home/Briefing/Helmut) entsteht ausschließlich aus
@@ -2320,8 +2474,14 @@ async function latestBriefingPayload({ politicianId, profile, url, previewMode =
     version: commitSha,
     apiOrigin: (url && (url.origin || (url.protocol && url.host ? `${url.protocol}//${url.host}` : null))) || null
   } : null;
-  const briefing = await buildV3Briefing(profile, politicianId, { slot, debug, debugMeta, debugRadar, commit: commitSha });
-  return prepareBriefingResponse(briefing, { previewMode, compact });
+  // Frischevertrag: Beleg + Fenster VOR dem Bau laden, damit der Contract-Adapter
+  // die Meldungen am selben Fenster einordnet, das die Antwort spaeter ausweist.
+  const frischeKontext = await ladeFrischeKontext(politicianId, new Date());
+  const briefing = await buildV3Briefing(profile, politicianId, {
+    slot, debug, debugMeta, debugRadar, commit: commitSha,
+    frischeFenster: frischeKontext ? frischeKontext.fenster : null
+  });
+  return prepareBriefingResponse(briefing, { previewMode, compact, frischeKontext });
 }
 
 // opts.slot (optional): expliziter Slot-Override (Tests/Admin/spaetere Cron-Nutzung).
@@ -2373,7 +2533,8 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   const briefingType = (opts && opts.slot != null && String(opts.slot).trim() !== "")
     ? briefingLanguage.normalizeBriefingType(opts.slot)
     : briefingLanguage.deriveBriefingTypeFromDate(new Date(), "Europe/Berlin");
-  const empty = (reason) => briefingContract.toBriefingContractV3({ profile, decisions: [], kosById: {}, sourcesByVorgang: {}, reason, briefingType });
+  const frischeFenster = (opts && opts.frischeFenster) || null;
+  const empty = (reason) => briefingContract.toBriefingContractV3({ profile, decisions: [], kosById: {}, sourcesByVorgang: {}, reason, briefingType, frischeFenster });
 
   // REVIEW-FIXTURE (nur PR-/Preview-/Lokal-Abnahme): streng hinter HELMUT_REVIEW_FIXTURE
   // (Default AUS). In main/Produktion nicht gesetzt -> dieser Zweig ist inert und der
@@ -2418,7 +2579,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     const mentionSources = {};
     await loadMentionSourcesInto(profile, understood, mentionSources);
     return briefingContract.toBriefingContractV3({
-      profile, decisions: [], kosById: {}, sourcesByVorgang: mentionSources, reason, briefingType, knowledgeObjects: understood, now: new Date()
+      profile, decisions: [], kosById: {}, sourcesByVorgang: mentionSources, reason, briefingType, knowledgeObjects: understood, now: new Date(), frischeFenster
     });
   };
 
@@ -2460,7 +2621,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     return sourceSafety.guardKnowledgeObject(ko, sourcesByVorgang[ko.vorgang_id] || []).status !== "quarantine";
   });
   if (!safeDecisions.length) return emptyKeepMentions("keine-treffer");
-  const briefing = briefingContract.toBriefingContractV3({ profile, decisions: safeDecisions, kosById, sourcesByVorgang, now, briefingType, knowledgeObjects: understood });
+  const briefing = briefingContract.toBriefingContractV3({ profile, decisions: safeDecisions, kosById, sourcesByVorgang, now, briefingType, knowledgeObjects: understood, frischeFenster });
   // Read-only Auswahl-Diagnose (nur bei ?debugPrimary=1 -> opts.debug). Aus dem ECHTEN
   // Read-Pfad, additiv, ohne die normale Antwort zu veraendern. Fehlerrobust (nie Crash).
   if (opts && opts.debug) {
@@ -3361,6 +3522,9 @@ module.exports.__ASSET_VERSION = () => ASSET_VERSION;
 // Briefing-Status aus der EINEN Frische-Wahrheit (currentHelmutState) stammt und
 // ein alter/fehlgeschlagener Lauf nie "Aktuell" ergibt (Konsistenz Kopf ↔ Karte).
 module.exports.__decorateBriefingFreshness = decorateBriefingFreshness;
+// Frischevertrag: Lesekontext (Beleg + Fenster + Datenstand) fuer die Offline-Abnahme.
+module.exports.__ladeFrischeKontext = ladeFrischeKontext;
+module.exports.__prepareBriefingResponse = prepareBriefingResponse;
 // Test-Hook (Offline, P2-5): die Quellenabdeckungs-Prüfungen an ihrem ECHTEN Aufrufort —
 // backendHealth "Quellenbasis" + pilotReadiness "zu wenige Quellen". Sichert, dass ein
 // Regress am Aufrufort (Schwelle zurückgedreht ODER wieder der tote Blob gezählt) auffällt,
@@ -3465,11 +3629,11 @@ function shouldRefreshLatestBriefing(briefing, url) {
   return isBriefingStaleForBerlin(briefing) || ageMs > 4 * 60 * 60 * 1000;
 }
 
-function decorateBriefingFreshness(briefing) {
+function decorateBriefingFreshness(briefing, frischeKontext = null) {
   if (!briefing || briefing.status === "Demo") return briefing;
   // EINE Wahrheit fuer die Aktualitaet: der Kopf-Status folgt der Frische der
   // TATSAECHLICH angezeigten Daten (briefing.currentHelmutState — echte
-  // Datenzeitstempel + Tages-Guard aus buildCurrentHelmutState), NICHT dem
+  // Datenzeitstempel + Frische-Guard aus buildCurrentHelmutState), NICHT dem
   // generatedAt-Feld. Das wird im V3-Read-Pfad bei JEDEM Request auf now gesetzt,
   // wodurch isBriefingStaleForBerlin nie "stale" meldete und der Kopf faelschlich
   // "Aktuell" zeigte, waehrend die Karte (HSTAND_STATUS_LABEL[currentHelmutState.status])
@@ -3485,22 +3649,62 @@ function decorateBriefingFreshness(briefing) {
   // "Aktuell" nur bei WIRKLICH frischem Stand — ein leerer/unvollstaendiger State
   // (empty) darf nie "Aktuell" ergeben (sonst Widerspruch zur Karte "Kein aktueller Stand").
   const fresh = hasState ? state.status === "fresh" : (hasDecisionItems || hasSituationalItems);
-  const status = stale ? "Veraltet" : fresh ? "Aktuell" : "Keine neue Entscheidung";
+
+  // --- FRISCHEVERTRAG (verbindlich, Punkt 1/2/5/7) ---------------------------
+  // Ohne BELEGTEN heutigen Lauf gibt es kein "Aktuell" — und keinen Rueckfall auf
+  // das gestrige Briefing: der Kopf sagt dann ehrlich "Briefing noch nicht aktuell".
+  // Der Vertrag kann nur HERABSTUFEN, nie hochstufen.
+  let vertrag = null;
+  if (frischeKontext && briefingFrische.vertragAktiv()) {
+    vertrag = briefingFrische.briefingFrischevertrag({
+      // Bewertungszeitpunkt aus dem Lesekontext (derselbe wie beim Aufbau) —
+      // sonst koennten Aufbau und Urteil an einem Tageswechsel auseinanderlaufen.
+      jetzt: frischeKontext.jetzt || new Date(),
+      lauf: frischeKontext.lauf,
+      datenstandIso: frischeKontext.datenstand,
+      quellen: frischeKontext.lauf ? frischeKontext.lauf.quellen : null,
+      items: hasState && Array.isArray(state.items) ? state.items : [],
+      fenster: frischeKontext.fenster
+    });
+    if (frischeKontext.speicherFehler) vertrag.speicherFehler = frischeKontext.speicherFehler;
+  }
+  const vertragBlockiert = Boolean(vertrag && vertrag.aktuell === false);
+
+  const status = vertragBlockiert
+    ? briefingFrische.LABEL_NICHT_AKTUELL
+    : (stale ? "Veraltet" : fresh ? "Aktuell" : "Keine neue Entscheidung");
+
+  // Der Vertrag wirkt bis in den State hinein, damit Kopf, Karte und Client
+  // NICHT auseinanderlaufen koennen (Punkt 7: eine Aussage in API und Oberflaeche).
+  const stateOut = hasState
+    ? {
+      ...state,
+      ...(vertragBlockiert && state.status !== "error" ? { status: "stale", staleState: true } : {}),
+      ...(vertrag ? { frischeVertrag: vertrag } : {})
+    }
+    : state;
+
   return {
     ...briefing,
+    ...(hasState ? { currentHelmutState: stateOut } : {}),
     status,
     freshness: {
       status,
-      isStale: stale,
+      isStale: vertragBlockiert ? true : stale,
       generatedAt: briefing.generatedAt || briefing.date || null,
       berlinDate: berlinDateKey(new Date()),
-      reason: stale
-        ? "Das Briefing stammt nicht aus dem aktuellen Berliner Tag oder ist älter als 18 Stunden."
-        : hasDecisionItems
-          ? "Das Briefing enthält aktuelle politische Entscheidungen."
-          : hasSituationalItems
-            ? "Die Quellen wurden geprüft; es gibt beobachtbare Entwicklungen, aber keinen akuten Handlungsdruck."
-            : "Die Quellen wurden geprüft; es gibt aktuell keine belastbare neue Entscheidung."
+      // Der maschinenlesbare Vertrag (null, wenn der Not-Aus gezogen ist oder kein
+      // Mandatskontext vorliegt) — API, Cache und Oberflaeche lesen dieselbe Quelle.
+      vertrag,
+      reason: vertragBlockiert
+        ? vertrag.grundText
+        : stale
+          ? "Das Briefing stammt nicht aus dem aktuellen Berliner Tag oder ist älter als 18 Stunden."
+          : hasDecisionItems
+            ? "Das Briefing enthält aktuelle politische Entscheidungen."
+            : hasSituationalItems
+              ? "Die Quellen wurden geprüft; es gibt beobachtbare Entwicklungen, aber keinen akuten Handlungsdruck."
+              : "Die Quellen wurden geprüft; es gibt aktuell keine belastbare neue Entscheidung."
     }
   };
 }

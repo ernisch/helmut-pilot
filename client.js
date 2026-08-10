@@ -6467,6 +6467,9 @@ function hstandCommLabel(token) {
 const HSTAND_PRIORITY_LABEL = { low: "Niedrig", medium: "Mittel", high: "Hoch" };
 const HSTAND_STATUS_LABEL = {
   fresh: { label: "Aktuell", tone: "ok" },
+  // Frischevertrag: kein belegtes heutiges Briefing -> ehrliche Ansage, kein
+  // Rueckfall auf den Vortag (server: briefing.freshness.vertrag).
+  nicht_aktuell: { label: "Briefing noch nicht aktuell", tone: "warn" },
   stale: { label: "Nicht aktuell", tone: "warn" },
   updating: { label: "Wird aktualisiert", tone: "muted" },
   empty: { label: "Kein aktueller Stand", tone: "muted" },
@@ -6500,12 +6503,15 @@ function hstandSentences(text, cap = 4) {
 }
 
 // Echter Zeitstempel -> ruhiges Datum/Uhrzeit (de-DE). Fehlt/ungueltig -> "" (keine Fake-Zeit).
+// FRISCHEVERTRAG Punkt 6: Zeiten IMMER in Europe/Berlin (inkl. Sommerzeit) — nicht
+// in der Zeitzone des Geraets. Ein Briefing, das in Berlin von gestern ist, darf auf
+// einem Geraet in einer anderen Zone nicht als heute erscheinen (und umgekehrt).
 function hstandWhen(iso) {
   if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   try {
-    return new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(d);
+    return new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(d);
   } catch { return ""; }
 }
 
@@ -6577,12 +6583,28 @@ function renderHelmutStandView() {
 }
 
 function renderHstandHeader(state) {
-  const st = HSTAND_STATUS_LABEL[state.status] || HSTAND_STATUS_LABEL.empty;
-  const when = hstandWhen(state.sourcesSummary && state.sourcesSummary.lastUpdated) || hstandWhen(state.generatedAt);
+  // Der Frischevertrag ist die oberste Wahrheit im Kopf: ohne belegtes heutiges
+  // Briefing steht dort "Briefing noch nicht aktuell" — nie "Aktuell", nie der
+  // Slot-Name eines Tages, den es nicht gibt.
+  const vertrag = state && state.frischeVertrag;
+  const vertragOffen = Boolean(vertrag && vertrag.aktuell === false);
+  const st = vertragOffen
+    ? HSTAND_STATUS_LABEL.nicht_aktuell
+    : (HSTAND_STATUS_LABEL[state.status] || HSTAND_STATUS_LABEL.empty);
+  // Das Datum im Kopf ist das ECHTE Datum des gezeigten Vorgangs: bevorzugt sein
+  // belegtes Meldungsdatum (zeitLabel, Europe/Berlin) — nicht der Zeitpunkt, zu dem
+  // Helmut die Zeile zuletzt angefasst hat (Audit 2026-08-10, Befund F2).
+  const when = (state.primaryItem && state.primaryItem.zeitLabel)
+    || hstandWhen(state.sourcesSummary && state.sourcesSummary.lastUpdated)
+    || hstandWhen(state.generatedAt);
   // Bei STALE (angezeigter Datenstand nicht von heute) darf NICHT der aktuelle Slot-Name
   // (z. B. „Mittagsbriefing") mit einem alten Datum vermischt werden — das wirkt falsch.
   // Dann ehrlich „Letzter Stand · <Datum>" zeigen. Nur bei frischem Stand den Slot-Namen.
-  const isStale = state.status === "stale" || state.staleState === true;
+  // Befund F3: das gilt AUCH, wenn der Frischevertrag den Stand zu Recht als „neu seit
+  // dem letzten Briefing" fuehrt, der Vorgang aber von gestern ist — sonst stuende
+  // „Morgenbriefing · Gestern, 22:40" da und saehe wie die heutige Lage aus.
+  const isStale = vertragOffen || state.status === "stale" || state.staleState === true
+    || state.datenstandVonHeute === false;
   const type = isStale
     ? "Letzter Stand"
     : (HSTAND_TYPE_LABEL[String(state.briefingType || "").toLowerCase()] || "Briefing");
@@ -6601,6 +6623,7 @@ function renderHstandHeader(state) {
       </div>
       <p class="hstand-meta-line">${HELMUT_ICON_CLOCK}<span>${escapeHtml(type)}${when ? ` · ${escapeHtml(when)}` : ""}</span></p>
       ${partial ? `<p class="hstand-partial">${HELMUT_ICON_EYE}<span>Nur teilweise vollständig – einige Angaben fehlen noch.</span></p>` : ""}
+      ${renderHstandFrische(state)}
     </header>`;
 }
 
@@ -6742,29 +6765,74 @@ function renderHstandPrimary(state) {
     </section>`;
 }
 
+// FRISCHEVERTRAG — ehrliche Ansage im Kopf.
+// Fehlt der heutige Lauf, ist er fehlgeschlagen oder sind die Daten zu alt, steht
+// hier der Grund. Zusaetzlich: Teilausfaelle von Quellen und der ruhige Tag ohne
+// neue Meldung (das ist AKTUELL, kein Fehler — und kein Anlass, alte Vorgaenge
+// als neu auszugeben).
+function renderHstandFrische(state) {
+  const v = state && state.frischeVertrag;
+  if (!v) return "";
+  const zeilen = [];
+  if (v.aktuell === false) {
+    zeilen.push({ ton: "warn", text: `${v.grundText || "Für heute liegt noch kein aktuelles Briefing vor."} Es wird bewusst kein Briefing vom Vortag als heutiges angezeigt.` });
+  } else if (v.ruhelage) {
+    zeilen.push({ ton: "muted", text: v.hinweis || "Heute liegt keine neue Meldung vor." });
+  }
+  if (v.quellen && v.quellen.hinweis) zeilen.push({ ton: "warn", text: v.quellen.hinweis });
+  if (!zeilen.length) return "";
+  return zeilen.map((z) => `<p class="hstand-frische hstand-frische--${z.ton}">${HELMUT_ICON_CLOCK}<span>${escapeHtml(z.text)}</span></p>`).join("");
+}
+
+const HSTAND_FRISCHE_GRUPPEN = [
+  { klasse: "neu", label: "Neu seit dem letzten Briefing", tone: "accent" },
+  { klasse: "weiterhin_relevant", label: "Weiterhin relevant", tone: "muted" },
+  { klasse: "hintergrund", label: "Hintergrund", tone: "muted" },
+  { klasse: "undatiert", label: "Ohne belegtes Datum", tone: "muted" }
+];
+
 function renderHstandItems(state) {
   const items = (Array.isArray(state.items) ? state.items : []).filter((i) => i && (hstandText(i.displayTitle) || hstandText(i.title)));
   if (!items.length) return "";
   // Kompakte Liste: Titel + EIN kurzer Relevanzsatz + Dringlichkeit. Bewusst KEINE
   // Chipwolke und keine langen Sammeltexte (Beleg, nicht Hauptscreen).
-  const rows = items.slice(0, 3).map((i) => {
+  const zeile = (i) => {
     const title = hstandText(i.displayTitle) || hstandText(i.title);
     const why = hstandText(i.whyRelevant);
     const urgency = hstandUrgencyChip(i.urgency);
+    // Das Datum bleibt IMMER das tatsaechliche Datum der Meldung (Vertragspunkt 3):
+    // eine Meldung vom spaeten Vorabend steht als "Gestern, 22:40" im heutigen Briefing.
+    const zeit = hstandText(i.zeitLabel) || hstandWhen(i.lastUpdated);
     return `
       <li class="hstand-rel">
         <div class="hstand-rel-head">
           <p class="hstand-rel-title">${escapeHtml(title)}</p>
           ${urgency}
         </div>
+        ${zeit ? `<p class="hstand-rel-when">${escapeHtml(zeit)}</p>` : ""}
         ${why ? `<p class="hstand-rel-why">${escapeHtml(why)}</p>` : ""}
       </li>`;
-  }).join("");
-  return `
+  };
+  // Ohne Frischeklassen (Altpfad/Vertrag aus) unveraendert EINE Liste.
+  const klassifiziert = items.some((i) => i && i.frischeKlasse);
+  if (!klassifiziert) {
+    return `
     <section class="hstand-card hstand-related" aria-label="Weitere relevante Vorgänge">
       ${hstandKicker(HELMUT_ICON_EYE, "Weitere relevante Vorgänge", "muted")}
-      <ul class="hstand-rels">${rows}</ul>
+      <ul class="hstand-rels">${items.slice(0, 3).map(zeile).join("")}</ul>
     </section>`;
+  }
+  // Vertragspunkt 4: Aeltere Vorgaenge erscheinen NUR klar getrennt als
+  // "weiterhin relevant" bzw. "Hintergrund" — nie unter "neu".
+  const gruppen = HSTAND_FRISCHE_GRUPPEN
+    .map((g) => ({ ...g, liste: items.filter((i) => i.frischeKlasse === g.klasse).slice(0, 3) }))
+    .filter((g) => g.liste.length);
+  if (!gruppen.length) return "";
+  return gruppen.map((g) => `
+    <section class="hstand-card hstand-related" data-frische-klasse="${escapeAttribute(g.klasse)}" aria-label="${escapeAttribute(g.label)}">
+      ${hstandKicker(HELMUT_ICON_EYE, g.label, g.tone)}
+      <ul class="hstand-rels">${g.liste.map(zeile).join("")}</ul>
+    </section>`).join("");
 }
 
 function renderHstandSources(state) {

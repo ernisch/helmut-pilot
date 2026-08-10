@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-09/3** (zwei Stränge: **(a) OP-25-Production-Nachweis BESTANDEN** — drittes Fenster 2026-08-07/08, Exit 0, null Befunde, kanonisch §7.7.9; gilt **ausschließlich für die heutige Architektur mit 5 Mandaten** und beweist weder OP-30 noch 200 Mandate. **(b) OP-30**, §7a — PR #233/#235/#236 gemergt, Deployments READY; **R4 behoben**, Kapazität der Morgenlage slotgenau gemessen, 200 Mandate lokal getragen; alle Flags **aus**, keine Migration angewendet, nichts aktiviert). Diese Datei enthält
+**Stand: 2026-08-10/2** (drei Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** — drittes Fenster 2026-08-07/08, Exit 0, null Befunde, kanonisch §7.7.9; gilt **ausschliesslich fuer die heutige Architektur mit 5 Mandaten** und beweist weder OP-30 noch 200 Mandate. **(b) OP-30**, §7a — PR #233/#235/#236/#237 gemergt; alle Flags **aus**, keine Migration angewendet. **(c) OP-31 Frischevertrag des Morgenbriefings**, §7a — gebaut, adversarial gegengeprueft (sechs Befunde behoben), **PR #238 offen**, kein Production-Nachweis). Diese Datei enthaelt
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -18,15 +18,14 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 ## 2 · Stand auf `main`
 
-- **HEAD `0f047b1`** = Merge von **PR #236** (2026-08-09T13:12:54Z, Kopf war exakt der
-  reviewte `361731c`): E1, Lage-Narrativ als fünfter Auftragstyp — **alle Flags aus, keine
-  Migration angewendet**. Deployment `dpl_2hdoPoZ6Y2J4iFmBvEFY7itgFgeY` **READY** (Commit
-  gegengeprüft). **Noch kein regulärer Lauf auf diesem Stand** (Merge 13:12Z, Prüfung 13:22Z,
-  nächster Cron 16:00Z) ⇒ eine Regression durch PR #236 ist **noch nicht beobachtbar**;
-  der letzte Lauf davor (lage-check 10:00Z auf `40e7708`) war `success`.
-- Davor `40e7708` = **PR #235**, `559a3d9` = **PR #233**, `1f10d66` = **PR #234**,
-  `a07954df` = **PR #232** (Kostenlücken-Fix), `f4f4500b` = **PR #229** (K1–K8, kanonisch
-  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.7). Ältere PRs: Archiv.
+- **HEAD `ec2e208`** = Merge von **PR #237** (Kapazität der Morgenlage + R4/R4b): zwei
+  zusätzliche Cron-Einträge, **alle Flags aus, keine Migration angewendet**. Damit ist die
+  frühere Angabe „PR #237 offen / PR dieses Sprints noch nicht gemergt" **überholt**.
+  Ein Production-Beweislauf auf diesem Stand ist in dieser Sitzung **nicht** geführt worden
+  (kein Vercel-Zugriff) — Deploymentzustand und erster regulärer Lauf sind **ungeprüft**.
+- Davor `0f047b1` = **PR #236**, `40e7708` = **PR #235**, `559a3d9` = **PR #233**,
+  `1f10d66` = **PR #234**, `a07954df` = **PR #232**, `f4f4500b` = **PR #229** (K1–K8,
+  kanonisch [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.7). Ältere PRs: Archiv.
 - Merge nach `main` = automatisches Production-Deployment (Vercel `fra1`,
   Projekt `helmut-pilot`). Rollback: [`betrieb/deploy-rollback.md`](betrieb/deploy-rollback.md).
 
@@ -111,10 +110,10 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **#218** | OP-25-Kapazität, konkurrierende Analyse | Codeänderung auf dem Branch zurückgenommen; Ursache/Fix kamen über #219. **Empfehlung: schließen** |
 | **#216** | flackernden `werkzeug-lesefehler-test.js` stabilisieren (F-PORT) | offen, reserviert als OP-28 |
 
-Alle übrigen früher geführten PRs sind gemergt oder geschlossen (zuletzt **#235 und #233
-gemergt 2026-08-09**, davor #234/#232/#230/#229). **Neu offen:** der PR dieses Sprints
-(`claude/lage-narrativ-fifth-job-type-4zm1za`, E1: fünfter Auftragstyp `tenant_narrative`).
-Historie: Archiv.
+Alle übrigen früher geführten PRs sind gemergt oder geschlossen (zuletzt **#237, #236, #235
+und #233**). **Neu offen:** der PR dieses Sprints
+(`claude/briefing-freshness-guarantee-r36h8m`, OP-31: Frischevertrag des Morgenbriefings —
+keine Migration, keine Flag-/Cron-Änderung). Historie: Archiv.
 
 ## 7 · Offene Blocker
 
@@ -175,39 +174,35 @@ Budgetzaehlung) und **R6** (Stresssuite ueber dem Runnerlimit). Belege
 [`lage-narrativ-warteschlange-2026-08-09.md`](betrieb/lage-narrativ-warteschlange-2026-08-09.md) ·
 [`op30-e1-abschlussreview-2026-08-09.md`](betrieb/op30-e1-abschlussreview-2026-08-09.md).
 
-**Sprint „Kapazitaet der Morgenlage" (2026-08-09/3, PR offen).** Kanonisch:
+**Sprint „Kapazitaet der Morgenlage" (2026-08-09/3, PR #237 gemergt).** Kanonisch:
 [`op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md).
+**R4** (doppelte Budgetzaehlung) und **R4b** (still verworfener Bereichsdeckel) an echter
+PostgreSQL 16.13 reproduziert und behoben — ein Buch, ein Schreiber; beides in der **nicht
+angewendeten** Migration `20260808_llm_budget_fairness.sql` (weiterhin sechs Paare).
+Kapazitaet slotgenau gemessen: heutige Verdrahtung traegt **39 von 200**; kleinste sichere
+Loesung (Parallelitaet 8 ueber `HELMUT_NARRATIV_PARALLEL` · Slotbudget 270 s · zwei
+Morgenslots 06:10/06:22 UTC auf geriegelter Route · Narrativgrenze 45 s · Leerlaufwarten)
+⇒ **200/200 im Morgenfenster (06:30 UTC), 59,6 % Reserve**, 14 Stoerfaelle ohne Verlust
+und ohne Doppelverarbeitung; 1 000 Mandate: 586 (ehrlich als Rueckstand gemeldet).
+**R6** im Testgeruest entschaerft. Narrativkosten 0,2614 USD/Morgen bei 200.
+**Offen:** echte Google-/KI-Laufzeit · wirksamer Production-Deckel · **190 fehlende echte
+Profile** (es gibt 10) · Migration (sechs Paare), Aktivierung, Production-Nachweis ·
+Vercel-Verhalten bei Parallelitaet 8.
 
-- **R4 behoben.** Ursache: zwei Schreiber auf `llm_budget_counters(day,'global')` — die
-  Fairnessschicht **und** der Choke-Point `helmut_reserve_llm_call` (ai.js, der einzige Ort
-  mit Modellaufruf). An echter PostgreSQL 16.13 reproduziert (`global.used = 2`) und behoben:
-  **ein Buch, ein Schreiber** — die Zaehlertabelle schreibt nur noch der Choke-Point, die
-  Fairness fuehrt Absichten; Belegung = getaetigt + laufend, keine ausgleichende Ruecknahme
-  mehr (CLAUDE.md §4.10). Nachher `global.used = 1`. **Zusatzbefund R4b:** `p_scope_max` wurde
-  fuer `scope='global'` still verworfen — der `globalerTopf` (Schutz der Narrative vor dem
-  Verstehen) war berechnet, uebergeben und wirkungslos. Beides in der **nicht angewendeten**
-  Migration `20260808_llm_budget_fairness.sql` korrigiert (weiterhin sechs Paare).
-- **Kapazitaet slotgenau gemessen** (neue Suite; echte `durchlauf`/`arbeite`/Handler,
-  Production-Messreihe n=134): die heutige Verdrahtung (par 2, ein Slot) traegt **39 von 200**.
-  Die Zahlen des Vorreviews (par 2 ~14 / par 4 ~52 / par 8 ~127) sind **nicht bestaetigt** —
-  eigene Messung par 2 ~39 / par 4 ~88 / par 8 ~179 je Slot; die **Richtung** stimmt.
-- **Kleinste sichere Loesung:** Parallelitaet **8** (neue Variable `HELMUT_NARRATIV_PARALLEL`,
-  damit die Crawl-Slots unberuehrt bleiben) · Slotbudget **270 s** statt 230 s (wie
-  crawl/pipeline) · **zwei zusaetzliche Morgenslots** 06:10/06:22 UTC auf einer neuen,
-  dreifach geriegelten Route ohne Altpfad · eigene Zeitgrenze **45 s** fuer Narrative ·
-  Leerlaufwarten 20 s (Default 0 = aus). ⇒ **200 von 200 im Morgenfenster (06:30 UTC),
-  59,6 % Kapazitaetsreserve gegen Arbeitslast**, in allen 14 Stoerfaellen ohne Verlust und
-  ohne Doppelverarbeitung. 1 000 Mandate: 586 — Ueberlast, ehrlich als Rueckstand gemeldet.
-- **R6 untersucht und im Testgeruest entschaerft** (174,6 s → 140,5 s bei 180 s Limit): der
-  Aufwand lag in der Buchhaltung der Attrappe (O(n)-Suche je Abschluss, `Date.parse` im
-  Sortiervergleich), nicht in der fachlichen Last. **Belastung und Pruefungen unveraendert.**
-- **Kosten Narrativ:** 0,2614 USD/Morgen bei 200 · 0,039 USD je Mandat/Monat (Messreihe
-  n=126, **kein Anbieterpreis**); ueber alle Stufen konstant.
+**Sprint „Frischevertrag des Morgenbriefings" (2026-08-10, PR offen).** Kanonisch:
+[`briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md),
+neuer Punkt **OP-31**. Vor Stufe 2 (25 Mandate) fehlte die Antwort auf „hat dieses Mandat
+heute ueberhaupt ein Briefing bekommen?" — die Lauftelemetrie ist prozessweit, ein wegen
+Zeitdeckelung uebersprungenes Mandat war von einem versorgten **nicht unterscheidbar**.
+Umgesetzt: eine Quelle fuer den Berliner Tageswechsel (inkl. Sommerzeit), mandatsscharfe
+**Lauf-Quittung** in der bestehenden `briefings`-Tabelle (**keine Migration**, Erfolg und
+Fehler getrennt, atomarer Upsert mit Gegenlesen), Briefingfenster „neu seit dem letzten
+erfolgreichen Morgenbriefing", getrennte Klassen neu/weiterhin relevant/Hintergrund,
+ehrliches **„Briefing noch nicht aktuell"** ohne Vortagsrueckfall, Wiederholungserkennung
+(kein zweiter Push, kein zusaetzlicher Modellaufruf), Abdeckungsmeldung.
 
-**Offen.** Echte Google-/KI-Laufzeit · wirksamer Production-Deckel (offline nicht lesbar) ·
-**190 fehlende echte Profile** (es gibt 10) · Migration (sechs Paare), Aktivierung,
-Production-Nachweis · Review/Merge des neuen PR · Vercel-Verhalten bei Parallelitaet 8.
-
+**Unabhaengiger adversarialer Review (2026-08-10/2, gleicher Branch): sechs echte Befunde, alle behoben** — Beleg nicht mandats-/tagesscharf · alter Vorgang durch Backfill-`updated_at` als „neu" mit Datum „Heute" · gestriger Stand unter „Morgenbriefing" · Wiederholungsfenster so breit wie die Bauzeit · Dauerfehlalarm bei Not-Aus · **Abdeckungszahl zaehlte FEHLER-Quittungen als „belegt"** (`frischebelege=1/1` nach komplett gescheitertem Lauf). Einzelheiten und Restrisiken: Belegdatei §10. Tests 69/69 · 68/68 · **34/34** (neue adversariale Suite ueber die echte Cron-Route) · Gesamtlauf **238/242 in 530 s** (4 rot = Umgebungsartefakte, auf `origin/main` identisch rot, CI gruen) · Smoke 32/32.
+**Offen:** Review/Merge · Production-Nachweis des ersten Morgenlaufs · Alarmweg (OP-07). **Merge-Wirkung:** bis zum ersten Morgenlauf zeigt die App ehrlich „Briefing noch nicht aktuell". **Restrisiko:** ohne `HELMUT_CRON_FAIRNESS` koennen exakt ueberlappende Laeufe doppelt pushen (kein falsches Gruen); `briefings` waechst taeglich, Loeschung nicht scharf (OP-12).
 
 **Folge für OP-25:** eine spätere Aktivierung verändert `quellenVereinigung`, die
 K2.1-Sichtbarkeitsmengen und die Laufzeitbilanz ⇒ **OP-25 muss danach von vorn**.
@@ -281,18 +276,21 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**PR #233, #235 und #236 sind gemergt, alle Deployments READY. R4 ist behoben, die Kapazität
-der Morgenlage ist lokal gelöst und gemessen.** Nächste Entscheidungen liegen beim Betreiber:
+**PR #233, #235, #236 und #237 sind gemergt.** Nächste Entscheidungen liegen beim Betreiber:
 
-1. **Über den Merge des neuen PR entscheiden** (Kapazität der Morgenlage + R4). Er ist
-   verhaltensneutral bei ausgeschalteten Flags, fügt aber **zwei Cron-Einträge** hinzu — sie
-   laufen nach dem Merge und tun bei ausgeschalteten Flags **nichts** (dreifacher Riegel,
-   kein Datenbankschreibzugriff). Der Merge bleibt ein Production-Deployment.
-2. **Stufenweise Aktivierung freigeben** (5 → 25 → 50 → 100 → 200), jede Stufe einzeln;
-   der vollständige Plan mit Flags, Migration, Metriken, Abnahme- und Rückfallbedingungen
-   steht in [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) §10.
-   Vor Stufe 2: Migrationen anwenden (sechs Paare) und **OP-25 vollständig wiederholen**.
-3. Vor Stufe 5: **190 fehlende echte Profile** (es gibt 10).
+1. **Über den Merge des neuen PR entscheiden** (OP-31, Frischevertrag des Morgenbriefings).
+   Keine Migration, kein Flag-Wechsel, keine Cron-Änderung; der Merge bleibt ein
+   Production-Deployment. Sichtbare Wirkung: bis zum ersten Morgenlauf auf dem neuen Stand
+   zeigt die App ehrlich „Briefing noch nicht aktuell", und ein vom Morgenlauf nicht
+   erreichtes Mandat wird ab dann sichtbar.
+2. **Nach dem Merge den ersten Morgenlauf ansehen** (`frischevertrag.belegt == mandate`,
+   keine Zeile `FRISCHEBELEG NICHT PERSISTIERT`) — das ist der Production-Nachweis von
+   OP-31 und die Messgröße für Stufe 2.
+3. **Stufenweise Aktivierung freigeben** (5 → 25 → 50 → 100 → 200), jede Stufe einzeln;
+   Plan mit Flags, Migration, Metriken, Abnahme- und Rückfallbedingungen in
+   [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) §10.
+   Vor Stufe 2: Migrationen anwenden (sechs Paare), **OP-25 vollständig wiederholen** und
+   OP-31 (b) belegen. Vor Stufe 5: **190 fehlende echte Profile** (es gibt 10).
 
 Parallel und unabhängig: **OP-01** (Pro + PITR); **OP-11** verifizieren; **#218** schließen.
 
@@ -330,6 +328,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 | PARDOK-Parser (Punkt 24) | [`quellenarchitektur/17-pardok-parser.md`](quellenarchitektur/17-pardok-parser.md) |
 | Paket-Inventur (wiederholbar) | [`quellenarchitektur/30-paket-inventur-production.md`](quellenarchitektur/30-paket-inventur-production.md) |
 | **OP-30: Kapazität der Morgenlage, R4/R4b, Aktivierungsplan** | [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) |
+| **OP-31: Frischevertrag + adversarialer Review (§10)** | [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) |
 | Roadmap Phase 1 | [`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md) |
 | Mail | [`betrieb/mailversand-resend.md`](betrieb/mailversand-resend.md) · [`betrieb/lokale-mailtests-mailpit.md`](betrieb/lokale-mailtests-mailpit.md) |
 | **Vollständige Historie bis `4594fea`** | [`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md) |
@@ -338,9 +337,9 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-09/3 | **OP-30 Kapazität der Morgenlage + R4** (nach dem Merge von PR #236): **R4 behoben** (doppelte Budgetzählung — ein Buch, ein Schreiber; an echter PostgreSQL 16.13 reproduziert und nachgemessen), **R4b** neu gefunden und behoben (still wirkungsloser Bereichsdeckel für globale Arbeit); Kapazität der Morgenlage **slotgenau** gemessen statt aus einer Dauerbetriebs-Simulation abgeleitet; kleinste sichere Lösung umgesetzt (Parallelität 8 über eigene Variable · Slotbudget 270 s · zwei zusätzliche Morgenslots auf geriegelter Route ohne Altpfad · eigene Narrativ-Zeitgrenze 45 s · Leerlaufwarten, Default aus) ⇒ **200/200 im Morgenfenster mit 59,6 % Reserve**, 14 Störfälle ohne Verlust/Doppelverarbeitung; **R6** untersucht und im Testgerüst entschärft · Beleg [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) | **teilweise abgeschlossen** (lokal bewiesen; Merge, Migration, Aktivierung und Production-Nachweis offen) |
-| 2026-08-09/2 | **E1 `tenant_narrative` + unabhängiger Abschlussreview PR #236**: das Lage-Narrativ läuft als fünfter Auftragstyp über die Warteschlange (Handler ruft die **unveränderte** `lage.buildLageBriefing`, Flag `HELMUT_NARRATIV_QUEUE` default AUS, Migration `20260809_jobqueue_narrativ` nicht angewendet). Der Review widerlegte den Doppelpfad ausführungsseitig (15 Flagkombinationen über die echte Route), maß den Budgetvertrag an echter PostgreSQL und behob **R1** (kritisch: Fälligkeitsstreuung passte nicht in den einzigen Slot), **R2** und **R3**; benannt blieben **R4** und **R6** — beide im Sprint 2026-08-09/3 erledigt. Belege [`lage-narrativ-warteschlange-2026-08-09.md`](betrieb/lage-narrativ-warteschlange-2026-08-09.md) · [`op30-e1-abschlussreview-2026-08-09.md`](betrieb/op30-e1-abschlussreview-2026-08-09.md) | **abgeschlossen**, PR #236 gemergt (Deployment READY; erster regulärer Lauf steht aus) |
-| 2026-08-09 | **OP-30 Aktivierungsreife für 200 Mandate** (nach dem Merge von PR #233): **O1–O5 gelöst** (faire Rotation im echten Planungspfad verdrahtet, `scopeMax` nicht mehr `null`, `worker-betrieb.js` verdrahtet, Vorbedingungsprüfung über alle enthaltenen Fenster, Budgetwarten auf 48 h begrenzt, Migration `20260809_jobqueue_wiedervorlage` mit Rollback, **nicht angewendet**); **Befund B14 behoben**; **Stufennachweis 5/25/50/100/200 + Stress 1 000** mit allen 14 Abnahmekriterien; **Importvertrag für Mandatsprofile**; eigene Fehlmessung offengelegt und korrigiert (Zeitreserve ≠ Kapazitätsreserve) · Beleg [`betrieb/op30-aktivierungsreife-2026-08-09.md`](betrieb/op30-aktivierungsreife-2026-08-09.md) | **teilweise abgeschlossen** (lokal bewiesen und reviewbereit; Merge, Migration, Aktivierung, Production-Nachweis, 190 echte Profile und E1 offen) |
+| 2026-08-10 | **OP-31 Frischevertrag des Morgenbriefings** (§7a): mandatsscharfe Lauf-Quittung ohne Migration, ehrliches „Briefing noch nicht aktuell" ohne Vortagsrückfall, Meldungsklassen, Wiederholungserkennung. **Anschließend unabhängiger adversarialer Review desselben PR: sechs echte Befunde, alle behoben** — darunter ein Tagesbeleg ohne Mandats-/Tagesprüfung und eine Abdeckungszahl, die FEHLER-Quittungen als „belegt" zählte. Tests 69/69 · 68/68 · **34/34** · Gesamt **238/242 in 530 s** · Smoke 32/32 · Beleg [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) §10 | **teilweise abgeschlossen** (lokal bewiesen und adversarial gegengeprüft; Merge und Production-Nachweis fehlen) |
+| 2026-08-09/3 | **OP-30 Kapazität der Morgenlage + R4/R4b** — doppelte Budgetzählung an echter PostgreSQL reproduziert und behoben, Kapazität slotgenau gemessen, kleinste sichere Lösung ⇒ 200/200 im Morgenfenster mit 59,6 % Reserve; R6 im Testgerüst entschärft · Beleg [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) | **teilweise abgeschlossen**, PR #237 gemergt (Migration, Aktivierung und Production-Nachweis offen) |
+| 2026-08-09/2 | **E1 `tenant_narrative` + unabhängiger Abschlussreview**: Lage-Narrativ als fünfter Auftragstyp über die Warteschlange (Flag default AUS, Migration nicht angewendet); Review behob R1–R3, benannte R4/R6 · Belege [`lage-narrativ-warteschlange-2026-08-09.md`](betrieb/lage-narrativ-warteschlange-2026-08-09.md) · [`op30-e1-abschlussreview-2026-08-09.md`](betrieb/op30-e1-abschlussreview-2026-08-09.md) | **abgeschlossen**, PR #236 gemergt |
+| 2026-08-09 | **OP-30 Aktivierungsreife für 200 Mandate**: O1–O5 gelöst, B14 behoben, Stufennachweis 5/25/50/100/200 (+Stress 1 000) mit allen 14 Abnahmekriterien, Importvertrag für Mandatsprofile; eigene Fehlmessung offengelegt · Beleg [`betrieb/op30-aktivierungsreife-2026-08-09.md`](betrieb/op30-aktivierungsreife-2026-08-09.md) | **teilweise abgeschlossen** (lokal bewiesen; Merge, Migration, Aktivierung, Production-Nachweis und 190 echte Profile offen) |
 
-Die OP-30-Sprints vom 2026-08-08 (V3-Skalierungsprüfung, Umsetzung, Abnahme, Korrektur, Abschlussreview PR #233, Prüf-/Commit-/PR-Sprint mit CI-Basisrot-Befund — Beleg [`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md)) stehen vollständig in den Belegdateien aus §7a. Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 (Fenster 1–3, Korrektursprint K1–K8, Ursachenanalyse, Betreiberschritte K2/K3, Befundsprint Kostenlücke) stehen vollständig und kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 sowie ältere Berichte, Testzahlen und Beweisketten: **Archiv**
-([`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)).
+Die OP-30-Sprints vom 2026-08-08 stehen vollständig in den Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) trägt den CI-Basisrot-Befund). Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 stehen kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 und ältere Beweisketten: **Archiv** ([`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)).

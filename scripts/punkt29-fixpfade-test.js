@@ -236,7 +236,10 @@ function fairnessUmgebung() {
     const serverQuelle = fs.readFileSync(path.join(__dirname, "..", "server.js"), "utf8");
     check("A11 morning-briefing hebt build-/push-timeout als ok:false/bounded in die Mandatsantwort (Quelltextvertrag)",
       /const buildTimeout = Boolean\(briefing && briefing\.reason === "build-timeout"\)/.test(serverQuelle)
-        && /buildTimeout \|\| pushTimeout \? \{ ok: false, bounded: true/.test(serverQuelle));
+        // Der Frischevertrag hat die Bedingung um `speicherfehler` ERWEITERT (ein
+        // nicht lesbarer V3-Store ist ebenfalls kein Erfolg). Der Vertrag bleibt:
+        // build-/push-timeout MUESSEN ok:false/bounded in die Mandatsantwort heben.
+        && /buildTimeout \|\| pushTimeout(?: \|\| speicherfehler)?\s*\n?\s*\?\s*\{ ok: false, bounded: true/.test(serverQuelle));
     check("A12 lage-check hebt den maskierten Timeout (bounded) und push-timeout in die Mandatsantwort (Quelltextvertrag)",
       /const lageTimeout = Boolean\(lageCheck && lageCheck\.bounded === true\)/.test(serverQuelle)
         && /lageTimeout \|\| pushTimeout \? \{ ok: false, bounded: true/.test(serverQuelle));
