@@ -11172,6 +11172,16 @@ body:has(.lage2) {
 .hstand-status--muted { color: var(--muted); }
 .hstand-partial { margin: 0; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--watch); }
 .hstand-partial svg { width: 15px; height: 15px; }
+/* Frischevertrag: ehrliche Ansage im Kopf ("Briefing noch nicht aktuell",
+   Teilausfall von Quellen, ruhiger Tag ohne neue Meldung). Kein Alarmrot —
+   der Zustand ist eine Tatsache, keine Katastrophe. */
+.hstand-frische {
+  margin: 2px 0 0; display: flex; align-items: flex-start; gap: 8px;
+  font-size: 13px; line-height: 1.45; color: var(--muted);
+}
+.hstand-frische svg { flex: none; width: 15px; height: 15px; margin-top: 2px; }
+.hstand-frische--warn { color: var(--watch); }
+.hstand-frische--muted { color: var(--muted); }
 
 /* Karte — kompakter, ruhigerer Rahmen, etwas tiefer/blauer als die Fläche.
    Der Blauton läuft über var(--accent) (in beiden Themes blau) -> theme-sicher. */
@@ -11347,6 +11357,9 @@ body:has(.lage2) {
   margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.4;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
 }
+/* Tatsaechliches Datum der Meldung (Europe/Berlin) — steht auch dann am Vorgang,
+   wenn er im heutigen Briefing unter "Neu seit dem letzten Briefing" laeuft. */
+.hstand-rel-when { margin: 0; font-size: 12px; color: var(--muted-2); letter-spacing: -.01em; }
 
 /* Quality-Indikator */
 .hstand-q { display: inline-flex; align-items: center; gap: 7px; }

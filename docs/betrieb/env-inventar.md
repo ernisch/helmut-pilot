@@ -185,6 +185,11 @@ weg, App läuft; fail-closed = Zugriff/Aktion wird verweigert) · Rotationsbedar
 | `HELMUT_ASSET_VERSION` | O | Cache-Busting-Version für den CLI-Deploy-Weg (setzt `scripts/vercel-deploy.sh` aus Git-SHA+Zeit). Git-Integration-Deploys nutzen stattdessen `VERCEL_GIT_COMMIT_SHA`. **CLI-Deploys IMMER über das Skript** (siehe `deploy-rollback.md`). | server.js · nur CLI-Deploy · ohne: Konstante (Stale-Asset-Falle) · — |
 | `HELMUT_LAGE_CHECK_RECENT_HOURS` · `HELMUT_LAGE_CHECK_REGENERATE_THRESHOLD` | O | Lage-Check-Feinsteuerung. | lage.js · alle · Default greift · — |
 | `HELMUT_STAFF_STALE_DAYS` | O | Staff-Backfill-Frische. | staff.js · alle · Default greift · — |
+| `HELMUT_BRIEFING_FRISCHE` | O | **Not-Aus des Frischevertrags** (Default AN). Nur `off`/`0`/`false`/`aus`/`nein` schaltet ab; dann entfällt die Aussage „Briefing noch nicht aktuell“ und der Kopf verhält sich wie vor dem Vertrag. Kein Aktivierungsschalter — Abschalten ist eine Betreiberentscheidung mit Ehrlichkeitsverlust. | briefing-frische.js/server.js · alle · Default greift (AN) · — |
+| `HELMUT_BRIEFING_MAX_DATENALTER_H` (Default 24) | O | Ab welchem Alter des jüngsten verstandenen Vorgangs die Daten als „nicht ausreichend aktuell“ gelten (Frischevertrag Punkt 5). | briefing-frische.js · alle · Default greift · — |
+| `HELMUT_BRIEFING_VORABEND_H` (Default 8) | O | Wie weit das Briefingfenster vor Tagesbeginn reicht, wenn kein vorheriger erfolgreicher Lauf bekannt ist (16:00 Berliner Vorabend) — damit späte Vorabendmeldungen im Morgenbriefing „neu“ sind. | briefing-frische.js · alle · Default greift · — |
+| `HELMUT_BRIEFING_RELEVANZ_TAGE` (Default 14) | O | Grenze zwischen „weiterhin relevant“ und „Hintergrund“ für ältere Vorgänge. | briefing-frische.js · alle · Default greift · — |
+| `HELMUT_BRIEFING_MAX_RUECKBLICK_TAGE` (Default 3) | O | Wie weit der letzte erfolgreiche Lauf zurückliegen darf, um noch den Fensteranfang zu bestimmen; danach greift der Vorabend-Standard (kein Riesenfenster nach einem Ausfall). | briefing-frische.js · alle · Default greift · — |
 
 ## 7. Pflicht-Mindestset für einen funktionierenden Production-Neuaufbau
 
