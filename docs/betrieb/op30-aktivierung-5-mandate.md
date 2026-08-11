@@ -28,6 +28,13 @@ Vorgänger: [`op30-kapazitaet-morgenslots-2026-08-09.md`](op30-kapazitaet-morgen
 > zur Vercel-Production-Konfiguration (gemessen, §14.1). **Nichts aktiviert, nichts
 > verändert, K0–K3 nicht begonnen** — vollständiger Beleg samt K0-tauglichem Vorzustand
 > in **§14**.
+>
+> **Nachtrag 2026-08-11/6 — OP-30 IST AKTIV.** Der **Betreiber** hat
+> `HELMUT_SCALABLE_PIPELINE=on` gesetzt und Production neu bereitgestellt (READY
+> 18:52:47Z, unveränderter Commit `eb136522…`). Der einleitende Satz „Nichts ist
+> aktiviert" gilt **nur noch für die Sprints /2 bis /5**. Diese Sitzung hat weiterhin
+> **nichts aktiviert und nichts verändert** — sie kontrolliert rein lesend: **K0
+> bestanden** (mit benannter Lücke), erster Lauf und K1–K3 in **§15**.
 
 ---
 
@@ -185,10 +192,13 @@ READY; (b) kein laufendes Nachweisfenster; (c) Betreiber hat §8 (Messwerte/Gren
 3. **`HELMUT_SCALABLE_PIPELINE=on`** in Vercel setzen (nur Production) + Redeploy.
    Sonst **nichts**: `HELMUT_NARRATIV_QUEUE`, `HELMUT_LLM_FAIRNESS` und alle
    `HELMUT_WORKER_*`/`HELMUT_DEMAND_*` bleiben ungesetzt (Defaults greifen).
-   **⛔ Offen — Betreiberaktion.** Versuch 2026-08-11/5 vor jeder Änderung gestoppt:
-   aus Sitzungen gibt es keinen Schreibweg zur Vercel-Env (§14). Vorzustand für K0
-   liegt erhoben vor (§14.3).
+   **✅ Vom Betreiber ausgeführt 2026-08-11** — Redeploy READY **18:52:47Z** auf
+   unverändertem Commit `eb136522…` (Beleg §15.1). Der Versuch 2026-08-11/5 war zuvor vor
+   jeder Änderung gestoppt worden, weil es aus Sitzungen keinen Schreibweg zur Vercel-Env
+   gibt (§14); dieser Zugangsblocker besteht unverändert fort.
 4. **Sofortkontrolle** (§8.4, Punkt K0).
+   **✅ Erledigt 2026-08-11, 18:55–19:05 UTC — bestanden mit einer benannten Lücke
+   (`/api/ops/jobqueue` mangels `CRON_SECRET` nicht abrufbar); Beleg §15.1.**
 5. Beobachtung nach Kontrollplan §8.4 (K1 nach dem ersten vollen Lauf, K2 nach 24 h,
    K3 nach 72 h). Erst nach K3 grün ist die 5er-Aktivierung **bestanden**.
 6. *(Optionaler zweiter Schritt, frühestens nach K3:)* `HELMUT_LLM_FAIRNESS=on` — eigene
@@ -654,3 +664,70 @@ Cronlauf · kein Worker · keine Migration angewendet oder zurückgenommen · ke
 Production-Datenänderung · keine Mandatsänderung · `mdb-a` unangetastet · keine Testdaten ·
 keine Grenzwerte verändert · keine Sicherheitsprüfung umgangen · kein 403-Umgehungsversuch ·
 keine Geheimnisse ausgegeben · kein Merge · keine Ausweitung auf 25 Mandate.
+
+## 15 · OP-30 ist aktiv — Kontrollen ab 2026-08-11/6 (rein lesend)
+
+**Der Betreiber hat §6 Schritt 3 selbst ausgeführt** (Weg 1 aus §14.5). Diese Sitzung hat
+**nichts aktiviert und nichts verändert**: kein Flag, keine Env-Variable, kein Redeploy,
+kein manueller Lauf, keine Datenzeile. Alle Zugriffe sind rein lesend.
+
+**Zugangslage unverändert (erneut gemessen, 18:55–18:58 UTC):** `api.vercel.com:443`,
+`vercel.com:443` und `helmut-pilot.vercel.app` antworten weiterhin `CONNECT → HTTP 403`;
+`CRON_SECRET` ist in dieser Sitzung **nicht** gesetzt. Neu gegenüber §14: die Anwendung ist
+über das **Vercel-MCP-Lesewerkzeug** (`web_fetch_vercel_url`) abrufbar — damit ist die
+K0-Erreichbarkeitsprüfung möglich, `/api/ops/jobqueue` bleibt es nicht.
+**Folge, die ehrlich benannt bleiben muss: diese Sitzung kann den Rücknahmeweg (§7 Schritt 1)
+weiterhin nicht selbst ausführen.** Tritt ein Abbruchkriterium aus §8.2 ein, ist das
+Ausschalten des Flags eine **Betreiberaktion**.
+
+### 15.1 K0 — Sofortkontrolle (durchgeführt 18:55–19:05 UTC / 20:55–21:05 Uhr Berlin)
+
+Bezugsgröße ist die K0-Grundlinie aus §14.3 (erhoben 17:47 UTC, vor der Aktivierung).
+
+| # | Prüfpunkt | Befund | Urteil |
+|---|---|---|---|
+| 1 | Welches Production-Deployment ist READY | **`dpl_BmBpsBmg6QK2ydJVg57tx8JVeVGN`** — `target=production`, `state/readyState=READY`, Aliasse `helmut-pilot.vercel.app`, `helmut-pilot-nohut.vercel.app`, `helmut-pilot-git-main-nohut.vercel.app`, Region `fra1` | ✅ |
+| 2 | Welcher Commit läuft tatsächlich | `githubCommitSha` **`eb136522b89c39a908c3feccbc2385f007dd5186`**, `githubCommitRef=main` — identisch mit `main`-HEAD (Merge PR #242) und mit dem Vor-Aktivierungsstand. `source/action = redeploy`, `originalDeploymentId = dpl_7XYS3L6pMBtkQwiXJCswmWYkYKvY` ⇒ **reine Konfigurationsänderung, kein Codewechsel** | ✅ |
+| 3 | Wann war das neue Deployment bereit | erstellt **18:52:32.338Z**, Build ab 18:52:35.039Z, **READY 18:52:47.418Z** (= 20:52:47 Uhr Berlin). **Zwei** Redeploys desselben Commits: `dpl_H2ReArdsfMuxwTiNaoZF2jTkuwsR` 18:50:54.086Z und der obige 98 s später; der zweite trägt die Production-Aliasse und ist der wirksame Stand | ✅ (Doppel-Redeploy vermerkt, unschädlich) |
+| 4 | Anwendung erreichbar und fehlerfrei | `GET https://helmut-pilot.vercel.app/` → **HTTP 200**, 18:57:54Z, vollständige HTML-Auslieferung, Sicherheitskopfzeilen (CSP, HSTS, `x-frame-options`) unverändert. **Ausgelieferte Asset-Version `?v=eb136522`** — der laufende Commit ist damit **aus der Anwendung selbst** bestätigt, nicht nur aus der Deployment-Verwaltung | ✅ |
+| 5 | Weiterhin exakt fünf Mandate aktiv | `mandate_profiles`: **5 aktiv** — `annika-klose, cem-ince, helmut-kleebank, ottilie-paola-klein-2, ruppert-st-we`; 9 Zeilen gesamt | ✅ unverändert |
+| 6 | `mdb-a` unverändert inert | `profiles` 1 / `decisions` 1 / `mandate_profiles` **0** — identisch zu §9 und §14.3 | ✅ unverändert |
+| 7 | Ausgangszustand `helmut_jobs` / `llm_reservations` vor dem ersten aktiven Lauf | beide **0 Zeilen**; `pg_stat_user_tables`: `n_tup_ins/upd/del = 0/0/0`, `idx_scan = 0` auf **beiden** Tabellen ⇒ seit ihrer Anlage (10:47 UTC) **nie beschrieben**. Die `seq_scan`-Zähler (18 bzw. 11) stammen ausschließlich aus den lesenden Prüfabfragen dieser und der Vorsitzungen | ✅ erwarteter Ausgangszustand |
+| 8 | KI-Budget, Briefings, OP-31 unverändert | `llm_budget_counters` 2026-08-11 `global.used` = **41**, letzte Änderung **16:06:11Z** (also vom V2-Pipelinelauf, **nicht** von der Aktivierung) · `briefings` gesamt **163** · heute genau 10 Zeilen: 5× `morgenlage` (alle `status=erfolg`, 05:00:31–05:00:39Z) + 5× `lage` (05:45:33–05:45:59Z), je genau eine je Mandat | ✅ unverändert, **0 Zusatzkosten durch die Aktivierung** |
+| 9 | Wurde ausschließlich der skalierbare Pipeline-Schalter wirksam | **aus dieser Sitzung nicht direkt belegbar** — Vercel-Environment bleibt weder lesbar noch setzbar (§14.1). Was belegt ist: es gab **keinen Codewechsel** (Punkt 2), **keine** neue Migration (letzte registrierte unverändert `20260811105229`, Gesamtzahl 25) und bis zum ersten Lauf **keine** Wirkung in den OP-30-Tabellen. Der wirkungsbasierte Nachweis ist erst am ersten Lauf möglich (§15.3/§15.4) | ⚠️ **offen bis zum ersten Lauf** |
+| 10 | Andere Production-Änderung erkennbar | **nein.** Registrierte Migrationen 25 (unverändert) · Policies `public` 24 (unverändert) · `profiles` 10 · `mandate_profiles` 9/5 · Security-Advisor unverändert (20× INFO `rls_enabled_no_policy` inkl. der zwei OP-30-Tabellen — der geprüfte Vertrag — sowie der vorbestehende WARN `extension_in_public` für `vector`; **kein neuer WARN, kein ERROR**) · Vercel-Runtime-Fehler seit dem Redeploy: **keine** (jüngste Fehlerzeilen 16:03:03Z aus dem V2-Pipelinelauf, ausnahmslos die dokumentierte Google-Basisklasse OP-15) · `process_runs` ohne `finished_at`: **0** (kein Lauf in Arbeit) | ✅ |
+
+**K0-Ergebnis: bestanden, mit einer benannten Lücke.** Neun von zehn Punkten sind belegt;
+Punkt 9 ist aus dieser Sitzung strukturell nicht direkt prüfbar.
+
+**Was K0 laut §8.4 zusätzlich verlangt und hier NICHT geleistet werden konnte:**
+`/api/ops/jobqueue` mit `bereit:true` und leeren Gründen. Die Route ist `authorizeCron`-
+geschützt und `CRON_SECRET` liegt dieser Sitzung nicht vor. **Ersatzbeleg** (schwächer, aber
+ehrlich): die beiden Tabellen sind nachweislich leer **und nie beschrieben**, und der
+Zustand „ein Worker darf und kann abarbeiten" wird ohnehin erst am ersten Lauf sichtbar.
+Diese Teilprüfung bleibt damit **offen** und ist vom Betreiber nachzuholen.
+
+### 15.2 Kein manueller Lauf — Begründung
+
+Das Runbook erlaubt **keinen** manuellen Lauf: §6 kennt nach Schritt 3 nur Beobachtung
+(Schritt 4/5), §8.4 bindet K1 ausdrücklich an die **regulären** Slots. Unabhängig davon
+wäre er aus dieser Sitzung technisch nicht auslösbar (`CRON_SECRET` fehlt, Egress 403) und
+er wäre ein kostenverursachender Lauf. Es wurde **kein** alternativer Zugriffsweg gesucht
+oder gebaut.
+
+### 15.3 Wann der erste gültige Lauf mit aktivem OP-30 stattfindet — **berichtigt**
+
+Die Annahme „nächster Lauf am 12.08.2026 um 16:00 UTC / 18:00 Uhr Berlin" ist **falsch**.
+Belegt am Code und am Betriebsverlauf:
+
+- `server.js:845` ruft `cronSchwererPfad("crawl", …)` und `server.js:1030`
+  `cronSchwererPfad("pipeline", …)`. Der Einsprung in die Warteschlange
+  (`skalierbarerPfadAktiv() → return runCronUeberWarteschlange(…)`) sitzt **in
+  `cronSchwererPfad` selbst** — er gilt also für **beide** Crons, nicht nur für `pipeline`.
+- `vercel.json` plant `/api/cron/crawl` **zweimal** täglich: `0 4 * * *` **und `0 20 * * *`**.
+- Der 20:00-Slot ist real belegt: `cron-crawl-20260810200142-iquxi` (10.08., 20:01:42Z),
+  `cron-crawl-20260809200052-zxn0v` (09.08.).
+
+**Der erste gültige Production-Lauf mit aktivem OP-30 ist daher der `crawl`-Slot am
+2026-08-11 um 20:00 UTC (22:00 Uhr Berlin)** — rund 65 Minuten nach der Aktivierung, nicht
+erst am Folgetag. Diese Sitzung wartet ihn ab und wertet ihn rein lesend aus (§15.4).
