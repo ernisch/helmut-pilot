@@ -1,12 +1,13 @@
 # Frischevertrag des Morgenbriefings (Sprint 2026-08-10)
 
 **Kanonische Belegdatei** für den verbindlichen Frischevertrag. `docs/CURRENT_STATE.md`
-führt davon nur die entscheidungsrelevanten Zeilen. Zustand des Sprints:
-**teilweise abgeschlossen** — lokal vollständig gebaut, getestet und reviewbar;
-Merge, Deployment und Production-Nachweis stehen aus.
+führt davon nur die entscheidungsrelevanten Zeilen. Zustand des Sprints (Stand 2026-08-11):
+**abgeschlossen** — gebaut, getestet, adversarial gegengeprüft, gemergt und
+**Production-Nachweis bestanden** (§11).
 
-**Branch:** `claude/briefing-freshness-guarantee-r36h8m` · **PR:** gegen `main`, nicht gemergt
-**Neuer offener Punkt:** OP-31 ([`../datenmotor-restliste.md`](../datenmotor-restliste.md))
+**Branch:** `claude/briefing-freshness-guarantee-r36h8m` · **PR #238:** gemergt
+`2026-08-10T21:02:57Z`, Merge-Commit `6030cbb71a39448b598106531970c4b5c681df6f`
+**Punkt:** OP-31 ([`../datenmotor-restliste.md`](../datenmotor-restliste.md))
 
 ---
 
@@ -210,7 +211,7 @@ Ein Merge ist ein Deployment. Danach gilt sofort:
    Sie sind über Umgebungsvariablen änderbar; eine empirische Justierung braucht
    Production-Daten.
 
-## 9 · Nächster Schritt
+## 9 · Nächster Schritt (Stand vor dem Merge — Historie)
 
 1. Review und **Merge-Entscheidung** durch den Betreiber (Merge = Deployment).
 2. Nach dem Merge: den **ersten Morgenlauf** ansehen —
@@ -219,6 +220,98 @@ Ein Merge ist ein Deployment. Danach gilt sofort:
 3. Erst danach die OP-30-Stufe 2 (25 Mandate) freigeben; die Abdeckungszahl des
    Morgenlaufs ist ab dann die Messgröße dafür, ob 25 Mandate wirklich täglich
    versorgt werden.
+
+Diese drei Schritte sind erledigt — Nachweis §11.
+
+## 11 · OP-31 (b): Production-Nachweis des ersten Morgenlaufs (2026-08-11, BESTANDEN)
+
+Rein lesende Prüfung nach dem regulären Morgenlauf vom 2026-08-11 05:00 UTC. Keine
+Production-Datenänderung, kein manueller Lauf, keine Migration, keine Env-/Flag-Änderung.
+
+**Merge- und Deployment-Kette**
+
+- PR #238 gemergt `2026-08-10T21:02:57Z`, Merge-Commit `6030cbb71a39448b598106531970c4b5c681df6f`
+  (`merged: true`, gegen GitHub geprüft).
+- `main` HEAD ist dieser Commit; kein weiterer Commit seither.
+- Production-Deployment `dpl_Es8TeJjw6CvamH5RC33af6o2sWHt`, `target: production`,
+  `state: READY`, erstellt `2026-08-10T21:03:04Z`, Vercel-Metadatum
+  `githubCommitSha=6030cbb71a39448b598106531970c4b5c681df6f` — Production basiert
+  nachvollziehbar auf dem Merge-Commit.
+
+**Der Morgenlauf**
+
+- Vercel-Runtime-Log, automatischer Cron (Schedule `0 5 * * *`, kein `workflow_dispatch`,
+  kein manueller Aufruf): `05:00:26 GET /api/cron/morning-briefing 200`,
+  `lauf=cron-morning-briefing-20260811050027-ifo1h`.
+- `[cron/morning-briefing/fairness] geplant=ottilie-paola-klein-2,cem-ince,annika-klose,
+  helmut-kleebank,ruppert-st-we begonnen=<dieselben fünf> erfolgreich=5 fehlgeschlagen=0
+  kapazitaet=5 obergrenzeLaeufe=1 laufzustand=abgeschlossen zustand=ok`.
+- `[cron/morning-briefing] 14522ms tenants=5 reason=ok frischebelege=5/5`.
+- Zeitfenster deployment→jetzt (`2026-08-10T21:03Z`–`2026-08-11T07:55Z`) auf
+  `/api/cron/morning-briefing` durchsucht: **genau ein** Aufruf. Kein zweiter Push, kein
+  Watchdog-Ersatzlauf auf dieser Route.
+- `briefing-watchdog.yml` (GitHub Actions, `event: schedule`, kein manueller Trigger)
+  lief 06:12:44 UTC erfolgreich, ruft aber `/api/cron/pipeline-status`/`/api/cron/pipeline`
+  — eine andere Route als der Morgen-Cron; keine Überschneidung mit `morning-briefing`.
+- Keine Zeile `FRISCHEBELEG NICHT PERSISTIERT`, keine Zeile `FRISCHEVERTRAG nicht erfuellt`
+  im gesamten Fenster (log-durchsucht). Keine `error`/`warning`-Log-Zeilen, keine
+  `get_runtime_errors`-Treffer seit dem Deployment.
+
+**Belegzeilen (relational gegengeprüft, GET-only gegen `SUPABASE_URL`)**
+
+| Mandat | id | user_id | payload.tenantId | berlinTag | status | ausloeser |
+|---|---|---|---|---|---|---|
+| annika-klose | `bf-annika-klose-morgenlage-2026-08-11` | annika-klose | annika-klose | 2026-08-11 | erfolg | morgenlauf |
+| cem-ince | `bf-cem-ince-morgenlage-2026-08-11` | cem-ince | cem-ince | 2026-08-11 | erfolg | morgenlauf |
+| helmut-kleebank | `bf-helmut-kleebank-morgenlage-2026-08-11` | helmut-kleebank | helmut-kleebank | 2026-08-11 | erfolg | morgenlauf |
+| ottilie-paola-klein-2 | `bf-ottilie-paola-klein-2-morgenlage-2026-08-11` | ottilie-paola-klein-2 | ottilie-paola-klein-2 | 2026-08-11 | erfolg | morgenlauf |
+| ruppert-st-we | `bf-ruppert-st-we-morgenlage-2026-08-11` | ruppert-st-we | ruppert-st-we | 2026-08-11 | erfolg | morgenlauf |
+
+Abfrage `id=like.bf-*-morgenlage*-2026-08-11` lieferte **genau diese fünf Zeilen** — keine
+Fehlerzeile (`morgenlage-fehler`), keine fremde Mandats- oder Tageszeile wurde mitgezählt.
+`user_id`, `payload.tenantId` und `berlinTag` stimmen je Zeile eindeutig überein (F1-Prüfung
+des Reviews bestätigt sich in Production).
+
+**Aktive Mandate**
+
+`profiles`+`mandate_profiles` relational gelesen: 10 Profilzeilen, davon 5 aktiv
+(`aktiv≠false`, `geloescht_at` leer) — exakt `annika-klose, cem-ince, helmut-kleebank,
+ottilie-paola-klein-2, ruppert-st-we`. Deaktiviert: `angela-merkel`, `james-brown`,
+`max-mustermann`, `helmut-abnahme-berlin` (unverändert, §3 CURRENT_STATE.md). Eine zehnte
+Zeile `mdb-a` trägt **keine** `mandate_profiles`-Zeile — nach derselben Lebenszyklusregel wie
+die Laufzeit (`tenant-context.relationalesProfilLebenszyklus`) unvollständig und **nicht**
+aktiv; sie beeinflusst die Fünferzahl nicht, ist aber als Beobachtung festgehalten.
+
+**OP-30 unverändert deaktiviert**
+
+`GET /rest/v1/helmut_jobs` und `GET /rest/v1/llm_reservations` liefern `404 PGRST205`
+(„Could not find the table") — beide Migrationen sind in Production **nicht** eingespielt.
+Runtime-Log 06:10/06:22 UTC: `[cron/lage-briefing-nachlauf] uebersprungen — OP-30-Flags aus,
+keine Verarbeitung`.
+
+**Runtime-Logs seit Deployment (2026-08-10T21:03Z–2026-08-11T07:55Z, vollständig gesichtet)**
+
+11 Aufrufe, alle `200`, keine `error`/`warning`-Log-Zeile, keine `get_runtime_errors`-Treffer:
+`/` · `/api/release/public` · `crawl` (04:00, `status=teilweise budgetErschoepft=true
+verstanden=8` — vorbestehender Verstehensrückstand, OP-14, **nicht** durch PR #238 verursacht:
+dieselbe Kennzahlklasse stand bereits vor dem Sprint offen) · `morning-briefing` (05:00,
+s. o.) · `understanding` (05:31, 21:30) · `lage-briefing` (05:45) · `lage-briefing-nachlauf`
+(06:10, 06:22, beide übersprungen) · `pipeline-status` (06:12, Watchdog-Vorprüfung) ·
+`health-report` (06:00). Keine neue Fehlerklasse, keine Regression durch PR #238 erkennbar.
+
+**Nicht live nachgesehen:** der gerenderte Kopfstatus in der Oberfläche wurde in dieser
+Sitzung nicht per authentifizierter Session abgerufen (kein Zugangsgeheimnis verfügbar).
+Da für alle fünf Mandate ein gültiger, mandats- und tagesscharfer Erfolgsbeleg vorliegt und
+der Kopfstatus laut testgesichertem Code (F1–F6 des Reviews, `briefing-frische-audit-test.js`
+34/34) „Aktuell" **nur** bei genau einem solchen Beleg zeigt, ist die Anzeige mit hoher
+Sicherheit korrekt — aber nicht per Live-Aufruf verifiziert. Der Umkehrfall („Briefing noch
+nicht aktuell" bei fehlendem Beleg) trat heute bei keinem der fünf Mandate ein und konnte
+daher nicht live beobachtet werden; künstliche Fehlerzustände sind laut `CLAUDE.md` §7.7.5-
+Methodik/29B-Praxis nicht Gegenstand eines Production-Nachweises.
+
+**Urteil:** Alle 16 verbindlichen Abnahmekriterien des OP-31-Production-Nachweises sind
+anhand von Vercel-Runtime-Logs, GitHub-API und relational gelesenen Production-Daten erfüllt.
+**OP-31 gilt als abgeschlossen.**
 
 ---
 
