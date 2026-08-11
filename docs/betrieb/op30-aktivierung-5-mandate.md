@@ -21,6 +21,13 @@ Vorgänger: [`op30-kapazitaet-morgenslots-2026-08-09.md`](op30-kapazitaet-morgen
 > nicht gestartet (**Neutralitätsnachweis §13, bestanden**). Damit ist die Vorbedingung
 > für §6 Schritt 3–5 erfüllt; die Aktivierung selbst bleibt ein eigener, freigabepflichtiger
 > Sprint.
+>
+> **Nachtrag 2026-08-11/5 (Aktivierungssprint, ausdrückliche Freigabe für
+> `HELMUT_SCALABLE_PIPELINE=on`):** §6 Schritt 3 **konnte nicht ausgeführt werden** und
+> wurde **nicht** ausgeführt. 14 von 15 Voraussetzungen erfüllt; es fehlt der Schreibweg
+> zur Vercel-Production-Konfiguration (gemessen, §14.1). **Nichts aktiviert, nichts
+> verändert, K0–K3 nicht begonnen** — vollständiger Beleg samt K0-tauglichem Vorzustand
+> in **§14**.
 
 ---
 
@@ -178,6 +185,9 @@ READY; (b) kein laufendes Nachweisfenster; (c) Betreiber hat §8 (Messwerte/Gren
 3. **`HELMUT_SCALABLE_PIPELINE=on`** in Vercel setzen (nur Production) + Redeploy.
    Sonst **nichts**: `HELMUT_NARRATIV_QUEUE`, `HELMUT_LLM_FAIRNESS` und alle
    `HELMUT_WORKER_*`/`HELMUT_DEMAND_*` bleiben ungesetzt (Defaults greifen).
+   **⛔ Offen — Betreiberaktion.** Versuch 2026-08-11/5 vor jeder Änderung gestoppt:
+   aus Sitzungen gibt es keinen Schreibweg zur Vercel-Env (§14). Vorzustand für K0
+   liegt erhoben vor (§14.3).
 4. **Sofortkontrolle** (§8.4, Punkt K0).
 5. Beobachtung nach Kontrollplan §8.4 (K1 nach dem ersten vollen Lauf, K2 nach 24 h,
    K3 nach 72 h). Erst nach K3 grün ist die 5er-Aktivierung **bestanden**.
@@ -535,3 +545,112 @@ Start bleibt eine Betreiberentscheidung.
 Env-Variable, kein Flag, kein Worker, keine Migration angewendet oder zurückgenommen,
 keine Production-Datenänderung, keine Mandatsänderung, `mdb-a` unangetastet, keine
 Ausweitung auf 25 Mandate, kein Merge.
+
+## 14 · Aktivierungsversuch 2026-08-11/5 — **blockiert vor jeder Änderung** (rein lesend)
+
+**Auftrag:** §6 Schritt 3–5 ausführen — ausschließlich `HELMUT_SCALABLE_PIPELINE=on`,
+Redeploy, danach Kontrollplan K0–K3. Freigabe lag ausdrücklich vor.
+
+**Ergebnis: nicht ausgeführt.** Die Vorprüfung (Phase 1) ergab **14 von 15 Voraussetzungen
+erfüllt**; die fünfzehnte — *„die aktuelle Production-Konfiguration kann sicher eingesehen
+und verändert werden"* — ist **nicht erfüllt**. Nach der Auftragsregel („wenn eine
+Voraussetzung nicht eindeutig erfüllt ist, stoppe vor jeder Änderung") wurde **nichts**
+verändert: kein Flag, keine Env-Variable, kein Redeploy, kein Lauf, keine Datenzeile.
+
+### 14.1 Der Blocker, gemessen (nicht vermutet)
+
+| Prüfung | Messung 2026-08-11, 17:46–17:47 UTC | Folge |
+|---|---|---|
+| `VERCEL_TOKEN` in der Sitzung | vorhanden (Wert nicht ausgegeben) | allein wertlos |
+| Egress `api.vercel.com:443` | `CONNECT → HTTP 403` (Proxy-Statusmeldung: *policy denial*) | Vercel-REST-Weg gesperrt |
+| Egress `vercel.com:443` | `CONNECT → HTTP 403` | Vercel-Oberfläche gesperrt |
+| Vercel-MCP-Werkzeugsatz | Teams/Projekte/Deployments/Logs/Runtime-Fehler lesbar — **kein Environment-Werkzeug, kein Redeploy-Werkzeug** | Flag weder lesbar noch setzbar |
+| Egress `helmut-pilot.vercel.app` | `CONNECT → HTTP 403` | K0-Erreichbarkeitsprüfung nicht durchführbar |
+| `CRON_SECRET` in der Sitzung | nicht gesetzt | `/api/ops/jobqueue` (K0/K1-Messquelle) nicht abrufbar |
+
+Damit gilt [`env-inventar.md`](env-inventar.md) §8 unverändert: **eine Vercel-Env-Änderung
+ist nur möglich, wenn Token UND geöffneter Egress zusammenkommen.** Ein Umgehen der
+403-Ablehnung ist untersagt und wurde **nicht versucht**. Zweiter, unabhängiger Blocker:
+selbst bei gesetztem Flag wären **K0 und K1 aus dieser Sitzung nicht vollständig
+belegbar** (weder Anwendungserreichbarkeit noch `/api/ops/jobqueue`).
+
+Der Rücknahmeweg (§7 Schritt 1: Flag `off` + Redeploy) hängt am **selben** gesperrten Weg.
+Eine Aktivierung durch diese Sitzung wäre also nicht nur unmöglich, sondern wäre — wenn sie
+möglich gewesen wäre — **ohne eigenen Rückweg** erfolgt. Das ist der Grund, warum hier
+gestoppt statt improvisiert wurde.
+
+### 14.2 Vorprüfung Phase 1 — Ergebnis je Punkt (alles rein lesend)
+
+| # | Voraussetzung | Befund |
+|---|---|---|
+| 1 | PR #242 gemergt | ✅ `merged=true`, 2026-08-11T17:43:10Z, Merge-Commit `eb136522b89c39a908c3feccbc2385f007dd5186` |
+| 2 | Production-Deployment READY | ✅ **`dpl_7XYS3L6pMBtkQwiXJCswmWYkYKvY`**, `target=production`, `state=READY`, erstellt 17:43:13.974Z |
+| 3 | Production auf dem erwarteten Commit | ✅ `githubCommitSha` = `eb136522…`, `githubCommitRef=main`, identisch mit lokalem `main`-HEAD |
+| 4 | Neutralitätsbeweis vollständig dokumentiert | ✅ §13, 16 Prüfpunkte, im Repo auf `main` |
+| 5 | Sechs OP-30-Migrationen registriert | ✅ exakt `20260811104749 / 104841 / 104923 / 105100 / 105131 / 105229`; Gesamtzahl 25 unverändert |
+| 6 | `helmut_jobs` leer | ✅ 0 Zeilen; `n_tup_ins/upd/del = 0/0/0`, `idx_scan=0` (seit Anlage nie beschrieben) |
+| 7 | `llm_reservations` leer | ✅ 0 Zeilen; `n_tup_ins/upd/del = 0/0/0`, `idx_scan=0` |
+| 8 | Exakt die fünf Mandate aktiv | ✅ `annika-klose, cem-ince, helmut-kleebank, ottilie-paola-klein-2, ruppert-st-we` (9 Zeilen gesamt, 5 aktiv) |
+| 9 | `mdb-a` unverändert und inert | ✅ `profiles` 1 / `decisions` 1 / `mandate_profiles` **0** — wie §9 |
+| 10 | V2-Betrieb und OP-31 unauffällig | ✅ alle Läufe des Tages `success`/`partial`(Normalstand), `failed_count=0`; 10 Briefingzeilen (5× `morgenlage` 05:00:31–05:00:39Z, 5× `lage` 05:45:33–05:45:59Z), je genau eine je Mandat |
+| 11 | Kein laufender Lauf/Worker | ✅ `process_runs` ohne `finished_at`: **0**; aktive Datenbankabfragen 0; gewährte Sperren fremder Sitzungen 0; nächster Regel-Slot erst 20:00 UTC |
+| 12 | Kein ungeklärter Fehler-/Sperrzustand | ✅ Vercel-Runtime-Fehler 24 h: **keine**. PostgreSQL 24 h: 0 FATAL/PANIC, 0 Berechtigungsfehler; 10 ERROR = ausnahmslos fehlgeschlagene **Ad-hoc-Leseabfragen aus Prüfsitzungen** („column … does not exist", jüngste 17:47:48Z aus **dieser** Sitzung), 12 WARNING = Transaktionshinweise aus dem Migrationsfenster 10:47–10:52Z |
+| 13 | Rücknahmeweg eindeutig ausführbar | ⚠️ **für den Betreiber ja** (§7, unverändert gültig) — **aus dieser Sitzung nein**, siehe §14.1 |
+| 14 | Ausschließlich Production-Projekt `ddckuvvpcytqbyfmbvie` | ✅ einziges Projekt der Organisation, `ACTIVE_HEALTHY`, eu-west-1, PostgreSQL 17.6 |
+| 15 | Production-Konfiguration einsehbar und veränderbar | ❌ **nicht erfüllt** — §14.1 |
+
+### 14.3 Vorzustand (Phase 2) — erhoben 2026-08-11, **17:47 UTC / 19:47 Uhr Berlin**
+
+Diese Werte sind die **verwendbare K0-Grundlinie** für den Betreiber: wer nach dem Setzen
+des Flags Schritt 4 ausführt, vergleicht gegen genau diese Tabelle.
+
+| Größe | Wert |
+|---|---|
+| Production-Commit | `eb136522b89c39a908c3feccbc2385f007dd5186` (Merge PR #242) |
+| Production-Deployment | `dpl_7XYS3L6pMBtkQwiXJCswmWYkYKvY`, READY 17:43:13.974Z |
+| Aktive Mandate | 5 (Liste §14.2 Punkt 8), `mandate_profiles` gesamt 9 |
+| `helmut_jobs` | 0 Zeilen, nie beschrieben |
+| `llm_reservations` | 0 Zeilen, nie beschrieben |
+| KI-Budget `global.used` | **41** (2026-08-11) · Vortage: 69 (10.08.), 70 (09.08.) · Rahmen 100 + Reserve 30 |
+| Briefingstand | `briefings` gesamt **163**; heute 10 Zeilen (5 `morgenlage` + 5 `lage`), OP-31-Frischebelege 5/5 |
+| Letzter V2-Lauf | `cron-pipeline-20260811160305-zvzhe-global`, 16:03:05.566Z → 16:06:44.039Z, 218 472 ms, `partial` (Normalstand), `failed_count=0`, `commit_ref=6ed4f657…` |
+| Letzter OP-31-Lauf | `briefing-morning-20260811050027-ewtbk`, `success`, 12 308 ms, `failed_count=0`; `briefing-lage-20260811054525-gk9l8`, `success`, 33 652 ms |
+| Fehlergrundlinie | Vercel 0 Runtime-Fehler/24 h; PostgreSQL 0 FATAL, 10 ERROR (nur Ad-hoc-Leseabfragen), 12 WARNING (Migrationsfenster) |
+| Struktur | `profiles` 10 · Policies 24 · registrierte Migrationen 25 |
+| Relevante Flags | **nicht direkt einsehbar** (§14.1). Wirkungsbasiert unverändert belegt: alle OP-30-Flags **aus** (`n_tup_ins=0` auf beiden Tabellen). Keine Geheimnisse ausgegeben |
+
+### 14.4 Kontrollplan K0–K3
+
+**Nicht begonnen.** K0 setzt Schritt 3 (Flag + Redeploy) voraus; ohne Aktivierung gibt es
+nichts zu kontrollieren. Es wurden **keine** Messwerte des Kontrollplans erhoben, kein
+Auftrag angelegt, kein Mandat verarbeitet, keine Reservierung erzeugt, keine Zusatzkosten
+verursacht (`global.used` unverändert 41). **Der Fünferlauf ist damit nicht bestanden —
+er hat nicht stattgefunden.**
+
+### 14.5 Was der Betreiber jetzt genau tun muss
+
+Einer der beiden Wege, dann bleibt das Runbook unverändert gültig:
+
+1. **Empfohlen — Betreiber setzt selbst:** in Vercel → Projekt `helmut-pilot` → Settings →
+   Environment Variables → **nur** `HELMUT_SCALABLE_PIPELINE=on`, **nur** Environment
+   *Production*; danach Redeploy des aktuellen Production-Commits `eb136522…`
+   (Deployments → aktuelles Production-Deployment → *Redeploy*, **ohne** Build-Cache-Zwang
+   ist nicht nötig). Anschließend §6 Schritt 4–5 (K0 sofort, K1/K2/K3) — K0/K1 brauchen
+   `/api/ops/jobqueue` mit `CRON_SECRET`, das nur der Betreiber hat.
+2. **Alternativ — Sitzung befähigen:** Egress zu `api.vercel.com` in den Claude-Code-
+   Environment-Einstellungen freigeben **und** `CRON_SECRET` als Environment-Variable
+   hinterlegen (nie über den Chat). Dann kann eine Folgesitzung §6 Schritt 3–5 und K0–K3
+   vollständig selbst ausführen und belegen. Vorher: erneut §14.2 durchprüfen, weil sich
+   Lauf- und Zeitlage bis dahin verschieben.
+
+**Wichtig für beide Wege:** Die Grenzen aus §8.2 gelten unverändert; K3 (72 h) entscheidet.
+Eine Ausweitung auf 25 Mandate bleibt bis dahin ausgeschlossen — und danach zusätzlich vom
+neu bestandenen OP-25-Nachweis abhängig.
+
+### 14.6 Nicht getan (Verbote eingehalten)
+
+Kein Flag gesetzt oder geändert · keine Env-Variable · kein Redeploy · kein manueller
+Cronlauf · kein Worker · keine Migration angewendet oder zurückgenommen · keine
+Production-Datenänderung · keine Mandatsänderung · `mdb-a` unangetastet · keine Testdaten ·
+keine Grenzwerte verändert · keine Sicherheitsprüfung umgangen · kein 403-Umgehungsversuch ·
+keine Geheimnisse ausgegeben · kein Merge · keine Ausweitung auf 25 Mandate.

@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-11/4** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30**, §7a — PR #233/#235/#236/#237/#240/#241 gemergt; die sechs Vorwaertsmigrationen sind am 2026-08-11 angewendet und abgenommen (Runbook §12), und der **Neutralitaetsnachweis des ersten Regellaufs ist BESTANDEN** (Runbook §13): alle OP-30-Flags weiter **aus**, nichts aktiviert, null Zusatzkosten. **(c) OP-31 Frischevertrag BESTANDEN** — PR #238/#239 gemergt, Morgenlauf 2026-08-11: `belegt=5/5`, ein Push je Mandat. **(d)** Befund `mdb-a`/`dec-y` geklaert, kein Blocker, Bereinigungsplan im Runbook §9). Diese Datei enthaelt
+**Stand: 2026-08-11/5** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30**, §7a — PR #233…#242 gemergt; sechs Vorwaertsmigrationen angewendet (Runbook §12), Neutralitaetsnachweis BESTANDEN (§13). **Der Aktivierungssprint 2026-08-11/5 ist BLOCKIERT**: 14 von 15 Voraussetzungen erfuellt, es fehlt der Schreibweg zur Vercel-Env — **nichts aktiviert, K0–K3 nicht begonnen** (Runbook §14). **(c) OP-31 Frischevertrag BESTANDEN** — Morgenlauf 2026-08-11: `belegt=5/5`, ein Push je Mandat. **(d)** Befund `mdb-a`/`dec-y` geklaert, kein Blocker, Bereinigungsplan im Runbook §9). Diese Datei enthaelt
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -18,9 +18,9 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 ## 2 · Stand auf `main`
 
-- **HEAD `6ed4f65`** = Merge von **PR #241** (Doku-PR: OP-30-Migrationsbeleg;
-  Production-Deployment `dpl_F4e6ojyF5g4J9HZJGF28sWqHEEvW` READY 2026-08-11T11:53:30Z,
-  Commit gegengeprüft, **Regellauf darauf neutral**, §7a). Davor `9663fc8` = **PR #240**,
+- **HEAD `eb13652`** = Merge von **PR #242** (Doku-PR: OP-30-Neutralitätsnachweis;
+  Production-Deployment `dpl_7XYS3L6pMBtkQwiXJCswmWYkYKvY` READY 2026-08-11T17:43:13Z,
+  Commit gegengeprüft). Davor `6ed4f65` = **PR #241**, `9663fc8` = **PR #240**,
   `dcd6da5` = **PR #239**, `6030cbb7` = **PR #238** (OP-31, §7a/§9).
 - Davor `ec2e208` = **PR #237**, `0f047b1` = **PR #236**, `40e7708` = **PR #235**,
   `559a3d9` = **PR #233**, `1f10d66` = **PR #234**, `a07954df` = **PR #232**,
@@ -69,10 +69,12 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 - **Kosten:** LLM im Mittel ~0,14 USD/Betriebstag (Untergrenze, Preisbasis unbelegt,
   [`betrieb/kostenmessung.md`](betrieb/kostenmessung.md)); Nachweisfenster 0,1892 USD
   bei Rahmen 2 USD.
-- **Zugangsgrenze jeder Claude-Sitzung:** Supabase lesend erreichbar; **Vercel-Env weder
-  lesbar noch setzbar** (Egress `CONNECT → 403`, Vercel-MCP ohne Env-/Redeploy-Werkzeug).
-  Jede Flag-Aktivierung **und jeder Rückbau** ist Betreiberaktion
-  ([`betrieb/env-inventar.md`](betrieb/env-inventar.md) §8).
+- **Zugangsgrenze jeder Claude-Sitzung (erneut gemessen 2026-08-11 17:46 UTC):** Supabase
+  lesend erreichbar; **Vercel-Env weder lesbar noch setzbar** (`api.vercel.com`,
+  `vercel.com` **und** `helmut-pilot.vercel.app`: `CONNECT → 403` Policy-Denial;
+  Vercel-MCP ohne Env-/Redeploy-Werkzeug; `CRON_SECRET` nicht gesetzt ⇒
+  `/api/ops/jobqueue` unerreichbar). Jede Flag-Aktivierung **und jeder Rückbau** ist
+  Betreiberaktion ([`betrieb/env-inventar.md`](betrieb/env-inventar.md) §8).
 
 ## 4 · Aktivierte Funktionen (Production)
 
@@ -106,7 +108,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **dieser Sprint** | Doku: Neutralitätsnachweis des ersten Regellaufs nach PR #241 (Runbook §13, §6 Schritt 2 erledigt) | reine Doku, **mergefähig nach Review** |
+| **dieser Sprint** | Doku: blockierter OP-30-Aktivierungssprint (Runbook §14: Vorprüfung, Vorzustand, Blocker) | reine Doku, **mergefähig nach Review** |
 | **#231** (Draft) | OP-03 Konten-Vorbedingung, 1 Konto je Mandat | in §6 bisher nicht geführt (Korrektur 2026-08-11/2); Betreiberentscheidung |
 | **#224** (Draft) | F-E2E: Lage-Rangfolge aus berechnetem Rang statt Ablage | behauptet die Behebung des CI-Nichtdeterminismus F-E2E; **nicht reviewt, nicht abgenommen** |
 | **#225** (Draft) | „Produktroadmap für LINIE" | nicht aus dem Helmut-Arbeitsstrang; Einordnung beim Betreiber |
@@ -167,46 +169,36 @@ Importvertrag. #236 (E1): Lage-Narrativ als fünfter Auftragstyp, Flag
 [`lage-narrativ-warteschlange-2026-08-09.md`](betrieb/lage-narrativ-warteschlange-2026-08-09.md) ·
 [`op30-e1-abschlussreview-2026-08-09.md`](betrieb/op30-e1-abschlussreview-2026-08-09.md).
 
-**Sprint „Kapazitaet der Morgenlage" (2026-08-09/3, PR #237 gemergt).** Kanonisch:
+**Kapazitaet der Morgenlage (2026-08-09/3, PR #237).** Kanonisch:
 [`op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md).
-**R4** (doppelte Budgetzaehlung) und **R4b** (still verworfener Bereichsdeckel) an echter
-PostgreSQL 16.13 reproduziert und behoben — ein Buch, ein Schreiber; beides in der
-Migration `20260808_llm_budget_fairness.sql` (seit 2026-08-11 angewendet).
-Kapazitaet slotgenau gemessen: heutige Verdrahtung traegt **39 von 200**; kleinste sichere
-Loesung (Parallelitaet 8 ueber `HELMUT_NARRATIV_PARALLEL` · Slotbudget 270 s · zwei
-Morgenslots 06:10/06:22 UTC auf geriegelter Route · Narrativgrenze 45 s · Leerlaufwarten)
-⇒ **200/200 im Morgenfenster (06:30 UTC), 59,6 % Reserve**, 14 Stoerfaelle ohne Verlust
-und ohne Doppelverarbeitung; 1 000 Mandate: 586 (ehrlich als Rueckstand gemeldet).
-**R6** im Testgeruest entschaerft. Narrativkosten 0,2614 USD/Morgen bei 200.
-**Offen:** echte Google-/KI-Laufzeit · wirksamer Production-Deckel · **190 fehlende echte
-Profile** (es gibt 10) · Aktivierung + Production-Nachweis (Migrationen 2026-08-11
-angewendet) · Vercel-Verhalten bei Parallelitaet 8.
+R4/R4b (doppelte Budgetzaehlung, verworfener Bereichsdeckel) behoben; slotgenau gemessen:
+heutige Verdrahtung traegt 39/200, mit Parallelitaet 8 + zwei Morgenslots **200/200 bei
+59,6 % Reserve**. **Offen:** echte Google-/KI-Laufzeit · wirksamer Production-Deckel ·
+**190 fehlende echte Profile** (es gibt 10) · Vercel-Verhalten bei Parallelitaet 8.
 
-**Sprint „Frischevertrag des Morgenbriefings" (2026-08-10, PR #238) — OP-31 Production-Nachweis
-BESTANDEN (2026-08-11).** Kanonisch (inkl. Reviewbefunde, Laufdetails, Belegzeilen):
-[`briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) §10/§11.
-Erster regulaerer Morgenlauf 2026-08-11 05:00:26 UTC: `frischevertrag.belegt=5/5`,
-`erfolgreich=5 fehlgeschlagen=0`, ein Push je Mandat, 5 relational gegengepruefte
-Erfolgsbelege, kein zweiter Routenaufruf, keine Fehlerzeile. Restrisiko unveraendert:
-ohne `HELMUT_CRON_FAIRNESS` koennen exakt ueberlappende Laeufe doppelt pushen (kein
-falsches Gruen); `briefings` waechst taeglich (OP-12); Alarmweg weiterhin OP-07.
+**OP-31 Frischevertrag (2026-08-10/11, PR #238/#239): BESTANDEN.** Kanonisch
+[`briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md)
+§10/§11. Restrisiko: ohne `HELMUT_CRON_FAIRNESS` koennen exakt ueberlappende Laeufe doppelt
+pushen; `briefings` waechst taeglich (OP-12); Alarmweg weiterhin OP-07.
 
-**Sprint „OP-30-Aktivierungsvorbereitung 5 Mandate" (2026-08-11/2).** Kanonisch:
+**OP-30-Vorbereitung/Migration/Neutralitaet (2026-08-11/2–/4, PR #240–#242).** Kanonisch
 [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) (Inventar,
-Migrationsbeweise, Aktivierungs-/Rücknahmeplan, Messwerte/Abbruchgrenzen, `mdb-a`-Plan).
-**Kernbefund:** der Produktfehler „übersprungener V3-Lauf gilt als erledigt" war nur auf dem
-nie gemergten Branch `claude/helmut_scaling_foundation_1000` behoben — auf `main` fehlte er
-(„B14 behoben" in PR #235 meinte einen gleichnamigen Testinfrastruktur-Befund). Portiert +
-gehärtet, 7 neue Vertragstests; der alte Branch ist vollständig ausgewertet. `mdb-a`:
-Testfixture-Write mit Production-Env vor dem lokalen Schutz; **kein aktiver Datenweg,
-kein Blocker** (Runbook §9).
+Plaene, Grenzen, `mdb-a` §9; Migrationsbeleg §12; Neutralitaetsbeleg §13). Kernbefunde:
+der Produktfehler „übersprungener V3-Lauf gilt als erledigt" lag nur auf einem nie
+gemergten Branch und ist portiert + gehaertet; sechs Migrationspaare 10:47–10:52 UTC
+angewendet; erster Regellauf danach lief unveraendert auf dem Altpfad
+(`erfolgreich=5`, `helmut_jobs`/`llm_reservations` **nie beschrieben**).
 
-**Sprint „OP-30-Vorwärtsmigrationen Production" (2026-08-11/3).** Sechs Paare 10:47–10:52
-UTC über MCP `apply_migration` angewendet, lesende Abnahme grün (Runbook §12).
-**Sprint „Neutralitätsnachweis" (2026-08-11/4): BESTANDEN** — erster Regellauf nach PR #241
-(pipeline 16:03:05–16:07:03 UTC, `commit_ref=6ed4f657…`) lief unverändert auf dem Altpfad:
-`erfolgreich=5 fehlgeschlagen=0 zustand=ok`, `helmut_jobs`/`llm_reservations` **nie
-beschrieben** (`n_tup_ins=0`), +2 KI-Aufrufe = `verstanden=2` des Altpfads. Beleg §13.
+**Sprint „OP-30-Aktivierung 5 Mandate" (2026-08-11/5): BLOCKIERT — nichts aktiviert.**
+Freigabe lag vor (nur `HELMUT_SCALABLE_PIPELINE=on`). Vorprüfung: **14 von 15
+Voraussetzungen erfüllt** (PR #242 gemergt, Deployment READY auf `eb13652`, sechs
+Migrationen registriert, `helmut_jobs`/`llm_reservations` leer und nie beschrieben,
+genau 5 Mandate, `mdb-a` inert, kein laufender Lauf, 0 Vercel-Runtime-Fehler).
+**Nicht erfüllt: der Schreibweg zur Production-Konfiguration** — `api.vercel.com`,
+`vercel.com`, `*.vercel.app` je `CONNECT → 403`, Vercel-MCP ohne Env-/Redeploy-Werkzeug,
+`CRON_SECRET` fehlt (⇒ auch K0/K1 nicht belegbar). Auftragsgemäß **vor jeder Änderung
+gestoppt**: kein Flag, kein Redeploy, kein Lauf, keine Datenzeile, K0–K3 nicht begonnen,
+0 Zusatzkosten. Vorzustand als K0-Grundlinie erhoben: Runbook §14.3.
 
 **Folge für OP-25:** eine spätere Aktivierung verändert `quellenVereinigung`, die
 K2.1-Sichtbarkeitsmengen und die Laufzeitbilanz ⇒ **OP-25 muss danach von vorn**.
@@ -283,15 +275,20 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Runbook §6 Schritt 1 und 2 sind erledigt:** Migrationen angewendet (§12), Regellauf bei
-Flags aus als neutral nachgewiesen (§13). Nächste Betreiberschritte:
+**Runbook §6 Schritt 1 und 2 sind erledigt** (§12/§13); **Schritt 3 ist blockiert** — er
+verlangt eine Vercel-Env-Änderung, die aus Sitzungen nicht möglich ist. Der Ball liegt
+beim Betreiber, genau einer der beiden Wege (Runbook §14.5):
 
-1. Doku-PR dieses Sprints reviewen/mergen, dann
-   [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §6
-   Schritt 3–5 (`HELMUT_SCALABLE_PIPELINE=on` + Redeploy → K0–K3) als **eigener
-   Aktivierungssprint mit exakt fünf Mandaten**. Ausweitung auf 25+ erst nach K3 **und neu
-   bestandenem OP-25** ([`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) §10);
-   vor Stufe 5: **190 fehlende echte Profile** (es gibt 10).
+1. **Betreiber setzt selbst** in Vercel (nur Production) `HELMUT_SCALABLE_PIPELINE=on`,
+   sonst nichts, + Redeploy des Commits `eb13652` — dann §6 Schritt 4–5 (K0–K3) gegen den
+   erhobenen Vorzustand (§14.3); **oder**
+2. **Sitzung befähigen:** Egress zu `api.vercel.com` freigeben **und** `CRON_SECRET` als
+   Environment-Variable hinterlegen (nie über den Chat) — dann kann eine Folgesitzung
+   Aktivierung und K0–K3 vollständig selbst belegen.
+
+Ausweitung auf 25+ erst nach K3 **und neu bestandenem OP-25**
+([`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) §10);
+vor Stufe 5: **190 fehlende echte Profile** (es gibt 10).
 
 Parallel und unabhängig: **OP-01** (Pro + PITR); **OP-11** verifizieren; **#218** schließen.
 
@@ -339,6 +336,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
+| 2026-08-11/5 | **OP-30-Aktivierung 5 Mandate** (§7a): Vorprüfung 14/15 grün, aber kein Schreibweg zur Vercel-Production-Konfiguration (`CONNECT → 403`, MCP ohne Env-/Redeploy-Werkzeug, kein `CRON_SECRET`) ⇒ auftragsgemäß **vor jeder Änderung gestoppt**. Nichts aktiviert, K0–K3 nicht begonnen, 0 Zusatzkosten; Vorzustand als K0-Grundlinie erhoben · Beleg Runbook §14 | **blockiert** |
 | 2026-08-11/4 | **OP-30-Neutralitätsnachweis** (§7a): erster Regellauf nach PR #241 (pipeline 16:03:05–16:07:03 UTC) rein lesend geprüft — Altpfad unverändert, 5/5 Mandate erfolgreich, `helmut_jobs`/`llm_reservations` nie beschrieben, +2 KI-Aufrufe vollständig aus dem Altpfad erklärt, keine doppelten Pushs, 0 neue Fehler, `mdb-a` inert, Flags aus · Beleg Runbook §13 | **erfolgreich abgeschlossen** (Doku-PR offen) |
 | 2026-08-11/3 | **OP-30-Vorwärtsmigrationen Production** (§7a): alle sechs Paare angewendet (10:47–10:52 UTC), lesende Abnahme grün, Advisor ohne neuen WARN/ERROR, Flags aus, nichts aktiviert · Beleg Runbook §12 | **erfolgreich abgeschlossen** (Aktivierung = separater Sprint) |
 | 2026-08-11/2 | **OP-30-Aktivierungsvorbereitung 5 Mandate** (§7a): Überspring-Produktfehler portiert (`jobqueue-vertrag` 120/120), Migrationskette 31/31, `mdb-a` geklärt, Runbook · Beleg [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) | **abgeschlossen** (PR #240 gemergt 2026-08-11) |

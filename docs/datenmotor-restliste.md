@@ -1741,6 +1741,13 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Vorwärtsmigrationen sind auf Production angewendet und rein lesend abgenommen**
   (Runbook §12) — alle OP-30-Flags weiter aus, nichts aktiviert, Tabellen leer; offen sind
   Regellauf-Kontrolle, Flag-Aktivierung (Betreiber) und der Production-Nachweis K0–K3.
+  **Ergänzt 2026-08-11/4:** die Regellauf-Kontrolle ist erledigt — Neutralitätsnachweis
+  bestanden (Runbook §13). **Ergänzt 2026-08-11/5:** der freigegebene Aktivierungssprint
+  ist **blockiert** — 14 von 15 Voraussetzungen erfüllt, aber aus Claude-Sitzungen gibt es
+  **keinen Schreibweg zur Vercel-Production-Konfiguration** (`api.vercel.com`/`vercel.com`/
+  `*.vercel.app` je `CONNECT → 403`, Vercel-MCP ohne Env-/Redeploy-Werkzeug, kein
+  `CRON_SECRET` ⇒ auch K0/K1 nicht belegbar). **Nichts aktiviert, K0–K3 nicht begonnen**;
+  Vorzustand als K0-Grundlinie und die zwei Betreiberwege stehen im Runbook §14.
   Für den Einzelpiloten (5–6 Mandate) **kein** Blocker; Blocker
   ab etwa zehn Mandaten und damit vor mehreren zahlenden Kunden.
 
