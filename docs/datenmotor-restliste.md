@@ -1735,9 +1735,11 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 #### OP-31 · Frischegarantie des Morgenbriefings (neu, Sprint „Frischevertrag" 2026-08-10; Prioritätsklasse P1)
 
-- **Status:** **teilweise erledigt.** Der verbindliche Frischevertrag ist gebaut und
-  offline vollständig belegt; der Production-Nachweis fehlt. Kanonisch:
-  [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md).
+- **Status:** **erledigt — Production-Nachweis bestanden (2026-08-11).** PR #238 gemergt
+  (`6030cbb7`, 2026-08-10T21:02:57Z), erster regulärer Morgenlauf 2026-08-11 05:00:26 UTC:
+  `frischevertrag.belegt=5/5`, alle Belege `status=erfolg`, ein Push je Mandat, keine
+  Zeile FRISCHEBELEG NICHT PERSISTIERT oder FRISCHEVERTRAG nicht erfuellt. Kanonisch:
+  [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) §11.
 - **Belegte Ursache (Code auf `main`, `ec2e208`):** es gab **keinen mandatsscharfen
   Beleg**, dass an einem Berliner Kalendertag ein Morgenbriefing entstanden ist — die
   Lauftelemetrie `briefing-morning` ist prozessweit. Ein wegen Zeitdeckelung
@@ -1769,11 +1771,10 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Grün an genau der Stelle, die es verhindern soll. Einzelheiten, Gegenbeweise und
   verbleibende Risiken:
   [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) §10.
-- **Fehlender Schritt:** (a) Review/Merge; (b) **Production-Nachweis**: erster Morgenlauf
-  auf dem neuen Stand mit `frischevertrag.belegt == mandate` und ohne Zeile
-  `FRISCHEBELEG NICHT PERSISTIERT`; (c) **Abdeckungsalarm** statt Logeintrag — gehört zu
-  OP-07 und ist bewusst nicht Teil dieses Sprints; (d) empirische Justierung der
-  Schwellen (8 h / 14 Tage / 3 Tage / 24 h), die gesetzt und nicht gemessen sind;
+- **Fehlender Schritt:** (a) Review/Merge — **erledigt**; (b) **Production-Nachweis** —
+  **erledigt (2026-08-11)**; (c) **Abdeckungsalarm** statt Logeintrag — gehört zu OP-07 und
+  ist bewusst nicht Teil dieses Sprints; (d) empirische Justierung der Schwellen
+  (8 h / 14 Tage / 3 Tage / 24 h), die gesetzt und nicht gemessen sind;
   (e) **Wachstum von `briefings`** — bis zu zwei Quittungszeilen je Mandat und Tag; die
   Aufbewahrung (90 Tage, `nutzer-ausgabe`) ist nicht scharf (OP-12).
 - **Abhängigkeiten:** OP-30 (die Abdeckungszahl ist die Messgröße der stufenweisen

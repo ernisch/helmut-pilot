@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-10/2** (drei Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** — drittes Fenster 2026-08-07/08, Exit 0, null Befunde, kanonisch §7.7.9; gilt **ausschliesslich fuer die heutige Architektur mit 5 Mandaten** und beweist weder OP-30 noch 200 Mandate. **(b) OP-30**, §7a — PR #233/#235/#236/#237 gemergt; alle Flags **aus**, keine Migration angewendet. **(c) OP-31 Frischevertrag des Morgenbriefings**, §7a — gebaut, adversarial gegengeprueft (sechs Befunde behoben), **PR #238 offen**, kein Production-Nachweis). Diese Datei enthaelt
+**Stand: 2026-08-11** (drei Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** — drittes Fenster 2026-08-07/08, Exit 0, null Befunde, kanonisch §7.7.9; gilt **ausschliesslich fuer die heutige Architektur mit 5 Mandaten** und beweist weder OP-30 noch 200 Mandate. **(b) OP-30**, §7a — PR #233/#235/#236/#237 gemergt; alle Flags **aus**, keine Migration angewendet. **(c) OP-31 Frischevertrag des Morgenbriefings BESTANDEN** — PR #238 gemergt (`6030cbb7`), Morgenlauf 2026-08-11 05:00 UTC: `frischevertrag.belegt=5/5`, alle Belege `erfolg`, ein Push je Mandat, keine Fehlermeldung; §7a/§9). Diese Datei enthaelt
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -18,14 +18,15 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 ## 2 · Stand auf `main`
 
-- **HEAD `ec2e208`** = Merge von **PR #237** (Kapazität der Morgenlage + R4/R4b): zwei
-  zusätzliche Cron-Einträge, **alle Flags aus, keine Migration angewendet**. Damit ist die
-  frühere Angabe „PR #237 offen / PR dieses Sprints noch nicht gemergt" **überholt**.
-  Ein Production-Beweislauf auf diesem Stand ist in dieser Sitzung **nicht** geführt worden
-  (kein Vercel-Zugriff) — Deploymentzustand und erster regulärer Lauf sind **ungeprüft**.
-- Davor `0f047b1` = **PR #236**, `40e7708` = **PR #235**, `559a3d9` = **PR #233**,
-  `1f10d66` = **PR #234**, `a07954df` = **PR #232**, `f4f4500b` = **PR #229** (K1–K8,
-  kanonisch [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.7). Ältere PRs: Archiv.
+- **HEAD `6030cbb7`** = Merge von **PR #238** (OP-31, Frischevertrag des Morgenbriefings):
+  keine Migration, kein Flag-/Cron-Wechsel. Production-Deployment `dpl_Es8TeJjw6CvamH5RC33af6o2sWHt`
+  READY 2026-08-10T21:03:04Z, `githubCommitSha=6030cbb71a39448b598106531970c4b5c681df6f`
+  (Vercel-Metadaten gegengeprüft). Erster regulärer Morgenlauf auf diesem Stand:
+  **bestanden**, Einzelheiten §7a/§9.
+- Davor `ec2e208` = **PR #237**, `0f047b1` = **PR #236**, `40e7708` = **PR #235**,
+  `559a3d9` = **PR #233**, `1f10d66` = **PR #234**, `a07954df` = **PR #232**,
+  `f4f4500b` = **PR #229** (K1–K8, kanonisch
+  [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.7). Ältere PRs: Archiv.
 - Merge nach `main` = automatisches Production-Deployment (Vercel `fra1`,
   Projekt `helmut-pilot`). Rollback: [`betrieb/deploy-rollback.md`](betrieb/deploy-rollback.md).
 
@@ -101,7 +102,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | `HELMUT_PROFILE_DB_MODE` | **Wirkung AN** — die frühere Angabe „nicht gesetzt" ist durch Laufzeitbelege widerlegt (alle Läufe bis 05.08. planten die relationale 6er-Menge, die nur der Stufe-D-Merge liefert; Code-Default wäre AUS). Direkte Env-Einsicht aus Sitzungen nicht möglich; Wert/Setzzeitpunkt nicht Betreiber-bestätigt (offener Klärpunkt). Der Blob ist **nicht** die wirksame Sicht |
 | 5 Offline-Testmandate (`test-mdb-*`) | deaktivierte Repo-Daten, **nicht aktivieren** |
 
-## 6 · Offene Pull Requests (gegen GitHub geprüft 2026-08-09)
+## 6 · Offene Pull Requests (gegen GitHub geprüft 2026-08-11)
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
@@ -110,10 +111,9 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **#218** | OP-25-Kapazität, konkurrierende Analyse | Codeänderung auf dem Branch zurückgenommen; Ursache/Fix kamen über #219. **Empfehlung: schließen** |
 | **#216** | flackernden `werkzeug-lesefehler-test.js` stabilisieren (F-PORT) | offen, reserviert als OP-28 |
 
-Alle übrigen früher geführten PRs sind gemergt oder geschlossen (zuletzt **#237, #236, #235
-und #233**). **Neu offen:** der PR dieses Sprints
-(`claude/briefing-freshness-guarantee-r36h8m`, OP-31: Frischevertrag des Morgenbriefings —
-keine Migration, keine Flag-/Cron-Änderung). Historie: Archiv.
+Alle übrigen früher geführten PRs sind gemergt oder geschlossen (zuletzt **#238, #237, #236,
+#235 und #233**). Diese Sitzung öffnet einen reinen Doku-PR für den OP-31-Nachweis
+(unten, §7a/§9). Historie: Archiv.
 
 ## 7 · Offene Blocker
 
@@ -189,20 +189,24 @@ und ohne Doppelverarbeitung; 1 000 Mandate: 586 (ehrlich als Rueckstand gemeldet
 Profile** (es gibt 10) · Migration (sechs Paare), Aktivierung, Production-Nachweis ·
 Vercel-Verhalten bei Parallelitaet 8.
 
-**Sprint „Frischevertrag des Morgenbriefings" (2026-08-10, PR offen).** Kanonisch:
-[`briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md),
-neuer Punkt **OP-31**. Vor Stufe 2 (25 Mandate) fehlte die Antwort auf „hat dieses Mandat
-heute ueberhaupt ein Briefing bekommen?" — die Lauftelemetrie ist prozessweit, ein wegen
-Zeitdeckelung uebersprungenes Mandat war von einem versorgten **nicht unterscheidbar**.
-Umgesetzt: eine Quelle fuer den Berliner Tageswechsel (inkl. Sommerzeit), mandatsscharfe
-**Lauf-Quittung** in der bestehenden `briefings`-Tabelle (**keine Migration**, Erfolg und
-Fehler getrennt, atomarer Upsert mit Gegenlesen), Briefingfenster „neu seit dem letzten
-erfolgreichen Morgenbriefing", getrennte Klassen neu/weiterhin relevant/Hintergrund,
-ehrliches **„Briefing noch nicht aktuell"** ohne Vortagsrueckfall, Wiederholungserkennung
-(kein zweiter Push, kein zusaetzlicher Modellaufruf), Abdeckungsmeldung.
-
-**Unabhaengiger adversarialer Review (2026-08-10/2, gleicher Branch): sechs echte Befunde, alle behoben** — Beleg nicht mandats-/tagesscharf · alter Vorgang durch Backfill-`updated_at` als „neu" mit Datum „Heute" · gestriger Stand unter „Morgenbriefing" · Wiederholungsfenster so breit wie die Bauzeit · Dauerfehlalarm bei Not-Aus · **Abdeckungszahl zaehlte FEHLER-Quittungen als „belegt"** (`frischebelege=1/1` nach komplett gescheitertem Lauf). Einzelheiten und Restrisiken: Belegdatei §10. Tests 69/69 · 68/68 · **34/34** (neue adversariale Suite ueber die echte Cron-Route) · Gesamtlauf **238/242 in 530 s** (4 rot = Umgebungsartefakte, auf `origin/main` identisch rot, CI gruen) · Smoke 32/32.
-**Offen:** Review/Merge · Production-Nachweis des ersten Morgenlaufs · Alarmweg (OP-07). **Merge-Wirkung:** bis zum ersten Morgenlauf zeigt die App ehrlich „Briefing noch nicht aktuell". **Restrisiko:** ohne `HELMUT_CRON_FAIRNESS` koennen exakt ueberlappende Laeufe doppelt pushen (kein falsches Gruen); `briefings` waechst taeglich, Loeschung nicht scharf (OP-12).
+**Sprint „Frischevertrag des Morgenbriefings" (2026-08-10, PR #238) — OP-31 Production-Nachweis
+BESTANDEN (2026-08-11).** Kanonisch:
+[`briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) §11.
+Gebaut, offline belegt (Tests 69/69 · 68/68 · 34/34 · Gesamt 238/242 · Smoke 32/32), von einem
+unabhaengigen adversarialen Review sechs echte Befunde gefunden und behoben (Beleg nicht
+mandats-/tagesscharf, Backfill-`updated_at` als falsches „Heute", Abdeckungszahl zaehlte
+FEHLER-Quittungen als „belegt" — Details Belegdatei §10), gemergt 2026-08-10T21:02:57Z
+(`6030cbb7`, Deployment READY 21:03:04Z). **Erster regulaerer Morgenlauf 2026-08-11 05:00:26 UTC
+(automatischer Vercel-Cron, `lauf=cron-morning-briefing-20260811050027-ifo1h`):
+`frischevertrag.belegt=5/5`, `erfolgreich=5 fehlgeschlagen=0`, `obergrenzeLaeufe=1`, kein
+zweiter Aufruf der Route bis 07:55 UTC, keine Zeile FRISCHEBELEG NICHT PERSISTIERT oder
+FRISCHEVERTRAG nicht erfuellt.** Relational gegengeprueft: 5 Belegzeilen
+`bf-<mandat>-morgenlage-2026-08-11`, je `status=erfolg`, `user_id=payload.tenantId=berlinTag`
+konsistent, `ausloeser=morgenlauf`, keine Fremd-/Fehler-/Fremdtagzeilen. Watchdog
+(`briefing-watchdog.yml`, 06:12 UTC) ruft eine andere Route (`/api/cron/pipeline`), keine
+Ueberschneidung. Restrisiko unveraendert: ohne `HELMUT_CRON_FAIRNESS` koennen exakt
+ueberlappende Laeufe doppelt pushen (kein falsches Gruen); `briefings` waechst taeglich,
+Loeschung nicht scharf (OP-12). Alarmweg weiterhin OP-07.
 
 **Folge für OP-25:** eine spätere Aktivierung verändert `quellenVereinigung`, die
 K2.1-Sichtbarkeitsmengen und die Laufzeitbilanz ⇒ **OP-25 muss danach von vorn**.
@@ -243,6 +247,9 @@ K2.1-Sichtbarkeitsmengen und die Laufzeitbilanz ⇒ **OP-25 muss danach von vorn
   unverändert dokumentiert. **Geltung: nur die aktuelle Architektur mit 5 Mandaten —
   beweist weder OP-30 noch 200 Mandate; nach OP-30-Aktivierung vollständige Wiederholung
   erforderlich.** OP-14 (Verstehensrückstand) bleibt ausdrücklich offen.
+- **OP-31-Nachweis: BESTANDEN — Morgenlauf 2026-08-11 05:00 UTC** (§7a). Kopfstatus/UI-Rendering
+  live nicht per Session abgerufen (kein Zugangsgeheimnis in dieser Sitzung) — Aussage stützt
+  sich auf den relational geprüften Beleg plus testgesicherten Code (F1–F6 des Reviews).
 - **F-E2E** (nichtdeterministische E2E-Rangfolge im CI, belegt 2026-08-04) — Ursache offen;
   PR #224 (Draft) liegt vor, nicht abgenommen.
 - **29B** — wartet auf natürlich auftretende Fehlerzustände (künstliche Fehler verboten).
@@ -276,21 +283,14 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**PR #233, #235, #236 und #237 sind gemergt.** Nächste Entscheidungen liegen beim Betreiber:
+**PR #233, #235, #236, #237 und #238 sind gemergt; OP-31-Production-Nachweis ist bestanden
+(2026-08-11).** Nächste Entscheidungen liegen beim Betreiber:
 
-1. **Über den Merge des neuen PR entscheiden** (OP-31, Frischevertrag des Morgenbriefings).
-   Keine Migration, kein Flag-Wechsel, keine Cron-Änderung; der Merge bleibt ein
-   Production-Deployment. Sichtbare Wirkung: bis zum ersten Morgenlauf auf dem neuen Stand
-   zeigt die App ehrlich „Briefing noch nicht aktuell", und ein vom Morgenlauf nicht
-   erreichtes Mandat wird ab dann sichtbar.
-2. **Nach dem Merge den ersten Morgenlauf ansehen** (`frischevertrag.belegt == mandate`,
-   keine Zeile `FRISCHEBELEG NICHT PERSISTIERT`) — das ist der Production-Nachweis von
-   OP-31 und die Messgröße für Stufe 2.
-3. **Stufenweise Aktivierung freigeben** (5 → 25 → 50 → 100 → 200), jede Stufe einzeln;
+1. **Stufenweise Aktivierung freigeben** (5 → 25 → 50 → 100 → 200), jede Stufe einzeln;
    Plan mit Flags, Migration, Metriken, Abnahme- und Rückfallbedingungen in
    [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) §10.
-   Vor Stufe 2: Migrationen anwenden (sechs Paare), **OP-25 vollständig wiederholen** und
-   OP-31 (b) belegen. Vor Stufe 5: **190 fehlende echte Profile** (es gibt 10).
+   Vor Stufe 2: Migrationen anwenden (sechs Paare) und **OP-25 vollständig wiederholen**
+   (OP-31 ist belegt). Vor Stufe 5: **190 fehlende echte Profile** (es gibt 10).
 
 Parallel und unabhängig: **OP-01** (Pro + PITR); **OP-11** verifizieren; **#218** schließen.
 
@@ -337,7 +337,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-10 | **OP-31 Frischevertrag des Morgenbriefings** (§7a): mandatsscharfe Lauf-Quittung ohne Migration, ehrliches „Briefing noch nicht aktuell" ohne Vortagsrückfall, Meldungsklassen, Wiederholungserkennung. **Anschließend unabhängiger adversarialer Review desselben PR: sechs echte Befunde, alle behoben** — darunter ein Tagesbeleg ohne Mandats-/Tagesprüfung und eine Abdeckungszahl, die FEHLER-Quittungen als „belegt" zählte. Tests 69/69 · 68/68 · **34/34** · Gesamt **238/242 in 530 s** · Smoke 32/32 · Beleg [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) §10 | **teilweise abgeschlossen** (lokal bewiesen und adversarial gegengeprüft; Merge und Production-Nachweis fehlen) |
+| 2026-08-11 | **OP-31 Production-Nachweis** (§7a): erster Morgenlauf auf `6030cbb7` (PR #238), 05:00:26 UTC automatischer Vercel-Cron, `frischevertrag.belegt=5/5`, 5 relational geprüfte Erfolgsbelege, kein Doppel-Push, keine Fehlermeldung, keine Runtime-Fehler seit Deployment · Beleg [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) §11 | **abgeschlossen** |
+| 2026-08-10 | **OP-31 Frischevertrag des Morgenbriefings** (§7a): mandatsscharfe Lauf-Quittung ohne Migration, adversarialer Review sechs echte Befunde behoben (Tagesbeleg ohne Mandats-/Tagesprüfung, Abdeckungszahl zählte FEHLER als „belegt"). Tests 69/69 · 68/68 · 34/34 · Gesamt 238/242 · Smoke 32/32 | **teilweise abgeschlossen** (Merge und Nachweis folgten 2026-08-11, Zeile oben) |
 | 2026-08-09/3 | **OP-30 Kapazität der Morgenlage + R4/R4b** — doppelte Budgetzählung an echter PostgreSQL reproduziert und behoben, Kapazität slotgenau gemessen, kleinste sichere Lösung ⇒ 200/200 im Morgenfenster mit 59,6 % Reserve; R6 im Testgerüst entschärft · Beleg [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) | **teilweise abgeschlossen**, PR #237 gemergt (Migration, Aktivierung und Production-Nachweis offen) |
 | 2026-08-09/2 | **E1 `tenant_narrative` + unabhängiger Abschlussreview**: Lage-Narrativ als fünfter Auftragstyp über die Warteschlange (Flag default AUS, Migration nicht angewendet); Review behob R1–R3, benannte R4/R6 · Belege [`lage-narrativ-warteschlange-2026-08-09.md`](betrieb/lage-narrativ-warteschlange-2026-08-09.md) · [`op30-e1-abschlussreview-2026-08-09.md`](betrieb/op30-e1-abschlussreview-2026-08-09.md) | **abgeschlossen**, PR #236 gemergt |
 | 2026-08-09 | **OP-30 Aktivierungsreife für 200 Mandate**: O1–O5 gelöst, B14 behoben, Stufennachweis 5/25/50/100/200 (+Stress 1 000) mit allen 14 Abnahmekriterien, Importvertrag für Mandatsprofile; eigene Fehlmessung offengelegt · Beleg [`betrieb/op30-aktivierungsreife-2026-08-09.md`](betrieb/op30-aktivierungsreife-2026-08-09.md) | **teilweise abgeschlossen** (lokal bewiesen; Merge, Migration, Aktivierung, Production-Nachweis und 190 echte Profile offen) |
