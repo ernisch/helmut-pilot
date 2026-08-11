@@ -15,6 +15,12 @@ Vorgänger: [`op30-kapazitaet-morgenslots-2026-08-09.md`](op30-kapazitaet-morgen
 > ausgeführt — die sechs Vorwärtsmigrationen sind auf Production angewendet und rein
 > lesend abgenommen (**Migrationsbeleg §12**). Alle OP-30-Flags sind weiterhin **aus**,
 > nichts ist aktiviert, keine Rücknahmedatei wurde angewendet.
+>
+> **Nachtrag 2026-08-11/4 (rein lesend):** §6 Schritt 2 ist erfüllt — der erste reguläre
+> Lauf nach PR #241 (pipeline 16:00 UTC) verhielt sich unverändert, der neue Motor wurde
+> nicht gestartet (**Neutralitätsnachweis §13, bestanden**). Damit ist die Vorbedingung
+> für §6 Schritt 3–5 erfüllt; die Aktivierung selbst bleibt ein eigener, freigabepflichtiger
+> Sprint.
 
 ---
 
@@ -167,6 +173,8 @@ READY; (b) kein laufendes Nachweisfenster; (c) Betreiber hat §8 (Messwerte/Gren
 2. **Regellauf bei Flags aus beobachten** (ein Zyklus, z. B. 16:00-pipeline): Verhalten
    unverändert, keine Zeile in `helmut_jobs` (Migration ist ohne Flag wirkungslos —
    bewiesen, Flagmatrix 75/75).
+   **✅ Erledigt 2026-08-11, pipeline 16:03:05–16:07:03 UTC — Neutralitätsnachweis
+   bestanden, alle 16 Prüfpunkte grün (Beleg §13).**
 3. **`HELMUT_SCALABLE_PIPELINE=on`** in Vercel setzen (nur Production) + Redeploy.
    Sonst **nichts**: `HELMUT_NARRATIV_QUEUE`, `HELMUT_LLM_FAIRNESS` und alle
    `HELMUT_WORKER_*`/`HELMUT_DEMAND_*` bleiben ungesetzt (Defaults greifen).
@@ -401,3 +409,129 @@ wurde angewendet**; Anwendung bleibt freigabepflichtig.
 **Nicht getan (Verbote eingehalten):** kein Flag gesetzt/geändert, keine Env-Variable, kein
 Worker, kein manueller Cronlauf, keine Testdaten, keine Mandatsänderung, `mdb-a` unangetastet,
 keine Rücknahme, keine Codeänderung, kein Merge.
+
+## 13 · Neutralitätsnachweis des ersten Regellaufs (Sprint 2026-08-11/4, rein lesend)
+
+**Erfüllt §6 Schritt 2.** Frage: verhält sich der bisherige Betrieb bei ausgeschalteten
+OP-30-Flags unverändert, und wurde der neue Motor nicht gestartet? **Antwort: ja bzw. nein
+— der Nachweis ist bestanden.** Kein manueller Lauf, keine Env-/Flag-Änderung, kein Worker,
+keine Datenänderung; alle Zugriffe rein lesend.
+
+### 13.1 Prüfobjekt
+
+- **PR #241** gemergt 2026-08-11T11:53:27Z, Merge-Commit `6ed4f6570439c37629e539218369af3cf8d85d3b`.
+- Production-Deployment **`dpl_F4e6ojyF5g4J9HZJGF28sWqHEEvW`**, `target=production`,
+  `state=READY`, erstellt 11:53:30Z, `githubCommitSha` = exakt dieser Commit.
+- Geprüfter Lauf: **regulärer Vercel-Cron `pipeline` 16:00 UTC** (`/api/cron/pipeline`,
+  HTTP 200, **genau eine** Anfrage im Fenster), `run_id`
+  `cron-pipeline-20260811160305-zvzhe`, `commit_ref` = derselbe Commit.
+- Vor-Lauf-Grundlinie um 11:57 UTC erhoben (§13.3, Spalte „vorher").
+
+### 13.2 Lauf begonnen und vollständig beendet
+
+| Größe | Wert |
+|---|---|
+| `globalphase` | 16:03:05.566Z → 16:06:44.039Z, `duration_ms` 218 472 |
+| Routenlaufzeit gesamt | 239 696 ms (16:03:03Z → ~16:07:03Z), `tenants=5 bounded=false` |
+| Abschluss | `laufzustand=abgeschlossen` · `zustand=ok` · `versiegelt=true` |
+| Zeitbudget | 218 472 ms von 229 734 ms, `restMs=47 732` — Limit **nicht** erreicht |
+| Fehler | `failed_count=0` · `fehler=0` · `persistenz=ok` · `cas=0` |
+
+`status=partial` ist der **unveränderte Normalzustand** von `globalphase`: alle elf Läufe
+seit 2026-08-08 tragen ihn, bei Dauern 188 121–224 450 ms. Der Reason-String
+`status=teilweise budget=1 fehler=0 abruf=0 persistenz=ok cas=0 lazyskip=1 nv=0 vk=1015`
+ist formgleich mit allen Vorläufen (z. B. 04:00 desselben Tages, `vk=981`).
+
+### 13.3 Ausschließlich der bisherige stabile Datenweg
+
+Der Lauf durchlief `runGlobaleErfassung` → `crawlAllSources` → `globalphase/persistenz` →
+`lazy-/eager-understanding` → `vormerk-abschluss` — der Altpfad. **Keine einzige Logzeile
+mit `warteschlange`**, kein Worker-Start, keine Auftragsplanung. Belegt zusätzlich über
+`pg_stat_user_tables`: beide OP-30-Tabellen wurden seit ihrer Anlage (10:47 UTC) **nie
+gelesen und nie beschrieben**.
+
+| Prüfpunkt | vorher (11:57Z) | nachher (16:19Z) | Urteil |
+|---|---|---|---|
+| `helmut_jobs` Zeilen | 0 | **0** | unverändert |
+| `helmut_jobs` `n_tup_ins`/`upd`/`del` | — | **0 / 0 / 0** | nie beschrieben |
+| `helmut_jobs` `idx_scan` | — | **0** | nie über Index gelesen |
+| `llm_reservations` Zeilen | 0 | **0** | unverändert |
+| `llm_reservations` `n_tup_ins`/`upd`/`del` | — | **0 / 0 / 0** | nie beschrieben |
+| `llm_reservations` `idx_scan` | — | **0** | nie über Index gelesen |
+| aktive Mandate | 5 | **5** | unverändert |
+| `mdb-a` (profiles/decisions/mandate_profiles) | 1 / 1 / 0 | **1 / 1 / 0** | unverändert inert |
+| `llm_budget_counters` `global.used` (2026-08-11) | 39 | **41** | +2, erklärt (§13.5) |
+| Policies `public` | 24 | **24** | unverändert |
+| registrierte Migrationen | 25 | **25** | unverändert |
+| `briefings` gesamt | 163 | **163** | unverändert |
+| `profiles` | 10 | **10** | unverändert |
+
+### 13.4 Alle fünf Mandate, genau einmal
+
+```
+[cron/pipeline/fairness] geplant=ruppert-st-we,cem-ince,annika-klose,ottilie-paola-klein-2,
+helmut-kleebank begonnen=<dieselben fünf> erfolgreich=5 fehlgeschlagen=0 zeitbudget=-
+laeuftBereits=- sperreVerweigert=- kapazitaet=5 obergrenzeLaeufe=1 laufzustand=abgeschlossen
+abweichung=- zustand=ok
+```
+
+Relational gegengelesen: alle fünf Mandate haben im Laufzeitfenster frische `decisions`
+(annika-klose 21 · cem-ince 24 · helmut-kleebank 25 · ottilie-paola-klein-2 22 ·
+ruppert-st-we 23; letzte Schreibvorgänge 16:06:50–16:07:03Z). **Kein sechstes Mandat, kein
+`mdb-a`, kein Testmandat.** `obergrenzeLaeufe=1` und `laeuftBereits=-` belegen: kein
+Zweitlauf, keine konkurrierende Verarbeitung.
+
+### 13.5 Kosten und Pushs sind eindeutig getrennt
+
+- **KI-Aufrufe:** `global.used` 39 → 41 = **+2**. Das ist exakt `verstanden=2` bzw.
+  `eager-understanding {"processed":2}` des Altpfads. Da `llm_reservations` **nie** eine
+  Zeile erhielt, hat die OP-30-Budgetschicht **null** Aufrufe verursacht oder reserviert.
+- **Pushs:** der Pipelinelauf erzeugt keine Briefings — `briefings` blieb bei 163, seit
+  05:45Z kam keine Zeile hinzu. Push gibt es nur auf der unveränderten
+  `morning-briefing`-Route (§7). **Keine doppelten, keine konkurrierenden Pushs.**
+- **OP-31 unverändert:** die zehn Belegzeilen des Tages stehen unberührt — 5× `morgenlage`
+  (alle `status=erfolg`, `ausloeser=morgenlauf`, 05:00:31–05:00:39Z) + 5× `lage`
+  (05:45:33–05:45:59Z), je genau eine Zeile pro Mandat, keine Fremd- oder Dublettenzeile.
+
+### 13.6 Keine neuen Fehler
+
+- **Vercel:** `get_runtime_errors` über 6 h — **keine**. Im Fenster 15:55–16:20 UTC genau
+  **eine** Anfrage (`/api/cron/pipeline`, 200); keine Worker-, Admin- oder Ops-Route.
+- **PostgreSQL:** das Logfenster deckt 2026-08-10 16:44Z bis 2026-08-11 16:20Z ab. Im
+  Lauffenster stehen **nur zwei Routine-Zeilen** (`checkpoint starting`/`complete`) —
+  **0 ERROR, 0 WARNING, 0 Berechtigungsfehler**. Die neun ERROR-Zeilen des Tages sind
+  ausnahmslos fehlgeschlagene Ad-hoc-Leseabfragen aus Prüfsitzungen („column … does not
+  exist"), die zwölf WARNING-Zeilen stammen aus dem Migrationsfenster 10:47–10:52Z.
+- **Google-Abrufstörungen** (Timeouts/HTTP 503) traten wie in jedem Lauf auf. Sie sind die
+  dokumentierte **vorbestehende Basisklasse** (OP-15), wurden von der Härtung abgefangen
+  (`abruf=0`, `fehler=0`, `failed_count=0`) und sind **keine** neue Fehlerklasse.
+- **Security-Advisor:** unverändert — INFO `rls_enabled_no_policy` für die beiden neuen
+  Tabellen (der geprüfte Vertrag) und der vorbestehende WARN `extension_in_public`
+  (`vector`). **Kein neuer WARN, kein ERROR.**
+
+### 13.7 Flagzustand
+
+Alle OP-30-Flags sind **aus**. Direkte Env-Einsicht bleibt aus Sitzungen unmöglich
+([`env-inventar.md`](env-inventar.md) §8); der Nachweis ist deshalb **wirkungsbasiert und
+insoweit schlüssig**: mit `HELMUT_SCALABLE_PIPELINE=on` hätte der Lauf zwingend Aufträge
+angelegt (`scalable-pipeline-flag-test` §1–§3, `flagmatrix-op30-test` 75/75). `n_tup_ins=0`
+auf beiden Tabellen schließt das aus. `HELMUT_NARRATIV_QUEUE` allein wäre ohnehin
+wirkungslos (§6). Eine Bestätigung durch Betreiber-Sichtprüfung in Vercel bleibt der
+einzige direkte Weg und ist **nicht** erfolgt.
+
+### 13.8 Ergebnis und Grenzen
+
+**Neutralitätsnachweis bestanden — alle 16 Prüfpunkte grün.** Der bisherige Betrieb
+verhält sich bei ausgeschalteten Flags unverändert; kein Bestandteil von OP-30 wurde
+gestartet; OP-30 verursachte **null** zusätzliche Aufträge, Aufrufe, Kosten und Pushs.
+
+**Was das nicht beweist:** nichts über das Verhalten **mit** eingeschaltetem Flag (§10
+gilt unverändert), nichts über 25 oder 200 Mandate, und es ersetzt weder K0–K3 noch den
+nach einer Aktivierung fälligen neuen OP-25-Nachweis. Damit ist die Vorbedingung für einen
+**eigenen Aktivierungssprint mit exakt fünf Mandaten** (§6 Schritt 3–5) erfüllt; dessen
+Start bleibt eine Betreiberentscheidung.
+
+**Nicht getan (Verbote eingehalten):** kein manueller Lauf, kein Cron ausgelöst, keine
+Env-Variable, kein Flag, kein Worker, keine Migration angewendet oder zurückgenommen,
+keine Production-Datenänderung, keine Mandatsänderung, `mdb-a` unangetastet, keine
+Ausweitung auf 25 Mandate, kein Merge.
