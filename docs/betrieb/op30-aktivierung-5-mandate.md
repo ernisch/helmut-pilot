@@ -35,6 +35,10 @@ Vorgänger: [`op30-kapazitaet-morgenslots-2026-08-09.md`](op30-kapazitaet-morgen
 > aktiviert" gilt **nur noch für die Sprints /2 bis /5**. Diese Sitzung hat weiterhin
 > **nichts aktiviert und nichts verändert** — sie kontrolliert rein lesend: **K0
 > bestanden** (mit benannter Lücke), erster Lauf und K1–K3 in **§15**.
+> **Ergebnis: K0 bestanden, erster Lauf sauber — aber in §8.2 ist die Grenze „ältester
+> offener Auftrag > 24 h" eingetreten (`betriebsstatus zustand=kritisch`). Die Kontrollen
+> sind deshalb bei K1 gestoppt; K2/K3 nicht begonnen. Ursache und Entscheidungsvorlage in
+> §15.5/§15.6. Die Rücknahme ist eine Betreiberaktion.**
 
 ---
 
@@ -731,3 +735,149 @@ Belegt am Code und am Betriebsverlauf:
 **Der erste gültige Production-Lauf mit aktivem OP-30 ist daher der `crawl`-Slot am
 2026-08-11 um 20:00 UTC (22:00 Uhr Berlin)** — rund 65 Minuten nach der Aktivierung, nicht
 erst am Folgetag. Diese Sitzung wartet ihn ab und wertet ihn rein lesend aus (§15.4).
+
+### 15.4 Erster Lauf mit aktivem OP-30 — `cron-crawl-20260811200004-xyejr`
+
+**OP-30 ist wirksam.** Damit ist auch K0-Punkt 9 wirkungsbasiert beantwortet: der Schalter
+`HELMUT_SCALABLE_PIPELINE` **hat gegriffen**, und zwar **nur er** — `HELMUT_NARRATIV_QUEUE`
+hätte einen fünften Auftragstyp `tenant_narrative` erzeugt (0 vorhanden),
+`HELMUT_LLM_FAIRNESS` hätte Zeilen in `llm_reservations` erzeugt (0 vorhanden).
+
+Laufquittung (Vercel-Runtimelog, `GET /api/cron/crawl` **200**, Deployment
+`dpl_BmBpsBmg6QK2ydJVg57tx8JVeVGN`):
+
+```
+[cron/crawl/warteschlange] 266583ms geplant=193 neu=193 worker=2 erledigt=55
+  wiederholt=2 endgueltigFehler=0 wiedervorgelegt=0 rotation=5 zustand=kritisch
+  lauf=cron-crawl-20260811200004-xyejr
+[cron/crawl] 266583ms tenants=5 bounded=false lauf=cron-crawl-20260811200004-xyejr
+```
+
+**Angelegte Aufträge: 235** (193 in der Planung + 42 während des Laufs aus den frisch
+geholten Dokumenten). Aufteilung nach Typ, Mandat und Zustand:
+
+| Auftragstyp | Mandat | angelegt | erledigt | offen |
+|---|---|---|---|---|
+| `source_fetch` | (global) | 169 | 43 | 126 |
+| `source_fetch` | annika-klose | 3 | 2 | 1 |
+| `source_fetch` | cem-ince | 2 | 1 | 1 |
+| `source_fetch` | helmut-kleebank | 3 | 2 | 1 |
+| `source_fetch` | ottilie-paola-klein-2 | 3 | 2 | 1 |
+| `source_fetch` | ruppert-st-we | 3 | 2 | 1 |
+| `document_understanding` | (global) | 42 | 3 | 39 |
+| `mandate_projection` | je 1 für **alle fünf** | 5 | 0 | 5 |
+| `briefing_materialization` | je 1 für **alle fünf** | 5 | 0 | 5 |
+| **Summe** | | **235** | **55** | **180** |
+
+**Belegte Antworten auf die Kontrollfragen des Auftrags:**
+
+| Frage | Befund |
+|---|---|
+| Nur die fünf aktiven Mandate berücksichtigt | ✅ Aufträge mit `tenant_id` außerhalb der fünf aktiven Mandate: **0** |
+| Auftrag für `mdb-a` | ✅ **0** — `mdb-a` blieb vollständig unbeteiligt und unverändert |
+| Abhängigkeiten und Reihenfolge | ✅ korrekt: `source_fetch` ab 20:00:06 → `document_understanding` ab 20:00:26 (erst nach den Dokumenten) → `mandate_projection`/`briefing_materialization` bleiben **wartend**, weil ihre Vorbedingung (Verstehen) offen ist. Keine Projektion ohne Verstehen, kein Briefing ohne Projektion |
+| Abgeschlossen / zurückgestellt / abgebrochen | **55 erledigt** · **43 zurückgestellt** · **0 endgültig fehlgeschlagen** · 0 abgebrochen. Zurückstellgründe ausschließlich: `verstehen-uebersprungen: understanding-locked` (39) und `zeitbudget-des-laufs-erschoepft` (4) |
+| Verloren / hängengeblieben / unkontrolliert wiederholt | ✅ nichts: 0 offene Leases, 0 Aufträge in `laufend`, `wiederholt=2` (beide `auftrag-zeitlimit`, `attempts=1` von `max_attempts` 3 bzw. 5), 0 doppelte Idempotenzschlüssel |
+| Faire Berücksichtigung aller fünf | ✅ `rotation=5`; jedes Mandat hat eigene `source_fetch`-, Projektions- und Briefingaufträge; die erledigten mandatseigenen Abrufe verteilen sich 2/1/2/2/2 |
+| Einträge in `llm_reservations` | **0** — **erwartet**, weil `HELMUT_LLM_FAIRNESS` bewusst **aus** ist (§1). Die Reservierungsschicht gehört zu diesem Flag, nicht zum Warteschlangenpfad |
+| Tatsächliche KI-Aufrufe | **+11** (`global.used` 41 → 52, 20:04:12Z) |
+| Reservierungen / Aufrufe / Kosten passen zusammen | ✅ **+11 KI-Aufrufe = +11 neue `knowledge_objects`** im selben Fenster. Keine Reservierung, keine Buchung ohne Gegenstück, keine Doppelzählung (R4-Gegenprobe: Abweichung **0**) |
+| KI-Deckel eingehalten | ✅ 52 von Rahmen 100 (+ Reserve 30); Vortage 69/70. **Kein** Deckelkontakt |
+| Korrekte Briefings entstanden | ⚠️ **in diesem Slot keine** — Projektion und Briefing stehen für alle fünf noch aus (siehe Reihenfolge). Der `crawl`-Slot ist auch im Altbetrieb kein Briefingslot; die Morgenlage entsteht um 05:00 UTC |
+| Doppelte Briefings / konkurrierende Pushs | ✅ **0** — `briefings` unverändert **163**, keine neue Zeile, kein Push. `scalable-pipeline.js` enthält keinen Pushaufruf |
+| V2 unbeabsichtigt parallel | ✅ **nein** — `process_runs` unverändert **150** (der Altpfad legt dort Läufe an), `decisions` seit 19:55 **+0**, keine `globalphase`-Logzeile. Der Pfadwechsel ist ein `return`, wie in §1 beschrieben |
+| OP-31 und Frischebelege intakt | ✅ die zehn Belegzeilen des Tages unverändert (5× `morgenlage` `status=erfolg`, 5× `lage`). **Der eigentliche OP-31-Test ist der Morgenlauf 05:00 UTC — er steht noch aus** |
+| Neue Runtime-/DB-/RLS-/Berechtigungsfehler | ✅ **keine**: Route HTTP 200, 0 ERROR/FATAL, 0 Berechtigungsfehler, 0 RLS-Verstöße. Im Lauf protokolliert und abgefangen: 3× `blob-retry` (Supabase-Storage-Timeout, Wiederholung griff) und 1× `[understanding] skipped-error … OpenAI request timeout` — beide gehören zur dokumentierten Basisklasse, keine neue Fehlerklasse |
+| Laufzeiten / Warteschlangentiefe / offene Aufträge in den Grenzen | ⚠️ **teilweise**: Slotdauer **266 583 ms < 270 000 ms** ✅ · Zurückstellquote 43/235 = **18,3 %** (< 30 %) ✅ · offene Aufträge **180** · **ältester offener Auftrag 5,84 Tage** ❌ |
+| Normale Zurückstellung anschließend korrekt weiterverarbeitet | ⏳ **nicht prüfbar** — das zeigt sich erst am nächsten Slot (`understanding` 21:30 UTC / `crawl` 04:00 UTC) |
+
+**Wichtigster fachlicher Einzelbefund — der portierte Produktfehler-Fix wirkt in Production.**
+Die 39 übersprungenen Verstehensläufe (`understanding-locked`) sind **zurückgestellt**
+(`status=wartend`, `attempts=0`, sichtbarer Grund im Auftrag) — **nicht** als erledigt
+gemeldet. Genau das war der Fehler aus §4, der bis 2026-08-11 nur auf einem nie gemergten
+Branch behoben war. Er ist damit erstmals unter echter Last belegt.
+
+### 15.5 Abbruchkriterium — **eingetreten** (§8.2, Zeile „ältester offener Auftrag")
+
+| Grenze aus §8.2 | Messwert | Urteil |
+|---|---|---|
+| Doppelte Verarbeitung / doppelter Push = 0 | 0 | ✅ weiterlaufen |
+| `global.used` vs. fachliche Aufrufe, Abweichung 0 | 0 | ✅ weiterlaufen |
+| endgültig fehlgeschlagene Aufträge 0 | 0 | ✅ weiterlaufen |
+| Slotdauer ≤ 270 s | 266,6 s | ✅ weiterlaufen |
+| `used` = 100 (Deckel) nie | 52 | ✅ weiterlaufen |
+| Zurückstellquote < 30 % | 18,3 % | ✅ weiterlaufen |
+| Frischebelege 5/5 | 5/5 (Vortagsstand, Morgenlauf steht aus) | ✅ vorerst |
+| Warteschlangengröße fallend je Slot | erst ein Slot — nicht beurteilbar | ⏳ offen |
+| Mandate mit Projektion je Fenster 5/5 | 0/5 in diesem Slot | ⚠️ beobachten |
+| **ältester offener Auftrag < 12 h · 12–24 h · > 24 h** | **504 477 s = 5,84 Tage**, `betriebsstatus` meldet **`zustand=kritisch`** | ❌ **„sofort stoppen + zurücknehmen"** |
+
+**Die Kontrollen werden hier beendet. K2 (24 h) und K3 (72 h) wurden nicht begonnen.**
+
+**Genaue Ursache (damit der Betreiber in einer Minute entscheiden kann):** der kritische
+Zustand kommt **nicht** von einem hängenden Auftrag und **nicht** von der Warteschlange
+selbst. Von 180 offenen Aufträgen sind **176 jünger als 24 h**; genau **vier** tragen ein
+zurückdatiertes Fälligkeitsdatum:
+
+| Auftrag | Mandat | fällig seit |
+|---|---|---|
+| `source_fetch\|person\|…\|2026-08-06T00Z` | ottilie-paola-klein-2 | 2026-08-06 00:00 |
+| `source_fetch\|person\|…\|2026-08-06T00Z` | annika-klose | 2026-08-07 06:14 |
+| `source_fetch\|person\|…\|2026-08-06T00Z` | helmut-kleebank | 2026-08-08 12:28 |
+| `source_fetch\|person\|…\|2026-08-06T00Z` | ruppert-st-we | 2026-08-09 18:43 |
+
+Das sind die **Personenquellen** von vier der fünf Mandate. Ihr Aktualitätsfenster steht auf
+`2026-08-06` — sie sind seither **nicht erfolgreich abgerufen** worden. Das deckt sich exakt
+mit der vorbestehenden Fehlerklasse OP-15 (Google-News-Drosselung; die Runtime-Fehlerliste
+zeigt für genau diese Quellen seit Wochen `Timeout`/`HTTP 503`).
+
+**Bewertung, ehrlich getrennt:**
+
+1. **Die Regel ist eingetreten und ist verbindlich.** §8.1 Nr. 11 und §8.2 binden das
+   Abbruchkriterium ausdrücklich an denselben Wert, den `betriebsstatus` als `kritisch`
+   meldet. Dieser Wert ist gemessen, nicht vermutet. Eine Sitzung darf eine verbindliche
+   Abbruchgrenze **nicht** eigenmächtig umdeuten — deshalb wird gestoppt und eskaliert.
+2. **Die Ursache ist mit hoher Wahrscheinlichkeit älter als die Aktivierung.** Der Rückstand
+   der Personenquellen bestand schon vorher; der Altpfad kannte keinen Fälligkeitsbegriff und
+   hat ihn deshalb **nie sichtbar gemacht**. Die Warteschlange macht ihn zum ersten Mal
+   sichtbar — das ist die von CLAUDE.md §4.4 gewollte Ehrlichkeit, kein neuer Schaden.
+3. **Daraus folgt ein echter Mangel am Nachweisvertrag, nicht (nur) am Betrieb:** die Grenze
+   „ältester offener Auftrag" unterstellt stillschweigend, dass `due_at` das Alter des
+   *Auftrags* misst. Tatsächlich misst sie das Alter der *Fälligkeit* und übernimmt damit
+   beim allerersten Lauf einen vorbestehenden Datenrückstand. Für die Wiederholung muss die
+   Grenze entweder auf `created_at` bezogen oder für den Erstlauf ausdrücklich ausgenommen
+   werden. **Diese Änderung ist eine Betreiberentscheidung und wurde hier nicht vorgenommen.**
+
+**Was gegen einen echten Notfall spricht** (ausdrücklich als Entscheidungshilfe, nicht als
+Entwarnung): kein Auftrag verloren, keine Dublette, kein endgültiger Fehler, kein
+Deckelkontakt, Slot im Zeitbudget, Rücknahmeweg unverändert intakt, Altpfad byte-identisch
+reaktivierbar. **Was dafür spricht:** Projektion und Briefing aller fünf Mandate hängen
+hinter 39 zurückgestellten Verstehensaufträgen, und der nächste Produktausgabe-Termin ist
+die **Morgenlage 05:00 UTC**. Ob die Warteschlange bis dahin leerläuft, ist **unbewiesen**.
+
+### 15.6 Was der Betreiber jetzt entscheiden muss
+
+Diese Sitzung kann den Schalter **nicht** selbst zurücknehmen (§7 Schritt 1 verlangt
+Vercel-Env-Zugriff; Egress unverändert `403`, kein Environment-/Redeploy-Werkzeug). Deshalb:
+
+1. **Sicherer Weg (regelkonform):** `HELMUT_SCALABLE_PIPELINE` auf `off` setzen oder löschen
+   (Vercel → `helmut-pilot` → Environment Variables, nur *Production*) **+ Redeploy**. Ab dem
+   nächsten Cron-Fenster läuft der Altpfad unverändert; die 180 offenen Aufträge bleiben als
+   ehrlicher Zustand stehen, niemand holt sie ab, es entstehen keine Kosten (§7 Schritt 2/3).
+   Keine Rücknahmemigration nötig.
+2. **Bewusstes Weiterlaufen:** wer den Befund aus §15.5 Punkt 2/3 teilt, kann die Aktivierung
+   **stehen lassen** und den Morgenlauf abwarten — dann aber mit ausdrücklicher Entscheidung
+   und mit einer **berichtigten Grenze** in §8.2. Prüfpunkte am Morgen: Morgenlage 5/5,
+   Frischebelege 5/5, offene Aufträge fallend, `zustand` nicht mehr `kritisch`.
+
+**Vor jeder Ausweitung bleibt es unverändert dabei:** keine 25 Mandate ohne bestandenes K3
+**und** ohne neu bestandenen OP-25-Nachweis.
+
+### 15.7 Nicht getan (Verbote eingehalten)
+
+Kein Flag gesetzt oder geändert · keine Env-Variable · kein Redeploy · kein manueller
+Cronlauf · kein Worker gestartet · keine Migration angewendet oder zurückgenommen · **keine
+Rücknahmemigration** · keine Production-Datenänderung · keine Mandatsänderung · `mdb-a`
+unangetastet · keine Testdaten · keine Grenzwerte erhöht oder verändert · keine Codeänderung ·
+kein 403-Umgehungsversuch · keine Geheimnisse ausgegeben · kein Merge · **keine Ausweitung
+auf 25 Mandate**.
