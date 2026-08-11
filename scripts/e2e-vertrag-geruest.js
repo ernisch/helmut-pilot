@@ -165,7 +165,20 @@ function neuerStore(opts) {
       // KONSTANT, ein Stapel-Upsert vergibt also fuer alle Zeilen denselben Zeitstempel.
       // Die Attrappe hat damit eine Streuung erzeugt, die es in Production nicht gibt — und
       // nebenbei aufgedeckt, dass der Lesepfad bei GLEICHEN Zeitstempeln gar keine
-      // definierte Reihenfolge hatte (dort jetzt `order=created_at.desc,id.desc`).
+      // definierte Reihenfolge hat.
+      //
+      // KORREKTUR DES KOMMENTARS (Abschlussreview 2026-08-08, portiert 2026-08-11): hier
+      // stand „dort jetzt `order=created_at.desc,id.desc`". Das ist NICHT so —
+      // `storage.listMatchingResults` sendet unveraendert nur `&order=created_at.desc`;
+      // welcher Vorgang bei Gleichstand zuerst angezeigt wird, ist eine offene
+      // Produktentscheidung. Der Kommentar behauptete eine Korrektur am
+      // Production-Lesepfad, die es nicht gibt.
+      //
+      // UND DER NICHTDETERMINISMUS IST NICHT ERLEDIGT, nur verkleinert: der eine
+      // Stapelzeitstempel unten stabilisiert die Reihenfolge INNERHALB eines Stapels.
+      // Schreibt der Matcher in MEHREREN Stapeln ueber eine Millisekundengrenze, kippt
+      // J8 weiterhin (im Abschlussreview 2026-08-08 in einem von sechs vollstaendigen
+      // Offline-Laeufen aufgetreten). F-E2E bleibt offen (CURRENT_STATE §9, Entwurf PR #224).
       const stapelZeit = new Date().toISOString();
       for (const r of rows || []) st.matchingResults.set(r.id, { ...r, aktuell: true, created_at: stapelZeit });
       return { saved: (rows || []).length };

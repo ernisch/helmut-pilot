@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-11** (drei Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** — drittes Fenster 2026-08-07/08, Exit 0, null Befunde, kanonisch §7.7.9; gilt **ausschliesslich fuer die heutige Architektur mit 5 Mandaten** und beweist weder OP-30 noch 200 Mandate. **(b) OP-30**, §7a — PR #233/#235/#236/#237 gemergt; alle Flags **aus**, keine Migration angewendet. **(c) OP-31 Frischevertrag des Morgenbriefings BESTANDEN** — PR #238 gemergt (`6030cbb7`), Morgenlauf 2026-08-11 05:00 UTC: `frischevertrag.belegt=5/5`, alle Belege `erfolg`, ein Push je Mandat, keine Fehlermeldung; §7a/§9). Diese Datei enthaelt
+**Stand: 2026-08-11/2** (vier Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30**, §7a — PR #233/#235/#236/#237 gemergt; alle Flags **aus**, keine Migration angewendet; **Aktivierungsvorbereitung 5 Mandate abgeschlossen**, Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md), Korrektur-PR offen. **(c) OP-31 Frischevertrag BESTANDEN** — PR #238/#239 gemergt, Morgenlauf 2026-08-11: `belegt=5/5`, ein Push je Mandat. **(d)** Befund `mdb-a`/`dec-y` geklaert, kein Blocker, Bereinigungsplan im Runbook §9). Diese Datei enthaelt
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -18,11 +18,10 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 ## 2 · Stand auf `main`
 
-- **HEAD `6030cbb7`** = Merge von **PR #238** (OP-31, Frischevertrag des Morgenbriefings):
-  keine Migration, kein Flag-/Cron-Wechsel. Production-Deployment `dpl_Es8TeJjw6CvamH5RC33af6o2sWHt`
-  READY 2026-08-10T21:03:04Z, `githubCommitSha=6030cbb71a39448b598106531970c4b5c681df6f`
-  (Vercel-Metadaten gegengeprüft). Erster regulärer Morgenlauf auf diesem Stand:
-  **bestanden**, Einzelheiten §7a/§9.
+- **HEAD `dcd6da5`** = Merge von **PR #239** (Doku: OP-31-Production-Nachweis). Davor
+  `6030cbb7` = **PR #238** (OP-31 Frischevertrag; Deployment `dpl_Es8TeJjw…` READY
+  2026-08-10T21:03:04Z, Commit gegengeprüft). Erster regulärer Morgenlauf auf diesem
+  Stand: **bestanden**, Einzelheiten §7a/§9.
 - Davor `ec2e208` = **PR #237**, `0f047b1` = **PR #236**, `40e7708` = **PR #235**,
   `559a3d9` = **PR #233**, `1f10d66` = **PR #234**, `a07954df` = **PR #232**,
   `f4f4500b` = **PR #229** (K1–K8, kanonisch
@@ -106,14 +105,15 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
+| **dieser Sprint** | OP-30-Aktivierungsvorbereitung 5 Mandate: portierter Überspring-Fix (§7a) + Runbook | **mergefähig nach Review; Vorbedingung der Aktivierung** |
+| **#231** (Draft) | OP-03 Konten-Vorbedingung, 1 Konto je Mandat | in §6 bisher nicht geführt (Korrektur 2026-08-11/2); Betreiberentscheidung |
 | **#224** (Draft) | F-E2E: Lage-Rangfolge aus berechnetem Rang statt Ablage | behauptet die Behebung des CI-Nichtdeterminismus F-E2E; **nicht reviewt, nicht abgenommen** |
 | **#225** (Draft) | „Produktroadmap für LINIE" | nicht aus dem Helmut-Arbeitsstrang; Einordnung beim Betreiber |
-| **#218** | OP-25-Kapazität, konkurrierende Analyse | Codeänderung auf dem Branch zurückgenommen; Ursache/Fix kamen über #219. **Empfehlung: schließen** |
+| **#218** | OP-25-Kapazität, konkurrierende Analyse | Ursache/Fix kamen über #219. **Empfehlung: schließen** |
 | **#216** | flackernden `werkzeug-lesefehler-test.js` stabilisieren (F-PORT) | offen, reserviert als OP-28 |
 
-Alle übrigen früher geführten PRs sind gemergt oder geschlossen (zuletzt **#238, #237, #236,
-#235 und #233**). Diese Sitzung öffnet einen reinen Doku-PR für den OP-31-Nachweis
-(unten, §7a/§9). Historie: Archiv.
+Alle übrigen früher geführten PRs sind gemergt oder geschlossen (zuletzt **#239, #238, #237,
+#236, #235 und #233**). Historie: Archiv.
 
 ## 7 · Offene Blocker
 
@@ -190,23 +190,23 @@ Profile** (es gibt 10) · Migration (sechs Paare), Aktivierung, Production-Nachw
 Vercel-Verhalten bei Parallelitaet 8.
 
 **Sprint „Frischevertrag des Morgenbriefings" (2026-08-10, PR #238) — OP-31 Production-Nachweis
-BESTANDEN (2026-08-11).** Kanonisch:
-[`briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) §11.
-Gebaut, offline belegt (Tests 69/69 · 68/68 · 34/34 · Gesamt 238/242 · Smoke 32/32), von einem
-unabhaengigen adversarialen Review sechs echte Befunde gefunden und behoben (Beleg nicht
-mandats-/tagesscharf, Backfill-`updated_at` als falsches „Heute", Abdeckungszahl zaehlte
-FEHLER-Quittungen als „belegt" — Details Belegdatei §10), gemergt 2026-08-10T21:02:57Z
-(`6030cbb7`, Deployment READY 21:03:04Z). **Erster regulaerer Morgenlauf 2026-08-11 05:00:26 UTC
-(automatischer Vercel-Cron, `lauf=cron-morning-briefing-20260811050027-ifo1h`):
-`frischevertrag.belegt=5/5`, `erfolgreich=5 fehlgeschlagen=0`, `obergrenzeLaeufe=1`, kein
-zweiter Aufruf der Route bis 07:55 UTC, keine Zeile FRISCHEBELEG NICHT PERSISTIERT oder
-FRISCHEVERTRAG nicht erfuellt.** Relational gegengeprueft: 5 Belegzeilen
-`bf-<mandat>-morgenlage-2026-08-11`, je `status=erfolg`, `user_id=payload.tenantId=berlinTag`
-konsistent, `ausloeser=morgenlauf`, keine Fremd-/Fehler-/Fremdtagzeilen. Watchdog
-(`briefing-watchdog.yml`, 06:12 UTC) ruft eine andere Route (`/api/cron/pipeline`), keine
-Ueberschneidung. Restrisiko unveraendert: ohne `HELMUT_CRON_FAIRNESS` koennen exakt
-ueberlappende Laeufe doppelt pushen (kein falsches Gruen); `briefings` waechst taeglich,
-Loeschung nicht scharf (OP-12). Alarmweg weiterhin OP-07.
+BESTANDEN (2026-08-11).** Kanonisch (inkl. Reviewbefunde, Laufdetails, Belegzeilen):
+[`briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) §10/§11.
+Erster regulaerer Morgenlauf 2026-08-11 05:00:26 UTC: `frischevertrag.belegt=5/5`,
+`erfolgreich=5 fehlgeschlagen=0`, ein Push je Mandat, 5 relational gegengepruefte
+Erfolgsbelege, kein zweiter Routenaufruf, keine Fehlerzeile. Restrisiko unveraendert:
+ohne `HELMUT_CRON_FAIRNESS` koennen exakt ueberlappende Laeufe doppelt pushen (kein
+falsches Gruen); `briefings` waechst taeglich (OP-12); Alarmweg weiterhin OP-07.
+
+**Sprint „OP-30-Aktivierungsvorbereitung 5 Mandate" (2026-08-11/2).** Kanonisch:
+[`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) (Inventar,
+Migrationsbeweise, Aktivierungs-/Rücknahmeplan, Messwerte/Abbruchgrenzen, `mdb-a`-Plan).
+**Kernbefund:** der Produktfehler „übersprungener V3-Lauf gilt als erledigt" war nur auf dem
+nie gemergten Branch `claude/helmut_scaling_foundation_1000` behoben — auf `main` fehlte er
+(„B14 behoben" in PR #235 meinte einen gleichnamigen Testinfrastruktur-Befund). Portiert +
+gehärtet, 7 neue Vertragstests; der alte Branch ist vollständig ausgewertet. `mdb-a`:
+Testfixture-Write mit Production-Env vor dem lokalen Schutz; **kein aktiver Datenweg,
+kein Blocker** (Runbook §9).
 
 **Folge für OP-25:** eine spätere Aktivierung verändert `quellenVereinigung`, die
 K2.1-Sichtbarkeitsmengen und die Laufzeitbilanz ⇒ **OP-25 muss danach von vorn**.
@@ -283,14 +283,15 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**PR #233, #235, #236, #237 und #238 sind gemergt; OP-31-Production-Nachweis ist bestanden
-(2026-08-11).** Nächste Entscheidungen liegen beim Betreiber:
+**Die OP-30-Aktivierung mit 5 Mandaten ist vollständig vorbereitet** (2026-08-11/2).
+Nächste Entscheidungen liegen beim Betreiber:
 
-1. **Stufenweise Aktivierung freigeben** (5 → 25 → 50 → 100 → 200), jede Stufe einzeln;
-   Plan mit Flags, Migration, Metriken, Abnahme- und Rückfallbedingungen in
-   [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) §10.
-   Vor Stufe 2: Migrationen anwenden (sechs Paare) und **OP-25 vollständig wiederholen**
-   (OP-31 ist belegt). Vor Stufe 5: **190 fehlende echte Profile** (es gibt 10).
+1. **Korrektur-PR dieses Sprints reviewen und mergen** (Vorbedingung der Aktivierung),
+   dann **5er-Aktivierung nach Runbook** [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md)
+   §6 (Migrationen → Regellauf-Kontrolle → `HELMUT_SCALABLE_PIPELINE=on` → K0–K3).
+   Ausweitung auf 25+ erst nach bestandener K3 **und neu bestandenem OP-25**
+   (Stufenplan [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) §10);
+   vor Stufe 5: **190 fehlende echte Profile** (es gibt 10).
 
 Parallel und unabhängig: **OP-01** (Pro + PITR); **OP-11** verifizieren; **#218** schließen.
 
@@ -327,7 +328,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 | Profilreife/Reparatur 2026-08-04 | [`multitenancy-profilbereitschaft-bundestag.md`](multitenancy-profilbereitschaft-bundestag.md) |
 | PARDOK-Parser (Punkt 24) | [`quellenarchitektur/17-pardok-parser.md`](quellenarchitektur/17-pardok-parser.md) |
 | Paket-Inventur (wiederholbar) | [`quellenarchitektur/30-paket-inventur-production.md`](quellenarchitektur/30-paket-inventur-production.md) |
-| **OP-30: Kapazität der Morgenlage, R4/R4b, Aktivierungsplan** | [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) |
+| **OP-30: Kapazität der Morgenlage, R4/R4b, Stufenplan** | [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) |
+| **OP-30: Aktivierungs-Runbook 5 Mandate (Pläne, Grenzen, `mdb-a`)** | [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) |
 | **OP-31: Frischevertrag + adversarialer Review (§10)** | [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) |
 | Roadmap Phase 1 | [`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md) |
 | Mail | [`betrieb/mailversand-resend.md`](betrieb/mailversand-resend.md) · [`betrieb/lokale-mailtests-mailpit.md`](betrieb/lokale-mailtests-mailpit.md) |
@@ -337,7 +339,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-11 | **OP-31 Production-Nachweis** (§7a): erster Morgenlauf auf `6030cbb7` (PR #238), 05:00:26 UTC automatischer Vercel-Cron, `frischevertrag.belegt=5/5`, 5 relational geprüfte Erfolgsbelege, kein Doppel-Push, keine Fehlermeldung, keine Runtime-Fehler seit Deployment · Beleg [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) §11 | **abgeschlossen** |
+| 2026-08-11/2 | **OP-30-Aktivierungsvorbereitung 5 Mandate** (§7a): Überspring-Produktfehler portiert (`jobqueue-vertrag` 120/120), Migrationskette 31/31, `mdb-a` geklärt, Runbook · Beleg [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) | **teilweise abgeschlossen** (PR offen, Merge/Aktivierung = Betreiber) |
+| 2026-08-11 | **OP-31 Production-Nachweis** (§7a): erster Morgenlauf auf `6030cbb7` (PR #238), 05:00:26 UTC automatischer Vercel-Cron, `frischevertrag.belegt=5/5`, 5 relational geprüfte Erfolgsbelege, kein Doppel-Push, keine Fehlermeldung · Beleg [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) §11 | **abgeschlossen** |
 | 2026-08-10 | **OP-31 Frischevertrag des Morgenbriefings** (§7a): mandatsscharfe Lauf-Quittung ohne Migration, adversarialer Review sechs echte Befunde behoben (Tagesbeleg ohne Mandats-/Tagesprüfung, Abdeckungszahl zählte FEHLER als „belegt"). Tests 69/69 · 68/68 · 34/34 · Gesamt 238/242 · Smoke 32/32 | **teilweise abgeschlossen** (Merge und Nachweis folgten 2026-08-11, Zeile oben) |
 | 2026-08-09/3 | **OP-30 Kapazität der Morgenlage + R4/R4b** — doppelte Budgetzählung an echter PostgreSQL reproduziert und behoben, Kapazität slotgenau gemessen, kleinste sichere Lösung ⇒ 200/200 im Morgenfenster mit 59,6 % Reserve; R6 im Testgerüst entschärft · Beleg [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) | **teilweise abgeschlossen**, PR #237 gemergt (Migration, Aktivierung und Production-Nachweis offen) |
 | 2026-08-09/2 | **E1 `tenant_narrative` + unabhängiger Abschlussreview**: Lage-Narrativ als fünfter Auftragstyp über die Warteschlange (Flag default AUS, Migration nicht angewendet); Review behob R1–R3, benannte R4/R6 · Belege [`lage-narrativ-warteschlange-2026-08-09.md`](betrieb/lage-narrativ-warteschlange-2026-08-09.md) · [`op30-e1-abschlussreview-2026-08-09.md`](betrieb/op30-e1-abschlussreview-2026-08-09.md) | **abgeschlossen**, PR #236 gemergt |

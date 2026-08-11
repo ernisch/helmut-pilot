@@ -746,6 +746,93 @@ async function main() {
       !geplanteMandate.has("m-deaktiviert") && !geplanteMandate.has("m-geloescht")
       && geplanteMandate.has("m-aktiv"),
       [...geplanteMandate].join(", "));
+
+    // ── 12.14–12.19 · Ein UEBERSPRUNGENER V3-Lauf ist kein erledigter Auftrag ────────
+    // `runUnderstandingShadow`, `runMatchingShadow` und `runDecisionShadow` liefern in
+    // mehreren Faellen `{ skipped: true, reason }` — darunter `understanding-locked` und
+    // `matching-locked`, also VORUEBERGEHENDE Sperrkollisionen. Vorher wurde das als
+    // `ok:true` verbucht. Beim Verstehen traegt der Idempotenzschluessel bewusst kein
+    // Fenster: die Dokumente waeren DAUERHAFT unverstanden geblieben, gemeldet als
+    // Erfolg. Bei der Projektion haette das Mandat sein ganzes 24-h-Fenster verloren.
+    const uebersprungenesVerstehen = await SP.HANDLER.document_understanding(
+      { id: "j-skip", payload: { dokumente: [{ id: "rd-x" }] }, freshnessWindow: "F1",
+        createdAt: new Date().toISOString() },
+      { eagerUnderstanding: async () => ({ skipped: true, reason: "understanding-locked" }) });
+    check("12.14 Ein uebersprungenes Verstehen wird zurueckgestellt, nicht als erledigt gemeldet",
+      uebersprungenesVerstehen.ok === false && uebersprungenesVerstehen.zurueckgestellt === true
+      && uebersprungenesVerstehen.langeWarten !== true
+      && /understanding-locked/.test(String(uebersprungenesVerstehen.grund)),
+      JSON.stringify(uebersprungenesVerstehen));
+
+    const verstehenOhneKi = await SP.HANDLER.document_understanding(
+      { id: "j-skip-ki", payload: { dokumente: [{ id: "rd-x" }] }, freshnessWindow: "F1",
+        createdAt: new Date().toISOString() },
+      { eagerUnderstanding: async () => ({ skipped: true, reason: "ai-disabled" }) });
+    check("12.15 Abgeschaltete KI stellt LANGE zurueck (kein Leerlauf-Pendeln)",
+      verstehenOhneKi.ok === false && verstehenOhneKi.zurueckgestellt === true
+      && verstehenOhneKi.langeWarten === true,
+      JSON.stringify(verstehenOhneKi));
+
+    // Obergrenze: ein Auftrag, der seit mehr als der Budgetwartefrist uebersprungen wird,
+    // endet ENDGUELTIG und sichtbar — dieselbe O4-Logik wie beim Budgetwarten.
+    let dauerhaftFehler = null;
+    try {
+      await SP.HANDLER.document_understanding(
+        { id: "j-skip-alt", payload: { dokumente: [{ id: "rd-x" }] }, freshnessWindow: "F1",
+          createdAt: new Date(Date.now() - 49 * 3600 * 1000).toISOString() },
+        { eagerUnderstanding: async () => ({ skipped: true, reason: "understanding-locked" }) });
+    } catch (e) { dauerhaftFehler = e; }
+    check("12.16 Nach der Wartefrist endet ein uebersprungener Auftrag endgueltig und sichtbar",
+      dauerhaftFehler && /verstehen-uebersprungen-dauerhaft/.test(String(dauerhaftFehler.message))
+      && SP.istEndgueltig(dauerhaftFehler.message) === true,
+      String(dauerhaftFehler && dauerhaftFehler.message));
+
+    const projektionDeps = {
+      getActiveProfile: async (id) => ({ id }),
+      offeneVorbedingungen: async () => ({ offen: 0, wartend: 0, laufend: 0 }),
+      decisions: async () => ({ saved: 1 })
+    };
+    const uebersprungeneProjektion = await SP.HANDLER.mandate_projection(
+      { id: "j-skip2", payload: { mandatsId: "m1" }, freshnessWindow: null,
+        createdAt: new Date().toISOString() },
+      { ...projektionDeps, matching: async () => ({ skipped: true, reason: "matching-locked" }) });
+    check("12.17 Ein uebersprungenes Matching wird zurueckgestellt, nicht als Projektion verbucht",
+      uebersprungeneProjektion.ok === false && uebersprungeneProjektion.zurueckgestellt === true
+      && /matching-locked/.test(String(uebersprungeneProjektion.grund)),
+      JSON.stringify(uebersprungeneProjektion));
+
+    // `no-vorgaenge` ist ein EHRLICHER LEERZUSTAND: erledigt mit 0, kein Zurueckstellen.
+    const leereProjektion = await SP.HANDLER.mandate_projection(
+      { id: "j-leer", payload: { mandatsId: "m1" }, freshnessWindow: null,
+        createdAt: new Date().toISOString() },
+      { ...projektionDeps, matching: async () => ({ matched: 0 }),
+        decisions: async () => ({ skipped: true, reason: "no-vorgaenge" }) });
+    check("12.18 Ein ehrlicher Leerzustand (no-vorgaenge) bleibt ein Erfolg mit 0",
+      leereProjektion.ok === true && leereProjektion.entscheidungen === 0,
+      JSON.stringify(leereProjektion));
+
+    // `decision-error` ist ein ECHTER Fehler im Ueberspring-Gewand: er wird geworfen
+    // (Versuch + Backoff + sichtbares Ende), nicht unbegrenzt versteckt zurueckgestellt.
+    let entscheidungsFehler = null;
+    try {
+      await SP.HANDLER.mandate_projection(
+        { id: "j-decerr", payload: { mandatsId: "m1" }, freshnessWindow: null,
+          createdAt: new Date().toISOString() },
+        { ...projektionDeps, matching: async () => ({ matched: 2 }),
+          decisions: async () => ({ skipped: true, reason: "decision-error", error: "kaputt" }) });
+    } catch (e) { entscheidungsFehler = e; }
+    check("12.19 Ein als Ueberspringen verpackter Entscheidungsfehler wird sichtbar geworfen",
+      entscheidungsFehler && /projektion-entscheidungen-fehler: kaputt/.test(String(entscheidungsFehler.message))
+      && SP.istEndgueltig(entscheidungsFehler.message) === false,
+      String(entscheidungsFehler && entscheidungsFehler.message));
+
+    const echteProjektion = await SP.HANDLER.mandate_projection(
+      { id: "j-ok", payload: { mandatsId: "m1" }, freshnessWindow: null,
+        createdAt: new Date().toISOString() },
+      { ...projektionDeps, matching: async () => ({ matched: 3 }) });
+    check("12.20 Eine echte Projektion bleibt unveraendert erfolgreich",
+      echteProjektion.ok === true && echteProjektion.matched === 3 && echteProjektion.entscheidungen === 1,
+      JSON.stringify(echteProjektion));
   }
 
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
