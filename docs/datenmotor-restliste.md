@@ -1728,10 +1728,17 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
     **reproduziert, erklärt und behoben** (untreues Testgerüst); **offen bleibt** der dabei
     entdeckte Production-Befund: die Reihenfolge der Matchingergebnisse ist bei gleichem
     Zeitstempel **undefiniert** — eine Gründerentscheidung, siehe Sprintdoku §15.
-- **Zustand:** offen. Code liegt lokal auf `claude/helmut_scaling_foundation_1000`
-  (Arbeitsbaum `/home/user/helmut-scaling`), **kein Commit, kein PR**. Für den Einzelpiloten
-  (5–6 Mandate) **kein** Blocker; Blocker ab etwa zehn Mandaten und damit vor mehreren
-  zahlenden Kunden.
+- **Zustand:** offen (Aktivierung steht aus). **Statuszeile berichtigt 2026-08-11/2:** die
+  frühere Angabe „Code liegt lokal auf `claude/helmut_scaling_foundation_1000`, kein Commit,
+  kein PR" ist überholt — der OP-30-Code ist seit PR #233/#235/#236/#237 auf `main`; der
+  genannte Branch trug danach nur noch zwei Commits (Überspring-Produktfehler-Fix +
+  Ehrlichkeitskorrekturen), die im Sprint 2026-08-11/2 auf `main`-Basis portiert wurden —
+  der Branch ist damit vollständig ausgewertet. **Aktivierungsvorbereitung für 5 Mandate
+  abgeschlossen:** kanonisches Runbook
+  [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md)
+  (Migrationsbeweise 31/31, Aktivierungs-/Rücknahmeplan, Messwerte/Abbruchgrenzen,
+  `mdb-a`-Bereinigungsplan). Für den Einzelpiloten (5–6 Mandate) **kein** Blocker; Blocker
+  ab etwa zehn Mandaten und damit vor mehreren zahlenden Kunden.
 
 #### OP-31 · Frischegarantie des Morgenbriefings (neu, Sprint „Frischevertrag" 2026-08-10; Prioritätsklasse P1)
 
