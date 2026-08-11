@@ -1,10 +1,11 @@
 # ARCHITECTURE — Systemkarte Helmut
 
-**Letzte Aktualisierung:** 2026-08-08/3 (§7e: V3-Anbindung des Warteschlangenpfads und
+**Letzte Aktualisierung:** 2026-08-11 (§7e: die sechs OP-30-Migrationen sind auf Production
+**angewendet** — Schema vorhanden, fünfter Auftragstyp `tenant_narrative`, alle Flags weiter
+AUS, Pfad im Betrieb wirkungslos); davor 2026-08-08/3 (§7e: V3-Anbindung des Warteschlangenpfads und
 KI-Budgetschicht, beide lokal und DEFAULT AUS); davor 2026-08-08/2 (§7e: Phasenfenster für Projektion und Briefing;
 zuvor am selben Tag §7e ergänzt: skalierbarer Pfad über eine dauerhafte
-Arbeitswarteschlange, OP-30 — **lokal gebaut, Default AUS, in Production weder angewendet noch
-aktiviert**) · davor 2026-07-28 (§7d ergänzt: Matching-Auditpersistenz,
+Arbeitswarteschlange, OP-30) · davor 2026-07-28 (§7d ergänzt: Matching-Auditpersistenz,
 Roadmap-Punkt 23; Migrationsstand nach Production-Anwendung von
 `20260728_matching_audit` nachgezogen) · **verankert auf `main` @ `b1d450c`**
 
@@ -354,10 +355,12 @@ identischer Zweitlauf schrieb bisher 20 wirkungslose UPDATEs, jetzt eines.
 
 ### 7e · Skalierbarer Pfad über eine dauerhafte Arbeitswarteschlange (OP-30, DEFAULT AUS)
 
-> **Zustand:** lokal gebaut und getestet. Migration **nicht angewendet**, Flag
-> `HELMUT_SCALABLE_PIPELINE` **nirgends gesetzt**, Worker **nie gelaufen**. Solange das Flag
-> aus ist, ist dieser gesamte Abschnitt für den Betrieb **wirkungslos** — §7a–§7d beschreiben
-> unverändert, was tatsächlich läuft.
+> **Zustand (2026-08-11):** die sechs Migrationspaare sind auf Production **angewendet**
+> (Schema vorhanden, Tabellen leer; Beleg
+> [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §12).
+> Flag `HELMUT_SCALABLE_PIPELINE` **nirgends gesetzt**, Worker **nie gelaufen**. Solange das
+> Flag aus ist, ist dieser gesamte Abschnitt für den Betrieb **wirkungslos** — §7a–§7d
+> beschreiben unverändert, was tatsächlich läuft.
 > Kanonisch: [`betrieb/skalierungsgrundlage-1000.md`](betrieb/skalierungsgrundlage-1000.md).
 
 **Warum er existiert.** Der schwere Cron erledigt Planung **und** Verarbeitung in einem
@@ -394,8 +397,9 @@ identischer Zweitlauf schrieb bisher 20 wirkungslose UPDATEs, jetzt eines.
               storage.jobQueueFinish                   ← helmut_finish_job (halterge­bunden)
 ```
 
-**Datenmodell.** Eine Tabelle, `public.helmut_jobs`, mit vier Aufgabentypen (`source_fetch`,
-`document_understanding`, `mandate_projection`, `briefing_materialization`). Idempotenz über
+**Datenmodell.** Eine Tabelle, `public.helmut_jobs`, mit fünf Aufgabentypen (`source_fetch`,
+`document_understanding`, `mandate_projection`, `briefing_materialization`,
+`tenant_narrative` seit E1). Idempotenz über
 `unique(idempotency_key)`; der Schlüssel enthält das **Aktualitätsfenster**, deshalb erzeugt
 wiederholtes Planen im selben Fenster nie einen zweiten Auftrag, ein neues Fenster dagegen
 schon. Reservierung, Lease, Wiederaufnahme, Wiederholungsgrenze und Kennzahlen liegen in
