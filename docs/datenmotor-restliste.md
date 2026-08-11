@@ -1737,7 +1737,11 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   abgeschlossen:** kanonisches Runbook
   [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md)
   (Migrationsbeweise 31/31, Aktivierungs-/Rücknahmeplan, Messwerte/Abbruchgrenzen,
-  `mdb-a`-Bereinigungsplan). Für den Einzelpiloten (5–6 Mandate) **kein** Blocker; Blocker
+  `mdb-a`-Bereinigungsplan). **Ergänzt 2026-08-11/3:** PR #240 gemergt; die **sechs
+  Vorwärtsmigrationen sind auf Production angewendet und rein lesend abgenommen**
+  (Runbook §12) — alle OP-30-Flags weiter aus, nichts aktiviert, Tabellen leer; offen sind
+  Regellauf-Kontrolle, Flag-Aktivierung (Betreiber) und der Production-Nachweis K0–K3.
+  Für den Einzelpiloten (5–6 Mandate) **kein** Blocker; Blocker
   ab etwa zehn Mandaten und damit vor mehreren zahlenden Kunden.
 
 #### OP-31 · Frischegarantie des Morgenbriefings (neu, Sprint „Frischevertrag" 2026-08-10; Prioritätsklasse P1)

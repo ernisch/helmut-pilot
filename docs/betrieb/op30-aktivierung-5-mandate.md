@@ -10,6 +10,11 @@ Vorgänger: [`op30-kapazitaet-morgenslots-2026-08-09.md`](op30-kapazitaet-morgen
 > Production-Datenzeile verändert. Alle Production-Zugriffe waren rein lesend.
 > Jeder Schritt in §6/§7 ist eine **Betreiberaktion** (Vercel-Env ist aus Sitzungen
 > weder lesbar noch setzbar, [`env-inventar.md`](env-inventar.md) §8).
+>
+> **Nachtrag 2026-08-11/3 (Folgesprint mit ausdrücklicher Freigabe):** §6 Schritt 1 ist
+> ausgeführt — die sechs Vorwärtsmigrationen sind auf Production angewendet und rein
+> lesend abgenommen (**Migrationsbeleg §12**). Alle OP-30-Flags sind weiterhin **aus**,
+> nichts ist aktiviert, keine Rücknahmedatei wurde angewendet.
 
 ---
 
@@ -19,7 +24,7 @@ Vorgänger: [`op30-kapazitaet-morgenslots-2026-08-09.md`](op30-kapazitaet-morgen
 |---|---|
 | Ist OP-30 für 5 Mandate technisch aktivierungsbereit? | **Ja — nach Merge des Korrektur-PRs dieses Sprints.** Ein echter, bis dahin nur auf einem nie gemergten Branch behobener Produktfehler (übersprungener V3-Lauf galt als erledigter Auftrag) ist auf `main`-Basis portiert und getestet. |
 | Verbindlicher Quellstand | `main` (`dcd6da5`, Merge PR #239) **plus** der Korrektur-PR dieses Sprints. Der Branch `claude/helmut_scaling_foundation_1000` ist damit vollständig ausgewertet und wird nicht mehr gebraucht. |
-| Migrationen | Sechs Paare, alle auf `main`, keine angewendet. Kette an echter PostgreSQL 16.13 bewiesen: vorwärts, wiederholt, Rollback, erneut vorwärts, Teilzustände, Datenerhalt, RLS (31/31). |
+| Migrationen | Sechs Paare, alle auf `main`. Kette an echter PostgreSQL 16.13 bewiesen: vorwärts, wiederholt, Rollback, erneut vorwärts, Teilzustände, Datenerhalt, RLS (31/31). **Seit 2026-08-11 auf Production angewendet (§12).** |
 | Flags | Alle OP-30-Flags Default AUS, in Production **nirgends gesetzt** (gegengeprüft: 0 OP-30-Tabellen, 0 OP-30-Funktionen in Production, 2026-08-11). |
 | Fünf Mandate | Bestätigt (rein lesend): genau `annika-klose`, `cem-ince`, `helmut-kleebank`, `ottilie-paola-klein-2`, `ruppert-st-we` sind `aktiv=true`. |
 | Zeile `mdb-a` | Gefunden, Ursache belegt, **beeinflusst keinen aktiven Datenweg** und blockiert die Aktivierung nicht. Bereinigungsplan in §9, Ausführung freigabepflichtig. |
@@ -61,7 +66,7 @@ Zustände: **(1)** auf `main` und einsatzbereit · **(2)** vorhanden, nicht inte
 
 | Bestandteil | Zustand | Beleg |
 |---|---|---|
-| Migrationen (6 Paare, je mit Rollback) | **(1)** — nicht angewendet | `supabase/migrations/2026080{8,9}_*`; Kette 31/31 (§5) |
+| Migrationen (6 Paare, je mit Rollback) | **(1)** — seit 2026-08-11 in Production angewendet (§12) | `supabase/migrations/2026080{8,9}_*`; Kette 31/31 (§5) |
 | Tabellen/Funktionen/Indizes/Rechte | **(1)** | 3 Tabellen, 20 `helmut_`-Funktionen, 14 Indizes; `helmut_claim_jobs` nutzt `helmut_jobs_claim_idx` (EXPLAIN geprüft); RLS aktiviert **und** erzwungen, keine Policy, `anon`/`authenticated`/PUBLIC ohne Rechte, keine SECURITY-DEFINER-Funktion |
 | Warteschlange + Worker (`scalable-pipeline.js`, `worker-betrieb.js`) | **(1)** | `jobqueue-vertrag-test` 120/120 · `jobqueue-sicherheit-test` 69/69 |
 | Worker-Startweg | **(1)** | Vercel-Form (b): `runCronUeberWarteschlange` je Cron-Fenster (`server.js:6710`), Budget 270 s < `maxDuration` 300 s; kein eigener Dienst nötig ([`workerbetrieb.md`](workerbetrieb.md) §5) |
@@ -114,7 +119,10 @@ dauerhafte Zustände unbegrenzt zurückgestellt — genau das O4-Muster):
 1. Übersprungene Läufe werden **zurückgestellt** (Sperren kurz, abgeschaltete Pfade lang),
    aber mit der **O4-Obergrenze** (`HELMUT_BUDGET_MAX_WARTE_MS`, Default 48 h): danach
    enden sie **endgültig und sichtbar** (`verstehen-/projektion-uebersprungen-dauerhaft`,
-   von `istEndgueltig` erkannt, Wiedervorlage O5 greift).
+   von `istEndgueltig` erkannt). *Präzisiert 2026-08-11/3:* die Wiedervorlage (O5,
+   `helmut_jobs_wiedervorlage`) gilt standardmäßig für `document_understanding`. Für
+   Projektionen erfolgt die Erholung über die Neuplanung im nächsten 24-Stunden-Fenster
+   (der Projektionsschlüssel trägt das Fenster). Der Fehlerbeleg bleibt sichtbar.
 2. `no-vorgaenge` ist ein **ehrlicher Leerzustand** und bleibt ein Erfolg mit 0 —
    kein Zurückstellen eines gesunden leeren Mandats.
 3. `decision-error` (ein echter Fehler im Überspring-Gewand) wird **geworfen**: Versuch,
@@ -155,6 +163,7 @@ READY; (b) kein laufendes Nachweisfenster; (c) Betreiber hat §8 (Messwerte/Gren
    hinterlässt nichts). *Rein lesende Abnahme danach:* `helmut_jobs`, `llm_reservations`
    existieren; 20 `helmut_`-Funktionen; `relrowsecurity=true` und `relforcerowsecurity=true`
    für beide neuen Tabellen; Bestandszahlen aller Alt-Tabellen unverändert.
+   **✅ Erledigt 2026-08-11, 10:47–10:52 UTC — alle Abnahmekriterien erfüllt (Beleg §12).**
 2. **Regellauf bei Flags aus beobachten** (ein Zyklus, z. B. 16:00-pipeline): Verhalten
    unverändert, keine Zeile in `helmut_jobs` (Migration ist ohne Flag wirkungslos —
    bewiesen, Flagmatrix 75/75).
@@ -335,3 +344,60 @@ bedingungslos dieselbe Route — er ist damit der **eingebaute tägliche Idempot
 | Kanonischer Offline-Gesamtlauf (`run-offline-tests` über `lokal.js`) + Browser-Smoke | siehe PR-Beschreibung (echte Zahlen) |
 
 Die OFFEN-Punkte sind ausnahmslos ehrliche „erst in Production beweisbar"-Markierungen.
+
+## 12 · Migrationsbeleg Production (Sprint 2026-08-11/3, ausdrückliche Freigabe)
+
+**Ziel eindeutig bestätigt:** Supabase-Projekt `ddckuvvpcytqbyfmbvie` („ernisch's Project",
+eu-west-1, `ACTIVE_HEALTHY`, PostgreSQL **17.6**) — das einzige Projekt der Organisation,
+identisch mit dem in [`restore-uebung-2026-07-28.md`](restore-uebung-2026-07-28.md)
+dokumentierten Production-Projekt. Quellstand: `main` = `9663fc8b` (Merge PR #240),
+Arbeitsbaum sauber, Production-Deployment `dpl_HsbK5VJsp1T5A8SpwexgVmqbVsy8` READY mit
+exakt diesem Commit. Migrationsweg: MCP `apply_migration` (derselbe belegte Weg wie
+`20260727`/`20260728`). Supabase-CLI in der Sitzung nicht installiert (nicht benötigt);
+der Supabase-Changelog war wegen Egress-Sperre (`supabase.com`) nicht abrufbar —
+gemildert durch den unveränderten, belegten Werkzeugweg und die versionsneutrale Kette (§5).
+
+**Vorzustand (rein lesend, vor 10:47 UTC):** 0 OP-30-Tabellen, 0 OP-30-Funktionen,
+Voraussetzung `llm_budget_counters` vorhanden (39 Zeilen, `global.used`=39); Historie mit
+19 Migrationen, keine der sechs registriert; keine Sperren/lang laufenden Operationen;
+43 Tabellen mit erfassten Zeilenzahlen; genau 5 aktive Mandate; `mdb-a` wie in §9;
+OP-31-Belege 5/5 (Morgenlage 05:00) + 5/5 (Lage 05:45); Runtime-Fehler nur die bekannten
+Basisklassen (Google-Timeouts, `lage-check`-Zeitlimit 10:00 UTC).
+
+**Anwendung (SHA256 der Vorwärtsdateien, Reihenfolge = §5; jede einzeln geprüft):**
+
+| # | Datei | SHA256 (Kurzform) | Registriert (Version) | Ergebnis |
+|---|---|---|---|---|
+| 1 | `20260808_scalable_job_queue.sql` | `d2a32f41…3711761` | `20260811104749` | ✅ Tabelle + RLS true/true, 7 Indizes, 1 Trigger, 7 Funktionen, 0 Fremdrechte |
+| 2 | `20260808_jobqueue_abhaengigkeiten.sql` | `e55538d5…c60c7d89` | `20260811104841` | ✅ `helmut_jobs_offen(text[],text[])` + `helmut_defer_job`, Fenster-Typ-Index |
+| 3 | `20260808_jobqueue_bereinigung.sql` | `bf073594…257639b1` | `20260811104923` | ✅ Vorschau + Bereinigen (Default Trockenlauf), Bereinigungs-Index |
+| 4 | `20260808_llm_budget_fairness.sql` | `e00e771d…53d92aa` | `20260811105100` | ✅ `llm_reservations` RLS true/true, 5 Funktionen, `llm_budget_counters` unberührt |
+| 5 | `20260809_jobqueue_narrativ.sql` | `0f4675d9…6ca9a1` | `20260811105131` | ✅ `helmut_jobs_type_chk` enthält alle fünf Typen |
+| 6 | `20260809_jobqueue_wiedervorlage.sql` | `f1181472…fc7b306` | `20260811105229` | ✅ Spalte `wiedervorlagen` + Check + Index + 3 Funktionen |
+
+**Abnahme (rein lesend, vollständig grün):** Historie enthält exakt die sechs Einträge in
+dieser Reihenfolge · 2 neue Tabellen, RLS **aktiviert und erzwungen**, **keine** Policy,
+**0** Rechte für `anon`/`authenticated`/PUBLIC (Tabellen und alle Funktionen) · 19 neue
+`helmut_`-Funktionen mit korrekten Signaturen, **0 SECURITY DEFINER**, überall fester
+`search_path` (+ bestehende `helmut_reserve_llm_call` = die 20 aus §6.1) · 13 Indizes auf
+den neuen Tabellen (11 explizite + 2 PK), **0 ungültige**, 0 unvalidierte Constraints ·
+Policies gesamt unverändert 24 · **Bestandszeilenzahlen aller geprüften Alt-Tabellen
+byte-identisch zum Vorzustand** · 5 aktive Mandate unverändert · `mdb-a` unverändert inert ·
+`global.used` unverändert 39 (**0 KI-Aufrufe/Kosten**) · `helmut_jobs`/`llm_reservations`
+**leer** (kein Worker, kein Cronlauf ausgelöst, kein Push) · OP-31-Belege unverändert ·
+im Migrationsfenster 10:47–10:52 UTC **0 neue Runtime-/Datenbankfehler**.
+
+**Security-Advisor (nach der Migration):** kein neuer WARN/ERROR-Befund. Neu (migrationsbedingt)
+nur der **beabsichtigte** INFO-Hinweis `rls_enabled_no_policy` für `helmut_jobs` und
+`llm_reservations` (RLS an + erzwungen ohne Policy = die zwei unabhängigen Riegel des
+geprüften Vertrags; gleiche Klasse wie bei 18 Bestandstabellen). Vorbestehend und unverändert:
+`extension_in_public` (`vector`, WARN) und die `rls_enabled_no_policy`-INFOs der Bestandstabellen.
+
+**Rücknahmefähigkeit:** die sechs `_rollback.sql` referenzieren exakt die jetzt vorhandenen
+Objekte (Tabellen, alle 19 Funktionen mit passenden Signaturen, alle 11 expliziten Indizes,
+Trigger, Constraints) — der Rücknahmeweg aus §7 passt unverändert. **Keine Rücknahmedatei
+wurde angewendet**; Anwendung bleibt freigabepflichtig.
+
+**Nicht getan (Verbote eingehalten):** kein Flag gesetzt/geändert, keine Env-Variable, kein
+Worker, kein manueller Cronlauf, keine Testdaten, keine Mandatsänderung, `mdb-a` unangetastet,
+keine Rücknahme, keine Codeänderung, kein Merge.
