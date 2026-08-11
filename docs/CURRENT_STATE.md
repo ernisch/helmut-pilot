@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-11/3** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30**, §7a — PR #233/#235/#236/#237/#240 gemergt; **die sechs Vorwaertsmigrationen sind am 2026-08-11 auf Production angewendet und abgenommen**, alle OP-30-Flags weiter **aus**, nichts aktiviert; Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §12. **(c) OP-31 Frischevertrag BESTANDEN** — PR #238/#239 gemergt, Morgenlauf 2026-08-11: `belegt=5/5`, ein Push je Mandat. **(d)** Befund `mdb-a`/`dec-y` geklaert, kein Blocker, Bereinigungsplan im Runbook §9). Diese Datei enthaelt
+**Stand: 2026-08-11/4** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30**, §7a — PR #233/#235/#236/#237/#240/#241 gemergt; die sechs Vorwaertsmigrationen sind am 2026-08-11 angewendet und abgenommen (Runbook §12), und der **Neutralitaetsnachweis des ersten Regellaufs ist BESTANDEN** (Runbook §13): alle OP-30-Flags weiter **aus**, nichts aktiviert, null Zusatzkosten. **(c) OP-31 Frischevertrag BESTANDEN** — PR #238/#239 gemergt, Morgenlauf 2026-08-11: `belegt=5/5`, ein Push je Mandat. **(d)** Befund `mdb-a`/`dec-y` geklaert, kein Blocker, Bereinigungsplan im Runbook §9). Diese Datei enthaelt
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -18,10 +18,10 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 ## 2 · Stand auf `main`
 
-- **HEAD `9663fc8`** = Merge von **PR #240** (OP-30-Aktivierungsvorbereitung: portierter
-  Überspring-Fix + Runbook; Production-Deployment `dpl_HsbK5VJ…` READY 2026-08-11,
-  Commit gegengeprüft). Davor `dcd6da5` = **PR #239**, `6030cbb7` = **PR #238**
-  (OP-31; erster Morgenlauf **bestanden**, §7a/§9).
+- **HEAD `6ed4f65`** = Merge von **PR #241** (Doku-PR: OP-30-Migrationsbeleg;
+  Production-Deployment `dpl_F4e6ojyF5g4J9HZJGF28sWqHEEvW` READY 2026-08-11T11:53:30Z,
+  Commit gegengeprüft, **Regellauf darauf neutral**, §7a). Davor `9663fc8` = **PR #240**,
+  `dcd6da5` = **PR #239**, `6030cbb7` = **PR #238** (OP-31, §7a/§9).
 - Davor `ec2e208` = **PR #237**, `0f047b1` = **PR #236**, `40e7708` = **PR #235**,
   `559a3d9` = **PR #233**, `1f10d66` = **PR #234**, `a07954df` = **PR #232**,
   `f4f4500b` = **PR #229** (K1–K8, kanonisch
@@ -106,7 +106,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **dieser Sprint** | Doku: OP-30-Vorwärtsmigrationen auf Production angewendet (Migrationsbeleg Runbook §12, O5-Präzisierung) | reine Doku, **mergefähig nach Review** |
+| **dieser Sprint** | Doku: Neutralitätsnachweis des ersten Regellaufs nach PR #241 (Runbook §13, §6 Schritt 2 erledigt) | reine Doku, **mergefähig nach Review** |
 | **#231** (Draft) | OP-03 Konten-Vorbedingung, 1 Konto je Mandat | in §6 bisher nicht geführt (Korrektur 2026-08-11/2); Betreiberentscheidung |
 | **#224** (Draft) | F-E2E: Lage-Rangfolge aus berechnetem Rang statt Ablage | behauptet die Behebung des CI-Nichtdeterminismus F-E2E; **nicht reviewt, nicht abgenommen** |
 | **#225** (Draft) | „Produktroadmap für LINIE" | nicht aus dem Helmut-Arbeitsstrang; Einordnung beim Betreiber |
@@ -201,12 +201,12 @@ gehärtet, 7 neue Vertragstests; der alte Branch ist vollständig ausgewertet. `
 Testfixture-Write mit Production-Env vor dem lokalen Schutz; **kein aktiver Datenweg,
 kein Blocker** (Runbook §9).
 
-**Sprint „OP-30-Vorwärtsmigrationen Production" (2026-08-11/3, ausdrückliche Freigabe).**
-Alle sechs Paare 10:47–10:52 UTC über MCP `apply_migration` (Projekt `ddckuvvpcytqbyfmbvie`)
-angewendet; lesende Abnahme vollständig grün: Historie exakt in Reihenfolge, RLS aktiviert +
-erzwungen, keine Policy, 0 Fremdrechte, 0 SECURITY DEFINER, Bestandsdaten/Mandate/`mdb-a`/
-`global.used` unverändert, `helmut_jobs`/`llm_reservations` leer, Security-Advisor ohne
-neuen WARN/ERROR. **Alle OP-30-Flags aus, nichts aktiviert.** Beleg: Runbook §12.
+**Sprint „OP-30-Vorwärtsmigrationen Production" (2026-08-11/3).** Sechs Paare 10:47–10:52
+UTC über MCP `apply_migration` angewendet, lesende Abnahme grün (Runbook §12).
+**Sprint „Neutralitätsnachweis" (2026-08-11/4): BESTANDEN** — erster Regellauf nach PR #241
+(pipeline 16:03:05–16:07:03 UTC, `commit_ref=6ed4f657…`) lief unverändert auf dem Altpfad:
+`erfolgreich=5 fehlgeschlagen=0 zustand=ok`, `helmut_jobs`/`llm_reservations` **nie
+beschrieben** (`n_tup_ins=0`), +2 KI-Aufrufe = `verstanden=2` des Altpfads. Beleg §13.
 
 **Folge für OP-25:** eine spätere Aktivierung verändert `quellenVereinigung`, die
 K2.1-Sichtbarkeitsmengen und die Laufzeitbilanz ⇒ **OP-25 muss danach von vorn**.
@@ -283,15 +283,14 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Runbook §6 Schritt 1 ist erledigt: die sechs Migrationen sind seit 2026-08-11 auf
-Production angewendet und abgenommen** (Beleg Runbook §12). Nächste Betreiberschritte:
+**Runbook §6 Schritt 1 und 2 sind erledigt:** Migrationen angewendet (§12), Regellauf bei
+Flags aus als neutral nachgewiesen (§13). Nächste Betreiberschritte:
 
-1. Doku-PR dieses Sprints reviewen/mergen; **einen Regellauf bei Flags aus kontrollieren**
-   (z. B. 16:00-pipeline: Verhalten unverändert, 0 Zeilen in `helmut_jobs`), dann
-   [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md)
-   §6 Schritt 3–5 (`HELMUT_SCALABLE_PIPELINE=on` + Redeploy → K0–K3).
-   Ausweitung auf 25+ erst nach bestandener K3 **und neu bestandenem OP-25**
-   (Stufenplan [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) §10);
+1. Doku-PR dieses Sprints reviewen/mergen, dann
+   [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §6
+   Schritt 3–5 (`HELMUT_SCALABLE_PIPELINE=on` + Redeploy → K0–K3) als **eigener
+   Aktivierungssprint mit exakt fünf Mandaten**. Ausweitung auf 25+ erst nach K3 **und neu
+   bestandenem OP-25** ([`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) §10);
    vor Stufe 5: **190 fehlende echte Profile** (es gibt 10).
 
 Parallel und unabhängig: **OP-01** (Pro + PITR); **OP-11** verifizieren; **#218** schließen.
@@ -340,11 +339,11 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-11/3 | **OP-30-Vorwärtsmigrationen Production** (§7a): alle sechs Paare angewendet (10:47–10:52 UTC), lesende Abnahme grün, Advisor ohne neuen WARN/ERROR, Flags aus, nichts aktiviert · Beleg Runbook §12 | **erfolgreich abgeschlossen** (Doku-PR offen; Aktivierung = separater Sprint) |
+| 2026-08-11/4 | **OP-30-Neutralitätsnachweis** (§7a): erster Regellauf nach PR #241 (pipeline 16:03:05–16:07:03 UTC) rein lesend geprüft — Altpfad unverändert, 5/5 Mandate erfolgreich, `helmut_jobs`/`llm_reservations` nie beschrieben, +2 KI-Aufrufe vollständig aus dem Altpfad erklärt, keine doppelten Pushs, 0 neue Fehler, `mdb-a` inert, Flags aus · Beleg Runbook §13 | **erfolgreich abgeschlossen** (Doku-PR offen) |
+| 2026-08-11/3 | **OP-30-Vorwärtsmigrationen Production** (§7a): alle sechs Paare angewendet (10:47–10:52 UTC), lesende Abnahme grün, Advisor ohne neuen WARN/ERROR, Flags aus, nichts aktiviert · Beleg Runbook §12 | **erfolgreich abgeschlossen** (Aktivierung = separater Sprint) |
 | 2026-08-11/2 | **OP-30-Aktivierungsvorbereitung 5 Mandate** (§7a): Überspring-Produktfehler portiert (`jobqueue-vertrag` 120/120), Migrationskette 31/31, `mdb-a` geklärt, Runbook · Beleg [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) | **abgeschlossen** (PR #240 gemergt 2026-08-11) |
 | 2026-08-11 | **OP-31 Production-Nachweis** (§7a): erster Morgenlauf auf `6030cbb7` (PR #238), 05:00:26 UTC automatischer Vercel-Cron, `frischevertrag.belegt=5/5`, 5 relational geprüfte Erfolgsbelege, kein Doppel-Push, keine Fehlermeldung · Beleg [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) §11 | **abgeschlossen** |
 | 2026-08-10 | **OP-31 Frischevertrag des Morgenbriefings** (§7a): mandatsscharfe Lauf-Quittung ohne Migration, adversarialer Review sechs echte Befunde behoben (Tagesbeleg ohne Mandats-/Tagesprüfung, Abdeckungszahl zählte FEHLER als „belegt"). Tests 69/69 · 68/68 · 34/34 · Gesamt 238/242 · Smoke 32/32 | **teilweise abgeschlossen** (Merge und Nachweis folgten 2026-08-11, Zeile oben) |
 | 2026-08-09/3 | **OP-30 Kapazität der Morgenlage + R4/R4b** — doppelte Budgetzählung an echter PostgreSQL reproduziert und behoben, Kapazität slotgenau gemessen, kleinste sichere Lösung ⇒ 200/200 im Morgenfenster mit 59,6 % Reserve; R6 im Testgerüst entschärft · Beleg [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) | **teilweise abgeschlossen**, PR #237 gemergt (Migration, Aktivierung und Production-Nachweis offen) |
-| 2026-08-09/2 | **E1 `tenant_narrative` + unabhängiger Abschlussreview**: Lage-Narrativ als fünfter Auftragstyp über die Warteschlange (Flag default AUS, Migration nicht angewendet); Review behob R1–R3, benannte R4/R6 · Belege [`lage-narrativ-warteschlange-2026-08-09.md`](betrieb/lage-narrativ-warteschlange-2026-08-09.md) · [`op30-e1-abschlussreview-2026-08-09.md`](betrieb/op30-e1-abschlussreview-2026-08-09.md) | **abgeschlossen**, PR #236 gemergt |
 
-Die OP-30-Sprints vom 2026-08-08 stehen vollständig in den Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) trägt den CI-Basisrot-Befund). Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 stehen kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 und ältere Beweisketten: **Archiv** ([`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)).
+Der Sprint 2026-08-09/2 (E1 `tenant_narrative`, PR #236 gemergt) und die OP-30-Sprints vom 2026-08-08 stehen vollständig in den Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) trägt den CI-Basisrot-Befund). Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 stehen kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 und ältere Beweisketten: **Archiv** ([`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)).
