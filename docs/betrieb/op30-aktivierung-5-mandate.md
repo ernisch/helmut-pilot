@@ -50,6 +50,13 @@ Vorgänger: [`op30-kapazitaet-morgenslots-2026-08-09.md`](op30-kapazitaet-morgen
 > Lauf durch `cronSchwererPfad` — entschieden wird das am **crawl 04:00 UTC / 06:00 Uhr
 > Berlin** (§16.6). **Der Fünferlauf ist nicht bestanden; K2 und K3 bleiben offen** (§16.10).
 > Die Korrektur der Altersgrenze ist ausdrücklich **ein eigener Folgesprint**.
+>
+> **Nachtrag 2026-08-12/2 — WIRKUNGSNACHWEIS BESTANDEN (rein lesend).** Der crawl 04:00 UTC
+> lief **vollständig über den Altpfad**: Laufquittung `[cron/crawl/globalphase]` statt
+> `[cron/crawl/warteschlange]`, `erfolgreich=5 fehlgeschlagen=0 zustand=ok`, und
+> `helmut_jobs` hat **keinen einzigen Schreibvorgang** gesehen (`n_tup_ins/upd/del`
+> unverändert 235/202/0). **OP-30 ist damit nachweislich aus**, §7 Schritt 5 ist erfüllt und
+> der Rücknahmeplan vollständig abgenommen — **Beleg §16.12**.
 
 ---
 
@@ -251,6 +258,8 @@ vor 3); es entsteht dabei kein stiller Erfolg und keine doppelte Arbeit
    (bewiesen, Kette 6.1–6.3).
 5. Abnahme des Rückbaus: nächster Regellauf zeigt den Altpfad (Logzeile ohne
    `warteschlange`), Morgenbriefing 5/5 Frischebelege, keine neuen Zeilen in `helmut_jobs`.
+   **✅ Erfüllt 2026-08-12, crawl 04:01:15–04:04:40 UTC — Wirkungsnachweis bestanden
+   (Beleg §16.12): Altpfad, 5/5 Mandate, `helmut_jobs` ohne jeden Schreibvorgang.**
 
 **Doppelte Verarbeitung/Pushs beim Rückbau:** strukturell ausgeschlossen — Push gibt es nur
 auf der unveränderten `morning-briefing`-Route; Abruf/Projektion wechseln atomar mit dem
@@ -1169,3 +1178,133 @@ Production-Datenänderung · keine Mandatsänderung · `mdb-a` unangetastet · k
 angewendet oder zurückgenommen · keine Codeänderung · **keine Korrektur der Altersgrenze** ·
 keine Grenzwertänderung · keine Testdaten · kein 403-Umgehungsversuch · keine Geheimnisse
 ausgegeben · kein Merge · **keine Ausweitung auf 25 Mandate**.
+
+### 16.12 Wirkungsnachweis am ersten Regellauf nach der Abschaltung — **BESTANDEN**
+
+**Erfüllt §7 Schritt 5 und schließt die offene Frage aus §16.5/§16.10 Punkt 3.**
+Geprüft: der reguläre Vercel-Cron **`crawl` 04:00 UTC am 2026-08-12** — der erste Lauf durch
+`cronSchwererPfad` nach dem Rücknahme-Redeploy. Rein lesend, kein manueller Lauf, keine
+Änderung. Erhebungszeit 04:16–04:18 UTC / 06:16–06:18 Uhr Berlin.
+
+**Ergebnis: `HELMUT_SCALABLE_PIPELINE` ist nachweislich unwirksam. OP-30 ist aus.**
+
+#### 16.12.1 Der Lauf hat stattgefunden — und lief über den Altpfad
+
+`GET /api/cron/crawl` **HTTP 200**, `dep=dpl_7kcdpTbhLMQHH1eUNGVTcKuSYWBt` (das
+Rücknahme-Deployment), Beginn 04:01:14Z, Lauf `cron-crawl-20260812040115-0xlmm`.
+
+Laufquittung (Vercel-Runtimelog, wörtlich):
+
+```
+[cron/crawl/globalphase] 208443ms status=teilweise quellen=174 rohdokumente=1978
+  verstanden=4 frisch=false budgetGlobalMs=229731 reserveMs=40000 restMs=61287
+  lauf=cron-crawl-20260812040115-0xlmm-global
+[cron/crawl/fairness] geplant=ottilie-paola-klein-2,cem-ince,helmut-kleebank,annika-klose,
+  ruppert-st-we begonnen=<dieselben fünf> erfolgreich=5 fehlgeschlagen=0 kapazitaet=5
+  obergrenzeLaeufe=1 laufzustand=abgeschlossen abweichung=- zustand=ok
+[cron/crawl] 233079ms tenants=5 bounded=false lauf=cron-crawl-20260812040115-0xlmm
+```
+
+**Der entscheidende Unterschied ist die erste Zeile.** Am 2026-08-11 mit aktivem Flag stand
+dort `[cron/crawl/warteschlange] … geplant=193 neu=193 worker=2 …` (§15.4). Heute steht dort
+`[cron/crawl/globalphase]`, und **keine einzige Logzeile des Laufs enthält `warteschlange`**.
+Der Lauf durchlief den bekannten Altpfad: `Quellen vereinigt gesamt=174 gemeinsam=140
+mandatseigen=34 doppelteWege=0 fehlerhafteProfile=0` → `globalphase/persistenz 5937ms
+dokumente=1978 neu=1539 bestandstreffer=251 zaehlerVerfehlt=0` → `lazy-understanding`
+(clusters=1134, processed=279) → `eager-understanding` (processed=4, `reason=zeitbudget`)
+→ `vormerk-abschluss` (vorgemerkt=6, fehlgeschlagen=0) → `datenstand … versiegelt=true`.
+
+Relational bestätigt in `process_runs` (der Warteschlangenpfad schreibt dort **nicht**, §16.7):
+
+| Lauf | Zeit UTC | Status | Dauer | commit_ref |
+|---|---|---|---|---|
+| `globalphase` | 04:01:15 → 04:04:40 | `partial`, `failed_count=0`, `processed=4`, `target_count=1978` | 204 253 ms von 229 731 ms | `eb136522` |
+| `understanding-eager` | 04:03:06 → 04:04:26 | `success`, `failed_count=0`, `processed=4` | 80 257 ms | `eb136522` |
+
+Reason-String `status=teilweise budget=1 fehler=0 abruf=0 persistenz=ok cas=0 lazyskip=0
+nv=0 vk=932` — formgleich mit allen bisherigen `globalphase`-Läufen; `partial` ist deren
+unveränderter Normalzustand (§13.2).
+
+#### 16.12.2 Die Warteschlange wurde nicht angefasst
+
+| Prüfpunkt | vor dem Lauf (01:22Z) | nach dem Lauf (04:16Z) | Urteil |
+|---|---|---|---|
+| `helmut_jobs` Zeilen | 235 | **235** | unverändert |
+| `helmut_jobs` `max(updated_at)` | 2026-08-11 20:04:26.487Z | **2026-08-11 20:04:26.487Z** | **kein Schreibvorgang** (Trigger `helmut_jobs_kappen_trg`) |
+| `helmut_jobs` `max(created_at)` | 2026-08-11 20:03:54.674Z | **20:03:54.674Z** | kein neuer Auftrag |
+| `n_tup_ins` / `n_tup_upd` / `n_tup_del` | 235 / 202 / 0 | **235 / 202 / 0** | **kein einziges Insert/Update/Delete** |
+| `status='laeuft'` | 0 | **0** | nichts beansprucht |
+| `lease_owner` oder `lease_expires_at` | 0 | **0** | keine Lease vergeben |
+| `status='fehlgeschlagen'` · `attempts>1` | 0 · 0 | **0 · 0** | keine neuen Fehler, keine Wiederholung |
+| `first_claimed_at` gesetzt | 100 | **100** | Altbestand vom 20:00-Lauf, unverändert |
+| `llm_reservations` Zeilen · `n_tup_ins/upd/del` · `idx_scan` | 0 · 0/0/0 · 0 | **0 · 0/0/0 · 0** | weiterhin nie beschrieben, nie über Index gelesen |
+
+*Zur Vollständigkeit:* `seq_scan`/`idx_scan` auf `helmut_jobs` sind um 25 bzw. 8 gestiegen —
+das sind die **Leseabfragen dieser Prüfsitzung**. Die **Schreibzähler stehen exakt still**,
+und nur die zählen für die Frage.
+
+#### 16.12.3 Warum das zwingend ist und keine andere Erklärung zulässt
+
+Alle 235 Aufträge waren **fällig** (`due_at ≤ now`, §16.3). Mit wirksamem
+`HELMUT_SCALABLE_PIPELINE` hätte `runCronUeberWarteschlange` sie zwingend beansprucht —
+`helmut_claim_jobs` setzt `status='laeuft'`, `lease_owner` und `updated_at`. Nichts davon ist
+passiert. Die zweite denkbare Erklärung — „Flag an, aber Migration fehlt" — scheidet aus:
+in dem Fall meldet der Lauf ehrlich `verfuegbar:false / migration-fehlt` und gilt als **nicht
+ok** (§6); tatsächlich sind alle sechs Migrationen registriert (25 Einträge) und der Lauf
+meldet `zustand=ok`. **Es bleibt genau eine Erklärung: das Flag ist aus.**
+
+#### 16.12.4 Kosten, Mandate, Fehler
+
+| Prüfpunkt | Messwert | Urteil |
+|---|---|---|
+| `llm_budget_counters` 2026-08-12 `global.used` | **4** (04:04:10Z) | **vollständig erklärt**: exakt `verstanden=4` bzw. `eager-understanding processed=4` des **Altpfads**. Da `llm_reservations` nie beschrieben wurde: **0 Aufrufe, 0 Kosten durch OP-30** |
+| Rahmen | 4 von 100 (+30 Reserve) | kein Deckelkontakt |
+| Anfragen an Production seit 00:54:14Z | `/` 5 · `/api/auth/session` 2 · `/robots.txt` 1 · **`/api/cron/crawl` 1** | **genau ein Cronlauf**, keine Worker-, Admin- oder Ops-Route, kein Zweitlauf |
+| aktive Mandate | **5**, unverändert; alle fünf im Lauf `erfolgreich`, `fehlgeschlagen=0` | unverändert |
+| `mandate_profiles` letzte Änderung | 2026-08-06 08:01:31Z | unverändert |
+| `mdb-a` (`profiles`/`decisions`/`mandate_profiles`/`helmut_jobs`) | **1 / 1 / 0 / 0** | **unverändert inert** |
+| `briefings` · `profiles` · Policies · Migrationen | 163 · 10 · 24 · 25 | unverändert |
+| Vercel-Runtimefehler seit 2026-08-12T00:00Z | **keine** — auch keine Google-Timeouts (alle URL-Auflösungen des Laufs erfolgreich) | 0 neue Fehlerklassen |
+| PostgreSQL im Lauffenster 04:00–04:10Z | **eine** Routinezeile (`checkpoint starting`) — **0 ERROR, 0 WARNING, kein Sperrwarten** | sauber; deutlicher Kontrast zum OP-30-Lauf (3× `statement timeout` + `ShareLock`, §16.8) |
+| PostgreSQL seit 00:54:14Z gesamt | 5 ERROR — **ausnahmslos fehlgeschlagene Ad-hoc-Leseabfragen der Prüfsitzungen** (01:24–01:27Z); **0 FATAL, 0 PANIC, 0 Berechtigungsfehler, 0 RLS-Verstöße** | keine echten Fehler |
+| Security-Advisor | unverändert: 20× INFO `rls_enabled_no_policy` + 1× WARN `extension_in_public` | kein neuer Befund |
+
+*Ehrliche Grenze wie in §16.8:* das PostgreSQL-Logwerkzeug liefert 100 Zeilen (Fenster
+2026-08-11 05:35:59Z → 2026-08-12 04:10:10Z); die Aussagen gelten für die zurückgegebene Menge.
+
+#### 16.12.5 Was weiterhin aussteht
+
+- **Morgenlauf 05:00 UTC (07:00 Uhr Berlin) war zum Prüfzeitpunkt noch nicht gelaufen**
+  (Erhebung 04:16–04:18 UTC). `briefings` steht unverändert bei 163, für 2026-08-12 gibt es
+  **noch keine** Belegzeile — das ist erwartungsgemäß, **kein Befund**. Der OP-31-Frischebeleg
+  (`belegt=5/5`, ein Push je Mandat) ist damit die nächste **Routinebeobachtung**, nicht mehr
+  Teil des OP-30-Nachweises: der Warteschlangenpfad hat ohnehin keinen Pushaufruf (§1), und
+  OP-31 ist seit 2026-08-11 eigenständig bestanden.
+- Der zweite Beobachtungsanlass (GitHub-Actions-Watchdog 05:30 UTC, `/api/cron/pipeline`)
+  wird nicht mehr gebraucht — er könnte den Befund nur wiederholen.
+
+#### 16.12.6 Urteil
+
+1. **Die Abschaltung ist wirkungsbasiert belegt.** Der erste Regellauf durch
+   `cronSchwererPfad` nach dem Redeployment lief vollständig über den Altpfad, hat alle fünf
+   Mandate erfolgreich bearbeitet und die Warteschlange **mit keinem einzigen Schreibvorgang**
+   berührt. Damit ist §7 Schritt 5 erfüllt und der Rücknahmeplan **vollständig abgenommen**.
+2. **Production ist im Normalbetrieb** — nicht nur „still": 174 Quellen, 1 978 Rohdokumente,
+   5/5 Mandate, `zustand=ok`, 0 Fehler, 4 KI-Aufrufe.
+3. **Die 235 Aufträge bleiben unverändert liegen** und sind jetzt belegt folgenlos: ein
+   vollständiger Regellauf ist über sie hinweggegangen, ohne sie anzufassen. Sie sind
+   Datenrest, kein Betriebszustand. Ihre Bereinigung ist eine eigene, freigabepflichtige
+   Entscheidung (Rollback-SQL wird dafür **nicht** gebraucht — §7 Punkt 3).
+4. **Unverändert offen bleibt:** der **Fünferlauf ist nicht bestanden** (K2/K3 nie begonnen,
+   §16.10 Punkt 1) · die **Korrektur der Altersgrenze** ist ein eigener Folgesprint
+   (§16.10 Punkt 4) · **OP-15** (Personenquellen seit 2026-08-06 ohne erfolgreichen Abruf)
+   ist beziffert und offen.
+
+#### 16.12.7 Nicht getan (Verbote eingehalten)
+
+Kein manueller Cronlauf und kein Cron ausgelöst — der Slot kam von selbst · kein Flag ·
+keine Env-Variable · kein Redeploy · kein Worker · **keiner der 235 Aufträge verändert,
+verschoben oder gelöscht** · keine Reservierung angefasst · keine Production-Datenänderung ·
+keine Mandatsänderung · `mdb-a` unangetastet · keine Migration angewendet oder zurückgenommen ·
+keine Codeänderung · **keine Korrektur der Altersgrenze** · keine Grenzwertänderung ·
+kein 403-Umgehungsversuch · kein Merge · **keine Ausweitung auf 25 Mandate**.
