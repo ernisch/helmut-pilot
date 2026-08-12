@@ -96,7 +96,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#244** (dieser Sprint), Branch `claude/queue-age-measurement-ka8gbz` | **Berichtigte Altersmessung** (§7b): Migration `20260812` + Rollback, `betriebsstatus` auf Wartezeit, 2 neue Suiten, Runbook §17/§18 | **offen, nicht gemergt**; beide Pflicht-Checks **grün** auf `914458e`. Merge allein ändert Production **nicht** (Flag aus, Migration nicht angewendet) |
+| **#244** (dieser Sprint), Branch `claude/queue-age-measurement-ka8gbz` | **Berichtigte Altersmessung** (§7b): Migration `20260812` + Rollback, `betriebsstatus` auf Wartezeit, 2 neue Suiten, Runbook §17/§18 | **offen, nicht gemergt**; beide Pflicht-Checks **grün** (zuletzt `201335f`). Merge allein ändert Production **nicht** (Flag aus, Migration nicht angewendet) |
 | **#231** (Draft) | OP-03 Konten-Vorbedingung, 1 Konto je Mandat | in §6 bisher nicht geführt (Korrektur 2026-08-11/2); Betreiberentscheidung |
 | **#224** (Draft) | F-E2E: Lage-Rangfolge aus berechnetem Rang statt Ablage | behauptet die Behebung des CI-Nichtdeterminismus F-E2E; **nicht reviewt, nicht abgenommen** |
 | **#225** (Draft) | „Produktroadmap für LINIE" | nicht aus dem Helmut-Arbeitsstrang; Einordnung beim Betreiber |
@@ -190,7 +190,7 @@ Migration `20260812` anwenden · 4. **erst dann** Flag + Redeploy, K0–K3 von v
 `jobqueue-alter-datenbank-test.js` (echte PostgreSQL 16.13) **26 PASS** ·
 `jobqueue-ruecknahme-datenbank-test.js` (Export/Löschung/Wiederherstellung, §17.8) **31 PASS** ·
 Vertragstest **125 PASS** · Mutationsprobe **10/10 rot** · kanonischer Lauf **239/244** (5 rot =
-Basisrot, auf `main` gegengeprüft). **CI: beide Pflicht-Checks grün auf `914458e`**
+Basisrot, auf `main` gegengeprüft). **CI: beide Pflicht-Checks grün, zuletzt auf `201335f`**
 (`Syntax + Offline-Suiten`, `Browser-/Mobile-Smoke (Chromium)`). **PR #244 ist offen und nicht
 gemergt.** **OP-30 bleibt ausgeschaltet**, Migration `20260812` **nicht angewendet**, die
 235 Aufträge **unverändert**. **OP-15 bleibt separat offen** (Personenquellen seit 2026-08-06
@@ -342,7 +342,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-12/3 | **Altersgrenze der Warteschlange berichtigt** (§7b): Fehlbefund an echter PostgreSQL 16.13 reproduziert (504 576 s) und behoben — die Grenze misst jetzt die Wartezeit ab `max(created_at, first_due_at)`; Migration `20260812` + Rollback; **3 neue Suiten** (59 + 26 + 31 PASS), Vertragstest 125 PASS, CI beide Pflicht-Checks grün auf `914458e`; die 235 Production-Aufträge rein lesend untersucht ⇒ **vor dem nächsten Versuch zu neutralisieren**, Rücknahmeweg lokal bewiesen (Runbook §17.7/§17.8) | **erfolgreich abgeschlossen** (Merge, Migration und Betreiberschritte sind getrennte, freigabepflichtige Betriebsschritte) |
+| 2026-08-12/3 | **Altersgrenze der Warteschlange berichtigt** (§7b): Fehlbefund an echter PostgreSQL 16.13 reproduziert (504 576 s) und behoben — die Grenze misst jetzt die Wartezeit ab `max(created_at, first_due_at)`; Migration `20260812` + Rollback; **3 neue Suiten** (59 + 26 + 31 PASS), Vertragstest 125 PASS, CI beide Pflicht-Checks grün (zuletzt `201335f`); die 235 Production-Aufträge rein lesend untersucht ⇒ **vor dem nächsten Versuch zu neutralisieren**, Rücknahmeweg lokal bewiesen (Runbook §17.7/§17.8) | **erfolgreich abgeschlossen** (Merge, Migration und Betreiberschritte sind getrennte, freigabepflichtige Betriebsschritte) |
 | 2026-08-12/2 | **OP-30-Wirkungsnachweis der Abschaltung** (§7a): crawl 04:00 UTC lief über den Altpfad (`[cron/crawl/globalphase]`, 5/5 Mandate, `zustand=ok`), `helmut_jobs` ohne jeden Schreibvorgang (235/202/0), `llm_reservations` 0/0/0, KI `used=4` vollständig aus dem Altpfad erklärt, 0 Fehler ⇒ **OP-30 nachweislich aus, Rücknahmeplan abgenommen** · Runbook §16.12 | **erfolgreich abgeschlossen** (Doku-PR #243 gemergt) |
 
 Die Sprints 2026-08-12/1 (Rücknahmebeleg, Runbook §16), 2026-08-11/6 (K0 bestanden, bei K1 gestoppt, §15), 2026-08-11/5 (**blockiert**, kein Schreibweg zur Vercel-Env, §14), 2026-08-11/4 (Neutralitätsnachweis, §13) und 2026-08-11/3 (Vorwärtsmigrationen, §12) stehen kanonisch im Runbook. Der Sprint 2026-08-09/2 (E1 `tenant_narrative`, PR #236 gemergt) und die OP-30-Sprints vom 2026-08-08 stehen vollständig in den Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) trägt den CI-Basisrot-Befund). Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 stehen kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 und ältere Beweisketten: **Archiv** ([`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)).

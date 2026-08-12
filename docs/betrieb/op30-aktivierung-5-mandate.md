@@ -1443,7 +1443,7 @@ nicht aussagekräftig und der Versuch beginnt gar nicht erst.
 | `scripts/skalierung-1000-test.js` | **70 PASS / 0 FAIL / 2 OFFEN** (die 2 offenen sind Bestand) |
 | `scripts/vorgangskontext-test.js` | **103 PASS / 0 FAIL** |
 | `node scripts/run-offline-tests.js` (kanonisch) | **240/245 Suiten grün** (mit den drei neuen Suiten). Die 5 roten sind **Basisrot** — `kalender-ics`, `privacy-vollstaendigkeit`, `profile-db`, `provision-tenant`, `tenant-neutrality`, auf unverändertem `main` gegengeprüft; sie sind lokale Umgebungsfehler und im CI grün |
-| **CI-Gate von PR #244** — `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)` | **beide grün** auf Commit `914458e` (2026-08-12 09:35 UTC) |
+| **CI-Gate von PR #244** — `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)` | **beide grün**, zuletzt auf Commit `201335f` (2026-08-12 13:23 UTC); davor `914458e` (09:35 UTC) |
 
 ### 17.7 Die 235 Production-Aufträge — rein lesende Untersuchung
 
