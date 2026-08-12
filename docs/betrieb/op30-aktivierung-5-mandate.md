@@ -1436,12 +1436,14 @@ nicht aussagekräftig und der Versuch beginnt gar nicht erst.
 |---|---|
 | `scripts/jobqueue-alter-test.js` (neu, offline; Fälle a–h + adversariale Mutationsproben) | **59 PASS / 0 FAIL** |
 | `scripts/jobqueue-alter-datenbank-test.js` (neu, **echte PostgreSQL 16.13**; Fehlbefund reproduziert, Fix belegt, Rechte, Rollback) | **26 PASS / 0 FAIL** |
+| `scripts/jobqueue-ruecknahme-datenbank-test.js` (neu, **echte PostgreSQL 16.13**; Export → Löschung → Wiederherstellung → Gleichheit, drei Abbruchfälle — der Nachweis zu §17.8) | **31 PASS / 0 FAIL** |
 | `scripts/jobqueue-vertrag-test.js` (mit DB-Gleichheitsteil, neuer Fall F) | **125 PASS / 0 FAIL** |
 | `scripts/jobqueue-datenbank-test.js` (echte PostgreSQL) | **55 PASS / 0 FAIL** |
 | `scripts/jobqueue-mutationsprobe.js` (echte PostgreSQL) | **10/10 ROT** (alle Mutationen erkannt) |
 | `scripts/skalierung-1000-test.js` | **70 PASS / 0 FAIL / 2 OFFEN** (die 2 offenen sind Bestand) |
 | `scripts/vorgangskontext-test.js` | **103 PASS / 0 FAIL** |
-| `node scripts/run-offline-tests.js` (kanonisch) | **238/244 Suiten grün**; die 6 roten sind **Basisrot** — 5 davon (`kalender-ics`, `privacy-vollstaendigkeit`, `profile-db`, `provision-tenant`, `tenant-neutrality`) auf unverändertem `main` gegengeprüft, die sechste (`vorgangskontext`) war die Migrations-Allowlist und ist **behoben** ⇒ **239/244**, unverändert 5 vorbestehende |
+| `node scripts/run-offline-tests.js` (kanonisch) | **240/245 Suiten grün** (mit den drei neuen Suiten). Die 5 roten sind **Basisrot** — `kalender-ics`, `privacy-vollstaendigkeit`, `profile-db`, `provision-tenant`, `tenant-neutrality`, auf unverändertem `main` gegengeprüft; sie sind lokale Umgebungsfehler und im CI grün |
+| **CI-Gate von PR #244** — `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)` | **beide grün** auf Commit `914458e` (2026-08-12 09:35 UTC) |
 
 ### 17.7 Die 235 Production-Aufträge — rein lesende Untersuchung
 
@@ -1500,46 +1502,235 @@ Idempotenzsperre gegen erneutes Verstehen derselben Dokumentmenge).
 **In dieser Reihenfolge, vollständig, sonst kein zweiter Versuch.** Alles hiervon ist
 freigabepflichtig (CLAUDE.md §5); diese Sitzung hat **nichts davon ausgeführt**.
 
-**Schritt 1 — Sicherung der 180 offenen Aufträge (verifizierbar, rein lesend).**
+> **Der gesamte Ablauf inklusive Rückweg ist an einer echten PostgreSQL 16.13 bewiesen:**
+> `scripts/jobqueue-ruecknahme-datenbank-test.js` — **31 PASS / 0 FAIL**, gegen eine
+> wegwerfbare lokale Datenbank mit demselben Bestandsbild (180 offen / 55 erledigt). Die
+> Suite führt exakt die hier stehenden Anweisungen aus; weicht dieses Runbook später ab,
+> wird sie rot. Ohne diesen Nachweis darf Schritt 2 **nicht** ausgeführt werden.
+
+**Vorbedingungen für den gesamten Ablauf (alle müssen gelten):**
+
+1. `HELMUT_SCALABLE_PIPELINE` ist **`off`** und das ist am laufenden Deployment geprüft. Das
+   ist der **einzige** wirksame Riegel gegen Verarbeitung — die Datenbank selbst kann sie
+   nicht verhindern (§17.8-R7).
+2. Es läuft gerade **kein** schwerer Cronslot (crawl 04:00/20:00, pipeline 16:00 UTC).
+3. Die Zahl **180** ist unmittelbar vorher gemessen worden (Schritt 0). Sie ist eine
+   **Eingabe**, keine Selbstauskunft — ein Skript, das seine eigene Erwartung nachrechnet,
+   prüft nichts.
+
+#### Schritt 0 — Erwartung messen (rein lesend)
+
 ```sql
--- Vollständiger Export als eine JSON-Zeile; Ergebnis abspeichern (Datei/Ticket).
-select jsonb_agg(to_jsonb(j) order by j.created_at)
-  from public.helmut_jobs j
- where j.status in ('wartend','laeuft');
--- Erwartet: 180 Elemente. Gegenprobe:
-select count(*) from public.helmut_jobs where status in ('wartend','laeuft');
+select count(*) as offen,
+       (select count(*) from public.helmut_jobs) as gesamt
+  from public.helmut_jobs
+ where status in ('wartend','laeuft')
+   and created_at < timestamptz '2026-08-12 00:00:00+00';
+-- Erwartet: offen = 180, gesamt = 235. Weicht das ab: HIER anhalten und neu bewerten.
 ```
 
-**Schritt 2 — Neutralisieren (die eine Datenänderung, konditional, gedeckelt).**
+#### Schritt 1 — Vollständiger Export (rein lesend, das ist der Rückweg)
+
+```sql
+select coalesce(jsonb_agg(to_jsonb(j) order by j.id), '[]'::jsonb)
+  from public.helmut_jobs j
+ where j.status in ('wartend','laeuft')
+   and j.created_at < timestamptz '2026-08-12 00:00:00+00';
+```
+
+`to_jsonb(j)` nimmt **alle 19 Spalten** der Zeile mit — `id`, `job_type`, `idempotency_key`,
+`freshness_window`, `due_at`, `first_due_at`, `priority`, `status`, `created_at`,
+`updated_at`, `attempts`, `max_attempts`, `lease_owner`, `lease_expires_at`, `last_error`,
+`finished_at`, `payload`, `tenant_id`, `first_claimed_at` — einschließlich der Felder, die
+`null` sind. Das Ergebnis in **eine Datei** speichern (nicht in ein Ticketfeld, das
+umbricht).
+
+**Export prüfen, BEVOR gelöscht wird** (drei Prüfungen, alle müssen stimmen):
+
+```sql
+-- (E1) Anzahl im Export == gemessene Anzahl
+select jsonb_array_length(:'export'::jsonb);                       -- erwartet 180
+
+-- (E2) Jedes Element trägt ALLE Spalten der Tabelle
+select count(*) from jsonb_array_elements(:'export'::jsonb) e
+ where (select count(*) from jsonb_object_keys(e.value))
+    <> (select count(*) from information_schema.columns
+         where table_schema='public' and table_name='helmut_jobs');   -- erwartet 0
+
+-- (E3) Prüfsumme der Datei festhalten (macht den Export später belegbar)
+select md5(:'export');
+```
+
+`:'export'` ist eine psql-Variable (`psql -v export="$(cat export.json)"`); sie erzeugt ein
+korrekt maskiertes Stringliteral. **Nur wenn E1 = 180, E2 = 0 und die Prüfsumme notiert ist,
+geht es weiter.**
+
+#### Schritt 2 — Neutralisieren (die eine Datenänderung, geschützt und gedeckelt)
+
 ```sql
 begin;
-delete from public.helmut_jobs
- where status in ('wartend','laeuft')
-   and created_at < timestamptz '2026-08-12 00:00:00+00';   -- nur der Bestand vom 11.08.
--- ERWARTET: DELETE 180. Weicht die Zahl ab: ROLLBACK und neu bewerten.
+do $ruecknahme$
+declare v_geloescht bigint;
+begin
+  delete from public.helmut_jobs
+   where status in ('wartend','laeuft')
+     and created_at < timestamptz '2026-08-12 00:00:00+00';
+  get diagnostics v_geloescht = row_count;
+  if v_geloescht <> 180 then
+    raise exception 'ABBRUCH: % Zeilen geloescht, erwartet 180 — nichts veraendert', v_geloescht;
+  end if;
+end
+$ruecknahme$;
 commit;
 ```
+
+Der `raise` bricht die Transaktion ab — bei jeder anderen Zahl als 180 wird **nichts**
+gelöscht. Bewiesen in §3 der Nachweissuite (Erwartung 179 gesetzt ⇒ Abbruch, danach
+unverändert 235 Zeilen).
+
+**Gegenprobe nach dem Commit:**
+```sql
+select count(*) filter (where status in ('wartend','laeuft')) as offen,
+       count(*) as gesamt from public.helmut_jobs;   -- erwartet 0 und 55
+```
+
 Warum **Löschen** und nicht Umstatuieren: `fehlgeschlagen` würde entweder als *endgültiger
 Fehler* gezählt (sofort `kritisch`) oder von der Wiedervorlage (`helmut_jobs_wiedervorlage`,
 Typen `source_fetch`/`document_understanding`, ab 24 h) **zurückgeholt** — beides schlechter
 als der ehrliche Löschvorgang. `first_due_at` zu verschieben scheidet aus: die Spalte ist
 ausdrücklich „wird NIE verändert", eine Verschiebung wäre eine Falschaussage im Prüfpfad.
 `helmut_jobs_bereinigen` kann hier **nicht** helfen — sie schützt offene Aufträge bewusst.
+Die **55 erledigten** Aufträge bleiben stehen (Beleg des ersten Laufs; §17.7).
 
-**Rücknahme von Schritt 2:** die Export-Zeile aus Schritt 1 wieder einspielen
-(`insert into public.helmut_jobs select * from jsonb_populate_recordset(null::public.helmut_jobs, '<export>'::jsonb)`).
-Der Idempotenzschlüssel ist eindeutig — ein Wiedereinspielen kann keine Dublette erzeugen.
+#### Schritt R — Wiederherstellung (nur falls nötig)
 
-**Schritt 3 — Migration `20260812_jobqueue_altersmessung.sql` anwenden** (nach Merge des PR;
-freigabepflichtig). Gegenprobe rein lesend:
+**Wann sie zulässig ist** — alle vier Bedingungen gleichzeitig:
+
+| # | Bedingung | Warum |
+|---|---|---|
+| R-a | `HELMUT_SCALABLE_PIPELINE` ist **`off`** | sonst beansprucht der nächste Slot die Aufträge sofort — **alle 180 sind fällig** |
+| R-b | Die Exportdatei liegt vor und ihre **Prüfsumme** stimmt mit der aus Schritt 1 überein | ein halber Export wäre schlimmer als keiner |
+| R-c | Es gibt **keine** Zeile mit derselben `id` oder demselben `idempotency_key` | der Schlüssel ist global eindeutig; nach einem zwischenzeitlichen Planungslauf ist die Wiederherstellung **unzulässig**, nicht bloß unbequem |
+| R-d | Es läuft **kein** schwerer Cronslot | keine Reservierung mitten in der Transaktion |
+
+R-c wird nicht geglaubt, sondern **in derselben Transaktion geprüft** — siehe unten.
+
+```sql
+begin;
+create temporary table wh_export (daten jsonb) on commit drop;
+insert into wh_export values (:'export'::jsonb);
+create temporary view wh_zeilen as
+  select * from jsonb_populate_recordset(null::public.helmut_jobs, (select daten from wh_export));
+
+-- VARIANTE B (byte-gleich, siehe unten) — nur dann diese Zeile mit ausführen:
+-- alter table public.helmut_jobs disable trigger helmut_jobs_kappen_trg;
+
+do $wh$
+declare
+  v_erwartet   bigint := 180;
+  v_im_export  bigint;
+  v_konflikte  bigint;
+  v_eingefuegt bigint;
+  v_abweichend bigint;
+begin
+  select count(*) into v_im_export from wh_zeilen;
+  if v_im_export <> v_erwartet then
+    raise exception 'ABBRUCH: Export enthaelt % Zeilen, erwartet % — nichts eingefuegt',
+      v_im_export, v_erwartet;
+  end if;
+
+  select count(*) into v_konflikte
+    from wh_zeilen e
+    join public.helmut_jobs j
+      on j.id = e.id or j.idempotency_key = e.idempotency_key;
+  if v_konflikte > 0 then
+    raise exception 'ABBRUCH: % vorhandene Zeile(n) kollidieren mit dem Export — nichts eingefuegt',
+      v_konflikte;
+  end if;
+
+  insert into public.helmut_jobs select * from wh_zeilen;
+  get diagnostics v_eingefuegt = row_count;
+  if v_eingefuegt <> v_erwartet then
+    raise exception 'ABBRUCH: % Zeilen eingefuegt, erwartet % — Transaktion zurueckgenommen',
+      v_eingefuegt, v_erwartet;
+  end if;
+
+  -- INHALTSPRUEFUNG NOCH VOR DEM COMMIT (Variante A: `updated_at` ausgenommen, siehe unten).
+  select count(*) into v_abweichend
+    from wh_zeilen e
+    join public.helmut_jobs j on j.id = e.id
+   where (to_jsonb(j) - 'updated_at') is distinct from (to_jsonb(e) - 'updated_at');
+  if v_abweichend > 0 then
+    raise exception 'ABBRUCH: % wiederhergestellte Zeile(n) weichen vom Export ab', v_abweichend;
+  end if;
+end
+$wh$;
+
+-- nur bei VARIANTE B:
+-- alter table public.helmut_jobs enable trigger helmut_jobs_kappen_trg;
+commit;
+```
+
+**Alle vier Prüfungen liegen INNERHALB der Transaktion.** Schlägt eine fehl, ist der Zustand
+unverändert — es gibt keinen Zwischenstand, den jemand aufräumen müsste. Bewiesen in §6 der
+Nachweissuite: Schlüsselkonflikt ⇒ Abbruch, 0 eingefügt; leerer Export ⇒ Abbruch, 0 eingefügt.
+
+**Zwei Varianten, und der Unterschied ist genau ein Feld:**
+
+| Variante | Trigger | Ergebnis | Wann |
+|---|---|---|---|
+| **A (Regelfall)** | bleibt aktiv | alle 180 Zeilen in **jedem** Feld identisch **außer `updated_at`** — der Trigger `helmut_jobs_kappen_trg` stempelt es bei jedem Insert auf `now()` | wenn der fachliche Zustand zählt (Normalfall) |
+| **B (byte-gleich)** | für die Dauer der Transaktion aus | **alle 19 Felder identisch**, auch `updated_at`; der erneute Export ist byte-gleich zum ursprünglichen | wenn Byte-Gleichheit belegt werden muss (Audit) |
+
+Variante B braucht Eigentumsrechte an der Tabelle und nimmt kurz eine `ACCESS EXCLUSIVE`-
+Sperre. Der Trigger wird in **derselben** Transaktion wieder eingeschaltet — bricht sie ab,
+bleibt er an. Die Nachweissuite prüft das ausdrücklich (§7.3: `tgenabled = 'O'` danach).
+
+**Gegenprobe nach dem Commit** (beides muss stimmen):
+```sql
+-- (W1) Anzahl und Verteilung
+select count(*) filter (where status in ('wartend','laeuft')) || '/'
+    || count(*) filter (where status = 'erledigt') from public.helmut_jobs;   -- erwartet 180/55
+
+-- (W2) Inhalt gegen die Exportdatei — 0 Abweichungen, 0 fehlende Aufträge
+select (select count(*) from jsonb_populate_recordset(null::public.helmut_jobs, :'export'::jsonb) e
+          join public.helmut_jobs j on j.id = e.id
+         where (to_jsonb(j) - 'updated_at') is distinct from (to_jsonb(e) - 'updated_at')) as abweichend,
+       (select count(*) from jsonb_populate_recordset(null::public.helmut_jobs, :'export'::jsonb) e
+         where not exists (select 1 from public.helmut_jobs j where j.id = e.id)) as fehlend;
+-- erwartet: 0 | 0     (bei Variante B zusätzlich: md5 des erneuten Exports == md5 aus Schritt 1)
+```
+
+**R7 — kein unbeabsichtigtes Verarbeiten.** Wiederhergestellte Aufträge stehen auf `wartend`,
+ohne Lease, ohne Halter (Nachweissuite §8.1/§8.2). Aber **alle 180 sind fällig** und würden
+bei aktivem Flag im nächsten Slot sofort beansprucht (§8.3, ausdrücklich so gemessen). Der
+**einzige** Riegel ist deshalb `HELMUT_SCALABLE_PIPELINE=off`. Es gibt in der Tabelle kein
+„pausiert"-Feld, und ein in die Zukunft geschobenes `due_at` wäre zwar eine Bremse, aber
+keine originalgetreue Wiederherstellung mehr — dann stimmt die Gegenprobe W2 nicht mehr. Wer
+die Aufträge zurückholt, muss vor dem nächsten Einschalten des Flags neu entscheiden, was mit
+ihnen geschehen soll.
+
+**R8 — Abbruch und Rollback.** Jede der acht Prüfungen (E1–E3, Löschanzahl, Exportgröße,
+Konflikte, Einfügeanzahl, Inhalt) endet im Fehlerfall mit `raise exception` innerhalb einer
+Transaktion; PostgreSQL nimmt sie vollständig zurück. Es gibt keinen Pfad, auf dem ein
+Teilzustand entsteht. Ist bereits committet und man will zurück: Schritt R ist selbst der
+Rückweg für Schritt 2 — und für Schritt R gibt es keinen eigenen, weil er nur einfügt, was
+vorher exportiert wurde (Konfliktprüfung R-c verhindert Dubletten).
+
+#### Schritt 3 — Migration anwenden
+
+`20260812_jobqueue_altersmessung.sql` (nach Merge des PR; freigabepflichtig). Gegenprobe rein
+lesend:
 ```sql
 select round(aeltester_offener_s), round(max_mandatsalter_s), ueberfaellige_mandate_wartezeit
   from public.helmut_job_metrics(1440);   -- erwartet nach Schritt 2: 0 | 0 | 0
 ```
 
-**Schritt 4 — erst dann** `HELMUT_SCALABLE_PIPELINE=on` + Redeploy, und der Kontrollplan
-beginnt wieder bei §6 Schritt 3 mit **K0–K3**. K0 bekommt einen Punkt dazu:
-`altersvertrag = "wartezeit"` (sonst fehlt die Migration).
+#### Schritt 4 — erst dann aktivieren
+
+`HELMUT_SCALABLE_PIPELINE=on` + Redeploy; der Kontrollplan beginnt wieder bei §6 Schritt 3 mit
+**K0–K3**. K0 bekommt einen Punkt dazu: `altersvertrag = "wartezeit"` (sonst fehlt die
+Migration).
 
 **Reihenfolge ist nicht beliebig:** Schritt 2 vor Schritt 4, sonst greifen die Fallen aus
 §17.7. Schritt 3 vor Schritt 4, sonst misst K0 noch mit dem alten Vertrag.
@@ -1550,6 +1741,12 @@ Kein Flag gesetzt · keine Env-Variable geändert · kein Deployment, kein Redep
 Cronlauf ausgelöst · **kein Auftrag der 235 verändert, verschoben oder gelöscht** · keine
 Migration auf Production angewendet · keine Production-Datenänderung · keine Ausweitung auf
 25 Mandate · OP-15 **nicht** nebenbei repariert · kein Merge.
+
+**Ausdrücklich auch für §17.8:** der Export-/Lösch-/Wiederherstellungsablauf wurde
+**ausschließlich gegen eine wegwerfbare lokale PostgreSQL** ausgeführt
+(`scripts/jobqueue-ruecknahme-datenbank-test.js`, eigene Datenbank `helmut_test_ruecknahme`,
+am Ende zurückgerollt). Gegen Production liefen in diesem Sprint **nur lesende** Abfragen
+(`select`); kein `insert`, `update`, `delete`, kein DDL.
 
 ---
 
