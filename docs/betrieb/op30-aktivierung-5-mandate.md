@@ -57,6 +57,14 @@ Vorgänger: [`op30-kapazitaet-morgenslots-2026-08-09.md`](op30-kapazitaet-morgen
 > `helmut_jobs` hat **keinen einzigen Schreibvorgang** gesehen (`n_tup_ins/upd/del`
 > unverändert 235/202/0). **OP-30 ist damit nachweislich aus**, §7 Schritt 5 ist erfüllt und
 > der Rücknahmeplan vollständig abgenommen — **Beleg §16.12**.
+>
+> **Nachtrag 2026-08-12/3 — ALTERSGRENZE BERICHTIGT (Code + Migration, PR offen).** Der
+> Fehlbefund aus §15.5 ist reproduziert (echte PostgreSQL) und behoben: die Grenze misst ab
+> jetzt die **Wartezeit** ab `max(created_at, first_due_at)` statt der Fälligkeit. Ursache
+> präzisiert: die **7-Tage-Fensterbreite des Archivabrufs**, nicht (nur) OP-15 — **§17**.
+> **Production unverändert:** Flag `off`, Migration `20260812` **nicht angewendet**, die
+> 235 Aufträge **unangetastet**. Vor dem nächsten Versuch sind die 180 offenen Aufträge zu
+> neutralisieren — Begründung §17.7, Betreiberablauf §17.8.
 
 ---
 
@@ -286,7 +294,7 @@ Vercel-Runtime-Logs.
 | 8 | deduplizierte Aufträge (`neu=false` bei Einreihung) | > 0 ab dem zweiten Lauf desselben Fensters |
 | 9 | Wiederholungen (`attempts > 1`) | vereinzelt; Quote < 10 % |
 | 10 | Warteschlangengröße (wartend + läuft) | fällt nach jedem Slot; kein monotones Wachstum über 24 h |
-| 11 | Alter des ältesten offenen Auftrags | < 24 h (ab 24 h meldet `betriebsstatus` **kritisch** — bewusst dieselbe Grenze) |
+| 11 | Alter des ältesten offenen Auftrags — **berichtigt 2026-08-12, verbindlich ist §17.5**: gemessen wird die **Wartezeit** ab `max(created_at, first_due_at)`, nicht die Fälligkeit | < 24 h (ab 24 h meldet `betriebsstatus` **kritisch** — bewusst dieselbe Grenze) |
 | 12 | Pushs je Mandat und Tag | genau 1 (Morgenbriefing) |
 | 13 | gültige Frischebelege (OP-31) | 5/5, `status=erfolg` |
 | 14 | Datenbankfehler (Queue-RPCs) | 0 systematisch |
@@ -300,7 +308,7 @@ Vercel-Runtime-Logs.
 | Doppelte Verarbeitung / doppelter Push | 0 | — | **≥ 1** (kein Ermessen) |
 | `global.used` vs. Zahl fachlicher Aufrufe (R4-Gegenprobe) | Abweichung 0 | — | Abweichung **> 0** |
 | endgültig fehlgeschlagene Aufträge | 0 | 1–2/Tag, erklärbar | ≥ 3/Tag **oder** derselbe Auftrag nach Wiedervorlage erneut |
-| ältester offener Auftrag | < 12 h | 12–24 h | > 24 h (`betriebsstatus` kritisch) |
+| ältester offener Auftrag (**Wartezeit**, berichtigte Fassung → **§17.5**; der reine Fälligkeitsrückstand ist **nie allein** ein Abbruchgrund) | < 12 h | 12–24 h | > 24 h (`betriebsstatus` kritisch) |
 | Slotdauer | ≤ 270 s | 270–280 s einmalig | > 280 s **zweimal in Folge** |
 | `used` = 100 (Deckel) | nie | einmal, nach 20:00 UTC erreicht | vor 12:00 UTC erreicht **oder** 2 Tage in Folge 100 |
 | Frischebelege | 5/5 | 4/5 einmal | < 5 zweimal in Folge |
@@ -867,7 +875,11 @@ zeigt für genau diese Quellen seit Wochen `Timeout`/`HTTP 503`).
    der Personenquellen bestand schon vorher; der Altpfad kannte keinen Fälligkeitsbegriff und
    hat ihn deshalb **nie sichtbar gemacht**. Die Warteschlange macht ihn zum ersten Mal
    sichtbar — das ist die von CLAUDE.md §4.4 gewollte Ehrlichkeit, kein neuer Schaden.
-3. **Daraus folgt ein echter Mangel am Nachweisvertrag, nicht (nur) am Betrieb:** die Grenze
+3. **Daraus folgt ein echter Mangel am Nachweisvertrag, nicht (nur) am Betrieb** — *berichtigt
+   und abgeschlossen am 2026-08-12, siehe §17: die Ursache ist die **7-Tage-Fensterbreite des
+   Archivabrufs**, nicht (nur) der OP-15-Rückstand; die Grenze wäre bei jedem ersten Lauf in
+   einem laufenden Archivfenster eingetreten. Punkt 2 dieser Liste bleibt richtig, Punkt 3
+   ist durch §17.2 präzisiert:* die Grenze
    „ältester offener Auftrag" unterstellt stillschweigend, dass `due_at` das Alter des
    *Auftrags* misst. Tatsächlich misst sie das Alter der *Fälligkeit* und übernimmt damit
    beim allerersten Lauf einen vorbestehenden Datenrückstand. Für die Wiederholung muss die
@@ -1308,3 +1320,258 @@ verschoben oder gelöscht** · keine Reservierung angefasst · keine Production-
 keine Mandatsänderung · `mdb-a` unangetastet · keine Migration angewendet oder zurückgenommen ·
 keine Codeänderung · **keine Korrektur der Altersgrenze** · keine Grenzwertänderung ·
 kein 403-Umgehungsversuch · kein Merge · **keine Ausweitung auf 25 Mandate**.
+
+---
+
+## 17 · Berichtigte Altersmessung der Warteschlange (Sprint 2026-08-12/3)
+
+> **Stand:** Code, Migration und Tests liegen auf `claude/queue-age-measurement-ka8gbz`
+> (PR offen, **nicht** gemergt). **In Production ist noch nichts davon wirksam** —
+> `HELMUT_SCALABLE_PIPELINE` bleibt `off`, die Migration `20260812` ist **nicht angewendet**,
+> die 235 Aufträge sind **unverändert**. Dieser Sprint hat rein lesend auf Production
+> zugegriffen.
+
+### 17.1 Der Fehlbefund, in einem Satz
+
+Die Grenze aus §8.2 maß, **seit wann Arbeit fachlich fällig gewesen wäre**, nicht **wie lange
+ein Auftrag tatsächlich wartet** — und ein frisch erzeugter Auftrag kann bauartbedingt ein
+tagealtes Fälligkeitsdatum tragen.
+
+### 17.2 Genaue Ursache (belegt, nicht vermutet)
+
+Der Verdacht aus §15.5 Punkt 3 hat sich bestätigt und ist jetzt **präzise**:
+
+1. `helmut_job_metrics` maß das Alter gegen `first_due_at` (`max_mandatsalter_s`,
+   `ueberfaellige_mandate`) bzw. gegen `due_at` (`aeltester_faelliger_s`). Beides ist die
+   **Fälligkeit**.
+2. `first_due_at` ist die fachliche Fälligkeit **beim Einreihen**. `source-demand.js` streut
+   sie deterministisch **ab dem Beginn des Aktualitätsfensters** und klemmt sie ausdrücklich
+   nicht in die Zukunft („ein bereits fälliger Auftrag bleibt sofort fällig"). Fällt ein
+   Auftrag in ein **bereits laufendes** Fenster, ist er in der Sekunde seiner Entstehung
+   „überfällig".
+3. Entscheidend ist die **Fensterbreite**: das Archivfenster der Personensuchen ist
+   **7 Tage** breit (`HELMUT_DEMAND_ARCHIVE_WINDOW_H`, Vorgabe 168). Der Streuversatz folgt
+   dem Rotationsrang — 0 h / 30,25 h / 60,5 h / 90,75 h / 121 h.
+
+**Gegenprobe an den Production-Daten (rein lesend, 2026-08-12 08:38 UTC):** genau
+**5 Aufträge** tragen das Fenster `2026-08-06T00Z`, alle vom Typ `source_fetch`,
+`payload.art = "person-archiv"`, alle am 2026-08-11 20:00 erzeugt. Ihre `first_due_at`-Werte
+sind exakt die fünf Rangversätze. Alle **230 übrigen** Aufträge liegen unter 24 h
+Fälligkeitsalter. Der gemeldete Wert 504 477 s = 5,84 Tage ist genau
+`20:04 UTC − 2026-08-06T00:00Z`.
+
+**Damit ist die Erstdiagnose aus §15.5 in einem Punkt zu berichtigen:** es ist **nicht**
+(nur) der vorbestehende OP-15-Rückstand, der die Grenze auslöste, sondern die **Fensterbreite
+des Archivabrufs**. Die Grenze wäre bei **jedem** ersten Lauf in einem laufenden
+7-Tage-Fenster eingetreten — auch bei völlig gesunden Quellen. Sie war strukturell
+unbrauchbar, nicht bloß unglücklich kalibriert. (OP-15 bleibt davon unberührt offen: die
+Personenquellen laufen tatsächlich seit dem 6.8. nicht durch — das ist ein echter, weiterhin
+gemeldeter Datenbefund, §17.4.)
+
+**Reproduziert** an echter PostgreSQL 16.13: `scripts/jobqueue-alter-datenbank-test.js` §1
+stellt den Fall mit der **alten** Funktion nach und misst 5,84 Tage; §2 misst mit der neuen
+Funktion auf **denselben Zeilen** 0 s.
+
+### 17.3 Die Semantik, ab jetzt verbindlich
+
+Zwei Begriffe, überall gleich benannt (SQL, Anwendung, dieses Runbook):
+
+| Begriff | Formel | Wofür |
+|---|---|---|
+| **Fälligkeitsrückstand** | `now − first_due_at` | „Seit wann *wäre* diese Arbeit fällig gewesen." Datenbefund (z. B. OP-15). **Keine Betriebsgrenze.** |
+| **Wartezeit** | `max(now − max(created_at, first_due_at), 0)` | „Wie lange wartet dieser Auftrag *tatsächlich*, seit er bearbeitbar ist." **Die Betriebsgrenze.** |
+
+Warum genau diese Formel — und nicht ein getauschtes Feld:
+
+- **`created_at` statt `due_at`:** `helmut_defer_job` setzt `due_at` bei **jedem**
+  Zurückstellen neu. Eine Messung dagegen wäre durch Warten löschbar — derselbe Fehler, der
+  am 2026-08-08 schon einmal belegt wurde. `created_at` steht fest; ein wirklich alter
+  Auftrag altert also auch nach beliebig vielen Zurückstellungen und Wiederholungen weiter.
+- **`first_due_at` als Obergrenze:** ein Auftrag, der erst heute Abend bearbeitbar wird,
+  wartet **jetzt** 0 s. Ohne diesen Deckel wäre die Vorausplanung selbst ein Rückstand.
+- **`first_claimed_at` scheidet aus** (2026-08-08 belegt): es springt beim ersten Zugriff
+  nach vorn und verliert die Wartezeit davor.
+- Der **spätere** der beiden Zeitpunkte ist damit exakt „ab wann wartet er wirklich".
+
+### 17.4 Was geändert wurde
+
+| Ort | Änderung |
+|---|---|
+| `supabase/migrations/20260812_jobqueue_altersmessung.sql` (+ Rollback) | ersetzt **nur** die lesende Funktion `helmut_job_metrics` und ergänzt drei Spalten: `aeltester_offener_s`, `max_mandatswartezeit_s`, `ueberfaellige_mandate_wartezeit`. **Keine** Tabelle, Spalte, Policy, kein Index, kein Backfill. Die 14 bisherigen Spalten bleiben nach Name, Typ, Reihenfolge **und Formel** unverändert (`drop + create`, weil PostgreSQL den Rückgabetyp nicht per `replace` erweitert; Rechte werden identisch neu gesetzt) |
+| `lib/helmut/scalable-pipeline.js` | `betriebsstatus` prüft die Schwellen gegen die **Wartezeit**; neue Ausgabefelder `altersvertrag`, `kennzahlen.aeltesterOffenerS/maxMandatswartezeitS/ueberfaelligeMandateWartezeit/gemessenesAlterS`, `schwellen.bezug`. Neue, exportierte Formel `bearbeitbarAbMs`/`wartezeitS` — **eine** Fassung für App, Attrappe und Tests |
+| `scripts/fixtures/jobqueue-speicher-treiber.js` | liefert dieselben drei Kennzahlen und **leiht** die Formel aus der Anwendung, statt sie ein drittes Mal nachzubauen |
+
+**Der fachliche Rückstand bleibt sichtbar** (CLAUDE.md §4.4): `max_mandatsalter_s` und
+`ueberfaellige_mandate` werden unverändert weiter gemeldet, und überschreitet der
+Fälligkeitsrückstand 24 h, erscheint der Befund `faelligkeitsrueckstand:<n>s-nicht-wartezeit`.
+Er färbt den Zustand **nicht** ein — er sagt „diese Quelle läuft seit Tagen nicht durch",
+nicht „die Warteschlange kommt nicht hinterher".
+
+**Fehlt die Migration**, wird nicht geraten und nicht grüngerechnet: dann gilt ausdrücklich
+der **alte, zu strenge** Vertrag (`altersvertrag="faelligkeit-alt"`, Befund
+`altersmessung-alt:migration-20260812-fehlt`). Fehlalarm ist zulässig, falsches Grün nicht.
+
+### 17.5 §8.1 Nr. 11 und §8.2 — berichtigte Fassung
+
+Die Zeilen aus §8 gelten unverändert **in ihren Zahlen**; berichtigt ist ausschließlich der
+**Bezugspunkt**:
+
+| # | Messwert (berichtigt) | Erwartung (5 Mandate) |
+|---|---|---|
+| 11 | **Wartezeit des ältesten offenen Auftrags** (`aeltester_offener_s`; ab `max(created_at, first_due_at)`, alle offenen Aufträge — auch die ohne Mandatsbezug) | < 24 h (ab 24 h meldet `betriebsstatus` **kritisch** — bewusst dieselbe Grenze) |
+| 11b | **Fälligkeitsrückstand** (`max_mandatsalter_s`) | wird **berichtet**, ist **kein** Abbruchkriterium; > 24 h ⇒ Ursache klären (OP-15), Stufe halten |
+
+| Beobachtung | **Weiterlaufen** | **Beobachten** | **Sofort stoppen + zurücknehmen** (§7) |
+|---|---|---|---|
+| **Wartezeit** des ältesten offenen Auftrags | < 12 h | 12–24 h | > 24 h (`betriebsstatus` kritisch) |
+| Fälligkeitsrückstand | — | jederzeit, wenn > 24 h: Ursache klären | **nie allein** ein Abbruchgrund |
+
+Zusätzlich zu prüfen ist ab jetzt bei K0: `altersvertrag` muss `wartezeit` sein. Steht dort
+`faelligkeit-alt`, ist die Migration `20260812` **nicht** angewendet — dann ist die Grenze
+nicht aussagekräftig und der Versuch beginnt gar nicht erst.
+
+### 17.6 Testergebnisse (alle lokal ausgeführt, echte Zahlen)
+
+| Suite | Ergebnis |
+|---|---|
+| `scripts/jobqueue-alter-test.js` (neu, offline; Fälle a–h + adversariale Mutationsproben) | **59 PASS / 0 FAIL** |
+| `scripts/jobqueue-alter-datenbank-test.js` (neu, **echte PostgreSQL 16.13**; Fehlbefund reproduziert, Fix belegt, Rechte, Rollback) | **26 PASS / 0 FAIL** |
+| `scripts/jobqueue-vertrag-test.js` (mit DB-Gleichheitsteil, neuer Fall F) | **125 PASS / 0 FAIL** |
+| `scripts/jobqueue-datenbank-test.js` (echte PostgreSQL) | **55 PASS / 0 FAIL** |
+| `scripts/jobqueue-mutationsprobe.js` (echte PostgreSQL) | **10/10 ROT** (alle Mutationen erkannt) |
+| `scripts/skalierung-1000-test.js` | **70 PASS / 0 FAIL / 2 OFFEN** (die 2 offenen sind Bestand) |
+| `scripts/vorgangskontext-test.js` | **103 PASS / 0 FAIL** |
+| `node scripts/run-offline-tests.js` (kanonisch) | **238/244 Suiten grün**; die 6 roten sind **Basisrot** — 5 davon (`kalender-ics`, `privacy-vollstaendigkeit`, `profile-db`, `provision-tenant`, `tenant-neutrality`) auf unverändertem `main` gegengeprüft, die sechste (`vorgangskontext`) war die Migrations-Allowlist und ist **behoben** ⇒ **239/244**, unverändert 5 vorbestehende |
+
+### 17.7 Die 235 Production-Aufträge — rein lesende Untersuchung
+
+Zustand am 2026-08-12 08:38 UTC (unverändert seit 2026-08-11 20:04): **235 gesamt**,
+55 `erledigt`, **180 `wartend`**, 0 `laeuft`, 0 `fehlgeschlagen`, **0 Leases**.
+
+| Typ | Fenster | offen | Fenster heute noch gültig? |
+|---|---|---|---|
+| `source_fetch` geteilt | `2026-08-11T16Z` (8 h) | 126 | **nein** (abgelaufen 2026-08-12T00Z) |
+| `document_understanding` | `2026-08-11T16Z` | 39 | Schlüssel trägt **kein** Fenster |
+| `source_fetch` person-archiv | `2026-08-06T00Z` (7 d) | 5 | **ja**, bis 2026-08-13T00:00Z |
+| `mandate_projection` | `2026-08-11T00Z` (24 h) | 5 | **nein** |
+| `briefing_materialization` | `2026-08-11T00Z` (24 h) | 5 | **nein** |
+
+**(a) Würden sie bei einer erneuten Aktivierung sofort verarbeitet? — Ja, alle 180.**
+`due_at <= now()` gilt für **180 von 180**; `helmut_claim_jobs` würde sie im ersten Slot
+beanspruchen, und zwar **vor** der neu geplanten Arbeit des Tages (Sortierung
+`priority, due_at, created_at` — die zurückdatierten stehen vorn).
+
+**(b) Gefahr doppelter Verarbeitung? — Ja, für 10 Aufträge, und sie ist konkret.**
+`VORBEDINGUNG_MAX_WARTE_MS` beträgt 6 h ab `created_at`; die 5 Projektions- und
+5 Briefingaufträge sind seit **> 13 h** alt. Sie würden also **nicht mehr auf ihre
+Vorbedingungen warten**, sondern sofort laufen — und im selben Slot entstehen für dasselbe
+Mandat die Aufträge des **heutigen** Fensters (`2026-08-12T00Z`). Ergebnis: Matching,
+Entscheidungen und Briefingaufbau laufen je Mandat **zweimal** am selben Tag. Ein doppelter
+**Push** entsteht dabei nicht (der Warteschlangenpfad hat keinen Pushaufruf, §1), aber §8.2
+kennt „doppelte Verarbeitung ≥ 1" **ohne Ermessen** als Abbruchgrund.
+
+**(c) Zweite Falle: `BUDGET_MAX_WARTE_MS` = 48 h.** Ein Verstehensauftrag, der übersprungen
+wird (`understanding-locked`, `ai-disabled`) und dessen `created_at` länger als 48 h zurück
+liegt, wird **nicht** mehr zurückgestellt, sondern als Fehler geworfen. Für die 39 offenen
+Verstehensaufträge läuft diese Frist am **2026-08-13 20:04 UTC** ab. Danach können sie
+`max_attempts` verbrauchen und als **endgültige Fehler** enden — und „≥ 3 endgültige
+Fehler/Tag" ist ebenfalls ein Abbruchgrund aus §8.2.
+
+**(d) Dritte Falle — und sie gilt ausdrücklich auch nach diesem Fix:** die berichtigte
+Wartezeit der 180 offenen Aufträge beträgt am 2026-08-12 08:38 UTC **13,1 h** und überschreitet
+am **2026-08-12 ~20:04 UTC** die 24-h-Grenze. Das ist dann **kein Fehlalarm mehr**, sondern
+richtig: es liegt echte, unbearbeitete Arbeit in der Warteschlange. Eine Aktivierung nach
+diesem Zeitpunkt würde bei K0 **zu Recht** `kritisch` melden — aus einem Grund, der mit dem
+neuen Versuch nichts zu tun hat.
+
+**Können sie sicher weiterverwendet werden? — Nein.** Sie tragen keine Information, die
+verloren ginge: der Planer erzeugt bei jedem schweren Cronlauf genau die Aufträge, die das
+dann aktuelle Fenster braucht — einschließlich des Archivauftrags, solange dessen Fenster
+läuft (identischer Idempotenzschlüssel ⇒ er entsteht neu, mit frischem `created_at`). Ihr
+einziger Effekt bei einer Wiederverwendung sind die drei Fallen (b)/(c)/(d).
+
+**Die 55 erledigten Aufträge bleiben stehen.** Sie werden nie wieder beansprucht, sind der
+Beleg des ersten Laufs und stören keinen neuen Versuch (ihre Fenster sind durch; die
+3 erledigten Verstehensaufträge tragen kein Fenster und wirken dort als **korrekte**
+Idempotenzsperre gegen erneutes Verstehen derselben Dokumentmenge).
+
+### 17.8 Erforderliche Betreiberaktion vor dem nächsten Versuch
+
+**In dieser Reihenfolge, vollständig, sonst kein zweiter Versuch.** Alles hiervon ist
+freigabepflichtig (CLAUDE.md §5); diese Sitzung hat **nichts davon ausgeführt**.
+
+**Schritt 1 — Sicherung der 180 offenen Aufträge (verifizierbar, rein lesend).**
+```sql
+-- Vollständiger Export als eine JSON-Zeile; Ergebnis abspeichern (Datei/Ticket).
+select jsonb_agg(to_jsonb(j) order by j.created_at)
+  from public.helmut_jobs j
+ where j.status in ('wartend','laeuft');
+-- Erwartet: 180 Elemente. Gegenprobe:
+select count(*) from public.helmut_jobs where status in ('wartend','laeuft');
+```
+
+**Schritt 2 — Neutralisieren (die eine Datenänderung, konditional, gedeckelt).**
+```sql
+begin;
+delete from public.helmut_jobs
+ where status in ('wartend','laeuft')
+   and created_at < timestamptz '2026-08-12 00:00:00+00';   -- nur der Bestand vom 11.08.
+-- ERWARTET: DELETE 180. Weicht die Zahl ab: ROLLBACK und neu bewerten.
+commit;
+```
+Warum **Löschen** und nicht Umstatuieren: `fehlgeschlagen` würde entweder als *endgültiger
+Fehler* gezählt (sofort `kritisch`) oder von der Wiedervorlage (`helmut_jobs_wiedervorlage`,
+Typen `source_fetch`/`document_understanding`, ab 24 h) **zurückgeholt** — beides schlechter
+als der ehrliche Löschvorgang. `first_due_at` zu verschieben scheidet aus: die Spalte ist
+ausdrücklich „wird NIE verändert", eine Verschiebung wäre eine Falschaussage im Prüfpfad.
+`helmut_jobs_bereinigen` kann hier **nicht** helfen — sie schützt offene Aufträge bewusst.
+
+**Rücknahme von Schritt 2:** die Export-Zeile aus Schritt 1 wieder einspielen
+(`insert into public.helmut_jobs select * from jsonb_populate_recordset(null::public.helmut_jobs, '<export>'::jsonb)`).
+Der Idempotenzschlüssel ist eindeutig — ein Wiedereinspielen kann keine Dublette erzeugen.
+
+**Schritt 3 — Migration `20260812_jobqueue_altersmessung.sql` anwenden** (nach Merge des PR;
+freigabepflichtig). Gegenprobe rein lesend:
+```sql
+select round(aeltester_offener_s), round(max_mandatsalter_s), ueberfaellige_mandate_wartezeit
+  from public.helmut_job_metrics(1440);   -- erwartet nach Schritt 2: 0 | 0 | 0
+```
+
+**Schritt 4 — erst dann** `HELMUT_SCALABLE_PIPELINE=on` + Redeploy, und der Kontrollplan
+beginnt wieder bei §6 Schritt 3 mit **K0–K3**. K0 bekommt einen Punkt dazu:
+`altersvertrag = "wartezeit"` (sonst fehlt die Migration).
+
+**Reihenfolge ist nicht beliebig:** Schritt 2 vor Schritt 4, sonst greifen die Fallen aus
+§17.7. Schritt 3 vor Schritt 4, sonst misst K0 noch mit dem alten Vertrag.
+
+### 17.9 Nicht getan (Verbote eingehalten)
+
+Kein Flag gesetzt · keine Env-Variable geändert · kein Deployment, kein Redeploy · kein
+Cronlauf ausgelöst · **kein Auftrag der 235 verändert, verschoben oder gelöscht** · keine
+Migration auf Production angewendet · keine Production-Datenänderung · keine Ausweitung auf
+25 Mandate · OP-15 **nicht** nebenbei repariert · kein Merge.
+
+---
+
+## 18 · Belegdateien des OP-30-Strangs (Vorgeschichte, vollständig)
+
+Diese Liste stand bis 2026-08-12 in `docs/CURRENT_STATE.md` §7a und ist von dort hierher
+verlagert worden (CLAUDE.md §9: der Status bleibt kompakt, Belege stehen in den Belegdateien).
+
+[`v3-skalierungspruefung-2026-08-08.md`](v3-skalierungspruefung-2026-08-08.md) ·
+[`skalierungsgrundlage-1000.md`](skalierungsgrundlage-1000.md) ·
+[`op30-abnahme-2026-08-08.md`](op30-abnahme-2026-08-08.md) ·
+[`skalierung-200-mandate.md`](skalierung-200-mandate.md) ·
+[`lokaler-production-schutz.md`](lokaler-production-schutz.md) ·
+[`op30-testbefunde-2026-08-08.md`](op30-testbefunde-2026-08-08.md) ·
+[`workerbetrieb.md`](workerbetrieb.md) ·
+[`op30-abschlussreview-2026-08-08.md`](op30-abschlussreview-2026-08-08.md) ·
+[`op30-aktivierungsreife-2026-08-09.md`](op30-aktivierungsreife-2026-08-09.md) ·
+[`lage-narrativ-warteschlange-2026-08-09.md`](lage-narrativ-warteschlange-2026-08-09.md) ·
+[`op30-e1-abschlussreview-2026-08-09.md`](op30-e1-abschlussreview-2026-08-09.md) ·
+[`op30-kapazitaet-morgenslots-2026-08-09.md`](op30-kapazitaet-morgenslots-2026-08-09.md) ·
+[`briefing-frischevertrag-2026-08-10.md`](briefing-frischevertrag-2026-08-10.md).
+
+Innerhalb dieses Runbooks: Inventar/Pläne/Grenzen §1–§8 · `mdb-a` §9 · Migrationsbeleg §12 ·
+Neutralität §13 · blockierter Versuch §14 · Aktivierung + erster Lauf §15 · Rücknahme §16 ·
+**berichtigte Altersmessung §17**.

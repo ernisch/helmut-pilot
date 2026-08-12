@@ -1419,6 +1419,20 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 #### OP-30 · Mandatseigene Abrufwege vervielfachen den Quellenabruf linear (neu, Sprint „V3-Skalierungsprüfung" 2026-08-08; Prioritätsklasse P1)
 
+- **Stand 2026-08-12/3 (Korrektursprint „Altersmessung", PR offen, Production unveraendert):**
+  Der erste Production-Lauf am 2026-08-11 wurde durch die eigene Abbruchgrenze gestoppt —
+  **zu Unrecht**. `helmut_job_metrics` mass die **Faelligkeit** (`first_due_at`/`due_at`) statt
+  der **Wartezeit**; weil das Archivfenster der Personensuchen **7 Tage** breit ist, traegt ein
+  frisch erzeugter Archivauftrag ein bis zu 6,3 Tage altes Quelldatum. An echter PostgreSQL 16.13
+  reproduziert (504 576 s) und behoben: die Grenze misst jetzt
+  `max(now − max(created_at, first_due_at), 0)`; der Faelligkeitsrueckstand bleibt gemeldet, ist
+  aber kein Abbruchgrund. Migration `20260812_jobqueue_altersmessung.sql` (+ Rollback) —
+  **nicht angewendet**. Neue Suiten: `jobqueue-alter-test.js` (59 PASS),
+  `jobqueue-alter-datenbank-test.js` (26 PASS). Die **180 offenen Production-Auftraege** sind vor
+  dem naechsten Aktivierungsversuch zu **neutralisieren** (Betreiberablauf: Runbook
+  [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §17.8).
+  **Der Fuenferlauf bleibt NICHT bestanden** (K2/K3 nie begonnen).
+
 - **Stand 2026-08-08/2 (Korrektur- und Abnahmesprint):** Belege
   [`betrieb/skalierung-200-mandate.md`](betrieb/skalierung-200-mandate.md) und
   [`betrieb/lokaler-production-schutz.md`](betrieb/lokaler-production-schutz.md).

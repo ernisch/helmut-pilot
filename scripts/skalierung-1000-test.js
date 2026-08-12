@@ -445,6 +445,14 @@ async function main() {
         "durchsatzProStunde", "ueberfaelligeMandate", "maxMandatsalterS", "nachTyp", "nachStatus"]
         .every((k) => k in status.kennzahlen),
       Object.keys(status.kennzahlen).join(","));
+    // Korrektursprint 2026-08-12: die Wartezeitsicht gehoert dazu — sie traegt seither die
+    // Abbruchgrenze. Fehlte sie hier, koennte sie unbemerkt aus der Ausgabe verschwinden.
+    check("12.6 Die Wartezeitsicht ist vollstaendig vorhanden und benannt",
+      ["aeltesterOffenerS", "maxMandatswartezeitS", "ueberfaelligeMandateWartezeit",
+        "gemessenesAlterS"].every((k) => k in status.kennzahlen)
+      && status.altersvertrag === SP.ALTERSVERTRAG_WARTEZEIT
+      && status.schwellen.bezug === "wartezeit-ab-bearbeitbarkeit",
+      `${status.altersvertrag} / ${status.schwellen.bezug}`);
   }
 
   abschnitt("13 · Planungsidempotenz ueber MEHRERE identische Laeufe (Sprintauftrag §7)");
