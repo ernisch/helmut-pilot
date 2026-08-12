@@ -1772,3 +1772,70 @@ verlagert worden (CLAUDE.md §9: der Status bleibt kompakt, Belege stehen in den
 Innerhalb dieses Runbooks: Inventar/Pläne/Grenzen §1–§8 · `mdb-a` §9 · Migrationsbeleg §12 ·
 Neutralität §13 · blockierter Versuch §14 · Aktivierung + erster Lauf §15 · Rücknahme §16 ·
 **berichtigte Altersmessung §17**.
+
+### 17.10 Ausführungsbeleg — Betreiberablauf §17.8 ausgeführt (2026-08-12, freigegeben)
+
+**Ausgeführt am 2026-08-12 zwischen 17:17 und 17:24 UTC** aus einer Claude-Sitzung mit
+ausdrücklicher Betreiberfreigabe (Chat-Auftrag; Umfang: Export der 180 offenen Aufträge,
+kontrollierte Löschung genau dieser 180, Anwendung der Migration `20260812`). Alle Werte
+gemessen, keine Nutzdaten in diesem Beleg.
+
+**Vorprüfung (14 Punkte, alle bestanden):** PR #244 gemergt (`1fd9c98b` auf `main`),
+Production-Deployment `dpl_6joktzAKgqp5CfhFqHT771znrEKZ` READY, **kein** weiteres Deployment
+seit dem Merge (⇒ keine wirksame Env-Änderung; der 16:00-Wirkungsnachweis des ausgeschalteten
+Motors gilt für exakt dieses Deployment), Migration nicht angewendet, Zustand exakt
+235 / 180 wartend / 0 laufend / 55 erledigt / 0 fehlgeschlagen, 0 Leases, 0 Reservierungen,
+0 Änderungen seit dem Nachweis, Löschauswahl = exakt 180, Migrationsdateien byte-identisch
+mit `origin/main` (SHA256 `90ca4ef2…d37d` / `257ddba2…f9d7`).
+
+**Lokaler Rücknahmenachweis unmittelbar davor erneut geführt:**
+`jobqueue-ruecknahme-datenbank-test.js` **31 PASS / 0 FAIL** ·
+`jobqueue-alter-datenbank-test.js` **26 PASS / 0 FAIL** (PostgreSQL 16.13, wegwerfbar).
+
+**Schritt 0/1 — Export:** Datei `helmut_jobs_offen_2026-08-12.json`, 257 848 Bytes,
+**180 Elemente, alle 20 Spalten je Element** (Production trägt seit
+`20260809_jobqueue_wiedervorlage` eine Spalte mehr als die 19-Spalten-Basis), 180 eindeutige
+IDs, Pflichtfelder vollständig, zweimal gelesen und geparst. **SHA256
+`d74e76188cd47b3a5f4fe4f895d7db8d901cac60fd9c80304595eb89bfbfcda9`.**
+Identität mit der Löschauswahl über die ID-Ketten-md5 bewiesen (sortierte IDs, Komma):
+lokal = Server = `df57f03b6909cb6fa3f4da5212497402`; Inhalts-Kennzahlen identisch
+(Σ attempts 2 · 45 Fehlertexte · Typen 131/39/5/5 · Fenster 165/10/5). Server-Referenz-md5
+der `jsonb_agg`-Fassung: `699f8040545abf07e0fb52b8384a4613`. Die Datei wurde dem Betreiber
+**direkt übergeben** (Konversations-Anhang; nicht committet, nicht veröffentlicht) und liegt
+zusätzlich im Sitzungs-Scratchpad (chmod 600).
+
+**Schritt 2 — Neutralisierung:** eine Transaktion, Zielzeilen mit `for update` gesperrt,
+darin nacheinander geprüft: Zählung = 180 · ID-Ketten-md5 = Exportwert · `row_count` der
+Löschung = 180 · Nachzustand in der Transaktion = 55/55/0. Erst dann Commit. Ergebnis:
+**exakt 180 gelöscht**; `pg_stat` zeigt `n_tup_ins/upd/del = 235/202/180` (kein Insert,
+kein Update). Die **55 erledigten Aufträge sind byte-identisch unverändert**
+(`jsonb_agg`-md5 vorher = nachher = `0ad846c771668db5fb9d7e5ae8d9fe2c`). Alle 180
+Export-IDs fehlen aus der Tabelle (verbleibende 55 vollständig geholt, Schnittmenge 0).
+Nebenwirkungsfreiheit strukturell belegt: **0 Fremdschlüssel** auf `helmut_jobs`,
+**0 DELETE-Trigger**; `llm_reservations` unverändert 0/0/0.
+
+**Schritt 3 — Migration `20260812`:** Funktionszustand vorher gesichert
+(md5 `94357e97dcc4f9f82da481c8c569ab13`; Wiederherstellung = Rollback-Datei). Angewendet
+über den dokumentierten Weg (MCP `apply_migration`, derselbe wie am 2026-08-11) als
+**genau eine** Migration → Historieneintrag **`20260812172327 ·
+20260812_jobqueue_altersmessung`** (jetzt 26 Einträge). Abnahme: 17 Ausgabespalten, die
+drei Wartezeit-Spalten am Ende, Formel `greatest(created_at, first_due_at)` in der
+Definition, SECURITY INVOKER, **0 Rechte** für `anon`/`authenticated`/`PUBLIC`, Advisor
+unverändert (kein neuer WARN/ERROR). Kennzahlen auf der leeren offenen Warteschlange:
+`wartend/laufend/fehlgeschlagen/endgueltig = 0`, **alle vier Alterswerte 0**,
+`ueberfaellige_mandate(_wartezeit) = 0`, `erledigt_im_zeitraum = 55` (die Abschlüsse vom
+11.08. liegen im 24-h-Fenster — korrekt). Die Schwellen (18 h / 24 h) stehen unverändert im
+deployten App-Code. Der Nachweis „historisches Quelldatum erzeugt keinen falschen kritischen
+Zustand" stützt sich auf die byte-identisch angewendete, lokal bewiesene Migration
+(26 PASS, §17.6) plus die Production-Definitionsprüfung — **kein** künstlicher Auftrag
+wurde in Production eingeführt.
+
+**Nicht getan:** kein Flag, keine Env-Änderung, kein Deployment (0 neue Deployments seit
+`dpl_6jokt…`), kein Cronlauf (letzter Lauf unverändert `cron-pipeline-20260812160111-ejqa2`),
+kein Worker, kein neuer Auftrag, keine weitere Migration (offen bleibt nur `20260720`,
+OP-03), keine Änderung an den 55 erledigten Aufträgen, OP-15 unberührt, keine Ausweitung.
+
+**Damit ist §17.8 bis einschließlich Schritt 3 erledigt. Schritt 4 (Flag + Redeploy,
+K0–K3 von vorn) ist NICHT ausgeführt — er ist der nächste, separat freigabepflichtige
+Betreiberschritt.** K0 prüft zusätzlich `altersvertrag = "wartezeit"`; diese Bedingung ist
+durch die angewendete Migration jetzt erfüllbar.
