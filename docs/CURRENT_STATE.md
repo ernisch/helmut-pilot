@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-12/3** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30 war 2026-08-11 18:52 bis 2026-08-12 00:54 UTC aktiv und ist ZURUECKGENOMMEN — Abschaltung am crawl 04:00 UTC wirkungsbasiert BELEGT** (§7a, Runbook §15/§16): K0 bestanden, erster Lauf sauber, aber die Grenze „aeltester offener Auftrag > 24 h" trat ein ⇒ **K2/K3 nie begonnen, der Fuenferlauf ist NICHT bestanden**. **(c) Altersgrenze berichtigt** (§7b, Runbook §17) — Fehlbefund reproduziert und behoben, **PR #244 offen**, Production unveraendert; die 180 offenen Auftraege sind vor dem naechsten Versuch zu neutralisieren. **(d) OP-31 Frischevertrag BESTANDEN**; **(e)** Befund `mdb-a`/`dec-y` geklaert (Runbook §9). Diese Datei enthaelt
+**Stand: 2026-08-12/4** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30 ist ZURUECKGENOMMEN und wirkungsbasiert aus** — zuletzt belegt am pipeline-Lauf 16:00 UTC des 12.08. auf dem Merge-Stand von PR #244 (§7a/§7b); **K2/K3 nie begonnen, der Fuenferlauf ist NICHT bestanden**. **(c) Altersgrenze berichtigt UND Betreiberablauf ausgefuehrt** (§7b, Runbook §17.10): PR #244 **gemergt** (`1fd9c98b`), die 180 offenen Auftraege **exportiert und kontrolliert geloescht** (55 erledigte byte-identisch erhalten), Migration `20260812` **angewendet** — der neue Altersvertrag ist in Production nachweisbar. **(d) OP-31 Frischevertrag BESTANDEN**; **(e)** Befund `mdb-a`/`dec-y` geklaert (Runbook §9). Diese Datei enthaelt
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -53,8 +53,9 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
   UTC · 2 Narrativ-Nachlaufslots 06:10/06:22, inert). **Dazu** der GitHub-Actions-Watchdog
   (`briefing-watchdog.yml`, täglich 05:30 UTC bedingungslos, oft 2–3 h verzögert): kein
   Störfall, aber im Aufbewahrungsvertrag nicht modelliert (→ K3/K7).
-- **Migrationen:** die sechs OP-30-Paare am 2026-08-11 angewendet (Runbook §12); offen sind
-  **`20260720`** (OP-03) und **neu `20260812`** (Altersmessung, §7b). Übrige: erledigt.
+- **Migrationen:** die sechs OP-30-Paare am 2026-08-11 angewendet (Runbook §12); **`20260812`
+  (Altersmessung) am 2026-08-12 17:23 UTC angewendet und abgenommen** (Runbook §17.10). Offen
+  ist **nur noch `20260720`** (OP-03).
 - **Kosten:** LLM ~0,14 USD/Betriebstag (Untergrenze, Preisbasis unbelegt,
   [`betrieb/kostenmessung.md`](betrieb/kostenmessung.md)); Nachweisfenster 0,1892 USD.
 - **Zugangsgrenze jeder Claude-Sitzung (gemessen 2026-08-12):** Supabase lesend erreichbar;
@@ -81,7 +82,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **`HELMUT_CRON_GLOBALABRUF`** | **`on`** seit 2026-08-06 ~08:15 UTC (Betreiber, für das Nachweisfenster) ⇒ **Kontextpfad aktiv**, laufzeitbelegt (drei Fensterläufe 06./07.08. global auf `d8bf68fa…`, E3 `nv=0`). Ob es `on` bleibt, ist Betreiberentscheidung. Dritter Zyklus |
 | **Berlin (Landesmodul)** | inaktiv. `HELMUT_LANDESMODULE=berlin` seit 2026-07-26 gesetzt, aber **wirkungslos**: 0 berechtigte Berliner Mandate seit dem Rollback ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22). Ob das Flag wirkt, ist **unbewiesen** |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt); PR #132 vor Merge Gate-Name vereinheitlichen |
-| **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **wieder `off`, wirkungsbasiert belegt** — war `on` 2026-08-11 18:52 → Rücknahme-Redeploy 2026-08-12 **00:54:14Z** (`dpl_7kcdpTbh…`, Commit `eb13652` unverändert); der crawl 04:00 UTC lief über den **Altpfad**, `helmut_jobs` ohne jeden Schreibvorgang. Die **235 Aufträge** liegen still — vor dem nächsten Versuch zu neutralisieren (§7b, Runbook §16.12/§17.7) |
+| **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **`off`, wirkungsbasiert belegt** (Rücknahme 2026-08-12 00:54Z; crawl 04:00 **und** pipeline 16:00 liefen über den Altpfad, auch nach dem Merge von PR #244). **Die Warteschlange ist neutralisiert:** die 180 offenen Aufträge am 2026-08-12 17:22 UTC exportiert und kontrolliert gelöscht, 55 erledigte byte-identisch erhalten (Runbook §17.10). Ein neuer Versuch beginnt bei §6 Schritt 3 mit K0–K3 |
 | **M8 / `HELMUT_MATCHING_RELEVANZ_GATE`** | aus (Default aus, nie aktiviert) |
 | `HELMUT_CRON_GLOBALPHASE` | nicht gesetzt (aus) — K2-Prüfung ergab keine Aktivierungsempfehlung |
 | `HELMUT_UNDERSTANDING_GATE` / `HELMUT_PARDOK_DISPATCH` | `shadow` |
@@ -158,45 +159,45 @@ können exakt überlappende Läufe doppelt pushen; `briefings` wächst täglich,
 ist **erstmals in Production belegt**. **Aber:** `zustand=kritisch`, ältester offener Auftrag **5,84
 Tage** ⇒ Grenze §8.2 **eingetreten**, K2/K3 nicht begonnen — **zu Unrecht, berichtigt in §7b.**
 
-## 7b · Altersgrenze berichtigt (2026-08-12/3, PR offen — Production unverändert)
+## 7b · Altersgrenze berichtigt und Betreiberablauf ausgeführt (2026-08-12/3 und /4)
 
 **Ursache, präzisiert und an echter PostgreSQL 16.13 reproduziert** (Runbook §17.2): nicht (nur) der
-OP-15-Rückstand, sondern die **7-Tage-Fensterbreite des Archivabrufs** (`HELMUT_DEMAND_ARCHIVE_WINDOW_H=168`).
-`source-demand` streut die Fälligkeit ab Fensterbeginn und klemmt sie nicht in die Zukunft — ein Auftrag in
-einem **laufenden** Fenster ist bei seiner Entstehung bis zu 6,3 Tage „überfällig". In Production waren es
-genau die **5 `person-archiv`-Aufträge** im Fenster `2026-08-06T00Z`; alle 230 übrigen lagen unter 24 h. Die
-Grenze wäre bei **jedem** ersten Lauf in einem laufenden Archivfenster eingetreten.
+OP-15-Rückstand, sondern die **7-Tage-Fensterbreite des Archivabrufs**: ein Auftrag in einem **laufenden**
+Fenster ist bei seiner Entstehung bis zu 6,3 Tage „überfällig" (in Production genau die 5
+`person-archiv`-Aufträge im Fenster `2026-08-06T00Z`; alle 230 übrigen unter 24 h). Die Grenze wäre bei
+**jedem** ersten Lauf in einem laufenden Archivfenster eingetreten.
 
 **Fix:** Die Grenze misst jetzt die **Wartezeit** = `max(now − max(created_at, first_due_at), 0)`. Der
-**Fälligkeitsrückstand** (`now − first_due_at`) bleibt gemeldet, ist aber **kein** Abbruchgrund (OP-15 bleibt
-sichtbar). `due_at` scheidet aus (Zurückstellen verschiebt es), `first_claimed_at` ebenfalls. Ohne Migration
-gilt ausdrücklich der alte, zu strenge Vertrag (`altersvertrag="faelligkeit-alt"`) — Fehlalarm statt falschem
-Grün. Migration `20260812_jobqueue_altersmessung.sql` (+ Rollback) ersetzt **nur** die lesende Funktion
-`helmut_job_metrics`, drei neue Spalten, keine Tabelle/Policy/Backfill.
+**Fälligkeitsrückstand** bleibt gemeldet, ist aber **kein** Abbruchgrund (OP-15 bleibt sichtbar); `due_at`
+und `first_claimed_at` scheiden aus (Runbook §17.3). Ohne Migration gilt der alte, zu strenge Vertrag
+(`altersvertrag="faelligkeit-alt"`) — Fehlalarm statt falschem Grün. Migration `20260812` (+ Rollback)
+ersetzt **nur** die lesende Funktion `helmut_job_metrics` (drei neue Spalten, keine Tabelle/Policy/Backfill).
 
-**Die 235 Aufträge — rein lesend untersucht** (Runbook §17.7): 55 erledigt, **180 wartend**, 0 Leases, **alle
-180 sofort fällig**. Sie sind **nicht** sicher weiterverwendbar — drei belegte Fallen: (1) die 5 Projektions-
-+ 5 Briefingaufträge warten wegen `VORBEDINGUNG_MAX_WARTE_MS` (6 h) nicht mehr auf Vorbedingungen ⇒ **doppelte
-Verarbeitung** je Mandat am selben Tag (§8.2: ≥1 = sofort stoppen); (2) ab 2026-08-13 20:04 UTC laufen die 39
-Verstehensaufträge in `BUDGET_MAX_WARTE_MS` (48 h) ⇒ **endgültige Fehler**; (3) ihre *echte* Wartezeit
-überschreitet am 2026-08-12 ~20:04 UTC die 24 h — dann zu Recht `kritisch`. **Betreiberaktion vor dem nächsten
-Versuch (Runbook §17.8, freigabepflichtig, nichts davon ausgeführt):** 1. Export der 180 offenen Aufträge
-(lesend, rücknahmefähig) · 2. `delete … where status in ('wartend','laeuft') and created_at <
-2026-08-12T00:00Z` (erwartet exakt 180; Umstatuieren scheidet aus — Wiedervorlage oder Fehlerzählung) · 3.
-Migration `20260812` anwenden · 4. **erst dann** Flag + Redeploy, K0–K3 von vorn; K0 zusätzlich:
-`altersvertrag = "wartezeit"`.
+**Die 235 Aufträge des ersten Laufs** waren nicht sicher weiterverwendbar (drei belegte Fallen —
+kanonisch Runbook §17.7). Der Betreiberablauf §17.8 (Export → geschützte Löschung → Migration, mit
+bewiesenem Rückweg) wurde am 2026-08-12 ausgeführt — siehe unten.
 
 **Nachweise, Grenzen, Stand.** Tests: `jobqueue-alter-test.js` **59 PASS** ·
 `jobqueue-alter-datenbank-test.js` (echte PostgreSQL 16.13) **26 PASS** ·
 `jobqueue-ruecknahme-datenbank-test.js` (Export/Löschung/Wiederherstellung, §17.8) **31 PASS** ·
-Vertragstest **125 PASS** · Mutationsprobe **10/10 rot** · kanonischer Lauf **239/244** (5 rot =
-Basisrot, auf `main` gegengeprüft). **CI: beide Pflicht-Checks grün, zuletzt auf `201335f`**
-(`Syntax + Offline-Suiten`, `Browser-/Mobile-Smoke (Chromium)`). **PR #244 ist offen und nicht
-gemergt.** **OP-30 bleibt ausgeschaltet**, Migration `20260812` **nicht angewendet**, die
-235 Aufträge **unverändert**. **OP-15 bleibt separat offen** (Personenquellen seit 2026-08-06
-ohne erfolgreichen Abruf) — in diesem Sprint bewusst nicht repariert, nur nicht mehr
-abbruchauslösend. **Der Fünferlauf bleibt NICHT bestanden** und ist vollständig zu wiederholen
-(§6 Schritt 3, K0–K3).
+Vertragstest **125 PASS** · Mutationsprobe **10/10 rot**. **PR #244 ist gemergt** (`1fd9c98b`,
+2026-08-12 13:51 UTC, beide Pflicht-Checks grün); der Merge-Lauf pipeline 16:00 UTC lief
+**vollständig über den Altpfad** (Wirkungsnachweis, keine `warteschlange`-Zeile, 0 Berührung).
+
+**Betreiberablauf §17.8 AUSGEFÜHRT (2026-08-12 17:17–17:24 UTC, freigegeben; Beleg Runbook
+§17.10):** Export der 180 offenen Aufträge (180 Elemente, 20 Spalten, SHA256 `d74e7618…cda9`,
+ID-Menge = Löschauswahl per md5 `df57f03b…7402` bewiesen; Datei dem Betreiber übergeben, nicht
+committet) → kontrollierte Löschung in **einer** Transaktion (exakt 180; `pg_stat` 235/202/**180**;
+**55 erledigte byte-identisch erhalten**, md5 `0ad846c7…fe2c` vorher = nachher; 0 FKs, 0
+DELETE-Trigger) → Migration **`20260812` angewendet** (`20260812172327`, 17 Spalten,
+Wartezeitformel in der Definition, 0 Fremdrechte, Advisor unverändert). Kennzahlen jetzt:
+offene Warteschlange **leer**, alle Alterswerte **0**, Zustand wäre **grün** —
+`altersvertrag="wartezeit"` ist in Production erfüllbar. **Flag blieb aus**, kein Deployment,
+kein Cronlauf, kein neuer Auftrag. **OP-15 bleibt separat offen** (Personenquellen; am
+16:00-Lauf erneut Timeouts/503 sichtbar) — bewusst nicht repariert, nur nicht mehr
+abbruchauslösend. **Der Fünferlauf bleibt NICHT bestanden** und ist vollständig zu wiederholen —
+ein neuer Aktivierungsversuch wurde **nicht** gestartet (§6 Schritt 3, K0–K3; K0 zusätzlich:
+`altersvertrag = "wartezeit"`).
 
 **Rücknahme + Wirkungsnachweis (2026-08-12/1 und /2, Runbook §16/§16.12): BESTANDEN.** Betreiber setzte das
 Flag `off` (nur Production) + Redeploy **`dpl_7kcdpTbh…` READY 2026-08-12T00:54:14Z**, Commit `eb136522…`
@@ -280,15 +281,14 @@ Rücknahme (§7 Schritt 1) ist ausgeführt** (§12/§13/§15/§16). Reihenfolge 
 
 1. **Erledigt 2026-08-12:** die Abnahme der Rücknahme am crawl 04:00 UTC ist **bestanden**
    (Runbook §16.12) — OP-30 ist nachweislich aus, Production im Normalbetrieb.
-2. **Erledigt 2026-08-12/3:** die Altersgrenze ist berichtigt und der Rücknahmeweg für die
-   180 offenen Aufträge ist an echter PostgreSQL bewiesen (§7b, Runbook §17). **Nächster
-   Schritt: Review + Merge von PR #244**, danach die Betreiberschritte §17.8 (Schritt 0–2:
-   messen, exportieren, neutralisieren; dann Migration `20260812`) — **erst danach** ist ein
-   zweiter Aktivierungsversuch bewertbar.
-3. Unabhängig davon: **OP-15** (Personenquellen von vier Mandaten seit 2026-08-06 nicht
-   erfolgreich abgerufen) ist jetzt beziffert und gehört behoben; `CRON_SECRET`/Egress für
-   eine Folgesitzung freigeben, sonst bleiben Messquelle **und** Rücknahmeweg
-   betreibergebunden.
+2. **Erledigt 2026-08-12/4:** PR #244 gemergt, Wirkungsnachweis am 16:00-Lauf bestanden,
+   die 180 offenen Aufträge exportiert und kontrolliert gelöscht, Migration `20260812`
+   angewendet (§7b, Runbook §17.10). **Nächster Schritt: den neuen kontrollierten
+   OP-30-Fünferlauf vorbereiten** — Beginn bei Runbook §6 Schritt 3, K0–K3 von vorn
+   (K0 zusätzlich: `altersvertrag = "wartezeit"`); die Flag-Aktivierung ist eine separate
+   Betreiberfreigabe.
+3. Unabhängig davon: **OP-15** (Personenquellen seit 2026-08-06 nicht erfolgreich abgerufen)
+   ist beziffert und gehört behoben; `CRON_SECRET`/Egress für eine Folgesitzung freigeben.
 4. **Der Fünferlauf ist nicht bestanden** (K2/K3 nie begonnen) — eine Wiederholung beginnt
    bei §6 Schritt 3 und braucht wieder K0–K3.
 
@@ -296,7 +296,7 @@ Ausweitung auf 25+ erst nach K3 **und neu bestandenem OP-25**
 ([`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) §10);
 vor Stufe 5: **190 fehlende echte Profile** (es gibt 10).
 
-Parallel: **OP-01** (Pro + PITR); **OP-11** verifizieren; **#218** schließen.
+Parallel: **OP-01**; **OP-11** verifizieren; **#218** schließen.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
@@ -342,7 +342,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-12/3 | **Altersgrenze der Warteschlange berichtigt** (§7b): Fehlbefund an echter PostgreSQL 16.13 reproduziert (504 576 s) und behoben — die Grenze misst jetzt die Wartezeit ab `max(created_at, first_due_at)`; Migration `20260812` + Rollback; **3 neue Suiten** (59 + 26 + 31 PASS), Vertragstest 125 PASS, CI beide Pflicht-Checks grün (zuletzt `201335f`); die 235 Production-Aufträge rein lesend untersucht ⇒ **vor dem nächsten Versuch zu neutralisieren**, Rücknahmeweg lokal bewiesen (Runbook §17.7/§17.8) | **erfolgreich abgeschlossen** (Merge, Migration und Betreiberschritte sind getrennte, freigabepflichtige Betriebsschritte) |
+| 2026-08-12/4 | **Betreiber-Sprint Neutralisierung + Migration** (§7b, Runbook §17.10): 180 offene Aufträge exportiert (SHA256 `d74e7618…cda9`, ID-Beweis per md5) und in einer geschützten Transaktion exakt gelöscht; 55 erledigte byte-identisch erhalten; Migration `20260812` angewendet und abgenommen (17 Spalten, Wartezeitformel, Alterswerte 0, Zustand grün); Flag blieb aus, kein Deployment, kein Cronlauf | **erfolgreich abgeschlossen** (Doku-PR offen) |
+| 2026-08-12/3 | **Altersgrenze berichtigt** (§7b, Runbook §17): Fehlbefund reproduziert und behoben (Wartezeit statt Fälligkeit); 3 neue Suiten (59+26+31 PASS); PR #244 → **gemergt 13:51 UTC**, Wirkungsnachweis am 16:00-Lauf bestanden | **erfolgreich abgeschlossen** |
 | 2026-08-12/2 | **OP-30-Wirkungsnachweis der Abschaltung** (§7a): crawl 04:00 UTC lief über den Altpfad (`[cron/crawl/globalphase]`, 5/5 Mandate, `zustand=ok`), `helmut_jobs` ohne jeden Schreibvorgang (235/202/0), `llm_reservations` 0/0/0, KI `used=4` vollständig aus dem Altpfad erklärt, 0 Fehler ⇒ **OP-30 nachweislich aus, Rücknahmeplan abgenommen** · Runbook §16.12 | **erfolgreich abgeschlossen** (Doku-PR #243 gemergt) |
 
 Die Sprints 2026-08-12/1 (Rücknahmebeleg, Runbook §16), 2026-08-11/6 (K0 bestanden, bei K1 gestoppt, §15), 2026-08-11/5 (**blockiert**, kein Schreibweg zur Vercel-Env, §14), 2026-08-11/4 (Neutralitätsnachweis, §13) und 2026-08-11/3 (Vorwärtsmigrationen, §12) stehen kanonisch im Runbook. Der Sprint 2026-08-09/2 (E1 `tenant_narrative`, PR #236 gemergt) und die OP-30-Sprints vom 2026-08-08 stehen vollständig in den Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) trägt den CI-Basisrot-Befund). Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 stehen kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 und ältere Beweisketten: **Archiv** ([`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)).

@@ -1419,6 +1419,16 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 #### OP-30 · Mandatseigene Abrufwege vervielfachen den Quellenabruf linear (neu, Sprint „V3-Skalierungsprüfung" 2026-08-08; Prioritätsklasse P1)
 
+- **Stand 2026-08-12/4 (Betreiber-Sprint Neutralisierung + Migration, AUSGEFUEHRT):** PR #244
+  gemergt (`1fd9c98b`); Wirkungsnachweis des ausgeschalteten Motors am pipeline-Lauf 16:00 UTC
+  bestanden (Altpfad, 0 Warteschlangenberuehrung). Danach mit ausdruecklicher Freigabe: die
+  **180 offenen Auftraege exportiert** (SHA256 `d74e7618…cda9`, ID-Identitaet mit der
+  Loeschauswahl per md5 bewiesen, Datei beim Betreiber) und **in einer geschuetzten Transaktion
+  exakt geloescht**; die **55 erledigten byte-identisch erhalten**; **Migration `20260812`
+  angewendet** (`20260812172327`) und abgenommen — Alterswerte der leeren Warteschlange 0,
+  `altersvertrag="wartezeit"` in Production erfuellbar. Flag blieb aus, kein Deployment, kein
+  Cronlauf. **Der Fuenferlauf bleibt NICHT bestanden**; naechster Schritt ist ein neuer
+  kontrollierter Fuenferlauf (Runbook §6 Schritt 3, K0–K3; Beleg §17.10).
 - **Stand 2026-08-12/3 (Korrektursprint „Altersmessung", PR offen, Production unveraendert):**
   Der erste Production-Lauf am 2026-08-11 wurde durch die eigene Abbruchgrenze gestoppt —
   **zu Unrecht**. `helmut_job_metrics` mass die **Faelligkeit** (`first_due_at`/`due_at`) statt
