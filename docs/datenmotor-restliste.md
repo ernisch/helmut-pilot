@@ -1741,6 +1741,43 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Vorwärtsmigrationen sind auf Production angewendet und rein lesend abgenommen**
   (Runbook §12) — alle OP-30-Flags weiter aus, nichts aktiviert, Tabellen leer; offen sind
   Regellauf-Kontrolle, Flag-Aktivierung (Betreiber) und der Production-Nachweis K0–K3.
+  **Ergänzt 2026-08-11/4:** die Regellauf-Kontrolle ist erledigt — Neutralitätsnachweis
+  bestanden (Runbook §13). **Ergänzt 2026-08-11/5:** der freigegebene Aktivierungssprint
+  ist **blockiert** — 14 von 15 Voraussetzungen erfüllt, aber aus Claude-Sitzungen gibt es
+  **keinen Schreibweg zur Vercel-Production-Konfiguration** (`api.vercel.com`/`vercel.com`/
+  `*.vercel.app` je `CONNECT → 403`, Vercel-MCP ohne Env-/Redeploy-Werkzeug, kein
+  `CRON_SECRET` ⇒ auch K0/K1 nicht belegbar). **Nichts aktiviert, K0–K3 nicht begonnen**;
+  Vorzustand als K0-Grundlinie und die zwei Betreiberwege stehen im Runbook §14.
+  **Ergänzt 2026-08-11/6 — aktiviert und nach K1 abgebrochen:** der Betreiber setzte
+  `HELMUT_SCALABLE_PIPELINE=on` (Redeploy READY 18:52:47Z, unveränderter Commit `eb13652`).
+  **K0 bestanden**; erster Lauf `crawl` 20:00 UTC: 235 Aufträge, nur die fünf aktiven
+  Mandate, 0 für `mdb-a`, Reihenfolge korrekt, 55 erledigt · 43 zurückgestellt ·
+  0 endgültige Fehler · 0 verloren · 0 Dubletten · 0 Pushs · Slot 266,6 s · KI +11 bei
+  Abweichung 0. Der portierte Überspring-Fix ist damit **erstmals in Production belegt**.
+  **Aber:** die Abbruchgrenze aus §8.2 („ältester offener Auftrag > 24 h") ist eingetreten
+  (`betriebsstatus zustand=kritisch`, 5,84 Tage) ⇒ Kontrollen bei K1 gestoppt (Runbook §15).
+  Ursache: vier zurückdatierte Personenquellen-Aufträge, fällig seit 2026-08-06 — ein
+  **vorbestehender OP-15-Rückstand**, den die Warteschlange erstmals sichtbar macht.
+  **Ergänzt 2026-08-12/1 — zurückgenommen:** der Betreiber setzte
+  `HELMUT_SCALABLE_PIPELINE=off` (nur Production) + Redeploy (`dpl_7kcdpTbh…`, READY
+  00:54:14Z, Commit unverändert). Rein lesend belegt (Runbook §16): die 235 Aufträge stehen
+  unverändert still (0 laufend, 0 Leases, 0 endgültige Fehler), `llm_reservations` nie
+  beschrieben, **0 KI-Aufrufe und 0 Kosten nach der Abschaltung**, 5 Mandate und `mdb-a`
+  unverändert, keine neuen Fehler, keine Rücknahmemigration. **Ergänzt 2026-08-12/2 —
+  Wirkungsnachweis BESTANDEN (Runbook §16.12):** der crawl 04:00 UTC
+  (`cron-crawl-20260812040115-0xlmm`, `globalphase` 04:01:15–04:04:40Z, `commit_ref=eb136522`)
+  lief **vollständig über den Altpfad** — Laufquittung `[cron/crawl/globalphase]` statt
+  `[cron/crawl/warteschlange]`, `erfolgreich=5 fehlgeschlagen=0 zustand=ok` — und `helmut_jobs`
+  sah **keinen einzigen Schreibvorgang** (`n_tup_ins/upd/del` unverändert 235/202/0,
+  `max(updated_at)` unverändert, 0 laufend, 0 Leases); `llm_reservations` weiter 0/0/0;
+  KI `used=4` exakt = `verstanden=4` des Altpfads ⇒ 0 Aufrufe durch OP-30; 0 Runtimefehler.
+  Zwingend, weil alle 235 Aufträge fällig waren. **OP-30 ist damit nachweislich aus, §7
+  Schritt 5 erfüllt, der Rücknahmeplan vollständig abgenommen.**
+  **Der Fünferlauf bleibt NICHT bestanden: K2 und K3 wurden
+  nie begonnen.** **Zwei Punkte bleiben daraus offen:** (a) die **Altersgrenze** misst das
+  Alter der *Fälligkeit* (`due_at`) statt des *Auftrags* (`created_at`) — Mangel am
+  Nachweisvertrag, Korrektur ist ein **eigener Folgesprint**; (b) OP-15 (Personenquellen
+  von vier Mandaten seit 2026-08-06 nicht erfolgreich abgerufen) ist jetzt beziffert.
   Für den Einzelpiloten (5–6 Mandate) **kein** Blocker; Blocker
   ab etwa zehn Mandaten und damit vor mehreren zahlenden Kunden.
 
