@@ -34,6 +34,11 @@ const AUFGABENTYPEN = new Set([
   "tenant_narrative"
 ]);
 
+// Die Wartezeitformel wird NICHT nachgebaut, sondern aus der Anwendung geliehen — sonst
+// gaebe es drei Fassungen derselben Regel (SQL, App, Attrappe) und zwei davon koennten
+// stillschweigend auseinanderlaufen.
+const { wartezeitS } = require("../../lib/helmut/scalable-pipeline");
+
 function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
   const zeilen = new Map();     // id -> Zeile
   const nachSchluessel = new Map();  // idempotency_key -> id
@@ -190,7 +195,8 @@ function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
     }, {});
     const wartendFaellig = alle.filter((z) => z.status === "wartend" && Date.parse(z.due_at) <= jetztMs);
     const erledigt = alle.filter((z) => z.status === "erledigt" && z.finished_at && Date.parse(z.finished_at) >= ab);
-    const mandate = alle.filter((z) => z.tenant_id && (z.status === "wartend" || z.status === "laeuft"));
+    const offene = alle.filter((z) => z.status === "wartend" || z.status === "laeuft");
+    const mandate = offene.filter((z) => z.tenant_id);
     return {
       verfuegbar: true,
       kennzahlen: {
@@ -213,7 +219,19 @@ function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
           .filter((z) => Date.parse(z.first_due_at || z.due_at) <= jetztMs - 24 * 3600 * 1000)
           .map((z) => z.tenant_id)).size,
         max_mandatsalter_s: mandate.length
-          ? Math.max(...mandate.map((z) => (jetztMs - Date.parse(z.first_due_at || z.due_at)) / 1000)) : 0
+          ? Math.max(...mandate.map((z) => (jetztMs - Date.parse(z.first_due_at || z.due_at)) / 1000)) : 0,
+        // ── WARTEZEITSICHT (Migration 20260812) ───────────────────────────────────────
+        // Dieselbe Formel wie die SQL-Fassung: `greatest(created_at, first_due_at)` ist der
+        // Zeitpunkt, ab dem der Auftrag bearbeitbar ist; eine in der Zukunft liegende
+        // Bearbeitbarkeit ergibt 0 s, nicht eine negative Wartezeit. Der Vertragstest
+        // vergleicht Attrappe und echte Datenbank Zeile fuer Zeile.
+        aeltester_offener_s: offene.length
+          ? Math.max(...offene.map((z) => wartezeitS(z, jetztMs))) : 0,
+        max_mandatswartezeit_s: mandate.length
+          ? Math.max(...mandate.map((z) => wartezeitS(z, jetztMs))) : 0,
+        ueberfaellige_mandate_wartezeit: new Set(mandate
+          .filter((z) => wartezeitS(z, jetztMs) >= 24 * 3600)
+          .map((z) => z.tenant_id)).size
       }
     };
   }

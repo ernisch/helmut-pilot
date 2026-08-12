@@ -596,7 +596,14 @@ const ALLE_FAMILIEN = [...G.FAMILIEN, ...G.ZUSATZFAMILIEN];
         // `tenant_narrative` — keine K2.1-Struktur. Eigener Nachweis:
         // scripts/jobqueue-narrativ-datenbank-test.js an echter PostgreSQL.
         "20260809_jobqueue_narrativ.sql",
-        "20260809_jobqueue_narrativ_rollback.sql"
+        "20260809_jobqueue_narrativ_rollback.sql",
+        // OP-30, Sprint "Altersmessung der Warteschlange" (2026-08-12): ersetzt
+        // AUSSCHLIESSLICH die lesende Funktion public.helmut_job_metrics und ergaenzt sie um
+        // drei Wartezeit-Spalten. Keine Tabelle, keine Spalte, keine Policy, kein Backfill —
+        // und keine K2.1-Struktur. Eigener Nachweis:
+        // scripts/jobqueue-alter-datenbank-test.js an echter PostgreSQL.
+        "20260812_jobqueue_altersmessung.sql",
+        "20260812_jobqueue_altersmessung_rollback.sql"
       ]);
       // Die Allowlist ist KEINE Abschwaechung: 8.8b prueft unabhaengig und INHALTLICH,
       // dass keine Migration im Repository den Kontextpfad beruehrt — auch keine der

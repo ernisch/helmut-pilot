@@ -446,6 +446,72 @@ async function main() {
       const spTyp = await speicher.enqueue(auftrag({ jobType: "quatsch", idempotencyKey: "G-X" }));
       check("9.5 Unbekannter Aufgabentyp wird in beiden abgelehnt",
         dbTypFehler === true && spTyp.verfuegbar === false, `db=${dbTypFehler} sp=${JSON.stringify(spTyp)}`);
+
+      // Fall F: ALTERSMESSUNG (Korrektursprint 2026-08-12). Die Wartezeitformel steht an
+      // ZWEI Stellen — in SQL und in der Anwendung. Genau solche Doppelungen laufen still
+      // auseinander; deshalb wird sie hier gegen dieselben Daten geprueft.
+      execFileSync("psql", ["-h", host, "-p", process.env.HELMUT_TEST_PG_PORT || "5433",
+        "-U", process.env.HELMUT_TEST_PG_USER || "helmut", "-d", PG_DB,
+        "-v", "ON_ERROR_STOP=1", "-f", path.join(ROOT, "supabase/migrations/20260812_jobqueue_altersmessung.sql")],
+        { encoding: "utf8", stdio: "ignore" });
+      q("delete from public.helmut_jobs");
+      speicher.zuruecksetzen();
+      const uAlter = uhr();
+      const speicherAlter = erzeugeSpeicherWarteschlange({ now: uAlter.jetzt });
+      // Dieselben DREI Zeilen in Datenbank und Attrappe:
+      // (1) frisch erzeugt, Faelligkeit 6 Tage zurueckdatiert  -> Wartezeit 0
+      // (2) wirklich alt (30 h)                                -> Wartezeit 30 h
+      // (3) erst in 6 h bearbeitbar                            -> Wartezeit 0
+      // In der Attrappe entsteht (2) zuerst; danach laeuft die Uhr 30 h weiter.
+      await speicherAlter.enqueue(auftrag({
+        idempotencyKey: "F-wirklich-alt", jobType: "mandate_projection", tenantId: "m-2",
+        payload: { mandatsId: "m-2" }
+      }));
+      uAlter.vor(30 * 3600 * 1000);
+      q(`insert into public.helmut_jobs
+           (job_type, idempotency_key, freshness_window, payload, due_at, first_due_at, created_at, tenant_id)
+         values
+           ('source_fetch','F-alt-quelldatum','2026-08-06T00Z','{}'::jsonb,
+            now() - interval '6 days', now() - interval '6 days', now(), 'm-1'),
+           ('mandate_projection','F-wirklich-alt','2026-08-09T00Z','{}'::jsonb,
+            now() - interval '30 hours', now() - interval '30 hours', now() - interval '30 hours', 'm-2'),
+           ('source_fetch','F-zukunft','2026-08-12T08Z','{}'::jsonb,
+            now() + interval '6 hours', now() + interval '6 hours', now(), 'm-3')`);
+      await speicherAlter.enqueue(auftrag({
+        idempotencyKey: "F-alt-quelldatum", tenantId: "m-1",
+        dueAt: new Date(uAlter.jetzt() - 6 * 86400000).toISOString()
+      }));
+      await speicherAlter.enqueue(auftrag({
+        idempotencyKey: "F-zukunft", tenantId: "m-3",
+        dueAt: new Date(uAlter.jetzt() + 6 * 3600000).toISOString()
+      }));
+
+      const dbAlter = q("select round(aeltester_offener_s), ueberfaellige_mandate_wartezeit,"
+        + " round(max_mandatsalter_s), round(max_mandatswartezeit_s)"
+        + " from public.helmut_job_metrics(1440)").split("|").map((s) => s.trim());
+      const sp = (await speicherAlter.metrics(1440)).kennzahlen;
+      const gleich = (a, b, toleranz = 60) => Math.abs(Number(a) - Number(b)) <= toleranz;
+      check("9.6 Wartezeit: Attrappe und DB stimmen ueberein (~30 h aus dem wirklich alten Auftrag)",
+        gleich(dbAlter[0], sp.aeltester_offener_s) && gleich(sp.aeltester_offener_s, 30 * 3600),
+        `db=${dbAlter[0]} sp=${sp.aeltester_offener_s}`);
+      check("9.7 Das zurueckdatierte Quelldatum treibt die Wartezeit in KEINEM von beiden hoch",
+        Number(dbAlter[0]) < 31 * 3600 && Number(sp.aeltester_offener_s) < 31 * 3600,
+        `db=${dbAlter[0]} sp=${sp.aeltester_offener_s}`);
+      check("9.8 Genau EIN ueberfaelliges Mandat in beiden (das wirklich alte, nicht die drei)",
+        Number(dbAlter[1]) === 1 && Number(sp.ueberfaellige_mandate_wartezeit) === 1,
+        `db=${dbAlter[1]} sp=${sp.ueberfaellige_mandate_wartezeit}`);
+      check("9.9 Beide melden den FAELLIGKEITSRUECKSTAND weiterhin (kein Vertuschen)",
+        Number(dbAlter[2]) > 5 * 86400 && Number(sp.max_mandatsalter_s) > 5 * 86400,
+        `db=${dbAlter[2]} sp=${sp.max_mandatsalter_s}`);
+      check("9.10 Auch die mandatsbezogene Wartezeit stimmt ueberein",
+        gleich(dbAlter[3], sp.max_mandatswartezeit_s),
+        `db=${dbAlter[3]} sp=${sp.max_mandatswartezeit_s}`);
+
+      // Zustand wieder herstellen, damit ein Folgelauf dieser Suite sauber startet.
+      execFileSync("psql", ["-h", host, "-p", process.env.HELMUT_TEST_PG_PORT || "5433",
+        "-U", process.env.HELMUT_TEST_PG_USER || "helmut", "-d", PG_DB,
+        "-v", "ON_ERROR_STOP=1", "-f", path.join(ROOT, "supabase/migrations/20260812_jobqueue_altersmessung_rollback.sql")],
+        { encoding: "utf8", stdio: "ignore" });
     }
   }
 
