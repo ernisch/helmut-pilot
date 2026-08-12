@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-11/6** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30 IST SEIT 2026-08-11 18:52 UTC AKTIV** (§7a) — der Betreiber hat `HELMUT_SCALABLE_PIPELINE=on` gesetzt; **K0 bestanden**, erster Lauf (crawl 20:00 UTC) sauber, aber die Grenze „aeltester offener Auftrag > 24 h" ist eingetreten ⇒ **Kontrollen bei K1 gestoppt, K2/K3 nicht begonnen; Ruecknahme ist Betreiberaktion** (Runbook §15). **(c) OP-31 Frischevertrag BESTANDEN** — Morgenlauf 2026-08-11: `belegt=5/5`, ein Push je Mandat; der erste Morgenlauf **mit** OP-30 steht aus. **(d)** Befund `mdb-a`/`dec-y` geklaert, kein Blocker (Runbook §9). Diese Datei enthaelt
+**Stand: 2026-08-12/1** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30 war 2026-08-11 18:52 bis 2026-08-12 00:54 UTC aktiv und ist ZURUECKGENOMMEN** (§7a) — K0 bestanden, erster Lauf sauber, aber die Grenze „aeltester offener Auftrag > 24 h" trat ein ⇒ **Kontrollen bei K1 gestoppt, K2/K3 nie begonnen, der Fuenferlauf ist NICHT bestanden**; Ruecknahme zustandsseitig belegt, wirkungsseitig offen bis zum crawl 04:00 UTC (Runbook §15/§16). **(c) OP-31 Frischevertrag BESTANDEN** — Morgenlauf 2026-08-11: `belegt=5/5`, ein Push je Mandat. **(d)** Befund `mdb-a`/`dec-y` geklaert, kein Blocker (Runbook §9). Diese Datei enthaelt
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -18,12 +18,11 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 ## 2 · Stand auf `main`
 
-- **HEAD `eb13652`** = Merge von **PR #242** (Doku-PR: OP-30-Neutralitätsnachweis;
-  Production-Deployment `dpl_7XYS3L6pMBtkQwiXJCswmWYkYKvY` READY 2026-08-11T17:43:13Z,
-  Commit gegengeprüft). Davor `6ed4f65` = **PR #241**, `9663fc8` = **PR #240**,
-  `dcd6da5` = **PR #239**, `6030cbb7` = **PR #238** (OP-31, §7a/§9).
-- Davor `ec2e208` (#237), `0f047b1` (#236), `40e7708` (#235), `559a3d9` (#233),
-  `1f10d66` (#234), `a07954df` (#232), `f4f4500b` (#229, K1–K8, kanonisch
+- **HEAD `eb13652`** = Merge **PR #242** (OP-30-Neutralitätsnachweis). In Production läuft
+  dieser Commit über den Rücknahme-Redeploy `dpl_7kcdpTbh…` (READY 2026-08-12T00:54:14Z,
+  §7a/§5). Davor `6ed4f65` (#241), `9663fc8` (#240), `dcd6da5` (#239), `6030cbb7` (#238),
+  `ec2e208` (#237), `0f047b1` (#236), `40e7708` (#235), `559a3d9` (#233), `1f10d66` (#234),
+  `a07954df` (#232), `f4f4500b` (#229, K1–K8, kanonisch
   [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.7). Ältere: Archiv.
 - Merge nach `main` = automatisches Production-Deployment (Vercel `fra1`,
   Projekt `helmut-pilot`). Rollback: [`betrieb/deploy-rollback.md`](betrieb/deploy-rollback.md).
@@ -59,12 +58,12 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
   §12); offen ist **nur noch `20260720`** (OP-03). `20260721`/`20260727`/`20260728`: erledigt.
 - **Kosten:** LLM ~0,14 USD/Betriebstag (Untergrenze, Preisbasis unbelegt,
   [`betrieb/kostenmessung.md`](betrieb/kostenmessung.md)); Nachweisfenster 0,1892 USD.
-- **Zugangsgrenze jeder Claude-Sitzung (erneut gemessen 2026-08-11 18:55 UTC):** Supabase
-  lesend erreichbar; **Vercel-Env weder lesbar noch setzbar** (`api.vercel.com`,
-  `vercel.com` **und** `helmut-pilot.vercel.app`: `CONNECT → 403` Policy-Denial;
-  Vercel-MCP ohne Env-/Redeploy-Werkzeug; `CRON_SECRET` nicht gesetzt ⇒
-  `/api/ops/jobqueue` unerreichbar). Jede Flag-Aktivierung **und jeder Rückbau** ist
-  Betreiberaktion ([`betrieb/env-inventar.md`](betrieb/env-inventar.md) §8).
+- **Zugangsgrenze jeder Claude-Sitzung (erneut gemessen 2026-08-12 01:22 UTC):** Supabase
+  lesend erreichbar; **Vercel-Env weder lesbar noch setzbar** (`api.vercel.com` und
+  `helmut-pilot.vercel.app` per `curl`: `CONNECT → 403`; Vercel-MCP ohne Env-/Redeploy-
+  Werkzeug; `CRON_SECRET` nicht gesetzt ⇒ `/api/ops/jobqueue` fail closed). Lesend geht die
+  Anwendung über das Vercel-MCP-Werkzeug (HTTP 200). Jede Flag-Aktivierung **und jeder
+  Rückbau** ist Betreiberaktion ([`betrieb/env-inventar.md`](betrieb/env-inventar.md) §8).
 
 ## 4 · Aktivierte Funktionen (Production)
 
@@ -75,7 +74,6 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | `HELMUT_MATCHING_AUDIT=on` | seit 2026-07-28, Auditpersistenz + Idempotenz belegt |
 | `HELMUT_PROCESS_RUNS_RELATIONAL=on` | seit 2026-07-27, Dual-Write belegt (W-2 geschlossen) |
 | `HELMUT_ATOMIC_LOCK` | an — atomare, fail-closed Sperren (Token-belegt) |
-| **`HELMUT_SCALABLE_PIPELINE=on`** | **seit 2026-08-11 18:52 UTC (Betreiber, Redeploy `dpl_BmBpsBmg…`)** — `crawl`/`pipeline` laufen über die Warteschlange; laufzeitbelegt (235 Aufträge, §7a). `HELMUT_NARRATIV_QUEUE` und `HELMUT_LLM_FAIRNESS` bleiben **aus** (0 `tenant_narrative`, 0 `llm_reservations`) |
 | LLM-Tagesbudget 100 + Reserve 30 | fail-closed, live |
 
 ## 5 · Deaktivierte Funktionen (bleiben aus, Aktivierung = Freigabe)
@@ -85,6 +83,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **`HELMUT_CRON_GLOBALABRUF`** | **`on`** seit 2026-08-06 ~08:15 UTC (Betreiber-Sichtprüfung, für das Nachweisfenster) ⇒ **Kontextpfad aktiv** — laufzeitbelegt: die drei Fensterläufe 06./07.08. liefen global auf `d8bf68fa…` mit E3 `nv=0`. Ob das Flag nach dem ausgewerteten Fenster `on` bleibt, ist Betreiberentscheidung (das nächste Fenster braucht ohnehin ein neues Deployment). Dritter Zyklus; zweiter war `on` 2026-08-04 18:23 → Rückbau 2026-08-05 |
 | **Berlin (Landesmodul)** | inaktiv. `HELMUT_LANDESMODULE=berlin` seit 2026-07-26 gesetzt, aber **wirkungslos**: 0 berechtigte Berliner Mandate seit dem Rollback ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22). Ob das Flag wirkt, ist **unbewiesen** |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt); PR #132 vor Merge Gate-Name vereinheitlichen |
+| **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **wieder `off`** — war `on` 2026-08-11 18:52 → Rücknahme-Redeploy 2026-08-12 **00:54:14Z** (`dpl_7kcdpTbh…`, Commit `eb13652` unverändert, Aliasse liegen dort). Die **235 Aufträge** des einen Laufs stehen unverändert still (0 laufend, 0 Leases, 0 endgültige Fehler, 0 Reservierungen). **Wirkungsnachweis der Abschaltung offen** bis zum crawl 04:00 UTC (Runbook §16) |
 | **M8 / `HELMUT_MATCHING_RELEVANZ_GATE`** | aus (Default aus, nie aktiviert) |
 | `HELMUT_CRON_GLOBALPHASE` | nicht gesetzt (aus) — K2-Prüfung ergab keine Aktivierungsempfehlung |
 | `HELMUT_UNDERSTANDING_GATE` / `HELMUT_PARDOK_DISPATCH` | `shadow` |
@@ -99,7 +98,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#243** (dieser Sprint) | Doku: blockierter Aktivierungsversuch (Runbook §14) **plus** Aktivierungsbeleg K0 + erster Lauf + Abbruchbefund (§15) | reine Doku, **mergefähig nach Review**; die Betriebsentscheidung aus §15.6 ist davon unabhängig |
+| **#243** (dieser Sprint) | Doku: blockierter Aktivierungsversuch (§14) · Aktivierungsbeleg K0 + erster Lauf + Abbruchbefund (§15) · **Rücknahmebeleg (§16)** | reine Doku, **mergefähig nach Review** (beide Pflicht-Checks grün); Merge ändert nichts an Production |
 | **#231** (Draft) | OP-03 Konten-Vorbedingung, 1 Konto je Mandat | in §6 bisher nicht geführt (Korrektur 2026-08-11/2); Betreiberentscheidung |
 | **#224** (Draft) | F-E2E: Lage-Rangfolge aus berechnetem Rang statt Ablage | behauptet die Behebung des CI-Nichtdeterminismus F-E2E; **nicht reviewt, nicht abgenommen** |
 | **#225** (Draft) | „Produktroadmap für LINIE" | nicht aus dem Helmut-Arbeitsstrang; Einordnung beim Betreiber |
@@ -133,74 +132,78 @@ damit nur noch durch die **separate Startfreigabe** blockiert (§9/§11).
 Fünf Sprints an einem Tag. Die Einzelheiten stehen in den Belegdateien; hier steht nur, was
 für eine Entscheidung zählt.
 
-| Beleg | Inhalt |
-|---|---|
-| [`betrieb/v3-skalierungspruefung-2026-08-08.md`](betrieb/v3-skalierungspruefung-2026-08-08.md) | Ursache: mandatseigene Abrufwege, Kipppunkt n ≈ 14–15 |
-| [`betrieb/skalierungsgrundlage-1000.md`](betrieb/skalierungsgrundlage-1000.md) | Warteschlange, Worker, Flag, erste Messung |
-| [`betrieb/op30-abnahme-2026-08-08.md`](betrieb/op30-abnahme-2026-08-08.md) | Rechengrundlage 5/200/1000, Relevanzordnung, Bereinigung, Profilinventar |
-| [`betrieb/skalierung-200-mandate.md`](betrieb/skalierung-200-mandate.md) | 200 Mandate im Tag, Deckel, Kosten |
-| [`betrieb/lokaler-production-schutz.md`](betrieb/lokaler-production-schutz.md) | Vorfall, Ursache, zweischichtiger Schutz |
-| [`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) | Endgültige Bewertung der fünf roten Suiten |
-| [`betrieb/workerbetrieb.md`](betrieb/workerbetrieb.md) | Worker, Bereinigung, Vercel-Entscheidung |
-| **[`betrieb/op30-abschlussreview-2026-08-08.md`](betrieb/op30-abschlussreview-2026-08-08.md)** | **unabhängiger adversarialer Abschlussreview von PR #233: 12 behobene Befunde, 16 benannte, Migrations-/Rollbackdurchlauf an echter PostgreSQL, Mutationsproben** |
+**Kanonische Belege** (Einzelheiten dort, nicht hier): Runbook
+[`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) —
+Inventar/Pläne/Grenzen · `mdb-a` §9 · Migrationsbeleg §12 · Neutralität §13 · blockierter
+Versuch §14 · Aktivierung + erster Lauf §15 · **Rücknahme §16**. Vorgeschichte:
+[`v3-skalierungspruefung-2026-08-08.md`](betrieb/v3-skalierungspruefung-2026-08-08.md) ·
+[`skalierungsgrundlage-1000.md`](betrieb/skalierungsgrundlage-1000.md) ·
+[`op30-abnahme-2026-08-08.md`](betrieb/op30-abnahme-2026-08-08.md) ·
+[`skalierung-200-mandate.md`](betrieb/skalierung-200-mandate.md) ·
+[`lokaler-production-schutz.md`](betrieb/lokaler-production-schutz.md) ·
+[`op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) ·
+[`workerbetrieb.md`](betrieb/workerbetrieb.md) ·
+[`op30-abschlussreview-2026-08-08.md`](betrieb/op30-abschlussreview-2026-08-08.md) ·
+[`op30-aktivierungsreife-2026-08-09.md`](betrieb/op30-aktivierungsreife-2026-08-09.md) ·
+[`lage-narrativ-warteschlange-2026-08-09.md`](betrieb/lage-narrativ-warteschlange-2026-08-09.md) ·
+[`op30-e1-abschlussreview-2026-08-09.md`](betrieb/op30-e1-abschlussreview-2026-08-09.md) ·
+[`op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) ·
+[`briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md).
 
 **Befund (unverändert gültig).** Der V3-Motorkern skaliert; die Grenze liegt **davor**: jedem
 Profil werden 7–8 eigene Google-Wege vorangestellt (Kipppunkt **n ≈ 14–15**). **Zurückgezogen**
 bleiben „V3 ist für 1000 Mandate konzipiert" und „Skalierungsnachweis für 200 Mandate liegt
-vor". Warteschlange, Worker, KI-Budget und Relevanzordnung sind lokal vollständig gebaut und
-getestet, **alle Flags aus**; die sechs Migrationspaare sind **seit 2026-08-11 angewendet**. Die
-Warteschlange ist nicht der Engpass (8 Worker: 4 093 Aufträge/s) — der Engpass ist die
-Slot-Zuteilung, und genau die löst der Sprint 2026-08-09/3 unten. Details: Belegdateien oben.
+vor". Nicht die Warteschlange ist der Engpass (8 Worker: 4 093 Aufträge/s), sondern die
+Slot-Zuteilung: mit Parallelität 8 + zwei Morgenslots **200/200 bei 59,6 % Reserve** (2026-08-09/3,
+PR #237; R4/R4b behoben). **Offen:** echte Google-/KI-Laufzeit · wirksamer Production-Deckel ·
+**190 fehlende echte Profile** (es gibt 10) · Vercel-Verhalten bei Parallelität 8.
 
-**PR #233/#235/#236 sind gemergt, Deployments READY, erste reguläre Läufe sauber — keine
-Regression.** #235 („Aktivierungsreife 200"): O1–O5 gelöst, Stufennachweis 5–200 (+1 000),
-Importvertrag. #236 (E1): Lage-Narrativ als fünfter Auftragstyp, Flag
-**`HELMUT_NARRATIV_QUEUE`** default AUS; Review behob R1–R3, benannte R4/R6. Belege
-[`op30-aktivierungsreife-2026-08-09.md`](betrieb/op30-aktivierungsreife-2026-08-09.md) ·
-[`lage-narrativ-warteschlange-2026-08-09.md`](betrieb/lage-narrativ-warteschlange-2026-08-09.md) ·
-[`op30-e1-abschlussreview-2026-08-09.md`](betrieb/op30-e1-abschlussreview-2026-08-09.md).
+**Vorlauf 2026-08-08…/11/5, alles gemergt (PR #233–#242).** Warteschlange, Worker, KI-Budget,
+Relevanzordnung und das Lage-Narrativ (`HELMUT_NARRATIV_QUEUE`, default AUS) gebaut und
+getestet; der Produktfehler „übersprungener V3-Lauf gilt als erledigt" lag nur auf einem nie
+gemergten Branch und ist portiert + gehärtet; sechs Migrationspaare am 2026-08-11 10:47–10:52
+UTC angewendet; der Regellauf danach lief unverändert auf dem Altpfad. **OP-31 Frischevertrag
+BESTANDEN** (Restrisiko: ohne `HELMUT_CRON_FAIRNESS` können exakt überlappende Läufe doppelt
+pushen; `briefings` wächst täglich, OP-12; Alarmweg OP-07). **Sprint /5 BLOCKIERT** — es fehlte
+der Schreibweg zur Vercel-Env; dieser Zugangsblocker besteht unverändert fort.
 
-**Kapazitaet der Morgenlage (2026-08-09/3, PR #237).** Kanonisch:
-[`op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md).
-R4/R4b (doppelte Budgetzaehlung, verworfener Bereichsdeckel) behoben; slotgenau gemessen:
-heutige Verdrahtung traegt 39/200, mit Parallelitaet 8 + zwei Morgenslots **200/200 bei
-59,6 % Reserve**. **Offen:** echte Google-/KI-Laufzeit · wirksamer Production-Deckel ·
-**190 fehlende echte Profile** (es gibt 10) · Vercel-Verhalten bei Parallelitaet 8.
+**Aktivierungskontrollen (2026-08-11/6, Runbook §15).** Betreiber setzte
+`HELMUT_SCALABLE_PIPELINE=on` (Redeploy READY 18:52:47Z, **unveränderter** Commit
+`eb13652`); rein lesend kontrolliert. **K0 bestanden** (9/10; offen `/api/ops/jobqueue`
+mangels `CRON_SECRET`). **Erster Lauf `crawl` 20:00 UTC** (**nicht** 16:00 — der Einsprung
+sitzt in `cronSchwererPfad`, gilt für crawl **und** pipeline): 235 Aufträge, nur die fünf
+Mandate, **0 für `mdb-a`**, Reihenfolge korrekt, 55 erledigt · 43 zurückgestellt ·
+**0 endgültige Fehler** · 0 verloren · 0 Dubletten · 0 Pushs · Slot 266,6 s < 270 s ·
+KI **+11 = +11 `knowledge_objects`** (Abweichung 0), `used` 52/100 · V2 **nicht** parallel.
+Der Überspring-Fix ist **erstmals in Production belegt**. **Aber:** `zustand=kritisch`,
+ältester offener Auftrag **5,84 Tage** ⇒ Grenze §8.2 **eingetreten**, K2/K3 nicht begonnen.
+Ursache: **4** von 180 offenen Aufträgen sind zurückdatiert (Personenquellen, fällig seit
+2026-08-06 — vorbestehender OP-15-Rückstand, erst durch die Warteschlange sichtbar).
+**Die Grenze misst das Alter der *Fälligkeit*, nicht des *Auftrags*** — ein Mangel am
+Nachweisvertrag; seine Korrektur ist ein **eigener Folgesprint**, nicht erledigt.
 
-**OP-31 Frischevertrag (2026-08-10/11, PR #238/#239): BESTANDEN.** Kanonisch
-[`briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md)
-§10/§11. Restrisiko: ohne `HELMUT_CRON_FAIRNESS` koennen exakt ueberlappende Laeufe doppelt
-pushen; `briefings` waechst taeglich (OP-12); Alarmweg weiterhin OP-07.
+**Rücknahme (2026-08-12/1, Runbook §16, rein lesend).** Betreiber setzte
+`HELMUT_SCALABLE_PIPELINE=off` (nur Production) + Redeploy: **`dpl_7kcdpTbh…` READY
+2026-08-12T00:54:14Z / 02:54:14 Uhr Berlin**, `githubCommitSha` = `eb136522…` gegengeprüft,
+`source=redeploy` (kein Codewechsel), Aliasse inkl. `helmut-pilot.vercel.app`. Anwendung
+erreichbar (HTTP 200, ausgelieferte Assetversion `?v=eb136522` bestätigt den Commit aus der
+Anwendung selbst). **Zustandsseitig vollständig belegt:** die 235 Aufträge unverändert
+(`max(updated_at)` **2026-08-11 20:04:26Z**, triggergesichert; 0 laufend, **0 Leases**,
+0 `attempts>1`, 0 endgültige Fehler, 0 Dubletten, 0 Fremdmandate) · `llm_reservations`
+**0/0/0, nie beschrieben** · **für 2026-08-12 keine Zählerzeile ⇒ 0 KI-Aufrufe, 0 Kosten
+nach der Abschaltung** (2026-08-11 endete bei `used`=73: 41→52 OP-30-Lauf, →73
+`understanding`-Cron 21:30) · 5 Mandate, `mdb-a` (1/1/0/0) und OP-31-Belege (5+5) unverändert
+· 0 neue Runtime-/DB-/RLS-/Berechtigungsfehler, Advisor unverändert · Migrationen 25,
+Policies 24, RLS force auf beiden Tabellen, **keine Rücknahmemigration**.
+**Wirkungsseitig noch NICHT belegt:** seit dem Redeployment lief kein `crawl`/`pipeline` —
+Production sah nur 5× `/`, 2× `/api/auth/session`, 1× `understanding` (21:30, davor).
+Direkte Env-Einsicht bleibt unmöglich (`CRON_SECRET` fehlt, Vercel-Egress `403`, erneut
+gemessen). **Entschieden wird das am crawl 04:00 UTC / 06:00 Uhr Berlin** — zweiseitig
+eindeutig, weil **alle 235 Aufträge fällig sind** (`due_at ≤ now`): bleibt `helmut_jobs`
+byte-identisch, ist die Abschaltung wirksam. Rein lesende Fortsetzung dafür eingeplant.
 
-**OP-30-Vorbereitung/Migration/Neutralitaet (2026-08-11/2–/4, PR #240–#242).** Kanonisch
-[`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) (Inventar,
-Plaene, Grenzen, `mdb-a` §9; Migrationsbeleg §12; Neutralitaetsbeleg §13). Kernbefunde:
-der Produktfehler „übersprungener V3-Lauf gilt als erledigt" lag nur auf einem nie
-gemergten Branch und ist portiert + gehaertet; sechs Migrationspaare 10:47–10:52 UTC
-angewendet; erster Regellauf danach lief unveraendert auf dem Altpfad
-(`erfolgreich=5`, `helmut_jobs`/`llm_reservations` **nie beschrieben**).
-
-**Sprint 2026-08-11/5: BLOCKIERT** — 14/15 Voraussetzungen erfüllt, es fehlte der
-Schreibweg zur Vercel-Env; nichts aktiviert, Vorzustand als K0-Grundlinie erhoben
-(Runbook §14). Der Zugangsblocker besteht unverändert fort.
-
-**Sprint „OP-30-Aktivierungskontrollen" (2026-08-11/6): OP-30 IST AKTIV, Kontrollen bei K1
-gestoppt.** Betreiber setzte `HELMUT_SCALABLE_PIPELINE=on` (Redeploy `dpl_BmBpsBmg…` READY
-18:52:47Z, **unveränderter** Commit `eb13652`). Diese Sitzung kontrollierte rein lesend.
-**K0 bestanden** (9/10; offen: `/api/ops/jobqueue` mangels `CRON_SECRET`). **Erster Lauf**
-`crawl` 20:00 UTC (**nicht** 16:00 — der Einsprung sitzt in `cronSchwererPfad` und gilt für
-beide Crons): 235 Aufträge, nur die fünf Mandate, **0 für `mdb-a`**, Reihenfolge korrekt,
-55 erledigt · 43 zurückgestellt · **0 endgültige Fehler** · 0 verloren · 0 Dubletten ·
-0 Pushs · Slot 266,6 s < 270 s · KI **+11 = +11 `knowledge_objects`** (Abweichung 0),
-`used` 52/100 · V2 **nicht** parallel. Der Überspring-Fix ist **erstmals in Production
-belegt**. **Aber:** `zustand=kritisch`, ältester offener Auftrag **5,84 Tage** ⇒ Grenze §8.2
-**eingetreten**, K2/K3 nicht begonnen. Ursache: **4** von 180 offenen Aufträgen sind
-zurückdatiert — Personenquellen von vier Mandaten, fällig seit 2026-08-06 (vorbestehender
-OP-15-Rückstand, erst durch die Warteschlange sichtbar). Zusätzlich belegt: die Grenze misst
-das Alter der *Fälligkeit*, nicht des *Auftrags* — Mangel am Nachweisvertrag. Runbook §15.
-
-**Folge für OP-25:** die Aktivierung verändert `quellenVereinigung`, die
-K2.1-Sichtbarkeitsmengen und die Laufzeitbilanz ⇒ **OP-25 muss von vorn**.
+**Folge für OP-25:** eine Aktivierung verändert `quellenVereinigung`, die
+K2.1-Sichtbarkeitsmengen und die Laufzeitbilanz ⇒ **OP-25 muss danach von vorn**.
 
 
 ## 8 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
@@ -226,18 +229,12 @@ K2.1-Sichtbarkeitsmengen und die Laufzeitbilanz ⇒ **OP-25 muss von vorn**.
 
 ## 9 · Ausstehende Production-Nachweise
 
-- **OP-25-Nachweis nach §7.7.5: BESTANDEN — drittes Fenster 2026-08-07/08 (Exit 0,
-  null Befunde), kanonisch §7.7.9.** Aktivierung `dpl_AdZ4JJJZUAT27X72SWzVeFyJu49a`
-  (Merge PR #232, Commit `a07954df…` mit dem Kostenlücken-Fix), READY 20:19:06.409Z,
-  Baseline +160 s (`belege/op25-startbaseline-2026-08-07-fixfenster.json`, SHA256
-  `8414fab3…`). Alle Kriterien grün: 3/3 Läufe vollständig + versiegelt, Commitnachweis,
-  m5 konstant, K1-Bindung, E3 `nv=0`, Kontextzahl erklärt, kein Watchdog-Ersatzlauf,
-  Retention 36, **Kosten 0,2106 USD / unbepreist 0** (Fix wirkte). Beleg
-  `belege/op25-auswertung-2026-08-08.log` (SHA256 `17ed0f83…`). Historie: Fenster 1
-  (04./05.08.) `nicht_bestanden`, Fenster 2 (06./07.08.) `nicht_pruefbar` — beide bleiben
-  unverändert dokumentiert. **Geltung: nur die aktuelle Architektur mit 5 Mandaten —
-  beweist weder OP-30 noch 200 Mandate; nach OP-30-Aktivierung vollständige Wiederholung
-  erforderlich.** OP-14 (Verstehensrückstand) bleibt ausdrücklich offen.
+- **OP-25-Nachweis nach §7.7.5: BESTANDEN — drittes Fenster 2026-08-07/08 (Exit 0, null
+  Befunde), kanonisch §7.7.9** (Aktivierung `dpl_AdZ4JJJ…`, PR #232 / `a07954df…`; alle
+  Kriterien grün, Kosten 0,2106 USD, Belege `belege/op25-*`). Fenster 1 `nicht_bestanden`,
+  Fenster 2 `nicht_pruefbar` — bleiben dokumentiert. **Geltung: nur die aktuelle Architektur
+  mit 5 Mandaten — beweist weder OP-30 noch 200 Mandate; nach einer OP-30-Aktivierung
+  vollständige Wiederholung.** OP-14 (Verstehensrückstand) bleibt offen.
 - **OP-31-Nachweis: BESTANDEN — Morgenlauf 2026-08-11 05:00 UTC** (§7a). Kopfstatus/UI-Rendering
   live nicht per Session abgerufen (kein Zugangsgeheimnis in dieser Sitzung) — Aussage stützt
   sich auf den relational geprüften Beleg plus testgesicherten Code (F1–F6 des Reviews).
@@ -274,19 +271,22 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Runbook §6 Schritt 1–4 sind erledigt** (§12/§13/§15). **Offen ist eine Betreiber-
-Entscheidung, weil die Abbruchgrenze aus §8.2 eingetreten ist** (Runbook §15.6):
+**Runbook §6 Schritt 1–4 sind erledigt, Schritt 5 wurde nach K1 abgebrochen, und die
+Rücknahme (§7 Schritt 1) ist ausgeführt** (§12/§13/§15/§16). Reihenfolge jetzt:
 
-1. **Regelkonform:** `HELMUT_SCALABLE_PIPELINE` auf `off` + Redeploy. Der Altpfad läuft ab
-   dem nächsten Cron-Fenster unverändert; die 180 offenen Aufträge bleiben folgenlos stehen,
-   keine Rücknahmemigration nötig; **oder**
-2. **Bewusst weiterlaufen lassen** — dann mit ausdrücklicher Entscheidung **und**
-   berichtigter Grenze in §8.2 (Alter des *Auftrags* statt der *Fälligkeit*). Prüfpunkte am
-   Morgenlauf 05:00 UTC: Morgenlage 5/5, Frischebelege 5/5, offene Aufträge fallend,
-   `zustand` nicht mehr `kritisch`.
-3. Unabhängig davon: **OP-15** (Personenquellen seit 2026-08-06 nicht erfolgreich abgerufen)
-   ist jetzt beziffert und gehört behoben; `CRON_SECRET`/Egress für eine Folgesitzung
-   freigeben, sonst bleiben K1-Messquelle und Rücknahmeweg betreibergebunden.
+1. **Sofort (rein lesend, keine Freigabe nötig):** Abnahme der Rücknahme am **crawl
+   04:00 UTC / 06:00 Uhr Berlin** nach der Prüfliste Runbook §16.6 — erst danach ist die
+   Abschaltung wirkungsbasiert belegt. **Kein manueller Cronlauf.**
+2. **Danach eigener Folgesprint: Altersgrenze berichtigen** — §8.1 Nr. 11 / §8.2 und
+   `betriebsstatus` auf das Alter des *Auftrags* (`created_at`) statt der *Fälligkeit*
+   (`due_at`) beziehen bzw. den Erstlauf ausdrücklich ausnehmen (Runbook §16.10 Punkt 4).
+   **Ohne diese Korrektur ist ein zweiter Aktivierungsversuch nicht sinnvoll bewertbar.**
+3. Unabhängig davon: **OP-15** (Personenquellen von vier Mandaten seit 2026-08-06 nicht
+   erfolgreich abgerufen) ist jetzt beziffert und gehört behoben; `CRON_SECRET`/Egress für
+   eine Folgesitzung freigeben, sonst bleiben Messquelle **und** Rücknahmeweg
+   betreibergebunden.
+4. **Der Fünferlauf ist nicht bestanden** (K2/K3 nie begonnen) — eine Wiederholung beginnt
+   bei §6 Schritt 3 und braucht wieder K0–K3.
 
 Ausweitung auf 25+ erst nach K3 **und neu bestandenem OP-25**
 ([`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) §10);
@@ -338,13 +338,11 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
+| 2026-08-12/1 | **OP-30-Rücknahmebeleg** (§7a): Abschaltung zustandsseitig vollständig belegt (235 Aufträge unverändert, 0 Leases, 0 Reservierungen, 0 KI-Aufrufe/Kosten, 5 Mandate, `mdb-a` inert, 0 neue Fehler) — **wirkungsseitig offen bis zum crawl 04:00 UTC**, weil seither kein Lauf stattfand; **Fünferlauf nicht bestanden, K2/K3 offen** · Runbook §16 | **teilweise abgeschlossen** |
 | 2026-08-11/6 | **OP-30-Aktivierungskontrollen** (§7a): K0 bestanden, erster Lauf sauber, **Abbruchgrenze §8.2 eingetreten** ⇒ bei K1 gestoppt · Runbook §15 | **teilweise abgeschlossen** |
 | 2026-08-11/5 | **OP-30-Aktivierung 5 Mandate** (§7a): Vorprüfung 14/15 grün, kein Schreibweg zur Vercel-Env ⇒ vor jeder Änderung gestoppt; nichts aktiviert · Runbook §14 | **blockiert** |
 | 2026-08-11/4 | **OP-30-Neutralitätsnachweis** (§7a): Regellauf nach PR #241 rein lesend geprüft — Altpfad unverändert, 5/5 erfolgreich, `helmut_jobs`/`llm_reservations` nie beschrieben, `mdb-a` inert · Runbook §13 | **erfolgreich abgeschlossen** |
 | 2026-08-11/3 | **OP-30-Vorwärtsmigrationen Production** (§7a): alle sechs Paare angewendet (10:47–10:52 UTC), lesende Abnahme grün, Advisor ohne neuen WARN/ERROR · Runbook §12 | **erfolgreich abgeschlossen** |
 | 2026-08-11/2 | **OP-30-Aktivierungsvorbereitung** (§7a): Überspring-Produktfehler portiert (120/120), Migrationskette 31/31, `mdb-a` geklärt, Runbook · [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) | **abgeschlossen** (PR #240) |
-| 2026-08-11 | **OP-31 Production-Nachweis** (§7a): erster Morgenlauf auf `6030cbb7`, `belegt=5/5`, 5 relational geprüfte Belege, kein Doppel-Push · [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) §11 | **abgeschlossen** |
-| 2026-08-10 | **OP-31 Frischevertrag** (§7a): mandatsscharfe Lauf-Quittung ohne Migration; adversarialer Review, sechs echte Befunde behoben. Tests 238/242, Smoke 32/32 | **teilweise abgeschlossen** (Merge/Nachweis 2026-08-11) |
-| 2026-08-09/3 | **OP-30 Kapazität der Morgenlage + R4/R4b**: doppelte Budgetzählung an echter PostgreSQL behoben; 200/200 im Morgenfenster mit 59,6 % Reserve · [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) | **teilweise abgeschlossen**, PR #237 |
 
 Der Sprint 2026-08-09/2 (E1 `tenant_narrative`, PR #236 gemergt) und die OP-30-Sprints vom 2026-08-08 stehen vollständig in den Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) trägt den CI-Basisrot-Befund). Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 stehen kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 und ältere Beweisketten: **Archiv** ([`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)).
