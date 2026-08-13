@@ -1419,6 +1419,22 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 #### OP-30 · Mandatseigene Abrufwege vervielfachen den Quellenabruf linear (neu, Sprint „V3-Skalierungsprüfung" 2026-08-08; Prioritätsklasse P1)
 
+- **Stand 2026-08-13/2 (zweiter Fuenferlauf-Versuch, NICHT bestanden — Kapazitaetsbefund;
+  Beleg Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §19):**
+  K0 vollstaendig gruen (inkl. `altersvertrag="wartezeit"` produktiv), Betreiber-Aktivierung
+  2026-08-12 18:50 UTC (`dpl_9Pvj1N6y…`, Commit `8088fc9`). **Fuenf Laeufe fehlerfrei und
+  fair** — 0 endgueltige Fehler, 0 Dubletten, 0 fremde Mandate, Dedupe produktiv belegt
+  (`neu=169<geplant=193`), OP-31 hielt (5/5+5/5), der berichtigte Wartezeitvertrag
+  bestaetigte sich (6,8 d Faelligkeitsrueckstand ohne Fehlabbruch). **Aber: Ankunft ~440–470
+  Auftraege/Tag ≫ Abfluss ~130–180/Tag** bei der §6-Default-Konfiguration (worker=2,
+  Slotbudget 270 s, 3–4 Drain-Slots/Tag) ⇒ Bestand 0→524, die 24-h-Wartezeitgrenze der
+  Altauftraege war rechnerisch sicher nicht einhaltbar ⇒ **kontrollierte Ruecknahme VOR
+  Grenzuebertritt** (2026-08-13 16:27 UTC, `dpl_5Ktikubeezvj…`), **Wirkungsnachweis am crawl
+  20:00 UTC bestanden** (Altpfad, `pg_stat` 939/1765/180 unveraendert). 524 wartende
+  Auftraege stehen **inert**. K2/K3 nicht erreicht. **Vor Versuch 3:** Abflussrate-
+  Entscheidung (Worker-Parallelitaet/Slots, §19.6), erneute Neutralisierung nach Muster
+  §17.8, §8.3/§8.4-Watchdog-Kriterium queue-tauglich fassen. Nebenbefunde: `llm_usage` leer
+  (Punkt 17), `zustand=unbekannt` bei Metrik-Lesetimeout am Laufende.
 - **Stand 2026-08-12/4 (Betreiber-Sprint Neutralisierung + Migration, AUSGEFUEHRT):** PR #244
   gemergt (`1fd9c98b`); Wirkungsnachweis des ausgeschalteten Motors am pipeline-Lauf 16:00 UTC
   bestanden (Altpfad, 0 Warteschlangenberuehrung). Danach mit ausdruecklicher Freigabe: die

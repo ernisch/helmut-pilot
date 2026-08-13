@@ -1839,3 +1839,118 @@ OP-03), keine Änderung an den 55 erledigten Aufträgen, OP-15 unberührt, keine
 K0–K3 von vorn) ist NICHT ausgeführt — er ist der nächste, separat freigabepflichtige
 Betreiberschritt.** K0 prüft zusätzlich `altersvertrag = "wartezeit"`; diese Bedingung ist
 durch die angewendete Migration jetzt erfüllbar.
+
+## 19 · Zweiter Aktivierungsversuch 2026-08-12/13 — kontrollierte Rücknahme VOR Grenzübertritt (Fünferlauf NICHT bestanden)
+
+Durchgeführt in einer Claude-Sitzung mit ausdrücklicher Betreiberfreigabe (Aktivierung)
+und Betreiber-Ausführung beider Env-Änderungen (kein Schreibweg aus Sitzungen, §14.1
+unverändert). Alle Sitzungszugriffe rein lesend; kein manueller Cronlauf, keine
+Production-Datenänderung, keine Migration, keine Codeänderung.
+
+### 19.1 K0-Vorprüfung vor der Aktivierung (2026-08-12, 18:27–18:50 UTC) — bestanden
+
+Alle zehn Auftragspunkte a–j grün, u. a.: Production-Deployment
+`dpl_6TeiGM7w4aeWhp8fTUL28ThSsJED` READY 18:27:35Z mit Commit `8088fc9` (= Merge PR #245 =
+`main`-HEAD; Asset-Version `?v=8088fc99` aus der Anwendung bestätigt, CI grün) ·
+Flag wirkungsbasiert aus (16:00-Lauf Altpfad; `pg_stat` 235/202/180 unverändert seit §17.10) ·
+26 Migrationen, zuletzt `20260812172327`, offen nur `20260720` (OP-03) ·
+**`altersvertrag="wartezeit"` erfüllt** (alle drei Wartezeit-Spalten in `helmut_job_metrics()`,
+Werte 0; Formel `greatest(created_at, first_due_at)` in der Definition) · Warteschlange exakt
+55 erledigt / 0 offen, Inhalts-md5 `0ad846c7…fe2c` byte-identisch zu §17.10 · 0 Leases /
+0 Reservierungen · genau die 5 Mandate, `mdb-a` inert (1/1/0) · 0 konkurrierende
+Deployments/Läufe · Offline-Suite lokal 240/245 (die 5 roten = dokumentiertes lokales
+Basisrot, §17.6; im CI grün). Bekannte Lücke unverändert: `/api/ops/jobqueue` ohne
+`CRON_SECRET` nicht abrufbar (fail-closed 401 bestätigt) — Ersatzbeleg wie §15.1.
+CI-Nebenbefund: der main-Lauf auf `1fd9c98` war durch die einzelne flackernde Suite
+`brandenburg-e2e-vertrag-test.js` rot (244/245; F-E2E-Klasse); auf `8088fc9` grün.
+
+### 19.2 Aktivierung und K0-Sofortkontrolle (18:50–18:52 UTC) — bestanden
+
+Betreiber setzte `HELMUT_SCALABLE_PIPELINE=on` (nur Production) + Redeploy:
+**`dpl_9Pvj1N6y94PhdqWQ5BawoxVk839C` READY 18:50:17Z**, `source=redeploy`, Commit `8088fc9`
+unverändert ⇒ reine Konfigurationsänderung (erneut Doppel-Redeploy, der zweite trägt die
+Aliasse — bekanntes Muster, unschädlich). K0 sofort: Anwendung HTTP 200, DB seit Aktivierung
+unberührt (55/0, 0 Leases/Reservierungen, Budget und Briefings unverändert) — 0 Zusatzkosten.
+Punkt 9 (nur dieses Flag wirksam) wie beim ersten Versuch erst am ersten Lauf belegbar — dort
+belegt (§19.3: 0 `tenant_narrative`, 0 `llm_reservations`).
+
+### 19.3 Die fünf Läufe des Nachweisfensters (alle Werte gemessen)
+
+| Lauf | Kennzahlen | Urteil |
+|---|---|---|
+| **crawl 20:00 12.08.** `cron-crawl-20260812200012-pe1ba` | `[cron/crawl/warteschlange]` **272 640 ms** · geplant=193 neu=193 · erledigt=65 · wiederholt=2 · endgueltigFehler=0 · rotation=5 · zustand=**unbekannt** (Metrik-Lesetimeout am Laufende nach 2 Storage-Timeouts; Direktmessung real grün) · 247 neue Aufträge, nur die 5 Mandate, `mdb-a`=0, 0 Dubletten · **Wartezeitvertrag wirkt:** Fälligkeitsrückstand 6,8 d gemeldet ohne Abbruch, Wartezeit 825 s · R4: +12 Buchungen / 11 persistierte Gegenstücke (1 neues + 10 aktualisierte KO; 12. Buchung koinzidiert mit 2 am Slotende abgeschnittenen Verstehensaufträgen — keine Verdopplungssignatur) · 11 Zeilen in `laeuft` mit ablaufenden Leases (Slotende-Abschnitt, by design) | Wirkungsnachweis OP-30 erbracht; Slotdauer in Beobachtungszone 270–280 s |
+| **crawl 04:00 13.08.** `cron-crawl-20260813040043-t6f2s` | **262 637 ms** · erledigt=30 · endgueltigFehler=0 · zustand=**gruen** · die 11 Abgeschnittenen ohne Dubletten wiedergeholt (9× attempts>1) · R4: +12 Buchungen / 14 KO-Gegenstücke, kein Überschuss | grün |
+| **morning 05:00 + lage 05:45 13.08.** | **5/5 `morgenlage` `status=erfolg`** + 5/5 `lage`, je genau 1 je Mandat, +10 Briefings exakt, genau 1 Push je Mandat, Budget +26 | grün — OP-31 hält unter OP-30 |
+| **Watchdog 06:54–06:58 13.08.** (GitHub Actions success) | Unter OP-30 ein regulärer Drain-Slot: 31 erledigt (28 Abrufe + 3 Verstehen), +12 Buchungen / 9 Gegenstücke, **0 neue Briefings, 0 Doppel-Pushs, 0 Dubletten** | Schutzabsicht erfüllt; **§8.3 wörtlich („0 neue KI-Aufrufe") ist queue-inkompatibel** — der Zweitlauf arbeitet legitim neuen Rückstand ab (Kriterienbefund → §19.6) |
+| **pipeline 16:00 13.08.** `cron-pipeline-20260813160255-6fswd` | **257 041 ms** · erledigt=54 · **neu=169 < geplant=193 ⇒ Dedupe erstmals produktiv belegt** (Messwert 8) · endgueltigFehler=0 · zustand=**warnung** (Wartezeit 12–24-h-Zone, korrekt) | grün, Warnzone korrekt gemeldet |
+
+Durchgehend über alle Läufe: **0 endgültige Fehler, 0 doppelte Idempotenzschlüssel, 0 fremde
+Mandate, 0 Aufträge für `mdb-a`, 0 `llm_reservations`, 0 `tenant_narrative`, kein
+Deckelkontakt** (12.08.: 62/100 gesamt; 13.08.: 77/100), keine neue Runtime-Fehlerklasse
+(nur OP-15-Google-Klasse und Supabase-Storage-Timeouts beim Blob-Schreiben).
+
+### 19.4 Der Kapazitätsbefund — Grund der Rücknahme
+
+**Ankunftsrate ≫ Abflussrate bei der §6-Default-Konfiguration** (worker=2, Slotbudget 270 s,
+3–4 Drain-Slots/Tag; Briefing-/Lage-Slots konsumieren die Warteschlange nicht):
+
+- Ankunft: ~440–470 Aufträge/Tag bei 5 Mandaten (12.08. 20:00: +247; 13.08.: +218 am 04:00,
+  +169 netto am 16:00 trotz Dedupe).
+- Abfluss: 30–65 Aufträge je Slot gemessen (65/30/31/54) ⇒ ~130–180/Tag.
+- Folge: offener Bestand 0 → 182 (12.08. 20:15) → 371 (13.08. 06:18) → **524** (16:20);
+  vom 12.08.-Lauf waren um 08:46 noch 125, nach dem 16:00-Slot noch **77 offen** — deren
+  24-h-Wartezeitmarke (20:00:26–20:05 UTC) war ohne weiteren Drain-Slot **rechnerisch sicher**
+  nicht mehr einhaltbar. Zwei §8.2-Stopp-Kriterien liefen damit auf: Wartezeit > 24 h und
+  „Warteschlange wachsend über 24 h".
+
+Die Produktausgabe blieb durchgehend unberührt (Morgenlage über die unveränderte
+Briefing-Route). Kein Warteschlangenfehler: der Motor arbeitete fehlerfrei, fair, ohne
+Doppelarbeit — er ist mit den Defaults schlicht zu langsam für die eigene Ankunftsrate.
+Vorwarnung an den Betreiber 08:55 UTC, Entscheidungsmessung 16:19, Rücknahme-Anforderung
+16:20 — **die Rücknahme erfolgte VOR Eintritt des kritischen Zustands** (bewusste
+Betreiberentscheidung statt Nachtbetrieb in `kritisch`).
+
+### 19.5 Rücknahme und Wirkungsnachweis (§7 Schritt 1 + 5) — BESTANDEN
+
+Betreiber setzte das Flag `off` + Redeploy: **`dpl_5Ktikubeezvj1hwfmXaxr7QqhWPi` READY
+16:27:27Z**, `source=redeploy`, Commit `8088fc9` unverändert. Basislinie 17:18/19:38 UTC
+eingefroren: 524 wartend / 235 erledigt, `pg_stat` **939/1765/180**, 0 Leases,
+0 Reservierungen, Budget 72 (16:07). **crawl 20:00 UTC 13.08.**
+(`cron-crawl-20260813200040-6d9uc`): vollständig Altpfad — `[cron/crawl/globalphase]`
+202 563 ms, status=teilweise, quellen=174, rohdokumente=1946, verstanden=9;
+`[cron/crawl/fairness] erfolgreich=5 zustand=ok`; **keine** `warteschlange`-Zeile;
+`pg_stat` byte-genau unverändert 939/1765/180; 524/235 unverändert; 0 Leases;
+0 Reservierungen; Budget +5 vollständig durch das Altpfad-Verstehen erklärt (5 Clusteraufrufe
+für 9 Dokumente); Fehler nur OP-15-Klasse (1 Google-Timeout). **OP-30 ist wirkungsbasiert
+wieder aus.** Die 524 wartenden Aufträge bleiben als ehrlicher, inerter Zustand stehen
+(§7 Schritt 2/3: niemand holt sie ab, keine Kosten); die überschrittene 24-h-Marke ist im
+ausgeschalteten Zustand bedeutungslos.
+
+### 19.6 Kriterien- und Messbefunde für den nächsten Versuch
+
+1. **§8.4-K1-Kriterium „Watchdog-Zweitlauf ohne neue KI-Aufrufe" (§8.3) passt nicht zum
+   Warteschlangenpfad:** der Zweitlauf draint legitim neuen Rückstand. Richtige Fassung:
+   „0 Doppelarbeit, 0 Doppel-Pushs, Buchungen nur für erstmalige Arbeit" — vor dem nächsten
+   Versuch in §8.3/§8.4 einarbeiten.
+2. **`llm_usage` ist leer** (auch an Vortagen) — die R4-Gegenprobe stützt sich auf
+   KO-Gegenstücke und ist bei Slotende-Abschnitten nicht exakt schließbar (Punkt 17,
+   Kostenmessung). Echte Aufruf-Telemetrie wäre der saubere Träger.
+3. **`zustand=unbekannt` bei Metrik-Lesetimeout am Laufende** (12.08. 20:04): ehrlich statt
+   falschem Grün, aber eine Messlücke — der Laufabschluss sollte die Metrik-Lesung
+   wiederholen dürfen.
+4. **Wartezeitvertrag §17.5 erstmals produktiv bestätigt:** 6,8 d Fälligkeitsrückstand ohne
+   Fehlabbruch, Wartezeit als maßgebliche Größe; Warn-/Kritisch-Stufen feuerten korrekt.
+5. **Vor einem dritten Versuch zu entscheiden (Betreiber):** (a) Abflussrate erhöhen —
+   `HELMUT_WORKER_*`-Parallelität (lokal bis 8 bewiesen: 4 093 Aufträge/s) und/oder mehr
+   Drain-Slots; §6 Schritt 3 („Defaults, sonst nichts") wäre entsprechend neu zu fassen und
+   die Kapazität je Slot vorab zu bemessen; (b) Umgang mit den 524 inerten Aufträgen — vor
+   einem dritten Versuch erneute Neutralisierung nach dem bewiesenen Muster §17.8/§17.10
+   (Export → geschützte Löschung; Rückweg 31-PASS-belegt).
+
+### 19.7 Nicht getan (Verbote eingehalten)
+
+Kein Merge nach `main`, kein Deployment aus der Sitzung (beide Env-Änderungen + Redeploys
+waren Betreiberaktionen nach ausdrücklicher Freigabe bzw. §8.2-Empfehlung), kein manueller
+Cronlauf, keine Migration (offen bleibt nur `20260720`), keine Production-Datenänderung
+(0 Schreibzugriffe; alle Belege rein lesend), keine Änderung an Crons/Secrets/anderen Flags,
+keine Ausweitung über 5 Mandate, `understanding-recovery.yml` nicht berührt.
