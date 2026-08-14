@@ -183,7 +183,7 @@ async function main() {
   await check("5.3 Unbekannter Auftrag -> Quarantaene (die Nachricht zeigt auf nichts)", async () => {
     const r = await verbraucher.verarbeiteWecksignal({
       payload: dispatch.transportPayload(UUID), env: SQS_ENV,
-      deps: { claimById: async () => ({ verfuegbar: true, uebernommen: false, grund: "unbekannt" }) } });
+      deps: { supabasePflicht: false, relay: false, claimById: async () => ({ verfuegbar: true, uebernommen: false, grund: "unbekannt" }) } });
     assert.strictEqual(r.quarantaene, true);
     assert.strictEqual(r.grund, "auftrag-unbekannt");
   });
@@ -193,7 +193,7 @@ async function main() {
     const gesehen = [];
     await verbraucher.verarbeiteWecksignal({
       payload: dispatch.transportPayload(UUID2), env: SQS_ENV,
-      deps: { claimById: async (o) => { gesehen.push(o.jobId); return { verfuegbar: true, uebernommen: false, grund: "lease-fremd" }; } } });
+      deps: { supabasePflicht: false, relay: false, claimById: async (o) => { gesehen.push(o.jobId); return { verfuegbar: true, uebernommen: false, grund: "lease-fremd" }; } } });
     assert.deepStrictEqual(gesehen, [UUID2]);
   });
   await check("6.2 Zweite Zustellung eines erledigten Auftrags: KEINE Arbeit, Nachricht weg", async () => {
@@ -201,6 +201,7 @@ async function main() {
     const r = await verbraucher.verarbeiteWecksignal({
       payload: dispatch.transportPayload(UUID), env: SQS_ENV,
       deps: {
+        supabasePflicht: false, relay: false,
         claimById: async () => ({ verfuegbar: true, uebernommen: false, grund: "bereits-erledigt" }),
         handlerDeps: { handler: { source_fetch: async () => { handlerAufrufe += 1; return { ok: true }; } } }
       } });
@@ -211,14 +212,14 @@ async function main() {
   await check("6.3 Fremde Lease -> wiederholen (kein Verlust, keine Doppelarbeit)", async () => {
     const r = await verbraucher.verarbeiteWecksignal({
       payload: dispatch.transportPayload(UUID), env: SQS_ENV,
-      deps: { claimById: async () => ({ verfuegbar: true, uebernommen: false, grund: "lease-fremd" }) } });
+      deps: { supabasePflicht: false, relay: false, claimById: async () => ({ verfuegbar: true, uebernommen: false, grund: "lease-fremd" }) } });
     assert.strictEqual(r.wiederholen, true);
     assert.strictEqual(r.erledigt, false);
   });
   await check("6.4 Datenbank nicht verfuegbar -> wiederholen, NICHTS behaupten", async () => {
     const r = await verbraucher.verarbeiteWecksignal({
       payload: dispatch.transportPayload(UUID), env: SQS_ENV,
-      deps: { claimById: async () => ({ verfuegbar: false, grund: "migration-fehlt" }) } });
+      deps: { supabasePflicht: false, relay: false, claimById: async () => ({ verfuegbar: false, grund: "migration-fehlt" }) } });
     assert.strictEqual(r.wiederholen, true);
     assert.strictEqual(r.gearbeitet, false);
   });
@@ -226,7 +227,7 @@ async function main() {
     let claims = 0;
     const r = await verbraucher.verarbeiteWecksignal({
       payload: dispatch.transportPayload(UUID), env: {},
-      deps: { claimById: async () => { claims += 1; return { verfuegbar: true, uebernommen: true }; } } });
+      deps: { supabasePflicht: false, relay: false, claimById: async () => { claims += 1; return { verfuegbar: true, uebernommen: true }; } } });
     assert.strictEqual(r.wiederholen, true);
     assert.match(String(r.grund), /antrieb-bestand/);
     assert.strictEqual(claims, 0, "ohne Ereignis-Antrieb wird nichts beansprucht");
@@ -238,12 +239,46 @@ async function main() {
     assert.strictEqual(r.grund, "schema-version-neuer-als-deployment");
   });
 
+  abschnitt("6b · Supabase-Riegel: ohne belegte Verbindung wird NIE gearbeitet");
+  await check("6b.1 Ohne Supabase-Verbindung wird NICHTS beansprucht (kein Lokalbetrieb)", async () => {
+    let claims = 0;
+    const r = await verbraucher.verarbeiteWecksignal({
+      payload: dispatch.transportPayload(UUID), env: SQS_ENV,
+      deps: { claimById: async () => { claims += 1; return { verfuegbar: true, uebernommen: true }; } } });
+    assert.strictEqual(r.wiederholen, true);
+    assert.strictEqual(r.grund, "supabase-nicht-verbunden");
+    assert.strictEqual(claims, 0, "ohne Supabase darf kein Auftrag beansprucht werden");
+  });
+  await check("6b.2 Ein SSM-Fehler stoppt geschlossen (Nachricht wird erneut zugestellt)", async () => {
+    const r = await verbraucher.verarbeiteWecksignal({
+      payload: dispatch.transportPayload(UUID),
+      env: { ...SQS_ENV, HELMUT_SUPABASE_URL_PARAMETER: "/x", HELMUT_SUPABASE_KEY_PARAMETER: "/y" },
+      deps: {
+        konfiguration: {
+          stelleKonfigurationSicher: async () => { const e = new Error("x"); e.helmutUrsache = "ssm-parameter-nicht-lesbar"; throw e; },
+          supabaseBereit: () => false
+        },
+        claimById: async () => ({ verfuegbar: true, uebernommen: true })
+      } });
+    assert.strictEqual(r.wiederholen, true);
+    assert.strictEqual(r.grund, "konfiguration-nicht-geladen");
+    assert.strictEqual(r.detail, "ssm-parameter-nicht-lesbar");
+  });
+  await check("6b.3 Mit belegter Verbindung laeuft der Verbraucher normal weiter", async () => {
+    const r = await verbraucher.verarbeiteWecksignal({
+      payload: dispatch.transportPayload(UUID),
+      env: { ...SQS_ENV, HELMUT_STORAGE_BACKEND: "supabase", SUPABASE_URL: "https://x.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "k" },
+      deps: { relay: false, claimById: async () => ({ verfuegbar: true, uebernommen: false, grund: "lease-fremd" }) } });
+    assert.strictEqual(r.grund, "lease-fremd");
+  });
+
   abschnitt("7 · Kein zweiter Fachpfad");
   await check("7.1 Der Verbraucher ruft fuehreAuftragAus auf (denselben Kern wie Cron)", async () => {
     let benutzt = false;
     await verbraucher.verarbeiteWecksignal({
       payload: dispatch.transportPayload(UUID), env: SQS_ENV,
       deps: {
+        supabasePflicht: false, relay: false,
         claimById: async () => ({
           verfuegbar: true, uebernommen: true, id: UUID, jobType: "source_fetch",
           tenantId: null, payload: {}, attempts: 1, maxAttempts: 5, leaseExpiresAt: null }),

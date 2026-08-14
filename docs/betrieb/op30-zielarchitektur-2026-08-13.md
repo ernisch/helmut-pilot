@@ -873,3 +873,167 @@ Production-Deckel bleibt in diesem Sprint **unverändert**.
 **Externe Blocker unverändert ehrlich:** OP-15 (Google-Drosselung) ist nicht mit echten
 Messungen gelöst und bleibt ab ~10 Mandaten Blocker; die Anbietersteuerung bremst dort
 konservativ, ersetzt aber keine Messung.
+
+---
+
+## 24 · Korrekturlauf 2026-08-14/3 — fünf bestätigte Lücken geschlossen
+
+Der Härtungssprint (§19–§23) lieferte Transport, Verbraucher und Anbietersteuerung, aber der
+Weg war an fünf Stellen **nicht betriebsfähig**. Alle fünf wurden am Code bestätigt, keine
+widerlegt. Dazu kamen **drei weitere Befunde**, die erst bei der Umsetzung sichtbar wurden
+(24.6–24.8). Nichts davon ist ausgerollt; Production ist unverändert.
+
+### 24.1 Lücke 1 — es gab keinen Antrieb, nur einen Transport
+
+**Befund.** `job-dispatch.versendeAbsichten` existierte, aber niemand rief ihn im Betrieb
+regelmäßig auf außer den Vercel-Cron-Slots. Der Ende-zu-Ende-Test pumpte den Versand in einer
+eigenen Schleife (`await versende()`) — er bewies den **Transport**, nicht den **Antrieb**.
+
+**Korrektur — drei Wege, ein Modul (`lib/helmut/outbox-relay.js`):**
+
+| Weg | Auslöser | Trägt |
+|---|---|---|
+| **Unmittelbar** | Verbraucher nach belegtem Abschluss → `lambda:InvokeFunction` (`InvocationType: Event`) | die Folgeaufträge einer Kette |
+| **Zeitgeber** | EventBridge Scheduler `rate(1 minute)`, **DISABLED** ausgeliefert | später fällige Arbeit, Wiederholungen, Reparatur eines verlorenen Anstoßes |
+| **Sicherheitsnetz** | `helmut_outbox_abgleich`, **im Zeitgeberlauf** (nicht mehr nur im Cron) | verwaiste und fehlende Absichten |
+
+Deckelung: Klassen-Lease `outbox-relay` (60 s), Stapel 50, Schleifenobergrenze 5, reservierte
+Lambda-Parallelität 2. **Keine Rekursion, keine Warteschleife, kein Selbstaufruf** — je
+Verbraucherlauf höchstens **ein** Relayanstoß, nicht einer je Nachricht.
+
+Der Relay trägt **ausschließlich Signale**: kein Handler, kein Modell, kein Quellenabruf —
+per Quelltextprüfung festgeschrieben (`outbox-relay-test.js` §1).
+
+**Kostenklasse Zeitgeber (wenn der Betreiber ihn einschaltet):** 1.440 Aufrufe/Tag ≈ 43.800/Monat,
+je ~200 ms bei 256 MB. Das liegt innerhalb des dauerhaft kostenlosen Lambda-Kontingents
+(1 Mio. Aufrufe + 400.000 GB-s pro Monat); EventBridge Scheduler kostet ~0,04 $ für 43.800
+Aufrufe. **Kostenklasse: unter 1 $/Monat.** Er ist **nicht aktiviert** — das Einschalten ist
+eine Betreiberentscheidung.
+
+### 24.2 Lücke 2 — die Lambda-Funktion war nicht bereitstellbar
+
+**Befund.** Die Vorlage trug einen Code-Platzhalter, der beim Ausrollen absichtlich scheiterte.
+
+**Korrektur.** `scripts/lambda-paket-bauen.js` baut ein **reproduzierbares** Paket
+(feste Zeitstempel, feste Reihenfolge → zwei Läufe ergeben bytegleiche Archive), die Vorlage
+lädt es über `S3Bucket`/`S3Key`. Der ZIP-Schreiber und -Leser benutzen ausschließlich `zlib` —
+**keine neue Abhängigkeit**.
+
+| Kennzahl | Wert |
+|---|---|
+| Dateien | 1.515 |
+| Roh | 6,68 MiB |
+| Archiv | 2,17 MiB (Lambda-Grenze 50 MiB) |
+| Abhängigkeitsbaum | 27 Pakete, **namentlich festgeschrieben** |
+
+Verboten und geprüft: `.env`, `.git`, `*-test.js`, `*.md`, `scripts/`, `docs/`,
+`supabase/`, Fixtures, `.pem`, `.key`. Zusätzlich ein **inhaltlicher** Blick: keine Datei
+enthält etwas, das wie ein JWT oder ein `sk-`-Token aussieht.
+
+Der Test lädt beide Handler **aus dem entpackten Archiv** und führt sie aus — damit ist
+bewiesen, dass alle `require`-Ketten im ausgelieferten Artefakt auflösbar sind.
+
+### 24.3 Lücke 3 — in AWS hätte es keine Supabase-Verbindung gegeben
+
+**Befund.** Die Funktion bekommt aus der Vorlage nur **Parameternamen**. Ohne Startweg fällt
+`storage.js` still auf den **lokalen** Speicher zurück: der Verbraucher hätte Aufträge
+„erledigt", die niemand je sieht.
+
+**Korrektur — `lib/helmut/lambda-konfiguration.js`:**
+1. `GetParameter` mit `WithDecryption: true` (SecureString),
+2. Werte **nur** im Prozessspeicher — kein Protokoll, keine Datei, keine Rückgabe,
+3. Fehlertexte werden **verworfen** und auf fünf feste Ursachen abgebildet (ein AWS-Fehlertext
+   trägt Parameternamen und ARN),
+4. Prozesscache für warme Aufrufe; **ein Fehlschlag wird nicht zwischengespeichert**,
+5. **Fail closed**: ohne belegte Verbindung wird nicht gearbeitet, die Nachricht wird erneut
+   zugestellt. Ein stiller Lokalbetrieb ist strukturell ausgeschlossen.
+
+Fünf gleichzeitige Aufrufe erzeugen **genau zwei** SSM-Zugriffe (ein Ladevorgang je Container).
+
+### 24.4 Lücke 4 — die Anbietersteuerung hing an keinem echten Aufruf
+
+**Befund.** Das Modul war vollständig und getestet, aber **kein** externer Aufruf lief
+hindurch. Es war ein Modul, kein Schutz.
+
+**Korrektur.** Eine Umschließung (`anbieterUmschlossen`), **einmal** implementiert, um alle
+Netzstellen gelegt:
+
+| Netzstelle | Anbieter |
+|---|---|
+| `fetchUrlRoh` | RSS, Webseiten, Google News, Google Suche (`fetchText`/`fetchHtmlPage` rufen nur `fetchUrl`) |
+| `fetchPardokTextRoh` | amtlicher PARDOK-Export |
+| `postFormRoh` | Google-News-Auflösung (`batchexecute`) |
+| `ai.requestOpenAI` | jeder Modellaufruf (OpenAI **und** Azure) |
+
+Ablauf je Aufruf: atomar reservieren → bei erschöpfter Grenze **vertagen** statt scheitern
+(`fuehreAuftragAus` übersetzt das in eine Zurückstellung bis zum frühesten Zeitpunkt, **keine
+Warteschleife in der Function**) → Klassen-Lease halten und erneuern → bei Lease-Verlust
+**echter** Abbruch der laufenden Anfrage → Erfolg oder **echten** Anbieterfehler melden →
+Lease **immer** freigeben.
+
+Anbieterfehler sind Timeout, 429 und 5xx. **Ein fachlich leeres Ergebnis ist kein
+Anbieterfehler** — sonst sperrt eine ruhige Quelle den Anbieter.
+**Kein Doppelzählen:** das Tagesbudget bleibt allein bei `reserveLlmBudgetOrThrow`; die
+Anbietergrenze setzt für KI **keine** eigene Tagesgrenze.
+Ohne `HELMUT_ANBIETER_STEUERUNG=on` ist die gesamte Umschließung inert — Production unverändert.
+
+### 24.5 Lücke 5 — falsche KMS-Rechte (der Versand hätte nicht funktioniert)
+
+**Befund.** Der Produzent trug `kms:GenerateDataKey` + `kms:Encrypt`. Ein Produzent einer mit
+kundeneigenem KMS-Schlüssel verschlüsselten SQS-Queue braucht `kms:GenerateDataKey` **und**
+`kms:Decrypt`.
+
+**Korrektur.** Sender und Relay: `GenerateDataKey` + `Decrypt` **auf dem Queue-Schlüssel**;
+`kms:Encrypt` entfernt. Verbraucher: `Decrypt`.
+
+> **Ehrliche Grenze:** `docs.aws.amazon.com` und `aws.amazon.com` sind aus dieser Umgebung
+> durch die Netzrichtlinie gesperrt (EGRESS_BLOCKED). Die Korrektur stützt sich auf die
+> Vorgabe des Betreibers und auf Modellwissen — **nicht** auf eine in dieser Sitzung
+> abgerufene AWS-Quelle. Vor dem Ausrollen einmal gegen die offizielle Dokumentation prüfen.
+
+### 24.6 Zusatzbefund A — der Verbraucher konnte SSM-Parameter nicht entschlüsseln
+
+Bei der Gesamtdurchsicht der AWS-Definition (Auftrag Lücke 5): die Verbraucherrolle durfte
+`ssm:GetParameter`, aber **nicht** `kms:Decrypt` auf `alias/aws/ssm`. `WithDecryption: true`
+wäre mit AccessDenied gescheitert — die Funktion hätte in AWS **nie** eine Supabase-Verbindung
+bekommen (sie hätte korrekt geschlossen gestoppt, aber niemals gearbeitet). Behoben.
+
+### 24.7 Zusatzbefund B — der Regionsriegel hielt nichts
+
+Der Riegel hing an einem `AWS::NoValue` in einem **Metadata**-Feld. Ein fehlendes Metadata-Feld
+lässt einen Stack nicht scheitern — der Riegel war Dokumentation, kein Schutz. Er hängt jetzt
+an der **Pflicht**-Eigenschaft `KeyPolicy` des KMS-Schlüssels; beide Queues hängen über
+`KmsMasterKeyId` von diesem Schlüssel ab, in einer falschen Region entsteht also **keine**
+Queue. **Nachweis offen:** das Verhalten ist CloudFormation-Standard, aber in dieser Umgebung
+nicht gegen AWS geprüft — vor dem ersten Ausrollen einmal in einer falschen Region trocken
+anlegen.
+
+### 24.8 Zusatzbefund C — Wiederholungen wurden vom Relay nicht getragen
+
+**Vom Ende-zu-Ende-Test aufgedeckt, nicht von den Vertragstests.** Ein wiederholter oder
+zurückgestellter Auftrag kehrt nach `wartend` zurück, seine Versandabsicht ist zu diesem
+Zeitpunkt aber schon `bestaetigt`. Im Ereignis-Antrieb weckte ihn danach nur der Abgleich —
+und der wartet bewusst ein Mindestalter (Standard 10 Minuten) ab. **Ein 30-Sekunden-Backoff
+wurde faktisch zu 10 Minuten.** Der Auftrag ging nie verloren, aber der Relay trug nur
+Erstzustellungen.
+
+**Korrektur:** `helmut_outbox_erneut_vorlegen(job_id)` legt die Absicht **genau zur neuen
+Fälligkeit** des Auftrags erneut vor (nur für `wartend`, nie für terminale Aufträge, nie nach
+hinten verschiebend). Der Verbraucher ruft sie nach jeder Zurückstellung und Wiederholung.
+Schlägt der Aufruf fehl, bleibt exakt das bisherige Verhalten — der schlechteste Fall ist der
+alte Zustand, nie ein Verlust. Ein sofortiger Relayanstoß erfolgt **nur**, wenn die Absicht
+jetzt fällig ist (kein Leeraufruf).
+
+### 24.9 Was die Nachweise tragen — und was nicht
+
+**Getragen (lokal, echte PostgreSQL 16.13, echte Migrationen, gebautes Paket):**
+Outbox-Atomarität · echter Relay-Einstiegspunkt · echter SQS-Adapter · Lambda-Verbraucher aus
+dem entpackten Archiv · derselbe Fachkern wie Cron und Warteschlange · Folgeauftrag ohne
+Testpumpe · später fällige Arbeit · Mehrfachzustellung · Absturz vor/nach Abschluss und
+zwischen Outbox und Versand · SQS-Ausfall · Quarantäne nach genau `maxReceiveCount` ·
+automatische Reparatur eines verlorenen Anstoßes · vollständiger Abfluss **ohne Vercel-Cron
+und ohne manuelle Testpumpe**.
+
+**Nicht getragen:** alles, was echtes AWS braucht — Queue, Lambda, KMS, SSM, EventBridge,
+IAM-Auswertung, Region, Kosten. Ersetzt sind ausschließlich **zwei Außengrenzen**: das
+AWS-Netz und der SSM-Dienst. **Das ist kein Production-Beweis.**

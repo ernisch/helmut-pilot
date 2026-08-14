@@ -366,10 +366,98 @@ comment on function public.helmut_klasse_erneuere(uuid, text, bigint) is
   'OP-30: verlaengert einen GUELTIGEN, haltereigenen Klassen-Slot. Ein abgelaufener Slot wird nie wiederbelebt — der Aufrufer erfaehrt den Verlust und bricht ab.';
 
 -- ───────────────────────────────────────────────────────────────────────────────────────────
--- 6 · RECHTE (identisch zum Bestand: nichts fuer anon/authenticated, Ausfuehrung service_role)
+-- 6 · WIEDERVORLAGE NACH WIEDERHOLUNG UND ZURUECKSTELLUNG (Korrekturlauf 2026-08-14/3)
+-- ───────────────────────────────────────────────────────────────────────────────────────────
+-- DER BEFUND (vom Ende-zu-Ende-Test aufgedeckt, nicht von den Vertragstests): ein Auftrag,
+-- der wiederholt oder zurueckgestellt wird, kehrt nach `wartend` zurueck — seine Versand-
+-- absicht ist zu diesem Zeitpunkt aber schon `bestaetigt`. Im Ereignis-Antrieb weckte ihn
+-- danach NUR der Abgleich, und der wartet bewusst ein Mindestalter (Standard 10 Minuten) ab.
+-- Ein Backoff von 30 Sekunden wurde damit faktisch zu 10 Minuten. Der Auftrag ging nie
+-- verloren, aber der Relay trug die WIEDERHOLUNGEN nicht — er trug nur Erstzustellungen.
+--
+-- DIE KORREKTUR: wer einen Auftrag nach `wartend` zurueckschreibt, legt seine Versandabsicht
+-- ausdruecklich erneut vor — faellig GENAU zur neuen Faelligkeit des Auftrags.
+--   * Nur fuer Auftraege in `wartend` (ein terminaler Auftrag wird nie wieder geweckt).
+--   * Kein Versandfehler wird verbucht: der Versuchszaehler beginnt neu (neue Zustellrunde).
+--   * Fehlt die Absicht ganz (Altbestand), entsteht sie hier — sonst haenge der Auftrag
+--     bis zum naechsten Abgleich.
+--   * `sofort` sagt dem Aufrufer, ob ein unmittelbarer Relay-Anstoss ueberhaupt Sinn hat.
+--     Ist die Absicht erst spaeter faellig, uebernimmt der Zeitgeber — ein Anstoss waere
+--     ein Leeraufruf.
+-- SICHERHEITSNETZ BLEIBT: geht diese Wiedervorlage verloren (Absturz zwischen Abschluss und
+-- Aufruf), faengt der Abgleich den Auftrag wie bisher — der schlechteste Fall ist also
+-- exakt das bisherige Verhalten, nie ein Verlust.
+create or replace function public.helmut_outbox_erneut_vorlegen(
+  p_job_id uuid
+)
+returns table(uebernommen boolean, grund text, faellig_ab timestamptz, sofort boolean)
+language plpgsql
+security invoker
+set search_path = public, pg_temp
+as $$
+declare
+  v_job    public.helmut_jobs%rowtype;
+  v_zeile  public.helmut_job_outbox%rowtype;
+  v_now    timestamptz := now();
+  v_ziel   timestamptz;
+begin
+  select * into v_job from public.helmut_jobs j where j.id = p_job_id;
+  if not found then
+    return query select false, 'auftrag-unbekannt'::text, null::timestamptz, false;
+    return;
+  end if;
+
+  -- Ein terminaler Auftrag wird NIE erneut vorgelegt (kein zweiter Fachlauf, kein zweiter
+  -- KI-Aufruf). Auch `laeuft` ist kein Fall fuer die Wiedervorlage: der Halter arbeitet noch.
+  if v_job.status <> 'wartend' then
+    return query select false, ('status-' || v_job.status)::text, null::timestamptz, false;
+    return;
+  end if;
+
+  v_ziel := greatest(coalesce(v_job.due_at, v_now), v_now);
+
+  select * into v_zeile
+    from public.helmut_job_outbox o
+   where o.job_id = p_job_id
+   for update;
+
+  if not found then
+    insert into public.helmut_job_outbox (job_id, schema_version, next_attempt_at)
+    values (p_job_id, 1, v_ziel)
+    on conflict (job_id) do nothing;
+    return query select true, 'angelegt'::text, v_ziel, (v_ziel <= v_now);
+    return;
+  end if;
+
+  -- Eine bereits OFFENE Absicht, die frueher oder gleich faellig ist, bleibt unangetastet:
+  -- sie ist schon die Wiedervorlage. Nur nach hinten wird nie verschoben.
+  if v_zeile.status = 'offen' and v_zeile.next_attempt_at <= v_ziel then
+    return query select true, 'bereits-offen'::text, v_zeile.next_attempt_at,
+                        (v_zeile.next_attempt_at <= v_now);
+    return;
+  end if;
+
+  update public.helmut_job_outbox o
+     set status          = 'offen',
+         attempts        = 0,
+         next_attempt_at = v_ziel,
+         last_error      = null,
+         updated_at      = v_now
+   where o.id = v_zeile.id;
+
+  return query select true, 'wiedervorgelegt'::text, v_ziel, (v_ziel <= v_now);
+end;
+$$;
+
+comment on function public.helmut_outbox_erneut_vorlegen(uuid) is
+  'OP-30: legt die Versandabsicht eines wieder wartenden Auftrags erneut vor (faellig zur neuen Auftragsfaelligkeit). Traegt Wiederholungen und Zurueckstellungen im Ereignis-Antrieb, ohne auf den Abgleich zu warten.';
+
+-- ───────────────────────────────────────────────────────────────────────────────────────────
+-- 7 · RECHTE (identisch zum Bestand: nichts fuer anon/authenticated, Ausfuehrung service_role)
 -- ───────────────────────────────────────────────────────────────────────────────────────────
 revoke all on function public.helmut_claim_job_by_id(uuid, text, bigint)          from public, anon, authenticated;
 revoke all on function public.helmut_outbox_zuruecklegen(uuid, integer)           from public, anon, authenticated;
+revoke all on function public.helmut_outbox_erneut_vorlegen(uuid)                 from public, anon, authenticated;
 revoke all on function public.helmut_outbox_abgleich(integer, integer)            from public, anon, authenticated;
 revoke all on function public.helmut_outbox_aufraeumen(integer, integer, boolean) from public, anon, authenticated;
 revoke all on function public.helmut_klasse_erneuere(uuid, text, bigint)          from public, anon, authenticated;
@@ -379,6 +467,7 @@ begin
   if exists (select 1 from pg_roles where rolname = 'service_role') then
     execute 'grant execute on function public.helmut_claim_job_by_id(uuid, text, bigint) to service_role';
     execute 'grant execute on function public.helmut_outbox_zuruecklegen(uuid, integer) to service_role';
+    execute 'grant execute on function public.helmut_outbox_erneut_vorlegen(uuid) to service_role';
     execute 'grant execute on function public.helmut_outbox_abgleich(integer, integer) to service_role';
     execute 'grant execute on function public.helmut_outbox_aufraeumen(integer, integer, boolean) to service_role';
     execute 'grant execute on function public.helmut_klasse_erneuere(uuid, text, bigint) to service_role';
@@ -390,5 +479,6 @@ end $$;
 -- ───────────────────────────────────────────────────────────────────────────────────────────
 -- select proname, prosecdef, proconfig from pg_proc
 --  where proname in ('helmut_claim_job_by_id','helmut_outbox_zuruecklegen',
---                    'helmut_outbox_abgleich','helmut_outbox_aufraeumen','helmut_klasse_erneuere');
--- -> 5 Zeilen, prosecdef=false, proconfig={"search_path=public, pg_temp"}
+--                    'helmut_outbox_abgleich','helmut_outbox_aufraeumen','helmut_klasse_erneuere',
+--                    'helmut_outbox_erneut_vorlegen');
+-- -> 6 Zeilen, prosecdef=false, proconfig={"search_path=public, pg_temp"}

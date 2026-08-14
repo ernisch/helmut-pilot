@@ -1,6 +1,6 @@
 # ARCHITECTURE — Systemkarte Helmut
 
-**Letzte Aktualisierung:** 2026-08-14 (§7f.1 neu: verwalteter Transport SQS+Lambda, nicht ausgerollt; §7f: OP-30-Zielarchitektur — transaktionale
+**Letzte Aktualisierung:** 2026-08-14/3 (§7f.1: Outbox-Relay als Antrieb, SSM-Startweg, Anbietersteuerung im Fachpfad — nicht ausgerollt; §7f: OP-30-Zielarchitektur — transaktionale
 Outbox, austauschbarer Transport, verteilte Klassengrenzen, Vorgangswache; alles gebaut,
 lokal nachgewiesen, Default-AUS, Migrationen `20260813` NICHT angewendet; kanonisch
 [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md));
@@ -505,10 +505,17 @@ statt des selbst gebauten Weckrufs:
 ```
 Supabase (WAHRHEIT)                    AWS eu-central-1 (nur TRANSPORT)
 ┌────────────────────────┐             ┌──────────────────────────────┐
-│ helmut_jobs            │             │ SQS helmut-auftraege         │
-│ helmut_job_outbox      │──Versand───▶│  Sichtbarkeit 360 s          │
-│  (atomar mit dem Job)  │  {jobId,    │  maxReceiveCount 5           │
-│                        │  schemaVer} │  KMS-verschlüsselt           │
+│ helmut_jobs            │   liest     │ Lambda helmut-outbox-relay   │
+│ helmut_job_outbox      │◀────────────│  ← EventBridge rate(1 min)   │  Zeitgeber
+│  (atomar mit dem Job)  │             │  ← Verbraucher (async Event) │  unmittelbar
+│                        │             └──────────────┬───────────────┘
+│                        │                            │ {jobId, schemaVersion}
+│                        │                            ▼
+│                        │             ┌──────────────────────────────┐
+│                        │             │ SQS helmut-auftraege         │
+│                        │             │  Sichtbarkeit 360 s          │
+│                        │             │  maxReceiveCount 5           │
+│                        │             │  KMS-verschlüsselt           │
 │                        │             │        │                     │
 │                        │             │        ▼ (nach 5 Versuchen)  │
 │                        │             │ SQS …-quarantaene (DLQ)      │
@@ -517,21 +524,39 @@ Supabase (WAHRHEIT)                    AWS eu-central-1 (nur TRANSPORT)
         │                                       ▼
         │                              ┌──────────────────────────────┐
         └──atomare Beanspruchung───────│ Lambda helmut-…-verbraucher  │
-           helmut_claim_job_by_id      │  → queue-verbraucher.js      │
-           + derselbe Fachhandler      │  → fuehreAuftragAus (SHARED) │
-           (fuehreAuftragAus)          │  partielle Fehlerantwort     │
+           helmut_claim_job_by_id      │  → SSM-Startweg (Supabase)   │
+           + derselbe Fachhandler      │  → queue-verbraucher.js      │
+           (fuehreAuftragAus)          │  → fuehreAuftragAus (SHARED) │
+                                       │  partielle Fehlerantwort     │
                                        └──────────────────────────────┘
 ```
+
+**Der Antrieb (Korrekturlauf 2026-08-14/3).** Der Relay ist die einzige Stelle, die
+Versandabsichten in die Queue trägt. Er läuft auf drei Wegen — unmittelbar nach einem
+Abschluss (genau ein asynchroner Aufruf je Verbraucherlauf), minütlich über einen
+EventBridge-Zeitgeber (**DISABLED** ausgeliefert), und der Zeitgeber führt zusätzlich das
+Sicherheitsnetz `helmut_outbox_abgleich` aus. Er trägt **ausschließlich Signale**: kein
+Handler, kein Modell, kein Quellenabruf. Keine Rekursion, keine Warteschleife, gedeckelt
+durch Klassen-Lease, Stapelgröße und reservierte Parallelität. Ein wiederholter oder
+zurückgestellter Auftrag wird über `helmut_outbox_erneut_vorlegen` **genau zu seiner neuen
+Fälligkeit** erneut vorgelegt.
+
+**Der Startweg.** Die Lambda-Funktionen bekommen aus der Vorlage nur **Parameternamen**.
+`lib/helmut/lambda-konfiguration.js` holt URL und Dienstschlüssel über AWS Systems Manager
+mit Entschlüsselung, hält sie ausschließlich im Prozessspeicher, protokolliert sie nie und
+stoppt bei jedem Fehler **geschlossen** — ein stiller Rückfall auf den lokalen Speicher ist
+strukturell ausgeschlossen.
 
 **Verbindlich:** Supabase bleibt die Wahrheit; SQS ist nur der austauschbare Transport,
 Lambda nur der austauschbare Verbraucher. Über die Transportgrenze gehen ausschließlich
 `{jobId, schemaVersion}`. Der Verbraucher benutzt denselben Fachhandler wie Cron und
 Warteschlange — es gibt keine zweite Fachimplementierung. Cron bleibt Planer, Abgleich und
-Rückfallweg, ist aber für den normalen Abfluss nicht mehr erforderlich (Beleg:
-`scripts/queue-ende-zu-ende-test.js` §10). Der Selbstweck ist auf einen ausdrücklich
+Rückfallweg, ist aber für den normalen Abfluss **nicht mehr erforderlich** — der
+vollständige Abfluss ist ohne Vercel-Cron und ohne manuelle Testpumpe belegt
+(`scripts/queue-ende-zu-ende-test.js` §11). Der Selbstweck ist auf einen ausdrücklich
 freizuschaltenden Entwicklungs- und Notfallweg zurückgestuft. Details und Grenzen:
 [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md)
-§18–§23.
+§18–§24.
 
 ## 8 · Briefing, Lage, Radar, Büro
 

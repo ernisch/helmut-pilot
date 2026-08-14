@@ -2025,3 +2025,75 @@ die Stufen 0–2 mit dem **Cron-Antrieb** und dem Schattenmodus. Was sich geaend
 Weder die AWS-Aktivierung noch die Anhebung des KI-Tagesdeckels noch eine hoehere
 Verstehensparallelitaet (die bleibt bei 1, Belegdatei §22). Helmut ist durch diesen Sprint
 **nicht** fuer 25, 100, 200 oder 500 Mandate freigegeben.
+
+---
+
+## §22 · AWS-Betreiberanleitung nach dem Korrekturlauf 2026-08-14/3
+
+Diese Anleitung **ersetzt §21.2 Schritt 3–6**. Sie ist die vollständige Reihenfolge für den
+Tag, an dem der Betreiber Stufe 2 tatsächlich einschalten will. **Nichts davon ist getan.**
+
+### §22.1 Was AWS zu sehen bekommt (Datenumfang)
+
+Über die Transportgrenze geht ausschließlich `{ jobId, schemaVersion }` — eine UUID und eine
+Zahl. **Kein Mandatsname, kein Dokument, kein Text, keine Quelle, keine E-Mail-Adresse.** Die
+Outbox hat strukturell keine Inhaltsspalte. In den CloudWatch-Protokollen stehen nur Zahlen
+und Ausgänge, nie eine Auftrags-, Mandats- oder Quellenkennung.
+**Der Supabase-Dienstschlüssel liegt in AWS** — als SSM-SecureString und zur Laufzeit im
+Prozessspeicher der Lambda-Funktionen. Das ist die eigentliche Vertrauensentscheidung, nicht
+die Nachrichtenmenge.
+
+### §22.2 Reihenfolge
+
+1. **Kostenentscheidung.** Mengen: Belegdatei §23 (Nachrichten/Tag) und §24.1 (Zeitgeber).
+   Größenordnung bei 5–25 Mandaten: SQS, Lambda und EventBridge liegen im kostenlosen
+   Kontingent; KMS kostet ~1 $/Monat je Schlüssel, CloudWatch nach Volumen.
+2. **Paket bauen** (reproduzierbar):
+   `node scripts/lambda-paket-bauen.js --ziel build/`
+   Ergebnis prüfen: 1.515 Dateien, 2,17 MiB Archiv, SHA-256 aus dem Manifest **notieren**.
+   Der Bau ist deterministisch — zwei Läufe ergeben dieselbe Prüfsumme.
+3. **Paket nach S3** in **eu-central-1** hochladen (eigener Bucket, keine öffentliche
+   Freigabe, Versionierung an). Bucketname und Objektschlüssel merken.
+4. **SSM-Parameter anlegen** (eu-central-1, Typ **SecureString**), z. B.
+   `/helmut/prod/supabase-url` und `/helmut/prod/supabase-service-role-key`.
+   **Die Werte werden im AWS-Konsolenformular eingegeben — nie in eine Datei, nie in einen
+   Commit, nie in einen Chat.**
+5. **Stack anlegen** aus `infra/aws/helmut-auftrags-queue.yaml` mit den Parametern
+   `PaketBucket`, `PaketSchluessel`, `SupabaseUrlParameter`, `SupabaseSchluesselParameter`,
+   `Umgebung`, `MaxParallelitaet`.
+   **Nur in eu-central-1.** In jeder anderen Region scheitert der Stack am KMS-Schlüssel
+   (§24.7 der Belegdatei) — vorher einmal in einer falschen Region trocken anlegen und das
+   Scheitern belegen.
+6. **Vercel-Variablen setzen:** `HELMUT_SQS_QUEUE_URL` (Stack-Ausgabe), `AWS_REGION` bleibt
+   `eu-central-1`, `HELMUT_KLASSEN_GRENZEN=on`, `HELMUT_JOB_DISPATCH_MODE=queue`.
+   Zugangsdaten des IAM-Senders hinterlegen (**nur** `sqs:SendMessage` + KMS-Produzentenrechte).
+7. **Ereignisquelle prüfen, dann Zeitgeber einschalten.** Der EventBridge-Zeitgeber
+   (`helmut-outbox-relay-<umgebung>`) wird **DISABLED** ausgeliefert. Er ist die
+   Wiedervorlage später fälliger Arbeit **und** die automatische Reparatur eines verlorenen
+   Anstoßes. Ohne ihn trägt nur der unmittelbare Anstoß — Ketten laufen, aber später fällige
+   Arbeit und Wiederholungen bleiben liegen, bis ein Cron-Slot sie aufsammelt.
+   Kosten: 1.440 Aufrufe/Tag, Kostenklasse unter 1 $/Monat.
+
+### §22.3 Erste Kontrolle nach dem Einschalten
+
+| Prüfung | Erwartung |
+|---|---|
+| CloudWatch `helmut-auftrags-verbraucher` | Zeilen `[lambda/verbraucher] … ausgang=erledigt`, **keine** `konfiguration-nicht-geladen`, **keine** `supabase-nicht-verbunden` |
+| CloudWatch `helmut-outbox-relay` | `[lambda/relay] ausloeser=… versendet=n` |
+| SQS `…-quarantaene` | **leer** — jede Nachricht darin ist ein Befund, kein Betriebsrauschen |
+| `helmut_outbox_kennzahlen()` | `offen` fällt, `aelteste_offene_s` bleibt klein |
+| `helmut_jobs` | `wartend` sinkt, `laeuft` bleibt klein, `fehlgeschlagen` wächst nicht |
+
+### §22.4 Rücknahme (ein Schritt, jederzeit)
+
+`HELMUT_JOB_DISPATCH_MODE=shadow` (oder `off`) + Redeploy. Die Queue läuft leer, der
+Cron-Rückfallweg trägt weiter, **kein Auftrag geht verloren**. Zusätzlich optional: den
+EventBridge-Zeitgeber deaktivieren und die reservierte Lambda-Parallelität auf 0 setzen —
+dann verarbeitet AWS nichts mehr, ohne dass etwas gelöscht wird.
+
+### §22.5 Was auch nach diesem Korrekturlauf NICHT freigegeben ist
+
+Die AWS-Aktivierung selbst, die Anhebung des KI-Tagesdeckels und eine höhere
+Verstehensparallelität (bleibt 1). **Helmut ist nicht für 25, 100, 200 oder 500 Mandate
+freigegeben.** Der Korrekturlauf hat die Lücken geschlossen, die eine Aktivierung technisch
+unmöglich gemacht hätten — er ersetzt keinen Production-Nachweis.

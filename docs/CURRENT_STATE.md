@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-14/2** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30-Fuenferlauf, zweiter Versuch (12./13.08.): NICHT bestanden — kontrollierte Ruecknahme VOR Grenzuebertritt** (Runbook §19): 5 Laeufe fehlerfrei/fair/ohne Doppelarbeit, aber Ankunft ~440–470 Auftraege/Tag ≫ Abfluss ~130–180/Tag ⇒ Flag wieder `off`, wirkungsbasiert belegt; **524 wartende Auftraege bleiben inert**. **(c) OP-30-ZIELARCHITEKTUR gebaut und lokal nachgewiesen** (§7c; Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache; Production unangetastet, alles Default-AUS; der Kapazitaetssprint davor wurde kontrolliert abgebrochen, seine Zwischenloesung „mehr Slots" verworfen; Sicherheitskorrektur 2026-08-14: Signalpruefung, Weckziel-Riegel, Klingel-Buendelung, Migrationsstempel — Belegdatei §17). **Haertung 2026-08-14/2:** Production-Transport **SQS+Lambda (eu-central-1)** gebaut und lokal ende-zu-ende bewiesen (NICHT ausgerollt); Anbietersteuerung; Verstehen bleibt Parallelitaet 1 = Engpass (Belegdatei §18–§23). **(d) OP-31 Frischevertrag BESTANDEN** — hielt auch unter OP-30 (5/5 am 13.08.). Diese Datei enthaelt
+**Stand: 2026-08-14/3** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30-Fuenferlauf, zweiter Versuch (12./13.08.): NICHT bestanden — kontrollierte Ruecknahme VOR Grenzuebertritt** (Runbook §19): 5 Laeufe fehlerfrei/fair/ohne Doppelarbeit, aber Ankunft ~440–470 Auftraege/Tag ≫ Abfluss ~130–180/Tag ⇒ Flag wieder `off`, wirkungsbasiert belegt; **524 wartende Auftraege bleiben inert**. **(c) OP-30-ZIELARCHITEKTUR gebaut und lokal nachgewiesen** (§7c; Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache; Production unangetastet, alles Default-AUS; der Kapazitaetssprint davor wurde kontrolliert abgebrochen, seine Zwischenloesung „mehr Slots" verworfen; Sicherheitskorrektur 2026-08-14: Signalpruefung, Weckziel-Riegel, Klingel-Buendelung, Migrationsstempel — Belegdatei §17). **Haertung 2026-08-14/2:** Production-Transport **SQS+Lambda (eu-central-1)** gebaut und lokal ende-zu-ende bewiesen (NICHT ausgerollt); Anbietersteuerung; Verstehen bleibt Parallelitaet 1 = Engpass (Belegdatei §18–§23). **Korrekturlauf 2026-08-14/3:** fuenf Betriebsluecken des Transports geschlossen (§7c, Belegdatei §24); AWS weiterhin **nicht** ausgerollt. **(d) OP-31 Frischevertrag BESTANDEN** — hielt auch unter OP-30 (5/5 am 13.08.). Diese Datei enthaelt
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -182,25 +182,34 @@ erneute Neutralisierung der jetzt 524 inerten Aufträge (Muster §17.8).
 **Folge für OP-25:** eine Aktivierung verändert `quellenVereinigung`, die K2.1-Sichtbarkeitsmengen und die
 Laufzeitbilanz ⇒ **OP-25 muss danach von vorn**.
 
-## 7c · Zielarchitektur-Sprint 2026-08-13/3 (Erfolgreich abgeschlossen; Aktivierung = Betreiberentscheidung; Sicherheitskorrektur + Haertung 2026-08-14 eingearbeitet — Belegdatei §17–§23)
+## 7c · Zielarchitektur-Sprint 2026-08-13/3 (Erfolgreich abgeschlossen; Aktivierung = Betreiberentscheidung; Sicherheitskorrektur, Haertung und Korrekturlauf 2026-08-14 eingearbeitet — Belegdatei §17–§24)
 
 Der Kapazitätssprint nach §7b wurde **kontrolliert abgebrochen**; seine Zwischenlösung
 (Parallelität 6 + sechs Drain-Slots) wurde **verworfen und nicht rekonstruiert**. Stattdessen
-gebaut und lokal nachgewiesen (Production nur lesend geprüft, alle 18 §2-Vorprüfungen grün):
-**transaktionale Outbox** (`20260813090000_jobqueue_outbox`, atomar mit dem Auftrag, strukturell ohne
-Inhaltsspalte) · **austauschbarer Transport** (`HELMUT_JOB_DISPATCH_MODE=off|shadow|queue`, fail
-closed; Payload nur `{jobId, schemaVersion}`; erster Transport Selbstweck via
-`/api/cron/worker-weck`; Vercel-Queues-Adapter gebaut, nicht aktiviert — Beta, keine
-EU-Residenz im Failover, kostenpflichtig) · **verteilte Klassengrenzen**
-(`20260813090100_verteilte_grenzen`: quellenabruf 5 · verstehen 1 · worker-drain 1) ·
-**Vorgangswache** als kleinste sichere Ablösung des globalen Understanding-Schlosses
-(`HELMUT_VERSTEHEN_KONKURRENZ`, aus). Nachweise: 37+20+53+14 PASS neue Suiten · Mutationsprobe
-6/6 · lokaler Lastnachweis 5/25/100/200/500 an echter PostgreSQL (kein Verlust, keine
-Doppelarbeit; 500er-Reserve rechnerisch ×3,7 — **kein Production-Beweis**; KI-Bedarf ~1.040/Tag
-bei 500 ≫ Deckel 100+30 = gesonderte Gründerentscheidung). Die 524 Aufträge wurden nur lesend
-analysiert (1.556 referenzierte Dokumente, 0 bereits verstanden). Kanonisch:
+gebaut und lokal nachgewiesen (Production nur lesend geprüft): **transaktionale Outbox**
+(`20260813090000`, atomar mit dem Auftrag, strukturell ohne Inhaltsspalte) · **austauschbarer
+Transport** (`HELMUT_JOB_DISPATCH_MODE=off|shadow|queue`, fail closed; Payload nur
+`{jobId, schemaVersion}`) · **verteilte Klassengrenzen** (`20260813090100`: quellenabruf 5 ·
+verstehen 1 · worker-drain 1) · **Vorgangswache** als kleinste sichere Ablösung des globalen
+Understanding-Schlosses (`HELMUT_VERSTEHEN_KONKURRENZ`, aus). Lastnachweis 5–500 an echter
+PostgreSQL (kein Verlust, keine Doppelarbeit; 500er-Reserve ×3,7 — **kein Production-Beweis**;
+KI-Bedarf ~1.040/Tag bei 500 ≫ Deckel 100+30 = gesonderte Gründerentscheidung). Kanonisch:
 [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md)
 (Vergleich 7 Varianten × 20 Kriterien, Mengengerüst, Stufenplan, Betreiberablauf); Runbook §20.
+
+**Korrekturlauf 2026-08-14/3 (Belegdatei §24).** Fünf bestätigte Betriebslücken geschlossen:
+**Antrieb statt Testpumpe** (Outbox-Relay: unmittelbarer Anstoß · minütlicher
+EventBridge-Zeitgeber, **DISABLED** ausgeliefert · Abgleich jetzt im Zeitgeberlauf) ·
+**bereitstellbares Lambda-Paket** (reproduzierbar, 1.515 Dateien / 2,17 MiB, keine neue
+Abhängigkeit) · **SSM-Startweg** (fail closed, **kein stiller Rückfall auf lokalen Speicher**) ·
+**Anbietersteuerung im Fachpfad** (alle drei Netzstellen + jeder Modellaufruf; Vertagung statt
+Warteschleife) · **KMS-Produzentenrechte** (`GenerateDataKey` **+ `Decrypt`**). Drei
+Zusatzbefunde: fehlendes `kms:Decrypt` für `alias/aws/ssm`; wirkungsloser Regionsriegel;
+**Wiederholungen wurden vom Relay nicht getragen** (30-s-Backoff wurde faktisch 10 min →
+`helmut_outbox_erneut_vorlegen`). Nachweise: Ende-zu-Ende **46 PASS ohne Testpumpe und ohne
+Vercel-Cron**; Paket 43 · Relay 37 · Anbieterfachpfad 51 · Infrastruktur 67; Mutationsprobe
+**10/10 rot**. **AWS unangetastet; `docs.aws.amazon.com` ist hier gesperrt — die KMS- und
+Regionsaussagen sind nicht gegen eine AWS-Quelle geprüft.**
 
 ## 8 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -331,9 +340,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-13/3 | **OP-30-Zielarchitektur** (§7c): Kapazitätssprint kontrolliert abgebrochen, „mehr Slots" verworfen; stattdessen Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache gebaut; lokaler Lastnachweis 5–500 an echter PostgreSQL; 524 Aufträge nur lesend analysiert; Production unangetastet | **Erfolgreich abgeschlossen** (alle 16 Abnahmekriterien erfüllt, beide Pflichtprüfungen grün auf `2158b0c`); PR #247 offen, nicht gemergt — OP-30 insgesamt bleibt offen (Aktivierung nach Stufenplan = Betreiberentscheidung) |
-| 2026-08-14 | **Sicherheitskorrektur OP-30** (Belegdatei §17): vier beauftragte Befunde bestaetigt und behoben — vollstaendige Signalpruefung der Verbraucher-Route, Weckziel-Riegel (CRON_SECRET nie an ungeprüfte Ziele), Tuerklingel-Buendelung statt Aufrufverstaerkung, eindeutige Migrationsstempel + `rollback_`-Praefix (CLI-Nachweis); Route nach `/api/cron/worker-weck` verlegt | Neue Suiten: worker-weck-route 21, migrations-organisation 10; Production unangetastet |
-| 2026-08-14/2 | **Haertungssprint OP-30** (Belegdatei §18–§23): sechs Gegenpruefungspunkte alle bestaetigt; verwalteter Transport **SQS+Lambda eu-central-1** gebaut (CloudFormation, DLQ, KMS, partielle Fehlerantwort, atomare Beanspruchung genau der signalisierten jobId) — **keine AWS-Ressource angelegt**; geteilter Verbraucherkern; verteilte Anbietersteuerung; Outbox-Endzustand + Aufbewahrungsvertrag; Kapazitaet je Klasse | Ende-zu-Ende 37 PASS **ohne Cron-Rueckfall**; neue Suiten 44/37/36/32/31 + 7/7 Mutationen; Engpass `verstehen` (x2,7 bei 500, Parallelitaet bleibt 1); KI-Bedarf 344–1.040/Tag bei 500 vs Deckel 130; Production unangetastet |
+| 2026-08-14/3 | **Korrekturlauf OP-30** (Belegdatei §24): fuenf bestaetigte Luecken geschlossen (Outbox-Relay als echter Antrieb · bereitstellbares Lambda-Paket · SSM-Startweg · Anbietersteuerung im Fachpfad · KMS-Produzentenrechte) + drei Zusatzbefunde (fehlendes `kms:Decrypt` fuer SSM · wirkungsloser Regionsriegel · Wiederholungen wurden vom Relay nicht getragen) | Ende-zu-Ende **46 PASS ohne Testpumpe/ohne Cron**; Paket 43 · Relay 37 · Anbieterfachpfad 51 · Infrastruktur 67; Mutationsprobe **10/10 rot**; AWS und Production unangetastet |
 | 2026-08-12/3 | **Altersgrenze berichtigt** (Runbook §17): Wartezeit statt Fälligkeit; 3 neue Suiten (59+26+31 PASS); PR #244 gemergt, Wirkungsnachweis am 16:00-Lauf bestanden | **erfolgreich abgeschlossen** |
 
-Die Sprints 2026-08-12/5 – 13/2 (**Fünferlauf, zweiter Versuch — nicht bestanden**, kontrollierte Rücknahme vor Grenzübertritt; §7b, Runbook §19), 2026-08-12/4 (Neutralisierung + Migration, Runbook §17.10), 2026-08-12/2 (Wirkungsnachweis der Abschaltung, Runbook §16.12), 2026-08-12/1 (Rücknahmebeleg, Runbook §16), 2026-08-11/6 (K0 bestanden, bei K1 gestoppt, §15), 2026-08-11/5 (**blockiert**, kein Schreibweg zur Vercel-Env, §14), 2026-08-11/4 (Neutralitätsnachweis, §13) und 2026-08-11/3 (Vorwärtsmigrationen, §12) stehen kanonisch im Runbook. Der Sprint 2026-08-09/2 (E1 `tenant_narrative`, PR #236 gemergt) und die OP-30-Sprints vom 2026-08-08 stehen vollständig in den Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) trägt den CI-Basisrot-Befund). Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 stehen kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 und ältere Beweisketten: **Archiv** ([`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)).
+Die drei OP-30-Sprints davor (Zielarchitektur 13/3 · Sicherheitskorrektur 14 · Haertung 14/2) stehen vollstaendig in der Belegdatei [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §17–§23. Die Sprints 2026-08-12/5 – 13/2 (**Fünferlauf, zweiter Versuch — nicht bestanden**, kontrollierte Rücknahme vor Grenzübertritt; §7b, Runbook §19), 2026-08-12/4 (Neutralisierung + Migration, Runbook §17.10), 2026-08-12/2 (Wirkungsnachweis der Abschaltung, Runbook §16.12), 2026-08-12/1 (Rücknahmebeleg, Runbook §16), 2026-08-11/6 (K0 bestanden, bei K1 gestoppt, §15), 2026-08-11/5 (**blockiert**, kein Schreibweg zur Vercel-Env, §14), 2026-08-11/4 (Neutralitätsnachweis, §13) und 2026-08-11/3 (Vorwärtsmigrationen, §12) stehen kanonisch im Runbook. Der Sprint 2026-08-09/2 (E1 `tenant_narrative`, PR #236 gemergt) und die OP-30-Sprints vom 2026-08-08 stehen vollständig in den Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) trägt den CI-Basisrot-Befund). Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 stehen kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 und ältere Beweisketten: **Archiv** ([`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)).

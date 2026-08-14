@@ -7,7 +7,7 @@
 -- (Belegdatei op30-zielarchitektur-2026-08-13.md §17.4).
 --
 -- WAS DER ROLLBACK TUT:
---   * entfernt die fuenf neuen Funktionen,
+--   * entfernt die sechs neuen Funktionen,
 --   * STELLT helmut_outbox_abgleich AUF DEN STAND VOR DER HAERTUNG ZURUECK (ohne den
 --     Zustand `bestaetigt` im Terminalzweig) — sonst bliebe eine Funktion zurueck, die
 --     die Migration gar nicht mehr definiert.
@@ -17,6 +17,7 @@
 
 drop function if exists public.helmut_claim_job_by_id(uuid, text, bigint);
 drop function if exists public.helmut_outbox_zuruecklegen(uuid, integer);
+drop function if exists public.helmut_outbox_erneut_vorlegen(uuid);
 drop function if exists public.helmut_outbox_aufraeumen(integer, integer, boolean);
 drop function if exists public.helmut_klasse_erneuere(uuid, text, bigint);
 

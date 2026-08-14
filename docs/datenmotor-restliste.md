@@ -1467,6 +1467,33 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Suiten: `worker-weck-route-test` 21 PASS · `migrations-organisation-test` 10 PASS ·
   Dispatch-Vertrag erweitert 78 PASS (Harness awaited jetzt async-Faelle). Production
   erneut unangetastet.
+- **Stand 2026-08-14/3 (Korrekturlauf — der verwaltete Transport ist jetzt BETRIEBSFAEHIG gebaut, aber weiterhin NICHT ausgerollt; Beleg
+  [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §24,
+  Runbook §22; PR #247):** Der Haertungssprint lieferte Transport, Verbraucher und
+  Anbietersteuerung — aber an **fuenf Stellen war der Weg nicht betriebsfaehig**. Alle fuenf
+  wurden am Code bestaetigt und geschlossen: (1) es gab einen **Transport ohne Antrieb** (der
+  Test pumpte den Versand selbst) → **Outbox-Relay** mit unmittelbarem Anstoss, minuetlichem
+  EventBridge-Zeitgeber (**DISABLED** ausgeliefert) und dem Abgleich **im Zeitgeberlauf**;
+  (2) die Lambda-Funktion war **nicht bereitstellbar** (absichtlich scheiternder Platzhalter)
+  → reproduzierbarer Paketbau (1.515 Dateien, 2,17 MiB, **keine neue Abhaengigkeit**), Vorlage
+  laedt aus S3; (3) in AWS haette es **keine Supabase-Verbindung** gegeben → SSM-Startweg mit
+  Entschluesselung, nur im Prozessspeicher, **fail closed statt stillem Lokalspeicher**;
+  (4) die Anbietersteuerung hing **an keinem echten Aufruf** → sie umschliesst jetzt alle drei
+  Netzstellen des Crawlers und jeden Modellaufruf (Vertagung statt Warteschleife, kein
+  Doppelzaehlen); (5) die **KMS-Rechte des Produzenten waren falsch** (`Encrypt` statt
+  `Decrypt`) → korrigiert. Drei Zusatzbefunde kamen bei der Umsetzung dazu: dem Verbraucher
+  fehlte `kms:Decrypt` fuer `alias/aws/ssm`; der Regionsriegel hing an einem Metadata-Feld und
+  **hielt nichts**; **Wiederholungen wurden vom Relay nicht getragen** (ein 30-Sekunden-Backoff
+  wurde faktisch 10 Minuten → neue Funktion `helmut_outbox_erneut_vorlegen`).
+  **Nachweise:** Ende-zu-Ende **46 PASS ohne manuelle Testpumpe und ohne Vercel-Cron** (der Test
+  laedt beide Handler aus dem **gebauten** Paket), Paket/Startweg 43, Relay 37,
+  Anbieterfachpfad 51, Infrastruktur 67, Mutationsprobe **10/10 rot**.
+  **Grenzen unveraendert ehrlich:** keine AWS-Ressource angelegt, keine Migration angewendet,
+  Production unangetastet; `docs.aws.amazon.com` ist aus der Arbeitsumgebung gesperrt, die
+  KMS- und Regionsaussagen sind **nicht gegen eine AWS-Quelle geprueft**; der Engpass
+  `verstehen` bleibt Parallelitaet 1 und OP-15 (Google-Drosselung) bleibt ab ~10 Mandaten
+  Blocker. **OP-30 bleibt insgesamt offen** — die Aktivierung ist eine Betreiberentscheidung.
+
 - **Stand 2026-08-13/3 (Architektursprint Zielarchitektur — Sprint ERFOLGREICH abgeschlossen, beide Pflichtpruefungen gruen; OP-30 insgesamt bleibt offen; Beleg
   [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md),
   Runbook §20; PR #247):** Der auf den zweiten Fuenferlauf folgende **Kapazitaetssprint wurde

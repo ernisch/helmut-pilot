@@ -16,3 +16,8 @@ tmp/
 output/
 .DS_Store
 .helmut-mailvorschau/
+
+# Lambda-Bauartefakte (Korrekturlauf 2026-08-14/3): das Archiv wird aus dem Repository
+# GEBAUT (scripts/lambda-paket-bauen.js), nie committet — Binaerarchive gehoeren nicht in
+# die Versionsverwaltung.
+build/
