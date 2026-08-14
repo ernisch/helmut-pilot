@@ -220,12 +220,15 @@ for (const [name, block] of [["Verbraucher", verbraucherBlock], ["Relay", relayR
 // Metadata-Feld laesst einen Stack NICHT scheitern — das waere ein Riegel, der nichts haelt.
 check("13.3a Die Bedingung IstFrankfurt existiert",
   /IstFrankfurt:\s*!Equals\s*\[\s*!Ref\s*'?AWS::Region'?,\s*'?eu-central-1'?\s*\]/.test(y));
-check("13.3b Sie haengt an der PFLICHT-Eigenschaft KeyPolicy (sonst haelt der Riegel nichts)",
-  /KeyPolicy:\s*!If\s*\n\s*-\s*IstFrankfurt[\s\S]{0,600}?-\s*!Ref\s*'AWS::NoValue'/.test(y));
-check("13.3c Beide Queues haengen an diesem Schluessel (in falscher Region entsteht KEINE Queue)",
+// KORREKTUR 2026-08-14/5: hier stand, der Riegel haenge an der "PFLICHT-Eigenschaft"
+// KeyPolicy. `KeyPolicy` ist bei AWS::KMS::Key OPTIONAL — der Riegel hielt nichts. Der
+// wirksame Riegel wird jetzt in Abschnitt 17 geprueft.
+check("13.3b Der Riegel haengt NICHT mehr an KeyPolicy",
+  !/KeyPolicy:\s*!If/.test(ohneKommentar(y)));
+check("13.3c Beide Queues haengen am Queue-Schluessel",
   (y.match(/KmsMasterKeyId:\s*!Ref AuftragsQueueSchluessel/g) || []).length === 2);
-check("13.3d Die Vorlage benennt den offenen AWS-Nachweis ehrlich",
-  /NACHWEIS OFFEN/.test(y));
+check("13.3d Die Vorlage benennt offene AWS-Nachweise ehrlich",
+  /NACHWEIS OFFEN|nicht gegen AWS geprueft|nicht gegen AWS geprüft/.test(y));
 check("13.4 Die Node-Laufzeit ist ausdruecklich festgelegt", /Runtime:\s*nodejs\d+\.x/.test(y));
 check("13.5 Beide Funktionen tragen dieselbe Laufzeit",
   new Set(y.match(/Runtime:\s*nodejs\d+\.x/g) || []).size === 1);
@@ -273,6 +276,7 @@ check("14.9 Der Code faellt bei fehlender Relay-Konfiguration NICHT auf Direktve
 check("14.10 Eine fehlende Relay-Konfiguration ist BEOBACHTBAR (Protokollzeile)",
   /KONFIGURATIONSBEFUND relay=/.test(fs.readFileSync(path.join(ROOT, "lib/helmut/lambda-verbraucher.js"), "utf8")));
 
+const cfnFrueh = require(path.join(ROOT, "scripts", "cfn-vorlage-lesen"));
 abschnitt("15 · KMS-Entschluesselung zeigt auf einen SCHLUESSEL, nicht auf einen Alias (Blocker 2)");
 // DIE FEHLKLASSE, NICHT NUR DER EINZELFALL: eine Alias-ARN im Resource-Feld einer
 // IAM-Richtlinie gewaehrt NICHTS ("You cannot use a key id, alias name, or alias ARN to
@@ -301,15 +305,114 @@ check("15.5 Der Sender kann den Parameter-Schluessel NICHT benutzen",
     .some((a) => a.resourcen.includes(parameterSchluessel)));
 check("15.6 Und er hat auch kein ssm:GetParameter",
   !cfn.iamAnweisungen(y, "SenderBenutzer").some((a) => a.actions.includes("ssm:GetParameter")));
-check("15.7 Der Parameter-Schluessel rotiert und traegt den Regionsriegel",
-  /ParameterSchluessel:[\s\S]{0,400}?EnableKeyRotation:\s*true/.test(y)
-  && /ParameterSchluessel:[\s\S]{0,600}?KeyPolicy:\s*!If\s*\n\s*-\s*IstFrankfurt/.test(y));
-check("15.8 Seine Schluesselrichtlinie nennt die beiden Lambda-Rollen ausdruecklich",
-  /NurDieBeidenLambdaRollenEntschluesseln/.test(y)
-  && /role\/helmut-auftrags-verbraucher-\$\{Umgebung\}/.test(y)
-  && /role\/helmut-outbox-relay-\$\{Umgebung\}/.test(y));
+check("15.7 Der Parameter-Schluessel rotiert und ist an die Region gebunden",
+  /ParameterSchluessel:[\s\S]{0,600}?EnableKeyRotation:\s*true/.test(y)
+  && String(cfnFrueh.paare(cfnFrueh.block(y, ["Resources", "ParameterSchluessel"])).Condition || "").trim()
+     === "IstFrankfurt");
+// KORREKTUR 2026-08-14/5: hier wurde bisher VERLANGT, dass die Schluesselrichtlinie die
+// beiden Rollen nennt. Genau das war die nicht aufloesbare Erstbereitstellungsabhaengigkeit.
+check("15.8 Seine Schluesselrichtlinie nennt KEINE Rollen-Principals mehr",
+  !/NurDieBeidenLambdaRollenEntschluesseln/.test(y)
+  && !/role\/helmut-auftrags-verbraucher-\$\{Umgebung\}'\s*$/m.test(y));
 check("15.9 Der Alias existiert NUR als Bedienhilfe (nie in einem Resource-Feld)",
   /AWS::KMS::Alias/.test(y) && /AliasName:\s*!Sub 'alias\/helmut-ssm-\$\{Umgebung\}'/.test(y));
 
 console.log(`\n== ERGEBNIS (Verkabelung) ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
+// (Zwischenstand; die Abschnitte 16 und 17 folgen — Abbruch erst am Dateiende.)
+
+abschnitt("16 · Erstbereitstellung im leeren Konto ist strukturell moeglich (Blocker 1)");
+// DER BEFUND: die Schluesselrichtlinie nannte die beiden Lambda-Rollen als Principals. Beim
+// ERSTEN Anlegen existieren sie noch nicht — und die Rollen brauchen ihrerseits die
+// Schluessel-ARN. KMS loest einen Principal beim Setzen der Richtlinie auf und weist eine
+// Richtlinie mit unbekanntem Principal zurueck. Der Stack waere nie entstanden.
+const reihenfolge = cfn.bereitstellungsReihenfolge(y);
+check("16.1 Der Abhaengigkeitsgraph ist azyklisch (topologische Sortierung gelingt)",
+  reihenfolge.moeglich === true, reihenfolge.kreis.join(", "));
+check("16.2 JEDE Ressource kommt in der Reihenfolge genau einmal vor",
+  reihenfolge.reihenfolge.length === cfn.ressourcenNamen(y).length
+  && new Set(reihenfolge.reihenfolge).size === reihenfolge.reihenfolge.length,
+  `${reihenfolge.reihenfolge.length} von ${cfn.ressourcenNamen(y).length}`);
+// Die Schluessel muessen VOR den Rollen entstehen — die Rollen zeigen per !GetAtt auf sie.
+const vorher = (a, b) => reihenfolge.reihenfolge.indexOf(a) < reihenfolge.reihenfolge.indexOf(b);
+check("16.3 Beide Schluessel entstehen VOR den Rollen, die sie benutzen",
+  vorher("ParameterSchluessel", "VerbraucherRolle") && vorher("ParameterSchluessel", "RelayRolle")
+  && vorher("AuftragsQueueSchluessel", "VerbraucherRolle"));
+check("16.4 Die Rollen entstehen VOR den Funktionen, die sie annehmen",
+  vorher("VerbraucherRolle", "VerbraucherFunktion") && vorher("RelayRolle", "RelayFunktion"));
+
+// DIE UNSICHTBARE KANTE: eine per !Sub gebaute Rollen-ARN erzeugt KEINE CloudFormation-Kante,
+// der Principal muss aber trotzdem schon existieren. Genau daran waere es gescheitert.
+const principals = cfn.kmsPrincipals(y);
+const fremde = Object.entries(principals)
+  .flatMap(([k, arns]) => arns.filter((a) => !/:root$/.test(a)).map((a) => `${k}: ${a}`));
+check("16.5 KEINE Schluesselrichtlinie nennt einen Rollen- oder Benutzer-Principal",
+  fremde.length === 0, fremde.join(" | "));
+for (const [schluessel, arns] of Object.entries(principals)) {
+  check(`16.6 ${schluessel}: genau die Konto-Anweisung (aktiviert die Vergabe ueber IAM)`,
+    arns.length === 1 && /:root$/.test(arns[0]), arns.join(", "));
+}
+// Die Erlaubnis steht jetzt in den IAM-Richtlinien — und dort auf den Parameter Store begrenzt.
+const parameterSchluesselArn = cfn.aufloese(y, "!GetAtt ParameterSchluessel.Arn");
+const queueSchluesselArn = cfn.aufloese(y, "!GetAtt AuftragsQueueSchluessel.Arn");
+for (const rolle of ["VerbraucherRolle", "RelayRolle"]) {
+  const anweisungen = cfn.iamAnweisungen(y, rolle).filter((a) => a.actions.includes("kms:Decrypt"));
+  const parameter = anweisungen.filter((a) => a.resourcen.includes(parameterSchluesselArn));
+  const queue = anweisungen.filter((a) => a.resourcen.includes(queueSchluesselArn));
+  check(`16.7 ${rolle} darf den Parameter-Schluessel NUR ueber den Parameter Store benutzen`,
+    parameter.length === 1 && /kms:ViaService/.test(parameter[0].roh)
+    && /ssm\.\$\{AWS::Region\}\.amazonaws\.com/.test(parameter[0].roh));
+  // GETRENNTE ANWEISUNGEN: eine gemeinsame mit ViaService wuerde auch die SQS-Entschluesselung
+  // an SSM binden und den Empfang brechen.
+  check(`16.8 ${rolle}: der Queue-Schluessel haengt NICHT an kms:ViaService=ssm`,
+    queue.length === 1 && !/kms:ViaService/.test(queue[0].roh));
+  check(`16.9 ${rolle}: Queue- und Parameter-Schluessel stehen in GETRENNTEN Anweisungen`,
+    queue[0] !== parameter[0]);
+}
+
+abschnitt("17 · Der Regionsriegel haelt wirklich (Blocker 2)");
+// DER BEFUND: der Riegel hing an `KeyPolicy: !If [..., !Ref 'AWS::NoValue']`. `KeyPolicy` ist
+// bei AWS::KMS::Key OPTIONAL — fehlt sie, legt AWS eine Standardrichtlinie an und der
+// Schluessel entsteht trotzdem. Der Riegel hielt nichts.
+const yOhneKommentar = ohneKommentar(y);
+check("17.1 Der alte, unwirksame KeyPolicy-Riegel ist verschwunden",
+  !/KeyPolicy:\s*!If/.test(yOhneKommentar));
+check("17.2 Keine Eigenschaft traegt mehr AWS::NoValue als Riegel",
+  !/!Ref 'AWS::NoValue'/.test(yOhneKommentar));
+check("17.3 Die Bedingung IstFrankfurt existiert und prueft die Region",
+  /IstFrankfurt:\s*!Equals\s*\[\s*!Ref\s*'?AWS::Region'?,\s*'?eu-central-1'?\s*\]/.test(y));
+// DER EIGENTLICHE NACHWEIS: keine echte Ressource ohne Regionsbedingung.
+const ohne = cfn.ohneBedingung(y, "IstFrankfurt");
+check("17.4 JEDE echte Ressource traegt Condition: IstFrankfurt", ohne.length === 0, ohne.join(", "));
+// Namentlich, damit ein spaeterer Zusatz nicht unbemerkt durchrutscht.
+for (const n of ["AuftragsQueue", "AuftragsQuarantaene", "AuftragsQueueSchluessel", "ParameterSchluessel",
+  "ParameterSchluesselAlias", "SenderBenutzer", "VerbraucherRolle", "RelayRolle", "RelayZeitgeberRolle",
+  "VerbraucherFunktion", "RelayFunktion", "VerbraucherLogGruppe", "RelayLogGruppe",
+  "VerbraucherAnbindung", "VerbraucherRelayRecht", "RelayZeitgeber"]) {
+  const eigen = cfn.paare(cfn.block(y, ["Resources", n]) || []);
+  check(`17.5 ${n} ist an die Region gebunden`, String(eigen.Condition || "").trim() === "IstFrankfurt");
+}
+// Der einzige unbedingte Eintrag ist ein stack-lokaler Platzhalter — kein AWS-Dienst.
+const unbedingt = cfn.ressourcenNamen(y).filter((n) => {
+  const e = cfn.paare(cfn.block(y, ["Resources", n]) || []);
+  return String(e.Condition || "").trim() !== "IstFrankfurt";
+});
+check("17.6 Genau EIN unbedingter Eintrag, und der legt nichts an",
+  unbedingt.length === 1
+  && String(cfn.paare(cfn.block(y, ["Resources", unbedingt[0]])).Type).trim()
+     === "AWS::CloudFormation::WaitConditionHandle",
+  unbedingt.join(", "));
+check("17.7 Eine falsche Region hinterlaesst einen sprechenden Befund",
+  /NichtFrankfurt:\s*!Not/.test(y) && /RegionsBefund:[\s\S]{0,400}?Condition:\s*NichtFrankfurt/.test(y));
+check("17.8 Alle Ausgaben haengen an der Region (keine Ausgabe ohne Bedingung)",
+  (cfn.block(y, "Outputs") || []).join("\n").split(/\n  [A-Za-z]/).length - 1 <= 0
+  || cfn.ressourcenNamen(y).length > 0);
+const ausgaben = cfn.block(y, "Outputs") || [];
+const ausgabenNamen = ausgaben.filter((z) => /^  [A-Za-z0-9_]+:\s*$/.test(z)).map((z) => z.trim().replace(":", ""));
+const ausgabenOhne = ausgabenNamen.filter((n) => {
+  const e = cfn.paare(cfn.block(ausgaben.join("\n"), n) || []);
+  return !["IstFrankfurt", "NichtFrankfurt"].includes(String(e.Condition || "").trim());
+});
+check("17.9 Jede Ausgabe traegt eine Regionsbedingung", ausgabenOhne.length === 0, ausgabenOhne.join(", "));
+
+console.log(`\n== ERGEBNIS (CloudFormation-Korrektur) ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
 process.exit(fail > 0 ? 1 : 0);

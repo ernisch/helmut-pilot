@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-14/4** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30-Fuenferlauf, zweiter Versuch (12./13.08.): NICHT bestanden — kontrollierte Ruecknahme VOR Grenzuebertritt** (Runbook §19): 5 Laeufe fehlerfrei/fair/ohne Doppelarbeit, aber Ankunft ~440–470 Auftraege/Tag ≫ Abfluss ~130–180/Tag ⇒ Flag wieder `off`, wirkungsbasiert belegt; **524 wartende Auftraege bleiben inert**. **(c) OP-30-ZIELARCHITEKTUR gebaut und lokal nachgewiesen** (§7c; Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache; Production unangetastet, alles Default-AUS; der Kapazitaetssprint davor wurde kontrolliert abgebrochen, seine Zwischenloesung „mehr Slots" verworfen; Sicherheitskorrektur 2026-08-14: Signalpruefung, Weckziel-Riegel, Klingel-Buendelung, Migrationsstempel — Belegdatei §17). **Haertung 2026-08-14/2:** Transport **SQS+Lambda (eu-central-1)** gebaut, lokal bewiesen, NICHT ausgerollt; Verstehen bleibt Parallelitaet 1 = Engpass (Belegdatei §18–§23). **Korrekturlauf 14/3 und Verkabelungslauf 14/4:** sieben Betriebs- und Einsatzblocker des Transports geschlossen (§7c, Belegdatei §24–§25); AWS weiterhin **nicht** ausgerollt. **(d) OP-31 Frischevertrag BESTANDEN** — hielt auch unter OP-30 (5/5 am 13.08.). Diese Datei enthaelt
+**Stand: 2026-08-14/5** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30-Fuenferlauf, zweiter Versuch (12./13.08.): NICHT bestanden — kontrollierte Ruecknahme VOR Grenzuebertritt** (Runbook §19): 5 Laeufe fehlerfrei/fair/ohne Doppelarbeit, aber Ankunft ~440–470 Auftraege/Tag ≫ Abfluss ~130–180/Tag ⇒ Flag wieder `off`, wirkungsbasiert belegt; **524 wartende Auftraege bleiben inert**. **(c) OP-30-ZIELARCHITEKTUR gebaut und lokal nachgewiesen** (§7c; Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache; Production unangetastet, alles Default-AUS; der Kapazitaetssprint davor wurde kontrolliert abgebrochen, seine Zwischenloesung „mehr Slots" verworfen; Sicherheitskorrektur 2026-08-14: Signalpruefung, Weckziel-Riegel, Klingel-Buendelung, Migrationsstempel — Belegdatei §17). **Haertung 2026-08-14/2:** Transport **SQS+Lambda (eu-central-1)** gebaut, lokal bewiesen, NICHT ausgerollt; Verstehen bleibt Parallelitaet 1 = Engpass (Belegdatei §18–§23). **Korrekturlauf 14/3, Verkabelungslauf 14/4, CloudFormation-Korrektur 14/5:** neun Betriebs-, Einsatz- und Bereitstellungsblocker des Transports geschlossen (§7c, Belegdatei §24–§26); AWS weiterhin **nicht** ausgerollt. **(d) OP-31 Frischevertrag BESTANDEN** — hielt auch unter OP-30 (5/5 am 13.08.). Diese Datei enthaelt
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -196,22 +196,23 @@ Lastnachweis 5–500 an echter PostgreSQL (kein Verlust, keine Doppelarbeit; 500
 [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md)
 (Vergleich 7 Varianten × 20 Kriterien, Mengengerüst, Stufenplan, Betreiberablauf); Runbook §20.
 
-**Korrekturlauf 2026-08-14/3 (Belegdatei §24).** Fünf Betriebslücken geschlossen: Antrieb statt
-Testpumpe (Outbox-Relay, Zeitgeber **DISABLED**, Abgleich im Zeitgeberlauf) · bereitstellbares
-Lambda-Paket · SSM-Startweg (fail closed, **kein stiller Rückfall auf lokalen Speicher**) ·
-Anbietersteuerung im Fachpfad · KMS-Produzentenrechte. Dazu: **Wiederholungen wurden vom Relay
-nicht getragen** (30-s-Backoff wurde faktisch 10 min → `helmut_outbox_erneut_vorlegen`).
+**Läufe 14/3 und 14/4 (Belegdatei §24–§25).** Sieben Lücken geschlossen: Antrieb statt
+Testpumpe (Outbox-Relay, Zeitgeber **DISABLED**) · bereitstellbares Lambda-Paket ·
+SSM-Startweg (fail closed, **kein stiller Rückfall auf lokalen Speicher**) · Anbietersteuerung
+im Fachpfad · KMS-Produzentenrechte · Wiederholungen · `HELMUT_RELAY_FUNKTION` · eigener
+KMS-Schlüssel statt Alias-ARN.
 
-**Verkabelungslauf 2026-08-14/4 (Belegdatei §25).** Zwei **Einsatzblocker**: (a) der
-Verbraucher bekam `HELMUT_RELAY_FUNKTION` in der Vorlage **überhaupt nicht** — der
-unmittelbare Relay-Anstoß war unverkabelt, und der Test merkte es nicht, weil er den Auslöser
-fertig einsetzte; (b) die KMS-Berechtigung zeigte auf eine **Alias-ARN**, die laut AWS nichts
-gewährt (an AWS-eigenen Primärquellen belegt). Korrektur: Variable verkabelt, Testnaht auf die
-AWS-Netzgrenze verschoben, kein stiller Direktversand, **eigener KMS-Schlüssel für die
-Supabase-Parameter** — der Vercel-Sender kann die Zugangsdaten nicht mehr entschlüsseln.
-Ende-zu-Ende **53 PASS** (Umgebung und Rechte aus der echten Vorlage), Infrastruktur **87
-PASS**, Mutationsprobe **14/14 rot**. **`docs.aws.amazon.com` ist hier gesperrt; fünf
-AWS-Fragen bleiben unbelegt (§25.3).**
+**CloudFormation-Korrektur 14/5 (Belegdatei §26).** Die Vorlage war **nicht
+erstbereitstellbar**: (a) die Schlüsselrichtlinie nannte die beiden Lambda-**Rollen** als
+Principals — die es beim ersten Anlegen nicht gibt, während sie ihrerseits die Schlüssel-ARN
+brauchen (Zyklus); AWS verlangt, dass Principals „must exist and be visible to AWS KMS". Jetzt trägt der Schlüssel nur
+die Konto-Anweisung (Schalter für IAM-Rechte), die Erlaubnis steht in den Rollen — exakte
+Schlüssel-ARN, eingeengt per `kms:ViaService` auf SSM; Graph **azyklisch, 17/17**. (b) Der Regionsriegel hing an `KeyPolicy` — laut AWS
+`Required: No`; fehlt sie, hängt AWS eine Standardrichtlinie an, der Riegel hielt **nichts**.
+Jetzt trägt **jede** echte Ressource `Condition: IstFrankfurt`, ausgewertet **vor** dem
+Anlegen: außerhalb Frankfurts entsteht **null** Ressourcen. Belege aus den AWS-eigenen
+`awsdocs/*`-Quelltexten (`docs.aws.amazon.com` ist gesperrt); der AWS-Trockenlauf beider
+Regionen bleibt offen (§26.3), ebenso §25.3.
 
 ## 8 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -342,7 +343,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-14/4 | **Verkabelungslauf OP-30** (Belegdatei §25): zwei Einsatzblocker — fehlende `HELMUT_RELAY_FUNKTION` in der Vorlage und eine wirkungslose Alias-ARN in der KMS-Berechtigung | Ende-zu-Ende **53 PASS** (Umgebung und Rechte aus der ECHTEN Vorlage), Infrastruktur **87 PASS**, Mutationsprobe **14/14 rot**; AWS und Production unangetastet |
+| 2026-08-14/5 | **CloudFormation-Korrektur OP-30** (Belegdatei §26): zwei Bereitstellungsblocker — Rollen-Principals in der Schluesselrichtlinie (Zyklus) und ein Riegel an der OPTIONALEN `KeyPolicy` | Ende-zu-Ende **53 PASS**, Infrastruktur **124 PASS**, Mutationsprobe **16/16 rot**, Offline **256/260** (4 sandboxbedingt), Browser/Mobile **32 PASS**; AWS und Production unangetastet |
 | 2026-08-12/3 | **Altersgrenze berichtigt** (Runbook §17): Wartezeit statt Fälligkeit; 3 neue Suiten (59+26+31 PASS); PR #244 gemergt, Wirkungsnachweis am 16:00-Lauf bestanden | **erfolgreich abgeschlossen** |
 
-Die vier OP-30-Sprints davor (Zielarchitektur 13/3 · Sicherheitskorrektur 14 · Haertung 14/2 · Korrekturlauf 14/3) stehen vollstaendig in der Belegdatei [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §17–§24. Die Sprints 2026-08-12/5 – 13/2 (**Fünferlauf, zweiter Versuch — nicht bestanden**, kontrollierte Rücknahme vor Grenzübertritt; §7b, Runbook §19), 2026-08-12/4 (Neutralisierung + Migration, Runbook §17.10), 2026-08-12/2 (Wirkungsnachweis der Abschaltung, Runbook §16.12), 2026-08-12/1 (Rücknahmebeleg, Runbook §16), 2026-08-11/6 (K0 bestanden, bei K1 gestoppt, §15), 2026-08-11/5 (**blockiert**, kein Schreibweg zur Vercel-Env, §14), 2026-08-11/4 (Neutralitätsnachweis, §13) und 2026-08-11/3 (Vorwärtsmigrationen, §12) stehen kanonisch im Runbook. Der Sprint 2026-08-09/2 (E1 `tenant_narrative`, PR #236 gemergt) und die OP-30-Sprints vom 2026-08-08 stehen vollständig in den Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) trägt den CI-Basisrot-Befund). Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 stehen kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 und ältere Beweisketten: **Archiv** ([`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)).
+Die fuenf OP-30-Sprints davor (Zielarchitektur 13/3 · Sicherheitskorrektur 14 · Haertung 14/2 · Korrekturlauf 14/3 · Verkabelungslauf 14/4) stehen vollstaendig in der Belegdatei [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §17–§25. Die Sprints 2026-08-12/5 – 13/2 (**Fünferlauf, zweiter Versuch — nicht bestanden**, kontrollierte Rücknahme vor Grenzübertritt; §7b, Runbook §19), 2026-08-12/4 (Neutralisierung + Migration, Runbook §17.10), 2026-08-12/2 (Wirkungsnachweis der Abschaltung, Runbook §16.12), 2026-08-12/1 (Rücknahmebeleg, Runbook §16), 2026-08-11/6 (K0 bestanden, bei K1 gestoppt, §15), 2026-08-11/5 (**blockiert**, kein Schreibweg zur Vercel-Env, §14), 2026-08-11/4 (Neutralitätsnachweis, §13) und 2026-08-11/3 (Vorwärtsmigrationen, §12) stehen kanonisch im Runbook. Der Sprint 2026-08-09/2 (E1 `tenant_narrative`, PR #236 gemergt) und die OP-30-Sprints vom 2026-08-08 stehen vollständig in den Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) trägt den CI-Basisrot-Befund). Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 stehen kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 und ältere Beweisketten: **Archiv** ([`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)).

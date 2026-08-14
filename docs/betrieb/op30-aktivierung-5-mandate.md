@@ -2054,6 +2054,25 @@ die Nachrichtenmenge.
    Der Bau ist deterministisch — zwei Läufe ergeben dieselbe Prüfsumme.
 3. **Paket nach S3** in **eu-central-1** hochladen (eigener Bucket, keine öffentliche
    Freigabe, Versionierung an). Bucketname und Objektschlüssel merken.
+3b. **Trockenlauf ohne jede Ressource** (kostet nichts, legt nichts an) — **beide Läufe
+   gehören vor Schritt 4**, sie sind der bisher offene AWS-Nachweis aus Belegdatei §26.3:
+
+   ```bash
+   # (a) FALSCHE Region: der Plan muss LEER sein — null Ressourcen.
+   aws cloudformation create-change-set --region eu-west-1 \
+     --stack-name helmut-auftrag-probe --change-set-name riegelprobe --change-set-type CREATE \
+     --template-body file://infra/aws/helmut-auftrags-queue.yaml \
+     --capabilities CAPABILITY_NAMED_IAM \
+     --parameters ParameterKey=PaketBucket,ParameterValue=<bucket>
+   aws cloudformation describe-change-set --region eu-west-1 \
+     --stack-name helmut-auftrag-probe --change-set-name riegelprobe \
+     --query 'length(Changes)'          # ERWARTET: 1 (nur RegionsRiegel) — nie eine Queue,
+                                        # Funktion, Rolle, Protokollgruppe oder ein Schlüssel
+   # (b) eu-central-1: derselbe Aufruf muss 17 Einträge planen.
+   ```
+   Beide Change-Sets danach **löschen** (`delete-change-set`, dann `delete-stack` auf den
+   `REVIEW_IN_PROGRESS`-Stack). Ein Change-Set legt **keine** Ressource an — es ist ein Plan.
+
 4. **Stack anlegen** aus `infra/aws/helmut-auftrags-queue.yaml` mit den Parametern
    `PaketBucket`, `PaketSchluessel`, `SupabaseUrlParameter`, `SupabaseSchluesselParameter`,
    `Umgebung`, `MaxParallelitaet`.
@@ -2077,9 +2096,10 @@ die Nachrichtenmenge.
    aber er kostet einen Anlauf.
    **Die Werte werden direkt in die Kommandozeile bzw. das Konsolenformular eingegeben — nie
    in eine Datei, nie in einen Commit, nie in einen Chat.**
-   **Nur in eu-central-1.** In jeder anderen Region scheitert der Stack am KMS-Schlüssel
-   (§24.7 der Belegdatei) — vorher einmal in einer falschen Region trocken anlegen und das
-   Scheitern belegen.
+   **Nur in eu-central-1.** Jede echte Ressource der Vorlage trägt `Condition: IstFrankfurt`;
+   CloudFormation wertet Bedingungen **vor** dem Anlegen aus, in jeder anderen Region entsteht
+   deshalb **keine einzige** Ressource (Belegdatei §26.2). Ein früher dokumentierter
+   „KMS-Riegel" (§24.7) hielt nichts und ist ersetzt.
 6. **Vercel-Variablen setzen:** `HELMUT_SQS_QUEUE_URL` (Stack-Ausgabe), `AWS_REGION` bleibt
    `eu-central-1`, `HELMUT_KLASSEN_GRENZEN=on`, `HELMUT_JOB_DISPATCH_MODE=queue`.
    Zugangsdaten des IAM-Senders hinterlegen (**nur** `sqs:SendMessage` + KMS-Produzentenrechte).

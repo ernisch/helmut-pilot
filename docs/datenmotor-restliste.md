@@ -1467,6 +1467,38 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Suiten: `worker-weck-route-test` 21 PASS · `migrations-organisation-test` 10 PASS ·
   Dispatch-Vertrag erweitert 78 PASS (Harness awaited jetzt async-Faelle). Production
   erneut unangetastet.
+- **Stand 2026-08-14/5 (CloudFormation-Korrektur — zwei BEREITSTELLUNGSBLOCKER geschlossen; Beleg
+  [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §26,
+  Runbook §22.2):** Die Vorlage war **nicht erstbereitstellbar**. (1) Die Richtlinie des
+  Parameterschluessels nannte die beiden Lambda-**Rollen** als Principals — im leeren Konto
+  existieren die beim Anlegen des Schluessels noch nicht, waehrend sie ihrerseits die
+  Schluessel-ARN brauchen. Das CloudFormation-Handbuch zu `AWS::KMS::Key` sagt woertlich: „The
+  principals in the key policy **must exist and be visible to AWS KMS**." Behoben ueber den von
+  AWS vorgesehenen Weg: die Schluessel tragen nur die **Konto-Anweisung** (sie schaltet die
+  Rechtevergabe per IAM-Richtlinie ueberhaupt erst ein — `key-policy-default.md`: „It allows the
+  account to use IAM policies to allow access to the KMS key"), die Erlaubnis steht in den
+  IAM-Richtlinien der Rollen auf die exakte Schluessel-ARN, fuer den Parameterschluessel
+  eingeengt mit `kms:ViaService` auf SSM. Der Abhaengigkeitsgraph ist jetzt **testgesichert
+  azyklisch** (topologische Sortierung, 17/17; Schluessel vor Rollen, Rollen vor Funktionen).
+  (2) Der Regionsriegel hing an `KeyPolicy` — laut `aws-resource-kms-key.md` **`Required: No`**,
+  und „If you do not provide a key policy, AWS KMS attaches a default key policy": der Riegel
+  hielt **nichts**, ausserhalb Frankfurts waeren Schluessel, Queues, Funktionen, Rollen und
+  Zeitgeber entstanden. Ersetzt durch den offiziellen Mechanismus: **jede** echte Ressource
+  traegt `Condition: IstFrankfurt` — „AWS CloudFormation evaluates all the conditions in your
+  template **before creating any resources**. … Resources that are associated with a false
+  condition are ignored." Einziger unbedingter Eintrag ist ein `WaitConditionHandle` (kein
+  Dienst, kein Speicher, keine Kosten) plus die Ausgabe `RegionsBefund`.
+  **Nachweise:** Infrastruktur **124 PASS / 0 FAIL** (neu §16 Erstbereitstellbarkeit, §17
+  Regionsschutz namentlich fuer alle 16 echten Ressourcen), Ende-zu-Ende **53 PASS**,
+  Mutationsprobe **16/16 rot** — **M15** erkennt den alten `KeyPolicy`-Riegel, **M16** die
+  wieder eingefuegten Rollen-Principals, und M16 faellt nicht ueber ein Textmuster, sondern
+  ueber den **Zyklus** in der topologischen Sortierung. Offline-Suite 256/260 (vier Suiten
+  scheitern sandboxbedingt, auch ohne diesen Branch), Browser/Mobile 32 PASS.
+  **Grenzen unveraendert ehrlich:** keine AWS-Ressource angelegt, kein Stack, kein Change-Set,
+  Production unangetastet. `docs.aws.amazon.com` ist gesperrt; die Belege stammen aus den
+  **von AWS selbst gepflegten Quelltexten derselben Handbuecher** (`awsdocs/*` auf GitHub).
+  Offen bleibt der AWS-Trockenlauf beider Regionen (§26.3) sowie die fuenf Fragen aus §25.3.
+  **OP-30 bleibt insgesamt offen** — die Aktivierung ist eine Betreiberentscheidung.
 - **Stand 2026-08-14/4 (Verkabelungslauf — zwei EINSATZBLOCKER geschlossen; Beleg
   [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §25,
   Runbook §22):** Der Korrekturlauf hatte den Code richtig gemacht; dieser Lauf hat geprueft, ob

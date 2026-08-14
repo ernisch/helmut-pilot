@@ -23,6 +23,8 @@
 //   M12 Das Aufrufrecht lambda:InvokeFunction fehlt
 //   M13 Alias-ARN kehrt in eine KMS-Berechtigung zurueck
 //   M14 Falsche Schluessel-ARN (Queue- statt Parameter-Schluessel)
+//   M15 Der alte unwirksame KeyPolicy-Riegel (AWS::NoValue) kehrt zurueck
+//   M16 Noch nicht vorhandene Rollen-Principals in der Schluesselrichtlinie
 //
 // WIE MUTIERT WIRD: die Datei wird KURZ veraendert, der zustaendige Test als eigener Prozess
 // ausgefuehrt, und die Datei danach IMMER zurueckgeschrieben — auch bei Absturz oder Abbruch
@@ -280,6 +282,49 @@ probe({
   ersetzungen: [[
     "                Resource: !GetAtt ParameterSchluessel.Arn",
     "                Resource: !GetAtt AuftragsQueueSchluessel.Arn"
+  ]],
+  test: "infrastruktur-definition-test.js"
+});
+
+// ── M15 · DER ALTE UNWIRKSAME REGIONSRIEGEL KEHRT ZURUECK ──────────────────────────────────
+// GENAU DIESER FEHLER lag vor: `KeyPolicy: !If [IstFrankfurt, ..., !Ref 'AWS::NoValue']`.
+// `KeyPolicy` ist bei AWS::KMS::Key OPTIONAL (aws-resource-kms-key.md: "Required: No"); fehlt
+// sie, haengt AWS eine Standardrichtlinie an — der Schluessel entsteht trotzdem. Der Riegel
+// hielt also NICHTS. Wer ihn wieder einbaut, muss rot werden.
+probe({
+  name: "M15 Der alte unwirksame KeyPolicy-Riegel (AWS::NoValue) kehrt zurueck",
+  datei: "infra/aws/helmut-auftrags-queue.yaml",
+  ersetzungen: [[
+    "      KeyPolicy:\n        Version: '2012-10-17'\n        Statement:\n"
+    + "          - Sid: KontoVerwaltungUndIamAktivierung\n            Effect: Allow\n"
+    + "            Principal:\n              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'\n"
+    + "            Action: 'kms:*'\n            Resource: '*'\n\n"
+    + "  # BEDIENALIAS",
+    "      KeyPolicy: !If\n        - IstFrankfurt\n        - Version: '2012-10-17'\n          Statement:\n"
+    + "            - Sid: KontoVerwaltungUndIamAktivierung\n              Effect: Allow\n"
+    + "              Principal:\n                AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'\n"
+    + "              Action: 'kms:*'\n              Resource: '*'\n        - !Ref 'AWS::NoValue'\n\n"
+    + "  # BEDIENALIAS"
+  ]],
+  test: "infrastruktur-definition-test.js"
+});
+
+// ── M16 · NOCH NICHT VORHANDENE ROLLEN-PRINCIPALS KEHREN ZURUECK ───────────────────────────
+// Eine Schluesselrichtlinie, die die beiden Lambda-Rollen als Principal nennt, ist beim
+// ERSTEN Anlegen in einem leeren Konto nicht aufloesbar: KMS loest einen Principal beim
+// Setzen der Richtlinie auf und weist eine Richtlinie mit unbekanntem Principal zurueck —
+// waehrend die Rollen ihrerseits die ARN dieses Schluessels brauchen. Das ist der Zyklus,
+// der die Erstbereitstellung unmoeglich macht.
+probe({
+  name: "M16 Noch nicht vorhandene Rollen-Principals in der Schluesselrichtlinie",
+  datei: "infra/aws/helmut-auftrags-queue.yaml",
+  ersetzungen: [[
+    "            Action: 'kms:*'\n            Resource: '*'\n\n  # BEDIENALIAS",
+    "            Action: 'kms:*'\n            Resource: '*'\n"
+    + "          - Sid: NurDieBeidenLambdaRollenEntschluesseln\n            Effect: Allow\n"
+    + "            Principal:\n              AWS:\n"
+    + "                - !GetAtt VerbraucherRolle.Arn\n                - !GetAtt RelayRolle.Arn\n"
+    + "            Action: 'kms:Decrypt'\n            Resource: '*'\n\n  # BEDIENALIAS"
   ]],
   test: "infrastruktur-definition-test.js"
 });

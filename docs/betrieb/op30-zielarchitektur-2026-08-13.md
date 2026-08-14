@@ -1000,13 +1000,16 @@ bekommen (sie hätte korrekt geschlossen gestoppt, aber niemals gearbeitet). Beh
 
 ### 24.7 Zusatzbefund B — der Regionsriegel hielt nichts
 
+> **ÜBERHOLT am 2026-08-14 durch §26.2 — die hier beschriebene Korrektur war selbst falsch.**
+> Der Absatz bleibt als Fehlerprotokoll stehen und darf **nicht** als aktueller Stand zitiert
+> werden.
+
 Der Riegel hing an einem `AWS::NoValue` in einem **Metadata**-Feld. Ein fehlendes Metadata-Feld
-lässt einen Stack nicht scheitern — der Riegel war Dokumentation, kein Schutz. Er hängt jetzt
-an der **Pflicht**-Eigenschaft `KeyPolicy` des KMS-Schlüssels; beide Queues hängen über
-`KmsMasterKeyId` von diesem Schlüssel ab, in einer falschen Region entsteht also **keine**
-Queue. **Nachweis offen:** das Verhalten ist CloudFormation-Standard, aber in dieser Umgebung
-nicht gegen AWS geprüft — vor dem ersten Ausrollen einmal in einer falschen Region trocken
-anlegen.
+lässt einen Stack nicht scheitern — der Riegel war Dokumentation, kein Schutz. Er wurde daraufhin
+an `KeyPolicy` des KMS-Schlüssels gehängt, in der Annahme, das sei eine *Pflicht*-Eigenschaft.
+**Diese Annahme ist widerlegt:** `KeyPolicy` ist bei `AWS::KMS::Key` `Required: No`, und fehlt
+sie, hängt AWS eine Standardrichtlinie an (Belege in §26.2). Der zweite Riegel hielt also
+genauso wenig wie der erste. Der wirksame Riegel steht in §26.2.
 
 ### 24.8 Zusatzbefund C — Wiederholungen wurden vom Relay nicht getragen
 
@@ -1168,3 +1171,162 @@ Kontos eine ressourcenbasierte Richtlinie nötig ist · welche Wirkung die
 Konto-Root-Anweisung in einer Schlüsselrichtlinie hat. **Alle diese Punkte scheitern im
 Zweifel geschlossen und laut** — die Funktion arbeitet dann nicht, statt still Falsches zu
 tun. Sie gehören trotzdem vor das erste Ausrollen, sobald `docs.aws.amazon.com` erreichbar ist.
+
+---
+
+## 26 · CloudFormation-Korrektur 2026-08-14/5 — die Vorlage war nicht erstbereitstellbar
+
+Zwei bestätigte Blocker. Beide betrafen **nicht** den Fachcode, sondern die Vorlage
+`infra/aws/helmut-auftrags-queue.yaml` — und beide hätten das **erste** Ausrollen in einem
+leeren AWS-Konto verhindert oder unbemerkt wirkungslos gemacht.
+
+**Warum das in dieser Umgebung überhaupt entscheidbar war:** `docs.aws.amazon.com` ist hier
+gesperrt (403 auf CONNECT). Die verwendeten Quellen sind deshalb die **von AWS selbst
+gepflegten Quelltexte derselben Handbücher** auf GitHub (`awsdocs/*`) — dieselben Sätze, nur
+vor dem Rendern. Jede Aussage unten ist wörtlich belegt; nichts stammt aus Modellwissen.
+
+### 26.1 Blocker 1 — die Schlüsselrichtlinie nannte noch nicht vorhandene Rollen
+
+**Der Fehler.** `ParameterSchluessel` trug eine zweite Anweisung
+`NurDieBeidenLambdaRollenEntschluesseln` mit `!GetAtt VerbraucherRolle.Arn` und
+`!GetAtt RelayRolle.Arn` als Principals. Das sah nach *besonders eng* aus, war aber ein
+**Zyklus**: der Schlüssel braucht die Rollen (als Principal), die Rollen brauchen den
+Schlüssel (als `Resource` ihrer `kms:Decrypt`-Erlaubnis). In einem leeren Konto existiert beim
+Anlegen des Schlüssels keine der beiden Rollen.
+
+**Der offizielle Beleg — im CloudFormation-Handbuch zu `AWS::KMS::Key` selbst:**
+
+> „Each statement in the key policy must contain one or more principals. **The principals in
+> the key policy must exist and be visible to AWS KMS.** When you create a new AWS principal
+> (for example, an IAM user or role), you might need to enforce a delay before including the
+> new principal in a key policy because the new principal might not be immediately visible to
+> AWS KMS."
+> — [`aws-resource-kms-key.md`](https://github.com/awsdocs/aws-cloudformation-user-guide/blob/main/doc_source/aws-resource-kms-key.md)
+> (gerendert: [AWS::KMS::Key](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-kms-key.html))
+
+Ergänzend, warum ein ARN im `Principal`-Feld nicht bloß ein Textwert ist:
+
+> „If your `Principal` element in a role trust policy contains an ARN that points to a specific
+> IAM role, then **that ARN transforms to the role unique principal ID when you save the
+> policy.**"
+> — [`reference_policies_elements_principal.md`](https://github.com/awsdocs/iam-user-guide/blob/main/doc_source/reference_policies_elements_principal.md)
+
+Ein Principal wird also **beim Setzen der Richtlinie aufgelöst**. Was es noch nicht gibt, kann
+nicht aufgelöst werden.
+
+**Die Lösung — der von AWS vorgesehene Weg.** Die Schlüsselrichtlinie enthält nur noch die
+Konto-Anweisung. Das ist kein Verzicht auf Kontrolle, sondern der dokumentierte Schalter, der
+die Rechtevergabe über IAM-Richtlinien für diesen Schlüssel überhaupt erst **einschaltet**:
+
+> „When the principal in a key policy statement is an *account principal* expressed as
+> `arn:aws:iam::111122223333:root`, the policy statement doesn't give permission to any IAM
+> principal. Instead, **it gives the AWS account permission to use IAM policies to delegate the
+> permissions specified in the key policy.**"
+> — [`key-policy-overview.md`](https://github.com/awsdocs/aws-kms-developer-guide/blob/master/doc_source/key-policy-overview.md)
+
+> „`Sid`: `Enable IAM policies` … **It allows the account to use IAM policies to allow access
+> to the KMS key**, in addition to the key policy." — und ohne sie: „IAM policies that allow
+> access to the key are ineffective."
+> — [`key-policy-default.md`](https://github.com/awsdocs/aws-kms-developer-guide/blob/master/doc_source/key-policy-default.md)
+
+Die **eigentliche** Erlaubnis steht jetzt in den IAM-Richtlinien der beiden Rollen — auf die
+exakte Schlüssel-ARN (`!GetAtt ParameterSchluessel.Arn`, kein Alias, kein Platzhalter) und dort
+zusätzlich eingeengt mit
+
+```yaml
+    Condition:
+      StringEquals:
+        'kms:ViaService': !Sub 'ssm.${AWS::Region}.amazonaws.com'
+```
+
+> „The `kms:ViaService` condition key **limits use of an KMS key to requests from specified AWS
+> services**."
+> — [`conditions-kms.md`](https://github.com/awsdocs/aws-kms-developer-guide/blob/master/doc_source/conditions-kms.md)
+
+Die Rollen können diesen Schlüssel damit **ausschließlich über den Parameter Store** benutzen —
+ein direkter `kms:Decrypt`-Aufruf mit einem beliebigen Geheimtext ist ihnen verwehrt. Die
+Einengung ist also nicht schwächer als vorher, sondern an der richtigen Stelle.
+
+**Bewusst getrennt gehalten:** die Erlaubnis für den *Queue*-Schlüssel steht in einer **eigenen**
+Anweisung **ohne** `ViaService`. Eine zusammengefasste Anweisung hätte die SQS-Entschlüsselung
+an `ssm.…` gebunden und den Empfang gebrochen — genau die Art stiller Fehler, die diese Vorlage
+vermeiden soll.
+
+**Der Graph ist jetzt beweisbar azyklisch.** `scripts/cfn-vorlage-lesen.js` baut den
+Abhängigkeitsgraphen aus `!Ref`/`!GetAtt`/`DependsOn` und sortiert ihn topologisch
+(`bereitstellungsReihenfolge`). Ergebnis: `moeglich: true`, 17 von 17 Ressourcen, Reihenfolge
+
+```
+AuftragsQueueSchluessel → ParameterSchluessel → RegionsRiegel → RelayLogGruppe →
+VerbraucherLogGruppe → AuftragsQuarantaene → ParameterSchluesselAlias → AuftragsQueue →
+RelayRolle → SenderBenutzer → VerbraucherRolle → RelayFunktion → RelayZeitgeberRolle →
+VerbraucherFunktion → VerbraucherRelayRecht → RelayZeitgeber → VerbraucherAnbindung
+```
+
+Beide Schlüssel entstehen **vor** den Rollen, die Rollen **vor** den Funktionen. Eine
+Erstbereitstellung in einem leeren Konto ist damit strukturell möglich.
+
+### 26.2 Blocker 2 — der Regionsriegel hing an einer optionalen Eigenschaft
+
+**Der Fehler.** Der Riegel lautete `KeyPolicy: !If [IstFrankfurt, {…}, !Ref 'AWS::NoValue']`.
+Die Begründung im Kommentar („`KeyPolicy` ist eine Pflicht-Eigenschaft") ist **falsch**:
+
+> „If you do not provide a key policy, **AWS KMS attaches a default key policy to the KMS
+> key.**" … „*Required*: **No**"
+> — [`aws-resource-kms-key.md`](https://github.com/awsdocs/aws-cloudformation-user-guide/blob/main/doc_source/aws-resource-kms-key.md)
+
+Außerhalb von Frankfurt wäre der Schlüssel also **entstanden** — mit Standardrichtlinie — und
+mit ihm Queues, Funktionen, Rollen und Zeitgeber. Der Riegel hielt nichts. (`AWS::NoValue`
+*entfernt* die Eigenschaft korrekt — nur bewirkt das Entfernen einer optionalen Eigenschaft
+eben nichts:
+[`pseudo-parameter-reference.md`](https://github.com/awsdocs/aws-cloudformation-user-guide/blob/main/doc_source/pseudo-parameter-reference.md).)
+
+**Die Lösung — der offiziell vorgesehene Mechanismus.** Jede echte Ressource trägt
+`Condition: IstFrankfurt`:
+
+> „**At stack creation or stack update, AWS CloudFormation evaluates all the conditions in your
+> template before creating any resources.** … **Resources that are associated with a false
+> condition are ignored.** … Use the `Condition` key and a condition's logical ID to associate
+> it with a resource or output."
+> — [`conditions-section-structure.md`](https://github.com/awsdocs/aws-cloudformation-user-guide/blob/main/doc_source/conditions-section-structure.md)
+
+Das ist der Unterschied zwischen „wird angelegt und wieder zurückgerollt" und „**entsteht gar
+nicht**". Die Auswertung passiert **vor** dem Anlegen.
+
+**Die fünf geforderten Nachweise** (alle in `scripts/infrastruktur-definition-test.js` §16/§17,
+gegen die echte Vorlagendatei, nicht gegen eine Kopie):
+
+| # | Nachweis | Prüfung | Ergebnis |
+|---|---|---|---|
+| 1 | Frankfurt erstellt den vollständigen Plan | §16.1–16.4 topologische Sortierung, 17/17 Ressourcen | erfüllt |
+| 2 | Andere Region erzeugt **null** Ressourcen | §17.3–17.6: nur `RegionsRiegel` (WaitConditionHandle) ist unbedingt | erfüllt |
+| 3 | Keine Queue, Funktion, Rolle, Protokollgruppe, kein Schlüssel, kein Zeitgeber ohne Schutz | §17.4 prüft **namentlich** alle 16 echten Ressourcen | erfüllt |
+| 4 | Mutationsprobe erkennt den alten `KeyPolicy`-Riegel | **M15** → rot über §13.3b, §17.1, §17.2 | erfüllt |
+| 5 | Mutationsprobe erkennt wiedereingefügte Rollen-Principals | **M16** → rot über §15.8 **und** §16.1 (Zyklus!) | erfüllt |
+
+Nachweis 5 ist der aussagekräftigste: die Mutation lässt die topologische Sortierung
+**scheitern** und benennt den Kreis (`ParameterSchluessel`, `RelayRolle`, `VerbraucherRolle`,
+`RelayFunktion`, …). Der Test erkennt also nicht ein Textmuster, sondern die *Struktur* des
+Fehlers.
+
+**Der einzige unbedingte Eintrag** ist `RegionsRiegel`, ein
+`AWS::CloudFormation::WaitConditionHandle`: kein Dienst, kein Speicher, kein Netz, keine
+Kosten — ein stack-lokaler Platzhalter. Er steht dort, damit der `Resources`-Abschnitt nie leer
+ist (eine leere `Resources`-Sektion ist in CloudFormation ungültig) und damit eine falsche
+Region eine sprechende Ausgabe hinterlässt: `RegionsBefund` unter `Condition: NichtFrankfurt`.
+
+### 26.3 Was dieser Lauf **nicht** belegt
+
+Unverändert gilt: **die Vorlage wurde nie auf ein AWS-Konto angewendet.** Es gibt keinen Stack,
+kein Change-Set, keinen Konto-Lauf. Belegt sind die *Zusagen der Handbücher* und die
+*Struktur der Vorlage* — nicht das Verhalten von AWS an dieser Vorlage. Vor dem ersten
+Ausrollen bleibt deshalb offen:
+
+1. ein Trockenlauf in einer **falschen** Region (`aws cloudformation create-change-set`) mit dem
+   Nachweis, dass der Plan **null** Ressourcen enthält,
+2. ein Trockenlauf in `eu-central-1` mit dem Nachweis, dass der Plan alle 17 Einträge enthält,
+3. die weiter offenen Punkte aus §25.3 (u. a. ob `ssm:GetParameter` mit `WithDecryption` ein
+   eigenes `kms:Decrypt` verlangt).
+
+Alle drei kosten nichts und ändern nichts — ein Change-Set legt keine Ressource an. Sie
+brauchen aber ein AWS-Konto und damit eine Gründerentscheidung.

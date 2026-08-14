@@ -1,6 +1,6 @@
 # ARCHITECTURE — Systemkarte Helmut
 
-**Letzte Aktualisierung:** 2026-08-14/4 (§7f.1: Outbox-Relay als Antrieb, SSM-Startweg, zwei KMS-Schluessel, Verkabelung aus der echten Vorlage — nicht ausgerollt; §7f: OP-30-Zielarchitektur — transaktionale
+**Letzte Aktualisierung:** 2026-08-14/5 (§7f.1: Outbox-Relay als Antrieb, SSM-Startweg, zwei KMS-Schluessel, Verkabelung aus der echten Vorlage, erstbereitstellbarer azyklischer Graph und Regionsbedingung an jeder Ressource — nicht ausgerollt; §7f: OP-30-Zielarchitektur — transaktionale
 Outbox, austauschbarer Transport, verteilte Klassengrenzen, Vorgangswache; alles gebaut,
 lokal nachgewiesen, Default-AUS, Migrationen `20260813` NICHT angewendet; kanonisch
 [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md));
@@ -555,6 +555,20 @@ ein IAM-Benutzer mit Zugangsdaten außerhalb von AWS die kryptographische Fähig
 **Schlüssel-ARN**; eine Alias-ARN im `Resource`-Feld gewährt nach AWS-Dokumentation nichts
 und ist per Test ausgeschlossen (Belegdatei §25).
 
+**Erstbereitstellbarkeit und Datenresidenz** (CloudFormation-Korrektur 2026-08-14/5). Die
+Schlüsselrichtlinien nennen **keine Rollen** als Principals — AWS verlangt, dass Principals
+einer Schlüsselrichtlinie beim Setzen bereits existieren und sichtbar sind, und beim ersten
+Ausrollen in einem leeren Konto gibt es die Rollen noch nicht (sie brauchen ihrerseits die
+Schlüssel-ARN — ein Zyklus). Die Schlüssel tragen deshalb nur die **Konto-Anweisung**, den von
+AWS dokumentierten Schalter, der die Rechtevergabe über IAM-Richtlinien einschaltet; die
+Erlaubnis steht in den IAM-Richtlinien der beiden Rollen, auf die exakte Schlüssel-ARN und für
+den Parameterschlüssel zusätzlich mit `kms:ViaService` auf SSM eingeengt. Der
+Abhängigkeitsgraph ist testgesichert **azyklisch** (topologische Sortierung, 17/17).
+Datenresidenz trägt **jede** echte Ressource selbst über `Condition: IstFrankfurt` —
+CloudFormation wertet Bedingungen vor dem Anlegen aus, außerhalb `eu-central-1` entsteht
+**keine einzige** Ressource. Belege (AWS-Primärquellen) und die fünf geforderten Nachweise:
+Belegdatei §26.
+
 **Die Verkabelung ist Teil des Nachweises.** `scripts/cfn-vorlage-lesen.js` löst die echte
 CloudFormation-Vorlage auf; Ende-zu-Ende-Test und Infrastrukturtest beziehen daraus die
 Umgebungsvariablen und die IAM-Rechte. Der Ende-zu-Ende-Test setzt **keinen** Relay-Auslöser
@@ -570,7 +584,7 @@ vollständige Abfluss ist ohne Vercel-Cron und ohne manuelle Testpumpe belegt
 (`scripts/queue-ende-zu-ende-test.js` §11). Der Selbstweck ist auf einen ausdrücklich
 freizuschaltenden Entwicklungs- und Notfallweg zurückgestuft. Details und Grenzen:
 [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md)
-§18–§25.
+§18–§26.
 
 ## 8 · Briefing, Lage, Radar, Büro
 

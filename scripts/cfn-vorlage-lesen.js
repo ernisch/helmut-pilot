@@ -256,7 +256,11 @@ function iamAnweisungen(text, rolle) {
       const effekt = (stueck.match(/^\s*(\w+)/) || [])[1] || "";
       const actions = [...stueck.matchAll(/['"]?((?:sqs|kms|ssm|logs|lambda|sts):[A-Za-z*]+)['"]?/g)]
         .map((m) => m[1]);
-      const resTeil = stueck.split(/\bResource:/).slice(1).join("\nResource:");
+      // Nur bis zum naechsten Schluessel derselben Anweisung: eine folgende `Condition:`
+      // gehoert NICHT zur Ressourcenliste (sonst laendeten `kms:ViaService` und der
+      // Dienstname faelschlich als "Ressourcen" in der Auswertung).
+      const resTeil = stueck.split(/\bResource:/).slice(1).join("\nResource:")
+        .split(/\n\s*Condition:/)[0];
       const resourcen = [...resTeil.matchAll(/(!Sub\s+'[^']*'|!GetAtt\s+[A-Za-z0-9_]+\.[A-Za-z0-9_]+|!Ref\s+[A-Za-z0-9_]+|'[^']*'|"[^"]*")/g)]
         .map((m) => {
           try { return String(aufloese(sauber, m[1], parameter)); } catch (_) { return m[1]; }
@@ -276,8 +280,92 @@ function darf(text, rolle, aktion, ziel) {
     && a.resourcen.some((r) => r === ziel));
 }
 
+// ── DER ABHAENGIGKEITSGRAPH (Korrektur 2026-08-14/5) ─────────────────────────────────────────
+// WOZU: eine Erstbereitstellung in einem LEEREN Konto ist nur dann strukturell moeglich, wenn
+// die Ressourcen sich in eine Reihenfolge bringen lassen — jede erst, wenn alles da ist,
+// worauf sie zeigt. Ein Kreis (A braucht B, B braucht A) laesst sich nie anlegen.
+// CloudFormation leitet diese Reihenfolge aus `!Ref`, `!GetAtt` und `DependsOn` ab; genau
+// diese drei Kanten sammelt `abhaengigkeiten`.
+//
+// ZUSAETZLICH GEPRUEFT WIRD DIE UNSICHTBARE KANTE: eine ARN, die per `!Sub` aus festen Namen
+// zusammengesetzt wird, erzeugt KEINE Kante — CloudFormation weiss dann nichts von der
+// Abhaengigkeit. Steht so eine ARN als PRINCIPAL in einer KMS-Schluesselrichtlinie, muss der
+// Prinzipal beim Anlegen trotzdem schon existieren. Genau daran waere die Erstbereitstellung
+// gescheitert. `kmsPrincipals` macht diese Faelle sichtbar.
+function ressourcenNamen(text) {
+  const res = block(ohneKommentare(text), "Resources") || [];
+  let basis = -1;
+  for (const z of res) { if (z.trim()) { basis = einrueckung(z); break; } }
+  const namen = [];
+  for (const z of res) {
+    if (!z.trim() || einrueckung(z) !== basis) continue;
+    const n = (z.match(/^\s*([A-Za-z0-9_]+)\s*:/) || [])[1];
+    if (n) namen.push(n);
+  }
+  return namen;
+}
+
+function abhaengigkeiten(text) {
+  const sauber = ohneKommentare(text);
+  const namen = ressourcenNamen(sauber);
+  const graph = {};
+  for (const name of namen) {
+    const roh = (block(sauber, ["Resources", name]) || []).join("\n");
+    const kanten = new Set();
+    for (const m of roh.matchAll(/!Ref\s+'?([A-Za-z0-9_]+)'?/g)) if (namen.includes(m[1])) kanten.add(m[1]);
+    for (const m of roh.matchAll(/!GetAtt\s+'?([A-Za-z0-9_]+)\./g)) if (namen.includes(m[1])) kanten.add(m[1]);
+    for (const m of roh.matchAll(/\$\{([A-Za-z0-9_]+)(?:\.[A-Za-z0-9_]+)?\}/g)) if (namen.includes(m[1])) kanten.add(m[1]);
+    for (const m of roh.matchAll(/DependsOn:\s*'?([A-Za-z0-9_]+)'?/g)) if (namen.includes(m[1])) kanten.add(m[1]);
+    kanten.delete(name);
+    graph[name] = [...kanten];
+  }
+  return graph;
+}
+
+// Topologische Sortierung. Gelingt sie, ist der Graph azyklisch und eine Erstbereitstellung
+// strukturell moeglich; sonst nennt sie die Ressourcen, die im Kreis haengen.
+function bereitstellungsReihenfolge(text) {
+  const graph = abhaengigkeiten(text);
+  const offen = new Set(Object.keys(graph));
+  const reihenfolge = [];
+  while (offen.size) {
+    const naechste = [...offen].filter((n) => graph[n].every((k) => !offen.has(k))).sort();
+    if (!naechste.length) return { moeglich: false, reihenfolge, kreis: [...offen].sort() };
+    for (const n of naechste) { reihenfolge.push(n); offen.delete(n); }
+  }
+  return { moeglich: true, reihenfolge, kreis: [] };
+}
+
+// Alle Principal-ARNs, die in einer KMS-Schluesselrichtlinie stehen — je Schluessel.
+function kmsPrincipals(text) {
+  const sauber = ohneKommentare(text);
+  const erg = {};
+  for (const name of ressourcenNamen(sauber)) {
+    const kopf = paare(block(sauber, ["Resources", name]) || []);
+    if (String(kopf.Type || "").trim() !== "AWS::KMS::Key") continue;
+    const roh = (block(sauber, ["Resources", name, "Properties", "KeyPolicy"]) || []).join("\n");
+    erg[name] = [...roh.matchAll(/arn:aws:iam::[^'"\s]+/g)].map((m) => m[0]);
+  }
+  return erg;
+}
+
+// Traegt jede ECHTE Ressource die Regionsbedingung? `AWS::CloudFormation::WaitConditionHandle`
+// ist bewusst ausgenommen: er ist ein stack-lokaler Platzhalter, kein AWS-Dienst.
+function ohneBedingung(text, bedingung = "IstFrankfurt") {
+  const sauber = ohneKommentare(text);
+  const fehlt = [];
+  for (const name of ressourcenNamen(sauber)) {
+    const eigen = paare(block(sauber, ["Resources", name]) || []);
+    const typ = String(eigen.Type || "").trim();
+    if (typ === "AWS::CloudFormation::WaitConditionHandle") continue;
+    if (String(eigen.Condition || "").trim() !== bedingung) fehlt.push(`${name} (${typ})`);
+  }
+  return fehlt;
+}
+
 module.exports = {
   VORLAGE, KONTO, REGION,
   ladeText, ohneKommentare, block, paare,
-  parameterWerte, aufloese, umgebung, iamAnweisungen, darf
+  parameterWerte, aufloese, umgebung, iamAnweisungen, darf,
+  ressourcenNamen, abhaengigkeiten, bereitstellungsReihenfolge, kmsPrincipals, ohneBedingung
 };
