@@ -43,6 +43,7 @@ console.log("Helmut — Arbeitsreduzierung und Kapazitaetsmodell je Auftragsklas
 // ═══════════════════════════════════════════════════════════════════════════════════════════
 abschnitt("A1 · Quellen werden global abgerufen, nicht je Mandat");
 const scalable = require(path.join(ROOT, "lib/helmut/scalable-pipeline"));
+const vertrag = require(path.join(ROOT, "lib/helmut/verstehen-vertrag"));
 check("A1.1 Es gibt genau EINEN Abruftyp (source_fetch) — kein Typ je Mandat",
   Object.keys(scalable.HANDLER).filter((t) => /fetch|abruf/.test(t)).length === 1,
   Object.keys(scalable.HANDLER).join(","));
@@ -115,34 +116,42 @@ const PARALLEL = { quellenabruf: 5, verstehen: 1, "worker-drain": 4 };
 // Anteil des Tages, in dem ein Verbraucher tatsaechlich arbeiten kann. Bewusst konservativ:
 // mit SQS/Lambda gibt es keine Slotgrenze mehr, aber 50 % ist die ehrliche Annahme (A).
 const AUSLASTUNG = 0.5;
+// ZWEITE, PESSIMISTISCHE ANNAHME (A2, neu 2026-08-14). Annahme A ist eine ANNAHME, keine
+// Messung — und der zweite Fuenferlauf hat gezeigt, wie weit die Wirklichkeit davon abweichen
+// kann (Ankunft ~440–470/Tag gegen Abfluss ~130–180/Tag, Runbook §19). A2 rechnet mit einem
+// Viertel davon: nur 12,5 % des Tages nutzbar. Sie ersetzt A nicht, sie zeigt, wie viel
+// Verstehensparallelitaet noetig waere, wenn A zu optimistisch ist.
+const AUSLASTUNG_PESSIMISTISCH = 0.125;
 const TAG_S = 86400;
 
-function modell(n) {
+function modell(n, ueberschreibung = {}) {
   const a = ankunft(n);
+  const parallel = { ...PARALLEL, ...(ueberschreibung.parallel || {}) };
+  const auslastung = Number(ueberschreibung.auslastung) > 0 ? Number(ueberschreibung.auslastung) : AUSLASTUNG;
   const klassen = {
     quellenabruf: {
       auftraege: a.fetch_geteilt + a.fetch_person,
       bedarfS: a.fetch_geteilt * BEDIENZEIT_S.fetch_geteilt + a.fetch_person * BEDIENZEIT_S.fetch_person,
-      parallel: PARALLEL.quellenabruf
+      parallel: parallel.quellenabruf
     },
     verstehen: {
       auftraege: a.verstehen,
       bedarfS: a.verstehen * BEDIENZEIT_S.verstehen,
-      parallel: PARALLEL.verstehen
+      parallel: parallel.verstehen
     },
     projektion: {
       auftraege: a.projektion,
       bedarfS: a.projektion * BEDIENZEIT_S.projektion,
-      parallel: PARALLEL["worker-drain"]
+      parallel: parallel["worker-drain"]
     },
     briefing: {
       auftraege: a.briefing + a.narrativ,
       bedarfS: a.briefing * BEDIENZEIT_S.briefing + a.narrativ * BEDIENZEIT_S.narrativ,
-      parallel: PARALLEL["worker-drain"]
+      parallel: parallel["worker-drain"]
     }
   };
   for (const k of Object.values(klassen)) {
-    k.angebotS = k.parallel * TAG_S * AUSLASTUNG;
+    k.angebotS = k.parallel * TAG_S * auslastung;
     k.reserve = k.bedarfS > 0 ? k.angebotS / k.bedarfS : Infinity;
   }
   const engpass = Object.entries(klassen).sort((x, y) => x[1].reserve - y[1].reserve)[0];
@@ -201,13 +210,50 @@ for (const e of ergebnisse) {
 check("B1.x Der Engpass ist bei jeder Stufe benannt (keine gemittelte Gesamtreserve)",
   ergebnisse.every((e) => Boolean(e.engpass)));
 
-abschnitt("B2 · Verstehen ist der bindende Engpass — und bleibt auf Parallelitaet 1");
-check("B2.1 Bei 500 Mandaten ist `verstehen` die schwaechste Klasse",
+abschnitt("B2 · Verstehen: der Engpass ist jetzt KONFIGURIERBAR, der Standard bleibt 1");
+check("B2.1 Bei 500 Mandaten ist `verstehen` bei Parallelitaet 1 die schwaechste Klasse",
   modell(500).engpass === "verstehen", modell(500).engpass);
-check("B2.2 Die Klassengrenze `verstehen` steht auf 1 (bis der Vormerkungs-Store bedingt schreibt)",
+check("B2.2 Der STANDARD der Klassengrenze `verstehen` bleibt 1 (Production unveraendert)",
   scalable.KLASSEN_STANDARD.verstehen === 1, String(scalable.KLASSEN_STANDARD.verstehen));
-check("B2.3 Eine allgemeine Parallelitaet von 8 wird NICHT als Verstehenskapazitaet gerechnet",
+check("B2.3 Das Modell rechnet weiterhin mit der STANDARD-Grenze, nicht mit einer Wunschzahl",
   PARALLEL.verstehen === 1 && modell(500).klassen.verstehen.parallel === 1);
+check("B2.4 Eine Parallelitaet > 1 ist ohne den atomaren Vertrag nicht erreichbar (harter Riegel)",
+  scalable.klassenMax("verstehen", { HELMUT_KLASSE_VERSTEHEN_MAX: "8" }) === 1
+    && scalable.klassenMax("verstehen", { HELMUT_KLASSE_VERSTEHEN_MAX: "8", HELMUT_VERSTEHEN_CAS: "on" }) === 8);
+
+// ── Welche Verstehensparallelitaet ist noetig, welche ist NACHGEWIESEN? ──────────────────────
+// Die untere Schranke: die kleinste ganze Zahl, bei der `verstehen` bei dieser Mandatszahl
+// Faktor 2 Reserve haelt. Unter der optimistischen Annahme A und unter der pessimistischen A2.
+function noetigeParallelitaet(n, auslastung) {
+  for (let p = 1; p <= vertrag.VERSTEHEN_PARALLELITAET_MAX; p += 1) {
+    if (modell(n, { parallel: { verstehen: p }, auslastung }).klassen.verstehen.reserve >= 2) return p;
+  }
+  return null;   // im gedeckelten Bereich nicht erreichbar
+}
+
+console.log("\n  Mandate | noetig bei A (50 %) | noetig bei A2 (12,5 %) | Reserve bei p=1/A | Reserve bei p=8/A2");
+for (const n of STUFEN) {
+  const pA = noetigeParallelitaet(n, AUSLASTUNG);
+  const pA2 = noetigeParallelitaet(n, AUSLASTUNG_PESSIMISTISCH);
+  const r1 = modell(n).klassen.verstehen.reserve;
+  const r8 = modell(n, { parallel: { verstehen: 8 }, auslastung: AUSLASTUNG_PESSIMISTISCH }).klassen.verstehen.reserve;
+  console.log(`  ${String(n).padStart(7)} | ${String(pA ?? ">8").padStart(19)} | ${String(pA2 ?? ">8").padStart(22)}`
+    + ` | ${("x" + r1.toFixed(1)).padStart(17)} | ${("x" + r8.toFixed(1)).padStart(18)}`);
+}
+check("B2.5 Unter Annahme A traegt schon Parallelitaet 1 bis 500 Mandate",
+  noetigeParallelitaet(500, AUSLASTUNG) === 1, String(noetigeParallelitaet(500, AUSLASTUNG)));
+check("B2.6 Unter der PESSIMISTISCHEN Annahme A2 braucht es bei 500 Mandaten mehr als 1",
+  noetigeParallelitaet(500, AUSLASTUNG_PESSIMISTISCH) > 1,
+  String(noetigeParallelitaet(500, AUSLASTUNG_PESSIMISTISCH)));
+// NACHGEWIESEN ist 8: `verstehen-cas-datenbank-test.js` §4 haelt acht Vorgaenge gleichzeitig an
+// echter PostgreSQL, `verstehen-cas-vertrag-test.js` §13 verarbeitet acht Vorgaenge im Fachkern
+// wirklich gleichzeitig. Das Modul deckelt bei genau dieser Zahl.
+check("B2.7 Die lokal nachgewiesene Parallelitaet (8) deckt auch die pessimistische Annahme",
+  noetigeParallelitaet(500, AUSLASTUNG_PESSIMISTISCH) <= 8);
+check("B2.8 Die Obergrenze des Moduls entspricht der nachgewiesenen Zahl (kein ungedeckter Wert)",
+  vertrag.VERSTEHEN_PARALLELITAET_MAX === 8, String(vertrag.VERSTEHEN_PARALLELITAET_MAX));
+check("B2.9 Der KI-Deckel bleibt der bindende Grund gegen 25+ Mandate — nicht der Durchsatz",
+  kiSpanne(25).oben > 100 + 30);
 
 abschnitt("B3 · KI-Tagesbedarf GETRENNT vom technischen Durchsatz");
 const DECKEL = 100 + 30;                      // Production-Tagesdeckel, unveraendert
@@ -254,4 +300,6 @@ check("B5.2 Die Anbietersteuerung setzt fuer Google eine konservative Rate ohne 
 console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
 console.log("EINORDNUNG: Rechenmodell aus Production-Messwerten (P) — KEIN Production-Beweis");
 console.log("fuer 25+ Mandate. Der KI-Tagesbedarf ist eine getrennte Gruenderentscheidung.");
+console.log("Die nachgewiesene Verstehensparallelitaet (8) ist LOKAL belegt (echte PostgreSQL,");
+console.log("echte Nebenlaeufigkeit) — sie gibt Helmut NICHT fuer 25 bis 500 Mandate frei.");
 process.exit(fail > 0 ? 1 : 0);

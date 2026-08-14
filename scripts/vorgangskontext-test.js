@@ -623,7 +623,14 @@ const ALLE_FAMILIEN = [...G.FAMILIEN, ...G.ZUSATZFAMILIEN];
   "20260814090000_queue_verbraucher.sql",
   "rollback_20260814090000_queue_verbraucher.sql",
   "20260814090100_anbieter_steuerung.sql",
-  "rollback_20260814090100_anbieter_steuerung.sql"
+  "rollback_20260814090100_anbieter_steuerung.sql",
+  // Sprint 2026-08-14/6 (Verstehensparallelitaet und CAS): atomarer Verstehensvertrag —
+  // legt AUSSCHLIESSLICH helmut_verstehen_reservierungen/-_vormerkungen, deren Funktionen
+  // und die Fencing-Spalte samt Trigger auf knowledge_objects an. Keine K2.1-Struktur, kein
+  // Kontextpfad. Eigener Nachweis: scripts/verstehen-cas-datenbank-test.js an echter
+  // PostgreSQL; Pruefung 8.8b prueft ihren Inhalt unabhaengig mit.
+  "20260814180000_verstehen_cas.sql",
+  "rollback_20260814180000_verstehen_cas.sql"
       ]);
       // Die Allowlist ist KEINE Abschwaechung: 8.8b prueft unabhaengig und INHALTLICH,
       // dass keine Migration im Repository den Kontextpfad beruehrt — auch keine der

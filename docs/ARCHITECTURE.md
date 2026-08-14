@@ -1,6 +1,6 @@
 # ARCHITECTURE — Systemkarte Helmut
 
-**Letzte Aktualisierung:** 2026-08-14/5 (§7f.1: Outbox-Relay als Antrieb, SSM-Startweg, zwei KMS-Schluessel, Verkabelung aus der echten Vorlage, erstbereitstellbarer azyklischer Graph und Regionsbedingung an jeder Ressource — nicht ausgerollt; §7f: OP-30-Zielarchitektur — transaktionale
+**Letzte Aktualisierung:** 2026-08-14/6 (§7f: **atomarer Verstehensvertrag (CAS)** — eine Zeile je Vorgang mit Besitzer, Lease und monotonem, per Trigger ERZWUNGENEM Fencing-Wert; loest den Karten-Store der Update-Vormerkungen ab und macht Verstehensparallelitaet ueberhaupt erst sicher moeglich; Default AUS, Migration `20260814180000` NICHT angewendet, kanonisch [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)); davor 2026-08-14/5 (§7f.1: Outbox-Relay als Antrieb, SSM-Startweg, zwei KMS-Schluessel, Verkabelung aus der echten Vorlage, erstbereitstellbarer azyklischer Graph und Regionsbedingung an jeder Ressource — nicht ausgerollt; §7f: OP-30-Zielarchitektur — transaktionale
 Outbox, austauschbarer Transport, verteilte Klassengrenzen, Vorgangswache; alles gebaut,
 lokal nachgewiesen, Default-AUS, Migrationen `20260813` NICHT angewendet; kanonisch
 [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md));
@@ -479,6 +479,24 @@ Understanding-Schloss bekommt eine engere Nachfolgerin: die **Vorgangswache**
 (`storage.vorgangsWache`, Klasse `verstehen-vorgang:<id>` max 1) schützt „ein KI-Aufruf je
 neuem Vorgang" über Prozess- und Pfadgrenzen, statt alles zu serialisieren — Default inert
 (`HELMUT_VERSTEHEN_KONKURRENZ`).
+
+**Der atomare Verstehensvertrag (OP-30 CAS, Migration `20260814180000`, Default inert
+via `HELMUT_VERSTEHEN_CAS`).** Die Klassengrenze `verstehen` stand auf 1, weil die
+Vormerkungen gescheiterter Aktualisierungen in **einer Karte** lagen und mit Lesen →
+Ändern → Schreiben zurückgeschrieben wurden (`CLAUDE.md` §4 Regel 10). Ersetzt durch
+**eine Zeile je Vorgang** (`helmut_verstehen_reservierungen`) mit Besitzerkennung, Lease
+und **monotonem Fencing-Wert**, plus eine Vormerkungszeile je Vorgang, die atomar erhöht
+und bedingt gelöscht wird (`helmut_verstehen_vormerkungen`). Der Fencing-Wert wandert über
+`knowledge_objects.verstehen_fencing` mit ins Ergebnis und wird dort per Trigger
+**erzwungen** — gegen die gespeicherte Fassung *und* gegen die aktuelle Reservierung; ein
+abgelöster Arbeiter kann damit nicht überschreiben, auch nicht mit beliebiger Verzögerung.
+Ein Modellaufruf wird **vor** dem Absenden vermerkt: ein Absturz danach endet sichtbar in
+`zustand='unbekannt'` und wird **nie** automatisch wiederholt (at most once; eine
+Exactly-once-Zusage für einen externen Aufruf ist ohne gemeinsames Commit unmöglich —
+kanonisch: [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md) §3).
+Die Parallelität ist über `HELMUT_VERSTEHEN_PARALLELITAET` (im Lauf) und
+`HELMUT_KLASSE_VERSTEHEN_MAX` (systemweit) begrenzbar; **beide werden ohne den Vertrag
+hart auf 1 geklemmt**, Obergrenze 8 = die lokal nachgewiesene Zahl.
 
 **Vorbedingungen werden geprüft, nicht angenommen.** `helmut_jobs_offen` zählt offene
 Vorbedingungen im selben Fenster; Projektion und Briefing werden über `helmut_defer_job`
