@@ -1421,7 +1421,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 - **Stand 2026-08-13/3 (Architektursprint Zielarchitektur — Teilweise abgeschlossen; Beleg
   [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md),
-  Runbook §20):** Der auf den zweiten Fuenferlauf folgende **Kapazitaetssprint wurde
+  Runbook §20; PR #247):** Der auf den zweiten Fuenferlauf folgende **Kapazitaetssprint wurde
   kontrolliert abgebrochen**; die verworfene Zwischenloesung (Parallelitaet 6 + sechs
   Drain-Slots) wurde NICHT rekonstruiert — mehr Cron-Slots skalieren den Slot, nicht die
   Architektur. Stattdessen gebaut und lokal nachgewiesen (Production unangetastet, alles
