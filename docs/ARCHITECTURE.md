@@ -1,6 +1,6 @@
 # ARCHITECTURE — Systemkarte Helmut
 
-**Letzte Aktualisierung:** 2026-08-14/3 (§7f.1: Outbox-Relay als Antrieb, SSM-Startweg, Anbietersteuerung im Fachpfad — nicht ausgerollt; §7f: OP-30-Zielarchitektur — transaktionale
+**Letzte Aktualisierung:** 2026-08-14/4 (§7f.1: Outbox-Relay als Antrieb, SSM-Startweg, zwei KMS-Schluessel, Verkabelung aus der echten Vorlage — nicht ausgerollt; §7f: OP-30-Zielarchitektur — transaktionale
 Outbox, austauschbarer Transport, verteilte Klassengrenzen, Vorgangswache; alles gebaut,
 lokal nachgewiesen, Default-AUS, Migrationen `20260813` NICHT angewendet; kanonisch
 [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md));
@@ -547,6 +547,20 @@ mit Entschlüsselung, hält sie ausschließlich im Prozessspeicher, protokollier
 stoppt bei jedem Fehler **geschlossen** — ein stiller Rückfall auf den lokalen Speicher ist
 strukturell ausgeschlossen.
 
+**Zwei KMS-Schlüssel, nicht einer** (Verkabelungslauf 2026-08-14/4). Der Queue-Schlüssel
+verschlüsselt die Wecksignale; ihn benutzt auch der Sender auf der Vercel-Seite. Ein
+**eigener** Schlüssel verschlüsselt die beiden Supabase-SecureString-Parameter — sonst hätte
+ein IAM-Benutzer mit Zugangsdaten außerhalb von AWS die kryptographische Fähigkeit, den
+`service_role`-Schlüssel zu entschlüsseln. Jede KMS-Berechtigung zeigt auf eine
+**Schlüssel-ARN**; eine Alias-ARN im `Resource`-Feld gewährt nach AWS-Dokumentation nichts
+und ist per Test ausgeschlossen (Belegdatei §25).
+
+**Die Verkabelung ist Teil des Nachweises.** `scripts/cfn-vorlage-lesen.js` löst die echte
+CloudFormation-Vorlage auf; Ende-zu-Ende-Test und Infrastrukturtest beziehen daraus die
+Umgebungsvariablen und die IAM-Rechte. Der Ende-zu-Ende-Test setzt **keinen** Relay-Auslöser
+mehr ein — ersetzt ist nur die AWS-Netzgrenze. Eine fehlende Zeile in der Vorlage lässt
+deshalb den Gesamtweg fallen, nicht bloß einen Textvergleich.
+
 **Verbindlich:** Supabase bleibt die Wahrheit; SQS ist nur der austauschbare Transport,
 Lambda nur der austauschbare Verbraucher. Über die Transportgrenze gehen ausschließlich
 `{jobId, schemaVersion}`. Der Verbraucher benutzt denselben Fachhandler wie Cron und
@@ -556,7 +570,7 @@ vollständige Abfluss ist ohne Vercel-Cron und ohne manuelle Testpumpe belegt
 (`scripts/queue-ende-zu-ende-test.js` §11). Der Selbstweck ist auf einen ausdrücklich
 freizuschaltenden Entwicklungs- und Notfallweg zurückgestuft. Details und Grenzen:
 [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md)
-§18–§24.
+§18–§25.
 
 ## 8 · Briefing, Lage, Radar, Büro
 

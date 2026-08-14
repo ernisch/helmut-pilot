@@ -18,6 +18,12 @@
 //   M9  Verlorene Folgeauftraege  — die Wiedervorlage nach Wiederholung entfaellt
 //   M10 Cron-Abhaengigkeit        — der Zeitgeber traegt das Sicherheitsnetz nicht mehr
 //
+// VERKABELUNGSLAUF 2026-08-14/4 — vier weitere Mutationen an der ECHTEN AWS-Vorlage:
+//   M11 HELMUT_RELAY_FUNKTION fehlt in der CloudFormation-Vorlage
+//   M12 Das Aufrufrecht lambda:InvokeFunction fehlt
+//   M13 Alias-ARN kehrt in eine KMS-Berechtigung zurueck
+//   M14 Falsche Schluessel-ARN (Queue- statt Parameter-Schluessel)
+//
 // WIE MUTIERT WIRD: die Datei wird KURZ veraendert, der zustaendige Test als eigener Prozess
 // ausgefuehrt, und die Datei danach IMMER zurueckgeschrieben — auch bei Absturz oder Abbruch
 // (process-Handler unten). Das ist noetig, weil die Tests die Dateien vom Datentraeger lesen
@@ -227,6 +233,55 @@ probe({
     "  let abgleich = { gelaufen: false, grund: \"abgeschaltet\" };\n  if (false) {"
   ]],
   test: "queue-ende-zu-ende-test.js"
+});
+
+// ── M11 · DIE UMGEBUNGSVARIABLE FEHLT IN DER VORLAGE ───────────────────────────────────────
+// GENAU DIESER FEHLER lag vor: der Code war richtig, die Vorlage setzte die Variable nicht,
+// und der Test setzte den Ausloeser ein — also fiel es niemandem auf.
+probe({
+  name: "M11 HELMUT_RELAY_FUNKTION fehlt in der CloudFormation-Vorlage",
+  datei: "infra/aws/helmut-auftrags-queue.yaml",
+  ersetzungen: [["          HELMUT_RELAY_FUNKTION: !Ref RelayFunktion\n", ""]],
+  test: "queue-ende-zu-ende-test.js"
+});
+
+// ── M12 · DAS AUFRUFRECHT FEHLT ────────────────────────────────────────────────────────────
+// Die Variable steht da, aber die Rolle darf nicht aufrufen: in AWS ein AccessDenied, das
+// der Verbraucher schweigend schlucken wuerde.
+probe({
+  name: "M12 Der Verbraucherrolle fehlt lambda:InvokeFunction",
+  datei: "infra/aws/helmut-auftrags-queue.yaml",
+  ersetzungen: [[
+    "            Action: 'lambda:InvokeFunction'\n            Resource: !GetAtt RelayFunktion.Arn",
+    "            Action: 'lambda:GetFunction'\n            Resource: !GetAtt RelayFunktion.Arn"
+  ]],
+  test: "queue-ende-zu-ende-test.js"
+});
+
+// ── M13 · DIE ALIAS-ARN KEHRT ZURUECK ──────────────────────────────────────────────────────
+// Eine Alias-ARN im Resource-Feld gewaehrt NICHTS. Sie sieht aber praezise aus — deshalb
+// braucht es einen Riegel gegen die FEHLKLASSE, nicht nur gegen den Einzelfall.
+probe({
+  name: "M13 Alias-ARN statt Schluessel-ARN in einer KMS-Berechtigung",
+  datei: "infra/aws/helmut-auftrags-queue.yaml",
+  ersetzungen: [[
+    "                Resource: !GetAtt ParameterSchluessel.Arn",
+    "                Resource: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/ssm'"
+  ]],
+  test: "infrastruktur-definition-test.js"
+});
+
+// ── M14 · FALSCHE SCHLUESSEL-ARN ───────────────────────────────────────────────────────────
+// Der Queue-Schluessel statt des Parameter-Schluessels: formal eine Schluessel-ARN, aber die
+// falsche — die Entschluesselung der Zugangsdaten scheitert.
+probe({
+  name: "M14 Falsche Schluessel-ARN (Queue- statt Parameter-Schluessel)",
+  datei: "infra/aws/helmut-auftrags-queue.yaml",
+  ersetzungen: [[
+    "                Resource: !GetAtt ParameterSchluessel.Arn",
+    "                Resource: !GetAtt AuftragsQueueSchluessel.Arn"
+  ]],
+  test: "infrastruktur-definition-test.js"
 });
 
 console.log(`\n== ERGEBNIS ==\nROT (erkannt) ${erkannt}  GRUEN (Loch) ${loecher}  (gesamt ${erkannt + loecher})`);

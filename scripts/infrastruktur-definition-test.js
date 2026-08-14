@@ -110,9 +110,12 @@ check("7.3 Der Verbraucher darf empfangen und loeschen",
 // deshalb die beiden IAM-Richtlinien, ueber die Helmut selbst zugreift.
 check("7.4 Keine Wildcard-Rechte in den Helmut-IAM-Richtlinien",
   !/(sqs|kms):\*/.test(senderBlock) && !/(sqs|kms):\*/.test(verbraucherBlock));
-check("7.6 Die KMS-Wildcard steht ausschliesslich in der Schluesselrichtlinie des Konto-Roots",
-  (y.match(/kms:\*/g) || []).length === 1
-  && /Principal:\s*\n\s*AWS:\s*!Sub 'arn:aws:iam::\$\{AWS::AccountId\}:root'\s*\n\s*Action:\s*'kms:\*'/.test(y));
+// Jeder KMS-Schluessel braucht die Konto-Root-Anweisung, sonst ist er dauerhaft
+// unverwaltbar (AWS-Standard). Erlaubt ist `kms:*` deshalb GENAU dort — und nirgends sonst.
+const kmsWildcards = (y.match(/kms:\*/g) || []).length;
+const rootAnweisungen = (y.match(/Principal:\s*\n\s*AWS:\s*!Sub 'arn:aws:iam::\$\{AWS::AccountId\}:root'\s*\n\s*Action:\s*'kms:\*'/g) || []).length;
+check("7.6 Jede KMS-Wildcard steht in einer Konto-Root-Schluesselrichtlinie",
+  kmsWildcards > 0 && kmsWildcards === rootAnweisungen, `${kmsWildcards} Wildcards, ${rootAnweisungen} Root-Anweisungen`);
 check("7.5 Die Rechte zeigen auf GENAU diese Queue (kein Ressourcen-Sternchen)",
   !/Resource:\s*'\*'[\s\S]{0,80}sqs/.test(y));
 
@@ -207,8 +210,11 @@ abschnitt("13 · SSM-Rechte und Regionsriegel");
 for (const [name, block] of [["Verbraucher", verbraucherBlock], ["Relay", relayRolleBlock]]) {
   check(`13.1 ${name} darf GENAU die beiden Parameter lesen`,
     /ssm:GetParameter/.test(block) && !/ssm:GetParameters?ByPath|ssm:\*|ssm:PutParameter/.test(block));
-  check(`13.2 ${name} darf den SSM-Standardschluessel entschluesseln`,
-    /alias\/aws\/ssm/.test(block));
+  // KORREKTUR 2026-08-14/4: hier stand `alias/aws/ssm` — dieser Test hat den Fehler
+  // ZEMENTIERT. Eine Alias-ARN im Resource-Feld gewaehrt nichts; geprueft wird jetzt in
+  // Abschnitt 15 gegen die SCHLUESSEL-ARN.
+  check(`13.2 ${name} entschluesselt NICHT ueber eine Alias-ARN`,
+    !/:alias\//.test(block));
 }
 // DER RIEGEL MUSS AN EINER PFLICHT-EIGENSCHAFT HAENGEN. Ein `AWS::NoValue` in einem
 // Metadata-Feld laesst einen Stack NICHT scheitern — das waere ein Riegel, der nichts haelt.
@@ -225,4 +231,85 @@ check("13.5 Beide Funktionen tragen dieselbe Laufzeit",
   new Set(y.match(/Runtime:\s*nodejs\d+\.x/g) || []).size === 1);
 
 console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
+// (Zwischenstand; die Verkabelungsabschnitte 14 und 15 folgen — Abbruch erst am Dateiende.)
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// VERKABELUNGSLAUF 2026-08-14/4 — die beiden Einsatzblocker
+// Diese Abschnitte pruefen nicht mehr nur Text, sondern die AUFGELOESTE Verkabelung: welche
+// Umgebungsvariablen eine Funktion wirklich bekaeme und welche Rechte ihre Rolle wirklich
+// traegt (scripts/cfn-vorlage-lesen.js).
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+const cfn = require(path.join(ROOT, "scripts", "cfn-vorlage-lesen"));
+const umgebungVerbraucher = cfn.umgebung(y, "VerbraucherFunktion");
+const umgebungRelay = cfn.umgebung(y, "RelayFunktion");
+const relayArn = cfn.aufloese(y, "!GetAtt RelayFunktion.Arn");
+
+abschnitt("14 · Der unmittelbare Relay-Anstoss ist WIRKLICH verkabelt (Blocker 1)");
+check("14.1 Der Verbraucher bekommt HELMUT_RELAY_FUNKTION",
+  Boolean(umgebungVerbraucher.HELMUT_RELAY_FUNKTION), JSON.stringify(Object.keys(umgebungVerbraucher)));
+check("14.2 Der Wert ist GENAU die Relay-Funktion dieser Vorlage",
+  umgebungVerbraucher.HELMUT_RELAY_FUNKTION === cfn.aufloese(y, "!Ref RelayFunktion"),
+  String(umgebungVerbraucher.HELMUT_RELAY_FUNKTION));
+check("14.3 Der Code liest genau diesen Variablennamen",
+  fs.readFileSync(path.join(ROOT, "lib/helmut/lambda-verbraucher.js"), "utf8")
+    .includes("HELMUT_RELAY_FUNKTION"));
+check("14.4 Die Verbraucherrolle darf GENAU diese Funktion aufrufen",
+  cfn.darf(y, "VerbraucherRolle", "lambda:InvokeFunction", relayArn), relayArn);
+check("14.5 Sie darf sonst NICHTS aufrufen (kein Sternchen, keine fremde Funktion)",
+  cfn.iamAnweisungen(y, "VerbraucherRolle")
+    .filter((a) => a.actions.some((x) => x.startsWith("lambda:")))
+    .every((a) => a.resourcen.length === 1 && a.resourcen[0] === relayArn));
+// KEIN STILLER DIREKTVERSAND: der Verbraucher darf gar nicht senden koennen.
+check("14.6 Der Verbraucher bekommt KEINE Queue-Adresse",
+  umgebungVerbraucher.HELMUT_SQS_QUEUE_URL === undefined);
+check("14.7 Der Verbraucher hat KEIN sqs:SendMessage",
+  !cfn.iamAnweisungen(y, "VerbraucherRolle").some((a) => a.actions.includes("sqs:SendMessage")));
+check("14.8 Der Relay hat beides — Queue-Adresse und Senderecht",
+  Boolean(umgebungRelay.HELMUT_SQS_QUEUE_URL)
+  && cfn.iamAnweisungen(y, "RelayRolle").some((a) => a.actions.includes("sqs:SendMessage")));
+check("14.9 Der Code faellt bei fehlender Relay-Konfiguration NICHT auf Direktversand zurueck",
+  fs.readFileSync(path.join(ROOT, "lib/helmut/outbox-relay.js"), "utf8").includes("direktVerboten")
+  && fs.readFileSync(path.join(ROOT, "lib/helmut/lambda-verbraucher.js"), "utf8").includes("direktVerboten: true"));
+check("14.10 Eine fehlende Relay-Konfiguration ist BEOBACHTBAR (Protokollzeile)",
+  /KONFIGURATIONSBEFUND relay=/.test(fs.readFileSync(path.join(ROOT, "lib/helmut/lambda-verbraucher.js"), "utf8")));
+
+abschnitt("15 · KMS-Entschluesselung zeigt auf einen SCHLUESSEL, nicht auf einen Alias (Blocker 2)");
+// DIE FEHLKLASSE, NICHT NUR DER EINZELFALL: eine Alias-ARN im Resource-Feld einer
+// IAM-Richtlinie gewaehrt NICHTS ("You cannot use a key id, alias name, or alias ARN to
+// identify a KMS key in an IAM policy statement" — AWS KMS Developer Guide, Belegdatei §25).
+const kmsAnweisungen = ["VerbraucherRolle", "RelayRolle", "SenderBenutzer"]
+  .flatMap((r) => cfn.iamAnweisungen(y, r).map((a) => ({ rolle: r, ...a })))
+  .filter((a) => a.actions.some((x) => x.startsWith("kms:")));
+check("15.1 KEINE Alias-ARN in einer KMS-Berechtigung (die Fehlklasse ist geschlossen)",
+  kmsAnweisungen.every((a) => a.resourcen.every((r) => !/:alias\//.test(r))),
+  kmsAnweisungen.flatMap((a) => a.resourcen).filter((r) => /:alias\//.test(r)).join(", "));
+check("15.2 Jede KMS-Berechtigung zeigt auf eine SCHLUESSEL-ARN",
+  kmsAnweisungen.length > 0 && kmsAnweisungen.every((a) => a.resourcen.every((r) => /:key\//.test(r))),
+  kmsAnweisungen.flatMap((a) => a.resourcen).join(" | "));
+const parameterSchluessel = cfn.aufloese(y, "!GetAtt ParameterSchluessel.Arn");
+const queueSchluessel = cfn.aufloese(y, "!GetAtt AuftragsQueueSchluessel.Arn");
+check("15.3 Es gibt einen EIGENEN Schluessel fuer die Supabase-Parameter",
+  parameterSchluessel !== queueSchluessel && /:key\//.test(parameterSchluessel));
+for (const rolle of ["VerbraucherRolle", "RelayRolle"]) {
+  check(`15.4 ${rolle} darf GENAU diesen Parameter-Schluessel entschluesseln`,
+    cfn.darf(y, rolle, "kms:Decrypt", parameterSchluessel));
+}
+// DER EIGENTLICHE SICHERHEITSGEWINN: der Sender (IAM-Benutzer mit Zugangsdaten AUSSERHALB
+// von AWS) darf den Schluessel der Zugangsdaten NICHT anfassen.
+check("15.5 Der Sender kann den Parameter-Schluessel NICHT benutzen",
+  !cfn.iamAnweisungen(y, "SenderBenutzer")
+    .some((a) => a.resourcen.includes(parameterSchluessel)));
+check("15.6 Und er hat auch kein ssm:GetParameter",
+  !cfn.iamAnweisungen(y, "SenderBenutzer").some((a) => a.actions.includes("ssm:GetParameter")));
+check("15.7 Der Parameter-Schluessel rotiert und traegt den Regionsriegel",
+  /ParameterSchluessel:[\s\S]{0,400}?EnableKeyRotation:\s*true/.test(y)
+  && /ParameterSchluessel:[\s\S]{0,600}?KeyPolicy:\s*!If\s*\n\s*-\s*IstFrankfurt/.test(y));
+check("15.8 Seine Schluesselrichtlinie nennt die beiden Lambda-Rollen ausdruecklich",
+  /NurDieBeidenLambdaRollenEntschluesseln/.test(y)
+  && /role\/helmut-auftrags-verbraucher-\$\{Umgebung\}/.test(y)
+  && /role\/helmut-outbox-relay-\$\{Umgebung\}/.test(y));
+check("15.9 Der Alias existiert NUR als Bedienhilfe (nie in einem Resource-Feld)",
+  /AWS::KMS::Alias/.test(y) && /AliasName:\s*!Sub 'alias\/helmut-ssm-\$\{Umgebung\}'/.test(y));
+
+console.log(`\n== ERGEBNIS (Verkabelung) ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
 process.exit(fail > 0 ? 1 : 0);

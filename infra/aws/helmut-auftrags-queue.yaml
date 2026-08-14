@@ -106,6 +106,68 @@ Resources:
               Resource: '*'
         - !Ref 'AWS::NoValue'
 
+  # ── SCHLÜSSEL FÜR DIE SUPABASE-ZUGANGSDATEN (Verkabelungslauf 2026-08-14/4) ────────────────
+  # WARUM EIN ZWEITER SCHLÜSSEL UND NICHT DER OBIGE:
+  # Der Queue-Schlüssel wird vom SenderBenutzer benutzt — einem IAM-Benutzer mit langlebigen
+  # Zugangsdaten, die AUSSERHALB von AWS bei Vercel liegen. Er trägt darauf (korrekterweise,
+  # als Produzent) `kms:GenerateDataKey` UND `kms:Decrypt`. Schützte derselbe Schlüssel auch
+  # die SecureString-Parameter, hätte dieser Benutzer die kryptographische Fähigkeit, den
+  # Supabase-service_role-Schlüssel zu entschlüsseln — den Generalschlüssel, der RLS umgeht
+  # und alle Mandanten trägt (CLAUDE.md §4 Regel 1). Dass er es heute nicht kann, liegt nur
+  # an einer IAM-Hürde (ihm fehlt ssm:GetParameter), nicht an der Kryptographie.
+  # Ein Schlüssel für Wecksignale ({jobId, schemaVersion}) und ein Schlüssel für
+  # Mandantengeheimnisse dürfen nicht derselbe sein. Kosten: ein zweiter KMS-Schlüssel.
+  ParameterSchluessel:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub 'Helmut ${Umgebung}: Verschluesselung der Supabase-SecureString-Parameter'
+      EnableKeyRotation: true
+      # Derselbe Datenresidenz-Riegel wie oben (Pflichteigenschaft entfällt außerhalb Frankfurts).
+      KeyPolicy: !If
+        - IstFrankfurt
+        - Version: '2012-10-17'
+          Statement:
+            - Sid: KontoVerwaltung
+              Effect: Allow
+              Principal:
+                AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+              Action: 'kms:*'
+              Resource: '*'
+            # AUSDRÜCKLICH, NICHT NUR ÜBER IAM: ob die Konto-Anweisung oben allein genügt,
+            # damit IAM-Identitätsrichtlinien für diesen Schlüssel greifen, konnte in dieser
+            # Umgebung NICHT an der offiziellen Quelle geprüft werden (docs.aws.amazon.com ist
+            # durch den Egress-Proxy gesperrt). Diese Anweisung nennt die beiden Rollen
+            # deshalb selbst — damit trägt die Lösung unter beiden möglichen Antworten.
+            # Die Rollen-ARNs entstehen per !Sub aus den fest vergebenen RoleName-Werten,
+            # NICHT per !GetAtt: sonst entstünde ein wechselseitiger Bezug (die Rollen
+            # verweisen ihrerseits auf diesen Schlüssel).
+            - Sid: NurDieBeidenLambdaRollenEntschluesseln
+              Effect: Allow
+              Principal:
+                AWS:
+                  - !Sub 'arn:aws:iam::${AWS::AccountId}:role/helmut-auftrags-verbraucher-${Umgebung}'
+                  - !Sub 'arn:aws:iam::${AWS::AccountId}:role/helmut-outbox-relay-${Umgebung}'
+              Action: 'kms:Decrypt'
+              Resource: '*'
+              Condition:
+                StringEquals:
+                  # NUR über den Parameter Store, nie direkt. Dasselbe Muster benutzt AWS für
+                  # seine eigenen verwalteten Schlüssel: "All AWS managed keys use a
+                  # kms:ViaService condition key in their key policy document."
+                  # (AWS KMS Developer Guide, conditions-kms — Quellen: Belegdatei §25.)
+                  'kms:ViaService': !Sub 'ssm.${AWS::Region}.amazonaws.com'
+        - !Ref 'AWS::NoValue'
+
+  # BEDIENALIAS — ausschließlich für den Betreiber beim Anlegen der Parameter
+  # (`aws ssm put-parameter --key-id alias/helmut-ssm-<umgebung> ...`).
+  # ER GEHÖRT NIEMALS IN EIN `Resource`-FELD: eine Alias-ARN bezeichnet den Alias, nicht den
+  # Schlüssel (Belegdatei §25). Genau dieser Fehler wurde hier korrigiert.
+  ParameterSchluesselAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/helmut-ssm-${Umgebung}'
+      TargetKeyId: !Ref ParameterSchluessel
+
   # ── QUARANTÄNE (Dead-Letter-Queue) ─────────────────────────────────────────────────────────
   # Eine Nachricht, die dauerhaft nicht verarbeitet werden kann, landet hier — statt endlos
   # zu kreisen oder still zu verschwinden. 14 Tage Aufbewahrung, damit ein Betreiber sie
@@ -205,12 +267,18 @@ Resources:
                 # ZWEI Schlüssel, zwei Gründe:
                 #   * der eigene Queue-Schlüssel — sonst ist die empfangene Nachricht
                 #     Chiffretext,
-                #   * der AWS-verwaltete SSM-Schlüssel — sonst schlägt GetParameter mit
+                #   * der Parameter-Schlüssel — sonst schlägt GetParameter mit
                 #     WithDecryption=true fehl und der Verbraucher bekommt NIE eine
                 #     Supabase-Verbindung (er stoppt dann geschlossen, aber er arbeitet nie).
+                # KORREKTUR 2026-08-14/4: hier stand die ARN des Alias `alias/aws/ssm`. Eine
+                # Alias-ARN im Resource-Feld gewährt NICHTS — "You cannot use a key id, alias
+                # name, or alias ARN to identify a KMS key in an IAM policy statement" und
+                # "When an alias is the value of a resource element, the policy applies to the
+                # alias resource, not to any KMS key" (AWS KMS Developer Guide; Quellen und
+                # Einordnung: Belegdatei §25). Es MUSS die SCHLÜSSEL-ARN sein.
                 Resource:
                   - !GetAtt AuftragsQueueSchluessel.Arn
-                  - !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/ssm'
+                  - !GetAtt ParameterSchluessel.Arn
               - Effect: Allow
                 Action:
                   - 'ssm:GetParameter'
@@ -254,6 +322,16 @@ Resources:
           HELMUT_JOB_DISPATCH_MODE: 'queue'
           HELMUT_JOB_TRANSPORT: 'sqs'
           HELMUT_KLASSEN_GRENZEN: 'on'
+          # ── DER UNMITTELBARE RELAY-ANSTOSS (Verkabelungslauf 2026-08-14/4) ──────────────
+          # OHNE DIESE ZEILE WAR DIE KETTE UNTERBROCHEN: `lambda-verbraucher.js` liest genau
+          # diesen Namen, um die Relay-Funktion asynchron aufzurufen. Fehlte er, fand der
+          # Verbraucher keinen Ausloeser — und der Anstoss verschwand still.
+          # `!Ref` auf eine AWS::Lambda::Function liefert den FUNKTIONSNAMEN, und genau den
+          # erwartet `InvokeCommand.FunctionName`.
+          HELMUT_RELAY_FUNKTION: !Ref RelayFunktion
+          # BEWUSST NICHT GESETZT: HELMUT_SQS_QUEUE_URL. Der Verbraucher soll NIE selbst
+          # senden — er hat dafuer auch kein `sqs:SendMessage`. Beides zusammen macht einen
+          # stillen Rueckfall auf Direktversand strukturell unmoeglich.
       Code:
         # PAKETQUELLE (Korrekturlauf 2026-08-14/3, Lücke 2): kein Platzhalter mehr. Das
         # Archiv wird reproduzierbar aus dem Repository gebaut
@@ -318,9 +396,11 @@ Resources:
               - Effect: Allow
                 Action:
                   - 'kms:Decrypt'
-                # SecureString-Parameter werden mit dem AWS-verwalteten SSM-Schlüssel
-                # verschlüsselt; ohne Decrypt käme nur Chiffretext an.
-                Resource: !Sub 'arn:aws:kms:${AWS::Region}:${AWS::AccountId}:alias/aws/ssm'
+                # Die beiden SecureString-Parameter sind mit GENAU diesem Schlüssel
+                # verschlüsselt (der Betreiber legt sie mit `--key-id` an, Runbook §22.2);
+                # ohne Decrypt käme nur Chiffretext an.
+                # KORREKTUR 2026-08-14/4: hier stand eine Alias-ARN — sie gewährt nichts.
+                Resource: !GetAtt ParameterSchluessel.Arn
               - Effect: Allow
                 Action:
                   - 'logs:CreateLogStream'

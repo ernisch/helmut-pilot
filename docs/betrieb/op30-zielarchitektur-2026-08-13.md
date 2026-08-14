@@ -1037,3 +1037,134 @@ und ohne manuelle Testpumpe**.
 **Nicht getragen:** alles, was echtes AWS braucht — Queue, Lambda, KMS, SSM, EventBridge,
 IAM-Auswertung, Region, Kosten. Ersetzt sind ausschließlich **zwei Außengrenzen**: das
 AWS-Netz und der SSM-Dienst. **Das ist kein Production-Beweis.**
+
+---
+
+## 25 · Verkabelungslauf 2026-08-14/4 — zwei Einsatzblocker geschlossen
+
+Der Korrekturlauf (§24) hat den Code richtig gemacht. Dieser Lauf hat geprüft, ob der Code in
+der **echten CloudFormation-Vorlage** auch wirklich zusammengesteckt ist. Er war es an zwei
+Stellen nicht. Beide Blocker sind bestätigt und behoben; nichts ist ausgerollt.
+
+### 25.1 Blocker 1 — der unmittelbare Relay-Anstoß war nicht verkabelt
+
+**Befund.** `lib/helmut/lambda-verbraucher.js` liest `HELMUT_RELAY_FUNKTION`, um die
+Relay-Funktion asynchron aufzurufen. Die Vorlage **setzte diese Variable nicht**. Die
+Aufrufberechtigung (`VerbraucherRelayRecht`) existierte — die Adresse fehlte.
+
+**Warum es kein Test gemerkt hat.** Der Ende-zu-Ende-Test setzte den Auslöser fertig ein
+(`relayDeps.loeseAus`). Damit übersprang er genau die Stelle, die kaputt war: das Lesen der
+Umgebungsvariablen. Der Test war grün, die Kette war unterbrochen. Das ist die eigentliche
+Lehre dieses Laufs: **eine Naht, die den Fehlerpfad umgeht, prüft ihn nicht.**
+
+**Korrektur, vier Teile:**
+
+1. **Vorlage:** `HELMUT_RELAY_FUNKTION: !Ref RelayFunktion` in der Umgebung des Verbrauchers.
+2. **Naht verschoben:** `erstelleRelayAusloeser` nimmt keinen fertigen Auslöser mehr entgegen.
+   Ersetzbar ist nur noch `deps.lambdaAufruf` — die **AWS-Netzgrenze**. Funktionsname,
+   Aufrufart (`Event`) und Nutzdaten entstehen immer im echten Code aus der echten Umgebung.
+3. **Kein stiller Direktversand:** Der Verbraucher setzt `direktVerboten: true`. Fehlt der
+   Auslöser, meldet `stosseRelayAn` den benannten Ausgang `relay-nicht-konfiguriert` — statt
+   in `relayLauf` zu laufen, dort keinen Transport zu finden und „nichts zu tun" zu melden.
+   Das ist konsequent: der Verbraucher hat in AWS **weder Queue-Adresse noch
+   `sqs:SendMessage`** — beides ist jetzt auch im Test festgeschrieben.
+4. **Beobachtbar:** Einmal je Aufruf (nicht je Nachricht) protokolliert der Handler
+   `KONFIGURATIONSBEFUND relay=…`; die Stapelbilanz trägt `relay=<zustand>`.
+
+**Der Nachweis benutzt jetzt die Vorlage.** `scripts/cfn-vorlage-lesen.js` liest dieselbe
+Datei, die später nach AWS geht, löst `!Ref`, `!Sub`, `!GetAtt` und `!If` auf und liefert:
+die **wirklichen** Umgebungsvariablen einer Funktion und die **wirklichen** IAM-Anweisungen
+einer Rolle. Die Attrappe der AWS-Netzgrenze im Ende-zu-Ende-Test prüft die Berechtigung
+**gegen die Vorlage** und weist einen unerlaubten Aufruf mit `AccessDeniedException` ab.
+
+Zusätzlich modelliert der Test jetzt **zwei Container**: Verbraucher und Relay werden aus
+zwei getrennten Entpackungen geladen. In AWS sind es zwei Funktionen mit eigenem Prozess und
+eigenem Modulzustand (der SSM-Prozesscache gehört jedem Container für sich) — eine einzige
+Entpackung hätte ein Modell erzeugt, das es in AWS nicht gibt.
+
+### 25.2 Blocker 2 — die KMS-Berechtigung zeigte auf einen Alias
+
+**Befund.** Verbraucher und Relay trugen
+`Resource: arn:aws:kms:<region>:<konto>:alias/aws/ssm`. Eine **Alias-ARN im Resource-Feld
+einer IAM-Richtlinie gewährt nichts.**
+
+**Belegt an AWS-eigenen Primärquellen:**
+
+> „To specify a KMS key in an IAM policy statement, you must use its key ARN. You cannot use a
+> key id, alias name, or alias ARN to identify a KMS key in an IAM policy statement."
+> — AWS KMS Developer Guide, `cmks-in-iam-policies`
+
+> „When an alias is the value of a resource element, the policy applies to the alias resource,
+> not to any KMS key that might be associated with it."
+> — AWS KMS Developer Guide, `alias-authorization`
+
+> „Use an alias ARN as the resource only in a policy statement that controls access to alias
+> operations, such as CreateAlias, UpdateAlias, or DeleteAlias."
+> — AWS KMS Developer Guide, `cmks-in-iam-policies`
+
+Die maschinenlesbare Service Authorization Reference bestätigt es strukturell: für `Decrypt`
+ist ausschließlich der Ressourcentyp `key` gelistet; `alias` erscheint nur bei `CreateAlias`,
+`DeleteAlias` und `UpdateAlias`.
+
+**Tatsächlich abgerufene Quellen:**
+
+| Quelle | Was sie trägt |
+|---|---|
+| `https://servicereference.us-east-1.amazonaws.com/v1/kms/kms.json` | AWS-betriebener Endpunkt, maschinenlesbare Service Authorization Reference: Ressourcentypen je Aktion |
+| `https://raw.githubusercontent.com/awsdocs/aws-kms-developer-guide/master/doc_source/cmks-in-iam-policies.md` | Key-ARN vorgeschrieben, Alias-ARN nur für Alias-Operationen |
+| `…/doc_source/alias-authorization.md` | Alias im Resource-Element gilt dem Alias, nicht dem Schlüssel |
+| `…/doc_source/conditions-kms.md` | `kms:ResourceAliases`, `kms:RequestAlias`, `kms:ViaService` |
+| `…/doc_source/kms-api-permissions-reference.md` | „AWS KMS supports two resource types: a KMS key and an alias." |
+
+> **Ehrliche Grenze der Quellenlage.** `docs.aws.amazon.com` und `aws.amazon.com` sind aus
+> dieser Arbeitsumgebung durch den Egress-Proxy gesperrt (403 auf CONNECT). Abgerufen wurden
+> deshalb der **AWS-betriebene** Service-Reference-Endpunkt und das **AWS-eigene
+> Dokumentations-Quellrepository** (`awsdocs/aws-kms-developer-guide`) — beides
+> AWS-verfasster Originaltext, das Repository jedoch ein Spiegel, dessen Stand hinter der
+> Live-Seite zurückliegen kann. Vor dem Ausrollen einmal gegen die Live-Seiten prüfen.
+
+**Korrektur (die kleinste sichere Lösung, Variante A).** Die Vorlage legt einen **eigenen
+KMS-Schlüssel für die beiden Supabase-Parameter** an (`ParameterSchluessel`); Verbraucher und
+Relay bekommen `kms:Decrypt` auf `!GetAtt ParameterSchluessel.Arn`. Dazu ein Bedienalias
+`alias/helmut-ssm-<umgebung>`, mit dem der Betreiber die Parameter anlegt — **er steht
+niemals in einem Resource-Feld**.
+
+**Warum ein zweiter Schlüssel und nicht der vorhandene Queue-Schlüssel.** Den Queue-Schlüssel
+benutzt der `SenderBenutzer` — ein IAM-Benutzer mit langlebigen Zugangsdaten, die
+**außerhalb von AWS bei Vercel** liegen. Er trägt darauf als Produzent korrekterweise
+`kms:GenerateDataKey` **und** `kms:Decrypt`. Schützte derselbe Schlüssel auch die
+SecureStrings, hätte dieser Benutzer die **kryptographische** Fähigkeit, den
+Supabase-`service_role`-Schlüssel zu entschlüsseln — den Generalschlüssel, der RLS umgeht und
+alle Mandanten trägt. Dass er es heute nicht kann, liegt allein an einer IAM-Hürde (ihm fehlt
+`ssm:GetParameter`). Zwei Verteidigungsebenen würden zu einer. Ein Schlüssel für Wecksignale
+und ein Schlüssel für Mandantengeheimnisse dürfen nicht derselbe sein.
+
+**Die Schlüsselrichtlinie nennt die beiden Rollen ausdrücklich** (zusätzlich zur
+Konto-Root-Anweisung), eingeschränkt auf `kms:ViaService = ssm.<region>.amazonaws.com`. Grund:
+ob die Konto-Anweisung allein genügt, damit IAM-Richtlinien greifen, konnte hier **nicht**
+belegt werden (Seite gesperrt). Mit der ausdrücklichen Anweisung trägt die Lösung unter beiden
+möglichen Antworten. Die Rollen-ARNs entstehen per `!Sub` aus den festen `RoleName`-Werten,
+nicht per `!GetAtt` — sonst entstünde ein wechselseitiger Bezug.
+
+**Verworfene Alternativen:** *Queue-Schlüssel mitbenutzen* — Sicherheitsrückschritt (siehe
+oben). *Schlüssel-ARN als Eingabeparameter* — verlagert die Entscheidung auf den Betreiber,
+ohne dass die Vorlage prüfen kann, ob es der richtige Schlüssel ist. *`key/*` mit
+`kms:ViaService`* — erlaubt Decrypt über SSM für **jeden** Schlüssel des Kontos; die
+Eingrenzung hinge allein an der `ssm:GetParameter`-Ressourcenliste, also an einer einzigen
+Verteidigungsebene.
+
+**Der Riegel gegen die Fehlklasse, nicht nur gegen den Einzelfall:**
+`infrastruktur-definition-test.js` §15.1 lässt in **keiner** KMS-Berechtigung eine Alias-ARN
+mehr zu, §15.2 verlangt für jede eine Schlüssel-ARN. Der frühere Test 13.2, der die Alias-ARN
+sogar *verlangte*, hat den Fehler zementiert — er ist umgedreht.
+
+### 25.3 Was nach diesem Lauf unverändert offen ist
+
+Vier der fünf Rechercheteile konnten **gar keine** Quelle abrufen. Unbelegt bleiben deshalb:
+ob `ssm:GetParameter` mit `WithDecryption` überhaupt ein eigenes `kms:Decrypt` verlangt · was
+`!Ref`/`!GetAtt` genau zurückgeben (die Vorlage stützt sich an mehreren Stellen darauf) · ob
+`lambda:InvokeFunction` einen `Event`-Aufruf abdeckt · ob zwischen zwei Funktionen desselben
+Kontos eine ressourcenbasierte Richtlinie nötig ist · welche Wirkung die
+Konto-Root-Anweisung in einer Schlüsselrichtlinie hat. **Alle diese Punkte scheitern im
+Zweifel geschlossen und laut** — die Funktion arbeitet dann nicht, statt still Falsches zu
+tun. Sie gehören trotzdem vor das erste Ausrollen, sobald `docs.aws.amazon.com` erreichbar ist.

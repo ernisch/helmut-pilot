@@ -27,6 +27,8 @@ const os = require("os");
 const fs = require("fs");
 const crypto = require("crypto");
 const { execFileSync } = require("child_process");
+// Die ECHTE CloudFormation-Vorlage ist ab jetzt die Quelle der Umgebung und der Rechte.
+const cfn = require(path.join(__dirname, "cfn-vorlage-lesen"));
 
 const ROOT = path.join(__dirname, "..");
 const PG = {
@@ -131,38 +133,68 @@ async function main() {
   const bauZiel = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-paket-"));
   const gebaut = bauer.baue({ ziel: bauZiel });
   check("0.1 Das Paket wurde gebaut (Archiv + Manifest)", Boolean(gebaut.zipPfad) && fs.existsSync(gebaut.zipPfad));
-  const entpackt = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-entpackt-"));
+  // ZWEI CONTAINER, ZWEI ENTPACKUNGEN. In AWS sind Verbraucher und Relay getrennte
+  // Funktionen mit eigenem Prozess und eigenem Modulzustand (der SSM-Prozesscache gehoert
+  // jedem Container fuer sich). Ein einziges Entpacken wuerde beide denselben Cache teilen
+  // lassen — das waere ein Modell, das es in AWS nicht gibt.
+  const entpackt = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-container-verbraucher-"));
+  const entpacktRelay = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-container-relay-"));
   const dateien = bauer.entpackeZip(fs.readFileSync(gebaut.zipPfad), entpackt);
+  bauer.entpackeZip(fs.readFileSync(gebaut.zipPfad), entpacktRelay);
   check("0.2 Das Archiv laesst sich vollstaendig entpacken",
     dateien.length === gebaut.manifest.dateien, `${dateien.length} vs ${gebaut.manifest.dateien}`);
   check("0.3 Beide Handlerpfade liegen im Paket",
-    fs.existsSync(path.join(entpackt, "lambda/index.js")) && fs.existsSync(path.join(entpackt, "lambda/relay.js")));
+    fs.existsSync(path.join(entpackt, "lambda/index.js")) && fs.existsSync(path.join(entpacktRelay, "lambda/relay.js")));
   check("0.4 Das Paket traegt KEINE Tests, Dokumente, Migrationen oder Secrets",
     !dateien.some((d) => /-test\.js$|\.md$|(^|\/)supabase\/|(^|\/)docs\/|\.env/.test(d)));
-  // AB HIER wird ausschliesslich aus dem ENTPACKTEN PAKET geladen.
+  // AB HIER wird ausschliesslich aus den ENTPACKTEN PAKETEN geladen.
   const paketVerbraucher = require(path.join(entpackt, "lambda/index.js"));
-  const paketRelay = require(path.join(entpackt, "lambda/relay.js"));
+  const paketRelay = require(path.join(entpacktRelay, "lambda/relay.js"));
   check("0.5 Der Verbraucher-Handler aus dem Paket ist ausfuehrbar", typeof paketVerbraucher.handler === "function");
   check("0.6 Der Relay-Handler aus dem Paket ist ausfuehrbar", typeof paketRelay.handler === "function");
 
-  // Die Module des ENTPACKTEN Pakets (nicht des Arbeitsbaums) — nur so ist bewiesen, dass
-  // das ausgelieferte Artefakt vollstaendig ist.
-  const dispatch = require(path.join(entpackt, "lib/helmut/job-dispatch"));
-  const relayModul = require(path.join(entpackt, "lib/helmut/outbox-relay"));
-  const konfiguration = require(path.join(entpackt, "lib/helmut/lambda-konfiguration"));
+  // Die Module der ENTPACKTEN Pakete (nicht des Arbeitsbaums) — nur so ist bewiesen, dass
+  // das ausgelieferte Artefakt vollstaendig ist. Je Container ein eigener Satz.
+  const dispatch = require(path.join(entpacktRelay, "lib/helmut/job-dispatch"));
+  const relayModul = require(path.join(entpacktRelay, "lib/helmut/outbox-relay"));
+  const konfiguration = require(path.join(entpacktRelay, "lib/helmut/lambda-konfiguration"));
+  const konfigVerbraucher = require(path.join(entpackt, "lib/helmut/lambda-konfiguration"));
 
-  // ── UMGEBUNG ───────────────────────────────────────────────────────────────────────────────
-  const SSM_URL = "/helmut/test/supabase-url";
-  const SSM_KEY = "/helmut/test/supabase-key";
-  const ENV = {
-    HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue",
-    HELMUT_JOB_TRANSPORT: "sqs", AWS_REGION: "eu-central-1",
-    HELMUT_SQS_QUEUE_URL: "https://sqs.eu-central-1.amazonaws.com/123456789012/helmut-auftraege-test",
-    HELMUT_SUPABASE_URL_PARAMETER: SSM_URL, HELMUT_SUPABASE_KEY_PARAMETER: SSM_KEY
-  };
+  // ── DIE UMGEBUNG KOMMT AUS DER ECHTEN CLOUDFORMATION-VORLAGE ───────────────────────────────
+  // Der Test schreibt sie NICHT mehr selbst. Genau daran ist die Verkabelung vorher
+  // gescheitert: der Code war richtig, die Vorlage setzte `HELMUT_RELAY_FUNKTION` nicht — und
+  // der Test bemerkte es nicht, weil er den Ausloeser fertig eingesetzt hat.
+  abschnitt("0b · Die Umgebung stammt aus der echten CloudFormation-Vorlage");
+  const vorlage = cfn.ladeText();
+  const ENV_VERBRAUCHER = { ...cfn.umgebung(vorlage, "VerbraucherFunktion"), AWS_REGION: cfn.REGION };
+  const ENV_RELAY = { ...cfn.umgebung(vorlage, "RelayFunktion"), AWS_REGION: cfn.REGION };
+  const RELAY_NAME = ENV_VERBRAUCHER.HELMUT_RELAY_FUNKTION;
+  const RELAY_ARN = cfn.aufloese(vorlage, "!GetAtt RelayFunktion.Arn");
+
+  check("0b.1 Die Vorlage gibt dem Verbraucher den Namen der Relay-Funktion",
+    Boolean(RELAY_NAME), String(RELAY_NAME));
+  check("0b.2 Dieser Name ist WIRKLICH die Relay-Funktion der Vorlage",
+    RELAY_NAME === cfn.aufloese(vorlage, "!Ref RelayFunktion"), String(RELAY_NAME));
+  check("0b.3 Die Verbraucherrolle darf genau diese Funktion aufrufen",
+    cfn.darf(vorlage, "VerbraucherRolle", "lambda:InvokeFunction", RELAY_ARN), RELAY_ARN);
+  check("0b.4 Der Verbraucher bekommt KEINE Queue-Adresse (er ist nie Absender)",
+    ENV_VERBRAUCHER.HELMUT_SQS_QUEUE_URL === undefined);
+  check("0b.5 Der Verbraucher hat KEIN sqs:SendMessage",
+    !cfn.iamAnweisungen(vorlage, "VerbraucherRolle").some((a) => a.actions.includes("sqs:SendMessage")));
+  check("0b.6 Der Relay bekommt die Queue-Adresse und darf senden",
+    Boolean(ENV_RELAY.HELMUT_SQS_QUEUE_URL)
+    && cfn.iamAnweisungen(vorlage, "RelayRolle").some((a) => a.actions.includes("sqs:SendMessage")));
+
+  const SSM_URL = ENV_VERBRAUCHER.HELMUT_SUPABASE_URL_PARAMETER;
+  const SSM_KEY = ENV_VERBRAUCHER.HELMUT_SUPABASE_KEY_PARAMETER;
+  check("0b.7 Beide Funktionen zeigen auf dieselben SSM-Parameternamen",
+    SSM_URL === ENV_RELAY.HELMUT_SUPABASE_URL_PARAMETER
+    && SSM_KEY === ENV_RELAY.HELMUT_SUPABASE_KEY_PARAMETER);
+
   const ssm = lokalesSsm({ [SSM_URL]: "https://projekt.supabase.co", [SSM_KEY]: "dienst-schluessel-geheim" });
   const queue = new LokaleQueue({ maxReceiveCount: 5 });
-  const transport = dispatch.sqsTransport(ENV, { sqsSende: async (n) => queue.sende(JSON.stringify(n)) });
+  // Der Transport gehoert dem RELAY — nur er hat Queue-Adresse und Senderecht.
+  const transport = dispatch.sqsTransport(ENV_RELAY, { sqsSende: async (n) => queue.sende(JSON.stringify(n)) });
 
   // ── DATENBANKSEITE (echte SQL) ─────────────────────────────────────────────────────────────
   const sqlText = (v) => (v === null || v === undefined ? "null" : `'${String(v).replace(/'/g, "''")}'`);
@@ -251,25 +283,59 @@ async function main() {
   async function relayEinstieg(ausloeser = "zeitgeber") {
     relayAufrufe += 1;
     return paketRelay.handler({ ausloeser }, {}, {
-      env: ENV, log: () => {},
+      env: ENV_RELAY, log: () => {},
       konfiguration, konfigurationDeps: { ssm },
       relayDeps
     });
   }
 
-  // Der VERBRAUCHER stoesst den Relay selbst an (kein Testaufruf des Dispatchers).
+  // ── DIE EINZIGE ERSETZTE STELLE: DIE AWS-NETZGRENZE ───────────────────────────────────────
+  // Der Test setzt KEINEN Relay-Ausloeser mehr ein. Er stellt nur die Attrappe des
+  // Lambda-SDK bereit. Alles davor ist echter Produktionscode:
+  //   Vorlage -> HELMUT_RELAY_FUNKTION -> erstelleRelayAusloeser -> FunctionName/Event/Payload.
+  // Die Attrappe verhaelt sich wie AWS: sie prueft die IAM-Berechtigung der Verbraucherrolle
+  // GEGEN DIE VORLAGE und weist einen unerlaubten Aufruf ab (AccessDeniedException).
+  const awsAufrufe = [];
+  async function lambdaNetzgrenze(befehl) {
+    awsAufrufe.push(befehl);
+    const ziel = `arn:aws:lambda:${cfn.REGION}:${cfn.KONTO}:function:${befehl.FunctionName}`;
+    if (!cfn.darf(vorlage, "VerbraucherRolle", "lambda:InvokeFunction", ziel)) {
+      const f = new Error(`AccessDeniedException: not authorized to perform lambda:InvokeFunction on ${ziel}`);
+      f.name = "AccessDeniedException";
+      throw f;
+    }
+    if (befehl.InvocationType !== "Event") {
+      throw new Error(`Unerwartete Aufrufart ${befehl.InvocationType} — der Anstoss muss asynchron sein`);
+    }
+    if (befehl.FunctionName !== RELAY_NAME) {
+      throw new Error(`Falsches Ziel ${befehl.FunctionName}`);
+    }
+    // `InvocationType: Event` stellt in AWS nur zu; der Aufrufer wartet nicht auf das
+    // Ergebnis. Hier laeuft der ECHTE Relay-Handler mit der Nutzlast des echten Codes.
+    const ereignis = JSON.parse(Buffer.from(befehl.Payload).toString("utf8"));
+    relayAufrufe += 1;
+    await paketRelay.handler(ereignis, {}, {
+      env: ENV_RELAY, log: () => {},
+      konfiguration, konfigurationDeps: { ssm },
+      relayDeps
+    });
+    return { StatusCode: 202 };
+  }
+
   const verbraucherDeps = {
     claimById: dbDeps.claimById, erneutVorlegen: dbDeps.erneutVorlegen,
     handlerDeps, budgetDeps: handlerDeps,
-    konfigurationDeps: { ssm },
-    relayDeps: { ...relayDeps, loeseAus: () => relayEinstieg("verbraucher") }
+    konfiguration: konfigVerbraucher, konfigurationDeps: { ssm },
+    relayDeps
   };
 
   async function lambdaLauf({ anzahl = 5 } = {}) {
     const zugestellt = queue.empfange(anzahl);
     if (!zugestellt.length) return { zugestellt: 0, batchItemFailures: [] };
     const antwort = await paketVerbraucher.handler({ Records: zugestellt }, {}, {
-      log: () => {}, env: ENV,
+      log: () => {}, env: ENV_VERBRAUCHER,
+      // NUR die AWS-Netzgrenze ist ersetzt — kein fertiger Ausloeser.
+      lambdaAufruf: lambdaNetzgrenze,
       verbraucherDeps: { ...verbraucherDeps, besitzer: `lambda-${crypto.randomUUID()}` }
     });
     queue.quittiere(zugestellt, antwort.batchItemFailures);
@@ -304,7 +370,7 @@ async function main() {
   check("2.4 Die Nachricht traegt GENAU { jobId, schemaVersion }",
     JSON.stringify(Object.keys(nachricht).sort()) === JSON.stringify(["jobId", "schemaVersion"]));
   check("2.5 Die Supabase-Konfiguration kam ueber die SSM-Grenze", ssm.aufrufe >= 2, `aufrufe=${ssm.aufrufe}`);
-  check("2.6 SUPABASE_URL, Service-Schluessel und Backend sind gesetzt", konfiguration.supabaseBereit(ENV));
+  check("2.6 SUPABASE_URL, Service-Schluessel und Backend sind gesetzt", konfiguration.supabaseBereit(ENV_RELAY));
 
   abschnitt("3 · Lambda -> Verbraucher -> Beanspruchung -> Fachkern -> Abschluss (Zusage 6, 7)");
   const l1 = await lambdaLauf();
@@ -349,7 +415,8 @@ async function main() {
   await relayEinstieg("zeitgeber");
   const zugestellt4 = queue.empfange(5);
   await paketVerbraucher.handler({ Records: zugestellt4 }, {}, {
-    log: () => {}, env: ENV, verbraucherDeps: { ...verbraucherDeps, besitzer: `lambda-${crypto.randomUUID()}` } });
+    log: () => {}, env: ENV_VERBRAUCHER, lambdaAufruf: lambdaNetzgrenze,
+    verbraucherDeps: { ...verbraucherDeps, besitzer: `lambda-${crypto.randomUUID()}` } });
   check("6.2 Der Auftrag ist erledigt", psql(`select status from public.helmut_jobs where id='${a4.id}'`) === "erledigt");
   for (const n of zugestellt4) n.sichtbarAb = 0;   // ABSTURZ: keine Quittung
   await lambdaLauf();
@@ -470,6 +537,7 @@ async function main() {
 
   fs.rmSync(bauZiel, { recursive: true, force: true });
   fs.rmSync(entpackt, { recursive: true, force: true });
+  fs.rmSync(entpacktRelay, { recursive: true, force: true });
 
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
   console.log("EINORDNUNG: lokaler Integrationstest. Echt sind PostgreSQL, Migrationen, Outbox,");

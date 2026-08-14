@@ -2054,13 +2054,29 @@ die Nachrichtenmenge.
    Der Bau ist deterministisch — zwei Läufe ergeben dieselbe Prüfsumme.
 3. **Paket nach S3** in **eu-central-1** hochladen (eigener Bucket, keine öffentliche
    Freigabe, Versionierung an). Bucketname und Objektschlüssel merken.
-4. **SSM-Parameter anlegen** (eu-central-1, Typ **SecureString**), z. B.
-   `/helmut/prod/supabase-url` und `/helmut/prod/supabase-service-role-key`.
-   **Die Werte werden im AWS-Konsolenformular eingegeben — nie in eine Datei, nie in einen
-   Commit, nie in einen Chat.**
-5. **Stack anlegen** aus `infra/aws/helmut-auftrags-queue.yaml` mit den Parametern
+4. **Stack anlegen** aus `infra/aws/helmut-auftrags-queue.yaml` mit den Parametern
    `PaketBucket`, `PaketSchluessel`, `SupabaseUrlParameter`, `SupabaseSchluesselParameter`,
    `Umgebung`, `MaxParallelitaet`.
+   **Diese Reihenfolge ist verbindlich:** der Stack legt den KMS-Schlüssel für die Parameter
+   an, und den braucht Schritt 5. Umgekehrt ginge es nicht.
+5. **SSM-Parameter anlegen** (eu-central-1, Typ **SecureString**) — mit **genau dem
+   Schlüssel aus dem Stack**:
+
+   ```
+   aws ssm put-parameter --region eu-central-1 --type SecureString \
+     --key-id alias/helmut-ssm-production \
+     --name /helmut/production/supabase-url --value '<URL>'
+   aws ssm put-parameter --region eu-central-1 --type SecureString \
+     --key-id alias/helmut-ssm-production \
+     --name /helmut/production/supabase-service-role-key --value '<SCHLUESSEL>'
+   ```
+
+   **`--key-id` ist nicht optional.** Ohne ihn landet der Parameter unter dem Vorgabeschlüssel
+   des Kontos, und die Berechtigung der Lambda-Rollen greift nicht — die Funktionen stoppen
+   dann geschlossen und arbeiten nie. Der Fehler tritt beim ersten Lauf sofort und laut auf,
+   aber er kostet einen Anlauf.
+   **Die Werte werden direkt in die Kommandozeile bzw. das Konsolenformular eingegeben — nie
+   in eine Datei, nie in einen Commit, nie in einen Chat.**
    **Nur in eu-central-1.** In jeder anderen Region scheitert der Stack am KMS-Schlüssel
    (§24.7 der Belegdatei) — vorher einmal in einer falschen Region trocken anlegen und das
    Scheitern belegen.
@@ -2079,7 +2095,8 @@ die Nachrichtenmenge.
 | Prüfung | Erwartung |
 |---|---|
 | CloudWatch `helmut-auftrags-verbraucher` | Zeilen `[lambda/verbraucher] … ausgang=erledigt`, **keine** `konfiguration-nicht-geladen`, **keine** `supabase-nicht-verbunden` |
-| CloudWatch `helmut-outbox-relay` | `[lambda/relay] ausloeser=… versendet=n` |
+| CloudWatch `helmut-outbox-relay` | `[lambda/relay] ausloeser=… versendet=n` — es **muss** Zeilen mit `ausloeser=verbraucher` geben, sonst ist der unmittelbare Anstoß nicht angekommen |
+| CloudWatch `helmut-auftrags-verbraucher` | **keine** Zeile `KONFIGURATIONSBEFUND relay=` — sie bedeutet, dass `HELMUT_RELAY_FUNKTION` fehlt; die Stapelbilanz muss `relay=relay-verdrahtet` zeigen |
 | SQS `…-quarantaene` | **leer** — jede Nachricht darin ist ein Befund, kein Betriebsrauschen |
 | `helmut_outbox_kennzahlen()` | `offen` fällt, `aelteste_offene_s` bleibt klein |
 | `helmut_jobs` | `wartend` sinkt, `laeuft` bleibt klein, `fehlgeschlagen` wächst nicht |

@@ -1467,6 +1467,30 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Suiten: `worker-weck-route-test` 21 PASS · `migrations-organisation-test` 10 PASS ·
   Dispatch-Vertrag erweitert 78 PASS (Harness awaited jetzt async-Faelle). Production
   erneut unangetastet.
+- **Stand 2026-08-14/4 (Verkabelungslauf — zwei EINSATZBLOCKER geschlossen; Beleg
+  [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §25,
+  Runbook §22):** Der Korrekturlauf hatte den Code richtig gemacht; dieser Lauf hat geprueft, ob
+  er in der ECHTEN CloudFormation-Vorlage auch zusammengesteckt ist. War er an zwei Stellen
+  nicht. (1) Der Verbraucher liest `HELMUT_RELAY_FUNKTION` — die Vorlage setzte sie **gar
+  nicht**; der unmittelbare Relay-Anstoss war unverkabelt. Kein Test merkte es, weil der
+  Ende-zu-Ende-Test den Ausloeser fertig einsetzte und damit genau die kaputte Stelle
+  uebersprang. Jetzt: Variable verkabelt, Testnaht auf die **AWS-Netzgrenze** verschoben,
+  Umgebung und IAM-Rechte kommen aus der Vorlage (`scripts/cfn-vorlage-lesen.js`), und ein
+  stiller Rueckfall auf Direktversand ist ausgeschlossen (`direktVerboten` + sichtbare
+  Protokollzeile; der Verbraucher hat weder Queue-Adresse noch `sqs:SendMessage`).
+  (2) Die KMS-Berechtigung zeigte auf eine **Alias-ARN**. Laut AWS gewaehrt das **nichts**
+  ("You cannot use a key id, alias name, or alias ARN to identify a KMS key in an IAM policy
+  statement"). Jetzt ein **eigener KMS-Schluessel** fuer die beiden Supabase-Parameter mit
+  Schluessel-ARN — damit kann der Vercel-Sender die Zugangsdaten auch kryptographisch nicht
+  mehr entschluesseln. Ein Testriegel schliesst die **Fehlklasse**: keine Alias-ARN in
+  irgendeiner KMS-Berechtigung.
+  **Nachweise:** Ende-zu-Ende **53 PASS**, Infrastruktur **87 PASS**, Mutationsprobe
+  **14/14 rot** (inkl. fehlender Variable, fehlendem Aufrufrecht, Alias-ARN, falscher
+  Schluessel-ARN). **Grenzen:** keine AWS-Ressource angelegt, keine Migration angewendet,
+  Production unangetastet; `docs.aws.amazon.com` war gesperrt — belegt ist der Kernpunkt an
+  AWS-eigenen Primaerquellen, fuenf weitere AWS-Fragen bleiben unbelegt (§25.3).
+  **OP-30 bleibt insgesamt offen.**
+
 - **Stand 2026-08-14/3 (Korrekturlauf — der verwaltete Transport ist jetzt BETRIEBSFAEHIG gebaut, aber weiterhin NICHT ausgerollt; Beleg
   [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §24,
   Runbook §22; PR #247):** Der Haertungssprint lieferte Transport, Verbraucher und
