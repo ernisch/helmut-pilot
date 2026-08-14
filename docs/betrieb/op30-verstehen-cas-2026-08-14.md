@@ -253,6 +253,24 @@ sich sonst in der nächsten Probe wiederholen:
    weil ein ganz anderer Mechanismus zufällig dasselbe leistet. Die Probe legt die
    Ankerzeile deshalb vorher an.
 
+### 5.4 CI auf dem Sprint-Commit
+
+**Lauf 520, Commit `a78d6e8` (PR #248).** `Browser-/Mobile-Smoke (Chromium)`: **grün**.
+`Syntax + Offline-Suiten`: **261 von 262 Suiten grün** in 452 s — beide neuen Suiten
+darunter (`verstehen-cas-vertrag-test.js` PASS; `verstehen-cas-datenbank-test.js` meldet
+ohne PostgreSQL im Runner ehrlich „übersprungen, Nachweis offen" und endet mit Exit 0 —
+der Datenbanknachweis wird lokal geführt, nicht im CI).
+
+**Die eine rote Suite ist `werkzeug-lesefehler-test.js` und nicht dieser Sprint.** Sie ist
+als **F-PORT** bekannt und in `CURRENT_STATE.md` §6 als PR #216 / OP-28 geführt: die
+gescheiterte Zusage („Netzwerkfehler: Meldung nennt Quelle und Fehlerklasse") hängt daran,
+dass ein *soeben geschlossener* lokaler Port sofort `ECONNREFUSED` liefert — im CI kann ihn
+inzwischen ein anderer Prozess belegt haben. Dieselbe Suite lief auf demselben Branch
+**lokal grün** (42+1 Zusagen, 1 749 ms). Der Sprint fasst weder das Werkzeug noch den
+Lesepfad an, den sie prüft.
+
+Ein Folge-Commit dieses Sprints ändert ausschließlich diese Belegdatei.
+
 ## 6 · Migration und Rückweg
 
 * **Vorwärts:** `supabase/migrations/20260814180000_verstehen_cas.sql` — 14-stelliger,
