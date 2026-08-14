@@ -603,7 +603,19 @@ const ALLE_FAMILIEN = [...G.FAMILIEN, ...G.ZUSATZFAMILIEN];
         // und keine K2.1-Struktur. Eigener Nachweis:
         // scripts/jobqueue-alter-datenbank-test.js an echter PostgreSQL.
         "20260812_jobqueue_altersmessung.sql",
-        "20260812_jobqueue_altersmessung_rollback.sql"
+        "20260812_jobqueue_altersmessung_rollback.sql",
+        // OP-30-Zielarchitektur (2026-08-13): transaktionale Outbox — legt AUSSCHLIESSLICH
+        // public.helmut_job_outbox + Funktionen darauf an (Versandabsichten, nur
+        // Auftrags-ID/Schema-Version, strukturell keine Inhaltsspalte). Keine K2.1-Struktur.
+        // Eigener Nachweis: scripts/jobqueue-outbox-datenbank-test.js an echter PostgreSQL.
+        "20260813_jobqueue_outbox.sql",
+        "20260813_jobqueue_outbox_rollback.sql",
+        // OP-30-Zielarchitektur (2026-08-13): verteilte Arbeitsklassengrenzen — legt
+        // AUSSCHLIESSLICH helmut_klassen_anker/-_slots + Funktionen an (Semaphor mit TTL).
+        // Keine K2.1-Struktur. Eigener Nachweis:
+        // scripts/verteilte-grenzen-datenbank-test.js an echter PostgreSQL.
+        "20260813_verteilte_grenzen.sql",
+        "20260813_verteilte_grenzen_rollback.sql"
       ]);
       // Die Allowlist ist KEINE Abschwaechung: 8.8b prueft unabhaengig und INHALTLICH,
       // dass keine Migration im Repository den Kontextpfad beruehrt — auch keine der

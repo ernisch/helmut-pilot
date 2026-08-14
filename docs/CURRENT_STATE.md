@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-13/2** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30-Fuenferlauf, zweiter Versuch (12./13.08.): NICHT bestanden — kontrollierte Ruecknahme VOR Grenzuebertritt** (Runbook §19): K0 vollstaendig gruen, 5 Laeufe fehlerfrei/fair/ohne Doppelarbeit, aber Ankunft ~440–470 Auftraege/Tag ≫ Abfluss ~130–180/Tag bei Default-Konfiguration ⇒ 24-h-Wartezeitgrenze waere sicher gerissen; Flag wieder `off`, **wirkungsbasiert belegt am crawl 20:00 UTC 13.08.**; **524 wartende Auftraege bleiben inert stehen**. **(c) Altersvertrag `wartezeit` erstmals produktiv bestaetigt** (6,8 d Faelligkeitsrueckstand ohne Fehlabbruch). **(d) OP-31 Frischevertrag BESTANDEN** — hielt auch unter OP-30 (5/5 am 13.08.). Diese Datei enthaelt
+**Stand: 2026-08-13/3** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30-Fuenferlauf, zweiter Versuch (12./13.08.): NICHT bestanden — kontrollierte Ruecknahme VOR Grenzuebertritt** (Runbook §19): 5 Laeufe fehlerfrei/fair/ohne Doppelarbeit, aber Ankunft ~440–470 Auftraege/Tag ≫ Abfluss ~130–180/Tag ⇒ Flag wieder `off`, wirkungsbasiert belegt; **524 wartende Auftraege bleiben inert**. **(c) OP-30-ZIELARCHITEKTUR gebaut und lokal nachgewiesen** (§7c; Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache; Production unangetastet, alles Default-AUS; der Kapazitaetssprint davor wurde kontrolliert abgebrochen, seine Zwischenloesung „mehr Slots" verworfen). **(d) OP-31 Frischevertrag BESTANDEN** — hielt auch unter OP-30 (5/5 am 13.08.). Diese Datei enthaelt
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -18,11 +18,11 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 ## 2 · Stand auf `main`
 
-- **HEAD `8088fc9`** = Merge **PR #245** (Neutralisierungsbeleg, reine Doku). In Production
-  läuft exakt dieser Commit über den Rücknahme-Redeploy **`dpl_5Ktikubeezvj1hwfmXaxr7QqhWPi`**
-  (READY 2026-08-13T16:27:27Z, Runbook §19.5) mit `HELMUT_SCALABLE_PIPELINE=off`.
-  Davor `1fd9c98` (#244), `104f4e1` (#243), `eb13652` (#242), `6ed4f65` (#241),
-  `9663fc8` (#240); ältere Merges: Archiv/Runbook.
+- **HEAD `e83eb19`** = Merge **PR #246** (Doku zweiter Fünferlauf, reine Doku). Production
+  läuft auf diesem Commit (`dpl_7KMZaUfVSBmb…`, READY 2026-08-13T21:46Z) mit
+  `HELMUT_SCALABLE_PIPELINE=off` (Rücknahme-Redeploy davor: `dpl_5Ktikubeezvj…`,
+  READY 16:27:27Z, Runbook §19.5). Davor `8088fc9` (#245), `1fd9c98` (#244),
+  `104f4e1` (#243), `eb13652` (#242); ältere Merges: Archiv/Runbook.
 - Merge nach `main` = automatisches Production-Deployment (Vercel `fra1`,
   Projekt `helmut-pilot`). Rollback: [`betrieb/deploy-rollback.md`](betrieb/deploy-rollback.md).
 
@@ -95,7 +95,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#246** (dieser Sprint), Branch `claude/op30-funferlauf-aktivierung-ypwmv2` | **Doku zweiter Fünferlauf-Versuch** (§7b, Runbook §19): K0-Beleg, 5 Läufe, Kapazitätsbefund, Rücknahme + Wirkungsnachweis | reine Doku; Merge ändert Production nicht |
+| **Zielarchitektur-PR** (2026-08-13/3), Branch `claude/op30-scalable-architecture-o2bzrd` | **OP-30-Zielarchitektur** (§7c): Outbox-/Grenzen-Migrationen (NICHT angewendet), Transport, Verbraucher-Route, Vorgangswache, Suiten + lokaler Lastnachweis, Doku | alles Default-AUS; Merge ändert Production nicht; Migrationen bleiben freigabepflichtig |
 | **#231** (Draft) | OP-03 Konten-Vorbedingung, 1 Konto je Mandat | in §6 bisher nicht geführt (Korrektur 2026-08-11/2); Betreiberentscheidung |
 | **#224** (Draft) | F-E2E: Lage-Rangfolge aus berechnetem Rang statt Ablage | behauptet die Behebung des CI-Nichtdeterminismus F-E2E; **nicht reviewt, nicht abgenommen** |
 | **#225** (Draft) | „Produktroadmap für LINIE" | nicht aus dem Helmut-Arbeitsstrang; Einordnung beim Betreiber |
@@ -182,6 +182,26 @@ erneute Neutralisierung der jetzt 524 inerten Aufträge (Muster §17.8).
 **Folge für OP-25:** eine Aktivierung verändert `quellenVereinigung`, die K2.1-Sichtbarkeitsmengen und die
 Laufzeitbilanz ⇒ **OP-25 muss danach von vorn**.
 
+## 7c · Zielarchitektur-Sprint 2026-08-13/3 (Teilweise abgeschlossen — Betreiberfreigaben offen)
+
+Der Kapazitätssprint nach §7b wurde **kontrolliert abgebrochen**; seine Zwischenlösung
+(Parallelität 6 + sechs Drain-Slots) wurde **verworfen und nicht rekonstruiert**. Stattdessen
+gebaut und lokal nachgewiesen (Production nur lesend geprüft, alle 18 §2-Vorprüfungen grün):
+**transaktionale Outbox** (`20260813_jobqueue_outbox`, atomar mit dem Auftrag, strukturell ohne
+Inhaltsspalte) · **austauschbarer Transport** (`HELMUT_JOB_DISPATCH_MODE=off|shadow|queue`, fail
+closed; Payload nur `{jobId, schemaVersion}`; erster Transport Selbstweck via
+`/api/ops/worker-weck`; Vercel-Queues-Adapter gebaut, nicht aktiviert — Beta, keine
+EU-Residenz im Failover, kostenpflichtig) · **verteilte Klassengrenzen**
+(`20260813_verteilte_grenzen`: quellenabruf 5 · verstehen 1 · worker-drain 1) ·
+**Vorgangswache** als kleinste sichere Ablösung des globalen Understanding-Schlosses
+(`HELMUT_VERSTEHEN_KONKURRENZ`, aus). Nachweise: 37+20+53+14 PASS neue Suiten · Mutationsprobe
+6/6 · lokaler Lastnachweis 5/25/100/200/500 an echter PostgreSQL (kein Verlust, keine
+Doppelarbeit; 500er-Reserve rechnerisch ×3,7 — **kein Production-Beweis**; KI-Bedarf ~1.040/Tag
+bei 500 ≫ Deckel 100+30 = gesonderte Gründerentscheidung). Die 524 Aufträge wurden nur lesend
+analysiert (1.556 referenzierte Dokumente, 0 bereits verstanden). Kanonisch:
+[`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md)
+(Vergleich 7 Varianten × 20 Kriterien, Mengengerüst, Stufenplan, Betreiberablauf); Runbook §20.
+
 ## 8 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
 | Punkt | Was fehlt |
@@ -247,17 +267,19 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Der zweite Fünferlauf-Versuch ist abgeschlossen und zurückgenommen** (§7b, Runbook §19);
-Production läuft im Normalbetrieb auf dem Altpfad. Reihenfolge jetzt:
+**Der zweite Fünferlauf ist zurückgenommen (§7b); die Zielarchitektur liegt als PR vor
+(§7c).** Production läuft im Normalbetrieb auf dem Altpfad. Reihenfolge jetzt:
 
-1. **Betreiberentscheidung Abflussrate** (Runbook §19.6 Punkt 5): Worker-Parallelität
-   (`HELMUT_WORKER_*`, lokal bis 8 bewiesen) und/oder mehr Drain-Slots; §6 Schritt 3
-   („Defaults, sonst nichts") entsprechend neu fassen und Slotkapazität vorab bemessen.
+1. **Zielarchitektur-PR reviewen und mergen** (ändert Production nicht — alles Default-AUS;
+   die Abflussrate-Frage aus §19.6 ist damit architektonisch beantwortet: Wecksignale statt
+   „mehr Slots").
 2. **Vor Versuch 3:** die 524 inerten Aufträge neutralisieren (bewiesenes Muster
    Runbook §17.8/§17.10) und §8.3/§8.4 (Watchdog-Kriterium) queue-tauglich umformulieren.
-3. Unabhängig davon: **OP-15** (Personenquellen) beziffert und offen; `CRON_SECRET`/Egress
+3. Versuch 3 nach Stufenplan (Zielarchitektur §14, Stufe 1: Migrationen `20260813`
+   anwenden + `HELMUT_JOB_DISPATCH_MODE=shadow`); beginnt unverändert bei Runbook §6
+   Schritt 3 mit K0–K3 von vorn.
+4. Unabhängig davon: **OP-15** (Personenquellen) beziffert und offen; `CRON_SECRET`/Egress
    für eine Folgesitzung freigeben (schließt die K0-Teillücke `/api/ops/jobqueue`).
-4. Ein dritter Versuch beginnt wieder bei Runbook §6 Schritt 3 mit K0–K3 von vorn.
 
 Ausweitung auf 25+ erst nach K3 **und neu bestandenem OP-25**
 ([`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) §10);
@@ -309,7 +331,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-12/5 – 13/2 | **OP-30-Fünferlauf, zweiter Versuch** (§7b, Runbook §19): K0 a–j grün → Betreiber-Aktivierung 18:50 UTC → 5 Läufe fehlerfrei/fair (0 endgültige Fehler, 0 Dubletten, Dedupe belegt, OP-31 hält, Wartezeitvertrag produktiv bestätigt) → Kapazitätsbefund (Ankunft ≫ Abfluss bei Defaults) → Rücknahme VOR Grenzübertritt 16:27 UTC → Wirkungsnachweis am crawl 20:00 bestanden; 524 Aufträge inert | **Fünferlauf NICHT bestanden** (kontrollierter Abbruch, K2/K3 nicht erreicht); Sprint als Nachweisarbeit erfolgreich, Doku-PR #246 offen |
+| 2026-08-13/3 | **OP-30-Zielarchitektur** (§7c): Kapazitätssprint kontrolliert abgebrochen, „mehr Slots" verworfen; stattdessen Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache gebaut; lokaler Lastnachweis 5–500 an echter PostgreSQL; 524 Aufträge nur lesend analysiert; Production unangetastet | **Teilweise abgeschlossen** (Code+Nachweise+Doku fertig; Betreiberfreigaben/Stufenplan offen); Zielarchitektur-PR offen |
+| 2026-08-12/5 – 13/2 | **OP-30-Fünferlauf, zweiter Versuch** (§7b, Runbook §19): K0 a–j grün → Betreiber-Aktivierung 18:50 UTC → 5 Läufe fehlerfrei/fair (0 endgültige Fehler, 0 Dubletten, Dedupe belegt, OP-31 hält, Wartezeitvertrag produktiv bestätigt) → Kapazitätsbefund (Ankunft ≫ Abfluss bei Defaults) → Rücknahme VOR Grenzübertritt 16:27 UTC → Wirkungsnachweis am crawl 20:00 bestanden; 524 Aufträge inert | **Fünferlauf NICHT bestanden** (kontrollierter Abbruch, K2/K3 nicht erreicht); Doku-PR #246 gemergt (`e83eb19`) |
 | 2026-08-12/4 | **Betreiber-Sprint Neutralisierung + Migration** (Runbook §17.10): 180 offene Aufträge exportiert und geschützt gelöscht, 55 erledigte byte-identisch erhalten, Migration `20260812` angewendet und abgenommen | **erfolgreich abgeschlossen** (Doku-PR #245 gemergt) |
 | 2026-08-12/3 | **Altersgrenze berichtigt** (Runbook §17): Wartezeit statt Fälligkeit; 3 neue Suiten (59+26+31 PASS); PR #244 gemergt, Wirkungsnachweis am 16:00-Lauf bestanden | **erfolgreich abgeschlossen** |
 

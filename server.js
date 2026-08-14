@@ -35,6 +35,10 @@ const scalablePipeline = require("./lib/helmut/scalable-pipeline");
 // nichts beim Einbinden; ohne HELMUT_SCALABLE_PIPELINE gibt jede seiner Funktionen sofort
 // `flag-aus` zurueck.
 const workerBetrieb = require("./lib/helmut/worker-betrieb");
+// OP-30-Zielarchitektur (2026-08-13): austauschbarer Transport fuer Wecksignale +
+// transaktionale Outbox. DEFAULT AUS — ohne HELMUT_JOB_DISPATCH_MODE (off ist der
+// fail-closed-Rueckfall jedes ungueltigen Werts) wird von hier nichts betreten.
+const jobDispatch = require("./lib/helmut/job-dispatch");
 
 // P0-1: technischer Ausfuehrungsort + Laufkennung fuer Prozess-Laufzeit-Telemetrie
 // (Cron-Understanding, Briefing-Aufbau). Reine technische Metadaten, nie PII.
@@ -1053,6 +1057,117 @@ async function handleRequest(request, response) {
   // strukturierter, testbarer Ausgabe. 0 Writes, 0 KI, keine Nutzdaten — nur Zaehler,
   // Zeitspannen und der Flagzustand. Autorisierung: dasselbe CRON_SECRET wie die uebrigen
   // Betriebsendpunkte (fail closed, siehe authorizeCron).
+  // ═══ OP-30-ZIELARCHITEKTUR — VERBRAUCHER DER WECKSIGNALE (ereignisgesteuerter Antrieb) ═══
+  // Der Transport (Selbstweck heute, Vercel Queues spaeter) stellt hier NUR
+  // { jobId, schemaVersion } zu. Der Verbraucher vertraut dem Payload NICHT: er beansprucht
+  // Arbeit ausschliesslich ATOMAR in Supabase (helmut_claim_jobs) — mehrfache Zustellung ist
+  // damit wirkungslos statt gefaehrlich, Reihenfolge und Genau-einmal-Zustellung werden nie
+  // vorausgesetzt. Autorisierung: dasselbe CRON_SECRET wie alle Betriebsendpunkte.
+  if (url.pathname === "/api/ops/worker-weck" && request.method === "POST") {
+    if (!authorizeCron(request, url, response)) return;
+    return handleJson(request, response, async (body) => {
+      const weckStart = Date.now();
+      const laufkennung = helmutRunId("worker-weck", weckStart);
+
+      // GENAU EIN PRIMAERER ANTRIEB (Auftrag §14): dieser Verbraucher arbeitet
+      // AUSSCHLIESSLICH im Ereignis-Antrieb. Jede andere Konfiguration — Flag aus,
+      // Dispatch off/shadow, Widerspruch — stoppt geschlossen mit 409: der Transport
+      // verbucht den Versand als fehlgeschlagen, die Absicht bleibt offen und der
+      // Befund wird sichtbar statt still geschluckt.
+      const antrieb = jobDispatch.waehleAntrieb();
+      if (antrieb.antrieb !== "ereignis") {
+        response.writeHead(409, jsonHeaders());
+        response.end(JSON.stringify({
+          verarbeitet: false,
+          grund: `antrieb-${antrieb.antrieb}`,
+          widersprueche: antrieb.widersprueche
+        }, null, 2));
+        return null;
+      }
+
+      // SCHEMA-VERSION (sichere Behandlung alter und neuer Deployment-Versionen): eine
+      // NEUERE Version als dieses Deployment wird nie verarbeitet — der Abgleich legt die
+      // Absicht spaeter erneut vor, wenn der Deployment-Wechsel abgeschlossen ist.
+      const version = body && body.schemaVersion;
+      if (version != null && !jobDispatch.schemaVersionVerarbeitbar(version)) {
+        console.log(`[ops/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
+          + ` grund=schema-version lauf=${laufkennung}`);
+        return { verarbeitet: false, grund: "schema-version-neuer-als-deployment" };
+      }
+
+      // DRAIN-LEASE (Auftrag §12): der Ereignis-Antrieb ERFORDERT die verteilten
+      // Klassengrenzen — ohne pruefbare Grenze arbeitet kein Wecksignal-Verbraucher
+      // (fail closed, §12.10). Die Klasse `worker-drain` (Default max 1) begrenzt, wie
+      // viele Verbraucher systemweit gleichzeitig laufen; ein bereits laufender
+      // Verbraucher macht mehrfache Zustellung zum No-Op.
+      const klassen = scalablePipeline.klassenAdapter({ owner: jobDispatch.verbraucherKennung(laufkennung) });
+      if (!klassen) {
+        console.log(`[ops/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
+          + ` grund=klassengrenzen-aus lauf=${laufkennung}`);
+        return { verarbeitet: false, grund: "klassengrenzen-aus (Ereignis-Antrieb erfordert HELMUT_KLASSEN_GRENZEN=on)" };
+      }
+      const drainBudgetMs = Math.max(5000, Math.min(240000, Number(process.env.HELMUT_DRAIN_BUDGET_MS) || 60000));
+      const lease = await klassen.belege("worker-drain", { ttlMs: drainBudgetMs + 60000 });
+      if (!lease || lease.erlaubt !== true) {
+        console.log(`[ops/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
+          + ` grund=${(lease && lease.grund) || "drain-belegt"} lauf=${laufkennung}`);
+        return { verarbeitet: false, grund: `drain-nicht-frei: ${(lease && lease.grund) || "belegt"}` };
+      }
+
+      try {
+        // Tagesplan wie im Cron-Pfad (Befund R2): ohne ihn haette die Budgetschicht
+        // keinen Bereichsdeckel — das wird ehrlich gemeldet, nie still gelebt.
+        const weckTagesplan = await scalablePipeline.tagesplanFuerLauf({ jetztMs: weckStart }).catch(() => null);
+        const durchlauf = await workerBetrieb.durchlauf({
+          kennung: laufkennung,
+          grenzen: {
+            budgetMs: drainBudgetMs,
+            leaseMs: 300000,
+            stapel: Math.max(1, Number(process.env.HELMUT_WORKER_BATCH) || 10)
+          },
+          tagesplan: weckTagesplan,
+          deps: { buildV3Briefing }
+        });
+
+        // KETTE UND FOLGEAUFTRAEGE (Auftrag §13): erledigte Arbeit hat ueber die
+        // Enqueue-Weiche bereits neue Versandabsichten atomar erzeugt. Ein kleiner,
+        // GEDECKELTER Abgleich + Versand am Laufende stellt sie zu — die Kette traegt
+        // sich ueber die Abhaengigkeitsfolge selbst und stirbt ohne Fortschritt aus
+        // (bestaetigte Absichten werden erst nach Mindestalter wieder geoeffnet).
+        const abgleich = await jobDispatch.abgleich({ limit: 50 }).catch(() => ({ verfuegbar: false }));
+        const versand = await jobDispatch.versendeAbsichten({ limit: 20 }).catch(() => ({ versendet: 0, fehlgeschlagen: 0 }));
+
+        console.log(`[ops/worker-weck] ${Date.now() - weckStart}ms worker=${durchlauf.worker}`
+          + ` reserviert=${durchlauf.reserviert || 0} erledigt=${durchlauf.erledigt || 0}`
+          + ` zurueckgestellt=${durchlauf.zurueckgestellt || 0}`
+          + ` endgueltigFehler=${durchlauf.endgueltigFehlgeschlagen || 0}`
+          + ` weckVersand=${versand.versendet || 0}/${(versand.vergeben || 0)}`
+          + ` lauf=${laufkennung}`);
+
+        // KEINE BESTAETIGUNG VOR BELEGTEM DATENBANKABSCHLUSS: alles, was hier als
+        // erledigt gemeldet wird, ist durch helmut_finish_job persistiert; die
+        // HTTP-Antwort selbst traegt keine Zustandsverantwortung.
+        return {
+          verarbeitet: true,
+          lauf: laufkennung,
+          dauerMs: Date.now() - weckStart,
+          erledigt: durchlauf.erledigt || 0,
+          reserviert: durchlauf.reserviert || 0,
+          zurueckgestellt: durchlauf.zurueckgestellt || 0,
+          endgueltigFehlgeschlagen: durchlauf.endgueltigFehlgeschlagen || 0,
+          abgleich,
+          versand: {
+            transport: versand.transport || null,
+            versendet: versand.versendet || 0,
+            fehlgeschlagen: versand.fehlgeschlagen || 0
+          }
+        };
+      } finally {
+        await klassen.gebeFrei(lease.slot);
+      }
+    });
+  }
+
   if (url.pathname === "/api/ops/jobqueue") {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
@@ -1068,13 +1183,21 @@ async function handleRequest(request, response) {
       // Trockenlauf: was WUERDE wiedervorgelegt? Aendert nichts (Befund O5).
       const wiedervorlage = await scalablePipeline.wiedervorlage({ trockenlauf: true })
         .catch(() => ({ verfuegbar: false, grund: "fehler" }));
+      // Zielarchitektur: Antrieb + Outbox-Kennzahlen gehoeren in die Betriebssicht.
+      // Bei Dispatch off oder fehlender Migration ist das ehrlich "nicht verfuegbar",
+      // nie ein leerer Erfolg.
+      const outbox = jobDispatch.dispatchModus() === "off"
+        ? { verfuegbar: false, grund: "dispatch-off" }
+        : await storageModul.jobOutboxKennzahlen().catch(() => ({ verfuegbar: false, grund: "fehler" }));
       return {
         // Der Flagzustand steht IMMER dabei: ein "gruener" Status bei ausgeschaltetem Flag
         // bedeutet nur "niemand arbeitet", nicht "alles in Ordnung".
         pfadAktiv: scalablePipeline.skalierbarerPfadAktiv(),
+        antrieb: jobDispatch.waehleAntrieb(),
         ...status,
         worker: bereitschaft,
-        wiedervorlage
+        wiedervorlage,
+        outbox
       };
     });
   }
@@ -6849,6 +6972,17 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
   const wieder = await scalablePipeline.wiedervorlage({ trockenlauf: false })
     .catch((error) => ({ verfuegbar: false, grund: String((error && error.message) || "fehler").slice(0, 200) }));
 
+  // ZIELARCHITEKTUR (2026-08-13): OUTBOX-ABGLEICH + VERSAND, beide bei Dispatch off ein
+  // reiner No-Op. Der Abgleich ist das Sicherheitsnetz (ausfuehrbare Auftraege ohne gueltige
+  // Versandabsicht werden erneut vorgemerkt, Absichten terminaler Auftraege geschlossen);
+  // der Versand stellt faellige Wecksignale zu — im shadow-Modus beweisbar ohne dass etwas
+  // den Prozess verlaesst. Der Cron bleibt in JEDEM Modus zusaetzlich Drain (Rueckfallweg,
+  // Auftrag §14.9): doppelte Arbeit ist durch den atomaren Claim ausgeschlossen.
+  const outboxAbgleich = await jobDispatch.abgleich({ limit: 200 })
+    .catch((error) => ({ verfuegbar: false, grund: String((error && error.message) || "fehler").slice(0, 200) }));
+  const weckVersand = await jobDispatch.versendeAbsichten({ limit: 100 })
+    .catch((error) => ({ versendet: 0, fehlgeschlagen: 0, grund: String((error && error.message) || "fehler").slice(0, 200) }));
+
   // WORKERBETRIEB STATT DIREKTAUFRUF (OP-30, Befund O2). Bis hierher rief der Cron
   // `scalable-pipeline.arbeite` direkt auf — `lib/helmut/worker-betrieb.js` war damit im
   // Betrieb tot: begrenzte Parallelitaet, der Riegel gegen externen Abruf bei
@@ -6897,6 +7031,8 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     + ` endgueltigFehler=${bilanz.endgueltigFehlgeschlagen}`
     + ` wiedervorgelegt=${(wieder && wieder.wiedervorgelegt) ?? "n/v"}`
     + ` rotation=${(plan && plan.tagesplan && plan.tagesplan.plaetze) || 0}`
+    + ` dispatch=${jobDispatch.dispatchModus()}`
+    + ` weckVersand=${weckVersand.versendet || 0}/${weckVersand.vergeben || 0}`
     + ` zustand=${(status && status.zustand) || "unbekannt"} lauf=${laufkennung}`);
 
   // EHRLICHER GESAMTAUSGANG (CLAUDE.md §4.4): ein Lauf ist nur dann ok, wenn geplant UND
@@ -6910,6 +7046,9 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     planung: plan,
     verarbeitung: bilanz,
     wiedervorlage: wieder,
+    // Zielarchitektur: Dispatch-Sicht dieses Laufs (off => beide uebersprungen).
+    outboxAbgleich,
+    weckVersand,
     betrieb: status
   };
 }

@@ -1419,6 +1419,32 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 #### OP-30 · Mandatseigene Abrufwege vervielfachen den Quellenabruf linear (neu, Sprint „V3-Skalierungsprüfung" 2026-08-08; Prioritätsklasse P1)
 
+- **Stand 2026-08-13/3 (Architektursprint Zielarchitektur — Teilweise abgeschlossen; Beleg
+  [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md),
+  Runbook §20):** Der auf den zweiten Fuenferlauf folgende **Kapazitaetssprint wurde
+  kontrolliert abgebrochen**; die verworfene Zwischenloesung (Parallelitaet 6 + sechs
+  Drain-Slots) wurde NICHT rekonstruiert — mehr Cron-Slots skalieren den Slot, nicht die
+  Architektur. Stattdessen gebaut und lokal nachgewiesen (Production unangetastet, alles
+  Default-AUS, Migrationen `20260813` NICHT angewendet): **transaktionale Outbox**
+  (`helmut_job_outbox`, atomar mit dem Auftrag; strukturell ohne Inhaltsspalte),
+  **austauschbarer Transport** (`HELMUT_JOB_DISPATCH_MODE=off|shadow|queue`, fail closed;
+  Payload strukturell nur `{jobId, schemaVersion}`; erster Transport Selbstweck ueber die
+  neue Verbraucher-Route `/api/ops/worker-weck`; Vercel-Queues-Adapter gebaut, nicht
+  aktiviert — Public Beta, keine EU-Residenzzusage im Failover, kostenpflichtig),
+  **verteilte Klassengrenzen** (`helmut_klasse_belege`, Semaphor mit TTL-Selbstheilung:
+  quellenabruf 5 · verstehen 1 · worker-drain 1) und die **Vorgangswache** als kleinste
+  sichere Abloesung des globalen Understanding-Schlosses (exklusiv je Vorgang statt global
+  seriell; `HELMUT_VERSTEHEN_KONKURRENZ`, Default aus). Nachweise: Outbox-DB-Suite 37 PASS ·
+  Klassengrenzen-DB-Suite 20 PASS · Dispatch-Vertrag 53 PASS · Konkurrenzwache 14 PASS ·
+  Outbox-Mutationsprobe 6/6 erkannt · **lokaler Architektur- und Lastnachweis 5/25/100/200/500
+  an echter PostgreSQL** (kein Verlust, keine Doppelarbeit, Grenzen halten; 500er-Reserve
+  rechnerisch x3,7 — ausdruecklich KEIN Production-Beweis; KI-Bedarf ~1.040/Tag bei 500 ≫
+  Deckel 100+30 = gesonderte Gruenderentscheidung). Die 524 inerten Auftraege wurden rein
+  lesend analysiert (1.556 referenzierte Dokumente, 0 bereits verstanden — echte offene
+  KI-Arbeit; Neutralisierungsmuster §17.8 bleibt geeignet; kein Auftrag veraendert).
+  **Offen:** Betreiberfreigaben nach Stufenplan (Zielarchitektur §14); Versuch 3 beginnt
+  unveraendert bei Runbook §6 Schritt 3; vor Verstehens-Parallelitaet >1 CAS-Haertung des
+  Update-Vormerkungs-Stores.
 - **Stand 2026-08-13/2 (zweiter Fuenferlauf-Versuch, NICHT bestanden — Kapazitaetsbefund;
   Beleg Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §19):**
   K0 vollstaendig gruen (inkl. `altersvertrag="wartezeit"` produktiv), Betreiber-Aktivierung

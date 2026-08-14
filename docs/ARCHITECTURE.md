@@ -1,6 +1,10 @@
 # ARCHITECTURE — Systemkarte Helmut
 
-**Letzte Aktualisierung:** 2026-08-11 (§7e: die sechs OP-30-Migrationen sind auf Production
+**Letzte Aktualisierung:** 2026-08-13/3 (§7f neu: OP-30-Zielarchitektur — transaktionale
+Outbox, austauschbarer Transport, verteilte Klassengrenzen, Vorgangswache; alles gebaut,
+lokal nachgewiesen, Default-AUS, Migrationen `20260813` NICHT angewendet; kanonisch
+[`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md));
+davor 2026-08-11 (§7e: die sechs OP-30-Migrationen sind auf Production
 **angewendet** — Schema vorhanden, fünfter Auftragstyp `tenant_narrative`, alle Flags weiter
 AUS, Pfad im Betrieb wirkungslos); davor 2026-08-08/3 (§7e: V3-Anbindung des Warteschlangenpfads und
 KI-Budgetschicht, beide lokal und DEFAULT AUS); davor 2026-08-08/2 (§7e: Phasenfenster für Projektion und Briefing;
@@ -427,6 +431,54 @@ Pfad endete faktisch beim Rohdokument. Der Auftragsschlüssel ist der **Inhaltsf
 der Dokumentmenge (`rd-<hash>`), nicht das Aktualitätsfenster: derselbe Artikel erzeugt nie
 einen zweiten Verstehensauftrag. Der Auftrag trägt **nur Kennungen**, keine Inhalte; die
 minimierten Zeilen holt der Handler aus `raw_documents`.
+
+### 7f · Zielarchitektur: transaktionale Outbox + austauschbarer Transport (2026-08-13, DEFAULT AUS)
+
+> **Zustand:** vollständig gebaut und lokal nachgewiesen, in Production **nirgends aktiv**.
+> Die zwei neuen Migrationspaare (`20260813_jobqueue_outbox`, `20260813_verteilte_grenzen`)
+> sind **nicht angewendet**; alle neuen Flags sind Default-AUS und fail closed. Kanonische
+> Entscheidungs- und Belegdatei:
+> [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md).
+
+**Warum sie existiert.** Der zweite Fünferlauf (Runbook §19) hat belegt: der Motor ist
+fehlerfrei und fair, aber der **slotgebundene Abfluss** (~130–180 Aufträge/Tag) trägt die
+eigene Ankunftsrate (~440–470/Tag bei n=5) nicht. Mehr Slots skalieren den Slot, nicht die
+Architektur. Die Zielarchitektur löst die Rechenleistung vom Slottakt — **ereignisgesteuert,
+ohne den Fachkern zu verändern**.
+
+```
+Einreihen (Planer/Handler, EINE Transaktion)
+  helmut_enqueue_job_mit_outbox  → Auftrag (helmut_jobs) + Versandabsicht (helmut_job_outbox)
+Dispatcher (Cron-Slots + Verbraucher-Laufende)
+  helmut_outbox_naechste         → fällige Absichten atomar vergeben (skip locked, Backoff)
+  Transport.sende({jobId, schemaVersion})       ← NIE mehr als diese zwei Felder
+  helmut_outbox_bestaetige       → Versand bestätigt / Fehlversuch verbucht
+Verbraucher  POST /api/ops/worker-weck  (CRON_SECRET; nur Antrieb 'ereignis'; Drain-Lease)
+  helmut_claim_jobs              → atomare Beanspruchung — die EINZIGE Vergabewahrheit
+  helmut_klasse_belege           → verteilte Anbietergrenze (z. B. quellenabruf max 5)
+  unveränderte Fachhandler → Persistenz → helmut_finish_job → Folgeauftrag MIT neuer Absicht
+Abgleich (Sicherheitsnetz, nicht Antrieb)
+  helmut_outbox_abgleich         → fehlende/verwaiste Absichten, terminale schließen
+```
+
+**Verbindliche Regeln.** Supabase bleibt die einzige Wahrheit (kein Transportdienst kennt
+oder entscheidet einen Auftragszustand); das Transport-Payload ist strukturell auf
+`{jobId, schemaVersion}` begrenzt (die Outbox **hat keine Inhaltsspalte**; Laufzeit-Riegel
+`pruefeTransportPayload`); mehrfache Zustellung ist wirkungslos (Claim-Atomarität); bei
+Transportausfall bleibt jeder Auftrag vollständig erhalten; ein Transportwechsel
+(Selbstweck ↔ Vercel Queues ↔ späterer externer Worker) ändert **keinen Fachhandler**
+(testgesichert). Es gibt genau **einen** primären Antrieb (`bestand` · `cron-queue` ·
+`ereignis`, `job-dispatch.waehleAntrieb`); widersprüchliche Konfiguration stoppt geschlossen.
+
+**Verteilte Grenzen.** Prozesslokale Grenzen addieren sich über Instanzen — die neuen
+Klassen-Semaphore (`helmut_klasse_belege`, Row-Lock auf der Ankerzeile, TTL-selbstheilend)
+gelten systemweit: `quellenabruf` max 5, `verstehen` max 1 (die heutige Serialisierung,
+ehrlich verteilt), `worker-drain` max 1. Das KI-Tagesbudget war bereits datenbank-atomar
+(`helmut_reserve_llm_call` + `llm_reservations`) und bleibt unverändert. Das globale
+Understanding-Schloss bekommt eine engere Nachfolgerin: die **Vorgangswache**
+(`storage.vorgangsWache`, Klasse `verstehen-vorgang:<id>` max 1) schützt „ein KI-Aufruf je
+neuem Vorgang" über Prozess- und Pfadgrenzen, statt alles zu serialisieren — Default inert
+(`HELMUT_VERSTEHEN_KONKURRENZ`).
 
 **Vorbedingungen werden geprüft, nicht angenommen.** `helmut_jobs_offen` zählt offene
 Vorbedingungen im selben Fenster; Projektion und Briefing werden über `helmut_defer_job`

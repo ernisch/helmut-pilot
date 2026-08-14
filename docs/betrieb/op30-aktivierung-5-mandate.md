@@ -1954,3 +1954,26 @@ waren Betreiberaktionen nach ausdrücklicher Freigabe bzw. §8.2-Empfehlung), ke
 Cronlauf, keine Migration (offen bleibt nur `20260720`), keine Production-Datenänderung
 (0 Schreibzugriffe; alle Belege rein lesend), keine Änderung an Crons/Secrets/anderen Flags,
 keine Ausweitung über 5 Mandate, `understanding-recovery.yml` nicht berührt.
+
+## 20 · Zielarchitektur statt „mehr Slots" (Architektursprint 2026-08-13/3)
+
+Der auf §19 folgende **Kapazitätssprint wurde kontrolliert abgebrochen**; seine geplante
+Zwischenlösung (Parallelität 6 + sechs zusätzliche Drain-Slots) war weder getestet noch
+committet und wurde **verworfen — sie ist nicht die Zielarchitektur und wurde nicht
+rekonstruiert**. An ihre Stelle tritt die im Architektursprint 2026-08-13/3 gebaute und
+lokal nachgewiesene **OP-30-Zielarchitektur** (transaktionale Outbox, austauschbarer
+Transport mit Wecksignalen, verteilte Klassengrenzen, Vorgangswache als engere Nachfolgerin
+des globalen Understanding-Schlosses). Kanonische Entscheidungs- und Belegdatei:
+[`op30-zielarchitektur-2026-08-13.md`](op30-zielarchitektur-2026-08-13.md) — dort stehen
+Architekturvergleich (7 Varianten × 20 Kriterien), Mengengerüst 5–500, der lokale
+Architektur- und Lastnachweis samt ehrlicher Grenzen, die Analyse der 524 inerten
+Aufträge, der Stufenplan und der genaue nächste Betreiberablauf.
+
+**Wirkung auf dieses Runbook:** §1–§19 bleiben unverändert gültig (der Altpfad und der
+Cron-Queue-Antrieb bestehen fort; die 524 Aufträge stehen weiter inert). Ein **Versuch 3**
+beginnt unverändert bei §6 Schritt 3 mit K0–K3 von vorn — neu ist, dass Stufe 1 des
+Zielarchitektur-Stufenplans (`HELMUT_JOB_DISPATCH_MODE=shadow`) parallel den Outbox-Beweis
+erbringt, ohne dass irgendetwas den Prozess verlässt. Vorher gelten unverändert §19.6:
+524 neutralisieren (Muster §17.8/§17.10) und §8.3/§8.4 queue-tauglich fassen. In
+Production wurde in diesem Sprint **nichts** verändert (alle Zugriffe rein lesend; die
+zwei neuen Migrationspaare `20260813` sind NICHT angewendet; alle neuen Flags Default-AUS).
