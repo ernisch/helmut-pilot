@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-13/3** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30-Fuenferlauf, zweiter Versuch (12./13.08.): NICHT bestanden — kontrollierte Ruecknahme VOR Grenzuebertritt** (Runbook §19): 5 Laeufe fehlerfrei/fair/ohne Doppelarbeit, aber Ankunft ~440–470 Auftraege/Tag ≫ Abfluss ~130–180/Tag ⇒ Flag wieder `off`, wirkungsbasiert belegt; **524 wartende Auftraege bleiben inert**. **(c) OP-30-ZIELARCHITEKTUR gebaut und lokal nachgewiesen** (§7c; Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache; Production unangetastet, alles Default-AUS; der Kapazitaetssprint davor wurde kontrolliert abgebrochen, seine Zwischenloesung „mehr Slots" verworfen). **(d) OP-31 Frischevertrag BESTANDEN** — hielt auch unter OP-30 (5/5 am 13.08.). Diese Datei enthaelt
+**Stand: 2026-08-14** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30-Fuenferlauf, zweiter Versuch (12./13.08.): NICHT bestanden — kontrollierte Ruecknahme VOR Grenzuebertritt** (Runbook §19): 5 Laeufe fehlerfrei/fair/ohne Doppelarbeit, aber Ankunft ~440–470 Auftraege/Tag ≫ Abfluss ~130–180/Tag ⇒ Flag wieder `off`, wirkungsbasiert belegt; **524 wartende Auftraege bleiben inert**. **(c) OP-30-ZIELARCHITEKTUR gebaut und lokal nachgewiesen** (§7c; Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache; Production unangetastet, alles Default-AUS; der Kapazitaetssprint davor wurde kontrolliert abgebrochen, seine Zwischenloesung „mehr Slots" verworfen; Sicherheitskorrektur 2026-08-14: Signalpruefung, Weckziel-Riegel, Klingel-Buendelung, Migrationsstempel — Belegdatei §17). **(d) OP-31 Frischevertrag BESTANDEN** — hielt auch unter OP-30 (5/5 am 13.08.). Diese Datei enthaelt
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -182,17 +182,17 @@ erneute Neutralisierung der jetzt 524 inerten Aufträge (Muster §17.8).
 **Folge für OP-25:** eine Aktivierung verändert `quellenVereinigung`, die K2.1-Sichtbarkeitsmengen und die
 Laufzeitbilanz ⇒ **OP-25 muss danach von vorn**.
 
-## 7c · Zielarchitektur-Sprint 2026-08-13/3 (Erfolgreich abgeschlossen; Aktivierung = Betreiberentscheidung)
+## 7c · Zielarchitektur-Sprint 2026-08-13/3 (Erfolgreich abgeschlossen; Aktivierung = Betreiberentscheidung; Sicherheitskorrektur 2026-08-14 eingearbeitet, Belegdatei §17)
 
 Der Kapazitätssprint nach §7b wurde **kontrolliert abgebrochen**; seine Zwischenlösung
 (Parallelität 6 + sechs Drain-Slots) wurde **verworfen und nicht rekonstruiert**. Stattdessen
 gebaut und lokal nachgewiesen (Production nur lesend geprüft, alle 18 §2-Vorprüfungen grün):
-**transaktionale Outbox** (`20260813_jobqueue_outbox`, atomar mit dem Auftrag, strukturell ohne
+**transaktionale Outbox** (`20260813090000_jobqueue_outbox`, atomar mit dem Auftrag, strukturell ohne
 Inhaltsspalte) · **austauschbarer Transport** (`HELMUT_JOB_DISPATCH_MODE=off|shadow|queue`, fail
 closed; Payload nur `{jobId, schemaVersion}`; erster Transport Selbstweck via
 `/api/ops/worker-weck`; Vercel-Queues-Adapter gebaut, nicht aktiviert — Beta, keine
 EU-Residenz im Failover, kostenpflichtig) · **verteilte Klassengrenzen**
-(`20260813_verteilte_grenzen`: quellenabruf 5 · verstehen 1 · worker-drain 1) ·
+(`20260813090100_verteilte_grenzen`: quellenabruf 5 · verstehen 1 · worker-drain 1) ·
 **Vorgangswache** als kleinste sichere Ablösung des globalen Understanding-Schlosses
 (`HELMUT_VERSTEHEN_KONKURRENZ`, aus). Nachweise: 37+20+53+14 PASS neue Suiten · Mutationsprobe
 6/6 · lokaler Lastnachweis 5/25/100/200/500 an echter PostgreSQL (kein Verlust, keine
@@ -332,6 +332,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 | Datum | Sprint | Ausgang |
 |---|---|---|
 | 2026-08-13/3 | **OP-30-Zielarchitektur** (§7c): Kapazitätssprint kontrolliert abgebrochen, „mehr Slots" verworfen; stattdessen Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache gebaut; lokaler Lastnachweis 5–500 an echter PostgreSQL; 524 Aufträge nur lesend analysiert; Production unangetastet | **Erfolgreich abgeschlossen** (alle 16 Abnahmekriterien erfüllt, beide Pflichtprüfungen grün auf `2158b0c`); PR #247 offen, nicht gemergt — OP-30 insgesamt bleibt offen (Aktivierung nach Stufenplan = Betreiberentscheidung) |
+| 2026-08-14 | **Sicherheitskorrektur OP-30-Zielarchitektur** (Belegdatei §17): (1) Route prüft das Wecksignal vollständig (Versand-Vertrag, 400/409); (2) Weckziel-Riegel — CRON_SECRET nie an ungeprüfte Ziele (15 adversariale Tests, 0 Netzaufrufe); (3) Aufrufverstärkung beseitigt (Türklingel-Bündelung, Timeout=unbestätigt, Slot-Freigabe vor Folgeklingel); (4) Migrationen auf eindeutige 14-stellige Stempel + `rollback_`-Präfix — **CLI-Nachweis**: die Altkonvention hätte Rollbacks als Vorwärtsmigrationen ausgeführt; Vertragstest-Harness awaited jetzt async-Fälle | Auf PR #247 nachgeführt; neue Suiten: worker-weck-route (21), migrations-organisation (10); Production unangetastet |
 | 2026-08-12/5 – 13/2 | **OP-30-Fünferlauf, zweiter Versuch** (§7b, Runbook §19): K0 a–j grün → Betreiber-Aktivierung 18:50 UTC → 5 Läufe fehlerfrei/fair (0 endgültige Fehler, 0 Dubletten, Dedupe belegt, OP-31 hält, Wartezeitvertrag produktiv bestätigt) → Kapazitätsbefund (Ankunft ≫ Abfluss bei Defaults) → Rücknahme VOR Grenzübertritt 16:27 UTC → Wirkungsnachweis am crawl 20:00 bestanden; 524 Aufträge inert | **Fünferlauf NICHT bestanden** (kontrollierter Abbruch, K2/K3 nicht erreicht); Doku-PR #246 gemergt (`e83eb19`) |
 | 2026-08-12/4 | **Betreiber-Sprint Neutralisierung + Migration** (Runbook §17.10): 180 offene Aufträge exportiert und geschützt gelöscht, 55 erledigte byte-identisch erhalten, Migration `20260812` angewendet und abgenommen | **erfolgreich abgeschlossen** (Doku-PR #245 gemergt) |
 | 2026-08-12/3 | **Altersgrenze berichtigt** (Runbook §17): Wartezeit statt Fälligkeit; 3 neue Suiten (59+26+31 PASS); PR #244 gemergt, Wirkungsnachweis am 16:00-Lauf bestanden | **erfolgreich abgeschlossen** |

@@ -144,7 +144,7 @@ Die zwölf Zusagen des Zielbilds, alle umgesetzt und getestet (L):
 
 1. Supabase bleibt die verbindliche Daten- und Auftragswahrheit.
 2. `helmut_jobs` bleibt das verbindliche Auftragsbuch (unverändert).
-3. Die transaktionale Outbox (`helmut_job_outbox`, Migration `20260813_jobqueue_outbox`)
+3. Die transaktionale Outbox (`helmut_job_outbox`, Migration `20260813090000_jobqueue_outbox`)
    speichert Versandabsichten **atomar gemeinsam** mit neuen Aufträgen
    (`helmut_enqueue_job_mit_outbox` = ein Funktionskörper = eine Transaktion).
 4. Der Transport überträgt **ausschließlich** `{ jobId (zufällige uuid), schemaVersion }` —
@@ -275,7 +275,7 @@ nicht Teil dieses Sprints; bis dahin bleibt `HELMUT_KLASSE_VERSTEHEN_MAX=1` verb
 
 ## 7 · Transaktionale Outbox (Auftrag §9)
 
-Migration [`20260813_jobqueue_outbox.sql`](../../supabase/migrations/20260813_jobqueue_outbox.sql)
+Migration [`20260813090000_jobqueue_outbox.sql`](../../supabase/migrations/20260813090000_jobqueue_outbox.sql)
 (+ vollständiges Rollback). Kernpunkte:
 
 - Genau EINE Versandabsicht je Auftrag (`unique(job_id)`, FK `on delete cascade` — die
@@ -303,6 +303,12 @@ Mutationsprobe `outbox-mutationsprobe.js` **6/6 Mutationen erkannt** (skip locke
 unique · Terminal-Prüfung · Backoff · Statusbindung · Fälligkeitsfilter).
 
 ## 8 · Austauschbarer Transport (Auftrag §10) und Verbraucher (§11)
+
+> **Sicherheitskorrektur 2026-08-14 (§17):** Weckziel-Vertrauensanker (CRON_SECRET nie an
+> ungeprüfte Ziele), Türklingel-Bündelung (ein Weckruf je Versandkontext),
+> Timeout=unbestätigt, vollständige Signalprüfung der Verbraucher-Route (400/409) und
+> Slot-Freigabe vor der Folgeklingel. §17 ist die maßgebliche Beschreibung des
+> Transportverhaltens, wo es von diesem Abschnitt abweicht.
 
 Modul [`lib/helmut/job-dispatch.js`](../../lib/helmut/job-dispatch.js):
 `HELMUT_JOB_DISPATCH_MODE = off | shadow | queue` (jeder andere Wert = `off`).
@@ -336,7 +342,7 @@ wieder geöffnet).
 
 ## 9 · Verteilte Anbietergrenzen (Auftrag §12)
 
-Migration [`20260813_verteilte_grenzen.sql`](../../supabase/migrations/20260813_verteilte_grenzen.sql):
+Migration [`20260813090100_verteilte_grenzen.sql`](../../supabase/migrations/20260813090100_verteilte_grenzen.sql):
 Semaphor mit ablaufenden Slots, atomar über Row-Lock auf der Klassen-Ankerzeile (dasselbe
 R4-Muster wie die Budget-Reservierung). Flag `HELMUT_KLASSEN_GRENZEN` (Default AUS);
 fail closed in beide Richtungen (nicht prüfbare Grenze = nicht arbeiten).
@@ -490,3 +496,123 @@ vor Verstehens-Parallelität > 1.
 4. `HELMUT_WORKER_WAKE_URL` (Production-URL + `/api/ops/worker-weck`) erst für Stufe 2.
 5. Getrennt und ausdrücklich NICHT Teil dieses Sprints: KI-Deckel-Anhebung, Vercel
    Queues/Supabase Pro (Kosten), OP-15.
+
+---
+
+## 17 · Sicherheitskorrektur 2026-08-14 (gezielter Korrektursprint, PR #247)
+
+Vier vom Gründer beauftragte Punkte; alle Befunde wurden **bestätigt**, korrigiert und mit
+Regressionstests belegt. Production blieb erneut vollständig unangetastet.
+
+### 17.1 Eingehendes Wecksignal wird vollständig geprüft (Befund bestätigt)
+
+**Ursache:** Die Route `POST /api/ops/worker-weck` las nur locker `body.schemaVersion`
+(`!= null`) — ein Signal **ohne** `schemaVersion`, mit Zusatzfeldern oder mit beliebiger
+Nicht-UUID als `jobId` passierte die Eingangsprüfung.
+**Korrektur:** Direkt nach der Autorisierung erzwingt die Route jetzt **denselben zentralen
+Payload-Vertrag wie der Versand** (`jobDispatch.pruefeTransportPayload`): exakt
+`{ jobId: <uuid>, schemaVersion: <int> }`; fehlende Felder, Zusatzfelder, ungültige UUIDs
+und falsche Typen → **400, geschlossen**. Nicht unterstützte Schemaversionen sowie
+falscher Antrieb / fehlende Klassengrenzen → **409** (definitiver Fehlversuch beim Sender;
+die Absicht bleibt offen). Nur „Drain belegt" bleibt bewusst 2xx (Klingel zugestellt, ein
+aktiver Verbraucher arbeitet; Rest fängt der Abgleich).
+**Beleg (L):** `scripts/worker-weck-route-test.js` — 21 PASS am echten server.js-Handler,
+inkl. Reihenfolgebeweis (Payload-Prüfung vor Antriebsprüfung) und Vertragsgleichheit
+Sender ↔ Empfänger.
+
+### 17.2 CRON_SECRET kann nicht mehr an fremde Ziele gesendet werden (Befund bestätigt)
+
+**Ursache:** Der Selbstweck sendete `Bearer CRON_SECRET` an **jede** in
+`HELMUT_WORKER_WAKE_URL` konfigurierte Adresse — beliebiger Host (auch `http://`),
+beliebiger Pfad, Query, Fragment, Zugangsdaten in der URL.
+**Korrektur:** `pruefeWeckZiel` verriegelt das Ziel **vor** jedem Versand: nur HTTPS, exakt
+`/api/ops/worker-weck` (nach URL-Normalisierung — Traversal fällt durch), kein Userinfo,
+kein Query, kein Fragment, kein expliziter Port, und der Host muss einem **von der
+Plattform gesetzten** Deployment-Host entsprechen (`VERCEL_PROJECT_PRODUCTION_URL` /
+`VERCEL_URL` / `VERCEL_BRANCH_URL` — reservierte Systemvariablen, kein freier
+Operator-Text; ein bloßes `*.vercel.app`-Suffix genügt ausdrücklich NICHT, denn dort
+deployt jeder Vercel-Kunde). Versendet wird immer die kanonisch neu gebaute URL. Ohne
+Vertrauensanker (z. B. lokal) ist der Transport geschlossen nicht verfügbar — das Secret
+verlässt den Prozess in keinem Abweichungsfall.
+**Beleg (L):** 15 adversariale Weckziele in `scripts/jobdispatch-vertrag-test.js` §5.6
+(fremder Host, `angreifer.vercel.app`, Zugangsdaten, Traversal, Query, Fragment, Port,
+IP, Präfix-Fälschung, …) — jeweils mit hartem Beweis **0 Netzaufrufe**.
+
+### 17.3 Aufrufverstärkung beseitigt: Türklingel-Bündelung + Timeout-Semantik (Befund bestätigt)
+
+**Ursachen (zwei):**
+1. **Verschachtelte Aufrufkette:** ein Wecksignal je Absicht (bis 20 pro Kontext), und der
+   Weck-Handler wartete auf seine Folge-POSTs, deren Empfänger je bis 60 s drainen und
+   selbst weiterversenden — bei Rückstand stapelten sich Dutzende gleichzeitig offene
+   Funktionsaufrufe (mit den 524: Kettentiefe > 50).
+2. **Timeout-Fehlklassifikation:** Sender-Timeout 5 s < Empfänger-Antwortzeit (Drain bis
+   60 s vor der Antwort) → fast jeder Versand galt als gescheitert → bis zu 10 Wieder-
+   holungen je Absicht (Backoff bis `aufgegeben`) trotz erfolgreicher Drains — Verstärkung
+   UND stille Verzögerung zugleich.
+**Korrektur (drei Bausteine):**
+1. **Bündelung** (`transport.buendelt`): GENAU EIN Weckruf je Versandkontext für alle
+   gerade fälligen Absichten — der Verbraucher beansprucht Arbeit ohnehin nur atomar in
+   der Datenbank, nie aus dem Payload. 2xx bestätigt alle gebündelten Absichten; eine
+   echte Fehlerantwort verbucht alle als Fehlversuch.
+2. **Timeout = unbestätigt:** ein Abbruch nach dem Absenden verbucht NICHTS (die Vergabe
+   trägt Versuchszähler + Backoff bereits; erledigte Aufträge räumt der Terminal-/
+   Abgleichpfad). Das ist exakt der bereits getestete Dispatcher-Crash-Pfad (§7 der
+   Outbox-Suite) — kein Auftrag und keine Outbox-Wahrheit gehen verloren.
+3. **Slot-Freigabe vor der Folgeklingel:** der Weck-Handler gibt den `worker-drain`-Slot
+   frei, BEVOR er Abgleich + höchstens einen Folge-Weckruf sendet, und wartet auf die
+   Folgeklingel höchstens `HELMUT_WAKE_TIMEOUT_MS` (Default jetzt 3 s) — nie auf den
+   Drain des Nächsten. Ein abgewiesener Handler (400/409/belegt) versendet nichts.
+**Beweisrechnung (R, aus P-Messwerten):** gleichzeitig offene Weckvorgänge ≤ 1 notwendiger
+Drain (DB-Klasse `worker-drain` max 1) + Antwortfenster ≤ 3 s der jeweils vorigen
+Invocation — keine Verschachtelung, kurzzeitige Überlappung ≤ 2. Tagesvolumen im
+500er-Modell: 46.250 ws ÷ 60-s-Bursts ≈ **~770 Weck-Drains/Tag** + ≈ 215 gebündelte
+Klingeln (4.301 Absichten ÷ Bündel 20) + 11 Cron-Klingeln ≈ ~1.000 Funktionsaufrufe/Tag —
+dieselben Worker-Sekunden, die der Cron-Pfad ohnehin bräuchte, nur ereignisgesteuert
+verteilt; bei n=5 ≈ 135 Bursts/Tag. Wiederholungen sind je Absicht durch `max_attempts=10`
+und 30-min-Backoff-Deckel begrenzt; ohne Fortschritt stirbt die Kette (keine fälligen
+Absichten → keine Klingel).
+**Beleg (L):** `jobdispatch-vertrag-test.js` §5.5/§7.6–7.9 (5 Absichten → genau 1
+Netzaufruf; Timeout verbucht nichts; leere Outbox klingelt nie).
+
+### 17.4 Migrationsorganisation korrigiert — mit CLI-Nachweis (Befund bestätigt, gravierend)
+
+**Ursache:** Die beiden neuen Migrationen teilten sich den 8-stelligen Tagesstempel
+`20260813`, und die Rollback-Skripte lagen CLI-lesbar daneben (Altkonvention des Repos).
+**Empirischer Nachweis (L, Supabase CLI 2.114.0, frische lokale PostgreSQL 16.13):**
+- **Altkonvention:** `supabase db push --dry-run` listete **alle vier** Dateien als
+  anzuwendende Migrationen — beide Rollbacks eingeschlossen. Der echte Lauf wendete die
+  Outbox-Vorwärtsmigration an, führte **danach ihr Rollback als Vorwärtsmigration aus**
+  (Objekte wieder gelöscht) und brach dann an der Versionskollision ab
+  (`duplicate key … Key (version)=(20260813) already exists`). Endzustand: **keine
+  Objekte, aber Buchführung behauptet „20260813 angewendet"** — stiller Verlust plus
+  falsches Grün plus blockierte Folge-Migrationen.
+- **Neukonvention:** `rollback_*`-Dateien werden ausdrücklich übersprungen
+  (`Skipping migration … (file name must match pattern "<timestamp>_name.sql")`), genau
+  die zwei Vorwärtsmigrationen laufen, alle Objekte existieren, Buchführung trägt
+  `20260813090000, 20260813090100`.
+**Korrektur:** Vorwärts jetzt `20260813090000_jobqueue_outbox.sql` und
+`20260813090100_verteilte_grenzen.sql` (eindeutige 14-stellige Stempel); Rollbacks
+`rollback_<vorwärtsname>.sql` im selben Verzeichnis (CLI-unausführbar, Betreiber findet
+sie direkt daneben). Alle Verweise (Suiten, Doku) umgestellt; die SQL-Anweisungen sind byte-identisch (geändert wurden ausschließlich fünf Kopfkommentar-Zeilen mit Dateiverweisen).
+`scripts/migrations-organisation-test.js` (10 PASS) erzwingt die Neukonvention dauerhaft
+und friert den Altbestand ein. CLAUDE.md §4 Regel 8 entsprechend geschärft.
+**Ehrlich benannte Altlast (nicht repariert):** die 48 Bestandsdateien (8-stellige
+Stempel, `_rollback`-Suffix CLI-lesbar, Selbtag-Kollisionen z. B. 3× `20260712`) wären
+bei einem CLI-Lauf genauso gefährdet. Sie sind **angewendete Historie** und werden nicht
+umbenannt; die Betreiberpraxis (manuelle Anwendung im SQL-Editor, Runbook) berührt die
+Gefahr nicht. Eine spätere Reorganisation des Altbestands ist eine eigene, hier bewusst
+nicht nebenbei erledigte Entscheidung.
+
+### 17.5 Zusätzlicher Befund: Vertragstest-Harness zählte async-Fälle blind als PASS
+
+`jobdispatch-vertrag-test.js` awaitete async-Testkörper nicht — deren Assertions
+verpufften als späte Promise-Rejection am `process.exit`; ein Fehlschlag konnte unsichtbar
+bleiben. Korrigiert (`await check(...)` an allen 39 Aufrufstellen); nach der Korrektur
+fielen genau die drei Altfälle, die den neuen Weckziel-Riegel verletzten (http-URLs) —
+alle übrigen bestanden legitim. Die Boolean-Harnesse der übrigen neuen Suiten waren nicht
+betroffen. Außerdem kannte Prüfung 14 des adversarialen Gesamttests nur die alte
+`_rollback.sql`-Konvention — angepasst auf „jede Vorwärtsmigration hat ein
+Rollback-Gegenstück (alte oder neue Benennung)"; der erste Korrektur-Komplettlauf der
+Offline-Suite zeigte 246/252 mit genau diesem einen sprintbedingten Rot, nach der
+Anpassung 247/252 (die 5 verbleibenden = dokumentiertes lokales Basisrot, im CI grün);
+Browser-Smoke erneut 32/32.

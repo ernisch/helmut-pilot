@@ -25,8 +25,12 @@ const scalable = require("../lib/helmut/scalable-pipeline");
 
 let pass = 0;
 let fail = 0;
-function check(name, fn) {
-  try { fn(); pass += 1; console.log(`  PASS  ${name}`); }
+// SICHERHEITSKORREKTUR 2026-08-14: check() AWAITED async-Testkoerper. Vorher wurden
+// async-Faelle als PASS gezaehlt, waehrend ihre Assertions als spaete Promise-Rejection
+// am process.exit verpufften — ein Fehlschlag konnte unsichtbar bleiben. Jede
+// Aufrufstelle nutzt jetzt `await check(...)`.
+async function check(name, fn) {
+  try { await fn(); pass += 1; console.log(`  PASS  ${name}`); }
   catch (error) { fail += 1; console.log(`  FAIL  ${name} — ${error && error.message}`); }
 }
 function abschnitt(titel) { console.log(`\n== ${titel} ==`); }
@@ -37,49 +41,49 @@ async function main() {
   console.log("Helmut — Vertragstest austauschbarer Transport (OP-30-Zielarchitektur)");
 
   abschnitt("1 · Modusgrenze: fail closed");
-  check("1.1 Ohne Variable ist der Modus off", () => {
+  await check("1.1 Ohne Variable ist der Modus off", () => {
     assert.strictEqual(dispatch.dispatchModus({}), "off");
   });
   // " Shadow "/"QUEUE " normalisieren zu gueltigen Werten (getrimmt + kleingeschrieben,
   // §1.3) — hier stehen nur Werte, die auch NACH der Normalisierung ungueltig sind.
   for (const wert of ["ON", "an", "1", "true", "Queue!", "shadow-x", "aus", "no", "offen"]) {
     const erwartet = wert.trim().toLowerCase() === "off" ? "off" : "off";
-    check(`1.2 Unbekannter/abweichender Wert "${wert}" bedeutet ${erwartet}`, () => {
+    await check(`1.2 Unbekannter/abweichender Wert "${wert}" bedeutet ${erwartet}`, () => {
       assert.strictEqual(dispatch.dispatchModus({ HELMUT_JOB_DISPATCH_MODE: wert }), "off");
     });
   }
-  check("1.3 Nur die drei dokumentierten Werte schalten (off/shadow/queue, case-insensitiv getrimmt)", () => {
+  await check("1.3 Nur die drei dokumentierten Werte schalten (off/shadow/queue, case-insensitiv getrimmt)", () => {
     assert.strictEqual(dispatch.dispatchModus({ HELMUT_JOB_DISPATCH_MODE: " Shadow " }), "shadow");
     assert.strictEqual(dispatch.dispatchModus({ HELMUT_JOB_DISPATCH_MODE: "QUEUE" }), "queue");
     assert.strictEqual(dispatch.dispatchModus({ HELMUT_JOB_DISPATCH_MODE: "off" }), "off");
   });
-  check("1.4 dispatchAktiv verlangt Warteschlange UND Modus (kein Dispatch ohne Pfad)", () => {
+  await check("1.4 dispatchAktiv verlangt Warteschlange UND Modus (kein Dispatch ohne Pfad)", () => {
     assert.strictEqual(dispatch.dispatchAktiv({ HELMUT_JOB_DISPATCH_MODE: "queue" }), false);
     assert.strictEqual(dispatch.dispatchAktiv({ HELMUT_SCALABLE_PIPELINE: "on" }), false);
     assert.strictEqual(dispatch.dispatchAktiv({ HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "shadow" }), true);
   });
 
   abschnitt("2 · Genau EIN primaerer Antrieb");
-  check("2.1 Flag aus = Bestand, auch mit gesetztem Dispatch (Widerspruch wird benannt)", () => {
+  await check("2.1 Flag aus = Bestand, auch mit gesetztem Dispatch (Widerspruch wird benannt)", () => {
     const a = dispatch.waehleAntrieb({ HELMUT_JOB_DISPATCH_MODE: "queue" });
     assert.strictEqual(a.antrieb, "bestand");
     assert.ok(a.widersprueche.length === 1 && /dispatch-ohne-warteschlange/.test(a.widersprueche[0]));
   });
-  check("2.2 Warteschlange an + Dispatch off/shadow = cron-queue", () => {
+  await check("2.2 Warteschlange an + Dispatch off/shadow = cron-queue", () => {
     assert.strictEqual(dispatch.waehleAntrieb({ HELMUT_SCALABLE_PIPELINE: "on" }).antrieb, "cron-queue");
     assert.strictEqual(dispatch.waehleAntrieb({ HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "shadow" }).antrieb, "cron-queue");
   });
-  check("2.3 Warteschlange an + Dispatch queue = ereignis", () => {
+  await check("2.3 Warteschlange an + Dispatch queue = ereignis", () => {
     assert.strictEqual(dispatch.waehleAntrieb({ HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue" }).antrieb, "ereignis");
   });
-  check("2.4 Ein unbekannter Dispatch-Wert wird benannt und wirkt als off", () => {
+  await check("2.4 Ein unbekannter Dispatch-Wert wird benannt und wirkt als off", () => {
     const a = dispatch.waehleAntrieb({ HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "vielleicht" });
     assert.strictEqual(a.antrieb, "cron-queue");
     assert.ok(a.widersprueche.some((w) => /dispatch-modus-unbekannt/.test(w)));
   });
 
   abschnitt("3 · Transport-Payload: GENAU zwei Felder, adversarial");
-  check("3.1 Das Payload traegt exakt jobId (uuid) + schemaVersion und ist eingefroren", () => {
+  await check("3.1 Das Payload traegt exakt jobId (uuid) + schemaVersion und ist eingefroren", () => {
     const p = dispatch.transportPayload(UUID);
     assert.deepStrictEqual(Object.keys(p).sort(), ["jobId", "schemaVersion"]);
     assert.strictEqual(p.schemaVersion, dispatch.SCHEMA_VERSION);
@@ -96,67 +100,150 @@ async function main() {
     ["null", null]
   ];
   for (const [name, kaputt] of boese) {
-    check(`3.2 Abgewiesen: ${name}`, () => {
+    await check(`3.2 Abgewiesen: ${name}`, () => {
       assert.throws(() => dispatch.pruefeTransportPayload(kaputt), /transport-payload-ungueltig/);
     });
   }
 
   abschnitt("4 · Schatten-Transport: beweist, versendet nichts");
-  check("4.1 Der Schatten-Transport ist verfuegbar und bestaetigt ohne jede Netzfunktion", async () => {
+  await check("4.1 Der Schatten-Transport ist verfuegbar und bestaetigt ohne jede Netzfunktion", async () => {
     const t = dispatch.schattenTransport();
     const r = await t.sende(dispatch.transportPayload(UUID));
     assert.deepStrictEqual({ ok: r.ok, schatten: r.schatten }, { ok: true, schatten: true });
   });
-  check("4.2 Auch der Schatten-Transport weist ein regelwidriges Payload ab", async () => {
+  await check("4.2 Auch der Schatten-Transport weist ein regelwidriges Payload ab", async () => {
     const t = dispatch.schattenTransport();
     await assert.rejects(() => t.sende({ jobId: UUID, schemaVersion: 1, inhalt: "geheim" }), /transport-payload-ungueltig/);
   });
 
-  abschnitt("5 · Selbstweck-Transport");
-  check("5.1 Ohne Weck-URL oder CRON_SECRET: fail closed, ehrlicher Grund", () => {
-    const ohneUrl = dispatch.selbstweckTransport({ CRON_SECRET: "s" }, {});
-    const ohneSecret = dispatch.selbstweckTransport({ HELMUT_WORKER_WAKE_URL: "http://localhost/x" }, {});
+  abschnitt("5 · Selbstweck-Transport: Weckziel-Riegel (CRON_SECRET verlaesst den Prozess NIE ungeprueft)");
+  // Vertrauensanker: die von der PLATTFORM gesetzten Deployment-Hosts. Im Test simuliert
+  // ueber ein env-Objekt — im Betrieb sind VERCEL_* reservierte Systemvariablen.
+  const PROD_HOST = "helmut-pilot.vercel.app";
+  const DEPLOY_HOST = "helmut-pilot-abc123-nohut.vercel.app";
+  const VERTRAUEN = { VERCEL_PROJECT_PRODUCTION_URL: PROD_HOST, VERCEL_URL: DEPLOY_HOST };
+  const GUTE_URL = `https://${PROD_HOST}/api/ops/worker-weck`;
+
+  await check("5.1 Ohne Weck-URL oder CRON_SECRET: fail closed, ehrlicher Grund", () => {
+    const ohneUrl = dispatch.selbstweckTransport({ CRON_SECRET: "s", ...VERTRAUEN }, {});
+    const ohneSecret = dispatch.selbstweckTransport({ HELMUT_WORKER_WAKE_URL: GUTE_URL, ...VERTRAUEN }, {});
     assert.strictEqual(ohneUrl.verfuegbar, false);
     assert.match(ohneUrl.grund, /HELMUT_WORKER_WAKE_URL/);
     assert.strictEqual(ohneSecret.verfuegbar, false);
     assert.match(ohneSecret.grund, /CRON_SECRET/);
   });
-  check("5.2 Der Versand traegt NUR das Zwei-Felder-Payload und das Bearer-Secret", async () => {
+  await check("5.2 Der Versand traegt NUR das Zwei-Felder-Payload und das Bearer-Secret — an die KANONISCHE URL", async () => {
     const aufrufe = [];
     const t = dispatch.selbstweckTransport(
-      { HELMUT_WORKER_WAKE_URL: "http://localhost/api/ops/worker-weck", CRON_SECRET: "geheim" },
+      { HELMUT_WORKER_WAKE_URL: GUTE_URL, CRON_SECRET: "geheim", ...VERTRAUEN },
       { fetch: async (url, opts) => { aufrufe.push({ url, opts }); return { ok: true, status: 200 }; } });
+    assert.strictEqual(t.verfuegbar, true);
+    assert.strictEqual(t.buendelt, true, "Selbstweck ist eine Tuerklingel (buendelt)");
     const r = await t.sende(dispatch.transportPayload(UUID));
     assert.strictEqual(r.ok, true);
     assert.strictEqual(aufrufe.length, 1);
+    assert.strictEqual(aufrufe[0].url, GUTE_URL, "es wird die kanonisch gebaute Ziel-URL versendet");
     assert.strictEqual(aufrufe[0].opts.headers.Authorization, "Bearer geheim");
     const body = JSON.parse(aufrufe[0].opts.body);
     assert.deepStrictEqual(Object.keys(body).sort(), ["jobId", "schemaVersion"]);
     assert.strictEqual(body.jobId, UUID);
   });
-  check("5.3 Ein Nicht-2xx (z. B. 409 Widerspruch) ist ein FEHLGESCHLAGENER Versand", async () => {
+  await check("5.3 Ein Nicht-2xx (z. B. 409 Widerspruch) ist ein DEFINITIVER Fehlversuch", async () => {
     const t = dispatch.selbstweckTransport(
-      { HELMUT_WORKER_WAKE_URL: "http://localhost/x", CRON_SECRET: "s" },
+      { HELMUT_WORKER_WAKE_URL: GUTE_URL, CRON_SECRET: "s", ...VERTRAUEN },
       { fetch: async () => ({ ok: false, status: 409 }) });
     const r = await t.sende(dispatch.transportPayload(UUID));
     assert.deepStrictEqual(r, { ok: false, grund: "http-409" });
   });
-  check("5.4 Ein Netzfehler wird bereinigt gemeldet, nie geworfen", async () => {
+  await check("5.4 Ein Netzfehler wird bereinigt gemeldet, nie geworfen", async () => {
     const t = dispatch.selbstweckTransport(
-      { HELMUT_WORKER_WAKE_URL: "http://localhost/x", CRON_SECRET: "s" },
+      { HELMUT_WORKER_WAKE_URL: GUTE_URL, CRON_SECRET: "geheim", ...VERTRAUEN },
       { fetch: async () => { throw new Error("connect ECONNREFUSED 127.0.0.1:3000"); } });
     const r = await t.sende(dispatch.transportPayload(UUID));
     assert.strictEqual(r.ok, false);
     assert.ok(r.grund && !/geheim/.test(r.grund));
   });
+  await check("5.5 Timeout NACH dem Absenden ist UNBESTAETIGT, nie ein definitiver Fehlversuch", async () => {
+    const t = dispatch.selbstweckTransport(
+      { HELMUT_WORKER_WAKE_URL: GUTE_URL, CRON_SECRET: "s", HELMUT_WAKE_TIMEOUT_MS: "500", ...VERTRAUEN },
+      { fetch: (url, opts) => new Promise((_, reject) => {
+          opts.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })));
+        }) });
+    const r = await t.sende(dispatch.transportPayload(UUID));
+    assert.deepStrictEqual({ ok: r.ok, unbestaetigt: r.unbestaetigt }, { ok: false, unbestaetigt: true });
+  });
+
+  // ── ADVERSARIALE WECKZIELE: jede Abweichung macht den Transport geschlossen nicht
+  // verfuegbar, und der Beweis ist hart: die Netzfunktion wird NIE aufgerufen, das
+  // Bearer-Secret verlaesst den Prozess NIE. ──
+  const ADVERSARIALE_ZIELE = [
+    ["http statt https", `http://${PROD_HOST}/api/ops/worker-weck`, /nicht-https/],
+    ["fremder Host (vercel.app gehoert JEDEM Vercel-Kunden)", "https://angreifer.vercel.app/api/ops/worker-weck", /fremder-host/],
+    ["fremder Host (beliebige Domain)", "https://evil.example.com/api/ops/worker-weck", /fremder-host/],
+    ["Zugangsdaten in der URL", `https://user:pass@${PROD_HOST}/api/ops/worker-weck`, /zugangsdaten/],
+    ["anderer Pfad", `https://${PROD_HOST}/api/ops/jobqueue`, /falscher-pfad/],
+    ["Pfad-Traversal (normalisiert auf fremden Pfad)", `https://${PROD_HOST}/api/ops/worker-weck/../jobqueue`, /falscher-pfad/],
+    ["Pfad mit angehaengtem Segment", `https://${PROD_HOST}/api/ops/worker-weck/extra`, /falscher-pfad/],
+    ["Pfad mit Schluss-Schraegstrich", `https://${PROD_HOST}/api/ops/worker-weck/`, /falscher-pfad/],
+    ["Pfad prozentcodiert", `https://${PROD_HOST}/api/ops/worker%2Dweck`, /falscher-pfad/],
+    ["Queryparameter", `https://${PROD_HOST}/api/ops/worker-weck?debug=1`, /queryparameter/],
+    ["Fragment", `https://${PROD_HOST}/api/ops/worker-weck#f`, /fragment/],
+    ["expliziter Nicht-Standard-Port", `https://${PROD_HOST}:8443/api/ops/worker-weck`, /expliziter-port/],
+    ["IP-Adresse statt Deployment-Host", "https://203.0.113.7/api/ops/worker-weck", /fremder-host/],
+    ["kein URL-Wert", "kein ziel", /keine-url/],
+    ["Host als Praefix-Faelschung", `https://${PROD_HOST}.evil.example.com/api/ops/worker-weck`, /fremder-host/]
+  ];
+  for (const [name, ziel, muster] of ADVERSARIALE_ZIELE) {
+    await check(`5.6 Adversariales Weckziel abgewiesen: ${name}`, async () => {
+      let netzAufrufe = 0;
+      const t = dispatch.selbstweckTransport(
+        { HELMUT_WORKER_WAKE_URL: ziel, CRON_SECRET: "streng-geheim", ...VERTRAUEN },
+        { fetch: async () => { netzAufrufe += 1; return { ok: true, status: 200 }; } });
+      assert.strictEqual(t.verfuegbar, false);
+      assert.match(String(t.grund), muster);
+      const r = await t.sende(dispatch.transportPayload(UUID));
+      assert.strictEqual(r.ok, false);
+      assert.strictEqual(netzAufrufe, 0, "die Netzfunktion darf fuer ein abgewiesenes Ziel NIE aufgerufen werden");
+    });
+  }
+  await check("5.7 Ohne Plattform-Vertrauensanker (lokal) ist der Selbstweck geschlossen nicht verfuegbar", async () => {
+    let netzAufrufe = 0;
+    const t = dispatch.selbstweckTransport(
+      { HELMUT_WORKER_WAKE_URL: GUTE_URL, CRON_SECRET: "s" },
+      { fetch: async () => { netzAufrufe += 1; return { ok: true }; } });
+    assert.strictEqual(t.verfuegbar, false);
+    assert.match(t.grund, /vertrauensanker/);
+    await t.sende(dispatch.transportPayload(UUID));
+    assert.strictEqual(netzAufrufe, 0);
+  });
+  await check("5.8 Der Vertrauensanker uebernimmt NUR nackte Plattform-Hosts (praeparierte Werte zaehlen nie)", () => {
+    const hosts = dispatch.vertrauenswuerdigeWeckHosts({
+      VERCEL_PROJECT_PRODUCTION_URL: PROD_HOST,
+      VERCEL_URL: "evil.example.com/api/ops/worker-weck",
+      VERCEL_BRANCH_URL: "host:8443"
+    });
+    assert.deepStrictEqual([...hosts], [PROD_HOST]);
+  });
+  await check("5.9 Jeder Plattform-Host (Production, Deployment, Branch) ist einzeln vertrauenswuerdig", () => {
+    const okProd = dispatch.pruefeWeckZiel(GUTE_URL, VERTRAUEN);
+    const okDeploy = dispatch.pruefeWeckZiel(`https://${DEPLOY_HOST}/api/ops/worker-weck`, VERTRAUEN);
+    assert.strictEqual(okProd.ok, true);
+    assert.strictEqual(okProd.url, GUTE_URL);
+    assert.strictEqual(okDeploy.ok, true);
+  });
+  await check("5.10 Gross geschriebener Host wird kanonisch normalisiert und bleibt vertrauenswuerdig", () => {
+    const r = dispatch.pruefeWeckZiel(`HTTPS://${PROD_HOST.toUpperCase()}/api/ops/worker-weck`, VERTRAUEN);
+    assert.strictEqual(r.ok, true);
+    assert.strictEqual(r.url, GUTE_URL);
+  });
 
   abschnitt("6 · Vercel-Queues-Adapter");
-  check("6.1 Ohne installiertes SDK: fail closed mit Gruenderentscheidungs-Hinweis", () => {
+  await check("6.1 Ohne installiertes SDK: fail closed mit Gruenderentscheidungs-Hinweis", () => {
     const t = dispatch.vercelQueuesTransport({}, {});
     assert.strictEqual(t.verfuegbar, false);
     assert.match(t.grund, /sdk-nicht-installiert/);
   });
-  check("6.2 Mit SDK-Attrappe: send(topic, payload, {idempotencyKey}) nach offizieller Signatur", async () => {
+  await check("6.2 Mit SDK-Attrappe: send(topic, payload, {idempotencyKey}) nach offizieller Signatur", async () => {
     const aufrufe = [];
     const t = dispatch.vercelQueuesTransport(
       { HELMUT_QUEUE_TOPIC: "helmut-test" },
@@ -167,7 +254,7 @@ async function main() {
     assert.deepStrictEqual(Object.keys(aufrufe[0].payload).sort(), ["jobId", "schemaVersion"]);
     assert.strictEqual(aufrufe[0].opts.idempotencyKey, UUID);
   });
-  check("6.3 Ein unbekannter Transportname ist fail closed (kein stiller Rueckfall)", () => {
+  await check("6.3 Ein unbekannter Transportname ist fail closed (kein stiller Rueckfall)", () => {
     const t = dispatch.erstelleTransport({ HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue", HELMUT_JOB_TRANSPORT: "taubenpost" }, {});
     assert.strictEqual(t.verfuegbar, false);
     assert.match(t.grund, /transport-unbekannt/);
@@ -185,7 +272,7 @@ async function main() {
       }
     };
   }
-  check("7.1 Shadow: alle vergebenen Absichten werden ohne Netz bestaetigt", async () => {
+  await check("7.1 Shadow: alle vergebenen Absichten werden ohne Netz bestaetigt", async () => {
     const attrappe = outboxAttrappe([
       { outboxId: "o1", jobId: UUID, schemaVersion: 1, attempts: 1 },
       { outboxId: "o2", jobId: UUID2, schemaVersion: 1, attempts: 1 }
@@ -199,7 +286,7 @@ async function main() {
     assert.strictEqual(attrappe.log.bestaetigt.length, 2);
     assert.strictEqual(bilanz.transport, "schatten");
   });
-  check("7.2 Transport nicht verfuegbar: NICHTS wird vergeben, ehrlicher Grund, Absichten bleiben", async () => {
+  await check("7.2 Transport nicht verfuegbar: NICHTS wird vergeben, ehrlicher Grund, Absichten bleiben", async () => {
     let vergeben = false;
     const bilanz = await dispatch.versendeAbsichten({
       env: { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue" },
@@ -212,7 +299,7 @@ async function main() {
     assert.strictEqual(vergeben, false, "es darf keine Absicht vergeben werden");
     assert.ok(bilanz.grund);
   });
-  check("7.3 Ein Sendefehler wird als Fehlversuch verbucht (Absicht faellt zurueck, nie verloren)", async () => {
+  await check("7.3 Ein Sendefehler wird als Fehlversuch verbucht (Absicht faellt zurueck, nie verloren)", async () => {
     const attrappe = outboxAttrappe([{ outboxId: "o1", jobId: UUID, schemaVersion: 1, attempts: 1 }]);
     const bilanz = await dispatch.versendeAbsichten({
       env: { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue" },
@@ -224,17 +311,86 @@ async function main() {
     assert.strictEqual(bilanz.fehlgeschlagen, 1);
     assert.deepStrictEqual(attrappe.log.fehlgeschlagen, [{ outboxId: "o1", fehler: "http-503" }]);
   });
-  check("7.4 Modus off: der Dispatcher ist ein reiner No-Op", async () => {
+  // ── GEBUENDELTER WECKRUF (Sicherheitskorrektur 2026-08-14): der Selbstweck ist eine
+  // Tuerklingel — EIN Ruf je Aufrufkontext, egal wie viele Absichten faellig sind. Das
+  // beseitigt die Aufrufverstaerkung (vorher: ein HTTP-Aufruf je Absicht, verschachtelt). ──
+  const QUEUE_ENV = {
+    HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue",
+    HELMUT_WORKER_WAKE_URL: GUTE_URL, CRON_SECRET: "s", ...VERTRAUEN
+  };
+  const FUENF = [
+    { outboxId: "o1", jobId: UUID, schemaVersion: 1 },
+    { outboxId: "o2", jobId: UUID2, schemaVersion: 1 },
+    { outboxId: "o3", jobId: UUID, schemaVersion: 1 },
+    { outboxId: "o4", jobId: UUID2, schemaVersion: 1 },
+    { outboxId: "o5", jobId: UUID, schemaVersion: 1 }
+  ];
+  await check("7.6 Buendelung: 5 faellige Absichten -> GENAU EIN Weckruf, alle 5 bestaetigt", async () => {
+    const attrappe = outboxAttrappe(FUENF.map((a) => ({ ...a })));
+    let netzAufrufe = 0;
+    const bilanz = await dispatch.versendeAbsichten({
+      env: QUEUE_ENV,
+      deps: { ...attrappe, fetch: async () => { netzAufrufe += 1; return { ok: true, status: 200 }; } }
+    });
+    assert.strictEqual(netzAufrufe, 1, "genau ein Weckruf fuer alle fuenf Absichten");
+    assert.strictEqual(bilanz.weckrufe, 1);
+    assert.strictEqual(bilanz.versendet, 5);
+    assert.strictEqual(attrappe.log.bestaetigt.length, 5);
+  });
+  await check("7.7 Buendelung: definitiver Fehler -> ein Weckruf, alle 5 als Fehlversuch verbucht", async () => {
+    const attrappe = outboxAttrappe(FUENF.map((a) => ({ ...a })));
+    let netzAufrufe = 0;
+    const bilanz = await dispatch.versendeAbsichten({
+      env: QUEUE_ENV,
+      deps: { ...attrappe, fetch: async () => { netzAufrufe += 1; return { ok: false, status: 503 }; } }
+    });
+    assert.strictEqual(netzAufrufe, 1);
+    assert.strictEqual(bilanz.fehlgeschlagen, 5);
+    assert.strictEqual(attrappe.log.fehlgeschlagen.length, 5);
+    assert.strictEqual(attrappe.log.fehlgeschlagen[0].fehler, "http-503");
+  });
+  await check("7.8 Buendelung: Timeout (unbestaetigt) verbucht NICHTS — Crash-aequivalenter, sicherer Pfad", async () => {
+    const attrappe = outboxAttrappe(FUENF.map((a) => ({ ...a })));
+    const bilanz = await dispatch.versendeAbsichten({
+      env: { ...QUEUE_ENV, HELMUT_WAKE_TIMEOUT_MS: "500" },
+      deps: {
+        ...attrappe,
+        fetch: (url, opts) => new Promise((_, reject) => {
+          opts.signal.addEventListener("abort", () => reject(Object.assign(new Error("aborted"), { name: "AbortError" })));
+        })
+      }
+    });
+    assert.strictEqual(bilanz.unbestaetigt, 5);
+    assert.strictEqual(bilanz.versendet, 0);
+    assert.strictEqual(bilanz.fehlgeschlagen, 0);
+    assert.strictEqual(attrappe.log.bestaetigt.length + attrappe.log.fehlgeschlagen.length, 0,
+      "bei unbekanntem Ausgang wird die Outbox NICHT verbucht (Vergabe traegt Versuch+Backoff bereits)");
+  });
+  await check("7.9 Buendelung: leere Outbox -> KEIN Weckruf (die Klingel laeutet nie ohne Arbeit)", async () => {
+    let netzAufrufe = 0;
+    const bilanz = await dispatch.versendeAbsichten({
+      env: QUEUE_ENV,
+      deps: {
+        naechste: async () => ({ verfuegbar: true, absichten: [] }),
+        bestaetige: async () => ({ verfuegbar: true }),
+        fetch: async () => { netzAufrufe += 1; return { ok: true }; }
+      }
+    });
+    assert.strictEqual(netzAufrufe, 0);
+    assert.strictEqual(bilanz.vergeben, 0);
+  });
+
+  await check("7.4 Modus off: der Dispatcher ist ein reiner No-Op", async () => {
     const bilanz = await dispatch.versendeAbsichten({ env: {}, deps: {} });
     assert.deepStrictEqual(bilanz, { uebersprungen: true, grund: "dispatch-off", versendet: 0 });
   });
-  check("7.5 Der Abgleich ist bei Modus off ebenfalls ein No-Op", async () => {
+  await check("7.5 Der Abgleich ist bei Modus off ebenfalls ein No-Op", async () => {
     const a = await dispatch.abgleich({ env: {}, deps: {} });
     assert.strictEqual(a.uebersprungen, true);
   });
 
   abschnitt("8 · Schema-Version: sichere Behandlung alter und neuer Deployments");
-  check("8.1 Bekannte Versionen (1..SCHEMA_VERSION) sind verarbeitbar, neuere NIE", () => {
+  await check("8.1 Bekannte Versionen (1..SCHEMA_VERSION) sind verarbeitbar, neuere NIE", () => {
     assert.strictEqual(dispatch.schemaVersionVerarbeitbar(1), true);
     assert.strictEqual(dispatch.schemaVersionVerarbeitbar(dispatch.SCHEMA_VERSION), true);
     assert.strictEqual(dispatch.schemaVersionVerarbeitbar(dispatch.SCHEMA_VERSION + 1), false);
@@ -243,7 +399,7 @@ async function main() {
   });
 
   abschnitt("9 · Enqueue-Weiche (standardEnqueue)");
-  check("9.1 Dispatch off: das Einreihen ist byte-identisch der Bestandsweg", async () => {
+  await check("9.1 Dispatch off: das Einreihen ist byte-identisch der Bestandsweg", async () => {
     // Ohne Supabase-Konfiguration antwortet der Bestandsweg 'supabase-nicht-konfiguriert' —
     // exakt daran ist er erkennbar (die Outbox-Variante wuerde denselben Grund liefern,
     // deshalb prueft 9.2 zusaetzlich ueber die Feldform).
@@ -252,7 +408,7 @@ async function main() {
     assert.strictEqual(r.verfuegbar, false);
     assert.strictEqual(r.versandabsicht, undefined, "Bestandsweg kennt keine versandabsicht");
   });
-  check("9.2 Dispatch aktiv: das Einreihen laeuft ueber die Outbox-Variante (mit Schema-Version)", async () => {
+  await check("9.2 Dispatch aktiv: das Einreihen laeuft ueber die Outbox-Variante (mit Schema-Version)", async () => {
     // storage laesst sich hier nicht injizieren (bewusst: die Weiche ist der Bauplatz) —
     // die Outbox-Variante ist an ihrem Rueckgabefeld `versandabsicht` erkennbar.
     const enq = scalable.standardEnqueue({ HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "shadow" });
@@ -265,17 +421,17 @@ async function main() {
   });
 
   abschnitt("10 · Klassengrenzen-Adapter: fail closed in beide Richtungen");
-  check("10.1 Ohne HELMUT_KLASSEN_GRENZEN ist der Adapter null (byte-identisches Verhalten)", () => {
+  await check("10.1 Ohne HELMUT_KLASSEN_GRENZEN ist der Adapter null (byte-identisches Verhalten)", () => {
     assert.strictEqual(scalable.klassenAdapter({ env: {} }), null);
   });
-  check("10.2 Standards: quellenabruf 5 · verstehen 1 · worker-drain 1; Env-Override wirkt", () => {
+  await check("10.2 Standards: quellenabruf 5 · verstehen 1 · worker-drain 1; Env-Override wirkt", () => {
     assert.strictEqual(scalable.klassenMax("quellenabruf", {}), 5);
     assert.strictEqual(scalable.klassenMax("verstehen", {}), 1);
     assert.strictEqual(scalable.klassenMax("worker-drain", {}), 1);
     assert.strictEqual(scalable.klassenMax("worker-drain", { HELMUT_KLASSE_WORKER_DRAIN_MAX: "4" }), 4);
     assert.strictEqual(scalable.klassenMax("worker-drain", { HELMUT_KLASSE_WORKER_DRAIN_MAX: "-2" }), 1);
   });
-  check("10.3 Eine NICHT pruefbare Grenze erlaubt nichts (fail closed, sichtbarer Grund)", async () => {
+  await check("10.3 Eine NICHT pruefbare Grenze erlaubt nichts (fail closed, sichtbarer Grund)", async () => {
     const adapter = scalable.klassenAdapter({
       env: { HELMUT_KLASSEN_GRENZEN: "on" },
       deps: { klassenSpeicher: { belege: async () => ({ verfuegbar: false, grund: "migration-fehlt" }), gebeFrei: async () => ({}) } }
@@ -284,7 +440,7 @@ async function main() {
     assert.strictEqual(f.erlaubt, false);
     assert.match(f.grund, /grenze-nicht-verfuegbar:migration-fehlt/);
   });
-  check("10.4 Eine volle Klasse lehnt ab, eine freie erlaubt (Slot wird durchgereicht)", async () => {
+  await check("10.4 Eine volle Klasse lehnt ab, eine freie erlaubt (Slot wird durchgereicht)", async () => {
     const adapter = scalable.klassenAdapter({
       env: { HELMUT_KLASSEN_GRENZEN: "on" },
       deps: { klassenSpeicher: {
@@ -302,7 +458,7 @@ async function main() {
   });
 
   abschnitt("11 · Fachhandler bleiben transport-agnostisch (Quelltext)");
-  check("11.1 Kein Handler in scalable-pipeline.js kennt einen Transportanbieter", () => {
+  await check("11.1 Kein Handler in scalable-pipeline.js kennt einen Transportanbieter", () => {
     const quelle = fs.readFileSync(path.join(__dirname, "..", "lib", "helmut", "scalable-pipeline.js"), "utf8");
     const handlerBlock = quelle.slice(quelle.indexOf("async function handleSourceFetch"), quelle.indexOf("const HANDLER = {"));
     assert.ok(handlerBlock.length > 1000, "Handler-Block gefunden");
@@ -310,7 +466,7 @@ async function main() {
       assert.ok(!handlerBlock.includes(verboten), `Handler-Block enthaelt '${verboten}'`);
     }
   });
-  check("11.2 Ein Transportwechsel ist reine Konfiguration (erstelleTransport ist der EINE Bauplatz)", () => {
+  await check("11.2 Ein Transportwechsel ist reine Konfiguration (erstelleTransport ist der EINE Bauplatz)", () => {
     const selbst = dispatch.erstelleTransport({ HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue", HELMUT_WORKER_WAKE_URL: "http://localhost/x", CRON_SECRET: "s" }, {});
     const vercel = dispatch.erstelleTransport({ HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue", HELMUT_JOB_TRANSPORT: "vercel-queues" }, { vercelQueueSend: async () => {} });
     assert.strictEqual(selbst.name, "selbstweck");
@@ -323,7 +479,7 @@ async function main() {
     id: UUID, jobType: "source_fetch", payload: { quelle: { id: "q1", rssUrls: [] } },
     freshnessWindow: "2026-08-13T00Z", attempts: 1, maxAttempts: 3, createdAt: new Date().toISOString()
   };
-  check("12.1 source_fetch: volle Klasse -> zurueckgestellt OHNE externen Abruf", async () => {
+  await check("12.1 source_fetch: volle Klasse -> zurueckgestellt OHNE externen Abruf", async () => {
     let abgerufen = false;
     const ergebnis = await scalable.HANDLER.source_fetch(basisAuftrag, {
       klassen: { belege: async () => ({ erlaubt: false, grund: "klasse-voll", slot: null }), gebeFrei: async () => {} },
@@ -334,7 +490,7 @@ async function main() {
     assert.match(ergebnis.grund, /klassengrenze-belegt: quellenabruf/);
     assert.strictEqual(abgerufen, false, "es darf KEIN externer Abruf stattfinden");
   });
-  check("12.2 source_fetch: freie Klasse -> Slot wird nach der Arbeit freigegeben (auch im Fehlerfall)", async () => {
+  await check("12.2 source_fetch: freie Klasse -> Slot wird nach der Arbeit freigegeben (auch im Fehlerfall)", async () => {
     const freigaben = [];
     await scalable.HANDLER.source_fetch(basisAuftrag, {
       klassen: { belege: async () => ({ erlaubt: true, slot: "s-1" }), gebeFrei: async (slot) => { freigaben.push(slot); } },
@@ -347,7 +503,7 @@ async function main() {
     id: UUID2, jobType: "document_understanding", payload: { dokumente: [{ id: "rd-1" }] },
     freshnessWindow: "2026-08-13T00Z", attempts: 1, maxAttempts: 3, createdAt: new Date().toISOString()
   };
-  check("12.3 Verstehen: volle Klasse -> zurueckgestellt OHNE Verstehenslauf", async () => {
+  await check("12.3 Verstehen: volle Klasse -> zurueckgestellt OHNE Verstehenslauf", async () => {
     let verstanden = false;
     const ergebnis = await scalable.HANDLER.document_understanding(verstehenAuftrag, {
       klassen: { belege: async () => ({ erlaubt: false, grund: "klasse-voll", slot: null }), gebeFrei: async () => {} },
@@ -358,7 +514,7 @@ async function main() {
     assert.match(ergebnis.grund, /klassengrenze-belegt: verstehen/);
     assert.strictEqual(verstanden, false);
   });
-  check("12.4 Ohne Konkurrenzflag wird das globale Schloss NICHT uebersteuert", async () => {
+  await check("12.4 Ohne Konkurrenzflag wird das globale Schloss NICHT uebersteuert", async () => {
     let gesehen = null;
     await scalable.HANDLER.document_understanding(verstehenAuftrag, {
       eagerUnderstanding: async (_docs, overrides) => { gesehen = overrides; return { processed: 1 }; },
@@ -366,7 +522,7 @@ async function main() {
     });
     assert.strictEqual(gesehen.acquireLock, undefined, "acquireLock darf ohne Flag nicht uebersteuert werden");
   });
-  check("12.5 Mit Konkurrenzflag ersetzt die Vorgangswache das globale Schloss fuer diesen Lauf", async () => {
+  await check("12.5 Mit Konkurrenzflag ersetzt die Vorgangswache das globale Schloss fuer diesen Lauf", async () => {
     let gesehen = null;
     await scalable.HANDLER.document_understanding(verstehenAuftrag, {
       eagerUnderstanding: async (_docs, overrides) => { gesehen = overrides; return { processed: 1 }; },

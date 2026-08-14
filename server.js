@@ -1069,6 +1069,40 @@ async function handleRequest(request, response) {
       const weckStart = Date.now();
       const laufkennung = helmutRunId("worker-weck", weckStart);
 
+      // VOLLSTAENDIGE SIGNALPRUEFUNG VOR JEDER VERARBEITUNG (Sicherheitskorrektur
+      // 2026-08-14): das eingehende Wecksignal muss EXAKT dem Versand-Vertrag genuegen —
+      // genau { jobId: <uuid>, schemaVersion: <int> }, derselbe zentrale Riegel wie beim
+      // Versand (pruefeTransportPayload). Fehlende Felder, Zusatzfelder, Nicht-UUIDs und
+      // falsche Typen werden geschlossen mit 400 abgewiesen, bevor irgendetwas
+      // verarbeitet wird.
+      try {
+        jobDispatch.pruefeTransportPayload(body);
+      } catch (fehler) {
+        console.log(`[ops/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
+          + ` grund=payload-vertrag lauf=${laufkennung}`);
+        response.writeHead(400, jsonHeaders());
+        response.end(JSON.stringify({
+          verarbeitet: false,
+          grund: scalablePipeline.bereinigeFehler(fehler, 200) || "transport-payload-ungueltig"
+        }, null, 2));
+        return null;
+      }
+
+      // SCHEMA-VERSION (sichere Behandlung alter und neuer Deployment-Versionen): eine
+      // NEUERE Version als dieses Deployment wird nie verarbeitet — 409 (definitiver
+      // Fehlversuch beim Sender), die Absicht bleibt offen und wird nach dem
+      // Deployment-Wechsel per Backoff/Abgleich erneut vorgelegt.
+      if (!jobDispatch.schemaVersionVerarbeitbar(body.schemaVersion)) {
+        console.log(`[ops/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
+          + ` grund=schema-version lauf=${laufkennung}`);
+        response.writeHead(409, jsonHeaders());
+        response.end(JSON.stringify({
+          verarbeitet: false,
+          grund: "schema-version-neuer-als-deployment"
+        }, null, 2));
+        return null;
+      }
+
       // GENAU EIN PRIMAERER ANTRIEB (Auftrag §14): dieser Verbraucher arbeitet
       // AUSSCHLIESSLICH im Ereignis-Antrieb. Jede andere Konfiguration — Flag aus,
       // Dispatch off/shadow, Widerspruch — stoppt geschlossen mit 409: der Transport
@@ -1085,40 +1119,45 @@ async function handleRequest(request, response) {
         return null;
       }
 
-      // SCHEMA-VERSION (sichere Behandlung alter und neuer Deployment-Versionen): eine
-      // NEUERE Version als dieses Deployment wird nie verarbeitet — der Abgleich legt die
-      // Absicht spaeter erneut vor, wenn der Deployment-Wechsel abgeschlossen ist.
-      const version = body && body.schemaVersion;
-      if (version != null && !jobDispatch.schemaVersionVerarbeitbar(version)) {
-        console.log(`[ops/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
-          + ` grund=schema-version lauf=${laufkennung}`);
-        return { verarbeitet: false, grund: "schema-version-neuer-als-deployment" };
-      }
-
       // DRAIN-LEASE (Auftrag §12): der Ereignis-Antrieb ERFORDERT die verteilten
       // Klassengrenzen — ohne pruefbare Grenze arbeitet kein Wecksignal-Verbraucher
-      // (fail closed, §12.10). Die Klasse `worker-drain` (Default max 1) begrenzt, wie
-      // viele Verbraucher systemweit gleichzeitig laufen; ein bereits laufender
-      // Verbraucher macht mehrfache Zustellung zum No-Op.
+      // (fail closed, §12.10; 409 = Konfigurationsbefund, definitiver Fehlversuch beim
+      // Sender). Die Klasse `worker-drain` (Default max 1) begrenzt, wie viele
+      // Verbraucher systemweit gleichzeitig laufen; ein bereits laufender Verbraucher
+      // macht mehrfache Zustellung zum No-Op.
       const klassen = scalablePipeline.klassenAdapter({ owner: jobDispatch.verbraucherKennung(laufkennung) });
       if (!klassen) {
         console.log(`[ops/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
           + ` grund=klassengrenzen-aus lauf=${laufkennung}`);
-        return { verarbeitet: false, grund: "klassengrenzen-aus (Ereignis-Antrieb erfordert HELMUT_KLASSEN_GRENZEN=on)" };
+        response.writeHead(409, jsonHeaders());
+        response.end(JSON.stringify({
+          verarbeitet: false,
+          grund: "klassengrenzen-aus (Ereignis-Antrieb erfordert HELMUT_KLASSEN_GRENZEN=on)"
+        }, null, 2));
+        return null;
       }
       const drainBudgetMs = Math.max(5000, Math.min(240000, Number(process.env.HELMUT_DRAIN_BUDGET_MS) || 60000));
       const lease = await klassen.belege("worker-drain", { ttlMs: drainBudgetMs + 60000 });
       if (!lease || lease.erlaubt !== true) {
+        // BEWUSST 2xx: die Klingel ist zugestellt, ein aktiver Verbraucher arbeitet
+        // bereits (Klasse worker-drain max 1). Der Sender darf die gebuendelten
+        // Absichten bestaetigen; bleibt ein Auftrag dennoch liegen, oeffnet der
+        // Abgleich die Absicht nach Mindestalter wieder.
         console.log(`[ops/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
           + ` grund=${(lease && lease.grund) || "drain-belegt"} lauf=${laufkennung}`);
         return { verarbeitet: false, grund: `drain-nicht-frei: ${(lease && lease.grund) || "belegt"}` };
       }
 
+      // DRAIN unter gehaltenem Slot — und NUR der Drain (Sicherheitskorrektur
+      // 2026-08-14): Abgleich und Folgeversand laufen erst NACH der Slot-Freigabe,
+      // damit die Folgeklingel sofort einen freien Slot vorfindet, statt waehrend des
+      // gehaltenen Slots als „belegt" zu verpuffen.
+      let durchlauf;
       try {
         // Tagesplan wie im Cron-Pfad (Befund R2): ohne ihn haette die Budgetschicht
         // keinen Bereichsdeckel — das wird ehrlich gemeldet, nie still gelebt.
         const weckTagesplan = await scalablePipeline.tagesplanFuerLauf({ jetztMs: weckStart }).catch(() => null);
-        const durchlauf = await workerBetrieb.durchlauf({
+        durchlauf = await workerBetrieb.durchlauf({
           kennung: laufkennung,
           grenzen: {
             budgetMs: drainBudgetMs,
@@ -1128,43 +1167,49 @@ async function handleRequest(request, response) {
           tagesplan: weckTagesplan,
           deps: { buildV3Briefing }
         });
-
-        // KETTE UND FOLGEAUFTRAEGE (Auftrag §13): erledigte Arbeit hat ueber die
-        // Enqueue-Weiche bereits neue Versandabsichten atomar erzeugt. Ein kleiner,
-        // GEDECKELTER Abgleich + Versand am Laufende stellt sie zu — die Kette traegt
-        // sich ueber die Abhaengigkeitsfolge selbst und stirbt ohne Fortschritt aus
-        // (bestaetigte Absichten werden erst nach Mindestalter wieder geoeffnet).
-        const abgleich = await jobDispatch.abgleich({ limit: 50 }).catch(() => ({ verfuegbar: false }));
-        const versand = await jobDispatch.versendeAbsichten({ limit: 20 }).catch(() => ({ versendet: 0, fehlgeschlagen: 0 }));
-
-        console.log(`[ops/worker-weck] ${Date.now() - weckStart}ms worker=${durchlauf.worker}`
-          + ` reserviert=${durchlauf.reserviert || 0} erledigt=${durchlauf.erledigt || 0}`
-          + ` zurueckgestellt=${durchlauf.zurueckgestellt || 0}`
-          + ` endgueltigFehler=${durchlauf.endgueltigFehlgeschlagen || 0}`
-          + ` weckVersand=${versand.versendet || 0}/${(versand.vergeben || 0)}`
-          + ` lauf=${laufkennung}`);
-
-        // KEINE BESTAETIGUNG VOR BELEGTEM DATENBANKABSCHLUSS: alles, was hier als
-        // erledigt gemeldet wird, ist durch helmut_finish_job persistiert; die
-        // HTTP-Antwort selbst traegt keine Zustandsverantwortung.
-        return {
-          verarbeitet: true,
-          lauf: laufkennung,
-          dauerMs: Date.now() - weckStart,
-          erledigt: durchlauf.erledigt || 0,
-          reserviert: durchlauf.reserviert || 0,
-          zurueckgestellt: durchlauf.zurueckgestellt || 0,
-          endgueltigFehlgeschlagen: durchlauf.endgueltigFehlgeschlagen || 0,
-          abgleich,
-          versand: {
-            transport: versand.transport || null,
-            versendet: versand.versendet || 0,
-            fehlgeschlagen: versand.fehlgeschlagen || 0
-          }
-        };
       } finally {
         await klassen.gebeFrei(lease.slot);
       }
+
+      // KETTE UND FOLGEAUFTRAEGE (Auftrag §13): erledigte Arbeit hat ueber die
+      // Enqueue-Weiche bereits neue Versandabsichten atomar erzeugt. Ein kleiner,
+      // GEDECKELTER Abgleich + HOECHSTENS EIN gebuendelter Folge-Weckruf stellt sie zu
+      // (Tuerklingel-Semantik, Sender wartet hoechstens HELMUT_WAKE_TIMEOUT_MS) — KEINE
+      // verschachtelte Aufrufkette: dieser Handler wartet nie auf den Drain des
+      // naechsten. Die Kette traegt sich ueber die Abhaengigkeitsfolge selbst und
+      // stirbt ohne Fortschritt aus (Vergabe zaehlt Versuche, Backoff deckelt,
+      // bestaetigte Absichten werden erst nach Mindestalter wieder geoeffnet).
+      const abgleich = await jobDispatch.abgleich({ limit: 50 }).catch(() => ({ verfuegbar: false }));
+      const versand = await jobDispatch.versendeAbsichten({ limit: 20 }).catch(() => ({ versendet: 0, fehlgeschlagen: 0 }));
+
+      console.log(`[ops/worker-weck] ${Date.now() - weckStart}ms worker=${durchlauf.worker}`
+        + ` reserviert=${durchlauf.reserviert || 0} erledigt=${durchlauf.erledigt || 0}`
+        + ` zurueckgestellt=${durchlauf.zurueckgestellt || 0}`
+        + ` endgueltigFehler=${durchlauf.endgueltigFehlgeschlagen || 0}`
+        + ` weckVersand=${versand.versendet || 0}/${(versand.vergeben || 0)}`
+        + ` weckrufe=${versand.weckrufe || 0} unbestaetigt=${versand.unbestaetigt || 0}`
+        + ` lauf=${laufkennung}`);
+
+      // KEINE BESTAETIGUNG VOR BELEGTEM DATENBANKABSCHLUSS: alles, was hier als
+      // erledigt gemeldet wird, ist durch helmut_finish_job persistiert; die
+      // HTTP-Antwort selbst traegt keine Zustandsverantwortung.
+      return {
+        verarbeitet: true,
+        lauf: laufkennung,
+        dauerMs: Date.now() - weckStart,
+        erledigt: durchlauf.erledigt || 0,
+        reserviert: durchlauf.reserviert || 0,
+        zurueckgestellt: durchlauf.zurueckgestellt || 0,
+        endgueltigFehlgeschlagen: durchlauf.endgueltigFehlgeschlagen || 0,
+        abgleich,
+        versand: {
+          transport: versand.transport || null,
+          versendet: versand.versendet || 0,
+          fehlgeschlagen: versand.fehlgeschlagen || 0,
+          weckrufe: versand.weckrufe || 0,
+          unbestaetigt: versand.unbestaetigt || 0
+        }
+      };
     });
   }
 

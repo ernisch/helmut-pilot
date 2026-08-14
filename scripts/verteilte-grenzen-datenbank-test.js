@@ -2,7 +2,7 @@
 
 // Helmut — Datenbanknachweis VERTEILTE ARBEITSKLASSENGRENZEN (OP-30-Zielarchitektur).
 // =============================================================================================
-// Prueft die Migration 20260813_verteilte_grenzen.sql an einer ECHTEN PostgreSQL:
+// Prueft die Migration 20260813090100_verteilte_grenzen.sql an einer ECHTEN PostgreSQL:
 //   * Semaphor-Zusage: nie mehr als p_max gleichzeitige Slots je Klasse — auch unter
 //     ECHTER Nebenlaeufigkeit (spawn + Promise.all, acht gleichzeitige Beleger).
 //   * TTL-Selbstheilung: abgelaufene Slots geben ihre Kapazitaet von selbst zurueck
@@ -18,8 +18,8 @@ const { execFileSync, spawn } = require("child_process");
 const path = require("path");
 
 const ROOT = path.join(__dirname, "..");
-const MIGRATION = path.join(ROOT, "supabase", "migrations", "20260813_verteilte_grenzen.sql");
-const ROLLBACK = path.join(ROOT, "supabase", "migrations", "20260813_verteilte_grenzen_rollback.sql");
+const MIGRATION = path.join(ROOT, "supabase", "migrations", "20260813090100_verteilte_grenzen.sql");
+const ROLLBACK = path.join(ROOT, "supabase", "migrations", "rollback_20260813090100_verteilte_grenzen.sql");
 
 const PG = {
   host: process.env.HELMUT_TEST_PG_HOST || "",

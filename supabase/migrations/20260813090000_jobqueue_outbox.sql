@@ -3,7 +3,7 @@
 --     NICHT ANWENDEN OHNE AUSDRÜCKLICHE BETREIBERFREIGABE (CLAUDE.md §5).
 --     Dieses Repo spielt Migrationen NICHT automatisch ein; Anwendung
 --     ausschließlich manuell durch einen Menschen.
---     Rollback: 20260813_jobqueue_outbox_rollback.sql (gleiches Verzeichnis).
+--     Rollback: rollback_20260813090000_jobqueue_outbox.sql (gleiches Verzeichnis).
 --     Voraussetzung: 20260808_scalable_job_queue.sql ist eingespielt.
 -- ═══════════════════════════════════════════════════════════════════════════
 --

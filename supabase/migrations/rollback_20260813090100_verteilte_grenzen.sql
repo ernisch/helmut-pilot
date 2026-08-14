@@ -1,4 +1,4 @@
--- ROLLBACK zu 20260813_verteilte_grenzen.sql — Klassengrenzen vollständig
+-- ROLLBACK zu 20260813090100_verteilte_grenzen.sql — Klassengrenzen vollständig
 -- entfernen. Entfernt AUSSCHLIESSLICH die in der Vorwärtsmigration angelegten
 -- Objekte. Die App behandelt fehlende Funktionen fail closed als „Grenze
 -- nicht verfügbar" und stellt betroffene Arbeit ehrlich zurück — es geht

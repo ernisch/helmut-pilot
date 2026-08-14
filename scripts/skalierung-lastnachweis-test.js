@@ -43,12 +43,12 @@ const ROOT = path.join(__dirname, "..");
 const MIGRATIONEN = [
   "20260808_scalable_job_queue.sql",
   "20260808_jobqueue_abhaengigkeiten.sql",
-  "20260813_jobqueue_outbox.sql",
-  "20260813_verteilte_grenzen.sql"
+  "20260813090000_jobqueue_outbox.sql",
+  "20260813090100_verteilte_grenzen.sql"
 ].map((f) => path.join(ROOT, "supabase", "migrations", f));
 const ROLLBACKS = [
-  "20260813_verteilte_grenzen_rollback.sql",
-  "20260813_jobqueue_outbox_rollback.sql",
+  "rollback_20260813090100_verteilte_grenzen.sql",
+  "rollback_20260813090000_jobqueue_outbox.sql",
   "20260808_jobqueue_abhaengigkeiten_rollback.sql",
   "20260808_scalable_job_queue_rollback.sql"
 ].map((f) => path.join(ROOT, "supabase", "migrations", f));

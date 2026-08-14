@@ -4,7 +4,7 @@ Diese Datei ist die **Einstiegsschicht**, kein Handbuch. Sie gibt Orientierung i
 zwei Minuten und verweist danach auf die kanonischen Dokumente. Sie wird **nur**
 geändert, wenn eine neue dauerhaft verbindliche Projektregel entsteht.
 
-**Stand:** 2026-08-05 (§9 geschärft: `CURRENT_STATE.md` nur noch kompakt, Historie ins Archiv)
+**Stand:** 2026-08-14 (§4 Regel 8 geschärft: Migrations-Zeitstempel 14-stellig eindeutig, Rollbacks `rollback_`-Präfix)
 
 ---
 
@@ -82,7 +82,13 @@ festgestellt wurde.
    (Generation B) werden **nicht** gemergt und **nicht** als Basis verwendet:
    [`docs/architecture/retired-quellenplattform-branches.md`](docs/architecture/retired-quellenplattform-branches.md).
 7. **Keine Secrets ins Repo** — auch nicht in Doku, Beispielen oder Tests.
-8. **Jede Migration braucht Rollback-SQL** im selben Verzeichnis.
+8. **Jede Migration braucht Rollback-SQL** im selben Verzeichnis. Vorwärtsmigrationen
+   tragen einen **eindeutigen 14-stelligen Zeitstempel** (`JJJJMMTThhmmss_name.sql`),
+   Rollback-Dateien heißen **`rollback_<vorwärtsname>.sql`** — ein normaler
+   Supabase-CLI-Lauf darf sie nie als Vorwärtsmigration ausführen (empirisch belegt
+   2026-08-14, `op30-zielarchitektur-2026-08-13.md` §17.4; testgesichert durch
+   `scripts/migrations-organisation-test.js`). Altbestand mit 8-stelligen Stempeln ist
+   angewendete Historie und wird nicht umbenannt.
 9. **Produktionsrelevante Skripte, die Secrets benötigen, müssen sowohl lokal als auch in
    einer Claude-Code-Cloud-Sitzung lauffähig sein.** Sie lesen Secrets ausschließlich aus
    `process.env` — kein eigenes Parsen einer `.env.local` im Code. In Cloud-Sitzungen

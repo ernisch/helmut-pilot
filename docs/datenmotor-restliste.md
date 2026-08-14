@@ -1419,6 +1419,22 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 #### OP-30 · Mandatseigene Abrufwege vervielfachen den Quellenabruf linear (neu, Sprint „V3-Skalierungsprüfung" 2026-08-08; Prioritätsklasse P1)
 
+- **Stand 2026-08-14 (Sicherheitskorrektur auf PR #247, Belegdatei
+  [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §17):**
+  vier beauftragte Befunde bestaetigt und behoben — (1) die Verbraucher-Route prueft das
+  eingehende Wecksignal jetzt vollstaendig gegen den Versand-Vertrag (400/409, geschlossen);
+  (2) Weckziel-Riegel: CRON_SECRET geht nie mehr an ein unvertrautes Ziel (HTTPS, exakter
+  Pfad, Plattform-Vertrauensanker; 15 adversariale Tests mit 0 Netzaufrufen); (3)
+  Aufrufverstaerkung beseitigt (Tuerklingel-Buendelung: EIN Weckruf je Versandkontext;
+  Timeout=unbestaetigt statt Fehlversuch; Slot-Freigabe vor der Folgeklingel — vorher
+  drohten verschachtelte Aufrufketten und bis zu 10-fache Wiederholungen); (4)
+  Migrationsorganisation: eindeutige 14-stellige Stempel + `rollback_`-Praefix, mit
+  Supabase-CLI 2.114.0 an frischer lokaler DB NACHGEWIESEN, dass die Altkonvention
+  Rollbacks als Vorwaertsmigrationen ausgefuehrt und an der Versionskollision abgebrochen
+  haette (Altbestand als dokumentierte, eingefrorene Altlast). Neue Suiten:
+  `worker-weck-route-test` 21 PASS · `migrations-organisation-test` 10 PASS ·
+  Dispatch-Vertrag erweitert 77 PASS (Harness awaited jetzt async-Faelle). Production
+  erneut unangetastet.
 - **Stand 2026-08-13/3 (Architektursprint Zielarchitektur — Sprint ERFOLGREICH abgeschlossen, beide Pflichtpruefungen gruen; OP-30 insgesamt bleibt offen; Beleg
   [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md),
   Runbook §20; PR #247):** Der auf den zweiten Fuenferlauf folgende **Kapazitaetssprint wurde

@@ -1,8 +1,8 @@
 -- ═══════════════════════════════════════════════════════════════════════════
 -- ⚠️  FREIGABEPFLICHTIG (Sprint „OP-30-Zielarchitektur", 2026-08-13) —
 --     NICHT ANWENDEN OHNE AUSDRÜCKLICHE BETREIBERFREIGABE (CLAUDE.md §5).
---     Rollback: 20260813_verteilte_grenzen_rollback.sql (gleiches Verzeichnis).
---     Voraussetzung: keine (eigenständig; von 20260813_jobqueue_outbox
+--     Rollback: rollback_20260813090100_verteilte_grenzen.sql (gleiches Verzeichnis).
+--     Voraussetzung: keine (eigenständig; von 20260813090000_jobqueue_outbox
 --     unabhängig anwendbar).
 -- ═══════════════════════════════════════════════════════════════════════════
 --

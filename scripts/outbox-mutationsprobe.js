@@ -4,7 +4,7 @@
 // =============================================================================================
 // Prinzip (wie scripts/jobqueue-mutationsprobe.js): ein gruener Test beweist nichts, solange
 // niemand geprueft hat, ob er ueberhaupt rot werden KANN. Diese Probe entfernt gezielt je
-// EINEN Schutzmechanismus aus einer IN-MEMORY-Kopie der Migration 20260813_jobqueue_outbox.sql
+// EINEN Schutzmechanismus aus einer IN-MEMORY-Kopie der Migration 20260813090000_jobqueue_outbox.sql
 // (die Datei selbst wird NIE veraendert), spielt sie in eine Wegwerf-Datenbank ein und weist
 // nach, dass der Schaden dann tatsaechlich eintritt.
 //
@@ -21,7 +21,7 @@ const path = require("path");
 
 const ROOT = path.join(__dirname, "..");
 const BASIS = path.join(ROOT, "supabase", "migrations", "20260808_scalable_job_queue.sql");
-const MIGRATION = path.join(ROOT, "supabase", "migrations", "20260813_jobqueue_outbox.sql");
+const MIGRATION = path.join(ROOT, "supabase", "migrations", "20260813090000_jobqueue_outbox.sql");
 
 const PG = {
   host: process.env.HELMUT_TEST_PG_HOST || "",

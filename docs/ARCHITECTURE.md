@@ -435,7 +435,7 @@ minimierten Zeilen holt der Handler aus `raw_documents`.
 ### 7f · Zielarchitektur: transaktionale Outbox + austauschbarer Transport (2026-08-13, DEFAULT AUS)
 
 > **Zustand:** vollständig gebaut und lokal nachgewiesen, in Production **nirgends aktiv**.
-> Die zwei neuen Migrationspaare (`20260813_jobqueue_outbox`, `20260813_verteilte_grenzen`)
+> Die zwei neuen Migrationspaare (`20260813090000_jobqueue_outbox`, `20260813090100_verteilte_grenzen`)
 > sind **nicht angewendet**; alle neuen Flags sind Default-AUS und fail closed. Kanonische
 > Entscheidungs- und Belegdatei:
 > [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md).

@@ -2,7 +2,7 @@
 
 // Helmut — Datenbanknachweis TRANSAKTIONALE OUTBOX (OP-30-Zielarchitektur, 2026-08-13).
 // =============================================================================================
-// Prueft die Migration 20260813_jobqueue_outbox.sql an einer ECHTEN PostgreSQL:
+// Prueft die Migration 20260813090000_jobqueue_outbox.sql an einer ECHTEN PostgreSQL:
 //   * Atomaritaet: Auftrag und Versandabsicht entstehen in EINER Transaktion — oder beide
 //     nicht (erzwungener Fehler laesst keinen halben Zustand).
 //   * Idempotenz des Planens, Zustandsautomat (offen/versendet/bestaetigt/aufgegeben/
@@ -23,8 +23,8 @@ const path = require("path");
 const ROOT = path.join(__dirname, "..");
 const BASIS_MIGRATION = path.join(ROOT, "supabase", "migrations", "20260808_scalable_job_queue.sql");
 const BASIS_ROLLBACK = path.join(ROOT, "supabase", "migrations", "20260808_scalable_job_queue_rollback.sql");
-const MIGRATION = path.join(ROOT, "supabase", "migrations", "20260813_jobqueue_outbox.sql");
-const ROLLBACK = path.join(ROOT, "supabase", "migrations", "20260813_jobqueue_outbox_rollback.sql");
+const MIGRATION = path.join(ROOT, "supabase", "migrations", "20260813090000_jobqueue_outbox.sql");
+const ROLLBACK = path.join(ROOT, "supabase", "migrations", "rollback_20260813090000_jobqueue_outbox.sql");
 
 const PG = {
   host: process.env.HELMUT_TEST_PG_HOST || "",

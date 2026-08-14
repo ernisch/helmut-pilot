@@ -1,4 +1,4 @@
--- ROLLBACK zu 20260813_jobqueue_outbox.sql — Outbox vollständig entfernen.
+-- ROLLBACK zu 20260813090000_jobqueue_outbox.sql — Outbox vollständig entfernen.
 -- Entfernt AUSSCHLIESSLICH die in der Vorwärtsmigration angelegten Objekte.
 -- helmut_jobs und alle bestehenden Funktionen bleiben unberührt: der
 -- Cron-Rückfallweg arbeitet ohne Outbox unverändert weiter — kein Auftrag
