@@ -134,6 +134,7 @@
     "mail:vorschau": "node scripts/mailpit-vorschau.js"
   },
   "dependencies": {
+    "@aws-sdk/client-sqs": "3.1110.0",
     "ical.js": "2.2.1"
   }
 }

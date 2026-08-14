@@ -1,6 +1,6 @@
 # ARCHITECTURE — Systemkarte Helmut
 
-**Letzte Aktualisierung:** 2026-08-13/3 (§7f neu: OP-30-Zielarchitektur — transaktionale
+**Letzte Aktualisierung:** 2026-08-14 (§7f.1 neu: verwalteter Transport SQS+Lambda, nicht ausgerollt; §7f: OP-30-Zielarchitektur — transaktionale
 Outbox, austauschbarer Transport, verteilte Klassengrenzen, Vorgangswache; alles gebaut,
 lokal nachgewiesen, Default-AUS, Migrationen `20260813` NICHT angewendet; kanonisch
 [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md));
@@ -496,6 +496,42 @@ Deckel bleibt unverändert das Notfalllimit — die Schicht kann nur **weniger**
 
 **Rückweg:** Flag auf `off`, Redeploy. Der bisherige Pfad läuft unverändert weiter; die
 Tabelle darf stehen bleiben. Die Budgetschicht hat ihren eigenen Rückweg über das zweite Flag.
+
+### 7f.1 Verwalteter Transport (Stand 2026-08-14, NICHT ausgerollt)
+
+Der ereignisgesteuerte Antrieb hat seit dem Härtungssprint einen **verwalteten** Transport
+statt des selbst gebauten Weckrufs:
+
+```
+Supabase (WAHRHEIT)                    AWS eu-central-1 (nur TRANSPORT)
+┌────────────────────────┐             ┌──────────────────────────────┐
+│ helmut_jobs            │             │ SQS helmut-auftraege         │
+│ helmut_job_outbox      │──Versand───▶│  Sichtbarkeit 360 s          │
+│  (atomar mit dem Job)  │  {jobId,    │  maxReceiveCount 5           │
+│                        │  schemaVer} │  KMS-verschlüsselt           │
+│                        │             │        │                     │
+│                        │             │        ▼ (nach 5 Versuchen)  │
+│                        │             │ SQS …-quarantaene (DLQ)      │
+└────────────────────────┘             └────────┬─────────────────────┘
+        ▲                                       │ Stapel 5, Parallelität ≤ 4
+        │                                       ▼
+        │                              ┌──────────────────────────────┐
+        └──atomare Beanspruchung───────│ Lambda helmut-…-verbraucher  │
+           helmut_claim_job_by_id      │  → queue-verbraucher.js      │
+           + derselbe Fachhandler      │  → fuehreAuftragAus (SHARED) │
+           (fuehreAuftragAus)          │  partielle Fehlerantwort     │
+                                       └──────────────────────────────┘
+```
+
+**Verbindlich:** Supabase bleibt die Wahrheit; SQS ist nur der austauschbare Transport,
+Lambda nur der austauschbare Verbraucher. Über die Transportgrenze gehen ausschließlich
+`{jobId, schemaVersion}`. Der Verbraucher benutzt denselben Fachhandler wie Cron und
+Warteschlange — es gibt keine zweite Fachimplementierung. Cron bleibt Planer, Abgleich und
+Rückfallweg, ist aber für den normalen Abfluss nicht mehr erforderlich (Beleg:
+`scripts/queue-ende-zu-ende-test.js` §10). Der Selbstweck ist auf einen ausdrücklich
+freizuschaltenden Entwicklungs- und Notfallweg zurückgestuft. Details und Grenzen:
+[`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md)
+§18–§23.
 
 ## 8 · Briefing, Lage, Radar, Büro
 

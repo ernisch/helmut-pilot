@@ -637,3 +637,239 @@ Rollback-Gegenstück (alte oder neue Benennung)"; der erste Korrektur-Komplettla
 Offline-Suite zeigte 246/252 mit genau diesem einen sprintbedingten Rot, nach der
 Anpassung 247/252 (die 5 verbleibenden = dokumentiertes lokales Basisrot, im CI grün);
 Browser-Smoke erneut 32/32.
+
+---
+
+## 18 · Haertungssprint 2026-08-14 — Gegenpruefung der sechs Befunde
+
+Alle sechs vom Gründer benannten Befunde wurden am Code **bestätigt** (keiner widerlegt).
+
+| # | Befund | Ort | Wirkung (nachvollzogen) | Zustand |
+|---|---|---|---|---|
+| 1 | Belegter Drain antwortet 2xx, der gebündelte Sender bestätigt trotzdem alle Absichten | `server.js` Drain-Zweig + `job-dispatch.versendeAbsichten` | Kein Verbraucher hatte übernommen; die Absichten galten als zugestellt und wurden erst vom Abgleich nach ≥10 min wieder geöffnet — ohne unabhängigen Aufruf wartete die Verarbeitung bis zum nächsten Cronlauf | **behoben** (§18.1) |
+| 2 | Kein echter verwalteter Queue-Verbraucher | `job-dispatch.vercelQueuesTransport` | Es existierte nur ein SENDEadapter: keine Abhängigkeit, keine Infrastruktur, kein Verbraucher, keine Quarantäne, keine Parallelitätskontrolle, kein Ende-zu-Ende-Test | **behoben** (§19) |
+| 3 | Der 500er-Lastnachweis umgeht den echten Motor | `scripts/skalierung-lastnachweis-test.js` | Der Test fährt Aufträge über direkte `psql`-Aufrufe, startet simulierte Verbraucher ohne Transport und lässt am Ende den Cron-Rückfallweg räumen. Er ist ein **Durchsatzmodell**, kein Nachweis des Ereignismotors | **eingeordnet + ersetzt** (§20) |
+| 4 | Anbietergrenzen begrenzen nur Gleichzeitigkeit | `20260813090100_verteilte_grenzen.sql` | `helmut_klasse_belege` kennt keine Rate/Minute, kein Tagesbudget, keinen frühesten Folgezeitpunkt, keine Schutzschaltung und kein erneuerbares Lease | **behoben** (§21) |
+| 5 | Verstehensparallelität > 1 ist unsicher | `understanding.js` `merkeUpdateOffen` | Der Update-Vormerkungs-Store liest die gesamte Karte, ändert sie und schreibt sie zurück (Read-Modify-Write auf gemeinsamem Zustand) — genau das, was CLAUDE.md §4 Regel 10 verbietet | **bleibt gesperrt** (§22) |
+| 6 | Bestätigte Outbox-Einträge erreichen keinen Endzustand | `helmut_outbox_abgleich` | Der Terminalzweig deckte `offen/versendet/aufgegeben` ab, **nicht** `bestaetigt`. Eine bestätigte Absicht eines fertigen Auftrags blieb dauerhaft liegen (bei 500 Mandaten ~4.300 Zeilen/Tag, unbegrenzt wachsend) | **behoben** (§18.2) |
+
+### 18.1 Befund 1 — kein 2xx ohne Übernahme
+
+Der Drain-Zweig antwortet jetzt **429** (`uebernommen: false`). Der Selbstweck übersetzt 429 in
+`unbestaetigt`, und der Dispatcher **legt** die gebündelten Absichten über
+`helmut_outbox_zuruecklegen` **zurück**: Status zurück auf `offen`, der bei der Vergabe
+gezogene Versuch wird zurückgegeben (Muster von `helmut_defer_job` — „Warten ist kein
+Fehler"), neue Fälligkeit in 60 Sekunden. Damit ist ein 2xx nur noch dann eine Bestätigung,
+wenn ein Verbraucher die Verantwortung tatsächlich übernommen hat. Beleg: Mutationsprobe M6,
+Vertragstest §7.6–7.9.
+
+### 18.2 Befund 6 — Endzustand und Aufbewahrungsvertrag
+
+`helmut_outbox_abgleich` schließt jetzt auch `bestaetigt`, sobald der Auftrag terminal ist.
+Zusätzlich existiert `helmut_outbox_aufraeumen(alter_tage, limit, trockenlauf)`: löscht
+ausschließlich **terminale** Zeilen (`verzichtet`/`aufgegeben`), deren Auftrag ebenfalls
+terminal ist, gedeckelt, Default Trockenlauf — **ohne automatischen Aufrufer**. Es findet in
+diesem Sprint **keine** Production-Bereinigung statt.
+
+---
+
+## 19 · Der verwaltete Production-Transport: Amazon SQS + Lambda (eu-central-1)
+
+### 19.1 Entscheidung
+
+Der Selbstweck ist **nicht** der Production-Antrieb für 500 Mandate. Er bleibt als
+ausdrücklich begrenzter Entwicklungs- und Notfallweg bestehen: in einer
+Vercel-Production-Umgebung wählt ihn nur, wer `HELMUT_SELBSTWECK_ERLAUBT=on` setzt; sonst
+stoppt der Dispatcher geschlossen, statt unbemerkt auf den schwächeren Weg zu fallen. Der
+**Standardtransport ist `sqs`**.
+
+Gründe (die vier Eigenschaften, die der Selbstweck nicht hat und die sonst selbst gebaut und
+selbst bewiesen werden müssten): Sichtbarkeitszeit, Zustellzähler, native Quarantäne,
+kontrollierte Parallelität — dazu eine europäische Region (Frankfurt) und ein ausgereifter
+Dienst statt eines Public-Beta-Transports. **Kein technischer Grund gegen SQS/Lambda
+gefunden**; die Prüfung galt Regionsverfügbarkeit (eu-central-1 seit 2016), Nachrichtengröße
+(Payload 2 Felder ≪ 256 KiB), Zustellsemantik (at-least-once, durch die atomare Beanspruchung
+strukturell ungefährlich) und der Frage, ob Vercel als Sender ausreicht (ja — nur
+`sqs:SendMessage`).
+
+### 19.2 Was implementiert wurde (nichts davon ist ausgerollt)
+
+1. **Abhängigkeit** `@aws-sdk/client-sqs`, Version **fest auf 3.1110.0 gepinnt**. Zuvor
+   geprüft: 3.712.0 zieht 80 Pakete mit 19 Schwachstellen (davon 1 kritisch); 3.1110.0 zieht
+   **26 Pakete mit 0 Schwachstellen** (`npm audit`). Geladen wird das SDK **lazy** und **fail
+   closed** — fehlt es, meldet sich der Transport ehrlich als nicht verfügbar.
+2. **Transportadapter** hinter der bestehenden Grenze (`job-dispatch.sqsTransport`), mit
+   hartem **Ziel-Riegel**: nur HTTPS, nur `sqs.eu-central-1.amazonaws.com`, kein Userinfo,
+   kein Query, kein Fragment — und **nur eu-central-1** (Datenresidenz ist keine
+   Konfigurationsfrage, die still danebengehen darf).
+3. **Infrastrukturdefinition** `infra/aws/helmut-auftrags-queue.yaml` (CloudFormation):
+   Queue + Dead-Letter-Queue, eigener KMS-Schlüssel mit Rotation (SSE), Sichtbarkeitszeit
+   360 s > Lambda-Timeout 180 s > Auftragsbudget 120 s, `maxReceiveCount: 5`, reservierte
+   Lambda-Parallelität **und** `ScalingConfig.MaximumConcurrency`, minimale IAM-Rechte
+   (Sender darf **nur** senden; der Verbraucher darf **nicht** senden — Folgeaufträge
+   entstehen ausschließlich in der Outbox), Secrets nur als SSM-**Parameternamen**.
+4. **Lambda-Verbraucher** `lib/helmut/lambda-verbraucher.js` mit **partieller Fehlerantwort**
+   (`ReportBatchItemFailures`): nur die nicht erledigten Nachrichten werden gemeldet.
+5. **Geteilter Verbraucherkern** `lib/helmut/queue-verbraucher.js`: vollständige
+   Signalprüfung → **atomare Beanspruchung genau der signalisierten `jobId`**
+   (`helmut_claim_job_by_id`, neu) → **derselbe Fachhandler wie Cron und Warteschlange**.
+6. **Kein zweiter Fachpfad:** die Auftragsausführung wurde aus `arbeite` in die exportierte
+   Funktion `scalable-pipeline.fuehreAuftragAus` gehoben; `arbeite` **und** der Verbraucher
+   rufen sie auf. Wiederholung, Zurückstellung, Abschluss und Backoff sind byte-gleich
+   derselbe Code (Vertragstest §7.1–7.3).
+
+### 19.3 Was die Transportgrenze passiert
+
+Ausschließlich `{ jobId: <zufällige uuid>, schemaVersion: <int> }` — geprüft durch denselben
+Riegel wie bei jedem anderen Transport, beim Versand **und** beim Empfang. Keine
+Mandatsnummern, keine Namen, keine Quellen, keine Dokumente, keine Prompts, keine Ergebnisse.
+Die zufällige Auftragsnummer ist zugleich der Idempotenzschlüssel **im eigenen Auftragsbuch**
+(nicht in der Queue). Auch die Lambda-Protokolle tragen nur Auftrags-IDs, Ausgänge und
+Dauern (Vertragstest §7.4).
+
+### 19.4 Region, Aufbewahrung, Kosten
+
+Datenresidenz **eu-central-1 (Frankfurt)**, im Code hart. Nachrichtenaufbewahrung 4 Tage
+(Hauptqueue) bzw. 14 Tage (Quarantäne). **Kostenklassen** (keine erfundenen Beträge): SQS
+rechnet je Anfrage, Lambda je Aufruf und GB-Sekunde, KMS je Schlüssel und Anfrage,
+CloudWatch je aufbewahrtem Protokoll. Das Modell nennt die **Mengen** (§20: ~123 bis ~859
+Lambda-Aufrufe/Tag über die Stufen 5→500); die Preise pro Einheit stehen bewusst nicht hier,
+weil sie zum Zeitpunkt der Freigabe am AWS-Preisblatt zu prüfen sind.
+
+### 19.5 Was gefahrlos wiederholbar ist
+
+Ein Absturz **zwischen Datenbankabschluss und Queue-Bestätigung** führt zur erneuten
+Zustellung; die trifft dann auf einen terminalen Auftrag und bleibt folgenlos (kein zweiter
+Fachaufruf, kein zweiter Modellaufruf). Ein Fehler **vor** dem Abschluss führt zu einer
+sicheren Wiederholung über den Versuchszähler des Auftrags. Beides ist im
+Ende-zu-Ende-Integrationstest §6 bzw. §5 belegt.
+
+### 19.6 Ausdrückliche Grenze dieses Sprints
+
+Es wurde **keine AWS-Ressource angelegt**: keine Queue, keine Lambda-Funktion, keine
+IAM-Rolle, kein KMS-Schlüssel, kein Konto berührt. Die Aktivierung ist eine
+kostenpflichtige Gründerentscheidung.
+
+---
+
+## 20 · Ende-zu-Ende-Nachweis und die Einordnung des alten Lastnachweises
+
+**Neu:** `scripts/queue-ende-zu-ende-test.js` — echte lokale PostgreSQL mit den echten
+Migrationen, echte atomare Outbox-Erzeugung, **echter** SQS-Adapter, **echter** Lambda-Handler,
+**echter** Verbraucher, **echter** Fachkern. Ersetzt ist ausschließlich die
+AWS-Netzwerkgrenze durch einen vertragstreuen lokalen Ersatz (Sichtbarkeitszeit,
+Zustellzähler, Dead-Letter-Queue, partielle Fehlerantwort). **37 PASS / 0 FAIL**, darunter:
+vollständiger Abfluss **ohne einen einzigen Cron-Workerlauf**, keine doppelte Arbeit bei
+Mehrfachzustellung, Quarantäne nach genau `maxReceiveCount`, kein Auftragsverlust bei
+Transportausfall.
+
+Dieser Test hat einen **echten Fehler** gefunden, den die Vertragstests nicht sehen konnten:
+`helmut_claim_job_by_id` schrieb zunächst auf eine Spalte `started_at`, die es in
+`helmut_jobs` nicht gibt (die Buchführung heißt `first_claimed_at`). Ohne den Ende-zu-Ende-Lauf
+wäre die Funktion erst in Production gescheitert.
+
+**Einordnung des bisherigen Lastnachweises** (`skalierung-lastnachweis-test.js`): er bleibt
+als **Durchsatzmodell** bestehen und ist als solches gültig — aber er ist **kein** Nachweis
+des Ereignismotors, weil er `server.js`, den Transport, den Verbraucher und die echten
+Handler umgeht und am Ende den Cron-Rückfallweg räumen lässt. Beide Tests haben getrennte
+Zwecke; wo es um den Motor geht, gilt der Ende-zu-Ende-Test.
+
+---
+
+## 21 · Verteilte Anbietersteuerung (Auftrag Phase 4)
+
+Migration `20260814090100_anbieter_steuerung.sql` (+ Rollback). Der Schlüssel wird von der
+Anwendung gebildet und unterscheidet damit **Anbieter · Modell/Endpunkt · Auftragsklasse ·
+Mandat**; die Fensterarten sind **Minute** und **Tag**.
+
+- `helmut_anbieter_reserviere` — atomare Reservierung gegen beide Fenster, mit Rückgabe des
+  **frühesten zulässigen nächsten Zeitpunkts**. Eine abgelehnte Reservierung zählt in
+  **keinem** Fenster (keine halben Buchungen — testgesichert in beide Richtungen).
+- **Vertagung statt Fehler:** `anbieter-steuerung.mitAnbietergrenze` liefert die den
+  Fachhandlern bereits bekannte Form `{ zurueckgestellt: true, grund, langeWarten }`. Es gibt
+  **keine Warteschleife innerhalb einer Function** — gewartet wird, indem der **Auftrag**
+  vertagt wird und die Function endet.
+- **Exponentielle Wiederholung mit Jitter**, deterministisch aus (Kennung, Versuch): zwei
+  Instanzen desselben Auftrags rechnen gleich, zwei verschiedene Aufträge laufen auseinander
+  (kein Gleichschritt nach einer Anbieterstörung). Kein `Math.random`.
+- **Schutzschaltung** `helmut_anbieter_melde`: Sperre ab N aufeinanderfolgenden Fehlern,
+  danach ein Erholungsversuch (halb offen), der nach M Erfolgen vollständig schließt; ein
+  Fehler **im** Erholungsversuch sperrt sofort wieder.
+- **Erneuerbares Lease** `helmut_klasse_erneuere` (Befund 4g): ein gültiger, haltereigener
+  Slot kann verlängert werden; ein **abgelaufener** Slot wird nie wiederbelebt — der Halter
+  erfährt den Verlust und kann abbrechen, statt außerhalb der Grenze weiterzuarbeiten.
+- **Tagesbudget der KI bleibt unverändert** bei `helmut_reserve_llm_call` (eine Engstelle,
+  kein Doppelzählen): die Standardwerte für KI-Anbieter setzen `tag: 0` (= nicht prüfen).
+
+**Keine erfundenen Anbieterwerte.** Die Standardwerte sind bewusst klein und konservativ
+(Google 30/min, OpenAI/Azure 20/min, Quellenabruf 60/min) und **nicht** aus
+Anbieterdokumentation abgeleitet. Vor einer Aktivierung müssen anhand der echten
+Vertragsbedingungen entschieden werden: Anfragen/Minute je Anbieter, ggf. Tokens/Minute,
+Tagesbudget je Anbieter, Schwelle und Sperrdauer der Schutzschaltung. Flag
+`HELMUT_ANBIETER_STEUERUNG`, Default AUS, fail closed (eine nicht prüfbare Grenze lässt
+**nicht** durch, sondern vertagt).
+
+---
+
+## 22 · Verstehenskapazität: Parallelität bleibt 1 (Befund 5)
+
+Die Voraussetzung für Parallelität > 1 ist **nicht** sicher klein umsetzbar und wird
+deshalb **nicht** umgesetzt. Grund, am Code belegt: `understanding.js` `merkeUpdateOffen`
+liest die gesamte Vormerkungskarte, ändert einen Eintrag und schreibt die **ganze Karte**
+zurück. Bei zwei gleichzeitigen Verstehensläufen überschreibt der langsamere Schreiber die
+Vormerkung des schnelleren — ein verlorener Eintrag bedeutet einen Vorgang, der nie wieder
+aufgenommen wird. Das ist exakt der Fall, den CLAUDE.md §4 Regel 10 verbietet (bedingtes
+Schreiben statt Lesen→Ändern→Schreiben).
+
+Eine sichere Ablösung verlangt einen **Compare-and-Set-Store je Vorgang** (eine Zeile je
+Vorgang statt einer Karte, mit atomarem Zähler) — das ist eine eigene Migration mit eigenen
+Nebenläufigkeitstests und gehört nicht als Beifang in diesen Sprint.
+
+**Folge für das Kapazitätsmodell:** `verstehen` bleibt auf Parallelität **1**, und eine
+allgemeine Parallelität von 8 darf **nicht** als Verstehenskapazität gerechnet werden.
+Genau das erzwingt `scripts/kapazitaetsmodell-test.js` §B2.
+
+---
+
+## 23 · Kapazitätsmodell je Auftragsklasse (Auftrag Phase 6)
+
+Grundlage: Production-Messwerte (P) des zweiten Fünferlaufs. Angebot = Klassenparallelität ×
+86.400 s × 50 % (konservative Annahme A; mit SQS/Lambda gibt es keine Slotgrenze mehr).
+
+| Mandate | Aufträge/Tag | Klasse | Bedarf s/Tag | Angebot s/Tag | Reserve | Engpass |
+|---|---|---|---|---|---|---|
+| 5 | 612 | quellenabruf · verstehen · projektion · briefing | 4.800 · 3.220 · 30 · 75 | 216.000 · 43.200 · 172.800 · 172.800 | ×45,0 · **×13,4** · ×5.760 · ×2.304 | verstehen |
+| 25 | 778 | " | 5.520 · 4.080 · 150 · 375 | " | ×39,1 · **×10,6** · … | verstehen |
+| 100 | 1.386 | " | 8.040 · 7.040 · 600 · 1.500 | " | ×26,9 · **×6,1** · … | verstehen |
+| 200 | 2.167 | " | 11.520 · 10.360 · 1.200 · 3.000 | " | ×18,8 · **×4,2** · … | verstehen |
+| 500 | 4.291 | " | 21.750 · 16.000 · 3.000 · 7.500 | " | ×9,9 · **×2,7** · ×57,6 · ×23,0 | verstehen |
+
+**Der Engpass ist auf jeder Stufe `verstehen`** — die einzige Klasse mit Parallelität 1. Die
+schwächste notwendige Klasse hält auf allen fünf Stufen den geforderten Faktor 2 (bei 500:
+×2,7). Eine gemittelte Gesamtreserve wird bewusst **nicht** ausgewiesen.
+
+**Queue-Mengen:** 612 → 4.291 Nachrichten/Tag (5 → 500 Mandate), d. h. ~123 → ~859
+Lambda-Aufrufe/Tag bei Stapelgröße 5. Die Nachrichtenzahl wächst **unterlinear** (Faktor 7,0
+bei 100-facher Mandatszahl) — die geteilten Quellen tragen.
+
+**KI-Tagesbedarf, getrennt vom technischen Durchsatz.** Ein Verstehensauftrag ist **nicht**
+ein Modellaufruf: ein bereits verstandener Vorgang wird ohne KI kurzgeschlossen,
+Aktualisierungen kosten zusätzlich. Statt einer erfundenen Punktzahl steht eine **Spanne**
+zwischen dem in Production gemessenen Verhältnis (untere Grenze) und einem Aufruf je Auftrag
+zuzüglich Aktualisierungen (obere Grenze):
+
+| Mandate | Verstehensaufträge | KI-Aufrufe/Tag (Spanne) | Deckel 100+30 |
+|---|---|---|---|
+| 5 | 161 | 69–209 | trägt nur im günstigen Fall — beobachten (P: gemessen 62–77) |
+| 25 | 204 | 88–265 | reicht nicht |
+| 100 | 352 | 151–458 | reicht nicht |
+| 200 | 518 | 223–673 | reicht nicht |
+| 500 | 800 | **344–1.040** | reicht nicht — gesonderte Gründerentscheidung |
+
+Die gemessene Untergrenze ist selbst **konservativ zu niedrig**, weil das globale
+Verstehens-Schloss im zweiten Fünferlauf 124 von 139 Aufträgen vertagt hat. Der
+Production-Deckel bleibt in diesem Sprint **unverändert**.
+
+**Externe Blocker unverändert ehrlich:** OP-15 (Google-Drosselung) ist nicht mit echten
+Messungen gelöst und bleibt ab ~10 Mandaten Blocker; die Anbietersteuerung bremst dort
+konservativ, ersetzt aber keine Messung.

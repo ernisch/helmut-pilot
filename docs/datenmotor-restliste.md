@@ -1419,6 +1419,35 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 #### OP-30 · Mandatseigene Abrufwege vervielfachen den Quellenabruf linear (neu, Sprint „V3-Skalierungsprüfung" 2026-08-08; Prioritätsklasse P1)
 
+- **Stand 2026-08-14/2 (Haertungssprint, PR #247; Beleg
+  [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §18–§23):**
+  Alle sechs Gegenpruefungspunkte **bestaetigt** (keiner widerlegt) und behoben bzw. ehrlich
+  eingeordnet. (1) Ein 2xx ohne Uebernahme gibt es nicht mehr — belegter Drain antwortet 429,
+  der Sender LEGT die Absichten ZURUECK (`helmut_outbox_zuruecklegen`, ohne Fehlversuch).
+  (2) Der Production-Transport ist jetzt **Amazon SQS + Lambda in eu-central-1**: SDK fest
+  gepinnt (3.1110.0, 26 Pakete, 0 Schwachstellen), Transportadapter mit hartem Regions-/
+  Ziel-Riegel, vollstaendige CloudFormation-Definition (DLQ, KMS, Sichtbarkeit 360 s >
+  Timeout 180 s > Auftragsbudget 120 s, maxReceiveCount 5, reservierte Parallelitaet,
+  minimale IAM-Rechte), echter Lambda-Verbraucher mit partieller Fehlerantwort und **atomarer
+  Beanspruchung genau der signalisierten jobId** (`helmut_claim_job_by_id`, neu). Der
+  Selbstweck ist auf einen freizuschaltenden Notfallweg zurueckgestuft. **Keine AWS-Ressource
+  angelegt** — Aktivierung = kostenpflichtige Gruenderentscheidung. (3) Der alte
+  500er-Lastnachweis ist als **Durchsatzmodell** eingeordnet; der neue
+  `queue-ende-zu-ende-test` faehrt den ECHTEN Pfad (37 PASS) und flieszt **ohne einen
+  einzigen Cron-Workerlauf** ab — er fand dabei einen echten Migrationsfehler
+  (`started_at` statt `first_claimed_at`). (4) Verteilte Anbietersteuerung ergaenzt
+  (Migration `20260814090100`): Raten-/Tagesgrenzen je Anbieter/Modell/Klasse/Mandat,
+  fruehester Folgezeitpunkt, Vertagung statt Fehler, Jitter, Schutzschaltung mit Erholung,
+  erneuerbares Klassen-Lease. (5) **Verstehensparallelitaet bleibt 1** — der
+  Update-Vormerkungs-Store schreibt weiterhin Lesen→Aendern→Schreiben; eine CAS-Ablösung ist
+  eine eigene Migration und wurde NICHT nebenbei gebaut. Damit ist `verstehen` auf jeder
+  Stufe der Engpass (Reserve x13,4 bei 5 → **x2,7 bei 500**). (6) Der Abgleich schliesst
+  jetzt auch `bestaetigt` bei terminalen Auftraegen; ein begrenzter Aufbewahrungsvertrag
+  (`helmut_outbox_aufraeumen`, Default Trockenlauf, kein automatischer Aufrufer) existiert.
+  KI-Bedarf getrennt ausgewiesen als **Spanne** (5 Mandate 69–209, 500 Mandate 344–1.040
+  gegen Deckel 130). Neue Suiten: SQS/Lambda-Vertrag 44 · Ende-zu-Ende 37 ·
+  Anbietersteuerung-DB 36 · Infrastrukturdefinition 32 · Kapazitaetsmodell 31 ·
+  Mutationsprobe 7/7 erkannt. Production erneut unangetastet.
 - **Stand 2026-08-14 (Sicherheitskorrektur auf PR #247, Belegdatei
   [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §17):**
   vier beauftragte Befunde bestaetigt und behoben — (1) die Verbraucher-Route prueft das

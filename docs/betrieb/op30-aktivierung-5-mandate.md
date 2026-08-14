@@ -1977,3 +1977,51 @@ erbringt, ohne dass irgendetwas den Prozess verlässt. Vorher gelten unveränder
 524 neutralisieren (Muster §17.8/§17.10) und §8.3/§8.4 queue-tauglich fassen. In
 Production wurde in diesem Sprint **nichts** verändert (alle Zugriffe rein lesend; die
 zwei neuen Migrationspaare `20260813` sind NICHT angewendet; alle neuen Flags Default-AUS).
+
+---
+
+## §21 · Haertungssprint 2026-08-14: verwalteter Transport (SQS + Lambda)
+
+Der Aktivierungsweg dieses Runbooks (§19.6, §20) bleibt unveraendert gueltig — er beschreibt
+die Stufen 0–2 mit dem **Cron-Antrieb** und dem Schattenmodus. Was sich geaendert hat:
+
+1. **Der Standardtransport ist `sqs`,** nicht mehr der Selbstweck. Der Selbstweck ist in
+   Production ohne `HELMUT_SELBSTWECK_ERLAUBT=on` **gesperrt** (Notfall-/Entwicklungsweg).
+2. **Fuer Stufe 2 (Ereignis-Antrieb) sind jetzt AWS-Ressourcen noetig**, die es **nicht
+   gibt**: Queue, Dead-Letter-Queue, KMS-Schluessel, IAM-Sender, Lambda-Verbraucher. Die
+   Definition liegt vollstaendig in `infra/aws/helmut-auftrags-queue.yaml`; ihr Anlegen ist
+   eine **kostenpflichtige Gruenderentscheidung**.
+3. **Zwei neue Migrationen** (`20260814090000`, `20260814090100`) gehoeren zur Stufe 1 dazu.
+   Beide sind **nicht angewendet**.
+
+### §21.1 Reihenfolge fuer Stufe 1 (unveraendert freigabepflichtig)
+
+1. Die 524 wartenden Auftraege nach §17.8 neutralisieren (unveraendert).
+2. Migrationen anwenden — in dieser Reihenfolge:
+   `20260813090000_jobqueue_outbox.sql` → `20260813090100_verteilte_grenzen.sql` →
+   `20260814090000_queue_verbraucher.sql` → `20260814090100_anbieter_steuerung.sql`.
+   Die Verifikationsbloecke stehen jeweils am Dateiende.
+3. Flags: `HELMUT_SCALABLE_PIPELINE=on`, `HELMUT_JOB_DISPATCH_MODE=shadow`.
+   **Noch KEIN** `HELMUT_JOB_TRANSPORT`, **kein** AWS.
+4. Beobachten wie in §19.6 beschrieben.
+
+### §21.2 Zusaetzliche Schritte fuer Stufe 2 (Ereignis-Antrieb)
+
+1. Gruenderentscheidung ueber die AWS-Kosten (SQS je Anfrage, Lambda je Aufruf und
+   GB-Sekunde, KMS je Schluessel, CloudWatch je Protokoll — Mengen siehe Belegdatei §23).
+2. Stack aus `infra/aws/helmut-auftrags-queue.yaml` in **eu-central-1** anlegen.
+3. Supabase-URL und service_role-Schluessel als **SSM-Parameter** hinterlegen (SecureString);
+   sie stehen NIE in der Vorlage und NIE in einer Lambda-Umgebungsvariablen im Klartext.
+4. Lambda-Paket aus dem Repository bauen (Einstieg `lambda/index.js`).
+5. In Vercel setzen: `HELMUT_SQS_QUEUE_URL` (Ausgabe `QueueUrl`), `HELMUT_KLASSEN_GRENZEN=on`,
+   `HELMUT_JOB_DISPATCH_MODE=queue`. `AWS_REGION` bleibt auf `eu-central-1`.
+6. Zugangsdaten des IAM-Senders in Vercel hinterlegen (nur `sqs:SendMessage`).
+7. **Ruecknahme in einem Schritt:** `HELMUT_JOB_DISPATCH_MODE=shadow` (oder `off`) +
+   Redeploy. Die Queue laeuft dann leer; kein Auftrag geht verloren, der Cron-Rueckfallweg
+   traegt weiter.
+
+### §21.3 Was der Haertungssprint NICHT freigibt
+
+Weder die AWS-Aktivierung noch die Anhebung des KI-Tagesdeckels noch eine hoehere
+Verstehensparallelitaet (die bleibt bei 1, Belegdatei §22). Helmut ist durch diesen Sprint
+**nicht** fuer 25, 100, 200 oder 500 Mandate freigegeben.

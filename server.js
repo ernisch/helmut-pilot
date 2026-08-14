@@ -1148,13 +1148,25 @@ async function handleRequest(request, response) {
       const drainBudgetMs = Math.max(5000, Math.min(240000, Number(process.env.HELMUT_DRAIN_BUDGET_MS) || 60000));
       const lease = await klassen.belege("worker-drain", { ttlMs: drainBudgetMs + 60000 });
       if (!lease || lease.erlaubt !== true) {
-        // BEWUSST 2xx: die Klingel ist zugestellt, ein aktiver Verbraucher arbeitet
-        // bereits (Klasse worker-drain max 1). Der Sender darf die gebuendelten
-        // Absichten bestaetigen; bleibt ein Auftrag dennoch liegen, oeffnet der
-        // Abgleich die Absicht nach Mindestalter wieder.
+        // HAERTUNG 2026-08-14 (bestaetigter Befund 1): frueher antwortete dieser Zweig mit
+        // 2xx. Der gebuendelte Sender wertete das als Erfolg und BESTAETIGTE alle
+        // mitgeschickten Versandabsichten — obwohl KEIN Verbraucher die Verantwortung
+        // uebernommen hatte (der laufende Verbraucher hat seinen Stapel bereits vor diesen
+        // Auftraegen gezogen). Die Absichten wurden dann erst vom Abgleich nach dem
+        // Mindestalter wieder geoeffnet; ohne unabhaengigen Aufruf wartete die Verarbeitung
+        // bis zum naechsten Cronlauf.
+        // 429 ist die ehrliche Antwort: die Klingel ist angekommen, aber NIEMAND hat
+        // uebernommen. Der Sender legt die Absichten zurueck (ohne Fehlversuch, ohne
+        // Bestaetigung) und stellt sie kurz darauf erneut zu.
         console.log(`[cron/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
           + ` grund=${(lease && lease.grund) || "drain-belegt"} lauf=${laufkennung}`);
-        return { verarbeitet: false, grund: `drain-nicht-frei: ${(lease && lease.grund) || "belegt"}` };
+        response.writeHead(429, jsonHeaders());
+        response.end(JSON.stringify({
+          verarbeitet: false,
+          uebernommen: false,
+          grund: `drain-nicht-frei: ${(lease && lease.grund) || "belegt"}`
+        }, null, 2));
+        return null;
       }
 
       // DRAIN unter gehaltenem Slot — und NUR der Drain (Sicherheitskorrektur

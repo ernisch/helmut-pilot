@@ -1,0 +1,236 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Helmut OP-30 — verwalteter Auftrags-Transport (Amazon SQS + Lambda) in eu-central-1.
+  ÜBERPRÜFBARE INFRASTRUKTURDEFINITION — in diesem Sprint NICHT ausgerollt.
+  Supabase bleibt die Wahrheit über Aufträge; SQS trägt ausschließlich Wecksignale
+  ({jobId, schemaVersion}), Lambda ist ausschließlich der Verbraucher. Beide sind
+  austauschbar, ohne den Fachkern anzufassen.
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+# BEWUSSTE GRENZE DIESES SPRINTS
+# Diese Vorlage wurde NICHT auf ein AWS-Konto angewendet. Es existiert keine Queue, keine
+# Lambda-Funktion, keine IAM-Rolle und kein KMS-Schlüssel. Das Anlegen ist eine
+# kostenpflichtige Gründerentscheidung (Belegdatei §19.6). Die Vorlage ist trotzdem
+# vollständig und wird durch `scripts/infrastruktur-definition-test.js` gegen die
+# Zusagen der Architektur geprüft — eine stille Abweichung (zu kurze Sichtbarkeitszeit,
+# fehlende Verschlüsselung, unbegrenzte Parallelität, fehlende Quarantäne) fällt auf.
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+
+Parameters:
+  Umgebung:
+    Type: String
+    Default: production
+    AllowedValues: [production, staging]
+    Description: Trennt Queues und Funktionen je Umgebung; sie teilen sich nie eine Queue.
+
+  MaxParallelitaet:
+    Type: Number
+    Default: 4
+    MinValue: 1
+    MaxValue: 20
+    Description: >-
+      Reservierte Lambda-Parallelität = harte Obergrenze gleichzeitiger Verbraucher.
+      Default 4 passt zur Stufe 200 des Stufenplans. Der Wert ist bewusst klein: die
+      eigentliche Schutzgrenze liegt in der Datenbank (Klasse worker-drain), diese hier
+      verhindert, dass AWS überhaupt mehr Verbraucher startet, als Supabase Free trägt.
+
+  SupabaseUrlParameter:
+    Type: String
+    Default: /helmut/production/supabase-url
+    Description: >-
+      Name des SSM-Parameters mit der Supabase-URL. Es steht KEIN Secret in dieser Vorlage
+      und keines in einer Lambda-Umgebungsvariablen im Klartext.
+
+  SupabaseSchluesselParameter:
+    Type: String
+    Default: /helmut/production/supabase-service-role-key
+    Description: Name des SecureString-SSM-Parameters mit dem service_role-Schlüssel.
+
+Resources:
+
+  # ── VERSCHLÜSSELUNG ────────────────────────────────────────────────────────────────────────
+  # Serverseitige Verschlüsselung mit einem EIGENEN KMS-Schlüssel (nicht dem AWS-eigenen):
+  # nur so ist der Zugriff über eine Schlüsselrichtlinie prüfbar und entziehbar.
+  AuftragsQueueSchluessel:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub 'Helmut ${Umgebung}: Verschluesselung der Auftrags-Wecksignale'
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: KontoVerwaltung
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+
+  # ── QUARANTÄNE (Dead-Letter-Queue) ─────────────────────────────────────────────────────────
+  # Eine Nachricht, die dauerhaft nicht verarbeitet werden kann, landet hier — statt endlos
+  # zu kreisen oder still zu verschwinden. 14 Tage Aufbewahrung, damit ein Betreiber sie
+  # tatsächlich noch ansehen kann.
+  AuftragsQuarantaene:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub 'helmut-auftraege-quarantaene-${Umgebung}'
+      MessageRetentionPeriod: 1209600        # 14 Tage (Maximum)
+      KmsMasterKeyId: !Ref AuftragsQueueSchluessel
+      KmsDataKeyReusePeriodSeconds: 300
+      Tags:
+        - Key: helmut:zweck
+          Value: auftrags-quarantaene
+
+  # ── HAUPTQUEUE ─────────────────────────────────────────────────────────────────────────────
+  AuftragsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub 'helmut-auftraege-${Umgebung}'
+      # SICHTBARKEITSZEIT > MAXIMALE BEARBEITUNGSDAUER.
+      # Der Verbraucher deckelt einen Auftrag auf 120 s (queue-verbraucher.js
+      # VERBRAUCHER_BUDGET_MS) und die Lambda-Funktion auf 180 s (Timeout unten).
+      # 360 s = doppelte Lambda-Laufzeit: eine noch laufende Verarbeitung kann NIE
+      # gleichzeitig ein zweites Mal zugestellt werden.
+      VisibilityTimeout: 360
+      MessageRetentionPeriod: 345600         # 4 Tage — deutlich über jedem Cron-Rückfallzyklus
+      ReceiveMessageWaitTimeSeconds: 20      # Long Polling: weniger leere Abfragen, weniger Kosten
+      KmsMasterKeyId: !Ref AuftragsQueueSchluessel
+      KmsDataKeyReusePeriodSeconds: 300
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt AuftragsQuarantaene.Arn
+        # BEGRENZTE ZUSTELLVERSUCHE: nach 5 erfolglosen Zustellungen ist die Nachricht
+        # dauerhaft problematisch und geht in die Quarantäne. Der Wert liegt bewusst unter
+        # der Versuchsgrenze des Auftragsbuchs (max_attempts 5–10), damit die Queue nie
+        # länger kreist als der Auftrag selbst Versuche hat.
+        maxReceiveCount: 5
+      Tags:
+        - Key: helmut:zweck
+          Value: auftrags-wecksignale
+
+  # ── IAM: MINIMALE RECHTE FÜR DEN SENDER (Vercel) ───────────────────────────────────────────
+  # Der Sender darf GENAU EINES: eine Nachricht in GENAU DIESE Queue legen. Kein Empfangen,
+  # kein Löschen, kein Purge, keine Attributänderung, keine zweite Queue.
+  SenderBenutzer:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Sub 'helmut-auftrags-sender-${Umgebung}'
+      Policies:
+        - PolicyName: nur-senden
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'sqs:SendMessage'
+                Resource: !GetAtt AuftragsQueue.Arn
+              - Effect: Allow
+                Action:
+                  - 'kms:GenerateDataKey'
+                  - 'kms:Encrypt'
+                Resource: !GetAtt AuftragsQueueSchluessel.Arn
+
+  # ── IAM: MINIMALE RECHTE FÜR DEN VERBRAUCHER (Lambda) ──────────────────────────────────────
+  VerbraucherRolle:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'helmut-auftrags-verbraucher-${Umgebung}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: nur-empfangen-und-loeschen
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'sqs:ReceiveMessage'
+                  - 'sqs:DeleteMessage'
+                  - 'sqs:GetQueueAttributes'
+                  # KEIN sqs:SendMessage: der Verbraucher erzeugt NIE selbst Nachrichten.
+                  # Folgeaufträge entstehen über die Outbox in Supabase, nie in der Queue.
+                Resource: !GetAtt AuftragsQueue.Arn
+              - Effect: Allow
+                Action:
+                  - 'kms:Decrypt'
+                Resource: !GetAtt AuftragsQueueSchluessel.Arn
+              - Effect: Allow
+                Action:
+                  - 'ssm:GetParameter'
+                Resource:
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SupabaseUrlParameter}'
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SupabaseSchluesselParameter}'
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/helmut-auftrags-verbraucher-${Umgebung}:*'
+
+  VerbraucherLogGruppe:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/helmut-auftrags-verbraucher-${Umgebung}'
+      # Wecksignal-Protokolle enthalten nur Auftrags-IDs, Ausgänge und Dauern — keine
+      # politischen Inhalte. 30 Tage genügen für die Fehlersuche.
+      RetentionInDays: 30
+
+  VerbraucherFunktion:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'helmut-auftrags-verbraucher-${Umgebung}'
+      Runtime: nodejs22.x
+      Architectures: [arm64]
+      Handler: lambda/index.handler
+      Role: !GetAtt VerbraucherRolle.Arn
+      # TIMEOUT < SICHTBARKEITSZEIT (180 s < 360 s): eine Verarbeitung endet immer, bevor
+      # dieselbe Nachricht erneut sichtbar werden kann.
+      Timeout: 180
+      MemorySize: 512
+      # HARTE PARALLELITÄTSGRENZE: mehr gleichzeitige Verbraucher startet AWS nicht.
+      ReservedConcurrentExecutions: !Ref MaxParallelitaet
+      Environment:
+        Variables:
+          # KEINE SECRETS IM KLARTEXT. Die Funktion liest sie zur Laufzeit aus SSM.
+          HELMUT_SUPABASE_URL_PARAMETER: !Ref SupabaseUrlParameter
+          HELMUT_SUPABASE_KEY_PARAMETER: !Ref SupabaseSchluesselParameter
+          HELMUT_SCALABLE_PIPELINE: 'on'
+          HELMUT_JOB_DISPATCH_MODE: 'queue'
+          HELMUT_JOB_TRANSPORT: 'sqs'
+          HELMUT_KLASSEN_GRENZEN: 'on'
+      Code:
+        ZipFile: |
+          // Platzhalter. Der echte Verbraucher wird aus dem Repository gepackt:
+          //   lambda/index.js -> lib/helmut/lambda-verbraucher.js -> lib/helmut/queue-verbraucher.js
+          exports.handler = async () => { throw new Error("Paket nicht ausgeliefert"); };
+
+  # ── ANBINDUNG QUEUE -> LAMBDA ──────────────────────────────────────────────────────────────
+  VerbraucherAnbindung:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt AuftragsQueue.Arn
+      FunctionName: !GetAtt VerbraucherFunktion.Arn
+      BatchSize: 5
+      MaximumBatchingWindowInSeconds: 5
+      # PARTIELLE FEHLERANTWORT: ohne diese Einstellung würde ein einziger Fehler den
+      # gesamten Stapel erneut zustellen — auch die bereits erledigten Nachrichten.
+      FunctionResponseTypes:
+        - ReportBatchItemFailures
+      ScalingConfig:
+        # Zusätzlich zur reservierten Parallelität: SQS selbst startet nie mehr gleichzeitige
+        # Verbraucher als hier erlaubt.
+        MaximumConcurrency: !Ref MaxParallelitaet
+
+Outputs:
+  QueueUrl:
+    Description: Wert für HELMUT_SQS_QUEUE_URL (Sender-Seite, Vercel).
+    Value: !Ref AuftragsQueue
+  QuarantaeneUrl:
+    Description: Dead-Letter-Queue — hier landen dauerhaft unbrauchbare Nachrichten.
+    Value: !Ref AuftragsQuarantaene
+  Region:
+    Description: Datenresidenz des Transports.
+    Value: !Ref 'AWS::Region'
