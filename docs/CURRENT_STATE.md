@@ -182,7 +182,7 @@ erneute Neutralisierung der jetzt 524 inerten Aufträge (Muster §17.8).
 **Folge für OP-25:** eine Aktivierung verändert `quellenVereinigung`, die K2.1-Sichtbarkeitsmengen und die
 Laufzeitbilanz ⇒ **OP-25 muss danach von vorn**.
 
-## 7c · Zielarchitektur-Sprint 2026-08-13/3 (Teilweise abgeschlossen — Betreiberfreigaben offen)
+## 7c · Zielarchitektur-Sprint 2026-08-13/3 (Erfolgreich abgeschlossen; Aktivierung = Betreiberentscheidung)
 
 Der Kapazitätssprint nach §7b wurde **kontrolliert abgebrochen**; seine Zwischenlösung
 (Parallelität 6 + sechs Drain-Slots) wurde **verworfen und nicht rekonstruiert**. Stattdessen
@@ -331,7 +331,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-13/3 | **OP-30-Zielarchitektur** (§7c): Kapazitätssprint kontrolliert abgebrochen, „mehr Slots" verworfen; stattdessen Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache gebaut; lokaler Lastnachweis 5–500 an echter PostgreSQL; 524 Aufträge nur lesend analysiert; Production unangetastet | **Teilweise abgeschlossen** (Code+Nachweise+Doku fertig; Betreiberfreigaben/Stufenplan offen); PR #247 offen |
+| 2026-08-13/3 | **OP-30-Zielarchitektur** (§7c): Kapazitätssprint kontrolliert abgebrochen, „mehr Slots" verworfen; stattdessen Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache gebaut; lokaler Lastnachweis 5–500 an echter PostgreSQL; 524 Aufträge nur lesend analysiert; Production unangetastet | **Erfolgreich abgeschlossen** (alle 16 Abnahmekriterien erfüllt, beide Pflichtprüfungen grün auf `2158b0c`); PR #247 offen, nicht gemergt — OP-30 insgesamt bleibt offen (Aktivierung nach Stufenplan = Betreiberentscheidung) |
 | 2026-08-12/5 – 13/2 | **OP-30-Fünferlauf, zweiter Versuch** (§7b, Runbook §19): K0 a–j grün → Betreiber-Aktivierung 18:50 UTC → 5 Läufe fehlerfrei/fair (0 endgültige Fehler, 0 Dubletten, Dedupe belegt, OP-31 hält, Wartezeitvertrag produktiv bestätigt) → Kapazitätsbefund (Ankunft ≫ Abfluss bei Defaults) → Rücknahme VOR Grenzübertritt 16:27 UTC → Wirkungsnachweis am crawl 20:00 bestanden; 524 Aufträge inert | **Fünferlauf NICHT bestanden** (kontrollierter Abbruch, K2/K3 nicht erreicht); Doku-PR #246 gemergt (`e83eb19`) |
 | 2026-08-12/4 | **Betreiber-Sprint Neutralisierung + Migration** (Runbook §17.10): 180 offene Aufträge exportiert und geschützt gelöscht, 55 erledigte byte-identisch erhalten, Migration `20260812` angewendet und abgenommen | **erfolgreich abgeschlossen** (Doku-PR #245 gemergt) |
 | 2026-08-12/3 | **Altersgrenze berichtigt** (Runbook §17): Wartezeit statt Fälligkeit; 3 neue Suiten (59+26+31 PASS); PR #244 gemergt, Wirkungsnachweis am 16:00-Lauf bestanden | **erfolgreich abgeschlossen** |
