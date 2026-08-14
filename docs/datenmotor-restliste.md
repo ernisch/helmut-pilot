@@ -1431,9 +1431,12 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Migrationsorganisation: eindeutige 14-stellige Stempel + `rollback_`-Praefix, mit
   Supabase-CLI 2.114.0 an frischer lokaler DB NACHGEWIESEN, dass die Altkonvention
   Rollbacks als Vorwaertsmigrationen ausgefuehrt und an der Versionskollision abgebrochen
-  haette (Altbestand als dokumentierte, eingefrorene Altlast). Neue Suiten:
-  `worker-weck-route-test` 21 PASS · `migrations-organisation-test` 10 PASS ·
-  Dispatch-Vertrag erweitert 77 PASS (Harness awaited jetzt async-Faelle). Production
+  haette (Altbestand als dokumentierte, eingefrorene Altlast). Zusatzbefund aus dem ersten
+  CI-Lauf: die Verbraucher-Route lag unter `/api/ops/` hinter drei Zugriffs-Gates
+  (Account-401, Mandatsauswahl-409, CSRF) — verlegt nach **`/api/cron/worker-weck`**
+  (selbst-autorisierender Namensraum, kein Gate aufgeweicht; Belegdatei §17.6). Neue
+  Suiten: `worker-weck-route-test` 21 PASS · `migrations-organisation-test` 10 PASS ·
+  Dispatch-Vertrag erweitert 78 PASS (Harness awaited jetzt async-Faelle). Production
   erneut unangetastet.
 - **Stand 2026-08-13/3 (Architektursprint Zielarchitektur — Sprint ERFOLGREICH abgeschlossen, beide Pflichtpruefungen gruen; OP-30 insgesamt bleibt offen; Beleg
   [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md),
@@ -1445,7 +1448,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   (`helmut_job_outbox`, atomar mit dem Auftrag; strukturell ohne Inhaltsspalte),
   **austauschbarer Transport** (`HELMUT_JOB_DISPATCH_MODE=off|shadow|queue`, fail closed;
   Payload strukturell nur `{jobId, schemaVersion}`; erster Transport Selbstweck ueber die
-  neue Verbraucher-Route `/api/ops/worker-weck`; Vercel-Queues-Adapter gebaut, nicht
+  neue Verbraucher-Route `/api/cron/worker-weck`; Vercel-Queues-Adapter gebaut, nicht
   aktiviert — Public Beta, keine EU-Residenzzusage im Failover, kostenpflichtig),
   **verteilte Klassengrenzen** (`helmut_klasse_belege`, Semaphor mit TTL-Selbstheilung:
   quellenabruf 5 · verstehen 1 · worker-drain 1) und die **Vorgangswache** als kleinste

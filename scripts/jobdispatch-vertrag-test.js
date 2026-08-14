@@ -122,7 +122,7 @@ async function main() {
   const PROD_HOST = "helmut-pilot.vercel.app";
   const DEPLOY_HOST = "helmut-pilot-abc123-nohut.vercel.app";
   const VERTRAUEN = { VERCEL_PROJECT_PRODUCTION_URL: PROD_HOST, VERCEL_URL: DEPLOY_HOST };
-  const GUTE_URL = `https://${PROD_HOST}/api/ops/worker-weck`;
+  const GUTE_URL = `https://${PROD_HOST}/api/cron/worker-weck`;
 
   await check("5.1 Ohne Weck-URL oder CRON_SECRET: fail closed, ehrlicher Grund", () => {
     const ohneUrl = dispatch.selbstweckTransport({ CRON_SECRET: "s", ...VERTRAUEN }, {});
@@ -177,21 +177,22 @@ async function main() {
   // verfuegbar, und der Beweis ist hart: die Netzfunktion wird NIE aufgerufen, das
   // Bearer-Secret verlaesst den Prozess NIE. ──
   const ADVERSARIALE_ZIELE = [
-    ["http statt https", `http://${PROD_HOST}/api/ops/worker-weck`, /nicht-https/],
-    ["fremder Host (vercel.app gehoert JEDEM Vercel-Kunden)", "https://angreifer.vercel.app/api/ops/worker-weck", /fremder-host/],
-    ["fremder Host (beliebige Domain)", "https://evil.example.com/api/ops/worker-weck", /fremder-host/],
-    ["Zugangsdaten in der URL", `https://user:pass@${PROD_HOST}/api/ops/worker-weck`, /zugangsdaten/],
+    ["http statt https", `http://${PROD_HOST}/api/cron/worker-weck`, /nicht-https/],
+    ["fremder Host (vercel.app gehoert JEDEM Vercel-Kunden)", "https://angreifer.vercel.app/api/cron/worker-weck", /fremder-host/],
+    ["fremder Host (beliebige Domain)", "https://evil.example.com/api/cron/worker-weck", /fremder-host/],
+    ["Zugangsdaten in der URL", `https://user:pass@${PROD_HOST}/api/cron/worker-weck`, /zugangsdaten/],
     ["anderer Pfad", `https://${PROD_HOST}/api/ops/jobqueue`, /falscher-pfad/],
-    ["Pfad-Traversal (normalisiert auf fremden Pfad)", `https://${PROD_HOST}/api/ops/worker-weck/../jobqueue`, /falscher-pfad/],
-    ["Pfad mit angehaengtem Segment", `https://${PROD_HOST}/api/ops/worker-weck/extra`, /falscher-pfad/],
-    ["Pfad mit Schluss-Schraegstrich", `https://${PROD_HOST}/api/ops/worker-weck/`, /falscher-pfad/],
+    ["alter Pfad vor der Verlegung (§17.6)", `https://${PROD_HOST}/api/ops/worker-weck`, /falscher-pfad/],
+    ["Pfad-Traversal (normalisiert auf fremden Pfad)", `https://${PROD_HOST}/api/cron/worker-weck/../jobqueue`, /falscher-pfad/],
+    ["Pfad mit angehaengtem Segment", `https://${PROD_HOST}/api/cron/worker-weck/extra`, /falscher-pfad/],
+    ["Pfad mit Schluss-Schraegstrich", `https://${PROD_HOST}/api/cron/worker-weck/`, /falscher-pfad/],
     ["Pfad prozentcodiert", `https://${PROD_HOST}/api/ops/worker%2Dweck`, /falscher-pfad/],
-    ["Queryparameter", `https://${PROD_HOST}/api/ops/worker-weck?debug=1`, /queryparameter/],
-    ["Fragment", `https://${PROD_HOST}/api/ops/worker-weck#f`, /fragment/],
-    ["expliziter Nicht-Standard-Port", `https://${PROD_HOST}:8443/api/ops/worker-weck`, /expliziter-port/],
-    ["IP-Adresse statt Deployment-Host", "https://203.0.113.7/api/ops/worker-weck", /fremder-host/],
+    ["Queryparameter", `https://${PROD_HOST}/api/cron/worker-weck?debug=1`, /queryparameter/],
+    ["Fragment", `https://${PROD_HOST}/api/cron/worker-weck#f`, /fragment/],
+    ["expliziter Nicht-Standard-Port", `https://${PROD_HOST}:8443/api/cron/worker-weck`, /expliziter-port/],
+    ["IP-Adresse statt Deployment-Host", "https://203.0.113.7/api/cron/worker-weck", /fremder-host/],
     ["kein URL-Wert", "kein ziel", /keine-url/],
-    ["Host als Praefix-Faelschung", `https://${PROD_HOST}.evil.example.com/api/ops/worker-weck`, /fremder-host/]
+    ["Host als Praefix-Faelschung", `https://${PROD_HOST}.evil.example.com/api/cron/worker-weck`, /fremder-host/]
   ];
   for (const [name, ziel, muster] of ADVERSARIALE_ZIELE) {
     await check(`5.6 Adversariales Weckziel abgewiesen: ${name}`, async () => {
@@ -219,20 +220,20 @@ async function main() {
   await check("5.8 Der Vertrauensanker uebernimmt NUR nackte Plattform-Hosts (praeparierte Werte zaehlen nie)", () => {
     const hosts = dispatch.vertrauenswuerdigeWeckHosts({
       VERCEL_PROJECT_PRODUCTION_URL: PROD_HOST,
-      VERCEL_URL: "evil.example.com/api/ops/worker-weck",
+      VERCEL_URL: "evil.example.com/api/cron/worker-weck",
       VERCEL_BRANCH_URL: "host:8443"
     });
     assert.deepStrictEqual([...hosts], [PROD_HOST]);
   });
   await check("5.9 Jeder Plattform-Host (Production, Deployment, Branch) ist einzeln vertrauenswuerdig", () => {
     const okProd = dispatch.pruefeWeckZiel(GUTE_URL, VERTRAUEN);
-    const okDeploy = dispatch.pruefeWeckZiel(`https://${DEPLOY_HOST}/api/ops/worker-weck`, VERTRAUEN);
+    const okDeploy = dispatch.pruefeWeckZiel(`https://${DEPLOY_HOST}/api/cron/worker-weck`, VERTRAUEN);
     assert.strictEqual(okProd.ok, true);
     assert.strictEqual(okProd.url, GUTE_URL);
     assert.strictEqual(okDeploy.ok, true);
   });
   await check("5.10 Gross geschriebener Host wird kanonisch normalisiert und bleibt vertrauenswuerdig", () => {
-    const r = dispatch.pruefeWeckZiel(`HTTPS://${PROD_HOST.toUpperCase()}/api/ops/worker-weck`, VERTRAUEN);
+    const r = dispatch.pruefeWeckZiel(`HTTPS://${PROD_HOST.toUpperCase()}/api/cron/worker-weck`, VERTRAUEN);
     assert.strictEqual(r.ok, true);
     assert.strictEqual(r.url, GUTE_URL);
   });

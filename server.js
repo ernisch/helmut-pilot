@@ -1063,7 +1063,16 @@ async function handleRequest(request, response) {
   // Arbeit ausschliesslich ATOMAR in Supabase (helmut_claim_jobs) — mehrfache Zustellung ist
   // damit wirkungslos statt gefaehrlich, Reihenfolge und Genau-einmal-Zustellung werden nie
   // vorausgesetzt. Autorisierung: dasselbe CRON_SECRET wie alle Betriebsendpunkte.
-  if (url.pathname === "/api/ops/worker-weck" && request.method === "POST") {
+  //
+  // WARUM /api/cron/ (Sicherheitskorrektur 2026-08-14, Belegdatei §17.6): dies ist eine
+  // Maschine-zu-Maschine-Route OHNE Nutzersitzung. Unter /api/ops/ fingen sie DREI
+  // vorgelagerte Zugriffs-Gates ab (Account-Modus: 401 ohne Session; Legacy-Modus:
+  // Mandatsauswahl-409 bei != 1 aktivem Mandat; CSRF-Pflicht fuer POST) — im CI mit
+  // frischem Store nachgewiesen. Der /api/cron/-Namensraum ist der etablierte,
+  // selbst-autorisierende Pfad (authorizeCron, eigene DB-Mandatsaufloesung) und passiert
+  // alle drei Gates korrekt, OHNE eines davon aufzuweichen. KEIN Eintrag in vercel.json:
+  // die Route hat keinen Zeitplan, sie wird ausschliesslich vom Selbstweck gerufen.
+  if (url.pathname === "/api/cron/worker-weck" && request.method === "POST") {
     if (!authorizeCron(request, url, response)) return;
     return handleJson(request, response, async (body) => {
       const weckStart = Date.now();
@@ -1078,7 +1087,7 @@ async function handleRequest(request, response) {
       try {
         jobDispatch.pruefeTransportPayload(body);
       } catch (fehler) {
-        console.log(`[ops/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
+        console.log(`[cron/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
           + ` grund=payload-vertrag lauf=${laufkennung}`);
         response.writeHead(400, jsonHeaders());
         response.end(JSON.stringify({
@@ -1093,7 +1102,7 @@ async function handleRequest(request, response) {
       // Fehlversuch beim Sender), die Absicht bleibt offen und wird nach dem
       // Deployment-Wechsel per Backoff/Abgleich erneut vorgelegt.
       if (!jobDispatch.schemaVersionVerarbeitbar(body.schemaVersion)) {
-        console.log(`[ops/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
+        console.log(`[cron/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
           + ` grund=schema-version lauf=${laufkennung}`);
         response.writeHead(409, jsonHeaders());
         response.end(JSON.stringify({
@@ -1127,7 +1136,7 @@ async function handleRequest(request, response) {
       // macht mehrfache Zustellung zum No-Op.
       const klassen = scalablePipeline.klassenAdapter({ owner: jobDispatch.verbraucherKennung(laufkennung) });
       if (!klassen) {
-        console.log(`[ops/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
+        console.log(`[cron/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
           + ` grund=klassengrenzen-aus lauf=${laufkennung}`);
         response.writeHead(409, jsonHeaders());
         response.end(JSON.stringify({
@@ -1143,7 +1152,7 @@ async function handleRequest(request, response) {
         // bereits (Klasse worker-drain max 1). Der Sender darf die gebuendelten
         // Absichten bestaetigen; bleibt ein Auftrag dennoch liegen, oeffnet der
         // Abgleich die Absicht nach Mindestalter wieder.
-        console.log(`[ops/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
+        console.log(`[cron/worker-weck] ${Date.now() - weckStart}ms verarbeitet=false`
           + ` grund=${(lease && lease.grund) || "drain-belegt"} lauf=${laufkennung}`);
         return { verarbeitet: false, grund: `drain-nicht-frei: ${(lease && lease.grund) || "belegt"}` };
       }
@@ -1182,7 +1191,7 @@ async function handleRequest(request, response) {
       const abgleich = await jobDispatch.abgleich({ limit: 50 }).catch(() => ({ verfuegbar: false }));
       const versand = await jobDispatch.versendeAbsichten({ limit: 20 }).catch(() => ({ versendet: 0, fehlgeschlagen: 0 }));
 
-      console.log(`[ops/worker-weck] ${Date.now() - weckStart}ms worker=${durchlauf.worker}`
+      console.log(`[cron/worker-weck] ${Date.now() - weckStart}ms worker=${durchlauf.worker}`
         + ` reserviert=${durchlauf.reserviert || 0} erledigt=${durchlauf.erledigt || 0}`
         + ` zurueckgestellt=${durchlauf.zurueckgestellt || 0}`
         + ` endgueltigFehler=${durchlauf.endgueltigFehlgeschlagen || 0}`

@@ -1,6 +1,6 @@
 "use strict";
 
-// Helmut — Routentest POST /api/ops/worker-weck (Sicherheitskorrektur 2026-08-14).
+// Helmut — Routentest POST /api/cron/worker-weck (Sicherheitskorrektur 2026-08-14).
 // =============================================================================================
 // Beweist am ECHTEN server.js-Handler (in-Prozess, lokaler Listener, kein Netz nach außen,
 // keine Datenbank), dass das eingehende Wecksignal VOLLSTAENDIG geprueft wird, BEVOR
@@ -49,7 +49,7 @@ function post(port, body, { auth = SECRET, roh = false } = {}) {
     const req = http.request({
       host: "127.0.0.1",
       port,
-      path: "/api/ops/worker-weck",
+      path: "/api/cron/worker-weck",
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -70,7 +70,7 @@ function post(port, body, { auth = SECRET, roh = false } = {}) {
 }
 
 async function main() {
-  console.log("Helmut — Routentest /api/ops/worker-weck (vollstaendige Signalpruefung)");
+  console.log("Helmut — Routentest /api/cron/worker-weck (vollstaendige Signalpruefung)");
   const server = http.createServer(handler);
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   const { port } = server.address();

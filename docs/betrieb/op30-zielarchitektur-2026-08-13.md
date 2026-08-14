@@ -150,7 +150,7 @@ Die zwölf Zusagen des Zielbilds, alle umgesetzt und getestet (L):
 4. Der Transport überträgt **ausschließlich** `{ jobId (zufällige uuid), schemaVersion }` —
    strukturell erzwungen: die Outbox **hat keine Inhaltsspalte**, und
    `pruefeTransportPayload` weist jedes andere Objekt hart ab (Laufzeit + Test).
-5. Der Transport weckt Verbraucher ereignisgesteuert (`/api/ops/worker-weck`).
+5. Der Transport weckt Verbraucher ereignisgesteuert (`/api/cron/worker-weck`).
 6. Der Verbraucher beansprucht Aufträge **atomar in Supabase** (`helmut_claim_jobs`).
 7. Mehrfache Zustellung ist ungefährlich (der Claim ist die einzige Vergabewahrheit).
 8. Der Abgleich (`helmut_outbox_abgleich`) veröffentlicht vergessene Versandabsichten
@@ -316,7 +316,7 @@ Modul [`lib/helmut/job-dispatch.js`](../../lib/helmut/job-dispatch.js):
 den Prozess verlässt; `queue` versendet über `HELMUT_JOB_TRANSPORT`:
 
 - **`selbstweck` (erster produktiver Transport):** POST auf `HELMUT_WORKER_WAKE_URL`
-  (die eigene Route `/api/ops/worker-weck`), autorisiert mit dem bestehenden
+  (die eigene Route `/api/cron/worker-weck`), autorisiert mit dem bestehenden
   `CRON_SECRET` (Bearer, `authorizeCron`). Kein neuer Dienst, kein neuer Anbieter,
   keine neuen Kosten, keine Daten verlassen die bestehende Vercel↔Supabase-Strecke.
   Verlorene Signale repariert der Abgleich.
@@ -325,12 +325,12 @@ den Prozess verlässt; `queue` versendet über `HELMUT_JOB_TRANSPORT`:
   Grund „Aktivierung = kostenpflichtige Gründerentscheidung". Beta-Fakten in §3.
 - Unbekannte Transportnamen: fail closed, kein stiller Rückfall.
 
-**Verbraucher `/api/ops/worker-weck`** erfüllt die 15 Eigenschaften des Auftrags §11:
+**Verbraucher `/api/cron/worker-weck`** erfüllt die 15 Eigenschaften des Auftrags §11:
 Nur-ID-Payload (Riegel an jedem Signal) · atomare erneute Beanspruchung in Supabase ·
 mehrfache Zustellung wirkungslos · keine Bestätigung vor belegtem Datenbankabschluss
 (`helmut_finish_job` ist der einzige Abschluss) · kontrollierte Wiederholung (Outbox-
 Backoff) · terminale Behandlung (aufgegeben, sichtbar) · sichtbare Zustellzählung
-(`attempts`, Kennzahlen) · Lauftelemetrie (`[ops/worker-weck]`-Logzeile + JSON-Bilanz) ·
+(`attempts`, Kennzahlen) · Lauftelemetrie (`[cron/worker-weck]`-Logzeile + JSON-Bilanz) ·
 Rücknahme auf `off` ohne Datenverlust (L) · kein Vertrauen auf Reihenfolge, Exactly-once
 oder unbegrenzte Aufbewahrung (die Outbox ist die Versandwahrheit) · keine politischen
 Inhalte in Headern/Logs/Fehlern · Schema-Versions-Schutz (neuere Version wird NIE
@@ -493,7 +493,7 @@ vor Verstehens-Parallelität > 1.
    §8.3/§8.4 queue-tauglich fassen.
 3. Bei Freigabe Stufe 1: beide `20260813`-Migrationen anwenden (Verifikationsblöcke in
    den Dateien), dann Flags nach §14 Stufe 1.
-4. `HELMUT_WORKER_WAKE_URL` (Production-URL + `/api/ops/worker-weck`) erst für Stufe 2.
+4. `HELMUT_WORKER_WAKE_URL` (Production-URL + `/api/cron/worker-weck`) erst für Stufe 2.
 5. Getrennt und ausdrücklich NICHT Teil dieses Sprints: KI-Deckel-Anhebung, Vercel
    Queues/Supabase Pro (Kosten), OP-15.
 
@@ -506,7 +506,7 @@ Regressionstests belegt. Production blieb erneut vollständig unangetastet.
 
 ### 17.1 Eingehendes Wecksignal wird vollständig geprüft (Befund bestätigt)
 
-**Ursache:** Die Route `POST /api/ops/worker-weck` las nur locker `body.schemaVersion`
+**Ursache:** Die Route `POST /api/cron/worker-weck` las nur locker `body.schemaVersion`
 (`!= null`) — ein Signal **ohne** `schemaVersion`, mit Zusatzfeldern oder mit beliebiger
 Nicht-UUID als `jobId` passierte die Eingangsprüfung.
 **Korrektur:** Direkt nach der Autorisierung erzwingt die Route jetzt **denselben zentralen
@@ -526,7 +526,7 @@ Sender ↔ Empfänger.
 `HELMUT_WORKER_WAKE_URL` konfigurierte Adresse — beliebiger Host (auch `http://`),
 beliebiger Pfad, Query, Fragment, Zugangsdaten in der URL.
 **Korrektur:** `pruefeWeckZiel` verriegelt das Ziel **vor** jedem Versand: nur HTTPS, exakt
-`/api/ops/worker-weck` (nach URL-Normalisierung — Traversal fällt durch), kein Userinfo,
+`/api/cron/worker-weck` (nach URL-Normalisierung — Traversal fällt durch), kein Userinfo,
 kein Query, kein Fragment, kein expliziter Port, und der Host muss einem **von der
 Plattform gesetzten** Deployment-Host entsprechen (`VERCEL_PROJECT_PRODUCTION_URL` /
 `VERCEL_URL` / `VERCEL_BRANCH_URL` — reservierte Systemvariablen, kein freier
@@ -534,7 +534,7 @@ Operator-Text; ein bloßes `*.vercel.app`-Suffix genügt ausdrücklich NICHT, de
 deployt jeder Vercel-Kunde). Versendet wird immer die kanonisch neu gebaute URL. Ohne
 Vertrauensanker (z. B. lokal) ist der Transport geschlossen nicht verfügbar — das Secret
 verlässt den Prozess in keinem Abweichungsfall.
-**Beleg (L):** 15 adversariale Weckziele in `scripts/jobdispatch-vertrag-test.js` §5.6
+**Beleg (L):** 16 adversariale Weckziele in `scripts/jobdispatch-vertrag-test.js` §5.6
 (fremder Host, `angreifer.vercel.app`, Zugangsdaten, Traversal, Query, Fragment, Port,
 IP, Präfix-Fälschung, …) — jeweils mit hartem Beweis **0 Netzaufrufe**.
 
@@ -602,6 +602,27 @@ bei einem CLI-Lauf genauso gefährdet. Sie sind **angewendete Historie** und wer
 umbenannt; die Betreiberpraxis (manuelle Anwendung im SQL-Editor, Runbook) berührt die
 Gefahr nicht. Eine spätere Reorganisation des Altbestands ist eine eigene, hier bewusst
 nicht nebenbei erledigte Entscheidung.
+
+### 17.6 Zusätzlicher Befund aus dem CI-Rot: Verbraucher-Route war durch Zugriffs-Gates unerreichbar
+
+Der erste CI-Lauf der Sicherheitskorrektur färbte NUR die neue Routen-Suite rot
+(alle 21 Fälle, jede Antwort ein 409 ohne `grund`) — und deckte damit einen echten
+Konstruktionsfehler auf: `/api/ops/worker-weck` lag HINTER drei vorgelagerten
+Zugriffs-Gates des Servers, die eine Maschine-zu-Maschine-Route nicht passieren kann:
+
+1. **Account-Modus** (Production): jeder `/api/`-Aufruf ohne Nutzersitzung → 401
+   (nur `/api/cron/` ist ausgenommen) — der Selbstweck-Sender hat nie eine Sitzung.
+2. **Legacy-Modus**: bei ≠ 1 aktivem Mandat → Mandatsauswahl-409 für alle
+   `/api/`-Pfade außer Cron (exakt der CI-Befund; lokal unsichtbar, weil der
+   Browser-Smoke zuvor genau EIN Testmandat in den lokalen Store geschrieben hatte).
+3. **CSRF-Pflicht** für POST auf `/api/` (Cron ausgenommen).
+
+**Korrektur:** die Route heißt jetzt **`/api/cron/worker-weck`** — der etablierte,
+selbst-autorisierende Namensraum (authorizeCron, eigene DB-Mandatsauflösung, keine
+Sitzung, keine CSRF-Pflicht). Damit passiert sie alle drei Gates korrekt, **ohne eines
+davon aufzuweichen**; kein Eintrag in `vercel.json` (kein Zeitplan — nur der Selbstweck
+ruft sie). `WECK_PFAD` im Transport, Weckziel-Riegel, Tests und Doku sind umgestellt;
+die Routen-Suite läuft bewusst gegen einen frischen Store (CI-Parität).
 
 ### 17.5 Zusätzlicher Befund: Vertragstest-Harness zählte async-Fälle blind als PASS
 

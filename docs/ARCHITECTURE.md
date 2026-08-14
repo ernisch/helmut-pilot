@@ -453,7 +453,7 @@ Dispatcher (Cron-Slots + Verbraucher-Laufende)
   helmut_outbox_naechste         → fällige Absichten atomar vergeben (skip locked, Backoff)
   Transport.sende({jobId, schemaVersion})       ← NIE mehr als diese zwei Felder
   helmut_outbox_bestaetige       → Versand bestätigt / Fehlversuch verbucht
-Verbraucher  POST /api/ops/worker-weck  (CRON_SECRET; nur Antrieb 'ereignis'; Drain-Lease)
+Verbraucher  POST /api/cron/worker-weck  (CRON_SECRET; nur Antrieb 'ereignis'; Drain-Lease)
   helmut_claim_jobs              → atomare Beanspruchung — die EINZIGE Vergabewahrheit
   helmut_klasse_belege           → verteilte Anbietergrenze (z. B. quellenabruf max 5)
   unveränderte Fachhandler → Persistenz → helmut_finish_job → Folgeauftrag MIT neuer Absicht
