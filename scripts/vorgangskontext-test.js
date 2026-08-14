@@ -615,7 +615,15 @@ const ALLE_FAMILIEN = [...G.FAMILIEN, ...G.ZUSATZFAMILIEN];
         // Keine K2.1-Struktur. Eigener Nachweis:
         // scripts/verteilte-grenzen-datenbank-test.js an echter PostgreSQL.
         "20260813090100_verteilte_grenzen.sql",
-        "rollback_20260813090100_verteilte_grenzen.sql"
+        "rollback_20260813090100_verteilte_grenzen.sql",
+  // Haertungssprint 2026-08-14/2: verwalteter Queue-Verbraucher (claim-by-id,
+  // Outbox-Zuruecklegen/Endzustand/Aufbewahrung, erneuerbares Klassen-Lease) und die
+  // verteilte Anbietersteuerung. Beide gehoeren zum OP-30-Antrieb, nicht zur
+  // Vorgangsbildung — Pruefung 8.8b prueft ihren Inhalt unabhaengig.
+  "20260814090000_queue_verbraucher.sql",
+  "rollback_20260814090000_queue_verbraucher.sql",
+  "20260814090100_anbieter_steuerung.sql",
+  "rollback_20260814090100_anbieter_steuerung.sql"
       ]);
       // Die Allowlist ist KEINE Abschwaechung: 8.8b prueft unabhaengig und INHALTLICH,
       // dass keine Migration im Repository den Kontextpfad beruehrt — auch keine der

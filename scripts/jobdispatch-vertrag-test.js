@@ -315,8 +315,12 @@ async function main() {
   // ── GEBUENDELTER WECKRUF (Sicherheitskorrektur 2026-08-14): der Selbstweck ist eine
   // Tuerklingel — EIN Ruf je Aufrufkontext, egal wie viele Absichten faellig sind. Das
   // beseitigt die Aufrufverstaerkung (vorher: ein HTTP-Aufruf je Absicht, verschachtelt). ──
+  // HAERTUNG 2026-08-14/2: der Standardtransport ist jetzt `sqs`. Die Buendelung ist eine
+  // Eigenschaft des SELBSTWECKS (Tuerklingel) — er muss hier deshalb ausdruecklich gewaehlt
+  // werden. Genau das ist die Absicht: wer buendeln will, waehlt den Selbstweck bewusst.
   const QUEUE_ENV = {
     HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue",
+    HELMUT_JOB_TRANSPORT: "selbstweck",
     HELMUT_WORKER_WAKE_URL: GUTE_URL, CRON_SECRET: "s", ...VERTRAUEN
   };
   const FUENF = [
@@ -468,10 +472,21 @@ async function main() {
     }
   });
   await check("11.2 Ein Transportwechsel ist reine Konfiguration (erstelleTransport ist der EINE Bauplatz)", () => {
-    const selbst = dispatch.erstelleTransport({ HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue", HELMUT_WORKER_WAKE_URL: "http://localhost/x", CRON_SECRET: "s" }, {});
-    const vercel = dispatch.erstelleTransport({ HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue", HELMUT_JOB_TRANSPORT: "vercel-queues" }, { vercelQueueSend: async () => {} });
+    // Drei Transporte, EIN Bauplatz: der Wechsel ist reine Konfiguration.
+    const basis = { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue" };
+    const sqs = dispatch.erstelleTransport({ ...basis }, { sqsSende: async () => {} });
+    const selbst = dispatch.erstelleTransport(
+      { ...basis, HELMUT_JOB_TRANSPORT: "selbstweck",
+        HELMUT_WORKER_WAKE_URL: "https://helmut-pilot.vercel.app/api/cron/worker-weck",
+        CRON_SECRET: "s", VERCEL_PROJECT_PRODUCTION_URL: "helmut-pilot.vercel.app" }, {});
+    const vercel = dispatch.erstelleTransport(
+      { ...basis, HELMUT_JOB_TRANSPORT: "vercel-queues" }, { vercelQueueSend: async () => {} });
+    // HAERTUNG 2026-08-14/2: OHNE Angabe greift der neue Standard `sqs` — nicht mehr der
+    // selbst gebaute Selbstweck.
+    assert.strictEqual(sqs.name, "sqs");
     assert.strictEqual(selbst.name, "selbstweck");
     assert.strictEqual(vercel.name, "vercel-queues");
+    assert.strictEqual(typeof sqs.sende, typeof selbst.sende);
     assert.strictEqual(typeof selbst.sende, typeof vercel.sende);
   });
 
