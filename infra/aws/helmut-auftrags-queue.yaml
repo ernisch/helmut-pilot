@@ -1,0 +1,565 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Helmut OP-30 — verwalteter Auftrags-Transport (Amazon SQS + Lambda) in eu-central-1.
+  ÜBERPRÜFBARE INFRASTRUKTURDEFINITION — in diesem Sprint NICHT ausgerollt.
+  Supabase bleibt die Wahrheit über Aufträge; SQS trägt ausschließlich Wecksignale
+  ({jobId, schemaVersion}), Lambda ist ausschließlich der Verbraucher. Beide sind
+  austauschbar, ohne den Fachkern anzufassen.
+
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+# BEWUSSTE GRENZE DIESES SPRINTS
+# Diese Vorlage wurde NICHT auf ein AWS-Konto angewendet. Es existiert keine Queue, keine
+# Lambda-Funktion, keine IAM-Rolle und kein KMS-Schlüssel. Das Anlegen ist eine
+# kostenpflichtige Gründerentscheidung (Belegdatei §19.6). Die Vorlage ist trotzdem
+# vollständig und wird durch `scripts/infrastruktur-definition-test.js` gegen die
+# Zusagen der Architektur geprüft — eine stille Abweichung (zu kurze Sichtbarkeitszeit,
+# fehlende Verschlüsselung, unbegrenzte Parallelität, fehlende Quarantäne) fällt auf.
+# ═══════════════════════════════════════════════════════════════════════════════════════════
+
+Parameters:
+  Umgebung:
+    Type: String
+    Default: production
+    AllowedValues: [production, staging]
+    Description: Trennt Queues und Funktionen je Umgebung; sie teilen sich nie eine Queue.
+
+  MaxParallelitaet:
+    Type: Number
+    Default: 4
+    MinValue: 1
+    MaxValue: 20
+    Description: >-
+      Reservierte Lambda-Parallelität = harte Obergrenze gleichzeitiger Verbraucher.
+      Default 4 passt zur Stufe 200 des Stufenplans. Der Wert ist bewusst klein: die
+      eigentliche Schutzgrenze liegt in der Datenbank (Klasse worker-drain), diese hier
+      verhindert, dass AWS überhaupt mehr Verbraucher startet, als Supabase Free trägt.
+
+  SupabaseUrlParameter:
+    Type: String
+    Default: /helmut/production/supabase-url
+    Description: >-
+      Name des SSM-Parameters mit der Supabase-URL. Es steht KEIN Secret in dieser Vorlage
+      und keines in einer Lambda-Umgebungsvariablen im Klartext.
+
+  SupabaseSchluesselParameter:
+    Type: String
+    Default: /helmut/production/supabase-service-role-key
+    Description: Name des SecureString-SSM-Parameters mit dem service_role-Schlüssel.
+
+  PaketBucket:
+    Type: String
+    Description: >-
+      S3-Bucket mit dem gebauten Lambda-Archiv (helmut-lambda.zip). Der Bucket MUSS in
+      eu-central-1 liegen — AWS verlangt, dass Lambda-Code aus derselben Region kommt.
+
+  PaketSchluessel:
+    Type: String
+    Default: helmut-lambda.zip
+    Description: S3-Objektschlüssel des gebauten Archivs (Integritätsnachweis siehe manifest.json).
+
+# ── DATENRESIDENZ-RIEGEL (Korrektur 2026-08-14/5) ────────────────────────────────────────────
+# WAS VORHER FALSCH WAR: der Riegel hing an `KeyPolicy: !If [..., !Ref 'AWS::NoValue']`.
+# `KeyPolicy` ist bei AWS::KMS::Key jedoch OPTIONAL — fehlt sie, legt AWS eine
+# Standardrichtlinie an und der Schlüssel entsteht trotzdem. Der Riegel hielt also nichts.
+#
+# WAS JETZT GILT: JEDE echte Ressource dieser Vorlage trägt `Condition: IstFrankfurt`.
+# CloudFormation wertet Bedingungen aus, BEVOR es Ressourcen anlegt, und legt eine Ressource
+# mit falscher Bedingung gar nicht erst an. Außerhalb von eu-central-1 entsteht deshalb
+# GARANTIERT KEINE Queue, keine Funktion, keine Rolle, kein Schlüssel, keine Protokollgruppe
+# und kein Zeitgeber — nicht „es wird angelegt und wieder zurückgerollt", sondern: es entsteht
+# nichts.
+#
+# Der einzige unbedingte Eintrag ist `RegionsRiegel` — ein AWS::CloudFormation::WaitCondition-
+# Handle. Es ist KEINE AWS-Ressource im Sinne von Daten oder Kosten (kein Dienst, kein Speicher,
+# kein Netz), sondern ein stack-lokaler Platzhalter. Er steht hier aus einem einzigen Grund:
+# damit der `Resources`-Abschnitt auch dann einen Eintrag hat, wenn alle Bedingungen falsch
+# sind, und damit die Ausgabe `RegionsBefund` den Betreiber laut darauf hinweist, dass in
+# dieser Region nichts entstanden ist.
+#
+# NACHWEIS OFFEN: die Auswertungsreihenfolge (Bedingungen vor dem Anlegen) ist dokumentiertes
+# CloudFormation-Verhalten, diese Vorlage ist aber in dieser Umgebung nicht gegen AWS geprüft
+# — es existiert kein Stack, kein Konto-Lauf, kein change-set. Vor dem ersten Ausrollen einmal
+# in einer falschen Region trocken anlegen (`aws cloudformation create-change-set`) und
+# belegen, dass der Plan null Ressourcen enthält (Runbook §AWS).
+Conditions:
+  IstFrankfurt: !Equals [!Ref 'AWS::Region', 'eu-central-1']
+  NichtFrankfurt: !Not [!Equals [!Ref 'AWS::Region', 'eu-central-1']]
+
+Resources:
+
+  # Der einzige UNBEDINGTE Eintrag — bewusst so (siehe Kopfkommentar oben). Ein
+  # WaitConditionHandle erzeugt keinen Dienst, keinen Speicher, kein Netz und keine Kosten.
+  # Er sorgt allein dafür, dass der Resources-Abschnitt nie leer ist und dass eine
+  # Bereitstellung in der falschen Region eine sprechende Ausgabe hinterlässt.
+  RegionsRiegel:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Metadata:
+      Zweck: >-
+        Datenresidenz-Marker. Der Stack ist ausschliesslich fuer eu-central-1 (Frankfurt)
+        bestimmt. Der WIRKSAME Riegel ist die Bedingung IstFrankfurt an jeder echten
+        Ressource — ausserhalb Frankfurts entsteht keine einzige davon.
+
+  # ── VERSCHLÜSSELUNG ────────────────────────────────────────────────────────────────────────
+  # Serverseitige Verschlüsselung mit einem EIGENEN KMS-Schlüssel (nicht dem AWS-eigenen):
+  # nur so ist der Zugriff über eine Schlüsselrichtlinie prüfbar und entziehbar.
+  AuftragsQueueSchluessel:
+    Type: AWS::KMS::Key
+    Condition: IstFrankfurt
+    Properties:
+      Description: !Sub 'Helmut ${Umgebung}: Verschluesselung der Auftrags-Wecksignale'
+      EnableKeyRotation: true
+      # KORREKTUR 2026-08-14/5: hier hing der Datenresidenz-Riegel an `KeyPolicy` mit
+      # `AWS::NoValue`. Das war WIRKUNGSLOS — `KeyPolicy` ist bei AWS::KMS::Key OPTIONAL;
+      # fehlt sie, legt AWS eine Standardrichtlinie an, und der Schlüssel entsteht trotzdem.
+      # Der Riegel sitzt jetzt dort, wo er greift: an einer `Condition` auf JEDER Ressource
+      # (siehe Kopf der Vorlage). Diese Richtlinie ist wieder das, was sie sein soll — die
+      # Konto-Anweisung, die die Rechtevergabe über IAM-Richtlinien aktiviert.
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: KontoVerwaltungUndIamAktivierung
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+
+  # ── SCHLÜSSEL FÜR DIE SUPABASE-ZUGANGSDATEN (Verkabelungslauf 2026-08-14/4) ────────────────
+  # WARUM EIN ZWEITER SCHLÜSSEL UND NICHT DER OBIGE:
+  # Der Queue-Schlüssel wird vom SenderBenutzer benutzt — einem IAM-Benutzer mit langlebigen
+  # Zugangsdaten, die AUSSERHALB von AWS bei Vercel liegen. Er trägt darauf (korrekterweise,
+  # als Produzent) `kms:GenerateDataKey` UND `kms:Decrypt`. Schützte derselbe Schlüssel auch
+  # die SecureString-Parameter, hätte dieser Benutzer die kryptographische Fähigkeit, den
+  # Supabase-service_role-Schlüssel zu entschlüsseln — den Generalschlüssel, der RLS umgeht
+  # und alle Mandanten trägt (CLAUDE.md §4 Regel 1). Dass er es heute nicht kann, liegt nur
+  # an einer IAM-Hürde (ihm fehlt ssm:GetParameter), nicht an der Kryptographie.
+  # Ein Schlüssel für Wecksignale ({jobId, schemaVersion}) und ein Schlüssel für
+  # Mandantengeheimnisse dürfen nicht derselbe sein. Kosten: ein zweiter KMS-Schlüssel.
+  ParameterSchluessel:
+    Type: AWS::KMS::Key
+    Condition: IstFrankfurt
+    Properties:
+      Description: !Sub 'Helmut ${Umgebung}: Verschluesselung der Supabase-SecureString-Parameter'
+      EnableKeyRotation: true
+      # ── KEINE NOCH NICHT VORHANDENEN PRINCIPALS (Korrektur 2026-08-14/5) ──────────────
+      # Hier standen die ARNs der beiden Lambda-Rollen als Principals. Das war eine nicht
+      # auflösbare ERSTBEREITSTELLUNGS-ABHÄNGIGKEIT: beim ersten Anlegen in einem leeren
+      # Konto existieren diese Rollen noch nicht, wenn der Schlüssel entsteht — und die
+      # Rollen brauchen ihrerseits die ARN dieses Schlüssels. KMS löst einen Principal beim
+      # Setzen der Richtlinie in seine eindeutige ID auf und weist eine Richtlinie mit
+      # unbekanntem Principal zurück.
+      #
+      # DER OFFIZIELLE WEG: die Konto-Anweisung unten AKTIVIERT die Rechtevergabe über
+      # IAM-Richtlinien für diesen Schlüssel. Die eigentliche Erlaubnis steht deshalb in den
+      # IAM-Richtlinien der beiden Rollen — dort auf die genaue Schlüssel-ARN und
+      # eingeschränkt mit `kms:ViaService` auf den Parameter Store.
+      # Damit ist der Graph azyklisch: Schlüssel -> Rollen, nie zurück.
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: KontoVerwaltungUndIamAktivierung
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+
+  # BEDIENALIAS — ausschließlich für den Betreiber beim Anlegen der Parameter
+  # (`aws ssm put-parameter --key-id alias/helmut-ssm-<umgebung> ...`).
+  # ER GEHÖRT NIEMALS IN EIN `Resource`-FELD: eine Alias-ARN bezeichnet den Alias, nicht den
+  # Schlüssel (Belegdatei §25). Genau dieser Fehler wurde hier korrigiert.
+  ParameterSchluesselAlias:
+    Type: AWS::KMS::Alias
+    Condition: IstFrankfurt
+    Properties:
+      AliasName: !Sub 'alias/helmut-ssm-${Umgebung}'
+      TargetKeyId: !Ref ParameterSchluessel
+
+  # ── QUARANTÄNE (Dead-Letter-Queue) ─────────────────────────────────────────────────────────
+  # Eine Nachricht, die dauerhaft nicht verarbeitet werden kann, landet hier — statt endlos
+  # zu kreisen oder still zu verschwinden. 14 Tage Aufbewahrung, damit ein Betreiber sie
+  # tatsächlich noch ansehen kann.
+  AuftragsQuarantaene:
+    Type: AWS::SQS::Queue
+    Condition: IstFrankfurt
+    Properties:
+      QueueName: !Sub 'helmut-auftraege-quarantaene-${Umgebung}'
+      MessageRetentionPeriod: 1209600        # 14 Tage (Maximum)
+      KmsMasterKeyId: !Ref AuftragsQueueSchluessel
+      KmsDataKeyReusePeriodSeconds: 300
+      Tags:
+        - Key: helmut:zweck
+          Value: auftrags-quarantaene
+
+  # ── HAUPTQUEUE ─────────────────────────────────────────────────────────────────────────────
+  AuftragsQueue:
+    Type: AWS::SQS::Queue
+    Condition: IstFrankfurt
+    Properties:
+      QueueName: !Sub 'helmut-auftraege-${Umgebung}'
+      # SICHTBARKEITSZEIT > MAXIMALE BEARBEITUNGSDAUER.
+      # Der Verbraucher deckelt einen Auftrag auf 120 s (queue-verbraucher.js
+      # VERBRAUCHER_BUDGET_MS) und die Lambda-Funktion auf 180 s (Timeout unten).
+      # 360 s = doppelte Lambda-Laufzeit: eine noch laufende Verarbeitung kann NIE
+      # gleichzeitig ein zweites Mal zugestellt werden.
+      VisibilityTimeout: 360
+      MessageRetentionPeriod: 345600         # 4 Tage — deutlich über jedem Cron-Rückfallzyklus
+      ReceiveMessageWaitTimeSeconds: 20      # Long Polling: weniger leere Abfragen, weniger Kosten
+      KmsMasterKeyId: !Ref AuftragsQueueSchluessel
+      KmsDataKeyReusePeriodSeconds: 300
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt AuftragsQuarantaene.Arn
+        # BEGRENZTE ZUSTELLVERSUCHE: nach 5 erfolglosen Zustellungen ist die Nachricht
+        # dauerhaft problematisch und geht in die Quarantäne. Der Wert liegt bewusst unter
+        # der Versuchsgrenze des Auftragsbuchs (max_attempts 5–10), damit die Queue nie
+        # länger kreist als der Auftrag selbst Versuche hat.
+        maxReceiveCount: 5
+      Tags:
+        - Key: helmut:zweck
+          Value: auftrags-wecksignale
+
+  # ── IAM: MINIMALE RECHTE FÜR DEN SENDER (Vercel) ───────────────────────────────────────────
+  # Der Sender darf GENAU EINES: eine Nachricht in GENAU DIESE Queue legen. Kein Empfangen,
+  # kein Löschen, kein Purge, keine Attributänderung, keine zweite Queue.
+  SenderBenutzer:
+    Type: AWS::IAM::User
+    Condition: IstFrankfurt
+    Properties:
+      UserName: !Sub 'helmut-auftrags-sender-${Umgebung}'
+      Policies:
+        - PolicyName: nur-senden
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'sqs:SendMessage'
+                Resource: !GetAtt AuftragsQueue.Arn
+              - Effect: Allow
+                Action:
+                  # PRODUZENTENRECHTE (korrigiert 2026-08-14/3): ein Sender an eine mit
+                  # kundeneigenem KMS-Schlüssel verschlüsselte SQS-Queue braucht
+                  # `kms:GenerateDataKey` UND `kms:Decrypt` — Decrypt, weil SQS den
+                  # verschlüsselten Datenschlüssel im Namen des Aufrufers entschlüsselt.
+                  # `kms:Encrypt` allein genügt NICHT und wird nicht benötigt.
+                  - 'kms:GenerateDataKey'
+                  - 'kms:Decrypt'
+                Resource: !GetAtt AuftragsQueueSchluessel.Arn
+
+  # ── IAM: MINIMALE RECHTE FÜR DEN VERBRAUCHER (Lambda) ──────────────────────────────────────
+  VerbraucherRolle:
+    Type: AWS::IAM::Role
+    Condition: IstFrankfurt
+    Properties:
+      RoleName: !Sub 'helmut-auftrags-verbraucher-${Umgebung}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: nur-empfangen-und-loeschen
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'sqs:ReceiveMessage'
+                  - 'sqs:DeleteMessage'
+                  - 'sqs:GetQueueAttributes'
+                  # KEIN sqs:SendMessage: der Verbraucher erzeugt NIE selbst Nachrichten.
+                  # Folgeaufträge entstehen über die Outbox in Supabase, nie in der Queue.
+                Resource: !GetAtt AuftragsQueue.Arn
+              # ZWEI SCHLÜSSEL, ZWEI ANWEISUNGEN — bewusst NICHT eine gemeinsame:
+              #   * der Queue-Schlüssel wird über SQS benutzt (Nachricht entschlüsseln),
+              #   * der Parameter-Schlüssel ausschließlich über SSM.
+              # Eine einzige Anweisung mit beiden ARNs und einer `kms:ViaService`-Bedingung
+              # wäre falsch: sie würde auch die SQS-Entschlüsselung an SSM binden und damit
+              # den Empfang brechen.
+              # Die Alias-ARN, die hier bis 2026-08-14/4 stand, gewährt nichts — es MUSS die
+              # Schlüssel-ARN sein (Belegdatei §25).
+              - Effect: Allow
+                Action:
+                  - 'kms:Decrypt'
+                Resource: !GetAtt AuftragsQueueSchluessel.Arn
+              - Effect: Allow
+                Action:
+                  - 'kms:Decrypt'
+                # HIER liegt die Erlaubnis, die früher fälschlich in der Schlüsselrichtlinie
+                # stand (Korrektur 2026-08-14/5). Eingeschränkt auf Aufrufe, die über den
+                # Parameter Store kommen — direkt darf diese Rolle den Schlüssel nicht nutzen.
+                Resource: !GetAtt ParameterSchluessel.Arn
+                Condition:
+                  StringEquals:
+                    'kms:ViaService': !Sub 'ssm.${AWS::Region}.amazonaws.com'
+              - Effect: Allow
+                Action:
+                  - 'ssm:GetParameter'
+                Resource:
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SupabaseUrlParameter}'
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SupabaseSchluesselParameter}'
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/helmut-auftrags-verbraucher-${Umgebung}:*'
+
+  VerbraucherLogGruppe:
+    Type: AWS::Logs::LogGroup
+    Condition: IstFrankfurt
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/helmut-auftrags-verbraucher-${Umgebung}'
+      # Wecksignal-Protokolle enthalten nur Auftrags-IDs, Ausgänge und Dauern — keine
+      # politischen Inhalte. 30 Tage genügen für die Fehlersuche.
+      RetentionInDays: 30
+
+  VerbraucherFunktion:
+    Type: AWS::Lambda::Function
+    Condition: IstFrankfurt
+    Properties:
+      FunctionName: !Sub 'helmut-auftrags-verbraucher-${Umgebung}'
+      Runtime: nodejs22.x
+      Architectures: [arm64]
+      Handler: lambda/index.handler
+      Role: !GetAtt VerbraucherRolle.Arn
+      # TIMEOUT < SICHTBARKEITSZEIT (180 s < 360 s): eine Verarbeitung endet immer, bevor
+      # dieselbe Nachricht erneut sichtbar werden kann.
+      Timeout: 180
+      MemorySize: 512
+      # HARTE PARALLELITÄTSGRENZE: mehr gleichzeitige Verbraucher startet AWS nicht.
+      ReservedConcurrentExecutions: !Ref MaxParallelitaet
+      Environment:
+        Variables:
+          # KEINE SECRETS IM KLARTEXT. Die Funktion liest sie zur Laufzeit aus SSM.
+          HELMUT_SUPABASE_URL_PARAMETER: !Ref SupabaseUrlParameter
+          HELMUT_SUPABASE_KEY_PARAMETER: !Ref SupabaseSchluesselParameter
+          HELMUT_SCALABLE_PIPELINE: 'on'
+          HELMUT_JOB_DISPATCH_MODE: 'queue'
+          HELMUT_JOB_TRANSPORT: 'sqs'
+          HELMUT_KLASSEN_GRENZEN: 'on'
+          # ── DER UNMITTELBARE RELAY-ANSTOSS (Verkabelungslauf 2026-08-14/4) ──────────────
+          # OHNE DIESE ZEILE WAR DIE KETTE UNTERBROCHEN: `lambda-verbraucher.js` liest genau
+          # diesen Namen, um die Relay-Funktion asynchron aufzurufen. Fehlte er, fand der
+          # Verbraucher keinen Ausloeser — und der Anstoss verschwand still.
+          # `!Ref` auf eine AWS::Lambda::Function liefert den FUNKTIONSNAMEN, und genau den
+          # erwartet `InvokeCommand.FunctionName`.
+          HELMUT_RELAY_FUNKTION: !Ref RelayFunktion
+          # BEWUSST NICHT GESETZT: HELMUT_SQS_QUEUE_URL. Der Verbraucher soll NIE selbst
+          # senden — er hat dafuer auch kein `sqs:SendMessage`. Beides zusammen macht einen
+          # stillen Rueckfall auf Direktversand strukturell unmoeglich.
+      Code:
+        # PAKETQUELLE (Korrekturlauf 2026-08-14/3, Lücke 2): kein Platzhalter mehr. Das
+        # Archiv wird reproduzierbar aus dem Repository gebaut
+        # (`node scripts/lambda-paket-bauen.js`) und vor dem Ausrollen nach S3 geladen.
+        # Der Bauweg liefert Manifest und SHA-256 als Integritätsnachweis.
+        S3Bucket: !Ref PaketBucket
+        S3Key: !Ref PaketSchluessel
+
+  # ── ANBINDUNG QUEUE -> LAMBDA ──────────────────────────────────────────────────────────────
+  VerbraucherAnbindung:
+    Type: AWS::Lambda::EventSourceMapping
+    Condition: IstFrankfurt
+    Properties:
+      EventSourceArn: !GetAtt AuftragsQueue.Arn
+      FunctionName: !GetAtt VerbraucherFunktion.Arn
+      BatchSize: 5
+      MaximumBatchingWindowInSeconds: 5
+      # PARTIELLE FEHLERANTWORT: ohne diese Einstellung würde ein einziger Fehler den
+      # gesamten Stapel erneut zustellen — auch die bereits erledigten Nachrichten.
+      FunctionResponseTypes:
+        - ReportBatchItemFailures
+      ScalingConfig:
+        # Zusätzlich zur reservierten Parallelität: SQS selbst startet nie mehr gleichzeitige
+        # Verbraucher als hier erlaubt.
+        MaximumConcurrency: !Ref MaxParallelitaet
+
+  # ── RELAY: der dauerhafte Antrieb der Outbox (Korrekturlauf 2026-08-14/3, Lücke 1) ────────
+  # Er transportiert ausschließlich SIGNALE: fällige Versandabsichten aus der Outbox lesen,
+  # an SQS senden, Ergebnis verbuchen. Keine Facharbeit, kein Modellaufruf, kein Quellenabruf.
+  RelayRolle:
+    Type: AWS::IAM::Role
+    Condition: IstFrankfurt
+    Properties:
+      RoleName: !Sub 'helmut-outbox-relay-${Umgebung}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: nur-senden-und-lesen
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  # Der Relay ist der EINZIGE Produzent. Er empfängt nichts und löscht nichts.
+                  - 'sqs:SendMessage'
+                Resource: !GetAtt AuftragsQueue.Arn
+              - Effect: Allow
+                Action:
+                  # Produzentenrechte, siehe Kommentar beim Sender.
+                  - 'kms:GenerateDataKey'
+                  - 'kms:Decrypt'
+                Resource: !GetAtt AuftragsQueueSchluessel.Arn
+              - Effect: Allow
+                Action:
+                  - 'ssm:GetParameter'
+                Resource:
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SupabaseUrlParameter}'
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${SupabaseSchluesselParameter}'
+              - Effect: Allow
+                Action:
+                  - 'kms:Decrypt'
+                # Die beiden SecureString-Parameter sind mit GENAU diesem Schlüssel
+                # verschlüsselt (der Betreiber legt sie mit `--key-id` an, Runbook §22.2);
+                # ohne Decrypt käme nur Chiffretext an.
+                # KORREKTUR 2026-08-14/4: hier stand eine Alias-ARN — sie gewährt nichts.
+                # KORREKTUR 2026-08-14/5: die Einschränkung auf den Parameter Store steht
+                # jetzt HIER statt in der Schlüsselrichtlinie (dort hätte sie einen noch
+                # nicht existierenden Principal gebraucht).
+                Resource: !GetAtt ParameterSchluessel.Arn
+                Condition:
+                  StringEquals:
+                    'kms:ViaService': !Sub 'ssm.${AWS::Region}.amazonaws.com'
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/helmut-outbox-relay-${Umgebung}:*'
+
+  RelayLogGruppe:
+    Type: AWS::Logs::LogGroup
+    Condition: IstFrankfurt
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/helmut-outbox-relay-${Umgebung}'
+      RetentionInDays: 30
+
+  RelayFunktion:
+    Type: AWS::Lambda::Function
+    Condition: IstFrankfurt
+    Properties:
+      FunctionName: !Sub 'helmut-outbox-relay-${Umgebung}'
+      Runtime: nodejs22.x
+      Architectures: [arm64]
+      Handler: lambda/relay.handler
+      Role: !GetAtt RelayRolle.Arn
+      Timeout: 60
+      MemorySize: 512
+      # Der Relay ist bewusst SCHMAL gedeckelt: er ist kein Arbeiter, sondern eine Klingel.
+      # Zusammen mit der Klassen-Lease `outbox-relay` (max 1) kann keine Aufruflawine
+      # entstehen, auch wenn viele Verbraucher gleichzeitig anstoßen.
+      ReservedConcurrentExecutions: 2
+      Environment:
+        Variables:
+          HELMUT_SUPABASE_URL_PARAMETER: !Ref SupabaseUrlParameter
+          HELMUT_SUPABASE_KEY_PARAMETER: !Ref SupabaseSchluesselParameter
+          HELMUT_SCALABLE_PIPELINE: 'on'
+          HELMUT_JOB_DISPATCH_MODE: 'queue'
+          HELMUT_JOB_TRANSPORT: 'sqs'
+          HELMUT_KLASSEN_GRENZEN: 'on'
+          HELMUT_SQS_QUEUE_URL: !Ref AuftragsQueue
+          HELMUT_RELAY_MAX_LAEUFE: '5'
+      Code:
+        S3Bucket: !Ref PaketBucket
+        S3Key: !Ref PaketSchluessel
+
+  # ── ZEITGEBER: trägt SPÄTER fällige Arbeit und repariert einen verlorenen Anstoß ───────────
+  # Minütlich = 1.440 Aufrufe/Tag. Kostenklasse: Lambda-Aufrufe + GB-Sekunden (ein Leerlauf
+  # dauert Millisekunden) sowie EventBridge-Scheduler-Aufrufe. Bewusst NICHT aktiviert.
+  RelayZeitgeberRolle:
+    Type: AWS::IAM::Role
+    Condition: IstFrankfurt
+    Properties:
+      RoleName: !Sub 'helmut-relay-zeitgeber-${Umgebung}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: nur-relay-aufrufen
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: 'lambda:InvokeFunction'
+                Resource: !GetAtt RelayFunktion.Arn
+
+  RelayZeitgeber:
+    Type: AWS::Scheduler::Schedule
+    Condition: IstFrankfurt
+    Properties:
+      Name: !Sub 'helmut-outbox-relay-${Umgebung}'
+      Description: >-
+        Minütlicher Relay-Lauf: stellt später fällige Versandabsichten zu und repariert
+        einen verlorenen unmittelbaren Anstoß. Ohne ihn wäre der Vercel-Cron wieder für
+        den normalen Fortgang erforderlich.
+      ScheduleExpression: 'rate(1 minute)'
+      ScheduleExpressionTimezone: 'Europe/Berlin'
+      FlexibleTimeWindow:
+        Mode: 'OFF'
+      State: DISABLED          # NICHT aktiviert — Einschalten ist eine Betreiberentscheidung
+      Target:
+        Arn: !GetAtt RelayFunktion.Arn
+        RoleArn: !GetAtt RelayZeitgeberRolle.Arn
+        Input: '{"ausloeser":"zeitgeber"}'
+        RetryPolicy:
+          # Ein verpasster Lauf ist folgenlos — der nächste kommt in einer Minute.
+          MaximumRetryAttempts: 0
+
+  # Der Verbraucher darf GENAU EINE Sache zusätzlich: den Relay asynchron anstoßen.
+  VerbraucherRelayRecht:
+    Type: AWS::IAM::Policy
+    Condition: IstFrankfurt
+    Properties:
+      PolicyName: !Sub 'helmut-verbraucher-relay-anstoss-${Umgebung}'
+      Roles: [!Ref VerbraucherRolle]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: 'lambda:InvokeFunction'
+            Resource: !GetAtt RelayFunktion.Arn
+
+Outputs:
+  # Alle Ausgaben haengen an derselben Bedingung: in einer falschen Region gibt es nichts
+  # auszugeben, weil nichts entstanden ist.
+  QueueUrl:
+    Condition: IstFrankfurt
+    Description: Wert fuer HELMUT_SQS_QUEUE_URL (Sender-Seite, Vercel).
+    Value: !Ref AuftragsQueue
+  QuarantaeneUrl:
+    Condition: IstFrankfurt
+    Description: Dead-Letter-Queue — hier landen dauerhaft unbrauchbare Nachrichten.
+    Value: !Ref AuftragsQuarantaene
+  RelayFunktionName:
+    Condition: IstFrankfurt
+    Description: >-
+      Name der Relay-Funktion. Der Verbraucher bekommt ihn als HELMUT_RELAY_FUNKTION direkt
+      aus dieser Vorlage; die Ausgabe dient nur der Kontrolle.
+    Value: !Ref RelayFunktion
+  ParameterSchluesselArn:
+    Condition: IstFrankfurt
+    Description: >-
+      Schluessel-ARN fuer die beiden Supabase-SecureString-Parameter. Der Betreiber legt sie
+      mit `--key-id alias/helmut-ssm-<umgebung>` an (Runbook §22.2).
+    Value: !GetAtt ParameterSchluessel.Arn
+  Region:
+    Condition: IstFrankfurt
+    Description: Bestaetigte Region (Datenresidenz).
+    Value: !Ref 'AWS::Region'
+  RegionsBefund:
+    Condition: NichtFrankfurt
+    Description: >-
+      DATENRESIDENZ-RIEGEL HAT GEGRIFFEN. Diese Vorlage ist ausschliesslich fuer eu-central-1
+      (Frankfurt) bestimmt. In dieser Region wurde KEINE Ressource angelegt — keine Queue,
+      keine Lambda-Funktion, keine IAM-Rolle, kein KMS-Schluessel, keine Protokollgruppe und
+      kein Zeitgeber. Stack in eu-central-1 erneut anlegen.
+    Value: !Sub 'KEINE RESSOURCE ANGELEGT — falsche Region ${AWS::Region}, erlaubt ist nur eu-central-1'

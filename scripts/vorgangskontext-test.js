@@ -603,7 +603,27 @@ const ALLE_FAMILIEN = [...G.FAMILIEN, ...G.ZUSATZFAMILIEN];
         // und keine K2.1-Struktur. Eigener Nachweis:
         // scripts/jobqueue-alter-datenbank-test.js an echter PostgreSQL.
         "20260812_jobqueue_altersmessung.sql",
-        "20260812_jobqueue_altersmessung_rollback.sql"
+        "20260812_jobqueue_altersmessung_rollback.sql",
+        // OP-30-Zielarchitektur (2026-08-13): transaktionale Outbox — legt AUSSCHLIESSLICH
+        // public.helmut_job_outbox + Funktionen darauf an (Versandabsichten, nur
+        // Auftrags-ID/Schema-Version, strukturell keine Inhaltsspalte). Keine K2.1-Struktur.
+        // Eigener Nachweis: scripts/jobqueue-outbox-datenbank-test.js an echter PostgreSQL.
+        "20260813090000_jobqueue_outbox.sql",
+        "rollback_20260813090000_jobqueue_outbox.sql",
+        // OP-30-Zielarchitektur (2026-08-13): verteilte Arbeitsklassengrenzen — legt
+        // AUSSCHLIESSLICH helmut_klassen_anker/-_slots + Funktionen an (Semaphor mit TTL).
+        // Keine K2.1-Struktur. Eigener Nachweis:
+        // scripts/verteilte-grenzen-datenbank-test.js an echter PostgreSQL.
+        "20260813090100_verteilte_grenzen.sql",
+        "rollback_20260813090100_verteilte_grenzen.sql",
+  // Haertungssprint 2026-08-14/2: verwalteter Queue-Verbraucher (claim-by-id,
+  // Outbox-Zuruecklegen/Endzustand/Aufbewahrung, erneuerbares Klassen-Lease) und die
+  // verteilte Anbietersteuerung. Beide gehoeren zum OP-30-Antrieb, nicht zur
+  // Vorgangsbildung — Pruefung 8.8b prueft ihren Inhalt unabhaengig.
+  "20260814090000_queue_verbraucher.sql",
+  "rollback_20260814090000_queue_verbraucher.sql",
+  "20260814090100_anbieter_steuerung.sql",
+  "rollback_20260814090100_anbieter_steuerung.sql"
       ]);
       // Die Allowlist ist KEINE Abschwaechung: 8.8b prueft unabhaengig und INHALTLICH,
       // dass keine Migration im Repository den Kontextpfad beruehrt — auch keine der

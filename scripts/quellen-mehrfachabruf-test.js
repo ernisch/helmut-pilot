@@ -257,9 +257,15 @@ function abrufUntergrenze(dauern, g) {
     check("1.1 `CRAWLER_TIMEOUT_MS` wird ausschliesslich als `timeout` EINZELNER Anfragen benutzt",
       stellen >= 3 && !/fetchTimeoutMs[\s\S]{0,40}(Date\.now|deadline|budget)/i.test(src),
       `${stellen} Verwendungen, alle als Socket-Timeout`);
+    // Seit dem Korrekturlauf 2026-08-14/3 heisst die Rohfassung `fetchUrlRoh`; `fetchUrl` ist
+    // die Anbieter-Umschliessung darum. Am Zeitverhalten aendert das NICHTS: jede Weiterleitung
+    // bleibt eine eigene Anfrage mit eigenem Timeout. Neu ist nur, dass die GANZE Kette
+    // innerhalb EINER Anbieterreservierung laeuft (sonst kostete eine 6er-Kette 6 Kontingente).
     check("1.2 `fetchUrl` folgt Weiterleitungen rekursiv — jede Weiterleitung ist eine EIGENE"
       + " Anfrage mit EIGENEM Timeout (bis zu 6 Hops)",
-      /redirectDepth > 6/.test(src) && /fetchUrl\(nextUrl, redirectDepth \+ 1\)/.test(src));
+      /redirectDepth > 6/.test(src) && /fetchUrlRoh\(nextUrl, redirectDepth \+ 1, deps\)/.test(src));
+    check("1.2b Die gesamte Weiterleitungskette laeuft in EINER Anbieterreservierung",
+      /if \(redirectDepth > 0\) return fetchUrlRoh\(url, redirectDepth, deps\);/.test(src));
     check("1.3 `resolveArticleUrl` kann je Eintrag 1x `fetchUrl` + bis zu 2x `postForm` ausloesen",
       /for \(let attempt = 0; attempt < 2; attempt \+= 1\)/.test(src) && /await postForm\(/.test(src));
     check("1.4 `enrichPersonArticleImages` ist eine SEQUENZIELLE Schleife mit Netzarbeit je Eintrag",

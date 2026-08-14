@@ -90,8 +90,15 @@ const seedDir = path.join(__dirname, "..", "supabase", "seeds");
 // Quellenarchitektur-Migrationen (ab Quellenarchitektur-Aera 20260712) muessen Rollback haben.
 // Ausgenommen: presale_hardening (vorbestehend, ausserhalb Scope). Der generierte Kern-Seed
 // wird durch den Tabellen-Drop des Migrations-Rollbacks mit entfernt (kein eigener noetig).
-const migFiles = fs.readdirSync(migDir).filter((f) => f.endsWith(".sql") && !f.endsWith("_rollback.sql") && !/presale_hardening/.test(f) && f >= "20260712");
-check("14 alle Quellenarchitektur-Migrationen haben ein _rollback.sql", migFiles.length >= 4 && migFiles.every((f) => fs.existsSync(path.join(migDir, f.replace(/\.sql$/, "_rollback.sql")))));
+// Zwei Rollback-Konventionen (Sicherheitskorrektur 2026-08-14, CLAUDE.md §4 Regel 8):
+// Altbestand `<name>_rollback.sql` (angewendete Historie), Neu-Konvention
+// `rollback_<name>.sql` (fuer die Supabase CLI strukturell unausfuehrbar) — der
+// Organisationstest (migrations-organisation-test.js) erzwingt die Neu-Konvention;
+// hier zaehlt nur: JEDE Vorwaertsmigration hat ein Rollback-Gegenstueck.
+const migFiles = fs.readdirSync(migDir).filter((f) => f.endsWith(".sql") && !f.endsWith("_rollback.sql") && !f.startsWith("rollback_") && !/presale_hardening/.test(f) && f >= "20260712");
+check("14 alle Quellenarchitektur-Migrationen haben ein Rollback-Gegenstueck", migFiles.length >= 4 && migFiles.every((f) =>
+  fs.existsSync(path.join(migDir, f.replace(/\.sql$/, "_rollback.sql")))
+  || fs.existsSync(path.join(migDir, `rollback_${f}`))));
 check("14b Landesmodul-Seed hat Rollback; Kern-Seed via Tabellen-Drop abgedeckt", fs.existsSync(path.join(seedDir, "20260717_landesmodul_be_bb_seed_rollback.sql")));
 const seedSql = fs.existsSync(path.join(seedDir, "20260717_landesmodul_be_bb_seed.sql")) ? fs.readFileSync(path.join(seedDir, "20260717_landesmodul_be_bb_seed.sql"), "utf8") : "";
 check("14 Landesmodul-Seed ist idempotent (ON CONFLICT DO NOTHING)", /on conflict .* do nothing/i.test(seedSql));

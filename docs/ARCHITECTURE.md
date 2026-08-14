@@ -1,6 +1,10 @@
 # ARCHITECTURE — Systemkarte Helmut
 
-**Letzte Aktualisierung:** 2026-08-11 (§7e: die sechs OP-30-Migrationen sind auf Production
+**Letzte Aktualisierung:** 2026-08-14/5 (§7f.1: Outbox-Relay als Antrieb, SSM-Startweg, zwei KMS-Schluessel, Verkabelung aus der echten Vorlage, erstbereitstellbarer azyklischer Graph und Regionsbedingung an jeder Ressource — nicht ausgerollt; §7f: OP-30-Zielarchitektur — transaktionale
+Outbox, austauschbarer Transport, verteilte Klassengrenzen, Vorgangswache; alles gebaut,
+lokal nachgewiesen, Default-AUS, Migrationen `20260813` NICHT angewendet; kanonisch
+[`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md));
+davor 2026-08-11 (§7e: die sechs OP-30-Migrationen sind auf Production
 **angewendet** — Schema vorhanden, fünfter Auftragstyp `tenant_narrative`, alle Flags weiter
 AUS, Pfad im Betrieb wirkungslos); davor 2026-08-08/3 (§7e: V3-Anbindung des Warteschlangenpfads und
 KI-Budgetschicht, beide lokal und DEFAULT AUS); davor 2026-08-08/2 (§7e: Phasenfenster für Projektion und Briefing;
@@ -428,6 +432,54 @@ der Dokumentmenge (`rd-<hash>`), nicht das Aktualitätsfenster: derselbe Artikel
 einen zweiten Verstehensauftrag. Der Auftrag trägt **nur Kennungen**, keine Inhalte; die
 minimierten Zeilen holt der Handler aus `raw_documents`.
 
+### 7f · Zielarchitektur: transaktionale Outbox + austauschbarer Transport (2026-08-13, DEFAULT AUS)
+
+> **Zustand:** vollständig gebaut und lokal nachgewiesen, in Production **nirgends aktiv**.
+> Die zwei neuen Migrationspaare (`20260813090000_jobqueue_outbox`, `20260813090100_verteilte_grenzen`)
+> sind **nicht angewendet**; alle neuen Flags sind Default-AUS und fail closed. Kanonische
+> Entscheidungs- und Belegdatei:
+> [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md).
+
+**Warum sie existiert.** Der zweite Fünferlauf (Runbook §19) hat belegt: der Motor ist
+fehlerfrei und fair, aber der **slotgebundene Abfluss** (~130–180 Aufträge/Tag) trägt die
+eigene Ankunftsrate (~440–470/Tag bei n=5) nicht. Mehr Slots skalieren den Slot, nicht die
+Architektur. Die Zielarchitektur löst die Rechenleistung vom Slottakt — **ereignisgesteuert,
+ohne den Fachkern zu verändern**.
+
+```
+Einreihen (Planer/Handler, EINE Transaktion)
+  helmut_enqueue_job_mit_outbox  → Auftrag (helmut_jobs) + Versandabsicht (helmut_job_outbox)
+Dispatcher (Cron-Slots + Verbraucher-Laufende)
+  helmut_outbox_naechste         → fällige Absichten atomar vergeben (skip locked, Backoff)
+  Transport.sende({jobId, schemaVersion})       ← NIE mehr als diese zwei Felder
+  helmut_outbox_bestaetige       → Versand bestätigt / Fehlversuch verbucht
+Verbraucher  POST /api/cron/worker-weck  (CRON_SECRET; nur Antrieb 'ereignis'; Drain-Lease)
+  helmut_claim_jobs              → atomare Beanspruchung — die EINZIGE Vergabewahrheit
+  helmut_klasse_belege           → verteilte Anbietergrenze (z. B. quellenabruf max 5)
+  unveränderte Fachhandler → Persistenz → helmut_finish_job → Folgeauftrag MIT neuer Absicht
+Abgleich (Sicherheitsnetz, nicht Antrieb)
+  helmut_outbox_abgleich         → fehlende/verwaiste Absichten, terminale schließen
+```
+
+**Verbindliche Regeln.** Supabase bleibt die einzige Wahrheit (kein Transportdienst kennt
+oder entscheidet einen Auftragszustand); das Transport-Payload ist strukturell auf
+`{jobId, schemaVersion}` begrenzt (die Outbox **hat keine Inhaltsspalte**; Laufzeit-Riegel
+`pruefeTransportPayload`); mehrfache Zustellung ist wirkungslos (Claim-Atomarität); bei
+Transportausfall bleibt jeder Auftrag vollständig erhalten; ein Transportwechsel
+(Selbstweck ↔ Vercel Queues ↔ späterer externer Worker) ändert **keinen Fachhandler**
+(testgesichert). Es gibt genau **einen** primären Antrieb (`bestand` · `cron-queue` ·
+`ereignis`, `job-dispatch.waehleAntrieb`); widersprüchliche Konfiguration stoppt geschlossen.
+
+**Verteilte Grenzen.** Prozesslokale Grenzen addieren sich über Instanzen — die neuen
+Klassen-Semaphore (`helmut_klasse_belege`, Row-Lock auf der Ankerzeile, TTL-selbstheilend)
+gelten systemweit: `quellenabruf` max 5, `verstehen` max 1 (die heutige Serialisierung,
+ehrlich verteilt), `worker-drain` max 1. Das KI-Tagesbudget war bereits datenbank-atomar
+(`helmut_reserve_llm_call` + `llm_reservations`) und bleibt unverändert. Das globale
+Understanding-Schloss bekommt eine engere Nachfolgerin: die **Vorgangswache**
+(`storage.vorgangsWache`, Klasse `verstehen-vorgang:<id>` max 1) schützt „ein KI-Aufruf je
+neuem Vorgang" über Prozess- und Pfadgrenzen, statt alles zu serialisieren — Default inert
+(`HELMUT_VERSTEHEN_KONKURRENZ`).
+
 **Vorbedingungen werden geprüft, nicht angenommen.** `helmut_jobs_offen` zählt offene
 Vorbedingungen im selben Fenster; Projektion und Briefing werden über `helmut_defer_job`
 **zurückgestellt** statt dünn gerechnet — und Zurückstellen nimmt den Versuch zurück, damit
@@ -444,6 +496,95 @@ Deckel bleibt unverändert das Notfalllimit — die Schicht kann nur **weniger**
 
 **Rückweg:** Flag auf `off`, Redeploy. Der bisherige Pfad läuft unverändert weiter; die
 Tabelle darf stehen bleiben. Die Budgetschicht hat ihren eigenen Rückweg über das zweite Flag.
+
+### 7f.1 Verwalteter Transport (Stand 2026-08-14, NICHT ausgerollt)
+
+Der ereignisgesteuerte Antrieb hat seit dem Härtungssprint einen **verwalteten** Transport
+statt des selbst gebauten Weckrufs:
+
+```
+Supabase (WAHRHEIT)                    AWS eu-central-1 (nur TRANSPORT)
+┌────────────────────────┐             ┌──────────────────────────────┐
+│ helmut_jobs            │   liest     │ Lambda helmut-outbox-relay   │
+│ helmut_job_outbox      │◀────────────│  ← EventBridge rate(1 min)   │  Zeitgeber
+│  (atomar mit dem Job)  │             │  ← Verbraucher (async Event) │  unmittelbar
+│                        │             └──────────────┬───────────────┘
+│                        │                            │ {jobId, schemaVersion}
+│                        │                            ▼
+│                        │             ┌──────────────────────────────┐
+│                        │             │ SQS helmut-auftraege         │
+│                        │             │  Sichtbarkeit 360 s          │
+│                        │             │  maxReceiveCount 5           │
+│                        │             │  KMS-verschlüsselt           │
+│                        │             │        │                     │
+│                        │             │        ▼ (nach 5 Versuchen)  │
+│                        │             │ SQS …-quarantaene (DLQ)      │
+└────────────────────────┘             └────────┬─────────────────────┘
+        ▲                                       │ Stapel 5, Parallelität ≤ 4
+        │                                       ▼
+        │                              ┌──────────────────────────────┐
+        └──atomare Beanspruchung───────│ Lambda helmut-…-verbraucher  │
+           helmut_claim_job_by_id      │  → SSM-Startweg (Supabase)   │
+           + derselbe Fachhandler      │  → queue-verbraucher.js      │
+           (fuehreAuftragAus)          │  → fuehreAuftragAus (SHARED) │
+                                       │  partielle Fehlerantwort     │
+                                       └──────────────────────────────┘
+```
+
+**Der Antrieb (Korrekturlauf 2026-08-14/3).** Der Relay ist die einzige Stelle, die
+Versandabsichten in die Queue trägt. Er läuft auf drei Wegen — unmittelbar nach einem
+Abschluss (genau ein asynchroner Aufruf je Verbraucherlauf), minütlich über einen
+EventBridge-Zeitgeber (**DISABLED** ausgeliefert), und der Zeitgeber führt zusätzlich das
+Sicherheitsnetz `helmut_outbox_abgleich` aus. Er trägt **ausschließlich Signale**: kein
+Handler, kein Modell, kein Quellenabruf. Keine Rekursion, keine Warteschleife, gedeckelt
+durch Klassen-Lease, Stapelgröße und reservierte Parallelität. Ein wiederholter oder
+zurückgestellter Auftrag wird über `helmut_outbox_erneut_vorlegen` **genau zu seiner neuen
+Fälligkeit** erneut vorgelegt.
+
+**Der Startweg.** Die Lambda-Funktionen bekommen aus der Vorlage nur **Parameternamen**.
+`lib/helmut/lambda-konfiguration.js` holt URL und Dienstschlüssel über AWS Systems Manager
+mit Entschlüsselung, hält sie ausschließlich im Prozessspeicher, protokolliert sie nie und
+stoppt bei jedem Fehler **geschlossen** — ein stiller Rückfall auf den lokalen Speicher ist
+strukturell ausgeschlossen.
+
+**Zwei KMS-Schlüssel, nicht einer** (Verkabelungslauf 2026-08-14/4). Der Queue-Schlüssel
+verschlüsselt die Wecksignale; ihn benutzt auch der Sender auf der Vercel-Seite. Ein
+**eigener** Schlüssel verschlüsselt die beiden Supabase-SecureString-Parameter — sonst hätte
+ein IAM-Benutzer mit Zugangsdaten außerhalb von AWS die kryptographische Fähigkeit, den
+`service_role`-Schlüssel zu entschlüsseln. Jede KMS-Berechtigung zeigt auf eine
+**Schlüssel-ARN**; eine Alias-ARN im `Resource`-Feld gewährt nach AWS-Dokumentation nichts
+und ist per Test ausgeschlossen (Belegdatei §25).
+
+**Erstbereitstellbarkeit und Datenresidenz** (CloudFormation-Korrektur 2026-08-14/5). Die
+Schlüsselrichtlinien nennen **keine Rollen** als Principals — AWS verlangt, dass Principals
+einer Schlüsselrichtlinie beim Setzen bereits existieren und sichtbar sind, und beim ersten
+Ausrollen in einem leeren Konto gibt es die Rollen noch nicht (sie brauchen ihrerseits die
+Schlüssel-ARN — ein Zyklus). Die Schlüssel tragen deshalb nur die **Konto-Anweisung**, den von
+AWS dokumentierten Schalter, der die Rechtevergabe über IAM-Richtlinien einschaltet; die
+Erlaubnis steht in den IAM-Richtlinien der beiden Rollen, auf die exakte Schlüssel-ARN und für
+den Parameterschlüssel zusätzlich mit `kms:ViaService` auf SSM eingeengt. Der
+Abhängigkeitsgraph ist testgesichert **azyklisch** (topologische Sortierung, 17/17).
+Datenresidenz trägt **jede** echte Ressource selbst über `Condition: IstFrankfurt` —
+CloudFormation wertet Bedingungen vor dem Anlegen aus, außerhalb `eu-central-1` entsteht
+**keine einzige** Ressource. Belege (AWS-Primärquellen) und die fünf geforderten Nachweise:
+Belegdatei §26.
+
+**Die Verkabelung ist Teil des Nachweises.** `scripts/cfn-vorlage-lesen.js` löst die echte
+CloudFormation-Vorlage auf; Ende-zu-Ende-Test und Infrastrukturtest beziehen daraus die
+Umgebungsvariablen und die IAM-Rechte. Der Ende-zu-Ende-Test setzt **keinen** Relay-Auslöser
+mehr ein — ersetzt ist nur die AWS-Netzgrenze. Eine fehlende Zeile in der Vorlage lässt
+deshalb den Gesamtweg fallen, nicht bloß einen Textvergleich.
+
+**Verbindlich:** Supabase bleibt die Wahrheit; SQS ist nur der austauschbare Transport,
+Lambda nur der austauschbare Verbraucher. Über die Transportgrenze gehen ausschließlich
+`{jobId, schemaVersion}`. Der Verbraucher benutzt denselben Fachhandler wie Cron und
+Warteschlange — es gibt keine zweite Fachimplementierung. Cron bleibt Planer, Abgleich und
+Rückfallweg, ist aber für den normalen Abfluss **nicht mehr erforderlich** — der
+vollständige Abfluss ist ohne Vercel-Cron und ohne manuelle Testpumpe belegt
+(`scripts/queue-ende-zu-ende-test.js` §11). Der Selbstweck ist auf einen ausdrücklich
+freizuschaltenden Entwicklungs- und Notfallweg zurückgestuft. Details und Grenzen:
+[`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md)
+§18–§26.
 
 ## 8 · Briefing, Lage, Radar, Büro
 

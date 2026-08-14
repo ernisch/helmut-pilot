@@ -1419,6 +1419,163 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 #### OP-30 · Mandatseigene Abrufwege vervielfachen den Quellenabruf linear (neu, Sprint „V3-Skalierungsprüfung" 2026-08-08; Prioritätsklasse P1)
 
+- **Stand 2026-08-14/2 (Haertungssprint, PR #247; Beleg
+  [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §18–§23):**
+  Alle sechs Gegenpruefungspunkte **bestaetigt** (keiner widerlegt) und behoben bzw. ehrlich
+  eingeordnet. (1) Ein 2xx ohne Uebernahme gibt es nicht mehr — belegter Drain antwortet 429,
+  der Sender LEGT die Absichten ZURUECK (`helmut_outbox_zuruecklegen`, ohne Fehlversuch).
+  (2) Der Production-Transport ist jetzt **Amazon SQS + Lambda in eu-central-1**: SDK fest
+  gepinnt (3.1110.0, 26 Pakete, 0 Schwachstellen), Transportadapter mit hartem Regions-/
+  Ziel-Riegel, vollstaendige CloudFormation-Definition (DLQ, KMS, Sichtbarkeit 360 s >
+  Timeout 180 s > Auftragsbudget 120 s, maxReceiveCount 5, reservierte Parallelitaet,
+  minimale IAM-Rechte), echter Lambda-Verbraucher mit partieller Fehlerantwort und **atomarer
+  Beanspruchung genau der signalisierten jobId** (`helmut_claim_job_by_id`, neu). Der
+  Selbstweck ist auf einen freizuschaltenden Notfallweg zurueckgestuft. **Keine AWS-Ressource
+  angelegt** — Aktivierung = kostenpflichtige Gruenderentscheidung. (3) Der alte
+  500er-Lastnachweis ist als **Durchsatzmodell** eingeordnet; der neue
+  `queue-ende-zu-ende-test` faehrt den ECHTEN Pfad (37 PASS) und flieszt **ohne einen
+  einzigen Cron-Workerlauf** ab — er fand dabei einen echten Migrationsfehler
+  (`started_at` statt `first_claimed_at`). (4) Verteilte Anbietersteuerung ergaenzt
+  (Migration `20260814090100`): Raten-/Tagesgrenzen je Anbieter/Modell/Klasse/Mandat,
+  fruehester Folgezeitpunkt, Vertagung statt Fehler, Jitter, Schutzschaltung mit Erholung,
+  erneuerbares Klassen-Lease. (5) **Verstehensparallelitaet bleibt 1** — der
+  Update-Vormerkungs-Store schreibt weiterhin Lesen→Aendern→Schreiben; eine CAS-Ablösung ist
+  eine eigene Migration und wurde NICHT nebenbei gebaut. Damit ist `verstehen` auf jeder
+  Stufe der Engpass (Reserve x13,4 bei 5 → **x2,7 bei 500**). (6) Der Abgleich schliesst
+  jetzt auch `bestaetigt` bei terminalen Auftraegen; ein begrenzter Aufbewahrungsvertrag
+  (`helmut_outbox_aufraeumen`, Default Trockenlauf, kein automatischer Aufrufer) existiert.
+  KI-Bedarf getrennt ausgewiesen als **Spanne** (5 Mandate 69–209, 500 Mandate 344–1.040
+  gegen Deckel 130). Neue Suiten: SQS/Lambda-Vertrag 44 · Ende-zu-Ende 37 ·
+  Anbietersteuerung-DB 36 · Infrastrukturdefinition 32 · Kapazitaetsmodell 31 ·
+  Mutationsprobe 7/7 erkannt. Production erneut unangetastet.
+- **Stand 2026-08-14 (Sicherheitskorrektur auf PR #247, Belegdatei
+  [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §17):**
+  vier beauftragte Befunde bestaetigt und behoben — (1) die Verbraucher-Route prueft das
+  eingehende Wecksignal jetzt vollstaendig gegen den Versand-Vertrag (400/409, geschlossen);
+  (2) Weckziel-Riegel: CRON_SECRET geht nie mehr an ein unvertrautes Ziel (HTTPS, exakter
+  Pfad, Plattform-Vertrauensanker; 15 adversariale Tests mit 0 Netzaufrufen); (3)
+  Aufrufverstaerkung beseitigt (Tuerklingel-Buendelung: EIN Weckruf je Versandkontext;
+  Timeout=unbestaetigt statt Fehlversuch; Slot-Freigabe vor der Folgeklingel — vorher
+  drohten verschachtelte Aufrufketten und bis zu 10-fache Wiederholungen); (4)
+  Migrationsorganisation: eindeutige 14-stellige Stempel + `rollback_`-Praefix, mit
+  Supabase-CLI 2.114.0 an frischer lokaler DB NACHGEWIESEN, dass die Altkonvention
+  Rollbacks als Vorwaertsmigrationen ausgefuehrt und an der Versionskollision abgebrochen
+  haette (Altbestand als dokumentierte, eingefrorene Altlast). Zusatzbefund aus dem ersten
+  CI-Lauf: die Verbraucher-Route lag unter `/api/ops/` hinter drei Zugriffs-Gates
+  (Account-401, Mandatsauswahl-409, CSRF) — verlegt nach **`/api/cron/worker-weck`**
+  (selbst-autorisierender Namensraum, kein Gate aufgeweicht; Belegdatei §17.6). Neue
+  Suiten: `worker-weck-route-test` 21 PASS · `migrations-organisation-test` 10 PASS ·
+  Dispatch-Vertrag erweitert 78 PASS (Harness awaited jetzt async-Faelle). Production
+  erneut unangetastet.
+- **Stand 2026-08-14/5 (CloudFormation-Korrektur — zwei BEREITSTELLUNGSBLOCKER geschlossen; Beleg
+  [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §26,
+  Runbook §22.2):** Die Vorlage war **nicht erstbereitstellbar**. (1) Die Richtlinie des
+  Parameterschluessels nannte die beiden Lambda-**Rollen** als Principals — im leeren Konto
+  existieren die beim Anlegen des Schluessels noch nicht, waehrend sie ihrerseits die
+  Schluessel-ARN brauchen. Das CloudFormation-Handbuch zu `AWS::KMS::Key` sagt woertlich: „The
+  principals in the key policy **must exist and be visible to AWS KMS**." Behoben ueber den von
+  AWS vorgesehenen Weg: die Schluessel tragen nur die **Konto-Anweisung** (sie schaltet die
+  Rechtevergabe per IAM-Richtlinie ueberhaupt erst ein — `key-policy-default.md`: „It allows the
+  account to use IAM policies to allow access to the KMS key"), die Erlaubnis steht in den
+  IAM-Richtlinien der Rollen auf die exakte Schluessel-ARN, fuer den Parameterschluessel
+  eingeengt mit `kms:ViaService` auf SSM. Der Abhaengigkeitsgraph ist jetzt **testgesichert
+  azyklisch** (topologische Sortierung, 17/17; Schluessel vor Rollen, Rollen vor Funktionen).
+  (2) Der Regionsriegel hing an `KeyPolicy` — laut `aws-resource-kms-key.md` **`Required: No`**,
+  und „If you do not provide a key policy, AWS KMS attaches a default key policy": der Riegel
+  hielt **nichts**, ausserhalb Frankfurts waeren Schluessel, Queues, Funktionen, Rollen und
+  Zeitgeber entstanden. Ersetzt durch den offiziellen Mechanismus: **jede** echte Ressource
+  traegt `Condition: IstFrankfurt` — „AWS CloudFormation evaluates all the conditions in your
+  template **before creating any resources**. … Resources that are associated with a false
+  condition are ignored." Einziger unbedingter Eintrag ist ein `WaitConditionHandle` (kein
+  Dienst, kein Speicher, keine Kosten) plus die Ausgabe `RegionsBefund`.
+  **Nachweise:** Infrastruktur **124 PASS / 0 FAIL** (neu §16 Erstbereitstellbarkeit, §17
+  Regionsschutz namentlich fuer alle 16 echten Ressourcen), Ende-zu-Ende **53 PASS**,
+  Mutationsprobe **16/16 rot** — **M15** erkennt den alten `KeyPolicy`-Riegel, **M16** die
+  wieder eingefuegten Rollen-Principals, und M16 faellt nicht ueber ein Textmuster, sondern
+  ueber den **Zyklus** in der topologischen Sortierung. Offline-Suite 256/260 (vier Suiten
+  scheitern sandboxbedingt, auch ohne diesen Branch), Browser/Mobile 32 PASS.
+  **Grenzen unveraendert ehrlich:** keine AWS-Ressource angelegt, kein Stack, kein Change-Set,
+  Production unangetastet. `docs.aws.amazon.com` ist gesperrt; die Belege stammen aus den
+  **von AWS selbst gepflegten Quelltexten derselben Handbuecher** (`awsdocs/*` auf GitHub).
+  Offen bleibt der AWS-Trockenlauf beider Regionen (§26.3) sowie die fuenf Fragen aus §25.3.
+  **OP-30 bleibt insgesamt offen** — die Aktivierung ist eine Betreiberentscheidung.
+- **Stand 2026-08-14/4 (Verkabelungslauf — zwei EINSATZBLOCKER geschlossen; Beleg
+  [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §25,
+  Runbook §22):** Der Korrekturlauf hatte den Code richtig gemacht; dieser Lauf hat geprueft, ob
+  er in der ECHTEN CloudFormation-Vorlage auch zusammengesteckt ist. War er an zwei Stellen
+  nicht. (1) Der Verbraucher liest `HELMUT_RELAY_FUNKTION` — die Vorlage setzte sie **gar
+  nicht**; der unmittelbare Relay-Anstoss war unverkabelt. Kein Test merkte es, weil der
+  Ende-zu-Ende-Test den Ausloeser fertig einsetzte und damit genau die kaputte Stelle
+  uebersprang. Jetzt: Variable verkabelt, Testnaht auf die **AWS-Netzgrenze** verschoben,
+  Umgebung und IAM-Rechte kommen aus der Vorlage (`scripts/cfn-vorlage-lesen.js`), und ein
+  stiller Rueckfall auf Direktversand ist ausgeschlossen (`direktVerboten` + sichtbare
+  Protokollzeile; der Verbraucher hat weder Queue-Adresse noch `sqs:SendMessage`).
+  (2) Die KMS-Berechtigung zeigte auf eine **Alias-ARN**. Laut AWS gewaehrt das **nichts**
+  ("You cannot use a key id, alias name, or alias ARN to identify a KMS key in an IAM policy
+  statement"). Jetzt ein **eigener KMS-Schluessel** fuer die beiden Supabase-Parameter mit
+  Schluessel-ARN — damit kann der Vercel-Sender die Zugangsdaten auch kryptographisch nicht
+  mehr entschluesseln. Ein Testriegel schliesst die **Fehlklasse**: keine Alias-ARN in
+  irgendeiner KMS-Berechtigung.
+  **Nachweise:** Ende-zu-Ende **53 PASS**, Infrastruktur **87 PASS**, Mutationsprobe
+  **14/14 rot** (inkl. fehlender Variable, fehlendem Aufrufrecht, Alias-ARN, falscher
+  Schluessel-ARN). **Grenzen:** keine AWS-Ressource angelegt, keine Migration angewendet,
+  Production unangetastet; `docs.aws.amazon.com` war gesperrt — belegt ist der Kernpunkt an
+  AWS-eigenen Primaerquellen, fuenf weitere AWS-Fragen bleiben unbelegt (§25.3).
+  **OP-30 bleibt insgesamt offen.**
+
+- **Stand 2026-08-14/3 (Korrekturlauf — der verwaltete Transport ist jetzt BETRIEBSFAEHIG gebaut, aber weiterhin NICHT ausgerollt; Beleg
+  [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §24,
+  Runbook §22; PR #247):** Der Haertungssprint lieferte Transport, Verbraucher und
+  Anbietersteuerung — aber an **fuenf Stellen war der Weg nicht betriebsfaehig**. Alle fuenf
+  wurden am Code bestaetigt und geschlossen: (1) es gab einen **Transport ohne Antrieb** (der
+  Test pumpte den Versand selbst) → **Outbox-Relay** mit unmittelbarem Anstoss, minuetlichem
+  EventBridge-Zeitgeber (**DISABLED** ausgeliefert) und dem Abgleich **im Zeitgeberlauf**;
+  (2) die Lambda-Funktion war **nicht bereitstellbar** (absichtlich scheiternder Platzhalter)
+  → reproduzierbarer Paketbau (1.515 Dateien, 2,17 MiB, **keine neue Abhaengigkeit**), Vorlage
+  laedt aus S3; (3) in AWS haette es **keine Supabase-Verbindung** gegeben → SSM-Startweg mit
+  Entschluesselung, nur im Prozessspeicher, **fail closed statt stillem Lokalspeicher**;
+  (4) die Anbietersteuerung hing **an keinem echten Aufruf** → sie umschliesst jetzt alle drei
+  Netzstellen des Crawlers und jeden Modellaufruf (Vertagung statt Warteschleife, kein
+  Doppelzaehlen); (5) die **KMS-Rechte des Produzenten waren falsch** (`Encrypt` statt
+  `Decrypt`) → korrigiert. Drei Zusatzbefunde kamen bei der Umsetzung dazu: dem Verbraucher
+  fehlte `kms:Decrypt` fuer `alias/aws/ssm`; der Regionsriegel hing an einem Metadata-Feld und
+  **hielt nichts**; **Wiederholungen wurden vom Relay nicht getragen** (ein 30-Sekunden-Backoff
+  wurde faktisch 10 Minuten → neue Funktion `helmut_outbox_erneut_vorlegen`).
+  **Nachweise:** Ende-zu-Ende **46 PASS ohne manuelle Testpumpe und ohne Vercel-Cron** (der Test
+  laedt beide Handler aus dem **gebauten** Paket), Paket/Startweg 43, Relay 37,
+  Anbieterfachpfad 51, Infrastruktur 67, Mutationsprobe **10/10 rot**.
+  **Grenzen unveraendert ehrlich:** keine AWS-Ressource angelegt, keine Migration angewendet,
+  Production unangetastet; `docs.aws.amazon.com` ist aus der Arbeitsumgebung gesperrt, die
+  KMS- und Regionsaussagen sind **nicht gegen eine AWS-Quelle geprueft**; der Engpass
+  `verstehen` bleibt Parallelitaet 1 und OP-15 (Google-Drosselung) bleibt ab ~10 Mandaten
+  Blocker. **OP-30 bleibt insgesamt offen** — die Aktivierung ist eine Betreiberentscheidung.
+
+- **Stand 2026-08-13/3 (Architektursprint Zielarchitektur — Sprint ERFOLGREICH abgeschlossen, beide Pflichtpruefungen gruen; OP-30 insgesamt bleibt offen; Beleg
+  [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md),
+  Runbook §20; PR #247):** Der auf den zweiten Fuenferlauf folgende **Kapazitaetssprint wurde
+  kontrolliert abgebrochen**; die verworfene Zwischenloesung (Parallelitaet 6 + sechs
+  Drain-Slots) wurde NICHT rekonstruiert — mehr Cron-Slots skalieren den Slot, nicht die
+  Architektur. Stattdessen gebaut und lokal nachgewiesen (Production unangetastet, alles
+  Default-AUS, Migrationen `20260813` NICHT angewendet): **transaktionale Outbox**
+  (`helmut_job_outbox`, atomar mit dem Auftrag; strukturell ohne Inhaltsspalte),
+  **austauschbarer Transport** (`HELMUT_JOB_DISPATCH_MODE=off|shadow|queue`, fail closed;
+  Payload strukturell nur `{jobId, schemaVersion}`; erster Transport Selbstweck ueber die
+  neue Verbraucher-Route `/api/cron/worker-weck`; Vercel-Queues-Adapter gebaut, nicht
+  aktiviert — Public Beta, keine EU-Residenzzusage im Failover, kostenpflichtig),
+  **verteilte Klassengrenzen** (`helmut_klasse_belege`, Semaphor mit TTL-Selbstheilung:
+  quellenabruf 5 · verstehen 1 · worker-drain 1) und die **Vorgangswache** als kleinste
+  sichere Abloesung des globalen Understanding-Schlosses (exklusiv je Vorgang statt global
+  seriell; `HELMUT_VERSTEHEN_KONKURRENZ`, Default aus). Nachweise: Outbox-DB-Suite 37 PASS ·
+  Klassengrenzen-DB-Suite 20 PASS · Dispatch-Vertrag 53 PASS · Konkurrenzwache 14 PASS ·
+  Outbox-Mutationsprobe 6/6 erkannt · **lokaler Architektur- und Lastnachweis 5/25/100/200/500
+  an echter PostgreSQL** (kein Verlust, keine Doppelarbeit, Grenzen halten; 500er-Reserve
+  rechnerisch x3,7 — ausdruecklich KEIN Production-Beweis; KI-Bedarf ~1.040/Tag bei 500 ≫
+  Deckel 100+30 = gesonderte Gruenderentscheidung). Die 524 inerten Auftraege wurden rein
+  lesend analysiert (1.556 referenzierte Dokumente, 0 bereits verstanden — echte offene
+  KI-Arbeit; Neutralisierungsmuster §17.8 bleibt geeignet; kein Auftrag veraendert).
+  **Offen:** Betreiberfreigaben nach Stufenplan (Zielarchitektur §14); Versuch 3 beginnt
+  unveraendert bei Runbook §6 Schritt 3; vor Verstehens-Parallelitaet >1 CAS-Haertung des
+  Update-Vormerkungs-Stores.
 - **Stand 2026-08-13/2 (zweiter Fuenferlauf-Versuch, NICHT bestanden — Kapazitaetsbefund;
   Beleg Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §19):**
   K0 vollstaendig gruen (inkl. `altersvertrag="wartezeit"` produktiv), Betreiber-Aktivierung

@@ -1954,3 +1954,183 @@ waren Betreiberaktionen nach ausdrücklicher Freigabe bzw. §8.2-Empfehlung), ke
 Cronlauf, keine Migration (offen bleibt nur `20260720`), keine Production-Datenänderung
 (0 Schreibzugriffe; alle Belege rein lesend), keine Änderung an Crons/Secrets/anderen Flags,
 keine Ausweitung über 5 Mandate, `understanding-recovery.yml` nicht berührt.
+
+## 20 · Zielarchitektur statt „mehr Slots" (Architektursprint 2026-08-13/3)
+
+Der auf §19 folgende **Kapazitätssprint wurde kontrolliert abgebrochen**; seine geplante
+Zwischenlösung (Parallelität 6 + sechs zusätzliche Drain-Slots) war weder getestet noch
+committet und wurde **verworfen — sie ist nicht die Zielarchitektur und wurde nicht
+rekonstruiert**. An ihre Stelle tritt die im Architektursprint 2026-08-13/3 gebaute und
+lokal nachgewiesene **OP-30-Zielarchitektur** (transaktionale Outbox, austauschbarer
+Transport mit Wecksignalen, verteilte Klassengrenzen, Vorgangswache als engere Nachfolgerin
+des globalen Understanding-Schlosses). Kanonische Entscheidungs- und Belegdatei:
+[`op30-zielarchitektur-2026-08-13.md`](op30-zielarchitektur-2026-08-13.md) — dort stehen
+Architekturvergleich (7 Varianten × 20 Kriterien), Mengengerüst 5–500, der lokale
+Architektur- und Lastnachweis samt ehrlicher Grenzen, die Analyse der 524 inerten
+Aufträge, der Stufenplan und der genaue nächste Betreiberablauf.
+
+**Wirkung auf dieses Runbook:** §1–§19 bleiben unverändert gültig (der Altpfad und der
+Cron-Queue-Antrieb bestehen fort; die 524 Aufträge stehen weiter inert). Ein **Versuch 3**
+beginnt unverändert bei §6 Schritt 3 mit K0–K3 von vorn — neu ist, dass Stufe 1 des
+Zielarchitektur-Stufenplans (`HELMUT_JOB_DISPATCH_MODE=shadow`) parallel den Outbox-Beweis
+erbringt, ohne dass irgendetwas den Prozess verlässt. Vorher gelten unverändert §19.6:
+524 neutralisieren (Muster §17.8/§17.10) und §8.3/§8.4 queue-tauglich fassen. In
+Production wurde in diesem Sprint **nichts** verändert (alle Zugriffe rein lesend; die
+zwei neuen Migrationspaare `20260813` sind NICHT angewendet; alle neuen Flags Default-AUS).
+
+---
+
+## §21 · Haertungssprint 2026-08-14: verwalteter Transport (SQS + Lambda)
+
+Der Aktivierungsweg dieses Runbooks (§19.6, §20) bleibt unveraendert gueltig — er beschreibt
+die Stufen 0–2 mit dem **Cron-Antrieb** und dem Schattenmodus. Was sich geaendert hat:
+
+1. **Der Standardtransport ist `sqs`,** nicht mehr der Selbstweck. Der Selbstweck ist in
+   Production ohne `HELMUT_SELBSTWECK_ERLAUBT=on` **gesperrt** (Notfall-/Entwicklungsweg).
+2. **Fuer Stufe 2 (Ereignis-Antrieb) sind jetzt AWS-Ressourcen noetig**, die es **nicht
+   gibt**: Queue, Dead-Letter-Queue, KMS-Schluessel, IAM-Sender, Lambda-Verbraucher. Die
+   Definition liegt vollstaendig in `infra/aws/helmut-auftrags-queue.yaml`; ihr Anlegen ist
+   eine **kostenpflichtige Gruenderentscheidung**.
+3. **Zwei neue Migrationen** (`20260814090000`, `20260814090100`) gehoeren zur Stufe 1 dazu.
+   Beide sind **nicht angewendet**.
+
+### §21.1 Reihenfolge fuer Stufe 1 (unveraendert freigabepflichtig)
+
+1. Die 524 wartenden Auftraege nach §17.8 neutralisieren (unveraendert).
+2. Migrationen anwenden — in dieser Reihenfolge:
+   `20260813090000_jobqueue_outbox.sql` → `20260813090100_verteilte_grenzen.sql` →
+   `20260814090000_queue_verbraucher.sql` → `20260814090100_anbieter_steuerung.sql`.
+   Die Verifikationsbloecke stehen jeweils am Dateiende.
+3. Flags: `HELMUT_SCALABLE_PIPELINE=on`, `HELMUT_JOB_DISPATCH_MODE=shadow`.
+   **Noch KEIN** `HELMUT_JOB_TRANSPORT`, **kein** AWS.
+4. Beobachten wie in §19.6 beschrieben.
+
+### §21.2 Zusaetzliche Schritte fuer Stufe 2 (Ereignis-Antrieb)
+
+1. Gruenderentscheidung ueber die AWS-Kosten (SQS je Anfrage, Lambda je Aufruf und
+   GB-Sekunde, KMS je Schluessel, CloudWatch je Protokoll — Mengen siehe Belegdatei §23).
+2. Stack aus `infra/aws/helmut-auftrags-queue.yaml` in **eu-central-1** anlegen.
+3. Supabase-URL und service_role-Schluessel als **SSM-Parameter** hinterlegen (SecureString);
+   sie stehen NIE in der Vorlage und NIE in einer Lambda-Umgebungsvariablen im Klartext.
+4. Lambda-Paket aus dem Repository bauen (Einstieg `lambda/index.js`).
+5. In Vercel setzen: `HELMUT_SQS_QUEUE_URL` (Ausgabe `QueueUrl`), `HELMUT_KLASSEN_GRENZEN=on`,
+   `HELMUT_JOB_DISPATCH_MODE=queue`. `AWS_REGION` bleibt auf `eu-central-1`.
+6. Zugangsdaten des IAM-Senders in Vercel hinterlegen (nur `sqs:SendMessage`).
+7. **Ruecknahme in einem Schritt:** `HELMUT_JOB_DISPATCH_MODE=shadow` (oder `off`) +
+   Redeploy. Die Queue laeuft dann leer; kein Auftrag geht verloren, der Cron-Rueckfallweg
+   traegt weiter.
+
+### §21.3 Was der Haertungssprint NICHT freigibt
+
+Weder die AWS-Aktivierung noch die Anhebung des KI-Tagesdeckels noch eine hoehere
+Verstehensparallelitaet (die bleibt bei 1, Belegdatei §22). Helmut ist durch diesen Sprint
+**nicht** fuer 25, 100, 200 oder 500 Mandate freigegeben.
+
+---
+
+## §22 · AWS-Betreiberanleitung nach dem Korrekturlauf 2026-08-14/3
+
+Diese Anleitung **ersetzt §21.2 Schritt 3–6**. Sie ist die vollständige Reihenfolge für den
+Tag, an dem der Betreiber Stufe 2 tatsächlich einschalten will. **Nichts davon ist getan.**
+
+### §22.1 Was AWS zu sehen bekommt (Datenumfang)
+
+Über die Transportgrenze geht ausschließlich `{ jobId, schemaVersion }` — eine UUID und eine
+Zahl. **Kein Mandatsname, kein Dokument, kein Text, keine Quelle, keine E-Mail-Adresse.** Die
+Outbox hat strukturell keine Inhaltsspalte. In den CloudWatch-Protokollen stehen nur Zahlen
+und Ausgänge, nie eine Auftrags-, Mandats- oder Quellenkennung.
+**Der Supabase-Dienstschlüssel liegt in AWS** — als SSM-SecureString und zur Laufzeit im
+Prozessspeicher der Lambda-Funktionen. Das ist die eigentliche Vertrauensentscheidung, nicht
+die Nachrichtenmenge.
+
+### §22.2 Reihenfolge
+
+1. **Kostenentscheidung.** Mengen: Belegdatei §23 (Nachrichten/Tag) und §24.1 (Zeitgeber).
+   Größenordnung bei 5–25 Mandaten: SQS, Lambda und EventBridge liegen im kostenlosen
+   Kontingent; KMS kostet ~1 $/Monat je Schlüssel, CloudWatch nach Volumen.
+2. **Paket bauen** (reproduzierbar):
+   `node scripts/lambda-paket-bauen.js --ziel build/`
+   Ergebnis prüfen: 1.515 Dateien, 2,17 MiB Archiv, SHA-256 aus dem Manifest **notieren**.
+   Der Bau ist deterministisch — zwei Läufe ergeben dieselbe Prüfsumme.
+3. **Paket nach S3** in **eu-central-1** hochladen (eigener Bucket, keine öffentliche
+   Freigabe, Versionierung an). Bucketname und Objektschlüssel merken.
+3b. **Trockenlauf ohne jede Ressource** (kostet nichts, legt nichts an) — **beide Läufe
+   gehören vor Schritt 4**, sie sind der bisher offene AWS-Nachweis aus Belegdatei §26.3:
+
+   ```bash
+   # (a) FALSCHE Region: der Plan muss LEER sein — null Ressourcen.
+   aws cloudformation create-change-set --region eu-west-1 \
+     --stack-name helmut-auftrag-probe --change-set-name riegelprobe --change-set-type CREATE \
+     --template-body file://infra/aws/helmut-auftrags-queue.yaml \
+     --capabilities CAPABILITY_NAMED_IAM \
+     --parameters ParameterKey=PaketBucket,ParameterValue=<bucket>
+   aws cloudformation describe-change-set --region eu-west-1 \
+     --stack-name helmut-auftrag-probe --change-set-name riegelprobe \
+     --query 'length(Changes)'          # ERWARTET: 1 (nur RegionsRiegel) — nie eine Queue,
+                                        # Funktion, Rolle, Protokollgruppe oder ein Schlüssel
+   # (b) eu-central-1: derselbe Aufruf muss 17 Einträge planen.
+   ```
+   Beide Change-Sets danach **löschen** (`delete-change-set`, dann `delete-stack` auf den
+   `REVIEW_IN_PROGRESS`-Stack). Ein Change-Set legt **keine** Ressource an — es ist ein Plan.
+
+4. **Stack anlegen** aus `infra/aws/helmut-auftrags-queue.yaml` mit den Parametern
+   `PaketBucket`, `PaketSchluessel`, `SupabaseUrlParameter`, `SupabaseSchluesselParameter`,
+   `Umgebung`, `MaxParallelitaet`.
+   **Diese Reihenfolge ist verbindlich:** der Stack legt den KMS-Schlüssel für die Parameter
+   an, und den braucht Schritt 5. Umgekehrt ginge es nicht.
+5. **SSM-Parameter anlegen** (eu-central-1, Typ **SecureString**) — mit **genau dem
+   Schlüssel aus dem Stack**:
+
+   ```
+   aws ssm put-parameter --region eu-central-1 --type SecureString \
+     --key-id alias/helmut-ssm-production \
+     --name /helmut/production/supabase-url --value '<URL>'
+   aws ssm put-parameter --region eu-central-1 --type SecureString \
+     --key-id alias/helmut-ssm-production \
+     --name /helmut/production/supabase-service-role-key --value '<SCHLUESSEL>'
+   ```
+
+   **`--key-id` ist nicht optional.** Ohne ihn landet der Parameter unter dem Vorgabeschlüssel
+   des Kontos, und die Berechtigung der Lambda-Rollen greift nicht — die Funktionen stoppen
+   dann geschlossen und arbeiten nie. Der Fehler tritt beim ersten Lauf sofort und laut auf,
+   aber er kostet einen Anlauf.
+   **Die Werte werden direkt in die Kommandozeile bzw. das Konsolenformular eingegeben — nie
+   in eine Datei, nie in einen Commit, nie in einen Chat.**
+   **Nur in eu-central-1.** Jede echte Ressource der Vorlage trägt `Condition: IstFrankfurt`;
+   CloudFormation wertet Bedingungen **vor** dem Anlegen aus, in jeder anderen Region entsteht
+   deshalb **keine einzige** Ressource (Belegdatei §26.2). Ein früher dokumentierter
+   „KMS-Riegel" (§24.7) hielt nichts und ist ersetzt.
+6. **Vercel-Variablen setzen:** `HELMUT_SQS_QUEUE_URL` (Stack-Ausgabe), `AWS_REGION` bleibt
+   `eu-central-1`, `HELMUT_KLASSEN_GRENZEN=on`, `HELMUT_JOB_DISPATCH_MODE=queue`.
+   Zugangsdaten des IAM-Senders hinterlegen (**nur** `sqs:SendMessage` + KMS-Produzentenrechte).
+7. **Ereignisquelle prüfen, dann Zeitgeber einschalten.** Der EventBridge-Zeitgeber
+   (`helmut-outbox-relay-<umgebung>`) wird **DISABLED** ausgeliefert. Er ist die
+   Wiedervorlage später fälliger Arbeit **und** die automatische Reparatur eines verlorenen
+   Anstoßes. Ohne ihn trägt nur der unmittelbare Anstoß — Ketten laufen, aber später fällige
+   Arbeit und Wiederholungen bleiben liegen, bis ein Cron-Slot sie aufsammelt.
+   Kosten: 1.440 Aufrufe/Tag, Kostenklasse unter 1 $/Monat.
+
+### §22.3 Erste Kontrolle nach dem Einschalten
+
+| Prüfung | Erwartung |
+|---|---|
+| CloudWatch `helmut-auftrags-verbraucher` | Zeilen `[lambda/verbraucher] … ausgang=erledigt`, **keine** `konfiguration-nicht-geladen`, **keine** `supabase-nicht-verbunden` |
+| CloudWatch `helmut-outbox-relay` | `[lambda/relay] ausloeser=… versendet=n` — es **muss** Zeilen mit `ausloeser=verbraucher` geben, sonst ist der unmittelbare Anstoß nicht angekommen |
+| CloudWatch `helmut-auftrags-verbraucher` | **keine** Zeile `KONFIGURATIONSBEFUND relay=` — sie bedeutet, dass `HELMUT_RELAY_FUNKTION` fehlt; die Stapelbilanz muss `relay=relay-verdrahtet` zeigen |
+| SQS `…-quarantaene` | **leer** — jede Nachricht darin ist ein Befund, kein Betriebsrauschen |
+| `helmut_outbox_kennzahlen()` | `offen` fällt, `aelteste_offene_s` bleibt klein |
+| `helmut_jobs` | `wartend` sinkt, `laeuft` bleibt klein, `fehlgeschlagen` wächst nicht |
+
+### §22.4 Rücknahme (ein Schritt, jederzeit)
+
+`HELMUT_JOB_DISPATCH_MODE=shadow` (oder `off`) + Redeploy. Die Queue läuft leer, der
+Cron-Rückfallweg trägt weiter, **kein Auftrag geht verloren**. Zusätzlich optional: den
+EventBridge-Zeitgeber deaktivieren und die reservierte Lambda-Parallelität auf 0 setzen —
+dann verarbeitet AWS nichts mehr, ohne dass etwas gelöscht wird.
+
+### §22.5 Was auch nach diesem Korrekturlauf NICHT freigegeben ist
+
+Die AWS-Aktivierung selbst, die Anhebung des KI-Tagesdeckels und eine höhere
+Verstehensparallelität (bleibt 1). **Helmut ist nicht für 25, 100, 200 oder 500 Mandate
+freigegeben.** Der Korrekturlauf hat die Lücken geschlossen, die eine Aktivierung technisch
+unmöglich gemacht hätten — er ersetzt keinen Production-Nachweis.

@@ -192,8 +192,17 @@ function main() {
   abschnitt("8 · Keine neue Abhaengigkeit, kein neuer Dienst");
   {
     const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8"));
-    check("8.1 package.json hat weiterhin genau eine Abhaengigkeit",
-      Object.keys(pkg.dependencies || {}).length === 1 && "ical.js" in pkg.dependencies,
+    // ABHAENGIGKEITS-WAECHTER (geschaerft im Haertungssprint 2026-08-14).
+    // Bis dahin galt "genau EINE Abhaengigkeit (ical.js)". Der Haertungssprint hat den
+    // verwalteten Production-Transport (Amazon SQS) eingefuehrt; dessen offizielles SDK ist
+    // eine bewusste, dokumentierte Gruenderentscheidung (Belegdatei §19.2: Version fest
+    // gepinnt, 26 Pakete, 0 Schwachstellen, lazy geladen und fail closed). Der Waechter
+    // bleibt scharf: die Liste ist eine ALLOWLIST mit exakten Versionen — jede WEITERE
+    // Abhaengigkeit und jede stille Versionsaenderung faellt hier auf.
+    const ERLAUBTE_ABHAENGIGKEITEN = { "ical.js": "2.2.1", "@aws-sdk/client-sqs": "3.1110.0" };
+    check("8.1 package.json fuehrt ausschliesslich die zwei dokumentierten Abhaengigkeiten (exakte Versionen)",
+      JSON.stringify(pkg.dependencies || {}, Object.keys(ERLAUBTE_ABHAENGIGKEITEN).sort())
+        === JSON.stringify(ERLAUBTE_ABHAENGIGKEITEN, Object.keys(ERLAUBTE_ABHAENGIGKEITEN).sort()),
       JSON.stringify(pkg.dependencies));
     check("8.2 Es gibt keine devDependencies", !pkg.devDependencies || Object.keys(pkg.devDependencies).length === 0);
   }
