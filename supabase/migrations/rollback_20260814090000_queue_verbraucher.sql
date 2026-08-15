@@ -15,6 +15,12 @@
 --     Zustand. Der Rueckweg braucht KEINE Datenmigration.
 -- ═══════════════════════════════════════════════════════════════════════════════════════════
 
+-- ALLES ODER NICHTS (2026-08-15): dieser Rueckweg loescht nicht nur, er STELLT auch
+-- helmut_outbox_abgleich auf den Vorgaengerstand zurueck. Bricht er zwischen beidem ab,
+-- fehlen die Funktionen UND der Abgleich steht noch auf dem gehaerteten Stand — ein
+-- Zwischenzustand, den keine der beiden Migrationen beschreibt.
+begin;
+
 drop function if exists public.helmut_claim_job_by_id(uuid, text, bigint);
 drop function if exists public.helmut_outbox_zuruecklegen(uuid, integer);
 drop function if exists public.helmut_outbox_erneut_vorlegen(uuid);
@@ -89,3 +95,5 @@ begin
     execute 'grant execute on function public.helmut_outbox_abgleich(integer, integer) to service_role';
   end if;
 end $$;
+
+commit;

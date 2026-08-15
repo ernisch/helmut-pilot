@@ -2209,3 +2209,158 @@ technischen Engpass beseitigt — der bindende Grund gegen mehr Mandate war ohne
 anderer: der KI-Tagesdeckel (ab 25 Mandaten reicht 100+30 auch im günstigen Fall nicht) und
 OP-15 (Google-Drosselung, ab ~10 Mandaten). Auch der AWS-Trockenlauf aus §22 bleibt eine
 gesonderte Betreiberentscheidung und wurde nicht ausgeführt.
+
+---
+
+## §24 · Production-Vorprüfung nach PR #248 und Migrationsplan (2026-08-15)
+
+Rein lesende Vorprüfung gegen Production und Supabase Production; **nichts angewendet,
+nichts geändert, nichts deployt, kein Lauf gestartet, keine AWS-Aktion**. Ergebnis: die
+fünf offenen OP-30-Migrationen sind bereit — **nach** dem Merge des unten genannten
+Korrektur-PRs.
+
+### §24.1 Production-Istzustand (gemessen 2026-08-15 03:02 UTC)
+
+| Gegenstand | Befund |
+|---|---|
+| `main` / Deployment | `6a501ee` (Merge PR #248) ist auf `main`; Production-Deployment `dpl_Cuub2Uu8vpE5ryKZVevMQJ2mafUZ` **READY**, Ziel `production`, Commit `6a501ee` (2026-08-15 02:51 UTC) |
+| Warteschlange | **759 Zeilen: 524 wartend · 235 erledigt · 0 laufend · 0 fehlgeschlagen**, 0 offene Leases. Signatur (id+status+typ+versuche, **keine Inhalte**): `a069f91fde4547493796395f2c989497` |
+| Neue Aufträge seit der Rücknahme (13.08. 16:07 UTC) | **0** — `HELMUT_SCALABLE_PIPELINE` ist wirkungsbelegt weiterhin aus |
+| Alter Motor | läuft unverändert: jüngstes Wissensobjekt und Rohdokument 14.08. 20:04 UTC (crawl 20:00), jüngster `process_run` 14.08. 21:35 UTC (understanding 21:30) |
+| Angewendete Migrationen | letzte ist `20260812172327`. Offen: die **fünf** OP-30-Dateien unten **plus** `20260720` (OP-03, nicht Teil dieses Plans) |
+| Namenskonflikte | **keine** — keine der 7 neuen Tabellen und keiner der 32 neuen Funktionsnamen existiert in Production |
+| Trigger auf `knowledge_objects` | **keine** — `helmut_ko_fencing_wache_trg` kollidiert mit nichts |
+| Voraussetzung der Outbox | `helmut_enqueue_job(text,text,text,jsonb,timestamptz,smallint,integer,text)` existiert mit **exakt** der aufgerufenen Signatur |
+
+**Ehrliche Grenze:** seit dem Deployment von `6a501ee` (02:51 UTC) ist **noch kein Cron
+gelaufen**. Der erste Lauf auf diesem Stand ist morning-briefing 05:00 UTC (07:00 Berlin).
+Die Aussage „Production-Verhalten unverändert" ist damit codeseitig belegt (alles
+Default-AUS, siehe §24.3), **nicht** laufzeitbelegt auf genau diesem Commit.
+
+### §24.2 Migrationsinventar — Reihenfolge, Abhängigkeiten, Prüfsummen
+
+Reihenfolge **1 → 5**. Nur Schritt 3 hat echte Vorbedingungen (empirisch geprüft: ohne
+Schritt 1 bricht er mit `relation "public.helmut_job_outbox" does not exist` ab);
+1, 2, 4 und 5 sind voneinander unabhängig und einzeln anwendbar.
+
+| # | Datei | Hängt ab von | SHA-256 (nach Korrektur-PR) |
+|---|---|---|---|
+| 1 | `20260813090000_jobqueue_outbox.sql` | `20260808_scalable_job_queue` (angewendet) | `fb383be116bc1b41…` |
+| 2 | `20260813090100_verteilte_grenzen.sql` | — | `4dc5cdb0fa608f9b…` |
+| 3 | `20260814090000_queue_verbraucher.sql` | **1 und 2** | `2615433a4f693881…` |
+| 4 | `20260814090100_anbieter_steuerung.sql` | — | `ffd85fcad680e69a…` |
+| 5 | `20260814180000_verstehen_cas.sql` | nur `knowledge_objects` (per `do`-Block geprüft) | `c21ddc8319b2797d…` |
+
+Jeder Schritt hat **einen eigenen Rückweg** im selben Verzeichnis
+(`rollback_<vorwärtsname>.sql`), rückwärts in umgekehrter Reihenfolge 5 → 1.
+
+### §24.3 Warum die Migrationen bei ausgeschalteten Schaltern inert sind
+
+Alle sieben Tabellen sind neu und leer; alle 32 Funktionen werden nur von Codepfaden
+gerufen, die hinter `HELMUT_JOB_DISPATCH_MODE`, `HELMUT_KLASSEN_GRENZEN` bzw.
+`HELMUT_VERSTEHEN_CAS` liegen (alle Default aus). Der einzige Eingriff in eine bestehende
+Tabelle ist die CAS-Migration:
+
+* `knowledge_objects.verstehen_fencing` — nullbare Spalte ohne Default, in PostgreSQL 11+
+  reine Metadatenänderung, überall `NULL`.
+* `helmut_ko_fencing_wache_trg` — `before insert or update **of verstehen_fencing**`. Bei
+  UPDATE feuert er **nur**, wenn die Spalte ausdrücklich im `SET` steht; kein bestehender
+  Schreibweg tut das (`storage.js` schreibt über die Allowlists
+  `V3_KO_WRITE_COLUMNS`/`V3_KNOWLEDGE_OBJECT_COLUMNS`, in denen `verstehen_fencing`
+  ausdrücklich **nicht** steht). Bei INSERT feuert er immer, findet `NULL` und lässt durch.
+
+Lokal als `service_role` (mit `bypassrls` wie in Production) gegen die nachgebaute
+Production-Schemaform geprüft — alles grün: Einfügen ohne Fencing-Wert · Update ohne die
+Spalte · PostgREST-Upsert-Form · fremdes Setzen wird mit `HV002` abgewiesen (auch bei
+Wertgleichheit) · `helmut_enqueue_job`/`helmut_claim_jobs` unverändert · der Altweg erzeugt
+**keine** Versandabsicht (Outbox bleibt bei 0).
+
+Weiter geprüft: RLS auf allen 7 Tabellen **an und erzwungen**, **0** Policies, **0** Rechte
+für `anon`/`authenticated`/`PUBLIC` (Tabellen wie Funktionen), alle 32 Funktionen
+`SECURITY INVOKER` mit festem `search_path = public, pg_temp`.
+
+### §24.4 Sicherstes Zeitfenster (Berliner Zeit)
+
+Cron-Belegung (UTC → Berlin, CEST): 04:00→06:00 crawl · 05:00→07:00 morning · 05:30→07:30
+understanding · 05:45→07:45 lage · 06:00→08:00 health · 06:10/06:22→08:10/08:22 Nachlauf ·
+10:00→12:00 lage-check · 16:00→18:00 pipeline · 20:00→22:00 crawl · 21:30→23:30
+understanding. Dazu der GitHub-Actions-Watchdog (05:30 UTC, oft 2–3 h verzögert → bis ~08:30
+UTC / 10:30 Berlin).
+
+**Empfohlenes Fenster: 18:10–19:50 Berlin** (16:10–17:50 UTC) — direkt nachdem der
+pipeline-Lauf 18:00 Berlin beendet ist (er dauert ~4–5 min), mit ~2 h Abstand zum
+crawl 22:00 Berlin und weit außerhalb jeder Watchdog-Verzögerung. Zweitbestes Fenster:
+12:15–17:45 Berlin.
+
+**Pflicht-Vorsatz je Schritt**, weil die CAS-Migration kurz eine `ACCESS EXCLUSIVE`-Sperre
+auf `knowledge_objects` braucht: `set lock_timeout = '5s'; set statement_timeout = '60s';`
+Damit scheitert ein Schritt schnell und sichtbar, statt sich hinter einen laufenden
+Crawl zu stellen und alle nachfolgenden Zugriffe auf `knowledge_objects` mit anzustauen.
+Erst durch die Korrektur aus §24.6 ist ein solcher Abbruch folgenlos.
+
+### §24.5 Wirkung bei weiterhin ausgeschalteten Flags
+
+**Keine.** Kein Cron, keine Route und kein Handler ruft eine der neuen Funktionen, solange
+`HELMUT_JOB_DISPATCH_MODE`, `HELMUT_KLASSEN_GRENZEN` und `HELMUT_VERSTEHEN_CAS` aus sind.
+Die 524 wartenden Aufträge bleiben unberührt und inert: keine Versandabsicht entsteht (der
+Altweg `helmut_enqueue_job` legt keine an), niemand holt sie ab, keine Kosten. Der KI-
+Tagesdeckel bleibt unverändert; die Migrationen erzeugen keinen einzigen Modellaufruf.
+
+### §24.6 BEFUND — zwei Dateien waren nicht „alles oder nichts"
+
+`20260814090000_queue_verbraucher.sql` und `20260814090100_anbieter_steuerung.sql` trugen
+als **einzige** Dateien des Verzeichnisses keine `begin;`/`commit;`-Klammer (ihre beiden
+Rollbacks ebenso). Der Inhalt war korrekt — die Lücke betraf ausschließlich den Abbruchfall:
+an einer frischen PostgreSQL 16 belegt blieb nach einem Abbruch in der Mitte
+`helmut_claim_job_by_id` allein stehen, während alles danach fehlte. Ein halb angewendeter
+Schritt ist falsches Grün (`CLAUDE.md` §4 Regel 4) und macht den Rückweg mehrdeutig — und
+der in §24.4 empfohlene `lock_timeout` macht einen Abbruch mitten im Skript wahrscheinlicher,
+nicht unwahrscheinlicher.
+
+Behoben auf `claude/op30-production-pr248-k0ixy5`: Klammer in allen vier Dateien ergänzt,
+Regressionsprüfung `migrations-organisation-test.js` §5 (jede neue Datei genau einmal
+geklammert, vorwärts wie rückwärts). Nach der Korrektur hinterlässt derselbe Abbruch
+**keine** Zeile mehr. **Bis dieser PR gemergt ist, sollen die Schritte 3 und 4 nicht
+angewendet werden** — die Schritte 1, 2 und 5 sind davon unberührt.
+
+### §24.7 Sicherung vor der Anwendung
+
+Eine Vollsicherung ist **nicht** erforderlich: alle fünf Migrationen sind additiv, keine
+bestehende Zeile, Spalte, Policy oder Funktion wird verändert, und jeder Schritt hat einen
+geprüften Rückweg. Der kleinste datensparsame Umfang, der trotzdem sinnvoll ist — **ohne
+jeden personenbezogenen Inhalt**:
+
+1. **Schemastand** (nur Struktur, keine Zeilen): die Ausgabe von
+   `select table_name, column_name, data_type from information_schema.columns
+    where table_schema='public' order by 1,2` sichern.
+2. **Zwei Zählwerte als Vergleichsanker**: die Warteschlangensignatur aus §24.1
+   (`a069f91fde4547493796395f2c989497`) und `select count(*) from knowledge_objects`.
+
+Beides ist rein technisch (Namen, Typen, Zahlen) und enthält keine politischen Inhalte,
+keine Mandate und keine URLs.
+
+### §24.8 Ablauf je Schritt — anwenden, prüfen, zurücknehmen
+
+Für **jeden** der fünf Schritte, einzeln und in der Reihenfolge aus §24.2:
+
+1. `set lock_timeout = '5s'; set statement_timeout = '60s';` voranstellen.
+2. Die Datei über den belegten Weg anwenden (MCP `apply_migration`, wie am 2026-08-11/12).
+3. **Verifikation** — die rein lesenden Abfragen stehen am Ende jeder Migrationsdatei
+   („Verifikation nach der Anwendung"); zusätzlich nach **jedem** Schritt:
+   `select count(*) from helmut_jobs where status='wartend'` → **524** und
+   `select count(*) from helmut_jobs where status='erledigt'` → **235**.
+4. **Rücknahme dieses Schrittes** (falls die Verifikation abweicht):
+   `rollback_<vorwärtsname>.sql` anwenden — danach ist der Ausgangsstand exakt
+   wiederhergestellt (lokal belegt: Tabellen/Funktionen/Trigger/Spalten kehren auf
+   44/103/18/540 zurück).
+
+Nach Schritt 5 zusätzlich: `select count(*) from knowledge_objects where verstehen_fencing
+is not null` → **0** (niemand schreibt den Wert, solange `HELMUT_VERSTEHEN_CAS` aus ist)
+und `select * from helmut_verstehen_kennzahlen()` → **leer**.
+
+### §24.9 Was dieser Plan NICHT enthält
+
+Keine Flag-Aktivierung, kein Redeploy, keine AWS-Aktion, kein Production-Lauf, keine
+Neutralisierung der 524 Aufträge, keine Anwendung von `20260720`. Die Aktivierungsschritte
+stehen unverändert in §23.1 (CAS) und in der Zielarchitektur-Belegdatei §14 (Stufenplan) —
+sie sind **eigene** Entscheidungen nach dieser Migration.

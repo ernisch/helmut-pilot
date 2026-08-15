@@ -147,5 +147,24 @@ const achtstelligNeu = neue.filter((f) => /^\d{8}_/.test(f));
 check("4.1 Keine neue Datei mit 8-stelligem Altstempel", achtstelligNeu.length === 0,
   `alt-stil: ${achtstelligNeu.join(", ")}`);
 
+// == 5 · ALLES ODER NICHTS ==================================================================
+// BEFUND der Production-Vorpruefung nach PR #248 (2026-08-15): 20260814090000 und
+// 20260814090100 trugen als EINZIGE Dateien des Verzeichnisses keine Transaktionsklammer.
+// Empirisch belegt an einer frischen PostgreSQL 16: bricht eine solche Datei in der Mitte ab
+// (fehlende Voraussetzung, `lock_timeout`, Verbindungsabbruch), bleibt ein TEILSTAND zurueck —
+// `helmut_claim_job_by_id` stand allein da, alles danach fehlte. Ein halb angewendeter
+// Migrationsschritt ist falsches Gruen (CLAUDE.md §4 Regel 4) und macht den Rueckweg
+// mehrdeutig. Diese Pruefung haelt die Klammer fuer JEDE neue Datei fest — vorwaerts wie
+// rueckwaerts. Der eingefrorene Altbestand ist angewendete Historie und bleibt aussen vor.
+console.log(`\n== 5 · Jede neue Migration ist eine Transaktion (alles oder nichts) ==`);
+for (const datei of [...neueVorwaerts, ...neueRollbacks].sort()) {
+  const zeilen = fs.readFileSync(path.join(VERZEICHNIS, datei), "utf8")
+    .split("\n").map((z) => z.trim().toLowerCase());
+  const beginnt = zeilen.filter((z) => z === "begin;").length;
+  const endet = zeilen.filter((z) => z === "commit;").length;
+  check(`5.1 ${datei} ist genau einmal in begin;/commit; geklammert`,
+    beginnt === 1 && endet === 1, `begin=${beginnt} commit=${endet}`);
+}
+
 console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
 process.exit(fail > 0 ? 1 : 0);
