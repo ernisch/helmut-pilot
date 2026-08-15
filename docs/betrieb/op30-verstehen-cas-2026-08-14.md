@@ -1,6 +1,7 @@
 # OP-30 · Verstehensparallelität und atomarer Verstehensvertrag (CAS)
 
 **Sprint 2026-08-14/6 · Zustand: erfolgreich abgeschlossen (lokal belegt; Aktivierung = Betreiberentscheidung)**
+**Korrekturlauf 2026-08-15 · drei bestätigte Lücken geschlossen — siehe [§11](#10--korrekturlauf-2026-08-15-drei-bestätigte-lücken).**
 
 Kanonische Belegdatei für den letzten globalen Engpass der OP-30-Zielarchitektur.
 Vorgeschichte: [`op30-zielarchitektur-2026-08-13.md`](op30-zielarchitektur-2026-08-13.md)
@@ -78,24 +79,46 @@ nicht auf einem globalen Schloss. Verschiedene Vorgänge blockieren sich deshalb
 vorhandene Ergebnis ohne Modellaufruf (Idempotenz). Ein **neuer** Eingabehash wird
 zugelassen — Fortschreibung bleibt möglich.
 
-### 2.3 Der Fencing-Wert ist erzwungen, nicht nur geprüft
+### 2.3 Ein einziger, atomar geprüfter Schreibweg
 
-Jede Übernahme erhöht `fencing` um 1. Der Wert wandert über die neue Spalte
-`knowledge_objects.verstehen_fencing` mit in das Ergebnis und wird dort vom Trigger
-`helmut_ko_fencing_wache` **durchgesetzt** — in zwei Richtungen:
+*Fassung nach dem Korrekturlauf 2026-08-15 (§10.3). Die erste Fassung prüfte den
+Fencing-Wert am Trigger; das reichte nicht.*
 
-1. gegen die **gespeicherte Fassung**: `new < old` ⇒ Abweisung (SQLSTATE `HV001`);
-2. gegen die **aktuelle Reservierung**: `new < reservierung.fencing` ⇒ Abweisung.
+Jede Übernahme erhöht `fencing` um 1. Geschrieben wird ausschließlich über
+**`helmut_verstehen_speichere`**: eine Datenbankfunktion, die unter dem **Row-Lock der
+Vorgangszeile** fünf Dinge **gemeinsam** prüft und erst dann schreibt.
 
-Punkt 2 schließt das Fenster, das eine reine Vorher-Prüfung offen lässt: ein abgelöster
-Arbeiter kann auch dann nicht schreiben, wenn der neue Besitzer sein Ergebnis noch nicht
-persistiert hat. Das ist der Unterschied zwischen „vorher geprüft" und „erzwungen".
+| geprüft | abgewiesen mit |
+|---|---|
+| aktuelle Reservierung = eigener Fencing-Wert | `fencing-veraltet` |
+| Zustand = `modell-laeuft` | `zustand-<x>` |
+| Besitzer = eigener Besitzer | `fremder-besitzer` |
+| Lease noch gültig | `lease-abgelaufen` |
+| keine neuere Fassung gespeichert | `ergebnis-neuer` |
 
-**Der Trigger ist ohne den neuen Pfad wirkungslos.** Er kehrt sofort zurück, wenn
-`verstehen_fencing` NULL ist oder sich nicht ändert. Alle bestehenden Schreibpfade
-(Anreicherung, Matching, Nachklassifikation) senden die Spalte nicht mit; PostgREST
-behält dann den Altwert, `NEW = OLD`, und der Vergleich schlägt nie an
-(nachgewiesen: Datenbanktest §13).
+Wissensobjekt **und** Abschluss der Reservierung liegen danach in **derselben
+Transaktion**. Es gibt damit kein Fenster mehr, in dem das Ergebnis geschrieben, der
+Vorgang aber noch offen wäre — und keines, in dem ein abgelöster Arbeiter zwischen
+Prüfung und Schreibvorgang durchrutschen könnte.
+
+**Der Trigger `helmut_ko_fencing_wache` ist der zweite, unabhängige Riegel.** Er
+entscheidet nicht mehr am *Wert*, sondern an der *Herkunft*:
+
+* außerhalb von `helmut_verstehen_speichere` darf `verstehen_fencing` **weder gesetzt
+  noch geändert** werden (SQLSTATE `HV002`) — auch nicht auf denselben Wert;
+* innerhalb wird zusätzlich Monotonie gegen die gespeicherte Fassung **und** gegen die
+  aktuelle Reservierung erzwungen (`HV001`).
+
+Technisch trägt das ein `before insert or update **of verstehen_fencing**`: der Trigger
+feuert bei einem UPDATE nur, wenn die Spalte ausdrücklich im SET-Teil steht — unabhängig
+davon, ob sich ihr Wert ändert. Genau diese Unterscheidung fehlte vorher.
+
+**Bestehende Schreibpfade bleiben unberührt.** Anreicherung, Matching und
+Nachklassifikation senden die Spalte nicht mit; ihr Teil-Update erwähnt sie nicht und
+löst deshalb nicht einmal einen Triggeraufruf aus (nachgewiesen: Datenbanktest §13.1–13.3).
+Zusätzlich strukturell abgesichert: `verstehen_fencing` steht nicht mehr in der
+PostgREST-Schreibprojektion `V3_KO_WRITE_COLUMNS` — dieser Weg kann den Wert gar nicht
+mehr tragen.
 
 ### 2.4 Rechte und Datenschutz
 
@@ -123,27 +146,47 @@ Idempotenzschlüssel, den der Anbieter über Tage vorhält, ebenso wenig.
 
 | Zusage | Umsetzung |
 |---|---|
-| **Kein automatischer Doppelaufruf** | `modellstart` vermerkt den Aufruf **vor** dem Absenden. Ein danach abgestürzter Vorgang wird nie automatisch erneut aufgerufen. |
-| **Unbekannter Ausgang sichtbar blockiert** | `zustand = 'unbekannt'`, `letzter_grund = 'absturz-nach-modellstart'`, zählbar über `helmut_verstehen_kennzahlen()`, in der Lauftelemetrie als eigene Klasse `skipped-ausgang-unbekannt` (Gruppe „fehlgeschlagen"). |
-| **Keine erfundene Erfolgsmeldung** | `abschluss` läuft **nach** der Persistenz und nur mit passendem Fencing-Wert; scheitert er, meldet der Lauf `skipped-veraltet` statt „saved". |
+| **Kein automatischer Doppelaufruf** | `modellstart` vermerkt den Aufruf **vor** dem Absenden. Ab diesem Vermerk führt **kein** automatischer Weg zurück nach `offen`: `freigabe` greift nur noch aus `reserviert`, jeder andere Ausgang endet in `unbekannt` (§10.1). |
+| **Unbekannter Ausgang sichtbar blockiert** | `zustand = 'unbekannt'`, `letzter_grund` benennt die Ursache, zählbar über `helmut_verstehen_kennzahlen()`, in der Lauftelemetrie als eigene Klasse `skipped-ausgang-unbekannt` (Gruppe „fehlgeschlagen"); der Rückgabewert des Laufs trägt zusätzlich `ausgang: "unbekannt"`. |
+| **Keine erfundene Erfolgsmeldung** | Persistenz und Abschluss liegen in **einer** Transaktion (`helmut_verstehen_speichere`); scheitert sie, meldet der Lauf `skipped-veraltet` bzw. `skipped-store` statt „saved". |
 
 **Die einzige automatische Auflösung ist eine belegte.** Findet `reserviere` in
 `knowledge_objects` ein Ergebnis mit mindestens dem Fencing-Wert des Abgestürzten, dann
 lag der Absturz **nach** dem Speichern — der Ausgang ist damit bekannt, und der Vertrag
-löst selbst auf `fertig` auf. Ohne KI, ohne Betreiber (Datenbanktest §11.1).
+löst selbst auf `fertig` auf. Ohne KI, ohne Betreiber (Datenbanktest §10.1).
 
 Alles andere braucht eine ausdrückliche Entscheidung:
 `helmut_verstehen_ausgang_aufloesen(vorgang, 'erneut' | 'aufgeben')`. `erneut` ist die
 bewusste Zustimmung zu einem zweiten, bezahlten Aufruf; `aufgeben` ist terminal.
 
-### 3.2 Die verbleibende Ungenauigkeit, ehrlich benannt
+### 3.2 Der Zustandsvertrag vor und nach dem Modellstart
 
-Zwischen dem erfolgreichen `modellstart` und dem tatsächlichen Absenden der Anfrage
-liegen wenige Millisekunden. Stirbt der Prozess **in** diesem Fenster, hat kein Aufruf
-stattgefunden — der Vertrag stuft den Vorgang trotzdem als `unbekannt` ein. Das ist die
-konservative Seite des Irrtums: es entstehen keine Doppelkosten, sondern ein sichtbarer
-Vorgang, der eine Entscheidung braucht. Die umgekehrte Wahl (im Zweifel wiederholen)
-wäre die teure und wurde bewusst nicht getroffen.
+*Fassung nach dem Korrekturlauf 2026-08-15 (§10.1).*
+
+| | **vor** `modellstart` | **nach** `modellstart` |
+|---|---|---|
+| Was gilt | es **kann** kein Aufruf abgesetzt worden sein | es **kann** ein bezahlter Aufruf gelaufen sein |
+| Fehler (Budget, Wache, Reservierung) | `freigabe` ⇒ `offen`, sicher wiederholbar | — |
+| Zeitüberschreitung · Verbindungsabbruch · unklarer Anbieterfehler | — | `unbekannt` |
+| ungültige oder schemawidrige Modellantwort | — | `unbekannt` |
+| Validierungs-, Schreibrechts- oder Speicherfehler | — | `unbekannt` |
+| Prozessabsturz (meldet nichts) | Lease läuft ab ⇒ regulär übernehmbar | Lease läuft ab ⇒ `unbekannt` |
+| **belegt** nichts abgesendet (Tagesbudget, Anbietergrenze) | `freigabe` ⇒ `offen` | `freigabe_ohne_aufruf` ⇒ `offen`, Zähler korrigiert |
+
+Aus `unbekannt` entsteht **nie** automatisch ein weiterer Modellaufruf. Nur
+`helmut_verstehen_ausgang_aufloesen(…, 'erneut')` gibt ihn wieder frei — oder der Vertrag
+löst selbst auf, wenn das Ergebnis nachweislich doch vorliegt.
+
+**Der Beleg „nicht abgesendet" ist ein Beleg, keine Vermutung.** Er entsteht an der
+KI-Engstelle selbst: `ai.markiereNichtGesendet` markiert genau die Fehler, die
+**nachweislich vor** `https.request(…)` entstehen — Tagesbudget und Anbietergrenze. Fehlt
+die Marke, gilt „unbekannt". Die Richtung des Irrtums ist Absicht: teurer und ehrlich
+statt billig und falsch.
+
+**Die verbleibende Ungenauigkeit, ehrlich benannt:** stirbt der Prozess zwischen dem
+erfolgreichen `modellstart` und dem Absenden, hat kein Aufruf stattgefunden — der Vertrag
+stuft den Vorgang trotzdem als `unbekannt` ein. Das ist die konservative Seite des
+Irrtums: kein Doppelaufruf, sondern ein sichtbarer Vorgang, der eine Entscheidung braucht.
 
 ### 3.3 Keine Doppelbuchung des Tagesbudgets
 
@@ -191,7 +234,8 @@ Zwei getrennte Suiten, weil sie zwei verschiedene Dinge beweisen. Eine allein ge
 ### 5.1 `scripts/verstehen-cas-datenbank-test.js` — die Datenbankzusagen
 
 Echte PostgreSQL 16, echte Nebenläufigkeit: **je Arbeiter ein eigener
-Betriebssystemprozess** (`spawn psql`), kein gemeinsamer JavaScript-Faden. **68 PASS / 0 FAIL.**
+Betriebssystemprozess** (`spawn psql`), kein gemeinsamer JavaScript-Faden.
+**103 PASS / 0 FAIL** (Stand Korrekturlauf 2026-08-15; vorher 68).
 
 | § | Nachweis | Ergebnis |
 |---|---|---|
@@ -199,7 +243,7 @@ Betriebssystemprozess** (`spawn psql`), kein gemeinsamer JavaScript-Faden. **68 
 | 2 | RLS an+erzwungen, keine Policy, 0 Rechte für anon/authenticated/PUBLIC, fester `search_path`, kein `SECURITY DEFINER` | 6/6 |
 | 3 | **20 gleichzeitige Arbeiter auf denselben Vorgang** | genau **1** Berechtigung, genau **1** erfolgreicher `modellstart`, `ki_aufrufe = 1` |
 | 4 | **8 verschiedene Vorgänge gleichzeitig**; zusätzlich 24 Arbeiter auf 8 Vorgänge | 8 aktive Leases zum selben Zeitpunkt, 8 gleichzeitig auf `modell-laeuft`; 24 → genau 8 Berechtigungen |
-| 5 | Lease-Verlust | alter Besitzer: kein Schreibrecht, kein Abschluss |
+| 5 | Lease-Verlust an einen Nachfolger | alter Besitzer: kein Schreibrecht, kein Abschluss |
 | 6 | Veraltetes Überschreiben | Datenbank weist ab — auch bevor der neue Besitzer geschrieben hat |
 | 7 | Absturz **vor** dem Modellaufruf | reguläre Übernahme, Fencing +1, `ki_aufrufe = 0` |
 | 8 | Absturz **nach** dem Modellaufruf | `ausgang-unbekannt`, dauerhaft blockiert, `ki_aufrufe` bleibt 1, in den Kennzahlen sichtbar |
@@ -207,21 +251,44 @@ Betriebssystemprozess** (`spawn psql`), kein gemeinsamer JavaScript-Faden. **68 
 | 10 | Vormerkungen | 20 gleichzeitige Erhöhungen ergeben **genau 20**; alter Erfolgsmelder löscht nicht |
 | 11 | Auflösung des unbekannten Ausgangs | automatisch bei belegtem Ergebnis; sonst nur `erneut`/`aufgeben` |
 | 12 | Fehlerhafte Argumente | Fehler statt stillem Erfolg; unbekannter Zustand strukturell ausgeschlossen |
-| 13 | Fremde Schreibpfade | unberührt (Anreicherung/Matching laufen durch) |
+| 13 | Fremde Schreibpfade | unberührt (Anreicherung/Matching laufen durch); ein Fencing-Wert von außen wird abgewiesen — auch ein gleich hoher |
+| **14** | **abgelaufene Lease OHNE Nachfolger** (Lücke 2) | Schreibrecht `false`, Speicherweg `lease-abgelaufen`, **0** geschriebene Zeilen; ein gültiges Lease behält sein Recht |
+| **15** | **F1 gespeichert · F2 reserviert · erneuter F1** (Lücke 3) | `fencing-veraltet`, Bestand unverändert `F1`; auch mit vorgetäuschtem F2: `fremder-besitzer` |
+| **16** | **nach dem Modellstart kein Weg zurück nach `offen`** (Lücke 1) | `freigabe` wirkungslos, Zustand bleibt `modell-laeuft`, `ausgang_unbekannt` → `blockiert`, nächster Lauf `ausgang-unbekannt`, `ki_aufrufe = 1` über beide Läufe; der belegte Fall hat einen eigenen, eng gefassten Weg |
+| **17** | **Atomarität des Speicherwegs** | Schreiben und Abschluss gemeinsam; nur übergebene Spalten werden geschrieben; unbekannte Schlüssel werden ignoriert; fremde Vorgangskennung → Fehler statt stillem Erfolg |
 
 ### 5.2 `scripts/verstehen-cas-vertrag-test.js` — die Anwendungsseite
 
-Offline, gegen eine Attrappe der SQL-Semantik. **68 PASS / 0 FAIL.** Kernpunkte:
+Offline, gegen eine Attrappe der SQL-Semantik.
+**107 PASS / 0 FAIL** (Stand Korrekturlauf 2026-08-15; vorher 68). Kernpunkte:
 
 * **§3** vollständige Reihenfolge belegt: `reservieren → modellstart → KI → schreibrecht →
-  speichern → abschluss`; das Ergebnis trägt den Fencing-Wert der Reservierung.
+  speichern(+abschluss)`; Speichern und Abschluss sind **ein** Schritt.
 * **§13** **acht verschiedene Vorgänge laufen im Fachkern wirklich gleichzeitig**
-  (gemessener Höchststand 8, Laufzeit unter der seriellen Summe) — und die Gegenprobe:
-  **ohne** Vertrag bleibt derselbe Lauf seriell (Höchststand 1). Der Riegel greift.
+  (gemessener Höchststand 8) — und die Gegenprobe: **ohne** Vertrag bleibt derselbe Lauf
+  seriell (Höchststand 1). Der Riegel greift.
+  *Korrekturlauf: die frühere Zusage über die **Wanduhr** ist ersatzlos entfallen. Sie hat
+  in einer geteilten Sandbox die Maschine gemessen, nicht die Parallelität, und schlug
+  auch am **unveränderten** Bestand fehl (262–291 ms gegen ein Budget von 200 ms). Der
+  gemessene Höchststand ist der deterministische, aussagekräftigere Beleg; die Dauer wird
+  nur noch berichtet.*
 * **§14** **20 gleichzeitige Arbeiter auf denselben Cluster**: genau 1 Modellaufruf,
   genau 1 Speicherung, 19 geschlossen zurückgestellt, kein leeres Ergebnis.
 * **§12** fail closed an **jeder** Vertragsstelle (Reservierung, Modellstart, Schreibrecht,
-  Abschluss) — eine nicht prüfbare Zusage erlaubt nichts.
+  Speicherweg) — eine nicht prüfbare Zusage erlaubt nichts und wird nach dem Modellstart
+  als `unbekannt` geführt.
+* **§16** (neu) **at most once über ZWEI aufeinanderfolgende Läufe**, je Fehlerfall
+  einzeln: Zeitüberschreitung · Verbindungsabbruch · unklarer Anbieterfehler · ungültige
+  Antwort · schemawidrige Antwort · Speicherfehler · Absturz im Speichern ·
+  Prozessabbruch. **Jeweils höchstens ein Modellaufruf insgesamt**, der zweite Lauf
+  sichtbar blockiert.
+* **§17** (neu) ein **belegbar nicht abgesendeter** Aufruf darf erneut versucht werden:
+  erster Lauf 0 Modellaufrufe und Zustand wieder `offen`, zweiter Lauf versteht —
+  **genau ein Modellaufruf insgesamt**.
+* **§18** (neu) abgelaufene Lease **ohne Nachfolger**: nicht gespeichert, Ausgang
+  `unbekannt`, kein zweiter Aufruf im Folgelauf.
+* **§19** (neu) F1 gespeichert · F2 reserviert · erneuter F1-Schreibversuch → abgewiesen,
+  Bestand unverändert.
 * **§15** Cron, Warteschlange und Lambda benutzen denselben Fachpfad; es gibt genau **eine**
   `understandOneCluster`.
 
@@ -229,17 +296,29 @@ Offline, gegen eine Attrappe der SQL-Semantik. **68 PASS / 0 FAIL.** Kernpunkte:
 
 Je EIN Schutzmechanismus wird aus einer **In-Memory-Kopie** der Migration entfernt (die
 Datei selbst bleibt unangetastet), die Mutation in eine Wegwerf-Datenbank eingespielt und
-der Schaden nachgewiesen. **ROT 6 / Löcher 0.** Vorher wird die **Grundlinie** geprüft —
-eine bereits beschädigte Grundlinie würde jede Mutation aussagelos machen.
+der Schaden nachgewiesen. **ROT 9 / Löcher 0** (Stand Korrekturlauf 2026-08-15; vorher 6).
+Vorher wird die **Grundlinie** geprüft — eine bereits beschädigte Grundlinie würde jede
+Mutation aussagelos machen.
 
 | Mutation | Entfernter Schutz | Nachgewiesener Schaden |
 |---|---|---|
 | M1 | atomare Erhöhung → Lesen-Ändern-Schreiben | 20 gleichzeitige Erhöhungen ergeben **3** statt 20 |
-| M2 | monotoner Fencing-Wert | der abgelöste Arbeiter schließt den Vorgang mit **seinem** Ergebnis ab |
-| M3 | Row-Lock in `reserviere` | **12** berechtigte KI-Ausführungen statt 1 |
+| M2 | monotoner Fencing-Wert | ein **nie berechnetes** Ergebnis wird als fertig gemeldet (falsches Grün) |
+| M3 | Row-Lock in `reserviere` | **15** berechtigte KI-Ausführungen statt 1 |
 | M4 | Lease-/Besitzerprüfung im Schreibrecht | der ALTE Besitzer bekommt Schreibrecht zurück |
 | M5 | Fencing-Riegel am Wissensobjekt | ein altes Ergebnis überschreibt das neuere |
 | M6 | Sperre des unbekannten Ausgangs | der unbekannte Ausgang wird **still wiederholt** (zweiter KI-Aufruf) |
+| **M7** | **Lücke 1** — `freigabe` wirkt wieder aus `modell-laeuft` | ein Fehler nach dem Modellstart öffnet den Vorgang wieder → **zweiter Modellaufruf** |
+| **M8** | **Lücke 2** — Lease-Zwang in `schreibrecht` **und** `speichere` | abgelaufene Lease **ohne Nachfolger** speichert trotzdem |
+| **M9** | **Lücke 3** — Triggerlogik in der Originalfassung (Wertgleichheit springt ab) | F1 gespeichert + F2 reserviert → ein erneuter F1-Schreibversuch kommt **durch** |
+
+M2 brauchte im Korrekturlauf einen neuen Schadensnachweis: der alte („der abgelöste
+Arbeiter schließt mit seinem Ergebnis ab") wird inzwischen von der **zusätzlichen**
+Besitzerprüfung in `abschluss` aufgefangen — die Mutation blieb grün, obwohl der Schutz
+fehlte. Der neue Nachweis hängt an dem, was allein die Monotonie leistet: ohne sie kann
+die Datenbank die Generationen eines Vorgangs nicht mehr trennen und meldet einen nie
+berechneten Vorgang als fertig. **Das ist genau der Fall, für den Mutationsproben da
+sind** — ein grüner Test, dessen Schutz längst woanders liegt.
 
 Zwei Befunde aus der Erstellung der Probe, beide behoben und hier festgehalten, weil sie
 sich sonst in der nächsten Probe wiederholen:
@@ -341,17 +420,156 @@ Zusätzlich fehlen unverändert **190 echte Profile** (es gibt 10).
    `helmut_verstehen_kennzahlen()` sammeln sich blockierte Vorgänge an. Sie sind sichtbar
    und harmlos (keine Kosten, kein falsches Grün) — aber sie lösen sich nicht von selbst.
    Ein Alarmweg dafür gehört zu OP-07 und ist **nicht** Teil dieses Sprints.
-2. **Der Trigger liegt auf `knowledge_objects`.** Er ist nachweislich inert, solange
-   niemand `verstehen_fencing` setzt (§2.3, Datenbanktest §13) — aber er liegt auf der
-   zentralen Tabelle. Ein künftiger Schreibpfad, der die Spalte versehentlich mitsendet,
-   könnte abgewiesen werden. Deshalb ist sie ausschließlich Schreibspalte und steht in
-   keiner Leseprojektion.
+2. **Der Trigger liegt auf `knowledge_objects`.** Er feuert nur, wenn ein Schreibvorgang
+   `verstehen_fencing` ausdrücklich setzt (§2.3, Datenbanktest §13.1–13.3) — aber er liegt
+   auf der zentralen Tabelle. Ein künftiger Schreibpfad, der die Spalte mitsendet, würde
+   mit `HV002` **abgewiesen**, nicht stillschweigend geduldet. Das ist gewollt (nur ein
+   Weg darf den Wert setzen) und muss bei jeder Erweiterung des KO-Schreibpfads bekannt
+   sein. Die Spalte steht in keiner Leseprojektion und seit dem Korrekturlauf auch in
+   keiner PostgREST-Schreibprojektion mehr.
+5. **Ein direkter SQL-Schreibvorgang mit `service_role` bleibt möglich.** Wer die
+   Datenbank unmittelbar beschreibt, kann Inhalte eines Wissensobjekts ändern, solange er
+   `verstehen_fencing` nicht anfasst — davon ist ein legitimes Teil-Update aus
+   Anreicherung oder Matching nicht unterscheidbar. Der Vertrag schützt den
+   *Verstehenspfad*, nicht die Tabelle gegen jeden denkbaren Schreiber. Für den
+   Auftragsfall (ein abgelöster Verstehenslauf) ist das geschlossen, weil dieser Pfad
+   ausschließlich über `helmut_verstehen_speichere` läuft.
+6. **Der Beleg „nicht abgesendet" ist eine Codeeigenschaft, keine Laufzeitprüfung.** Die
+   Datenbank kann ihn nicht nachprüfen; sie stellt nur sicher, dass er über einen eigenen,
+   eigens berechtigten Weg (`helmut_verstehen_freigabe_ohne_aufruf`) laufen muss und eine
+   eigene Spur hinterlässt. Wer künftig eine Fehlerklasse als „nicht abgesendet" markiert,
+   muss belegen, dass sie den HTTP-Aufruf nicht erreichen kann.
 3. **Die Parallelität ist lokal belegt, nicht in Production.** Alles über Parallelität 1
    hinaus ist eine Betreiberentscheidung nach Stufenplan, nicht eine Codefolge.
 4. **A2 ist eine Annahme, keine Messung.** Sie ist bewusst pessimistisch gewählt, aber
    nicht aus Production abgeleitet; die einzige echte Messung bleibt der Fünferlauf.
 
-## 10 · Nächster Schritt
+## 10 · Korrekturlauf 2026-08-15: drei bestätigte Lücken
+
+Ein Review der ersten Fassung hat **drei Lücken** bestätigt. Alle drei sind geschlossen,
+alle drei sind einzeln durch eine Mutationsprobe belegt (M7, M8, M9 in §5.3). Die
+Migration `20260814180000` wurde dafür **an Ort und Stelle korrigiert** — sie ist nirgends
+angewendet, weder in Production noch sonst wo, und eine Korrekturmigration auf eine nie
+angewendete Migration wäre eine Fiktion.
+
+### 10.1 Lücke 1 — nach dem Modellstart wurde automatisch wieder geöffnet
+
+**Ursache.** Beide Verstehenspfade endeten in einem *allgemeinen* `finally`:
+
+```js
+} finally {
+  if (vertrag && reservierung && !abgeschlossen) {
+    await vertrag.freigabe({ … });     // -> zustand = 'offen'
+  }
+}
+```
+
+`helmut_verstehen_freigabe` akzeptierte `zustand in ('reserviert','modell-laeuft')`.
+Damit führte **jeder** Fehler nach dem Modellstart — Zeitüberschreitung,
+Verbindungsabbruch, unklarer Anbieterfehler, ungültige Antwort, Validierungsfehler,
+Speicherfehler — den Vorgang zurück auf `offen`. Der nächste Cron-Lauf reservierte ihn
+regulär und bezahlte **denselben Aufruf ein zweites Mal**. Die Zusage „at most once" galt
+faktisch nur für den Prozessabsturz, also genau für den Fall, den niemand meldet.
+
+**Korrektur, in dieser Reihenfolge:**
+
+1. **In der Datenbank**, damit die Zusage nicht am Aufrufer hängt: `freigabe` greift nur
+   noch aus `reserviert`. Neu: `helmut_verstehen_ausgang_unbekannt` setzt `unbekannt` für
+   den eigenen, noch aktuellen Vorgang.
+2. **Im Fachkern**: `understanding.js` führt einen ausdrücklichen Zustand
+   `modellGestartet` und verzweigt im `finally` dreifach — `unbekannt` nach dem
+   Modellstart, `freigabeOhneAufruf` bei **belegtem** Nichtabsenden, `freigabe` davor.
+3. **An der KI-Engstelle**: `ai.markiereNichtGesendet` markiert die Fehler, die
+   nachweislich vor `https.request(…)` entstehen (Tagesbudget, Anbietergrenze). Nur sie
+   gelten als Beleg. Fehlt die Marke, gilt `unbekannt`.
+4. **In der Meldung**: der Rückgabewert trägt `ausgang: "unbekannt"`. Es wird nicht
+   behauptet, es sei kein Aufruf erfolgt, wenn das nicht belegbar ist.
+
+Wo *fail closed* nicht mehr weiterhilft, gibt es bewusst **keinen** Notausgang: lässt sich
+`unbekannt` nicht schreiben (DB-Fehler), bleibt die Zeile auf `modell-laeuft` stehen und
+läuft über das ablaufende Lease von selbst in `unbekannt`. Ein Rückfall auf `freigabe`
+wäre genau die Lücke.
+
+**Nachweis.** Vertragstest §16: acht Fehlerfälle, jeder über **zwei aufeinanderfolgende
+Läufe**, jeweils **höchstens ein** Modellaufruf insgesamt. Datenbanktest §16.
+Mutationsprobe M7.
+
+### 10.2 Lücke 2 — abgelaufene Lease ohne Nachfolger
+
+**Ursache.** `helmut_verstehen_schreibrecht` prüfte Besitzer, Fencing-Wert und Zustand —
+**nicht** aber, ob das Lease noch gilt:
+
+```sql
+where res.vorgang_id = p_vorgang_id
+  and res.besitzer   = p_besitzer
+  and res.fencing    = p_fencing
+  and res.zustand    = 'modell-laeuft';    -- kein lease_bis > now()
+```
+
+Solange **kein Nachfolger** übernommen hatte, blieb die Zeile unverändert stehen — ein
+beliebig lange angehaltener Arbeiter bekam sein Schreibrecht deshalb noch immer
+bestätigt. Ein Lease ohne Ablaufzwang ist kein Lease.
+
+**Korrektur.** `and res.lease_bis is not null and res.lease_bis > now()` — und dieselbe
+Prüfung, verbindlich, im neuen atomaren Speicherweg (§10.3). Ein **erneuerbarer**
+Lease-Vertrag wurde bewusst *nicht* gebaut: erneuert wird nur, solange das Lease noch
+gilt; ein abgelaufenes ist endgültig verloren, und sein Ausgang gehört nach `unbekannt`.
+
+**Nachweis.** Datenbanktest §14 (Zeile gehört noch dem alten Besitzer, Schreibrecht
+`false`, Speicherweg `lease-abgelaufen`, **0** geschriebene Zeilen; ein gültiges Lease
+behält sein Recht). Vertragstest §18. Mutationsprobe M8.
+
+### 10.3 Lücke 3 — die Fencing-Umgehung bei Wertgleichheit
+
+**Ursache.** Der Trigger sprang ab, sobald der geschriebene Wert dem gespeicherten
+entsprach:
+
+```sql
+if new.verstehen_fencing is null
+   or (tg_op = 'UPDATE' and new.verstehen_fencing is not distinct from old.verstehen_fencing) then
+  return new;                       -- <- hier ging der alte Arbeiter durch
+end if;
+```
+
+Das war als Kostenriegel für fremde Teil-Updates gedacht (die tragen den Altwert mit),
+riss aber ein Loch: **gespeichert F1 · aktuelle Reservierung F2 · alter Arbeiter schreibt
+erneut F1** ⇒ `new = old = F1` ⇒ Prüfung übersprungen ⇒ veralteter Inhalt geschrieben.
+Am *Wert* allein sind die beiden Fälle nicht unterscheidbar.
+
+**Korrektur — zwei unabhängige Riegel:**
+
+1. **Ein wirklich atomarer Speicherweg.** `helmut_verstehen_speichere` prüft Besitzer,
+   aktuelle Reservierung, Fencing-Wert, Zustand und Lease **gemeinsam** unter dem Row-Lock
+   der Vorgangszeile und schreibt erst dann — Wissensobjekt und Abschluss in **einer**
+   Transaktion (§2.3). Der Auftragsfall endet dort mit `fencing-veraltet`, ohne dass eine
+   einzige Spalte angefasst wird.
+2. **Der Trigger entscheidet an der Herkunft statt am Wert.** `before insert or update
+   **of verstehen_fencing**` feuert bei einem UPDATE nur, wenn die Spalte ausdrücklich
+   gesetzt wird — auch bei gleichem Wert. Außerhalb des geprüften Wegs ist das verboten
+   (`HV002`).
+
+**Und `helmut_verstehen_abschluss` prüft jetzt den Besitzer** (Auftragsfrage: „reicht
+Fencing allein?"). Antwort: **nein.** Freigabe und `unbekannt` erhöhen den Fencing-Wert
+*nicht*; ein später eintreffender Melder hätte eine bereits blockierte Zeile
+stillschweigend wieder auf `fertig` gesetzt. `abschluss` verlangt deshalb Besitzer **und**
+`zustand = 'modell-laeuft'`.
+
+**Bestehende Schreibwege sind nachweislich unbeschädigt** (Datenbanktest §13.1–13.3):
+ein Wissensobjekt ohne Fencing-Wert entsteht unverändert, ein Teil-Update aus Anreicherung
+oder Matching läuft durch — auch bei gesetztem Fencing-Wert. Zusätzlich strukturell:
+`verstehen_fencing` ist aus der PostgREST-Schreibprojektion entfernt.
+
+**Nachweis.** Datenbanktest §15 (F1/F2/F1 → `fencing-veraltet`, Bestand unverändert) und
+§13.4–13.6. Vertragstest §19. Mutationsprobe M9.
+
+### 10.4 Was der Korrekturlauf **nicht** getan hat
+
+Keine Migration angewendet, keine Umgebungsvariable, kein Flag, keine Daten, kein
+Deployment, kein Production-Lauf, kein Secret gelesen, keine AWS-Ressource berührt. Die
+Freigabe für 25 bis 500 Mandate ist **nicht** erteilt und wird hier auch nicht behauptet
+(§7 bleibt ein Rechenmodell).
+
+## 11 · Nächster Schritt
 
 **Genau einer:** den PR reviewen und mergen (ändert Production nicht — alles Default-AUS).
 Erst danach, und als getrennte Betreiberentscheidung, die Migration `20260814180000`

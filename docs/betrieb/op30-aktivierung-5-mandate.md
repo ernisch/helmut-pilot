@@ -2154,7 +2154,7 @@ Drei Schritte, jeder einzeln zurücknehmbar, jeder eine eigene Entscheidung:
 
 | Schritt | Aktion | Wirkung | Rücknahme |
 |---|---|---|---|
-| 1 | Migration `20260814180000_verstehen_cas.sql` anwenden | **keine** — ohne Flag rührt sie kein Codepfad an; der Trigger ist inert, solange niemand `verstehen_fencing` setzt | `rollback_20260814180000_verstehen_cas.sql` |
+| 1 | Migration `20260814180000_verstehen_cas.sql` anwenden | **keine** — ohne Flag rührt sie kein Codepfad an; der Trigger feuert nur, wenn ein Schreibvorgang `verstehen_fencing` ausdrücklich setzt, und das tut ohne Vertrag niemand | `rollback_20260814180000_verstehen_cas.sql` |
 | 2 | `HELMUT_VERSTEHEN_CAS=on` + Redeploy | der Vertrag wirkt; die Vormerkungen wandern vom Karten-Store in die Vorgangszeilen. **Der Durchsatz ändert sich nicht** — Parallelität bleibt 1 | Flag zurück auf leer + Redeploy |
 | 3 | `HELMUT_VERSTEHEN_PARALLELITAET` und/oder `HELMUT_KLASSE_VERSTEHEN_MAX` > 1 | erst hier steigt der Verstehensdurchsatz | Wert zurück auf 1 + Redeploy |
 
@@ -2174,9 +2174,23 @@ nicht in doppelte KI-Kosten münden.
 
 ### §23.3 Wenn ein unbekannter Ausgang auftritt
 
-Er ist **kein Störfall**, sondern eine Entscheidung: ein Modellaufruf ist abgestürzt, bevor
-sein Ergebnis persistiert war, und niemand weiß, ob er ein Ergebnis geliefert hat. Der
-Vorgang ist blockiert und kostet nichts.
+Er ist **kein Störfall**, sondern eine Entscheidung: ein Modellaufruf wurde begonnen, sein
+Ergebnis ist aber nicht persistiert, und niemand kann belegen, ob er eines geliefert hat.
+Der Vorgang ist blockiert und kostet nichts.
+
+**Seit dem Korrekturlauf 2026-08-15 erreicht diesen Zustand deutlich mehr als nur ein
+Absturz** (kanonisch: [`op30-verstehen-cas-2026-08-14.md`](op30-verstehen-cas-2026-08-14.md)
+§10.1). `unbekannt` heißt jetzt auch: Zeitüberschreitung, Verbindungsabbruch, unklarer
+Anbieterfehler, unbrauchbare oder schemawidrige Modellantwort, Validierungs- oder
+Speicherfehler. Das ist **Absicht** — jeder dieser Fälle hat den Aufruf möglicherweise
+bezahlt, und keiner rechtfertigt eine automatische Wiederholung. `letzter_grund` in
+`helmut_verstehen_reservierungen` nennt die Ursache.
+
+**Erwartung für den Betrieb:** ein paar solcher Zeilen sind normal, sobald der Vertrag
+scharf ist — sie sind nicht mehr gleichbedeutend mit „etwas ist kaputt". Ein *wachsender*
+Rückstand ist es sehr wohl. Die Kontrolle in §23.2 („`unbekannt` bleibt bei 0") gilt
+unverändert für die **erste** Beobachtung direkt nach Schritt 2; danach ist die Frage nicht
+mehr „ist es 0?", sondern „wächst es?".
 
 1. Zuerst prüfen lassen, ob das Ergebnis doch vorliegt (kostet nichts, kein KI-Aufruf):
    `select public.helmut_verstehen_ausgang_aufloesen('<vorgang>', 'pruefen');`

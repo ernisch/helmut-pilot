@@ -26,6 +26,10 @@
 // §13 Mindestens 8 verschiedene Vorgänge laufen nachweislich parallel
 // §14 Mindestens 20 gleichzeitige Arbeiter auf DENSELBEN Vorgang → genau ein Modellaufruf
 // §15 Cron, Warteschlange und Lambda benutzen denselben Fachpfad
+// §16 At most once ÜBER ZWEI LÄUFE: jeder Fehlerfall nach dem Modellstart (Korrekturlauf)
+// §17 Ein belegbar NICHT abgesendeter Aufruf darf erneut versucht werden (Korrekturlauf)
+// §18 Abgelaufene Lease ohne Nachfolger verhindert das Speichern (Korrekturlauf)
+// §19 F1 gespeichert · F2 reserviert · erneuter F1-Schreibversuch (Korrekturlauf)
 
 const fs = require("fs");
 const path = require("path");
@@ -49,6 +53,8 @@ function baueSpeicherAttrappe({ jetzt = () => Date.now(), protokoll = null } = {
   const zeilen = new Map();       // vorgangId -> Reservierungszeile
   const vormerkungen = new Map(); // vorgangId -> { fehlversuche, letzteFencing }
   const kos = new Map();          // vorgangId -> verstehen_fencing
+  const inhalte = new Map();      // vorgangId -> zuletzt geschriebenes Wissensobjekt
+  const ausgabe = { p: null };    // Protokollobjekt des Aufrufers (von baueDeps gesetzt)
 
   const hole = (id) => {
     if (!zeilen.has(id)) {
@@ -61,7 +67,7 @@ function baueSpeicherAttrappe({ jetzt = () => Date.now(), protokoll = null } = {
   };
 
   return {
-    zeilen, vormerkungen, kos,
+    zeilen, vormerkungen, kos, inhalte, ausgabe,
     async verstehenReserviere({ vorgangId, eingabeHash, besitzer, ttlMs }) {
       const r = hole(vorgangId);
       if (protokoll) protokoll.push(["reserviere", vorgangId, besitzer]);
@@ -102,14 +108,52 @@ function baueSpeicherAttrappe({ jetzt = () => Date.now(), protokoll = null } = {
     async verstehenSchreibrecht({ vorgangId, besitzer, fencing, ttlMs }) {
       const r = hole(vorgangId);
       if (protokoll) protokoll.push(["schreibrecht", vorgangId, besitzer]);
-      if (r.besitzer !== besitzer || r.fencing !== fencing || r.zustand !== "modell-laeuft") return { verfuegbar: true, ok: false };
+      // KORREKTURLAUF: ein abgelaufenes Lease verliert das Schreibrecht auch OHNE Nachfolger.
+      if (r.besitzer !== besitzer || r.fencing !== fencing || r.zustand !== "modell-laeuft"
+          || !(r.leaseBis > jetzt())) return { verfuegbar: true, ok: false };
       r.leaseBis = jetzt() + ttlMs;
       return { verfuegbar: true, ok: true };
     },
-    async verstehenAbschluss({ vorgangId, fencing, ergebnisHash }) {
+
+    // KORREKTURLAUF: DER atomare Speicherweg — Besitzer, Reservierung, Fencing-Wert,
+    // Zustand und Lease werden GEMEINSAM geprueft, danach wird geschrieben UND
+    // abgeschlossen. Bildet helmut_verstehen_speichere nach.
+    async verstehenSpeichere({ vorgangId, besitzer, fencing, ko, ergebnisHash }) {
+      const r = hole(vorgangId);
+      if (protokoll) protokoll.push(["speichere", vorgangId, besitzer]);
+      if (ausgabe.p) ausgabe.p.reihenfolge.push("speichere");
+      if (r.fencing !== fencing) return { verfuegbar: true, ergebnis: "fencing-veraltet", gespeichert: false };
+      if (r.zustand !== "modell-laeuft") return { verfuegbar: true, ergebnis: `zustand-${r.zustand}`, gespeichert: false };
+      if (r.besitzer !== besitzer) return { verfuegbar: true, ergebnis: "fremder-besitzer", gespeichert: false };
+      if (!(r.leaseBis > jetzt())) return { verfuegbar: true, ergebnis: "lease-abgelaufen", gespeichert: false };
+      const gespeichertesFencing = kos.has(vorgangId) ? Number(kos.get(vorgangId)) : null;
+      if (gespeichertesFencing != null && gespeichertesFencing > fencing) {
+        return { verfuegbar: true, ergebnis: "ergebnis-neuer", gespeichert: false };
+      }
+      kos.set(vorgangId, fencing);
+      inhalte.set(vorgangId, { ...ko, verstehen_fencing: fencing });
+      if (ausgabe.p) ausgabe.p.gespeichert.push({ id: ko && ko.id, fencing });
+      r.zustand = "fertig"; r.ergebnisFencing = fencing; r.ergebnisHash = ergebnisHash;
+      r.besitzer = null; r.leaseBis = null;
+      return { verfuegbar: true, ergebnis: "gespeichert", gespeichert: true };
+    },
+
+    // KORREKTURLAUF: der ehrliche Ausgang nach dem Modellstart.
+    async verstehenAusgangUnbekannt({ vorgangId, besitzer, fencing, grund }) {
+      const r = hole(vorgangId);
+      if (protokoll) protokoll.push(["ausgang-unbekannt", vorgangId]);
+      if (ausgabe.p) ausgabe.p.reihenfolge.push("ausgang-unbekannt");
+      if (r.besitzer !== besitzer || r.fencing !== fencing || r.zustand !== "modell-laeuft") {
+        return { verfuegbar: true, ergebnis: r.fencing !== fencing ? "uebernommen" : `zustand-${r.zustand}`, blockiert: false };
+      }
+      r.zustand = "unbekannt"; r.besitzer = null; r.leaseBis = null; r.grund = grund || null;
+      return { verfuegbar: true, ergebnis: "blockiert", blockiert: true };
+    },
+    async verstehenAbschluss({ vorgangId, besitzer, fencing, ergebnisHash }) {
       const r = hole(vorgangId);
       if (protokoll) protokoll.push(["abschluss", vorgangId]);
-      if (r.fencing !== fencing || (r.ergebnisFencing != null && r.ergebnisFencing > fencing)) return { verfuegbar: true, ok: false };
+      if (r.fencing !== fencing || r.besitzer !== besitzer || r.zustand !== "modell-laeuft"
+          || (r.ergebnisFencing != null && r.ergebnisFencing > fencing)) return { verfuegbar: true, ok: false };
       r.zustand = "fertig"; r.ergebnisFencing = fencing; r.ergebnisHash = ergebnisHash;
       r.besitzer = null; r.leaseBis = null;
       return { verfuegbar: true, ok: true };
@@ -117,10 +161,23 @@ function baueSpeicherAttrappe({ jetzt = () => Date.now(), protokoll = null } = {
     async verstehenFreigabe({ vorgangId, besitzer, fencing }) {
       const r = hole(vorgangId);
       if (protokoll) protokoll.push(["freigabe", vorgangId]);
-      if (r.besitzer !== besitzer || r.fencing !== fencing || !["reserviert", "modell-laeuft"].includes(r.zustand)) {
+      // KORREKTURLAUF: NUR vor dem Modellstart. 'modell-laeuft' ist bewusst ausgeschlossen.
+      if (r.besitzer !== besitzer || r.fencing !== fencing || r.zustand !== "reserviert") {
         return { verfuegbar: true, ok: false };
       }
       r.zustand = "offen"; r.besitzer = null; r.leaseBis = null;
+      return { verfuegbar: true, ok: true };
+    },
+
+    // KORREKTURLAUF: eigener Weg fuer den BELEGTEN Fall „nichts abgesendet".
+    async verstehenFreigabeOhneAufruf({ vorgangId, besitzer, fencing, grund }) {
+      const r = hole(vorgangId);
+      if (protokoll) protokoll.push(["freigabe-ohne-aufruf", vorgangId]);
+      if (r.besitzer !== besitzer || r.fencing !== fencing || !["reserviert", "modell-laeuft"].includes(r.zustand)) {
+        return { verfuegbar: true, ok: false };
+      }
+      if (r.zustand === "modell-laeuft") r.kiAufrufe = Math.max(0, r.kiAufrufe - 1);
+      r.zustand = "offen"; r.besitzer = null; r.leaseBis = null; r.grund = `belegt-ohne-aufruf:${grund || ""}`;
       return { verfuegbar: true, ok: true };
     },
     async verstehenVormerkungLese(ids) {
@@ -170,6 +227,9 @@ function baueCluster(titel, docId) {
 }
 
 function baueDeps(p, speicher, extra = {}) {
+  // Der CAS-Pfad schreibt ueber `verstehenSpeichere` (nicht mehr ueber `deps.save`) —
+  // die Attrappe braucht deshalb Zugriff auf dasselbe Protokoll.
+  if (speicher && speicher.ausgabe) speicher.ausgabe.p = p;
   return {
     canSpend: async () => ({ allowed: true }),
     requestUnderstanding: async () => {
@@ -266,16 +326,19 @@ async function main() {
     check("3.1 Der Vorgang wird gespeichert (genau ein Modellaufruf)",
       r.status === "saved" && p.kiAufrufe === 1, `${r.status}/${p.kiAufrufe}`);
     const schritte = proto.map((z) => z[0]);
-    check("3.2 Vollstaendige Reihenfolge reservieren -> modellstart -> KI -> schreibrecht -> speichern -> abschluss",
+    check("3.2 Vollstaendige Reihenfolge reservieren -> modellstart -> KI -> schreibrecht -> speichern(+abschluss)",
       JSON.stringify(schritte) === JSON.stringify(
-        ["reserviere", "modellstart", "ki", "schreibrecht", "save", "abschluss"]),
+        ["reserviere", "modellstart", "ki", "schreibrecht", "speichere"]),
       JSON.stringify(schritte));
     check("3.3 Der Modellstart steht VOR dem Aufruf (nur so ist ein Absturz danach erkennbar)",
       schritte.indexOf("modellstart") >= 0 && schritte.indexOf("modellstart") < schritte.indexOf("ki"),
       JSON.stringify(schritte));
-    check("3.3b Das Schreibrecht steht VOR der Persistenz, der Abschluss DANACH",
-      schritte.indexOf("schreibrecht") < schritte.indexOf("save")
-        && schritte.indexOf("save") < schritte.indexOf("abschluss"), JSON.stringify(schritte));
+    check("3.3b Das Schreibrecht steht VOR der Persistenz",
+      schritte.indexOf("schreibrecht") >= 0 && schritte.indexOf("schreibrecht") < schritte.indexOf("speichere"),
+      JSON.stringify(schritte));
+    check("3.3c Speichern und Abschluss sind EIN Schritt (kein eigener Abschluss-Aufruf)",
+      !schritte.includes("abschluss") && speicher.zeilen.get(deriveVorgangId(baueCluster(TITEL[0], "rd-1"))).zustand === "fertig",
+      JSON.stringify(schritte));
     check("3.4 Das gespeicherte Ergebnis traegt den Fencing-Wert der Reservierung",
       p.gespeichert.length === 1 && p.gespeichert[0].fencing === 1, JSON.stringify(p.gespeichert));
     check("3.5 Es wird KEINE Freigabe nach dem Abschluss gerufen (der Vorgang ist fertig)",
@@ -365,16 +428,15 @@ async function main() {
     const p = neuesProtokoll();
     const speicher = baueSpeicherAttrappe();
     const vgId = deriveVorgangId(baueCluster(TITEL[0], "rd-1"));
-    const deps = baueDeps(p, speicher, {
-      save: async (ko) => {
-        // Erst NACH bestandener Schreibrechtspruefung uebernimmt ein neuerer Arbeiter und
-        // schreibt zuerst. Der Trigger muss die Altfassung dann abweisen.
-        speicher.kos.set(ko.vorgang_id, (ko.verstehen_fencing || 0) + 1);
-        const alt = speicher.kos.get(ko.vorgang_id);
-        if (ko.verstehen_fencing < alt) return { skipped: true, reason: "verstehen-fencing-veraltet", veraltet: true };
-        return { saved: true, id: ko.id };
-      }
-    });
+    const echt = speicher.verstehenSpeichere.bind(speicher);
+    speicher.verstehenSpeichere = async (args) => {
+      // Erst NACH bestandener Schreibrechtspruefung uebernimmt ein neuerer Arbeiter.
+      // Der atomare Speicherweg muss die Altfassung dann abweisen.
+      const z = speicher.zeilen.get(args.vorgangId);
+      if (z && z.fencing === args.fencing) { z.fencing += 1; z.besitzer = "neuer"; }
+      return echt(args);
+    };
+    const deps = baueDeps(p, speicher);
     const r = await understandOneCluster(baueCluster(TITEL[0], "rd-1"), deps);
     check("8.1 Die abgewehrte Ueberschreibung wird als `skipped-veraltet` gemeldet",
       r.status === "skipped-veraltet" && r.begruendung === "datenbank-hat-abgewehrt", `${r.status}/${r.begruendung}`);
@@ -389,6 +451,9 @@ async function main() {
       /"skipped-veraltet":\s*"duplikate"/.test(src));
     check("8.4 Der Speicherpfad erkennt den Trigger-Fehler ueberhaupt",
       /helmut-verstehen-fencing-veraltet/.test(fs.readFileSync(path.join(ROOT, "lib/helmut/storage.js"), "utf8")));
+    check("8.5 Der PostgREST-Schreibpfad traegt den Fencing-Wert gar nicht mehr (Einwegigkeit)",
+      !/V3_KO_WRITE_COLUMNS = \[\.\.\.V3_KNOWLEDGE_OBJECT_COLUMNS, "embedding", "verstehen_fencing"\]/
+        .test(fs.readFileSync(path.join(ROOT, "lib/helmut/storage.js"), "utf8")));
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
@@ -414,16 +479,15 @@ async function main() {
     const proto = [];
     const speicher = baueSpeicherAttrappe({ protokoll: proto });
     const vgIdA = deriveVorgangId(baueCluster(TITEL[0], "rd-1"));
-    const deps = baueDeps(p, speicher, {
-      save: async () => { throw new Error("prozess-weg"); }
-    });
+    speicher.verstehenSpeichere = async () => { throw new Error("prozess-weg"); };
+    const deps = baueDeps(p, speicher);
     const r = await understandOneCluster(baueCluster(TITEL[0], "rd-1"), deps).catch((e) => ({ status: `geworfen:${e.message}` }));
     check("10.1 Der Absturz wird durchgereicht (nichts wird beschoenigt)",
       String(r.status).startsWith("geworfen:"), String(r.status));
-    // Ein geworfener Speicherfehler ist ein BEKANNTER Ausgang ohne Ergebnis: der finally-Zweig
-    // gibt frei. Ein echter Prozessabbruch kann das nicht — dann greift die Lease-Regel.
-    check("10.2 Der Zustand ist danach nicht 'fertig' (kein falsches Gruen)",
-      speicher.zeilen.get(vgIdA).zustand !== "fertig",
+    // KORREKTURLAUF: ein Speicherfehler NACH dem Modellstart ist KEIN bekannter Ausgang —
+    // der Aufruf ist bezahlt, und ob das Ergebnis liegt, weiss niemand. Also `unbekannt`.
+    check("10.2 Der Zustand ist danach `unbekannt`, nicht `offen` und nicht `fertig`",
+      speicher.zeilen.get(vgIdA).zustand === "unbekannt",
       speicher.zeilen.get(vgIdA).zustand);
     check("10.3 Der Modellstart war vermerkt, bevor der Aufruf geschah",
       proto.some((z) => z[0] === "modellstart") && speicher.zeilen.get(vgIdA).kiAufrufe === 1);
@@ -508,16 +572,23 @@ async function main() {
     {
       const p = neuesProtokoll();
       const speicher = baueSpeicherAttrappe();
-      speicher.verstehenAbschluss = async () => nichtPruefbar;
+      const vgId = deriveVorgangId(baueCluster(TITEL[0], "rd-1"));
+      speicher.verstehenSpeichere = async () => nichtPruefbar;
       const r = await understandOneCluster(baueCluster(TITEL[0], "rd-1"), baueDeps(p, speicher));
-      check("12.4 Abschluss nicht pruefbar -> das eigene Ergebnis wird NICHT als fertig behauptet",
-        r.status === "skipped-veraltet", r.status);
+      check("12.4 Speicherweg nicht pruefbar -> das eigene Ergebnis wird NICHT als fertig behauptet",
+        r.status === "skipped-store" && r.status !== "saved", r.status);
+      check("12.5 ... und der Ausgang wird ehrlich als unbekannt gefuehrt (kein `offen`)",
+        r.ausgang === "unbekannt" && speicher.zeilen.get(vgId).zustand === "unbekannt",
+        `${r.ausgang}/${speicher.zeilen.get(vgId).zustand}`);
     }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
   abschnitt("13 · Mindestens 8 VERSCHIEDENE Vorgaenge laufen nachweislich parallel");
   {
+    // Bewusst deutlich ueber der festen Grundlast eines Laufs: nur dann misst der
+    // Zeitvergleich unten die Parallelitaet und nicht das Rauschen der Maschine.
+    const PARALLEL_WARTE_MS = 120;
     const p = neuesProtokoll();
     const speicher = baueSpeicherAttrappe();
     let gleichzeitig = 0;
@@ -526,7 +597,7 @@ async function main() {
       requestUnderstanding: async () => {
         gleichzeitig += 1;
         hoechstens = Math.max(hoechstens, gleichzeitig);
-        await new Promise((r) => setTimeout(r, 25));
+        await new Promise((r) => setTimeout(r, PARALLEL_WARTE_MS));
         gleichzeitig -= 1;
         p.kiAufrufe += 1;
         return { ...ANALYSE };
@@ -551,21 +622,37 @@ async function main() {
       verstanden === 8 && p.kiAufrufe === 8, `${verstanden}/${p.kiAufrufe}`);
     check("13.3 Sie liefen NACHWEISLICH gleichzeitig (Hoechststand 8)",
       hoechstens === 8, String(hoechstens));
-    check("13.4 Der Lauf war kuerzer als die serielle Summe (8 x 25 ms)",
-      dauer < 8 * 25, `${dauer} ms`);
-    // Gegenprobe: ohne Vertrag bleibt es seriell.
+    // Gegenprobe: ohne Vertrag bleibt es seriell — und sie ist zugleich die MESSLATTE.
+    // KORREKTURLAUF 2026-08-15: der frühere Vergleich gegen ein festes Millisekundenbudget
+    // (8 x 25 ms) mass die Geschwindigkeit der Maschine mit, nicht die Parallelität — auf
+    // einer langsamen Sandbox schlug er auch bei einwandfreier Parallelität fehl
+    // (unverändert am Bestand nachgemessen). Verglichen wird jetzt DIESELBE Last einmal
+    // parallel und einmal seriell; das ist genau die Aussage, die der Test trifft.
     const p2 = neuesProtokoll();
     let gleichzeitig2 = 0;
     let hoechstens2 = 0;
+    const startSeriell = Date.now();
     const ergebnis2 = await runUnderstandingShadow(dokumente, {
       ...deps,
       verstehenVertrag: () => null,
       requestUnderstanding: async () => {
         gleichzeitig2 += 1; hoechstens2 = Math.max(hoechstens2, gleichzeitig2);
-        await new Promise((r) => setTimeout(r, 5));
+        await new Promise((r) => setTimeout(r, PARALLEL_WARTE_MS));
         gleichzeitig2 -= 1; p2.kiAufrufe += 1; return { ...ANALYSE };
       }
     });
+    const dauerSeriell = Date.now() - startSeriell;
+    // KORREKTURLAUF 2026-08-15: hier stand eine Zusage ueber die WANDUHR (frueher gegen ein
+    // festes Millisekundenbudget, dann gegen den seriellen Lauf). Beide Fassungen haben in
+    // einer geteilten Sandbox die Maschine gemessen, nicht die Parallelitaet — sie schlugen
+    // auch bei einwandfrei parallelem Lauf fehl (am unveraenderten Bestand nachgemessen:
+    // 262-291 ms gegen ein Budget von 200 ms). Die Parallelitaet selbst ist bereits
+    // DETERMINISTISCH belegt: 13.3 misst den gleichzeitigen Hoechststand 8, 13.5 zeigt
+    // dieselbe Last ohne Vertrag bei Hoechststand 1. Die Dauer wird nur noch BERICHTET.
+    console.log(`        (Dauer: parallel ${dauer} ms / seriell ${dauerSeriell} ms — nur berichtet, keine Zusage)`);
+    check("13.4 Der serielle Vergleichslauf hat dieselbe Last verarbeitet (der Vergleich ist fair)",
+      (ergebnis2.results || []).length === (ergebnis.results || []).length && p2.kiAufrufe === 8,
+      `${(ergebnis2.results || []).length}/${p2.kiAufrufe}`);
     check("13.5 OHNE Vertrag bleibt der Lauf seriell (Hoechststand 1) — der Riegel greift",
       hoechstens2 === 1 && (ergebnis2.results || []).length === 8, `${hoechstens2}`);
   }
@@ -614,6 +701,236 @@ async function main() {
       /verstehenVertrag:\s*\(\)\s*=>/.test(understandingSrc));
     check("15.5 Es gibt genau EINE Verstehensimplementierung (keine zweite Fachlogik)",
       (understandingSrc.match(/async function understandOneCluster\(/g) || []).length === 1);
+  }
+
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // KORREKTURLAUF 2026-08-15 — die drei bestaetigten Luecken auf der Anwendungsseite.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  abschnitt("16 · At most once UEBER ZWEI LAEUFE: jeder Fehlerfall nach dem Modellstart");
+  {
+    // Jeder Fall laeuft ZWEIMAL hintereinander mit derselben Eingabe — genau so, wie es
+    // der naechste Cron-Lauf taete. Gezaehlt wird der EXTERNE Modellaufruf ueber BEIDE
+    // Laeufe zusammen. Er darf hoechstens einmal stattfinden.
+    const faelle = [
+      {
+        name: "Zeitueberschreitung",
+        deps: () => ({ requestUnderstanding: async () => { const e = new Error("ETIMEDOUT"); throw e; } })
+      },
+      {
+        name: "Verbindungsabbruch",
+        deps: () => ({ requestUnderstanding: async () => { const e = new Error("socket hang up"); e.code = "ECONNRESET"; throw e; } })
+      },
+      {
+        name: "unklarer Anbieterfehler",
+        deps: () => ({ requestUnderstanding: async () => { throw new Error("OpenAI HTTP 503"); } })
+      },
+      {
+        name: "ungueltige Modellantwort",
+        deps: () => ({ requestUnderstanding: async () => null })
+      },
+      {
+        name: "schemawidrige Modellantwort (Validierungsfehler)",
+        // Schemawidrig auf eine Weise, die die Assemblierung NICHT glattbuegelt.
+        deps: () => ({ requestUnderstanding: async () => ({ ...ANALYSE, was_ist_passiert: "schreiben an max@example.invalid" }) })
+      }
+    ];
+    for (const fall of faelle) {
+      const speicher = baueSpeicherAttrappe();
+      const cluster = baueCluster(TITEL[0], "rd-1");
+      const vgId = deriveVorgangId(cluster);
+      let ki = 0;
+      const baue = () => {
+        const p = neuesProtokoll();
+        const roh = fall.deps();
+        return baueDeps(p, speicher, {
+          ...roh,
+          requestUnderstanding: async (...args) => { ki += 1; return roh.requestUnderstanding(...args); }
+        });
+      };
+      const erst = await understandOneCluster(cluster, baue());
+      const zweit = await understandOneCluster(cluster, baue());
+      check(`16.${faelle.indexOf(fall) + 1}a ${fall.name}: hoechstens EIN Modellaufruf ueber zwei Laeufe`,
+        ki === 1, `${ki} Aufrufe (${erst.status} -> ${zweit.status})`);
+      check(`16.${faelle.indexOf(fall) + 1}b ${fall.name}: der zweite Lauf ist sichtbar blockiert`,
+        zweit.status === "skipped-ausgang-unbekannt"
+        && speicher.zeilen.get(vgId).zustand === "unbekannt",
+        `${zweit.status}/${speicher.zeilen.get(vgId).zustand}`);
+      check(`16.${faelle.indexOf(fall) + 1}c ${fall.name}: der erste Lauf behauptet NICHT, es sei nichts passiert`,
+        erst.ausgang === "unbekannt", String(erst.ausgang));
+    }
+
+    // Speicherfehler (die Ablage antwortet nicht pruefbar) — der Aufruf ist bezahlt.
+    {
+      const speicher = baueSpeicherAttrappe();
+      speicher.verstehenSpeichere = async () => ({ verfuegbar: false, grund: "netzfehler" });
+      const cluster = baueCluster(TITEL[0], "rd-1");
+      const vgId = deriveVorgangId(cluster);
+      let ki = 0;
+      const baue = () => baueDeps(neuesProtokoll(), speicher, {
+        requestUnderstanding: async () => { ki += 1; return { ...ANALYSE }; }
+      });
+      const erst = await understandOneCluster(cluster, baue());
+      const zweit = await understandOneCluster(cluster, baue());
+      check("16.6a Speicherfehler: hoechstens EIN Modellaufruf ueber zwei Laeufe", ki === 1,
+        `${ki} (${erst.status} -> ${zweit.status})`);
+      check("16.6b Speicherfehler: der Ausgang ist unbekannt, nicht `gespeichert` und nicht `offen`",
+        erst.ausgang === "unbekannt" && speicher.zeilen.get(vgId).zustand === "unbekannt",
+        `${erst.ausgang}/${speicher.zeilen.get(vgId).zustand}`);
+    }
+
+    // Absturz mitten im Speichern (geworfener Fehler) und echter Prozessabbruch.
+    {
+      const speicher = baueSpeicherAttrappe();
+      speicher.verstehenSpeichere = async () => { throw new Error("prozess-weg"); };
+      const cluster = baueCluster(TITEL[0], "rd-1");
+      const vgId = deriveVorgangId(cluster);
+      let ki = 0;
+      const baue = () => baueDeps(neuesProtokoll(), speicher, {
+        requestUnderstanding: async () => { ki += 1; return { ...ANALYSE }; }
+      });
+      await understandOneCluster(cluster, baue()).catch(() => ({}));
+      const zweit = await understandOneCluster(cluster, baue()).catch(() => ({}));
+      check("16.7a Absturz im Speichern: hoechstens EIN Modellaufruf ueber zwei Laeufe", ki === 1, String(ki));
+      check("16.7b Absturz im Speichern: geschlossen blockiert",
+        zweit.status === "skipped-ausgang-unbekannt" && speicher.zeilen.get(vgId).zustand === "unbekannt",
+        `${zweit.status}/${speicher.zeilen.get(vgId).zustand}`);
+    }
+    {
+      // ECHTER Prozessabbruch: der Arbeiter meldet gar nichts, das Lease laeuft ab.
+      const speicher = baueSpeicherAttrappe();
+      const cluster = baueCluster(TITEL[0], "rd-1");
+      const vgId = deriveVorgangId(cluster);
+      await speicher.verstehenReserviere({ vorgangId: vgId, eingabeHash: "x", besitzer: "tot", ttlMs: 1000 });
+      await speicher.verstehenModellstart({ vorgangId: vgId, besitzer: "tot", fencing: 1, ttlMs: 1000 });
+      speicher.zeilen.get(vgId).leaseBis = Date.now() - 1;
+      let ki = 0;
+      const baue = () => baueDeps(neuesProtokoll(), speicher, {
+        requestUnderstanding: async () => { ki += 1; return { ...ANALYSE }; }
+      });
+      const erst = await understandOneCluster(cluster, baue());
+      const zweit = await understandOneCluster(cluster, baue());
+      check("16.8 Prozessabbruch nach dem Modellstart: KEIN weiterer Modellaufruf in zwei Laeufen",
+        ki === 0 && erst.status === "skipped-ausgang-unbekannt" && zweit.status === "skipped-ausgang-unbekannt",
+        `${ki}/${erst.status}/${zweit.status}`);
+    }
+    // Und die Gegenprobe zur Zusage selbst: `freigabe` ist nach dem Modellstart wirkungslos.
+    {
+      const speicher = baueSpeicherAttrappe();
+      await speicher.verstehenReserviere({ vorgangId: "vg-f", eingabeHash: "x", besitzer: "w", ttlMs: 60000 });
+      await speicher.verstehenModellstart({ vorgangId: "vg-f", besitzer: "w", fencing: 1, ttlMs: 60000 });
+      const frei = await speicher.verstehenFreigabe({ vorgangId: "vg-f", besitzer: "w", fencing: 1 });
+      check("16.9 Die Freigabe greift nach dem Modellstart nicht mehr (Zusage liegt in der Datenbank)",
+        frei.ok === false && speicher.zeilen.get("vg-f").zustand === "modell-laeuft",
+        `${frei.ok}/${speicher.zeilen.get("vg-f").zustand}`);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  abschnitt("17 · Ein belegbar NICHT abgesendeter Aufruf darf erneut versucht werden");
+  {
+    const ai = require(path.join(ROOT, "lib/helmut/ai"));
+    check("17.1 Die KI-Engstelle kann einen Fehler als `nicht abgesendet` belegen",
+      typeof ai.markiereNichtGesendet === "function"
+      && ai.istBelegtNichtGesendet(ai.markiereNichtGesendet(new Error("x"))) === true
+      && ai.istBelegtNichtGesendet(new Error("y")) === false);
+    check("17.2 Der Budget-Abbruch traegt die Marke (er entsteht VOR dem HTTP-Aufruf)",
+      /throw markiereNichtGesendet\(error\)/.test(fs.readFileSync(path.join(ROOT, "lib/helmut/ai.js"), "utf8")));
+
+    // Erster Lauf: Tagesbudget erschoepft NACH dem Modellstart (Wettlauf mit der
+    // Engstelle). Zweiter Lauf: das Budget ist wieder da — er MUSS verstehen duerfen.
+    const speicher = baueSpeicherAttrappe();
+    const cluster = baueCluster(TITEL[0], "rd-1");
+    const vgId = deriveVorgangId(cluster);
+    let ki = 0;
+    let budgetWeg = true;
+    const baue = () => baueDeps(neuesProtokoll(), speicher, {
+      requestUnderstanding: async () => {
+        if (budgetWeg) {
+          const e = new Error("llm-budget-erschoepft");
+          e.code = "LLM_BUDGET_EXHAUSTED"; e.reason = "daily-llm-budget-reached";
+          e.kiNichtGesendet = true;
+          throw e;
+        }
+        ki += 1;
+        return { ...ANALYSE };
+      }
+    });
+    const erst = await understandOneCluster(cluster, baue());
+    check("17.3 Der erste Lauf zaehlt KEINEN Modellaufruf und vertagt ehrlich",
+      erst.status === "skipped-budget" && ki === 0 && erst.ausgang === undefined,
+      `${erst.status}/${ki}/${erst.ausgang}`);
+    check("17.4 Der Vorgang steht wieder auf `offen` (sicher wiederholbar)",
+      speicher.zeilen.get(vgId).zustand === "offen", speicher.zeilen.get(vgId).zustand);
+    budgetWeg = false;
+    const zweit = await understandOneCluster(cluster, baue());
+    check("17.5 Der zweite Lauf darf verstehen — GENAU EIN Modellaufruf insgesamt",
+      zweit.status === "saved" && ki === 1, `${zweit.status}/${ki}`);
+    check("17.6 Eine Anbietervertagung gilt ebenfalls als belegt nicht abgesendet",
+      (() => {
+        const e = new Error("anbietergrenze: rate");
+        e.anbieterVertagung = { bereich: {}, wartenMs: 1000, grund: "rate" };
+        return /anbieterVertagung/.test(fs.readFileSync(path.join(ROOT, "lib/helmut/understanding.js"), "utf8"))
+          && Boolean(e.anbieterVertagung);
+      })());
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  abschnitt("18 · Abgelaufene Lease OHNE Nachfolger verhindert das Speichern");
+  {
+    const speicher = baueSpeicherAttrappe();
+    const cluster = baueCluster(TITEL[0], "rd-1");
+    const vgId = deriveVorgangId(cluster);
+    const p = neuesProtokoll();
+    const deps = baueDeps(p, speicher, {
+      requestUnderstanding: async () => {
+        p.kiAufrufe += 1;
+        // Waehrend des Modellaufrufs laeuft das Lease ab — NIEMAND uebernimmt.
+        speicher.zeilen.get(vgId).leaseBis = Date.now() - 1;
+        return { ...ANALYSE };
+      }
+    });
+    const r = await understandOneCluster(cluster, deps);
+    check("18.1 Der Arbeiter mit abgelaufener Lease speichert NICHT",
+      r.status === "skipped-veraltet" && p.gespeichert.length === 0 && !speicher.kos.has(vgId),
+      `${r.status}/${p.gespeichert.length}`);
+    check("18.2 Die Zeile gehoerte weiterhin ihm (es gab keinen Nachfolger)",
+      speicher.zeilen.get(vgId).fencing === 1, String(speicher.zeilen.get(vgId).fencing));
+    check("18.3 Der Ausgang ist unbekannt (der Aufruf war bezahlt)",
+      r.ausgang === "unbekannt" && speicher.zeilen.get(vgId).zustand === "unbekannt",
+      `${r.ausgang}/${speicher.zeilen.get(vgId).zustand}`);
+    check("18.4 Der naechste Lauf loest KEINEN zweiten Modellaufruf aus",
+      (await understandOneCluster(cluster, baueDeps(p, speicher))).status === "skipped-ausgang-unbekannt"
+      && p.kiAufrufe === 1, String(p.kiAufrufe));
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  abschnitt("19 · F1 gespeichert, F2 reserviert, erneuter F1-Schreibversuch");
+  {
+    const speicher = baueSpeicherAttrappe();
+    // F1 regulaer schreiben.
+    await speicher.verstehenReserviere({ vorgangId: "vg-cas", eingabeHash: "h1", besitzer: "alt", ttlMs: 60000 });
+    await speicher.verstehenModellstart({ vorgangId: "vg-cas", besitzer: "alt", fencing: 1, ttlMs: 60000 });
+    const f1 = await speicher.verstehenSpeichere({
+      vorgangId: "vg-cas", besitzer: "alt", fencing: 1,
+      ko: { id: "ko-vg-cas", vorgang_id: "vg-cas", headline: "F1" }, ergebnisHash: "e1"
+    });
+    check("19.1 F1 wird regulaer gespeichert", f1.gespeichert === true, f1.ergebnis);
+    // F2 reservieren (neuer Arbeiter).
+    const zweit = await speicher.verstehenReserviere({ vorgangId: "vg-cas", eingabeHash: "h2", besitzer: "neu", ttlMs: 60000 });
+    await speicher.verstehenModellstart({ vorgangId: "vg-cas", besitzer: "neu", fencing: zweit.fencing, ttlMs: 60000 });
+    check("19.2 Der zweite Arbeiter haelt F2", zweit.fencing === 2, String(zweit.fencing));
+    // Der alte Arbeiter schreibt erneut F1.
+    const nochmal = await speicher.verstehenSpeichere({
+      vorgangId: "vg-cas", besitzer: "alt", fencing: 1,
+      ko: { id: "ko-vg-cas", vorgang_id: "vg-cas", headline: "ALT-F1" }, ergebnisHash: "e1"
+    });
+    check("19.3 DER AUFTRAGSFALL: der erneute F1-Schreibversuch wird abgewiesen",
+      nochmal.gespeichert === false && nochmal.ergebnis === "fencing-veraltet", String(nochmal.ergebnis));
+    check("19.4 Der Bestand traegt unveraendert die F1-Fassung des BERECHTIGTEN Laufs",
+      speicher.inhalte.get("vg-cas").headline === "F1", String(speicher.inhalte.get("vg-cas").headline));
+    check("19.5 Der Fachkern meldet das als `skipped-veraltet`, nicht als Fehler",
+      /begruendung: "datenbank-hat-abgewehrt"/.test(fs.readFileSync(path.join(ROOT, "lib/helmut/understanding.js"), "utf8")));
   }
 
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);

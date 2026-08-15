@@ -94,7 +94,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **NEU 2026-08-14/6**, Branch `claude/op30-verstehen-cas-a89axz` | **Atomarer Verstehensvertrag (CAS)** (§7d): Migration `20260814180000` (NICHT angewendet), `verstehen-vertrag.js`, Parallelitaetsriegel, 2 Suiten + Mutationsprobe, neu gerechnetes Kapazitaetsmodell, Doku | alles Default-AUS; Merge ändert Production nicht; Migration bleibt freigabepflichtig |
+| **PR #248**, Branch `claude/op30-verstehen-cas-a89axz` | **Atomarer Verstehensvertrag (CAS)** (§7d): Migration `20260814180000` (NICHT angewendet), `verstehen-vertrag.js`, Parallelitaetsriegel, 2 Suiten + Mutationsprobe, Kapazitaetsmodell, Doku; **Korrekturlauf 15.08.**: at-most-once nach Modellstart, Lease-Zwang, atomarer CAS-Speicherweg | alles Default-AUS; Merge ändert Production nicht; Migration bleibt freigabepflichtig |
 | **#231** (Draft) | OP-03 Konten-Vorbedingung, 1 Konto je Mandat | in §6 bisher nicht geführt (Korrektur 2026-08-11/2); Betreiberentscheidung |
 | **#224** (Draft) | F-E2E: Lage-Rangfolge aus berechnetem Rang statt Ablage | behauptet die Behebung des CI-Nichtdeterminismus F-E2E; **nicht reviewt, nicht abgenommen** |
 | **#225** (Draft) | „Produktroadmap für LINIE" | nicht aus dem Helmut-Arbeitsstrang; Einordnung beim Betreiber |
@@ -187,25 +187,29 @@ der OPTIONALEN `KeyPolicy` und hielt **nichts** — jetzt trägt jede Ressource
 `Condition: IstFrankfurt`, Graph azyklisch 17/17). Der AWS-Trockenlauf beider Regionen bleibt
 offen (§26.3), ebenso §25.3. **AWS ist unverändert nicht ausgerollt.**
 
-## 7d · Verstehensparallelität und CAS — Sprint 2026-08-14/6 (erfolgreich abgeschlossen, lokal belegt)
+## 7d · Verstehensparallelität und CAS — Sprint 2026-08-14/6, Korrekturlauf 2026-08-15 (lokal belegt)
 
-Der **letzte globale Engpass** der Zielarchitektur ist beseitigt. `verstehen` stand auf
-Parallelität 1, weil die Update-Vormerkungen in **einer Karte** lagen und mit Lesen → Ändern →
-Schreiben zurückgeschrieben wurden (`CLAUDE.md` §4 Regel 10). Ersetzt durch den **atomaren
-Verstehensvertrag** (Migration `20260814180000_verstehen_cas.sql` + Rollback, **NICHT
-angewendet**): eine Zeile je Vorgang mit Besitzer, Lease und **monotonem Fencing-Wert**; eine
-Vormerkungszeile je Vorgang, atomar erhöht und **bedingt** gelöscht; der Fencing-Wert wandert
-über `knowledge_objects.verstehen_fencing` mit ins Ergebnis und wird dort per Trigger
-**erzwungen**. Ein Modellaufruf wird **vor** dem Absenden vermerkt: ein Absturz danach endet
-sichtbar in `zustand='unbekannt'` und wird **nie automatisch wiederholt** (at most once; die
-Exactly-once-Unmöglichkeit für externe Aufrufe ist geprüft und dokumentiert).
+Der **letzte globale Engpass** der Zielarchitektur ist beseitigt: `verstehen` stand auf
+Parallelität 1, weil die Update-Vormerkungen in **einer Karte** mit Lesen → Ändern → Schreiben
+gepflegt wurden (`CLAUDE.md` §4 Regel 10). Ersetzt durch den **atomaren Verstehensvertrag**
+(Migration `20260814180000_verstehen_cas.sql` + Rollback, **NICHT angewendet**): eine Zeile je
+Vorgang mit Besitzer, Lease und **monotonem Fencing-Wert**.
+
+**Korrekturlauf 2026-08-15 — drei bestätigte Lücken geschlossen** (Ursachen, Korrektur und
+Nachweis: Belegdatei §10): (1) ein allgemeines `finally` öffnete den Vorgang nach dem
+Modellstart wieder — jeder Fehler danach hätte einen **zweiten bezahlten Aufruf** ausgelöst;
+jetzt endet jeder Ausgang ohne Ergebnisbeleg in `unbekannt`. (2) `schreibrecht` verlangte
+**kein gültiges Lease**; jetzt Lease-Zwang. (3) Der Trigger übersprang die Prüfung bei
+**Wertgleichheit** (F1 gespeichert, F2 reserviert, erneut F1); jetzt schreibt ausschließlich
+`helmut_verstehen_speichere` — Besitzer, Reservierung, Fencing-Wert, Zustand und Lease
+gemeinsam unter Row-Lock, Ergebnis **und** Abschluss in einer Transaktion. Bestehende
+Schreibwege bleiben nachweislich unberührt.
 **Alles Default AUS** (`HELMUT_VERSTEHEN_CAS`); Parallelität > 1 wird ohne den Vertrag **hart
-auf 1 geklemmt** (bisher nur ein Kommentar, jetzt Code), Obergrenze 8 = die nachgewiesene Zahl.
-Nachweise: DB-Suite **68 PASS** an echter PostgreSQL mit echter Nebenläufigkeit (20 Arbeiter auf
-denselben Vorgang → genau 1 Berechtigung; 8 Vorgänge gleichzeitig; 24 Arbeiter auf 8 Vorgänge →
-genau 8) · Vertragssuite **68 PASS** · **Mutationsprobe 6/6 rot** · Kapazitätsmodell **37 PASS**
-(neu gerechnet 5–500, zweite pessimistische Annahme; sichere Verstehensparallelität **8** lokal
-belegt). **Helmut ist dadurch NICHT für 25–500 Mandate freigegeben** — bindend bleiben der
+auf 1 geklemmt**, Obergrenze 8. Nachweise: DB-Suite **103 PASS** (echte PostgreSQL, echte
+Nebenläufigkeit: 20 Arbeiter auf denselben Vorgang → 1 Berechtigung; 8 Vorgänge gleichzeitig) ·
+Vertragssuite **107 PASS** (jeder Fehlerfall über **zwei Läufe**, insgesamt höchstens **ein**
+Modellaufruf) · **Mutationsprobe 9/9 rot** (M7–M9 = die drei Lücken) · Kapazitätsmodell
+**37 PASS**. **Helmut ist NICHT für 25–500 Mandate freigegeben** — bindend bleiben
 KI-Tagesdeckel und OP-15. Kanonisch:
 [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md); Runbook §23.
 
@@ -277,8 +281,8 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 **Die Zielarchitektur ist gemergt (§7c, PR #247); der atomare Verstehensvertrag liegt als PR
 vor (§7d).** Production läuft im Normalbetrieb auf dem Altpfad. Reihenfolge jetzt:
 
-1. **CAS-PR reviewen und mergen** (ändert Production nicht — alles Default-AUS). Damit ist der
-   letzte globale Engpass der Zielarchitektur auch auf `main`.
+1. **CAS-PR #248 reviewen und mergen** (ändert Production nicht — alles Default-AUS; der
+   Korrekturlauf 15.08. ist enthalten). Damit ist der letzte globale Engpass auch auf `main`.
 2. **Vor Versuch 3:** die 524 inerten Aufträge neutralisieren (bewiesenes Muster Runbook
    §17.8/§17.10) und §8.3/§8.4 (Watchdog-Kriterium) queue-tauglich umformulieren.
 3. Versuch 3 nach Stufenplan (Zielarchitektur §14, Stufe 1: Migrationen `20260813` anwenden +
@@ -339,8 +343,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-14/6 | **Verstehensparallelitaet und CAS** (Belegdatei [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)): atomarer Verstehensvertrag loest den Karten-Store (Lesen-Aendern-Schreiben) ab — letzter globaler Engpass | DB-Suite **68 PASS** (echte Nebenlaeufigkeit), Vertragssuite **68 PASS**, Mutationsprobe **6/6 rot**, Kapazitaetsmodell **37 PASS**; Migration NICHT angewendet, alles Default-AUS |
+| 2026-08-14/6 + Korrekturlauf 15.08. | **Verstehensparallelitaet und CAS** (Belegdatei [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)): atomarer Verstehensvertrag loest den Karten-Store ab; Korrekturlauf schliesst 3 Luecken (at-most-once nach Modellstart, Lease-Zwang, Fencing-Umgehung) | DB-Suite **103 PASS** (echte Nebenlaeufigkeit), Vertragssuite **107 PASS**, Mutationsprobe **9/9 rot**, Kapazitaetsmodell **37 PASS**; Migration NICHT angewendet, alles Default-AUS |
 | 2026-08-14/5 | **CloudFormation-Korrektur OP-30** (Belegdatei §26): zwei Bereitstellungsblocker — Rollen-Principals in der Schluesselrichtlinie (Zyklus) und ein Riegel an der OPTIONALEN `KeyPolicy` | Ende-zu-Ende **53 PASS**, Infrastruktur **124 PASS**, Mutationsprobe **16/16 rot**, Offline **256/260** (4 sandboxbedingt), Browser/Mobile **32 PASS**; AWS und Production unangetastet |
 | 2026-08-12/3 | **Altersgrenze berichtigt** (Runbook §17): Wartezeit statt Fälligkeit; 3 neue Suiten (59+26+31 PASS); PR #244 gemergt, Wirkungsnachweis am 16:00-Lauf bestanden | **erfolgreich abgeschlossen** |
 
-Die sechs OP-30-Sprints davor (Zielarchitektur 13/3 · Sicherheitskorrektur 14 · Haertung 14/2 · Korrekturlauf 14/3 · Verkabelungslauf 14/4 · CloudFormation 14/5) stehen vollstaendig in der Belegdatei [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §17–§26. Die Sprints 2026-08-11/3 – 13/2 (Vorwaertsmigrationen · Neutralitaetsnachweis · blockierter Env-Sprint · K0 · Ruecknahmebeleg · Wirkungsnachweis · Neutralisierung+Migration · **zweiter Fuenferlauf, nicht bestanden**) stehen kanonisch im Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §12–§19. Der Sprint 2026-08-09/2 und die OP-30-Sprints vom 2026-08-08 stehen in den Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) traegt den CI-Basisrot-Befund). Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; alles bis 2026-07-31: **Archiv**.
+Die sechs OP-30-Sprints davor (Zielarchitektur 13/3 bis CloudFormation 14/5) stehen vollstaendig in der Belegdatei [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §17–§26. Die Sprints 2026-08-11/3 – 13/2 (bis zum **zweiten Fuenferlauf, nicht bestanden**) stehen kanonisch im Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §12–§19. Sprint 2026-08-09/2 und die OP-30-Sprints vom 2026-08-08: Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) traegt den CI-Basisrot-Befund). OP-25-Sprints 01.–08.08.: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; alles bis 2026-07-31: **Archiv**.

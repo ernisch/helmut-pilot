@@ -19,6 +19,10 @@
 //   §11 Der unbekannte Ausgang ist auflösbar — automatisch bei belegtem Ergebnis
 //   §12 Fehlerhafte Argumente stoppen geschlossen (kein stiller Erfolg)
 //   §13 Fremde Schreibpfade auf knowledge_objects bleiben unberührt
+//   §14 Abgelaufene Lease OHNE Nachfolger verhindert das Speichern  (Korrekturlauf, Lücke 2)
+//   §15 Fencing-Umgehung: F1 gespeichert · F2 reserviert · erneuter F1 (Korrekturlauf, Lücke 3)
+//   §16 Nach dem Modellstart führt kein Weg automatisch zurück nach `offen` (Lücke 1)
+//   §17 Der CAS-Speicherweg schreibt und schließt gemeinsam (Atomarität, Teilprojektion)
 //
 // Ohne erreichbaren Server: ehrlicher Skip mit Exit 0 — der Nachweis ist dann OFFEN.
 // Aufruf lokal: HELMUT_TEST_PG_HOST=127.0.0.1 node scripts/lokal.js -- \
@@ -110,6 +114,15 @@ function reserviere(vorgangId, hash, besitzer, ttlMs = 300000) {
   const zeile = psql(`select erlaubt||'|'||fencing||'|'||zustand||'|'||grund`
     + ` from public.helmut_verstehen_reserviere('${vorgangId}','${hash}','${besitzer}',${ttlMs})`).out.split("|");
   return { erlaubt: /^t/.test(zeile[0] || ""), fencing: Number(zeile[1]), zustand: zeile[2], grund: zeile[3] };
+}
+
+// Der EINZIGE erlaubte Weg, ein Verstehensergebnis mit Fencing-Wert zu schreiben
+// (Korrekturlauf 2026-08-15). Er prueft Besitzer, Reservierung, Fencing-Wert, Zustand und
+// Lease gemeinsam und schliesst den Vorgang in derselben Transaktion ab.
+function casSchreibe(vorgangId, besitzer, fencing, koId, felder = {}, ergebnisHash = "erg") {
+  const ko = JSON.stringify({ id: koId, vorgang_id: vorgangId, ...felder }).replace(/'/g, "''");
+  return psql(`select public.helmut_verstehen_speichere('${vorgangId}','${besitzer}',${fencing},`
+    + `'${ko}'::jsonb,'${ergebnisHash}')`).out;
 }
 
 function leaseAblaufenLassen(vorgangId) {
@@ -266,27 +279,32 @@ async function main() {
   // ═══════════════════════════════════════════════════════════════════════════════════════
   abschnitt("6 · Ein alter Lauf kann ein neueres Ergebnis nicht ueberschreiben");
   {
-    psql("insert into public.knowledge_objects(id,vorgang_id,verstehen_fencing) values ('ko-vg-lease','vg-lease',2)");
+    // `vg-lease` steht seit §5 beim neuen Besitzer `neu` mit Fencing 2 auf modell-laeuft.
+    check("6.0 Der aktuelle Besitzer schreibt ueber den CAS-Weg",
+      casSchreibe("vg-lease", "neu", 2, "ko-vg-lease", { status: "neu" }, "erg-neu") === "gespeichert");
     const veraltet = psql("update public.knowledge_objects set verstehen_fencing=1, status='alt'"
       + " where id='ko-vg-lease'", { erwarteFehler: true });
-    check("6.1 Die Datenbank WEIST eine veraltete Fassung ab (nicht nur die Anwendung)",
-      veraltet.ok === false && /helmut-verstehen-fencing-veraltet/.test(veraltet.out), veraltet.out.slice(0, 120));
+    check("6.1 Die Datenbank WEIST einen Fencing-Wert von aussen ab (nicht nur die Anwendung)",
+      veraltet.ok === false && /helmut-verstehen-fencing-fremdschreibweg/.test(veraltet.out), veraltet.out.slice(0, 140));
     check("6.2 Der Bestand ist unveraendert (das neuere Ergebnis gilt weiter)",
-      psql("select coalesce(status,'-')||'|'||verstehen_fencing from public.knowledge_objects where id='ko-vg-lease'").out === "-|2");
+      psql("select coalesce(status,'-')||'|'||verstehen_fencing from public.knowledge_objects where id='ko-vg-lease'").out === "neu|2");
     // Und der Riegel gilt auch, wenn der neue Besitzer noch NICHT geschrieben hat:
     // die Reservierung ist die Wahrheit, nicht der zuletzt geschriebene Wert.
     reserviere("vg-frisch", "h1", "a1");
-    leaseAblaufenLassen("vg-frisch");                 // a1 verschwindet VOR dem Modellstart
+    psql("select public.helmut_verstehen_modellstart('vg-frisch','a1',1,300000)");
+    leaseAblaufenLassen("vg-frisch");
+    psql("update public.helmut_verstehen_reservierungen set zustand='reserviert' where vorgang_id='vg-frisch'");
     const uebernahme = reserviere("vg-frisch", "h2", "a2");
     check("6.3a Die Uebernahme erhoeht den Fencing-Wert auf 2",
       uebernahme.erlaubt === true && uebernahme.fencing === 2, `${uebernahme.erlaubt}/${uebernahme.fencing}`);
-    const zuFrueh = psql("insert into public.knowledge_objects(id,vorgang_id,verstehen_fencing)"
-      + " values ('ko-vg-frisch','vg-frisch',1)", { erwarteFehler: true });
+    psql("select public.helmut_verstehen_modellstart('vg-frisch','a2',2,300000)");
     check("6.3 Ein abgeloester Arbeiter kann gar nicht erst schreiben (Reservierung schlaegt Bestand)",
-      zuFrueh.ok === false && /aktuelle Reservierung/.test(zuFrueh.out), zuFrueh.out.slice(0, 120));
-    check("6.4 Der aktuelle Besitzer darf schreiben",
+      casSchreibe("vg-frisch", "a1", 1, "ko-vg-frisch", { status: "alt" }) === "fencing-veraltet");
+    check("6.3b Auch der direkte Weg an der Funktion vorbei ist versperrt",
       psql("insert into public.knowledge_objects(id,vorgang_id,verstehen_fencing)"
-        + " values ('ko-vg-frisch','vg-frisch',2)").ok === true);
+        + " values ('ko-vg-frisch','vg-frisch',1)", { erwarteFehler: true }).ok === false);
+    check("6.4 Der aktuelle Besitzer darf schreiben",
+      casSchreibe("vg-frisch", "a2", 2, "ko-vg-frisch", { status: "neu" }) === "gespeichert");
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
@@ -332,8 +350,8 @@ async function main() {
   {
     reserviere("vg-idem", "hash-A", "w1");
     psql("select public.helmut_verstehen_modellstart('vg-idem','w1',1,300000)");
-    psql("insert into public.knowledge_objects(id,vorgang_id,verstehen_fencing) values ('ko-vg-idem','vg-idem',1)");
-    psql("select public.helmut_verstehen_abschluss('vg-idem','w1',1,'erg-1')");
+    check("9.0 Der CAS-Weg schreibt und schliesst in einem Schritt ab",
+      casSchreibe("vg-idem", "w1", 1, "ko-vg-idem", { status: "fertig" }, "erg-1") === "gespeichert");
     const gleich = reserviere("vg-idem", "hash-A", "w2");
     check("9.1 Dieselbe Eingabe wird NICHT erneut berechtigt",
       gleich.erlaubt === false && gleich.grund === "bereits-fertig", `${gleich.erlaubt}/${gleich.grund}`);
@@ -343,6 +361,9 @@ async function main() {
     check("9.3 Eine NEUE Eingabe wird zugelassen (Fortschreibung bleibt moeglich)",
       anders.erlaubt === true && anders.fencing === 2, `${anders.erlaubt}/${anders.fencing}`);
     // Und 20 gleichzeitige Wiederholungen derselben fertigen Eingabe kosten nichts.
+    psql("select public.helmut_verstehen_modellstart('vg-idem','w3',2,300000)");
+    check("9.3b Der Abschluss verlangt jetzt den Besitzer (fremd -> abgelehnt)",
+      psql("select public.helmut_verstehen_abschluss('vg-idem','fremd',2,'erg-x')").out === "f");
     psql("select public.helmut_verstehen_abschluss('vg-idem','w3',2,'erg-2')");
     psql("update public.helmut_verstehen_reservierungen set eingabe_hash='hash-A' where vorgang_id='vg-idem'");
     const viele = await Promise.all(Array.from({ length: 20 }, (_, i) =>
@@ -382,7 +403,12 @@ async function main() {
     // (a) Automatisch, wenn das Ergebnis doch belegt vorliegt.
     reserviere("vg-aufl-a", "h1", "tot");
     psql("select public.helmut_verstehen_modellstart('vg-aufl-a','tot',1,300000)");
-    psql("insert into public.knowledge_objects(id,vorgang_id,verstehen_fencing) values ('ko-vg-aufl-a','vg-aufl-a',1)");
+    casSchreibe("vg-aufl-a", "tot", 1, "ko-vg-aufl-a", { status: "fertig" }, "erg-a");
+    // KONSTRUIERTER Zustand: Ergebnis liegt, Reservierung steht noch auf modell-laeuft.
+    // Der atomare Speicherweg erzeugt ihn nicht mehr — die Sicherung bleibt trotzdem
+    // bestehen (Altbestand, Wiederanlauf nach Rollback, fremde Eingriffe).
+    psql("update public.helmut_verstehen_reservierungen set zustand='modell-laeuft', besitzer='tot',"
+      + " ergebnis_fencing=null, ergebnis_hash=null where vorgang_id='vg-aufl-a'");
     leaseAblaufenLassen("vg-aufl-a");
     const auto = reserviere("vg-aufl-a", "h1", "neu");
     check("11.1 Liegt das Ergebnis belegt vor, loest der Vertrag SELBST auf (kein Betreiber, keine KI)",
@@ -438,8 +464,139 @@ async function main() {
       psql("update public.knowledge_objects set status='angereichert' where id='ko-fremd'").ok === true);
     check("13.3 Auch bei GESETZTEM Fencing-Wert bleibt ein fremder Teil-Update erlaubt",
       psql("update public.knowledge_objects set status='gematcht' where id='ko-vg-idem'").ok === true);
-    check("13.4 Ein gleich hoher Fencing-Wert darf erneut geschrieben werden (Wiederholung desselben Laufs)",
-      psql("update public.knowledge_objects set verstehen_fencing=2 where id='ko-vg-lease'").ok === true);
+    // KORREKTURLAUF 2026-08-15: frueher lief genau HIER die Umgehung — ein Schreibvorgang
+    // mit dem GLEICHEN Fencing-Wert sprang an der Pruefung vorbei. Jetzt gilt: von aussen
+    // darf der Wert weder gesetzt noch geaendert werden, auch nicht auf denselben Wert.
+    const gleichHoch = psql("update public.knowledge_objects set verstehen_fencing=2, status='umgehung'"
+      + " where id='ko-vg-lease'", { erwarteFehler: true });
+    check("13.4 Ein gleich hoher Fencing-Wert von aussen wird abgewiesen (die alte Umgehung)",
+      gleichHoch.ok === false && /fremdschreibweg/.test(gleichHoch.out), gleichHoch.out.slice(0, 140));
+    check("13.5 Ein Insert MIT Fencing-Wert von aussen wird abgewiesen",
+      psql("insert into public.knowledge_objects(id,vorgang_id,verstehen_fencing)"
+        + " values ('ko-fremd-2','vg-fremd-2',1)", { erwarteFehler: true }).ok === false);
+    check("13.6 Der Bestand hat die Umgehungsversuche unveraendert ueberstanden",
+      psql("select coalesce(status,'-')||'|'||verstehen_fencing from public.knowledge_objects where id='ko-vg-lease'").out === "neu|2");
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  // KORREKTURLAUF 2026-08-15 — die drei bestaetigten Luecken, je einzeln nachgewiesen.
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  abschnitt("14 · Abgelaufene Lease OHNE Nachfolger verhindert das Speichern (Luecke 2)");
+  {
+    reserviere("vg-lease-tot", "h1", "w1");
+    psql("select public.helmut_verstehen_modellstart('vg-lease-tot','w1',1,300000)");
+    leaseAblaufenLassen("vg-lease-tot");             // NIEMAND uebernimmt
+    check("14.1 Die Zeile gehoert unveraendert dem alten Besitzer (kein Nachfolger)",
+      psql("select besitzer||'|'||zustand||'|'||fencing from public.helmut_verstehen_reservierungen"
+        + " where vorgang_id='vg-lease-tot'").out === "w1|modell-laeuft|1");
+    check("14.2 Das Schreibrecht ist trotzdem verloren (Lease-Zwang)",
+      psql("select public.helmut_verstehen_schreibrecht('vg-lease-tot','w1',1,120000)").out === "f");
+    check("14.3 Auch der atomare Speicherweg weist ab",
+      casSchreibe("vg-lease-tot", "w1", 1, "ko-vg-lease-tot", { status: "zu-spaet" }) === "lease-abgelaufen");
+    check("14.4 Es ist NICHTS gespeichert worden",
+      psql("select count(*) from public.knowledge_objects where vorgang_id='vg-lease-tot'").out === "0");
+    check("14.5 Ein noch gueltiges Lease behaelt sein Schreibrecht (kein Fehlalarm)",
+      (() => {
+        reserviere("vg-lease-gut", "h1", "w1");
+        psql("select public.helmut_verstehen_modellstart('vg-lease-gut','w1',1,300000)");
+        return psql("select public.helmut_verstehen_schreibrecht('vg-lease-gut','w1',1,120000)").out === "t";
+      })());
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  abschnitt("15 · Fencing-Umgehung: F1 gespeichert, F2 reserviert, erneuter F1 (Luecke 3)");
+  {
+    reserviere("vg-umgehung", "h1", "alt");
+    psql("select public.helmut_verstehen_modellstart('vg-umgehung','alt',1,300000)");
+    check("15.1 F1 wird regulaer gespeichert",
+      casSchreibe("vg-umgehung", "alt", 1, "ko-vg-umgehung", { status: "F1" }, "erg-F1") === "gespeichert");
+    const zweit = reserviere("vg-umgehung", "h2", "neu");
+    check("15.2 Ein zweiter Arbeiter reserviert F2", zweit.erlaubt === true && zweit.fencing === 2,
+      `${zweit.erlaubt}/${zweit.fencing}`);
+    psql("select public.helmut_verstehen_modellstart('vg-umgehung','neu',2,300000)");
+    check("15.3 DER AUFTRAGSFALL: der alte Arbeiter schreibt erneut F1 -> abgewiesen",
+      casSchreibe("vg-umgehung", "alt", 1, "ko-vg-umgehung", { status: "ALT-F1" }, "erg-F1") === "fencing-veraltet");
+    check("15.4 Der Bestand traegt unveraendert F1-Inhalt und F1 (nichts wurde angefasst)",
+      psql("select status||'|'||verstehen_fencing from public.knowledge_objects where id='ko-vg-umgehung'").out === "F1|1");
+    check("15.5 Auch mit HOEHEREM angegebenem Fencing kommt der alte Besitzer nicht durch",
+      casSchreibe("vg-umgehung", "alt", 2, "ko-vg-umgehung", { status: "GEFAELSCHT" }) === "fremder-besitzer");
+    check("15.6 Der aktuelle Besitzer schreibt F2 regulaer",
+      casSchreibe("vg-umgehung", "neu", 2, "ko-vg-umgehung", { status: "F2" }, "erg-F2") === "gespeichert");
+    check("15.7 Danach steht der Bestand auf F2 und der Vorgang ist fertig",
+      psql("select status||'|'||verstehen_fencing from public.knowledge_objects where id='ko-vg-umgehung'").out === "F2|2"
+      && psql("select zustand||'|'||ergebnis_hash from public.helmut_verstehen_reservierungen where vorgang_id='vg-umgehung'").out === "fertig|erg-F2");
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  abschnitt("16 · Nach dem Modellstart fuehrt kein Weg automatisch zurueck nach `offen` (Luecke 1)");
+  {
+    reserviere("vg-amo", "h1", "w1");
+    check("16.1 VOR dem Modellstart ist die Freigabe moeglich (sicher wiederholbar)",
+      psql("select public.helmut_verstehen_freigabe('vg-amo','w1',1,'budget')").out === "t"
+      && psql("select zustand from public.helmut_verstehen_reservierungen where vorgang_id='vg-amo'").out === "offen");
+    const zweit = reserviere("vg-amo", "h1", "w2");
+    psql(`select public.helmut_verstehen_modellstart('vg-amo','w2',${zweit.fencing},300000)`);
+    check("16.2 NACH dem Modellstart ist die Freigabe wirkungslos",
+      psql(`select public.helmut_verstehen_freigabe('vg-amo','w2',${zweit.fencing},'zeitueberschreitung')`).out === "f");
+    check("16.3 Der Zustand bleibt modell-laeuft (nicht offen)",
+      psql("select zustand from public.helmut_verstehen_reservierungen where vorgang_id='vg-amo'").out === "modell-laeuft");
+    check("16.4 Der ehrliche Ausgang ist `unbekannt`",
+      psql(`select public.helmut_verstehen_ausgang_unbekannt('vg-amo','w2',${zweit.fencing},'zeitueberschreitung')`).out === "blockiert");
+    check("16.5 Er ist sichtbar begruendet (kein falsches Gruen)",
+      psql("select zustand||'|'||letzter_grund from public.helmut_verstehen_reservierungen where vorgang_id='vg-amo'").out
+        === "unbekannt|zeitueberschreitung");
+    const naechster = reserviere("vg-amo", "h1", "w3");
+    check("16.6 Der naechste Lauf bekommt KEINE Berechtigung (kein zweiter Modellaufruf)",
+      naechster.erlaubt === false && naechster.grund === "ausgang-unbekannt", `${naechster.erlaubt}/${naechster.grund}`);
+    check("16.7 Der Zaehler der Modellaufrufe steht auf 1 — ueber beide Laeufe zusammen",
+      psql("select ki_aufrufe from public.helmut_verstehen_reservierungen where vorgang_id='vg-amo'").out === "1");
+    check("16.8 Nur die ausdrueckliche Entscheidung `erneut` gibt ihn wieder frei",
+      psql("select public.helmut_verstehen_ausgang_aufloesen('vg-amo','erneut')").out === "erneut-freigegeben");
+    check("16.8b Der belegte Fall `nichts abgesendet` hat einen EIGENEN, engen Weg",
+      (() => {
+        reserviere("vg-beleg", "h1", "w1");
+        psql("select public.helmut_verstehen_modellstart('vg-beleg','w1',1,300000)");
+        const frei = psql("select public.helmut_verstehen_freigabe_ohne_aufruf('vg-beleg','w1',1,'tagesbudget')").out;
+        const zeile = psql("select zustand||'|'||ki_aufrufe||'|'||letzter_grund"
+          + " from public.helmut_verstehen_reservierungen where vorgang_id='vg-beleg'").out;
+        // Freigegeben, und der Zaehler behauptet keine Kosten, die nie entstanden sind.
+        return frei === "t" && zeile === "offen|0|belegt-ohne-aufruf:tagesbudget";
+      })());
+    check("16.8c Ein fremder Arbeiter kann diesen Weg nicht nehmen",
+      psql("select public.helmut_verstehen_freigabe_ohne_aufruf('vg-beleg','fremd',1,'x')").out === "f");
+    check("16.9 Ein fremder Arbeiter kann den Ausgang nicht als unbekannt vermerken",
+      (() => {
+        reserviere("vg-amo-2", "h1", "w1");
+        psql("select public.helmut_verstehen_modellstart('vg-amo-2','w1',1,300000)");
+        return psql("select public.helmut_verstehen_ausgang_unbekannt('vg-amo-2','fremd',1,'x')").out === "zustand-modell-laeuft";
+      })());
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  abschnitt("17 · Der CAS-Speicherweg schreibt und schliesst gemeinsam");
+  {
+    reserviere("vg-atom", "h1", "w1");
+    psql("select public.helmut_verstehen_modellstart('vg-atom','w1',1,300000)");
+    check("17.1 Ein Schreibversuch ohne Reservierung wird abgewiesen",
+      casSchreibe("vg-ohne", "w1", 1, "ko-vg-ohne", {}) === "keine-reservierung");
+    check("17.2 Eine fremde Vorgangskennung im Wissensobjekt ist ein Fehler, kein stiller Erfolg",
+      psql("select public.helmut_verstehen_speichere('vg-atom','w1',1,"
+        + "'{\"id\":\"ko-x\",\"vorgang_id\":\"vg-anders\"}'::jsonb,'e')", { erwarteFehler: true }).ok === false);
+    check("17.3 Schreiben und Abschluss geschehen gemeinsam",
+      casSchreibe("vg-atom", "w1", 1, "ko-vg-atom", { status: "fertig", ko_version: 3 }, "erg-atom") === "gespeichert"
+      && psql("select zustand||'|'||ergebnis_fencing||'|'||ergebnis_hash from public.helmut_verstehen_reservierungen"
+        + " where vorgang_id='vg-atom'").out === "fertig|1|erg-atom");
+    check("17.4 Nur die uebergebenen Spalten werden geschrieben (Teilprojektion)",
+      psql("select status||'|'||ko_version||'|'||verstehen_fencing||'|'||coalesce(understanding_status,'-')"
+        + " from public.knowledge_objects where id='ko-vg-atom'").out === "fertig|3|1|-");
+    check("17.5 Unbekannte Schluessel werden ignoriert statt zu scheitern",
+      (() => {
+        reserviere("vg-atom-2", "h1", "w1");
+        psql("select public.helmut_verstehen_modellstart('vg-atom-2','w1',1,300000)");
+        return casSchreibe("vg-atom-2", "w1", 1, "ko-vg-atom-2", { status: "ok", gibtEsNicht: "egal" }) === "gespeichert";
+      })());
+    check("17.6 Ein zweiter Schreibvorgang desselben Laufs findet den Vorgang bereits fertig",
+      casSchreibe("vg-atom", "w1", 1, "ko-vg-atom", { status: "nochmal" }) === "zustand-fertig");
   }
 
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
