@@ -5,6 +5,16 @@ langfristig skalierbaren OP-30-Antrieb (5 → 25 → 100 → 200 → perspektivi
 Mandate **ohne erneuten Austausch des Fachkerns**). Production blieb während des
 gesamten Sprints unangetastet; alle Production-Zugriffe waren rein lesend.
 
+> **Nachtrag 2026-08-15:** die vier Migrationen dieses Sprints (`20260813090000`,
+> `20260813090100`, `20260814090000`, `20260814090100`) sind inzwischen — zusammen mit der
+> CAS-Migration — **auf Production angewendet** (freigegeben; Beleg
+> [`op30-aktivierung-5-mandate.md`](op30-aktivierung-5-mandate.md) §24.10). Alle sieben
+> Tabellen stehen **leer**; **kein Flag wurde gesetzt** (`HELMUT_JOB_DISPATCH_MODE`,
+> `HELMUT_KLASSEN_GRENZEN`, `HELMUT_ANBIETER_STEUERUNG`, `HELMUT_VERSTEHEN_CAS` sind aus),
+> AWS ist weiterhin **nicht** ausgerollt, und der alte Motor ist unverändert der aktive
+> Pfad. Der Stufenplan §14 ist davon **nichts** freigegeben. Aussagen „Migration nicht
+> angewendet" in dieser Datei tragen den Sprintstand vom 2026-08-13/14.
+
 **Vorgeschichte in einem Satz:** Der zweite Fünferlauf-Versuch (Runbook
 [`op30-aktivierung-5-mandate.md`](op30-aktivierung-5-mandate.md) §19) lief fehlerfrei,
 fair und ohne Doppelarbeit — aber die Ankunft (~440–470 Aufträge/Tag bei n=5) übersteigt

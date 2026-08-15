@@ -2364,3 +2364,85 @@ Keine Flag-Aktivierung, kein Redeploy, keine AWS-Aktion, kein Production-Lauf, k
 Neutralisierung der 524 Aufträge, keine Anwendung von `20260720`. Die Aktivierungsschritte
 stehen unverändert in §23.1 (CAS) und in der Zielarchitektur-Belegdatei §14 (Stufenplan) —
 sie sind **eigene** Entscheidungen nach dieser Migration.
+
+### §24.10 AUSFÜHRUNGSBELEG — alle fünf Migrationen angewendet (2026-08-15, freigegeben)
+
+Der Plan §24.1–§24.8 wurde am 2026-08-15 im empfohlenen Fenster **18:10–19:50 Berlin**
+ausgeführt. **Ergebnis: 5/5 angewendet, 0 Fehler, 0 Rücknahmen, Production-Verhalten
+unverändert.**
+
+**Vorbedingungen (alle zehn erneut geprüft, 18:35–18:40 Berlin / 16:35–16:40 UTC):**
+
+| # | Gegenstand | Befund |
+|---|---|---|
+| 1 | PR #249 | gemergt 15.08. 11:08:03 UTC, Merge-Commit `f084d72` auf `main` |
+| 2 | Deployment | `dpl_2q87SSJp2tMJzccG49sT6R1oNPTT`, target `production`, Commit `f084d72`, **READY** |
+| 3 | `HELMUT_SCALABLE_PIPELINE` | wirkungsbelegt aus: jüngster Auftrag `2026-08-13 16:07:05 UTC` = Zeitpunkt der Rücknahme, **0 neue Aufträge seit 2 Tagen** |
+| 4 | Laufende Schreibvorgänge | **0** aktive Abfragen, **0** Sperren auf `knowledge_objects`; der 16:00-UTC-pipeline-Lauf war um 16:04:48 UTC beendet |
+| 5 | Warteschlange | **524 / 235 / 0 / 0**, 0 offene Leases |
+| 6 | Signatur | `a069f91fde4547493796395f2c989497` — exakt getroffen |
+| 7 | Fehlende Migrationen | letzte angewendete `20260812172327`; **0 von 7** neuen Tabellen, **0 von 32** neuen Funktionen, **0 von 2** neuen Triggern vorhanden |
+| 8 | Dateien/Prüfsummen | alle fünf SHA-256 = §24.2; `git diff origin/main -- supabase/migrations/` **leer** |
+| 9 | Neue Flags | alle aus — wirkungsbelegt, da keine der neuen Strukturen existierte |
+| 10 | Konkurrierende Aktion | `main` unverändert seit 11:08 UTC, kein neueres Deployment, 0 aktive DB-Sitzungen |
+
+**Ausgangsanker (§24.7, rein technisch):** Schema-Signatur
+`7a902e09dc3b9d0b563868d907023fbf` · 44 Tabellen · 148 Funktionen · 546 Spalten ·
+18 Trigger · 6.691 Wissensobjekte. Die Signaturformel der Warteschlange ist
+`md5(string_agg(id||'|'||status||'|'||job_type||'|'||attempts, ',' order by id))`.
+
+**Ausführung** — einzeln über MCP `apply_migration`, je Schritt mit vorangestelltem
+`set lock_timeout='5s'; set statement_timeout='60s';`:
+
+| # | Datei | Eintrag in `supabase_migrations` | Ergebnis |
+|---|---|---|---|
+| 1 | `20260813090000_jobqueue_outbox` | `20260815163732` | Tabelle 1/1 · RLS `t/t` · 0 Policies · 0 Fremdrechte · **0 Inhaltsspalten** · Trigger 1 · 6/6 Funktionen |
+| 2 | `20260813090100_verteilte_grenzen` | `20260815163814` | 2/2 Tabellen · RLS `t/t` je Tabelle · 0 Policies · 0 Fremdrechte · 3/3 Funktionen |
+| 3 | `20260814090000_queue_verbraucher` | `20260815163924` | 6/6 Funktionen · 0 Fremdrechte |
+| 4 | `20260814090100_anbieter_steuerung` | `20260815164026` | 2/2 Tabellen · RLS `t/t` · 0 Policies · 0 Fremdrechte · 4/4 Funktionen |
+| 5 | `20260814180000_verstehen_cas` | `20260815164241` | 2/2 Tabellen · RLS `t/t` · 0 Policies · 0 Fremdrechte · Spalte `verstehen_fencing` 1 · Trigger `helmut_ko_fencing_wache_trg` 1 |
+
+Alle 32 neuen Funktionen sind `SECURITY INVOKER` mit festem `search_path = public, pg_temp`
+(geprüft je Schritt, **0** Abweichungen).
+
+**Nach JEDEM der fünf Schritte gemessen — durchgehend identisch:** 524 wartend · 235 erledigt ·
+0 laufend · 0 fehlgeschlagen · 0 offene Leases · Signatur `a069f91fde4547493796395f2c989497`.
+Keine Lease, keine Reservierung, keine Versandabsicht, keine Anbieterbuchung: alle sieben neuen
+Tabellen blieben nach jedem Schritt bei **0 Zeilen**.
+
+**Zusätzliche Prüfungen nach Schritt 5:**
+
+* `select count(*) from knowledge_objects where verstehen_fencing is not null` → **0**
+  (bei allen 6.691 Wissensobjekten `NULL`).
+* `select * from helmut_verstehen_kennzahlen()` → **leer** (0 Arbeitszeilen).
+* Outbox, Klassenanker/-slots, Anbieterfenster/-schutzschalter, CAS-Reservierungen und
+  -Vormerkungen: **je 0 Zeilen** — keine Laufzeitdaten.
+* **Der alte Motor bleibt aktiv:** jüngstes Wissensobjekt und jüngster `process_run`
+  15.08. 16:04 UTC (pipeline-Lauf 18:00 Berlin), Zahl der Wissensobjekte vor und nach der
+  Migration identisch (6.691) — keine politischen Inhalte und keine bestehenden
+  Wissensobjekte verändert.
+* **Keine Warteschlangenverarbeitung, kein KI-Aufruf** durch die Migration ausgelöst
+  (`ki_aufrufe` existiert nur in der leeren CAS-Tabelle; 0 neue Aufträge, 0 Leases).
+* Schema danach: **51 Tabellen (+7) · 180 Funktionen (+32) · 597 Spalten (+51) ·
+  20 Trigger (+2)** — exakt der erwartete additive Zuwachs.
+* Advisor (security) nach der Anwendung: **keine neue Fehlerklasse.** Die 7 neuen Tabellen
+  erscheinen ausschließlich unter dem bereits bekannten INFO-Lint `rls_enabled_no_policy`
+  — das ist die beabsichtigte Bauform (RLS an+erzwungen, 0 Policies, Zugriff nur über
+  `service_role`), identisch zu `helmut_jobs` und `llm_reservations`. Einzige WARN-Meldung
+  bleibt das vorbestehende `extension_in_public` (`vector`).
+
+**Nicht getan (Verbote eingehalten):** keine Flag-Änderung, kein Redeployment, keine
+AWS-Ressource, keine Neutralisierung der 524 Aufträge, kein manueller Production-Lauf, keine
+Anwendung von `20260720`, keine Secrets gelesen oder ausgegeben, keine Production-Daten
+geändert. Die Rollback-Skripte wurden **nicht** gebraucht.
+
+**Ehrliche Grenze:** die Inertheit ist zum Zeitpunkt dieses Belegs **strukturell** belegt (alle
+neuen Strukturen leer, alle Flags aus, Zähler und Signatur unverändert), aber noch **nicht**
+über einen vollständigen Cron-Zyklus auf dem migrierten Schema laufzeitbelegt. Der erste Lauf
+danach ist crawl 20:00 UTC (22:00 Berlin); der erste vollständige Morgenzyklus folgt am 16.08.
+Erwartung: unverändertes Verhalten, weil kein Codepfad die neuen Strukturen ohne Flag berührt
+(§24.3, §24.5).
+
+**Nächster Schritt:** unverändert eine **eigene** Betreiberentscheidung — die Aktivierung nach
+§23.1 (CAS) bzw. Zielarchitektur-Belegdatei §14 (Stufenplan). Diese Migration gibt davon
+**nichts** frei.

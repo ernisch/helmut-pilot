@@ -45,8 +45,16 @@ VERSTEHEN_MAX=8` widerspruchslos gehorcht. Auch das ist jetzt behoben (§3.5).
 
 ## 2 · Der neue atomare Vertrag
 
-**Migration `20260814180000_verstehen_cas.sql`** (+ `rollback_…`, beide **nicht
-angewendet**, freigabepflichtig). Zwei Tabellen, zehn Funktionen, ein Trigger.
+**Migration `20260814180000_verstehen_cas.sql`** (+ `rollback_…`). Zwei Tabellen, zehn
+Funktionen, ein Trigger.
+
+> **Stand 2026-08-15: die Migration ist auf Production ANGEWENDET** (freigegeben; Beleg
+> [`op30-aktivierung-5-mandate.md`](op30-aktivierung-5-mandate.md) §24.10). Die Strukturen
+> stehen leer und wirkungslos: `verstehen_fencing` ist bei allen Wissensobjekten `NULL`,
+> `helmut_verstehen_kennzahlen()` liefert keine Zeile. **Das Flag `HELMUT_VERSTEHEN_CAS`
+> bleibt aus** — die Aktivierung ist unverändert freigabepflichtig (§23.1 des Runbooks).
+> Ältere Formulierungen „nicht angewendet" in dieser Datei beziehen sich auf den Sprintstand
+> vom 2026-08-14.
 
 ### 2.1 Eine Zeile je Vorgang statt einer Karte
 
