@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-15** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30-Fuenferlauf, zweiter Versuch (12./13.08.): NICHT bestanden — kontrollierte Ruecknahme VOR Grenzuebertritt** (Runbook §19): Ankunft ~440–470 Auftraege/Tag ≫ Abfluss ~130–180/Tag ⇒ Flag wieder `off`; **524 wartende Auftraege bleiben inert**. **(c) OP-30-ZIELARCHITEKTUR gebaut und lokal nachgewiesen** (§7c; Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache + SQS/Lambda-Transport; Production unangetastet, alles Default-AUS, AWS **nicht** ausgerollt; Belegdatei §17–§26). **(d) OP-31 Frischevertrag BESTANDEN** (5/5 am 13.08.). **(e) atomarer Verstehensvertrag (CAS) gemergt** (§7d, PR #248). **(f) NEU 15.08.: Production-Vorpruefung der fuenf offenen OP-30-Migrationen abgeschlossen** — bereit, ein Befund behoben, Betreiberentscheidung offen (§7e, Runbook §24).) Diese Datei enthaelt
+**Stand: 2026-08-15** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30-Fuenferlauf, zweiter Versuch (12./13.08.): NICHT bestanden — kontrollierte Ruecknahme VOR Grenzuebertritt** (Runbook §19): Ankunft ~440–470 Auftraege/Tag ≫ Abfluss ~130–180/Tag ⇒ Flag wieder `off`; **524 wartende Auftraege bleiben inert**. **(c) OP-30-ZIELARCHITEKTUR gebaut und lokal nachgewiesen** (§7c; Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache + SQS/Lambda-Transport; Production unangetastet, alles Default-AUS, AWS **nicht** ausgerollt; Belegdatei §17–§26). **(d) OP-31 Frischevertrag BESTANDEN** (5/5 am 13.08.). **(e) atomarer Verstehensvertrag (CAS) gemergt** (§7d, PR #248). **(f) NEU 15.08.: die fuenf OP-30-Migrationen sind auf Production ANGEWENDET** — 5/5 fehlerfrei, Warteschlange unveraendert 524/235/0/0, alle neuen Strukturen leer, **alle Flags blieben aus**, alter Motor aktiv; die Aktivierung ist eine eigene, offene Entscheidung (§7e, Runbook §24.10).) Diese Datei enthaelt
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -46,10 +46,9 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
   UTC · 2 Narrativ-Nachlaufslots 06:10/06:22, inert). **Dazu** der GitHub-Actions-Watchdog
   (`briefing-watchdog.yml`, täglich 05:30 UTC bedingungslos, oft 2–3 h verzögert): kein
   Störfall, aber im Aufbewahrungsvertrag nicht modelliert (→ K3/K7).
-- **Migrationen:** letzte angewendete ist `20260812172327` (Runbook §17.10); die sechs
-  OP-30-Paare seit 2026-08-11 (§12). **Offen sind sechs:** die fünf OP-30-Dateien
-  `20260813090000`, `20260813090100`, `20260814090000`, `20260814090100`, `20260814180000`
-  (vorgeprüft, Reihenfolge/Rückwege in Runbook §24) **plus `20260720`** (OP-03).
+- **Migrationen:** die **fünf OP-30-Dateien sind am 15.08. angewendet** (§7e, Runbook §24.10;
+  Einträge `20260815163732`–`20260815164241`). **Offen ist nur noch `20260720`** (OP-03).
+  Alle neuen Strukturen sind leer und wirkungslos, solange die Flags aus sind.
 - **Kosten:** LLM ~0,14 USD/Betriebstag (Untergrenze, Preisbasis unbelegt,
   [`betrieb/kostenmessung.md`](betrieb/kostenmessung.md)); Nachweisfenster 0,1892 USD.
 - **Zugangsgrenze jeder Claude-Sitzung (gemessen 2026-08-12, am 15.08. bestätigt):** Supabase
@@ -92,7 +91,6 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **PR #249**, Branch `claude/op30-production-pr248-k0ixy5` | **Transaktionsklammer** für `20260814090000`/`20260814090100` + beide Rollbacks (§7e) und Regressionsprüfung `migrations-organisation-test.js` §5; Runbook §24 (Vorprüfung + Migrationsplan) | **vor der Migration zu mergen**; kein Produktivcode, keine Flag-/Production-Änderung |
 | **#231** (Draft) | OP-03 Konten-Vorbedingung, 1 Konto je Mandat | in §6 bisher nicht geführt (Korrektur 2026-08-11/2); Betreiberentscheidung |
 | **#224** (Draft) | F-E2E: Lage-Rangfolge aus berechnetem Rang statt Ablage | behauptet die Behebung des CI-Nichtdeterminismus F-E2E; **nicht reviewt, nicht abgenommen** |
 | **#225** (Draft) | „Produktroadmap für LINIE" | nicht aus dem Helmut-Arbeitsstrang; Einordnung beim Betreiber |
@@ -192,29 +190,29 @@ Mandate freigegeben** — bindend bleiben KI-Tagesdeckel und OP-15. Kanonisch (U
 Korrekturen, Nachweise, Unmöglichkeitsgrenze):
 [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md); Runbook §23.
 
-## 7e · Production-Vorprüfung der fünf offenen OP-30-Migrationen (2026-08-15, rein lesend)
+## 7e · Die fünf OP-30-Migrationen sind ANGEWENDET (2026-08-15, 16:37–16:43 UTC, freigegeben)
 
-**Ergebnis: bereit — nach einem Korrektur-PR.** Production, Flags, Daten, Deployments und AWS
-blieben **unangetastet**. Vollständig (Istzustand · Inventar · Inertheit · Zeitfenster ·
-Sicherung · Ablauf und Rückweg je Schritt): Runbook
-[`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) **§24**.
+**Ergebnis: alle fünf angewendet, alle Verifikationen grün, 0 Rücknahmen.** Ablauf, Messwerte
+und Verifikation je Schritt: Runbook
+[`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) **§24.10**.
 
-**Reihenfolge** `20260813090000` → `20260813090100` → `20260814090000` (braucht die beiden
-davor, empirisch belegt) → `20260814090100` → `20260814180000`; die übrigen vier sind
-unabhängig, jeder Schritt hat einen eigenen Rückweg. Fenster **18:10–19:50 Berlin**, je Schritt
-mit `lock_timeout='5s'`. **Wirkung bei ausgeschalteten Flags: keine** — die 524 Aufträge bleiben
-inert; keine Vollsicherung nötig (rein additiv, §24.7).
+Reihenfolge `20260813090000` → `20260813090100` → `20260814090000` → `20260814090100` →
+`20260814180000`, einzeln über MCP `apply_migration`, je Schritt mit `lock_timeout='5s'` /
+`statement_timeout='60s'` im Fenster **18:10–19:50 Berlin**. Alle zehn Vorbedingungen vorher
+erfüllt; Prüfsummen = `main` = §24.2.
 
-**Lokale Nachweise** (frische PostgreSQL 16, Production-Schemaform ohne Inhalte): vorwärts →
-rückwärts → vorwärts **0 Fehler**, Rückweg stellt den Ausgangsstand exakt her, dritter Lauf
-idempotent · Inertheit als `service_role` grün (fremdes Setzen von `verstehen_fencing`
-scheitert mit `HV002`; der Altweg erzeugt keine Versandabsicht) · RLS an+erzwungen 7/7,
-0 Rechte für `anon`/`authenticated` · CAS-DB-Suite **103 PASS** · Mutationsprobe **9/9 rot**.
+**Wirkung: keine.** Warteschlange nach jedem der fünf Schritte unverändert **524 wartend ·
+235 erledigt · 0 laufend · 0 fehlgeschlagen · 0 Leases**, Signatur durchgängig
+`a069f91fde4547493796395f2c989497`. Alle 7 neuen Tabellen **leer**, `verstehen_fencing` bei
+**allen 6.691** Wissensobjekten `NULL`, `helmut_verstehen_kennzahlen()` **leer**. RLS
+an+erzwungen 7/7, 0 Policies, 0 Rechte für `anon`/`authenticated`, 32/32 neue Funktionen
+`SECURITY INVOKER` mit festem `search_path`. Schema 44→51 Tabellen, 148→180 Funktionen,
+546→597 Spalten, 18→20 Trigger. Keine neue Fehlerklasse (Advisor: nur der bekannte
+INFO-Lint `rls_enabled_no_policy`, die beabsichtigte Bauform).
 
-**Ein Befund, behoben (§24.6).** `20260814090000` und `20260814090100` trugen als einzige
-Dateien **keine `begin;`/`commit;`-Klammer** (Rollbacks ebenso): ein Abbruch in der Mitte
-hinterließ belegt einen Teilstand. Inhalt war korrekt. Klammer ergänzt + Regressionsprüfung
-`migrations-organisation-test.js` §5; **bis der PR gemergt ist: die beiden nicht anwenden.**
+**Alle Flags blieben aus** (`HELMUT_SCALABLE_PIPELINE`, `HELMUT_JOB_DISPATCH_MODE`,
+`HELMUT_KLASSEN_GRENZEN`, `HELMUT_ANBIETER_STEUERUNG`, `HELMUT_VERSTEHEN_CAS`) — der alte
+Motor bleibt der aktive Pfad. **Die Aktivierung ist eine eigene, offene Entscheidung.**
 
 ## 8 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -279,11 +277,12 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Zielarchitektur (#247) und CAS (#248) sind gemergt; die fünf Migrationen sind vorgeprüft
-und noch nicht angewendet (§7e).** Production läuft im Normalbetrieb auf dem Altpfad:
+**Zielarchitektur (#247) und CAS (#248) sind gemergt, die fünf Migrationen sind angewendet
+(§7e).** Production läuft unverändert im Normalbetrieb auf dem Altpfad:
 
-1. **Betreiberentscheidung: die fünf OP-30-Migrationen anwenden?** Plan, Reihenfolge,
-   Zeitfenster und Rückwege: Runbook §24. Vorher den Korrektur-PR aus §7e mergen.
+1. **Betreiberentscheidung: den neuen Motor stufenweise scharfschalten?** Die Struktur steht
+   jetzt in Production, wirkt aber erst mit einem Flag. Reihenfolge: Runbook §23.1 (CAS) bzw.
+   Zielarchitektur §14 (Stufenplan). **Nichts davon ist mit dieser Migration freigegeben.**
 2. **Vor Versuch 3:** die 524 inerten Aufträge neutralisieren (bewiesenes Muster Runbook
    §17.8/§17.10) und §8.3/§8.4 (Watchdog-Kriterium) queue-tauglich umformulieren.
 3. Versuch 3 nach Stufenplan (Zielarchitektur §14, Stufe 1: Migrationen `20260813` anwenden +
@@ -344,7 +343,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 | Datum | Sprint | Ausgang |
 |---|---|---|
 | 2026-08-14/6 + Korrekturlauf 15.08. | **Verstehensparallelitaet und CAS** (Belegdatei [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)): atomarer Verstehensvertrag loest den Karten-Store ab; Korrekturlauf schliesst 3 Luecken (at-most-once nach Modellstart, Lease-Zwang, Fencing-Umgehung) | DB-Suite **103 PASS** (echte Nebenlaeufigkeit), Vertragssuite **107 PASS**, Mutationsprobe **9/9 rot**, Kapazitaetsmodell **37 PASS**; Migration NICHT angewendet, alles Default-AUS |
-| 2026-08-15 | **Production-Vorpruefung der fuenf offenen OP-30-Migrationen** (§7e, Runbook §24): rein lesend; Reihenfolge, Abhaengigkeiten, Inertheit, Zeitfenster, Sicherung, Rueckweg je Schritt | **teilweise abgeschlossen** — Migrationen bereit, **ein Befund behoben** (fehlende Transaktionsklammer in 2 Dateien + 2 Rollbacks, eigener PR); vorwaerts/rueckwaerts/vorwaerts **0 Fehler**; Production unangetastet; **Betreiberentscheidung offen** |
+| 2026-08-15 | **Anwendung der fuenf OP-30-Migrationen auf Supabase Production** (§7e, Runbook §24.10), freigegeben, Fenster 18:10–19:50 Berlin | **erfolgreich abgeschlossen** — 5/5 angewendet, 0 Fehler, 0 Ruecknahmen; Warteschlange nach jedem Schritt unveraendert 524/235/0/0, Signatur konstant; alle neuen Tabellen leer, `verstehen_fencing` ueberall NULL; **alle Flags blieben aus**, alter Motor aktiv |
+| 2026-08-15 | **Production-Vorpruefung der fuenf Migrationen** (Runbook §24), rein lesend | **abgeschlossen** — **ein Befund behoben** (fehlende Transaktionsklammer in 2 Dateien + 2 Rollbacks, PR #249 gemergt) |
 | 2026-08-14/5 | **CloudFormation-Korrektur OP-30** (Belegdatei §26): zwei Bereitstellungsblocker — Rollen-Principals in der Schluesselrichtlinie (Zyklus) und ein Riegel an der OPTIONALEN `KeyPolicy` | Ende-zu-Ende **53 PASS**, Infrastruktur **124 PASS**, Mutationsprobe **16/16 rot**; AWS und Production unangetastet |
 
 Die sechs OP-30-Sprints davor (Zielarchitektur 13/3 bis CloudFormation 14/5) stehen vollstaendig in der Belegdatei [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §17–§26. Die Sprints 2026-08-11/3 – 13/2 (bis zum **zweiten Fuenferlauf, nicht bestanden**) stehen kanonisch im Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §12–§19. Sprint 2026-08-09/2 und die OP-30-Sprints vom 2026-08-08: Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) traegt den CI-Basisrot-Befund). OP-25-Sprints 01.–08.08.: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; alles bis 2026-07-31: **Archiv**.

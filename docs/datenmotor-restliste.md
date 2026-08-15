@@ -2006,6 +2006,17 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   von vier Mandaten seit 2026-08-06 nicht erfolgreich abgerufen) ist jetzt beziffert.
   Für den Einzelpiloten (5–6 Mandate) **kein** Blocker; Blocker
   ab etwa zehn Mandaten und damit vor mehreren zahlenden Kunden.
+  **Ergänzt 2026-08-15 (freigegeben, Beleg Runbook
+  [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §24.10):**
+  die **fünf Migrationen der Zielarchitektur und des CAS-Vertrags** (`20260813090000`,
+  `20260813090100`, `20260814090000`, `20260814090100`, `20260814180000`) sind **auf
+  Production angewendet** — 5/5 fehlerfrei, 0 Rücknahmen. Warteschlange nach jedem Schritt
+  unverändert **524/235/0/0** bei konstanter Signatur; alle sieben neuen Tabellen **leer**,
+  `verstehen_fencing` überall `NULL`, keine neue Fehlerklasse. **Alle Flags blieben aus,
+  der alte Motor ist unverändert der aktive Pfad — es wurde nichts aktiviert.**
+  **OP-30 bleibt insgesamt offen:** offen sind unverändert die Flag-Aktivierung nach
+  Stufenplan (Betreiberentscheidung), der Production-Nachweis K0–K3, die Neutralisierung der
+  524 inerten Aufträge und OP-15.
 
 #### OP-31 · Frischegarantie des Morgenbriefings (neu, Sprint „Frischevertrag" 2026-08-10; Prioritätsklasse P1)
 
