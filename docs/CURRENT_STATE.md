@@ -92,7 +92,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **NEU 15.08.**, Branch `claude/op30-production-pr248-k0ixy5` | **Transaktionsklammer** für `20260814090000`/`20260814090100` + beide Rollbacks (§7e) und Regressionsprüfung `migrations-organisation-test.js` §5; Runbook §24 (Vorprüfung + Migrationsplan) | **vor der Migration zu mergen**; kein Produktivcode, keine Flag-/Production-Änderung |
+| **PR #249**, Branch `claude/op30-production-pr248-k0ixy5` | **Transaktionsklammer** für `20260814090000`/`20260814090100` + beide Rollbacks (§7e) und Regressionsprüfung `migrations-organisation-test.js` §5; Runbook §24 (Vorprüfung + Migrationsplan) | **vor der Migration zu mergen**; kein Produktivcode, keine Flag-/Production-Änderung |
 | **#231** (Draft) | OP-03 Konten-Vorbedingung, 1 Konto je Mandat | in §6 bisher nicht geführt (Korrektur 2026-08-11/2); Betreiberentscheidung |
 | **#224** (Draft) | F-E2E: Lage-Rangfolge aus berechnetem Rang statt Ablage | behauptet die Behebung des CI-Nichtdeterminismus F-E2E; **nicht reviewt, nicht abgenommen** |
 | **#225** (Draft) | „Produktroadmap für LINIE" | nicht aus dem Helmut-Arbeitsstrang; Einordnung beim Betreiber |

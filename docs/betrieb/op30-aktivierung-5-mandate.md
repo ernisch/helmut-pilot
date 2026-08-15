@@ -2317,10 +2317,10 @@ Schritt ist falsches Grün (`CLAUDE.md` §4 Regel 4) und macht den Rückweg mehr
 der in §24.4 empfohlene `lock_timeout` macht einen Abbruch mitten im Skript wahrscheinlicher,
 nicht unwahrscheinlicher.
 
-Behoben auf `claude/op30-production-pr248-k0ixy5`: Klammer in allen vier Dateien ergänzt,
+Behoben mit **PR #249** (Branch `claude/op30-production-pr248-k0ixy5`): Klammer in allen vier Dateien ergänzt,
 Regressionsprüfung `migrations-organisation-test.js` §5 (jede neue Datei genau einmal
 geklammert, vorwärts wie rückwärts). Nach der Korrektur hinterlässt derselbe Abbruch
-**keine** Zeile mehr. **Bis dieser PR gemergt ist, sollen die Schritte 3 und 4 nicht
+**keine** Zeile mehr. **Bis PR #249 gemergt ist, sollen die Schritte 3 und 4 nicht
 angewendet werden** — die Schritte 1, 2 und 5 sind davon unberührt.
 
 ### §24.7 Sicherung vor der Anwendung
