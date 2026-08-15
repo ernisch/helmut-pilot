@@ -1550,6 +1550,35 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   `verstehen` bleibt Parallelitaet 1 und OP-15 (Google-Drosselung) bleibt ab ~10 Mandaten
   Blocker. **OP-30 bleibt insgesamt offen** — die Aktivierung ist eine Betreiberentscheidung.
 
+- **Stand 2026-08-14/6 (Sprint „Verstehensparallelitaet und CAS" — ERFOLGREICH abgeschlossen,
+  lokal belegt; OP-30 insgesamt bleibt offen; Beleg
+  [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)):**
+  Der letzte globale Engpass der Zielarchitektur ist beseitigt. Der Update-Vormerkungs-Store
+  arbeitete mit **Lesen -> Aendern -> Schreiben** auf EINER Karte (CLAUDE.md §4 Regel 10) —
+  deshalb stand `verstehen` auf Parallelitaet 1. Ersetzt durch den **atomaren Verstehensvertrag**
+  (Migration `20260814180000_verstehen_cas.sql` + Rollback, **NICHT angewendet**,
+  freigabepflichtig): eine Zeile je Vorgang mit Besitzerkennung, Lease und **monotonem
+  Fencing-Wert**; eine Vormerkungszeile je Vorgang, atomar erhoeht und **bedingt** geloescht;
+  der Fencing-Wert wandert ueber `knowledge_objects.verstehen_fencing` mit ins Ergebnis und
+  wird dort per Trigger **erzwungen** (gegen die gespeicherte Fassung UND gegen die aktuelle
+  Reservierung). Ein Modellaufruf wird VOR dem Absenden vermerkt: ein Absturz danach endet
+  sichtbar in `zustand='unbekannt'` und wird **nie automatisch wiederholt** — die
+  Exactly-once-Unmoeglichkeit fuer externe Aufrufe ist ausdruecklich geprueft und dokumentiert
+  (Belegdatei §3). **Alles Default AUS** (`HELMUT_VERSTEHEN_CAS`); Parallelitaet ist ueber
+  `HELMUT_VERSTEHEN_PARALLELITAET` (im Lauf) und `HELMUT_KLASSE_VERSTEHEN_MAX` (systemweit)
+  begrenzbar und wird **ohne den Vertrag hart auf 1 geklemmt** (frueher nur ein Kommentar,
+  jetzt Code). Nachweise: DB-Suite **68 PASS** an echter PostgreSQL mit echter Nebenlaeufigkeit
+  (20 gleichzeitige Arbeiter auf denselben Vorgang -> genau 1 Berechtigung; 8 Vorgaenge
+  gleichzeitig gehalten; 24 Arbeiter auf 8 Vorgaenge -> genau 8) · Vertragssuite **68 PASS**
+  (u. a. 8 Vorgaenge im Fachkern wirklich gleichzeitig, Gegenprobe ohne Vertrag seriell;
+  20 gleichzeitige Arbeiter -> 1 Modellaufruf) · **Mutationsprobe 6/6 rot** (fehlendes CAS,
+  fehlender Fencing-Wert, doppelte KI-Ausfuehrung, verlorenes Lease, veraltetes Ueberschreiben,
+  stilles Wiederholen) · Kapazitaetsmodell **37 PASS** (neu gerechnet 5/25/100/200/500, zweite
+  pessimistische Auslastungsannahme; **lokal nachgewiesene sichere Verstehensparallelitaet 8**).
+  **Ausdruecklich:** Helmut ist dadurch NICHT fuer 25–500 Mandate freigegeben; bindend bleibt
+  der KI-Tagesdeckel (ab 25 Mandaten reicht 100+30 auch im guenstigen Fall nicht) und OP-15.
+  **Offen:** Review/Merge des PR; danach als getrennte Betreiberentscheidung Migration
+  anwenden und `HELMUT_VERSTEHEN_CAS` im Schattenbetrieb beobachten.
 - **Stand 2026-08-13/3 (Architektursprint Zielarchitektur — Sprint ERFOLGREICH abgeschlossen, beide Pflichtpruefungen gruen; OP-30 insgesamt bleibt offen; Beleg
   [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md),
   Runbook §20; PR #247):** Der auf den zweiten Fuenferlauf folgende **Kapazitaetssprint wurde
@@ -1574,8 +1603,8 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   lesend analysiert (1.556 referenzierte Dokumente, 0 bereits verstanden — echte offene
   KI-Arbeit; Neutralisierungsmuster §17.8 bleibt geeignet; kein Auftrag veraendert).
   **Offen:** Betreiberfreigaben nach Stufenplan (Zielarchitektur §14); Versuch 3 beginnt
-  unveraendert bei Runbook §6 Schritt 3; vor Verstehens-Parallelitaet >1 CAS-Haertung des
-  Update-Vormerkungs-Stores.
+  unveraendert bei Runbook §6 Schritt 3. *(Die damalige Auflage „vor Verstehens-Parallelitaet
+  >1 CAS-Haertung des Update-Vormerkungs-Stores" ist am 2026-08-14/6 eingeloest — siehe oben.)*
 - **Stand 2026-08-13/2 (zweiter Fuenferlauf-Versuch, NICHT bestanden — Kapazitaetsbefund;
   Beleg Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §19):**
   K0 vollstaendig gruen (inkl. `altersvertrag="wartezeit"` produktiv), Betreiber-Aktivierung

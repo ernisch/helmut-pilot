@@ -2134,3 +2134,78 @@ Die AWS-Aktivierung selbst, die Anhebung des KI-Tagesdeckels und eine höhere
 Verstehensparallelität (bleibt 1). **Helmut ist nicht für 25, 100, 200 oder 500 Mandate
 freigegeben.** Der Korrekturlauf hat die Lücken geschlossen, die eine Aktivierung technisch
 unmöglich gemacht hätten — er ersetzt keinen Production-Nachweis.
+
+---
+
+## §23 · Verstehensparallelität: der Vertrag steht, die Zahl bleibt 1 (Sprint 2026-08-14/6)
+
+Der Stufenplan trug bisher an genau einer Stelle eine Auflage: *„vor Verstehens-Parallelität
+> 1 CAS-Härtung des Update-Vormerkungs-Stores"*. Sie ist eingelöst — der atomare
+Verstehensvertrag ist gebaut und lokal nachgewiesen. Kanonisch:
+[`op30-verstehen-cas-2026-08-14.md`](op30-verstehen-cas-2026-08-14.md).
+
+**Für den Betreiber ändert sich in diesem Sprint nichts.** Es ist nichts aktiviert, nichts
+angewendet, nichts deployt. Der Standard bleibt Parallelität 1; Production läuft unverändert
+auf dem Altpfad.
+
+### §23.1 Was neu freigebbar wäre (und in welcher Reihenfolge)
+
+Drei Schritte, jeder einzeln zurücknehmbar, jeder eine eigene Entscheidung:
+
+| Schritt | Aktion | Wirkung | Rücknahme |
+|---|---|---|---|
+| 1 | Migration `20260814180000_verstehen_cas.sql` anwenden | **keine** — ohne Flag rührt sie kein Codepfad an; der Trigger feuert nur, wenn ein Schreibvorgang `verstehen_fencing` ausdrücklich setzt, und das tut ohne Vertrag niemand | `rollback_20260814180000_verstehen_cas.sql` |
+| 2 | `HELMUT_VERSTEHEN_CAS=on` + Redeploy | der Vertrag wirkt; die Vormerkungen wandern vom Karten-Store in die Vorgangszeilen. **Der Durchsatz ändert sich nicht** — Parallelität bleibt 1 | Flag zurück auf leer + Redeploy |
+| 3 | `HELMUT_VERSTEHEN_PARALLELITAET` und/oder `HELMUT_KLASSE_VERSTEHEN_MAX` > 1 | erst hier steigt der Verstehensdurchsatz | Wert zurück auf 1 + Redeploy |
+
+Schritt 3 setzt Schritt 2 technisch voraus: ohne `HELMUT_VERSTEHEN_CAS` wird jede Zahl > 1
+**hart auf 1 geklemmt** und einmalig gemeldet. Das ist Absicht — ein vergessenes Flag darf
+nicht in doppelte KI-Kosten münden.
+
+### §23.2 Erste Kontrolle nach Schritt 2 (rein lesend)
+
+| Prüfung | Erwartung |
+|---|---|
+| `select * from helmut_verstehen_kennzahlen()` | Zeilen mit `zustand='fertig'` wachsen; **`unbekannt` bleibt bei 0** |
+| `select count(*) from helmut_verstehen_reservierungen where zustand='unbekannt'` | 0 — jede Zeile hier ist ein Befund (abgestürzter Modellaufruf mit unbekanntem Ausgang), kein Betriebsrauschen |
+| Lauftelemetrie (`processRuns`) | keine Klasse `skipped-ausgang-unbekannt`; `skipped-veraltet` nur bei echter Nebenläufigkeit |
+| `select count(*) from knowledge_objects where verstehen_fencing is not null` | wächst — der Beleg, dass der Vertrag wirklich schreibt |
+| KI-Tagesbudget | **unverändert** — der Vertrag erzeugt keinen zusätzlichen Aufruf |
+
+### §23.3 Wenn ein unbekannter Ausgang auftritt
+
+Er ist **kein Störfall**, sondern eine Entscheidung: ein Modellaufruf wurde begonnen, sein
+Ergebnis ist aber nicht persistiert, und niemand kann belegen, ob er eines geliefert hat.
+Der Vorgang ist blockiert und kostet nichts.
+
+**Seit dem Korrekturlauf 2026-08-15 erreicht diesen Zustand deutlich mehr als nur ein
+Absturz** (kanonisch: [`op30-verstehen-cas-2026-08-14.md`](op30-verstehen-cas-2026-08-14.md)
+§10.1). `unbekannt` heißt jetzt auch: Zeitüberschreitung, Verbindungsabbruch, unklarer
+Anbieterfehler, unbrauchbare oder schemawidrige Modellantwort, Validierungs- oder
+Speicherfehler. Das ist **Absicht** — jeder dieser Fälle hat den Aufruf möglicherweise
+bezahlt, und keiner rechtfertigt eine automatische Wiederholung. `letzter_grund` in
+`helmut_verstehen_reservierungen` nennt die Ursache.
+
+**Erwartung für den Betrieb:** ein paar solcher Zeilen sind normal, sobald der Vertrag
+scharf ist — sie sind nicht mehr gleichbedeutend mit „etwas ist kaputt". Ein *wachsender*
+Rückstand ist es sehr wohl. Die Kontrolle in §23.2 („`unbekannt` bleibt bei 0") gilt
+unverändert für die **erste** Beobachtung direkt nach Schritt 2; danach ist die Frage nicht
+mehr „ist es 0?", sondern „wächst es?".
+
+1. Zuerst prüfen lassen, ob das Ergebnis doch vorliegt (kostet nichts, kein KI-Aufruf):
+   `select public.helmut_verstehen_ausgang_aufloesen('<vorgang>', 'pruefen');`
+   → `aufgeloest-ergebnis-vorhanden` bedeutet: erledigt, nichts weiter zu tun.
+2. Sonst entscheiden:
+   `… 'erneut'` = **ausdrückliche Zustimmung zu einem zweiten, bezahlten Modellaufruf**;
+   `… 'aufgeben'` = terminal, der Vorgang wird nie wieder automatisch verstanden.
+
+Beides sind Änderungen an Production-Daten und damit **freigabepflichtig** (`CLAUDE.md` §5).
+
+### §23.4 Was auch nach diesem Sprint NICHT freigegeben ist
+
+Die AWS-Aktivierung, die Anhebung des KI-Tagesdeckels und die Ausweitung auf 25+ Mandate.
+**Helmut ist nicht für 25, 100, 200 oder 500 Mandate freigegeben.** Der Sprint hat einen
+technischen Engpass beseitigt — der bindende Grund gegen mehr Mandate war ohnehin ein
+anderer: der KI-Tagesdeckel (ab 25 Mandaten reicht 100+30 auch im günstigen Fall nicht) und
+OP-15 (Google-Drosselung, ab ~10 Mandaten). Auch der AWS-Trockenlauf aus §22 bleibt eine
+gesonderte Betreiberentscheidung und wurde nicht ausgeführt.

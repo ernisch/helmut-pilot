@@ -1,12 +1,10 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-14/5** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30-Fuenferlauf, zweiter Versuch (12./13.08.): NICHT bestanden — kontrollierte Ruecknahme VOR Grenzuebertritt** (Runbook §19): 5 Laeufe fehlerfrei/fair/ohne Doppelarbeit, aber Ankunft ~440–470 Auftraege/Tag ≫ Abfluss ~130–180/Tag ⇒ Flag wieder `off`, wirkungsbasiert belegt; **524 wartende Auftraege bleiben inert**. **(c) OP-30-ZIELARCHITEKTUR gebaut und lokal nachgewiesen** (§7c; Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache; Production unangetastet, alles Default-AUS; der Kapazitaetssprint davor wurde kontrolliert abgebrochen, seine Zwischenloesung „mehr Slots" verworfen; Sicherheitskorrektur 2026-08-14: Signalpruefung, Weckziel-Riegel, Klingel-Buendelung, Migrationsstempel — Belegdatei §17). **Haertung 2026-08-14/2:** Transport **SQS+Lambda (eu-central-1)** gebaut, lokal bewiesen, NICHT ausgerollt; Verstehen bleibt Parallelitaet 1 = Engpass (Belegdatei §18–§23). **Korrekturlauf 14/3, Verkabelungslauf 14/4, CloudFormation-Korrektur 14/5:** neun Betriebs-, Einsatz- und Bereitstellungsblocker des Transports geschlossen (§7c, Belegdatei §24–§26); AWS weiterhin **nicht** ausgerollt. **(d) OP-31 Frischevertrag BESTANDEN** — hielt auch unter OP-30 (5/5 am 13.08.). Diese Datei enthaelt
+**Stand: 2026-08-14/6** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30-Fuenferlauf, zweiter Versuch (12./13.08.): NICHT bestanden — kontrollierte Ruecknahme VOR Grenzuebertritt** (Runbook §19): Ankunft ~440–470 Auftraege/Tag ≫ Abfluss ~130–180/Tag ⇒ Flag wieder `off`; **524 wartende Auftraege bleiben inert**. **(c) OP-30-ZIELARCHITEKTUR gebaut und lokal nachgewiesen** (§7c; Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache + SQS/Lambda-Transport; Production unangetastet, alles Default-AUS, AWS **nicht** ausgerollt; Belegdatei §17–§26). **(d) OP-31 Frischevertrag BESTANDEN** (5/5 am 13.08.). **(e) NEU 14/6: der letzte globale Engpass ist beseitigt** — atomarer Verstehensvertrag (CAS), §7d.) Diese Datei enthaelt
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
-[`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)
-(byte-identisch mit `main`-Commit `4594fea`; der danach ergänzte 12. Durchgang steht kanonisch
-in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.6).
+[`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md).
 Ablageregeln: [`archive/README.md`](archive/README.md), `CLAUDE.md` §9.
 
 ## 1 · Aktive Produktphase
@@ -18,7 +16,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 ## 2 · Stand auf `main`
 
-- **HEAD `e83eb19`** = Merge **PR #246** (Doku zweiter Fünferlauf, reine Doku). Production
+- **HEAD `9923a7e`** = Merge **PR #247** (OP-30-Zielarchitektur, alles Default-AUS). Production
   läuft auf diesem Commit (`dpl_7KMZaUfVSBmb…`, READY 2026-08-13T21:46Z) mit
   `HELMUT_SCALABLE_PIPELINE=off` (Rücknahme-Redeploy davor: `dpl_5Ktikubeezvj…`,
   READY 16:27:27Z, Runbook §19.5). Davor `8088fc9` (#245), `1fd9c98` (#244),
@@ -81,6 +79,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **Berlin (Landesmodul)** | inaktiv. `HELMUT_LANDESMODULE=berlin` seit 2026-07-26 gesetzt, aber **wirkungslos**: 0 berechtigte Berliner Mandate seit dem Rollback ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22). Ob das Flag wirkt, ist **unbewiesen** |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt); PR #132 vor Merge Gate-Name vereinheitlichen |
 | **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **`off`, wirkungsbasiert belegt** (Rücknahme des zweiten Versuchs 2026-08-13 16:27Z; crawl 20:00 UTC lief vollständig über den Altpfad, `pg_stat helmut_jobs` 939/1765/180 unverändert — Runbook §19.5). **524 wartende Aufträge stehen inert** (niemand holt sie ab, keine Kosten); vor einem dritten Versuch: Abflussrate-Entscheidung + erneute Neutralisierung (Runbook §19.6) |
+| **`HELMUT_VERSTEHEN_CAS` (OP-30 CAS)** | **aus** (nirgends gesetzt). Ohne das Flag laeuft der Karten-Store byte-identisch weiter und jede Verstehensparallelitaet > 1 wird hart auf 1 geklemmt. Migration `20260814180000` **nicht angewendet** (§7d) |
 | **M8 / `HELMUT_MATCHING_RELEVANZ_GATE`** | aus (Default aus, nie aktiviert) |
 | `HELMUT_CRON_GLOBALPHASE` | nicht gesetzt (aus) — K2-Prüfung ergab keine Aktivierungsempfehlung |
 | `HELMUT_UNDERSTANDING_GATE` / `HELMUT_PARDOK_DISPATCH` | `shadow` |
@@ -95,14 +94,14 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 | PR | Inhalt | Einschätzung |
 |---|---|---|
-| **#247** (2026-08-13/3), Branch `claude/op30-scalable-architecture-o2bzrd` | **OP-30-Zielarchitektur** (§7c): Outbox-/Grenzen-Migrationen (NICHT angewendet), Transport, Verbraucher-Route, Vorgangswache, Suiten + lokaler Lastnachweis, Doku | alles Default-AUS; Merge ändert Production nicht; Migrationen bleiben freigabepflichtig |
+| **PR #248**, Branch `claude/op30-verstehen-cas-a89axz` | **Atomarer Verstehensvertrag (CAS)** (§7d): Migration `20260814180000` (NICHT angewendet), `verstehen-vertrag.js`, Parallelitaetsriegel, 2 Suiten + Mutationsprobe, Kapazitaetsmodell, Doku; **Korrekturlauf 15.08.**: at-most-once nach Modellstart, Lease-Zwang, atomarer CAS-Speicherweg | alles Default-AUS; Merge ändert Production nicht; Migration bleibt freigabepflichtig |
 | **#231** (Draft) | OP-03 Konten-Vorbedingung, 1 Konto je Mandat | in §6 bisher nicht geführt (Korrektur 2026-08-11/2); Betreiberentscheidung |
 | **#224** (Draft) | F-E2E: Lage-Rangfolge aus berechnetem Rang statt Ablage | behauptet die Behebung des CI-Nichtdeterminismus F-E2E; **nicht reviewt, nicht abgenommen** |
 | **#225** (Draft) | „Produktroadmap für LINIE" | nicht aus dem Helmut-Arbeitsstrang; Einordnung beim Betreiber |
 | **#218** | OP-25-Kapazität, konkurrierende Analyse | Ursache/Fix kamen über #219. **Empfehlung: schließen** |
 | **#216** | flackernden `werkzeug-lesefehler-test.js` stabilisieren (F-PORT) | offen, reserviert als OP-28 |
 
-Alle übrigen früher geführten PRs sind gemergt oder geschlossen (zuletzt **#243**, davor #240,
+Alle übrigen früher geführten PRs sind gemergt oder geschlossen (zuletzt **#247** — Zielarchitektur, Merge-Commit `9923a7e` —, davor #246, #243,
 #239, #238, #237, #236, #235, #233). Historie: Archiv.
 
 ## 7 · Offene Blocker
@@ -126,58 +125,40 @@ damit nur noch durch die **separate Startfreigabe** blockiert (§9/§11).
 
 ## 7a · Kapazitätsgrenze und OP-30 (Stand 2026-08-09)
 
-Fünf Sprints an einem Tag. Die Einzelheiten stehen in den Belegdateien; hier steht nur, was
-für eine Entscheidung zählt.
-
-**Kanonische Belege** (Einzelheiten dort, nicht hier): Runbook
-[`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) —
-`mdb-a` §9 · Migrationsbeleg §12 · Neutralität §13 · blockierter Versuch §14 · Versuch 1
-(Aktivierung/erster Lauf/Rücknahme) §15/§16 · berichtigte Altersmessung §17 ·
-Belegliste der Vorgeschichte §18 · **zweiter Versuch mit Kapazitätsbefund §19**.
+Die Einzelheiten stehen in den Belegdateien; hier steht nur, was für eine Entscheidung zählt.
+**Kanonisch:** Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md)
+§9/§12–§19 (`mdb-a` · Migrationen · Neutralität · blockierter Versuch · Versuch 1 · berichtigte
+Altersmessung · Vorgeschichte · **zweiter Versuch mit Kapazitätsbefund**).
 
 **Befund (unverändert gültig).** Der V3-Motorkern skaliert; die Grenze liegt **davor**: jedem Profil
 werden 7–8 eigene Google-Wege vorangestellt (Kipppunkt **n ≈ 14–15**). **Zurückgezogen** bleiben „V3 ist
 für 1000 Mandate konzipiert" und „Skalierungsnachweis für 200 Mandate liegt vor". Engpass ist nicht die
 Warteschlange (8 Worker: 4 093 Aufträge/s), sondern die Slot-Zuteilung: mit Parallelität 8 + zwei
-Morgenslots **200/200 bei 59,6 % Reserve** (PR #237; R4/R4b behoben). **Offen:** echte Google-/KI-Laufzeit ·
+Morgenslots **200/200 bei 59,6 % Reserve** (PR #237). **Offen:** echte Google-/KI-Laufzeit ·
 wirksamer Production-Deckel · **190 fehlende echte Profile** (es gibt 10) · Vercel bei Parallelität 8.
 
 **Vorlauf 2026-08-08…/11/5, alles gemergt (PR #233–#242).** Warteschlange, Worker, KI-Budget,
-Relevanzordnung und Lage-Narrativ (`HELMUT_NARRATIV_QUEUE`, default AUS) gebaut und getestet; der
-Produktfehler „übersprungener V3-Lauf gilt als erledigt" ist portiert + gehärtet; sechs Migrationspaare
-am 2026-08-11 angewendet. **OP-31 Frischevertrag BESTANDEN** (Restrisiko: ohne `HELMUT_CRON_FAIRNESS`
-können exakt überlappende Läufe doppelt pushen; `briefings` wächst täglich, OP-12; Alarmweg OP-07).
-**Sprint /5 BLOCKIERT** — kein Schreibweg zur Vercel-Env; der Zugangsblocker besteht fort.
-
-**Versuch 1 (2026-08-11, Runbook §15/§16, historisch):** K0 bestanden, erster Lauf sauber
-(235 Aufträge, 0 endgültige Fehler), aber die **damals falsche** Altersgrenze (Fälligkeit
-statt Wartezeit) brach zu Unrecht ab; Rücknahme + Wirkungsnachweis bestanden. Die Berichtigung
-(Runbook §17: Wartezeitformel, Migration `20260812`, 59+26+31 PASS) und die Neutralisierung
-der 180 Altaufträge (§17.10: Export SHA256 `d74e7618…cda9`, geschützte Löschung, 55 erledigte
-byte-identisch erhalten) sind ausgeführt; PR #244/#245 gemergt.
+Relevanzordnung und Lage-Narrativ gebaut und getestet; sechs Migrationspaare am 2026-08-11 angewendet.
+**OP-31 Frischevertrag BESTANDEN** (Restrisiko: ohne `HELMUT_CRON_FAIRNESS` können exakt überlappende
+Läufe doppelt pushen; `briefings` wächst täglich, OP-12; Alarmweg OP-07). **Versuch 1 (Runbook §15–§17,
+historisch):** erster Lauf sauber, aber die damals falsche Altersgrenze brach zu Unrecht ab; Berichtigung
+(Wartezeitformel, Migration `20260812`) und Neutralisierung der 180 Altaufträge sind ausgeführt.
 
 ## 7b · Zweiter Versuch 2026-08-12/13: Kapazitätsbefund, kontrollierte Rücknahme (Runbook §19)
 
-**K0 vollständig bestanden** (a–j; `altersvertrag="wartezeit"` produktiv erfüllt). Betreiber
-aktivierte 18:50 UTC (`dpl_9Pvj1N6y…`, Commit `8088fc9` unverändert). **Fünf Läufe, alle
-fehlerfrei und fair:** crawl 20:00 (65 erledigt; Wirkungsnachweis OP-30; Wartezeitvertrag
-bestätigt: 6,8 d Rückstand ohne Fehlabbruch) · crawl 04:00 (30; Slotende-Abschnitte ohne
-Dubletten wiedergeholt) · Morgen-/Lagezyklus 5/5+5/5 (OP-31 hält) · Watchdog 06:54 als
-regulärer Drain-Slot (31; 0 Doppelarbeit) · pipeline 16:00 (54; **Dedupe produktiv belegt**,
-`neu=169<geplant=193`). Durchgehend: 0 endgültige Fehler, 0 Dubletten, 0 fremde Mandate,
-0 Reservierungen, kein Deckelkontakt, keine neue Fehlerklasse.
+**K0 vollständig bestanden**; Betreiber aktivierte 18:50 UTC (`dpl_9Pvj1N6y…`, Commit `8088fc9`).
+**Fünf Läufe, alle fehlerfrei und fair** (crawl 20:00/04:00 · Morgen-/Lagezyklus 5/5+5/5 · Watchdog
+06:54 als Drain-Slot · pipeline 16:00 mit produktiv belegtem Dedupe `neu=169<geplant=193`): 0 endgültige
+Fehler, 0 Dubletten, 0 fremde Mandate, kein Deckelkontakt, keine neue Fehlerklasse.
 
 **Aber: Ankunft ~440–470 Aufträge/Tag ≫ Abfluss ~130–180/Tag** (worker=2, Slotbudget 270 s,
-3–4 Drain-Slots/Tag) ⇒ Bestand 0→182→371→**524**; die 24-h-Wartezeitgrenze der Altaufträge
-(20:00 UTC) war rechnerisch sicher nicht mehr einhaltbar (nach dem 16:00-Slot noch 77 offen,
-kein Drain-Slot davor). **Rücknahme VOR Grenzübertritt** (Betreiber, 16:27 UTC,
-`dpl_5Ktikubeezvj…`); **Wirkungsnachweis am crawl 20:00 bestanden** (§19.5: Altpfad,
-`pg_stat` 939/1765/180 unverändert, Budget +5 = 5 Altpfad-Clusteraufrufe). Kein
-Warteschlangenfehler — der Motor ist mit Defaults zu langsam für die eigene Ankunftsrate.
-**Kriterienbefunde §19.6:** §8.3-Watchdog-Kriterium queue-inkompatibel · `llm_usage` leer
-(R4 nur über KO-Gegenstücke schließbar) · `zustand=unbekannt` bei Metrik-Lesetimeout.
-**Vor Versuch 3 (Betreiberentscheidung):** Abflussrate (Worker-Parallelität/Slots) **und**
-erneute Neutralisierung der jetzt 524 inerten Aufträge (Muster §17.8).
+3–4 Drain-Slots/Tag) ⇒ Bestand 0→182→371→**524**; die 24-h-Wartezeitgrenze der Altaufträge war
+rechnerisch sicher nicht mehr einhaltbar. **Rücknahme VOR Grenzübertritt** (Betreiber, 16:27 UTC,
+`dpl_5Ktikubeezvj…`); **Wirkungsnachweis am crawl 20:00 bestanden** (§19.5: Altpfad, `pg_stat`
+939/1765/180 unverändert). Kein Warteschlangenfehler — der Motor ist mit Defaults zu langsam für die
+eigene Ankunftsrate. **Kriterienbefunde §19.6:** §8.3-Watchdog-Kriterium queue-inkompatibel ·
+`llm_usage` leer · `zustand=unbekannt` bei Metrik-Lesetimeout. **Vor Versuch 3
+(Betreiberentscheidung):** Abflussrate **und** erneute Neutralisierung der 524 inerten Aufträge (§17.8).
 
 **Folge für OP-25:** eine Aktivierung verändert `quellenVereinigung`, die K2.1-Sichtbarkeitsmengen und die
 Laufzeitbilanz ⇒ **OP-25 muss danach von vorn**.
@@ -196,23 +177,41 @@ Lastnachweis 5–500 an echter PostgreSQL (kein Verlust, keine Doppelarbeit; 500
 [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md)
 (Vergleich 7 Varianten × 20 Kriterien, Mengengerüst, Stufenplan, Betreiberablauf); Runbook §20.
 
-**Läufe 14/3 und 14/4 (Belegdatei §24–§25).** Sieben Lücken geschlossen: Antrieb statt
-Testpumpe (Outbox-Relay, Zeitgeber **DISABLED**) · bereitstellbares Lambda-Paket ·
-SSM-Startweg (fail closed, **kein stiller Rückfall auf lokalen Speicher**) · Anbietersteuerung
-im Fachpfad · KMS-Produzentenrechte · Wiederholungen · `HELMUT_RELAY_FUNKTION` · eigener
-KMS-Schlüssel statt Alias-ARN.
+**Läufe 14/3–14/5 (Belegdatei §24–§26).** Neun Betriebs-, Einsatz- und Bereitstellungsblocker
+geschlossen: Antrieb statt Testpumpe (Outbox-Relay, Zeitgeber **DISABLED**) · bereitstellbares
+Lambda-Paket · SSM-Startweg (fail closed, **kein stiller Rückfall auf lokalen Speicher**) ·
+Anbietersteuerung im Fachpfad · KMS-Produzentenrechte · Wiederholungen ·
+`HELMUT_RELAY_FUNKTION` · eigener KMS-Schlüssel · **erstbereitstellbare CloudFormation-Vorlage**
+(Rollen-Principals in der Schlüsselrichtlinie ergaben einen Zyklus; der Regionsriegel hing an
+der OPTIONALEN `KeyPolicy` und hielt **nichts** — jetzt trägt jede Ressource
+`Condition: IstFrankfurt`, Graph azyklisch 17/17). Der AWS-Trockenlauf beider Regionen bleibt
+offen (§26.3), ebenso §25.3. **AWS ist unverändert nicht ausgerollt.**
 
-**CloudFormation-Korrektur 14/5 (Belegdatei §26).** Die Vorlage war **nicht
-erstbereitstellbar**: (a) die Schlüsselrichtlinie nannte die beiden Lambda-**Rollen** als
-Principals — die es beim ersten Anlegen nicht gibt, während sie ihrerseits die Schlüssel-ARN
-brauchen (Zyklus); AWS verlangt, dass Principals „must exist and be visible to AWS KMS". Jetzt trägt der Schlüssel nur
-die Konto-Anweisung (Schalter für IAM-Rechte), die Erlaubnis steht in den Rollen — exakte
-Schlüssel-ARN, eingeengt per `kms:ViaService` auf SSM; Graph **azyklisch, 17/17**. (b) Der Regionsriegel hing an `KeyPolicy` — laut AWS
-`Required: No`; fehlt sie, hängt AWS eine Standardrichtlinie an, der Riegel hielt **nichts**.
-Jetzt trägt **jede** echte Ressource `Condition: IstFrankfurt`, ausgewertet **vor** dem
-Anlegen: außerhalb Frankfurts entsteht **null** Ressourcen. Belege aus den AWS-eigenen
-`awsdocs/*`-Quelltexten (`docs.aws.amazon.com` ist gesperrt); der AWS-Trockenlauf beider
-Regionen bleibt offen (§26.3), ebenso §25.3.
+## 7d · Verstehensparallelität und CAS — Sprint 2026-08-14/6, Korrekturlauf 2026-08-15 (lokal belegt)
+
+Der **letzte globale Engpass** der Zielarchitektur ist beseitigt: `verstehen` stand auf
+Parallelität 1, weil die Update-Vormerkungen in **einer Karte** mit Lesen → Ändern → Schreiben
+gepflegt wurden (`CLAUDE.md` §4 Regel 10). Ersetzt durch den **atomaren Verstehensvertrag**
+(Migration `20260814180000_verstehen_cas.sql` + Rollback, **NICHT angewendet**): eine Zeile je
+Vorgang mit Besitzer, Lease und **monotonem Fencing-Wert**.
+
+**Korrekturlauf 2026-08-15 — drei bestätigte Lücken geschlossen** (Ursachen, Korrektur und
+Nachweis: Belegdatei §10): (1) ein allgemeines `finally` öffnete den Vorgang nach dem
+Modellstart wieder — jeder Fehler danach hätte einen **zweiten bezahlten Aufruf** ausgelöst;
+jetzt endet jeder Ausgang ohne Ergebnisbeleg in `unbekannt`. (2) `schreibrecht` verlangte
+**kein gültiges Lease**; jetzt Lease-Zwang. (3) Der Trigger übersprang die Prüfung bei
+**Wertgleichheit** (F1 gespeichert, F2 reserviert, erneut F1); jetzt schreibt ausschließlich
+`helmut_verstehen_speichere` — Besitzer, Reservierung, Fencing-Wert, Zustand und Lease
+gemeinsam unter Row-Lock, Ergebnis **und** Abschluss in einer Transaktion. Bestehende
+Schreibwege bleiben nachweislich unberührt.
+**Alles Default AUS** (`HELMUT_VERSTEHEN_CAS`); Parallelität > 1 wird ohne den Vertrag **hart
+auf 1 geklemmt**, Obergrenze 8. Nachweise: DB-Suite **103 PASS** (echte PostgreSQL, echte
+Nebenläufigkeit: 20 Arbeiter auf denselben Vorgang → 1 Berechtigung; 8 Vorgänge gleichzeitig) ·
+Vertragssuite **107 PASS** (jeder Fehlerfall über **zwei Läufe**, insgesamt höchstens **ein**
+Modellaufruf) · **Mutationsprobe 9/9 rot** (M7–M9 = die drei Lücken) · Kapazitätsmodell
+**37 PASS**. **Helmut ist NICHT für 25–500 Mandate freigegeben** — bindend bleiben
+KI-Tagesdeckel und OP-15. Kanonisch:
+[`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md); Runbook §23.
 
 ## 8 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -279,17 +278,17 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Der zweite Fünferlauf ist zurückgenommen (§7b); die Zielarchitektur liegt als PR vor
-(§7c).** Production läuft im Normalbetrieb auf dem Altpfad. Reihenfolge jetzt:
+**Die Zielarchitektur ist gemergt (§7c, PR #247); der atomare Verstehensvertrag liegt als PR
+vor (§7d).** Production läuft im Normalbetrieb auf dem Altpfad. Reihenfolge jetzt:
 
-1. **Zielarchitektur-PR reviewen und mergen** (ändert Production nicht — alles Default-AUS;
-   die Abflussrate-Frage aus §19.6 ist damit architektonisch beantwortet: Wecksignale statt
-   „mehr Slots").
-2. **Vor Versuch 3:** die 524 inerten Aufträge neutralisieren (bewiesenes Muster
-   Runbook §17.8/§17.10) und §8.3/§8.4 (Watchdog-Kriterium) queue-tauglich umformulieren.
-3. Versuch 3 nach Stufenplan (Zielarchitektur §14, Stufe 1: Migrationen `20260813`
-   anwenden + `HELMUT_JOB_DISPATCH_MODE=shadow`); beginnt unverändert bei Runbook §6
-   Schritt 3 mit K0–K3 von vorn.
+1. **CAS-PR #248 reviewen und mergen** (ändert Production nicht — alles Default-AUS; der
+   Korrekturlauf 15.08. ist enthalten). Damit ist der letzte globale Engpass auch auf `main`.
+2. **Vor Versuch 3:** die 524 inerten Aufträge neutralisieren (bewiesenes Muster Runbook
+   §17.8/§17.10) und §8.3/§8.4 (Watchdog-Kriterium) queue-tauglich umformulieren.
+3. Versuch 3 nach Stufenplan (Zielarchitektur §14, Stufe 1: Migrationen `20260813` anwenden +
+   `HELMUT_JOB_DISPATCH_MODE=shadow`); beginnt unverändert bei Runbook §6 Schritt 3 mit K0–K3.
+   Der CAS-Vertrag ist davon **unabhängig** freigebbar (Runbook §23.1: Migration → Flag →
+   erst danach Parallelität).
 4. Unabhängig davon: **OP-15** (Personenquellen) beziffert und offen; `CRON_SECRET`/Egress
    für eine Folgesitzung freigeben (schließt die K0-Teillücke `/api/ops/jobqueue`).
 
@@ -334,6 +333,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 | Paket-Inventur (wiederholbar) | [`quellenarchitektur/30-paket-inventur-production.md`](quellenarchitektur/30-paket-inventur-production.md) |
 | **OP-30: Kapazität der Morgenlage, R4/R4b, Stufenplan** | [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) |
 | **OP-30: Aktivierungs-Runbook 5 Mandate (Pläne, Grenzen, `mdb-a`)** | [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) |
+| **OP-30 CAS: atomarer Verstehensvertrag, Unmoeglichkeitsgrenze, Nebenlaeufigkeitsnachweise** | [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md) |
 | **OP-31: Frischevertrag + adversarialer Review (§10)** | [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) |
 | Roadmap Phase 1 | [`roadmap/phase_1_checkliste.md`](roadmap/phase_1_checkliste.md) |
 | Mail | [`betrieb/mailversand-resend.md`](betrieb/mailversand-resend.md) · [`betrieb/lokale-mailtests-mailpit.md`](betrieb/lokale-mailtests-mailpit.md) |
@@ -343,7 +343,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
+| 2026-08-14/6 + Korrekturlauf 15.08. | **Verstehensparallelitaet und CAS** (Belegdatei [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)): atomarer Verstehensvertrag loest den Karten-Store ab; Korrekturlauf schliesst 3 Luecken (at-most-once nach Modellstart, Lease-Zwang, Fencing-Umgehung) | DB-Suite **103 PASS** (echte Nebenlaeufigkeit), Vertragssuite **107 PASS**, Mutationsprobe **9/9 rot**, Kapazitaetsmodell **37 PASS**; Migration NICHT angewendet, alles Default-AUS |
 | 2026-08-14/5 | **CloudFormation-Korrektur OP-30** (Belegdatei §26): zwei Bereitstellungsblocker — Rollen-Principals in der Schluesselrichtlinie (Zyklus) und ein Riegel an der OPTIONALEN `KeyPolicy` | Ende-zu-Ende **53 PASS**, Infrastruktur **124 PASS**, Mutationsprobe **16/16 rot**, Offline **256/260** (4 sandboxbedingt), Browser/Mobile **32 PASS**; AWS und Production unangetastet |
 | 2026-08-12/3 | **Altersgrenze berichtigt** (Runbook §17): Wartezeit statt Fälligkeit; 3 neue Suiten (59+26+31 PASS); PR #244 gemergt, Wirkungsnachweis am 16:00-Lauf bestanden | **erfolgreich abgeschlossen** |
 
-Die fuenf OP-30-Sprints davor (Zielarchitektur 13/3 · Sicherheitskorrektur 14 · Haertung 14/2 · Korrekturlauf 14/3 · Verkabelungslauf 14/4) stehen vollstaendig in der Belegdatei [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §17–§25. Die Sprints 2026-08-12/5 – 13/2 (**Fünferlauf, zweiter Versuch — nicht bestanden**, kontrollierte Rücknahme vor Grenzübertritt; §7b, Runbook §19), 2026-08-12/4 (Neutralisierung + Migration, Runbook §17.10), 2026-08-12/2 (Wirkungsnachweis der Abschaltung, Runbook §16.12), 2026-08-12/1 (Rücknahmebeleg, Runbook §16), 2026-08-11/6 (K0 bestanden, bei K1 gestoppt, §15), 2026-08-11/5 (**blockiert**, kein Schreibweg zur Vercel-Env, §14), 2026-08-11/4 (Neutralitätsnachweis, §13) und 2026-08-11/3 (Vorwärtsmigrationen, §12) stehen kanonisch im Runbook. Der Sprint 2026-08-09/2 (E1 `tenant_narrative`, PR #236 gemergt) und die OP-30-Sprints vom 2026-08-08 stehen vollständig in den Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) trägt den CI-Basisrot-Befund). Die OP-25-Sprints vom 2026-08-01 bis 2026-08-08 stehen kanonisch in [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; Sprints bis einschließlich 2026-07-31 und ältere Beweisketten: **Archiv** ([`archive/project_state/2026_08_05_CURRENT_STATE_full.md`](archive/project_state/2026_08_05_CURRENT_STATE_full.md)).
+Die sechs OP-30-Sprints davor (Zielarchitektur 13/3 bis CloudFormation 14/5) stehen vollstaendig in der Belegdatei [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §17–§26. Die Sprints 2026-08-11/3 – 13/2 (bis zum **zweiten Fuenferlauf, nicht bestanden**) stehen kanonisch im Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §12–§19. Sprint 2026-08-09/2 und die OP-30-Sprints vom 2026-08-08: Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) traegt den CI-Basisrot-Befund). OP-25-Sprints 01.–08.08.: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; alles bis 2026-07-31: **Archiv**.

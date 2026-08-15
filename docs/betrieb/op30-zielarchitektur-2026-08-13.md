@@ -468,7 +468,7 @@ doppelter** rechnerischer Reserve — als Modell, nicht als Beweis.
 | 1 | 5 | Migrationen `20260813` beide anwenden · `HELMUT_SCALABLE_PIPELINE=on` · `HELMUT_JOB_DISPATCH_MODE=shadow` | Versuch 3 nach Runbook §6/K0 (vorher: 524 neutralisieren, §8.3/§8.4 queue-tauglich); Outbox-Beweis im Schattenmodus |
 | 2 | 5 | `HELMUT_KLASSEN_GRENZEN=on` · `HELMUT_JOB_DISPATCH_MODE=queue` (+`HELMUT_WORKER_WAKE_URL`) | Abfluss ≥ Ankunft über 7 Tage; 0 Verlust/Doppelarbeit; Wartezeit < 24 h dauerhaft |
 | 3 | 25 | `HELMUT_LLM_FAIRNESS=on` · `HELMUT_KLASSE_WORKER_DRAIN_MAX=2` | OP-25 vollständig NEU bestanden (Pflicht nach jeder OP-30-Aktivierung); 20 echte Profile |
-| 4 | 100 | `HELMUT_VERSTEHEN_KONKURRENZ=on` + `HELMUT_KLASSE_VERSTEHEN_MAX=2` (erst nach CAS-Migration des Vormerkungs-Stores, §6) · KI-Deckel-Entscheidung (~500/Tag) · Supabase Pro (OP-01) | OP-15 strukturell gelöst (Direkt-RSS) — dort beziffert als Blocker ab ~10 Mandaten |
+| 4 | 100 | Migration `20260814180000` anwenden · `HELMUT_VERSTEHEN_CAS=on` · **dann erst** `HELMUT_VERSTEHEN_KONKURRENZ=on` + `HELMUT_KLASSE_VERSTEHEN_MAX=2` (der CAS-Store ist seit 2026-08-14/6 gebaut und lokal belegt, [`op30-verstehen-cas-2026-08-14.md`](op30-verstehen-cas-2026-08-14.md); ohne das Flag wird jede Zahl >1 hart auf 1 geklemmt) · KI-Deckel-Entscheidung (~500/Tag) · Supabase Pro (OP-01) | OP-15 strukturell gelöst (Direkt-RSS) — dort beziffert als Blocker ab ~10 Mandaten |
 | 5 | 200 | `HELMUT_NARRATIV_QUEUE=on` · Drain 4 | 190 echte Profile; R4-Gegenprobe in Production |
 | 6 | 500 | externer Worker ODER Vercel-Queues-Adapter (Gründerentscheidung; reine Konfiguration) · KI-Deckel ~1.500/Tag | erneuter Lastnachweis mit echten Zahlen je Stufe davor |
 
@@ -813,6 +813,15 @@ Tagesbudget je Anbieter, Schwelle und Sperrdauer der Schutzschaltung. Flag
 
 ## 22 · Verstehenskapazität: Parallelität bleibt 1 (Befund 5)
 
+> **ERLEDIGT am 2026-08-14/6 — dieser Abschnitt beschreibt den Befund, nicht mehr den
+> Zustand.** Der geforderte Compare-and-Set-Store je Vorgang ist gebaut und lokal
+> nachgewiesen: Migration `20260814180000_verstehen_cas.sql`,
+> `lib/helmut/verstehen-vertrag.js`, drei Suiten (68 + 68 PASS, Mutationsprobe 6/6 rot).
+> Kanonisch: [`op30-verstehen-cas-2026-08-14.md`](op30-verstehen-cas-2026-08-14.md).
+> Der **Standard** bleibt Parallelität 1 (Production unverändert); mehr ist eine
+> Betreiberentscheidung und ohne `HELMUT_VERSTEHEN_CAS` technisch geklemmt.
+> Das Kapazitätsmodell in §23 ist entsprechend fortgeschrieben (§23.1).
+
 Die Voraussetzung für Parallelität > 1 ist **nicht** sicher klein umsetzbar und wird
 deshalb **nicht** umgesetzt. Grund, am Code belegt: `understanding.js` `merkeUpdateOffen`
 liest die gesamte Vormerkungskarte, ändert einen Eintrag und schreibt die **ganze Karte**
@@ -873,6 +882,26 @@ Production-Deckel bleibt in diesem Sprint **unverändert**.
 **Externe Blocker unverändert ehrlich:** OP-15 (Google-Drosselung) ist nicht mit echten
 Messungen gelöst und bleibt ab ~10 Mandaten Blocker; die Anbietersteuerung bremst dort
 konservativ, ersetzt aber keine Messung.
+
+### 23.1 Fortschreibung 2026-08-14/6 (nach dem CAS-Sprint)
+
+Die Tabelle oben gilt unverändert für den **Standard** (Verstehensparallelität 1). Neu ist,
+dass Parallelität > 1 überhaupt sicher möglich ist — und dass das Modell jetzt eine
+**zweite, pessimistische Auslastungsannahme A2** (12,5 % statt 50 % des Tages) mitrechnet,
+weil A eine Annahme und keine Messung ist:
+
+| Mandate | nötige Verstehensparallelität bei A | bei A2 | Reserve p=1/A | Reserve p=8/A2 |
+|---|---|---|---|---|
+| 5 | 1 | 1 | ×13,4 | ×26,8 |
+| 25 | 1 | 1 | ×10,6 | ×21,2 |
+| 100 | 1 | 2 | ×6,1 | ×12,3 |
+| 200 | 1 | 2 | ×4,2 | ×8,3 |
+| 500 | 1 | **3** | ×2,7 | ×5,4 |
+
+**Lokal nachgewiesene sichere Verstehensparallelität: 8** (acht gleichzeitig gehaltene
+Vorgänge an echter PostgreSQL, acht wirklich gleichzeitig verarbeitete Vorgänge im
+Fachkern). Der bindende Grund gegen 25+ Mandate bleibt **unverändert der KI-Tagesdeckel**,
+nicht der Durchsatz. Einzelheiten: [`op30-verstehen-cas-2026-08-14.md`](op30-verstehen-cas-2026-08-14.md) §7.
 
 ---
 
