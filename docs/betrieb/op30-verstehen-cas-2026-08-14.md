@@ -332,7 +332,15 @@ sich sonst in der nächsten Probe wiederholen:
    weil ein ganz anderer Mechanismus zufällig dasselbe leistet. Die Probe legt die
    Ankerzeile deshalb vorher an.
 
-### 5.4 CI auf dem Sprint-Commit
+### 5.4 CI auf den Sprint-Commits
+
+**Lauf 522, Commit `ff04b54` (Korrekturlauf 2026-08-15, PR #248) — beide Pflicht-Checks
+grün:** `Syntax + Offline-Suiten` ✅ (00:53:40–01:01:44 UTC) · `Browser-/Mobile-Smoke
+(Chromium)` ✅. Damit ist der Korrekturlauf im CI vollständig grün; die lokal roten sechs
+Suiten sind Sandbox-Bedingungen (nicht installierte npm-Abhängigkeiten, lokaler
+Blob-/Auth-Store, Netzzugriff) und auf unverändertem `main` identisch rot nachgewiesen.
+
+**Lauf 521, Commit `e69328e`:** beide Pflicht-Checks grün.
 
 **Lauf 520, Commit `a78d6e8` (PR #248).** `Browser-/Mobile-Smoke (Chromium)`: **grün**.
 `Syntax + Offline-Suiten`: **261 von 262 Suiten grün** in 452 s — beide neuen Suiten
@@ -348,7 +356,7 @@ inzwischen ein anderer Prozess belegt haben. Dieselbe Suite lief auf demselben B
 **lokal grün** (42+1 Zusagen, 1 749 ms). Der Sprint fasst weder das Werkzeug noch den
 Lesepfad an, den sie prüft.
 
-Ein Folge-Commit dieses Sprints ändert ausschließlich diese Belegdatei.
+Ein Folge-Commit belegt jeweils ausschließlich das CI-Ergebnis in dieser Datei.
 
 ## 6 · Migration und Rückweg
 
