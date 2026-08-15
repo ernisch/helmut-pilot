@@ -37,6 +37,15 @@
 --                20260813090100_verteilte_grenzen.sql.
 -- ═══════════════════════════════════════════════════════════════════════════════════════════
 
+-- ALLES ODER NICHTS (2026-08-15, Vorpruefung nach PR #248): ohne diese Klammer laeuft die
+-- Datei anweisungsweise mit Selbstbestaetigung. Bricht sie in der Mitte ab — fehlende
+-- Voraussetzung, Sperrzeitueberschreitung (`lock_timeout`), Verbindungsabbruch —, bleibt ein
+-- TEILSTAND zurueck: empirisch belegt blieb `helmut_claim_job_by_id` allein stehen, waehrend
+-- alles danach fehlte. Ein halb angewendeter Migrationsschritt ist genau das falsche Gruen,
+-- das CLAUDE.md §4 Regel 4/10 verbietet, und er macht den Rueckweg mehrdeutig. Alle uebrigen
+-- Migrationen dieses Repos tragen diese Klammer bereits; hier fehlte sie.
+begin;
+
 -- ───────────────────────────────────────────────────────────────────────────────────────────
 -- 1 · ATOMARE BEANSPRUCHUNG GENAU EINES AUFTRAGS (Wecksignal -> genau dieser Auftrag)
 -- ───────────────────────────────────────────────────────────────────────────────────────────
@@ -473,6 +482,8 @@ begin
     execute 'grant execute on function public.helmut_klasse_erneuere(uuid, text, bigint) to service_role';
   end if;
 end $$;
+
+commit;
 
 -- ───────────────────────────────────────────────────────────────────────────────────────────
 -- VERIFIKATION (nach dem Anwenden im SQL-Editor ausfuehren)

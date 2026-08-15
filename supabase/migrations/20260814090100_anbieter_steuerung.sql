@@ -31,6 +31,12 @@
 -- Rollback: rollback_20260814090100_anbieter_steuerung.sql (gleiches Verzeichnis).
 -- ═══════════════════════════════════════════════════════════════════════════════════════════
 
+-- ALLES ODER NICHTS (2026-08-15, Vorpruefung nach PR #248): siehe die gleichlautende
+-- Begruendung in 20260814090000_queue_verbraucher.sql. Ohne diese Klammer kann ein Abbruch
+-- in der Mitte einen Teilstand hinterlassen (z. B. beide Tabellen ohne die Funktionen, die
+-- sie bedienen). Alle uebrigen Migrationen dieses Repos tragen sie bereits.
+begin;
+
 -- ───────────────────────────────────────────────────────────────────────────────────────────
 -- 1 · ZAEHLERFENSTER
 -- ───────────────────────────────────────────────────────────────────────────────────────────
@@ -323,6 +329,8 @@ begin
     execute 'grant execute on function public.helmut_anbieter_fenster_aufraeumen(integer, integer) to service_role';
   end if;
 end $$;
+
+commit;
 
 -- ───────────────────────────────────────────────────────────────────────────────────────────
 -- VERIFIKATION

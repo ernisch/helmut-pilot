@@ -11,6 +11,11 @@
 -- Aufruf beginnt ein neues Fenster.
 -- ═══════════════════════════════════════════════════════════════════════════════════════════
 
+-- ALLES ODER NICHTS (2026-08-15): ein halber Rueckweg ist schlimmer als keiner — er laesst
+-- Funktionen ohne ihre Tabellen (oder umgekehrt) stehen. Alle uebrigen Rollbacks dieses
+-- Repos tragen diese Klammer bereits.
+begin;
+
 drop function if exists public.helmut_anbieter_fenster_aufraeumen(integer, integer);
 drop function if exists public.helmut_anbieter_kennzahlen();
 drop function if exists public.helmut_anbieter_melde(text, boolean, integer, bigint, integer, text);
@@ -18,3 +23,5 @@ drop function if exists public.helmut_anbieter_reserviere(text, integer, integer
 
 drop table if exists public.helmut_anbieter_schutzschalter;
 drop table if exists public.helmut_anbieter_fenster;
+
+commit;
