@@ -76,7 +76,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **Berlin (Landesmodul)** | inaktiv. `HELMUT_LANDESMODULE=berlin` seit 2026-07-26 gesetzt, aber **wirkungslos**: 0 berechtigte Berliner Mandate seit dem Rollback ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22). Ob das Flag wirkt, ist **unbewiesen** |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt); PR #132 vor Merge Gate-Name vereinheitlichen |
 | **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **`off`, wirkungsbasiert belegt** (Rücknahme des zweiten Versuchs 2026-08-13 16:27Z; crawl 20:00 UTC lief vollständig über den Altpfad, `pg_stat helmut_jobs` 939/1765/180 unverändert — Runbook §19.5). **524 wartende Aufträge stehen inert** (niemand holt sie ab, keine Kosten); vor einem dritten Versuch: Abflussrate-Entscheidung + erneute Neutralisierung (Runbook §19.6) |
-| **`HELMUT_VERSTEHEN_CAS` (OP-30 CAS)** | **aus** (nirgends gesetzt). Ohne das Flag laeuft der Karten-Store byte-identisch weiter und jede Verstehensparallelitaet > 1 wird hart auf 1 geklemmt. Migration `20260814180000` **nicht angewendet** (§7d) |
+| **`HELMUT_VERSTEHEN_CAS` (OP-30 CAS)** | **aus** (nirgends gesetzt). Ohne das Flag laeuft der Karten-Store byte-identisch weiter und jede Verstehensparallelitaet > 1 wird hart auf 1 geklemmt. Migration `20260814180000` ist seit 15.08. **angewendet** und laufzeitbelegt inert (§7e) — **das Flag ist der naechste, kleinste Aktivierungsschritt** (Runbook §25) |
 | **M8 / `HELMUT_MATCHING_RELEVANZ_GATE`** | aus (Default aus, nie aktiviert) |
 | `HELMUT_CRON_GLOBALPHASE` | nicht gesetzt (aus) — K2-Prüfung ergab keine Aktivierungsempfehlung |
 | `HELMUT_UNDERSTANDING_GATE` / `HELMUT_PARDOK_DISPATCH` | `shadow` |
@@ -178,41 +178,37 @@ AWS-Trockenlauf bleibt offen (§26.3), ebenso §25.3; **AWS ist nicht ausgerollt
 Der **letzte globale Engpass** der Zielarchitektur ist beseitigt: `verstehen` stand auf
 Parallelität 1, weil die Update-Vormerkungen in **einer Karte** mit Lesen → Ändern → Schreiben
 gepflegt wurden (`CLAUDE.md` §4 Regel 10). Ersetzt durch den **atomaren Verstehensvertrag**
-(Migration `20260814180000_verstehen_cas.sql` + Rollback, **NICHT angewendet**): eine Zeile je
-Vorgang mit Besitzer, Lease und monotonem Fencing-Wert. Der Korrekturlauf 15.08. schloss drei
-bestätigte Lücken (at-most-once nach dem Modellstart · Lease-Zwang · Fencing-Umgehung bei
-Wertgleichheit); bestehende Schreibwege bleiben nachweislich unberührt.
+(Migration `20260814180000`, seit 15.08. angewendet, §7e): eine Zeile je Vorgang mit Besitzer,
+Lease und monotonem Fencing-Wert. Der Korrekturlauf 15.08. schloss drei bestätigte Lücken
+(at-most-once nach dem Modellstart · Lease-Zwang · Fencing-Umgehung bei Wertgleichheit).
 
-**Alles Default AUS** (`HELMUT_VERSTEHEN_CAS`); Parallelität > 1 wird ohne den Vertrag **hart
-auf 1 geklemmt**, Obergrenze 8. Nachweise: DB-Suite **103 PASS** · Vertragssuite **107 PASS** ·
+**Flag `HELMUT_VERSTEHEN_CAS` ist AUS**; Parallelität > 1 wird ohne den Vertrag **hart auf 1
+geklemmt**, Obergrenze 8. Nachweise: DB-Suite **103 PASS** · Vertragssuite **107 PASS** ·
 **Mutationsprobe 9/9 rot** · Kapazitätsmodell **37 PASS**. **Helmut ist NICHT für 25–500
-Mandate freigegeben** — bindend bleiben KI-Tagesdeckel und OP-15. Kanonisch (Ursachen,
-Korrekturen, Nachweise, Unmöglichkeitsgrenze):
-[`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md); Runbook §23.
+Mandate freigegeben** — bindend bleiben KI-Tagesdeckel und OP-15. Kanonisch:
+[`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md); Runbook §23/§25.
 
-## 7e · Die fünf OP-30-Migrationen sind ANGEWENDET (2026-08-15, 16:37–16:43 UTC, freigegeben)
+## 7e · Die fünf OP-30-Migrationen sind ANGEWENDET und laufzeitbelegt inert (15./16.08.)
 
-**Ergebnis: alle fünf angewendet, alle Verifikationen grün, 0 Rücknahmen.** Ablauf, Messwerte
-und Verifikation je Schritt: Runbook
-[`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) **§24.10**.
+**Angewendet 15.08. 16:37–16:43 UTC (freigegeben): 5/5, 0 Fehler, 0 Rücknahmen.** Ablauf, Vorbedingungen,
+Prüfsummen und Verifikation je Schritt: Runbook
+[`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) **§24.10**, Laufzeitnachweis **§24.11**.
+Schema additiv 44→51 Tabellen, 148→180 Funktionen, 546→597 Spalten, 18→20 Trigger; RLS an+erzwungen 7/7,
+0 Policies, 0 Rechte für `anon`/`authenticated`, 32/32 Funktionen `SECURITY INVOKER` mit festem `search_path`.
 
-Reihenfolge `20260813090000` → `20260813090100` → `20260814090000` → `20260814090100` →
-`20260814180000`, einzeln über MCP `apply_migration`, je Schritt mit `lock_timeout='5s'` /
-`statement_timeout='60s'` im Fenster **18:10–19:50 Berlin**. Alle zehn Vorbedingungen vorher
-erfüllt; Prüfsummen = `main` = §24.2.
+**LAUFZEITINERTHEIT BESTÄTIGT (16.08., rein lesend).** Zwei vollständige Zyklen auf dem
+migrierten Schema — crawl 20:00 UTC und der ganze Morgenzyklus (globalphase 04:03 ·
+understanding-eager 04:04 · briefing-morning 05:01 · understanding-cron 05:30 ·
+briefing-lage 05:45): alle Läufe im Normalband der gesunden Zyklen davor, **`error_class`
+über 6 Tage durchgehend `null`, `failed_count` 0**, Briefings **5/5 Mandate je Slot**
+(dieselben fünf). Der Fencing-Trigger ist aktiv und sah **145 echte Schreibvorgänge**
+(139 INSERT + 6 UPDATE) — alle liefen durch, **kein `HV001`/`HV002`**, `verstehen_fencing`
+bei **0 von 6.830** Wissensobjekten gesetzt. Warteschlange unverändert **524/235/0/0**, 0 Leases,
+Signatur `a069f91fde4547493796395f2c989497`, jüngster Auftrag weiterhin 13.08.; alle sieben neuen
+Tabellen **0 Zeilen**; KI-Tagesbudget im Normalband (15.08. 70); keine neue Fehlerklasse.
 
-**Wirkung: keine.** Warteschlange nach jedem der fünf Schritte unverändert **524 wartend ·
-235 erledigt · 0 laufend · 0 fehlgeschlagen · 0 Leases**, Signatur durchgängig
-`a069f91fde4547493796395f2c989497`. Alle 7 neuen Tabellen **leer**, `verstehen_fencing` bei
-**allen 6.691** Wissensobjekten `NULL`, `helmut_verstehen_kennzahlen()` **leer**. RLS
-an+erzwungen 7/7, 0 Policies, 0 Rechte für `anon`/`authenticated`, 32/32 neue Funktionen
-`SECURITY INVOKER` mit festem `search_path`. Schema 44→51 Tabellen, 148→180 Funktionen,
-546→597 Spalten, 18→20 Trigger. Keine neue Fehlerklasse (Advisor: nur der bekannte
-INFO-Lint `rls_enabled_no_policy`, die beabsichtigte Bauform).
-
-**Alle Flags blieben aus** (`HELMUT_SCALABLE_PIPELINE`, `HELMUT_JOB_DISPATCH_MODE`,
-`HELMUT_KLASSEN_GRENZEN`, `HELMUT_ANBIETER_STEUERUNG`, `HELMUT_VERSTEHEN_CAS`) — der alte
-Motor bleibt der aktive Pfad. **Die Aktivierung ist eine eigene, offene Entscheidung.**
+**Alle fünf Flags blieben aus** — der alte Motor ist der aktive Pfad. **Die Aktivierung ist
+eine eigene, offene Entscheidung; der Plan dafür steht in Runbook §25.**
 
 ## 8 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -280,9 +276,13 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 **Zielarchitektur (#247) und CAS (#248) sind gemergt, die fünf Migrationen sind angewendet
 (§7e).** Production läuft unverändert im Normalbetrieb auf dem Altpfad:
 
-1. **Betreiberentscheidung: den neuen Motor stufenweise scharfschalten?** Die Struktur steht
-   jetzt in Production, wirkt aber erst mit einem Flag. Reihenfolge: Runbook §23.1 (CAS) bzw.
-   Zielarchitektur §14 (Stufenplan). **Nichts davon ist mit dieser Migration freigegeben.**
+1. **Betreiberentscheidung: `HELMUT_VERSTEHEN_CAS=on` als erste kontrollierte Stufe?** Die
+   Struktur steht in Production und ist laufzeitbelegt inert (§7e). Der ausformulierte
+   Betreiberplan — Vorbedingungen, genaue Schritte, Kontrollen, Rückweg, Abbruchgrenzen —
+   steht in Runbook **§25**. Es ist der kleinste umkehrbare Schritt: der Durchsatz ändert
+   sich **nicht** (Parallelität bleibt 1), die 524 Aufträge bleiben unberührt. **Stufe 1 des
+   Stufenplans** (Zielarchitektur §14: `HELMUT_SCALABLE_PIPELINE`/`…DISPATCH_MODE=shadow`)
+   ist davon getrennt und hat **zwei offene Vorbedingungen** (Punkt 2). Nichts ist freigegeben.
 2. **Vor Versuch 3:** die 524 inerten Aufträge neutralisieren (bewiesenes Muster Runbook
    §17.8/§17.10) und §8.3/§8.4 (Watchdog-Kriterium) queue-tauglich umformulieren.
 3. Versuch 3 nach Stufenplan (Zielarchitektur §14, Stufe 1: Migrationen `20260813` anwenden +
@@ -342,9 +342,9 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 | Datum | Sprint | Ausgang |
 |---|---|---|
-| 2026-08-14/6 + Korrekturlauf 15.08. | **Verstehensparallelitaet und CAS** (Belegdatei [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)): atomarer Verstehensvertrag loest den Karten-Store ab; Korrekturlauf schliesst 3 Luecken (at-most-once nach Modellstart, Lease-Zwang, Fencing-Umgehung) | DB-Suite **103 PASS** (echte Nebenlaeufigkeit), Vertragssuite **107 PASS**, Mutationsprobe **9/9 rot**, Kapazitaetsmodell **37 PASS**; Migration NICHT angewendet, alles Default-AUS |
-| 2026-08-15 | **Anwendung der fuenf OP-30-Migrationen auf Supabase Production** (§7e, Runbook §24.10), freigegeben, Fenster 18:10–19:50 Berlin | **erfolgreich abgeschlossen** — 5/5 angewendet, 0 Fehler, 0 Ruecknahmen; Warteschlange nach jedem Schritt unveraendert 524/235/0/0, Signatur konstant; alle neuen Tabellen leer, `verstehen_fencing` ueberall NULL; **alle Flags blieben aus**, alter Motor aktiv |
-| 2026-08-15 | **Production-Vorpruefung der fuenf Migrationen** (Runbook §24), rein lesend | **abgeschlossen** — **ein Befund behoben** (fehlende Transaktionsklammer in 2 Dateien + 2 Rollbacks, PR #249 gemergt) |
+| 2026-08-14/6 + Korrekturlauf 15.08. | **Verstehensparallelitaet und CAS** (Belegdatei [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)): atomarer Verstehensvertrag loest den Karten-Store ab; Korrekturlauf schliesst 3 Luecken (at-most-once nach Modellstart, Lease-Zwang, Fencing-Umgehung) | DB-Suite **103 PASS** (echte Nebenlaeufigkeit), Vertragssuite **107 PASS**, Mutationsprobe **9/9 rot**, Kapazitaetsmodell **37 PASS**; alles Default-AUS |
+| 2026-08-16 | **Laufzeitnachweis der fuenf Migrationen** (§7e, Runbook §24.11), rein lesend: crawl 22:00 + vollstaendiger Morgenzyklus auf dem migrierten Schema gegen die gesunden Zyklen davor | **erfolgreich abgeschlossen** — alle Laeufe im Normalband, `error_class` 6 Tage `null`, Briefings 5/5 je Slot, 145 Schreibvorgaenge auf `knowledge_objects` ohne `HV001`/`HV002`, Fencing ueberall NULL, Warteschlange/Signatur unveraendert; **Laufzeitinertheit bestaetigt**; Betreiberplan Runbook §25 |
+| 2026-08-15 | **Vorpruefung + Anwendung der fuenf OP-30-Migrationen auf Production** (§7e, Runbook §24), freigegeben, Fenster 18:10–19:50 Berlin | **erfolgreich abgeschlossen** — Vorpruefung fand **einen Befund** (fehlende Transaktionsklammer, PR #249 gemergt); danach 5/5 angewendet, 0 Fehler, 0 Ruecknahmen; Warteschlange je Schritt 524/235/0/0, alle neuen Tabellen leer; **alle Flags blieben aus** |
 | 2026-08-14/5 | **CloudFormation-Korrektur OP-30** (Belegdatei §26): zwei Bereitstellungsblocker — Rollen-Principals in der Schluesselrichtlinie (Zyklus) und ein Riegel an der OPTIONALEN `KeyPolicy` | Ende-zu-Ende **53 PASS**, Infrastruktur **124 PASS**, Mutationsprobe **16/16 rot**; AWS und Production unangetastet |
 
 Die sechs OP-30-Sprints davor (Zielarchitektur 13/3 bis CloudFormation 14/5) stehen vollstaendig in der Belegdatei [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §17–§26. Die Sprints 2026-08-11/3 – 13/2 (bis zum **zweiten Fuenferlauf, nicht bestanden**) stehen kanonisch im Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §12–§19. Sprint 2026-08-09/2 und die OP-30-Sprints vom 2026-08-08: Belegdateien aus §7a ([`betrieb/op30-testbefunde-2026-08-08.md`](betrieb/op30-testbefunde-2026-08-08.md) traegt den CI-Basisrot-Befund). OP-25-Sprints 01.–08.08.: [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7.5–§7.7.9; alles bis 2026-07-31: **Archiv**.

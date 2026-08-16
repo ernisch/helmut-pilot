@@ -2445,4 +2445,161 @@ Erwartung: unverändertes Verhalten, weil kein Codepfad die neuen Strukturen ohn
 
 **Nächster Schritt:** unverändert eine **eigene** Betreiberentscheidung — die Aktivierung nach
 §23.1 (CAS) bzw. Zielarchitektur-Belegdatei §14 (Stufenplan). Diese Migration gibt davon
-**nichts** frei.
+**nichts** frei. Der ausformulierte Plan der ersten Stufe steht in **§25**.
+
+### §24.11 LAUFZEITNACHWEIS — zwei vollständige Zyklen auf dem migrierten Schema (2026-08-16)
+
+Die in §24.10 benannte ehrliche Grenze („strukturell belegt, noch nicht laufzeitbelegt") ist
+**geschlossen**. Rein lesend geprüft, nichts geändert, nichts aktiviert, nichts deployt.
+
+**Was gelaufen ist.** Der Crawl 20:00 UTC am 15.08. (auf Commit `34ebae77`, Deployment
+`dpl_EpKBbGCGAi2D4gxQseqKJ1REYLeQ`) und am 16.08. der **vollständige Morgenzyklus**:
+`globalphase` 04:03 · `understanding-eager` 04:04 · `briefing-morning` 05:01 ·
+`understanding-cron` 05:30 · `briefing-lage` 05:45.
+
+**Vergleich mit den letzten gesunden Zyklen vor der Migration** (14./15.08.):
+
+| Lauf | 14.08. (vorher) | 15.08. (vorher) | **16.08. (nachher)** |
+|---|---|---|---|
+| `globalphase` 04:0x | `partial`, 189,7 s, Ziel 1934, gespeichert 1465, `failed` 0 | `partial`, 212,6 s, Ziel 1925, gespeichert 1461, `failed` 0 | **`partial`, 205,1 s, Ziel 1997, gespeichert 1468, `failed` 0** |
+| `understanding-eager` 04:0x | `success`, 97,1 s, 10 verarbeitet | `success`, 89,6 s, 10 verarbeitet | **`success`, 97,8 s, 16 verarbeitet** |
+| `briefing-morning` 05:0x | `success`, 12,3 s, **5/5** | `success`, 11,0 s, **5/5** | **`success`, 17,7 s, 5/5** |
+| `understanding-cron` 05:30 | `success`, 252,2 s, Ziel 500, 18 verarbeitet | `success`, 254,0 s, Ziel 500, 21 verarbeitet | **`success`, 244,3 s, Ziel 500, 15 verarbeitet** |
+| `briefing-lage` 05:45 | `success`, 31,1 s, **9/9** | `success`, 31,3 s, **9/9** | **`success`, 34,7 s, 9/9** |
+
+Jeder Wert liegt im Band der Vergleichstage. `status`-Arten unverändert (`partial` für
+`globalphase` — das ist seit jeher der Normalzustand, 17/17 Läufe in 7 Tagen —, `success`
+sonst). **`error_class` ist über sechs Tage durchgehend `null`, die Summe aller
+`failed_count` ist 0.**
+
+**Briefings je geplantem Mandat.** `morgenlage` **5 Briefings / 5 Mandate** um 05:01,
+`lage` **5/5** um 05:45 — identisch zum 15.08., 13.08. und 12.08. Es sind **dieselben fünf**
+Mandate wie an den Vergleichstagen; das sechste, deaktivierte Mandat erhält wie zuvor keines.
+
+**Der Fencing-Trigger blieb inert — der belastbarste Einzelbefund.** Er ist aktiv
+(`tgenabled='O'`) und hat über beide Zyklen **145 echte Schreibvorgänge** auf
+`knowledge_objects` gesehen: **139 INSERT** (dort feuert er immer) und **6 UPDATE** auf
+vorbestehenden Zeilen. **Alle liefen durch. Kein einziger `HV001`/`HV002`.**
+`verstehen_fencing` ist bei **0 von 6.830** Wissensobjekten gesetzt. Damit ist beides belegt,
+was §24.3 vorhergesagt hat: der Fremdschreibweg wird nicht behindert, und ohne den CAS-Pfad
+entsteht nirgends ein Fencing-Wert.
+
+**Alles Weitere unverändert:** Warteschlange **524 / 235 / 0 / 0**, 0 offene Leases, Signatur
+`a069f91fde4547493796395f2c989497`, jüngster Auftrag weiterhin 13.08. 16:07:05 UTC (der
+Betrieb hat **keinen** Auftrag erzeugt oder angefasst). Alle sieben neuen Tabellen: **0
+Zeilen**; `helmut_verstehen_kennzahlen()`, `helmut_outbox_kennzahlen()`,
+`helmut_klassen_kennzahlen()` und `helmut_anbieter_kennzahlen()` liefern **keine
+Arbeitszeile**. Schema unverändert 51/180/597/20. KI-Tagesbudget im Normalband (15.08. 70;
+Band der Vortage 62–94). Laufprotokoll durchgehend `persistenz=ok fehler=0 cas=0`.
+
+**Ehrlich benannt, keine Abweichung:** am 16.08. 05:30 stehen zwei Laufzeitmeldungen
+`[understanding] skipped-error: … OpenAI request timeout`. Das ist eine **bestehende Klasse**
+(dieselbe Meldung am 14.08. 21:31 und 15.08. 04:00, also vor der Migration), ein externer
+Anbieter-Zeitüberlauf, vom Lauf sauber abgefangen (`understanding-cron` meldet `success` mit
+`failed_count` 0). Sie hat mit Schema, Trigger oder Migration nichts zu tun.
+
+**Schluss: die Laufzeitinertheit der fünf Migrationen ist bestätigt.** Der alte Motor
+funktioniert auf dem migrierten Schema unverändert; die neuen Strukturen sind vorhanden,
+leer und wirkungslos.
+
+---
+
+## §25 · Betreiberplan der ERSTEN kontrollierten OP-30-Aktivierungsstufe (Stand 2026-08-16)
+
+**Nichts hiervon ist ausgeführt.** Dieser Abschnitt ist der Plan, nicht sein Vollzug. Jeder
+Schritt ist freigabepflichtig (`CLAUDE.md` §5).
+
+### §25.1 Welche Stufe zuerst — und warum diese
+
+Es gibt zwei Kandidaten. Empfohlen ist **A**.
+
+| | **A · CAS scharfschalten** (§23.1 Schritt 2) | B · Stufenplan Stufe 1 (Zielarchitektur §14) |
+|---|---|---|
+| Aktion | `HELMUT_VERSTEHEN_CAS=on` + Redeploy | `HELMUT_SCALABLE_PIPELINE=on` + `HELMUT_JOB_DISPATCH_MODE=shadow` + Redeploy |
+| Wirkung auf den Durchsatz | **keine** — Parallelität bleibt hart auf 1 geklemmt | Aufträge entstehen wieder; Schattenversand beginnt |
+| Berührt die 524 inerten Aufträge | **nein** | ja — Neutralisierung **vorher** nötig (§17.8) |
+| Offene Vorbedingungen | **keine** | **zwei**: 524 neutralisieren · §8.3/§8.4 (Watchdog-Kriterium) queue-tauglich fassen (§19.6) |
+| Rückweg | Flag leeren + Redeploy, eine Minute | Flag leeren + Redeploy, danach Wirkungsnachweis wie §19.5 |
+| Kostenrisiko | keine zusätzlichen Modellaufrufe (der Vertrag erzeugt keinen) | Abflussrate-Entscheidung steht noch aus (§19.4) |
+
+**A ist der kleinste umkehrbare Schritt mit echtem Erkenntnisgewinn.** Er wechselt nur den
+Speicherort der Update-Vormerkungen (Karte → Vorgangszeilen) und beseitigt damit den
+Lesen-Ändern-Schreiben-Verstoß (`CLAUDE.md` §4 Regel 10), ohne Durchsatz, Kosten oder
+Warteschlange anzufassen.
+
+**Bewusst benannter Widerspruch:** der Stufenplan (Zielarchitektur §14) führt CAS erst unter
+Stufe 4 (100 Mandate). Das ist die **ältere** Einordnung. §23.1 (14.08.) macht den
+CAS-Vertrag ausdrücklich **unabhängig freigebbar** und trennt Flag (Schritt 2) von
+Parallelität (Schritt 3). Beides ist vereinbar, solange **Schritt 3 nicht** mitgezogen wird:
+Stufe 4 meint die *Parallelität*, nicht das Flag. Wer A ausführt, hat damit **nicht** Stufe 4
+begonnen und Helmut **nicht** für 25–500 Mandate freigegeben.
+
+### §25.2 Vorbedingungen vor dem ersten Schreibzugriff (alle rein lesend prüfbar)
+
+1. `main` unverändert, Production-Deployment **READY**.
+2. Warteschlange **524 / 235 / 0 / 0**, 0 offene Leases, Signatur
+   `a069f91fde4547493796395f2c989497`.
+3. `helmut_verstehen_reservierungen` und `helmut_verstehen_vormerkungen` **leer**.
+4. `select count(*) from knowledge_objects where verstehen_fencing is not null` → **0**.
+5. Trigger `helmut_ko_fencing_wache_trg` vorhanden und aktiv.
+6. Kein Cron-Lauf aktiv, keine Sperre auf `knowledge_objects`.
+7. Die vier übrigen Flags bleiben aus — insbesondere `HELMUT_VERSTEHEN_PARALLELITAET` und
+   `HELMUT_KLASSE_VERSTEHEN_MAX` **unverändert 1**.
+
+### §25.3 Zeitfenster
+
+**18:10–19:50 Berlin** (wie §24.4) — nach dem pipeline-Lauf 18:00, mit Abstand zum crawl
+22:00. Ein Redeploy ist in Sekunden wirksam; der erste Lauf, der den Vertrag benutzt, ist
+`understanding` **21:30 UTC / 23:30 Berlin**. Das ist zugleich die erste Kontrollgelegenheit.
+
+### §25.4 Ablauf (Betreiberaktion — aus einer Claude-Sitzung nicht ausführbar)
+
+Vercel-Env ist aus Claude-Sitzungen **weder lesbar noch setzbar** (`CURRENT_STATE.md` §3);
+Schritte 1–2 macht ausschließlich der Betreiber.
+
+1. In Vercel `HELMUT_VERSTEHEN_CAS=on` für **Production** setzen.
+2. Production-Deployment auslösen und `READY` abwarten.
+3. **Sofortkontrolle, rein lesend** (§25.5) — vor dem 21:30-Lauf.
+4. Nach dem 21:30-Lauf: **erste Wirkungskontrolle** (§25.5).
+5. Nach dem Morgenzyklus des Folgetags: **Bestätigungskontrolle** (§25.5), dann Entscheidung
+   über Schritt 3 aus §23.1 (Parallelität) — **frühestens dann**, nie am selben Tag.
+
+### §25.5 Kontrollen (rein lesend, nach §23.2)
+
+| Zeitpunkt | Prüfung | Erwartung |
+|---|---|---|
+| Sofort nach Redeploy | alle sieben neuen Tabellen | weiterhin **0 Zeilen** (kein Lauf war) |
+| Sofort | Warteschlange + Signatur | unverändert 524/235/0/0, Signatur gleich |
+| Nach 21:30 | `select * from helmut_verstehen_kennzahlen()` | Zeilen erscheinen; `zustand='fertig'` wächst; **`unbekannt` = 0** |
+| Nach 21:30 | `count(*) from knowledge_objects where verstehen_fencing is not null` | **> 0** — der Beleg, dass der Vertrag wirklich schreibt |
+| Nach 21:30 | KI-Tagesbudget | im bisherigen Band (62–94/Tag); **kein Sprung** |
+| Nach 21:30 | `process_runs` | `error_class` `null`, `failed_count` 0, keine Klasse `skipped-ausgang-unbekannt` |
+| Nach 21:30 | Warteschlange | **unverändert 524/235/0/0** — der CAS-Vertrag fasst keine Aufträge an |
+| Folgetag | Briefings je Mandat | **5/5** je Slot, wie im Vergleichsband |
+| Folgetag | `helmut_verstehen_reservierungen where zustand='unbekannt'` | wächst **nicht** |
+
+### §25.6 Abbruchgrenzen (jede einzelne genügt für den Rückweg)
+
+* `unbekannt` > 0 bei der **ersten** Kontrolle nach 21:30 (§23.2), oder danach wachsend.
+* `verstehen_fencing` bleibt nach dem 21:30-Lauf bei 0 → der Vertrag greift nicht.
+* Irgendein `HV001`/`HV002` in den Laufzeitmeldungen.
+* Eine neue Fehlerklasse in `process_runs` oder `failed_count` > 0.
+* Warteschlange oder Signatur verändert.
+* KI-Tagesbudget springt aus dem Band (Verdacht auf Doppelaufruf).
+* Briefings am Folgetag nicht 5/5.
+
+### §25.7 Rückweg
+
+`HELMUT_VERSTEHEN_CAS` leeren + Redeploy. Danach läuft der Karten-Store byte-identisch
+weiter; die CAS-Tabellen bleiben mit ihrem Inhalt stehen und sind **wirkungslos** (kein
+Codepfad liest sie ohne Flag). Die Migration wird dafür **nicht** zurückgenommen — ein
+Rollback der Migration ist nur nötig, wenn das Schema selbst als Ursache belegt wäre, und
+dafür gibt es nach §24.11 keinen Anhaltspunkt. Rückweg ist damit eine Minute Arbeit ohne
+Datenverlust.
+
+### §25.8 Was §25 ausdrücklich NICHT enthält
+
+Keine Parallelität > 1 (§23.1 Schritt 3), keine Neutralisierung der 524 Aufträge, keine
+AWS-Aktion, keine Anhebung des KI-Deckels, keine Ausweitung über 5 Mandate, keine Anwendung
+von `20260720`, kein Versuch 3 des Fünferlaufs. **Helmut bleibt nicht für 25–500 Mandate
+freigegeben**; bindend bleiben KI-Tagesdeckel und OP-15 (§23.4).
