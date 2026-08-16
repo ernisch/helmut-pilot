@@ -53,6 +53,11 @@ Funktionen, ein Trigger.
 > stehen leer und wirkungslos: `verstehen_fencing` ist bei allen Wissensobjekten `NULL`,
 > `helmut_verstehen_kennzahlen()` liefert keine Zeile. **Das Flag `HELMUT_VERSTEHEN_CAS`
 > bleibt aus** — die Aktivierung ist unverändert freigabepflichtig (§23.1 des Runbooks).
+>
+> **Stand 2026-08-16: Laufzeitinertheit bestätigt** (Runbook §24.11) — zwei vollständige
+> Zyklen auf dem migrierten Schema, 145 Schreibvorgänge auf `knowledge_objects` ohne einen
+> einzigen `HV001`/`HV002`, Fencing weiterhin überall `NULL`. Der ausformulierte
+> Betreiberplan zum Scharfschalten des Flags steht in **Runbook §25**.
 > Ältere Formulierungen „nicht angewendet" in dieser Datei beziehen sich auf den Sprintstand
 > vom 2026-08-14.
 
