@@ -1550,6 +1550,25 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   `verstehen` bleibt Parallelitaet 1 und OP-15 (Google-Drosselung) bleibt ab ~10 Mandaten
   Blocker. **OP-30 bleibt insgesamt offen** — die Aktivierung ist eine Betreiberentscheidung.
 
+- **Stand 2026-08-17 (Sprint „Neutralisierung + Warteschlangenwache" — ERFOLGREICH
+  abgeschlossen, lokal belegt; OP-30 insgesamt bleibt offen; Beleg Runbook
+  [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §26):**
+  Die beiden §19.6-Blocker vor Versuch 3 sind geloest. (1) Die **524 inerten Altauftraege**
+  des zweiten Fuenferlaufs sind rein lesend eindeutig abgegrenzt (alle aus dem Fenster
+  12.08. 20:00 – 13.08. 16:07 UTC; drei unveraenderliche Anker: Gesamtsignatur, ID-Kette,
+  Erledigt-Signatur) und der Neutralisierungsweg ist nach dem bewiesenen Muster §17.8/§17.10
+  vollstaendig vorbereitet: elf Riegel, Standardmodus Trockenlauf mit bauartbedingtem
+  Rollback, atomare Transaktion mit erneuter Pruefung unmittelbar vor der Loeschung,
+  Laufquittung, sicherer Wiederholung und belegtem Rueckweg — DB-Nachweis **52 PASS**,
+  Mutationsproben tragend; **nichts gegen Production ausgefuehrt** (Ausfuehrung =
+  freigabepflichtige Betreiberaktion). (2) §8.3/§8.4 sind **queue-tauglich berichtigt**
+  („keine Doppelarbeit" statt „0 neue KI-Aufrufe") und `betriebsstatus` traegt die
+  **Warteschlangenwache V2** (`statusvertrag: 2`): neun Zustandsklassen mit Betreiberaktion —
+  ein ausgeschalteter Motor mit inertem Bestand meldet ehrlich `inaktiv` statt faelschlich
+  `kritisch`, ein echter Rueckstau bleibt quer durch alle Diagnoseklassen kritisch
+  (Sweep-belegt), nie ausfuehrbare Altauftraege zaehlen ab dem erklaerten
+  Aktivierungszeitpunkt (`HELMUT_SCALABLE_PIPELINE_SEIT`), Widerspruechliches blockiert
+  geschlossen. Vertragssuite **65 PASS**; bestehende Suiten unveraendert gruen.
 - **Stand 2026-08-14/6 (Sprint „Verstehensparallelitaet und CAS" — ERFOLGREICH abgeschlossen,
   lokal belegt; OP-30 insgesamt bleibt offen; Beleg
   [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)):**
