@@ -2787,9 +2787,23 @@ Unbekanntes/Widersprüchliches blockiert geschlossen · **Verharmlosungs-Sweep: 
 Konstellationen mit 25-h-Rückstau melden kritisch** · V1-Feldkompatibilität vollständig ·
 Mutationsproben (dauerklemmende `SEIT`-Variable bleibt sichtbar; identische Kennzahlen kippen
 nur mit dem Flag; Grenzwert-Paare; Diagnose eskaliert nie künstlich). Bestehende Suiten
-unverändert grün: `jobqueue-alter-test` 59 · `jobqueue-vertrag-test` 115 ·
+unverändert grün: `jobqueue-alter-test` 59 · `jobqueue-vertrag-test` **125** (mit DB-Teil an
+echter PostgreSQL; §8 stellt der Wache jetzt ausdrücklich Blockierten- und Grund-Attrappen
+bereit, weil eine Messlücke seit V2 keine grüne Zusage mehr ist) ·
 `op30-aktivierungsreife-test` 55 (3 OFFEN, Bestand) · `anbieterausfall-test` 17 ·
 `skalierung-1000-test` 70 (2 OFFEN, Bestand) · `scalable-pipeline-flag-test` 52.
+
+**Gesamtläufe (lokal, 2026-08-17):** kanonische Offline-Suite **260/264 Suiten grün**
+(841 s; die 4 roten — `privacy-vollstaendigkeit`, `profile-db`, `provision-tenant`,
+`tenant-neutrality` — sind **identisch** auf unverändertem `main`-Stand `51d0e80` rot:
+258/262, gleiche Namen; dokumentiertes lokales Basisrot §17.6, im CI grün) ·
+Migrationsorganisation **23 PASS** · CURRENT_STATE-Größe **4 PASS** ·
+Browser-/Mobile-Smoke (Chromium, `HELMUT_REQUIRE_BROWSER=1`) **32 PASS / 0 FAIL** ·
+DB-Suiten an echter PostgreSQL 16.13: `jobqueue-datenbank` 55 · `jobqueue-alter-datenbank`
+26 · `jobqueue-ruecknahme-datenbank` 31 · `jobqueue-wiedervorlage-datenbank` 48 ·
+`jobqueue-outbox-datenbank` 37 · `jobqueue-narrativ-datenbank` 27 ·
+`jobqueue-mutationsprobe` **10/10 ROT** (erkannt) · `queue-ende-zu-ende` 53 ·
+`lambda-paket` 43.
 
 ### §26.6 Nicht getan (Verbote eingehalten)
 
