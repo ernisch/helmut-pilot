@@ -2673,11 +2673,15 @@ Neutralisierungsvertrags — nie Selbstauskunft des Skripts):
 
 ### §26.2 Teil B — der Neutralisierungsvertrag (vorbereitet, bewiesen, NICHT ausgeführt)
 
-**Gewählte Lösung: das bewiesene Muster §17.8/§17.10** (Export mit Prüfsumme → geschützte
-Löschung → 31-PASS-belegter Rückweg), erweitert um die Riegel, die der größere Bestand und
-die Wiederholbarkeit verlangen. Kein neuer Status, keine neue Migration — Löschen bleibt aus
-denselben Gründen richtig wie in §17.8 (kein Datenverlust: die Arbeit entsteht fensterfrisch
-neu, Zielarchitektur §13).
+**Gewählte Lösung: die geschützte Löschung in einer Transaktion.** Aus dem historischen
+Ablauf §17.8/§17.10 übernommen sind **ausschließlich** das Transaktionsmuster, die
+Sicherheitsriegel, der Trockenlauf als Standard und die Nachkontrolle. **Ein Vollzeilenexport
+ist ausdrücklich NICHT Teil des aktuellen Verfahrens** (Datenschutzkorrektur weiter unten);
+der Rückweg besteht **ausschließlich** in der deterministischen Neuerzeugung der benötigten
+Arbeit durch den Planer. §17.8 bleibt nur als historischer Beleg des am 12.08. vollzogenen
+Eingriffs stehen und ist **keine aktuelle Betreiberanweisung**. Kein neuer Status, keine
+neue Migration — Löschen bleibt aus denselben Gründen richtig wie damals (kein Datenverlust:
+die Arbeit entsteht fensterfrisch neu, Zielarchitektur §13).
 
 **Eine Quelle, drei Nutzer:** `lib/helmut/jobqueue-neutralisierung.js` erzeugt das gesamte
 SQL (Vertragsprüfung fail closed); `scripts/jobqueue-neutralisierung-524.js` druckt es für
