@@ -1514,6 +1514,14 @@ Idempotenzsperre gegen erneutes Verstehen derselben Dokumentmenge).
 
 ### 17.8 Erforderliche Betreiberaktion vor dem nächsten Versuch
 
+> **Datenschutz-Hinweis (2026-08-17/2, nachträglich):** dieser Abschnitt ist der am
+> 2026-08-12 **bereits ausgeführte** historische Ablauf (§17.10) und bleibt als Beleg
+> unverändert stehen. Für **künftige** Neutralisierungen ist er **nicht** mehr maßgeblich:
+> der hier enthaltene Vollzeilenexport (Schritt 1, `to_jsonb`) schreibt `payload`,
+> `tenant_id`, `idempotency_key` und `last_error` in eine Datei und ist aus dem aktuellen
+> Betreiberablauf **entfernt**. Verbindlich ist **§26.2** (kein Export; Rückweg =
+> deterministische Neuerzeugung).
+
 **In dieser Reihenfolge, vollständig, sonst kein zweiter Versuch.** Alles hiervon ist
 freigabepflichtig (CLAUDE.md §5); diese Sitzung hat **nichts davon ausgeführt**.
 
@@ -2693,9 +2701,25 @@ Standardmodus ist der Trockenlauf und endet bauartbedingt im Rollback** (er schl
 Zustand an der Erledigt-Signatur und bricht mit `ABBRUCH-BEREITS-NEUTRALISIERT` ab, ohne
 Änderung. **Laufquittung:** jede Ausführung (auch der Trockenlauf) liefert eine jsonb-Quittung
 mit Verfahren, Modus, UTC-Zeit, Löschanzahl, Grenze, allen drei Prüfsummen und Ergebnis —
-ausschließlich technische Werte. **Rückweg:** Schritt-1-Export (alle Spalten, md5) +
-`wiederherstellungSql` (identisch zum §17.8-Schritt-R-Muster, Erwartung 524; Varianten A/B
-unverändert).
+ausschließlich technische Werte.
+
+**Rückweg = deterministische Neuerzeugung — KEIN Export (Datenschutzkorrektur 2026-08-17/2).**
+Die erste Fassung dieses Abschnitts sah als Schritt 1 einen Vollzeilenexport (`to_jsonb`)
+vor. Der hätte `payload`, `tenant_id`, `idempotency_key` und `last_error` — und damit
+politische bzw. personenbeziehbare Inhalte — aus Production in eine Datei geschrieben, im
+Widerspruch zum eigenen Vertrag („nur technische Werte und Prüfsummen"). **Der Exportschritt
+ist ersatzlos gestrichen** (aus Modul, CLI und Suite entfernt; das Modul verweigert
+bauartbedingt jedes SQL, das eine der vier sensiblen Spalten oder ein Vollzeilenkonstrukt
+enthält). Der Rückweg ist stattdessen **funktional**: die Zielmenge ist belegt inert und
+fensterveraltet; der Planer erzeugt beim nächsten regulären Lauf exakt die dann benötigte
+Arbeit deterministisch neu — gleiche Schlüsselbildung, „kein Datenverlust durch
+Neutralisierung" (Zielarchitektur §13). **Das ist ausdrücklich KEIN byte-identischer
+Restore:** `created_at`/`attempts`/Fehlertexte der gelöschten Zeilen sind danach weg — und
+das ist gewollt, denn ein byte-identischer Rücktransport würde genau die drei §17.7-Fallen
+(Doppelverarbeitung, 48-h-Frist, sofortige Überalterung) wiederherstellen, die die
+Neutralisierung beseitigt. Ein byte-identischer Restore ist deshalb **nicht erforderlich**;
+eine serverseitige Sicherungslösung samt Migration braucht es nicht — sie würde dieselben
+sensiblen Inhalte nur an einen zweiten Ort kopieren, ohne betrieblichen Nutzen.
 
 **Betreiberablauf (freigabepflichtig, CLAUDE.md §5 — Reihenfolge bindend):**
 
@@ -2703,30 +2727,36 @@ unverändert).
 |---|---|---|
 | Vorbedingungen | `HELMUT_SCALABLE_PIPELINE=off` am laufenden Deployment geprüft · kein schwerer Cronslot aktiv · Anker §26.1 unverändert | rein lesend |
 | 0 | Vorprüfung: Verteilung, Leases, alle drei Anker, Grenze | `node scripts/jobqueue-neutralisierung-524.js --vorpruefung` |
-| 1 | Export der 524 in EINE Datei, md5 notieren (= Rückweg) | `… --export` |
-| 2a | **Trockenlauf (Standard)** — alle Riegel, garantiertes Rollback, Quittung | `… ` (ohne Argument) |
-| 2b | Scharfe Ausführung — nur nach bestandenem Trockenlauf | `… --scharf` |
+| 1 | **Trockenlauf (Standard)** — alle Riegel, garantiertes Rollback, Quittung | `… ` (ohne Argument) |
+| 2 | Scharfe Ausführung — nur nach bestandenem Trockenlauf | `… --scharf` |
 | Gegenprobe | 0 offen · 235 gesamt · Erledigt-Signatur `f7989b8c…` (steht am Ende der scharfen Ausgabe) | rein lesend |
-| R | nur falls nötig: Wiederherstellung aus dem Export (Vorbedingungen R-a…R-d aus §17.8) | `… --rueckweg` |
+| Rückweg | keiner nötig: der nächste reguläre Planungslauf erzeugt die benötigte Arbeit fensterfrisch neu (funktional, nicht byte-identisch — siehe oben) | — |
 
 Danach (getrennte Schritte des Versuchs 3, nicht Teil der Neutralisierung):
 `HELMUT_SCALABLE_PIPELINE_SEIT=<Aktivierungszeitpunkt ISO-8601>` setzen (§26.4) und weiter
 nach Stufenplan (Zielarchitektur §14, Runbook §6/K0–K3).
 
-### §26.3 Nachweise Teil B (echte PostgreSQL 16.13, wegwerfbare Datenbank, 2026-08-17)
+### §26.3 Nachweise Teil B (echte PostgreSQL 16.13, wegwerfbare Datenbank, 2026-08-17; Datenschutzkorrektur /2)
 
-`scripts/jobqueue-neutralisierung-datenbank-test.js` — **52 PASS / 0 FAIL** gegen das
+`scripts/jobqueue-neutralisierung-datenbank-test.js` — **55 PASS / 0 FAIL** gegen das
 Production-Bestandsbild (524/235, gleiche Typ-/Mandats-/Versuchs-/Fehlertextverteilung),
 darunter alle Pflichtfälle: Trockenlauf exakt und folgenlos · 235 Erledigte **byte-identisch**
 (md5 über alle Spalten, auch `updated_at`) · abweichende Signatur blockiert · neue Zeile
 blockiert (R1) · zählungsneutraler Zeilentausch blockiert (R6) · offene Lease blockiert (R2)
 · laufender/fehlgeschlagener Auftrag blockiert (R1) · konkurrierende Statusänderung zwischen
 Vorprüfung und Transaktion blockiert · Wiederholung nach Erfolg sicher
-(`ABBRUCH-BEREITS-NEUTRALISIERT`) · Rückweg vollständig (Export → Wiederherstellung →
-Feldgleichheit → erneute Neutralisierung möglich) · **Mutationsproben:** R2 entfernt ⇒
-Löschung liefe trotz Lease durch (Riegel tragend) · R3 entfernt ⇒ Feldmutation unbemerkt
-(Riegel tragend) · R8 mit falscher Erwartung nimmt eine vollzogene Löschung vollständig
-zurück. Die bestehende §17.8-Suite bleibt unverändert grün (**31 PASS**).
+(`ABBRUCH-BEREITS-NEUTRALISIERT`) · **funktionaler Rückweg belegt** (ein neutralisierter
+Schlüssel ist wieder frei und wird fensterfrisch neu erzeugt; ein erledigter Schlüssel
+dedupliziert weiter; ausdrücklich kein byte-identischer Restore) · **Mutationsproben:** R2
+entfernt ⇒ Löschung liefe trotz Lease durch (Riegel tragend) · R3 entfernt ⇒ Feldmutation
+unbemerkt (Riegel tragend) · R8 mit falscher Erwartung nimmt eine vollzogene Löschung
+vollständig zurück · **Datenschutzvertrag testgesichert:** kein Exportweg mehr im Modul;
+kein erzeugtes SQL liest `payload`/`tenant_id`/`idempotency_key`/`last_error` oder ein
+Vollzeilenkonstrukt; fünf Wiedereinführungs-Muster werden zuverlässig abgelehnt; **Kanarien
+in allen vier sensiblen Spalten erscheinen in keiner einzigen Ausgabe** des gesamten
+Betreiberwegs (gesammelt über alle Läufe der Suite). Die historische §17.8-Suite bleibt
+unverändert grün (**31 PASS**) — sie belegt den bereits am 12.08. ausgeführten Alt-Ablauf,
+der für künftige Neutralisierungen **nicht** mehr maßgeblich ist (siehe Hinweis in §17.8).
 
 ### §26.4 Teil C — Warteschlangenwache V2 (`betriebsstatus`, `statusvertrag: 2`)
 

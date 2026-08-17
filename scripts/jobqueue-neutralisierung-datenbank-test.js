@@ -28,8 +28,12 @@
 //   6. ein laufender oder fehlgeschlagener Auftrag blockiert           (R1)
 //   7. eine Aenderung zwischen Vorpruefung und Transaktion blockiert   (R3/R10)
 //   8. Wiederholung nach erfolgreicher Neutralisierung ist sicher      (BEREITS-NEUTRALISIERT)
-//   +  Rueckweg (Export -> Wiederherstellung -> Gleichheit) und MUTATIONSPROBEN
-//      (entfernte Riegel machen die Suite nachweislich rot bzw. belegen die Staffelung).
+//   +  FUNKTIONALER RUECKWEG (deterministische Neuerzeugung durch den Planer — AUSDRUECKLICH
+//      kein byte-identischer Restore, Modulkopf + Runbook §26.2), MUTATIONSPROBEN
+//      (entfernte Riegel machen die Suite nachweislich rot) und der DATENSCHUTZVERTRAG:
+//      kein erzeugtes SQL liest payload/tenant_id/idempotency_key/last_error, keine
+//      Ausgabe traegt Werte aus diesen Spalten (Kanarien-Beweis), und eine erneute
+//      Vollzeilenausgabe wird zuverlaessig rot.
 //
 // KONFIGURATION (alles ueber Env, keine Geheimnisse):
 //   HELMUT_TEST_PG_HOST  Socket-Verzeichnis oder Host (ohne Wert -> Suite uebersprungen)
@@ -63,16 +67,21 @@ function check(name, ok, detail = "") {
 }
 function abschnitt(titel) { console.log(`\n== ${titel} ==`); }
 
+// JEDE psql-Ausgabe (stdout UND stderr, aller Laeufe) wird fuer den Kanarien-Beweis in §6
+// gesammelt: keine einzige Ausgabe des Betreiberwegs darf Werte aus payload, tenant_id,
+// idempotency_key oder last_error tragen.
+const ALLE_AUSGABEN = [];
 function psqlRoh(args, { erlaubeFehler = false } = {}) {
   try {
-    return {
-      ok: true,
-      out: execFileSync("psql", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim(),
-      err: ""
-    };
+    const out = execFileSync("psql", args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+    ALLE_AUSGABEN.push(out);
+    return { ok: true, out, err: "" };
   } catch (error) {
     if (!erlaubeFehler) throw error;
-    return { ok: false, out: String(error.stdout || "").trim(), err: String(error.stderr || "").trim() };
+    const out = String(error.stdout || "").trim();
+    const err = String(error.stderr || "").trim();
+    ALLE_AUSGABEN.push(out, err);
+    return { ok: false, out, err };
   }
 }
 function basisArgs(db = PG.db) {
@@ -81,24 +90,14 @@ function basisArgs(db = PG.db) {
 function sql(text, opts = {}) { return psqlRoh([...basisArgs(), "-c", text], opts); }
 function datei(pfad, opts = {}) { return psqlRoh([...basisArgs(), "-f", pfad], opts); }
 let skriptNr = 0;
-function skript(text, { exportJson = null, erlaubeFehler = false } = {}) {
+function skript(text, { erlaubeFehler = false } = {}) {
   skriptNr += 1;
   const tmp = path.join(os.tmpdir(), `helmut-neutralisierung-${process.pid}-${skriptNr}.sql`);
-  const tmpExport = path.join(os.tmpdir(), `helmut-neutralisierung-${process.pid}-${skriptNr}.json`);
-  // Der Export ist fuer 524 Zeilen zu gross fuer ein Kommandozeilenargument (E2BIG bei
-  // >128 KB je Argument). Er kommt deshalb als Datei herein — exakt der Weg, den auch das
-  // Runbook vorschreibt („in EINE Datei speichern"): `\\set export` liest sie ein.
-  let kopf = "";
-  if (exportJson != null) {
-    fs.writeFileSync(tmpExport, exportJson, "utf8");
-    kopf = `\\set export \`cat '${tmpExport}'\`\n`;
-  }
-  fs.writeFileSync(tmp, kopf + text, "utf8");
+  fs.writeFileSync(tmp, text, "utf8");
   try {
     return psqlRoh([...basisArgs(), "-f", tmp], { erlaubeFehler });
   } finally {
     try { fs.unlinkSync(tmp); } catch (_) { /* egal */ }
-    try { fs.unlinkSync(tmpExport); } catch (_) { /* egal */ }
   }
 }
 
@@ -187,7 +186,17 @@ select 'source_fetch', 'erledigt-zweitlauf-' || g, '2026-08-12T16Z', '{}'::jsonb
        timestamptz '2026-08-12 20:00:00+00', timestamptz '2026-08-12 20:00:00+00',
        timestamptz '2026-08-12 20:00:20+00', 'erledigt',
        timestamptz '2026-08-13 04:03:00+00', 1, 'wk-zweitlauf', null
-  from generate_series(1,180) g;`;
+  from generate_series(1,180) g;
+-- KANARIEN (Datenschutzvertrag §6): eindeutige Werte in ALLEN vier sensiblen Spalten.
+-- Erscheint auch nur einer davon in irgendeiner Ausgabe des Betreiberwegs, wird die
+-- Suite rot — der Beweis, dass keine Nutzdaten die Datenbank verlassen.
+update public.helmut_jobs
+   set payload = payload || '{"kanarie":"KANARIE-NUTZDATEN-x7q9"}'::jsonb,
+       last_error = 'KANARIE-FEHLERTEXT-x7q9'
+ where idempotency_key = 'geteilt-20';
+update public.helmut_jobs set tenant_id = 'KANARIE-MANDAT-x7q9' where tenant_id = 'm-5';
+update public.helmut_jobs set idempotency_key = 'KANARIE-SCHLUESSEL-x7q9'
+ where idempotency_key = 'geteilt-21';`;
 
 // Die lokalen Anker werden EINMAL nach dem Seeding erhoben und danach wie in Production als
 // EINGABE behandelt (Runbook-Regel: eine Erwartung, die sich selbst nachrechnet, prueft nichts).
@@ -413,40 +422,35 @@ function main() {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
-  abschnitt("4 · Export (Schritt 1), scharfe Ausfuehrung, Erledigt-Unversehrtheit, Quittung");
-  const exportJson = sql(N.exportSql(vertrag2)).out;
+  abschnitt("4 · Scharfe Ausfuehrung, Erledigt-Unversehrtheit, Quittung");
+  // Existenzbeweis der Kanarien VOR der Loeschung (fuer §6): alle vier sensiblen Spalten
+  // tragen zu diesem Zeitpunkt eindeutige Werte in der Zielmenge.
+  const kanarienVorher = sql(`select
+      (count(*) filter (where payload ? 'kanarie')) || '/' ||
+      (count(*) filter (where last_error like 'KANARIE-%')) || '/' ||
+      (count(*) filter (where tenant_id like 'KANARIE-%')) || '/' ||
+      (count(*) filter (where idempotency_key like 'KANARIE-%'))
+    from public.helmut_jobs where status = 'wartend';`).out;
   {
-    const anzahl = skript("select jsonb_array_length(:'export'::jsonb);", { exportJson }).out;
-    check("4.1 Der Export traegt genau 524 Elemente", anzahl === "524", anzahl);
-    const spalten = sql(`select count(*) from information_schema.columns
-       where table_schema='public' and table_name='helmut_jobs';`).out;
-    const unvollstaendig = skript(`
-      select count(*) from jsonb_array_elements(:'export'::jsonb) e
-       where (select count(*) from jsonb_object_keys(e.value)) <> ${spalten};`, { exportJson }).out;
-    check(`4.2 Jedes Element traegt ALLE ${spalten} Spalten (auch NULL-Felder)`,
-      unvollstaendig === "0", `${unvollstaendig} unvollstaendige Elemente`);
-    check("4.3 Der Export traegt eine md5-Pruefsumme (Belegbarkeit der Datei)",
-      /^[0-9a-f]{32}$/.test(skript("select md5(:'export');", { exportJson }).out));
-
     const scharfLauf = skript(scharf2, { erlaubeFehler: true });
-    check("4.4 Die scharfe Ausfuehrung laeuft mit korrektem Zustand durch",
+    check("4.1 Die scharfe Ausfuehrung laeuft mit korrektem Zustand durch",
       scharfLauf.ok === true, scharfLauf.err.split("\n")[0]);
-    check("4.5 Die Quittung nennt Verfahren, Modus scharf, 524 geloescht und das Ergebnis",
+    check("4.2 Die Quittung nennt Verfahren, Modus scharf, 524 geloescht und das Ergebnis",
       /"verfahren": "op30-neutralisierung-524"/.test(scharfLauf.out + scharfLauf.err)
       && /"modus": "scharf"/.test(scharfLauf.out + scharfLauf.err)
       && /"geloescht": 524/.test(scharfLauf.out + scharfLauf.err)
       && /"ergebnis": "neutralisiert"/.test(scharfLauf.out + scharfLauf.err));
-    check("4.6 Die Gegenprobe nach dem Commit steht in der Ausgabe (0 offen, 235 gesamt, Erledigt-Anker)",
+    check("4.3 Die Gegenprobe nach dem Commit steht in der Ausgabe (0 offen, 235 gesamt, Erledigt-Anker)",
       new RegExp(`0\\|235\\|${vertrag2.signaturErledigt}`).test(scharfLauf.out), scharfLauf.out.split("\n").slice(-1)[0]);
-    check("4.7 Verteilung nach der Neutralisierung: 0/235/0/0",
+    check("4.4 Verteilung nach der Neutralisierung: 0/235/0/0",
       sql(VERTEILUNG_SQL).out === "0/235/0/0");
-    check("4.8 DIE 235 ERLEDIGTEN SIND BYTE-IDENTISCH UNVERAENDERT (jede Spalte, auch updated_at)",
+    check("4.5 DIE 235 ERLEDIGTEN SIND BYTE-IDENTISCH UNVERAENDERT (jede Spalte, auch updated_at)",
       sql(ERLEDIGT_MD5_SQL).out === erledigtMd5Neu,
       `${sql(ERLEDIGT_MD5_SQL).out} vs ${erledigtMd5Neu}`);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
-  abschnitt("5 · Wiederholung nach Erfolg ist sicher; Rueckweg funktioniert");
+  abschnitt("5 · Wiederholung nach Erfolg ist sicher; FUNKTIONALER Rueckweg (Neuerzeugung)");
   {
     const wiederholung = skript(scharf2, { erlaubeFehler: true });
     check("5.1 Ein zweiter scharfer Lauf erkennt den neutralisierten Zustand und aendert NICHTS",
@@ -458,38 +462,84 @@ function main() {
       trockenNachher.ok === false && /ABBRUCH-BEREITS-NEUTRALISIERT/.test(trockenNachher.err),
       trockenNachher.err.split("\n")[0]);
 
-    const wieder = skript(N.wiederherstellungSql(vertrag2), { exportJson, erlaubeFehler: true });
-    check("5.4 Der Rueckweg (Schritt R) stellt alle 524 Zeilen wieder her",
-      wieder.ok === true && sql(VERTEILUNG_SQL).out === "524/235/0/0",
-      `${wieder.err.split("\n")[0]} ${sql(VERTEILUNG_SQL).out}`);
-    const abweichend = skript(`
-      select count(*) from jsonb_populate_recordset(null::public.helmut_jobs, :'export'::jsonb) e
-        join public.helmut_jobs j on j.id = e.id
-       where (to_jsonb(j) - 'updated_at') is distinct from (to_jsonb(e) - 'updated_at');`, { exportJson }).out;
-    check("5.5 Alle 524 Zeilen sind in jedem Feld ausser `updated_at` identisch (Variante A)",
-      abweichend === "0", `${abweichend} abweichende Zeilen`);
-    const doppelt = skript(N.wiederherstellungSql(vertrag2), { exportJson, erlaubeFehler: true });
-    check("5.6 Eine zweite Wiederherstellung kollidiert und fuegt NICHTS ein",
-      doppelt.ok === false && /kollidieren mit dem Export/.test(doppelt.err),
-      doppelt.err.split("\n")[0]);
-    const erneutScharf = skript(scharf2, { erlaubeFehler: true });
-    check("5.7 Nach dem Rueckweg ist die Neutralisierung erneut moeglich (voller Kreis)",
-      erneutScharf.ok === true && sql(VERTEILUNG_SQL).out === "0/235/0/0",
-      `${erneutScharf.ok} ${sql(VERTEILUNG_SQL).out}`);
-    check("5.8 Und die 235 erledigten sind weiterhin byte-identisch",
-      sql(ERLEDIGT_MD5_SQL).out === erledigtMd5Neu);
+    // DER RUECKWEG IST DIE DETERMINISTISCHE NEUERZEUGUNG — ausdruecklich KEIN byte-identischer
+    // Restore (Modulkopf, Runbook §26.2). Bewiesen wird genau das, was er leisten muss:
+    // (a) ein geloeschter Schluessel ist wieder frei — der Planer kann dieselbe Arbeit
+    //     fensterfrisch NEU erzeugen (nichts blockiert die Neuerzeugung);
+    // (b) ein ERLEDIGTER Schluessel bleibt belegt — abgeschlossene Arbeit entsteht nicht
+    //     neu (die Idempotenzsperre der 235 wirkt weiter).
+    const neuErzeugt = sql(`select neu from public.helmut_enqueue_job(
+      'source_fetch', 'geteilt-1', '2026-08-17T16Z', '{}'::jsonb);`).out;
+    check("5.4 FUNKTIONALER RUECKWEG (a): ein neutralisierter Schluessel ist wieder frei — "
+      + "die Neuerzeugung legt eine NEUE wartende Zeile an",
+    neuErzeugt === "t" && sql(VERTEILUNG_SQL).out === "1/235/0/0",
+    `neu=${neuErzeugt} ${sql(VERTEILUNG_SQL).out}`);
+    const dedupe = sql(`select neu from public.helmut_enqueue_job(
+      'source_fetch', 'erledigt-erstlauf-1', '2026-08-11T16Z', '{}'::jsonb);`).out;
+    check("5.5 FUNKTIONALER RUECKWEG (b): ein erledigter Schluessel dedupliziert weiter — "
+      + "abgeschlossene Arbeit entsteht NICHT neu",
+    dedupe === "f" && sql(VERTEILUNG_SQL).out === "1/235/0/0",
+    `neu=${dedupe} ${sql(VERTEILUNG_SQL).out}`);
+    check("5.6 EHRLICH BENANNT: die neue Zeile ist fensterfrisch (heutiges Fenster, attempts 0) — "
+      + "KEIN byte-identischer Restore der alten Zeile, und genau das ist der Vertrag",
+    sql(`select freshness_window || '/' || attempts from public.helmut_jobs
+          where status = 'wartend';`).out === "2026-08-17T16Z/0");
+    sql("delete from public.helmut_jobs where status = 'wartend';");
+    check("5.7 Nach dem Aufraeumen der Probe: 0/235/0/0 und Erledigte weiter byte-identisch",
+      sql(VERTEILUNG_SQL).out === "0/235/0/0" && sql(ERLEDIGT_MD5_SQL).out === erledigtMd5Neu);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
-  abschnitt("6 · Der Production-Vertrag im Modul stimmt mit dem Runbook ueberein");
+  abschnitt("6 · DATENSCHUTZVERTRAG — keine Nutzdaten verlassen die Datenbank");
+  {
+    check("6.1 Es gibt KEINEN Exportweg mehr im Modul (exportSql/wiederherstellungSql entfernt)",
+      N.exportSql === undefined && N.wiederherstellungSql === undefined);
+    const texte = [
+      ["Vorpruefung", N.vorpruefungSql(vertrag2)],
+      ["Trockenlauf", N.neutralisierungSql(vertrag2)],
+      ["Scharf", N.neutralisierungSql(vertrag2, { modus: "scharf" })]
+    ];
+    for (const [name, text] of texte) {
+      const t = text.toLowerCase();
+      const verstoesse = [...N.SENSIBLE_SPALTEN, ...N.VOLLZEILEN_MUSTER].filter((m) => t.includes(m));
+      check(`6.2 ${name}s-SQL liest keine sensible Spalte und kein Vollzeilenkonstrukt`,
+        verstoesse.length === 0, verstoesse.join(","));
+    }
+    let geworfen = 0;
+    for (const boese of [
+      "select coalesce(jsonb_agg(to_jsonb(j)), '[]') from public.helmut_jobs j",
+      "select payload from public.helmut_jobs",
+      "select last_error from public.helmut_jobs where status='wartend'",
+      "select tenant_id, idempotency_key from public.helmut_jobs",
+      "select * from public.helmut_jobs"
+    ]) {
+      try { N.pruefeDatensparsamkeit(boese); } catch (_) { geworfen += 1; }
+    }
+    check("6.3 Eine erneute Vollzeilen-/Spaltenausgabe wird ZUVERLAESSIG rot (5/5 Muster abgelehnt)",
+      geworfen === 5, `${geworfen}/5`);
+
+    // KANARIEN-BEWEIS: die Fixture traegt eindeutige Werte in ALLEN vier sensiblen Spalten
+    // (payload, last_error, tenant_id, idempotency_key). Ueber ALLE bisherigen psql-Ausgaben
+    // dieser Suite hinweg — Vorpruefungen, Trockenlaeufe, Abbrueche, Quittungen, Gegenproben —
+    // darf keiner dieser Werte auftauchen.
+    const gesamt = ALLE_AUSGABEN.join("\n");
+    check("6.4 KEINE der gesammelten Ausgaben traegt einen Kanarienwert aus den sensiblen Spalten",
+      !/KANARIE/.test(gesamt), (gesamt.match(/KANARIE[^\s"']*/g) || []).slice(0, 3).join(","));
+    check("6.5 Die Kanarien standen VOR der Loeschung wirklich in allen vier sensiblen "
+      + "Spalten (der Beweis ist nicht leer): payload/last_error/tenant_id/idempotency_key",
+    kanarienVorher === "1/1/6/1", kanarienVorher);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  abschnitt("7 · Der Production-Vertrag im Modul stimmt mit dem Runbook ueberein");
   {
     const runbook = fs.readFileSync(path.join(ROOT, "docs/betrieb/op30-aktivierung-5-mandate.md"), "utf8");
     const P = N.PRODUCTION_VERTRAG;
-    check("6.1 Gesamtsignatur des Moduls steht im Runbook", runbook.includes(P.signaturGesamt));
-    check("6.2 ID-Ketten-md5 der Zielmenge steht im Runbook", runbook.includes(P.idKettenMd5Wartend));
-    check("6.3 Erledigt-Signatur steht im Runbook", runbook.includes(P.signaturErledigt));
-    check("6.4 Zeitgrenze steht im Runbook", runbook.includes(P.grenze));
-    check("6.5 Die Verteilung 524/235/0/0 steht im Runbook", /524 ?\/ ?235 ?\/ ?0 ?\/ ?0/.test(runbook));
+    check("7.1 Gesamtsignatur des Moduls steht im Runbook", runbook.includes(P.signaturGesamt));
+    check("7.2 ID-Ketten-md5 der Zielmenge steht im Runbook", runbook.includes(P.idKettenMd5Wartend));
+    check("7.3 Erledigt-Signatur steht im Runbook", runbook.includes(P.signaturErledigt));
+    check("7.4 Zeitgrenze steht im Runbook", runbook.includes(P.grenze));
+    check("7.5 Die Verteilung 524/235/0/0 steht im Runbook", /524 ?\/ ?235 ?\/ ?0 ?\/ ?0/.test(runbook));
   }
 
   // Aufraeumen: die Wegwerfdatenbank leer hinterlassen.
@@ -499,7 +549,8 @@ function main() {
   if (fail === 0) {
     console.log("Die Neutralisierung der 524 Altauftraege ist an echter PostgreSQL bewiesen:");
     console.log("Trockenlauf standard und folgenlos, jede Abweichung blockiert, Erledigte unversehrt,");
-    console.log("Wiederholung sicher, Rueckweg identisch, Riegel nachweislich tragend.");
+    console.log("Wiederholung sicher, Rueckweg = funktionale Neuerzeugung (kein Export, keine");
+    console.log("Nutzdaten in irgendeiner Ausgabe — Kanarien-belegt), Riegel nachweislich tragend.");
   }
   process.exit(fail === 0 ? 0 : 1);
 }

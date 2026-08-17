@@ -1559,9 +1559,12 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Erledigt-Signatur) und der Neutralisierungsweg ist nach dem bewiesenen Muster §17.8/§17.10
   vollstaendig vorbereitet: elf Riegel, Standardmodus Trockenlauf mit bauartbedingtem
   Rollback, atomare Transaktion mit erneuter Pruefung unmittelbar vor der Loeschung,
-  Laufquittung, sicherer Wiederholung und belegtem Rueckweg — DB-Nachweis **52 PASS**,
-  Mutationsproben tragend; **nichts gegen Production ausgefuehrt** (Ausfuehrung =
-  freigabepflichtige Betreiberaktion). (2) §8.3/§8.4 sind **queue-tauglich berichtigt**
+  Laufquittung, sicherer Wiederholung und **funktionalem Rueckweg** (deterministische
+  Neuerzeugung durch den Planer — ausdruecklich kein byte-identischer Restore; der
+  urspruenglich vorgesehene Vollzeilenexport wurde als Datenschutzverstoss entfernt,
+  Kanarien-belegt: keine Werte aus payload/tenant_id/idempotency_key/last_error in
+  irgendeiner Ausgabe) — DB-Nachweis **55 PASS**, Mutationsproben tragend; **nichts gegen
+  Production ausgefuehrt** (Ausfuehrung = freigabepflichtige Betreiberaktion). (2) §8.3/§8.4 sind **queue-tauglich berichtigt**
   („keine Doppelarbeit" statt „0 neue KI-Aufrufe") und `betriebsstatus` traegt die
   **Warteschlangenwache V2** (`statusvertrag: 2`): neun Zustandsklassen mit Betreiberaktion —
   ein ausgeschalteter Motor mit inertem Bestand meldet ehrlich `inaktiv` statt faelschlich
