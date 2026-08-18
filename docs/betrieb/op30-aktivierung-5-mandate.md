@@ -2629,6 +2629,10 @@ freigegeben**; bindend bleiben KI-Tagesdeckel und OP-15 (§23.4).
 
 ## §26 · Neutralisierung der 524 Altaufträge + Warteschlangenwache V2 (Sprint 2026-08-17)
 
+> **Nachtrag 2026-08-18: die Neutralisierung ist mit ausdrücklicher Betreiberfreigabe
+> AUSGEFÜHRT — Vollzugsbeleg §26.7.** Die Absätze darunter beschreiben den Stand des
+> Vorbereitungssprints (17.08.) und bleiben als Beleg unverändert stehen.
+
 **Sprintzustand: erfolgreich abgeschlossen (lokal bewiesen; Production unangetastet).**
 Dieser Sprint löst die beiden §19.6-Blocker vor dem dritten Fünferlauf: (1) ein sicherer,
 wiederholbarer, belegbarer Neutralisierungsweg für die 524 inerten wartenden Aufträge ist
@@ -2671,7 +2675,7 @@ Neutralisierungsvertrags — nie Selbstauskunft des Skripts):
 | Signatur nur der 235 erledigten (gleiche Formel) | `f7989b8cc2828acb99f26148a405999f` |
 | Zeitgrenze der Zielmenge | `created_at < 2026-08-13 16:30:00+00` (strikt nach dem jüngsten Zielauftrag 16:07:05, vor jeder möglichen neuen Arbeit) |
 
-### §26.2 Teil B — der Neutralisierungsvertrag (vorbereitet, bewiesen, NICHT ausgeführt)
+### §26.2 Teil B — der Neutralisierungsvertrag (vorbereitet, bewiesen; ausgeführt am 2026-08-18 — §26.7)
 
 **Gewählte Lösung: die geschützte Löschung in einer Transaktion.** Aus dem historischen
 Ablauf §17.8/§17.10 übernommen sind **ausschließlich** das Transaktionsmuster, die
@@ -2848,3 +2852,68 @@ Inhalte gelesen oder exportiert · PR #252 nicht berührt (CURRENT_STATE.md/STAR
 diesem Sprint bewusst unverändert) · Production, Supabase Production, Vercel und AWS
 unangetastet. Der Neutralisierungsweg wurde **ausschließlich** gegen die wegwerfbare lokale
 Datenbank `helmut_test_neutralisierung` ausgeführt.
+
+### §26.7 AUSFÜHRUNGSBELEG — Neutralisierung vollzogen (2026-08-18, freigegeben)
+
+**Ausgeführt am 2026-08-18 zwischen 07:08 und 07:13 UTC (09:08–09:13 Berlin)** aus einer
+Claude-Sitzung mit **ausdrücklicher Betreiberfreigabe** (Chat-Auftrag: Vorprüfung,
+Trockenlauf und scharfe Ausführung ohne weiteren Haltepunkt, sofern alle Riegel exakt
+treffen). Ausschließlich der kanonische Weg aus §26.2: SQL aus
+`scripts/jobqueue-neutralisierung-524.js` (byte-identisch zum Generator, vor jeder
+Ausführung erneut durch `pruefeDatensparsamkeit` geprüft), ausgeführt über die freigegebene
+Supabase-MCP-Verbindung. **Keine Nutzdaten wurden gelesen, gespeichert oder ausgegeben** —
+alle Belege dieses Abschnitts sind Zähler, Zeitstempel und md5-Prüfsummen.
+
+**Vorbedingungen (alle bestanden):** `main` = Merge PR #253 (`0d9cf62`), einziges und
+jüngstes Production-Deployment `dpl_CdJo36VoDys5TsHZkiC9sRhZdnYM` READY auf exakt diesem
+Commit, kein weiteres/unbekanntes Deployment · lokale Suiten auf dem gemergten Stand:
+Neutralisierung **55 PASS / 0 FAIL** · Wache 65 · Migrationsorganisation 23 ·
+CURRENT_STATE-Größe 4 · Syntax OK · MCP-Transaktionsprobe (begin/serializable/temp-table/
+rollback) verhaltensgleich zu psql · kein schwerer Cronslot (07:08 UTC; jüngster
+`process_run` 05:46:19 UTC = lage-briefing).
+
+**Vorprüfung (Schritt 0, 07:08–07:09 UTC) — alle Werte exakt:** 524 wartend · 235 erledigt ·
+0 laufend · 0 fehlgeschlagen · 759 gesamt · 0 offene Leases · Gesamtsignatur
+`a069f91fde4547493796395f2c989497` · ID-Kette `59af8c9e9e61631f30fc9e968c14de7c` ·
+Erledigt-Signatur `f7989b8cc2828acb99f26148a405999f` · 0 wartende außerhalb der Grenze ·
+Typen 365/139/10/10 · Entstehungsfenster [12.08. 20:00:15, 13.08. 16:07:05] · jüngstes
+`updated_at` der Zielmenge 13.08. 16:07:11 (unangetastet) · **0 fremde aktive Abfragen,
+0 fremde Sperren auf `helmut_jobs`**. **CAS-Vorherwert:** 45 Reservierungen (45 `fertig`,
+0 `unbekannt`, 0 andere), 0 Vormerkungen, 45 Wissensobjekte mit `verstehen_fencing`.
+KI-Budget heute: 26. Migrationen: 31, letzte `20260815164241`.
+
+**Trockenlauf (Schritt 1, 07:10:03 UTC) — exakt der dokumentierte Abschluss:**
+`TROCKENLAUF-OK: alle Riegel bestanden, 524 Zeilen WAEREN geloescht worden — Transaktion
+vollstaendig zurueckgenommen`, Quittung mit allen drei Prüfsummen und Nachzustand 0/235/0/0
+(`ergebnis: trockenlauf-ok`). Gegenmessung danach: **524/235/0/0, 0 Leases, Gesamtsignatur
+unverändert** — vollständig folgenlos.
+
+**Scharfe Ausführung (Schritt 2, ~07:11 UTC, genau ein Lauf):** eine `serializable`-
+Transaktion, Zielzeilen per `for update` gesperrt, alle Riegel R1–R9 erneut innerhalb der
+Transaktion — **exakt 524 gelöscht** (R8), Nachzustand in der Transaktion 0/235 mit
+unveränderter Erledigt-Signatur (R9), erst dann Commit. **Gegenprobe nach dem Commit:
+0 offen · 235 gesamt · Erledigt-Signatur `f7989b8cc2828acb99f26148a405999f`.**
+
+**Nachkontrolle (07:12–07:13 UTC, rein lesend):** Warteschlange **0 wartend · 235 erledigt ·
+0 laufend · 0 fehlgeschlagen · 0 offene Leases**; die 235 Erledigten tragen dieselbe
+kanonische Signatur wie vor dem Eingriff (`f7989b8c…` — unangetastet). **CAS byte-gleich zum
+Vorherwert:** 45/45/0/0, 0 Vormerkungen, 45 fencing; kein `HV001`/`HV002`. Jüngster
+`process_run` unverändert 05:46:19 UTC (**kein Cronlauf ausgelöst**), 0 Fehlerklassen in 6 h.
+`llm_reservations` 0, KI-Budget unverändert 26 (**kein KI-Aufruf**). Migrationen unverändert
+31/`20260815164241` (`20260720` weiterhin **nicht** angewendet). **Kein Vercel-Deployment
+seit dem Merge-Deployment** (`since`-Abfrage: genau 1 Ergebnis, das Merge-Deployment selbst);
+kein Flag verändert, `HELMUT_SCALABLE_PIPELINE_SEIT` nicht gesetzt (kein Env-Schreibweg aus
+Sitzungen, kein Redeploy), AWS unberührt. **Struktureller Löschbeleg** (`pg_stat_user_tables`
+für `helmut_jobs`): `n_tup_ins` 939 und `n_tup_upd` 1765 **unverändert** seit §19.5 (kein
+Insert, kein Update — auch nicht an den 235); `n_tup_del` 180 (§19.5) → **1228** = +524
+(zurückgerollter Trockenlauf-Delete zählt kumulativ mit) +524 (Commit); `n_live_tup` 235.
+
+**Rückweg:** wie §26.2 — ausschließlich die deterministische Neuerzeugung durch den Planer;
+es existiert **kein Export** und keine Sicherungskopie. Ein erneuter Lauf des Verfahrens
+endet jetzt mit `ABBRUCH-BEREITS-NEUTRALISIERT` (lokal 55-PASS-belegt, gegen Production
+nicht wiederholt — der Auftrag lautete: genau ein scharfer Lauf).
+
+**Damit ist die letzte offene §19.6-Vorbedingung des dritten Fünferlaufs erfüllt.** Vor
+Versuch 3 verbleiben die Abflussraten-Entscheidung (§19.4) und der Stufenplan
+(Zielarchitektur §14, Stufe 1) samt `HELMUT_SCALABLE_PIPELINE_SEIT` (§26.4) — alles
+Betreiberentscheidungen.

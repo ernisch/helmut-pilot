@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-15** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30-Fuenferlauf, zweiter Versuch (12./13.08.): NICHT bestanden — kontrollierte Ruecknahme VOR Grenzuebertritt** (Runbook §19): Ankunft ~440–470 Auftraege/Tag ≫ Abfluss ~130–180/Tag ⇒ Flag wieder `off`; **524 wartende Auftraege bleiben inert**. **(c) OP-30-ZIELARCHITEKTUR gebaut und lokal nachgewiesen** (§7c; Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache + SQS/Lambda-Transport; Production unangetastet, alles Default-AUS, AWS **nicht** ausgerollt; Belegdatei §17–§26). **(d) OP-31 Frischevertrag BESTANDEN** (5/5 am 13.08.). **(e) atomarer Verstehensvertrag (CAS) gemergt** (§7d, PR #248). **(f) NEU 15.08.: die fuenf OP-30-Migrationen sind auf Production ANGEWENDET** — 5/5 fehlerfrei, Warteschlange unveraendert 524/235/0/0, alle neuen Strukturen leer, **alle Flags blieben aus**, alter Motor aktiv; die Aktivierung ist eine eigene, offene Entscheidung (§7e, Runbook §24.10).) Diese Datei enthaelt
+**Stand: 2026-08-15** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30-Fuenferlauf, zweiter Versuch (12./13.08.): NICHT bestanden — kontrollierte Ruecknahme VOR Grenzuebertritt** (Runbook §19): Ankunft ~440–470 Auftraege/Tag ≫ Abfluss ~130–180/Tag ⇒ Flag wieder `off`; **524 wartende Auftraege bleiben inert** *(18.08.: neutralisiert, 0/235/0/0 — §26.7)*. **(c) OP-30-ZIELARCHITEKTUR gebaut und lokal nachgewiesen** (§7c; Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache + SQS/Lambda-Transport; Production unangetastet, alles Default-AUS, AWS **nicht** ausgerollt; Belegdatei §17–§26). **(d) OP-31 Frischevertrag BESTANDEN** (5/5 am 13.08.). **(e) atomarer Verstehensvertrag (CAS) gemergt** (§7d, PR #248). **(f) NEU 15.08.: die fuenf OP-30-Migrationen sind auf Production ANGEWENDET** — 5/5 fehlerfrei, Warteschlange unveraendert 524/235/0/0, alle neuen Strukturen leer, **alle Flags blieben aus**, alter Motor aktiv; die Aktivierung ist eine eigene, offene Entscheidung (§7e, Runbook §24.10).) Diese Datei enthaelt
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
 Historie liegt **verlustfrei** in
@@ -75,7 +75,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **`HELMUT_CRON_GLOBALABRUF`** | **`on`** seit 2026-08-06 ~08:15 UTC (Betreiber, für das Nachweisfenster) ⇒ **Kontextpfad aktiv**, laufzeitbelegt (drei Fensterläufe 06./07.08. global auf `d8bf68fa…`, E3 `nv=0`). Ob es `on` bleibt, ist Betreiberentscheidung. Dritter Zyklus |
 | **Berlin (Landesmodul)** | inaktiv. `HELMUT_LANDESMODULE=berlin` seit 2026-07-26 gesetzt, aber **wirkungslos**: 0 berechtigte Berliner Mandate seit dem Rollback ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22). Ob das Flag wirkt, ist **unbewiesen** |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt); PR #132 vor Merge Gate-Name vereinheitlichen |
-| **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **`off`, wirkungsbasiert belegt** (Rücknahme des zweiten Versuchs 2026-08-13 16:27Z; crawl 20:00 UTC lief vollständig über den Altpfad, `pg_stat helmut_jobs` 939/1765/180 unverändert — Runbook §19.5). **524 wartende Aufträge stehen inert** (niemand holt sie ab, keine Kosten); vor einem dritten Versuch: Abflussrate-Entscheidung + erneute Neutralisierung (Runbook §19.6) |
+| **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **`off`, wirkungsbasiert belegt** (Rücknahme des zweiten Versuchs 2026-08-13 16:27Z; crawl 20:00 UTC lief vollständig über den Altpfad, `pg_stat helmut_jobs` 939/1765/180 unverändert — Runbook §19.5). **18.08.: die 524 inerten Aufträge sind neutralisiert** (freigegeben; exakt 524 gelöscht, 235 erledigte signaturgleich unangetastet — Runbook §26.7); vor Versuch 3 offen: Abflussrate (§19.4) |
 | **`HELMUT_VERSTEHEN_CAS` (OP-30 CAS)** | **aus** (nirgends gesetzt). Ohne das Flag laeuft der Karten-Store byte-identisch weiter und jede Verstehensparallelitaet > 1 wird hart auf 1 geklemmt. Migration `20260814180000` ist seit 15.08. **angewendet** und laufzeitbelegt inert (§7e) — **das Flag ist der naechste, kleinste Aktivierungsschritt** (Runbook §25) |
 | **M8 / `HELMUT_MATCHING_RELEVANZ_GATE`** | aus (Default aus, nie aktiviert) |
 | `HELMUT_CRON_GLOBALPHASE` | nicht gesetzt (aus) — K2-Prüfung ergab keine Aktivierungsempfehlung |
@@ -151,7 +151,7 @@ rechnerisch sicher nicht mehr einhaltbar. **Rücknahme VOR Grenzübertritt** (Be
 939/1765/180 unverändert). Kein Warteschlangenfehler — der Motor ist mit Defaults zu langsam für die
 eigene Ankunftsrate. **Kriterienbefunde §19.6:** §8.3-Watchdog-Kriterium queue-inkompatibel ·
 `llm_usage` leer · `zustand=unbekannt` bei Metrik-Lesetimeout. **Vor Versuch 3
-(Betreiberentscheidung):** Abflussrate **und** erneute Neutralisierung der 524 inerten Aufträge (§17.8).
+(Betreiberentscheidung):** Abflussrate **und** erneute Neutralisierung *(18.08.: vollzogen, §26.7 — offen bleibt die Abflussrate)*.
 
 **Folge für OP-25:** eine Aktivierung verändert `quellenVereinigung`, die K2.1-Sichtbarkeitsmengen
 und die Laufzeitbilanz ⇒ **OP-25 muss danach von vorn**.
@@ -283,8 +283,8 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
    sich **nicht** (Parallelität bleibt 1), die 524 Aufträge bleiben unberührt. **Stufe 1 des
    Stufenplans** (Zielarchitektur §14: `HELMUT_SCALABLE_PIPELINE`/`…DISPATCH_MODE=shadow`)
    ist davon getrennt und hat **zwei offene Vorbedingungen** (Punkt 2). Nichts ist freigegeben.
-2. **Vor Versuch 3:** die 524 inerten Aufträge neutralisieren (bewiesenes Muster Runbook
-   §17.8/§17.10) und §8.3/§8.4 (Watchdog-Kriterium) queue-tauglich umformulieren.
+2. **Vor Versuch 3 — beides erledigt 18.08.:** §8.3/§8.4 queue-tauglich + Wache V2 (PR #253,
+   §26); die 524 neutralisiert (§26.7, 0/235/0/0). Offen: Abflussrate (§19.4).
 3. Versuch 3 nach Stufenplan (Zielarchitektur §14, Stufe 1: Migrationen `20260813` anwenden +
    `HELMUT_JOB_DISPATCH_MODE=shadow`); beginnt unverändert bei Runbook §6 Schritt 3 mit K0–K3.
    Der CAS-Vertrag ist davon **unabhängig** freigebbar (Runbook §23.1: Migration → Flag →
