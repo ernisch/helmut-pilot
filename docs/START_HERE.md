@@ -4,7 +4,7 @@
 Historie. Für den aktuellen Stand → [`CURRENT_STATE.md`](CURRENT_STATE.md), für die
 Systemkarte → [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
-**Letzte Aktualisierung:** 2026-07-25
+**Letzte Aktualisierung:** 2026-08-17
 
 ---
 
@@ -43,9 +43,10 @@ Neue Funktionen sind nachrangig, solange die P0-Punkte offen sind.
   Seine Identität wird in Code und Doku bewusst **nicht** geführt — siehe §5,
   Prinzip „Mandantenneutralität". Historische Altdokumente und Testfixtures
   enthalten noch den Klarnamen; das ist Alt-Bestand, keine aktive Logik.
-- **Betriebsmodus heute:** Einzelpilot + zwei Demo-Mandate (deren Entfernung ist
-  offener Punkt OP-04). Mehrmandantenbetrieb ist gebaut und getestet, aber vor dem
-  ersten zahlenden Zweitmandanten steht das Freigabepaket **OP-03**.
+- **Betriebsmodus heute:** kontrollierter Mehrmandantenbetrieb mit mehreren aktiven
+  Mandatsprofilen. Die aktuelle Anzahl und der Nachweisstand stehen ausschließlich in
+  [`CURRENT_STATE.md`](CURRENT_STATE.md). Vor dem ersten zahlenden Zweitmandanten bleibt
+  das Freigabepaket **OP-03** verbindlich; deaktivierte Demo-Profile bleiben OP-04.
 
 ## 4 · Produktbereiche
 
