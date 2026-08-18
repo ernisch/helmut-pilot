@@ -315,20 +315,35 @@ Vercel-Runtime-Logs.
 | Warteschlangengröße | fallend je Slot | stagnierend 24 h | wachsend 24 h |
 | Zurückstellquote je Lauf | < 30 % | 30–60 % | > 60 % über zwei Läufe (Leerlaufverdacht) |
 
-### 8.3 Zweiter identischer Lauf
+### 8.3 Zweiter identischer Lauf — **queue-taugliche Fassung (berichtigt 2026-08-17, §19.6 Punkt 1)**
 
-Ein wiederholter Lauf im selben Aktualitätsfenster erzeugt **0 neue KI-Aufrufe**
-(Idempotenzschlüssel + `existing`-Kurzschluss + ergebnisgebundene Reservierung; bewiesen:
-Migrationskette 5.4, `morgenslot-idempotenz-test`, Budgetvertrag Zusage 3/6). In Production
-prüfbar über `global.used` vor/nach dem Watchdog-Pipelinelauf (05:30-Workflow, feuert
-bedingungslos dieselbe Route — er ist damit der **eingebaute tägliche Idempotenztest**).
+> **Die frühere Fassung („ein wiederholter Lauf erzeugt 0 neue KI-Aufrufe") ist für den
+> Warteschlangenpfad falsch** und hat im zweiten Fünferlauf einen korrekten Betrieb als
+> Kriterienverstoß erscheinen lassen (§19.3, Watchdog 13.08.): unter OP-30 ist der
+> Watchdog-Zweitlauf ein **regulärer Drain-Slot** — er arbeitet legitim neuen Rückstand ab
+> und darf dafür selbstverständlich KI-Aufrufe buchen.
+
+Verbindlich ist ab jetzt: ein wiederholter Lauf im selben Aktualitätsfenster erzeugt
+**keine Doppelarbeit** —
+
+1. **0 doppelte Idempotenzschlüssel** (dieselbe Arbeit entsteht nie zweimal;
+   Einreihung meldet `neu=false`),
+2. **0 Doppel-Pushs** (genau 1 Push je Mandat und Tag, Messwert 12),
+3. **Buchungen nur für erstmalige Arbeit**: jeder KI-Aufruf des Zweitlaufs gehört zu einem
+   Auftrag, der zuvor **nicht** erledigt war (R4-Gegenprobe: Buchungen ↔ persistierte
+   Gegenstücke; `existing`-Kurzschluss + ergebnisgebundene Reservierung unverändert bewiesen —
+   Migrationskette 5.4, `morgenslot-idempotenz-test`, Budgetvertrag Zusage 3/6).
+
+In Production prüfbar am Watchdog-Pipelinelauf (05:30-Workflow, feuert bedingungslos
+dieselbe Route): erwartet ist **Drain ohne Dubletten** (wie am 13.08. gemessen: 31 erledigt,
+0 Doppel-Pushs, 0 doppelte Schlüssel), **nicht** „0 neue KI-Aufrufe".
 
 ### 8.4 Kontrollplan nach der Aktivierung
 
 | Kontrolle | Wann | Was |
 |---|---|---|
-| **K0 Sofort** | ≤ 15 min nach Redeploy | Deployment READY trägt den erwarteten Commit; `/api/ops/jobqueue`: `bereit:true` (Gründe leer); keine Runtime-Fehler; `helmut_jobs` noch leer (kein Slot lief) |
-| **K1 Erster voller Lauf** | nach 04:00-crawl + 05:00-briefing + 05:30-Watchdog + 16:00-pipeline | Messwerte 1–15 einmal vollständig erheben; R4-Gegenprobe; Watchdog-Zweitlauf ohne neue KI-Aufrufe (§8.3); Frischebelege 5/5 |
+| **K0 Sofort** | ≤ 15 min nach Redeploy | Deployment READY trägt den erwarteten Commit; `/api/ops/jobqueue`: `bereit:true` (Gründe leer), `altersvertrag="wartezeit"` (§17.5), **`statusvertrag=2` und `zustandsklasse` vorhanden (§26.4)**, **`HELMUT_SCALABLE_PIPELINE_SEIT` gesetzt und `motor.aktivSeit` trägt den Aktivierungszeitpunkt** (sonst zählt Altbestand ab `created_at` — §17.7(d)); keine Runtime-Fehler; `helmut_jobs` leer bzw. exakt der dokumentierte Reststand |
+| **K1 Erster voller Lauf** | nach 04:00-crawl + 05:00-briefing + 05:30-Watchdog + 16:00-pipeline | Messwerte 1–15 einmal vollständig erheben; R4-Gegenprobe; **Watchdog-Zweitlauf ohne Doppelarbeit (§8.3 berichtigte Fassung: 0 doppelte Schlüssel, 0 Doppel-Pushs, Buchungen nur für erstmalige Arbeit)**; Frischebelege 5/5 |
 | **K2 24 h** | +1 Tag | alle Grenzen §8.2 in „Weiterlaufen"; Rückstand < 24 h; Kostenvergleich zur Basis |
 | **K3 72 h** | +3 Tage | drei Tage in Folge alle Grenzen grün ⇒ 5er-Stufe **bestanden**; danach Betreiberentscheidung über OP-25-Wiederholung als Vorbedingung jeder Ausweitung |
 
@@ -1499,6 +1514,14 @@ Idempotenzsperre gegen erneutes Verstehen derselben Dokumentmenge).
 
 ### 17.8 Erforderliche Betreiberaktion vor dem nächsten Versuch
 
+> **Datenschutz-Hinweis (2026-08-17/2, nachträglich):** dieser Abschnitt ist der am
+> 2026-08-12 **bereits ausgeführte** historische Ablauf (§17.10) und bleibt als Beleg
+> unverändert stehen. Für **künftige** Neutralisierungen ist er **nicht** mehr maßgeblich:
+> der hier enthaltene Vollzeilenexport (Schritt 1, `to_jsonb`) schreibt `payload`,
+> `tenant_id`, `idempotency_key` und `last_error` in eine Datei und ist aus dem aktuellen
+> Betreiberablauf **entfernt**. Verbindlich ist **§26.2** (kein Export; Rückweg =
+> deterministische Neuerzeugung).
+
 **In dieser Reihenfolge, vollständig, sonst kein zweiter Versuch.** Alles hiervon ist
 freigabepflichtig (CLAUDE.md §5); diese Sitzung hat **nichts davon ausgeführt**.
 
@@ -2518,7 +2541,7 @@ Es gibt zwei Kandidaten. Empfohlen ist **A**.
 | Aktion | `HELMUT_VERSTEHEN_CAS=on` + Redeploy | `HELMUT_SCALABLE_PIPELINE=on` + `HELMUT_JOB_DISPATCH_MODE=shadow` + Redeploy |
 | Wirkung auf den Durchsatz | **keine** — Parallelität bleibt hart auf 1 geklemmt | Aufträge entstehen wieder; Schattenversand beginnt |
 | Berührt die 524 inerten Aufträge | **nein** | ja — Neutralisierung **vorher** nötig (§17.8) |
-| Offene Vorbedingungen | **keine** | **zwei**: 524 neutralisieren · §8.3/§8.4 (Watchdog-Kriterium) queue-tauglich fassen (§19.6) |
+| Offene Vorbedingungen | **keine** | **zwei** (§19.6; Stand 2026-08-17: §8.3/§8.4 sind queue-tauglich berichtigt und die Neutralisierung ist vollständig vorbereitet und lokal bewiesen — §26; offen bleibt ihre **Ausführung** als freigabepflichtige Betreiberaktion) |
 | Rückweg | Flag leeren + Redeploy, eine Minute | Flag leeren + Redeploy, danach Wirkungsnachweis wie §19.5 |
 | Kostenrisiko | keine zusätzlichen Modellaufrufe (der Vertrag erzeugt keinen) | Abflussrate-Entscheidung steht noch aus (§19.4) |
 
@@ -2603,3 +2626,225 @@ Keine Parallelität > 1 (§23.1 Schritt 3), keine Neutralisierung der 524 Auftr�
 AWS-Aktion, keine Anhebung des KI-Deckels, keine Ausweitung über 5 Mandate, keine Anwendung
 von `20260720`, kein Versuch 3 des Fünferlaufs. **Helmut bleibt nicht für 25–500 Mandate
 freigegeben**; bindend bleiben KI-Tagesdeckel und OP-15 (§23.4).
+
+## §26 · Neutralisierung der 524 Altaufträge + Warteschlangenwache V2 (Sprint 2026-08-17)
+
+**Sprintzustand: erfolgreich abgeschlossen (lokal bewiesen; Production unangetastet).**
+Dieser Sprint löst die beiden §19.6-Blocker vor dem dritten Fünferlauf: (1) ein sicherer,
+wiederholbarer, belegbarer Neutralisierungsweg für die 524 inerten wartenden Aufträge ist
+vollständig vorbereitet und an echter PostgreSQL bewiesen — **nichts davon wurde gegen
+Production ausgeführt**; (2) §8.3/§8.4 sind queue-tauglich berichtigt und `betriebsstatus`
+trägt einen neuen, maschinenprüfbaren Wachvertrag mit neun Zustandsklassen. Alle Zugriffe
+auf Production waren rein lesend (nur technische Metadaten und Zählwerte).
+
+### §26.1 Teil A — Herkunft und exakte Abgrenzung der 524 Aufträge (rein lesend, 2026-08-17)
+
+**Gesamtbild (gemessen ~18:20 UTC):** 759 Zeilen = **524 wartend · 235 erledigt · 0 laufend ·
+0 fehlgeschlagen**, 0 offene Leases; Gesamtsignatur
+(`md5(string_agg(id||'|'||status||'|'||job_type||'|'||attempts, ',' order by id))`, §24.7)
+**`a069f91fde4547493796395f2c989497`** — byte-identisch zu §24.10/§24.11 und §25.2. Der
+Anker ist damit weiterhin gültig.
+
+**Die 524 wartenden Aufträge — Herkunft eindeutig belegt:**
+
+| Merkmal | Befund |
+|---|---|
+| Entstehungsfenster | **alle 524** zwischen 2026-08-12 20:00:15 und 2026-08-13 16:07:05 UTC — exakt die fünf Läufe des zweiten Aktivierungsversuchs (§19.3); 524/524 im Fenster [Aktivierung 18:50 12.08., Rücknahme 16:27 13.08.] |
+| Typen | 365 `source_fetch` (354 geteilt · 10 `person-archiv` · 1 `person-aktuell`) · 139 `document_understanding` · 10 `mandate_projection` · 10 `briefing_materialization` — deckungsgleich mit Zielarchitektur §13 |
+| Mandate | 493 global (kein Mandat) · 31 mandatsgebunden auf genau die 5 aktiven Mandate |
+| Versuche | 515× `attempts=0` · 7× `1` · 2× `2` |
+| Zurückstellgründe | 140 mit technischem `last_error`: 124× `zurueckgestellt: verstehen-uebersprungen` · 11× `zurueckgestellt: zeitbudget-deckel` · 5 Einzel-Timeouts/Storage — keine unbekannte Fehlerklasse |
+| Inertheit | 0 Leases, jüngstes `updated_at` **2026-08-13 16:07:11 UTC** — seit der Rücknahme hat nichts sie angefasst; das Flag ist wirkungsbelegt aus (§19.5, §24.11) |
+
+**Die 235 erledigten Aufträge gehören NICHT zur Zielmenge:** 55 aus dem Erstlauf (erzeugt
+11.08., §17.7) + 180 aus dem Zweitlauf (erzeugt 12./13.08., erledigt bis 13.08. 16:07:05);
+0 davon seit dem 13.08. verändert. Es existieren nur die zwei Statusarten `wartend`/`erledigt`
+— keine laufenden, keine fehlgeschlagenen, keine neuen Aufträge. Politische Inhalte wurden
+weder gelesen noch exportiert (ausschließlich Zähler, Zeitstempel, Prüfsummen, Typnamen).
+
+**Zusätzliche unveränderliche Anker für die Zielmenge** (erhoben 2026-08-17, Eingaben des
+Neutralisierungsvertrags — nie Selbstauskunft des Skripts):
+
+| Anker | Wert |
+|---|---|
+| ID-Ketten-md5 der 524 wartenden (sortierte IDs, Komma) | `59af8c9e9e61631f30fc9e968c14de7c` |
+| Signatur nur der 235 erledigten (gleiche Formel) | `f7989b8cc2828acb99f26148a405999f` |
+| Zeitgrenze der Zielmenge | `created_at < 2026-08-13 16:30:00+00` (strikt nach dem jüngsten Zielauftrag 16:07:05, vor jeder möglichen neuen Arbeit) |
+
+### §26.2 Teil B — der Neutralisierungsvertrag (vorbereitet, bewiesen, NICHT ausgeführt)
+
+**Gewählte Lösung: die geschützte Löschung in einer Transaktion.** Aus dem historischen
+Ablauf §17.8/§17.10 übernommen sind **ausschließlich** das Transaktionsmuster, die
+Sicherheitsriegel, der Trockenlauf als Standard und die Nachkontrolle. **Ein Vollzeilenexport
+ist ausdrücklich NICHT Teil des aktuellen Verfahrens** (Datenschutzkorrektur weiter unten);
+der Rückweg besteht **ausschließlich** in der deterministischen Neuerzeugung der benötigten
+Arbeit durch den Planer. §17.8 bleibt nur als historischer Beleg des am 12.08. vollzogenen
+Eingriffs stehen und ist **keine aktuelle Betreiberanweisung**. Kein neuer Status, keine
+neue Migration — Löschen bleibt aus denselben Gründen richtig wie damals (kein Datenverlust:
+die Arbeit entsteht fensterfrisch neu, Zielarchitektur §13).
+
+**Eine Quelle, drei Nutzer:** `lib/helmut/jobqueue-neutralisierung.js` erzeugt das gesamte
+SQL (Vertragsprüfung fail closed); `scripts/jobqueue-neutralisierung-524.js` druckt es für
+den Betreiber (**verbindet sich nirgendwohin**); `scripts/jobqueue-neutralisierung-datenbank-test.js`
+führt exakt dieses SQL an einer wegwerfbaren lokalen PostgreSQL aus — weicht dieses Runbook
+vom Modul ab, wird die Suite rot (sie prüft die Anker aus §26.1 gegen diese Datei).
+
+**Die Sicherheitsriegel (jeder einzelne bricht die gesamte Transaktion ab):** R1 exakte
+Statusverteilung 524/235/0/0 (gesamt 759) · R2 keine offene Lease · R3 exakte Gesamtsignatur
+· R4 exakte ID-Kette der Zielmenge · R5 Erledigt-Signatur vor UND nach der Löschung
+unverändert · R6 keine wartende Zeile neuer als die Zeitgrenze · R7 exakte Typverteilung
+(365/139/10/10) · R8 Löschanzahl exakt 524 (`get diagnostics`, nach dem Delete, in der
+Transaktion) · R9 Nachzustand 0/235 noch in der Transaktion · R10 `serializable` +
+`for update`-Sperre der Zielzeilen ab der ersten Prüfung — die erneute Prüfung liegt
+**innerhalb derselben Transaktion unmittelbar vor der Änderung**, eine konkurrierende
+Änderung zwischen Vorprüfung und Commit endet als Abbruch, nie als Teilzustand · R11 **der
+Standardmodus ist der Trockenlauf und endet bauartbedingt im Rollback** (er schließt mit
+`raise exception 'TROCKENLAUF-OK…'` — ein Commit ist in diesem Modus unmöglich).
+
+**Wiederholbarkeit:** nach erfolgreicher scharfer Ausführung erkennt jeder weitere Lauf den
+Zustand an der Erledigt-Signatur und bricht mit `ABBRUCH-BEREITS-NEUTRALISIERT` ab, ohne
+Änderung. **Laufquittung:** jede Ausführung (auch der Trockenlauf) liefert eine jsonb-Quittung
+mit Verfahren, Modus, UTC-Zeit, Löschanzahl, Grenze, allen drei Prüfsummen und Ergebnis —
+ausschließlich technische Werte.
+
+**Rückweg = deterministische Neuerzeugung — KEIN Export (Datenschutzkorrektur 2026-08-17/2).**
+Die erste Fassung dieses Abschnitts sah als Schritt 1 einen Vollzeilenexport (`to_jsonb`)
+vor. Der hätte `payload`, `tenant_id`, `idempotency_key` und `last_error` — und damit
+politische bzw. personenbeziehbare Inhalte — aus Production in eine Datei geschrieben, im
+Widerspruch zum eigenen Vertrag („nur technische Werte und Prüfsummen"). **Der Exportschritt
+ist ersatzlos gestrichen** (aus Modul, CLI und Suite entfernt; das Modul verweigert
+bauartbedingt jedes SQL, das eine der vier sensiblen Spalten oder ein Vollzeilenkonstrukt
+enthält). Der Rückweg ist stattdessen **funktional**: die Zielmenge ist belegt inert und
+fensterveraltet; der Planer erzeugt beim nächsten regulären Lauf exakt die dann benötigte
+Arbeit deterministisch neu — gleiche Schlüsselbildung, „kein Datenverlust durch
+Neutralisierung" (Zielarchitektur §13). **Das ist ausdrücklich KEIN byte-identischer
+Restore:** `created_at`/`attempts`/Fehlertexte der gelöschten Zeilen sind danach weg — und
+das ist gewollt, denn ein byte-identischer Rücktransport würde genau die drei §17.7-Fallen
+(Doppelverarbeitung, 48-h-Frist, sofortige Überalterung) wiederherstellen, die die
+Neutralisierung beseitigt. Ein byte-identischer Restore ist deshalb **nicht erforderlich**;
+eine serverseitige Sicherungslösung samt Migration braucht es nicht — sie würde dieselben
+sensiblen Inhalte nur an einen zweiten Ort kopieren, ohne betrieblichen Nutzen.
+
+**Betreiberablauf (freigabepflichtig, CLAUDE.md §5 — Reihenfolge bindend):**
+
+| Schritt | Aktion | Werkzeug |
+|---|---|---|
+| Vorbedingungen | `HELMUT_SCALABLE_PIPELINE=off` am laufenden Deployment geprüft · kein schwerer Cronslot aktiv · Anker §26.1 unverändert | rein lesend |
+| 0 | Vorprüfung: Verteilung, Leases, alle drei Anker, Grenze | `node scripts/jobqueue-neutralisierung-524.js --vorpruefung` |
+| 1 | **Trockenlauf (Standard)** — alle Riegel, garantiertes Rollback, Quittung | `… ` (ohne Argument) |
+| 2 | Scharfe Ausführung — nur nach bestandenem Trockenlauf | `… --scharf` |
+| Gegenprobe | 0 offen · 235 gesamt · Erledigt-Signatur `f7989b8c…` (steht am Ende der scharfen Ausgabe) | rein lesend |
+| Rückweg | keiner nötig: der nächste reguläre Planungslauf erzeugt die benötigte Arbeit fensterfrisch neu (funktional, nicht byte-identisch — siehe oben) | — |
+
+Danach (getrennte Schritte des Versuchs 3, nicht Teil der Neutralisierung):
+`HELMUT_SCALABLE_PIPELINE_SEIT=<Aktivierungszeitpunkt ISO-8601>` setzen (§26.4) und weiter
+nach Stufenplan (Zielarchitektur §14, Runbook §6/K0–K3).
+
+### §26.3 Nachweise Teil B (echte PostgreSQL 16.13, wegwerfbare Datenbank, 2026-08-17; Datenschutzkorrektur /2)
+
+`scripts/jobqueue-neutralisierung-datenbank-test.js` — **55 PASS / 0 FAIL** gegen das
+Production-Bestandsbild (524/235, gleiche Typ-/Mandats-/Versuchs-/Fehlertextverteilung),
+darunter alle Pflichtfälle: Trockenlauf exakt und folgenlos · 235 Erledigte **byte-identisch**
+(md5 über alle Spalten, auch `updated_at`) · abweichende Signatur blockiert · neue Zeile
+blockiert (R1) · zählungsneutraler Zeilentausch blockiert (R6) · offene Lease blockiert (R2)
+· laufender/fehlgeschlagener Auftrag blockiert (R1) · konkurrierende Statusänderung zwischen
+Vorprüfung und Transaktion blockiert · Wiederholung nach Erfolg sicher
+(`ABBRUCH-BEREITS-NEUTRALISIERT`) · **funktionaler Rückweg belegt** (ein neutralisierter
+Schlüssel ist wieder frei und wird fensterfrisch neu erzeugt; ein erledigter Schlüssel
+dedupliziert weiter; ausdrücklich kein byte-identischer Restore) · **Mutationsproben:** R2
+entfernt ⇒ Löschung liefe trotz Lease durch (Riegel tragend) · R3 entfernt ⇒ Feldmutation
+unbemerkt (Riegel tragend) · R8 mit falscher Erwartung nimmt eine vollzogene Löschung
+vollständig zurück · **Datenschutzvertrag testgesichert:** kein Exportweg mehr im Modul;
+kein erzeugtes SQL liest `payload`/`tenant_id`/`idempotency_key`/`last_error` oder ein
+Vollzeilenkonstrukt; fünf Wiedereinführungs-Muster werden zuverlässig abgelehnt; **Kanarien
+in allen vier sensiblen Spalten erscheinen in keiner einzigen Ausgabe** des gesamten
+Betreiberwegs (gesammelt über alle Läufe der Suite). Die historische §17.8-Suite bleibt
+unverändert grün (**31 PASS**) — sie belegt den bereits am 12.08. ausgeführten Alt-Ablauf,
+der für künftige Neutralisierungen **nicht** mehr maßgeblich ist (siehe Hinweis in §17.8).
+
+### §26.4 Teil C — Warteschlangenwache V2 (`betriebsstatus`, `statusvertrag: 2`)
+
+**Ursache der beiden Fehlbefunde:** (a) bei `HELMUT_SCALABLE_PIPELINE=off` las die Wache
+dieselben Schwellen wie im Betrieb und meldete den inerten 524er-Bestand als `kritisch` —
+niemand holt diese Aufträge ab, die 24-h-Marke ist dort bedeutungslos (§19.5); zugleich wäre
+„gruen" gelogen (niemand arbeitet). (b) nach einer Reaktivierung zählte die Wartezeit ab
+`created_at`, auch wenn der Auftrag nachweislich nie ausführbar war (dritte Falle §17.7(d)).
+
+**Der neue Vertrag** (implementiert in `lib/helmut/scalable-pipeline.js`; Ausgabe über
+`/api/ops/jobqueue`): `zustand` bleibt die Schweregrad-Ampel (`gruen|warnung|kritisch|
+unbekannt`, **neu: `inaktiv`** nur bei Motor aus — versioniert über `statusvertrag: 2`);
+**`zustandsklasse`** ist die maschinenlesbare Diagnose, **`betreiberaktion`** die zugehörige
+Handlungsanweisung. Neue Kennzahlen: `rohesAlterS`, `abgelaufeneLeases`,
+`zurueckgestellt.nachGrundklasse`, `motor.aktivSeit`.
+
+| # | `zustandsklasse` | Messgrundlage · Zeitbezug | Schwelle | `zustand` | Betreiberaktion | Abbruchgrenze |
+|---|---|---|---|---|---|---|
+| 1 | `inaktiv-inert` | Flag aus; Bestand `wartend+laufend` | — | **inaktiv** | keine; vor Reaktivierung neutralisieren (§26.2) + `…_SEIT` setzen | keine (kein Betrieb) |
+| 2 | `aktiv-keine-faellige-arbeit` | Flag an; 0 fällige wartende, 0 laufende | — | gruen | keine | — |
+| 3 | `aktiv-gesund` | fällige Arbeit + Abfluss; effektive Wartezeit | < 18 h | gruen | keine | — |
+| 4 | `aktiv-verzoegert` | effektive Wartezeit bzw. überfällige Mandate | ≥ 18 h bzw. > 0 | warnung | beobachten, Ursache klären (§8.2) | — |
+| 5 | `aktiv-festgefahren` | Wartezeit ≥ 24 h **ohne** Abfluss im Fenster, oder endgültige Fehler > 0 | ≥ 24 h / > 0 | kritisch | sofort stoppen + zurücknehmen (§7) | ja (§8.2) |
+| 6 | `aktiv-lease-ohne-fortschritt` | `laufend − aktive_leases` (abgelaufene Leases) | > 0 | ≥ warnung | nächsten Slot abwarten; wiederholt: Verbraucher prüfen | über Wartezeitpfad |
+| 7 | `aktiv-ueberfaellig-trotz-abfluss` | Wartezeit ≥ 24 h **mit** Abfluss (der reale §19.4-Befund) | ≥ 24 h | kritisch | Abflussrate erhöhen oder zurücknehmen (§19.4) | ja (§8.2) |
+| 8 | `aktiv-abhaengigkeit-oder-anbietergrenze` | dauerhaft Blockierte > 0, oder ≥ 50 % der wartenden mit Schloss-/Vorbedingungs-/Budget-/Anbieter-Grund bei Verzögerung | > 0 / ≥ 0,5 | wie 4/5/7 | Abhängigkeit/Deckel prüfen — **nicht** den Verbraucher neu starten | dauerhaft blockiert: ja |
+| 9 | `unbekannt` | Metrik unlesbar, negative/nicht-numerische Zähler, `aktive_leases > laufend`, `…_SEIT` in der Zukunft | — | unbekannt | **geschlossen blockieren**: keine Entscheidung auf dieser Messung | Aktivierung/Weiterlauf nein |
+
+**Zeitbezug der Betriebsgrenze (Ergänzung zu §17.5):** die effektive Wartezeit ist
+`min(Wartezeit ab max(created_at, first_due_at), jetzt − HELMUT_SCALABLE_PIPELINE_SEIT)`.
+Der Betreiber erklärt den Aktivierungszeitpunkt beim Einschalten des Flags; ein während der
+Abschaltung entstandener (nachweislich nicht ausführbarer) Auftrag zählt damit ab
+Ausführbarkeit, nicht ab Erstellungsdatum — und sobald er ausführbar ist, läuft die
+18-h-/24-h-Frist unverkürzt. Ohne die Variable gilt die rohe Wartezeit (Fehlalarm zulässig,
+falsches Grün nie); die Klemmung ist immer als Befund `wartezeit-ab-aktivierung:…` sichtbar,
+`rohesAlterS` bleibt daneben stehen; ein Zeitpunkt in der Zukunft ist Klasse 9.
+**Ein echter Rückstau wird nie verharmlost:** bei aktivem Motor gelten die §8.2-Schwellen
+unverändert quer durch alle Diagnoseklassen (Sweep-Beweis §26.5); Fälligkeitsrückstand
+(`max_mandatsalter_s`, OP-15) wird unverändert weiter gemeldet.
+
+**Rückwärtskompatibilität:** alle V1-Felder und -Kennzahlen bleiben nach Name und Bedeutung
+erhalten; neue Felder sind additiv; der einzige neue `zustand`-Wert `inaktiv` tritt
+ausschließlich bei Motor aus auf und ist über `statusvertrag: 2` als Vertragsänderung
+gekennzeichnet. Verschärft (bewusst, fail closed): eine fehlende Blockierten-Sicht ist keine
+grüne Zusage mehr (höchstens `warnung`), Widersprüche enden in `unbekannt` statt in einer
+gerechneten Ampel. Messgrundlage Klasse 8: neue rein lesende Storage-Funktion
+`jobQueueZurueckgestellteGruende` (nur `last_error`-Texte, keine Nutzdaten).
+
+### §26.5 Nachweise Teil C (offline, 2026-08-17)
+
+`scripts/warteschlangenwache-vertrag-test.js` — **65 PASS / 0 FAIL**: alle neun Klassen ·
+Motor aus + 524 inert ⇒ ehrlich `inaktiv` (nie gruen, nie kritisch) · Schwellen exakt bei
+18 h/24 h (≥, nicht >) · Aktivierungsklemme §17.7(d) (5 Tage alter, nie ausführbarer Auftrag
+bei frischer Aktivierung gruen; nach 19 h Warnung, nach 25 h kritisch) · hängende Lease
+erkannt, aktive Leases kein Befund (Slotende-Normalfall §19.3) · Anbieterlimit/Abhängigkeit
+getrennt vom festgefahrenen Verbraucher (Betreiberaktion zeigt auf den Deckel) ·
+Unbekanntes/Widersprüchliches blockiert geschlossen · **Verharmlosungs-Sweep: alle 12
+Konstellationen mit 25-h-Rückstau melden kritisch** · V1-Feldkompatibilität vollständig ·
+Mutationsproben (dauerklemmende `SEIT`-Variable bleibt sichtbar; identische Kennzahlen kippen
+nur mit dem Flag; Grenzwert-Paare; Diagnose eskaliert nie künstlich). Bestehende Suiten
+unverändert grün: `jobqueue-alter-test` 59 · `jobqueue-vertrag-test` **125** (mit DB-Teil an
+echter PostgreSQL; §8 stellt der Wache jetzt ausdrücklich Blockierten- und Grund-Attrappen
+bereit, weil eine Messlücke seit V2 keine grüne Zusage mehr ist) ·
+`op30-aktivierungsreife-test` 55 (3 OFFEN, Bestand) · `anbieterausfall-test` 17 ·
+`skalierung-1000-test` 70 (2 OFFEN, Bestand) · `scalable-pipeline-flag-test` 52.
+
+**Gesamtläufe (lokal, 2026-08-17):** kanonische Offline-Suite **260/264 Suiten grün**
+(841 s; die 4 roten — `privacy-vollstaendigkeit`, `profile-db`, `provision-tenant`,
+`tenant-neutrality` — sind **identisch** auf unverändertem `main`-Stand `51d0e80` rot:
+258/262, gleiche Namen; dokumentiertes lokales Basisrot §17.6, im CI grün) ·
+Migrationsorganisation **23 PASS** · CURRENT_STATE-Größe **4 PASS** ·
+Browser-/Mobile-Smoke (Chromium, `HELMUT_REQUIRE_BROWSER=1`) **32 PASS / 0 FAIL** ·
+DB-Suiten an echter PostgreSQL 16.13: `jobqueue-datenbank` 55 · `jobqueue-alter-datenbank`
+26 · `jobqueue-ruecknahme-datenbank` 31 · `jobqueue-wiedervorlage-datenbank` 48 ·
+`jobqueue-outbox-datenbank` 37 · `jobqueue-narrativ-datenbank` 27 ·
+`jobqueue-mutationsprobe` **10/10 ROT** (erkannt) · `queue-ende-zu-ende` 53 ·
+`lambda-paket` 43.
+
+### §26.6 Nicht getan (Verbote eingehalten)
+
+Kein Auftrag der 759 gelesen (nur Aggregatwerte), verändert, reserviert, beansprucht oder
+gelöscht · keine Migration angewendet · kein Flag, keine Env-Variable, kein Deployment,
+kein Cronlauf, kein Timer, keine Wache, kein Abo · keine politischen oder personenbezogenen
+Inhalte gelesen oder exportiert · PR #252 nicht berührt (CURRENT_STATE.md/START_HERE.md in
+diesem Sprint bewusst unverändert) · Production, Supabase Production, Vercel und AWS
+unangetastet. Der Neutralisierungsweg wurde **ausschließlich** gegen die wegwerfbare lokale
+Datenbank `helmut_test_neutralisierung` ausgeführt.

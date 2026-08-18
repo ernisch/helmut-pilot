@@ -335,14 +335,23 @@ async function main() {
     const q = erzeugeSpeicherWarteschlange({ now: u.jetzt });
     await q.enqueue(auftrag({ idempotencyKey: "M1" }));
     await q.enqueue(auftrag({ idempotencyKey: "M2", jobType: "mandate_projection", tenantId: "m-a", payload: { mandatsId: "m-a" } }));
-    let status = await SP.betriebsstatus({ env: AN, deps: { metrics: q.metrics } });
+    // Warteschlangenwache V2 (2026-08-17): eine fehlende Blockierten-Sicht ist keine gruene
+    // Zusage mehr — die Messgrundlagen werden hier deshalb ausdruecklich bereitgestellt,
+    // damit dieser Abschnitt weiterhin die SCHWELLEN prueft (die Messluecken-Eskalation
+    // selbst prueft scripts/warteschlangenwache-vertrag-test.js §8.2).
+    const messDeps = (metrics) => ({
+      metrics,
+      blockierte: async () => ({ verfuegbar: true, blockiert: 0, nachTyp: {} }),
+      zurueckgestellte: async () => ({ verfuegbar: true, anzahl: 0, texte: [] })
+    });
+    let status = await SP.betriebsstatus({ env: AN, deps: messDeps(q.metrics) });
     check("8.1 Frische Warteschlange ist gruen", status.zustand === "gruen", JSON.stringify(status.befunde));
     check("8.2 Das Flag wird ehrlich mitgemeldet", status.flag === "on");
     u.vor(19 * 3600 * 1000);
-    status = await SP.betriebsstatus({ env: AN, deps: { metrics: q.metrics } });
+    status = await SP.betriebsstatus({ env: AN, deps: messDeps(q.metrics) });
     check("8.3 Nach 19 h wird gewarnt (VOR 24 h)", status.zustand === "warnung", `${status.zustand} ${JSON.stringify(status.befunde)}`);
     u.vor(6 * 3600 * 1000);
-    status = await SP.betriebsstatus({ env: AN, deps: { metrics: q.metrics } });
+    status = await SP.betriebsstatus({ env: AN, deps: messDeps(q.metrics) });
     check("8.4 Ab 24 h ist der Zustand kritisch", status.zustand === "kritisch", status.zustand);
     check("8.5 Ueberfaellige Mandate werden benannt", status.kennzahlen.ueberfaelligeMandate === 1);
     // Ein endgueltiger Fehler ist IMMER kritisch.
@@ -351,7 +360,7 @@ async function main() {
     await q2.enqueue(auftrag({ idempotencyKey: "E", maxAttempts: 1 }));
     const c = await q2.claim({ owner: "w", limit: 1, leaseMs: 1000 });
     await q2.finish({ id: c.auftraege[0].id, owner: "w", ok: false, error: "endgueltig" });
-    const s2 = await SP.betriebsstatus({ env: AN, deps: { metrics: q2.metrics } });
+    const s2 = await SP.betriebsstatus({ env: AN, deps: messDeps(q2.metrics) });
     check("8.6 Ein endgueltiger Fehler macht den Zustand sofort kritisch", s2.zustand === "kritisch", s2.zustand);
     // Nicht lesbare Warteschlange ist NICHT gruen.
     const s3 = await SP.betriebsstatus({ env: AN, deps: { metrics: async () => ({ verfuegbar: false, grund: "migration-fehlt" }) } });
