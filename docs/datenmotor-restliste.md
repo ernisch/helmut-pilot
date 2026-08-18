@@ -1550,6 +1550,18 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   `verstehen` bleibt Parallelitaet 1 und OP-15 (Google-Drosselung) bleibt ab ~10 Mandaten
   Blocker. **OP-30 bleibt insgesamt offen** — die Aktivierung ist eine Betreiberentscheidung.
 
+- **Stand 2026-08-18 (Vollzug der Neutralisierung — AUSGEFÜHRT, Betreiberfreigabe; Beleg
+  Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md)
+  §26.7):** Die 524 inerten Altauftraege sind am 2026-08-18 ~07:11 UTC ueber den kanonischen
+  Weg (§26.2: Vorpruefung → Trockenlauf → scharfe serialisierbare Transaktion) neutralisiert.
+  Alle Riegel R1–R11 trafen exakt; Trockenlauf endete mit dem dokumentierten
+  `TROCKENLAUF-OK` und war belegt folgenlos; **exakt 524 geloescht**, Warteschlange danach
+  **0/235/0/0**, die 235 erledigten byte-signaturgleich unangetastet; CAS-Kennzahlen
+  byte-gleich vorher/nachher (45/45/0/0, 45 fencing); kein Cron, kein KI-Aufruf, kein
+  Deployment, keine Migration, kein Flag; kein Export (nur Zaehler/Zeit/Pruefsummen).
+  **Damit ist von den zwei §19.6-Vorbedingungen fuer Versuch 3 auch die zweite erfuellt**;
+  offen bleiben Abflussraten-Entscheidung (§19.4) und Stufenplan-Freigabe (Stufe 1).
+  OP-30 insgesamt bleibt offen.
 - **Stand 2026-08-17 (Sprint „Neutralisierung + Warteschlangenwache" — ERFOLGREICH
   abgeschlossen, lokal belegt; OP-30 insgesamt bleibt offen; Beleg Runbook
   [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §26):**
