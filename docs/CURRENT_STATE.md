@@ -1,13 +1,17 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-17.** OP-25 ist für die aktuelle Fünf-Mandate-Architektur bestanden;
+**Stand: 2026-08-18.** OP-25 ist für die aktuelle Fünf-Mandate-Architektur bestanden;
 OP-31 ist bestanden. Die OP-30-Zielarchitektur und der atomare Verstehensvertrag sind
-gemergt. Alle fünf OP-30-Migrationen sind in Production angewendet und laufzeitbelegt
-inert; alle neuen Motor-Flags bleiben aus, der Altpfad ist aktiv. Der nächste Schritt
-ist eine eigene Betreiberentscheidung über die erste kontrollierte CAS-Aktivierung (§11).
+gemergt, alle fünf OP-30-Migrationen sind in Production angewendet. **`HELMUT_VERSTEHEN_CAS`
+ist seit 17.08. eingeschaltet und laufzeitgeprüft** (§7a); die Verstehensparallelität wirkt
+weiterhin als **1**. Die 524 inerten Altaufträge sind am 18.08. **neutralisiert** — die
+Warteschlange steht bei **0 wartend / 235 erledigt / 0 laufend / 0 fehlgeschlagen**. Der
+**neue Motor bleibt ausgeschaltet**, Versuch 3 ist nicht gestartet; die einzige offene
+Vorbedingung dafür ist die **Abflussraten-Entscheidung** (§11).
 
-Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand. Die vollständige
-Fassung vor dieser Verdichtung liegt verlustfrei in
+Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000
+Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die
+vollständige Fassung vor dieser Verdichtung liegt verlustfrei in
 [`archive/project_state/2026_08_17_CURRENT_STATE_full.md`](archive/project_state/2026_08_17_CURRENT_STATE_full.md).
 Ablageregeln: [`archive/README.md`](archive/README.md), `CLAUDE.md` §9.
 
@@ -20,15 +24,15 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 ## 2 · Stand auf `main`
 
-- **HEAD `51d0e80`** = Merge **PR #251** am 2026-08-16. Der PR änderte nur
-  `docs/CURRENT_STATE.md`, das OP-30-Aktivierungs-Runbook und den CAS-Nachweis:
-  Laufzeitinertheit der fünf Migrationen bestätigt, Betreiberplan §25 ergänzt.
-- Der PR-Head `4289261` hatte grüne Pflicht-CI und einen grünen Vercel-Status; keine
-  formale Review. Das Production-Deployment auf `51d0e80` wurde am 16.08. als READY
-  belegt. Danach ist auf `main` kein weiterer Commit vorhanden.
-- Relevante Vorgänger: **#250/#249** Migrationsorganisation und Transaktionsschutz,
-  **#248** CAS, **#247** Zielarchitektur. Merge nach `main` löst automatisch ein
-  Production-Deployment aus.
+- **HEAD `4072064`** = Merge **PR #254** am 2026-08-18: Vollzugsbeleg der
+  Neutralisierung (Runbook §26.7).
+- **PR #253** (davor, `0d9cf62`) lieferte den **datensparsamen Neutralisierungsweg**
+  (`lib/helmut/jobqueue-neutralisierung.js`, Riegel R1–R9, kein Export) und die
+  **Warteschlangenwache V2** (`betriebsstatus`, `statusvertrag: 2`, Runbook §26.4).
+- **PR #251** (`51d0e80`) bestätigte die Laufzeitinertheit der fünf Migrationen und
+  ergänzte den Betreiberplan §25. Relevante Vorgänger: **#250/#249**
+  Migrationsorganisation und Transaktionsschutz, **#248** CAS, **#247** Zielarchitektur.
+- Merge nach `main` löst automatisch ein Production-Deployment aus.
 
 ## 3 · Production-Zustand
 
@@ -52,9 +56,11 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
   UTC · 2 Narrativ-Nachlaufslots 06:10/06:22, inert). **Dazu** der GitHub-Actions-Watchdog
   (`briefing-watchdog.yml`, täglich 05:30 UTC bedingungslos, oft 2–3 h verzögert): kein
   Störfall, aber im Aufbewahrungsvertrag nicht modelliert (→ K3/K7).
-- **Migrationen:** die **fünf OP-30-Dateien sind am 15.08. angewendet** (§7e, Runbook §24.10;
+- **Migrationen:** die **fünf OP-30-Dateien sind am 15.08. angewendet** (§7a, Runbook §24.10;
   Einträge `20260815163732`–`20260815164241`). **Offen ist nur noch `20260720`** (OP-03).
-  Alle neuen Strukturen sind leer und wirkungslos, solange die Flags aus sind.
+  Die Strukturen des Schattenpfads (Outbox, Klassengrenzen, Anbietersteuerung) sind leer
+  und wirkungslos, solange die Motor-Flags aus sind; die CAS-Tabellen werden seit dem
+  17.08. produktiv genutzt (§7a).
 - **Kosten:** LLM ~0,14 USD/Betriebstag (Untergrenze, Preisbasis unbelegt,
   [`betrieb/kostenmessung.md`](betrieb/kostenmessung.md)); Nachweisfenster 0,1892 USD.
 - **Zugangsgrenze jeder Claude-Sitzung (gemessen 2026-08-12, am 15.08. bestätigt):** Supabase
@@ -73,6 +79,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | `HELMUT_PROCESS_RUNS_RELATIONAL=on` | seit 2026-07-27, Dual-Write belegt (W-2 geschlossen) |
 | `HELMUT_ATOMIC_LOCK` | an — atomare, fail-closed Sperren (Token-belegt) |
 | LLM-Tagesbudget 100 + Reserve 30 | fail-closed, live |
+| **`HELMUT_VERSTEHEN_CAS=on`** | **seit 2026-08-17** (Betreiber). Atomarer Verstehensvertrag aktiv: ein Besitzer je Vorgang, at-most-once je Modellaufruf, monotones Fencing. Laufzeitgeprüft (§7a). **`HELMUT_VERSTEHEN_PARALLELITAET` nicht gesetzt ⇒ Parallelität wirkt als 1**; > 1 ist eine eigene Freigabe (Runbook §23.1 Schritt 3) |
 
 ## 5 · Deaktivierte Funktionen (bleiben aus, Aktivierung = Freigabe)
 
@@ -81,8 +88,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **`HELMUT_CRON_GLOBALABRUF`** | **`on`** seit 2026-08-06 ~08:15 UTC (Betreiber, für das Nachweisfenster) ⇒ **Kontextpfad aktiv**, laufzeitbelegt (drei Fensterläufe 06./07.08. global auf `d8bf68fa…`, E3 `nv=0`). Ob es `on` bleibt, ist Betreiberentscheidung. Dritter Zyklus |
 | **Berlin (Landesmodul)** | inaktiv. `HELMUT_LANDESMODULE=berlin` seit 2026-07-26 gesetzt, aber **wirkungslos**: 0 berechtigte Berliner Mandate seit dem Rollback ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22). Ob das Flag wirkt, ist **unbewiesen** |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt); PR #132 vor Merge Gate-Name vereinheitlichen |
-| **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **`off`, wirkungsbasiert belegt** (Rücknahme des zweiten Versuchs 2026-08-13 16:27Z; crawl 20:00 UTC lief vollständig über den Altpfad, `pg_stat helmut_jobs` 939/1765/180 unverändert — Runbook §19.5). **524 wartende Aufträge stehen inert** (niemand holt sie ab, keine Kosten); vor einem dritten Versuch: Abflussrate-Entscheidung + erneute Neutralisierung (Runbook §19.6) |
-| **`HELMUT_VERSTEHEN_CAS` (OP-30 CAS)** | **aus** (nirgends gesetzt). Ohne das Flag laeuft der Karten-Store byte-identisch weiter und jede Verstehensparallelitaet > 1 wird hart auf 1 geklemmt. Migration `20260814180000` ist seit 15.08. **angewendet** und laufzeitbelegt inert (§7e) — **das Flag ist der naechste, kleinste Aktivierungsschritt** (Runbook §25) |
+| **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **`off`, wirkungsbasiert belegt** (Rücknahme des zweiten Versuchs 2026-08-13 16:27Z; crawl 20:00 UTC lief vollständig über den Altpfad, `pg_stat helmut_jobs` 939/1765/180 unverändert — Runbook §19.5). **18.08.: die 524 inerten Aufträge sind neutralisiert** (freigegeben; exakt 524 gelöscht, 235 erledigte signaturgleich unangetastet — Runbook §26.7); Warteschlange jetzt 0/235/0/0. **Versuch 3 ist nicht gestartet**; einzige offene Vorbedingung: Abflussrate (§19.4) |
 | **M8 / `HELMUT_MATCHING_RELEVANZ_GATE`** | aus (Default aus, nie aktiviert) |
 | `HELMUT_CRON_GLOBALPHASE` | nicht gesetzt (aus) — K2-Prüfung ergab keine Aktivierungsempfehlung |
 | `HELMUT_UNDERSTANDING_GATE` / `HELMUT_PARDOK_DISPATCH` | `shadow` |
@@ -125,20 +131,29 @@ OP-30-Aktivierung muss OP-25 für die geänderte Architektur erneut vollständig
 ## 7a · OP-30 — aktueller Stand
 
 - Der zweite Fünf-Mandate-Versuch wurde am 13.08. kontrolliert zurückgenommen:
-  Ankunft etwa 440–470 Aufträge/Tag, Abfluss etwa 130–180/Tag. Die Warteschlange steht
-  seitdem inert bei **524 wartend / 235 erledigt / 0 laufend / 0 fehlgeschlagen**.
+  Ankunft etwa 440–470 Aufträge/Tag, Abfluss etwa 130–180/Tag (Runbook §19.4/§19.5).
 - Die Zielarchitektur (Outbox, austauschbarer Transport, verteilte Klassengrenzen,
   Vorgangswache) ist gemergt und lokal lastgetestet. AWS ist nicht ausgerollt.
-- Der atomare Verstehensvertrag (CAS) ist gemergt. Die fünf zugehörigen Migrationen
-  wurden am 15.08. fehlerfrei angewendet.
-- Zwei vollständige Produktionszyklen belegten am 15./16.08., dass die neuen Strukturen
-  bei ausgeschalteten Flags inert sind: 5/5 Briefings je Slot, keine neue Fehlerklasse,
-  145 Schreibvorgänge ohne `HV001`/`HV002`, Warteschlange und Signatur unverändert.
-- **Alle OP-30-Motor-Flags bleiben aus; der Altpfad ist aktiv.** Für 25–500 Mandate
+- Die fünf OP-30-Migrationen wurden am 15.08. fehlerfrei angewendet (§24.10); zwei
+  vollständige Produktionszyklen belegten am 15./16.08. ihre Inertheit bei ausgeschalteten
+  Flags — 145 Schreibvorgänge ohne `HV001`/`HV002` (§24.11).
+- **`HELMUT_VERSTEHEN_CAS` ist seit 17.08. eingeschaltet** (Betreiber, Redeploy auf
+  unverändertem Stand) und über drei Kontrollen laufzeitgeprüft: 45 Vorgänge, alle
+  `fertig`, **0 `unbekannt`**, ein Modellaufruf je Vorgang, kein `HV001`/`HV002`, KI-Budget
+  im Band. Der Morgenzyklus 18.08. war vollständig: **briefing-morning 5/5 Mandate,
+  briefing-lage 5/5**, `understanding-cron` erfolgreich. **`HELMUT_VERSTEHEN_PARALLELITAET`
+  ist nicht gesetzt und wirkt daher als 1** (Runbook §25).
+- **Die 524 inerten Altaufträge sind am 18.08. neutralisiert** (freigegeben, ein scharfer
+  Lauf 07:11 UTC): exakt 524 gelöscht, die 235 erledigten signaturgleich unangetastet.
+  Warteschlange jetzt **0 wartend / 235 erledigt / 0 laufend / 0 fehlgeschlagen**, 0 offene
+  Leases. **Kein Export, keine Sicherungskopie, keine Nutzdaten außerhalb von Production**;
+  Rückweg ist ausschließlich die deterministische Neuerzeugung durch den Planer (§26.7).
+- **Der neue Motor bleibt ausgeschaltet** (`HELMUT_SCALABLE_PIPELINE` aus,
+  `HELMUT_JOB_DISPATCH_MODE` aus); **Versuch 3 ist nicht gestartet**. Für 25–500 Mandate
   besteht keine Produktionsfreigabe.
 
 Kanonisch: [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md)
-§24/§25, [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)
+§24/§25/§26, [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)
 und [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md).
 
 ## 8 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
@@ -168,7 +183,7 @@ und [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-
   bleiben dokumentiert). **Geltung: nur die aktuelle Architektur mit 5 Mandaten — beweist
   weder OP-30 noch 200 Mandate; nach einer OP-30-Aktivierung vollständige Wiederholung.**
   OP-14 (Verstehensrückstand) bleibt offen.
-- **OP-31-Nachweis: BESTANDEN — Morgenlauf 2026-08-11 05:00 UTC** (§7a). Kopfstatus/UI live
+- **OP-31-Nachweis: BESTANDEN — Morgenlauf 2026-08-11 05:00 UTC** ([`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md)). Kopfstatus/UI live
   nicht abgerufen (kein Zugangsgeheimnis) — die Aussage stützt sich auf den relational
   geprüften Beleg plus testgesicherten Code.
 - **F-E2E** (nichtdeterministische E2E-Rangfolge im CI, belegt 2026-08-04) — Ursache offen;
@@ -203,20 +218,25 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Erste kontrollierte OP-30-Stufe: `HELMUT_VERSTEHEN_CAS=on` als Betreiberentscheidung.**
+**Die erste kontrollierte OP-30-Stufe (CAS) ist vollzogen. Offen ist jetzt genau eine
+Entscheidung: die Abflussrate für Versuch 3.**
 
-1. Vorbedingungen nach Runbook §25.2 erneut vollständig lesend prüfen.
-2. Nur bei Grün setzt der Betreiber das CAS-Flag und löst ein unverändertes Redeploy aus.
-3. Sofortkontrolle, Wirkungskontrolle nach dem 21:30-UTC-Lauf und Bestätigung nach dem
-   Morgenzyklus des Folgetags; bei jeder Abbruchgrenze Flag leeren und redeployen.
-4. Durchsatz und Parallelität bleiben dabei unverändert bei 1; die 524 inerten Aufträge
-   und das KI-Budget dürfen sich nicht verändern.
-5. Erst nach bestandenem CAS-Beweis über Parallelität oder Schattenbetrieb entscheiden.
+1. **Abflussraten-Entscheidung (§19.4, Zielarchitektur §14 Stufe 1).** Die beiden
+   §19.6-Vorbedingungen sind erfüllt: Watchdog-Vertrag queue-tauglich + Wache V2 (PR #253,
+   Runbook §26.4) und die 524 Altaufträge neutralisiert (§26.7). Versuch 2 scheiterte an
+   Ankunft ~440–470/Tag gegen Abfluss ~130–180/Tag — ohne höhere Abflussrate wiederholt
+   sich genau das. Die Rate ist **Konfiguration**, kein Code.
+2. **Erst nach dieser Entscheidung** Stufe 1 des Stufenplans (`HELMUT_SCALABLE_PIPELINE=on`
+   + `HELMUT_JOB_DISPATCH_MODE=shadow` + `HELMUT_SCALABLE_PIPELINE_SEIT`), dann K0–K3 nach
+   Runbook §6. **Nichts davon ist freigegeben.**
+3. Nach **jeder** wirksamen OP-30-Aktivierung ist OP-25 vollständig zu wiederholen.
+4. Unabhängig davon: **OP-15** (Personenquellen) beziffert und offen; `CRON_SECRET`/Egress
+   für eine Folgesitzung freigeben (schließt die K0-Teillücke `/api/ops/jobqueue`).
 
-Für den Schattenbetrieb bleiben zwei Vorbedingungen offen: 524 inerte Aufträge erneut
-neutralisieren und den Watchdog-Vertrag queue-tauglich fassen. Die fünf OP-30-Migrationen
-sind bereits angewendet und dürfen **nicht** erneut ausgeführt werden. Nach jeder
-wirksamen OP-30-Aktivierung ist OP-25 vollständig zu wiederholen.
+Die fünf OP-30-Migrationen sind angewendet und dürfen **nicht** erneut ausgeführt werden;
+`20260720` bleibt offen. Ein Rückweg für die neutralisierten Aufträge ist ausschließlich die
+**deterministische Neuerzeugung durch den Planer** — es existiert **kein Export** und keine
+Sicherungskopie (§26.2/§26.7).
 
 ## 12 · Verbindliche Betriebsgrenzen
 
@@ -262,6 +282,12 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzte relevante Sprints
 
+- **18.08., PR #254:** Neutralisierung der 524 Altaufträge vollzogen (0/235/0/0);
+  235 Erledigte signaturgleich unangetastet; kein Export, kein Flag, kein Cron.
+- **17.08., PR #253:** datensparsamer Neutralisierungsweg (R1–R9) und
+  Warteschlangenwache V2; Watchdog-Vertrag queue-tauglich.
+- **17./18.08. (Betreiber):** `HELMUT_VERSTEHEN_CAS=on` aktiviert und über drei
+  Kontrollen laufzeitgeprüft — 45 Vorgänge, 0 `unbekannt`, Morgenzyklus 5/5 je Slot.
 - **16.08., PR #251:** Laufzeitinertheit der fünf Migrationen bestätigt; Betreiberplan
   der ersten CAS-Aktivierung dokumentiert; nur Dokumentation.
 - **15.08., PR #249/#250:** fünf OP-30-Migrationen nach Transaktions- und

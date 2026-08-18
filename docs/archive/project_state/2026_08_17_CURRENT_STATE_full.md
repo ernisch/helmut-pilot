@@ -1,5 +1,17 @@
 # CURRENT STATE — Helmut
 
+> **ARCHIVFASSUNG — historisch, nicht der aktuelle Stand.** Wortgleiche Sicherung der
+> Datei unmittelbar vor der Verdichtung vom 2026-08-17 (Repo-Stand `51d0e80`, Merge
+> PR #251). Sie wird nicht mehr fortgeschrieben. Der aktuelle Stand steht in
+> [`../../CURRENT_STATE.md`](../../CURRENT_STATE.md).
+>
+> **Was nach dieser Sicherung geschah** und deshalb hier fehlt — vollständig belegt im
+> Runbook [`../../betrieb/op30-aktivierung-5-mandate.md`](../../betrieb/op30-aktivierung-5-mandate.md):
+> `HELMUT_VERSTEHEN_CAS` wurde am 17.08. eingeschaltet und laufzeitgeprüft (§25), und die
+> 524 inerten Altaufträge wurden am 18.08. neutralisiert (§26.7) — die Warteschlange steht
+> seitdem bei 0/235/0/0. Aussagen dieser Archivfassung zu diesen beiden Punkten sind
+> **überholt**.
+
 **Stand: 2026-08-15** (Straenge: **(a) OP-25-Production-Nachweis BESTANDEN** (§7.7.9; gilt nur fuer die heutige Architektur mit 5 Mandaten). **(b) OP-30-Fuenferlauf, zweiter Versuch (12./13.08.): NICHT bestanden — kontrollierte Ruecknahme VOR Grenzuebertritt** (Runbook §19): Ankunft ~440–470 Auftraege/Tag ≫ Abfluss ~130–180/Tag ⇒ Flag wieder `off`; **524 wartende Auftraege bleiben inert**. **(c) OP-30-ZIELARCHITEKTUR gebaut und lokal nachgewiesen** (§7c; Outbox + austauschbarer Transport + verteilte Grenzen + Vorgangswache + SQS/Lambda-Transport; Production unangetastet, alles Default-AUS, AWS **nicht** ausgerollt; Belegdatei §17–§26). **(d) OP-31 Frischevertrag BESTANDEN** (5/5 am 13.08.). **(e) atomarer Verstehensvertrag (CAS) gemergt** (§7d, PR #248). **(f) NEU 15.08.: die fuenf OP-30-Migrationen sind auf Production ANGEWENDET** — 5/5 fehlerfrei, Warteschlange unveraendert 524/235/0/0, alle neuen Strukturen leer, **alle Flags blieben aus**, alter Motor aktiv; die Aktivierung ist eine eigene, offene Entscheidung (§7e, Runbook §24.10).) Diese Datei enthaelt
 **ausschließlich den aktuellen, entscheidungsrelevanten Zustand** (Grenze 30.000 Zeichen /
 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die vollständige
