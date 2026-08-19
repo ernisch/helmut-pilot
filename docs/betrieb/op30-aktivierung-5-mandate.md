@@ -3226,3 +3226,76 @@ Cronlauf, keine AWS-Ressource · PR #255 unberührt · Production-Mutationen aus
 die zwei freigegebenen CAS-`erneut`-Aufrufe (§28.2) · keine Nutzdaten, Payloads,
 Mandatskennungen oder Fehlertexte übertragen oder ausgegeben (Vorgänge nur als
 md5-Präfix; Zielmenge nur als Zähler/Zeitgrenzen/Prüfsummen).
+
+### §28.8 AUSFÜHRUNGSBELEG — gemischte Neutralisierung der 383 vollzogen (2026-08-19, freigegeben)
+
+**Ausgeführt am 2026-08-19 zwischen 13:40 und 13:46 türkischer Zeit (12:40–12:46 Berlin,
+10:40–10:46 UTC)** aus einer Claude-Sitzung mit **ausdrücklicher Betreiberfreigabe** (Chat-
+Auftrag: Vorprüfung, Trockenlauf und scharfe Ausführung ohne weiteren Haltepunkt, sofern
+alle Riegel exakt treffen; genau ein scharfer Versuch). Ausschließlich der kanonische Weg
+aus §28.4: SQL aus `scripts/jobqueue-neutralisierung-383.js` (byte-identisch zum Modul,
+CLI-Gleichheit vor der Ausführung belegt; beide Fassungen erneut durch
+`pruefeDatensparsamkeit` geprüft — 0 Verstöße), ausgeführt über die freigegebene
+Supabase-MCP-Verbindung. **Keine Nutzdaten gelesen, gespeichert oder ausgegeben** — alle
+Belege sind Zähler, Zeitstempel und md5-Prüfsummen.
+
+**Vorbedingungen (alle bestanden):** `main` = Merge PR #257 (`fc9b611`), einziges und
+jüngstes Production-Deployment `dpl_7DeB1qcaY3y4Fc2wiDLiFaKaiQLm` READY auf exakt diesem
+Commit (13:34:52 TR / 10:34:52 UTC); Motor wirkungsbasiert aus (0 Aufträge seit der
+Rücknahme 06:56 UTC verändert, keine Warteschlangen-Quittungen, 10:00-Lage-Check lief über
+den Altpfad); kein schwerer Cronslot (jüngster `process_run` 10:03:57 UTC).
+
+**Vorprüfung (Schritt 0, 13:40:05 TR / 10:40:05 UTC) — alle Werte exakt:** 301 wartend ·
+235 erledigt · 82 laeuft (**alle 82 Leases abgelaufen, 0 aktive**) · 0 fehlgeschlagen ·
+618 gesamt · Zielmenge **383** · Gesamtsignatur `3fd4565a65cdea28a52bde279d6dd69c` ·
+ID-Kette `3b709747630e28d5b7eaae8a36e24939` · Erledigt-Signatur
+`f7989b8cc2828acb99f26148a405999f` · Typen 361/2/10/10 · Fenster 18.08. 20:00:22 –
+19.08. 05:56:54 UTC · 0 offene außerhalb der Grenze · **Outbox 383, vollständig
+Zielmenge** (220 offen/163 bestätigt) · Migrationen 31/`20260815164241` · 0 fremde
+Abfragen/Sperren · 0 Laufzeitfehler. **CAS-Vorheranker (unmittelbar gemessen):** 90
+`fertig` · 2 `offen` (die §28.2-Freigaben, unverändert) · **1 `modell-laeuft` mit
+abgelaufener Lease** (md5 `25c6c69d`, 10:05 UTC — der 10:00-Lage-Check riss sein äußeres
+Zeitlimit; erwartbarer §23.3-Kandidat, hier auftragsgemäß **nicht** angefasst) · 0
+Vormerkungen · 90 KO-Fencing. Abweichung vom nominellen Ausgangsstand (85/2/0) vollständig
+durch den regulären 10:00-Verstehenslauf erklärt — zielmengenneutral (alle
+`helmut_jobs`-Anker byte-exakt).
+
+**Trockenlauf (Schritt 1, 13:42:48 TR / 10:42:48 UTC):** dokumentierter Abschluss
+`TROCKENLAUF-OK: alle Riegel bestanden, 383 Zeilen WAEREN geloescht worden — Transaktion
+vollstaendig zurueckgenommen`; Quittung: geloescht 383, Outbox 383→0 (R12 in der
+Transaktion), Nachzustand 0/235/0/0, alle drei Prüfsummen exakt. Gegenmessung danach:
+**301/235/82/0, Outbox 383/220, alle Signaturen und CAS unverändert** — vollständig
+folgenlos (`pg_stat n_tup_del` +383 = zurückgerollter Delete, kumulative Zählung;
+ins/upd unverändert).
+
+**Scharfe Ausführung (Schritt 2, ~13:44 TR / ~10:44 UTC, genau ein Lauf):** eine
+`serializable`-Transaktion, Zielzeilen per `for update` gesperrt, alle Riegel
+R1–R9/R2a/R2b/R12 erneut innerhalb der Transaktion — **exakt 383 gelöscht** (R8), die
+**383 Outbox-Absichten über die bewiesene Kaskade vollständig mit entfernt**
+(R12-nachher = 0), Nachzustand in der Transaktion 0/235 mit unveränderter
+Erledigt-Signatur (R9), erst dann Commit. **Gegenprobe nach dem Commit: 0 offen ·
+235 gesamt · Erledigt-Signatur `f7989b8cc2828acb99f26148a405999f` · Outbox 0.**
+
+**Nachkontrolle (13:45–13:46 TR / 10:45–10:46 UTC, rein lesend):** Warteschlange
+**0 wartend · 235 erledigt · 0 laeuft · 0 fehlgeschlagen**, 0 aktive Leases, **Outbox 0**;
+die 235 Erledigten signaturgleich unangetastet, **kein Insert, kein Update**
+(`pg_stat_user_tables`: `n_tup_ins` 1322 und `n_tup_upd` 2302 unverändert; `n_tup_del`
+1228 → 1611 (zurückgerollter Trockenlauf) → **1994** (+383 Commit); `n_live_tup` 235).
+**CAS byte-gleich zum Vorheranker** (90/1/2, 0 Vormerkungen, 90 Fencing) — kein KI-Aufruf
+(`llm_reservations` 0). Migrationen unverändert 31/`20260815164241` (`20260720` weiterhin
+nicht angewendet). Jüngster `process_run` unverändert 10:03:57 UTC (**kein Cronlauf
+ausgelöst**), 0 Laufzeitfehler, kein HV001/HV002, kein Deployment, kein Flag, keine
+AWS-Aktion. **Wache mit echter Live-Eingabe** (echte exportierte `betriebsstatus()`,
+echte RPCs): `statusvertrag 2` · `zustand inaktiv` · `zustandsklasse inaktiv-inert` ·
+`motor.aktiv false` · Kennzahlen 0/0/0 abgelaufene Leases · Befund `inert-bestand:0` —
+kein kritischer Rückstau. **Wiederholungsschutz in Production belegt:** der kanonische
+Trockenlauf endet jetzt mit `ABBRUCH-BEREITS-NEUTRALISIERT` (ausgeführt, folgenlos);
+keine zweite scharfe Ausführung gestartet.
+
+**Rückweg:** wie §26.2/§28.4 — ausschließlich die deterministische Neuerzeugung durch den
+Planer; **kein Export, keine Sicherungskopie, kein byte-identischer Restore.** Die
+datenbankseitigen §28.6-Vorbedingungen für Versuch 4 (V4-2: 0/235/0/0 + 0 aktive Leases ·
+V4-3: Outbox 0 · V4-6: Migrationen · V4-7: 0 fremde Abfragen/Sperren) sind damit
+**erfüllt**; V4-4 trägt den ehrlichen Vorbehalt des einen `modell-laeuft`-Vorgangs mit
+abgelaufener Lease (wird vom Wärter regulär aufgelöst bzw. ehrlich `unbekannt`). Versuch 4
+wurde **nicht** aktiviert — Aktivierung bleibt Betreiberaktion nach §28.6.
