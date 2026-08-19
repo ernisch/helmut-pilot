@@ -104,29 +104,34 @@ function welt({ dokumenteJeAbruf = 3 } = {}) {
     },
 
     // KORREKTUR (Abschlussreview 2026-08-08): diese Attrappe hat die Kennung frueher SELBST
-    // gebaut (`rd-<sha256(url)[0..16]>`) und dabei behauptet, das sei „exakt wie
-    // dedup.toRawDocumentRow". Das war es nicht, und vor allem gab sie die `rd-…`-Kennung
-    // im Rueckgabewert von `saveRawItems` mit — was Production NICHT tut: dort kommen die
-    // BLOB-Zeilen mit `raw-<hash16>` zurueck (crawler.js). Die Attrappe hat damit genau den
-    // Fehler verdeckt, den sie haette finden muessen (der Handler las `d.id` und schickte
-    // Blob-Kennungen in einen Auftrag, der `raw_documents` liest).
+    // gebaut und dabei genau den Fehler verdeckt, den sie haette finden muessen (der
+    // Handler schickte Blob-Kennungen in einen Auftrag, der `raw_documents` liest).
     //
-    // Jetzt liefert sie die BLOB-Form, und die Ablage wird unter der ECHTEN
-    // `raw_documents`-Kennung gefuehrt — der Handler muss sie selbst korrekt ableiten.
-    saveRawItems: async (items) => items.map((it) => {
-      const zeile = dedup.toRawDocumentRow(it);
-      w.rohdokumente.set(zeile.id, {
-        id: zeile.id, url: it.url, title: it.title, source_id: it.sourceId,
-        // Herkunft (welcher Abrufweg hat dieses Dokument geliefert) wird ausdruecklich
-        // mitgefuehrt. Vorher leitete die Attrappe sie aus dem URL-PRAEFIX ab — das ging
-        // nur, solange die Artikel-URL den Feed enthielt (`<feed>#artikel-N`), und genau
-        // diese unrealistische Form war der Grund, warum die Kennungen kollabierten.
-        _weg: it._weg,
-        _vorgang: vorgangFuer(it._weg, it._nr)
-      });
-      return { ...it, id: `raw-${crypto.createHash("sha256").update(String(it.url)).digest("hex").slice(0, 16)}` };
-    }),
-    persistRawDocuments: async (docs) => ({ skipped: false, error: null, persisted: docs.length }),
+    // SEIT OPTION B (Reparatursprint 2026-08-19) bildet die Attrappe die RELATIONALE
+    // Persistenz des Warteschlangenpfads nach: `dedup.toRawDocumentRow` liefert die echte
+    // Ablage-Kennung (`rd-<inhaltsfingerabdruck>`), NEU ist nur, was die Welt-Ablage noch
+    // nicht traegt — exakt die ignore-duplicates-Semantik von
+    // `storage.persistiereRohdokumenteWarteschlange`. Der Handler bekommt die Kennungen
+    // aus der Ablage-Antwort (`neuIds`), nie aus einer Blob-Form.
+    persistRohdokumente: async (items) => {
+      const neuIds = [];
+      let vorhandene = 0;
+      for (const it of items) {
+        const zeile = dedup.toRawDocumentRow(it);
+        if (!zeile || !zeile.id) continue;
+        if (w.rohdokumente.has(zeile.id)) { vorhandene += 1; continue; }
+        w.rohdokumente.set(zeile.id, {
+          id: zeile.id, url: it.url, title: it.title, source_id: it.sourceId,
+          // Herkunft (welcher Abrufweg hat dieses Dokument geliefert) wird ausdruecklich
+          // mitgefuehrt — vorher aus dem URL-Praefix abgeleitet, was nur mit der
+          // unrealistischen `<feed>#artikel-N`-Form funktionierte.
+          _weg: it._weg,
+          _vorgang: vorgangFuer(it._weg, it._nr)
+        });
+        neuIds.push(zeile.id);
+      }
+      return { ok: true, neuIds, vorhandene };
+    },
     ladeRohdokumente: async (ids) => ids.map((i) => w.rohdokumente.get(i)).filter(Boolean),
 
     // Das V3-Verstehen: EIN Aufruf je NEUEM Vorgang. Ein bekannter Vorgang wird

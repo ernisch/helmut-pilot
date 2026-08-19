@@ -103,8 +103,8 @@ async function main() {
       hardeningConfig: () => ({ enabled: false, sharedPathDedup: false, sharedPathWindowMs: 0 }),
       createGate: () => null, sharedLedger: () => null,
       crawlAllSources: async () => ({ results: [{ ok: true }], rawItems: [] }),
-      saveRawItems: async (i) => i,
-      persistRawDocuments: async () => ({ skipped: false, error: null, persisted: 0 }),
+      // Option B (2026-08-19): der Handler persistiert relational (neuIds statt Blob-Write).
+      persistRohdokumente: async () => ({ ok: true, neuIds: [], vorhandene: 0 }),
       getActiveProfile: async () => null,
       matching: async () => ({}), decisions: async () => ({}),
       buildV3Briefing: async () => ({ available: false })

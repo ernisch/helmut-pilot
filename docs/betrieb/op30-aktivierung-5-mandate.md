@@ -2917,3 +2917,125 @@ nicht wiederholt — der Auftrag lautete: genau ein scharfer Lauf).
 Versuch 3 verbleiben die Abflussraten-Entscheidung (§19.4) und der Stufenplan
 (Zielarchitektur §14, Stufe 1) samt `HELMUT_SCALABLE_PIPELINE_SEIT` (§26.4) — alles
 Betreiberentscheidungen.
+
+---
+
+## §27 · Erster Aktivierungslauf der Stufe 1: Befund, Rücknahme, Reparatur (2026-08-18/19)
+
+Kanonischer Beleg des ersten Production-Laufs des neuen Motors, seiner Rücknahme und des
+Reparatursprints. Alle Production-Zugriffe dieses Abschnitts waren **rein lesend und
+aggregiert** — keine Nutzdaten, keine Mandatskennungen, keine Fehlertexte.
+
+### §27.1 Hergang (belegt)
+
+1. **Aktivierung 18.08. ~16:15 UTC** (Betreiber, §25.2-Variablen inkl.
+   `HELMUT_WORKER_PARALLEL=4`, `HELMUT_WORKER_BATCH=25`,
+   `HELMUT_SCALABLE_PIPELINE_SEIT=2026-08-18T16:15:00Z`), Redeployment READY.
+   Sofortkontrolle grün; die **Planung** des ersten Slots war einwandfrei: 193 Aufträge
+   deterministisch kompiliert, Outbox-Absichten atomar, 0 Duplikate, 0 Kosten.
+2. **Slot crawl 20:00 UTC: 0 von 193 Abschlüssen.** Vercel-Runtime-Log:
+   `[cron/crawl/warteschlange] 279116ms … erledigt=0 wiederholt=6` inmitten einer Serie
+   von `helmut_store`-10-s-Timeouts. **Keine `process_runs`-Zeile** — nicht wegen des
+   Blobs, sondern weil `runCronUeberWarteschlange` bis zu diesem Sprint **gar keine
+   Lauftelemetrie schrieb** (zweiter Befund, §27.2).
+3. **Slot crawl 04:00 UTC (19.08.): gleiches Bild** — 0 Abschlüsse, keine Laufzeile.
+4. **Rücknahme durch den Betreiber** (Flag geleert), Redeployment
+   `dpl_4WcYbNowXxK3kaMBAxpbzo2ZaTgU` READY ~06:56 UTC — verifiziert: exakter Rebuild von
+   `main` `6bc5e35`, seitdem **0 veränderte Aufträge** (gegengeprüft 19.08. ~07:45 UTC),
+   Briefings 10/10 intakt, Wache ehrlich `inaktiv` (Statusvertrag 2) mit Inert-Befunden.
+5. **Bestand seit der Rücknahme (inert):** **301 `wartend` · 82 `laeuft` mit abgelaufener
+   Lease** (der Slot starb vor dem Abschluss; letzte Bewegung 05:53/05:58 UTC) ·
+   235 `erledigt` (Historie, unangetastet) · 0 `fehlgeschlagen`. Die **383** (301+82)
+   sind mit Flag AUS wirkungslos; ihre Behandlung (erneuter Anlauf nach der Reparatur
+   **oder** Neutralisierung nach dem §26-Verfahren mit **neuen** Ankern und **neuer**
+   Freigabe) ist eine Betreiberentscheidung — im Reparatursprint wurde ausdrücklich
+   **nichts** an ihnen verändert.
+
+### §27.2 Technische Ursache (am Code belegt, an Production gemessen)
+
+**Befund 1 — Blob-Konvoi je Auftrag:** `handleSourceFetch` rief je Auftrag
+`storage.saveRawItems` auf — ein vollständiges Lesen **und** Schreiben der zentralen
+Blob-Zeile `main` (gemessen 1,29 MB; `main-auth` 266 KB) über PostgREST, je Auftrag.
+Unter Parallelität 4 serialisiert der Row-Lock der einen Zeile alle Worker
+(`resolution=merge-duplicates` = UPDATE unter Zeilensperre), die Anfragen laufen in das
+10-s-Timeout (`SUPABASE_REQUEST_TIMEOUT_MS`, storage.js), `withStoreRetry` verdreifacht
+die Last, und die Fehlerpfade schreiben zusätzlich den Auth-Blob (`systemErrors`).
+Messbeleg: `helmut_store` trägt 12 Zeilen bei **14 285 kumulierten Updates**
+(`pg_stat_user_tables`, 19.08.). Ergebnis: kein Auftrag erreichte seinen Abschluss im
+Auftragszeitbudget — `wiederholt=6`, `erledigt=0`. Die Vorab-Suiten waren grün, weil sie
+`saveRawItems` als Attrappe einreichten — die Blob-Kosten je Auftrag hat keine Suite
+gemessen (diese Lücke schließen die Wächter aus §27.3).
+
+**Befund 2 — keine Slot-Quittung:** `runCronUeberWarteschlange` schrieb — anders als
+Narrativ-Slot und Understanding-Cron — **keinerlei** `recordProcessRun`. Beide Slots des
+Fensters sind deshalb ohne dauerhafte Laufzeile; die Diagnose musste auf
+Vercel-Runtime-Logs ausweichen (gegengeprüft 19.08.: 0 Zeilen `process like
+'warteschlange%'`).
+
+### §27.3 Reparatur (Sprint 2026-08-19, Option B + D — PR #256, kein Deployment)
+
+* **Option B — Blob-Entkopplung:** der Warteschlangenpfad `source_fetch` persistiert
+  Rohdokumente **kanonisch relational** (`storage.persistiereRohdokumenteWarteschlange`:
+  gebündelter `raw_documents`-Upsert mit `ignore-duplicates` + `return=representation`
+  — **ein** Round-Trip liefert exakt die neuen `rd-`Kennungen, die das Verstehen
+  einreihen). Die Blob-Zeilen `main`/`main-auth` werden **je Auftrag nie mehr**
+  angefasst; der Blob bleibt Lesespiegel (Lage-Check `getRawItemsSince`, Admin-Zähler)
+  und wird **höchstens einmal je Slot** am Slotende nachgezogen
+  (`worker-betrieb.durchlauf` → `blobSpiegel`; Ausfall des Spiegels bricht den Slot
+  nicht und wird ehrlich gemeldet). Mit Flag AUS ist der Altpfad byte-identisch
+  (scheduler.js unverändert).
+* **Option D — blob-unabhängige Slot-Quittung:** `runCronUeberWarteschlange` schreibt
+  Start- (`running`) und Abschlussquittung in `process_runs`
+  (`storage.schreibeWarteschlangenLaufquittung`: relational-nativ, fasst **keinen** Blob
+  an, Gate nur `v3StoreReady()` — Beginn, Ende, Status, Zählwerte und Fehlerklasse
+  überleben Blob-/Storage-Ausfälle; Prozessname `warteschlange-<cron>`, atomarer Upsert
+  je (run_id, process)). Ein Slot mit Reservierungen und 0 Abschlüssen quittiert
+  ehrlich `partial` mit Klasse `lease-ohne-fortschritt` — exakt das Bild des 18.08.
+* **Wächter (machen die Rückkehr des Musters rot):**
+  `scripts/warteschlange-blob-entkopplung-test.js` — **40 PASS / 0 FAIL** (statische +
+  verhaltensbasierte Wächter gegen jeden `helmut_store`-Zugriff je Auftrag an einer
+  lokalen PostgREST-Attrappe mit echten storage-Funktionen; Quittungs-Vertrag inkl.
+  simuliertem Blob-Ausfall; Spiegel höchstens 1×/Slot; Mutationsproben belegen die
+  Tragfähigkeit der Wächter).
+* **Parallelitätsnachweis:** `scripts/warteschlange-parallelitaet-test.js` — **16 PASS /
+  0 FAIL** an echter lokaler PostgreSQL (echte SQL-Funktionen, 4 getrennte
+  DB-Sitzungen): worker=4/stapel=25 arbeitet 60/60 Aufträge ab, **Blob-Zugriffe konstant
+  2 je Slot** (alte Bauart: ≥ 120) — identisch bei 1,35-MB- und Mini-Blob; 0
+  Doppelarbeit, 0 verlorene Aufträge, Wiederaufnahme abgelaufener Leases, voller
+  Durchsatz bei simuliertem Blob-Totalausfall. **Keine Aussage über
+  Production-Performance** — der Beweis ist strukturell (Zugriffsmuster,
+  Verlustfreiheit), nicht latenzbasiert.
+
+### §27.4 CAS-Kontrolle nach §23.3 (rein lesend, 19.08. ~07:30 UTC)
+
+Gesamtbild gesund: **85 `fertig`** (deckungsgleich 85 Wissensobjekte mit
+`verstehen_fencing`), **2 `unbekannt`**, 0 Vormerkungen. Die beiden `unbekannt`-Vorgänge
+(nur technische Felder; Kennungen als md5-Präfix):
+
+| Vorgang (md5) | Zeitpunkt (UTC) | Versuche | KI-Aufrufe | Fehlerklasse | Ergebnis persistiert? |
+|---|---|---|---|---|---|
+| `7aae32c1` | 18.08. 21:31:11 → :33 | 1 | 1 | `modellfehler`, Timeout-Marker | nein (`verstehen_fencing` fehlt) |
+| `744a7780` | 19.08. 05:31:05 → :26 | 1 | 1 | `modellfehler`, Timeout-Marker | nein |
+
+Beide sind der **erwartete** §23.3-Fall: Modellaufruf gestartet, nach ~22 s als
+Timeout-Klasse gescheitert, Ausgang nicht belegbar → ehrlich blockiert, keine
+automatische Wiederholung, keine weiteren Kosten. Beide identische Fehlerlänge (35
+Zeichen) und Timeout-Marker; beide fielen in das gestörte Aktivierungsfenster — ein
+Zusammenhang mit der Blob-Überlast ist **plausibel, nicht bewiesen** (der Timeout traf
+den Modell-, nicht den Datenbankaufruf). **Nicht wachsend** seit der Rücknahme. Es wurde
+**nichts** verändert: kein `helmut_verstehen_ausgang_aufloesen` (auch nicht `pruefen` —
+der Aufruf kann Zustand auflösen und wäre keine reine Lesung), keine Wiederholung, keine
+Freigabe, keine Löschung.
+
+**Empfohlene Betreiberentscheidung (freigabepflichtig, CLAUDE.md §5):** je Vorgang
+zuerst `… 'pruefen'` (kostenlos), dann `… 'erneut'` — die Fehlerklasse ist transient
+(Timeout), nicht inhaltlich; Kosten: bis zu 2 bezahlte Modellaufrufe. `'aufgeben'` nur,
+falls die Vorgänge inhaltlich entbehrlich sind. Beides führt der Betreiber aus, nicht
+eine Sitzung ohne Freigabe.
+
+### §27.5 Nicht getan (Verbote eingehalten)
+
+Kein Production-Schreibzugriff irgendeiner Art · keine Neutralisierung der 383 · kein
+Flag, kein Deployment, keine Migration, kein Cronlauf, kein KI-Aufruf · PR #255
+unberührt · keine Nutzdaten/Mandatskennungen/Fehlertexte exportiert (Vorgänge nur als
+md5-Präfix, Fehlertexte nur als Klasse/Marker-Booleans).

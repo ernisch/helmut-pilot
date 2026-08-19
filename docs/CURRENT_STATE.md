@@ -1,13 +1,15 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-18.** OP-25 ist für die aktuelle Fünf-Mandate-Architektur bestanden;
-OP-31 ist bestanden. Die OP-30-Zielarchitektur und der atomare Verstehensvertrag sind
-gemergt, alle fünf OP-30-Migrationen sind in Production angewendet. **`HELMUT_VERSTEHEN_CAS`
-ist seit 17.08. eingeschaltet und laufzeitgeprüft** (§7a); die Verstehensparallelität wirkt
-weiterhin als **1**. Die 524 inerten Altaufträge sind am 18.08. **neutralisiert** — die
-Warteschlange steht bei **0 wartend / 235 erledigt / 0 laufend / 0 fehlgeschlagen**. Der
-**neue Motor bleibt ausgeschaltet**, Versuch 3 ist nicht gestartet; die einzige offene
-Vorbedingung dafür ist die **Abflussraten-Entscheidung** (§11).
+**Stand: 2026-08-19.** OP-25 ist für die aktuelle Fünf-Mandate-Architektur bestanden;
+OP-31 ist bestanden. `HELMUT_VERSTEHEN_CAS` läuft seit 17.08. (§7a); die 524 Altaufträge
+sind am 18.08. neutralisiert. **Die erste Stufe-1-Aktivierung des neuen Motors (18.08.
+16:15 UTC) wurde am 19.08. ~06:56 UTC zurückgenommen:** beide Warteschlangenslots planten
+einwandfrei, schlossen aber **0 Aufträge** ab — Ursache war der vollständige Blob-Read/
+Write je Auftrag (Row-Lock-Konvoi auf `main`, 1,29 MB) plus fehlende Slot-Laufquittung
+(Runbook §27). Die Warteschlange trägt seitdem **301 wartend / 82 laeuft (Leases
+abgelaufen) / 235 erledigt / 0 fehlgeschlagen** — die 383 sind mit Flag AUS inert. Der
+**Reparatursprint 19.08. (Option B + D)** liegt als **PR #256** vor (§7a); Production ist seit der
+Rücknahme unangetastet.
 
 Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000
 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die
@@ -88,7 +90,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **`HELMUT_CRON_GLOBALABRUF`** | **`on`** seit 2026-08-06 ~08:15 UTC (Betreiber, für das Nachweisfenster) ⇒ **Kontextpfad aktiv**, laufzeitbelegt (drei Fensterläufe 06./07.08. global auf `d8bf68fa…`, E3 `nv=0`). Ob es `on` bleibt, ist Betreiberentscheidung. Dritter Zyklus |
 | **Berlin (Landesmodul)** | inaktiv. `HELMUT_LANDESMODULE=berlin` seit 2026-07-26 gesetzt, aber **wirkungslos**: 0 berechtigte Berliner Mandate seit dem Rollback ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22). Ob das Flag wirkt, ist **unbewiesen** |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt); PR #132 vor Merge Gate-Name vereinheitlichen |
-| **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **`off`, wirkungsbasiert belegt** (Rücknahme des zweiten Versuchs 2026-08-13 16:27Z; crawl 20:00 UTC lief vollständig über den Altpfad, `pg_stat helmut_jobs` 939/1765/180 unverändert — Runbook §19.5). **18.08.: die 524 inerten Aufträge sind neutralisiert** (freigegeben; exakt 524 gelöscht, 235 erledigte signaturgleich unangetastet — Runbook §26.7); Warteschlange jetzt 0/235/0/0. **Versuch 3 ist nicht gestartet**; einzige offene Vorbedingung: Abflussrate (§19.4) |
+| **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **`off`** — erster Stufe-1-Anlauf 18.08. 16:15 UTC, **Rücknahme 19.08. ~06:56 UTC** nach 2 Slots mit 0 Abschlüssen (Ursache + Reparatur: Runbook §27, PR #256). Die 524 Altaufträge waren am 18.08. neutralisiert (§26.7); Warteschlange jetzt **301 wartend / 82 laeuft (Leases abgelaufen) / 235 erledigt** — inert bei Flag aus. Zweiter Anlauf erst nach Merge von PR #256 (§11) |
 | **M8 / `HELMUT_MATCHING_RELEVANZ_GATE`** | aus (Default aus, nie aktiviert) |
 | `HELMUT_CRON_GLOBALPHASE` | nicht gesetzt (aus) — K2-Prüfung ergab keine Aktivierungsempfehlung |
 | `HELMUT_UNDERSTANDING_GATE` / `HELMUT_PARDOK_DISPATCH` | `shadow` |
@@ -143,17 +145,33 @@ OP-30-Aktivierung muss OP-25 für die geänderte Architektur erneut vollständig
   im Band. Der Morgenzyklus 18.08. war vollständig: **briefing-morning 5/5 Mandate,
   briefing-lage 5/5**, `understanding-cron` erfolgreich. **`HELMUT_VERSTEHEN_PARALLELITAET`
   ist nicht gesetzt und wirkt daher als 1** (Runbook §25).
-- **Die 524 inerten Altaufträge sind am 18.08. neutralisiert** (freigegeben, ein scharfer
-  Lauf 07:11 UTC): exakt 524 gelöscht, die 235 erledigten signaturgleich unangetastet.
-  Warteschlange jetzt **0 wartend / 235 erledigt / 0 laufend / 0 fehlgeschlagen**, 0 offene
-  Leases. **Kein Export, keine Sicherungskopie, keine Nutzdaten außerhalb von Production**;
-  Rückweg ist ausschließlich die deterministische Neuerzeugung durch den Planer (§26.7).
-- **Der neue Motor bleibt ausgeschaltet** (`HELMUT_SCALABLE_PIPELINE` aus,
-  `HELMUT_JOB_DISPATCH_MODE` aus); **Versuch 3 ist nicht gestartet**. Für 25–500 Mandate
-  besteht keine Produktionsfreigabe.
+- **Die 524 inerten Altaufträge sind am 18.08. neutralisiert** (ein scharfer Lauf
+  07:11 UTC): exakt 524 gelöscht, die 235 erledigten signaturgleich unangetastet. **Kein
+  Export**; Rückweg ausschließlich deterministische Neuerzeugung durch den Planer (§26.7).
+- **Erste Stufe-1-Aktivierung 18.08. 16:15 UTC → Rücknahme 19.08. ~06:56 UTC** (Runbook
+  §27): Planung/Outbox einwandfrei (193 Aufträge, 0 Duplikate, 0 Kosten), aber **0
+  Abschlüsse** in beiden Slots (20:00/04:00 UTC) — je Auftrag las und schrieb
+  `saveRawItems` die volle Blob-Zeile `main` (1,29 MB): Row-Lock-Konvoi, 10-s-Timeouts,
+  Retry-Verstärkung (`helmut_store`: 12 Zeilen, 14 285 kumulierte Updates). Zweiter
+  Befund: der Slot schrieb **keine** Laufquittung. Rest seit der Rücknahme: **301
+  wartend / 82 laeuft (Leases abgelaufen) / 235 erledigt** = 383 inert, unangetastet;
+  Behandlung (neuer Anlauf oder §26-Neutralisierung mit **neuen** Ankern) ist
+  Betreiberentscheidung. Beim CAS entstanden 2 Vorgänge `unbekannt`
+  (Klasse `modellfehler`/Timeout, §27.4 — Empfehlung: `pruefen`, dann `erneut`;
+  freigabepflichtig).
+- **Reparatursprint 19.08. (Branch `claude/op30-neutralisierung-watchdog-dvqx99`,
+  **PR #256**, nicht gemergt):** Option B — `source_fetch` persistiert kanonisch relational
+  (`raw_documents`, ein gebündelter Round-Trip liefert die neuen Kennungen), Blob nur
+  noch als Lesespiegel **höchstens 1×/Slot**; Option D — blob-unabhängige relationale
+  Slot-Quittung (`process_runs`, Start + Abschluss). Wächter- und Parallelitätssuiten:
+  40 + 16 PASS / 0 FAIL (u. a. worker=4/stapel=25: 60/60 erledigt, Blob-Zugriffe konstant
+  2/Slot statt ≥ 120, 0 Doppelarbeit, Lease-Wiederaufnahme, voller Durchsatz bei
+  simuliertem Blob-Ausfall). Altpfad mit Flag AUS byte-identisch.
+- **Der neue Motor ist wieder ausgeschaltet**; **Versuch 3 ist nicht gestartet**. Für
+  25–500 Mandate besteht keine Produktionsfreigabe.
 
 Kanonisch: [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md)
-§24/§25/§26, [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)
+§24/§25/§26/**§27**, [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)
 und [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md).
 
 ## 8 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
@@ -218,18 +236,18 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Die erste kontrollierte OP-30-Stufe (CAS) ist vollzogen. Offen ist jetzt genau eine
-Entscheidung: die Abflussrate für Versuch 3.**
+**Genau ein Schritt: PR #256 (Reparatursprint 19.08.) prüfen und mergen** (Merge =
+Deployment; Entscheidung beim Betreiber). Erst danach, in dieser Reihenfolge:
 
-1. **Abflussraten-Entscheidung (§19.4, Zielarchitektur §14 Stufe 1).** Die beiden
-   §19.6-Vorbedingungen sind erfüllt: Watchdog-Vertrag queue-tauglich + Wache V2 (PR #253,
-   Runbook §26.4) und die 524 Altaufträge neutralisiert (§26.7). Versuch 2 scheiterte an
-   Ankunft ~440–470/Tag gegen Abfluss ~130–180/Tag — ohne höhere Abflussrate wiederholt
-   sich genau das. Die Rate ist **Konfiguration**, kein Code.
-2. **Erst nach dieser Entscheidung** Stufe 1 des Stufenplans (`HELMUT_SCALABLE_PIPELINE=on`
-   + `HELMUT_JOB_DISPATCH_MODE=shadow` + `HELMUT_SCALABLE_PIPELINE_SEIT`), dann K0–K3 nach
-   Runbook §6. **Nichts davon ist freigegeben.**
-3. Nach **jeder** wirksamen OP-30-Aktivierung ist OP-25 vollständig zu wiederholen.
+1. **CAS-Entscheidung** für die 2 `unbekannt`-Vorgänge (§27.4: `pruefen`, dann `erneut` —
+   bis zu 2 bezahlte Modellaufrufe; freigabepflichtig).
+2. **Entscheidung über die 383 inerten Aufträge** (301 wartend + 82 abgelaufene Leases):
+   ein neuer Stufe-1-Anlauf nimmt sie automatisch wieder auf (Claim übernimmt abgelaufene
+   Leases); alternativ Neutralisierung nach §26-Verfahren mit **neuen** Ankern und
+   **neuer** Freigabe. Nichts davon ist freigegeben.
+3. **Zweiter Stufe-1-Anlauf** frühestens nach dem Merge, mit denselben §25-Variablen und
+   den §27.3-Quittungen als neuer Kontrolle (`process_runs`: `warteschlange-crawl`/
+   `-pipeline`); danach OP-25 vollständig wiederholen.
 4. Unabhängig davon: **OP-15** (Personenquellen) beziffert und offen; `CRON_SECRET`/Egress
    für eine Folgesitzung freigeben (schließt die K0-Teillücke `/api/ops/jobqueue`).
 
@@ -282,6 +300,12 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzte relevante Sprints
 
+- **19.08. (Reparatursprint, PR #256):** Ursache des 0-Abschluss-Laufs belegt
+  (Blob-RMW je Auftrag + fehlende Slot-Quittung), Option B + D implementiert, Wächter-
+  und Parallelitätssuiten neu (40+16 PASS); CAS-Review der 2 `unbekannt` rein lesend;
+  Production unangetastet (Runbook §27).
+- **18.08. (Betreiber): Stufe 1 aktiviert 16:15 UTC, 19.08. ~06:56 UTC zurückgenommen**
+  — 2 Slots mit 0 Abschlüssen, Rest 383 inert (§27.1).
 - **18.08., PR #254:** Neutralisierung der 524 Altaufträge vollzogen (0/235/0/0);
   235 Erledigte signaturgleich unangetastet; kein Export, kein Flag, kein Cron.
 - **17.08., PR #253:** datensparsamer Neutralisierungsweg (R1–R9) und

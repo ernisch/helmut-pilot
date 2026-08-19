@@ -1550,6 +1550,23 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   `verstehen` bleibt Parallelitaet 1 und OP-15 (Google-Drosselung) bleibt ab ~10 Mandaten
   Blocker. **OP-30 bleibt insgesamt offen** — die Aktivierung ist eine Betreiberentscheidung.
 
+- **Stand 2026-08-19 (Erster Stufe-1-Anlauf gescheitert und zurückgenommen; Reparatursprint
+  Option B + D — TEILWEISE ABGESCHLOSSEN: Code + Nachweise auf PR #256, Merge und zweiter
+  Anlauf stehen aus; Beleg Runbook
+  [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §27):**
+  Die Aktivierung 18.08. 16:15 UTC plante einwandfrei (193 Auftraege, Outbox atomar, 0
+  Duplikate, 0 Kosten), schloss aber in beiden Slots **0 Auftraege** ab; Ruecknahme durch
+  den Betreiber 19.08. ~06:56 UTC. **Bewiesene Ursache:** `handleSourceFetch` las und
+  schrieb je Auftrag die volle Blob-Zeile `main` (1,29 MB) — Row-Lock-Konvoi unter
+  Parallelitaet 4, 10-s-Timeouts, Retry-Verstaerkung; zweiter Befund: der
+  Warteschlangenslot schrieb keine Laufquittung. **Reparatur (nicht gemergt):** relationale
+  kanonische Persistenz mit gebuendeltem Upsert und Neu-Erkennung (Option B; Blob nur noch
+  Lesespiegel, hoechstens 1×/Slot), blob-unabhaengige `process_runs`-Slot-Quittung
+  (Option D), Waechter-/Parallelitaetssuiten **40 + 16 PASS** (worker=4/stapel=25: 60/60,
+  Blob-Zugriffe konstant 2/Slot, 0 Doppelarbeit, Lease-Wiederaufnahme, Durchsatz auch bei
+  Blob-Ausfall). Rest in Production: **383 inerte Auftraege** (301 wartend + 82 abgelaufene
+  Leases) unangetastet; 2 CAS-Vorgaenge `unbekannt` (Timeout-Klasse, §27.4,
+  Betreiberentscheidung). OP-30 insgesamt bleibt offen.
 - **Stand 2026-08-18 (Vollzug der Neutralisierung — AUSGEFÜHRT, Betreiberfreigabe; Beleg
   Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md)
   §26.7):** Die 524 inerten Altauftraege sind am 2026-08-18 ~07:11 UTC ueber den kanonischen
