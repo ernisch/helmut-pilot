@@ -1,14 +1,15 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-19 (nachmittags).** OP-25/OP-31 bestanden; `HELMUT_VERSTEHEN_CAS` läuft
-(§7a). **PR #256 (Reparatur Option B + D) ist gemergt und deployt** (Deployment
-`dpl_EqcMLYpu…` READY auf exakt `e43d306`, Runbook §28.1). Der Motor bleibt **aus**. Die
-zwei CAS-`unbekannt`-Vorgänge sind nach §23.3 **behandelt** (`erneut` freigegeben, 0
-`unbekannt`; bis zu 2 bezahlte Modellaufrufe folgen im nächsten Verstehenslauf, §28.2).
-Die **383 inerten Aufträge (301 wartend + 82 laeuft mit abgelaufener Lease) sind NICHT
-neutralisiert**: das §26-Verfahren unterstützt die gemischte Zielmenge nachweislich nicht
-(Blocker §28.3); das korrigierte Verfahren mit neuen Ankern liegt bewiesen als **PR #257**
-vor (§28.4/§28.5). Versuch 4 ist vorbereitet, **nicht aktiviert** (§28.6).
+**Stand: 2026-08-19 (13:46 türkischer Zeit / 12:46 Berlin / 10:46 UTC).** OP-25/OP-31
+bestanden; `HELMUT_VERSTEHEN_CAS` läuft (§7a). PR #256 (Reparatur Option B + D) und
+PR #257 (gemischtes Neutralisierungsverfahren) sind **gemergt und deployt** (aktuell
+`dpl_7DeB1qca…` READY auf exakt `fc9b611`). **Die 383 inerten Aufträge sind am 19.08.
+~10:44 UTC NEUTRALISIERT** (Runbook §28.8): exakt 383 gelöscht (301 wartend + 82 laeuft
+mit abgelaufener Lease), die 383 Outbox-Absichten über die bewiesene Kaskade mit entfernt,
+die 235 Erledigten signaturgleich unangetastet. Warteschlange **0 / 235 / 0 / 0**,
+Outbox **0**, Wache live `inaktiv-inert` mit `inert-bestand:0`. Der Motor bleibt **aus**;
+die zwei CAS-Vorgänge sind `erneut`-freigegeben (§28.2). **Versuch 4 ist datenbankseitig
+bereit, nicht aktiviert** (§28.6/§28.8).
 
 Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000
 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die
@@ -25,9 +26,10 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 ## 2 · Stand auf `main`
 
-- **HEAD `e43d306`** = Merge **PR #256** am 2026-08-19: Blob-Entkopplung des
-  Warteschlangenpfads (Option B) + blob-unabhängige Slot-Quittung (Option D), Runbook §27.
-- **PR #254** (davor, `4072064`): Vollzugsbeleg der Neutralisierung (Runbook §26.7).
+- **HEAD `fc9b611`** = Merge **PR #257** am 2026-08-19: gemischtes
+  Neutralisierungsverfahren + §28. Davor **PR #256** (`e43d306`): Blob-Entkopplung
+  (Option B) + Slot-Quittung (Option D), Runbook §27; **PR #254** (`4072064`):
+  Vollzugsbeleg der 524er-Neutralisierung (§26.7).
 - **PR #253** (davor, `0d9cf62`) lieferte den **datensparsamen Neutralisierungsweg**
   (`lib/helmut/jobqueue-neutralisierung.js`, Riegel R1–R9, kein Export) und die
   **Warteschlangenwache V2** (`betriebsstatus`, `statusvertrag: 2`, Runbook §26.4).
@@ -90,7 +92,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **`HELMUT_CRON_GLOBALABRUF`** | **`on`** seit 2026-08-06 ~08:15 UTC (Betreiber, für das Nachweisfenster) ⇒ **Kontextpfad aktiv**, laufzeitbelegt (drei Fensterläufe 06./07.08. global auf `d8bf68fa…`, E3 `nv=0`). Ob es `on` bleibt, ist Betreiberentscheidung. Dritter Zyklus |
 | **Berlin (Landesmodul)** | inaktiv. `HELMUT_LANDESMODULE=berlin` seit 2026-07-26 gesetzt, aber **wirkungslos**: 0 berechtigte Berliner Mandate seit dem Rollback ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22). Ob das Flag wirkt, ist **unbewiesen** |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt); PR #132 vor Merge Gate-Name vereinheitlichen |
-| **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **gelöscht (aus)** — erster Stufe-1-Anlauf 18.08. 16:15 UTC, Rücknahme 19.08. ~06:56 UTC (Ursache: §27; Reparatur PR #256 **gemergt + deployt**, §28.1). Warteschlange **301 wartend / 82 laeuft (Leases abgelaufen) / 235 erledigt** — inert; Neutralisierung nach §28.4 erst nach Merge des Folge-PR. **Versuch 4 vorbereitet, nicht aktiviert** (§28.6) |
+| **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **gelöscht (aus)** — erster Stufe-1-Anlauf 18.08. 16:15 UTC, Rücknahme 19.08. ~06:56 UTC (Ursache §27; Reparatur PR #256/#257 gemergt + deployt). **19.08. ~10:44 UTC: die 383 inerten Aufträge sind neutralisiert** (§28.8); Warteschlange **0/235/0/0**, Outbox 0. **Versuch 4 datenbankseitig bereit, nicht aktiviert** (§28.6) |
 | **M8 / `HELMUT_MATCHING_RELEVANZ_GATE`** | aus (Default aus, nie aktiviert) |
 | `HELMUT_CRON_GLOBALPHASE` | nicht gesetzt (aus) — K2-Prüfung ergab keine Aktivierungsempfehlung |
 | `HELMUT_UNDERSTANDING_GATE` / `HELMUT_PARDOK_DISPATCH` | `shadow` |
@@ -171,9 +173,16 @@ OP-30-Aktivierung muss OP-25 für die geänderte Architektur erneut vollständig
   im nächsten Verstehenslauf · **Neutralisierung der 383 NICHT ausgeführt** — belegter
   Blocker: §26-Verfahren bricht an den 82 abgelaufenen `laeuft`-Leases ab (§28.3);
   korrigiertes gemischtes Verfahren (`neutralisierungGemischtSql`, neue Anker vom 19.08.,
-  Outbox-Riegel R12) an echter PostgreSQL bewiesen (**58 PASS / 0 FAIL** inkl.
-  Blocker-Beweis und Mutationsproben) und als **PR #257** eingereicht; Ausführung erst
-  nach Merge + erneuter Vorprüfung (§28.4).
+  Outbox-Riegel R12) an echter PostgreSQL bewiesen (**58 PASS / 0 FAIL**), als PR #257
+  gemergt und deployt.
+- **Vollzug 19.08. ~13:44 TR / 10:44 UTC (freigegeben; Beleg §28.8):** Vorprüfung alle
+  Anker byte-exakt → Trockenlauf `TROCKENLAUF-OK` (belegt folgenlos) → scharf: **exakt
+  383 gelöscht**, 383 Outbox-Absichten kaskadiert entfernt (R12 bewiesen), 235 Erledigte
+  signaturgleich (`f7989b8c…`, pg_stat ins/upd unverändert), CAS byte-gleich zum
+  Vorheranker (90 `fertig`/1 `modell-laeuft` mit abgelaufener Lease aus dem
+  10:00-Lage-Check/2 `offen`), kein Cron/KI/Deploy/Flag/Export; Wache live
+  `inaktiv-inert`, `inert-bestand:0`; Wiederholungsschutz in Production belegt
+  (`ABBRUCH-BEREITS-NEUTRALISIERT`).
 - **Der neue Motor ist wieder ausgeschaltet**; **Versuch 3 ist nicht gestartet**. Für
   25–500 Mandate besteht keine Produktionsfreigabe.
 
@@ -243,21 +252,19 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Genau ein Schritt: PR #257 (gemischtes Neutralisierungsverfahren + §28) prüfen und
-mergen** (Merge = Deployment; Entscheidung beim Betreiber). Danach, in
-dieser Reihenfolge:
+**Genau ein Schritt: Versuch 4 nach Runbook §28.6 aktivieren** — die datenbankseitigen
+Vorbedingungen sind seit dem Vollzug §28.8 erfüllt (0/235/0/0, Outbox 0, Wache
+`inert-bestand:0`). Nächstes sicheres Fenster: **19:10–20:50 türkischer Zeit
+(18:10–19:50 Berlin, 16:10–17:50 UTC)**, erster Wirkungslauf crawl 23:00 türkischer Zeit
+(22:00 Berlin, 20:00 UTC) mit den 11 Kontrollen; Rückweg = Flag löschen + Redeploy.
+Vorher den Vollzugs-Doku-PR mergen. Danach:
 
-1. **Neutralisierung der 383** nach Runbook §28.4 ausführen lassen (Vorprüfung →
-   Trockenlauf → scharf; Anker vom 19.08., Outbox-Riegel R12; erneute Betreiberfreigabe
-   in der ausführenden Sitzung).
-2. **CAS-Folgekontrolle** nach dem nächsten Verstehenslauf (§28.2): beide freigegebenen
-   Vorgänge `fertig` mit Fencing ≥ 2 — oder ehrlich erneut `unbekannt` (dann neue
-   Entscheidung; keine automatische dritte Wiederholung).
-3. **Versuch 4** nach §28.6: Vorprüfung V4-1…V4-7, §25.2-Variablen, Fenster 19:10–20:50
-   türkischer Zeit (18:10–19:50 Berlin, 16:10–17:50 UTC), erster Wirkungslauf crawl
-   23:00 türkischer Zeit (22:00 Berlin, 20:00 UTC) mit den 11 Kontrollen; Rückweg = Flag
-   löschen + Redeploy. Danach OP-25 vollständig wiederholen.
-4. Unabhängig davon: **OP-15** (Personenquellen) beziffert und offen; `CRON_SECRET`/Egress
+1. **CAS-Folgekontrolle** nach dem nächsten Verstehenslauf (§28.2): beide freigegebenen
+   Vorgänge `fertig` mit Fencing ≥ 2 — oder ehrlich erneut `unbekannt`; dazu der eine
+   `modell-laeuft`-Vorgang mit abgelaufener Lease (10:00-Lage-Check, §28.8) — der Wärter
+   löst ihn regulär auf oder stellt ihn ehrlich `unbekannt` (dann §23.3-Entscheidung).
+2. Nach jeder wirksamen OP-30-Aktivierung: **OP-25 vollständig wiederholen**.
+3. Unabhängig davon: **OP-15** (Personenquellen) beziffert und offen; `CRON_SECRET`/Egress
    für eine Folgesitzung freigeben (schließt die K0-Teillücke `/api/ops/jobqueue`).
 
 Die fünf OP-30-Migrationen sind angewendet und dürfen **nicht** erneut ausgeführt werden;
@@ -309,10 +316,13 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzte relevante Sprints
 
+- **19.08. ~10:44 UTC (Vollzug, §28.8):** die 383 inerten Aufträge nach dem gemergten
+  §28.4-Verfahren neutralisiert — 383 gelöscht, Outbox kaskadiert 0, 235 Erledigte
+  signaturgleich, CAS unverändert, Wache `inert-bestand:0`; Versuch 4 nicht gestartet.
 - **19.08. nachm. (Folgesprint, Runbook §28):** PR-#256-Deployment nachgewiesen; CAS
   behandelt (2× `erneut`, 0 `unbekannt`); Blocker des §26-Verfahrens für die gemischte
-  Zielmenge belegt; gemischtes Verfahren (Anker 19.08., R12) 58/0 bewiesen, PR #257;
-  Versuch-4-Plan §28.6. Production-Mutation: nur die 2 freigegebenen CAS-Aufrufe.
+  Zielmenge belegt; gemischtes Verfahren (Anker 19.08., R12) 58/0 bewiesen, PR #257
+  (gemergt); Versuch-4-Plan §28.6.
 - **19.08. (Reparatursprint, PR #256, gemergt):** Ursache des 0-Abschluss-Laufs belegt
   (Blob-RMW je Auftrag + fehlende Slot-Quittung), Option B + D implementiert, Wächter-
   und Parallelitätssuiten neu (40+16 PASS); CAS-Review der 2 `unbekannt` rein lesend

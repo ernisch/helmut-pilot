@@ -1550,6 +1550,22 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   `verstehen` bleibt Parallelitaet 1 und OP-15 (Google-Drosselung) bleibt ab ~10 Mandaten
   Blocker. **OP-30 bleibt insgesamt offen** — die Aktivierung ist eine Betreiberentscheidung.
 
+- **Stand 2026-08-19/3 (VOLLZUG der gemischten Neutralisierung — AUSGEFÜHRT,
+  Betreiberfreigabe; Beleg Runbook
+  [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md)
+  §28.8):** Nach Merge + Deployment von PR #257 (`fc9b611`, Deployment `dpl_7DeB1qca…`
+  READY, exakt gedeckt) wurden am 19.08. ~13:44 TR / 10:44 UTC ueber den kanonischen Weg
+  (§28.4: Vorpruefung → Trockenlauf `TROCKENLAUF-OK` → scharfe serialisierbare
+  Transaktion) **exakt 383 Zielauftraege geloescht** (301 wartend + 82 laeuft mit
+  abgelaufener Lease; alle Anker byte-exakt) und die **383 zugehoerigen Outbox-Absichten
+  ueber die bewiesene Kaskade entfernt** (R12 in der Transaktion). Die 235 erledigten
+  Auftraege sind signaturgleich unangetastet (`f7989b8c…`, pg_stat ins/upd unveraendert);
+  CAS byte-gleich zum unmittelbaren Vorheranker; kein Export, kein Cron, kein KI-Aufruf,
+  keine Migration, kein Deployment, kein Flag. Wache live: `inaktiv-inert`,
+  `inert-bestand:0`; Wiederholungsschutz in Production belegt
+  (`ABBRUCH-BEREITS-NEUTRALISIERT`). Rueckweg ausschliesslich die deterministische
+  Neuerzeugung durch den Planer. **Versuch 4 datenbankseitig bereit, nicht aktiviert**
+  (§28.6). OP-30 insgesamt bleibt offen.
 - **Stand 2026-08-19/2 (Folgesprint nach Merge von PR #256 — TEILWEISE ABGESCHLOSSEN:
   Deployment nachgewiesen, CAS behandelt, Neutralisierung der 383 durch belegten
   Verfahrens-Blocker NICHT ausgeführt; Beleg Runbook
