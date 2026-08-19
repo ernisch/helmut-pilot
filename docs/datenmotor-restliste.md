@@ -1550,9 +1550,25 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   `verstehen` bleibt Parallelitaet 1 und OP-15 (Google-Drosselung) bleibt ab ~10 Mandaten
   Blocker. **OP-30 bleibt insgesamt offen** — die Aktivierung ist eine Betreiberentscheidung.
 
+- **Stand 2026-08-19/2 (Folgesprint nach Merge von PR #256 — TEILWEISE ABGESCHLOSSEN:
+  Deployment nachgewiesen, CAS behandelt, Neutralisierung der 383 durch belegten
+  Verfahrens-Blocker NICHT ausgeführt; Beleg Runbook
+  [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §28):**
+  PR #256 ist gemergt (`e43d306`) und als einziges Production-Deployment seit der
+  Ruecknahme READY nachgewiesen (§28.1); Ruhepruefung bestanden (0 Auftraege seit der
+  Ruecknahme veraendert). Die zwei CAS-`unbekannt`-Vorgaenge wurden mit ausdruecklicher
+  Freigabe kanonisch behandelt (`pruefen` beide ergebnislos-zustandsneutral, `erneut`
+  beide freigegeben → 0 `unbekannt`, 0 Modellaufrufe durch die Behandlung, hoechstens 2
+  im naechsten Verstehenslauf; §28.2). **Blocker belegt:** das §26-Verfahren unterstuetzt
+  die gemischte Zielmenge (301 wartend + 82 laeuft mit abgelaufener Lease) nicht — R2
+  bricht an den laeuft-Zeilen ab (§28.3); daher keine Production-Neutralisierung in diesem
+  Sprint. Korrektur: gemischtes Verfahren (`neutralisierungGemischtSql`, neue Anker vom
+  19.08., Outbox-Riegel R12 mit bewiesener Kaskade) an echter PostgreSQL **58 PASS / 0
+  FAIL** inkl. Blocker-Beweis, Tiefenstaffelung und Mutationsproben; CLI
+  `scripts/jobqueue-neutralisierung-383.js`; PR #257 eingereicht, nicht gemergt.
+  Versuch 4 vorbereitet, nicht aktiviert (§28.6). OP-30 insgesamt bleibt offen.
 - **Stand 2026-08-19 (Erster Stufe-1-Anlauf gescheitert und zurückgenommen; Reparatursprint
-  Option B + D — TEILWEISE ABGESCHLOSSEN: Code + Nachweise auf PR #256, Merge und zweiter
-  Anlauf stehen aus; Beleg Runbook
+  Option B + D — PR #256, am 19.08. gemergt und deployt (§28.1); Beleg Runbook
   [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §27):**
   Die Aktivierung 18.08. 16:15 UTC plante einwandfrei (193 Auftraege, Outbox atomar, 0
   Duplikate, 0 Kosten), schloss aber in beiden Slots **0 Auftraege** ab; Ruecknahme durch

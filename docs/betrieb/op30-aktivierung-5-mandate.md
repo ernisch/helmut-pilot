@@ -3039,3 +3039,190 @@ Kein Production-Schreibzugriff irgendeiner Art · keine Neutralisierung der 383 
 Flag, kein Deployment, keine Migration, kein Cronlauf, kein KI-Aufruf · PR #255
 unberührt · keine Nutzdaten/Mandatskennungen/Fehlertexte exportiert (Vorgänge nur als
 md5-Präfix, Fehlertexte nur als Klasse/Marker-Booleans).
+
+---
+
+## §28 · Nach dem Merge von PR #256: Deployment-Nachweis, CAS-Behandlung, gemischte Neutralisierung, Versuch-4-Plan (2026-08-19)
+
+Alle Zeitangaben: türkische Zeit (UTC+3), dann Berlin (UTC+2), dann UTC. Production-Zugriffe
+dieses Sprints: rein lesend und aggregiert — **plus** exakt zwei freigegebene Mutationen
+(§28.2, CAS-`erneut` je Vorgang). Keine Neutralisierung ausgeführt (§28.3).
+
+### §28.1 Deployment-Nachweis PR #256 und Ruheprüfung (Teil A — bestanden)
+
+- **`main` = `e43d306`** (Merge PR #256). Production-Deployment
+  **`dpl_EqcMLYpugcXBfoGuDSVRfzNFuq6i`**, **READY**, `target=production`, Commit-SHA exakt
+  `e43d3064dd42570d576a9ad76801365651a24cce` — deckungsgleich mit `origin/main`; erstellt
+  11:53:43 TR / 10:53:43 Berlin / 08:53:43 UTC. Es ist das **einzige** Production-Deployment
+  seit der Rücknahme (`dpl_4WcYbNow…`, §27.1); dazwischen nur Preview-Deployments des PR.
+- **Ruheprüfung 12:08 TR / 11:08 Berlin / 09:08 UTC (rein lesend):** Warteschlange exakt
+  **301 wartend / 235 erledigt / 82 laeuft / 0 fehlgeschlagen**; **0 aktive Leases, alle 82
+  laeuft-Leases abgelaufen**; **0 Aufträge seit der Rücknahme erzeugt oder geändert**;
+  Outbox 220 offen / 163 bestätigt (alle 383 gehören zur Zielmenge, §28.3); CAS 85 `fertig`
+  / 2 `unbekannt` / 0 Vormerkungen / 85 KO-Fencing; Migrationen unverändert
+  31/`20260815164241` (`20260720` nicht angewendet); 0 fremde aktive Abfragen, 0 Sperren
+  auf `helmut_jobs`; **0 Laufzeitfehler** (error/fatal) in den 3 h um das Deployment.
+- **Motor wirkungsbasiert aus:** seit der Rücknahme 0 neue/geänderte Aufträge, keine
+  `warteschlange-*`-Quittungen, keine Warteschlangen-Logzeilen; die Variablen aus §25.2
+  sind ohne das Hauptflag wirkungslos. Der nächste flaggeschaltete Slot (pipeline 19:00 TR
+  / 18:00 Berlin / 16:00 UTC) läuft planmäßig über den Altpfad.
+
+### §28.2 CAS-Behandlung nach §23.3/§27.4 (Teil B — AUSGEFÜHRT, ausdrücklich freigegeben)
+
+Betreiberfreigabe: eng begrenzt auf exakt die zwei dokumentierten `unbekannt`-Vorgänge
+(md5-Präfixe `7aae32c1`, `744a7780`). Ablauf 12:15–12:20 TR / 11:15–11:20 Berlin /
+09:15–09:20 UTC, ausschließlich über die kanonische Funktion
+`helmut_verstehen_ausgang_aufloesen` — keine direkte SQL-Zustandskorrektur:
+
+1. **Vorprüfung erneut bestanden:** exakt 2 `unbekannt`, je 1 Versuch / 1 KI-Aufruf, kein
+   Besitzer, keine aktive Lease, kein Ergebnis (weder reserviert noch am Wissensobjekt),
+   0 Vormerkungen, Klasse `modellfehler`.
+2. **`pruefen` je Vorgang:** beide `entscheidung-unbekannt` = kein nachträglich belegtes
+   Ergebnis vorhanden; belegt zustandsneutral (die Funktion ändert in diesem Zweig nichts).
+3. **`erneut` je Vorgang:** beide `erneut-freigegeben` → Zustand `offen`,
+   `letzter_grund='erneut-freigegeben'`.
+4. **Nachkontrolle:** `unbekannt` = **0** (85 `fertig` + 2 `offen`); Versuchs-/KI-Zähler
+   unverändert 1/1 (durch diese Aktion entstand **kein** Modellaufruf); 0 Vormerkungen;
+   0 offene LLM-Reservierungen; KO-Fencing unverändert 85; kein HV001/HV002.
+
+**Kosten:** 0 Modellaufrufe durch die Behandlung selbst; **bis zu 2 bezahlte Aufrufe**
+folgen im nächsten regulären Verstehenslauf (frühestens Pipeline-Slot 19:00 TR / 16:00 UTC,
+spätestens understanding-cron 00:30 TR / 23:30 Berlin / 21:30 UTC) — exakt die freigegebene
+Obergrenze. Kontrolle danach: beide Vorgänge `fertig` mit `verstehen_fencing` ≥ 2, oder
+erneut ehrlich `unbekannt` (dann neue Betreiberentscheidung, keine automatische dritte
+Wiederholung).
+
+### §28.3 BELEGTER BLOCKER: das §26-Verfahren unterstützt die gemischte Zielmenge nicht (Teil C)
+
+Die Zielmenge besteht jetzt aus **301 `wartend` + 82 `laeuft` mit abgelaufener Lease**
+(= 383; die 82 stammen aus den zwei gescheiterten Slots, deren Worker vor dem Abschluss
+starben). Das §26-Verfahren scheitert daran dreifach — am Code belegt und in der neuen
+Nachweissuite am echten SQL bewiesen: (1) seine Zielmenge trifft nur `status='wartend'`;
+(2) sein R2 bricht bei **jeder** nicht erledigten Zeile mit `lease_owner` ab — eine
+`laeuft`-Zeile trägt ihn per CHECK-Constraint zwingend, auch mit abgelaufener Lease;
+(3) sein R9 verlangt 0 `laeuft` im Nachzustand. Es ist fail closed (kein Teilzustand
+möglich), aber für diese Zielmenge unbrauchbar. **Deshalb wurde in diesem Sprint NICHT
+neutralisiert** (Auftrag Teil C Punkt 7): die kleinste notwendige Korrektur liegt als
+eigenes, zusätzliches Verfahren im selben Modul vor — Ausführung erst nach Merge und
+erneuter Vorprüfung (§28.4).
+
+### §28.4 Das gemischte Verfahren: Anker, Riegel, Betreiberablauf
+
+**Anker (rein lesend erhoben 12:12 TR / 11:12 Berlin / 09:12 UTC; unveränderlich):**
+
+| Anker | Wert |
+|---|---|
+| Verteilung (wartend/erledigt/laeuft/fehlgeschlagen) | **301 / 235 / 82 / 0** (gesamt 618) |
+| Zielmenge (wartend + laeuft mit abgelaufener Lease) | **383** |
+| Zeitgrenze (strikt nach jüngster Zielzeile 05:56:54 UTC und Rücknahme 06:56 UTC) | `2026-08-19 07:00:00+00` |
+| Gesamtsignatur md5(id\|status\|typ\|versuche) | `3fd4565a65cdea28a52bde279d6dd69c` |
+| ID-Kette der Zielmenge (md5) | `3b709747630e28d5b7eaae8a36e24939` |
+| Erledigt-Signatur (identisch seit §26.7 — die 235 sind unangetastet) | `f7989b8cc2828acb99f26148a405999f` |
+| Typverteilung der Zielmenge | source_fetch 361 · document_understanding 2 · mandate_projection 10 · briefing_materialization 10 |
+| Entstehungsfenster der Zielmenge | 18.08. 20:00:22 – 19.08. 05:56:54 UTC |
+| Outbox-Absichten der Zielmenge | **383** (= gesamte Outbox; 220 offen / 163 bestätigt) |
+
+**Was sich gegenüber §26 ändert (und nur das):** Zielmenge = `wartend` ODER `laeuft` mit
+`lease_expires_at <= now()`, jeweils vor der Grenze · R2 zweiteilig (R2a: 0 **aktive**
+Leases im gesamten Bestand; R2b: jede `laeuft`-Zeile gehört zur Zielmenge) · **neuer
+Riegel R12**: die Outbox-Absichten der Zielmenge werden vor der Löschung gegen den Anker
+(383) geprüft und müssen nach der Löschung 0 sein — die `on delete cascade`-Kopplung
+(Migration `20260813090000`) wird in der Transaktion **bewiesen**, nicht angenommen; es
+bleibt keine zur Zielmenge gehörende Outbox-Restarbeit · R9 prüft 0 `wartend` **und**
+0 `laeuft`. Unverändert: Serializable + FOR UPDATE, Trockenlauf-Standard mit
+bauartbedingtem Rollback, `ABBRUCH-BEREITS-NEUTRALISIERT`, Datensparsamkeit (keine
+sensible Spalte, kein Vollzeilenkonstrukt, kein Export), **Rückweg ausschließlich die
+deterministische Neuerzeugung durch den Planer** (kein byte-identischer Restore, keine
+Kopie gelöschter Nutzdaten — §26.2 gilt wörtlich weiter).
+
+**Betreiberablauf (nach Merge des Sprint-PR, mit neuer ausdrücklicher Freigabe):**
+
+1. Ruheprüfung wie §28.1 (kein schwerer Cronslot aktiv, 0 fremde Abfragen/Sperren, 0 neue
+   Aufträge seit der Rücknahme — sonst Anker neu erheben und neu entscheiden).
+2. `node scripts/jobqueue-neutralisierung-383.js --vorpruefung` → alle 12 Werte exakt.
+3. `node scripts/jobqueue-neutralisierung-383.js` (Trockenlauf) → muss mit
+   `TROCKENLAUF-OK … 383 Zeilen WAEREN geloescht` enden; Gegenmessung: nichts verändert.
+4. `node scripts/jobqueue-neutralisierung-383.js --scharf` → genau ein Lauf; erwarteter
+   Nachzustand **0 / 235 / 0 / 0**, 0 aktive Leases, Outbox 0, Erledigt-Signatur
+   `f7989b8c…` unverändert, CAS unverändert gegenüber §28.2.
+5. Nachkontrolle rein lesend (Verteilung, Signaturen, Outbox, CAS, kein Cron/KI/Deploy).
+
+**Erwarteter Nachzustand deckt sich mit dem Auftrag:** 0 wartend · 235 erledigt · 0 laeuft
+· 0 fehlgeschlagen · 0 aktive Leases · keine Outbox-Restarbeit der Zielmenge ·
+Erledigt-Signatur unverändert · CAS unverändert · kein Cron, kein KI-Aufruf, keine
+Migration, kein Deployment, kein Flag, kein Export.
+
+### §28.5 Nachweise des gemischten Verfahrens (echte lokale PostgreSQL)
+
+Suite `scripts/jobqueue-neutralisierung-gemischt-datenbank-test.js` (vom Offline-Runner
+automatisch eingesammelt; ohne lokalen PG ehrlich OFFEN): **58 PASS / 0 FAIL** an echter
+PostgreSQL 16.13 (PR #257).
+Bewiesen werden: der §26-Blocker am echten SQL (R2-Abbruch an den abgelaufenen Leases,
+folgenlos) · Vorprüfung und folgenloser Trockenlauf · Abbruch bei aktiver Lease (R2a),
+Feldmutation (R3), neuer Zeile (R1), zählungsneutralem Tausch (R6), fehlender
+Outbox-Absicht (R12), Fehlgeschlagenem (R1) · Mutationsproben: ohne R2a/R2b nimmt R9 die
+Löschung vollständig zurück (Tiefenstaffelung), ohne R3 bliebe eine Feldmutation
+unbemerkt, ohne R12 fremde Outbox-Aktivität, R8 rollt eine falsche Löschanzahl nach dem
+Delete zurück · scharfe Ausführung: Zielmenge weg, Erledigte byte-identisch, Outbox-Kaskade
+bewiesen, fremde (erledigte) Outbox-Absicht überlebt · Wiederholung
+`ABBRUCH-BEREITS-NEUTRALISIERT` · funktionaler Rückweg (Schlüssel wieder frei, erledigte
+deduplizieren weiter) · Kanarien-Beweis über alle Ausgaben (payload/last_error/tenant_id/
+idempotency_key/outbox-Fehlertext erscheinen nirgends).
+
+### §28.6 Vorprüfung und Betreiberplan für Versuch 4 (Teil D — NICHT aktiviert)
+
+**Unmittelbare Vorprüfung (alles rein lesend, unmittelbar vor dem Setzen der Variablen):**
+
+| Nr. | Prüfung | Erwartung |
+|---|---|---|
+| V4-1 | `main`-HEAD = jüngstes Production-Deployment, READY | deckungsgleich, enthält PR #256 **und** den Sprint-PR |
+| V4-2 | Warteschlange | 0 wartend / 235 erledigt / 0 laeuft / 0 fehlgeschlagen · 0 aktive Leases (nach §28.4) |
+| V4-3 | Outbox | 0 offene Absichten |
+| V4-4 | CAS | 0 `unbekannt` oder jeder Fall mit §23.3-Blocker erklärt; 0 Vormerkungen; kein HV001/HV002 |
+| V4-5 | Kein schwerer Cronslot im Aktivierungsfenster aktiv | Fenster 19:10–20:50 TR liegt nach dem 16:00-UTC-Slot |
+| V4-6 | Migrationen | unverändert 31/`20260815164241`; `20260720` NICHT anwenden |
+| V4-7 | 0 fremde aktive Abfragen/Sperren auf `helmut_jobs` | 0/0 |
+
+**Variablen (Vercel → Production, exakt diese Werte):** `HELMUT_SCALABLE_PIPELINE=on` ·
+`HELMUT_JOB_DISPATCH_MODE=shadow` · `HELMUT_SCALABLE_PIPELINE_SEIT=<exakter
+Aktivierungszeitpunkt UTC, z. B. 2026-08-19T16:15:00Z>` · `HELMUT_WORKER_PARALLEL=4` ·
+`HELMUT_WORKER_STAPEL=25` · `HELMUT_WORKER_BATCH=25`. Unverändert: `HELMUT_VERSTEHEN_CAS=on`;
+`HELMUT_VERSTEHEN_PARALLELITAET` nicht gesetzt (wirkt als 1); `HELMUT_KLASSEN_GRENZEN` und
+`HELMUT_ANBIETER_STEUERUNG` aus. Danach Redeployment abwarten (READY, gleicher Git-Stand).
+
+**Fenster:** Aktivierung 19:10–20:50 TR / 18:10–19:50 Berlin / 16:10–17:50 UTC. Erster
+Wirkungslauf: crawl 23:00 TR / 22:00 Berlin / **20:00 UTC**.
+
+**Kontrollen des ersten Wirkungslaufs (Abbruch-/Erfolgsgrenzen):**
+
+1. **Echter Abfluss > 0** (`erledigt > 0` im Slot — das K.-o.-Kriterium des 18.08.).
+2. **Keine Blob-Zugriffe je `source_fetch`-Auftrag**; höchstens der dokumentierte gebündelte
+   Blob-Spiegel **einmal je Slot** (Logzeile `spiegel=ok:<n>` oder ehrlich `FEHLER`).
+3. **`process_runs`-Quittungen vorhanden:** `warteschlange-crawl` mit Start- (`running`)
+   und Abschlusszeile; Status `success` (oder ehrlich `partial` mit Fehlerklasse).
+4. **Keine Doppelarbeit, keine verlorenen Aufträge** (Zähler der Quittung konsistent:
+   zielmenge = erledigt + zurückgestellt + wiederholt-offen; keine doppelten Abschlüsse).
+5. **0 endgültige Fehler** (`endgueltigFehlgeschlagen = 0`).
+6. **R4-Abweichung 0** (Watchdog-Vertrag §8.3/§8.4: keine Doppelarbeit-Befunde).
+7. **CAS ohne neue `unbekannt`-Vorgänge** (Stand §28.2: 0; die bis zu 2 freigegebenen
+   Wiederholungen können regulär `fertig` werden).
+8. **Slotdauer unter der Runbook-Grenze** (< 280 s äußeres Limit; Soll ≤ 270 s).
+9. **Warteschlange wächst nicht unkontrolliert** (Wache-Klassen 1–3; Klasse ≥ 6 = Abbruch).
+10. **Briefings im Morgenzyklus vollständig** (nächster Morgen: briefing-morning 5/5,
+    briefing-lage 5/5).
+11. **Kein HV001/HV002.**
+
+**Sofortiger Rückweg (unverändert §27):** `HELMUT_SCALABLE_PIPELINE` aus Production
+löschen + Redeployment desselben Git-Stands; die Variablen aus §25.2 dürfen stehen
+bleiben (ohne Hauptflag wirkungslos). Abbruchkriterien: Kontrolle 1, 5, 9 oder 11 verletzt
+→ sofort zurücknehmen; Kontrolle 2/3 verletzt → zurücknehmen und Befund dokumentieren
+(die Wächtersuiten müssten das eigentlich ausschließen).
+
+### §28.7 Nicht getan (Verbote eingehalten)
+
+Keine Neutralisierung ausgeführt (Blocker §28.3 — Verfahren liegt als PR vor) · kein Flag
+gesetzt oder gelöscht, kein Deployment/Redeployment ausgelöst, keine Migration, kein
+Cronlauf, keine AWS-Ressource · PR #255 unberührt · Production-Mutationen ausschließlich
+die zwei freigegebenen CAS-`erneut`-Aufrufe (§28.2) · keine Nutzdaten, Payloads,
+Mandatskennungen oder Fehlertexte übertragen oder ausgegeben (Vorgänge nur als
+md5-Präfix; Zielmenge nur als Zähler/Zeitgrenzen/Prüfsummen).
