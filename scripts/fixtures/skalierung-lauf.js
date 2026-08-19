@@ -134,19 +134,26 @@ function welt({ profile, ausfall = [], drosselung = 0, dokumenteJeWeg = 2, decke
     },
 
     // KORREKTUR (Abschlussreview 2026-08-08): die Attrappe baute die Kennung selbst und gab
-    // sie im Rueckgabewert von `saveRawItems` mit. Production liefert dort die BLOB-Zeilen
-    // mit `raw-<hash16>`; die Ablage steht unter `rd-<inhaltsfingerabdruck>`
-    // (dedup.toRawDocumentRow). Die Attrappe hat damit genau den Fehler verdeckt, den sie
-    // haette finden muessen. Jetzt: echte Kennung in der Ablage, Blob-Form im Rueckgabewert.
-    saveRawItems: async (items) => items.map((it) => {
-      const zeile = dedup.toRawDocumentRow(it);
-      w.rohdokumente.set(zeile.id, {
-        id: zeile.id, url: it.url, title: it.title, source_id: it.sourceId,
-        _weg: it._weg, _vorgang: vorgangFuer(it._weg, it._nr)
-      });
-      return { ...it, id: `raw-${crypto.createHash("sha256").update(String(it.url)).digest("hex").slice(0, 16)}` };
-    }),
-    persistRawDocuments: async (d) => ({ skipped: false, error: null, persisted: d.length }),
+    // sie im Rueckgabewert mit — und verdeckte damit genau den Fehler, den sie haette
+    // finden muessen. Seit OPTION B (Reparatursprint 2026-08-19) bildet die Attrappe die
+    // relationale Persistenz nach: `dedup.toRawDocumentRow` liefert die Ablage-Kennung
+    // (`rd-<inhaltsfingerabdruck>`), NEU ist nur, was die Welt-Ablage noch nicht traegt —
+    // exakt die ignore-duplicates-Semantik von `persistiereRohdokumenteWarteschlange`.
+    persistRohdokumente: async (items) => {
+      const neuIds = [];
+      let vorhandene = 0;
+      for (const it of items) {
+        const zeile = dedup.toRawDocumentRow(it);
+        if (!zeile || !zeile.id) continue;
+        if (w.rohdokumente.has(zeile.id)) { vorhandene += 1; continue; }
+        w.rohdokumente.set(zeile.id, {
+          id: zeile.id, url: it.url, title: it.title, source_id: it.sourceId,
+          _weg: it._weg, _vorgang: vorgangFuer(it._weg, it._nr)
+        });
+        neuIds.push(zeile.id);
+      }
+      return { ok: true, neuIds, vorhandene };
+    },
     ladeRohdokumente: async (ids) => ids.map((i) => w.rohdokumente.get(i)).filter(Boolean),
 
     eagerUnderstanding: async (dokumente) => {

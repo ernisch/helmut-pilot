@@ -529,8 +529,13 @@ async function main() {
   {
     const quelltext = require("fs").readFileSync(path.join(ROOT, "lib/helmut/scalable-pipeline.js"), "utf8");
     check("10.1 Der Abrufhandler ruft crawlAllSources auf", /deps\.crawlAllSources\(/.test(quelltext));
-    check("10.2 Der Abrufhandler schreibt ueber saveRawItems + persistRawDocuments",
-      /deps\.saveRawItems\(/.test(quelltext) && /deps\.persistRawDocuments\(/.test(quelltext));
+    // OPTION B (Reparatursprint 2026-08-19): der Abrufhandler persistiert KANONISCH
+    // RELATIONAL und fasst die Blob-Zeile `main` je Auftrag nicht mehr an — `saveRawItems`
+    // im Handler waere die Rueckkehr des Row-Lock-Konvois (Runbook §27) und macht rot.
+    check("10.2 Der Abrufhandler schreibt relational (persistRohdokumente), NIE je Auftrag in den Blob",
+      /deps\.persistRohdokumente\(/.test(quelltext)
+      && !/deps\.saveRawItems\(/.test(quelltext)
+      && !/deps\.persistRawDocuments\(/.test(quelltext));
     check("10.3 Verstehen laeuft ueber runUnderstandingShadow (globaler Deckel unveraendert)",
       /runUnderstandingShadow/.test(quelltext) && /deps\.eagerUnderstanding\(/.test(quelltext));
     check("10.4 Die Projektion nutzt runMatchingShadow + runDecisionShadow",
@@ -547,18 +552,18 @@ async function main() {
       hardeningConfig: () => ({ enabled: false, sharedPathDedup: false, sharedPathWindowMs: 0 }),
       createGate: () => null, sharedLedger: () => null,
       crawlAllSources: async () => ({ results: [{ ok: true, sourceId: "q1" }], rawItems: [{ hash: "h1" }] }),
-      saveRawItems: async (items) => items,
-      persistRawDocuments: async () => ({ skipped: false, error: null, persisted: 1 })
+      // Option B: die NEU-Erkennung liegt in der relationalen Ablage (neuIds).
+      persistRohdokumente: async () => ({ ok: true, neuIds: ["rd-x"], vorhandene: 0 })
     };
     const gut = await SP.HANDLER.source_fetch({ id: "j", payload: { quelle: { id: "q1" } } }, d);
     check("10.8 Erfolgreicher Abruf meldet ok", gut.ok === true && gut.gespeichert === 1);
     let gefangen = null;
     try {
       await SP.HANDLER.source_fetch({ id: "j", payload: { quelle: { id: "q1" } } },
-        { ...d, persistRawDocuments: async () => ({ error: "kaputt" }) });
+        { ...d, persistRohdokumente: async () => ({ ok: false, grund: "kaputt" }) });
     } catch (e) { gefangen = e.message; }
     check("10.9 Gescheiterte Persistenz meldet KEINEN Erfolg (kein falsches Gruen)",
-      gefangen === "persistenz-fehlgeschlagen-oder-unbekannt", String(gefangen));
+      /^persistenz-fehlgeschlagen-oder-unbekannt/.test(String(gefangen)), String(gefangen));
     let leer = null;
     try { await SP.HANDLER.source_fetch({ id: "j", payload: {} }, d); } catch (e) { leer = e.message; }
     check("10.10 Ein Auftrag ohne Quelle wird als payload-ungueltig abgelehnt", /payload-ungueltig/.test(String(leer)));
@@ -661,8 +666,11 @@ async function main() {
     const basisDeps = {
       hardeningConfig: () => ({ enabled: false }),
       crawlAllSources: async () => ({ results: [{ ok: true }], rawItems: [rawItem] }),
-      saveRawItems: async (items) => items,       // wie Production: dieselben Blob-Zeilen
-      persistRawDocuments: async () => ({ persisted: 1 }),
+      // Option B: wie Production — die relationale Persistenz liefert die rd-Kennungen der
+      // NEU eingefuegten Zeilen (dieselbe Ableitung wie dedup.toRawDocumentRow).
+      persistRohdokumente: async (items) => ({
+        ok: true, neuIds: items.map((it) => dedup.toRawDocumentRow(it).id), vorhandene: 0
+      }),
       enqueue: async (a) => { eingereiht = a; return { verfuegbar: true, neu: true }; }
     };
     const sfErgebnis = await SP.HANDLER.source_fetch(
@@ -755,8 +763,10 @@ async function main() {
     const standard = SP.workerDeps();
     const modulPaare = [
       ["crawlAllSources", "crawler", "crawlAllSources"],
-      ["saveRawItems", "storage", "saveRawItems"],
-      ["persistRawDocuments", "scheduler", "persistRawDocumentsShadow"],
+      // Option B (2026-08-19): der Warteschlangenpfad persistiert relational; saveRawItems/
+      // persistRawDocumentsShadow sind bewusst NICHT mehr verdrahtet (Waechter: 10.2 und
+      // scripts/warteschlange-blob-entkopplung-test.js).
+      ["persistRohdokumente", "storage", "persistiereRohdokumenteWarteschlange"],
       ["eagerUnderstanding", "understanding", "runUnderstandingShadow"],
       ["matching", "matching", "runMatchingShadow"],
       ["decisions", "decisions", "runDecisionShadow"],

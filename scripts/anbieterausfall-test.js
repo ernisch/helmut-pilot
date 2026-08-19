@@ -61,8 +61,11 @@ function grundAttrappen(u, w) {
     now: u.jetzt,
     hardeningConfig: () => ({ enabled: false, sharedPathDedup: false, sharedPathWindowMs: 0 }),
     createGate: () => null, sharedLedger: () => null,
-    saveRawItems: async (items) => items.map((it, i) => ({ id: `rd-${i}-${it.url.length}`, ...it })),
-    persistRawDocuments: async (d) => ({ skipped: false, error: null, persisted: d.length }),
+    // Option B (2026-08-19): der Handler persistiert relational — die Attrappe liefert
+    // deterministische rd-Kennungen als NEU eingefuegte Zeilen.
+    persistRohdokumente: async (items) => ({
+      ok: true, neuIds: items.map((it, i) => `rd-${i}-${it.url.length}`), vorhandene: 0
+    }),
     ladeRohdokumente: async () => [],
     eagerUnderstanding: async () => ({ processed: 0, deferred: 0 }),
     getActiveProfile: async (id) => w.profile.find((p) => p.id === id) || null,

@@ -7019,6 +7019,22 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
   const laufkennung = runId || helmutRunId(`cron-${cronName}`, start);
   const verbleibend = () => Math.max(0, deadlineMs - (Date.now() - start));
 
+  // ── LAUFQUITTUNG DES SLOTS (OP-30 Option D, Reparatursprint 2026-08-19) ────────────────
+  // Bis zu diesem Sprint schrieb dieser Slot GAR KEINE Lauftelemetrie — die beiden Laeufe
+  // des Aktivierungsfensters 18./19.08. (20:00/04:00 UTC) haben deshalb keine
+  // `process_runs`-Zeile hinterlassen (Runbook §27). Die Quittung ist RELATIONAL und
+  // BLOB-UNABHAENGIG (`schreibeWarteschlangenLaufquittung` fasst keinen Blob an): Beginn,
+  // Ende, Status, Zaehlwerte und Fehlerklasse ueberleben damit genau die Stoerungsklasse
+  // (Blob-/Storage-Ausfall), die den Anlass ausgeloest hat. Ein Quittungsfehler bricht den
+  // Slot nie, wird aber im Ergebnis ausgewiesen (CLAUDE.md §4.10: gemeldet wird, was die
+  // Ablage traegt — oder der Persistenzfehler ausdruecklich).
+  const quittungsProzess = `warteschlange-${cronName}`.slice(0, 40);
+  const startQuittung = await storageModul.schreibeWarteschlangenLaufquittung({
+    process: quittungsProzess, runId: laufkennung, mode: "warteschlange",
+    location: helmutExecLocation(), status: "running",
+    startedAt: new Date(start).toISOString(), finishedAt: null
+  }).catch((error) => ({ ok: false, grund: String((error && error.message) || "fehler").slice(0, 120) }));
+
   // PLANUNGSANTEIL: gedeckelt, damit eine langsame Profil-/Quellenabfrage nie den gesamten
   // Slot frisst. Reicht die Zeit nicht, wird EHRLICH gemeldet und trotzdem gearbeitet —
   // die Warteschlange traegt ja bereits Auftraege aus frueheren Laeufen.
@@ -7091,6 +7107,39 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
 
   const status = await scalablePipeline.betriebsstatus({ seitMinuten: 1440 }).catch(() => null);
 
+  // ── ABSCHLUSSQUITTUNG (OP-30 Option D): dieselbe (run_id, process)-Zeile wie der
+  // Startbeleg, atomar ueberschrieben — Zaehlwerte, Status und Fehlerklasse relational und
+  // blob-unabhaengig. Der Status ist EHRLICH: ein Slot, der reserviert hat und nichts
+  // abschloss, ist `partial` mit Klasse `lease-ohne-fortschritt` (genau das Bild des
+  // Aktivierungslaufs 18.08.), kein Erfolg.
+  const planFehlgeschlagen = !(plan && plan.ok !== false);
+  const spiegelD = durchlauf.blobSpiegel || {};
+  const quittungsStatus = planFehlgeschlagen || bilanz.verfuegbar === false
+    ? "failed"
+    : ((bilanz.endgueltigFehlgeschlagen || 0) > 0 || ((bilanz.reserviert || 0) > 0 && (bilanz.erledigt || 0) === 0)
+      ? "partial" : "success");
+  const quittungsFehlerklasse = planFehlgeschlagen
+    ? "planung-fehlgeschlagen"
+    : (bilanz.verfuegbar === false
+      ? "warteschlange-nicht-verfuegbar"
+      : ((bilanz.reserviert || 0) > 0 && (bilanz.erledigt || 0) === 0
+        ? "lease-ohne-fortschritt"
+        : ((bilanz.endgueltigFehlgeschlagen || 0) > 0 ? "auftraege-endgueltig-fehlgeschlagen" : null)));
+  const endQuittung = await storageModul.schreibeWarteschlangenLaufquittung({
+    process: quittungsProzess, runId: laufkennung, mode: "warteschlange",
+    location: helmutExecLocation(), status: quittungsStatus,
+    startedAt: new Date(start).toISOString(), finishedAt: new Date().toISOString(),
+    durationMs: Date.now() - start,
+    zielmenge: bilanz.reserviert || 0, processed: bilanz.erledigt || 0,
+    deferred: bilanz.zurueckgestellt || 0, fehlgeschlagen: bilanz.endgueltigFehlgeschlagen || 0,
+    wiederholt: bilanz.wiederholt || 0, leaseVerloren: bilanz.leaseVerloren || 0,
+    geplant: (plan && plan.geplant) || 0, neuGeplant: (plan && plan.neu) || 0,
+    spiegelGesammelt: spiegelD.gesammelt ?? 0,
+    spiegelGeschrieben: spiegelD.geschrieben === true ? (spiegelD.neuImBlob ?? 0) : null,
+    fehlerklasse: quittungsFehlerklasse,
+    reason: spiegelD.geschrieben === false ? "blob-spiegel-fehlgeschlagen" : ((!bilanz.verfuegbar && durchlauf.grund) ? String(durchlauf.grund).slice(0, 120) : null)
+  }).catch((error) => ({ ok: false, grund: String((error && error.message) || "fehler").slice(0, 120) }));
+
   console.log(`[cron/${cronName}/warteschlange] ${Date.now() - start}ms`
     + ` geplant=${plan && plan.geplant} neu=${plan && plan.neu}`
     + ` worker=${durchlauf.worker} erledigt=${bilanz.erledigt} wiederholt=${bilanz.wiederholt}`
@@ -7099,6 +7148,8 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     + ` rotation=${(plan && plan.tagesplan && plan.tagesplan.plaetze) || 0}`
     + ` dispatch=${jobDispatch.dispatchModus()}`
     + ` weckVersand=${weckVersand.versendet || 0}/${weckVersand.vergeben || 0}`
+    + ` spiegel=${spiegelD.geschrieben == null ? "leer" : (spiegelD.geschrieben ? `ok:${spiegelD.neuImBlob ?? "?"}` : "FEHLER")}`
+    + ` quittung=${startQuittung && startQuittung.ok ? "start-ok" : "start-fehler"}/${endQuittung && endQuittung.ok ? "ende-ok" : "ende-fehler"}`
     + ` zustand=${(status && status.zustand) || "unbekannt"} lauf=${laufkennung}`);
 
   // EHRLICHER GESAMTAUSGANG (CLAUDE.md §4.4): ein Lauf ist nur dann ok, wenn geplant UND
@@ -7115,6 +7166,16 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     // Zielarchitektur: Dispatch-Sicht dieses Laufs (off => beide uebersprungen).
     outboxAbgleich,
     weckVersand,
+    // OP-30 Option D: Ausgang der blob-unabhaengigen Slot-Quittung — sichtbar, nie verworfen.
+    lauftelemetrie: {
+      prozess: quittungsProzess,
+      start: Boolean(startQuittung && startQuittung.ok),
+      ende: Boolean(endQuittung && endQuittung.ok),
+      status: quittungsStatus,
+      fehlerklasse: quittungsFehlerklasse,
+      ...(startQuittung && startQuittung.ok ? {} : { startGrund: (startQuittung && startQuittung.grund) || "unbekannt" }),
+      ...(endQuittung && endQuittung.ok ? {} : { endeGrund: (endQuittung && endQuittung.grund) || "unbekannt" })
+    },
     betrieb: status
   };
 }
