@@ -2972,7 +2972,7 @@ Fensters sind deshalb ohne dauerhafte Laufzeile; die Diagnose musste auf
 Vercel-Runtime-Logs ausweichen (gegengeprüft 19.08.: 0 Zeilen `process like
 'warteschlange%'`).
 
-### §27.3 Reparatur (Sprint 2026-08-19, Option B + D — Code auf Branch, kein Deployment)
+### §27.3 Reparatur (Sprint 2026-08-19, Option B + D — PR #256, kein Deployment)
 
 * **Option B — Blob-Entkopplung:** der Warteschlangenpfad `source_fetch` persistiert
   Rohdokumente **kanonisch relational** (`storage.persistiereRohdokumenteWarteschlange`:

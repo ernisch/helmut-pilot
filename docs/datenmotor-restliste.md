@@ -1551,7 +1551,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Blocker. **OP-30 bleibt insgesamt offen** — die Aktivierung ist eine Betreiberentscheidung.
 
 - **Stand 2026-08-19 (Erster Stufe-1-Anlauf gescheitert und zurückgenommen; Reparatursprint
-  Option B + D — TEILWEISE ABGESCHLOSSEN: Code + Nachweise auf Branch/PR, Merge und zweiter
+  Option B + D — TEILWEISE ABGESCHLOSSEN: Code + Nachweise auf PR #256, Merge und zweiter
   Anlauf stehen aus; Beleg Runbook
   [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §27):**
   Die Aktivierung 18.08. 16:15 UTC plante einwandfrei (193 Auftraege, Outbox atomar, 0

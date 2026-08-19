@@ -8,7 +8,7 @@ einwandfrei, schlossen aber **0 Aufträge** ab — Ursache war der vollständige
 Write je Auftrag (Row-Lock-Konvoi auf `main`, 1,29 MB) plus fehlende Slot-Laufquittung
 (Runbook §27). Die Warteschlange trägt seitdem **301 wartend / 82 laeuft (Leases
 abgelaufen) / 235 erledigt / 0 fehlgeschlagen** — die 383 sind mit Flag AUS inert. Der
-**Reparatursprint 19.08. (Option B + D)** liegt als PR vor (§7a); Production ist seit der
+**Reparatursprint 19.08. (Option B + D)** liegt als **PR #256** vor (§7a); Production ist seit der
 Rücknahme unangetastet.
 
 Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000
@@ -159,8 +159,8 @@ OP-30-Aktivierung muss OP-25 für die geänderte Architektur erneut vollständig
   Betreiberentscheidung. Beim CAS entstanden 2 Vorgänge `unbekannt`
   (Klasse `modellfehler`/Timeout, §27.4 — Empfehlung: `pruefen`, dann `erneut`;
   freigabepflichtig).
-- **Reparatursprint 19.08. (Branch `claude/op30-neutralisierung-watchdog-dvqx99`, PR
-  offen, nicht gemergt):** Option B — `source_fetch` persistiert kanonisch relational
+- **Reparatursprint 19.08. (Branch `claude/op30-neutralisierung-watchdog-dvqx99`,
+  **PR #256**, nicht gemergt):** Option B — `source_fetch` persistiert kanonisch relational
   (`raw_documents`, ein gebündelter Round-Trip liefert die neuen Kennungen), Blob nur
   noch als Lesespiegel **höchstens 1×/Slot**; Option D — blob-unabhängige relationale
   Slot-Quittung (`process_runs`, Start + Abschluss). Wächter- und Parallelitätssuiten:
@@ -236,7 +236,7 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Genau ein Schritt: den Reparatur-PR des Sprints 19.08. prüfen und mergen** (Merge =
+**Genau ein Schritt: PR #256 (Reparatursprint 19.08.) prüfen und mergen** (Merge =
 Deployment; Entscheidung beim Betreiber). Erst danach, in dieser Reihenfolge:
 
 1. **CAS-Entscheidung** für die 2 `unbekannt`-Vorgänge (§27.4: `pruefen`, dann `erneut` —
@@ -300,7 +300,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzte relevante Sprints
 
-- **19.08. (Reparatursprint, PR offen):** Ursache des 0-Abschluss-Laufs belegt
+- **19.08. (Reparatursprint, PR #256):** Ursache des 0-Abschluss-Laufs belegt
   (Blob-RMW je Auftrag + fehlende Slot-Quittung), Option B + D implementiert, Wächter-
   und Parallelitätssuiten neu (40+16 PASS); CAS-Review der 2 `unbekannt` rein lesend;
   Production unangetastet (Runbook §27).
