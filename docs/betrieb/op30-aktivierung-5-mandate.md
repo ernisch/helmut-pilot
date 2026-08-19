@@ -3155,7 +3155,8 @@ Migration, kein Deployment, kein Flag, kein Export.
 ### §28.5 Nachweise des gemischten Verfahrens (echte lokale PostgreSQL)
 
 Suite `scripts/jobqueue-neutralisierung-gemischt-datenbank-test.js` (vom Offline-Runner
-automatisch eingesammelt; ohne lokalen PG ehrlich OFFEN): Ergebniszahlen im Sprint-PR.
+automatisch eingesammelt; ohne lokalen PG ehrlich OFFEN): **58 PASS / 0 FAIL** an echter
+PostgreSQL 16.13 (PR #257).
 Bewiesen werden: der §26-Blocker am echten SQL (R2-Abbruch an den abgelaufenen Leases,
 folgenlos) · Vorprüfung und folgenloser Trockenlauf · Abbruch bei aktiver Lease (R2a),
 Feldmutation (R3), neuer Zeile (R1), zählungsneutralem Tausch (R6), fehlender

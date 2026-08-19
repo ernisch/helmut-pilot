@@ -1565,7 +1565,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Sprint. Korrektur: gemischtes Verfahren (`neutralisierungGemischtSql`, neue Anker vom
   19.08., Outbox-Riegel R12 mit bewiesener Kaskade) an echter PostgreSQL **58 PASS / 0
   FAIL** inkl. Blocker-Beweis, Tiefenstaffelung und Mutationsproben; CLI
-  `scripts/jobqueue-neutralisierung-383.js`; Folge-PR eingereicht, nicht gemergt.
+  `scripts/jobqueue-neutralisierung-383.js`; PR #257 eingereicht, nicht gemergt.
   Versuch 4 vorbereitet, nicht aktiviert (§28.6). OP-30 insgesamt bleibt offen.
 - **Stand 2026-08-19 (Erster Stufe-1-Anlauf gescheitert und zurückgenommen; Reparatursprint
   Option B + D — PR #256, am 19.08. gemergt und deployt (§28.1); Beleg Runbook

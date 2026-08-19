@@ -7,7 +7,7 @@ zwei CAS-`unbekannt`-Vorgänge sind nach §23.3 **behandelt** (`erneut` freigege
 `unbekannt`; bis zu 2 bezahlte Modellaufrufe folgen im nächsten Verstehenslauf, §28.2).
 Die **383 inerten Aufträge (301 wartend + 82 laeuft mit abgelaufener Lease) sind NICHT
 neutralisiert**: das §26-Verfahren unterstützt die gemischte Zielmenge nachweislich nicht
-(Blocker §28.3); das korrigierte Verfahren mit neuen Ankern liegt bewiesen als Folge-PR
+(Blocker §28.3); das korrigierte Verfahren mit neuen Ankern liegt bewiesen als **PR #257**
 vor (§28.4/§28.5). Versuch 4 ist vorbereitet, **nicht aktiviert** (§28.6).
 
 Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000
@@ -172,8 +172,8 @@ OP-30-Aktivierung muss OP-25 für die geänderte Architektur erneut vollständig
   Blocker: §26-Verfahren bricht an den 82 abgelaufenen `laeuft`-Leases ab (§28.3);
   korrigiertes gemischtes Verfahren (`neutralisierungGemischtSql`, neue Anker vom 19.08.,
   Outbox-Riegel R12) an echter PostgreSQL bewiesen (**58 PASS / 0 FAIL** inkl.
-  Blocker-Beweis und Mutationsproben) und als Folge-PR eingereicht; Ausführung erst nach
-  Merge + erneuter Vorprüfung (§28.4).
+  Blocker-Beweis und Mutationsproben) und als **PR #257** eingereicht; Ausführung erst
+  nach Merge + erneuter Vorprüfung (§28.4).
 - **Der neue Motor ist wieder ausgeschaltet**; **Versuch 3 ist nicht gestartet**. Für
   25–500 Mandate besteht keine Produktionsfreigabe.
 
@@ -243,8 +243,8 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Genau ein Schritt: den Folge-PR des Sprints 19.08. (gemischtes Neutralisierungsverfahren
-+ §28) prüfen und mergen** (Merge = Deployment; Entscheidung beim Betreiber). Danach, in
+**Genau ein Schritt: PR #257 (gemischtes Neutralisierungsverfahren + §28) prüfen und
+mergen** (Merge = Deployment; Entscheidung beim Betreiber). Danach, in
 dieser Reihenfolge:
 
 1. **Neutralisierung der 383** nach Runbook §28.4 ausführen lassen (Vorprüfung →
@@ -311,7 +311,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 - **19.08. nachm. (Folgesprint, Runbook §28):** PR-#256-Deployment nachgewiesen; CAS
   behandelt (2× `erneut`, 0 `unbekannt`); Blocker des §26-Verfahrens für die gemischte
-  Zielmenge belegt; gemischtes Verfahren (Anker 19.08., R12) 58/0 bewiesen, Folge-PR;
+  Zielmenge belegt; gemischtes Verfahren (Anker 19.08., R12) 58/0 bewiesen, PR #257;
   Versuch-4-Plan §28.6. Production-Mutation: nur die 2 freigegebenen CAS-Aufrufe.
 - **19.08. (Reparatursprint, PR #256, gemergt):** Ursache des 0-Abschluss-Laufs belegt
   (Blob-RMW je Auftrag + fehlende Slot-Quittung), Option B + D implementiert, Wächter-
