@@ -3377,7 +3377,7 @@ durch die Behandlung überschrieben — einzeln nicht mehr nachweisbar).
    Budget!), und der Queue-Auftrag `document_understanding` (dessen Handler sein
    Auftragsfenster bisher nicht kannte — `mitZeitgrenze` ist ebenfalls nur ein Race).
 
-### §29.3 Reparatur: zentrale Restzeitwache (dieser Sprint, PR siehe unten)
+### §29.3 Reparatur: zentrale Restzeitwache (dieser Sprint, PR #259)
 
 **Neu `lib/helmut/verstehen-restzeit.js`:** EINE zentrale, testbare Entscheidung
 `restzeitEntscheidung({deadlineMs})` mit Reserve = KI-Timeout (20 s) + Speicher-Timeout

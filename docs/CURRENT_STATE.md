@@ -7,7 +7,7 @@ Aktivierung, Runbook §29):** Warteschlangenprüfung grün (0/235/0/0, Outbox 0,
 `modell-laeuft` (10:00-Lage-Check, Muster wie `25c6c69d`), `eff40db2` `unbekannt`
 (`speicherfehler`, bezahlter Aufruf ohne Ergebnis); dazu vier Anbieter-Timeout-Fälle.
 **Reparatursprint 20.08.: zentrale Restzeitwache + begrenzter Speicherweg-Zweitversuch**
-(Branch `claude/repair-sprint-attempt-4-spwwfd`, PR offen, nicht gemergt). Der Motor
+(Branch `claude/repair-sprint-attempt-4-spwwfd`, **PR #259**, nicht gemergt). Der Motor
 bleibt **aus**; kein Deployment, Production unangetastet.
 
 Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000
@@ -319,7 +319,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzte relevante Sprints
 
-- **20.08. (Reparatursprint nach Versuch 4, §29, PR offen):** Versuch 4 ehrlich als
+- **20.08. (Reparatursprint nach Versuch 4, §29, PR #259):** Versuch 4 ehrlich als
   gescheitert vor Aktivierung dokumentiert; Ursachen live + am Code belegt; zentrale
   Restzeitwache + Speicherweg-Zweitversuch implementiert; Suite 37/37, keine
   Offline-Regression; Production rein lesend, nichts verändert.
