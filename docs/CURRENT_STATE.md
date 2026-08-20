@@ -185,7 +185,7 @@ OP-30-Aktivierung muss OP-25 für die geänderte Architektur erneut vollständig
 - **Versuch 4 (20.08.) VOR der Aktivierung beendet — gescheitert vor Aktivierung (§29):**
   Teil C grün (live gegenbestätigt), Teil D blockiert durch `df1a6700` und `eff40db2`
   (Details/Belege, Ursachen und Reparatur kanonisch in Runbook **§29**; Suite
-  `verstehen-restzeit-test.js` 37/37, Offline-Lauf ohne Regression, Alt-Rot getrennt).
+  `verstehen-restzeit-test.js` 50/50 inkl. Review-Korrektur, keine Offline-Regression).
 - **Der neue Motor ist wieder ausgeschaltet.** Für 25–500 Mandate besteht keine
   Produktionsfreigabe.
 
@@ -321,8 +321,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 - **20.08. (Reparatursprint nach Versuch 4, §29, PR #259):** Versuch 4 ehrlich als
   gescheitert vor Aktivierung dokumentiert; Ursachen live + am Code belegt; zentrale
-  Restzeitwache + Speicherweg-Zweitversuch implementiert; Suite 37/37, keine
-  Offline-Regression; Production rein lesend, nichts verändert.
+  Restzeitwache (drei Gates inkl. `modellstart`-RPC-Deckung, Review-Korrektur) +
+  Speicherweg-Zweitversuch; Suite 50/50, keine Offline-Regression; Production rein lesend.
 - **19.08. ~10:44 UTC (Vollzug, §28.8):** die 383 inerten Aufträge nach dem gemergten
   §28.4-Verfahren neutralisiert — 383 gelöscht, Outbox kaskadiert 0, 235 Erledigte
   signaturgleich, CAS unverändert, Wache `inert-bestand:0`; Versuch 4 nicht gestartet.

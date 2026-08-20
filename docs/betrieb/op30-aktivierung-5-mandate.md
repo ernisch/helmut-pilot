@@ -3380,23 +3380,36 @@ durch die Behandlung überschrieben — einzeln nicht mehr nachweisbar).
 ### §29.3 Reparatur: zentrale Restzeitwache (dieser Sprint, PR #259)
 
 **Neu `lib/helmut/verstehen-restzeit.js`:** EINE zentrale, testbare Entscheidung
-`restzeitEntscheidung({deadlineMs})` mit Reserve = KI-Timeout (20 s) + Speicher-Timeout
-(10 s) + Abschluss (5 s) = **35 s** (Override `HELMUT_VERSTEHEN_RESTZEIT_RESERVE_MS`;
-der KI-Timeout ist jetzt zentral `HELMUT_KI_TIMEOUT_MS`, Default unverändert 20 000,
-`ai.js` liest dieselbe Quelle — Aufruf und Reserve können nie auseinanderlaufen).
+`restzeitEntscheidung({deadlineMs, reserveMs?})` mit ZWEI Reserven (Review-Korrektur
+20.08. abends — der `modellstart`-RPC ist selbst ein bis zu 10 s dauernder
+Supabase-Aufruf und war von der ersten Fassung nicht gedeckt): **Kernreserve** ab dem
+externen KI-Aufruf = KI-Timeout (20 s) + Schreibrecht (10 s) + Speicherung (10 s) +
+Abschluss (5 s) = **45 s** (Override `HELMUT_VERSTEHEN_RESTZEIT_RESERVE_MS`);
+**Vor-Modellstart-Reserve** = Kernreserve + `modellstart`-RPC (10 s) = **55 s**. Der
+KI-Timeout ist zentral `HELMUT_KI_TIMEOUT_MS` (Default unverändert 20 000, `ai.js`
+liest dieselbe Quelle — Aufruf und Reserve können nie auseinanderlaufen).
 
-**`understanding.js`:** Erstverstehen UND Aktualisierung prüfen die Restzeit (a) VOR der
-Reservierung (kein Lease, kein Budget, kein Versuch — Ausgang `skipped-zeitbudget`,
-Gruppe `erneut`) und (b) unmittelbar VOR dem Modellstart (Rückweg = reguläre Freigabe
-„vor Modellstart", sicher wiederholbar). Beide Loops (`understandClusters`,
-`runPendingUnderstandingShadow`) stoppen zusätzlich VOR jedem Cluster, sobald die
-absolute Deadline die Reserve unterschreitet; der Rest wird regulär vorgemerkt. Ohne
-Deadline (0/undefined) ist alles byte-identisch zum Bestand.
+**`understanding.js` — DREI Gates in Erstverstehen UND Aktualisierung:** (a) VOR der
+Reservierung und (b) VOR dem Modellstart-Vermerk je mit der Vor-Modellstart-Reserve
+(kein Lease bzw. reguläre Freigabe, kein Budget, Ausgang `skipped-zeitbudget`, Gruppe
+`erneut`); (c) unmittelbar VOR dem externen KI-Aufruf (also NACH dem
+Modellstart-Vermerk) mit der Kernreserve — dort ist belegbar nichts abgesendet, der
+Rückweg ist `freigabeOhneAufruf` (Zeile wieder `offen`, `ki_aufrufe` korrigiert, keine
+verwaiste Lease). Ist der Modellstart-VERMERK selbst nicht prüfbar (RPC-Timeout —
+serverseitiger Commit möglich, Antwort verloren), greift derselbe belegbar sichere
+Rückweg (`freigabeOhneAufruf` deckt `reserviert` UND `modell-laeuft`, Besitzer- und
+Fencing-gesichert): Ausgang `skipped-modellstart-unklar` (Gruppe `erneut`) — nie eine
+verwaiste `modell-laeuft`-Zeile, nie ein `unbekannt` ohne bezahlten Aufruf, nie eine
+automatische bezahlte Wiederholung. Beide Loops (`understandClusters`,
+`runPendingUnderstandingShadow`) stoppen zusätzlich VOR jedem Cluster
+(Vor-Modellstart-Reserve); der Rest wird regulär vorgemerkt. Ohne Deadline
+(0/undefined) ist alles byte-identisch zum Bestand.
 
 **Speicherweg:** genau EINE Wiederholung des atomaren Speicher-RPC bei nicht prüfbarem
 Ausgang (kein Modellaufruf, kein Budget; CAS-gesichert — hat der Erstversuch in Wahrheit
 committet, antwortet die Wiederholung geordnet `zustand-fertig` und schreibt nie
-doppelt), nur wenn die Restzeit dafür reicht. Danach unverändert fail closed
+doppelt), nur wenn die Restzeit dafür reicht — **einschließlich der konfigurierten
+Wartezeit vor der Wiederholung** (Review-Korrektur). Danach unverändert fail closed
 (`unbekannt`, Grund mit `nach-wiederholung:`-Vermerk).
 
 **Deadline-Verdrahtung der Einstiegspunkte:** lage-check `t0+280 s` → `runLageCheck` →
@@ -3409,17 +3422,23 @@ Verstehens-Handler gibt sie in den Loop. Debug-Routen bleiben ohne Deadline
 
 ### §29.4 Nachweise (offline, 2026-08-20)
 
-Neue Suite `scripts/verstehen-restzeit-test.js`: **37 PASS / 0 FAIL** — §1 Grenzfälle
-der Entscheidung · §2 zu wenig Restzeit: kein Aufruf/Budget/Versuch/Lease · §3 genug
+Neue Suite `scripts/verstehen-restzeit-test.js`: **50 PASS / 0 FAIL** — §1 Grenzfälle
+beider Reserven · §2 zu wenig Restzeit: kein Aufruf/Budget/Versuch/Lease · §3 genug
 Restzeit: genau ein Aufruf, `fertig` · §4 zweites Gate: Freigabe statt Waise · §5
 Anbieter-Timeout: genau ein Aufruf, ehrlich `unbekannt`, kein Auto-Zweitaufruf im
 Folgelauf · §6 Speicherweg: Rettung im Zweitversuch, dauerhafter Fehler ehrlich, KEIN
 Doppel-Schreiben nach verlorenem Commit, keine Wiederholung ohne Restzeit · §7
 Loop-Gate: 0 Aufrufe, alles vorgemerkt · §8 Queue-Deadline erreicht den Handler · §9
-Verdrahtungs-/Quelltextverträge. Kanonischer Offline-Lauf: siehe PR-Beschreibung
-(bekannte Alt-Rot-Suiten von Regressionen getrennt; fünf Quelltextvertrags-Suiten
-bewusst an §29 nachgeführt: cron-fairness, cron-globalphase, vorgangskontext,
-kostenmessung, vorgangs-lebenszyklus/ERGEBNISGRUPPEN + env-inventar-Eintrag).
+Verdrahtungs-/Quelltextverträge · **§10–§12 (Review-Korrektur):** langsamer
+`modellstart`-RPC → drittes Gate verhindert den Aufruf (0 Anbieteraufrufe, Zähler
+korrigiert, keine Waise) · Antwortverlust nach serverseitigem `modellstart`-Commit →
+`skipped-modellstart-unklar`, Zeile wieder `offen`, Folgelauf versteht regulär (auch
+ohne Commit) · Wartezeit zählt in der Restzeitprüfung des Speicherweg-Zweitversuchs.
+Kanonischer Offline-Lauf: 263/268 grün; die 4 verbliebenen Rot-Suiten sind per
+Worktree-Baseline auf unverändertem `main` identisch rot (umgebungsbedingt — Details
+PR #259); fünf Quelltextvertrags-Suiten bewusst an §29 nachgeführt (cron-fairness,
+cron-globalphase, vorgangskontext, kostenmessung,
+vorgangs-lebenszyklus/ERGEBNISGRUPPEN) + env-inventar-Eintrag.
 
 ### §29.5 Nicht getan (Verbote eingehalten)
 

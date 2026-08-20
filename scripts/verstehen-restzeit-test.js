@@ -24,7 +24,14 @@
 //   §8 Warteschlangenpfad: fuehreAuftragAus reicht das absolute Auftragsfensterende an
 //      den Handler durch
 //   §9 Verdrahtung: Einstiegspunkte uebergeben die absolute Deadline; ai.js nutzt den
-//      zentralen KI-Timeout
+//      zentralen KI-Timeout; beide Pfade tragen das dritte Gate
+//   §10 REVIEW-KORREKTUR: langsamer `modellstart`-RPC -> das dritte Gate (unmittelbar
+//       vor dem externen Aufruf) verhindert den Aufruf; Rueckweg `freigabeOhneAufruf`
+//   §11 REVIEW-KORREKTUR: `modellstart` serverseitig committet, Antwort im
+//       Client-Timeout verloren -> keine verwaiste Zeile, kein unbekannt, sicher
+//       erneut verarbeitbar (auch ohne Commit, §11b)
+//   §12 REVIEW-KORREKTUR: die Wartezeit vor dem Speicherweg-Zweitversuch zaehlt in
+//       dessen Restzeitpruefung
 
 const assert = require("assert");
 const fs = require("fs");
@@ -45,7 +52,11 @@ function abschnitt(t) { console.log(`\n== ${t} ==`); }
 const warte = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ── Attrappe der CAS-Datenbankseite (bildet 20260814180000 nach, kompakt) ────────────────────
-function baueSpeicherAttrappe({ speichereVerhalten = null } = {}) {
+// `modellstartVerhalten`/`speichereVerhalten`: optionale (auch async) Haken je Aufruf —
+// geben sie ein Objekt zurueck, ersetzt es die Antwort; geben sie null zurueck, laeuft
+// die normale Logik (so laesst sich ein LANGSAMER RPC oder ein Antwortverlust nach
+// serverseitigem Commit nachbilden).
+function baueSpeicherAttrappe({ speichereVerhalten = null, modellstartVerhalten = null } = {}) {
   const zeilen = new Map();
   const kos = new Map();     // vorgangId -> { fencing, fassungen }
   let speichereAufrufe = 0;
@@ -72,6 +83,10 @@ function baueSpeicherAttrappe({ speichereVerhalten = null } = {}) {
       return { verfuegbar: true, erlaubt: true, fencing: r.fencing, zustand: "reserviert", grund: "uebernommen" };
     },
     async verstehenModellstart({ vorgangId, besitzer, fencing, ttlMs }) {
+      if (typeof modellstartVerhalten === "function") {
+        const sonder = await modellstartVerhalten({ attrappe, vorgangId, besitzer, fencing, ttlMs });
+        if (sonder) return sonder;
+      }
       const r = hole(vorgangId);
       if (r.besitzer !== besitzer || r.fencing !== fencing || r.zustand !== "reserviert" || !(r.leaseBis > Date.now())) {
         return { verfuegbar: true, ok: false };
@@ -116,11 +131,15 @@ function baueSpeicherAttrappe({ speichereVerhalten = null } = {}) {
       r.zustand = "offen"; r.besitzer = null; r.leaseBis = null;
       return { ok: true };
     },
-    async verstehenFreigabeOhneAufruf({ vorgangId, besitzer }) {
+    async verstehenFreigabeOhneAufruf({ vorgangId, besitzer, fencing, grund }) {
+      // Spiegelt die Migration exakt: Guard auf Besitzer+Fencing+Zustand, Zaehler-
+      // korrektur NUR aus modell-laeuft, Beleg-Spur in letzter_grund.
       const r = hole(vorgangId);
-      if (r.besitzer !== besitzer) return { ok: false };
-      r.kiAufrufe = Math.max(0, r.kiAufrufe - 1);
+      if (r.besitzer !== besitzer || r.fencing !== fencing
+          || !["reserviert", "modell-laeuft"].includes(r.zustand)) return { ok: false };
+      if (r.zustand === "modell-laeuft") r.kiAufrufe = Math.max(0, r.kiAufrufe - 1);
       r.zustand = "offen"; r.besitzer = null; r.leaseBis = null;
+      r.letzterGrund = ("belegt-ohne-aufruf:" + (grund || "unbenannt")).slice(0, 200);
       return { ok: true };
     },
     async verstehenVormerkungLese() { return { verfuegbar: true, eintraege: {} }; },
@@ -168,17 +187,24 @@ async function main() {
     const ohne = restzeit.restzeitEntscheidung({ deadlineMs: 0, jetztMs: jetzt, env: {} });
     check("§1.1 ohne Deadline immer erlaubt (Bestandsverhalten)", ohne.erlaubt === true && ohne.grund === "keine-deadline");
     const reserve = restzeit.reserveMs({});
-    check("§1.2 Default-Reserve = KI-Timeout + Speicher-Timeout + Abschluss (35 000 ms)",
-      reserve === 35000, `reserve=${reserve}`);
+    check("§1.2 Kernreserve = KI-Timeout + 2x Speicher-Timeout (Schreibrecht + Speichern) + Abschluss (45 000 ms)",
+      reserve === 45000, `reserve=${reserve}`);
+    check("§1.2b Vor-Modellstart-Reserve = Kernreserve + modellstart-RPC (55 000 ms)",
+      restzeit.reserveVorModellstartMs({}) === 55000, String(restzeit.reserveVorModellstartMs({})));
     const genau = restzeit.restzeitEntscheidung({ deadlineMs: jetzt + reserve, jetztMs: jetzt, env: {} });
     check("§1.3 Rest exakt gleich Reserve: erlaubt", genau.erlaubt === true);
     const knapp = restzeit.restzeitEntscheidung({ deadlineMs: jetzt + reserve - 1, jetztMs: jetzt, env: {} });
     check("§1.4 Rest unter Reserve: nicht erlaubt, Grund benannt",
       knapp.erlaubt === false && knapp.grund === "restzeit-unter-reserve");
+    check("§1.4b Waehlbare Reserve (Gate-3 vs. Vor-Modellstart) wirkt in der Entscheidung",
+      restzeit.restzeitEntscheidung({ deadlineMs: jetzt + 50000, jetztMs: jetzt, env: {}, reserveMs: 55000 }).erlaubt === false
+      && restzeit.restzeitEntscheidung({ deadlineMs: jetzt + 50000, jetztMs: jetzt, env: {}, reserveMs: 45000 }).erlaubt === true);
     check("§1.5 Reserve folgt HELMUT_KI_TIMEOUT_MS und HELMUT_SUPABASE_TIMEOUT_MS",
-      restzeit.reserveMs({ HELMUT_KI_TIMEOUT_MS: "30000", HELMUT_SUPABASE_TIMEOUT_MS: "20000" }) === 55000);
-    check("§1.6 HELMUT_VERSTEHEN_RESTZEIT_RESERVE_MS ueberstimmt die Summe",
-      restzeit.reserveMs({ HELMUT_VERSTEHEN_RESTZEIT_RESERVE_MS: "12000", HELMUT_KI_TIMEOUT_MS: "99000" }) === 12000);
+      restzeit.reserveMs({ HELMUT_KI_TIMEOUT_MS: "30000", HELMUT_SUPABASE_TIMEOUT_MS: "20000" }) === 75000
+      && restzeit.reserveVorModellstartMs({ HELMUT_KI_TIMEOUT_MS: "30000", HELMUT_SUPABASE_TIMEOUT_MS: "20000" }) === 95000);
+    check("§1.6 HELMUT_VERSTEHEN_RESTZEIT_RESERVE_MS ueberstimmt die Kernreserve (Vor-Modellstart bleibt +1 Storage-Aufruf)",
+      restzeit.reserveMs({ HELMUT_VERSTEHEN_RESTZEIT_RESERVE_MS: "12000", HELMUT_KI_TIMEOUT_MS: "99000" }) === 12000
+      && restzeit.reserveVorModellstartMs({ HELMUT_VERSTEHEN_RESTZEIT_RESERVE_MS: "12000", HELMUT_KI_TIMEOUT_MS: "99000" }) === 22000);
     check("§1.7 kiTimeoutMs: Default 20 000, Override wirkt, Unsinn faellt auf Default",
       restzeit.kiTimeoutMs({}) === 20000
       && restzeit.kiTimeoutMs({ HELMUT_KI_TIMEOUT_MS: "45000" }) === 45000
@@ -215,14 +241,16 @@ async function main() {
       z.zustand === "fertig" && z.leaseBis === null);
   }
 
-  abschnitt("§4 Zweites Gate unmittelbar vor dem Modellstart");
+  abschnitt("§4 Zweites Gate VOR dem Modellstart-Vermerk");
   {
+    // Kernreserve 1000, modellstart-RPC-Anteil 1000 -> Vor-Modellstart-Reserve 2000.
     process.env.HELMUT_VERSTEHEN_RESTZEIT_RESERVE_MS = "1000";
+    process.env.HELMUT_SUPABASE_TIMEOUT_MS = "1000";
     try {
       const p = neuesProtokoll();
       const speicher = baueSpeicherAttrappe();
       const deps = baueDeps(p, speicher, {
-        deadlineMs: Date.now() + 1300,
+        deadlineMs: Date.now() + 2400,
         // Das Budget-Gate (zwischen Reservierung und Modellstart) verbraucht die Restzeit.
         canSpend: async () => { p.budgetGeprueft += 1; await warte(500); return { allowed: true }; }
       });
@@ -234,6 +262,7 @@ async function main() {
         z.zustand === "offen" && z.leaseBis === null && z.besitzer === null);
     } finally {
       delete process.env.HELMUT_VERSTEHEN_RESTZEIT_RESERVE_MS;
+      delete process.env.HELMUT_SUPABASE_TIMEOUT_MS;
     }
   }
 
@@ -313,18 +342,23 @@ async function main() {
   }
   {
     // §6d: reicht die Restzeit fuer keine Wiederholung, bleibt es bei EINEM Versuch.
+    // Kern 1000 / Vor-Modellstart 2000 (Storage 1000, Mindestwert der Klemmung);
+    // Wiederholungsbedarf waere warteMs(0) + Storage(1000) + Abschluss(5000) = 6000
+    // > Rest (~2350).
     process.env.HELMUT_VERSTEHEN_RESTZEIT_RESERVE_MS = "1000";
+    process.env.HELMUT_SUPABASE_TIMEOUT_MS = "1000";
     try {
       const p = neuesProtokoll();
       const speicher = baueSpeicherAttrappe({
         speichereVerhalten: () => ({ verfuegbar: false, grund: "storage-timeout-10000ms" })
       });
-      const deps = baueDeps(p, speicher, { deadlineMs: Date.now() + 2000 });
+      const deps = baueDeps(p, speicher, { deadlineMs: Date.now() + 2400 });
       const r = await understandOneCluster(baueCluster("Bundestag debattiert Haushaltsentwurf", "rd-1"), deps);
       check("§6d.1 Ohne Restzeit KEINE Wiederholung: genau 1 Speicherversuch, ehrlich unbekannt",
         speicher.speichereAufrufe === 1 && r.status === "skipped-store" && r.ausgang === "unbekannt");
     } finally {
       delete process.env.HELMUT_VERSTEHEN_RESTZEIT_RESERVE_MS;
+      delete process.env.HELMUT_SUPABASE_TIMEOUT_MS;
     }
   }
 
@@ -396,6 +430,113 @@ async function main() {
       && /Number\(kontext\.auftragsDeadlineMs\)/.test(pipeline));
     check("§9.6 ai.js nutzt den zentralen KI-Timeout statt eines Literals",
       /timeout:\s*kiTimeoutMs\(\)/.test(aiJs) && !/timeout:\s*20000/.test(aiJs));
+    const understandingSrc = src("lib/helmut/understanding.js");
+    check("§9.7 BEIDE Pfade tragen das dritte Gate (nach Modellstart, vor dem externen Aufruf) und den modellstart-Rueckweg",
+      (understandingSrc.match(/DRITTE PRUEFUNG/g) || []).length === 2
+      && (understandingSrc.match(/grund: "modellstart-nicht-pruefbar"/g) || []).length === 2);
+  }
+
+  abschnitt("§10 REVIEW-KORREKTUR: langsamer modellstart-RPC — drittes Gate verhindert den Aufruf");
+  {
+    // Kern 1000 / Vor-Modellstart 2000. Der modellstart-RPC committet, braucht aber
+    // 1200 ms — danach liegt der Rest (~900) unter der Kernreserve.
+    process.env.HELMUT_VERSTEHEN_RESTZEIT_RESERVE_MS = "1000";
+    process.env.HELMUT_SUPABASE_TIMEOUT_MS = "1000";
+    try {
+      const p = neuesProtokoll();
+      const speicher = baueSpeicherAttrappe({
+        modellstartVerhalten: async () => { await warte(1200); return null; }
+      });
+      const deps = baueDeps(p, speicher, { deadlineMs: Date.now() + 2150 });
+      const r = await understandOneCluster(baueCluster("Bundestag debattiert Haushaltsentwurf", "rd-1"), deps);
+      const z = einzigeZeile(speicher);
+      check("§10.1 KEIN Anbieteraufruf (drittes Gate)", p.kiAufrufe === 0 && r.status === "skipped-zeitbudget");
+      check("§10.2 Rueckweg freigabeOhneAufruf: KI-Aufrufzaehler korrigiert, KEINE verwaiste Lease",
+        z.kiAufrufe === 0 && z.leaseBis === null && z.besitzer === null,
+        `zustand=${z.zustand} kiAufrufe=${z.kiAufrufe}`);
+      check("§10.3 Zustand offen mit Beleg-Spur — sicher erneut verarbeitbar",
+        z.zustand === "offen" && /^belegt-ohne-aufruf:/.test(z.letzterGrund || ""));
+    } finally {
+      delete process.env.HELMUT_VERSTEHEN_RESTZEIT_RESERVE_MS;
+      delete process.env.HELMUT_SUPABASE_TIMEOUT_MS;
+    }
+  }
+
+  abschnitt("§11 REVIEW-KORREKTUR: modellstart committet, Antwort verloren — kein unbekannt, keine Waise");
+  {
+    let verlustAktiv = true;
+    const speicher = baueSpeicherAttrappe({
+      // Serverseitiger COMMIT (Zeile -> modell-laeuft, ki_aufrufe+1), aber die Antwort
+      // geht im Client-Timeout verloren (verfuegbar:false).
+      modellstartVerhalten: ({ attrappe, vorgangId, ttlMs }) => {
+        if (!verlustAktiv) return null;
+        const r = attrappe.zeilen.get(vorgangId);
+        r.zustand = "modell-laeuft"; r.kiAufrufe += 1; r.leaseBis = Date.now() + ttlMs;
+        return { verfuegbar: false, grund: "storage-timeout-10000ms" };
+      }
+    });
+    const p = neuesProtokoll();
+    const cluster = baueCluster("Bundestag debattiert Haushaltsentwurf", "rd-1");
+    const r1 = await understandOneCluster(cluster, baueDeps(p, speicher, { deadlineMs: Date.now() + 600000 }));
+    const z = einzigeZeile(speicher);
+    check("§11.1 KEIN Anbieteraufruf, Status skipped-modellstart-unklar mit gelungenem Rueckweg",
+      p.kiAufrufe === 0 && r1.status === "skipped-modellstart-unklar" && r1.rueckwegOk === true);
+    check("§11.2 KEINE verwaiste modell-laeuft-Zeile, KEIN unbekannt: offen, Zaehler korrigiert, keine Lease",
+      z.zustand === "offen" && z.kiAufrufe === 0 && z.leaseBis === null
+      && /^belegt-ohne-aufruf:modellstart-nicht-pruefbar/.test(z.letzterGrund || ""));
+    verlustAktiv = false;
+    const r2 = await understandOneCluster(cluster, baueDeps(p, speicher, { deadlineMs: Date.now() + 600000 }));
+    check("§11.3 Sicher erneut verarbeitbar: Folgelauf versteht regulaer (genau EIN bezahlter Aufruf insgesamt)",
+      r2.status === "saved" && p.kiAufrufe === 1 && z.zustand === "fertig" && z.kiAufrufe === 1);
+  }
+  {
+    // §11b: Antwort verloren OHNE serverseitigen Commit (Zeile bleibt reserviert).
+    let verlustAktiv = true;
+    const speicher = baueSpeicherAttrappe({
+      modellstartVerhalten: () => (verlustAktiv ? { verfuegbar: false, grund: "netzfehler" } : null)
+    });
+    const p = neuesProtokoll();
+    const cluster = baueCluster("Bundestag debattiert Haushaltsentwurf", "rd-1");
+    const r1 = await understandOneCluster(cluster, baueDeps(p, speicher, { deadlineMs: Date.now() + 600000 }));
+    const z = einzigeZeile(speicher);
+    check("§11b.1 Auch ohne Commit: kein Aufruf, kein Zaehler, offen, keine Lease",
+      p.kiAufrufe === 0 && r1.status === "skipped-modellstart-unklar"
+      && z.zustand === "offen" && z.kiAufrufe === 0 && z.leaseBis === null);
+    verlustAktiv = false;
+    const r2 = await understandOneCluster(cluster, baueDeps(p, speicher, { deadlineMs: Date.now() + 600000 }));
+    check("§11b.2 Folgelauf versteht regulaer", r2.status === "saved" && p.kiAufrufe === 1);
+  }
+
+  abschnitt("§12 REVIEW-KORREKTUR: Wartezeit zaehlt in der Restzeitpruefung des Speicherweg-Zweitversuchs");
+  {
+    // Kern = 1000 + 2x1000 + 5000 = 8000, Vor-Modellstart 9000; Deadline +9500.
+    // Wiederholungsbedarf MIT warteMs 4000: 4000+1000+5000 = 10000 > Rest (~9300) -> nein.
+    // Ohne Wartezeit (warteMs 0): 6000 <= Rest -> ja. Genau die Wartezeit entscheidet.
+    process.env.HELMUT_KI_TIMEOUT_MS = "1000";
+    process.env.HELMUT_SUPABASE_TIMEOUT_MS = "1000";
+    try {
+      const pA = neuesProtokoll();
+      const speicherA = baueSpeicherAttrappe({
+        speichereVerhalten: () => ({ verfuegbar: false, grund: "storage-timeout" })
+      });
+      const rA = await understandOneCluster(baueCluster("Bundestag debattiert Haushaltsentwurf", "rd-1"),
+        baueDeps(pA, speicherA, { deadlineMs: Date.now() + 9500, speicherWiederholungWarteMs: 4000 }));
+      check("§12.1 Mit Wartezeit 4000 ms reicht die Restzeit NICHT: genau 1 Speicherversuch",
+        speicherA.speichereAufrufe === 1 && rA.status === "skipped-store",
+        `versuche=${speicherA.speichereAufrufe}`);
+      const pB = neuesProtokoll();
+      const speicherB = baueSpeicherAttrappe({
+        speichereVerhalten: () => ({ verfuegbar: false, grund: "storage-timeout" })
+      });
+      const rB = await understandOneCluster(baueCluster("Bundestag debattiert Haushaltsentwurf", "rd-1"),
+        baueDeps(pB, speicherB, { deadlineMs: Date.now() + 9500, speicherWiederholungWarteMs: 0 }));
+      check("§12.2 Ohne Wartezeit reicht dieselbe Restzeit: genau 2 Speicherversuche",
+        speicherB.speichereAufrufe === 2 && rB.status === "skipped-store",
+        `versuche=${speicherB.speichereAufrufe}`);
+    } finally {
+      delete process.env.HELMUT_KI_TIMEOUT_MS;
+      delete process.env.HELMUT_SUPABASE_TIMEOUT_MS;
+    }
   }
 
   console.log(`\nErgebnis: ${pass} PASS / ${fail} FAIL`);
