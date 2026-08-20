@@ -330,7 +330,9 @@ const store = (llmUsage, processRuns = []) => async () => ({ llmUsage, processRu
   check("scheduler.js: jeder Aufruf reicht runId durch", schedulerAufrufe.every((o) => /\brunId\b/.test(o)));
   const serverSrc = src("server.js");
   // Der dedizierte Understanding-Cron erzeugt eine eigene Laufkennung.
-  const cronBlock = serverSrc.slice(serverSrc.indexOf('"/api/cron/understanding"'), serverSrc.indexOf('"/api/cron/understanding"') + 3000);
+  // §29 (Reparatursprint 2026-08-20): das Fenster ist um die zwei Zeilen der
+  // Restzeitwache (Kommentar + absolute Deadline im Aufruf) verlaengert.
+  const cronBlock = serverSrc.slice(serverSrc.indexOf('"/api/cron/understanding"'), serverSrc.indexOf('"/api/cron/understanding"') + 3200);
   check("Understanding-Cron erzeugt eine Laufkennung", /const runId = helmutRunId\("understanding-cron"/.test(cronBlock));
   check("Understanding-Cron reicht die Laufkennung an den Kostenpfad durch",
     /runPendingUnderstandingShadow\([\s\S]{0,200}?runId[\s\S]{0,40}?\)/.test(cronBlock));
