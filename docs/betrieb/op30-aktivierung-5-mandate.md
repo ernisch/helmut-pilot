@@ -3299,3 +3299,149 @@ V4-3: Outbox 0 · V4-6: Migrationen · V4-7: 0 fremde Abfragen/Sperren) sind dam
 **erfüllt**; V4-4 trägt den ehrlichen Vorbehalt des einen `modell-laeuft`-Vorgangs mit
 abgelaufener Lease (wird vom Wärter regulär aufgelöst bzw. ehrlich `unbekannt`). Versuch 4
 wurde **nicht** aktiviert — Aktivierung bleibt Betreiberaktion nach §28.6.
+
+## §29 · Versuch 4 vor der Aktivierung beendet: zwei Verstehensbefunde + Restzeitwache (Reparatursprint 2026-08-20)
+
+### §29.1 Hergang und Befund (Versuch 4, 2026-08-20 — GESCHEITERT VOR AKTIVIERUNG)
+
+Versuch 4 wurde am 20.08. **vor dem Setzen der Variablen beendet**; der neue
+Warteschlangenmotor blieb wirkungsbasiert aus, es erfolgte **keine** Aktivierung. Die
+Warteschlangenprüfung (Teil C) selbst war grün: Queue 0/235/0/0 mit korrekter
+Erledigt-Signatur, Outbox 0, 0 Queue-Leases, 0 Vormerkungen, 0 HV001/HV002, Fencing
+konsistent, 0 fremde Abfragen/Sperren, Budget 34/100, exakt 5 aktive Mandate. Blockiert
+hat die CAS-Vorprüfung (Teil D, §28.6 V4-4) durch zwei Verstehensbefunde:
+
+1. **`df1a6700`** blieb nach dem 10:00-Lage-Check als `modell-laeuft` mit abgelaufener
+   Lease stehen — dasselbe Muster wie `25c6c69d` am Vortag (§28.8).
+2. **`eff40db2`** endete im Eager-Verstehen des 16:00-Slots als `unbekannt`, Klasse
+   `speicherfehler`, „Vertrag nicht prüfbar" — ein bezahlter Aufruf ohne belegtes Ergebnis.
+
+Dazu entstanden **innerhalb von drei Tagen vier `unbekannt`-Fälle** durch
+Anbieter-Timeouts nach Modellstart (Klasse `modellfehler`, vgl. §27.4).
+
+**Beleglage:** die Scratchpad-Belege der Versuch-4-Sitzung sind mit deren ephemerem
+Container verloren. Alle tragenden Aussagen wurden am 20.08. abends **rein lesend live
+neu erhoben** (Supabase-MCP, nur Zähler/md5-Präfixe/Zeitstempel):
+`df1a6700` `modell-laeuft`, Versuche 1, KI-Aufrufe 1, Modellstart **10:06:13 UTC**
+(Lease-Ende 10:11:13); der persistierte `understanding-lage`-Lauf des Slots lief
+10:02:11–10:05:05 (173,9 s, 14 verarbeitet / 558 vertagt) — der verwaiste Aufruf stammt
+von einem **späteren Mandat desselben Lage-Laufs**, unmittelbar vor dem harten
+Funktionsende. `eff40db2` `unbekannt` mit wörtlichem Grund
+`speicherfehler:vertrag-nicht-pruefbar:Supabase storage timed out after 10000ms:
+/rest/v1/rpc/helmut_verstehen_speichere` (16:04:44 UTC, im `understanding-eager`
+16:04:01–16:04:53, Grund „zeitbudget", parallel zur `globalphase` 16:01:19–16:05:06);
+das zugehörige KO trägt unverändert `ko_version 1` vom 13.08. — **der Speicher-RPC hat
+nicht committet**, das bezahlte Aktualisierungsergebnis ist verloren. Queue 0/235/0/0,
+Outbox leer, 0 aktive Leases, 0 LLM-Vormerkungen, Budget 35/100 (20.08. abends) live
+gegenbestätigt. Die Herkunft der vier Timeout-Fälle ist über §27.4 und die sieben
+`erneut`-freigegebenen `offen`-Vorgänge plausibilisiert (die `letzter_grund`-Texte sind
+durch die Behandlung überschrieben — einzeln nicht mehr nachweisbar).
+
+### §29.2 Bewiesene Ursachen (Code + Live-Messung)
+
+1. **Der Verstehens-Loop kannte nur ein RELATIVES Zeitbudget** (`budgetMs` ab
+   Loop-Start, geprüft nur VOR jedem Cluster — `understanding.js`), nie das absolute
+   Funktionsende. Ein bei Budget−ε gestarteter Cluster führte Modellaufruf (~20 s) +
+   Speicherung (~10 s) vollständig aus.
+2. **Der Lage-Pfad hatte gar keine absolute Grenze:** `runLageCheck` ohne Gesamtbudget,
+   `crawlAllSources` ohne Gesamtzeitgrenze (nur 7-s-Einzelanfragen), das 60-s-Budget des
+   Lage-Verstehens relativ zu einem beliebig späten Loop-Start. `withTimeout` ist ein
+   reines `Promise.race` (bricht nichts ab); `runTenantsFairly` hat nur ein
+   Start-Gatter (15 s Reserve), kein Stopp-Gatter — nach innerem 240-s-Timeout lief das
+   verlassene Mandat im Hintergrund weiter und startete um t+~293 s noch Modellaufrufe.
+   Beim Funktionsende (Antwort nach 280-s-Race, Kill bei maxDuration 300) läuft kein
+   `finally` mehr → `modell-laeuft` bleibt stehen; §4e löst erst bei der NÄCHSTEN
+   Reservierung ehrlich nach `unbekannt` auf. Zustand/Lease/Zähler werden korrekt in
+   `helmut_verstehen_reservierungen` gesetzt (Versuche nur im Übernahme-Zweig,
+   KI-Aufrufe im Modellstart); das Tagesbudget wird am Choke-Point in `ai.js` VOR dem
+   HTTP-Aufruf reserviert und nie zurückgegeben — der verwaiste Aufruf ist bezahlt.
+3. **`eff40db2`:** Der atomare Speicherweg (`helmut_verstehen_speichere`, EINE
+   Transaktion: Prüfung + KO-Upsert + Abschluss) wurde vom Storage-Client nach exakt
+   10 s abgebrochen (`HELMUT_SUPABASE_TIMEOUT_MS`-Default, AbortController) — unter der
+   Parallellast des 16:00-Slots. „Vertrag nicht prüfbar" heißt: die JS-Hülle konnte den
+   RPC-Ausgang nicht feststellen (Timeout/Netzfehler/leere Antwort); ob committet wurde,
+   war im Moment unentscheidbar. Live-Beweis: nicht committet. Das Fail-closed-Verhalten
+   (ehrlich `unbekannt`, kein falscher Erfolg, kein Auto-Retry des Modells) war KORREKT —
+   verloren ging „nur" der bezahlte Aufruf, weil es für den Speicherweg selbst keinen
+   zweiten Versuch gab.
+4. **Anbieter-Timeouts:** Der KI-HTTP-Timeout war ein **Literal 20 000 ms** in `ai.js`
+   (Socket-Inaktivität, nicht konfigurierbar). Production-Messungen liegen knapp
+   darüber (20,1–22 s, `befund-csd` §, §27.4) — eine **zu knappe lokale Frist ist
+   plausible Mitursache**, echte Anbieterstörungen sind nicht ausschließbar (belegte
+   Einzelfälle nicht mehr unterscheidbar). Kein Retry nach Timeout existiert (korrekt);
+   die einzige automatische Zweitanfrage ist der 400er-Modell-Fallback (deterministisch
+   abgelehnte Anfrage, erbt die Reservierung) — kein „unklares Ergebnis"-Fall.
+5. **Betroffene Einstiegspunkte** (gemeinsamer Code `understanding.js`): lage-check
+   (10:00), crawl/pipeline eager+lazy (04:00/20:00/16:00, alt + Globalphase),
+   understanding-Cron (05:30/21:30, pending), Admin-Recovery, Debug-Routen (ohne
+   Budget!), und der Queue-Auftrag `document_understanding` (dessen Handler sein
+   Auftragsfenster bisher nicht kannte — `mitZeitgrenze` ist ebenfalls nur ein Race).
+
+### §29.3 Reparatur: zentrale Restzeitwache (dieser Sprint, PR siehe unten)
+
+**Neu `lib/helmut/verstehen-restzeit.js`:** EINE zentrale, testbare Entscheidung
+`restzeitEntscheidung({deadlineMs})` mit Reserve = KI-Timeout (20 s) + Speicher-Timeout
+(10 s) + Abschluss (5 s) = **35 s** (Override `HELMUT_VERSTEHEN_RESTZEIT_RESERVE_MS`;
+der KI-Timeout ist jetzt zentral `HELMUT_KI_TIMEOUT_MS`, Default unverändert 20 000,
+`ai.js` liest dieselbe Quelle — Aufruf und Reserve können nie auseinanderlaufen).
+
+**`understanding.js`:** Erstverstehen UND Aktualisierung prüfen die Restzeit (a) VOR der
+Reservierung (kein Lease, kein Budget, kein Versuch — Ausgang `skipped-zeitbudget`,
+Gruppe `erneut`) und (b) unmittelbar VOR dem Modellstart (Rückweg = reguläre Freigabe
+„vor Modellstart", sicher wiederholbar). Beide Loops (`understandClusters`,
+`runPendingUnderstandingShadow`) stoppen zusätzlich VOR jedem Cluster, sobald die
+absolute Deadline die Reserve unterschreitet; der Rest wird regulär vorgemerkt. Ohne
+Deadline (0/undefined) ist alles byte-identisch zum Bestand.
+
+**Speicherweg:** genau EINE Wiederholung des atomaren Speicher-RPC bei nicht prüfbarem
+Ausgang (kein Modellaufruf, kein Budget; CAS-gesichert — hat der Erstversuch in Wahrheit
+committet, antwortet die Wiederholung geordnet `zustand-fertig` und schreibt nie
+doppelt), nur wenn die Restzeit dafür reicht. Danach unverändert fail closed
+(`unbekannt`, Grund mit `nach-wiederholung:`-Vermerk).
+
+**Deadline-Verdrahtung der Einstiegspunkte:** lage-check `t0+280 s` → `runLageCheck` →
+`foldLageItemsIntoV3`; crawl/pipeline-Altpfad `startedMs+270 s` → `runSourceCrawl`
+(min mit eigenem 240-s-Fenster) → eager; Globalphase `startedMs+budget−Abschlussreserve`;
+understanding-Cron `+280 s`; Admin-Recovery `+240 s`; Queue: `fuehreAuftragAus` reicht
+`auftragsDeadlineMs` (= jetzt + Auftragsbudget) an jeden Handler, der
+Verstehens-Handler gibt sie in den Loop. Debug-Routen bleiben ohne Deadline
+(unverändert; nur maxDuration).
+
+### §29.4 Nachweise (offline, 2026-08-20)
+
+Neue Suite `scripts/verstehen-restzeit-test.js`: **37 PASS / 0 FAIL** — §1 Grenzfälle
+der Entscheidung · §2 zu wenig Restzeit: kein Aufruf/Budget/Versuch/Lease · §3 genug
+Restzeit: genau ein Aufruf, `fertig` · §4 zweites Gate: Freigabe statt Waise · §5
+Anbieter-Timeout: genau ein Aufruf, ehrlich `unbekannt`, kein Auto-Zweitaufruf im
+Folgelauf · §6 Speicherweg: Rettung im Zweitversuch, dauerhafter Fehler ehrlich, KEIN
+Doppel-Schreiben nach verlorenem Commit, keine Wiederholung ohne Restzeit · §7
+Loop-Gate: 0 Aufrufe, alles vorgemerkt · §8 Queue-Deadline erreicht den Handler · §9
+Verdrahtungs-/Quelltextverträge. Kanonischer Offline-Lauf: siehe PR-Beschreibung
+(bekannte Alt-Rot-Suiten von Regressionen getrennt; fünf Quelltextvertrags-Suiten
+bewusst an §29 nachgeführt: cron-fairness, cron-globalphase, vorgangskontext,
+kostenmessung, vorgangs-lebenszyklus/ERGEBNISGRUPPEN + env-inventar-Eintrag).
+
+### §29.5 Nicht getan (Verbote eingehalten)
+
+Keine Aktivierung, kein Deployment, kein Merge, keine Migration, keine
+Production-Datenänderung, keine Env-/Flag-/Cron-Änderung, kein bezahlter Modellaufruf,
+kein kostenverursachender Lauf. Die sieben `offen`-Vorgänge sowie `df1a6700` und
+`eff40db2` wurden **nicht** verändert und **nicht** erneut ausgeführt (alle Zugriffe
+rein lesend). Die strenge Aktivierungsbedingung (§28.6, insb. 0 `unbekannt`, 0
+`modell-laeuft` mit aktiver/abgelaufener Lease, 0 Vormerkungen, 0 HV001/HV002) ist
+**unverändert**.
+
+### §29.6 Verbleibende Risiken und Weg zu Versuch 5
+
+- **Anbieter-Timeouts bleiben ein Skalierungsrisiko:** die Reparatur verhindert
+  verwaiste Zustände und unnötige Starts, nicht den Timeout selbst. Eine Anhebung von
+  `HELMUT_KI_TIMEOUT_MS` (hebt die Reserve automatisch mit) ist eine
+  **Betreiberentscheidung**; bei 5 Mandaten trägt der `unbekannt`→`pruefen`/`erneut`-Weg
+  (§23.3), bei 25+ Mandaten wächst die Behandlungslast linear.
+- **Der Speicher-Timeout unter Slotlast** ist durch die eine Wiederholung gemildert,
+  nicht beseitigt (Supabase Free, OP-01).
+- **Altbestand vor Versuch 5:** `df1a6700` (läuft per §4e beim nächsten Verstehenslauf
+  ehrlich nach `unbekannt` bzw. `fertig`), `eff40db2` (`unbekannt`) und die sieben
+  `offen`-Vorgänge müssen regulär abfließen bzw. per §23.3 behandelt werden, bis die
+  §28.6-Vorprüfung wieder vollständig grün ist — **nach Review, Merge und Deployment
+  dieses Sprints**, damit die Restzeitwache im ersten Wirkungslauf bereits gilt.
