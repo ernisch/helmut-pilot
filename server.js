@@ -1453,7 +1453,10 @@ async function handleRequest(request, response) {
         const profile = await activeProfile(tenantId);
         const val = validateProfile(profile);
         if (val.disabled) return { skipped: true, reason: "profil-deaktiviert" };
-        const lageCheck = await withTimeout(runLageCheck(tenantId), 240000, "cron-lage-check")
+        // RESTZEITWACHE (§29): absolute Deadline = Antwortzeitpunkt des aeusseren
+        // 280s-Race. Auch ein nach innerem Timeout verlassener Lauf startet damit
+        // keinen Modellaufruf mehr, der das Funktionsende nicht ueberleben wuerde.
+        const lageCheck = await withTimeout(runLageCheck(tenantId, { deadlineMs: t0 + 280000 }), 240000, "cron-lage-check")
           .catch((error) => ({ status: "stable", bounded: true, reason: "lage-check-timeout", error: error && error.message }));
         const push = await withTimeout(sendLageChangePush(lageCheck, profile), 30000, "cron-lage-push")
           .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
@@ -1665,7 +1668,11 @@ async function handleRequest(request, response) {
       // unten schreibt, MUSS auch in den Kostenlog. Ohne sie blieb ausgerechnet
       // der dedizierte Understanding-Cron — ein Hauptkostenpfad — bei den Kosten
       // je Lauf auf die Zeitfenster-Rekonstruktion angewiesen.
-      const result = await runPendingUnderstandingShadow(rawDocs, { budgetMs: Number(process.env.HELMUT_UNDERSTAND_BUDGET_MS || 240000), runId });
+      // RESTZEITWACHE (§29): absolute Deadline gegen maxDuration 300s.
+      const result = await runPendingUnderstandingShadow(rawDocs, {
+        budgetMs: Number(process.env.HELMUT_UNDERSTAND_BUDGET_MS || 240000),
+        deadlineMs: understandingStartMs + 280000, runId
+      });
       // "processed" zaehlt jetzt auch Aktualisierungen bestehender Vorgaenge —
       // vorher zaehlte nur `saved`, wodurch ein Nachholauf, der ausschliesslich
       // bestehende Vorgaenge fortgeschrieben hat, als "0 verarbeitet" erschien.
@@ -2269,7 +2276,8 @@ async function handleRequest(request, response) {
       // Budget knapp unter dem Client-Timeout (250s), damit der Lauf antwortet, bevor
       // der Browser abbricht; Rest bleibt pending und wird beim naechsten Klick geholt.
       const budgetMs = Math.min(Number(process.env.HELMUT_UNDERSTAND_BUDGET_MS || 180000), 180000);
-      const result = await runPendingUnderstandingShadow(rawDocs, { budgetMs })
+      // RESTZEITWACHE (§29): absolute Deadline unter dem 250s-Client-Timeout.
+      const result = await runPendingUnderstandingShadow(rawDocs, { budgetMs, deadlineMs: startTs + 240000 })
         .catch((e) => ({ skipped: true, reason: e && e.message }));
       // EIGENEN Lock zuverlaessig loesen: Wir sind nur hier, weil VOR dem Lauf KEIN Lock
       // existierte (sonst kehrt der Guard oben frueh zurueck). runPendingUnderstandingShadow
@@ -6904,7 +6912,9 @@ function cronSchwererPfad(cronName, { deadlineMs, runId, startedMs }) {
       + " sind gleichzeitig gesetzt — die Absicht ist nicht eindeutig. Es laeuft der ALTPFAD.");
   }
   if (wahl.pfad === "alt") {
-    return runCronForTenants(cronName, (tenantId) => runSourceCrawl(tenantId), { deadlineMs, runId });
+    // RESTZEITWACHE (§29): das absolute Slotende wandert bis in den Eager-Verstehens-
+    // Loop — auch ein spaet gestartetes Mandat versteht nicht mehr ueber das Slotende.
+    return runCronForTenants(cronName, (tenantId) => runSourceCrawl(tenantId, { deadlineMs: startedMs + deadlineMs }), { deadlineMs, runId });
   }
   return runCronMitGlobalerPhase(cronName, {
     deadlineMs, runId, startedMs,

@@ -1545,8 +1545,12 @@ function sechsProfile() {
     // DREI Pfade gibt. Die Zusage ist unveraendert und wird hier zweifach geprueft — der
     // Ausdruck im Alt-Zweig ist derselbe wie vorher, UND ohne gesetzte Flagge faellt die Wahl
     // auf `alt`.
-    check("9.8 bei deaktiviertem Flag ist der Aufruf byte-identisch zum bisherigen",
-      /if \(wahl\.pfad === "alt"\) \{\s*\n\s*return runCronForTenants\(cronName, \(tenantId\) => runSourceCrawl\(tenantId\), \{ deadlineMs, runId \}\);/.test(serverSrc)
+    // §29 (Reparatursprint 2026-08-20): der Alt-Zweig reicht jetzt bewusst das ABSOLUTE
+    // Slotende (`startedMs + deadlineMs`) an `runSourceCrawl` durch — die Restzeitwache
+    // vor dem Verstehens-Modellaufruf. Pfadwahl, Fairnessschleife und Zeitgrenzen sind
+    // unveraendert; ohne Deadline-Option verhaelt sich `runSourceCrawl` byte-identisch.
+    check("9.8 bei deaktiviertem Flag laeuft unveraendert der Alt-Zweig (nur um die §29-Deadline ergaenzt)",
+      /if \(wahl\.pfad === "alt"\) \{[\s\S]{0,400}?return runCronForTenants\(cronName, \(tenantId\) => runSourceCrawl\(tenantId, \{ deadlineMs: startedMs \+ deadlineMs \}\), \{ deadlineMs, runId \}\);/.test(serverSrc)
       && G.waehleCronPfad({}).pfad === "alt");
     check("9.9 Berlin/Brandenburg werden durch die Vereinigungslogik nicht aktiv (die Sperre wirkt VOR der Vereinigung)",
       /landesmodulQuelleGesperrt/.test(schedSrc)
@@ -1594,7 +1598,8 @@ function sechsProfile() {
         fs.readFileSync(path.join(ROOT, "lib", "helmut", "cron-globalphase.js"), "utf8") + schedSrc)
       && JSON.stringify(require(path.join(ROOT, "package.json")).dependencies || {}) === JSON.stringify(require(path.join(ROOT, "package.json")).dependencies || {}));
     check("9.16 `runSourceCrawl` ist unveraendert der Pfad ohne Flag (er wird weiterhin direkt aufgerufen)",
-      /return runCronForTenants\(cronName, \(tenantId\) => runSourceCrawl\(tenantId\), \{ deadlineMs, runId \}\)/.test(serverSrc));
+      // §29: derselbe Direktaufruf, ergaenzt um das absolute Slotende (Restzeitwache).
+      /return runCronForTenants\(cronName, \(tenantId\) => runSourceCrawl\(tenantId, \{ deadlineMs: startedMs \+ deadlineMs \}\), \{ deadlineMs, runId \}\)/.test(serverSrc));
   }
 
   // ────────────────────────────────────────────────────────────────────────────────────────

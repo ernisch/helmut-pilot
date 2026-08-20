@@ -558,8 +558,13 @@ async function main() {
       const speicher = baueSpeicherAttrappe();
       speicher.verstehenModellstart = async () => nichtPruefbar;
       const r = await understandOneCluster(baueCluster(TITEL[0], "rd-1"), baueDeps(p, speicher));
-      check("12.2 Modellstart nicht pruefbar -> KEIN Modellaufruf",
-        r.status === "skipped-cluster-belegt" && p.kiAufrufe === 0, `${r.status}/${p.kiAufrufe}`);
+      // §29-Review-Korrektur (2026-08-20): ein NICHT PRUEFBARER Modellstart-Vermerk endet
+      // jetzt als eigener, sicherer Ausgang `skipped-modellstart-unklar` — belegbar wurde
+      // nichts abgesendet, die Zeile wird per freigabeOhneAufruf wieder geoeffnet statt
+      // ueber die ablaufende Lease faelschlich in `unbekannt` zu laufen. Die Kernzusage
+      // ist unveraendert: KEIN Modellaufruf.
+      check("12.2 Modellstart nicht pruefbar -> KEIN Modellaufruf, sicherer Rueckweg",
+        r.status === "skipped-modellstart-unklar" && p.kiAufrufe === 0, `${r.status}/${p.kiAufrufe}`);
     }
     {
       const p = neuesProtokoll();

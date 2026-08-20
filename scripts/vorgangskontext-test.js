@@ -543,8 +543,10 @@ const ALLE_FAMILIEN = [...G.FAMILIEN, ...G.ZUSATZFAMILIEN];
     const kSrc = fs.readFileSync(path.join(ROOT, "lib", "helmut", "vorgangskontext.js"), "utf8");
     const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
 
-    check("8.1 der ALTPFAD ist unveraendert: ohne Flagge derselbe Ausdruck wie bisher",
-      /if \(wahl\.pfad === "alt"\) \{\s*\n\s*return runCronForTenants\(cronName, \(tenantId\) => runSourceCrawl\(tenantId\), \{ deadlineMs, runId \}\);/.test(serverSrc));
+    check("8.1 der ALTPFAD ist unveraendert: ohne Flagge derselbe Ausdruck wie bisher (plus §29-Deadline)",
+      // §29 (Reparatursprint 2026-08-20): einzige bewusste Ergaenzung des Alt-Zweigs ist
+      // das absolute Slotende fuer die Restzeitwache vor dem Verstehens-Modellaufruf.
+      /if \(wahl\.pfad === "alt"\) \{[\s\S]{0,400}?return runCronForTenants\(cronName, \(tenantId\) => runSourceCrawl\(tenantId, \{ deadlineMs: startedMs \+ deadlineMs \}\), \{ deadlineMs, runId \}\);/.test(serverSrc));
     check("8.2 `runSourceCrawl` kennt den Kontextbegriff nicht (der Altpfad wurde nicht angefasst)",
       !/vorgangskontext/.test(schedSrc.slice(0, schedSrc.indexOf("OP-25 K1 — SCHATTENPFAD"))));
     check("8.3 die Vorgangsbildung selbst ist unveraendert (kein Eingriff in `vorgang-identity.js`)",

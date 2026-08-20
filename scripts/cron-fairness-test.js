@@ -1875,8 +1875,14 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
       check("Der Vermerk respektiert den Rueckweg HELMUT_CRON_FAIRNESS=off",
         /async function markiereAeusseresCronTimeout[\s\S]{0,200}if \(!cronFairness\.fairnessEnabled\(\)\) return/.test(serverSrc));
       // Der Sprint erhoeht KEINE Grenze (die Budgets selbst prueft §20).
-      check("Kein neues/erhoehtes Zeitlimit: die vier 280 000-ms-Grenzen bleiben unveraendert",
-        (serverSrc.match(/280000/g) || []).length === 4, String((serverSrc.match(/280000/g) || []).length));
+      // §29 (Reparatursprint 2026-08-20): ZWEI zusaetzliche Vorkommen sind ABSOLUTE
+      // Deadline-Berechnungen an derselben 280-s-Grenze (`t0 + 280000` im lage-check,
+      // `understandingStartMs + 280000` im Understanding-Cron) — keine neue, keine
+      // erhoehte Grenze. Die vier withTimeout-Grenzen selbst bleiben unveraendert.
+      check("Kein neues/erhoehtes Zeitlimit: vier 280 000-ms-Grenzen + zwei §29-Deadline-Bezuege",
+        (serverSrc.match(/280000/g) || []).length === 6
+        && (serverSrc.match(/\+ 280000/g) || []).length === 2,
+        String((serverSrc.match(/280000/g) || []).length));
       check("Kein neues Zeitbudget: 270 000 / 240 000 ms bleiben unveraendert",
         (serverSrc.match(/deadlineMs: 270000/g) || []).length === 2
         && (serverSrc.match(/deadlineMs: 240000/g) || []).length === 2);
