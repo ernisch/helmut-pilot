@@ -1,14 +1,14 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-20 (abends UTC).** OP-25/OP-31 bestanden; `HELMUT_VERSTEHEN_CAS` läuft
-(§7a). **Versuch 4 wurde am 20.08. VOR der Aktivierung beendet (gescheitert vor
-Aktivierung, Runbook §29):** Warteschlangenprüfung grün (0/235/0/0, Outbox 0, Budget
-34/100, 5 Mandate), aber die CAS-Vorprüfung blockierte — `df1a6700` verwaist als
-`modell-laeuft` (10:00-Lage-Check, Muster wie `25c6c69d`), `eff40db2` `unbekannt`
-(`speicherfehler`, bezahlter Aufruf ohne Ergebnis); dazu vier Anbieter-Timeout-Fälle.
-**Reparatursprint 20.08.: zentrale Restzeitwache + begrenzter Speicherweg-Zweitversuch**
-(Branch `claude/repair-sprint-attempt-4-spwwfd`, **PR #259**, nicht gemergt). Der Motor
-bleibt **aus**; kein Deployment, Production unangetastet.
+**Stand: 2026-08-22 (morgens UTC).** OP-25/OP-31 bestanden; `HELMUT_VERSTEHEN_CAS` läuft
+(§7a). **PR #259 (Restzeitwache §29) ist gemergt und deployt** (`12b1e618`,
+`dpl_7PkMvsJNRU7Ge32RUtVPDxx53uEL` READY); `HELMUT_KI_TIMEOUT_MS=30000` seit 21.08. 06:10 UTC
+wirksam. Wirkungsnachweis: seit dem Redeployment **0 neue verwaiste `modell-laeuft`** und
+**0 neue Timeout-`unbekannt`** über alle Läufe. CAS: 190 fertig · 12 offen · **0 unbekannt** ·
+**0 modell-laeuft** · 1 Vormerkung (0caefc33). **Versuch 5 ist GESTOPPT** — Betreiberentscheid
+22.08.: keine Ausnahme für 0caefc33, zuerst die strukturelle Wiederaufnahmelücke schließen
+(**Runbook §30**, Branch `claude/repair-sprint-attempt-4-spwwfd`, PR offen, nicht gemergt).
+Der Motor bleibt **aus**; Production unangetastet.
 
 Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000
 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die
@@ -25,10 +25,9 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 ## 2 · Stand auf `main`
 
-- **HEAD `fc9b611`** = Merge **PR #257** am 2026-08-19: gemischtes
-  Neutralisierungsverfahren + §28. Davor **PR #256** (`e43d306`): Blob-Entkopplung
-  (Option B) + Slot-Quittung (Option D), Runbook §27; **PR #254** (`4072064`):
-  Vollzugsbeleg der 524er-Neutralisierung (§26.7).
+- **HEAD `12b1e618`** = Merge **PR #259** am 2026-08-20: Restzeitwache §29. Davor
+  **#258/#257** (`fc9b611`) gemischte Neutralisierung + §28, **#256** (`e43d306`)
+  Blob-Entkopplung + Slot-Quittung (§27), **#254** 524er-Vollzugsbeleg (§26.7).
 - **PR #253** (davor, `0d9cf62`) lieferte den **datensparsamen Neutralisierungsweg**
   (`lib/helmut/jobqueue-neutralisierung.js`, Riegel R1–R9, kein Export) und die
   **Warteschlangenwache V2** (`betriebsstatus`, `statusvertrag: 2`, Runbook §26.4).
@@ -91,7 +90,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **`HELMUT_CRON_GLOBALABRUF`** | **`on`** seit 2026-08-06 ~08:15 UTC (Betreiber, für das Nachweisfenster) ⇒ **Kontextpfad aktiv**, laufzeitbelegt (drei Fensterläufe 06./07.08. global auf `d8bf68fa…`, E3 `nv=0`). Ob es `on` bleibt, ist Betreiberentscheidung. Dritter Zyklus |
 | **Berlin (Landesmodul)** | inaktiv. `HELMUT_LANDESMODULE=berlin` seit 2026-07-26 gesetzt, aber **wirkungslos**: 0 berechtigte Berliner Mandate seit dem Rollback ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22). Ob das Flag wirkt, ist **unbewiesen** |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt); PR #132 vor Merge Gate-Name vereinheitlichen |
-| **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **gelöscht (aus)** — Stufe-1-Anlauf 18.08., Rücknahme 19.08. (§27; Reparatur PR #256/#257 gemergt + deployt); 383 inerte Aufträge 19.08. neutralisiert (§28.8), Warteschlange **0/235/0/0**, Outbox 0. **Versuch 4 am 20.08. VOR Aktivierung beendet** (CAS-Blocker, §29); Versuch 5 erst nach Merge+Deploy der Restzeitwache und CAS-Bereinigung (§29.6) |
+| **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **gelöscht (aus)** — Stufe-1-Anlauf 18.08., Rücknahme 19.08. (§27); 383 inerte Aufträge neutralisiert (§28.8), Warteschlange **0/235/0/0**, Outbox 0. **Versuch 4 am 20.08. vor Aktivierung beendet** (§29). **Versuch 5 am 22.08. GESTOPPT** (Betreiberentscheid): zuerst §30 mergen+deployen |
 | **M8 / `HELMUT_MATCHING_RELEVANZ_GATE`** | aus (Default aus, nie aktiviert) |
 | `HELMUT_CRON_GLOBALPHASE` | nicht gesetzt (aus) — K2-Prüfung ergab keine Aktivierungsempfehlung |
 | `HELMUT_UNDERSTANDING_GATE` / `HELMUT_PARDOK_DISPATCH` | `shadow` |
@@ -255,25 +254,19 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Genau ein Schritt: den Reparatur-PR (Restzeitwache §29, Branch
-`claude/repair-sprint-attempt-4-spwwfd`) reviewen und mergen** (Merge = Deployment).
-Erst mit deployter Restzeitwache ist ein Versuch 5 fachlich vertretbar. Danach:
+**Genau ein Schritt: den §30-PR (Wiederaufnahmelücke, Branch
+`claude/repair-sprint-attempt-4-spwwfd`) reviewen und mergen** (Merge = Deployment). Erst
+danach erreichen ausdrücklich `erneut` freigegebene Vorgänge deterministisch einen regulären
+Lauf — heute hängt das vom Zufall der Clusterbildung ab (§30.1: fünf von sechs Freigaben über
+vier Slots unberührt, obwohl allein der 21:30-Lauf 18 Vorgänge verarbeitete). Danach:
 
-1. **CAS-Bereinigung bis §28.6 wieder grün ist:** `df1a6700` läuft per §4e beim nächsten
-   Verstehenslauf ehrlich nach `unbekannt`/`fertig`; `eff40db2` und die sieben `offen`
-   fließen regulär ab bzw. werden per §23.3 behandelt (`pruefen`/`erneut`,
-   freigabepflichtig). Dann Versuch 5 nach §28.6 (Fenster 19:10–20:50 TR, erster
-   Wirkungslauf crawl 20:00 UTC, 11 Kontrollen; Rückweg = Flag löschen + Redeploy).
-2. Nach jeder wirksamen OP-30-Aktivierung: **OP-25 vollständig wiederholen**.
-3. Unabhängig davon: **OP-15** (Personenquellen) beziffert und offen; `CRON_SECRET`/Egress
+1. **Abfluss der fünf freigegebenen Vorgänge** im nächsten Nachhollauf beobachten; ein
+   erfolgreicher Lauf von 0caefc33 löst zugleich die letzte offene Vormerkung.
+2. Dann erst **Versuch 5** nach §28.6 (Fenster 19:10–20:50 TR, erster Wirkungslauf crawl
+   20:00 UTC, 11 Kontrollen; Rückweg = Flag löschen + Redeploy).
+3. Nach jeder wirksamen OP-30-Aktivierung: **OP-25 vollständig wiederholen**.
+4. Unabhängig davon: **OP-15** (Personenquellen) beziffert und offen; `CRON_SECRET`/Egress
    für eine Folgesitzung freigeben (schließt die K0-Teillücke `/api/ops/jobqueue`).
-4. Betreiberentscheidung offen: `HELMUT_KI_TIMEOUT_MS` anheben (Anbieter-Timeouts
-   bleiben sonst ein Skalierungsrisiko, §29.6) — die Reserve wandert automatisch mit.
-
-Die fünf OP-30-Migrationen sind angewendet und dürfen **nicht** erneut ausgeführt werden;
-`20260720` bleibt offen. Ein Rückweg für die neutralisierten Aufträge ist ausschließlich die
-**deterministische Neuerzeugung durch den Planer** — es existiert **kein Export** und keine
-Sicherungskopie (§26.2/§26.7).
 
 ## 12 · Verbindliche Betriebsgrenzen
 
@@ -319,6 +312,15 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzte relevante Sprints
 
+- **22.08. (§30, PR offen):** strukturelle Wiederaufnahmelücke belegt und geschlossen —
+  `erneut` freigegebene Vorgänge erreichten keinen regulären Lauf. Fix ohne Migration
+  (`storage.verstehenWiederaufnahmen`, Filter `erneut-freigegeben`, an `casAktiv()` + §29
+  gebunden; `duplicate`/`skipped-failed` weichen **nur** bei ausdrücklicher Freigabe). Eine
+  unabhängige Gegenprüfung fand vier ernste Mängel am ersten Entwurf — alle behoben, Suite
+  **47/0**, Versuch 5 gestoppt, Production intakt.
+- **21.08. (Betreiber + Kontrolle):** `HELMUT_KI_TIMEOUT_MS=30000` gesetzt und deployt;
+  CAS-Bereinigung freigegeben und vollzogen (df1a6700 per §4e-Wärterweg, 6× `pruefen`,
+  6× `erneut`, 0 Modellaufrufe durch die Behandlung); erster Erfolg `eff40db2` → `fertig`.
 - **20.08. (Reparatursprint nach Versuch 4, §29, PR #259):** Versuch 4 ehrlich als
   gescheitert vor Aktivierung dokumentiert; Ursachen live + am Code belegt; zentrale
   Restzeitwache (drei Gates inkl. `modellstart`-RPC-Deckung, Review-Korrektur) +
@@ -342,9 +344,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
   Warteschlangenwache V2; Watchdog-Vertrag queue-tauglich.
 - **17./18.08. (Betreiber):** `HELMUT_VERSTEHEN_CAS=on` aktiviert und über drei
   Kontrollen laufzeitgeprüft — 45 Vorgänge, 0 `unbekannt`, Morgenzyklus 5/5 je Slot.
-- **16.08., PR #251:** Laufzeitinertheit der fünf Migrationen bestätigt; Betreiberplan
-  der ersten CAS-Aktivierung dokumentiert; nur Dokumentation.
+- **16.08., PR #251:** Laufzeitinertheit der fünf Migrationen bestätigt, Betreiberplan der ersten CAS-Aktivierung dokumentiert; nur Dokumentation.
 - **15.08., PR #249/#250:** fünf OP-30-Migrationen nach Transaktions- und
   Organisationskorrekturen fehlerfrei auf Production angewendet; alle Flags aus.
-Ältere Sprintberichte (inkl. PR #247/#248) stehen in den kanonischen Belegdateien aus
-§13 und in der verlustfreien Archivfassung vom 17.08.
+Ältere Sprintberichte (inkl. PR #247/#248) stehen in den Belegdateien aus §13 und in der verlustfreien Archivfassung vom 17.08.

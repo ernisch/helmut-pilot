@@ -3464,3 +3464,136 @@ rein lesend). Die strenge Aktivierungsbedingung (§28.6, insb. 0 `unbekannt`, 0
   `offen`-Vorgänge müssen regulär abfließen bzw. per §23.3 behandelt werden, bis die
   §28.6-Vorprüfung wieder vollständig grün ist — **nach Review, Merge und Deployment
   dieses Sprints**, damit die Restzeitwache im ersten Wirkungslauf bereits gilt.
+
+## §30 · Strukturelle Wiederaufnahmelücke: freigegebene Vorgänge erreichten keinen Lauf (Sprint 2026-08-22)
+
+### §30.1 Der belegte Fehler
+
+Nach der Behandlung vom 21.08. (§29.7) standen sechs Vorgänge per kanonischem Betreiberweg
+auf `offen` mit `letzter_grund='erneut-freigegeben'`. **Fünf von ihnen wurden über vier
+aufeinanderfolgende Slots nicht ein einziges Mal angefasst** — obwohl dieselben Läufe reichlich
+Arbeit leisteten:
+
+| Slot (UTC) | Lauf | verarbeitet | einer der sechs dabei? |
+|---|---|---|---|
+| 21.08. 16:00 | globalphase + eager | 0 | nein |
+| 21.08. 20:00 | globalphase + eager | 1 | **ja — `eff40db2` → `fertig`** |
+| 21.08. 21:30 | understanding-cron | **18** | nein |
+| 22.08. 04:00 | globalphase + eager | 6 | nein |
+
+**Ursache, am Code belegt:** Der dedizierte Nachholpfad `runPendingUnderstandingShadow` liest
+ausschließlich `storage.listPendingKnowledgeObjects()`, also Wissensobjekte mit
+`status='pending'`. Ein per `erneut` freigegebener Vorgang hat aber entweder ein bestehendes
+`complete`-KO (dann ist er nicht `pending`) oder gar kein KO (dann ist er dort erst recht
+nicht). Er war damit in **keiner** Liste, die ein regulärer Lauf abarbeitet. Erreicht wurde er
+nur über den eager-Pfad — und der sieht ihn ausschließlich, wenn sein Cluster **zufällig**
+durch neue Dokumente erneut gebildet wird. Genau das traf am 20.08. auf `eff40db2` zu und auf
+die übrigen fünf nicht. Die Freigabe war also wirkungslos, ohne dass irgendetwas fehlschlug —
+ein stiller Rückstand, kein Fehler.
+
+### §30.2 Der kleinste sichere Fix (ohne Migration)
+
+**Neu `storage.verstehenWiederaufnahmen({limit})`** — eine **rein lesende** PostgREST-Abfrage
+auf die bestehende Tabelle `helmut_verstehen_reservierungen`, gefiltert auf
+`zustand=eq.offen` **und** `letzter_grund=eq.erneut-freigegeben`. Das ist exakt der Marker, den
+`helmut_verstehen_ausgang_aufloesen(..., 'erneut')` schreibt (Migration `20260814180000`,
+Zeile 815) — **keine** pauschale Wiederverarbeitung offener Vorgänge. Sortiert wird
+`updated_at.desc`, damit ein Eintrag, der aus Struktur- oder Budgetgründen dauerhaft hängen
+bleibt, keine frischere Freigabe verhungern lässt. **Keine Migration nötig:** die Tabelle und
+alle benutzten Vertragsfunktionen stammen unverändert aus `20260814180000`.
+
+**`understanding.js`:** `runPendingUnderstandingShadow` stellt diese Vorgänge der pending-Menge
+voran (eine ausdrückliche Betreiberfreigabe soll nicht daran scheitern, dass das Zeitbudget
+vorher aufgeht) und verarbeitet sie über **denselben, unveränderten** `understandOneCluster` —
+dieselbe CAS-Reservierung, dieselbe Vorgangswache, dasselbe Budget-Gate, dieselbe
+Restzeitwache (§29), dieselben Versuchs- und Wiederaufnahmegrenzen. Der Cluster wird über die
+**Verknüpfung** rekonstruiert (`listVorgangDocuments`), nicht über eine Neuclusterung — genau
+damit entfällt die Abhängigkeit von zufälliger Neuclusterung. Fehlt das KO, bleibt die
+Kennungssuche als Rückfallebene; findet auch sie nichts, endet der Vorgang ehrlich als
+`skipped-no-cluster` **ohne** Modellaufruf. Obergrenze je Lauf: 25
+(`HELMUT_VERSTEHEN_WIEDERAUFNAHME_MAX`, hart auf 200 gedeckelt).
+
+**Die zwei Vorfilter, die den belegten Fällen im Weg standen** (`duplicate` bei bestehendem
+`complete`-KO, `skipped-failed` bei geparktem KO), greifen beim Wiederaufnahmepfad
+**ausschließlich dann nicht**, wenn `wiederaufnahmeFreigabe` gesetzt ist — also genau bei einer
+ausdrücklichen Betreiberfreigabe. Ohne Freigabe bleiben beide unverändert scharf (§30.3 §11c).
+Das war der entscheidende Punkt: Cluster und Bestandsdokumente stammen aus **derselben**
+Verknüpfungsabfrage, deshalb hätte der Wiederaufnahmepfad ohne diese Lockerung bei
+`ba50848e`/`dcbb89b6`/`50390467` weiterhin `duplicate` gemeldet — der Fix hätte den belegten
+Produktionsfall nicht gelöst.
+
+**Drei harte Klammern um den neuen Pfad** (Review-Korrekturen, alle testgesichert):
+
+1. **Vertragsbindung.** Die Liste wird nur gelesen, wenn der CAS-Vertrag aktiv ist
+   (`verstehenVertrag()` bzw. `casAktiv()`). Ohne Flag gibt es keine Abfrage und keinen
+   Modellaufruf — der neue Pfad kann nicht am CAS-Schalter vorbei bezahlte Aufrufe auslösen.
+2. **Zeit-Gate vor der Vorarbeit.** Die Abfrage läuft nur, wenn die Restzeit die
+   Vor-Modellstart-Reserve (§29) noch trägt. Reicht sie nicht, wird gar nicht erst gelesen.
+   Die drei Gates im Lauf selbst bleiben unverändert.
+3. **Strenger Bestandsleser.** Das bestehende Wissensobjekt wird erst **hinter** Sperre und
+   Gates geholt, und zwar über `getKnowledgeObjectByVorgang(..., {throwOnError:true})`. Ein
+   Lesefehler endet ehrlich als `skipped-store` mit Grund `bestand-nicht-lesbar:…`; er darf
+   **niemals** als „kein Bestand" durchgehen, weil das ein lebendes KO mit `ko_version: 1`
+   überschrieben hätte.
+
+**Selbstbegrenzung — ehrlich abgegrenzt:** `helmut_verstehen_reserviere` setzt bei jeder
+Übernahme `letzter_grund = null` (Migration `20260814180000`, Zeile 371). Sobald ein Vorgang
+also tatsächlich reserviert wird, ist der Freigabemarker verbraucht: eine Freigabe führt zu
+**höchstens einem** Reservierungs- und damit Modellaufrufversuch, einen automatischen zweiten
+gibt es nicht. Endet der Vorgang **vor** der Reservierung (kein Cluster, Budget aus, Zeitbudget
+aus, Bestand nicht lesbar, Versuchslimit ausgeschöpft), bleibt der Marker stehen und der
+Vorgang wird im nächsten geeigneten Lauf erneut **angeboten** — jedes Mal ohne Modellaufruf,
+weil er an derselben Stelle wieder endet. Das ist gewollt (die Freigabe verfällt nicht
+stillschweigend), aber es ist **keine** Selbstlöschung: ein strukturell unlösbarer Vorgang
+bleibt in der Liste, bis ein Betreiber ihn per `aufgeben` schließt. Die `desc`-Sortierung sorgt
+dafür, dass er dabei niemandem den Platz nimmt. **Fail closed:** Ein Lesefehler der Liste gilt
+nicht als „kein Rückstand", sondern wird als `wiederaufnahmeGrund` gemeldet; nur
+`supabase-nicht-konfiguriert` wird still übergangen.
+
+### §30.3 Nachweise (offline, 2026-08-22)
+
+Neue Suite `scripts/verstehen-wiederaufnahme-test.js`: **47 PASS / 0 FAIL**.
+
+- **§1 Kernbeweis** — ein freigegebener Vorgang wird bei **leerer** Rohdokumentmenge
+  (`rawDocs = []`), also ohne jede Clusterbildung, reserviert und verstanden;
+  Cluster-Herkunft `verknuepfung`. Genau die verlangte Unabhängigkeit von erneuter
+  Clusterbildung.
+- **§2/§7** — `complete`-KO mit Vormerkung über den Update-Pfad; Erfolg setzt `fertig` und löst
+  die Vormerkung vertragsgemäß, Zähler exakt +1.
+- **§3** — ohne KO: ehrlich `skipped-no-cluster` ohne Aufruf, bei Kennungstreffer reguläres
+  Erstverstehen.
+- **§4** — enge Grenze samt serverseitigem Filter: nur `erneut-freigegeben`, kein
+  `zustand='offen'` ohne Marker.
+- **§5** — ausgeschöpftes Versuchslimit: kein weiterer Modellaufruf (`skipped-update-final`).
+- **§6** — parallele Läufe: genau **ein** Modellaufruf, keine verwaiste Lease.
+- **§8** — erneuter Fehler endet ehrlich `unbekannt`, kein Doppelaufruf, kein stilles
+  Verschwinden.
+- **§9** — fail closed bei Lesefehler der Liste.
+- **§10** — Grenzen und Quelltextverträge inklusive **unveränderter** Restzeitwache (§29) und
+  unverändertem 30-Sekunden-Timeout.
+- **§11 (Review-Korrektur)** — die belegten Produktionsfälle werden wirklich gelöst:
+  `complete`-KO **ohne** Vormerkung wird verarbeitet statt als `duplicate` verworfen
+  (§11a, Lage von `ba50848e`/`dcbb89b6`/`50390467`); geparktes KO mit
+  `understanding_status='failed'` wird auf ausdrückliche Freigabe hin verarbeitet (§11b);
+  **ohne** Freigabe bleiben beide Vorfilter scharf, kein Modellaufruf (§11c).
+- **§12 (Review-Korrektur)** — ohne CAS-Vertrag wird die Liste gar nicht erst gelesen (§12a);
+  ohne Restzeit ebenfalls nicht (§12b); ein Bestands-Lesefehler erzeugt keinen Modellaufruf und
+  überschreibt kein Wissensobjekt, sondern meldet `skipped-store` mit Grund (§12c);
+  „nicht konfiguriert" ist kein Alarm, ein echter Lesefehler schon (§12d); `desc`-Sortierung,
+  Bestandslesung hinter der Sperre und Vertragsbindung sind am Quelltext festgenagelt (§12e).
+
+**Vor der Korrektur** lief dieselbe Suite mit 34 Checks grün — eine unabhängige
+Gegenprüfung fand danach vier ernste Mängel (fehlende Vertragsbindung, ungedeckelte Vorarbeit,
+nicht gelöste Produktionsfälle wegen der beiden Vorfilter, stiller Bestandslesefehler). Alle
+vier sind behoben, die Suite deckt sie jetzt ab. Das wird hier festgehalten, weil ein
+grüner Testlauf allein kein Beleg für Vollständigkeit ist.
+
+Zusätzlich: vollständige Offline-Suiten und Browser-Smoke — Zahlen in `CURRENT_STATE.md`.
+
+### §30.4 Nicht getan (Verbote eingehalten)
+
+Keine Production-Behandlung, kein manueller Modellaufruf, kein SQL-Schreiben, keine
+Env-Änderung, kein Redeployment, keine Aktivierung. **Die Vormerkung von 0caefc33 wurde nicht
+gelöscht.** Kein vierter Versuch für 0caefc33 — der Fix erhöht keine Grenze, er verschafft
+einem bereits freigegebenen Vorgang nur die Gelegenheit, überhaupt reserviert zu werden.
+Versuch 5 bleibt gestoppt; die Ausnahme für 0caefc33 wurde nicht erteilt.
