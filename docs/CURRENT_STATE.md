@@ -7,7 +7,7 @@ wirksam. Wirkungsnachweis: seit dem Redeployment **0 neue verwaiste `modell-laeu
 **0 neue Timeout-`unbekannt`** über alle Läufe. CAS: 190 fertig · 12 offen · **0 unbekannt** ·
 **0 modell-laeuft** · 1 Vormerkung (0caefc33). **Versuch 5 ist GESTOPPT** — Betreiberentscheid
 22.08.: keine Ausnahme für 0caefc33, zuerst die strukturelle Wiederaufnahmelücke schließen
-(**Runbook §30**, Branch `claude/repair-sprint-attempt-4-spwwfd`, PR offen, nicht gemergt).
+(**Runbook §30**, PR #260, beide Pflicht-Checks grün, nicht gemergt).
 Der Motor bleibt **aus**; Production unangetastet.
 
 Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000
@@ -254,7 +254,7 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Genau ein Schritt: den §30-PR (Wiederaufnahmelücke, Branch
+**Genau ein Schritt: PR #260 (§30 Wiederaufnahmelücke, Branch
 `claude/repair-sprint-attempt-4-spwwfd`) reviewen und mergen** (Merge = Deployment). Erst
 danach erreichen ausdrücklich `erneut` freigegebene Vorgänge deterministisch einen regulären
 Lauf — heute hängt das vom Zufall der Clusterbildung ab (§30.1: fünf von sechs Freigaben über
@@ -317,7 +317,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
   (`storage.verstehenWiederaufnahmen`, Filter `erneut-freigegeben`, an `casAktiv()` + §29
   gebunden; `duplicate`/`skipped-failed` weichen **nur** bei ausdrücklicher Freigabe). Eine
   unabhängige Gegenprüfung fand vier ernste Mängel am ersten Entwurf — alle behoben, Suite
-  **47/0**, Versuch 5 gestoppt, Production intakt.
+  **47/0**, CI 269/269. Versuch 5 gestoppt, Production intakt.
 - **21.08. (Betreiber + Kontrolle):** `HELMUT_KI_TIMEOUT_MS=30000` gesetzt und deployt;
   CAS-Bereinigung freigegeben und vollzogen (df1a6700 per §4e-Wärterweg, 6× `pruefen`,
   6× `erneut`, 0 Modellaufrufe durch die Behandlung); erster Erfolg `eff40db2` → `fertig`.
