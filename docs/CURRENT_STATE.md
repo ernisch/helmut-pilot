@@ -1,14 +1,14 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-22 (vormittags UTC).** **PR #260 (§30 Wiederaufnahmelücke) ist gemergt und
-deployt:** Merge `cb9e14e` 05:36:41 UTC, `dpl_5jW267RPUp1Ya7ow76YjXK4oC379` READY 05:36:55
-UTC, Production-Alias + Asset-Version `cb9e14e0` live bestätigt. **Der §30-Wirkungsnachweis
-steht AUS:** der 05:30-Lauf lief 05:31–05:34 auf Altcode (`process_runs.commit_ref
-12b1e618`); erster geeigneter Lauf ist understanding-cron **22.08. 21:30 UTC**. Dabei brach
-die §29-Serie: **1 neuer Timeout-`unbekannt`** 05:31:38 (Altcode-Lauf, `modellfehler:OpenAI
-request timeout`, §27.4, Behandlung freigabepflichtig). CAS: 203 fertig · 12 offen (alle
-`erneut-freigegeben`, darunter 0caefc33) · **1 unbekannt** · **0 modell-laeuft** ·
-1 Vormerkung (0caefc33). **Versuch 5 bleibt GESTOPPT.** Motor aus; Production unangetastet.
+**Stand: 2026-08-22 (spätabends UTC).** **Der §30-Wirkungsnachweis ist ERBRACHT:** der Lauf
+`understanding-cron-20260822213131-2iz11` (21:31–21:35 UTC, `commit_ref cb9e14e0…`) nahm
+alle 12 freigegebenen Vorgänge deterministisch auf (`wiederaufnahmeFreigabe`-Marker) — 11
+`fertig` mit exakt +1 je Zähler; `0caefc33` als `updated` mit **0 neuen Dokumenten** (also
+ohne jede Clusterbildung), KO v2, Fencing 3=3, **Vormerkungen jetzt 0**; nur `df1a6700`
+ehrlich `skipped-no-cluster` (kein KO, keine verknüpften Dokumente, kein Aufruf). 0 HV001/
+HV002, 0 Leases, 0 Doppelaufrufe, Queue 0/235/0/0, Outbox 0, 5 Mandate. Offen: `492dcd48`
+`unbekannt` (Anbieter-Timeout 05:31, Altcode-Lauf, §27.4, Behandlung freigabepflichtig).
+**Versuch 5 bleibt GESTOPPT** — die §28.6-Vorprüfung ist jetzt zulässig (§11).
 
 Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000
 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die
@@ -90,7 +90,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **`HELMUT_CRON_GLOBALABRUF`** | **`on`** seit 2026-08-06 ~08:15 UTC (Betreiber, für das Nachweisfenster) ⇒ **Kontextpfad aktiv**, laufzeitbelegt (drei Fensterläufe 06./07.08. global auf `d8bf68fa…`, E3 `nv=0`). Ob es `on` bleibt, ist Betreiberentscheidung. Dritter Zyklus |
 | **Berlin (Landesmodul)** | inaktiv. `HELMUT_LANDESMODULE=berlin` seit 2026-07-26 gesetzt, aber **wirkungslos**: 0 berechtigte Berliner Mandate seit dem Rollback ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22). Ob das Flag wirkt, ist **unbewiesen** |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt); PR #132 vor Merge Gate-Name vereinheitlichen |
-| **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **gelöscht (aus)** — Stufe-1-Anlauf 18.08., Rücknahme 19.08. (§27); 383 inerte Aufträge neutralisiert (§28.8), Warteschlange **0/235/0/0**, Outbox 0. **Versuch 4 am 20.08. vor Aktivierung beendet** (§29). **Versuch 5 am 22.08. GESTOPPT** (Betreiberentscheid); §30 ist seit 22.08. deployt, der §30-Wirkungsnachweis steht aus |
+| **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **gelöscht (aus)** — Stufe-1-Anlauf 18.08., Rücknahme 19.08. (§27); 383 inerte Aufträge neutralisiert (§28.8), Warteschlange **0/235/0/0**, Outbox 0. **Versuch 4 am 20.08. vor Aktivierung beendet** (§29). **Versuch 5 am 22.08. GESTOPPT** (Betreiberentscheid); §30 ist seit 22.08. deployt und der Wirkungsnachweis im 21:30-UTC-Lauf erbracht |
 | **M8 / `HELMUT_MATCHING_RELEVANZ_GATE`** | aus (Default aus, nie aktiviert) |
 | `HELMUT_CRON_GLOBALPHASE` | nicht gesetzt (aus) — K2-Prüfung ergab keine Aktivierungsempfehlung |
 | `HELMUT_UNDERSTANDING_GATE` / `HELMUT_PARDOK_DISPATCH` | `shadow` |
@@ -254,16 +254,16 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Genau ein Schritt: den Understanding-Lauf 22.08. 21:30 UTC rein lesend nachprüfen**
-(§30-Wirkungsnachweis; frühester sinnvoller Prüfzeitpunkt 00:45 TR / 23:45 Berlin /
-21:45 UTC). Beleggrundlage: `process_runs.commit_ref` = `cb9e14e0…`, Vercel-Logzeile
-`[cron/understanding]` mit `wiederaufnahmen`-Zähler + `wiederaufnahmeFreigabe`-Markern,
-Zähler der fünf freigegebenen Vorgänge (0caefc33: `fertig` + Vormerkung gelöst). Danach:
+**Genau ein Schritt: die vollständige Versuch-5-Vorprüfung nach §28.6 als separater
+Sprint** (Fenster 19:10–20:50 TR, erster Wirkungslauf crawl 20:00 UTC, 11 Kontrollen;
+Rückweg = Flag löschen + Redeploy). Der §30-Wirkungsnachweis ist erbracht (22.08., Lauf
+21:30 UTC, Kopfstatus + §14). Vorher zwei Betreiberentscheidungen, sonst meldet die
+CAS-Vorprüfung (Teil D) absehbar Befunde:
 
-1. **Abfluss der fünf freigegebenen Vorgänge** im nächsten Nachhollauf beobachten; ein
-   erfolgreicher Lauf von 0caefc33 löst zugleich die letzte offene Vormerkung.
-2. Dann erst **Versuch 5** nach §28.6 (Fenster 19:10–20:50 TR, erster Wirkungslauf crawl
-   20:00 UTC, 11 Kontrollen; Rückweg = Flag löschen + Redeploy).
+1. **`492dcd48`** `unbekannt` (Anbieter-Timeout 05:31 UTC im Altcode-Lauf, Klasse §27.4):
+   kanonisch `pruefen`/`erneut` — eine Freigabe erreicht jetzt deterministisch den Lauf.
+2. **`df1a6700`** `offen` mit Marker, ohne KO und ohne verknüpfte Dokumente — endet je Lauf
+   ehrlich `skipped-no-cluster` ohne Modellaufruf; `aufgeben` oder bewusst stehen lassen.
 3. Nach jeder wirksamen OP-30-Aktivierung: **OP-25 vollständig wiederholen**.
 4. Unabhängig davon: **OP-15** (Personenquellen) beziffert und offen; `CRON_SECRET`/Egress
    für eine Folgesitzung freigeben (schließt die K0-Teillücke `/api/ops/jobqueue`).
@@ -312,12 +312,12 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzte relevante Sprints
 
-- **22.08. (§30):** Wiederaufnahmelücke geschlossen (PR #260, Suite 47/0, CI 269/269);
-  **gemergt 05:36 UTC und deployt** (`cb9e14e`, `dpl_5jW267RPUp1Ya7ow76YjXK4oC379` READY
-  05:36:55 UTC, Alias/Asset `cb9e14e0` live belegt, kein Zwischen-Deployment).
-  Nachweissprint (rein lesend): 05:30-Lauf lief auf Altcode → **Wirkungsnachweis
-  AUSSTEHEND** bis 21:30 UTC; 1 neuer Timeout-`unbekannt` 05:31 (Altcode, §27.4); die 12
-  `erneut-freigegeben`-Vorgänge, Queue 0/235/0/0, Outbox 0 und Vormerkung unverändert.
+- **22.08. (§30):** PR #260 gemergt 05:36 UTC + deployt (`cb9e14e`, READY 05:36:55 UTC,
+  Alias/Asset live belegt, kein Production-Zwischendeployment). **Wirkungsnachweis im Lauf
+  21:30 UTC erbracht** (Neucode per `commit_ref`; Marker `wiederaufnahme`/
+  `wiederaufnahmeFreigabe`; 0caefc33 `updated` ohne neue Dokumente → §30-Pfad statt
+  Zufallscluster; 11/12 `fertig`, Vormerkungen 0, Fencing konsistent, genau ein Aufruf je
+  Vorgang; df1a6700 ehrlich `skipped-no-cluster`); 1 Timeout-`unbekannt` 05:31 (Altcode).
 - **21.08. (Betreiber + Kontrolle):** `HELMUT_KI_TIMEOUT_MS=30000` gesetzt und deployt;
   CAS-Bereinigung freigegeben und vollzogen (df1a6700 per §4e-Wärterweg, 6× `pruefen`,
   6× `erneut`, 0 Modellaufrufe durch die Behandlung); erster Erfolg `eff40db2` → `fertig`.
