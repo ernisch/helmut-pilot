@@ -3180,7 +3180,7 @@ idempotency_key/outbox-Fehlertext erscheinen nirgends).
 | V4-3 | Outbox | 0 offene Absichten |
 | V4-4 | CAS | 0 `unbekannt` oder jeder Fall mit §23.3-Blocker erklärt; 0 Vormerkungen; kein HV001/HV002 |
 | V4-5 | Kein schwerer Cronslot im Aktivierungsfenster aktiv | Fenster 19:10–20:50 TR liegt nach dem 16:00-UTC-Slot |
-| V4-6 | Migrationen | unverändert 31/`20260815164241`; `20260720` NICHT anwenden |
+| V4-6 | Migrationen | Basispunkt 33/`20260823063208`; zwei dokumentierte bytegleiche Einträge für `20260823043633`; `20260720` NICHT anwenden |
 | V4-7 | 0 fremde aktive Abfragen/Sperren auf `helmut_jobs` | 0/0 |
 
 **Variablen (Vercel → Production, exakt diese Werte):** `HELMUT_SCALABLE_PIPELINE=on` ·
@@ -3638,7 +3638,27 @@ Dokumentgrundlage verweigert (§3–§5), Zähler unverändert (§6), Idempotenz
 Rollback + erneutes Vorwärts (§10). Bestandssuite `verstehen-cas-datenbank-test.js`
 unverändert **103/0**; Offline-Gesamtlauf grün.
 
-**Nicht getan:** kein Merge, kein Deployment, keine Anwendung auf Production, kein
-`aufgeben`-Aufruf. df1a6700 bleibt in Production unverändert `offen` mit stehendem Marker;
-Merge (= Deployment), Anwendung der Migration und der Aufruf selbst sind drei getrennte
-Betreiberfreigaben (PR #262, CURRENT_STATE §11).
+**Production Vollzug 2026-08-23:**
+
+1. PR #262 wurde gemergt (`81f396b5`) und als Production Deployment
+   `dpl_8Z74anCHqxZVNQjmUPs5UGq7GuRZ` READY ausgeliefert.
+2. Die Migration wurde nach eigener Betreiberfreigabe angewendet. Die Buchführung enthält
+   zwei bytegleiche Einträge mit demselben Namen und den Anwendungsversionen
+   `20260823063140` und `20260823063208`. Ursache waren zwei parallele Anwendungen durch
+   getrennte Agenten, nicht ein interner Werkzeugretry. Die Funktion existiert genau einmal;
+   die Anwendung änderte keine Daten. Die Dublette wurde nicht gelöscht.
+3. Unmittelbare Vorprüfung um 09:38:42 TR / 08:38:42 Berlin / 06:38:42 UTC:
+   df1a6700 exakt `offen` + `erneut-freigegeben`, Besitzer und Lease null,
+   0 Wissensobjekte, 0 Dokumentverknüpfungen, Funktion und Row Lock vorhanden.
+4. Der getrennt freigegebene Aufruf für
+   `vg-ausschreibung-20260708-3ff6e2-2` lieferte um 09:38:54 TR /
+   08:38:54 Berlin / 06:38:54 UTC exakt `aufgegeben`.
+5. Nachkontrolle: Zustand `aufgegeben`, Grund `aufgegeben-nach-freigabe`,
+   Versuche/KI Aufrufe/Fencing unverändert 1/1/1, Besitzer/Lease null. Seit der Vorprüfung
+   änderte sich genau diese eine Reservierungszeile. 492dcd48 blieb `fertig` mit 2/2/2.
+   Gesamtstand 239 fertig / 1 aufgegeben; Queue 0/235/0/0, Outbox 0,
+   Vormerkungen 0, aktive Leases 0.
+
+**V4 Nachkontrolle 09:44:50 TR / 08:44:50 Berlin / 06:44:50 UTC:** V4 1/2/3/4/6/7
+grün; V4 5 bleibt bis unmittelbar vor einer ausdrücklich freigegebenen Aktivierung offen.
+Kein Flag, kein Redeployment, kein Motorstart, kein Versuch 5.
