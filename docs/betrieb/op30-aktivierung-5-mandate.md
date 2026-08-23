@@ -3642,3 +3642,28 @@ unverändert **103/0**; Offline-Gesamtlauf grün.
 `aufgeben`-Aufruf. df1a6700 bleibt in Production unverändert `offen` mit stehendem Marker;
 Merge (= Deployment), Anwendung der Migration und der Aufruf selbst sind drei getrennte
 Betreiberfreigaben (PR #262, CURRENT_STATE §11).
+
+**Vollzug (Nachtrag 23.08., je einzeln freigegeben):** Nach dem Merge von PR #262
+(`81f396b5`, Vercel-Production READY 06:19:03 UTC, laufzeitneutral) wurde die Migration
+`20260823043633` per ausdrücklicher Betreiberfreigabe kanonisch angewendet — Vorprüfung
+06:30:49 UTC byte-gleich (Altfassung aktiv, unverbucht, df1a6700 unverändert), Anwendung
+laut `postgres_logs` um 06:31:40 und 06:32:08 UTC: **das Migrationswerkzeug führte die eine
+angestoßene Anwendung intern doppelt aus und verbuchte zwei Zeilen**
+(`20260823063140`/`20260823063208`, gleicher Name). Datenneutral belegt: Funktion genau 1×
+(neue Fassung, len 4636, Rechte/Signatur/`search_path` unverändert, 0 Grants für
+PUBLIC/anon/authenticated), **0 veränderte Vorgangszeilen durch die Anwendung** — die
+Idempotenz der Doppelanwendung war zuvor in der Abnahmesuite bewiesen. Die Dublette bleibt
+auf Betreiberentscheid dokumentiert stehen (Bereinigung wäre eine eigene kleine Freigabe).
+
+**df1a6700 (`vg-ausschreibung-20260708-3ff6e2-2`) wurde um 06:38:54 UTC per kanonischem
+`aufgeben` geschlossen** — über einen direkten SQL-Betreiberkanal (nicht aus der
+Claude-Sitzung; `edge_logs` zeigen keinen REST-Aufruf, DML wird in `postgres_logs` nicht
+protokolliert — die Herkunft belegt der Marker `aufgegeben-nach-freigabe`, den
+ausschließlich der neue enge Pfad schreibt). Wirkung exakt vertragsgemäß: nur `zustand`,
+`letzter_grund` und `updated_at` geschrieben; Zähler/Fencing 1/1/1 und `ergebnis_*`
+unangetastet; einzige veränderte Zeile seit der Anwendung; Wiederaufnahmeliste leer.
+492dcd48 (`vg-digitalisierung-20230809-b709d7`) war zuvor um 05:30:30 UTC **regulär**
+`fertig` geworden (2/2/2, `verstehen_fencing` 2 — der §30-Wiederaufnahmepfad plus ein
+bezahlter Aufruf, wie in CURRENT_STATE §11.1 erwartet). Endzustand 07:48 UTC: CAS
+**239 fertig · 1 aufgegeben · 0 offen · 0 unbekannt**, 0 Leases, 0 Vormerkungen, Queue
+0/235/0/0, Outbox 0. Beide V4-4-Marker sind damit aufgelöst; Versuch 5 blieb aus.

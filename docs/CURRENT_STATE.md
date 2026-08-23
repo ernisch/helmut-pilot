@@ -1,15 +1,15 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-23 (früh UTC).** **PR #260 (§30 Wiederaufnahmepfad) ist gemergt, deployt und
-wirksam** (`cb9e14e0`); der 21:31-UTC-Lauf nahm alle 12 `erneut`-Freigaben deterministisch
-auf. **492dcd48 ist am 23.08. 04:15 UTC kanonisch behandelt** (`pruefen`/`erneut`, Zähler
-1/1/1 unverändert, kein Modellaufruf durch die Behandlung; **höchstens 1** bezahlter Aufruf
-folgt im understanding-cron 05:30 UTC). CAS live (04:16 UTC): **223 fertig · 2 offen
-(df1a6700 + 492dcd48, je Marker) · 0 unbekannt** · 0 modell-laeuft · 0 Leases ·
-0 Vormerkungen. **Die df1a6700-Vertragslücke (`aufgeben` nur aus `unbekannt`) ist LOKAL
-geschlossen** — Migration + Rollback + Abnahme 47/0, **PR #262** (Branch
-`claude/helmut-aufgeben-contract-gap-02k6wi`, §7a/§11) — **Production besitzt die Reparatur
-NICHT**: df1a6700 bleibt dort `offen` mit Marker. **Versuch 5 bleibt GESTOPPT**; Motor **aus**.
+**Stand: 2026-08-23 (vormittags UTC).** **Die §30.2-Kette ist vollzogen:** PR #262 gemergt +
+deployt (`81f396b5`, READY 06:19 UTC) · Migration `20260823043633` am 23.08. 06:31/06:32 UTC
+auf Production angewendet (das Werkzeug verbuchte die eine Anwendung doppelt — Befund §7a,
+datenneutral, stehen gelassen) · **df1a6700 per kanonischem Betreiber-`aufgeben` geschlossen**
+(06:38:54 UTC, Marker `aufgegeben-nach-freigabe`, Zähler/Fencing 1/1/1 unangetastet) ·
+**492dcd48 regulär `fertig`** (05:30:30 UTC, exakt +1 Aufruf, Fencing 2). CAS live:
+**239 fertig · 1 aufgegeben · 0 offen · 0 unbekannt** · 0 modell-laeuft · 0 Leases ·
+0 Vormerkungen · Wiederaufnahmeliste leer; Queue 0/235/0/0, Outbox 0. **Beide V4-4-Marker
+sind aufgelöst — Versuch 5 bleibt GESTOPPT** (Start = eigene Betreiberfreigabe nach §28.6,
+s. §11); der Motor bleibt **aus**.
 
 Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000
 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die
@@ -26,9 +26,10 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 ## 2 · Stand auf `main`
 
-- **HEAD `cb9e14e0`** = Merge **PR #260** am 2026-08-22: §30-Wiederaufnahmepfad. Davor
-  **#259** (`12b1e618`) Restzeitwache §29, **#258/#257** (`fc9b611`) gemischte
-  Neutralisierung + §28, **#256** (`e43d306`) Blob-Entkopplung + Slot-Quittung (§27).
+- **HEAD `81f396b5`** = Merge **PR #262** am 2026-08-23: §30.5-Vertragserweiterung
+  (Migration `20260823043633` + Rollback + Abnahmesuite; laufzeitneutral bis zur Anwendung).
+  Davor **#260** (`cb9e14e0`) §30-Wiederaufnahmepfad, **#259** (`12b1e618`) Restzeitwache
+  §29, **#258/#257** (`fc9b611`) gemischte Neutralisierung + §28, **#256** Blob-Entkopplung.
 - **PR #253** (davor, `0d9cf62`) lieferte den **datensparsamen Neutralisierungsweg**
   (`lib/helmut/jobqueue-neutralisierung.js`, Riegel R1–R9, kein Export) und die
   **Warteschlangenwache V2** (`betriebsstatus`, `statusvertrag: 2`, Runbook §26.4).
@@ -60,7 +61,8 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
   (`briefing-watchdog.yml`, täglich 05:30 UTC bedingungslos, oft 2–3 h verzögert): kein
   Störfall, aber im Aufbewahrungsvertrag nicht modelliert (→ K3/K7).
 - **Migrationen:** die **fünf OP-30-Dateien sind am 15.08. angewendet** (§7a, Runbook §24.10;
-  Einträge `20260815163732`–`20260815164241`). **Offen ist nur noch `20260720`** (OP-03).
+  Einträge `20260815163732`–`20260815164241`); **`20260823043633` am 23.08. angewendet**
+  (§7a, doppelt verbucht). **Offen ist nur noch `20260720`** (OP-03).
   Die Strukturen des Schattenpfads (Outbox, Klassengrenzen, Anbietersteuerung) sind leer
   und wirkungslos, solange die Motor-Flags aus sind; die CAS-Tabellen werden seit dem
   17.08. produktiv genutzt (§7a).
@@ -175,18 +177,18 @@ OP-30-Aktivierung muss OP-25 für die geänderte Architektur erneut vollständig
   Marker bleibt stehen). Neu am 22.08. 05:31:38 UTC (Altcode #259, VOR dem #260-Deployment
   05:36 UTC): 492dcd48 `unbekannt` (`modellfehler:OpenAI request timeout`, 1 Versuch /
   1 KI-Aufruf / Fencing 1, keine Lease) — am 23.08. 04:15 UTC kanonisch behandelt (s. §14).
-- **Vertragslücke `aufgeben` (belegt 22.08., Betreibersprint):** einziger Schreiber von
-  `zustand='aufgegeben'` ist `helmut_verstehen_ausgang_aufloesen` (live per `pg_proc`
-  geprüft), und die löst **nur** `unbekannt` auf (`nicht-blockiert`-Riegel). §30.2 verspricht
-  den `aufgeben`-Abschluss auch für dauerhaft `offen`e Freigaben (df1a6700) — das trägt der
-  deployte Vertrag nicht. **Schließung liegt seit 23.08. lokal vor:** Migration
-  `20260823043633_verstehen_aufgeben_erneut_freigegeben.sql` + `rollback_`-Gegenstück —
-  `aufgeben` zusätzlich NUR für `offen`+`letzter_grund='erneut-freigegeben'` ohne
-  Besitzer/Lease/Wissensobjekt/Dokumentverknüpfung, atomar unter dem bestehenden Row-Lock;
-  Zähler/Fencing unangetastet, Rechte/`search_path`/Signatur identisch. Abnahme **47/0**
-  plus CAS-Basissuite **103/0** an echter PostgreSQL 16. **Nicht gemergt, nicht angewendet**
-  — Merge (= Deployment), Anwendung auf Production und der `aufgeben`-Aufruf sind drei
-  eigene Betreiberentscheidungen (§11; Beleg Runbook §30.5).
+- **Vertragslücke `aufgeben` — GESCHLOSSEN UND VOLLZOGEN (23.08.):** `aufgeben` löste bis
+  23.08. nur `unbekannt` auf; §30.2 versprach den Abschluss auch für dauerhaft `offen`e
+  Freigaben. Migration `20260823043633` (+ `rollback_`-Gegenstück) erweitert `aufgeben` um
+  GENAU diesen Fall (Marker `erneut-freigegeben`, kein Besitzer/Lease/Wissensobjekt/
+  Dokumentverknüpfung, atomar unter dem Row-Lock; Abnahme 47/0, CAS-Basis 103/0). **Am
+  23.08. 06:31/06:32 UTC per Betreiberfreigabe auf Production angewendet**; das Werkzeug
+  verbuchte die eine Anwendung doppelt (`20260823063140`/`20260823063208`, gleicher Name) —
+  datenneutral belegt (0 veränderte Zeilen durch die Anwendung, Funktion genau 1×, len 4636,
+  Rechte/`search_path`/Signatur unverändert), Dublette auf Betreiberwunsch stehen gelassen.
+  **df1a6700 (`vg-ausschreibung-20260708-3ff6e2-2`) wurde um 06:38:54 UTC per kanonischem
+  `aufgeben` geschlossen** (`aufgegeben-nach-freigabe`, Zähler/Fencing 1/1/1 unangetastet,
+  einzige veränderte Zeile seit der Anwendung). Beleg: Runbook §30.5.
 - **Der neue Motor ist wieder ausgeschaltet.** Für 25–500 Mandate besteht keine
   Produktionsfreigabe.
 
@@ -256,22 +258,17 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Zwei Betreiberentscheidungen, dann Versuch 5:**
+**Beide Blocker des Betreibersprints sind aufgelöst (492dcd48 regulär `fertig`, df1a6700
+per `aufgeben` geschlossen — §7a). Nächster Schritt:**
 
-1. **492dcd48: BEHANDELT (23.08. 04:15 UTC, eigenständige Freigabe).** Abfluss im
-   understanding-cron 08:30 TR / 07:30 Berlin / 05:30 UTC (23.08.) beobachten; Kontrolle ab
-   08:45 TR / 07:45 Berlin / 05:45 UTC — erwartet `fertig` mit `verstehen_fencing` ≥ 2 und
-   exakt +1 KI-Aufruf, oder erneut ehrlich `unbekannt` (dann neue Betreiberentscheidung).
-2. **df1a6700: die Migration liegt vor** (**PR #262**, §7a). Drei getrennte Freigaben:
-   PR reviewen und mergen (= Deployment, ändert Laufzeitverhalten NICHT — die Funktion
-   liegt in der DB) → Migration `20260823043633` im SQL-Editor anwenden →
-   `aufgeben`-Aufruf für df1a6700. Alternative bleibt: dokumentiert akzeptieren, dass der
-   Vorgang mit stehendem Marker `offen` bleibt (kostenneutral, je Lauf `skipped-no-cluster`).
-3. Dann erst **Versuch 5** nach §28.6 (Stand 23.08. früh: V4-1/2/3/6/7 grün; V4-4 wörtlich
-   grün — 0 `unbekannt`, 0 Vormerkungen, kein HV —, aber beide Marker müssen erst
-   abfließen: 492dcd48 regulär, df1a6700 per Entscheid aus 2.; V4-5 erst am Aktivierungstag).
-4. Nach jeder wirksamen OP-30-Aktivierung: **OP-25 vollständig wiederholen**; **OP-15** und
+1. **Versuch 5** nach §28.6 ist die nächste eigene Betreiberfreigabe (Stand 23.08.
+   vormittags: V4-1/2/3/6/7 grün; **V4-4 vollständig grün** — 0 offen, 0 `unbekannt`,
+   0 Vormerkungen, beide Marker aufgelöst; V4-5 erst am Aktivierungstag). Fenster und
+   Kontrollen unverändert §28.6; Rückweg = Flag löschen + Redeploy.
+2. Nach jeder wirksamen OP-30-Aktivierung: **OP-25 vollständig wiederholen**; **OP-15** und
    `CRON_SECRET`/Egress-Freigabe unverändert offen.
+3. Klein und unkritisch, freigabepflichtig: die doppelte Buchführungszeile der Migration
+   (§7a-Befund) löschen — oder dokumentiert stehen lassen.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
@@ -279,8 +276,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 - Kein Merge nach `main` (= Deployment), kein Deployment, keine Production-Datenänderung,
   keine Secret-/Env-/Flag-/Cron-Änderung ohne ausdrückliche Freigabe.
-- Migration auf Production: offen ist nur `20260720` — Anwendung freigabepflichtig; nach
-  einem Merge von PR #262 kommt `20260823043633` hinzu (Anwendung einzeln freigabepflichtig).
+- Migration auf Production: offen ist nur `20260720` — Anwendung freigabepflichtig
+  (`20260823043633` ist seit 23.08. per Einzelfreigabe angewendet, §7a).
 - **Berlin, Brandenburg und M8 bleiben deaktiviert**; keine Testmandat-Aktivierung; die
   5 Offline-Testmandate bleiben deaktivierte Repo-Daten.
 - Keine kostenverursachenden Läufe (Backfills, Recovery, Massen-Crawls);
@@ -318,20 +315,23 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzte relevante Sprints
 
-- **23.08. (Vertragslücken-Sprint, PR #262 offen):** `aufgeben` aus `offen` eng ermöglicht —
-  Migration `20260823043633` + Rollback erweitern `helmut_verstehen_ausgang_aufloesen` um
-  GENAU den §30.2-Fall (Marker `erneut-freigegeben`, kein Besitzer/Lease/KO/Dokument,
-  atomar unter dem Row-Lock; Zähler/Rechte/Signatur unverändert). Abnahme **47/0**,
-  CAS-Basis **103/0** (echte PostgreSQL 16), Offline-Suite grün. **Nichts gemergt, nichts
-  angewendet**; df1a6700 in Production unverändert `offen` mit Marker.
-- **23.08. früh (Nachtrag zum Betreibersprint, AUSGEFÜHRT):** eigenständige Freigabe nur
-  für 492dcd48 — kanonisch `pruefen` 04:15:46 UTC und `erneut` 04:15:53 UTC (Marker genau
-  1×); Zähler/Fencing unverändert 1/1/1, keine Lease, kein Modellaufruf, 0 HV001/HV002;
-  df1a6700 und alle übrigen Zustände byte-gleich (CAS 223/2/0, Queue 0/235/0/0, Outbox 0).
+- **23.08. vormittags (Vollzug §30.5, je einzeln freigegeben):** Migration `20260823043633`
+  nach rein lesender Vorprüfung kanonisch angewendet (06:31:40/06:32:08 UTC — das Werkzeug
+  verbuchte die eine Anwendung doppelt, datenneutral belegt) und vollständig verifiziert
+  (neue Fassung aktiv, Rechte/Signatur/`search_path` unverändert, df1a6700/492dcd48/System
+  byte-gleich). Danach **df1a6700 per `aufgeben` geschlossen** (06:38:54 UTC, direkter
+  SQL-Betreiberkanal, einzige veränderte Zeile seit der Anwendung); 492dcd48 lief 05:30 UTC
+  regulär `fertig` (2/2/2). Kein Redeploy, kein Motor, kein weiterer Eingriff.
+- **23.08. (Vertragslücken-Sprint, PR #262, gemergt):** `aufgeben` aus `offen` eng
+  ermöglicht — Migration `20260823043633` + Rollback, GENAU der §30.2-Fall (Marker, kein
+  Besitzer/Lease/KO/Dokument, atomar unterm Row-Lock; Zähler/Rechte/Signatur unverändert).
+  Abnahme **47/0**, CAS-Basis **103/0** (echte PostgreSQL 16), Offline-Suite 270/270.
+- **23.08. früh (Nachtrag zum Betreibersprint, AUSGEFÜHRT):** eigenständige Freigabe nur für
+  492dcd48 — kanonisch `pruefen`/`erneut` 04:15 UTC, Marker genau 1×, Zähler/Fencing 1/1/1,
+  kein Modellaufruf, 0 HV; df1a6700 und alle übrigen Zustände byte-gleich (CAS 223/2/0).
 - **22./23.08. (Betreibersprint, BLOCKIERT ohne Änderung):** Freigabe 492dcd48
-  `pruefen`/`erneut` + df1a6700 `aufgeben`; Vorprüfung bestätigte beide Sachlagen exakt,
-  scheiterte am Vertragspunkt (`aufgeben` aus `offen` unmöglich) → **keine** Aktion
-  ausgeführt, Invarianz belegt; Versuch-5-Vorprüfung §28.6 rein lesend (V4-4 rot, s. §11).
+  `pruefen`/`erneut` + df1a6700 `aufgeben`; Vorprüfung exakt bestätigt, am Vertragspunkt
+  gescheitert (`aufgeben` aus `offen` unmöglich) → keine Aktion, Invarianz belegt.
 - **22.08. (§30, PR #260, gemergt + deployt):** strukturelle Wiederaufnahmelücke geschlossen
   (`storage.verstehenWiederaufnahmen`, Filter `erneut-freigegeben`, an `casAktiv()` + §29
   gebunden; `duplicate`/`skipped-failed` weichen nur bei ausdrücklicher Freigabe). Eine
