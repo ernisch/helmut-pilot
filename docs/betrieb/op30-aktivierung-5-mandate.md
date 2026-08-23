@@ -3597,3 +3597,48 @@ Env-Änderung, kein Redeployment, keine Aktivierung. **Die Vormerkung von 0caefc
 gelöscht.** Kein vierter Versuch für 0caefc33 — der Fix erhöht keine Grenze, er verschafft
 einem bereits freigegebenen Vorgang nur die Gelegenheit, überhaupt reserviert zu werden.
 Versuch 5 bleibt gestoppt; die Ausnahme für 0caefc33 wurde nicht erteilt.
+
+### §30.5 Vertragsschließung: `aufgeben` für dauerhaft folgenlose Freigaben (Sprint 2026-08-23)
+
+Die in §30.2 zugesagte Betreiberschließung („bleibt in der Liste, bis ein Betreiber ihn per
+`aufgeben` schließt") war im deployten Datenbankvertrag **unmöglich**:
+`helmut_verstehen_ausgang_aufloesen` — der einzige Schreiber von `zustand='aufgegeben'` —
+löste ausschließlich `unbekannt` auf (`nicht-blockiert`-Riegel, Betreibersprint 22.08.
+BLOCKIERT). Production-Fall: `df1a6700` (`offen`, Marker `erneut-freigegeben`, kein
+Wissensobjekt, keine Dokumentverknüpfung, je Lauf ehrlich `skipped-no-cluster`).
+
+**Schließung (Migration `20260823043633_verstehen_aufgeben_erneut_freigegeben.sql` +
+`rollback_`-Gegenstück, gleiches Verzeichnis):** `aufgeben` zusätzlich erlaubt für GENAU
+
+1. `zustand='offen'` **und** `letzter_grund='erneut-freigegeben'` — der Marker, den nur der
+   kanonische Betreiberweg (`aufloesen(..., 'erneut')`) schreibt; die App-Freigaben schreiben
+   andere Literale (`kein-ergebnis-vor-modellstart`, `aktualisierung-vor-modellstart`) bzw.
+   den Präfix `belegt-ohne-aufruf:`. Sobald ein Lauf reserviert, ist der Marker verbraucht
+   (`reserviere` setzt `letzter_grund = null`).
+2. kein Besitzer, keine Lease (`besitzer IS NULL`, `lease_bis IS NULL`; Verstoß →
+   `aufgeben-verweigert-besitz`, keine Änderung),
+3. kein Wissensobjekt und keine `ko_document_links`-Verknüpfung zu dieser Vorgangskennung
+   (Verstoß → `aufgeben-verweigert-dokumentgrundlage`, keine Änderung — die
+   `ba50848e`-Klasse mit bestehendem complete-KO bleibt dem Wiederaufnahmepfad vorbehalten),
+4. ausdrückliche Entscheidung `'aufgeben'`.
+
+Alle Bedingungen atomar unter dem bestehenden `FOR UPDATE`-Row-Lock; Erfolg schreibt nur
+`zustand='aufgegeben'` + `letzter_grund='aufgegeben-nach-freigabe'` (Herkunft ablesbar,
+Zeile fällt aus dem §30.2-Listenfilter). `versuche`/`ki_aufrufe`/`fencing`/`ergebnis_*`
+unangetastet; Signatur, SECURITY INVOKER, `search_path=public, pg_temp` und Rechte (EXECUTE
+nur `service_role`) identisch — deckungsgleich mit den offiziellen Supabase-Hinweisen zu
+Datenbankfunktionen (invoker als Best Practice, fester `search_path`, Rechte per REVOKE).
+Jedes andere Verhalten der Funktion ist byte-gleich; `aufgegeben` bleibt terminal
+(`reserviere` → `grund='aufgegeben'`).
+
+**Nachweise (echte PostgreSQL 16, `scripts/verstehen-aufgeben-erneut-freigegeben-test.js`):
+47 PASS / 0 FAIL** — Altvertrag unverändert (§1), Zielfall (§2), Fremdfälle/Lease/Besitzer/
+Dokumentgrundlage verweigert (§3–§5), Zähler unverändert (§6), Idempotenz inkl. `updated_at`
+(§7), Parallelität aufgeben ↔ reserviere ohne Widerspruch (§8), Rechte/Signatur (§9),
+Rollback + erneutes Vorwärts (§10). Bestandssuite `verstehen-cas-datenbank-test.js`
+unverändert **103/0**; Offline-Gesamtlauf grün.
+
+**Nicht getan:** kein Merge, kein Deployment, keine Anwendung auf Production, kein
+`aufgeben`-Aufruf. df1a6700 bleibt in Production unverändert `offen` mit stehendem Marker;
+Merge (= Deployment), Anwendung der Migration und der Aufruf selbst sind drei getrennte
+Betreiberfreigaben (PR #262, CURRENT_STATE §11).
