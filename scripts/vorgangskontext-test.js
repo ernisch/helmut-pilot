@@ -632,7 +632,14 @@ const ALLE_FAMILIEN = [...G.FAMILIEN, ...G.ZUSATZFAMILIEN];
   // Kontextpfad. Eigener Nachweis: scripts/verstehen-cas-datenbank-test.js an echter
   // PostgreSQL; Pruefung 8.8b prueft ihren Inhalt unabhaengig mit.
   "20260814180000_verstehen_cas.sql",
-  "rollback_20260814180000_verstehen_cas.sql"
+  "rollback_20260814180000_verstehen_cas.sql",
+  // Sprint 2026-08-23 (Vertragsluecke aufgeben, Runbook §30.2): erweitert AUSSCHLIESSLICH
+  // helmut_verstehen_ausgang_aufloesen um den engen Betreiberabschluss
+  // offen+erneut-freigegeben -> aufgegeben. Keine K2.1-Struktur, kein Kontextpfad.
+  // Eigener Nachweis: scripts/verstehen-aufgeben-erneut-freigegeben-test.js an echter
+  // PostgreSQL; Pruefung 8.8b prueft ihren Inhalt unabhaengig mit.
+  "20260823043633_verstehen_aufgeben_erneut_freigegeben.sql",
+  "rollback_20260823043633_verstehen_aufgeben_erneut_freigegeben.sql"
       ]);
       // Die Allowlist ist KEINE Abschwaechung: 8.8b prueft unabhaengig und INHALTLICH,
       // dass keine Migration im Repository den Kontextpfad beruehrt — auch keine der
