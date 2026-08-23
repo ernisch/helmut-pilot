@@ -3662,3 +3662,51 @@ unverändert **103/0**; Offline-Gesamtlauf grün.
 **V4 Nachkontrolle 09:44:50 TR / 08:44:50 Berlin / 06:44:50 UTC:** V4 1/2/3/4/6/7
 grün; V4 5 bleibt bis unmittelbar vor einer ausdrücklich freigegebenen Aktivierung offen.
 Kein Flag, kein Redeployment, kein Motorstart, kein Versuch 5.
+
+### §30.6 Live-Vorprüfung V4 im Aktivierungsfenster (2026-08-23, rein lesend) — ROT UND BLOCKIERT
+
+**Gemessen 19:12:31–19:23:18 TR / 18:12:31–18:23:18 Berlin / 16:12:31–16:23:18 UTC**, also
+vollständig im kanonischen Fenster (19:10–20:50 TR / 16:10–17:50 UTC). Ausschließlich lesende
+Zugriffe (Git/GitHub lesend, Vercel lesend, Supabase `select`/Logs); keine Nutzdaten gelesen
+oder ausgegeben — Vorgänge nur als md5-Präfix, Mandate nur als Zähler/Signatur. **Kein Flag,
+keine Env-Änderung, kein Deployment, kein SQL-Schreiben, kein Cron-/Worker-/Modelllauf, keine
+Migration, keine Löschung der doppelten Buchung, keine Aktivierung von Versuch 5.**
+
+| Tor | Erwartung (Freigabetext) | Messung | Ergebnis |
+|---|---|---|---|
+| V4-1 | main-HEAD = jüngstes Production-Deployment, READY; erwartet `a7559186` | `origin/main` = `a7559186dfb0…`; jüngstes Production-Deployment `dpl_95o8QLbe1QT2jCVHv88s8hZDTDc3` (07:40:36 UTC) READY auf exakt diesem Commit; jüngeres Deployment nur Preview (07:54:22 UTC, PR #264, kein `target=production`) | **grün** |
+| V4-2 | 0 wartend / 235 erledigt / 0 laeuft / 0 fehlgeschlagen · 0 aktive/abgelaufene Leases | exakt 0/235/0/0, Leases 0/0; `pg_stat_user_tables` für `helmut_jobs` ins/upd/del/live = **1322/2302/1994/235**, byte-stabil identisch zu §28.8 (19.08.) ⇒ seither kein einziger Schreibvorgang | **grün** |
+| V4-3 | Outbox 0 | `helmut_job_outbox` 0 Zeilen | **grün** |
+| V4-4 | **239 fertig** · 1 aufgegeben · 0 offen · 0 unbekannt · 0 modell-laeuft · 0 Vormerkungen · 0 HV001/HV002 · 0 Fencing-Konflikte | **244 fertig** · 1 aufgegeben · 0 offen · 0 unbekannt · 0 modell-laeuft · 0 reserviert · 0 Besitzer/Leases · 0 Vormerkungen · KO-Fencing 244 = fertig-Anzahl · 0 Fencing-Konflikte · Logs seit 06:30 UTC: 0 HV001/HV002, 0 ERROR, 0 FATAL | **ABWEICHUNG** (nur Zählstand) |
+| V4-5 | kein schwerer Cronslot im Fenster aktiv | `process_runs` 0 `running`; 16:00-UTC-Slot beendet 16:03:14 UTC (vor Fensterbeginn); nächster schwerer Slot crawl 20:00 UTC nach Fensterende. Hinweis: `globalphase` 16:00 endete ehrlich `partial` (`budget=1 fehler=0 persistenz=ok cas=0 nv=0`, vertagt 1888/2009, 182 s) — reguläres fail-closed-Budgetverhalten des Altpfads, kein V4-Tor | **grün** |
+| V4-6 | Basispunkt 33/`20260823063208`; **zwei bytegleiche Einträge** für `20260823043633`; nichts löschen; `20260720` nicht anwenden | 33 Einträge, Ende `20260823063208` ✓; `20260720` nicht angewendet ✓; Dublette vorhanden, aber **nicht streng bytegleich**: `…063140` = Repo-Datei **byte-identisch** (md5 `ef205d5f30ca0ddbc6d95e0d2523d92a`, 12 684 Zeichen), `…063208` = identischer Inhalt **ohne das letzte Newline-Byte** (md5 `77f78362aad5552519aefecba05e2423`, 12 683 Zeichen, letztes Zeichen `;`); Präfix über 12 683 Zeichen exakt gleich, je 1 Statement ⇒ SQL-wirkungsgleich. Funktion `helmut_verstehen_ausgang_aufloesen` genau 1×. Nichts gelöscht, nichts angewendet | **ABWEICHUNG** (nur Wortlaut „bytegleich") |
+| V4-7 | 0 fremde aktive Abfragen / 0 Sperren auf `helmut_jobs` | 0 / 0 | **grün** |
+| Zusatz | 0 offene Pull Requests | 0 offene; #264 (überholte Doku-Variante zur Dubletten-Ursache) am 23.08. 07:57:32 UTC **geschlossen, nicht gemergt** | **grün** |
+| Zusatz | `HELMUT_SCALABLE_PIPELINE` aus | wirkungsbasiert aus: Queue/pg_stat byte-stabil (s. V4-2), keine `warteschlange-*`-Quittungen, Outbox 0; 16:00-Slot lief als `globalphase mode=global` über den Altpfad | **grün** |
+| Zusatz | genau 5 reale Mandate aktiv | `mandate_profiles`: **5 aktiv / 9 gesamt**, 0 aktive mit `test-*`-Präfix, 0 aktive gelöscht; Signatur **`m5-9aee228dbf2c9f13`** identisch zum K2-Beleg | **grün** |
+
+**Erklärung der V4-4-Abweichung (kein Schadensbefund):** Der Erwartungswert 239 war der Stand
+der Nachkontrolle 06:44:50 UTC. Seither liefen die regulären Slots 10:00 UTC (Lage-Check) und
+16:00 UTC (Pipeline): **fünf neue Vorgänge**, alle regulär `fertig` mit Zählern/Fencing 1/1/1
+(erstellt/abgeschlossen 10:01:44–10:02:40 bzw. 16:02:06–16:02:40 UTC), plus **eine reguläre
+Aktualisierung** eines Bestandsvorgangs (`28aae85d`, 22.08. 21:34 erstellt, 16:02:55 UTC auf
+3/3/3, `ergebnis_fencing=3`). 239 + 5 = 244; alle Vertragsinvarianten unverletzt (ein
+Modellaufruf je Versuch, monotones Fencing, keine Vormerkung, kein `unbekannt`).
+
+**Erklärung der V4-6-Abweichung:** Die beiden Buchungen unterscheiden sich um **genau ein
+End-Newline-Byte** (0x0a); Anwendung 1 buchte die Datei wörtlich, Anwendung 2 ohne
+End-Newline. Der Unterschied **stützt** die §30.5-Darstellung zweier getrennter paralleler
+Anwendungen (ein interner Werkzeug-Retry desselben Aufrufs hätte zwei wirklich byte-identische
+Zeilen erzeugt — genau das Gegenmodell aus dem nicht gemergten #264).
+Inhaltlich/SQL-seitig identisch; die dokumentierte Formulierung „bytegleich"
+(§30.5, CURRENT_STATE) ist um dieses eine Whitespace-Byte unpräzise. Kein Eingriff erfolgt;
+die Dublette bleibt auftragsgemäß stehen.
+
+**Ergebnis: Vorprüfung rot und blockiert.** Auftragsregel „jede Abweichung ⇒ stoppen, keine
+Aktivierung empfehlen, nichts verändern, Blocker benennen" angewendet: beide Abweichungen sind
+vollständig erklärt und ohne Schadensbefund, weichen aber vom wörtlich freigegebenen
+Erwartungsstand ab. **Versuch 5 wurde nicht aktiviert.** Nächste Betreiberaktionen (nur
+benannt, nicht ausgeführt): (1) neue Referenzwerte bestätigen — CAS-Basis 244 fertig /
+1 aufgegeben (bzw. Stand des dann aktuellen Slots) und Dubletten-Wortlaut „inhaltsgleich bis
+auf ein End-Newline-Byte"; (2) neues Aktivierungsfenster ausdrücklich freigeben; (3) unmittelbar
+darin V4 1–7 frisch wiederholen; erst bei vollständigem Grün Aktivierung nach §28.6-Plan.

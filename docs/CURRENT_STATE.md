@@ -1,11 +1,11 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-23, GitHub Bereinigung 10:31:35 TR / 09:31:35 Berlin / 07:31:35 UTC.**
-**Der Production Abschluss aus §30.5 ist vollständig vollzogen.** Die Migration `20260823043633` ist installiert, df1a6700 wurde ausdrücklich `aufgegeben`, 492dcd48 ist regulär `fertig`. Production steht bei **239 fertig · 1 aufgegeben · 0 offen · 0 unbekannt · 0 modell-laeuft**, Queue **0/235/0/0**, Outbox 0, Vormerkungen 0, Leases 0.
+**Stand: 2026-08-23, Live-Vorprüfung V4 im Aktivierungsfenster 19:12–19:23 TR / 18:12–18:23 Berlin / 16:12–16:23 UTC (rein lesend).**
+**Ergebnis: Vorprüfung rot und blockiert — zwei erklärte Abweichungen, kein Schadensbefund** (Beleg: Runbook §30.6): (1) CAS misst **244 fertig** statt der freigegebenen 239 — fünf reguläre Neuvorgänge der Slots 10:00/16:00 UTC (je 1/1/1) plus eine reguläre Aktualisierung (3/3/3); Invarianten grün (0 offen/unbekannt/modell-laeuft, 0 Vormerkungen, 0 Fencing-Konflikte, KO-Fencing 244, 0 HV001/HV002, 0 ERROR/FATAL seit 06:30 UTC). (2) Die zwei Buchungen zu `20260823043633` sind **nicht streng bytegleich**, sondern unterscheiden sich um genau ein End-Newline-Byte (`…063140` = Repo-Datei byte-identisch; SQL-wirkungsgleich).
 
-**Die geprüften GitHub Änderungen sind veröffentlicht.** #225, #216 und #261 wurden grün gemergt; veraltete oder bewusst blockierte Altstände wurden mit Begründung geschlossen. Nach dem reinen Vollzugsnachtrag dieser Datei bleibt kein Pull Request offen.
+**Alle übrigen Tore grün:** main `a7559186` = jüngstes Production-Deployment READY · Queue **0/235/0/0**, Leases 0/0, `pg_stat` byte-stabil zu §28.8 · Outbox 0 · kein schwerer Slot im Fenster (der 16:00er endete 16:03:14 UTC ehrlich `partial`, Budget-Gate, 0 Fehler) · Migrationen 33 bis `20260823063208`, `20260720` nicht angewendet · 0 fremde Abfragen/Sperren · 0 offene PRs (#264 um 07:57 UTC geschlossen, nicht gemergt) · Motor wirkungsbasiert aus · exakt 5 aktive Mandate (`m5-9aee228dbf2c9f13`).
 
-**V4 1/2/3/4/6/7 sind grün. V4 5 ist erst unmittelbar im freizugebenden Aktivierungsfenster prüfbar. Versuch 5 bleibt GESTOPPT; Motor aus.**
+**Versuch 5 bleibt GESTOPPT; keine Aktivierung empfohlen. Nächster Schritt: Betreiberentscheidung (§11).**
 
 Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000
 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die
@@ -58,9 +58,9 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 - **Migrationen:** die fünf OP 30 Dateien sind seit 15.08. angewendet (§24.10).
   Zusätzlich ist die freigegebene Migration `20260823043633` seit 23.08. installiert.
   Die Buchführung steht bei 33 Einträgen und endet bei `20260823063208`; für dieselbe
-  Migration existieren zwei bytegleiche Einträge (`20260823063140` und
-  `20260823063208`) aus zwei parallelen Anwendungen. Funktion genau einmal vorhanden,
-  keine Datenwirkung; kein Bereinigungseingriff. **Offen ist nur `20260720`** (OP 03).
+  Migration existieren zwei inhaltsgleiche Einträge (`20260823063140` und `20260823063208`)
+  aus zwei parallelen Anwendungen — Differenz genau ein End-Newline-Byte (§30.6). Funktion
+  genau einmal vorhanden, keine Datenwirkung; kein Bereinigungseingriff. **Offen ist nur `20260720`** (OP 03).
   Schattenpfadstrukturen bleiben leer und wirkungslos, solange der Motor aus ist.
 - **Kosten:** LLM ~0,14 USD/Betriebstag (Untergrenze, Preisbasis unbelegt,
   [`betrieb/kostenmessung.md`](betrieb/kostenmessung.md)); Nachweisfenster 0,1892 USD.
@@ -89,7 +89,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **`HELMUT_CRON_GLOBALABRUF`** | **`on`** seit 2026-08-06 ~08:15 UTC (Betreiber, für das Nachweisfenster) ⇒ **Kontextpfad aktiv**, laufzeitbelegt (drei Fensterläufe 06./07.08. global auf `d8bf68fa…`, E3 `nv=0`). Ob es `on` bleibt, ist Betreiberentscheidung. Dritter Zyklus |
 | **Berlin (Landesmodul)** | inaktiv. `HELMUT_LANDESMODULE=berlin` seit 2026-07-26 gesetzt, aber **wirkungslos**: 0 berechtigte Berliner Mandate seit dem Rollback ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22). Ob das Flag wirkt, ist **unbewiesen** |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt); PR #132 vor Merge Gate-Name vereinheitlichen |
-| **`HELMUT_SCALABLE_PIPELINE` (OP 30)** | **gelöscht und aus.** Versuch 5 bleibt gestoppt. V4 1/2/3/4/6/7 sind nach der Nachkontrolle 23.08. grün; V4 5 wird erst unmittelbar im freigegebenen Aktivierungsfenster geprüft. |
+| **`HELMUT_SCALABLE_PIPELINE` (OP 30)** | **gelöscht und aus** (wirkungsbelegt 23.08. ~16:15 UTC). Versuch 5 bleibt gestoppt; die Live-V4 im Fenster 23.08. endete **rot** — zwei erklärte Abweichungen (§7a, Runbook §30.6). |
 | **M8 / `HELMUT_MATCHING_RELEVANZ_GATE`** | aus (Default aus, nie aktiviert) |
 | `HELMUT_CRON_GLOBALPHASE` | nicht gesetzt (aus) — K2-Prüfung ergab keine Aktivierungsempfehlung |
 | `HELMUT_UNDERSTANDING_GATE` / `HELMUT_PARDOK_DISPATCH` | `shadow` |
@@ -176,9 +176,10 @@ OP-30-Aktivierung muss OP-25 für die geänderte Architektur erneut vollständig
   Funktionsweg und gab `aufgegeben` zurück. Zustand `aufgegeben`, Grund
   `aufgegeben-nach-freigabe`, Zähler und Fencing unverändert 1/1/1. Danach nur dieser
   eine Reservierungsdatensatz verändert; Queue 0/235/0/0, Outbox 0, Vormerkungen 0.
-- **V4 Nachkontrolle 06:44:50 UTC:** V4 1/2/3/4/6/7 grün. V4 5 bleibt bis unmittelbar
-  vor einer ausdrücklich freigegebenen Aktivierung offen. **Motor aus, Versuch 5 nicht
-  gestartet.**
+- **Live-V4 im Fenster 23.08. 16:12–16:23 UTC (nach der Nachkontrolle 06:44:50 UTC): rot
+  und blockiert** — CAS 244 statt 239 `fertig` (regulär erklärt) · Migrations-Dublette nur
+  bis auf ein End-Newline-Byte gleich; alle übrigen Tore grün (Beleg Runbook §30.6).
+  **Motor aus, Versuch 5 nicht gestartet.**
 Kanonisch: [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md)
 §24/§25/§26/**§27**, [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)
 und [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md).
@@ -245,22 +246,19 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Vor Versuch 5 fehlt nur noch das Aktivierungstor V4 5 und eine frische Wiederholung der
-zeitabhängigen Tore unmittelbar im freigegebenen Fenster.** Der belegte Stand 23.08.
-09:44:50 TR / 08:44:50 Berlin / 06:44:50 UTC:
+**Die Live-Vorprüfung V4 vom 23.08. (16:12–16:23 UTC, rein lesend, vollständig im Fenster)
+endete rot und blockiert** — kein Schadensbefund, aber zwei Abweichungen vom wörtlich
+freigegebenen Erwartungsstand: CAS 244 statt 239 `fertig` (fünf reguläre Neuvorgänge
+10:00/16:00 UTC plus eine reguläre Aktualisierung) und die Migrations-Dublette nicht streng
+bytegleich (Differenz genau ein End-Newline-Byte; `…063140` = Repo-Datei byte-identisch).
+Alle Messwerte: [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §30.6.
 
-1. V4 1 grün: letzter funktionaler Stand `bb1c992e` aus PR #261,
-   Vercel Status `success`; die vorangegangenen reinen Dokumentations und Testmerges
-   wurden ebenfalls erfolgreich ausgeliefert.
-2. V4 2 grün: Queue 0 wartend / 235 erledigt / 0 laufend / 0 fehlgeschlagen, 0 Leases.
-3. V4 3 grün: Outbox 0.
-4. V4 4 grün: 239 fertig / 1 aufgegeben / 0 offen / 0 unbekannt /
-   0 modell-laeuft, 0 Vormerkungen, 0 HV001/HV002, 0 Fencingabweichungen.
-5. V4 6 grün gegen den freigegebenen neuen Basispunkt: 33 Buchungen, zwei dokumentierte
-   bytegleiche Einträge für `20260823043633`, `20260720` weiterhin nicht angewendet.
-6. V4 7 grün: 0 fremde aktive Abfragen und 0 Sperren auf `helmut_jobs`.
-7. V4 5 ist **noch nicht prüfbar**. Unmittelbar vor einer Aktivierung im vorgesehenen
-   Fenster 19:10 bis 20:50 TR müssen V4 1 bis V4 7 frisch wiederholt werden.
+Vor Versuch 5 braucht es jetzt:
+1. **Betreiberbestätigung der neuen Referenzwerte** — CAS-Basis 244 fertig / 1 aufgegeben
+   (bzw. Stand zum dann aktuellen Prüfzeitpunkt) und Dubletten-Wortlaut „inhaltsgleich bis
+   auf ein End-Newline-Byte"; die Dublette wird weiterhin **nicht** gelöscht.
+2. **Ein neu freigegebenes Aktivierungsfenster** mit frischer Wiederholung von V4 1–7
+   unmittelbar darin; erst bei vollständigem Grün Aktivierung nach §28.6-Plan.
 
 **Keine Aktivierung aus dieser Dokumentation.** Flagänderung, Redeployment und Start von
 Versuch 5 bleiben eine neue ausdrückliche Betreiberfreigabe. Danach OP 25 vollständig
@@ -273,8 +271,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 - Kein Merge nach `main` (= Deployment), kein Deployment, keine Production-Datenänderung,
   keine Secret-/Env-/Flag-/Cron-Änderung ohne ausdrückliche Freigabe.
 - Migration auf Production: `20260823043633` ist freigegeben angewendet; die zwei
-  bytegleichen Buchungseinträge bleiben dokumentiert. Offen ist nur `20260720`; jede
-  künftige Anwendung bleibt freigabepflichtig.
+  inhaltsgleichen Buchungseinträge (ein End-Newline-Byte Differenz) bleiben dokumentiert.
+  Offen ist nur `20260720`; jede künftige Anwendung bleibt freigabepflichtig.
 - **Berlin, Brandenburg und M8 bleiben deaktiviert**; keine Testmandat-Aktivierung; die
   5 Offline-Testmandate bleiben deaktivierte Repo-Daten.
 - Keine kostenverursachenden Läufe (Backfills, Recovery, Massen-Crawls);
@@ -312,6 +310,9 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzte relevante Sprints
 
+- **23.08. (Live-V4 im Aktivierungsfenster, rein lesend):** vollständige Vorprüfung 16:12–16:23 UTC
+  → **rot und blockiert** (zwei erklärte Abweichungen, Runbook §30.6); Production unangetastet
+  (pg_stat `helmut_jobs` identisch §28.8), kein Flag, kein Modellaufruf, kein PR, kein Merge.
 - **23.08. (GitHub Bereinigung):** #225 Produktroadmap, #216 Teststabilisierung und
   #261 Quellenpflicht nach aktualisiertem Diff, Pflichtprüfungen und erfolgreichem
   Vercel Deployment gemergt. #218, #231, #224 und #255 mit konkreter Begründung
