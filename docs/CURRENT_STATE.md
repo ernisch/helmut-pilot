@@ -1,15 +1,11 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-23 (früh UTC).** **PR #260 (§30 Wiederaufnahmepfad) ist gemergt, deployt und
-wirksam** (`cb9e14e0`); der 21:31-UTC-Lauf nahm alle 12 `erneut`-Freigaben deterministisch
-auf. **492dcd48 ist am 23.08. 04:15 UTC kanonisch behandelt** (`pruefen`/`erneut`, Zähler
-1/1/1 unverändert, kein Modellaufruf durch die Behandlung; **höchstens 1** bezahlter Aufruf
-folgt im understanding-cron 05:30 UTC). CAS live (04:16 UTC): **223 fertig · 2 offen
-(df1a6700 + 492dcd48, je Marker) · 0 unbekannt** · 0 modell-laeuft · 0 Leases ·
-0 Vormerkungen. **Die df1a6700-Vertragslücke (`aufgeben` nur aus `unbekannt`) ist LOKAL
-geschlossen** — Migration + Rollback + Abnahme 47/0, **PR #262** (Branch
-`claude/helmut-aufgeben-contract-gap-02k6wi`, §7a/§11) — **Production besitzt die Reparatur
-NICHT**: df1a6700 bleibt dort `offen` mit Marker. **Versuch 5 bleibt GESTOPPT**; Motor **aus**.
+**Stand: 2026-08-23, GitHub Bereinigung 10:31:35 TR / 09:31:35 Berlin / 07:31:35 UTC.**
+**Der Production Abschluss aus §30.5 ist vollständig vollzogen.** Die Migration `20260823043633` ist installiert, df1a6700 wurde ausdrücklich `aufgegeben`, 492dcd48 ist regulär `fertig`. Production steht bei **239 fertig · 1 aufgegeben · 0 offen · 0 unbekannt · 0 modell-laeuft**, Queue **0/235/0/0**, Outbox 0, Vormerkungen 0, Leases 0.
+
+**Die geprüften GitHub Änderungen sind veröffentlicht.** #225, #216 und #261 wurden grün gemergt; veraltete oder bewusst blockierte Altstände wurden mit Begründung geschlossen. Nach dem reinen Vollzugsnachtrag dieser Datei bleibt kein Pull Request offen.
+
+**V4 1/2/3/4/6/7 sind grün. V4 5 ist erst unmittelbar im freizugebenden Aktivierungsfenster prüfbar. Versuch 5 bleibt GESTOPPT; Motor aus.**
 
 Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000
 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die
@@ -26,16 +22,16 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 
 ## 2 · Stand auf `main`
 
-- **HEAD `cb9e14e0`** = Merge **PR #260** am 2026-08-22: §30-Wiederaufnahmepfad. Davor
-  **#259** (`12b1e618`) Restzeitwache §29, **#258/#257** (`fc9b611`) gemischte
-  Neutralisierung + §28, **#256** (`e43d306`) Blob-Entkopplung + Slot-Quittung (§27).
-- **PR #253** (davor, `0d9cf62`) lieferte den **datensparsamen Neutralisierungsweg**
-  (`lib/helmut/jobqueue-neutralisierung.js`, Riegel R1–R9, kein Export) und die
-  **Warteschlangenwache V2** (`betriebsstatus`, `statusvertrag: 2`, Runbook §26.4).
-- **PR #251** (`51d0e80`) bestätigte die Laufzeitinertheit der fünf Migrationen und
-  ergänzte den Betreiberplan §25. Relevante Vorgänger: **#250/#249**
-  Migrationsorganisation und Transaktionsschutz, **#248** CAS, **#247** Zielarchitektur.
-- Merge nach `main` löst automatisch ein Production-Deployment aus.
+- Der letzte funktionale Stand vor diesem reinen Dokumentationsnachtrag ist
+  **`bb1c992e` = Merge PR #261**: sichtbare quellenpflichtige Inhalte in
+  Radar, Lage, Briefing und Büro benötigen eine echte öffnende HTTPS Quelle.
+- Im selben geprüften Bereinigungszug wurden **PR #225** (LINIE Produktroadmap) und
+  **PR #216** (Stabilisierung einer flackernden Offline Prüfung) gemergt.
+- Davor: **PR #262** (`81f396b5`) enger Betreiberabschluss für dauerhaft folgenlose
+  Wiederaufnahmefreigaben, **#260** Wiederaufnahmepfad, **#259** Restzeitwache und
+  **#256** Blobentkopplung plus Slotquittung.
+- Merge nach `main` löst automatisch ein Production Deployment aus. Alle Deployments
+  dieses Bereinigungszugs wurden einzeln gegen Vercel geprüft.
 
 ## 3 · Production-Zustand
 
@@ -59,11 +55,13 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
   UTC · 2 Narrativ-Nachlaufslots 06:10/06:22, inert). **Dazu** der GitHub-Actions-Watchdog
   (`briefing-watchdog.yml`, täglich 05:30 UTC bedingungslos, oft 2–3 h verzögert): kein
   Störfall, aber im Aufbewahrungsvertrag nicht modelliert (→ K3/K7).
-- **Migrationen:** die **fünf OP-30-Dateien sind am 15.08. angewendet** (§7a, Runbook §24.10;
-  Einträge `20260815163732`–`20260815164241`). **Offen ist nur noch `20260720`** (OP-03).
-  Die Strukturen des Schattenpfads (Outbox, Klassengrenzen, Anbietersteuerung) sind leer
-  und wirkungslos, solange die Motor-Flags aus sind; die CAS-Tabellen werden seit dem
-  17.08. produktiv genutzt (§7a).
+- **Migrationen:** die fünf OP 30 Dateien sind seit 15.08. angewendet (§24.10).
+  Zusätzlich ist die freigegebene Migration `20260823043633` seit 23.08. installiert.
+  Die Buchführung steht bei 33 Einträgen und endet bei `20260823063208`; für dieselbe
+  Migration existieren zwei bytegleiche Einträge (`20260823063140` und
+  `20260823063208`) aus zwei parallelen Anwendungen. Funktion genau einmal vorhanden,
+  keine Datenwirkung; kein Bereinigungseingriff. **Offen ist nur `20260720`** (OP 03).
+  Schattenpfadstrukturen bleiben leer und wirkungslos, solange der Motor aus ist.
 - **Kosten:** LLM ~0,14 USD/Betriebstag (Untergrenze, Preisbasis unbelegt,
   [`betrieb/kostenmessung.md`](betrieb/kostenmessung.md)); Nachweisfenster 0,1892 USD.
 - **Zugangsgrenze jeder Claude-Sitzung (gemessen 2026-08-12, am 15.08. bestätigt):** Supabase
@@ -91,7 +89,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **`HELMUT_CRON_GLOBALABRUF`** | **`on`** seit 2026-08-06 ~08:15 UTC (Betreiber, für das Nachweisfenster) ⇒ **Kontextpfad aktiv**, laufzeitbelegt (drei Fensterläufe 06./07.08. global auf `d8bf68fa…`, E3 `nv=0`). Ob es `on` bleibt, ist Betreiberentscheidung. Dritter Zyklus |
 | **Berlin (Landesmodul)** | inaktiv. `HELMUT_LANDESMODULE=berlin` seit 2026-07-26 gesetzt, aber **wirkungslos**: 0 berechtigte Berliner Mandate seit dem Rollback ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22). Ob das Flag wirkt, ist **unbewiesen** |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt); PR #132 vor Merge Gate-Name vereinheitlichen |
-| **`HELMUT_SCALABLE_PIPELINE` (OP-30)** | **gelöscht (aus)** — Stufe-1-Anlauf 18.08., Rücknahme 19.08. (§27); 383 inerte Aufträge neutralisiert (§28.8), Warteschlange **0/235/0/0**, Outbox 0. **Versuch 4 am 20.08. vor Aktivierung beendet** (§29). **Versuch 5 bleibt GESTOPPT** — §30 ist seit 22.08. deployt, aber §28.6-V4-4 ist rot (s. §11) |
+| **`HELMUT_SCALABLE_PIPELINE` (OP 30)** | **gelöscht und aus.** Versuch 5 bleibt gestoppt. V4 1/2/3/4/6/7 sind nach der Nachkontrolle 23.08. grün; V4 5 wird erst unmittelbar im freigegebenen Aktivierungsfenster geprüft. |
 | **M8 / `HELMUT_MATCHING_RELEVANZ_GATE`** | aus (Default aus, nie aktiviert) |
 | `HELMUT_CRON_GLOBALPHASE` | nicht gesetzt (aus) — K2-Prüfung ergab keine Aktivierungsempfehlung |
 | `HELMUT_UNDERSTANDING_GATE` / `HELMUT_PARDOK_DISPATCH` | `shadow` |
@@ -102,18 +100,15 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | `HELMUT_PROFILE_DB_MODE` | **Wirkung AN** — die frühere Angabe „nicht gesetzt" ist durch Laufzeitbelege widerlegt (alle Läufe bis 05.08. planten die relationale 6er-Menge; Code-Default wäre AUS). Wert/Setzzeitpunkt nicht Betreiber-bestätigt (offener Klärpunkt); der Blob ist **nicht** die wirksame Sicht |
 | 5 Offline-Testmandate (`test-mdb-*`) | deaktivierte Repo-Daten, **nicht aktivieren** |
 
-## 6 · Offene Pull Requests (gegen GitHub geprüft 2026-08-17)
+## 6 · Pull Request Bereinigung
 
-| PR | Tatsächlicher Diff | Aktueller Zustand |
-|---|---|---|
-| **#231** (Draft) | Konten-/Provisionierungs-Gates, Mehrmandantentest, Doku | konfliktbehaftet, Pflicht-CI/Vercel grün, keine Review |
-| **#224** (Draft) | deterministische Lage-/Matching-Rangfolge, Tests, Doku | konfliktbehaftet, Vercel grün, kein aktueller Actions-Lauf, keine Review |
-| **#225** (Draft) | nur LINIE-Roadmap und Statusdoku | konfliktbehaftet, Pflicht-CI/Vercel grün, keine Review |
-| **#218** | alte OP-25-Analyse, Tests und Doku | konfliktbehaftet, durch #219 überholt; schließen |
-| **#216** | F-PORT-Teststabilisierung und Doku | konfliktbehaftet, Pflicht-CI/Vercel grün, keine Review |
-
-Keiner dieser Alt-PRs ist für die erste OP-30-Aktivierungsstufe erforderlich. Vor einer
-Wiederaufnahme muss jeder gegen den aktuellen `main` neu bewertet werden.
+Stand 10:31:35 TR / 09:31:35 Berlin / 07:31:35 UTC: **gemergt** wurden #225 Produktroadmap, #216 Teststabilisierung und
+#261 Quellenpflicht. Die echten Diffs umfassten zuletzt 1, 3 und 20 Dateien; alle
+Pflichtprüfungen und Vercel Deployments waren vor jedem Merge grün.
+**Geschlossen, nicht gemergt:** #218 war durch #219 überholt; #231 und #224 waren
+veraltet und konfliktbehaftet; #255 blieb wegen seiner Bedingung geschlossen: kein Merge
+vor dem ersten grünen OP 30 Wirkungslauf. Zweige und Historie bleiben erhalten.
+Nach diesem Dokumentationsmerge: **0 Pull Requests offen**, Versuch 5 nicht gestartet.
 
 ## 7 · Offene Blocker
 
@@ -170,26 +165,20 @@ OP-30-Aktivierung muss OP-25 für die geänderte Architektur erneut vollständig
   Teil C grün (live gegenbestätigt), Teil D blockiert durch `df1a6700` und `eff40db2`
   (Details/Belege, Ursachen und Reparatur kanonisch in Runbook **§29**; Suite
   `verstehen-restzeit-test.js` 50/50 inkl. Review-Korrektur, keine Offline-Regression).
-- **§30 in Production wirkungsbelegt (22.08.):** der 21:31-UTC-Lauf verarbeitete 16 Vorgänge
-  (14 saved · 2 updated · 1 `skipped-no-cluster` = df1a6700 ohne KO und ohne Modellaufruf,
-  Marker bleibt stehen). Neu am 22.08. 05:31:38 UTC (Altcode #259, VOR dem #260-Deployment
-  05:36 UTC): 492dcd48 `unbekannt` (`modellfehler:OpenAI request timeout`, 1 Versuch /
-  1 KI-Aufruf / Fencing 1, keine Lease) — am 23.08. 04:15 UTC kanonisch behandelt (s. §14).
-- **Vertragslücke `aufgeben` (belegt 22.08., Betreibersprint):** einziger Schreiber von
-  `zustand='aufgegeben'` ist `helmut_verstehen_ausgang_aufloesen` (live per `pg_proc`
-  geprüft), und die löst **nur** `unbekannt` auf (`nicht-blockiert`-Riegel). §30.2 verspricht
-  den `aufgeben`-Abschluss auch für dauerhaft `offen`e Freigaben (df1a6700) — das trägt der
-  deployte Vertrag nicht. **Schließung liegt seit 23.08. lokal vor:** Migration
-  `20260823043633_verstehen_aufgeben_erneut_freigegeben.sql` + `rollback_`-Gegenstück —
-  `aufgeben` zusätzlich NUR für `offen`+`letzter_grund='erneut-freigegeben'` ohne
-  Besitzer/Lease/Wissensobjekt/Dokumentverknüpfung, atomar unter dem bestehenden Row-Lock;
-  Zähler/Fencing unangetastet, Rechte/`search_path`/Signatur identisch. Abnahme **47/0**
-  plus CAS-Basissuite **103/0** an echter PostgreSQL 16. **Nicht gemergt, nicht angewendet**
-  — Merge (= Deployment), Anwendung auf Production und der `aufgeben`-Aufruf sind drei
-  eigene Betreiberentscheidungen (§11; Beleg Runbook §30.5).
-- **Der neue Motor ist wieder ausgeschaltet.** Für 25–500 Mandate besteht keine
-  Produktionsfreigabe.
-
+- **§30 und §30.5 in Production vollzogen (23.08.):** 492dcd48 ist im regulären
+  05:30 UTC Lauf mit exakt einem weiteren Versuch und KI Aufruf fertig geworden
+  (2/2/2, `ergebnis_fencing=2`). PR #262 wurde gemergt und als Production Deployment
+  `dpl_8Z74anCHqxZVNQjmUPs5UGq7GuRZ` READY ausgeliefert.
+- Die freigegebene Migration `20260823043633` wurde installiert. Zwei bytegleiche
+  Buchungseinträge dokumentieren die parallele Doppelanwendung; Funktion genau einmal,
+  Datenanker unverändert, kein Bereinigungseingriff.
+- Der freigegebene Abschluss für df1a6700 lief um 06:38:54 UTC über den kanonischen
+  Funktionsweg und gab `aufgegeben` zurück. Zustand `aufgegeben`, Grund
+  `aufgegeben-nach-freigabe`, Zähler und Fencing unverändert 1/1/1. Danach nur dieser
+  eine Reservierungsdatensatz verändert; Queue 0/235/0/0, Outbox 0, Vormerkungen 0.
+- **V4 Nachkontrolle 06:44:50 UTC:** V4 1/2/3/4/6/7 grün. V4 5 bleibt bis unmittelbar
+  vor einer ausdrücklich freigegebenen Aktivierung offen. **Motor aus, Versuch 5 nicht
+  gestartet.**
 Kanonisch: [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md)
 §24/§25/§26/**§27**, [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)
 und [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md).
@@ -256,22 +245,26 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Zwei Betreiberentscheidungen, dann Versuch 5:**
+**Vor Versuch 5 fehlt nur noch das Aktivierungstor V4 5 und eine frische Wiederholung der
+zeitabhängigen Tore unmittelbar im freigegebenen Fenster.** Der belegte Stand 23.08.
+09:44:50 TR / 08:44:50 Berlin / 06:44:50 UTC:
 
-1. **492dcd48: BEHANDELT (23.08. 04:15 UTC, eigenständige Freigabe).** Abfluss im
-   understanding-cron 08:30 TR / 07:30 Berlin / 05:30 UTC (23.08.) beobachten; Kontrolle ab
-   08:45 TR / 07:45 Berlin / 05:45 UTC — erwartet `fertig` mit `verstehen_fencing` ≥ 2 und
-   exakt +1 KI-Aufruf, oder erneut ehrlich `unbekannt` (dann neue Betreiberentscheidung).
-2. **df1a6700: die Migration liegt vor** (**PR #262**, §7a). Drei getrennte Freigaben:
-   PR reviewen und mergen (= Deployment, ändert Laufzeitverhalten NICHT — die Funktion
-   liegt in der DB) → Migration `20260823043633` im SQL-Editor anwenden →
-   `aufgeben`-Aufruf für df1a6700. Alternative bleibt: dokumentiert akzeptieren, dass der
-   Vorgang mit stehendem Marker `offen` bleibt (kostenneutral, je Lauf `skipped-no-cluster`).
-3. Dann erst **Versuch 5** nach §28.6 (Stand 23.08. früh: V4-1/2/3/6/7 grün; V4-4 wörtlich
-   grün — 0 `unbekannt`, 0 Vormerkungen, kein HV —, aber beide Marker müssen erst
-   abfließen: 492dcd48 regulär, df1a6700 per Entscheid aus 2.; V4-5 erst am Aktivierungstag).
-4. Nach jeder wirksamen OP-30-Aktivierung: **OP-25 vollständig wiederholen**; **OP-15** und
-   `CRON_SECRET`/Egress-Freigabe unverändert offen.
+1. V4 1 grün: letzter funktionaler Stand `bb1c992e` aus PR #261,
+   Vercel Status `success`; die vorangegangenen reinen Dokumentations und Testmerges
+   wurden ebenfalls erfolgreich ausgeliefert.
+2. V4 2 grün: Queue 0 wartend / 235 erledigt / 0 laufend / 0 fehlgeschlagen, 0 Leases.
+3. V4 3 grün: Outbox 0.
+4. V4 4 grün: 239 fertig / 1 aufgegeben / 0 offen / 0 unbekannt /
+   0 modell-laeuft, 0 Vormerkungen, 0 HV001/HV002, 0 Fencingabweichungen.
+5. V4 6 grün gegen den freigegebenen neuen Basispunkt: 33 Buchungen, zwei dokumentierte
+   bytegleiche Einträge für `20260823043633`, `20260720` weiterhin nicht angewendet.
+6. V4 7 grün: 0 fremde aktive Abfragen und 0 Sperren auf `helmut_jobs`.
+7. V4 5 ist **noch nicht prüfbar**. Unmittelbar vor einer Aktivierung im vorgesehenen
+   Fenster 19:10 bis 20:50 TR müssen V4 1 bis V4 7 frisch wiederholt werden.
+
+**Keine Aktivierung aus dieser Dokumentation.** Flagänderung, Redeployment und Start von
+Versuch 5 bleiben eine neue ausdrückliche Betreiberfreigabe. Danach OP 25 vollständig
+wiederholen; OP 15 und `CRON_SECRET`/Egress bleiben offen.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
@@ -279,8 +272,9 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 - Kein Merge nach `main` (= Deployment), kein Deployment, keine Production-Datenänderung,
   keine Secret-/Env-/Flag-/Cron-Änderung ohne ausdrückliche Freigabe.
-- Migration auf Production: offen ist nur `20260720` — Anwendung freigabepflichtig; nach
-  einem Merge von PR #262 kommt `20260823043633` hinzu (Anwendung einzeln freigabepflichtig).
+- Migration auf Production: `20260823043633` ist freigegeben angewendet; die zwei
+  bytegleichen Buchungseinträge bleiben dokumentiert. Offen ist nur `20260720`; jede
+  künftige Anwendung bleibt freigabepflichtig.
 - **Berlin, Brandenburg und M8 bleiben deaktiviert**; keine Testmandat-Aktivierung; die
   5 Offline-Testmandate bleiben deaktivierte Repo-Daten.
 - Keine kostenverursachenden Läufe (Backfills, Recovery, Massen-Crawls);
@@ -318,12 +312,18 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzte relevante Sprints
 
-- **23.08. (Vertragslücken-Sprint, PR #262 offen):** `aufgeben` aus `offen` eng ermöglicht —
-  Migration `20260823043633` + Rollback erweitern `helmut_verstehen_ausgang_aufloesen` um
-  GENAU den §30.2-Fall (Marker `erneut-freigegeben`, kein Besitzer/Lease/KO/Dokument,
-  atomar unter dem Row-Lock; Zähler/Rechte/Signatur unverändert). Abnahme **47/0**,
-  CAS-Basis **103/0** (echte PostgreSQL 16), Offline-Suite grün. **Nichts gemergt, nichts
-  angewendet**; df1a6700 in Production unverändert `offen` mit Marker.
+- **23.08. (GitHub Bereinigung):** #225 Produktroadmap, #216 Teststabilisierung und
+  #261 Quellenpflicht nach aktualisiertem Diff, Pflichtprüfungen und erfolgreichem
+  Vercel Deployment gemergt. #218, #231, #224 und #255 mit konkreter Begründung
+  geschlossen; danach 0 offene Pull Requests. Keine Datenbankaktion, kein Flag,
+  kein KI Lauf und kein Versuch 5.
+- **23.08. (§30.5 vollständig vollzogen):** PR #262 gemergt und deployt, Migration
+  `20260823043633` freigegeben installiert, df1a6700 nach bestandener Vorprüfung über
+  `helmut_verstehen_ausgang_aufloesen(..., 'aufgeben')` terminal abgeschlossen.
+  Rückgabe `aufgegeben`; genau eine Reservierungszeile verändert, Zähler/Fencing 1/1/1.
+  Nachkontrolle: 239 fertig / 1 aufgegeben, Queue 0/235/0/0, Outbox/Vormerkungen/Leases 0.
+  Buchführung mit zwei bytegleichen Migrationseinträgen dokumentiert und nicht bereinigt.
+  V4 1/2/3/4/6/7 grün, V4 5 offen; Versuch 5 nicht gestartet.
 - **23.08. früh (Nachtrag zum Betreibersprint, AUSGEFÜHRT):** eigenständige Freigabe nur
   für 492dcd48 — kanonisch `pruefen` 04:15:46 UTC und `erneut` 04:15:53 UTC (Marker genau
   1×); Zähler/Fencing unverändert 1/1/1, keine Lease, kein Modellaufruf, 0 HV001/HV002;
