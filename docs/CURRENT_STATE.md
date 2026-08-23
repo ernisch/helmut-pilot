@@ -1,14 +1,15 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-22 (spätabends UTC).** **PR #260 (§30 Wiederaufnahmepfad) ist gemergt, deployt
-und wirksam** (`cb9e14e0`, `dpl_5jW267RPUp1Ya7ow76YjXK4oC379` READY 22.08. 05:36 UTC):
-`understanding-cron-20260822213131-2iz11` (21:31 UTC auf `cb9e14e0`) nahm alle 12
-`erneut`-Freigaben deterministisch auf. CAS live (22.08. 22:12 UTC): **223 fertig · 1 offen
-(df1a6700) · 1 unbekannt (492dcd48)** · 0 modell-laeuft · 0 Leases · 0 Vormerkungen. Der
-freigegebene Betreibersprint (492dcd48 `pruefen`/`erneut` · df1a6700 `aufgeben`) endete
-**BLOCKIERT ohne jede Änderung**: der deployte Vertrag kennt `aufgeben` nur aus `unbekannt`,
-für `offen` existiert kein kanonischer Abschlussweg (Vertragslücke, §7a/§11/§14).
-**Versuch 5 bleibt GESTOPPT**; der Motor bleibt **aus**; Production unangetastet.
+**Stand: 2026-08-23 (früh UTC).** **PR #260 (§30 Wiederaufnahmepfad) ist gemergt, deployt und
+wirksam** (`cb9e14e0`, `dpl_5jW267RPUp1Ya7ow76YjXK4oC379` READY 22.08. 05:36 UTC); der
+21:31-UTC-Lauf nahm alle 12 `erneut`-Freigaben deterministisch auf. **492dcd48 ist am 23.08.
+04:15:53 UTC per neuer, eigenständiger Freigabe kanonisch behandelt** (`pruefen` →
+`entscheidung-unbekannt` · `erneut` → `erneut-freigegeben`; Zähler 1/1/1 unverändert, kein
+Modellaufruf durch die Behandlung; **höchstens 1** bezahlter Aufruf folgt im understanding-cron
+05:30 UTC). CAS live (04:16 UTC): **223 fertig · 2 offen (df1a6700 + 492dcd48, je Marker) ·
+0 unbekannt** · 0 modell-laeuft · 0 Leases · 0 Vormerkungen. df1a6700-`aufgeben` bleibt
+BLOCKIERT (Vertragslücke: `aufgeben` nur aus `unbekannt`, §7a/§11/§14).
+**Versuch 5 bleibt GESTOPPT**; der Motor bleibt **aus**.
 
 Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000
 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die
@@ -173,7 +174,7 @@ OP-30-Aktivierung muss OP-25 für die geänderte Architektur erneut vollständig
   (14 saved · 2 updated · 1 `skipped-no-cluster` = df1a6700 ohne KO und ohne Modellaufruf,
   Marker bleibt stehen). Neu am 22.08. 05:31:38 UTC (Altcode #259, VOR dem #260-Deployment
   05:36 UTC): 492dcd48 `unbekannt` (`modellfehler:OpenAI request timeout`, 1 Versuch /
-  1 KI-Aufruf / Fencing 1, keine Lease, kein Besitzer) — §23.3-Fall, behandlungsbedürftig.
+  1 KI-Aufruf / Fencing 1, keine Lease) — am 23.08. 04:15 UTC kanonisch behandelt (s. §14).
 - **Vertragslücke `aufgeben` (belegt 22.08., Betreibersprint):** einziger Schreiber von
   `zustand='aufgegeben'` ist `helmut_verstehen_ausgang_aufloesen` (live per `pg_proc`
   geprüft), und die löst **nur** `unbekannt` auf (`nicht-blockiert`-Riegel). §30.2 verspricht
@@ -250,17 +251,17 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 **Zwei Betreiberentscheidungen, dann Versuch 5:**
 
-1. **492dcd48:** erneute, eng begrenzte Freigabe für `pruefen`/`erneut` erteilen (höchstens
-   1 bezahlter Aufruf im nächsten regulären Lauf; die Sprint-Freigabe vom 22.08. war an die
-   gemeinsame Vorprüfung gebunden und wurde nicht vollzogen). Geeignete reguläre Läufe:
-   understanding-cron 08:30 TR / 07:30 Berlin / 05:30 UTC und 00:30 TR (Folgetag) /
-   23:30 Berlin / 21:30 UTC; Kontrolle ~15 min nach Slotstart.
+1. **492dcd48: BEHANDELT (23.08. 04:15 UTC, eigenständige Freigabe).** Abfluss im
+   understanding-cron 08:30 TR / 07:30 Berlin / 05:30 UTC (23.08.) beobachten; Kontrolle ab
+   08:45 TR / 07:45 Berlin / 05:45 UTC — erwartet `fertig` mit `verstehen_fencing` ≥ 2 und
+   exakt +1 KI-Aufruf, oder erneut ehrlich `unbekannt` (dann neue Betreiberentscheidung).
 2. **df1a6700:** Vertragslücke schließen — kleinste Migration erweitert
    `helmut_verstehen_ausgang_aufloesen` um `offen`+`erneut-freigegeben` → `aufgegeben`
    (mit Rollback, CLAUDE.md §4.8) — oder dokumentiert akzeptieren, dass der Vorgang mit
    stehendem Marker `offen` bleibt (kostenneutral, je Lauf ehrlich `skipped-no-cluster`).
-3. Dann erst **Versuch 5** nach §28.6 (V4-4 muss grün werden: 0 `unbekannt`, Marker
-   abgeflossen; Stand 22.08.: V4-1/2/3/6/7 grün, V4-4 rot, V4-5 erst am Aktivierungstag).
+3. Dann erst **Versuch 5** nach §28.6 (Stand 23.08. früh: V4-1/2/3/6/7 grün; V4-4 wörtlich
+   grün — 0 `unbekannt`, 0 Vormerkungen, kein HV —, aber beide Marker müssen erst
+   abfließen: 492dcd48 regulär, df1a6700 per Entscheid aus 2.; V4-5 erst am Aktivierungstag).
 4. Nach jeder wirksamen OP-30-Aktivierung: **OP-25 vollständig wiederholen**; **OP-15** und
    `CRON_SECRET`/Egress-Freigabe unverändert offen.
 
@@ -308,6 +309,12 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzte relevante Sprints
 
+- **23.08. früh (Nachtrag zum Betreibersprint, AUSGEFÜHRT):** neue eigenständige Freigabe
+  nur für 492dcd48 vollzogen — Vorprüfung byte-gleich bestätigt, dann kanonisch `pruefen`
+  04:15:46 UTC (`entscheidung-unbekannt`, zustandsneutral) und `erneut` 04:15:53 UTC
+  (`erneut-freigegeben`, Marker genau 1×). Zähler/Fencing unverändert 1/1/1, keine Lease,
+  kein Modellaufruf durch die Behandlung, 0 HV001/HV002; df1a6700 und alle übrigen
+  Zustände byte-gleich (CAS 223/2/0, Queue 0/235/0/0, Outbox 0, 5 Mandate).
 - **22./23.08. (Betreibersprint, BLOCKIERT ohne Änderung):** Freigabe: 492dcd48
   `pruefen`/`erneut` + df1a6700 `aufgeben`, beides kanonisch. Rein lesende Vorprüfung
   bestätigte beide Sachlagen exakt (Zähler 1/1/1, keine Leases, Lauf-/Commit-Zuordnung),
@@ -327,23 +334,17 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
   gescheitert vor Aktivierung dokumentiert; Ursachen live + am Code belegt; zentrale
   Restzeitwache (drei Gates inkl. `modellstart`-RPC-Deckung, Review-Korrektur) +
   Speicherweg-Zweitversuch; Suite 50/50, keine Offline-Regression; Production rein lesend.
-- **19.08. ~10:44 UTC (Vollzug, §28.8):** die 383 inerten Aufträge nach dem gemergten
-  §28.4-Verfahren neutralisiert — 383 gelöscht, Outbox kaskadiert 0, 235 Erledigte
-  signaturgleich, CAS unverändert, Wache `inert-bestand:0`; Versuch 4 nicht gestartet.
+- **19.08. ~10:44 UTC (Vollzug, §28.8):** die 383 inerten Aufträge neutralisiert (Detail §7a).
 - **19.08. nachm. (Folgesprint, Runbook §28):** PR-#256-Deployment nachgewiesen; CAS
   behandelt (2× `erneut`, 0 `unbekannt`); Blocker des §26-Verfahrens für die gemischte
   Zielmenge belegt; gemischtes Verfahren (Anker 19.08., R12) 58/0 bewiesen, PR #257
   (gemergt); Versuch-4-Plan §28.6.
-- **19.08. (Reparatursprint, PR #256, gemergt):** Ursache des 0-Abschluss-Laufs belegt
-  (Blob-RMW je Auftrag + fehlende Slot-Quittung), Option B + D implementiert, Wächter-
-  und Parallelitätssuiten neu (40+16 PASS); CAS-Review der 2 `unbekannt` rein lesend
-  (Runbook §27).
+- **19.08. (Reparatursprint, PR #256, gemergt):** Ursache des 0-Abschluss-Laufs belegt,
+  Option B + D implementiert (Suiten 40+16 PASS); Detail §7a und Runbook §27/§28.
 - **18.08. (Betreiber): Stufe 1 aktiviert 16:15 UTC, 19.08. ~06:56 UTC zurückgenommen**
   — 2 Slots mit 0 Abschlüssen, Rest 383 inert (§27.1).
-- **18.08., PR #254:** Neutralisierung der 524 Altaufträge vollzogen (0/235/0/0);
-  235 Erledigte signaturgleich unangetastet; kein Export, kein Flag, kein Cron.
-- **17.08., PR #253:** datensparsamer Neutralisierungsweg (R1–R9) und
-  Warteschlangenwache V2; Watchdog-Vertrag queue-tauglich.
+- **18.08., PR #254 / 17.08., PR #253:** 524er-Neutralisierung vollzogen (§26.7);
+  Neutralisierungsweg R1–R9 + Warteschlangenwache V2.
 - **17./18.08. (Betreiber):** `HELMUT_VERSTEHEN_CAS=on` aktiviert und über drei
   Kontrollen laufzeitgeprüft — 45 Vorgänge, 0 `unbekannt`, Morgenzyklus 5/5 je Slot.
 Ältere Sprintberichte (inkl. PR #247–#251) stehen in den Belegdateien aus §13 und in der verlustfreien Archivfassung vom 17.08.
