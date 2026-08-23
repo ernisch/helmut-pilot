@@ -152,7 +152,10 @@ function zeilenSpeicher() {
   const basisKo = {
     status: "understood", understanding_status: "complete",
     was_ist_passiert: "passiert", warum_wichtig: "wichtig", why_relevant: "relevant",
-    recommendation: "Linie festlegen.", zeitdruck: "hoch", confidence_score: 80
+    recommendation: "Linie festlegen.", zeitdruck: "hoch", confidence_score: 80,
+    // Quellenpflicht (2026-08-22): ohne oeffnende Quelle traegt kein Vorgang den Stand.
+    // Die Datums-/Frischesemantik dieses Tests bleibt unberuehrt (Fallback-Quelle ohne Datum).
+    best_source_url: "https://beispiel.de/politik/audit-artikel", best_link_type: "direct"
   };
   const baue = (ko, docs) => contract.toBriefingContractV3({
     profile: { id: MANDAT }, decisions: [{ knowledge_object_id: ko.id, score: 90, decision: "Sofort reagieren" }],

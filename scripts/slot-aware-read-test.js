@@ -99,7 +99,9 @@ function stateWith(updatedAtIso, nowIso, briefingType = "morning") {
     risk_of_no_action: "Ri.", opportunity_summary: "Ch.", risk_level: "high", opportunity_level: "high",
     recommended_communication_struct: { communicationLine: "L.", recommendedChannel: "press", recommendedFormat: "statement", suggestedOutputs: ["qa"] },
     action_items_struct: [{ title: "T", description: "", dueHint: "heute", priority: "high", actionType: "monitor" }],
-    ausschuesse: ["A"], zeitdruck: "hoch", source_document_count: 3, updated_at: updatedAtIso
+    ausschuesse: ["A"], zeitdruck: "hoch", source_document_count: 3, updated_at: updatedAtIso,
+    // Quellenpflicht (2026-08-22): ohne oeffnende Quelle traegt kein Vorgang den Stand.
+    best_source_url: "https://beispiel.de/politik/vg-f", best_link_type: "direct"
   };
   const dec = [{ knowledge_object_id: "ko-f", vorgang_id: "vg-f", score: 88, decision: "Sofort reagieren", priority_type: "risk", risk: "r", chance: "", matched_features: [] }];
   return contract.buildCurrentHelmutState({ profile, decisions: dec, kosById: { "ko-f": ko }, sourcesByVorgang: {}, now: new Date(nowIso), briefingType });
@@ -129,7 +131,7 @@ check("Frische: Mitternachtsgrenze — Vortag 23:30 Berlin -> stale",
 const sDailyOld = contract.toBriefingContractV3({
   profile, now: new Date("2026-07-11T07:29:00Z"),
   decisions: [{ knowledge_object_id: "ko-f", vorgang_id: "vg-f", score: 88, decision: "Sofort reagieren", priority_type: "risk", risk: "r", chance: "", matched_features: [] }],
-  kosById: { "ko-f": { id: "ko-f", vorgang_id: "vg-f", status: "neu", understanding_status: "complete", display_title: "T", was_ist_passiert: "X.", warum_wichtig: "Y.", recommendation: "R.", risk_of_no_action: "Ri.", opportunity_summary: "Ch.", recommended_communication: "L.", action_items: ["A"], ausschuesse: ["A"], zeitdruck: "hoch", source_document_count: 1, updated_at: "2026-07-08T04:01:00Z" } },
+  kosById: { "ko-f": { id: "ko-f", vorgang_id: "vg-f", status: "neu", understanding_status: "complete", display_title: "T", was_ist_passiert: "X.", warum_wichtig: "Y.", recommendation: "R.", risk_of_no_action: "Ri.", opportunity_summary: "Ch.", recommended_communication: "L.", action_items: ["A"], ausschuesse: ["A"], zeitdruck: "hoch", source_document_count: 1, updated_at: "2026-07-08T04:01:00Z", best_source_url: "https://beispiel.de/politik/vg-f", best_link_type: "direct" } },
   sourcesByVorgang: {}
 }).currentHelmutState;
 check("Frische: daily-Fallback (kein Slot) + alte Daten -> briefingType daily, status stale",
@@ -205,7 +207,9 @@ async function main() {
     risk_of_no_action: "Ohne Reaktion droht uneinheitliche Kommunikation.",
     opportunity_summary: "Soziale Entlastung glaubwuerdig besetzen.",
     risk_level: "high", opportunity_level: "high",
-    updated_at: "2026-07-07T07:45:00Z"
+    updated_at: "2026-07-07T07:45:00Z",
+    // Quellenpflicht (2026-08-22): ohne oeffnende Quelle traegt kein Vorgang den Stand.
+    best_source_url: "https://beispiel.de/politik/pflegereform-1", best_link_type: "direct"
   };
   const decisions = [{ knowledge_object_id: "ko-vg-1", vorgang_id: "vg-1", score: 88, decision: "Sofort reagieren", priority_type: "risk", risk: "Kritik", chance: "", matched_features: [] }];
   const kosById = { "ko-vg-1": koPrimary };

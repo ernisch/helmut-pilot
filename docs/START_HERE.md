@@ -4,7 +4,7 @@
 Historie. Für den aktuellen Stand → [`CURRENT_STATE.md`](CURRENT_STATE.md), für die
 Systemkarte → [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
-**Letzte Aktualisierung:** 2026-08-17
+**Letzte Aktualisierung:** 2026-08-22 (§5.2 Belegpflicht präzisiert: Element-Garantie statt Aussagen-Garantie)
 
 ---
 
@@ -63,8 +63,14 @@ Neue Funktionen sind nachrangig, solange die P0-Punkte offen sind.
 
 1. **Entscheidungen statt Daten.** Helmut zeigt nicht, was passiert ist, sondern was
    zu tun ist. Eine Funktion, die nur Inhalte anzeigt, ist keine Helmut-Funktion.
-2. **Belegpflicht.** Kein erfundener Inhalt. Jede Aussage trägt eine echte,
-   öffnende Quelle. Lieber „keine belastbare Lage" als eine erfundene.
+2. **Belegpflicht.** Kein erfundener Inhalt, keine erfundene Quellen-URL. Jedes
+   sichtbare Inhaltselement in Lage, Heute/Briefing, Radar und Büro trägt
+   mindestens eine echte, öffnende https-Quelle — keine bloße
+   Herausgeber-Startseite; ohne solche Quelle erscheint ein ehrlicher Leerzustand
+   (testgesichert: `scripts/quellenpflicht-vertrag-test.js`). **Noch nicht
+   garantiert** ist die Beleg-Bindung: dass jede einzelne Aussage eines Elements
+   einer bestimmten Quelle oder Textstelle zugeordnet ist. Lieber „keine
+   belastbare Lage" als eine erfundene.
 3. **Ehrlichkeit über Zustände.** Leere Zustände, Störungen und Rückstände werden
    benannt, nicht kaschiert. Kein falsches Grün.
 4. **Mandantenneutralität.** Kein Mandant ist im Code bevorzugt, hartkodiert oder

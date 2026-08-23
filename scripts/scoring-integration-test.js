@@ -111,8 +111,9 @@ async function rankWith(mode, { relevanzordnung = "on" } = {}) {
   console.log("== HELMUT: Handlungsfaehigkeit + Leerzustand (flag-gesichert) ==");
   // Zwei gleich-priorisierte Entscheidungen; nur Handlungsfaehigkeit unterscheidet.
   // id 'aaa' (kein Handlungssignal) sortiert per Alt-Tiebreak VOR 'zzz' (konkret handelbar).
-  const koLowAct = { id: "aaa", vorgang_id: "aaa", was_ist_passiert: "x", warum_wichtig: "y", handlungsempfehlung: "—", updated_at: iso(1 * H) };
-  const koHighAct = { id: "zzz", vorgang_id: "zzz", was_ist_passiert: "x", warum_wichtig: "y", zeitdruck: "hoch", handlungsempfehlung: "Jetzt Statement", action_items_struct: [{ title: "Statement", actionType: "prepareStatement", dueHint: "heute" }], recommended_communication_struct: { recommendedChannel: "press", recommendedFormat: "statement", suggestedOutputs: ["PM"] }, updated_at: iso(1 * H) };
+  // Quellenpflicht (2026-08-22): ohne oeffnende Quelle traegt kein Vorgang den Stand.
+  const koLowAct = { id: "aaa", vorgang_id: "aaa", was_ist_passiert: "x", warum_wichtig: "y", handlungsempfehlung: "—", updated_at: iso(1 * H), best_source_url: "https://beispiel.de/politik/aaa", best_link_type: "direct" };
+  const koHighAct = { id: "zzz", vorgang_id: "zzz", was_ist_passiert: "x", warum_wichtig: "y", zeitdruck: "hoch", handlungsempfehlung: "Jetzt Statement", action_items_struct: [{ title: "Statement", actionType: "prepareStatement", dueHint: "heute" }], recommended_communication_struct: { recommendedChannel: "press", recommendedFormat: "statement", suggestedOutputs: ["PM"] }, updated_at: iso(1 * H), best_source_url: "https://beispiel.de/politik/zzz", best_link_type: "direct" };
   const kosById = { aaa: koLowAct, zzz: koHighAct };
   const decisions = [
     { knowledge_object_id: "aaa", vorgang_id: "aaa", decision: "Sofort reagieren", score: 90, matched_features: [] },

@@ -9815,6 +9815,61 @@ details[open].meeting-detail summary::before { content: '▾ '; }
 }
 .buero-detail-footer { border-top: 1px solid var(--hairline); padding-top: 24px; }
 
+/* ── Quellenliste des Entwurfs (Quellenpflicht-Sprint 2026-08-22) ── */
+.buero-detail-sources {
+  margin: 0 0 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--hairline);
+}
+.buero-sources-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--muted-2);
+  margin: 0 0 12px;
+}
+.buero-sources-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.buero-source-row { margin: 0; }
+.buero-source-link {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  text-decoration: none;
+  background: transparent;
+  transition: border-color .15s ease;
+}
+.buero-source-link:hover { border-color: var(--muted-2); }
+.buero-source-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.buero-source-title {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.buero-source-meta {
+  font-size: 11px;
+  color: var(--muted-2);
+}
+.buero-sources-empty {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0;
+  font-style: italic;
+}
+
 /* ── Qualitätscheck ── */
 .buero-quality-check {
   margin: 28px 0;
@@ -11360,6 +11415,21 @@ body:has(.lage2) {
 /* Tatsaechliches Datum der Meldung (Europe/Berlin) — steht auch dann am Vorgang,
    wenn er im heutigen Briefing unter "Neu seit dem letzten Briefing" laeuft. */
 .hstand-rel-when { margin: 0; font-size: 12px; color: var(--muted-2); letter-spacing: -.01em; }
+
+/* Oeffnende Quellen-Links (Quellenpflicht-Sprint 2026-08-22) */
+.hstand-quelle-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 10px; font-size: 12.5px; font-weight: 600;
+  color: var(--text); text-decoration: none;
+  border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px;
+  transition: border-color .15s ease;
+}
+.hstand-quelle-link:hover { border-color: var(--muted-2); }
+.hstand-rel-quelle {
+  display: inline-block; margin-top: 2px; font-size: 12px; font-weight: 600;
+  color: var(--muted); text-decoration: none;
+}
+.hstand-rel-quelle:hover { color: var(--text); }
 
 /* Quality-Indikator */
 .hstand-q { display: inline-flex; align-items: center; gap: 7px; }

@@ -2968,7 +2968,10 @@ function compactItem(item) {
   delete compact.relevanceBreakdown;
   delete compact.sourceBasis;
   delete compact.referent_audit;
-  compact.sources = compactSources(item.sources, 2);
+  // Quellenpflicht-Sprint 2026-08-22: Kappung 2 -> 5, damit die sichtbare Buero-
+  // Quellenliste und ihr Zaehler die unterschiedlichen oeffnenden Quellen eines
+  // Entwurfs real abbilden koennen (vorher konnte der Zaehler nie ueber 2 steigen).
+  compact.sources = compactSources(item.sources, 5);
   compact.primarySource = compactSource(item.primarySource || compact.sources?.[0]);
   compact.content = truncateText(compact.content, 360);
   compact.excerpt = truncateText(compact.excerpt, 360);
@@ -3013,6 +3016,8 @@ function compactSource(source) {
     linkType: source.linkType,
     publishedAt: source.publishedAt,
     retrievedAt: source.retrievedAt,
+    // Artikeltitel fuer die sichtbare Buero-Quellenliste (Quellenpflicht-Sprint).
+    title: truncateText(source.title, 120),
     excerpt: truncateText(source.excerpt || source.content || source.relevanceReason, 160),
     confidence: source.confidence
   };

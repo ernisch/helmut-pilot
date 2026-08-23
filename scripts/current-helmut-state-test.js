@@ -46,7 +46,9 @@ const sources = {
     { id: "rd-a", url: "https://bmg.bund.de/pflege", source_name: "BMG", link_type: "direct", published_at: "2026-07-07T07:45:00Z" },
     { id: "rd-b", url: "https://x.de/2", source_name: "X", published_at: "2026-07-06T10:00:00Z" }
   ],
-  "vg-2": [{ id: "rd-c", url: "https://y.de", source_name: "Y", published_at: "2026-07-06T09:00:00Z" }]
+  // Quellenpflicht-Sprint 2026-08-22: ein Domain-Root ("https://y.de") ist keine
+  // oeffnende Artikelquelle mehr — die Fixture-Quelle traegt eine echte Artikel-URL.
+  "vg-2": [{ id: "rd-c", url: "https://y.de/politik/foerdermittel-2", source_name: "Y", published_at: "2026-07-06T09:00:00Z" }]
 };
 
 const decisions = [
@@ -151,7 +153,9 @@ check("Leerfall: keine erfundenen Inhalte (leer/null/unknown)",
 const koThin = {
   id: "ko-vg-3", vorgang_id: "vg-3", status: "neu", understanding_status: "complete",
   was_ist_passiert: "Antrag eingebracht.", warum_wichtig: "Betrifft das Mandat.",
-  ausschuesse: ["Gesundheit"], zeitdruck: "niedrig", source_document_count: 1, updated_at: NOW.toISOString()
+  ausschuesse: ["Gesundheit"], zeitdruck: "niedrig", source_document_count: 1, updated_at: NOW.toISOString(),
+  // Quellenpflicht: auch ein duennes KO braucht eine oeffnende Quelle, um den Stand zu tragen.
+  best_source_url: "https://beispiel.de/politik/antrag-3", best_link_type: "direct"
 };
 const stateThin = contract.buildCurrentHelmutState({
   profile, kosById: { "ko-vg-3": koThin },
@@ -215,7 +219,9 @@ function mkFullKo(id, vg, updatedAt, title) {
     risk_of_no_action: "Ri.", opportunity_summary: "Ch.", risk_level: "high", opportunity_level: "high",
     recommended_communication_struct: { communicationLine: "L.", recommendedChannel: "press", recommendedFormat: "statement", suggestedOutputs: ["qa"] },
     action_items_struct: [{ title: "Lege bis uebermorgen vor", description: "", dueHint: "uebermorgen", priority: "high", actionType: "prepareStatement" }],
-    ausschuesse: ["A"], zeitdruck: "hoch", source_document_count: 2, updated_at: updatedAt
+    ausschuesse: ["A"], zeitdruck: "hoch", source_document_count: 2, updated_at: updatedAt,
+    // Quellenpflicht (2026-08-22): ohne oeffnende Quelle traegt kein Vorgang den Stand.
+    best_source_url: `https://beispiel.de/politik/${vg}`, best_link_type: "direct"
   };
 }
 const koFlagship = mkFullKo("ko-vg-destabilisiert", "vg-destabilisiert", "2026-07-08T04:00:00Z", "Staat prueft Massnahmen gegen Tarifflucht");
@@ -302,7 +308,9 @@ function koMatch(id, vg, updatedAt, title, feats = {}) {
     action_items_struct: [{ title: "Heute interne Lagebewertung", description: "", dueHint: "heute", priority: "high", actionType: "alignInternally" }],
     ausschuesse: feats.ausschuesse || [], parteien: feats.parteien || [], tags: feats.tags || [],
     policy_field: feats.policy_field || [], zeitdruck: "hoch", source_document_count: 3, confidence_score: 80,
-    updated_at: updatedAt, created_at: updatedAt
+    updated_at: updatedAt, created_at: updatedAt,
+    // Quellenpflicht (2026-08-22): ohne oeffnende Quelle traegt kein Vorgang den Stand.
+    best_source_url: `https://beispiel.de/politik/${vg}`, best_link_type: "direct"
   };
 }
 const decideFor = (kos) => decisionsEngine.decideForUser(profFresh, kos, { userId: "u-f", limit: kos.length });
