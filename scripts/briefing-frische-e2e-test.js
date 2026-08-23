@@ -49,7 +49,10 @@ function ko(id, updatedAt, titel) {
     risk_of_no_action: "Ohne Reaktion entsteht eine Lücke.", risk_level: "mittel",
     opportunity_summary: "Eigene Position sichtbar machen.", opportunity_level: "mittel",
     recommended_communication: "Kurzstatement vorbereiten.", action_items: ["Entwurf prüfen"],
-    updated_at: updatedAt, created_at: updatedAt, policy_field: "Arbeit und Soziales"
+    updated_at: updatedAt, created_at: updatedAt, policy_field: "Arbeit und Soziales",
+    // Quellenpflicht (2026-08-22): ohne oeffnende Quelle traegt kein Vorgang den Stand.
+    // Fallback-Quelle ohne Datum -> die Frische-/Datumssemantik dieses Tests bleibt unberuehrt.
+    best_source_url: `https://beispiel.de/politik/${id}`, best_link_type: "direct"
   };
 }
 function entscheidung(id, score) {

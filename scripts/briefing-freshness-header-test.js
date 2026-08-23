@@ -39,7 +39,9 @@ function fullKo(id, vg, updatedAt, extra = {}) {
     recommended_communication_struct: { communicationLine: "Wir beobachten genau.", recommendedChannel: "press", recommendedFormat: "pressRelease", suggestedOutputs: ["statement"] },
     action_items_struct: [{ title: "Linie abstimmen", description: "", dueHint: "heute", priority: "high", actionType: "alignInternally" }],
     ausschuesse: ["Gesundheit"], parteien: ["SPD"], tags: ["Reform"], zeitdruck: "hoch",
-    confidence_score: 85, source_document_count: 8, updated_at: updatedAt, created_at: updatedAt, ...extra
+    confidence_score: 85, source_document_count: 8, updated_at: updatedAt, created_at: updatedAt,
+    // Quellenpflicht (2026-08-22): ohne oeffnende Quelle traegt kein Vorgang den Stand.
+    best_source_url: `https://beispiel.de/politik/${vg}`, best_link_type: "direct", ...extra
   };
 }
 function decisionFor(id, vg, score = 88) {

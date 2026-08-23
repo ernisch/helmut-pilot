@@ -185,7 +185,10 @@ async function run() {
   // Recommendation), NICHT den oft verworfenen display_title.
   console.log("selectLageVorgaenge (modern-first, Legacy beigemischt)");
   {
-    const withSrc = { sources: [{ name: "Tagesschau" }], sourceCount: 1 };
+    // Quellenpflicht-Sprint 2026-08-22: "belegt" heisst jetzt mindestens EINE Quelle
+    // mit echter oeffnender https-URL — ein Name allein (oder ein blosser sourceCount)
+    // genuegt nicht mehr.
+    const withSrc = { sources: [{ name: "Tagesschau", url: "https://www.tagesschau.de/inland/beispiel-101.html" }], sourceCount: 1 };
     const noSrc = { sources: [], sourceCount: 0 };
     const coreFields = { displaySummary: "S", whyRelevant: "W", recommendation: "R" };
     const modern = (id) => ({ id, displayTitle: "T", displayCategory: "C", ...coreFields, ...withSrc });

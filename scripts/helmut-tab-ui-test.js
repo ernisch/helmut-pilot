@@ -103,13 +103,17 @@ const koPrimary = {
     { title: "Kurzes Q&A vorbereiten", description: "", dueHint: "", priority: "medium", actionType: "prepareQA" },
     { title: "Monitoring starten", description: "", dueHint: "", priority: "low", actionType: "monitor" }
   ],
-  updated_at: "2026-07-07T07:45:00Z"
+  updated_at: "2026-07-07T07:45:00Z",
+  // Quellenpflicht (2026-08-22): ohne oeffnende Quelle traegt kein Vorgang den Stand.
+  best_source_url: "https://beispiel.de/politik/arbeitszeit-1", best_link_type: "direct"
 };
 const koRelated = {
   id: "ko-vg-2", vorgang_id: "vg-2", status: "neu", understanding_status: "complete",
   display_title: "Laender fordern mehr Foerdermittel", was_ist_passiert: "Programm angekuendigt.", warum_wichtig: "Mittel fuer Kommunen.",
   why_relevant: "Chance fuer deinen Wahlkreis.", ausschuesse: ["Kommunales"], tags: ["Foerderung"],
-  zeitdruck: "mittel", confidence_score: 70, source_document_count: 4, updated_at: "2026-07-06T09:00:00Z"
+  zeitdruck: "mittel", confidence_score: 70, source_document_count: 4, updated_at: "2026-07-06T09:00:00Z",
+  // Quellenpflicht (2026-08-22): ohne oeffnende Quelle traegt kein Vorgang den Stand.
+  best_source_url: "https://beispiel.de/politik/foerdermittel-2", best_link_type: "direct"
 };
 const sources = {
   "vg-1": [{ id: "rd-a", published_at: "2026-07-07T07:45:00Z" }, { id: "rd-b", published_at: "2026-07-06T10:00:00Z" }],
@@ -255,7 +259,9 @@ const koOld = {
   warum_wichtig: "Betrifft die Ausschussarbeit des Mandats.",
   handlungsempfehlung: "Intern kurz abstimmen und die Linie festhalten.",
   ausschuesse: ["Arbeit & Soziales"], zeitdruck: "mittel",
-  source_document_count: 3, updated_at: NOW.toISOString()
+  source_document_count: 3, updated_at: NOW.toISOString(),
+  // Quellenpflicht (2026-08-22): ohne oeffnende Quelle traegt kein Vorgang den Stand.
+  best_source_url: "https://beispiel.de/politik/antrag-old-1", best_link_type: "direct"
 };
 const oldState = contract.buildCurrentHelmutState({
   profile, kosById: { "ko-old-1": koOld },

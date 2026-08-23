@@ -4547,11 +4547,19 @@ function lageDateLabel() {
   } catch (_) { return ""; }
 }
 
-// Quellenregel: nur Vorgänge mit mind. einer echten Quelle dürfen erscheinen.
+// Quellenregel (Quellenpflicht-Sprint 2026-08-22): nur Vorgänge, bei denen mindestens
+// EINE Quelle eine echte ÖFFNENDE https-URL trägt (https, kein Google-Proxy, keine
+// bloße Herausgeber-Startseite), dürfen erscheinen. Ein bloßer Zählerwert
+// (sourceCount) ohne öffnende Quelle genügt nicht mehr — Parität zur Server-Auswahl
+// (lib/helmut/lage.js lageHasRealSource).
 function lageHasSource(v) {
   if (!v) return false;
-  if (Array.isArray(v.sources) && v.sources.length > 0) return true;
-  return Number(v.sourceCount) > 0;
+  const sources = Array.isArray(v.sources) ? v.sources : [];
+  return sources.some((s) => {
+    const url = s && s.url;
+    if (!url || !/^https:\/\//i.test(String(url))) return false;
+    return !isGoogleArticleProxy(url) && !isLikelyPublisherHomepage(url);
+  });
 }
 
 // ── Sichtbare Lage-Menge — der SERVER wählt zentral aus (lib/helmut/lage.js
@@ -6742,6 +6750,17 @@ function renderHstandActions(state) {
     </section>`;
 }
 
+// QUELLENPFLICHT (P0-Schliessungssprint 2026-08-22): oeffnender Quellen-Link eines
+// Stand-Items — https, kein Google-Proxy, keine Herausgeber-Startseite. Der Server
+// (briefingContract.oeffnendeHelmutQuelle) laesst Vorgaenge ohne solche Quelle gar
+// nicht mehr in den Stand; leer nur bei zwischengespeicherten Alt-Payloads.
+function hstandQuelleHref(item) {
+  const url = item && item.sourceUrl;
+  if (!url || !/^https:\/\//i.test(String(url))) return "";
+  if (isGoogleArticleProxy(url) || isLikelyPublisherHomepage(url)) return "";
+  return url;
+}
+
 function renderHstandPrimary(state) {
   const p = state.primaryItem;
   if (!p || typeof p !== "object") return "";
@@ -6752,6 +6771,7 @@ function renderHstandPrimary(state) {
   const chips = hstandContextChips(p.contextChips, 3);
   const count = Number(p.sourceCount);
   const when = hstandWhen(p.lastUpdated);
+  const quelle = hstandQuelleHref(p);
   return `
     <section class="hstand-card hstand-primary" aria-label="Aktueller Vorgang">
       ${hstandKicker(HELMUT_ICON_DOC, "Aktueller Vorgang", "accent")}
@@ -6762,6 +6782,7 @@ function renderHstandPrimary(state) {
         <div class="hstand-metric"><dt><span class="hstand-mk-full">Letzte Aktualisierung</span><span class="hstand-mk-short">Stand</span></dt><dd>${when ? escapeHtml(when) : "—"}</dd></div>
         <div class="hstand-metric"><dt>Qualität</dt><dd>${hstandQuality(p.qualityStatus)}</dd></div>
       </dl>
+      ${quelle ? `<a class="hstand-quelle-link" href="${escapeAttribute(quelle)}" target="_blank" rel="noopener noreferrer">Quelle öffnen${p.sourceName ? ` · ${escapeHtml(p.sourceName)}` : ""}</a>` : ""}
     </section>`;
 }
 
@@ -6803,6 +6824,8 @@ function renderHstandItems(state) {
     // Das Datum bleibt IMMER das tatsaechliche Datum der Meldung (Vertragspunkt 3):
     // eine Meldung vom spaeten Vorabend steht als "Gestern, 22:40" im heutigen Briefing.
     const zeit = hstandText(i.zeitLabel) || hstandWhen(i.lastUpdated);
+    // Quellenpflicht: auch die weiteren Vorgaenge tragen ihren oeffnenden Beleg.
+    const quelle = hstandQuelleHref(i);
     return `
       <li class="hstand-rel">
         <div class="hstand-rel-head">
@@ -6811,6 +6834,7 @@ function renderHstandItems(state) {
         </div>
         ${zeit ? `<p class="hstand-rel-when">${escapeHtml(zeit)}</p>` : ""}
         ${why ? `<p class="hstand-rel-why">${escapeHtml(why)}</p>` : ""}
+        ${quelle ? `<a class="hstand-rel-quelle" href="${escapeAttribute(quelle)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : ""}
       </li>`;
   };
   // Ohne Frischeklassen (Altpfad/Vertrag aus) unveraendert EINE Liste.
@@ -8802,10 +8826,33 @@ function draftReadingTime(text) {
   return min < 1 ? "30 Sek. Lesezeit" : `${min} Min. Lesezeit`;
 }
 
-// Echte Quellenanzahl dieser Entscheidung. KEIN erfundenes Minimum mehr
-// (frueher Math.max(n, 3) -> "Basiert auf 3 Quellen" auch bei 0 echten Quellen).
+// Sichtbare, oeffnende Quellenbasis eines Entwurfs (Quellenpflicht-Sprint 2026-08-22):
+// primarySource + sources, dedupliziert nach URL. Die Primaerquelle IST server-seitig
+// sources[0] (briefingContract.toItem/toRecommendation) — die fruehere Addition
+// `sources.length + (primarySource ? 1 : 0)` zaehlte sie deshalb doppelt. Es zaehlt
+// und erscheint nur, was eine echte oeffnende Artikel-URL traegt (sourceHref: https,
+// kein Google-Proxy, keine Herausgeber-Startseite, linkType nicht publisher/missing).
+function officeDraftSources(decision) {
+  if (!decision) return [];
+  const raw = [decision.primarySource, ...(decision.sources || [])].filter(Boolean);
+  const out = [];
+  const seen = new Set();
+  for (const source of raw) {
+    const href = sourceHref(source);
+    if (!href) continue;
+    const key = href.replace(/\/+$/, "").toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({ ...source, href });
+  }
+  return out;
+}
+
+// Echte Quellenanzahl dieser Entscheidung = exakt die Laenge der sichtbaren,
+// deduplizierten Quellenliste. KEIN erfundenes Minimum (frueher Math.max(n, 3)),
+// KEINE Doppelzaehlung der Primaerquelle mehr.
 function draftSourceCount(decision) {
-  return (decision.sources?.length || 0) + (decision.primarySource ? 1 : 0);
+  return officeDraftSources(decision).length;
 }
 
 function officeBriefingTime() {
@@ -8979,12 +9026,46 @@ function renderOfficeDraftCard(decision, format, index = 0) {
   `;
 }
 
+// Ehrliches Quellen-Datum: ohne belegtes Veroeffentlichungsdatum bleibt der Wert leer
+// (kein "Heute"-Fallback, kein 1.1.1970 aus new Date(null)).
+function officeSourceDateLabel(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long" }).format(d);
+}
+
+// Sichtbare, anklickbare Quellenliste des Entwurfs (Quellenpflicht-Sprint):
+// dedupliziert, nur oeffnende Artikel-URLs; ohne oeffnende Quelle ein ehrlicher
+// Hinweis statt einer leeren Behauptung.
+function renderOfficeDraftSources(sourceList) {
+  const rows = sourceList.map((s) => {
+    const dateLabel = officeSourceDateLabel(s.publishedAt);
+    return `
+      <li class="buero-source-row">
+        <a class="buero-source-link" href="${escapeAttribute(s.href)}" target="_blank" rel="noopener noreferrer">
+          <span class="buero-source-name">${escapeHtml(s.sourceName || s.name || "Quelle")}</span>
+          ${s.title ? `<span class="buero-source-title">${escapeHtml(compactText(s.title, 90))}</span>` : ""}
+          <span class="buero-source-meta">${dateLabel ? `${escapeHtml(dateLabel)} · ` : ""}Artikel öffnen</span>
+        </a>
+      </li>`;
+  }).join("");
+  return `
+    <section class="buero-detail-sources" aria-label="Quellen dieses Entwurfs">
+      <h2 class="buero-sources-title">Quellen (${sourceList.length})</h2>
+      ${sourceList.length
+        ? `<ul class="buero-sources-list">${rows}</ul>`
+        : `<p class="buero-sources-empty">Für diesen Entwurf liegt keine öffnbare Originalquelle vor. Prüfe die Aussagen vor einer Veröffentlichung selbst.</p>`}
+    </section>`;
+}
+
 function renderOfficeDraftDetail() {
   if (!selectedOfficeDraft) { currentView = "office"; return renderOfficeView(); }
   const { decision, format, text } = selectedOfficeDraft;
   const meta = OFFICE_FORMAT_META[format.id] || { formatLabel: format.label, typeLabel: format.label.toUpperCase(), einordnung: "", defaultStatus: "Zum Bereithalten", lineCheck: "", qualityTone: "Sachlich, klar, politisch anschlussfähig", qualityUsage: "Presse und Medien", iconBg: "#F0F0F0", iconColor: "#555" };
   const time = officeBriefingTime();
-  const sources = draftSourceCount(decision);
+  const sourceList = officeDraftSources(decision);
+  const sources = sourceList.length;
   const status = officeCardStatus(decision, format);
   const statusClass = draftStatusClass(status);
   const paragraphs = String(text).split(/\n{1,}/).map((p) => p.trim()).filter(Boolean);
@@ -9019,6 +9100,7 @@ function renderOfficeDraftDetail() {
       <div class="buero-detail-body">
         ${paragraphs.map((p) => `<p>${escapeHtml(p)}</p>`).join("")}
       </div>
+      ${renderOfficeDraftSources(sourceList)}
       <div class="buero-quality-check">
         <div class="buero-quality-row">
           <span class="buero-quality-label">Ton</span>
@@ -9340,8 +9422,10 @@ function renderRadarInner(state) {
 function radarStateHasContent(state) {
   if (!state) return false;
   const env = state.environment || {};
-  const envCount = (env.party || []).length + (env.constituency || []).length + (env.committees || []).length;
-  return Boolean((state.mentions || []).length || envCount || (state.dynamics || []).length || (state.articles || []).length);
+  // Quellenpflicht: nur Items mit oeffnender Artikelquelle zaehlen als Inhalt —
+  // sonst zeigt der Radar den ehrlichen Gesamt-Leerzustand statt leerer Bereiche.
+  const envCount = radarOpenableItems(env.party).length + radarOpenableItems(env.constituency).length + radarOpenableItems(env.committees).length;
+  return Boolean(radarOpenableItems(state.mentions).length || envCount || radarOpenableItems(state.dynamics).length || radarOpenableItems(state.articles).length);
 }
 
 // --- Kopf -------------------------------------------------------------------
@@ -9349,8 +9433,11 @@ function renderRadarHeader(state) {
   const status = (state && state.status) || "empty";
   const fresh = status === "fresh";
   const updated = state && state.lastUpdated;
+  // Quellenpflicht-Sprint: lastUpdated ist nur noch das juengste BELEGTE
+  // Veroeffentlichungsdatum der angezeigten Quellen. Gibt es Inhalte, aber kein
+  // belegtes Datum, sagt der Kopf das ehrlich — nicht "Noch keine Radar-Daten".
   const label = !updated
-    ? (previewMode ? "Vorschau" : "Noch keine Radar-Daten")
+    ? (previewMode ? "Vorschau" : (radarStateHasContent(state) ? "Ohne belegtes Quellendatum" : "Noch keine Radar-Daten"))
     : (fresh ? `Aktualisiert ${radarUpdatedLabel(updated)}` : `Letzter Stand: ${radarUpdatedLabel(updated)}`);
   // Stoerungswahrheit: ein fehlgeschlagener Refresh bleibt nicht mehr stumm —
   // ruhige Hinweiszeile mit dem Zeitstempel des letzten erfolgreichen Stands
@@ -9397,7 +9484,7 @@ function radarHighlight(text) {
 
 // --- Über dich (direkte Erwähnungen) ----------------------------------------
 function renderRadarAboutYou(state) {
-  const all = state.mentions || [];
+  const all = radarOpenableItems(state.mentions);
   const expanded = radarMentionsExpanded;
   const shown = expanded ? all : all.slice(0, 3);
   const body = all.length
@@ -9442,7 +9529,7 @@ function renderRadarEnvironment(state) {
     return `<button class="radar2-seg ${isActive ? "is-active" : ""}" type="button" role="tab" aria-selected="${isActive}" data-radar-segment="${s.key}">${escapeHtml(s.label)}</button>`;
   }).join("");
   const seg = RADAR_SEGMENTS.find((s) => s.key === active);
-  const items = env[active] || [];
+  const items = radarOpenableItems(env[active]);
   // Kuratierte Auswahl statt Feed: standardmäßig max. 3 pro Segment; der Rest ist eine
   // ECHTE erweiterte Liste (Daten liegen vor) hinter einem segmentspezifischen Button.
   const RADAR_ENV_PREVIEW = 3;
@@ -9478,7 +9565,7 @@ function renderRadarEnvRow(e) {
 
 // --- Neue Dynamiken ---------------------------------------------------------
 function renderRadarDynamics(state) {
-  const all = state.dynamics || [];
+  const all = radarOpenableItems(state.dynamics);
   const expanded = radarDynamicsExpanded;
   const shown = expanded ? all : all.slice(0, 3);
   const body = all.length
@@ -9510,7 +9597,7 @@ function renderRadarDynamicCard(d) {
 
 // --- Alle relevanten Artikel + Filter ---------------------------------------
 function renderRadarArticles(state) {
-  const all = state.articles || [];
+  const all = radarOpenableItems(state.articles);
   // Nur Filter mit >=1 Treffer anzeigen (kein toter Filter); "Alle" immer.
   const available = RADAR_FILTERS.filter((f) => f.key === "all" || all.some((a) => radarArticleMatchesFilter(a, f.key)));
   const activeKey = available.some((f) => f.key === radarFilter) ? radarFilter : "all";
@@ -9672,10 +9759,23 @@ function radarSourceBadge(item, opts = {}) {
   return `<span class="${cls}" aria-hidden="true">${initial}</span>`;
 }
 
-// Nur echte http(s)-Quellen öffnen (kein toter Link). Server kuratiert canonical/best.
+// QUELLENPFLICHT (P0-Schliessungssprint 2026-08-22): Radar verlinkt nur eine echte
+// OEFFNENDE Artikelquelle — https, kein Google-Proxy, keine bloße Herausgeber-
+// Startseite. Items ohne solche Quelle werden von den Bereichs-Renderern gar nicht
+// mehr als Karte gezeigt (ehrlicher Leerzustand); die nolink-Zweige in
+// radarCardWrap/radarRowWrap bleiben nur als defensive Reserve.
 function radarItemHref(item) {
   const url = item && item.sourceUrl;
-  return url && isHttpUrl(url) ? url : "";
+  if (!url || !/^https:\/\//i.test(String(url))) return "";
+  if (isGoogleArticleProxy(url) || isLikelyPublisherHomepage(url)) return "";
+  return url;
+}
+
+// Sichtbare (quellenpflichtige) Teilmenge einer Radar-Liste: nur Items mit
+// oeffnender Artikelquelle. Der Server erzwingt dieselbe Pflicht (radarState.js,
+// oeffnendeArtikelUrl) — dieser Filter ist die defensive Client-Paritaet.
+function radarOpenableItems(list) {
+  return (Array.isArray(list) ? list : []).filter((item) => Boolean(radarItemHref(item)));
 }
 
 function radarUpdatedLabel(iso) {
@@ -9688,6 +9788,9 @@ function radarUpdatedLabel(iso) {
 }
 
 function radarTime(iso) {
+  // Ohne belegtes Veroeffentlichungsdatum bleibt die Zeitangabe leer (Quellenpflicht-
+  // Sprint) — new Date(null) waere sonst der 1.1.1970, kein ehrlicher Leerwert.
+  if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   return radarIsToday(d)
@@ -11369,15 +11472,23 @@ function bindActions() {
       const key = card.dataset.officeOpen;
       const formatId = card.dataset.officeFormat;
       const format = OFFICE_FORMATS.find((f) => f.id === formatId);
-      let decision;
-      try { decision = JSON.parse(card.dataset.officeDecision || "{}"); } catch (_) { decision = {}; }
+      let cardDecision;
+      try { cardDecision = JSON.parse(card.dataset.officeDecision || "{}"); } catch (_) { cardDecision = {}; }
+      // Volle Entscheidung aufloesen: die Karte traegt nur { id, signalId, title } —
+      // Quellenliste und -zaehler der Detailansicht brauchen sources/primarySource
+      // aus der globalen Entscheidungs-Menge. Ohne Treffer bleibt das schlanke
+      // Kartenobjekt (Zaehler ehrlich 0, kein erfundener Wert).
+      const decision = decisions.find((d) =>
+        (cardDecision.id && d.id === cardDecision.id)
+        || (cardDecision.signalId && d.signalId === cardDecision.signalId)
+      ) || cardDecision;
       const resolvedFormat = format || { id: formatId, label: formatId, icon: "ti-file", channel: "press" };
       const resolvedMeta = OFFICE_FORMAT_META[formatId] || {};
       const cachedValue = officeDrafts[key];
       const cachedText = officeDraftText(cachedValue);
       const hasValidCached = isValidDraft(cachedText);
       const text = (hasValidCached ? cachedText : null) || channelFallbackStatement(
-        decisions.find((d) => d.id === decision.id || d.signalId === decision.signalId) || decision,
+        decision,
         resolvedFormat.channel || "press"
       );
       // Herkunft mitgeben, damit die Detailansicht ehrlich kennzeichnet.
@@ -12883,7 +12994,10 @@ function sourceLinkLabel(source) {
 }
 
 function isDirectArticleHref(url, source = {}) {
-  if (!/^https?:\/\//i.test(String(url || ""))) return false;
+  // Quellenpflicht-Sprint 2026-08-22: nur https zaehlt als echte oeffnende Quelle
+  // (vorher auch http). Klartext-http-Quellen kommen in den Daten nicht vor;
+  // eine Quelle ohne https-URL verschwindet ehrlich statt unsicher zu verlinken.
+  if (!/^https:\/\//i.test(String(url || ""))) return false;
   if (String(url).includes("example.local") || isGoogleArticleProxy(url)) return false;
   if (source?.linkType && source.linkType !== "direct") return false;
   return !isLikelyPublisherHomepage(url, source);

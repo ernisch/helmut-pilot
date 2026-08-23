@@ -97,8 +97,14 @@ check("Voller Name (İnal) -> Über dich (v1)", mv.includes("v1"));
 check("Namensvariante 'Deniz Inal' -> Über dich (v2)", mv.includes("v2"));
 check("Reine Partei-Erwähnung ist KEINE persönliche Erwähnung (v3 nicht in mentions)", !mv.includes("v3"));
 check("Fremder Politiker/Partei -> keine Erwähnung (v6 nicht in mentions)", !mv.includes("v6"));
-check("Jede Erwähnung trägt Quelle + echte URL + Zeit + mentionType",
-  state.mentions.every((m) => m.sourceUrl && /^https?:\/\//.test(m.sourceUrl) && m.publishedAt && m.mentionType));
+// Quellenpflicht-Sprint 2026-08-22: publishedAt traegt NUR noch das belegte
+// Veroeffentlichungsdatum der Quelle. Die Fixtures hier haben keins (best_source_url-
+// Fallback ohne Dokumente) — der Wert bleibt ehrlich leer statt Helmuts
+// Analysedatum (updated_at) auszugeben.
+check("Jede Erwähnung trägt Quelle + echte öffnende https-URL + mentionType",
+  state.mentions.every((m) => m.sourceUrl && /^https:\/\//.test(m.sourceUrl) && m.mentionType));
+check("Ohne belegtes Quellendatum bleibt publishedAt leer (nie das Analysedatum)",
+  state.mentions.every((m) => m.publishedAt == null));
 check("Erwähnung mit Risiko -> mentionType 'criticism' + Ton 'critical'",
   (state.mentions.find((m) => m.vorgangId === "v2") || {}).mentionType === "criticism" &&
   (state.mentions.find((m) => m.vorgangId === "v2") || {}).mentionTone === "critical");
@@ -217,7 +223,20 @@ check("Ausschuss-Artikel trägt relationType 'committee' (v4)",
 }
 
 // --- 7) Status / Aktualitaet ------------------------------------------------
-check("Status 'fresh' bei heutigem Datenstand", state.status === "fresh");
+// Quellenpflicht-Sprint: Frische bemisst sich am BELEGTEN Veroeffentlichungsdatum
+// der Quellen. Die Haupt-Fixtures haben keins -> lastUpdated null -> ehrlich 'stale'.
+check("Ohne belegtes Quellendatum: lastUpdated leer und Status 'stale' (kein falsches 'Aktuell')",
+  state.lastUpdated == null && state.status === "stale");
+{
+  const freshState = radarState.buildCurrentRadarState({
+    profile, kosById: { k3: koParty },
+    decisions: [{ knowledge_object_id: "k3", vorgang_id: "v3", score: 60, matched_features: [{ type: "partei", value: "Die Linke" }] }],
+    knowledgeObjects: [koParty],
+    sourcesByVorgang: { v3: [{ id: "d1", url: "https://media.de/artikel-heute", source_type: "media", published_at: iso(3600e3) }] },
+    now: nowDate
+  });
+  check("Status 'fresh' bei heutigem BELEGTEM Quellendatum", freshState.status === "fresh");
+}
 {
   const oldKo = { ...koParty, updated_at: iso(10 * 864e5), created_at: iso(10 * 864e5) };
   const stale = radarState.buildCurrentRadarState({

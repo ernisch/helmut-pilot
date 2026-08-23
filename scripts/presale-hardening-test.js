@@ -33,7 +33,9 @@ function check(name, cond, detail = "") {
 
     // --- Lage: modern-first, Legacy beigemischt ---------------------------
     const lage = require("../lib/helmut/lage");
-    const withSrc = { sources: [{ name: "Tagesschau" }], sourceCount: 1 };
+    // Quellenpflicht-Sprint 2026-08-22: "belegt" verlangt mindestens EINE Quelle mit
+    // echter oeffnender https-URL (Name/Zaehler allein genuegen nicht mehr).
+    const withSrc = { sources: [{ name: "Tagesschau", url: "https://www.tagesschau.de/inland/beispiel-101.html" }], sourceCount: 1 };
     const modern = (id) => ({ id, displaySummary: "S", whyRelevant: "W", recommendation: "R", ...withSrc });
     const legacy = (id) => ({ id, displaySummary: "", whyRelevant: "", recommendation: "", ...withSrc });
     const out = lage.selectLageVorgaenge([legacy("a"), modern("b"), legacy("c")]);
