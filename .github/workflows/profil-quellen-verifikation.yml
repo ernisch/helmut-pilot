@@ -1,0 +1,88 @@
+name: Profil-Quellen-Verifikation (BE/BB, PR 267)
+
+# =============================================================================
+# Bytegenaue, REIN LESENDE Verifikation der 20 amtlichen Mandatsprofile aus
+# daten/mandatsprofile-berlin-brandenburg-2026-08-24.json gegen die echten
+# amtlichen Profilseiten. Sicherheitsmuster: sprint9b-verify.yml.
+# =============================================================================
+# SICHERHEIT / GRENZEN (bewusst):
+#   - KEINE Secrets, KEINE Supabase-/Vercel-/AWS-Verbindung, KEIN Deployment,
+#     KEIN Production-Zugriff. permissions: contents: read — schreibt NICHTS
+#     ins Repo, importiert und aktiviert NICHTS.
+#   - Abgerufen werden AUSSCHLIESSLICH die 20 parlament-profil-URLs des Pakets;
+#     erlaubte Hosts nur (www.)parlament-berlin.de und (www.)landtag.brandenburg.de
+#     — technisch erzwungen in scripts/profil-quellen-verifikation.js (auch fuer
+#     Redirect-Ziele). TLS bleibt an; KEIN Umgehen von Zugriffssperren.
+#   - Ergebnis je Profil genau eines: bestaetigt / abweichung / nicht_eindeutig /
+#     nicht_erreichbar. Nicht erreichbar oder nicht eindeutig gilt NIE als bestaetigt.
+#   - Artefakte: JSON-Vollbericht + Markdown-Zusammenfassung. Keine vollstaendigen
+#     HTML-Seiten im Repository; ausserhalb der Artefakte wird nichts geschrieben.
+#   - NICHT als Required Check setzen (CLAUDE.md §6: pfadgefilterte Workflows nie
+#     als Pflicht-Check).
+
+on:
+  # Laeuft aus dem PR-Head, wenn der PR die Verifikationsdateien oder das Paket
+  # betrifft. Hinweis: GitHub wertet die Pfadfilter gegen den GESAMT-Diff des PR
+  # aus — jeder weitere Push auf einen betroffenen PR loest daher einen Lauf aus.
+  pull_request:
+    paths:
+      - ".github/workflows/profil-quellen-verifikation.yml"
+      - "scripts/profil-quellen-verifikation.js"
+      - "scripts/profil-quellen-verifikation-test.js"
+      - "daten/mandatsprofile-berlin-brandenburg-2026-08-24.json"
+  workflow_dispatch: {}
+
+# Minimalrechte: nur lesen. Kein Repo-Write, keine Pakete, nichts.
+permissions:
+  contents: read
+
+concurrency:
+  group: profil-quellen-verifikation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verifikation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout (PR-Head)
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Offline-Selbsttest der Auswertungslogik VOR jedem Netzabruf.
+      - name: Auswertungslogik testen (offline, kein Netz)
+        run: node scripts/profil-quellen-verifikation-test.js
+
+      # Echter Abruf der 20 amtlichen Profilseiten. Keine Abhaengigkeiten, keine Env,
+      # keine Secrets. Exit 1, wenn nicht alle 20 bestaetigt sind (ehrliches Rot).
+      - name: 20 amtliche Profilseiten verifizieren (echter Abruf)
+        run: >
+          node scripts/profil-quellen-verifikation.js
+          --paket daten/mandatsprofile-berlin-brandenburg-2026-08-24.json
+          --out-json profil-verifikation-bericht.json
+          --out-md profil-verifikation-zusammenfassung.md
+
+      - name: Zusammenfassung in die Job-Summary schreiben
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f profil-verifikation-zusammenfassung.md ]; then
+            cat profil-verifikation-zusammenfassung.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Kein Bericht erzeugt (Abruf-Schritt vorzeitig gescheitert)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Artefakte hochladen (JSON + Zusammenfassung)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: profil-quellen-verifikation
+          path: |
+            profil-verifikation-bericht.json
+            profil-verifikation-zusammenfassung.md
+          if-no-files-found: warn
+          retention-days: 30
