@@ -619,9 +619,11 @@ vollständige Abfluss ist ohne Vercel-Cron und ohne manuelle Testpumpe belegt
 freizuschaltenden Entwicklungs- und Notfallweg zurückgestuft — **für den siebentägigen
 Nachweis mit den fünf bestehenden Mandaten ist er allerdings ausreichend und empfohlen; AWS
 ist dafür nicht technisch notwendig** (Ergänzung 2026-08-24). Seit demselben Datum meldet
-`/api/ops/jobqueue` im Feld `ereignisbetrieb`, ob der Ereignis-Antrieb **tatsächlich** bereit
-ist (Transport verfügbar, Klassengrenzen an) — `antrieb: "ereignis"` allein ist kein
-Bereitschaftsbeleg. Details und Grenzen:
+`/api/ops/jobqueue` im Feld `ereignisbetrieb`, ob der Ereignis-Antrieb **konfigurationsbereit**
+ist (Transportkonfiguration vollständig, Klassengrenzen an) — `antrieb: "ereignis"` allein ist
+kein Bereitschaftsbeleg, und `bereit: true` ist **kein Zustellnachweis**: die Prüfung macht
+keinen Netzaufruf. Derselbe Vorlauf riegelt seit 2026-08-24/2 auch den Versandpfad ab: nicht
+bereit ⇒ keine Outbox-Vergabe, kein Versuch, kein Weckruf. Details und Grenzen:
 [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md)
 §18–§27.
 

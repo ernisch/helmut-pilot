@@ -319,7 +319,10 @@ async function main() {
   await check("7.3 Ein Sendefehler wird als Fehlversuch verbucht (Absicht faellt zurueck, nie verloren)", async () => {
     const attrappe = outboxAttrappe([{ outboxId: "o1", jobId: UUID, schemaVersion: 1, attempts: 1 }]);
     const bilanz = await dispatch.versendeAbsichten({
-      env: { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue" },
+      // `HELMUT_KLASSEN_GRENZEN=on` gehoert seit der Korrekturrunde 2026-08-24/2 zur
+      // vollstaendigen Vorpruefung: ohne die verteilten Grenzen weist die Verbraucher-Route
+      // jedes Wecksignal mit 409 ab, deshalb vergibt der Dispatcher dann gar nicht erst.
+      env: { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_KLASSEN_GRENZEN: "on", HELMUT_JOB_DISPATCH_MODE: "queue" },
       deps: {
         ...attrappe,
         transport: { name: "test", verfuegbar: true, sende: async () => ({ ok: false, grund: "http-503" }) }
@@ -335,7 +338,8 @@ async function main() {
   // Eigenschaft des SELBSTWECKS (Tuerklingel) — er muss hier deshalb ausdruecklich gewaehlt
   // werden. Genau das ist die Absicht: wer buendeln will, waehlt den Selbstweck bewusst.
   const QUEUE_ENV = {
-    HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue",
+    HELMUT_SCALABLE_PIPELINE: "on", HELMUT_KLASSEN_GRENZEN: "on",
+    HELMUT_JOB_DISPATCH_MODE: "queue",
     HELMUT_JOB_TRANSPORT: "selbstweck",
     HELMUT_WORKER_WAKE_URL: GUTE_URL, CRON_SECRET: "s", ...VERTRAUEN
   };
@@ -570,8 +574,14 @@ async function main() {
   // stimmten — auch wenn der Transport gar nicht versenden konnte. Der Betriebsstatus sah
   // damit nach Ereignisbetrieb aus, obwohl ausschliesslich der Cron-Rueckfallweg trug.
   // `aktivierungsVorpruefung` trennt Angefordertes, Wirksames, Transport, Verfuegbarkeit,
-  // Grund und Production-Bereitschaft — und ist die Vorpruefung vor jeder Umschaltung.
-  abschnitt("13 · Aktivierungsvorpruefung: neun Zustaende, maschinenlesbar unterschieden");
+  // Grund und KONFIGURATIONSBEREITSCHAFT — und ist die Vorpruefung vor jeder Umschaltung.
+  //
+  // BEDEUTUNG VON `bereit` (Korrekturrunde 2026-08-24/2): die Vorpruefung macht KEINEN
+  // Netzaufruf. Sie stellt ausschliesslich fest, ob die Konfiguration fuer einen spaeteren
+  // echten Versuch vollstaendig und intern widerspruchsfrei ist. Sie sagt NICHTS darueber,
+  // ob der Transport gerade zustellen kann, ob das Ziel erreichbar ist, ob die Zugangsdaten
+  // beim Empfaenger wirken oder ob je ein echter Weckruf stattfand.
+  abschnitt("13 · Aktivierungsvorpruefung: neun Konfigurationszustaende, maschinenlesbar unterschieden");
   const ANKER = { VERCEL_PROJECT_PRODUCTION_URL: "helmut-pilot.vercel.app" };
   const WECK_OK = "https://helmut-pilot.vercel.app/api/cron/worker-weck";
   const SELBSTWECK = {
@@ -591,7 +601,7 @@ async function main() {
         assert.strictEqual(v.bereit, false);
         assert.ok(v.befunde.some((b) => /kein-ereignis-antrieb:cron-queue/.test(b)));
       }],
-    ["13.2 Queue-Modus mit funktionierendem Selbstweck: bereit, keine Befunde",
+    ["13.2 Queue-Modus mit vollstaendig konfiguriertem Selbstweck: konfigurationsbereit, keine Befunde",
       SELBSTWECK,
       (v) => {
         assert.strictEqual(v.antrieb, "ereignis");
@@ -600,25 +610,25 @@ async function main() {
         assert.strictEqual(v.bereit, true);
         assert.deepStrictEqual(v.befunde, []);
       }],
-    ["13.3 Queue-Modus mit FEHLENDEM Weckziel: nicht bereit, Variablenname im Grund",
+    ["13.3 Queue-Modus mit FEHLENDEM Weckziel: nicht konfigurationsbereit, Variablenname im Grund",
       { ...SELBSTWECK, HELMUT_WORKER_WAKE_URL: "" },
       (v) => {
         assert.strictEqual(v.bereit, false);
         assert.match(String(v.transport.grund), /weckziel-fehlt \(HELMUT_WORKER_WAKE_URL\)/);
       }],
-    ["13.4 Queue-Modus mit UNGUELTIGEM Weckziel: nicht bereit, fremder Host benannt",
+    ["13.4 Queue-Modus mit UNGUELTIGEM Weckziel: nicht konfigurationsbereit, fremder Host benannt",
       { ...SELBSTWECK, HELMUT_WORKER_WAKE_URL: "https://angreifer.example.com/api/cron/worker-weck" },
       (v) => {
         assert.strictEqual(v.bereit, false);
         assert.match(String(v.transport.grund), /fremder-host/);
       }],
-    ["13.5 Queue-Modus ohne Production-Freigabe des Selbstwecks: geschlossen nicht bereit",
+    ["13.5 Queue-Modus ohne Production-Freigabe des Selbstwecks: geschlossen nicht konfigurationsbereit",
       { ...SELBSTWECK, HELMUT_SELBSTWECK_ERLAUBT: "", VERCEL_ENV: "production" },
       (v) => {
         assert.strictEqual(v.bereit, false);
         assert.match(String(v.transport.grund), /selbstweck-in-production-gesperrt/);
       }],
-    ["13.6 Queue-Modus ohne Vertrauensanker (lokal): nicht bereit",
+    ["13.6 Queue-Modus ohne Vertrauensanker (lokal): nicht konfigurationsbereit",
       { ...SELBSTWECK, VERCEL_PROJECT_PRODUCTION_URL: "", VERCEL_URL: "", VERCEL_BRANCH_URL: "" },
       (v) => {
         assert.strictEqual(v.bereit, false);
@@ -632,10 +642,10 @@ async function main() {
         assert.strictEqual(v.bereit, false);
         assert.match(String(v.transport.grund), /sqs-queue-url-fehlt \(HELMUT_SQS_QUEUE_URL\)/);
       }],
-    ["13.8 Fehlende Klassengrenzen: Transport verfuegbar, Ereignisbetrieb trotzdem NICHT bereit",
+    ["13.8 Fehlende Klassengrenzen: Transport konfiguriert, Ereignisbetrieb trotzdem NICHT bereit",
       { ...SELBSTWECK, HELMUT_KLASSEN_GRENZEN: "" },
       (v) => {
-        assert.strictEqual(v.transport.verfuegbar, true, "der Transport selbst ist in Ordnung");
+        assert.strictEqual(v.transport.verfuegbar, true, "die Transportkonfiguration selbst ist vollstaendig");
         assert.strictEqual(v.klassenGrenzen, false);
         assert.strictEqual(v.bereit, false, "ohne Klassengrenzen weist die Route jedes Signal ab");
         assert.ok(v.befunde.some((b) => /klassengrenzen-aus/.test(b)));
@@ -654,6 +664,23 @@ async function main() {
   for (const [name, env, pruefe] of FAELLE) {
     await check(name, () => pruefe(dispatch.aktivierungsVorpruefung(env, {})));
   }
+  await check("13.10a `bereit` traegt seine Bedeutung mit: Konfiguration, kein Zustellnachweis", () => {
+    const v = dispatch.aktivierungsVorpruefung(SELBSTWECK, {});
+    assert.strictEqual(v.bereit, true);
+    assert.strictEqual(v.bereitBedeutung, dispatch.BEREIT_BEDEUTUNG);
+    assert.match(v.bereitBedeutung, /konfigurationsbereit/);
+    assert.match(v.bereitBedeutung, /KEIN Zustellnachweis/);
+  });
+  await check("13.10b Die Vorpruefung macht KEINEN Netzaufruf (sie kann Zustellung nicht kennen)", () => {
+    let netzAufrufe = 0;
+    const v = dispatch.aktivierungsVorpruefung(SELBSTWECK, {
+      fetch: async () => { netzAufrufe += 1; return { ok: true, status: 200 }; },
+      sqsSende: async () => { netzAufrufe += 1; }
+    });
+    assert.strictEqual(v.bereit, true);
+    assert.strictEqual(netzAufrufe, 0,
+      "eine Konfigurationspruefung darf nie klingeln — sonst waere sie ein Weckruf");
+  });
   await check("13.10 Der Status gibt WEDER Secret NOCH Adresse NOCH Hostnamen aus", () => {
     const text = JSON.stringify(dispatch.aktivierungsVorpruefung(SELBSTWECK, {}));
     assert.ok(!text.includes("streng-geheim"), "kein CRON_SECRET im Status");
@@ -689,7 +716,8 @@ async function main() {
   await check("14.2 Mit Warteschlange laeuft derselbe Aufruf wie bisher durch", async () => {
     let netzAufrufe = 0;
     const bilanz = await dispatch.versendeAbsichten({
-      env: { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "queue",
+      env: { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_KLASSEN_GRENZEN: "on",
+        HELMUT_JOB_DISPATCH_MODE: "queue",
         HELMUT_JOB_TRANSPORT: "selbstweck", HELMUT_SELBSTWECK_ERLAUBT: "on",
         HELMUT_WORKER_WAKE_URL: WECK_OK, CRON_SECRET: "s", ...ANKER },
       deps: {
@@ -700,6 +728,125 @@ async function main() {
     });
     assert.strictEqual(bilanz.versendet, 1);
     assert.strictEqual(netzAufrufe, 1);
+  });
+
+  // ══ 15 · DER VOLLSTAENDIGE VORLAUF STOPPT VOR DER ERSTEN VERGABE ══════════════════════════
+  // BELEGTE LUECKE (Korrekturrunde 2026-08-24/2): der Riegel in §14 prueft nur den ANTRIEB.
+  // Fehlten die verteilten Klassengrenzen, lief der Dispatcher weiter, VERGAB eine Absicht
+  // (Versuchszaehler + Backoff) und klingelte — waehrend die Verbraucher-Route jedes Signal
+  // mit 409 `klassengrenzen-aus` abweist. Jetzt entscheidet die VOLLSTAENDIGE Vorpruefung.
+  //
+  // Jeder Fall unten beweist dasselbe harte Muster: `naechste` wird NIE gerufen (keine
+  // Vergabe, kein Versuch, kein Backoff), es gibt keinen Netzaufruf, und weder `bestaetige`
+  // noch `zuruecklegen` werden angefasst.
+  abschnitt("15 · Vollstaendiger Aktivierungsvorlauf: nicht bereit ⇒ keine Vergabe, kein Versand");
+
+  const BEREIT_ENV = {
+    HELMUT_SCALABLE_PIPELINE: "on", HELMUT_KLASSEN_GRENZEN: "on",
+    HELMUT_JOB_DISPATCH_MODE: "queue", HELMUT_JOB_TRANSPORT: "selbstweck",
+    HELMUT_SELBSTWECK_ERLAUBT: "on", HELMUT_WORKER_WAKE_URL: WECK_OK,
+    CRON_SECRET: "streng-geheim", ...ANKER
+  };
+
+  // Eine Attrappe, die JEDEN Ablagezugriff und jeden Netzaufruf mitzaehlt.
+  function wachsameDeps(absichten = [{ outboxId: "o1", jobId: UUID, schemaVersion: 1 }]) {
+    const zaehler = { naechste: 0, bestaetige: 0, zuruecklegen: 0, netz: 0 };
+    return {
+      zaehler,
+      deps: {
+        naechste: async () => { zaehler.naechste += 1; return { verfuegbar: true, absichten }; },
+        bestaetige: async () => { zaehler.bestaetige += 1; return { verfuegbar: true, uebernommen: true }; },
+        zuruecklegen: async () => { zaehler.zuruecklegen += 1; return { verfuegbar: true, uebernommen: true }; },
+        fetch: async () => { zaehler.netz += 1; return { ok: true, status: 200 }; },
+        sqsSende: async () => { zaehler.netz += 1; }
+      }
+    };
+  }
+
+  const VORLAUF_FAELLE = [
+    ["15.1 Fehlende Klassengrenzen stoppen VOR `naechste`",
+      { ...BEREIT_ENV, HELMUT_KLASSEN_GRENZEN: "" }, /klassengrenzen-aus/],
+    ["15.2 Fehlender skalierbarer Motor stoppt VOR `naechste`",
+      { ...BEREIT_ENV, HELMUT_SCALABLE_PIPELINE: "" }, /antrieb-bestand/],
+    ["15.3 Nicht verfuegbarer Selbstweck (Production-Sperre) stoppt VOR `naechste`",
+      { ...BEREIT_ENV, HELMUT_SELBSTWECK_ERLAUBT: "", VERCEL_ENV: "production" },
+      /transport-nicht-verfuegbar:selbstweck-in-production-gesperrt/],
+    ["15.4 Voreingestelltes SQS ohne Queue-Adresse stoppt VOR `naechste`",
+      { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_KLASSEN_GRENZEN: "on", HELMUT_JOB_DISPATCH_MODE: "queue" },
+      /transport-nicht-verfuegbar:sqs-queue-url-fehlt/],
+    ["15.5 Ungueltiges Weckziel (fremder Host) stoppt VOR `naechste`",
+      { ...BEREIT_ENV, HELMUT_WORKER_WAKE_URL: "https://angreifer.example.com/api/cron/worker-weck" },
+      /transport-nicht-verfuegbar:weckziel-fremder-host/]
+  ];
+  for (const [name, env, grundMuster] of VORLAUF_FAELLE) {
+    await check(name, async () => {
+      const w = wachsameDeps();
+      const bilanz = await dispatch.versendeAbsichten({ env, deps: w.deps });
+      assert.strictEqual(bilanz.uebersprungen, true, "der Lauf wird uebersprungen");
+      assert.strictEqual(bilanz.bereit, false, "die Bilanz nennt die fehlende Bereitschaft");
+      assert.match(String(bilanz.grund), grundMuster, `Grund war: ${bilanz.grund}`);
+      assert.ok(Array.isArray(bilanz.befunde) && bilanz.befunde.length > 0, "Befunde liegen bei");
+      assert.strictEqual(bilanz.vergeben, 0);
+      assert.strictEqual(bilanz.versendet, 0);
+      assert.strictEqual(bilanz.fehlgeschlagen, 0);
+      assert.deepStrictEqual(w.zaehler, { naechste: 0, bestaetige: 0, zuruecklegen: 0, netz: 0 },
+        "keine Vergabe, kein Versuch, kein Backoff, kein Netzaufruf, keine Verbuchung");
+      // Kein Geheimnis und keine Adresse im maschinenlesbaren Grund.
+      const text = `${bilanz.grund} ${(bilanz.befunde || []).join(" ")}`;
+      assert.ok(!text.includes("streng-geheim"), "kein CRON_SECRET im Grund");
+      assert.ok(!text.includes("angreifer.example.com"), "keine Zieladresse im Grund");
+    });
+  }
+
+  await check("15.6 Bereiter Selbstweck durchlaeuft denselben Weg wie bisher", async () => {
+    const w = wachsameDeps();
+    const bilanz = await dispatch.versendeAbsichten({ env: BEREIT_ENV, deps: w.deps });
+    assert.strictEqual(bilanz.uebersprungen, false);
+    assert.strictEqual(bilanz.transport, "selbstweck");
+    assert.strictEqual(bilanz.vergeben, 1);
+    assert.strictEqual(bilanz.versendet, 1);
+    assert.strictEqual(bilanz.weckrufe, 1);
+    assert.deepStrictEqual({ naechste: w.zaehler.naechste, netz: w.zaehler.netz, bestaetige: w.zaehler.bestaetige },
+      { naechste: 1, netz: 1, bestaetige: 1 });
+  });
+
+  await check("15.7 Schattenmodus bleibt unveraendert (kein Vorlauf-Riegel, kein Netz)", async () => {
+    const w = wachsameDeps([
+      { outboxId: "o1", jobId: UUID, schemaVersion: 1 },
+      { outboxId: "o2", jobId: UUID2, schemaVersion: 1 }
+    ]);
+    // Bewusst OHNE Klassengrenzen und ohne jede Transportkonfiguration: der Schattenmodus
+    // versendet nichts nach draussen und darf deshalb auch nicht am Vorlauf haengen.
+    const bilanz = await dispatch.versendeAbsichten({
+      env: { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "shadow" }, deps: w.deps
+    });
+    assert.strictEqual(bilanz.uebersprungen, false);
+    assert.strictEqual(bilanz.transport, "schatten");
+    assert.strictEqual(bilanz.versendet, 2);
+    assert.strictEqual(w.zaehler.naechste, 1);
+    assert.strictEqual(w.zaehler.bestaetige, 2);
+    assert.strictEqual(w.zaehler.netz, 0, "im Schatten verlaesst nichts den Prozess");
+  });
+
+  await check("15.8 Vorpruefung und Versand benutzen DIESELBE Transportinstanz", async () => {
+    // Kein Auseinanderlaufen moeglich: wird ein Transport eingereicht, sieht ihn auch die
+    // Vorpruefung; wird keiner eingereicht, baut `versendeAbsichten` genau EINEN.
+    let gebaut = 0;
+    const transport = {
+      name: "einmalig", verfuegbar: true, buendelt: true,
+      sende: async () => { gebaut += 1; return { ok: true }; }
+    };
+    const w = wachsameDeps();
+    const bilanz = await dispatch.versendeAbsichten({
+      env: BEREIT_ENV, deps: { ...w.deps, transport }
+    });
+    assert.strictEqual(bilanz.transport, "einmalig", "der eingereichte Transport wird benutzt");
+    assert.strictEqual(gebaut, 1, "genau ein Sendevorgang ueber genau diese Instanz");
+    assert.strictEqual(w.zaehler.netz, 0, "der eigene Transport ersetzt jeden anderen Weg");
+    // Gegenprobe: dieselbe Instanz entscheidet auch die Vorpruefung.
+    const v = dispatch.aktivierungsVorpruefung(BEREIT_ENV, { transport: { ...transport, verfuegbar: false, grund: "attrappe-zu" } });
+    assert.strictEqual(v.bereit, false);
+    assert.match(String(v.transport.grund), /attrappe-zu/);
   });
 
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);

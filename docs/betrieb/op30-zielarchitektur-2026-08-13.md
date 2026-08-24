@@ -1427,9 +1427,21 @@ Feld `ereignisbetrieb` aus; alle bisherigen Felder (`pfadAktiv`, `antrieb`, `wor
 `wiedervorlage`, `outbox`, Statusvertrag) bleiben unverändert — die kleinste kompatible
 Ergänzung.
 
-`bereit: true` heißt ausschließlich: der Ereignis-Antrieb ist wirksam, die Klassengrenzen sind
-an und der Transport ist **jetzt** versandfähig. Es heißt **nicht**, dass ein
-Production-Nachweis existiert.
+**Was `bereit` heißt — und was nicht (geschärft 2026-08-24/2).** Die Vorprüfung macht **keinen
+Netzaufruf** (testgesichert, §13.10b). Sie kann deshalb ausschließlich die **statische
+Konfigurationsbereitschaft** feststellen:
+
+> `bereit: true` = **die Konfiguration für einen späteren echten Versuch ist vollständig und
+> intern widerspruchsfrei.**
+
+Es heißt ausdrücklich **nicht**, dass der Transport gerade zustellen kann, dass das Weckziel
+erreichbar ist, dass das `CRON_SECRET` beim Empfänger wirkt oder dass je ein echter Weckruf
+stattgefunden hat. Der tatsächliche Transport- und Production-Nachweis bleibt ein **getrennter
+Betriebsbeleg**. Damit die Lesart nicht verloren geht, trägt die Antwort sie selbst mit
+(`bereitBedeutung`); das Feld `bereit` bleibt aus Kompatibilitätsgründen unverändert.
+
+Der Riegel im Dispatcher ist deshalb bewusst **einseitig**: `bereit: false` verhindert sicher
+jeden Versuch, `bereit: true` erlaubt ihn nur.
 
 Neun Fälle sind einzeln testgesichert (`scripts/jobdispatch-vertrag-test.js` §13):
 Schattenmodus · Queue mit funktionierendem Selbstweck · fehlendes Weckziel · ungültiges
@@ -1437,13 +1449,27 @@ Weckziel · fehlende Production-Freigabe · fehlender Vertrauensanker · voreing
 SQS-Transport ohne Queue-Adresse · fehlende Klassengrenzen · fehlender skalierbarer Motor.
 Dazu: die Ausgabe enthält **weder Secret noch Adresse noch Hostnamen** (§13.10).
 
-**Zweite Korrektur — der Aktivierungsvorlauf scheitert geschlossen.** `versendeAbsichten`
-prüfte bisher nur den Modus. Bei `queue` **ohne** `HELMUT_SCALABLE_PIPELINE` (Antrieb
-`bestand`) baute es trotzdem einen echten Transport, **vergab** Versandabsichten (Versuch +
-Backoff) und verbuchte sie als Fehlversuch — während die Verbraucher-Route jedes Signal mit
-409 `antrieb-bestand` abwies. Ergebnis wäre Versuchsverbrauch bis zur Quarantäne für Arbeit,
-die nie hätte zugestellt werden können. Jetzt gilt: kein Ereignis-Antrieb ⇒ kein Versand,
-keine Vergabe, sichtbarer Widerspruch in der Bilanz (§14 des Vertragstests).
+**Zweite Korrektur — der Aktivierungsvorlauf scheitert geschlossen, und zwar vollständig.**
+`versendeAbsichten` prüfte zunächst gar nichts und nach dem ersten Durchgang nur den **Antrieb**.
+Zwei Lücken, beide belegt:
+
+1. Bei `queue` **ohne** `HELMUT_SCALABLE_PIPELINE` (Antrieb `bestand`) baute der Dispatcher
+   trotzdem einen echten Transport, **vergab** Versandabsichten (Versuch + Backoff) und
+   verbuchte sie als Fehlversuch — während die Route jedes Signal mit 409 abwies.
+2. **Nachgereicht am 2026-08-24/2:** fehlten die **Klassengrenzen**, war der Antrieb formal
+   `ereignis` — der Dispatcher vergab eine Absicht und klingelte, obwohl die Route jedes Signal
+   mit 409 `klassengrenzen-aus` abweist und die vollständige Vorprüfung für genau diesen Fall
+   bereits `bereit: false` meldete. Der Versandpfad hörte nur nicht darauf.
+
+**Jetzt entscheidet im Queue-Modus die VOLLSTÄNDIGE Vorprüfung, bevor die erste Absicht vergeben
+wird.** Ist sie nicht bereit, passiert nichts: keine Vergabe, kein Versuchszähler, kein Backoff,
+kein HTTP, kein SQS, keine Bestätigung, keine Fehlverbuchung. Die Bilanz nennt einen bereinigten,
+maschinenlesbaren Grund (`antrieb-…` · `transport-nicht-verfuegbar:…` · `klassengrenzen-aus`)
+plus die Befundliste. Der **Schattenmodus bleibt unberührt** (er versendet nichts nach außen und
+hängt deshalb nicht am Vorlauf), und ein **bereiter** Ereignisbetrieb läuft byte-gleich wie
+zuvor. Vorprüfung und Versand benutzen **dieselbe Transportinstanz** — ein Auseinanderlaufen ist
+strukturell ausgeschlossen. Nachweise: §14 und §15 des Vertragstests (fünf Nichtbereitschaften
+stoppen je **vor** `naechste`, kein Netzaufruf, keine Verbuchung).
 
 ### 27.2 Geschlossener lokaler Ende-zu-Ende-Nachweis des Selbstwecks
 
@@ -1500,22 +1526,31 @@ client disconnects, such as closing a browser tab. **This is an opt-in feature t
 enabled in your project configuration**" — aktiviert wird es über `"supportsCancellation": true`
 je Funktionspfad in `vercel.json`.
 
-**Anwendung auf Helmut.** `vercel.json` setzt `supportsCancellation` **nicht** (testgesichert:
-`scripts/selbstweck-ende-zu-ende-test.js` §12.1 — die Prüfung wird rot, falls jemand die Option
-später einschaltet). Damit gilt amtlich: **Vercel beendet die Ausführung nicht, weil der Sender
-aufgibt.** Was die Dokumentation an dieser Stelle **nicht** ausspricht, ist eine positive
-Zusage „die Funktion läuft nach einem Abbruch garantiert zu Ende". Diese Zusage wird hier
-deshalb **nicht** behauptet.
+**Anwendung auf Helmut — und die Grenze der Aussage (geschärft 2026-08-24/2).** `vercel.json`
+setzt `supportsCancellation` **nicht** (testgesichert: `scripts/selbstweck-ende-zu-ende-test.js`
+§12.1). Was daraus folgt und was **nicht**:
+
+| Belegt | Nicht belegt |
+|---|---|
+| Die Abbruch**unterstützung** ist ein Opt-in und wird ausdrücklich eingeschaltet. | Dass eine Funktion **ohne** diese Einstellung nach einer Client-Trennung garantiert weiterläuft. |
+| Helmut hat sie nicht eingeschaltet. | Dass der Senderabbruch die Vercel-Funktion sicher **nicht** beendet. |
+| Eine spätere Aktivierung macht den Selbstweck-Vertrag erneut prüfpflichtig (der Wächtertest fällt dann auf). | Dass das tatsächliche Plattformverhalten lokal geprüft wäre. |
+
+Die frühere Formulierung an dieser Stelle („damit gilt amtlich: Vercel beendet die Ausführung
+nicht") ging über den Beleg hinaus und ist **zurückgenommen**. **Der Punkt bleibt empirisch
+ungeprüft.**
 
 **Warum der Ausgang trotzdem in beide Richtungen sicher ist.** Ein Abbruch nach dem Absenden
 ist im Code ein **dritter** Ausgang neben Erfolg und Fehlversuch: `unbestaetigt`. Dann wird in
 der Outbox **nichts** verbucht, die Absicht wird zurückgelegt (Status `offen`, gezogener
 Versuch zurückgegeben, 60 s Wartezeit) und der Auftrag bleibt unberührt. Lokal belegt
-(§27.2 §6): der Verbraucher arbeitet nach dem Senderabbruch zu Ende, der Auftrag wird **genau
-einmal** ausgeführt, die erneut zugestellte Absicht läuft ins Leere statt in Doppelarbeit.
-Beendete Vercel die Ausführung doch, wäre die Folge **kein Verlust und keine Doppelarbeit**,
-sondern ein *nicht abgeschlossener* Auftrag, den die ablaufende Lease und der Cron-Rückfallweg
-wieder aufnehmen — der Ereignis-Antrieb käme dann aber nicht voran.
+(§27.2 §6) ist die eine Hälfte: **läuft** der Verbraucher weiter, wird der Auftrag **genau
+einmal** ausgeführt und die erneut zugestellte Absicht läuft ins Leere statt in Doppelarbeit —
+das ist eine Aussage über den Helmut-Code, nicht über Vercel. Beendete Vercel die Ausführung
+doch, wäre die Folge **kein Verlust und keine Doppelarbeit**, sondern ein *nicht abgeschlossener*
+Auftrag, den die ablaufende Lease und der Cron-Rückfallweg wieder aufnehmen — der
+Ereignis-Antrieb käme dann aber nicht voran. Welche der beiden Welten gilt, entscheidet erst ein
+echter Versuch.
 
 **Kein Umbau.** Ein Weg, der die Frage vollständig auflöst, wäre eine sofortige Antwort mit
 Fortsetzung im Hintergrund (`waitUntil` aus `@vercel/functions`). Das ist eine **neue
@@ -1523,13 +1558,39 @@ Anbieterabhängigkeit** und eine Architekturänderung; beides ist in diesem Spri
 Umgesetzt wurde stattdessen die kleinste sichere Änderung: der Wächtertest auf
 `supportsCancellation` plus der Ende-zu-Ende-Beleg des `unbestaetigt`-Pfads.
 
-**Kleinster späterer Vorschauversuch (nicht Teil dieses Sprints, kostenpflichtig nur in
-Rechenzeit):** ein **Preview**-Deployment (nie Production) mit den fünf Werten aus §14 Stufe 2,
-`HELMUT_WORKER_WAKE_URL` auf den Preview-Host, **einem** Weckruf und einem Testauftrag, dessen
-Handler nachweislich länger als `HELMUT_WAKE_TIMEOUT_MS` läuft. Auswertung rein lesend über die
-Logzeile `[cron/worker-weck] …ms worker=… erledigt=…`: erscheint sie nach dem Senderabbruch mit
-`erledigt=1`, ist die Fortsetzung empirisch belegt. Das braucht eine Betreiberfreigabe (Preview
-mit gesetzten Variablen) und ist kein Production-Versuch.
+### 27.3.1 Der spätere Vorschauversuch — heute **blockiert**
+
+Ein Preview-Versuch würde die Frage empirisch klären. Er ist **nicht** freigegeben und wurde
+**nicht** durchgeführt. **Entscheidender Punkt (Korrektur 2026-08-24/2):** eine Vorschau ist
+*nicht automatisch* ungefährlich. Vercel-Preview-Deployments erben in der Regel die
+Umgebungsvariablen ihrer Umgebung — ein Weckruf gegen eine Vorschau, die auf die
+**Production-Supabase** zeigt, ist ein **Production-Eingriff mit Vorschau-Etikett**. Genau so
+entstehen echte Aufträge, echte Leases und echte Kennzahlen.
+
+**Sieben zwingende Vorbedingungen. Alle sieben müssen VORHER belegt sein:**
+
+1. **Getrennte nichtproduktive Datenbank** oder ein nachweislich isolierter Datenbestand.
+2. **Keine Production-Supabase-Adresse** in der Vorschau (`SUPABASE_URL` zeigt nicht auf das
+   Production-Projekt).
+3. **Kein Production-Dienstrollenschlüssel** und kein Production-Geheimschlüssel in der
+   Vorschau.
+4. **Eigenes Vorschau-Weckziel** (`HELMUT_WORKER_WAKE_URL` auf den Preview-Host, nie auf den
+   Production-Host).
+5. **Kontrollierter Testauftrag** ohne Mandatsdaten, ohne Quellenabruf, ohne Modellaufruf.
+6. **Vollständiger Rückbau** dieses Testauftrags nach dem Versuch.
+7. **Separater Gründerentscheid vor jedem einzelnen Vorschauversuch** — keine Dauerfreigabe.
+
+**Ablauf, wenn und nur wenn alle sieben belegt sind:** ein Weckruf, ein Testauftrag, dessen
+Handler nachweislich länger als `HELMUT_WAKE_TIMEOUT_MS` läuft; Auswertung rein lesend über die
+Logzeile `[cron/worker-weck] …ms worker=… erledigt=…`. Erscheint sie nach dem Senderabbruch mit
+`erledigt=1`, ist die Fortsetzung empirisch belegt.
+
+**Heutiger Stand: die Isolierung ist NICHT belegt.** Die automatische Vorschau dieses Pull
+Requests existiert bereits; ob sie auf Production-Zugangsdaten zeigt, ist aus einer
+Claude-Sitzung nicht prüfbar (Vercel-Env weder lesbar noch setzbar). **Damit bleibt der
+Vorschauversuch blockiert.** Es wurde deshalb kein Weckruf gegen irgendeine Vorschau gesendet,
+kein Deployment ausgelöst und **kein Ersatzweg erfunden**: weder ein Supabase-Branch noch eine
+zweite Datenbank noch sonst eine Infrastruktur wurde eingerichtet.
 
 ### 27.4 Kosten- und AWS-Aussagen berichtigt
 

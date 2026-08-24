@@ -246,10 +246,21 @@ OP-30-Migrationen.
 **Vorprüfung statt Vermutung:** `GET /api/ops/jobqueue` (mit `CRON_SECRET`) liefert seit
 2026-08-24 das Feld `ereignisbetrieb` — es unterscheidet *angeforderten Modus*, *wirksamen
 Modus*, *Antrieb*, *gewählten Transport*, *Verfügbarkeit*, *Grund* und `bereit`. **Der
-Ereignisbetrieb gilt erst dann als bereit, wenn `ereignisbetrieb.bereit === true` ist** —
-`antrieb: "ereignis"` allein ist ausdrücklich **kein** Bereitschaftsbeleg. Die Ausgabe enthält
-weder Secrets noch Adressen noch Hostnamen (testgesichert:
+Ereignisbetrieb gilt erst dann als konfigurationsbereit, wenn `ereignisbetrieb.bereit === true`
+ist** — `antrieb: "ereignis"` allein ist ausdrücklich **kein** Bereitschaftsbeleg. Die Ausgabe
+enthält weder Secrets noch Adressen noch Hostnamen (testgesichert:
 `scripts/jobdispatch-vertrag-test.js` §13.10).
+
+**Was `bereit` bedeutet (geschärft 2026-08-24/2):** die Vorprüfung macht **keinen Netzaufruf**.
+`bereit: true` heißt ausschließlich **„die Konfiguration für einen späteren echten Versuch ist
+vollständig und intern widerspruchsfrei"** — **nicht**, dass der Transport gerade zustellen kann,
+dass das Ziel erreichbar ist, dass das Secret beim Empfänger wirkt oder dass je ein Weckruf
+stattfand. Die Antwort trägt diese Lesart im Feld `bereitBedeutung` mit. Der tatsächliche
+Transport- und Production-Nachweis bleibt ein **getrennter Betriebsbeleg**.
+
+**Wirkung im Versandpfad:** derselbe Vorlauf entscheidet seit 2026-08-24/2 auch den Dispatcher.
+Ist er nicht bereit, wird im Queue-Modus **keine** Outbox-Absicht vergeben — kein Versuch, kein
+Backoff, kein HTTP, kein SQS, keine Verbuchung. Der Schattenmodus bleibt davon unberührt.
 
 **Kostenaussage (ehrlich):** Der Selbstweck braucht **keinen neuen Anbieter und keine neue
 feste Infrastrukturgebühr**. Er erzeugt aber **zusätzliche Vercel-Funktionsaufrufe, zusätzliche

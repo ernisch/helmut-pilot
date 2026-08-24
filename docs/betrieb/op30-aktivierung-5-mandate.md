@@ -3850,9 +3850,21 @@ Seit 2026-08-24 enthält die Antwort das Feld `ereignisbetrieb`:
 }
 ```
 
-**Freigaberegel:** der Ereignisbetrieb gilt **erst** als bereit, wenn `bereit === true` und
-`befunde` leer ist. `antrieb: "ereignis"` allein ist **kein** Bereitschaftsbeleg — genau diese
-Verwechslung war der Befund. Typische Nichtbereitschaften und ihr Grund im Klartext:
+**Was `bereit` heißt — und was nicht (geschärft 2026-08-24/2).** Die Vorprüfung ruft **nichts**
+auf: kein HTTP, kein SQS, keinen Weckruf. Sie beantwortet genau eine Frage —
+
+> **Ist die Konfiguration für einen späteren echten Versuch vollständig und in sich
+> widerspruchsfrei?**
+
+Sie beantwortet **nicht**: ob der Transport gerade zustellen kann · ob das Weckziel erreichbar
+ist · ob das `CRON_SECRET` beim Empfänger wirkt · ob je ein echter Weckruf stattfand. Deshalb
+trägt die Antwort ihre eigene Lesart im Feld `bereitBedeutung` mit. **Der Transport- und
+Production-Nachweis bleibt ein getrennter Betriebsbeleg** — er entsteht erst im 7-Tage-Fenster.
+
+**Freigaberegel:** der Ereignisbetrieb gilt **erst** als *konfigurationsbereit*, wenn
+`bereit === true` und `befunde` leer ist. `antrieb: "ereignis"` allein ist **kein**
+Bereitschaftsbeleg — genau diese Verwechslung war der Befund. Und *konfigurationsbereit* ist
+seinerseits kein Zustellbeleg. Typische Nichtbereitschaften und ihr Grund im Klartext:
 
 | `transport.grund` / Befund | Bedeutung |
 |---|---|
@@ -3886,9 +3898,15 @@ Route weist jedes Wecksignal mit 409 ab).
 3. Neun Zustände des Betriebsstatus, jeder einzeln (Vertragstest §13).
 4. Der Aktivierungsvorlauf scheitert geschlossen, wenn Transport **oder** Antrieb nicht
    wirklich bereit sind (Vertragstest §14).
-5. `vercel.json` aktiviert `supportsCancellation` nicht — der dokumentierte Vercel-Zustand,
-   in dem ein Senderabbruch die Ausführung **nicht** beendet (Wächtertest).
-6. **Die Atomarität der Vergabe ist datenbankgestützt nachgewiesen, nicht nur modelliert:**
+5. `vercel.json` aktiviert `supportsCancellation` **nicht** — ein Wächtertest hält diesen
+   Konfigurationsstand fest, damit eine spätere Aktivierung den Selbstweck-Vertrag erneut
+   prüfpflichtig macht. **Das ist kein Beleg für das Plattformverhalten** (siehe Punkt 2 der
+   offenen Nachweise).
+6. **Der Aktivierungsvorlauf ist vollständig, nicht nur antriebsbezogen:** fehlen die
+   Klassengrenzen, der Motor, das Weckziel, die Production-Freigabe oder die Queue-Adresse,
+   stoppt der Dispatcher **vor** der ersten Outbox-Vergabe — keine Vergabe, kein Versuch, kein
+   Backoff, kein Netzaufruf, keine Verbuchung (Vertragstest §15, fünf Fälle einzeln).
+7. **Die Atomarität der Vergabe ist datenbankgestützt nachgewiesen, nicht nur modelliert:**
    in diesem Sprint wurde eine lokale **PostgreSQL 16.13** gestartet und die vierzehn
    datenbankgestützten Warteschlangen-/Outbox-/Nebenläufigkeitssuiten sind wirklich gelaufen
    (sonst überspringen sie sich ehrlich) — **690 PASS, 0 FAIL**, darunter Outbox 37,
@@ -3898,8 +3916,14 @@ Route weist jedes Wecksignal mit 409 ab).
 
 1. **Der Selbstweck lief noch nie in Production.** Kein einziger echter Weckruf.
 2. **Kein Preview-Beleg** dafür, dass der Verbraucher auf Vercel nach dem 3-Sekunden-Abbruch
-   des Senders wirklich zu Ende arbeitet (kleinster Versuch:
-   [`op30-zielarchitektur-2026-08-13.md`](op30-zielarchitektur-2026-08-13.md) §27.3).
+   des Senders wirklich zu Ende arbeitet. **Der Punkt bleibt empirisch ungeprüft** — die
+   offizielle Dokumentation belegt nur, dass die Abbruch*unterstützung* ein Opt-in ist, das
+   Helmut nicht gesetzt hat; sie belegt **nicht**, dass eine Funktion ohne diese Einstellung
+   garantiert weiterläuft. **Der Vorschauversuch ist heute blockiert:** er ist erst zulässig,
+   wenn die Datenisolierung der Vorschau belegt ist (sieben Vorbedingungen,
+   [`op30-zielarchitektur-2026-08-13.md`](op30-zielarchitektur-2026-08-13.md) §27.3.1). Eine
+   Vorschau, die auf die Production-Supabase zeigt, wäre ein Production-Eingriff mit
+   Vorschau-Etikett.
 3. **Kein siebentägiges Fenster** (Abfluss ≥ Ankunft, 0 Verlust, 0 Doppelarbeit, ältester
    offener Auftrag < 24 h).
 4. **Keine Messung der zusätzlichen Vercel-Kosten** (Aufrufe, Rechenzeit, Speicher) gegen
@@ -3932,17 +3956,69 @@ Production-Kennungen jetzt **selbst**, vor jedem `require` — ein Handlauf dies
 Production nicht mehr erreichen. Damit laufen §9.1/§9.2 auch von Hand grün (vorher rot, weil
 sie „nicht verfügbar" erwarteten und stattdessen echten Erfolg bekamen).
 
-**Offen, Betreiberentscheidung (bewusst NICHT ausgeführt — Löschen ist eine
-Production-Datenänderung, CLAUDE.md §5):**
+### §31.6.1 Rein lesender Zustand am 2026-08-25, 00:33 türkischer Zeit (23:33 Berlin, 21:33 UTC)
 
-```sql
--- rein lesend prüfen
-select id, job_type, idempotency_key, status, attempts
-  from public.helmut_jobs where id = '371707a4-3d78-44f5-a1c5-d6f11026f4d2';
--- entfernen (nur nach ausdrücklicher Freigabe; Outbox zuerst)
-delete from public.helmut_job_outbox where id = '24ba14ec-0827-49af-9cf1-43cb485f4e33';
-delete from public.helmut_jobs      where id = '371707a4-3d78-44f5-a1c5-d6f11026f4d2';
-```
+Ausschließlich `SELECT` und Katalogabfragen; keine Funktion aufgerufen, kein `DELETE`/`UPDATE`/
+`INSERT`, keine Sperre, keine Migration, kein Worker-/Cronlauf, keine Profil- oder Mandatsdaten.
+
+| Frage | Befund |
+|---|---|
+| 1. Existieren beide Zeilen noch? | **Ja**, beide unverändert |
+| 2. Aktueller Status | Auftrag `wartend` · Outbox-Absicht `offen` |
+| 3. Gezählte Versuche | Auftrag `attempts = 0` (von `max_attempts = 5`) · Outbox `attempts = 0` |
+| 4. Aktive Reservierung/Lease? | **Nein** — `lease_owner` und `lease_expires_at` sind leer, `first_claimed_at` ist leer: der Auftrag wurde seit dem Anlegen **nie** beansprucht |
+| 5. Gespeicherter Fehler | **Keiner** (`last_error` in beiden Zeilen leer) |
+| 6. Gehört die Outbox-Zeile exakt zum Testauftrag? | **Ja** (`job_id` = `371707a4…`) |
+| 7. Weitere Outbox-Zeilen zu diesem Auftrag? | **Nein** — genau eine |
+| 8. Abhängige Zeilen über Fremdschlüssel | **Genau eine Beziehung** im gesamten Schema: `helmut_job_outbox.job_id → helmut_jobs.id ON DELETE CASCADE`. Keine weiteren Fremdschlüssel auf `helmut_jobs` oder `helmut_job_outbox` |
+| 9. Beeinflusst er **heute** `endgueltig_fehler`? | **Nein.** Die Kennzahl zählt `status = 'fehlgeschlagen' AND attempts >= max_attempts`. **Aber** er zählt in `wartend` und — weil `tenant_id` leer ist und `aeltester_offener_s` **nicht** nach Mandat filtert — treibt er die **Wartezeitkennzahl** hoch: **3 593 s (≈ 1 h)** zum Messzeitpunkt. Genau diese Kennzahl ist seit 2026-08-12 die Betriebsgrenze der Warteschlangenwache (18 h Warnung, 24 h `kritisch`) |
+| 10. Kann ein Worker ihn noch aufnehmen? | **Ja.** `status='wartend'`, `due_at` liegt in der Vergangenheit, `attempts < max_attempts`, Typ `source_fetch` ist in der Typmenge (Production: `HELMUT_SOURCE_MODE=on`). Beim nächsten Drain-Slot wird er beansprucht; sein Payload ist `{}`, der Handler wirft `payload-ungueltig: quelle fehlt`, `istEndgueltig` trifft zu ⇒ `retryDelayMs 0` ⇒ **die fünf Versuche brennen in einem einzigen Slot ab** und der Auftrag endet `fehlgeschlagen` — **dann** zählt er als **1** in `endgueltig_fehler` |
+
+**Konsequenz für die anstehende Entscheidung:** bleibt die Zeile liegen, startet der
+siebentägige Fünfernachweis mit einem bekannten Fehlbefund in genau der Kennzahl, die §28.6
+mit „0 endgültige Fehler" abnimmt.
+
+### §31.6.2 Empfehlung (nicht ausgeführt) — **eine** Möglichkeit
+
+**Empfohlen: über den vorhandenen kanonischen Weg aufgeben**, also mit dem Generator
+`lib/helmut/jobqueue-neutralisierung.js`, um eine Zielmenge von **genau dieser einen Kennung**
+erweitert. Begründung: dieser Weg ist gebaut, testgesichert und in Production bereits
+angewandt; er trägt elf Sicherheitsriegel (exakte Statusverteilung, keine offene Lease,
+Signaturen über die Zielmenge, exakte Löschanzahl, Nachzustand, `SERIALIZABLE` +
+`FOR UPDATE`, **Trockenlauf als Standard mit bauartbedingtem Rollback**) und ist
+datensparsam (payload/tenant_id/idempotency_key/last_error werden im erzeugten SQL nie
+gelesen). Seine eigene Begründung passt exakt auf diesen Fall: `fehlgeschlagen` würde als
+endgültiger Fehler gezählt.
+
+Die beiden anderen Möglichkeiten, der Vollständigkeit halber: **bedingt löschen** (fachlich
+gleichwertig, erfindet aber einen zweiten Ablauf neben dem kanonischen) und **als
+dokumentierten Störungsbeleg stehenlassen** (kostet nichts, verfälscht aber ab dem nächsten
+Drain-Slot die Abnahmekennzahl — deshalb nicht empfohlen).
+
+**Ausgeführt wurde keine der drei Möglichkeiten.** Jede ist eine Production-Datenänderung und
+damit Betreiberentscheidung (CLAUDE.md §5).
+
+### §31.6.3 Das früher hier stehende Lösch-SQL ist **nicht** freigabefertig
+
+Die erste Fassung dieses Abschnitts zeigte zwei nackte `delete`-Zeilen. **Das ist
+zurückgenommen** — so etwas darf nicht als freigabefertig gelten. Ein späterer Löschplan muss
+mindestens enthalten:
+
+1. **Vollständige Vorbedingungen** auf Kennung, Typ, Idempotenzschlüssel, Inhalt und aktuellen
+   Status (`id`, `job_type='source_fetch'`, `idempotency_key='k'`, `freshness_window='f'`,
+   `payload = '{}'::jsonb`, `status='wartend'`, `attempts=0`, keine Lease).
+2. **Prüfung aller Abhängigkeiten** — hier belegt: genau eine, `ON DELETE CASCADE` von der
+   Outbox auf den Auftrag (die Outbox-Zeile verschwindet also mit; das muss der Plan
+   ausdrücklich erwarten statt es zu übersehen).
+3. **Eine Transaktion** um alles.
+4. **Abbruch bei jeder Abweichung** (jede verletzte Vorbedingung bricht die gesamte
+   Transaktion ab, kein Teilzustand).
+5. **Exakte erwartete Zeilenzahl** (1 Auftrag, 1 Outbox-Zeile) — abweichende Zahl ⇒ Abbruch.
+6. **`RETURNING`** als Wirkungsbeleg der tatsächlich entfernten Kennungen.
+7. **Sicherer Rückweg — oder die ehrliche Feststellung, dass es keinen gibt.** Für diesen Fall
+   gilt: ein byte-identischer Rückweg existiert **nicht** (`created_at` ist dann weg). Er wird
+   auch nicht gebraucht: die Zeile trägt keine echte Arbeit, und der Planer erzeugt reale
+   Arbeit deterministisch neu. Genau so ist es im kanonischen Weg begründet.
 
 **Empfehlung für später (nicht in diesem Sprint umgesetzt, weil allgemeine Umstrukturierung):**
 den Schutz aus `scripts/lokaler-netzschutz.js` nicht nur im Runner, sondern in **jeder** Suite

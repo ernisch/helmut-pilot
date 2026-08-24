@@ -1430,10 +1430,16 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   gewaehlten Transport, dessen Verfuegbarkeit, den Grund einer Nichtverfuegbarkeit und die
   Bereitschaft; `/api/ops/jobqueue` gibt sie als Feld `ereignisbetrieb` aus (additiv, alle
   Bestandsfelder unveraendert). Neun Zustaende einzeln testgesichert; die Ausgabe traegt weder
-  Secret noch Adresse noch Hostnamen. **(2) Der Aktivierungsvorlauf scheitert geschlossen:**
-  `queue` ohne `HELMUT_SCALABLE_PIPELINE` versendet nichts mehr und vergibt keine Absicht
-  (vorher: Versuchsverbrauch bis zur Quarantaene fuer Signale, die die Route ohnehin mit 409
-  abwies). **(3) Geschlossener Ende-zu-Ende-Nachweis des Selbstwecks:**
+  Secret noch Adresse noch Hostnamen. **(2) Der Aktivierungsvorlauf scheitert VOLLSTAENDIG geschlossen**
+  (nachgebessert in der Korrekturrunde 2026-08-24/2): im Queue-Modus entscheidet die
+  **vollstaendige** Vorpruefung VOR der ersten Outbox-Vergabe. Fehlen Klassengrenzen, Motor,
+  Weckziel, Production-Freigabe oder Queue-Adresse, passiert nichts — keine Vergabe, kein
+  Versuchszaehler, kein Backoff, kein HTTP, kein SQS, keine Bestaetigung, keine
+  Fehlverbuchung; die Bilanz nennt bereinigten Grund und Befunde. Vorher deckte der Riegel nur
+  den ANTRIEB ab: ohne `HELMUT_KLASSEN_GRENZEN` vergab der Dispatcher weiterhin eine Absicht
+  und klingelte, waehrend die Route mit 409 abwies. Schattenmodus unberuehrt, bereiter
+  Ereignisbetrieb unveraendert, Vorpruefung und Versand teilen **dieselbe**
+  Transportinstanz. **(3) Geschlossener Ende-zu-Ende-Nachweis des Selbstwecks:**
   `scripts/selbstweck-ende-zu-ende-test.js` **31 PASS** — echte Route, echte Autorisierung,
   echter Transport, echter Dispatcher, echter Workerbetrieb, echter Fachhandler; ersetzt sind
   nur Datenbank, Netzgrenze und externer Abruf. Geprueft: Erfolg · falsches Geheimnis ·
@@ -1450,10 +1456,16 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Vercel-Aufrufe/Rechenzeit/Speicher — Hoehe ungeprueft" · die AWS-Vorlage nutzt den alten
   `service_role`-Schluessel (breites Rotationsrisiko, mit getrennten `sb_secret_…`-Schluesseln
   vermeidbar) und legt zwei KMS-Schluessel an (2 USD/Monat, nach erster Rotation 4, nach
-  zweiter 6, plus Anfragen). **(5) 3 s gegen 60 s:** amtlich belegt ist, dass das Beenden bei
-  Client-Trennung auf Vercel ein **Opt-in** ist (`supportsCancellation`), das Helmut nicht
-  gesetzt hat (Waechtertest); eine positive Zusage „laeuft garantiert zu Ende" steht dort
-  **nicht** — der Preview-Beleg bleibt offen und ist als kleinster Versuch beschrieben.
+  zweiter 6, plus Anfragen). **(5) 3 s gegen 60 s — empirisch UNGEPRUEFT:** belegt ist, dass die
+  Abbruch*unterstuetzung* auf Vercel ein **Opt-in** ist (`supportsCancellation`), das Helmut
+  nicht gesetzt hat (Waechtertest haelt den Stand fest). **Nicht** belegt ist, dass eine
+  Funktion ohne diese Einstellung nach einer Client-Trennung weiterlaeuft. Der Preview-Beleg
+  ist **blockiert**, solange die Datenisolierung der Vorschau nicht bewiesen ist (sieben
+  Vorbedingungen, Zielarchitektur §27.3.1) — eine Vorschau auf der Production-Supabase waere
+  ein Production-Eingriff mit Vorschau-Etikett. **(6) `bereit` heisst
+  Konfigurationsbereitschaft**, nicht erfolgreiche Zustellung: die Vorpruefung macht keinen
+  Netzaufruf und kann ueber Erreichbarkeit, wirksame Zugangsdaten oder einen echten Weckruf
+  nichts sagen (Feld `bereitBedeutung` traegt die Lesart mit).
   **Stoerung dieses Sprints:** ein Handlauf der Bestandssuite `jobdispatch-vertrag-test.js`
   ohne `scripts/lokal.js` hat in der Cloud-Sitzung **zwei Testzeilen in Production** erzeugt
   (ein `source_fetch`-Auftrag `371707a4…` ohne `payload.quelle` + eine Outbox-Zeile

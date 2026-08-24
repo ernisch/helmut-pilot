@@ -331,8 +331,10 @@ globalThis.fetch = async (url, opts = {}) => {
   assert.strictEqual(ziel, WECK_URL, "der Transport ruft ausschliesslich die kanonische Weck-URL");
   const antwortLauf = lokalerPost({ body: opts.body, authorization });
   laufendeAntworten.push(antwortLauf.catch(() => null));
-  // ABBRUCH DES SENDERS: er gibt auf, die lokale Anfrage laeuft weiter. Genau das modelliert
-  // den Vercel-Zustand ohne `supportsCancellation` (siehe Abschnitt 12).
+  // ABBRUCH DES SENDERS: er gibt auf, die LOKALE Anfrage laeuft weiter. Das ist das Verhalten
+  // eines gewoehnlichen Node-Listeners und beweist ausschliesslich, was der HELMUT-CODE tut,
+  // wenn der Verbraucher weiterlaeuft. Ob eine Vercel-Funktion nach einer Client-Trennung
+  // weiterlaeuft, ist damit AUSDRUECKLICH NICHT gezeigt (siehe Abschnitt 12).
   if (opts.signal) {
     const abbruch = new Promise((_, reject) => {
       if (opts.signal.aborted) return reject(Object.assign(new Error("aborted"), { name: "AbortError" }));
@@ -363,7 +365,7 @@ async function main() {
   try {
     // ══ 0 · Vorpruefung: der Betriebsstatus sagt die Wahrheit ═════════════════════════════
     abschnitt("0 · Vorpruefung des Antriebs (wahrer Betriebsstatus)");
-    await check("0.1 Vollstaendige Selbstweck-Konfiguration -> bereit, keine Befunde", () => {
+    await check("0.1 Vollstaendige Selbstweck-Konfiguration -> konfigurationsbereit, keine Befunde", () => {
       const v = dispatch.aktivierungsVorpruefung();
       assert.strictEqual(v.bereit, true, JSON.stringify(v.befunde));
       assert.strictEqual(v.antrieb, "ereignis");
@@ -531,7 +533,7 @@ async function main() {
         assert.strictEqual(bilanz.fehlgeschlagen, 0);
       } finally { process.env.HELMUT_WAKE_TIMEOUT_MS = alt; }
     });
-    await check("6.2 Der Verbraucher arbeitet nach dem Abbruch zu Ende — genau einmal", async () => {
+    await check("6.2 LOKAL: laeuft der Verbraucher weiter, erledigt er den Auftrag genau einmal", async () => {
       const antworten = await warteAufAlleAntworten();
       assert.strictEqual(antworten[0] && antworten[0].status, 200, "die abgebrochene Anfrage lief zu Ende");
       assert.strictEqual(antworten[0].json.erledigt, 1);
@@ -696,18 +698,29 @@ async function main() {
     });
 
     // ══ 12 · Drei Sekunden gegen sechzig Sekunden ═════════════════════════════════════════
-    abschnitt("12 · 3-s-Sendergrenze gegen 60-s-Verbraucherlauf (Vercel-Beleg)");
-    await check("12.1 vercel.json aktiviert `supportsCancellation` NICHT (Abbruch beendet nicht)", () => {
-      // Offizielle Vercel-Dokumentation (functions-api-reference, abgerufen 2026-08-24):
-      // „Request cancellation allows your Vercel Functions to stop execution when a client
-      // disconnects … This is an opt-in feature that must be enabled in your project
-      // configuration." Ohne `supportsCancellation` beendet die Plattform die Ausfuehrung
-      // also NICHT, wenn der Sender aufgibt. Diese Pruefung ist der Waechter: wer die
-      // Option spaeter einschaltet, macht den Selbstweck-Vertrag ungueltig und faellt hier auf.
+    abschnitt("12 · 3-s-Sendergrenze gegen 60-s-Verbraucherlauf (Konfigurationswaechter, KEIN Plattformbeleg)");
+    await check("12.1 `supportsCancellation` ist fuer diese Funktion NICHT gesetzt (Waechter fuer den Selbstweck-Vertrag)", () => {
+      // WAS DIE OFFIZIELLE DOKUMENTATION BELEGT (Vercel, functions-api-reference, abgerufen
+      // 2026-08-24): „Request cancellation allows your Vercel Functions to stop execution when
+      // a client disconnects … This is an opt-in feature that must be enabled in your project
+      // configuration." Das belegt: die AbbruchUNTERSTUETZUNG wird ausdruecklich eingeschaltet.
+      //
+      // WAS SIE NICHT BELEGT — und was dieser Test deshalb NICHT behauptet: dass eine Funktion
+      // OHNE diese Einstellung nach einer Client-Trennung garantiert bis zum Ende weiterlaeuft.
+      // Ein Senderabbruch koennte die Vercel-Funktion also beenden; empirisch geprueft ist das
+      // in keiner Richtung. Lokal ist nur belegt, dass der Helmut-Code sauber bleibt, wenn der
+      // Verbraucher weiterlaeuft (§6), und dass nichts verloren geht, wenn er es nicht tut
+      // (`unbestaetigt` verbucht nichts, §6.1).
+      //
+      // WOZU DIESER WAECHTER DANN DIENT: er haelt den heutigen Konfigurationsstand fest. Wird
+      // `supportsCancellation` spaeter eingeschaltet, aendert sich die Grundlage des
+      // Selbstweck-Vertrags — dieser Test faellt dann auf und macht die Sache erneut
+      // pruefpflichtig, statt sie stillschweigend mitlaufen zu lassen.
       const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
       const text = JSON.stringify(vercel);
       assert.ok(!/supportsCancellation/.test(text),
-        "supportsCancellation ist gesetzt — der Verbraucher koennte beim Senderabbruch beendet werden");
+        "supportsCancellation ist gesetzt — die Grundlage des Selbstweck-Vertrags hat sich geaendert"
+        + " und muss neu geprueft werden");
       const fn = (vercel.functions || {})["api/index.js"] || {};
       assert.ok(Number(fn.maxDuration) >= 300, `maxDuration=${fn.maxDuration}`);
     });
@@ -721,10 +734,12 @@ async function main() {
       assert.ok(obergrenze > 0 && obergrenze < maxMs,
         `Drain-Obergrenze ${obergrenze} ms muss unter ${maxMs} ms liegen`);
     });
-    await check("12.3 Der Sender wartet kuerzer als der Verbraucher arbeitet — und das ist verbucht", () => {
+    await check("12.3 Der Sender wartet kuerzer als der Verbraucher arbeiten darf — dafuer gibt es den dritten Ausgang", () => {
       // Kein Wunschdenken: die Sendergrenze (Default 3 s) ist KLEINER als das Drain-Budget
-      // (Default 60 s). Genau deshalb ist `unbestaetigt` ein eigener, dritter Ausgang neben
-      // Erfolg und Fehlversuch — belegt in §6.1/§6.2.
+      // (Default 60 s). Der Sender erfaehrt den Ausgang deshalb im Regelfall NICHT. Genau
+      // dafuer ist `unbestaetigt` ein eigener, dritter Ausgang neben Erfolg und Fehlversuch:
+      // er verbucht nichts und traegt in BEIDEN Auslegungen des Plattformverhaltens
+      // (Verbraucher laeuft weiter / Verbraucher wird beendet) — belegt in §6.1/§6.2.
       const quelle = fs.readFileSync(path.join(ROOT, "lib", "helmut", "job-dispatch.js"), "utf8");
       assert.match(quelle, /HELMUT_WAKE_TIMEOUT_MS\) \|\| 3000/);
       assert.match(quelle, /unbestaetigt: true/);
