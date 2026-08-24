@@ -7,13 +7,13 @@
 // Sicherheitsmuster: sprint9b-verify.yml). Die Cloud-Arbeitsumgebung selbst hat KEINEN
 // Zugriff auf die Parlamentsdomains (Egress-Sperre) — deshalb dieser Weg.
 //
-// STRENGE-STUFE 2 (dritter Lauf, gruenderfreigegeben). Die Erstfassung war an mehreren
-// Stellen zu grosszuegig; folgende Regeln sind jetzt VERBINDLICH:
+// STRENGE-STUFE 2 (dritter Lauf, gruenderfreigegeben; vierter Lauf: Korrekturen unten).
+// Die Erstfassung war an mehreren Stellen zu grosszuegig; folgende Regeln sind VERBINDLICH:
 //   1. Ein Profil ist nur "bestaetigt", wenn JEDES importierte pruefbare Faktenfeld belegt
 //      ist: Name, Fraktion, Mandatsachse, jede Ausschussmitgliedschaft IN DER RICHTIGEN
 //      ROLLE, jeder Listenplatz im Regionshinweis, jede gespeicherte Funktion.
-//   2. FEHLENDE Information ist KEINE Bestaetigung: nennt die Seite keine Mandatsachse und
-//      liegt kein Beleg aus dem Pruefmanifest vor, lautet das Ergebnis "nicht_eindeutig".
+//   2. FEHLENDE Information ist KEINE Bestaetigung: nennt die Seite keine Mandatsachse,
+//      lautet das Ergebnis "nicht_eindeutig".
 //   3. Mitgliedschaften zaehlen nur im PROFILINHALT: Brandenburg ausschliesslich in den
 //      Abschnitten "Ordentliche/Stellvertretende Ausschuss- und Gremienmitgliedschaften";
 //      Navigation (Petitionsausschuss/Kommissionen vor dem Abschnitt) und biografische
@@ -26,9 +26,19 @@
 //      STELLVERTRETEND-Behauptung ist fuer Berlin damit unbelegbar (rot).
 //   5. Jede M-Zeile der Seite, die keinem Paketeintrag zuzuordnen ist, ist ROT
 //      (unbelegte Mitgliedschaft fehlt im Paket).
-//   6. Zusatzquellen NUR aus daten/profil-quellen-manifest-2026-08-24.json (fest
-//      hinterlegte amtliche HTTPS-Adressen, eigene Host-Schranke; hier: die amtliche
-//      Gewaehlten-Seite der Landeswahlleiterin fuer die Mandatsart von Saleh/Stroedter).
+//
+// KORREKTUREN FUER LAUF 4 (gruenderbestaetigt, Ursachen aus Lauf 3 belegt):
+//   A. Die drei EXAKTEN Berliner Seiten-/Reiterueberschriften "Ausschuesse: Einladungen
+//      und Protokolle", "Ausschuesse: Vorgaenge" und "Mitgliedschaft in Ausschuessen"
+//      sind Struktur, keine Mitgliedschaft (Lauf 3 wurde allein dadurch 10x rot).
+//      Bewusst nur exakte Treffer — echte zusaetzliche Mitgliedschaften bleiben rot.
+//   B. Fraktion und Funktionen werden NAVIGATIONSFEST belegt (siehe Kommentare an den
+//      Pruefstellen): Navigation, Menues, Historik und Listen ANDERER Fraktionen
+//      beweisen nichts.
+//   C. KEINE Zusatzquellen mehr (doppelte Beweislogik entfernt): Lauf 3 hat belegt, dass
+//      die Profilseiten von Saleh/Stroedter die Mandatsart selbst ausweisen ("gewaehlt
+//      ueber: Bezirksliste"). Abgerufen werden AUSSCHLIESSLICH die 20 parlament-profil-
+//      URLs des Pakets.
 //
 // SICHERHEIT unveraendert: nur amtliche Hosts (auch fuer Redirects), TLS an, realistischer
 // User-Agent (Repo-Praezedenz), max. 1 Wiederholung, 1,2 s Abstand, keine Secrets, kein
@@ -60,12 +70,11 @@ const MAX_SEITEN = 30; // harte Obergrenze der Abrufe je Lauf (Freigabegrenze)
 
 // ── Reine Helfer ─────────────────────────────────────────────────────────────
 
-function urlErlaubt(u, zusatzhosts) {
+function urlErlaubt(u) {
   try {
     const p = new URL(u);
     if (p.protocol !== "https:") return false;
-    const h = p.hostname.toLowerCase();
-    return ERLAUBTE_HOSTS.includes(h) || (Array.isArray(zusatzhosts) && zusatzhosts.includes(h));
+    return ERLAUBTE_HOSTS.includes(p.hostname.toLowerCase());
   } catch { return false; }
 }
 
@@ -115,7 +124,38 @@ const NAV_BERLIN = ["enquete kommission"];
 // hierher — auf parlament-berlin.de ist die alleinstehende Zeile eine ECHTE Mitgliedschaft
 // (nur Seiten von Mitgliedern fuehren sie); die Brandenburger Navigationszeile gleichen
 // Namens faellt bereits durch die Abschnittslogik heraus (sie steht VOR dem Marker).
-const STRUKTUR_RE = /^(ausschuesse|gremien|kommissionen)$|^(ordentliche|stellvertretende) ?ausschuss( und gremienmitgliedschaften)?$/;
+// Lauf-4-Korrektur A: die drei EXAKTEN Berliner Seiten-/Reiterueberschriften
+// "Ausschuesse: Einladungen und Protokolle", "Ausschuesse: Vorgaenge" und
+// "Mitgliedschaft in Ausschuessen" stehen auf jeder Berliner Profilseite (auch im Kopf-/
+// Fussbereich wiederholt) und sind Struktur — Lauf 3 meldete sie faelschlich als
+// unzugeordnete Mitgliedschaften. NUR exakte Treffer, keine breiten Muster: eine echte
+// zusaetzliche Mitgliedschaftszeile daneben bleibt rot.
+const STRUKTUR_RE = /^(ausschuesse|gremien|kommissionen)$|^(ordentliche|stellvertretende) ?ausschuss( und gremienmitgliedschaften)?$|^ausschuesse (einladungen und protokolle|vorgaenge)$|^mitgliedschaft in ausschuessen$/;
+
+// Fraktions-Kuerzel aus der Paketangabe ("CDU", "Buendnis 90/Die Gruenen", "Die Linke" …).
+// Grundlage der navigationsfesten Fraktionspruefung in bewerteProfil().
+function fraktionToken(frNorm) {
+  if (/\bcdu\b/.test(frNorm)) return "cdu";
+  if (/\bspd\b/.test(frNorm)) return "spd";
+  if (/\bafd\b/.test(frNorm)) return "afd";
+  if (/\bbsw\b/.test(frNorm)) return "bsw";
+  if (/\bfdp\b/.test(frNorm)) return "fdp";
+  if (/gruene/.test(frNorm)) return "gruene";
+  if (/link/.test(frNorm)) return "linke";
+  return null;
+}
+// Die vier Fraktionen des Landtages Brandenburg (8. WP) — die BB-Navigation nennt sie ALLE
+// auf jeder Profilseite je einmal; nur die eigene steht zusaetzlich in den Stammdaten.
+const BB_FRAKTIONSZEILEN = Object.freeze(["spd fraktion", "afd fraktion", "cdu fraktion", "bsw fraktion"]);
+
+// Exakte Navigations-/Strukturzeilen der Praesidiums-Bloecke beider Parlamente (Lauf-2/3-
+// belegt). Diese Zeilen beweisen NIE eine gespeicherte Funktion (Lauf-4-Korrektur B).
+const NAV_FUNKTION = new Set([
+  "praesidentin", "die praesidentin", "der praesident", "das praesidium", "praesidium",
+  "praesidentin und praesidium", "vizepraesidenten", "vizepraesidentinnen",
+  "vizepraesidentinnen und vizepraesidenten", "schriftfuehrer innen",
+  "schriftfuehrerinnen und schriftfuehrer"
+]);
 
 // Mitgliedschaften aus dem PROFILINHALT — Rollen getrennt.
 //   landtag-brandenburg: NUR Zeilen nach den amtlichen Abschnittsueberschriften
@@ -151,30 +191,10 @@ function mitgliedschaften(zeilen, parlament) {
   return m;
 }
 
-// Mandatsart-Beleg aus einer Zusatzquelle (amtliche Gewaehlten-Seite): der dem Namen
-// NAECHSTGELEGENE vorausgehende Abschnittsmarker (Liste vs. Wahlkreis) entscheidet.
-function belegeMandatsart(text, vollname) {
-  const t = " " + norm(text) + " ";
-  const basis = norm(vollname);
-  const formen = [basis, basis.split(" ").reverse().join(" ")];
-  let idx = -1, form = null;
-  for (const f of formen) {
-    const i = t.indexOf(" " + f + " ");
-    if (i >= 0) { idx = i; form = f; break; }
-  }
-  if (idx < 0) return { gefunden: false, urteil: "name-nicht-gefunden" };
-  const prefix = t.slice(0, idx);
-  const li = Math.max(prefix.lastIndexOf("landesliste"), prefix.lastIndexOf("bezirksliste"), prefix.lastIndexOf("listenplatz"), prefix.lastIndexOf(" liste "));
-  const wi = prefix.lastIndexOf("wahlkreis");
-  const umfeld = t.slice(Math.max(0, idx - 300), idx + form.length + 200).trim();
-  if (li < 0 && wi < 0) return { gefunden: true, urteil: "uneindeutig", umfeld };
-  if (li > wi) return { gefunden: true, urteil: "liste-belegt", umfeld };
-  return { gefunden: true, urteil: "wahlkreis-zuordnung", umfeld };
-}
-
 // Bewertung eines Profils. REIN, offline testbar.
-// externerBeleg (optional): Ergebnis von belegeMandatsart() aus einer Manifest-Zusatzquelle.
-function bewerteProfil(profil, seite, abruf, externerBeleg) {
+// seite = { zeilen, h1 } — h1 ist die Profilueberschrift (fuer die Berliner
+// Fraktionspruefung; parlament-berlin.de fuehrt dort das Fraktionskuerzel).
+function bewerteProfil(profil, seite, abruf) {
   const gruende = [];   // Widersprueche / fehlende Belege importierter Fakten -> abweichung
   const unbelegt = [];  // fehlende Information ohne Widerspruch -> nicht_eindeutig
   const hinweise = [];
@@ -208,11 +228,32 @@ function bewerteProfil(profil, seite, abruf, externerBeleg) {
     return { ergebnis: "nicht_eindeutig", gruende: [], unbelegt: ["Vollname auf der Seite nicht auffindbar — falsche Seite oder Namensabweichung"], hinweise, gefunden };
   }
 
-  // 2 · Fraktion (seitenweite Pruefung; dokumentierte Grenze: die BB-Navigation nennt alle
-  // Fraktionen — die Fraktionsangabe traegt daher weniger Beweiskraft als die uebrigen Felder).
-  const fr = norm(profil.fraktion || profil.partei || "");
-  gefunden.fraktion = Boolean(fr) && vollNorm.includes(" " + fr + " ");
-  if (!gefunden.fraktion) gruende.push(`Fraktion \`${profil.fraktion || profil.partei}\` nicht im Seitentext gefunden`);
+  // 2 · Fraktion — NAVIGATIONSFEST (Lauf-4-Korrektur B). Die alte seitenweite Suche war
+  // zu grosszuegig: die BB-Navigation nennt ALLE vier Fraktionen auf jeder Seite.
+  //   landtag-berlin: die Profilueberschrift (h1) traegt das Fraktionskuerzel
+  //     ("Raed Saleh, SPD") — Navigation kann die Ueberschrift nicht stellen.
+  //   landtag-brandenburg (h1 ohne Kuerzel): (a) Stammdatenzeile
+  //     "Landesliste <F>-Fraktion, Platz N" ODER (b) die exakte eigene
+  //     "<F>-Fraktion"-Zeile kommt haeufiger vor als jede andere Fraktionszeile
+  //     (Navigation: alle vier je 1x; die eigene steht zusaetzlich in den Stammdaten —
+  //     Lauf-2/3-belegt fuer alle 10 BB-Profile, auch die Direktmandate). Historik nie.
+  const frText = profil.fraktion || profil.partei || "";
+  const frToken = fraktionToken(norm(frText));
+  if (!frToken) {
+    gruende.push(`Fraktion \`${frText}\` ist keinem bekannten Fraktionskuerzel zuzuordnen`);
+  } else if (profil.parlament === "landtag-brandenburg") {
+    const eigene = `${frToken} fraktion`;
+    const zaehle = (fz) => zeilen.filter((z) => !istHistorik(z) && norm(z) === fz).length;
+    const landeslisteZeile = zeilen.some((z) => !istHistorik(z) && norm(z).startsWith(`landesliste ${eigene}`));
+    const eigeneAnzahl = zaehle(eigene);
+    gefunden.fraktion = landeslisteZeile ||
+      (eigeneAnzahl > 0 && BB_FRAKTIONSZEILEN.filter((f) => f !== eigene).every((f) => zaehle(f) < eigeneAnzahl));
+    if (!gefunden.fraktion) gruende.push(`Fraktion \`${frText}\` nicht navigationsfest belegt (weder Landeslisten-Stammdatenzeile noch Mehrheit eigener Fraktionszeilen — die Navigation nennt alle Fraktionen)`);
+  } else {
+    const h1Norm = norm(seite.h1 || "");
+    gefunden.fraktion = Boolean(h1Norm) && h1Norm.endsWith(" " + frToken);
+    if (!gefunden.fraktion) gruende.push(`Fraktion \`${frText}\` nicht navigationsfest belegt (Profilueberschrift \`${seite.h1 || "—"}\` traegt nicht das Kuerzel)`);
+  }
 
   // 3 · Mandatsachse. Fehlende Information ist KEINE Bestaetigung.
   const wahlkreisZuweisung = zeilen.some((z) => /^wahlkreis\s*[:0-9]/i.test(z.trim()));
@@ -227,18 +268,16 @@ function bewerteProfil(profil, seite, abruf, externerBeleg) {
     if (gefunden.mandatAchse) gefunden.mandatAchseQuelle = "profilseite";
     else gruende.push(`Wahlkreis \`${profil.wahlkreis}\` nicht im Seitentext gefunden`);
   } else if (profil.listenmandat === true) {
+    // Listenbeleg direkt von der Profilseite. Auch die Berliner Bezirkslisten-Mandate
+    // (Saleh/Stroedter) weisen sich dort selbst aus: "gewaehlt ueber: Bezirksliste"
+    // (Lauf-3-belegt, mandatAchse=profilseite) — deshalb keine Zusatzquellen mehr.
     const listeMarker = /(landesliste|bezirksliste|listenplatz|listenmandat)/.test(vollNorm);
     if (listeMarker && !wahlkreisZuweisung) {
       gefunden.mandatAchse = true; gefunden.mandatAchseQuelle = "profilseite";
     } else if (wahlkreisZuweisung) {
       gruende.push("Listenmandat im Paket, aber die Seite weist einen Wahlkreis zu");
-    } else if (externerBeleg && externerBeleg.urteil === "liste-belegt") {
-      gefunden.mandatAchse = true; gefunden.mandatAchseQuelle = "zusatzquelle";
-      hinweise.push("Mandatsachse ueber die im Manifest hinterlegte amtliche Zusatzquelle belegt");
-    } else if (externerBeleg && externerBeleg.urteil === "wahlkreis-zuordnung") {
-      gruende.push("Listenmandat im Paket, aber die amtliche Zusatzquelle ordnet einen Wahlkreis zu");
     } else {
-      unbelegt.push("Mandatsachse (Listenmandat) weder auf der Profilseite noch ueber eine Zusatzquelle belegt — fehlende Information ist keine Bestaetigung");
+      unbelegt.push("Mandatsachse (Listenmandat) auf der Profilseite nicht belegt — fehlende Information ist keine Bestaetigung");
     }
   } else {
     unbelegt.push("Keine Mandatsachse im Paket");
@@ -295,13 +334,17 @@ function bewerteProfil(profil, seite, abruf, externerBeleg) {
     });
   }
 
-  // 6 · Funktionen: jede gespeicherte Funktion muss im aktuellen (nicht historischen)
-  // Seitentext belegt sein — sonst rot (unbelegte Funktionen gehoeren nicht ins Paket).
-  const aktuellNorm = " " + norm(zeilen.filter((z) => !istHistorik(z)).join("\n")) + " ";
+  // 6 · Funktionen: jede gespeicherte Funktion muss in EINER aktuellen (nicht
+  // historischen) Seitenzeile vollstaendig belegt sein — sonst rot. ZEILENWEISE
+  // (kein zeilenuebergreifender Zufallsbeleg) und NAVIGATIONSFEST: die exakten
+  // Praesidiums-Navigationszeilen (NAV_FUNKTION) beweisen nie eine Funktion
+  // (Lauf-4-Korrektur B).
+  const funktionsZeilen = zeilen.filter((z) => !istHistorik(z) && !NAV_FUNKTION.has(norm(z)));
   for (const f of profil.funktionen || []) {
-    const ok = aktuellNorm.includes(" " + norm(f) + " ");
+    const fN = " " + norm(f) + " ";
+    const ok = funktionsZeilen.some((z) => (" " + norm(z) + " ").includes(fN));
     gefunden.funktionen.push({ name: f, belegt: ok });
-    if (!ok) gruende.push(`Funktion \`${f}\` im aktuellen Seitentext nicht belegt`);
+    if (!ok) gruende.push(`Funktion \`${f}\` in keiner aktuellen Seitenzeile belegt (Navigation und Historik zaehlen nicht)`);
   }
 
   let ergebnis;
@@ -313,13 +356,13 @@ function bewerteProfil(profil, seite, abruf, externerBeleg) {
 
 // ── Netzabruf (nur unter require.main) ──────────────────────────────────────
 
-function httpAbruf(startUrl, zusatzhosts) {
+function httpAbruf(startUrl) {
   return new Promise((resolve) => {
     const redirects = [];
     const start = Date.now();
     function schritt(url, tiefe) {
       if (tiefe > MAX_REDIRECTS) { resolve({ fehler: "zu viele Weiterleitungen", redirects, ms: Date.now() - start }); return; }
-      if (!urlErlaubt(url, zusatzhosts)) { resolve({ fehler: `Adresse ausserhalb der erlaubten amtlichen Hosts: ${url}`, redirects, ms: Date.now() - start }); return; }
+      if (!urlErlaubt(url)) { resolve({ fehler: `Adresse ausserhalb der erlaubten amtlichen Hosts: ${url}`, redirects, ms: Date.now() - start }); return; }
       const req = https.get(url, {
         headers: {
           "user-agent": USER_AGENT,
@@ -362,10 +405,10 @@ function zeitStempel(d) {
   return { tr: fmt("Europe/Istanbul"), berlin: fmt("Europe/Berlin"), utc: d.toISOString() };
 }
 
-async function abrufMitProtokoll(url, zusatzhosts) {
+async function abrufMitProtokoll(url) {
   const eintrag = { url };
   const t = new Date();
-  const r = await httpAbruf(url, zusatzhosts);
+  const r = await httpAbruf(url);
   eintrag.abrufzeit = zeitStempel(t);
   eintrag.redirects = r.redirects || [];
   eintrag.finalUrl = r.finalUrl || null;
@@ -379,40 +422,14 @@ async function abrufMitProtokoll(url, zusatzhosts) {
   return eintrag;
 }
 
-async function pruefeAlle(paketPfad, manifestPfad) {
+async function pruefeAlle(paketPfad) {
   const paket = JSON.parse(fs.readFileSync(paketPfad, "utf8"));
-  let manifest = { erlaubteZusatzhosts: [], zusatzquellen: [] };
-  if (manifestPfad && fs.existsSync(manifestPfad)) manifest = JSON.parse(fs.readFileSync(manifestPfad, "utf8"));
-  const zusatzhosts = (manifest.erlaubteZusatzhosts || []).map((h) => String(h).toLowerCase());
 
-  const geplanteAbrufe = paket.profile.length + (manifest.zusatzquellen || []).length;
+  // Abrufplan: AUSSCHLIESSLICH die parlament-profil-URLs des Pakets (aktuell 20),
+  // keine Zusatzquellen. Harte Freigabegrenze bleibt 30 Seiten je Lauf.
+  const geplanteAbrufe = paket.profile.length;
   if (geplanteAbrufe > MAX_SEITEN) throw new Error(`Abrufplan (${geplanteAbrufe}) ueberschreitet die Obergrenze von ${MAX_SEITEN} Seiten`);
 
-  // 1 · Zusatzquellen zuerst (liefern externe Belege fuer die Profilbewertung).
-  const zusatz = [];
-  const externeBelege = {}; // mandatsId -> belegeMandatsart-Ergebnis (+ Quelle)
-  for (const q of manifest.zusatzquellen || []) {
-    const e = await abrufMitProtokoll(q.url, zusatzhosts);
-    e.zweck = q.zweck;
-    e.belege = [];
-    if (!e.fehler && e.status === 200) {
-      const text = htmlZuText(e.html).join("\n");
-      for (const b of q.belege || []) {
-        const urteil = belegeMandatsart(text, b.vollname);
-        urteil.quelle = q.url;
-        urteil.erwarteteArt = b.erwarteteArt;
-        e.belege.push({ mandatsId: b.mandatsId, ...urteil });
-        externeBelege[b.mandatsId] = urteil;
-      }
-    } else {
-      for (const b of q.belege || []) e.belege.push({ mandatsId: b.mandatsId, gefunden: false, urteil: "quelle-nicht-abrufbar" });
-    }
-    delete e.html;
-    zusatz.push(e);
-    await new Promise((res) => setTimeout(res, ABSTAND_MS));
-  }
-
-  // 2 · Die 20 Profilseiten.
   const ergebnisse = [];
   for (const profil of paket.profile) {
     const quelle = (profil.offizielleQuellen || []).find((q) => q.art === "parlament-profil");
@@ -433,7 +450,7 @@ async function pruefeAlle(paketPfad, manifestPfad) {
         eintrag.h1 = ersteTreffer(e.html, /<h1[^>]*>([\s\S]*?)<\/h1>/i);
         const okStatus = e.status === 200 && /html/i.test(e.contentType || "");
         eintrag.abruf = okStatus ? { ok: true } : { ok: false, grund: `HTTP ${e.status} / Content-Type ${e.contentType || "?"}` };
-        eintrag.bewertung = bewerteProfil(profil, { zeilen }, eintrag.abruf, externeBelege[profil.mandatsId]);
+        eintrag.bewertung = bewerteProfil(profil, { zeilen, h1: eintrag.h1 }, eintrag.abruf);
         eintrag.textAusschnitte = {
           mitgliedschaften: eintrag.bewertung.mitgliedschaftenSeite,
           mandatZeilen: zeilen.filter((z) => /(wahlkreis|landesliste|bezirksliste|listenplatz|direktmandat)/i.test(z)).slice(0, 12).map((z) => z.slice(0, 240)),
@@ -446,13 +463,13 @@ async function pruefeAlle(paketPfad, manifestPfad) {
     ergebnisse.push(eintrag);
     console.log(`  ${eintrag.ergebnis.padEnd(16)} ${profil.mandatsId} (HTTP ${eintrag.status || "-"}, ${eintrag.dauerMs || 0} ms)`);
   }
-  return { paketPfad, manifestPfad, lauf: zeitStempel(new Date()), abgerufeneSeiten: zusatz.length + ergebnisse.filter((e) => e.status != null).length, zusatzquellen: zusatz, ergebnisse };
+  return { paketPfad, lauf: zeitStempel(new Date()), abgerufeneSeiten: ergebnisse.filter((e) => e.status != null).length, ergebnisse };
 }
 
 function zusammenfassungMd(bericht) {
   const z = ["# Profil-Quellen-Verifikation — Zusammenfassung (Strenge-Stufe 2)", ""];
   z.push(`**Lauf:** ${bericht.lauf.tr} TR · ${bericht.lauf.berlin} Berlin · ${bericht.lauf.utc} UTC`);
-  z.push(`**Abgerufene Seiten:** ${bericht.abgerufeneSeiten} (davon ${bericht.zusatzquellen.length} Zusatzquellen aus dem Manifest)`);
+  z.push(`**Abgerufene Seiten:** ${bericht.abgerufeneSeiten} — ausschließlich die parlament-profil-URLs des Pakets, keine Zusatzquellen`);
   const zaehler = {};
   for (const e of bericht.ergebnisse) zaehler[e.ergebnis] = (zaehler[e.ergebnis] || 0) + 1;
   z.push("", `**Ergebnis:** ${Object.entries(zaehler).map(([k, v]) => `${v}× ${k}`).join(" · ")} (${bericht.ergebnisse.length} Profile)`, "");
@@ -460,11 +477,6 @@ function zusammenfassungMd(bericht) {
   z.push("|---|---|---|---|---|---|");
   for (const e of bericht.ergebnisse) {
     z.push(`| ${e.mandatsId} | **${e.ergebnis}** | ${e.status || "-"} | ${e.finalUrl || "-"} | ${e.dauerMs || 0} ms | ${(e.sha256 || "").slice(0, 12)} |`);
-  }
-  z.push("", "## Zusatzquellen (Manifest)", "");
-  for (const q of bericht.zusatzquellen) {
-    z.push(`- ${q.url} — HTTP ${q.status || "-"}, SHA256 ${(q.sha256 || "").slice(0, 12)}; ${q.zweck || ""}`);
-    for (const b of q.belege || []) z.push(`  - ${b.mandatsId}: ${b.urteil}${b.umfeld ? ` — Umfeld: "${String(b.umfeld).slice(0, 220)}"` : ""}`);
   }
   z.push("", "## Gründe je nicht bestätigtem Profil", "");
   for (const e of bericht.ergebnisse) {
@@ -482,17 +494,15 @@ async function main() {
   const args = process.argv.slice(2);
   const arg = (name, dflt) => { const i = args.indexOf(name); return i >= 0 ? args[i + 1] : dflt; };
   const paketPfad = arg("--paket", path.join(__dirname, "..", "daten", "mandatsprofile-berlin-brandenburg-2026-08-24.json"));
-  const manifestPfad = arg("--manifest", path.join(__dirname, "..", "daten", "profil-quellen-manifest-2026-08-24.json"));
   const outJson = arg("--out-json", "profil-verifikation-bericht.json");
   const outMd = arg("--out-md", "profil-verifikation-zusammenfassung.md");
 
   console.log(`Profil-Quellen-Verifikation (Strenge-Stufe 2) — ${paketPfad}`);
-  const bericht = await pruefeAlle(paketPfad, manifestPfad);
+  const bericht = await pruefeAlle(paketPfad);
   fs.writeFileSync(outJson, JSON.stringify(bericht, null, 1));
   fs.writeFileSync(outMd, zusammenfassungMd(bericht));
 
   console.log("\n===== PQV-REPORT-BEGIN =====");
-  for (const q of bericht.zusatzquellen) console.log(`PQV-ZUSATZ ${JSON.stringify(q)}`);
   for (const e of bericht.ergebnisse) console.log(`PQV-PROFIL ${e.mandatsId} ${JSON.stringify(e)}`);
   console.log(`PQV-META ${JSON.stringify({ paketPfad: bericht.paketPfad, lauf: bericht.lauf, abgerufeneSeiten: bericht.abgerufeneSeiten })}`);
   console.log("===== PQV-REPORT-END =====\n");
@@ -506,7 +516,7 @@ async function main() {
   console.log("\nERGEBNIS: alle Profile bestätigt (Strenge-Stufe 2).");
 }
 
-module.exports = { ERLAUBTE_HOSTS, MAX_SEITEN, urlErlaubt, norm, htmlZuText, istHistorik, mitgliedschaften, belegeMandatsart, bewerteProfil, zusammenfassungMd };
+module.exports = { ERLAUBTE_HOSTS, MAX_SEITEN, urlErlaubt, norm, htmlZuText, istHistorik, mitgliedschaften, bewerteProfil, zusammenfassungMd };
 
 if (require.main === module) {
   main().catch((e) => { console.error("FATAL:", e && e.stack || e); process.exit(2); });

@@ -9,10 +9,12 @@ name: Profil-Quellen-Verifikation (BE/BB, PR 267)
 #   - KEINE Secrets, KEINE Supabase-/Vercel-/AWS-Verbindung, KEIN Deployment,
 #     KEIN Production-Zugriff. permissions: contents: read — schreibt NICHTS
 #     ins Repo, importiert und aktiviert NICHTS.
-#   - Abgerufen werden AUSSCHLIESSLICH die 20 parlament-profil-URLs des Pakets;
-#     erlaubte Hosts nur (www.)parlament-berlin.de und (www.)landtag.brandenburg.de
-#     — technisch erzwungen in scripts/profil-quellen-verifikation.js (auch fuer
-#     Redirect-Ziele). TLS bleibt an; KEIN Umgehen von Zugriffssperren.
+#   - Abgerufen werden AUSSCHLIESSLICH die 20 parlament-profil-URLs des Pakets —
+#     KEINE Zusatzquellen (das fruehere Pruefmanifest wurde entfernt; die Profilseiten
+#     belegen alle Achsen selbst). Erlaubte Hosts nur (www.)parlament-berlin.de und
+#     (www.)landtag.brandenburg.de — technisch erzwungen in
+#     scripts/profil-quellen-verifikation.js (auch fuer Redirect-Ziele), harte
+#     Obergrenze 30 Seiten je Lauf. TLS bleibt an; KEIN Umgehen von Zugriffssperren.
 #   - Ergebnis je Profil genau eines: bestaetigt / abweichung / nicht_eindeutig /
 #     nicht_erreichbar. Nicht erreichbar oder nicht eindeutig gilt NIE als bestaetigt.
 #   - Artefakte: JSON-Vollbericht + Markdown-Zusammenfassung. Keine vollstaendigen
@@ -30,7 +32,6 @@ on:
       - "scripts/profil-quellen-verifikation.js"
       - "scripts/profil-quellen-verifikation-test.js"
       - "daten/mandatsprofile-berlin-brandenburg-2026-08-24.json"
-      - "daten/profil-quellen-manifest-2026-08-24.json"
   workflow_dispatch: {}
 
 # Minimalrechte: nur lesen. Kein Repo-Write, keine Pakete, nichts.

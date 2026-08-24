@@ -1,6 +1,6 @@
 {
   "version": "helmut-mandatsprofil/1",
-  "quelleDerRecherche": "WebSearch-Vorrecherche + bytegenauer Abgleich mit den amtlichen Profilseiten über die rein lesenden GitHub-Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung; Zusatzquellen nur aus daten/profil-quellen-manifest-2026-08-24.json). Nicht amtlich belegte optionale Angaben wurden entfernt. Kein Import, keine Aktivierung ohne Betreiberfreigabe.",
+  "quelleDerRecherche": "WebSearch-Vorrecherche + bytegenauer Abgleich mit den amtlichen Profilseiten über die rein lesenden GitHub-Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, navigationsfeste Fraktions-/Funktionsbelege; ausschließlich die 20 Profilseiten, keine Zusatzquellen). Nicht amtlich belegte optionale Angaben wurden entfernt. Kein Import, keine Aktivierung ohne Betreiberfreigabe.",
   "profile": [
     {
       "mandatsId": "dirk-stettner",
@@ -95,7 +95,7 @@
       "fraktion": "SPD",
       "bundesland": "Berlin",
       "listenmandat": true,
-      "regionHinweis": "Land Berlin (Listenmandat)",
+      "regionHinweis": "Land Berlin (Bezirksliste)",
       "themen": [
         "Landespolitik Berlin",
         "Parlamentsarbeit und Fraktionsführung"
@@ -111,7 +111,7 @@
         }
       ],
       "aktiv": false,
-      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei. Mandatsart amtlich über die eigene Profilseite belegt („gewählt über: Bezirksliste“)."
     },
     {
       "mandatsId": "joerg-stroedter",
@@ -121,7 +121,7 @@
       "fraktion": "SPD",
       "bundesland": "Berlin",
       "listenmandat": true,
-      "regionHinweis": "Land Berlin (Listenmandat)",
+      "regionHinweis": "Land Berlin (Bezirksliste)",
       "ausschuesse": [
         "Ausschuss für Wirtschaft, Energie und Betriebe",
         "Unterausschuss Beteiligungsmanagement und -controlling"
@@ -144,7 +144,7 @@
         }
       ],
       "aktiv": false,
-      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei. Mandatsart amtlich über die eigene Profilseite belegt („gewählt über: Bezirksliste“)."
     },
     {
       "mandatsId": "bettina-jarasch",

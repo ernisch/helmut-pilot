@@ -168,29 +168,29 @@ check("Bretz: Hauptausschuss ordentlich, keine stellvertretenden Altangaben",
   !!bretz && (bretz.ausschuesse || []).includes("Hauptausschuss") &&
   !(bretz.stellvertretendeAusschuesse || []).length);
 
-abschnitt("Strenge-Stufe 2: keine unbelegten optionalen Angaben, Manifest vorhanden");
+abschnitt("Strenge-Stufe 2: keine unbelegten optionalen Angaben, keine Zusatzquellen");
 
 const saleh = (datei.profile || []).find((p) => p.mandatsId === "raed-saleh");
 const stroedter = (datei.profile || []).find((p) => p.mandatsId === "joerg-stroedter");
-check("Saleh/Stroedter ohne unbelegte Bezirks-Präzisierung im Regionshinweis",
+// Lauf-3-belegt: beide Profilseiten weisen die Mandatsart selbst aus
+// („gewählt über: Bezirksliste") — kein „uneindeutig", keine Zusatzquelle noetig.
+check("Saleh/Stroedter mit seitenbelegtem Regionshinweis „Land Berlin (Bezirksliste)“",
   !!saleh && !!stroedter &&
-  saleh.regionHinweis === "Land Berlin (Listenmandat)" &&
-  stroedter.regionHinweis === "Land Berlin (Listenmandat)");
+  saleh.regionHinweis === "Land Berlin (Bezirksliste)" &&
+  stroedter.regionHinweis === "Land Berlin (Bezirksliste)");
+check("Saleh/Stroedter-Notiz nennt den Seitenbeleg der Mandatsart",
+  /gewählt über: Bezirksliste/.test(saleh.notiz || "") &&
+  /gewählt über: Bezirksliste/.test(stroedter.notiz || ""));
 check("Kein Berliner Profil behauptet eine stellvertretende Rolle (Seiten weisen keine aus)",
   (datei.profile || []).filter((p) => p.parlament === "landtag-berlin")
     .every((p) => !(p.stellvertretendeAusschuesse || []).length));
 check("Jeder behauptete Listenplatz steht als „Platz N“ im Regionshinweis von BB-Listenprofilen",
   (datei.profile || []).filter((p) => p.parlament === "landtag-brandenburg" && p.listenmandat === true)
     .every((p) => /\(Landesliste, Platz \d+\)$/.test(String(p.regionHinweis || ""))));
-const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "daten/profil-quellen-manifest-2026-08-24.json"), "utf8"));
-check("Prüfmanifest existiert und nennt die amtliche Gewählten-Seite der Landeswahlleiterin",
-  Array.isArray(manifest.zusatzquellen) && manifest.zusatzquellen.length === 1 &&
-  manifest.zusatzquellen[0].url.startsWith("https://www.wahlen-berlin.de/") &&
-  manifest.zusatzquellen[0].belege.map((b) => b.mandatsId).sort().join(",") === "joerg-stroedter,raed-saleh");
-check("Manifest-Zusatzhosts sind ausschließlich wahlen-berlin.de",
-  (manifest.erlaubteZusatzhosts || []).every((h) => /(^|\.)wahlen-berlin\.de$/.test(h)));
-check("Abrufplan bleibt unter der 30-Seiten-Grenze",
-  (datei.profile || []).length + manifest.zusatzquellen.length <= 30);
+check("Kein Prüfmanifest mehr (Zusatzquellen entfernt — die Profilseiten belegen alle Achsen selbst)",
+  !fs.existsSync(path.join(ROOT, "daten/profil-quellen-manifest-2026-08-24.json")));
+check("Abrufplan (nur die Paket-URLs) bleibt unter der 30-Seiten-Grenze",
+  (datei.profile || []).length <= 30);
 
 abschnitt("Empfohlene erste Brandenburger Gruppe (nur Vorbereitung)");
 

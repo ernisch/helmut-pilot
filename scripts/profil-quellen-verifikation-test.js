@@ -1,9 +1,10 @@
 "use strict";
 
 // Helmut — Offline-Test der Auswertungslogik der Profil-Quellen-Verifikation (PR #267,
-// Strenge-Stufe 2). KEIN Netz. Getestet werden die reinen Funktionen: URL-Schranke,
-// Normalisierung, HTML→Text, Mitgliedschafts-/Rollenlogik, Mandatsachsen-, Funktions- und
-// Regionspruefung sowie die Mandatsart-Belegung aus einer Zusatzquelle.
+// Strenge-Stufe 2 mit den Lauf-4-Korrekturen). KEIN Netz. Getestet werden die reinen
+// Funktionen: URL-Schranke, Normalisierung, HTML→Text, Mitgliedschafts-/Rollenlogik,
+// Mandatsachsen-, Funktions- und Regionspruefung sowie die navigationsfesten
+// Fraktions-/Funktionsbelege und die drei exakten Berliner Strukturueberschriften.
 
 const V = require("./profil-quellen-verifikation.js");
 
@@ -21,8 +22,8 @@ check("landtag.brandenburg.de erlaubt", V.urlErlaubt("https://www.landtag.brande
 check("fremder Host abgelehnt", !V.urlErlaubt("https://www.abgeordnetenwatch.de/x"));
 check("Subdomain-Trick abgelehnt", !V.urlErlaubt("https://parlament-berlin.de.boese.example/x"));
 check("http (ohne TLS) abgelehnt", !V.urlErlaubt("http://www.parlament-berlin.de/x"));
-check("Manifest-Zusatzhost NUR wenn uebergeben", !V.urlErlaubt("https://www.wahlen-berlin.de/x") &&
-  V.urlErlaubt("https://www.wahlen-berlin.de/x", ["www.wahlen-berlin.de"]));
+check("wahlen-berlin.de ist KEIN erlaubter Host mehr (Zusatzquellen entfernt)",
+  !V.urlErlaubt("https://www.wahlen-berlin.de/x"));
 check("Abruf-Obergrenze je Lauf ist 30 Seiten", V.MAX_SEITEN === 30);
 
 abschnitt("Normalisierung und Entities");
@@ -37,11 +38,17 @@ check("&bdquo;/&ldquo; dekodiert (keine Buchstabenreste)", V.norm(entZeilen[0]) 
 const FUELLER = Array.from({ length: 30 }, (_, i) =>
   `Absatz ${i + 1} der Biografie mit ausreichend Fliesstext zu Werdegang, Terminen und parlamentarischer Arbeit im Landtag.`);
 
-// Brandenburg-Seite: Navigation VOR den Abschnitten, Historik, dann amtliche Abschnitte.
-function bbZeilen({ ordentlich = [], stellvertretend = [], extraVorAbschnitt = [] } = {}) {
+// Brandenburg-Seite wie in Lauf 2/3 beobachtet: Navigation nennt ALLE vier Fraktionen und
+// den Praesidiums-Block, die eigene Fraktion steht zusaetzlich in den Stammdaten; dann
+// Historik und die amtlichen Mitgliedschaftsabschnitte.
+function bbZeilen({ ordentlich = [], stellvertretend = [], extraVorAbschnitt = [], mitLandesliste = true } = {}) {
   return [
-    "Erika Muster", "SPD-Fraktion", "Landesliste SPD-Fraktion, Platz 7",
+    "Erika Muster",
+    "SPD-Fraktion", "AfD-Fraktion", "CDU-Fraktion", "BSW-Fraktion", // Navigation: ALLE Fraktionen
+    "Präsidentin", "Vizepräsidenten", "Präsidentin und Präsidium", "Präsidium", "Schriftführer/-innen", // Praesidiums-Navigation
     "Petitionsausschuss", "Kommissionen", // Navigation auf JEDER BB-Seite
+    "SPD-Fraktion", // Stammdaten: eigene Fraktion (zweites Vorkommen)
+    ...(mitLandesliste ? ["Landesliste SPD-Fraktion, Platz 7"] : []),
     "2019 bis 2021 stellvertretender Vorsitzender im Ausschuss für Wissenschaft, Forschung und Kultur", // Historik
     ...extraVorAbschnitt,
     "Ordentliche Ausschuss- und Gremienmitgliedschaften",
@@ -99,16 +106,23 @@ const beListe = {
   parlament: "landtag-berlin", listenmandat: true, regionHinweis: "Land Berlin (Listenmandat)",
   ausschuesse: [], stellvertretendeAusschuesse: [], aktiv: false
 };
-const beOhneAchse = { zeilen: ["Max Muster", "SPD-Fraktion", "Wahlkreisbüro", ...FUELLER] };
+const beOhneAchse = { h1: "Max Muster, SPD", zeilen: ["Max Muster", "SPD-Fraktion", "Wahlkreisbüro", ...FUELLER] };
 const b7 = V.bewerteProfil(beListe, beOhneAchse, { ok: true });
 check("fehlende Achsenangabe ist KEINE Bestaetigung → nicht_eindeutig", b7.ergebnis === "nicht_eindeutig", JSON.stringify(b7.unbelegt));
-const b8 = V.bewerteProfil(beListe, beOhneAchse, { ok: true }, { urteil: "liste-belegt" });
-check("Manifest-Zusatzbeleg macht die Achse belegt → bestaetigt", b8.ergebnis === "bestaetigt", JSON.stringify(b8.gruende.concat(b8.unbelegt)));
-const b9 = V.bewerteProfil(beListe, beOhneAchse, { ok: true }, { urteil: "wahlkreis-zuordnung" });
-check("Zusatzquelle ordnet Wahlkreis zu → abweichung", b9.ergebnis === "abweichung");
-const beMitWk = { zeilen: ["Max Muster", "SPD-Fraktion", "Wahlkreis: Spandau 2", ...FUELLER] };
+const beMitWk = { h1: "Max Muster, SPD", zeilen: ["Max Muster", "SPD-Fraktion", "Wahlkreis: Spandau 2", ...FUELLER] };
 const b10 = V.bewerteProfil(beListe, beMitWk, { ok: true });
 check("Profilseite weist Wahlkreis zu, Paket sagt Liste → abweichung", b10.ergebnis === "abweichung");
+
+abschnitt("Gegenprobe 11 (Lauf 4): Bezirkslisten-Beleg direkt von der Profilseite");
+
+const beBezirk = { ...beListe, regionHinweis: "Land Berlin (Bezirksliste)" };
+const beBezirkSeite = { h1: "Max Muster, SPD", zeilen: ["Max Muster", "SPD-Fraktion", "gewählt über:", "Bezirksliste", "Wahlkreisbüro", ...FUELLER] };
+const b8 = V.bewerteProfil(beBezirk, beBezirkSeite, { ok: true });
+check("„gewählt über: Bezirksliste“ auf der eigenen Profilseite belegt die Achse → bestaetigt",
+  b8.ergebnis === "bestaetigt", JSON.stringify(b8.gruende.concat(b8.unbelegt)));
+check("Achsenquelle ist die Profilseite (keine Zusatzquelle)",
+  b8.gefunden && b8.gefunden.mandatAchseQuelle === "profilseite");
+check("„Wahlkreisbüro“ zaehlt dabei nicht als Wahlkreis-Zuweisung", !b8.gruende.length);
 
 abschnitt("Gegenprobe 6: gespeicherte Funktion ohne amtlichen Beleg");
 
@@ -122,6 +136,60 @@ check("amtlich belegte Funktion → bestaetigt", b12.ergebnis === "bestaetigt", 
 const fkHist = { zeilen: [...s1.zeilen, "2016 bis 2019 Vorsitzende der SPD-Fraktion des Landtages"] };
 const b13 = V.bewerteProfil(fkProfil, fkHist, { ok: true });
 check("nur historisch belegte Funktion zaehlt NICHT", b13.ergebnis === "abweichung");
+
+abschnitt("Gegenprobe 12 (Lauf 4): Navigation beweist keine Funktion");
+
+// Der Praesidiums-Navigationsblock steht bereits in bbZeilen ("Präsidium", "Präsidentin" …).
+const navFkProfil = { ...BB_PROFIL, funktionen: ["Präsidium"] };
+const b20 = V.bewerteProfil(navFkProfil, s1, { ok: true });
+check("exakte Navigationszeile „Präsidium“ belegt die Funktion NICHT → abweichung", b20.ergebnis === "abweichung");
+const echteFkProfil = { ...BB_PROFIL, funktionen: ["Mitglied im Präsidium des Landtages Brandenburg"] };
+const s1p = { zeilen: [...s1.zeilen, "Seit Dezember 2024 Mitglied im Präsidium des Landtages Brandenburg"] };
+const b21 = V.bewerteProfil(echteFkProfil, s1p, { ok: true });
+check("echte Inhaltszeile belegt die Funktion weiterhin → bestaetigt", b21.ergebnis === "bestaetigt", JSON.stringify(b21.gruende));
+const b22 = V.bewerteProfil(echteFkProfil, s1, { ok: true });
+check("ohne Inhaltszeile bleibt die Funktion trotz Navigationsblock rot", b22.ergebnis === "abweichung");
+// Zeilenweise Pruefung: ein zufaellig zeilenuebergreifender Text beweist nichts.
+const splitFk = { zeilen: [...s1.zeilen, "Sie ist Vorsitzende der", "SPD-Fraktion des Landtages"] };
+const b23 = V.bewerteProfil(fkProfil, splitFk, { ok: true });
+check("zeilenuebergreifender Zufallstext belegt keine Funktion → abweichung", b23.ergebnis === "abweichung");
+
+abschnitt("Gegenprobe 13 (Lauf 4): Fraktion navigationsfest — BB");
+
+// Die Navigation nennt alle vier Fraktionen; nur die eigene steht zusaetzlich in den
+// Stammdaten. Eine falsche Paket-Fraktion darf dadurch NIE gruen werden.
+const falscheFraktion = { ...BB_PROFIL, fraktion: "AfD", partei: "AfD" };
+const b24 = V.bewerteProfil(falscheFraktion, s1, { ok: true });
+check("BB: Navigations-Nennung „AfD-Fraktion“ beweist keine AfD-Zugehoerigkeit → abweichung", b24.ergebnis === "abweichung");
+check("Grund nennt die navigationsfeste Fraktionspruefung", b24.gruende.some((g) => /navigationsfest/.test(g)));
+// Direktmandat ohne Landeslisten-Zeile: Mehrheitsregel (eigene 2x, andere je 1x).
+const bbDirekt = {
+  mandatsId: "erika-muster", vollname: "Erika Muster", fraktion: "SPD", partei: "SPD",
+  parlament: "landtag-brandenburg", wahlkreis: "Wahlkreis 21 (Musterstadt)",
+  ausschuesse: ["Hauptausschuss"], stellvertretendeAusschuesse: [], aktiv: false
+};
+const sDirekt = { zeilen: [...bbZeilen({ ordentlich: ["Hauptausschuss"], mitLandesliste: false }), "Wahlkreis 21"] };
+const b25 = V.bewerteProfil(bbDirekt, sDirekt, { ok: true });
+check("BB-Direktmandat: eigene Fraktionszeile in den Stammdaten (Mehrheitsregel) → bestaetigt",
+  b25.ergebnis === "bestaetigt", JSON.stringify(b25.gruende.concat(b25.unbelegt)));
+const b26 = V.bewerteProfil({ ...bbDirekt, fraktion: "CDU", partei: "CDU" }, sDirekt, { ok: true });
+check("BB-Direktmandat: falsche Fraktion faellt durch die Mehrheitsregel → abweichung", b26.ergebnis === "abweichung");
+
+abschnitt("Gegenprobe 14 (Lauf 4): Fraktion navigationsfest — Berlin (h1-Kuerzel)");
+
+const beGruene = {
+  mandatsId: "gerd-gruen", vollname: "Gerd Grün", fraktion: "Bündnis 90/Die Grünen", partei: "Bündnis 90/Die Grünen",
+  parlament: "landtag-berlin", listenmandat: true, regionHinweis: "Land Berlin (Landesliste)",
+  ausschuesse: [], stellvertretendeAusschuesse: [], aktiv: false
+};
+const beGrueneSeite = { h1: "Gerd Grün, GRÜNE", zeilen: ["Gerd Grün", "Landesliste", ...FUELLER] };
+const b27 = V.bewerteProfil(beGruene, beGrueneSeite, { ok: true });
+check("Berlin: h1-Kuerzel GRÜNE belegt Bündnis 90/Die Grünen → bestaetigt", b27.ergebnis === "bestaetigt", JSON.stringify(b27.gruende.concat(b27.unbelegt)));
+const b28 = V.bewerteProfil({ ...beGruene, fraktion: "CDU", partei: "CDU" }, beGrueneSeite, { ok: true });
+check("Berlin: falsche Paket-Fraktion trotz Seitentext-Nennungen → abweichung", b28.ergebnis === "abweichung");
+const beOhneH1 = { zeilen: ["Gerd Grün", "Landesliste", "Fraktion Bündnis 90/Die Grünen", ...FUELLER] };
+const b29 = V.bewerteProfil(beGruene, beOhneH1, { ok: true });
+check("Berlin: ohne h1-Kuerzel gilt die Fraktion als unbelegt (kein Seitentext-Ersatz) → abweichung", b29.ergebnis === "abweichung");
 
 abschnitt("Gegenprobe 7: Regionshinweis widerspricht der amtlichen Seite");
 
@@ -149,7 +217,7 @@ check("Berliner Navigationszeile Enquete-Kommission ist ausgeschlossen",
 check("Berliner Petitionsausschuss-Zeile ist eine echte Mitgliedschaft (keine Blockliste)",
   V.mitgliedschaften(["Petitionsausschuss"], "landtag-berlin").unbestimmt.includes("Petitionsausschuss"));
 const beMitgliedProfil = { ...beListe, ausschuesse: ["Hauptausschuss"] };
-const beSeite = { zeilen: ["Max Muster", "SPD-Fraktion", "Landesliste", "Hauptausschuss", ...FUELLER] };
+const beSeite = { h1: "Max Muster, SPD", zeilen: ["Max Muster", "SPD-Fraktion", "Landesliste", "Hauptausschuss", ...FUELLER] };
 const b17 = V.bewerteProfil(beMitgliedProfil, beSeite, { ok: true });
 check("Berliner Mitgliedschaft ohne Rollenausweis wird als Mitgliedschaft bestaetigt", b17.ergebnis === "bestaetigt", JSON.stringify(b17.gruende.concat(b17.unbelegt)));
 const beStvProfil = { ...beListe, stellvertretendeAusschuesse: ["Hauptausschuss"] };
@@ -163,17 +231,36 @@ const b19 = V.bewerteProfil(BB_PROFIL, s3, { ok: true });
 check("unzugeordnete Abschnittszeile → abweichung", b19.ergebnis === "abweichung");
 check("Grund nennt den Wahlprüfungsausschuss", b19.gruende.some((g) => /Wahlprüfungsausschuss/.test(g)));
 
-abschnitt("Mandatsart-Beleg aus der Gewaehlten-Zusatzquelle");
+abschnitt("Gegenprobe 15 (Lauf 4): die drei exakten Berliner Strukturueberschriften");
 
-const gewText = "Gewählte in den Wahlkreisen Wahlkreis 21 Beispiel, Anna CDU\nGewählte nach Bezirksliste der SPD Muster, Max SPD\n";
-const u1 = V.belegeMandatsart(gewText, "Max Muster");
-check("Name in Nachname-Vorname-Form gefunden, Listen-Abschnitt naeher → liste-belegt", u1.gefunden && u1.urteil === "liste-belegt", u1.urteil);
-const u2 = V.belegeMandatsart(gewText, "Anna Beispiel");
-check("Wahlkreis-Abschnitt naeher → wahlkreis-zuordnung", u2.gefunden && u2.urteil === "wahlkreis-zuordnung");
-const u3 = V.belegeMandatsart(gewText, "Nie Genannt");
-check("nicht gelisteter Name → name-nicht-gefunden", !u3.gefunden && u3.urteil === "name-nicht-gefunden");
+// Lauf 3 wurde 10x rot, weil diese drei Seiten-/Reiterueberschriften als unzugeordnete
+// Mitgliedschaften galten. Sie stehen auf jeder Berliner Profilseite — auch im Kopf- UND
+// Fussbereich wiederholt — und duerfen weder bestaetigen noch rot melden.
+const BE_STRUKTUR = ["Ausschüsse: Einladungen und Protokolle", "Ausschüsse: Vorgänge", "Mitgliedschaft in Ausschüssen"];
+const beKopfFussProfil = { ...beListe, ausschuesse: ["Hauptausschuss"] };
+const beKopfFussSeite = { h1: "Max Muster, SPD", zeilen: [
+  ...BE_STRUKTUR, // Kopfbereich
+  "Max Muster", "Landesliste", "Hauptausschuss",
+  ...FUELLER,
+  ...BE_STRUKTUR // Wiederholung im Fussbereich
+] };
+const b30 = V.bewerteProfil(beKopfFussProfil, beKopfFussSeite, { ok: true });
+check("drei Strukturueberschriften in Kopf UND Fuss → kein Rot, Profil bestaetigt",
+  b30.ergebnis === "bestaetigt", JSON.stringify(b30.gruende.concat(b30.unbelegt)));
+check("Strukturueberschriften bestaetigen selbst KEINE Mitgliedschaft",
+  V.mitgliedschaften(BE_STRUKTUR, "landtag-berlin").unbestimmt.length === 0);
+const beEchteExtra = { h1: "Max Muster, SPD", zeilen: [
+  ...BE_STRUKTUR,
+  "Max Muster", "Landesliste", "Hauptausschuss",
+  "Ausschuss für Sport", // ECHTE zusaetzliche Mitgliedschaft neben den Ueberschriften
+  ...FUELLER,
+  ...BE_STRUKTUR
+] };
+const b31 = V.bewerteProfil(beKopfFussProfil, beEchteExtra, { ok: true });
+check("echte zusaetzliche Mitgliedschaft neben den Ueberschriften bleibt ROT", b31.ergebnis === "abweichung");
+check("Grund nennt den Ausschuss für Sport", b31.gruende.some((g) => /Ausschuss für Sport/.test(g)));
 
 console.log(`\n== ERGEBNIS ==`);
 console.log(`PASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
 if (fail > 0) process.exit(1);
-console.log("Auswertungslogik der Profil-Quellen-Verifikation (Strenge-Stufe 2) ist offline belegt.");
+console.log("Auswertungslogik der Profil-Quellen-Verifikation (Strenge-Stufe 2, Lauf-4-Korrekturen) ist offline belegt.");

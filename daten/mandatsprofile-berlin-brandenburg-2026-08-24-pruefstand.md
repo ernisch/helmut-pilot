@@ -3,19 +3,22 @@
 **Prüfweg:** Vom Gründer freigegebene, rein lesende GitHub-Actions-Läufe
 (`.github/workflows/profil-quellen-verifikation.yml`, Sicherheitsmuster `sprint9b-verify.yml`;
 `permissions: contents: read`, keine Secrets, Host-Schranke auch für Redirects, TLS an, keine
-Umgehung von Zugriffssperren). Abgerufen werden die 20 amtlichen `parlament-profil`-URLs des
-Pakets plus ausschließlich die im Prüfmanifest `daten/profil-quellen-manifest-2026-08-24.json`
-fest hinterlegten amtlichen Zusatzadressen (Obergrenze 30 Seiten je Lauf, technisch erzwungen).
+Umgehung von Zugriffssperren). Abgerufen werden **ausschließlich die 20 amtlichen
+`parlament-profil`-URLs des Pakets** — keine Zusatzquellen (das frühere Prüfmanifest wurde mit
+Lauf 4 entfernt, Begründung unten; Obergrenze 30 Seiten je Lauf, technisch erzwungen).
 
 ## Strenge-Stufe 2 (dritter Lauf, gründerfreigegeben)
 
 Die Erstfassung der Prüflogik war an mehreren Stellen zu großzügig. Seit der Strenge-Stufe 2 gilt:
 
 1. **Fehlende Information ist keine Bestätigung.** Nennt die Profilseite keine Mandatsachse,
-   ist das Ergebnis `nicht_eindeutig` — es sei denn, eine im Manifest hinterlegte amtliche
-   Zusatzquelle belegt sie. Für **Raed Saleh** und **Jörg Stroedter** (parlament-berlin.de
-   nennt keine Achse) ist die amtliche Gewählten-Übersicht der Landeswahlleiterin zur
-   Wiederholungswahl 2023 hinterlegt (`wahlen-berlin.de`, exakte URL im Manifest).
+   ist das Ergebnis `nicht_eindeutig`. **Korrektur (Lauf 3/4):** Für **Raed Saleh** und
+   **Jörg Stroedter** ist die Mandatsachse **auf der eigenen amtlichen Profilseite
+   ausgewiesen** („gewählt über: Bezirksliste"; Saleh: Wahlbezirk Spandau, Stroedter:
+   Wahlbezirk Reinickendorf) — Lauf 3 hat sie dort belegt (`mandatAchse`, Quelle
+   `profilseite`). Die frühere Aussage, die Seiten nennten keine Achse, war ein
+   Auswertungsfehler; die dafür hinterlegte Zusatzquelle der Landeswahlleiterin
+   (`wahlen-berlin.de`) war doppelte Beweislogik und wurde mit Lauf 4 entfernt.
 2. **Mitgliedschaften zählen nur im Profilinhalt:** Brandenburg ausschließlich in den
    Abschnitten „Ordentliche/Stellvertretende Ausschuss- und Gremienmitgliedschaften";
    Navigation (BB: „Petitionsausschuss"/„Kommissionen" vor dem Abschnitt; Berlin:
@@ -44,7 +47,8 @@ Die Erstfassung der Prüflogik war an mehreren Stellen zu großzügig. Seit der 
   Fraktionsvorsitz), Lüders (Fraktionsvorsitz + Präsidium).
 - **Regionshinweise auf das Belegte reduziert:** BB-Listenprofile → „Brandenburg
   (Landesliste, Platz N)" (Platz je amtlicher Seite); Berliner Listenprofile → „Land Berlin
-  (Landesliste)" bzw. für Saleh/Stroedter „Land Berlin (Listenmandat)"; unbelegte
+  (Landesliste)" bzw. für Saleh/Stroedter seit Lauf 4 „Land Berlin (Bezirksliste)"
+  (seitenbelegt: „gewählt über: Bezirksliste"); unbelegte
   Bezirks-/Kandidaturwahlkreis- und Wohnort-Präzisierungen sowie Jaraschs
   Listenplatz-1-Angabe entfernt.
 - **Themen** je Profil auf ableitbare Felder zurückgeführt.
@@ -56,16 +60,29 @@ Die Erstfassung der Prüflogik war an mehreren Stellen zu großzügig. Seit der 
 12 mit Abweichungen; zusätzlich deckte die manuelle Auswertung der Seitenzeilen fünf im
 Erstlauf technisch nicht angemahnte fehlende Gremien auf (Jarasch, Schmidberger, Schrader,
 Liedtke, Poschmann). **Alle Befunde wurden in das Paket eingearbeitet** (Spalte „Korrektur“).
-Der abschließende Lauf 2 nach den Korrekturen ist der maßgebliche Nachweis; sein Ergebnis ist
-am Pull Request (Check „Profil-Quellen-Verifikation“) und in dessen Artefakten einsehbar.
+**Lauf 2** nach den Korrekturen war grün (20/20), aber mit der später verschärften Logik
+nicht ausreichend streng. **Lauf 3 (Strenge-Stufe 2)** bestätigte alle 10 Brandenburger
+Profile vollständig (Rollen, Listenplätze, Funktionen) und wurde für alle 10 Berliner
+Profile rot — **allein durch einen Auswertungsfehler**: die auf jeder Berliner Profilseite
+stehenden drei Struktur-/Reiterüberschriften „Ausschüsse: Einladungen und Protokolle",
+„Ausschüsse: Vorgänge" und „Mitgliedschaft in Ausschüssen" wurden fälschlich als
+unzugeordnete Mitgliedschaften gemeldet; alle Paket-Mitgliedschaften selbst waren gefunden,
+keine echte zusätzliche Mitgliedschaft fehlte. **Lauf 4** behebt genau das (die drei
+Überschriften zählen als exakte Strukturzeilen), macht Fraktions- und Funktionsbelege
+navigationsfest (Berlin: Fraktionskürzel in der Profilüberschrift; Brandenburg:
+Stammdaten-/Mehrheitsregel statt Navigations-Nennung; Funktionen nur zeilenweise, nie aus
+Navigations-/Präsidiumszeilen) und entfernt die Zusatzquellen-Beweislogik. **Der Lauf 4 ist
+der maßgebliche Nachweis;** sein Ergebnis ist am Pull Request (Check
+„Profil-Quellen-Verifikation") und in dessen Artefakten einsehbar.
 
 **Dokumentierte Grenzen des Prüfwegs:**
 
 1. `parlament-berlin.de` weist bei Ausschussmitgliedschaften **keine Rollen** aus
    (ordentlich/stellvertretend). Berliner Mitgliedschaften stehen daher im Feld `ausschuesse`;
    die Rolle ist amtlich unbestimmt und wird nicht behauptet.
-2. Bei Berliner **Listenabgeordneten ohne Achsenangabe** auf der Seite (Saleh, Stroedter) gilt:
-   keine Bestätigung, aber auch **kein Widerspruch** — dokumentiert, kein Fehler.
+2. **Korrigiert (Lauf 3/4):** Die früher hier dokumentierte Annahme, die Seiten von Saleh und
+   Stroedter nennten keine Mandatsachse, war **falsch** — beide Profilseiten weisen
+   „gewählt über: Bezirksliste" aus; die Achse ist seitenbelegt (kein `uneindeutig`).
 3. `landtag.brandenburg.de` führt „Petitionsausschuss“/„Kommissionen“ als **Navigation** auf
    jeder Seite; eine echte Brandenburger Petitionsausschuss-Mitgliedschaft würde von der
    Außerhalb-Prüfung nicht gemeldet (der Positivabgleich eines Pakets, das sie führt, greift).
@@ -93,8 +110,8 @@ alle 20 Profile tragen `aktiv: false`.
 | dirk-stettner | 200 | 24.08.26, 17:32:01 | `2a90f55c220a` | bestaetigt | Keine Korrektur nötig; Seite führt keine Ausschussmitgliedschaften. |
 | christian-goiny | 200 | 24.08.26, 17:32:04 | `4880374d318f` | abweichung | Keine Korrektur nötig; alle vier Gremien amtlich geführt. |
 | danny-freymark | 200 | 24.08.26, 17:32:07 | `fb1651c729d1` | abweichung | Ausschussname korrigiert: amtlich „Ausschuss für Umwelt- und Klimaschutz“. |
-| raed-saleh | 200 | 24.08.26, 17:32:09 | `ba196306def3` | abweichung | Keine Datenkorrektur; Seite nennt keine Mandatsachse (kein Widerspruch, dokumentiert) und keine Ausschüsse. |
-| joerg-stroedter | 200 | 24.08.26, 17:32:12 | `4893ae8f9bce` | abweichung | Ausschussname korrigiert (amtlich „…Wirtschaft, Energie und Betriebe“); Funktion „Stellv. Fraktionsvorsitzender“ von der Seite übernommen; Seite nennt keine Mandatsachse (dokumentiert). |
+| raed-saleh | 200 | 24.08.26, 17:32:09 | `ba196306def3` | abweichung | Keine Datenkorrektur; keine Ausschüsse. Die Lauf-1-Aussage „Seite nennt keine Mandatsachse“ war ein Auswertungsfehler — die Seite weist „gewählt über: Bezirksliste“ aus (Lauf-3-belegt). |
+| joerg-stroedter | 200 | 24.08.26, 17:32:12 | `4893ae8f9bce` | abweichung | Ausschussname korrigiert (amtlich „…Wirtschaft, Energie und Betriebe“); Funktion „Stellv. Fraktionsvorsitzender“ von der Seite übernommen. Die Lauf-1-Aussage „Seite nennt keine Mandatsachse“ war ein Auswertungsfehler — die Seite weist „gewählt über: Bezirksliste“ aus (Lauf-3-belegt). |
 | bettina-jarasch | 200 | 24.08.26, 17:32:15 | `bfe2e218b659` | bestaetigt | Petitionsausschuss von der Seite ergänzt. |
 | werner-sebastian-graf | 200 | 24.08.26, 17:32:17 | `a7959d622882` | bestaetigt | Keine Korrektur nötig; voller amtlicher Name bestätigt. |
 | katrin-schmidberger | 200 | 24.08.26, 17:32:20 | `b03359bfcd4f` | bestaetigt | Zwei amtlich geführte Ausschüsse ergänzt (Verfassungs-/Rechtsangelegenheiten…, Umwelt- und Klimaschutz). |
