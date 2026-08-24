@@ -1,6 +1,6 @@
 # Entscheidungsvorlage — Erweiterung von 5 auf 10 und später 25 Mandate
 
-**Stand:** 2026-08-24, korrigiert im Verifikationssprint (Betriebsreihenfolge, KI-Budget-Evidenzen, Berliner Wahl) · **Für:** den Gründer · **Sprache:** bewusst einfach gehalten.
+**Stand:** 2026-08-24, korrigiert im Verifikationssprint (Betriebsreihenfolge, KI-Budget-Evidenzen, Berliner Wahl) und nach dem grünen Verifikationslauf 4 nachgeführt (amtliche Bestätigung aller 20 Profile; frühere „Bestätigung fehlt"-Aussagen überholt) · **Für:** den Gründer · **Sprache:** bewusst einfach gehalten.
 **Zahlenquellen:** `scripts/skalierungsmodell.js` (einzige Rechenquelle, lokal am 24.08.
 für 5/10/25 Mandate ausgeführt),
 [`op30-kapazitaet-morgenslots-2026-08-09.md`](op30-kapazitaet-morgenslots-2026-08-09.md)
@@ -37,6 +37,13 @@ für 5/10/25 Mandate ausgeführt),
 - Der **Importvertrag für Mandatsprofile** ist testgesichert: ein Import kann nie ein
   Mandat scharf schalten (`aktiv: false` ist Pflicht, `aktiv: true` wird abgelehnt),
   und deaktivierte Profile erzeugen keine Last und keine Kosten.
+- **Alle 20 zusätzlichen Mandatsprofile (10 Berlin, 10 Brandenburg) sind amtlich
+  bestätigt:** Der rein lesende GitHub-Actions-Lauf 4 vom 24.08.2026 prüfte alle 20
+  amtlichen Profilseiten unter Strenge-Stufe 2 und bestätigte **20 von 20** — alle
+  Seiten HTTP 200 ohne Umleitung, keine Abweichung, kein unklarer Befund, keine
+  unerreichbare Seite. Die Profile bleiben lokal, deaktiviert (`aktiv: false`),
+  **nicht importiert und nicht aktiviert** — Import und jede Aktivierung sind
+  gesonderte Betreiberentscheidungen (Frage 9).
 
 **Wichtige Abgrenzung:** Der laufende **Schattenbetrieb beweist den Motor** mit fünf
 Mandaten — er beweist **nicht den echten Ereignis-Antrieb** (Warteschlange als Auslöser).
@@ -62,12 +69,20 @@ eingeschaltet.
    alle Landeswege gesperrt, die vorbereiteten Quellenlisten („Seeds") sind nicht
    eingespielt, und ob der Berlin-Schalter in Production überhaupt wirkt, ist
    unbewiesen. Ohne Landesquellen bekämen Landtagsabgeordnete eine leere Lage.
-3. **Bytegenaue Bestätigung und Import der fünf empfohlenen Brandenburger Profile**
-   (Steeven Bretz, Katja Poschmann, Niels-Olaf Lüders, Jenny Meyer,
-   Prof. Dr. Ulrike Liedtke; Lüders amtlich mit Bindestrich) — die amtlichen Seiten konnten aus der Cloud-Umgebung
-   nicht direkt abgerufen werden (Netzsperre); die Recherche liegt vor, die
-   Bestätigung fehlt. Danach: Import und **je Mandat eine eigene Freigabe** zur
-   Aktivierung.
+3. **Import der fünf empfohlenen Brandenburger Profile** (Steeven Bretz,
+   Katja Poschmann, Niels-Olaf Lüders, Jenny Meyer, Prof. Dr. Ulrike Liedtke;
+   Lüders amtlich mit Bindestrich). Ihre bytegenaue amtliche Bestätigung **liegt
+   seit dem 24.08.2026 vor** (rein lesender Actions-Lauf 4, Strenge-Stufe 2). Die
+   frühere Aussage an dieser Stelle — die Seiten seien aus der Cloud-Umgebung nicht
+   abrufbar und die Bestätigung fehle — ist überholt: die Netzsperre der
+   Cloud-Umgebung selbst besteht fort, geprüft wird über den vom Gründer
+   freigegebenen, rein lesenden Actions-Weg. **Zusammensetzung der Empfehlung:**
+   Jenny Meyer ersetzt Christian Dorst als Infrastrukturprofil, weil nur Meyer die
+   vorgesehene Infrastrukturachse amtlich belegt — ihre ordentliche Mitgliedschaft
+   im Ausschuss für Infrastruktur und Landesplanung ist amtlich bestätigt, während
+   Dorsts früher angenommene Mitgliedschaft dort amtlich nicht belegt war und
+   deshalb korrekt aus seinem Profil entfernt wurde. Offen bleiben nur der Import
+   und **je Mandat eine eigene Freigabe** zur Aktivierung.
 4. **Eine KI-Deckel-Entscheidung** (Fragen 4 und 5) — derzeit ohne belastbare
    Zahlenempfehlung; eine Betreiberänderung an den Vercel-Umgebungsvariablen.
 5. **Das Google-Risiko** (Frage 6): schon heute liefern 29 von 42 personenbezogenen
@@ -88,8 +103,12 @@ Alles aus Frage 2, dauerhaft nachgewiesen mit zehn Mandaten, und zusätzlich:
 2. **KI-Deckel-Entscheidung für 25 Mandate** (Frage 5 — derzeit ohne belastbare
    Empfehlung) einschließlich einer einmaligen, gesondert freizugebenden
    Erstbefüllung (Modellwert ~7 840 Aufrufe am ersten Tag).
-3. **Alle 20 zusätzlichen Profile bytegenau bestätigt, importiert und einzeln
-   freigegeben.** Das lokale Paket liegt vor, ist aber noch nicht amtlich bestätigt.
+3. **Alle 20 zusätzlichen Profile importiert und einzeln freigegeben.** Die
+   bytegenaue amtliche Bestätigung aller 20 **liegt seit dem 24.08.2026 vor**
+   (Lauf 4: 20 von 20 unter Strenge-Stufe 2); offen sind nur Import und
+   Einzelfreigaben — für die zehn Berliner Profile zusätzlich die erneute amtliche
+   Prüfung nach der Wahl am 20.09.2026, falls sie erst danach aktiviert werden
+   (Frage 11).
 4. **Tägliche Lage für 25 Mandate im echten Betrieb belegt** (Frage 7).
 5. **Neubewertung der zehn Berliner Profile nach der Wahl am 20.09.2026** (Frage 11).
 
@@ -260,8 +279,9 @@ Amtliche Quelle: https://www.berlin.de/wahlen/ (Landeswahlleitung Berlin).
 
 ---
 
-**Rechercheunterlage:** Das lokale, vollständig deaktivierte Importpaket der 20 Profile
-liegt in `daten/mandatsprofile-berlin-brandenburg-2026-08-24.json`; der Prüfstand je
+**Rechercheunterlage:** Das lokale, vollständig deaktivierte und am 24.08.2026 amtlich
+bestätigte Importpaket der 20 Profile (Lauf 4: 20 von 20) liegt in
+`daten/mandatsprofile-berlin-brandenburg-2026-08-24.json`; der Prüfstand je
 Profil steht in `daten/mandatsprofile-berlin-brandenburg-2026-08-24-pruefstand.md`.
 
 **Empfohlene Reihenfolge (zusammengefasst):** ① **AWS-Entscheidung** (kanonischer
