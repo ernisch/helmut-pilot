@@ -1,0 +1,465 @@
+{
+  "version": "helmut-mandatsprofil/1",
+  "quelleDerRecherche": "Sprint 'Fundament 25 Mandate' 2026-08-24. Recherche ausschließlich über WebSearch-Suchtreffer (Cloud-Sitzung, Egress-Proxy blockt landtag.brandenburg.de und alle deutschen Domains — Präzedenzfall Sprint 9B). Alle Profil-URLs stammen WÖRTLICH aus Suchtreffern, keine ist konstruiert. KEIN Wert ist bytegenau gegen die amtliche Seite verifiziert; der vorbereitete Verifikationslauf (.github/workflows/profil-quellen-verifikation.yml, nur workflow_dispatch) ist vor jedem Import auszuführen. Ausschüsse/Funktionen tragen je Profil eine notiz zur Beleglage. Vorgaben des Betreibers (Augustin, Peschel, Dorst, Meyer, Scheetz) sind eingearbeitet.",
+  "profile": [
+    {
+      "mandatsId": "ulrike-liedtke",
+      "vollname": "Ulrike Liedtke",
+      "namensvarianten": ["Prof. Dr. Ulrike Liedtke", "Liedtke, Ulrike"],
+      "parlament": "landtag-brandenburg",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Brandenburg",
+      "wahlkreis": "Wahlkreis 3 — Ostprignitz-Ruppin I",
+      "ausschuesse": ["Hauptausschuss"],
+      "themen": ["Kulturpolitik", "Musikpolitik", "Parlamentarismus"],
+      "funktionen": ["Präsidentin des Landtages Brandenburg"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/liedtke_ulrike_(prof._dr.)/11247" },
+        { "art": "eigene-website", "url": "https://ulrike-liedtke.de/de/landtag/" }
+      ],
+      "aktiv": false,
+      "notiz": "Nicht bytegenau verifiziert (Egress-Sperre; URL wörtlich aus Suchtreffer). Amtliches Verzeichnis führt Titel (Slug 'prof._dr.'); Vollname bewusst ohne Titel für die Personensuche. Hauptausschuss: Stand Konstituierung 12.11.2024, Umbesetzungen möglich. Direktmandat seit 2014."
+    },
+    {
+      "mandatsId": "ludwig-scheetz",
+      "vollname": "Ludwig Scheetz",
+      "namensvarianten": ["Scheetz, Ludwig"],
+      "parlament": "landtag-brandenburg",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Brandenburg",
+      "wahlkreis": "Wahlkreis 27 — Dahme-Spreewald II/Oder-Spree I",
+      "ausschuesse": ["Hauptausschuss", "Ausschuss für Inneres und Kommunales", "Wahlprüfungsausschuss"],
+      "themen": ["Innenpolitik", "Kommunalpolitik", "Flughafen BER", "Bauen und Wohnen"],
+      "funktionen": [
+        "Parlamentarischer Geschäftsführer der SPD-Fraktion",
+        "Mitglied des Präsidiums des Landtages Brandenburg",
+        "Flughafenpolitischer Sprecher der SPD-Fraktion"
+      ],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/scheetz_ludwig/24191" },
+        { "art": "eigene-website", "url": "https://ludwig-scheetz.de/arbeit-im-landtag/" }
+      ],
+      "aktiv": false,
+      "notiz": "Betreiber-Vorgabe: vollständig aus dem amtlichen Profil übernehmen — die amtliche Seite war nicht direkt abrufbar (Egress-Sperre); Stand ist die Snippet-Recherche 24.08.2026, der Verifikationslauf muss das amtliche Profil bytegenau gegenlesen. Direktmandat 2024 (35,7 %). Thema 'Bauen und Wohnen' nur über eigene Website belegt."
+    },
+    {
+      "mandatsId": "katja-poschmann",
+      "vollname": "Katja Poschmann",
+      "namensvarianten": ["Poschmann, Katja"],
+      "parlament": "landtag-brandenburg",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Havelland (Premnitz/Rathenow); Betreuungsregion Wahlkreis Ostprignitz-Ruppin III/Havelland III",
+      "ausschuesse": ["Ausschuss für Arbeit, Soziales, Gesundheit und gesellschaftlichen Zusammenhalt"],
+      "stellvertretendeAusschuesse": ["Ausschuss für Haushaltskontrolle", "Hauptausschuss"],
+      "themen": ["Arbeitsmarkt", "Sozialpolitik", "Gesundheitspolitik", "Pflege", "Gesellschaftlicher Zusammenhalt"],
+      "funktionen": [
+        "Stellvertretende Fraktionsvorsitzende der SPD-Fraktion",
+        "Vorsitzende des Arbeitskreises 3 (Arbeit, Soziales, Gesundheit, gesellschaftlicher Zusammenhalt) der SPD-Fraktion"
+      ],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/poschmann_katja/24188" },
+        { "art": "eigene-website", "url": "https://katja-poschmann.de/uber-mich/" }
+      ],
+      "aktiv": false,
+      "notiz": "Nicht bytegenau verifiziert (Egress-Sperre). Ausschussmitgliedschaft AASGZ nur Snippet-belegt; ältere Quellen (eigene Website) tragen noch 7.-WP-Rollen — nicht übernommen. 2024 Direktmandat verloren, Einzug über Landesliste."
+    },
+    {
+      "mandatsId": "bjoern-luettmann",
+      "vollname": "Björn Lüttmann",
+      "namensvarianten": ["Lüttmann, Björn", "Bjoern Luettmann"],
+      "parlament": "landtag-brandenburg",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Oberhavel (Oranienburg, Leegebruch, Liebenwalde); Betreuungsregion Wahlkreis 9 Oberhavel III",
+      "ausschuesse": ["Hauptausschuss"],
+      "themen": ["Landespolitik", "Verfassungsfragen", "Bundes- und Europaangelegenheiten", "Medienpolitik"],
+      "funktionen": [
+        "Fraktionsvorsitzender der SPD-Fraktion",
+        "Vorsitzender des Hauptausschusses"
+      ],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/luettmann_bjoern/24183" },
+        { "art": "eigene-website", "url": "https://bjoern-luettmann.de/im-landtag-2/" }
+      ],
+      "aktiv": false,
+      "notiz": "Nicht bytegenau verifiziert (Egress-Sperre). Fraktionsvorsitz seit 12/2024 sicher; Hauptausschuss-Vorsitz mehrfach snippet-belegt (Nachfolge Keller), amtlich nicht gegengelesen. Themen aus der Hauptausschuss-Zuständigkeit abgeleitet."
+    },
+    {
+      "mandatsId": "wolfgang-roick",
+      "vollname": "Wolfgang Roick",
+      "namensvarianten": ["Roick, Wolfgang"],
+      "parlament": "landtag-brandenburg",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Lausitz, Landkreis Oberspreewald-Lausitz (Großräschen); Region Oberspreewald-Lausitz II/Spree-Neiße IV",
+      "ausschuesse": [
+        "Sonderausschuss Strukturentwicklung in der Lausitz",
+        "Ausschuss für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz",
+        "Ausschuss für Haushaltskontrolle"
+      ],
+      "themen": ["Strukturwandel Lausitz", "Umweltpolitik", "Klimaschutz", "Landwirtschaft", "Ländlicher Raum", "Haushaltskontrolle"],
+      "funktionen": [
+        "Stellvertretender Fraktionsvorsitzender der SPD-Fraktion",
+        "Vorsitzender des Sonderausschusses Strukturentwicklung in der Lausitz",
+        "Sprecher der SPD-Fraktion für Umweltpolitik, Klimaschutz, Nachhaltigkeit und demografischen Wandel"
+      ],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/roick_wolfgang/24185" }
+      ],
+      "aktiv": false,
+      "notiz": "Nicht bytegenau verifiziert (Egress-Sperre). Sonderausschuss-Vorsitz (erneut eingesetzt 12/2024) sicher belegt; ALEUV-Name amtlich über Gremienseite bestätigt. 2024 Wahlkreis an AfD verloren, Einzug über Landesliste."
+    },
+    {
+      "mandatsId": "elske-hildebrandt",
+      "vollname": "Elske Hildebrandt",
+      "namensvarianten": ["Hildebrandt, Elske"],
+      "parlament": "landtag-brandenburg",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Märkisch-Oderland II (Strausberg, Petershagen/Eggersdorf, Rüdersdorf); Büros Strausberg/Bad Freienwalde",
+      "themen": ["Kulturpolitik", "Frühkindliche Bildung", "Gleichstellungspolitik"],
+      "funktionen": ["Sprecherin der SPD-Fraktion für Kulturpolitik und frühkindliche Bildung"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/hildebrandt_elske/24178" },
+        { "art": "eigene-website", "url": "https://www.elskehildebrandt.de/" }
+      ],
+      "aktiv": false,
+      "notiz": "Nicht bytegenau verifiziert (Egress-Sperre). Für die 8. WP war KEINE Ausschussmitgliedschaft zweifelsfrei belegbar — Feld bewusst leer (fachliche Achse über Themen); im Verifikationslauf vom amtlichen Profil nachziehen. Sprecherrolle nur Snippet-belegt."
+    },
+    {
+      "mandatsId": "erik-stohn",
+      "vollname": "Erik Stohn",
+      "namensvarianten": ["Stohn, Erik"],
+      "parlament": "landtag-brandenburg",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Brandenburg",
+      "wahlkreis": "Wahlkreis 24 — Teltow-Fläming II",
+      "ausschuesse": ["Ausschuss für Inneres und Kommunales"],
+      "stellvertretendeAusschuesse": ["Wahlprüfungsausschuss"],
+      "themen": ["Rechtspolitik", "Innenpolitik", "Kommunalpolitik", "Digitales und Medien"],
+      "funktionen": [
+        "Stellvertretender Fraktionsvorsitzender der SPD-Fraktion",
+        "Rechtspolitischer Sprecher der SPD-Fraktion"
+      ],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/stohn_erik/24198" },
+        { "art": "eigene-website", "url": "https://www.erik-stohn.de/lebenslauf/" }
+      ],
+      "aktiv": false,
+      "notiz": "Nicht bytegenau verifiziert (Egress-Sperre). Direktmandat Teltow-Fläming II (dreimal in Folge). Ausschüsse nur Snippet-belegt (abgeordnetenwatch 8. WP); 'Sprecher für Digitales und Medien' unsicher — als Thema, nicht als Funktion geführt."
+    },
+    {
+      "mandatsId": "steeven-bretz",
+      "vollname": "Steeven Bretz",
+      "namensvarianten": ["Bretz, Steeven"],
+      "parlament": "landtag-brandenburg",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Potsdam (Wahlkreis-Region Potsdam II/Potsdamer Süden); CDU-Kreisvorsitzender Potsdam",
+      "ausschuesse": ["Ausschuss für Haushalt und Finanzen", "Hauptausschuss"],
+      "themen": ["Haushalt", "Finanzen", "Landeshauptstadt Potsdam"],
+      "funktionen": [
+        "Fraktionsvorsitzender der CDU-Fraktion",
+        "Sprecher der CDU-Fraktion für Haushalt und Finanzen"
+      ],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/bretz_steeven/13468" },
+        { "art": "fraktion-profil", "url": "https://www.cdu-fraktion-brandenburg.de/person/10/Steeven-Bretz" }
+      ],
+      "aktiv": false,
+      "notiz": "Nicht bytegenau verifiziert (Egress-Sperre). Fraktionsvorsitz seit 17.03.2026 (11/12 Stimmen, Nachfolger Redmanns), zuvor PGF seit 2019. Landesliste Platz 5. Hauptausschuss-Mitgliedschaft seit März 2026 nur Snippet-belegt."
+    },
+    {
+      "mandatsId": "kristy-augustin",
+      "vollname": "Kristy Augustin",
+      "namensvarianten": ["Augustin, Kristy"],
+      "parlament": "landtag-brandenburg",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Märkisch-Oderland (Wriezen/Oderbruch); Wahlkreis-Region Märkisch-Oderland IV",
+      "ausschuesse": ["Ausschuss für Bildung, Jugend und Sport"],
+      "stellvertretendeAusschuesse": ["Ausschuss für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz"],
+      "themen": ["Bildung", "Jugend", "Sport", "Frauenpolitik", "Kinderschutz"],
+      "funktionen": [
+        "Stellvertretende Fraktionsvorsitzende der CDU-Fraktion",
+        "Sprecherin der CDU-Fraktion für Bildung, Jugend, Sport, Frauen und Kinderschutz"
+      ],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/augustin_kristy/13480" },
+        { "art": "fraktion-profil", "url": "https://www.cdu-fraktion-brandenburg.de/person/11/-Kristy-Augustin.html" }
+      ],
+      "aktiv": false,
+      "notiz": "Betreiber-Vorgabe eingearbeitet: Einzug über CDU-Landesliste Platz 2; amtliche URL vom Betreiber vorgegeben und durch wörtlichen Suchtreffer bestätigt. Bildungsausschuss-VORSITZ war 7. WP (nicht übernommen); in der 8. WP einfaches Mitglied. Nicht bytegenau verifiziert (Egress-Sperre)."
+    },
+    {
+      "mandatsId": "nicole-walter-mundt",
+      "vollname": "Nicole Walter-Mundt",
+      "namensvarianten": ["Walter-Mundt, Nicole"],
+      "parlament": "landtag-brandenburg",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Oberhavel (Oranienburg, Leegebruch, Liebenwalde); Wahlkreis-Region Oberhavel III",
+      "ausschuesse": ["Ausschuss für Inneres und Kommunales", "Ausschuss für Infrastruktur und Landesplanung"],
+      "themen": ["Innenpolitik", "Kommunalpolitik", "Infrastruktur", "Verkehr", "Bauen und Wohnen"],
+      "funktionen": [
+        "Stellvertretende Fraktionsvorsitzende der CDU-Fraktion",
+        "Vorsitzende des Ausschusses für Inneres und Kommunales",
+        "Sprecherin der CDU-Fraktion für Infrastruktur, Verkehr, Bauen und Wohnen"
+      ],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/walter-mundt_nicole/13909" },
+        { "art": "fraktion-profil", "url": "https://cdu-fraktion-brandenburg.de/person/48/Nicole-Walter-Mundt" }
+      ],
+      "aktiv": false,
+      "notiz": "Nicht bytegenau verifiziert (Egress-Sperre). Innenausschuss-Vorsitz seit 14.01.2025 sicher. ACHTUNG Namensvariante des Infrastrukturausschusses: ein Landtags-Treffertitel lautet 'Infrastruktur und Landesentwicklung', Slug/abgeordnetenwatch 'Landesplanung' — im Verifikationslauf klären. Landesliste Platz 9."
+    },
+    {
+      "mandatsId": "frank-bommert",
+      "vollname": "Frank Bommert",
+      "namensvarianten": ["Bommert, Frank"],
+      "parlament": "landtag-brandenburg",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Oberhavel (Hennigsdorf); Wahlkreis-Region Oberhavel I; CDU-Kreisvorsitzender Oberhavel",
+      "ausschuesse": ["Ausschuss für Wirtschaft, Arbeit, Energie und Klimaschutz"],
+      "themen": ["Wirtschaft", "Handwerk", "Tourismus", "Bürokratieabbau", "Energie"],
+      "funktionen": [
+        "Stellvertretender Fraktionsvorsitzender der CDU-Fraktion",
+        "Sprecher der CDU-Fraktion für Wirtschaft, Handwerk, Tourismus und Bürokratieabbau"
+      ],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/bommert_frank/13479" },
+        { "art": "fraktion-profil", "url": "https://www.cdu-fraktion-brandenburg.de/person/12/Frank-Bommert" }
+      ],
+      "aktiv": false,
+      "notiz": "Nicht bytegenau verifiziert (Egress-Sperre). Recherche-Korrektur: Ausschussvorsitz Wirtschaft war 7. WP (Rücktritt 01/2024); in der 8. WP ordentliches Mitglied im AWAEK (Vorsitz: Kornmesser, SPD). MdL seit 2009, stets Landesliste."
+    },
+    {
+      "mandatsId": "danny-eichelbaum",
+      "vollname": "Danny Eichelbaum",
+      "namensvarianten": ["Eichelbaum, Danny"],
+      "parlament": "landtag-brandenburg",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Teltow-Fläming (Treuenbrietzen); Wahlkreis-Region Teltow-Fläming I",
+      "ausschuesse": ["Ausschuss für Recht und Digitalisierung", "Richterwahlausschuss", "Wahlprüfungsausschuss"],
+      "themen": ["Rechtspolitik", "Justiz", "Digitalisierung"],
+      "funktionen": [
+        "Parlamentarischer Geschäftsführer der CDU-Fraktion",
+        "Vorsitzender des Ausschusses für Recht und Digitalisierung",
+        "Sprecher der CDU-Fraktion für Rechtspolitik"
+      ],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/eichelbaum_danny/13478" },
+        { "art": "fraktion-profil", "url": "https://www.cdu-fraktion-brandenburg.de/person/13/Danny-Eichelbaum" }
+      ],
+      "aktiv": false,
+      "notiz": "Nicht bytegenau verifiziert (Egress-Sperre). PGF seit März 2026 (Nachfolger von Bretz); führt den Rechtsausschuss-Vorsitz laut Beleglage weiter und bleibt Sprecher für Rechtspolitik. Richterwahl-/Wahlprüfungsausschuss nur Snippet-belegt."
+    },
+    {
+      "mandatsId": "niels-olaf-lueders",
+      "vollname": "Niels-Olaf Lüders",
+      "namensvarianten": ["Lüders, Niels-Olaf", "Niels-Olaf Lueders"],
+      "parlament": "landtag-brandenburg",
+      "partei": "BSW",
+      "fraktion": "BSW",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Strausberg, Landkreis Märkisch-Oderland",
+      "ausschuesse": ["Hauptausschuss", "Ausschuss für Inneres und Kommunales", "Rechtsausschuss"],
+      "themen": ["Innenpolitik", "Polizei", "Migration", "Feuerwehr und Katastrophenschutz", "Kommunalpolitik"],
+      "funktionen": [
+        "Fraktionsvorsitzender der BSW-Fraktion",
+        "Mitglied des Präsidiums des Landtages Brandenburg",
+        "Sprecher der BSW-Fraktion für Inneres, Polizei, Migration, Feuerwehr und Katastrophenschutz"
+      ],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/lueders_niels-olaf/40623" },
+        { "art": "fraktion-profil", "url": "https://bsw-fraktion-brandenburg.de/abgeordnete/niels-olaf-lueders/" }
+      ],
+      "aktiv": false,
+      "notiz": "Nicht bytegenau verifiziert (Egress-Sperre). Fraktionsvorsitz seit 13.12.2024 (Nachfolger Crumbachs). Landesliste Platz 4. Ausschüsse nur Snippet-belegt; nach den BSW-Austritten 01/2026 wurden Ausschüsse neu zusammengesetzt — im Verifikationslauf gegenlesen."
+    },
+    {
+      "mandatsId": "falk-peschel",
+      "vollname": "Falk Peschel",
+      "namensvarianten": ["Peschel, Falk"],
+      "parlament": "landtag-brandenburg",
+      "partei": "BSW",
+      "fraktion": "BSW",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Lausitz (Senftenberg; geboren in Hoyerswerda); Sorben/Wenden-Bezug",
+      "ausschuesse": [
+        "Hauptausschuss",
+        "Ausschuss für Bildung, Jugend und Sport",
+        "Sonderausschuss Strukturentwicklung in der Lausitz"
+      ],
+      "themen": ["Bildungspolitik", "Strukturentwicklung Lausitz", "Medienpolitik (RBB)", "Sorben/Wenden", "Jugend und Sport"],
+      "funktionen": [
+        "Parlamentarischer Geschäftsführer der BSW-Fraktion",
+        "Sprecher der BSW-Fraktion für Bildung, Strukturentwicklung Lausitz, RBB/Medien und Sorben/Wenden"
+      ],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/peschel_falk/40626" },
+        { "art": "fraktion-profil", "url": "https://bsw-fraktion-brandenburg.de/abgeordnete/falk-peschel/" }
+      ],
+      "aktiv": false,
+      "notiz": "Betreiber-Vorgabe (Ausschuss für Bildung, Jugend und Sport + Sonderausschuss Strukturentwicklung Lausitz) unabhängig durch Snippets bestätigt; amtliche Gremiennamen über Treffertitel belegt. Landesliste Platz 7. Nicht bytegenau verifiziert (Egress-Sperre)."
+    },
+    {
+      "mandatsId": "christian-dorst",
+      "vollname": "Christian Dorst",
+      "namensvarianten": ["Dorst, Christian"],
+      "parlament": "landtag-brandenburg",
+      "partei": "BSW",
+      "fraktion": "BSW",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Königs Wusterhausen, Landkreis Dahme-Spreewald",
+      "ausschuesse": [
+        "Ausschuss für Haushalt und Finanzen",
+        "Enquete-Kommission 8/1 (Lehren aus der Coronapandemie)",
+        "Sonderausschuss Bürokratieabbau"
+      ],
+      "themen": ["Haushalt und Finanzen", "Corona-Aufarbeitung", "Bürokratieabbau", "Mittelstand"],
+      "funktionen": ["Sprecher der BSW-Fraktion für Finanzen/Haushalt, Corona und Bürokratieabbau"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/dorst_christian/40618" },
+        { "art": "fraktion-profil", "url": "https://bsw-fraktion-brandenburg.de/abgeordnete/christian-dorst/" }
+      ],
+      "aktiv": false,
+      "notiz": "Betreiber-Vorgabe eingearbeitet: Haushalt + Corona-Enquete, NICHT Infrastruktur (ältere Indexstände nennen noch den Infrastrukturausschuss — nicht übernommen). Stellv. Fraktionsvorsitz endete 11/2025 durch Rücktritt. Landesliste Platz 12. Nicht bytegenau verifiziert (Egress-Sperre)."
+    },
+    {
+      "mandatsId": "jenny-meyer",
+      "vollname": "Jenny Meyer",
+      "namensvarianten": ["Meyer, Jenny"],
+      "parlament": "landtag-brandenburg",
+      "partei": "BSW",
+      "fraktion": "BSW",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Bernau bei Berlin, Landkreis Barnim",
+      "ausschuesse": [
+        "Ausschuss für Infrastruktur und Landesplanung",
+        "Ausschuss für Wirtschaft, Arbeit, Energie und Klimaschutz"
+      ],
+      "themen": ["Infrastruktur", "Landesplanung", "Energie", "Bauen und Wohnen"],
+      "funktionen": ["Sprecherin der BSW-Fraktion für Energie, Bauen/Wohnen und Landesplanung"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/meyer_jenny/40625" },
+        { "art": "fraktion-profil", "url": "https://bsw-fraktion-brandenburg.de/abgeordnete/jenny-meyer/" }
+      ],
+      "aktiv": false,
+      "notiz": "Betreiber-Vorgabe eingearbeitet: Infrastruktur und Landesplanung. Namensvariante des Ausschusses ('Landesentwicklung' in einem Landtags-Treffertitel) im Verifikationslauf klären. Wirtschaftsausschuss-Mitgliedschaft nur Snippet-belegt. Landesliste Platz 9. Nicht bytegenau verifiziert."
+    },
+    {
+      "mandatsId": "stefan-roth",
+      "vollname": "Stefan Roth",
+      "namensvarianten": ["Roth, Stefan"],
+      "parlament": "landtag-brandenburg",
+      "partei": "BSW",
+      "fraktion": "BSW",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Teltow-Fläming (Nuthe-Urstromtal); Lausitz-Bezug (Senftenberg, geboren in Altdöbern)",
+      "ausschuesse": [
+        "Ausschuss für Wirtschaft, Arbeit, Energie und Klimaschutz",
+        "Ausschuss für Haushaltskontrolle",
+        "Sonderausschuss Strukturentwicklung in der Lausitz"
+      ],
+      "stellvertretendeAusschuesse": ["Ausschuss für Infrastruktur und Landesplanung", "Ausschuss für Haushalt und Finanzen"],
+      "themen": ["Wirtschaftspolitik", "Energiepolitik", "Strukturwandel Lausitz", "Haushaltskontrolle", "Arbeitsmarkt"],
+      "funktionen": ["Sprecher der BSW-Fraktion für Wirtschaft"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/roth_stefan/40628" },
+        { "art": "fraktion-profil", "url": "https://bsw-fraktion-brandenburg.de/abgeordnete/stefan-roth/" }
+      ],
+      "aktiv": false,
+      "notiz": "Nicht bytegenau verifiziert (Egress-Sperre). WIDERSPRUCH in der Beleglage: Roth wurde 09/2024 als PGF gewählt (14/14), aktuelle Belege führen aber Peschel als PGF — Rolle deshalb nicht übernommen, im Verifikationslauf klären. Landesliste Platz 3."
+    },
+    {
+      "mandatsId": "sven-hornauf",
+      "vollname": "Sven Hornauf",
+      "namensvarianten": ["Hornauf, Sven"],
+      "parlament": "landtag-brandenburg",
+      "partei": "BSW",
+      "fraktion": "BSW",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Frankfurt (Oder)",
+      "ausschuesse": ["Ausschuss für Inneres und Kommunales"],
+      "stellvertretendeAusschuesse": ["Rechtsausschuss", "Ausschuss für Haushaltskontrolle"],
+      "themen": ["Kommunalpolitik", "Wasserwirtschaft", "Innenpolitik", "Verwaltungsrecht"],
+      "funktionen": ["Sprecher der BSW-Fraktion für Kommunales und Wasser"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/hornauf_sven/40620" },
+        { "art": "fraktion-profil", "url": "https://bsw-fraktion-brandenburg.de/abgeordnete/sven-hornauf/" }
+      ],
+      "aktiv": false,
+      "notiz": "Nicht bytegenau verifiziert (Egress-Sperre). WICHTIG: Die BSW-Fraktion wollte ihn 05/2025 aus den Ausschüssen abziehen; ob vollzogen, ist offen — Ausschussangaben möglicherweise überholt, im Verifikationslauf zwingend klären. Landesliste Platz 8."
+    },
+    {
+      "mandatsId": "melanie-matzies",
+      "vollname": "Melanie Matzies",
+      "namensvarianten": ["Melanie Matzies-Köhler", "Matzies, Melanie"],
+      "parlament": "landtag-brandenburg",
+      "fraktionslos": true,
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Land Brandenburg (Landesliste); regionale Zuordnung offen — im Verifikationslauf klären",
+      "ausschuesse": ["Ausschuss für Bildung, Jugend und Sport"],
+      "themen": ["Bildung", "Jugend", "Sport", "Inklusion und Autismus"],
+      "funktionen": ["Mitglied der Gruppe „Wir für Brandenburg“ im Landtag Brandenburg"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/matzies_melanie/40624" }
+      ],
+      "aktiv": false,
+      "notiz": "Ex-BSW (Austritt 01/2026), formal fraktionslos; Gruppe „Wir für Brandenburg“ vom Landtag 2026 anerkannt (amtliche Meldung 48951). Amtliche Namensform aktuell 'Matzies, Melanie' (Slug existiert auch als matzies-koehler, gleiche ID 40624). Nicht bytegenau verifiziert (Egress-Sperre)."
+    },
+    {
+      "mandatsId": "reinhard-simon",
+      "vollname": "Reinhard Simon",
+      "namensvarianten": ["Simon, Reinhard"],
+      "parlament": "landtag-brandenburg",
+      "fraktionslos": true,
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Schwedt/Oder, Uckermark",
+      "ausschuesse": ["Ausschuss für Wissenschaft, Forschung und Kultur"],
+      "themen": ["Kulturpolitik", "Wissenschaft und Forschung", "Beziehungen zu Polen", "Theater und Kulturbetrieb"],
+      "funktionen": [
+        "Mitglied der Gruppe „Wir für Brandenburg“ im Landtag Brandenburg",
+        "Alterspräsident des 8. Landtages Brandenburg"
+      ],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/simon_reinhard/40627" }
+      ],
+      "aktiv": false,
+      "notiz": "Ex-BSW (Austritt 01/2026), formal fraktionslos; Gruppe „Wir für Brandenburg“ anerkannt 2026. Früherer Vorsitz des Wissenschaftsausschusses nach Fraktionsaustritt ungeklärt — nicht als Funktion geführt, im Verifikationslauf klären. Landesliste Platz 11. Nicht bytegenau verifiziert."
+    }
+  ]
+}

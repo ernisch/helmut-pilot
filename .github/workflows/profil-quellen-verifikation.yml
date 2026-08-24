@@ -1,0 +1,91 @@
+name: Profilquellen-Verifikation (Profilpaket 25)
+
+# =============================================================================
+# NUR manuelle, ausdruecklich freigegebene Verifikation der amtlichen
+# Profilseiten des lokalen Importpakets (data/mandatsprofile/*.json) gegen die
+# ECHTE Adresse auf landtag.brandenburg.de.
+# =============================================================================
+# Diese Action laeuft NIEMALS automatisch: ausschliesslich workflow_dispatch.
+# BEWUSST KEIN pull_request-Trigger (anders als sprint9b-verify.yml), damit das
+# Eroeffnen eines PRs keinen Netzlauf ausloest — die Ausfuehrung ist eine
+# eigene Betreiberfreigabe (CLAUDE.md §5, Sprintauftrag "Fundament 25 Mandate").
+#
+# SICHERHEIT / GRENZEN (Muster Sprint 9B):
+#   - KEINE Secrets, KEINE Supabase-Verbindung, KEINE Production-Daten, KEIN Import.
+#   - permissions: contents: read -> schreibt NICHTS ins Repo, aktiviert NICHTS.
+#   - Prueft nur OEFFENTLICHE Adressen; realistischer User-Agent, TLS an, ~1,5 s
+#     Abstand je Abruf (20 Abrufe insgesamt, Laufzeit < 2 Minuten, Kosten: nur
+#     GitHub-Actions-Minuten eines ubuntu-Runners, keine externen Kosten).
+#   - Ergebnis je Profil: bestaetigt / name_nicht_gefunden / umgeleitet /
+#     nicht_erreichbar / uebersprungen. Abweichungen sind Ergebnisse, kein Fehler.
+#
+# ARTEFAKT: vollstaendiger JSON-Report (30 Tage aufbewahrt).
+
+on:
+  workflow_dispatch:
+    inputs:
+      datei:
+        description: "Pfad des Importpakets im Repo"
+        required: false
+        default: "data/mandatsprofile/brandenburg-25-kandidaten.json"
+      timeout_ms:
+        description: "HTTP-Timeout je Abruf in ms"
+        required: false
+        default: "15000"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: profil-quellen-verifikation
+  cancel-in-progress: false
+
+jobs:
+  verifizieren:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Node einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Offline-Formpruefung des Pakets VOR jedem Netzabruf (Prüfer + Groessen).
+      - name: Importpaket offline pruefen
+        run: node scripts/profilpaket-25-test.js
+
+      - name: Amtliche Profilseiten verifizieren (echter Abruf)
+        env:
+          HELMUT_PROFILVERIFIKATION: "on"
+          PV_TIMEOUT_MS: ${{ inputs.timeout_ms || '15000' }}
+        run: |
+          node scripts/profil-quellen-verifikation.js \
+            --datei "${{ inputs.datei || 'data/mandatsprofile/brandenburg-25-kandidaten.json' }}" \
+            --out profilverifikation-report.json
+
+      - name: Zusammenfassung in die Job-Summary
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f profilverifikation-report.json ]; then
+            node -e 'const r=require("./profilverifikation-report.json");
+              console.log("## Profilquellen-Verifikation");
+              console.log("Zaehlung: `"+JSON.stringify(r.zaehlung)+"`\n");
+              console.log("| Urteil | mandatsId | URL |");
+              console.log("|---|---|---|");
+              for (const e of r.ergebnisse) console.log(`| ${e.urteil} | ${e.mandatsId} | ${e.url} |`);' \
+              >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Kein Report erzeugt (Abruf-Schritt fehlgeschlagen)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Report hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: profilverifikation
+          path: profilverifikation-report.json
+          if-no-files-found: warn
+          retention-days: 30
