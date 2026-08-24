@@ -54,6 +54,7 @@ const healthAxes = require("./lib/helmut/health-axes");
 const { recoverFailedUnderstanding } = require("./lib/helmut/ko-recovery");
 const { buildAlarmPayload, buildAlarmText } = require("./lib/helmut/alarm-payload");
 const rollingHealth = require("./lib/helmut/rolling-health");
+const motorHealth = require("./lib/helmut/motor-health");
 const monitoringWebhook = require("./lib/helmut/monitoring-webhook");
 const { sourceMode } = require("./lib/helmut/quellenarchitektur/source-mode");
 const { sourceCoverageThresholds, effectiveActiveSourceCount } = require("./lib/helmut/source-coverage");
@@ -1322,7 +1323,7 @@ async function handleRequest(request, response) {
       const reports = [];
       for (const tenantId of tenantIds) {
         try {
-          const r = await buildHealthReport(tenantId);
+          const r = await buildHealthReport(tenantId, { mandate: tenantIds.length });
           reports.push({
             tenant: tenantId, ok: r.ok, text: r.text, overdueCrons: r.overdueCrons,
             googleUrlResolutionRate: r.googleUrlResolutionRate,
@@ -4309,7 +4310,183 @@ function publicReleasePayload(release) {
 // Operativer Morgen-Health-Report (fuer WhatsApp). Bewusst pragmatisch: prueft echte
 // Betriebssignale (Crawl/Briefing frisch, Speicher aktiv, Fehler-Spike) statt des
 // strengen Pitch-Gates, plus Engagement aus dem Nutzungs-Tracking.
-async function buildHealthReport(politicianId) {
+// ── HEALTH-REPORT-WEICHE (Teil B, 2026-08-24) ────────────────────────────────
+// Bei AKTIVEM Warteschlangenmotor (HELMUT_SCALABLE_PIPELINE, dieselbe Flaggrenze
+// wie der Motor selbst) kommt der Betriebsstatus aus den ECHTEN Quittungen des
+// Motors: `process_runs`-Slot-Quittungen, `betriebsstatus` (Queue/Leases/
+// Wartezeitvertrag) und Verstehens-CAS. Der Blob `crawlRuns` wird vom Motor nicht
+// mehr gefüttert — sein jüngster Eintrag ist seit der Aktivierung ein
+// struktureller Projektionslauf mit 0 Quellen und erzeugte das falsche
+// „Teilweise gestört" (Befund Teil A). Bei NACHWEISLICH inaktivem Motor (Flag
+// aus) bleibt der Altpfad funktional unverändert; bei unklarer Datenlage im
+// Motorpfad wird NIE still auf alte Blob-Daten zurückgefallen, sondern
+// „Status nicht bestimmbar" gemeldet.
+async function buildHealthReport(politicianId, kontext = {}) {
+  if (scalablePipeline.skalierbarerPfadAktiv(process.env)) {
+    return buildMotorHealthReport(politicianId, kontext);
+  }
+  return buildLegacyHealthReport(politicianId);
+}
+
+// Motor-Gesundheitsbericht: vier Zustände (Gesund · Gesund mit Hinweisen ·
+// Gestört · Status nicht bestimmbar), Logik in lib/helmut/motor-health.js.
+// REIN LESEND: kein Blob-Write, kein saveWatchdogState (die Erholt-Hysterese
+// ist ein dokumentierter eigener Punkt und nicht Teil dieses Berichts).
+async function buildMotorHealthReport(politicianId, { mandate = null } = {}) {
+  politicianId = tenantContext.requireTenantId(politicianId, "buildHealthReport");
+  const storage = getStorageStatus();
+  const now = Date.now();
+  const ageMs = (t) => (t ? now - new Date(t).getTime() : null);
+  const day = 24 * 3600000;
+  const fehlerText = (error) => String((error && error.message) || "unbekannt").slice(0, 160);
+
+  const [lageCheck, completeKoAt, errors, users, feedback, pushEvents, llmBreakdown, classificationCoverage, queueStatus, casKennzahlen, quittungen] = await Promise.all([
+    getLatestLageCheck(politicianId).catch(() => null),
+    getLatestCompleteKnowledgeObjectAt(), // fail-safe null
+    accounts.listSystemErrors(100).catch(() => []),
+    accounts.listUsers().catch(() => []),
+    listFeedback(200).catch(() => []),
+    listPushEvents(politicianId, 200).catch(() => []),
+    getLlmUsageBreakdownToday().catch(() => null),
+    getClassificationCoverage().catch(() => null),
+    scalablePipeline.betriebsstatus({ seitMinuten: 1440 })
+      .catch((error) => ({ verfuegbar: false, grund: fehlerText(error) })),
+    storageModul.verstehenKennzahlen()
+      .catch((error) => ({ verfuegbar: false, grund: fehlerText(error) })),
+    // AUSSCHLIESSLICH die relationale Quittungssicht: die Warteschlangen-Quittungen
+    // sind blob-unabhängig relational (§28.1 Option D) — der Dual-Read listProcessRuns
+    // fiele bei relationalem Lesefehler still auf den Blob-Ring zurück, der KEINE
+    // warteschlange-*-Zeilen trägt (Review-Befund: stiller Halb-Ausfall sähe aus wie
+    // fehlende Slots). Ein Lesefehler wird hier zu „Status nicht bestimmbar".
+    storageModul.listProcessRunsRelational({ limit: 120 })
+      .then((runs) => ({ verfuegbar: true, runs }))
+      .catch((error) => ({ verfuegbar: false, grund: fehlerText(error) }))
+  ]);
+
+  const errors24 = (errors || []).filter((e) => e.createdAt && (now - new Date(e.createdAt).getTime()) < day).length;
+  const feedback24 = (feedback || []).filter((f) => f.createdAt && (now - new Date(f.createdAt).getTime()) < day).length;
+  const pushSent24 = (pushEvents || []).filter((e) => e.createdAt && (now - new Date(e.createdAt).getTime()) < day && Number(e.delivered) > 0).length;
+  const active7 = (users || []).filter((u) => {
+    const seen = u.lastSeenAt || u.lastLoginAt;
+    return seen && (now - new Date(seen).getTime()) < 7 * day;
+  }).length;
+
+  const budget = healthAxes.budgetAxis(llmBreakdown || {});
+  const coverage = healthAxes.coverageAxis(classificationCoverage);
+  const motorAktivSeitMs = queueStatus && queueStatus.motor && queueStatus.motor.aktivSeit
+    ? Date.parse(queueStatus.motor.aktivSeit) : null;
+  const slotPruefung = quittungen.verfuegbar
+    ? motorHealth.pruefeSlotQuittungen({
+      quittungen: quittungen.runs, nowMs: now,
+      motorAktivSeitMs: Number.isFinite(motorAktivSeitMs) ? motorAktivSeitMs : null
+    })
+    : null;
+
+  const lageAlterMs = ageMs(lageCheck?.checkedAt || lageCheck?.createdAt);
+  const lageHinweis = motorHealth.lageRotationsHinweis({ lageAlterMs, mandate });
+  const verstandenAlterMs = ageMs(completeKoAt);
+
+  // Hinweise (Teil-B-Auftrag Nr. 6): dürfen niemals allein eine
+  // Störungsüberschrift auslösen — sie ergeben „Gesund mit Hinweisen".
+  const ingest = slotPruefung && slotPruefung.juengsteIngest;
+  const hinweise = motorHealth.leiteMotorHinweise({ ingest, coverage, errors24, lageHinweis });
+
+  const klass = motorHealth.klassifiziereMotorZustand({
+    storageOk: storage.backend === "supabase",
+    queueStatus,
+    casKennzahlen,
+    quittungenLesbar: quittungen.verfuegbar === true,
+    slotPruefung,
+    verstandenAlterMs,
+    verstandenWarnMs: 24 * 60 * 60 * 1000,
+    verstandenRotMs: maxOutputFreshnessMs,
+    budget,
+    hinweise
+  });
+
+  // Terminale Fehler getrennt von historisch aufgefangenen (Teil-B-Auftrag Nr. 8):
+  // `errors24` sind protokollierte, bereits aufgefangene Betriebsmeldungen;
+  // OFFEN sind endgültig fehlgeschlagene bzw. dauerhaft blockierte Aufträge der
+  // Warteschlange — sie kommen aus dem Motor selbst und wirken über die
+  // Klassifikation (kritisch → Gestört), nie über eine pauschale Prozentgrenze.
+  const k = (queueStatus && queueStatus.kennzahlen) || {};
+  const dauerhaftBlockiert = queueStatus && queueStatus.blockiert && queueStatus.blockiert.anzahl != null
+    ? queueStatus.blockiert.anzahl : null;
+  const terminalOffen = (Number(k.endgueltigFehler) || 0) + (Number(dauerhaftBlockiert) || 0);
+
+  const fmt = motorHealth.fmtAlter;
+  const motorZeile = ingest
+    ? `Motor: ${ingest.process} ${fmt(ageMs(ingest.startedAt || ingest.createdAt))} — ${slotPruefung.abrechnung.text}`
+    : "Motor: noch keine Warteschlangen-Slot-Quittung lesbar";
+  const slotZeile = slotPruefung
+    ? (slotPruefung.fehlendeSlots.length
+      ? `⏰ Erwartete Slots fehlend: ${slotPruefung.fehlendeSlots.join(", ")}`
+      : "⏰ Alle erwarteten Slots quittiert (Slot-Plan aus vercel.json, Toleranz 3h)")
+    : "⏰ Slot-Quittungen nicht lesbar";
+  const queueZeile = queueStatus && queueStatus.verfuegbar !== false
+    ? `Queue: ${k.wartend ?? "?"} wartend · ${k.laufend ?? "?"} laufend · hängende Leases ${k.abgelaufeneLeases ?? "?"}`
+      + ` · terminal offen ${terminalOffen}${dauerhaftBlockiert == null ? " (Blockierten-Sicht fehlt)" : ""}`
+      + ` · CAS unbekannt ${klass.casUnbekannt ?? "?"}`
+    : `Queue: nicht lesbar (${(queueStatus && queueStatus.grund) || "unbekannt"})`;
+
+  const text = [
+    `${klass.emoji} Helmut: ${klass.label}.`,
+    ...(klass.gruende.length ? [`Gestört: ${klass.gruende.join("; ")}.`] : []),
+    ...(klass.unbestimmtGruende.length ? [`Nicht bestimmbar: ${klass.unbestimmtGruende.join("; ")}.`] : []),
+    motorZeile,
+    slotZeile,
+    queueZeile,
+    `Verstanden zuletzt: ${fmt(verstandenAlterMs)} · Fehler (24h): ${errors24} historisch aufgefangen · terminal offen: ${terminalOffen}`,
+    lageHinweis.text,
+    ...(coverage.available ? [`🏷️ Klassifikationsabdeckung: ${Math.round((coverage.establishedLevelCoverage != null ? coverage.establishedLevelCoverage : coverage.levelCoverage || 0) * 100)}% mit ermittelter Ebene (${coverage.withEstablishedLevel != null ? coverage.withEstablishedLevel : coverage.withLevel}/${coverage.total})${coverage.warn ? " · Hinweis, keine Störung" : ""}`] : []),
+    budget.limit != null
+      ? `🧮 KI-Budget: ${budget.calls}/${budget.limit} genutzt · Rest ${budget.remaining} · Skips ${budget.skips}${budget.exhausted ? " ⚠️ erschöpft" : (budget.status === "knapp" ? " · knapp" : "")}`
+      : `🧮 KI-Budget: ${budget.calls} Calls · Skips ${budget.skips} (kein Limit gesetzt)`,
+    `👤 ${active7} aktiv (7T) · 💬 ${feedback24} Feedback · 📲 ${pushSent24} Push (24h)`,
+    ...(klass.hinweise.length ? [`Hinweise: ${klass.hinweise.join("; ")}.`] : [])
+  ].join("\n");
+
+  return {
+    ok: klass.ok,
+    text,
+    state: klass.label,
+    severity: klass.severity,
+    overdueCrons: slotPruefung ? slotPruefung.fehlendeSlots : [],
+    rollingCrawl: null,
+    googleUrlResolution: null,
+    googleUrlResolutionRate: null,
+    budget,
+    idle: null,
+    classificationCoverage: coverage,
+    sourceFreshness: null,
+    healthBlockers: [...klass.gruende, ...klass.unbestimmtGruende],
+    healthWarnings: klass.hinweise,
+    active7,
+    feedback24,
+    errors24,
+    briefingItems: null,
+    pushSent24,
+    motor: {
+      zustand: klass.zustand,
+      queue: queueStatus && queueStatus.verfuegbar !== false
+        ? { zustand: queueStatus.zustand, zustandsklasse: queueStatus.zustandsklasse, befunde: queueStatus.befunde || [] }
+        : { verfuegbar: false, grund: (queueStatus && queueStatus.grund) || "unbekannt" },
+      casUnbekannt: klass.casUnbekannt,
+      slotPruefung: slotPruefung
+        ? {
+          fehlendeSlots: slotPruefung.fehlendeSlots,
+          fehlgeschlageneSlots: slotPruefung.fehlgeschlageneSlots,
+          abrechnung: slotPruefung.abrechnung
+        }
+        : null,
+      terminalOffen,
+      historischAufgefangen24h: errors24
+    }
+  };
+}
+
+// Altpfad (Motor nachweislich inaktiv, Flag aus): funktional unverändert.
+async function buildLegacyHealthReport(politicianId) {
   politicianId = tenantContext.requireTenantId(politicianId, "buildHealthReport");
   // V3: Health-Report bewertet das frisch erzeugte V3-Briefing (kein V2-Blob).
   // P1-4/P1-5: Betriebszustand kommt jetzt aus dem Zwei-Achsen-Zustandsmodell

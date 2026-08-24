@@ -691,4 +691,4 @@ audit/                                        # historische Auditberichte (kein 
 | **Understanding / KI** | `understanding.js`, `ai.js`, `llm-budget.js`, `quellenarchitektur/understanding-gate.js` |
 | **Sicherheit / Mandanten** | [`quellenarchitektur/05-sicherheitsmodell-rls.md`](quellenarchitektur/05-sicherheitsmodell-rls.md), [`sprint1-sicherheit/01-zugriffsmatrix.md`](sprint1-sicherheit/01-zugriffsmatrix.md), `tenant-context.js`, `auth.js`, `scripts/cross-tenant-security-test.js` |
 | **Betrieb / Production** | [`betrieb/deploy-rollback.md`](betrieb/deploy-rollback.md), [`betrieb/env-inventar.md`](betrieb/env-inventar.md), [`betrieb/branch-protection.md`](betrieb/branch-protection.md), `vercel.json`, `helmut-flags.json` |
-| **Monitoring / Alarm** | `rolling-health.js`, `watchdog-state.js`, `monitoring-webhook.js`, `alarm-payload.js` |
+| **Monitoring / Alarm** | `rolling-health.js`, `watchdog-state.js`, `motor-health.js` (Motor-Quittungen bei aktivem OP-30-Pfad), `monitoring-webhook.js`, `alarm-payload.js` |

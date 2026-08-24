@@ -7,6 +7,8 @@
 
 **`HELMUT_SCALABLE_PIPELINE` bleibt eingeschaltet; kein Rückbau erforderlich.** OP-25 ist laut Betreiberfeststellung vom 24.08. bereits abgeschlossen und bewiesen (keine neue Prüfung dieses Sprints).
 
+**Der WhatsApp-Gesundheitsbot war bis 24.08. an tote Altquittungen gebunden:** der Blob `crawlRuns` endet seit der Aktivierung bei einem Projektionslauf mit 0 Quellen (16:03 UTC 23.08.) → fälschlich „Teilweise gestört"; ohne Merge von **PR #266** (offen) ab 25.08. 06:00 UTC falsches „Kritisch". Umstellung auf die Motor-Quittungen: PR #266. Der **Monitoring-Zweitkanal (OP-07)** stellt entgegen früherem Stand seit mind. 17.08. täglich zu (belegt 24.08., HTTP 200, attempts 1); Ziel von `HELMUT_MONITORING_WEBHOOK_URL` und der doppelte WhatsApp-Eingang 09:02 TR bleiben ungeklärt (Betreiberprüfung, kein Code-Fix vorher).
+
 Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000
 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die
 vollständige Fassung vor dieser Verdichtung liegt verlustfrei in
@@ -110,6 +112,7 @@ veraltet und konfliktbehaftet; #255 blieb wegen seiner Bedingung geschlossen: ke
 vor dem ersten grünen OP 30 Wirkungslauf. Zweige und Historie bleiben erhalten.
 Nach diesem Dokumentationsmerge: **0 Pull Requests offen**; Versuch 5 war zu diesem
 Zeitpunkt noch nicht gestartet (Aktivierung und Abschluss folgten am 23./24.08., §7a).
+Am 24.08. kam PR #266 (Gesundheitsbot, §14) hinzu; offen, nicht gemergt.
 
 ## 7 · Offene Blocker
 
@@ -122,6 +125,10 @@ Zeitpunkt noch nicht gestartet (Aktivierung und Abschluss folgten am 23./24.08.,
 6. **OP-11:** Branch Protection ist auf GitHub nicht aktiv; Pflicht-CI blockiert Merges daher
    nicht technisch.
 7. **OP-15:** echte Google-Drosselung und Personenquellen bleiben Produktionsrisiken.
+8. **Lage-Rotation (eigener Kapazitätspunkt):** der Lage-Cron schafft 2 Mandate je Tageslauf
+   (Zeitbudget, systemErrors 21.–23.08.) — bei 25 Mandaten wären das ≈ 13 Tage je
+   vollständiger Rotation. Vor Zweitmandanten-Skalierung Kapazitätsentscheidung nötig;
+   ab Merge von Teil B meldet der Bot den Rückstand als Produkthinweis, nicht als Störung.
 
 K2/K3 und OP-25 sind abgeschlossen: fünf aktive Mandate, Signatur
 `m5-9aee228dbf2c9f13`, Retention 36 und drittes OP-25-Fenster bestanden. Nach einer
@@ -133,50 +140,31 @@ OP-30-Aktivierung muss OP-25 für die geänderte Architektur erneut vollständig
   Ankunft etwa 440–470 Aufträge/Tag, Abfluss etwa 130–180/Tag (Runbook §19.4/§19.5).
 - Die Zielarchitektur (Outbox, austauschbarer Transport, verteilte Klassengrenzen,
   Vorgangswache) ist gemergt und lokal lastgetestet. AWS ist nicht ausgerollt.
-- Die fünf OP-30-Migrationen wurden am 15.08. fehlerfrei angewendet (§24.10); zwei
-  vollständige Produktionszyklen belegten am 15./16.08. ihre Inertheit bei ausgeschalteten
-  Flags — 145 Schreibvorgänge ohne `HV001`/`HV002` (§24.11).
-- **`HELMUT_VERSTEHEN_CAS` ist seit 17.08. eingeschaltet** (Betreiber, Redeploy auf
-  unverändertem Stand) und über drei Kontrollen laufzeitgeprüft: 45 Vorgänge, alle
-  `fertig`, **0 `unbekannt`**, ein Modellaufruf je Vorgang, kein `HV001`/`HV002`, KI-Budget
-  im Band. Der Morgenzyklus 18.08. war vollständig: **briefing-morning 5/5 Mandate,
-  briefing-lage 5/5**, `understanding-cron` erfolgreich. **`HELMUT_VERSTEHEN_PARALLELITAET`
-  ist nicht gesetzt und wirkt daher als 1** (Runbook §25).
-- **Die 524 inerten Altaufträge sind am 18.08. neutralisiert** (ein scharfer Lauf
-  07:11 UTC): exakt 524 gelöscht, die 235 erledigten signaturgleich unangetastet. **Kein
-  Export**; Rückweg ausschließlich deterministische Neuerzeugung durch den Planer (§26.7).
-- **Erste Stufe-1-Aktivierung 18.08. 16:15 UTC → Rücknahme 19.08. ~06:56 UTC** (Runbook
-  §27): Planung/Outbox einwandfrei, aber **0 Abschlüsse** in beiden Slots (Blob-Row-Lock-
-  Konvoi je Auftrag, fehlende Slot-Quittung); Rest 383 inert, 2 CAS-`unbekannt`
-  (`modellfehler`/Timeout). Befunde und Zahlen kanonisch in §27.
-- **Reparatursprint 19.08. (PR #256, GEMERGT + DEPLOYT, §28.1):** Option B —
-  `source_fetch` persistiert kanonisch relational, Blob nur noch Lesespiegel
-  **höchstens 1×/Slot**; Option D — blob-unabhängige Slot-Quittung (`process_runs`).
-  Wächter-/Parallelitätssuiten 40 + 16 PASS (Blob-Zugriffe konstant 2/Slot statt ≥ 120,
-  0 Doppelarbeit, Lease-Wiederaufnahme). Altpfad mit Flag AUS byte-identisch.
-- **Folgesprint 19.08. nachmittags (Runbook §28):** Deployment-Nachweis + Ruheprüfung
-  bestanden · CAS-Behandlung ausgeführt (freigegeben, 2× `pruefen`/`erneut`, 0 Modellaufrufe
-  durch die Behandlung) · gemischtes Neutralisierungsverfahren (Anker 19.08., R12) 58/0
-  bewiesen, als PR #257 gemergt und deployt (Details §28.2–§28.5).
-- **Vollzug 19.08. ~13:44 TR / 10:44 UTC (freigegeben; Beleg §28.8):** exakt **383
-  gelöscht**, Outbox kaskadiert 0, 235 Erledigte signaturgleich, CAS byte-gleich zum
-  Vorheranker, kein Cron/KI/Deploy/Flag/Export; Wiederholungsschutz in Production belegt
-  (`ABBRUCH-BEREITS-NEUTRALISIERT`).
-- **Versuch 4 (20.08.) VOR der Aktivierung beendet — gescheitert vor Aktivierung (§29):**
-  Teil C grün (live gegenbestätigt), Teil D blockiert durch `df1a6700` und `eff40db2`
-  (Details/Belege, Ursachen und Reparatur kanonisch in Runbook **§29**; Suite
-  `verstehen-restzeit-test.js` 50/50 inkl. Review-Korrektur, keine Offline-Regression).
-- **§30 und §30.5 in Production vollzogen (23.08.):** 492dcd48 ist im regulären
-  05:30 UTC Lauf mit exakt einem weiteren Versuch und KI Aufruf fertig geworden
-  (2/2/2, `ergebnis_fencing=2`). PR #262 wurde gemergt und als Production Deployment
-  `dpl_8Z74anCHqxZVNQjmUPs5UGq7GuRZ` READY ausgeliefert.
-- Die freigegebene Migration `20260823043633` wurde installiert. Zwei bytegleiche
-  Buchungseinträge dokumentieren die parallele Doppelanwendung; Funktion genau einmal,
-  Datenanker unverändert, kein Bereinigungseingriff.
-- Der freigegebene Abschluss für df1a6700 lief um 06:38:54 UTC über den kanonischen
-  Funktionsweg und gab `aufgegeben` zurück. Zustand `aufgegeben`, Grund
-  `aufgegeben-nach-freigabe`, Zähler und Fencing unverändert 1/1/1. Danach nur dieser
-  eine Reservierungsdatensatz verändert; Queue 0/235/0/0, Outbox 0, Vormerkungen 0.
+- Die fünf OP-30-Migrationen wurden am 15.08. angewendet; zwei Produktionszyklen belegten
+  15./16.08. ihre Inertheit bei ausgeschalteten Flags (§24.10/§24.11).
+- **`HELMUT_VERSTEHEN_CAS` ist seit 17.08. eingeschaltet** (Betreiber) und laufzeitgeprüft:
+  45 Vorgänge alle `fertig`, **0 `unbekannt`**, ein Modellaufruf je Vorgang, Morgenzyklus
+  18.08. 5/5. **`HELMUT_VERSTEHEN_PARALLELITAET` nicht gesetzt ⇒ wirkt als 1** (Runbook §25).
+- **Die 524 inerten Altaufträge sind am 18.08. neutralisiert** (exakt 524 gelöscht, 235
+  Erledigte signaturgleich, kein Export; Rückweg nur Neuerzeugung durch den Planer, §26.7).
+- **Erste Stufe-1-Aktivierung 18.08. → Rücknahme 19.08.:** Planung/Outbox einwandfrei, aber
+  **0 Abschlüsse** (Blob-Row-Lock-Konvoi, fehlende Slot-Quittung); Rest 383 inert,
+  2 CAS-`unbekannt`. Befunde und Zahlen kanonisch in Runbook §27.
+- **19.08. (drei Sprints, kanonisch Runbook §28):** PR #256 Blob-Entkopplung
+  (`source_fetch` relational kanonisch, Slot-Quittung `process_runs`, Altpfad
+  byte-identisch) · PR #257 gemischtes Neutralisierungsverfahren 58/0 + CAS-Behandlung ·
+  Vollzug §28.8: exakt 383 inerte Aufträge gelöscht, Wiederholungsschutz belegt.
+- **Versuch 4 (20.08.) vor der Aktivierung beendet — gescheitert (§29):** Teil C grün,
+  Teil D blockiert durch `df1a6700` und `eff40db2`; Ursachen und Reparatur kanonisch in
+  Runbook **§29** (Suite `verstehen-restzeit-test.js` 50/50, keine Offline-Regression).
+- **§30 und §30.5 in Production vollzogen (23.08.):** 492dcd48 wurde im regulären
+  05:30-UTC-Lauf mit genau einem weiteren Versuch fertig (2/2/2, `ergebnis_fencing=2`);
+  PR #262 gemergt und als Deployment `dpl_8Z74anCHqxZVNQjmUPs5UGq7GuRZ` READY ausgeliefert.
+- Die freigegebene Migration `20260823043633` wurde installiert (Buchführung und die zwei
+  Einträge der Doppelanwendung: §3/§30.6; Funktion genau einmal, keine Datenwirkung).
+- Der freigegebene Abschluss für df1a6700 lief 06:38:54 UTC über den kanonischen
+  Funktionsweg und gab `aufgegeben` zurück (Grund `aufgegeben-nach-freigabe`,
+  Zähler/Fencing 1/1/1, genau eine Zeile verändert; Queue 0/235/0/0, Outbox 0).
 - **Live-V4 im Fenster 23.08. 16:12–16:23 UTC: rot und blockiert** — zwei erklärte
   Abweichungen (CAS 244 statt 239; Dublette ein End-Newline-Byte), übrige Tore grün (§30.6).
 - **Aktivierung + Abschluss (23./24.08.): Versuch 5 formal vollständig abgeschlossen.**
@@ -194,7 +182,7 @@ und [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-
 |---|---|
 | Profilreife (OP-29/OP-04-Teil) — 5 Profile am 2026-08-04 repariert | 29B (lesender Fehlerzustands-Nachweis); relationale Profilzeilen bleiben veraltete Schnappschüsse (F-P6); K2 |
 | Google-News-Härtung (OP-15) | Production-Beweislauf unter echter Drosselung |
-| Monitoring-Zweitkanal (OP-07) | `HELMUT_MONITORING_WEBHOOK_URL` unset → No-Op |
+| Monitoring-Zweitkanal (OP-07) | Webhook stellt seit mind. 17.08. täglich zu (belegt 24.08.); Ziel-URL und doppelter WhatsApp-Eingang ungeklärt (Betreiber) |
 | `source_id`-Dubletten (OP-19) | Live-Nachweis „Telemetriezeilen = distinct `source_id`" |
 | Punkt 16 Quellenstörungs-Erkennung | 7 von 14 Klassen nur testbelegt |
 | Punkt 17 Kostenmessung | ~16 % Logverlust, Preisbasis unbelegt, Nicht-LLM ungemessen |
@@ -259,6 +247,10 @@ dieses Sprints). Empfohlen:
    (`warteschlange-*`, Briefings 5/5); bei Verletzung einer §28.6-Grenze gilt der
    dokumentierte Rückweg (Flag löschen + Redeploy, Betreiberaktion).
 2. **Rückkehr zu den P0-Verkaufsblockern OP-01…OP-04** (§1/§7).
+3. **Bot-PR #266 entscheiden** — ohne ihn meldet der Bot ab 25.08. 06:00 UTC fälschlich
+   Kritisch (Blob-Altquittungen laufen leer).
+4. **Betreiberprüfung Doppelkanal:** Ziel von `HELMUT_MONITORING_WEBHOOK_URL` prüfen;
+   erst danach ein Kanalschritt.
 
 Flag-/Env-Änderungen, Deployments und die Aktivierung weiterer Mandate bleiben ausdrückliche
 Betreiberaktionen; OP 15 und `CRON_SECRET`/Egress bleiben offen.
@@ -309,6 +301,17 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzte relevante Sprints
 
+- **24.08. (Gesundheitsbot Teil A+B, PR #266):** Teil A rein lesend: „Teilweise gestört" als
+  Artefakt toter Blob-Altquittungen (Projektionslauf 0 Quellen) identifiziert;
+  Quittungen vollständig aufgelöst (238=204+23+11 · 67=55+12 · 137=117+8+4+8 Stapelrest);
+  Doppelnachricht = ein Lauf, zwei Kanäle (CallMeBot + Webhook 06:01:11 UTC), Ziel ungeprüft.
+  Teil B: Umstellung auf `process_runs`/`betriebsstatus`/CAS mit vier Zuständen (Gesund /
+  Gesund mit Hinweisen / Gestört / Status nicht bestimmbar), Altpfad byte-gleich;
+  adversarialer 18-Befunde-Review eingearbeitet; `motor-health-test.js` 38/38, Offline
+  267/273 (6 rote Suiten umgebungsbedingter Altbestand). Grenzen: Webhook-Ereignistyp bleibt
+  bei „nicht bestimmbar" konservativ `alarm`, Quittungssicht braucht den relationalen
+  Lesepfad; Watchdog-Lauf #59 war der K7-Ersatzlauf — die Vorprüfung findet seit der
+  Aktivierung keine Altquittungen mehr (eigener Folgepunkt).
 - **23./24.08. (Aktivierung + Abschluss Versuch 5):** nach Betreiber-Referenzentscheidung und
   grüner V4-Wiederholung Aktivierung 16:47:38 UTC durch den Betreiber; Wirkungsnachweis
   117 + 259 Abschlüsse, Morgenzyklus 5/5, R4/Watchdog #59 grün — alle elf §28.6-Kontrollen
@@ -344,7 +347,4 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 - **19.08. (drei Sprints):** Vollzug §28.8 — 383 inerte Aufträge neutralisiert · Folgesprint
   §28 — CAS behandelt, gemischtes Verfahren 58/0 (PR #257) · Reparatursprint PR #256 —
   Blob-Entkopplung + Slot-Quittung (Suiten 40+16); Detail §7a, Runbook §27/§28.
-- **17.–18.08.:** `HELMUT_VERSTEHEN_CAS=on` (laufzeitgeprüft, 0 `unbekannt`) · Stufe 1
-  aktiviert 16:15 UTC, 19.08. zurückgenommen (§27.1) · PR #253/#254: Neutralisierungsweg
-  R1–R9, Warteschlangenwache V2, 524er-Vollzug (§26.7).
 Ältere Sprintberichte (inkl. PR #247–#251) stehen in den Belegdateien aus §13 und in der verlustfreien Archivfassung vom 17.08.
