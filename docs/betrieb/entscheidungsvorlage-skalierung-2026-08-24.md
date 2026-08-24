@@ -1,6 +1,6 @@
 # Entscheidungsvorlage — Erweiterung von 5 auf 10 und später 25 Mandate
 
-**Stand:** 2026-08-24, korrigiert im Verifikationssprint (Betriebsreihenfolge, KI-Budget-Evidenzen, Berliner Wahl) und nach dem grünen Verifikationslauf 4 nachgeführt (amtliche Bestätigung aller 20 Profile; frühere „Bestätigung fehlt"-Aussagen überholt) · **Für:** den Gründer · **Sprache:** bewusst einfach gehalten.
+**Stand:** 2026-08-24, **zuletzt berichtigt im Härtungssprint Selbstweck am 2026-08-24** (AWS ist keine Voraussetzung des Fünfernachweises · fünf statt drei Variablen · Budgetsemantik · Kostenaussagen); zuvor korrigiert im Verifikationssprint (Betriebsreihenfolge, KI-Budget-Evidenzen, Berliner Wahl) und nach dem grünen Verifikationslauf 4 nachgeführt (amtliche Bestätigung aller 20 Profile; frühere „Bestätigung fehlt"-Aussagen überholt) · **Für:** den Gründer · **Sprache:** bewusst einfach gehalten.
 **Zahlenquellen:** `scripts/skalierungsmodell.js` (einzige Rechenquelle, lokal am 24.08.
 für 5/10/25 Mandate ausgeführt),
 [`op30-kapazitaet-morgenslots-2026-08-09.md`](op30-kapazitaet-morgenslots-2026-08-09.md)
@@ -13,12 +13,21 @@ für 5/10/25 Mandate ausgeführt),
   Aufträge in eine Warteschlange legt und mit Quittungen abarbeitet.
 - **Schattenmodus (`HELMUT_JOB_DISPATCH_MODE=shadow`):** der Motor läuft und
   arbeitet vollständig, aber der Antrieb ist noch der bisherige Zeitplan (Cron).
-  Der „echte" Warteschlangenbetrieb (Ereignis-Antrieb über einen externen
-  Nachrichtendienst) ist noch nicht eingeschaltet.
+  Der „echte" Warteschlangenbetrieb (Ereignis-Antrieb: erledigte Arbeit weckt die
+  nächste) ist noch nicht eingeschaltet. **Berichtigt am 2026-08-24:** hier stand
+  „über einen externen Nachrichtendienst" — das ist nur für große Mandatszahlen die
+  vorgesehene Form. Für den Fünfernachweis weckt Helmut sich **selbst** über die eigene
+  Route („Selbstweck"); ein externer Dienst ist dafür nicht nötig.
 - **KI-Tagesdeckel:** höchstzulässige Zahl von KI-Aufrufen pro Tag. Heute wirksam:
-  **100 plus 30 Reserve**. Ist er erreicht, wird liegen gelassene Arbeit ehrlich
-  als „übersprungen wegen Budget" verbucht — sie geht nicht verloren, wird aber an
-  diesem Tag nicht verstanden.
+  **100 insgesamt**, davon **30 für das Verstehen reserviert**. Wichtig, weil hier oft
+  falsch gerechnet wurde: die Reserve ist ein **Anteil des Deckels**, kein Zuschlag.
+  100 mit Reserve 30 heißt: höchstens **100** Aufrufe am Tag; nicht priorisierte Arbeit
+  (Büro, Kommunikation, Lage, App-Start) bekommt höchstens **70**; priorisiertes Verstehen
+  darf den reservierten Bereich mitnutzen. Ein späterer Deckel 250 mit Reserve 50 hieße
+  entsprechend: höchstens **250** insgesamt und **200** für nicht priorisierte Arbeit —
+  **nicht 300**. Ist der Deckel erreicht, wird liegen gelassene Arbeit ehrlich als
+  „übersprungen wegen Budget" verbucht — sie geht nicht verloren, wird aber an diesem Tag
+  nicht verstanden. Kanonisch: [`llm-budget-reservierung.md`](llm-budget-reservierung.md).
 
 ---
 
@@ -54,17 +63,26 @@ eingeschaltet.
 
 1. **Der siebentägige Nachweis des echten Warteschlangenbetriebs mit den fünf
    bestehenden Mandaten.** Er ist nicht begonnen; heute läuft der Schattenmodus.
-   Der Nachweis der nächsten technischen Stufe verlangt verbindlich:
+   Verbindliche Quelle dieses Nachweises ist die Zielarchitektur
+   ([`op30-zielarchitektur-2026-08-13.md`](op30-zielarchitektur-2026-08-13.md) §14, Stufe 2) —
+   **nicht** der ältere Slot-Stufenplan im Kapazitätsbeleg (§10 dort); der beschreibt die
+   Morgenslots und die Mandatszahlen 5→200, nicht den Ereignis-Antrieb.
+   Der Nachweis verlangt (**korrigiert am 2026-08-24: fünf Werte, nicht drei**):
    1. `HELMUT_JOB_DISPATCH_MODE=queue` (Ereignis-Antrieb statt Zeitplan),
    2. `HELMUT_KLASSEN_GRENZEN=on` (verteilte Klassengrenzen),
-   3. gesetztes Weckziel `HELMUT_WORKER_WAKE_URL`,
-   4. sieben Tage lang Abfluss mindestens gleich Ankunft,
-   5. keine verlorene und keine doppelte Arbeit,
-   6. ältester offener Auftrag dauerhaft unter 24 Stunden.
-   Der kanonische Production-Transport dafür ist laut Zielarchitektur **AWS SQS plus
-   Lambda** — und diese AWS-Infrastruktur **existiert noch nicht**. Deshalb muss die
-   **AWS-Entscheidung vor dem siebentägigen Nachweis fallen, nicht danach** (Frage 8).
-   In diesem Sprint wird dazu nichts bereitgestellt und nichts freigegeben.
+   3. `HELMUT_JOB_TRANSPORT=selbstweck` (ohne diesen Wert greift der Standardtransport `sqs`),
+   4. `HELMUT_SELBSTWECK_ERLAUBT=on` (sonst ist der Selbstweck in Production gesperrt),
+   5. gesetztes Weckziel `HELMUT_WORKER_WAKE_URL=https://<production-host>/api/cron/worker-weck`,
+   6. eine grüne Vorprüfung: `/api/ops/jobqueue` → `ereignisbetrieb.bereit === true`,
+   7. sieben Tage lang Abfluss mindestens gleich Ankunft,
+   8. keine verlorene und keine doppelte Arbeit,
+   9. ältester offener Auftrag dauerhaft unter 24 Stunden.
+   **Korrektur vom 2026-08-24:** hier stand, der Nachweis brauche zwingend **AWS SQS plus
+   Lambda**, und die AWS-Entscheidung müsse deshalb **vor** dem Nachweis fallen. Das ist
+   technisch falsch. AWS bleibt der kanonische Transport für **große** Mandatszahlen; für den
+   Nachweis mit **fünf** Mandaten genügt der vorhandene **Selbstweck** — gebaut, verriegelt
+   und seit 2026-08-24 lokal Ende-zu-Ende belegt (31 PASS), aber **noch nie in Production
+   ausgeführt**. In diesem Sprint wird dazu nichts bereitgestellt und nichts freigegeben.
 2. **Regionale Quellen für Berlin und Brandenburg.** Beide Landesmodule sind inaktiv,
    alle Landeswege gesperrt, die vorbereiteten Quellenlisten („Seeds") sind nicht
    eingespielt, und ob der Berlin-Schalter in Production überhaupt wirkt, ist
@@ -112,12 +130,12 @@ Alles aus Frage 2, dauerhaft nachgewiesen mit zehn Mandaten, und zusätzlich:
 4. **Tägliche Lage für 25 Mandate im echten Betrieb belegt** (Frage 7).
 5. **Neubewertung der zehn Berliner Profile nach der Wahl am 20.09.2026** (Frage 11).
 
-## 4 · Warum reicht das aktuelle KI-Limit von 100 plus 30 nicht sicher?
+## 4 · Warum reicht der aktuelle KI-Gesamtdeckel von 100 (mit 30 reserviert) nicht sicher?
 
 Weil **jede** vorhandene Evidenzlinie zeigt, dass der Deckel bei Wachstum entweder schon
 im Normalfall oder spätestens am Ereignistag erreicht wird — die Linien widersprechen
 sich nur darin, **wie früh**. Die verbindliche Restliste hält fest: **ab 25 Mandaten
-reicht 100 plus 30 auch im günstigsten Fall nicht.** Erreicht der Deckel, bleibt Arbeit
+reicht der Gesamtdeckel 100 (davon 30 reserviert) auch im günstigsten Fall nicht.** Erreicht der Deckel, bleibt Arbeit
 sichtbar liegen („übersprungen wegen Budget") — an genau den Tagen, an denen die Lage am
 wichtigsten wäre. Dass der Betrieb heute grün ist, liegt an ruhigen Tagen (gemessen
 23./24.08.: 66 bzw. 29 von 100), nicht an ausreichender Reserve.
@@ -132,7 +150,7 @@ Evidenzen widersprechen sich und werden deshalb getrennt ausgewiesen:
 | Evidenzlinie | Aussage für ~25 Mandate | Quelle |
 |---|---|---|
 | **Gemessener Production-Verbrauch (5 Mandate)** | 62–77 Aufrufe/Tag gemessen (23.08.: 66/100; 24.08. Teiltag: 29/100); Kosten ~0,14 USD/Tag | Budgetquittungen; Kapazitätsmodell B3.1b |
-| **Kapazitätsmodell (vorgangsgetrieben)** | 25 Mandate: ~204 Verstehensaufträge, **88–265 Aufrufe/Tag**; Deckel 130 trägt „nur im günstigen Fall". Die früher zitierte Spanne „~113–290" gehört zu dieser Evidenzfamilie (andere Parametrisierung) | `scripts/kapazitaetsmodell-test.js` §B3 |
+| **Kapazitätsmodell (vorgangsgetrieben)** | 25 Mandate: ~204 Verstehensaufträge, **88–265 Aufrufe/Tag**; der **Gesamtdeckel 100** trägt „nur im günstigen Fall". Die früher hier genannte Zahl „Deckel 130" war falsch (siehe Kasten unter dieser Tabelle). Die früher zitierte Spanne „~113–290" gehört zu dieser Evidenzfamilie (andere Parametrisierung) | `scripts/kapazitaetsmodell-test.js` §B3 |
 | **Skalierungsmodell (quellengetrieben)** | 25 Mandate: **684 Aufrufe/Tag im Normalfall**, bis **5 376 am Ereignistag**, einmalige Erstbefüllung ~7 840 | `scripts/skalierungsmodell.js` |
 | **Ältere Stufen-/Grundlagenrechnung** | Deckel 100 greift rechnerisch ab ~70 Mandaten; für 100 Mandate wurden Größenordnungen um ~150–500 Aufrufe/Tag genannt | `betrieb/skalierungsgrundlage-1000.md` · Kapazitätsmodell B3 (100er-Zeile: 151–458) |
 
@@ -150,7 +168,7 @@ erste und die letzte gemessen):
 
 1. **Erwarteter Normalverbrauch** — je nach Linie 88–265 oder ~684 Aufrufe/Tag bei 25.
 2. **Erwarteter Belastungsfall** (Ereignistag) — bis ~5 376 bei 25 (Modellannahme).
-3. **Technischer Sicherheitsdeckel** — die eigentliche Stellgröße; heute 100+30.
+3. **Technischer Sicherheitsdeckel** — die eigentliche Stellgröße; heute **100 insgesamt** (davon 30 für Verstehen reserviert, also höchstens 70 für alles andere).
 4. **Maximal mögliche Kosten bei voll ausgeschöpftem Deckel** — der Deckel ist zugleich
    die Kostenobergrenze; sie wächst genau mit dem gewählten Deckel.
 5. **Einmalige Erstbefüllung** — eigener, gesondert freizugebender Tageslauf
@@ -211,20 +229,45 @@ Dauerzustand).
 **Für den heutigen Schattenmodus: nein.** Er läuft vollständig auf der bestehenden
 Infrastruktur (Vercel-Zeitpläne + Supabase).
 
-**Für den echten Ereignis-Antrieb: ja.** Der **kanonische Production-Transport ist
-laut Zielarchitektur AWS SQS plus Lambda** (Warteschlange SQS, Fehler-Warteschlange,
-Verschlüsselung KMS, Zugriffsrollen IAM, Verbraucher-Funktion Lambda, Region
-Frankfurt). **Nichts davon existiert bisher**; die vollständige Vorlage liegt im
-Repository (`infra/aws/helmut-auftrags-queue.yaml`). Die Kosten sind nutzungsabhängig
-(Cent-Beträge je Million Anfragen plus Rechenzeit) — die Entscheidung darüber ist
-ausdrücklich eine kostenpflichtige Gründerentscheidung, und sie muss **vor** dem
-siebentägigen Nachweis des echten Warteschlangenbetriebs fallen, weil dieser Nachweis
-ohne den Transport nicht laufen kann (Frage 2). **In diesem Sprint wird dazu nichts
-bereitgestellt und nichts freigegeben.** Ein eingebauter Ausweichantrieb ohne AWS
-(„Selbstweck") existiert, ist in Production aber bewusst gesperrt und nur
-Notfall-/Entwicklungsweg. Unabhängig davon steht die separate Kostenentscheidung
-**Supabase Pro** (echte Datenbank-Backups, OP-01) weiter aus — sie gehört zur
-Verkaufsreife, nicht zur Skalierung.
+**Für den Nachweis mit den fünf bestehenden Mandaten: nein** (berichtigt am 2026-08-24;
+die frühere Antwort „ja" war falsch). Dafür genügt der eingebaute **Selbstweck**: der
+Sender ruft die eigene Verbraucher-Route über HTTPS, autorisiert mit dem bestehenden
+`CRON_SECRET`. Kein neuer Anbieter, keine neue feste Infrastrukturgebühr. Er ist in
+Production heute gesperrt und wird mit `HELMUT_SELBSTWECK_ERLAUBT=on` ausdrücklich
+freigeschaltet — genau so ist er gedacht: eine bewusste Entscheidung, kein stiller
+Standard.
+
+**Was der Selbstweck kostet — ehrlich:** nicht null. Jeder Weckruf ist ein zusätzlicher
+Vercel-Funktionsaufruf mit eigener Rechenzeit und Speicherbelegung. Wie stark das die
+Rechnung belastet, hängt von Tarif, Kontingent und aktueller Nutzung ab und ist
+**ungeprüft** (https://vercel.com/docs/functions/usage-and-pricing). Eine Zusage
+„garantiert keine Zusatzkosten" ist nicht zulässig.
+
+**Für große Mandatszahlen: ja.** Der kanonische Transport bleibt **AWS SQS plus Lambda**
+(Queue, Fehler-Warteschlange, KMS, IAM, Lambda, Frankfurt). **Nichts davon existiert
+bisher**; die vollständige Vorlage liegt im Repository
+(`infra/aws/helmut-auftrags-queue.yaml`). Diese Entscheidung ist kostenpflichtig — sie ist
+aber **keine Voraussetzung des Fünfernachweises** und kann danach fallen.
+
+**Zwei Punkte zur AWS-Vorlage, die vor einem späteren Ja geklärt sein müssen:**
+
+- **Schlüsselrisiko:** die Vorlage reicht der Lambda-Funktion den **alten
+  Supabase-Dienstrollenschlüssel** (`service_role`) durch. Der ist aus dem JWT-Geheimnis des
+  Projekts abgeleitet; ihn zu widerrufen trifft **alles**, was ihn nutzt. Das ist **nicht
+  unvermeidbar**: Supabase unterstützt getrennte, benannte Geheimschlüssel (`sb_secret_…`),
+  die unabhängig widerrufen werden können — ausdrücklich auch „one secret key per backend
+  component" (https://supabase.com/docs/guides/getting-started/migrating-to-new-api-keys).
+  Eine spätere AWS-Lösung müsste einen **eigenen** Schlüssel bekommen. Das ist **keine
+  Freigabe**, diese Lösung jetzt zu bauen, und keine Aufforderung, jetzt Schlüssel zu
+  rotieren.
+- **KMS-Kosten:** die Vorlage legt **zwei** Schlüssel an, beide mit aktivierter Rotation.
+  AWS berechnet 1 USD/Monat je vom Kunden verwaltetem Schlüssel; die erste und die zweite
+  Rotation erhöhen je um 1 USD/Monat, danach ist der Aufschlag gedeckelt. Für zwei Schlüssel:
+  zunächst **2 USD/Monat**, nach der ersten Rotation **4**, nach der zweiten **6**, solange
+  beide bestehen — **zuzüglich** Anfragekosten (https://aws.amazon.com/kms/pricing/).
+
+Unabhängig davon steht die separate Kostenentscheidung **Supabase Pro** (echte
+Datenbank-Backups, OP-01) weiter aus — sie gehört zur Verkaufsreife, nicht zur Skalierung.
 
 ## 9 · Welche Production-Aktionen benötigen jeweils eine ausdrückliche Betreiberfreigabe?
 
@@ -284,11 +327,13 @@ bestätigte Importpaket der 20 Profile (Lauf 4: 20 von 20) liegt in
 `daten/mandatsprofile-berlin-brandenburg-2026-08-24.json`; der Prüfstand je
 Profil steht in `daten/mandatsprofile-berlin-brandenburg-2026-08-24-pruefstand.md`.
 
-**Empfohlene Reihenfolge (zusammengefasst):** ① **AWS-Entscheidung** (kanonischer
-Transport für den Ereignis-Antrieb — Voraussetzung des Fünfernachweises) →
-② **7-Tage-Nachweis des echten Warteschlangenbetriebs mit 5 Mandaten**
-(`queue` + Klassengrenzen + Weckziel; Abfluss ≥ Ankunft, nichts verloren/doppelt,
-ältester offener Auftrag < 24 h) → ③ Landesquellen Berlin/Brandenburg bytegenau
+**Empfohlene Reihenfolge (zusammengefasst; ① berichtigt am 2026-08-24 — die
+AWS-Entscheidung ist **keine** Voraussetzung des Fünfernachweises):** ① **Freigabe des
+Selbstwecks für den Fünfernachweis** (die fünf Werte aus Frage 2, Vorprüfung
+`ereignisbetrieb.bereit === true`; AWS bleibt offen und wird erst für größere Stufen
+gebraucht) → ② **7-Tage-Nachweis des echten Warteschlangenbetriebs mit 5 Mandaten**
+(Abfluss ≥ Ankunft, nichts verloren/doppelt, ältester offener Auftrag < 24 h) →
+③ Landesquellen Berlin/Brandenburg bytegenau
 verifizieren und freigeben → ④ KI-Deckel-Entscheidung anhand echter Messwochen
 (Frage 5 — offen, keine Empfehlung) → ⑤ die fünf empfohlenen Brandenburger Profile
 importieren und einzeln aktivieren (= 10 Mandate; **vorsichtige Zwischenstufe als

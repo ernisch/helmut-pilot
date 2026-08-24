@@ -398,7 +398,9 @@ dieselbe Route): erwartet ist **Drain ohne Dubletten** (wie am 13.08. gemessen: 
 3. **PostgreSQL-17-Verhalten** (lokal 16.13, §5).
 4. **Vercel-Verhalten** der Nachlaufslots unter Last (bei der 5er-Stufe inert).
 5. Der wirksame Production-Wert von `HELMUT_MAX_LLM_CALLS_PER_DAY` bleibt aus Sitzungen
-   nicht lesbar; die Basis 100+30 stammt aus Code-Default und Betriebsbeobachtung.
+   nicht lesbar; die Basis (Gesamtdeckel 100, davon 30 fuer das Verstehen reserviert — nicht 130,
+   siehe [`llm-budget-reservierung.md`](llm-budget-reservierung.md)) stammt aus Code-Default und
+   Betriebsbeobachtung.
 
 ## 11 · Testergebnisse dieses Sprints (alle 2026-08-11, lokal)
 
@@ -2010,12 +2012,19 @@ die Stufen 0–2 mit dem **Cron-Antrieb** und dem Schattenmodus. Was sich geaend
 
 1. **Der Standardtransport ist `sqs`,** nicht mehr der Selbstweck. Der Selbstweck ist in
    Production ohne `HELMUT_SELBSTWECK_ERLAUBT=on` **gesperrt** (Notfall-/Entwicklungsweg).
-2. **Fuer Stufe 2 (Ereignis-Antrieb) sind jetzt AWS-Ressourcen noetig**, die es **nicht
-   gibt**: Queue, Dead-Letter-Queue, KMS-Schluessel, IAM-Sender, Lambda-Verbraucher. Die
-   Definition liegt vollstaendig in `infra/aws/helmut-auftrags-queue.yaml`; ihr Anlegen ist
-   eine **kostenpflichtige Gruenderentscheidung**.
+2. ~~**Fuer Stufe 2 (Ereignis-Antrieb) sind jetzt AWS-Ressourcen noetig**, die es **nicht
+   gibt**~~ — **ueberholt, berichtigt am 2026-08-24 (§31).** Richtig ist: der **kanonische
+   Transport fuer grosse Mandatszahlen** ist SQS + Lambda, und diese Ressourcen gibt es nicht.
+   Fuer den **siebentaegigen Nachweis mit den fuenf bestehenden Mandaten** ist AWS jedoch
+   **nicht technisch notwendig** — dafuer traegt der vorhandene, verriegelte und seit
+   2026-08-24 lokal Ende-zu-Ende belegte **Selbstweck** (§31.1). Die Definition in
+   `infra/aws/helmut-auftrags-queue.yaml` bleibt unveraendert; ihr Anlegen bleibt eine
+   **kostenpflichtige Gruenderentscheidung** — nur eben keine Voraussetzung des
+   Fuenfernachweises.
 3. **Zwei neue Migrationen** (`20260814090000`, `20260814090100`) gehoeren zur Stufe 1 dazu.
-   Beide sind **nicht angewendet**.
+   ~~Beide sind **nicht angewendet**.~~ **Ueberholt:** der Anwendungsstand steht in §24 und
+   verbindlich in [`../CURRENT_STATE.md`](../CURRENT_STATE.md) §3 (OP-30-Dateien seit
+   2026-08-15 angewendet; offen ist nur noch `20260720`).
 
 ### §21.1 Reihenfolge fuer Stufe 1 (unveraendert freigabepflichtig)
 
@@ -2229,7 +2238,8 @@ Beides sind Änderungen an Production-Daten und damit **freigabepflichtig** (`CL
 Die AWS-Aktivierung, die Anhebung des KI-Tagesdeckels und die Ausweitung auf 25+ Mandate.
 **Helmut ist nicht für 25, 100, 200 oder 500 Mandate freigegeben.** Der Sprint hat einen
 technischen Engpass beseitigt — der bindende Grund gegen mehr Mandate war ohnehin ein
-anderer: der KI-Tagesdeckel (ab 25 Mandaten reicht 100+30 auch im günstigen Fall nicht) und
+anderer: der KI-Tagesdeckel (ab 25 Mandaten reicht der Gesamtdeckel 100 — davon 30 reserviert —
+auch im günstigen Fall nicht) und
 OP-15 (Google-Drosselung, ab ~10 Mandaten). Auch der AWS-Trockenlauf aus §22 bleibt eine
 gesonderte Betreiberentscheidung und wurde nicht ausgeführt.
 
@@ -3768,3 +3778,173 @@ und bewiesen** — eine Betreiberfeststellung, keine Prüfung dieses Sprints. Pr
 dieses Abschlusses waren ausschließlich die vom Betreiber selbst ausgeführte Variablen- und
 Redeploy-Aktion; sämtliche Claude-Messungen blieben rein lesend (kein SQL-Schreiben, kein
 Cron-/Worker-/Modellaufruf, keine Migration, keine Löschung der Migrations-Dublette).
+
+---
+
+## §31 · Aktivierungsvorlauf des Ereignis-Antriebs (Härtungssprint Selbstweck, 2026-08-24)
+
+**Dieser Abschnitt aktiviert nichts.** Er beschreibt, was **vor** einer Umschaltung von
+`shadow` auf `queue` geprüft sein muss, und was der Sprint vom 2026-08-24 daran belegt hat.
+Production, Supabase, Vercel-Konfiguration, AWS, Profile und KI-Budget blieben in diesem
+Sprint unverändert.
+
+### §31.1 Welcher Transport für den Fünfernachweis
+
+**AWS ist für den siebentägigen Nachweis mit den fünf bestehenden Mandaten nicht technisch
+notwendig.** Empfohlen bleibt der vorhandene **Selbstweck**: er ist gebaut, seit dem
+Härtungssprint 2026-08-14 verriegelt (Ziel-Riegel, Türklingel-Bündelung, `unbestaetigt`-Pfad,
+429 bei belegtem Verbraucher) und seit 2026-08-24 lokal Ende-zu-Ende belegt
+(`scripts/selbstweck-ende-zu-ende-test.js`, 31 PASS). **Er war noch nie in Production
+ausgeführt** — genau das ist der offene Nachweis.
+
+Was der Selbstweck **nicht** hat, bleibt wahr und bleibt der Grund, ihn nicht als Endzustand
+zu führen: Sichtbarkeitszeit, Zustellzähler, native Quarantäne, kontrollierte Parallelität
+über einen verwalteten Dienst. Für fünf Mandate übernehmen diese Rollen: der Versuchszähler
+der Outbox, der Backoff der Vergabe, der Abgleich als Sicherheitsnetz und die Drain-Klasse
+`worker-drain` (max 1).
+
+### §31.2 Die fünf Werte (nicht drei)
+
+| # | Variable | Wert |
+|---|---|---|
+| 1 | `HELMUT_JOB_DISPATCH_MODE` | `queue` |
+| 2 | `HELMUT_KLASSEN_GRENZEN` | `on` |
+| 3 | `HELMUT_JOB_TRANSPORT` | `selbstweck` |
+| 4 | `HELMUT_SELBSTWECK_ERLAUBT` | `on` |
+| 5 | `HELMUT_WORKER_WAKE_URL` | `https://<production-host>/api/cron/worker-weck` |
+
+Ohne 3 greift der **Standardtransport `sqs`** (seit 2026-08-14), ohne 4 ist der Selbstweck in
+`VERCEL_ENV=production` **gesperrt**. Mit nur drei Werten würde also **nichts** zugestellt,
+während der Status früher trotzdem „Ereignis-Antrieb" gemeldet hätte. Ausführlich:
+[`env-inventar.md`](env-inventar.md) §7a.
+
+**Bereits vorhanden, nur zu prüfen — keine neuen Änderungen:** `HELMUT_SCALABLE_PIPELINE=on`
+(Production seit 23.08.2026), `CRON_SECRET` (in Vercel **und** als GitHub-Secret
+`HELMUT_CRON_SECRET`), die von Vercel selbst gesetzten Systemvariablen
+`VERCEL_PROJECT_PRODUCTION_URL`/`VERCEL_URL`/`VERCEL_BRANCH_URL` (Vertrauensanker des
+Weckziels) und die angewendeten OP-30-Migrationen.
+
+Alle fünf Werte zu setzen ist eine **Betreiberaktion** (Vercel-Env + Redeploy) und
+freigabepflichtig.
+
+### §31.3 Vorprüfung: eindeutig, maschinenlesbar, ohne Vermutung
+
+```
+GET /api/ops/jobqueue        (Authorization: Bearer <CRON_SECRET>)
+```
+
+Seit 2026-08-24 enthält die Antwort das Feld `ereignisbetrieb`:
+
+```json
+"ereignisbetrieb": {
+  "vertrag": 1,
+  "angeforderterModus": "queue",
+  "modus": "queue",
+  "antrieb": "ereignis",
+  "skalierbarerMotor": true,
+  "klassenGrenzen": true,
+  "transport": { "gewaehlt": "selbstweck", "wirksam": "selbstweck",
+                 "verfuegbar": true, "buendelt": true, "grund": null },
+  "bereit": true,
+  "befunde": []
+}
+```
+
+**Freigaberegel:** der Ereignisbetrieb gilt **erst** als bereit, wenn `bereit === true` und
+`befunde` leer ist. `antrieb: "ereignis"` allein ist **kein** Bereitschaftsbeleg — genau diese
+Verwechslung war der Befund. Typische Nichtbereitschaften und ihr Grund im Klartext:
+
+| `transport.grund` / Befund | Bedeutung |
+|---|---|
+| `weckziel-fehlt (HELMUT_WORKER_WAKE_URL)` | Wert 5 fehlt |
+| `weckziel-fremder-host` / `weckziel-falscher-pfad` / `weckziel-nicht-https` | Wert 5 falsch |
+| `weckziel-kein-vertrauensanker (…)` | keine Plattform-Systemvariable sichtbar |
+| `CRON_SECRET fehlt` | Secret nicht gesetzt |
+| `selbstweck-in-production-gesperrt (…)` | Wert 4 fehlt |
+| `sqs-queue-url-fehlt (HELMUT_SQS_QUEUE_URL)` | Wert 3 fehlt ⇒ Standardtransport `sqs` ohne Queue |
+| `klassengrenzen-aus (…)` | Wert 2 fehlt |
+| `skalierbarer-motor-aus (…)` / `dispatch-ohne-warteschlange (…)` | Motor aus ⇒ Dispatch wirkungslos |
+
+Die Ausgabe enthält **keine** Secrets, **keine** Adressen und **keine** Hostnamen
+(testgesichert). Sie ist rein lesend.
+
+### §31.4 Rückweg (unverändert, ein Schritt)
+
+`HELMUT_JOB_DISPATCH_MODE` zurück auf `shadow` (oder `off`) + Redeploy. Die Warteschlange
+läuft leer, kein Auftrag geht verloren, der Cron-Antrieb trägt sofort weiter. Lokal belegt:
+Ende-zu-Ende-Test §9 (Schattenmodus: kein HTTP, Absichten laufen über den Schattenweg, die
+Route weist jedes Wecksignal mit 409 ab).
+
+### §31.5 Was nach diesem Sprint technisch belegt ist — und was nicht
+
+**Belegt (lokal, kostenfrei, ohne Production-Kontakt):**
+
+1. Die vollständige Selbstweck-Kette inklusive Authentifizierung, atomarem Anspruch,
+   Ausführung, Abschluss, Folgeweckung und sauberem Ende (31 PASS).
+2. Zehn Fehler- und Grenzfälle, darunter 429 bei belegtem Verbraucher, unbestätigte
+   Zustellung, doppelte Zustellung, Handlerfehler und Rückkehr in den Schattenmodus.
+3. Neun Zustände des Betriebsstatus, jeder einzeln (Vertragstest §13).
+4. Der Aktivierungsvorlauf scheitert geschlossen, wenn Transport **oder** Antrieb nicht
+   wirklich bereit sind (Vertragstest §14).
+5. `vercel.json` aktiviert `supportsCancellation` nicht — der dokumentierte Vercel-Zustand,
+   in dem ein Senderabbruch die Ausführung **nicht** beendet (Wächtertest).
+6. **Die Atomarität der Vergabe ist datenbankgestützt nachgewiesen, nicht nur modelliert:**
+   in diesem Sprint wurde eine lokale **PostgreSQL 16.13** gestartet und die vierzehn
+   datenbankgestützten Warteschlangen-/Outbox-/Nebenläufigkeitssuiten sind wirklich gelaufen
+   (sonst überspringen sie sich ehrlich) — **690 PASS, 0 FAIL**, darunter Outbox 37,
+   verteilte Grenzen 20, Verbraucher-Ende-zu-Ende 53, Auftragsvertrag 125.
+
+**Nicht belegt — offene Nachweise vor einer Aktivierungsfreigabe:**
+
+1. **Der Selbstweck lief noch nie in Production.** Kein einziger echter Weckruf.
+2. **Kein Preview-Beleg** dafür, dass der Verbraucher auf Vercel nach dem 3-Sekunden-Abbruch
+   des Senders wirklich zu Ende arbeitet (kleinster Versuch:
+   [`op30-zielarchitektur-2026-08-13.md`](op30-zielarchitektur-2026-08-13.md) §27.3).
+3. **Kein siebentägiges Fenster** (Abfluss ≥ Ankunft, 0 Verlust, 0 Doppelarbeit, ältester
+   offener Auftrag < 24 h).
+4. **Keine Messung der zusätzlichen Vercel-Kosten** (Aufrufe, Rechenzeit, Speicher) gegen
+   Tarif und Kontingent.
+5. **Keine Wiederholung von OP-25** nach der Stufenaktivierung (Pflicht nach jeder
+   OP-30-Aktivierung).
+
+### §31.6 Störung dieses Sprints: zwei Testzeilen in Production (2026-08-24)
+
+**Was passiert ist.** Ein **Handlauf** von `scripts/jobdispatch-vertrag-test.js` (Bestandsdatei,
+nicht neu) lief in dieser Cloud-Sitzung **ohne** `scripts/lokal.js`. In der Sitzungsumgebung
+lagen `SUPABASE_URL` und `SUPABASE_SERVICE_ROLE_KEY`. Der §9-Prüfpunkt ruft bewusst den echten
+`standardEnqueue` (dort ist der Speicher nicht injizierbar) — und schrieb dadurch am
+**2026-08-24 um 23:32 türkischer Zeit (22:32 Berlin, 20:32 UTC)** je **eine** Zeile:
+
+| Tabelle | Kennung | Inhalt |
+|---|---|---|
+| `helmut_jobs` | `371707a4-3d78-44f5-a1c5-d6f11026f4d2` | `source_fetch`, Idempotenzschlüssel `k`, Fenster `f`, Status `wartend`, `attempts 0` |
+| `helmut_job_outbox` | `24ba14ec-0827-49af-9cf1-43cb485f4e33` | zu obigem Auftrag, Status `offen` |
+
+**Wirkung.** Der Auftrag trägt **kein** `payload.quelle`. Nimmt ihn ein Production-Worker auf,
+scheitert er mit `payload-ungueltig: quelle fehlt`, wird nach Backoff wiederholt und endet als
+`fehlgeschlagen`. Er kostet **keinen** Modellaufruf und berührt **keine** Mandats-, Quellen-
+oder Inhaltsdaten. Er kann aber die Kennzahl `endgueltig_fehler` erhöhen — genau die Zahl, die
+der Watchdog und die §28.6-Kontrollen als „0" erwarten. Wer sie liest, muss diesen einen Fall
+kennen.
+
+**Sofortmassnahme (umgesetzt).** `scripts/jobdispatch-vertrag-test.js` entfernt die
+Production-Kennungen jetzt **selbst**, vor jedem `require` — ein Handlauf dieser Datei kann
+Production nicht mehr erreichen. Damit laufen §9.1/§9.2 auch von Hand grün (vorher rot, weil
+sie „nicht verfügbar" erwarteten und stattdessen echten Erfolg bekamen).
+
+**Offen, Betreiberentscheidung (bewusst NICHT ausgeführt — Löschen ist eine
+Production-Datenänderung, CLAUDE.md §5):**
+
+```sql
+-- rein lesend prüfen
+select id, job_type, idempotency_key, status, attempts
+  from public.helmut_jobs where id = '371707a4-3d78-44f5-a1c5-d6f11026f4d2';
+-- entfernen (nur nach ausdrücklicher Freigabe; Outbox zuerst)
+delete from public.helmut_job_outbox where id = '24ba14ec-0827-49af-9cf1-43cb485f4e33';
+delete from public.helmut_jobs      where id = '371707a4-3d78-44f5-a1c5-d6f11026f4d2';
+```
+
+**Empfehlung für später (nicht in diesem Sprint umgesetzt, weil allgemeine Umstrukturierung):**
+den Schutz aus `scripts/lokaler-netzschutz.js` nicht nur im Runner, sondern in **jeder** Suite
+erzwingen — der Vorfall vom 2026-08-08 und dieser hier haben dieselbe Ursache (Handlauf ohne
+Starter).

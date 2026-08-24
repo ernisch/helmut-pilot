@@ -4,7 +4,7 @@ Diese Datei ist die **Einstiegsschicht**, kein Handbuch. Sie gibt Orientierung i
 zwei Minuten und verweist danach auf die kanonischen Dokumente. Sie wird **nur**
 geändert, wenn eine neue dauerhaft verbindliche Projektregel entsteht.
 
-**Stand:** 2026-08-14 (§4 Regel 8 geschärft: Migrations-Zeitstempel 14-stellig eindeutig, Rollbacks `rollback_`-Präfix)
+**Stand:** 2026-08-24 (§6 geschärft: jeder Testlauf — auch ein einzelner — geht über `scripts/lokal.js`; belegter Anlass: zwei Production-Schreibvorgänge durch Handläufe)
 
 ---
 
@@ -136,9 +136,17 @@ reversibel und eindeutig sinnvoll ist.
   Sicherheitsentscheidung unterbrechen. Veraltete/ungeeignete Arbeit darf
   verworfen werden, dann aber kurz in `docs/CURRENT_STATE.md` dokumentieren.
 - **Nie direkt auf `main`.** Feature-Branch, dann PR. `main` deployt automatisch.
-- **Tests vor jedem PR:** `node scripts/run-offline-tests.js` (kanonischer Lauf,
-  sammelt alle `scripts/*-test.js` ein, erzwingt Offline technisch). Bei UI-Änderungen
-  zusätzlich `node scripts/browser-smoke-test.js`.
+- **Tests vor jedem PR:** `node scripts/lokal.js -- node scripts/run-offline-tests.js`
+  (kanonischer Lauf, sammelt alle `scripts/*-test.js` ein, erzwingt Offline technisch).
+  Bei UI-Änderungen zusätzlich `node scripts/lokal.js -- node scripts/browser-smoke-test.js`.
+- **Jeder Testlauf geht über `scripts/lokal.js`, auch der einzelne.** Liegen
+  Production-Kennungen in der Umgebung (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
+  `VERCEL_TOKEN` — in Cloud-Sitzungen der Normalfall), kann ein **Handlauf einer einzelnen
+  Suite** echte Zeilen in Production schreiben: Suiten, die bewusst den nicht injizierbaren
+  Produktionspfad prüfen, reden dann mit der echten Datenbank. Zweimal belegt (2026-08-08 und
+  2026-08-24, [`docs/betrieb/op30-aktivierung-5-mandate.md`](docs/betrieb/op30-aktivierung-5-mandate.md) §31.6).
+  `scripts/lokal.js` entfernt die Kennungen aus der Kindprozess-Umgebung — Dateien und
+  Sitzungsvariablen bleiben unangetastet.
 - **CI-Gate:** `.github/workflows/ci.yml` — Pflicht-Checks sind ausschließlich
   `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)`. Pfadgefilterte
   Workflows und Vercel-Checks nie als Required Check setzen.

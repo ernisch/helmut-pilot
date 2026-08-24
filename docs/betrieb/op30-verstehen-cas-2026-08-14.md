@@ -422,7 +422,8 @@ Zahl, damit die Konfiguration keinen ungedeckten Wert annehmen kann.
 **Ausdrückliche Einordnung.** Das ist ein **Rechenmodell aus Production-Messwerten**, kein
 Production-Nachweis. **Helmut ist durch diesen Sprint nicht für 25 bis 500 Mandate
 freigegeben.** Der bindende Grund dagegen ist unverändert **nicht** der technische
-Durchsatz, sondern der **KI-Tagesdeckel**: ab 25 Mandaten reicht 100+30 auch im günstigen
+Durchsatz, sondern der **KI-Tagesdeckel**: ab 25 Mandaten reicht der Gesamtdeckel 100 (davon 30
+fuer das Verstehen reserviert — nicht 130) auch im günstigen
 Fall nicht (§B3), und OP-15 (Google-Drosselung) bleibt ab ~10 Mandaten offener Blocker.
 Zusätzlich fehlen unverändert **190 echte Profile** (es gibt 10).
 

@@ -281,7 +281,9 @@ Rechnungsbeträge. Gescheiterte Aufrufe = **unbekannte Kosten, nie 0**.
 
 Wiederholungen sind enthalten (im 200er-Tag 234 Narrativ-Aufrufe für 210 Narrative).
 **Tagesdeckel-Folge:** 200 Mandate brauchen ~1 056 KI-Aufrufe/Tag (846 Verstehen + 210
-Narrativ + Wiederholungen) — der Production-Deckel (heute 100+30) muss vor Stufe 3 des
+Narrativ + Wiederholungen) — der Production-Deckel (heute: Gesamtdeckel 100, davon 30 fuer das
+Verstehen reserviert — nicht 130, [`llm-budget-reservierung.md`](llm-budget-reservierung.md))
+muss vor Stufe 3 des
 Aktivierungsplans angehoben werden (unverändert die Aussage aus `skalierung-200-mandate.md`).
 
 ## 10 · Pflichtläufe, Baseline-Vergleich und Befunde am eigenen Sprint

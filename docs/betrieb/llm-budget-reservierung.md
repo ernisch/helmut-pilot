@@ -46,6 +46,36 @@
   ehrlich gekennzeichnete Regel-Fallbacks (Büro/Kommunikation: Regeltext; Lage: kein
   Fake-Briefing; Understanding: Vorgang bleibt pending).
 
+## Die Semantik in einem Satz — und die Rechnung, die immer wieder falsch gemacht wird
+
+**Die Reserve ist ein Anteil des Tageslimits, kein Zuschlag darauf.** Im Code steht genau das:
+
+```js
+const priority     = LLM_PRIORITY_CALLTYPES.has(callType);   // heute: understanding
+const reserve      = priority ? 0 : llmUnderstandingReserve();
+const effectiveMax = priority ? limit : Math.max(0, limit - reserve);
+```
+(`lib/helmut/storage.js`, `reserveLlmCall` — der einzige Ort, an dem reserviert wird.)
+
+Daraus folgt (Korrektur vom 2026-08-24; in mehreren Dokumenten stand die Schreibweise
+„Deckel 100+30", die als 130 gelesen wurde):
+
+| Tageslimit | Reserve | Gesamt höchstens | Nicht priorisierte Arbeit höchstens | Priorisiertes Verstehen höchstens |
+|---|---|---|---|---|
+| 100 | 30 | **100** | **70** | 100 |
+| 250 | 50 | **250** | **200** | 250 |
+
+**Es sind nie 130 und nie 300.** „100 + 30" ist eine Kurzschreibweise für „Gesamtdeckel 100,
+davon 30 für das Verstehen reserviert" — nicht für eine Summe. Wer eine Kapazitätsspanne gegen
+den Deckel hält, vergleicht sie mit dem **Gesamtdeckel**; wer prüft, ob Büro/Kommunikation/Lage
+genug Luft haben, vergleicht mit **Limit − Reserve**.
+
+Ein Deckelwert wird ausschließlich über `HELMUT_MAX_LLM_CALLS_PER_DAY` (und
+`HELMUT_LLM_RESERVE_UNDERSTANDING`) gesetzt — eine **Betreiberaktion in Vercel**. Dieser Sprint
+hat keinen Wert geändert und empfiehlt keinen neuen: ein späteres Budget muss anhand
+tatsächlicher Verteilung, Tokenverbrauch, Modellwahl, bestehendem Kontingent und einer harten
+Kostengrenze gesondert freigegeben werden.
+
 ## Verhaltensmatrix
 
 | Zustand | Verhalten |

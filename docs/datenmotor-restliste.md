@@ -1419,6 +1419,49 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 #### OP-30 · Mandatseigene Abrufwege vervielfachen den Quellenabruf linear (neu, Sprint „V3-Skalierungsprüfung" 2026-08-08; Prioritätsklasse P1)
 
+- **Stand 2026-08-24 (Haertungssprint Selbstweck — Sprint erfolgreich abgeschlossen; OP-30
+  insgesamt bleibt offen; kein Production-Kontakt ausser einer benannten Stoerung; Beleg
+  [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §27
+  und Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §31):**
+  Vier Wahrheitskorrekturen plus ein neuer Nachweis, alles lokal und kostenfrei.
+  **(1) Kein falsches Gruen mehr im Betriebsstatus:** `waehleAntrieb` meldete `ereignis`, sobald
+  Modus und Warteschlange stimmten — auch wenn der Transport gar nicht versenden konnte. Neu
+  trennt `job-dispatch.aktivierungsVorpruefung` angeforderten Modus, wirksamen Modus, Antrieb,
+  gewaehlten Transport, dessen Verfuegbarkeit, den Grund einer Nichtverfuegbarkeit und die
+  Bereitschaft; `/api/ops/jobqueue` gibt sie als Feld `ereignisbetrieb` aus (additiv, alle
+  Bestandsfelder unveraendert). Neun Zustaende einzeln testgesichert; die Ausgabe traegt weder
+  Secret noch Adresse noch Hostnamen. **(2) Der Aktivierungsvorlauf scheitert geschlossen:**
+  `queue` ohne `HELMUT_SCALABLE_PIPELINE` versendet nichts mehr und vergibt keine Absicht
+  (vorher: Versuchsverbrauch bis zur Quarantaene fuer Signale, die die Route ohnehin mit 409
+  abwies). **(3) Geschlossener Ende-zu-Ende-Nachweis des Selbstwecks:**
+  `scripts/selbstweck-ende-zu-ende-test.js` **31 PASS** — echte Route, echte Autorisierung,
+  echter Transport, echter Dispatcher, echter Workerbetrieb, echter Fachhandler; ersetzt sind
+  nur Datenbank, Netzgrenze und externer Abruf. Geprueft: Erfolg · falsches Geheimnis ·
+  ungueltiges Weckziel · fehlende Production-Freigabe · 429 bei belegtem Verbraucher ·
+  unbestaetigte Zustellung · doppelte Zustellung · Handlerfehler · Rueckkehr in den
+  Schattenmodus · Folgeweckung nur bei faelliger Arbeit. **Keine Unmoeglichkeitsbehauptung:**
+  benannt werden die drei atomaren Schranken; nachgewiesen ist, dass in keinem Fall
+  Doppelarbeit oder Verlust auftrat. **(4) Dokumentwahrheit:** AWS ist fuer den
+  Fuenfernachweis **nicht technisch notwendig** (empfohlen bleibt der Selbstweck) · fuer die
+  Umschaltung braucht es **fuenf** Werte, nicht drei · die Budgetsemantik ist berichtigt (die
+  Reserve ist ein Anteil des Deckels: 100/30 = hoechstens 100 gesamt und 70 fuer nicht
+  priorisierte Arbeit, nie 130; 250/50 = 250, nie 300) · „Selbstweck kostet null Dollar" ist
+  ersetzt durch „kein neuer Anbieter, keine neue feste Gebuehr, aber zusaetzliche
+  Vercel-Aufrufe/Rechenzeit/Speicher — Hoehe ungeprueft" · die AWS-Vorlage nutzt den alten
+  `service_role`-Schluessel (breites Rotationsrisiko, mit getrennten `sb_secret_…`-Schluesseln
+  vermeidbar) und legt zwei KMS-Schluessel an (2 USD/Monat, nach erster Rotation 4, nach
+  zweiter 6, plus Anfragen). **(5) 3 s gegen 60 s:** amtlich belegt ist, dass das Beenden bei
+  Client-Trennung auf Vercel ein **Opt-in** ist (`supportsCancellation`), das Helmut nicht
+  gesetzt hat (Waechtertest); eine positive Zusage „laeuft garantiert zu Ende" steht dort
+  **nicht** — der Preview-Beleg bleibt offen und ist als kleinster Versuch beschrieben.
+  **Stoerung dieses Sprints:** ein Handlauf der Bestandssuite `jobdispatch-vertrag-test.js`
+  ohne `scripts/lokal.js` hat in der Cloud-Sitzung **zwei Testzeilen in Production** erzeugt
+  (ein `source_fetch`-Auftrag `371707a4…` ohne `payload.quelle` + eine Outbox-Zeile
+  `24ba14ec…`); Ursache, Wirkung, Sofortmassnahme (die Suite entfernt die Kennungen jetzt
+  selbst) und das Loesch-SQL stehen in Runbook §31.6 — **das Loeschen ist eine
+  Betreiberentscheidung und wurde NICHT ausgefuehrt**. **Offen:** der Selbstweck war noch nie
+  in Production ausgefuehrt; ohne Preview-/Production-Beleg und ohne 7-Tage-Fenster bleibt der
+  Ereignis-Antrieb **nicht aktivierungsbereit**.
 - **Stand 2026-08-14/2 (Haertungssprint, PR #247; Beleg
   [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §18–§23):**
   Alle sechs Gegenpruefungspunkte **bestaetigt** (keiner widerlegt) und behoben bzw. ehrlich
@@ -1445,7 +1488,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   jetzt auch `bestaetigt` bei terminalen Auftraegen; ein begrenzter Aufbewahrungsvertrag
   (`helmut_outbox_aufraeumen`, Default Trockenlauf, kein automatischer Aufrufer) existiert.
   KI-Bedarf getrennt ausgewiesen als **Spanne** (5 Mandate 69–209, 500 Mandate 344–1.040
-  gegen Deckel 130). Neue Suiten: SQS/Lambda-Vertrag 44 · Ende-zu-Ende 37 ·
+  gegen den Gesamtdeckel 100, davon 30 fuer das Verstehen reserviert — die frueher hier stehende Zahl „130" war eine falsche Addition). Neue Suiten: SQS/Lambda-Vertrag 44 · Ende-zu-Ende 37 ·
   Anbietersteuerung-DB 36 · Infrastrukturdefinition 32 · Kapazitaetsmodell 31 ·
   Mutationsprobe 7/7 erkannt. Production erneut unangetastet.
 - **Stand 2026-08-14 (Sicherheitskorrektur auf PR #247, Belegdatei
@@ -1659,7 +1702,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   stilles Wiederholen) · Kapazitaetsmodell **37 PASS** (neu gerechnet 5/25/100/200/500, zweite
   pessimistische Auslastungsannahme; **lokal nachgewiesene sichere Verstehensparallelitaet 8**).
   **Ausdruecklich:** Helmut ist dadurch NICHT fuer 25–500 Mandate freigegeben; bindend bleibt
-  der KI-Tagesdeckel (ab 25 Mandaten reicht 100+30 auch im guenstigen Fall nicht) und OP-15.
+  der KI-Tagesdeckel (ab 25 Mandaten reicht der Gesamtdeckel 100 — davon 30 reserviert — auch im guenstigen Fall nicht; Semantik: [`betrieb/llm-budget-reservierung.md`](betrieb/llm-budget-reservierung.md)) und OP-15.
   **Offen:** Review/Merge des PR; danach als getrennte Betreiberentscheidung Migration
   anwenden und `HELMUT_VERSTEHEN_CAS` im Schattenbetrieb beobachten.
 - **Stand 2026-08-13/3 (Architektursprint Zielarchitektur — Sprint ERFOLGREICH abgeschlossen, beide Pflichtpruefungen gruen; OP-30 insgesamt bleibt offen; Beleg
@@ -1682,7 +1725,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Outbox-Mutationsprobe 6/6 erkannt · **lokaler Architektur- und Lastnachweis 5/25/100/200/500
   an echter PostgreSQL** (kein Verlust, keine Doppelarbeit, Grenzen halten; 500er-Reserve
   rechnerisch x3,7 — ausdruecklich KEIN Production-Beweis; KI-Bedarf ~1.040/Tag bei 500 ≫
-  Deckel 100+30 = gesonderte Gruenderentscheidung). Die 524 inerten Auftraege wurden rein
+  Gesamtdeckel 100 = gesonderte Gruenderentscheidung). Die 524 inerten Auftraege wurden rein
   lesend analysiert (1.556 referenzierte Dokumente, 0 bereits verstanden — echte offene
   KI-Arbeit; Neutralisierungsmuster §17.8 bleibt geeignet; kein Auftrag veraendert).
   **Offen:** Betreiberfreigaben nach Stufenplan (Zielarchitektur §14); Versuch 3 beginnt

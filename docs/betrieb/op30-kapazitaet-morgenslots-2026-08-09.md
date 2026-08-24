@@ -349,6 +349,15 @@ Zusage** — sie wird beim Deployment des PR sichtbar, ohne dass irgendetwas akt
 
 ## 10 · Aktivierungsplan
 
+> **Abgrenzung (ergänzt 2026-08-24).** Dieser Plan ist der **Slot-Stufenplan** — er staffelt
+> **Mandatszahlen** (5 → 200), Morgenslots und Worker-Parallelität. Er ist **nicht** die
+> Quelle für den **siebentägigen Nachweis des Ereignis-Antriebs** (Warteschlange als Auslöser);
+> die „7 Tage" in der Tabelle sind der Beobachtungszeitraum der **Mandatsstufe 25**. Der
+> Nachweis des Ereignis-Antriebs mit den fünf bestehenden Mandaten steht in
+> [`op30-zielarchitektur-2026-08-13.md`](op30-zielarchitektur-2026-08-13.md) §14 **Stufe 2**;
+> der Vorlauf dazu in [`op30-aktivierung-5-mandate.md`](op30-aktivierung-5-mandate.md) §31.
+> Beides wurde mehrfach verwechselt.
+
 **Kein Schritt wird automatisch ausgeführt. Jede Stufe ist eine eigene Freigabe.**
 Der Plan unterscheidet vier Dinge, die gern verwechselt werden:
 **(a) technische Grundlage** — was im Repository liegt und lokal bewiesen ist;

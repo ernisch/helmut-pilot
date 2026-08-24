@@ -1,9 +1,13 @@
 # Workerbetrieb der Arbeitswarteschlange
 
-**Stand:** 2026-08-08 · OP-30, finaler lokaler Abnahmesprint
+**Stand:** 2026-08-08, Zustandszeile berichtigt am 2026-08-24 · OP-30
 **Code:** [`lib/helmut/worker-betrieb.js`](../../lib/helmut/worker-betrieb.js) · [`lib/helmut/scalable-pipeline.js`](../../lib/helmut/scalable-pipeline.js)
-**Zustand:** **nicht scharfgeschaltet.** `HELMUT_SCALABLE_PIPELINE` ist aus; ohne dieses Flag
-startet hier nichts. Dieses Dokument beschreibt, wie der Betrieb aussähe — es aktiviert ihn nicht.
+**Zustand (2026-08-24):** `HELMUT_SCALABLE_PIPELINE` ist in Production **seit dem 23.08.2026
+eingeschaltet**; der Worker arbeitet also wirklich. Der **Antrieb** ist weiterhin der Zeitplan
+(`HELMUT_JOB_DISPATCH_MODE=shadow`) — der Ereignis-Antrieb ist **nicht** aktiviert. Die frühere
+Zeile „nicht scharfgeschaltet, Flag ist aus" ist **überholt**. Verbindlich:
+[`../CURRENT_STATE.md`](../CURRENT_STATE.md) §4; Aktivierungsvorlauf des Ereignis-Antriebs:
+[`op30-aktivierung-5-mandate.md`](op30-aktivierung-5-mandate.md) §31.
 
 ---
 
