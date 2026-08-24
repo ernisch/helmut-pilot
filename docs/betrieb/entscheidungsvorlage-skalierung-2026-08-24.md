@@ -1,6 +1,6 @@
 # Entscheidungsvorlage — Erweiterung von 5 auf 10 und später 25 Mandate
 
-**Stand:** 2026-08-24 · **Für:** den Gründer · **Sprache:** bewusst einfach gehalten.
+**Stand:** 2026-08-24, korrigiert im Verifikationssprint (Betriebsreihenfolge, KI-Budget-Evidenzen, Berliner Wahl) · **Für:** den Gründer · **Sprache:** bewusst einfach gehalten.
 **Zahlenquellen:** `scripts/skalierungsmodell.js` (einzige Rechenquelle, lokal am 24.08.
 für 5/10/25 Mandate ausgeführt),
 [`op30-kapazitaet-morgenslots-2026-08-09.md`](op30-kapazitaet-morgenslots-2026-08-09.md)
@@ -38,10 +38,26 @@ für 5/10/25 Mandate ausgeführt),
   Mandat scharf schalten (`aktiv: false` ist Pflicht, `aktiv: true` wird abgelehnt),
   und deaktivierte Profile erzeugen keine Last und keine Kosten.
 
+**Wichtige Abgrenzung:** Der laufende **Schattenbetrieb beweist den Motor** mit fünf
+Mandaten — er beweist **nicht den echten Ereignis-Antrieb** (Warteschlange als Auslöser).
+Der Antrieb ist weiterhin der Zeitplan (Cron); der Ereignisweg war noch nie in Production
+eingeschaltet.
+
 ## 2 · Was fehlt noch vor der Erweiterung auf zehn Mandate?
 
 1. **Der siebentägige Nachweis des echten Warteschlangenbetriebs mit den fünf
-   bestehenden Mandaten.** Er ist nicht abgeschlossen; heute läuft der Schattenmodus.
+   bestehenden Mandaten.** Er ist nicht begonnen; heute läuft der Schattenmodus.
+   Der Nachweis der nächsten technischen Stufe verlangt verbindlich:
+   1. `HELMUT_JOB_DISPATCH_MODE=queue` (Ereignis-Antrieb statt Zeitplan),
+   2. `HELMUT_KLASSEN_GRENZEN=on` (verteilte Klassengrenzen),
+   3. gesetztes Weckziel `HELMUT_WORKER_WAKE_URL`,
+   4. sieben Tage lang Abfluss mindestens gleich Ankunft,
+   5. keine verlorene und keine doppelte Arbeit,
+   6. ältester offener Auftrag dauerhaft unter 24 Stunden.
+   Der kanonische Production-Transport dafür ist laut Zielarchitektur **AWS SQS plus
+   Lambda** — und diese AWS-Infrastruktur **existiert noch nicht**. Deshalb muss die
+   **AWS-Entscheidung vor dem siebentägigen Nachweis fallen, nicht danach** (Frage 8).
+   In diesem Sprint wird dazu nichts bereitgestellt und nichts freigegeben.
 2. **Regionale Quellen für Berlin und Brandenburg.** Beide Landesmodule sind inaktiv,
    alle Landeswege gesperrt, die vorbereiteten Quellenlisten („Seeds") sind nicht
    eingespielt, und ob der Berlin-Schalter in Production überhaupt wirkt, ist
@@ -52,8 +68,8 @@ für 5/10/25 Mandate ausgeführt),
    nicht direkt abgerufen werden (Netzsperre); die Recherche liegt vor, die
    Bestätigung fehlt. Danach: Import und **je Mandat eine eigene Freigabe** zur
    Aktivierung.
-4. **Anhebung des KI-Tagesdeckels** (siehe Fragen 4 und 5) — eine
-   Betreiberänderung an den Vercel-Umgebungsvariablen.
+4. **Eine KI-Deckel-Entscheidung** (Fragen 4 und 5) — derzeit ohne belastbare
+   Zahlenempfehlung; eine Betreiberänderung an den Vercel-Umgebungsvariablen.
 5. **Das Google-Risiko** (Frage 6): schon heute liefern 29 von 42 personenbezogenen
    Suchen dauerhaft nichts, weil die zentrale Google-Drosselung greift. Ab ungefähr
    zehn Mandaten ist das laut Restliste ein Blocker; mindestens braucht es die dort
@@ -69,50 +85,65 @@ Alles aus Frage 2, dauerhaft nachgewiesen mit zehn Mandaten, und zusätzlich:
 1. **Stufenplan Stufe 2** aus dem Kapazitätsbeleg: sieben Tage Beobachtung je Stufe,
    Abnahme erst nach drei Tagen in Folge „alle Mandate im Fenster, nichts doppelt,
    nichts verloren, Deckel nicht erreicht".
-2. **KI-Tagesdeckel für 25 Mandate** (Frage 5) einschließlich einer einmaligen,
-   gesondert freizugebenden Erstbefüllung (rund 7 800 Aufrufe am ersten Tag).
+2. **KI-Deckel-Entscheidung für 25 Mandate** (Frage 5 — derzeit ohne belastbare
+   Empfehlung) einschließlich einer einmaligen, gesondert freizugebenden
+   Erstbefüllung (Modellwert ~7 840 Aufrufe am ersten Tag).
 3. **Alle 20 zusätzlichen Profile bytegenau bestätigt, importiert und einzeln
    freigegeben.** Das lokale Paket liegt vor, ist aber noch nicht amtlich bestätigt.
-4. **Entscheidung über den Antrieb** (Frage 8): spätestens hier stellt sich die
-   AWS-Frage, wenn der Ereignis-Antrieb gewünscht ist.
-5. **Tägliche Lage für 25 Mandate im echten Betrieb belegt** (Frage 7).
+4. **Tägliche Lage für 25 Mandate im echten Betrieb belegt** (Frage 7).
+5. **Neubewertung der zehn Berliner Profile nach der Wahl am 20.09.2026** (Frage 11).
 
 ## 4 · Warum reicht das aktuelle KI-Limit von 100 plus 30 nicht sicher?
 
-- Die **einzige Rechenquelle des Projekts** (am 24.08. lokal neu ausgeführt) nennt als
-  realistischen Tagesbedarf: **391 Aufrufe bei 5 Mandaten, 469 bei 10, 684 bei 25**.
-  Selbst der heutige Bedarf liegt rechnerisch über dem Deckel; dass es heute trotzdem
-  funktioniert, liegt daran, dass ruhige Tage weniger brauchen (gemessen am
-  23./24.08.: 66 bzw. 29 von 100) und Übriges ehrlich liegen bleibt.
-- Die verbindliche Restliste hält fest: **ab 25 Mandaten reicht 100 plus 30 auch im
-  günstigsten Fall nicht.** Der Deckel würde dann nicht nur an Ereignistagen, sondern
-  regelmäßig erreicht; übersprungene Arbeit würde zum Normalfall — jeden Tag bliebe
-  ein Teil der Mandate ohne verstandene Lage.
-- An einem **Ereignistag** (viel Nachrichtenlage) rechnet das Modell mit bis zu
-  3 716 (10 Mandate) bzw. 5 376 (25 Mandate) nötigen Aufrufen. Ein Deckel von 130
-  deckt davon nur einen Bruchteil — genau an dem Tag, an dem die Lage am wichtigsten
-  ist.
+Weil **jede** vorhandene Evidenzlinie zeigt, dass der Deckel bei Wachstum entweder schon
+im Normalfall oder spätestens am Ereignistag erreicht wird — die Linien widersprechen
+sich nur darin, **wie früh**. Die verbindliche Restliste hält fest: **ab 25 Mandaten
+reicht 100 plus 30 auch im günstigsten Fall nicht.** Erreicht der Deckel, bleibt Arbeit
+sichtbar liegen („übersprungen wegen Budget") — an genau den Tagen, an denen die Lage am
+wichtigsten wäre. Dass der Betrieb heute grün ist, liegt an ruhigen Tagen (gemessen
+23./24.08.: 66 bzw. 29 von 100), nicht an ausreichender Reserve.
 
 ## 5 · Welcher KI-Grenzwert wäre technisch sinnvoll, und welche Kosten werden erwartet?
 
-Empfehlung der Rechenquelle (ausgelegt auf den Ereignistag plus 30 % Reserve):
+**Diese Frage ist derzeit NICHT belastbar beantwortbar.** Die früher hier genannten
+Werte (4 900 für zehn, 7 000 für 25 Mandate) waren die Stresswert-Empfehlung **eines
+einzelnen Modells** und werden nicht mehr als Empfehlung geführt. Die vorhandenen
+Evidenzen widersprechen sich und werden deshalb getrennt ausgewiesen:
 
-| Mandate | empfohlener Tagesdeckel | Warnschwelle gelb/rot | Erstbefüllung (einmalig) |
-|---|---|---|---|
-| 10 | **4 900** | 3 430 / 4 410 | ~5 372 Aufrufe |
-| 25 | **7 000** | 4 900 / 6 300 | ~7 840 Aufrufe |
+| Evidenzlinie | Aussage für ~25 Mandate | Quelle |
+|---|---|---|
+| **Gemessener Production-Verbrauch (5 Mandate)** | 62–77 Aufrufe/Tag gemessen (23.08.: 66/100; 24.08. Teiltag: 29/100); Kosten ~0,14 USD/Tag | Budgetquittungen; Kapazitätsmodell B3.1b |
+| **Kapazitätsmodell (vorgangsgetrieben)** | 25 Mandate: ~204 Verstehensaufträge, **88–265 Aufrufe/Tag**; Deckel 130 trägt „nur im günstigen Fall". Die früher zitierte Spanne „~113–290" gehört zu dieser Evidenzfamilie (andere Parametrisierung) | `scripts/kapazitaetsmodell-test.js` §B3 |
+| **Skalierungsmodell (quellengetrieben)** | 25 Mandate: **684 Aufrufe/Tag im Normalfall**, bis **5 376 am Ereignistag**, einmalige Erstbefüllung ~7 840 | `scripts/skalierungsmodell.js` |
+| **Ältere Stufen-/Grundlagenrechnung** | Deckel 100 greift rechnerisch ab ~70 Mandaten; für 100 Mandate wurden Größenordnungen um ~150–500 Aufrufe/Tag genannt | `betrieb/skalierungsgrundlage-1000.md` · Kapazitätsmodell B3 (100er-Zeile: 151–458) |
 
-Wer sparsamer starten will, kann den Deckel am realistischen Bedarf ausrichten
-(rund 500 bei 10, rund 700–1 000 bei 25 Mandaten) und bewusst in Kauf nehmen, dass an
-Ereignistagen Arbeit liegen bleibt — sichtbar verbucht, am Folgetag nachholbar.
+**Warum die Zahlen nicht zusammenpassen:** Sie messen Verschiedenes. Das
+Skalierungsmodell rechnet quellengetrieben (jedes eingehende Dokument wird noch am
+selben Tag verstanden, plus Narrativ- und Büropfade) und ist bewusst pessimistisch. Das
+Kapazitätsmodell rechnet vorgangsgetrieben (Verstehen entsteht je **neuem Vorgang**,
+weitgehend unabhängig von der Mandatszahl, weil die Quellen stark geteilt sind). Die
+Production-Messung zeigt ruhige Tage mit funktionierendem Budget-Gate. Keine der Linien
+ist widerlegt; sie beantworten unterschiedliche Fragen mit unterschiedlichen Annahmen
+(Dublettenanteil, Ereignislage, Anteil aktiver Mandate).
 
-**Erwartete Kosten** (berechnet aus dem Modell; die Preisbasis ist ein unbelegter
-Schätzwert im Code, kein Anbieterpreis — als Größenordnung belastbar, nicht als
-Rechnungsbetrag): 10 Mandate ≈ **1,11 USD/Tag ≈ 33 USD/Monat** (3,34 USD je
-Mandat/Monat); 25 Mandate ≈ **1,64 USD/Tag ≈ 49 USD/Monat** (1,96 USD je
-Mandat/Monat). Zum Vergleich: gemessen heute mit 5 Mandaten ~0,14 USD/Betriebstag —
-die Modellwerte sind bewusst vorsichtig nach oben gerechnet. Das Lage-Narrativ allein
-ist mit einer echten Messreihe belegt: ~0,033 USD je Morgen bei 25 Mandaten.
+**Für eine spätere Entscheidung sind sechs Größen getrennt zu halten** (heute nur die
+erste und die letzte gemessen):
+
+1. **Erwarteter Normalverbrauch** — je nach Linie 88–265 oder ~684 Aufrufe/Tag bei 25.
+2. **Erwarteter Belastungsfall** (Ereignistag) — bis ~5 376 bei 25 (Modellannahme).
+3. **Technischer Sicherheitsdeckel** — die eigentliche Stellgröße; heute 100+30.
+4. **Maximal mögliche Kosten bei voll ausgeschöpftem Deckel** — der Deckel ist zugleich
+   die Kostenobergrenze; sie wächst genau mit dem gewählten Deckel.
+5. **Einmalige Erstbefüllung** — eigener, gesondert freizugebender Tageslauf
+   (~5 372 bei 10, ~7 840 bei 25 laut Skalierungsmodell).
+6. **Tatsächlich gemessene Kosten** — ~0,14 USD/Betriebstag bei 5 Mandaten
+   (Untergrenze, Preisbasis unbelegt); Lage-Narrativ als einzige echte Messreihe:
+   ~0,033 USD je Morgen bei 25 Mandaten.
+
+**Es wird hier bewusst keine neue Budgetempfehlung erfunden.** Die Budgetentscheidung
+bleibt offen und braucht eine ausdrückliche Gründerfreigabe — sinnvollerweise nach den
+ersten Messwochen des echten Warteschlangenbetriebs mit fünf Mandaten, die die
+Modellannahmen gegen echte Zahlen stellen.
 
 ## 6 · Wie wird das Risiko zu vieler Google-Anfragen mit zehn Mandaten gemessen?
 
@@ -161,17 +192,20 @@ Dauerzustand).
 **Für den heutigen Schattenmodus: nein.** Er läuft vollständig auf der bestehenden
 Infrastruktur (Vercel-Zeitpläne + Supabase).
 
-**Für den echten Ereignis-Antrieb: ja.** Der vorgesehene Standardweg ist ein
-verwalteter Nachrichtendienst bei AWS (Warteschlange SQS, Fehler-Warteschlange,
+**Für den echten Ereignis-Antrieb: ja.** Der **kanonische Production-Transport ist
+laut Zielarchitektur AWS SQS plus Lambda** (Warteschlange SQS, Fehler-Warteschlange,
 Verschlüsselung KMS, Zugriffsrollen IAM, Verbraucher-Funktion Lambda, Region
 Frankfurt). **Nichts davon existiert bisher**; die vollständige Vorlage liegt im
 Repository (`infra/aws/helmut-auftrags-queue.yaml`). Die Kosten sind nutzungsabhängig
 (Cent-Beträge je Million Anfragen plus Rechenzeit) — die Entscheidung darüber ist
-ausdrücklich eine kostenpflichtige Gründerentscheidung. Ein eingebauter
-Ausweichantrieb ohne AWS („Selbstweck") existiert, ist in Production aber bewusst
-gesperrt und nur Notfall-/Entwicklungsweg. Unabhängig davon steht die separate
-Kostenentscheidung **Supabase Pro** (echte Datenbank-Backups, OP-01) weiter aus — sie
-gehört zur Verkaufsreife, nicht zur Skalierung.
+ausdrücklich eine kostenpflichtige Gründerentscheidung, und sie muss **vor** dem
+siebentägigen Nachweis des echten Warteschlangenbetriebs fallen, weil dieser Nachweis
+ohne den Transport nicht laufen kann (Frage 2). **In diesem Sprint wird dazu nichts
+bereitgestellt und nichts freigegeben.** Ein eingebauter Ausweichantrieb ohne AWS
+(„Selbstweck") existiert, ist in Production aber bewusst gesperrt und nur
+Notfall-/Entwicklungsweg. Unabhängig davon steht die separate Kostenentscheidung
+**Supabase Pro** (echte Datenbank-Backups, OP-01) weiter aus — sie gehört zur
+Verkaufsreife, nicht zur Skalierung.
 
 ## 9 · Welche Production-Aktionen benötigen jeweils eine ausdrückliche Betreiberfreigabe?
 
@@ -206,16 +240,39 @@ Jede Stufe hat einen dokumentierten Ein-Schritt-Rückweg:
   Narrativ, Deckel erreicht oder Fenster über 280 Sekunden ⇒ Stufe zurück bzw. Flag
   aus — die Grenzwerte sind vorab festgelegt, nicht situativ.
 
+## 11 · Betriebsrisiko: Wahl zum Abgeordnetenhaus von Berlin am 20. September 2026
+
+Amtliche Quelle: https://www.berlin.de/wahlen/ (Landeswahlleitung Berlin).
+
+1. **Die zehn Berliner Profile des Pakets gehören zur derzeitigen Wahlperiode**
+   (19. Wahlperiode des Abgeordnetenhauses). Sie sind eine Momentaufnahme vor der Wahl.
+2. **Nach der Wahl müssen je Person Mandat, Ausschüsse und Profilgültigkeit erneut
+   geprüft werden:** Mandate können enden, Wahlkreise und Zuschnitte ändern sich,
+   Ausschüsse werden in der neuen Wahlperiode neu gebildet und besetzt.
+3. **Ein vor der Wahl vorbereitetes Berliner Profil darf nach der Wahl nicht ungeprüft
+   aktiviert werden** — die Aktivierung braucht dann eine erneute bytegenaue Prüfung
+   gegen die amtliche Seite der neuen Wahlperiode.
+4. **Das beeinflusst die Terminplanung für den 25-Mandate-Nachweis:** Fällt der
+   Nachweiszeitraum über den 20.09.2026, ist mit Mandats- und Ausschusswechseln
+   mitten im Fenster zu rechnen. Entweder wird der Berliner Anteil vor der Wahl
+   abgeschlossen, oder er wird bewusst erst nach der Konstituierung des neuen
+   Abgeordnetenhauses aufgesetzt — beides ist eine Terminentscheidung des Gründers.
+
 ---
 
 **Rechercheunterlage:** Das lokale, vollständig deaktivierte Importpaket der 20 Profile
-liegt in `daten/mandatsprofile-berlin-brandenburg-2026-08-24.json`; die je Profil noch
-fehlenden bytegenauen Prüfungen stehen in
-`daten/mandatsprofile-berlin-brandenburg-2026-08-24-pruefstand.md`.
+liegt in `daten/mandatsprofile-berlin-brandenburg-2026-08-24.json`; der Prüfstand je
+Profil steht in `daten/mandatsprofile-berlin-brandenburg-2026-08-24-pruefstand.md`.
 
-**Empfohlene Reihenfolge (zusammengefasst):** ① 7-Tage-Nachweis mit 5 Mandaten →
-② Landesquellen Berlin/Brandenburg bytegenau verifizieren und freigeben →
-③ KI-Deckel für 10 Mandate anheben → ④ die fünf empfohlenen Brandenburger Profile
-bytegenau bestätigen, importieren, einzeln aktivieren (= 10 Mandate) →
-⑤ 7-Tage-Nachweis mit 10 Mandaten + Google-Messung → ⑥ AWS-Entscheidung →
-⑦ restliche 15 Profile → 25 Mandate. Kein Schritt geschieht automatisch.
+**Empfohlene Reihenfolge (zusammengefasst):** ① **AWS-Entscheidung** (kanonischer
+Transport für den Ereignis-Antrieb — Voraussetzung des Fünfernachweises) →
+② **7-Tage-Nachweis des echten Warteschlangenbetriebs mit 5 Mandaten**
+(`queue` + Klassengrenzen + Weckziel; Abfluss ≥ Ankunft, nichts verloren/doppelt,
+ältester offener Auftrag < 24 h) → ③ Landesquellen Berlin/Brandenburg bytegenau
+verifizieren und freigeben → ④ KI-Deckel-Entscheidung anhand echter Messwochen
+(Frage 5 — offen, keine Empfehlung) → ⑤ die fünf empfohlenen Brandenburger Profile
+importieren und einzeln aktivieren (= 10 Mandate; **vorsichtige Zwischenstufe als
+Gründerentscheidung — sie ersetzt den technischen Fünfernachweis im echten
+Queue-Betrieb nicht**) → ⑥ 7-Tage-Beobachtung mit 10 Mandaten + Google-Messung →
+⑦ restliche 15 Profile unter Beachtung der Berliner Wahl (Frage 11) → 25 Mandate.
+Kein Schritt geschieht automatisch; jeder ist einzeln freigabepflichtig.

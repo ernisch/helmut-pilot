@@ -76,7 +76,15 @@ function htmlZuText(html) {
     .replace(/&#39;|&apos;/gi, "'").replace(/&auml;/gi, "ä").replace(/&ouml;/gi, "ö")
     .replace(/&uuml;/gi, "ü").replace(/&Auml;/g, "Ä").replace(/&Ouml;/g, "Ö")
     .replace(/&Uuml;/g, "Ü").replace(/&szlig;/gi, "ß")
-    .replace(/&#(\d+);/g, (_, d) => { try { return String.fromCodePoint(Number(d)); } catch { return " "; } });
+    // Typografische Entities — Lauf 1 zeigte &bdquo;/&ldquo; UNKODIERT im Seitentext
+    // (z. B. Enquete-Namen auf landtag.brandenburg.de); ohne Dekodierung blieben
+    // Buchstabenreste ("bdquo") in der Normalform und zerstoerten den Namensabgleich.
+    .replace(/&bdquo;/gi, "„").replace(/&ldquo;/gi, "“").replace(/&rdquo;/gi, "”")
+    .replace(/&sbquo;/gi, "‚").replace(/&lsquo;/gi, "‘").replace(/&rsquo;/gi, "’")
+    .replace(/&ndash;/gi, "–").replace(/&mdash;/gi, "—").replace(/&shy;/gi, "")
+    .replace(/&#(\d+);/g, (_, d) => { try { return String.fromCodePoint(Number(d)); } catch { return " "; } })
+    // Restliche benannte Entities nie als Buchstaben in die Normalform durchreichen.
+    .replace(/&[a-z]{2,10};/gi, " ");
   return s.split("\n").map((z) => z.replace(/\s+/g, " ").trim()).filter(Boolean);
 }
 
@@ -153,8 +161,14 @@ function bewerteProfil(profil, seite, abruf) {
       (klammer && vollNorm.includes(" " + norm(klammer) + " ") && vollNorm.includes(" wahlkreis "));
     if (!gefunden.mandatAchse) gruende.push(`Wahlkreis \`${profil.wahlkreis}\` nicht im Seitentext gefunden`);
   } else if (profil.listenmandat === true) {
-    gefunden.mandatAchse = /(landesliste|listenplatz|listenmandat| ueber die liste | liste )/.test(vollNorm);
-    if (!gefunden.mandatAchse) gruende.push("Kein Listen-Marker (Landesliste/Listenplatz/Liste) im Seitentext gefunden");
+    const listeMarker = /(landesliste|listenplatz|listenmandat| ueber die liste | liste )/.test(vollNorm);
+    // Lauf-1-Befund: parlament-berlin.de nennt bei Listenabgeordneten teils GAR KEINE
+    // Mandatsachse (weder "Landesliste" noch eine "Wahlkreis:"-Zuweisung). Eine fehlende
+    // Angabe ist kein Widerspruch — ein Widerspruch waere eine Wahlkreis-Zuweisung.
+    const wahlkreisZuweisung = zeilen.some((z) => /^wahlkreis\s*[:0-9]/i.test(z.trim()));
+    gefunden.mandatAchse = listeMarker || !wahlkreisZuweisung;
+    if (!gefunden.mandatAchse) gruende.push("Listenmandat im Paket, aber die Seite weist einen Wahlkreis zu");
+    else if (!listeMarker) gefunden.mandatAchseHinweis = "Seite nennt keine Mandatsachse; kein Widerspruch zur Listenangabe (dokumentiert, kein Fehler)";
   }
 
   // 4 · Erwartete Ausschuesse — jede fehlende Nennung ist eine Abweichung.
@@ -169,16 +183,41 @@ function bewerteProfil(profil, seite, abruf) {
     if (!ok) gruende.push(`Stellv. Ausschuss \`${a}\` nicht im Seitentext gefunden`);
   }
 
-  // 5 · Gremienzeilen der Seite, die KEINEM erwarteten Ausschuss zuzuordnen sind — als
-  // Hinweis ausgewiesen (Navigations-/Listenrauschen moeglich); eine Zeile mit klarem
-  // Mitglieds-Wortlaut zaehlt als Abweichung (unbelegte Mitgliedschaft im Paket fehlend).
+  // 5 · Gremienzeilen der Seite, die KEINEM erwarteten Ausschuss zuzuordnen sind.
+  // Lauf-1-Befunde (2026-08-24) eingearbeitet:
+  //   (a) Biografie-Historik traegt IMMER Jahreszahlen ("2019 bis 2021 ...", "1985 - 1989 ...")
+  //       und kommunale/parteiliche Gremien (BVV, Kreistag, Stadtverordnetenversammlung,
+  //       Landesausschuss einer Partei) — das sind KEINE aktuellen Landtagsmitgliedschaften.
+  //   (b) Navigationsrauschen: landtag.brandenburg.de zeigt auf JEDER Profilseite die
+  //       Menuepunkte "Petitionsausschuss" und "Kommissionen"; parlament-berlin.de zeigt
+  //       ueberall "Enquete-Kommission". Solche alleinstehenden Zeilen sind erst dann eine
+  //       Mitgliedschaft, wenn das Paket sie erwartet (dann greift der Positivabgleich oben).
+  //   Grenze (dokumentiert): eine ECHTE Brandenburger Petitionsausschuss-Mitgliedschaft
+  //   wuerde von dieser Ausserhalb-Pruefung nicht gemeldet — der Positivabgleich eines
+  //   Pakets, das sie fuehrt, findet sie weiterhin.
+  const NAV_JE_PARLAMENT = {
+    "landtag-brandenburg": ["petitionsausschuss", "kommissionen"],
+    "landtag-berlin": ["enquete kommission"]
+  };
+  const nav = NAV_JE_PARLAMENT[profil.parlament] || [];
+  const istHistorik = (z) => /\b(19|20)\d{2}\b/.test(z) ||
+    /(bvv|kreistag|stadtverordnetenversammlung|ortsverein|jugendhilfeausschuss|landesausschuss)/i.test(z);
   const erwartetNorm = [...(profil.ausschuesse || []), ...(profil.stellvertretendeAusschuesse || [])].map((a) => norm(a));
   const unzugeordnet = [];
   for (const g of seite.gremien || []) {
     const gz = norm(g.zeile);
     if (erwartetNorm.some((e) => e && gz.includes(e))) continue;
     unzugeordnet.push(g);
-    if (/(^| )mitglied( |$)|stellvertret/i.test(g.zeile) && !/keine mitglied/i.test(g.zeile)) {
+    if (nav.includes(gz)) continue;
+    if (istHistorik(g.zeile)) continue;
+    // Strukturueberschriften der Seiten sind keine Gremien.
+    if (/^(ordentliche|stellvertretende)? ?ausschuss( und gremienmitgliedschaften)?$|^ausschuesse$|^gremien$/.test(gz)) continue;
+    // Eine Zeile mit Mitglieds-Wortlaut ODER eine alleinstehende Gremien-Ueberschrift
+    // (Lauf 1 zeigte: die Parlamentsseiten fuehren aktuelle Mitgliedschaften als kurze
+    // eigene Zeilen OHNE das Wort "Mitglied") ist eine unzugeordnete Mitgliedschaft.
+    const mitgliedsWortlaut = /(^| )mitglied( |$)|stellvertret/i.test(g.zeile) && !/keine mitglied/i.test(g.zeile);
+    const alleinstehendeUeberschrift = g.zeile.length <= 110 && !/[.!?]$/.test(g.zeile);
+    if (mitgliedsWortlaut || alleinstehendeUeberschrift) {
       gruende.push(`Seite nennt Gremium ausserhalb des Pakets: "${g.zeile.slice(0, 160)}"`);
     }
   }
@@ -335,13 +374,16 @@ async function main() {
   fs.writeFileSync(outJson, JSON.stringify(bericht, null, 1));
   fs.writeFileSync(outMd, zusammenfassungMd(bericht));
 
-  // Vollbericht ins Log (fuer Umgebungen ohne Artefakt-Download). Marker fuer maschinelles Finden.
+  // Vollbericht ins Log (fuer Umgebungen ohne Artefakt-Download). Lauf-1-Lehre: EINE
+  // Riesenzeile wird vom Log-Abruf gekappt — deshalb JE PROFIL eine eigene kompakte
+  // Zeile plus eine Metazeile; jede bleibt weit unter der beobachteten Zeilenkappung.
   console.log("\n===== PQV-REPORT-BEGIN =====");
-  console.log(JSON.stringify(bericht));
+  for (const e of bericht.ergebnisse) console.log(`PQV-PROFIL ${e.mandatsId} ${JSON.stringify(e)}`);
+  console.log(`PQV-META ${JSON.stringify({ paketPfad: bericht.paketPfad, lauf: bericht.lauf })}`);
   console.log("===== PQV-REPORT-END =====\n");
 
   const alleBestaetigt = bericht.ergebnisse.every((e) => e.ergebnis === "bestaetigt");
-  console.log(zusammenfassungMd(bericht).split("\n").slice(0, 30).join("\n"));
+  console.log(zusammenfassungMd(bericht));
   if (!alleBestaetigt) {
     console.log("\nERGEBNIS: NICHT alle Profile bestätigt — Details in Bericht/Zusammenfassung.");
     process.exit(1);

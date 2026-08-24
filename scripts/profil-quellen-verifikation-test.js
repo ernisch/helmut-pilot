@@ -91,6 +91,40 @@ check("Namensvariante wird gefunden", b8.gefunden.name === true);
 const kurz = V.bewerteProfil(profilOk, { zeilen: ["Erika"], gremien: [] }, { ok: true });
 check("zu kurzer Seitentext → nicht_eindeutig", kurz.ergebnis === "nicht_eindeutig");
 
+abschnitt("Lauf-1-Befunde: Entities, Historik, Navigation, alleinstehende Gremienzeilen");
+
+const entZeilen = V.htmlZuText("<p>Enquete-Kommission &bdquo;Finanzierung und Gestaltung&ldquo;</p>");
+check("&bdquo;/&ldquo; werden dekodiert (keine Buchstabenreste in der Normalform)",
+  V.norm(entZeilen[0]) === "enquete kommission finanzierung und gestaltung", V.norm(entZeilen[0]));
+
+const bbProfil = { ...profilOk, parlament: "landtag-brandenburg" };
+const bbZeilen = [
+  "Erika Muster", "SPD-Fraktion", "Wahlkreis 9 (Oranienburg)",
+  "Petitionsausschuss", "Kommissionen", // Navigationsrauschen auf jeder BB-Seite
+  "Ordentliche Ausschuss- und Gremienmitgliedschaften", // Strukturueberschrift
+  "Mitglied im Hauptausschuss", "Stellvertretendes Mitglied im Petitionsausschuss",
+  "2019 bis 2021 stellvertretender Vorsitzender im Ausschuss für Wissenschaft, Forschung und Kultur", // Historik
+  ...V.htmlZuText(FUELLER)
+];
+const bbSeite = { zeilen: bbZeilen, gremien: V.gremienZeilen(bbZeilen) };
+const bbBew = V.bewerteProfil(bbProfil, bbSeite, { ok: true });
+check("BB-Navigation und Historik erzeugen KEINE Abweichung", bbBew.ergebnis === "bestaetigt", JSON.stringify(bbBew.gruende));
+
+const bbMitFremdem = { zeilen: [...bbZeilen, "Wahlprüfungsausschuss"], gremien: V.gremienZeilen([...bbZeilen, "Wahlprüfungsausschuss"]) };
+const bbBew2 = V.bewerteProfil(bbProfil, bbMitFremdem, { ok: true });
+check("alleinstehende Gremien-Ueberschrift ausserhalb des Pakets → abweichung", bbBew2.ergebnis === "abweichung");
+check("Grund nennt den Wahlprüfungsausschuss", bbBew2.gruende.some((g) => g.includes("Wahlprüfungsausschuss")));
+
+const beListe = { ...profilOk, parlament: "landtag-berlin", wahlkreis: undefined, listenmandat: true, regionHinweis: "Spandau" };
+const beOhneAchse = ["Erika Muster", "SPD-Fraktion", "Wahlkreisbüro", "Mitglied im Hauptausschuss", "Stellvertretendes Mitglied im Petitionsausschuss", ...V.htmlZuText(FUELLER)];
+const beBew = V.bewerteProfil(beListe, { zeilen: beOhneAchse, gremien: V.gremienZeilen(beOhneAchse) }, { ok: true });
+check("Berlin-Liste ohne Seitenangabe zur Achse → kein Widerspruch, bestaetigt", beBew.ergebnis === "bestaetigt", JSON.stringify(beBew.gruende));
+check("fehlende Achsenangabe wird als Hinweis dokumentiert", typeof beBew.gefunden.mandatAchseHinweis === "string");
+
+const beMitWk = [...beOhneAchse.slice(0, 2), "Wahlkreis: Spandau 2", ...beOhneAchse.slice(2)];
+const beBew2 = V.bewerteProfil(beListe, { zeilen: beMitWk, gremien: V.gremienZeilen(beMitWk) }, { ok: true });
+check("Berlin-Liste, aber Seite weist Wahlkreis zu → abweichung", beBew2.ergebnis === "abweichung");
+
 console.log(`\n== ERGEBNIS ==`);
 console.log(`PASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
 if (fail > 0) process.exit(1);

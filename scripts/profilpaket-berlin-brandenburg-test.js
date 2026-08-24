@@ -11,9 +11,9 @@
 //   2. Es sind GENAU die 20 vorgesehenen Personen (10 Berlin, 10 Brandenburg).
 //   3. AUSNAHMSLOS `aktiv: false`; die Abbildung nach Helmut ergibt `profileActive: false`.
 //   4. Keine Dubletten über die drei Vertragsachsen (Kennung, Vollname, amtliche Seite).
-//   5. EHRLICHKEIT: kein Profil trägt `geprueftAm` (das Feld ist der bytegenauen Prüfung
-//      vorbehalten, die aus der Cloud-Umgebung nicht möglich war — Egress-Sperre der
-//      Parlamentsdomains, belegt 2026-08-24); jede Notiz nennt den Prüfstand.
+//   5. PRÜFSTAND: jedes Profil trägt `geprueftAm: 2026-08-24` — die bytegenaue Prüfung
+//      lief über den freigegebenen, rein lesenden GitHub-Actions-Lauf
+//      (profil-quellen-verifikation.yml, alle 20 Seiten HTTP 200); jede Notiz nennt ihn.
 //   6. Die fünf für eine spätere erste Erweiterung empfohlenen Brandenburger Profile sind
 //      enthalten (Empfehlung ist KEINE Aktivierung).
 
@@ -101,13 +101,16 @@ check("Keine zusätzliche Person", namen.size === 20, `distinct Namen: ${namen.s
 check("„Werner Sebastian Graf“ mit vollem amtlichen Namen (nicht nur „Werner Graf“)",
   namen.has("Werner Sebastian Graf") && !namen.has("Werner Graf"));
 
-abschnitt("Ehrlichkeit des Prüfstands (bytegenaue Bestätigung steht aus)");
+abschnitt("Prüfstand (bytegenauer Abgleich über den Actions-Lauf)");
 
-check("Kein Profil trägt `geprueftAm` (bytegenaue Prüfung ist nicht erfolgt)",
+check("Jede amtliche Quelle trägt `geprueftAm: 2026-08-24`",
   (datei.profile || []).every((p) =>
-    (p.offizielleQuellen || []).every((q) => !("geprueftAm" in q))));
-check("Jede Notiz benennt den Prüfstand („noch nicht bytegenau bestätigt“)",
-  (datei.profile || []).every((p) => /noch nicht bytegenau/i.test(String(p.notiz || ""))));
+    (p.offizielleQuellen || []).filter((q) => q.art === "parlament-profil")
+      .every((q) => q.geprueftAm === "2026-08-24")));
+check("Jede Notiz benennt den Actions-Lauf als Prüfgrundlage",
+  (datei.profile || []).every((p) => /Actions-Lauf/i.test(String(p.notiz || ""))));
+check("Jede Notiz bleibt in der Vertragsgrenze (max. 500 Zeichen)",
+  (datei.profile || []).every((p) => String(p.notiz || "").length <= 500));
 check("Kein SYNTHETISCH-Marker (dies ist eine Recherche, kein Beispiel)",
   !/SYNTHETISCH/.test(roh));
 
@@ -138,15 +141,32 @@ check("Kristy Augustin als Listenmandat geführt (Listenplatz 2, NICHT Wahlkreis
 const dorst = (datei.profile || []).find((p) => p.vollname === "Christian Dorst");
 check("Christian Dorst ohne ungeprüfte Infrastrukturausschuss-Mitgliedschaft",
   !!dorst && !(dorst.ausschuesse || []).some((a) => /Infrastruktur/i.test(a)));
-// Peschel: die Ausschüsse wurden NEU recherchiert (Auftragskorrektur). Ergebnis 2026-08-24:
-// Hauptausschuss ist aktuell mehrfach 8.-WP-belegt und darf geführt werden; die
-// Haushaltskontroll-Mitgliedschaft blieb unklar und darf NICHT geführt werden.
+// Peschel: der amtliche Live-Abgleich (Actions-Lauf 1, 24.08.2026) ergab eine jüngere
+// Umbesetzung — Hauptausschuss und die stellv. Angaben sind amtlich NICHT (mehr) geführt.
 const peschel = (datei.profile || []).find((p) => p.vollname === "Falk Peschel");
 const peschelAlle = [...((peschel && peschel.ausschuesse) || []), ...((peschel && peschel.stellvertretendeAusschuesse) || [])];
-check("Falk Peschel ohne ungeklärte Haushaltskontroll-Angabe",
-  !!peschel && !peschelAlle.some((a) => /Haushaltskontrolle/i.test(a)));
-check("Falk Peschels Notiz dokumentiert die Neurecherche der Ausschüsse",
-  !!peschel && /neu recherchiert/i.test(String(peschel.notiz || "")));
+check("Falk Peschel ohne Haushaltskontroll- und ohne Hauptausschuss-Angabe (amtlich nicht geführt)",
+  !!peschel && !peschelAlle.some((a) => /Haushaltskontrolle|^Hauptausschuss$/i.test(a)));
+check("Falk Peschels Notiz dokumentiert Abrufzeit und Umbesetzung",
+  !!peschel && /17:32:48 TR/.test(String(peschel.notiz || "")) && /NICHT \(mehr\) geführt/i.test(String(peschel.notiz || "")));
+
+abschnitt("Korrekturen aus dem amtlichen Live-Abgleich (Actions-Lauf 1)");
+
+const luettmann = (datei.profile || []).find((p) => p.vollname === "Björn Lüttmann");
+check("Björn Lüttmann als Listenmandat (amtlich Landesliste Platz 7, kein Wahlkreis-Eintrag)",
+  !!luettmann && luettmann.listenmandat === true && !luettmann.wahlkreis);
+const meyer = (datei.profile || []).find((p) => p.vollname === "Jenny Meyer");
+check("Jenny Meyer mit amtlichem Namen „Ausschuss für Infrastruktur und Landesplanung“",
+  !!meyer && (meyer.ausschuesse || []).includes("Ausschuss für Infrastruktur und Landesplanung") &&
+  !(meyer.ausschuesse || []).some((a) => /Landesentwicklung/.test(a)));
+const liedtke = (datei.profile || []).find((p) => p.vollname === "Prof. Dr. Ulrike Liedtke");
+check("Liedtke mit amtlicher Schreibweise „Wahlkreis 03“ und Hauptausschuss",
+  !!liedtke && liedtke.wahlkreis === "Wahlkreis 03 (Ostprignitz-Ruppin I)" &&
+  (liedtke.ausschuesse || []).includes("Hauptausschuss"));
+const bretz = (datei.profile || []).find((p) => p.vollname === "Steeven Bretz");
+check("Bretz: Hauptausschuss ordentlich, keine stellvertretenden Altangaben",
+  !!bretz && (bretz.ausschuesse || []).includes("Hauptausschuss") &&
+  !(bretz.stellvertretendeAusschuesse || []).length);
 
 abschnitt("Empfohlene erste Brandenburger Gruppe (nur Vorbereitung)");
 
@@ -165,4 +185,5 @@ if (fail > 0) {
   process.exit(1);
 }
 console.log("Das lokale Importpaket ist formal importierbar, vollständig deaktiviert und dublettenfrei.");
-console.log("AUSDRÜCKLICH NICHT geprüft: die inhaltliche Richtigkeit gegen die amtlichen Profilseiten (bytegenaue Bestätigung steht aus).");
+console.log("Die inhaltliche Richtigkeit gegen die amtlichen Live-Seiten prüft NICHT dieser Offline-Test,");
+console.log("sondern der rein lesende Actions-Lauf (.github/workflows/profil-quellen-verifikation.yml).");

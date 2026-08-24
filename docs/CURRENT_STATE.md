@@ -65,7 +65,7 @@ Fassung vor dieser Verdichtung: byte-identisch in [`archive/project_state/2026_0
 2. **Regionale Quellen Berlin/Brandenburg**: beide Landesmodule inaktiv, Wege gesperrt, Seeds nicht eingespielt; Wirkung von `HELMUT_LANDESMODULE` unbewiesen (§5).
 3. **KI-Tagesdeckel**: 100+30 reicht ab 25 Mandaten auch im günstigen Fall nicht (Restliste OP-30-Vermerk; Rechengrundlage `scripts/skalierungsmodell.js`).
 4. **Tägliche Lagekapazität**: der Lage-Cron schaffte im Altpfad 2 Mandate je Tageslauf (systemErrors 21.–23.08.); der Motor liefert seit 23.08. effektiv 5/5, für 25 ist der Nachweis offen (Stufenplan Stufe 2 inkl. OP-25-Wiederholung).
-5. **20 zusätzliche Profile**: recherchiert, aber **noch nicht bytegenau amtlich bestätigt** (Egress-Sperre, §14); Aktivierung/Import bleiben freigabepflichtig.
+5. **20 zusätzliche Profile**: **bytegenau gegen die amtlichen Live-Seiten abgeglichen** (Actions-Lauf 24.08., 20× HTTP 200, Korrekturen eingearbeitet, §14); Import/Aktivierung bleiben freigabepflichtig. **Berliner Wahl 20.09.2026** (berlin.de/wahlen): die zehn Berliner Profile gelten nur für die 19. WP — nach der Wahl erneute Prüfung, keine ungeprüfte Aktivierung; Terminrisiko für den 25er-Nachweis.
 6. **Echter Warteschlangenbetrieb (Ereignis-Antrieb)** braucht AWS-Ressourcen, die es nicht gibt (SQS/DLQ/KMS/IAM/Lambda; kostenpflichtige Gründerentscheidung, Runbook §21/§22).
 
 Entscheidungsgrundlage in einfacher Sprache: [`betrieb/entscheidungsvorlage-skalierung-2026-08-24.md`](betrieb/entscheidungsvorlage-skalierung-2026-08-24.md).
@@ -166,10 +166,10 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzter Sprint (24.08. — Vorbereitung 25 Mandate, kein Production-Kontakt)
 
-**Sprintzustand: teilweise abgeschlossen** — testgesichert (Paket 48/48, Offline-Suite 268/274, 6 rote = Umgebungs-Altbestand), aber bytegenaue amtliche Bestätigung unmöglich, Review/Merge offen. Branch `claude/helmut-25-mandate-prep-hz4zjg`, **PR #267 (offen, nicht gemergt)**.
+**Sprintzustand: teilweise abgeschlossen** — Arbeit fertig und testgesichert (Paket 53/53, Verifikationslogik 31/31, Offline-Suite 268/274; 6 rote = Umgebungs-Altbestand); Review-/Merge-Entscheidung liegt beim Betreiber. Branch `claude/helmut-25-mandate-prep-hz4zjg`, **PR #267** (Stand 24.08.: eröffnet, nicht selbst gemergt — Merge = Production-Deployment und Betreiberentscheidung).
 
-- `CURRENT_STATE.md` byte-identisch archiviert und auf diese Fassung verdichtet; PR-266-Stand korrigiert (gemergt, `bf7aee29`, 0 offene PRs zu Sprintbeginn).
-- **Lokales Importpaket** für 20 zusätzliche Profile (10 Berlin, 10 Brandenburg) nach Importvertrag erstellt — ausnahmslos `aktiv: false`, kein Import, keine Aktivierung: `daten/mandatsprofile-berlin-brandenburg-2026-08-24.json`, testgesichert durch `scripts/profilpaket-berlin-brandenburg-test.js`.
-- **Bytegenaue amtliche Bestätigung war nicht möglich:** parlament-berlin.de, landtag.brandenburg.de und bundestag.de sind aus der Cloud-Sitzung per Egress-Proxy gesperrt (CONNECT 403 / EGRESS_BLOCKED, belegt 24.08.). Alle 20 Profile tragen den Vermerk „noch nicht bytegenau bestätigt"; die fehlenden Prüfungen sind je Profil in `daten/mandatsprofile-berlin-brandenburg-2026-08-24-pruefstand.md` aufgelistet. Frühere bytegenaue Verifikationen liefen über einen GitHub-Actions-Runner mit offenem Egress (Sprint 9B) — dieser Weg war in diesem Sprint ausdrücklich untersagt.
+- `CURRENT_STATE.md` byte-identisch archiviert und verdichtet; PR-266-Stand korrigiert (gemergt, `bf7aee29`, 0 offene PRs zu Sprintbeginn).
+- **Lokales Importpaket** für 20 Profile (10 BE, 10 BB) nach Importvertrag — ausnahmslos `aktiv: false`, kein Import, keine Aktivierung: `daten/mandatsprofile-berlin-brandenburg-2026-08-24.json`, testgesichert (`scripts/profilpaket-berlin-brandenburg-test.js`).
+- **Bytegenaue Bestätigung (Nachtrag, gründerfreigegeben):** Wegen der Egress-Sperre der Parlamentsdomains lief die Prüfung über den freigegebenen, **rein lesenden Actions-Weg** (`profil-quellen-verifikation.yml`, Muster Sprint 9B; `contents: read`, keine Secrets, nur die 20 amtlichen URLs). **Lauf 1 (≈17:32 TR / 16:32 Berlin / 14:32 UTC): alle 20 Seiten HTTP 200**; 15 Profile korrigiert (u. a. Lüttmann Listenmandat statt Wahlkreis 9; Bretz Hauptausschuss ordentlich, Platz 5; Meyer „Infrastruktur und Landesplanung"; Peschel-Umbesetzung). Protokoll: `daten/…-pruefstand.md`; Lauf 2 am PR einsehbar.
 - **Entscheidungsvorlage Skalierung 10/25** erstellt (§6/§13).
-- Ältere Sprintberichte (23./24.08. Aktivierung, Bereinigung, Gesundheitsbot) stehen vollständig in der Archivfassung vom 24.08. und in den Belegdateien aus §13.
+- Ältere Sprintberichte: Archivfassung 24.08., Belegdateien §13.
