@@ -3662,3 +3662,109 @@ unverändert **103/0**; Offline-Gesamtlauf grün.
 **V4 Nachkontrolle 09:44:50 TR / 08:44:50 Berlin / 06:44:50 UTC:** V4 1/2/3/4/6/7
 grün; V4 5 bleibt bis unmittelbar vor einer ausdrücklich freigegebenen Aktivierung offen.
 Kein Flag, kein Redeployment, kein Motorstart, kein Versuch 5.
+
+### §30.6 Live-Vorprüfung V4 im Aktivierungsfenster (2026-08-23, rein lesend) — ROT UND BLOCKIERT
+
+**Gemessen 19:12:31–19:23:18 TR / 18:12:31–18:23:18 Berlin / 16:12:31–16:23:18 UTC**, also
+vollständig im kanonischen Fenster (19:10–20:50 TR / 16:10–17:50 UTC). Ausschließlich lesende
+Zugriffe (Git/GitHub lesend, Vercel lesend, Supabase `select`/Logs); keine Nutzdaten gelesen
+oder ausgegeben — Vorgänge nur als md5-Präfix, Mandate nur als Zähler/Signatur. **Kein Flag,
+keine Env-Änderung, kein Deployment, kein SQL-Schreiben, kein Cron-/Worker-/Modelllauf, keine
+Migration, keine Löschung der doppelten Buchung, keine Aktivierung von Versuch 5.**
+
+| Tor | Erwartung (Freigabetext) | Messung | Ergebnis |
+|---|---|---|---|
+| V4-1 | main-HEAD = jüngstes Production-Deployment, READY; erwartet `a7559186` | `origin/main` = `a7559186dfb0…`; jüngstes Production-Deployment `dpl_95o8QLbe1QT2jCVHv88s8hZDTDc3` (07:40:36 UTC) READY auf exakt diesem Commit; jüngeres Deployment nur Preview (07:54:22 UTC, PR #264, kein `target=production`) | **grün** |
+| V4-2 | 0 wartend / 235 erledigt / 0 laeuft / 0 fehlgeschlagen · 0 aktive/abgelaufene Leases | exakt 0/235/0/0, Leases 0/0; `pg_stat_user_tables` für `helmut_jobs` ins/upd/del/live = **1322/2302/1994/235**, byte-stabil identisch zu §28.8 (19.08.) ⇒ seither kein einziger Schreibvorgang | **grün** |
+| V4-3 | Outbox 0 | `helmut_job_outbox` 0 Zeilen | **grün** |
+| V4-4 | **239 fertig** · 1 aufgegeben · 0 offen · 0 unbekannt · 0 modell-laeuft · 0 Vormerkungen · 0 HV001/HV002 · 0 Fencing-Konflikte | **244 fertig** · 1 aufgegeben · 0 offen · 0 unbekannt · 0 modell-laeuft · 0 reserviert · 0 Besitzer/Leases · 0 Vormerkungen · KO-Fencing 244 = fertig-Anzahl · 0 Fencing-Konflikte · Logs seit 06:30 UTC: 0 HV001/HV002, 0 ERROR, 0 FATAL | **ABWEICHUNG** (nur Zählstand) |
+| V4-5 | kein schwerer Cronslot im Fenster aktiv | `process_runs` 0 `running`; 16:00-UTC-Slot beendet 16:03:14 UTC (vor Fensterbeginn); nächster schwerer Slot crawl 20:00 UTC nach Fensterende. Hinweis: `globalphase` 16:00 endete ehrlich `partial` (`budget=1 fehler=0 persistenz=ok cas=0 nv=0`, vertagt 1888/2009, 182 s) — reguläres fail-closed-Budgetverhalten des Altpfads, kein V4-Tor | **grün** |
+| V4-6 | Basispunkt 33/`20260823063208`; **zwei bytegleiche Einträge** für `20260823043633`; nichts löschen; `20260720` nicht anwenden | 33 Einträge, Ende `20260823063208` ✓; `20260720` nicht angewendet ✓; Dublette vorhanden, aber **nicht streng bytegleich**: `…063140` = Repo-Datei **byte-identisch** (md5 `ef205d5f30ca0ddbc6d95e0d2523d92a`, 12 684 Zeichen), `…063208` = identischer Inhalt **ohne das letzte Newline-Byte** (md5 `77f78362aad5552519aefecba05e2423`, 12 683 Zeichen, letztes Zeichen `;`); Präfix über 12 683 Zeichen exakt gleich, je 1 Statement ⇒ SQL-wirkungsgleich. Funktion `helmut_verstehen_ausgang_aufloesen` genau 1×. Nichts gelöscht, nichts angewendet | **ABWEICHUNG** (nur Wortlaut „bytegleich") |
+| V4-7 | 0 fremde aktive Abfragen / 0 Sperren auf `helmut_jobs` | 0 / 0 | **grün** |
+| Zusatz | 0 offene Pull Requests | 0 offene; #264 (überholte Doku-Variante zur Dubletten-Ursache) am 23.08. 07:57:32 UTC **geschlossen, nicht gemergt** | **grün** |
+| Zusatz | `HELMUT_SCALABLE_PIPELINE` aus | wirkungsbasiert aus: Queue/pg_stat byte-stabil (s. V4-2), keine `warteschlange-*`-Quittungen, Outbox 0; 16:00-Slot lief als `globalphase mode=global` über den Altpfad | **grün** |
+| Zusatz | genau 5 reale Mandate aktiv | `mandate_profiles`: **5 aktiv / 9 gesamt**, 0 aktive mit `test-*`-Präfix, 0 aktive gelöscht; Signatur **`m5-9aee228dbf2c9f13`** identisch zum K2-Beleg | **grün** |
+
+**Erklärung der V4-4-Abweichung (kein Schadensbefund):** Der Erwartungswert 239 war der Stand
+der Nachkontrolle 06:44:50 UTC. Seither liefen die regulären Slots 10:00 UTC (Lage-Check) und
+16:00 UTC (Pipeline): **fünf neue Vorgänge**, alle regulär `fertig` mit Zählern/Fencing 1/1/1
+(erstellt/abgeschlossen 10:01:44–10:02:40 bzw. 16:02:06–16:02:40 UTC), plus **eine reguläre
+Aktualisierung** eines Bestandsvorgangs (`28aae85d`, 22.08. 21:34 erstellt, 16:02:55 UTC auf
+3/3/3, `ergebnis_fencing=3`). 239 + 5 = 244; alle Vertragsinvarianten unverletzt (ein
+Modellaufruf je Versuch, monotones Fencing, keine Vormerkung, kein `unbekannt`).
+
+**Erklärung der V4-6-Abweichung:** Die beiden Buchungen unterscheiden sich um **genau ein
+End-Newline-Byte** (0x0a); Anwendung 1 buchte die Datei wörtlich, Anwendung 2 ohne
+End-Newline. Der Unterschied **stützt** die §30.5-Darstellung zweier getrennter paralleler
+Anwendungen (ein interner Werkzeug-Retry desselben Aufrufs hätte zwei wirklich byte-identische
+Zeilen erzeugt — genau das Gegenmodell aus dem nicht gemergten #264).
+Inhaltlich/SQL-seitig identisch; die dokumentierte Formulierung „bytegleich"
+(§30.5, CURRENT_STATE) ist um dieses eine Whitespace-Byte unpräzise. Kein Eingriff erfolgt;
+die Dublette bleibt auftragsgemäß stehen.
+
+**Ergebnis: Vorprüfung rot und blockiert.** Auftragsregel „jede Abweichung ⇒ stoppen, keine
+Aktivierung empfehlen, nichts verändern, Blocker benennen" angewendet: beide Abweichungen sind
+vollständig erklärt und ohne Schadensbefund, weichen aber vom wörtlich freigegebenen
+Erwartungsstand ab. **Versuch 5 wurde nicht aktiviert.** Nächste Betreiberaktionen (nur
+benannt, nicht ausgeführt): (1) neue Referenzwerte bestätigen — CAS-Basis 244 fertig /
+1 aufgegeben (bzw. Stand des dann aktuellen Slots) und Dubletten-Wortlaut „inhaltsgleich bis
+auf ein End-Newline-Byte"; (2) neues Aktivierungsfenster ausdrücklich freigeben; (3) unmittelbar
+darin V4 1–7 frisch wiederholen; erst bei vollständigem Grün Aktivierung nach §28.6-Plan.
+
+*(Nachtrag gleichentags: Beide Abweichungen wurden vom Betreiber als neue Referenz anerkannt,
+die V4-Wiederholung war grün, die Aktivierung wurde freigegeben und vollzogen — Verlauf und
+Abschluss in §30.7.)*
+
+### §30.7 ABSCHLUSSBELEG — Versuch 5 aktiviert und formal vollständig abgeschlossen (2026-08-23/24)
+
+**Hergang (alle Schritte einzeln freigegeben, Zeiten UTC):**
+
+1. **Betreiberentscheidung 23.08.:** die zwei §30.6-Abweichungen wurden als neue Referenz
+   anerkannt (CAS-Basis 244 fertig / 1 aufgegeben; Migrations-Dublette „inhaltsgleich bis auf
+   genau ein fehlendes abschließendes Newline-Byte", keine Bereinigung; die Ursache wird nicht
+   allein aus dem Byte-Unterschied abgeleitet — entscheidend ist: Funktion genau einmal,
+   wirkungsgleich, keine Daten beschädigt).
+2. **Frische V4-Wiederholung 16:32:07–16:32:41 (rein lesend): vollständig grün** — Queue
+   0/235/0/0 (pg_stat byte-stabil), Outbox 0, CAS exakt 244/1/0/0/0/0 (0 Zeilen seit 16:23:18
+   verändert), 0 Vormerkungen, 0 Fencing-Konflikte, Migrationen 33/`20260823063208`,
+   0 fremde Abfragen/Sperren, 0 offene PRs, 5 aktive Mandate (`m5-9aee228dbf2c9f13`),
+   0 HV001/HV002 und 0 ERROR/FATAL seit 06:30.
+3. **Aktivierung durch den Betreiber im freigegebenen Fenster** (Vercel-Dashboard; aus der
+   Claude-Sitzung technisch unmöglich, Env weder lesbar noch setzbar): die sechs §28.6-Variablen
+   gesetzt (`HELMUT_SCALABLE_PIPELINE=on` · `HELMUT_JOB_DISPATCH_MODE=shadow` ·
+   `HELMUT_SCALABLE_PIPELINE_SEIT` · `HELMUT_WORKER_PARALLEL=4` · `HELMUT_WORKER_STAPEL=25` ·
+   `HELMUT_WORKER_BATCH=25`), dann Redeploy des unveränderten Stands. Dabei entstanden
+   **vier** READY-Production-Redeploys (16:43:21/16:46:09/16:46:36/16:47:26) statt des einen
+   freigegebenen — alle auf exakt `a7559186`, ohne Sicherheitsrelevanz; das jüngste gewann.
+4. **Aktives Production-Deployment:** **`dpl_CJAWWr3UZygjjWCYxZz35CcJ3Ssk`**, READY
+   **23.08. 19:47:38 TR / 18:47:38 Berlin / 16:47:38 UTC**, `action=redeploy`, Git-Stand
+   **unverändert `a7559186`**, Production-Aliasse übernommen (`helmut-pilot.vercel.app`,
+   `helmut-pilot-nohut.vercel.app`, `helmut-pilot-git-main-nohut.vercel.app`), `aliasError`
+   null. Unmittelbare Ruhekontrolle 16:48:46: alle Bestände byte-stabil, keine Nebenwirkung.
+
+**Wirkungsnachweis (rein lesend, Kontrollen nach §28.6):**
+
+| Messpunkt | Beleg |
+|---|---|
+| Erster Wirkungsslot (crawl 20:00) | Quittung `warteschlange-crawl` **`success`**, 20:02:57–20:07:16, **259 s** (< 280), **117 echte Abschlüsse**, Bilanz exakt 137 = 117 + 8 vertagt + 12 wiederholt-offen, 0 endgültige Fehler, 0 `unbekannt`, 0 Lease-Probleme (`leaseVerloren 0`, Leases 0/0), Blob-Spiegel 1×/Slot |
+| Nacht + Morgen 24.08. | crawl 04:03 `success` 219 s, **204 Abschlüsse** (Bilanz exakt 238 = 204+23+11); Watchdog-Ersatzlauf 06:01 `success` 81 s, **55 Abschlüsse** (67 = 55+12, `neuGeplant 0`) — zusammen **+259**; Zeilenbilanz der Nacht exakt: 89 + 227 neu = 259 erledigt + 57 wartend |
+| Gesamtabnahme | **376 belegte Abschlüsse** (117 + 259); Abfluss > Ankunft — der OP-30-Kernbefund (Ankunft ≈ 440–470/Tag vs. Abfluss ≈ 130–180/Tag, §19) ist in Production gelöst |
+| Morgenzyklus (Kontrolle 10) | briefing-morning 05:01 `success` **5/5**; briefing-lage 05:45 `success`, 9 Profile verarbeitet, 4 vertagt (deaktivierte) ⇒ **effektiv 5/5 aktive Mandate**; understanding-cron 05:30 `success` (16 verarbeitet, 0 `unbekannt`, 0 fehlgeschlagen, 0 Dokumente ohne Endzustand) |
+| Integrität | keine Doppelarbeit, keine verlorenen Aufträge (alle Zeilenbilanzen exakt), **0 Fencing-Konflikte**, KO-Fencing = fertig-Anzahl (296), 0 Vormerkungen, CAS-Zähler konsistent, durchgehend **0 HV001/HV002** und 0 ERROR/FATAL (postgres_logs 19:55→08:54) |
+| Budget | 23.08. 66/100 · 24.08. 29/100 (08:55, eingefroren seit 06:04); **kein Doppelzählungsmuster** (R4-Fall ≈ 2× je Aufruf ausgeschlossen: 26 von 29 Aufrufen quittungsgenau zugeordnet, darunter understanding-cron aufrufgenau 16/16 gegen die CAS-Zeilen 05:25–05:45; **die 3 übrigen sind Briefing-interne Kleinpfade mit begrenzter Messauflösung** — das aufrufgenaue Nutzungsprotokoll liegt im Blob, das relationale `llm_usage` war nie der lebende Speicher; keine stärkere Behauptung) |
+
+**R4- und Watchdog-Abgleich (24.08., grün):** GitHub-Actions-Lauf **#59** (`briefing-watchdog.yml`,
+ID 32695609227) 06:01:08–06:02:44 auf **`a7559186`**, **`conclusion: success`**. §8.3-Kriterien
+exakt erfüllt: **0 doppelte Idempotenzschlüssel** (live gezählt; Unique-Index
+`helmut_jobs_idem_uidx` in Production vorhanden), **0 Doppel-Pushs** (jede Zeile genau einmal
+abgeschlossen, erledigt-Zuwachs = verarbeitet), **0 Neuplanungen im Ersatzlauf** (`neuGeplant 0`
+— Buchungen nur für erstmalige Arbeit).
+
+**Ergebnis: Alle elf Kontrollen aus §28.6 sind erfüllt. Versuch 5 ist formal vollständig
+abgeschlossen.** `HELMUT_SCALABLE_PIPELINE` bleibt in Production eingeschaltet; **kein Rückbau
+erforderlich**. Der dokumentierte Rückweg (Flag löschen + Redeploy desselben Stands) bleibt als
+Notfallpfad bestehen. **OP-25 ist laut Betreiberfeststellung vom 24.08. bereits abgeschlossen
+und bewiesen** — eine Betreiberfeststellung, keine Prüfung dieses Sprints. Production-Eingriffe
+dieses Abschlusses waren ausschließlich die vom Betreiber selbst ausgeführte Variablen- und
+Redeploy-Aktion; sämtliche Claude-Messungen blieben rein lesend (kein SQL-Schreiben, kein
+Cron-/Worker-/Modellaufruf, keine Migration, keine Löschung der Migrations-Dublette).

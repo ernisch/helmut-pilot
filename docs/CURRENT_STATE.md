@@ -1,11 +1,13 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-24, Gesundheitsbot-Sprint (Teil A lesende Production-Analyse ~06:45 UTC · Teil B Bot-PR).**
-**Der Warteschlangenmotor läuft seit 23.08. abends in Production (Versuch 5, Betreiberaktivierung; erste Queue-Quittung `cron-crawl-20260823200257`, 20:02 UTC).** Der aktuelle Production-Nachweis ist **grün**: alle Slot-Läufe seit Aktivierung `success` (20:02 → 117/137 · 04:03 → 204/238 · Watchdog-Ersatzlauf 06:01 → 55/67; jede Zielmenge vollständig aufgelöst in erledigt/zurückgestellt/wiederholt/Stapelrest), Queue 57 wartend / 611 erledigt / 0 laufend / 0 fehlgeschlagen, **0 hängende Leases**, CAS 296 `fertig` + 1 `aufgegeben` / **0 `unbekannt`**, Outbox 53 bestätigt / 321 verzichtet / 59 offen (Weck-Transport nicht ausgerollt, Cron-Fallback trägt — kein Stau).
+**Stand: 2026-08-24 — Versuch 5 ist formal vollständig abgeschlossen; der neue Warteschlangenmotor läuft in Production** (grüner R4-/Watchdog-Abgleich 08:51–08:55 UTC, rein lesend; Vollbeleg Runbook §30.7).
+**Aktivierung am 23.08. im freigegebenen Fenster** nach anerkannten Referenzwerten und frischer grüner V4-Wiederholung: aktives Production-Deployment **`dpl_CJAWWr3UZygjjWCYxZz35CcJ3Ssk`**, READY 19:47:38 TR / 18:47:38 Berlin / 16:47:38 UTC, **unveränderter Git-Stand `a7559186`**. Erster Wirkungsslot **117 echte Abschlüsse** (`success`, 259 s, 0 endgültige Fehler, 0 `unbekannt`, 0 Lease-Probleme), Nacht und Morgen **+259** — **insgesamt 376 belegte Abschlüsse** in der Abnahme; briefing-morning **5/5**, briefing-lage effektiv **5/5** aktive Mandate; keine Doppelarbeit, keine verlorenen Aufträge, 0 Fencing-Konflikte, 0 HV001/HV002. **Alle elf §28.6-Kontrollen erfüllt.**
 
-**Der WhatsApp-Gesundheitsbot war bis 24.08. an tote Altquittungen gebunden:** der Blob `crawlRuns` endet seit der Aktivierung bei einem Projektionslauf mit 0 Quellen (16:03 UTC 23.08.) → fälschlich „Teilweise gestört" trotz gesundem Motor. Teil B stellt ihn auf die echten Motor-Quittungen um (`process_runs`, `betriebsstatus`, CAS); PR aus Branch `claude/whatsapp-bot-queue-engine-analysis-tom08f`, nicht gemergt.
+**R4 und GitHub-Actions-Watchdog grün:** Lauf **#59** auf `a7559186`, `conclusion: success`; 0 doppelte Idempotenzschlüssel, 0 Doppel-Pushs, 0 Neuplanungen im Ersatzlauf. Budget ohne Doppelzählungsmuster — 26 von 29 Aufrufen quittungsgenau zugeordnet; die 3 übrigen sind Briefing-interne Kleinpfade mit begrenzter Messauflösung (aufrufgenaues Protokoll liegt im Blob), keine stärkere Aussage.
 
-**Der Monitoring-Zweitkanal (OP-07) stellt entgegen früherem Stand seit mind. 17.08. täglich zu** (Zustellstatus belegt 24.08., HTTP 200, attempts 1). Ziel von `HELMUT_MONITORING_WEBHOOK_URL` und der doppelte, nahezu identische WhatsApp-Eingang 09:02 TR sind **noch nicht abschließend geklärt** — Betreiberprüfung offen; kein Code-„Fix" vor dieser Klärung.
+**`HELMUT_SCALABLE_PIPELINE` bleibt eingeschaltet; kein Rückbau erforderlich.** OP-25 ist laut Betreiberfeststellung vom 24.08. bereits abgeschlossen und bewiesen (keine neue Prüfung dieses Sprints).
+
+**Der WhatsApp-Gesundheitsbot war bis 24.08. an tote Altquittungen gebunden:** der Blob `crawlRuns` endet seit der Aktivierung bei einem Projektionslauf mit 0 Quellen (16:03 UTC 23.08.) → fälschlich „Teilweise gestört"; ohne Merge von **PR #266** (offen) ab 25.08. 06:00 UTC falsches „Kritisch". Umstellung auf die Motor-Quittungen: PR #266. Der **Monitoring-Zweitkanal (OP-07)** stellt entgegen früherem Stand seit mind. 17.08. täglich zu (belegt 24.08., HTTP 200, attempts 1); Ziel von `HELMUT_MONITORING_WEBHOOK_URL` und der doppelte WhatsApp-Eingang 09:02 TR bleiben ungeklärt (Betreiberprüfung, kein Code-Fix vorher).
 
 Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000
 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die
@@ -58,10 +60,10 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 - **Migrationen:** die fünf OP 30 Dateien sind seit 15.08. angewendet (§24.10).
   Zusätzlich ist die freigegebene Migration `20260823043633` seit 23.08. installiert.
   Die Buchführung steht bei 33 Einträgen und endet bei `20260823063208`; für dieselbe
-  Migration existieren zwei bytegleiche Einträge (`20260823063140` und
-  `20260823063208`) aus zwei parallelen Anwendungen. Funktion genau einmal vorhanden,
-  keine Datenwirkung; kein Bereinigungseingriff. **Offen ist nur `20260720`** (OP 03).
-  Schattenpfadstrukturen bleiben leer und wirkungslos, solange der Motor aus ist.
+  Migration existieren zwei inhaltsgleiche Einträge (`20260823063140` und `20260823063208`)
+  aus zwei parallelen Anwendungen — Differenz genau ein End-Newline-Byte (§30.6). Funktion
+  genau einmal vorhanden, keine Datenwirkung; kein Bereinigungseingriff. **Offen ist nur `20260720`** (OP 03).
+  Die früheren Schattenpfadstrukturen sind seit der Aktivierung 23.08. produktiv (§7a).
 - **Kosten:** LLM ~0,14 USD/Betriebstag (Untergrenze, Preisbasis unbelegt,
   [`betrieb/kostenmessung.md`](betrieb/kostenmessung.md)); Nachweisfenster 0,1892 USD.
 - **Zugangsgrenze jeder Claude-Sitzung (gemessen 2026-08-12, am 15.08. bestätigt):** Supabase
@@ -81,6 +83,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | `HELMUT_ATOMIC_LOCK` | an — atomare, fail-closed Sperren (Token-belegt) |
 | LLM-Tagesbudget 100 + Reserve 30 | fail-closed, live |
 | **`HELMUT_VERSTEHEN_CAS=on`** | **seit 2026-08-17** (Betreiber). Atomarer Verstehensvertrag aktiv: ein Besitzer je Vorgang, at-most-once je Modellaufruf, monotones Fencing. Laufzeitgeprüft (§7a). **`HELMUT_VERSTEHEN_PARALLELITAET` nicht gesetzt ⇒ Parallelität wirkt als 1**; > 1 ist eine eigene Freigabe (Runbook §23.1 Schritt 3) |
+| **`HELMUT_SCALABLE_PIPELINE=on`** | **seit 2026-08-23 16:47 UTC** (Betreiber, freigegebenes Fenster) mit `HELMUT_JOB_DISPATCH_MODE=shadow`, Worker 4/25/25. Versuch 5 am 24.08. formal abgeschlossen — alle elf §28.6-Kontrollen erfüllt (Runbook §30.7); **kein Rückbau erforderlich**, Rückweg dokumentiert |
 
 ## 5 · Deaktivierte Funktionen (bleiben aus, Aktivierung = Freigabe)
 
@@ -89,7 +92,6 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **`HELMUT_CRON_GLOBALABRUF`** | **`on`** seit 2026-08-06 ~08:15 UTC (Betreiber, für das Nachweisfenster) ⇒ **Kontextpfad aktiv**, laufzeitbelegt (drei Fensterläufe 06./07.08. global auf `d8bf68fa…`, E3 `nv=0`). Ob es `on` bleibt, ist Betreiberentscheidung. Dritter Zyklus |
 | **Berlin (Landesmodul)** | inaktiv. `HELMUT_LANDESMODULE=berlin` seit 2026-07-26 gesetzt, aber **wirkungslos**: 0 berechtigte Berliner Mandate seit dem Rollback ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22). Ob das Flag wirkt, ist **unbewiesen** |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt); PR #132 vor Merge Gate-Name vereinheitlichen |
-| **`HELMUT_SCALABLE_PIPELINE` (OP 30)** | **`on` seit 23.08. abends (Betreiber, Versuch 5)** — Queue-Slots quittieren `success` (Kopf dieser Datei); Nachweisführung läuft, OP-25 ist danach vollständig zu wiederholen |
 | **M8 / `HELMUT_MATCHING_RELEVANZ_GATE`** | aus (Default aus, nie aktiviert) |
 | `HELMUT_CRON_GLOBALPHASE` | nicht gesetzt (aus) — K2-Prüfung ergab keine Aktivierungsempfehlung |
 | `HELMUT_UNDERSTANDING_GATE` / `HELMUT_PARDOK_DISPATCH` | `shadow` |
@@ -108,8 +110,9 @@ Pflichtprüfungen und Vercel Deployments waren vor jedem Merge grün.
 **Geschlossen, nicht gemergt:** #218 war durch #219 überholt; #231 und #224 waren
 veraltet und konfliktbehaftet; #255 blieb wegen seiner Bedingung geschlossen: kein Merge
 vor dem ersten grünen OP 30 Wirkungslauf. Zweige und Historie bleiben erhalten.
-Nach dem Dokumentationsmerge 23.08.: 0 Pull Requests offen. Am 23.08. abends startete
-der Betreiber Versuch 5; am 24.08. kommt der Gesundheitsbot-PR (Teil B, §14) hinzu.
+Nach diesem Dokumentationsmerge: **0 Pull Requests offen**; Versuch 5 war zu diesem
+Zeitpunkt noch nicht gestartet (Aktivierung und Abschluss folgten am 23./24.08., §7a).
+Am 24.08. kam PR #266 (Gesundheitsbot, §14) hinzu; offen, nicht gemergt.
 
 ## 7 · Offene Blocker
 
@@ -137,49 +140,38 @@ OP-30-Aktivierung muss OP-25 für die geänderte Architektur erneut vollständig
   Ankunft etwa 440–470 Aufträge/Tag, Abfluss etwa 130–180/Tag (Runbook §19.4/§19.5).
 - Die Zielarchitektur (Outbox, austauschbarer Transport, verteilte Klassengrenzen,
   Vorgangswache) ist gemergt und lokal lastgetestet. AWS ist nicht ausgerollt.
-- Die fünf OP-30-Migrationen wurden am 15.08. fehlerfrei angewendet (§24.10); zwei
-  vollständige Produktionszyklen belegten am 15./16.08. ihre Inertheit bei ausgeschalteten
-  Flags — 145 Schreibvorgänge ohne `HV001`/`HV002` (§24.11).
-- **`HELMUT_VERSTEHEN_CAS` ist seit 17.08. eingeschaltet** (Betreiber, Redeploy auf
-  unverändertem Stand) und über drei Kontrollen laufzeitgeprüft: 45 Vorgänge, alle
-  `fertig`, **0 `unbekannt`**, ein Modellaufruf je Vorgang, kein `HV001`/`HV002`, KI-Budget
-  im Band. Der Morgenzyklus 18.08. war vollständig: **briefing-morning 5/5 Mandate,
-  briefing-lage 5/5**, `understanding-cron` erfolgreich. **`HELMUT_VERSTEHEN_PARALLELITAET`
-  ist nicht gesetzt und wirkt daher als 1** (Runbook §25).
-- **Die 524 inerten Altaufträge sind am 18.08. neutralisiert** (ein scharfer Lauf
-  07:11 UTC): exakt 524 gelöscht, die 235 erledigten signaturgleich unangetastet. **Kein
-  Export**; Rückweg ausschließlich deterministische Neuerzeugung durch den Planer (§26.7).
-- **Erste Stufe-1-Aktivierung 18.08. 16:15 UTC → Rücknahme 19.08. ~06:56 UTC** (Runbook
-  §27): Planung/Outbox einwandfrei, aber **0 Abschlüsse** in beiden Slots (Blob-Row-Lock-
-  Konvoi je Auftrag, fehlende Slot-Quittung); Rest 383 inert, 2 CAS-`unbekannt`
-  (`modellfehler`/Timeout). Befunde und Zahlen kanonisch in §27.
+- Die fünf OP-30-Migrationen wurden am 15.08. angewendet; zwei Produktionszyklen belegten
+  15./16.08. ihre Inertheit bei ausgeschalteten Flags (§24.10/§24.11).
+- **`HELMUT_VERSTEHEN_CAS` ist seit 17.08. eingeschaltet** (Betreiber) und laufzeitgeprüft:
+  45 Vorgänge alle `fertig`, **0 `unbekannt`**, ein Modellaufruf je Vorgang, Morgenzyklus
+  18.08. 5/5. **`HELMUT_VERSTEHEN_PARALLELITAET` nicht gesetzt ⇒ wirkt als 1** (Runbook §25).
+- **Die 524 inerten Altaufträge sind am 18.08. neutralisiert** (exakt 524 gelöscht, 235
+  Erledigte signaturgleich, kein Export; Rückweg nur Neuerzeugung durch den Planer, §26.7).
+- **Erste Stufe-1-Aktivierung 18.08. → Rücknahme 19.08.:** Planung/Outbox einwandfrei, aber
+  **0 Abschlüsse** (Blob-Row-Lock-Konvoi, fehlende Slot-Quittung); Rest 383 inert,
+  2 CAS-`unbekannt`. Befunde und Zahlen kanonisch in Runbook §27.
 - **19.08. (drei Sprints, kanonisch Runbook §28):** PR #256 Blob-Entkopplung
   (`source_fetch` relational kanonisch, Slot-Quittung `process_runs`, Altpfad
   byte-identisch) · PR #257 gemischtes Neutralisierungsverfahren 58/0 + CAS-Behandlung ·
   Vollzug §28.8: exakt 383 inerte Aufträge gelöscht, Wiederholungsschutz belegt.
-- **Versuch 4 (20.08.) VOR der Aktivierung beendet — gescheitert vor Aktivierung (§29):**
-  Teil C grün (live gegenbestätigt), Teil D blockiert durch `df1a6700` und `eff40db2`
-  (Details/Belege, Ursachen und Reparatur kanonisch in Runbook **§29**; Suite
-  `verstehen-restzeit-test.js` 50/50 inkl. Review-Korrektur, keine Offline-Regression).
-- **§30 und §30.5 in Production vollzogen (23.08.):** 492dcd48 ist im regulären
-  05:30 UTC Lauf mit exakt einem weiteren Versuch und KI Aufruf fertig geworden
-  (2/2/2, `ergebnis_fencing=2`). PR #262 wurde gemergt und als Production Deployment
-  `dpl_8Z74anCHqxZVNQjmUPs5UGq7GuRZ` READY ausgeliefert.
-- Die freigegebene Migration `20260823043633` wurde installiert. Zwei bytegleiche
-  Buchungseinträge dokumentieren die parallele Doppelanwendung; Funktion genau einmal,
-  Datenanker unverändert, kein Bereinigungseingriff.
-- Der freigegebene Abschluss für df1a6700 lief um 06:38:54 UTC über den kanonischen
-  Funktionsweg und gab `aufgegeben` zurück. Zustand `aufgegeben`, Grund
-  `aufgegeben-nach-freigabe`, Zähler und Fencing unverändert 1/1/1. Danach nur dieser
-  eine Reservierungsdatensatz verändert; Queue 0/235/0/0, Outbox 0, Vormerkungen 0.
-- **V4 Nachkontrolle 23.08. 06:44:50 UTC:** V4 1/2/3/4/6/7 grün; V4 5 war bis zur
-  Aktivierung offen.
-- **Versuch 5 ist seit 23.08. abends AKTIV** (Betreiberaktivierung; erste
-  Warteschlangen-Quittung 20:02 UTC). Alle Slots seither `success`, 0 `unbekannt`,
-  0 hängende Leases (Zahlen im Kopf). Seit der Aktivierung füttert der Motor den Blob
-  `crawlRuns` nicht mehr; der GitHub-Watchdog (K7) findet darum keinen brauchbaren
-  Altlauf mehr und stößt täglich einen harmlosen Ersatzlauf an (24.08. 06:01, Lauf #59)
-  — Anpassung der K7-Vorprüfung ist ein eigener offener Folgepunkt.
+- **Versuch 4 (20.08.) vor der Aktivierung beendet — gescheitert (§29):** Teil C grün,
+  Teil D blockiert durch `df1a6700` und `eff40db2`; Ursachen und Reparatur kanonisch in
+  Runbook **§29** (Suite `verstehen-restzeit-test.js` 50/50, keine Offline-Regression).
+- **§30 und §30.5 in Production vollzogen (23.08.):** 492dcd48 wurde im regulären
+  05:30-UTC-Lauf mit genau einem weiteren Versuch fertig (2/2/2, `ergebnis_fencing=2`);
+  PR #262 gemergt und als Deployment `dpl_8Z74anCHqxZVNQjmUPs5UGq7GuRZ` READY ausgeliefert.
+- Die freigegebene Migration `20260823043633` wurde installiert (Buchführung und die zwei
+  Einträge der Doppelanwendung: §3/§30.6; Funktion genau einmal, keine Datenwirkung).
+- Der freigegebene Abschluss für df1a6700 lief 06:38:54 UTC über den kanonischen
+  Funktionsweg und gab `aufgegeben` zurück (Grund `aufgegeben-nach-freigabe`,
+  Zähler/Fencing 1/1/1, genau eine Zeile verändert; Queue 0/235/0/0, Outbox 0).
+- **Live-V4 im Fenster 23.08. 16:12–16:23 UTC: rot und blockiert** — zwei erklärte
+  Abweichungen (CAS 244 statt 239; Dublette ein End-Newline-Byte), übrige Tore grün (§30.6).
+- **Aktivierung + Abschluss (23./24.08.): Versuch 5 formal vollständig abgeschlossen.**
+  Referenzwerte anerkannt, V4-Wiederholung grün, Betreiber-Aktivierung 16:47:38 UTC
+  (`dpl_CJAWWr3U…`, `a7559186`); Slots 117 + 259 Abschlüsse bilanzgenau, Morgenzyklus
+  5/5 + effektiv 5/5, R4/Watchdog #59 grün, Budget ohne Doppelzählungsmuster; alle elf
+  §28.6-Kontrollen erfüllt. **Motor bleibt an; kein Rückbau erforderlich** (Runbook §30.7).
 Kanonisch: [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md)
 §24/§25/§26/**§27**, [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)
 und [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md).
@@ -246,16 +238,22 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-Versuch 5 läuft (Betreiberaktivierung 23.08. abends); der Nachweis ist bislang grün.
-Empfohlen, in dieser Reihenfolge:
+**Versuch 5 ist abgeschlossen; der Motor bleibt an** (Vollbeleg
+[`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §30.7).
+OP-25 ist laut Betreiberfeststellung vom 24.08. abgeschlossen und bewiesen (keine Prüfung
+dieses Sprints). Empfohlen:
 
-1. **Bot-PR entscheiden** (Branch `claude/whatsapp-bot-queue-engine-analysis-tom08f`):
-   ohne ihn meldet der Bot ab 25.08. 06:00 UTC fälschlich „Kritisch/Cron überfällig",
-   weil der Blob `crawlRuns` seit der Aktivierung leer ausläuft.
-2. **Betreiberprüfung Doppelkanal:** Ziel von `HELMUT_MONITORING_WEBHOOK_URL` prüfen (Kopf); erst danach ein Kanalschritt.
-3. **Versuch 5 weiter beobachten** (Slots, Leases, CAS `unbekannt`, Budget), danach
-   **OP-25 vollständig wiederholen**; K7-Vorprüfung des GitHub-Watchdogs anpassen
-   (täglicher unnötiger Ersatzlauf). OP-15 und `CRON_SECRET`/Egress bleiben offen.
+1. **Beobachtung der nächsten Regelzyklen** über die bestehenden Quittungen
+   (`warteschlange-*`, Briefings 5/5); bei Verletzung einer §28.6-Grenze gilt der
+   dokumentierte Rückweg (Flag löschen + Redeploy, Betreiberaktion).
+2. **Rückkehr zu den P0-Verkaufsblockern OP-01…OP-04** (§1/§7).
+3. **Bot-PR #266 entscheiden** — ohne ihn meldet der Bot ab 25.08. 06:00 UTC fälschlich
+   Kritisch (Blob-Altquittungen laufen leer).
+4. **Betreiberprüfung Doppelkanal:** Ziel von `HELMUT_MONITORING_WEBHOOK_URL` prüfen;
+   erst danach ein Kanalschritt.
+
+Flag-/Env-Änderungen, Deployments und die Aktivierung weiterer Mandate bleiben ausdrückliche
+Betreiberaktionen; OP 15 und `CRON_SECRET`/Egress bleiben offen.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
@@ -264,8 +262,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 - Kein Merge nach `main` (= Deployment), kein Deployment, keine Production-Datenänderung,
   keine Secret-/Env-/Flag-/Cron-Änderung ohne ausdrückliche Freigabe.
 - Migration auf Production: `20260823043633` ist freigegeben angewendet; die zwei
-  bytegleichen Buchungseinträge bleiben dokumentiert. Offen ist nur `20260720`; jede
-  künftige Anwendung bleibt freigabepflichtig.
+  inhaltsgleichen Buchungseinträge (ein End-Newline-Byte Differenz) bleiben dokumentiert.
+  Offen ist nur `20260720`; jede künftige Anwendung bleibt freigabepflichtig.
 - **Berlin, Brandenburg und M8 bleiben deaktiviert**; keine Testmandat-Aktivierung; die
   5 Offline-Testmandate bleiben deaktivierte Repo-Daten.
 - Keine kostenverursachenden Läufe (Backfills, Recovery, Massen-Crawls);
@@ -303,24 +301,26 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzte relevante Sprints
 
-- **24.08. (Gesundheitsbot Teil A+B):** Teil A rein lesend: Motor seit 23.08. abends
-  aktiv und grün belegt; „Teilweise gestört" als Artefakt toter Blob-Altquittungen
-  (Projektionslauf 0 Quellen) identifiziert; Quittungszahlen vollständig aufgelöst
-  (238=204+23+11 · 67=55+12 · 137=117+8+4+8 Stapelrest); Doppelnachricht: ein Lauf,
-  zwei Kanäle (CallMeBot + Webhook 06:01:11 UTC), Ziel-URL ungeprüft. Teil B: Bot auf
-  Motor-Quittungen umgestellt (`lib/helmut/motor-health.js`, Weiche in `server.js`,
-  Altpfad byte-gleich; vier Zustände Grün/Hinweise/Gestört/nicht bestimmbar); ein
-  adversarialer 18-Befunde-Review härtete Slot-Fensterbindung, `blocked`-Leerlauf,
-  Rot-vor-Unbestimmt und stabile Slugs nach. Suite `motor-health-test.js` 38/38,
-  Offline-Lauf 267/273 (6 rote Suiten = umgebungsbedingter Altbestand, Basislauf
-  identisch; F-E2E-Flake unverändert offen). Bekannte, bewusst offene Grenzen:
-  Webhook-Ereignistyp bleibt bei „nicht bestimmbar" konservativ `alarm`;
-  Quittungssicht braucht den relationalen Lesepfad (sonst „nicht bestimmbar").
-- **23.08. (GitHub Bereinigung):** #225 Produktroadmap, #216 Teststabilisierung und
-  #261 Quellenpflicht nach aktualisiertem Diff, Pflichtprüfungen und erfolgreichem
-  Vercel Deployment gemergt. #218, #231, #224 und #255 mit konkreter Begründung
-  geschlossen; danach 0 offene Pull Requests. Keine Datenbankaktion, kein Flag,
-  kein KI Lauf und kein Versuch 5.
+- **24.08. (Gesundheitsbot Teil A+B, PR #266):** Teil A rein lesend: „Teilweise gestört" als
+  Artefakt toter Blob-Altquittungen (Projektionslauf 0 Quellen) identifiziert;
+  Quittungen vollständig aufgelöst (238=204+23+11 · 67=55+12 · 137=117+8+4+8 Stapelrest);
+  Doppelnachricht = ein Lauf, zwei Kanäle (CallMeBot + Webhook 06:01:11 UTC), Ziel ungeprüft.
+  Teil B: Umstellung auf `process_runs`/`betriebsstatus`/CAS mit vier Zuständen (Gesund /
+  Gesund mit Hinweisen / Gestört / Status nicht bestimmbar), Altpfad byte-gleich;
+  adversarialer 18-Befunde-Review eingearbeitet; `motor-health-test.js` 38/38, Offline
+  267/273 (6 rote Suiten umgebungsbedingter Altbestand). Grenzen: Webhook-Ereignistyp bleibt
+  bei „nicht bestimmbar" konservativ `alarm`, Quittungssicht braucht den relationalen
+  Lesepfad; Watchdog-Lauf #59 war der K7-Ersatzlauf — die Vorprüfung findet seit der
+  Aktivierung keine Altquittungen mehr (eigener Folgepunkt).
+- **23./24.08. (Aktivierung + Abschluss Versuch 5):** nach Betreiber-Referenzentscheidung und
+  grüner V4-Wiederholung Aktivierung 16:47:38 UTC durch den Betreiber; Wirkungsnachweis
+  117 + 259 Abschlüsse, Morgenzyklus 5/5, R4/Watchdog #59 grün — alle elf §28.6-Kontrollen
+  erfüllt, Versuch 5 formal abgeschlossen (Runbook §30.7). Claude-Messungen rein lesend.
+- **23.08. (Live-V4, rein lesend):** Vorprüfung 16:12–16:23 UTC → rot und blockiert (zwei
+  erklärte Abweichungen, §30.6); Production unangetastet, kein Flag, kein PR, kein Merge.
+- **23.08. (GitHub Bereinigung):** #225, #216 und #261 nach Pflichtprüfungen und grünem
+  Vercel Deployment gemergt; #218, #231, #224 und #255 begründet geschlossen; danach
+  0 offene Pull Requests. Keine Datenbankaktion, kein Flag, kein KI Lauf.
 - **23.08. (§30.5 vollständig vollzogen):** PR #262 gemergt und deployt, Migration
   `20260823043633` freigegeben installiert, df1a6700 nach bestandener Vorprüfung über
   `helmut_verstehen_ausgang_aufloesen(..., 'aufgeben')` terminal abgeschlossen.
