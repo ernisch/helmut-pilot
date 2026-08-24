@@ -1470,8 +1470,33 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   ohne `scripts/lokal.js` hat in der Cloud-Sitzung **zwei Testzeilen in Production** erzeugt
   (ein `source_fetch`-Auftrag `371707a4…` ohne `payload.quelle` + eine Outbox-Zeile
   `24ba14ec…`); Ursache, Wirkung, Sofortmassnahme (die Suite entfernt die Kennungen jetzt
-  selbst) und das Loesch-SQL stehen in Runbook §31.6 — **das Loeschen ist eine
-  Betreiberentscheidung und wurde NICHT ausgefuehrt**. **Offen:** der Selbstweck war noch nie
+  selbst) stehen in Runbook §31.6 — **es wurde NICHTS geloescht**; das dort urspruenglich
+  notierte nackte Loesch-SQL gilt ausdruecklich **nicht** als freigabefertig.
+  **Begriffskorrektur (2026-08-25):** die erste Empfehlung, den Auftrag „ueber einen
+  kanonischen Weg **aufzugeben**", war **falsch**. `helmut_jobs.status` kennt nur
+  `wartend|laeuft|erledigt|fehlgeschlagen`; `aufgegeben` ist ein Status der
+  **Outbox-Versandabsicht** (und daneben des Verstehensvertrags), nie des Auftrags — und
+  `lib/helmut/jobqueue-neutralisierung.js` „gibt" nichts „auf", sondern **loescht**. Die
+  fachlich ehrliche Masznahme heiszt deshalb: **bedingte Neutralisierung durch LOESCHEN der
+  nachweislich versehentlichen Testzeile und ihrer exakt zugeordneten Outbox-Zeile**
+  (Runbook §31.6.2). **Vorbereitung (2026-08-25, nichts ausgefuehrt):** der Generator traegt
+  jetzt neben den zwei Mengenvertraegen einen **dritten, getrennten Einzeilenvertrag**, der
+  **ausschlieszlich** die zwei exakten Kennungen trifft — keine zeitliche Zielmenge, keine
+  Mengenlogik. In **derselben** `SERIALIZABLE`-Transaktion werden 19 Auftrags- und 13
+  Outbox-Werte sowie der Datenbankvertrag geprueft (genau **eine** eingehende Beziehung auf
+  `helmut_jobs`, `ON DELETE CASCADE`, keine weitere abhaengige Zeile); jede Abweichung beendet
+  die ganze Transaktion ohne Aenderung. Gesperrt werden nur die beiden Zielzeilen, geloescht
+  wird genau ein Auftrag, die Loeschanzahl wird geprueft, die Nachpruefung laeuft in derselben
+  Transaktion, die Quittung enthaelt keine Secrets und keinen Payload. Der **Trockenlauf ist
+  unveraenderbarer Standard und endet immer im Rollback**, der scharfe Lauf muss ausdruecklich
+  benannt werden und ist beim zweiten Mal wirkungslos (Riegel E0). Nachweis:
+  `scripts/jobqueue-einzeilen-neutralisierung-datenbank-test.js` **43 PASS** gegen echte
+  PostgreSQL 16 — mit Fremdauftrag und Fremd-Outbox-Zeile, die unangetastet bleiben;
+  Bestandsvertraege unveraendert (55 + 58 PASS). **Noch wurde nichts geloescht und noch kein
+  Production-Trockenlauf ausgefuehrt**; einzige Production-Beruehrung war die erneute enge
+  Lesepruefung der zwei Kennungen (2026-08-24 22:31 UTC: unveraendert `wartend`,
+  `attempts = 0`, ohne Lease, alle Vertragswerte passend). **Trockenlauf und scharfer Lauf
+  brauchen je eine eigene Gruenderfreigabe** (Runbook §31.7). **Offen:** der Selbstweck war noch nie
   in Production ausgefuehrt; ohne Preview-/Production-Beleg und ohne 7-Tage-Fenster bleibt der
   Ereignis-Antrieb **nicht aktivierungsbereit**.
 - **Stand 2026-08-14/2 (Haertungssprint, PR #247; Beleg

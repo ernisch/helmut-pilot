@@ -3978,24 +3978,39 @@ Ausschließlich `SELECT` und Katalogabfragen; keine Funktion aufgerufen, kein `D
 siebentägige Fünfernachweis mit einem bekannten Fehlbefund in genau der Kennzahl, die §28.6
 mit „0 endgültige Fehler" abnimmt.
 
-### §31.6.2 Empfehlung (nicht ausgeführt) — **eine** Möglichkeit
+### §31.6.2 Begriffskorrektur (2026-08-25): „aufgeben" ist hier falsch
 
-**Empfohlen: über den vorhandenen kanonischen Weg aufgeben**, also mit dem Generator
-`lib/helmut/jobqueue-neutralisierung.js`, um eine Zielmenge von **genau dieser einen Kennung**
-erweitert. Begründung: dieser Weg ist gebaut, testgesichert und in Production bereits
-angewandt; er trägt elf Sicherheitsriegel (exakte Statusverteilung, keine offene Lease,
-Signaturen über die Zielmenge, exakte Löschanzahl, Nachzustand, `SERIALIZABLE` +
-`FOR UPDATE`, **Trockenlauf als Standard mit bauartbedingtem Rollback**) und ist
-datensparsam (payload/tenant_id/idempotency_key/last_error werden im erzeugten SQL nie
-gelesen). Seine eigene Begründung passt exakt auf diesen Fall: `fehlgeschlagen` würde als
-endgültiger Fehler gezählt.
+Die erste Fassung dieses Abschnitts empfahl, den Auftrag „über einen kanonischen Weg
+**aufzugeben**". **Das war ein Begriffsfehler und ist zurückgenommen.**
 
-Die beiden anderen Möglichkeiten, der Vollständigkeit halber: **bedingt löschen** (fachlich
-gleichwertig, erfindet aber einen zweiten Ablauf neben dem kanonischen) und **als
-dokumentierten Störungsbeleg stehenlassen** (kostet nichts, verfälscht aber ab dem nächsten
-Drain-Slot die Abnahmekennzahl — deshalb nicht empfohlen).
+- `helmut_jobs.status` kennt genau vier Werte: `wartend`, `laeuft`, `erledigt`,
+  `fehlgeschlagen` (`helmut_jobs_status_chk`). **Ein Auftrag kann nicht „aufgegeben" werden.**
+- `aufgegeben` ist ein Status der **Outbox-Versandabsicht**
+  (`helmut_job_outbox_status_chk`: `offen|versendet|bestaetigt|aufgegeben|verzichtet`) — und
+  daneben ein Zustand des **Verstehensvertrags** (§30.5). Beides betrifft nicht den Auftrag.
+- Und selbst wenn man nur die Outbox-Zeile auf `aufgegeben` setzte, wäre nichts gewonnen: der
+  **Auftrag** bliebe `wartend`, weiter beanspruchbar und würde weiter altern. Genau das ist das
+  Problem.
+- Auch der vorhandene Generator `lib/helmut/jobqueue-neutralisierung.js` „gibt" nichts „auf":
+  er **löscht** (Modulkopf: „WARUM LOESCHEN …").
 
-**Ausgeführt wurde keine der drei Möglichkeiten.** Jede ist eine Production-Datenänderung und
+**Die fachlich ehrliche Maßnahme lautet deshalb: bedingte Neutralisierung durch LÖSCHEN der
+nachweislich versehentlichen Testzeile und ihrer exakt zugeordneten Outbox-Zeile.**
+„Neutralisierung" heißt in diesem Repository seit jeher genau das — Löschen unter Riegeln.
+
+### §31.6.2a Empfehlung (nicht ausgeführt) — **eine** Möglichkeit
+
+**Empfohlen: bedingte Neutralisierung über den neuen Einzeilenvertrag** (§31.7), also
+Löschen genau dieser einen Auftragszeile samt der über die geprüfte Kaskade mitgehenden
+Outbox-Zeile — mit vollständiger Vorbedingungsprüfung, `SERIALIZABLE`, Trockenlauf als
+Standard und exakter Löschanzahl.
+
+Die beiden anderen Möglichkeiten, der Vollständigkeit halber: **die Outbox-Zeile auf
+`aufgegeben` setzen** (löst das Problem **nicht** — der Auftrag bliebe liegen, siehe oben) und
+**als dokumentierten Störungsbeleg stehenlassen** (kostet nichts, verfälscht aber ab dem
+nächsten Drain-Slot die Abnahmekennzahl — deshalb nicht empfohlen).
+
+**Ausgeführt wurde keine der Möglichkeiten.** Jede ist eine Production-Datenänderung und
 damit Betreiberentscheidung (CLAUDE.md §5).
 
 ### §31.6.3 Das früher hier stehende Lösch-SQL ist **nicht** freigabefertig
@@ -4024,3 +4039,135 @@ mindestens enthalten:
 den Schutz aus `scripts/lokaler-netzschutz.js` nicht nur im Runner, sondern in **jeder** Suite
 erzwingen — der Vorfall vom 2026-08-08 und dieser hier haben dieselbe Ursache (Handlauf ohne
 Starter).
+
+---
+
+## §31.7 Der Einzeilenvertrag für die Testzeile vom 2026-08-24 (Vorbereitung, 2026-08-25)
+
+**Nichts ausgeführt.** Weder ein Production-Trockenlauf noch eine Löschung. Dieser Abschnitt
+beschreibt einen **fertig gebauten und lokal bewiesenen** Vertrag, der auf zwei getrennte
+Gründerfreigaben wartet.
+
+### §31.7.1 Was er ist — und wovon er sich unterscheidet
+
+`lib/helmut/jobqueue-neutralisierung.js` trägt seit dem 2026-08-25 einen **dritten, klar
+getrennten** Vertrag: `EINZEILEN_VERTRAG_TESTZEILE` mit
+`einzeilenVorpruefungSql()` und `einzeilenNeutralisierungSql()`. Die beiden Sammelverträge für
+die alten Bestände (524 bzw. 383 Aufträge) sind **unverändert** — testgesichert.
+
+Der entscheidende Unterschied: die Sammelverträge treffen ihre Zielmenge über eine
+**Zeitgrenze** (`created_at < grenze`) plus Signaturen über den Gesamtbestand. Das wäre hier
+grundfalsch — eine Zeitgrenze könnte künftig weitere Zeilen einfangen. Der Einzeilenvertrag
+trifft **ausschließlich zwei fest benannte Kennungen**:
+
+| | Kennung |
+|---|---|
+| Auftrag | `371707a4-3d78-44f5-a1c5-d6f11026f4d2` |
+| Outbox | `24ba14ec-0827-49af-9cf1-43cb485f4e33` |
+
+Ein Riegel im Generator (`pruefeEinzeilenSql`) erzwingt das strukturell: **kein Zeitbereich als
+Zielmenge**, **höchstens eine Löschanweisung**, und diese muss wörtlich
+`delete from public.helmut_jobs where id = '<uuid>'::uuid;` lauten. Jede Abweichung erzeugt
+**kein SQL**.
+
+### §31.7.2 Was der Vertrag vor einer möglichen Löschung bestätigt
+
+Alles in **einer** Transaktion (`SERIALIZABLE`), beide Zielzeilen ab der ersten Prüfung mit
+`FOR UPDATE` gesperrt — und **nur** diese beiden:
+
+- **Auftrag, 19 Zusagen:** Kennung · `job_type=source_fetch` · `idempotency_key=k` ·
+  `freshness_window=f` · `status=wartend` · `attempts=0` · `max_attempts=5` · `priority=100` ·
+  `tenant_id is null` · `payload='{}'::jsonb` · `last_error is null` · `lease_owner is null` ·
+  `lease_expires_at is null` · `first_claimed_at is null` · `finished_at is null` ·
+  `wiedervorlagen=0` · `due_at`/`first_due_at`/`created_at` auf die Mikrosekunde.
+- **Outbox, 13 Zusagen:** Kennung · Zuordnung zum Zielauftrag · **genau eine** Outbox-Zeile für
+  diesen Auftrag · `status=offen` · `attempts=0` · `max_attempts=10` · `transport is null` ·
+  `sent_at is null` · `confirmed_at is null` · `last_error is null` · `schema_version=1` ·
+  `created_at`/`next_attempt_at` auf die Mikrosekunde.
+- **Datenbankvertrag:** genau **eine** eingehende Fremdschlüsselbeziehung auf `helmut_jobs`,
+  und das ist `helmut_job_outbox_job_id_fkey` mit `ON DELETE CASCADE`. Damit ist belegt, dass
+  die Löschung des Auftrags **genau eine** abhängige Zeile mitnimmt und sonst nichts.
+- **Keine Beanspruchung, keine Statusänderung, keine Wiederholung** (eigene Riegelgruppe E7):
+  jede zwischenzeitliche Worker-Aktivität stoppt den Ablauf.
+
+Danach: **exakt eine** gelöschte Auftragszeile (`get diagnostics`), Nachprüfung **in derselben
+Transaktion** (Auftrag weg · Outbox-Zeile über die geprüfte Kaskade weg · keine weitere
+Verweiszeile), ein Umgebungsbeleg (Auftrags- **und** Outbox-Bestand je genau −1 ⇒ fremde Zeilen
+unberührt) und eine **technische Quittung** ohne Secrets und ohne Nutzdaten.
+
+**Trockenlauf ist der unveränderbare Standard** und endet bauartbedingt im Abbruch
+(`TROCKENLAUF-OK`) — er kann nicht committen. Der scharfe Modus muss ausdrücklich benannt
+werden (`{ modus: "scharf" }`). Ein **zweiter scharfer Lauf** bricht mit
+`ABBRUCH-BEREITS-NEUTRALISIERT` ab, ohne etwas zu ändern.
+
+**Datensparsamkeit, bewusst anders als bei den Sammelverträgen:** dort dürfen
+`payload`/`tenant_id`/`idempotency_key`/`last_error` **nirgends** angefasst werden, weil die
+Zielmenge echte politische Arbeit enthielt. Hier hängt die Sicherheit der Löschung genau daran,
+dass diese Werte geprüft werden — nur `idempotency_key='k'` und `payload='{}'::jsonb`
+unterscheiden die versehentliche Testzeile von echter Arbeit. Der Riegel erlaubt sie deshalb
+**ausschließlich in Vergleichen gegen feste Literale** und verbietet jedes Lesen, jede Zuweisung
+und jede Ausgabe. Kein Wert dieser Spalten verlässt die Datenbank — auch nicht in einer
+Fehlermeldung (die Meldungen benennen deutsche Feldbezeichnungen, nie Werte).
+
+### §31.7.3 Lokaler Datenbanknachweis
+
+`scripts/jobqueue-einzeilen-neutralisierung-datenbank-test.js` — **43 PASS / 0 FAIL** gegen eine
+lokal gestartete **PostgreSQL 16.13** mit den echten Migrationen. Bestand: die zwei exakten
+Zielzeilen **plus** absichtlich ähnliche fremde Zeilen (gleicher Typ, gleicher Status, gleiche
+Priorität; echte Nutzlast und echte Mandatszuordnung). Nachgewiesen:
+
+| # | Nachweis | Ergebnis |
+|---|---|---|
+| 1 | Standard-Trockenlauf rollt vollständig zurück | ✅ `TROCKENLAUF-OK` |
+| 2 | beide Zielzeilen bestehen danach weiter | ✅ |
+| 3 | fremde Zeilen unverändert (md5-Signatur) | ✅ |
+| 4 | scharfer Modus löscht **exakt eine** Auftrags- und **exakt eine** Outbox-Zeile | ✅ |
+| 5 | fremde Zeilen auch danach unverändert | ✅ |
+| 6 | veränderte Kennung stoppt (Auftrag **und** Outbox getrennt) | ✅ |
+| 7 | veränderter Status stoppt | ✅ |
+| 8 | veränderte Versuchszahl **und** veränderte Wiedervorlagen stoppen | ✅ |
+| 9 | aktive Lease stoppt | ✅ |
+| 10 | veränderte Nutzlast, veränderter Idempotenzschlüssel, gesetzte Mandatszuordnung, veränderter Erstellzeitpunkt stoppen | ✅ |
+| 11 | zusätzliche Outbox-Zeile stoppt (und die Datenbank selbst verhindert sie ohnehin per `unique`) | ✅ |
+| 12 | fehlende Kaskade stoppt — und eine **zweite** eingehende Fremdschlüsselbeziehung ebenfalls | ✅ |
+| 13 | Wiederholung nach erfolgreicher Neutralisierung ändert nichts | ✅ |
+
+Dazu: Trockenlauf **und** scharfer Lauf brechen in **jedem** Negativfall ab, und der Bestand ist
+danach nachweislich unverändert; nach allen Negativfällen läuft der Vertrag wieder sauber durch
+(Gegenprobe); keine Ausgabe trägt einen Wert aus den vier sensiblen Spalten.
+
+### §31.7.4 Rein lesender Production-Abgleich am 2026-08-25, 01:31 türkischer Zeit (00:31 Berlin, 22:31 UTC)
+
+Nur `SELECT` und Katalogabfragen — kein `FOR UPDATE`, kein `DELETE`/`UPDATE`/`INSERT`, keine
+verändernde Funktion, kein Worker-/Cron-/Weckruf, keine Profil- oder Mandatsdaten:
+
+| Prüfung | Ergebnis |
+|---|---|
+| Auftrag vorhanden · Outbox vorhanden · genau eine Outbox-Zeile je Auftrag | 1 · 1 · 1 |
+| Auftragsstatus · Versuche · Wiedervorlagen | `wartend` · 0 · 0 |
+| unberührt (keine Lease, nie beansprucht, nicht abgeschlossen) | ja |
+| **alle 19 Auftragszusagen des Vertrags erfüllt** | **ja** |
+| Outbox-Status · Versuche · Versuchsobergrenze | `offen` · 0 · 10 |
+| **alle 13 Outbox-Zusagen des Vertrags erfüllt** | **ja** |
+| eingehende Fremdschlüssel auf `helmut_jobs` · davon die Outbox-Kaskade | 1 · 1 |
+| Wartezeit der Zeile | 7 159 s (≈ 2 h) |
+
+**Ergebnis: der Vertrag passt exakt auf den heutigen Production-Zustand.** Es gab keinen
+Stoppgrund; der Vertrag wurde **nicht** nachträglich angepasst.
+
+### §31.7.5 Was jetzt gebraucht wird — zwei getrennte Freigaben
+
+1. **Freigabe A — Production-Trockenlauf.** `einzeilenNeutralisierungSql()` (Standardmodus)
+   gegen Production. Er kann bauartbedingt nichts ändern (Abbruch `TROCKENLAUF-OK`, Rollback)
+   und liefert die Quittung, die alle Riegel bestätigt. **Bis dahin nicht ausgeführt.**
+2. **Freigabe B — scharfer Lauf.** Erst nach einem grünen Trockenlauf und als **eigene**
+   Entscheidung: `einzeilenNeutralisierungSql(V, { modus: "scharf" })`. Danach die
+   Gegenprobe (0/0/0) rein lesend.
+
+**Rückweg:** ein byte-identischer Rückweg existiert **nicht** (`created_at` wäre weg). Er wird
+auch nicht gebraucht: die Zeile trägt keine echte Arbeit (leere Nutzlast, keine
+Mandatszuordnung, Idempotenzschlüssel `k` aus der Testsuite). Echte Arbeit erzeugt der Planer
+deterministisch neu.
+
+**Der Selbstweck bleibt davon unberührt und weiterhin deaktiviert.** Diese Vorbereitung ändert
+nichts am Ereignis-Antrieb und ersetzt keinen der offenen Nachweise aus §31.5.
