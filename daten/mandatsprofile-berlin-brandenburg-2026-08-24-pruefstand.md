@@ -1,9 +1,54 @@
 # Prüfstand — Importpaket Berlin/Brandenburg (bytegenau abgeglichen 2026-08-24)
 
-**Prüfweg:** Vom Gründer freigegebener, rein lesender GitHub-Actions-Lauf
+**Prüfweg:** Vom Gründer freigegebene, rein lesende GitHub-Actions-Läufe
 (`.github/workflows/profil-quellen-verifikation.yml`, Sicherheitsmuster `sprint9b-verify.yml`;
-`permissions: contents: read`, keine Secrets, nur die 20 amtlichen `parlament-profil`-URLs,
-Host-Schranke auch für Redirects, TLS an, keine Umgehung von Zugriffssperren).
+`permissions: contents: read`, keine Secrets, Host-Schranke auch für Redirects, TLS an, keine
+Umgehung von Zugriffssperren). Abgerufen werden die 20 amtlichen `parlament-profil`-URLs des
+Pakets plus ausschließlich die im Prüfmanifest `daten/profil-quellen-manifest-2026-08-24.json`
+fest hinterlegten amtlichen Zusatzadressen (Obergrenze 30 Seiten je Lauf, technisch erzwungen).
+
+## Strenge-Stufe 2 (dritter Lauf, gründerfreigegeben)
+
+Die Erstfassung der Prüflogik war an mehreren Stellen zu großzügig. Seit der Strenge-Stufe 2 gilt:
+
+1. **Fehlende Information ist keine Bestätigung.** Nennt die Profilseite keine Mandatsachse,
+   ist das Ergebnis `nicht_eindeutig` — es sei denn, eine im Manifest hinterlegte amtliche
+   Zusatzquelle belegt sie. Für **Raed Saleh** und **Jörg Stroedter** (parlament-berlin.de
+   nennt keine Achse) ist die amtliche Gewählten-Übersicht der Landeswahlleiterin zur
+   Wiederholungswahl 2023 hinterlegt (`wahlen-berlin.de`, exakte URL im Manifest).
+2. **Mitgliedschaften zählen nur im Profilinhalt:** Brandenburg ausschließlich in den
+   Abschnitten „Ordentliche/Stellvertretende Ausschuss- und Gremienmitgliedschaften";
+   Navigation (BB: „Petitionsausschuss"/„Kommissionen" vor dem Abschnitt; Berlin:
+   „Enquete-Kommission") und biografische Historik bestätigen nichts und verbergen nichts.
+3. **Rollen streng getrennt:** ordentlich erwartet, aber nur stellvertretend geführt → rot;
+   umgekehrt ebenso. Berlin weist keine Rollen aus → Einträge gelten als Mitgliedschaft mit
+   unbestimmter Rolle; eine stellvertretende Behauptung wäre für Berlin unbelegbar (rot);
+   im Paket wird keine Rolle erfunden.
+4. **Jede Funktion und jeder behauptete Listenplatz** muss im aktuellen (nicht historischen)
+   amtlichen Seitentext belegt sein — sonst rot. **Nicht amtlich belegte optionale Angaben
+   wurden aus dem Paket entfernt statt behauptet** (siehe Revisionstabelle unten).
+5. **Jede Mitgliedschaftszeile der Seite** muss einem Paketeintrag zuzuordnen sein — sonst rot.
+6. Themen sind redaktionelle Einordnung und wurden auf das aus belegten Ausschüssen,
+   Wahlkreisen und Funktionen Ableitbare zurückgeführt.
+
+### Revision des Datenpakets in der Strenge-Stufe 2
+
+- **Funktionen entfernt (amtlich nicht belegt):** Goiny (2 Sprecherrollen), Freymark (2),
+  Jarasch (Fraktionsvorsitz — auf ihrer amtlichen Seite nicht ausgewiesen), Schmidberger (2),
+  Schrader (3), Lüttmann (Fraktions- und Hauptausschussvorsitz — auf seiner Profilseite nicht
+  ausgewiesen), Scheetz (2), Liedtke (Präsidentinnen-Funktion — auf der Profilseite nicht
+  zweifelsfrei als aktuelle Zeile belegbar), Bretz (1), Augustin (2), Dorst (1), Meyer (2),
+  Peschel (3).
+- **Funktionen beibehalten, Wortlaut an die amtliche Seite angelehnt:** Stettner, Saleh
+  („Fraktionsvorsitzender"), Stroedter (2), Graf, Schulze, Poschmann (stellv.
+  Fraktionsvorsitz), Lüders (Fraktionsvorsitz + Präsidium).
+- **Regionshinweise auf das Belegte reduziert:** BB-Listenprofile → „Brandenburg
+  (Landesliste, Platz N)" (Platz je amtlicher Seite); Berliner Listenprofile → „Land Berlin
+  (Landesliste)" bzw. für Saleh/Stroedter „Land Berlin (Listenmandat)"; unbelegte
+  Bezirks-/Kandidaturwahlkreis- und Wohnort-Präzisierungen sowie Jaraschs
+  Listenplatz-1-Angabe entfernt.
+- **Themen** je Profil auf ableitbare Felder zurückgeführt.
+- Ausschusslisten, Kennungen, Namen, `aktiv: false` und amtliche URLs blieben unverändert.
 
 **Lauf 1 (Ist-Aufnahme):** Actions-Lauf Nr. 1, ID 32739268032, 24.08.2026 ≈**17:32 TR /
 16:32 Berlin / 14:32 UTC** — https://github.com/ernisch/helmut-pilot/actions/runs/32739268032.

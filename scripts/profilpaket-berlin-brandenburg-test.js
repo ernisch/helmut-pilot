@@ -107,8 +107,8 @@ check("Jede amtliche Quelle trägt `geprueftAm: 2026-08-24`",
   (datei.profile || []).every((p) =>
     (p.offizielleQuellen || []).filter((q) => q.art === "parlament-profil")
       .every((q) => q.geprueftAm === "2026-08-24")));
-check("Jede Notiz benennt den Actions-Lauf als Prüfgrundlage",
-  (datei.profile || []).every((p) => /Actions-Lauf/i.test(String(p.notiz || ""))));
+check("Jede Notiz benennt die Actions-Läufe als Prüfgrundlage",
+  (datei.profile || []).every((p) => /Actions-L(auf|äufe)/i.test(String(p.notiz || ""))));
 check("Jede Notiz bleibt in der Vertragsgrenze (max. 500 Zeichen)",
   (datei.profile || []).every((p) => String(p.notiz || "").length <= 500));
 check("Kein SYNTHETISCH-Marker (dies ist eine Recherche, kein Beispiel)",
@@ -147,8 +147,8 @@ const peschel = (datei.profile || []).find((p) => p.vollname === "Falk Peschel")
 const peschelAlle = [...((peschel && peschel.ausschuesse) || []), ...((peschel && peschel.stellvertretendeAusschuesse) || [])];
 check("Falk Peschel ohne Haushaltskontroll- und ohne Hauptausschuss-Angabe (amtlich nicht geführt)",
   !!peschel && !peschelAlle.some((a) => /Haushaltskontrolle|^Hauptausschuss$/i.test(a)));
-check("Falk Peschels Notiz dokumentiert Abrufzeit und Umbesetzung",
-  !!peschel && /17:32:48 TR/.test(String(peschel.notiz || "")) && /NICHT \(mehr\) geführt/i.test(String(peschel.notiz || "")));
+check("Falk Peschels Notiz dokumentiert die Umbesetzung (Abrufzeiten stehen im Prüfstand)",
+  !!peschel && /nicht \(mehr\) geführt/i.test(String(peschel.notiz || "")));
 
 abschnitt("Korrekturen aus dem amtlichen Live-Abgleich (Actions-Lauf 1)");
 
@@ -167,6 +167,30 @@ const bretz = (datei.profile || []).find((p) => p.vollname === "Steeven Bretz");
 check("Bretz: Hauptausschuss ordentlich, keine stellvertretenden Altangaben",
   !!bretz && (bretz.ausschuesse || []).includes("Hauptausschuss") &&
   !(bretz.stellvertretendeAusschuesse || []).length);
+
+abschnitt("Strenge-Stufe 2: keine unbelegten optionalen Angaben, Manifest vorhanden");
+
+const saleh = (datei.profile || []).find((p) => p.mandatsId === "raed-saleh");
+const stroedter = (datei.profile || []).find((p) => p.mandatsId === "joerg-stroedter");
+check("Saleh/Stroedter ohne unbelegte Bezirks-Präzisierung im Regionshinweis",
+  !!saleh && !!stroedter &&
+  saleh.regionHinweis === "Land Berlin (Listenmandat)" &&
+  stroedter.regionHinweis === "Land Berlin (Listenmandat)");
+check("Kein Berliner Profil behauptet eine stellvertretende Rolle (Seiten weisen keine aus)",
+  (datei.profile || []).filter((p) => p.parlament === "landtag-berlin")
+    .every((p) => !(p.stellvertretendeAusschuesse || []).length));
+check("Jeder behauptete Listenplatz steht als „Platz N“ im Regionshinweis von BB-Listenprofilen",
+  (datei.profile || []).filter((p) => p.parlament === "landtag-brandenburg" && p.listenmandat === true)
+    .every((p) => /\(Landesliste, Platz \d+\)$/.test(String(p.regionHinweis || ""))));
+const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, "daten/profil-quellen-manifest-2026-08-24.json"), "utf8"));
+check("Prüfmanifest existiert und nennt die amtliche Gewählten-Seite der Landeswahlleiterin",
+  Array.isArray(manifest.zusatzquellen) && manifest.zusatzquellen.length === 1 &&
+  manifest.zusatzquellen[0].url.startsWith("https://www.wahlen-berlin.de/") &&
+  manifest.zusatzquellen[0].belege.map((b) => b.mandatsId).sort().join(",") === "joerg-stroedter,raed-saleh");
+check("Manifest-Zusatzhosts sind ausschließlich wahlen-berlin.de",
+  (manifest.erlaubteZusatzhosts || []).every((h) => /(^|\.)wahlen-berlin\.de$/.test(h)));
+check("Abrufplan bleibt unter der 30-Seiten-Grenze",
+  (datei.profile || []).length + manifest.zusatzquellen.length <= 30);
 
 abschnitt("Empfohlene erste Brandenburger Gruppe (nur Vorbereitung)");
 

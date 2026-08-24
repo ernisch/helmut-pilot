@@ -30,6 +30,7 @@ on:
       - "scripts/profil-quellen-verifikation.js"
       - "scripts/profil-quellen-verifikation-test.js"
       - "daten/mandatsprofile-berlin-brandenburg-2026-08-24.json"
+      - "daten/profil-quellen-manifest-2026-08-24.json"
   workflow_dispatch: {}
 
 # Minimalrechte: nur lesen. Kein Repo-Write, keine Pakete, nichts.

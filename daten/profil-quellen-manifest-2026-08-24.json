@@ -1,0 +1,15 @@
+{
+  "kommentar": "Prüfmanifest für die Profil-Quellen-Verifikation (PR #267, dritter Lauf). Zusätzliche amtliche Adressen NUR zur Klärung der Mandatsart, wo die Abgeordnetenhaus-Profilseite keine Achse nennt. Jede Adresse ist hier VOR dem Lauf fest hinterlegt; das Prüfskript ruft ausschließlich diese URLs zusätzlich ab (HTTPS, TLS an, keine Redirects zu fremden Hosts, keine Umgehung von Zugriffssperren).",
+  "erlaubteZusatzhosts": ["wahlen-berlin.de", "www.wahlen-berlin.de"],
+  "zusatzquellen": [
+    {
+      "url": "https://www.wahlen-berlin.de/wahlen/BE2023/AFSPRAES/agh/gewaehlte.html",
+      "beschreibung": "Landeswahlleiterin Berlin — amtliche Gewählten-Übersicht der Wiederholungswahl zum 19. Abgeordnetenhaus vom 12.02.2023 (Hauptwahl 26.09.2021).",
+      "zweck": "Beleg der Mandatsart (Listenmandat vs. Wahlkreis) für Abgeordnete, deren parlament-berlin.de-Profil keine Mandatsachse nennt.",
+      "belege": [
+        { "mandatsId": "raed-saleh", "vollname": "Raed Saleh", "erwarteteArt": "liste" },
+        { "mandatsId": "joerg-stroedter", "vollname": "Jörg Stroedter", "erwarteteArt": "liste" }
+      ]
+    }
+  ]
+}
