@@ -1,11 +1,11 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-23, GitHub Bereinigung 10:31:35 TR / 09:31:35 Berlin / 07:31:35 UTC.**
-**Der Production Abschluss aus §30.5 ist vollständig vollzogen.** Die Migration `20260823043633` ist installiert, df1a6700 wurde ausdrücklich `aufgegeben`, 492dcd48 ist regulär `fertig`. Production steht bei **239 fertig · 1 aufgegeben · 0 offen · 0 unbekannt · 0 modell-laeuft**, Queue **0/235/0/0**, Outbox 0, Vormerkungen 0, Leases 0.
+**Stand: 2026-08-24 — Versuch 5 ist formal vollständig abgeschlossen; der neue Warteschlangenmotor läuft in Production** (grüner R4-/Watchdog-Abgleich 08:51–08:55 UTC, rein lesend; Vollbeleg Runbook §30.7).
+**Aktivierung am 23.08. im freigegebenen Fenster** nach anerkannten Referenzwerten und frischer grüner V4-Wiederholung: aktives Production-Deployment **`dpl_CJAWWr3UZygjjWCYxZz35CcJ3Ssk`**, READY 19:47:38 TR / 18:47:38 Berlin / 16:47:38 UTC, **unveränderter Git-Stand `a7559186`**. Erster Wirkungsslot **117 echte Abschlüsse** (`success`, 259 s, 0 endgültige Fehler, 0 `unbekannt`, 0 Lease-Probleme), Nacht und Morgen **+259** — **insgesamt 376 belegte Abschlüsse** in der Abnahme; briefing-morning **5/5**, briefing-lage effektiv **5/5** aktive Mandate; keine Doppelarbeit, keine verlorenen Aufträge, 0 Fencing-Konflikte, 0 HV001/HV002. **Alle elf §28.6-Kontrollen erfüllt.**
 
-**Die geprüften GitHub Änderungen sind veröffentlicht.** #225, #216 und #261 wurden grün gemergt; veraltete oder bewusst blockierte Altstände wurden mit Begründung geschlossen. Nach dem reinen Vollzugsnachtrag dieser Datei bleibt kein Pull Request offen.
+**R4 und GitHub-Actions-Watchdog grün:** Lauf **#59** auf `a7559186`, `conclusion: success`; 0 doppelte Idempotenzschlüssel, 0 Doppel-Pushs, 0 Neuplanungen im Ersatzlauf. Budget ohne Doppelzählungsmuster — 26 von 29 Aufrufen quittungsgenau zugeordnet; die 3 übrigen sind Briefing-interne Kleinpfade mit begrenzter Messauflösung (aufrufgenaues Protokoll liegt im Blob), keine stärkere Aussage.
 
-**V4 1/2/3/4/6/7 sind grün. V4 5 ist erst unmittelbar im freizugebenden Aktivierungsfenster prüfbar. Versuch 5 bleibt GESTOPPT; Motor aus.**
+**`HELMUT_SCALABLE_PIPELINE` bleibt eingeschaltet; kein Rückbau erforderlich.** OP-25 ist laut Betreiberfeststellung vom 24.08. bereits abgeschlossen und bewiesen (keine neue Prüfung dieses Sprints).
 
 Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000
 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Die
@@ -58,10 +58,10 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 - **Migrationen:** die fünf OP 30 Dateien sind seit 15.08. angewendet (§24.10).
   Zusätzlich ist die freigegebene Migration `20260823043633` seit 23.08. installiert.
   Die Buchführung steht bei 33 Einträgen und endet bei `20260823063208`; für dieselbe
-  Migration existieren zwei bytegleiche Einträge (`20260823063140` und
-  `20260823063208`) aus zwei parallelen Anwendungen. Funktion genau einmal vorhanden,
-  keine Datenwirkung; kein Bereinigungseingriff. **Offen ist nur `20260720`** (OP 03).
-  Schattenpfadstrukturen bleiben leer und wirkungslos, solange der Motor aus ist.
+  Migration existieren zwei inhaltsgleiche Einträge (`20260823063140` und `20260823063208`)
+  aus zwei parallelen Anwendungen — Differenz genau ein End-Newline-Byte (§30.6). Funktion
+  genau einmal vorhanden, keine Datenwirkung; kein Bereinigungseingriff. **Offen ist nur `20260720`** (OP 03).
+  Die früheren Schattenpfadstrukturen sind seit der Aktivierung 23.08. produktiv (§7a).
 - **Kosten:** LLM ~0,14 USD/Betriebstag (Untergrenze, Preisbasis unbelegt,
   [`betrieb/kostenmessung.md`](betrieb/kostenmessung.md)); Nachweisfenster 0,1892 USD.
 - **Zugangsgrenze jeder Claude-Sitzung (gemessen 2026-08-12, am 15.08. bestätigt):** Supabase
@@ -81,6 +81,7 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | `HELMUT_ATOMIC_LOCK` | an — atomare, fail-closed Sperren (Token-belegt) |
 | LLM-Tagesbudget 100 + Reserve 30 | fail-closed, live |
 | **`HELMUT_VERSTEHEN_CAS=on`** | **seit 2026-08-17** (Betreiber). Atomarer Verstehensvertrag aktiv: ein Besitzer je Vorgang, at-most-once je Modellaufruf, monotones Fencing. Laufzeitgeprüft (§7a). **`HELMUT_VERSTEHEN_PARALLELITAET` nicht gesetzt ⇒ Parallelität wirkt als 1**; > 1 ist eine eigene Freigabe (Runbook §23.1 Schritt 3) |
+| **`HELMUT_SCALABLE_PIPELINE=on`** | **seit 2026-08-23 16:47 UTC** (Betreiber, freigegebenes Fenster) mit `HELMUT_JOB_DISPATCH_MODE=shadow`, Worker 4/25/25. Versuch 5 am 24.08. formal abgeschlossen — alle elf §28.6-Kontrollen erfüllt (Runbook §30.7); **kein Rückbau erforderlich**, Rückweg dokumentiert |
 
 ## 5 · Deaktivierte Funktionen (bleiben aus, Aktivierung = Freigabe)
 
@@ -89,7 +90,6 @@ Rechts- und Sicherheitsreife. Verbindliche OP-Liste:
 | **`HELMUT_CRON_GLOBALABRUF`** | **`on`** seit 2026-08-06 ~08:15 UTC (Betreiber, für das Nachweisfenster) ⇒ **Kontextpfad aktiv**, laufzeitbelegt (drei Fensterläufe 06./07.08. global auf `d8bf68fa…`, E3 `nv=0`). Ob es `on` bleibt, ist Betreiberentscheidung. Dritter Zyklus |
 | **Berlin (Landesmodul)** | inaktiv. `HELMUT_LANDESMODULE=berlin` seit 2026-07-26 gesetzt, aber **wirkungslos**: 0 berechtigte Berliner Mandate seit dem Rollback ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22). Ob das Flag wirkt, ist **unbewiesen** |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt); PR #132 vor Merge Gate-Name vereinheitlichen |
-| **`HELMUT_SCALABLE_PIPELINE` (OP 30)** | **gelöscht und aus.** Versuch 5 bleibt gestoppt. V4 1/2/3/4/6/7 sind nach der Nachkontrolle 23.08. grün; V4 5 wird erst unmittelbar im freigegebenen Aktivierungsfenster geprüft. |
 | **M8 / `HELMUT_MATCHING_RELEVANZ_GATE`** | aus (Default aus, nie aktiviert) |
 | `HELMUT_CRON_GLOBALPHASE` | nicht gesetzt (aus) — K2-Prüfung ergab keine Aktivierungsempfehlung |
 | `HELMUT_UNDERSTANDING_GATE` / `HELMUT_PARDOK_DISPATCH` | `shadow` |
@@ -108,7 +108,8 @@ Pflichtprüfungen und Vercel Deployments waren vor jedem Merge grün.
 **Geschlossen, nicht gemergt:** #218 war durch #219 überholt; #231 und #224 waren
 veraltet und konfliktbehaftet; #255 blieb wegen seiner Bedingung geschlossen: kein Merge
 vor dem ersten grünen OP 30 Wirkungslauf. Zweige und Historie bleiben erhalten.
-Nach diesem Dokumentationsmerge: **0 Pull Requests offen**, Versuch 5 nicht gestartet.
+Nach diesem Dokumentationsmerge: **0 Pull Requests offen**; Versuch 5 war zu diesem
+Zeitpunkt noch nicht gestartet (Aktivierung und Abschluss folgten am 23./24.08., §7a).
 
 ## 7 · Offene Blocker
 
@@ -176,9 +177,13 @@ OP-30-Aktivierung muss OP-25 für die geänderte Architektur erneut vollständig
   Funktionsweg und gab `aufgegeben` zurück. Zustand `aufgegeben`, Grund
   `aufgegeben-nach-freigabe`, Zähler und Fencing unverändert 1/1/1. Danach nur dieser
   eine Reservierungsdatensatz verändert; Queue 0/235/0/0, Outbox 0, Vormerkungen 0.
-- **V4 Nachkontrolle 06:44:50 UTC:** V4 1/2/3/4/6/7 grün. V4 5 bleibt bis unmittelbar
-  vor einer ausdrücklich freigegebenen Aktivierung offen. **Motor aus, Versuch 5 nicht
-  gestartet.**
+- **Live-V4 im Fenster 23.08. 16:12–16:23 UTC: rot und blockiert** — zwei erklärte
+  Abweichungen (CAS 244 statt 239; Dublette ein End-Newline-Byte), übrige Tore grün (§30.6).
+- **Aktivierung + Abschluss (23./24.08.): Versuch 5 formal vollständig abgeschlossen.**
+  Referenzwerte anerkannt, V4-Wiederholung grün, Betreiber-Aktivierung 16:47:38 UTC
+  (`dpl_CJAWWr3U…`, `a7559186`); Slots 117 + 259 Abschlüsse bilanzgenau, Morgenzyklus
+  5/5 + effektiv 5/5, R4/Watchdog #59 grün, Budget ohne Doppelzählungsmuster; alle elf
+  §28.6-Kontrollen erfüllt. **Motor bleibt an; kein Rückbau erforderlich** (Runbook §30.7).
 Kanonisch: [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md)
 §24/§25/§26/**§27**, [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md)
 und [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md).
@@ -245,26 +250,18 @@ Vollständige Begründungen: Archiv (§5 der Altfassung).
 
 ## 11 · Nächster empfohlener Schritt
 
-**Vor Versuch 5 fehlt nur noch das Aktivierungstor V4 5 und eine frische Wiederholung der
-zeitabhängigen Tore unmittelbar im freigegebenen Fenster.** Der belegte Stand 23.08.
-09:44:50 TR / 08:44:50 Berlin / 06:44:50 UTC:
+**Versuch 5 ist abgeschlossen; der Motor bleibt an** (Vollbeleg
+[`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §30.7).
+OP-25 ist laut Betreiberfeststellung vom 24.08. abgeschlossen und bewiesen (keine Prüfung
+dieses Sprints). Empfohlen:
 
-1. V4 1 grün: letzter funktionaler Stand `bb1c992e` aus PR #261,
-   Vercel Status `success`; die vorangegangenen reinen Dokumentations und Testmerges
-   wurden ebenfalls erfolgreich ausgeliefert.
-2. V4 2 grün: Queue 0 wartend / 235 erledigt / 0 laufend / 0 fehlgeschlagen, 0 Leases.
-3. V4 3 grün: Outbox 0.
-4. V4 4 grün: 239 fertig / 1 aufgegeben / 0 offen / 0 unbekannt /
-   0 modell-laeuft, 0 Vormerkungen, 0 HV001/HV002, 0 Fencingabweichungen.
-5. V4 6 grün gegen den freigegebenen neuen Basispunkt: 33 Buchungen, zwei dokumentierte
-   bytegleiche Einträge für `20260823043633`, `20260720` weiterhin nicht angewendet.
-6. V4 7 grün: 0 fremde aktive Abfragen und 0 Sperren auf `helmut_jobs`.
-7. V4 5 ist **noch nicht prüfbar**. Unmittelbar vor einer Aktivierung im vorgesehenen
-   Fenster 19:10 bis 20:50 TR müssen V4 1 bis V4 7 frisch wiederholt werden.
+1. **Beobachtung der nächsten Regelzyklen** über die bestehenden Quittungen
+   (`warteschlange-*`, Briefings 5/5); bei Verletzung einer §28.6-Grenze gilt der
+   dokumentierte Rückweg (Flag löschen + Redeploy, Betreiberaktion).
+2. **Rückkehr zu den P0-Verkaufsblockern OP-01…OP-04** (§1/§7).
 
-**Keine Aktivierung aus dieser Dokumentation.** Flagänderung, Redeployment und Start von
-Versuch 5 bleiben eine neue ausdrückliche Betreiberfreigabe. Danach OP 25 vollständig
-wiederholen; OP 15 und `CRON_SECRET`/Egress bleiben offen.
+Flag-/Env-Änderungen, Deployments und die Aktivierung weiterer Mandate bleiben ausdrückliche
+Betreiberaktionen; OP 15 und `CRON_SECRET`/Egress bleiben offen.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
@@ -273,8 +270,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 - Kein Merge nach `main` (= Deployment), kein Deployment, keine Production-Datenänderung,
   keine Secret-/Env-/Flag-/Cron-Änderung ohne ausdrückliche Freigabe.
 - Migration auf Production: `20260823043633` ist freigegeben angewendet; die zwei
-  bytegleichen Buchungseinträge bleiben dokumentiert. Offen ist nur `20260720`; jede
-  künftige Anwendung bleibt freigabepflichtig.
+  inhaltsgleichen Buchungseinträge (ein End-Newline-Byte Differenz) bleiben dokumentiert.
+  Offen ist nur `20260720`; jede künftige Anwendung bleibt freigabepflichtig.
 - **Berlin, Brandenburg und M8 bleiben deaktiviert**; keine Testmandat-Aktivierung; die
   5 Offline-Testmandate bleiben deaktivierte Repo-Daten.
 - Keine kostenverursachenden Läufe (Backfills, Recovery, Massen-Crawls);
@@ -312,11 +309,15 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzte relevante Sprints
 
-- **23.08. (GitHub Bereinigung):** #225 Produktroadmap, #216 Teststabilisierung und
-  #261 Quellenpflicht nach aktualisiertem Diff, Pflichtprüfungen und erfolgreichem
-  Vercel Deployment gemergt. #218, #231, #224 und #255 mit konkreter Begründung
-  geschlossen; danach 0 offene Pull Requests. Keine Datenbankaktion, kein Flag,
-  kein KI Lauf und kein Versuch 5.
+- **23./24.08. (Aktivierung + Abschluss Versuch 5):** nach Betreiber-Referenzentscheidung und
+  grüner V4-Wiederholung Aktivierung 16:47:38 UTC durch den Betreiber; Wirkungsnachweis
+  117 + 259 Abschlüsse, Morgenzyklus 5/5, R4/Watchdog #59 grün — alle elf §28.6-Kontrollen
+  erfüllt, Versuch 5 formal abgeschlossen (Runbook §30.7). Claude-Messungen rein lesend.
+- **23.08. (Live-V4, rein lesend):** Vorprüfung 16:12–16:23 UTC → rot und blockiert (zwei
+  erklärte Abweichungen, §30.6); Production unangetastet, kein Flag, kein PR, kein Merge.
+- **23.08. (GitHub Bereinigung):** #225, #216 und #261 nach Pflichtprüfungen und grünem
+  Vercel Deployment gemergt; #218, #231, #224 und #255 begründet geschlossen; danach
+  0 offene Pull Requests. Keine Datenbankaktion, kein Flag, kein KI Lauf.
 - **23.08. (§30.5 vollständig vollzogen):** PR #262 gemergt und deployt, Migration
   `20260823043633` freigegeben installiert, df1a6700 nach bestandener Vorprüfung über
   `helmut_verstehen_ausgang_aufloesen(..., 'aufgeben')` terminal abgeschlossen.
