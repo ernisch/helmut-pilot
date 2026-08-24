@@ -1419,7 +1419,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 #### OP-30 · Mandatseigene Abrufwege vervielfachen den Quellenabruf linear (neu, Sprint „V3-Skalierungsprüfung" 2026-08-08; Prioritätsklasse P1)
 
-- **Stand 2026-08-24 (Haertungssprint Selbstweck — Sprint erfolgreich abgeschlossen; OP-30
+- **Stand 2026-08-24 (Haertungssprint Selbstweck, PR #269 — Sprint erfolgreich abgeschlossen; OP-30
   insgesamt bleibt offen; kein Production-Kontakt ausser einer benannten Stoerung; Beleg
   [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §27
   und Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §31):**

@@ -12,7 +12,7 @@ Fassung vor dieser Verdichtung: byte-identisch in [`archive/project_state/2026_0
 ## 2 · Stand auf `main` und Pull Requests
 
 - **`main` = `572f5663` = Merge von PR #267** („Vorbereitung 25 Mandate", 24.08.; voller Commit `572f5663605152c3e6e4f5314f890c1c632bc63b`). **PR #267 ist gemergt** — die frühere Angabe „`main` = `bf7aee29` = PR #266" ist damit **überholt**; PR #266 steckt in dieser Historie.
-- **Zu Beginn des Härtungssprints Selbstweck (24.08.) war kein Pull Request offen.** Offen ist jetzt genau einer: der PR dieses Sprints (§14).
+- **Zu Beginn des Härtungssprints Selbstweck (24.08.) war kein Pull Request offen.** Offen ist jetzt genau einer: **PR #269** (§14).
 - Davor gemergt: #265, #262, #261, #260/#259/#256/#257, #225, #216; die PR-Bereinigung vom 23.08. (inkl. begründeter Schließungen) ist in Archivfassung und Runbook dokumentiert.
 - Merge nach `main` löst automatisch ein Production-Deployment aus.
 
@@ -166,7 +166,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzter Sprint (24.08. — Härtungssprint Selbstweck)
 
-**Sprintzustand: erfolgreich abgeschlossen** (Abnahme = lokale Härtung + Wahrheitskorrektur; die *Aktivierung* war ausdrücklich nicht Sprintziel). Branch `claude/helmut-selbstweck-hardening-t7lsbx`, ein Pull Request offen (Nummer/Link in der PR-Beschreibung; **nicht selbst gemergt** — Merge = Production-Deployment). Ausgangscommit `572f5663`.
+**Sprintzustand: erfolgreich abgeschlossen** (Abnahme = lokale Härtung + Wahrheitskorrektur; die *Aktivierung* war ausdrücklich nicht Sprintziel). Branch `claude/helmut-selbstweck-hardening-t7lsbx`, Commit `851174d`, **PR #269** (offen, **nicht selbst gemergt** — Merge = Production-Deployment und Betreiberentscheidung). Ausgangscommit `572f5663`.
 
 - **Kein falsches Grün mehr:** `job-dispatch.aktivierungsVorpruefung` trennt angeforderten Modus, wirksamen Modus, Antrieb, gewählten Transport, dessen Verfügbarkeit, Grund und Bereitschaft; `/api/ops/jobqueue` gibt sie als **neues** Feld `ereignisbetrieb` aus (alle Bestandsfelder unverändert). Neun Zustände einzeln testgesichert; ohne Secrets/Adressen/Hostnamen.
 - **Aktivierungsvorlauf scheitert geschlossen:** `queue` ohne `HELMUT_SCALABLE_PIPELINE` versendet nichts mehr und vergibt keine Absicht.
