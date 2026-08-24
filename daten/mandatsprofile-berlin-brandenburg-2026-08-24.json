@@ -1,0 +1,596 @@
+{
+  "version": "helmut-mandatsprofil/1",
+  "quelleDerRecherche": "WebSearch-Vorrecherche + bytegenauer Abgleich mit den amtlichen Profilseiten über die rein lesenden GitHub-Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, navigationsfeste Fraktions-/Funktionsbelege; ausschließlich die 20 Profilseiten, keine Zusatzquellen). Nicht amtlich belegte optionale Angaben wurden entfernt. Kein Import, keine Aktivierung ohne Betreiberfreigabe.",
+  "profile": [
+    {
+      "mandatsId": "dirk-stettner",
+      "vollname": "Dirk Stettner",
+      "parlament": "landtag-berlin",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Berlin",
+      "wahlkreis": "Pankow 4",
+      "themen": [
+        "Landespolitik Berlin",
+        "Parlamentsarbeit und Fraktionsführung",
+        "Pankow"
+      ],
+      "funktionen": [
+        "Vorsitzender der CDU-Fraktion im Abgeordnetenhaus von Berlin"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.parlament-berlin.de/Abgeordnete/dirk-stettner",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "christian-goiny",
+      "vollname": "Christian Goiny",
+      "parlament": "landtag-berlin",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Berlin",
+      "wahlkreis": "Steglitz-Zehlendorf 3",
+      "ausschuesse": [
+        "Hauptausschuss",
+        "Ausschuss für Bundes- und Europaangelegenheiten, Medien",
+        "Unterausschuss Haushaltskontrolle",
+        "Unterausschuss Vermögensverwaltung"
+      ],
+      "themen": [
+        "Haushalt und Finanzen",
+        "Medienpolitik",
+        "Bundes- und Europaangelegenheiten",
+        "Haushaltskontrolle",
+        "Landesvermögen"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.parlament-berlin.de/Abgeordnete/christian-goiny",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "danny-freymark",
+      "vollname": "Danny Freymark",
+      "parlament": "landtag-berlin",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Berlin",
+      "wahlkreis": "Lichtenberg 1",
+      "ausschuesse": [
+        "Ausschuss für Umwelt- und Klimaschutz",
+        "Petitionsausschuss"
+      ],
+      "themen": [
+        "Umweltschutz",
+        "Klimaschutz",
+        "Petitionen und Bürgeranliegen",
+        "Lichtenberg"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.parlament-berlin.de/Abgeordnete/danny-freymark",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "raed-saleh",
+      "vollname": "Raed Saleh",
+      "parlament": "landtag-berlin",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Berlin",
+      "listenmandat": true,
+      "regionHinweis": "Land Berlin (Bezirksliste)",
+      "themen": [
+        "Landespolitik Berlin",
+        "Parlamentsarbeit und Fraktionsführung"
+      ],
+      "funktionen": [
+        "Fraktionsvorsitzender"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.parlament-berlin.de/Abgeordnete/raed-saleh",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei. Mandatsart amtlich über die eigene Profilseite belegt („gewählt über: Bezirksliste“)."
+    },
+    {
+      "mandatsId": "joerg-stroedter",
+      "vollname": "Jörg Stroedter",
+      "parlament": "landtag-berlin",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Berlin",
+      "listenmandat": true,
+      "regionHinweis": "Land Berlin (Bezirksliste)",
+      "ausschuesse": [
+        "Ausschuss für Wirtschaft, Energie und Betriebe",
+        "Unterausschuss Beteiligungsmanagement und -controlling"
+      ],
+      "themen": [
+        "Wirtschaftspolitik",
+        "Energiepolitik",
+        "Landeseigene Betriebe und Beteiligungen",
+        "Beteiligungscontrolling"
+      ],
+      "funktionen": [
+        "Stellvertretender Fraktionsvorsitzender",
+        "Sprecher für Wirtschaft, Energie, Betriebe und Beteiligungen"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.parlament-berlin.de/Abgeordnete/jorg-stroedter",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei. Mandatsart amtlich über die eigene Profilseite belegt („gewählt über: Bezirksliste“)."
+    },
+    {
+      "mandatsId": "bettina-jarasch",
+      "vollname": "Bettina Jarasch",
+      "parlament": "landtag-berlin",
+      "partei": "Bündnis 90/Die Grünen",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "bundesland": "Berlin",
+      "listenmandat": true,
+      "regionHinweis": "Land Berlin (Landesliste)",
+      "ausschuesse": [
+        "Petitionsausschuss"
+      ],
+      "themen": [
+        "Petitionen und Bürgeranliegen",
+        "Landespolitik Berlin"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.parlament-berlin.de/Abgeordnete/bettina-jarasch",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "werner-sebastian-graf",
+      "vollname": "Werner Sebastian Graf",
+      "namensvarianten": [
+        "Werner Graf"
+      ],
+      "parlament": "landtag-berlin",
+      "partei": "Bündnis 90/Die Grünen",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "bundesland": "Berlin",
+      "listenmandat": true,
+      "regionHinweis": "Land Berlin (Landesliste)",
+      "themen": [
+        "Landespolitik Berlin",
+        "Parlamentsarbeit und Fraktionsführung"
+      ],
+      "funktionen": [
+        "Fraktionsvorsitzender von Bündnis 90/Die Grünen"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.parlament-berlin.de/Abgeordnete/werner-sebastian-graf",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "katrin-schmidberger",
+      "vollname": "Katrin Schmidberger",
+      "parlament": "landtag-berlin",
+      "partei": "Bündnis 90/Die Grünen",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "bundesland": "Berlin",
+      "wahlkreis": "Friedrichshain-Kreuzberg 1",
+      "ausschuesse": [
+        "Ausschuss für Stadtentwicklung, Bauen und Wohnen",
+        "Ausschuss für Verfassungs- und Rechtsangelegenheiten, Geschäftsordnung, Verbraucherschutz",
+        "Ausschuss für Umwelt- und Klimaschutz"
+      ],
+      "themen": [
+        "Stadtentwicklung",
+        "Bauen und Wohnen",
+        "Verbraucherschutz",
+        "Umwelt- und Klimaschutz",
+        "Verfassung und Recht"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.parlament-berlin.de/Abgeordnete/katrin-schmidberger",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "tobias-schulze",
+      "vollname": "Tobias Schulze",
+      "parlament": "landtag-berlin",
+      "partei": "Die Linke",
+      "fraktion": "Die Linke",
+      "bundesland": "Berlin",
+      "listenmandat": true,
+      "regionHinweis": "Land Berlin (Landesliste)",
+      "ausschuesse": [
+        "Ausschuss für Wissenschaft und Forschung"
+      ],
+      "themen": [
+        "Wissenschaft und Forschung",
+        "Hochschulpolitik",
+        "Landespolitik Berlin"
+      ],
+      "funktionen": [
+        "Fraktionsvorsitzender"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.parlament-berlin.de/Abgeordnete/tobias-schulze",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "niklas-schrader",
+      "vollname": "Niklas Schrader",
+      "parlament": "landtag-berlin",
+      "partei": "Die Linke",
+      "fraktion": "Die Linke",
+      "bundesland": "Berlin",
+      "listenmandat": true,
+      "regionHinweis": "Land Berlin (Landesliste)",
+      "ausschuesse": [
+        "Ausschuss für Inneres, Sicherheit und Ordnung",
+        "Ausschuss für Verfassungsschutz",
+        "1. Untersuchungsausschuss (\"Neukölln II\")"
+      ],
+      "themen": [
+        "Innenpolitik",
+        "Innere Sicherheit",
+        "Verfassungsschutz",
+        "Polizei",
+        "Aufarbeitung der Anschlagsserie Neukölln"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.parlament-berlin.de/Abgeordnete/niklas-schrader",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "bjoern-luettmann",
+      "vollname": "Björn Lüttmann",
+      "parlament": "landtag-brandenburg",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Brandenburg (Landesliste, Platz 7)",
+      "ausschuesse": [
+        "Hauptausschuss",
+        "Enquete-Kommission „Lehren aus der Coronapandemie zur Analyse und Aufarbeitung staatlicher Maßnahmen sowie zur Stärkung der Krisenresilienz des Landes Brandenburg“"
+      ],
+      "themen": [
+        "Verfassungs- und Bundesangelegenheiten",
+        "Medienpolitik",
+        "Corona-Aufarbeitung",
+        "Krisenresilienz"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.landtag.brandenburg.de/de/luettmann_bjoern/24183",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "ludwig-scheetz",
+      "vollname": "Ludwig Scheetz",
+      "parlament": "landtag-brandenburg",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Brandenburg",
+      "wahlkreis": "Wahlkreis 27 (Dahme-Spreewald II / Oder-Spree I)",
+      "ausschuesse": [
+        "Hauptausschuss",
+        "Sonderausschuss Strukturentwicklung in der Lausitz",
+        "Wahlprüfungsausschuss",
+        "Enquete-Kommission „Finanzierung und Gestaltung des öffentlichen Personennahverkehrs in Brandenburg und die Entwicklung der Flughafenregion Brandenburg unter Berücksichtigung der Infrastruktur und des Umwelt- und Lärmschutzes“"
+      ],
+      "themen": [
+        "Strukturwandel Lausitz",
+        "Öffentlicher Personennahverkehr",
+        "Wahlprüfung",
+        "Medienpolitik",
+        "Dahme-Spreewald und Oder-Spree"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.landtag.brandenburg.de/de/scheetz_ludwig/24191",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "ulrike-liedtke",
+      "vollname": "Prof. Dr. Ulrike Liedtke",
+      "namensvarianten": [
+        "Ulrike Liedtke"
+      ],
+      "parlament": "landtag-brandenburg",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Brandenburg",
+      "wahlkreis": "Wahlkreis 03 (Ostprignitz-Ruppin I)",
+      "ausschuesse": [
+        "Hauptausschuss"
+      ],
+      "themen": [
+        "Verfassungs- und Bundesangelegenheiten",
+        "Parlament und Demokratie",
+        "Ostprignitz-Ruppin"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.landtag.brandenburg.de/de/liedtke_ulrike_(prof._dr.)/11247",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "katja-poschmann",
+      "vollname": "Katja Poschmann",
+      "parlament": "landtag-brandenburg",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Brandenburg (Landesliste, Platz 8)",
+      "ausschuesse": [
+        "Ausschuss für Bildung, Jugend und Sport",
+        "Ausschuss für Wissenschaft, Forschung und Kultur",
+        "Untersuchungsausschuss 8/1 - UA OPR"
+      ],
+      "themen": [
+        "Bildungspolitik",
+        "Jugend und Sport",
+        "Wissenschaft und Forschung",
+        "Kulturpolitik"
+      ],
+      "funktionen": [
+        "Stellvertretende Fraktionsvorsitzende der SPD-Fraktion des Landtages Brandenburg"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.landtag.brandenburg.de/de/poschmann_katja/24188",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "steeven-bretz",
+      "vollname": "Steeven Bretz",
+      "parlament": "landtag-brandenburg",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Brandenburg (Landesliste, Platz 5)",
+      "ausschuesse": [
+        "Hauptausschuss",
+        "Ausschuss für Haushalt und Finanzen"
+      ],
+      "themen": [
+        "Haushalt und Finanzen",
+        "Landespolitik Brandenburg"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.landtag.brandenburg.de/de/bretz_steeven/13468",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "kristy-augustin",
+      "vollname": "Kristy Augustin",
+      "parlament": "landtag-brandenburg",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Brandenburg (Landesliste, Platz 2)",
+      "ausschuesse": [
+        "Ausschuss für Bildung, Jugend und Sport",
+        "Ausschuss für Recht und Digitalisierung",
+        "Untersuchungsausschuss 8/1 - UA OPR"
+      ],
+      "themen": [
+        "Bildung",
+        "Jugend und Sport",
+        "Recht und Digitalisierung"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.landtag.brandenburg.de/de/augustin_kristy/13480",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "niels-olaf-lueders",
+      "vollname": "Niels-Olaf Lüders",
+      "namensvarianten": [
+        "Niels Olaf Lüders"
+      ],
+      "parlament": "landtag-brandenburg",
+      "partei": "Bündnis Sahra Wagenknecht",
+      "fraktion": "BSW",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Brandenburg (Landesliste, Platz 4)",
+      "ausschuesse": [
+        "Hauptausschuss",
+        "Ausschuss für Inneres und Kommunales",
+        "Untersuchungsausschuss 8/1 - UA OPR",
+        "Parlamentarische Kontrollkommission"
+      ],
+      "themen": [
+        "Inneres und Kommunales",
+        "Parlamentarische Kontrolle",
+        "Medienpolitik",
+        "Landespolitik Brandenburg"
+      ],
+      "funktionen": [
+        "Vorsitzender der BSW-Fraktion im Landtag Brandenburg",
+        "Mitglied im Präsidium des Landtages Brandenburg"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.landtag.brandenburg.de/de/lueders_niels-olaf/40623",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "christian-dorst",
+      "vollname": "Christian Dorst",
+      "parlament": "landtag-brandenburg",
+      "partei": "Bündnis Sahra Wagenknecht",
+      "fraktion": "BSW",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Brandenburg (Landesliste, Platz 12)",
+      "ausschuesse": [
+        "Ausschuss für Haushalt und Finanzen",
+        "Enquete-Kommission „Lehren aus der Coronapandemie zur Analyse und Aufarbeitung staatlicher Maßnahmen sowie zur Stärkung der Krisenresilienz des Landes Brandenburg“"
+      ],
+      "themen": [
+        "Haushalt und Finanzen",
+        "Corona-Aufarbeitung",
+        "Krisenresilienz"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.landtag.brandenburg.de/de/dorst_christian/40618",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "jenny-meyer",
+      "vollname": "Jenny Meyer",
+      "parlament": "landtag-brandenburg",
+      "partei": "Bündnis Sahra Wagenknecht",
+      "fraktion": "BSW",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Brandenburg (Landesliste, Platz 9)",
+      "ausschuesse": [
+        "Ausschuss für Wissenschaft, Forschung und Kultur",
+        "Ausschuss für Infrastruktur und Landesplanung"
+      ],
+      "themen": [
+        "Infrastruktur und Landesplanung",
+        "Wissenschaft und Forschung",
+        "Kulturpolitik"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.landtag.brandenburg.de/de/meyer_jenny/40625",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2: Abschnitts-/Rollenprüfung, Funktions- und Listenplatz-Beleg; nicht amtlich belegte optionale Angaben entfernt). Details: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "falk-peschel",
+      "vollname": "Falk Peschel",
+      "parlament": "landtag-brandenburg",
+      "partei": "Bündnis Sahra Wagenknecht",
+      "fraktion": "BSW",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Brandenburg (Landesliste, Platz 7)",
+      "ausschuesse": [
+        "Ausschuss für Bildung, Jugend und Sport",
+        "Sonderausschuss Strukturentwicklung in der Lausitz"
+      ],
+      "themen": [
+        "Bildungspolitik",
+        "Jugend und Sport",
+        "Strukturwandel Lausitz"
+      ],
+      "offizielleQuellen": [
+        {
+          "art": "parlament-profil",
+          "url": "https://www.landtag.brandenburg.de/de/peschel_falk/40626",
+          "geprueftAm": "2026-08-24"
+        }
+      ],
+      "aktiv": false,
+      "notiz": "Bytegenau geprüft über die rein lesenden Actions-Läufe vom 24.08.2026 (Strenge-Stufe 2). Frühere Angaben zu Hauptausschuss und stellv. Mitgliedschaften waren amtlich nicht (mehr) geführt (jüngere Umbesetzung) und wurden entfernt; Abrufzeiten je Lauf im Prüfstand. Details: Prüfstand-Datei."
+    }
+  ]
+}
