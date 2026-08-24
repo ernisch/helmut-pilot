@@ -243,5 +243,5 @@ Profilquellen (Gate §2.4, Actions-Lauf erst nach ausdrücklicher Freigabe), jed
 und jede Aktivierung. Production wurde nicht berührt (alle Verbote eingehalten; keine
 Production-Abfrage — Production-Aussagen dieses Sprints stützen sich auf Betreiberangaben
 und die dokumentierte Beleglage). Branch: `claude/fundament-25-mandate-aju9zu`;
-PR: siehe CURRENT_STATE §8. Nächste Entscheidung: Gründerfreigabe für den
+**PR #268** (offen, nicht gemergt). Nächste Entscheidung: Gründerfreigabe für den
 Verifikationslauf + Stufe-2-AWS-Entscheidung (§1.3).

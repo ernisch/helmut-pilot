@@ -3,7 +3,7 @@
 **Stand: 2026-08-24 (verdichtet im Sprint „Fundament 25 Mandate").** Versuch 5 ist formal
 vollständig abgeschlossen; der Warteschlangenmotor läuft in Production und bleibt an (Vollbeleg
 [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §30.7).
-**PR #265 und #266 sind gemergt; 0 Pull Requests offen.** `main` =
+**PR #265 und #266 sind gemergt; offen ist nur PR #268 (dieser Doku-Sprint).** `main` =
 **`bf7aee29181cb80a4d7eb33d20858614212b6c80`** (Merge PR #266); Auslieferung in Production
 laut Betreiberangabe 24.08. **Der WhatsApp-Gesundheitsbot ist damit an den neuen Motor
 angepasst** (liest `process_runs`/`betriebsstatus`/CAS, vier Zustände) — die Fehlwarnung aus
@@ -149,7 +149,7 @@ weiteren OP-30-Aktivierungsstufe muss OP-25 vollständig neu laufen.**
   in `data/mandatsprofile/` — **alle `aktiv:false`**, aber **nicht final direkt verifiziert**
   (Egress-Sperre; Verifikationslauf vorbereitet, nicht ausgeführt, freigabepflichtig).
   Stufung: **zuerst 5 Mandate im Queue-Betrieb (Stufe 2), danach kontrollierte Erweiterung.**
-  **Keine Aktivierungsfreigabe für 25.** Kein Import, keine Production-Änderung.
+  **Keine Aktivierungsfreigabe für 25.** Kein Import, keine Production-Änderung. PR #268 offen.
 
 ## 9 · Teilweise abgeschlossen (Code da, Abnahme fehlt)
 
@@ -236,7 +236,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere unverändert:
 | Backup/Restore | [`betrieb/backup-restore-runbook.md`](betrieb/backup-restore-runbook.md) · [`betrieb/restore-uebung-2026-07-28.md`](betrieb/restore-uebung-2026-07-28.md) |
 | Env-/Secret-Inventar, Cloud-Zugangsgrenzen | [`betrieb/env-inventar.md`](betrieb/env-inventar.md) |
 | Vorbereitung 25 Mandate (Teil B/C/D) | [`betrieb/fundament-25-mandate-2026-08-24.md`](betrieb/fundament-25-mandate-2026-08-24.md) |
-| Vollstatus vor Verdichtung 24.08. | [`archive/project_state/2026_08_24_CURRENT_STATE_pre_25_full.md`](archive/project_state/2026_08_24_CURRENT_STATE_pre_25_full.md) (ältere: 17.08./05.08. ebd.) |
+| Vollstatus vor Verdichtung 24.08. | [`archive/project_state/2026_08_24_CURRENT_STATE_pre_25_full.md`](archive/project_state/2026_08_24_CURRENT_STATE_pre_25_full.md) |
 
 **Letzte Sprints:** 24.08. Gesundheitsbot (PR #266) · 23./24.08. Aktivierung + Abschluss
 Versuch 5 (PR #265) · 23.08. GitHub-Bereinigung, §30.5-Vollzug (PR #262), Live-V4 ·
