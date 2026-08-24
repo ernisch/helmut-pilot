@@ -166,7 +166,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Letzter Sprint (24.08. — Vorbereitung 25 Mandate, kein Production-Kontakt)
 
-**Sprintzustand: teilweise abgeschlossen** — Arbeit fertig und testgesichert (Paket 48/48, Größentest 4/4, Offline-Suite 268/274, 6 rote = umgebungsbedingter Altbestand), aber die bytegenaue amtliche Bestätigung der 20 Profile war aus der Umgebung unmöglich und Review/Merge stehen aus. Branch `claude/helmut-25-mandate-prep-hz4zjg`, **PR #267 (offen, nicht gemergt)**.
+**Sprintzustand: teilweise abgeschlossen** — testgesichert (Paket 48/48, Offline-Suite 268/274, 6 rote = Umgebungs-Altbestand), aber bytegenaue amtliche Bestätigung unmöglich, Review/Merge offen. Branch `claude/helmut-25-mandate-prep-hz4zjg`, **PR #267 (offen, nicht gemergt)**.
 
 - `CURRENT_STATE.md` byte-identisch archiviert und auf diese Fassung verdichtet; PR-266-Stand korrigiert (gemergt, `bf7aee29`, 0 offene PRs zu Sprintbeginn).
 - **Lokales Importpaket** für 20 zusätzliche Profile (10 Berlin, 10 Brandenburg) nach Importvertrag erstellt — ausnahmslos `aktiv: false`, kein Import, keine Aktivierung: `daten/mandatsprofile-berlin-brandenburg-2026-08-24.json`, testgesichert durch `scripts/profilpaket-berlin-brandenburg-test.js`.
