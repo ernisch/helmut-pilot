@@ -47,8 +47,8 @@ für 5/10/25 Mandate ausgeführt),
    eingespielt, und ob der Berlin-Schalter in Production überhaupt wirkt, ist
    unbewiesen. Ohne Landesquellen bekämen Landtagsabgeordnete eine leere Lage.
 3. **Bytegenaue Bestätigung und Import der fünf empfohlenen Brandenburger Profile**
-   (Steeven Bretz, Katja Poschmann, Niels Olaf Lüders, Jenny Meyer,
-   Prof. Dr. Ulrike Liedtke) — die amtlichen Seiten konnten aus der Cloud-Umgebung
+   (Steeven Bretz, Katja Poschmann, Niels-Olaf Lüders, Jenny Meyer,
+   Prof. Dr. Ulrike Liedtke; Lüders amtlich mit Bindestrich) — die amtlichen Seiten konnten aus der Cloud-Umgebung
    nicht direkt abgerufen werden (Netzsperre); die Recherche liegt vor, die
    Bestätigung fehlt. Danach: Import und **je Mandat eine eigene Freigabe** zur
    Aktivierung.
@@ -207,6 +207,11 @@ Jede Stufe hat einen dokumentierten Ein-Schritt-Rückweg:
   aus — die Grenzwerte sind vorab festgelegt, nicht situativ.
 
 ---
+
+**Rechercheunterlage:** Das lokale, vollständig deaktivierte Importpaket der 20 Profile
+liegt in `daten/mandatsprofile-berlin-brandenburg-2026-08-24.json`; die je Profil noch
+fehlenden bytegenauen Prüfungen stehen in
+`daten/mandatsprofile-berlin-brandenburg-2026-08-24-pruefstand.md`.
 
 **Empfohlene Reihenfolge (zusammengefasst):** ① 7-Tage-Nachweis mit 5 Mandaten →
 ② Landesquellen Berlin/Brandenburg bytegenau verifizieren und freigeben →

@@ -1,0 +1,424 @@
+{
+  "version": "helmut-mandatsprofil/1",
+  "quelleDerRecherche": "WebSearch-Recherche 2026-08-24 (Sprint Vorbereitung 25 Mandate). KEINE bytegenaue amtliche Bestätigung: parlament-berlin.de und landtag.brandenburg.de sind aus der Cloud-Umgebung per Egress-Proxy gesperrt (EGRESS_BLOCKED, je Profil protokolliert). Offene Einzelprüfungen je Profil: daten/mandatsprofile-berlin-brandenburg-2026-08-24-pruefstand.md. Kein Import, keine Aktivierung ohne Betreiberfreigabe.",
+  "profile": [
+    {
+      "mandatsId": "dirk-stettner",
+      "vollname": "Dirk Stettner",
+      "parlament": "landtag-berlin",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Berlin",
+      "wahlkreis": "Pankow 4",
+      "themen": ["Bildung", "Digitalisierung", "Digitale Verwaltung", "Stadtentwicklung", "Schulbau"],
+      "funktionen": ["Vorsitzender der CDU-Fraktion im Abgeordnetenhaus von Berlin"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.parlament-berlin.de/Abgeordnete/dirk-stettner" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (amtliche Seite EGRESS_BLOCKED). Ausschüsse der 19. WP aus keinem Suchtreffer belegbar (als Fraktionsvorsitzender ggf. ohne ordentliche Sitze) — bewusst leer. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "christian-goiny",
+      "vollname": "Christian Goiny",
+      "parlament": "landtag-berlin",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Berlin",
+      "wahlkreis": "Steglitz-Zehlendorf 3",
+      "ausschuesse": [
+        "Hauptausschuss",
+        "Ausschuss für Bundes- und Europaangelegenheiten, Medien",
+        "Unterausschuss Haushaltskontrolle",
+        "Unterausschuss Vermögensverwaltung"
+      ],
+      "themen": ["Haushalt und Finanzen", "Medienpolitik", "Personal und Verwaltung", "Haushaltskontrolle", "Clubkultur"],
+      "funktionen": ["Haushaltspolitischer Sprecher der CDU-Fraktion", "Sprecher für Medienpolitik der CDU-Fraktion"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.parlament-berlin.de/Abgeordnete/christian-goiny" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Ausschussliste 19. WP aus Sekundärquelle (abgeordnetenwatch); Rollen ordentlich/stellvertretend ungeklärt. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "danny-freymark",
+      "vollname": "Danny Freymark",
+      "parlament": "landtag-berlin",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Berlin",
+      "wahlkreis": "Lichtenberg 1",
+      "ausschuesse": [
+        "Ausschuss für Umwelt, Verbraucher- und Klimaschutz",
+        "Petitionsausschuss"
+      ],
+      "themen": ["Umweltschutz", "Klimaschutz", "Verbraucherschutz", "Petitionen", "Lichtenberg/Hohenschönhausen"],
+      "funktionen": ["Stellvertretender Vorsitzender der CDU-Fraktion", "Umweltpolitischer Sprecher der CDU-Fraktion"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.parlament-berlin.de/Abgeordnete/danny-freymark" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Umweltausschuss über 19.-WP-Slug belegt; Rolle im Petitionsausschuss unklar. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "raed-saleh",
+      "vollname": "Raed Saleh",
+      "parlament": "landtag-berlin",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Berlin",
+      "listenmandat": true,
+      "regionHinweis": "Berlin-Spandau (Betreuungswahlkreis Spandau 2)",
+      "themen": ["Haushalts- und Finanzpolitik", "Gesellschaftlicher Zusammenhalt", "Integration", "Bezahlbares Wohnen", "Spandau"],
+      "funktionen": ["Vorsitzender der SPD-Fraktion im Abgeordnetenhaus von Berlin"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.parlament-berlin.de/Abgeordnete/raed-saleh" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Einzug 2023 über Liste (Direktmandat Spandau 2 verloren); Ausschüsse 19. WP aus keinem Suchtreffer belegbar — bewusst leer. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "joerg-stroedter",
+      "vollname": "Jörg Stroedter",
+      "parlament": "landtag-berlin",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Berlin",
+      "listenmandat": true,
+      "regionHinweis": "Reinickendorf (Betreuungswahlkreis Reinickendorf 2)",
+      "ausschuesse": [
+        "Ausschuss für Wirtschaft, Energie, Betriebe",
+        "Unterausschuss Beteiligungsmanagement und -controlling"
+      ],
+      "themen": ["Wirtschaftspolitik", "Energiepolitik", "Landeseigene Betriebe und Beteiligungen", "Beteiligungscontrolling", "Reinickendorf"],
+      "funktionen": ["Sprecher der SPD-Fraktion für Wirtschaft, Energie, Betriebe und Beteiligungen"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.parlament-berlin.de/Abgeordnete/jorg-stroedter" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). 2023 im Wahlkreis Reinickendorf 2 unterlegen, Einzug über Liste; URL-Slug ohne Umlaut (jorg-stroedter) aus Suchtreffer. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "bettina-jarasch",
+      "vollname": "Bettina Jarasch",
+      "parlament": "landtag-berlin",
+      "partei": "Bündnis 90/Die Grünen",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "bundesland": "Berlin",
+      "listenmandat": true,
+      "regionHinweis": "Spandau (Kandidaturwahlkreis Spandau 2); Landesliste Platz 1",
+      "themen": ["Klimaschutz", "Mobilität und Verkehrswende", "Umweltpolitik", "Stadtentwicklung und Wohnen", "Integration"],
+      "funktionen": ["Fraktionsvorsitzende der Fraktion Bündnis 90/Die Grünen im Abgeordnetenhaus"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.parlament-berlin.de/Abgeordnete/bettina-jarasch" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Ausschüsse 19. WP aus keinem Suchtreffer belegbar — bewusst leer. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "werner-sebastian-graf",
+      "vollname": "Werner Sebastian Graf",
+      "namensvarianten": ["Werner Graf"],
+      "parlament": "landtag-berlin",
+      "partei": "Bündnis 90/Die Grünen",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "bundesland": "Berlin",
+      "listenmandat": true,
+      "regionHinweis": "Friedrichshain-Kreuzberg",
+      "themen": ["Moderne Mobilität", "Drogenpolitik", "Vielfältige Gesellschaft", "Weltoffenes Berlin"],
+      "funktionen": ["Co-Fraktionsvorsitzender der Fraktion Bündnis 90/Die Grünen im Abgeordnetenhaus"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.parlament-berlin.de/Abgeordnete/werner-sebastian-graf" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Vollständiger amtlicher Name „Werner Sebastian Graf“ gemäß Auftragskorrektur; Slug werner-sebastian-graf in Suchtreffern sichtbar. Ausschüsse 19. WP nicht belegbar — bewusst leer. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "katrin-schmidberger",
+      "vollname": "Katrin Schmidberger",
+      "parlament": "landtag-berlin",
+      "partei": "Bündnis 90/Die Grünen",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "bundesland": "Berlin",
+      "wahlkreis": "Friedrichshain-Kreuzberg 1",
+      "ausschuesse": [
+        "Ausschuss für Stadtentwicklung, Bauen und Wohnen"
+      ],
+      "themen": ["Mieten und Wohnen", "Mieterschutz", "Gemeinwohlorientierte Stadtentwicklung", "Milieuschutz", "Stadtverträglicher Tourismus"],
+      "funktionen": ["Sprecherin für Wohnen und Mieten der Grünen-Fraktion", "Sprecherin für Tourismus der Grünen-Fraktion"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.parlament-berlin.de/Abgeordnete/katrin-schmidberger" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Direktmandat seit 2016; Wahlkreis wird zur Wahl 2026 umnummeriert — für die 19. WP gilt Nr. 1. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "tobias-schulze",
+      "vollname": "Tobias Schulze",
+      "parlament": "landtag-berlin",
+      "partei": "Die Linke",
+      "fraktion": "Die Linke",
+      "bundesland": "Berlin",
+      "listenmandat": true,
+      "regionHinweis": "Berlin-Mitte, Wedding/Gesundbrunnen (Kandidaturwahlkreis Mitte 7)",
+      "ausschuesse": [
+        "Ausschuss für Wissenschaft und Forschung"
+      ],
+      "themen": ["Wissenschaft und Forschung", "Hochschulpolitik", "Digitalisierung und Netzpolitik", "Digitale Verwaltung", "Gesundheit"],
+      "funktionen": ["Co-Fraktionsvorsitzender der Linksfraktion im Abgeordnetenhaus"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.parlament-berlin.de/Abgeordnete/tobias-schulze" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Exakte Ausschussbezeichnung/-zuschnitt der 19. WP unklar (Snippets nennen auch Gesundheitsbezug); Sprecherrollen nach Übernahme des Fraktionsvorsitzes 2024 ungeprüft. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "niklas-schrader",
+      "vollname": "Niklas Schrader",
+      "parlament": "landtag-berlin",
+      "partei": "Die Linke",
+      "fraktion": "Die Linke",
+      "bundesland": "Berlin",
+      "listenmandat": true,
+      "regionHinweis": "Neukölln (Kandidaturwahlkreis Neukölln 6)",
+      "ausschuesse": [
+        "Ausschuss für Inneres, Sicherheit und Ordnung"
+      ],
+      "themen": ["Innenpolitik", "Polizei", "Verfassungsschutz", "Datenschutz", "Drogenpolitik"],
+      "funktionen": ["Parlamentarischer Geschäftsführer der Linksfraktion", "Sprecher für Innenpolitik", "Sprecher für Drogenpolitik"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.parlament-berlin.de/Abgeordnete/niklas-schrader" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Amtliche Bezeichnung des Innenausschusses der 19. WP ungeprüft übernommen (übliche Bezeichnung); Listenplatz-Angabe (17) WP-Zuordnung unklar. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "bjoern-luettmann",
+      "vollname": "Björn Lüttmann",
+      "parlament": "landtag-brandenburg",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Brandenburg",
+      "wahlkreis": "Wahlkreis 9 (Oranienburg)",
+      "ausschuesse": [
+        "Hauptausschuss"
+      ],
+      "themen": ["Verfassungs- und Bundesangelegenheiten", "Medienpolitik", "Gesundheitspolitik und Krankenhausfinanzierung", "Krisenresilienz", "Oberhavel"],
+      "funktionen": ["Vorsitzender der SPD-Fraktion im Landtag Brandenburg", "Vorsitzender des Hauptausschusses"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/luettmann_bjoern/24183" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Fraktionsvorsitz seit 12/2024; Mitwirkung in der Corona-Enquete-Kommission snippet-belegt (kein ständiger Ausschuss, daher nicht gelistet). Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "ludwig-scheetz",
+      "vollname": "Ludwig Scheetz",
+      "parlament": "landtag-brandenburg",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Brandenburg",
+      "wahlkreis": "Wahlkreis 27 (Dahme-Spreewald II/Oder-Spree I)",
+      "ausschuesse": [
+        "Hauptausschuss",
+        "Ausschuss für Inneres und Kommunales",
+        "Wahlprüfungsausschuss"
+      ],
+      "themen": ["Innen- und Kommunalpolitik", "Parlamentsorganisation", "Strukturwandel Lausitz", "Königs Wusterhausen"],
+      "funktionen": ["Parlamentarischer Geschäftsführer der SPD-Fraktion", "Mitglied des Präsidiums des Landtags"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/scheetz_ludwig/24191" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Rollen (ordentlich/stellvertretend) in Inneres/Kommunales und Wahlprüfung unklar. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "ulrike-liedtke",
+      "vollname": "Prof. Dr. Ulrike Liedtke",
+      "namensvarianten": ["Ulrike Liedtke"],
+      "parlament": "landtag-brandenburg",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Brandenburg",
+      "wahlkreis": "Wahlkreis 3 (Ostprignitz-Ruppin I)",
+      "themen": ["Parlament und Demokratie", "Kulturpolitik", "Musik", "Angelegenheiten der Sorben/Wenden", "Ostprignitz-Ruppin"],
+      "funktionen": ["Präsidentin des Landtages Brandenburg"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/liedtke_ulrike_(prof._dr.)/11247" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Als Landtagspräsidentin (8. WP wiedergewählt 10/2024) keine Ausschussmitgliedschaft belegt — bewusst leer; URL-Sonderform mit Titelklammer aus Suchtreffer. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "katja-poschmann",
+      "vollname": "Katja Poschmann",
+      "parlament": "landtag-brandenburg",
+      "partei": "SPD",
+      "fraktion": "SPD",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Westhavelland/Ostprignitz-Ruppin (Betreuungswahlkreis 4, Rathenow)",
+      "ausschuesse": [
+        "Ausschuss für Bildung, Jugend und Sport",
+        "Ausschuss für Wissenschaft, Forschung und Kultur"
+      ],
+      "themen": ["Bildungspolitik", "Lehrkräftegewinnung", "Wissenschaft und Forschung", "Kulturpolitik", "Jugend und Sport"],
+      "funktionen": ["Stellvertretende Vorsitzende der SPD-Fraktion", "Bildungspolitische Sprecherin der SPD-Fraktion"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/poschmann_katja/24188" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Mögliche Hauptausschuss-Mitgliedschaft ungeklärt und daher nicht gelistet; Listenplatz unbelegt. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "steeven-bretz",
+      "vollname": "Steeven Bretz",
+      "parlament": "landtag-brandenburg",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Potsdam (Kandidaturwahlkreis 22 Potsdam II)",
+      "ausschuesse": [
+        "Ausschuss für Haushalt und Finanzen"
+      ],
+      "stellvertretendeAusschuesse": [
+        "Hauptausschuss",
+        "Ausschuss für Wirtschaft, Arbeit, Energie und Klimaschutz"
+      ],
+      "themen": ["Haushalt und Finanzen", "Wirtschaft und Energie", "Landespolitik Brandenburg", "Potsdam"],
+      "funktionen": ["Vorsitzender der CDU-Fraktion im Landtag Brandenburg"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/bretz_steeven/13468" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Fraktionsvorsitz seit 03/2026 (mehrfach belegt); Listenplatz 2024 in Quellen widersprüchlich (5 oder 6). Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "kristy-augustin",
+      "vollname": "Kristy Augustin",
+      "parlament": "landtag-brandenburg",
+      "partei": "CDU",
+      "fraktion": "CDU",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Märkisch-Oderland (Betreuungswahlkreis 34 Märkisch-Oderland IV); Landesliste Platz 2",
+      "ausschuesse": [
+        "Ausschuss für Bildung, Jugend und Sport"
+      ],
+      "stellvertretendeAusschuesse": [
+        "Ausschuss für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz"
+      ],
+      "themen": ["Bildung", "Jugend", "Sport", "Frauen und Kinderschutz", "Märkisch-Oderland"],
+      "funktionen": ["Stellvertretende Fraktionsvorsitzende der CDU-Fraktion", "Sprecherin für Bildung, Jugend, Sport, Frauen und Kinderschutz"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/augustin_kristy/13480" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Einzug über Landesliste Platz 2, NICHT über Wahlkreis 34 (Auftragskorrektur; abgeordnetenwatch bestätigt). Petitionsausschuss-WP-Zuordnung unsicher, daher nicht gelistet. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "niels-olaf-lueders",
+      "vollname": "Niels-Olaf Lüders",
+      "namensvarianten": ["Niels Olaf Lüders"],
+      "parlament": "landtag-brandenburg",
+      "partei": "Bündnis Sahra Wagenknecht",
+      "fraktion": "BSW",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Strausberg, Landkreis Märkisch-Oderland; Landesliste Platz 4",
+      "ausschuesse": [
+        "Hauptausschuss",
+        "Ausschuss für Inneres und Kommunales",
+        "Ausschuss für Recht und Digitalisierung"
+      ],
+      "themen": ["Recht und Justiz", "Inneres und Kommunales", "Migrationsrecht", "Medienpolitik"],
+      "funktionen": ["Vorsitzender der BSW-Fraktion im Landtag Brandenburg", "Mitglied des Präsidiums des Landtags"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/lueders_niels-olaf/40623" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Amtliche Schreibweise mit Bindestrich (Niels-Olaf, URL-Slug bestätigt Muster); exakte Bezeichnung des Rechtsausschusses der 8. WP ungeprüft. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "christian-dorst",
+      "vollname": "Christian Dorst",
+      "parlament": "landtag-brandenburg",
+      "partei": "Bündnis Sahra Wagenknecht",
+      "fraktion": "BSW",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Königs Wusterhausen, Landkreis Dahme-Spreewald",
+      "ausschuesse": [
+        "Ausschuss für Haushalt und Finanzen",
+        "Sonderausschuss Bürokratieabbau",
+        "Ausschuss für Inneres und Kommunales",
+        "Ausschuss für Bildung, Jugend und Sport"
+      ],
+      "stellvertretendeAusschuesse": [
+        "Ausschuss für Recht und Digitalisierung"
+      ],
+      "themen": ["Haushalt und Finanzen", "Bürokratieabbau", "Corona-Aufarbeitung", "Kommunalfinanzen", "Mittelstand und Bauwirtschaft"],
+      "funktionen": ["Sprecher der BSW-Fraktion für Finanzen, Haushalt, Corona-Aufarbeitung und Bürokratieabbau"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/dorst_christian/40618" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Auftragskorrektur beachtet: Infrastrukturausschuss NICHT geführt (amtlicher Snippet nennt ihn nicht; nur veraltete Sekundärquellen). Rollen teils unklar. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "jenny-meyer",
+      "vollname": "Jenny Meyer",
+      "parlament": "landtag-brandenburg",
+      "partei": "Bündnis Sahra Wagenknecht",
+      "fraktion": "BSW",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Bernau bei Berlin, Landkreis Barnim; Landesliste Platz 9",
+      "ausschuesse": [
+        "Ausschuss für Infrastruktur und Landesentwicklung"
+      ],
+      "stellvertretendeAusschuesse": [
+        "Ausschuss für Wissenschaft, Forschung und Kultur",
+        "Ausschuss für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz",
+        "Ausschuss für Europaangelegenheiten und Entwicklungspolitik",
+        "Sonderausschuss Strukturentwicklung in der Lausitz",
+        "Petitionsausschuss"
+      ],
+      "themen": ["Energiepolitik", "Bauen und Wohnen", "Landesplanung", "Infrastruktur", "Wissenschaft und Forschung"],
+      "funktionen": ["Sprecherin der BSW-Fraktion für Energie, Bauen/Wohnen und Landesplanung", "Schriftführerin des Landtags"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/meyer_jenny/40625" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Infrastruktur-Zuordnung (Auftrag: ersetzt Dorst als Infrastrukturprofil): Sprecherrolle klar belegt, ordentliche Ausschussmitgliedschaft nur snippet-belegt, ein Gegencheck unbestätigt. Offene Prüfungen: Prüfstand-Datei."
+    },
+    {
+      "mandatsId": "falk-peschel",
+      "vollname": "Falk Peschel",
+      "parlament": "landtag-brandenburg",
+      "partei": "Bündnis Sahra Wagenknecht",
+      "fraktion": "BSW",
+      "bundesland": "Brandenburg",
+      "listenmandat": true,
+      "regionHinweis": "Senftenberg, Lausitz; Landesliste Platz 7",
+      "ausschuesse": [
+        "Hauptausschuss",
+        "Ausschuss für Bildung, Jugend und Sport",
+        "Sonderausschuss Strukturentwicklung in der Lausitz"
+      ],
+      "stellvertretendeAusschuesse": [
+        "Ausschuss für Inneres und Kommunales",
+        "Ausschuss für Haushalt und Finanzen",
+        "Ausschuss für Europaangelegenheiten und Entwicklungspolitik"
+      ],
+      "themen": ["Bildungspolitik", "Strukturwandel Lausitz", "Medienpolitik und öffentlich-rechtlicher Rundfunk", "Angelegenheiten der Sorben/Wenden", "Kommunales"],
+      "funktionen": ["Sprecher der BSW-Fraktion für Bildung", "Sprecher für Strukturentwicklung in der Lausitz", "Sprecher für Angelegenheiten der Sorben/Wenden"],
+      "offizielleQuellen": [
+        { "art": "parlament-profil", "url": "https://www.landtag.brandenburg.de/de/peschel_falk/40626" }
+      ],
+      "aktiv": false,
+      "notiz": "Recherche 2026-08-24, noch nicht bytegenau bestätigt (EGRESS_BLOCKED). Ausschüsse neu recherchiert (Auftragskorrektur): Hauptausschuss aktuell mehrfach 8.-WP-belegt und daher geführt; Haushaltskontrolle unklar und NICHT geführt. Offene Prüfungen: Prüfstand-Datei."
+    }
+  ]
+}
