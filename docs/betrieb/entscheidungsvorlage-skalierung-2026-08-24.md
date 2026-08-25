@@ -130,15 +130,34 @@ Alles aus Frage 2, dauerhaft nachgewiesen mit zehn Mandaten, und zusätzlich:
 4. **Tägliche Lage für 25 Mandate im echten Betrieb belegt** (Frage 7).
 5. **Neubewertung der zehn Berliner Profile nach der Wahl am 20.09.2026** (Frage 11).
 
-## 4 · Warum reicht der aktuelle KI-Gesamtdeckel von 100 (mit 30 reserviert) nicht sicher?
+## 4 · Trägt der aktuelle KI-Gesamtdeckel von 100 (mit 30 reserviert) die nächste Stufe?
 
-Weil **jede** vorhandene Evidenzlinie zeigt, dass der Deckel bei Wachstum entweder schon
-im Normalfall oder spätestens am Ereignistag erreicht wird — die Linien widersprechen
-sich nur darin, **wie früh**. Die verbindliche Restliste hält fest: **ab 25 Mandaten
-reicht der Gesamtdeckel 100 (davon 30 reserviert) auch im günstigsten Fall nicht.** Erreicht der Deckel, bleibt Arbeit
-sichtbar liegen („übersprungen wegen Budget") — an genau den Tagen, an denen die Lage am
-wichtigsten wäre. Dass der Betrieb heute grün ist, liegt an ruhigen Tagen (gemessen
-23./24.08.: 66 bzw. 29 von 100), nicht an ausreichender Reserve.
+> **Berichtigt 2026-08-25/5.** Diese Frage lautete „Warum reicht der Deckel nicht sicher?"
+> und antwortete mit „**ab 25 Mandaten reicht der Gesamtdeckel 100 auch im günstigsten Fall
+> nicht**". Das war die Aussage **einer** von drei Modelllinien und ist **zurückgenommen**.
+
+**Zwei Dinge sind zu trennen — der Wert und die Tragfähigkeit.**
+
+1. **Der Wert selbst ist nicht live verifiziert.** **100/30 sind dokumentierte Werte.**
+   `HELMUT_MAX_LLM_CALLS_PER_DAY` und `HELMUT_LLM_RESERVE_UNDERSTANDING` liegen in der
+   Vercel-Umgebung (aus einer Claude-Sitzung weder lesbar noch setzbar), und die Datenbank
+   speichert nur den **Verbrauch**, nicht die **Grenze**. Fehlt die Variable, greift laut
+   Code das Schutzlimit **50** (fail-closed). Gestützt sind 100/30 auf die Ablesungen
+   „66/100" und „29/100" vom 23./24.08. — das ist ein Beleg, keine Verifikation.
+2. **Die Tragfähigkeit hängt von der Stufe ab:**
+
+| Stufe | Trägt der Deckel 100? | Grundlage |
+|---|---|---|
+| **5** (heute) | **ja** — gemessen 62–77 Aufrufe/Tag | Budgetquittungen |
+| **25** | **offen — muss gemessen werden** | Linie A sagt 88–265 (untere Grenze **unter** 100), Linie B sagt 113–336 (schon der günstigste Fall **über** 100). Beide korrekt gerechnet, **keine gemessen** |
+| **50 und mehr** | **nein** — in **beiden** Modelllinien und in **beiden** Richtungen der Spanne zu klein | Linie A 110–333, Linie B 160–444 |
+
+**Was daraus folgt.** Für die Stufe **25** braucht es eine **Messung**, keine dritte
+Rechnung. Ab **50** ist die Anhebung eine sichere Voraussetzung. Wird der Deckel erreicht,
+bleibt Arbeit sichtbar liegen („übersprungen wegen Budget") — an genau den Tagen, an denen
+die Lage am wichtigsten wäre. Dass der Betrieb heute grün ist, liegt an ruhigen Tagen
+(gemessen 23./24.08.: 66 bzw. 29 von 100), nicht an nachgewiesener Reserve. Modellvergleich:
+[`skalierung-25-50-100.md`](skalierung-25-50-100.md) §2c.
 
 ## 5 · Welcher KI-Grenzwert wäre technisch sinnvoll, und welche Kosten werden erwartet?
 

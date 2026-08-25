@@ -268,7 +268,7 @@ const SCHUTZLIMIT_AUS_CODE = (() => {
 // bzw. „29/100" (Runbook §30.7, 23./24.08.) stammt aus einer API-Antwort, nicht aus
 // dieser Sitzung. Sie ist damit belegt, aber HIER nicht nachpruefbar.
 const DOKUMENTIERTER_DECKEL = deckelmodell(100, 30,
-  "DOKUMENTIERT (CURRENT_STATE §4, Runbook §30.7 Ablesung 66/100) — in dieser Sitzung NICHT nachgelesen");
+  "DOKUMENTIERT (CURRENT_STATE §4, Runbook §30.7 Ablesung 66/100) — in dieser Sitzung NICHT live verifiziert: Vercel-Env ist weder lesbar noch setzbar, llm_budget_counters speichert nur den Verbrauch");
 const PROD_DECKEL = deckelAusUmgebung();
 
 abschnitt("B0 · Deckelsemantik: die Reserve ist ein Anteil, kein Zuschlag");
@@ -318,7 +318,9 @@ check("B0.13 Ein gesetzter Wert wird gelesen und als solcher gekennzeichnet",
   deckelAusUmgebung({ HELMUT_MAX_LLM_CALLS_PER_DAY: "250", HELMUT_LLM_RESERVE_UNDERSTANDING: "50" })
     .werte.nichtPriorisiertMax === 200);
 check("B0.14 Der hier gerechnete Deckel ist als DOKUMENTIERT gekennzeichnet, nicht als gemessen",
-  /DOKUMENTIERT/.test(DOKUMENTIERTER_DECKEL.herkunft) && /NICHT nachgelesen/.test(DOKUMENTIERTER_DECKEL.herkunft));
+  /DOKUMENTIERT/.test(DOKUMENTIERTER_DECKEL.herkunft)
+  && /NICHT live verifiziert/.test(DOKUMENTIERTER_DECKEL.herkunft),
+  DOKUMENTIERTER_DECKEL.herkunft);
 abschnitt("B1 · Kapazitaet je Klasse (Bedarf, Angebot, Reserve, Engpass)");
 const STUFEN = [5, 25, 100, 200, 500];
 const ergebnisse = STUFEN.map(modell);
@@ -384,9 +386,29 @@ check("B2.7 Die lokal nachgewiesene Parallelitaet (8) deckt auch die pessimistis
   noetigeParallelitaet(500, AUSLASTUNG_PESSIMISTISCH) <= 8);
 check("B2.8 Die Obergrenze des Moduls entspricht der nachgewiesenen Zahl (kein ungedeckter Wert)",
   vertrag.VERSTEHEN_PARALLELITAET_MAX === 8, String(vertrag.VERSTEHEN_PARALLELITAET_MAX));
-check("B2.9 Der KI-Deckel bleibt der bindende Grund gegen 25+ Mandate — nicht der Durchsatz",
-  kiSpanne(25).oben > DOKUMENTIERTER_DECKEL.gesamtObergrenze,
-  `${kiSpanne(25).oben} vs ${DOKUMENTIERTER_DECKEL.gesamtObergrenze}`);
+// EHRLICH ZURUECKGENOMMEN (Korrekturrunde 5, 2026-08-25). Hier stand: „Der KI-Deckel bleibt
+// der bindende Grund gegen 25+ Mandate". Das behauptete zweierlei, was nicht belegt ist:
+//   (a) der Deckel sei fuer JEDE Stufe ab 25 bindend — fuer 25 sagt DIESE Linie 88–265, die
+//       untere Grenze liegt UNTER 100; ob er bei 25 bindet, ist OFFEN und muss GEMESSEN
+//       werden (die zweite Linie sagt 113, siehe skalierung-25-50-100.md §2c);
+//   (b) der Deckelwert selbst sei bewiesen — 100/30 sind DOKUMENTIERT, in dieser Sitzung
+//       NICHT live verifiziert (Vercel-Env unlesbar, die DB speichert nur den Verbrauch).
+// Zugesichert wird deshalb nur noch, was diese Linie wirklich traegt: der Durchsatz ist bei
+// 25 nicht der Engpass, und AB 50 reisst der Deckel in beiden Richtungen der Spanne.
+check("B2.9a Bei 25 Mandaten ist der Durchsatz NICHT der Engpass (Reserve >= 2 in jeder Klasse)",
+  modell(25).engpassReserve >= 2, `x${modell(25).engpassReserve.toFixed(1)}`);
+check("B2.9b Fuer 25 bleibt die Deckelfrage OFFEN — die Spanne umschliesst den Deckel",
+  kiSpanne(25).unten <= DOKUMENTIERTER_DECKEL.gesamtObergrenze
+  && kiSpanne(25).oben > DOKUMENTIERTER_DECKEL.gesamtObergrenze,
+  `${kiSpanne(25).unten}–${kiSpanne(25).oben} vs ${DOKUMENTIERTER_DECKEL.gesamtObergrenze}`
+  + " — nicht entschieden, zu messen");
+check("B2.9c Erst AB 50 ist der Deckel in dieser Linie sicher bindend — und dann nicht der Durchsatz",
+  kiSpanne(50).unten > DOKUMENTIERTER_DECKEL.gesamtObergrenze && modell(50).engpassReserve >= 2,
+  `${kiSpanne(50).unten}–${kiSpanne(50).oben} vs ${DOKUMENTIERTER_DECKEL.gesamtObergrenze}`);
+check("B2.9d Der Deckelwert wird NICHT als bewiesen gefuehrt (dokumentiert, nicht verifiziert)",
+  /DOKUMENTIERT/.test(DOKUMENTIERTER_DECKEL.herkunft)
+  && /NICHT (nachgelesen|live verifiziert)/.test(DOKUMENTIERTER_DECKEL.herkunft),
+  DOKUMENTIERTER_DECKEL.herkunft);
 
 abschnitt("B3 · KI-Tagesbedarf GETRENNT vom technischen Durchsatz");
 console.log("\n  Deckelsemantik: " + deckelSatz(DOKUMENTIERTER_DECKEL));
@@ -454,6 +476,9 @@ check("B5.2 Die Anbietersteuerung setzt fuer Google eine konservative Rate ohne 
 console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
 console.log("EINORDNUNG: Rechenmodell aus Production-Messwerten (P) — KEIN Production-Beweis");
 console.log("fuer 25+ Mandate. Der KI-Tagesbedarf ist eine getrennte Gruenderentscheidung.");
+console.log("DECKEL: 100/30 sind DOKUMENTIERT, in dieser Sitzung NICHT live verifiziert. Ob der");
+console.log("Deckel die Stufe 25 traegt, ist OFFEN und muss GEMESSEN werden (diese Linie 88–265,");
+console.log("die an der Fuenfermessung geeichte Linie 113–336). AB 50 reisst er in BEIDEN Linien.");
 console.log("Die nachgewiesene Verstehensparallelitaet (8) ist LOKAL belegt (echte PostgreSQL,");
 console.log("echte Nebenlaeufigkeit) — sie gibt Helmut NICHT fuer 25 bis 500 Mandate frei.");
 process.exit(fail > 0 ? 1 : 0);

@@ -1,6 +1,6 @@
 # Skalierung 25 / 50 / 100 Mandate — Kapazität, Kriterien, Nachweise, Aktivierungsplan
 
-**Stand:** 2026-08-25 (Korrekturrunde 4) · **Ausgangscommit:** `24a895ed` (= `main`, Merge PR #269)
+**Stand:** 2026-08-25 (Korrekturrunde 5) · **Ausgangscommit:** `24a895ed` (= `main`, Merge PR #269)
 **Kanonische Stelle für die Skalierung auf 25/50/100.** Ältere Skalierungsdokumente bleiben
 gültig für ihren jeweiligen Gegenstand:
 [`skalierung-200-mandate.md`](skalierung-200-mandate.md) (Rechenmodell 200),
@@ -24,7 +24,7 @@ Diese Datei verwendet ausschließlich diese Begriffe. Sie werden **nie** vermisc
 
 **Ein Nachweis auf Z2 ist niemals ein Nachweis auf Z3, und Z3 ist niemals Z4.**
 
-### 0.1 Verbindlicher Stand (Fassung 2026-08-25/4)
+### 0.1 Verbindlicher Stand (Fassung 2026-08-25/5)
 
 Eine frühere Fassung sagte „**Z1 und Z2 für 25/50/100 erreicht**". Das war **zu weit** und
 ist **zurückgenommen**. Verbindlich gilt:
@@ -47,8 +47,10 @@ gehören und offen sind:
 2. **Fluid Compute ist unbestätigt** — jede Laufzeit über 300 s bleibt eine Hypothese (§6.1);
 3. **Supabase unter realistischer Last ist ungeprüft** — der Lasttest lief gegen eine lokale
    PostgreSQL; auch die **Verbindungsfrage** ist offen (§4.3a);
-4. der **KI-Tagesdeckel** ist für die Stufen 25/50/100 nicht festgelegt (§5.2), und ob er
-   bei **25** überhaupt reißt, ist **modellabhängig und damit unentschieden** (§2c);
+4. der **KI-Tagesdeckel** ist für die Stufen 25/50/100 nicht festgelegt (§5.2). Die Werte
+   **100/30 sind dokumentiert, in dieser Sitzung nicht live verifiziert**; für **25** ist die
+   Tragfähigkeit **offen und muss gemessen werden**, **ab 50** reicht 100 in **beiden**
+   Modelllinien nicht (§2c);
 5. es gibt **drei reguläre Abflussläufe/Tag**, nicht elf (§2a) — der Abstand zur
    hochgerechneten Menge ist damit größer als zuvor dargestellt;
 6. die **Quellenversorgung der vorbereiteten Landtagsprofile fehlt** (§8.0).
@@ -78,17 +80,52 @@ nebeneinander mit Zweck und Grenze dokumentiert (§2c). Und die Frage, warum ein
 Lauf weit unter der geplanten Menge blieb, ist aus dem Protokoll beantwortet statt vermutet
 (§2b).
 
+### 0.3 Was die Korrekturrunde 5 (2026-08-25) geändert hat
+
+Sechs verbliebene Widersprüche, alle **gegen Code, Konfiguration oder Production geprüft**,
+bevor eine Zeile geändert wurde. Keine Production-Änderung, keine Migration, keine Aktivierung.
+
+| # | Widerspruch | Ergebnis |
+|---|---|---|
+| 1 | `CURRENT_STATE` sagte gleichzeitig „Deckel 100/30 **live**, reicht ab 25 nicht" **und** „Wert nicht nachprüfbar, 25 modellabhängig offen" | **bestätigt** — überall vereinheitlicht: 100/30 sind **dokumentiert, nicht live verifiziert**; **25 offen (messen)**; **ab 50** reicht 100 in beiden Linien nicht (§2c, §5.2, `CURRENT_STATE` §4/§6.3) |
+| 2 | „Alle **drei** Narrativslots sind heute inert" | **bestätigt und falsch** — `/api/cron/lage-briefing` läuft bei ausgeschalteter Narrativwarteschlange über seinen **Direktpfad** weiter; nur die **zwei** Nachlaufeinträge sind inaktiv. Keiner der drei ist ein **allgemeiner** Abfluss ⇒ die Zahl **drei reguläre Abflussläufe** bleibt korrekt (§2a) |
+| 3 | „Offen ist nur `20260720`" stand ohne Einschränkung auf dem PR-Stand | **bestätigt** — auf `main` offen ist nur `20260720`; **PR #270 bereitet zusätzlich F9 vor**, weder gemergt noch angewendet (`CURRENT_STATE` §3/§12) |
+| 4 | Mandatsprofile und Identitätsprofile vermischt („insgesamt 9 Profile") | **bestätigt** — rein lesend getrennt gezählt: **9** Mandatsprofile (5 aktiv), **10** Identitätsprofile (**1** ohne Mandatsprofil), **0** Testmandate (§1) |
+| 5 | Lokale Datenbanktests liefen gegen PostgreSQL **16.13**, Production fährt **17.6** | **bestätigt** — die drei relevanten Suiten laufen jetzt zusätzlich gegen eine **lokale, isolierte PostgreSQL 17.6** (§4.9a) |
+| 6 | F10 erschien als Voraussetzung **vor** F9 | **bestätigt** — F10 ist **optionale Optimierung**, **nicht blockierend**, für den 7-Tage-Nachweis **nicht erforderlich**, erst **bei gemessenem Bedarf**, nach einer F9-Anwendung nur über eine **neue reguläre Migration** (§4.9, §9a, §10) |
+
 ---
 
 ## 1 · Belegter Ausgangszustand (gemessen, 2026-08-25)
 
-Rein lesende SELECTs gegen Production (Supabase `ddckuvvpcytqbyfmbvie`, PostgreSQL 17.6.1).
-Keine Schreiboperation, kein `EXPLAIN ANALYZE`.
+Rein lesende SELECTs gegen Production (Supabase `ddckuvvpcytqbyfmbvie`, PostgreSQL **17.6**;
+`select version()` ⇒ `PostgreSQL 17.6 on aarch64-unknown-linux-gnu`, Projektangabe
+`17.6.1.127`, Engine `17`). Keine Schreiboperation, kein `EXPLAIN ANALYZE`.
+
+**Profilzahlen — zwei Zählungen, die nicht dasselbe sind** (rein lesend bestätigt, 25.08.,
+Korrekturrunde 5; frühere Fassungen sagten pauschal „9 Profile"):
+
+| Größe | Wert |
+|---|---:|
+| **Mandatsprofile** (`mandate_profiles`) | **9** |
+| davon **aktiv** (`aktiv is true`, ohne Löschmarke) | **5** |
+| davon deaktiviert | **4** |
+| davon mit Löschmarke (`geloescht_at`) | **0** |
+| **Identitätsprofile** (`profiles`) | **10** |
+| davon **ohne** zugehöriges Mandatsprofil | **1** |
+| Mandatsprofile **ohne** Identitätsprofil | **0** |
+| **Testmandate** (Kennung `test-…`, beide Tabellen) | **0** |
+
+> Ein **Identitätsprofil** ist ein Konto (`profiles`: Kennung, Name, E-Mail). Ein
+> **Mandatsprofil** ist die politische Steuergröße (`mandate_profiles`: Ausschüsse, Themen,
+> Aktivzustand). **Nur die fünf aktiven Mandatsprofile erzeugen Arbeit, Last und Kosten** —
+> der Arbeitsplaner filtert genau auf diesem Prädikat. Das zehnte Identitätsprofil ohne
+> Mandatsprofil ist damit **kein** sechstes Mandat.
 
 | Größe | Wert | Bewertung |
 |---|---|---|
 | aktive Mandate | **5** | Z5 für 5 Mandate |
-| `helmut_jobs` / `helmut_job_outbox` | 1123 / 888 | deckt sich mit 1124→1123 bzw. 889→888 nach der Neutralisierung |
+| `helmut_jobs` / `helmut_job_outbox` | 1123 / 888 | Stand der Erstmessung; deckt sich mit 1124→1123 bzw. 889→888 nach der Neutralisierung. **Nachgelesen am selben Tag (Korrekturrunde 5): 1347 / 1112** — der reguläre Betrieb ist weitergelaufen |
 | Status `fehlgeschlagen` | **0** | `endgueltig_fehler = 0` |
 | hängende Leases | **0** | |
 | verwaiste Outbox-Zeilen | **0** | |
@@ -197,13 +234,39 @@ Routen stehen mit **drei** Zeiteinträgen im Plan.
 
 **Was die übrigen acht Einträge NICHT tun.** `morning-briefing` (05:00), `understanding`
 (05:30/21:30), `lage-briefing` (05:45), `health-report` (06:00), `lage-briefing-nachlauf`
-(06:10/06:22) und `lage-check` (10:00) rufen den Warteschlangenabfluss nicht auf. Die drei
-Narrativslots (`lage-briefing` + zwei Nachlaufslots) würden über `narrativSlotLauf`
-**ausschließlich Aufträge des Typs `tenant_narrative`** abarbeiten — und auch das nur, wenn
-**beide** Flags gesetzt sind (`HELMUT_SCALABLE_PIPELINE` **und** `HELMUT_NARRATIV_QUEUE`).
-`HELMUT_NARRATIV_QUEUE` ist aus und die zugehörige Migration `20260809_jobqueue_narrativ.sql`
-ist nicht angewendet (F6); die Slots sind heute **inert**. Ein schwerer Cron, der diesen Pfad
-nicht aufruft, ist kein Abflussplatz — auch dann nicht, wenn er lange läuft und viel tut.
+(06:10/06:22) und `lage-check` (10:00) rufen den Warteschlangenabfluss nicht auf. Ein schwerer
+Cron, der diesen Pfad nicht aufruft, ist kein Abflussplatz — auch dann nicht, wenn er lange
+läuft und viel tut.
+
+> **Berichtigung (2026-08-25/5): „alle drei Narrativslots sind heute inert" war falsch.**
+> Eine frühere Fassung dieses Abschnitts fasste `lage-briefing` und die beiden
+> `lage-briefing-nachlauf`-Einträge zu „drei inerten Narrativslots" zusammen. Gegen
+> `server.js` geprüft gilt stattdessen:
+
+| Cron-Eintrag | bei **eingeschalteter** Narrativwarteschlange | bei **ausgeschalteten** Flags (heute) |
+|---|---|---|
+| `/api/cron/lage-briefing` 05:45 | Warteschlangenslot, **typgebunden** `tenant_narrative` (`narrativSlotLauf`) | **aktiv** — der bestehende **Direktpfad** läuft weiter (Vorwärmschleife über alle aktiven Profile) |
+| `/api/cron/lage-briefing-nachlauf` 06:10 | Warteschlangenslot, **typgebunden** `tenant_narrative` | **inaktiv** — ehrlicher Übersprung, kein Schreibvorgang, kein Modellaufruf |
+| `/api/cron/lage-briefing-nachlauf` 06:22 | Warteschlangenslot, **typgebunden** `tenant_narrative` | **inaktiv** — wie oben |
+
+**Der Code sagt es so** (`server.js`): in `/api/cron/lage-briefing` steht
+`if (scalablePipeline.narrativUeberWarteschlange()) { return narrativSlotLauf(…) }` — ein
+`return` **vor** der Direktschleife. Nur bei eingeschalteter Warteschlange ersetzt der
+Warteschlangenzweig den Direktpfad; ist sie aus, läuft die Direktschleife wie bisher. Die
+Nachlaufroute hat diesen Altpfad ausdrücklich **nicht** (Kommentar im Quelltext: „ein reiner
+Warteschlangen-Slot: sie hat KEINEN Altpfad") und endet bei ausgeschalteten Flags mit
+`uebersprungen — OP-30-Flags aus, keine Verarbeitung`.
+
+**Was sich dadurch an der Abflusszahl ändert: nichts.** Keiner der drei Einträge ist ein
+**allgemeiner** Warteschlangenabfluss — weder heute noch nach F6. Sie wären ausschließlich
+typgebunden auf `tenant_narrative` und würden **keinen** anderen Auftragstyp abholen. Die
+**drei regulären allgemeinen Abflussläufe/Tag** (crawl 04:00, pipeline 16:00, crawl 20:00 UTC)
+bleiben damit unverändert korrekt. `HELMUT_NARRATIV_QUEUE` ist aus und die zugehörige
+Migration `20260809_jobqueue_narrativ.sql` ist nicht angewendet (F6).
+
+Testgesichert gegen ein Wiederauftreten: `scripts/warteschlangen-abfluss-test.js` §4 prüft den
+Direktpfad des regulären Slots, die Altpfadlosigkeit der Nachlaufroute und die Typbindung
+einzeln — ein Test, der die drei Einträge wieder gleich behandelt, wird rot.
 
 **Warum der Watchdog nicht mitzählt.** `briefing-watchdog.yml` ruft zwar `/api/cron/pipeline`
 und damit denselben Abflusspfad. Er ist aber ein **bedingter Ersatzlauf**: die Vorprüfung
@@ -387,7 +450,10 @@ Die nächste **nicht produktive** Teststufe wird nur ausgeführt, wenn die vorhe
 ### 4.1 Gestufter Belastungsnachweis — **Zustand Z2 (synthetisch)**
 
 Werkzeug: `scripts/skalierung-stufen-lasttest.js`, ausgeführt am 2026-08-25 über
-`scripts/lokal.js` gegen eine **lokale** PostgreSQL 16.13 (127.0.0.1:5433).
+`scripts/lokal.js` gegen eine **lokale** PostgreSQL — zuerst **16.13** (127.0.0.1:5433),
+in der Korrekturrunde 5 zusätzlich gegen eine **lokale, isolierte PostgreSQL 17.6**
+(127.0.0.1:5434), also die **Hauptversion von Production**. Beide Male **60 PASS / 0 FAIL**,
+je zweimal gefahren (§4.9a).
 
 **Was echt war:** der Arbeitsplan aus dem Produktionscode (`planeArbeit` →
 `kompiliereQuellenbedarf` + `planeMandatsarbeit`), die echten Migrationen, echte
@@ -440,10 +506,12 @@ Nachgeschärft nach Review 2026-08-25/2 — drei Grenzen, die vorher zu weit for
    dominieren die externen Abrufe: der reale Wirkungslauf brauchte **259 s für 117
    Abschlüsse** (0,45/s) — rund **2 300-mal langsamer**. Über die Gesamtdauer eines echten
    Tageslaufs sagt der Test nichts.
-2. **Die Verbindungsspitze 5/300 ist ein LOKALER Messwert** einer selbst gestarteten
-   PostgreSQL 16 mit `max_connections=300`. Sie ist **kein Supabase-Grenzwert** und **keine
-   Aussage über den Pooler des Free-Plans**. Production spricht über PostgREST/HTTP mit
-   PostgreSQL 17.6.1 und ganz anderen Verbindungsgrenzen — die hier **nicht** gemessen wurden.
+2. **Die Verbindungsspitze ist ein LOKALER Messwert** einer selbst gestarteten PostgreSQL:
+   **5/300** auf dem 16.13-Cluster (`max_connections=300`), **5/100** auf dem
+   17.6-Cluster (Vorgabewert 100) — in beiden Fällen dieselbe **Spitze von 5**. Sie ist
+   **kein Supabase-Grenzwert** und **keine Aussage über den Pooler des Free-Plans**.
+   Production spricht über PostgREST/HTTP mit PostgreSQL 17.6 und ganz anderen
+   Verbindungsgrenzen — die hier **nicht** gemessen wurden.
 3. **Der Test beweist NICHT, dass Supabase unter realistischer Production-Last kein Engpass
    wird.** Bewiesen ist ausschließlich: *die Warteschlangenmechanik selbst* — Reservieren,
    Lease, Fencing, Abschluss, Nebenläufigkeit — trägt bis 100 Mandate gegen eine lokale
@@ -564,8 +632,9 @@ Funktion, die Production laufend liest, mit einem Fenster, in dem sie nicht exis
 Die neue Funktion daneben hat denselben Nutzen ohne dieses Risiko: **kein bestehender
 Aufrufer ändert sich, keine bestehende Signatur wird angefasst.**
 
-**Nachweis:** `scripts/jobqueue-ankunft-datenbank-test.js` — **30 PASS / 0 FAIL** gegen
-echte PostgreSQL 16: Migration additiv, wiederholbar, Rechte wie `helmut_job_metrics`
+**Nachweis:** `scripts/jobqueue-ankunft-datenbank-test.js` — **30 PASS / 0 FAIL** gegen echte
+PostgreSQL **16.13** und, seit der Korrekturrunde 5, **ebenfalls 30 PASS / 0 FAIL** gegen echte
+PostgreSQL **17.6** (§4.9a): Migration additiv, wiederholbar, Rechte wie `helmut_job_metrics`
 (nichts für `anon`/`authenticated`/`public`), Datensparsamkeit, Zeitfenster wirkt,
 Rollback ohne Datenverlust und idempotent. Bei leerer Warteschlange meldet das Verhältnis
 **`null` (unbestimmt)**, nicht `0` — eine `0` wäre ein falsches Alarmsignal.
@@ -654,7 +723,8 @@ einen eigenen Index?
 > sind die korrigierten.
 
 **Messung** (`scripts/jobqueue-ankunft-index-datenbank-test.js`, **36 PASS / 0 FAIL**,
-echte lokale PostgreSQL 16.13, `EXPLAIN ANALYZE, BUFFERS`). Die Nutzlast ist auf die in
+echte lokale PostgreSQL 16.13, `EXPLAIN ANALYZE, BUFFERS`; **in §4.9a gegen die
+Production-Hauptversion 17.6 wiederholt**). Die Nutzlast ist auf die in
 Production **rein lesend gemessene** mittlere Größe geeicht
 (`avg(pg_column_size(payload))` = **821 Byte**) — ohne diese Eichung fiele die Messung zu
 günstig aus, weil der sequentielle Durchlauf die Nutzlast mitliest.
@@ -710,16 +780,23 @@ Begründung — alles aus den Messungen oben:
    `helmut_jobs_bereinigen` hat im Anwendungscode **keinen Aufrufer** (im Test geprüft) —,
    nicht der Plan.
 
-> **Der bessere Hebel ist dokumentiert, aber bewusst NICHT gezogen (neu: F10).** Die
-> Zeitgrenze inline zu rechnen wäre ein Änderungssatz **ohne Speicherkosten, ohne neue
-> Migration und ohne Erweiterung des Funktionsumfangs** — F9 enthielte danach weiterhin
-> ausschließlich seine dokumentierte Ankunftskennzahl. Diese Runde schreibt eine bereits
-> zweimal reviewte, freigabepflichtige Migration jedoch **nicht** noch einmal um; die
-> Messung liegt vor, die Entscheidung liegt beim Betreiber (§10, F10).
+> **Der bessere Hebel ist dokumentiert, aber bewusst NICHT gezogen (F10).** Die Zeitgrenze
+> inline zu rechnen wäre ein Änderungssatz **ohne Speicherkosten und ohne Erweiterung des
+> Funktionsumfangs**. Diese Runde schreibt eine bereits zweimal reviewte, freigabepflichtige
+> Migration jedoch **nicht** noch einmal um; die Messung liegt vor, die Entscheidung liegt
+> beim Betreiber (§10, F10).
+>
+> **Einordnung von F10, verbindlich (2026-08-25/5):** F10 ist eine **optionale Optimierung**,
+> **aktuell nicht blockierend**, für den **siebentägigen Nachweis nicht erforderlich** und
+> **erst bei gemessenem Bedarf** erneut zu prüfen. **F10 ist keine Voraussetzung vor F9** —
+> eine frühere Fassung nannte es „sinnvoll vor F9"; das ist **zurückgenommen**. Wird F9
+> angewendet, ist es angewendete Historie und wird nicht umgeschrieben: F10 ist danach
+> **nur über eine neue reguläre Vorwärtsmigration** umsetzbar (`CLAUDE.md` §4.8).
 
 **Erneut zu prüfen**, sobald einer der vier Punkte nicht mehr stimmt: Supabase Pro (größere
 Grenze), Aufbewahrung weiterhin aus **und** 50+ aktive Mandate, oder ein neuer Aufrufer, der
-die Kennzahl häufig liest. Dann zuerst F10, erst danach ein Index.
+die Kennzahl häufig liest. Dann — **bei dann gemessenem Bedarf** — zuerst F10 (als neue
+Vorwärtsmigration, falls F9 zu diesem Zeitpunkt angewendet ist), erst danach ein Index.
 
 **Mitgeprüft:** Indexmenge namensgleich zu Production (§1.1), Vorwärtsmigration additiv,
 fachliche Richtigkeit bei voller Datenmenge (Ankunft und Abfluss exakt gegen eine
@@ -732,6 +809,65 @@ unverändert).
 > **Production wurde dabei nicht angefasst.** Alle `EXPLAIN ANALYZE` liefen lokal; gegen
 > Production lief ausschließlich rein lesendes SQL (Zeilenzahl, Tabellengröße, mittlere
 > Nutzlast, Indexliste, Spalten von `llm_budget_counters`).
+
+---
+
+### 4.9a Versionsgleiche Gegenprobe auf PostgreSQL 17.6 (Korrekturrunde 5, 2026-08-25)
+
+**Der Befund.** Die Messungen in §4.1, §4.6 und §4.9 liefen gegen **PostgreSQL 16.13** — die
+einzige Version, die in dieser Umgebung als Paket vorliegt. **Production fährt 17.6**
+(rein lesend gelesen: `select version()` ⇒ `PostgreSQL 17.6 on aarch64-unknown-linux-gnu`,
+Supabase-Projektangabe `17.6.1.127`, Engine `17`). Ein Planvergleich über eine
+Hauptversionsgrenze hinweg ist **keine versionsgleiche Production-Simulation**: der Planer
+ändert sich zwischen Hauptversionen.
+
+**Was getan wurde.** In dieser Sitzung wurde eine **lokale, isolierte PostgreSQL 17.6**
+aufgesetzt (eigener Cluster, eigener Port 5434, eigenes Datenverzeichnis, `trust` nur auf
+127.0.0.1, keinerlei Verbindung zu Production) und die drei relevanten Suiten wurden über
+`scripts/lokal.js` **zusätzlich** dagegen gefahren. Der 16.13-Cluster blieb parallel
+bestehen, damit beide Zahlenreihen **auf derselben Maschine in derselben Sitzung** entstehen.
+
+| Suite | PostgreSQL 16.13 | PostgreSQL **17.6** (Production-Hauptversion) |
+|---|---|---|
+| `jobqueue-ankunft-datenbank-test.js` | **30 PASS / 0 FAIL** | **30 PASS / 0 FAIL** |
+| `jobqueue-ankunft-index-datenbank-test.js` | **36 PASS / 0 FAIL** | **36 PASS / 0 FAIL** |
+| `skalierung-stufen-lasttest.js` (25/50/100) | **60 PASS / 0 FAIL** (2×) | **60 PASS / 0 FAIL** (2×) |
+
+**Die Indexmessung Seite an Seite** (365 Tage, 834 755 Zeilen, Nutzlast auf 821 Byte geeicht):
+
+| Größe | PostgreSQL 16.13 | PostgreSQL **17.6** | Bewertung |
+|---|---:|---:|---|
+| Funktion heute (CTE-Join) | 522 396 Puffer · 1574 ms | 522 395 Puffer · 1624 ms | **gleicher Plan** (Seq Scan), gleicher Aufwand |
+| Zeitgrenze **inline** | 209 223 · 317 ms | 209 222 · 287 ms | **Faktor 2,5** in beiden Versionen |
+| zusätzlicher `created_at`-Index | 210 262 · 613 ms · **18 MB** | 209 406 · 713 ms · **18 MB** | **Faktor 2,5**, gleiche Speicherkosten |
+| Hälfte (A) Ankunft | 104 345 · 129 ms · **Seq Scan** | 104 345 · 106 ms · **Seq Scan** | ungedeckt in beiden |
+| Hälfte (B) Abfluss | 7 454 · 24 ms · **Index Only Scan** | 7 168 · 38 ms · **Index Only Scan** | `helmut_jobs_bereinigung_idx` greift in beiden (Faktor 14 bzw. 15) |
+| Zuwachs je Tag (100-Mandate-Menge) | 2,71 MB | 2,71 MB | identisch |
+
+**Ergebnis: der Indexbefund ist auf Production übertragbar.** Die **Planwahl ist in beiden
+Hauptversionen dieselbe** — die Ankunftshälfte läuft sequentiell, die Abflusshälfte nutzt den
+vorhandenen Teilindex, und der CTE-Join sperrt ihn in beiden Versionen aus. Auch die beiden
+Hebel wirken gleich stark (Faktor 2,5) bei gleichen Speicherkosten (18 MB). Die Entscheidung
+aus §4.9 — **kein zusätzlicher Index, F9 unverändert** — steht damit **nicht** mehr auf einer
+Messung gegen eine fremde Hauptversion.
+
+**Ehrliche Grenzen dieser Gegenprobe** — sie schließt die Versionslücke, nicht mehr:
+
+1. **Gleiche Hauptversion ist nicht gleiche Umgebung.** Der lokale 17.6-Cluster fährt
+   Vorgabewerte (`shared_buffers` 128 MB, `max_connections` 100) auf x86-64; Production läuft
+   auf aarch64 mit Supabase-Konfiguration. Absolute Millisekunden sind **nicht** übertragbar,
+   Planwahl und Größenordnung sind es.
+2. **Der Client blieb `psql` 16.13** (die eingebettete 17.6-Auslieferung bringt nur
+   `initdb`/`pg_ctl`/`postgres` mit). Für `EXPLAIN ANALYZE` ist das ohne Belang — der Plan
+   entsteht **serverseitig**.
+3. **Kein Production-Lasttest, keine Production-Migration.** Gegen Production lief in dieser
+   Runde ausschließlich rein lesendes, eng begrenztes SQL; **kein `EXPLAIN ANALYZE`**.
+4. **Die Verbindungsspitze bleibt lokal.** 5/100 auf 17.6, 5/300 auf 16.13 — beides sagt
+   nichts über den Supabase-Pooler (§4.3a).
+5. **Der 17.6-Cluster ist Sitzungswerkzeug, kein Repository-Bestandteil.** Er liegt außerhalb
+   des Arbeitsbaums; es wurde **keine** Abhängigkeit in `package.json` aufgenommen und **kein**
+   Binärpaket eingecheckt. Ein späterer Lauf muss ihn erneut aufsetzen — die Suiten
+   überspringen ohne Server weiterhin **ehrlich** statt falsch grün zu melden.
 
 ---
 
@@ -769,7 +905,7 @@ ist lokal belegt, ist aber **nicht angewendet** (F9) — die Lücke bleibt bis d
 
 | # | Lücke | Blockiert |
 |---|---|---|
-| R1 | KI-Tagesdeckel 100 trägt keine Stufe | jede Aktivierung |
+| R1 | KI-Tagesdeckel: **100/30 dokumentiert, nicht live verifiziert**; **25 offen** (muss gemessen werden), **ab 50 reicht 100 in beiden Modelllinien nicht** (§2c/§5.2) | Aktivierung ab Stufe B sicher; Stufe A erst nach Messung |
 | — | Siebentägiger Fünfernachweis nicht begonnen | Stufe A |
 | F9 | Ankunftskennzahl nicht angewendet ⇒ Nachweis nicht messbar | Stufe A |
 | R2 | Abflussläufe: **3 reguläre/Tag** gegen hochgerechnet ~20 nötige bei 100 (§2a) | Stufe B/C |
@@ -963,7 +1099,7 @@ aus auf `vercel.com` beschränkten Suchtreffern und dem Vercel-Dokumentationswer
 
 | # | Risiko | Stufe | Bewertung |
 |---|---|---|---|
-| R1 | KI-Tagesdeckel 100 trägt keine Stufe | 25/50/100 | **blockierend**, Freigabeentscheidung |
+| R1 | KI-Tagesdeckel: **100/30 dokumentiert, in dieser Sitzung nicht live verifiziert**. Für **25** ist die Tragfähigkeit **offen und zu messen** (Linie A 88–265, Linie B 113–336); **ab 50** reicht 100 in **beiden** Linien nicht (§2c) | 25: offen · 50/100: sicher zu klein | **ab 50 blockierend**, Freigabeentscheidung; bei 25 zuerst **Messung** statt Rechnung |
 | R2 | Abflussläufe: **3 reguläre/Tag** (§2a) gegen hochgerechnet ~20 nötige bei 100 (§2, Hochrechnung) — der Watchdog ist ein **bedingter Ersatzlauf** und zählt nicht mit | 50/100 | hoch |
 | R3 | Supabase Free: 500-MB-Grenze nicht überwacht; Überschreitung ⇒ Read-only. **Heute 160 MB belegt** (rein lesend, 25.08.); bei 100-Mandate-Menge wäre der Rest (≈ 340 MB) in rund **126 Tagen** aufgebraucht (§4.9) | 25/50/100 | hoch |
 | R4 | kein PITR/Backup (OP-01) | alle | hoch, Kostenentscheidung |
@@ -1101,6 +1237,20 @@ gibt den nächsten automatisch frei.
 > Sollte der laufende Nachweis zeigen, dass der Deckel **schon bei fünf Mandaten** drosselt,
 > rückt er vor — das wäre dann ein **gemessener** Befund und keine Annahme.
 
+> **F10 steht bewusst NICHT in dieser Reihenfolge (2026-08-25/5).** Eine frühere Fassung des
+> Abschlussberichts und der PR-Beschreibung führte „F10 entscheiden — sinnvoll **vor** F9" als
+> eigenen Schritt zwischen Deployment und F9. Das ist **zurückgenommen** und in allen drei
+> Dokumenten entfernt. F10 ist eine **optionale Optimierung**, **aktuell nicht blockierend**
+> und für den siebentägigen Nachweis **nicht erforderlich**; sie wird **erst bei gemessenem
+> Bedarf** wieder aufgerufen (§4.9). Wird F9 vorher angewendet, ist F10 danach **nur über eine
+> neue reguläre Vorwärtsmigration** umsetzbar — angewendete Migrationen werden nicht
+> umgeschrieben (`CLAUDE.md` §4.8).
+>
+> **Zu Schritt 4/5, damit kein Missverständnis entsteht:** offen auf `main` ist allein die
+> Altmigration `20260720` (OP-03). **F9 kommt erst mit dem Merge dieses PR hinzu** und ist
+> weder gemergt noch angewendet (rein lesend gegengeprüft: `helmut_job_ankunft` in Production
+> nicht vorhanden).
+
 ---
 
 ## 10 · Noch erforderliche Freigaben
@@ -1116,4 +1266,4 @@ gibt den nächsten automatisch frei.
 | F7 | Preisbasis aus echter Rechnung belegen | Betreiber | ehrliche Kostenangabe |
 | F8 | Realistischer Belastungsnachweis (Z3) | Gründer, Kosten | Z3 überhaupt |
 | F9 | Migration `20260825101500_jobqueue_ankunftskennzahl.sql` anwenden | Gründer | Messbarkeit des 7-Tage-Nachweises (F4) |
-| F10 | Zeitgrenze in `helmut_job_ankunft` **inline** statt über einen CTE-Join rechnen — belegt Faktor 2,5 weniger Leseaufwand, **0 MB** Speicher, Ergebnis nachweislich identisch (§4.9). **Nicht** in dieser Runde geändert. | Betreiber | nichts — reine Verbesserung, sinnvoll **vor** F9 |
+| F10 | Zeitgrenze in `helmut_job_ankunft` **inline** statt über einen CTE-Join rechnen — belegt Faktor 2,5 weniger Leseaufwand, **0 MB** Speicher, Ergebnis nachweislich identisch (§4.9). **Nicht** in dieser Runde geändert. | Betreiber | **nichts.** Optionale Optimierung · **aktuell nicht blockierend** · für den siebentägigen Nachweis **nicht erforderlich** · erst **bei gemessenem Bedarf** erneut zu prüfen · **nach einer Anwendung von F9 nur über eine neue reguläre Migration umsetzbar** (F9 ist dann angewendete Historie und wird nicht umgeschrieben) |
