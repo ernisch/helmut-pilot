@@ -965,9 +965,9 @@ aus auf `vercel.com` beschränkten Suchtreffern und dem Vercel-Dokumentationswer
 |---|---|---|---|
 | R1 | KI-Tagesdeckel 100 trägt keine Stufe | 25/50/100 | **blockierend**, Freigabeentscheidung |
 | R2 | Abflussläufe: **3 reguläre/Tag** (§2a) gegen hochgerechnet ~20 nötige bei 100 (§2, Hochrechnung) — der Watchdog ist ein **bedingter Ersatzlauf** und zählt nicht mit | 50/100 | hoch |
-| R3 | Supabase Free: 500-MB-Grenze nicht überwacht; Überschreitung ⇒ Read-only. **Heute 160 MB belegt** (rein lesend, 25.08.); bei 100-Mandate-Menge wäre der Rest in rund **136 Tagen** aufgebraucht (§4.9) | 25/50/100 | hoch |
+| R3 | Supabase Free: 500-MB-Grenze nicht überwacht; Überschreitung ⇒ Read-only. **Heute 160 MB belegt** (rein lesend, 25.08.); bei 100-Mandate-Menge wäre der Rest (≈ 340 MB) in rund **126 Tagen** aufgebraucht (§4.9) | 25/50/100 | hoch |
 | R4 | kein PITR/Backup (OP-01) | alle | hoch, Kostenentscheidung |
-| R5 | keine automatische Aufbewahrung: `helmut_jobs`/`helmut_job_outbox` wachsen unbegrenzt (`helmut_jobs_bereinigen` hat keinen Aufrufer); gemessen **2,52 MB/Tag** bei 100-Mandate-Menge (§4.9) | 25/50/100 | hoch |
+| R5 | keine automatische Aufbewahrung: `helmut_jobs`/`helmut_job_outbox` wachsen unbegrenzt (`helmut_jobs_bereinigen` hat keinen Aufrufer); gemessen **2,70 MB/Tag** bei 100-Mandate-Menge (§4.9) | 25/50/100 | hoch |
 | R6 | Google-Klumpenrisiko 146/163 Wege (OP-15) | alle | bestehend |
 | R7 | `HELMUT_CRAWL_RUN_RETENTION=36` reicht nur für n=5 | 25/50/100 | mittel, Betreiberaktion |
 | R8 | Morgenlage im Direktpfad: ~28 Mandate je Lauf sind die Obergrenze | 50/100 | hoch |
