@@ -68,7 +68,7 @@ Sieben bestätigte Widersprüche behoben, zwei Ausgangsbefunde **widerlegt**:
 | 4 | KI-Deckel als `100 + 30 = 130` gerechnet | **bestätigt** — Gesamtobergrenze ist **100**; Limit und Reserve sind getrennte Eingaben (§5.2, `kapazitaetsmodell-test.js` §B0) |
 | 5 | Stapelprovisionierung legte Mandate **aktiv** an | **bestätigt** — Anlage und Aktivierung sind jetzt technisch getrennt (§4.5a) |
 | 6 | Zu weite Aussagen zu Datenbankverbindungen | **bestätigt** — auf das Belegbare zurückgeführt (§4.3a) |
-| 7 | Indexfrage der Ankunftskennzahl offen | **bestätigt** — lokal gemessen und **entschieden**: kein Index, F9 unverändert (§4.9) |
+| 7 | Indexfrage der Ankunftskennzahl offen | **bestätigt** — lokal gemessen und **entschieden**: kein Index, F9 unverändert. Dabei ein **besserer Hebel** gefunden: nicht der Index fehlt, die **Form** der Abfrage sperrt einen vorhandenen Index aus (§4.9, neu F10) |
 | 8 | „Die 20 Profile erfüllen die Zweitquellenanforderung nicht" | **widerlegt in dieser Form** — die Zweitquelle wurde in Lauf 4 **bewusst als doppelte Beweislogik entfernt**; die Bestätigung steht auf **einer** amtlichen Quelle je Profil. Die echte Lücke ist die **Quellenversorgung** (gesperrte Landesmodule), nicht die Verifikation (§8.0) |
 | 9 | „80 weitere Kandidaten mit Indexbelegen" | **widerlegt** — eine solche Liste existiert im Repository **nicht** (§8.0) |
 
@@ -506,7 +506,7 @@ Darin ausdrücklich grün: alle vier vormals roten Befunde (`privacy-vollstaendi
 **Ehrlich zur Einordnung:** `jobqueue-ankunft-datenbank-test.js` läuft im kanonischen Lauf
 in **79 ms** — das ist der saubere Übersprung, weil dort kein PostgreSQL-Server gesetzt ist.
 Sein eigentlicher Nachweis (**30 PASS**, §4.6) wurde getrennt **mit** echter PostgreSQL
-geführt; dasselbe gilt für den neuen Indexnachweis (**26 PASS**, §4.9).
+geführt; dasselbe gilt für den neuen Indexnachweis (**36 PASS**, §4.9).
 Dasselbe gilt für alle `*-datenbank-test.js`-Suiten; der kanonische Lauf ist bewusst
 DB-frei (so läuft auch die CI).
 
@@ -640,64 +640,98 @@ Mandanten (Präfix `stapel-`), kein Netz, keine echte Datenbank.
 ### 4.9 Indexfrage der Ankunftskennzahl — lokal gemessen, entschieden
 
 **Die Frage:** `helmut_job_ankunft` zählt zweimal über `helmut_jobs` — nach `created_at`
-(Ankunft) und nach `status = 'erledigt' AND finished_at` (Abfluss). Auf `helmut_jobs` gibt es
-**keinen** Index auf `created_at` und **keinen** auf `finished_at`. Braucht die Funktion
-einen?
+(Ankunft) und nach `status = 'erledigt' AND finished_at` (Abfluss). Braucht die Funktion
+einen eigenen Index?
 
-**Messung** (`scripts/jobqueue-ankunft-index-datenbank-test.js`, **26 PASS / 0 FAIL**,
+> **Selbst gefundener Fehler der ersten Messung (2026-08-25/4).** Sie lief gegen ein
+> **unvollständiges Schema**: nur die Basismigration, also **7** Indizes — Production trägt
+> **10**. Der Unterschied ist nicht nebensächlich, er betrifft genau diese Frage: unter den
+> drei fehlenden war **`helmut_jobs_bereinigung_idx`** auf
+> `(status, finished_at) WHERE status = 'erledigt'` — also ein passender Teilindex für die
+> **Abflusshälfte**. Eine Messung gegen ein ärmeres Schema überschätzt den Indexbedarf
+> systematisch. Der Test spielt jetzt fünf Migrationen ein und **sichert zu**, dass die
+> lokale Indexmenge namensgleich die aus Production gelesene ist (§1.1). Die Zahlen unten
+> sind die korrigierten.
+
+**Messung** (`scripts/jobqueue-ankunft-index-datenbank-test.js`, **36 PASS / 0 FAIL**,
 echte lokale PostgreSQL 16.13, `EXPLAIN ANALYZE, BUFFERS`). Die Nutzlast ist auf die in
-Production **rein lesend gemessene** mittlere Größe geeicht (`avg(pg_column_size(payload))`
-= **821 Byte**, 25.08.) — ohne diese Eichung fiele die Messung zu günstig aus, weil der
-sequentielle Durchlauf die Nutzlast mitliest.
+Production **rein lesend gemessene** mittlere Größe geeicht
+(`avg(pg_column_size(payload))` = **821 Byte**) — ohne diese Eichung fiele die Messung zu
+günstig aus, weil der sequentielle Durchlauf die Nutzlast mitliest.
 
 | Datenmenge | Zeilen | `helmut_jobs` gesamt | gelesene Puffer | Laufzeit `…(1440)` | Plan |
 |---|---:|---:|---:|---:|---|
-| 7 Tage à 2287 | 16 009 | 18 MB | 10 616 | **17–25 ms** | Seq Scan |
-| 90 Tage à 2287 | 205 830 | 227 MB | 129 255 | **341–366 ms** | Seq Scan |
-| ~1 Jahr à 2287 | 834 755 | 921 MB | 522 333 | **1584–1649 ms** | Seq Scan |
+| 7 Tage à 2287 | 16 009 | 19 MB | 10 679 | **19–22 ms** | Seq Scan |
+| 90 Tage à 2287 | 205 830 | 243 MB | 129 318 | **356–359 ms** | Seq Scan |
+| ~1 Jahr à 2287 | 834 755 | 988 MB | 522 396 | **1538–1615 ms** | Seq Scan |
 
-**Drei Befunde aus dem Plan:**
+**Die beiden Hälften als eigenständige Abfragen (365 Tage):**
 
-1. **Der Aufwand hängt an der Tabellengröße, nicht am Fenster.** Ein 24-Stunden-Fenster liest
-   bei 365 Tagen Bestand dieselben 522 333 Puffer wie ein 365-Tage-Fenster (522 331). Die
-   Funktion liest immer alles.
-2. **Er wächst rund linear** mit der Zeilenzahl: Zeilen ×52,1 ⇒ Puffer ×49,2.
-3. **Ein Index würde massiv helfen:** mit `(created_at)` und `(finished_at) where status =
-   'erledigt'` fällt der Plan auf Index Only Scan und der Leseaufwand von 522 333 auf **691
-   Puffer** — **Faktor 756**, Laufzeit 1,6 s → **28 ms**. Das Ergebnis bleibt exakt gleich.
+| Hälfte | Plan | Puffer | Zeit |
+|---|---|---:|---:|
+| (A) Ankunft — `created_at` | **Seq Scan** (kein Index vorhanden) | 104 345 | 134 ms |
+| (B) Abfluss — `status='erledigt' AND finished_at` | **Index Only Scan** auf `helmut_jobs_bereinigung_idx` | **7 168** | **24 ms** |
 
-**Entscheidung: KEIN zusätzlicher Index in diesem Sprint. F9 bleibt unverändert** und enthält
-weiterhin ausschließlich die dokumentierte Ankunftskennzahl. Begründung — vier Punkte, alle
-aus den Messungen oben:
+Die Abflusshälfte ist also **bereits gedeckt** — Faktor **15** günstiger als die
+Ankunftshälfte, ganz ohne neue Migration.
+
+#### Der eigentliche Befund: nicht der Index fehlt, die **Form** der Abfrage steht im Weg
+
+`helmut_job_ankunft` schreibt `from public.helmut_jobs, fenster where created_at >=
+fenster.ab` — die Zeitgrenze steht in einer **anderen Relation**. PostgreSQL sieht damit
+eine **Join-Bedingung**, keine auf einen Wert festgelegte Filterbedingung, und kann **keinen
+Index bedienen**. Der Plan zeigt es unmissverständlich: **beide** Zweige lesen die ganze
+Tabelle — auch der, für den ein passender Index existiert.
+
+| Variante (365 Tage) | Puffer | Zeit | Zusätzlicher Speicher |
+|---|---:|---:|---:|
+| **heute** (CTE-Join, wie in F9) | 522 396 | 1538 ms | — |
+| Zeitgrenze **inline** statt CTE-Join | **209 223** | **315 ms** | **0 MB** |
+| zusätzlicher `created_at`-Index (Form unverändert) | 209 409 | 638 ms | **18 MB** |
+
+**Beide Hebel wirken etwa gleich stark — aber nur einer kostet nichts.** Die inline
+gerechnete Zeitgrenze liefert nachweislich **exakt dasselbe Ergebnis** (im selben SQL-Statement
+gegeneinander geprüft, damit beide Seiten dasselbe `now()` sehen).
+
+**Entscheidung: KEIN zusätzlicher Index, und F9 bleibt in dieser Runde unverändert.**
+Begründung — alles aus den Messungen oben:
 
 1. **Kein heißer Pfad.** Die Funktion wird von `/api/ops/jobqueue` und vom siebentägigen
-   Nachweis wenige Male am Tag gelesen — nicht je Auftrag, nicht je Slot. 1,6 s im
+   Nachweis wenige Male am Tag gelesen — nicht je Auftrag, nicht je Slot. 1,5 s im
    Worst Case sind 0,6 % eines 270-s-Slots.
-2. **Die Datenmenge, bei der es weh täte, ist auf dem Free-Plan nicht erreichbar.**
-   Bei 100-Mandate-Menge wächst `helmut_jobs` um **2,52 MB/Tag**; ein Jahr ergäbe **921 MB**
-   allein in dieser Tabelle. Die Supabase-Free-Grenze liegt bei **500 MB für die ganze
-   Datenbank**, von denen heute schon **160 MB** belegt sind (rein lesend geprüft, 25.08.).
-   Innerhalb des Erreichbaren bleibt die Funktion **unter einer Sekunde**.
-3. **Der Index kostet 35 MB** — rund 10 % des heute verbleibenden Speicherbudgets. Er würde
-   Risiko R3 (500-MB-Grenze) verschärfen, um ein Problem zu lösen, das vorher nicht eintritt.
-4. **Die Ursache des Wachstums ist die fehlende Aufbewahrung (R5), nicht der Plan.**
-   `helmut_jobs_bereinigen` hat im Anwendungscode **keinen Aufrufer** (im Test geprüft).
-   Ein Index gegen das Symptom, während die Ursache offen bleibt, wäre die falsche Reihenfolge.
+2. **Die kritische Datenmenge ist auf dem Free-Plan nicht erreichbar.** Bei
+   100-Mandate-Menge wächst `helmut_jobs` um **2,70 MB/Tag**; ein Jahr wären **988 MB**
+   allein in dieser Tabelle. Die Grenze liegt bei **500 MB für die ganze Datenbank**, wovon
+   heute **160 MB** belegt sind (rein lesend geprüft). Innerhalb des Erreichbaren bleibt die
+   Funktion **unter einer Sekunde** (90 Tage: 356 ms bei 243 MB).
+3. **Der Index bringt nur Faktor 2,5** und kostet dafür **18 MB** — rund 5 % des
+   verbleibenden Speicherbudgets, auf einer Grenze, die vorher reißt (R3).
+4. **Die Ursache des Wachstums ist die fehlende Aufbewahrung (R5)** —
+   `helmut_jobs_bereinigen` hat im Anwendungscode **keinen Aufrufer** (im Test geprüft) —,
+   nicht der Plan.
 
-**Erneut zu prüfen, sobald eines davon nicht mehr stimmt:** Supabase Pro (größere Grenze),
-Aufbewahrung weiterhin aus **und** 50+ aktive Mandate, oder ein neuer Aufrufer, der die
-Kennzahl häufig liest. Der Test hält die Messung fest; wer die Entscheidung umdreht, sieht
-im selben Lauf, was sie kostet.
+> **Der bessere Hebel ist dokumentiert, aber bewusst NICHT gezogen (neu: F10).** Die
+> Zeitgrenze inline zu rechnen wäre ein Änderungssatz **ohne Speicherkosten, ohne neue
+> Migration und ohne Erweiterung des Funktionsumfangs** — F9 enthielte danach weiterhin
+> ausschließlich seine dokumentierte Ankunftskennzahl. Diese Runde schreibt eine bereits
+> zweimal reviewte, freigabepflichtige Migration jedoch **nicht** noch einmal um; die
+> Messung liegt vor, die Entscheidung liegt beim Betreiber (§10, F10).
 
-**Mitgeprüft:** Vorwärtsmigration additiv, fachliche Richtigkeit bei voller Datenmenge
-(Ankunft und Abfluss exakt gegen eine unabhängige Gegenzählung, Verhältnis exakt
-`runde(Abfluss/Ankunft, 4)`), Datenunversehrtheit beim Anlegen und Entfernen der
-Kandidatenindizes (834 755 Zeilen unverändert) und der **Rollback bei voller Datenmenge**
-(Funktion weg, `helmut_job_metrics` unberührt, kein Datenverlust, Indexlage unverändert).
+**Erneut zu prüfen**, sobald einer der vier Punkte nicht mehr stimmt: Supabase Pro (größere
+Grenze), Aufbewahrung weiterhin aus **und** 50+ aktive Mandate, oder ein neuer Aufrufer, der
+die Kennzahl häufig liest. Dann zuerst F10, erst danach ein Index.
+
+**Mitgeprüft:** Indexmenge namensgleich zu Production (§1.1), Vorwärtsmigration additiv,
+fachliche Richtigkeit bei voller Datenmenge (Ankunft und Abfluss exakt gegen eine
+unabhängige Gegenzählung im selben Statement, Verhältnis exakt `runde(Abfluss/Ankunft, 4)`),
+Datenunversehrtheit beim Anlegen und Entfernen des Kandidatenindex (834 755 Zeilen
+unverändert), Wiederherstellung der Production-Indexmenge und der **Rollback bei voller
+Datenmenge** (Funktion weg, `helmut_job_metrics` unberührt, kein Datenverlust, Indexlage
+unverändert).
 
 > **Production wurde dabei nicht angefasst.** Alle `EXPLAIN ANALYZE` liefen lokal; gegen
-> Production lief ausschließlich ein rein lesendes `SELECT` für Zeilenzahl, Tabellengröße
-> und mittlere Nutzlast.
+> Production lief ausschließlich rein lesendes SQL (Zeilenzahl, Tabellengröße, mittlere
+> Nutzlast, Indexliste, Spalten von `llm_budget_counters`).
 
 ---
 
@@ -726,6 +760,7 @@ geschlossen** — er hat sie erhoben und einen kleinen, klar begrenzten Teil beh
 | „~11 schwere Slots" als Abflusskapazität | `warteschlangen-abfluss-test.js` *(Runde 4)* |
 | `100 + 30 = 130` als KI-Gesamtdeckel | `kapazitaetsmodell-test.js` §B0 *(Runde 4)* |
 | Indexfrage der Ankunftskennzahl unbeantwortet | `jobqueue-ankunft-index-datenbank-test.js` *(Runde 4)* |
+| Erste Indexmessung lief gegen ein Teilschema (7 statt 10 Indizes) | derselbe Test, §1.1 *(Runde 4, selbst gefunden)* |
 
 **Vorbereitet, aber nicht wirksam:** die fehlende Ankunftskennzahl. Migration liegt vor und
 ist lokal belegt, ist aber **nicht angewendet** (F9) — die Lücke bleibt bis dahin offen.
@@ -1081,3 +1116,4 @@ gibt den nächsten automatisch frei.
 | F7 | Preisbasis aus echter Rechnung belegen | Betreiber | ehrliche Kostenangabe |
 | F8 | Realistischer Belastungsnachweis (Z3) | Gründer, Kosten | Z3 überhaupt |
 | F9 | Migration `20260825101500_jobqueue_ankunftskennzahl.sql` anwenden | Gründer | Messbarkeit des 7-Tage-Nachweises (F4) |
+| F10 | Zeitgrenze in `helmut_job_ankunft` **inline** statt über einen CTE-Join rechnen — belegt Faktor 2,5 weniger Leseaufwand, **0 MB** Speicher, Ergebnis nachweislich identisch (§4.9). **Nicht** in dieser Runde geändert. | Betreiber | nichts — reine Verbesserung, sinnvoll **vor** F9 |

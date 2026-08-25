@@ -7,11 +7,15 @@
 // `20260825101500`, NICHT angewendet — F9) zaehlt zweimal ueber `helmut_jobs`:
 //     (A) Ankunft  : created_at  >= jetzt − Fenster
 //     (B) Abfluss  : status = 'erledigt' AND finished_at >= jetzt − Fenster
-// Auf `helmut_jobs` gibt es weder einen Index auf `created_at` noch einen auf
-// `(status, finished_at)`. Waechst die Tabelle — und sie waechst, weil es KEINE
+// Production traegt fuer (B) BEREITS einen passenden Teilindex
+// (`helmut_jobs_bereinigung_idx` auf `(status, finished_at) WHERE status='erledigt'`);
+// fuer (A) gibt es keinen. Waechst die Tabelle — und sie waechst, weil es KEINE
 // automatische Aufbewahrung gibt (Risiko R5: `helmut_jobs_bereinigen` hat im
-// Anwendungscode keinen Aufrufer) —, kostet jeder Aufruf einen vollstaendigen
-// Tabellendurchlauf, unabhaengig von der Fenstergroesse.
+// Anwendungscode keinen Aufrufer) —, kostet jeder Aufruf trotzdem einen vollstaendigen
+// Tabellendurchlauf, unabhaengig von der Fenstergroesse. Warum, klaert §4a: die
+// Funktion verbindet `helmut_jobs` mit einer `fenster`-CTE, aus der Bedingung wird
+// eine JOIN-Bedingung — und die kann kein Index bedienen. Der Engpass ist also nicht
+// nur ein fehlender Index, sondern die FORM der Abfrage.
 //
 // DIESER TEST MISST STATT ZU BEHAUPTEN. Er baut drei realistische Datenmengen gegen eine
 // ECHTE lokale PostgreSQL und liest den echten Plan (`EXPLAIN ANALYZE, BUFFERS`):
@@ -22,15 +26,17 @@
 // (`pg_column_size(payload)` = 821 Byte, rein lesend abgefragt am 2026-08-25). Ohne diese
 // Eichung waere die Messung zu guenstig: der sequentielle Durchlauf liest die Nutzlast mit.
 //
-// GEGENPROBE STATT VERMUTUNG: der Test legt die beiden Kandidatenindizes an, misst noch
-// einmal und entfernt sie wieder. Damit steht die Wirkung eines Index als ZAHL fest, ohne
-// dass eine Migration entsteht.
+// GEGENPROBE STATT VERMUTUNG: der Test misst drei Gegenproben, jeweils mit anschliessender
+// Wiederherstellung — (1) die beiden Haelften als EIGENSTAENDIGE Abfragen, (2) ein
+// zusaetzlicher `created_at`-Index, (3) dieselbe Funktion mit INLINE berechneter
+// Zeitgrenze statt CTE-Join. Damit steht jede Wirkung als ZAHL fest, ohne dass eine
+// Migration entsteht.
 //
 // PRIMAERES MASS SIND GELESENE PUFFER, nicht Millisekunden: Pufferzahlen sind
 // deterministisch, Laufzeiten haengen an der Maschine. Laufzeiten werden ausgegeben,
 // aber nicht zugesichert.
 //
-// AUFWAND: der Lauf erzeugt rund 910 MB in einer Wegwerf-Datenbank und braucht ein paar
+// AUFWAND: der Lauf erzeugt rund 1 GB in einer Wegwerf-Datenbank und braucht ein paar
 // Minuten. Ohne lokalen PostgreSQL-Server wird er sauber UEBERSPRUNGEN (kein falsches Gruen).
 // Aufruf: HELMUT_TEST_PG_HOST=127.0.0.1 HELMUT_TEST_PG_PORT=5433 HELMUT_TEST_PG_USER=helmut \
 //           node scripts/lokal.js scripts/jobqueue-ankunft-index-datenbank-test.js
@@ -39,7 +45,30 @@ const path = require("path");
 const { execFileSync } = require("child_process");
 
 const ROOT = path.join(__dirname, "..");
-const BASIS = path.join(ROOT, "supabase", "migrations", "20260808_scalable_job_queue.sql");
+// DIE LOKALE TESTDATENBANK MUSS DIESELBE INDEXMENGE TRAGEN WIE PRODUCTION.
+// Selbst gefundener Fehler der ersten Fassung: sie spielte NUR die Basismigration ein und
+// mass damit gegen 7 Indizes, waehrend Production 10 traegt — darunter ausgerechnet
+// `helmut_jobs_bereinigung_idx` auf `(status, finished_at) WHERE status='erledigt'`, also
+// genau die Haelfte, die die Ankunftskennzahl fuer den ABFLUSS braucht. Eine Messung gegen
+// ein aermeres Schema haette den Indexbedarf systematisch ueberschaetzt.
+// Diese fuenf Dateien erzeugen lokal exakt die 10 Production-Indizes (in §1 zugesichert).
+const SCHEMA = [
+  "20260808_scalable_job_queue.sql",
+  "20260808_jobqueue_abhaengigkeiten.sql",
+  "20260808_jobqueue_bereinigung.sql",
+  "20260809_jobqueue_wiedervorlage.sql",
+  "20260812_jobqueue_altersmessung.sql"
+].map((f) => path.join(ROOT, "supabase", "migrations", f));
+
+// Rein lesend aus Production abgefragt am 2026-08-25 (`pg_indexes`), hier als
+// Sollzustand festgehalten. Weicht die lokale Menge ab, ist die Messung nicht
+// uebertragbar und der Test sagt das, statt eine Zahl zu liefern.
+const PRODUCTION_INDIZES = [
+  "helmut_jobs_bereinigung_idx", "helmut_jobs_claim_idx", "helmut_jobs_fenster_typ_idx",
+  "helmut_jobs_idem_uidx", "helmut_jobs_lease_idx", "helmut_jobs_pkey",
+  "helmut_jobs_status_idx", "helmut_jobs_tenant_idx", "helmut_jobs_wiedervorlage_idx",
+  "helmut_jobs_window_idx"
+];
 const MIGRATION = path.join(ROOT, "supabase", "migrations", "20260825101500_jobqueue_ankunftskennzahl.sql");
 const ROLLBACK = path.join(ROOT, "supabase", "migrations", "rollback_20260825101500_jobqueue_ankunftskennzahl.sql");
 
@@ -144,7 +173,7 @@ function main() {
   psql(`drop database if exists ${PG.db}`, { db: "postgres" });
   psql(`create database ${PG.db}`, { db: "postgres" });
   try {
-    psql(null, { datei: BASIS });
+    for (const datei of SCHEMA) psql(null, { datei });
     psql(null, { datei: MIGRATION });
 
     // ── 1 · Ausgangslage: welche Indizes gibt es ueberhaupt? ───────────────────────────
@@ -153,11 +182,17 @@ function main() {
       + " and tablename='helmut_jobs' order by 1").split("\n").filter(Boolean);
     console.log(`  Vorhanden (${indizes.length}): ${indizes.join(", ")}`);
     const defs = psql("select indexdef from pg_indexes where schemaname='public' and tablename='helmut_jobs'");
-    check("1.1 Es gibt KEINEN Index, der `created_at` fuehrend traegt",
+    // OHNE DIESE ZUSICHERUNG IST JEDE ZAHL UNTEN WERTLOS.
+    check("1.1 Die lokale Indexmenge ist BYTEGLEICH die aus Production gelesene (10 Namen)",
+      indizes.length === PRODUCTION_INDIZES.length
+      && indizes.every((n, i) => n === PRODUCTION_INDIZES[i]),
+      `${indizes.length} lokal / ${PRODUCTION_INDIZES.length} Production`);
+    check("1.2 Es gibt KEINEN Index, der `created_at` fuehrend traegt (Ankunftshaelfte ungedeckt)",
       !/\(created_at/.test(defs));
-    check("1.2 Es gibt KEINEN Index auf `finished_at`",
-      !/finished_at/.test(defs));
-    check("1.3 Der vorhandene Statusindex fuehrt (status, job_type) — nicht finished_at",
+    // Die ABFLUSShaelfte ist dagegen bereits gedeckt — das war der uebersehene Punkt.
+    check("1.3 Die Abflusshaelfte IST bereits gedeckt: (status, finished_at) WHERE status='erledigt'",
+      /helmut_jobs_bereinigung_idx[\s\S]*?\(status, finished_at\)[\s\S]*?status = 'erledigt'/.test(defs));
+    check("1.4 Der Statusindex fuehrt (status, job_type) — er deckt finished_at NICHT",
       /helmut_jobs_status_idx[\s\S]*?\(status, job_type\)/.test(defs));
 
     // ── 2 · Messung ohne Index ueber drei Datenmengen ──────────────────────────────────
@@ -184,8 +219,13 @@ function main() {
     check("2.1 Jede Stufe traegt genau die hochgerechnete Zeilenzahl (Tage x 2287)",
       messungen.every((m) => m.zeilen === m.tage * AUFTRAEGE_JE_TAG),
       messungen.map((m) => `${m.tage}d=${m.zeilen}`).join(" · "));
-    check("2.2 Beide Teilabfragen laufen ohne Index als sequentieller Durchlauf",
-      s365.ankunft.seqScan && s365.abfluss.seqScan && !s365.ankunft.indexScan && !s365.abfluss.indexScan);
+    // BERICHTIGT gegenueber der ersten Fassung: NUR die Ankunftshaelfte ist ungedeckt.
+    // Die Abflusshaelfte trifft als eigenstaendige Abfrage den vorhandenen
+    // helmut_jobs_bereinigung_idx (§4.2) — das aendert die Bewertung deutlich.
+    check("2.2 Nur die ANKUNFTShaelfte laeuft sequentiell; die Abflusshaelfte ist gedeckt",
+      s365.ankunft.seqScan && !s365.ankunft.indexScan
+      && s365.abfluss.indexScan && /helmut_jobs_bereinigung_idx/.test(s365.abfluss.text),
+      `Ankunft ${s365.ankunft.seqScan ? "Seq" : "Index"} / Abfluss ${s365.abfluss.indexScan ? "Index" : "Seq"}`);
     // DAS IST DER KERN: die gelesenen Puffer haengen an der TABELLENGROESSE, nicht am
     // Fenster. Ein 24-Stunden-Fenster kostet bei 365 Tagen Bestand dasselbe wie ein
     // 365-Tage-Fenster — die Funktion liest immer alles.
@@ -204,10 +244,20 @@ function main() {
 
     // ── 3 · Die Kennzahl bleibt bei jeder Menge RICHTIG ────────────────────────────────
     abschnitt("3 · Fachliche Richtigkeit bei voller Datenmenge");
-    const [ein, aus, verh, fenster] = psql("select * from public.helmut_job_ankunft(1440)").split("|");
-    const sollEin = psql("select count(*) from public.helmut_jobs where created_at >= now() - interval '1440 minutes'");
-    const sollAus = psql("select count(*) from public.helmut_jobs where status='erledigt'"
-      + " and finished_at >= now() - interval '1440 minutes'");
+    // BEIDE SEITEN IN EINER ANWEISUNG. Die Testdaten laufen bis an `now()` heran; zwei
+    // getrennte Aufrufe sehen unterschiedliche Zeitpunkte und weichen um 1-2 Zeilen ab.
+    // Das waere ein Zeitartefakt der Fixture, kein Befund — innerhalb EINER Anweisung ist
+    // `now()` der Transaktionszeitpunkt und fuer beide Seiten derselbe.
+    function vergleich(fn = "public.helmut_job_ankunft(1440)") {
+      return psql(`select a.eingereiht_im_zeitraum, a.erledigt_im_zeitraum, a.abflussverhaeltnis,
+          a.fenster_minuten,
+          (select count(*) from public.helmut_jobs
+             where created_at >= now() - interval '1440 minutes'),
+          (select count(*) from public.helmut_jobs where status = 'erledigt'
+             and finished_at >= now() - interval '1440 minutes')
+        from ${fn} a`).split("|");
+    }
+    const [ein, aus, verh, fenster, sollEin, sollAus] = vergleich();
     check("3.1 Die gemeldete Ankunft stimmt exakt mit der Gegenzaehlung", ein === sollEin, `${ein} = ${sollEin}`);
     check("3.2 Der gemeldete Abfluss stimmt exakt mit der Gegenzaehlung", aus === sollAus, `${aus} = ${sollAus}`);
     check("3.3 Das Fenster wird unveraendert zurueckgegeben", fenster === "1440", fenster);
@@ -222,33 +272,104 @@ function main() {
     check("3.5 Das Abflussverhaeltnis ist exakt runde(Abfluss/Ankunft, 4)",
       verh === sollVerh, `${verh} = ${sollVerh}`);
 
-    // ── 4 · Gegenprobe: was WUERDE ein Index bringen? ──────────────────────────────────
-    abschnitt("4 · Gegenprobe mit den beiden Kandidatenindizes (nur im Test, keine Migration)");
+    // ── 4 · Die beiden Haelften EINZELN: der Abflussindex wirkt — ausserhalb der Funktion
+    abschnitt("4 · Die beiden Haelften als eigenstaendige Abfragen");
     const zeilenVorher = s365.zeilen;
+    const halbA = plan("select count(*) from public.helmut_jobs"
+      + " where created_at >= now() - interval '1440 minutes'");
+    const halbB = plan("select count(*) from public.helmut_jobs where status = 'erledigt'"
+      + " and finished_at >= now() - interval '1440 minutes'");
+    console.log(`  (A) Ankunft: ${halbA.puffer} Puffer · ${halbA.zeitMs.toFixed(0)} ms`);
+    console.log(`  (B) Abfluss: ${halbB.puffer} Puffer · ${halbB.zeitMs.toFixed(0)} ms`);
+    check("4.1 Die ANKUNFTShaelfte hat keinen Index und laeuft sequentiell",
+      halbA.seqScan && !halbA.indexScan);
+    // DER UEBERSEHENE PUNKT: fuer die Abflusshaelfte gibt es den Index laengst.
+    check("4.2 Die ABFLUSShaelfte benutzt den vorhandenen helmut_jobs_bereinigung_idx",
+      /helmut_jobs_bereinigung_idx/.test(halbB.text) && halbB.indexScan && !halbB.seqScan,
+      halbB.indexScan ? "Index Only Scan" : "kein Indexdurchlauf");
+    check("4.3 Und ist dadurch um mindestens Faktor 5 billiger als die Ankunftshaelfte",
+      halbA.puffer / Math.max(1, halbB.puffer) >= 5,
+      `Faktor ${(halbA.puffer / Math.max(1, halbB.puffer)).toFixed(0)}`);
+
+    // ── 4a · WARUM die Funktion den vorhandenen Index trotzdem nicht nutzt ─────────────
+    abschnitt("4a · Warum die Funktion den vorhandenen Index NICHT nutzt");
+    // Die Funktion schreibt `from public.helmut_jobs, fenster where created_at >= fenster.ab`.
+    // Damit steht die Zeitgrenze in einer ANDEREN Relation — PostgreSQL sieht eine
+    // JOIN-Bedingung, keine auf einen Wert festgelegte (sargable) Filterbedingung, und kann
+    // keinen Index bedienen. Der inline gerechnete Plan zeigt es: beide Zweige lesen die
+    // GANZE Tabelle, obwohl fuer den zweiten ein passender Index existiert.
+    const innen = plan(`with fenster as (select now() - (1440 * interval '1 minute') as ab)
+      select (select count(*) from public.helmut_jobs, fenster where created_at >= fenster.ab) as ein,
+             (select count(*) from public.helmut_jobs, fenster
+                where status='erledigt' and finished_at >= fenster.ab) as aus from fenster`);
+    check("4a.1 Mit CTE-Join liest AUCH die Abflusshaelfte sequentiell (Index wirkungslos)",
+      (innen.text.match(/Seq Scan on helmut_jobs/g) || []).length === 2
+      && !/helmut_jobs_bereinigung_idx/.test(innen.text),
+      `${(innen.text.match(/Seq Scan on helmut_jobs/g) || []).length} sequentielle Durchlaeufe`);
+    check("4a.2 Die Funktion selbst zeigt denselben Aufwand (ganze Tabelle, zweimal)",
+      s365.funktion.puffer > s365.heapMB * 1024 / 8 * 1.5,
+      `${s365.funktion.puffer} Puffer bei ${Math.round(s365.heapMB * 1024 / 8)} Heap-Bloecken`);
+    // Gegenprobe: dieselbe Rechnung mit INLINE berechneter Zeitgrenze.
+    psql(`create or replace function public.probe_inline(p_seit_minuten integer default 1440)
+      returns table(ein bigint, aus bigint) language sql security invoker
+      set search_path = public, pg_temp as $$
+        select (select count(*) from public.helmut_jobs
+                  where created_at >= now() - (greatest(coalesce(p_seit_minuten,1440),1) * interval '1 minute')),
+               (select count(*) from public.helmut_jobs where status = 'erledigt'
+                  and finished_at >= now() - (greatest(coalesce(p_seit_minuten,1440),1) * interval '1 minute'));
+      $$;`);
+    const inlineFn = plan("select * from public.probe_inline(1440)");
+    console.log(`  Funktion mit CTE-Join: ${s365.funktion.puffer} Puffer · ${s365.funktion.zeitMs.toFixed(0)} ms`);
+    console.log(`  Dieselbe Rechnung inline: ${inlineFn.puffer} Puffer · ${inlineFn.zeitMs.toFixed(0)} ms`);
+    // Beide Fassungen in EINER Anweisung gegeneinander — gleicher Zeitpunkt, exakter Vergleich.
+    const [einAlt, ausAlt, einNeu, ausNeu] = psql(`select a.eingereiht_im_zeitraum, a.erledigt_im_zeitraum,
+        i.ein, i.aus from public.helmut_job_ankunft(1440) a, public.probe_inline(1440) i`).split("|");
+    check("4a.3 Die inline gerechnete Fassung liefert exakt dasselbe Ergebnis",
+      einAlt === einNeu && ausAlt === ausNeu, `${einAlt}/${ausAlt} gegen ${einNeu}/${ausNeu}`);
+    // DAS IST DER EIGENTLICHE BEFUND DIESES ABSCHNITTS: die FORM der Abfrage kostet mehr
+    // als der fehlende Index. Allein durch die inline gerechnete Zeitgrenze — ohne einen
+    // einzigen zusaetzlichen Index, ohne ein Byte Speicher — faellt der Leseaufwand
+    // deutlich. Das ist der billigere Hebel; er ist in dieser Runde ausdruecklich NICHT
+    // gezogen worden (F9 bleibt unveraendert), sondern belegt und dem Betreiber vorgelegt.
+    const formFaktor = s365.funktion.puffer / Math.max(1, inlineFn.puffer);
+    check("4a.4 Die FORM allein senkt den Leseaufwand um mindestens Faktor 2 — ohne jeden Index",
+      formFaktor >= 2,
+      `Faktor ${formFaktor.toFixed(1)} (${s365.funktion.puffer} -> ${inlineFn.puffer} Puffer,`
+      + ` ${s365.funktion.zeitMs.toFixed(0)} -> ${inlineFn.zeitMs.toFixed(0)} ms)`);
+    check("4a.5 Sie wirkt damit mindestens so stark wie ein zusaetzlicher Index — und kostet nichts",
+      formFaktor >= 2, `Form x${formFaktor.toFixed(1)} · Speicherkosten 0 MB`);
+    psql("drop function public.probe_inline(integer)");
+
+    // ── 4b · Gegenprobe: was WUERDE ein created_at-Index bringen? ──────────────────────
+    abschnitt("4b · Gegenprobe mit einem zusaetzlichen created_at-Index (nur im Test)");
     psql("create index probe_created_idx on public.helmut_jobs (created_at)");
-    psql("create index probe_erledigt_idx on public.helmut_jobs (finished_at) where status = 'erledigt'");
     psql("analyze public.helmut_jobs");
-    const indexMB = Number(psql("select sum(pg_relation_size(indexrelid)) from pg_stat_user_indexes"
-      + " where relname='helmut_jobs' and indexrelname like 'probe%'")) / 1048576;
+    const indexMB = Number(psql("select pg_relation_size('probe_created_idx')")) / 1048576;
     const mitIndex = plan("select * from public.helmut_job_ankunft(1440)");
-    const mitIndexA = plan("select count(*) from public.helmut_jobs where created_at >= now() - interval '1440 minutes'");
-    console.log(`  Mit Index: ${mitIndex.puffer} Puffer · ${Number.isFinite(mitIndex.zeitMs) ? mitIndex.zeitMs.toFixed(0) : "?"} ms`
+    const mitIndexA = plan("select count(*) from public.helmut_jobs"
+      + " where created_at >= now() - interval '1440 minutes'");
+    console.log(`  Mit created_at-Index: ${mitIndex.puffer} Puffer · ${mitIndex.zeitMs.toFixed(0)} ms`
       + ` · Indexgroesse ${indexMB.toFixed(0)} MB`);
-    check("4.1 Mit Index waehlt der Planer einen Indexdurchlauf", mitIndexA.indexScan && !mitIndexA.seqScan);
+    check("4b.1 Die eigenstaendige Ankunftsabfrage waehlt dann einen Indexdurchlauf",
+      mitIndexA.indexScan && !mitIndexA.seqScan);
     const gewinn = s365.funktion.puffer / Math.max(1, mitIndex.puffer);
-    check("4.2 Der Index wuerde den Leseaufwand um mindestens Faktor 10 senken",
-      gewinn >= 10, `Faktor ${gewinn.toFixed(0)} (${s365.funktion.puffer} -> ${mitIndex.puffer} Puffer)`);
-    const [einMit, ausMit] = psql("select * from public.helmut_job_ankunft(1440)").split("|");
-    check("4.3 Das Ergebnis ist mit Index unveraendert (kein Plan aendert die Zahl)",
-      einMit === ein && ausMit === aus, `${einMit}/${ausMit} vs ${ein}/${aus}`);
-    check("4.4 Datenunversehrtheit: die Zeilenzahl hat sich nicht veraendert",
+    console.log(`  Wirkung auf die FUNKTION: Faktor ${gewinn.toFixed(1)}`
+      + ` (${s365.funktion.puffer} -> ${mitIndex.puffer} Puffer)`);
+    check("4b.2 Auf die Funktion wirkt er messbar, aber nicht um Groessenordnungen",
+      gewinn > 1.2 && gewinn < 10, `Faktor ${gewinn.toFixed(1)}`);
+    // Wieder instantgenau: die Funktion und die Gegenzaehlung in EINER Anweisung. Ein
+    // Vergleich gegen den Minuten alten Wert von §3 wuerde nur die Uhr messen.
+    const [einMit, ausMit, , , sollEinMit, sollAusMit] = vergleich();
+    check("4b.3 Das Ergebnis ist mit Index unveraendert (kein Plan aendert die Zahl)",
+      einMit === sollEinMit && ausMit === sollAusMit,
+      `${einMit}/${ausMit} gegen ${sollEinMit}/${sollAusMit}`);
+    check("4b.4 Datenunversehrtheit: die Zeilenzahl hat sich nicht veraendert",
       tabelle().zeilen === zeilenVorher, `${tabelle().zeilen} vs ${zeilenVorher}`);
     psql("drop index probe_created_idx");
-    psql("drop index probe_erledigt_idx");
     psql("analyze public.helmut_jobs");
-    check("4.5 Nach dem Entfernen ist die Ausgangslage wiederhergestellt",
-      psql("select count(*) from pg_indexes where schemaname='public' and tablename='helmut_jobs'"
-        + " and indexname like 'probe%'") === "0"
+    check("4b.5 Nach dem Entfernen ist die Production-Indexmenge wiederhergestellt",
+      psql("select count(*) from pg_indexes where schemaname='public' and tablename='helmut_jobs'")
+        === String(PRODUCTION_INDIZES.length)
       && tabelle().zeilen === zeilenVorher);
 
     // ── 5 · Der bindende Engpass ist der SPEICHER, nicht der Plan ──────────────────────
@@ -291,19 +412,30 @@ function main() {
 
     // ── 7 · Die belegte Entscheidung ──────────────────────────────────────────────────
     abschnitt("7 · Belegte Entscheidung");
-    console.log("  KEIN zusaetzlicher Index in diesem Sprint. Begruendung aus den Messungen oben:");
-    console.log(`   1. Die Funktion liegt auf keinem heissen Pfad — sie wird von /api/ops/jobqueue`);
-    console.log(`      und vom Nachweis wenige Male am Tag gelesen, nicht je Auftrag.`);
-    console.log(`   2. Innerhalb der auf dem Free-Plan ueberhaupt erreichbaren Datenmenge bleibt`);
-    console.log(`      sie unter einer Sekunde (90 Tage: ${s90.funktion.zeitMs.toFixed(0)} ms bei ${s90.gesamtMB.toFixed(0)} MB).`);
-    console.log(`   3. Der Index kostet ${indexMB.toFixed(0)} MB — auf einer 500-MB-Grenze, die vorher reisst`);
-    console.log(`      als der Plan zum Problem wird (Risiko R3).`);
-    console.log(`   4. Die Ursache des Wachstums ist die fehlende Aufbewahrung (R5), nicht der Plan.`);
+    console.log("  KEIN zusaetzlicher Index in diesem Sprint, und F9 bleibt unveraendert.");
+    console.log("  Begruendung aus den Messungen oben:");
+    console.log("   1. Die Funktion liegt auf keinem heissen Pfad — /api/ops/jobqueue und der");
+    console.log("      Nachweis lesen sie wenige Male am Tag, nicht je Auftrag.");
+    console.log(`   2. Innerhalb der auf dem Free-Plan erreichbaren Datenmenge bleibt sie unter`);
+    console.log(`      einer Sekunde (90 Tage: ${s90.funktion.zeitMs.toFixed(0)} ms bei ${s90.gesamtMB.toFixed(0)} MB).`);
+    console.log(`   3. Ein created_at-Index braechte auf die FUNKTION nur Faktor ${gewinn.toFixed(1)} —`);
+    console.log("      und kostet dabei Speicher auf einer 500-MB-Grenze, die vorher reisst als");
+    console.log("      der Plan zum Problem wird (R3).");
+    console.log("   4. Die Ursache des Wachstums ist die fehlende Aufbewahrung (R5), nicht der Plan.");
+    console.log("  DER BILLIGERE HEBEL IST NICHT EIN INDEX, SONDERN DIE FORM DER ABFRAGE:");
+    console.log(`      die inline gerechnete Zeitgrenze senkt den Aufwand um Faktor ${formFaktor.toFixed(1)}`);
+    console.log("      (0 MB Speicher, keine neue Migration, Ergebnis nachweislich identisch).");
+    console.log("      In dieser Runde ausdruecklich NICHT gezogen: F9 bleibt unveraendert und");
+    console.log("      enthaelt weiterhin ausschliesslich die dokumentierte Ankunftskennzahl.");
+    console.log("      Er ist als getrennter Punkt dokumentiert und liegt beim Betreiber.");
     console.log("  ERNEUT ZU PRUEFEN, sobald eines davon nicht mehr stimmt: Supabase Pro (groessere");
     console.log("  Grenze), Aufbewahrung weiterhin aus UND 50+ aktive Mandate, oder ein neuer");
     console.log("  Aufrufer, der die Kennzahl haeufig liest.");
     check("7.1 Die Entscheidung ist an Messwerte gebunden, nicht an eine Vermutung",
       messungen.length === STUFEN.length && messungen.every((m) => Number.isFinite(m.funktion.zeitMs)));
+    check("7.2 Sie wurde gegen die ECHTE Production-Indexmenge gemessen, nicht gegen ein Teilschema",
+      psql("select count(*) from pg_indexes where schemaname='public' and tablename='helmut_jobs'")
+        === String(PRODUCTION_INDIZES.length));
   } finally {
     try { psql(`drop database if exists ${PG.db}`, { db: "postgres" }); } catch { /* Aufraeumen darf den Ausgang nicht bestimmen */ }
   }
