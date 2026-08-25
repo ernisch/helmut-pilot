@@ -24,6 +24,34 @@ Diese Datei verwendet ausschließlich diese Begriffe. Sie werden **nie** vermisc
 
 **Ein Nachweis auf Z2 ist niemals ein Nachweis auf Z3, und Z3 ist niemals Z4.**
 
+### 0.1 Verbindlicher Stand (Fassung 2026-08-25/3)
+
+Eine frühere Fassung sagte „**Z1 und Z2 für 25/50/100 erreicht**". Das war **zu weit** und
+ist **zurückgenommen**. Verbindlich gilt:
+
+| Aussage | Stand |
+|---|---|
+| **Werkzeuge und Änderungssatz dieses PR** | **lokal vollständig belegt** (279/279 Suiten, gezielte Tests, echte PostgreSQL) |
+| **Synthetischer Motorlasttest 25/50/100** | **bestanden** (60 PASS, zweimal, Attrappen für KI und Netz) |
+| **Z1 — technische Gesamtbereitschaft für 25/50/100** | **weiterhin teilweise / offen** |
+| **Z3 — realistischer Lastnachweis** | **nicht erreicht** |
+| **Z4 — Freigabe** | **nicht erteilt** |
+| **Z5 — real aktiv** | **nur die bestehenden 5 Mandate** |
+| **Production-Freigabe** | **keine** |
+
+**Warum Z1 nicht vollständig ist** — vier Punkte, die zur technischen Betriebsbereitschaft
+gehören und offen sind:
+
+1. die **Ankunftskennzahl ist nicht angewendet** (F9) — ohne sie ist die Stufe-2-Bedingung
+   „Abfluss ≥ Ankunft" nicht messbar;
+2. **Fluid Compute ist unbestätigt** — die Slotbudget-Reserve über 300 s ist eine Hypothese;
+3. **Supabase unter realistischer Last ist ungeprüft** — der Lasttest lief gegen eine lokale
+   PostgreSQL;
+4. der **KI-Tagesdeckel** ist für die Stufen 25/50/100 nicht festgelegt (§5.2).
+
+Belegt ist damit: *die Werkzeuge sind fertig und der Motor trägt die Menge* — **nicht**:
+*Helmut ist für 25 Mandate betriebsbereit*.
+
 ---
 
 ## 1 · Belegter Ausgangszustand (gemessen, 2026-08-25)
@@ -498,11 +526,38 @@ Ein Lauf wird sofort abgebrochen und gilt als **nicht bestanden**, wenn eines ei
 
 ---
 
+## 9a · Der sichere chronologische Restweg
+
+Diese Reihenfolge ist verbindlich. Jeder Schritt ist eine **eigene** Entscheidung; keiner
+gibt den nächsten automatisch frei.
+
+| # | Schritt | Wer | Art |
+|---|---|---|---|
+| 1 | **PR #270 vollständig prüfen** | Betreiber | Review |
+| 2 | **Getrennte Gründerfreigabe zum Merge** | Gründer | Freigabe |
+| 3 | **Automatisches Production-Deployment rein lesend bestätigen** (Commit, `READY`, Uhrzeit) | Betreiber | Kontrolle |
+| 4 | **Getrennte Vorprüfung und Gründerfreigabe für Migration F9** | Gründer | Freigabe |
+| 5 | **F9 anwenden und rein lesend verifizieren** (Funktion vorhanden, `service_role` kann sie ausführen, `anon`/`authenticated` nicht) | Betreiber | Migration |
+| 6 | **Siebentägigen Nachweis mit den fünf bestehenden Mandaten beginnen** | Betreiber | Nachweis |
+| 7 | **KI-Deckel festlegen — separat und VOR der Aktivierung der nächsten Mandatsstufe** | Gründer | Freigabe |
+
+> **Korrektur einer früheren Aussage (2026-08-25/3):** hier stand, der KI-Deckel müsse
+> **vor** dem Fünfernachweis angehoben werden. **Dafür gibt es keinen Beleg.** Der Nachweis
+> läuft mit den **fünf bestehenden** Mandaten, die heute unter dem geltenden Deckel
+> arbeiten — gemessen 455 Aufträge/Tag mit rund 98 Verstehensaufträgen. Der Deckel wird
+> erst dann zum Hindernis, wenn **zusätzliche** Mandate aktiviert werden (§5.2). Er gehört
+> deshalb an Position 7, nicht vor Position 6.
+>
+> Sollte der laufende Nachweis zeigen, dass der Deckel **schon bei fünf Mandaten** drosselt,
+> rückt er vor — das wäre dann ein **gemessener** Befund und keine Annahme.
+
+---
+
 ## 10 · Noch erforderliche Freigaben
 
 | # | Freigabe | Wer | blockiert |
 |---|---|---|---|
-| F1 | KI-Tagesdeckel anheben (350/450/700 je Stufe) | Gründer | jede Stufe |
+| F1 | KI-Tagesdeckel festlegen (Vorschlag 350/450/700 je Stufe) | Gründer | **Aktivierung** der nächsten Mandatsstufe — **nicht** den Fünfernachweis (§9a) |
 | F2 | Import der 20 Profile | Gründer | Stufe A |
 | F3 | Aktivierung je Tranche (getrennt von F2) | Gründer | Stufe A |
 | F4 | Siebentägiger Fünfernachweis starten | Betreiber | Stufe A |

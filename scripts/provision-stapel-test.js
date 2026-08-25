@@ -42,7 +42,7 @@ function check(name, cond, detail = "") {
 function abschnitt(t) { console.log(`\n== ${t} ==`); }
 
 const IDS = ["stapel-eins", "stapel-zwei", "stapel-drei", "stapel-fremd",
-  "stapel-vier", "stapel-fuenf"];
+  "stapel-vier", "stapel-fuenf", "stapel-sechs"];
 function spec(id, extra = {}) {
   return {
     id,
@@ -419,7 +419,109 @@ async function anzahlProfile(id) {
       try { fs.unlinkSync(blockiertDatei); fs.unlinkSync(sauberDatei); } catch { /* egal */ }
     }
 
-    // ── 13 · Aufraeumen ─────────────────────────────────────────────────────────
+    // ── 13 · Review 2026-08-25/3: JEDER Rueckweg ist eng begrenzt ───────────────
+    abschnitt("13 · Alle Rueckwege treffen ausschliesslich das neu angelegte Konto");
+    // Vorher liefen zwei der drei Rueckwege ueber `deleteAuthDataForPolitician(...)`.
+    // Das raeumt alles ab, was an der MANDATSKENNUNG haengt — auch vorbestehende
+    // Referentenzuweisungen, die der Lauf nie angelegt hat. Zusaetzlich verschluckten
+    // beide Stellen einen Loeschfehler und meldeten trotzdem einen sauberen Rueckweg.
+    const echt = require("../lib/helmut/accounts");
+
+    // Fremdbestand, der unter KEINEN Umstaenden angefasst werden darf: ein fremder
+    // Nutzer UND eine vorbestehende Referentenzuweisung auf genau die Mandatskennung,
+    // deren Anlage gleich scheitern wird.
+    const fremderNutzer = await echt.createUser({
+      email: "fremd-referent@synthetic.test", name: "Fremder Referent", role: "referent",
+      password: "fremd-pass-123"
+    });
+    await echt.addAssignment(fremderNutzer.id, "stapel-sechs");
+    const zuweisungenVorher = (await echt.listAssignments())
+      .filter((a) => a.politicianId === "stapel-sechs").length;
+    check("13.0 Aufbau: fremder Nutzer und vorbestehende Zuweisung auf stapel-sechs",
+      zuweisungenVorher === 1, String(zuweisungenVorher));
+
+    // (a) Kennungskollision — gezielter Rueckweg
+    {
+      const attrappe = {
+        ...echt,
+        // Legt den Nutzer WIRKLICH an, meldet aber eine abgeleitete Kennung zurueck —
+        // genau der Zustand, den `uniquePoliticianId` bei einer Kollision erzeugt.
+        createUser: async (...a) => {
+          const u = await echt.createUser(...a);
+          return { ...u, politicianId: `${u.politicianId}-2` };
+        }
+      };
+      const r = await provisioning.provisionTenant(spec("stapel-sechs"), { accounts: attrappe });
+      check("13.1 Kennungskollision bricht ab", r.ok === false && r.reason === "politician-id-collision",
+        JSON.stringify(r.reason));
+      check("13.2 Der gezielte Rueckweg war erfolgreich", r.rueckweg === "ok", JSON.stringify(r.rueckweg));
+      check("13.3 Das neu angelegte Konto ist weg",
+        (await anzahlNutzer("stapel-sechs")) === 0, String(await anzahlNutzer("stapel-sechs")));
+      check("13.4 Die VORBESTEHENDE Referentenzuweisung ist UNANGETASTET",
+        (await echt.listAssignments()).filter((a) => a.politicianId === "stapel-sechs").length === 1);
+      check("13.5 Der fremde Nutzer existiert weiterhin",
+        (await echt.listUsers()).some((u) => u.id === fremderNutzer.id));
+    }
+
+    // (b) Profilspeicherfehler — gezielter Rueckweg
+    {
+      const echteSpeicherung = storage.saveProfile;
+      storage.saveProfile = async (p) => {
+        if (p && p.id === "stapel-sechs") throw new Error("simulierter Schreibfehler");
+        return echteSpeicherung(p);
+      };
+      let r;
+      try { r = await provisioning.provisionTenant(spec("stapel-sechs")); }
+      finally { storage.saveProfile = echteSpeicherung; }
+      check("13.6 Profilspeicherfehler bricht ab",
+        r.ok === false && r.reason === "profile-write-failed", JSON.stringify(r.reason));
+      check("13.7 Der gezielte Rueckweg war erfolgreich", r.rueckweg === "ok", JSON.stringify(r.rueckweg));
+      check("13.8 Kein halbes Konto, kein Profil",
+        (await anzahlNutzer("stapel-sechs")) === 0 && (await anzahlProfile("stapel-sechs")) === 0);
+      check("13.9 Die vorbestehende Zuweisung ist WEITERHIN unangetastet",
+        (await echt.listAssignments()).filter((a) => a.politicianId === "stapel-sechs").length === 1);
+      check("13.10 Der fremde Nutzer existiert weiterhin",
+        (await echt.listUsers()).some((u) => u.id === fremderNutzer.id));
+    }
+
+    // (c) Die Loeschung selbst scheitert — ehrlicher Fehlerstatus statt falschem Gruen
+    {
+      const echteSpeicherung = storage.saveProfile;
+      storage.saveProfile = async (p) => {
+        if (p && p.id === "stapel-sechs") throw new Error("simulierter Schreibfehler");
+        return echteSpeicherung(p);
+      };
+      const attrappe = {
+        ...echt,
+        deleteUser: async () => { throw new Error("simulierter Loeschfehler"); }
+      };
+      let r;
+      try { r = await provisioning.provisionTenant(spec("stapel-sechs"), { accounts: attrappe }); }
+      finally { storage.saveProfile = echteSpeicherung; }
+      check("13.11 Der Lauf bricht ab", r.ok === false && r.reason === "profile-write-failed");
+      check("13.12 Der Rueckweg wird als FEHLGESCHLAGEN gemeldet — kein falsches Gruen",
+        r.rueckweg === "fehlgeschlagen", JSON.stringify(r.rueckweg));
+      const rollbackZeilen = r.log.filter((e) => e.step === "rollback");
+      check("13.13 Das Protokoll meldet den Fehler, nicht 'ok'",
+        rollbackZeilen.length === 1 && rollbackZeilen[0].status === "fehler",
+        JSON.stringify(rollbackZeilen));
+      check("13.14 Das Protokoll benennt den moeglichen halben Zustand ausdruecklich",
+        /moeglicherweise bleibt ein Konto ohne Profil/.test(String(rollbackZeilen[0].detail)),
+        String(rollbackZeilen[0].detail));
+      // Das Konto blieb hier tatsaechlich stehen — genau das soll die Meldung sagen.
+      check("13.15 Das Konto ist wirklich noch da (die ehrliche Meldung stimmt)",
+        (await anzahlNutzer("stapel-sechs")) === 1, String(await anzahlNutzer("stapel-sechs")));
+      // Aufraeumen von Hand, damit der Rest des Tests sauber weiterlaeuft.
+      const rest = (await echt.listUsers()).filter((u) => u.politicianId === "stapel-sechs");
+      for (const u of rest) await echt.deleteUser(u.id);
+    }
+
+    check("13.16 Nach allen Rueckwegen ist die vorbestehende Zuweisung immer noch da",
+      (await echt.listAssignments()).filter((a) => a.politicianId === "stapel-sechs").length === 1);
+    await echt.removeAssignment(fremderNutzer.id, "stapel-sechs");
+    await echt.deleteUser(fremderNutzer.id);
+
+    // ── 14 · Aufraeumen ─────────────────────────────────────────────────────────
     for (const id of IDS) { try { await provisioning.teardownTenant(id); } catch { /* egal */ } }
   } catch (err) {
     fail += 1;
