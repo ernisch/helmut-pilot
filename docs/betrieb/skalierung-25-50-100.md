@@ -377,6 +377,13 @@ Die nächste **nicht produktive** Teststufe wird nur ausgeführt, wenn die vorhe
 
 ## 4 · Testergebnisse
 
+> **Lesehinweis.** Die Unterabschnitte sind historisch gewachsen und stehen **nicht** in
+> Nummernfolge. Reihenfolge in dieser Datei: 4.1 Lasttest · 4.2 Unterlinearität ·
+> 4.3 Grenzen der Zahlen · 4.3a Datenbankverbindungen · 4.4 Provisionierung ·
+> 4.7 Gesamtlauf · 4.5 zwei Produktfehler · 4.6 Ankunftskennzahl · 4.5a Anlage und
+> Aktivierung getrennt · 4.9 Indexfrage · 4.8 die 139 Befundlücken. Die Nummern bleiben
+> stehen, damit Verweise aus PR-Beschreibungen und älteren Belegen weiter treffen.
+
 ### 4.1 Gestufter Belastungsnachweis — **Zustand Z2 (synthetisch)**
 
 Werkzeug: `scripts/skalierung-stufen-lasttest.js`, ausgeführt am 2026-08-25 über
