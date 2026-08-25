@@ -210,6 +210,33 @@ Zusätzlich: nach dem Anlegen eines Auth-Nutzers wird der persistierte Stand
 zurückgeprüft (`CLAUDE.md` §4.10) — der Auth-Speicher wird als ganzer Blob unbedingt
 geschrieben, was bei einem Stapel über 25/50/100 Mandate ein realer Rennfall ist.
 
+### 4.6 Beobachtbarkeit: die fehlende Ankunftskennzahl — vorbereitet, nicht angewendet
+
+**Befund:** die verbindliche Freigabebedingung der Stufe 2 lautet „**Abfluss ≥ Ankunft**
+über 7 Tage". Die vorhandene `helmut_job_metrics` liefert den **Abfluss**
+(`erledigt_im_zeitraum`), aber **keine Ankunft**. Der siebentägige Fünfernachweis ist
+damit heute **gar nicht messbar** — nicht, weil er scheitern würde, sondern weil eine
+Seite der Ungleichung nirgends erhoben wird.
+
+**Vorbereitet:** `supabase/migrations/20260825101500_jobqueue_ankunftskennzahl.sql` legt
+eine **neue, rein lesende** Funktion `helmut_job_ankunft(p_seit_minuten)` an
+(Ankunft, Abfluss, Abflussverhältnis, Fenster). Rollback-SQL liegt im selben Verzeichnis.
+
+**Warum eine neue Funktion statt einer Erweiterung:** eine zusätzliche Spalte in einer
+`returns table`-Funktion erzwingt in PostgreSQL ein DROP + CREATE — ein Eingriff in eine
+Funktion, die Production laufend liest, mit einem Fenster, in dem sie nicht existiert.
+Die neue Funktion daneben hat denselben Nutzen ohne dieses Risiko: **kein bestehender
+Aufrufer ändert sich, keine bestehende Signatur wird angefasst.**
+
+**Nachweis:** `scripts/jobqueue-ankunft-datenbank-test.js` — **24 PASS / 0 FAIL** gegen
+echte PostgreSQL 16: Migration additiv, wiederholbar, Rechte wie `helmut_job_metrics`
+(nichts für `anon`/`authenticated`/`public`), Datensparsamkeit, Zeitfenster wirkt,
+Rollback ohne Datenverlust und idempotent. Bei leerer Warteschlange meldet das Verhältnis
+**`null` (unbestimmt)**, nicht `0` — eine `0` wäre ein falsches Alarmsignal.
+
+> **Die Migration ist NICHT angewendet.** Anwendung gegen Production ist freigabepflichtig
+> (`CLAUDE.md` §5) und in §10 als **F9** geführt.
+
 ---
 
 ## 5 · Kostenrechnung
@@ -305,7 +332,8 @@ ausdrückliche Gründerfreigabe.**
 
 1. **Vorprüfung:** siebentägiger Nachweis des echten Warteschlangenbetriebs mit fünf
    Mandaten bestanden (Stufe 2 nach Zielarchitektur §14: Abfluss ≥ Ankunft über 7 Tage,
-   0 Verlust, 0 Doppelarbeit, Wartezeit < 24 h). **Heute nicht begonnen.**
+   0 Verlust, 0 Doppelarbeit, Wartezeit < 24 h). **Heute nicht begonnen — und ohne die
+   Ankunftskennzahl (§4.6, F9) auch nicht messbar.**
 2. **Vollständige Mandatsdaten:** 20 Profile amtlich bestätigt, `aktiv: false`, nicht
    importiert. Berliner Wahl **20.09.2026** — die zehn Berliner Profile gelten nur für die
    19. WP; danach erneute Prüfung.
@@ -357,3 +385,4 @@ Ein Lauf wird sofort abgebrochen und gilt als **nicht bestanden**, wenn eines ei
 | F6 | Migration `20260809_jobqueue_narrativ.sql` anwenden | Gründer | Stufe B |
 | F7 | Preisbasis aus echter Rechnung belegen | Betreiber | ehrliche Kostenangabe |
 | F8 | Realistischer Belastungsnachweis (Z3) | Gründer, Kosten | Z3 überhaupt |
+| F9 | Migration `20260825101500_jobqueue_ankunftskennzahl.sql` anwenden | Gründer | Messbarkeit des 7-Tage-Nachweises (F4) |
