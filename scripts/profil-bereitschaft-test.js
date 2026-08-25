@@ -138,7 +138,7 @@ const vollstaendig = Object.freeze({
     password: "test-pass-123", party: "SPD", parliamentType: "Bundestag",
     state: "Berlin", constituency: "Testkreis", committees: ["Bildung, Forschung und Technikfolgenabschätzung"], focusTopics: ["Netz"]
   };
-  const r15 = await provisioning.provisionTenant(specUnvollstaendig);
+  const r15 = await provisioning.provisionTenant(specUnvollstaendig, {}, { neuAktiv: true });
   check("15. provisionTenant weist unvollständiges BT-Profil ab (Slug-Name + WP-20-Ausschuss)",
     r15.ok === false && r15.reason === "bundestagsprofil-nicht-bereit" && Array.isArray(r15.errors) && r15.errors.length >= 2,
     JSON.stringify(r15.reason));
@@ -157,7 +157,7 @@ const vollstaendig = Object.freeze({
   let r16;
   try {
     await accounts.deleteAuthDataForPolitician("rt-prov-voll").catch(() => {}); // Residuen-Schutz wie in (15)
-    r16 = await provisioning.provisionTenant(specVoll);
+    r16 = await provisioning.provisionTenant(specVoll, {}, { neuAktiv: true });
     check("16. provisionTenant lässt vollständiges BT-Profil durch", r16 && r16.ok === true, JSON.stringify(r16 && (r16.reason || r16.errors)));
     check("16b. Protokoll enthält bestandenen Bundestagsreife-Schritt", (r16.log || []).some((l) => l.step === "bundestagsreife" && l.status === "ok"));
     await provisioning.teardownTenant("rt-prov-voll");

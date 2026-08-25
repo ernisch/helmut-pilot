@@ -87,7 +87,7 @@ async function anzahlProfile(id) {
 
     // ── 1 · Ein zweiter identischer Lauf loescht keine gepflegten Felder ──────────
     abschnitt("1 · Wiederholungslauf bewahrt nachtraeglich gepflegte Profilfelder");
-    const r1 = await provisioning.provisionTenant(spec("stapel-eins"));
+    const r1 = await provisioning.provisionTenant(spec("stapel-eins"), {}, { neuAktiv: true });
     check("1.1 Erstanlage erfolgreich", r1.ok === true && r1.created === true, JSON.stringify(r1.reason || r1.errors));
 
     // Nachtraegliche Pflege, wie sie im Betrieb ueber die Profilmaske entsteht.
@@ -102,7 +102,7 @@ async function anzahlProfile(id) {
       Array.isArray(vorher.regionalInterests) && vorher.regionalInterests.length === 2
       && vorher.governmentRole === "Sprecherin");
 
-    const r2 = await provisioning.provisionTenant(spec("stapel-eins"));
+    const r2 = await provisioning.provisionTenant(spec("stapel-eins"), {}, { neuAktiv: true });
     const nachher = await profilVon("stapel-eins");
     check("1.3 Zweiter identischer Lauf ist erfolgreich und legt NICHT neu an",
       r2.ok === true && r2.created === false);
@@ -129,21 +129,29 @@ async function anzahlProfile(id) {
     const deaktiviert = await profilVon("stapel-eins");
     check("2.1 Mandat ist deaktiviert", deaktiviert.profileActive === false, String(deaktiviert.profileActive));
 
-    const r3 = await provisioning.provisionTenant(spec("stapel-eins"));
+    const r3 = await provisioning.provisionTenant(spec("stapel-eins"), {}, { neuAktiv: true });
     const nachWiederholung = await profilVon("stapel-eins");
     // Das Zusammenspiel ist absichtlich FAIL-CLOSED und schaerfer als eine blosse
-    // Nicht-Reaktivierung: die Verschmelzung haelt `profileActive:false` fest,
-    // `validateProfile` meldet daraufhin den Zustand "deaktiviert", und
+    // Nicht-Reaktivierung: die Verschmelzung haelt `profileActive:false` fest, und
     // `provisionTenant` bricht VOR jedem Schreibvorgang ab. Ein Wiederholungslauf
     // gegen ein deaktiviertes Mandat aktiviert es also nicht nur nicht — er
     // veraendert es ueberhaupt nicht.
+    // GEAENDERT 2026-08-25/4: der Abbruch haengt jetzt am WIDERSPRUCH zwischen der
+    // Absicht des Laufs (`neuAktiv: true` — dieser Lauf will ein aktives Mandat) und
+    // dem deaktivierten Bestand, nicht mehr am Nebeneffekt „validateProfile meldet
+    // deaktiviert". Er liegt damit frueher und nennt den Grund selbst. Die
+    // Abbruchkennung `profile-not-ready` ist unveraendert, `validation` entfaellt an
+    // dieser Stelle, weil gar nicht mehr bis zur Inhaltspruefung gelaufen wird.
     check("2.2 Wiederholungslauf bricht sauber ab statt still zu reaktivieren",
-      r3.ok === false && r3.reason === "profile-not-ready"
-      && r3.validation.state === "deaktiviert", JSON.stringify(r3.reason));
+      r3.ok === false && r3.reason === "profile-not-ready", JSON.stringify(r3.reason));
+    check("2.2b Der Abbruch benennt den Widerspruch ausdruecklich im Protokoll",
+      (r3.log || []).some((e) => e.step === "aktivierungszustand" && e.status === "abbruch"
+        && /reaktivieren:true/.test(String(e.detail))),
+      JSON.stringify((r3.log || []).map((e) => e.step)));
     check("2.3 Das Mandat bleibt DEAKTIVIERT (keine Aktivierung ohne Freigabe)",
       nachWiederholung.profileActive === false, String(nachWiederholung.profileActive));
 
-    const r4 = await provisioning.provisionTenant(spec("stapel-eins", { reaktivieren: true }));
+    const r4 = await provisioning.provisionTenant(spec("stapel-eins", { reaktivieren: true }), {}, { neuAktiv: true });
     const reaktiviert = await profilVon("stapel-eins");
     check("2.4 Mit ausdruecklichem reaktivieren:true wird wieder aktiviert",
       r4.ok === true && reaktiviert.profileActive === true, String(reaktiviert.profileActive));
@@ -187,9 +195,14 @@ async function anzahlProfile(id) {
     check("4.2 Der Trockenlauf hat NICHTS geschrieben",
       (await anzahlNutzer("stapel-zwei")) === 0 && (await anzahlProfile("stapel-zwei")) === 0
       && (await anzahlNutzer("stapel-drei")) === 0);
-    check("4.3 Der Trockenlauf sagt fuer beide 'anlegen' voraus",
-      trocken.ergebnisse.length === 2 && trocken.ergebnisse.every((e) => e.vorhaben === "anlegen"),
+    check("4.3 Der Trockenlauf sagt fuer beide 'anlegen-inaktiv' voraus",
+      trocken.ergebnisse.length === 2 && trocken.ergebnisse.every((e) => e.vorhaben === "anlegen-inaktiv"),
       JSON.stringify(trocken.ergebnisse.map((e) => e.vorhaben)));
+    // Der Zielzustand steht als eigener, maschinenlesbarer Wert in jeder Zeile — nicht
+    // nur als Wort im `vorhaben`. Daran haengt der Riegel in `provisionBatch`.
+    check("4.3b Jede Vorschauzeile nennt den Zielzustand ausdruecklich als INAKTIV",
+      trocken.ergebnisse.every((e) => e.zielAktiv === false),
+      JSON.stringify(trocken.ergebnisse.map((e) => e.zielAktiv)));
     check("4.4 Die Bilanz weist 'geplant' aus, nicht 'angelegt'",
       trocken.bilanz.geplant === 2 && trocken.bilanz.angelegt === 0);
 
@@ -214,9 +227,12 @@ async function anzahlProfile(id) {
       && (await anzahlNutzer("stapel-drei")) === 1 && (await anzahlProfile("stapel-drei")) === 1);
 
     const trockenNachAnlage = await provisioning.provisionBatch([spec("stapel-zwei")]);
-    check("5.5 Der Trockenlauf erkennt jetzt 'aktualisieren'",
-      trockenNachAnlage.ergebnisse[0].vorhaben === "aktualisieren",
+    check("5.5 Der Trockenlauf erkennt jetzt 'aktualisieren-bleibt-inaktiv'",
+      trockenNachAnlage.ergebnisse[0].vorhaben === "aktualisieren-bleibt-inaktiv",
       trockenNachAnlage.ergebnisse[0].vorhaben);
+    check("5.5b Der vorhergesagte Zielzustand bleibt INAKTIV",
+      trockenNachAnlage.ergebnisse[0].zielAktiv === false,
+      String(trockenNachAnlage.ergebnisse[0].zielAktiv));
 
     // ── 6 · Ein fehlerhaftes Mandat hinterlaesst keinen Teilzustand ──────────────
     abschnitt("6 · Fehlerhaftes Mandat im Stapel");
@@ -311,15 +327,24 @@ async function anzahlProfile(id) {
     // ── 10 · Review-Befund 2: die Vorschau sagt echte Konflikte voraus ───────────
     abschnitt("10 · Trockenlauf sagt Deaktivierung, E-Mail- und Kennungskonflikte voraus");
 
-    // (a) deaktiviertes Mandat ohne Reaktivierungsabsicht
+    // (a) deaktiviertes Mandat — der Stapel laesst es deaktiviert (Korrektur 2026-08-25/4).
+    // FRUEHER stand hier die Erwartung „blockiert" und „mit reaktivieren:true wieder
+    // durchfuehrbar". Beides war falsch herum gedacht: der Stapel arbeitet OHNEHIN
+    // inaktiv, ein deaktiviertes Mandat ist fuer ihn also kein Widerspruch — und eine
+    // Reaktivierung ist im Stapelpfad ueberhaupt nicht zulaessig (CLAUDE.md §5). Mit der
+    // alten Erwartung haette der Stapel seine EIGENEN, inaktiv angelegten Mandate nie
+    // wieder anfassen koennen; die zugesicherte Wiederholbarkeit waere weg gewesen.
     await provisioning.deactivateTenant("stapel-drei");
     const deakt = await provisioning.provisionBatch([spec("stapel-drei")]);
-    check("10.1 Ein deaktiviertes Mandat erscheint als BLOCKIERT",
-      deakt.ok === false && deakt.ergebnisse[0].vorhaben === "abbruch:deaktiviert-ohne-reaktivierung",
-      deakt.ergebnisse[0].vorhaben);
+    check("10.1 Ein deaktiviertes Mandat ist durchfuehrbar und bleibt vorhergesagt INAKTIV",
+      deakt.ok === true && deakt.ergebnisse[0].vorhaben === "aktualisieren-bleibt-inaktiv"
+      && deakt.ergebnisse[0].zielAktiv === false,
+      `${deakt.ergebnisse[0].vorhaben} / ${deakt.ergebnisse[0].zielAktiv}`);
     const deaktJa = await provisioning.provisionBatch([spec("stapel-drei", { reaktivieren: true })]);
-    check("10.2 Mit ausdruecklichem reaktivieren:true ist es wieder durchfuehrbar",
-      deaktJa.ok === true && deaktJa.ergebnisse[0].ok === true, deaktJa.ergebnisse[0].vorhaben);
+    check("10.2 Ein Reaktivierungswunsch wird ABGELEHNT, nicht still umgedeutet",
+      deaktJa.ok === false && deaktJa.grund === "vorpruefung-fehlgeschlagen"
+      && deaktJa.vorbefunde.some((b) => /reaktivieren/.test(b)),
+      JSON.stringify(deaktJa.grund));
     check("10.3 Auch diese Vorschau hat nichts geschrieben",
       (await profilVon("stapel-drei")).profileActive === false);
 
@@ -357,7 +382,7 @@ async function anzahlProfile(id) {
           return echteAccounts.listUsers();
         }
       };
-      const r = await provisioning.provisionTenant(spec("stapel-vier"), { accounts: attrappe });
+      const r = await provisioning.provisionTenant(spec("stapel-vier"), { accounts: attrappe }, { neuAktiv: true });
       check("11.1 Der Lauf bricht mit auth-write-not-persisted ab",
         r.ok === false && r.reason === "auth-write-not-persisted", JSON.stringify(r.reason));
       check("11.2 Der Rueckweg wurde ausgefuehrt", r.rueckweg === "ok", JSON.stringify(r.rueckweg));
@@ -378,7 +403,7 @@ async function anzahlProfile(id) {
           return neueId ? alle.filter((u) => u.id !== neueId) : alle;
         }
       };
-      const r = await provisioning.provisionTenant(spec("stapel-fuenf"), { accounts: attrappe });
+      const r = await provisioning.provisionTenant(spec("stapel-fuenf"), { accounts: attrappe }, { neuAktiv: true });
       check("11.5 Auch der leere Treffer fuehrt zum Abbruch",
         r.ok === false && r.reason === "auth-write-not-persisted", JSON.stringify(r.reason));
       check("11.6 Der Rueckweg wurde ausgefuehrt", r.rueckweg === "ok", JSON.stringify(r.rueckweg));
@@ -451,7 +476,7 @@ async function anzahlProfile(id) {
           return { ...u, politicianId: `${u.politicianId}-2` };
         }
       };
-      const r = await provisioning.provisionTenant(spec("stapel-sechs"), { accounts: attrappe });
+      const r = await provisioning.provisionTenant(spec("stapel-sechs"), { accounts: attrappe }, { neuAktiv: true });
       check("13.1 Kennungskollision bricht ab", r.ok === false && r.reason === "politician-id-collision",
         JSON.stringify(r.reason));
       check("13.2 Der gezielte Rueckweg war erfolgreich", r.rueckweg === "ok", JSON.stringify(r.rueckweg));
@@ -471,7 +496,7 @@ async function anzahlProfile(id) {
         return echteSpeicherung(p);
       };
       let r;
-      try { r = await provisioning.provisionTenant(spec("stapel-sechs")); }
+      try { r = await provisioning.provisionTenant(spec("stapel-sechs"), {}, { neuAktiv: true }); }
       finally { storage.saveProfile = echteSpeicherung; }
       check("13.6 Profilspeicherfehler bricht ab",
         r.ok === false && r.reason === "profile-write-failed", JSON.stringify(r.reason));
@@ -496,7 +521,7 @@ async function anzahlProfile(id) {
         deleteUser: async () => { throw new Error("simulierter Loeschfehler"); }
       };
       let r;
-      try { r = await provisioning.provisionTenant(spec("stapel-sechs"), { accounts: attrappe }); }
+      try { r = await provisioning.provisionTenant(spec("stapel-sechs"), { accounts: attrappe }, { neuAktiv: true }); }
       finally { storage.saveProfile = echteSpeicherung; }
       check("13.11 Der Lauf bricht ab", r.ok === false && r.reason === "profile-write-failed");
       check("13.12 Der Rueckweg wird als FEHLGESCHLAGEN gemeldet — kein falsches Gruen",
@@ -521,7 +546,171 @@ async function anzahlProfile(id) {
     await echt.removeAssignment(fremderNutzer.id, "stapel-sechs");
     await echt.deleteUser(fremderNutzer.id);
 
-    // ── 14 · Aufraeumen ─────────────────────────────────────────────────────────
+    // ── 14 · ANLAGE UND AKTIVIERUNG SIND GETRENNT (Korrekturrunde 2026-08-25/4) ──
+    // Der Widerspruch, den dieser Abschnitt schliesst: der Importvertrag verlangt
+    // `profileActive: false` unabhaengig vom Eingang (op30-profilvertrag-200-mandate.md
+    // §6), der Profilbauer setzte aber fest `profileActive: true` — ein scharfer
+    // Stapellauf legte also AKTIVE Mandate an und umging die getrennte
+    // Aktivierungsfreigabe (CLAUDE.md §5).
+    abschnitt("14 · Ein Stapellauf legt ausschliesslich INAKTIV an und aktiviert nie");
+    for (const id of ["stapel-eins", "stapel-zwei", "stapel-drei"]) {
+      try { await provisioning.teardownTenant(id); } catch { /* egal */ }
+    }
+
+    // (a) KEIN STILLER VORGABEWERT im gemeinsamen Profilbauer.
+    {
+      let geworfen = null;
+      try { provisioning.buildProfile(spec("stapel-eins")); } catch (e) { geworfen = e; }
+      check("14.1 buildProfile ohne ausdruecklichen Zustand WIRFT (kein stiller Default)",
+        geworfen instanceof TypeError && /ausdruecklich/.test(geworfen.message),
+        String(geworfen && geworfen.message).slice(0, 80));
+      check("14.2 buildProfile(..., { aktiv: false }) liefert profileActive === false",
+        provisioning.buildProfile(spec("stapel-eins"), { aktiv: false }).profileActive === false);
+      check("14.3 buildProfile(..., { aktiv: true }) liefert profileActive === true",
+        provisioning.buildProfile(spec("stapel-eins"), { aktiv: true }).profileActive === true);
+      let geworfen2 = null;
+      try { await provisioning.provisionTenant(spec("stapel-eins"), {}); } catch (e) { geworfen2 = e; }
+      check("14.4 provisionTenant ohne ausdruecklichen Zustand WIRFT",
+        geworfen2 instanceof TypeError && /neuAktiv/.test(geworfen2.message),
+        String(geworfen2 && geworfen2.message).slice(0, 80));
+    }
+
+    // (b) TROCKENLAUF IST STANDARD und sagt den inaktiven Zustand voraus.
+    {
+      const vorschau = await provisioning.provisionBatch([spec("stapel-eins"), spec("stapel-zwei")]);
+      check("14.5 Der Trockenlauf ist der Standard (kein `ausfuehren`) und schreibt nichts",
+        vorschau.trockenlauf === true
+        && (await anzahlNutzer("stapel-eins")) === 0 && (await anzahlProfile("stapel-eins")) === 0);
+      check("14.6 Er sagt fuer jedes neue Mandat ausdruecklich INAKTIV voraus",
+        vorschau.ok === true && vorschau.ergebnisse.every((e) => e.zielAktiv === false
+          && e.vorhaben === "anlegen-inaktiv"),
+        JSON.stringify(vorschau.ergebnisse.map((e) => [e.vorhaben, e.zielAktiv])));
+    }
+
+    // (c) SCHARFER LOKALER STAPELLAUF: legt an, aktiviert nicht.
+    {
+      const scharf = await provisioning.provisionBatch(
+        [spec("stapel-eins"), spec("stapel-zwei")], {}, { ausfuehren: true });
+      check("14.7 Der scharfe Stapellauf ist erfolgreich und legt beide Mandate an",
+        scharf.ok === true && scharf.bilanz.angelegt === 2 && scharf.bilanz.fehlgeschlagen === 0,
+        JSON.stringify(scharf.bilanz));
+      const p1 = await profilVon("stapel-eins");
+      const p2 = await profilVon("stapel-zwei");
+      check("14.8 BEIDE Profile sind INAKTIV gespeichert (profileActive === false)",
+        p1.profileActive === false && p2.profileActive === false,
+        `${p1.profileActive} / ${p2.profileActive}`);
+      check("14.9 Das Ergebnis MELDET den gespeicherten Zustand ehrlich als inaktiv",
+        scharf.ergebnisse.every((e) => e.profilAktiv === false),
+        JSON.stringify(scharf.ergebnisse.map((e) => e.profilAktiv)));
+      // DIE BETRIEBLICH ENTSCHEIDENDE ZUSICHERUNG: es genuegt nicht, dass ein Feld
+      // `false` ist — das Mandat muss fuer den Arbeitsplaner wirklich unsichtbar sein.
+      // `scalable-pipeline` filtert seine Profile mit genau diesem Praedikat
+      // (`planeArbeit`/`planeMandatsarbeit`: `.filter((p) => p && p.id && !isDisabled(p))`).
+      // Ein so angelegtes Mandat erzeugt damit KEINEN Auftrag, keine Last und keine Kosten —
+      // genau das sichert `op30-profilvertrag-200-mandate.md` §6 zu.
+      const { isDisabled } = require("../lib/helmut/profile-validation");
+      check("14.9b Der Arbeitsplaner sieht die neuen Mandate als DEAKTIVIERT (kein Auftrag, keine Kosten)",
+        isDisabled(p1) === true && isDisabled(p2) === true,
+        `${isDisabled(p1)} / ${isDisabled(p2)}`);
+      check("14.9c Dasselbe Praedikat benutzt der Planer wirklich (kein zweiter Wahrheitsbegriff)",
+        /\.filter\(\(p\) => p && p\.id && !isDisabled\(p\)\)/
+          .test(fs.readFileSync(path.join(__dirname, "..", "lib/helmut/scalable-pipeline.js"), "utf8")));
+      // Das Konto entsteht, ist aber nicht anmeldefaehig: `accounts.authenticate` liest
+      // `user.active === false`. Sonst haette ein Mandat ohne Freigabe einen Login.
+      const konten = (await accounts.listUsers()).filter((u) => u.politicianId === "stapel-eins");
+      check("14.10 Das angelegte Konto ist GESPERRT (active === false, kein Login)",
+        konten.length === 1 && konten[0].active === false, JSON.stringify(konten.map((k) => k.active)));
+      // Wirkungsnachweis statt Feldpruefung: fuer ein gesperrtes Konto laesst sich nicht
+      // einmal ein Einladungs-/Zuruecksetz-Link erzeugen (`accounts.createPasswordToken`
+      // wirft 409 „Nutzer ist gesperrt."). Denselben `active === false`-Riegel liest auch
+      // `resolveSession` — eine Sitzung dieses Kontos ist damit nicht aufloesbar.
+      let gesperrtFehler = null;
+      try { await accounts.createPasswordToken(konten[0].id, "reset"); }
+      catch (e) { gesperrtFehler = e; }
+      check("14.11 Das gesperrte Konto ist nicht nutzbar (kein Zugangslink erzeugbar)",
+        Boolean(gesperrtFehler) && /gesperrt/i.test(String(gesperrtFehler.message)),
+        String(gesperrtFehler && gesperrtFehler.message).slice(0, 60));
+    }
+
+    // (d) WIEDERHOLUNGSLAUF aktiviert nichts und bleibt wiederholbar.
+    {
+      const zweiter = await provisioning.provisionBatch(
+        [spec("stapel-eins"), spec("stapel-zwei")], {}, { ausfuehren: true });
+      check("14.12 Der Wiederholungslauf ist erfolgreich und legt NICHTS neu an",
+        zweiter.ok === true && zweiter.bilanz.angelegt === 0 && zweiter.bilanz.aktualisiert === 2,
+        JSON.stringify(zweiter.bilanz));
+      check("14.13 Er aktiviert kein Mandat — beide bleiben inaktiv",
+        (await profilVon("stapel-eins")).profileActive === false
+        && (await profilVon("stapel-zwei")).profileActive === false);
+      check("14.14 Keine Dubletten durch den Wiederholungslauf",
+        (await anzahlNutzer("stapel-eins")) === 1 && (await anzahlProfile("stapel-eins")) === 1);
+    }
+
+    // (e) EIN AKTIVIERUNGSWUNSCH WIRD ABGELEHNT, nie still umgedeutet.
+    for (const [feld, wert] of [["aktiv", true], ["profileActive", true], ["active", true],
+      ["aktiv", "true"], ["aktiv", 1], ["reaktivieren", true]]) {
+      const res = await provisioning.provisionBatch(
+        [spec("stapel-drei", { [feld]: wert })], {}, { ausfuehren: true });
+      check(`14.15 Stapel lehnt ${feld}=${JSON.stringify(wert)} ab (Vorpruefung, kein Schreibvorgang)`,
+        res.ok === false && res.grund === "vorpruefung-fehlgeschlagen"
+        && res.vorbefunde.some((b) => b.includes(`"${feld}"`))
+        && (await anzahlProfile("stapel-drei")) === 0,
+        JSON.stringify(res.grund));
+    }
+    check("14.16 Ein ausdrueckliches aktiv:false ist dagegen zulaessig (Importvertrag §6)",
+      (await provisioning.provisionBatch([spec("stapel-drei", { aktiv: false })])).ok === true);
+
+    // (f) EIN BESTEHENDES AKTIVES MANDAT WIRD VOM STAPEL NICHT DEAKTIVIERT.
+    // Die Gegenrichtung desselben Fehlers: seit der Bauer `false` liefern kann, haette
+    // ein Wiederholungslauf ein aktives Mandat still abschalten koennen.
+    {
+      const aktiv = await provisioning.provisionTenant(spec("stapel-drei"), {}, { neuAktiv: true });
+      check("14.17 Ausgangslage: das Mandat ist AKTIV angelegt",
+        aktiv.ok === true && (await profilVon("stapel-drei")).profileActive === true);
+      const ueber = await provisioning.provisionBatch([spec("stapel-drei")], {}, { ausfuehren: true });
+      check("14.18 Der Stapellauf laesst ein bestehendes AKTIVES Mandat aktiv",
+        ueber.ok === true && (await profilVon("stapel-drei")).profileActive === true,
+        String((await profilVon("stapel-drei")).profileActive));
+      check("14.19 Und er sagt genau das vorher (aktualisieren-bleibt-aktiv)",
+        (await provisioning.provisionBatch([spec("stapel-drei")])).ergebnisse[0].vorhaben
+          === "aktualisieren-bleibt-aktiv");
+    }
+
+    // (g) UNBESTIMMBARER ZUSTAND: die GESAMTE Vorschau faellt geschlossen aus.
+    {
+      const kaputt = await profilVon("stapel-drei");
+      kaputt.profileActive = "false";            // Zeichenkette, kein Wahrheitswert
+      await storage.saveProfile(kaputt);
+      const res = await provisioning.provisionBatch([spec("stapel-drei")]);
+      check("14.20 Ein nicht bestimmbarer Aktivierungszustand bricht die Vorschau ab",
+        res.ok === false && res.ergebnisse[0].vorhaben === "abbruch:aktivierungszustand-unklar",
+        res.ergebnisse[0].vorhaben);
+      const scharf = await provisioning.provisionBatch([spec("stapel-drei")], {}, { ausfuehren: true });
+      check("14.21 Auch der scharfe Lauf bricht dort ab, ohne zu schreiben",
+        scharf.ok === false && scharf.ergebnisse[0].reason === "aktivierungszustand-unklar",
+        String(scharf.ergebnisse[0].reason));
+      kaputt.profileActive = true;
+      await storage.saveProfile(kaputt);
+    }
+
+    // (h) TEILFEHLER: ein gescheitertes Mandat aktiviert die uebrigen nicht.
+    {
+      for (const id of ["stapel-eins", "stapel-zwei"]) {
+        try { await provisioning.teardownTenant(id); } catch { /* egal */ }
+      }
+      const kaputteSpec = { ...spec("stapel-zwei"), email: "stapel-drei@synthetic.test" };
+      const res = await provisioning.provisionBatch(
+        [spec("stapel-eins"), kaputteSpec], {}, { ausfuehren: true, weiterBeiFehler: true });
+      check("14.22 Genau ein Mandat scheitert, das gesunde wird angelegt",
+        res.ok === false && res.bilanz.fehlgeschlagen === 1 && res.bilanz.angelegt === 1,
+        JSON.stringify(res.bilanz));
+      check("14.23 Das gesunde Mandat ist INAKTIV — ein Teilfehler aktiviert nichts",
+        (await profilVon("stapel-eins")).profileActive === false);
+      check("14.24 Das gescheiterte Mandat hinterlaesst kein Profil",
+        (await anzahlProfile("stapel-zwei")) === 0);
+    }
+
+    // ── 15 · Aufraeumen ─────────────────────────────────────────────────────────
     for (const id of IDS) { try { await provisioning.teardownTenant(id); } catch { /* egal */ } }
   } catch (err) {
     fail += 1;

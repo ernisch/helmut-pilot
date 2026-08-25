@@ -13,9 +13,24 @@
 //   * "Deckel 100 traegt 0 Mandate"                         -> rechnete GESAMT, inklusive
 //     des globalen Sockels — und das ist die ehrliche Zahl.
 //
-// Alle drei waren fuer sich genommen richtig und zusammen unbrauchbar. Deshalb gibt es ab
-// jetzt GENAU EINE Rechenquelle. Jede Tabelle in Bericht, Test und Dokumentation zieht ihre
-// Zahlen hier — es gibt keine zweite Herleitung mehr.
+// Alle drei waren fuer sich genommen richtig und zusammen unbrauchbar. Deshalb zieht jede
+// Tabelle, die DIESE Groessen braucht, ihre Zahlen hier — und nur hier.
+//
+// ZURUECKGENOMMEN (Korrekturrunde 2026-08-25/4): hier stand „Deshalb gibt es ab jetzt GENAU
+// EINE Rechenquelle … es gibt keine zweite Herleitung mehr." Dieser Alleinvertretungsanspruch
+// trifft nicht zu. Es gibt im Repository DREI fachlich relevante Modelllinien, die
+// verschiedene Fragen beantworten und deshalb alle bestehen bleiben:
+//   * DIESE Datei — Vollmodell aus dem Produktionscode: Bandbreite inkl. Dubletten, Cluster,
+//     Nutzung, Speicher und Kosten, bis 1000 Mandate.
+//   * `scripts/kapazitaetsmodell-test.js` — Kapazitaet JE AUFTRAGSKLASSE: wo ist der Engpass,
+//     welche Verstehensparallelitaet ist noetig.
+//   * `docs/betrieb/skalierung-25-50-100.md` §2 — an der Fuenfermessung GEEICHTE Hochrechnung
+//     der Tagesmenge (trifft fuer M=5 exakt die gemessenen 338 source_fetch).
+// Zweck, Eingaben, Annahmen und Grenzen jeder Linie stehen nebeneinander in
+// `docs/betrieb/skalierung-25-50-100.md` §2c. Wer eine Zahl benutzt, muss wissen, welche
+// Linie sie liefert — ehrlich zu DIESER Datei: ihr „realistisches" Szenario sagt fuer
+// 5 Mandate 391 KI-Aufrufe/Tag voraus, gemessen sind 62–77. Sie ist bewusst konservativ
+// und taugt fuer Obergrenzen, nicht fuer die Frage „was passiert heute".
 //
 // WAS HIER GEMESSEN IST UND WAS GERECHNET.
 //   GEMESSEN (aus dem Produktionscode, bei jedem Lauf neu):
@@ -474,8 +489,11 @@ if (require.main === module) {
     const z = (n) => Number(n).toLocaleString("de-DE");
     const alle = await alleGroessen([5, 200, 1000]);
     console.log("Helmut — zentrale Skalierungsrechnung (OP-30)");
-    console.log("  EINE Quelle fuer alle Zahlen. Gemessen aus dem Produktionscode, gerechnet mit");
-    console.log("  ausdruecklich benannten Parametern, Preise nur mit Herkunftsvermerk.\n");
+    console.log("  Quelle fuer DIESE Groessen: gemessen aus dem Produktionscode, gerechnet mit");
+    console.log("  ausdruecklich benannten Parametern, Preise nur mit Herkunftsvermerk.");
+    console.log("  KEIN Alleinvertretungsanspruch: zwei weitere Modelllinien beantworten andere");
+    console.log("  Fragen (Klassenkapazitaet, geeichte Tagesmenge) — Vergleich und Grenzen in");
+    console.log("  docs/betrieb/skalierung-25-50-100.md §2c.\n");
 
     for (const [n, m] of Object.entries(alle)) {
       const me = m.messung;

@@ -51,7 +51,7 @@ async function countProfiles(id) {
 (async () => {
   try {
     // ── 1) Provisionierung A: vollständig, bereit, Pakete abgeleitet ───────────
-    const r1 = await provisioning.provisionTenant(specA);
+    const r1 = await provisioning.provisionTenant(specA, {}, { neuAktiv: true });
     check("A provisioniert (ok, created)", r1.ok === true && r1.created === true, JSON.stringify(r1.reason || r1.errors));
     check("A: Auth-Nutzer + Profil vorhanden", (await countUsers(A)) === 1 && (await countProfiles(A)) === 1);
     check("A: matching-/briefingbereit", r1.readiness.kannBriefingErhalten === true && r1.readiness.kannMatching === true);
@@ -60,12 +60,12 @@ async function countProfiles(id) {
     check("A: Budgetkonfiguration übernommen", r1.budget.aiBudgetDailyCents === 500 && r1.budget.tenantDailyCallLimit === 30);
 
     // ── 2) IDEMPOTENZ: erneut A -> aktualisiert, KEINE Dublette ────────────────
-    const r2 = await provisioning.provisionTenant(specA);
+    const r2 = await provisioning.provisionTenant(specA, {}, { neuAktiv: true });
     check("A erneut: ok + updated (nicht created)", r2.ok === true && r2.updated === true && r2.created === false);
     check("A erneut: weiterhin genau 1 Nutzer + 1 Profil (keine Dublette)", (await countUsers(A)) === 1 && (await countProfiles(A)) === 1);
 
     // ── 3) Zweiter Mandant B: getrennt, keine Cross-Contamination ──────────────
-    const rB = await provisioning.provisionTenant(specB);
+    const rB = await provisioning.provisionTenant(specB, {}, { neuAktiv: true });
     check("B provisioniert getrennt", rB.ok === true && (await countUsers(B)) === 1 && (await countProfiles(B)) === 1);
     const profA = await storage.getProfile(A);
     const profB = await storage.getProfile(B);
@@ -75,7 +75,7 @@ async function countProfiles(id) {
 
     // ── 4) Pflichtfeld-Abbruch: OHNE Schreibvorgang ───────────────────────────
     const badSpec = { id: "prov-c-synthetic", email: "c@synthetic.test", name: "C", password: "test-pass-789", parliamentType: "Bundestag" }; // party+region+committee fehlen
-    const rBad = await provisioning.provisionTenant(badSpec);
+    const rBad = await provisioning.provisionTenant(badSpec, {}, { neuAktiv: true });
     check("unvollständige Spec -> Abbruch (spec-invalid)", rBad.ok === false && rBad.reason === "spec-invalid" && rBad.errors.length > 0);
     check("Abbruch hinterlässt KEINEN Account/Profil", (await countUsers("prov-c-synthetic")) === 0 && (await countProfiles("prov-c-synthetic")) === 0);
 
@@ -83,7 +83,7 @@ async function countProfiles(id) {
     const failId = "prov-d-synthetic";
     const failSpec = { ...specA, id: failId, email: "d@synthetic.test" };
     const throwingStorage = Object.assign(Object.create(storage), storage, { saveProfile: async () => { throw new Error("simulierter Store-Fehler"); } });
-    const rFail = await provisioning.provisionTenant(failSpec, { storage: throwingStorage });
+    const rFail = await provisioning.provisionTenant(failSpec, { storage: throwingStorage }, { neuAktiv: true });
     check("Profil-Write-Fehler -> Abbruch (profile-write-failed)", rFail.ok === false && rFail.reason === "profile-write-failed");
     check("KEIN halber Account: neu angelegter Auth-Nutzer wurde zurückgerollt", (await countUsers(failId)) === 0, `users=${await countUsers(failId)}`);
     check("Rollback-Schritt im Protokoll dokumentiert", rFail.log.some((s) => s.step === "rollback" && s.status === "ok"));
@@ -94,7 +94,7 @@ async function countProfiles(id) {
     const BESTAND = "tenant-bestand";
     await storage.saveProfile({ id: BESTAND, fullName: "Bestand Mandant", party: "Testpartei Alpha", parliamentType: "Bundestag", state: "Berlin", constituency: "Mitte", committees: ["Haushalt"] });
     check("(a) Profil OHNE Marker -> isProtectedTenant true", (await provisioning.isProtectedTenant(BESTAND)) === true);
-    const rpBestand = await provisioning.provisionTenant({ ...specA, id: BESTAND, email: "bestand@synthetic.test" });
+    const rpBestand = await provisioning.provisionTenant({ ...specA, id: BESTAND, email: "bestand@synthetic.test" }, {}, { neuAktiv: true });
     check("(a) Provisionierung über Bestandsprofil verweigert (protected-tenant)", rpBestand.ok === false && rpBestand.reason === "protected-tenant");
     const rdBestand = await provisioning.deactivateTenant(BESTAND);
     check("(a) Deaktivierung des Bestandsmandanten verweigert", rdBestand.ok === false && rdBestand.reason === "protected-tenant");
@@ -115,18 +115,18 @@ async function countProfiles(id) {
       state: testPoliticianOne.state, constituency: testPoliticianOne.constituency,
       committees: testPoliticianOne.committees, focusTopics: testPoliticianOne.focusTopics
     };
-    const rAlpha1 = await provisioning.provisionTenant(specAlpha);
+    const rAlpha1 = await provisioning.provisionTenant(specAlpha, {}, { neuAktiv: true });
     check("(b) tenant-alpha provisioniert, Profil trägt PROVISIONING_MARKER",
       rAlpha1.ok === true && (await storage.getProfile(TENANT_ALPHA)).provisionedBy === provisioning.PROVISIONING_MARKER);
     check("(b) selbst provisionierter Mandant ist NICHT geschützt", (await provisioning.isProtectedTenant(TENANT_ALPHA)) === false);
-    const rAlpha2 = await provisioning.provisionTenant(specAlpha);
+    const rAlpha2 = await provisioning.provisionTenant(specAlpha, {}, { neuAktiv: true });
     check("(b) idempotentes Update erlaubt (updated, keine Dublette)",
       rAlpha2.ok === true && rAlpha2.updated === true && (await countUsers(TENANT_ALPHA)) === 1 && (await countProfiles(TENANT_ALPHA)) === 1);
 
     // (c) Betreiber-Sperrliste per Env (HELMUT_PROTECTED_TENANT_IDS) schützt auch frische ids.
     process.env.HELMUT_PROTECTED_TENANT_IDS = "tenant-gesperrt";
     check("(c) Env-gelistete id ist geschützt", (await provisioning.isProtectedTenant("tenant-gesperrt")) === true);
-    const rGesperrt = await provisioning.provisionTenant({ ...specA, id: "tenant-gesperrt", email: "gesperrt@synthetic.test" });
+    const rGesperrt = await provisioning.provisionTenant({ ...specA, id: "tenant-gesperrt", email: "gesperrt@synthetic.test" }, {}, { neuAktiv: true });
     check("(c) Provisionierung der Env-gesperrten id verweigert (protected-tenant)", rGesperrt.ok === false && rGesperrt.reason === "protected-tenant");
     delete process.env.HELMUT_PROTECTED_TENANT_IDS;
     check("(c) ohne Env-Eintrag ist dieselbe (frische) id wieder erlaubt", (await provisioning.isProtectedTenant("tenant-gesperrt")) === false);
@@ -158,7 +158,7 @@ async function countProfiles(id) {
 
     // ── 9) KEINE Kontoübernahme: fremde E-Mail (Admin) wird NICHT degradiert ────
     await accounts.createUser({ email: "admin-collide@synthetic.test", name: "Admin", role: "admin", password: "test-pass-999" });
-    const rHijack = await provisioning.provisionTenant({ ...specB, id: "hijack-target-synthetic", email: "admin-collide@synthetic.test" });
+    const rHijack = await provisioning.provisionTenant({ ...specB, id: "hijack-target-synthetic", email: "admin-collide@synthetic.test" }, {}, { neuAktiv: true });
     check("Provisionierung mit fremder (Admin-)E-Mail -> Abbruch (email-belongs-to-other-account)",
       rHijack.ok === false && rHijack.reason === "email-belongs-to-other-account");
     const adminAfter = (await accounts.listUsers()).find((u) => u.email === "admin-collide@synthetic.test");
@@ -173,7 +173,7 @@ async function countProfiles(id) {
       { id: "raw-own", sourceType: "news", politicianId: "raw-test-synthetic", title: "Eigenes" }
     ];
     await storage.writeStore(mainSeed, "main");
-    await provisioning.provisionTenant({ ...specA, id: "raw-test-synthetic", email: "rawtest@synthetic.test" });
+    await provisioning.provisionTenant({ ...specA, id: "raw-test-synthetic", email: "rawtest@synthetic.test" }, {}, { neuAktiv: true });
     await provisioning.teardownTenant("raw-test-synthetic");
     const mainAfter = await storage.readStore("main");
     const rawIds = (mainAfter.rawItems || []).map((r) => r.id);
@@ -184,7 +184,7 @@ async function countProfiles(id) {
     // ── 11) DSGVO: Ergebnisprotokoll enthält KEINE Klartext-E-Mail (nur maskiert) ─
     check("maskEmail maskiert lokalen Teil, behält Domain",
       provisioning.maskEmail("admin-collide@synthetic.test") === "a************@synthetic.test");
-    const rProtokoll = await provisioning.provisionTenant({ ...specA, id: "prot-mail-synthetic", email: "geheim.person@synthetic.test" });
+    const rProtokoll = await provisioning.provisionTenant({ ...specA, id: "prot-mail-synthetic", email: "geheim.person@synthetic.test" }, {}, { neuAktiv: true });
     const protokollText = provisioning.formatProtocol(rProtokoll) + JSON.stringify(rProtokoll.log);
     check("Provisionierungs-Protokoll enthält KEINE volle E-Mail (nur maskiert)",
       !protokollText.includes("geheim.person@synthetic.test") && protokollText.includes("@synthetic.test"));

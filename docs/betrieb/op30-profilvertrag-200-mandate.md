@@ -136,10 +136,20 @@ Abschlussreviews über das verbindliche Projektprädikat `profile-validation.isD
    Der Bericht nennt je Fehler die Stelle **und** was zu tun ist.
 7. Erst wenn `ERGEBNIS: importierbar` steht, ist die Recherche fertig.
 
+> **Durchsetzung im Anlegewerkzeug (nachgetragen 2026-08-25/4).** Bis dahin galt §6 nur für
+> den Import*prüfer*; `lib/helmut/provisioning.js` setzte beim Anlegen fest
+> `profileActive: true` und hätte einen Stapel damit **aktiv** angelegt. Behoben: der
+> Profilbauer hat **keinen Vorgabewert** mehr (er wirft ohne ausdrücklichen Zustand), der
+> Stapelpfad (`provisionBatch`) legt **ausschließlich inaktiv** an und nimmt dafür keinen
+> Schalter entgegen, und ein Datensatz mit `aktiv`/`profileActive`/`active`/`reaktivieren`
+> ungleich `false` wird in der Vorprüfung **abgelehnt statt still umgedeutet** — genau wie
+> §6 es verlangt. Nachweis: `scripts/provision-stapel-test.js` §14; Einordnung:
+> [`skalierung-25-50-100.md`](skalierung-25-50-100.md) §4.5a.
+
 ## 8 · Was dieser Vertrag ausdrücklich **nicht** leistet
 
 - Er **legt nichts an**. Das Anlegen von Mandanten bleibt `lib/helmut/provisioning.js` und damit
-  eine bewusste Betreiberhandlung.
+  eine bewusste Betreiberhandlung — dort jetzt mit demselben Riegel (§6, Kasten oben).
 - Er prüft **keine Erreichbarkeit** der Quellen-URLs (das wäre ein Netzzugriff und gehört nicht
   in eine Offline-Prüfung).
 - Er prüft **nicht die Richtigkeit** der Angaben — nur ihre Form, ihre Vollständigkeit und ihre
