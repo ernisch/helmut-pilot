@@ -4305,3 +4305,102 @@ einer fremden Auftrags- bzw. Outbox-Zeile.
   mehr aufgenommen. Die Wartezeitkennzahl `aeltester_offener_s` treibt er **nicht mehr**, weil
   sie nur `wartend`/`laeuft` zählt.
 - **Der Selbstweck bleibt davon unberührt und weiterhin deaktiviert.**
+
+## §31.9 Trockenlauf, Abgleich und dritte Vertragsfassung (2026-08-25)
+
+### §31.9.1 Die exakte zeitliche Abfolge
+
+Alle Zeiten zuerst **türkisch**, dann Berlin, dann UTC.
+
+| Türkisch | Berlin | UTC | Ereignis |
+|---|---|---|---|
+| 07:01 | 06:01 | 04:01 | Der **reguläre Betrieb** nimmt die versehentliche Testzeile auf; fünf Versuche brennen in einem Slot ab, der Auftrag endet `fehlgeschlagen`. Die Outbox-Absicht wird im Schattenmodus versendet und bestätigt (§31.8). |
+| 07:48:39 | 06:48:39 | 04:48:39 | Rein lesender Abgleich: Endzustand erhoben, **zweite** Vertragsfassung gebaut (Commit `03eec29`). |
+| **08:55:30** | **07:55:30** | **05:55:30** | **Production-Trockenlauf der zweiten Fassung.** Alle Riegel bestanden, kontrollierte Meldung `TROCKENLAUF-OK`, Transaktion **vollständig zurückgerollt**. |
+| 08:56:06 | 07:56:06 | 05:56:06 | Nachprüfung: alle sieben Vorprüfungswerte `1`, Outbox noch `bestaetigt`, **0** offene Transaktionen, **0** Sperren, **0** zurückgelassene Temp-Tabellen. Bestände 1116 / 881 — identisch zum Vorher-Stand der Quittung. |
+| **08:56:14** | **07:56:14** | **05:56:14** | **Der reguläre Outbox-Abgleich** setzt die Absicht auf `verzichtet` (`updated_at 05:56:14.770379Z`). |
+| 09:05:55 | 08:05:55 | 06:05:55 | Unabhängige Prüfung: `auftrag_vertragstreu = 1`, `outbox_vertragstreu = 0`, `endgueltig_fehler_gesamt = 1`, Zielbeitrag `1`. |
+| 09:12:04 | 08:12:04 | 06:12:04 | Rein lesende Bestätigung dieser Runde: Outbox exakt `verzichtet`, `updated_at` wie gemeldet, alle übrigen Werte unverändert. |
+
+### §31.9.2 Der erste Trockenlauf war korrekt und ist vollständig zurückgerollt
+
+Der Lauf um **08:55:30 türkischer Zeit (07:55:30 Berlin, 05:55:30 UTC)** hat sämtliche Riegel
+durchlaufen und endete bauartbedingt in `TROCKENLAUF-OK` — einem `raise exception`, das die
+Transaktion vollständig zurücknimmt. Der ausgeführte Text enthielt **kein** `commit;`.
+
+Belegt ist das doppelt: die Quittung nennt als Vorher-Stand **1116 Aufträge / 881
+Outbox-Zeilen**, und die Nachprüfung 36 Sekunden später las **exakt dieselben 1116 / 881**. Der
+simulierte Nachher-Stand (1115 / 880) existiert nirgends. Ebenso: **0** offene Transaktionen,
+**0** Sperren auf den Zieltabellen, **0** zurückgelassene Temp-Tabellen.
+
+### §31.9.3 Die spätere Statusänderung stammt vom regulären Abgleich — nicht vom Trockenlauf
+
+Die Änderung fiel **8 Sekunden nach der Nachprüfung** und **44 Sekunden nach dem Trockenlauf**,
+zu einem Zeitpunkt, an dem die Trockenlauf-Transaktion längst zurückgerollt war.
+
+Die Ursache steht in der Production-Definition von `helmut_outbox_abgleich` (rein lesend aus
+dem Katalog gelesen, **nicht aufgerufen**). Ihr erster Satz lautet sinngemäß: setze die Absicht
+auf `verzichtet`, wenn der zugehörige **Auftrag terminal** ist (`erledigt` oder
+`fehlgeschlagen`) und die Absicht in `offen`, `versendet`, `aufgegeben` **oder `bestaetigt`**
+steht. Der Auftrag ist seit 04:01 UTC `fehlgeschlagen`, die Absicht stand auf `bestaetigt` —
+der Abgleich hat also **genau seine Aufgabe erfüllt**. Das ist der kanonische Weg und keine
+Wirkung des Trockenlaufs.
+
+### §31.9.4 Warum der erste Trockenlauf Freigabe B nicht mehr tragen kann
+
+Ein Trockenlauf beweist immer nur den Zustand, **gegen den er lief**. Er lief gegen die Absicht
+im Zustand `bestaetigt`; seit 08:56:14 türkischer Zeit steht sie auf `verzichtet`. Der Vertrag
+der zweiten Fassung würde heute an **E4.2** geschlossen abbrechen — richtig so, aber damit ist
+der alte Trockenlaufbeleg **verbraucht**. **Freigabe B kann auf ihm nicht mehr gestützt werden.**
+Nach dieser dritten Vertragsfassung ist zuerst **Freigabe A erneut** zu prüfen.
+
+### §31.9.5 Die dritte Vertragsfassung
+
+Geändert wurde **ausschließlich** der getrennte Einzeilenvertrag; die zwei Mengenverträge sind
+**bytegleich unverändert** (identische SHA-256 `e8a55ee3…` über den gesamten Abschnitt davor).
+Der **Auftrag** und alle übrigen Vertragswerte bleiben unverändert.
+
+1. **Outbox-Status `verzichtet`** statt `bestaetigt` — der stabile kanonische Endzustand.
+2. **`updated_at` ist neuer Riegel E4.12.** Aufgenommen, weil der Codebeleg zeigt, dass eine
+   bereits `verzichtet`-Zeile **nicht erneut** verändert wird: der Sweep führt `verzichtet`
+   nicht in seiner Statusliste, die Wiedereröffnung verlangt `j.status = 'wartend'`,
+   `helmut_outbox_vergeben` wählt nur `offen`/`versendet`, `helmut_outbox_quittieren` nur
+   `versendet`, `helmut_outbox_zuruecklegen` bricht bei jedem anderen Status ab, und
+   `helmut_outbox_erneut_vorlegen` bricht ab, sobald der Auftrag nicht `wartend` ist.
+   Zugleich setzt der Trigger `helmut_job_outbox_kappen_trg` bei **jedem** Update
+   `updated_at := now()` — der Riegel ist damit ein **allgemeiner Änderungsmelder**: jede
+   spätere Berührung der Zeile, aus welcher Quelle auch immer, stoppt den Ablauf.
+3. **Jeder frühere Zustand wird geschlossen abgelehnt** — Auftrag `wartend`, Outbox `offen`
+   **und Outbox `bestaetigt`** erzeugen kein SQL mehr (fail closed) und stoppen im SQL.
+4. **Unverändert:** nur die zwei fest benannten Kennungen · kein Zeitbereich als Zielmenge ·
+   genau **eine** Löschanweisung auf die Auftragskennung · Outbox nur über die vorher geprüfte
+   Kaskade · `SERIALIZABLE` · Sperre nur auf den beiden Zielzeilen · exakte Löschanzahl ·
+   Nachprüfung in derselben Transaktion · **Trockenlauf als unveränderbarer Standard mit
+   garantiertem Rollback** · scharfer Modus nur ausdrücklich benannt · zweiter scharfer Lauf
+   wirkungslos.
+
+### §31.9.6 Lokaler Datenbanknachweis — **65 PASS / 0 FAIL**
+
+`scripts/jobqueue-einzeilen-neutralisierung-datenbank-test.js` gegen echte PostgreSQL 16.
+
+| Nachweis | Ergebnis |
+|---|---|
+| `verzichtet` wird akzeptiert (Trockenlauf besteht alle Riegel) | ja |
+| `bestaetigt` wird abgelehnt — im Vertrag **und** im SQL | ja (fail closed bzw. E4.2) |
+| `offen`, `versendet`, `aufgegeben`, beliebiger Status | abgelehnt |
+| abweichender `updated_at` | stoppt (E4.12) |
+| **jeder** spätere Schreibvorgang auf die Zeile (Trigger setzt `updated_at`) | stoppt (E4.12) |
+| Trockenlauf rollt vollständig zurück, ändert nichts | ja |
+| scharfer Modus entfernt **lokal** genau den Zielauftrag und seine Outbox-Zeile | ja |
+| fremde Auftrags- und Outbox-Zeilen bleiben unverändert | ja (Signaturvergleich) |
+| zweiter scharfer Lauf | wirkungslos (`BEREITS-NEUTRALISIERT`) |
+
+### §31.9.7 Was jetzt gilt
+
+- **Es wurde nichts gelöscht**, kein Production-Trockenlauf in dieser Runde, kein scharfer Lauf,
+  keine Funktion aufgerufen, keine sonstige Production-Änderung.
+- **Freigabe A ist erneut zu prüfen** (Trockenlauf gegen den jetzt gültigen Vertrag).
+- **Freigabe B bleibt getrennt** und setzt einen *frischen* grünen Trockenlauf voraus.
+- `endgueltig_fehler` ist weiterhin um **1** verfälscht; der Auftrag ist terminal und wächst
+  nicht weiter.
+- **Der Selbstweck bleibt unberührt und weiterhin deaktiviert.**

@@ -147,6 +147,9 @@ values ('${A.id}'::uuid, '${A.jobType}', '${A.idempotenzschluessel}', '${A.aktua
         timestamptz '${A.ersteBeanspruchung}', timestamptz '${A.abschluss}', ${A.wiedervorlagen},
         timestamptz '${A.faelligAb}', timestamptz '${A.ersteFaelligkeit}',
         timestamptz '${A.erstelltAm}');
+-- Der Trigger helmut_job_outbox_kappen_trg setzt updated_at bei JEDEM Schreibvorgang auf
+-- now(). Der Vertragswert wird deshalb NACH dem Einfuegen gesetzt — mit ausgeschaltetem
+-- Trigger, sonst waere der Aenderungsmelder nicht herstellbar.
 insert into public.helmut_job_outbox
   (id, job_id, schema_version, status, transport, attempts, max_attempts, last_error,
    next_attempt_at, sent_at, confirmed_at, created_at)
@@ -154,6 +157,10 @@ values ('${O.id}'::uuid, '${A.id}'::uuid, ${O.schemaVersion}, '${O.status}', '${
         ${O.versuche}, ${O.maxVersuche}, null,
         timestamptz '${O.naechsterVersuchAb}', timestamptz '${O.versendetAm}',
         timestamptz '${O.bestaetigtAm}', timestamptz '${O.erstelltAm}');
+alter table public.helmut_job_outbox disable trigger helmut_job_outbox_kappen_trg;
+update public.helmut_job_outbox set updated_at = timestamptz '${O.aktualisiertAm}'
+ where id = '${O.id}'::uuid;
+alter table public.helmut_job_outbox enable trigger helmut_job_outbox_kappen_trg;
 -- (2) FREMDE, ECHTE ARBEIT — sie muss jeden Lauf unveraendert ueberstehen.
 insert into public.helmut_jobs
   (id, job_type, idempotency_key, freshness_window, payload, status, attempts, max_attempts,
@@ -271,16 +278,22 @@ function main() {
       { ...V, auftrag: { ...V.auftrag, versuche: 1 } },
       { ...V, auftrag: { ...V.auftrag, fehlertext: "" } },
       { ...V, outbox: { ...V.outbox, transport: "" } },
+      { ...V, outbox: { ...V.outbox, aktualisiertAm: "kein-zeitstempel" } },
+      { ...V, outbox: { ...V.outbox, status: "versendet" } },
+      { ...V, outbox: { ...V.outbox, status: "aufgegeben" } },
       { ...V, fremdschluessel: { ...V.fremdschluessel, loeschregel: "a" } }
     ]) {
       try { N.einzeilenNeutralisierungSql(kaputt); return false; } catch (_) { /* erwartet */ }
     }
     return true;
   })());
-  check("0.9 Ein Vertrag im FRUEHEREN Zustand (wartend / offen) wird ausdruecklich abgelehnt", (() => {
+  check("0.9 Jeder FRUEHERE Zustand (wartend / offen / bestaetigt) wird ausdruecklich abgelehnt", (() => {
     const veraltet = [
       { ...V, auftrag: { ...V.auftrag, status: "wartend", versuche: 0 } },
-      { ...V, outbox: { ...V.outbox, status: "offen" } }
+      { ...V, outbox: { ...V.outbox, status: "offen" } },
+      // `bestaetigt` war der Zustand VOR dem kanonischen Abgleich vom 2026-08-25,
+      // 08:56:14 Uhr tuerkischer Zeit (07:56:14 Berlin, 05:56:14 UTC).
+      { ...V, outbox: { ...V.outbox, status: "bestaetigt" } }
     ];
     for (const alt of veraltet) {
       try { N.einzeilenNeutralisierungSql(alt); return false; }
@@ -288,10 +301,13 @@ function main() {
     }
     return true;
   })());
-  check("0.10 Der Vertrag beschreibt den TERMINALEN Zustand (nicht mehr den unberuehrten)",
+  check("0.10 Der Vertrag beschreibt den KANONISCHEN Endzustand (terminal + abgeglichen)",
     V.auftrag.status === "fehlgeschlagen" && V.auftrag.versuche === V.auftrag.maxVersuche
-    && V.outbox.status === "bestaetigt" && typeof V.outbox.transport === "string"
-    && V.outbox.transport.length > 0);
+    && V.outbox.status === "verzichtet" && typeof V.outbox.transport === "string"
+    && V.outbox.transport.length > 0 && typeof V.outbox.aktualisiertAm === "string");
+  check("0.11 Der Aenderungsmelder updated_at ist Vertragsbestandteil und steht im SQL",
+    /updated_at = timestamptz '/.test(scharfSql) && /updated_at = timestamptz '/.test(trockenSql)
+    && /updated_at = timestamptz '/.test(N.einzeilenVorpruefungSql(V)));
 
   // ── 1–3 · Trockenlauf ─────────────────────────────────────────────────────────────────────
   abschnitt("1–3 · Standard-Trockenlauf: alle Riegel bestehen, nichts aendert sich");
@@ -386,6 +402,11 @@ function main() {
   stopptBei("7.0c Allein der fruehere Outbox-Status `offen` stoppt bereits (E4.2)",
     `update public.helmut_job_outbox set status = 'offen' where id = '${ZIEL_OUTBOX}'::uuid;`,
     /ABBRUCH E4\.2/);
+  // `bestaetigt` war der Zustand VOR dem kanonischen Abgleich (2026-08-25, 08:56:14 Uhr
+  // tuerkischer Zeit / 07:56:14 Berlin / 05:56:14 UTC). Er darf den Vertrag nicht mehr tragen.
+  stopptBei("7.0d Der Zustand VOR dem Abgleich (`bestaetigt`) stoppt (E4.2)",
+    `update public.helmut_job_outbox set status = 'bestaetigt' where id = '${ZIEL_OUTBOX}'::uuid;`,
+    /ABBRUCH E4\.2/);
   stopptBei("7.1 Veraenderter Status stoppt (E7.1 — spaetere Statusaenderung)",
     `update public.helmut_jobs set status = 'erledigt'
        where id = '${ZIEL_AUFTRAG}'::uuid;`,
@@ -443,6 +464,17 @@ function main() {
   stopptBei("11.3 Outbox auf `aufgegeben` gesetzt stoppt ebenfalls (E4.2) — der Auftrag bliebe ja liegen",
     `update public.helmut_job_outbox set status = 'aufgegeben' where id = '${ZIEL_OUTBOX}'::uuid;`,
     /ABBRUCH E4\.2/);
+  // DER AENDERUNGSMELDER: der Trigger setzt updated_at bei jedem Update. Eine spaetere
+  // Beruehrung der Zeile — aus welcher Quelle auch immer — muss den Ablauf stoppen.
+  stopptBei("11.8 Veraenderter Aenderungszeitpunkt stoppt (E4.12 — Aenderungsmelder)",
+    `alter table public.helmut_job_outbox disable trigger helmut_job_outbox_kappen_trg;
+     update public.helmut_job_outbox set updated_at = timestamptz '2026-08-25 06:30:00+00'
+      where id = '${ZIEL_OUTBOX}'::uuid;
+     alter table public.helmut_job_outbox enable trigger helmut_job_outbox_kappen_trg;`,
+    /ABBRUCH E4\.12/);
+  stopptBei("11.9 Ein beliebiger spaeterer Schreibvorgang stoppt ueber den Melder (E4.12)",
+    `update public.helmut_job_outbox set last_error = null where id = '${ZIEL_OUTBOX}'::uuid;`,
+    /ABBRUCH E4\.12/);
   stopptBei("11.4 Veraenderte Outbox-Versuchszahl stoppt (E4.3)",
     `update public.helmut_job_outbox set attempts = 2 where id = '${ZIEL_OUTBOX}'::uuid;`,
     /ABBRUCH E4\.3/);

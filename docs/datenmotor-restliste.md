@@ -1522,7 +1522,36 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   kein Production-Trockenlauf ausgefuehrt**; einzige Beruehrung war die enge Lesepruefung am
   2026-08-25 um **07:48:39 Uhr tuerkischer Zeit** (06:48:39 Berlin, 04:48:39 UTC), die jeden
   Vertragswert bestaetigt hat. **Freigabe A ist damit neu pruefbar**, Freigabe B bleibt eine
-  getrennte spaetere Entscheidung. **Offen:** der Selbstweck war noch nie
+  getrennte spaetere Entscheidung.
+  **Trockenlauf und kanonischer Abgleich (2026-08-25, dritte Korrekturrunde; Runbook §31.9):**
+  Freigabe A wurde erteilt und der Production-Trockenlauf um **08:55:30 Uhr tuerkischer Zeit**
+  (07:55:30 Berlin, 05:55:30 UTC) **genau einmal** ausgefuehrt — Ergebnis die kontrollierte
+  Meldung `TROCKENLAUF-OK`: alle Riegel bestanden, eine Auftrags- und eine Outbox-Zeile WAEREN
+  entfernt worden, Transaktion **vollstaendig zurueckgerollt**. Doppelt belegt: die Quittung
+  nennt als Vorher-Stand 1116 Auftraege / 881 Outbox-Zeilen, die Nachpruefung um 08:56:06 Uhr
+  tuerkischer Zeit las **dieselben** 1116 / 881; dazu 0 offene Transaktionen, 0 Sperren auf den
+  Zieltabellen, 0 zurueckgelassene Temp-Tabellen. **Es wurde nichts geloescht und nichts
+  dauerhaft gespeichert.** **Acht Sekunden nach der Nachpruefung**, um **08:56:14 Uhr
+  tuerkischer Zeit** (07:56:14 Berlin, 05:56:14 UTC), setzte der **regulaere** Outbox-Abgleich
+  die Absicht auf `verzichtet` (`updated_at` 05:56:14.770379Z). **Ursache belegt** aus der rein
+  lesend gelesenen Production-Definition von `helmut_outbox_abgleich` (NICHT aufgerufen): sie
+  schliesst Absichten TERMINALER Auftraege — `j.status in ('erledigt','fehlgeschlagen')` und
+  `o.status in ('offen','versendet','aufgegeben','bestaetigt')`. Das ist der kanonische Abgleich
+  und **keine Wirkung des Trockenlaufs**, der zu diesem Zeitpunkt laengst zurueckgerollt war.
+  **Folge:** ein Trockenlauf belegt nur den Zustand, gegen den er lief — der Beleg vom 08:55:30
+  ist damit **verbraucht** und kann Freigabe B **nicht** mehr tragen. **Dritte Vertragsfassung:**
+  Outbox-Status auf `verzichtet`; `updated_at` als neuer Riegel E4.12 aufgenommen, weil der
+  Codebeleg zeigt, dass eine bereits verzichtete Zeile NICHT erneut veraendert wird (der Sweep
+  fuehrt `verzichtet` nicht in seiner Statusliste, die Wiedereroeffnung verlangt
+  `j.status = 'wartend'`, `helmut_outbox_vergeben` waehlt nur `offen`/`versendet`,
+  `helmut_outbox_quittieren` nur `versendet`, `helmut_outbox_zuruecklegen` und
+  `helmut_outbox_erneut_vorlegen` brechen ab) und weil der Trigger
+  `helmut_job_outbox_kappen_trg` `updated_at` bei JEDEM Update setzt — der Riegel ist damit ein
+  allgemeiner Aenderungsmelder. Jeder fruehere Zustand (`wartend`, `offen`, `bestaetigt`) wird
+  geschlossen abgelehnt. Auftrag und alle uebrigen Vertragswerte unveraendert; die zwei
+  Mengenvertraege weiterhin **bytegleich** (SHA-256 `e8a55ee3…`). Nachweis: **65 PASS / 0 FAIL**
+  gegen echte PostgreSQL 16. **Freigabe A ist erneut zu pruefen; Freigabe B bleibt getrennt und
+  setzt einen frischen gruenen Trockenlauf voraus.** **Offen:** der Selbstweck war noch nie
   in Production ausgefuehrt; ohne Preview-/Production-Beleg und ohne 7-Tage-Fenster bleibt der
   Ereignis-Antrieb **nicht aktivierungsbereit**.
 - **Stand 2026-08-14/2 (Haertungssprint, PR #247; Beleg
