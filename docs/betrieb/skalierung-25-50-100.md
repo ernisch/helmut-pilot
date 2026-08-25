@@ -133,7 +133,82 @@ Die nächste **nicht produktive** Teststufe wird nur ausgeführt, wenn die vorhe
 
 ## 4 · Testergebnisse
 
-> Wird nach der Ausführung eingetragen. Bis dahin: **nicht erbracht.**
+### 4.1 Gestufter Belastungsnachweis — **Zustand Z2 (synthetisch)**
+
+Werkzeug: `scripts/skalierung-stufen-lasttest.js`, ausgeführt am 2026-08-25 über
+`scripts/lokal.js` gegen eine **lokale** PostgreSQL 16.13 (127.0.0.1:5433).
+
+**Was echt war:** der Arbeitsplan aus dem Produktionscode (`planeArbeit` →
+`kompiliereQuellenbedarf` + `planeMandatsarbeit`), die echten Migrationen, echte
+Workerprozesse (eigener Node-Prozess, eigene Verbindung, eigener Lease-Besitzer, echter
+`arbeite()`-Aufruf, echte Leases und Fencing), ein echtes Fehlermandat und ein echtes
+langsames Mandat.
+
+**Was Attrappe war:** die Aufgabenhandler. Kein Netzverkehr, kein Google-Abruf, kein
+KI-Aufruf. **Damit ist dies ein synthetischer Nachweis (Z2), kein realistischer (Z3).**
+
+**Ergebnis: 60 PASS / 0 FAIL über alle drei Stufen.**
+
+| Mandate | Aufträge | Laufzeit | Durchsatz | erledigt | endgült. Fehler | Rest | häng. Leases | Verbindungen (Spitze) |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| 25 | 244 | 463 ms | 522,7/s | 242 | 2 (Fehlermandat) | 0 | 0 | 5 / 300 |
+| 50 | 427 | 442 ms | 961,5/s | 425 | 2 (Fehlermandat) | 0 | 0 | 5 / 300 |
+| 100 | 690 | 660 ms | 1042,4/s | 688 | 2 (Fehlermandat) | 0 | 0 | 5 / 300 |
+
+**Fairness:** in allen drei Stufen hatten **alle** gesunden Mandate exakt gleich viele
+Abschlüsse (min = max = 4). Kein Mandat verhungert.
+
+**Fehlermandat und langsames Mandat:** das Fehlermandat scheiterte bei jedem Versuch und
+erreichte nach den Wiederholungen den Endzustand `fehlgeschlagen` (K13b, die Probe war also
+wirksam). Die gesunden Mandate waren dennoch **nach dem Hauptlauf vollständig** abgearbeitet
+(K13) — ein krankes Mandat hält die gesunden nicht auf.
+
+### 4.2 Zweite, unabhängige Bestätigung der Unterlinearität
+
+Der Planer erzeugt für 25 / 50 / 100 Mandate **194 / 327 / 490** `source_fetch`-Aufträge.
+Eine Verdopplung der Mandate erhöht die Abrufe nur um Faktor 1,69 bzw. 1,50 — dieselbe
+Dedup-Wirkung, die §2 aus den Production-Daten misst, hier unabhängig aus dem Planer.
+
+### 4.3 Was diese Zahlen **nicht** sagen
+
+Die Laufzeiten (Hunderte Millisekunden) messen **Warteschlange und Datenbank**, nicht die
+Wirklichkeit. In Production dominieren die externen Abrufe: der reale Wirkungslauf brauchte
+**259 s für 117 Abschlüsse** (0,45/s) — rund **2 300-mal langsamer** als hier gemessen.
+Bewiesen ist deshalb ausschließlich: **Warteschlange und Datenbank sind bis 100 Mandate
+nicht der Engpass.** Über die Gesamtdauer eines echten Tageslaufs sagt der Test nichts.
+
+### 4.4 Provisionierung
+
+`scripts/provision-stapel-test.js` — **42 PASS / 0 FAIL**. Abgedeckt: Wiederholungslauf ohne
+Feldverlust, keine stille Reaktivierung, Vorprüfung des ganzen Pakets (unvollständig,
+doppelte id, doppelte E-Mail, leeres Paket), Trockenlauf ohne Schreibvorgang, zweiter
+identischer Stapellauf ohne Dubletten, fehlerhaftes Mandat ohne Teilzustand,
+`weiterBeiFehler`, Mandantentrennung.
+
+Bestandssuiten unverändert grün: `provision-tenant-test.js` 41 PASS,
+`profil-bereitschaft-test.js` 91 PASS, `jobqueue-lasttest.js` 19 PASS (inkl. SIGKILL-Probe).
+
+### 4.5 Zwei echte Produktfehler in der Provisionierung — behoben
+
+Beide betrafen genau die geforderte Zusicherung „ein zweiter identischer
+Provisionierungslauf erzeugt keine Dubletten **und keine unbeabsichtigten Änderungen**".
+
+1. **Feldverlust bei Wiederholung.** `buildProfile` erzeugt 13 Felder, `toMandateProfileRow`
+   schreibt jede Spalte, der Upsert ersetzt die Zeile vollständig — ein zweiter Lauf löschte
+   damit alle nachträglich gepflegten Felder (`regionale_interessen`,
+   `relevante_ministerien`, `namensvarianten`, `regierungsrolle`, `themen_prioritaeten`,
+   `profil_extras`). Behoben durch `mergeMitBestand`: **was die Spec nicht trägt, behält
+   seinen Bestandswert.**
+2. **Stille Reaktivierung.** `profileActive: true` war fest gesetzt; ein Wiederholungslauf
+   aktivierte damit ein deaktiviertes Mandat wieder und umging faktisch die
+   Aktivierungsfreigabe (`CLAUDE.md` §5). Jetzt gewinnt der Bestandswert — und das
+   Zusammenspiel ist sogar **fail-closed**: der Lauf bricht mit `profile-not-ready` ab und
+   verändert das Mandat überhaupt nicht. Eine Reaktivierung verlangt ausdrücklich
+   `reaktivieren: true`.
+
+Zusätzlich: nach dem Anlegen eines Auth-Nutzers wird der persistierte Stand
+zurückgeprüft (`CLAUDE.md` §4.10) — der Auth-Speicher wird als ganzer Blob unbedingt
+geschrieben, was bei einem Stapel über 25/50/100 Mandate ein realer Rennfall ist.
 
 ---
 

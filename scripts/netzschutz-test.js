@@ -308,6 +308,44 @@ function main() {
     }
   }
 
+  // ── 15 · scripts/lokal.js stellt die Speicherwahl deterministisch auf lokal ──
+  // Anlass (2026-08-25, Skalierungssprint): in einer Cloud-Sitzung sind
+  // HELMUT_V3_STORE=1 und HELMUT_STORAGE_BACKEND=supabase gesetzt. Beide sind KEINE
+  // Zugangsdaten und wurden deshalb nicht entfernt — sie entscheiden aber laut
+  // lib/helmut/production-schreibgate.js darueber, WOHIN geschrieben wird. Folge:
+  // vier Offline-Suiten scheiterten lokal, waehrend die CI 277/277 gruen meldete
+  // (privacy-vollstaendigkeit, provision-tenant, tenant-neutrality durch
+  // HELMUT_V3_STORE; profile-db durch HELMUT_STORAGE_BACKEND). Dieser Abschnitt
+  // haelt die Behebung fest, damit sie nicht still zurueckfaellt.
+  abschnitt("15 · scripts/lokal.js: Speicherwahl im Kindprozess");
+  {
+    const LOKAL = path.join(ROOT, "scripts/lokal.js");
+    const env = { ...process.env };
+    for (const n of S.PRODUCTION_KENNUNGEN) delete env[n];
+    env.HELMUT_V3_STORE = "1";
+    env.HELMUT_STORAGE_BACKEND = "supabase";
+    const r = spawnSync(process.execPath, [LOKAL, "--", process.execPath, "-e",
+      'console.log(JSON.stringify({v3: process.env.HELMUT_V3_STORE ?? null,'
+      + ' backend: process.env.HELMUT_STORAGE_BACKEND ?? null,'
+      + ' quelle: process.env.HELMUT_SOURCE_MODE ?? null}))'],
+    { encoding: "utf8", env });
+    let gesehen = null;
+    try { gesehen = JSON.parse(String(r.stdout || "").trim().split("\n").pop() || "null"); } catch { gesehen = null; }
+    check("15.1 Der Kindprozess startet ueberhaupt", r.status === 0 && gesehen !== null,
+      `exit ${r.status} · ${String(r.stdout || "").slice(0, 120)}`);
+    if (gesehen) {
+      check("15.2 HELMUT_V3_STORE ist im Kindprozess NICHT gesetzt",
+        gesehen.v3 === null || String(gesehen.v3) === "", JSON.stringify(gesehen.v3));
+      check("15.3 HELMUT_STORAGE_BACKEND steht im Kindprozess auf 'local'",
+        gesehen.backend === "local", JSON.stringify(gesehen.backend));
+      check("15.4 HELMUT_SOURCE_MODE steht weiterhin auf 'off'",
+        gesehen.quelle === "off", JSON.stringify(gesehen.quelle));
+    }
+    // Die Sitzung selbst darf dabei NIE veraendert werden.
+    check("15.5 Die Variablen der aufrufenden Sitzung bleiben unveraendert",
+      env.HELMUT_V3_STORE === "1" && env.HELMUT_STORAGE_BACKEND === "supabase");
+  }
+
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
   console.log("\nKein einziger echter Netzzugriff: alle nicht-lokalen Ziele sind `.invalid`-Namen,");
   console.log("und der Schutz greift ohnehin vor der Namensaufloesung.");

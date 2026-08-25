@@ -64,6 +64,43 @@ function loadSpec() {
     process.exit(res.ok ? 0 : 1);
   }
 
+  // STAPELMODUS (Skalierungssprint 2026-08-25): eine Datei mit vielen Mandaten.
+  // TROCKENLAUF IST DER STANDARD — scharf wird nur mit --ausfuehren.
+  if (has("--paket")) {
+    const datei = arg("--paket");
+    if (!datei) { console.error("Fehlt: --paket <datei.json>"); process.exit(2); }
+    const roh = JSON.parse(fs.readFileSync(datei, "utf8"));
+    const specs = Array.isArray(roh) ? roh : (Array.isArray(roh.mandate) ? roh.mandate : null);
+    if (!specs) { console.error("Das Paket muss ein JSON-Array sein oder ein Objekt mit dem Feld \"mandate\"."); process.exit(2); }
+
+    const ausfuehren = has("--ausfuehren");
+    const res = await provisioning.provisionBatch(specs, {}, {
+      ausfuehren, weiterBeiFehler: has("--weiter-bei-fehler")
+    });
+
+    console.log(`\n=== STAPELPROVISIONIERUNG · ${ausfuehren ? "SCHARFER LAUF" : "TROCKENLAUF (kein Schreibvorgang)"} ===`);
+    console.log(`Paket: ${datei} · ${specs.length} Mandate\n`);
+
+    if (res.vorbefunde.length) {
+      console.error(`VORPRUEFUNG FEHLGESCHLAGEN — NICHTS WURDE GESCHRIEBEN (${res.vorbefunde.length} Befunde):`);
+      res.vorbefunde.forEach((b) => console.error("  - " + b));
+      process.exit(1);
+    }
+
+    for (const e of res.ergebnisse) {
+      const marke = e.trockenlauf ? e.vorhaben : (e.ok ? (e.created ? "angelegt" : "aktualisiert") : `FEHLER (${e.reason})`);
+      console.log(`  ${String(e.tenantId || "?").padEnd(32)} ${marke}`);
+    }
+
+    const b = res.bilanz;
+    console.log(`\nBilanz: ${b.gesamt} Mandate`
+      + (ausfuehren ? ` · angelegt ${b.angelegt} · aktualisiert ${b.aktualisiert} · fehlgeschlagen ${b.fehlgeschlagen}`
+        : ` · geplant ${b.geplant} (kein Schreibvorgang)`));
+    if (res.abgebrochen) console.error(`ABGEBROCHEN: ${res.grund}`);
+    if (!ausfuehren) console.log("\nHinweis: Das war ein TROCKENLAUF. Scharf: zusaetzlich --ausfuehren angeben.");
+    process.exit(res.ok ? 0 : 1);
+  }
+
   const spec = loadSpec();
   if (has("--validate")) {
     const errors = provisioning.validateSpec(spec);
