@@ -158,7 +158,7 @@ KI-Aufruf. **Damit ist dies ein synthetischer Nachweis (Z2), kein realistischer 
 
 **Ergebnis: 60 PASS / 0 FAIL über alle drei Stufen.**
 
-| Mandate | Aufträge | Laufzeit | Durchsatz | erledigt | endgült. Fehler | Rest | häng. Leases | Verbindungen (Spitze) |
+| Mandate | Aufträge | Laufzeit | Durchsatz | erledigt | endgült. Fehler | Rest | häng. Leases | Verbindungen (Spitze, **lokal**) |
 |---:|---:|---:|---:|---:|---:|---:|---:|---:|
 | 25 | 244 | 463 ms | 522,7/s | 242 | 2 (Fehlermandat) | 0 | 0 | 5 / 300 |
 | 50 | 427 | 442 ms | 961,5/s | 425 | 2 (Fehlermandat) | 0 | 0 | 5 / 300 |
@@ -192,11 +192,24 @@ Dedup-Wirkung, die §2 aus den Production-Daten misst, hier unabhängig aus dem 
 
 ### 4.3 Was diese Zahlen **nicht** sagen
 
-Die Laufzeiten (Hunderte Millisekunden) messen **Warteschlange und Datenbank**, nicht die
-Wirklichkeit. In Production dominieren die externen Abrufe: der reale Wirkungslauf brauchte
-**259 s für 117 Abschlüsse** (0,45/s) — rund **2 300-mal langsamer** als hier gemessen.
-Bewiesen ist deshalb ausschließlich: **Warteschlange und Datenbank sind bis 100 Mandate
-nicht der Engpass.** Über die Gesamtdauer eines echten Tageslaufs sagt der Test nichts.
+Nachgeschärft nach Review 2026-08-25/2 — drei Grenzen, die vorher zu weit formuliert waren:
+
+1. **Die Laufzeiten messen die LOKALE Mechanik, nicht die Wirklichkeit.** In Production
+   dominieren die externen Abrufe: der reale Wirkungslauf brauchte **259 s für 117
+   Abschlüsse** (0,45/s) — rund **2 300-mal langsamer**. Über die Gesamtdauer eines echten
+   Tageslaufs sagt der Test nichts.
+2. **Die Verbindungsspitze 5/300 ist ein LOKALER Messwert** einer selbst gestarteten
+   PostgreSQL 16 mit `max_connections=300`. Sie ist **kein Supabase-Grenzwert** und **keine
+   Aussage über den Pooler des Free-Plans**. Production spricht über PostgREST/HTTP mit
+   PostgreSQL 17.6.1 und ganz anderen Verbindungsgrenzen — die hier **nicht** gemessen wurden.
+3. **Der Test beweist NICHT, dass Supabase unter realistischer Production-Last kein Engpass
+   wird.** Bewiesen ist ausschließlich: *die Warteschlangenmechanik selbst* — Reservieren,
+   Lease, Fencing, Abschluss, Nebenläufigkeit — trägt bis 100 Mandate gegen eine lokale
+   Datenbank. Ob der Supabase-Free-Plan die dabei entstehenden Abfragen, Verbindungen und
+   Datenmengen trägt, ist **offen** und gehört zum realistischen Nachweis (Z3).
+
+Die frühere Formulierung „Warteschlange und Datenbank sind bis 100 Mandate nicht der
+Engpass" ging über die Belege hinaus und ist **zurückgenommen**.
 
 ### 4.4 Provisionierung
 
@@ -284,6 +297,59 @@ Rollback ohne Datenverlust und idempotent. Bei leerer Warteschlange meldet das V
 
 ---
 
+## 4.8 · Die 139 Befundlücken — ehrliche Einordnung
+
+Die rein lesende Prüfung (zwölf Aufträge) hat **139 Lücken** erhoben:
+**28 kritisch · 47 hoch · 44 mittel · 20 niedrig**. Dieser Sprint hat sie **nicht alle
+geschlossen** — er hat sie erhoben und einen kleinen, klar begrenzten Teil behoben.
+
+### Geschlossen (in diesem PR belegt)
+
+| Lücke | Nachweis |
+|---|---|
+| Kein Stapelpfad für viele Mandate | `provision-stapel-test.js` |
+| Wiederholungslauf löscht gepflegte Profilfelder | `provision-stapel-test.js` §1 |
+| Wiederholungslauf reaktiviert still ein deaktiviertes Mandat | §2 |
+| Auth-Blob ohne Erfolgsprüfung gegen die Ablage | §11 |
+| Halber Zustand nach fehlgeschlagener Auth-Kontrolle | §11 *(Review 2)* |
+| Falsches Grün im Trockenlauf | §9 *(Review 2)* |
+| Trockenlauf sagt Konto-/E-Mail-/Deaktivierungskonflikte nicht voraus | §10 *(Review 2)* |
+| `service_role` ohne EXECUTE auf der neuen Funktion | `jobqueue-ankunft-datenbank-test.js` §6 *(Review 2)* |
+| Vier vermeintliche Testbefunde (Ursache falsch dokumentiert) | Bisektion + CI 279/279 |
+| `CURRENT_STATE` nach dem Merge von PR #269 veraltet | §2/§14 berichtigt |
+| Doku-Drift: 9 statt 11 Crons, falscher Modell-Default | `workerbetrieb.md`, `env-inventar.md` |
+
+**Vorbereitet, aber nicht wirksam:** die fehlende Ankunftskennzahl. Migration liegt vor und
+ist lokal belegt, ist aber **nicht angewendet** (F9) — die Lücke bleibt bis dahin offen.
+
+### Weiterhin blockierend (entscheidungsrelevant)
+
+| # | Lücke | Blockiert |
+|---|---|---|
+| R1 | KI-Tagesdeckel 100 trägt keine Stufe | jede Aktivierung |
+| — | Siebentägiger Fünfernachweis nicht begonnen | Stufe A |
+| F9 | Ankunftskennzahl nicht angewendet ⇒ Nachweis nicht messbar | Stufe A |
+| R2 | Slot-Anzahl (19,5 nötig bei 100, ~11 schwere vorhanden) | Stufe B/C |
+| R8 | Morgenlage im Direktpfad: ~28 Mandate je Lauf | Stufe B/C |
+| R5 | keine automatische Aufbewahrung (`helmut_jobs` wächst unbegrenzt) | Stufe B/C |
+| R3/R4 | Supabase 500-MB-Grenze unüberwacht, kein PITR | Stufe C |
+| — | Berlin/Brandenburg: Landesmodule inaktiv, Seeds nicht eingespielt | Stufe A (BE/BB-Profile) |
+| — | Migration `20260720` offen (OP-03) | Zweitmandant |
+
+### Nicht blockierend
+
+Der verbleibende Rest — im Wesentlichen die Stufen *mittel* und *niedrig* sowie ein Teil der
+*hohen* — betrifft Härtung, Beobachtbarkeit und Dokumentation (z. B. fehlende Teilindizes,
+ungedeckelte Outbox-Zweige, Ringspeicher im Auth-Blob, Fairness-Rotation, Doppelpfad über
+`POST /api/admin/users`). Sie sind in den Prüfberichten mit Datei und Zeile erfasst.
+
+> **Ehrlich zur Methode:** diese Einordnung ist **nicht** eine einzeln nachgeprüfte Triage
+> aller 139 Punkte. Geschlossen und blockierend sind namentlich belegt; der Rest ist nach
+> der Schwere-Einstufung der Prüfberichte eingeordnet und **nicht erneut verifiziert**.
+> Wer eine belastbare Vollständigkeitsaussage braucht, muss die Restliste einzeln abarbeiten.
+
+---
+
 ## 5 · Kostenrechnung
 
 Preisquelle: offizielle OpenAI-Preisseiten, Abruf **2026-08-25**
@@ -311,6 +377,13 @@ die Werte stammen aus Suchtreffern, die auf die offiziellen Anbieterdomains besc
 | 100 | niedrig | 251 | **14,12** | BERECHNET |
 | 100 | realistisch | 399 | **32,78** | ANGENOMMEN |
 | 100 | hoch | 647 | **65,03** | ANGENOMMEN |
+
+> **Korrektur nach Review 2026-08-25/2:** Die Beträge **15 / 21 / 33 USD im Monat**
+> (25/50/100, Spalte „realistisch") sind **angenommene Szenarien, keine gemessenen
+> Monatswerte**. Sie beruhen auf einem angenommenen Aufruffaktor und angenommenen
+> Tokenmengen je Aufruf; offiziell belegt sind nur die Preise, gemessen ist nur die
+> Vergleichszeile unten. Als „Kosten" dürfen sie erst gelten, wenn F7 erfüllt ist —
+> bis dahin sind es **Größenordnungen**.
 
 **Einziger Ist-Wert:** heute 5–6 Mandate → **0,1370 USD/Tag** ≈ 4,11 USD/Monat
 ([`kostenmessung.md`](kostenmessung.md) §3.2). Die Szenarien klammern diesen Wert ein.
@@ -344,12 +417,19 @@ die Werte stammen aus Suchtreffern, die auf die offiziellen Anbieterdomains besc
 | Supabase-Plan | **Free** | [`CURRENT_STATE.md`](../CURRENT_STATE.md) §3 | — |
 | Production-Postgres | **17.6.1** | Supabase-API | 2026-08-25 |
 
-**Der wichtigste bisher übersehene Hebel:** `maxDuration` = 300 s ist eine **Konfiguration im
-Repository**, keine Plattformgrenze. Auf dem **Pro**-Tarif sind höhere Werte möglich
-(vgl. [`op30-zielarchitektur-2026-08-13.md`](op30-zielarchitektur-2026-08-13.md) §80-82: Pro
-bis 800 s). Das wäre ein Faktor auf das Slotbudget **ohne Architekturänderung und ohne
-Ereignis-Antrieb**. Vor einer Nutzung ist der genaue heute gültige Grenzwert des Tarifs beim
-Anbieter zu bestätigen — er ist hier **nicht** eigenhändig verifiziert.
+**Ein möglicher Hebel — ausdrücklich UNBESTÄTIGT:** `maxDuration` = 300 s ist eine
+**Konfiguration im Repository**. Die Projektdokumentation nennt für den Pro-Tarif höhere
+Werte ([`op30-zielarchitektur-2026-08-13.md`](op30-zielarchitektur-2026-08-13.md) §80-82:
+bis 800 s).
+
+> **Korrektur nach Review 2026-08-25/2:** Eine Laufzeit über 300 s darf **erst dann als
+> verfügbar gelten, wenn Fluid Compute für genau dieses Projekt rein lesend bestätigt ist.**
+> Das ist es **nicht**. Die Vercel-Projekt-API (`get_project` für `helmut-pilot`) liefert
+> `nodeVersion`, `framework`, Domains und das letzte Deployment — **kein Feld zu Fluid
+> Compute und keines zur maximal zulässigen Laufzeit**. Der Hebel ist damit eine
+> **Hypothese, kein Beleg**, und trägt keine Kapazitätsplanung. Belegt ist ausschließlich
+> der Tarif (`plan: "pro"`). Prüfweg: Betreiber liest im Vercel-Dashboard unter
+> Settings → Functions nach und trägt das Ergebnis ins Env-Inventar ein.
 
 ---
 

@@ -41,7 +41,8 @@ function check(name, cond, detail = "") {
 }
 function abschnitt(t) { console.log(`\n== ${t} ==`); }
 
-const IDS = ["stapel-eins", "stapel-zwei", "stapel-drei", "stapel-fremd"];
+const IDS = ["stapel-eins", "stapel-zwei", "stapel-drei", "stapel-fremd",
+  "stapel-vier", "stapel-fuenf"];
 function spec(id, extra = {}) {
   return {
     id,
@@ -285,7 +286,140 @@ async function anzahlProfile(id) {
       (await provisioning.provisionBatch([spec("stapel-fremd")])).ergebnisse[0].vorhaben
         === "abbruch:geschuetztes-mandat");
 
-    // ── 9 · Aufraeumen ──────────────────────────────────────────────────────────
+    // ── 9 · Review-Befund 2: der Trockenlauf meldet kein falsches Gruen ──────────
+    abschnitt("9 · Trockenlauf: ein blockiertes Mandat laesst den GESAMTEN Lauf fehlschlagen");
+    // Vorher meldete der Trockenlauf pauschal ok:true — auch bei
+    // `abbruch:geschuetztes-mandat`. Die CLI endete dadurch mit Status 0, obwohl ein
+    // scharfer Lauf gescheitert waere.
+    const gemischt = await provisioning.provisionBatch([spec("stapel-zwei"), spec("stapel-fremd")]);
+    check("9.1 Der Trockenlauf insgesamt gilt als NICHT erfolgreich",
+      gemischt.ok === false, JSON.stringify(gemischt.ok));
+    check("9.2 Er ist als abgebrochen gekennzeichnet und nennt den Grund",
+      gemischt.abgebrochen === true && String(gemischt.grund).startsWith("vorschau-blockiert"),
+      JSON.stringify(gemischt.grund));
+    check("9.3 Die Bilanz trennt durchfuehrbar von blockiert",
+      gemischt.bilanz.geplant === 1 && gemischt.bilanz.blockiert === 1,
+      JSON.stringify(gemischt.bilanz));
+    check("9.4 Das blockierte Mandat traegt ok:false und einen Grundtext",
+      gemischt.ergebnisse[1].ok === false && typeof gemischt.ergebnisse[1].grund === "string"
+      && gemischt.ergebnisse[1].grund.length > 0, JSON.stringify(gemischt.ergebnisse[1]));
+    check("9.5 Das durchfuehrbare Mandat bleibt ok:true", gemischt.ergebnisse[0].ok === true);
+    check("9.6 Der Trockenlauf hat trotzdem NICHTS geschrieben",
+      (await anzahlProfile("stapel-fremd")) === 1 // nur das vorbestehende fremde Profil
+      && (await anzahlNutzer("stapel-fremd")) === 0);
+
+    // ── 10 · Review-Befund 2: die Vorschau sagt echte Konflikte voraus ───────────
+    abschnitt("10 · Trockenlauf sagt Deaktivierung, E-Mail- und Kennungskonflikte voraus");
+
+    // (a) deaktiviertes Mandat ohne Reaktivierungsabsicht
+    await provisioning.deactivateTenant("stapel-drei");
+    const deakt = await provisioning.provisionBatch([spec("stapel-drei")]);
+    check("10.1 Ein deaktiviertes Mandat erscheint als BLOCKIERT",
+      deakt.ok === false && deakt.ergebnisse[0].vorhaben === "abbruch:deaktiviert-ohne-reaktivierung",
+      deakt.ergebnisse[0].vorhaben);
+    const deaktJa = await provisioning.provisionBatch([spec("stapel-drei", { reaktivieren: true })]);
+    check("10.2 Mit ausdruecklichem reaktivieren:true ist es wieder durchfuehrbar",
+      deaktJa.ok === true && deaktJa.ergebnisse[0].ok === true, deaktJa.ergebnisse[0].vorhaben);
+    check("10.3 Auch diese Vorschau hat nichts geschrieben",
+      (await profilVon("stapel-drei")).profileActive === false);
+
+    // (b) E-Mail gehoert einem anderen Konto
+    const fremdeMail = { ...spec("stapel-eins"), email: "stapel-zwei@synthetic.test" };
+    const mailKonflikt = await provisioning.provisionBatch([fremdeMail]);
+    check("10.4 Eine fremde E-Mail wird VOR dem ersten Schreibvorgang erkannt",
+      mailKonflikt.ok === false
+      && mailKonflikt.ergebnisse[0].vorhaben === "abbruch:email-gehoert-anderem-konto",
+      mailKonflikt.ergebnisse[0].vorhaben);
+    check("10.5 Der Grund nennt die E-Mail NUR maskiert",
+      !String(mailKonflikt.ergebnisse[0].grund).includes("stapel-zwei@synthetic.test"),
+      String(mailKonflikt.ergebnisse[0].grund));
+
+    // (c) Mandatskennung ist an eine andere E-Mail gebunden
+    const andereMail = { ...spec("stapel-zwei"), email: "ganz-neu@synthetic.test" };
+    const idKonflikt = await provisioning.provisionBatch([andereMail]);
+    check("10.6 Eine an eine andere E-Mail gebundene Kennung wird erkannt",
+      idKonflikt.ok === false
+      && idKonflikt.ergebnisse[0].vorhaben === "abbruch:id-an-andere-email-gebunden",
+      idKonflikt.ergebnisse[0].vorhaben);
+
+    // ── 11 · Review-Befund 3: kein halber Zustand nach fehlgeschlagener Kontrolle ─
+    abschnitt("11 · Abbruch nach der Auth-Kontrolle rollt das neue Konto zurueck");
+    const echteAccounts = require("../lib/helmut/accounts");
+
+    // (a) Der Kontroll-Lesezugriff WIRFT.
+    {
+      let nachAnlage = false;
+      const attrappe = {
+        ...echteAccounts,
+        createUser: async (...a) => { const u = await echteAccounts.createUser(...a); nachAnlage = true; return u; },
+        listUsers: async () => {
+          if (nachAnlage) throw new Error("simulierter Lesefehler der Ablage");
+          return echteAccounts.listUsers();
+        }
+      };
+      const r = await provisioning.provisionTenant(spec("stapel-vier"), { accounts: attrappe });
+      check("11.1 Der Lauf bricht mit auth-write-not-persisted ab",
+        r.ok === false && r.reason === "auth-write-not-persisted", JSON.stringify(r.reason));
+      check("11.2 Der Rueckweg wurde ausgefuehrt", r.rueckweg === "ok", JSON.stringify(r.rueckweg));
+      check("11.3 KEIN halbes Konto bleibt zurueck",
+        (await anzahlNutzer("stapel-vier")) === 0, String(await anzahlNutzer("stapel-vier")));
+      check("11.4 KEIN Profil bleibt zurueck",
+        (await anzahlProfile("stapel-vier")) === 0, String(await anzahlProfile("stapel-vier")));
+    }
+
+    // (b) Der Lesezugriff GELINGT, findet das neue Konto aber nicht.
+    {
+      let neueId = null;
+      const attrappe = {
+        ...echteAccounts,
+        createUser: async (...a) => { const u = await echteAccounts.createUser(...a); neueId = u.id; return u; },
+        listUsers: async () => {
+          const alle = await echteAccounts.listUsers();
+          return neueId ? alle.filter((u) => u.id !== neueId) : alle;
+        }
+      };
+      const r = await provisioning.provisionTenant(spec("stapel-fuenf"), { accounts: attrappe });
+      check("11.5 Auch der leere Treffer fuehrt zum Abbruch",
+        r.ok === false && r.reason === "auth-write-not-persisted", JSON.stringify(r.reason));
+      check("11.6 Der Rueckweg wurde ausgefuehrt", r.rueckweg === "ok", JSON.stringify(r.rueckweg));
+      check("11.7 KEIN halbes Konto bleibt zurueck",
+        (await anzahlNutzer("stapel-fuenf")) === 0, String(await anzahlNutzer("stapel-fuenf")));
+      check("11.8 KEIN Profil bleibt zurueck",
+        (await anzahlProfile("stapel-fuenf")) === 0, String(await anzahlProfile("stapel-fuenf")));
+    }
+
+    // ── 12 · Review-Befund 2: die CLI endet mit Fehlerstatus ────────────────────
+    abschnitt("12 · CLI-Exitcode des Trockenlaufs");
+    // Ein Trockenlauf, der einen Abbruch vorhersagt, muss auch als Prozess scheitern —
+    // sonst laeuft ein Skript oder eine Freigabekette daran vorbei.
+    {
+      const { spawnSync } = require("child_process");
+      const os = require("os");
+      const CLI = path.join(__dirname, "provision-tenant.js");
+      const schreibePaket = (datei, inhalt) => { fs.writeFileSync(datei, JSON.stringify(inhalt), "utf8"); return datei; };
+      const lauf = (datei) => spawnSync(process.execPath, [CLI, "--paket", datei],
+        { encoding: "utf8", env: { ...process.env, HELMUT_STORAGE_BACKEND: "local" } });
+
+      const blockiertDatei = schreibePaket(path.join(os.tmpdir(), `stapel-blockiert-${process.pid}.json`),
+        [spec("stapel-fremd")]);          // stapel-fremd ist ein geschuetztes Bestandsmandat
+      const rBlockiert = lauf(blockiertDatei);
+      check("12.1 Blockierter Trockenlauf endet mit Exitcode 1",
+        rBlockiert.status === 1, `Exitcode ${rBlockiert.status}`);
+      check("12.2 Die Meldung nennt den Abbruch ausdruecklich",
+        /ABGEBROCHEN|ABBRUCH/i.test(String(rBlockiert.stdout) + String(rBlockiert.stderr)));
+
+      const sauberDatei = schreibePaket(path.join(os.tmpdir(), `stapel-sauber-${process.pid}.json`),
+        [spec("stapel-zwei")]);           // vorhandenes, eigenes Mandat -> aktualisieren
+      const rSauber = lauf(sauberDatei);
+      check("12.3 Gegenprobe: ein durchfuehrbarer Trockenlauf endet mit Exitcode 0",
+        rSauber.status === 0, `Exitcode ${rSauber.status}`);
+      check("12.4 Der scharfe Lauf wird ehrlich als SEQUENZIELL beschrieben, nicht als atomarer Stapel",
+        /SEQUENZIELL/.test(String(rSauber.stdout)) === false, "Hinweis erscheint nur im scharfen Lauf");
+
+      try { fs.unlinkSync(blockiertDatei); fs.unlinkSync(sauberDatei); } catch { /* egal */ }
+    }
+
+    // ── 13 · Aufraeumen ─────────────────────────────────────────────────────────
     for (const id of IDS) { try { await provisioning.teardownTenant(id); } catch { /* egal */ } }
   } catch (err) {
     fail += 1;

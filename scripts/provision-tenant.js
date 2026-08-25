@@ -89,15 +89,30 @@ function loadSpec() {
 
     for (const e of res.ergebnisse) {
       const marke = e.trockenlauf ? e.vorhaben : (e.ok ? (e.created ? "angelegt" : "aktualisiert") : `FEHLER (${e.reason})`);
-      console.log(`  ${String(e.tenantId || "?").padEnd(32)} ${marke}`);
+      const grund = e.trockenlauf && e.grund ? `  — ${e.grund}` : "";
+      console.log(`  ${String(e.tenantId || "?").padEnd(32)} ${marke}${grund}`);
     }
 
     const b = res.bilanz;
     console.log(`\nBilanz: ${b.gesamt} Mandate`
       + (ausfuehren ? ` · angelegt ${b.angelegt} · aktualisiert ${b.aktualisiert} · fehlgeschlagen ${b.fehlgeschlagen}`
-        : ` · geplant ${b.geplant} (kein Schreibvorgang)`));
+        : ` · durchfuehrbar ${b.geplant} · blockiert ${b.blockiert} (kein Schreibvorgang)`));
     if (res.abgebrochen) console.error(`ABGEBROCHEN: ${res.grund}`);
-    if (!ausfuehren) console.log("\nHinweis: Das war ein TROCKENLAUF. Scharf: zusaetzlich --ausfuehren angeben.");
+    if (!ausfuehren) {
+      console.log("\nHinweis: Das war ein TROCKENLAUF. Scharf: zusaetzlich --ausfuehren angeben.");
+      if (!res.ok) {
+        console.error("Der Trockenlauf sagt fuer mindestens ein Mandat einen ABBRUCH voraus —"
+          + " ein scharfer Lauf wuerde dort scheitern. Exitcode 1.");
+      }
+    } else {
+      // EHRLICH (Review-Befund 2): der scharfe Stapellauf ist SEQUENZIELL, nicht eine
+      // gemeinsame Datenbanktransaktion. Bereits erfolgreich verarbeitete Mandate bleiben
+      // bestehen, wenn ein spaeteres Mandat an einem Laufzeitfehler scheitert. Nur die
+      // VORPRUEFUNG ist mengenweit (sie laeuft vollstaendig vor dem ersten Schreibvorgang).
+      console.log("\nHinweis: Der Stapel wird SEQUENZIELL abgearbeitet, nicht als eine gemeinsame"
+        + "\nDatenbanktransaktion. Bereits erfolgreich verarbeitete Mandate bleiben bestehen,"
+        + "\nwenn ein spaeteres Mandat scheitert. Mengenweit ist nur die Vorpruefung.");
+    }
     process.exit(res.ok ? 0 : 1);
   }
 

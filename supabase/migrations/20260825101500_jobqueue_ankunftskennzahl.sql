@@ -83,4 +83,24 @@ comment on function public.helmut_job_ankunft(integer) is
 -- Rechte exakt wie bei helmut_job_metrics: niemand ausser service_role.
 revoke all on function public.helmut_job_ankunft(integer) from public, anon, authenticated;
 
+-- KORREKTUR 2026-08-25/2 (Review-Befund 1): Der Entzug allein genuegt NICHT.
+-- PostgreSQL erteilt `execute` bei der Anlage an PUBLIC; `revoke ... from public`
+-- nimmt das wieder weg — und `service_role` ist in Supabase KEIN Superuser,
+-- sondern eine gewoehnliche Rolle mit `bypassrls`. Ohne ausdrueckliche
+-- Berechtigung haette also NIEMAND die Funktion aufrufen koennen; die Migration
+-- waere in Production wirkungslos gewesen.
+-- Empirisch belegt gegen echte PostgreSQL 16 (jobqueue-ankunft-datenbank-test §6):
+--   set role service_role; select … from public.helmut_job_ankunft(1440);
+--   -> vorher: ERROR: permission denied for function helmut_job_ankunft
+--
+-- `service_role` existiert in Supabase, aber nicht zwingend in einer lokalen
+-- Testdatenbank — deshalb BEDINGT, exakt wie in 20260808_scalable_job_queue.sql
+-- (dortiger Rechteblock, Abschnitt 9) und 20260728_matching_audit.sql.
+do $$
+begin
+  if exists (select 1 from pg_roles where rolname = 'service_role') then
+    execute 'grant execute on function public.helmut_job_ankunft(integer) to service_role';
+  end if;
+end $$;
+
 commit;

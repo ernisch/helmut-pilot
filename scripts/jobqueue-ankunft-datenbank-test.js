@@ -59,6 +59,21 @@ function main() {
     process.exit(0);
   }
 
+  // Die Supabase-Rollen sind clusterweit und in einer blanken lokalen PostgreSQL nicht
+  // vorhanden. Ohne sie waere der Rechtenachweis (§6) wertlos — und die Basismigration
+  // koennte ihre `revoke ... from anon, authenticated` gar nicht ausfuehren. Deshalb
+  // werden sie hier angelegt, falls sie fehlen. NOLOGIN: sie dienen nur der Rechtepruefung.
+  // WICHTIG fuer die Naturtreue: `service_role` traegt in Supabase BYPASSRLS.
+  // `helmut_jobs` hat RLS eingeschaltet und KEINE Policy — ohne BYPASSRLS saehe die
+  // Rolle zwar die Funktion ausfuehren duerfen, aber null Zeilen. Der Nachweis
+  // "service_role kann die Kennzahl wirklich lesen" waere dann wertlos.
+  for (const [rolle, zusatz] of [["anon", ""], ["authenticated", ""], ["service_role", " bypassrls"]]) {
+    psql(`do $$ begin if not exists (select 1 from pg_roles where rolname='${rolle}')`
+      + ` then create role ${rolle} nologin${zusatz}; end if; end $$;`, { db: "postgres" });
+  }
+  // Falls die Rolle aus einem frueheren Lauf ohne BYPASSRLS stammt, nachziehen.
+  psql("alter role service_role bypassrls;", { db: "postgres" });
+
   psql(`drop database if exists ${PG.db}`, { db: "postgres" });
   psql(`create database ${PG.db}`, { db: "postgres" });
   psql(null, { datei: BASIS });
@@ -122,10 +137,55 @@ function main() {
     Number(weitesFenster.eingereiht_im_zeitraum) === 7, String(weitesFenster.eingereiht_im_zeitraum));
   check("5.3 Das 7-Tage-Fenster meldet 10080 Minuten", Number(weitesFenster.fenster_minuten) === 10080);
 
-  abschnitt("6 · Rechte: niemand ausser service_role");
+  abschnitt("6 · Rechte: service_role JA, alle anderen NEIN");
+  // Review-Befund 1 (2026-08-25/2): der blosse Entzug genuegt nicht. PostgreSQL erteilt
+  // `execute` bei der Anlage an PUBLIC; `revoke ... from public` nimmt das weg — und
+  // service_role ist KEIN Superuser. Ohne ausdrueckliche Berechtigung koennte NIEMAND
+  // die Funktion aufrufen, die Migration waere in Production wirkungslos. Dieser
+  // Abschnitt prueft deshalb BEIDE Richtungen an einer ECHTEN Rolle.
+  const rolleDa = psql("select count(*) from pg_roles where rolname='service_role'") === "1";
+  check("6.0 Die Rolle service_role steht fuer den Nachweis zur Verfuegung", rolleDa,
+    rolleDa ? "vorhanden" : "FEHLT — der Rechtenachweis waere sonst wertlos");
+
   const rechte = psql("select count(*) from information_schema.routine_privileges"
     + " where routine_name='helmut_job_ankunft' and grantee in ('anon','authenticated','PUBLIC')");
   check("6.1 Keine Rechte fuer anon/authenticated/PUBLIC", rechte === "0", rechte);
+
+  const gewaehrt = psql("select count(*) from information_schema.routine_privileges"
+    + " where routine_name='helmut_job_ankunft' and grantee='service_role' and privilege_type='EXECUTE'");
+  check("6.2 service_role hat ausdruecklich EXECUTE", gewaehrt === "1", gewaehrt);
+
+  // Der eigentliche Beweis: der echte Aufruf unter der echten Rolle.
+  // Erwartungswert: nach Abschnitt 5 liegen 5 der 7 Auftraege im 1440-Minuten-Fenster.
+  // Der Aufruf muss also nicht nur durchgehen, sondern GENAU DIESEN Wert liefern —
+  // sonst waere z. B. ein RLS-bedingtes "0 Zeilen" faelschlich als Erfolg durchgegangen.
+  const alsService = (() => {
+    try {
+      const roh = psql("set role service_role;"
+        + " select eingereiht_im_zeitraum from public.helmut_job_ankunft(1440);");
+      return { ok: true, wert: String(roh).trim().split("\n").pop().trim() };
+    } catch (e) { return { ok: false, wert: String(e && e.message || e).slice(0, 160) }; }
+  })();
+  check("6.3 service_role kann die Funktion TATSAECHLICH ausfuehren UND liest den echten Wert",
+    alsService.ok && alsService.wert === "5", `gelesen: ${alsService.wert} (erwartet 5)`);
+
+  // Gegenprobe: die gesperrten Rollen duerfen es nicht — sonst waere der Entzug wertlos.
+  for (const rolle of ["anon", "authenticated"]) {
+    const versuch = (() => {
+      try {
+        psql(`set role ${rolle}; select 1 from public.helmut_job_ankunft(1440);`);
+        return "DURCHGELASSEN";
+      } catch (e) { return String(e && e.message || e); }
+    })();
+    check(`6.4 ${rolle} wird beim Aufruf abgewiesen`,
+      /permission denied/i.test(versuch), versuch.slice(0, 90));
+  }
+
+  // Gleichbehandlung mit dem Vorbild: helmut_job_metrics traegt dasselbe Rechtemuster.
+  const wieVorbild = psql("select count(*) from information_schema.routine_privileges"
+    + " where routine_name='helmut_job_metrics' and grantee='service_role' and privilege_type='EXECUTE'");
+  check("6.5 Dasselbe Rechtemuster wie das Vorbild helmut_job_metrics",
+    wieVorbild === gewaehrt, `Vorbild ${wieVorbild} · neu ${gewaehrt}`);
 
   abschnitt("7 · Datensparsamkeit");
   const spalten = psql("select string_agg(a.attname, ',' order by a.attnum) from pg_proc p"
