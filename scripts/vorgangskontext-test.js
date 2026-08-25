@@ -639,7 +639,16 @@ const ALLE_FAMILIEN = [...G.FAMILIEN, ...G.ZUSATZFAMILIEN];
   // Eigener Nachweis: scripts/verstehen-aufgeben-erneut-freigegeben-test.js an echter
   // PostgreSQL; Pruefung 8.8b prueft ihren Inhalt unabhaengig mit.
   "20260823043633_verstehen_aufgeben_erneut_freigegeben.sql",
-  "rollback_20260823043633_verstehen_aufgeben_erneut_freigegeben.sql"
+  "rollback_20260823043633_verstehen_aufgeben_erneut_freigegeben.sql",
+  // Skalierungssprint 25/50/100 (2026-08-25): legt AUSSCHLIESSLICH die neue, rein
+  // LESENDE Funktion public.helmut_job_ankunft an — die Ankunftszaehlung, ohne die
+  // die Stufe-2-Bedingung "Abfluss >= Ankunft" gar nicht messbar ist. Keine Tabelle,
+  // keine Spalte, kein Index, kein Trigger, keine Policy, kein Backfill; die
+  // bestehende helmut_job_metrics wird NICHT angefasst. Keine K2.1-Struktur, kein
+  // Kontextpfad. Eigener Nachweis: scripts/jobqueue-ankunft-datenbank-test.js an
+  // echter PostgreSQL; Pruefung 8.8b prueft ihren Inhalt unabhaengig mit.
+  "20260825101500_jobqueue_ankunftskennzahl.sql",
+  "rollback_20260825101500_jobqueue_ankunftskennzahl.sql"
       ]);
       // Die Allowlist ist KEINE Abschwaechung: 8.8b prueft unabhaengig und INHALTLICH,
       // dass keine Migration im Repository den Kontextpfad beruehrt — auch keine der
