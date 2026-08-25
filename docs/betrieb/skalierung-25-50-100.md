@@ -89,6 +89,15 @@ mandatsgebunden/Tag    = 3,8 × M                 (gemessen 19/5)
 weil 139 Quellen geteilt bleiben. Der Engpass ist nicht der Durchsatz, sondern die
 **Anzahl der Slots** und der **KI-Tagesdeckel**.
 
+**In welche Richtung das Modell irrt (wichtig für die Bewertung):** die 6 mandatsspezifischen
+Quellen je Mandat stammen aus den 30 Quellen, die heute von **genau einem** der fünf Mandate
+nachgefragt werden. Mit wachsender Mandatszahl werden einige davon zwangsläufig **geteilt**
+(gleicher Ausschuss, gleiche Partei, gleiches Bundesland) und fallen aus dem
+mandatsspezifischen Anteil heraus. Die 6 sind deshalb eine **Obergrenze**, und die
+Hochrechnung **überschätzt** die Arbeit eher, als sie zu unterschätzen. Der Lasttest bestätigt
+die Richtung unabhängig: der Planer erzeugt für 100 Mandate nur 490 statt der linear
+fortgeschriebenen 593 `source_fetch` (§4.2).
+
 ---
 
 ## 3 · Abnahmekriterien — VOR dem ersten Lasttest festgeschrieben
@@ -162,6 +171,18 @@ Abschlüsse (min = max = 4). Kein Mandat verhungert.
 erreichte nach den Wiederholungen den Endzustand `fehlgeschlagen` (K13b, die Probe war also
 wirksam). Die gesunden Mandate waren dennoch **nach dem Hauptlauf vollständig** abgearbeitet
 (K13) — ein krankes Mandat hält die gesunden nicht auf.
+
+**Determinismus belegt — auf zwei Ebenen:**
+
+1. **Der Plan.** Drei unabhängige Planungsläufe für 25 Mandate ergaben je **244 Aufträge**
+   mit identischer SHA-256-Summe der sortierten Idempotenzschlüssel (`b7e397b0db3113f3`).
+   Die Fixture `synthetische-mandate-1000.js` benutzt kein `Math.random`.
+2. **Der ganze Lauf.** Ein **zweiter vollständiger Durchlauf** aller drei Stufen ergab
+   erneut **60 PASS / 0 FAIL** mit **identischen** Mengen und Ergebnissen —
+   244/427/690 Aufträge, 242/425/688 erledigt, je 2 endgültige Fehler (Fehlermandat),
+   0 Rest, 0 hängende Leases, Verbindungsspitze 5/300. Abweichend waren **nur die
+   Laufzeiten** (423/534/549 ms gegen 463/442/660 ms) — erwartbar, weil parallel die
+   Offline-Gesamtsuite lief. Der Nachweis ist also **wiederholbar, nicht einmalig**.
 
 ### 4.2 Zweite, unabhängige Bestätigung der Unterlinearität
 
