@@ -3961,7 +3961,11 @@ sie „nicht verfügbar" erwarteten und stattdessen echten Erfolg bekamen).
 Ausschließlich `SELECT` und Katalogabfragen; keine Funktion aufgerufen, kein `DELETE`/`UPDATE`/
 `INSERT`, keine Sperre, keine Migration, kein Worker-/Cronlauf, keine Profil- oder Mandatsdaten.
 
-> ⚠️ **ÜBERHOLT seit dem 2026-08-25, 07:01 Uhr türkischer Zeit (06:01 Berlin, 04:01 UTC).**
+> 📌 **HISTORISCHER ZWISCHENSTAND — abgeschlossen in §31.10.** Die hier beschriebenen Zeilen
+> sind seit dem 2026-08-25 gegen 10:02 Uhr türkischer Zeit (09:02 Berlin, 07:02 UTC)
+> **neutralisiert**; `endgueltig_fehler` steht wieder auf 0.
+>
+> ⚠️ **Bereits am 2026-08-25, 07:01 Uhr türkischer Zeit (06:01 Berlin, 04:01 UTC) überholt.**
 > Die folgende Momentaufnahme beschreibt den Zustand vom **24.08.** und ist als historischer
 > Befund korrekt, als *aktueller* Stand aber **falsch**. Der reguläre Betrieb hat den Auftrag
 > inzwischen aufgenommen und endgültig scheitern lassen. Insbesondere gelten die Zeilen 2, 3,
@@ -4144,7 +4148,7 @@ Dazu: Trockenlauf **und** scharfer Lauf brechen in **jedem** Negativfall ab, und
 danach nachweislich unverändert; nach allen Negativfällen läuft der Vertrag wieder sauber durch
 (Gegenprobe); keine Ausgabe trägt einen Wert aus den vier sensiblen Spalten.
 
-### §31.7.4 Rein lesender Production-Abgleich am 2026-08-25, 01:31 türkischer Zeit (00:31 Berlin, 2026-08-24 22:31 UTC) — **überholt**
+### §31.7.4 Rein lesender Production-Abgleich am 2026-08-25, 01:31 türkischer Zeit (00:31 Berlin, 2026-08-24 22:31 UTC) — **historischer Zwischenstand**
 
 > ⚠️ **ÜBERHOLT.** Dieser Abgleich bestätigte die **erste** Vertragsfassung. Rund zweieinhalb
 > Stunden später, um **07:01 Uhr türkischer Zeit (06:01 Berlin, 04:01 UTC)**, hat der reguläre
@@ -4189,6 +4193,11 @@ deterministisch neu.
 nichts am Ereignis-Antrieb und ersetzt keinen der offenen Nachweise aus §31.5.
 
 ## §31.8 Der Auftrag ist eingetreten: Endzustand und zweite Vertragsfassung (2026-08-25)
+
+> 📌 **HISTORISCHER ZWISCHENSTAND, nicht falsch und nicht gelöscht.** Dieser Abschnitt hält den
+> Zustand *terminal `fehlgeschlagen` / Outbox `bestaetigt`* fest — eine zu ihrer Zeit korrekte
+> Momentaufnahme. Der Zustand wanderte danach regulär weiter (§31.9) und ist seit dem
+> 2026-08-25 gegen 10:02 Uhr türkischer Zeit **abgeschlossen: siehe §31.10.**
 
 ### §31.8.1 Was passiert ist — und wann
 
@@ -4308,6 +4317,10 @@ einer fremden Auftrags- bzw. Outbox-Zeile.
 
 ## §31.9 Trockenlauf, Abgleich und dritte Vertragsfassung (2026-08-25)
 
+> 📌 **HISTORISCHER ZWISCHENSTAND, nicht falsch und nicht gelöscht.** Er hält den Zustand
+> *Outbox `verzichtet`* und die dritte Vertragsfassung fest — die Fassung, mit der die
+> Neutralisierung dann tatsächlich gelang. **Abschluss: §31.10.**
+
 ### §31.9.1 Die exakte zeitliche Abfolge
 
 Alle Zeiten zuerst **türkisch**, dann Berlin, dann UTC.
@@ -4404,3 +4417,125 @@ Der **Auftrag** und alle übrigen Vertragswerte bleiben unverändert.
 - `endgueltig_fehler` ist weiterhin um **1** verfälscht; der Auftrag ist terminal und wächst
   nicht weiter.
 - **Der Selbstweck bleibt unberührt und weiterhin deaktiviert.**
+
+## §31.10 ABSCHLUSS: Die zwei versehentlichen Testzeilen sind neutralisiert (2026-08-25)
+
+**Status: erledigt.** Die am 2026-08-24 versehentlich erzeugten Zeilen existieren nicht mehr.
+Alle Zeiten zuerst **türkisch**, dann Berlin, dann UTC.
+
+### §31.10.1 Freigabe A und der frische Trockenlauf
+
+Der Gründer hat **Freigabe A ausdrücklich erteilt**. Ausgeführt wurde **genau ein** frischer
+Production-Trockenlauf mit der **dritten** Vertragsfassung:
+
+| | Wert |
+|---|---|
+| Zeitpunkt | **09:52:02 türkisch · 08:52:02 Berlin · 06:52:02 UTC** |
+| SHA-256 des ausgeführten Trockenlauf-SQL | `3d3acbbf4bd88837bda7f4dc0f3bb384103a7917616587f9b5424553cec06086` |
+| Ergebnis | kontrollierte Meldung `TROCKENLAUF-OK` — alle Riegel bestanden, Transaktion **vollständig zurückgerollt** |
+
+Vor der Ausführung geprüft und bestätigt: Modus ausdrücklich `trockenlauf` · **kein** `commit;` ·
+genau **ein** `rollback;` · genau **eine** Löschanweisung auf den exakten Zielauftrag · der
+Vertrag verlangt `status = 'verzichtet'` **und** `updated_at = 2026-08-25T05:56:14.770379Z`.
+Die Nachprüfung bestätigte danach alle sieben Vorprüfungswerte als `1`, den unveränderten
+`updated_at`, keine offene Transaktion, keine Sperre, keine Temp-Tabelle.
+
+### §31.10.2 Freigabe B — getrennt erteilt
+
+**Freigabe B wurde als eigene, ausdrückliche Entscheidung erteilt**, ausschließlich für Auftrag
+`371707a4-3d78-44f5-a1c5-d6f11026f4d2` und Outbox-Zeile `24ba14ec-0827-49af-9cf1-43cb485f4e33`,
+in Kenntnis und Annahme der Endgültigkeit: **ein byte-identischer Rückweg existiert nicht.** Die
+Zeilen trugen keine echte Arbeit — leere Testnutzlast, keine Mandatszuordnung.
+
+Unmittelbar vor dem scharfen Lauf, **10:01:04 türkisch (09:01:04 Berlin, 07:01:04 UTC)**, waren
+alle neun Vorprüfungswerte wie erwartet: die sieben Vertragswerte je `1`, dazu
+`endgueltig_fehler_gesamt = 1` und `ziel_beitrag_endgueltig_fehler = 1`.
+
+### §31.10.3 Der scharfe Lauf
+
+| | Wert |
+|---|---|
+| Zeitpunkt | **gegen 10:02 türkisch · 09:02 Berlin · 07:02 UTC** |
+| SHA-256 des ausgeführten scharfen SQL | `4ba3a93674fc0c77271c396983c4a756ceb98ad92936fb838cad88d3ade51356` |
+| Ausführungen | **genau eine** — kein Wiederholungsversuch, kein Abbruch, kein Serialisierungsfehler |
+
+Der scharfe Text wurde vor der Ausführung **Zeile für Zeile gegen den erfolgreichen
+Trockenlauftext verglichen**. Unterschiede: **ausschließlich die sechs zulässigen** — Modus
+`scharf` · fehlender E11-Trockenlaufabbruch · fehlender Rollback · genau **ein** `commit;` ·
+Ergebnisfeld `neutralisiert` · rein lesende Gegenprobe nach dem Commit. **Alle Riegel E0–E10b
+sind bytegleich.** Zusätzlich geprüft: `SERIALIZABLE` gesetzt · genau **zwei** gesperrte
+Zielzeilen · genau **eine** Löschanweisung, wörtlich auf die Auftragskennung · **null**
+Löschanweisungen auf `helmut_job_outbox`.
+
+### §31.10.4 Löschzahlen
+
+| | Wert |
+|---|---|
+| gelöschte Auftragszeilen | **genau 1** (Riegel E8) |
+| gelöschte Outbox-Zeilen über `helmut_job_outbox_job_id_fkey` | **genau 1**, ausschließlich über die vorher geprüfte Kaskade (E6 prüft sie, E9b weist sie nach) |
+| Auftragsbestand | **1124 → 1123** |
+| Outbox-Bestand | **889 → 888** |
+
+### §31.10.5 Unmittelbare Gegenprobe (rein lesend, nach dem Commit)
+
+`auftrag_rest = 0` · `outbox_rest = 0` · `verweise = 0`.
+
+### §31.10.6 Vollständige Nachprüfung
+
+**10:03:23 türkisch (09:03:23 Berlin, 07:03:23 UTC):**
+
+| Prüfung | Befund |
+|---|---|
+| `auftrag_vorhanden` · `outbox_vorhanden` · `outbox_je_auftrag` | 0 · 0 · 0 |
+| `ziel_beitrag_endgueltig_fehler` | 0 |
+| **`endgueltig_fehler_gesamt`** | **0** |
+| verwaiste Outbox-Zeilen | 0 |
+| offene Transaktionen · Sperren · Transaktionssperren | 0 · 0 · 0 |
+| vorbereitete Transaktionen · zurückgelassene Temp-Tabellen | 0 · 0 |
+| neue Zeile mit einer der beiden Kennungen | keine |
+| Aufträge · Outbox gesamt | 1123 · 888 |
+
+**Unabhängige spätere Gegenprüfung, 10:05:40 türkisch (09:05:40 Berlin, 07:05:40 UTC):** beide
+Zielzeilen fehlen weiterhin, `endgueltig_fehler_gesamt = 0`, keine verwaiste Outbox-Zeile,
+Aufträge **1123**, Outbox **888**.
+
+### §31.10.7 Ehrliche Einschränkung zur Quittung
+
+Der Betreiberkanal gab nach dem Commit **nur die letzte Gegenprobe** zurück. Die temporäre
+Quittungszeile war wegen `on commit drop` danach **nicht mehr abrufbar**. Ihre zugesagten Werte
+(`modus = scharf`, `geloescht_auftrag = 1`, `geloescht_outbox_ueber_kaskade = 1`,
+`ergebnis = neutralisiert`) folgen aus dem **erfolgreichen Commit** und den **zwingenden Riegeln
+E8 bis E10b**: jeder von ihnen hätte die Transaktion beendet, und dann wäre kein Commit
+zustande gekommen. **Es wurde ausdrücklich kein zweiter Lauf durchgeführt**, um die Quittung
+nachzureichen.
+
+### §31.10.8 Keine fremde Zeile verändert
+
+Bestätigt, mehrfach belegt: die einzige Löschanweisung trifft ausschließlich die
+Auftragskennung — **keine Zeitgrenze, keine Mengenlogik** · es gibt **keine** Löschanweisung auf
+`helmut_job_outbox` · E10/E10b hätten abgebrochen, wenn der Bestand um mehr oder weniger als
+genau eine Zeile je Tabelle gefallen wäre · die Zählwerte stimmen exakt (1124→1123, 889→888) ·
+keine verwaisten Outbox-Zeilen.
+
+### §31.10.9 Was bewusst unverändert bleibt
+
+- **Der frühere rote Cron-Beleg bleibt als historischer Störungsbeleg unverändert erhalten.**
+  Er dokumentiert einen realen Zustand seiner Zeit und wird nicht nachträglich bereinigt.
+- **Es wurde kein manueller Gesundheitslauf ausgelöst.** Die nächste **reguläre** Kontrolle darf
+  den bereinigten Zustand später organisch bestätigen; ein grüner Lauf ist **noch nicht
+  beobachtet** und wird hier **nicht behauptet**.
+- **Der Einzeilenvertrag bleibt unverändert als geprüftes Werkzeug im Repository.** Seine
+  Zielzeilen existieren **nicht mehr**; ein erneuter Lauf — scharf wie trocken — müsste am
+  Riegel E0 mit `ABBRUCH-BEREITS-NEUTRALISIERT` enden und würde nichts verändern. **Ein solcher
+  Lauf wurde nicht ausgeführt.**
+- **Der Selbstweck bleibt deaktiviert**, der siebentägige Fünfernachweis wurde **nicht**
+  gestartet. Beides ist von dieser Neutralisierung unberührt und bleibt eine eigene
+  Gründerentscheidung.
+
+### §31.10.10 Einordnung der früheren Abschnitte
+
+**§31.6.1**, **§31.7.4**, **§31.8** und **§31.9** bleiben inhaltlich stehen und sind **weder
+gelöscht noch falsch**: sie sind **historische Zwischenstände** — korrekte Momentaufnahmen zu
+ihrer jeweiligen Zeit, die den regulären Zustandsübergängen der Zeile folgten (`wartend/offen`
+→ `fehlgeschlagen/bestaetigt` → `fehlgeschlagen/verzichtet`). Der **Abschluss** steht in diesem
+Abschnitt §31.10.

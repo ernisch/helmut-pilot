@@ -1523,6 +1523,48 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   2026-08-25 um **07:48:39 Uhr tuerkischer Zeit** (06:48:39 Berlin, 04:48:39 UTC), die jeden
   Vertragswert bestaetigt hat. **Freigabe A ist damit neu pruefbar**, Freigabe B bleibt eine
   getrennte spaetere Entscheidung.
+  **ABSCHLUSS (2026-08-25; Beleg Runbook §31.10):** die Stoerung ist **erledigt**.
+  **(1) Unfallursache:** ein Handlauf der Bestandssuite `jobdispatch-vertrag-test.js` OHNE
+  `scripts/lokal.js` in einer Cloud-Sitzung mit Production-Kennungen in der Umgebung; der
+  §9-Pruefpunkt ruft bewusst den echten Einreihungspfad und schrieb dadurch je EINE Zeile in
+  `helmut_jobs` und `helmut_job_outbox`. Dauerhafte Gegenmassnahmen: die Suite entfernt die
+  Kennungen jetzt selbst, und CLAUDE.md §6 verlangt, dass JEDER Testlauf — auch ein einzelner —
+  ueber `scripts/lokal.js` geht. **(2) Drei Vertragsfassungen:** noetig, weil der REGULAERE
+  Betrieb den Zustand zweimal weiterbewegte — `wartend/offen` (24.08.) →
+  `fehlgeschlagen/bestaetigt` (25.08. 07:01 Uhr tuerkischer Zeit, Aufnahme durch den Worker) →
+  `fehlgeschlagen/verzichtet` (25.08. 08:56:14 Uhr tuerkischer Zeit, kanonischer
+  Outbox-Abgleich). Jede Fassung wurde erst nach rein lesender Pruefung nachgezogen; die Riegel
+  haben jeweils GENAU DAS getan, wofuer sie gebaut sind, und einen Lauf gegen einen veralteten
+  Vertrag verhindert. **(3) Frischer Trockenlauf** nach ausdruecklicher Freigabe A am
+  2026-08-25 um **09:52:02 Uhr tuerkischer Zeit** (08:52:02 Berlin, 06:52:02 UTC):
+  `TROCKENLAUF-OK`, alle Riegel bestanden, Transaktion vollstaendig zurueckgerollt
+  (SQL-SHA-256 `3d3acbbf…`). **(4) Getrennte Freigabe B** als eigene Gruenderentscheidung, in
+  Kenntnis der Endgueltigkeit (kein bytegleicher Rueckweg; die Zeilen trugen keine echte
+  Arbeit). **(5) Einmalige exakte Loeschung** gegen **10:02 Uhr tuerkischer Zeit** (09:02
+  Berlin, 07:02 UTC), SQL-SHA-256 `4ba3a936…`: genau EINE Auftragszeile, genau EINE zugehoerige
+  Outbox-Zeile ueber `helmut_job_outbox_job_id_fkey` (nur ueber die vorher gepruefte Kaskade —
+  es gibt keine Loeschanweisung auf die Outbox-Tabelle); Bestand 1124 → 1123 bzw. 889 → 888.
+  Textvergleich gegen den Trockenlauf: nur die sechs zulaessigen Unterschiede, alle Riegel
+  E0–E10b bytegleich. **(6) Vollstaendige Nachpruefung** um **10:03:23 Uhr tuerkischer Zeit**
+  (09:03:23 Berlin, 07:03:23 UTC): Auftrag, Outbox und Verweise je 0, keine verwaiste
+  Outbox-Zeile, keine offene Transaktion, keine Sperre, keine vorbereitete Transaktion, keine
+  zurueckgelassene Temp-Tabelle; unabhaengige Gegenpruefung um **10:05:40 Uhr tuerkischer Zeit**
+  bestaetigt 1123 Auftraege / 888 Outbox-Zeilen. **(7) `endgueltig_fehler = 0`** — der aktuelle
+  Datenbankfehler ist bereinigt. **(8) Keine fremde Zeile veraendert:** die einzige
+  Loeschanweisung trifft ausschliesslich die Auftragskennung (keine Zeitgrenze, keine
+  Mengenlogik), und E10/E10b haetten bei jeder anderen Bestandsdifferenz abgebrochen.
+  **(9) Historische Warnung erhalten:** der fruehere rote Cron-Beleg bleibt als
+  Stoerungsbeleg unveraendert stehen, es wurde KEIN manueller Gesundheitslauf ausgeloest, und
+  ein spaeterer regulaerer gruener Lauf ist NOCH NICHT beobachtet und wird nicht behauptet.
+  Ehrlich vermerkt: die temporaere Quittungszeile war nach dem Commit wegen `on commit drop`
+  nicht mehr abrufbar — ihre Werte folgen aus dem erfolgreichen Commit und den zwingenden
+  Riegeln E8–E10b; ein zweiter Lauf wurde ausdruecklich NICHT durchgefuehrt. Der
+  Einzeilenvertrag bleibt unveraendert als geprueftes Werkzeug im Repository; seine Zielzeilen
+  existieren nicht mehr, ein erneuter Lauf muesste am Riegel E0 mit
+  `ABBRUCH-BEREITS-NEUTRALISIERT` enden (nicht ausgefuehrt). **(10) Weiterhin offen und
+  ausdruecklich getrennt davon:** der **Selbstweck bleibt deaktiviert** und war in Production
+  nie ausgefuehrt — er ist NICHT aktivierungsbereit; der **siebentaegige Fuenfernachweis wurde
+  nicht gestartet**. Beides bleibt eine eigene Gruenderentscheidung.
   **Trockenlauf und kanonischer Abgleich (2026-08-25, dritte Korrekturrunde; Runbook §31.9):**
   Freigabe A wurde erteilt und der Production-Trockenlauf um **08:55:30 Uhr tuerkischer Zeit**
   (07:55:30 Berlin, 05:55:30 UTC) **genau einmal** ausgefuehrt — Ergebnis die kontrollierte
