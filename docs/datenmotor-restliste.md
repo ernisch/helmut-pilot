@@ -1496,7 +1496,33 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Production-Trockenlauf ausgefuehrt**; einzige Production-Beruehrung war die erneute enge
   Lesepruefung der zwei Kennungen (2026-08-24 22:31 UTC: unveraendert `wartend`,
   `attempts = 0`, ohne Lease, alle Vertragswerte passend). **Trockenlauf und scharfer Lauf
-  brauchen je eine eigene Gruenderfreigabe** (Runbook §31.7). **Offen:** der Selbstweck war noch nie
+  brauchen je eine eigene Gruenderfreigabe** (Runbook §31.7).
+  **Zustand eingetreten (2026-08-25, zweite Korrekturrunde; Runbook §31.8):** um **07:01 Uhr
+  tuerkischer Zeit** (06:01 Berlin, 04:01 UTC) hat der **regulaere Betrieb** die Testzeile
+  aufgenommen — leere Nutzlast, endgueltige Ablehnung, fuenf Versuche in einem Slot. Der Auftrag
+  ist jetzt terminal `fehlgeschlagen` (5 von 5 Versuchen), die Outbox-Absicht `bestaetigt`
+  (Transport `schatten`). Damit sind zwei fruehere Aussagen FALSCH geworden und berichtigt:
+  „nie beansprucht" stimmt seit 07:01 Uhr tuerkischer Zeit nicht mehr, und **`endgueltig_fehler`
+  wird jetzt tatsaechlich um eins verfaelscht** — ein siebentaegiger Fuenfernachweis startete
+  heute mit einem bekannten Fehlbefund in genau der §28.6-Abnahmekennzahl. Die
+  Wartezeitkennzahl `aeltester_offener_s` treibt die Zeile dagegen NICHT mehr (sie zaehlt nur
+  `wartend`/`laeuft`), und ein Worker nimmt sie nicht mehr auf. **Der Vertrag auf Commit
+  `d4fa57d` haette einen Production-Trockenlauf geschlossen ABGEBROCHEN** (E7.1/E7.2/E7.7/E7.8,
+  E2.7, E4.2/E4.5-E4.7) — genau dafuer sind die Riegel gebaut; deshalb wurde **nichts
+  ausgefuehrt**, sondern der Vertrag berichtigt. **Zweite Vertragsfassung:** nur der getrennte
+  Einzeilenvertrag geaendert, die zwei Mengenvertraege sind **bytegleich unveraendert** (per
+  SHA-256 ueber den Abschnitt davor belegt); weiterhin ausschliesslich die zwei Kennungen, kein
+  Zeitbereich, genau eine Loeschanweisung, Kaskade nur nach Pruefung, Trockenlauf als
+  unveraenderbarer Standard. Neu: der **fruehere** Zustand `wartend`/`offen` wird ausdruecklich
+  abgelehnt (fail closed), die Datensparsamkeit gilt jetzt **am Wert** (jeder sensible
+  Vertragswert nur als rechte Seite seines eigenen Spaltenvergleichs, Zaehlung auf dem Code ohne
+  Zeichenketten-Literale), und der Zeitbereichsriegel erfasst auch `first_claimed_at`,
+  `finished_at`, `sent_at`, `confirmed_at`. Nachweis: **61 PASS / 0 FAIL** gegen echte
+  PostgreSQL 16; Bestandsvertraege weiterhin 55 + 58 PASS. **Noch wurde nichts geloescht und
+  kein Production-Trockenlauf ausgefuehrt**; einzige Beruehrung war die enge Lesepruefung am
+  2026-08-25 um **07:48:39 Uhr tuerkischer Zeit** (06:48:39 Berlin, 04:48:39 UTC), die jeden
+  Vertragswert bestaetigt hat. **Freigabe A ist damit neu pruefbar**, Freigabe B bleibt eine
+  getrennte spaetere Entscheidung. **Offen:** der Selbstweck war noch nie
   in Production ausgefuehrt; ohne Preview-/Production-Beleg und ohne 7-Tage-Fenster bleibt der
   Ereignis-Antrieb **nicht aktivierungsbereit**.
 - **Stand 2026-08-14/2 (Haertungssprint, PR #247; Beleg

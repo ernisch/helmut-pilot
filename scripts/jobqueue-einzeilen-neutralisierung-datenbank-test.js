@@ -133,22 +133,27 @@ const BESTAND_SQL = `
 -- wenn ein Negativtest die Kaskade voruebergehend entfernt hat.
 delete from public.helmut_job_outbox;
 delete from public.helmut_jobs;
--- (1) DIE ZIELZEILE — byte-genau der Zustand aus der Production-Leseprüfung vom 2026-08-24.
+-- (1) DIE ZIELZEILE — der belegte ENDZUSTAND aus der Production-Lesepruefung vom 2026-08-25,
+-- 07:48:39 Uhr tuerkischer Zeit (06:48:39 Berlin, 04:48:39 UTC): terminal gescheitert, nachdem
+-- der regulaere Betrieb sie um 07:01 Uhr tuerkischer Zeit (06:01 Berlin, 04:01 UTC) aufgenommen
+-- hatte. Der Fehlertext ist eine EINGABE des Bestandsaufbaus und wird nie ausgegeben (§15).
 insert into public.helmut_jobs
   (id, job_type, idempotency_key, freshness_window, payload, status, attempts, max_attempts,
    priority, tenant_id, last_error, lease_owner, lease_expires_at, first_claimed_at,
    finished_at, wiedervorlagen, due_at, first_due_at, created_at)
 values ('${A.id}'::uuid, '${A.jobType}', '${A.idempotenzschluessel}', '${A.aktualitaetsfenster}',
         '{}'::jsonb, '${A.status}', ${A.versuche}, ${A.maxVersuche}, ${A.prioritaet},
-        null, null, null, null, null, null, ${A.wiedervorlagen},
+        null, '${A.fehlertext}', null, null,
+        timestamptz '${A.ersteBeanspruchung}', timestamptz '${A.abschluss}', ${A.wiedervorlagen},
         timestamptz '${A.faelligAb}', timestamptz '${A.ersteFaelligkeit}',
         timestamptz '${A.erstelltAm}');
 insert into public.helmut_job_outbox
   (id, job_id, schema_version, status, transport, attempts, max_attempts, last_error,
    next_attempt_at, sent_at, confirmed_at, created_at)
-values ('${O.id}'::uuid, '${A.id}'::uuid, ${O.schemaVersion}, '${O.status}', null,
+values ('${O.id}'::uuid, '${A.id}'::uuid, ${O.schemaVersion}, '${O.status}', '${O.transport}',
         ${O.versuche}, ${O.maxVersuche}, null,
-        timestamptz '${O.naechsterVersuchAb}', null, null, timestamptz '${O.erstelltAm}');
+        timestamptz '${O.naechsterVersuchAb}', timestamptz '${O.versendetAm}',
+        timestamptz '${O.bestaetigtAm}', timestamptz '${O.erstelltAm}');
 -- (2) FREMDE, ECHTE ARBEIT — sie muss jeden Lauf unveraendert ueberstehen.
 insert into public.helmut_jobs
   (id, job_type, idempotency_key, freshness_window, payload, status, attempts, max_attempts,
@@ -215,7 +220,7 @@ function stopptBei(name, abweichungSql, erwarteterAbbruch) {
 }
 
 function main() {
-  console.log("Helmut — Datenbanknachweis EINZEILENVERTRAG (Testzeile 2026-08-24)");
+  console.log("Helmut — Datenbanknachweis EINZEILENVERTRAG (Testzeile, ENDZUSTAND 2026-08-25)");
   console.log("HINWEIS: lokale Wegwerf-Datenbank. Production wird NICHT beruehrt.\n");
 
   if (!servererreichbar()) {
@@ -250,7 +255,7 @@ function main() {
     (scharfSql.match(/delete\s+from/gi) || []).length === 1
     && new RegExp(`delete from public\\.helmut_jobs where id = '${ZIEL_AUFTRAG}'::uuid;`).test(scharfSql));
   check("0.5 KEINE Zeitgrenze als Zielmenge (Unterschied zu den beiden Sammelvertraegen)",
-    !/(created_at|due_at|first_due_at|next_attempt_at)\s*(<|>|<=|>=)/.test(scharfSql));
+    !/(created_at|due_at|first_due_at|next_attempt_at|first_claimed_at|finished_at|sent_at|confirmed_at)\s*(<|>|<=|>=)/.test(scharfSql));
   check("0.6 SERIALIZABLE und Sperre ausschliesslich der beiden Zielzeilen",
     /begin isolation level serializable;/.test(scharfSql)
     && (scharfSql.match(/for update/g) || []).length === 2
@@ -264,12 +269,29 @@ function main() {
       { ...V, auftrag: { ...V.auftrag, id: "keine-uuid" } },
       { ...V, auftrag: { ...V.auftrag, status: "laeuft" } },
       { ...V, auftrag: { ...V.auftrag, versuche: 1 } },
+      { ...V, auftrag: { ...V.auftrag, fehlertext: "" } },
+      { ...V, outbox: { ...V.outbox, transport: "" } },
       { ...V, fremdschluessel: { ...V.fremdschluessel, loeschregel: "a" } }
     ]) {
       try { N.einzeilenNeutralisierungSql(kaputt); return false; } catch (_) { /* erwartet */ }
     }
     return true;
   })());
+  check("0.9 Ein Vertrag im FRUEHEREN Zustand (wartend / offen) wird ausdruecklich abgelehnt", (() => {
+    const veraltet = [
+      { ...V, auftrag: { ...V.auftrag, status: "wartend", versuche: 0 } },
+      { ...V, outbox: { ...V.outbox, status: "offen" } }
+    ];
+    for (const alt of veraltet) {
+      try { N.einzeilenNeutralisierungSql(alt); return false; }
+      catch (e) { if (!/veraltet/i.test(String(e.message))) return false; }
+    }
+    return true;
+  })());
+  check("0.10 Der Vertrag beschreibt den TERMINALEN Zustand (nicht mehr den unberuehrten)",
+    V.auftrag.status === "fehlgeschlagen" && V.auftrag.versuche === V.auftrag.maxVersuche
+    && V.outbox.status === "bestaetigt" && typeof V.outbox.transport === "string"
+    && V.outbox.transport.length > 0);
 
   // ── 1–3 · Trockenlauf ─────────────────────────────────────────────────────────────────────
   abschnitt("1–3 · Standard-Trockenlauf: alle Riegel bestehen, nichts aendert sich");
@@ -304,7 +326,7 @@ function main() {
   check("4.3 Genau EINE Outbox-Zeile entfernt — ueber die geprüfte Kaskade",
     nachScharf.outbox === vorScharf.outbox - 1 && nachScharf.zielOutbox === 0);
   check("4.4 Die Quittung nennt Verfahren, Modus und beide Kennungen",
-    /einzeilen-neutralisierung-testzeile-2026-08-24/.test(scharf.out)
+    scharf.out.includes(V.verfahren)
     && scharf.out.includes(ZIEL_AUFTRAG) && scharf.out.includes(ZIEL_OUTBOX)
     && /"ergebnis": ?"neutralisiert"/.test(scharf.out.replace(/\s+/g, " ")),
     scharf.out.replace(/\s+/g, " ").slice(0, 200));
@@ -344,22 +366,47 @@ function main() {
     `update public.helmut_job_outbox set id = '66666666-6666-4666-8666-666666666666'::uuid
        where id = '${ZIEL_OUTBOX}'::uuid;`,
     /ABBRUCH E3/);
-  // `status='laeuft'` OHNE Lease laesst die Datenbank selbst nicht zu (helmut_jobs_lease_chk) —
-  // die Statusaenderung wird deshalb ueber `fehlgeschlagen` geprueft, den Zustand, in dem der
-  // Auftrag nach fuenf verbrannten Versuchen tatsaechlich landen wuerde.
-  stopptBei("7.1 Veraenderter Status stoppt (E7.1 — Statusaenderung)",
-    `update public.helmut_jobs set status = 'fehlgeschlagen'
+  // DER WICHTIGSTE NEGATIVFALL DIESER FASSUNG: der FRUEHERE Zustand. Stuende die Zeile wieder
+  // (oder immer noch) auf `wartend`/`offen`, waere der Vertrag nicht mehr der belegte — der
+  // Ablauf muss geschlossen stoppen, statt sich still anzupassen.
+  stopptBei("7.0 Der FRUEHERE Zustand (Auftrag `wartend`, Outbox `offen`) wird abgelehnt",
+    `update public.helmut_jobs set status = 'wartend', attempts = 0, last_error = null,
+        first_claimed_at = null, finished_at = null
+      where id = '${ZIEL_AUFTRAG}'::uuid;
+     update public.helmut_job_outbox set status = 'offen', attempts = 0, transport = null,
+        sent_at = null, confirmed_at = null
+      where id = '${ZIEL_OUTBOX}'::uuid;`,
+    // Welcher Riegel ZUERST greift, bestimmt die Feldreihenfolge: der Fehlerzustand (E2.7) wird
+    // vor Status (E7.1) geprueft. Entscheidend ist, dass der Ablauf an einem Merkmal des
+    // ENDZUSTANDS scheitert, geschlossen stoppt und nichts veraendert.
+    /ABBRUCH (E2\.7|E7\.1|E7\.2|E7\.7|E7\.8|E4\.[2357])/);
+  stopptBei("7.0b Allein der fruehere Status `wartend` stoppt bereits (E7.1)",
+    `update public.helmut_jobs set status = 'wartend' where id = '${ZIEL_AUFTRAG}'::uuid;`,
+    /ABBRUCH E7\.1/);
+  stopptBei("7.0c Allein der fruehere Outbox-Status `offen` stoppt bereits (E4.2)",
+    `update public.helmut_job_outbox set status = 'offen' where id = '${ZIEL_OUTBOX}'::uuid;`,
+    /ABBRUCH E4\.2/);
+  stopptBei("7.1 Veraenderter Status stoppt (E7.1 — spaetere Statusaenderung)",
+    `update public.helmut_jobs set status = 'erledigt'
        where id = '${ZIEL_AUFTRAG}'::uuid;`,
     /ABBRUCH E7\.1/);
-  stopptBei("8.1 Veraenderte Versuchszahl stoppt (E7.2 — Wiederholung)",
-    `update public.helmut_jobs set attempts = 1 where id = '${ZIEL_AUFTRAG}'::uuid;`,
+  stopptBei("7.2 Veraenderte erste Beanspruchung stoppt (E7.7)",
+    `update public.helmut_jobs set first_claimed_at = timestamptz '2026-08-25 05:00:00+00'
+       where id = '${ZIEL_AUFTRAG}'::uuid;`,
+    /ABBRUCH E7\.7/);
+  stopptBei("7.3 Veraenderter Abschlusszeitpunkt stoppt (E7.8)",
+    `update public.helmut_jobs set finished_at = timestamptz '2026-08-25 05:00:00+00'
+       where id = '${ZIEL_AUFTRAG}'::uuid;`,
+    /ABBRUCH E7\.8/);
+  stopptBei("8.1 Veraenderte Versuchszahl stoppt (E7.2 — weiterer Versuch)",
+    `update public.helmut_jobs set attempts = 4 where id = '${ZIEL_AUFTRAG}'::uuid;`,
     /ABBRUCH E7\.2/);
   stopptBei("8.2 Veraenderte Wiedervorlagen stoppen (E7.4)",
     `update public.helmut_jobs set wiedervorlagen = 1 where id = '${ZIEL_AUFTRAG}'::uuid;`,
     /ABBRUCH E7\.4/);
-  stopptBei("9.1 Aktive Lease stoppt (E7.1/E7.5 — Beanspruchung durch einen Worker)",
+  stopptBei("9.1 Erneute aktive Lease stoppt (E7.1/E7.5 — neue Beanspruchung durch einen Worker)",
     `update public.helmut_jobs set status = 'laeuft', lease_owner = 'worker-x',
-        lease_expires_at = now() + interval '5 minutes', first_claimed_at = now(), attempts = 1
+        lease_expires_at = now() + interval '5 minutes', attempts = 1, finished_at = null
       where id = '${ZIEL_AUFTRAG}'::uuid;`,
     /ABBRUCH E7\./);
   stopptBei("10.1 Veraenderte Nutzlast stoppt (E2.6 — keine leere Nutzlast mehr)",
@@ -376,6 +423,17 @@ function main() {
     `update public.helmut_jobs set created_at = timestamptz '2026-08-25 00:00:00+00'
        where id = '${ZIEL_AUFTRAG}'::uuid;`,
     /ABBRUCH E2\.10/);
+  stopptBei("10.5 Veraenderter Fehlerzustand stoppt (E2.7 — anderer Fehlertext)",
+    `update public.helmut_jobs set last_error = 'ein voellig anderer fehler'
+       where id = '${ZIEL_AUFTRAG}'::uuid;`,
+    /ABBRUCH E2\.7/);
+  stopptBei("10.6 Geleerter Fehlerzustand stoppt ebenfalls (E2.7)",
+    `update public.helmut_jobs set last_error = null where id = '${ZIEL_AUFTRAG}'::uuid;`,
+    /ABBRUCH E2\.7/);
+  stopptBei("10.7 Veraenderte Faelligkeit stoppt (E2.8)",
+    `update public.helmut_jobs set due_at = timestamptz '2026-08-25 06:00:00+00'
+       where id = '${ZIEL_AUFTRAG}'::uuid;`,
+    /ABBRUCH E2\.8/);
   // Die erlaubten Outbox-Status sind `offen|versendet|bestaetigt|aufgegeben|verzichtet`
   // (helmut_job_outbox_status_chk) — `aufgegeben` gehoert also zur VERSANDABSICHT, nicht zum
   // Auftrag. Genau deshalb heisst die Massnahme hier LOESCHEN und nicht „aufgeben".
@@ -385,6 +443,19 @@ function main() {
   stopptBei("11.3 Outbox auf `aufgegeben` gesetzt stoppt ebenfalls (E4.2) — der Auftrag bliebe ja liegen",
     `update public.helmut_job_outbox set status = 'aufgegeben' where id = '${ZIEL_OUTBOX}'::uuid;`,
     /ABBRUCH E4\.2/);
+  stopptBei("11.4 Veraenderte Outbox-Versuchszahl stoppt (E4.3)",
+    `update public.helmut_job_outbox set attempts = 2 where id = '${ZIEL_OUTBOX}'::uuid;`,
+    /ABBRUCH E4\.3/);
+  stopptBei("11.5 Veraenderter Transport stoppt (E4.5)",
+    `update public.helmut_job_outbox set transport = 'selbstweck' where id = '${ZIEL_OUTBOX}'::uuid;`,
+    /ABBRUCH E4\.5/);
+  stopptBei("11.6 Veraenderter Sendezeitpunkt stoppt (E4.6)",
+    `update public.helmut_job_outbox set sent_at = timestamptz '2026-08-25 05:00:00+00'
+       where id = '${ZIEL_OUTBOX}'::uuid;`,
+    /ABBRUCH E4\.6/);
+  stopptBei("11.7 Veraenderter Bestaetigungszeitpunkt stoppt (E4.7)",
+    `update public.helmut_job_outbox set confirmed_at = null where id = '${ZIEL_OUTBOX}'::uuid;`,
+    /ABBRUCH E4\.7/);
 
   abschnitt("11 · Zusaetzliche Outbox-Zeile");
   bestandHerstellen();
@@ -439,18 +510,41 @@ function main() {
     !gesamtausgabe.includes("geteilt-echt-1") && !gesamtausgabe.includes("verstehen-echt-1")
     && !gesamtausgabe.includes("echte-quelle-1") && !gesamtausgabe.includes("rd-echt-1")
     && !gesamtausgabe.includes("mandat-echt"));
+  // NEU IN DIESER FASSUNG: der Fehlertext des Zielauftrags ist ein sensibler Wert. Er wird im
+  // Bestandsaufbau EINGEGEBEN und in der Datenbank VERGLICHEN — er darf in keiner Ausgabe
+  // stehen: nicht in einer Quittung, nicht in einer Abbruchmeldung, nicht in einer Testzeile.
+  check("15.1b Keine Ausgabe traegt den technischen Fehlertext des Zielauftrags",
+    !gesamtausgabe.includes(V.auftrag.fehlertext));
   check("15.2 Das erzeugte SQL liest die vier sensiblen Spalten ausschliesslich als Vergleich",
     (() => {
+      // Auf dem CODE zaehlen, nicht auf Zeichenketten-Literalen: der Fehlertext selbst enthaelt
+      // das Wort einer sensiblen Spalte, ist aber ein Wert und keine Spaltenreferenz.
+      const ohneLiterale = scharfSql.replace(/'(?:[^']|'')*'/g, "''");
       const muster = /\b(payload|tenant_id|idempotency_key|last_error)\b/gi;
       const vergleich = /\b(payload|tenant_id|idempotency_key|last_error)\b\s*(?:=|<>|is\s+(?:not\s+)?null)/gi;
-      return (scharfSql.match(muster) || []).length === (scharfSql.match(vergleich) || []).length;
+      return (ohneLiterale.match(muster) || []).length === (ohneLiterale.match(vergleich) || []).length;
     })());
+  check("15.2b Der Fehlertext steht im SQL AUSSCHLIESSLICH als rechte Seite seines Spaltenvergleichs",
+    (scharfSql.split(V.auftrag.fehlertext).length - 1) === 1
+    && new RegExp(`last_error = '${V.auftrag.fehlertext.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}'`).test(scharfSql));
+  check("15.2c Die Quittung enthaelt keinen Wert einer sensiblen Spalte",
+    (() => {
+      const quittung = scharfSql.slice(scharfSql.indexOf("jsonb_build_object"));
+      return !quittung.includes(V.auftrag.fehlertext)
+        && !new RegExp(`'${V.auftrag.idempotenzschluessel}'`).test(quittung);
+    })());
+  check("15.2d Der Riegel weist einen sensiblen Wert ausserhalb seines Vergleichs ab", (() => {
+    const boese = `select 1 where 'x' = '${V.auftrag.fehlertext}';`;
+    try { N.pruefeEinzeilenSql(boese, { last_error: V.auftrag.fehlertext }); return false; }
+    catch (_) { return true; }
+  })());
   check("15.3 Der Riegel weist Vollzeilenkonstrukte und ungebundene Loeschungen ab", (() => {
     const proben = [
       "select to_jsonb(j) from public.helmut_jobs j;",
       "select payload from public.helmut_jobs;",
       "delete from public.helmut_jobs where status = 'wartend';",
-      "select 1 from public.helmut_jobs where created_at < now();"
+      "select 1 from public.helmut_jobs where created_at < now();",
+      "select 1 from public.helmut_jobs where finished_at >= now();"
     ];
     for (const p of proben) {
       try { N.pruefeEinzeilenSql(p); return false; } catch (_) { /* erwartet */ }

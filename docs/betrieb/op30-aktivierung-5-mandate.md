@@ -3961,7 +3961,14 @@ sie „nicht verfügbar" erwarteten und stattdessen echten Erfolg bekamen).
 Ausschließlich `SELECT` und Katalogabfragen; keine Funktion aufgerufen, kein `DELETE`/`UPDATE`/
 `INSERT`, keine Sperre, keine Migration, kein Worker-/Cronlauf, keine Profil- oder Mandatsdaten.
 
-| Frage | Befund |
+> ⚠️ **ÜBERHOLT seit dem 2026-08-25, 07:01 Uhr türkischer Zeit (06:01 Berlin, 04:01 UTC).**
+> Die folgende Momentaufnahme beschreibt den Zustand vom **24.08.** und ist als historischer
+> Befund korrekt, als *aktueller* Stand aber **falsch**. Der reguläre Betrieb hat den Auftrag
+> inzwischen aufgenommen und endgültig scheitern lassen. Insbesondere gelten die Zeilen 2, 3,
+> 4, 5, 9 und 10 nicht mehr: **„nie beansprucht" stimmt nicht mehr**, und
+> **`endgueltig_fehler` ist jetzt tatsächlich um 1 verfälscht**. Aktueller Stand: **§31.8**.
+
+| Frage | Befund (Stand 24.08. — **überholt**, siehe §31.8) |
 |---|---|
 | 1. Existieren beide Zeilen noch? | **Ja**, beide unverändert |
 | 2. Aktueller Status | Auftrag `wartend` · Outbox-Absicht `offen` |
@@ -3974,9 +3981,10 @@ Ausschließlich `SELECT` und Katalogabfragen; keine Funktion aufgerufen, kein `D
 | 9. Beeinflusst er **heute** `endgueltig_fehler`? | **Nein.** Die Kennzahl zählt `status = 'fehlgeschlagen' AND attempts >= max_attempts`. **Aber** er zählt in `wartend` und — weil `tenant_id` leer ist und `aeltester_offener_s` **nicht** nach Mandat filtert — treibt er die **Wartezeitkennzahl** hoch: **3 593 s (≈ 1 h)** zum Messzeitpunkt. Genau diese Kennzahl ist seit 2026-08-12 die Betriebsgrenze der Warteschlangenwache (18 h Warnung, 24 h `kritisch`) |
 | 10. Kann ein Worker ihn noch aufnehmen? | **Ja.** `status='wartend'`, `due_at` liegt in der Vergangenheit, `attempts < max_attempts`, Typ `source_fetch` ist in der Typmenge (Production: `HELMUT_SOURCE_MODE=on`). Beim nächsten Drain-Slot wird er beansprucht; sein Payload ist `{}`, der Handler wirft `payload-ungueltig: quelle fehlt`, `istEndgueltig` trifft zu ⇒ `retryDelayMs 0` ⇒ **die fünf Versuche brennen in einem einzigen Slot ab** und der Auftrag endet `fehlgeschlagen` — **dann** zählt er als **1** in `endgueltig_fehler` |
 
-**Konsequenz für die anstehende Entscheidung:** bleibt die Zeile liegen, startet der
-siebentägige Fünfernachweis mit einem bekannten Fehlbefund in genau der Kennzahl, die §28.6
-mit „0 endgültige Fehler" abnimmt.
+**Konsequenz — am 2026-08-25 eingetreten:** die Zeile blieb liegen, wurde aufgenommen und ist
+endgültig gescheitert. Der siebentägige Fünfernachweis würde **jetzt tatsächlich** mit einem
+bekannten Fehlbefund in genau der Kennzahl starten, die §28.6 mit „0 endgültige Fehler" abnimmt
+(§31.8).
 
 ### §31.6.2 Begriffskorrektur (2026-08-25): „aufgeben" ist hier falsch
 
@@ -4136,7 +4144,12 @@ Dazu: Trockenlauf **und** scharfer Lauf brechen in **jedem** Negativfall ab, und
 danach nachweislich unverändert; nach allen Negativfällen läuft der Vertrag wieder sauber durch
 (Gegenprobe); keine Ausgabe trägt einen Wert aus den vier sensiblen Spalten.
 
-### §31.7.4 Rein lesender Production-Abgleich am 2026-08-25, 01:31 türkischer Zeit (00:31 Berlin, 22:31 UTC)
+### §31.7.4 Rein lesender Production-Abgleich am 2026-08-25, 01:31 türkischer Zeit (00:31 Berlin, 2026-08-24 22:31 UTC) — **überholt**
+
+> ⚠️ **ÜBERHOLT.** Dieser Abgleich bestätigte die **erste** Vertragsfassung. Rund zweieinhalb
+> Stunden später, um **07:01 Uhr türkischer Zeit (06:01 Berlin, 04:01 UTC)**, hat der reguläre
+> Betrieb den Auftrag aufgenommen. Der aktuelle Abgleich und die **zweite** Vertragsfassung
+> stehen in **§31.8**.
 
 Nur `SELECT` und Katalogabfragen — kein `FOR UPDATE`, kein `DELETE`/`UPDATE`/`INSERT`, keine
 verändernde Funktion, kein Worker-/Cron-/Weckruf, keine Profil- oder Mandatsdaten:
@@ -4160,6 +4173,9 @@ Stoppgrund; der Vertrag wurde **nicht** nachträglich angepasst.
 1. **Freigabe A — Production-Trockenlauf.** `einzeilenNeutralisierungSql()` (Standardmodus)
    gegen Production. Er kann bauartbedingt nichts ändern (Abbruch `TROCKENLAUF-OK`, Rollback)
    und liefert die Quittung, die alle Riegel bestätigt. **Bis dahin nicht ausgeführt.**
+   **Nachtrag 2026-08-25:** Freigabe A war zwischenzeitlich **nicht** unmittelbar erteilbar —
+   der Vertrag der **ersten** Fassung hätte den Trockenlauf gegen den neuen Zustand korrekt
+   abgebrochen. Sie kann erst mit der **zweiten** Vertragsfassung (§31.8) neu geprüft werden.
 2. **Freigabe B — scharfer Lauf.** Erst nach einem grünen Trockenlauf und als **eigene**
    Entscheidung: `einzeilenNeutralisierungSql(V, { modus: "scharf" })`. Danach die
    Gegenprobe (0/0/0) rein lesend.
@@ -4171,3 +4187,121 @@ deterministisch neu.
 
 **Der Selbstweck bleibt davon unberührt und weiterhin deaktiviert.** Diese Vorbereitung ändert
 nichts am Ereignis-Antrieb und ersetzt keinen der offenen Nachweise aus §31.5.
+
+## §31.8 Der Auftrag ist eingetreten: Endzustand und zweite Vertragsfassung (2026-08-25)
+
+### §31.8.1 Was passiert ist — und wann
+
+Am **2026-08-25 um 07:01 Uhr türkischer Zeit (06:01 Berlin, 04:01 UTC)** hat der **reguläre
+Betrieb** die versehentliche Testzeile aufgenommen. Genau der in §31.6.1 Zeile 10 vorhergesagte
+Ablauf ist eingetreten: leere Nutzlast ⇒ der Fachhandler lehnt endgültig ab ⇒ `retryDelayMs 0`
+⇒ **alle fünf Versuche brennen in einem einzigen Slot ab** ⇒ der Auftrag endet
+`fehlgeschlagen`. Die Outbox-Absicht wurde im **Schattenmodus** versendet und bestätigt.
+
+**Zwei Aussagen früherer Abschnitte sind damit falsch geworden und hiermit berichtigt:**
+
+1. **„Der Auftrag wurde nie beansprucht."** Das stimmt **seit 07:01 Uhr türkischer Zeit
+   (06:01 Berlin, 04:01 UTC) nicht mehr.** `first_claimed_at` ist gesetzt.
+2. **„`endgueltig_fehler` ist heute nicht betroffen."** Auch das stimmt nicht mehr: die
+   Kennzahl zählt `status = 'fehlgeschlagen' AND attempts >= max_attempts` — beides trifft zu.
+   **`endgueltig_fehler` wird jetzt tatsächlich um 1 verfälscht.** Ein siebentägiger
+   Fünfernachweis würde heute mit einem bekannten Fehlbefund in der §28.6-Abnahmekennzahl
+   starten.
+
+### §31.8.2 Rein lesender Production-Abgleich am 2026-08-25, 07:48:39 Uhr türkischer Zeit (06:48:39 Berlin, 04:48:39 UTC)
+
+Ausschließlich `SELECT` und Katalogabfragen — **kein** `FOR UPDATE`, **kein** `DELETE`/`UPDATE`/
+`INSERT`, keine verändernde Funktion, keine Sperre, kein Worker-, Cron- oder Weckruf, keine
+Profil- oder Mandatsdaten. Die vier datensparsamen Spalten wurden **ausschließlich innerhalb der
+Datenbank verglichen** (Rückgabe: nur Wahrheitswerte).
+
+| Prüfung | Befund |
+|---|---|
+| Auftrag vorhanden · Outbox vorhanden · genau eine Outbox-Zeile je Auftrag | 1 · 1 · 1 |
+| Auftragsstatus · Versuche · Versuchsobergrenze | `fehlgeschlagen` · 5 · 5 |
+| Typ · Priorität · Wiedervorlagen · Aktualitätsfenster | `source_fetch` · 100 · 0 · unverändert |
+| Nutzlast leer · ohne Mandatszuordnung · Idempotenzschlüssel der Testsuite | ja · ja · ja |
+| Fehlerzustand | gesetzt, **stimmt mit dem erwarteten technischen Handlerfehler überein** (nur in der Datenbank verglichen) |
+| aktuelle Lease | **keine** (`lease_owner` und `lease_expires_at` leer) |
+| erste Beanspruchung · Abschluss | `2026-08-25 04:01:05.852564Z` · `2026-08-25 04:01:35.086225Z` |
+| Fälligkeit · erste Fälligkeit · Erstellzeit | `04:01:34.992819Z` · `2026-08-24 20:32:12.512Z` · `2026-08-24 20:32:12.754636Z` |
+| Outbox: Status · Versuche · Obergrenze · Transport | `bestaetigt` · 1 · 10 · `schatten` |
+| Outbox: Versand · Bestätigung · nächster Versuch · Erstellzeit | `04:01:01.580665Z` · `04:01:03.624894Z` · `04:01:31.580665Z` · `2026-08-24 20:32:13.047778Z` |
+| eingehende Fremdschlüssel auf `helmut_jobs` · davon die Outbox-Kaskade | 1 · 1 (`helmut_job_outbox_job_id_fkey`, `ON DELETE CASCADE`) |
+| weitere abhängige Zeilen | keine |
+
+**Kein Wert wich vom oben beschriebenen Endzustand ab** — es gab keinen Stoppgrund.
+
+### §31.8.3 Warum nichts ausgeführt wurde — die Riegel haben funktioniert
+
+Der Einzeilenvertrag auf Commit `d4fa57d` beschrieb den Auftrag als **unberührt**
+(`wartend`, 0 Versuche, nie beansprucht, nicht abgeschlossen; Outbox `offen`, ohne Transport).
+Ein **Production-Trockenlauf hätte deshalb geschlossen abgebrochen** — an E7.1 (Status),
+E7.2 (Versuchszahl), E7.7 (erste Beanspruchung), E7.8 (Abschluss), E2.7 (Fehlerzustand)
+sowie E4.2/E4.5/E4.6/E4.7 auf der Outbox-Seite. **Genau dafür sind die Riegel gebaut.**
+Deshalb wurde **nichts ausgeführt**, sondern der Vertrag berichtigt.
+
+### §31.8.4 Die zweite Vertragsfassung
+
+`lib/helmut/jobqueue-neutralisierung.js` — **nur** der getrennte Einzeilenvertrag wurde
+geändert. Die **beiden Mengenverträge sind bytegleich unverändert** (nachgewiesen: identische
+SHA-256-Summe über den gesamten Abschnitt vor dem Einzeilenvertrag).
+
+Unverändert geblieben ist alles, was den Ablauf sicher macht: ausschließlich die zwei fest
+benannten Kennungen · **kein** Zeitbereich als Zielmenge · **genau eine** Löschanweisung, und
+zwar auf die Auftragskennung · die Outbox-Zeile verschwindet **nur** über die vorher geprüfte
+Kaskade · `SERIALIZABLE` · Sperre nur auf den beiden Zielzeilen · exakte Löschanzahl ·
+Nachprüfung in derselben Transaktion · **Trockenlauf als unveränderbarer Standard, der immer im
+Rollback endet** · scharfer Modus nur ausdrücklich benannt · zweiter scharfer Lauf wirkungslos.
+
+Neu bzw. geschärft:
+
+1. **Der Vertrag beschreibt den terminalen Zustand.** Geprüft werden zusätzlich erste
+   Beanspruchung, Abschlusszeitpunkt, Fehlerzustand, Outbox-Transport, Versand- und
+   Bestätigungszeitpunkt.
+2. **Der frühere Zustand wird ausdrücklich abgelehnt.** Ein Vertrag, der noch `wartend`/`offen`
+   beschreibt, erzeugt **kein SQL** mehr (fail closed), und eine Zeile, die wieder in diesem
+   Zustand stünde, stoppt den Ablauf.
+3. **Datensparsamkeit am Wert, nicht nur an der Spalte.** Jeder sensible Vertragswert darf im
+   erzeugten SQL **ausschließlich** als rechte Seite seines eigenen Spaltenvergleichs stehen —
+   nie in einer Quittung, nie in einer Abbruchmeldung, nie in einem Kommentar. Die
+   Spaltenzählung läuft jetzt auf dem **Code ohne Zeichenketten-Literale**, weil ein Wort
+   innerhalb eines Literals keine Spaltenreferenz ist.
+4. **Der Zeitbereichsriegel** erfasst zusätzlich `first_claimed_at`, `finished_at`, `sent_at`
+   und `confirmed_at`.
+
+### §31.8.5 Lokaler Datenbanknachweis
+
+`scripts/jobqueue-einzeilen-neutralisierung-datenbank-test.js` — **61 PASS / 0 FAIL** gegen
+echte PostgreSQL 16 mit echtem Migrationsstand, dem exakten Endzustand beider Zielzeilen und je
+einer fremden Auftrags- bzw. Outbox-Zeile.
+
+| Nachweis | Ergebnis |
+|---|---|
+| Trockenlauf besteht alle Riegel und ändert nichts | ja (Abbruch `TROCKENLAUF-OK`, Rollback) |
+| scharfer Lauf entfernt genau **eine** Auftragszeile | ja |
+| die exakt zugeordnete Outbox-Zeile geht über die Kaskade mit | ja |
+| fremde Zeilen bleiben unverändert (Signaturvergleich) | ja |
+| **der frühere Zustand `wartend`/`offen` wird abgelehnt** | ja (E7.1 bzw. E4.2, auch je einzeln) |
+| Abweichung bei Status · Versuchen · Beanspruchung · Abschluss | stoppt (E7.1 · E7.2 · E7.7 · E7.8) |
+| Abweichung bei Fehlerzustand · Nutzlast · Mandat · Idempotenzschlüssel | stoppt (E2.7 · E2.6 · E2.5 · E2.2) |
+| Abweichung bei Transport · Versand · Bestätigung · Outbox-Versuchen | stoppt (E4.5 · E4.6 · E4.7 · E4.3) |
+| Abweichung bei Zeitstempeln (Fälligkeit, Erstellzeit) | stoppt (E2.8 · E2.10) |
+| Abweichung am Fremdschlüsselvertrag (fehlende Kaskade, zweite Beziehung) | stoppt (E6 · E5) |
+| erneute aktive Lease | stoppt (E7.x) |
+| zweiter scharfer Lauf | ändert nichts (`BEREITS-NEUTRALISIERT`) |
+| kein sensibler Wert in irgendeiner Ausgabe | bestätigt |
+
+### §31.8.6 Was jetzt gilt
+
+- **Es wurde nichts gelöscht.** Kein Production-Trockenlauf, kein scharfer Lauf, keine
+  Production-Änderung. Einzige Berührung: die enge Leseprüfung aus §31.8.2.
+- **Freigabe A (Production-Trockenlauf) kann jetzt neu geprüft werden** — mit der zweiten
+  Vertragsfassung passt der Vertrag wieder exakt auf den belegten Zustand.
+- **Freigabe B (scharfer Lauf) bleibt eine getrennte, spätere Entscheidung** nach einem grünen
+  Trockenlauf.
+- **Der Zeitdruck hat sich verschoben, nicht erhöht:** der Schaden an `endgueltig_fehler` ist
+  **eingetreten** und wächst nicht weiter — der Auftrag ist terminal und wird von keinem Worker
+  mehr aufgenommen. Die Wartezeitkennzahl `aeltester_offener_s` treibt er **nicht mehr**, weil
+  sie nur `wartend`/`laeuft` zählt.
+- **Der Selbstweck bleibt davon unberührt und weiterhin deaktiviert.**
