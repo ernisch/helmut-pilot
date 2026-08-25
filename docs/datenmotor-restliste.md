@@ -1419,6 +1419,183 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 #### OP-30 · Mandatseigene Abrufwege vervielfachen den Quellenabruf linear (neu, Sprint „V3-Skalierungsprüfung" 2026-08-08; Prioritätsklasse P1)
 
+- **Stand 2026-08-24 (Haertungssprint Selbstweck, PR #269 — Sprint erfolgreich abgeschlossen; OP-30
+  insgesamt bleibt offen; kein Production-Kontakt ausser einer benannten Stoerung; Beleg
+  [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §27
+  und Runbook [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §31):**
+  Vier Wahrheitskorrekturen plus ein neuer Nachweis, alles lokal und kostenfrei.
+  **(1) Kein falsches Gruen mehr im Betriebsstatus:** `waehleAntrieb` meldete `ereignis`, sobald
+  Modus und Warteschlange stimmten — auch wenn der Transport gar nicht versenden konnte. Neu
+  trennt `job-dispatch.aktivierungsVorpruefung` angeforderten Modus, wirksamen Modus, Antrieb,
+  gewaehlten Transport, dessen Verfuegbarkeit, den Grund einer Nichtverfuegbarkeit und die
+  Bereitschaft; `/api/ops/jobqueue` gibt sie als Feld `ereignisbetrieb` aus (additiv, alle
+  Bestandsfelder unveraendert). Neun Zustaende einzeln testgesichert; die Ausgabe traegt weder
+  Secret noch Adresse noch Hostnamen. **(2) Der Aktivierungsvorlauf scheitert VOLLSTAENDIG geschlossen**
+  (nachgebessert in der Korrekturrunde 2026-08-24/2): im Queue-Modus entscheidet die
+  **vollstaendige** Vorpruefung VOR der ersten Outbox-Vergabe. Fehlen Klassengrenzen, Motor,
+  Weckziel, Production-Freigabe oder Queue-Adresse, passiert nichts — keine Vergabe, kein
+  Versuchszaehler, kein Backoff, kein HTTP, kein SQS, keine Bestaetigung, keine
+  Fehlverbuchung; die Bilanz nennt bereinigten Grund und Befunde. Vorher deckte der Riegel nur
+  den ANTRIEB ab: ohne `HELMUT_KLASSEN_GRENZEN` vergab der Dispatcher weiterhin eine Absicht
+  und klingelte, waehrend die Route mit 409 abwies. Schattenmodus unberuehrt, bereiter
+  Ereignisbetrieb unveraendert, Vorpruefung und Versand teilen **dieselbe**
+  Transportinstanz. **(3) Geschlossener Ende-zu-Ende-Nachweis des Selbstwecks:**
+  `scripts/selbstweck-ende-zu-ende-test.js` **31 PASS** — echte Route, echte Autorisierung,
+  echter Transport, echter Dispatcher, echter Workerbetrieb, echter Fachhandler; ersetzt sind
+  nur Datenbank, Netzgrenze und externer Abruf. Geprueft: Erfolg · falsches Geheimnis ·
+  ungueltiges Weckziel · fehlende Production-Freigabe · 429 bei belegtem Verbraucher ·
+  unbestaetigte Zustellung · doppelte Zustellung · Handlerfehler · Rueckkehr in den
+  Schattenmodus · Folgeweckung nur bei faelliger Arbeit. **Keine Unmoeglichkeitsbehauptung:**
+  benannt werden die drei atomaren Schranken; nachgewiesen ist, dass in keinem Fall
+  Doppelarbeit oder Verlust auftrat. **(4) Dokumentwahrheit:** AWS ist fuer den
+  Fuenfernachweis **nicht technisch notwendig** (empfohlen bleibt der Selbstweck) · fuer die
+  Umschaltung braucht es **fuenf** Werte, nicht drei · die Budgetsemantik ist berichtigt (die
+  Reserve ist ein Anteil des Deckels: 100/30 = hoechstens 100 gesamt und 70 fuer nicht
+  priorisierte Arbeit, nie 130; 250/50 = 250, nie 300) · „Selbstweck kostet null Dollar" ist
+  ersetzt durch „kein neuer Anbieter, keine neue feste Gebuehr, aber zusaetzliche
+  Vercel-Aufrufe/Rechenzeit/Speicher — Hoehe ungeprueft" · die AWS-Vorlage nutzt den alten
+  `service_role`-Schluessel (breites Rotationsrisiko, mit getrennten `sb_secret_…`-Schluesseln
+  vermeidbar) und legt zwei KMS-Schluessel an (2 USD/Monat, nach erster Rotation 4, nach
+  zweiter 6, plus Anfragen). **(5) 3 s gegen 60 s — empirisch UNGEPRUEFT:** belegt ist, dass die
+  Abbruch*unterstuetzung* auf Vercel ein **Opt-in** ist (`supportsCancellation`), das Helmut
+  nicht gesetzt hat (Waechtertest haelt den Stand fest). **Nicht** belegt ist, dass eine
+  Funktion ohne diese Einstellung nach einer Client-Trennung weiterlaeuft. Der Preview-Beleg
+  ist **blockiert**, solange die Datenisolierung der Vorschau nicht bewiesen ist (sieben
+  Vorbedingungen, Zielarchitektur §27.3.1) — eine Vorschau auf der Production-Supabase waere
+  ein Production-Eingriff mit Vorschau-Etikett. **(6) `bereit` heisst
+  Konfigurationsbereitschaft**, nicht erfolgreiche Zustellung: die Vorpruefung macht keinen
+  Netzaufruf und kann ueber Erreichbarkeit, wirksame Zugangsdaten oder einen echten Weckruf
+  nichts sagen (Feld `bereitBedeutung` traegt die Lesart mit).
+  **Stoerung dieses Sprints:** ein Handlauf der Bestandssuite `jobdispatch-vertrag-test.js`
+  ohne `scripts/lokal.js` hat in der Cloud-Sitzung **zwei Testzeilen in Production** erzeugt
+  (ein `source_fetch`-Auftrag `371707a4…` ohne `payload.quelle` + eine Outbox-Zeile
+  `24ba14ec…`); Ursache, Wirkung, Sofortmassnahme (die Suite entfernt die Kennungen jetzt
+  selbst) stehen in Runbook §31.6 — **es wurde NICHTS geloescht**; das dort urspruenglich
+  notierte nackte Loesch-SQL gilt ausdruecklich **nicht** als freigabefertig.
+  **Begriffskorrektur (2026-08-25):** die erste Empfehlung, den Auftrag „ueber einen
+  kanonischen Weg **aufzugeben**", war **falsch**. `helmut_jobs.status` kennt nur
+  `wartend|laeuft|erledigt|fehlgeschlagen`; `aufgegeben` ist ein Status der
+  **Outbox-Versandabsicht** (und daneben des Verstehensvertrags), nie des Auftrags — und
+  `lib/helmut/jobqueue-neutralisierung.js` „gibt" nichts „auf", sondern **loescht**. Die
+  fachlich ehrliche Masznahme heiszt deshalb: **bedingte Neutralisierung durch LOESCHEN der
+  nachweislich versehentlichen Testzeile und ihrer exakt zugeordneten Outbox-Zeile**
+  (Runbook §31.6.2). **Vorbereitung (2026-08-25, nichts ausgefuehrt):** der Generator traegt
+  jetzt neben den zwei Mengenvertraegen einen **dritten, getrennten Einzeilenvertrag**, der
+  **ausschlieszlich** die zwei exakten Kennungen trifft — keine zeitliche Zielmenge, keine
+  Mengenlogik. In **derselben** `SERIALIZABLE`-Transaktion werden 19 Auftrags- und 13
+  Outbox-Werte sowie der Datenbankvertrag geprueft (genau **eine** eingehende Beziehung auf
+  `helmut_jobs`, `ON DELETE CASCADE`, keine weitere abhaengige Zeile); jede Abweichung beendet
+  die ganze Transaktion ohne Aenderung. Gesperrt werden nur die beiden Zielzeilen, geloescht
+  wird genau ein Auftrag, die Loeschanzahl wird geprueft, die Nachpruefung laeuft in derselben
+  Transaktion, die Quittung enthaelt keine Secrets und keinen Payload. Der **Trockenlauf ist
+  unveraenderbarer Standard und endet immer im Rollback**, der scharfe Lauf muss ausdruecklich
+  benannt werden und ist beim zweiten Mal wirkungslos (Riegel E0). Nachweis:
+  `scripts/jobqueue-einzeilen-neutralisierung-datenbank-test.js` **43 PASS** gegen echte
+  PostgreSQL 16 — mit Fremdauftrag und Fremd-Outbox-Zeile, die unangetastet bleiben;
+  Bestandsvertraege unveraendert (55 + 58 PASS). **Noch wurde nichts geloescht und noch kein
+  Production-Trockenlauf ausgefuehrt**; einzige Production-Beruehrung war die erneute enge
+  Lesepruefung der zwei Kennungen (2026-08-24 22:31 UTC: unveraendert `wartend`,
+  `attempts = 0`, ohne Lease, alle Vertragswerte passend). **Trockenlauf und scharfer Lauf
+  brauchen je eine eigene Gruenderfreigabe** (Runbook §31.7).
+  **Zustand eingetreten (2026-08-25, zweite Korrekturrunde; Runbook §31.8):** um **07:01 Uhr
+  tuerkischer Zeit** (06:01 Berlin, 04:01 UTC) hat der **regulaere Betrieb** die Testzeile
+  aufgenommen — leere Nutzlast, endgueltige Ablehnung, fuenf Versuche in einem Slot. Der Auftrag
+  ist jetzt terminal `fehlgeschlagen` (5 von 5 Versuchen), die Outbox-Absicht `bestaetigt`
+  (Transport `schatten`). Damit sind zwei fruehere Aussagen FALSCH geworden und berichtigt:
+  „nie beansprucht" stimmt seit 07:01 Uhr tuerkischer Zeit nicht mehr, und **`endgueltig_fehler`
+  wird jetzt tatsaechlich um eins verfaelscht** — ein siebentaegiger Fuenfernachweis startete
+  heute mit einem bekannten Fehlbefund in genau der §28.6-Abnahmekennzahl. Die
+  Wartezeitkennzahl `aeltester_offener_s` treibt die Zeile dagegen NICHT mehr (sie zaehlt nur
+  `wartend`/`laeuft`), und ein Worker nimmt sie nicht mehr auf. **Der Vertrag auf Commit
+  `d4fa57d` haette einen Production-Trockenlauf geschlossen ABGEBROCHEN** (E7.1/E7.2/E7.7/E7.8,
+  E2.7, E4.2/E4.5-E4.7) — genau dafuer sind die Riegel gebaut; deshalb wurde **nichts
+  ausgefuehrt**, sondern der Vertrag berichtigt. **Zweite Vertragsfassung:** nur der getrennte
+  Einzeilenvertrag geaendert, die zwei Mengenvertraege sind **bytegleich unveraendert** (per
+  SHA-256 ueber den Abschnitt davor belegt); weiterhin ausschliesslich die zwei Kennungen, kein
+  Zeitbereich, genau eine Loeschanweisung, Kaskade nur nach Pruefung, Trockenlauf als
+  unveraenderbarer Standard. Neu: der **fruehere** Zustand `wartend`/`offen` wird ausdruecklich
+  abgelehnt (fail closed), die Datensparsamkeit gilt jetzt **am Wert** (jeder sensible
+  Vertragswert nur als rechte Seite seines eigenen Spaltenvergleichs, Zaehlung auf dem Code ohne
+  Zeichenketten-Literale), und der Zeitbereichsriegel erfasst auch `first_claimed_at`,
+  `finished_at`, `sent_at`, `confirmed_at`. Nachweis: **61 PASS / 0 FAIL** gegen echte
+  PostgreSQL 16; Bestandsvertraege weiterhin 55 + 58 PASS. **Noch wurde nichts geloescht und
+  kein Production-Trockenlauf ausgefuehrt**; einzige Beruehrung war die enge Lesepruefung am
+  2026-08-25 um **07:48:39 Uhr tuerkischer Zeit** (06:48:39 Berlin, 04:48:39 UTC), die jeden
+  Vertragswert bestaetigt hat. **Freigabe A ist damit neu pruefbar**, Freigabe B bleibt eine
+  getrennte spaetere Entscheidung.
+  **ABSCHLUSS (2026-08-25; Beleg Runbook §31.10):** die Stoerung ist **erledigt**.
+  **(1) Unfallursache:** ein Handlauf der Bestandssuite `jobdispatch-vertrag-test.js` OHNE
+  `scripts/lokal.js` in einer Cloud-Sitzung mit Production-Kennungen in der Umgebung; der
+  §9-Pruefpunkt ruft bewusst den echten Einreihungspfad und schrieb dadurch je EINE Zeile in
+  `helmut_jobs` und `helmut_job_outbox`. Dauerhafte Gegenmassnahmen: die Suite entfernt die
+  Kennungen jetzt selbst, und CLAUDE.md §6 verlangt, dass JEDER Testlauf — auch ein einzelner —
+  ueber `scripts/lokal.js` geht. **(2) Drei Vertragsfassungen:** noetig, weil der REGULAERE
+  Betrieb den Zustand zweimal weiterbewegte — `wartend/offen` (24.08.) →
+  `fehlgeschlagen/bestaetigt` (25.08. 07:01 Uhr tuerkischer Zeit, Aufnahme durch den Worker) →
+  `fehlgeschlagen/verzichtet` (25.08. 08:56:14 Uhr tuerkischer Zeit, kanonischer
+  Outbox-Abgleich). Jede Fassung wurde erst nach rein lesender Pruefung nachgezogen; die Riegel
+  haben jeweils GENAU DAS getan, wofuer sie gebaut sind, und einen Lauf gegen einen veralteten
+  Vertrag verhindert. **(3) Frischer Trockenlauf** nach ausdruecklicher Freigabe A am
+  2026-08-25 um **09:52:02 Uhr tuerkischer Zeit** (08:52:02 Berlin, 06:52:02 UTC):
+  `TROCKENLAUF-OK`, alle Riegel bestanden, Transaktion vollstaendig zurueckgerollt
+  (SQL-SHA-256 `3d3acbbf…`). **(4) Getrennte Freigabe B** als eigene Gruenderentscheidung, in
+  Kenntnis der Endgueltigkeit (kein bytegleicher Rueckweg; die Zeilen trugen keine echte
+  Arbeit). **(5) Einmalige exakte Loeschung** gegen **10:02 Uhr tuerkischer Zeit** (09:02
+  Berlin, 07:02 UTC), SQL-SHA-256 `4ba3a936…`: genau EINE Auftragszeile, genau EINE zugehoerige
+  Outbox-Zeile ueber `helmut_job_outbox_job_id_fkey` (nur ueber die vorher gepruefte Kaskade —
+  es gibt keine Loeschanweisung auf die Outbox-Tabelle); Bestand 1124 → 1123 bzw. 889 → 888.
+  Textvergleich gegen den Trockenlauf: nur die sechs zulaessigen Unterschiede, alle Riegel
+  E0–E10b bytegleich. **(6) Vollstaendige Nachpruefung** um **10:03:23 Uhr tuerkischer Zeit**
+  (09:03:23 Berlin, 07:03:23 UTC): Auftrag, Outbox und Verweise je 0, keine verwaiste
+  Outbox-Zeile, keine offene Transaktion, keine Sperre, keine vorbereitete Transaktion, keine
+  zurueckgelassene Temp-Tabelle; unabhaengige Gegenpruefung um **10:05:40 Uhr tuerkischer Zeit**
+  bestaetigt 1123 Auftraege / 888 Outbox-Zeilen. **(7) `endgueltig_fehler = 0`** — der aktuelle
+  Datenbankfehler ist bereinigt. **(8) Keine fremde Zeile veraendert:** die einzige
+  Loeschanweisung trifft ausschliesslich die Auftragskennung (keine Zeitgrenze, keine
+  Mengenlogik), und E10/E10b haetten bei jeder anderen Bestandsdifferenz abgebrochen.
+  **(9) Historische Warnung erhalten:** der fruehere rote Cron-Beleg bleibt als
+  Stoerungsbeleg unveraendert stehen, es wurde KEIN manueller Gesundheitslauf ausgeloest, und
+  ein spaeterer regulaerer gruener Lauf ist NOCH NICHT beobachtet und wird nicht behauptet.
+  Ehrlich vermerkt: die temporaere Quittungszeile war nach dem Commit wegen `on commit drop`
+  nicht mehr abrufbar — ihre Werte folgen aus dem erfolgreichen Commit und den zwingenden
+  Riegeln E8–E10b; ein zweiter Lauf wurde ausdruecklich NICHT durchgefuehrt. Der
+  Einzeilenvertrag bleibt unveraendert als geprueftes Werkzeug im Repository; seine Zielzeilen
+  existieren nicht mehr, ein erneuter Lauf muesste am Riegel E0 mit
+  `ABBRUCH-BEREITS-NEUTRALISIERT` enden (nicht ausgefuehrt). **(10) Weiterhin offen und
+  ausdruecklich getrennt davon:** der **Selbstweck bleibt deaktiviert** und war in Production
+  nie ausgefuehrt — er ist NICHT aktivierungsbereit; der **siebentaegige Fuenfernachweis wurde
+  nicht gestartet**. Beides bleibt eine eigene Gruenderentscheidung.
+  **Trockenlauf und kanonischer Abgleich (2026-08-25, dritte Korrekturrunde; Runbook §31.9):**
+  Freigabe A wurde erteilt und der Production-Trockenlauf um **08:55:30 Uhr tuerkischer Zeit**
+  (07:55:30 Berlin, 05:55:30 UTC) **genau einmal** ausgefuehrt — Ergebnis die kontrollierte
+  Meldung `TROCKENLAUF-OK`: alle Riegel bestanden, eine Auftrags- und eine Outbox-Zeile WAEREN
+  entfernt worden, Transaktion **vollstaendig zurueckgerollt**. Doppelt belegt: die Quittung
+  nennt als Vorher-Stand 1116 Auftraege / 881 Outbox-Zeilen, die Nachpruefung um 08:56:06 Uhr
+  tuerkischer Zeit las **dieselben** 1116 / 881; dazu 0 offene Transaktionen, 0 Sperren auf den
+  Zieltabellen, 0 zurueckgelassene Temp-Tabellen. **Es wurde nichts geloescht und nichts
+  dauerhaft gespeichert.** **Acht Sekunden nach der Nachpruefung**, um **08:56:14 Uhr
+  tuerkischer Zeit** (07:56:14 Berlin, 05:56:14 UTC), setzte der **regulaere** Outbox-Abgleich
+  die Absicht auf `verzichtet` (`updated_at` 05:56:14.770379Z). **Ursache belegt** aus der rein
+  lesend gelesenen Production-Definition von `helmut_outbox_abgleich` (NICHT aufgerufen): sie
+  schliesst Absichten TERMINALER Auftraege — `j.status in ('erledigt','fehlgeschlagen')` und
+  `o.status in ('offen','versendet','aufgegeben','bestaetigt')`. Das ist der kanonische Abgleich
+  und **keine Wirkung des Trockenlaufs**, der zu diesem Zeitpunkt laengst zurueckgerollt war.
+  **Folge:** ein Trockenlauf belegt nur den Zustand, gegen den er lief — der Beleg vom 08:55:30
+  ist damit **verbraucht** und kann Freigabe B **nicht** mehr tragen. **Dritte Vertragsfassung:**
+  Outbox-Status auf `verzichtet`; `updated_at` als neuer Riegel E4.12 aufgenommen, weil der
+  Codebeleg zeigt, dass eine bereits verzichtete Zeile NICHT erneut veraendert wird (der Sweep
+  fuehrt `verzichtet` nicht in seiner Statusliste, die Wiedereroeffnung verlangt
+  `j.status = 'wartend'`, `helmut_outbox_vergeben` waehlt nur `offen`/`versendet`,
+  `helmut_outbox_quittieren` nur `versendet`, `helmut_outbox_zuruecklegen` und
+  `helmut_outbox_erneut_vorlegen` brechen ab) und weil der Trigger
+  `helmut_job_outbox_kappen_trg` `updated_at` bei JEDEM Update setzt — der Riegel ist damit ein
+  allgemeiner Aenderungsmelder. Jeder fruehere Zustand (`wartend`, `offen`, `bestaetigt`) wird
+  geschlossen abgelehnt. Auftrag und alle uebrigen Vertragswerte unveraendert; die zwei
+  Mengenvertraege weiterhin **bytegleich** (SHA-256 `e8a55ee3…`). Nachweis: **65 PASS / 0 FAIL**
+  gegen echte PostgreSQL 16. **Freigabe A ist erneut zu pruefen; Freigabe B bleibt getrennt und
+  setzt einen frischen gruenen Trockenlauf voraus.** **Offen:** der Selbstweck war noch nie
+  in Production ausgefuehrt; ohne Preview-/Production-Beleg und ohne 7-Tage-Fenster bleibt der
+  Ereignis-Antrieb **nicht aktivierungsbereit**.
 - **Stand 2026-08-14/2 (Haertungssprint, PR #247; Beleg
   [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §18–§23):**
   Alle sechs Gegenpruefungspunkte **bestaetigt** (keiner widerlegt) und behoben bzw. ehrlich
@@ -1445,7 +1622,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   jetzt auch `bestaetigt` bei terminalen Auftraegen; ein begrenzter Aufbewahrungsvertrag
   (`helmut_outbox_aufraeumen`, Default Trockenlauf, kein automatischer Aufrufer) existiert.
   KI-Bedarf getrennt ausgewiesen als **Spanne** (5 Mandate 69–209, 500 Mandate 344–1.040
-  gegen Deckel 130). Neue Suiten: SQS/Lambda-Vertrag 44 · Ende-zu-Ende 37 ·
+  gegen den Gesamtdeckel 100, davon 30 fuer das Verstehen reserviert — die frueher hier stehende Zahl „130" war eine falsche Addition). Neue Suiten: SQS/Lambda-Vertrag 44 · Ende-zu-Ende 37 ·
   Anbietersteuerung-DB 36 · Infrastrukturdefinition 32 · Kapazitaetsmodell 31 ·
   Mutationsprobe 7/7 erkannt. Production erneut unangetastet.
 - **Stand 2026-08-14 (Sicherheitskorrektur auf PR #247, Belegdatei
@@ -1659,7 +1836,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   stilles Wiederholen) · Kapazitaetsmodell **37 PASS** (neu gerechnet 5/25/100/200/500, zweite
   pessimistische Auslastungsannahme; **lokal nachgewiesene sichere Verstehensparallelitaet 8**).
   **Ausdruecklich:** Helmut ist dadurch NICHT fuer 25–500 Mandate freigegeben; bindend bleibt
-  der KI-Tagesdeckel (ab 25 Mandaten reicht 100+30 auch im guenstigen Fall nicht) und OP-15.
+  der KI-Tagesdeckel (ab 25 Mandaten reicht der Gesamtdeckel 100 — davon 30 reserviert — auch im guenstigen Fall nicht; Semantik: [`betrieb/llm-budget-reservierung.md`](betrieb/llm-budget-reservierung.md)) und OP-15.
   **Offen:** Review/Merge des PR; danach als getrennte Betreiberentscheidung Migration
   anwenden und `HELMUT_VERSTEHEN_CAS` im Schattenbetrieb beobachten.
 - **Stand 2026-08-13/3 (Architektursprint Zielarchitektur — Sprint ERFOLGREICH abgeschlossen, beide Pflichtpruefungen gruen; OP-30 insgesamt bleibt offen; Beleg
@@ -1682,7 +1859,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Outbox-Mutationsprobe 6/6 erkannt · **lokaler Architektur- und Lastnachweis 5/25/100/200/500
   an echter PostgreSQL** (kein Verlust, keine Doppelarbeit, Grenzen halten; 500er-Reserve
   rechnerisch x3,7 — ausdruecklich KEIN Production-Beweis; KI-Bedarf ~1.040/Tag bei 500 ≫
-  Deckel 100+30 = gesonderte Gruenderentscheidung). Die 524 inerten Auftraege wurden rein
+  Gesamtdeckel 100 = gesonderte Gruenderentscheidung). Die 524 inerten Auftraege wurden rein
   lesend analysiert (1.556 referenzierte Dokumente, 0 bereits verstanden — echte offene
   KI-Arbeit; Neutralisierungsmuster §17.8 bleibt geeignet; kein Auftrag veraendert).
   **Offen:** Betreiberfreigaben nach Stufenplan (Zielarchitektur §14); Versuch 3 beginnt

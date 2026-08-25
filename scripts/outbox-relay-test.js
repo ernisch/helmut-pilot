@@ -40,6 +40,12 @@ const ENV_EREIGNIS = {
   HELMUT_SCALABLE_PIPELINE: "on",
   HELMUT_JOB_DISPATCH_MODE: "queue",
   HELMUT_JOB_TRANSPORT: "sqs",
+  // Seit dem geschlossenen Aktivierungsvorlauf (2026-08-24) entscheidet im Queue-Modus die
+  // VOLLSTAENDIGE Vorpruefung, bevor die erste Absicht vergeben wird. Ohne Klassengrenzen
+  // waere der Ereignisbetrieb NICHT aktivierungsbereit — die Route wiese jedes Signal mit
+  // 409 'klassengrenzen-aus' ab. Diese Suite prueft den BEREITEN Ereignisbetrieb, also
+  // gehoert der Wert in die Umgebung.
+  HELMUT_KLASSEN_GRENZEN: "on",
   AWS_REGION: "eu-central-1",
   HELMUT_SQS_QUEUE_URL: "https://sqs.eu-central-1.amazonaws.com/123456789012/helmut-test"
 };

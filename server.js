@@ -1261,6 +1261,22 @@ async function handleRequest(request, response) {
         // bedeutet nur "niemand arbeitet", nicht "alles in Ordnung".
         pfadAktiv: scalablePipeline.skalierbarerPfadAktiv(),
         antrieb: jobDispatch.waehleAntrieb(),
+        // WAHRER BETRIEBSSTATUS (Haertungssprint Selbstweck 2026-08-24): `antrieb` sagt, was
+        // KONFIGURIERT ist. `ereignisbetrieb` sagt, ob der Ereignis-Antrieb wirksam ist UND
+        // seine Transportkonfiguration vollstaendig und widerspruchsfrei ist (plus
+        // Klassengrenzen). Vorher meldete der Status `antrieb: ereignis` auch dann, wenn gar
+        // nichts versendet werden konnte — fehlendes/ungueltiges Weckziel, fehlender
+        // Vertrauensanker, in Production gesperrter Selbstweck, fehlende SQS-Adresse. Das sah
+        // aus wie laufender Ereignisbetrieb und war keiner (CLAUDE.md §4.4).
+        //
+        // GRENZE DER AUSSAGE (Korrekturrunde 2026-08-24/2): `ereignisbetrieb.bereit` ist eine
+        // KONFIGURATIONSAUSSAGE. Diese Route macht keinen Weckruf und keinen Netzaufruf; sie
+        // kann deshalb nicht sagen, ob das Ziel erreichbar ist, ob das Secret beim Empfaenger
+        // wirkt oder ob je ein Wecksignal ankam. Das Feld `bereitBedeutung` traegt diese
+        // Lesart in der Antwort mit. Rein lesend; ausgegeben werden ausschliesslich Modus-,
+        // Antriebs- und Transportnamen sowie bereinigte Gruende — keine Secrets, keine
+        // Adressen, keine Umgebungswerte.
+        ereignisbetrieb: jobDispatch.aktivierungsVorpruefung(),
         ...status,
         worker: bereitschaft,
         wiedervorlage,

@@ -616,9 +616,16 @@ Warteschlange — es gibt keine zweite Fachimplementierung. Cron bleibt Planer, 
 Rückfallweg, ist aber für den normalen Abfluss **nicht mehr erforderlich** — der
 vollständige Abfluss ist ohne Vercel-Cron und ohne manuelle Testpumpe belegt
 (`scripts/queue-ende-zu-ende-test.js` §11). Der Selbstweck ist auf einen ausdrücklich
-freizuschaltenden Entwicklungs- und Notfallweg zurückgestuft. Details und Grenzen:
+freizuschaltenden Entwicklungs- und Notfallweg zurückgestuft — **für den siebentägigen
+Nachweis mit den fünf bestehenden Mandaten ist er allerdings ausreichend und empfohlen; AWS
+ist dafür nicht technisch notwendig** (Ergänzung 2026-08-24). Seit demselben Datum meldet
+`/api/ops/jobqueue` im Feld `ereignisbetrieb`, ob der Ereignis-Antrieb **konfigurationsbereit**
+ist (Transportkonfiguration vollständig, Klassengrenzen an) — `antrieb: "ereignis"` allein ist
+kein Bereitschaftsbeleg, und `bereit: true` ist **kein Zustellnachweis**: die Prüfung macht
+keinen Netzaufruf. Derselbe Vorlauf riegelt seit 2026-08-24/2 auch den Versandpfad ab: nicht
+bereit ⇒ keine Outbox-Vergabe, kein Versuch, kein Weckruf. Details und Grenzen:
 [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md)
-§18–§26.
+§18–§27.
 
 ## 8 · Briefing, Lage, Radar, Büro
 

@@ -1,9 +1,9 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-24 — verdichtet im Sprint „Vorbereitung 25 Mandate".** Vollständige
+**Stand: 2026-08-24 — zuletzt aktualisiert im Härtungssprint Selbstweck (§14).** Vollständige
 Fassung vor dieser Verdichtung: byte-identisch in [`archive/project_state/2026_08_24_CURRENT_STATE_full.md`](archive/project_state/2026_08_24_CURRENT_STATE_full.md). Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Ablageregeln: [`archive/README.md`](archive/README.md), `CLAUDE.md` §9.
 
-**Kernlage in sechs Sätzen:** Der neue Warteschlangenmotor (`HELMUT_SCALABLE_PIPELINE=on`) ist **seit dem 23.08.2026 in Production eingeschaltet** (Vollbeleg Runbook §30.7). Die **fünf bestehenden Mandate sind mit 376 echten Abschlüssen bewiesen**; **Morgenlauf 5/5 und Lagelauf effektiv 5/5** aller aktiven Mandate waren erfolgreich. Der **R4-/GitHub-Actions-Watchdog-Nachweis ist grün**. Es gab **keine Doppelarbeit, keine verlorenen Aufträge, keine endgültigen Fehler, 0 `unbekannt`, 0 Lease-Probleme und 0 Fencing-Konflikte**; alle elf §28.6-Kontrollen sind erfüllt ([`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §30.7). Der Modus ist weiterhin **`HELMUT_JOB_DISPATCH_MODE=shadow`** (Cron-Antrieb; kein Ereignis-Antrieb, kein AWS).
+**Kernlage in sechs Sätzen:** Der neue Warteschlangenmotor (`HELMUT_SCALABLE_PIPELINE=on`) ist **seit dem 23.08.2026 in Production eingeschaltet** (Vollbeleg Runbook §30.7). Die **fünf bestehenden Mandate sind mit 376 echten Abschlüssen bewiesen**; **Morgenlauf 5/5 und Lagelauf effektiv 5/5** aller aktiven Mandate waren erfolgreich. Der **R4-/GitHub-Actions-Watchdog-Nachweis ist grün**. Es gab **keine Doppelarbeit, keine verlorenen Aufträge, keine endgültigen Fehler, 0 `unbekannt`, 0 Lease-Probleme und 0 Fencing-Konflikte**; alle elf §28.6-Kontrollen sind erfüllt ([`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §30.7). Der Modus ist weiterhin **`HELMUT_JOB_DISPATCH_MODE=shadow`** (Cron-Antrieb; kein Ereignis-Antrieb, kein AWS). **Der Selbstweck ist seit 24.08. lokal Ende-zu-Ende belegt, aber in Production nie ausgeführt** (§14).
 
 ## 1 · Aktive Produktphase
 
@@ -11,8 +11,8 @@ Fassung vor dieser Verdichtung: byte-identisch in [`archive/project_state/2026_0
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **`main` = `bf7aee29` = Merge von PR #266** (Gesundheitsbot auf Motor-Quittungen, 24.08.). **PR #266 ist gemergt**, der Merge-Commit lautet `bf7aee29181cb80a4d7eb33d20858614212b6c80`; der Production-Einsatz wurde **getrennt belegt** (frühere Angabe „offen" überholt).
-- **Zu Beginn des Sprints „Vorbereitung 25 Mandate" (24.08.) waren null Pull Requests offen.**
+- **`main` = `572f5663` = Merge von PR #267** („Vorbereitung 25 Mandate", 24.08.; voller Commit `572f5663605152c3e6e4f5314f890c1c632bc63b`). **PR #267 ist gemergt** — die frühere Angabe „`main` = `bf7aee29` = PR #266" ist damit **überholt**; PR #266 steckt in dieser Historie.
+- **Zu Beginn des Härtungssprints Selbstweck (24.08.) war kein Pull Request offen.** Offen ist jetzt genau einer: **PR #269** (§14).
 - Davor gemergt: #265, #262, #261, #260/#259/#256/#257, #225, #216; die PR-Bereinigung vom 23.08. (inkl. begründeter Schließungen) ist in Archivfassung und Runbook dokumentiert.
 - Merge nach `main` löst automatisch ein Production-Deployment aus.
 
@@ -36,7 +36,7 @@ Fassung vor dieser Verdichtung: byte-identisch in [`archive/project_state/2026_0
 | `HELMUT_MATCHING_AUDIT=on` | seit 2026-07-28 |
 | `HELMUT_PROCESS_RUNS_RELATIONAL=on` | seit 2026-07-27 |
 | `HELMUT_ATOMIC_LOCK` | an — atomare, fail-closed Sperren |
-| LLM-Tagesbudget 100 + Reserve 30 | fail-closed, live; **reicht ab 25 Mandaten nicht** (§7) |
+| LLM-Tagesbudget: **Gesamtdeckel 100**, davon 30 für Verstehen reserviert (nicht priorisiert: max. 70) | fail-closed, live; **reicht ab 25 Mandaten nicht** (§7) |
 | `HELMUT_VERSTEHEN_CAS=on` | seit 2026-08-17; `HELMUT_VERSTEHEN_PARALLELITAET` nicht gesetzt ⇒ wirkt als 1 |
 | `HELMUT_SCALABLE_PIPELINE=on` | **seit 23.08. 16:47 UTC**, `HELMUT_JOB_DISPATCH_MODE=shadow`, Worker 4/25/25; Versuch 5 abgeschlossen, kein Rückbau nötig; Rückweg: Flag löschen + Redeploy (Betreiber) |
 | `HELMUT_CRON_GLOBALABRUF=on` | seit 2026-08-06 (Betreiber); Fortbestand ist Betreiberentscheidung |
@@ -61,12 +61,12 @@ Fassung vor dieser Verdichtung: byte-identisch in [`archive/project_state/2026_0
 
 **Die 25 Mandate sind nicht aktiviert.** Die 20 zusätzlichen Profile existieren als **lokales, vollständig deaktiviertes Importpaket** (`aktiv: false`, kein Import in Production; §14). Voraussetzungen bleiben ausdrücklich:
 
-1. **Siebentägiger Nachweis des echten Warteschlangenbetriebs mit fünf Mandaten** — nicht begonnen ([`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) §10).
+1. **Siebentägiger Nachweis des echten Warteschlangenbetriebs mit fünf Mandaten** — nicht begonnen. Verbindliche Quelle ist [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §14 **Stufe 2** (Abfluss ≥ Ankunft über 7 Tage, 0 Verlust/Doppelarbeit, Wartezeit < 24 h). Die frühere Angabe „`op30-kapazitaet-morgenslots-2026-08-09.md` §10" war **falsch**: dort steht der ältere **Slot-Stufenplan** (Morgenslots, 5→200 Mandate), nicht der Ereignis-Antrieb. Für die Umschaltung sind **fünf** Umgebungswerte nötig, nicht drei ([`betrieb/env-inventar.md`](betrieb/env-inventar.md) §7a).
 2. **Regionale Quellen Berlin/Brandenburg**: beide Landesmodule inaktiv, Wege gesperrt, Seeds nicht eingespielt; Wirkung von `HELMUT_LANDESMODULE` unbewiesen (§5).
-3. **KI-Tagesdeckel**: 100+30 reicht ab 25 Mandaten auch im günstigen Fall nicht (Restliste OP-30-Vermerk; Rechengrundlage `scripts/skalierungsmodell.js`).
+3. **KI-Tagesdeckel**: der **Gesamtdeckel 100** (davon 30 für das Verstehen reserviert ⇒ höchstens 70 für alles andere — **nicht** 130) reicht ab 25 Mandaten auch im günstigen Fall nicht (Restliste OP-30-Vermerk; Semantik [`betrieb/llm-budget-reservierung.md`](betrieb/llm-budget-reservierung.md); Rechengrundlage `scripts/skalierungsmodell.js`).
 4. **Tägliche Lagekapazität**: der Altpfad schaffte 2 Mandate je Tageslauf; der Motor liefert seit 23.08. effektiv 5/5, für 25 ist der Nachweis offen (Stufenplan Stufe 2 inkl. OP-25-Wiederholung).
 5. **20 zusätzliche Profile**: gegen die amtlichen Live-Seiten abgeglichen und **amtlich bestätigt** (rein lesende Actions-Läufe 24.08.; Lauf 4 bestätigte alle 20 unter Strenge-Stufe 2, nicht amtlich Belegbares wurde entfernt statt behauptet — **maßgeblich ist der jeweils letzte Verifikationslauf am PR**, Protokoll: `daten/…-pruefstand.md`); Import/Aktivierung bleiben freigabepflichtig. **Berliner Wahl 20.09.2026** (berlin.de/wahlen): die zehn Berliner Profile gelten nur für die 19. WP — nach der Wahl erneute Prüfung, keine ungeprüfte Aktivierung; Terminrisiko für den 25er-Nachweis.
-6. **Echter Warteschlangenbetrieb (Ereignis-Antrieb)** braucht AWS-Ressourcen, die es nicht gibt (SQS/DLQ/KMS/IAM/Lambda; kostenpflichtige Gründerentscheidung, Runbook §21/§22).
+6. **Echter Warteschlangenbetrieb (Ereignis-Antrieb):** **AWS ist dafür nicht technisch notwendig** (Korrektur 24.08.). Für den Fünfernachweis trägt der vorhandene **Selbstweck** — gebaut, verriegelt, lokal Ende-zu-Ende belegt, **in Production nie ausgeführt**; Freischaltung ist eine Betreiberentscheidung (Runbook §31). AWS (SQS/DLQ/KMS/IAM/Lambda) bleibt der kanonische Transport für **große** Mandatszahlen und eine getrennte, kostenpflichtige Gründerentscheidung — die frühere Aussage „Voraussetzung des Fünfernachweises" ist überholt.
 
 Entscheidungsgrundlage in einfacher Sprache: [`betrieb/entscheidungsvorlage-skalierung-2026-08-24.md`](betrieb/entscheidungsvorlage-skalierung-2026-08-24.md).
 
@@ -80,7 +80,8 @@ Entscheidungsgrundlage in einfacher Sprache: [`betrieb/entscheidungsvorlage-skal
 6. **OP-11:** Branch Protection nicht aktiv; Pflicht-CI blockiert Merges nicht technisch.
 7. **OP-15:** Google-Klumpenrisiko (146/163 Wege); 29 von 42 Personensuchen lieferten im Betriebszeitraum nie (`circuit-open`) — Versorgungsausfall-Risiko, Production-Beweis der Härtung steht aus.
 8. **Lage-/KI-Kapazität für Skalierung:** siehe §6 (Deckel, 7-Tage-Nachweis, Stufenplan).
-9. **OP-07:** Monitoring-Zweitkanal stellt seit mind. 17.08. täglich zu; Ziel von `HELMUT_MONITORING_WEBHOOK_URL` und der doppelte WhatsApp-Eingang bleiben ungeklärt (Betreiberprüfung, kein Code-Fix vorher).
+9. **Zwei Testzeilen in Production — ERLEDIGT (25.08.).** Auftrag `371707a4…` und Outbox-Zeile `24ba14ec…` sind **entfernt**; die Neutralisierung lief gegen **10:02 Uhr türkischer Zeit** (09:02 Berlin, 07:02 UTC) genau einmal, nach getrennt erteilter Freigabe A (Trockenlauf) und Freigabe B (scharfer Lauf). **`endgueltig_fehler = 0`** — der aktuelle Datenbankfehler ist bereinigt, keine verwaiste Outbox-Zeile, keine fremde Zeile verändert. Der **historische rote Cron-Beleg bleibt erhalten**; ein späterer regulärer grüner Lauf ist **noch nicht beobachtet** und wird nicht behauptet. Belege: Runbook §31.10.
+10. **OP-07:** Monitoring-Zweitkanal stellt seit mind. 17.08. täglich zu; Ziel von `HELMUT_MONITORING_WEBHOOK_URL` und der doppelte WhatsApp-Eingang bleiben ungeklärt (Betreiberprüfung, kein Code-Fix vorher).
 
 K2/K3 und OP-25 sind abgeschlossen (OP-25 laut Betreiberfeststellung vom 24.08.). Nach einer weiteren OP-30-Stufenaktivierung muss OP-25 vollständig wiederholt werden.
 
@@ -111,6 +112,7 @@ K2/K3 und OP-25 sind abgeschlossen (OP-25 laut Betreiberfeststellung vom 24.08.)
 - **29B** — wartet auf natürlich auftretende Fehlerzustände (künstliche Fehler verboten).
 - **OP-09/OP-10** (Lock-Deny/Fehlerpfad) — brauchen ein echtes Störereignis.
 - **Berlin:** ob `HELMUT_LANDESMODULE` in Production wirkt, ist unbewiesen.
+- **Selbstweck (neu, 24.08.):** **bleibt deaktiviert** und wurde in Production **nie ausgeführt**. Offen: (a) Preview-Beleg zum 3-s-Abbruch — **blockiert**, solange die Datenisolierung der Vorschau nicht belegt ist (Zielarchitektur §27.3.1), (b) das 7-Tage-Fenster, (c) Messung der zusätzlichen Vercel-Kosten. Bis dahin ist der Ereignis-Antrieb **nicht aktivierungsbereit** (Runbook §31.5).
 
 ## 10 · Gescheiterte Ansätze — nicht wiederholen
 
@@ -127,7 +129,7 @@ Vollständige Begründungen: Archiv (§5 der Altfassung 2026-08-05).
 ## 11 · Nächster empfohlener Schritt
 
 1. **Gründerentscheidung zur Skalierung** (Entscheidungsvorlage, §6): KI-Deckel, AWS-Frage, Reihenfolge 10 → 25.
-2. **Siebentägigen Nachweis des echten Warteschlangenbetriebs** mit 5 Mandaten führen (Quittungen `warteschlange-*`, Briefings 5/5; bei Verletzung einer §28.6-Grenze gilt der dokumentierte Rückweg).
+2. **Selbstweck-Vorlauf entscheiden:** die fünf Werte setzen (Betreiberaktion), Vorprüfung `/api/ops/jobqueue` → `ereignisbetrieb.bereit === true`, danach den **siebentägigen Nachweis** mit 5 Mandaten führen (Quittungen `warteschlange-*`, Briefings 5/5; bei Verletzung einer §28.6-Grenze gilt der dokumentierte Rückweg). Empfohlen davor: der kleinste Preview-Versuch zum 3-s-Abbruch (Zielarchitektur §27.3).
 3. **Rückkehr zu den P0-Verkaufsblockern OP-01…OP-04.**
 4. **Betreiberprüfung Doppelkanal** (OP-07, §7 Punkt 9) vor jedem Kanalschritt.
 
@@ -162,13 +164,22 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 | Production-Beweise | [`betrieb/production_beweisprotokoll.md`](betrieb/production_beweisprotokoll.md) |
 | Vollstände vor den Verdichtungen (24.08./17.08./05.08.) | [`archive/project_state/`](archive/project_state/) (Index: [`archive/README.md`](archive/README.md)) |
 
-## 14 · Letzter Sprint (24.08. — Vorbereitung 25 Mandate, kein Production-Kontakt)
+## 14 · Letzter Sprint (24./25.08. — Härtungssprint Selbstweck)
 
-**Sprintzustand: teilweise abgeschlossen** — Arbeit fertig und testgesichert (sprint-eigene Offline-Suiten grün; maßgeblich sind die GitHub-CI und der jeweils letzte Verifikationslauf am PR); Review-/Merge-Entscheidung liegt beim Betreiber. Branch `claude/helmut-25-mandate-prep-hz4zjg`, **PR #267** (nicht selbst gemergt — Merge = Production-Deployment und Betreiberentscheidung; Laufnummern und Testzahlen stehen in der PR-Beschreibung).
+**Sprintzustand: erfolgreich abgeschlossen** (Abnahme = lokale Härtung + Wahrheitskorrektur + abgeschlossene Neutralisierung; die *Aktivierung* war ausdrücklich nicht Sprintziel). Branch `claude/helmut-selbstweck-hardening-t7lsbx`, **PR #269** (offen, **nicht selbst gemergt** — Merge = Production-Deployment und Betreiberentscheidung). Ausgangscommit `572f5663`.
 
-- `CURRENT_STATE.md` byte-identisch archiviert und verdichtet; PR-266-Stand korrigiert (gemergt, `bf7aee29`).
-- **Lokales Importpaket** für 20 Profile (10 BE, 10 BB) nach Importvertrag — ausnahmslos `aktiv: false`: `daten/mandatsprofile-berlin-brandenburg-2026-08-24.json`, testgesichert (`scripts/profilpaket-berlin-brandenburg-test.js`).
-- **Bytegenaue Prüfung (gründerfreigegeben):** rein lesender Actions-Weg `profil-quellen-verifikation.yml` (Muster Sprint 9B; `contents: read`, keine Secrets; **ausschließlich die 20 amtlichen Paket-URLs, keine Zusatzquellen**, max. 30 Seiten/Lauf). Die Läufe vom 24.08. deckten erhebliche Korrekturen auf (u. a. Lüttmann Listenmandat statt Wahlkreis 9; Bretz Hauptausschuss ordentlich; Peschel-Umbesetzung); danach **Strenge-Stufe 2** (Rollen-/Abschnittsprüfung, Funktions-/Listenplatz-Beleg, fehlende Information ≠ Bestätigung, navigationsfeste Fraktions-/Funktionsbelege) und Paket entsprechend reduziert. Lauf 3 war für die 10 Berliner Profile allein durch einen inzwischen behobenen Auswertungsfehler rot (drei Strukturüberschriften; Saleh/Stroedter-Achse ist seitenbelegt: „gewählt über: Bezirksliste“); **Lauf 4 (24.08.) bestätigte alle 20 Profile amtlich** (Berlin 10/10, Brandenburg 10/10). Protokoll: Prüfstand-Datei; **Ergebnisstand: letzter Verifikationslauf am PR.**
-- **Entscheidungsvorlage Skalierung 10/25** erstellt (§6/§13).
-- **Vercel:** Kein Production Deployment. Ein automatisches Preview Deployment entstand und wurde nicht hochgestuft.
-- Ältere Sprintberichte: Archivfassung 24.08., Belegdateien §13.
+**Getrennt zu lesen:** `main` bleibt `572f5663…`, solange PR #269 **nicht gemergt** ist — die Arbeit dieses Sprints liegt ausschließlich auf dem Zweig. Der **PR-Kopf ist ein Zweigstand, kein Production-Stand**. Code- und Teststand: `ce5c189`; der Dokumentationsabschluss der Neutralisierung: `62fb1a4` (Runbook §31.10). Diese Zeile selbst wurde im unmittelbar folgenden Commit nachgetragen — der jeweils tagesaktuelle Kopf steht in PR #269.
+
+- **Kein falsches Grün mehr:** `job-dispatch.aktivierungsVorpruefung` trennt angeforderten Modus, wirksamen Modus, Antrieb, gewählten Transport, dessen Verfügbarkeit, Grund und Bereitschaft; `/api/ops/jobqueue` gibt sie als **neues** Feld `ereignisbetrieb` aus (alle Bestandsfelder unverändert). Neun Zustände einzeln testgesichert; ohne Secrets/Adressen/Hostnamen.
+- **`bereit` heißt Konfigurationsbereitschaft, nicht erfolgreiche Zustellung** (geschärft 24.08./2). Die Vorprüfung macht keinen Netzaufruf; sie sagt nur, dass die Konfiguration für einen späteren echten Versuch vollständig und widerspruchsfrei ist — nicht, dass das Ziel erreichbar ist, das Secret wirkt oder je ein Weckruf ankam. Die Antwort trägt die Lesart im Feld `bereitBedeutung` mit.
+- **Aktivierungsvorlauf scheitert vollständig geschlossen** (nachgebessert 24.08./2): im Queue-Modus entscheidet die **vollständige** Vorprüfung vor der ersten Outbox-Vergabe. Fehlen Klassengrenzen, Motor, Weckziel, Production-Freigabe oder Queue-Adresse ⇒ keine Vergabe, kein Versuch, kein Backoff, kein HTTP/SQS, keine Verbuchung. Schattenmodus unberührt; bereiter Ereignisbetrieb unverändert.
+- **Neuer Nachweis:** `scripts/selbstweck-ende-zu-ende-test.js` (**31 PASS**) fährt die echte Route, Autorisierung, Transport, Dispatcher, Workerbetrieb und Fachhandler; ersetzt sind nur Datenbank, Netzgrenze und externer Abruf. Zehn Fälle inkl. 429, unbestätigter Zustellung, doppelter Zustellung, Handlerfehler, Schattenmodus-Rückweg.
+- **3 s gegen 60 s: empirisch ungeprüft.** Belegt ist nur, dass die Abbruch*unterstützung* auf Vercel ein **Opt-in** ist (`supportsCancellation`), das Helmut nicht setzt (Wächtertest hält den Stand fest). **Nicht** belegt ist, dass eine Funktion ohne diese Einstellung weiterläuft. Ein **Vorschauversuch ist ohne belegte Datenisolierung verboten** — sieben Vorbedingungen, heute nicht erfüllt, deshalb **blockiert** (Zielarchitektur §27.3.1).
+- **Dokumentwahrheit:** AWS ist für den Fünfernachweis **nicht** notwendig · **fünf** statt drei Umgebungswerte · Budgetsemantik (Reserve ist Anteil, nicht Zuschlag) · „Selbstweck kostet null" ersetzt · `service_role`-Risiko der AWS-Vorlage + `sb_secret_…` als Ausweg · zwei KMS-Schlüssel 2/4/6 USD/Monat je nach Rotation · veralteter Hauptcommit, Env-Inventar, Workerbetriebs-Zustand und Quellenangabe des 7-Tage-Nachweises berichtigt.
+- **Störung (offen, Betreiberentscheidung):** ein Handlauf der Bestandssuite `jobdispatch-vertrag-test.js` **ohne** `scripts/lokal.js` erzeugte am 24.08. um 20:32 UTC **zwei Testzeilen in Production** (`helmut_jobs` `371707a4…`, `source_fetch` ohne `payload.quelle`, Status `wartend`; `helmut_job_outbox` `24ba14ec…`, `offen`). Wirkung: kein Modellaufruf, keine Inhalts-/Mandatsdaten — aber die Zeile kann `endgueltig_fehler` um 1 erhöhen und damit eine Watchdog-Kennzahl verfälschen. Sofortmaßnahme umgesetzt: die Suite entfernt die Production-Kennungen jetzt selbst. **Nichts gelöscht, nichts in Production verändert.** Rein lesender Zustand (24.08. 21:33 UTC), Wirkungsanalyse und Empfehlung; das frühere nackte Lösch-SQL gilt ausdrücklich **nicht** als freigabefertig: Runbook §31.6. **Fortgang 25.08.: die Wirkung ist eingetreten** — siehe unten.
+- **Weg dorthin (25.08., verdichtet — Belege im Runbook §31.6.2/§31.7–§31.9):** Begriffskorrektur („aufgeben" ist für einen Auftrag falsch — der Generator **löscht**) · getrennter Einzeilenvertrag, der **nur** die zwei Kennungen trifft, ohne Zeitfenster · **drei Vertragsfassungen**, weil der reguläre Betrieb den Zustand zweimal weiterbewegte (`wartend/offen` → `fehlgeschlagen/bestaetigt` → `fehlgeschlagen/verzichtet`); **jeder Riegel hat dabei getan, was er soll** und einen Lauf gegen einen veralteten Vertrag verhindert · Datensparsamkeit **am Wert** · `updated_at` als allgemeiner Änderungsmelder (E4.12). Mengenverträge durchgehend **bytegleich** (SHA-256 `e8a55ee3…`), Nachweis zuletzt **65 PASS** gegen echte PostgreSQL 16.
+- **Neutralisierung abgeschlossen (25.08.).** Nach **Freigabe A** lief der frische Production-Trockenlauf um **09:52:02 türkischer Zeit** (08:52:02 Berlin, 06:52:02 UTC) mit `TROCKENLAUF-OK` und vollständigem Rollback (SQL-SHA-256 `3d3acbbf…`). Nach **getrennt** erteilter **Freigabe B** entfernte **genau ein** scharfer Lauf gegen **10:02 türkischer Zeit** (09:02 Berlin, 07:02 UTC) **genau eine** Auftragszeile und **genau eine** zugehörige Outbox-Zeile über `helmut_job_outbox_job_id_fkey` (SQL-SHA-256 `4ba3a936…`; Bestand 1124 → 1123 bzw. 889 → 888). Textvergleich gegen den Trockenlauf: nur die sechs zulässigen Unterschiede, alle Riegel E0–E10b bytegleich.
+- **Nachprüfung (25.08., 10:03:23 türkischer Zeit** / 09:03:23 Berlin / 07:03:23 UTC): Auftrag, Outbox und Verweise je **0**, **`endgueltig_fehler_gesamt = 0`**, keine verwaiste Outbox-Zeile, keine offene Transaktion, keine Sperre, keine vorbereitete Transaktion, keine zurückgelassene Temp-Tabelle. Unabhängige Gegenprüfung um **10:05:40 türkischer Zeit** (09:05:40 Berlin, 07:05:40 UTC) bestätigt: beide Zeilen fehlen, `endgueltig_fehler = 0`, 1123 Aufträge / 888 Outbox-Zeilen. **Ehrlich:** die temporäre Quittungszeile war nach dem Commit (`on commit drop`) nicht mehr abrufbar — ihre Werte folgen aus dem Commit und den Riegeln E8–E10b; **kein zweiter Lauf**. Der **historische rote Cron-Beleg bleibt unverändert**, kein manueller Gesundheitslauf ausgelöst, ein regulärer grüner Lauf **noch nicht beobachtet**.
+- **Der Einzeilenvertrag bleibt unverändert als geprüftes Werkzeug im Repository.** Seine Zielzeilen existieren nicht mehr; ein erneuter Lauf müsste am Riegel E0 mit `ABBRUCH-BEREITS-NEUTRALISIERT` enden und würde nichts verändern — **ausgeführt wurde er nicht**. **Der Selbstweck bleibt deaktiviert** (in Production nie ausgeführt, **nicht** aktivierungsbereit); der **siebentägige Fünfernachweis wurde nicht gestartet**.
+- **Unverändert:** Production, Supabase-Schema, Vercel-Konfiguration, Flags, Crons, AWS (nichts angelegt), Profile (keine aktiviert), KI-Budget. Kein Deployment, kein manueller Actions-Lauf.
+- Vorheriger Sprint („Vorbereitung 25 Mandate", PR #267) ist **gemergt**; sein Bericht steht in der Archivfassung und in §6.

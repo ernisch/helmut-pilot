@@ -55,7 +55,7 @@ Alle 18 Vorprüfungen des Sprintauftrags §2 bestanden:
 Verbindliche P-Basiswerte: effektive Bedienzeit ~11 s/Auftrag, Median ~7 s; ~2.000
 verfügbare gegen ~7.800 benötigte Worker-Sekunden/Tag bei n=5; Slotleistungen 65/30/31/54;
 124 von 139 wartenden Verstehensaufträgen mit `verstehen-uebersprungen: understanding-locked`;
-Dedupe produktiv (`neu=169 < geplant=193`); KI-Verbrauch 62–77 Aufrufe/Tag bei Deckel 100+30.
+Dedupe produktiv (`neu=169 < geplant=193`); KI-Verbrauch 62–77 Aufrufe/Tag bei Gesamtdeckel 100 (davon 30 für Verstehen reserviert, §23).
 Die frühere lokale Aussage „4.093 Aufträge/s" beruhte auf Attrappen ohne reale Netz-,
 Datenbank- und KI-Latenzen und ist **nicht** auf Production übertragbar (P, §19-Befund).
 
@@ -327,9 +327,14 @@ den Prozess verlässt; `queue` versendet über `HELMUT_JOB_TRANSPORT`:
 
 - **`selbstweck` (erster produktiver Transport):** POST auf `HELMUT_WORKER_WAKE_URL`
   (die eigene Route `/api/cron/worker-weck`), autorisiert mit dem bestehenden
-  `CRON_SECRET` (Bearer, `authorizeCron`). Kein neuer Dienst, kein neuer Anbieter,
-  keine neuen Kosten, keine Daten verlassen die bestehende Vercel↔Supabase-Strecke.
-  Verlorene Signale repariert der Abgleich.
+  `CRON_SECRET` (Bearer, `authorizeCron`). Kein neuer Dienst, kein neuer Anbieter, keine
+  neue feste Infrastrukturgebühr, keine Daten verlassen die bestehende
+  Vercel↔Supabase-Strecke. **Korrektur 2026-08-24:** hier stand „keine neuen Kosten" —
+  das ist falsch. Jeder Weckruf ist ein zusätzlicher Vercel-Funktionsaufruf mit eigener
+  Rechenzeit und Speicherbelegung; wie stark das die Rechnung belastet, hängt von Tarif,
+  Kontingent und aktueller Nutzung ab und ist **ungeprüft**
+  (https://vercel.com/docs/functions/usage-and-pricing). Verlorene Signale repariert der
+  Abgleich.
 - **`vercel-queues` (gebaut, NICHT aktiviert):** Adapter nach offizieller SDK-Signatur
   `send(topic, payload, { idempotencyKey })`; ohne installiertes SDK fail closed mit dem
   Grund „Aktivierung = kostenpflichtige Gründerentscheidung". Beta-Fakten in §3.
@@ -476,7 +481,7 @@ doppelter** rechnerischer Reserve — als Modell, nicht als Beweis.
 |---|---|---|---|
 | 0 (heute) | 5 | alles aus (`bestand`) | — |
 | 1 | 5 | Migrationen `20260813` beide anwenden · `HELMUT_SCALABLE_PIPELINE=on` · `HELMUT_JOB_DISPATCH_MODE=shadow` | Versuch 3 nach Runbook §6/K0 (vorher: 524 neutralisieren, §8.3/§8.4 queue-tauglich); Outbox-Beweis im Schattenmodus |
-| 2 | 5 | `HELMUT_KLASSEN_GRENZEN=on` · `HELMUT_JOB_DISPATCH_MODE=queue` (+`HELMUT_WORKER_WAKE_URL`) | Abfluss ≥ Ankunft über 7 Tage; 0 Verlust/Doppelarbeit; Wartezeit < 24 h dauerhaft |
+| 2 | 5 | **fünf Werte** (Korrektur 2026-08-24): `HELMUT_JOB_DISPATCH_MODE=queue` · `HELMUT_KLASSEN_GRENZEN=on` · `HELMUT_JOB_TRANSPORT=selbstweck` · `HELMUT_SELBSTWECK_ERLAUBT=on` · `HELMUT_WORKER_WAKE_URL=https://<production-host>/api/cron/worker-weck`. Die frühere Angabe (drei Werte) war seit dem Härtungssprint 2026-08-14 falsch: ohne 3 und 4 greift der Standardtransport `sqs` bzw. die Production-Sperre des Selbstwecks, und es wird **nichts** zugestellt ([`env-inventar.md`](env-inventar.md) §7a). | Vorprüfung `/api/ops/jobqueue` → `ereignisbetrieb.bereit === true`; danach Abfluss ≥ Ankunft über 7 Tage; 0 Verlust/Doppelarbeit; Wartezeit < 24 h dauerhaft |
 | 3 | 25 | `HELMUT_LLM_FAIRNESS=on` · `HELMUT_KLASSE_WORKER_DRAIN_MAX=2` | OP-25 vollständig NEU bestanden (Pflicht nach jeder OP-30-Aktivierung); 20 echte Profile |
 | 4 | 100 | Migration `20260814180000` anwenden · `HELMUT_VERSTEHEN_CAS=on` · **dann erst** `HELMUT_VERSTEHEN_KONKURRENZ=on` + `HELMUT_KLASSE_VERSTEHEN_MAX=2` (der CAS-Store ist seit 2026-08-14/6 gebaut und lokal belegt, [`op30-verstehen-cas-2026-08-14.md`](op30-verstehen-cas-2026-08-14.md); ohne das Flag wird jede Zahl >1 hart auf 1 geklemmt) · KI-Deckel-Entscheidung (~500/Tag) · Supabase Pro (OP-01) | OP-15 strukturell gelöst (Direkt-RSS) — dort beziffert als Blocker ab ~10 Mandaten |
 | 5 | 200 | `HELMUT_NARRATIV_QUEUE=on` · Drain 4 | 190 echte Profile; R4-Gegenprobe in Production |
@@ -503,7 +508,7 @@ vor Verstehens-Parallelität > 1.
    §8.3/§8.4 queue-tauglich fassen.
 3. Bei Freigabe Stufe 1: beide `20260813`-Migrationen anwenden (Verifikationsblöcke in
    den Dateien), dann Flags nach §14 Stufe 1.
-4. `HELMUT_WORKER_WAKE_URL` (Production-URL + `/api/cron/worker-weck`) erst für Stufe 2.
+4. Für Stufe 2 die **fünf** Werte aus §14 setzen (nicht drei), danach `/api/ops/jobqueue` lesen: erst `ereignisbetrieb.bereit === true` heißt bereit.
 5. Getrennt und ausdrücklich NICHT Teil dieses Sprints: KI-Deckel-Anhebung, Vercel
    Queues/Supabase Pro (Kosten), OP-15.
 
@@ -702,6 +707,21 @@ gefunden**; die Prüfung galt Regionsverfügbarkeit (eu-central-1 seit 2016), Na
 strukturell ungefährlich) und der Frage, ob Vercel als Sender ausreicht (ja — nur
 `sqs:SendMessage`).
 
+> **Korrektur 2026-08-24 (Härtungssprint Selbstweck) — Reichweite dieser Entscheidung.**
+> Die Aussage „der Selbstweck ist nicht der Production-Antrieb **für 500 Mandate**" bleibt
+> gültig. Sie wurde in Folgedokumenten aber zu „der Ereignis-Antrieb **braucht** AWS"
+> verkürzt — auch für den **siebentägigen Nachweis mit den fünf bestehenden Mandaten**. Das
+> ist technisch falsch: für diesen Nachweis ist **keine AWS-Ressource notwendig**. Der
+> Selbstweck ist vollständig gebaut, ist seit dem Härtungssprint 2026-08-14 gegen die
+> bekannten Angriffs- und Fehlerwege verriegelt und ist seit 2026-08-24 lokal Ende-zu-Ende
+> belegt (`scripts/selbstweck-ende-zu-ende-test.js`, 31 PASS). Für den Fünfernachweis ist er
+> deshalb der **empfohlene** Weg; er braucht dafür die fünf Werte aus §14 Stufe 2 und die
+> ausdrückliche Freischaltung `HELMUT_SELBSTWECK_ERLAUBT=on`. Was der Selbstweck weiterhin
+> **nicht** hat (Sichtbarkeitszeit, Zustellzähler, native Quarantäne, kontrollierte
+> Parallelität), bleibt der Grund, ihn nicht als Endzustand für große Mandatszahlen zu führen.
+> Eine AWS-Entscheidung ist damit **nicht** Voraussetzung des Fünfernachweises, sondern eine
+> davon getrennte Frage für spätere Stufen.
+
 ### 19.2 Was implementiert wurde (nichts davon ist ausgerollt)
 
 1. **Abhängigkeit** `@aws-sdk/client-sqs`, Version **fest auf 3.1110.0 gepinnt**. Zuvor
@@ -877,7 +897,7 @@ Aktualisierungen kosten zusätzlich. Statt einer erfundenen Punktzahl steht eine
 zwischen dem in Production gemessenen Verhältnis (untere Grenze) und einem Aufruf je Auftrag
 zuzüglich Aktualisierungen (obere Grenze):
 
-| Mandate | Verstehensaufträge | KI-Aufrufe/Tag (Spanne) | Deckel 100+30 |
+| Mandate | Verstehensaufträge | KI-Aufrufe/Tag (Spanne) | Deckel **100 gesamt** (davon 30 für Verstehen reserviert) |
 |---|---|---|---|
 | 5 | 161 | 69–209 | trägt nur im günstigen Fall — beobachten (P: gemessen 62–77) |
 | 25 | 204 | 88–265 | reicht nicht |
@@ -888,6 +908,16 @@ zuzüglich Aktualisierungen (obere Grenze):
 Die gemessene Untergrenze ist selbst **konservativ zu niedrig**, weil das globale
 Verstehens-Schloss im zweiten Fünferlauf 124 von 139 Aufträgen vertagt hat. Der
 Production-Deckel bleibt in diesem Sprint **unverändert**.
+
+> **Budgetsemantik — Korrektur 2026-08-24.** Die Schreibweise „Deckel 100+30" in diesem und
+> anderen Dokumenten legt nahe, es seien 130 Aufrufe. Das ist falsch. `HELMUT_MAX_LLM_CALLS_PER_DAY`
+> ist der **Gesamtdeckel**; `HELMUT_LLM_RESERVE_UNDERSTANDING` ist ein **Anteil daraus**, kein
+> Zuschlag: `effectiveMax = priorität ? limit : limit − reserve` (`lib/helmut/storage.js`
+> `reserveLlmCall`). Bei 100/30 gilt also: **höchstens 100 insgesamt**, nicht priorisierte Arbeit
+> höchstens 70, priorisiertes Verstehen darf bis 100 gehen. Bei 250/50 wären es **höchstens 250
+> insgesamt** und 200 für nicht priorisierte Arbeit — **nie 300**. Kanonisch:
+> [`llm-budget-reservierung.md`](llm-budget-reservierung.md). Die Spalten oben sind gegen den
+> **Gesamtdeckel** zu lesen.
 
 **Externe Blocker unverändert ehrlich:** OP-15 (Google-Drosselung) ist nicht mit echten
 Messungen gelöst und bleibt ab ~10 Mandaten Blocker; die Anbietersteuerung bremst dort
@@ -1369,3 +1399,243 @@ Ausrollen bleibt deshalb offen:
 
 Alle drei kosten nichts und ändern nichts — ein Change-Set legt keine Ressource an. Sie
 brauchen aber ein AWS-Konto und damit eine Gründerentscheidung.
+
+---
+
+## 27 · Härtungssprint Selbstweck, 2026-08-24 (kein Production-Kontakt)
+
+**Zweck:** den vorhandenen Selbstweck technisch und dokumentarisch so härten, dass danach
+belastbar über den siebentägigen Production-Nachweis mit den fünf bestehenden Mandaten
+entschieden werden kann. **Nicht** Gegenstand: Aktivierung, Production-Änderung,
+Budgetänderung, AWS, zusätzliche Mandate.
+
+### 27.1 Der Betriebsstatus sagt jetzt die Wahrheit (Befund bestätigt)
+
+**Befund.** `waehleAntrieb` beantwortet nur „welcher Antrieb ist *konfiguriert*?". Der
+Betriebsstatus `/api/ops/jobqueue` meldete deshalb `antrieb: "ereignis"`, sobald
+`HELMUT_JOB_DISPATCH_MODE=queue` und die Warteschlange an waren — **auch dann, wenn der
+gewählte Transport gar nicht versenden konnte** (kein Weckziel, ungültiges Weckziel, kein
+Vertrauensanker, kein `CRON_SECRET`, in Production gesperrter Selbstweck, fehlende
+SQS-Adresse, fehlendes SDK). Das ist falsches Grün (CLAUDE.md §4.4): es sah aus wie laufender
+Ereignisbetrieb, während ausschließlich der Cron-Rückfallweg trug.
+
+**Korrektur.** `job-dispatch.aktivierungsVorpruefung(env)` trennt maschinenlesbar:
+`angeforderterModus` · `modus` (wirksam) · `antrieb` · `transport.gewaehlt` ·
+`transport.wirksam` · `transport.verfuegbar` · `transport.grund` · `klassenGrenzen` ·
+`skalierbarerMotor` · `bereit` · `befunde[]`. `/api/ops/jobqueue` gibt sie **zusätzlich** als
+Feld `ereignisbetrieb` aus; alle bisherigen Felder (`pfadAktiv`, `antrieb`, `worker`,
+`wiedervorlage`, `outbox`, Statusvertrag) bleiben unverändert — die kleinste kompatible
+Ergänzung.
+
+**Was `bereit` heißt — und was nicht (geschärft 2026-08-24/2).** Die Vorprüfung macht **keinen
+Netzaufruf** (testgesichert, §13.10b). Sie kann deshalb ausschließlich die **statische
+Konfigurationsbereitschaft** feststellen:
+
+> `bereit: true` = **die Konfiguration für einen späteren echten Versuch ist vollständig und
+> intern widerspruchsfrei.**
+
+Es heißt ausdrücklich **nicht**, dass der Transport gerade zustellen kann, dass das Weckziel
+erreichbar ist, dass das `CRON_SECRET` beim Empfänger wirkt oder dass je ein echter Weckruf
+stattgefunden hat. Der tatsächliche Transport- und Production-Nachweis bleibt ein **getrennter
+Betriebsbeleg**. Damit die Lesart nicht verloren geht, trägt die Antwort sie selbst mit
+(`bereitBedeutung`); das Feld `bereit` bleibt aus Kompatibilitätsgründen unverändert.
+
+Der Riegel im Dispatcher ist deshalb bewusst **einseitig**: `bereit: false` verhindert sicher
+jeden Versuch, `bereit: true` erlaubt ihn nur.
+
+Neun Fälle sind einzeln testgesichert (`scripts/jobdispatch-vertrag-test.js` §13):
+Schattenmodus · Queue mit funktionierendem Selbstweck · fehlendes Weckziel · ungültiges
+Weckziel · fehlende Production-Freigabe · fehlender Vertrauensanker · voreingestellter
+SQS-Transport ohne Queue-Adresse · fehlende Klassengrenzen · fehlender skalierbarer Motor.
+Dazu: die Ausgabe enthält **weder Secret noch Adresse noch Hostnamen** (§13.10).
+
+**Zweite Korrektur — der Aktivierungsvorlauf scheitert geschlossen, und zwar vollständig.**
+`versendeAbsichten` prüfte zunächst gar nichts und nach dem ersten Durchgang nur den **Antrieb**.
+Zwei Lücken, beide belegt:
+
+1. Bei `queue` **ohne** `HELMUT_SCALABLE_PIPELINE` (Antrieb `bestand`) baute der Dispatcher
+   trotzdem einen echten Transport, **vergab** Versandabsichten (Versuch + Backoff) und
+   verbuchte sie als Fehlversuch — während die Route jedes Signal mit 409 abwies.
+2. **Nachgereicht am 2026-08-24/2:** fehlten die **Klassengrenzen**, war der Antrieb formal
+   `ereignis` — der Dispatcher vergab eine Absicht und klingelte, obwohl die Route jedes Signal
+   mit 409 `klassengrenzen-aus` abweist und die vollständige Vorprüfung für genau diesen Fall
+   bereits `bereit: false` meldete. Der Versandpfad hörte nur nicht darauf.
+
+**Jetzt entscheidet im Queue-Modus die VOLLSTÄNDIGE Vorprüfung, bevor die erste Absicht vergeben
+wird.** Ist sie nicht bereit, passiert nichts: keine Vergabe, kein Versuchszähler, kein Backoff,
+kein HTTP, kein SQS, keine Bestätigung, keine Fehlverbuchung. Die Bilanz nennt einen bereinigten,
+maschinenlesbaren Grund (`antrieb-…` · `transport-nicht-verfuegbar:…` · `klassengrenzen-aus`)
+plus die Befundliste. Der **Schattenmodus bleibt unberührt** (er versendet nichts nach außen und
+hängt deshalb nicht am Vorlauf), und ein **bereiter** Ereignisbetrieb läuft byte-gleich wie
+zuvor. Vorprüfung und Versand benutzen **dieselbe Transportinstanz** — ein Auseinanderlaufen ist
+strukturell ausgeschlossen. Nachweise: §14 und §15 des Vertragstests (fünf Nichtbereitschaften
+stoppen je **vor** `naechste`, kein Netzaufruf, keine Verbuchung).
+
+### 27.2 Geschlossener lokaler Ende-zu-Ende-Nachweis des Selbstwecks
+
+`scripts/selbstweck-ende-zu-ende-test.js` — **31 PASS / 0 FAIL**, läuft im kanonischen
+Offline-Lauf mit (kein PostgreSQL nötig, deshalb kein SKIP im CI).
+
+**Echt** sind: die Verbraucher-Route aus `server.js` über eine echte lokale HTTP-Verbindung,
+`authorizeCron`, der echte Selbstweck-Transport samt Ziel-Riegel und Türklingel-Bündelung, der
+echte Dispatcher `versendeAbsichten`, der echte Workerbetrieb mit zwei parallelen Workern und
+der echte Fachhandler `handleSourceFetch`. **Ersetzt** sind genau drei Außengrenzen: die
+Datenbank (in-Prozess-Auftragsbuch mit den Verträgen der SQL-Funktionen; jede Mutation läuft
+in einem synchronen Block — die Serialisierung, die in Postgres der Row-Lock leistet), das
+Netz zwischen Sender und Verbraucher (Brücke prüft kanonische https-Adresse + Bearer und
+leitet an `127.0.0.1` weiter — der Ziel-Riegel lässt `127.0.0.1` bewusst nie zu) und der
+externe Quellenabruf (kontrollierter Testhandler, kein Modell, keine Quelle, keine Kosten).
+
+Geprüfte Kette: fällige Outbox-Absicht → Transportwahl → **ein** signierter HTTP-Weckruf →
+Authentifizierung → atomarer Auftragsanspruch → kontrollierter Testhandler → Abschluss →
+Folgeweckung bei weiterer fälliger Arbeit → sauberes Ende ohne weitere Arbeit. Dazu die zehn
+geforderten Fälle: Erfolg · falsches Geheimnis (403) · ungültiges Weckziel (kein Netzaufruf) ·
+fehlende Production-Freigabe · belegter Verbraucher (429 → Absicht zurückgelegt, Versuch
+zurückgegeben) · Zeitüberschreitung/unbestätigt · doppelte Zustellung · Handlerfehler
+(Wiederholung, danach sichtbarer Endzustand) · Rückkehr in den Schattenmodus · Folgeweckung
+nur bei tatsächlich fälliger Arbeit.
+
+**Was der Test nicht behauptet:** dass Doppelarbeit oder Verlust „unmöglich" seien. Er benennt
+die drei atomaren Schranken (Auftragsvergabe · Abschluss nur durch den Lease-Halter ·
+Vergabe der Versandabsicht plus Drain-Klasse `worker-drain` max 1) und weist nach, dass in
+**keinem** geprüften Fall ein Auftrag doppelt ausgeführt oder verloren wurde. Dass die
+SQL-Funktionen selbst atomar sind, belegen die datenbankgestützten Suiten.
+
+**Diese Suiten sind in diesem Sprint wirklich gelaufen** — sonst überspringen sie sich mangels
+lokalem Server ehrlich („Nachweis offen"). Gegen eine lokal gestartete **PostgreSQL 16.13** mit
+den echten Migrationen: `jobqueue-vertrag` 125 · `verstehen-cas-datenbank` 103 ·
+`jobqueue-neutralisierung-gemischt-datenbank` 58 · `jobqueue-datenbank` 55 ·
+`jobqueue-neutralisierung-datenbank` 55 · `queue-ende-zu-ende` 53 ·
+`jobqueue-wiedervorlage-datenbank` 48 · `jobqueue-outbox-datenbank` 37 ·
+`anbietersteuerung-datenbank` 36 · `jobqueue-ruecknahme-datenbank` 31 ·
+`jobqueue-narrativ-datenbank` 27 · `jobqueue-alter-datenbank` 26 ·
+`verteilte-grenzen-datenbank` 20 · `warteschlange-parallelitaet` 16 — **zusammen 690 PASS,
+0 FAIL**. Damit steht die Atomarität der Vergabe nicht nur als Modell, sondern als
+Datenbanknachweis daneben.
+
+### 27.3 Drei Sekunden Sender gegen sechzig Sekunden Verbraucher
+
+**Die Frage.** Der Selbstweck-Sender wartet standardmäßig **3 s** (`HELMUT_WAKE_TIMEOUT_MS`),
+der Verbraucher darf bis zu **60 s** arbeiten (`HELMUT_DRAIN_BUDGET_MS`, hart geklemmt auf
+5–240 s; Funktionsgrenze `maxDuration: 300`). Läuft der Verbraucher weiter, nachdem der Sender
+seine HTTP-Anfrage abgebrochen hat?
+
+**Amtlicher Beleg.** Vercel-Dokumentation, „Functions API Reference", Abschnitt *Request
+Cancellation*: „Request cancellation allows your Vercel Functions to stop execution when a
+client disconnects, such as closing a browser tab. **This is an opt-in feature that must be
+enabled in your project configuration**" — aktiviert wird es über `"supportsCancellation": true`
+je Funktionspfad in `vercel.json`.
+
+**Anwendung auf Helmut — und die Grenze der Aussage (geschärft 2026-08-24/2).** `vercel.json`
+setzt `supportsCancellation` **nicht** (testgesichert: `scripts/selbstweck-ende-zu-ende-test.js`
+§12.1). Was daraus folgt und was **nicht**:
+
+| Belegt | Nicht belegt |
+|---|---|
+| Die Abbruch**unterstützung** ist ein Opt-in und wird ausdrücklich eingeschaltet. | Dass eine Funktion **ohne** diese Einstellung nach einer Client-Trennung garantiert weiterläuft. |
+| Helmut hat sie nicht eingeschaltet. | Dass der Senderabbruch die Vercel-Funktion sicher **nicht** beendet. |
+| Eine spätere Aktivierung macht den Selbstweck-Vertrag erneut prüfpflichtig (der Wächtertest fällt dann auf). | Dass das tatsächliche Plattformverhalten lokal geprüft wäre. |
+
+Die frühere Formulierung an dieser Stelle („damit gilt amtlich: Vercel beendet die Ausführung
+nicht") ging über den Beleg hinaus und ist **zurückgenommen**. **Der Punkt bleibt empirisch
+ungeprüft.**
+
+**Warum der Ausgang trotzdem in beide Richtungen sicher ist.** Ein Abbruch nach dem Absenden
+ist im Code ein **dritter** Ausgang neben Erfolg und Fehlversuch: `unbestaetigt`. Dann wird in
+der Outbox **nichts** verbucht, die Absicht wird zurückgelegt (Status `offen`, gezogener
+Versuch zurückgegeben, 60 s Wartezeit) und der Auftrag bleibt unberührt. Lokal belegt
+(§27.2 §6) ist die eine Hälfte: **läuft** der Verbraucher weiter, wird der Auftrag **genau
+einmal** ausgeführt und die erneut zugestellte Absicht läuft ins Leere statt in Doppelarbeit —
+das ist eine Aussage über den Helmut-Code, nicht über Vercel. Beendete Vercel die Ausführung
+doch, wäre die Folge **kein Verlust und keine Doppelarbeit**, sondern ein *nicht abgeschlossener*
+Auftrag, den die ablaufende Lease und der Cron-Rückfallweg wieder aufnehmen — der
+Ereignis-Antrieb käme dann aber nicht voran. Welche der beiden Welten gilt, entscheidet erst ein
+echter Versuch.
+
+**Kein Umbau.** Ein Weg, der die Frage vollständig auflöst, wäre eine sofortige Antwort mit
+Fortsetzung im Hintergrund (`waitUntil` aus `@vercel/functions`). Das ist eine **neue
+Anbieterabhängigkeit** und eine Architekturänderung; beides ist in diesem Sprint ausgeschlossen.
+Umgesetzt wurde stattdessen die kleinste sichere Änderung: der Wächtertest auf
+`supportsCancellation` plus der Ende-zu-Ende-Beleg des `unbestaetigt`-Pfads.
+
+### 27.3.1 Der spätere Vorschauversuch — heute **blockiert**
+
+Ein Preview-Versuch würde die Frage empirisch klären. Er ist **nicht** freigegeben und wurde
+**nicht** durchgeführt. **Entscheidender Punkt (Korrektur 2026-08-24/2):** eine Vorschau ist
+*nicht automatisch* ungefährlich. Vercel-Preview-Deployments erben in der Regel die
+Umgebungsvariablen ihrer Umgebung — ein Weckruf gegen eine Vorschau, die auf die
+**Production-Supabase** zeigt, ist ein **Production-Eingriff mit Vorschau-Etikett**. Genau so
+entstehen echte Aufträge, echte Leases und echte Kennzahlen.
+
+**Sieben zwingende Vorbedingungen. Alle sieben müssen VORHER belegt sein:**
+
+1. **Getrennte nichtproduktive Datenbank** oder ein nachweislich isolierter Datenbestand.
+2. **Keine Production-Supabase-Adresse** in der Vorschau (`SUPABASE_URL` zeigt nicht auf das
+   Production-Projekt).
+3. **Kein Production-Dienstrollenschlüssel** und kein Production-Geheimschlüssel in der
+   Vorschau.
+4. **Eigenes Vorschau-Weckziel** (`HELMUT_WORKER_WAKE_URL` auf den Preview-Host, nie auf den
+   Production-Host).
+5. **Kontrollierter Testauftrag** ohne Mandatsdaten, ohne Quellenabruf, ohne Modellaufruf.
+6. **Vollständiger Rückbau** dieses Testauftrags nach dem Versuch.
+7. **Separater Gründerentscheid vor jedem einzelnen Vorschauversuch** — keine Dauerfreigabe.
+
+**Ablauf, wenn und nur wenn alle sieben belegt sind:** ein Weckruf, ein Testauftrag, dessen
+Handler nachweislich länger als `HELMUT_WAKE_TIMEOUT_MS` läuft; Auswertung rein lesend über die
+Logzeile `[cron/worker-weck] …ms worker=… erledigt=…`. Erscheint sie nach dem Senderabbruch mit
+`erledigt=1`, ist die Fortsetzung empirisch belegt.
+
+**Heutiger Stand: die Isolierung ist NICHT belegt.** Die automatische Vorschau dieses Pull
+Requests existiert bereits; ob sie auf Production-Zugangsdaten zeigt, ist aus einer
+Claude-Sitzung nicht prüfbar (Vercel-Env weder lesbar noch setzbar). **Damit bleibt der
+Vorschauversuch blockiert.** Es wurde deshalb kein Weckruf gegen irgendeine Vorschau gesendet,
+kein Deployment ausgelöst und **kein Ersatzweg erfunden**: weder ein Supabase-Branch noch eine
+zweite Datenbank noch sonst eine Infrastruktur wurde eingerichtet.
+
+### 27.4 Kosten- und AWS-Aussagen berichtigt
+
+1. **Selbstweck kostet nicht „null Dollar".** Richtig ist: kein neuer Anbieter, keine neue
+   feste Infrastrukturgebühr — aber zusätzliche Vercel-Aufrufe, Rechenzeit und
+   Speicherbelegung. Die tatsächliche Mehrbelastung ist ohne Prüfung von Tarif, Kontingenten
+   und aktueller Nutzung **unbekannt** (https://vercel.com/docs/functions/usage-and-pricing).
+2. **AWS ist für den Fünfernachweis nicht technisch notwendig** (§19.1, Korrektur).
+3. **Die AWS-Vorlage verwendet den alten Supabase-Dienstrollenschlüssel** (`service_role`,
+   Parameter `SupabaseSchluesselParameter` in `infra/aws/helmut-auftrags-queue.yaml`). Der ist
+   aus dem JWT-Geheimnis des Projekts abgeleitet — ein Widerruf trifft **alles**, was ihn
+   nutzt. Das Risiko ist aber **nicht unvermeidbar**: Supabase unterstützt getrennte, benannte
+   Geheimschlüssel (`sb_secret_…`), die „can be created, named, and revoked independently, so
+   you can rotate a single key without touching the rest of your app"; die Dokumentation nennt
+   ausdrücklich „one secret key per backend component"
+   (https://supabase.com/docs/guides/getting-started/migrating-to-new-api-keys). Eine spätere
+   AWS-Lösung müsste einen **eigenen** Schlüssel bekommen. **Das ist keine Freigabe, diese
+   Lösung jetzt zu bauen** — und keine Aufforderung, Schlüssel zu rotieren (Secret-Änderungen
+   sind Betreiberaktionen, CLAUDE.md §5).
+4. **KMS-Kosten der Vorlage.** Die Vorlage legt **zwei** Schlüssel an
+   (`AWS::KMS::Key` für die Queue-Verschlüsselung und für die Supabase-SecureString-Parameter),
+   beide mit `EnableKeyRotation: true`. AWS berechnet **1 USD/Monat je vom Kunden verwaltetem
+   Schlüssel**; die **erste und die zweite** Rotation eines Schlüssels erhöhen den Preis um je
+   1 USD/Monat, danach ist der Aufschlag gedeckelt. Für zwei Schlüssel heißt das: zunächst
+   **2 USD/Monat**, nach der ersten Rotation **4 USD/Monat**, nach der zweiten **6 USD/Monat**,
+   solange beide Schlüssel bestehen — **zuzüglich** Anfragekosten
+   (https://aws.amazon.com/kms/pricing/). Das ist eine Größenordnung, kein Angebot: vor einer
+   Freigabe ist am Preisblatt gegenzuprüfen.
+
+### 27.5 Abrufbelege der öffentlichen Quellen
+
+Alle Abrufe am **2026-08-24**, Zeiten in türkischer Zeit, dann Berlin, dann UTC:
+
+| Quelle | Abruf |
+|---|---|
+| https://vercel.com/docs/functions/functions-api-reference | 23:20 türkischer Zeit · 22:20 Berlin · 20:20 UTC |
+| https://vercel.com/docs/functions/usage-and-pricing | 23:22 türkischer Zeit · 22:22 Berlin · 20:22 UTC |
+| https://supabase.com/docs/guides/getting-started/migrating-to-new-api-keys | 23:24 türkischer Zeit · 22:24 Berlin · 20:24 UTC |
+| https://aws.amazon.com/kms/pricing/ | 23:26 türkischer Zeit · 22:26 Berlin · 20:26 UTC |
+
+**Abrufweg ehrlich benannt:** ein direkter Seitenabruf von `vercel.com`, `supabase.com` und
+`aws.amazon.com` ist aus dieser Cloud-Sitzung durch den Egress-Proxy **gesperrt**. Die Inhalte
+stammen deshalb aus den offiziellen Dokumentationsdiensten der Anbieter (Vercel- und
+Supabase-Dokumentationssuche, die die oben genannten Quell-URLs mitliefern) sowie — für die
+KMS-Preise — aus einer auf `aws.amazon.com` beschränkten Suche über dieselbe Preisseite.
+**Für die Vercel-Preisseite konnte kein Seiteninhalt gelesen werden**; von dort wird deshalb
+**keine Zahl** zitiert, sondern ausschließlich die Aussage, dass die Mehrkosten dort zu prüfen
+sind. Vor einer kostenwirksamen Entscheidung sind alle vier Seiten direkt gegenzulesen.
