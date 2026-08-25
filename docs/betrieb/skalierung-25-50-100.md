@@ -209,6 +209,30 @@ identischer Stapellauf ohne Dubletten, fehlerhaftes Mandat ohne Teilzustand,
 Bestandssuiten unverändert grün: `provision-tenant-test.js` 41 PASS,
 `profil-bereitschaft-test.js` 91 PASS, `jobqueue-lasttest.js` 19 PASS (inkl. SIGKILL-Probe).
 
+### 4.7 Gesamtlauf
+
+**`node scripts/lokal.js -- node scripts/run-offline-tests.js` → 279/279 Suiten grün in 729 s,
+0 FAIL, 0 SKIP.** Das sind die 277 Bestandssuiten plus die zwei neuen dieses Sprints.
+Darin ausdrücklich grün: alle vier vormals roten Befunde (`privacy-vollstaendigkeit`,
+`profile-db`, `provision-tenant`, `tenant-neutrality`).
+
+**Ehrlich zur Einordnung:** `jobqueue-ankunft-datenbank-test.js` läuft im kanonischen Lauf
+in **79 ms** — das ist der saubere Übersprung, weil dort kein PostgreSQL-Server gesetzt ist.
+Sein eigentlicher Nachweis (24 PASS, §4.6) wurde getrennt **mit** echter PostgreSQL geführt.
+Dasselbe gilt für alle `*-datenbank-test.js`-Suiten; der kanonische Lauf ist bewusst
+DB-frei (so läuft auch die CI).
+
+**Zwei Zwischenläufe waren rot und sind es nicht mehr — beide aus Umgebungsgründen, nicht
+aus Codegründen:**
+- `kalender-ics` und `lambda-paket` scheiterten, weil in dieser Sitzung **`node_modules`
+  fehlte** (`npm ci` war nie gelaufen). Nach der Installation grün.
+- `quellen-mehrfachabruf` scheiterte an einer **zeitabhängigen** Zusicherung
+  (1304 ms gegen 1339 ms), während parallel der Lasttest lief. Ohne Konkurrenzlast grün.
+- `vorgangskontext` §8.8a schlug an, weil die neue Migration nicht in der Allowlist stand.
+  Das ist die **vorgesehene Wirkung** dieser Prüfung: jede fremde Migration muss ausdrücklich
+  mit Begründung deklariert werden. Nachgetragen; die inhaltliche Gegenprüfung 8.8b war und
+  bleibt grün.
+
 ### 4.5 Zwei echte Produktfehler in der Provisionierung — behoben
 
 Beide betrafen genau die geforderte Zusicherung „ein zweiter identischer
