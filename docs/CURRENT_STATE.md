@@ -12,7 +12,7 @@ Fassung vor dieser Verdichtung: byte-identisch in [`archive/project_state/2026_0
 ## 2 · Stand auf `main` und Pull Requests
 
 - **`main` = `ade1674e` = Merge von PR #271** (Watchdog-Korrektur, 26.08. 13:00 UTC); davor `07bf7794` = Merge von PR #270 (Skalierung 25/50/100). Die Angaben „`main` = `07bf7794`", „`24a895ed`" bzw. „`572f5663`" sind überholt; alle stecken in dieser Historie. CI auf `ade1674e`: **grün**.
-- **Offen ist genau ein Pull Request** (Realistiknachweis Z3a, §17, Branch `claude/load-test-mandate-proof-wtlew0`). **Nicht gemergt** — Merge = Production-Deployment und Betreiberentscheidung.
+- **Offen ist genau ein Pull Request: PR #272** (Realistiknachweis Z3a, §17, Branch `claude/load-test-mandate-proof-wtlew0`). **Nicht gemergt** — Merge = Production-Deployment und Betreiberentscheidung.
 - Davor gemergt: #271, #270, #265, #262, #261, #260/#259/#256/#257, #225, #216; die PR-Bereinigung vom 23.08. (inkl. begründeter Schließungen) ist in Archivfassung und Runbook dokumentiert.
 - Merge nach `main` löst automatisch ein Production-Deployment aus.
 
@@ -195,7 +195,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 17 · Letzter Sprint (26.08. — Realistiknachweis Z3a für 25/50/100)
 
-**Teilweise abgeschlossen** — der realistische Nachweis ist **als Z3a erbracht und als Z3 offen**. Branch `claude/load-test-mandate-proof-wtlew0`, **Pull Request offen, nicht gemergt**, Ausgangscommit `ade1674e`. **Keine Production-Änderung, keine Datenbank-Mutation, kein Cron, kein Flag, keine Env, kein Import, kein manueller Lauf.** Vollständiger Bericht mit allen Zahlen: [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md).
+**Teilweise abgeschlossen** — der realistische Nachweis ist **als Z3a erbracht und als Z3 offen**. Branch `claude/load-test-mandate-proof-wtlew0`, **PR #272 (offen, nicht gemergt)**, Ausgangscommit `ade1674e`. **Keine Production-Änderung, keine Datenbank-Mutation, kein Cron, kein Flag, keine Env, kein Import, kein manueller Lauf.** Vollständiger Bericht mit allen Zahlen: [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md).
 
 **Was Z3a von Z2 unterscheidet:** echte Fachhandler statt Attrappen · Datenbank über **HTTP → PostgREST 12.2.3 → PostgreSQL 17.6** statt über `psql` · echtes Netz je Quelle · echte Modellaufrufe über echtes TLS mit echtem `usage`-Block · **Cron-Slots** (ein Prozess je Slot) statt Dauer-Worker. **Was auch Z3a nicht beweist:** die Anbieter sind lokal — weder Google noch Azure antwortet, der Google-Sonderweg (Gate, Circuit-Breaker, Artikel-URL-Auflösung) bleibt ungeprüft. Das ist **Z3b** und bleibt offen.
 
