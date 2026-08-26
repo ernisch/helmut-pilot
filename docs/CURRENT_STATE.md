@@ -12,7 +12,7 @@ Fassung vor dieser Verdichtung: byte-identisch in [`archive/project_state/2026_0
 ## 2 · Stand auf `main` und Pull Requests
 
 - **`main` = `07bf7794` = Merge von PR #270** (Skalierung 25/50/100, 26.08.); das automatische Production-Deployment ist abgeschlossen und der öffentliche Alias antwortet mit HTTP 200 auf dieser Version (Betreiberbestätigung 26.08.). Die Angaben „`main` = `24a895ed`" bzw. „`572f5663`" sind überholt; beide stecken in dieser Historie.
-- **Offen ist genau ein Pull Request: der Watchdog-PR** (§16, Branch `claude/watchdog-slot-briefing-korrektur`). **Nicht gemergt** — Merge = Production-Deployment und Betreiberentscheidung.
+- **Offen ist genau ein Pull Request: PR #271** (Watchdog-Korrektur, §16, Branch `claude/watchdog-slot-briefing-korrektur`). **Nicht gemergt** — Merge = Production-Deployment und Betreiberentscheidung.
 - Davor gemergt: #265, #262, #261, #260/#259/#256/#257, #225, #216; die PR-Bereinigung vom 23.08. (inkl. begründeter Schließungen) ist in Archivfassung und Runbook dokumentiert.
 - Merge nach `main` löst automatisch ein Production-Deployment aus.
 
@@ -187,7 +187,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 16 · Letzter Sprint (26.08. — Watchdog: Slotlogik und Briefingstufen)
 
-**Sprintzustand: teilweise abgeschlossen** — Korrektur gebaut und testbelegt; Merge, Deployment und der reguläre Production-Nachweis stehen aus. Branch `claude/watchdog-slot-briefing-korrektur`, Ausgangscommit `07bf7794`. **Keine Production-Änderung, keine Datenbank-Mutation, kein Cron, kein Flag, keine Env, keine Push-Abo-Änderung.**
+**Sprintzustand: teilweise abgeschlossen** — Korrektur gebaut und testbelegt; Merge, Deployment und der reguläre Production-Nachweis stehen aus. Branch `claude/watchdog-slot-briefing-korrektur`, **PR #271 (offen, nicht gemergt)**, Ausgangscommit `07bf7794`. **Keine Production-Änderung, keine Datenbank-Mutation, kein Cron, kein Flag, keine Env, keine Push-Abo-Änderung.**
 
 **Belegter Anlass (rein lesend, 26.08.):** Der Motor war grün (0 endgültige Fehler, 0 hängende Leases, 0 CAS-`unbekannt`), der Bot meldete dennoch **„Gestört"** — einziger Alarmgrund `slot-fehlt:warteschlange-crawl@04:00Z`. Der `partial`-Lauf vom 25.08. (189 von 207 Aufträgen erledigt) erfüllte den Slot nicht, obwohl er **lief** und zwei erfolgreiche Folgeläufe hatte; ein einmaliges `partial` erzeugte so bis zu **24 h** Fehlalarm. Gegen die echten Quittungen nachgerechnet ergibt die Korrektur **„Gesund mit Hinweisen"** mit sichtbarem `slot-erholt`.
 
