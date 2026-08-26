@@ -89,6 +89,22 @@ function zeilenSpeicher() {
       // OHNE user_id-Filter. Genau darum muss die Pruefung im Lesecode sitzen.
       return zeilen.get(`bf-${userId}-${slot}-${day}`) || null;
     },
+    // GEBUENDELTE Variante (Watchdog-Abnahme 26.08.): liefert die Zeilen zu den
+    // angefragten Kennungen — bewusst OHNE eigene Mandantenpruefung, exakt wie die
+    // Produktion. Die Pruefung muss im Lesecode sitzen, sonst waere die Buendelung
+    // ein Loch in der Mandantentrennung.
+    async listRenderedBriefingsV3ForTenants(tenantIds, slots, day) {
+      this.gebuendelteAbfragen += 1;
+      const out = [];
+      for (const t of tenantIds) {
+        for (const sl of slots) {
+          const row = zeilen.get(`bf-${t}-${sl}-${day}`);
+          if (row) out.push(row);
+        }
+      }
+      return out;
+    },
+    gebuendelteAbfragen: 0,
     async saveRenderedBriefingV3(entry) {
       this.schreibvorgaenge += 1;
       zeilen.set(entry.id, { ...entry });
@@ -144,6 +160,40 @@ function zeilenSpeicher() {
   // Und er faerbt NICHT auf ein anderes Mandat ab.
   const nachbar = await lauf.ladeTageslauf(st, FREMD, HEUTE);
   check("F1f Der Beleg von A macht B nicht aktuell", nachbar.lauf === null);
+
+  // (e) GEBUENDELT (Watchdog-Abnahme 26.08.): der Sammellesevorgang muss GENAU
+  // dieselbe Haertung tragen wie der Einzelpfad — sonst waere die Skalierung mit
+  // einem Loch in der Mandantentrennung erkauft.
+  {
+    const stB = zeilenSpeicher();
+    // eigener heutiger Beleg von A
+    await lauf.schreibeQuittung(stB, lauf.quittung({
+      tenantId: MANDAT, berlinTag: HEUTE, status: lauf.STATUS_ERFOLG,
+      erzeugtAm: new Date("2026-07-15T04:00:00Z"), signatur: "eigen-a"
+    }));
+    // Zeile unter B's Kennung, die aber A gehoert (Verfaelschung)
+    stB.zeilen.set(lauf.laufId(FREMD, HEUTE), {
+      id: lauf.laufId(FREMD, HEUTE), user_id: FREMD, slot: lauf.SLOT_ERFOLG,
+      generated_at: "2026-07-15T04:00:00Z",
+      payload: { vertragVersion: 1, tenantId: MANDAT, berlinTag: HEUTE, status: "erfolg", erzeugtAm: "2026-07-15T04:00:00Z", signatur: "fremd" }
+    });
+    const viele = await ohneFehlerprotokoll(() => lauf.ladeTageslaeufe(stB, [MANDAT, FREMD], HEUTE));
+    check("F1g Gebuendelt: EIN Speicherzugriff fuer beide Mandate",
+      stB.gebuendelteAbfragen === 1, String(stB.gebuendelteAbfragen));
+    check("F1h Gebuendelt: A bekommt genau seinen eigenen Beleg",
+      viele.get(MANDAT).lauf && viele.get(MANDAT).lauf.signatur === "eigen-a"
+        && viele.get(MANDAT).quelle === "erfolg", JSON.stringify(viele.get(MANDAT)));
+    check("F1i Gebuendelt: die verfaelschte Zeile wird verworfen, nie zugeordnet",
+      viele.get(FREMD).lauf === null && viele.get(FREMD).fehler === "beleg-passt-nicht",
+      JSON.stringify(viele.get(FREMD)));
+    // Ein Speicherfehler ergibt fuer JEDES Mandat einen benannten Fehler.
+    const stF = zeilenSpeicher();
+    stF.listRenderedBriefingsV3ForTenants = async () => { throw new Error("briefings-timeout"); };
+    const kaputt = await lauf.ladeTageslaeufe(stF, [MANDAT, FREMD], HEUTE);
+    check("F1j Gebuendelt: ein Lesefehler ist fuer JEDES Mandat eine benannte Messluecke",
+      [...kaputt.values()].every((x) => x.lauf === null && x.fehler === "briefings-timeout"),
+      JSON.stringify([...kaputt.values()]));
+  }
 
   // =============================================================================
   // F2 — „Neu" folgt dem BELEGTEN Meldungszeitpunkt, nie Helmuts Schreibzeitpunkt

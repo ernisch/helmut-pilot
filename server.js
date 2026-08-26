@@ -1331,15 +1331,79 @@ async function handleRequest(request, response) {
       const { tenantIds, reason } = await tenantContext.resolveCronTenants();
       if (!tenantIds.length) {
         const ladeStoerung = reason === "mandanten-liste-nicht-ladbar";
-        if (ladeStoerung) {
-          await accounts.recordSystemError({ scope: "health-report", message: "Mandantenliste nicht ladbar — Health-Report uebersprungen.", path: "/api/cron/health-report" }).catch(() => {});
+        if (!ladeStoerung) return { ok: true, skipped: true, reason, tenants: 0, reports: [] };
+        // MANDANTENLISTE NICHT LESBAR (Abnahme 26.08., Pflichtprüfung 3): der Bot darf
+        // hier weder „0 von 0" noch einen gesunden Zustand behaupten — und er darf vor
+        // allem NICHT schweigen. Vorher endete der Lauf hier ohne jede Meldung: genau
+        // dann, wenn der Betreiber nichts mehr sieht, kam auch keine Nachricht mehr.
+        await accounts.recordSystemError({ scope: "health-report", message: "Mandantenliste nicht ladbar — Health-Report uebersprungen.", path: "/api/cron/health-report" }).catch(() => {});
+        const unbestimmtText = "Briefingstufen: Status nicht bestimmbar — die Liste der aktiven Mandate"
+          + " ist nicht lesbar. Weder Vorbereitung noch Push-Empfänger noch Versand sind belegbar;"
+          + " das ist ausdrücklich KEIN Nachweis, dass es keine Mandate oder keine Empfänger gibt.";
+        const unbestimmtAggregat = {
+          ok: false, text: unbestimmtText,
+          state: "Status nicht bestimmbar", severity: "unbestimmt",
+          healthBlockers: [], healthWarnings: ["mandantenliste-nicht-lesbar", "briefingstufen-nicht-bestimmbar"],
+          rollingCrawl: null, overdueCrons: [], googleUrlResolutionRate: null
+        };
+        if (dryRun) {
+          return { dryRun: true, ok: false, skipped: true, reason, tenants: 0, text: unbestimmtText, reports: [] };
         }
-        return { ok: !ladeStoerung, skipped: true, reason, tenants: 0, reports: [] };
+        const [dl, wh] = await Promise.all([
+          sendCallMeBotMessage(buildAlarmText(unbestimmtAggregat)),
+          sendMonitoringWebhook(unbestimmtAggregat)
+        ]);
+        return { ok: false, skipped: true, reason, tenants: 0, text: unbestimmtText, delivery: dl, webhook: wh, reports: [] };
       }
+      // GEBÜNDELTER Frischebeleg für ALLE aktiven Mandate: EIN Speicherzugriff je
+      // Stapel statt zwei Abfragen je Mandat (Skalierung 25/100, Abnahme 26.08.).
+      // Der Frischevertrag ist der EINZIGE Schreiber dieser Belegzeile; ist er
+      // abgeschaltet, existiert für kein Mandat je ein Beleg — daraus darf weder Grün
+      // noch Rot folgen, sondern nur eine benannte Messlücke.
+      const motorPfadAktiv = scalablePipeline.skalierbarerPfadAktiv(process.env);
+      const berlinTagKeyLauf = briefingFrische.berlinTagKey(new Date());
+      // Mandantenneutrale Motorsignale EINMAL je Lauf (Skalierung, Abnahme 26.08.).
+      const motorKontext = motorPfadAktiv ? await motorLaufKontext({}) : null;
+      const briefingBelege = motorPfadAktiv
+        ? (briefingFrische.vertragAktiv()
+          ? await briefingLauf.ladeTageslaeufe(storageModul, tenantIds, berlinTagKeyLauf)
+            .catch((error) => new Map(tenantIds.map((t) => [t, { lauf: null, quelle: null, fehler: String((error && error.message) || "lesefehler").slice(0, 160) }])))
+          : new Map(tenantIds.map((t) => [t, { lauf: null, quelle: null, fehler: "frischevertrag-aus" }])))
+        : new Map();
+      // GEBÜNDELTE MANDANTENSPEICHER: Lage-Check und Push-Übersicht liegen in
+      // DERSELBEN helmut_store-Zeile je Mandat. Statt zwei Zugriffen je Mandat holt
+      // ein Stapellesevorgang mehrere Zeilen in einem Zugriff — mit begrenzter
+      // Parallelität und festem Gesamtzeitbudget. Ein gescheiterter oder zu langsamer
+      // Stapel bricht den Lauf NICHT ab: die betroffenen Mandate bleiben im Nenner und
+      // werden als „Status nicht bestimmbar" ausgewiesen.
+      const mandantenSpeicher = motorPfadAktiv
+        ? await storageModul.leseMandantenSpeicherGebuendelt(tenantIds)
+          .catch((error) => ({
+            speicher: new Map(),
+            fehler: new Map(tenantIds.map((t) => [t, String((error && error.message) || "lesefehler").slice(0, 160)]))
+          }))
+        : { speicher: new Map(), fehler: new Map() };
+      // Der gemeinsame Hauptspeicher ist EINE Zeile für ALLE Mandate und trägt nur den
+      // Altbestand-Rückfall des Lage-Checks. Er wird deshalb höchstens EINMAL je Lauf
+      // gelesen — und auch das nur, wenn mindestens ein Mandat keinen eigenen
+      // Lage-Check hat. Sonst zahlt jeder Lauf den grossen Blob umsonst.
+      const brauchtHauptSpeicher = motorPfadAktiv
+        && [...mandantenSpeicher.speicher.values()].some((st) => !((st && st.lageChecks) || []).length);
+      const hauptSpeicher = brauchtHauptSpeicher
+        ? await storageModul.readStore("main").catch(() => null)
+        : null;
       const reports = [];
       for (const tenantId of tenantIds) {
         try {
-          const r = await buildHealthReport(tenantId, { mandate: tenantIds.length });
+          const r = await buildHealthReport(tenantId, {
+            mandate: tenantIds.length,
+            briefingTageslauf: briefingBelege.get(tenantId) || null,
+            berlinTag: berlinTagKeyLauf,
+            laufKontext: motorKontext,
+            mandantenSpeicher: mandantenSpeicher.speicher.get(tenantId) || null,
+            mandantenSpeicherFehler: mandantenSpeicher.fehler.get(tenantId) || null,
+            mandantenHauptSpeicher: hauptSpeicher
+          });
           reports.push({
             tenant: tenantId, ok: r.ok, text: r.text, overdueCrons: r.overdueCrons,
             googleUrlResolutionRate: r.googleUrlResolutionRate,
@@ -1347,7 +1411,9 @@ async function handleRequest(request, response) {
             // aggregierten Alarm-Payload (nur technische Felder).
             state: r.state, severity: r.severity,
             healthBlockers: r.healthBlockers, healthWarnings: r.healthWarnings,
-            rollingCrawl: r.rollingCrawl
+            rollingCrawl: r.rollingCrawl,
+            // Nur der Motorpfad liefert Briefingstufen — der Altpfad antwortet unverändert.
+            ...(r.briefingEinzel ? { briefingEinzel: r.briefingEinzel } : {})
           });
         } catch (error) {
           // Auch der Fehlerfall trägt Zustand/Blocker (Review-Fix): sonst
@@ -1392,19 +1458,65 @@ async function handleRequest(request, response) {
       // gemacht, loest aber keinen Alarmkanal aus — sonst wuerde ein einzelnes
       // verwaistes Dokument den Betreiber jede Nacht wecken.
       const watchdogAlarm = Boolean(vorgangsWatchdog && vorgangsWatchdog.zustand === "alarm");
-      const overallOk = reports.every((r) => r.ok) && !watchdogAlarm;
-      const combinedText = [
+
+      // ── BRIEFINGSTUFEN ÜBER ALLE AKTIVEN MANDATE (Teil 3, 2026-08-26) ────────────
+      // Der Nenner sind die aktiven Mandate aus der Datenbank (`tenantIds`), nicht die
+      // Zahl der gelungenen Läufe: „5 von 5" eines Laufs beweist die Erzeugung, nicht
+      // die Ankunft. Die Stufen werden getrennt ausgewiesen; „Briefing erhalten" wird
+      // bewusst nirgends behauptet. Der Morgenlauf ist 05:00 UTC — als vorgesehener
+      // Zeitpunkt gilt er plus eine Stunde Toleranz (der Report läuft 06:00 UTC).
+      // NENNER = aktive Mandate. Ein Mandat, dessen Report geworfen hat, verschwindet
+      // NICHT aus dem Nenner — es wird als Messlücke geführt (`belegLesefehler`), damit
+      // weder „Vorbereitung fehlt" behauptet noch die Quote stillschweigend geschönt wird.
+      const briefingProMandat = new Map(
+        reports.filter((r) => r && r.briefingEinzel).map((r) => [r.tenant, r.briefingEinzel])
+      );
+      const briefingEinzelStatus = motorPfadAktiv
+        ? tenantIds.map((tenantId) => briefingProMandat.get(tenantId) || {
+          // Messlücke: der Report dieses Mandats ist geworfen. NICHTS davon ist belegt —
+          // weder Vorbereitung noch Push-Ereignis noch Empfänger. Alles bleibt `null`.
+          mandat: tenantId, vorbereitet: null, quelle: null, status: null, signatur: null,
+          ablageKorrekt: null, pushErzeugt: null, empfaenger: null,
+          versandBestaetigt: 0, zustellfehler: 0, belegLesefehler: "report-fehler"
+        })
+        : [];
+      // Fälligkeit am BERLINER Tagesschlüssel — demselben, unter dem der Frischebeleg
+      // abgelegt wird. Zwischen 22 und 24 Uhr UTC ist in Berlin bereits der Folgetag:
+      // ein UTC-Datum würde dort einen längst vergangenen Morgenslot behaupten und ein
+      // noch gar nicht fälliges Briefing als fehlend melden (Review-Befund).
+      const morgenSlotMs = (() => {
+        const teile = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(berlinTagKeyLauf || ""));
+        if (!teile) return Number.POSITIVE_INFINITY; // ohne Tagesschlüssel keine Fälligkeitsbehauptung
+        return Date.UTC(Number(teile[1]), Number(teile[2]) - 1, Number(teile[3]), 5, 0, 0) + 60 * 60 * 1000;
+      })();
+      const briefingStufen = briefingEinzelStatus.length
+        ? motorHealth.bewerteBriefingStufen({
+          einzel: briefingEinzelStatus, jetztMs: Date.now(), erwartetAbMs: morgenSlotMs
+        })
+        : null;
+      const briefingAlarm = Boolean(briefingStufen && briefingStufen.gruende.length);
+      const overallOk = reports.every((r) => r.ok) && !watchdogAlarm && !briefingAlarm;
+      // Die Briefingstufen stehen VORNE: `buildAlarmText` kappt für WhatsApp hart bei
+      // 2000 Zeichen, und bei fünf Mandaten fielen die mandantenübergreifenden Sätze
+      // sonst regelmäßig aus der Nachricht (belegt am 26.08.). Wird gekappt, sagt der
+      // Text das ausdrücklich — eine stillschweigend halbe Meldung wäre falsches Grün.
+      const kernText = [
+        briefingStufen ? `Briefingstufen (${briefingStufen.aktive} aktive Mandate): ${briefingStufen.text}` : null,
         ...reports.map((r) => r.text).filter(Boolean),
         vorgangsWatchdog && vorgangsWatchdog.zustand !== "ok" && vorgangsWatchdog.zustand !== "unbekannt"
           ? `Vorgangsbildung (${vorgangsWatchdog.fensterTage} Tage): ${vorgangsWatchdog.zustand.toUpperCase()}\n${vorgangsWatchdog.meldungen.map((m) => `- ${m}`).join("\n")}`
           : null
       ].filter(Boolean).join("\n\n");
+      const combinedText = kernText.length > 2000
+        ? `Meldung gekürzt: ${reports.length} Mandate im Bericht, WhatsApp zeigt nur die ersten 2000 Zeichen`
+          + ` (vollständig im Webhook und in der JSON-Antwort).\n\n${kernText}`
+        : kernText;
       const kanaele = {
         whatsapp: { konfiguriert: Boolean(String(process.env.CALLMEBOT_PHONE || "").trim() && String(process.env.CALLMEBOT_APIKEY || "").trim()) },
         webhook: { konfiguriert: Boolean(String(process.env.HELMUT_MONITORING_WEBHOOK_URL || "").trim()) }
       };
       if (dryRun) {
-        return { dryRun: true, ok: overallOk, tenants: tenantIds.length, text: combinedText, kanaele, reports, vorgangsWatchdog };
+        return { dryRun: true, ok: overallOk, tenants: tenantIds.length, text: combinedText, kanaele, reports, vorgangsWatchdog, ...(briefingStufen ? { briefingStufen } : {}) };
       }
       // EINE aggregierte Nachricht je Kanal (Alarm feuert, wenn IRGENDEIN Mandat nicht ok ist).
       // Härtungs-Sprint: Zustand/Blocker/rollierende Crawl-Sicht des SCHLECHTESTEN
@@ -1413,16 +1525,28 @@ async function handleRequest(request, response) {
       const worstRolling = reports.map((r) => r.rollingCrawl).filter(Boolean)
         .sort((a, b) => (alertRank[b.alertLevel] || 0) - (alertRank[a.alertLevel] || 0))[0] || null;
       const leadReport = reports.find((r) => !r.ok) || reports[0] || {};
+      // Zustand und Schweregrad dürfen dem Gesamtergebnis nicht widersprechen: feuert der
+      // Alarm allein wegen der Briefingstufen oder des Vorgangs-Watchdogs, sind ALLE
+      // Mandatsreports grün — dann würde `leadReport` „Gesund/ok" neben `ok:false`
+      // stellen. Der Payload trägt deshalb den eskalierten Wert (Review-Befund).
+      const aggregatZustand = !overallOk && leadReport.severity === "ok"
+        ? { state: "Gestört", severity: "alarm" }
+        : { state: leadReport.state, severity: leadReport.severity };
       const aggregate = {
         ok: overallOk, text: combinedText,
-        state: leadReport.state, severity: leadReport.severity,
+        state: aggregatZustand.state, severity: aggregatZustand.severity,
         healthBlockers: [
           ...reports.flatMap((r) => r.healthBlockers || []),
-          ...(watchdogAlarm ? ["vorgangsbildung-ohne-endzustand"] : [])
+          ...(watchdogAlarm ? ["vorgangsbildung-ohne-endzustand"] : []),
+          ...((briefingStufen && briefingStufen.gruende) || [])
         ],
         healthWarnings: [
           ...reports.flatMap((r) => r.healthWarnings || []),
-          ...(vorgangsWatchdog && vorgangsWatchdog.zustand === "warnung" ? ["vorgangsbildung-rueckstand"] : [])
+          ...(vorgangsWatchdog && vorgangsWatchdog.zustand === "warnung" ? ["vorgangsbildung-rueckstand"] : []),
+          ...((briefingStufen && briefingStufen.hinweise) || []),
+          // Messlücken der Briefingstufen sind weder Grund noch Grün — sie werden als
+          // Warnung mitgeführt, damit sie im Payload nicht stillschweigend verschwinden.
+          ...((briefingStufen && briefingStufen.unbestimmt) || [])
         ],
         rollingCrawl: worstRolling,
         overdueCrons: reports.flatMap((r) => r.overdueCrons || []),
@@ -1450,7 +1574,7 @@ async function handleRequest(request, response) {
           path: "/api/cron/health-report"
         }).catch(() => {});
       }
-      return { ok: overallOk, tenants: tenantIds.length, text: combinedText, delivery, webhook, reports, vorgangsWatchdog };
+      return { ok: overallOk, tenants: tenantIds.length, text: combinedText, delivery, webhook, reports, vorgangsWatchdog, ...(briefingStufen ? { briefingStufen } : {}) };
     });
   }
 
@@ -4344,25 +4468,16 @@ async function buildHealthReport(politicianId, kontext = {}) {
   return buildLegacyHealthReport(politicianId);
 }
 
-// Motor-Gesundheitsbericht: vier Zustände (Gesund · Gesund mit Hinweisen ·
-// Gestört · Status nicht bestimmbar), Logik in lib/helmut/motor-health.js.
-// REIN LESEND: kein Blob-Write, kein saveWatchdogState (die Erholt-Hysterese
-// ist ein dokumentierter eigener Punkt und nicht Teil dieses Berichts).
-async function buildMotorHealthReport(politicianId, { mandate = null } = {}) {
-  politicianId = tenantContext.requireTenantId(politicianId, "buildHealthReport");
-  const storage = getStorageStatus();
-  const now = Date.now();
-  const ageMs = (t) => (t ? now - new Date(t).getTime() : null);
-  const day = 24 * 3600000;
-  const fehlerText = (error) => String((error && error.message) || "unbekannt").slice(0, 160);
-
-  const [lageCheck, completeKoAt, errors, users, feedback, pushEvents, llmBreakdown, classificationCoverage, queueStatus, casKennzahlen, quittungen] = await Promise.all([
-    getLatestLageCheck(politicianId).catch(() => null),
+// Mandantenneutrale Signale des Motorberichts — GENAU EINMAL je Lauf. Keine dieser
+// Abfragen nimmt eine Mandantenkennung entgegen; sie je Mandat zu wiederholen wäre
+// derselbe Wert, N-mal bezahlt (Abnahme 26.08.). Jeder Lesefehler bleibt als benannte
+// Messlücke erhalten und wird NIE zu einem stillen Standardwert.
+async function motorLaufKontext({ fehlerText = (e) => String((e && e.message) || "unbekannt") } = {}) {
+  const [completeKoAt, errors, users, feedback, llmBreakdown, classificationCoverage, queueStatus, casKennzahlen, quittungen] = await Promise.all([
     getLatestCompleteKnowledgeObjectAt(), // fail-safe null
     accounts.listSystemErrors(100).catch(() => []),
     accounts.listUsers().catch(() => []),
     listFeedback(200).catch(() => []),
-    listPushEvents(politicianId, 200).catch(() => []),
     getLlmUsageBreakdownToday().catch(() => null),
     getClassificationCoverage().catch(() => null),
     scalablePipeline.betriebsstatus({ seitMinuten: 1440 })
@@ -4378,10 +4493,71 @@ async function buildMotorHealthReport(politicianId, { mandate = null } = {}) {
       .then((runs) => ({ verfuegbar: true, runs }))
       .catch((error) => ({ verfuegbar: false, grund: fehlerText(error) }))
   ]);
+  return { completeKoAt, errors, users, feedback, llmBreakdown, classificationCoverage, queueStatus, casKennzahlen, quittungen };
+}
+
+// Motor-Gesundheitsbericht: vier Zustände (Gesund · Gesund mit Hinweisen ·
+// Gestört · Status nicht bestimmbar), Logik in lib/helmut/motor-health.js.
+// REIN LESEND: kein Blob-Write, kein saveWatchdogState (die Erholt-Hysterese
+// ist ein dokumentierter eigener Punkt und nicht Teil dieses Berichts).
+async function buildMotorHealthReport(politicianId, {
+  mandate = null, briefingTageslauf = null, berlinTag = null, laufKontext = null,
+  mandantenSpeicher = null, mandantenSpeicherFehler = null, mandantenHauptSpeicher = null
+} = {}) {
+  politicianId = tenantContext.requireTenantId(politicianId, "buildHealthReport");
+  const storage = getStorageStatus();
+  const now = Date.now();
+  const ageMs = (t) => (t ? now - new Date(t).getTime() : null);
+  const day = 24 * 3600000;
+  const fehlerText = (error) => String((error && error.message) || "unbekannt").slice(0, 160);
+
+  // MANDANTENNEUTRALE Signale werden EINMAL JE LAUF geholt, nicht einmal je Mandat:
+  // keines dieser acht Signale nimmt eine Mandantenkennung entgegen, und bei 25 oder
+  // 100 Mandaten wären es sonst 8x25 bzw. 8x100 identische Abfragen (Abnahme 26.08.,
+  // Pflichtprüfung 4). Der Aufrufer reicht sie über `laufKontext` durch; fehlt der
+  // Kontext, holt der Bericht sie selbst — dann ist er langsamer, aber nie falsch.
+  const kontextBauen = () => motorLaufKontext({ fehlerText });
+  const globalerKontext = laufKontext || await kontextBauen();
+  const { completeKoAt, errors, users, feedback, llmBreakdown, classificationCoverage, queueStatus, casKennzahlen, quittungen } = globalerKontext;
+  // MANDANTENBEZOGENE SIGNALE: Lage-Check und Push-Übersicht liegen in DERSELBEN
+  // helmut_store-Zeile `main-p-<mandat>`. Der Aufrufer liest sie GEBÜNDELT für alle
+  // Mandate (`leseMandantenSpeicherGebuendelt`) und reicht den fertigen Speicher
+  // durch — hier fällt dann KEIN eigener Zugriff mehr an. Ohne durchgereichten
+  // Speicher liest der Bericht selbst: langsamer, aber nie falsch.
+  const speicherFehler = mandantenSpeicherFehler || null;
+  let mandantenStore = mandantenSpeicher || null;
+  let lageCheck = null;
+  let pushUebersicht = null;
+  if (!speicherFehler) {
+    if (!mandantenStore) {
+      const [lc, pu] = await Promise.all([
+        getLatestLageCheck(politicianId).catch(() => null),
+        storageModul.getPushUebersicht(politicianId, { limit: 200 }).catch(() => null)
+      ]);
+      lageCheck = lc;
+      pushUebersicht = pu;
+    } else {
+      // Mandantenprüfung unverändert im Speicherauswerter (`politicianId === tenantId`):
+      // eine gebündelte Antwort darf keine fremde Zeile in den Bericht tragen.
+      lageCheck = storageModul.lageCheckAusSpeicher(mandantenStore, politicianId, mandantenHauptSpeicher || null);
+      pushUebersicht = storageModul.pushUebersichtAusSpeicher(mandantenStore, politicianId, { limit: 200 });
+    }
+  }
+  // TEIL 3 (2026-08-26): Der Frischebeleg dieses Mandanten kommt GEBÜNDELT von der
+  // Route (`briefingLauf.ladeTageslaeufe`) — eine Abfrage für alle Mandate statt zwei
+  // je Mandat. Die Prüfung gegen Mandant und Berliner Tag ist dieselbe wie im
+  // Einzelpfad (`ausZeile` verwirft eine fremde Zeile). Fehlt der Baustein ganz, ist
+  // das eine Messlücke und weder Grün noch Rot.
+  const briefingBeleg = briefingTageslauf || { lauf: null, quelle: null, fehler: "briefingbeleg-nicht-uebergeben" };
+  const pushEvents = pushUebersicht ? pushUebersicht.events : null;
+  const pushAbos = pushUebersicht ? pushUebersicht.subscriptions : null;
 
   const errors24 = (errors || []).filter((e) => e.createdAt && (now - new Date(e.createdAt).getTime()) < day).length;
   const feedback24 = (feedback || []).filter((f) => f.createdAt && (now - new Date(f.createdAt).getTime()) < day).length;
-  const pushSent24 = (pushEvents || []).filter((e) => e.createdAt && (now - new Date(e.createdAt).getTime()) < day && Number(e.delivered) > 0).length;
+  // `null` heisst „Push-Speicher nicht lesbar" — dann wird KEINE Null behauptet.
+  const pushSent24 = pushEvents == null
+    ? null
+    : pushEvents.filter((e) => e.createdAt && (now - new Date(e.createdAt).getTime()) < day && Number(e.delivered) > 0).length;
   const active7 = (users || []).filter((u) => {
     const seen = u.lastSeenAt || u.lastLoginAt;
     return seen && (now - new Date(seen).getTime()) < 7 * day;
@@ -4399,13 +4575,50 @@ async function buildMotorHealthReport(politicianId, { mandate = null } = {}) {
     : null;
 
   const lageAlterMs = ageMs(lageCheck?.checkedAt || lageCheck?.createdAt);
-  const lageHinweis = motorHealth.lageRotationsHinweis({ lageAlterMs, mandate });
+  const lageHinweis = motorHealth.lageRotationsHinweis({ lageAlterMs, mandate, messbar: !speicherFehler });
   const verstandenAlterMs = ageMs(completeKoAt);
 
   // Hinweise (Teil-B-Auftrag Nr. 6): dürfen niemals allein eine
   // Störungsüberschrift auslösen — sie ergeben „Gesund mit Hinweisen".
   const ingest = slotPruefung && slotPruefung.juengsteIngest;
   const hinweise = motorHealth.leiteMotorHinweise({ ingest, coverage, errors24, lageHinweis });
+
+  // Briefingstufen dieses Mandanten — jede Stufe EINZELN belegt, nie zusammengezogen.
+  // `vorbereitet` heißt ausdrücklich: es liegt ein geprüfter Erfolgsbeleg für den
+  // heutigen Berliner Tag vor — NICHT „der Mandant hat das Briefing erhalten".
+  // Nur die BRIEFING-Pushes dieses Berliner Tages zählen. Der Filter läuft über den
+  // eindeutigen Anlassschlüssel (`push.js`: `briefing-push:<mandat>:<berlinTag>:…`) —
+  // nach Typ oder nur nach 24h zu filtern würde `reaction_recommended` und
+  // Lage-Pushes als Briefing-Zustellung ausweisen (Review-Befund).
+  // Derselbe Berliner Tagesschlüssel wie beim gebündelten Frischebeleg des Laufs —
+  // sonst könnten Beleg und Push-Filter am Tageswechsel auseinanderlaufen.
+  const berlinTagKey = berlinTag || briefingFrische.berlinTagKey(new Date(now));
+  const briefingPushPraefix = `briefing-push:${politicianId}:${berlinTagKey}:`;
+  const briefingPushes = pushEvents == null
+    ? null
+    : pushEvents.filter((e) => String(e.dedupeKey || "").startsWith(briefingPushPraefix));
+  // Ein Beleg, der gelesen, aber wegen fremdem Mandanten/Tag VERWORFEN wurde, ist ein
+  // Mandantentrennungsbefund — nicht dasselbe wie ein Lesefehler.
+  const belegVerworfen = Boolean(briefingBeleg && briefingBeleg.fehler === "beleg-passt-nicht");
+  const belegLesefehler = Boolean(briefingBeleg && briefingBeleg.fehler && !belegVerworfen);
+  const briefingEinzel = {
+    mandat: politicianId,
+    vorbereitet: Boolean(briefingBeleg && briefingBeleg.lauf
+      && briefingBeleg.lauf.status === briefingLauf.STATUS_ERFOLG),
+    quelle: (briefingBeleg && briefingBeleg.quelle) || null,
+    status: (briefingBeleg && briefingBeleg.lauf && briefingBeleg.lauf.status) || null,
+    signatur: (briefingBeleg && briefingBeleg.lauf && briefingBeleg.lauf.signatur) || null,
+    // true = geprüft korrekt abgelegt · false = fremder Mandant/Tag verworfen · null = kein Beleg
+    ablageKorrekt: briefingBeleg && briefingBeleg.lauf ? true : (belegVerworfen ? false : null),
+    pushErzeugt: briefingPushes == null ? null : briefingPushes.length > 0,
+    // Ein Lesefehler der Abos ergibt `null` = „nicht lesbar" — NICHT 0 = „kein Empfänger".
+    empfaenger: Array.isArray(pushAbos) ? pushAbos.length : null,
+    // `delivered` zählt die vom PUSH-DIENST angenommenen Sendungen (HTTP 2xx des
+    // Endpunkts), NICHT eine Bestätigung des Endgeräts — daher `versandBestaetigt`.
+    versandBestaetigt: (briefingPushes || []).reduce((n, e) => n + (Number(e.delivered) || 0), 0),
+    zustellfehler: (briefingPushes || []).reduce((n, e) => n + (Number(e.failed) || 0), 0),
+    belegLesefehler: belegLesefehler ? String(briefingBeleg.fehler) : null
+  };
 
   const klass = motorHealth.klassifiziereMotorZustand({
     storageOk: storage.backend === "supabase",
@@ -4417,7 +4630,10 @@ async function buildMotorHealthReport(politicianId, { mandate = null } = {}) {
     verstandenWarnMs: 24 * 60 * 60 * 1000,
     verstandenRotMs: maxOutputFreshnessMs,
     budget,
-    hinweise
+    hinweise,
+    // Ist der Mandantenspeicher nicht lesbar, sind Lage-Alter und Push-Daten dieses
+    // Mandats UNBEKANNT — nicht „nie geprüft" und nicht „kein Empfänger".
+    zusatzUnbestimmt: speicherFehler ? ["mandantenspeicher-nicht-lesbar"] : []
   });
 
   // Terminale Fehler getrennt von historisch aufgefangenen (Teil-B-Auftrag Nr. 8):
@@ -4434,11 +4650,13 @@ async function buildMotorHealthReport(politicianId, { mandate = null } = {}) {
   const motorZeile = ingest
     ? `Motor: ${ingest.process} ${fmt(ageMs(ingest.startedAt || ingest.createdAt))} — ${slotPruefung.abrechnung.text}`
     : "Motor: noch keine Warteschlangen-Slot-Quittung lesbar";
-  const slotZeile = slotPruefung
-    ? (slotPruefung.fehlendeSlots.length
-      ? `⏰ Erwartete Slots fehlend: ${slotPruefung.fehlendeSlots.join(", ")}`
-      : "⏰ Alle erwarteten Slots quittiert (Slot-Plan aus vercel.json, Toleranz 3h)")
-    : "⏰ Slot-Quittungen nicht lesbar";
+  // TEIL 2 (2026-08-26): Vollständigkeit, Ergebnis und Erholung werden GETRENNT
+  // angezeigt — die Zeilen entstehen in der reinen, testbaren Funktion
+  // motorHealth.slotDarstellung(), nicht hier im Berichtstext.
+  const { slotZeile, stoerungsZeile, erholungsZeile } = motorHealth.slotDarstellung({
+    slotPruefung,
+    alter: (q) => fmt(ageMs(q.startedAt || q.createdAt))
+  });
   const queueZeile = queueStatus && queueStatus.verfuegbar !== false
     ? `Queue: ${k.wartend ?? "?"} wartend · ${k.laufend ?? "?"} laufend · hängende Leases ${k.abgelaufeneLeases ?? "?"}`
       + ` · terminal offen ${terminalOffen}${dauerhaftBlockiert == null ? " (Blockierten-Sicht fehlt)" : ""}`
@@ -4451,6 +4669,8 @@ async function buildMotorHealthReport(politicianId, { mandate = null } = {}) {
     ...(klass.unbestimmtGruende.length ? [`Nicht bestimmbar: ${klass.unbestimmtGruende.join("; ")}.`] : []),
     motorZeile,
     slotZeile,
+    ...(stoerungsZeile ? [stoerungsZeile] : []),
+    ...(erholungsZeile ? [erholungsZeile] : []),
     queueZeile,
     `Verstanden zuletzt: ${fmt(verstandenAlterMs)} · Fehler (24h): ${errors24} historisch aufgefangen · terminal offen: ${terminalOffen}`,
     lageHinweis.text,
@@ -4458,7 +4678,7 @@ async function buildMotorHealthReport(politicianId, { mandate = null } = {}) {
     budget.limit != null
       ? `🧮 KI-Budget: ${budget.calls}/${budget.limit} genutzt · Rest ${budget.remaining} · Skips ${budget.skips}${budget.exhausted ? " ⚠️ erschöpft" : (budget.status === "knapp" ? " · knapp" : "")}`
       : `🧮 KI-Budget: ${budget.calls} Calls · Skips ${budget.skips} (kein Limit gesetzt)`,
-    `👤 ${active7} aktiv (7T) · 💬 ${feedback24} Feedback · 📲 ${pushSent24} Push (24h)`,
+    `👤 ${active7} aktiv (7T) · 💬 ${feedback24} Feedback · 📲 ${pushSent24 == null ? "Push-Versand nicht lesbar" : `${pushSent24} Push-Versand angenommen`} (24h)`,
     ...(klass.hinweise.length ? [`Hinweise: ${klass.hinweise.join("; ")}.`] : [])
   ].join("\n");
 
@@ -4482,6 +4702,7 @@ async function buildMotorHealthReport(politicianId, { mandate = null } = {}) {
     errors24,
     briefingItems: null,
     pushSent24,
+    briefingEinzel,
     motor: {
       zustand: klass.zustand,
       queue: queueStatus && queueStatus.verfuegbar !== false
@@ -4490,8 +4711,13 @@ async function buildMotorHealthReport(politicianId, { mandate = null } = {}) {
       casUnbekannt: klass.casUnbekannt,
       slotPruefung: slotPruefung
         ? {
+          // Vorhandensein und Ergebnis getrennt (Korrektur 2026-08-26): `fehlendeSlots`
+          // meint AUSSCHLIESSLICH „keine Quittung"; ein quittierter, aber teilweiser oder
+          // fehlgeschlagener Lauf steht in den Störungsfeldern.
           fehlendeSlots: slotPruefung.fehlendeSlots,
-          fehlgeschlageneSlots: slotPruefung.fehlgeschlageneSlots,
+          aktuelleStoerungen: (slotPruefung.aktuelleStoerungen || []).map((s) => ({ slot: s.slot, status: s.status })),
+          erholteStoerungen: (slotPruefung.erholteStoerungen || []).map((s) => ({ slot: s.slot, status: s.status })),
+          leerlaufSlots: (slotPruefung.leerlaufSlots || []).map((s) => ({ slot: s.slot, grund: s.grund, ordnungsgemaess: s.ordnungsgemaess })),
           abrechnung: slotPruefung.abrechnung
         }
         : null,
@@ -4745,8 +4971,11 @@ async function sendCallMeBotMessage(text) {
   const phone = String(process.env.CALLMEBOT_PHONE || "").replace(/[^\d]/g, "");
   const apikey = String(process.env.CALLMEBOT_APIKEY || "").trim();
   if (!phone || !apikey) return { sent: false, skipped: true, reason: "CALLMEBOT_PHONE/CALLMEBOT_APIKEY nicht gesetzt." };
-  const endpoint = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(apikey)}`;
   try {
+    // Die Kodierung gehoert IN den Schutz: ein alleinstehendes Ersatzzeichen im Text
+    // laesst encodeURIComponent werfen — frueher stand das ausserhalb des try und
+    // riss den gesamten Gesundheitslauf mit (Abnahme 26.08.).
+    const endpoint = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(apikey)}`;
     const res = await fetch(endpoint, { method: "GET" });
     const body = await res.text().catch(() => "");
     return { sent: res.ok, status: res.status, body: body.slice(0, 200) };

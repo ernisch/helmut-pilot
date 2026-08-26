@@ -65,5 +65,37 @@ check("Heartbeat: nicht-grün -> Fehler", evaluateHealthDryRun({ dryRun: true, o
 check("Heartbeat: kein dryRun -> Fehler", evaluateHealthDryRun({ ok: true }).ok === false);
 check("Heartbeat: keine Antwort -> Fehler", evaluateHealthDryRun(null).ok === false);
 
+// ── KAPPUNG BEI 2000 ZEICHEN ZERSCHNEIDET KEIN ZEICHEN ──────────────────────
+// Belegter Anlass (Abnahme 26.08., im echten Routentest bei fuenf Mandaten
+// aufgetreten): der Statustext traegt Emojis (⏰ 🧮 👤 📲). Faellt der Schnitt
+// mitten in ein Ersatzzeichenpaar, bleibt ein ALLEINSTEHENDES Surrogat stehen.
+// `encodeURIComponent` wirft darauf `URIError: URI malformed` — im CallMeBot-
+// Versand ausserhalb jedes try/catch, wodurch der GESAMTE Gesundheitslauf mit
+// 500 abbrach, statt nur den WhatsApp-Kanal zu verlieren.
+{
+  // Genau 1999 harmlose Zeichen, danach ein Emoji: der Schnitt bei 2000 landet
+  // zwischen den beiden Haelften des Ersatzzeichenpaars.
+  const boese = "a".repeat(1999) + "📲" + "b".repeat(50);
+  const gekappt = buildAlarmText({ text: boese }, fakeEnv);
+  check("Kappung laesst kein alleinstehendes Ersatzzeichen zurueck",
+    !/[\uD800-\uDBFF](?![\uDC00-\uDFFF])/.test(gekappt)
+      && !/(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(gekappt), JSON.stringify(gekappt.slice(-6)));
+  let wirft = null;
+  try { encodeURIComponent(gekappt); } catch (error) { wirft = error; }
+  check("der gekappte Text ist URL-kodierbar (kein URIError im WhatsApp-Versand)",
+    wirft === null, String(wirft && wirft.message));
+  check("die Kappung greift trotzdem (hoechstens 2000 Zeichen)", gekappt.length <= 2000, String(gekappt.length));
+  // Gegenprobe: die naive Kappung waere genau hier gescheitert.
+  let naivWirft = null;
+  try { encodeURIComponent(boese.slice(0, 2000)); } catch (error) { naivWirft = error; }
+  check("Gegenprobe: die naive Kappung haette geworfen (der Fehler war echt)",
+    naivWirft !== null, "naive Kappung warf keinen Fehler — Testfall greift nicht mehr");
+  // Auch der Payload-Text laeuft ueber dieselbe Kappung.
+  const payloadText = buildAlarmPayload({ text: boese }, fakeEnv).text;
+  let payloadWirft = null;
+  try { encodeURIComponent(payloadText); } catch (error) { payloadWirft = error; }
+  check("auch der Webhook-Payloadtext bleibt kodierbar", payloadWirft === null);
+}
+
 console.log(`\n${passed}/${passed + failed} Alarm-Payload-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
