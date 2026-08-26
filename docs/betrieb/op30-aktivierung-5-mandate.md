@@ -2238,9 +2238,13 @@ Beides sind Änderungen an Production-Daten und damit **freigabepflichtig** (`CL
 Die AWS-Aktivierung, die Anhebung des KI-Tagesdeckels und die Ausweitung auf 25+ Mandate.
 **Helmut ist nicht für 25, 100, 200 oder 500 Mandate freigegeben.** Der Sprint hat einen
 technischen Engpass beseitigt — der bindende Grund gegen mehr Mandate war ohnehin ein
-anderer: der KI-Tagesdeckel (ab 25 Mandaten reicht der Gesamtdeckel 100 — davon 30 reserviert —
-auch im günstigen Fall nicht) und
-OP-15 (Google-Drosselung, ab ~10 Mandaten). Auch der AWS-Trockenlauf aus §22 bleibt eine
+anderer: der KI-Tagesdeckel und OP-15 (Google-Drosselung, ab ~10 Mandaten).
+
+> **Berichtigt 2026-08-25/5.** Der Klammerzusatz lautete „ab 25 Mandaten reicht der
+> Gesamtdeckel 100 — davon 30 reserviert — auch im günstigen Fall nicht". Er ist
+> **zurückgenommen**: **100/30 sind dokumentiert, nicht live verifiziert**; für **25** ist die
+> Tragfähigkeit **offen und zu messen**, **ab 50** reicht 100 in **beiden** Modelllinien nicht
+> ([`skalierung-25-50-100.md`](skalierung-25-50-100.md) §2c). Auch der AWS-Trockenlauf aus §22 bleibt eine
 gesonderte Betreiberentscheidung und wurde nicht ausgeführt.
 
 ---

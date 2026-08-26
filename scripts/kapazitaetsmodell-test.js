@@ -187,6 +187,140 @@ function kiSpanne(n) {
   };
 }
 
+
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// TEIL B0 · DER KI-TAGESDECKEL — LIMIT UND RESERVE SIND GETRENNTE EINGABEN
+// ═══════════════════════════════════════════════════════════════════════════════════════════
+// BEHOBENER FEHLER (Korrekturrunde 2026-08-25/4): hier stand `const DECKEL = 100 + 30`, also
+// 130. Das ist die Rechnung, die `betrieb/llm-budget-reservierung.md` ausdruecklich verbietet:
+// „Es sind nie 130 und nie 300. `100 + 30` ist eine Kurzschreibweise fuer «Gesamtdeckel 100,
+// davon 30 fuer das Verstehen reserviert» — nicht fuer eine Summe."
+//
+// DIE PRODUKTIONSLOGIK, wortgetreu aus `storage.js` (`reserveLlmCall`):
+//     const priority     = LLM_PRIORITY_CALLTYPES.has(callType);   // heute: understanding
+//     const reserve      = priority ? 0 : llmUnderstandingReserve();
+//     const effectiveMax = priority ? limit : Math.max(0, limit - reserve);
+// Daraus folgt:
+//   * Die GESAMTOBERGRENZE ist das Limit — immer, fuer jeden Aufruftyp.
+//   * Die Reserve ist ein ANTEIL innerhalb dieser Obergrenze, nie ein Zuschlag darauf.
+//   * Priorisiertes Verstehen darf bis zum Limit gehen.
+//   * Alles andere darf hoechstens `Limit − Reserve`.
+// Der Deckel-Scope ist `global` (alle Mandate zusammen), nicht je Mandat.
+function deckelmodell(limit, reserve, herkunft = "PARAMETER") {
+  const l = Math.max(0, Math.floor(Number(limit) || 0));
+  // Die Reserve wird an der Obergrenze GEKLEMMT: eine Reserve groesser als das Limit
+  // ergaebe sonst ein negatives Restbudget. `storage.js` klemmt mit Math.max(0, …).
+  const r = Math.max(0, Math.min(l, Math.floor(Number(reserve) || 0)));
+  return {
+    limit: l,
+    reserve: r,
+    gesamtObergrenze: l,                        // NIE l + r
+    priorisiertMax: l,                          // Verstehen: volles Limit
+    nichtPriorisiertMax: Math.max(0, l - r),    // Buero/Kommunikation/Lage/Start
+    herkunft
+  };
+}
+
+function deckelSatz(d) {
+  return `Gesamtdeckel ${d.gesamtObergrenze} · davon ${d.reserve} fuer das Verstehen reserviert`
+    + ` ⇒ priorisiert hoechstens ${d.priorisiertMax}, nicht priorisiert hoechstens ${d.nichtPriorisiertMax}`;
+}
+
+function deckelUrteil(ki, d) {
+  if (ki.oben <= d.gesamtObergrenze) return "ja";
+  if (ki.unten <= d.gesamtObergrenze) return "nur im guenstigen Fall — beobachten";
+  return "NEIN — Gruenderentscheidung";
+}
+
+// DER TATSAECHLICH IN PRODUCTION GESETZTE WERT IST HIER NICHT LESBAR.
+// `HELMUT_MAX_LLM_CALLS_PER_DAY` und `HELMUT_LLM_RESERVE_UNDERSTANDING` sind Vercel-
+// Umgebungswerte; eine Claude-Sitzung kann Vercel-Env weder lesen noch setzen
+// (CURRENT_STATE §3), und die Datenbank speichert in `llm_budget_counters` nur den
+// VERBRAUCH (`used`), nicht die Grenze. Ein fehlender Wert wird deshalb als UNBEKANNT
+// gemeldet — nicht geraten und nicht als „verifiziert" bezeichnet.
+function deckelAusUmgebung(env = process.env) {
+  const rohLimit = String(env.HELMUT_MAX_LLM_CALLS_PER_DAY ?? "").trim();
+  const rohReserve = String(env.HELMUT_LLM_RESERVE_UNDERSTANDING ?? "").trim();
+  if (rohLimit === "") {
+    return { bekannt: false, grund: "HELMUT_MAX_LLM_CALLS_PER_DAY ist in dieser Umgebung nicht gesetzt", werte: null };
+  }
+  const limit = Number(rohLimit);
+  if (!Number.isFinite(limit) || limit <= 0) {
+    return { bekannt: false, grund: `HELMUT_MAX_LLM_CALLS_PER_DAY ist unbrauchbar ("${rohLimit.slice(0, 12)}")`, werte: null };
+  }
+  const reserve = rohReserve === "" ? 0 : Number(rohReserve);
+  return {
+    bekannt: true,
+    grund: null,
+    werte: deckelmodell(limit, Number.isFinite(reserve) && reserve > 0 ? reserve : 0, "aus der Prozessumgebung gelesen")
+  };
+}
+
+// Fehlt die Variable, greift laut Code das SCHUTZLIMIT — fail closed, nicht unbegrenzt.
+// Der Wert wird aus `storage.js` gelesen statt hier abgeschrieben.
+const SCHUTZLIMIT_AUS_CODE = (() => {
+  const treffer = storageSrc.match(/const LLM_LIMIT_FALLBACK = (\d+);/);
+  return treffer ? Number(treffer[1]) : null;
+})();
+
+// DER GERECHNETE DECKEL DIESER DATEI. Ausdruecklich DOKUMENTIERT, nicht gemessen:
+// 100/30 stehen in CURRENT_STATE §4 und im Runbook; die Production-Ablesung „66/100"
+// bzw. „29/100" (Runbook §30.7, 23./24.08.) stammt aus einer API-Antwort, nicht aus
+// dieser Sitzung. Sie ist damit belegt, aber HIER nicht nachpruefbar.
+const DOKUMENTIERTER_DECKEL = deckelmodell(100, 30,
+  "DOKUMENTIERT (CURRENT_STATE §4, Runbook §30.7 Ablesung 66/100) — in dieser Sitzung NICHT live verifiziert: Vercel-Env ist weder lesbar noch setzbar, llm_budget_counters speichert nur den Verbrauch");
+const PROD_DECKEL = deckelAusUmgebung();
+
+abschnitt("B0 · Deckelsemantik: die Reserve ist ein Anteil, kein Zuschlag");
+check("B0.1 Die Gesamtobergrenze IST das Limit — die Reserve wird nicht addiert",
+  deckelmodell(100, 30).gesamtObergrenze === 100, String(deckelmodell(100, 30).gesamtObergrenze));
+check("B0.2 Es gibt keinen Wert 130 im Modell (die verbotene Summe)",
+  Object.values(deckelmodell(100, 30)).every((w) => w !== 130),
+  JSON.stringify(deckelmodell(100, 30)));
+check("B0.3 Nicht priorisierte Aufrufe erhalten `Limit minus Reserve` (100/30 ⇒ 70)",
+  deckelmodell(100, 30).nichtPriorisiertMax === 70, String(deckelmodell(100, 30).nichtPriorisiertMax));
+check("B0.4 Priorisierte Aufrufe erhalten hoechstens das Limit (100/30 ⇒ 100)",
+  deckelmodell(100, 30).priorisiertMax === 100, String(deckelmodell(100, 30).priorisiertMax));
+check("B0.5 Limit und Reserve sind GETRENNTE Eingaben (250/50 ⇒ 250 gesamt, 200 sonstige)",
+  deckelmodell(250, 50).gesamtObergrenze === 250 && deckelmodell(250, 50).nichtPriorisiertMax === 200
+  && deckelmodell(250, 50).priorisiertMax === 250,
+  deckelSatz(deckelmodell(250, 50)));
+check("B0.6 Reserve 0 laesst beide Klassen bis zum Limit (kein Sonderfall)",
+  deckelmodell(100, 0).nichtPriorisiertMax === 100 && deckelmodell(100, 0).priorisiertMax === 100);
+check("B0.7 Eine Reserve groesser als das Limit ergibt nie ein negatives Restbudget",
+  deckelmodell(100, 500).nichtPriorisiertMax === 0 && deckelmodell(100, 500).gesamtObergrenze === 100,
+  deckelSatz(deckelmodell(100, 500)));
+// Die Eigenschaft, an der die falsche Rechnung gescheitert waere, als ALLAUSSAGE ueber
+// eine Reihe von Kombinationen — nicht nur am Einzelfall 100/30.
+check("B0.8 Fuer JEDE Kombination: Gesamtobergrenze = Limit, nie Limit + Reserve",
+  [[0, 0], [1, 0], [50, 0], [100, 30], [250, 50], [700, 200], [100, 100], [100, 101]]
+    .every(([l, r]) => {
+      const d = deckelmodell(l, r);
+      const summeWaereFalsch = d.reserve === 0 || d.gesamtObergrenze !== d.limit + d.reserve;
+      return d.gesamtObergrenze === d.limit
+        && d.priorisiertMax === d.gesamtObergrenze
+        && d.nichtPriorisiertMax <= d.priorisiertMax
+        && d.nichtPriorisiertMax === Math.max(0, d.limit - d.reserve)
+        && summeWaereFalsch;
+    }));
+check("B0.9 Das Modell bildet die Produktionsformel aus storage.js ab (effectiveMax)",
+  /const effectiveMax = priority \? limit : Math\.max\(0, limit - reserve\);/.test(storageSrc));
+check("B0.10 Fehlt die Umgebungsvariable, greift laut Code das Schutzlimit 50 (fail closed)",
+  SCHUTZLIMIT_AUS_CODE === 50, String(SCHUTZLIMIT_AUS_CODE));
+check("B0.11 Ein fehlender Production-Wert wird als UNBEKANNT gemeldet, nicht geraten",
+  deckelAusUmgebung({}).bekannt === false && deckelAusUmgebung({}).werte === null
+  && /nicht gesetzt/.test(deckelAusUmgebung({}).grund),
+  JSON.stringify(deckelAusUmgebung({})));
+check("B0.12 Auch ein unbrauchbarer Wert gilt als UNBEKANNT (keine stille Ersatzzahl)",
+  deckelAusUmgebung({ HELMUT_MAX_LLM_CALLS_PER_DAY: "viele" }).bekannt === false
+  && deckelAusUmgebung({ HELMUT_MAX_LLM_CALLS_PER_DAY: "0" }).bekannt === false);
+check("B0.13 Ein gesetzter Wert wird gelesen und als solcher gekennzeichnet",
+  deckelAusUmgebung({ HELMUT_MAX_LLM_CALLS_PER_DAY: "250", HELMUT_LLM_RESERVE_UNDERSTANDING: "50" })
+    .werte.nichtPriorisiertMax === 200);
+check("B0.14 Der hier gerechnete Deckel ist als DOKUMENTIERT gekennzeichnet, nicht als gemessen",
+  /DOKUMENTIERT/.test(DOKUMENTIERTER_DECKEL.herkunft)
+  && /NICHT live verifiziert/.test(DOKUMENTIERTER_DECKEL.herkunft),
+  DOKUMENTIERTER_DECKEL.herkunft);
 abschnitt("B1 · Kapazitaet je Klasse (Bedarf, Angebot, Reserve, Engpass)");
 const STUFEN = [5, 25, 100, 200, 500];
 const ergebnisse = STUFEN.map(modell);
@@ -252,27 +386,69 @@ check("B2.7 Die lokal nachgewiesene Parallelitaet (8) deckt auch die pessimistis
   noetigeParallelitaet(500, AUSLASTUNG_PESSIMISTISCH) <= 8);
 check("B2.8 Die Obergrenze des Moduls entspricht der nachgewiesenen Zahl (kein ungedeckter Wert)",
   vertrag.VERSTEHEN_PARALLELITAET_MAX === 8, String(vertrag.VERSTEHEN_PARALLELITAET_MAX));
-check("B2.9 Der KI-Deckel bleibt der bindende Grund gegen 25+ Mandate — nicht der Durchsatz",
-  kiSpanne(25).oben > 100 + 30);
+// EHRLICH ZURUECKGENOMMEN (Korrekturrunde 5, 2026-08-25). Hier stand: „Der KI-Deckel bleibt
+// der bindende Grund gegen 25+ Mandate". Das behauptete zweierlei, was nicht belegt ist:
+//   (a) der Deckel sei fuer JEDE Stufe ab 25 bindend — fuer 25 sagt DIESE Linie 88–265, die
+//       untere Grenze liegt UNTER 100; ob er bei 25 bindet, ist OFFEN und muss GEMESSEN
+//       werden (die zweite Linie sagt 113, siehe skalierung-25-50-100.md §2c);
+//   (b) der Deckelwert selbst sei bewiesen — 100/30 sind DOKUMENTIERT, in dieser Sitzung
+//       NICHT live verifiziert (Vercel-Env unlesbar, die DB speichert nur den Verbrauch).
+// Zugesichert wird deshalb nur noch, was diese Linie wirklich traegt: der Durchsatz ist bei
+// 25 nicht der Engpass, und AB 50 reisst der Deckel in beiden Richtungen der Spanne.
+check("B2.9a Bei 25 Mandaten ist der Durchsatz NICHT der Engpass (Reserve >= 2 in jeder Klasse)",
+  modell(25).engpassReserve >= 2, `x${modell(25).engpassReserve.toFixed(1)}`);
+check("B2.9b Fuer 25 bleibt die Deckelfrage OFFEN — die Spanne umschliesst den Deckel",
+  kiSpanne(25).unten <= DOKUMENTIERTER_DECKEL.gesamtObergrenze
+  && kiSpanne(25).oben > DOKUMENTIERTER_DECKEL.gesamtObergrenze,
+  `${kiSpanne(25).unten}–${kiSpanne(25).oben} vs ${DOKUMENTIERTER_DECKEL.gesamtObergrenze}`
+  + " — nicht entschieden, zu messen");
+check("B2.9c Erst AB 50 ist der Deckel in dieser Linie sicher bindend — und dann nicht der Durchsatz",
+  kiSpanne(50).unten > DOKUMENTIERTER_DECKEL.gesamtObergrenze && modell(50).engpassReserve >= 2,
+  `${kiSpanne(50).unten}–${kiSpanne(50).oben} vs ${DOKUMENTIERTER_DECKEL.gesamtObergrenze}`);
+check("B2.9d Der Deckelwert wird NICHT als bewiesen gefuehrt (dokumentiert, nicht verifiziert)",
+  /DOKUMENTIERT/.test(DOKUMENTIERTER_DECKEL.herkunft)
+  && /NICHT (nachgelesen|live verifiziert)/.test(DOKUMENTIERTER_DECKEL.herkunft),
+  DOKUMENTIERTER_DECKEL.herkunft);
 
 abschnitt("B3 · KI-Tagesbedarf GETRENNT vom technischen Durchsatz");
-const DECKEL = 100 + 30;                      // Production-Tagesdeckel, unveraendert
-console.log("\n  Mandate | Verstehensauftraege | KI-Aufrufe/Tag (Spanne) | Deckel | traegt der Deckel?");
+console.log("\n  Deckelsemantik: " + deckelSatz(DOKUMENTIERTER_DECKEL));
+console.log("  Herkunft des Deckelwerts: " + DOKUMENTIERTER_DECKEL.herkunft);
+console.log("  Aus der Prozessumgebung lesbar: " + (PROD_DECKEL.bekannt
+  ? deckelSatz(PROD_DECKEL.werte)
+  : `NEIN — ${PROD_DECKEL.grund}. Es wird nichts geraten.`));
+console.log("\n  Mandate | Verstehensauftraege | KI-Aufrufe/Tag (Spanne) | Gesamtdeckel | traegt der Deckel?");
 for (const e of ergebnisse) {
   const ki = kiSpanne(e.n);
-  const urteil = ki.oben <= DECKEL ? "ja"
-    : (ki.unten <= DECKEL ? "nur im guenstigen Fall — beobachten" : "NEIN — Gruenderentscheidung");
   console.log(`  ${String(e.n).padStart(7)} | ${String(ki.auftraege).padStart(19)} | `
-    + `${String(`${ki.unten}–${ki.oben}`).padStart(23)} | ${String(DECKEL).padStart(6)} | ${urteil}`);
+    + `${String(`${ki.unten}–${ki.oben}`).padStart(23)} | `
+    + `${String(DOKUMENTIERTER_DECKEL.gesamtObergrenze).padStart(12)} | `
+    + deckelUrteil(ki, DOKUMENTIERTER_DECKEL));
 }
-check("B3.1 Bei 5 Mandaten deckt die untere (gemessene) Grenze den heutigen Deckel ab",
-  kiSpanne(5).unten <= DECKEL, `${kiSpanne(5).unten} vs ${DECKEL}`);
+check("B3.1 Bei 5 Mandaten deckt die untere (gemessene) Grenze den Gesamtdeckel ab",
+  kiSpanne(5).unten <= DOKUMENTIERTER_DECKEL.gesamtObergrenze,
+  `${kiSpanne(5).unten} vs ${DOKUMENTIERTER_DECKEL.gesamtObergrenze}`);
 check("B3.1b Bei 5 Mandaten liegt die gemessene Production-Zahl (62–77) in der Spanne",
   kiSpanne(5).unten <= 77 && kiSpanne(5).oben >= 62, `${kiSpanne(5).unten}–${kiSpanne(5).oben}`);
 check("B3.1c Schon bei 5 Mandaten kann die OBERE Grenze den Deckel reissen — das wird benannt",
-  kiSpanne(5).oben > DECKEL, `${kiSpanne(5).oben} vs ${DECKEL}`);
-check("B3.2 Ab 25 Mandaten reicht der Deckel auch im guenstigen Fall NICHT",
-  kiSpanne(25).unten > DECKEL || kiSpanne(25).oben > DECKEL, `${kiSpanne(25).unten}–${kiSpanne(25).oben}`);
+  kiSpanne(5).oben > DOKUMENTIERTER_DECKEL.gesamtObergrenze,
+  `${kiSpanne(5).oben} vs ${DOKUMENTIERTER_DECKEL.gesamtObergrenze}`);
+// EHRLICH NACHGESCHAERFT (Korrekturrunde 2026-08-25/4). Mit dem RICHTIGEN Gesamtdeckel
+// (100 — nicht der falschen Summe 130) sagt DIESE Modelllinie fuer 25 Mandate 88–265
+// Aufrufe voraus: die untere Grenze liegt UNTER dem Deckel. Die frueher hier gepruefte
+// Aussage „reicht auch im guenstigen Fall NICHT" gilt fuer diese Linie also NICHT — sie
+// stammt aus der zweiten, an der Fuenfermessung geeichten Linie
+// (`docs/betrieb/skalierung-25-50-100.md` §2/§5.1: guenstigster Fall 113 > 100).
+// Beide Linien bleiben bestehen und werden dort mit Zweck, Eingaben und Grenzen getrennt
+// ausgewiesen. Hier wird nur zugesichert, was DIESE Linie wirklich traegt.
+check("B3.2 Ab 25 Mandaten reisst der Deckel im unguenstigen Fall sicher",
+  kiSpanne(25).oben > DOKUMENTIERTER_DECKEL.gesamtObergrenze,
+  `${kiSpanne(25).unten}–${kiSpanne(25).oben} vs ${DOKUMENTIERTER_DECKEL.gesamtObergrenze}`);
+check("B3.2b Diese Linie sagt fuer 25 ausdruecklich 'nur im guenstigen Fall', nicht 'NEIN'",
+  deckelUrteil(kiSpanne(25), DOKUMENTIERTER_DECKEL) === "nur im guenstigen Fall — beobachten",
+  deckelUrteil(kiSpanne(25), DOKUMENTIERTER_DECKEL));
+check("B3.2c Ab 50 Mandaten reisst der Deckel in BEIDEN Richtungen der Spanne",
+  kiSpanne(50).unten > DOKUMENTIERTER_DECKEL.gesamtObergrenze,
+  `${kiSpanne(50).unten}–${kiSpanne(50).oben}`);
 check("B3.3 Der KI-Bedarf bei 500 liegt in der dokumentierten Groessenordnung (344–1.040)",
   kiSpanne(500).unten >= 300 && kiSpanne(500).oben <= 1100,
   `${kiSpanne(500).unten}–${kiSpanne(500).oben}`);
@@ -300,6 +476,9 @@ check("B5.2 Die Anbietersteuerung setzt fuer Google eine konservative Rate ohne 
 console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
 console.log("EINORDNUNG: Rechenmodell aus Production-Messwerten (P) — KEIN Production-Beweis");
 console.log("fuer 25+ Mandate. Der KI-Tagesbedarf ist eine getrennte Gruenderentscheidung.");
+console.log("DECKEL: 100/30 sind DOKUMENTIERT, in dieser Sitzung NICHT live verifiziert. Ob der");
+console.log("Deckel die Stufe 25 traegt, ist OFFEN und muss GEMESSEN werden (diese Linie 88–265,");
+console.log("die an der Fuenfermessung geeichte Linie 113–336). AB 50 reisst er in BEIDEN Linien.");
 console.log("Die nachgewiesene Verstehensparallelitaet (8) ist LOKAL belegt (echte PostgreSQL,");
 console.log("echte Nebenlaeufigkeit) — sie gibt Helmut NICHT fuer 25 bis 500 Mandate frei.");
 process.exit(fail > 0 ? 1 : 0);

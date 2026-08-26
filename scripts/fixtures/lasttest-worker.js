@@ -34,10 +34,39 @@ async function main() {
   const stapel = Number(arg("stapel", "20"));
   const budgetMs = Number(arg("budgetMs", "120000"));
 
+  // FEHLERBEISPIELE JE MANDAT (Skalierungssprint 2026-08-25) — additiv, Default unveraendert.
+  // Ohne diese beiden Schalter verhaelt sich der Worker exakt wie bisher; der bestehende
+  // scripts/jobqueue-lasttest.js ist davon nicht beruehrt.
+  //   --langsamMandat=<id> + --langsamMs=<n>  ein Mandat arbeitet spuerbar langsamer
+  //   --fehlerMandat=<id>                     ein Mandat scheitert bei JEDEM Versuch
+  // Damit laesst sich pruefen, ob ein krankes Mandat gesunde Mandate beeintraechtigt.
+  const langsamMandat = arg("langsamMandat", "");
+  const langsamMs = Number(arg("langsamMs", "0"));
+  const fehlerMandat = arg("fehlerMandat", "");
+
+  function mandatVon(auftrag) {
+    if (auftrag && auftrag.tenant_id) return String(auftrag.tenant_id);
+    const p = (auftrag && auftrag.payload) || {};
+    return String(p.mandatsId || p.mandat || "");
+  }
+
   const dauern = [];
+  let langsameAufrufe = 0;
+  let fehlerAufrufe = 0;
   async function handler(auftrag) {
     const t0 = Date.now();
-    if (arbeitMs > 0) await new Promise((r) => setTimeout(r, arbeitMs));
+    const mandat = mandatVon(auftrag);
+    if (fehlerMandat && mandat === fehlerMandat) {
+      fehlerAufrufe += 1;
+      dauern.push(Date.now() - t0);
+      throw new Error(`simulierter Dauerfehler des Mandats ${fehlerMandat}`);
+    }
+    let warte = arbeitMs;
+    if (langsamMandat && mandat === langsamMandat && langsamMs > 0) {
+      warte = langsamMs;
+      langsameAufrufe += 1;
+    }
+    if (warte > 0) await new Promise((r) => setTimeout(r, warte));
     dauern.push(Date.now() - t0);
     return { ok: true, id: auftrag.id };
   }
@@ -53,8 +82,10 @@ async function main() {
       handler: {
         source_fetch: handler,
         global_understanding: handler,
+        document_understanding: handler,
         mandate_projection: handler,
-        briefing_materialization: handler
+        briefing_materialization: handler,
+        tenant_narrative: handler
       }
     }
   });
@@ -70,7 +101,9 @@ async function main() {
     leaseVerloren: bilanz.leaseVerloren,
     dauerMs: bilanz.dauerMs,
     handlerDauerSummeMs: dauern.reduce((s, d) => s + d, 0),
-    handlerAufrufe: dauern.length
+    handlerAufrufe: dauern.length,
+    langsameAufrufe,
+    fehlerAufrufe
   }) + "\n");
   process.exit(0);
 }

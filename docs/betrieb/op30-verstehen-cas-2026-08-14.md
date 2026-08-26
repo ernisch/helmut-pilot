@@ -422,9 +422,16 @@ Zahl, damit die Konfiguration keinen ungedeckten Wert annehmen kann.
 **Ausdrückliche Einordnung.** Das ist ein **Rechenmodell aus Production-Messwerten**, kein
 Production-Nachweis. **Helmut ist durch diesen Sprint nicht für 25 bis 500 Mandate
 freigegeben.** Der bindende Grund dagegen ist unverändert **nicht** der technische
-Durchsatz, sondern der **KI-Tagesdeckel**: ab 25 Mandaten reicht der Gesamtdeckel 100 (davon 30
-fuer das Verstehen reserviert — nicht 130) auch im günstigen
-Fall nicht (§B3), und OP-15 (Google-Drosselung) bleibt ab ~10 Mandaten offener Blocker.
+Durchsatz, sondern der **KI-Tagesdeckel** — und OP-15 (Google-Drosselung) bleibt ab ~10
+Mandaten offener Blocker.
+
+> **Berichtigt 2026-08-25/5.** Hier stand: „ab 25 Mandaten reicht der Gesamtdeckel 100 (davon
+> 30 für das Verstehen reserviert — nicht 130) auch im günstigen Fall nicht (§B3)". Diese
+> Aussage stammt aus **einer** von drei Modelllinien und ist **zurückgenommen**. Verbindlich:
+> die Werte **100/30 sind dokumentiert, nicht live verifiziert**; für **25 Mandate ist die
+> Tragfähigkeit offen und muss gemessen werden** (Linie A 88–265, Linie B 113–336); **ab 50
+> Mandaten reicht 100 in beiden Modelllinien nicht**
+> ([`skalierung-25-50-100.md`](skalierung-25-50-100.md) §2c).
 Zusätzlich fehlen unverändert **190 echte Profile** (es gibt 10).
 
 ## 8 · Was dieser Sprint ausdrücklich NICHT tut

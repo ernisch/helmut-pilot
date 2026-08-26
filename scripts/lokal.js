@@ -31,11 +31,32 @@ const { PRODUCTION_KENNUNGEN } = (() => {
   return m;
 })();
 
+// SPEICHERWAHL-SCHALTER (Skalierungssprint 2026-08-25).
+// ---------------------------------------------------------------------------
+// Diese beiden Variablen sind KEINE Zugangsdaten und standen deshalb nicht in
+// PRODUCTION_KENNUNGEN — sie entscheiden aber laut lib/helmut/production-schreibgate.js
+// (§ "URSACHE — zwei UNABHAENGIGE Schalter") darueber, WOHIN geschrieben wird:
+//   * HELMUT_V3_STORE=1        -> Fachtabellen ueber den V3-Store
+//   * HELMUT_STORAGE_BACKEND   -> Betriebsdaten ueber Supabase
+// In einer Cloud-Sitzung sind sie gesetzt. Da die Zugangsdaten oben bereits entfernt
+// werden, konnte damit zwar nichts Production erreichen — aber der Lauf verhielt sich
+// ANDERS als der kanonische Offline-Lauf und als die CI. Belegt am 2026-08-25:
+// `HELMUT_V3_STORE=1` liess privacy-vollstaendigkeit, provision-tenant und
+// tenant-neutrality scheitern, `HELMUT_STORAGE_BACKEND=supabase` profile-db —
+// vier Fehlschlaege, die in der CI nicht auftreten (dort 277/277 gruen).
+// Der lokale Lauf wird deshalb hart auf den lokalen Dateimodus gestellt. Das
+// schwaecht keine einzige Zusicherung ab: die Suiten pruefen unveraendert dasselbe,
+// nur eben in der Umgebung, fuer die sie geschrieben sind.
+const SPEICHERWAHL = { HELMUT_STORAGE_BACKEND: "local", HELMUT_V3_STORE: "" };
+
 function baueUmgebung(basis) {
   const env = { ...basis };
   for (const name of PRODUCTION_KENNUNGEN) delete env[name];
   // Der Quellenmodus wird hart auf `off` gesetzt, nicht nur geprueft.
   env.HELMUT_SOURCE_MODE = "off";
+  // Speicherwahl deterministisch auf lokal — siehe Begruendung oben.
+  env.HELMUT_STORAGE_BACKEND = SPEICHERWAHL.HELMUT_STORAGE_BACKEND;
+  delete env.HELMUT_V3_STORE;
   // Preload fuer den Kindprozess UND alle seine Kinder.
   const vorhandene = String(env.NODE_OPTIONS || "");
   if (!vorhandene.includes(SCHUTZ)) env.NODE_OPTIONS = (vorhandene + ` --require ${SCHUTZ}`).trim();
@@ -61,6 +82,12 @@ function main() {
   if (entfernt.length) {
     console.error(`[lokal] ${entfernt.length} Zugangsdaten NICHT an den Kindprozess weitergereicht `
       + `(${entfernt.join(", ")}) — Werte bleiben in dieser Sitzung unveraendert.`);
+  }
+  const umgestellt = Object.keys(SPEICHERWAHL)
+    .filter((n) => String(process.env[n] || "") !== String(env[n] || ""));
+  if (umgestellt.length) {
+    console.error(`[lokal] Speicherwahl fuer den Kindprozess auf lokal gestellt (${umgestellt.join(", ")}) `
+      + "— Werte bleiben in dieser Sitzung unveraendert.");
   }
 
   const [erst, ...rest] = argv;

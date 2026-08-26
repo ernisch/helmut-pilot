@@ -1836,7 +1836,12 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   stilles Wiederholen) · Kapazitaetsmodell **37 PASS** (neu gerechnet 5/25/100/200/500, zweite
   pessimistische Auslastungsannahme; **lokal nachgewiesene sichere Verstehensparallelitaet 8**).
   **Ausdruecklich:** Helmut ist dadurch NICHT fuer 25–500 Mandate freigegeben; bindend bleibt
-  der KI-Tagesdeckel (ab 25 Mandaten reicht der Gesamtdeckel 100 — davon 30 reserviert — auch im guenstigen Fall nicht; Semantik: [`betrieb/llm-budget-reservierung.md`](betrieb/llm-budget-reservierung.md)) und OP-15.
+  der KI-Tagesdeckel und OP-15. **Berichtigt 2026-08-25/5:** hier stand „ab 25 Mandaten reicht der
+  Gesamtdeckel 100 — davon 30 reserviert — auch im guenstigen Fall nicht". Diese Aussage stammt aus
+  **einer** von drei Modelllinien und ist **zurueckgenommen**. Verbindlich gilt: **100/30 sind dokumentierte Werte, nicht live verifiziert**; fuer
+  **25 Mandate ist die Tragfaehigkeit offen und muss gemessen werden**; **ab 50 reicht 100 in
+  beiden Modelllinien nicht** ([`betrieb/skalierung-25-50-100.md`](betrieb/skalierung-25-50-100.md) §2c).
+  Semantik: [`betrieb/llm-budget-reservierung.md`](betrieb/llm-budget-reservierung.md).
   **Offen:** Review/Merge des PR; danach als getrennte Betreiberentscheidung Migration
   anwenden und `HELMUT_VERSTEHEN_CAS` im Schattenbetrieb beobachten.
 - **Stand 2026-08-13/3 (Architektursprint Zielarchitektur — Sprint ERFOLGREICH abgeschlossen, beide Pflichtpruefungen gruen; OP-30 insgesamt bleibt offen; Beleg

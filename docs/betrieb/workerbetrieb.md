@@ -59,7 +59,10 @@ Schwebe, bis die Lease abläuft.
 **Auf Vercel ist (a) nicht möglich.** Belegt aus `vercel.json`:
 
 - `functions."api/index.js".maxDuration = 300` — eine Ausführung endet nach 300 Sekunden.
-- Es gibt **9 Cron-Einträge**, alle als HTTP-Aufruf einer Serverless-Funktion.
+- Es gibt **11 Cron-Einträge**, alle als HTTP-Aufruf einer Serverless-Funktion.
+  *(Berichtigt 2026-08-25: hier standen „9". Der Stand dieser Datei ist der 2026-08-08; die
+  zwei Narrativ-Nachlaufslots kamen am 2026-08-09 dazu. Wer die Kapazität aus der alten
+  Zahl ableitete, rechnete mit zwei Slots zu wenig.)*
 - Es gibt keinen Prozess, der zwischen zwei Aufrufen weiterläuft. `setInterval` überlebt das
   Ende der Ausführung nicht.
 

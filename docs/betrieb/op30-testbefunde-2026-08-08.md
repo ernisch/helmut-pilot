@@ -8,6 +8,41 @@ Arbeitsbaum zu verändern.
 
 ---
 
+> ## ⚠ URSACHENKORREKTUR (2026-08-25, Skalierungssprint)
+>
+> **Die Klassifizierung dieses Dokuments bleibt richtig:** alle vier sind Baseline-Fehler,
+> keine Regression, und in der CI grün (bestätigt an PR #269: **277/277 Suiten grün in 384 s**,
+> mit `PASS provision-tenant-test.js` und `PASS tenant-neutrality-test.js` im Lauf-Log).
+>
+> **Die unten genannten URSACHEN sind in drei von vier Fällen sachlich falsch — und zwar
+> genau umgekehrt.** Die Suiten scheitern nicht, weil eine Ablage *fehlt*, sondern weil in
+> einer Cloud-Sitzung zwei Umgebungsschalter *gesetzt* sind, die die CI nie setzt:
+>
+> | Suite | tatsächliche Ursache |
+> |---|---|
+> | `privacy-vollstaendigkeit` | `HELMUT_V3_STORE=1` in der Sitzungsumgebung |
+> | `provision-tenant` | `HELMUT_V3_STORE=1` |
+> | `tenant-neutrality` | `HELMUT_V3_STORE=1` |
+> | `profile-db` | `HELMUT_STORAGE_BACKEND=supabase` |
+>
+> **Wie das belegt wurde:** Bisektion über alle 139 Umgebungsvariablen der Sitzung, jeweils
+> beidseitig geprüft — Variable gesetzt ⇒ rot, Variable entfernt ⇒ grün. Die lokale
+> Dateiablage funktioniert einwandfrei; ein erreichbarer Supabase-Endpunkt wird an keiner
+> Stelle gebraucht.
+>
+> **Warum das zählt:** beide Schalter entscheiden laut
+> [`production-schreibgate.js`](../../lib/helmut/production-schreibgate.js) darüber, **wohin
+> geschrieben wird** — sie sind der Kern des Vorfalls vom 2026-07-27.
+>
+> **Behoben am 2026-08-25:** `scripts/lokal.js` stellt die Speicherwahl im Kindprozess
+> deterministisch auf lokal (`HELMUT_STORAGE_BACKEND=local`, `HELMUT_V3_STORE` entfernt) —
+> genauso, wie es `HELMUT_SOURCE_MODE=off` schon vorher tat. Die Sitzungsvariablen selbst
+> bleiben unangetastet. **Keine Testzusicherung wurde abgeschwächt**, keine Suite geändert;
+> testgesichert durch `scripts/netzschutz-test.js` §15. Seither laufen alle vier Suiten auch
+> in der vollen Cloud-Sitzung grün (20 / 44 / 41 / 39 PASS, 0 FAIL).
+>
+> Belege: [`skalierung-25-50-100.md`](skalierung-25-50-100.md).
+
 ## 1 · Das Ergebnis in einem Satz
 
 **Keiner der fünf Fehler ist eine Regression durch OP-30.** Alle fünf treten am

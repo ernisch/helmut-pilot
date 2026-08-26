@@ -239,7 +239,7 @@ const listOf = (arr) => async () => arr.map((p) => ({ ...p }));
 
   await setActiveMandates([testPoliticianOne]);
   const spec = { id: TENANT_ALPHA, email: "a@example.test", name: "Tenant Alpha", password: "pw-1234567", party: "Testpartei Alpha", parliamentType: "Bundestag", constituency: "Testkreis", committees: ["Arbeit und Soziales"], focusTopics: ["Arbeit"] };
-  const prov = await provisioning.provisionTenant(spec, {});
+  const prov = await provisioning.provisionTenant(spec, {}, { neuAktiv: true });
   check("Provisionierung mit beliebiger kuenstlicher ID funktioniert", prov.ok === true, JSON.stringify(prov.reason || prov.errors || ""));
   check("Bestehendes (nicht provisioniertes) Mandat ist automatisch geschuetzt", (await provisioning.isProtectedTenant(testPoliticianOne.id)) === true);
   const teardown = await provisioning.teardownTenant(TENANT_ALPHA);
