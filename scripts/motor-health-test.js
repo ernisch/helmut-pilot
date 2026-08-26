@@ -193,13 +193,17 @@ check("Slot 04:00 um 08:00 erzwungen (Deadline 07:00 abgelaufen)",
   check("T10c: Altpfad unverändert vorhanden (Blob-crawlRuns + Zwei-Achsen-Klassifikation + Hysterese-Persistenz)",
     legacy.includes("listCrawlRuns(20)") && legacy.includes("classifyOperationalState(")
       && legacy.includes("saveWatchdogState(politicianId, classification.state)"));
-  const motorTeil = server.slice(server.indexOf("async function buildMotorHealthReport("), server.indexOf("async function buildLegacyHealthReport("));
+  const motorTeil = server.slice(server.indexOf("async function motorLaufKontext("), server.indexOf("async function buildLegacyHealthReport("));
+  // Negative Zusagen werden gegen den CODE geprueft, nicht gegen Kommentare: der
+  // Kopfkommentar des Motorberichts nennt „kein saveWatchdogState" ausdruecklich.
+  const nurCode = (txt) => txt.split("\n").filter((z) => !z.trim().startsWith("//")).join("\n");
+  const motorCode = nurCode(motorTeil);
   check("T10d: Motorpfad liest NIE den Blob crawlRuns und schreibt keinen Watchdog-Zustand",
-    !motorTeil.includes("listCrawlRuns") && !motorTeil.includes("rollingHealth.")
-      && !motorTeil.includes("saveWatchdogState"));
+    !motorCode.includes("listCrawlRuns") && !motorCode.includes("rollingHealth.")
+      && !motorCode.includes("saveWatchdogState"));
   check("T10e: kein stiller Rückfall — Motorpfad liest NUR die relationale Quittungssicht und meldet Lesefehler als nicht bestimmbar",
     motorTeil.includes("verfuegbar: false") && motorTeil.includes("listProcessRunsRelational({ limit: 120 })")
-      && !motorTeil.includes("listProcessRuns({"));
+      && !motorCode.includes("listProcessRuns({"));
 }
 
 // ── Pflichttest 11: Quittungszahlen vollständig auflösbar ─────────────────────
@@ -407,7 +411,7 @@ function briefingEinzel(overrides = {}, i = 0) {
   return {
     mandat: MANDATE5[i], vorbereitet: true, quelle: "erfolg", status: "erfolg",
     signatur: `sig-${i}`, ablageKorrekt: true, pushErzeugt: true,
-    empfaenger: 0, zugestellt: 0, zustellfehler: 0, belegLesefehler: null, ...overrides
+    empfaenger: 0, versandBestaetigt: 0, zustellfehler: 0, belegLesefehler: null, ...overrides
   };
 }
 const JETZT = Date.parse("2026-08-26T06:00:18Z");
@@ -430,7 +434,7 @@ const ERWARTET_AB = Date.parse("2026-08-26T06:00:00Z");
 
 // K7 · fünf aktive Mandate, aber nur ein registrierter Push-Empfänger
 {
-  const einzel = MANDATE5.map((_, i) => briefingEinzel({ empfaenger: i === 1 ? 1 : 0, zugestellt: i === 1 ? 1 : 0 }, i));
+  const einzel = MANDATE5.map((_, i) => briefingEinzel({ empfaenger: i === 1 ? 1 : 0, versandBestaetigt: i === 1 ? 1 : 0 }, i));
   const b = motorHealth.bewerteBriefingStufen({ einzel, jetztMs: JETZT, erwartetAbMs: ERWARTET_AB });
   check("K7: 1 von 5 Empfängern ⇒ Produkthinweis, KEIN Alarm; Sätze exakt wie gefordert",
     b.empfaengerRegistriert === 1 && b.ohneEmpfaenger === 4 && b.gruende.length === 0
@@ -442,28 +446,30 @@ const ERWARTET_AB = Date.parse("2026-08-26T06:00:00Z");
 
 // K8 · vorhandener Empfänger mit erfolgreicher Zustellung
 {
-  const einzel = MANDATE5.map((_, i) => briefingEinzel({ empfaenger: i === 1 ? 1 : 0, zugestellt: i === 1 ? 1 : 0 }, i));
+  const einzel = MANDATE5.map((_, i) => briefingEinzel({ empfaenger: i === 1 ? 1 : 0, versandBestaetigt: i === 1 ? 1 : 0 }, i));
   const b = motorHealth.bewerteBriefingStufen({ einzel, jetztMs: JETZT, erwartetAbMs: ERWARTET_AB });
-  check("K8: Empfänger vorhanden und zugestellt ⇒ „Zugestellt: 1 von 1 registrierten Empfängern.“",
-    b.zugestellt === 1 && b.zustellfehler === 0
-      && b.text.includes("Zugestellt: 1 von 1 registrierten Empfängern."), b.text);
+  check("K8: Empfänger vorhanden und Versand angenommen ⇒ „Push Versand bestätigt: 1 von 1 …“ (nie „zugestellt“)",
+    b.versandBestaetigt === 1 && b.zustellfehler === 0
+      && b.text.includes("Push Versand bestätigt: 1 von 1 registrierten Empfängern (Annahme durch den Push-Dienst).")
+      && b.text.includes("Empfang am Endgerät: technisch nicht bestätigbar.")
+      && !/zugestellt/i.test(b.text), b.text);
 }
 
-// K9 · vorhandener Empfänger mit Zustellfehler ⇒ Rot
+// K9 · vorhandener Empfänger mit Versandfehler ⇒ Rot
 {
   const einzel = MANDATE5.map((_, i) => briefingEinzel({
-    empfaenger: i === 1 ? 1 : 0, zugestellt: 0, zustellfehler: i === 1 ? 1 : 0
+    empfaenger: i === 1 ? 1 : 0, versandBestaetigt: 0, zustellfehler: i === 1 ? 1 : 0
   }, i));
   const b = motorHealth.bewerteBriefingStufen({ einzel, jetztMs: JETZT, erwartetAbMs: ERWARTET_AB });
   const r = klassifiziere({ briefing: b });
-  check("K9: Zustellfehler bei vorhandenem Empfänger ⇒ Rot (Fehlervertrag)",
-    b.gruende.includes("briefing-zustellfehler") && r.zustand === Z.ROT
-      && b.text.includes("Zustellung fehlgeschlagen: 1 Mandate."), b.text);
+  check("K9: Versandfehler bei vorhandenem Empfänger ⇒ Rot (Fehlervertrag)",
+    b.gruende.includes("briefing-push-versandfehler") && r.zustand === Z.ROT
+      && b.text.includes("Push Versand fehlgeschlagen: 1 Mandate."), b.text);
 }
 
 // K10 · Öffnung technisch nicht messbar ⇒ neutral, nie Alarm, nie Hinweis
 {
-  const einzel = MANDATE5.map((_, i) => briefingEinzel({ empfaenger: 1, zugestellt: 1 }, i));
+  const einzel = MANDATE5.map((_, i) => briefingEinzel({ empfaenger: 1, versandBestaetigt: 1 }, i));
   const b = motorHealth.bewerteBriefingStufen({ einzel, jetztMs: JETZT, erwartetAbMs: ERWARTET_AB });
   check("K10: Öffnung wird als „nicht messbar“ ausgewiesen — neutral, weder Grund noch Hinweis",
     b.oeffnungMessbar === false && b.text.includes("Öffnung: nicht messbar.")
@@ -490,7 +496,7 @@ const ERWARTET_AB = Date.parse("2026-08-26T06:00:00Z");
 // K12 · Verdrahtung Teil 2/3 in server.js
 {
   const server = fs.readFileSync(path.join(__dirname, "..", "server.js"), "utf8");
-  const motorTeil = server.slice(server.indexOf("async function buildMotorHealthReport("), server.indexOf("async function buildLegacyHealthReport("));
+  const motorTeil = server.slice(server.indexOf("async function motorLaufKontext("), server.indexOf("async function buildLegacyHealthReport("));
   // K12a/K12b prüfen die ERZEUGTE AUSGABE (reine Funktion), nicht nur Quelltextfragmente.
   const alter = () => "vor 2h";
   // (a1) sauberer Lauf: genau die Grün-Zeile, KEINE Störungs-/Erholungszeile.
@@ -539,10 +545,11 @@ const ERWARTET_AB = Date.parse("2026-08-26T06:00:00Z");
   // Verdrahtung: der Bericht baut die Zeilen NICHT mehr selbst.
   check("K12b2: server.js nutzt die gemeinsame, testbare Darstellung",
     motorTeil.includes("motorHealth.slotDarstellung(") && motorTeil.includes("slotZeile"));
-  check("K12c: Briefingstufen werden mandantengetrennt über den Frischevertrag belegt",
-    motorTeil.includes("briefingLauf.ladeTageslauf(storageModul, politicianId")
-      && motorTeil.includes("getPushSubscriptions(politicianId)") && motorTeil.includes("briefingEinzel"));
   const route = server.slice(server.indexOf('url.pathname === "/api/cron/health-report"'), server.indexOf("async function buildHealthReport("));
+  check("K12c: Briefingstufen werden mandantengetrennt über den Frischevertrag belegt",
+    route.includes("briefingLauf.ladeTageslaeufe(storageModul, tenantIds")
+      && motorTeil.includes("briefingBeleg")
+      && motorTeil.includes("getPushUebersicht(politicianId") && motorTeil.includes("briefingEinzel"));
   check("K12d: Route nimmt die aktiven Mandate als Nenner und kippt ok bei Briefing-Alarm",
     route.includes("motorHealth.bewerteBriefingStufen") && route.includes("briefingAlarm")
       && route.includes("&& !briefingAlarm") && route.includes("Briefingstufen (")
@@ -558,8 +565,8 @@ const ERWARTET_AB = Date.parse("2026-08-26T06:00:00Z");
   // stillschweigend aus der Quote entfernt (das wäre falsches Grün).
   const mitLuecke = MANDATE5.map((_, i) => (i === 4
     ? { mandat: MANDATE5[4], vorbereitet: null, quelle: null, status: null, signatur: null,
-      ablageKorrekt: null, pushErzeugt: false, empfaenger: null, zugestellt: 0, zustellfehler: 0, belegLesefehler: true }
-    : briefingEinzel({ empfaenger: 1, zugestellt: 1 }, i)));
+      ablageKorrekt: null, pushErzeugt: false, empfaenger: null, versandBestaetigt: 0, zustellfehler: 0, belegLesefehler: true }
+    : briefingEinzel({ empfaenger: 1, versandBestaetigt: 1 }, i)));
   const bLuecke = motorHealth.bewerteBriefingStufen({ einzel: mitLuecke, jetztMs: JETZT, erwartetAbMs: ERWARTET_AB });
   check("K12f: Report-Ausfall eines Mandats bleibt im Nenner und zählt als Messlücke, nicht als Fehlen",
     bLuecke.aktive === 5 && bLuecke.vorbereitet === 4 && bLuecke.fehlend.length === 0
@@ -639,7 +646,7 @@ const ERWARTET_AB = Date.parse("2026-08-26T06:00:00Z");
 // slotPruefung/ingest/hinweise heraus, der Syntaxcheck blieb grün.
 {
   const server = fs.readFileSync(path.join(__dirname, "..", "server.js"), "utf8");
-  const motorTeil = server.slice(server.indexOf("async function buildMotorHealthReport("), server.indexOf("async function buildLegacyHealthReport("));
+  const motorTeil = server.slice(server.indexOf("async function motorLaufKontext("), server.indexOf("async function buildLegacyHealthReport("));
   const noetig = ["slotPruefung", "ingest", "hinweise", "verstandenAlterMs", "lageHinweis",
     "lageAlterMs", "motorAktivSeitMs", "briefingEinzel", "berlinTagKey", "terminalOffen"];
   const fehlend = noetig.filter((n) => !new RegExp(`const\\s+${n}\\s*=`).test(motorTeil));
@@ -650,7 +657,7 @@ const ERWARTET_AB = Date.parse("2026-08-26T06:00:00Z");
 // ── Pflichttest 12 (Anbindung): Motorbericht nutzt nur die Allowlist-Felder ───
 {
   const server = fs.readFileSync(path.join(__dirname, "..", "server.js"), "utf8");
-  const motorTeil = server.slice(server.indexOf("async function buildMotorHealthReport("), server.indexOf("async function buildLegacyHealthReport("));
+  const motorTeil = server.slice(server.indexOf("async function motorLaufKontext("), server.indexOf("async function buildLegacyHealthReport("));
   check("T12: Motorbericht liefert state/severity/healthBlockers/healthWarnings/overdueCrons (bestehende Allowlist, Redaction-Suite unverändert)",
     motorTeil.includes("healthBlockers:") && motorTeil.includes("healthWarnings:")
       && motorTeil.includes("overdueCrons:") && motorTeil.includes("severity:"));
