@@ -1370,6 +1370,28 @@ async function handleRequest(request, response) {
             .catch((error) => new Map(tenantIds.map((t) => [t, { lauf: null, quelle: null, fehler: String((error && error.message) || "lesefehler").slice(0, 160) }])))
           : new Map(tenantIds.map((t) => [t, { lauf: null, quelle: null, fehler: "frischevertrag-aus" }])))
         : new Map();
+      // GEBÜNDELTE MANDANTENSPEICHER: Lage-Check und Push-Übersicht liegen in
+      // DERSELBEN helmut_store-Zeile je Mandat. Statt zwei Zugriffen je Mandat holt
+      // ein Stapellesevorgang mehrere Zeilen in einem Zugriff — mit begrenzter
+      // Parallelität und festem Gesamtzeitbudget. Ein gescheiterter oder zu langsamer
+      // Stapel bricht den Lauf NICHT ab: die betroffenen Mandate bleiben im Nenner und
+      // werden als „Status nicht bestimmbar" ausgewiesen.
+      const mandantenSpeicher = motorPfadAktiv
+        ? await storageModul.leseMandantenSpeicherGebuendelt(tenantIds)
+          .catch((error) => ({
+            speicher: new Map(),
+            fehler: new Map(tenantIds.map((t) => [t, String((error && error.message) || "lesefehler").slice(0, 160)]))
+          }))
+        : { speicher: new Map(), fehler: new Map() };
+      // Der gemeinsame Hauptspeicher ist EINE Zeile für ALLE Mandate und trägt nur den
+      // Altbestand-Rückfall des Lage-Checks. Er wird deshalb höchstens EINMAL je Lauf
+      // gelesen — und auch das nur, wenn mindestens ein Mandat keinen eigenen
+      // Lage-Check hat. Sonst zahlt jeder Lauf den grossen Blob umsonst.
+      const brauchtHauptSpeicher = motorPfadAktiv
+        && [...mandantenSpeicher.speicher.values()].some((st) => !((st && st.lageChecks) || []).length);
+      const hauptSpeicher = brauchtHauptSpeicher
+        ? await storageModul.readStore("main").catch(() => null)
+        : null;
       const reports = [];
       for (const tenantId of tenantIds) {
         try {
@@ -1377,7 +1399,10 @@ async function handleRequest(request, response) {
             mandate: tenantIds.length,
             briefingTageslauf: briefingBelege.get(tenantId) || null,
             berlinTag: berlinTagKeyLauf,
-            laufKontext: motorKontext
+            laufKontext: motorKontext,
+            mandantenSpeicher: mandantenSpeicher.speicher.get(tenantId) || null,
+            mandantenSpeicherFehler: mandantenSpeicher.fehler.get(tenantId) || null,
+            mandantenHauptSpeicher: hauptSpeicher
           });
           reports.push({
             tenant: tenantId, ok: r.ok, text: r.text, overdueCrons: r.overdueCrons,
@@ -4475,7 +4500,10 @@ async function motorLaufKontext({ fehlerText = (e) => String((e && e.message) ||
 // Gestört · Status nicht bestimmbar), Logik in lib/helmut/motor-health.js.
 // REIN LESEND: kein Blob-Write, kein saveWatchdogState (die Erholt-Hysterese
 // ist ein dokumentierter eigener Punkt und nicht Teil dieses Berichts).
-async function buildMotorHealthReport(politicianId, { mandate = null, briefingTageslauf = null, berlinTag = null, laufKontext = null } = {}) {
+async function buildMotorHealthReport(politicianId, {
+  mandate = null, briefingTageslauf = null, berlinTag = null, laufKontext = null,
+  mandantenSpeicher = null, mandantenSpeicherFehler = null, mandantenHauptSpeicher = null
+} = {}) {
   politicianId = tenantContext.requireTenantId(politicianId, "buildHealthReport");
   const storage = getStorageStatus();
   const now = Date.now();
@@ -4491,14 +4519,30 @@ async function buildMotorHealthReport(politicianId, { mandate = null, briefingTa
   const kontextBauen = () => motorLaufKontext({ fehlerText });
   const globalerKontext = laufKontext || await kontextBauen();
   const { completeKoAt, errors, users, feedback, llmBreakdown, classificationCoverage, queueStatus, casKennzahlen, quittungen } = globalerKontext;
-  // MANDANTENBEZOGEN bleibt genau das, was eine Mandantenkennung braucht.
-  const [lageCheck, pushUebersicht] = await Promise.all([
-    getLatestLageCheck(politicianId).catch(() => null),
-    // Ereignisse UND Abos aus EINEM Speicherzugriff (sonst zwei je Mandat).
-    // Ein Lesefehler ergibt `null` — daraus wird eine benannte Messluecke, NIE „kein
-    // Empfaenger vorhanden" (Pflichtpruefung 3 der Abnahme).
-    storageModul.getPushUebersicht(politicianId, { limit: 200 }).catch(() => null)
-  ]);
+  // MANDANTENBEZOGENE SIGNALE: Lage-Check und Push-Übersicht liegen in DERSELBEN
+  // helmut_store-Zeile `main-p-<mandat>`. Der Aufrufer liest sie GEBÜNDELT für alle
+  // Mandate (`leseMandantenSpeicherGebuendelt`) und reicht den fertigen Speicher
+  // durch — hier fällt dann KEIN eigener Zugriff mehr an. Ohne durchgereichten
+  // Speicher liest der Bericht selbst: langsamer, aber nie falsch.
+  const speicherFehler = mandantenSpeicherFehler || null;
+  let mandantenStore = mandantenSpeicher || null;
+  let lageCheck = null;
+  let pushUebersicht = null;
+  if (!speicherFehler) {
+    if (!mandantenStore) {
+      const [lc, pu] = await Promise.all([
+        getLatestLageCheck(politicianId).catch(() => null),
+        storageModul.getPushUebersicht(politicianId, { limit: 200 }).catch(() => null)
+      ]);
+      lageCheck = lc;
+      pushUebersicht = pu;
+    } else {
+      // Mandantenprüfung unverändert im Speicherauswerter (`politicianId === tenantId`):
+      // eine gebündelte Antwort darf keine fremde Zeile in den Bericht tragen.
+      lageCheck = storageModul.lageCheckAusSpeicher(mandantenStore, politicianId, mandantenHauptSpeicher || null);
+      pushUebersicht = storageModul.pushUebersichtAusSpeicher(mandantenStore, politicianId, { limit: 200 });
+    }
+  }
   // TEIL 3 (2026-08-26): Der Frischebeleg dieses Mandanten kommt GEBÜNDELT von der
   // Route (`briefingLauf.ladeTageslaeufe`) — eine Abfrage für alle Mandate statt zwei
   // je Mandat. Die Prüfung gegen Mandant und Berliner Tag ist dieselbe wie im
@@ -4531,7 +4575,7 @@ async function buildMotorHealthReport(politicianId, { mandate = null, briefingTa
     : null;
 
   const lageAlterMs = ageMs(lageCheck?.checkedAt || lageCheck?.createdAt);
-  const lageHinweis = motorHealth.lageRotationsHinweis({ lageAlterMs, mandate });
+  const lageHinweis = motorHealth.lageRotationsHinweis({ lageAlterMs, mandate, messbar: !speicherFehler });
   const verstandenAlterMs = ageMs(completeKoAt);
 
   // Hinweise (Teil-B-Auftrag Nr. 6): dürfen niemals allein eine
@@ -4586,7 +4630,10 @@ async function buildMotorHealthReport(politicianId, { mandate = null, briefingTa
     verstandenWarnMs: 24 * 60 * 60 * 1000,
     verstandenRotMs: maxOutputFreshnessMs,
     budget,
-    hinweise
+    hinweise,
+    // Ist der Mandantenspeicher nicht lesbar, sind Lage-Alter und Push-Daten dieses
+    // Mandats UNBEKANNT — nicht „nie geprüft" und nicht „kein Empfänger".
+    zusatzUnbestimmt: speicherFehler ? ["mandantenspeicher-nicht-lesbar"] : []
   });
 
   // Terminale Fehler getrennt von historisch aufgefangenen (Teil-B-Auftrag Nr. 8):
@@ -4924,8 +4971,11 @@ async function sendCallMeBotMessage(text) {
   const phone = String(process.env.CALLMEBOT_PHONE || "").replace(/[^\d]/g, "");
   const apikey = String(process.env.CALLMEBOT_APIKEY || "").trim();
   if (!phone || !apikey) return { sent: false, skipped: true, reason: "CALLMEBOT_PHONE/CALLMEBOT_APIKEY nicht gesetzt." };
-  const endpoint = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(apikey)}`;
   try {
+    // Die Kodierung gehoert IN den Schutz: ein alleinstehendes Ersatzzeichen im Text
+    // laesst encodeURIComponent werfen — frueher stand das ausserhalb des try und
+    // riss den gesamten Gesundheitslauf mit (Abnahme 26.08.).
+    const endpoint = `https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}&apikey=${encodeURIComponent(apikey)}`;
     const res = await fetch(endpoint, { method: "GET" });
     const body = await res.text().catch(() => "");
     return { sent: res.ok, status: res.status, body: body.slice(0, 200) };

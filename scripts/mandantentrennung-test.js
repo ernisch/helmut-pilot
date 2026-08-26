@@ -80,6 +80,52 @@ const backups = files.map((f) => (fs.existsSync(f) ? fs.readFileSync(f, "utf8") 
     check("Profil: A erhält nur A's Profil", aProfile && aProfile.id === A);
     check("Profil: B erhält nur B's Profil", bProfile && bProfile.id === B);
     check("Profil: A's Profil enthält NICHTS von B", JSON.stringify(aProfile || {}).indexOf("Profil B") === -1 && JSON.stringify(aProfile || {}).indexOf("Partei B") === -1);
+
+    // ── GEBUENDELTE ANTWORTEN (Skalierungsstufe 26.08.) ───────────────────────
+    // Der Gesundheitsbericht liest die Mandantenspeicher jetzt STAPELWEISE
+    // (`leseMandantenSpeicherGebuendelt`). Eine gebuendelte Antwort kann Zeilen
+    // mehrerer Mandate enthalten — die Auswerter muessen deshalb GENAU dieselbe
+    // Mandantenpruefung tragen wie der Einzelpfad. Ein verschmutzter Speicher
+    // (fremde Zeilen im selben Objekt) ist hier der Ernstfall.
+    const verschmutzt = {
+      lageChecks: [
+        { politicianId: B, checkedAt: "2026-08-26T03:00:00Z", note: "Lage B" },
+        { politicianId: A, checkedAt: "2026-08-26T02:00:00Z", note: "Lage A" }
+      ],
+      pushEvents: [
+        { politicianId: B, dedupeKey: "briefing-push:" + B + ":2026-08-26:x:y", delivered: 99, failed: 7 },
+        { politicianId: A, dedupeKey: "briefing-push:" + A + ":2026-08-26:x:y", delivered: 1, failed: 0 }
+      ],
+      pushSubscriptions: [
+        { politicianId: B, endpoint: "https://push.example/b", active: true },
+        { politicianId: A, endpoint: "https://push.example/a", active: true },
+        { politicianId: A, endpoint: "https://push.example/a-alt", active: false }
+      ]
+    };
+    const lageA = storage.lageCheckAusSpeicher(verschmutzt, A);
+    check("Stapel: Lage-Auswerter liefert NUR die Zeile des angefragten Mandats",
+      Boolean(lageA) && lageA.politicianId === A && lageA.note === "Lage A",
+      JSON.stringify(lageA));
+    const pushA = storage.pushUebersichtAusSpeicher(verschmutzt, A);
+    check("Stapel: Push-Auswerter verwirft fremde Ereignisse und Abos",
+      pushA.events.length === 1 && pushA.events[0].politicianId === A
+        && pushA.subscriptions.length === 1 && pushA.subscriptions[0].politicianId === A,
+      JSON.stringify(pushA));
+    check("Stapel: keine fremde Kennung und kein fremder Zaehler im Ergebnis",
+      JSON.stringify({ lageA, pushA }).indexOf(B) === -1
+        && JSON.stringify(pushA).indexOf("99") === -1,
+      JSON.stringify({ lageA, pushA }));
+    check("Stapel: inaktives Abo des EIGENEN Mandats zaehlt nicht mit",
+      pushA.subscriptions.every((x) => x.active !== false));
+    let ohneKontext = null;
+    try { storage.pushUebersichtAusSpeicher(verschmutzt, ""); }
+    catch (error) { ohneKontext = error; }
+    check("Stapel: fehlender Mandantenkontext ist ein harter Fehler, kein Leerergebnis",
+      Boolean(ohneKontext), String(ohneKontext && ohneKontext.message));
+    // Der Altbestand-Rueckfall des Lage-Checks bleibt mandatsscharf.
+    const lageB = storage.lageCheckAusSpeicher({ lageChecks: [] }, A, verschmutzt);
+    check("Stapel: Hauptspeicher-Rueckfall liefert ebenfalls nur das eigene Mandat",
+      Boolean(lageB) && lageB.politicianId === A, JSON.stringify(lageB));
   } finally {
     // Wiederherstellen (byte-genau) bzw. Testdateien entfernen.
     files.forEach((f, i) => {

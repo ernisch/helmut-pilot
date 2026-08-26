@@ -136,6 +136,14 @@ function szenario(overrides = {}) {
     }])),
     verstandenAm: new Date(NOW - 2 * H).toISOString(),
     tagKey,
+    stapelGroesse: 10,
+    stapelMs: 0,            // simulierte Rundlaufzeit je Stapel
+    langsamesMandat: null,  // ein Mandat, dessen Stapel spuerbar laenger braucht
+    langsamMs: 0,
+    zeitbudgetMs: 0,        // 0 = kein Budget
+    speicherFehlerStapel: null,
+    fremdeZeilen: false,
+    lageChecks: null,
     ...overrides
   };
 }
@@ -160,6 +168,52 @@ storage.getPushUebersicht = async (tenantId) => {
   if (eintrag === null) throw new Error("push-store-nicht-lesbar");
   return eintrag;
 };
+// GEBUENDELTES LESEN der Mandantenspeicher — der Kern dieser Skalierungsstufe.
+// Der Stub bildet den echten Vertrag nach: EIN Zugriff je Stapel, begrenzte
+// Parallelitaet, festes Zeitbudget, und ein gescheiterter oder zu langsamer Stapel
+// bricht den Lauf nicht ab. Der Zaehler misst die STAPEL, nicht die Mandate.
+storage.leseMandantenSpeicherGebuendelt = async (tenantIds = []) => {
+  const ids = [...new Set(tenantIds.map(String))];
+  const speicher = new Map();
+  const fehler = new Map();
+  const groesse = F.stapelGroesse || 10;
+  const start = Date.now();
+  for (let i = 0; i < ids.length; i += groesse) {
+    const teil = ids.slice(i, i + groesse);
+    zaehle("leseMandantenSpeicherGebuendelt");
+    // Realistische Rundlaufzeit je Stapel + optionaler Sonderfall „langsames Mandat".
+    const langsam = F.langsamesMandat && teil.includes(F.langsamesMandat) ? F.langsamMs : 0;
+    await new Promise((r) => setTimeout(r, (F.stapelMs || 0) + langsam));
+    if (F.zeitbudgetMs && Date.now() - start > F.zeitbudgetMs) {
+      for (const t of teil) fehler.set(t, "zeitbudget-erschoepft");
+      continue;
+    }
+    if (F.speicherFehlerStapel && teil.some((t) => F.speicherFehlerStapel.includes(t))) {
+      for (const t of teil) fehler.set(t, "helmut_store-timeout");
+      continue;
+    }
+    for (const t of teil) {
+      const eintrag = F.push.get(t);
+      const lage = F.lageChecks && F.lageChecks.has(t)
+        ? F.lageChecks.get(t)
+        : [{ politicianId: t, checkedAt: new Date(NOW - 3 * H).toISOString() }];
+      speicher.set(t, {
+        lageChecks: lage,
+        // FREMDZEILEN bewusst enthalten: der Auswerter muss sie verwerfen.
+        pushEvents: [
+          ...((eintrag && eintrag.events) || []).map((e) => ({ ...e, politicianId: t })),
+          ...(F.fremdeZeilen ? [{ politicianId: "fremdes-mandat", dedupeKey: `briefing-push:fremdes-mandat:${F.tagKey}:briefing_ready:x`, createdAt: new Date(NOW - 1 * H).toISOString(), delivered: 99, failed: 0 }] : [])
+        ],
+        pushSubscriptions: [
+          ...((eintrag && eintrag.subscriptions) || []),
+          ...(F.fremdeZeilen ? [{ endpoint: "https://push.example/fremd", active: true, politicianId: "fremdes-mandat" }] : [])
+        ]
+      });
+    }
+  }
+  return { speicher, fehler, abfragen: aufrufe.leseMandantenSpeicherGebuendelt || 0 };
+};
+storage.readStore = async () => { zaehle("readStore"); return { lageChecks: [] }; };
 storage.getPushSubscriptions = async () => { zaehle("getPushSubscriptions"); return []; };
 storage.listRenderedBriefingsV3ForTenants = async (ids) => {
   zaehle("listRenderedBriefingsV3ForTenants");
@@ -395,56 +449,134 @@ async function main() {
         && stB.fehlend.length === 0 && b.json.text.includes("Briefingstufen: Status nicht bestimmbar."),
       JSON.stringify({ g: stB.gruende, u: stB.unbestimmt, f: stB.fehlend }));
 
-    const c = await lauf({ push: new Map([["m1", null]]) });
+    // Der Mandantenspeicher traegt Lage- UND Push-Daten. Ist er nicht lesbar, darf
+    // daraus NIE „kein Push Empfaenger vorhanden" werden — ein Datenfehler ist kein
+    // Produktbefund.
+    const c = await lauf({ speicherFehlerStapel: ["m1"] });
     const stC = c.json.briefingStufen;
     check("Push-Speicher nicht lesbar ⇒ „nicht lesbar“, NIE „kein Push Empfaenger vorhanden“",
       stC.empfaengerUnbekannt === 1 && stC.ohneEmpfaenger === 0
         && stC.unbestimmt.includes("push-empfaenger-nicht-lesbar")
         && !stC.hinweise.includes("push-ohne-registrierten-empfaenger")
-        && c.json.text.includes("Push Versand bestätigt: nicht bestimmbar — Push-Abos nicht lesbar."),
-      JSON.stringify({ u: stC.empfaengerUnbekannt, o: stC.ohneEmpfaenger, h: stC.hinweise }));
+        && c.json.text.includes("Push Versand bestätigt: nicht bestimmbar — Push-Abos nicht lesbar.")
+        && c.json.reports[0].state === "Status nicht bestimmbar"
+        && (c.json.reports[0].healthBlockers || []).includes("mandantenspeicher-nicht-lesbar"),
+      JSON.stringify({ u: stC.empfaengerUnbekannt, o: stC.ohneEmpfaenger, h: stC.hinweise, s: c.json.reports[0].state }));
+    check("nicht lesbarer Mandantenspeicher behauptet auch KEIN „Lage nie geprueft“",
+      !/Lage: nie/.test(c.json.text), c.json.text.slice(0, 400));
   }
 
-  abschnitt("9 · Skalierung: gebuendelte Briefingauswertung (Pflichtpruefung 4)");
+  abschnitt("9 · Skalierung: gebuendelte Speicherzugriffe (5 · 25 · 100 Mandate)");
   {
-    const fuenf = ["m1", "m2", "m3", "m4", "m5"];
-    const a5 = await lauf({ tenants: fuenf });
-    const n5 = { ...aufrufe };
-    const hundert = Array.from({ length: 100 }, (_, i) => `m${i + 1}`);
-    const a100 = await lauf({ tenants: hundert });
-    const n100 = { ...aufrufe };
-    check("beide Laeufe sind vollstaendig durchgelaufen",
-      a5.json.tenants === 5 && a100.json.tenants === 100
-        && a5.json.reports.every((r) => r.state !== "report-fehler")
-        && a100.json.reports.every((r) => r.state !== "report-fehler"));
-    check("Briefingbelege: EINE gebuendelte Abfrage bei 5, hoechstens zwei bei 100",
-      n5.listRenderedBriefingsV3ForTenants === 1 && n100.listRenderedBriefingsV3ForTenants <= 2,
-      JSON.stringify({ bei5: n5.listRenderedBriefingsV3ForTenants, bei100: n100.listRenderedBriefingsV3ForTenants }));
-    check("keine Einzelabfrage je Mandat mehr (getRenderedBriefingV3 nie benutzt)",
-      !n5.getRenderedBriefingV3 && !n100.getRenderedBriefingV3,
-      JSON.stringify({ bei5: n5.getRenderedBriefingV3 || 0, bei100: n100.getRenderedBriefingV3 || 0 }));
-    check("Push-Abos ohne zweiten Zugriff je Mandat (getPushSubscriptions nie benutzt)",
-      !n5.getPushSubscriptions && !n100.getPushSubscriptions,
-      JSON.stringify({ bei5: n5.getPushSubscriptions || 0, bei100: n100.getPushSubscriptions || 0 }));
-    check("Push-Uebersicht bleibt bei genau EINEM Zugriff je Mandat",
-      n5.getPushUebersicht === 5 && n100.getPushUebersicht === 100,
-      JSON.stringify({ bei5: n5.getPushUebersicht, bei100: n100.getPushUebersicht }));
-    // MANDANTENNEUTRALE Signale (Quittungen, Queue, CAS, Fehler, Nutzer, Feedback,
-    // Budget, Abdeckung) duerfen NICHT je Mandat wiederholt werden — sie nehmen gar
-    // keine Mandantenkennung entgegen.
+    const mandate = (n) => Array.from({ length: n }, (_, i) => `m${i + 1}`);
+    const messung = async (n) => {
+      const t0 = Date.now();
+      const a = await lauf({ tenants: mandate(n), stapelMs: 12 });
+      return { n, dauerMs: Date.now() - t0, zaehler: { ...aufrufe }, antwort: a };
+    };
+    const m5 = await messung(5);
+    const m25 = await messung(25);
+    const m100 = await messung(100);
+
+    for (const m of [m5, m25, m100]) {
+      check(`${m.n} Mandate laufen vollstaendig durch, alle im Nenner`,
+        m.antwort.json.tenants === m.n && m.antwort.json.briefingStufen.aktive === m.n
+          && m.antwort.json.reports.length === m.n
+          && m.antwort.json.reports.every((r) => r.state !== "report-fehler"),
+        JSON.stringify({ tenants: m.antwort.json.tenants, aktive: m.antwort.json.briefingStufen.aktive }));
+    }
+
+    // KEIN Zugriff waechst mehr MIT JEDEM Mandat: Lage und Push kommen aus dem
+    // gebuendelten Mandantenspeicher, nicht aus zwei Einzelabfragen je Mandat.
+    check("Lage-Check: KEINE Einzelabfrage je Mandat mehr (0 bei 5, 25 und 100)",
+      !m5.zaehler.getLatestLageCheck && !m25.zaehler.getLatestLageCheck && !m100.zaehler.getLatestLageCheck,
+      JSON.stringify([m5.zaehler.getLatestLageCheck || 0, m25.zaehler.getLatestLageCheck || 0, m100.zaehler.getLatestLageCheck || 0]));
+    check("Push-Uebersicht: KEINE Einzelabfrage je Mandat mehr (0 bei 5, 25 und 100)",
+      !m5.zaehler.getPushUebersicht && !m25.zaehler.getPushUebersicht && !m100.zaehler.getPushUebersicht,
+      JSON.stringify([m5.zaehler.getPushUebersicht || 0, m25.zaehler.getPushUebersicht || 0, m100.zaehler.getPushUebersicht || 0]));
+    check("getPushSubscriptions/getRenderedBriefingV3 werden nie benutzt",
+      !m100.zaehler.getPushSubscriptions && !m100.zaehler.getRenderedBriefingV3);
+
+    // Stapel statt Einzelzugriffe: ⌈n/10⌉ Speicherzugriffe fuer die Mandantenzeilen.
+    const erwarteteStapel = (n) => Math.ceil(n / 10);
+    check("Mandantenspeicher: 1 · 3 · 10 Stapelzugriffe statt 10 · 50 · 200 Einzelzugriffen",
+      m5.zaehler.leseMandantenSpeicherGebuendelt === erwarteteStapel(5)
+        && m25.zaehler.leseMandantenSpeicherGebuendelt === erwarteteStapel(25)
+        && m100.zaehler.leseMandantenSpeicherGebuendelt === erwarteteStapel(100),
+      JSON.stringify({
+        bei5: m5.zaehler.leseMandantenSpeicherGebuendelt,
+        bei25: m25.zaehler.leseMandantenSpeicherGebuendelt,
+        bei100: m100.zaehler.leseMandantenSpeicherGebuendelt
+      }));
+    check("Briefingbelege: 1 Abfrage bei 5 und 25, hoechstens 2 bei 100",
+      m5.zaehler.listRenderedBriefingsV3ForTenants === 1
+        && m25.zaehler.listRenderedBriefingsV3ForTenants === 1
+        && m100.zaehler.listRenderedBriefingsV3ForTenants <= 2,
+      JSON.stringify([m5.zaehler.listRenderedBriefingsV3ForTenants, m25.zaehler.listRenderedBriefingsV3ForTenants, m100.zaehler.listRenderedBriefingsV3ForTenants]));
+
     const neutral = ["listProcessRunsRelational", "betriebsstatus", "verstehenKennzahlen",
       "listSystemErrors", "listUsers", "listFeedback", "getLlmUsageBreakdownToday",
       "getClassificationCoverage", "getLatestCompleteKnowledgeObjectAt", "listRawDocuments"];
-    const abweichend = neutral.filter((k) => (n5[k] || 0) !== 1 || (n100[k] || 0) !== 1);
+    const abweichend = neutral.filter((k) => (m5.zaehler[k] || 0) !== 1 || (m100.zaehler[k] || 0) !== 1);
     check("mandantenneutrale Abfragen: genau EINE je Lauf, bei 5 wie bei 100 Mandaten",
       abweichend.length === 0,
-      JSON.stringify(Object.fromEntries(neutral.map((k) => [k, [n5[k] || 0, n100[k] || 0]]))));
-    // Mandantenbezogen bleibt genau das, was eine Mandantenkennung braucht: Lage-Check
-    // und die Push-Uebersicht. Das ist die untere Grenze, kein vermeidbarer Aufwand.
-    check("mandantenbezogene Abfragen: genau ZWEI je Mandat (Lage-Check, Push-Uebersicht)",
-      n5.getLatestLageCheck === 5 && n100.getLatestLageCheck === 100
-        && n5.getPushUebersicht === 5 && n100.getPushUebersicht === 100,
-      JSON.stringify({ lage: [n5.getLatestLageCheck, n100.getLatestLageCheck], push: [n5.getPushUebersicht, n100.getPushUebersicht] }));
+      JSON.stringify(Object.fromEntries(neutral.map((k) => [k, [m5.zaehler[k] || 0, m100.zaehler[k] || 0]]))));
+
+    // GESAMTZAHL der Speicherzugriffe: waechst nicht mehr mit jedem einzelnen Mandat.
+    const gesamt = (z) => Object.entries(z)
+      .filter(([k]) => k !== "recordSystemError")
+      .reduce((n, [, v]) => n + v, 0);
+    check("Gesamtzahl der Speicherzugriffe bleibt weit unter „einer je Mandat“",
+      gesamt(m100.zaehler) < 100 && gesamt(m25.zaehler) < 25,
+      JSON.stringify({ bei5: gesamt(m5.zaehler), bei25: gesamt(m25.zaehler), bei100: gesamt(m100.zaehler) }));
+
+    // LAUFZEIT: 100 Mandate mit realistischer Rundlaufzeit je Stapel (12 ms) muessen
+    // deutlich unter dem Zeitbudget der Route bleiben.
+    check("Laufzeit bei 100 Mandaten bleibt im Zeitbudget der Route (< 10 s)",
+      m100.dauerMs < 10000,
+      `5=${m5.dauerMs}ms · 25=${m25.dauerMs}ms · 100=${m100.dauerMs}ms`);
+    console.log(`        (gemessen: 5 Mandate ${m5.dauerMs} ms · 25 Mandate ${m25.dauerMs} ms · 100 Mandate ${m100.dauerMs} ms)`);
+  }
+
+  abschnitt("9b · Mandantentrennung, Lesefehler und Zeitbudget bei Buendelung");
+  {
+    const mandate = (n) => Array.from({ length: n }, (_, i) => `m${i + 1}`);
+    // (a) Fremde user_id in der gebuendelten Antwort wird verworfen.
+    const a = await lauf({ tenants: mandate(5), fremdeZeilen: true });
+    const st = a.json.briefingStufen;
+    check("fremde user_id in der Stapelantwort landet NICHT im Bericht",
+      st.empfaengerRegistriert === 1 && st.ohneEmpfaenger === 4
+        && !a.json.text.includes("fremdes-mandat")
+        && a.json.text.includes("Push Versand bestätigt: 1 von 1 registrierten Empfängern"),
+      JSON.stringify({ e: st.empfaengerRegistriert, o: st.ohneEmpfaenger }));
+    check("die fremde Zeile haette auffallen MUESSEN (99 angenommene Sendungen)",
+      !/99 von/.test(a.json.text), a.json.text.slice(0, 400));
+
+    // (b) Ein Stapel scheitert — die uebrigen Mandate bleiben korrekt.
+    const b = await lauf({ tenants: mandate(25), speicherFehlerStapel: ["m1"] });
+    const betroffen = b.json.reports.filter((r) => (r.healthBlockers || []).includes("mandantenspeicher-nicht-lesbar"));
+    const heil = b.json.reports.filter((r) => !(r.healthBlockers || []).includes("mandantenspeicher-nicht-lesbar"));
+    check("Lesefehler eines Stapels: betroffene Mandate „Status nicht bestimmbar“, Rest korrekt",
+      b.json.tenants === 25 && b.json.briefingStufen.aktive === 25
+        && betroffen.length === 10 && betroffen.every((r) => r.state === "Status nicht bestimmbar")
+        && heil.length === 15 && heil.every((r) => r.state !== "report-fehler"),
+      JSON.stringify({ betroffen: betroffen.length, heil: heil.length, zustand: betroffen[0] && betroffen[0].state }));
+    check("kein betroffenes Mandat faellt aus dem Nenner",
+      b.json.reports.length === 25 && b.json.briefingStufen.aktive === 25);
+
+    // (c) Ein langsames Mandat: Zeitbudget greift, der Bericht bleibt vollstaendig.
+    const t0 = Date.now();
+    const c = await lauf({ tenants: mandate(100), stapelMs: 10, langsamesMandat: "m1", langsamMs: 600, zeitbudgetMs: 400 });
+    const dauer = Date.now() - t0;
+    const unbestimmbar = c.json.reports.filter((r) => (r.healthBlockers || []).includes("mandantenspeicher-nicht-lesbar"));
+    check("langsames Mandat: Bericht bleibt im Zeitbudget und vollstaendig im Nenner",
+      dauer < 10000 && c.json.tenants === 100 && c.json.reports.length === 100
+        && c.json.briefingStufen.aktive === 100 && unbestimmbar.length > 0
+        && c.json.reports.every((r) => r.state !== "report-fehler"),
+      `dauer=${dauer}ms · nichtBestimmbar=${unbestimmbar.length}`);
+    check("die abgeschnittenen Mandate werden ausdruecklich „Status nicht bestimmbar“ genannt",
+      unbestimmbar.every((r) => r.state === "Status nicht bestimmbar"),
+      JSON.stringify(unbestimmbar.slice(0, 2).map((r) => r.state)));
   }
 
   abschnitt("10 · Rueckschau 48 h betrifft NUR folgenlose Historie (Pflichtpruefung 5)");
