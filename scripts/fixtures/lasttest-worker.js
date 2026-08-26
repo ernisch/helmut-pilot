@@ -44,7 +44,18 @@ async function main() {
   const langsamMs = Number(arg("langsamMs", "0"));
   const fehlerMandat = arg("fehlerMandat", "");
 
+  // BELEGTER FEHLER (Skalierungssprint Z3, 2026-08-26). Hier stand nur `auftrag.tenant_id`.
+  // Der Motor uebergibt dem Handler aber `normalisiereAuftrag(...)` mit dem Feld `tenantId`
+  // in camelCase (`lib/helmut/scalable-pipeline.js`, `tenantId: zeile.tenant_id || null`).
+  // `auftrag.tenant_id` war damit IMMER `undefined`, und die Einspritzung fiel jedes Mal auf
+  // `payload.mandatsId` zurueck — ein Feld, das nur `mandate_projection` und
+  // `briefing_materialization` tragen, nicht die mandatsgebundenen `source_fetch`-Auftraege
+  // (`lib/helmut/source-demand.js`). Folge im synthetischen Nachweis Z2: das „Fehlermandat"
+  // scheiterte NICHT bei jedem Versuch, sondern nur bei rund der Haelfte seiner Auftraege —
+  // daher die in allen drei Stufen konstante Zahl von 2 endgueltigen Fehlern. Der Beweis war
+  // deshalb schwaecher als seine Beschreibung. Beide Schreibweisen werden jetzt gelesen.
   function mandatVon(auftrag) {
+    if (auftrag && auftrag.tenantId) return String(auftrag.tenantId);
     if (auftrag && auftrag.tenant_id) return String(auftrag.tenant_id);
     const p = (auftrag && auftrag.payload) || {};
     return String(p.mandatsId || p.mandat || "");

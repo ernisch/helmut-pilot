@@ -34,10 +34,18 @@ ist **zurückgenommen**. Verbindlich gilt:
 | **Werkzeuge und Änderungssatz dieses PR** | **lokal vollständig belegt** (281/281 Suiten, gezielte Tests, echte PostgreSQL) |
 | **Synthetischer Motorlasttest 25/50/100** | **bestanden** (60 PASS, zweimal, Attrappen für KI und Netz) |
 | **Z1 — technische Gesamtbereitschaft für 25/50/100** | **weiterhin teilweise / offen** |
-| **Z3 — realistischer Lastnachweis** | **nicht erreicht** |
+| **Z3a — realistischer Lauf mit echten Fachhandlern, echtem Anwendungsweg zur Datenbank (HTTP/PostgREST/PostgreSQL 17.6), echtem Netz und echten Modellaufrufen, aber LOKALEN Anbietern** | **erbracht (2026-08-26)** — Belegdatei [`z3-realistiknachweis-2026-08-26.md`](z3-realistiknachweis-2026-08-26.md) |
+| **Z3b — echte Anbieter (Google-Sonderweg, Azure), echte Antwortzeiten, echte Drosselgrenzen, echte Rechnung** | **nicht erreicht** — freigabepflichtig (Kosten, Anbietergrenzen) |
+| **Z3 — realistischer Lastnachweis, vollständig** | **nicht erreicht** (Z3a ohne Z3b) |
 | **Z4 — Freigabe** | **nicht erteilt** |
 | **Z5 — real aktiv** | **nur die bestehenden 5 Mandate** |
 | **Production-Freigabe** | **keine** |
+
+> **Z3a ist nicht Z3.** Die Aufteilung wurde am 2026-08-26 eingeführt, weil ein Teil der
+> Realismusebene ohne jede Freigabe sicher erreichbar ist und ein anderer Teil grundsätzlich
+> nicht: ein Lasttest gegen einen fremden Anbieter wäre ein Massen-Crawl (CLAUDE.md §5),
+> und echte Modellaufrufe kosten Geld. Was Z3a belegt und was Z3b offen lässt, steht
+> vollständig in der Belegdatei, §8.
 
 **Warum Z1 nicht vollständig ist** — sechs Punkte, die zur technischen Betriebsbereitschaft
 gehören und offen sind:
@@ -45,12 +53,21 @@ gehören und offen sind:
 1. die **Ankunftskennzahl ist nicht angewendet** (F9) — ohne sie ist die Stufe-2-Bedingung
    „Abfluss ≥ Ankunft" nicht messbar;
 2. **Fluid Compute ist unbestätigt** — jede Laufzeit über 300 s bleibt eine Hypothese (§6.1);
-3. **Supabase unter realistischer Last ist ungeprüft** — der Lasttest lief gegen eine lokale
-   PostgreSQL; auch die **Verbindungsfrage** ist offen (§4.3a);
+3. **Supabase unter realistischer Last ist ungeprüft.** Z3a (2026-08-26) hat den
+   **Anwendungsweg** geschlossen — die Aufrufe gehen jetzt als `POST /rest/v1/rpc/…` über
+   HTTP und PostgREST 12.2.3 auf PostgreSQL 17.6, wie in Production, und nicht mehr über
+   `psql`. **Nicht** geschlossen ist die **Plattform**: gemessen wurde eine lokale
+   PostgreSQL ohne Supabase-Pooler, ohne Supabase-Netzweg und ohne dessen
+   Verbindungsobergrenzen. Die Verbindungsspitze im Lauf (32 von 100 bei 100 Mandaten,
+   Belegdatei §10.3) ist ein **lokaler** Messwert und **keine** Aussage über den Pooler
+   (§4.3a);
 4. der **KI-Tagesdeckel** ist für die Stufen 25/50/100 nicht festgelegt (§5.2). Die Werte
    **100/30 sind dokumentiert, in dieser Sitzung nicht live verifiziert**; für **25** ist die
    Tragfähigkeit **offen und muss gemessen werden**, **ab 50** reicht 100 in **beiden**
-   Modelllinien nicht (§2c);
+   Modelllinien nicht (§2c). Z3a hat den **ungedeckelten Bedarf** gemessen: über zwei
+   Tagesrunden 177 / 415 / 622 / 738 Modellaufrufe für 5 / 25 / 50 / 100 Mandate, also rund
+   **89 / 208 / 311 / 369 je Betriebstag** (Belegdatei §10.4). Schon **25 Mandate** verlangen
+   damit gut das **Doppelte** des heutigen Deckels von 100;
 5. es gibt **drei reguläre Abflussläufe/Tag**, nicht elf (§2a) — der Abstand zur
    hochgerechneten Menge ist damit größer als zuvor dargestellt;
 6. die **Quellenversorgung der vorbereiteten Landtagsprofile fehlt** (§8.0).
