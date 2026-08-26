@@ -195,7 +195,14 @@ gegen den Produktionscode, damit die Namen nicht wieder auseinanderlaufen.
 
 ---
 
-## 7 · Der tragende Befund: die Vorbedingungsprüfung hat keinen Mandatsfilter
+## 7 · Der tragende Befund: die Vorbedingungsprüfung hatte keinen Mandatsfilter
+
+> **Stand 26.08., abends — behoben auf dem Folgezweig.** Der hier beschriebene Befund ist mit
+> `claude/z22-tenant-isolation-after-z3a` **geschlossen**: Migration
+> `20260826190000_jobqueue_vorbedingung_mandatsfilter.sql` gibt `helmut_jobs_offen` ein
+> optionales drittes Argument `p_mandat`, der Motor übergibt die Mandatskennung des fragenden
+> Auftrags. Was danach gemessen wurde, steht in §13. Dieser Abschnitt beschreibt den Zustand
+> **vor** der Korrektur und bleibt als Beleg erhalten.
 
 **Verifizierte Tatsache (aus dem Code gelesen, nicht aus diesem Lauf).**
 `public.helmut_jobs_offen(p_fenster, p_typen)` (Migration
@@ -308,6 +315,12 @@ welchen Anbieter ein gegebener Aufruf lief. **Die Preisbasis bleibt offen (F7).*
 ---
 
 ## 10 · Messwerte
+
+> **Alle Zahlen dieses Abschnitts stammen aus den Läufen von PR #272 — also von *vor* der
+> Z22-Korrektur.** Sie bleiben unverändert stehen, weil sie der Beleg dieses PR sind. Wo unten
+> „Struktur: helmut_jobs_offen hat keinen Mandatsfilter" steht, beschreibt das den damaligen
+> Zustand; er ist im Folgezweig behoben. Die Werte **nach** der Korrektur stehen in §13.5–§13.7.
+
 
 *(Die Zahlen dieses Abschnitts stammen aus dem maschinenlesbaren Bericht des Laufs. Sie
 werden nach jedem Lauf ersetzt, nie ergänzt.)*
@@ -608,3 +621,162 @@ aufgenommen und **kein** Binärpaket eingecheckt.
 
 Der Vertragstest `scripts/z3-realistiklauf-vertrag-test.js` läuft dagegen **ohne** Datenbank
 und ist deshalb im Pflicht-CI-Gate.
+
+---
+
+## 13 · Nachtrag 26.08. abends — Befund Z22 behoben und gegengemessen
+
+> Dieser Abschnitt gehört zum **Folgezweig** `claude/z22-tenant-isolation-after-z3a`
+> (abhängiger Pull Request auf `claude/load-test-mandate-proof-wtlew0`). Er ändert an §1–§12
+> nichts; §7 trägt oben den Hinweis, dass sein Befund hier geschlossen wird.
+
+### 13.1 Was genau falsch war — enger als §7 es beschrieb
+
+`helmut_jobs_offen(p_fenster, p_typen)` zählte über Aktualitätsfenster und Typ, ohne
+Mandatsbezug. Nicht jede daraus folgende Blockade war falsch. Getrennt nach Auftragsklasse:
+
+| Vorbedingung | Mandatsbezug | Blockade über Mandate hinweg |
+|---|---|---|
+| **Geteilter** `source_fetch` | `tenant_id is null` (`source-demand.js`: „GETEILTE Arbeit gehört KEINEM Mandat") | **richtig** — speist alle Mandate |
+| `document_understanding` | bauartbedingt **immer** `tenant_id is null` (`scalable-pipeline.js`: „Ein Vorgang gehört keinem Mandanten") | **richtig** — bleibt global |
+| **Persönlicher** `source_fetch` | `tenant_id = <mandat>` — die Namenssuche genau eines Mandats | **falsch** |
+| `mandate_projection` | `tenant_id = <mandat>` — Vorbedingung des Briefings **desselben** Mandats | **falsch** |
+
+Die letzten beiden Zeilen sind der Befund. Die zweite fehlte in §7 ganz: dort ist nur von
+`source_fetch` die Rede, doch `briefing_materialization` wartet laut `VORBEDINGUNGEN` auch auf
+`mandate_projection` — und die trägt **immer** ein Mandat. Ein hängendes Mandat hielt damit
+nicht nur fremde Projektionen auf, sondern auch fremde Briefings.
+
+**Ursache, nicht Absicht.** Die Funktion entstand für die Fenster- und Typdimension, als Helmut
+faktisch einen Mandanten hatte. Die Mandatsdimension hat schlicht gefehlt. Beide Planungsstellen
+setzen den Mandatsbezug ausdrücklich und kommentiert — die Zählung hat ihn nur nie gelesen.
+
+### 13.2 Die Korrektur — kleinster Änderungssatz
+
+1. **Migration** `20260826190000_jobqueue_vorbedingung_mandatsfilter.sql` (+ Rückweg):
+   drittes Argument `p_mandat text default null`. Ohne Argument **verhaltensgleich**; mit
+   Argument zählt sie globale Arbeit (`tenant_id is null`) **plus** die Arbeit dieses einen
+   Mandats. Die Zählmenge selbst bleibt unangetastet: `offen` ist weiterhin
+   `wartend + laeuft`, endgültig gescheiterte Aufträge zählen weiterhin bewusst nicht.
+2. **`storage.jobQueueOffeneVorbedingungen`** nimmt `mandat` entgegen. Nur eine nicht leere
+   Zeichenkette gilt; alles andere führt zur globalen Zählung — **mehr** Warten, nie weniger.
+3. **`scalable-pipeline.vorbedingungOffen`** übergibt die Kennung aus der Spalte `tenant_id`
+   des fragenden Auftrags. Die Nutzlast (`payload.mandatsId`) wird ausdrücklich **nicht** als
+   Ersatz herangezogen: gefiltert wird nach der Spalte, und zwei Wahrheiten wären eine
+   Einladung zum Auseinanderlaufen.
+4. **In-Memory-Attrappe** wortgleich nachgezogen — eine Attrappe, die enger filtert als die
+   Datenbank, meldete zu wenige Vorbedingungen.
+
+**Kein neuer Index.** An PostgreSQL 17.6 gemessen (20 000 Zeilen): Zugriffsweg und
+Ausführungszeit sind mit und ohne Filter identisch — `Bitmap Index Scan on
+helmut_jobs_window_idx`, 1,481 ms gegen 1,397 ms. Der Mandatsfilter ist ein Nachvergleich auf
+der bereits eingegrenzten Treffermenge.
+
+### 13.3 Der Deployment-Riegel, der hier nötig war
+
+Merge ist Deployment, Migrationen sind freigabepflichtig — der Code steht also **vor** der
+Migration in Production. Ohne Vorkehrung hätte PostgREST den Aufruf mit unbekanntem Argument
+mit `PGRST202` beantwortet, `jobQueueOffeneVorbedingungen` hätte `verfuegbar:false` gemeldet,
+und `vorbedingungOffen` hätte **gar nicht mehr geprüft** — die Reihenfolgezusage wäre
+**stillschweigend abgeschaltet** gewesen. Deshalb fragt der Code bei genau diesem Fehler
+**einmal** ohne `p_mandat` nach und meldet `mandatsfilter-migration-fehlt`. Ohne angewendete
+Migration gilt damit exakt das alte, konservativere Verhalten — nicht Ausfall.
+
+**Das ist nicht behauptet, sondern gefahren** (§11 des Datenbanktests): echte PostgreSQL 17.6,
+echtes PostgREST, Rückweg eingespielt, Schema neu eingelesen — und dann der *Anwendungscode*
+gegen genau diesen Server. Gemessen: die alte Fassung antwortet auf den Aufruf mit `p_mandat`
+mit **HTTP 404 / `PGRST202`**, `jobQueueOffeneVorbedingungen` liefert daraufhin
+`verfuegbar: true`, `mandatsfilter: false`, `grund: mandatsfilter-migration-fehlt` und **genau
+die alte, globale Zahl** (16 005 gegen 16 005). Die ganze Sicherung hängt an einer Annahme über
+einen fremden Dienst — die lässt sich nicht durch Lesen prüfen, nur durch Fragen. Ihr erster
+Testaufbau sprach versehentlich rohes PostgREST statt des `/rest/v1`-Tors an und meldete
+deshalb einen Ausfall, den es nicht gab; erst mit dem Tor davor misst er den Produktionsweg.
+
+### 13.4 Gegenbeispiele: vorher rot, nachher grün
+
+`scripts/vorbedingung-mandatsfilter-test.js` (39 Prüfungen, ohne Netz und Datenbank, im
+Pflicht-CI-Gate). Gegen den Stand **vor** der Korrektur, gemessen:
+
+| Gegenbeispiel | vorher | nachher |
+|---|---|---|
+| 2.1 Fremder persönlicher Abruf blockiert Projektion nicht | **FAIL** (offen 1) | PASS |
+| 2.3 Fremde Projektion blockiert Briefing nicht | **FAIL** (offen 1) | PASS |
+| 2.5 Fremde Arbeit blockiert Narrativ nicht | **FAIL** (offen 1) | PASS |
+| 2.6 Dauerhaft krankes Mandat hält keine Stufe eines gesunden auf | **FAIL** (alle drei blockiert) | PASS |
+| 2.7 Gleichnamige Typen zweier Mandate werden nicht vermischt | **FAIL** (A sieht 2, B sieht 2) | PASS |
+| 2.8 Gezählt wird geteilt + eigen | **FAIL** (offen 3 statt 2) | PASS |
+
+§1 (globale Arbeit bleibt global) und §3 (Reihenfolge im eigenen Mandat) sind in **beiden**
+Ständen grün — die Korrektur nimmt nichts weg, was gebraucht wird.
+
+Der Datenbankteil (`scripts/vorbedingung-mandatsfilter-datenbank-test.js`, **34 Prüfungen**,
+PostgreSQL 17.6) prüft zusätzlich: Migration vorwärts/rückwärts/erneut vorwärts, genau **eine**
+Fassung (kein mehrdeutiger Aufruf), keine Rechte für `anon`/`authenticated`/`PUBLIC`, fester
+`search_path`, `stable` + `security invoker` — und dass eine **leere** Zeichenkette als Mandat
+kein Generalschlüssel ist.
+
+### 13.5 Z3a erneut gefahren — 25, 50, 100, je mit und ohne Fehlermandat
+
+Sechs Läufe, je zwei volle Tagesrunden, dieselbe lokale Plattform wie §2.
+
+| Mandate | Aufträge | erledigt | endgültige Fehler | Wdh. | häng. Leases | Dubletten | Doppelabschluss | unbek. Vorgänge | Fairness | Rückstau T1 → T2 |
+|---:|---:|---:|---:|---:|---:|---:|---:|---:|:--:|:--:|
+| 25 | 1.105 | 1.053 | 1 (nur Fehlermandat) | 18 | 0 | 0 | 0 | 0 | 6–6 | 50 → 51 |
+| 50 | 1.800 | 1.711 | 1 (nur Fehlermandat) | 24 | 0 | 0 | 0 | 0 | 6–7 | 91 → 88 |
+| 100 | 2.597 | 2.408 | 1 (nur Fehlermandat) | 41 | 0 | 0 | 0 | 0 | 6–7 | 197 → 188 |
+
+**Ergebnis je Stufe: 24 PASS · 0 FAIL · 0 offene Befunde.** Z22 ist damit auf allen drei Stufen
+**geschlossen** — in PR #272 war es auf allen Stufen offen.
+
+### 13.6 Der eigentliche Beweis: die Produktionsfunktion, je Slot zweimal gefragt
+
+Das neue Kriterium **Z22a** fragt in jedem Slot dieselbe Funktion zweimal — einmal ohne Mandat
+(die alte, mandatsblinde Sicht) und einmal mit einem **gesunden** Mandat — und prüft das
+Ergebnis gegen die Rohtabelle, nicht gegen die Zusage der Funktion.
+
+| Mandate | Slots mit Wirkung | Aufträge, auf die ein gesundes Mandat nicht mehr wartet | Abweichungen Funktion ↔ Ablage |
+|---:|---:|---:|---:|
+| 25 | 5 von 6 | 57 | **0** |
+| 50 | 5 von 6 | 111 | **0** |
+| 100 | 5 von 6 | 220 | **0** |
+
+Am deutlichsten am Ende von **Slot 1**: global waren 7 / 10 / 17 vorgelagerte Aufträge offen,
+ein gesundes Mandat sah **0**. Vor der Korrektur hätte es auf alle gewartet. Zu Beginn von Tag 2
+(Slot 4) sieht ein gesundes Mandat rund 40 % weniger Vorbedingungen (193→146, 326→229, 489→292).
+
+### 13.7 Vorher/nachher im Lastmaßstab — und was der Rest ist
+
+| Mandate | langsamster Slot **ohne** Fehlermandat | **mit** Fehlermandat | Aufschlag |
+|---:|---:|---:|---:|
+| 25 (PR #272, ohne Filter) | 119.175 ms | 152.509 ms | **+28 %** |
+| 25 (dieser Zweig) | 117.005 ms | 134.986 ms | **+15 %** |
+| 50 (PR #272, ohne Filter) | 172.424 ms | 180.340 ms | **+4,6 %** |
+| 50 (dieser Zweig) | 184.090 ms | 185.190 ms | **+0,6 %** |
+| 100 (PR #272, ohne Filter) | 198.132 ms | 215.504 ms | **+8,8 %** |
+| 100 (dieser Zweig) | 194.990 ms | 214.383 ms | **+9,9 %** |
+
+**Ehrlich benannt: der Aufschlag verschwindet nicht vollständig, und bei 100 Mandaten ist er
+im Rauschen unverändert.** Das ist erwartbar und **nicht** Z22. Was übrig bleibt, ist
+**Arbeitszeit**, nicht Blockade: der tote Abrufweg des Fehlermandats läuft in jedem Versuch in
+die volle Zeitgrenze (`CRAWLER_TIMEOUT_MS`) und belegt dabei einen der vier Arbeiter. Diese
+Kosten sind durch `max_attempts` und die Zeitgrenze **begrenzt** und treffen nur die
+Slotdauer, nicht die Vollständigkeit: liegengeblieben ist auf **keiner** Stufe Arbeit eines
+gesunden Mandats (0 gegen 0), und die Fairness bleibt 6–6 bzw. 6–7 Abschlüsse je Mandat.
+Ein einzelner Slotwert ist zudem verrauscht (die Läufe teilen sich eine Maschine); belastbar
+ist die Richtung bei 25 und 50, nicht die zweite Stelle bei 100.
+
+### 13.8 Was dieser Nachtrag **nicht** beweist
+
+Unverändert offen bleibt alles aus §8: die Anbieter sind lokal, weder Google noch Azure
+antwortet, geprüft ist PostgREST und nicht Supabase. **Z3 bleibt unvollständig, Z3b offen,
+Z4 nicht erteilt, Z5 unverändert fünf reale Mandate.** Die Migration ist **nicht** auf
+Production angewendet und bleibt freigabepflichtig.
+
+Und eine fachliche Grenze, die zur Korrektur selbst gehört: ein Mandat wartet jetzt nicht mehr
+auf die **persönliche** Namenssuche eines anderen Mandats. Ein Dokument, das ausschließlich
+diese fremde Suche gefunden hätte und zufällig auch zum eigenen Profil passt, kann damit erst
+im nächsten Fenster in die eigene Lage kommen. Das ist bewusst in Kauf genommen: dieselbe
+Abwägung trifft der Motor schon heute beim 7-Tage-Archivfenster („ein Briefing darf nicht auf
+eine Hintergrundsuche mit Wochenkadenz warten") und bei der 6-Stunden-Obergrenze des Wartens.
+Vorgänge bleiben persistent, das Matching liest gespeicherte Vorgänge — verloren geht nichts,
+es kommt nur später.

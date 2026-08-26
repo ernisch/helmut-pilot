@@ -239,7 +239,7 @@ function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
   // NEU (Sprint V3-Anbindung): dieselben drei Faehigkeiten wie die Datenbank —
   // Vorbedingungen zaehlen und einen Auftrag EHRLICH zurueckstellen.
   // Der Vertragstest prueft die Gleichheit von Attrappe und echter Datenbank.
-  async function offeneVorbedingungen({ fenster = null, typen = null } = {}) {
+  async function offeneVorbedingungen({ fenster = null, typen = null, mandat = null } = {}) {
     // Befund O3: `helmut_jobs_offen` nimmt seit der Korrektur eine LISTE von Fenstern
     // (`j.freshness_window = any(p_fenster)`), weil geteilte Abrufe in 8-h-Fenstern liegen,
     // mandatsbezogene Arbeit aber in einem 24-h-Fenster. Die Attrappe MUSS dasselbe tun —
@@ -257,6 +257,13 @@ function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
       ? null
       : new Set((Array.isArray(fenster) ? fenster : [fenster]).map(String));
     const typMenge = (typen == null || !typen.length) ? null : new Set(typen);
+    // MANDATSFILTER (Befund Z22, Migration 20260826190000) — WORTGLEICH zur Datenbank:
+    // `p_mandat is null or j.tenant_id is null or j.tenant_id = p_mandat`. Ohne Kennung
+    // wird global gezaehlt (Verhalten vor Z22); mit Kennung zaehlt globale Arbeit
+    // (`tenant_id` leer) plus die Arbeit genau dieses Mandats. Eine Attrappe, die hier
+    // ENGER filtert als die Datenbank, meldete zu wenige Vorbedingungen — genau das
+    // falsche Gruen, das der Vertragstest ausschliessen soll.
+    const mandatsKennung = typeof mandat === "string" && mandat.trim() !== "" ? mandat.trim() : null;
     let wartend = 0;
     let laufend = 0;
     let fehlgeschlagen = 0;
@@ -264,6 +271,7 @@ function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
     for (const z of zeilen.values()) {
       if (fensterMenge && !fensterMenge.has(z.freshness_window)) continue;
       if (typMenge && !typMenge.has(z.job_type)) continue;
+      if (mandatsKennung && z.tenant_id != null && z.tenant_id !== "" && z.tenant_id !== mandatsKennung) continue;
       if (z.status === "wartend") wartend += 1;
       else if (z.status === "laeuft") laufend += 1;
       else if (z.status === "fehlgeschlagen") fehlgeschlagen += 1;
@@ -275,7 +283,8 @@ function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
       wartend,
       laufend,
       fehlgeschlagen,
-      erledigt
+      erledigt,
+      mandatsfilter: Boolean(mandatsKennung)
     };
   }
 

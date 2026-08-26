@@ -41,6 +41,14 @@ ist **zurückgenommen**. Verbindlich gilt:
 | **Z5 — real aktiv** | **nur die bestehenden 5 Mandate** |
 | **Production-Freigabe** | **keine** |
 
+> **Nachtrag 26.08. abends:** der einzige offene Befund der Z3a-Läufe — **Z22**, die
+> mandatsblinde Vorbedingungszählung — ist auf dem Folgezweig
+> `claude/z22-tenant-isolation-after-z3a` **behoben und gegengemessen**
+> ([`z3-realistiknachweis-2026-08-26.md`](z3-realistiknachweis-2026-08-26.md) §13). Die Stufen
+> 25/50/100 laufen dort mit **24 PASS · 0 FAIL · 0 offenen Befunden**. Die zugehörige Migration
+> `20260826190000` ist **vorbereitet, nicht angewendet** und bleibt freigabepflichtig. An Z3b,
+> Z4 und Z5 ändert das nichts.
+
 > **Z3a ist nicht Z3.** Die Aufteilung wurde am 2026-08-26 eingeführt, weil ein Teil der
 > Realismusebene ohne jede Freigabe sicher erreichbar ist und ein anderer Teil grundsätzlich
 > nicht: ein Lasttest gegen einen fremden Anbieter wäre ein Massen-Crawl (CLAUDE.md §5),

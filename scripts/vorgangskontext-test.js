@@ -648,7 +648,19 @@ const ALLE_FAMILIEN = [...G.FAMILIEN, ...G.ZUSATZFAMILIEN];
   // Kontextpfad. Eigener Nachweis: scripts/jobqueue-ankunft-datenbank-test.js an
   // echter PostgreSQL; Pruefung 8.8b prueft ihren Inhalt unabhaengig mit.
   "20260825101500_jobqueue_ankunftskennzahl.sql",
-  "rollback_20260825101500_jobqueue_ankunftskennzahl.sql"
+  "rollback_20260825101500_jobqueue_ankunftskennzahl.sql",
+  // Z22-Korrektursprint (2026-08-26): ersetzt AUSSCHLIESSLICH die rein LESENDE Funktion
+  // public.helmut_jobs_offen durch dieselbe Funktion mit einem optionalen dritten Argument
+  // `p_mandat` (Vorgabewert null, dann verhaltensgleich). Ohne diesen Filter hielt die
+  // Vorbedingungspruefung der Warteschlange die Projektion und das Briefing ALLER Mandate
+  // zurueck, sobald irgendein Mandat einen offenen Abruf hatte. Keine Tabelle, keine
+  // Spalte, kein Index, kein Trigger, keine Policy, kein Backfill; `knowledge_objects`,
+  // `ko_document_links` und `raw_documents` werden nicht beruehrt. Keine K2.1-Struktur,
+  // kein Kontextpfad. Eigener Nachweis:
+  // scripts/vorbedingung-mandatsfilter-datenbank-test.js an echter PostgreSQL 17.6;
+  // Pruefung 8.8b prueft ihren Inhalt unabhaengig mit.
+  "20260826190000_jobqueue_vorbedingung_mandatsfilter.sql",
+  "rollback_20260826190000_jobqueue_vorbedingung_mandatsfilter.sql"
       ]);
       // Die Allowlist ist KEINE Abschwaechung: 8.8b prueft unabhaengig und INHALTLICH,
       // dass keine Migration im Repository den Kontextpfad beruehrt — auch keine der
