@@ -50,13 +50,27 @@ check("3b bereits escapte Sequenzen (\\\\n, \\\\\") bleiben unveraendert",
 check("3c escapter Backslash am Stringende verwirrt den Scanner nicht",
   JSON.parse(ai.escapeControlCharsInJsonStrings('{"p": "C:\\\\pfad\n"}')).p === "C:\\pfad\n");
 
-// --- 4) Ehrliches Scheitern: echter Muell wirft weiterhin ---------------------------
+// --- 4) Anbieter-Umschlag: Fehler kann VOR dem Modelltext-Parser entstehen -----------
+const validEnvelope = '{"output":[{"content":[{"type":"output_text","text":"ok"}]}],"usage":{"input_tokens":1}}';
+check("4 gueltiger Anbieter-Umschlag wird normal geparst",
+  ai.parseProviderResponseJson(validEnvelope).output[0].content[0].text === "ok");
+const rawEnvelopeNewline = '{"output":[{"content":[{"type":"output_text","text":"Zeile eins\nZeile zwei"}]}]}';
+check("4b rohes Steuerzeichen im output_text wird vor der Extraktion gerettet",
+  ai.parseProviderResponseJson(rawEnvelopeNewline).output[0].content[0].text === "Zeile eins\nZeile zwei");
+let envelopeThrew = false;
+try { ai.parseProviderResponseJson('Vorspann {"output":[]}'); } catch { envelopeThrew = true; }
+check("4c Anbieter-Umschlag akzeptiert keine fuehrende Prosa", envelopeThrew);
+envelopeThrew = false;
+try { ai.parseProviderResponseJson('{"output": [}'); } catch { envelopeThrew = true; }
+check("4d strukturell kaputter Anbieter-Umschlag bleibt ein Fehler", envelopeThrew);
+
+// --- 5) Ehrliches Scheitern: echter Muell wirft weiterhin ---------------------------
 let threw = false;
 try { ai.parseJsonText("kein json weit und breit"); } catch { threw = true; }
-check("4 komplett ungueltiger Text wirft weiterhin (kein stilles Erfinden)", threw);
+check("5 komplett ungueltiger Text wirft weiterhin (kein stilles Erfinden)", threw);
 threw = false;
 try { ai.parseJsonText('{"unvollstaendig": '); } catch { threw = true; }
-check("4b strukturell kaputtes JSON wirft weiterhin", threw);
+check("5b strukturell kaputtes JSON wirft weiterhin", threw);
 
 console.log(`\n${failed === 0 ? "ALLE GRÜN" : failed + " FEHLGESCHLAGEN"} — ${passed}/${passed + failed} AI-JSON-Parse-Assertions`);
 process.exit(failed > 0 ? 1 : 0);

@@ -230,8 +230,17 @@ Leases. Der GitHub Lauf `33105081744` war grün. Danach wurden GitHub Secret, Su
 Key und einmaliger Workflow vollständig entfernt; der geschützte Branch enthält wieder den
 Baum vor dem Lauf. Z2 und Z3a wurden nicht gestartet.
 
+**Supabase Lauf B ist ebenfalls grün:** weitere 25 synthetische Aufträge, Parallelität 8,
+genau 66 HTTP Anfragen und 25 Einreihungen, Reservierungen sowie Abschlüsse in 8.759 ms.
+Alle Antworten waren 200; Latenz p50/p95/p99 = 323/748/2.452 ms, Maximum 2.568 ms.
+Es gab 0 Zeitüberschreitungen, Netzfehler, Drosselungen, 5xx, unbekannte Vorgänge,
+Doppelreservierungen oder Lease Verluste. Der GitHub Lauf `33115237785` war grün. Danach
+wurden GitHub Secret, Supabase Secret Key und einmaliger Workflow vollständig entfernt.
+Im Testprojekt bleiben damit freigabegemäß 50 synthetische Zeilen, alle 50 abgeschlossen;
+0 offen, wartend, laufend, fehlgeschlagen oder mit aktiver Lease.
+
 Offline grün bleiben Supabase-Messläufer **46 PASS**, Azure-Messläufer **46 PASS** und
-Kapazitätsauswertung **33 PASS**. Noch ungemessen sind die Supabase Läufe B bis D, alle echten
+Kapazitätsauswertung **33 PASS**. Noch ungemessen sind die Supabase Läufe C und D, alle echten
 Azure Laufzeit- und Tokenwerte, daraus KI Deckel und Kostenobergrenze sowie die späteren neuen
 Stufen 200 und 500. Die aktuelle Azure Preisseite nennt fuer `GPT-5-mini` 0,25/2,00 USD je
 Million Eingabe-/Ausgabetoken fuer Global und 0,28/2,20 USD fuer Data Zone. Vor einem Aufruf
@@ -242,13 +251,24 @@ wird kein Preis geraten. Kanonisch:
 [`betrieb/z3b-aktivierungsplan-2026-08-27.md`](betrieb/z3b-aktivierungsplan-2026-08-27.md).
 
 PR #273 trägt die lokale Korrektur inzwischen als Commit `2a01ea9e`; #272 und #273 sind offen,
-mergefähig und grün, aber ungemergt. Lesender Production-Stand am 27.08.2026 um 12:26 UTC:
-Der neue unbekannte Verstehensvorgang wurde nach exakter Vorprüfung einmal über den kanonischen
-Betreiberweg auf `erneut` gesetzt. Aggregiert danach: 0 unbekannt, 2 erneut freigegeben,
-0 aktive Leases, 509 abgeschlossen und 1 aufgegeben. Kein manueller Lauf. Der natürliche
-`understanding-cron` um 21:30 UTC und dessen rein lesender Abschlusscheck bleiben offen.
+mergefähig und grün, aber ungemergt. Der natürliche Production Lauf am 27.08.2026 um 21:30 UTC
+endete ohne laufinternen Fehler, schloss die Fünferregression aber **rot** ab: 17 verarbeitet,
+34 vertagt. Der betroffene Vorgang wurde nach 2 Versuchen und 2 KI Aufrufen erneut unbekannt;
+es gibt kein gespeichertes Ergebnis. Aggregiert danach: 537 CAS Vorgänge, 535 abgeschlossen,
+1 unbekannt, 1 aufgegeben, 0 offen, reserviert oder laufend, 0 aktive oder hängende Leases,
+0 endgültige Auftragsfehler und weiterhin genau 5 aktive Mandate. Das ist eine Regression,
+kein neuer Skalierungsbeweis.
 
-Offen: natürlicher Nachlauf als Regression, nicht als neuer Fünfer-Skalierungsbeweis · Merge
-#272, danach #273 · F9/Z22 für Production jeweils separat · Supabase Läufe B bis D · echte
+Die genaue Fehlermeldung passt zu einem reproduzierbaren Lückenpfad im KI Transportparser:
+Der HTTP JSON Umschlag wurde bisher mit `JSON.parse` gelesen, bevor die bereits vorhandene
+Rettung roher Steuerzeichen im Modelltext greifen konnte. Auf dem Z3b Branch ist eine strikte
+Rettung für diesen Umschlag vorbereitet. Sie akzeptiert weder führende Prosa noch strukturell
+kaputtes JSON. Parser und angrenzende Verstehensverträge stehen bei **241 PASS, 0 FAIL**.
+Die gesamte Offline Suite steht bei **283 von 289 grünen Suiten**; sechs davon unabhängige
+Umgebungs-, Bestands- oder Flake Fehler verhindern noch die Aussage einer vollständig grünen
+Gesamtsuite. Keine Production Änderung wurde ausgeführt.
+
+Offen: unabhängige Prüfung des KI Parserfixes und später eine natürliche Regression · Merge
+#272, danach #273 · F9/Z22 für Production jeweils separat · Supabase Läufe C und D · echte
 Azure Aufrufe und Kosten · KI Deckel · jede Aktivierung. 200 und 500 sind strategische spätere
 Tore und blockieren den sicheren Plan bis 100 nicht.

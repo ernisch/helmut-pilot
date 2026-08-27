@@ -14,13 +14,14 @@ Vorbestands offen. Die installierte Funktion entspricht der korrigierten Fassung
 Security Invoker mit festem Suchpfad und zaehlt global sowie mandatsbezogen wie erwartet. Sie
 wird ohne eigene Freigabe weder veraendert noch zurueckgebaut.
 
-Der begrenzte Messlaeufer steht offline bei 46 PASS und 0 FAIL. **Lauf A wurde einmal gegen
-PostgREST ausgefuehrt und ist gruen:** 25 synthetische Auftraege bei Parallelitaet 4, genau
-62 HTTP Anfragen, 25 Reservierungen und 25 Abschluesse. Alle Testzeilen sind abgeschlossen;
-es gibt keine aktive Lease. Der temporaere Testschluessel, das GitHub Actions Secret und der
-einmalige Workflow wurden danach entfernt. Der Schluessel erschien weder in Chat, Code noch
-Protokollen. Die 25 Testzeilen bleiben gemaess Freigabe erhalten. Es gab keinen Import und
-keine Production Aenderung.
+Der begrenzte Messlaeufer steht offline bei 46 PASS und 0 FAIL. **Die Laeufe A und B wurden
+je einmal gegen PostgREST ausgefuehrt und sind gruen:** jeweils 25 synthetische Auftraege bei
+Parallelitaet 4 beziehungsweise 8, genau 62 beziehungsweise 66 HTTP Anfragen und insgesamt
+50 Reservierungen sowie 50 Abschluesse. Alle Testzeilen sind abgeschlossen; es gibt keine
+aktive Lease. Die temporaeren Testschluessel, GitHub Actions Secrets und einmaligen Workflows
+wurden danach entfernt. Ein Schluessel erschien weder in Chat, Code noch Protokollen. Die
+50 Testzeilen bleiben gemaess Freigabe erhalten. Es gab keinen Import und keine Production
+Aenderung.
 
 Das strategische Skalierungsziel ist jetzt **500 Mandate**. Die sichere Aktivierung bleibt
 gestuft. Zuerst wird die Stufe bis 100 abgeschlossen, danach folgen 200 und 500 als eigene,
@@ -33,10 +34,10 @@ noch unbekannten Eigenschaften der echten Supabase Plattform:
 
 | Wert | Messung |
 |---|---|
-| Datenschnittstelle | Lauf A gemessen; p50/p95/p99 gesamt 339/654/808 ms; B bis D offen |
-| Stabilitaet | Lauf A: 0 HTTP Fehler, Zeitueberschreitungen, 429 und 5xx; B bis D offen |
-| Parallelitaet | 4 gemessen; Verhalten bei 8, 16 und hoechstens 32 gleichzeitigen Anfragen offen |
-| Warteschlange | Lauf A vollstaendig gemessen; dieselben Endzustaende in B bis D offen |
+| Datenschnittstelle | A und B gemessen; B bei p50/p95/p99 323/748/2.452 ms; C und D offen |
+| Stabilitaet | A und B: 0 HTTP Fehler, Zeitueberschreitungen, 429 und 5xx; C und D offen |
+| Parallelitaet | 4 und 8 gemessen; Verhalten bei 16 und hoechstens 32 gleichzeitigen Anfragen offen |
+| Warteschlange | A und B vollstaendig gemessen; dieselben Endzustaende in C und D offen |
 | Z22 | Funktion lesend mit globaler und eigener Mandatssicht gegengeprueft; Herkunft der Migration offen |
 
 Die Zahlen aus Z3a fuer 5, 25, 50 und 100 Mandate sind nur Vergleichswerte. Sie werden nicht
@@ -48,9 +49,9 @@ als Beweis ausgegeben.
 
 | Stufe | Zweck | Nachweisstand |
 |---:|---|---|
-| 5 | bestehender Production Betrieb | technisch belegt, natuerlicher Abschlusscheck noch offen |
+| 5 | bestehender Production Betrieb | technischer Betrieb belegt; natuerliche Fuenferregression rot |
 | 10 | erste Aktivierungsstufe | kein eigener Volltest, nur kontrollierte Production Stufe |
-| 25 | erste Verkaufsstufe | Z2 und Z3a abgeschlossen, Z3b Lauf A gruen und Lauf B offen |
+| 25 | erste Verkaufsstufe | Z2 und Z3a abgeschlossen, Z3b Laeufe A und B gruen |
 | 50 | Zwischenstufe | Z2 und Z3a abgeschlossen, Z3b Plattformwerte offen |
 | 100 | erstes sicheres Kapazitaetstor | Z2 und Z3a abgeschlossen, Z3b Plattformwerte offen |
 | 200 | neue Messstufe | erst nach gruenem 100er Tor |
@@ -64,7 +65,7 @@ Vorbestand gefunden:
 
 | Paket | Reihenfolge | Zweck |
 |---|---|---|
-| Basis | `20260808_scalable_job_queue.sql`, `20260808_jobqueue_abhaengigkeiten.sql`, `20260812_jobqueue_altersmessung.sql` | angewendet und geprueft; seit Lauf A 25 abgeschlossene synthetische Zeilen |
+| Basis | `20260808_scalable_job_queue.sql`, `20260808_jobqueue_abhaengigkeiten.sql`, `20260812_jobqueue_altersmessung.sql` | angewendet und geprueft; seit A und B 50 abgeschlossene synthetische Zeilen |
 | Ankunft | `20260825101500_jobqueue_ankunftskennzahl.sql` | angewendet und lesend geprueft |
 | Z22 | `20260826190000_jobqueue_vorbedingung_mandatsfilter.sql` | als Vorbestand unter `20260827121931` gefunden und lesend geprueft; Herkunft offen |
 
@@ -73,7 +74,7 @@ alle Repository Seeds sind ausgeschlossen.
 
 ## Testdaten
 
-Es gibt keinen Import und keine Kopie aus Production. Lauf A erzeugte ausschliesslich
+Es gibt keinen Import und keine Kopie aus Production. Die Laeufe A und B erzeugten ausschliesslich
 kuenstliche Auftraege mit Kennungen wie `z3b-synth-mandat-0000`; spaetere Laeufe duerfen nur
 dasselbe Datenmuster verwenden. Die Nutzlast enthaelt nur Laufnummern und die Markierungen
 `z3b` und `synthetisch`. Namen, Dokumente, Quelleninhalte und sonstige personenbezogene Daten
@@ -105,7 +106,7 @@ startet den naechsten niemals automatisch.
 | Lauf | Messstufe | Auftraege | Parallelitaet | HTTP Obergrenze |
 |---:|---:|---:|---:|---:|
 | A | 25 | 25 | 4 | 62, **erledigt und gruen** |
-| B | 25 | 25 | 8 | 66, offen |
+| B | 25 | 25 | 8 | 66, **erledigt und gruen** |
 | C | 50 | 50 | 16 | 124, offen |
 | D | 100 | 100 | 32 | 240, offen |
 | **Gesamt** | bis 100 | **200** | hoechstens 32 | **492** |
@@ -133,6 +134,27 @@ Eine getrennte rein lesende Datenbankabfrage bestaetigte denselben Endstand. Die
 entstand um 18:46:02 UTC, der letzte Abschluss um 18:46:06 UTC. Die Zeilen wurden nicht
 geloescht. GitHub Secret, Supabase Secret Key und Workflow sind vollstaendig entfernt; der
 Bereinigungscommit startete keinen weiteren Actions Lauf und kein Deployment.
+
+### Ergebnis Lauf B
+
+| Kennzahl | Ergebnis |
+|---|---:|
+| GitHub Actions Lauf | `33115237785`, erfolgreich |
+| Dauer | 8.759 ms |
+| Einreihen / Reservieren / Abschliessen | 25 / 25 / 25 |
+| Anfragen | 66 von hoechstens 66, alle HTTP 200 |
+| RPC Verteilung | Kennzahlen 2, Ankunft 2, offene Auftraege 4, Einreihen 25, Reservieren 8, Abschliessen 25 |
+| Latenz min / p50 / p95 / p99 / max / Mittel | 101 / 323 / 748 / 2.452 / 2.568 / 356,7 ms |
+| hoechste Gleichzeitigkeit | 8 |
+| Zeitueberschreitungen / Netzfehler / Drosselungen / 5xx | 0 / 0 / 0 / 0 |
+| unbekannt / doppelt reserviert / Lease Verlust | 0 / 0 / 0 |
+| Laufendstand abgeschlossen / offen / wartend / laufend / fehlgeschlagen | 25 / 0 / 0 / 0 / 0 |
+| Gesamtbestand abgeschlossen / offen / wartend / laufend / fehlgeschlagen | 50 / 0 / 0 / 0 / 0 |
+
+Der Lauf erreichte eine Abflussquote von 1 und hinterliess keine aktive Lease. GitHub Secret,
+Supabase Secret Key und einmaliger Workflow wurden danach vollstaendig entfernt. Die insgesamt
+50 synthetischen Zeilen bleiben wie freigegeben erhalten. Es wurde kein weiterer Lauf, kein
+Deployment und keine Production Aenderung ausgeloest.
 
 ### Lesende Datenbankhinweise nach Lauf A
 
@@ -172,7 +194,7 @@ vor dem ersten Netzaufruf zum Abbruch.
 
 Ein Dienstschluessel wird fuer jeden spaeteren Testlauf neu benoetigt. Er darf nur in einer
 geschuetzten Laufzeitvariable liegen und weder in Git noch in einem Bericht oder Chat erscheinen.
-Der Schluessel fuer Lauf A wurde nach dem Lauf geloescht. Ohne einen neuen, getrennt
+Die Schluessel fuer A und B wurden nach den Laeufen geloescht. Ohne einen neuen, getrennt
 freigegebenen Schluessel kann und soll der vorbereitete Plan nichts ausfuehren.
 
 Der Messlaeufer verwendet eigene `HELMUT_Z3B_*` Variablen und verweigert den Start, wenn daneben
@@ -194,10 +216,11 @@ damit technisch und organisatorisch ein eigener, ausdruecklich freizugebender Sc
 1. Ankunftsmigration im Testprojekt anwenden — erledigt
 2. Z22 Vorbestand nicht veraendern und Herkunft getrennt klaeren — offen, kein Laufblocker
 3. Lauf A mit eigenem Testzugang — erledigt; Zugang und Workflow entfernt
-4. Lauf B, danach C und D jeweils getrennt freigeben — offen
-5. Bei gruenem 100er Ergebnis die neue Probe fuer 200 getrennt freigeben
-6. Bei gruenem 200er Ergebnis die neue Probe fuer 500 getrennt freigeben
-7. Ausschliesslich synthetische Testzeilen wieder entfernen
+4. Lauf B — erledigt; Zugang und Workflow entfernt
+5. Lauf C und danach D jeweils getrennt freigeben — offen
+6. Bei gruenem 100er Ergebnis die neue Probe fuer 200 getrennt freigeben
+7. Bei gruenem 200er Ergebnis die neue Probe fuer 500 getrennt freigeben
+8. Ausschliesslich synthetische Testzeilen wieder entfernen
 
 Jeder Schritt bleibt bis zu seiner ausdruecklichen Freigabe gesperrt. Kein Schritt beruehrt
 Production, fuehrt einen Import aus oder aktiviert ein Mandat.
