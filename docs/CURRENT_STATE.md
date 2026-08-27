@@ -233,7 +233,10 @@ Baum vor dem Lauf. Z2 und Z3a wurden nicht gestartet.
 Offline grün bleiben Supabase-Messläufer **46 PASS**, Azure-Messläufer **42 PASS** und
 Kapazitätsauswertung **33 PASS**. Noch ungemessen sind die Supabase Läufe B bis D, alle echten
 Azure Laufzeit- und Tokenwerte, daraus KI Deckel und Kostenobergrenze sowie die späteren neuen
-Stufen 200 und 500. Kanonisch:
+Stufen 200 und 500. Die aktuelle Azure Preisseite nennt fuer `GPT-5-mini` 0,25/2,00 USD je
+Million Eingabe-/Ausgabetoken fuer Global und 0,28/2,20 USD fuer Data Zone. Vor einem Aufruf
+muss deshalb die tatsaechliche Deploymentart im Azure Portal bestaetigt werden; fuer Regional
+wird kein Preis geraten. Kanonisch:
 [`betrieb/z3b-supabase-testplan-2026-08-27.md`](betrieb/z3b-supabase-testplan-2026-08-27.md),
 [`betrieb/z3b-azure-messplan-2026-08-27.md`](betrieb/z3b-azure-messplan-2026-08-27.md) und
 [`betrieb/z3b-aktivierungsplan-2026-08-27.md`](betrieb/z3b-aktivierungsplan-2026-08-27.md).

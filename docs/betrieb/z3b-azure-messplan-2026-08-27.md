@@ -55,6 +55,40 @@ wird fuer jedes Paket einzeln festgelegt. Die Zahlen im Offline Test sind reine 
 keine Behauptung ueber den Azure Vertrag. Der konkrete Azure Preis wird erst am Lauftag gegen
 die fuer Konto, Region und Deployment gueltige Preisquelle bestaetigt.
 
+## Preisgrundlage am 27.08.2026
+
+Die offizielle Azure Preisseite nennt fuer `GPT-5-mini` derzeit unterschiedliche Preise je
+Deploymentart. Alle Werte gelten pro eine Million Token und sind Listenpreise in USD:
+
+| Deploymentart | Eingabe | Cache Eingabe | Ausgabe |
+|---|---:|---:|---:|
+| Global | 0,25 USD | 0,03 USD | 2,00 USD |
+| Data Zone | 0,28 USD | 0,03 USD | 2,20 USD |
+
+Quelle: [Azure OpenAI Service Pricing](https://azure.microsoft.com/en-us/pricing/details/azure-openai/)
+
+Der bisherige Rechenwert von 0,25 USD fuer Eingabe und 2,00 USD fuer Ausgabe darf deshalb nur
+verwendet werden, wenn im Azure Portal **Global** als Deploymentart bestaetigt wurde. Fuer eine
+EU Data Zone gelten die hoeheren Data Zone Werte. Fuer ein regionales Deployment wird kein Preis
+geraten. Dort muss vor der Vorprobe der im Azure Konto angezeigte aktuelle Preis eingetragen
+werden. Ein kundenspezifischer Vertragspreis hat immer Vorrang vor dem Listenpreis.
+
+Reasoning Token werden von Azure als Ausgabetoken berechnet. Deshalb umfasst der technische
+Ausgaberiegel sowohl sichtbare Ausgabe als auch Reasoning und Formatierung. Quelle:
+[Azure OpenAI Reasoning Modelle](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/reasoning)
+
+Vor jeder kostenpflichtigen Vorprobe muessen daher genau diese vier Angaben rein lesend im
+Azure Portal bestaetigt sein:
+
+1. Deploymentname und tatsaechliches Modell `gpt-5-mini`
+2. Deploymentart Global, EU Data Zone oder Regional
+3. Ressourcenregion, voraussichtlich Sweden Central, aber nicht aus Altunterlagen uebernehmen
+4. fuer das Konto gueltiger Eingabe-, Cache- und Ausgabepreis mit Datum und Quelle
+
+Solange eine dieser Angaben fehlt, bleibt der Azure Netzlauf gesperrt. Die Pruefung der Angaben
+veraendert das Deployment nicht und verursacht keine Modellaufrufe. Die Vorprobe selbst bleibt
+eine separate Kostenfreigabe.
+
 ## Zielriegel
 
 Der Laeufer akzeptiert nur eine exakt normalisierte Azure OpenAI Basisadresse der Form

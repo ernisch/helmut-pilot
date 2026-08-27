@@ -110,7 +110,7 @@ Lease. Production, Azure, Z2 und Z3a wurden nicht beruehrt.
 |---|---|---|
 | Supabase Netzweg | Lauf A, 25 Auftraege, Parallelitaet 4 | Lauf B mit 8, Lauf C mit 16 und Lauf D mit 32 parallelen Anfragen |
 | Fachwege 25/50/100 | Z3a abgeschlossen | keine Wiederholung; nur gezielte Regression nach echter Aenderung oder neuen Anbieterwerten |
-| Azure | Werkzeug offline gruen | begrenzte echte Laufzeit, Ein- und Ausgabetoken sowie Preisbasis |
+| Azure | Werkzeug offline gruen; aktuelle Global- und Data-Zone-Listenpreise dokumentiert | Deploymentart und Kontopreis bestaetigen; danach begrenzte echte Laufzeit sowie Ein- und Ausgabetoken |
 | KI Deckel | Rechenweg und Schutzregeln vorhanden | Zahl erst aus echten Azure Werten bestimmen |
 | Aktivierung bis 100 | Stufen und Stopkriterien vorhanden | finale Zahlen fuer Deckel, Kosten, Slotreserve und Supabase Tragfaehigkeit |
 | 200 und 500 | strategischer Weg festgelegt | neue Messungen erst vor diesen spaeteren Stufen; kein Blocker fuer den Plan bis 100 |
