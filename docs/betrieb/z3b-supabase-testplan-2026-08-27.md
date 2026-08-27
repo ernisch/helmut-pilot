@@ -130,6 +130,24 @@ entstand um 18:46:02 UTC, der letzte Abschluss um 18:46:06 UTC. Die Zeilen wurde
 geloescht. GitHub Secret, Supabase Secret Key und Workflow sind vollstaendig entfernt; der
 Bereinigungscommit startete keinen weiteren Actions Lauf und kein Deployment.
 
+### Lesende Datenbankhinweise nach Lauf A
+
+Die Supabase Advisor Pruefung um 19:38 UTC meldete keine Warnung und keinen kritischen Befund,
+sondern vier Hinweise:
+
+1. **Security, INFO:** RLS ist auf `helmut_jobs` aktiv, aber es gibt keine Policy. Die
+   Gegenprobe bestaetigt den beabsichtigten reinen Serverzugang: `anon` und `authenticated`
+   haben kein Leserecht, nur `service_role` hat es. Damit ist keine Korrektur erforderlich.
+   Referenz: [RLS aktiv ohne Policy](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)
+2. **Performance, dreimal INFO:** `helmut_jobs_tenant_idx`, `helmut_jobs_window_idx` und
+   `helmut_jobs_fenster_typ_idx` stehen bei jeweils 0 registrierten Scans. Bei nur 25 Zeilen
+   ist das kein belastbarer Entfernungsgrund; PostgreSQL darf hier den kurzen Tabellenscan
+   waehlen. Der groessere PostgreSQL 17.6 Nachweis hatte den Fensterindex bereits benutzt.
+   Deshalb wird kein Index entfernt. Erneute Bewertung erst mit einer groesseren,
+   freigegebenen Stufe. Referenz: [unbenutzter Index](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index)
+
+Die Pruefung war ausschliesslich lesend. Es gab keine DDL, Migration oder Bereinigung.
+
 ## Kapazitaetsfragen fuer 500
 
 Vor einer Aktivierung von 500 muessen fuenf Werte aus echten, begrenzten Messungen feststehen:
