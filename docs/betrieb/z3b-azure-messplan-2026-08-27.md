@@ -3,7 +3,7 @@
 ## Stand
 
 Der Messlaeufer ist lokal vorbereitet und offline geprueft. Der Vertragstest steht bei
-**42 PASS und 0 FAIL**. Es wurde kein Azure Aufruf ausgefuehrt, kein Zugangsschluessel gelesen,
+**46 PASS und 0 FAIL**. Es wurde kein Azure Aufruf ausgefuehrt, kein Zugangsschluessel gelesen,
 keine Kostenfreigabe verbraucht und weder Supabase noch Production beruehrt.
 
 Diese Probe wiederholt weder Z2 noch Z3a. Sie misst ausschliesslich die dort noch fehlenden
@@ -84,6 +84,12 @@ Azure Portal bestaetigt sein:
 2. Deploymentart Global, EU Data Zone oder Regional
 3. Ressourcenregion, voraussichtlich Sweden Central, aber nicht aus Altunterlagen uebernehmen
 4. fuer das Konto gueltiger Eingabe-, Cache- und Ausgabepreis mit Datum und Quelle
+
+Der Messlaeufer erzwingt diese Angaben jetzt technisch: Die Deploymentart muss exakt `global`,
+`data-zone` oder `regional` lauten, die Region muss als normalisierter Azure Regionsname wie
+`swedencentral` vorliegen und das Preisdatum muss dem UTC Lauftag entsprechen. Cache Token
+werden in der Kostenoberrechnung weiterhin absichtlich zum vollen Eingabepreis gerechnet.
+Dadurch bleibt der Riegel konservativ, auch wenn kein Cache Rabatt angesetzt wird.
 
 Solange eine dieser Angaben fehlt, bleibt der Azure Netzlauf gesperrt. Die Pruefung der Angaben
 veraendert das Deployment nicht und verursacht keine Modellaufrufe. Die Vorprobe selbst bleibt

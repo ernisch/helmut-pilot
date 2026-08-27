@@ -21,6 +21,7 @@ const {
 } = require("./fixtures/z3b-azure-plan");
 
 const ANTWORT_MAX_BYTES = 8 * 1024 * 1024;
+const DEPLOYMENTARTEN = Object.freeze(["global", "data-zone", "regional"]);
 const FREMDKENNUNGEN = Object.freeze([
   "SUPABASE_URL",
   "SUPABASE_SERVICE_ROLE_KEY",
@@ -57,7 +58,19 @@ function freigabeKennung({ modus, laufKennung, aufrufe }) {
   return `z3b-azure:${modus}:${aufrufe}:${laufKennung}`;
 }
 
-function liesKonfiguration(env = process.env) {
+function utcDatum(roh, name, heuteUtc = new Date().toISOString().slice(0, 10)) {
+  const text = String(roh == null ? "" : roh).trim();
+  const datum = /^\d{4}-\d{2}-\d{2}$/.test(text) ? new Date(`${text}T00:00:00.000Z`) : null;
+  if (!datum || Number.isNaN(datum.getTime()) || datum.toISOString().slice(0, 10) !== text) {
+    throw new Z3bAzureAbbruch(`${name} fehlt oder ist kein gueltiges UTC Datum`, "kosten");
+  }
+  if (text !== heuteUtc) {
+    throw new Z3bAzureAbbruch(`${name} muss am UTC Lauftag erneut bestaetigt werden`, "kosten");
+  }
+  return text;
+}
+
+function liesKonfiguration(env = process.env, { heuteUtc = new Date().toISOString().slice(0, 10) } = {}) {
   const fremd = FREMDKENNUNGEN.filter((name) => String(env[name] || "").trim() !== "");
   if (fremd.length) {
     throw new Z3bAzureAbbruch(
@@ -78,6 +91,17 @@ function liesKonfiguration(env = process.env) {
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(deployment)) {
     throw new Z3bAzureAbbruch("Z3b Azure Deployment fehlt oder ist ungueltig", "deployment");
   }
+  const deploymentart = String(env.HELMUT_Z3B_AZURE_DEPLOYMENTART || "").trim();
+  if (!DEPLOYMENTARTEN.includes(deploymentart)) {
+    throw new Z3bAzureAbbruch(
+      `Z3b Azure Deploymentart muss einer von ${DEPLOYMENTARTEN.join(", ")} sein`,
+      "deployment"
+    );
+  }
+  const region = String(env.HELMUT_Z3B_AZURE_REGION || "").trim();
+  if (!/^[a-z][a-z0-9]{1,31}$/.test(region)) {
+    throw new Z3bAzureAbbruch("Z3b Azure Region fehlt oder ist nicht der normalisierte Azure Regionsname", "deployment");
+  }
   const modus = String(env.HELMUT_Z3B_AZURE_MODUS || "").trim();
   if (!MODI[modus]) {
     throw new Z3bAzureAbbruch(`Z3b Azure Modus muss einer von ${Object.keys(MODI).join(", ")} sein`, "konfiguration");
@@ -94,6 +118,11 @@ function liesKonfiguration(env = process.env) {
   if (!/^[A-Za-z0-9][A-Za-z0-9 ._:/-]{4,119}$/.test(preisquelle)) {
     throw new Z3bAzureAbbruch("Z3b Azure Preisquelle fehlt oder ist nicht knapp belegbar", "kosten");
   }
+  const preisdatumUtc = utcDatum(
+    env.HELMUT_Z3B_AZURE_PREISDATUM_UTC,
+    "HELMUT_Z3B_AZURE_PREISDATUM_UTC",
+    heuteUtc
+  );
   const kostenlimitUsd = positiveZahl(env.HELMUT_Z3B_AZURE_KOSTENLIMIT_USD, "HELMUT_Z3B_AZURE_KOSTENLIMIT_USD");
   if (kostenlimitUsd > KOSTENLIMIT_MAX_USD) {
     throw new Z3bAzureAbbruch(`Z3b Azure Kostenlimit darf ${KOSTENLIMIT_MAX_USD.toFixed(2)} USD nicht ueberschreiten`, "kosten");
@@ -115,6 +144,8 @@ function liesKonfiguration(env = process.env) {
     endpoint: ziel.url,
     endpointHash: endpointFingerabdruck(ziel.host),
     deployment,
+    deploymentart,
+    region,
     modus,
     laufKennung,
     aufrufe: auftraege.length,
@@ -124,6 +155,7 @@ function liesKonfiguration(env = process.env) {
     laufzeitMaxMs: LAUFZEIT_MAX_MS,
     preis,
     preisquelle,
+    preisdatumUtc,
     kostenlimitUsd,
     kostenObergrenzeUsd: kostenOben.usd,
     inputTokensObergrenze: kostenOben.inputTokensMax,
@@ -288,6 +320,8 @@ async function fuehreMesslauf(konfiguration, { fetchImpl = globalThis.fetch, jet
     modus: konfiguration.modus,
     laufKennung: konfiguration.laufKennung,
     deployment: konfiguration.deployment,
+    deploymentart: konfiguration.deploymentart,
+    region: konfiguration.region,
     endpointHash: konfiguration.endpointHash,
     aufrufe: ergebnisse.length,
     parallelitaet: konfiguration.parallelitaet,
@@ -301,6 +335,7 @@ async function fuehreMesslauf(konfiguration, { fetchImpl = globalThis.fetch, jet
     storeParameter: false,
     preis: konfiguration.preis,
     preisquelle: konfiguration.preisquelle,
+    preisdatumUtc: konfiguration.preisdatumUtc,
     kostenlimitUsd: konfiguration.kostenlimitUsd,
     konservativeKostenobergrenzeVorherUsd: Math.round(konfiguration.kostenObergrenzeUsd * 1e8) / 1e8,
     auswertung
@@ -332,9 +367,11 @@ async function main() {
 if (require.main === module) main();
 
 module.exports = {
+  DEPLOYMENTARTEN,
   FREMDKENNUNGEN,
   Z3bAzureAbbruch,
   positiveZahl,
+  utcDatum,
   freigabeKennung,
   liesKonfiguration,
   verteilung,

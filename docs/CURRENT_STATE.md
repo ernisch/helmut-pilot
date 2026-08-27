@@ -230,7 +230,7 @@ Leases. Der GitHub Lauf `33105081744` war grün. Danach wurden GitHub Secret, Su
 Key und einmaliger Workflow vollständig entfernt; der geschützte Branch enthält wieder den
 Baum vor dem Lauf. Z2 und Z3a wurden nicht gestartet.
 
-Offline grün bleiben Supabase-Messläufer **46 PASS**, Azure-Messläufer **42 PASS** und
+Offline grün bleiben Supabase-Messläufer **46 PASS**, Azure-Messläufer **46 PASS** und
 Kapazitätsauswertung **33 PASS**. Noch ungemessen sind die Supabase Läufe B bis D, alle echten
 Azure Laufzeit- und Tokenwerte, daraus KI Deckel und Kostenobergrenze sowie die späteren neuen
 Stufen 200 und 500. Die aktuelle Azure Preisseite nennt fuer `GPT-5-mini` 0,25/2,00 USD je

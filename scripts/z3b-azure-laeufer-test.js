@@ -38,11 +38,14 @@ function umgebung({ modus = "vorprobe", lauf = "azureprobe01", kostenlimit = "0.
     AZURE_OPENAI_ENDPOINT: "https://helmut-z3b-test.openai.azure.com",
     AZURE_OPENAI_KEY: TEST_KEY,
     AZURE_OPENAI_DEPLOYMENT: "gpt-5-mini",
+    HELMUT_Z3B_AZURE_DEPLOYMENTART: "global",
+    HELMUT_Z3B_AZURE_REGION: "swedencentral",
     HELMUT_Z3B_AZURE_MODUS: modus,
     HELMUT_Z3B_AZURE_LAUF: lauf,
     HELMUT_Z3B_AZURE_PREIS_INPUT_USD_MIO: "0.25",
     HELMUT_Z3B_AZURE_PREIS_OUTPUT_USD_MIO: "2.00",
     HELMUT_Z3B_AZURE_PREISQUELLE: "rein-lokale-preisattrappe-kein-azure-preis",
+    HELMUT_Z3B_AZURE_PREISDATUM_UTC: new Date().toISOString().slice(0, 10),
     HELMUT_Z3B_AZURE_KOSTENLIMIT_USD: kostenlimit
   };
   env.HELMUT_Z3B_AZURE_FREIGABE = Z.freigabeKennung({
@@ -97,7 +100,11 @@ async function main() {
   console.log("\n== B · Ziel, Kosten und Freigaberiegel ==");
   const basis = Z.liesKonfiguration(umgebung());
   check("B1 Exakter Azure OpenAI Ressourcenhost wird angenommen",
-    basis.endpoint === "https://helmut-z3b-test.openai.azure.com" && basis.endpointHash.length === 12);
+    basis.endpoint === "https://helmut-z3b-test.openai.azure.com"
+      && basis.endpointHash.length === 12
+      && basis.deploymentart === "global"
+      && basis.region === "swedencentral"
+      && /^\d{4}-\d{2}-\d{2}$/.test(basis.preisdatumUtc));
   check("B2 Key und Prompts sind im Konfigurations JSON nicht aufzaehlbar",
     !Object.keys(basis).includes("key")
       && !Object.keys(basis).includes("messauftraege")
@@ -121,34 +128,46 @@ async function main() {
   const ohneDeployment = umgebung(); delete ohneDeployment.AZURE_OPENAI_DEPLOYMENT;
   check("B6 Ohne ausdrueckliches Deployment wird abgebrochen",
     wirft(() => Z.liesKonfiguration(ohneDeployment), /Deployment/));
+  const ohneDeploymentart = umgebung(); delete ohneDeploymentart.HELMUT_Z3B_AZURE_DEPLOYMENTART;
+  check("B7 Ohne ausdrueckliche Deploymentart wird abgebrochen",
+    wirft(() => Z.liesKonfiguration(ohneDeploymentart), /Deploymentart/));
+  const falscheDeploymentart = umgebung(); falscheDeploymentart.HELMUT_Z3B_AZURE_DEPLOYMENTART = "vermutlich-global";
+  check("B8 Nur Global, Data Zone oder Regional werden angenommen",
+    wirft(() => Z.liesKonfiguration(falscheDeploymentart), /Deploymentart/));
+  const ohneRegion = umgebung(); delete ohneRegion.HELMUT_Z3B_AZURE_REGION;
+  check("B9 Ohne normalisierten Azure Regionsnamen wird abgebrochen",
+    wirft(() => Z.liesKonfiguration(ohneRegion), /Region/));
+  const altesPreisdatum = umgebung(); altesPreisdatum.HELMUT_Z3B_AZURE_PREISDATUM_UTC = "2000-01-01";
+  check("B10 Ein Preisbeleg von einem anderen UTC Lauftag wird abgelehnt",
+    wirft(() => Z.liesKonfiguration(altesPreisdatum), /UTC Lauftag/));
   const quelleAn = umgebung(); quelleAn.HELMUT_SOURCE_MODE = "live";
-  check("B7 Quellenmodus muss hart aus sein", wirft(() => Z.liesKonfiguration(quelleAn), /SOURCE_MODE.*off/));
+  check("B11 Quellenmodus muss hart aus sein", wirft(() => Z.liesKonfiguration(quelleAn), /SOURCE_MODE.*off/));
   const mitDb = umgebung(); mitDb.SUPABASE_URL = "https://datenbank.invalid";
-  check("B8 Sichtbare Datenbankkennungen sperren den Lauf",
+  check("B12 Sichtbare Datenbankkennungen sperren den Lauf",
     wirft(() => Z.liesKonfiguration(mitDb), /fremde Provider oder Datenbankkennungen/));
   const mitOpenAI = umgebung(); mitOpenAI.OPENAI_API_KEY = "anderer-anbieter";
-  check("B9 Sichtbare andere Providerkennungen sperren den Lauf",
+  check("B13 Sichtbare andere Providerkennungen sperren den Lauf",
     wirft(() => Z.liesKonfiguration(mitOpenAI), /fremde Provider oder Datenbankkennungen/));
   const mitAlias = umgebung(); mitAlias.AZURE_OPENAI_API_KEY = "zweiter-key";
-  check("B10 Zwei Azure Key Namen gleichzeitig werden abgelehnt",
+  check("B14 Zwei Azure Key Namen gleichzeitig werden abgelehnt",
     wirft(() => Z.liesKonfiguration(mitAlias), /fremde Provider oder Datenbankkennungen/));
   const ohnePreis = umgebung(); delete ohnePreis.HELMUT_Z3B_AZURE_PREIS_OUTPUT_USD_MIO;
-  check("B11 Ohne am Lauftag bestaetigte Preise wird abgebrochen",
+  check("B15 Ohne am Lauftag bestaetigte Preise wird abgebrochen",
     wirft(() => Z.liesKonfiguration(ohnePreis), /PREIS_OUTPUT/));
   const ohneQuelle = umgebung(); delete ohneQuelle.HELMUT_Z3B_AZURE_PREISQUELLE;
-  check("B12 Ohne Preisquelle wird abgebrochen", wirft(() => Z.liesKonfiguration(ohneQuelle), /Preisquelle/));
-  check("B13 Ein Kostenlimit ueber 1 USD ist technisch unmoeglich",
+  check("B16 Ohne Preisquelle wird abgebrochen", wirft(() => Z.liesKonfiguration(ohneQuelle), /Preisquelle/));
+  check("B17 Ein Kostenlimit ueber 1 USD ist technisch unmoeglich",
     wirft(() => Z.liesKonfiguration(umgebung({ kostenlimit: "1.01" })), /nicht ueberschreiten/));
-  check("B14 Ein zu kleines Kostenlimit sperrt bereits den Plan",
+  check("B18 Ein zu kleines Kostenlimit sperrt bereits den Plan",
     wirft(() => Z.liesKonfiguration(umgebung({ kostenlimit: "0.001" })), /Kostenobergrenze/));
   const ohneFreigabe = umgebung(); delete ohneFreigabe.HELMUT_Z3B_AZURE_FREIGABE;
-  check("B15 Ohne laufbezogene Kostenfreigabe wird abgebrochen",
+  check("B19 Ohne laufbezogene Kostenfreigabe wird abgebrochen",
     wirft(() => Z.liesKonfiguration(ohneFreigabe), /nicht lauf und kostenbezogen/));
   const falsch = umgebung(); falsch.HELMUT_Z3B_AZURE_FREIGABE = "z3b-azure:stichprobe:21:falsch";
-  check("B16 Die Freigabe eines anderen Laufs gilt nicht",
+  check("B20 Die Freigabe eines anderen Laufs gilt nicht",
     wirft(() => Z.liesKonfiguration(falsch), /nicht lauf und kostenbezogen/));
   const stichConfig = Z.liesKonfiguration(umgebung({ modus: "stichprobe" }));
-  check("B17 Die 21er Stichprobe bleibt selbst konservativ unter 0.25 USD",
+  check("B21 Die 21er Stichprobe bleibt selbst konservativ unter 0.25 USD",
     stichConfig.aufrufe === 21 && stichConfig.kostenObergrenzeUsd < 0.25,
     `${stichConfig.kostenObergrenzeUsd.toFixed(4)} USD`);
 
