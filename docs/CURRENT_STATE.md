@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-26 — zuletzt aktualisiert im Z22-Korrektursprint (§18).** Vollständige
+**Stand: 2026-08-27 — zuletzt aktualisiert in der sicheren Z3b-Vorbereitung (§19).** Vollständige
 Fassung vor dieser Verdichtung: byte-identisch in [`archive/project_state/2026_08_24_CURRENT_STATE_full.md`](archive/project_state/2026_08_24_CURRENT_STATE_full.md). Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Ablageregeln: [`archive/README.md`](archive/README.md), `CLAUDE.md` §9.
 
 **Kernlage in sechs Sätzen:** Der neue Warteschlangenmotor (`HELMUT_SCALABLE_PIPELINE=on`) ist **seit dem 23.08.2026 in Production eingeschaltet** (Vollbeleg Runbook §30.7). Die **fünf bestehenden Mandate sind mit 376 echten Abschlüssen bewiesen**; **Morgenlauf 5/5 und Lagelauf effektiv 5/5** aller aktiven Mandate waren erfolgreich. Der **R4-/GitHub-Actions-Watchdog-Nachweis ist grün**. Es gab **keine Doppelarbeit, keine verlorenen Aufträge, keine endgültigen Fehler, 0 `unbekannt`, 0 Lease-Probleme und 0 Fencing-Konflikte**; alle elf §28.6-Kontrollen sind erfüllt ([`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §30.7). Der Modus ist weiterhin **`HELMUT_JOB_DISPATCH_MODE=shadow`** (Cron-Antrieb; kein Ereignis-Antrieb, kein AWS). **Der Selbstweck ist seit 24.08. lokal Ende-zu-Ende belegt, aber in Production nie ausgeführt** (§14).
@@ -12,7 +12,7 @@ Fassung vor dieser Verdichtung: byte-identisch in [`archive/project_state/2026_0
 ## 2 · Stand auf `main` und Pull Requests
 
 - **`main` = `ade1674e` = Merge von PR #271** (Watchdog-Korrektur, 26.08. 13:00 UTC); davor `07bf7794` = Merge von PR #270 (Skalierung 25/50/100). Die Angaben „`main` = `07bf7794`", „`24a895ed`" bzw. „`572f5663`" sind überholt; alle stecken in dieser Historie. CI auf `ade1674e`: **grün**.
-- **Offen sind zwei Pull Requests, aufeinander aufbauend:** **PR #272** (Realistiknachweis Z3a, §17, Branch `claude/load-test-mandate-proof-wtlew0`) und darauf **PR-Z22** (Befund Z22 behoben, §18, Branch `claude/z22-tenant-isolation-after-z3a`, Basis ist der Zweig von #272 — **nicht** `main`). Beide **nicht gemergt** — Merge = Production-Deployment und Betreiberentscheidung. Reihenfolge: erst #272, dann der Z22-PR.
+- **Offen sind zwei Pull Requests, aufeinander aufbauend:** **PR #272** (Z3a, §17) und darauf **PR #273** (Z22, §18; Basis #272, nicht `main`). Beide **nicht gemergt**; Reihenfolge: erst #272, dann #273. Merge = Production-Deployment und Betreiberentscheidung.
 - Davor gemergt: #271, #270, #265, #262, #261, #260/#259/#256/#257, #225, #216; die PR-Bereinigung vom 23.08. (inkl. begründeter Schließungen) ist in Archivfassung und Runbook dokumentiert.
 - Merge nach `main` löst automatisch ein Production-Deployment aus.
 
@@ -183,27 +183,47 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 **Erfolgreich abgeschlossen und gemergt (PR #271).** Merge = Deployment ist erfolgt; offen bleibt nur der reguläre 06:00-Nachweis. Alle Zahlen und Befunde: [`betrieb/watchdog-korrektur-2026-08-26.md`](betrieb/watchdog-korrektur-2026-08-26.md). Zwei Punkte mit Folgewirkung: **`partial` heißt nie „Slot fehlt"** (ohne die Korrektur bis zu 24 h Fehlalarm), und der offene Produktbefund **5 von 5 Briefings personalisiert, aber nur 1 von 5 mit registriertem Push-Empfänger** — `delivered` heißt Annahme durch den Push-Dienst, nie „zugestellt".
 
-## 17 · Letzter Sprint (26.08. — Realistiknachweis Z3a für 25/50/100)
+## 17 · Sprint 26.08. — Realistiknachweis Z3a für 25/50/100
 
-**Teilweise abgeschlossen** — der realistische Nachweis ist **als Z3a erbracht und als Z3 offen**. Branch `claude/load-test-mandate-proof-wtlew0`, **PR #272 (offen, nicht gemergt)**, Ausgangscommit `ade1674e`. **Keine Production-Änderung, keine Datenbank-Mutation, kein Cron, kein Flag, keine Env, kein Import, kein manueller Lauf.** Vollständiger Bericht mit allen Zahlen: [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md).
+**Teilweise abgeschlossen:** Z3a ist erbracht, Z3 bleibt wegen echter Anbieter und Supabase
+offen. PR #272 ist offen und ungemergt. Echte Fachhandler liefen über HTTP/PostgREST/PostgreSQL
+17.6, Cron-Slots und lokale Anbieter. Für 5/25/50/100 wurden 271/1.090/1.801/2.596 Aufträge,
+177/415/622/738 Modellaufrufe und langsamste Slots von 143/153/180/216 s gemessen. Die
+Tagesarbeit floss ab; Anbieterwerte und der notwendige KI-Deckel bleiben Z3b. Vollbeleg:
+[`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md).
 
-**Was Z3a von Z2 unterscheidet:** echte Fachhandler statt Attrappen · Datenbank über **HTTP → PostgREST 12.2.3 → PostgreSQL 17.6** statt über `psql` · echtes Netz je Quelle · echte Modellaufrufe über echtes TLS mit echtem `usage`-Block · **Cron-Slots** (ein Prozess je Slot) statt Dauer-Worker. **Was auch Z3a nicht beweist:** die Anbieter sind lokal — weder Google noch Azure antwortet, der Google-Sonderweg (Gate, Circuit-Breaker, Artikel-URL-Auflösung) bleibt ungeprüft. Das ist **Z3b** und bleibt offen.
+Z22 war dabei der einzige offene Korrektheitsbefund. Zwei Fehler im Z2-Werkzeug und die
+Weitergabe sichtbarer Azure-Kennungen an lokale Testkinder wurden gezielt korrigiert; Z2 steht
+danach bei **60 PASS / 0 FAIL**. Z2 und Z3a werden nicht als vermeintlich neue Nachweise
+wiederholt.
 
-- **Gemessen (je Stufe zwei Tagesrunden à sechs Cron-Slots, plus je ein Kontrolllauf — acht Läufe):** 5/25/50/100 Mandate ⇒ 271/1.090/1.801/2.596 Aufträge · 177/415/622/738 Modellaufrufe · 181/842/1.400/2.084 Netzabrufe · 4.992/20.240/42.566/73.789 HTTP-Anfragen (**0** Transportfehler, **0** Konflikte) · langsamster Slot 143/153/180/216 s von 290 s · Verbindungsspitze 32 von 100 · **92 Korrektheitskriterien erfüllt, 0 nicht erfüllt**, je Stufe **1** offener Befund (Z22). Eichung: Stufe 5 ergibt rund **88** Modellaufrufe/Betriebstag gegen einen belegten Production-Boden von **113** — der Prüfstand liegt eher zu niedrig.
-- **Kapazitätsbefund (Z20/Z20b/Z21):** **Die Tagesarbeit fließt auf allen vier Stufen in den drei regulären Slots ab** — am Ende von Tag 2 lag auf keiner Stufe Arbeit aus einem früheren Tagesfenster (Z20/Z21 erfüllt), und der Rückstau wuchs nicht von Tag 1 zu Tag 2 (Z20b). Das ist eine Aussage über den **Motor unter dieser Last**, nicht über Production: die Anbieter sind lokal, der KI-Deckel war offen. Der ungedeckelte KI-Bedarf ist die eigentliche Grenze — rund 89/208/311/369 Aufrufe je Betriebstag gegen einen heutigen Deckel von 100.
-- **Kopplungsbefund (Z22):** in PR #272 auf allen vier Stufen **offen** — `helmut_jobs_offen` zählte mandatsblind. **Im Folge-PR behoben und gegengemessen: §18.**
-- **Sicherheitslücke geschlossen:** `scripts/lokal.js` räumte `AZURE_OPENAI_KEY`/`AZURE_OPENAI_ENDPOINT` **nicht** aus der Kindprozess-Umgebung — die echte Produktions-KI-Kennung lag in jedem Testkindprozess, gehalten allein von der Laufzeitsperre. Behoben, mit Laufzeit-Gegenprobe.
-- **Zwei Fehler im gemergten Z2-Werkzeug behoben:** `lasttest-worker.js` las `tenant_id` statt `tenantId`, `psql-sitzung.js` lieferte `status` statt `neuerStatus` — die Fehlereinspritzung traf deshalb nur einen Teil der Aufträge und `endgueltigFehlgeschlagen` blieb strukturell 0. Z2 danach **60 PASS / 0 FAIL**, jetzt **4** statt 2 endgültige Fehler.
-- **Preisbasis unverändert offen (F7):** die Preistabelle im Code ist ein **unbelegter Schätzwert**; die offizielle Azure-Preisseite ist aus Cloud-Sitzungen gesperrt. Alle Beträge sind **berechnet**, keine Rechnungsbeträge.
-- **Offen:** Merge/Deployment (Freigabe) · **Z3b** (echte Anbieter, echte Modellaufrufe) — die einmalige Freigabevorlage steht in der Belegdatei §11.3.
+## 18 · Sprint 26.08. — Z22 behoben (PR #273, abhängig von #272)
 
-## 18 · Sprint 26.08. abends — Befund Z22 behoben (abhängig von PR #272)
+**Erfolgreich abgeschlossen, nicht gemergt:** `helmut_jobs_offen` zählte persönliche
+`source_fetch`- und `mandate_projection`-Aufträge mandatsblind. Migration `20260826190000`
+ergänzt optional `p_mandat`; globale Arbeit bleibt global. Der Code fällt bei fehlender
+Migration einmal auf das alte Verhalten zurück. Merge und Migration bleiben getrennte
+Freigaben.
 
-**Erfolgreich abgeschlossen**, aber **nicht gemergt**: Branch `claude/z22-tenant-isolation-after-z3a`, abhängiger Pull Request mit dem Zweig von PR #272 als Basis. **Keine Production-Änderung, keine Migration angewendet, kein Cron, kein Flag, keine Env, kein Import, kein manueller Lauf.** PR #272 bleibt unverändert. Alle Zahlen: [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md) §13.
+Beleg: **39 PASS** im Vertrag, **34 PASS** gegen PostgreSQL 17.6/PostgREST und gezielte
+Regression für 25/50/100 mit jeweils **24 PASS, 0 FAIL, 0 offenen Befunden**. Der Zeitaufschlag
+eines kranken Mandats sinkt, verschwindet aber nicht; es blieb keine Arbeit aus früheren
+Tagesfenstern liegen. Details: Realistiknachweis §13.
 
-- **Ursache, enger als in §17 beschrieben:** `helmut_jobs_offen` zählte mandatsblind. Falsch war das für **zwei** Auftragsklassen: den **persönlichen** `source_fetch` (`tenant_id = <mandat>`) und **`mandate_projection`** — Letztere fehlte in der bisherigen Beschreibung ganz, obwohl sie Vorbedingung des Briefings ist. **Richtig** und unverändert global bleiben geteilte Abrufe und `document_understanding` (beide `tenant_id is null`).
-- **Korrektur:** Migration `20260826190000` gibt der Funktion ein optionales `p_mandat` (ohne Argument verhaltensgleich); Motor und Attrappe übergeben die Kennung aus der Spalte `tenant_id`. Unbrauchbare Kennung ⇒ globale Zählung, also **mehr** Warten. **Kein neuer Index** (Plan und Laufzeit an PostgreSQL 17.6 identisch gemessen).
-- **Deployment-Riegel:** Merge ist Deployment, die Migration ist freigabepflichtig — der Code steht also vor ihr in Production. Bei `PGRST202` fragt er **einmal** ohne Filter nach. Ohne angewendete Migration gilt exakt das alte Verhalten, **kein** stilles Abschalten der Reihenfolgezusage.
-- **Beweis:** 6 von 8 Gegenbeispielen in `vorbedingung-mandatsfilter-test.js` sind gegen den Stand vor der Korrektur **rot**, danach grün (39 PASS); der Datenbanknachweis an PostgreSQL 17.6 hat **34 PASS** — darin der Rückfall gegen **echtes PostgREST** gefahren (alte Fassung antwortet `PGRST202`, der Code liefert die alte globale Zahl). Z3a erneut für 25/50/100 mit Fehlermandat und je Kontrolllauf: **24 PASS · 0 FAIL · 0 offene Befunde je Stufe** (in PR #272: je 1 offener Befund). Neues Kriterium Z22a fragt die Produktionsfunktion je Slot zweimal und prüft gegen die Rohtabelle: **0 Abweichungen**, ein gesundes Mandat wartet auf 57/111/220 Aufträge weniger.
-- **Ehrlich benannt:** der Zeitaufschlag durch ein krankes Mandat sinkt (25 Mandate +28 % → **+15 %**, 50 Mandate +4,6 % → **+0,6 %**), verschwindet aber nicht. Der Rest ist **Arbeitszeit** des toten Abrufwegs, nicht Blockade — begrenzt durch `max_attempts` und Zeitgrenze; liegengeblieben ist auf keiner Stufe Arbeit (0 gegen 0).
-- **Unverändert offen:** Z3 vollständig (Z3b: echte Anbieter, Supabase) · Z4 nicht erteilt · Z5 weiterhin nur fünf reale Mandate · Anwendung der Migration auf Production (freigabepflichtig) · Merge beider PRs in der Reihenfolge #272, dann Z22.
+## 19 · Sprint 27.08. — sichere Z3b-Vorbereitung bis 500
+
+**Teilweise abgeschlossen, an Freigaben blockiert.** Im isolierten Supabase-Testprojekt
+`ffzaxdbatoamsovncrym` wurden nach ausdrücklicher Freigabe nur die drei Basismigrationen
+angewendet; die Warteschlange hat **0 Zeilen**, F9 und Z22 fehlen. Production blieb unverändert.
+
+Lokal vorbereitet und offline grün: Supabase-Messläufer **46 PASS**, Azure-Messläufer
+**42 PASS** und Kapazitätsauswertung **33 PASS**. Ohne F9/Z22 kann die Supabase-Probe keine
+Testzeile erzeugen; Azure bleibt ohne separate Lauf- und Kostenfreigabe vollständig offline.
+Zielstufen sind 10/25/50/100/200/500; 200 und 500 verlangen neue eigene Messwerte. Kanonisch:
+[`betrieb/z3b-supabase-testplan-2026-08-27.md`](betrieb/z3b-supabase-testplan-2026-08-27.md),
+[`betrieb/z3b-azure-messplan-2026-08-27.md`](betrieb/z3b-azure-messplan-2026-08-27.md) und
+[`betrieb/z3b-aktivierungsplan-2026-08-27.md`](betrieb/z3b-aktivierungsplan-2026-08-27.md).
+
+Offen: natürlicher Nachlauf des am 27.08. wieder geöffneten Verstehensvorgangs (nur Regression,
+kein neuer Fünfer-Skalierungsbeweis) · Merge #272, danach #273 · F9/Z22 je Umgebung separat ·
+synthetische Supabase-Testdaten · echte Azure-Aufrufe/Kosten · KI-Deckel · jede Aktivierung.
