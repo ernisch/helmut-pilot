@@ -13,7 +13,7 @@
 //   §5  Mit `p_mandat`: global + eigen, niemals fremd  — DAS GEGENBEISPIEL
 //   §6  Altaufruf mit ZWEI Argumenten bleibt lauffaehig (Vorgabewert)
 //   §7  Zaehlmenge unveraendert: wartend/laeuft zaehlen, fehlgeschlagen nicht
-//   §8  Leere Zeichenkette als Mandat ist NICHT „alle" — sie trifft nur leere Kennungen
+//   §8  Leere oder nur aus Leerzeichen bestehende Kennung zaehlt global (fail closed)
 //   §9  Der vorhandene Index traegt die Abfrage weiterhin (kein neuer Index noetig)
 //   §10 Attrappe und Datenbank liefern Zahl fuer Zahl dasselbe (Vertragsgleichheit)
 //   §11 Der Rueckfall OHNE angewendete Migration — gegen echtes PostgREST, nicht behauptet
@@ -221,12 +221,15 @@ function main() {
     b.offen === b.wartend + b.laufend && a.offen === a.wartend + a.laufend);
 
   // ═══ §8 · Leere Kennung ══════════════════════════════════════════════════════════════════
-  abschnitt("8 · Eine leere Zeichenkette ist kein „alle\"");
+  abschnitt("8 · Leere Kennungen zaehlen global — auch direkt an der SQL-Grenze");
   const leer = zaehle({ mandat: "" });
-  check("8.1 `p_mandat := ''` trifft nur globale Arbeit, nicht alle Mandate",
-    leer.offen === 1, `offen ${leer.offen} — sonst waere die leere Kennung ein stiller Generalschluessel`);
-  console.log("      (Der Anwendungscode uebergibt eine leere Kennung nie: `mandatsKennungVon`");
-  console.log("       liefert dann null, und die Zaehlung laeuft global — mehr Warten, nie weniger.)");
+  check("8.1 `p_mandat := ''` zaehlt global und damit nie weniger Vorbedingungen",
+    JSON.stringify(leer) === JSON.stringify(global),
+    `${JSON.stringify(leer)} gegen global ${JSON.stringify(global)}`);
+  const leerzeichen = zaehle({ mandat: "   " });
+  check("8.2 Eine nur aus Leerzeichen bestehende Kennung zaehlt ebenfalls global",
+    JSON.stringify(leerzeichen) === JSON.stringify(global),
+    `${JSON.stringify(leerzeichen)} gegen global ${JSON.stringify(global)}`);
 
   // ═══ §9 · Kein neuer Index noetig ════════════════════════════════════════════════════════
   // WAS HIER GEPRUEFT WIRD — und was ausdruecklich NICHT: nicht, WELCHEN Index der Planer

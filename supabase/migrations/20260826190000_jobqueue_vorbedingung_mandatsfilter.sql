@@ -29,7 +29,8 @@
 --
 -- WAS DIESE MIGRATION TUT: sie ersetzt die zweistellige Funktion durch eine dreistellige mit
 -- `p_mandat text default null`.
---   * `p_mandat is null`  -> zaehlt wie bisher ueber ALLE Mandate. Verhaltensgleich.
+--   * `p_mandat` ist null oder nach dem Trimmen leer -> zaehlt wie bisher ueber ALLE
+--     Mandate. Verhaltensgleich und auch an der SQL-Grenze fail closed.
 --     Genau das ist der Rueckfall fuer Aufrufer ohne verwertbare Mandatskennung — mehr
 --     warten ist immer die sichere Seite, nie weniger (fail closed).
 --   * `p_mandat` gesetzt  -> zaehlt GLOBALE Arbeit (`tenant_id is null`) PLUS die Arbeit
@@ -90,11 +91,15 @@ as $$
      -- globale Arbeit (kein Mandatsbezug) UND die Arbeit dieses einen Mandats.
      -- `j.tenant_id is null` ist die systemweite Arbeit — sie wird KEINEM Mandat
      -- zugerechnet und gilt fuer alle.
-     and (p_mandat is null or j.tenant_id is null or j.tenant_id = p_mandat);
+     and (
+       nullif(btrim(p_mandat), '') is null
+       or j.tenant_id is null
+       or j.tenant_id = btrim(p_mandat)
+     );
 $$;
 
 comment on function public.helmut_jobs_offen(text[], text[], text) is
-  'OP-30/Z22: zaehlt offene/erledigte/fehlgeschlagene Auftraege ueber eine LISTE von Aktualitaetsfenstern, eine Typliste und OPTIONAL ein Mandat. Nur lesend. Ohne p_mandat verhaltensgleich zur zweistelligen Vorfassung (zaehlt alle Mandate). Mit p_mandat zaehlt sie globale Arbeit (tenant_id is null) plus die Arbeit dieses Mandats — fremde mandatsgebundene Arbeit blockiert damit kein anderes Mandat mehr (Befund Z22).';
+  'OP-30/Z22: zaehlt offene/erledigte/fehlgeschlagene Auftraege ueber eine LISTE von Aktualitaetsfenstern, eine Typliste und OPTIONAL ein Mandat. Nur lesend. Ohne p_mandat oder mit einer nach dem Trimmen leeren Kennung verhaltensgleich zur zweistelligen Vorfassung (zaehlt alle Mandate). Mit p_mandat zaehlt sie globale Arbeit (tenant_id is null) plus die Arbeit dieses Mandats — fremde mandatsgebundene Arbeit blockiert damit kein anderes Mandat mehr (Befund Z22).';
 
 -- Kein Browserzugriff (identische Zusage wie die Basistabelle und die Vorfassung).
 revoke all on function public.helmut_jobs_offen(text[], text[], text) from public, anon, authenticated;

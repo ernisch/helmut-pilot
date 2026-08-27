@@ -327,8 +327,10 @@ async function main() {
     const fs = require("fs");
     const sql = fs.readFileSync(path.join(ROOT,
       "supabase/migrations/20260826190000_jobqueue_vorbedingung_mandatsfilter.sql"), "utf8");
-    check("6.1 Die Migration filtert `p_mandat is null or tenant_id is null or tenant_id = p_mandat`",
-      /p_mandat\s+is\s+null\s+or\s+j\.tenant_id\s+is\s+null\s+or\s+j\.tenant_id\s*=\s*p_mandat/.test(sql));
+    check("6.1 Die Migration normalisiert leere Kennungen und filtert dann global + eigen",
+      /nullif\s*\(\s*btrim\(p_mandat\)\s*,\s*''\s*\)\s+is\s+null/.test(sql)
+      && /j\.tenant_id\s+is\s+null/.test(sql)
+      && /j\.tenant_id\s*=\s*btrim\(p_mandat\)/.test(sql));
     check("6.2 `p_mandat` hat den Vorgabewert null (Altaufrufer mit zwei Argumenten bleiben lauffaehig)",
       /p_mandat\s+text\s+default\s+null/.test(sql));
     check("6.3 Die zweistellige Fassung wird entfernt (sonst waere der Aufruf mehrdeutig)",
