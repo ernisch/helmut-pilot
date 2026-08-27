@@ -456,7 +456,9 @@ async function parallel(items, parallelitaet, arbeit, messung) {
 }
 
 async function fuehreMesslauf(konfiguration, { fetchImpl = globalThis.fetch, jetzt = () => new Date() } = {}) {
-  const messung = baueMessung(konfiguration.anfragenGesamtMax);
+  // Die Profilgrenze begrenzt nur zulaessige Plaene. Im echten Lauf gilt die
+  // kleinere, fuer genau diese Stufe vorausberechnete Anfrageobergrenze.
+  const messung = baueMessung(konfiguration.anfragenObergrenze);
   const begonnen = jetzt();
   const vorher = await pruefeVoraussetzungen(konfiguration, messung, fetchImpl);
   const synthetisch = erzeugeSynthetischeAuftraege({

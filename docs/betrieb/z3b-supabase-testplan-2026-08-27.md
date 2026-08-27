@@ -91,6 +91,10 @@ Alle Pakete haben keine automatischen Wiederholungen und stoppen nach zwei aufei
 429 oder 5xx Antworten. Eine hoehere Parallelitaet als 32 ist nicht Teil dieses Plans. Echte
 Quellen oder Azure Aufrufe sind in diesen Supabase Proben ausgeschlossen.
 
+Die Paketgrenzen sind nur die aeusserste Plausibilitaetsgrenze fuer einen Plan. Im ausgefuehrten
+Messlauf sperrt der Zaehler jetzt technisch an der kleineren, fuer den einzelnen Lauf exakt
+vorausberechneten HTTP Obergrenze: 62 fuer A, 66 fuer B, 124 fuer C und 240 fuer D.
+
 ## Kleinste genaue Messfolge bis 100
 
 Die vier erlaubten Parallelitaetswerte werden mit insgesamt nur 200 synthetischen Auftraegen

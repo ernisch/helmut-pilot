@@ -376,6 +376,8 @@ async function main() {
     attrappe.jobs.length === 25 && attrappe.jobs.every((job) => job.status === "erledigt"));
   check("D4 Exakt die vorausberechnete Zahl von HTTP Anfragen wurde verwendet",
     bericht.http.anfragen === basis.anfragenObergrenze
+      && bericht.http.anfragenMax === basis.anfragenObergrenze
+      && bericht.http.anfragenMax < basis.anfragenGesamtMax
       && attrappe.aufrufe.length === basis.anfragenObergrenze,
     `${bericht.http.anfragen} Anfragen`);
   check("D5 p50, p95 und p99 werden als Verteilung ausgewiesen",
