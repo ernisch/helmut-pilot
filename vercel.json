@@ -1,6 +1,11 @@
 {
   "version": 2,
   "regions": ["fra1"],
+  "git": {
+    "deploymentEnabled": {
+      "codex/z3b-safe-activation-500": false
+    }
+  },
   "functions": {
     "api/index.js": {
       "maxDuration": 300,
