@@ -13,25 +13,27 @@ zulaessig.
 
 Der aktuelle Production Betrieb bleibt bei fuenf aktiven Mandaten. Der natuerliche
 Fuenfernachweis wartet auf die rein lesende Kontrolle des am 27.08.2026 erneut geoeffneten
-Verstehensvorgangs. PR #272 und danach PR #273 bleiben ungemergt. Keine Migration und keine
-Production Aenderung ist durch diesen Plan freigegeben.
+Verstehensvorgangs. Am 27.08. um 12:26 UTC war seit der Wiedereroeffnung noch kein natuerlicher
+`understanding-cron` gelaufen; der Vorgang war weiter offen und hatte keine aktive Lease.
+PR #272 und danach PR #273 bleiben offen, gruen, mergefaehig und ungemergt. Keine Migration und
+keine Production Aenderung ist durch diesen Plan freigegeben.
 
 ## Was lokal bereits vorbereitet ist
 
 | Baustein | Stand | Wirkung |
 |---|---|---|
-| Supabase Messlaeufer | 46 PASS, 0 FAIL | akzeptiert nur das isolierte Testprojekt; startet ohne F9 und Z22 nicht |
+| Supabase Messlaeufer | 46 PASS, 0 FAIL | akzeptiert nur das isolierte Testprojekt; F9 und Z22 sind dort jetzt installiert, Testzugang und Lauf bleiben gesperrt |
 | Azure Messlaeufer | 42 PASS, 0 FAIL | hoechstens 3 plus getrennt 21 Aufrufe; einzeln, ohne Wiederholung |
 | Kapazitaetsauswertung | 33 PASS, 0 FAIL | berechnet Deckel und Kosten nur aus vollstaendigen Messwerten; kann nichts aktivieren |
-| PR #273 Korrektur | nur lokal vorbereitet | kein Push, Merge, Deployment oder Migration |
+| PR #273 Korrektur | als Commit `2a01ea9e` hochgeladen | PR offen, gruen und mergefaehig; kein Merge, kein Production Deployment und keine Production Migration |
 
 ## Verbindliche Reihenfolge vor der ersten Erweiterung
 
 1. Natuerlichen Fuenfernachweis rein lesend abschliessen.
 2. PR #272 kontrolliert pruefen und erst nach ausdruecklicher Freigabe mergen.
 3. PR #273 danach auf dem gemergten Stand kontrollieren und erst nach neuer Freigabe mergen.
-4. F9 im Testprojekt nur nach eigener Migrationsfreigabe anwenden.
-5. Z22 im Testprojekt getrennt und nur nach eigener Migrationsfreigabe anwenden.
+4. F9 im Testprojekt nur nach eigener Migrationsfreigabe anwenden. **Erledigt.**
+5. Z22 im Testprojekt getrennt und nur nach eigener Migrationsfreigabe anwenden. **Erledigt.**
 6. Supabase Probe ausschliesslich mit synthetischen Testauftraegen bis 100 stufenweise
    freigeben und auswerten.
 7. Azure Vorprobe mit drei Aufrufen und eigener Kostenfreigabe ausfuehren.

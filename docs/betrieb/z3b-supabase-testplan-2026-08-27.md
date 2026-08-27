@@ -6,14 +6,17 @@ Das isolierte Projekt `Helmut Z3b Test` mit der Kennung `ffzaxdbatoamsovncrym` i
 verursacht laut Kostenabfrage derzeit 0 USD pro Monat. Production hat die Kennung
 `ddckuvvpcytqbyfmbvie` und ist fuer diesen Test ausdruecklich gesperrt.
 
-Am 27.08.2026 wurden nach ausdruecklicher Freigabe genau die drei Basismigrationen angewendet.
-Vorhanden ist eine leere Warteschlangentabelle mit 0 Zeilen. F9 und Z22 fehlen weiterhin.
-Es gab keinen Import, keine Testdaten und keinen Zugriffsschluessel im Repository oder im Chat.
+Am 27.08.2026 wurden nach jeweils ausdruecklicher Freigabe zuerst genau die drei
+Basismigrationen, danach F9 und zuletzt Z22 angewendet. Vorhanden ist weiterhin eine leere
+Warteschlangentabelle mit 0 Zeilen. F9 und Z22 sind datenbankseitig lesend verifiziert, der
+kompatible Zweieraufruf von `helmut_jobs_offen` funktioniert weiter und nur `service_role`
+darf beide neuen Funktionsfassungen ausfuehren. Es gab keinen Import, keine Testdaten und
+keinen Zugriffsschluessel im Repository oder im Chat.
 
-Der begrenzte Messlaeufer ist inzwischen **nur lokal vorbereitet**, aber nicht gegen Supabase
-gestartet. Sein Offline Vertragstest steht bei 46 PASS und 0 FAIL. Er verlangt F9 und Z22 als
-lesbar nachgewiesene Voraussetzungen. Im heutigen Basiszustand bricht er deshalb vor dem ersten
-synthetischen Auftrag ab. Es wurde weiterhin kein Testschluessel angefordert oder verwendet.
+Der begrenzte Messlaeufer ist **nur lokal vorbereitet**, aber nicht gegen PostgREST gestartet.
+Sein Offline Vertragstest steht bei 46 PASS und 0 FAIL. Seine Datenbankvoraussetzungen sind
+jetzt installiert. Weiterhin fehlen ausschließlich der geschuetzte Testzugang und die eigene
+Freigabe fuer synthetische Auftraege. Es wurde kein Testschluessel angefordert oder verwendet.
 
 Das strategische Skalierungsziel ist jetzt **500 Mandate**. Die sichere Aktivierung bleibt
 gestuft. Zuerst wird die Stufe bis 100 abgeschlossen, danach folgen 200 und 500 als eigene,
@@ -57,8 +60,8 @@ getrennte Pakete. Nur das Basispaket ist bereits angewendet:
 | Paket | Reihenfolge | Zweck |
 |---|---|---|
 | Basis | `20260808_scalable_job_queue.sql`, `20260808_jobqueue_abhaengigkeiten.sql`, `20260812_jobqueue_altersmessung.sql` | angewendet, leer und geprueft |
-| Ankunft | `20260825101500_jobqueue_ankunftskennzahl.sql` | nicht angewendet, eigene Freigabe erforderlich |
-| Z22 | `20260826190000_jobqueue_vorbedingung_mandatsfilter.sql` | nicht angewendet, eigene Freigabe erforderlich |
+| Ankunft | `20260825101500_jobqueue_ankunftskennzahl.sql` | angewendet und lesend geprueft |
+| Z22 | `20260826190000_jobqueue_vorbedingung_mandatsfilter.sql` | angewendet und lesend geprueft |
 
 Zu jeder Datei ist der vorhandene Rueckweg fest zugeordnet. `20260720`, das Vollschema und
 alle Repository Seeds sind ausgeschlossen.
@@ -81,6 +84,25 @@ Die Groessenklassen sind getrennt. Keine groessere Klasse startet automatisch:
 Alle Pakete haben keine automatischen Wiederholungen und stoppen nach zwei aufeinanderfolgenden
 429 oder 5xx Antworten. Eine hoehere Parallelitaet als 32 ist nicht Teil dieses Plans. Echte
 Quellen oder Azure Aufrufe sind in diesen Supabase Proben ausgeschlossen.
+
+## Kleinste genaue Messfolge bis 100
+
+Die vier erlaubten Parallelitaetswerte werden mit insgesamt nur 200 synthetischen Auftraegen
+abgedeckt. Damit bleibt die gesamte Folge deutlich unter beiden Riegeln des Pakets bis 100.
+Jede Zeile ist ein eigener Lauf mit eigener Laufkennung und eigener Freigabe. Ein gruener Lauf
+startet den naechsten niemals automatisch.
+
+| Lauf | Messstufe | Auftraege | Parallelitaet | HTTP Obergrenze |
+|---:|---:|---:|---:|---:|
+| A | 25 | 25 | 4 | 62 |
+| B | 25 | 25 | 8 | 66 |
+| C | 50 | 50 | 16 | 124 |
+| D | 100 | 100 | 32 | 240 |
+| **Gesamt** | bis 100 | **200** | hoechstens 32 | **492** |
+
+Die zweite 25er Messung ist keine Wiederholung des Fachnachweises. Beide 25er Laeufe messen
+ausschliesslich den echten Supabase Netzweg bei zwei verschiedenen Parallelitaetswerten. Z2 und
+Z3a werden dabei nicht gestartet.
 
 ## Kapazitaetsfragen fuer 500
 
@@ -120,9 +142,9 @@ damit technisch und organisatorisch ein eigener, ausdruecklich freizugebender Sc
 
 ## Getrennte Freigaben fuer die naechsten Schritte
 
-1. Ankunftsmigration im Testprojekt anwenden
-2. Z22 Migration im Testprojekt separat anwenden
-3. Testzugang sicher bereitstellen und die begrenzte Probe bis 100 starten
+1. Ankunftsmigration im Testprojekt anwenden — erledigt
+2. Z22 Migration im Testprojekt separat anwenden — erledigt
+3. Testzugang sicher bereitstellen und die begrenzte Probe bis 100 starten — offen
 4. Bei gruenem 100er Ergebnis die neue Probe fuer 200 getrennt freigeben
 5. Bei gruenem 200er Ergebnis die neue Probe fuer 500 getrennt freigeben
 6. Ausschliesslich synthetische Testzeilen wieder entfernen

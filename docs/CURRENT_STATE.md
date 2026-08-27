@@ -213,17 +213,27 @@ Tagesfenstern liegen. Details: Realistiknachweis §13.
 ## 19 · Sprint 27.08. — sichere Z3b-Vorbereitung bis 500
 
 **Teilweise abgeschlossen, an Freigaben blockiert.** Im isolierten Supabase-Testprojekt
-`ffzaxdbatoamsovncrym` wurden nach ausdrücklicher Freigabe nur die drei Basismigrationen
-angewendet; die Warteschlange hat **0 Zeilen**, F9 und Z22 fehlen. Production blieb unverändert.
+`ffzaxdbatoamsovncrym` wurden nach jeweils ausdrücklicher Freigabe die drei Basismigrationen,
+F9 und danach Z22 angewendet. Die Warteschlange hat weiterhin **0 Zeilen**. Beide Funktionen,
+der kompatible Zweieraufruf, die ausschließlich für `service_role` erteilten Ausführungsrechte
+und das Fehlen von Testdaten wurden lesend bestätigt. Production blieb unverändert.
 
 Lokal vorbereitet und offline grün: Supabase-Messläufer **46 PASS**, Azure-Messläufer
-**42 PASS** und Kapazitätsauswertung **33 PASS**. Ohne F9/Z22 kann die Supabase-Probe keine
-Testzeile erzeugen; Azure bleibt ohne separate Lauf- und Kostenfreigabe vollständig offline.
+**42 PASS** und Kapazitätsauswertung **33 PASS**. Die Datenbankvoraussetzungen des
+Supabase-Messläufers sind jetzt erfüllt; weiterhin fehlen der geschützte Testzugang und die
+eigene Freigabe für synthetische Testzeilen. Azure bleibt ohne separate Lauf- und
+Kostenfreigabe vollständig offline.
 Zielstufen sind 10/25/50/100/200/500; 200 und 500 verlangen neue eigene Messwerte. Kanonisch:
 [`betrieb/z3b-supabase-testplan-2026-08-27.md`](betrieb/z3b-supabase-testplan-2026-08-27.md),
 [`betrieb/z3b-azure-messplan-2026-08-27.md`](betrieb/z3b-azure-messplan-2026-08-27.md) und
 [`betrieb/z3b-aktivierungsplan-2026-08-27.md`](betrieb/z3b-aktivierungsplan-2026-08-27.md).
 
+PR #273 trägt die lokale Korrektur inzwischen als Commit `2a01ea9e`; #272 und #273 sind offen,
+mergefähig und grün, aber ungemergt. Lesender Production-Stand am 27.08.2026 um 12:26 UTC:
+seit der Wiederöffnung noch kein natürlicher `understanding-cron`, genau ein
+`erneut-freigegeben`-Vorgang offen, keine aktive Lease. Deshalb bleibt der Abschlusscheck offen.
+
 Offen: natürlicher Nachlauf des am 27.08. wieder geöffneten Verstehensvorgangs (nur Regression,
-kein neuer Fünfer-Skalierungsbeweis) · Merge #272, danach #273 · F9/Z22 je Umgebung separat ·
-synthetische Supabase-Testdaten · echte Azure-Aufrufe/Kosten · KI-Deckel · jede Aktivierung.
+kein neuer Fünfer-Skalierungsbeweis) · Merge #272, danach #273 · F9/Z22 für Production jeweils
+separat · geschützter Supabase-Testzugang und synthetische Testdaten · echte
+Azure-Aufrufe/Kosten · KI-Deckel · jede Aktivierung.
