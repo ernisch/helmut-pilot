@@ -30,6 +30,37 @@ keine Production Aenderung ist durch diesen Plan freigegeben.
 | Kapazitaetsauswertung | 33 PASS, 0 FAIL | berechnet Deckel und Kosten nur aus vollstaendigen Messwerten; kann nichts aktivieren |
 | PR #273 Korrektur | als Commit `2a01ea9e` hochgeladen | PR offen, gruen und mergefaehig; kein Merge, kein Production Deployment und keine Production Migration |
 
+## Kontrollierte Merge Vorbereitung
+
+Lesender GitHub Stand und lokale Merge Vorschau vom 27.08.2026:
+
+| Punkt | PR #272 | PR #273 |
+|---|---|---|
+| Basis | `main` bei `ade1674e` | Kopf von #272 bei `b42c07b` |
+| Kopf | `b42c07b` | `2a01ea9e` |
+| Zustand | offen, nicht Draft, mergefaehig | offen, nicht Draft, mergefaehig |
+| Pflicht CI | Syntax und Offline Suiten gruen; Browser und Mobile Smoke gruen | Syntax und Offline Suiten gruen; Browser und Mobile Smoke gruen |
+| Vercel Status | gruen | gruen |
+| Reviews / offene Review Threads | 0 / 0 | 0 / 0 |
+| Aenderungsart | nur `scripts/` und `docs/`; keine Anwendung und keine Migration | Anwendungscode fuer Z22, Tests, Dokumentation und getrennte Z22 Migration |
+
+Die lokale Vorschau bestaetigt: #272 passt konfliktfrei auf den aktuellen `main`; #273 ist
+ein direkter Nachfolger von #272 und passt konfliktfrei darauf. Die Codepruefung fand keinen
+neuen Merge Blocker. Der Rueckfall von #273 vor der Z22 Production Migration fragt genau
+einmal ohne Mandatsfilter und behaelt damit das bisherige konservative Verhalten bei.
+
+Spaeterer Vollzug bleibt strikt getrennt:
+
+1. Vor dem Vollzug `main`, beide Kopfstaende, Mergefaehigkeit und CI erneut lesen.
+2. #272 nur nach eigener Mergefreigabe mergen. Dieser Merge loest ein Production Deployment
+   aus, obwohl der Aenderungssatz selbst nur Pruefwerkzeuge und Dokumentation enthaelt.
+3. Deployment von #272 abwarten und rein lesend auf Erfolg pruefen.
+4. Basis von #273 danach ausdruecklich kontrollieren; nicht annehmen, dass GitHub sie
+   automatisch auf `main` umstellt. Diff und CI erneut pruefen.
+5. #273 nur nach einer zweiten Mergefreigabe mergen und das Deployment rein lesend pruefen.
+6. F9 und Z22 in Production bleiben danach zwei eigene Migrationsentscheidungen. Keine
+   Migration wird durch einen Merge mitfreigegeben.
+
 ## Verbindliche Reihenfolge vor der ersten Erweiterung
 
 1. Natuerlichen Fuenfernachweis rein lesend abschliessen.
