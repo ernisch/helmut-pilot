@@ -12,9 +12,12 @@ Regression ist erst nach einer echten Aenderung oder mit neu gemessenen Anbieter
 zulaessig.
 
 Der aktuelle Production Betrieb bleibt bei fuenf aktiven Mandaten. Der natuerliche
-Fuenfernachweis wartet auf die rein lesende Kontrolle des am 27.08.2026 erneut geoeffneten
-Verstehensvorgangs. Am 27.08. um 12:26 UTC war seit der Wiedereroeffnung noch kein natuerlicher
-`understanding-cron` gelaufen; der Vorgang war weiter offen und hatte keine aktive Lease.
+Fuenfernachweis wartet auf den natuerlichen Lauf und dessen rein lesende Kontrolle. Der am
+27.08.2026 neu unbekannte Verstehensvorgang wurde nach exakter Vorpruefung einmal ueber den
+kanonischen Betreiberweg auf `erneut` gesetzt. Aggregiert lagen danach 0 unbekannte,
+2 erneut freigegebene Vorgaenge, 0 aktive Leases, 509 abgeschlossene und 1 aufgegebener Vorgang
+vor. Es gab keinen manuellen Lauf. Der naechste regulaere `understanding-cron` ist fuer
+21:30 UTC vorgesehen.
 PR #272 und danach PR #273 bleiben offen, gruen, mergefaehig und ungemergt. Keine Migration und
 keine Production Aenderung ist durch diesen Plan freigegeben.
 
@@ -22,7 +25,7 @@ keine Production Aenderung ist durch diesen Plan freigegeben.
 
 | Baustein | Stand | Wirkung |
 |---|---|---|
-| Supabase Messlaeufer | 46 PASS, 0 FAIL | akzeptiert nur das isolierte Testprojekt; F9 und Z22 sind dort jetzt installiert, Testzugang und Lauf bleiben gesperrt |
+| Supabase Messlaeufer | 46 PASS, 0 FAIL; Lauf A gruen | akzeptiert nur das isolierte Testprojekt; 25 von 25 Auftraegen und 62 von 62 HTTP Anfragen erfolgreich; temporaere Zugaenge und Workflow entfernt |
 | Azure Messlaeufer | 42 PASS, 0 FAIL | hoechstens 3 plus getrennt 21 Aufrufe; einzeln, ohne Wiederholung |
 | Kapazitaetsauswertung | 33 PASS, 0 FAIL | berechnet Deckel und Kosten nur aus vollstaendigen Messwerten; kann nichts aktivieren |
 | PR #273 Korrektur | als Commit `2a01ea9e` hochgeladen | PR offen, gruen und mergefaehig; kein Merge, kein Production Deployment und keine Production Migration |
@@ -33,9 +36,11 @@ keine Production Aenderung ist durch diesen Plan freigegeben.
 2. PR #272 kontrolliert pruefen und erst nach ausdruecklicher Freigabe mergen.
 3. PR #273 danach auf dem gemergten Stand kontrollieren und erst nach neuer Freigabe mergen.
 4. F9 im Testprojekt nur nach eigener Migrationsfreigabe anwenden. **Erledigt.**
-5. Z22 im Testprojekt getrennt und nur nach eigener Migrationsfreigabe anwenden. **Erledigt.**
+5. Z22 im Testprojekt nicht veraendern. Eine lesende Bestandspruefung fand die korrigierte
+   Fassung unter `20260827121931`, obwohl die freigegebene Kette Z22 ausschloss. Der Ursprung
+   ist offen; der Supabase Lauf hat keine Migration ausgefuehrt.
 6. Supabase Probe ausschliesslich mit synthetischen Testauftraegen bis 100 stufenweise
-   freigeben und auswerten.
+   freigeben und auswerten. **Lauf A ist erledigt; B bis D bleiben gesperrt.**
 7. Azure Vorprobe mit drei Aufrufen und eigener Kostenfreigabe ausfuehren.
 8. Nur bei gruener Vorprobe die weiteren 21 Azure Aufrufe getrennt freigeben.
 9. Aus den echten Werten den KI Deckel, die Understanding Reserve und die Kostenobergrenze
@@ -46,12 +51,45 @@ keine Production Aenderung ist durch diesen Plan freigegeben.
 F9 und Z22 im Testprojekt sind keine Erlaubnis fuer Production. Ebenso ist ein Merge keine
 Migrationsfreigabe. Diese Grenzen gelten auch dann, wenn alle Tests gruen sind.
 
+## Neu gemessen: Supabase Lauf A
+
+Am 27.08.2026 lief genau die freigegebene kleinste Stufe im Testprojekt:
+
+| Wert | Ergebnis |
+|---|---:|
+| synthetische Auftraege | 25 |
+| Parallelitaet | 4 |
+| Dauer | 8.218 ms |
+| HTTP Anfragen | 62 von hoechstens 62 |
+| HTTP Status | 62 mal 200 |
+| Latenz p50 / p95 / p99 | 339 / 654 / 808 ms |
+| maximale Latenz | 1.265 ms |
+| Zeitueberschreitungen / Netzfehler / 429 / 5xx | 0 / 0 / 0 / 0 |
+| abgeschlossen / offen / laufend / fehlgeschlagen | 25 / 0 / 0 / 0 |
+| unbekannt / doppelt reserviert / Lease Verlust | 0 / 0 / 0 |
+
+Der GitHub Actions Lauf `33105081744` war gruen. Anschliessend wurden das GitHub Actions
+Secret, der temporaere Supabase Secret Key und der einmalige Workflow entfernt. Die
+25 synthetischen Zeilen bleiben wie freigegeben erhalten, alle abgeschlossen und ohne aktive
+Lease. Production, Azure, Z2 und Z3a wurden nicht beruehrt.
+
+## Ausschliesslich noch fehlende Z3b Werte
+
+| Bereich | Bereits vorhanden | Noch offen |
+|---|---|---|
+| Supabase Netzweg | Lauf A, 25 Auftraege, Parallelitaet 4 | Lauf B mit 8, Lauf C mit 16 und Lauf D mit 32 parallelen Anfragen |
+| Fachwege 25/50/100 | Z3a abgeschlossen | keine Wiederholung; nur gezielte Regression nach echter Aenderung oder neuen Anbieterwerten |
+| Azure | Werkzeug offline gruen | begrenzte echte Laufzeit, Ein- und Ausgabetoken sowie Preisbasis |
+| KI Deckel | Rechenweg und Schutzregeln vorhanden | Zahl erst aus echten Azure Werten bestimmen |
+| Aktivierung bis 100 | Stufen und Stopkriterien vorhanden | finale Zahlen fuer Deckel, Kosten, Slotreserve und Supabase Tragfaehigkeit |
+| 200 und 500 | strategischer Weg festgelegt | neue Messungen erst vor diesen spaeteren Stufen; kein Blocker fuer den Plan bis 100 |
+
 ## Stufentore
 
 | Ziel | Technischer Mindestnachweis | Vorheriger Realbetrieb | Zusaetzliche Voraussetzung |
 |---:|---|---|---|
-| 10 | vorhandene 25er Fachwegmessung als obere Huelle; Supabase bis 25; Azure Stichprobe | 5 Mandate, sieben gruene Tage | Fuenfernachweis, PR #272/#273 und notwendige Migrationen abgeschlossen; KI Deckel gesetzt |
-| 25 | Z3a 25 bleibt Regression; Supabase 25 gruen | 10 Mandate, sieben gruene Tage | eigene Import- und Aktivierungsfreigabe |
+| 10 | vorhandene 25er Fachwegmessung als obere Huelle; Supabase Lauf A gruen, Lauf B noch offen; Azure Stichprobe | 5 Mandate, sieben gruene Tage | Fuenfernachweis, PR #272/#273 und notwendige Migrationen abgeschlossen; KI Deckel gesetzt |
+| 25 | Z3a 25 bleibt Regression; Supabase Laeufe A und B gruen | 10 Mandate, sieben gruene Tage | eigene Import- und Aktivierungsfreigabe |
 | 50 | Z3a 50 bleibt Regression; Supabase 50 gruen | 25 Mandate, sieben gruene Tage | Morgenlage ueber tragfaehigen Warteschlangenpfad; Aufbewahrung aktiv und belegt |
 | 100 | Z3a 100 bleibt Regression; Supabase 100 gruen | 50 Mandate, sieben gruene Tage | Slotkapazitaet mit Reserve; Supabase Tarif, PITR und Speichergrenze entschieden |
 | 200 | **neue** 200er Fachwegmessung; Supabase 200 gruen | 100 Mandate, sieben gruene Tage | Ereignisantrieb beziehungsweise grosser Transportweg und Kostenrahmen entschieden |

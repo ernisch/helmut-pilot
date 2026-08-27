@@ -6,17 +6,21 @@ Das isolierte Projekt `Helmut Z3b Test` mit der Kennung `ffzaxdbatoamsovncrym` i
 verursacht laut Kostenabfrage derzeit 0 USD pro Monat. Production hat die Kennung
 `ddckuvvpcytqbyfmbvie` und ist fuer diesen Test ausdruecklich gesperrt.
 
-Am 27.08.2026 wurden nach jeweils ausdruecklicher Freigabe zuerst genau die drei
-Basismigrationen, danach F9 und zuletzt Z22 angewendet. Vorhanden ist weiterhin eine leere
-Warteschlangentabelle mit 0 Zeilen. F9 und Z22 sind datenbankseitig lesend verifiziert, der
-kompatible Zweieraufruf von `helmut_jobs_offen` funktioniert weiter und nur `service_role`
-darf beide neuen Funktionsfassungen ausfuehren. Es gab keinen Import, keine Testdaten und
-keinen Zugriffsschluessel im Repository oder im Chat.
+Am 27.08.2026 wurden nach ausdruecklicher Freigabe genau die drei Basismigrationen und danach
+F9 angewendet. Eine spaetere rein lesende Bestandspruefung fand ausserdem Z22 in der
+Migrationshistorie unter `20260827121931`. Die fuer die aktuelle Arbeit freigegebene Kette
+schloss Z22 aus, und Lauf A hat keine Migration ausgefuehrt. Deshalb bleibt die Herkunft dieses
+Vorbestands offen. Die installierte Funktion entspricht der korrigierten Fassung, ist ein
+Security Invoker mit festem Suchpfad und zaehlt global sowie mandatsbezogen wie erwartet. Sie
+wird ohne eigene Freigabe weder veraendert noch zurueckgebaut.
 
-Der begrenzte Messlaeufer ist **nur lokal vorbereitet**, aber nicht gegen PostgREST gestartet.
-Sein Offline Vertragstest steht bei 46 PASS und 0 FAIL. Seine Datenbankvoraussetzungen sind
-jetzt installiert. Weiterhin fehlen ausschließlich der geschuetzte Testzugang und die eigene
-Freigabe fuer synthetische Auftraege. Es wurde kein Testschluessel angefordert oder verwendet.
+Der begrenzte Messlaeufer steht offline bei 46 PASS und 0 FAIL. **Lauf A wurde einmal gegen
+PostgREST ausgefuehrt und ist gruen:** 25 synthetische Auftraege bei Parallelitaet 4, genau
+62 HTTP Anfragen, 25 Reservierungen und 25 Abschluesse. Alle Testzeilen sind abgeschlossen;
+es gibt keine aktive Lease. Der temporaere Testschluessel, das GitHub Actions Secret und der
+einmalige Workflow wurden danach entfernt. Der Schluessel erschien weder in Chat, Code noch
+Protokollen. Die 25 Testzeilen bleiben gemaess Freigabe erhalten. Es gab keinen Import und
+keine Production Aenderung.
 
 Das strategische Skalierungsziel ist jetzt **500 Mandate**. Die sichere Aktivierung bleibt
 gestuft. Zuerst wird die Stufe bis 100 abgeschlossen, danach folgen 200 und 500 als eigene,
@@ -29,11 +33,11 @@ noch unbekannten Eigenschaften der echten Supabase Plattform:
 
 | Wert | Messung |
 |---|---|
-| Datenschnittstelle | Antwortzeit p50, p95 und p99 je RPC |
-| Stabilitaet | HTTP Fehler, Zeitueberschreitungen, 429 und 5xx |
-| Parallelitaet | Verhalten bei 4, 8, 16 und hoechstens 32 gleichzeitigen Anfragen |
-| Warteschlange | Einreihen, Reservieren, Abschliessen und lesende Kennzahlen |
-| Z22 | getrennte Gegenprobe mit und ohne Mandatsfilter |
+| Datenschnittstelle | Lauf A gemessen; p50/p95/p99 gesamt 339/654/808 ms; B bis D offen |
+| Stabilitaet | Lauf A: 0 HTTP Fehler, Zeitueberschreitungen, 429 und 5xx; B bis D offen |
+| Parallelitaet | 4 gemessen; Verhalten bei 8, 16 und hoechstens 32 gleichzeitigen Anfragen offen |
+| Warteschlange | Lauf A vollstaendig gemessen; dieselben Endzustaende in B bis D offen |
+| Z22 | Funktion lesend mit globaler und eigener Mandatssicht gegengeprueft; Herkunft der Migration offen |
 
 Die Zahlen aus Z3a fuer 5, 25, 50 und 100 Mandate sind nur Vergleichswerte. Sie werden nicht
 als neuer Nachweis ausgegeben und der Fachlauf wird nicht erneut gefahren. Fuer 200 und 500
@@ -46,7 +50,7 @@ als Beweis ausgegeben.
 |---:|---|---|
 | 5 | bestehender Production Betrieb | technisch belegt, natuerlicher Abschlusscheck noch offen |
 | 10 | erste Aktivierungsstufe | kein eigener Volltest, nur kontrollierte Production Stufe |
-| 25 | erste Verkaufsstufe | Z2 und Z3a abgeschlossen, Z3b Plattformwerte offen |
+| 25 | erste Verkaufsstufe | Z2 und Z3a abgeschlossen, Z3b Lauf A gruen und Lauf B offen |
 | 50 | Zwischenstufe | Z2 und Z3a abgeschlossen, Z3b Plattformwerte offen |
 | 100 | erstes sicheres Kapazitaetstor | Z2 und Z3a abgeschlossen, Z3b Plattformwerte offen |
 | 200 | neue Messstufe | erst nach gruenem 100er Tor |
@@ -55,23 +59,25 @@ als Beweis ausgegeben.
 ## Kleinste Migrationskette
 
 Das gesamte Helmut Schema ist fuer diese Plattformmessung nicht erforderlich. Es gibt drei
-getrennte Pakete. Nur das Basispaket ist bereits angewendet:
+getrennte Pakete. Basis und F9 wurden freigegeben angewendet; Z22 wurde als ungeklärter
+Vorbestand gefunden:
 
 | Paket | Reihenfolge | Zweck |
 |---|---|---|
-| Basis | `20260808_scalable_job_queue.sql`, `20260808_jobqueue_abhaengigkeiten.sql`, `20260812_jobqueue_altersmessung.sql` | angewendet, leer und geprueft |
+| Basis | `20260808_scalable_job_queue.sql`, `20260808_jobqueue_abhaengigkeiten.sql`, `20260812_jobqueue_altersmessung.sql` | angewendet und geprueft; seit Lauf A 25 abgeschlossene synthetische Zeilen |
 | Ankunft | `20260825101500_jobqueue_ankunftskennzahl.sql` | angewendet und lesend geprueft |
-| Z22 | `20260826190000_jobqueue_vorbedingung_mandatsfilter.sql` | angewendet und lesend geprueft |
+| Z22 | `20260826190000_jobqueue_vorbedingung_mandatsfilter.sql` | als Vorbestand unter `20260827121931` gefunden und lesend geprueft; Herkunft offen |
 
 Zu jeder Datei ist der vorhandene Rueckweg fest zugeordnet. `20260720`, das Vollschema und
 alle Repository Seeds sind ausgeschlossen.
 
 ## Testdaten
 
-Es gibt keinen Import und keine Kopie aus Production. Der spaetere Lauf erzeugt ausschliesslich
-kuenstliche Auftraege mit Kennungen wie `z3b-synth-mandat-0000`. Die Nutzlast enthaelt nur
-Laufnummern und die Markierungen `z3b` und `synthetisch`. Namen, Dokumente, Quelleninhalte und
-sonstige personenbezogene Daten sind nicht Teil der Probe.
+Es gibt keinen Import und keine Kopie aus Production. Lauf A erzeugte ausschliesslich
+kuenstliche Auftraege mit Kennungen wie `z3b-synth-mandat-0000`; spaetere Laeufe duerfen nur
+dasselbe Datenmuster verwenden. Die Nutzlast enthaelt nur Laufnummern und die Markierungen
+`z3b` und `synthetisch`. Namen, Dokumente, Quelleninhalte und sonstige personenbezogene Daten
+sind nicht Teil der Probe.
 
 Die Groessenklassen sind getrennt. Keine groessere Klasse startet automatisch:
 
@@ -94,15 +100,35 @@ startet den naechsten niemals automatisch.
 
 | Lauf | Messstufe | Auftraege | Parallelitaet | HTTP Obergrenze |
 |---:|---:|---:|---:|---:|
-| A | 25 | 25 | 4 | 62 |
-| B | 25 | 25 | 8 | 66 |
-| C | 50 | 50 | 16 | 124 |
-| D | 100 | 100 | 32 | 240 |
+| A | 25 | 25 | 4 | 62, **erledigt und gruen** |
+| B | 25 | 25 | 8 | 66, offen |
+| C | 50 | 50 | 16 | 124, offen |
+| D | 100 | 100 | 32 | 240, offen |
 | **Gesamt** | bis 100 | **200** | hoechstens 32 | **492** |
 
 Die zweite 25er Messung ist keine Wiederholung des Fachnachweises. Beide 25er Laeufe messen
 ausschliesslich den echten Supabase Netzweg bei zwei verschiedenen Parallelitaetswerten. Z2 und
 Z3a werden dabei nicht gestartet.
+
+### Ergebnis Lauf A
+
+| Kennzahl | Ergebnis |
+|---|---:|
+| GitHub Actions Lauf | `33105081744`, erfolgreich |
+| Dauer | 8.218 ms |
+| Einreihen / Reservieren / Abschliessen | 25 / 25 / 25 |
+| Anfragen | 62 von hoechstens 62, alle HTTP 200 |
+| RPC Verteilung | Kennzahlen 2, Ankunft 2, offene Auftraege 4, Einreihen 25, Reservieren 4, Abschliessen 25 |
+| Latenz min / p50 / p95 / p99 / max / Mittel | 128 / 339 / 654 / 808 / 1.265 / 319,7 ms |
+| hoechste Gleichzeitigkeit | 4 |
+| Zeitueberschreitungen / Netzfehler / Drosselungen / 5xx | 0 / 0 / 0 / 0 |
+| unbekannt / doppelt reserviert / Lease Verlust | 0 / 0 / 0 |
+| Endstand abgeschlossen / offen / wartend / laufend / fehlgeschlagen | 25 / 0 / 0 / 0 / 0 |
+
+Eine getrennte rein lesende Datenbankabfrage bestaetigte denselben Endstand. Die erste Zeile
+entstand um 18:46:02 UTC, der letzte Abschluss um 18:46:06 UTC. Die Zeilen wurden nicht
+geloescht. GitHub Secret, Supabase Secret Key und Workflow sind vollstaendig entfernt; der
+Bereinigungscommit startete keinen weiteren Actions Lauf und kein Deployment.
 
 ## Kapazitaetsfragen fuer 500
 
@@ -122,9 +148,10 @@ Der lokale Vertrag akzeptiert nur die exakte HTTPS Basis URL des Testprojekts. D
 Kennung, jede andere Projektkennung, URL Pfade, Parameter und Zugangsdaten in der URL fuehren
 vor dem ersten Netzaufruf zum Abbruch.
 
-Ein Dienstschluessel wird erst fuer den spaeteren Testlauf benoetigt. Er darf nur in einer
+Ein Dienstschluessel wird fuer jeden spaeteren Testlauf neu benoetigt. Er darf nur in einer
 geschuetzten Laufzeitvariable liegen und weder in Git noch in einem Bericht oder Chat erscheinen.
-Ohne diesen Schluessel kann und soll der vorbereitete Plan nichts ausfuehren.
+Der Schluessel fuer Lauf A wurde nach dem Lauf geloescht. Ohne einen neuen, getrennt
+freigegebenen Schluessel kann und soll der vorbereitete Plan nichts ausfuehren.
 
 Der Messlaeufer verwendet eigene `HELMUT_Z3B_*` Variablen und verweigert den Start, wenn daneben
 allgemeine Supabase oder Anbieterkennungen sichtbar sind. Zusaetzlich ist fuer jeden einzelnen
@@ -143,11 +170,12 @@ damit technisch und organisatorisch ein eigener, ausdruecklich freizugebender Sc
 ## Getrennte Freigaben fuer die naechsten Schritte
 
 1. Ankunftsmigration im Testprojekt anwenden — erledigt
-2. Z22 Migration im Testprojekt separat anwenden — erledigt
-3. Testzugang sicher bereitstellen und die begrenzte Probe bis 100 starten — offen
-4. Bei gruenem 100er Ergebnis die neue Probe fuer 200 getrennt freigeben
-5. Bei gruenem 200er Ergebnis die neue Probe fuer 500 getrennt freigeben
-6. Ausschliesslich synthetische Testzeilen wieder entfernen
+2. Z22 Vorbestand nicht veraendern und Herkunft getrennt klaeren — offen, kein Laufblocker
+3. Lauf A mit eigenem Testzugang — erledigt; Zugang und Workflow entfernt
+4. Lauf B, danach C und D jeweils getrennt freigeben — offen
+5. Bei gruenem 100er Ergebnis die neue Probe fuer 200 getrennt freigeben
+6. Bei gruenem 200er Ergebnis die neue Probe fuer 500 getrennt freigeben
+7. Ausschliesslich synthetische Testzeilen wieder entfernen
 
 Jeder Schritt bleibt bis zu seiner ausdruecklichen Freigabe gesperrt. Kein Schritt beruehrt
 Production, fuehrt einen Import aus oder aktiviert ein Mandat.

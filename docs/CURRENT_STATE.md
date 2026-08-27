@@ -185,8 +185,8 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 17 · Sprint 26.08. — Realistiknachweis Z3a für 25/50/100
 
-**Teilweise abgeschlossen:** Z3a ist erbracht, Z3 bleibt wegen echter Anbieter und Supabase
-offen. PR #272 ist offen und ungemergt. Echte Fachhandler liefen über HTTP/PostgREST/PostgreSQL
+**Teilweise abgeschlossen:** Z3a ist erbracht; Z3b bleibt wegen weiterer echter Supabase Werte
+und echter Anbieterwerte offen. PR #272 ist offen und ungemergt. Echte Fachhandler liefen über HTTP/PostgREST/PostgreSQL
 17.6, Cron-Slots und lokale Anbieter. Für 5/25/50/100 wurden 271/1.090/1.801/2.596 Aufträge,
 177/415/622/738 Modellaufrufe und langsamste Slots von 143/153/180/216 s gemessen. Die
 Tagesarbeit floss ab; Anbieterwerte und der notwendige KI-Deckel bleiben Z3b. Vollbeleg:
@@ -212,28 +212,40 @@ Tagesfenstern liegen. Details: Realistiknachweis §13.
 
 ## 19 · Sprint 27.08. — sichere Z3b-Vorbereitung bis 500
 
-**Teilweise abgeschlossen, an Freigaben blockiert.** Im isolierten Supabase-Testprojekt
-`ffzaxdbatoamsovncrym` wurden nach jeweils ausdrücklicher Freigabe die drei Basismigrationen,
-F9 und danach Z22 angewendet. Die Warteschlange hat weiterhin **0 Zeilen**. Beide Funktionen,
-der kompatible Zweieraufruf, die ausschließlich für `service_role` erteilten Ausführungsrechte
-und das Fehlen von Testdaten wurden lesend bestätigt. Production blieb unverändert.
+**Teilweise abgeschlossen.** Im isolierten Supabase-Testprojekt `ffzaxdbatoamsovncrym` wurden
+freigegeben genau die drei Basismigrationen und F9 angewendet. Eine spätere rein lesende
+Bestandsprüfung fand zusätzlich Z22 in der Migrationshistorie (`20260827121931`), obwohl die
+freigegebene Kette Z22 ausschloss. Der hier dokumentierte Lauf hat **keine Migration**
+ausgeführt; Herkunft und Freigabekette dieses Vorbestands bleiben zu klären. Die vorhandene
+Funktion ist die korrigierte Fassung, arbeitet als Security Invoker mit festem Suchpfad und
+liefert global sowie mandatsbezogen die erwarteten Zählungen. Kein Rückbau ohne eigene
+Freigabe. Production blieb unverändert.
 
-Lokal vorbereitet und offline grün: Supabase-Messläufer **46 PASS**, Azure-Messläufer
-**42 PASS** und Kapazitätsauswertung **33 PASS**. Die Datenbankvoraussetzungen des
-Supabase-Messläufers sind jetzt erfüllt; weiterhin fehlen der geschützte Testzugang und die
-eigene Freigabe für synthetische Testzeilen. Azure bleibt ohne separate Lauf- und
-Kostenfreigabe vollständig offline.
-Zielstufen sind 10/25/50/100/200/500; 200 und 500 verlangen neue eigene Messwerte. Kanonisch:
+**Supabase Lauf A ist grün:** 25 synthetische Aufträge, Parallelität 4, genau 62 HTTP Anfragen,
+25 Einreihungen, 25 Reservierungen und 25 Abschlüsse in 8.218 ms. Alle Antworten waren 200;
+Latenz p50/p95/p99 = 339/654/808 ms, Maximum 1.265 ms. Es gab 0 Zeitüberschreitungen,
+Netzfehler, Drosselungen, 5xx, unbekannte Vorgänge, Doppelreservierungen oder Lease Verluste.
+Die 25 Testzeilen bleiben freigabegemäß erhalten und sind sämtlich abgeschlossen; 0 aktive
+Leases. Der GitHub Lauf `33105081744` war grün. Danach wurden GitHub Secret, Supabase Secret
+Key und einmaliger Workflow vollständig entfernt; der geschützte Branch enthält wieder den
+Baum vor dem Lauf. Z2 und Z3a wurden nicht gestartet.
+
+Offline grün bleiben Supabase-Messläufer **46 PASS**, Azure-Messläufer **42 PASS** und
+Kapazitätsauswertung **33 PASS**. Noch ungemessen sind die Supabase Läufe B bis D, alle echten
+Azure Laufzeit- und Tokenwerte, daraus KI Deckel und Kostenobergrenze sowie die späteren neuen
+Stufen 200 und 500. Kanonisch:
 [`betrieb/z3b-supabase-testplan-2026-08-27.md`](betrieb/z3b-supabase-testplan-2026-08-27.md),
 [`betrieb/z3b-azure-messplan-2026-08-27.md`](betrieb/z3b-azure-messplan-2026-08-27.md) und
 [`betrieb/z3b-aktivierungsplan-2026-08-27.md`](betrieb/z3b-aktivierungsplan-2026-08-27.md).
 
 PR #273 trägt die lokale Korrektur inzwischen als Commit `2a01ea9e`; #272 und #273 sind offen,
 mergefähig und grün, aber ungemergt. Lesender Production-Stand am 27.08.2026 um 12:26 UTC:
-seit der Wiederöffnung noch kein natürlicher `understanding-cron`, genau ein
-`erneut-freigegeben`-Vorgang offen, keine aktive Lease. Deshalb bleibt der Abschlusscheck offen.
+Der neue unbekannte Verstehensvorgang wurde nach exakter Vorprüfung einmal über den kanonischen
+Betreiberweg auf `erneut` gesetzt. Aggregiert danach: 0 unbekannt, 2 erneut freigegeben,
+0 aktive Leases, 509 abgeschlossen und 1 aufgegeben. Kein manueller Lauf. Der natürliche
+`understanding-cron` um 21:30 UTC und dessen rein lesender Abschlusscheck bleiben offen.
 
-Offen: natürlicher Nachlauf des am 27.08. wieder geöffneten Verstehensvorgangs (nur Regression,
-kein neuer Fünfer-Skalierungsbeweis) · Merge #272, danach #273 · F9/Z22 für Production jeweils
-separat · geschützter Supabase-Testzugang und synthetische Testdaten · echte
-Azure-Aufrufe/Kosten · KI-Deckel · jede Aktivierung.
+Offen: natürlicher Nachlauf als Regression, nicht als neuer Fünfer-Skalierungsbeweis · Merge
+#272, danach #273 · F9/Z22 für Production jeweils separat · Supabase Läufe B bis D · echte
+Azure Aufrufe und Kosten · KI Deckel · jede Aktivierung. 200 und 500 sind strategische spätere
+Tore und blockieren den sicheren Plan bis 100 nicht.
