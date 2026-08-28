@@ -5,7 +5,7 @@
 **Teilweise abgeschlossen.** Der kleine Folgebranch
 `codex/ki-antwortumschlag-hardening` steht auf dem Kopf von PR #273 `2a01ea9e`.
 Code und gezielte Regressionen sind grün. **PR #274 ist offen, ungemergt und hat
-noch keinen grünen Pflicht CI Beleg.** Production wurde nicht verändert. Der rote
+einen vollständig grünen Pflicht CI Beleg.** Production wurde nicht verändert. Der rote
 natürliche Fünferbefund gilt daher weiterhin als offen.
 
 ## Anlass und belegte Grenze
@@ -65,6 +65,7 @@ den Kindprozessen entfernt.
 | `z3-realistiklauf-vertrag-test.js` | 48 PASS, 0 FAIL |
 | `understanding-live-smoke.js`, lokaler HTTPS Mock | vollständig grün |
 | vollständiger Offline Lauf | 279 von 286 Suiten grün |
+| GitHub Actions Lauf 33166925375 | Syntax, Offline Suiten und Browser Smoke grün |
 
 Der erste parallel ausgeführte Budgettest hatte 18 PASS und 2 FAIL. Die
 unmittelbar danach isolierte Ausführung war 20 zu 0 grün. Das spricht für eine
@@ -105,9 +106,8 @@ und keine Umgebungsvariable zurückzusetzen.
 
 ## Noch offen
 
-1. Pflicht CI vollständig grün belegen
-2. Merge erst nach #272 und #273 sowie eigener Betreiberfreigabe
-3. automatisches Production Deployment rein lesend prüfen
-4. erst im nächsten natürlichen Understanding Lauf den Fünferbefund regressieren
+1. Merge erst nach #272 und #273 sowie eigener Betreiberfreigabe
+2. automatisches Production Deployment rein lesend prüfen
+3. erst im nächsten natürlichen Understanding Lauf den Fünferbefund regressieren
 
 Ein künstlicher Production Lauf ist dafür nicht freigegeben und nicht nötig.
