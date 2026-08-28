@@ -6,7 +6,7 @@
 `codex/z3b-monitoring-honesty` steht auf dem lokalen Kopf von PR #275. Zwei
 bereits vorhandene Folgekorrekturen wurden getrennt übernommen, gemeinsam
 geprüft und um einen zusätzlichen Nennervertrag ergänzt. **PR #276 ist offen,
-ungemergt und wartet auf seinen Pflicht CI Beleg.**
+ungemergt und sein Pflicht CI Lauf `33171232891` ist vollständig grün.**
 
 Production, Supabase, echte Mandatsdaten, Migrationen, Umgebungswerte und
 Geheimnisse wurden nicht verändert. Die Korrekturen wiederholen keinen
@@ -107,6 +107,11 @@ Die vier roten Suiten des vollständigen Laufs liegen außerhalb des
 
 Eine vollständig grüne lokale Gesamtsuite wird nicht behauptet.
 
+Der GitHub Pflicht CI Lauf `33171232891` am unveränderten PR Kopf
+`5e37bc1e0046d91700965847c46bc823870a4db7` ist vollständig grün. Sowohl
+`Syntax + Offline-Suiten` als auch `Browser-/Mobile-Smoke (Chromium)` sind
+erfolgreich abgeschlossen.
+
 ## Beweisgrenzen
 
 | Ebene | Stand |
@@ -135,6 +140,5 @@ Geheimnisrotation sind nicht nötig.
 
 ## Noch offen
 
-1. Pflicht CI vollständig grün belegen
-2. Merge erst nach #272 bis #275 sowie eigener Betreiberfreigabe
-3. Wirkung später rein lesend an natürlichen Production Befunden prüfen
+1. Merge erst nach #272 bis #275 sowie eigener Betreiberfreigabe
+2. Wirkung später rein lesend an natürlichen Production Befunden prüfen
