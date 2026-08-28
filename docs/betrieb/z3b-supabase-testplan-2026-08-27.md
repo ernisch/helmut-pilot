@@ -14,7 +14,7 @@ Vorbestands offen. Die installierte Funktion entspricht der korrigierten Fassung
 Security Invoker mit festem Suchpfad und zaehlt global sowie mandatsbezogen wie erwartet. Sie
 wird ohne eigene Freigabe weder veraendert noch zurueckgebaut.
 
-Der begrenzte Messlaeufer steht offline bei 46 PASS und 0 FAIL. **Die Laeufe A und B wurden
+Der begrenzte Messlaeufer steht offline bei 51 PASS und 0 FAIL. **Die Laeufe A und B wurden
 je einmal gegen PostgREST ausgefuehrt und sind gruen:** jeweils 25 synthetische Auftraege bei
 Parallelitaet 4 beziehungsweise 8, genau 62 beziehungsweise 66 HTTP Anfragen und insgesamt
 50 Reservierungen sowie 50 Abschluesse. Alle Testzeilen sind abgeschlossen; es gibt keine
@@ -22,6 +22,12 @@ aktive Lease. Die temporaeren Testschluessel, GitHub Actions Secrets und einmali
 wurden danach entfernt. Ein Schluessel erschien weder in Chat, Code noch Protokollen. Die
 50 Testzeilen bleiben gemaess Freigabe erhalten. Es gab keinen Import und keine Production
 Aenderung.
+
+Der lokale Gegenlauf prueft nun zusaetzlich die Mandatszuordnung jeder vom Claim gelieferten
+Zeile. Eine falsche Zuordnung stoppt vor jedem Abschluss. Mit 500 rein lokalen Mandatsattrappen,
+Parallelitaet 32 und exakt 1.040 von hoechstens 1.250 simulierten HTTP Aufrufen endeten 500 von
+500 Auftraegen korrekt, jedes Mandat genau einmal. Das ist nur ein gruener Werkzeugvertrag ohne
+Netz und ausdruecklich kein echter Supabase 500er Plattformnachweis.
 
 Das strategische Skalierungsziel ist jetzt **500 Mandate**. Die sichere Aktivierung bleibt
 gestuft. Zuerst wird die Stufe bis 100 abgeschlossen, danach folgen 200 und 500 als eigene,

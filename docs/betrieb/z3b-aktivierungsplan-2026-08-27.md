@@ -25,7 +25,7 @@ keine Production Aenderung ist durch diesen Plan freigegeben.
 
 | Baustein | Stand | Wirkung |
 |---|---|---|
-| Supabase Messlaeufer | 46 PASS, 0 FAIL; A und B gruen | akzeptiert nur das isolierte Testprojekt; zweimal 25 von 25 Auftraegen und 62 von 62 sowie 66 von 66 HTTP Anfragen erfolgreich; temporaere Zugaenge und Workflows entfernt |
+| Supabase Messlaeufer | 51 PASS, 0 FAIL; A und B gruen | lokaler 500er Werkzeugvertrag und Mandatszuordnung gruen; echte Plattformwerte nur fuer A und B; temporaere Zugaenge und Workflows entfernt |
 | Azure Messlaeufer | 46 PASS, 0 FAIL | hoechstens 3 plus getrennt 21 Aufrufe; einzeln, ohne Wiederholung; Deploymentart, Region und tagesaktueller Preisbeleg sind Pflicht |
 | Kapazitaetsauswertung | 33 PASS, 0 FAIL | berechnet Deckel und Kosten nur aus vollstaendigen Messwerten; kann nichts aktivieren |
 | PR #273 Korrektur | als Commit `2a01ea9e` hochgeladen | PR offen, gruen und mergefaehig; kein Merge, kein Production Deployment und keine Production Migration |

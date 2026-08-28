@@ -75,7 +75,7 @@ function antwort(status, daten, roh = null) {
   };
 }
 
-function baueSupabaseAttrappe() {
+function baueSupabaseAttrappe({ falscheMandatszuordnung = false } = {}) {
   const aufrufe = [];
   const jobs = [];
   let nummer = 0;
@@ -151,7 +151,10 @@ function baueSupabaseAttrappe() {
         job.status = "laeuft";
         job.lease_owner = parameter.p_owner;
       }
-      return antwort(200, auswahl.map((job) => ({ ...job })));
+      return antwort(200, auswahl.map((job, index) => ({
+        ...job,
+        tenant_id: falscheMandatszuordnung && index === 0 ? "z3b-synth-mandat-falsch" : job.tenant_id
+      })));
     }
     if (rpc === "helmut_finish_job") {
       const job = jobs.find((wert) => wert.id === parameter.p_id
@@ -374,38 +377,77 @@ async function main() {
       && bericht.auftraege.leaseVerloren === 0);
   check("D3 Alle Attrappenauftraege sind am Ende abgeschlossen",
     attrappe.jobs.length === 25 && attrappe.jobs.every((job) => job.status === "erledigt"));
-  check("D4 Exakt die vorausberechnete Zahl von HTTP Anfragen wurde verwendet",
+  check("D4 Jedes synthetische Mandat ist mit der erwarteten Auftragszahl vertreten",
+    bericht.mandatsverteilung.mandate === 25
+      && bericht.mandatsverteilung.minAuftraegeJeMandat === 1
+      && bericht.mandatsverteilung.maxAuftraegeJeMandat === 1
+      && bericht.mandatsverteilung.abweichendeMandate === 0
+      && bericht.mandatsverteilung.falscheZuordnung === 0);
+  const falscheAttrappe = baueSupabaseAttrappe({ falscheMandatszuordnung: true });
+  check("D5 Eine falsche Mandatszuordnung im Claim bricht vor dem Abschluss ab",
+    await verwirft(() => Z.fuehreMesslauf(basis, { fetchImpl: falscheAttrappe.fetchImpl }),
+      /falsch zugeordnete/)
+      && falscheAttrappe.jobs.every((job) => job.status !== "erledigt"));
+  check("D6 Exakt die vorausberechnete Zahl von HTTP Anfragen wurde verwendet",
     bericht.http.anfragen === basis.anfragenObergrenze
       && bericht.http.anfragenMax === basis.anfragenObergrenze
       && bericht.http.anfragenMax < basis.anfragenGesamtMax
       && attrappe.aufrufe.length === basis.anfragenObergrenze,
     `${bericht.http.anfragen} Anfragen`);
-  check("D5 p50, p95 und p99 werden als Verteilung ausgewiesen",
+  check("D7 p50, p95 und p99 werden als Verteilung ausgewiesen",
     bericht.http.dauerMs.n === bericht.http.anfragen
       && bericht.http.dauerMs.p50 != null
       && bericht.http.dauerMs.p95 != null
       && bericht.http.dauerMs.p99 != null);
-  check("D6 Jeder Aufruf ist POST und bleibt auf der RPC Erlaubnisliste",
+  check("D8 Jeder Aufruf ist POST und bleibt auf der RPC Erlaubnisliste",
     attrappe.aufrufe.every((aufruf) => aufruf.method === "POST"
       && aufruf.url.startsWith(`${TEST_PROJECT_URL}/rest/v1/rpc/`)
       && Z.RPC_ERLAUBT.includes(aufruf.rpc)));
-  check("D7 Kein Anbieter, Tabellenendpunkt, DELETE oder Aufraeum RPC wurde beruehrt",
+  check("D9 Kein Anbieter, Tabellenendpunkt, DELETE oder Aufraeum RPC wurde beruehrt",
     attrappe.aufrufe.every((aufruf) => !/azure|openai|google|prune|delete|helmut_jobs\?/.test(aufruf.url.toLowerCase())));
-  check("D8 Der Bericht enthaelt weder Zugang, Auftrag IDs noch Nutzdaten",
+  check("D10 Der Bericht enthaelt weder Zugang, Auftrag IDs noch Nutzdaten",
     !berichtText.includes(TEST_SECRET)
       && !berichtText.includes("nur-lokale-auftrag-id")
       && !berichtText.includes("p_payload"));
-  check("D9 Der Bericht ordnet sich als Teilnachweis ein und wiederholt Z2 oder Z3a nicht",
+  check("D11 Der Bericht ordnet sich als Teilnachweis ein und wiederholt Z2 oder Z3a nicht",
     /Plattformteilnachweis/.test(bericht.art)
       && /Z2 und Z3a wurden nicht wiederholt/.test(bericht.einordnung));
-  check("D10 Production, Anbieter und echte Mandatsdaten bleiben nachweislich unberuehrt",
+  check("D12 Production, Anbieter und echte Mandatsdaten bleiben nachweislich unberuehrt",
     bericht.productionBeruehrt === false && bericht.anbieterAufrufe === 0 && bericht.echteMandatsdaten === 0);
-  check("D11 Es gibt keine automatische Loeschung",
+  check("D13 Es gibt keine automatische Loeschung",
     /nicht ausgefuehrt/.test(bericht.aufraeumung));
 
   const quelltext = fs.readFileSync(path.join(ROOT, "scripts", "skalierung-z3b-supabase.js"), "utf8");
-  check("D12 Im Werkzeug ist kein echter Secret oder JWT Wert gespeichert",
+  check("D14 Im Werkzeug ist kein echter Secret oder JWT Wert gespeichert",
     !/sb_secret_[A-Za-z0-9_-]{20,}|eyJ[A-Za-z0-9_-]{20,}/.test(quelltext));
+
+  console.log("\n== E · Lokaler 500er Vertragslauf ohne Netz ==");
+  const config500 = Z.liesKonfiguration(umgebung({
+    stufe: 500,
+    auftraege: 500,
+    parallelitaet: 32,
+    lauf: "z3b500probe"
+  }));
+  const attrappe500 = baueSupabaseAttrappe();
+  const bericht500 = await Z.fuehreMesslauf(config500, { fetchImpl: attrappe500.fetchImpl });
+  check("E1 Der unveraenderte Messpfad beendet lokal exakt 500 von 500 Auftraegen",
+    bericht500.auftraege.eingereiht === 500
+      && bericht500.auftraege.reserviert === 500
+      && bericht500.auftraege.abgeschlossen === 500
+      && attrappe500.jobs.every((job) => job.status === "erledigt"));
+  check("E2 Alle 500 Mandate sind genau einmal und ohne Fehlzuordnung vertreten",
+    bericht500.mandatsverteilung.mandate === 500
+      && bericht500.mandatsverteilung.minAuftraegeJeMandat === 1
+      && bericht500.mandatsverteilung.maxAuftraegeJeMandat === 1
+      && bericht500.mandatsverteilung.abweichendeMandate === 0
+      && bericht500.mandatsverteilung.falscheZuordnung === 0);
+  check("E3 Der lokale 500er Lauf bleibt exakt im vorausberechneten HTTP Riegel",
+    bericht500.http.anfragen === 1040
+      && bericht500.http.anfragen === config500.anfragenObergrenze
+      && bericht500.http.anfragenMax === 1040
+      && bericht500.http.anfragenMax < config500.anfragenGesamtMax
+      && bericht500.http.gleichzeitigSpitze <= 32,
+    `${bericht500.http.anfragen} von ${config500.anfragenGesamtMax} Anfragen`);
 
   console.log(`\nPASS ${pass}  FAIL ${fail}`);
   process.exit(fail ? 1 : 0);

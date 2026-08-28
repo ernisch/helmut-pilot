@@ -478,6 +478,17 @@ async function fuehreMesslauf(konfiguration, { fetchImpl = globalThis.fetch, jet
     throw new Z3bAbbruch("Z3b Einreihung war nicht vollstaendig neu; der Lauf wird vor dem Claim beendet", "einreihung");
   }
   const erwarteteIds = new Set(eingereiht.map((zeile) => String(zeile.id)));
+  const erwarteteZuordnung = new Map(eingereiht.map((zeile, index) => [
+    String(zeile.id),
+    synthetisch[index].p_tenant_id
+  ]));
+  const erwarteteVerteilung = new Map();
+  for (const auftrag of synthetisch) {
+    erwarteteVerteilung.set(
+      auftrag.p_tenant_id,
+      (erwarteteVerteilung.get(auftrag.p_tenant_id) || 0) + 1
+    );
+  }
 
   const workerAnzahl = Math.min(konfiguration.parallelitaet, synthetisch.length);
   const limitJeWorker = Math.ceil(synthetisch.length / workerAnzahl);
@@ -497,11 +508,35 @@ async function fuehreMesslauf(konfiguration, { fetchImpl = globalThis.fetch, jet
   }
   const reserviert = claimAntworten.flatMap(({ antwort, owner }) => zeilen(antwort).map((zeile) => ({ zeile, owner })));
   const reservierteIds = reserviert.map(({ zeile }) => String(zeile && zeile.id || ""));
+  const beobachteteVerteilung = new Map();
+  let falscheZuordnung = 0;
+  for (const { zeile } of reserviert) {
+    const id = String(zeile && zeile.id || "");
+    const mandat = String(zeile && zeile.tenant_id || "");
+    if (erwarteteZuordnung.get(id) !== mandat) falscheZuordnung += 1;
+    if (erwarteteVerteilung.has(mandat)) {
+      beobachteteVerteilung.set(mandat, (beobachteteVerteilung.get(mandat) || 0) + 1);
+    }
+  }
+  const abweichendeMandate = [...erwarteteVerteilung.entries()].filter(([mandat, erwartet]) =>
+    (beobachteteVerteilung.get(mandat) || 0) !== erwartet).length;
   if (reserviert.length !== synthetisch.length
       || new Set(reservierteIds).size !== reserviert.length
-      || reservierteIds.some((id) => !erwarteteIds.has(id))) {
-    throw new Z3bAbbruch("Z3b Claim lieferte fehlende, doppelte oder laufzeitfremde Auftraege", "claim-vertrag");
+      || reservierteIds.some((id) => !erwarteteIds.has(id))
+      || falscheZuordnung !== 0 || abweichendeMandate !== 0) {
+    throw new Z3bAbbruch(
+      "Z3b Claim lieferte fehlende, doppelte, laufzeitfremde oder falsch zugeordnete Auftraege",
+      "claim-vertrag"
+    );
   }
+  const verteilungswerte = [...beobachteteVerteilung.values()];
+  const mandatsverteilung = Object.freeze({
+    mandate: erwarteteVerteilung.size,
+    minAuftraegeJeMandat: Math.min(...verteilungswerte),
+    maxAuftraegeJeMandat: Math.max(...verteilungswerte),
+    abweichendeMandate,
+    falscheZuordnung
+  });
 
   const finishAntworten = await parallel(reserviert, konfiguration.parallelitaet, ({ zeile, owner }) => rpcAnfrage({
     konfiguration,
@@ -586,6 +621,7 @@ async function fuehreMesslauf(konfiguration, { fetchImpl = globalThis.fetch, jet
       doppeltReserviert: 0,
       leaseVerloren: 0
     }),
+    mandatsverteilung,
     http: messung.bericht(),
     aufraeumung: "nicht ausgefuehrt; bleibt ein eigener Freigabeschritt"
   });

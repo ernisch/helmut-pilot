@@ -239,8 +239,10 @@ wurden GitHub Secret, Supabase Secret Key und einmaliger Workflow vollständig e
 Im Testprojekt bleiben damit freigabegemäß 50 synthetische Zeilen, alle 50 abgeschlossen;
 0 offen, wartend, laufend, fehlgeschlagen oder mit aktiver Lease.
 
-Offline grün bleiben Supabase-Messläufer **46 PASS**, Azure-Messläufer **46 PASS** und
-Kapazitätsauswertung **33 PASS**. Noch ungemessen sind die Supabase Läufe C und D, alle echten
+Offline grün bleiben Supabase-Messläufer **51 PASS** einschließlich lokaler 500er Gegenprobe,
+Azure-Messläufer **46 PASS** und Kapazitätsauswertung **33 PASS**. Der Messläufer verifiziert
+jetzt jede Mandatszuordnung aus dem Claim und stoppt vor dem Abschluss bei jeder Abweichung.
+Noch ungemessen sind die Supabase Läufe C und D, alle echten
 Azure Laufzeit- und Tokenwerte, daraus KI Deckel und Kostenobergrenze sowie die späteren neuen
 Stufen 200 und 500. Die aktuelle Azure Preisseite nennt fuer `GPT-5-mini` 0,25/2,00 USD je
 Million Eingabe-/Ausgabetoken fuer Global und 0,28/2,20 USD fuer Data Zone. Vor einem Aufruf
