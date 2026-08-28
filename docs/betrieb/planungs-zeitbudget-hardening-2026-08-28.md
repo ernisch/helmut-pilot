@@ -5,7 +5,7 @@
 **Lokal abgeschlossen, insgesamt teilweise abgeschlossen.** Der getrennte Branch
 `codex/planung-zeitbudget-hardening` steht auf dem lokalen, baumgleichen Stand
 von PR #274. Die gezielten Regressionen und der lokale Gesamtcheck sind gelaufen.
-**PR #275 ist offen, ungemergt und wartet auf seinen Pflicht CI Beleg.** Production, Supabase, echte Mandatsdaten,
+**PR #275 ist offen, ungemergt und hat einen vollständig grünen Pflicht CI Beleg.** Production, Supabase, echte Mandatsdaten,
 Migrationen, Umgebungswerte und Geheimnisse wurden nicht verändert.
 
 Diese Härtung ist kein Lastnachweis. Insbesondere wiederholt sie weder den
@@ -71,6 +71,7 @@ Kindprozessen damit nicht zur Verfügung.
 | `queue-ende-zu-ende-test.js` | grün |
 | `warteschlangen-abfluss-test.js` | grün |
 | vollständiger Offline Lauf | 281 von 287 Suiten grün |
+| GitHub Actions Lauf 33168919486 | Syntax, Offline Suiten und Browser Smoke grün |
 
 Der neue Vertrag prüft am echten Planer insbesondere: vorverbrauchtes Budget
 startet keinen Schreibvorgang; ein laufender Aufruf wird vor Rückgabe beendet;
@@ -120,6 +121,5 @@ Flagänderung oder Geheimnisrotation.
 
 ## Noch offen
 
-1. Pflicht CI vollständig grün belegen
-2. Merge erst nach #272, #273 und #274 sowie eigener Betreiberfreigabe
-3. Wirkung erst in einem später freigegebenen Production Lauf messen
+1. Merge erst nach #272, #273 und #274 sowie eigener Betreiberfreigabe
+2. Wirkung erst in einem später freigegebenen Production Lauf messen
