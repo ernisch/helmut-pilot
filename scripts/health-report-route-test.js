@@ -21,6 +21,24 @@
 const http = require("http");
 const path = require("path");
 
+// Die Slotbewertung haengt absichtlich an der UTC-Uhr. Eine Routentestsuite darf
+// deshalb nicht je nach CI-Startzeit andere erwartete Slots bekommen. Wir frieren
+// den Kalendertag auf einen Zeitpunkt ein, an dem der 04:00-Crawl bereits ausserhalb
+// seiner Toleranz liegt, lassen die Zeit fuer Dauer- und Timeoutpruefungen aber real
+// weiterlaufen. Produktcode und Slotplan bleiben unveraendert.
+const ECHTE_DATE = Date;
+const ECHTER_START_MS = ECHTE_DATE.now();
+const TEST_START_MS = ECHTE_DATE.parse("2026-08-27T12:30:00.000Z");
+class HealthReportTestDate extends ECHTE_DATE {
+  constructor(...args) {
+    super(...(args.length ? args : [HealthReportTestDate.now()]));
+  }
+  static now() {
+    return TEST_START_MS + (ECHTE_DATE.now() - ECHTER_START_MS);
+  }
+}
+global.Date = HealthReportTestDate;
+
 const SECRET = "health-report-routentest-geheim";
 process.env.CRON_SECRET = SECRET;
 process.env.HELMUT_OFFLINE_TEST = "1";

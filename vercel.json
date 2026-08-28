@@ -5,7 +5,8 @@
     "deploymentEnabled": {
       "codex/ki-antwortumschlag-hardening": false,
       "codex/planung-zeitbudget-hardening": false,
-      "codex/z3b-monitoring-honesty": false
+      "codex/z3b-monitoring-honesty": false,
+      "codex/z3b-proof-gates-500": false
     }
   },
   "functions": {
