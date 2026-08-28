@@ -18,6 +18,7 @@
 //
 // OFFLINE: reine Attrappen-Kennzahlen, kein Netz, keine DB, keine Kosten.
 
+const fs = require("fs");
 const path = require("path");
 const SP = require(path.join(__dirname, "..", "lib/helmut/scalable-pipeline.js"));
 
@@ -400,6 +401,61 @@ async function main() {
     check("10.4 Dominante Schloss-Gruende OHNE Verzoegerung eskalieren nicht (gruen, Klasse 3)",
       ruhig.zustand === "gruen" && ruhig.zustandsklasse === SP.ZUSTANDSKLASSEN.GESUND,
       `${ruhig.zustand} ${ruhig.zustandsklasse}`);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  abschnitt("11 · Gedeckelte Grundmenge ist Stichprobe, keine Gesamtverteilung");
+  {
+    // Reproduktion N6: 2.000 wartende Auftraege, aber der Lesepfad liefert hoechstens
+    // 1.000 ungeordnete Gruende. Selbst wenn ALLE gelesenen Zeilen auf eine Abhaengigkeit
+    // zeigen, ist damit nicht belegt, dass sie im gesamten Rueckstand dominiert.
+    const stichprobe = async () => ({
+      verfuegbar: true,
+      anzahl: 1000,
+      gelesen: 1000,
+      limit: 1000,
+      vollstaendig: false,
+      texte: Array(1000).fill("zurueckgestellt: verstehen-uebersprungen (understanding-locked)")
+    });
+    const verz = await status(kennzahlen({
+      wartend: 2000,
+      aeltester_faelliger_s: 19 * H,
+      aeltester_offener_s: 19 * H,
+      erledigt_im_zeitraum: 25
+    }), { gruende: stichprobe });
+
+    check("11.1 Die Stichprobe entscheidet NICHT global auf Klasse 8",
+      verz.zustandsklasse === SP.ZUSTANDSKLASSEN.VERZOEGERT,
+      verz.zustandsklasse);
+    check("11.2 Die 19-h-Warnung bleibt bestehen (keine Verharmlosung)",
+      verz.zustand === "warnung", verz.zustand);
+    check("11.3 Ein globaler Blockierungsanteil bleibt unbekannt statt falsch 0,5",
+      verz.zurueckgestellt && verz.zurueckgestellt.anteilBlockierend === null,
+      JSON.stringify(verz.zurueckgestellt));
+    check("11.4 Der Anteil INNERHALB der Stichprobe bleibt klar benannt sichtbar",
+      verz.zurueckgestellt && verz.zurueckgestellt.anteilBlockierendStichprobe === 1,
+      JSON.stringify(verz.zurueckgestellt));
+    check("11.5 Messumfang nennt 1.000 von 2.000 und `vollstaendig:false`",
+      verz.zurueckgestellt && verz.zurueckgestellt.messumfang
+      && verz.zurueckgestellt.messumfang.gelesen === 1000
+      && verz.zurueckgestellt.messumfang.limit === 1000
+      && verz.zurueckgestellt.messumfang.rueckstand === 2000
+      && verz.zurueckgestellt.messumfang.vollstaendig === false,
+      JSON.stringify(verz.zurueckgestellt && verz.zurueckgestellt.messumfang));
+    check("11.6 Der Befund macht die Stichprobengrenze maschinenlesbar",
+      (verz.befunde || []).includes("zurueckstellgruende-stichprobe:1000-von-2000"),
+      JSON.stringify(verz.befunde));
+
+    // Echte storage-Huelle: exakt am Limit ist die Vollstaendigkeit ohne Count-Header
+    // unentscheidbar und wird deshalb konservativ verneint.
+    const storageSource = fs.readFileSync(path.join(__dirname, "..", "lib/helmut/storage.js"), "utf8");
+    const start = storageSource.indexOf("async function jobQueueZurueckgestellteGruende");
+    const ende = storageSource.indexOf("// --- TRANSAKTIONALE OUTBOX", start);
+    const block = storageSource.slice(start, ende);
+    check("11.7 Der echte Lesepfad markiert `rows.length === limit` als unvollstaendig",
+      /vollstaendig:\s*zeilen\.length < wirksamesLimit/.test(block)
+      && /gelesen:\s*zeilen\.length/.test(block)
+      && /limit:\s*wirksamesLimit/.test(block));
   }
 
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}`);
