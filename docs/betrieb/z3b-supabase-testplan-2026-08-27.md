@@ -3,7 +3,7 @@
 ## Stand
 
 Das isolierte Projekt `Helmut Z3b Test` mit der Kennung `ffzaxdbatoamsovncrym` ist aktiv und
-verursacht laut Kostenabfrage derzeit 0 USD pro Monat. Production hat die Kennung
+verursachte laut Kostenabfrage vom 27.08.2026 0 USD pro Monat. Production hat die Kennung
 `ddckuvvpcytqbyfmbvie` und ist fuer diesen Test ausdruecklich gesperrt.
 
 Am 27.08.2026 wurden nach ausdruecklicher Freigabe genau die drei Basismigrationen und danach
@@ -30,7 +30,7 @@ Das strategische Skalierungsziel ist jetzt **500 Mandate**. Der isolierte Supaba
 ist bis 500 abgeschlossen. Die sichere echte Aktivierung bleibt trotzdem gestuft; insbesondere
 sind neue Fachwegmessungen und der Realbetrieb nicht durch diesen Plattformtest ersetzt.
 
-## Was noch gemessen werden muss
+## Was der isolierte Plattformweg gemessen hat und nicht beweist
 
 Z2 und Z3a sind abgeschlossen. Sie werden nicht wiederholt. Der neue Nachweis misst nur die
 noch unbekannten Eigenschaften der echten Supabase Plattform:
@@ -54,11 +54,11 @@ beiden Beweisarten werden nicht vermischt.
 |---:|---|---|
 | 5 | bestehender Production Betrieb | technischer Betrieb belegt; natuerliche Fuenferregression rot |
 | 10 | erste Aktivierungsstufe | kein eigener Volltest, nur kontrollierte Production Stufe |
-| 25 | erste Verkaufsstufe | Z2 und Z3a abgeschlossen, Z3b Laeufe A und B gruen |
-| 50 | Zwischenstufe | Z2 und Z3a abgeschlossen, Z3b Lauf C gruen |
-| 100 | erstes sicheres Kapazitaetstor | Z2 und Z3a abgeschlossen, Z3b Lauf D gruen |
-| 200 | neue Messstufe | Supabase Plattform gruen; Fachweg und Realstufe offen |
-| 500 | strategisches Ziel | Supabase Plattform gruen; Fachweg und Realstufe offen |
+| 25 | erste Verkaufsstufe | Z2 und Z3a abgeschlossen; isolierter Supabase Teil A und B gruen |
+| 50 | Zwischenstufe | Z2 und Z3a abgeschlossen; isolierter Supabase Teil C gruen |
+| 100 | erstes sicheres Kapazitaetstor | Z2 und Z3a abgeschlossen; isolierter Supabase Teil D gruen |
+| 200 | neue Messstufe | isolierter Supabase Teil gruen; Fachweg und Realstufe offen |
+| 500 | strategisches Ziel | isolierter Supabase Teil gruen; Fachweg und Realstufe offen |
 
 ## Kleinste Migrationskette
 

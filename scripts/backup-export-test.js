@@ -3,9 +3,9 @@
 // ============================================================================
 // Negativtests fuer scripts/backup-export.js — die Pre-Seed-Sicherung.
 // ============================================================================
-// Warum dieser Test existiert: backup-export.js ist (bis OP-01 freigegeben ist)
-// die EINZIGE Wiederherstellungsgrundlage vor der Quellen-Seed-Einspielung. Seine
-// Vollstaendigkeitslogik war bis hierhin vollstaendig ungeprueft — ein still
+// Warum dieser Test existiert: backup-export.js ist eine personenbezogene
+// dateibasierte Zweitsicherung. Seine Datei-Vollstaendigkeitslogik muss fail
+// closed sein — ein still
 // gekappter Export haette wie ein vollstaendiges Backup ausgesehen, und genau das
 // faellt erst im Ernstfall auf.
 //
@@ -31,7 +31,25 @@ function check(name, cond, detail = "") {
 
 const ROOT = path.join(__dirname, "..");
 const SKRIPT = path.join(__dirname, "backup-export.js");
-const { SEED_SCOPE_TABLES, PROFIL_SCOPE_TABLES, SCOPES, TABLES } = require("./backup-export.js");
+const GIT_TEST_BIN = fs.mkdtempSync(path.join(os.tmpdir(), "helmut-backup-git-"));
+const GIT_TEST_PFAD = path.join(GIT_TEST_BIN, "git");
+fs.writeFileSync(GIT_TEST_PFAD, [
+  "#!/bin/sh",
+  "if [ \"$1\" = \"rev-parse\" ]; then printf 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\\n'; exit 0; fi",
+  "if [ \"$1\" = \"status\" ]; then if [ \"$FAKE_GIT_DIRTY\" = \"1\" ]; then printf ' M scripts/backup-export.js\\n'; fi; exit 0; fi",
+  "exit 2",
+  ""
+].join("\n"));
+fs.chmodSync(GIT_TEST_PFAD, 0o700);
+const { SEED_SCOPE_TABLES, PROFIL_SCOPE_TABLES, SCOPES, TABLES, pruefeBackupQuelle } = require("./backup-export.js");
+const {
+  NICHT_PRODUKTIV,
+  ermittleSchemaTabellen,
+  vergleicheInventar,
+  pruefeInventar,
+  tabellenAusSql,
+  berechneBackupManifestPruefsumme
+} = require("./backup-table-inventory.js");
 
 // Eine Zeile je Tabelle bauen, die zur PK-Spalte des Skripts passt.
 function zeile(tabelle, i) {
@@ -47,7 +65,12 @@ function starteServer(plan, protokoll) {
     protokoll.push({ method: req.method, url: req.url });
     const u = new URL(req.url, "http://127.0.0.1");
     const tabelle = u.pathname.replace(/^\/rest\/v1\//, "");
-    const cfg = plan[tabelle] || { zeilen: 0 };
+    if (!Object.prototype.hasOwnProperty.call(plan, tabelle)) {
+      res.writeHead(404, { "content-type": "application/json" });
+      res.end(JSON.stringify({ code: "PGRST205", message: "table not found" }));
+      return;
+    }
+    const cfg = plan[tabelle];
 
     if (cfg.status && cfg.status >= 400) {
       res.writeHead(cfg.status, { "content-type": "application/json" });
@@ -71,6 +94,12 @@ function starteServer(plan, protokoll) {
 
     // `liefertZeilen` erlaubt, weniger auszuliefern als gemeldet (stille Kappung).
     const echt = cfg.liefertZeilen === undefined ? cfg.zeilen : cfg.liefertZeilen;
+    if (Array.isArray(cfg.rawElemente)) {
+      const roh = cfg.rawElemente.slice(offset, Math.min(offset + limit, echt));
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(`[${roh.join(",")}]`);
+      return;
+    }
     const seite = [];
     for (let i = offset; i < Math.min(offset + limit, echt); i += 1) seite.push(zeile(tabelle, i));
     res.writeHead(200, { "content-type": "application/json" });
@@ -83,7 +112,7 @@ function starteServer(plan, protokoll) {
 // BEWUSST asynchron: der PostgREST-Ersatz laeuft in DIESEM Prozess. Ein
 // synchrones execFileSync wuerde die Event-Loop blockieren, der Server koennte
 // dem Kind nie antworten — der Test liefe in einen Deadlock statt in ein Ergebnis.
-async function laufe(port, args = []) {
+async function laufe(port, args = [], extraEnv = {}) {
   const vorher = new Set(fs.existsSync(path.join(ROOT, "backups")) ? fs.readdirSync(path.join(ROOT, "backups")) : []);
   const code = await new Promise((resolve) => {
     const kind = spawn(process.execPath, [SKRIPT, ...args], {
@@ -91,8 +120,12 @@ async function laufe(port, args = []) {
       stdio: ["ignore", "pipe", "pipe"],
       env: {
         ...process.env,
+        PATH: `${GIT_TEST_BIN}${path.delimiter}${process.env.PATH || ""}`,
         SUPABASE_URL: `http://127.0.0.1:${port}`,
-        SUPABASE_SERVICE_ROLE_KEY: "attrappe-kein-echtes-secret"
+        SUPABASE_SERVICE_ROLE_KEY: "attrappe-kein-echtes-secret",
+        HELMUT_SIMULIERTER_SUPABASE_KEY: "attrappe-lokal-kein-echtes-secret",
+        HELMUT_SCHUTZ_SIMULIERTE_UMGEBUNG: "ja",
+        ...extraEnv
       }
     });
     kind.stdout.resume();
@@ -137,6 +170,19 @@ function sauberePlan(zeilenProTabelle = 3) {
     check("1 · Pruefsumme je Tabelle + Gesamtpruefsumme vorhanden",
       manifest && Object.keys(manifest.pruefsummen).length === 8
       && /^[0-9a-f]{64}$/.test(String(manifest.pruefsummeGesamt)));
+    check("1 · Manifestvertrag v3 bindet Commit, sauberen Arbeitsbaum, Quelle, Inventar und Migrationsstand",
+      manifest && manifest.backupVertrag === 3 && /^[0-9a-f]{40}$/.test(manifest.mainCommit)
+      && manifest.arbeitsbaum && manifest.arbeitsbaum.sauber === true
+      && /^127\.0\.0\.1:\d+$/.test(manifest.quelleHost)
+      && /^[0-9a-f]{64}$/.test(manifest.inventar.hash)
+      && /^production-migrations-/.test(manifest.inventar.migrationsmanifest));
+    check("1 · Gesamtmanifest-Pruefsumme bindet alle Vertragsfelder kryptografisch",
+      manifest && manifest.manifestPruefsumme === berechneBackupManifestPruefsumme(manifest));
+    check("1 · sequenzieller REST-Export behauptet keinen querschnittskonsistenten Voll-Rueckweg",
+      manifest && manifest.konsistenz && manifest.konsistenz.transaktional === false
+      && manifest.konsistenz.schreibstoppBestaetigt === false
+      && manifest.konsistenz.quersummenBestaetigt === false
+      && manifest.konsistenz.vollRueckwegBelegt === false);
     check("1 · restoreReihenfolge ist FK-sicher (Eltern vor Kindern)",
       manifest && JSON.stringify(manifest.restoreReihenfolge) === JSON.stringify(SEED_SCOPE_TABLES));
 
@@ -152,7 +198,8 @@ function sauberePlan(zeilenProTabelle = 3) {
     let keyGefunden = false;
     if (ordner) {
       for (const f of fs.readdirSync(ordner)) {
-        if (fs.readFileSync(path.join(ordner, f), "utf8").includes("attrappe-kein-echtes-secret")) keyGefunden = true;
+        const inhalt = fs.readFileSync(path.join(ordner, f), "utf8");
+        if (["attrappe-kein-echtes-secret", "attrappe-lokal-kein-echtes-secret"].some((key) => inhalt.includes(key))) keyGefunden = true;
       }
     }
     check("1 · Zugangsdaten stehen in keiner Backup-Datei", !keyGefunden);
@@ -250,7 +297,9 @@ function sauberePlan(zeilenProTabelle = 3) {
   // -------------------------- 4d) Argumentpruefung ------------------------
   console.log("\n== 4d) Negativtest: falsch geschriebenes Scope-Argument ==");
   {
-    const srv = await starteServer(sauberePlan(3), []);
+    const vollPlan = {};
+    for (const t of Object.keys(TABLES)) vollPlan[t] = { zeilen: 3 };
+    const srv = await starteServer(vollPlan, []);
     const port = srv.address().port;
     const a = await laufe(port, ["--scope", "seed"]);   // Leerzeichen statt =
     const b = await laufe(port, ["--scope=Seed"]);      // falsche Schreibweise
@@ -265,6 +314,30 @@ function sauberePlan(zeilenProTabelle = 3) {
     check("4d · '--scope=Seed' wird mit Exit 2 abgewiesen", b.code === 2, `Exit ${b.code}`);
     check("4d · '--scope=voll' ist erlaubt", c.code === 0 && c.manifest && c.manifest.art === "voll", `Exit ${c.code}`);
     aufraeumen(a.ordner); aufraeumen(b.ordner); aufraeumen(c.ordner);
+  }
+
+  // -------------------------- 4d-2) Git-Vertrag --------------------------
+  console.log("\n== 4d-2) Negativtest: uncommitteter Exportcode ==");
+  {
+    const protokoll = [];
+    const srv = await starteServer(sauberePlan(3), protokoll);
+    const { code, ordner } = await laufe(srv.address().port, ["--scope=seed"], { FAKE_GIT_DIRTY: "1" });
+    srv.close();
+    check("4d-2 · unsauberer Arbeitsbaum wird mit Exit 2 fail closed abgewiesen", code === 2, `Exit ${code}`);
+    check("4d-2 · vor Git-Klaerung entsteht kein Backup-Ordner", ordner === null);
+    check("4d-2 · vor Git-Klaerung erfolgt kein Daten-/Netzabruf", protokoll.length === 0, `${protokoll.length} Requests`);
+  }
+
+  // -------------------- 4e) Bekannte Ausnahme wird produktiv -------------
+  console.log("\n== 4e) Negativtest: ausgenommene Migration ist inzwischen erreichbar ==");
+  {
+    const plan = { crawl_runs: { zeilen: 0 } };
+    const srv = await starteServer(plan, []);
+    const { code, ordner } = await laufe(srv.address().port, ["--scope=seed"]);
+    srv.close();
+    check("4e · Exit-Code 2 — produktiv gewordene Ausnahme schliesst den Export", code === 2, `Exit ${code}`);
+    check("4e · vor der Inventarklaerung entsteht kein Backup-Ordner", ordner === null);
+    aufraeumen(ordner);
   }
 
   // --------------------------------------------------- 5) Paginierung -----
@@ -284,6 +357,30 @@ function sauberePlan(zeilenProTabelle = 3) {
     aufraeumen(ordner);
   }
 
+  // ----------------------------- 4f) Redirect-Keyschutz ------------------
+  console.log("\n== 4f) Negativtest: Redirect darf keinen apikey weiterleiten ==");
+  {
+    const zielRequests = [];
+    const ziel = http.createServer((req, res) => {
+      zielRequests.push({ url: req.url, apikey: req.headers.apikey || null });
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end("[]");
+    });
+    await new Promise((resolve) => ziel.listen(0, "127.0.0.1", resolve));
+    const umleiter = http.createServer((req, res) => {
+      res.writeHead(302, { location: `http://127.0.0.1:${ziel.address().port}${req.url}` });
+      res.end();
+    });
+    await new Promise((resolve) => umleiter.listen(0, "127.0.0.1", resolve));
+    const { code, ordner } = await laufe(umleiter.address().port, ["--scope=seed"]);
+    await new Promise((resolve) => umleiter.close(resolve));
+    await new Promise((resolve) => ziel.close(resolve));
+    check("4f · Redirect fuehrt zum fail-closed Abbruch", code === 2, `Exit ${code}`);
+    check("4f · Redirect-Ziel erhaelt keinen Request und damit keinen apikey", zielRequests.length === 0,
+      `${zielRequests.length} Requests`);
+    check("4f · bei Redirect entsteht kein Backup-Ordner", ordner === null);
+  }
+
   // ------------------------------------------------- 6) Voll-Export -------
   console.log("\n== 6) Voll-Export deckt alle Tabellen ab ==");
   {
@@ -298,6 +395,22 @@ function sauberePlan(zeilenProTabelle = 3) {
       manifest && Object.keys(manifest.tabellen).length === Object.keys(TABLES).length);
     check("6 · Exit-Code 0", code === 0, `Exit ${code}`);
     check("6 · kein restoreReihenfolge-Feld im Voll-Modus", manifest && manifest.restoreReihenfolge === undefined);
+    aufraeumen(ordner);
+  }
+
+  // ---------------------- 6a) bigint/numeric verlustfrei -----------------
+  console.log("\n== 6a) Raw-JSON erhaelt bigint/numeric bytegetreu ==");
+  {
+    const plan = sauberePlan(1);
+    const roh = '{"id":"retrieval_paths-0-id","gross":9007199254740993,"praezise":0.123456789012345678901,"jsonb":{"fencing":9007199254740995}}';
+    plan.retrieval_paths = { zeilen: 1, rawElemente: [roh] };
+    const srv = await starteServer(plan, []);
+    const { code, ordner } = await laufe(srv.address().port, ["--scope=seed"]);
+    srv.close();
+    const exportText = ordner ? fs.readFileSync(path.join(ordner, "retrieval_paths.json"), "utf8") : "";
+    check("6a · bigint oberhalb MAX_SAFE_INTEGER bleibt unveraendert", code === 0 && exportText.includes("9007199254740993"));
+    check("6a · hochpraezises numeric bleibt unveraendert", exportText.includes("0.123456789012345678901"));
+    check("6a · verschachtelte jsonb-Zahl bleibt unveraendert", exportText.includes('"fencing":9007199254740995'));
     aufraeumen(ordner);
   }
 
@@ -356,6 +469,55 @@ function sauberePlan(zeilenProTabelle = 3) {
   check("7 · Alle Umfaenge sind benannt und der Standard ist 'voll'",
     Object.keys(SCOPES).sort().join(",") === "profil,seed,voll" && SCOPES.voll === null);
 
+  const inventar = pruefeInventar(ROOT);
+  check("7 · migrationsbasierter Inventarriegel ist gruen (52 definiert = 51 produktiv + 1 bewusst ausgenommen)",
+    inventar.ok && inventar.schemaTabellen.length === 52 && inventar.exportTabellen.length === 51
+      && JSON.stringify(inventar.ausgenommeneTabellen) === JSON.stringify(["crawl_runs"]),
+    inventar.fehler.join(" | "));
+
+  const august = [
+    "llm_reservations", "helmut_jobs", "helmut_job_outbox",
+    "helmut_klassen_anker", "helmut_klassen_slots",
+    "helmut_anbieter_fenster", "helmut_anbieter_schutzschalter",
+    "helmut_verstehen_reservierungen", "helmut_verstehen_vormerkungen"
+  ];
+  check("7 · alle neun produktiven August-Tabellen werden exportiert",
+    august.every((t) => Object.prototype.hasOwnProperty.call(TABLES, t)),
+    august.filter((t) => !TABLES[t]).join(", "));
+  check("7 · die zwei produktiven Juli-Tabellen nach der alten Referenz werden exportiert",
+    !!TABLES.knowledge_object_embeddings && !!TABLES.matching_runs);
+
+  const schema = ermittleSchemaTabellen(ROOT);
+  const mitZukunftstabelle = vergleicheInventar({
+    ...schema,
+    tabellen: [...schema.tabellen, "zukuenftige_tabelle"]
+  });
+  check("7 · Mutation: neue Migrationstabelle ohne Backup-Entscheidung wird fail closed erkannt",
+    !mitZukunftstabelle.ok && mitZukunftstabelle.fehler.some((f) => /zukuenftige_tabelle/.test(f)));
+
+  const kommentarProbe = tabellenAusSql("-- create table public.blind;\ncreate table if not exists public.sichtbar(id int);", "probe.sql");
+  check("7 · SQL-Kommentare erzeugen keine Scheintabellen",
+    JSON.stringify(kommentarProbe.tabellen) === JSON.stringify(["sichtbar"]));
+  const unqualifiziert = tabellenAusSql("create table neue_tabelle(id int);", "probe.sql");
+  check("7 · unqualifizierte CREATE TABLE-Anweisung wird nicht still ignoriert",
+    unqualifiziert.fehler.length === 1);
+  check("7 · crawl_runs ist die einzige explizite Ausnahme und nennt ihre Migration",
+    Object.keys(NICHT_PRODUKTIV).length === 1
+      && NICHT_PRODUKTIV.crawl_runs.migration === "20260720_crawl_runs_relational.sql");
+
+  const prodRef = inventar.production.referenz.quelle;
+  check("7 · Realexport akzeptiert nur HTTPS gegen exakt die katalogbelegte Production-Ref",
+    pruefeBackupQuelle(`https://${prodRef}.supabase.co`, prodRef, {}).ok);
+  check("7 · zweite befuellte Projekt-Ref mit identischem Schema bleibt als falsche Quelle rot",
+    !pruefeBackupQuelle("https://aaaaaaaaaaaaaaaaaaaa.supabase.co", prodRef, {}).ok);
+  check("7 · HTTP gegen die echte Production-Ref wird vor Schluesselversand verweigert",
+    !pruefeBackupQuelle(`http://${prodRef}.supabase.co`, prodRef, {}).ok);
+  check("7 · Loopback-HTTP ist ohne expliziten Simulationsmarker verboten",
+    !pruefeBackupQuelle("http://127.0.0.1:54321", prodRef, {}).ok);
+  check("7 · Loopback-HTTP ist nur als klar markierter lokaler Test erlaubt",
+    pruefeBackupQuelle("http://127.0.0.1:54321", prodRef, { HELMUT_SCHUTZ_SIMULIERTE_UMGEBUNG: "ja" }).simulation === true);
+
+  fs.rmSync(GIT_TEST_BIN, { recursive: true, force: true });
   console.log(`\n== Ergebnis: ${pass} PASS, ${fail} FAIL ==`);
   process.exit(fail === 0 ? 0 : 1);
 })();

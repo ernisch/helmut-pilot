@@ -37,24 +37,450 @@
 const path = require("path");
 const fs = require("fs");
 const os = require("os");
+const crypto = require("crypto");
 const { execFileSync, spawn } = require("child_process");
 
 const ROOT = path.join(__dirname, "..");
 const P = require(path.join(ROOT, "scripts/fixtures/z3-plattform.js"));
+const TAGESBEDARF = require(path.join(ROOT, "scripts/fixtures/z3b-tagesbedarf-bericht.js"));
+
+// Z3b 200/500 ist ein eigener, streng gebundener Messmodus. Z3a bleibt mit seinen
+// historischen, absichtlich einstellbaren Werten unveraendert. Im Z3b-Modus darf dagegen
+// keine geerbte Sitzungsvariable die Last still verkleinern oder eine Grenze vergroessern.
+const FACHWEG_LAUF = String(process.env.HELMUT_Z3B_FACHWEG_LAUF || "").trim();
+const IST_FACHWEG = FACHWEG_LAUF !== "";
+const FACHWEG_QUELLENPROFIL = Object.freeze({
+  latenzMs: 60,
+  latenzStreuungMs: 140,
+  drosselAnteil: 0.03,
+  ausfallAnteil: 0.02,
+  eintraegeJeAntwort: 12,
+  geteilteThemen: 120,
+  ueberschneidungAnteil: 0.9,
+  dokumenteJeVorgang: 4,
+  frischeAnteil: 0.25
+});
+const FACHWEG_GRENZEN = Object.freeze({
+  slotsJeTag: 3,
+  slotsGesamt: 6,
+  slotBudgetMs: 290000,
+  slotP95MaxMs: 217500,
+  slotEinzelMaxMs: 280000,
+  parallel: 4,
+  stapel: 25,
+  basistagUtc: "2026-08-26T00:00:00Z"
+});
+const FACHWEG_PIPELINEPROFIL = Object.freeze({
+  wiedervorlageStunden: 24,
+  wiedervorlageMax: 2,
+  jobTimeoutMs: 120000,
+  narrativTimeoutMs: 45000,
+  understandingBuendel: 25,
+  vorbedingungWarteMs: 120000,
+  vorbedingungMaxWarteMs: 21600000,
+  budgetWarteMs: 3600000,
+  budgetMaxWarteMs: 172800000,
+  workerLeerlaufMs: 0,
+  crawlerTimeoutMs: 7000,
+  kiTimeoutMs: 20000,
+  workerLeaseMs: 300000,
+  klassenGrenzen: "on",
+  klasseQuellenabrufMax: 5,
+  klasseVerstehenMax: 1,
+  klasseWorkerDrainMax: 1,
+  verstehenKonkurrenz: "off",
+  verstehenParallelitaet: 1,
+  verstehenLeaseMs: 300000,
+  verstehenWiederaufnahmeMax: 25,
+  koScanLimit: 500,
+  lageMaxVorgaenge: 12,
+  lageDemo: "off",
+  llmBudgetFailClosed: "on",
+  understandingGate: "off",
+  understandingPriority: "off",
+  effektiverKiTagesdeckel: 1000000,
+  effektiverKiMandatsdeckel: 1000000
+});
+const FACHWEG_CODEDATEIEN = Object.freeze([
+  "scripts/skalierung-z3-realistiklauf.js",
+  "scripts/fixtures/z3-slotlauf.js",
+  "scripts/fixtures/z3-plattform.js",
+  "scripts/fixtures/z3b-tagesbedarf-bericht.js",
+  "scripts/fixtures/synthetische-mandate-1000.js",
+  "lib/helmut/scalable-pipeline.js",
+  "lib/helmut/worker-betrieb.js",
+  "lib/helmut/storage.js",
+  "lib/helmut/job-dispatch.js",
+  "lib/helmut/scheduler.js",
+  "lib/helmut/source-demand.js",
+  "lib/helmut/llm-budget-fair.js",
+  "lib/helmut/verstehen-vertrag.js",
+  "lib/helmut/crawler.js",
+  "lib/helmut/understanding.js",
+  "lib/helmut/matching.js",
+  "lib/helmut/decisions.js",
+  "lib/helmut/lage.js",
+  "lib/helmut/ai.js",
+  "server.js"
+]);
+
+function tiefFrieren(wert) {
+  if (!wert || typeof wert !== "object" || Object.isFrozen(wert)) return wert;
+  for (const teil of Object.values(wert)) tiefFrieren(teil);
+  return Object.freeze(wert);
+}
+
+function validiereFachwegDatenbankname(name) {
+  const wert = String(name || "").trim();
+  if (!/^helmut_z3b_[a-z0-9_]{1,51}$/.test(wert) || wert.length > 63) {
+    throw new Error("Z3b Fachweg Datenbankname muss neuartig und strikt mit helmut_z3b_ praefigiert sein");
+  }
+  return wert;
+}
+
+function fachwegDatenbankname(env = {}, { pid = process.pid, zufall = null } = {}) {
+  const vorgegeben = String(env.HELMUT_Z3_PG_DB || "").trim();
+  const lauf = String(env.HELMUT_Z3B_FACHWEG_LAUF || "").trim();
+  const suffix = String(zufall || crypto.randomBytes(6).toString("hex")).toLowerCase();
+  const erzeugt = `helmut_z3b_${lauf}_${pid}_${suffix}`.slice(0, 63);
+  return validiereFachwegDatenbankname(vorgegeben || erzeugt);
+}
+
+function pruefeFachwegUmgebung(env = {}, { datenbank = null } = {}) {
+  const lauf = String(env.HELMUT_Z3B_FACHWEG_LAUF || "").trim();
+  if (!/^[a-z0-9]{6,32}$/.test(lauf)) {
+    throw new Error("Z3b Fachweglauf braucht eine gueltige Laufkennung");
+  }
+  const stufenRoh = String(env.HELMUT_Z3_STUFEN || "").trim();
+  if (!/^(200|500)$/.test(stufenRoh)) {
+    throw new Error("Z3b Fachweg muss genau eine Zielstufe 200 oder 500 enthalten");
+  }
+  const stufen = [Number(stufenRoh)];
+
+  const fehler = [];
+  const zahlIst = (name, erwartet) => {
+    const roh = String(env[name] ?? "").trim();
+    if (roh !== "" && (!Number.isFinite(Number(roh)) || Number(roh) !== erwartet)) {
+      fehler.push(`${name} muss genau ${erwartet} sein`);
+    }
+  };
+  const textIst = (name, erwartet) => {
+    const roh = String(env[name] ?? "").trim().toLowerCase();
+    if (roh !== "" && roh !== String(erwartet).toLowerCase()) {
+      fehler.push(`${name} muss genau ${erwartet} sein`);
+    }
+  };
+  for (const [name, wert] of [
+    ["HELMUT_Z3_SLOTS", FACHWEG_GRENZEN.slotsJeTag],
+    ["HELMUT_Z3_MAX_SLOTS", FACHWEG_GRENZEN.slotsGesamt],
+    ["HELMUT_Z3_SLOT_BUDGET_MS", FACHWEG_GRENZEN.slotBudgetMs],
+    ["HELMUT_Z3_PARALLEL", FACHWEG_GRENZEN.parallel],
+    ["HELMUT_Z3_STAPEL", FACHWEG_GRENZEN.stapel],
+    ["HELMUT_Z3_URSPRUNG_LATENZ_MS", FACHWEG_QUELLENPROFIL.latenzMs],
+    ["HELMUT_Z3_URSPRUNG_STREUUNG_MS", FACHWEG_QUELLENPROFIL.latenzStreuungMs],
+    ["HELMUT_Z3_DROSSEL", FACHWEG_QUELLENPROFIL.drosselAnteil],
+    ["HELMUT_Z3_AUSFALL", FACHWEG_QUELLENPROFIL.ausfallAnteil],
+    ["HELMUT_Z3_EINTRAEGE", FACHWEG_QUELLENPROFIL.eintraegeJeAntwort],
+    ["HELMUT_Z3_THEMEN", FACHWEG_QUELLENPROFIL.geteilteThemen],
+    ["HELMUT_Z3_UEBERSCHNEIDUNG", FACHWEG_QUELLENPROFIL.ueberschneidungAnteil],
+    ["HELMUT_Z3_VARIANTEN", FACHWEG_QUELLENPROFIL.dokumenteJeVorgang],
+    ["HELMUT_Z3_FRISCHE", FACHWEG_QUELLENPROFIL.frischeAnteil],
+    ["HELMUT_Z3_KI_FEHLER", 0],
+    ["HELMUT_Z3_KI_RESERVE", 0],
+    ["HELMUT_LLM_GLOBAL_ANTEIL", 0.5],
+    ["HELMUT_WIEDERVORLAGE_STUNDEN", FACHWEG_PIPELINEPROFIL.wiedervorlageStunden],
+    ["HELMUT_WIEDERVORLAGE_MAX", FACHWEG_PIPELINEPROFIL.wiedervorlageMax],
+    ["HELMUT_JOB_TIMEOUT_MS", FACHWEG_PIPELINEPROFIL.jobTimeoutMs],
+    ["HELMUT_NARRATIV_TIMEOUT_MS", FACHWEG_PIPELINEPROFIL.narrativTimeoutMs],
+    ["HELMUT_UNDERSTANDING_BUENDEL", FACHWEG_PIPELINEPROFIL.understandingBuendel],
+    ["HELMUT_VORBEDINGUNG_WARTE_MS", FACHWEG_PIPELINEPROFIL.vorbedingungWarteMs],
+    ["HELMUT_VORBEDINGUNG_MAX_WARTE_MS", FACHWEG_PIPELINEPROFIL.vorbedingungMaxWarteMs],
+    ["HELMUT_BUDGET_WARTE_MS", FACHWEG_PIPELINEPROFIL.budgetWarteMs],
+    ["HELMUT_BUDGET_MAX_WARTE_MS", FACHWEG_PIPELINEPROFIL.budgetMaxWarteMs],
+    ["HELMUT_WORKER_LEERLAUF_MS", FACHWEG_PIPELINEPROFIL.workerLeerlaufMs],
+    ["CRAWLER_TIMEOUT_MS", FACHWEG_PIPELINEPROFIL.crawlerTimeoutMs],
+    ["HELMUT_KI_TIMEOUT_MS", FACHWEG_PIPELINEPROFIL.kiTimeoutMs],
+    ["HELMUT_WORKER_LEASE_MS", FACHWEG_PIPELINEPROFIL.workerLeaseMs],
+    ["HELMUT_KLASSE_QUELLENABRUF_MAX", FACHWEG_PIPELINEPROFIL.klasseQuellenabrufMax],
+    ["HELMUT_KLASSE_VERSTEHEN_MAX", FACHWEG_PIPELINEPROFIL.klasseVerstehenMax],
+    ["HELMUT_KLASSE_WORKER_DRAIN_MAX", FACHWEG_PIPELINEPROFIL.klasseWorkerDrainMax],
+    ["HELMUT_VERSTEHEN_PARALLELITAET", FACHWEG_PIPELINEPROFIL.verstehenParallelitaet],
+    ["HELMUT_VERSTEHEN_LEASE_MS", FACHWEG_PIPELINEPROFIL.verstehenLeaseMs],
+    ["HELMUT_VERSTEHEN_WIEDERAUFNAHME_MAX", FACHWEG_PIPELINEPROFIL.verstehenWiederaufnahmeMax],
+    ["HELMUT_KO_SCAN_LIMIT", FACHWEG_PIPELINEPROFIL.koScanLimit],
+    ["HELMUT_LAGE_MAX_VORGAENGE", FACHWEG_PIPELINEPROFIL.lageMaxVorgaenge],
+    ["HELMUT_MAX_LLM_CALLS_PER_DAY", FACHWEG_PIPELINEPROFIL.effektiverKiTagesdeckel],
+    ["HELMUT_MAX_LLM_CALLS_PER_TENANT_PER_DAY", FACHWEG_PIPELINEPROFIL.effektiverKiMandatsdeckel]
+  ]) zahlIst(name, wert);
+  for (const [name, wert] of [
+    ["HELMUT_Z3_BASISTAG", FACHWEG_GRENZEN.basistagUtc],
+    ["HELMUT_NARRATIV_QUEUE", "on"],
+    ["HELMUT_LLM_FAIRNESS", "on"],
+    ["HELMUT_KLASSEN_GRENZEN", FACHWEG_PIPELINEPROFIL.klassenGrenzen],
+    ["HELMUT_VERSTEHEN_KONKURRENZ", FACHWEG_PIPELINEPROFIL.verstehenKonkurrenz],
+    ["HELMUT_LAGE_DEMO", FACHWEG_PIPELINEPROFIL.lageDemo],
+    ["HELMUT_LLM_BUDGET_FAIL_CLOSED", FACHWEG_PIPELINEPROFIL.llmBudgetFailClosed],
+    ["HELMUT_UNDERSTANDING_GATE", FACHWEG_PIPELINEPROFIL.understandingGate],
+    ["HELMUT_UNDERSTANDING_PRIORITY", FACHWEG_PIPELINEPROFIL.understandingPriority],
+    ["HELMUT_JOB_DISPATCH_MODE", "shadow"],
+    ["HELMUT_Z3_KI_DECKEL", "offen"]
+  ]) textIst(name, wert);
+
+  if (String(env.HELMUT_MATCHING_DIM || "").trim() !== "") {
+    fehler.push("HELMUT_MATCHING_DIM muss im Fachweg wie im geprueften Production Profil ungesetzt bleiben");
+  }
+  if (!/^[a-z0-9][a-z0-9._-]{0,79}$/.test(
+    String(env.HELMUT_Z3B_FACHWEG_KI_MODELL || "").trim().toLowerCase())) {
+    fehler.push("HELMUT_Z3B_FACHWEG_KI_MODELL muss das gepruefte Azure Modell eindeutig binden");
+  }
+
+  for (const name of ["HELMUT_Z3_KI_LATENZ_MS", "HELMUT_Z3_KI_STREUUNG_MS",
+    "HELMUT_Z3_KI_HOECHSTZAHL"]) {
+    const roh = String(env[name] ?? "").trim();
+    if (roh === "" || !Number.isInteger(Number(roh)) || Number(roh) <= 0) {
+      fehler.push(`${name} muss als positiver ganzzahliger Azure Messwert vorliegen`);
+    }
+  }
+  const fehlerModus = String(env.HELMUT_Z3_FEHLERMANDAT || "").trim().toLowerCase();
+  if (!new Set(["an", "aus"]).has(fehlerModus)) {
+    fehler.push("HELMUT_Z3_FEHLERMANDAT muss genau an oder aus sein");
+  }
+  if (fehlerModus === "an" && !String(env.HELMUT_Z3_VERGLEICH || "").trim()) {
+    fehler.push("Der Lauf mit Fehlermandat braucht den Kontrollbericht");
+  }
+  const kontrollHash = String(env.HELMUT_Z3B_FACHWEG_KONTROLL_BELEG_SHA256 || "").trim();
+  if (fehlerModus === "an" && !/^[0-9a-f]{64}$/.test(kontrollHash)) {
+    fehler.push("Der Lauf mit Fehlermandat braucht den gebundenen 64 Zeichen Kontrollbeleg Hash");
+  }
+  if (fehlerModus === "aus" && kontrollHash !== "") {
+    fehler.push("Der Kontrolllauf darf keinen geerbten Fehlerlauf Vergleichsbeleg tragen");
+  }
+  for (const name of ["HELMUT_Z3_BERICHT", "HELMUT_Z3_LOG"]) {
+    if (!String(env[name] || "").trim()) fehler.push(`${name} muss fuer den Fachweg gesetzt sein`);
+  }
+  if (String(env.HELMUT_Z3B_FACHWEG_FREIGABE || "") !== `z3b-fachweg:${stufen[0]}:${lauf}`) {
+    fehler.push("HELMUT_Z3B_FACHWEG_FREIGABE bindet Zielstufe und Laufkennung nicht exakt");
+  }
+  for (const name of ["HELMUT_Z3B_FACHWEG_AZURE_BELEG_SHA256",
+    "HELMUT_Z3B_FACHWEG_VORSTUFEN_BELEG_SHA256"]) {
+    if (!/^[0-9a-f]{64}$/.test(String(env[name] || "").trim())) {
+      fehler.push(`${name} muss den vollstaendigen 64 Zeichen Eingangsbeleg binden`);
+    }
+  }
+  if (fehler.length) throw new Error(`Z3b Fachweg Manifest widerspruechlich: ${fehler.join("; ")}`);
+
+  return Object.freeze({
+    lauf,
+    ziel: stufen[0],
+    datenbank: datenbank == null
+      ? fachwegDatenbankname(env)
+      : validiereFachwegDatenbankname(datenbank),
+    fehlerMandatModus: fehlerModus
+  });
+}
+
+function dateiSha256(relativ) {
+  return crypto.createHash("sha256")
+    .update(fs.readFileSync(path.join(ROOT, relativ)))
+    .digest("hex");
+}
+
+function leseGitStand() {
+  const sha = execFileSync("git", ["rev-parse", "HEAD"], {
+    cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"]
+  }).trim();
+  const status = execFileSync("git", ["status", "--porcelain"], {
+    cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"]
+  }).trim();
+  if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(sha)) {
+    throw new Error("Z3b Fachweg braucht eine gueltige Git Kennung");
+  }
+  return Object.freeze({ sha, sauber: status === "" });
+}
+
+function erstelleFachwegManifest(env = {}, { datenbank = null, gitStand = null } = {}) {
+  const f = pruefeFachwegUmgebung(env, { datenbank });
+  const git = gitStand || leseGitStand();
+  if (!git || !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(String(git.sha || ""))
+      || git.sauber !== true) {
+    throw new Error("Z3b Fachweg Manifest verlangt einen sauberen, eindeutig gebundenen Git Stand");
+  }
+  const manifest = {
+    schemaVersion: 1,
+    modus: "Z3b lokaler Fachweg 200/500",
+    laufKennung: f.lauf,
+    zielStufe: f.ziel,
+    fehlerMandatModus: f.fehlerMandatModus,
+    datenbank: { name: f.datenbank, neuErforderlich: true, praefix: "helmut_z3b_" },
+    slots: {
+      jeTag: FACHWEG_GRENZEN.slotsJeTag,
+      gesamt: FACHWEG_GRENZEN.slotsGesamt,
+      budgetMs: FACHWEG_GRENZEN.slotBudgetMs,
+      p95MaxMs: FACHWEG_GRENZEN.slotP95MaxMs,
+      einzelMaxMs: FACHWEG_GRENZEN.slotEinzelMaxMs,
+      cronStundenUtc: [4, 16, 20],
+      basistagUtc: FACHWEG_GRENZEN.basistagUtc
+    },
+    worker: { parallel: FACHWEG_GRENZEN.parallel, stapel: FACHWEG_GRENZEN.stapel },
+    pipelineprofil: { ...FACHWEG_PIPELINEPROFIL },
+    quellenprofil: { ...FACHWEG_QUELLENPROFIL },
+    kiProfil: {
+      modell: String(env.HELMUT_Z3B_FACHWEG_KI_MODELL),
+      latenzMs: Number(env.HELMUT_Z3_KI_LATENZ_MS),
+      latenzStreuungMs: Number(env.HELMUT_Z3_KI_STREUUNG_MS),
+      fehlerAnteil: 0,
+      deckel: "offen",
+      effektiverTagesdeckel: FACHWEG_PIPELINEPROFIL.effektiverKiTagesdeckel,
+      effektiverMandatsdeckel: FACHWEG_PIPELINEPROFIL.effektiverKiMandatsdeckel,
+      hoechstzahlAufrufe: Number(env.HELMUT_Z3_KI_HOECHSTZAHL),
+      understandingReserve: 0
+    },
+    flags: {
+      scalablePipeline: "on",
+      narrativQueue: "on",
+      llmFairness: "on",
+      llmGlobalAnteil: 0.5,
+      dispatch: "shadow",
+      sourceMode: "on",
+      verstehenCas: "on",
+      v3Store: "1",
+      storageBackend: "supabase",
+      v3Matching: "1",
+      matchingAudit: "on",
+      processRunsRelational: "on",
+      atomicLock: "on"
+    },
+    ersetzungen: {
+      datenbank: "lokales PostgreSQL mit PostgREST",
+      quellenanbieter: "lokaler HTTP Ursprung",
+      kiAnbieter: "lokaler TLS Endpunkt mit echtem Azure Laufzeitprofil",
+      productionDaten: false
+    },
+    eingangsbelege: {
+      azureMessberichtSha256: String(env.HELMUT_Z3B_FACHWEG_AZURE_BELEG_SHA256),
+      natuerlicherVorstufenberichtSha256:
+        String(env.HELMUT_Z3B_FACHWEG_VORSTUFEN_BELEG_SHA256),
+      kontrollberichtSha256: f.fehlerMandatModus === "an"
+        ? String(env.HELMUT_Z3B_FACHWEG_KONTROLL_BELEG_SHA256) : null
+    },
+    simulationen: {
+      mandate: "synthetische Profile aus scripts/fixtures/synthetische-mandate-1000.js",
+      quelleninhalte: "lokaler synthetischer RSS Ursprung",
+      kiAntworten: "lokal synthetisch und schemafoermig; nur Laufzeitprofil aus Azure Messbeleg",
+      cronUhr: "zwei feste synthetische UTC Tage mit je drei Production Slotzeiten",
+      faelligkeit: "due_at wird zwischen Slots auf jetzt vorgezogen",
+      createdAtUnveraendert: true,
+      absoluteAufgabenfristenImVerdichtetenLaufNichtBewiesen: true
+    },
+    git,
+    codeFingerabdruecke: FACHWEG_CODEDATEIEN.map((datei) => ({
+      datei, sha256: dateiSha256(datei)
+    })),
+    codebefund: {
+      produktionsOrchestratorGemeinsam: false,
+      status: "offen",
+      detail: "Der Slot nutzt dieselben Produktionsfunktionen, bildet die Orchestrierung aber weiterhin separat ab.",
+      budgettagAnSynthetischeCronzeitGebunden: false,
+      budgettagDetail: "Die Planung nutzt die feste Cronzeit; Budgetreservierung und Lease verwenden weiterhin die echte Prozessuhr.",
+      bueroHandlerImQueueFachweg: false
+    }
+  };
+  return tiefFrieren({
+    ...manifest,
+    sha256: crypto.createHash("sha256").update(JSON.stringify(manifest)).digest("hex")
+  });
+}
+
+function pruefeFachwegManifest(manifest, { gitStandPruefen = true } = {}) {
+  if (!manifest || typeof manifest !== "object" || Array.isArray(manifest)) return false;
+  const { sha256, ...inhalt } = manifest;
+  const erwarteteSlots = {
+    jeTag: FACHWEG_GRENZEN.slotsJeTag,
+    gesamt: FACHWEG_GRENZEN.slotsGesamt,
+    budgetMs: FACHWEG_GRENZEN.slotBudgetMs,
+    p95MaxMs: FACHWEG_GRENZEN.slotP95MaxMs,
+    einzelMaxMs: FACHWEG_GRENZEN.slotEinzelMaxMs,
+    cronStundenUtc: [4, 16, 20],
+    basistagUtc: FACHWEG_GRENZEN.basistagUtc
+  };
+  const erwarteteFlags = {
+    scalablePipeline: "on", narrativQueue: "on", llmFairness: "on", llmGlobalAnteil: 0.5,
+    dispatch: "shadow", sourceMode: "on", verstehenCas: "on", v3Store: "1",
+    storageBackend: "supabase", v3Matching: "1", matchingAudit: "on",
+    processRunsRelational: "on", atomicLock: "on"
+  };
+  let datenbankGueltig = false;
+  try { datenbankGueltig = validiereFachwegDatenbankname(manifest.datenbank && manifest.datenbank.name) !== ""; }
+  catch (_) { datenbankGueltig = false; }
+  if (!/^[0-9a-f]{64}$/.test(String(sha256 || ""))
+      || crypto.createHash("sha256").update(JSON.stringify(inhalt)).digest("hex") !== sha256
+      || manifest.schemaVersion !== 1 || manifest.modus !== "Z3b lokaler Fachweg 200/500"
+      || !/^[a-z0-9]{6,32}$/.test(String(manifest.laufKennung || ""))
+      || ![200, 500].includes(manifest.zielStufe)
+      || !new Set(["an", "aus"]).has(manifest.fehlerMandatModus)
+      || !datenbankGueltig || manifest.datenbank.neuErforderlich !== true
+      || manifest.datenbank.praefix !== "helmut_z3b_"
+      || JSON.stringify(manifest.slots) !== JSON.stringify(erwarteteSlots)
+      || JSON.stringify(manifest.worker) !== JSON.stringify({
+        parallel: FACHWEG_GRENZEN.parallel, stapel: FACHWEG_GRENZEN.stapel
+      })
+      || JSON.stringify(manifest.pipelineprofil) !== JSON.stringify(FACHWEG_PIPELINEPROFIL)
+      || JSON.stringify(manifest.quellenprofil) !== JSON.stringify(FACHWEG_QUELLENPROFIL)
+      || JSON.stringify(manifest.flags) !== JSON.stringify(erwarteteFlags)
+      || JSON.stringify(manifest.ersetzungen) !== JSON.stringify({
+        datenbank: "lokales PostgreSQL mit PostgREST",
+        quellenanbieter: "lokaler HTTP Ursprung",
+        kiAnbieter: "lokaler TLS Endpunkt mit echtem Azure Laufzeitprofil",
+        productionDaten: false
+      })
+      || !manifest.simulationen || manifest.simulationen.createdAtUnveraendert !== true
+      || manifest.simulationen.absoluteAufgabenfristenImVerdichtetenLaufNichtBewiesen !== true
+      || !manifest.codebefund || manifest.codebefund.produktionsOrchestratorGemeinsam !== false
+      || manifest.codebefund.status !== "offen"
+      || manifest.codebefund.budgettagAnSynthetischeCronzeitGebunden !== false
+      || manifest.codebefund.bueroHandlerImQueueFachweg !== false
+      || !manifest.kiProfil || !/^[a-z0-9][a-z0-9._-]{0,79}$/.test(String(manifest.kiProfil.modell || ""))
+      || !Number.isFinite(manifest.kiProfil.latenzMs) || manifest.kiProfil.latenzMs <= 0
+      || !Number.isFinite(manifest.kiProfil.latenzStreuungMs) || manifest.kiProfil.latenzStreuungMs <= 0
+      || !Number.isInteger(manifest.kiProfil.hoechstzahlAufrufe) || manifest.kiProfil.hoechstzahlAufrufe <= 0
+      || manifest.kiProfil.fehlerAnteil !== 0 || manifest.kiProfil.deckel !== "offen"
+      || manifest.kiProfil.understandingReserve !== 0
+      || manifest.kiProfil.effektiverTagesdeckel !== FACHWEG_PIPELINEPROFIL.effektiverKiTagesdeckel
+      || manifest.kiProfil.effektiverMandatsdeckel !== FACHWEG_PIPELINEPROFIL.effektiverKiMandatsdeckel
+      || !manifest.eingangsbelege
+      || !/^[0-9a-f]{64}$/.test(String(manifest.eingangsbelege.azureMessberichtSha256 || ""))
+      || !/^[0-9a-f]{64}$/.test(String(manifest.eingangsbelege.natuerlicherVorstufenberichtSha256 || ""))
+      || (manifest.fehlerMandatModus === "an")
+        !== /^[0-9a-f]{64}$/.test(String(manifest.eingangsbelege.kontrollberichtSha256 || ""))
+      || !manifest.git || manifest.git.sauber !== true
+      || !/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(String(manifest.git.sha || ""))
+      || !Array.isArray(manifest.codeFingerabdruecke)
+      || manifest.codeFingerabdruecke.length !== FACHWEG_CODEDATEIEN.length) return false;
+  const codeGueltig = manifest.codeFingerabdruecke.every((eintrag, index) => (
+    eintrag && eintrag.datei === FACHWEG_CODEDATEIEN[index]
+      && /^[0-9a-f]{64}$/.test(String(eintrag.sha256 || ""))
+      && eintrag.sha256 === dateiSha256(eintrag.datei)
+  ));
+  if (!codeGueltig || !gitStandPruefen) return codeGueltig;
+  try {
+    const aktuell = leseGitStand();
+    return aktuell.sauber === true && aktuell.sha === manifest.git.sha;
+  } catch (_) { return false; }
+}
 
 // ── Umgebung ────────────────────────────────────────────────────────────────────────────────
 const PG = {
   host: process.env.HELMUT_TEST_PG_HOST || "",
   port: process.env.HELMUT_TEST_PG_PORT || "5434",
   user: process.env.HELMUT_TEST_PG_USER || "helmut",
-  db: process.env.HELMUT_Z3_PG_DB || "helmut_z3_last"
+  db: IST_FACHWEG ? fachwegDatenbankname(process.env) : (process.env.HELMUT_Z3_PG_DB || "helmut_z3_last")
 };
 const POSTGREST = process.env.HELMUT_Z3_POSTGREST || "";
 // Der Signierschluessel des lokalen PostgREST entsteht JE LAUF neu und steht deshalb nirgends
 // im Repository (CLAUDE.md §4.7). Er gilt nur fuer diesen einen Prozess und nur fuer
 // 127.0.0.1; er berechtigt zu nichts ausserhalb der lokalen Testdatenbank.
 const JWT_SECRET = process.env.HELMUT_Z3_JWT_SECRET
-  || require("crypto").randomBytes(32).toString("hex");
+  || crypto.randomBytes(32).toString("hex");
 
 // Die Stufen. Die Eichstufe 5 ist bewusst enthalten: sie ist die EINZIGE Stufe, fuer die es
 // eine Production-Messgroesse gibt (Kostenmessung: rund 113 Verstehensaufrufe/Tag bei fuenf
@@ -63,9 +489,12 @@ const STUFEN = (process.env.HELMUT_Z3_STUFEN || "5,25,50,100")
   .split(",").map((n) => Number(n.trim())).filter(Boolean);
 
 // Betriebsgroessen — dieselben, die Production faehrt (CURRENT_STATE §4: Worker 4/25/25).
-const SLOT_BUDGET_MS = Number(process.env.HELMUT_Z3_SLOT_BUDGET_MS || 290000);   // maxDuration 300 s
-const SLOTS_JE_TAG = Number(process.env.HELMUT_Z3_SLOTS || 3);                    // §2a: drei regulaere Abfluesse
-const MAX_SLOTS = Number(process.env.HELMUT_Z3_MAX_SLOTS || 12);                  // Abbruchgrenze des Laufs
+const SLOT_BUDGET_MS = IST_FACHWEG ? FACHWEG_GRENZEN.slotBudgetMs
+  : Number(process.env.HELMUT_Z3_SLOT_BUDGET_MS || 290000);   // maxDuration 300 s
+const SLOTS_JE_TAG = IST_FACHWEG ? FACHWEG_GRENZEN.slotsJeTag
+  : Number(process.env.HELMUT_Z3_SLOTS || 3);                 // §2a: drei regulaere Abfluesse
+const MAX_SLOTS = IST_FACHWEG ? FACHWEG_GRENZEN.slotsGesamt
+  : Number(process.env.HELMUT_Z3_MAX_SLOTS || 12);            // Abbruchgrenze des Laufs
 // EINE STUFE = EIN PROZESS. Bewusst ohne Fortsetzung ueber mehrere Aufrufe.
 // Ein frueherer Entwurf konnte eine Stufe in Teilstuecken fahren und nur das letzte
 // bewerten. Das war falsch, und zwar auf die gefaehrliche Art: die Warteschlange steht in
@@ -81,8 +510,8 @@ const MAX_SLOTS = Number(process.env.HELMUT_Z3_MAX_SLOTS || 12);                
 // Bericht wird hier eingelesen; Z22 entscheidet dann an der GEMESSENEN Differenz statt an
 // einer Vermutung. Fehlt er, entscheidet Z22 gar nicht (offener Befund) — er raet nie.
 const VERGLEICHSDATEI = process.env.HELMUT_Z3_VERGLEICH || "";
-const PARALLEL = Number(process.env.HELMUT_Z3_PARALLEL || 4);
-const STAPEL = Number(process.env.HELMUT_Z3_STAPEL || 25);
+const PARALLEL = IST_FACHWEG ? FACHWEG_GRENZEN.parallel : Number(process.env.HELMUT_Z3_PARALLEL || 4);
+const STAPEL = IST_FACHWEG ? FACHWEG_GRENZEN.stapel : Number(process.env.HELMUT_Z3_STAPEL || 25);
 const KI_DECKEL = String(process.env.HELMUT_Z3_KI_DECKEL || "offen");             // "offen" | Zahl
 const KI_HOECHSTZAHL = Number(process.env.HELMUT_Z3_KI_HOECHSTZAHL || 40000);     // harter Kostenriegel
 
@@ -152,6 +581,12 @@ function pruefeSicherheit() {
   if (PG.host && !lokal.includes(PG.host) && !PG.host.startsWith("/")) {
     console.error(`\nABBRUCH (Stopkriterium): Datenbankhost ${PG.host} ist nicht lokal.`);
     process.exit(3);
+  }
+  if (IST_FACHWEG) {
+    // Muss VOR der ersten Erreichbarkeitsprobe und damit sicher VOR jeder Datenwirkung
+    // entscheiden. Die erzeugte Datenbankkennung wird mitgeprueft, statt fuer die
+    // Manifestbildung versehentlich eine zweite Zufallskennung zu erzeugen.
+    pruefeFachwegUmgebung(process.env, { datenbank: PG.db });
   }
 }
 
@@ -252,12 +687,24 @@ function legeDatenbankAn(arbeitsverzeichnis) {
   // Es werden AUSSCHLIESSLICH Sitzungen DIESER Testdatenbank beendet — nie andere. Die Zahl
   // wird ausgegeben: ein Lauf, der Fremdsitzungen vorfindet, soll das sichtbar machen und
   // nicht still aufraeumen.
-  const beendet = Number(psql(
-    "select count(*) from (select pg_terminate_backend(pid) from pg_stat_activity"
-    + ` where datname = '${PG.db}' and pid <> pg_backend_pid()) t`, { db: "postgres" }) || 0);
-  if (beendet > 0) console.log(`  Aufraeumen: ${beendet} Sitzung(en) eines abgebrochenen Vorlaufs beendet.`);
-  psql(`drop database if exists ${PG.db}`, { db: "postgres" });
-  psql(`create database ${PG.db}`, { db: "postgres" });
+  if (IST_FACHWEG) {
+    // Z3b darf nie einen geerbten oder liegengebliebenen Datenbestand beseitigen. Selbst eine
+    // korrekt praefigierte Kennung muss neu sein; ein Treffer ist ein Stopkriterium. Das
+    // strenge Namensmuster aus `fachwegDatenbankname` macht Literal und Bezeichner sicher.
+    const vorhanden = Number(psql(
+      `select count(*) from pg_database where datname = '${PG.db}'`, { db: "postgres" }) || 0);
+    if (vorhanden !== 0) {
+      throw new Error(`Z3b Fachweg Datenbank ${PG.db} existiert bereits; nichts wurde geloescht`);
+    }
+    psql(`create database "${PG.db}"`, { db: "postgres" });
+  } else {
+    const beendet = Number(psql(
+      "select count(*) from (select pg_terminate_backend(pid) from pg_stat_activity"
+      + ` where datname = '${PG.db}' and pid <> pg_backend_pid()) t`, { db: "postgres" }) || 0);
+    if (beendet > 0) console.log(`  Aufraeumen: ${beendet} Sitzung(en) eines abgebrochenen Vorlaufs beendet.`);
+    psql(`drop database if exists ${PG.db}`, { db: "postgres" });
+    psql(`create database ${PG.db}`, { db: "postgres" });
+  }
   const vor = path.join(arbeitsverzeichnis, "vorbereitung.sql");
   fs.writeFileSync(vor, VORBEREITUNG_SQL, "utf8");
   psql(null, { datei: vor });
@@ -339,15 +786,59 @@ function letztesTagesendeVon(st) {
   return e.veraltetOffenGesund == null ? null : Number(e.veraltetOffenGesund);
 }
 
-function leseVergleich(mandate) {
+function vergleichsManifestSicht(manifest) {
+  return {
+    laufKennung: manifest && manifest.laufKennung,
+    zielStufe: manifest && manifest.zielStufe,
+    slots: manifest && manifest.slots,
+    worker: manifest && manifest.worker,
+    pipelineprofil: manifest && manifest.pipelineprofil,
+    quellenprofil: manifest && manifest.quellenprofil,
+    kiProfil: manifest && manifest.kiProfil,
+    flags: manifest && manifest.flags,
+    ersetzungen: manifest && manifest.ersetzungen,
+    simulationen: manifest && manifest.simulationen,
+    git: manifest && manifest.git,
+    codeFingerabdruecke: manifest && manifest.codeFingerabdruecke,
+    eingangsbelege: manifest && manifest.eingangsbelege ? {
+      azureMessberichtSha256: manifest.eingangsbelege.azureMessberichtSha256,
+      natuerlicherVorstufenberichtSha256: manifest.eingangsbelege.natuerlicherVorstufenberichtSha256
+    } : null
+  };
+}
+
+function leseVergleich(mandate, aktuellesManifest = null) {
   if (!VERGLEICHSDATEI || !fs.existsSync(VERGLEICHSDATEI)) return { gefunden: false };
   try {
-    const v = JSON.parse(fs.readFileSync(VERGLEICHSDATEI, "utf8"));
-    const st = (v.stufen || []).find((x) => Number(x.mandate) === Number(mandate));
+    const roh = fs.readFileSync(VERGLEICHSDATEI, "utf8");
+    const hash = crypto.createHash("sha256").update(roh).digest("hex");
+    if (hash !== String(process.env.HELMUT_Z3B_FACHWEG_KONTROLL_BELEG_SHA256 || "")) {
+      return { gefunden: false, grund: "Kontrollbericht stimmt nicht mit dem gebundenen Hash ueberein" };
+    }
+    const v = JSON.parse(roh);
+    if (!v || v.stand !== "Z3a-teilnachweis-lokale-anbieter" || Number(v.fail) !== 0
+        || !Array.isArray(v.stufen) || v.stufen.length !== 1
+        || !pruefeFachwegManifest(v.fachwegManifest)
+        || !aktuellesManifest || !pruefeFachwegManifest(aktuellesManifest)) {
+      return { gefunden: false, grund: "Kontrollbericht oder Manifest ist nicht vollstaendig pruefbar" };
+    }
+    if (v.fachwegManifest.fehlerMandatModus !== "aus"
+        || JSON.stringify(vergleichsManifestSicht(v.fachwegManifest))
+          !== JSON.stringify(vergleichsManifestSicht(aktuellesManifest))) {
+      return { gefunden: false, grund: "Kontrollbericht stammt nicht aus demselben gebundenen Fachweg" };
+    }
+    const st = v.stufen[0];
+    if (Number(st.mandate) !== Number(mandate)) {
+      return { gefunden: false, grund: `Stufe ${mandate} fehlt im Vergleichsbericht` };
+    }
     if (!st) return { gefunden: false, grund: `Stufe ${mandate} fehlt im Vergleichsbericht` };
     if (st.fehlerMandat) return { gefunden: false, grund: "Vergleichsbericht trug ein Fehlermandat" };
+    if (Number(st.slots) !== FACHWEG_GRENZEN.slotsGesamt
+        || !st.fachwegKiRohbeleg || st.fachwegKiRohbeleg.messungVollstaendig !== true) {
+      return { gefunden: false, grund: "Kontrollbericht enthaelt nicht sechs vollstaendige Fachweg Slots" };
+    }
     return {
-      gefunden: true, datei: VERGLEICHSDATEI,
+      gefunden: true, datei: VERGLEICHSDATEI, hash,
       zurueckstellungen: Number((st.kopplung && st.kopplung.zurueckstellungen) || 0),
       veraltetOffenGesund: letztesTagesendeVon(st),
       slots: Number(st.slots || 0), wartend: Number(st.wartend || 0)
@@ -414,11 +905,341 @@ function messwerteKopplung(slotBilanzen, rueckstauJeSlot) {
 // in VERSCHIEDENEN 8-Stunden-Fenstern, 16:00 und 20:00 im selben. Ohne diese Vorgabe haenge
 // die geplante Menge davon ab, ob der Lauf zufaellig eine Fenstergrenze kreuzt.
 const CRON_STUNDEN = [4, 16, 20];
-const BASISTAG_MS = Date.parse(process.env.HELMUT_Z3_BASISTAG || "2026-08-26T00:00:00Z");
+const BASISTAG_MS = Date.parse(IST_FACHWEG
+  ? FACHWEG_GRENZEN.basistagUtc
+  : (process.env.HELMUT_Z3_BASISTAG || "2026-08-26T00:00:00Z"));
 function cronZeitFuerSlot(nr) {
   const i = (nr - 1) % CRON_STUNDEN.length;
   const tag = Math.floor((nr - 1) / CRON_STUNDEN.length);
   return BASISTAG_MS + tag * 86400000 + CRON_STUNDEN[i] * 3600000;
+}
+
+function slotVerteilung(dauern) {
+  const werte = (Array.isArray(dauern) ? dauern : []).map(Number)
+    .filter((wert) => Number.isFinite(wert) && wert >= 0)
+    .sort((a, b) => a - b);
+  if (!werte.length) return { n: 0, p95: null, max: null };
+  const q = (p) => werte[Math.min(werte.length - 1, Math.floor(p * (werte.length - 1)))];
+  return { n: werte.length, p95: q(0.95), max: werte[werte.length - 1] };
+}
+
+function sollFachwegNachSlotWeiterlaufen({ slot, integritaetOk = true } = {}) {
+  if (integritaetOk !== true) return false;
+  return Number.isInteger(slot) && slot >= 1 && slot < FACHWEG_GRENZEN.slotsGesamt;
+}
+
+function pruefeFachwegSlotfolge(slots) {
+  return Array.isArray(slots) && slots.length === FACHWEG_GRENZEN.slotsGesamt
+    && slots.every((ergebnis, index) => ergebnis && ergebnis.bilanz
+      && ergebnis.bilanz.slot === index + 1);
+}
+
+// Rohbeleg fuer den KI Tagesbedarf. Er zaehlt nur Modellaufrufe, die im echten lokalen
+// Fachweg durch `recordLlmUsage` gelaufen sind, und gleicht ihre Summe gegen den unabhaengigen
+// lokalen TLS Endpunkt ab. Der Queue Fachweg besitzt keinen Buero Auftragstyp. Deshalb wird
+// `buero: 0` sichtbar und blockiert den vollstaendigen Tagesbedarfsvertrag, statt durch einen
+// kuenstlichen Aufruf ersetzt zu werden.
+function baueFachwegKiRohbeleg({ zielMandate, laufKennung, manifestSha256, gitSha,
+  slotBilanzen = [], kiAufrufe = null } = {}) {
+  const blocker = [];
+  const integritaetsBlocker = (grund, detail = null) => blocker.push({ art: "integritaet", grund, detail });
+  const abdeckungsBlocker = (grund, detail = null) => blocker.push({ art: "klassenabdeckung", grund, detail });
+  if (![200, 500].includes(Number(zielMandate))) integritaetsBlocker("zielstufe-ungueltig");
+  if (!/^[a-z0-9]{6,32}$/.test(String(laufKennung || ""))) integritaetsBlocker("laufkennung-ungueltig");
+  if (!/^[0-9a-f]{64}$/.test(String(manifestSha256 || ""))) integritaetsBlocker("manifest-hash-ungueltig");
+  if (!/^(?:[0-9a-f]{40}|[0-9a-f]{64})$/.test(String(gitSha || ""))) {
+    integritaetsBlocker("git-sha-ungueltig");
+  }
+
+  const slots = Array.isArray(slotBilanzen) ? slotBilanzen : [];
+  if (slots.length !== FACHWEG_GRENZEN.slotsGesamt) {
+    integritaetsBlocker("slotanzahl-nicht-sechs", slots.length);
+  }
+  const nachNummer = new Map();
+  for (const bilanz of slots) {
+    const nr = bilanz && bilanz.slot;
+    if (!Number.isInteger(nr) || nr < 1 || nr > FACHWEG_GRENZEN.slotsGesamt
+        || nachNummer.has(nr)) {
+      integritaetsBlocker("slotfolge-widerspruechlich", nr == null ? null : nr);
+      continue;
+    }
+    nachNummer.set(nr, bilanz);
+  }
+  const klassen = ["understanding", "lage", "buero", "sonstige"];
+  for (let nr = 1; nr <= FACHWEG_GRENZEN.slotsGesamt; nr += 1) {
+    const b = nachNummer.get(nr);
+    if (!b) { integritaetsBlocker("slot-fehlt", nr); continue; }
+    if (!b.kiKlassen || klassen.some((klasse) => (
+      !Number.isInteger(b.kiKlassen[klasse]) || b.kiKlassen[klasse] < 0
+    ))) integritaetsBlocker("ki-klassenzaehler-unvollstaendig", nr);
+    if (!Number.isInteger(b.kiEndpunktKumulativ) || b.kiEndpunktKumulativ < 0) {
+      integritaetsBlocker("ki-endpunktstand-fehlt", nr);
+    }
+  }
+
+  const fachwegtage = [];
+  let vorherigerEndpunkt = 0;
+  for (let tag = 1; tag <= 2; tag += 1) {
+    const von = (tag - 1) * FACHWEG_GRENZEN.slotsJeTag + 1;
+    const bis = tag * FACHWEG_GRENZEN.slotsJeTag;
+    const tagSlots = [];
+    for (let nr = von; nr <= bis; nr += 1) {
+      const b = nachNummer.get(nr);
+      if (b) tagSlots.push(b);
+    }
+    const aufrufe = { understanding: 0, lage: 0, buero: 0 };
+    let sonstige = 0;
+    let klassenVollstaendig = tagSlots.length === FACHWEG_GRENZEN.slotsJeTag;
+    for (const b of tagSlots) {
+      if (!b.kiKlassen || klassen.some((klasse) => !Number.isInteger(b.kiKlassen[klasse]))) {
+        klassenVollstaendig = false;
+        continue;
+      }
+      for (const klasse of Object.keys(aufrufe)) aufrufe[klasse] += b.kiKlassen[klasse];
+      sonstige += b.kiKlassen.sonstige;
+    }
+    const ende = nachNummer.get(bis);
+    const endpunktKumulativ = ende && Number.isInteger(ende.kiEndpunktKumulativ)
+      ? ende.kiEndpunktKumulativ : null;
+    const endpunktAufrufe = endpunktKumulativ == null ? null : endpunktKumulativ - vorherigerEndpunkt;
+    if (endpunktKumulativ != null) vorherigerEndpunkt = endpunktKumulativ;
+    const klassenSumme = Object.values(aufrufe).reduce((summe, wert) => summe + wert, 0) + sonstige;
+    const abgeglichen = klassenVollstaendig && Number.isInteger(endpunktAufrufe)
+      && endpunktAufrufe >= 0 && klassenSumme === endpunktAufrufe;
+    if (!abgeglichen) integritaetsBlocker("ki-endpunkt-abgleich-widerspruechlich", {
+      tag, klassenSumme, endpunktAufrufe
+    });
+    fachwegtage.push({
+      tag, slots: [von, bis], messungVollstaendig: abgeglichen,
+      aufrufe, sonstige, kiEndpunktAufrufe: endpunktAufrufe
+    });
+  }
+
+  const gesamt = fachwegtage.reduce((summe, tag) => ({
+    understanding: summe.understanding + tag.aufrufe.understanding,
+    lage: summe.lage + tag.aufrufe.lage,
+    buero: summe.buero + tag.aufrufe.buero,
+    sonstige: summe.sonstige + tag.sonstige
+  }), { understanding: 0, lage: 0, buero: 0, sonstige: 0 });
+  if (!Number.isInteger(kiAufrufe) || kiAufrufe < 0
+      || Object.values(gesamt).reduce((summe, wert) => summe + wert, 0) !== kiAufrufe) {
+    integritaetsBlocker("ki-gesamtzaehler-widerspruechlich", { gesamt, kiAufrufe });
+  }
+  if (gesamt.understanding <= 0) abdeckungsBlocker("understanding-ohne-echten-aufruf");
+  if (gesamt.lage <= 0) abdeckungsBlocker("lage-ohne-echten-aufruf");
+  if (gesamt.buero <= 0) {
+    abdeckungsBlocker("buero-im-queue-fachweg-nicht-ausgefuehrt",
+      "Der vorhandene office-output Handler ist interaktiv und kein Auftrag dieses Warteschlangenfachwegs");
+  }
+  if (gesamt.sonstige > 0) abdeckungsBlocker("unbekannte-ki-arbeitsform", gesamt.sonstige);
+
+  const klassenabdeckungVollstaendig = blocker.length === 0;
+  // Der versionierte Tagesbedarfsvertrag prueft derzeit bewusst nur die formale Struktur.
+  // Bis der vollstaendige Fachweg Gesamtbericht darin intern nachgeprueft wird, darf selbst
+  // eine echte Abdeckung aller drei Klassen keine Aufnahmeentscheidung behaupten.
+  if (klassenabdeckungVollstaendig) {
+    blocker.push({
+      art: "integration",
+      grund: "fachweg-gesamtbericht-intern-nicht-nachgeprueft",
+      detail: TAGESBEDARF.ERGEBNIS_FORMAL
+    });
+  }
+  const basis = {
+    schemaVersion: "z3b-fachweg-ki-rohbeleg-v1",
+    art: "Z3b KI Rohzaehlung aus lokalem Fachweg",
+    zielMandate: Number(zielMandate),
+    lokalerFachweg: true,
+    production: false,
+    synthetisch: true,
+    hochrechnung: false,
+    laufKennung: String(laufKennung || ""),
+    manifestSha256: String(manifestSha256 || ""),
+    gitSha: String(gitSha || ""),
+    fachwegtage,
+    gesamt,
+    kiEndpunktAufrufe: Number.isInteger(kiAufrufe) ? kiAufrufe : null,
+    messungVollstaendig: blocker.every((b) => b.art !== "integritaet"),
+    klassenabdeckungVollstaendig,
+    tagesbedarfFormalStrukturiert: klassenabdeckungVollstaendig,
+    kapazitaetsvertragVollstaendig: false,
+    entscheidungsgrundlageVollstaendig: false,
+    blocker
+  };
+  const fachwegBelegHash = crypto.createHash("sha256").update(JSON.stringify(basis)).digest("hex");
+  const tagesbedarfsbericht = klassenabdeckungVollstaendig ? {
+    schemaVersion: TAGESBEDARF.SCHEMA_VERSION,
+    art: TAGESBEDARF.ART,
+    ergebnis: TAGESBEDARF.ERGEBNIS_FORMAL,
+    zielMandate: Number(zielMandate),
+    lokalerFachweg: true,
+    production: false,
+    synthetisch: true,
+    hochrechnung: false,
+    laufKennung: String(laufKennung),
+    fachwegBelegHash,
+    gitSha: String(gitSha),
+    fachwegtage: fachwegtage.map((tag) => ({
+      tag: tag.tag, vollstaendig: true, aufrufe: { ...tag.aufrufe }
+    }))
+  } : null;
+  return tiefFrieren({ ...basis, fachwegBelegHash, tagesbedarfsbericht });
+}
+
+// Zweiter, vom Kind unabhaengiger Riegel. Selbst wenn der Slotprozess versehentlich sein
+// eigenes `integritaet.ok` falsch setzt, muss der Elternlauf alle Pflichtfelder selbst
+// nachrechnen. Fehlende Werte werden nie ueber `Number(null)` zu einer belegten Null.
+function pruefeFachwegSlotErgebnis(ergebnis, {
+  slot = null, laufKennung = FACHWEG_LAUF, manifestSha256 = null, zielMandate = null
+} = {}) {
+  const fehler = [];
+  if (!ergebnis || typeof ergebnis !== "object") return { ok: false, fehler: ["kindergebnis-fehlt"] };
+  if (ergebnis.code !== 0) fehler.push(`kindcode:${String(ergebnis.code)}`);
+  const b = ergebnis.bilanz;
+  if (!b || typeof b !== "object" || Array.isArray(b)) return { ok: false, fehler: [...fehler, "bilanz-fehlt"] };
+  if (b.fehler) fehler.push(`kindfehler:${String(b.fehler).slice(0, 80)}`);
+  if (slot != null && b.slot !== slot) fehler.push("slotkennung-widerspruechlich");
+  if (zielMandate != null && b.mandate !== zielMandate) fehler.push("zielmandate-widerspruechlich");
+  if (laufKennung && b.fachwegLauf !== laufKennung) fehler.push("fachweglauf-widerspruechlich");
+  if (manifestSha256 && b.fachwegManifestSha256 !== manifestSha256) {
+    fehler.push("manifestbindung-widerspruechlich");
+  }
+  if (!laufKennung || !String(b.laufkennung || "").startsWith(`z3b-${laufKennung}-`)) {
+    fehler.push("laufquittung-nicht-an-fachweg-gebunden");
+  }
+
+  const p = b.plan;
+  if (!p || typeof p !== "object" || p.ok !== true || p.uebersprungen !== false) {
+    fehler.push("planung-nicht-erfolgreich");
+  } else {
+    const namen = ["geplant", "neu", "vorhanden", "versucht", "ausstehend", "nichtEingereiht"];
+    const gueltig = namen.every((name) => Number.isInteger(p[name]) && p[name] >= 0);
+    if (!gueltig) fehler.push("planung-zaehler-unvollstaendig");
+    else {
+      if (p.versucht !== p.geplant) fehler.push("planung-nicht-vollstaendig-versucht");
+      if (p.neu + p.vorhanden !== p.versucht) fehler.push("planung-bilanz-widerspruch");
+      if (p.ausstehend !== 0) fehler.push("planung-ausstehend");
+      if (p.nichtEingereiht !== 0) fehler.push("planung-nicht-eingereiht");
+    }
+    if (p.profile !== b.mandate) fehler.push("planung-mandatsmenge-widerspruechlich");
+    if (p.zeitbudgetErschoepft !== false) fehler.push("planung-zeitbudget");
+    if (!p.tagesplan || typeof p.tagesplan !== "object") fehler.push("planung-tagesplan-fehlt");
+  }
+
+  const wieder = b.wiedervorlage;
+  if (!wieder || wieder.verfuegbar !== true || wieder.uebersprungen !== false
+      || wieder.trockenlauf !== false
+      || !Number.isInteger(wieder.gefunden) || wieder.gefunden < 0
+      || !Number.isInteger(wieder.wiedervorgelegt) || wieder.wiedervorgelegt < 0) {
+    fehler.push("wiedervorlage-nicht-verfuegbar");
+  }
+  const outbox = b.outbox;
+  if (!outbox || !outbox.abgleich || outbox.abgleich.verfuegbar !== true
+      || outbox.abgleich.uebersprungen !== false
+      || ["fehlend", "wiedereroeffnet", "verzichtet"].some((name) => (
+        !Number.isInteger(outbox.abgleich[name]) || outbox.abgleich[name] < 0
+      ))) {
+    fehler.push("outbox-abgleich-nicht-verfuegbar");
+  }
+  if (!outbox || !outbox.versand || outbox.versand.uebersprungen !== false
+      || outbox.versand.modus !== "shadow"
+      || outbox.versand.transport !== "schatten"
+      || outbox.versand.transportVerfuegbar !== true
+      || ["vergeben", "versendet", "fehlgeschlagen"].some((name) => (
+        !Number.isInteger(outbox.versand[name]) || outbox.versand[name] < 0
+      ))
+      || outbox.versand.fehlgeschlagen !== 0
+      || outbox.versand.versendet !== outbox.versand.vergeben) {
+    fehler.push("outbox-versand-nicht-erfolgreich");
+  }
+
+  const d = b.durchlauf;
+  const workerZaehler = ["reserviert", "erledigt", "wiederholt", "zurueckgestellt",
+    "endgueltigFehlgeschlagen", "leaseVerloren"];
+  if (!d || d.gestartet !== true || d.fehler
+      || d.worker !== FACHWEG_GRENZEN.parallel
+      || !d.grenzen || d.grenzen.parallel !== FACHWEG_GRENZEN.parallel
+      || d.grenzen.stapel !== FACHWEG_GRENZEN.stapel
+      || d.grenzen.leaseMs !== FACHWEG_PIPELINEPROFIL.workerLeaseMs
+      || d.grenzen.leerlaufWarteMs !== FACHWEG_PIPELINEPROFIL.workerLeerlaufMs
+      || workerZaehler.some((name) => !Number.isInteger(d[name]) || d[name] < 0)
+      || !Array.isArray(d.bilanzen) || d.bilanzen.length !== FACHWEG_GRENZEN.parallel
+      || d.bilanzen.some((wert) => !wert || wert.verfuegbar !== true || wert.fehler
+        || wert.budgetSchicht !== "mit-tagesplan"
+        || workerZaehler.some((name) => !Number.isInteger(wert[name]) || wert[name] < 0))) {
+    fehler.push("worker-nicht-vollstaendig-verfuegbar");
+  }
+  if (d && Array.isArray(d.bilanzen)) {
+    for (const name of workerZaehler) {
+      const summe = d.bilanzen.reduce((wert, bilanz) => wert + Number(bilanz && bilanz[name]), 0);
+      if (Number.isInteger(d[name]) && summe !== d[name]) {
+        fehler.push(`worker-summenwiderspruch:${name}`);
+      }
+    }
+  }
+
+  const quittung = b.quittung;
+  const runId = String(b.laufkennung || "");
+  const startBeleg = quittung && quittung.startBeleg;
+  const endeBeleg = quittung && quittung.endeBeleg;
+  if (!quittung || quittung.start !== true || !startBeleg || startBeleg.ok !== true
+      || startBeleg.uebersprungen !== false || !startBeleg.eintrag
+      || startBeleg.eintrag.runId !== runId || startBeleg.eintrag.status !== "running") {
+    fehler.push("startquittung-fehlt");
+  }
+  if (!quittung || quittung.ende !== true || !endeBeleg || endeBeleg.ok !== true
+      || endeBeleg.uebersprungen !== false || !endeBeleg.eintrag
+      || endeBeleg.eintrag.runId !== runId || endeBeleg.eintrag.status !== quittung.status
+      || !new Set(["success", "partial"]).has(quittung.status)) {
+    fehler.push("endquittung-fehlt");
+  }
+  if (!b.kiKlassen || ["understanding", "lage", "buero", "sonstige"].some((name) => (
+    !Number.isInteger(b.kiKlassen[name]) || b.kiKlassen[name] < 0
+  ))) fehler.push("ki-klassenzaehler-unvollstaendig");
+  if (!b.integritaet || b.integritaet.ok !== true) fehler.push("kindintegritaet-rot");
+  return { ok: fehler.length === 0, fehler };
+}
+
+function fachwegKindUmgebung() {
+  return {
+    HELMUT_NARRATIV_QUEUE: "on",
+    HELMUT_LLM_FAIRNESS: "on",
+    HELMUT_LLM_GLOBAL_ANTEIL: "0.5",
+    HELMUT_JOB_DISPATCH_MODE: "shadow",
+    HELMUT_WORKER_PARALLEL: String(FACHWEG_GRENZEN.parallel),
+    HELMUT_WORKER_STAPEL: String(FACHWEG_GRENZEN.stapel),
+    HELMUT_WORKER_BATCH: String(FACHWEG_GRENZEN.stapel),
+    HELMUT_WIEDERVORLAGE_STUNDEN: String(FACHWEG_PIPELINEPROFIL.wiedervorlageStunden),
+    HELMUT_WIEDERVORLAGE_MAX: String(FACHWEG_PIPELINEPROFIL.wiedervorlageMax),
+    HELMUT_JOB_TIMEOUT_MS: String(FACHWEG_PIPELINEPROFIL.jobTimeoutMs),
+    HELMUT_NARRATIV_TIMEOUT_MS: String(FACHWEG_PIPELINEPROFIL.narrativTimeoutMs),
+    HELMUT_UNDERSTANDING_BUENDEL: String(FACHWEG_PIPELINEPROFIL.understandingBuendel),
+    HELMUT_VORBEDINGUNG_WARTE_MS: String(FACHWEG_PIPELINEPROFIL.vorbedingungWarteMs),
+    HELMUT_VORBEDINGUNG_MAX_WARTE_MS: String(FACHWEG_PIPELINEPROFIL.vorbedingungMaxWarteMs),
+    HELMUT_BUDGET_WARTE_MS: String(FACHWEG_PIPELINEPROFIL.budgetWarteMs),
+    HELMUT_BUDGET_MAX_WARTE_MS: String(FACHWEG_PIPELINEPROFIL.budgetMaxWarteMs),
+    HELMUT_WORKER_LEERLAUF_MS: String(FACHWEG_PIPELINEPROFIL.workerLeerlaufMs),
+    CRAWLER_TIMEOUT_MS: String(FACHWEG_PIPELINEPROFIL.crawlerTimeoutMs),
+    HELMUT_KI_TIMEOUT_MS: String(FACHWEG_PIPELINEPROFIL.kiTimeoutMs),
+    HELMUT_WORKER_LEASE_MS: String(FACHWEG_PIPELINEPROFIL.workerLeaseMs),
+    HELMUT_KLASSEN_GRENZEN: FACHWEG_PIPELINEPROFIL.klassenGrenzen,
+    HELMUT_KLASSE_QUELLENABRUF_MAX: String(FACHWEG_PIPELINEPROFIL.klasseQuellenabrufMax),
+    HELMUT_KLASSE_VERSTEHEN_MAX: String(FACHWEG_PIPELINEPROFIL.klasseVerstehenMax),
+    HELMUT_KLASSE_WORKER_DRAIN_MAX: String(FACHWEG_PIPELINEPROFIL.klasseWorkerDrainMax),
+    HELMUT_VERSTEHEN_KONKURRENZ: FACHWEG_PIPELINEPROFIL.verstehenKonkurrenz,
+    HELMUT_VERSTEHEN_PARALLELITAET: String(FACHWEG_PIPELINEPROFIL.verstehenParallelitaet),
+    HELMUT_VERSTEHEN_LEASE_MS: String(FACHWEG_PIPELINEPROFIL.verstehenLeaseMs),
+    HELMUT_VERSTEHEN_WIEDERAUFNAHME_MAX:
+      String(FACHWEG_PIPELINEPROFIL.verstehenWiederaufnahmeMax),
+    HELMUT_KO_SCAN_LIMIT: String(FACHWEG_PIPELINEPROFIL.koScanLimit),
+    HELMUT_LAGE_MAX_VORGAENGE: String(FACHWEG_PIPELINEPROFIL.lageMaxVorgaenge),
+    HELMUT_LAGE_DEMO: FACHWEG_PIPELINEPROFIL.lageDemo,
+    HELMUT_LLM_BUDGET_FAIL_CLOSED: FACHWEG_PIPELINEPROFIL.llmBudgetFailClosed,
+    HELMUT_UNDERSTANDING_GATE: FACHWEG_PIPELINEPROFIL.understandingGate,
+    HELMUT_UNDERSTANDING_PRIORITY: FACHWEG_PIPELINEPROFIL.understandingPriority,
+    HELMUT_MAX_LLM_CALLS_PER_DAY: String(FACHWEG_PIPELINEPROFIL.effektiverKiTagesdeckel),
+    HELMUT_MAX_LLM_CALLS_PER_TENANT_PER_DAY: String(FACHWEG_PIPELINEPROFIL.effektiverKiMandatsdeckel),
+    HELMUT_LLM_RESERVE_UNDERSTANDING: "0"
+  };
 }
 
 // ── Ein Slotlauf als eigener Prozess ────────────────────────────────────────────────────────
@@ -429,9 +1250,17 @@ function starteSlot(nr, opt) {
     `--slot=${nr}`, `--jetztMs=${cronZeitFuerSlot(nr)}`,
     `--fehlerMandat=${opt.fehlerMandat}`, `--parallel=${PARALLEL}`,
     `--stapel=${STAPEL}`, `--kiDeckel=${opt.kiDeckel}`, `--kiReserve=${opt.kiReserve}`];
+  if (IST_FACHWEG) {
+    args.push(`--fachwegLauf=${FACHWEG_LAUF}`);
+    args.push(`--manifestSha256=${opt.manifestSha256}`);
+  }
+  const kindUmgebung = { ...process.env, NODE_EXTRA_CA_CERTS: opt.caBuendel };
+  if (IST_FACHWEG) {
+    Object.assign(kindUmgebung, fachwegKindUmgebung());
+  }
   const kind = spawn(process.execPath, args, {
     stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env, NODE_EXTRA_CA_CERTS: opt.caBuendel }
+    env: kindUmgebung
   });
   let out = "", err = "";
   kind.stdout.on("data", (d) => { out += d; });
@@ -451,7 +1280,7 @@ async function fuehreStufeAus(mandate, umgebung) {
   const P_ = `${mandate}`;
   leereDatenbank();
 
-  const ursprung = await P.starteAnbieterUrsprung({
+  const quellenprofil = IST_FACHWEG ? FACHWEG_QUELLENPROFIL : {
     latenzMs: Number(process.env.HELMUT_Z3_URSPRUNG_LATENZ_MS || 60),
     latenzStreuungMs: Number(process.env.HELMUT_Z3_URSPRUNG_STREUUNG_MS || 140),
     drosselAnteil: Number(process.env.HELMUT_Z3_DROSSEL || 0.03),
@@ -461,11 +1290,12 @@ async function fuehreStufeAus(mandate, umgebung) {
     ueberschneidungAnteil: Number(process.env.HELMUT_Z3_UEBERSCHNEIDUNG || 0.9),
     dokumenteJeVorgang: Number(process.env.HELMUT_Z3_VARIANTEN || 4),
     frischeAnteil: Number(process.env.HELMUT_Z3_FRISCHE || 0.25)
-  });
+  };
+  const ursprung = await P.starteAnbieterUrsprung(quellenprofil);
   const ki = await P.starteKiEndpunkt({
     latenzMs: Number(process.env.HELMUT_Z3_KI_LATENZ_MS || 900),
     latenzStreuungMs: Number(process.env.HELMUT_Z3_KI_STREUUNG_MS || 900),
-    fehlerAnteil: Number(process.env.HELMUT_Z3_KI_FEHLER || 0.01),
+    fehlerAnteil: IST_FACHWEG ? 0 : Number(process.env.HELMUT_Z3_KI_FEHLER || 0.01),
     hoechstzahlAufrufe: KI_HOECHSTZAHL
   });
   // CA-Buendel: bestehendes Sitzungsbuendel PLUS die ephemere lokale Stelle.
@@ -493,6 +1323,7 @@ async function fuehreStufeAus(mandate, umgebung) {
   // offen war. KEIN Kriterium — siehe Z20/Z21: ein leerer Endzustand ist nicht das Ziel.
   let slotBisGesund = null;
   const rueckstauJeSlot = [];
+  const slotIntegritaetsfehler = [];
   // VERBINDUNGEN WAEHREND DES LAUFS ABTASTEN. Ein Wert nach Laufende waere wertlos — die
   // Slotprozesse und der PostgREST-Pool haben ihre Verbindungen dann schon geschlossen.
   // Gemessen wird gegen dieselbe Datenbank, aus einer eigenen kurzlebigen Sitzung.
@@ -512,11 +1343,25 @@ async function fuehreStufeAus(mandate, umgebung) {
     const ergebnis = await starteSlot(nr, {
       datenbank: umgebung.torUrl, token: umgebung.token, ki: ki.url, ursprung: ursprung.url,
       mandate, fehlerMandat, caBuendel,
+      manifestSha256: umgebung.fachwegManifest && umgebung.fachwegManifest.sha256,
       kiDeckel: KI_DECKEL === "offen" ? "1000000" : KI_DECKEL,
       kiReserve: process.env.HELMUT_Z3_KI_RESERVE || "0"
     });
     slots.push(ergebnis);
-    if (!ergebnis.bilanz || ergebnis.bilanz.fehler) {
+    if (IST_FACHWEG) {
+      const integritaet = pruefeFachwegSlotErgebnis(ergebnis, {
+        slot: nr, laufKennung: FACHWEG_LAUF,
+        zielMandate: mandate,
+        manifestSha256: umgebung.fachwegManifest && umgebung.fachwegManifest.sha256
+      });
+      if (!integritaet.ok) {
+        slotIntegritaetsfehler.push({ slot: nr, fehler: integritaet.fehler });
+        console.log(`  Slot ${nr}: ABBRUCH — Integritaet ${integritaet.fehler.join(", ")}`);
+        console.log(`  stderr: ${ergebnis.fehlerAusgabe.slice(-600)}`);
+        break;
+      }
+      ergebnis.bilanz.kiEndpunktKumulativ = ki.bericht().aufrufe;
+    } else if (!ergebnis.bilanz || ergebnis.bilanz.fehler) {
       console.log(`  Slot ${nr}: ABBRUCH — ${ergebnis.bilanz && ergebnis.bilanz.fehler}`);
       console.log(`  stderr: ${ergebnis.fehlerAusgabe.slice(-600)}`);
       break;
@@ -603,7 +1448,7 @@ async function fuehreStufeAus(mandate, umgebung) {
     // Abbruch nur, wenn NICHTS mehr offen ist UND mindestens eine volle Tagesrunde lief.
     // Sonst laufen die Slots bis zur Obergrenze — der Rueckstautrend ueber zwei Tagesrunden
     // ist die eigentliche Aussage.
-    if (restOffen === 0 && nr % SLOTS_JE_TAG === 0) break;
+    if (!IST_FACHWEG && restOffen === 0 && nr % SLOTS_JE_TAG === 0) break;
 
     // ── ZEITFORTSCHRITT ZUM NAECHSTEN CRON-SLOT ────────────────────────────────────────────
     // Production faehrt die drei allgemeinen Abfluesse um 04:00, 16:00 und 20:00 UTC — der
@@ -622,6 +1467,7 @@ async function fuehreStufeAus(mandate, umgebung) {
       "with v as (update public.helmut_jobs set due_at = now()"
       + " where status = 'wartend' and due_at > now() returning 1) select count(*) from v"));
     zeitfortschritte.push({ nachSlot: nr, vorgezogen });
+    if (IST_FACHWEG && !sollFachwegNachSlotWeiterlaufen({ slot: nr, integritaetOk: true })) break;
   }
   clearInterval(abtaster);
   const gesamtDauerMs = Date.now() - t0;
@@ -637,6 +1483,15 @@ async function fuehreStufeAus(mandate, umgebung) {
   const haengendeLeases = z("select count(*) from public.helmut_jobs where lease_owner is not null and lease_expires_at < now()");
   const dubletten = z("select count(*) from (select idempotency_key from public.helmut_jobs group by idempotency_key having count(*)>1) d");
   const unbekannt = z("select count(*) from public.helmut_jobs where last_error='unbekannter-aufgabentyp'");
+  const casUnbekannt = IST_FACHWEG
+    ? z("select count(*) from public.helmut_verstehen_reservierungen where zustand='unbekannt'") : null;
+  const casAktiv = IST_FACHWEG
+    ? z("select count(*) from public.helmut_verstehen_reservierungen where zustand in ('reserviert','modell-laeuft')") : null;
+  const casFertig = IST_FACHWEG
+    ? z("select count(*) from public.helmut_verstehen_reservierungen where zustand='fertig'") : null;
+  const budgetKennzahlen = IST_FACHWEG
+    ? JSON.parse(psql("select row_to_json(k)::text from public.helmut_llm_budget_kennzahlen(null) k"))
+    : null;
   const fremdeFehler = z(`select count(*) from public.helmut_jobs where status='fehlgeschlagen' and coalesce(tenant_id,'') <> '${fehlerMandat}'`);
   const fehlerMandatFehler = z(`select count(*) from public.helmut_jobs where status='fehlgeschlagen' and tenant_id='${fehlerMandat}'`);
   const mandatsWiderspruch = z("select count(*) from public.helmut_jobs where tenant_id is not null and payload ? 'mandatsId' and payload->>'mandatsId' <> tenant_id");
@@ -662,11 +1517,20 @@ async function fuehreStufeAus(mandate, umgebung) {
   const ursprungBericht = ursprung.bericht();
   const kiBericht = ki.bericht();
   const slotBilanzen = slots.map((s) => s.bilanz).filter(Boolean);
+  const fachwegKiRohbeleg = IST_FACHWEG ? baueFachwegKiRohbeleg({
+    zielMandate: mandate,
+    laufKennung: FACHWEG_LAUF,
+    manifestSha256: umgebung.fachwegManifest && umgebung.fachwegManifest.sha256,
+    gitSha: umgebung.fachwegManifest && umgebung.fachwegManifest.git.sha,
+    slotBilanzen,
+    kiAufrufe: kiBericht.aufrufe
+  }) : null;
   const geplantGesamt = slotBilanzen.reduce((s, b) => s + ((b.plan && b.plan.neu) || 0), 0);
   const erledigtQuittung = slotBilanzen.reduce((s, b) => s + ((b.durchlauf && b.durchlauf.erledigt) || 0), 0);
   const leaseVerloren = slotBilanzen.reduce((s, b) => s + ((b.durchlauf && b.durchlauf.leaseVerloren) || 0), 0);
   const slotDauern = slotBilanzen.map((b) => b.dauerMs);
   const langsamsterSlot = slotDauern.length ? Math.max(...slotDauern) : 0;
+  const slotLaufzeit = slotVerteilung(slotDauern);
 
   console.log(`\n  Auftraege ${zahl(auftraege)} · erledigt ${zahl(erledigt)} · endgueltige Fehler ${fehlgeschlagen}`
     + ` (Fehlermandat ${fehlerMandatFehler}, fremd ${fremdeFehler}) · offen ${wartend + laeuft}`);
@@ -678,13 +1542,57 @@ async function fuehreStufeAus(mandate, umgebung) {
     + ` · ${zahl(ursprungBericht.ausgefallen)} Ausfaelle · p95 ${ursprungBericht.dauerMs.p95} ms`);
 
   // ── Kriterien ───────────────────────────────────────────────────────────────────────────
+  if (IST_FACHWEG) {
+    check(`Z0b/${P_}`, "Der Fachweg hat exakt sechs vollstaendige und integre Slots gemessen",
+      pruefeFachwegSlotfolge(slots)
+        && slotBilanzen.length === FACHWEG_GRENZEN.slotsGesamt
+        && slotIntegritaetsfehler.length === 0
+        && slots.every((ergebnis, index) => pruefeFachwegSlotErgebnis(ergebnis, {
+          slot: index + 1,
+          laufKennung: FACHWEG_LAUF,
+          zielMandate: mandate,
+          manifestSha256: umgebung.fachwegManifest && umgebung.fachwegManifest.sha256
+        }).ok),
+      `${slotBilanzen.length}/${FACHWEG_GRENZEN.slotsGesamt} Bilanzen`
+      + ` · ${slotIntegritaetsfehler.length} Integritaetsfehler`);
+    check(`Z0c/${P_}`, "Die klassenweise KI Rohzaehlung ist mit dem lokalen TLS Endpunkt abgeglichen",
+      fachwegKiRohbeleg && fachwegKiRohbeleg.messungVollstaendig === true,
+      fachwegKiRohbeleg
+        ? `${fachwegKiRohbeleg.kiEndpunktAufrufe} Endpunktaufrufe · Beleg ${fachwegKiRohbeleg.fachwegBelegHash}`
+        : "Rohbeleg fehlt");
+    befund(`Z0d/${P_}`, "Alle KI Arbeitsformen des Tagesbedarfsvertrags wurden im Fachweg echt ausgefuehrt",
+      fachwegKiRohbeleg && fachwegKiRohbeleg.kapazitaetsvertragVollstaendig === true
+        && fachwegKiRohbeleg.tagesbedarfsbericht !== null,
+      fachwegKiRohbeleg
+        ? `${JSON.stringify(fachwegKiRohbeleg.gesamt)} · `
+          + `${fachwegKiRohbeleg.blocker.filter((b) => b.art === "klassenabdeckung")
+            .map((b) => b.grund).join(", ") || "vollstaendig"}`
+        : "Rohbeleg fehlt");
+  }
   check(`Z1/${P_}`, "Der geplante Arbeitsumfang ist vollstaendig in der Ablage",
     auftraege > 0 && auftraege >= geplantGesamt, `${zahl(auftraege)} Zeilen · ${zahl(geplantGesamt)} gemeldet`);
   check(`Z2/${P_}`, "Quittung und Ablage sind deckungsgleich",
     erledigtQuittung === erledigt, `Quittung ${zahl(erledigtQuittung)} · Ablage ${zahl(erledigt)}`);
   check(`Z3/${P_}`, "Keine UNERWARTETEN endgueltigen Fehler",
     fremdeFehler === 0, `${fremdeFehler} fremd · ${fehlgeschlagen} gesamt`);
-  check(`Z4/${P_}`, "Keine unbekannten Vorgaenge", unbekannt === 0, `${unbekannt}`);
+  check(`Z4/${P_}`, "Keine Auftraege mit unbekanntem Auftragstyp", unbekannt === 0, `${unbekannt}`);
+  if (IST_FACHWEG) {
+    check(`Z4b/${P_}`, "Kein unbekannter CAS Ausgang und keine aktive Verstehensreservierung am Laufende",
+      casUnbekannt === 0 && casAktiv === 0 && (kiBericht.aufrufe === 0 || casFertig > 0),
+      `${casUnbekannt} unbekannt · ${casAktiv} reserviert oder modell-laeuft`
+        + ` · ${casFertig} fertig bei ${kiBericht.aufrufe} KI Aufrufen`);
+    check(`Z4c/${P_}`, "KI Budgetreservierungen sind vollstaendig abgeschlossen und mit dem Endpunkt abgeglichen",
+      budgetKennzahlen
+        && Number(budgetKennzahlen.offen) === 0
+        && Number(budgetKennzahlen.global_belegt) === Number(budgetKennzahlen.global_verbraucht)
+        && Number(budgetKennzahlen.reservierungen)
+          === Number(budgetKennzahlen.offen) + Number(budgetKennzahlen.verbraucht)
+            + Number(budgetKennzahlen.fehlgeschlagen) + Number(budgetKennzahlen.zurueckgegeben)
+        && Number(budgetKennzahlen.reservierungen)
+          === Number(budgetKennzahlen.notwendig) + Number(budgetKennzahlen.optional)
+        && Number(budgetKennzahlen.global_verbraucht) === kiBericht.aufrufe,
+      budgetKennzahlen ? JSON.stringify(budgetKennzahlen) : "Kennzahlen fehlen");
+  }
   check(`Z5/${P_}`, "Keine haengenden Leases, nichts steht auf 'laeuft'",
     haengendeLeases === 0 && laeuft === 0, `${haengendeLeases} abgelaufen · ${laeuft} laeuft`);
   check(`Z6/${P_}`, "Keine verlorene Lease", leaseVerloren === 0, `${leaseVerloren}`);
@@ -731,7 +1639,18 @@ async function fuehreStufeAus(mandate, umgebung) {
   check(`Z16/${P_}`, "Echter KI-Pfad: es wurden Modellaufrufe ueber TLS gefuehrt und protokolliert",
     kiBericht.aufrufe > 0 && kiProtokoll > 0, `${zahl(kiBericht.aufrufe)} Aufrufe · ${zahl(kiProtokoll)} Protokollzeilen`);
   check(`Z17/${P_}`, "Kein Slot ueberschreitet das 300-Sekunden-Zeitbudget",
-    langsamsterSlot <= SLOT_BUDGET_MS, `langsamster Slot ${langsamsterSlot} ms von ${SLOT_BUDGET_MS} ms`);
+    (!IST_FACHWEG || slotLaufzeit.n === FACHWEG_GRENZEN.slotsGesamt)
+      && langsamsterSlot <= SLOT_BUDGET_MS,
+    `langsamster Slot ${langsamsterSlot} ms von ${SLOT_BUDGET_MS} ms`
+      + (IST_FACHWEG ? ` · ${slotLaufzeit.n}/6 Messwerte` : ""));
+  if (IST_FACHWEG) {
+    befund(`Z17b/${P_}`, "Die Fachweg Slots halten p95 und Einzelwert Reserve",
+      slotLaufzeit.n === FACHWEG_GRENZEN.slotsGesamt
+        && slotLaufzeit.p95 <= FACHWEG_GRENZEN.slotP95MaxMs
+        && slotLaufzeit.max <= FACHWEG_GRENZEN.slotEinzelMaxMs,
+      `p95 ${slotLaufzeit.p95 == null ? "?" : slotLaufzeit.p95} ms von ${FACHWEG_GRENZEN.slotP95MaxMs} ms`
+        + ` · max ${slotLaufzeit.max == null ? "?" : slotLaufzeit.max} ms von ${FACHWEG_GRENZEN.slotEinzelMaxMs} ms`);
+  }
   check(`Z18/${P_}`, "Wiederholungen sind begrenzt (kein Auftrag ueber seiner Versuchsgrenze)",
     z("select count(*) from public.helmut_jobs where attempts > max_attempts") === 0,
     `${zahl(wiederholungen)} Wiederholungen gesamt`);
@@ -763,7 +1682,12 @@ async function fuehreStufeAus(mandate, umgebung) {
       + ` · ${letztesTagesende.offen} Auftraege insgesamt offen (davon Arbeit des laufenden`
       + " Tages, die der naechste Slot aufnimmt — das ist der Normalfall)");
   } else {
-    console.log(`  Z20/${P_} nicht anwendbar: es wurde keine volle Tagesrunde gefahren.`);
+    if (IST_FACHWEG) {
+      befund(`Z20/${P_}`, "Am Ende eines Tages liegt keine Arbeit eines FRUEHEREN Tages mehr",
+        false, "Pflichtmessung am Ende von Slot 3 oder 6 fehlt");
+    } else {
+      console.log(`  Z20/${P_} nicht anwendbar: es wurde keine volle Tagesrunde gefahren.`);
+    }
   }
   const tag1 = rueckstauJeSlot.find((r) => r.slot === SLOTS_JE_TAG);
   const tag2 = rueckstauJeSlot.find((r) => r.slot === SLOTS_JE_TAG * 2);
@@ -778,7 +1702,12 @@ async function fuehreStufeAus(mandate, umgebung) {
       `nach Tag 1 (Slot ${tag1.slot}) ${tag1.offen} offen · nach Tag 2 (Slot ${tag2.slot}) ${tag2.offen} offen`
       + ` · Grenze ${grenze}`);
   } else {
-    console.log(`  Z20b/${P_} nicht anwendbar: es wurden keine zwei vollen Tagesrunden gefahren.`);
+    if (IST_FACHWEG) {
+      befund(`Z20b/${P_}`, "Der Rueckstau waechst nicht von Tag zu Tag",
+        false, "Pflichtmessung fuer Slot 3 und Slot 6 fehlt");
+    } else {
+      console.log(`  Z20b/${P_} nicht anwendbar: es wurden keine zwei vollen Tagesrunden gefahren.`);
+    }
   }
 
   // DER EIGENTLICHE KAPAZITAETSBEFUND (§2a): Production hat DREI regulaere allgemeine
@@ -792,7 +1721,12 @@ async function fuehreStufeAus(mandate, umgebung) {
       + " gesunder Mandate aus frueheren Tagesfenstern offen"
       + ` · ${abflussSlots} Slots gefahren · langsamster Slot ${langsamsterSlot} ms`);
   } else {
-    console.log(`  Z21/${P_} nicht anwendbar: es wurde keine volle Tagesrunde gefahren.`);
+    if (IST_FACHWEG) {
+      befund(`Z21/${P_}`, "Die Tagesarbeit der GESUNDEN Mandate fliesst in den drei regulaeren Tagesslots ab (§2a)",
+        false, "Pflichtmessung am Tagesende fehlt");
+    } else {
+      console.log(`  Z21/${P_} nicht anwendbar: es wurde keine volle Tagesrunde gefahren.`);
+    }
   }
 
   // ── Z22 · Wird ein gesundes Mandat durch das kranke aufgehalten? ────────────────────────
@@ -812,7 +1746,7 @@ async function fuehreStufeAus(mandate, umgebung) {
   //       Gegengeprueft gegen die Rohtabelle — nicht gegen die Zusage der Funktion.
   //   (c) Der KONTROLLLAUF ohne Fehlermandat: liegengebliebene Arbeit gesunder Mandate.
   // Erst (b) und (c) zusammen tragen eine Aussage.
-  const VERGLEICH = leseVergleich(mandate);
+  const VERGLEICH = leseVergleich(mandate, umgebung.fachwegManifest);
   const gekoppelteSlots = messwerteKopplung(slotBilanzen, rueckstauJeSlot);
   const mitSicht = rueckstauJeSlot.filter((r) => r.sichtGesund != null);
   const filterVerletzt = mitSicht.filter((r) => r.sichtGesund !== r.erwartetGesund);
@@ -885,15 +1819,32 @@ async function fuehreStufeAus(mandate, umgebung) {
     auftraege, erledigt, fehlgeschlagen, fremdeFehler, fehlerMandatFehler,
     kopplung: gekoppelteSlots, konflikte, echteDatenbankfehler: echteFehler, vorgaengeOhneBeleg,
     wartend, laeuft, haengendeLeases, dubletten, wiederholungen, mehrfachAbschluss,
+    cas: IST_FACHWEG ? { unbekannt: casUnbekannt, aktiv: casAktiv, fertig: casFertig } : null,
+    budgetKennzahlen,
+    fachwegKiRohbeleg,
     rohdokumente, vorgaenge, kiProtokoll,
     gesamtDauerMs, langsamsterSlot, slots: abflussSlots, slotBisGesund, zeitfortschritte,
+    slotLaufzeit, slotIntegritaetsfehler,
     rueckstauJeSlot,
     verbindungenSpitze, verbindungenAktivSpitze, maxVerbindungen,
     slotDauern, fairnessMin: minG, fairnessMax: maxG,
     datenbank: torBericht, anbieter: ursprungBericht, ki: kiBericht,
-    slotBilanzen: slotBilanzen.map((b) => ({
+    slotBilanzen: slotBilanzen.map((b, index) => ({
       slot: b.slot, dauerMs: b.dauerMs, planDauerMs: b.planDauerMs, arbeitDauerMs: b.arbeitDauerMs,
+      kindCode: slots[index] ? slots[index].code : null,
       geplantNeu: b.plan && b.plan.neu,
+      ...(IST_FACHWEG ? {
+        laufkennung: b.laufkennung,
+        fachwegLauf: b.fachwegLauf,
+        fachwegManifestSha256: b.fachwegManifestSha256,
+        kiKlassen: b.kiKlassen,
+        kiEndpunktKumulativ: b.kiEndpunktKumulativ,
+        plan: b.plan,
+        wiedervorlage: b.wiedervorlage,
+        outbox: b.outbox,
+        quittung: b.quittung,
+        integritaet: b.integritaet
+      } : {}),
       erledigt: b.durchlauf && b.durchlauf.erledigt,
       zurueckgestellt: b.durchlauf && b.durchlauf.zurueckgestellt,
       wiederholt: b.durchlauf && b.durchlauf.wiederholt,
@@ -921,6 +1872,12 @@ async function main() {
   console.log("  LOKALE Anbieter — kein Google, kein Azure. Ergebnis ist Z3a (Teilnachweis), nie Z3 vollstaendig.\n");
 
   pruefeSicherheit();
+  const fachwegManifest = IST_FACHWEG
+    ? erstelleFachwegManifest(process.env, { datenbank: PG.db }) : null;
+  if (fachwegManifest) {
+    console.log(`  Z3b Fachweg Manifest ${fachwegManifest.sha256}`);
+    console.log(`  Einmaldatenbank ${fachwegManifest.datenbank.name} · exakt sechs Slots in zwei Tagen`);
+  }
 
   if (!servererreichbar() || !POSTGREST || !fs.existsSync(POSTGREST)) {
     console.log("== UEBERSPRUNGEN ==");
@@ -957,7 +1914,7 @@ async function main() {
     process.exit(1);
   }
 
-  const umgebung = { arbeitsverzeichnis, torUrl: tor.url, tor, token };
+  const umgebung = { arbeitsverzeichnis, torUrl: tor.url, tor, token, fachwegManifest };
   const alle = [];
   for (const stufe of STUFEN) {
     const vorherFail = fail;
@@ -1007,6 +1964,7 @@ async function main() {
   const bericht = {
     stand: "Z3a-teilnachweis-lokale-anbieter",
     erhoben: new Date().toISOString(),
+    fachwegManifest,
     slotBudgetMs: SLOT_BUDGET_MS, slotsJeTag: SLOTS_JE_TAG, parallel: PARALLEL, stapel: STAPEL,
     kiDeckel: KI_DECKEL, kiHoechstzahl: KI_HOECHSTZAHL,
     zeichenJeToken: P.ZEICHEN_JE_TOKEN,
@@ -1033,7 +1991,27 @@ async function main() {
   process.exit(fail === 0 ? 0 : 1);
 }
 
-main().catch((error) => {
-  console.error("LAUFFEHLER:", (error && error.stack) || error);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error("LAUFFEHLER:", (error && error.stack) || error);
+    process.exit(1);
+  });
+}
+
+module.exports = {
+  FACHWEG_GRENZEN,
+  FACHWEG_QUELLENPROFIL,
+  FACHWEG_PIPELINEPROFIL,
+  FACHWEG_CODEDATEIEN,
+  validiereFachwegDatenbankname,
+  fachwegDatenbankname,
+  pruefeFachwegUmgebung,
+  erstelleFachwegManifest,
+  pruefeFachwegManifest,
+  slotVerteilung,
+  sollFachwegNachSlotWeiterlaufen,
+  pruefeFachwegSlotfolge,
+  baueFachwegKiRohbeleg,
+  pruefeFachwegSlotErgebnis,
+  fachwegKindUmgebung
+};

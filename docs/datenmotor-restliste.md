@@ -148,7 +148,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 | `HELMUT_FAILED_KO_RECOVERY` (+ `HELMUT_FAILED_KO_MAX_RETRIES`) | AUS | OP-13 |
 | `HELMUT_UNDERSTANDING_PRIORITY` | AUS | OP-14 |
 | `HELMUT_CRAWL_RUNS_RELATIONAL` + Migration `20260720` (nicht angewandt) | AUS | OP-17 |
-| `HELMUT_RETENTION_EXECUTE` (echte Löschung) | AUS (nur Trockenlauf) | OP-12 |
+| `HELMUT_RETENTION_EXECUTE` (derzeit inert; kein DELETE-Executor) | AUS, auch mit Flag konstruktiv nur Trockenlauf | OP-12 |
 | Migration `20260721` (DB-Härtung, Advisor-Fixes) | vorbereitet, nicht angewandt | OP-03 |
 | `HELMUT_TENANT_LLM_CAP` (+ Limit-Envs) — Per-Mandant-Kostendeckel | AUS (verhaltensneutral) | OP-03 |
 | `HELMUT_V3_LAZY_UNDERSTANDING` (Lazy-Pfad; Feldbug inzwischen gefixt) | AUS | — (nur bei Reaktivierung relevant) |
@@ -280,9 +280,9 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 - **Parallelisierbarkeit:** vollständig parallel.
 - **Freigabe:** **JA** (Repo-Einstellung, Betreiber; 2 Minuten).
 
-#### OP-12 · Retention/Löschung scharfschalten (Teil von früher FT2-8; DSGVO-Betriebsreife)
-- **Status:** vorbereitet; Datenklassen-Matrix, Trockenlauf und Integritätsprüfung existieren; `HELMUT_RETENTION_EXECUTE` AUS; unbegrenztes Wachstum ist real gemessen.
-- **Fehlender Schritt:** Fristen aus OP-02 übernehmen → Trockenlauf-Protokoll → `HELMUT_RETENTION_EXECUTE` aktivieren → ersten echten Löschlauf dokumentieren.
+#### OP-12 · Atomare Retention/Löschung bauen und freigeben (Teil von früher FT2-8; DSGVO-Betriebsreife)
+- **Status:** Planung vorbereitet und fail closed; Datenklassen-Matrix, paginierter Trockenlauf und interne Integritätsprüfung existieren. Der REST-Abzug ist ausdrücklich nicht transaktional, `deleteRetention` konstruktiv gesperrt und `HELMUT_RETENTION_EXECUTE` kann keinen DELETE auslösen; unbegrenztes Wachstum ist real gemessen.
+- **Fehlender Schritt:** Fristen aus OP-02 übernehmen → Trockenlauf-Protokoll → atomaren DB-seitigen Executor oder belegten Schreibstopp mit atomarer Referenzprüfung implementieren und isoliert prüfen → erst danach den ersten echten Löschlauf getrennt freigeben und dokumentieren.
 - **Abhängigkeiten:** **OP-02** (Fristen) und **OP-05/OP-06** (Alt-Fälle erst retten/aussortieren — sonst permanenter Verlust).
 - **Risiko:** mittel — echte Löschung; durch Trockenlauf + Fristen-Freigabe kontrolliert.
 - **Parallelisierbarkeit:** erst nach den Abhängigkeiten.

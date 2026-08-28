@@ -1,7 +1,8 @@
 "use strict";
 
-// Google-News-Härtung — Crawler-Integrationssuite (lokaler Mock-Server, kein
-// externes Netz; der Netz-Guard der Offline-Suite erlaubt localhost).
+// Google-News-Härtung — Crawler-Integrationssuite mit injiziertem Transport.
+// Kein Socket und kein externes Netz: die Produktionskette erhaelt trotzdem
+// ausschliesslich die kanonische https://news.google.com-Adresse.
 //
 // Belegt am ECHTEN crawlAllSources/crawlSource-Pfad:
 //   1. Provider-Trennung: direkte/amtliche Quellen laufen erfolgreich weiter,
@@ -15,13 +16,12 @@
 //   6. Timeout: klassifiziert, ohne Retry (bewusst)
 //   7. Kill-Switch/kein Gate: Alt-Verhalten (ein Pool, keine Skips)
 //
-// Trick: die Provider-Erkennung matcht auf "news.google." im URL-String — der
-// Mock-Server nutzt localhost-URLs mit "news.google."-PFAD, sodass Klassifikation
-// und Härtungspfad greifen, ohne dass je ein externer Host kontaktiert wird.
+// Die Provider-Erkennung wird bewusst NICHT fuer localhost gelockert. Ein
+// injizierter requestGet-Adapter endet unmittelbar vor dem Socket und liefert
+// die Offline-Antwort fuer die echte, strikt validierte Provider-URL.
 
 process.env.CRAWLER_TIMEOUT_MS = "400"; // vor dem require lesen (Modul-Konstante)
 
-const http = require("http");
 const { crawlAllSources } = require("../lib/helmut/crawler");
 const { createGoogleNewsGate } = require("../lib/helmut/google-news-hardening");
 const { classifyCrawlError } = require("../lib/helmut/source-telemetry");
@@ -36,47 +36,47 @@ const RSS = (title) => `<?xml version="1.0"?><rss><channel><item><title>${title}
 
 let googleActive = 0, googleMaxActive = 0, google429Hits = 0;
 
-const server = http.createServer((req, res) => {
-  const url = req.url || "";
-  if (url.includes("news.google.")) {
+async function requestGet(url) {
+  const parsed = new URL(url);
+  if (parsed.hostname === "news.google.com") {
     googleActive += 1;
     googleMaxActive = Math.max(googleMaxActive, googleActive);
-    setTimeout(() => {
-      googleActive -= 1;
-      if (url.includes("mode=429")) {
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 30));
+      const mode = parsed.searchParams.get("mode") || "ok";
+      if (mode === "429") {
         google429Hits += 1;
-        res.writeHead(429, { "Retry-After": "0" });
-        res.end("rate limited");
-        return;
+        const error = new Error(`HTTP 429 for ${url}`);
+        error.statusCode = 429;
+        error.retryAfterMs = 0;
+        throw error;
       }
-      if (url.includes("mode=hang")) return; // nie antworten -> Crawler-Timeout
-      if (url.includes("mode=empty")) {
-        res.writeHead(200, { "Content-Type": "application/xml" });
-        res.end('<?xml version="1.0"?><rss><channel></channel></rss>');
-        return;
-      }
-      res.writeHead(200, { "Content-Type": "application/xml" });
-      res.end(RSS("Google-Weg " + url.slice(0, 40)));
-    }, 30);
-    return;
+      if (mode === "hang") throw new Error(`Timeout for ${url}`);
+      const body = mode === "empty"
+        ? '<?xml version="1.0"?><rss><channel></channel></rss>'
+        : RSS(`Google-Weg ${parsed.searchParams.get("q") || "test"}`);
+      return { statusCode: 200, headers: {}, body, finalUrl: url };
+    } finally {
+      googleActive -= 1;
+    }
   }
-  res.writeHead(200, { "Content-Type": "application/xml" });
-  res.end(RSS("Direkter amtlicher Weg"));
-});
+  return { statusCode: 200, headers: {}, body: RSS("Direkter amtlicher Weg"), finalUrl: url };
+}
+
+const mitTransport = (optionen = {}) => ({ ...optionen, requestDeps: { requestGet } });
 
 function googleSource(id, mode = "ok") {
+  const u = `https://news.google.com/rss/search?q=${encodeURIComponent(id)}&mode=${mode}`;
   return { id, name: id, type: "media", active: true, crawlMethod: "rss",
-    url: `http://127.0.0.1:${server.address().port}/news.google.com/rss/search?q=${id}&mode=${mode}`,
-    rssUrl: `http://127.0.0.1:${server.address().port}/news.google.com/rss/search?q=${id}&mode=${mode}` };
+    url: u, rssUrl: u };
 }
 function directSource(id) {
+  const u = `https://amtlich.example/${encodeURIComponent(id)}.xml`;
   return { id, name: id, type: "ministry", active: true, crawlMethod: "rss",
-    url: `http://127.0.0.1:${server.address().port}/amtlich/${id}`,
-    rssUrl: `http://127.0.0.1:${server.address().port}/amtlich/${id}.xml` };
+    url: u, rssUrl: u };
 }
 
 (async () => {
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const hardening = { retryMax: 1, retryBaseMs: 5, retryCapMs: 10, retryAfterCapMs: 10 };
 
   // ── 1+2: Provider-Trennung + Retry bei flächendeckendem 429 ───────────────
@@ -86,7 +86,7 @@ function directSource(id) {
       directSource("bmas"), directSource("bundestag")
     ];
     const gate = createGoogleNewsGate({ concurrency: 2, minSpacingMs: 0, breakerMinObservations: 999 });
-    const crawl = await crawlAllSources(sources, { googleGate: gate, hardeningConfig: hardening });
+    const crawl = await crawlAllSources(sources, mitTransport({ googleGate: gate, hardeningConfig: hardening }));
     const direct = crawl.results.filter((r) => r.sourceId.startsWith("bmas") || r.sourceId.startsWith("bundestag"));
     const google = crawl.results.filter((r) => r.sourceId.startsWith("g429"));
     check("amtliche/direkte Quellen erfolgreich TROTZ Google-Totalausfall", direct.every((r) => r.ok && r.itemCount === 1));
@@ -106,7 +106,8 @@ function directSource(id) {
       directSource("destatis")
     ];
     const gate = createGoogleNewsGate({ concurrency: 1, minSpacingMs: 0, breakerMinObservations: 3, breakerFailureRatio: 0.6 });
-    const crawl = await crawlAllSources(sources, { googleGate: gate, hardeningConfig: { ...hardening, retryMax: 0 } });
+    const crawl = await crawlAllSources(sources,
+      mitTransport({ googleGate: gate, hardeningConfig: { ...hardening, retryMax: 0 } }));
     const google = crawl.results.filter((r) => r.sourceId.startsWith("gb-"));
     const circuitFailed = google.filter((r) => classifyCrawlError(r.error) === "circuit-open");
     const real429 = google.filter((r) => classifyCrawlError(r.error) === "http-429");
@@ -127,7 +128,7 @@ function directSource(id) {
     googleMaxActive = 0;
     const sources = Array.from({ length: 8 }, (_, i) => googleSource(`gok-${i}`, "ok"));
     const gate = createGoogleNewsGate({ concurrency: 2, minSpacingMs: 0, breakerMinObservations: 999 });
-    const crawl = await crawlAllSources(sources, { googleGate: gate, hardeningConfig: hardening });
+    const crawl = await crawlAllSources(sources, mitTransport({ googleGate: gate, hardeningConfig: hardening }));
     check("Google-Parallelität am Server nie über der Grenze (2)", googleMaxActive <= 2, `max=${googleMaxActive}`);
     check("gesunde Google-Quellen liefern Items", crawl.successfulSources === 8);
   }
@@ -136,10 +137,10 @@ function directSource(id) {
   {
     const sources = [googleSource("g-skip-1"), googleSource("g-skip-2"), directSource("iab")];
     const gate = createGoogleNewsGate({ concurrency: 2, minSpacingMs: 0, breakerMinObservations: 999 });
-    const crawl = await crawlAllSources(sources, {
+    const crawl = await crawlAllSources(sources, mitTransport({
       googleGate: gate, hardeningConfig: hardening,
       cooldown: { active: true, skipGoogle: true, reason: "crawl-abstand" }
-    });
+    }));
     const skipped = crawl.results.filter((r) => r.status === "skipped-cooldown");
     check("Cooldown: Google-Quellen übersprungen (status skipped-cooldown)", skipped.length === 2 && skipped.every((r) => r.ok && r.itemCount === 0));
     check("Cooldown: Skips zählen weder als Erfolg noch als Fehler",
@@ -151,7 +152,7 @@ function directSource(id) {
   {
     const sources = [googleSource("g-hang", "hang"), directSource("drv")];
     const gate = createGoogleNewsGate({ concurrency: 2, minSpacingMs: 0, breakerMinObservations: 999 });
-    const crawl = await crawlAllSources(sources, { googleGate: gate, hardeningConfig: hardening });
+    const crawl = await crawlAllSources(sources, mitTransport({ googleGate: gate, hardeningConfig: hardening }));
     const hang = crawl.results.find((r) => r.sourceId === "g-hang");
     check("Timeout: klassifiziert als timeout, KEIN Retry", !hang.ok && classifyCrawlError(hang.error) === "timeout" && hang.retryCount === 0);
     check("Timeout blockiert die direkte Quelle nicht", crawl.results.find((r) => r.sourceId === "drv").ok === true);
@@ -161,7 +162,7 @@ function directSource(id) {
   {
     const sources = [googleSource("g-empty", "empty"), directSource("bpa")];
     const gate = createGoogleNewsGate({ concurrency: 2, minSpacingMs: 0, breakerMinObservations: 999 });
-    const crawl = await crawlAllSources(sources, { googleGate: gate, hardeningConfig: hardening });
+    const crawl = await crawlAllSources(sources, mitTransport({ googleGate: gate, hardeningConfig: hardening }));
     const empty = crawl.results.find((r) => r.sourceId === "g-empty");
     check("leerer Google-Feed -> ok/'empty', kein Fehler, kein Degradations-Signal",
       empty.ok === true && empty.status === "empty" && crawl.failedSources === 0 && crawl.successfulSources === 2);
@@ -170,12 +171,11 @@ function directSource(id) {
   // ── 7: ohne Gate (Kill-Switch) Alt-Verhalten ──────────────────────────────
   {
     const sources = [googleSource("g-legacy"), directSource("bmf")];
-    const crawl = await crawlAllSources(sources, {});
+    const crawl = await crawlAllSources(sources, mitTransport());
     check("ohne Gate: alle Quellen im Alt-Pfad erfolgreich, keine Skips",
       crawl.successfulSources === 2 && crawl.skippedSources === 0 && crawl.googleGate === null);
   }
 
-  server.close();
   console.log(`\n${passed}/${passed + failed} Crawler-Härtung-Assertions erfolgreich.`);
   if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
-})().catch((err) => { console.error("Suite-Fehler:", err); server.close(); process.exit(1); });
+})().catch((err) => { console.error("Suite-Fehler:", err); process.exit(1); });

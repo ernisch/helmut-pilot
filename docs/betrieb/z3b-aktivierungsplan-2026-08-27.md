@@ -18,20 +18,39 @@ Aufrufen erneut unbekannt; ein Ergebnis wurde nicht gespeichert. Aggregiert lage
 537 CAS Vorgaenge, 535 abgeschlossene, 1 unbekannter und 1 aufgegebener Vorgang vor; 0 offen,
 reserviert oder laufend, 0 aktive oder haengende Leases, 0 endgueltige Auftragsfehler und
 weiterhin genau 5 aktive Mandate. Das ist kein neuer Skalierungsbeweis.
-PR #272 bis #277 bleiben offen und ungemergt. #272 bis #276 sind gruen und mergefaehig;
-#277 enthaelt diese Z3b Mess- und Entscheidungstore und wartet auf seine Pflicht CI. Sie bauen
-in dieser Reihenfolge aufeinander auf: Z3a, Z22, KI Antwortumschlag, Planungszeitbudget,
-ehrliches Monitoring und Z3b Tore. Keine Migration und keine Production Aenderung ist durch
-diesen Plan freigegeben.
+PR #272 bis #277 bleiben offen und ungemergt; jeder ist nur gegen seinen unmittelbaren
+Vorgaenger sauber mergefaehig. Die Pflicht-CI-Laeufe der Kette sind
+`32996076988`, `33069194975`, `33167736389`, `33170004225`, `33172213903` und
+`33173604221`. #277 steht dabei auf `7320d4d`. Die Reihenfolge ist Z3a, Z22,
+KI Antwortumschlag, Planungszeitbudget, Monitoring und Z3b Tore. Nichts davon gibt
+eine Migration oder Production Aenderung frei.
 
-## Was lokal bereits vorbereitet ist
+Der danach weiter gehaertete lokale Arbeitsstand ist nicht durch Kopf `7320d4d` oder
+Lauf `33173604221` gedeckt. Erst ein neuer entfernter Kopf mit eigener vollstaendig
+gruener Pflicht CI darf diese lokalen Aenderungen als PR Beleg tragen.
+
+## Beweisstand streng getrennt
+
+| Ebene | Sicherer Stand | Grenze |
+|---|---|---|
+| Lokal bewiesen | Z3a 25/50/100 und die Schutzvertraege fuer Supabase, Azure, Kapazitaet und Fachweg | lokale Anbieter, lokale Datenbank oder Attrappen sind kein Production Nachweis |
+| Isoliert gegen Supabase bewiesen | A bis D sowie 200 und 500, zuletzt Lauf `33158170030` mit 500 synthetischen Mandaten | nur Plattformweg des Testprojekts, keine echten Mandate und kein Fachweg |
+| Vollstaendig im Fachweg bewiesen | fuer 200 und 500 noch nichts | die neuen Laeufe sind weder ausgefuehrt noch durch natuerliche Vorstufen freigeschaltet |
+| In Production bewiesen | historische Abnahme der fuenf aktiven Mandate | aktuelles Fuenfertor wegen 1 unbekannten Vorgang rot; 10 bis 500 nicht bewiesen |
+| Noch offen | Azure, echter Google Sonderweg, beweissichere Production Beobachtung, Ereignistransport, Speicher, Aufbewahrung, Tarif, Fachweg 200/500 und alle natuerlichen Stufen | Simulation und Hochrechnung duerfen keine dieser Luecken ersetzen |
+
+## Technische Werkzeuge und getrennte Belege
 
 | Baustein | Stand | Wirkung |
 |---|---|---|
-| Supabase Messlaeufer | 51 PASS, 0 FAIL; A bis D, 200 und 500 gruen | echter Plattformweg bis 500 bei Parallelitaet 32 belegt; temporaere Zugaenge und Workflows vollstaendig entfernt |
-| Azure Messlaeufer | 49 PASS, 0 FAIL | hoechstens 3 plus getrennt 21 Aufrufe; einzeln, ohne Wiederholung; Modelltyp, Deploymentart, Region und tagesaktueller Preisbeleg sind Pflicht |
-| Kapazitaetsauswertung | 56 PASS, 0 FAIL | verlangt sieben vollstaendige aufeinanderfolgende UTC Tage derselben Vorstufe und die deployten KI-, Planungs- und Monitoringhaertungen; kann nichts aktivieren |
-| Fachweglaeufer 200/500 | 33 PASS, 0 FAIL | startet je Freigabe genau eine neue Stufe zweimal; verlangt vorher die 21er Azure Stichprobe mit belegtem Modelltyp, sieben natuerliche Production Tage der Vorstufe und den vollstaendig deployten Haertungsstapel |
+| Isolierter Supabase Plattformbeleg | 51 PASS, 0 FAIL; A bis D, 200 und 500 gruen | echter PostgREST Weg im Testprojekt bis 500 bei Parallelitaet 32; keine echten Mandate und kein Fachweg |
+| Azure Messlaeufer | lokal 64 PASS, 0 FAIL | 21 Einzelwerte werden intern nachgerechnet; Portalherkunft, Deployment und Preis bleiben extern offen; kein Azure Aufruf erfolgt |
+| Kapazitaetsauswertung | lokal 90 PASS, 0 FAIL | formale Rechnung und Tore; bleibt ohne externe Herkunft, Fachweg Gesamtbericht und Kostenstopp nicht entscheidungsreif |
+| Fachweglaeufer 200/500 | lokal 45 Vertrag, 18 konstruktiver Aussenriegel und 60 Integritaet, je 0 FAIL | Prozessstart ohne externe Azure/Production Herkunft gesperrt; Buero im Queue Fachweg 0, kein 200er oder 500er Lauf |
+| Production Beobachtungsvertrag | lokal 61 PASS, 0 FAIL | interner Siebentage- und 500er Vertrag; vertrauenswuerdiger Slotplan, Sammler und externe Production Herkunft fehlen |
+| Provider Fachpfad | lokal 86 PASS und Google Haertung 60 PASS | Redirect, Retry und Aufloesung je Hop begrenzt; `proHttpVersuchGlobal` bleibt falsch; nicht deployt, M1, Quote, Production und gategebundene Kapazitaet offen |
+| Backup und Restore | lokal Export 74, Dateikopie 56, Verifier 86 gruen | 51 Tabellen gebunden; kein transaktionaler Snapshot, kein Datenbank Restore und kein Vollrueckweg |
+| Aufbewahrung | lokal Planner 53 und Storage 5 gruen | REST Plan bleibt nur Trockenlauf, Executor konstruktiv bei 0 DELETE; kein Production Vollzug |
 | KI Antwortumschlag | PR #274 offen, gruen, mergefaehig und ungemergt; Parser 25 PASS, Endpunktvertrag 10 PASS | rettet den beobachteten Steuerzeichenpfad, lehnt unvollstaendige Anbieterantworten ab und gibt keine Antwortfragmente im Fehler aus; nicht deployt |
 | Planungszeitbudget | PR #275 offen, gruen, mergefaehig und ungemergt | wartet einen bereits begonnenen Schreibaufruf ab und meldet nur belegte Zaehler; nicht deployt |
 | Monitoring Ehrlichkeit | PR #276 offen, gruen, mergefaehig und ungemergt | kennzeichnet gedeckelte Queuegruende als Stichprobe und traegt Blobspiegelueberlauf bis zum Motorbericht; nicht deployt |
@@ -47,7 +66,7 @@ Lesender GitHub Stand und lokale Merge Vorschau vom 27.08.2026:
 | Kopf | `b42c07b` | `2a01ea9e` |
 | Zustand | offen, nicht Draft, mergefaehig | offen, nicht Draft, mergefaehig |
 | Pflicht CI | Syntax und Offline Suiten gruen; Browser und Mobile Smoke gruen | Syntax und Offline Suiten gruen; Browser und Mobile Smoke gruen |
-| Vercel Status | gruen | gruen |
+| GitHub Vercel Check am damaligen Kopf | gruen | gruen |
 | Reviews / offene Review Threads | 0 / 0 | 0 / 0 |
 | Aenderungsart | nur `scripts/` und `docs/`; keine Anwendung und keine Migration | Anwendungscode fuer Z22, Tests, Dokumentation und getrennte Z22 Migration |
 
@@ -56,38 +75,48 @@ ein direkter Nachfolger von #272 und passt konfliktfrei darauf. Die Codepruefung
 neuen Merge Blocker. Der Rueckfall von #273 vor der Z22 Production Migration fragt genau
 einmal ohne Mandatsfilter und behaelt damit das bisherige konservative Verhalten bei.
 
-Am 28.08.2026 wurden #274, #275 und #276 als weitere getrennte Folge-PRs aufgebaut. Alle sind
-offen, nicht Draft, sauber mergefaehig und auf ihren Codekoepfen in der Pflicht CI gruen. Kein
-PR wurde gemergt und kein Deployment oder Production Lauf dadurch ausgeloest.
+Am 28.08.2026 wurden #274 bis #277 als getrennte Folge-PRs aufgebaut. Alle sind offen, nicht
+Draft, sauber mergefaehig und auf ihren entfernten Koepfen in der Pflicht CI gruen. GitHub
+meldet `main` derzeit als ungeschuetzt; Required Checks werden also nicht technisch erzwungen.
+Ein erfolgreicher Vercel Status ist in GitHub nur fuer `main` und die Vorschaukoepfe #272/#273 sichtbar;
+#274 bis #277 haben wegen der branchgenauen Deployment Sperre keinen Vercel Status. Kein PR
+wurde gemergt und kein Deployment oder Production Lauf dadurch ausgeloest.
 
 Spaeterer Vollzug bleibt strikt getrennt:
 
-1. Vor dem Vollzug `main`, alle Kopfstaende, Mergefaehigkeit und CI erneut lesen.
-2. #272 nur nach eigener Mergefreigabe mergen. Dieser Merge loest ein Production Deployment
-   aus, obwohl der Aenderungssatz selbst nur Pruefwerkzeuge und Dokumentation enthaelt.
-3. Deployment von #272 abwarten und rein lesend auf Erfolg pruefen.
-4. Basis von #273 danach ausdruecklich kontrollieren; nicht annehmen, dass GitHub sie
-   automatisch auf `main` umstellt. Diff und CI erneut pruefen.
-5. #273 nur nach einer zweiten Mergefreigabe mergen und das Deployment rein lesend pruefen.
-6. #274, #275 und #276 danach einzeln und nur mit jeweils eigener Mergefreigabe vollziehen;
-   nach jedem Schritt Deployment und Basis des Nachfolgers erneut lesen.
-7. PR #277 folgt erst nach gruener Pflicht CI und eigener Mergefreigabe.
-8. F9 und Z22 in Production bleiben danach zwei eigene Migrationsentscheidungen. Keine
-   Migration wird durch einen Merge mitfreigegeben.
+1. Zuerst das richtige Vercel Production Projekt, den erfolgreichen `main` Stand und den
+   konkreten Rollbackweg belegen; Branch Protection und beide Pflichtchecks bestaetigen.
+2. Danach alle Basen, Koepfe, Diffs, Mergefaehigkeit und CI der Kette erneut lesen.
+3. #272 nur mit eigener Freigabe mergen, sein Production Deployment abwarten und pruefen.
+4. #273 auf die neue Basis stellen, erneut pruefen, gesondert mergen und deployen.
+5. Erst danach Z22 als eigene Production Migration freigeben, anwenden und pruefen.
+6. #274 gesondert mergen und deployen; der naechste natuerliche Fuenferlauf muss den
+   Parserbefund schliessen.
+7. #275 und danach #276 einzeln mergen; jedes Deployment und die neue Folgebasis pruefen.
+8. F9 danach als eigene Production Migration freigeben, anwenden und pruefen.
+9. Erst dann #277 auf den finalen `main` Stand bringen, Diff und neue Pflicht CI pruefen,
+   gesondert mergen, das Production Deployment abwarten und verifizieren.
+10. Git SHA, Deployment, Migrationen, Konfiguration und Mandatsmenge danach einfrieren. Ab
+    der naechsten UTC Grenze beginnen sieben volle Tage; zwischen F9 und #277 zaehlt nichts.
+11. Jede spaetere Aenderung setzt das Fenster auf Tag 1 zurueck. `20260720` bleibt eine
+    getrennte Entscheidung und darf kein laufendes Fenster veraendern.
 
 ## Verbindliche Reihenfolge vor der ersten Erweiterung
 
 1. Roten Fuenferbefund durch den in PR #274 geprueften Parserfix beheben und danach natuerlich regressieren.
-2. PR #272 bis #276 streng in dieser Reihenfolge kontrollieren und jeden Merge sowie jedes
-   folgende Production Deployment einzeln freigeben und pruefen.
-3. PR #277 erst nach eigener Pflicht CI und Mergefreigabe vollziehen.
+2. #272 bis #276 und Z22/F9 nur in der kontrollierten Vollzugsfolge oben ausfuehren; kein
+   Stapelmerge und keine mit einem Merge still freigegebene Migration.
+3. Der dokumentierte entfernte Kopf von PR #277 hat gruene Pflicht CI. Die neuen
+   lokalen Haertungen brauchen nach dem Hochladen einen eigenen Lauf; Merge bleibt gesperrt.
 4. F9 im Testprojekt nur nach eigener Migrationsfreigabe anwenden. **Erledigt.**
 5. Z22 im Testprojekt nicht veraendern. Eine lesende Bestandspruefung fand die korrigierte
    Fassung unter `20260827121931`, obwohl die freigegebene Kette Z22 ausschloss. Der Ursprung
    ist offen; der Supabase Lauf hat keine Migration ausgefuehrt.
 6. Supabase Probe ausschliesslich mit synthetischen Testauftraegen stufenweise freigeben und
    auswerten. **A bis D sowie die 200er und 500er Proben sind erledigt und gruen.**
-7. Azure Vorprobe mit drei Aufrufen und eigener Kostenfreigabe ausfuehren.
+7. Azure bleibt nach dem einmalig freigegebenen, vor Kennworteingabe gesperrten
+   Anmeldeversuch extern gesperrt. Erst nach neuer Betreiberbestaetigung der Wartezeit
+   die Vorprobe mit drei Aufrufen und eigener Kostenfreigabe ausfuehren.
 8. Nur bei gruener Vorprobe die weiteren 21 Azure Aufrufe getrennt freigeben.
 9. Aus den echten Werten den KI Deckel, die Understanding Reserve und die Kostenobergrenze
    berechnen. Eine Rechnung setzt keine Production Variable.
@@ -155,16 +184,18 @@ Verluste. Jedes der 500 synthetischen Mandate war genau einmal vertreten. Danach
 Testauftraege abgeschlossen vor, sonst 0. Supabase Schluessel, GitHub Geheimnis und Workflow
 wurden entfernt; `8ecff689` startete keinen weiteren Lauf.
 
-## Ausschliesslich noch fehlende Z3b Werte
+## Noch fehlende Z3b Werte
 
 | Bereich | Bereits vorhanden | Noch offen |
 |---|---|---|
 | Supabase Netzweg | A bis D sowie 200 und 500 gruen, Parallelitaet bis 32 | keine weitere Plattformstufe bis zum Ziel 500 |
 | Fachwege 25/50/100 | Z3a abgeschlossen | keine Wiederholung; nur gezielte Regression nach echter Aenderung oder neuen Anbieterwerten |
-| Azure | Werkzeug offline gruen; aktuelle Global- und Data-Zone-Listenpreise dokumentiert | Deploymentart und Kontopreis bestaetigen; danach begrenzte echte Laufzeit sowie Ein- und Ausgabetoken |
-| KI Deckel | Rechenweg und Schutzregeln vorhanden | Zahl erst aus echten Azure Werten bestimmen |
-| Aktivierung bis 100 | Stufen und Stopkriterien sowie Supabase Tragfaehigkeit vorhanden | finale Zahlen fuer Deckel, Kosten und Slotreserve |
-| 200 und 500 | strategischer Weg festgelegt; Supabase 200 und 500 gruen | neue Fachwegmessungen bleiben offen |
+| Azure | Werkzeug offline gruen; kontrollierte Anmeldung vor Kennworteingabe gesperrt | neue Betreiberbestaetigung nach Wartezeit; Modell, Deploymentart, Region und Kontopreis belegen; danach 3 und getrennt 21 Aufrufe |
+| KI Deckel | K1 ergibt mindestens 399 fuer 200 und 999 fuer 500 bei 50 Prozent Globalanteil | echter klassenweiser Tagesbedarf, harte Tokenkostenbegrenzung und Betreiberkostenrahmen fehlen |
+| Echter Google Sonderweg | lokaler Fachpfad begrenzt Redirect, Retry und Aufloesung je Hop | `proHttpVersuchGlobal` bleibt falsch; M1, Quote, Versorgung bis 500 und Einbindung in das Kapazitaetstor nicht gemessen; nichts deployt |
+| Plattformbetrieb | Supabase Warteschlangenweg isoliert bis 500 gruen; lokale 51er Backup und Retention Vertraege gehaertet | Tarif, PITR, Snapshot, echter Restore, wirksame Aufbewahrung, Vercel Laufzeit und Ereignistransport fehlen |
+| Aktivierung bis 100 | Stufenplan und Stopkriterien vorhanden | beweissichere Tagesbelege sowie finale Zahlen fuer Deckel, Kosten und Slotreserve |
+| 200 und 500 | strategischer Weg festgelegt; Supabase 200 und 500 gruen | neue vollstaendige Fachwegmessungen und natuerliche Realstufen bleiben offen |
 
 ## Stufentore
 
@@ -181,11 +212,15 @@ Eine neue 200er oder 500er Messung ist keine Wiederholung des abgeschlossenen Z3
 sondern eine neue, bisher ungemessene Stufe. Sie wird trotzdem erst ausgefuehrt, wenn das
 vorherige Tor gruen ist.
 
-### Neuer fail closed Fachweglaeufer fuer 200 und 500
+Die Aktivierung von 500 ist noch kein Production Aufnahmebeweis. Dieser entsteht erst nach
+einem eigenen vollstaendigen, gruenen Siebentagefenster mit stabil genau 500 aktiven Mandaten,
+belegtem Ereignistransport und gegen unveraenderliche Production Quellen bestaetigten Tageswerten.
 
-`scripts/skalierung-z3b-fachweg.js` setzt diese Reihenfolge technisch um. Ein Lauf gilt nur,
-wenn genau eine Zielstufe 200 oder 500 und eine stufenbezogene Laufkennung freigegeben sind.
-Er verlangt vor jeder Ausfuehrung:
+### Lokaler Fachwegvertrag fuer 200 und 500
+
+`scripts/skalierung-z3b-fachweg.js` ist fuer genau eine Zielstufe 200 oder 500 und eine
+stufenbezogene Laufkennung gebaut. Fuer einen beweissicheren Lauf muss der aeussere Riegel
+vor jeder Ausfuehrung Folgendes gegen vertrauenswuerdige Belege pruefen:
 
 1. den vollstaendigen Azure Stichprobenbericht mit genau 7 echten Werten fuer Verstehen, Lage
    und Buero, ohne Wiederholung und mit hoechstens 7 UTC Tagen Alter,
@@ -196,18 +231,21 @@ Er verlangt vor jeder Ausfuehrung:
 4. den vollstaendigen Vollzug von #272 bis #276, F9 und Z22 samt gruener Fuenferregression
    sowie einen gesetzten KI Deckel oberhalb der Fairness Untergrenze der Vorstufe.
 
-Simulation, Hochrechnung, eine falsche Vorstufe, sechs Tage, ein roter Tag oder eine rote
-Slotreserve brechen vor dem Plattformaufbau ab. Danach laeuft die neue Stufe zweimal durch den
-echten Anwendungspfad: zuerst ohne Fehlermandat, dann mit Fehlermandat und genau diesem
-Kontrollbericht. Datenbank und Anbieter bleiben lokal; der lokale TLS Endpunkt verwendet fuer
-jeden Modellaufruf mindestens das langsamste echte Azure p95 der drei Arbeitsformen und eine
-Streuung bis zum langsamsten beobachteten Maximum. Azure wird waehrend des Fachweglaufs nicht
-erneut aufgerufen. Der Gesamtbericht nennt das Ergebnis deshalb ausdruecklich lokalen
-Fachwegnachweis und niemals Production oder Anbieterlastnachweis.
+Die erste 21er Azure Stichprobe kann wegen des Siebentage Altersriegels nicht die gesamte
+natuerliche Stufenkette bis 500 tragen. Vor einem spaeteren 200er oder 500er Fachweg ist daher
+eine neue, separat kostenfreigegebene 21er Auffrischung noetig. Der Altersriegel wird nicht
+gelockert und es gibt keinen automatischen Wiederholungsaufruf.
 
-Der Vertrag steht bei 33 PASS und 0 FAIL. Ausgefuehrt wurde noch keine 200er oder 500er
-Fachwegmessung: Die dafuer zwingenden natuerlichen Vorstufen 100 beziehungsweise 200 liegen im
-heutigen Fuenferbetrieb nicht vor. Diesen Beobachtungszeitraum ersetzt das Werkzeug nicht.
+Der innere Lauf ist lokal mit 60 Integritaetspruefungen auf feste Parameter, sechs Slots,
+vollstaendige Kindbilanzen, Codehashes und neue Ausgaben gehaertet. Hinzu kommen 45 Pruefungen
+des aeusseren Vertrags und 18 des konstruktiven Aussenriegels, jeweils ohne Fehler. Weil
+externe Azure und Production Herkunft fehlen, kann kein formales Eingabeobjekt den
+Prozessstart oder Plattformaufbau freigeben.
+
+Auch die Arbeitsformen sind noch nicht vollstaendig: Der Queue Fachweg fuehrt keinen echten
+Buero Handler aus und zaehlt deshalb ehrlich `buero: 0`. Er erzeugt keinen
+Tagesbedarfsbericht und keine Deckel oder Kostenentscheidung. Ausgefuehrt wurde weder eine
+200er noch eine 500er Fachwegmessung; die natuerlichen Vorstufen 100 und 200 fehlen ebenfalls.
 
 ## Wie der KI Deckel bestimmt wird
 
@@ -219,7 +257,13 @@ berechnet:
 3. Die Understanding Reserve innerhalb dieses Gesamtdeckels berechnen; sie wird nie zum
    Gesamtdeckel addiert.
 4. Echte Azure p95 Token je Arbeitsform mit dem Tagesbedarf multiplizieren.
-5. Mit dem am Lauftag belegten Azure Preis die Tages- und Deckelobergrenze berechnen.
+5. Mit dem am Lauftag belegten Azure Preis die p95 Schaetzung und das Szenario mit den hoechsten
+   beobachteten Tokenwerten berechnen. Beides ist ohne wirksame Production Tokenhartgrenze
+   keine mathematische Kostenobergrenze.
+
+Die aktuelle Kapazitaetsauswertung prueft diese Rechnung lokal mit 90 Faellen, bleibt aber
+absichtlich `nicht-entscheidungsreif`: Der vollstaendige Fachweg Gesamtbericht, Buero Bedarf,
+externe Herkunft, wirksamer Kostenstopp und Production Vollzug sind nicht belegt.
 
 ### Fairness-Untergrenze K1
 

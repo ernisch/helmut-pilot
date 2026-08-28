@@ -5,6 +5,8 @@
 // Ohne explizite Kosten und Laufkennung kein Netz. Keine Datenbank, keine echten
 // Mandatsdaten, keine Quellen, keine Wiederholung und nur ein Aufruf gleichzeitig.
 
+const crypto = require("crypto");
+
 const {
   KLASSEN,
   MODI,
@@ -16,9 +18,13 @@ const {
   pruefeAzureEndpoint,
   baueMessauftraege,
   bauePayload,
-  obereKostenUsd,
-  endpointFingerabdruck
+  obereKostenUsd
 } = require("./fixtures/z3b-azure-plan");
+const {
+  SCHEMA_VERSION: BERICHT_SCHEMA_VERSION,
+  ERGEBNIS_FORMAL: BERICHT_ERGEBNIS_FORMAL,
+  auswertungAus
+} = require("./fixtures/z3b-azure-bericht");
 
 const ANTWORT_MAX_BYTES = 8 * 1024 * 1024;
 const DEPLOYMENTARTEN = Object.freeze(["global", "data-zone", "regional"]);
@@ -150,7 +156,7 @@ function liesKonfiguration(env = process.env, { heuteUtc = new Date().toISOStrin
 
   const konfiguration = {
     endpoint: ziel.url,
-    endpointHash: endpointFingerabdruck(ziel.host),
+    endpointHash: crypto.createHash("sha256").update(ziel.host).digest("hex"),
     deployment,
     modell,
     deploymentart,
@@ -177,7 +183,10 @@ function liesKonfiguration(env = process.env, { heuteUtc = new Date().toISOStrin
 
 function verteilung(werte) {
   if (!werte.length) return Object.freeze({ n: 0, min: null, p50: null, p95: null, p99: null, max: null, mittel: null });
-  const sortiert = [...werte].map(Number).sort((a, b) => a - b);
+  if (!werte.every((wert) => typeof wert === "number" && Number.isSafeInteger(wert) && wert >= 0)) {
+    throw new Z3bAzureAbbruch("Z3b Azure Verteilung enthaelt keine sicheren Ganzzahlen", "antwortform");
+  }
+  const sortiert = [...werte].sort((a, b) => a - b);
   const q = (p) => sortiert[Math.min(sortiert.length - 1, Math.floor(p * (sortiert.length - 1)))];
   return Object.freeze({
     n: sortiert.length,
@@ -192,13 +201,14 @@ function verteilung(werte) {
 
 function usageAus(json) {
   const usage = json && json.usage;
-  const input = Number(usage && usage.input_tokens);
-  const output = Number(usage && usage.output_tokens);
-  const total = Number(usage && usage.total_tokens);
-  const cached = Number(usage && usage.input_tokens_details && usage.input_tokens_details.cached_tokens);
-  const reasoning = Number(usage && usage.output_tokens_details && usage.output_tokens_details.reasoning_tokens);
-  if (![input, output, total, cached, reasoning].every((wert) => Number.isFinite(wert) && wert >= 0)
-      || total !== input + output) {
+  const input = usage && usage.input_tokens;
+  const output = usage && usage.output_tokens;
+  const total = usage && usage.total_tokens;
+  const cached = usage && usage.input_tokens_details && usage.input_tokens_details.cached_tokens;
+  const reasoning = usage && usage.output_tokens_details && usage.output_tokens_details.reasoning_tokens;
+  if (![input, output, total, cached, reasoning].every((wert) => Number.isSafeInteger(wert) && wert >= 0)
+      || input <= 0 || output <= 0 || total !== input + output
+      || cached > input || reasoning > output) {
     throw new Z3bAzureAbbruch("Z3b Azure Antwort hat keinen vollstaendigen, widerspruchsfreien usage Block", "antwortform");
   }
   return Object.freeze({ input, output, total, cached, reasoning });
@@ -242,7 +252,7 @@ async function eineAnfrage(konfiguration, auftrag, fetchImpl = globalThis.fetch)
   }
   clearTimeout(timer);
   const dauerMs = Math.max(0, Date.now() - beginn);
-  const status = Number(antwort && antwort.status) || 0;
+  const status = Number.isSafeInteger(antwort && antwort.status) ? antwort.status : 0;
   let text = "";
   try { text = await antwort.text(); }
   catch (_) { throw new Z3bAzureAbbruch("Z3b Azure Antwort war nicht lesbar", "antwortform"); }
@@ -277,37 +287,13 @@ function kostenUsd(usage, preis) {
 }
 
 function aggregiere(ergebnisse, preis) {
-  const summe = (liste, feld) => liste.reduce((gesamt, wert) => gesamt + Number(wert.usage[feld] || 0), 0);
-  const baue = (liste) => {
-    const usage = Object.freeze({
-      input: summe(liste, "input"),
-      output: summe(liste, "output"),
-      total: summe(liste, "total"),
-      cached: summe(liste, "cached"),
-      reasoning: summe(liste, "reasoning")
-    });
-    return Object.freeze({
-      aufrufe: liste.length,
-      dauerMs: verteilung(liste.map((wert) => wert.dauerMs)),
-      inputTokens: verteilung(liste.map((wert) => wert.usage.input)),
-      outputTokens: verteilung(liste.map((wert) => wert.usage.output)),
-      reasoningTokens: verteilung(liste.map((wert) => wert.usage.reasoning)),
-      cachedTokens: verteilung(liste.map((wert) => wert.usage.cached)),
-      bytesJeInputToken: verteilung(liste.map((wert) => Math.round((wert.promptBytes / Math.max(1, wert.usage.input)) * 1000) / 1000)),
-      outputZeichen: verteilung(liste.map((wert) => wert.outputZeichen)),
-      usage,
-      kostenGeschaetztUsd: Math.round(kostenUsd(usage, preis) * 1e8) / 1e8
-    });
-  };
-  const jeKlasse = {};
-  for (const klasse of KLASSEN) {
-    jeKlasse[klasse] = baue(ergebnisse.filter((wert) => wert.klasse === klasse));
-  }
-  return Object.freeze({ gesamt: baue(ergebnisse), jeKlasse: Object.freeze(jeKlasse) });
+  return auswertungAus(ergebnisse, preis);
 }
 
 async function fuehreMesslauf(konfiguration, { fetchImpl = globalThis.fetch, jetztMs = () => Date.now() } = {}) {
   const beginnMs = jetztMs();
+  if (!Number.isSafeInteger(beginnMs)) throw new Z3bAzureAbbruch("Z3b Azure Laufbeginn ist ungueltig", "laufzeit");
+  const erhobenUtc = new Date(beginnMs).toISOString();
   const ergebnisse = [];
   let kostenBisher = 0;
   for (const auftrag of konfiguration.messauftraege) {
@@ -322,12 +308,24 @@ async function fuehreMesslauf(konfiguration, { fetchImpl = globalThis.fetch, jet
     }
   }
   const endeMs = jetztMs();
-  const auswertung = aggregiere(ergebnisse, konfiguration.preis);
+  if (!Number.isSafeInteger(endeMs) || endeMs < beginnMs) {
+    throw new Z3bAzureAbbruch("Z3b Azure Laufende ist ungueltig", "laufzeit");
+  }
+  const einzelmessungen = Object.freeze(ergebnisse.map((ergebnis, index) => Object.freeze({
+    runId: `${konfiguration.laufKennung}-${String(index + 1).padStart(2, "0")}`,
+    klasse: ergebnis.klasse,
+    dauerMs: ergebnis.dauerMs,
+    usage: ergebnis.usage
+  })));
+  const auswertung = aggregiere(einzelmessungen, konfiguration.preis);
   return Object.freeze({
+    schemaVersion: BERICHT_SCHEMA_VERSION,
     art: "Z3b Azure Laufzeit und Token Teilnachweis",
-    ergebnis: "vollstaendig",
+    ergebnis: BERICHT_ERGEBNIS_FORMAL,
     modus: konfiguration.modus,
     laufKennung: konfiguration.laufKennung,
+    erhobenUtc,
+    beendetUtc: new Date(endeMs).toISOString(),
     deployment: konfiguration.deployment,
     modell: konfiguration.modell,
     deploymentart: konfiguration.deploymentart,
@@ -348,6 +346,7 @@ async function fuehreMesslauf(konfiguration, { fetchImpl = globalThis.fetch, jet
     preisdatumUtc: konfiguration.preisdatumUtc,
     kostenlimitUsd: konfiguration.kostenlimitUsd,
     konservativeKostenobergrenzeVorherUsd: Math.round(konfiguration.kostenObergrenzeUsd * 1e8) / 1e8,
+    einzelmessungen,
     auswertung
   });
 }

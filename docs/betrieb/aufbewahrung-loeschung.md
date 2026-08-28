@@ -10,7 +10,7 @@
 | **Bezug** | Audit R11 / P3-1 · DSGVO Art. 5 (1) e (Speicherbegrenzung), Art. 17 (Löschung) |
 | **Werkzeug** | `scripts/retention-dryrun.js` (Trockenlauf-Default), `lib/helmut/retention.js` (reiner Planer) |
 | **Tests** | `scripts/retention-test.js` (Trockenlauf, Idempotenz, referenzielle Integrität) |
-| **Freigabe** | Fristen + Ausführung = Gründer + Rechtsfreigabe (Flag `HELMUT_RETENTION_EXECUTE`) |
+| **Freigabe** | Fristen + künftiger atomarer Executor = Gründer + Rechtsfreigabe; das Flag allein schaltet keine Löschung frei |
 
 ## 1. Datenklassen-Matrix
 
@@ -45,8 +45,13 @@ vom Planer + Test benutzt.
 ## 3. Sicherer Trockenlauf (Archivierung & Löschung)
 
 `node scripts/retention-dryrun.js` → plant die Löschung und meldet die betroffenen
-Datensätze, **schreibt nichts**. Der echte Lauf (`--execute`) verlangt zusätzlich
-`HELMUT_RETENTION_EXECUTE=on` (freigabepflichtig) und `v3StoreReady`.
+Datensätze, **schreibt nichts**. Auch `--execute` zusammen mit
+`HELMUT_RETENTION_EXECUTE=on` und `v3StoreReady` bleibt konstruktiv gesperrt und
+erzeugt keinen DELETE. Grund: Der vollständig paginierte REST-Abzug ist kein
+transaktionaler Snapshot; Seiten können sich verschieben und zwischen Plan und
+Mutation kann eine neue Referenz entstehen. Eine echte Ausführung braucht einen
+DB-seitig atomaren, sperrenden Vertrag oder einen belegten Schreibstopp mit
+atomarer Referenzprüfung unmittelbar beim Löschen.
 
 **Referenzielle Integrität (kritisch):** `ko_document_links` referenziert
 `raw_documents` mit `ON DELETE CASCADE`. Der Planer löscht deshalb ein raw_document
@@ -73,6 +78,7 @@ Integritätsgründen bewusst geschont werden.
 ## 6. Offene Freigaben (Gründer + Recht)
 
 1. Konkrete Aufbewahrungsfristen je Datenklasse bestätigen (juristische Entscheidung).
-2. `HELMUT_RETENTION_EXECUTE=on` + `--execute` erst nach dokumentiertem Trockenlauf.
+2. Atomaren DB-Executor oder belegten Schreibstopp mit atomarer Referenzprüfung
+   bauen und prüfen; erst danach über eine echte Ausführungsfreigabe entscheiden.
 3. Verhältnis zum bestehenden Löschkonzept `docs/recht/toms-loeschkonzept-vvt-entwurf.md`
    klären (dieses Dokument liefert die technische Mechanik, jenes den VVT/das TOM-Konzept).

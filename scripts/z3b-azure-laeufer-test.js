@@ -5,6 +5,7 @@
 const fs = require("fs");
 const path = require("path");
 const P = require("./fixtures/z3b-azure-plan");
+const B = require("./fixtures/z3b-azure-bericht");
 const Z = require("./skalierung-z3b-azure");
 
 const ROOT = path.join(__dirname, "..");
@@ -102,7 +103,7 @@ async function main() {
   const basis = Z.liesKonfiguration(umgebung());
   check("B1 Exakter Azure OpenAI Ressourcenhost wird angenommen",
     basis.endpoint === "https://helmut-z3b-test.openai.azure.com"
-      && basis.endpointHash.length === 12
+      && basis.endpointHash.length === 64
       && basis.modell === "gpt-5-mini"
       && basis.deploymentart === "global"
       && basis.region === "swedencentral"
@@ -204,7 +205,8 @@ async function main() {
       }
     });
   };
-  let uhr = 0;
+  const erwarteteErhebungUtc = `${basis.preisdatumUtc}T12:00:00.000Z`;
+  let uhr = Date.parse(erwarteteErhebungUtc) - 100;
   const bericht = await Z.fuehreMesslauf(basis, {
     fetchImpl: fakeFetch,
     jetztMs: () => { uhr += 100; return uhr; }
@@ -234,15 +236,34 @@ async function main() {
       return wert.aufrufe === 1 && wert.dauerMs.p50 != null && wert.dauerMs.p95 != null
         && wert.dauerMs.p99 != null && wert.inputTokens.p50 != null;
     }));
+  const monoton = (v, n) => v.n === n
+    && v.min <= v.p50 && v.p50 <= v.p95 && v.p95 <= v.p99 && v.p99 <= v.max
+    && v.mittel >= v.min && v.mittel <= v.max;
+  check("C7a Alle erzeugten Laufzeit und Tokenverteilungen sind vollstaendig und monoton",
+    P.KLASSEN.every((klasse) => {
+      const wert = bericht.auswertung.jeKlasse[klasse];
+      return monoton(wert.dauerMs, 1) && monoton(wert.inputTokens, 1)
+        && monoton(wert.outputTokens, 1);
+    })
+      && monoton(bericht.auswertung.gesamt.dauerMs, 3)
+      && monoton(bericht.auswertung.gesamt.inputTokens, 3)
+      && monoton(bericht.auswertung.gesamt.outputTokens, 3));
   check("C8 Der Bericht enthaelt weder Key, Antwort ID, Modelltext noch Prompt",
     !berichtText.includes(TEST_KEY)
       && !berichtText.includes("antwort-id")
       && !berichtText.includes("GEHEIMER MODELLTEXT")
       && !berichtText.includes("Synthetischer politischer"));
   check("C9 Der Bericht nennt nur den Endpoint Fingerabdruck",
-    bericht.endpointHash.length === 12 && !berichtText.includes("helmut-z3b-test.openai.azure.com"));
+    bericht.endpointHash.length === 64 && !berichtText.includes("helmut-z3b-test.openai.azure.com"));
   check("C9a Der Bericht traegt den separat belegten Modelltyp",
     bericht.modell === "gpt-5-mini");
+  check("C9b Der Bericht traegt einen echten UTC Erhebungszeitpunkt vom Preisdatum",
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(bericht.erhobenUtc)
+      && bericht.erhobenUtc === erwarteteErhebungUtc
+      && bericht.erhobenUtc.slice(0, 10) === bericht.preisdatumUtc);
+  check("C9c Der Bericht bindet Laufbeginn und Laufende an eine endliche Gesamtdauer",
+    Date.parse(bericht.beendetUtc) - Date.parse(bericht.erhobenUtc) === bericht.dauerGesamtMs
+      && bericht.dauerGesamtMs >= 0);
   check("C10 Keine Datenbank, Production Daten oder Quellenanbieter wurden beruehrt",
     bericht.productionDatenBeruehrt === false
       && bericht.datenbankBeruehrt === false
@@ -299,10 +320,104 @@ async function main() {
 
   const quelltext = [
     fs.readFileSync(path.join(ROOT, "scripts", "fixtures", "z3b-azure-plan.js"), "utf8"),
+    fs.readFileSync(path.join(ROOT, "scripts", "fixtures", "z3b-azure-bericht.js"), "utf8"),
     fs.readFileSync(path.join(ROOT, "scripts", "skalierung-z3b-azure.js"), "utf8")
   ].join("\n");
   check("C18 Im Werkzeug ist kein echter Azure Key gespeichert",
     !/AZURE[_-]KEY[_-][A-Za-z0-9]{16,}/.test(quelltext));
+
+  console.log("\n== D · Einzelwertbindung und exaktes Berichtsschema ==");
+  let stichUhr = Date.parse(`${stichConfig.preisdatumUtc}T12:00:00.000Z`) - 100;
+  const stichBericht = await Z.fuehreMesslauf(stichConfig, {
+    fetchImpl: fakeFetch,
+    jetztMs: () => { stichUhr += 100; return stichUhr; }
+  });
+  const stichEnde = new Date(stichBericht.beendetUtc);
+  const geprueft = B.pruefeAzureBericht(stichBericht, {
+    jetzt: stichEnde,
+    heuteUtc: stichBericht.beendetUtc.slice(0, 10)
+  });
+  check("D1 Exakt 21 bereinigte Einzelmessungen mit eindeutigen Run IDs werden nachgerechnet",
+    stichBericht.einzelmessungen.length === 21
+      && new Set(stichBericht.einzelmessungen.map((m) => m.runId)).size === 21
+      && geprueft.aggregateAusEinzelmessungenNachgerechnet === true);
+  check("D2 Der Validator behauptet keine externe Herkunft, Deployment oder Preisbindung",
+    geprueft.externeHerkunftBewiesen === false
+      && geprueft.deploymentUndPreisExternBewiesen === false
+      && geprueft.entscheidungsgrundlageVollstaendig === false);
+  const aggregatGefaelscht = JSON.parse(JSON.stringify(stichBericht));
+  aggregatGefaelscht.auswertung.gesamt.dauerMs.p95 += 1;
+  check("D3 Frei erfundene Aggregate werden gegen die Einzelmessungen abgelehnt",
+    wirft(() => B.pruefeAzureBericht(aggregatGefaelscht, {
+      jetzt: stichEnde, heuteUtc: stichBericht.beendetUtc.slice(0, 10)
+    }), /Aggregate stimmen nicht/));
+  const runDoppelt = JSON.parse(JSON.stringify(stichBericht));
+  runDoppelt.einzelmessungen[1].runId = runDoppelt.einzelmessungen[0].runId;
+  check("D4 Doppelte Einzelmessungs Run IDs werden abgelehnt",
+    wirft(() => B.pruefeAzureBericht(runDoppelt, {
+      jetzt: stichEnde, heuteUtc: stichBericht.beendetUtc.slice(0, 10)
+    }), /keine eindeutigen Run IDs/));
+  const koerziert = JSON.parse(JSON.stringify(stichBericht)); koerziert.parallelitaet = "1";
+  check("D5 Zahlenkoerzierung ist im Bericht ausgeschlossen",
+    wirft(() => B.pruefeAzureBericht(koerziert, {
+      jetzt: stichEnde, heuteUtc: stichBericht.beendetUtc.slice(0, 10)
+    }), /sichere Ganzzahl/));
+  const fremdesFeld = JSON.parse(JSON.stringify(stichBericht)); fremdesFeld.bestanden = true;
+  check("D6 Unbekannte Statusfelder werden fail closed abgelehnt",
+    wirft(() => B.pruefeAzureBericht(fremdesFeld, {
+      jetzt: stichEnde, heuteUtc: stichBericht.beendetUtc.slice(0, 10)
+    }), /unbekannte Felder/));
+  check("D7 Ein in die Zukunft verschobenes Laufende wird an echtes jetzt gebunden",
+    wirft(() => B.pruefeAzureBericht(stichBericht, {
+      jetzt: new Date(Date.parse(stichBericht.beendetUtc) - 1),
+      heuteUtc: stichBericht.beendetUtc.slice(0, 10)
+    }), /Zukunft/));
+  check("D8 Provider Usage Zahlen werden nicht aus Texten koerziert",
+    wirft(() => Z.usageAus({ usage: {
+      input_tokens: "10", output_tokens: 5, total_tokens: 15,
+      input_tokens_details: { cached_tokens: 0 },
+      output_tokens_details: { reasoning_tokens: 0 }
+    } }), /widerspruchsfreien/));
+  const zeitlichUnmoeglich = JSON.parse(JSON.stringify(stichBericht));
+  zeitlichUnmoeglich.einzelmessungen.forEach((messung) => {
+    messung.dauerMs = zeitlichUnmoeglich.dauerGesamtMs;
+  });
+  zeitlichUnmoeglich.auswertung = B.auswertungAus(
+    zeitlichUnmoeglich.einzelmessungen,
+    zeitlichUnmoeglich.preis
+  );
+  check("D9 Neu berechnete Einzelaggregate koennen keine zeitlich unmoegliche Sequenz gruenden",
+    wirft(() => B.pruefeAzureBericht(zeitlichUnmoeglich, {
+      jetzt: stichEnde, heuteUtc: stichBericht.beendetUtc.slice(0, 10)
+    }), /Summe der Einzelmessungsdauern uebersteigt/));
+  const zuHohesKostenlimit = JSON.parse(JSON.stringify(stichBericht));
+  zuHohesKostenlimit.kostenlimitUsd = 999;
+  zuHohesKostenlimit.konservativeKostenobergrenzeVorherUsd = 998;
+  check("D10 Der Bericht kann den technischen Kostenriegel von hoechstens 1 USD nicht erweitern",
+    wirft(() => B.pruefeAzureBericht(zuHohesKostenlimit, {
+      jetzt: stichEnde, heuteUtc: stichBericht.beendetUtc.slice(0, 10)
+    }), /darf 1 USD nicht ueberschreiten/));
+  const vorabgrenzeZuKlein = JSON.parse(JSON.stringify(stichBericht));
+  vorabgrenzeZuKlein.konservativeKostenobergrenzeVorherUsd = 0.00000001;
+  check("D11 Die behauptete konservative Vorabgrenze muss die nachgerechneten Istkosten decken",
+    wirft(() => B.pruefeAzureBericht(vorabgrenzeZuKlein, {
+      jetzt: stichEnde, heuteUtc: stichBericht.beendetUtc.slice(0, 10)
+    }), /ueber der vor dem Lauf angegebenen konservativen Kostenobergrenze/));
+  const rundungsAngriff = JSON.parse(JSON.stringify(stichBericht));
+  rundungsAngriff.preis = { inputUsdJeMio: 0.00034, outputUsdJeMio: 0.00034 };
+  rundungsAngriff.einzelmessungen.forEach((messung) => {
+    messung.usage = { input: 1, output: 1, total: 2, cached: 0, reasoning: 0 };
+  });
+  rundungsAngriff.auswertung = B.auswertungAus(
+    rundungsAngriff.einzelmessungen,
+    rundungsAngriff.preis
+  );
+  rundungsAngriff.kostenlimitUsd = 0.00000001;
+  rundungsAngriff.konservativeKostenobergrenzeVorherUsd = 0.00000001;
+  check("D12 Kosten oberhalb des Limits koennen nicht auf das Limit abgerundet werden",
+    wirft(() => B.pruefeAzureBericht(rundungsAngriff, {
+      jetzt: stichEnde, heuteUtc: stichBericht.beendetUtc.slice(0, 10)
+    }), /ungerundete.*Kosten.*ueber/));
 
   console.log(`\nPASS ${pass}  FAIL ${fail}`);
   process.exit(fail ? 1 : 0);

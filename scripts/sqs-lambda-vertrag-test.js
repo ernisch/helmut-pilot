@@ -326,7 +326,11 @@ async function main() {
   });
   await check("8.2 Ausgeschoepfte Grenze -> VERTAGUNG mit fruehestem Zeitpunkt, kein Fehler", async () => {
     const r = await anbieter.reserviere({
-      anbieter: "google", env: { HELMUT_ANBIETER_STEUERUNG: "on" },
+      anbieter: "google", env: {
+        HELMUT_ANBIETER_STEUERUNG: "on",
+        HELMUT_ANBIETER_GOOGLE_MINUTE: "30",
+        HELMUT_ANBIETER_GOOGLE_TAG: "3000"
+      },
       deps: { reserviere: async () => ({ verfuegbar: true, erlaubt: false, grund: "minutengrenze", fruehesteMs: 12000 }) } });
     assert.strictEqual(r.erlaubt, false);
     assert.strictEqual(r.vertagen, true);
@@ -358,7 +362,11 @@ async function main() {
     const r = await anbieter.mitAnbietergrenze(
       { anbieter: "google" },
       async () => ({ ok: true }),
-      { env: { HELMUT_ANBIETER_STEUERUNG: "on" },
+      { env: {
+          HELMUT_ANBIETER_STEUERUNG: "on",
+          HELMUT_ANBIETER_GOOGLE_MINUTE: "30",
+          HELMUT_ANBIETER_GOOGLE_TAG: "3000"
+        },
         deps: { reserviere: async () => ({ verfuegbar: true, erlaubt: false, grund: "tagesgrenze", fruehesteMs: 3600000 }) } });
     assert.strictEqual(r.zurueckgestellt, true);
     assert.strictEqual(r.langeWarten, true);

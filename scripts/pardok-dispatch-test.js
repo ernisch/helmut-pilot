@@ -57,8 +57,17 @@ function fetcherOf(xml) { let calls = 0; const f = async () => { calls += 1; ret
   check("5a shadow ohne Fetcher -> 0 Items, reason kein-fetcher, kein Crash", rNoFetch.items.length === 0 && rNoFetch.reason === "kein-fetcher");
   const rThrow = await D.pardokDispatch({ id: "be-plenum", url: "https://x" }, { mode: "shadow", noWrite: true, fetchText: async () => { throw new Error("boom"); } });
   check("5b shadow Fetch-Fehler -> 0 Items, reason fetch-fehler, kein Crash", rThrow.items.length === 0 && /fetch-fehler/.test(rThrow.reason));
+  const vertagung = new Error("anbietergrenze: minutengrenze");
+  vertagung.anbieterVertagung = { wartenMs: 42000, grund: "minutengrenze" };
+  let erhalteneVertagung = null;
+  await D.pardokDispatch(
+    { id: "be-plenum", url: "https://x" },
+    { mode: "shadow", noWrite: true, fetchText: async () => { throw vertagung; } }
+  ).catch((error) => { erhalteneVertagung = error; });
+  check("5c Provider-Vertagung bleibt erhalten und wird nicht zum leeren Shadow-Erfolg",
+    erhalteneVertagung === vertagung && erhalteneVertagung.anbieterVertagung.wartenMs === 42000);
   const rHtml = await D.pardokDispatch({ id: "be-plenum", url: "https://x" }, { mode: "shadow", noWrite: true, fetchText: async () => "<!doctype html><html>Fehler 500</html>" });
-  check("5c shadow HTML-Fehlerseite -> 0 Items, fehlerseite=true, 0 Dokumente", rHtml.items.length === 0 && rHtml.shadow.fehlerseite === true && rHtml.shadow.dokumente === 0);
+  check("5d shadow HTML-Fehlerseite -> 0 Items, fehlerseite=true, 0 Dokumente", rHtml.items.length === 0 && rHtml.shadow.fehlerseite === true && rHtml.shadow.dokumente === 0);
 
   // --- 6. Kein PARDOK-Land trotz shadow -> inert (0 Items, kein Fetch) ------------------------
   const spyUnknown = fetcherOf(beXml);

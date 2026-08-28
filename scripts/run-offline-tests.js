@@ -111,6 +111,11 @@ const DENYLIST = new Set([
   "relational-shadow-compare.js", // Werkzeug gegen echte DB
   "shadow-ingest.js", // Werkzeug
   "shadow-pilot-crawl.js", // echter Crawl
+  // Live-Streaming-Messwerkzeug: prueft erst example.com/Google und liest bei
+  // offenem Egress die echten PARDOK-Exporte der beiden Landesparlamente. Es ist
+  // DB-frei, aber ausdruecklich NICHT offline und darf daher nicht als gruene
+  // Offline-Suite ohne Messwerte gezaehlt werden.
+  "pardok-shadow-test.js",
   "pardok-structure-probe.js", // echte Parlaments-Endpunkte
   "sprint6-migration-dryrun.js", // Werkzeug gegen DB
   "sprint9b-verify-abrufwege.js", // echtes Netz
@@ -143,6 +148,10 @@ function collectSuites() {
     // dadurch in KEINEM CI-Pfad — der Namensfilter kennt das Muster jetzt explizit.
     .filter((f) => f.endsWith("-test.js") || f.endsWith("gesamttest.js") || f === "p1-security-check.js")
     .sort();
+}
+
+function offlineExitCode({ failed = [], netAttempts = [] } = {}) {
+  return failed.length > 0 || netAttempts.length > 0 ? 1 : 0;
 }
 
 function main() {
@@ -215,13 +224,15 @@ function main() {
   console.log(`\n${suites.length - failed.length}/${suites.length} Suiten grün in ${secs}s`);
   if (netAttempts.length) {
     console.log(`${NET_GUARD_MARKER} Suiten mit blockierten Nicht-Localhost-Verbindungen: ${netAttempts.join(", ")}`);
+    console.log("Offline-Vertrag verletzt: Auch ein von der Suite abgefangener Netzversuch macht das Gate rot.");
   }
   if (failed.length) {
     console.log(`Fehlgeschlagen: ${failed.join(", ")}`);
-    return 1;
   }
-  return 0;
+  return offlineExitCode({ failed, netAttempts });
 }
+
+module.exports = { offlineExitCode };
 
 if (require.main === module) {
   // ZENTRALER SCHUTZ (OP-30-Korrektursprint, 2026-08-08). Der Runner-eigene Guard unten

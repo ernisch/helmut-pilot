@@ -4,11 +4,9 @@
 // Supabase (Blob-Store + V3-Tabellen) und legt sie lokal als JSON ab.
 // AUSSCHLIESSLICH LESEND (nur GET) — kein Write, keine Migration, kein Delete.
 //
-// Hintergrund: Supabase laeuft (Stand Audit) auf dem Free-Plan ohne
-// automatische Backups/PITR; der zentrale Blob ist Last-Write-Wins. Bis
-// Freigabepunkt F7 (Supabase Pro + PITR) umgesetzt ist, ist dieses Skript die
-// EINZIGE Wiederherstellungsgrundlage. Danach bleibt es als Zweitsicherung
-// (Offsite-Kopie) sinnvoll.
+// Hintergrund: Dieses Skript liefert eine dateibasierte Zweitsicherung. Es ist
+// keine alleinige Wiederherstellungsgrundlage und ersetzt weder Supabase-
+// Backups/PITR noch einen transaktionalen Snapshot.
 //
 // EHRLICHE GRENZE: Das ist KEIN transaktionaler DB-Snapshot. Die Tabellen
 // werden sequenziell ueber REST gelesen; laufen waehrend des Exports Writes,
@@ -49,74 +47,18 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { execFileSync } = require("child_process");
-
-// Tabelle -> Primaerschluessel-Spalten (aus supabase/schema.sql + Migrationen).
-// Der PK dient als deterministisches order= beim Export: stabile Sortierung
-// macht Exporte vergleichbar und die limit/offset-Paginierung konsistent
-// (PostgREST garantiert ohne order= KEINE stabile Seitenreihenfolge).
-const TABLES = {
-  helmut_store: "id",
-  profiles: "id",
-  mandate_profiles: "user_id",
-  raw_documents: "id",
-  knowledge_objects: "id",
-  ko_document_links: "knowledge_object_id,raw_document_id",
-  ko_relations: "from_ko_id,to_ko_id,relation_type",
-  decisions: "id",
-  briefings: "id",
-  matching_results: "id",
-  matching_weights: "user_id",
-  profile_embeddings: "user_id",
-  office_outputs: "id",
-  topic_memory: "id",
-  interactions: "id",
-  user_notes: "id",
-  daily_tasks: "id",
-  communication_drafts: "id",
-  political_items: "id",
-  personalized_recommendations: "id",
-  priority_changes: "id",
-  llm_usage: "id",
-  llm_budget_counters: "day,scope",
-  pipeline_locks: "job_name",
-  sources: "id",
-  publishers: "id",
-  retrieval_paths: "id",
-  source_packages: "id",
-  package_paths: "package_id,retrieval_path_id",
-  political_entities: "id",
-  geographies: "id",
-  electoral_districts: "id",
-  path_expected_levels: "retrieval_path_id,level",
-  path_expected_geographies: "retrieval_path_id,geography_id",
-  path_expected_topics: "retrieval_path_id,topic",
-  path_expected_entities: "retrieval_path_id,entity_id",
-  document_findings: "raw_document_id,source_id,original_url",
-  gate_shadow_events: "id",
-  // OP-01-Befund 2026-07-28: diese beiden Tabellen existierten in Production
-  // (Migrationen 20260718 + 20260727), fehlten aber im Export — ein "Voll"-Backup
-  // deckte nur 38 von 40 Tabellen ab. Bei jeder neuen Migration mit CREATE TABLE
-  // MUSS diese Liste (und RESTORE_ORDER in restore-drill.js) nachgezogen werden;
-  // restore-verify-local-test.js prueft die Deckung gegen die Strukturreferenz.
-  source_crawl_telemetry: "id",
-  process_runs: "run_id,process"
-};
+const {
+  TABLES,
+  NICHT_PRODUKTIV,
+  SEED_SCOPE_TABLES,
+  PROFIL_SCOPE_TABLES,
+  SCOPES,
+  fordereGueltigesInventar,
+  berechneBackupManifestPruefsumme,
+  zerlegeJsonArrayRoh
+} = require("./backup-table-inventory.js");
 
 const PAGE_SIZE = 1000;
-
-// Genau die Tabellen, die die beiden Quellen-Seeds (20260713 + 20260717) beruehren —
-// direkt betroffen ODER per Fremdschluessel/Cascade daran haengend. Reihenfolge =
-// FK-sichere Restore-Reihenfolge (Eltern vor Kindern).
-const SEED_SCOPE_TABLES = [
-  "geographies",
-  "political_entities",
-  "publishers",
-  "retrieval_paths",
-  "source_packages",
-  "package_paths",
-  "path_expected_levels",
-  "path_expected_geographies"
-];
 
 // PROFIL-MODUS (2026-07-26, Phase-1-Punkt 14B): `node scripts/backup-export.js --scope=profil`
 // Genau die zwei Tabellen, die das Anlegen des Berliner Abnahmeprofils beruehrt
@@ -130,32 +72,23 @@ const SEED_SCOPE_TABLES = [
 // mandate_profiles.user_id -> profiles.id ON DELETE CASCADE).
 // EHRLICHE GRENZE: `profiles` traegt Klarnamen realer Mandatstraeger. Auch dieser kleine
 // Export ist personenbezogen und gehoert auf ein verschluesseltes Geraet (Runbook 1b).
-const PROFIL_SCOPE_TABLES = [
-  "profiles",
-  "mandate_profiles"
-];
-
-const SCOPES = {
-  voll: null,                       // null = alle Tabellen aus TABLES
-  seed: SEED_SCOPE_TABLES,
-  profil: PROFIL_SCOPE_TABLES
-};
-
 async function fetchPage(baseUrl, key, table, orderCols, offset) {
   const order = String(orderCols).split(",").map((c) => `${c.trim()}.asc`).join(",");
   const url = `${baseUrl}/rest/v1/${table}?select=*&order=${order}&limit=${PAGE_SIZE}&offset=${offset}`;
   const res = await fetch(url, {
-    headers: { apikey: key, Authorization: `Bearer ${key}` }
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+    redirect: "error"
   });
   if (!res.ok) throw new Error(`HTTP ${res.status} fuer ${table} (offset ${offset})`);
-  return res.json();
+  return zerlegeJsonArrayRoh(await res.text());
 }
 
 // Serverseitige Zeilenzahl (PostgREST Content-Range, z. B. "0-0/162"). Nur damit
 // laesst sich ein still gekappter Export erkennen; null = Server liefert keine Zahl.
 async function fetchCount(baseUrl, key, table) {
   const res = await fetch(`${baseUrl}/rest/v1/${table}?select=*&limit=1`, {
-    headers: { apikey: key, Authorization: `Bearer ${key}`, Prefer: "count=exact" }
+    headers: { apikey: key, Authorization: `Bearer ${key}`, Prefer: "count=exact" },
+    redirect: "error"
   });
   if (!res.ok) throw new Error(`HTTP ${res.status} bei Zeilenzahl fuer ${table}`);
   const range = res.headers.get("content-range") || "";
@@ -163,19 +96,68 @@ async function fetchCount(baseUrl, key, table) {
   return total && /^\d+$/.test(total) ? Number(total) : null;
 }
 
+// Positive Data-API-Erreichbarkeit beweist, dass eine bislang ausgenommene
+// Tabelle nachgezogen werden muss. Ein 404 ist dagegen KEIN Katalogbeweis: er
+// kann auch fehlende Data-API-Exposition oder einen alten Schema-Cache bedeuten.
+// Die belastbare Grundlage bleibt deshalb das explizite Production-
+// Migrationsmanifest; diese Probe ist nur ein zusaetzlicher positiver Riegel.
+async function tableExists(baseUrl, key, table) {
+  const res = await fetch(`${baseUrl}/rest/v1/${table}?select=*&limit=0`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+    redirect: "error"
+  });
+  if (res.status === 404) return false;
+  if (!res.ok) throw new Error(`HTTP ${res.status} bei Existenzpruefung fuer ${table}`);
+  return true;
+}
+
 function sha256(text) {
   return crypto.createHash("sha256").update(text).digest("hex");
 }
 
-// main-Commit, gegen den gesichert wurde — sonst ist beim Restore unklar, welcher
-// Sollzustand gilt. Fehlt git, bleibt das Feld null (kein harter Fehler).
-function gitCommit() {
+// Commit + sauberer Arbeitsbaum: Nur dann identifiziert mainCommit den
+// tatsaechlich ausgefuehrten Exportcode. Uncommittete oder unversionierte
+// Aenderungen werden nicht durch einen Commit belegt und schliessen den Export.
+function gitStand() {
   try {
-    return execFileSync("git", ["rev-parse", "HEAD"], { cwd: path.join(__dirname, ".."), encoding: "utf8" }).trim();
-  } catch (_) { return null; }
+    const cwd = path.join(__dirname, "..");
+    const commit = execFileSync("git", ["rev-parse", "HEAD"], { cwd, encoding: "utf8" }).trim();
+    const status = execFileSync("git", ["status", "--porcelain=v1", "--untracked-files=all"], { cwd, encoding: "utf8" });
+    return { commit, sauber: status.length === 0 };
+  } catch (_) { return { commit: null, sauber: false }; }
+}
+
+function pruefeBackupQuelle(baseUrl, katalogRef, env = process.env) {
+  let url;
+  try { url = new URL(baseUrl); }
+  catch (_) { return { ok: false, grund: "SUPABASE_URL ist keine gueltige URL" }; }
+  const hostname = url.hostname.toLowerCase();
+  const loopback = hostname === "127.0.0.1" || hostname === "localhost";
+  const simulation = env.HELMUT_SCHUTZ_SIMULIERTE_UMGEBUNG === "ja" && loopback;
+  if (simulation) {
+    return { ok: true, simulation: true, ref: hostname.split(".")[0], host: url.host.toLowerCase() };
+  }
+  const erwarteterHost = `${katalogRef}.supabase.co`;
+  if (url.protocol !== "https:" || hostname !== erwarteterHost || url.port
+      || (url.pathname && url.pathname !== "/") || url.search || url.hash
+      || url.username || url.password) {
+    return {
+      ok: false,
+      grund: `Realexport ist nur gegen https://${erwarteterHost} ohne Port/Pfad/Query erlaubt; lokale HTTP-Ziele nur unter dem Simulationsmarker`
+    };
+  }
+  return { ok: true, simulation: false, ref: katalogRef, host: erwarteterHost };
 }
 
 async function main() {
+  let inventar;
+  try {
+    inventar = fordereGueltigesInventar(path.join(__dirname, ".."));
+  } catch (error) {
+    console.error(`FEHLER: ${error.message}`);
+    process.exit(2);
+  }
+
   // Argumente streng pruefen (Review PR #125, Befund 2): `--scope seed` mit Leerzeichen
   // oder ein Tippfehler fiel frueher still auf den VOLL-Export zurueck — und der zieht
   // auch raw_documents, briefings, user_notes und interactions auf die Platte. Genau die
@@ -193,21 +175,96 @@ async function main() {
   const profilScope = scope === "profil";
 
   const baseUrl = String(process.env.SUPABASE_URL || "").replace(/\/+$/, "");
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-  if (!baseUrl || !key) {
-    console.error("FEHLER: SUPABASE_URL und SUPABASE_SERVICE_ROLE_KEY muessen gesetzt sein (.env.local).");
+  if (!baseUrl) {
+    console.error("FEHLER: SUPABASE_URL muss gesetzt sein (.env.local).");
     process.exit(2);
   }
+  const quellenPruefung = pruefeBackupQuelle(baseUrl, inventar.production.referenz.quelle);
+  if (!quellenPruefung.ok) {
+    console.error(`FEHLER: ${quellenPruefung.grund}. Kein Schluessel wurde an diese URL gesendet.`);
+    process.exit(2);
+  }
+  // Ein lokaler Test darf niemals versehentlich den echten Production-Key an
+  // einen Testserver senden. Simulationen haben deshalb eine eigene Attrappe-
+  // Variable; der normale SUPABASE_SERVICE_ROLE_KEY wird dort nicht gelesen.
+  const key = quellenPruefung.simulation
+    ? (process.env.HELMUT_SIMULIERTER_SUPABASE_KEY || "")
+    : (process.env.SUPABASE_SERVICE_ROLE_KEY || "");
+  if (!key) {
+    console.error(quellenPruefung.simulation
+      ? "FEHLER: HELMUT_SIMULIERTER_SUPABASE_KEY fehlt fuer den isolierten lokalen Test."
+      : "FEHLER: SUPABASE_SERVICE_ROLE_KEY fehlt fuer den katalogbelegten Production-Export.");
+    process.exit(2);
+  }
+
+  const git = gitStand();
+  if (!/^[0-9a-f]{40}$/i.test(String(git.commit || ""))) {
+    console.error("FEHLER: aktueller Git-Commit ist nicht belegbar — ohne 40-stellige mainCommit-Kennung kein kryptografischer Backup-Vertrag.");
+    process.exit(2);
+  }
+  if (!git.sauber) {
+    console.error("FEHLER: Git-Arbeitsbaum ist nicht sauber — mainCommit wuerde den ausgefuehrten Exportcode nicht vollstaendig belegen.");
+    process.exit(2);
+  }
+
+  // Rein lesender Drift-Riegel VOR Anlage des Backup-Verzeichnisses. Die
+  // einzige bekannte Ausnahme ist crawl_runs (Migration 20260720, laut
+  // Production-Stand nicht angewendet). Sobald sie erreichbar ist, muss sie
+  // zuerst bewusst in TABLES und RESTORE_ORDER aufgenommen werden.
+  for (const table of Object.keys(NICHT_PRODUKTIV)) {
+    try {
+      if (await tableExists(baseUrl, key, table)) {
+        console.error(`FEHLER: public.${table} existiert, ist aber im Backup-Inventar als nicht produktiv ausgenommen. Inventar und Restore-Reihenfolge zuerst nachziehen.`);
+        process.exit(2);
+      }
+    } catch (error) {
+      console.error(`FEHLER: Status von public.${table} nicht sicher pruefbar: ${error.message}`);
+      process.exit(2);
+    }
+  }
+
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const dir = path.join(__dirname, "..", "backups", stamp);
   fs.mkdirSync(dir, { recursive: true });
 
   const tableNames = SCOPES[scope] ? SCOPES[scope].slice() : Object.keys(TABLES);
   const manifest = {
+    backupVertrag: 3,
     art: seedScope ? "pre-seed" : (profilScope ? "pre-profil" : "voll"),
     erstellt: new Date().toISOString(),
-    mainCommit: gitCommit(),
-    quelle: baseUrl.replace(/^https?:\/\//, "").split(".")[0],
+    mainCommit: git.commit,
+    arbeitsbaum: { sauber: true },
+    quelle: quellenPruefung.ref,
+    quelleHost: quellenPruefung.host,
+    produktionsKatalogQuelle: inventar.production.referenz.quelle,
+    simulation: {
+      aktiv: quellenPruefung.simulation,
+      grund: quellenPruefung.simulation ? "isolierter-lokaler-test" : null
+    },
+    inventar: {
+      schemaTabellen: inventar.schemaTabellen.length,
+      exportTabellen: inventar.exportTabellen.length,
+      ausgenommen: inventar.ausgenommeneTabellen.slice(),
+      hash: inventar.production.inventarHash,
+      migrationsmanifest: inventar.production.manifest.id,
+      migrationsHistoryPruefsumme: inventar.production.manifest.historyPruefsumme,
+      migrationsPruefsumme: inventar.production.manifest.repoSqlPruefsumme,
+      katalogPruefsumme: inventar.production.katalogPruefsumme,
+      katalogErhoben: inventar.production.referenz.erhoben,
+      spaltenKatalogPruefsumme: (inventar.production.referenz.spaltenKatalog
+        && inventar.production.referenz.spaltenKatalog.pruefsumme) || null
+    },
+    // Dieser Export ist sequenziell und kann selbst keinen Schreibstopp oder
+    // transaktionalen Snapshot beweisen. restore-verify-local verweigert daher
+    // einen Voll-Rueckwegbeweis mit diesem Manifest fail closed. Die Dateien
+    // bleiben als kryptografisch gepruefte Zweitsicherung nutzbar.
+    konsistenz: {
+      art: "sequenzieller-rest-export",
+      transaktional: false,
+      schreibstoppBestaetigt: false,
+      quersummenBestaetigt: false,
+      vollRueckwegBelegt: false
+    },
     tabellen: {},
     pruefsummen: {},
     fehler: []
@@ -237,7 +294,9 @@ async function main() {
       if (rows.length !== erwartet) {
         throw new Error(`unvollstaendig: ${rows.length} exportiert, ${erwartet} erwartet`);
       }
-      const json = JSON.stringify(rows);
+      // Rohe JSON-Elemente bleiben bytegetreu: JSON.parse/JSON.stringify wuerde
+      // bigint/numeric sowie Zahlen in jsonb bereits vor dem Hash runden.
+      const json = `[${rows.join(",")}]`;
       fs.writeFileSync(path.join(dir, `${table}.json`), json);
       manifest.tabellen[table] = rows.length;
       manifest.pruefsummen[table] = sha256(json);
@@ -285,6 +344,7 @@ async function main() {
   // damit ein Teil-Export nicht spaeter faelschlich als Wiederherstellungsgrundlage gilt.
   manifest.vollstaendig = manifest.fehler.length === 0 && Object.keys(manifest.tabellen).length === tableNames.length;
   manifest.pruefsummeGesamt = sha256(JSON.stringify(manifest.pruefsummen));
+  manifest.manifestPruefsumme = berechneBackupManifestPruefsumme(manifest);
   fs.writeFileSync(path.join(dir, "manifest.json"), JSON.stringify(manifest, null, 2));
   console.log(`\nBackup unter ${dir}`);
   console.log(`Art: ${manifest.art} · Tabellen ok: ${Object.keys(manifest.tabellen).length}/${tableNames.length} · Fehler: ${manifest.fehler.length}`);
@@ -300,7 +360,8 @@ async function main() {
     console.log(`VOLLSTAENDIG fuer die ${tableNames.length} Profiltabellen (pre-profil) — deckt die uebrigen`
       + ` ${Object.keys(TABLES).length - tableNames.length} Tabellen ausdruecklich NICHT ab.`);
   } else {
-    console.log("VOLLSTAENDIG — als Wiederherstellungsgrundlage verwendbar.");
+    console.log("DATEI-INTEGRIERT gegen den belegten 51-Tabellen-Katalog und den versionierten Production-Migrationsstand.");
+    console.log("KEIN Voll-Rueckwegbeweis: Der sequenzielle REST-Export ist ohne belegten Schreibstopp oder transaktionalen Snapshot nicht querschnittskonsistent.");
   }
   process.exit(manifest.vollstaendig ? 0 : 1);
 }
@@ -309,4 +370,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { TABLES, SEED_SCOPE_TABLES, PROFIL_SCOPE_TABLES, SCOPES };
+module.exports = { TABLES, SEED_SCOPE_TABLES, PROFIL_SCOPE_TABLES, SCOPES, tableExists, gitStand, pruefeBackupQuelle };

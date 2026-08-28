@@ -120,6 +120,7 @@ erfolgreich abgeschlossen.
 | isoliert gegen Supabase bewiesen | unverändert der frühere Plattformnachweis bis 500; nicht Teil dieses Fixes |
 | vollständig im Fachweg bewiesen | offen |
 | in Production bewiesen | offen |
+| noch offen | Merge und Deployment sowie natürliche Production-Befunde für Stichprobe und Spiegelüberlauf |
 
 Die Tests beweisen keine reale Rückstandsverteilung und keinen echten
 Blobüberlauf in Production. Sie belegen den Vertrag, wie beide Fälle berichtet

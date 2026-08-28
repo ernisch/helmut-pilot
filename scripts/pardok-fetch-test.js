@@ -85,7 +85,7 @@ function record(i) {
   //    und reicht ein Record-Limit an den Dispatch durch.
   const crawlerSource = fs.readFileSync(path.join(root, "lib/helmut/crawler.js"), "utf8");
   check("pardokDispatch bekommt fetchPardokText injiziert",
-    /pardokDispatch\(source, \{\s*\n\s*fetchText: deps\.fetchText \|\| \(async \(u\) => \(await fetchPardokText\(u\)\)\.body\),\s*\n\s*maxRecords: defaultPardokMaxRecords/.test(crawlerSource));
+    /pardokDispatch\(source, \{\s*\n\s*env: deps\.env,\s*\n\s*fetchText: deps\.fetchText \|\| \(async \(u\) => \(await fetchPardokText\(u, \{\}, 0, deps\)\)\.body\),\s*\n\s*maxRecords: defaultPardokMaxRecords/.test(crawlerSource));
   check("PARDOK-Budget ist konfigurierbar dokumentiert (HELMUT_PARDOK_MAX_RESPONSE_BYTES/MAX_RECORDS)",
     crawlerSource.includes("HELMUT_PARDOK_MAX_RESPONSE_BYTES") && crawlerSource.includes("HELMUT_PARDOK_MAX_RECORDS"));
 

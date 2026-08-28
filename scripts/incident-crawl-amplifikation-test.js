@@ -25,13 +25,13 @@
 //   7. Die Watchdog-Lage-Achse erzeugt keinen Takt-Fehlalarm mehr
 //   8. Telemetrie zählt korrekt und bleibt inhaltsfrei (keine URLs/Secrets)
 //
-// Der Integrationsteil läuft gegen einen lokalen Mock-Server (Netz-Guard erlaubt
-// localhost); die Provider-Erkennung matcht auf "news.google." im URL-String,
-// deshalb nutzt der Mock localhost-URLs mit "news.google."-PFAD.
+// Der Integrationsteil nutzt einen injizierten Transport unmittelbar vor dem
+// Socket. Die Produktionskette sieht ausschliesslich die kanonische
+// https://news.google.com-Adresse; der Klassifizierer wird fuer den Test nicht
+// auf localhost oder URL-Substring-Matches aufgeweicht.
 
 process.env.CRAWLER_TIMEOUT_MS = "400"; // vor dem require lesen (Modul-Konstante)
 
-const http = require("http");
 const { crawlAllSources } = require("../lib/helmut/crawler");
 const {
   createGoogleNewsGate,
@@ -60,49 +60,41 @@ const RSS = (title) => `<?xml version="1.0"?><rss><channel><item><title>${title}
 
 // Zählt Treffer je Pfad — damit ist "kein Doppel-Abruf" MESSBAR statt behauptet.
 const hits = new Map();
-const server = http.createServer((req, res) => {
-  const url = req.url || "";
-  hits.set(url, (hits.get(url) || 0) + 1);
-  if (url.includes("mode=503")) {
-    // Was Google im Incident wirklich lieferte: 503, nicht 429/403.
-    res.writeHead(503, { "Content-Type": "text/plain" });
-    res.end("Service Unavailable");
-    return;
+async function requestGet(url) {
+  const parsed = new URL(url);
+  const key = `${parsed.pathname}${parsed.search}`;
+  hits.set(key, (hits.get(key) || 0) + 1);
+  const mode = parsed.searchParams.get("mode") || "ok";
+  if (["503", "429", "403"].includes(mode)) {
+    const error = new Error(`HTTP ${mode} for ${url}`);
+    error.statusCode = Number(mode);
+    if (mode === "429") error.retryAfterMs = 1000;
+    throw error;
   }
-  if (url.includes("mode=429")) {
-    res.writeHead(429, { "Content-Type": "text/plain", "Retry-After": "1" });
-    res.end("Too Many Requests");
-    return;
-  }
-  if (url.includes("mode=403")) {
-    res.writeHead(403, { "Content-Type": "text/plain" });
-    res.end("Forbidden");
-    return;
-  }
-  if (url.includes("mode=hang")) { setTimeout(() => { try { res.end(); } catch (_) {} }, 3000); return; }
-  res.writeHead(200, { "Content-Type": "application/xml" });
-  res.end(RSS(`Weg ${url.slice(0, 40)}`));
-});
+  if (mode === "hang") throw new Error(`Timeout for ${url}`);
+  return { statusCode: 200, headers: {}, body: RSS(`Weg ${key.slice(0, 40)}`), finalUrl: url };
+}
+
+const mitTransport = (optionen = {}) => ({ ...optionen, requestDeps: { requestGet } });
 
 // GETEILTER Weg: identische URL für jedes Mandat (Paket-/Planweg).
 function sharedGoogleSource(id, mode = "ok") {
-  const u = `http://127.0.0.1:${server.address().port}/news.google.com/rss/search?q=geteilt-${id}&mode=${mode}`;
+  const u = `https://news.google.com/rss/search?q=geteilt-${encodeURIComponent(id)}&mode=${mode}`;
   return { id: `shared-${id}`, name: `geteilt ${id}`, type: "media", active: true, crawlMethod: "rss", url: u, rssUrl: u };
 }
 // MANDANTSEIGENER Weg: URL enthält das Mandat (z. B. Personen-Newssuche).
 function tenantGoogleSource(tenant, mode = "ok") {
-  const u = `http://127.0.0.1:${server.address().port}/news.google.com/rss/search?q=${tenant}&mode=${mode}`;
+  const u = `https://news.google.com/rss/search?q=${encodeURIComponent(tenant)}&mode=${mode}`;
   return { id: `person-${tenant}`, name: `${tenant} News-Suche`, type: "media", active: true, crawlMethod: "rss", url: u, rssUrl: u };
 }
 function directSource(id, mode = "ok") {
-  const u = `http://127.0.0.1:${server.address().port}/amtlich/${id}?mode=${mode}`;
+  const u = `https://amtlich.example/${encodeURIComponent(id)}?mode=${mode}`;
   return { id, name: id, type: "ministry", active: true, crawlMethod: "rss", url: u, rssUrl: u };
 }
 const countHits = (needle) => Array.from(hits.entries())
   .filter(([u]) => u.includes(needle)).reduce((s, [, n]) => s + n, 0);
 
 (async () => {
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
   const hardening = { retryMax: 0, retryBaseMs: 5, retryCapMs: 10, retryAfterCapMs: 10 };
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -169,7 +161,7 @@ const countHits = (needle) => Array.from(hits.entries())
     // Mandat 1 (alphabetisch erstes) — holt alles.
     const t1 = await crawlAllSources(
       [...sharedPaths, tenantGoogleSource("annika-klose"), directSource("bmas")],
-      { googleGate: createGoogleNewsGate({ concurrency: 3, minSpacingMs: 0, breakerMinObservations: 999 }), hardeningConfig: hardening, sharedLedger: ledger }
+      mitTransport({ googleGate: createGoogleNewsGate({ concurrency: 3, minSpacingMs: 0, breakerMinObservations: 999 }), hardeningConfig: hardening, sharedLedger: ledger })
     );
     check("Mandat 1: alle Wege erfolgreich (Referenzlauf)",
       t1.successfulSources === 14 && t1.failedSources === 0 && t1.skippedSources === 0,
@@ -180,7 +172,7 @@ const countHits = (needle) => Array.from(hits.entries())
     // Mandat 2 (im selben Durchlauf) — dieselben geteilten Wege + eigener Weg.
     const t2 = await crawlAllSources(
       [...sharedPaths, tenantGoogleSource("cem-ince"), directSource("bmas")],
-      { googleGate: createGoogleNewsGate({ concurrency: 3, minSpacingMs: 0, breakerMinObservations: 999 }), hardeningConfig: hardening, sharedLedger: ledger }
+      mitTransport({ googleGate: createGoogleNewsGate({ concurrency: 3, minSpacingMs: 0, breakerMinObservations: 999 }), hardeningConfig: hardening, sharedLedger: ledger })
     );
     check("KEIN DOPPEL-CRAWL: geteilte Wege im zweiten Mandat nicht erneut abgerufen",
       countHits("geteilt-") === 12, `hits=${countHits("geteilt-")}`);
@@ -206,7 +198,7 @@ const countHits = (needle) => Array.from(hits.entries())
     // Kill-Switch: ohne Ledger das Alt-Verhalten (Doppel-Abruf) — Rollback belegt.
     hits.clear();
     const legacy = await crawlAllSources([...sharedPaths, directSource("bmas")],
-      { googleGate: createGoogleNewsGate({ concurrency: 3, minSpacingMs: 0, breakerMinObservations: 999 }), hardeningConfig: hardening, sharedLedger: null });
+      mitTransport({ googleGate: createGoogleNewsGate({ concurrency: 3, minSpacingMs: 0, breakerMinObservations: 999 }), hardeningConfig: hardening, sharedLedger: null }));
     check("Kill-Switch (kein Ledger): Alt-Verhalten, keine Shared-Skips",
       legacy.sharedSkippedSources === 0 && legacy.successfulSources === 13 && countHits("geteilt-") === 12);
   }
@@ -222,7 +214,7 @@ const countHits = (needle) => Array.from(hits.entries())
       directSource("tagesschau"), directSource("deutschlandfunk")
     ];
     const gate = createGoogleNewsGate({ concurrency: 1, minSpacingMs: 0, breakerMinObservations: 3, breakerFailureRatio: 0.6 });
-    const crawl = await crawlAllSources(sources, { googleGate: gate, hardeningConfig: hardening });
+    const crawl = await crawlAllSources(sources, mitTransport({ googleGate: gate, hardeningConfig: hardening }));
     const circuit = crawl.results.filter((r) => r.status === "circuit-open");
 
     check("503-Welle: Breaker greift, restliche Wege enden ohne Request (0 ms)",
@@ -250,7 +242,7 @@ const countHits = (needle) => Array.from(hits.entries())
     for (const [mode, code] of [["403", "http-4xx"], ["429", "http-429"], ["hang", "timeout"]]) {
       const sources = [sharedGoogleSource(`w-${mode}`, mode), directSource(`amt-${mode}`)];
       const gate = createGoogleNewsGate({ concurrency: 2, minSpacingMs: 0, breakerMinObservations: 999 });
-      const crawl = await crawlAllSources(sources, { googleGate: gate, hardeningConfig: hardening });
+      const crawl = await crawlAllSources(sources, mitTransport({ googleGate: gate, hardeningConfig: hardening }));
       const g = crawl.results.find((r) => r.sourceId === `shared-w-${mode}`);
       check(`${mode}-Welle: inhaltsfrei als ${code} klassifiziert, Direktquelle läuft`,
         !g.ok && classifyCrawlError(g.error) === code
@@ -420,7 +412,6 @@ const countHits = (needle) => Array.from(hits.entries())
       JSON.stringify(summarizeErrorCodes(results)));
   }
 
-  server.close();
   console.log(`\n${passed}/${passed + failed} Incident-Regressions-Assertions erfolgreich.`);
   if (failed > 0) process.exit(1);
-})().catch((error) => { console.error(error); server.close(); process.exit(1); });
+})().catch((error) => { console.error(error); process.exit(1); });

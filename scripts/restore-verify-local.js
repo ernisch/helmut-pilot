@@ -2,14 +2,14 @@
 
 // OP-01 Rueckweg-Beweis: stellt ein mit backup-export.js erzeugtes VOLL-Backup
 // in eine ISOLIERTE, LOKALE PostgreSQL-Instanz wieder her und BEWEIST die
-// Wiederherstellung feld- und mengenmaessig. Ergaenzt restore-drill.js (REST-
-// Ziel = zweites Supabase-Projekt) um den Weg ohne jedes Cloud-Konto:
-// lokale PostgreSQL + pgvector genuegen.
+// Wiederherstellung feld- und mengenmaessig. Der alte Remote-REST-Weg ist
+// vollstaendig gesperrt; nur eine lokale PostgreSQL + pgvector kommt als
+// isoliertes Importziel in Betracht.
 //
 // Ein Restore gilt hier NICHT als erfolgreich, weil der Import mit Exit 0
 // endet — er gilt als erfolgreich, wenn ALLE Pruefungen bestehen:
 //   1. Backup-Integritaet (jede Datei gegen die Manifest-Pruefsumme)
-//   2. Schema-Aufbau aus supabase/schema.sql + Migrationen (Production-Stand)
+//   2. Schema-Aufbau aus schema.sql + exakt 29 belegten Production-Migrationen
 //   3. Alle Tabellen vorhanden, Zeilenzahlen == Manifest
 //   4. Primaerschluessel-Mengen byte-identisch (Digest je Tabelle)
 //   5. Feldgenaue Stichproben je kritischer Tabelle (normalisierter Vergleich)
@@ -30,6 +30,8 @@
 //   - Ohne ausdruecklichen Bestaetigungs-Schalter --ziel-bestaetigt: verweigert.
 //   - Backup ohne manifest.quelle, ohne vollstaendig:true oder mit art!=voll:
 //     verweigert (Teil-Backups beweisen keinen Voll-Rueckweg).
+//   - Nichttransaktionaler Export ohne Schreibstopp+Quersummen: verweigert.
+//   - Ohne strukturierten, aktuellen 51-Tabellen-Spaltenkatalog: verweigert.
 //   - Ziel-Datenbank wird vom Skript SELBST angelegt (CREATE DATABASE);
 //     existiert sie schon, wird abgebrochen — kein Lauf ueberschreibt einen
 //     aelteren, keine gewachsene Datenbank wird still weiterbenutzt.
@@ -49,8 +51,16 @@ const path = require("path");
 const os = require("os");
 const crypto = require("crypto");
 const { spawnSync } = require("child_process");
-const { RESTORE_ORDER, hostOf } = require("./restore-drill.js");
-const { TABLES } = require("./backup-export.js");
+const { RESTORE_ORDER, hostOf, pruefeManifestInventar, pruefeBackupDateien } = require("./restore-drill.js");
+const {
+  TABLES,
+  fordereGueltigesInventar,
+  berechneKanonischePruefsumme,
+  parseJsonVerlustfrei,
+  zerlegeJsonArrayRoh,
+  verlustfreierZahltext,
+  ERWARTETE_SPALTENKATALOG_PRUEFSUMME
+} = require("./backup-table-inventory.js");
 
 const STRUKTUR_REFERENZ_PFAD = path.join(__dirname, "produktions-strukturreferenz.json");
 
@@ -60,7 +70,12 @@ const STRUKTUR_REFERENZ_PFAD = path.join(__dirname, "produktions-strukturreferen
 const KRITISCHE_TABELLEN = [
   "helmut_store", "profiles", "mandate_profiles", "knowledge_objects",
   "briefings", "decisions", "retrieval_paths", "source_packages",
-  "raw_documents", "llm_budget_counters"
+  "raw_documents", "llm_budget_counters",
+  "knowledge_object_embeddings", "matching_runs", "llm_reservations",
+  "helmut_jobs", "helmut_job_outbox", "helmut_klassen_anker",
+  "helmut_klassen_slots", "helmut_anbieter_fenster",
+  "helmut_anbieter_schutzschalter", "helmut_verstehen_reservierungen",
+  "helmut_verstehen_vormerkungen"
 ];
 const STICHPROBEN_JE_TABELLE = 9;
 
@@ -96,7 +111,10 @@ function pkTextZeile(zeile, pkSpalten) {
   // concat() in Postgres behandelt NULL als Leerstring und behaelt Trenner bei
   // — hier identisch, damit die Digests byte-gleich vergleichbar sind.
   return pkSpalten
-    .map((c) => (zeile[c] === null || zeile[c] === undefined ? "" : String(zeile[c])))
+    .map((c) => {
+      if (zeile[c] === null || zeile[c] === undefined) return "";
+      return verlustfreierZahltext(zeile[c]) ?? String(zeile[c]);
+    })
     .join(PK_TRENNER);
 }
 
@@ -114,6 +132,23 @@ function pkDigestAusZeilen(zeilen, pkSpalten) {
   return sha256(Buffer.from(keys.join("\n"), "utf8"));
 }
 
+function normalisiereZeile(zeile, spaltenTypen = {}) {
+  const out = {};
+  for (const spalte of Object.keys(zeile || {}).sort()) {
+    out[spalte] = normalisiereWert(zeile[spalte], spaltenTypen[spalte] || null);
+  }
+  return out;
+}
+
+function feldDigestAusZeilen(zeilen, pkSpalten, spaltenTypen = {}) {
+  const eintraege = zeilen.map((zeile) => ({
+    pk: pkTextZeile(zeile, pkSpalten),
+    zeile: normalisiereZeile(zeile, spaltenTypen)
+  }));
+  eintraege.sort((a, b) => Buffer.compare(Buffer.from(a.pk, "utf8"), Buffer.from(b.pk, "utf8")));
+  return sha256(Buffer.from(JSON.stringify(eintraege), "utf8"));
+}
+
 // Deterministische Stichproben-Indizes: Anfang, Ende, gleichmaessig dazwischen.
 function waehleStichprobenIndizes(anzahl, gewuenscht) {
   if (anzahl <= 0) return [];
@@ -123,60 +158,110 @@ function waehleStichprobenIndizes(anzahl, gewuenscht) {
   return Array.from(set).sort((a, b) => a - b);
 }
 
+function casRestoreVorbereitung(tabelle) {
+  return tabelle === "knowledge_objects"
+    ? "select set_config('helmut.verstehen_cas', 'geprueft', true);"
+    : "-- keine CAS-Restore-Markierung noetig";
+}
+
+function normalisiereZahltext(s) {
+  // Zahllexeme stammen ausschliesslich aus parseJsonVerlustfrei oder einem
+  // echten JS-Number-Wert. Ein beliebiger TEXT-Spaltenwert wird nie hierher
+  // geleitet — sonst wuerden z. B. die legitimen Texte "001" und "1"
+  // ununterscheidbar.
+  const dezimal = /^([+-]?)(\d+)(?:\.(\d*))?(?:[eE]([+-]?\d+))?$/.exec(String(s));
+  if (!dezimal) return `zahllexem:${String(s)}`;
+  const negativ = dezimal[1] === "-";
+  const ganz = dezimal[2];
+  const bruch = dezimal[3] || "";
+  const exponent = Number(dezimal[4] || 0);
+  if (!Number.isSafeInteger(exponent) || Math.abs(exponent) > 100000) return `zahllexem:${String(s)}`;
+  let ziffern = (ganz + bruch).replace(/^0+/, "");
+  if (!ziffern) return "zahl:0";
+  const skala = bruch.length - exponent;
+  let kanonisch;
+  if (skala <= 0) kanonisch = ziffern + "0".repeat(-skala);
+  else if (skala >= ziffern.length) kanonisch = "0." + "0".repeat(skala - ziffern.length) + ziffern;
+  else kanonisch = ziffern.slice(0, ziffern.length - skala) + "." + ziffern.slice(ziffern.length - skala);
+  if (kanonisch.includes(".")) kanonisch = kanonisch.replace(/0+$/, "").replace(/\.$/, "");
+  return "zahl:" + (negativ ? "-" : "") + kanonisch;
+}
+
+function istTimestampTyp(typ) {
+  return /^timestamp(?:\(\d+\))? (?:with|without) time zone$/i.test(String(typ || ""));
+}
+
+function istVectorTyp(typ) {
+  return /^vector(?:\(\d+\))?$/i.test(String(typ || ""));
+}
+
 // Wert-Normalisierung fuer den feldgenauen Vergleich REST-Export (PostgREST-
-// JSON) vs. to_jsonb() aus der wiederhergestellten Datenbank. Unterschiede,
-// die KEINE Datenaenderung sind: Timestamp-Textformate ("T"/" ", "+00:00"/"Z",
-// nachlaufende Nullen), jsonb-Schluesselreihenfolge, Zahl-vs-Zahltext beim
-// vector-Typ. Alles andere bleibt strikt.
-function normalisiereWert(wert) {
+// JSON) vs. to_jsonb() aus der wiederhergestellten Datenbank. Sie ist bewusst
+// typgebunden: echte JSON-Zahllexeme werden semantisch verglichen; Timestamp-
+// und Vector-Textdarstellungen nur dann, wenn der aktuelle, fest attestierte
+// Spaltenkatalog genau diesen PostgreSQL-Typ nennt. Alle echten Strings bleiben
+// ansonsten texttreu. Auch Strings innerhalb json/jsonb bleiben immer Strings.
+function normalisiereWert(wert, spaltenTyp = null) {
   if (wert === null || wert === undefined) return null;
-  if (typeof wert === "number") return Number.isFinite(wert) ? "zahl:" + String(wert) : "zahl:" + wert;
+  const zahltext = verlustfreierZahltext(wert);
+  if (zahltext !== null) return normalisiereZahltext(zahltext);
+  if (typeof wert === "number") return Number.isFinite(wert)
+    ? normalisiereZahltext(String(wert))
+    : "zahl:" + wert;
   if (typeof wert === "boolean") return "bool:" + wert;
-  if (Array.isArray(wert)) return wert.map(normalisiereWert);
+  if (Array.isArray(wert)) return wert.map((x) => normalisiereWert(x, null));
   if (typeof wert === "object") {
     const out = {};
-    for (const k of Object.keys(wert).sort()) out[k] = normalisiereWert(wert[k]);
+    for (const k of Object.keys(wert).sort()) out[k] = normalisiereWert(wert[k], null);
     return out;
   }
   const s = String(wert);
-  // Timestamp (mit Zeitzone oder ohne): auf Epochen-Millisekunden normalisieren.
-  // Postgres liefert Offsets auch als "+00" — Date.parse verlangt "+00:00".
-  if (/^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?([+-]\d{2}(:?\d{2})?|Z)?$/.test(s)) {
-    let iso = s.replace(" ", "T");
-    if (/[+-]\d{2}(:?\d{2})?$/.test(iso)) {
-      iso = iso.replace(/([+-]\d{2}):?(\d{2})?$/, (_, h, mm) => `${h}:${mm || "00"}`);
-    } else if (!/Z$/.test(iso)) {
-      iso += "Z";
+  // Timestamp auf UTC-Sekunde + verlustfreie Nachkommastellen normalisieren.
+  // Date.parse waere hier falsch: es kuerzt Postgres-Mikrosekunden auf ms.
+  const ts = istTimestampTyp(spaltenTyp)
+    ? /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?(Z|[+-]\d{2}(?::?\d{2})?)?$/.exec(s)
+    : null;
+  if (ts) {
+    const [, jahr, monat, tag, stunde, minute, sekunde, rohBruch = "", zone = "Z"] = ts;
+    let offsetMinuten = 0;
+    if (zone !== "Z") {
+      const zm = /^([+-])(\d{2})(?::?(\d{2}))?$/.exec(zone);
+      if (zm) offsetMinuten = (zm[1] === "+" ? 1 : -1) * (Number(zm[2]) * 60 + Number(zm[3] || 0));
     }
-    const t = Date.parse(iso);
-    if (!Number.isNaN(t)) return "ts:" + t;
+    const utcMillis = Date.UTC(Number(jahr), Number(monat) - 1, Number(tag), Number(stunde), Number(minute), Number(sekunde))
+      - offsetMinuten * 60000;
+    if (Number.isFinite(utcMillis)) {
+      const bruch = rohBruch.replace(/0+$/, "");
+      return `ts:${Math.trunc(utcMillis / 1000)}.${bruch || "0"}`;
+    }
   }
   // pgvector-Textform "[0.1,0.2,...]": als Zahlenliste vergleichen.
-  if (/^\[\s*-?\d/.test(s) && /\]$/.test(s)) {
+  if (istVectorTyp(spaltenTyp) && /^\[\s*-?\d/.test(s) && /\]$/.test(s)) {
     try {
-      const arr = JSON.parse(s);
-      if (Array.isArray(arr) && arr.every((x) => typeof x === "number")) {
-        return arr.map((x) => "zahl:" + String(x));
+      const arr = parseJsonVerlustfrei(s);
+      if (Array.isArray(arr) && arr.every((x) => typeof x === "number" || verlustfreierZahltext(x) !== null)) {
+        return arr.map((x) => normalisiereWert(x, null));
       }
     } catch (_) { /* kein Vektor — als String vergleichen */ }
   }
-  // Zahl-als-Text (numeric aus verschiedenen Serialisierern): kanonisch.
-  if (/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(s)) {
-    const z = Number(s);
-    if (Number.isFinite(z)) return "zahl:" + String(z);
-  }
-  return s;
+  return `text:${s}`;
 }
 
 // Vergleicht zwei Zeilen feldgenau (normalisiert). Ergebnis nennt NUR
 // Spaltennamen und Wert-Digests — nie die Werte selbst (personenbezogene
 // Daten gehoeren nicht ins Protokoll).
-function vergleicheZeile(erwartet, tatsaechlich) {
+function vergleicheZeile(erwartet, tatsaechlich, spaltenTypen = {}) {
   const abweichungen = [];
   const spalten = new Set([...Object.keys(erwartet || {}), ...Object.keys(tatsaechlich || {})]);
   for (const spalte of spalten) {
-    const a = JSON.stringify(normalisiereWert(erwartet ? erwartet[spalte] : undefined));
-    const b = JSON.stringify(normalisiereWert(tatsaechlich ? tatsaechlich[spalte] : undefined));
+    const hatA = Object.prototype.hasOwnProperty.call(erwartet || {}, spalte);
+    const hatB = Object.prototype.hasOwnProperty.call(tatsaechlich || {}, spalte);
+    const a = JSON.stringify(hatA
+      ? normalisiereWert(erwartet[spalte], spaltenTypen[spalte] || null)
+      : "(feld-fehlt)");
+    const b = JSON.stringify(hatB
+      ? normalisiereWert(tatsaechlich[spalte], spaltenTypen[spalte] || null)
+      : "(feld-fehlt)");
     if (a !== b) {
       abweichungen.push({
         spalte,
@@ -221,26 +306,187 @@ function pruefeZiel(opts) {
   if (manifest.art !== "voll") {
     return { ok: false, grund: `manifest.art ist '${manifest.art}' — der Voll-Rueckweg-Beweis verlangt ein Voll-Backup (Teil-Umfaenge: eigener Weg, Runbook 1a).` };
   }
+  if (manifest.simulation && manifest.simulation.aktiv === true) {
+    return { ok: false, grund: "Simulations-Backup kann keinen Production-Rueckweg beweisen." };
+  }
+  if (!manifest.konsistenz || manifest.konsistenz.vollRueckwegBelegt !== true) {
+    return { ok: false, grund: "Backup belegt keinen querschnittskonsistenten Voll-Rueckweg: erforderlich ist ein transaktionaler Snapshot oder belegter Schreibstopp plus Quersummen." };
+  }
   return { ok: true, grund: null };
 }
 
 // Dateiintegritaet: jede Tabelle im Manifest braucht ihre Datei, jede Datei
 // muss die Manifest-Pruefsumme treffen. Manipulation/Fehlen => Abbruch.
 function pruefeDateiPruefsummen(backupDir, manifest) {
-  const fehler = [];
-  for (const tabelle of Object.keys(manifest.tabellen || {})) {
-    const datei = path.join(backupDir, `${tabelle}.json`);
-    if (!fs.existsSync(datei)) {
-      fehler.push({ tabelle, fehler: "Datei fehlt im Backup" });
-      continue;
-    }
-    const inhalt = fs.readFileSync(datei);
-    const soll = (manifest.pruefsummen || {})[tabelle];
-    const ist = sha256(inhalt);
-    if (!soll) fehler.push({ tabelle, fehler: "keine Pruefsumme im Manifest" });
-    else if (soll !== ist) fehler.push({ tabelle, fehler: "Pruefsumme weicht ab — Datei veraendert oder beschaedigt" });
+  return pruefeBackupDateien(backupDir, manifest, Object.keys(manifest.tabellen || {}));
+}
+
+function pruefeSpaltengenauenProduktionsbeleg(referenz) {
+  const katalog = referenz && referenz.spaltenKatalog;
+  if (ERWARTETE_SPALTENKATALOG_PRUEFSUMME === null) {
+    return {
+      ok: false,
+      grund: katalog
+        ? "selbst gesetzter Spaltenkatalog ist nicht vertrauenswuerdig: kein echter Production-Spaltenkatalog-Digest ist fest verankert"
+        : "strukturierter spaltengenauer Production-Katalogbeleg fehlt"
+    };
   }
-  return fehler;
+  if (!katalog || katalog.vertrag !== 1 || katalog.quelle !== "rein-lesender-production-katalog") {
+    return { ok: false, grund: "strukturierter spaltengenauer Production-Katalogbeleg fehlt" };
+  }
+  if (katalog.erhoben !== referenz.erhoben) {
+    return { ok: false, grund: "Spaltenkatalog und 51er Production-Katalog wurden nicht im selben belegten Stand erhoben" };
+  }
+  const sollTabellen = (referenz.tabellen || []).slice().sort();
+  const istTabellen = Object.keys(katalog.tabellen || {}).sort();
+  if (JSON.stringify(istTabellen) !== JSON.stringify(sollTabellen)) {
+    return { ok: false, grund: "Spaltenkatalog deckt nicht exakt alle 51 Production-Tabellen" };
+  }
+  for (const tabelle of sollTabellen) {
+    const spalten = katalog.tabellen[tabelle];
+    if (!Array.isArray(spalten) || !spalten.length) return { ok: false, grund: `Spaltenkatalog fuer ${tabelle} fehlt` };
+    const namen = new Set();
+    for (const spalte of spalten) {
+      const gueltig = spalte && /^[a-z_][a-z0-9_]*$/.test(String(spalte.spalte || ""))
+        && typeof spalte.typ === "string" && spalte.typ.length > 0
+        && typeof spalte.nullable === "boolean"
+        && ["", "a", "d"].includes(spalte.identity)
+        && ["", "s"].includes(spalte.generated)
+        && (spalte.defaultDigest === null || /^[0-9a-f]{64}$/.test(String(spalte.defaultDigest || "")))
+        && (spalte.primaerschluesselPosition === null
+          || (Number.isInteger(spalte.primaerschluesselPosition) && spalte.primaerschluesselPosition > 0));
+      if (!gueltig || namen.has(spalte && spalte.spalte)) {
+        return { ok: false, grund: `Spaltenkatalog fuer ${tabelle} ist unvollstaendig oder ungueltig` };
+      }
+      namen.add(spalte.spalte);
+    }
+  }
+  if (!/^[0-9a-f]{64}$/.test(String(katalog.pruefsumme || ""))
+      || katalog.pruefsumme !== berechneKanonischePruefsumme(katalog.tabellen)) {
+    return { ok: false, grund: "Spaltenkatalog-Pruefsumme fehlt oder passt nicht" };
+  }
+  if (katalog.pruefsumme !== ERWARTETE_SPALTENKATALOG_PRUEFSUMME) {
+    return { ok: false, grund: "Spaltenkatalog passt nicht zum fest verankerten Production-Digest" };
+  }
+  return { ok: true, grund: null };
+}
+
+// Baut aus einem pg_catalog-Abzug genau den Vertrag, den spaltenKatalog
+// prueft. defaultDigest = SHA256 des von pg_get_expr kanonisch gelieferten
+// Default-Ausdrucks; keine Default-Inhalte gelangen ins Protokoll.
+function baueSpaltenKatalogAusKatalogzeilen(zeilen) {
+  const tabellen = {};
+  for (const roh of zeilen || []) {
+    const zeile = typeof roh === "string" ? JSON.parse(roh) : roh;
+    if (!zeile || !/^[a-z_][a-z0-9_]*$/.test(String(zeile.tabelle || ""))
+        || !/^[a-z_][a-z0-9_]*$/.test(String(zeile.spalte || ""))) {
+      throw new Error("ungueltige pg_catalog-Spaltenzeile");
+    }
+    if (!tabellen[zeile.tabelle]) tabellen[zeile.tabelle] = [];
+    tabellen[zeile.tabelle].push({
+      spalte: zeile.spalte,
+      typ: zeile.typ,
+      nullable: zeile.nullable,
+      identity: zeile.identity || "",
+      generated: zeile.generated || "",
+      defaultDigest: zeile.defaultAusdruck == null
+        ? null
+        : sha256(Buffer.from(String(zeile.defaultAusdruck), "utf8")),
+      primaerschluesselPosition: zeile.primaerschluesselPosition == null
+        ? null
+        : Number(zeile.primaerschluesselPosition)
+    });
+  }
+  return tabellen;
+}
+
+function spaltenTypenAusKatalog(katalog) {
+  const out = {};
+  for (const [tabelle, spalten] of Object.entries((katalog && katalog.tabellen) || {})) {
+    out[tabelle] = Object.fromEntries(spalten.map((spalte) => [spalte.spalte, spalte.typ]));
+  }
+  return out;
+}
+
+const SPALTEN_KATALOG_SQL = `
+select jsonb_build_object(
+  'tabelle', c.relname,
+  'spalte', a.attname,
+  'typ', format_type(a.atttypid, a.atttypmod),
+  'nullable', not a.attnotnull,
+  'identity', a.attidentity,
+  'generated', a.attgenerated,
+  'defaultAusdruck', pg_get_expr(ad.adbin, ad.adrelid),
+  'primaerschluesselPosition', pk.position
+)::text
+from pg_class c
+join pg_namespace n on n.oid = c.relnamespace
+join pg_attribute a on a.attrelid = c.oid and a.attnum > 0 and not a.attisdropped
+left join pg_attrdef ad on ad.adrelid = c.oid and ad.adnum = a.attnum
+left join lateral (
+  select array_position(i.indkey::smallint[], a.attnum::smallint) as position
+  from pg_index i where i.indrelid = c.oid and i.indisprimary
+) pk on true
+where n.nspname = 'public' and c.relkind = 'r'
+order by c.relname, a.attnum`;
+
+// Der strukturierte Production-Beleg nennt PostgreSQL 17.6 und pgvector
+// 0.8.0. Ein lokal aufgebautes Schema darf nicht allein deshalb gruen werden,
+// weil es auf einer anderen, zufaellig kompatiblen Version laeuft. Beide Werte
+// werden aus der tatsaechlichen lokalen Instanz erhoben; eine vom Aufrufer
+// gelieferte Versionsbehauptung gibt es nicht.
+const DATENBANK_VERSION_SQL = `
+select jsonb_build_object(
+  'postgresVersionNum', current_setting('server_version_num'),
+  'pgvectorVersion', (
+    select e.extversion
+    from pg_catalog.pg_extension e
+    where e.extname = 'vector'
+  )
+)::text`;
+
+function postgresVersionNumAusReferenz(version) {
+  const m = /^(\d+)\.(\d+)$/.exec(String(version || ""));
+  if (!m) return null;
+  const major = Number(m[1]);
+  const minor = Number(m[2]);
+  if (!Number.isSafeInteger(major) || !Number.isSafeInteger(minor)
+      || major < 10 || minor < 0 || minor > 99) return null;
+  return String(major * 10000 + minor).padStart(6, "0");
+}
+
+function pruefeLokaleDatenbankVersion(roh, referenz) {
+  let ist;
+  try { ist = typeof roh === "string" ? JSON.parse(roh) : roh; }
+  catch (_) { return { ok: false, grund: "lokaler Datenbank-Versionsbeleg ist kein gueltiges JSON" }; }
+  if (!ist || typeof ist !== "object" || Array.isArray(ist)
+      || JSON.stringify(Object.keys(ist).sort()) !== JSON.stringify(["pgvectorVersion", "postgresVersionNum"])) {
+    return { ok: false, grund: "lokaler Datenbank-Versionsbeleg hat nicht exakt die zwei erwarteten Felder" };
+  }
+  const sollPostgres = postgresVersionNumAusReferenz(referenz && referenz.postgresVersion);
+  const sollVector = referenz && referenz.pgvectorVersion;
+  if (!sollPostgres || !/^\d+\.\d+\.\d+$/.test(String(sollVector || ""))) {
+    return { ok: false, grund: "Production-Referenz enthaelt keinen auswertbaren PostgreSQL-/pgvector-Vertrag" };
+  }
+  if (!/^\d{6}$/.test(String(ist.postgresVersionNum || ""))
+      || ist.postgresVersionNum !== sollPostgres) {
+    return {
+      ok: false,
+      grund: `lokale PostgreSQL-Version ${String(ist.postgresVersionNum || "(fehlt)")} weicht von Production ${sollPostgres} ab`
+    };
+  }
+  if (typeof ist.pgvectorVersion !== "string" || ist.pgvectorVersion !== sollVector) {
+    return {
+      ok: false,
+      grund: `lokale pgvector-Version ${String(ist.pgvectorVersion || "(fehlt)")} weicht von Production ${sollVector} ab`
+    };
+  }
+  return {
+    ok: true,
+    grund: null,
+    postgresVersionNum: ist.postgresVersionNum,
+    pgvectorVersion: ist.pgvectorVersion
+  };
 }
 
 // Schutz vor Secret-Leaks in Protokoll/Logs: wirft, wenn ein Text den Wert
@@ -277,12 +523,30 @@ function fail(msg, code = 2) {
   process.exit(code);
 }
 
+function psqlFehlermeldung(sqlOderDatei, istDatei, status) {
+  return `psql (${istDatei ? path.basename(sqlOderDatei) : "SQL"}) Exit ${status}; stderr wegen moeglicher Inhaltsdaten unterdrueckt`;
+}
+
+function entferneSensibleDateien(dateien, operationen = {}) {
+  const exists = operationen.existsSync || fs.existsSync;
+  const unlink = operationen.unlinkSync || fs.unlinkSync;
+  const fehler = [];
+  for (const datei of dateien) {
+    if (!exists(datei)) continue;
+    try { unlink(datei); }
+    catch (_) { /* Existenzprobe unten entscheidet fail closed. */ }
+    if (exists(datei)) fehler.push(path.basename(datei));
+  }
+  return fehler;
+}
+
 function psql(conn, dbName, sqlOderDatei, istDatei) {
   const args = ["-v", "ON_ERROR_STOP=1", "-X", "-q", "-tA", "-h", conn.host, "-p", String(conn.port), "-U", conn.user, "-d", dbName];
   args.push(istDatei ? "-f" : "-c", sqlOderDatei);
   const res = spawnSync("psql", args, { encoding: "utf8", maxBuffer: 512 * 1024 * 1024 });
   if (res.status !== 0) {
-    throw new Error(`psql (${istDatei ? path.basename(sqlOderDatei) : "SQL"}) Exit ${res.status}: ${String(res.stderr).slice(0, 800)}`);
+    // stderr kann COPY-Zeilenwerte und damit personenbezogene Daten enthalten.
+    throw new Error(psqlFehlermeldung(sqlOderDatei, istDatei, res.status));
   }
   return String(res.stdout);
 }
@@ -321,6 +585,11 @@ function main() {
   const manifestPfad = path.join(backupDir, "manifest.json");
   if (!fs.existsSync(manifestPfad)) fail(`Kein manifest.json unter ${backupDir}.`);
   const manifest = JSON.parse(fs.readFileSync(manifestPfad, "utf8"));
+  let aktuellesInventar;
+  try { aktuellesInventar = fordereGueltigesInventar(path.join(__dirname, "..")); }
+  catch (error) { fail(error.message); }
+  const manifestPruefung = pruefeManifestInventar(manifest, aktuellesInventar);
+  if (!manifestPruefung.ok) fail(`Backup-Inventar unvollstaendig oder ungueltig: ${manifestPruefung.fehler.join(" | ")}`);
 
   const conn = {
     host: arg("--pg-host") || "127.0.0.1",
@@ -336,12 +605,25 @@ function main() {
   });
   if (!ziel.ok) fail(ziel.grund);
 
-  const strukturReferenz = JSON.parse(fs.readFileSync(arg("--struktur-referenz") || STRUKTUR_REFERENZ_PFAD, "utf8"));
-  const schemaDir = arg("--schema-dir") || path.join(__dirname, "..", "supabase");
-  const ohneMigrationen = new Set(strukturReferenz.angewendeteMigrationenOhne || []);
+  const angeforderteReferenz = arg("--struktur-referenz");
+  if (angeforderteReferenz && path.resolve(angeforderteReferenz) !== path.resolve(STRUKTUR_REFERENZ_PFAD)) {
+    fail("Eine abweichende --struktur-referenz ist fuer den Production-Rueckwegbeweis nicht erlaubt.");
+  }
+  const strukturReferenz = aktuellesInventar.production.referenz;
+  const kanonischesSchemaDir = path.join(__dirname, "..", "supabase");
+  const angefordertesSchemaDir = arg("--schema-dir");
+  if (angefordertesSchemaDir && path.resolve(angefordertesSchemaDir) !== path.resolve(kanonischesSchemaDir)) {
+    fail("Ein abweichendes --schema-dir ist fuer den Production-Rueckwegbeweis nicht erlaubt.");
+  }
+  const schemaDir = kanonischesSchemaDir;
 
-  const protokollDir = path.join(backupDir, `restore-verify-${laufKennung}`);
-  fs.mkdirSync(protokollDir, { recursive: false });
+  const spaltenbeleg = pruefeSpaltengenauenProduktionsbeleg(strukturReferenz);
+  if (!spaltenbeleg.ok) fail(`${spaltenbeleg.grund}; kein exakter Production-Restore-Beweis.`);
+  const spaltenTypenJeTabelle = spaltenTypenAusKatalog(strukturReferenz.spaltenKatalog);
+
+  // Nie in die Backup-Quelle schreiben. Staging und Protokoll liegen in einem
+  // neuen lokalen Temp-Verzeichnis; Tabellendateien werden nur gelesen.
+  const protokollDir = fs.mkdtempSync(path.join(os.tmpdir(), `helmut-restore-verify-${laufKennung}-`));
 
   const protokoll = {
     begonnen: new Date().toISOString(),
@@ -395,45 +677,53 @@ function main() {
     const tSchema = Date.now();
     psql(conn, "postgres", `create database "${dbName}"`, false);
 
-    // 3) Prelude, Schema, Migrationen (chronologisch, ohne Rollbacks, ohne die
-    //    in der Strukturreferenz ausgeschlossenen — Production-Stand).
+    // 3) Prelude, Schema und AUSSCHLIESSLICH die 29 explizit als Production-
+    //    angewendet belegten Repo-Migrationen. F9, Z22 und crawl_runs bleiben
+    //    draussen; neue Repo-Dateien brechen bereits den Inventarvertrag.
     const preludePfad = path.join(protokollDir, "_prelude.sql");
     fs.writeFileSync(preludePfad, PRELUDE_SQL);
     psql(conn, dbName, preludePfad, true);
     psql(conn, dbName, path.join(schemaDir, "schema.sql"), true);
-    const migrationen = fs.readdirSync(path.join(schemaDir, "migrations"))
-      .filter((f) => f.endsWith(".sql") && !f.includes("rollback") && !ohneMigrationen.has(f))
-      .sort();
+    const migrationen = aktuellesInventar.production.angewendet.slice();
     for (const m of migrationen) psql(conn, dbName, path.join(schemaDir, "migrations", m), true);
-    // Belegter Schema-Drift Repo↔Production (Strukturreferenz.schemaDrift):
-    // ohne diese Korrekturen bricht der Import (NOT-NULL-Drift) oder verliert
-    // still Felder, die Production traegt, das Repo-Schema aber nicht kennt.
-    const drift = strukturReferenz.schemaDrift || {};
-    const driftSql = [];
-    for (const eintrag of drift.notNullEntfernen || []) {
-      const [tab, spalte] = String(eintrag).split(".");
-      if (!/^[a-z0-9_]+$/.test(tab) || !/^[a-z0-9_]+$/.test(spalte)) throw new Error(`Strukturreferenz: unzulaessiger Drift-Eintrag '${eintrag}'`);
-      driftSql.push(`alter table public."${tab}" alter column "${spalte}" drop not null;`);
-    }
-    for (const eintrag of drift.spaltenErgaenzen || []) {
-      if (!/^[a-z0-9_]+$/.test(eintrag.tabelle) || !/^[a-z0-9_]+$/.test(eintrag.spalte) || !/^[a-z0-9_()\[\] ]+$/.test(eintrag.typ)) {
-        throw new Error(`Strukturreferenz: unzulaessiger Spalten-Eintrag '${JSON.stringify(eintrag)}'`);
-      }
-      driftSql.push(`alter table public."${eintrag.tabelle}" add column if not exists "${eintrag.spalte}" ${eintrag.typ};`);
-    }
-    if (driftSql.length) {
-      const driftPfad = path.join(protokollDir, "_drift.sql");
-      fs.writeFileSync(driftPfad, driftSql.join("\n"));
-      psql(conn, dbName, driftPfad, true);
-    }
-    protokoll.schritte.driftKorrekturen = driftSql.length;
-
     const grantsPfad = path.join(protokollDir, "_grants.sql");
     fs.writeFileSync(grantsPfad, GRANTS_SQL);
     psql(conn, dbName, grantsPfad, true);
     protokoll.schritte.schemaSekunden = Math.round((Date.now() - tSchema) / 1000);
     protokoll.schritte.migrationen = migrationen.length;
-    pruefe("Schema-Aufbau (schema.sql + Migrationen, Production-Stand)", true, `${migrationen.length} Migrationen, ohne: ${Array.from(ohneMigrationen).join(", ") || "—"}`);
+    pruefe("Schema-Aufbau (schema.sql + expliziter belegter Production-Migrationsstand)", true,
+      `${migrationen.length} Repo-Migrationen · ${aktuellesInventar.production.manifest.id}`);
+
+    const lokaleVersionen = pruefeLokaleDatenbankVersion(
+      psqlWert(conn, dbName, DATENBANK_VERSION_SQL),
+      strukturReferenz
+    );
+    pruefe("Lokale PostgreSQL-/pgvector-Version == Production-Katalog",
+      lokaleVersionen.ok,
+      lokaleVersionen.ok
+        ? `PostgreSQL ${strukturReferenz.postgresVersion} · pgvector ${lokaleVersionen.pgvectorVersion}`
+        : lokaleVersionen.grund);
+    if (!lokaleVersionen.ok) throw new Error(lokaleVersionen.grund);
+
+    // Freier historischer schemaDrift-Text wird NICHT angewendet. Der lokal
+    // aufgebaute Katalog muss stattdessen bytegenau denselben strukturierten
+    // Vertrag ergeben wie der aktuelle Production-Abzug.
+    const katalogZeilen = psqlWert(conn, dbName, SPALTEN_KATALOG_SQL).split("\n").filter(Boolean);
+    const lokalerSpaltenKatalog = baueSpaltenKatalogAusKatalogzeilen(katalogZeilen);
+    const lokalerSpaltenHash = berechneKanonischePruefsumme(lokalerSpaltenKatalog);
+    const spaltenHashOk = lokalerSpaltenHash === strukturReferenz.spaltenKatalog.pruefsumme;
+    pruefe("Lokaler Spaltenkatalog == aktueller Production-Spaltenkatalog (Typ/NULL/Identity/Generated/Default/PK)",
+      spaltenHashOk, `${Object.keys(lokalerSpaltenKatalog).length}/51 Tabellen · Hash ${lokalerSpaltenHash.slice(0, 12)}`);
+    if (!spaltenHashOk) throw new Error("Lokaler Schemaaufbau weicht vom strukturierten Production-Spaltenkatalog ab.");
+
+    const identitySpalten = psqlWert(conn, dbName,
+      `select c.relname||'.'||a.attname from pg_attribute a join pg_class c on c.oid=a.attrelid join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and a.attidentity in ('a','d') order by 1`)
+      .split("\n").filter(Boolean);
+    const identityOk = JSON.stringify(identitySpalten) === JSON.stringify(strukturReferenz.identitySpalten);
+    pruefe("Identity-Spaltenmenge == Production-Katalog", identityOk,
+      `${identitySpalten.length}/${strukturReferenz.identitySpalten.length}`);
+    if (!identityOk) throw new Error("Identity-Spalten weichen vom Production-Katalog ab.");
+    const identityTabellen = new Set(identitySpalten.map((name) => name.split(".")[0]));
 
     // schema.sql legt EINE Bootstrap-Zeile an (helmut_store id='main', leeres
     // data) — das Backup bringt die echte main-Zeile mit. Bootstrap entfernen,
@@ -447,11 +737,6 @@ function main() {
     pruefe("Zielumgebung beginnt leer (0 Zeilen ueber alle Tabellen)", vorabSumme === 0, `${vorabSumme} Zeilen vorgefunden`);
     if (vorabSumme !== 0) throw new Error("Ziel nicht leer — Abbruch.");
 
-    // Identity-Spalten dynamisch erheben (OVERRIDING SYSTEM VALUE noetig).
-    const identityTabellen = new Set(psqlWert(conn, dbName,
-      `select c.relname from pg_attribute a join pg_class c on c.oid=a.attrelid join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and a.attidentity in ('a','d')`)
-      .split("\n").filter(Boolean));
-
     // 4) Import in FK-sicherer Reihenfolge; jede Tabelle EIN Statement in EINER
     //    Transaktion (FK-Pruefung am Statement-Ende, live und unumgangen).
     const tImport = Date.now();
@@ -462,23 +747,39 @@ function main() {
     pruefe("Jede Backup-Tabelle hat einen Platz in RESTORE_ORDER", fehltInOrder.length === 0, fehltInOrder.join(", ") || `${reihenfolge.length} Tabellen`);
     if (fehltInOrder.length) throw new Error("RESTORE_ORDER unvollstaendig.");
     for (const tabelle of reihenfolge) {
-      const zeilen = JSON.parse(fs.readFileSync(path.join(backupDir, `${tabelle}.json`), "utf8"));
+      const elemente = zerlegeJsonArrayRoh(fs.readFileSync(path.join(backupDir, `${tabelle}.json`), "utf8"));
       const datenPfad = path.join(protokollDir, `_stage_${tabelle}.txt`);
-      fs.writeFileSync(datenPfad, zeilen.map((z) => escapeCopyZeile(JSON.stringify(z))).join("\n") + (zeilen.length ? "\n" : ""));
       const overriding = identityTabellen.has(tabelle) ? "overriding system value " : "";
+      // Die CAS-Migration verbietet konstruktionsbedingt jeden direkten Insert
+      // eines knowledge_objects mit verstehen_fencing. Beim isolierten
+      // Voll-Restore ist dies kein fremder Anwendungsschreibweg. Die
+      // Reservierungszeile wird bewusst ERST DANACH eingespielt: Eine aktive
+      // Reservierung darf Fencing 4 tragen, waehrend der letzte KO-Stand noch
+      // Fencing 3 traegt. Die transaktionslokale
+      // Markierung oeffnet daher nur dieses eine Importstatement und faellt beim
+      // Commit automatisch zurueck.
+      const casRestore = casRestoreVorbereitung(tabelle);
       const sqlPfad = path.join(protokollDir, `_import_${tabelle}.sql`);
-      fs.writeFileSync(sqlPfad, [
-        "begin;",
-        "create temp table _stage(zeile jsonb);",
-        zeilen.length ? `\\copy _stage(zeile) from '${datenPfad}' with (format text)` : "-- leere Tabelle",
-        `insert into public."${tabelle}" ${overriding}select r.* from _stage s, lateral jsonb_populate_record(null::public."${tabelle}", s.zeile) r;`,
-        "drop table _stage;",
-        "commit;"
-      ].join("\n"));
-      psql(conn, dbName, sqlPfad, true);
-      importiert[tabelle] = zeilen.length;
-      fs.unlinkSync(datenPfad);
-      fs.unlinkSync(sqlPfad);
+      try {
+        fs.writeFileSync(datenPfad, elemente.map(escapeCopyZeile).join("\n") + (elemente.length ? "\n" : ""));
+        fs.writeFileSync(sqlPfad, [
+          "begin;",
+          casRestore,
+          "create temp table _stage(zeile jsonb);",
+          elemente.length ? `\\copy _stage(zeile) from '${datenPfad}' with (format text)` : "-- leere Tabelle",
+          `insert into public."${tabelle}" ${overriding}select r.* from _stage s, lateral jsonb_populate_record(null::public."${tabelle}", s.zeile) r;`,
+          "drop table _stage;",
+          "commit;"
+        ].join("\n"));
+        psql(conn, dbName, sqlPfad, true);
+        importiert[tabelle] = elemente.length;
+      } finally {
+        // COPY-Staging kann PII enthalten und muss auch bei Importfehlern weg.
+        const cleanupFehler = entferneSensibleDateien([datenPfad, sqlPfad]);
+        if (cleanupFehler.length) {
+          throw new Error(`Sicherheitsabbruch: sensible Staging-Dateien konnten nicht entfernt werden: ${cleanupFehler.join(", ")}`);
+        }
+      }
     }
     // Identity-Sequenzen fortsetzen — sonst kollidiert der ERSTE neue Insert
     // nach einem echten Restore mit einer importierten ID. Teil des Rueckwegs,
@@ -516,7 +817,7 @@ function main() {
     for (const [tabelle, pkSpaltenStr] of Object.entries(TABLES)) {
       if (!(tabelle in manifest.tabellen)) continue;
       const pkSpalten = pkSpaltenStr.split(",").map((s) => s.trim());
-      const zeilen = JSON.parse(fs.readFileSync(path.join(backupDir, `${tabelle}.json`), "utf8"));
+      const zeilen = parseJsonVerlustfrei(fs.readFileSync(path.join(backupDir, `${tabelle}.json`), "utf8"));
       const sollDigest = pkDigestAusZeilen(zeilen, pkSpalten);
       const concat = pkSpalten.map((c) => `"${c}"::text`).join(`, E'\\x1f', `);
       const istDigest = psqlWert(conn, dbName,
@@ -525,34 +826,53 @@ function main() {
     }
     pruefe("Primaerschluessel-Mengen byte-identisch (Digest je Tabelle)", pkOk, pkOk ? `${Object.keys(manifest.tabellen).length} Tabellen` : `abweichend: ${pkDetails.join(", ")}`);
 
-    // 5d) Feldgenaue Stichproben je kritischer Tabelle.
+    // 5d) Vollstaendiger feldgenauer All-row-Digest fuer JEDE Tabelle. Die
+    // spaeteren Stichproben bleiben nur als gezielter Diagnosevertrag; das
+    // Gruen haengt nicht von einer Stichprobe ab.
+    let feldOk = true;
+    const feldDetails = [];
+    for (const [tabelle, pkSpaltenStr] of Object.entries(TABLES)) {
+      if (!(tabelle in manifest.tabellen)) continue;
+      const pkSpalten = pkSpaltenStr.split(",").map((s) => s.trim());
+      const backupZeilen = parseJsonVerlustfrei(fs.readFileSync(path.join(backupDir, `${tabelle}.json`), "utf8"));
+      const dbRoh = psqlWert(conn, dbName, `select to_jsonb(t) from public."${tabelle}" t`);
+      const dbZeilen = dbRoh ? dbRoh.split("\n").filter(Boolean).map(parseJsonVerlustfrei) : [];
+      const typen = spaltenTypenJeTabelle[tabelle] || {};
+      const sollDigest = feldDigestAusZeilen(backupZeilen, pkSpalten, typen);
+      const istDigest = feldDigestAusZeilen(dbZeilen, pkSpalten, typen);
+      if (sollDigest !== istDigest) { feldOk = false; feldDetails.push(tabelle); }
+    }
+    pruefe("Alle Felder aller Zeilen aller Tabellen byte-semantisch identisch (All-row-Digest)", feldOk,
+      feldOk ? `${Object.keys(manifest.tabellen).length} Tabellen vollstaendig` : `abweichend: ${feldDetails.join(", ")}`);
+
+    // 5e) Zusaetzliche deterministische Diagnose-Stichproben je kritischer Tabelle.
     let stichprobenGesamt = 0;
     let stichprobenAbweichungen = [];
     for (const tabelle of KRITISCHE_TABELLEN) {
       if (!(tabelle in manifest.tabellen)) continue;
       const pkSpalten = TABLES[tabelle].split(",").map((s) => s.trim());
-      const zeilen = JSON.parse(fs.readFileSync(path.join(backupDir, `${tabelle}.json`), "utf8"));
+      const zeilen = parseJsonVerlustfrei(fs.readFileSync(path.join(backupDir, `${tabelle}.json`), "utf8"));
       if (!zeilen.length) continue;
       const sortiert = zeilen.map((z) => ({ k: pkTextZeile(z, pkSpalten), z }));
       const reihenfolgeKeys = sortiereBytes(sortiert.map((p) => p.k));
       const proIndex = new Map(sortiert.map((p) => [p.k, p.z]));
       for (const idx of waehleStichprobenIndizes(reihenfolgeKeys.length, STICHPROBEN_JE_TABELLE)) {
         const zeile = proIndex.get(reihenfolgeKeys[idx]);
-        const where = pkSpalten.map((c) => `"${c}"::text = ${sqlLiteral(String(zeile[c]))}`).join(" and ");
+        const where = pkSpalten.map((c) => `"${c}"::text = ${sqlLiteral(verlustfreierZahltext(zeile[c]) ?? String(zeile[c]))}`).join(" and ");
         const raw = psqlWert(conn, dbName, `select to_jsonb(t) from public."${tabelle}" t where ${where}`);
         stichprobenGesamt++;
         if (!raw) { stichprobenAbweichungen.push({ tabelle, pkDigest: sha256(Buffer.from(pkTextZeile(zeile, pkSpalten))).slice(0, 12), spalten: ["(Zeile fehlt)"] }); continue; }
-        const diff = vergleicheZeile(zeile, JSON.parse(raw));
+        const diff = vergleicheZeile(zeile, parseJsonVerlustfrei(raw), spaltenTypenJeTabelle[tabelle] || {});
         if (diff.length) stichprobenAbweichungen.push({ tabelle, pkDigest: sha256(Buffer.from(pkTextZeile(zeile, pkSpalten))).slice(0, 12), spalten: diff.map((d) => d.spalte) });
       }
     }
     pruefe("Feldgenaue Stichproben kritischer Tabellen", stichprobenAbweichungen.length === 0,
       stichprobenAbweichungen.length ? JSON.stringify(stichprobenAbweichungen).slice(0, 400) : `${stichprobenGesamt} Zeilen feldidentisch`);
 
-    // 5e) Spalten-Vollstaendigkeit knowledge_objects (Sprint-19–21-Felder und
+    // 5f) Spalten-Vollstaendigkeit knowledge_objects (Sprint-19–21-Felder und
     //     alle uebrigen Spalten): Nicht-NULL-Zaehler je Spalte == Backup.
     {
-      const zeilen = JSON.parse(fs.readFileSync(path.join(backupDir, "knowledge_objects.json"), "utf8"));
+      const zeilen = parseJsonVerlustfrei(fs.readFileSync(path.join(backupDir, "knowledge_objects.json"), "utf8"));
       const spalten = zeilen.length ? Object.keys(zeilen[0]) : [];
       const abweichend = [];
       for (const spalte of spalten) {
@@ -567,10 +887,12 @@ function main() {
       pruefe("Sprint-21-Nachklassifikation erhalten (classification_confidence.nachklassifikation_am)", nachklassIst === nachklassSoll, `${nachklassIst}/${nachklassSoll} Objekte`);
     }
 
-    // 5f) Struktur gegen Production-Referenz: nichts fehlt, nichts unerwartet.
+    // 5g) Katalogmengen gegen den am 2026-08-28 rein lesend erhobenen Beleg.
+    // Der gesonderte strukturierte Spaltenkatalog wurde bereits vor DB-Anlage
+    // geprueft; freier historischer schemaDrift-Text kann ihn nicht ersetzen.
     const dbTabellen = psqlWert(conn, dbName, `select tablename from pg_tables where schemaname='public' order by 1`).split("\n").filter(Boolean);
-    const refTabellen = strukturReferenz.tabellen.slice().sort();
-    pruefe("Tabellenmenge == Production-Referenz", JSON.stringify(dbTabellen) === JSON.stringify(refTabellen),
+    const refTabellen = Object.keys(TABLES).sort();
+    pruefe("Tabellenmenge == migrationsgesichertes Backup-Inventar", JSON.stringify(dbTabellen) === JSON.stringify(refTabellen),
       `${dbTabellen.length}/${refTabellen.length}`);
     const rlsOhne = psqlWert(conn, dbName, `select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and not c.relrowsecurity order by 1`).split("\n").filter(Boolean);
     pruefe("RLS auf allen Tabellen aktiv", rlsOhne.length === 0, rlsOhne.join(", ") || `${dbTabellen.length} Tabellen`);
@@ -585,7 +907,7 @@ function main() {
     // 5g) Mandantentrennung FUNKTIONAL: RLS-Probe mit auth.jwt()-Shim.
     //     Mandanten werden aus den DATEN gewaehlt (kein Mandant hartkodiert).
     {
-      const briefings = JSON.parse(fs.readFileSync(path.join(backupDir, "briefings.json"), "utf8"));
+      const briefings = parseJsonVerlustfrei(fs.readFileSync(path.join(backupDir, "briefings.json"), "utf8"));
       const proTenant = new Map();
       for (const b of briefings) proTenant.set(b.user_id, (proTenant.get(b.user_id) || 0) + 1);
       const tenants = Array.from(proTenant.entries()).sort((a, b) => b[1] - a[1]).map((p) => p[0]);
@@ -601,7 +923,7 @@ function main() {
         let rlsOk = true;
         const rlsDetails = [];
         for (const tabelle of TENANT_PROBE_TABELLEN) {
-          const zeilenT = JSON.parse(fs.readFileSync(path.join(backupDir, `${tabelle}.json`), "utf8"));
+          const zeilenT = parseJsonVerlustfrei(fs.readFileSync(path.join(backupDir, `${tabelle}.json`), "utf8"));
           const sollA = zeilenT.filter((z) => z.user_id === tA).length;
           const sollB = zeilenT.filter((z) => z.user_id === tB).length;
           const istA = zaehle(tA, tabelle);
@@ -623,8 +945,8 @@ function main() {
 
     // 5h) Funktions-/Trigger-Proben (in der Drill-DB; Trigger in ROLLBACK-Txn).
     {
-      const embeddings = JSON.parse(fs.readFileSync(path.join(backupDir, "profile_embeddings.json"), "utf8"));
-      const koZeilen = JSON.parse(fs.readFileSync(path.join(backupDir, "knowledge_objects.json"), "utf8"));
+      const embeddings = parseJsonVerlustfrei(fs.readFileSync(path.join(backupDir, "profile_embeddings.json"), "utf8"));
+      const koZeilen = parseJsonVerlustfrei(fs.readFileSync(path.join(backupDir, "knowledge_objects.json"), "utf8"));
       const mitEmbedding = koZeilen.filter((z) => z.embedding !== null && z.embedding !== undefined).length;
       if (embeddings.length && mitEmbedding > 0) {
         const n = Number(psqlWert(conn, dbName,
@@ -633,7 +955,7 @@ function main() {
       } else {
         pruefe("Funktionsprobe match_knowledge_objects", mitEmbedding === 0, `uebersprungen — keine Embeddings im Backup (Profile: ${embeddings.length}, KOs mit Embedding: ${mitEmbedding})`);
       }
-      const blobIds = JSON.parse(fs.readFileSync(path.join(backupDir, "helmut_store.json"), "utf8"));
+      const blobIds = parseJsonVerlustfrei(fs.readFileSync(path.join(backupDir, "helmut_store.json"), "utf8"));
       if (blobIds.length) {
         const erste = blobIds[0];
         const triggerErgebnis = psqlWert(conn, dbName, [
@@ -673,11 +995,22 @@ module.exports = {
   pkTextZeile,
   sortiereBytes,
   pkDigestAusZeilen,
+  feldDigestAusZeilen,
   waehleStichprobenIndizes,
   normalisiereWert,
   vergleicheZeile,
   ohneSecrets,
   baueLaufKennung,
+  casRestoreVorbereitung,
+  pruefeSpaltengenauenProduktionsbeleg,
+  baueSpaltenKatalogAusKatalogzeilen,
+  spaltenTypenAusKatalog,
+  SPALTEN_KATALOG_SQL,
+  DATENBANK_VERSION_SQL,
+  postgresVersionNumAusReferenz,
+  pruefeLokaleDatenbankVersion,
+  psqlFehlermeldung,
+  entferneSensibleDateien,
   KRITISCHE_TABELLEN,
   TENANT_PROBE_TABELLEN,
   STRUKTUR_REFERENZ_PFAD

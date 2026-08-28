@@ -12,6 +12,7 @@ const {
   googleHardeningEnabled,
   googleHardeningConfig,
   isGoogleNewsSource,
+  isStrictGoogleNewsUrl,
   parseRetryAfterMs,
   computeRetryDelayMs,
   isRetryableGoogleError,
@@ -42,6 +43,25 @@ function check(name, cond, detail = "") {
     isGoogleNewsSource({ rssUrls: ["https://news.google.com/rss/search?q=y"] }) &&
     isGoogleNewsSource({ url: "https://news.google.com/search?q=z" }));
   check("direkte RSS-/HTML-Quelle ist NICHT google", !isGoogleNewsSource({ rssUrl: "https://www.bmas.de/rss.xml" }));
+  const gueltigeGoogleUrls = [
+    "https://news.google.com/rss/search?q=x",
+    "https://NEWS.GOOGLE.COM:443/rss/articles/x"
+  ];
+  const googleUrlTraps = [
+    "http://news.google.com/rss/search?q=x",
+    "https://news.google.com:444/rss/search?q=x",
+    "https://nutzer@news.google.com/rss/search?q=x",
+    "https://news.google.com.evil.example/rss/search?q=x",
+    "https://sub.news.google.com/rss/search?q=x",
+    "https://news.google.com./rss/search?q=x",
+    "https://evil.example/rss?next=https://news.google.com/rss/search?q=x",
+    "https://news.google.com@evil.example/rss/search?q=x"
+  ];
+  check("strikte Google-News-URL akzeptiert nur HTTPS/443 und exakt news.google.com",
+    gueltigeGoogleUrls.every(isStrictGoogleNewsUrl));
+  check("adversarielle URL-Faelle werden nicht als Google News klassifiziert",
+    googleUrlTraps.every((url) => !isStrictGoogleNewsUrl(url)
+      && !isGoogleNewsSource({ rssUrl: url })));
 
   // ── Retry-After-Parsing ────────────────────────────────────────────────────
   check("Retry-After Sekunden", parseRetryAfterMs("7") === 7000);

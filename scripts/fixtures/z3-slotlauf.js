@@ -4,8 +4,8 @@
 // =============================================================================================
 // WAS DIESER PROZESS IST: die Nachbildung EINER Cron-Ausfuehrung des Warteschlangenslots —
 // ein eigener Node-Prozess mit eigenem Zeitbudget, eigenen Datenbankverbindungen und eigenem
-// Lease-Besitzer, so wie eine Serverless-Ausfuehrung. Er faehrt DIESELBE Reihenfolge wie
-// `server.js runCronUeberWarteschlange`:
+// Lease-Besitzer, so wie eine Serverless-Ausfuehrung. Er faehrt dieselben sechs
+// Produktionsfunktionen in derselben Reihenfolge wie `server.js runCronUeberWarteschlange`:
 //
 //   1. Laufquittung "running" schreiben          (storage.schreibeWarteschlangenLaufquittung)
 //   2. planen                                    (scalable-pipeline.planeArbeit)
@@ -14,7 +14,9 @@
 //   5. arbeiten                                  (worker-betrieb.durchlauf, echte Handler)
 //   6. Laufquittung abschliessen
 //
-// WAS ECHT IST: alle sechs Schritte sind der unveraenderte Produktionscode. Der Datenzugriff
+// WAS ECHT IST: alle sechs Schritte rufen den unveraenderten Produktionscode. Die umgebende
+// Orchestrierung ist in dieser Datei weiterhin separat abgebildet und deshalb ein offener
+// Codebefund, kein Beleg fuer bytegleichen Routencode. Der Datenzugriff
 // laeuft ueber `SUPABASE_URL` — also HTTP/PostgREST/PostgreSQL, nicht ueber `psql`. Die
 // Fachhandler sind die echten (`HANDLER` in `scalable-pipeline.js`): echter Abruf, echtes
 // Parsen, echtes Verstehen mit echtem Modellaufruf, echte Projektion, echtes Briefing.
@@ -37,6 +39,7 @@
 // Ausgabe: genau eine JSON-Zeile auf stdout (die letzte), damit der Elternprozess sie liest.
 
 const path = require("path");
+const fs = require("fs");
 const ROOT = path.join(__dirname, "..", "..");
 
 function arg(name, standard = "") {
@@ -50,83 +53,181 @@ function istLokal(rohUrl) {
 }
 
 // ── Riegel 1 und 2, VOR jedem Laden von Produktionscode ──────────────────────────────────────
-const PRODUKTIONSKENNUNGEN = ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_KEY", "VERCEL_TOKEN",
-  "OPENAI_API_KEY", "BLOB_READ_WRITE_TOKEN"];
-const sichtbar = PRODUKTIONSKENNUNGEN.filter((n) => String(process.env[n] || "").trim() !== "");
-if (sichtbar.length) {
-  process.stdout.write(JSON.stringify({ fehler: `abbruch-produktionskennung: ${sichtbar.join(", ")}` }) + "\n");
-  process.exit(3);
-}
-
+const PRODUKTIONSKENNUNGEN = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_KEY",
+  "SUPABASE_ANON_KEY", "SUPABASE_JWT_SECRET", "AZURE_OPENAI_ENDPOINT", "AZURE_OPENAI_KEY",
+  "VERCEL_TOKEN", "OPENAI_API_KEY", "BLOB_READ_WRITE_TOKEN"];
 const DATENBANK_URL = arg("datenbank");
 const KI_URL = arg("ki");
 const URSPRUNG_URL = arg("ursprung");
-if (!istLokal(DATENBANK_URL) || !istLokal(KI_URL) || !istLokal(URSPRUNG_URL)) {
-  process.stdout.write(JSON.stringify({
-    fehler: "abbruch-nicht-lokal: Datenbanktor, KI-Endpunkt und Anbieterursprung muessen auf 127.0.0.1 zeigen"
-  }) + "\n");
-  process.exit(3);
+const FACHWEG_LAUF = String(arg("fachwegLauf", process.env.HELMUT_Z3B_FACHWEG_LAUF || "")).trim();
+const FACHWEG_MANIFEST_SHA = String(arg("manifestSha256", "")).trim();
+const IST_FACHWEG = FACHWEG_LAUF !== "";
+const FACHWEG_UMGEBUNG = Object.freeze({
+  HELMUT_NARRATIV_QUEUE: "on",
+  HELMUT_LLM_FAIRNESS: "on",
+  HELMUT_LLM_GLOBAL_ANTEIL: "0.5",
+  HELMUT_WIEDERVORLAGE_STUNDEN: "24",
+  HELMUT_WIEDERVORLAGE_MAX: "2",
+  HELMUT_JOB_TIMEOUT_MS: "120000",
+  HELMUT_NARRATIV_TIMEOUT_MS: "45000",
+  HELMUT_UNDERSTANDING_BUENDEL: "25",
+  HELMUT_VORBEDINGUNG_WARTE_MS: "120000",
+  HELMUT_VORBEDINGUNG_MAX_WARTE_MS: "21600000",
+  HELMUT_BUDGET_WARTE_MS: "3600000",
+  HELMUT_BUDGET_MAX_WARTE_MS: "172800000",
+  HELMUT_WORKER_LEERLAUF_MS: "0",
+  CRAWLER_TIMEOUT_MS: "7000",
+  HELMUT_KI_TIMEOUT_MS: "20000",
+  HELMUT_WORKER_LEASE_MS: "300000",
+  HELMUT_KLASSEN_GRENZEN: "on",
+  HELMUT_KLASSE_QUELLENABRUF_MAX: "5",
+  HELMUT_KLASSE_VERSTEHEN_MAX: "1",
+  HELMUT_KLASSE_WORKER_DRAIN_MAX: "1",
+  HELMUT_VERSTEHEN_KONKURRENZ: "off",
+  HELMUT_VERSTEHEN_PARALLELITAET: "1",
+  HELMUT_VERSTEHEN_LEASE_MS: "300000",
+  HELMUT_VERSTEHEN_WIEDERAUFNAHME_MAX: "25",
+  HELMUT_KO_SCAN_LIMIT: "500",
+  HELMUT_LAGE_MAX_VORGAENGE: "12",
+  HELMUT_LAGE_DEMO: "off",
+  HELMUT_LLM_BUDGET_FAIL_CLOSED: "on",
+  HELMUT_UNDERSTANDING_GATE: "off",
+  HELMUT_UNDERSTANDING_PRIORITY: "off",
+  HELMUT_MAX_LLM_CALLS_PER_DAY: "1000000",
+  HELMUT_MAX_LLM_CALLS_PER_TENANT_PER_DAY: "1000000",
+  HELMUT_LLM_RESERVE_UNDERSTANDING: "0"
+});
+
+function pruefeStartSicherheit() {
+  const sichtbar = PRODUKTIONSKENNUNGEN.filter((n) => String(process.env[n] || "").trim() !== "");
+  if (sichtbar.length) {
+    throw Object.assign(new Error(`abbruch-produktionskennung: ${sichtbar.join(", ")}`), { exitCode: 3 });
+  }
+  if (!istLokal(DATENBANK_URL) || !istLokal(KI_URL) || !istLokal(URSPRUNG_URL)) {
+    throw Object.assign(new Error(
+      "abbruch-nicht-lokal: Datenbanktor, KI-Endpunkt und Anbieterursprung muessen auf 127.0.0.1 zeigen"
+    ), { exitCode: 3 });
+  }
+  if (IST_FACHWEG) {
+    if (!/^[a-z0-9]{6,32}$/.test(FACHWEG_LAUF)
+        || FACHWEG_LAUF !== String(process.env.HELMUT_Z3B_FACHWEG_LAUF || "").trim()) {
+      throw Object.assign(new Error("abbruch-fachweglauf-nicht-gebunden"), { exitCode: 3 });
+    }
+    if (!/^[0-9a-f]{64}$/.test(FACHWEG_MANIFEST_SHA)) {
+      throw Object.assign(new Error("abbruch-fachwegmanifest-nicht-gebunden"), { exitCode: 3 });
+    }
+    if (!/^[a-z0-9][a-z0-9._-]{0,79}$/.test(
+      String(process.env.HELMUT_Z3B_FACHWEG_KI_MODELL || "").trim().toLowerCase())) {
+      throw Object.assign(new Error("abbruch-fachwegmodell-nicht-gebunden"), { exitCode: 3 });
+    }
+    if (Number(arg("budgetMs", "")) !== 290000
+        || Number(arg("parallel", "")) !== 4
+        || Number(arg("stapel", "")) !== 25) {
+      throw Object.assign(new Error("abbruch-fachweggrenzen-widerspruechlich"), { exitCode: 3 });
+    }
+    const ziel = Number(arg("mandate", ""));
+    const slot = Number(arg("slot", ""));
+    const cronStunden = [4, 16, 20];
+    const erwartetMs = Date.parse("2026-08-26T00:00:00Z")
+      + Math.floor((slot - 1) / 3) * 86400000 + cronStunden[(slot - 1) % 3] * 3600000;
+    if (![200, 500].includes(ziel) || !Number.isInteger(slot) || slot < 1 || slot > 6
+        || Number(arg("jetztMs", "")) !== erwartetMs
+        || Number(arg("kiDeckel", "")) !== 1000000 || Number(arg("kiReserve", "")) !== 0) {
+      throw Object.assign(new Error("abbruch-fachwegziel-slot-oder-ki-grenze-widerspruechlich"), { exitCode: 3 });
+    }
+    const envDatei = [".env.local", ".env", "env.local", "env.local.html"]
+      .find((name) => fs.existsSync(path.join(ROOT, name)));
+    if (envDatei) {
+      throw Object.assign(new Error(`abbruch-lokale-env-datei-sichtbar:${envDatei}`), { exitCode: 3 });
+    }
+  }
+  if (!String(process.env.NODE_EXTRA_CA_CERTS || "").trim()) {
+    throw Object.assign(new Error(
+      "abbruch-ca-fehlt: NODE_EXTRA_CA_CERTS muss beim Prozessstart gesetzt sein"
+    ), { exitCode: 3 });
+  }
 }
 
 // ── Die Umgebung DIESES Slotlaufs ────────────────────────────────────────────────────────────
 // Alle Werte zeigen auf die Schleifenadresse. `scripts/lokal.js` hat die Kennungen der Sitzung
 // bereits entfernt; hier entstehen ausschliesslich lokale Ersatzwerte. Es wird KEINE Datei und
 // KEINE Sitzungsvariable veraendert.
-process.env.SUPABASE_URL = DATENBANK_URL;
-process.env.SUPABASE_SERVICE_ROLE_KEY = arg("dienstschluessel");
-process.env.AZURE_OPENAI_ENDPOINT = KI_URL;
-// Attrappenwerte fuer den LOKALEN Endpunkt. Sie berechtigen zu nichts: der KI-Endpunkt
-// verlangt nur, dass die Kopfzeile `api-key` ueberhaupt gesetzt ist, und beide Werte
-// erreichen ausschliesslich 127.0.0.1.
-process.env.AZURE_OPENAI_KEY = "attrappe-lokaler-z3-endpunkt";
-process.env.CRON_SECRET = `attrappe-z3-${process.pid}`;
-
-// NODE_EXTRA_CA_CERTS wird von Node beim PROZESSSTART gelesen — eine Zuweisung hier waere
-// wirkungslos (belegt im ersten Probelauf: `unable to verify the first certificate`). Der
-// Elternprozess setzt sie deshalb in der Startumgebung; hier wird nur geprueft, dass sie
-// wirklich anliegt. Ohne sie waere jeder Modellaufruf ein TLS-Fehler statt einer Messung.
-if (!String(process.env.NODE_EXTRA_CA_CERTS || "").trim()) {
-  process.stdout.write(JSON.stringify({
-    fehler: "abbruch-ca-fehlt: NODE_EXTRA_CA_CERTS muss beim Prozessstart gesetzt sein"
-  }) + "\n");
-  process.exit(3);
+function initialisiereUmgebung() {
+  process.env.SUPABASE_URL = DATENBANK_URL;
+  process.env.SUPABASE_SERVICE_ROLE_KEY = arg("dienstschluessel");
+  process.env.AZURE_OPENAI_ENDPOINT = KI_URL;
+  // Attrappenwerte fuer den LOKALEN Endpunkt. Sie berechtigen zu nichts: der KI-Endpunkt
+  // verlangt nur, dass die Kopfzeile `api-key` ueberhaupt gesetzt ist.
+  process.env.AZURE_OPENAI_KEY = "attrappe-lokaler-z3-endpunkt";
+  process.env.CRON_SECRET = `attrappe-z3-${process.pid}`;
+  process.env.HELMUT_SCALABLE_PIPELINE = "on";
+  process.env.HELMUT_JOB_DISPATCH_MODE = IST_FACHWEG ? "shadow" : arg("dispatch", "shadow");
+  process.env.HELMUT_STORAGE_BACKEND = "supabase";
+  process.env.HELMUT_V3_STORE = "1";
+  process.env.HELMUT_SOURCE_MODE = "on";
+  process.env.HELMUT_V3_MATCHING = arg("v3Matching", "1");
+  process.env.HELMUT_MATCHING_AUDIT = arg("matchingAudit", "on");
+  process.env.HELMUT_PROCESS_RUNS_RELATIONAL = "on";
+  process.env.HELMUT_ATOMIC_LOCK = "on";
+  process.env.HELMUT_VERSTEHEN_CAS = "on";
+  process.env.HELMUT_WORKER_PARALLEL = IST_FACHWEG ? "4" : arg("parallel", "4");
+  process.env.HELMUT_WORKER_STAPEL = IST_FACHWEG ? "25" : arg("stapel", "25");
+  process.env.HELMUT_WORKER_BATCH = IST_FACHWEG ? "25" : arg("stapel", "25");
+  process.env.HELMUT_MAX_LLM_CALLS_PER_DAY = arg("kiDeckel", "100000");
+  process.env.HELMUT_LLM_RESERVE_UNDERSTANDING = arg("kiReserve", "0");
+  process.env.CRAWLER_TIMEOUT_MS = arg("abrufTimeoutMs", "7000");
+  if (IST_FACHWEG) {
+    Object.assign(process.env, FACHWEG_UMGEBUNG);
+    process.env.AZURE_OPENAI_DEPLOYMENT = String(process.env.HELMUT_Z3B_FACHWEG_KI_MODELL);
+    delete process.env.HELMUT_MATCHING_DIM;
+  }
 }
 
-// Produktionsschalter des Warteschlangenbetriebs.
-process.env.HELMUT_SCALABLE_PIPELINE = "on";
-process.env.HELMUT_JOB_DISPATCH_MODE = arg("dispatch", "shadow");
-process.env.HELMUT_STORAGE_BACKEND = "supabase";
-process.env.HELMUT_V3_STORE = "1";
-// Der Quellenmodus muss AN sein, sonst verweigert `worker-betrieb` jeden externen Abruf
-// (TYPEN_MIT_ABRUF). Der Umgebungsriegel des Netzschutzes ist zu diesem Zeitpunkt bereits
-// gelaufen; der LAUFZEITRIEGEL bleibt unveraendert scharf.
-process.env.HELMUT_SOURCE_MODE = "on";
-// DIE FLAGGEN, DIE PRODUCTION HEUTE FAEHRT (docs/CURRENT_STATE.md §4, docs/betrieb/env-inventar.md).
-// Ohne sie waere der Lauf NICHT produktionsnah: `HELMUT_V3_MATCHING` ist in Production
-// faktisch AN (belegt ueber frische `profile_embeddings`/`matching_results`, env-inventar
-// §175) — fehlt es, meldet `runMatchingShadow` `matching-disabled`, jede Projektion wird
-// zurueckgestellt und jedes Briefing wartet auf eine Vorbedingung, die nie faellt (im
-// Eichlauf gemessen: 10 Auftraege blieben ueber alle Slots stehen).
-process.env.HELMUT_V3_MATCHING = arg("v3Matching", "1");
-process.env.HELMUT_MATCHING_AUDIT = arg("matchingAudit", "on");
-process.env.HELMUT_PROCESS_RUNS_RELATIONAL = "on";
-process.env.HELMUT_ATOMIC_LOCK = "on";
-process.env.HELMUT_VERSTEHEN_CAS = "on";
-// `HELMUT_MATCHING_DIM` bleibt ausdruecklich UNGESETZT (env-inventar §175: ein abweichender
-// Wert erzeugte Vektoren, die nicht in die Spalte passen).
-process.env.HELMUT_WORKER_PARALLEL = arg("parallel", "4");
-process.env.HELMUT_WORKER_STAPEL = arg("stapel", "25");
-process.env.HELMUT_WORKER_BATCH = arg("stapel", "25");
-process.env.HELMUT_MAX_LLM_CALLS_PER_DAY = arg("kiDeckel", "100000");
-process.env.HELMUT_LLM_RESERVE_UNDERSTANDING = arg("kiReserve", "0");
-process.env.CRAWLER_TIMEOUT_MS = arg("abrufTimeoutMs", "7000");
+let SP;
+let workerBetrieb;
+let storage;
+let jobDispatch;
+let sched;
+let erzeugeMandate;
+const kiKlassen = { understanding: 0, lage: 0, buero: 0, sonstige: 0 };
+const ausstehendeKiProtokolle = new Set();
+function kiKlasse(callType) {
+  const typ = String(callType || "").trim().toLowerCase();
+  if (typ === "understanding") return "understanding";
+  if (typ === "lagebriefing" || typ === "lage-narrativ") return "lage";
+  if (typ === "office-output") return "buero";
+  return "sonstige";
+}
+function ladeProduktionsmodule() {
+  SP = require(path.join(ROOT, "lib/helmut/scalable-pipeline.js"));
+  workerBetrieb = require(path.join(ROOT, "lib/helmut/worker-betrieb.js"));
+  storage = require(path.join(ROOT, "lib/helmut/storage.js"));
+  jobDispatch = require(path.join(ROOT, "lib/helmut/job-dispatch.js"));
+  sched = require(path.join(ROOT, "lib/helmut/scheduler.js"));
+  ({ erzeugeMandate } = require(path.join(ROOT, "scripts/fixtures/synthetische-mandate-1000.js")));
+  if (IST_FACHWEG && storage && typeof storage.recordLlmUsage === "function") {
+    const original = storage.recordLlmUsage.bind(storage);
+    storage.recordLlmUsage = (entry = {}) => {
+      const callType = String(entry.callType || "");
+      if (entry.keinAufruf !== true && !callType.startsWith("skipped-")) {
+        kiKlassen[kiKlasse(callType)] += 1;
+      }
+      const aufruf = Promise.resolve(original(entry));
+      ausstehendeKiProtokolle.add(aufruf);
+      aufruf.then(
+        () => ausstehendeKiProtokolle.delete(aufruf),
+        () => ausstehendeKiProtokolle.delete(aufruf)
+      );
+      return aufruf;
+    };
+  }
+}
 
-const SP = require(path.join(ROOT, "lib/helmut/scalable-pipeline.js"));
-const workerBetrieb = require(path.join(ROOT, "lib/helmut/worker-betrieb.js"));
-const storage = require(path.join(ROOT, "lib/helmut/storage.js"));
-const jobDispatch = require(path.join(ROOT, "lib/helmut/job-dispatch.js"));
-const sched = require(path.join(ROOT, "lib/helmut/scheduler.js"));
-const { erzeugeMandate } = require(path.join(ROOT, "scripts/fixtures/synthetische-mandate-1000.js"));
+async function warteAufKiProtokolle() {
+  while (ausstehendeKiProtokolle.size) {
+    await Promise.allSettled([...ausstehendeKiProtokolle]);
+  }
+}
 
 // ── Die eine benannte Ersetzung: Ursprungs-Host der Quellenadresse ───────────────────────────
 function aufLokalenUrsprung(rohUrl) {
@@ -148,7 +249,90 @@ function quelleUmschreiben(quelle) {
   return neu;
 }
 
+function pruefeFachwegIntegritaet({ plan, wieder, outboxAbgleich, weckVersand,
+  durchlauf, startQuittung, abschlussQuittung, kiZaehler,
+  laufkennung = null, fachwegLauf = null, zielMandate = null, quittungsStatus = null } = {}) {
+  const fehler = [];
+  if (!fachwegLauf || !String(laufkennung || "").startsWith(`z3b-${fachwegLauf}-`)) {
+    fehler.push("laufquittung-nicht-an-fachweg-gebunden");
+  }
+  if (!plan || plan.ok !== true || plan.uebersprungen !== false) {
+    fehler.push("planung-nicht-erfolgreich");
+  } else {
+    const namen = ["geplant", "neu", "vorhanden", "versucht", "ausstehend", "nichtEingereiht"];
+    const gueltig = namen.every((name) => Number.isInteger(plan[name]) && plan[name] >= 0);
+    if (!gueltig) fehler.push("planung-zaehler-unvollstaendig");
+    else {
+      if (plan.versucht !== plan.geplant) fehler.push("planung-nicht-vollstaendig-versucht");
+      if (plan.neu + plan.vorhanden !== plan.versucht) fehler.push("planung-bilanz-widerspruch");
+      if (plan.ausstehend !== 0) fehler.push("planung-ausstehend");
+      if (plan.nichtEingereiht !== 0) fehler.push("planung-nicht-eingereiht");
+    }
+    if (plan.profile !== zielMandate) fehler.push("planung-mandatsmenge-widerspruechlich");
+    if (plan.zeitbudgetErschoepft !== false) fehler.push("planung-zeitbudget");
+    if (!plan.tagesplan || typeof plan.tagesplan !== "object") fehler.push("planung-tagesplan-fehlt");
+  }
+  if (!wieder || wieder.verfuegbar !== true || wieder.uebersprungen !== false
+      || wieder.trockenlauf !== false
+      || !Number.isInteger(wieder.gefunden) || wieder.gefunden < 0
+      || !Number.isInteger(wieder.wiedervorgelegt) || wieder.wiedervorgelegt < 0) {
+    fehler.push("wiedervorlage-nicht-verfuegbar");
+  }
+  if (!outboxAbgleich || outboxAbgleich.verfuegbar !== true
+      || outboxAbgleich.uebersprungen !== false
+      || ["fehlend", "wiedereroeffnet", "verzichtet"]
+        .some((name) => !Number.isInteger(outboxAbgleich[name]) || outboxAbgleich[name] < 0)) {
+    fehler.push("outbox-abgleich-nicht-verfuegbar");
+  }
+  if (!weckVersand || weckVersand.uebersprungen !== false
+      || weckVersand.modus !== "shadow"
+      || weckVersand.transport !== "schatten"
+      || weckVersand.transportVerfuegbar !== true
+      || ["vergeben", "versendet", "fehlgeschlagen"]
+        .some((name) => !Number.isInteger(weckVersand[name]) || weckVersand[name] < 0)
+      || weckVersand.fehlgeschlagen !== 0
+      || weckVersand.versendet !== weckVersand.vergeben) {
+    fehler.push("outbox-versand-nicht-erfolgreich");
+  }
+  const workerZaehler = ["reserviert", "erledigt", "wiederholt", "zurueckgestellt",
+    "endgueltigFehlgeschlagen", "leaseVerloren"];
+  if (!durchlauf || durchlauf.gestartet !== true || durchlauf.fehler
+      || durchlauf.worker !== 4 || !durchlauf.grenzen
+      || durchlauf.grenzen.parallel !== 4 || durchlauf.grenzen.stapel !== 25
+      || durchlauf.grenzen.leaseMs !== 300000 || durchlauf.grenzen.leerlaufWarteMs !== 0
+      || workerZaehler.some((name) => !Number.isInteger(durchlauf[name]) || durchlauf[name] < 0)
+      || !Array.isArray(durchlauf.bilanzen) || durchlauf.bilanzen.length !== 4
+      || durchlauf.bilanzen.some((wert) => !wert || wert.verfuegbar !== true || wert.fehler
+        || wert.budgetSchicht !== "mit-tagesplan"
+        || workerZaehler.some((name) => !Number.isInteger(wert[name]) || wert[name] < 0))) {
+    fehler.push("worker-nicht-vollstaendig-verfuegbar");
+  }
+  if (durchlauf && Array.isArray(durchlauf.bilanzen)) {
+    for (const name of workerZaehler) {
+      const summe = durchlauf.bilanzen.reduce((wert, bilanz) => wert + Number(bilanz && bilanz[name]), 0);
+      if (Number.isInteger(durchlauf[name]) && summe !== durchlauf[name]) {
+        fehler.push(`worker-summenwiderspruch:${name}`);
+      }
+    }
+  }
+  if (!startQuittung || startQuittung.ok !== true || startQuittung.uebersprungen !== false
+      || !startQuittung.eintrag || startQuittung.eintrag.runId !== laufkennung
+      || startQuittung.eintrag.status !== "running") fehler.push("startquittung-fehlt");
+  if (!abschlussQuittung || abschlussQuittung.ok !== true || abschlussQuittung.uebersprungen !== false
+      || !abschlussQuittung.eintrag || abschlussQuittung.eintrag.runId !== laufkennung
+      || abschlussQuittung.eintrag.status !== quittungsStatus
+      || !new Set(["success", "partial"]).has(quittungsStatus)) fehler.push("endquittung-fehlt");
+  if (!kiZaehler || ["understanding", "lage", "buero", "sonstige"]
+    .some((name) => !Number.isInteger(kiZaehler[name]) || kiZaehler[name] < 0)) {
+    fehler.push("ki-klassenzaehler-unvollstaendig");
+  }
+  return { ok: fehler.length === 0, fehler };
+}
+
 async function main() {
+  pruefeStartSicherheit();
+  initialisiereUmgebung();
+  ladeProduktionsmodule();
   const mandate = Number(arg("mandate", "25"));
   const budgetMs = Number(arg("budgetMs", "290000"));
   const slot = Number(arg("slot", "1"));
@@ -171,7 +355,9 @@ async function main() {
   // FOLGENDEN Tages — genau die Aussage, um die es geht ("die Tagesmenge braucht mehr als
   // die Tagesslots").
   const planungsZeitMs = Number(arg("jetztMs", "")) || start;
-  const laufkennung = `z3-stufe${mandate}-slot${slot}-${start}`;
+  const laufkennung = IST_FACHWEG
+    ? `z3b-${FACHWEG_LAUF}-stufe${mandate}-slot${slot}-${start}`
+    : `z3-stufe${mandate}-slot${slot}-${start}`;
   const verbleibend = () => Math.max(0, budgetMs - (Date.now() - start));
 
   const profile = erzeugeMandate(mandate).map((p) => (
@@ -182,6 +368,13 @@ async function main() {
       ? { ...p, __z3fehler: true }
       : p
   ));
+  if (IST_FACHWEG) {
+    const modus = String(process.env.HELMUT_Z3_FEHLERMANDAT || "").trim().toLowerCase();
+    const erwartet = modus === "an" ? String(profile[0] && profile[0].id || "") : "";
+    if (!new Set(["an", "aus"]).has(modus) || fehlerMandat !== erwartet) {
+      throw Object.assign(new Error("abbruch-fehlermandat-nicht-an-laufmodus-gebunden"), { exitCode: 3 });
+    }
+  }
 
   // 1 · Laufquittung
   const startQuittung = await storage.schreibeWarteschlangenLaufquittung({
@@ -192,8 +385,10 @@ async function main() {
 
   // 2 · Planen — Produktionsfunktion, nur die Quellenadresse zeigt lokal.
   const planStart = Date.now();
+  const planungsBudgetMs = Math.min(60000, Math.floor(budgetMs * 0.25));
   const plan = await SP.planeArbeit({
       jetztMs: planungsZeitMs,
+      ...(IST_FACHWEG ? { planungsDeadlineMs: Date.now() + planungsBudgetMs } : {}),
       deps: {
         listFullProfiles: async () => profile,
         quellenFuerProfil: async (p) => {
@@ -219,7 +414,12 @@ async function main() {
           return quellen.map(quelleUmschreiben);
         }
       }
-  }).catch((e) => ({ ok: false, grund: String((e && e.message) || "fehler").slice(0, 200), geplant: 0, neu: 0 }));
+  }).catch((e) => ({
+    ok: false,
+    grund: "planung-fehler",
+    fehler: String((e && e.message) || "fehler").slice(0, 200),
+    zaehlerVollstaendig: false
+  }));
   const planDauerMs = Date.now() - planStart;
 
   // 3 · Wiedervorlage
@@ -245,28 +445,85 @@ async function main() {
     }
   }).catch((e) => ({ fehler: String((e && e.message) || "fehler").slice(0, 300) }));
   const arbeitDauerMs = Date.now() - arbeitStart;
+  if (IST_FACHWEG) await warteAufKiProtokolle();
 
   // 6 · Laufquittung abschliessen
+  const planFehlgeschlagen = !(plan && plan.ok === true);
+  const workerNichtVerfuegbar = !(durchlauf && durchlauf.gestartet === true) || Boolean(durchlauf && durchlauf.fehler);
+  const quittungsStatus = planFehlgeschlagen || workerNichtVerfuegbar
+    ? "failed"
+    : ((Number(durchlauf.endgueltigFehlgeschlagen) || 0) > 0
+      || ((Number(durchlauf.reserviert) || 0) > 0 && (Number(durchlauf.erledigt) || 0) === 0)
+      ? "partial" : "success");
+  const quittungsFehlerklasse = planFehlgeschlagen
+    ? (plan && plan.grund === "planung-zeitbudget" ? "planung-zeitbudget" : "planung-fehlgeschlagen")
+    : (workerNichtVerfuegbar
+      ? "warteschlange-nicht-verfuegbar"
+      : ((Number(durchlauf.reserviert) || 0) > 0 && (Number(durchlauf.erledigt) || 0) === 0
+        ? "lease-ohne-fortschritt"
+        : ((Number(durchlauf.endgueltigFehlgeschlagen) || 0) > 0
+          ? "auftraege-endgueltig-fehlgeschlagen" : null)));
+  const spiegel = (durchlauf && durchlauf.blobSpiegel) || {};
   const abschlussQuittung = await storage.schreibeWarteschlangenLaufquittung({
     process: `warteschlange-z3-${mandate}`.slice(0, 40), runId: laufkennung, mode: "warteschlange",
     location: "z3-lasttest",
-    status: durchlauf && durchlauf.fehler ? "error" : "success",
-    startedAt: new Date(start).toISOString(), finishedAt: new Date().toISOString()
+    status: quittungsStatus,
+    startedAt: new Date(start).toISOString(), finishedAt: new Date().toISOString(),
+    durationMs: Date.now() - start,
+    zielmenge: Number(durchlauf && durchlauf.reserviert) || 0,
+    processed: Number(durchlauf && durchlauf.erledigt) || 0,
+    deferred: Number(durchlauf && durchlauf.zurueckgestellt) || 0,
+    fehlgeschlagen: Number(durchlauf && durchlauf.endgueltigFehlgeschlagen) || 0,
+    wiederholt: Number(durchlauf && durchlauf.wiederholt) || 0,
+    leaseVerloren: Number(durchlauf && durchlauf.leaseVerloren) || 0,
+    ...(Number.isFinite(plan && plan.geplant) ? { geplant: plan.geplant } : {}),
+    ...(Number.isFinite(plan && plan.neu) ? { neuGeplant: plan.neu } : {}),
+    spiegelGesammelt: spiegel.gesammelt ?? 0,
+    spiegelGeschrieben: spiegel.geschrieben === true ? (spiegel.neuImBlob ?? 0) : null,
+    fehlerklasse: quittungsFehlerklasse,
+    reason: planFehlgeschlagen
+      ? String((plan && plan.grund) || "planung-fehlgeschlagen").slice(0, 120)
+      : (spiegel.geschrieben === false ? "blob-spiegel-fehlgeschlagen" : null)
   }).catch((e) => ({ ok: false, grund: String((e && e.message) || "fehler").slice(0, 120) }));
 
-  process.stdout.write(JSON.stringify({
+  const integritaet = IST_FACHWEG
+    ? pruefeFachwegIntegritaet({
+      plan, wieder, outboxAbgleich, weckVersand, durchlauf, startQuittung, abschlussQuittung,
+      kiZaehler: kiKlassen, laufkennung, fachwegLauf: FACHWEG_LAUF,
+      zielMandate: mandate, quittungsStatus
+    })
+    : { ok: true, fehler: [] };
+  const ausgabe = {
     slot, mandate, laufkennung, planungsZeit: new Date(planungsZeitMs).toISOString(),
-    dauerMs: Date.now() - start, planDauerMs, arbeitDauerMs,
-    plan: { geplant: plan && plan.geplant, neu: plan && plan.neu, grund: plan && plan.grund || null },
-    wiedervorlage: { verfuegbar: wieder && wieder.verfuegbar !== false, wiedervorgelegt: (wieder && wieder.wiedervorgelegt) || 0 },
-    outbox: { abgleich: outboxAbgleich && outboxAbgleich.verfuegbar !== false, versendet: (weckVersand && weckVersand.versendet) || 0 },
+    fachwegLauf: IST_FACHWEG ? FACHWEG_LAUF : null,
+    fachwegManifestSha256: IST_FACHWEG ? FACHWEG_MANIFEST_SHA : null,
+    dauerMs: Date.now() - start, planDauerMs, planungsBudgetMs, arbeitDauerMs,
+    plan,
+    wiedervorlage: wieder,
+    outbox: { abgleich: outboxAbgleich, versand: weckVersand },
+    kiKlassen: { ...kiKlassen },
     durchlauf,
-    quittung: { start: startQuittung && startQuittung.ok !== false, ende: abschlussQuittung && abschlussQuittung.ok !== false }
-  }) + "\n");
-  process.exit(0);
+    quittung: {
+      start: Boolean(startQuittung && startQuittung.ok === true),
+      ende: Boolean(abschlussQuittung && abschlussQuittung.ok === true),
+      status: quittungsStatus,
+      fehlerklasse: quittungsFehlerklasse,
+      startBeleg: startQuittung,
+      endeBeleg: abschlussQuittung,
+      ...(startQuittung && startQuittung.ok === true ? {} : { startGrund: (startQuittung && startQuittung.grund) || "unbekannt" }),
+      ...(abschlussQuittung && abschlussQuittung.ok === true ? {} : { endeGrund: (abschlussQuittung && abschlussQuittung.grund) || "unbekannt" })
+    },
+    integritaet
+  };
+  process.stdout.write(JSON.stringify(ausgabe) + "\n");
+  process.exit(IST_FACHWEG && !integritaet.ok ? 2 : 0);
 }
 
-main().catch((error) => {
-  process.stdout.write(JSON.stringify({ fehler: String((error && error.stack) || error).slice(0, 900) }) + "\n");
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((error) => {
+    process.stdout.write(JSON.stringify({ fehler: String((error && error.stack) || error).slice(0, 900) }) + "\n");
+    process.exit(Number(error && error.exitCode) || 1);
+  });
+}
+
+module.exports = { FACHWEG_UMGEBUNG, istLokal, kiKlasse, pruefeFachwegIntegritaet };

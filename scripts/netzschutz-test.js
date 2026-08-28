@@ -18,6 +18,7 @@ const { spawnSync } = require("child_process");
 
 const ROOT = path.join(__dirname, "..");
 const SCHUTZ = path.join(ROOT, "scripts/lokaler-netzschutz.js");
+const OFFLINE_RUNNER = path.join(ROOT, "scripts/run-offline-tests.js");
 
 // Das Modul nur LADEN, nicht scharfschalten — sonst beendet es diesen Testprozess selbst.
 process.env.HELMUT_LOKALER_SCHUTZ_NUR_LADEN = "ja";
@@ -344,6 +345,40 @@ function main() {
     // Die Sitzung selbst darf dabei NIE veraendert werden.
     check("15.5 Die Variablen der aufrufenden Sitzung bleiben unveraendert",
       env.HELMUT_V3_STORE === "1" && env.HELMUT_STORAGE_BACKEND === "supabase");
+  }
+
+  // ── 16 · Auch ABGEFANGENE Netzversuche machen das Offline-Gate rot ────────
+  abschnitt("16 · Abgefangener Netzversuch bleibt ein Gate-Fehler");
+  {
+    const runnerSrc = require("fs").readFileSync(OFFLINE_RUNNER, "utf8");
+    check("16.1 Das PARDOK-Live-Werkzeug ist ehrlich aus den Offline-Suiten ausgeschlossen",
+      /DENYLIST[\s\S]*?["']pardok-shadow-test\.js["']/.test(runnerSrc));
+
+    // Der Kindprozess laedt exakt den Runner-Guard. https.get wirft synchron
+    // VOR DNS/Socket; der Fake faengt diesen Fehler absichtlich — genau wie die
+    // fruehere Shadow-Suite. Trotzdem muss dieselbe Exit-Entscheidung, die main()
+    // verwendet, den Prozess rot beenden.
+    const code = `
+      const runner = require(${JSON.stringify(OFFLINE_RUNNER)});
+      let abgefangen = false;
+      try {
+        require("https").get("https://abgefangener-versuch.invalid/");
+      } catch (error) {
+        abgefangen = String(error && error.message).includes("[NETZ-GUARD]");
+      }
+      const netAttempts = abgefangen ? ["fake-abfang-suite.js"] : [];
+      process.exit(runner.offlineExitCode({ failed: [], netAttempts }));
+    `;
+    const r = spawnSync(process.execPath, ["-e", code], {
+      encoding: "utf8",
+      env: sauber({ NO_NETWORK_TESTS: "1" }),
+      timeout: 30000
+    });
+    check("16.2 Ein abgefangener Guard-Versuch endet trotzdem mit Exit ungleich 0",
+      r.status === 1 && /\[NETZ-GUARD\].*abgefangener-versuch\.invalid/.test(String(r.stderr || "")),
+      `exit ${r.status}`);
+    check("16.3 Der kanonische Runner entscheidet mit derselben fail-closed Funktion",
+      /return offlineExitCode\(\{ failed, netAttempts \}\);/.test(runnerSrc));
   }
 
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
