@@ -112,7 +112,9 @@ function main() {
     K.bewerteEntscheidungsreife({
       zielMandate: 50, vorherigeAktivstufe: 10, fachwegGemessenBis: 100,
       supabaseGemessenBis: 100, azureStichprobenJeKlasse: { understanding: 7, lage: 7, buero: 7 },
-      kiDeckelEmpfohlen: 334, kiDeckelKonfiguriert: 334, slot: slotGruen, beobachtung,
+      kiDeckelEmpfohlen: 334, kiDeckelKonfiguriert: 334,
+      kiUnderstandingReserveEmpfohlen: 280, kiUnderstandingReserveKonfiguriert: 280,
+      slot: slotGruen, beobachtung,
       codeUndMigrationen: { pr272Merged: true, pr273Merged: true, f9Applied: true, z22Applied: true }
     }).gruende.includes("vorherige Aktivstufe stimmt nicht"));
   const basis = {
@@ -120,6 +122,7 @@ function main() {
     supabaseGemessenBis: 25, supabaseFehler: 0,
     azureStichprobenJeKlasse: { understanding: 7, lage: 7, buero: 7 },
     kiDeckelEmpfohlen: 334, kiDeckelKonfiguriert: 334,
+    kiUnderstandingReserveEmpfohlen: 280, kiUnderstandingReserveKonfiguriert: 280,
     slot: slotGruen, beobachtung,
     codeUndMigrationen: { pr272Merged: true, pr273Merged: true, f9Applied: true, z22Applied: true }
   };
@@ -152,6 +155,22 @@ function main() {
   const falscheVorstufe = K.bewerteBeobachtung(grueneTage(5));
   check("C13 Sieben gruene Tage auf der falschen Vorstufe reichen nicht",
     /Vorstufe 10/.test(K.bewerteEntscheidungsreife({ ...basis, beobachtung: falscheVorstufe }).gruende.join(" ")));
+  check("C14 Ein Gesamtdeckel ohne konfigurierte Understanding Reserve bleibt gesperrt",
+    /Understanding Reserve/.test(K.bewerteEntscheidungsreife({
+      ...basis, kiUnderstandingReserveKonfiguriert: null
+    }).gruende.join(" ")));
+  check("C15 Eine zu kleine Understanding Reserve bleibt gesperrt",
+    /Understanding Reserve/.test(K.bewerteEntscheidungsreife({
+      ...basis, kiUnderstandingReserveKonfiguriert: 279
+    }).gruende.join(" ")));
+  check("C16 Eine Reserve ueber dem Gesamtdeckel bleibt gesperrt",
+    /ueber dem Gesamtdeckel/.test(K.bewerteEntscheidungsreife({
+      ...basis, kiUnderstandingReserveKonfiguriert: 335
+    }).gruende.join(" ")));
+  check("C17 Eine zu grosse Reserve darf Lage und Buero nicht die geplante Kapazitaet nehmen",
+    /Lage und Buero/.test(K.bewerteEntscheidungsreife({
+      ...basis, kiUnderstandingReserveKonfiguriert: 300
+    }).gruende.join(" ")));
 
   console.log(`\nPASS ${pass}  FAIL ${fail}`);
   process.exit(fail ? 1 : 0);

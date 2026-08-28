@@ -204,7 +204,8 @@ function erforderlicheMessstufe(zielMandate) {
 
 function bewerteEntscheidungsreife({ zielMandate, vorherigeAktivstufe, fachwegGemessenBis,
   supabaseGemessenBis, supabaseFehler = 0, azureStichprobenJeKlasse, kiDeckelEmpfohlen,
-  kiDeckelKonfiguriert, slot, beobachtung, codeUndMigrationen = {} } = {}) {
+  kiDeckelKonfiguriert, kiUnderstandingReserveEmpfohlen,
+  kiUnderstandingReserveKonfiguriert, slot, beobachtung, codeUndMigrationen = {} } = {}) {
   const ziel = Number(zielMandate);
   const messstufe = erforderlicheMessstufe(ziel);
   const gruende = [];
@@ -220,8 +221,31 @@ function bewerteEntscheidungsreife({ zielMandate, vorherigeAktivstufe, fachwegGe
   } catch (_) { azureVollstaendig = false; }
   if (!azureVollstaendig) gruende.push("Azure Stichprobe ist nicht vollstaendig");
   const empfohlen = endlicheZahl(kiDeckelEmpfohlen, "empfohlener KI Deckel", { minimum: 1 });
+  const reserveEmpfohlen = endlicheZahl(kiUnderstandingReserveEmpfohlen,
+    "empfohlene Understanding Reserve", { minimum: 0 });
   const konfiguriert = endlicheZahl(kiDeckelKonfiguriert, "konfigurierter KI Deckel", { nullErlaubt: true, minimum: 1 });
+  const reserveKonfiguriert = endlicheZahl(kiUnderstandingReserveKonfiguriert,
+    "konfigurierte Understanding Reserve", { nullErlaubt: true, minimum: 0 });
+  if (![empfohlen, reserveEmpfohlen].every(Number.isInteger)) {
+    throw new Error("Empfohlener KI Deckel und Understanding Reserve muessen ganze Zahlen sein");
+  }
+  if (reserveEmpfohlen > empfohlen) {
+    throw new Error("Empfohlene Understanding Reserve darf nicht ueber dem Gesamtdeckel liegen");
+  }
   if (konfiguriert === null || konfiguriert < empfohlen) gruende.push("KI Deckel ist noch nicht ausreichend freigegeben und gesetzt");
+  if (konfiguriert !== null && !Number.isInteger(konfiguriert)) {
+    gruende.push("konfigurierter KI Deckel ist keine ganze Zahl");
+  }
+  if (reserveKonfiguriert === null || reserveKonfiguriert < reserveEmpfohlen) {
+    gruende.push("Understanding Reserve ist noch nicht ausreichend freigegeben und gesetzt");
+  } else if (!Number.isInteger(reserveKonfiguriert)) {
+    gruende.push("konfigurierte Understanding Reserve ist keine ganze Zahl");
+  } else if (konfiguriert !== null && reserveKonfiguriert > konfiguriert) {
+    gruende.push("Understanding Reserve liegt ueber dem Gesamtdeckel");
+  } else if (konfiguriert !== null
+    && konfiguriert - reserveKonfiguriert < empfohlen - reserveEmpfohlen) {
+    gruende.push("Understanding Reserve laesst zu wenig Kapazitaet fuer Lage und Buero");
+  }
   if (!slot || slot.bestanden !== true) gruende.push("Slot Kapazitaet hat keine 25 Prozent Reserve");
   if (!beobachtung || beobachtung.bestanden !== true) {
     gruende.push("siebentaegige Vorstufenbeobachtung ist nicht gruen");
