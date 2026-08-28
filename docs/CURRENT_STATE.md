@@ -269,11 +269,11 @@ Der HTTP JSON Umschlag wurde bisher mit `JSON.parse` gelesen, bevor die bereits 
 Rettung roher Steuerzeichen im Modelltext greifen konnte. Auf dem Z3b Branch ist eine strikte
 Rettung für diesen Umschlag vorbereitet. Sie akzeptiert weder führende Prosa noch strukturell
 kaputtes JSON. Parser und angrenzende Verstehensverträge stehen bei **241 PASS, 0 FAIL**.
-Die gesamte Offline Suite steht bei **283 von 289 grünen Suiten**; sechs davon unabhängige
-Umgebungs-, Bestands- oder Flake Fehler verhindern noch die Aussage einer vollständig grünen
+Die gesamte Offline Suite steht bei **287 von 291 grünen Suiten**; vier fehlende lokale
+Laufzeitabhängigkeiten verhindern noch die Aussage einer vollständig grünen
 Gesamtsuite. Keine Production Änderung wurde ausgeführt.
 
-Offen: unabhängige Prüfung des KI Parserfixes und später eine natürliche Regression · Merge
+Offen: natürliche Production-Regression des lokal geprüften KI Parserfixes · Merge
 #272, danach #273 · F9/Z22 für Production jeweils separat · Supabase Läufe C und D · echte
 Azure Aufrufe und Kosten · KI Deckel · jede Aktivierung. 200 und 500 sind strategische spätere
 Tore und blockieren den sicheren Plan bis 100 nicht.
