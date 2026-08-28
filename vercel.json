@@ -4,7 +4,8 @@
   "git": {
     "deploymentEnabled": {
       "codex/ki-antwortumschlag-hardening": false,
-      "codex/planung-zeitbudget-hardening": false
+      "codex/planung-zeitbudget-hardening": false,
+      "codex/z3b-monitoring-honesty": false
     }
   },
   "functions": {
