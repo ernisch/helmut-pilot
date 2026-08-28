@@ -3,10 +3,10 @@
 ## Sprintzustand
 
 **Teilweise abgeschlossen.** Der kleine Folgebranch
-`codex/ki-antwortumschlag-hardening` steht lokal auf dem Kopf von PR #273
-`2a01ea9e`. Code und gezielte Regressionen sind grün. Der Branch ist noch nicht
-hochgeladen, ein Pull Request existiert noch nicht, und Production wurde nicht
-verändert. Der rote natürliche Fünferbefund gilt daher weiterhin als offen.
+`codex/ki-antwortumschlag-hardening` steht auf dem Kopf von PR #273 `2a01ea9e`.
+Code und gezielte Regressionen sind grün. **PR #274 ist offen, ungemergt und hat
+noch keinen grünen Pflicht CI Beleg.** Production wurde nicht verändert. Der rote
+natürliche Fünferbefund gilt daher weiterhin als offen.
 
 ## Anlass und belegte Grenze
 
@@ -105,11 +105,9 @@ und keine Umgebungsvariable zurückzusetzen.
 
 ## Noch offen
 
-1. Branch committen und hochladen
-2. eigenen Pull Request auf Basis von PR #273 erstellen
-3. Pflicht CI vollständig grün belegen
-4. Merge nur nach eigener Betreiberfreigabe
-5. automatisches Production Deployment rein lesend prüfen
-6. erst im nächsten natürlichen Understanding Lauf den Fünferbefund regressieren
+1. Pflicht CI vollständig grün belegen
+2. Merge erst nach #272 und #273 sowie eigener Betreiberfreigabe
+3. automatisches Production Deployment rein lesend prüfen
+4. erst im nächsten natürlichen Understanding Lauf den Fünferbefund regressieren
 
 Ein künstlicher Production Lauf ist dafür nicht freigegeben und nicht nötig.
