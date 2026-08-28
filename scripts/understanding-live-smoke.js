@@ -64,6 +64,7 @@ async function main() {
     req.on("end", () => {
       requestSeen = true;
       const payload = {
+        status: "completed",
         output_text: JSON.stringify(analysis),
         usage: { input_tokens: 420, output_tokens: 180, total_tokens: 600 }
       };

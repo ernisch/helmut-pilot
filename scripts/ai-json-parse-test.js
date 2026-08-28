@@ -51,7 +51,7 @@ check("3c escapter Backslash am Stringende verwirrt den Scanner nicht",
   JSON.parse(ai.escapeControlCharsInJsonStrings('{"p": "C:\\\\pfad\n"}')).p === "C:\\pfad\n");
 
 // --- 4) Anbieter-Umschlag: Fehler kann VOR dem Modelltext-Parser entstehen -----------
-const validEnvelope = '{"output":[{"content":[{"type":"output_text","text":"ok"}]}],"usage":{"input_tokens":1}}';
+const validEnvelope = '{"status":"completed","output":[{"content":[{"type":"output_text","text":"ok"}]}],"usage":{"input_tokens":1}}';
 check("4 gueltiger Anbieter-Umschlag wird normal geparst",
   ai.parseProviderResponseJson(validEnvelope).output[0].content[0].text === "ok");
 const rawEnvelopeNewline = '{"output":[{"content":[{"type":"output_text","text":"Zeile eins\nZeile zwei"}]}]}';
@@ -63,6 +63,15 @@ check("4c Anbieter-Umschlag akzeptiert keine fuehrende Prosa", envelopeThrew);
 envelopeThrew = false;
 try { ai.parseProviderResponseJson('{"output": [}'); } catch { envelopeThrew = true; }
 check("4d strukturell kaputter Anbieter-Umschlag bleibt ein Fehler", envelopeThrew);
+check("4e nur status completed gilt als vollstaendige Anbieterantwort",
+  ai.requireCompletedProviderResponse(ai.parseProviderResponseJson(validEnvelope)).status === "completed");
+for (const status of ["incomplete", "failed", "cancelled", "queued", "in_progress", undefined]) {
+  let statusFehler = null;
+  try { ai.requireCompletedProviderResponse({ status }); } catch (error) { statusFehler = error; }
+  check(`4f Status ${String(status)} bleibt fail closed`,
+    statusFehler && statusFehler.code === "AI_RESPONSE_NOT_COMPLETED"
+      && !String(statusFehler.message).includes(String(status)));
+}
 
 // --- 5) Ehrliches Scheitern: echter Muell wirft weiterhin ---------------------------
 let threw = false;
@@ -71,6 +80,12 @@ check("5 komplett ungueltiger Text wirft weiterhin (kein stilles Erfinden)", thr
 threw = false;
 try { ai.parseJsonText('{"unvollstaendig": '); } catch { threw = true; }
 check("5b strukturell kaputtes JSON wirft weiterhin", threw);
+const geheimesFragment = 'PERSONENBEZOGENES_MODELLFRAGMENT_4711';
+let sichererFehler = null;
+try { ai.parseModelJsonText(`{"text":"${geheimesFragment}`); } catch (error) { sichererFehler = error; }
+check("5c Produktiver Modellparser gibt kein Eingabefragment im Fehler aus",
+  sichererFehler && sichererFehler.code === "AI_RESPONSE_INVALID_JSON"
+    && !String(sichererFehler.message).includes(geheimesFragment));
 
 console.log(`\n${failed === 0 ? "ALLE GRÜN" : failed + " FEHLGESCHLAGEN"} — ${passed}/${passed + failed} AI-JSON-Parse-Assertions`);
 process.exit(failed > 0 ? 1 : 0);
