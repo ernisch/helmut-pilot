@@ -2,10 +2,10 @@
 
 ## Sprintzustand
 
-**Lokal teilweise abgeschlossen.** Der getrennte Branch
+**Lokal abgeschlossen, insgesamt teilweise abgeschlossen.** Der getrennte Branch
 `codex/planung-zeitbudget-hardening` steht auf dem lokalen, baumgleichen Stand
-von PR #274. Die gezielten Regressionen sind grün. Ein Pull Request und ein
-vollständiger CI Beleg fehlen noch. Production, Supabase, echte Mandatsdaten,
+von PR #274. Die gezielten Regressionen und der lokale Gesamtcheck sind gelaufen.
+Ein Pull Request und ein vollständiger CI Beleg fehlen noch. Production, Supabase, echte Mandatsdaten,
 Migrationen, Umgebungswerte und Geheimnisse wurden nicht verändert.
 
 Diese Härtung ist kein Lastnachweis. Insbesondere wiederholt sie weder den
@@ -70,12 +70,29 @@ Kindprozessen damit nicht zur Verfügung.
 | `scalable-pipeline-flag-test.js` | grün |
 | `queue-ende-zu-ende-test.js` | grün |
 | `warteschlangen-abfluss-test.js` | grün |
+| vollständiger Offline Lauf | 281 von 287 Suiten grün |
 
 Der neue Vertrag prüft am echten Planer insbesondere: vorverbrauchtes Budget
 startet keinen Schreibvorgang; ein laufender Aufruf wird vor Rückgabe beendet;
 danach entsteht auch in späteren Microtasks kein weiterer Schreibvorgang; der
 Teilstand bleibt rot und zählergenau; der Server enthält kein Planungs
 `Promise.race` mehr.
+
+Die sechs roten Suiten des vollständigen Laufs liegen außerhalb des
+Änderungssatzes:
+
+| Suite | sichtbarer lokaler Befund | isolierte Wiederholung |
+|---|---|---:|
+| `admin-nutzer-loeschen-test.js` | Playwright Browser fehlt | nicht wiederholt |
+| `passwort-setzen-login-fix-test.js` | Playwright Browser fehlt | nicht wiederholt |
+| `kalender-ics-test.js` | npm Abhängigkeit fehlt | nicht wiederholt |
+| `lambda-paket-test.js` | AWS SDK Paket fehlt | nicht wiederholt |
+| `quellen-mehrfachabruf-test.js` | Zeitvergleich um 55 ms gedreht | 19 PASS, 0 FAIL |
+| `werkzeug-lesefehler-test.js` | Verbindungsfixture lief in den Timeout | 43 PASS, 0 FAIL |
+
+Damit ist die relevante Regression grün. Die beiden Zeitbefunde sind als lokale
+Flanken sichtbar und nicht als bewiesene Ursache klassifiziert. Eine vollständig
+grüne lokale Gesamtsuite wird nicht behauptet.
 
 ## Beweisgrenzen
 
@@ -103,8 +120,7 @@ Flagänderung oder Geheimnisrotation.
 
 ## Noch offen
 
-1. vollständigen lokalen Offline Lauf auf dem finalen Branch ausführen
-2. eigenen gestapelten Pull Request ohne Vorschau Deployment anlegen
-3. Pflicht CI vollständig grün belegen
-4. Merge erst nach #272, #273 und #274 sowie eigener Betreiberfreigabe
-5. Wirkung erst in einem später freigegebenen Production Lauf messen
+1. eigenen gestapelten Pull Request ohne Vorschau Deployment anlegen
+2. Pflicht CI vollständig grün belegen
+3. Merge erst nach #272, #273 und #274 sowie eigener Betreiberfreigabe
+4. Wirkung erst in einem später freigegebenen Production Lauf messen
