@@ -92,7 +92,13 @@ const PRODUCTION_KENNUNGEN = [
 ];
 
 // Datenbankvariablen, deren Adresse lokal sein MUSS, wenn sie gesetzt ist.
-const DB_HOST_VARIABLEN = ["HELMUT_TEST_PG_HOST", "PGHOST"];
+// `PGHOSTADDR` ergaenzt 2026-08-28. libpq benutzt `host` nur noch zur Authentifizierung,
+// sobald `hostaddr` gesetzt ist — ein `PGHOSTADDR` in der Umgebung schlaegt also das `-h`
+// auf der Kommandozeile und lenkt `psql -h 127.0.0.1 …` auf eine fremde Datenbank. Die
+// Laufzeitsperre greift hier nicht: `psql` ist ein natives Binary, das Monkeypatching von
+// net/tls/fetch erreicht es nicht. Die Umgebungspruefung ist bei diesem Weg also der
+// EINZIGE Riegel — und sie kannte diese Variable bisher nicht.
+const DB_HOST_VARIABLEN = ["HELMUT_TEST_PG_HOST", "PGHOST", "PGHOSTADDR"];
 const DB_URL_VARIABLEN = ["DATABASE_URL", "POSTGRES_URL", "SUPABASE_DB_URL", "PGURL"];
 
 function hostAusUrl(roh) {

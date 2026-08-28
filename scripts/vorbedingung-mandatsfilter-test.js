@@ -327,10 +327,40 @@ async function main() {
     const fs = require("fs");
     const sql = fs.readFileSync(path.join(ROOT,
       "supabase/migrations/20260826190000_jobqueue_vorbedingung_mandatsfilter.sql"), "utf8");
+    // NUR DER RUMPF ZWISCHEN `as $$` UND `$$;` — nicht die Kommentare. Sonst prueft dieser
+    // Test am Ende die ERKLAERUNG statt des ausgefuehrten SQL: der Kopfkommentar zitiert
+    // die alte Fassung wortwoertlich („Die Vorfassung pruefte nur `j.tenant_id is null`"),
+    // und ein Ausdruck, der den ganzen Dateitext durchsucht, wuerde daran gruen — fuer ein
+    // Praedikat, das im Rumpf gar nicht mehr steht. Genau diese Sorte falsches Gruen
+    // schliesst dieser Sprint.
+    // Auch INNERHALB des Rumpfes stehen `--`-Kommentare, und einer davon zitiert die alte
+    // Fassung woertlich. Sie werden deshalb entfernt: geprueft wird ausschliesslich das,
+    // was PostgreSQL wirklich ausfuehrt.
+    const rumpf = ((sql.match(/as \$\$([\s\S]*?)\$\$;/) || [])[1] || "")
+      .split("\n").map((z) => z.replace(/--.*$/, "")).join("\n");
+    check("6.0 Der Funktionsrumpf ist ueberhaupt auffindbar (sonst prueft alles Weitere Kommentare)",
+      rumpf.trim() !== "" && /from public\.helmut_jobs/.test(rumpf),
+      `${rumpf.length} Zeichen Rumpf`);
     check("6.1 Die Migration normalisiert leere Kennungen und filtert dann global + eigen",
-      /nullif\s*\(\s*btrim\(p_mandat\)\s*,\s*''\s*\)\s+is\s+null/.test(sql)
-      && /j\.tenant_id\s+is\s+null/.test(sql)
-      && /j\.tenant_id\s*=\s*btrim\(p_mandat\)/.test(sql));
+      /nullif\s*\(\s*btrim\(p_mandat\s*,[^)]*\)\s*,\s*''\s*\)\s+is\s+null/.test(rumpf)
+      && /nullif\s*\(\s*btrim\(j\.tenant_id\s*,[^)]*\)\s*,\s*''\s*\)\s+is\s+null/.test(rumpf)
+      && /btrim\(j\.tenant_id\s*,[^)]*\)\s*=\s*btrim\(p_mandat\s*,[^)]*\)/.test(rumpf));
+    // GEGENPROBE ZUM BEFUND VOM 28.08.2026 (Datenbanknachweis §8b): die Vorfassung pruefte
+    // auf der ZEILENSEITE nur `j.tenant_id is null`. Eine Zeile mit leerer oder nur aus
+    // Leerzeichen bestehender `tenant_id` fiel damit aus der gefilterten Zaehlung heraus —
+    // ein Mandat wartete NICHT mehr auf sie, obwohl ihr Mandatsbezug unbrauchbar ist. Die
+    // Attrappe zaehlte sie dagegen global. Beide Seiten lagen auseinander, und die
+    // Datenbankseite lag auf der unsicheren Seite. `tenant_id` ist `text` ohne NOT-NULL
+    // und ohne Pruefbedingung, eine solche Zeile ist also moeglich.
+    check("6.1b Die Zeilenseite prueft NICHT mehr nur auf `is null` (leere Kennung faellt sonst heraus)",
+      !/j\.tenant_id\s+is\s+null/.test(rumpf),
+      "die alte, unsichere Fassung `j.tenant_id is null` darf im RUMPF nicht mehr vorkommen");
+    // Und die Zeichenmenge muss auf beiden Seiten dieselbe sein: `btrim(x)` ohne zweites
+    // Argument entfernt in PostgreSQL nur U+0020, die Attrappe trimmt mehr. Ohne die
+    // ausgeschriebene Menge liefen beide bei einem Tabulator wieder auseinander.
+    check("6.1c Beide Seiten trimmen dieselbe, ausgeschriebene Weissraummenge",
+      (rumpf.match(/btrim\([^)]*,\s*E'[^']*'\s*\)/g) || []).length >= 3,
+      `${(rumpf.match(/btrim\([^)]*,\s*E'[^']*'\s*\)/g) || []).length} btrim-Aufrufe mit Zeichenmenge`);
     check("6.2 `p_mandat` hat den Vorgabewert null (Altaufrufer mit zwei Argumenten bleiben lauffaehig)",
       /p_mandat\s+text\s+default\s+null/.test(sql));
     check("6.3 Die zweistellige Fassung wird entfernt (sonst waere der Aufruf mehrdeutig)",
@@ -342,6 +372,36 @@ async function main() {
     check("6.5 Ein Rueckweg existiert und stellt die zweistellige Fassung wieder her",
       /drop function if exists public\.helmut_jobs_offen\(text\[\], text\[\], text\)/.test(rueck)
       && /create or replace function public\.helmut_jobs_offen\(/.test(rueck));
+
+    // ── GEGENPROBE, verhaltensseitig ────────────────────────────────────────────────────
+    // Dieselben fuenf Zeilen wie §8b des Datenbanknachweises, hier gegen die Attrappe.
+    // Erwartet ist die Zahl des SICHEREN Vertrags: null, '' und '   ' sind Arbeit ohne
+    // brauchbaren Mandatsbezug und gelten deshalb fuer JEDES Mandat; nur die fremde Zeile
+    // faellt weg. Vor der Korrektur meldete die Attrappe hier 3 (sie liess '   ' als
+    // eigenstaendiges Mandat gelten) und die Datenbank 2 — beide Zahlen waren falsch.
+    const FENSTER_LEER = "2026-08-26T12Z";
+    const qLeer = treiber.erzeugeSpeicherWarteschlange({
+      now: () => Date.parse("2026-08-26T12:00:00.000Z")
+    });
+    const leerZeilen = [null, "", "   ", "\t", MANDAT_A, MANDAT_B];
+    for (let i = 0; i < leerZeilen.length; i += 1) {
+      await qLeer.enqueue({
+        jobType: "source_fetch", idempotencyKey: `leer-${i}`, freshnessWindow: FENSTER_LEER,
+        tenantId: leerZeilen[i], priority: 100, maxAttempts: 5, payload: {}
+      });
+    }
+    const leerOhne = await qLeer.offeneVorbedingungen({
+      fenster: [FENSTER_LEER], typen: ["source_fetch"]
+    });
+    const leerMitB = await qLeer.offeneVorbedingungen({
+      fenster: [FENSTER_LEER], typen: ["source_fetch"], mandat: MANDAT_B
+    });
+    check("6.6 Ohne Mandat zaehlt die Attrappe alle sechs Zeilen",
+      leerOhne.offen === 6, `offen ${leerOhne.offen}, erwartet 6`);
+    check("6.7 GEGENPROBE: leere, Leerzeichen- und Tabulator-`tenant_id` zaehlen global",
+      leerMitB.offen === 5, `offen ${leerMitB.offen}, erwartet 5 (vor der Korrektur: 3)`);
+    check("6.8 Die FREMDE Zeile faellt weiterhin weg (der Filter wirkt wirklich)",
+      leerMitB.offen < leerOhne.offen, `${leerMitB.offen} gegen ${leerOhne.offen}`);
   }
 
   // ═══ §7 · Rueckfall ohne angewendete Migration ════════════════════════════════════════════

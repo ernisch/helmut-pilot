@@ -780,3 +780,155 @@ Abwägung trifft der Motor schon heute beim 7-Tage-Archivfenster („ein Briefin
 eine Hintergrundsuche mit Wochenkadenz warten") und bei der 6-Stunden-Obergrenze des Wartens.
 Vorgänge bleiben persistent, das Matching liest gespeicherte Vorgänge — verloren geht nichts,
 es kommt nur später.
+
+## 14 · Nachtrag 28.08. — zwei Nachweislücken im Z22-Beleg geschlossen
+
+Dieser Abschnitt gehört zu PR #273. Er korrigiert **nicht** den Befund Z22 selbst — der
+bleibt behoben wie in §13 beschrieben — sondern **zwei Lücken im Nachweis dieses Befunds**.
+Beide standen in derselben Ursache: der Datenbankteil lief nicht wirklich, und deshalb fiel
+nicht auf, dass SQL und Attrappe an einer Stelle auseinanderliefen.
+
+**Keine Production-Aktion.** Migration weiterhin nicht angewendet, kein Deployment, kein
+Flag, keine Env, kein Cron, kein Import, keine echten Anbieteraufrufe, keine Kosten. Der
+gesamte Datenbankteil lief gegen eine **kurzlebige lokale PostgreSQL**, die für den Lauf
+angelegt und danach verworfen wird; die Zeilen sind ausschließlich synthetisch.
+
+### 14.1 Lücke 1 — der Datenbanknachweis meldete grün, ohne zu laufen
+
+`scripts/vorbedingung-mandatsfilter-datenbank-test.js` beendete sich ohne
+`HELMUT_TEST_PG_HOST` mit **Exit 0**. `scripts/run-offline-tests.js` kennt aber nur
+`exit === 0` ⇒ `PASS`. Der kanonische Gesamtlauf zählte diesen Nachweis also als **grüne
+Suite**, obwohl gegen die Datenbank nichts geprüft wurde — genau das falsche Grün, das
+`CLAUDE.md` §4.4 verbietet. Die in §13 genannten „34 PASS" waren echt, stammten aber aus
+einem **Handlauf auf einer Arbeitsmaschine**, nicht aus dem Merge-Gate.
+
+Die Lösung folgt dem Muster, das im Repo für denselben Fall bereits existiert
+(`browser-smoke-test.js`):
+
+1. Der Nachweis steht jetzt in der **DENYLIST** von `run-offline-tests.js`. Ein stiller Skip
+   kann dort keine Abdeckung mehr vortäuschen. Der Runner zählt dadurch **eine Suite
+   weniger** (284 statt 285) — die Suite ist nicht verschwunden, sie läuft anderswo.
+2. Er hat einen **eigenen Schritt im Pflichtjob „Syntax + Offline-Suiten"** mit einem
+   kurzlebigen `postgres:17`-Dienst (Hauptversion wie Production 17.6). Der Schritt läuft
+   über `scripts/lokal.js` (CLAUDE.md §6). **Kein neuer Required Check** — der Jobname
+   bleibt unverändert.
+3. `HELMUT_REQUIRE_PG=1` macht ihn **fail-closed**: fehlende oder unerreichbare Datenbank
+   ist ein FEHLSCHLAG (Exit 1), kein Skip. Belegt, beide Wege:
+
+| Lauf | Erwartung | Ergebnis |
+|---|---|---|
+| `HELMUT_REQUIRE_PG=1`, kein Host | Exit 1 | **Exit 1**, „FEHLSCHLAG: kein HELMUT_TEST_PG_HOST gesetzt" |
+| `HELMUT_REQUIRE_PG=1`, Host auf totem Port 5999 | Exit 1 | **Exit 1**, „kein erreichbarer Server" |
+| lokal ohne Pflicht und ohne Host | Exit 0, ehrlicher Skip | **Exit 0**, Skip ausdrücklich benannt |
+
+`HELMUT_TEST_PG_HOST` wird **nur in diesem Schritt** gesetzt, nicht job-weit: sonst gingen
+rund 35 weitere Datenbanksuiten unbeabsichtigt scharf.
+
+**Dritter Befund, in derselben Lücke gefunden.** Der Nachweis legte die Supabase-Rollen nie
+selbst an. `20260808_scalable_job_queue.sql` enthält unbedingte
+`revoke … from public, anon, authenticated`; auf einem **frischen** Cluster bricht die
+Basismigration deshalb mit `role "anon" does not exist` ab — hier reproduziert. Er lief
+bisher nur, weil auf der Arbeitsmaschine eine **andere** Suite die Rollen bereits hinterlassen
+hatte (Rollen sind clusterweit, die Testdatenbank wird jedes Mal neu erzeugt): eine stille
+Abhängigkeit von der Laufreihenfolge. Der Nachweis legt `anon`, `authenticated`,
+`service_role` und `authenticator` jetzt selbst an — wortgleich zu den übrigen
+Datenbanksuiten.
+
+### 14.2 Lücke 2 — leere `tenant_id` auf der Zeile: SQL und Attrappe waren uneins
+
+`tenant_id` ist `text` **ohne** NOT-NULL und **ohne** Prüfbedingung
+(`20260808_scalable_job_queue.sql` Z. 111). Eine Zeile mit `''` oder nur Leerzeichen ist
+also möglich. Die beiden Umsetzungen behandelten sie **verschieden**:
+
+| Stand | Regel auf der Zeilenseite | Zeile `tenant_id = ''` bei Filter auf ein Mandat |
+|---|---|---|
+| SQL (vorher) | `j.tenant_id is null` | **fiel heraus** — das Mandat wartete nicht mehr auf sie |
+| Attrappe (vorher) | `z.tenant_id !== ""` | zählte mit, aber `'   '` galt als eigenes Mandat |
+| **beide (jetzt)** | `nullif(btrim(…), '') is null` | **zählt global** — jedes Mandat wartet auf sie |
+
+**Maßgeblich ist der sichere Production-Vertrag**, und der ist eindeutig: eine Zeile ohne
+brauchbaren Mandatsbezug ist geteilte Arbeit. Weniger zu warten ist nie die sichere Seite —
+dieselbe Richtung, die §13 für die leere Kennung als **Argument** bereits festhält. Die SQL-
+Seite lag auf der unsicheren Seite und wurde an die Attrappe angeglichen; beide trimmen
+jetzt auf beiden Seiten. Das Trimmen kann nur **mehr** Zeilen treffen als der frühere
+ungetrimmte Vergleich (jede vorher passende Zeile passt weiterhin) — fail closed.
+
+**Die Gegenprobe ist eindeutig, nicht behauptet.** Fünf Zeilen in einem eigenen
+Aktualitätsfenster — `null`, `''`, `'   '`, ein fremdes und das eigene Mandat — gefiltert
+auf das eigene Mandat:
+
+| | erwartet (sicherer Vertrag) | SQL vorher | Attrappe vorher |
+|---|---:|---:|---:|
+| offene Vorbedingungen | **4** | 2 | 3 |
+
+Gegen den Stand **vor** der Korrektur gefahren: `8b.2`, `8b.3`, `8b.4`, `8b.5` sind **rot**
+(`PASS 30 · FAIL 4`, Exit 1); nach der Korrektur grün (`PASS 34 · FAIL 0`). Die
+verhaltensgleiche Gegenprobe ohne Datenbank steht als `6.6`–`6.8` in
+`vorbedingung-mandatsfilter-test.js`, dazu `6.1b` gegen den Wortlaut der Migration.
+
+### 14.2b Was die Gegenprüfung des eigenen Fixes noch fand
+
+Die Korrektur wurde nach dem ersten Entwurf gegengeprüft. Vier Befunde daraus sind
+eingearbeitet — der erste war ein echter Fehler im Fix selbst:
+
+1. **`btrim()` und `String.prototype.trim()` sind nicht dieselbe Zeichenmenge.**
+   `btrim(x)` mit einem Argument entfernt in PostgreSQL **nur** U+0020, `trim()` in
+   JavaScript **jeden** Weißraum. Der erste Entwurf hätte SQL und Attrappe bei einer
+   `tenant_id` aus einem **Tabulator** erneut auseinanderlaufen lassen — wieder mit SQL
+   auf der unsicheren Seite. Gemessen: SQL 4, Attrappe 5. Beide Seiten schreiben die
+   Zeichenmenge jetzt aus (`E' \t\n\r\f\v'` bzw. `[ \t\n\r\f\v]`), und die
+   Gegenprobe enthält eine Tabulatorzeile.
+2. **§9 maß gar keinen Filter.** Die Vergleichsabfrage trug
+   `(null is null or j.tenant_id is null or …)`; `null is null` ist immer wahr, die
+   Klausel war eine Tautologie und wurde wegoptimiert. Sie trägt jetzt die echte
+   Mandatsklausel. Ergebnis unverändert: gleicher Zugriffsweg
+   (`Bitmap Index Scan on helmut_jobs_window_idx`), **kein neuer Index nötig**.
+3. **§6.1 hätte auf einem Kommentar grün werden können.** Die Textprüfung durchsuchte die
+   ganze Migrationsdatei — deren Kopfkommentar zitiert die alte Fassung wörtlich. Sie
+   prüft jetzt ausschließlich den Rumpf zwischen `as $$` und `$$;`, ohne SQL-Kommentare.
+4. **Die Zeitschranken in §9 waren als Pflicht-Check zu eng.** < 50 ms je Zählung
+   inklusive Prozessstart ist auf einem geteilten Runner mit Dienstcontainer ein
+   Merge-Blocker aus Maschinenrauschen. Sie sind jetzt großzügig (im CI Faktor 4 bzw.
+   400 ms) und ausdrücklich als Grobsicherung benannt; die Aussage von §9 trägt 9.1.
+
+Zwei kleinere Härtungen kamen aus derselben Prüfung:
+
+* **`PGHOSTADDR` fehlte im Netzschutz.** libpq benutzt `host` nur noch zur
+  Authentifizierung, sobald `hostaddr` gesetzt ist — ein `PGHOSTADDR` in der Umgebung
+  schlägt also das `-h` auf der Kommandozeile. Weil `psql` ein natives Binary ist, greift
+  die Laufzeitsperre dort nicht; die Umgebungsprüfung ist der einzige Riegel. Die Variable
+  steht jetzt in `DB_HOST_VARIABLEN` (`netzschutz-test.js`: 81 PASS).
+* **`psql` war eine unausgesprochene Voraussetzung.** Seit der Nachweis fail-closed im
+  Pflichtjob läuft, würde ein fehlendes Binary jeden Merge blockieren. Der Workflow prüft
+  es jetzt ausdrücklich und installiert `postgresql-client` nur, wenn es fehlt.
+
+### 14.3 Was jetzt wirklich gelaufen ist — und was nicht
+
+| Prüfung | Ergebnis | Grenze |
+|---|---|---|
+| `vorbedingung-mandatsfilter-test.js` | **45 PASS / 0 FAIL** (vorher 39) | ohne Netz und Datenbank |
+| `vorbedingung-mandatsfilter-datenbank-test.js` §1–§10 inkl. §8b | **34 PASS / 0 FAIL** | echte PostgreSQL, aber **16.13**, nicht 17.6 |
+| dieselbe Suite gegen den alten Stand | **30 PASS / 4 FAIL**, Exit 1 | die Gegenprobe greift wirklich |
+| fail-closed-Pfade | 3 von 3 wie erwartet | — |
+| **§11 Rückfall gegen echtes PostgREST** | **NICHT gelaufen** | kein PostgREST-Binary in dieser Umgebung |
+
+**Ehrlich benannt, dreierlei:**
+
+1. Die lokale PostgreSQL dieser Sitzung ist **16.13**, Production ist **17.6**. Der frühere
+   Handlauf lief auf 17.6. Der CI-Dienst ist auf `postgres:17` gesetzt; erst dessen Lauf
+   belegt die Hauptversion von Production im Gate.
+2. **§11 ist weiterhin offen.** Der Rückfall gegen echtes PostgREST ist der Nachweis, dass
+   ein Deployment **vor** der Migration die Reihenfolgezusage nicht still abschaltet. Er
+   wurde am 26.08. einmal von Hand erbracht (§13) und läuft weder lokal noch im neuen
+   CI-Schritt mit — dort fehlt das PostgREST-Binary. Drei Dinge halten das ehrlich: der
+   CI-Schritt heißt ausdrücklich nur **„§1–§10"**, die Schlusszeile des Nachweises benennt
+   übersprungene Abschnitte namentlich (damit „FAIL 0" nicht als Vollständigkeit gelesen
+   wird), und `HELMUT_REQUIRE_POSTGREST=1` macht auch §11 fail-closed, sobald jemand das
+   Binary bereitstellt. **`HELMUT_REQUIRE_PG=1` erzwingt §1–§10, nicht §11.**
+3. Die rund **35 übrigen Datenbanksuiten** überspringen weiterhin still. Dieselbe Lücke
+   besteht dort unverändert; sie wurde hier **nicht** geschlossen, weil der Auftrag den
+   Z22-Nachweis betraf. Das ist ein eigener, benannter offener Punkt.
+
+Nicht berührt: die Zahlen aus §10 und §13, der Befund Z22 selbst, Z2, Z3a und jede Aussage
+über Production. Der isolierte Supabase-Lauf mit 500 synthetischen Aufträgen beweist
+unverändert **nur den Warteschlangenmotor** und niemals 500 echte Mandate.
