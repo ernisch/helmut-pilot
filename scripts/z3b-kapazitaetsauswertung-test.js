@@ -171,6 +171,19 @@ function main() {
     /Lage und Buero/.test(K.bewerteEntscheidungsreife({
       ...basis, kiUnderstandingReserveKonfiguriert: 300
     }).gruende.join(" ")));
+  const ohneMessstaende = K.bewerteEntscheidungsreife({
+    ...basis, fachwegGemessenBis: undefined, supabaseGemessenBis: undefined
+  });
+  check("C18 Fehlende Fachweg und Supabase Messstaende bleiben fail closed",
+    ohneMessstaende.status === "nicht-entscheidungsreif"
+      && ohneMessstaende.gruende.includes("voller Fachweg hat keinen gueltigen Messstand")
+      && ohneMessstaende.gruende.includes("Supabase hat keinen gueltigen Messstand"));
+  const ungueltigeMessstaende = K.bewerteEntscheidungsreife({
+    ...basis, fachwegGemessenBis: Infinity, supabaseGemessenBis: "unbekannt"
+  });
+  check("C19 Unendliche und nichtnumerische Messstaende bleiben fail closed",
+    ungueltigeMessstaende.status === "nicht-entscheidungsreif"
+      && ungueltigeMessstaende.gruende.filter((grund) => /gueltigen Messstand/.test(grund)).length === 2);
 
   console.log(`\nPASS ${pass}  FAIL ${fail}`);
   process.exit(fail ? 1 : 0);

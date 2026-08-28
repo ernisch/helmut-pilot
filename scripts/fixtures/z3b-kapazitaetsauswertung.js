@@ -210,8 +210,18 @@ function bewerteEntscheidungsreife({ zielMandate, vorherigeAktivstufe, fachwegGe
   const messstufe = erforderlicheMessstufe(ziel);
   const gruende = [];
   if (Number(vorherigeAktivstufe) !== VORSTUFE[ziel]) gruende.push("vorherige Aktivstufe stimmt nicht");
-  if (Number(fachwegGemessenBis) < messstufe) gruende.push(`voller Fachweg nicht bis ${messstufe} gemessen`);
-  if (Number(supabaseGemessenBis) < messstufe) gruende.push(`Supabase nicht bis ${messstufe} gemessen`);
+  const fachwegStand = Number(fachwegGemessenBis);
+  if (!Number.isInteger(fachwegStand) || fachwegStand < 0) {
+    gruende.push("voller Fachweg hat keinen gueltigen Messstand");
+  } else if (fachwegStand < messstufe) {
+    gruende.push(`voller Fachweg nicht bis ${messstufe} gemessen`);
+  }
+  const supabaseStand = Number(supabaseGemessenBis);
+  if (!Number.isInteger(supabaseStand) || supabaseStand < 0) {
+    gruende.push("Supabase hat keinen gueltigen Messstand");
+  } else if (supabaseStand < messstufe) {
+    gruende.push(`Supabase nicht bis ${messstufe} gemessen`);
+  }
   if (Number(supabaseFehler) !== 0) gruende.push("Supabase Probe hatte Fehler");
   let azureVollstaendig = false;
   try {
