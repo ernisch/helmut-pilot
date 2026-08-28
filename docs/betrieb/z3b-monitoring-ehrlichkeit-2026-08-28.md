@@ -2,11 +2,11 @@
 
 ## Sprintzustand
 
-**Lokal teilweise abgeschlossen.** Der Branch
+**Lokal abgeschlossen, insgesamt teilweise abgeschlossen.** Der Branch
 `codex/z3b-monitoring-honesty` steht auf dem lokalen Kopf von PR #275. Zwei
 bereits vorhandene Folgekorrekturen wurden getrennt übernommen, gemeinsam
-geprüft und um einen zusätzlichen Nennervertrag ergänzt. Ein Pull Request, der
-vollständige lokale Offline Lauf und Pflicht CI fehlen noch.
+geprüft und um einen zusätzlichen Nennervertrag ergänzt. Ein Pull Request und
+Pflicht CI fehlen noch.
 
 Production, Supabase, echte Mandatsdaten, Migrationen, Umgebungswerte und
 Geheimnisse wurden nicht verändert. Die Korrekturen wiederholen keinen
@@ -93,6 +93,19 @@ Alle Läufe gingen über `scripts/lokal.js`.
 | `health-report-route-test.js` | 51 PASS, 0 FAIL |
 | `planungs-zeitbudget-test.js` | grün |
 | `queue-ende-zu-ende-test.js` | grün |
+| vollständiger Offline Lauf | 283 von 287 Suiten grün |
+
+Die vier roten Suiten des vollständigen Laufs liegen außerhalb des
+Änderungssatzes:
+
+| Suite | sichtbarer lokaler Befund |
+|---|---|
+| `admin-nutzer-loeschen-test.js` | Playwright Browser fehlt |
+| `passwort-setzen-login-fix-test.js` | Playwright Browser fehlt |
+| `kalender-ics-test.js` | npm Abhängigkeit fehlt |
+| `lambda-paket-test.js` | AWS SDK Paket fehlt |
+
+Eine vollständig grüne lokale Gesamtsuite wird nicht behauptet.
 
 ## Beweisgrenzen
 
@@ -122,8 +135,7 @@ Geheimnisrotation sind nicht nötig.
 
 ## Noch offen
 
-1. vollständigen lokalen Offline Lauf auf dem finalen Branch ausführen
-2. eigenen gestapelten Pull Request ohne Vorschau Deployment anlegen
-3. Pflicht CI vollständig grün belegen
-4. Merge erst nach #272 bis #275 sowie eigener Betreiberfreigabe
-5. Wirkung später rein lesend an natürlichen Production Befunden prüfen
+1. eigenen gestapelten Pull Request ohne Vorschau Deployment anlegen
+2. Pflicht CI vollständig grün belegen
+3. Merge erst nach #272 bis #275 sowie eigener Betreiberfreigabe
+4. Wirkung später rein lesend an natürlichen Production Befunden prüfen
