@@ -11,6 +11,7 @@ const SLOT_BUDGET_MS_STANDARD = 290000;
 const SLOT_STOP_MS_STANDARD = 280000;
 const BEOBACHTUNGSTAGE_MIN = 7;
 const AZURE_STICHPROBEN_JE_KLASSE_MIN = 7;
+const TAG_MS = 24 * 60 * 60 * 1000;
 
 function endlicheZahl(wert, name, { nullErlaubt = false, minimum = 0 } = {}) {
   if (nullErlaubt && (wert === null || wert === undefined)) return null;
@@ -39,6 +40,16 @@ function jeKlasse(objekt, name, pruefung) {
 
 function rundeUsd(wert) {
   return Math.round(Number(wert) * 1e8) / 1e8;
+}
+
+function datumUtc(wert, name) {
+  const text = String(wert || "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) throw new Error(`${name} ist kein UTC Kalenderdatum`);
+  const zeit = Date.parse(`${text}T00:00:00.000Z`);
+  if (!Number.isFinite(zeit) || new Date(zeit).toISOString().slice(0, 10) !== text) {
+    throw new Error(`${name} ist kein gueltiges UTC Kalenderdatum`);
+  }
+  return Object.freeze({ text, zeit });
 }
 
 function berechneKiDeckel({ tagesbedarf, azure, preis, reserve = RESERVE_ANTEIL_STANDARD } = {}) {
@@ -133,7 +144,22 @@ function bewerteBeobachtung(tage) {
   const fehlerhafteTage = [];
   let ankunft = 0;
   let abfluss = 0;
+  let vorherigesDatum = null;
+  let ersteAktivstufe = null;
+  let einheitlicheAktivstufe = true;
+  const daten = [];
   tage.forEach((tag, index) => {
+    const datum = datumUtc(tag && tag.datumUtc, `Tag ${index + 1} Datum`);
+    if (vorherigesDatum !== null && datum.zeit !== vorherigesDatum + TAG_MS) {
+      throw new Error("Beobachtungstage muessen lueckenlos und chronologisch aufeinanderfolgen");
+    }
+    vorherigesDatum = datum.zeit;
+    daten.push(datum.text);
+    const aktiveMandate = endlicheZahl(tag && tag.aktiveMandate,
+      `Tag ${index + 1} aktive Mandate`, { minimum: 1 });
+    if (!Number.isInteger(aktiveMandate)) throw new Error(`Tag ${index + 1} aktive Mandate ist keine ganze Zahl`);
+    if (ersteAktivstufe === null) ersteAktivstufe = aktiveMandate;
+    if (aktiveMandate !== ersteAktivstufe) einheitlicheAktivstufe = false;
     const a = endlicheZahl(tag && tag.ankunft, `Tag ${index + 1} Ankunft`, { minimum: 0 });
     const b = endlicheZahl(tag && tag.abfluss, `Tag ${index + 1} Abfluss`, { minimum: 0 });
     const alter = endlicheZahl(tag && tag.aeltesterOffenerStunden,
@@ -144,6 +170,8 @@ function bewerteBeobachtung(tage) {
     const fehler = endlicheZahl(tag && tag.endgueltigeFehler, `Tag ${index + 1} Fehler`, { minimum: 0 });
     const briefingFehlt = endlicheZahl(tag && tag.briefingFehlt, `Tag ${index + 1} Briefing`, { minimum: 0 });
     const gruende = [];
+    if (!tag || tag.vollstaendig !== true) gruende.push("Kalendertag ist nicht vollstaendig");
+    if (aktiveMandate !== ersteAktivstufe) gruende.push("aktive Mandatsstufe wechselte im Beobachtungsfenster");
     if (b < a) gruende.push("Abfluss kleiner Ankunft");
     if (alter !== null && alter >= 24) gruende.push("offene Arbeit mindestens 24 Stunden alt");
     if (unbekannt) gruende.push("unbekannte Auftraege");
@@ -159,6 +187,9 @@ function bewerteBeobachtung(tage) {
   return Object.freeze({
     bestanden: fehlerhafteTage.length === 0,
     tage: tage.length,
+    vonDatumUtc: daten[0],
+    bisDatumUtc: daten[daten.length - 1],
+    aktiveMandate: einheitlicheAktivstufe ? ersteAktivstufe : null,
     ankunft,
     abfluss,
     fehlerhafteTage: Object.freeze(fehlerhafteTage)
@@ -192,7 +223,11 @@ function bewerteEntscheidungsreife({ zielMandate, vorherigeAktivstufe, fachwegGe
   const konfiguriert = endlicheZahl(kiDeckelKonfiguriert, "konfigurierter KI Deckel", { nullErlaubt: true, minimum: 1 });
   if (konfiguriert === null || konfiguriert < empfohlen) gruende.push("KI Deckel ist noch nicht ausreichend freigegeben und gesetzt");
   if (!slot || slot.bestanden !== true) gruende.push("Slot Kapazitaet hat keine 25 Prozent Reserve");
-  if (!beobachtung || beobachtung.bestanden !== true) gruende.push("siebentaegige Vorstufenbeobachtung ist nicht gruen");
+  if (!beobachtung || beobachtung.bestanden !== true) {
+    gruende.push("siebentaegige Vorstufenbeobachtung ist nicht gruen");
+  } else if (Number(beobachtung.aktiveMandate) !== VORSTUFE[ziel]) {
+    gruende.push(`siebentaegige Beobachtung stammt nicht aus Vorstufe ${VORSTUFE[ziel]}`);
+  }
   for (const [name, ok] of Object.entries({
     "PR 272 ist nicht gemergt": codeUndMigrationen.pr272Merged,
     "PR 273 ist nicht gemergt": codeUndMigrationen.pr273Merged,

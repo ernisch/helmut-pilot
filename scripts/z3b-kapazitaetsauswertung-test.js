@@ -22,12 +22,19 @@ const azure = {
 const preis = { inputUsdJeMio: 0.25, outputUsdJeMio: 2, quelle: "rein lokale Preisattrappe" };
 const tagesbedarf = { understanding: 210, lage: 25, buero: 15 };
 
-function gruenerTag() {
+function gruenerTag(index, aktiveMandate = 10) {
   return {
+    datumUtc: `2026-08-${String(index + 1).padStart(2, "0")}`,
+    vollstaendig: true,
+    aktiveMandate,
     ankunft: 300, abfluss: 305, aeltesterOffenerStunden: 2,
     unbekannt: 0, dubletten: 0, haengendeLeases: 0,
     endgueltigeFehler: 0, briefingFehlt: 0, kiDeckelErreicht: false
   };
+}
+
+function grueneTage(aktiveMandate = 10, anzahl = 7) {
+  return Array.from({ length: anzahl }, (_, index) => gruenerTag(index, aktiveMandate));
 }
 
 function main() {
@@ -69,18 +76,30 @@ function main() {
   check("B4 Ein Maximum ueber der betrieblichen 280 Sekunden Stopgrenze ist nicht gruen",
     K.bewerteSlot({ p95Ms: 210000, maxMs: 290000 }).bestanden === false);
   check("B5 Sechs Tage sind kein Siebentagenachweis",
-    wirft(() => K.bewerteBeobachtung(Array.from({ length: 6 }, gruenerTag)), /mindestens 7/));
-  const beobachtung = K.bewerteBeobachtung(Array.from({ length: 7 }, gruenerTag));
-  check("B6 Sieben vollstaendig gruene Tage bestehen", beobachtung.bestanden === true && beobachtung.tage === 7);
-  const rueckstau = Array.from({ length: 7 }, gruenerTag); rueckstau[3].abfluss = 299;
+    wirft(() => K.bewerteBeobachtung(grueneTage(10, 6)), /mindestens 7/));
+  const beobachtung = K.bewerteBeobachtung(grueneTage());
+  check("B6 Sieben vollstaendige aufeinanderfolgende Tage derselben Vorstufe bestehen",
+    beobachtung.bestanden === true && beobachtung.tage === 7
+      && beobachtung.vonDatumUtc === "2026-08-01" && beobachtung.bisDatumUtc === "2026-08-07"
+      && beobachtung.aktiveMandate === 10);
+  const rueckstau = grueneTage(); rueckstau[3].abfluss = 299;
   check("B7 Schon ein Tag mit Abfluss kleiner Ankunft wird rot",
     K.bewerteBeobachtung(rueckstau).bestanden === false);
-  const alt = Array.from({ length: 7 }, gruenerTag); alt[2].aeltesterOffenerStunden = 24;
+  const alt = grueneTage(); alt[2].aeltesterOffenerStunden = 24;
   check("B8 Arbeit ab 24 Stunden wird rot", K.bewerteBeobachtung(alt).bestanden === false);
-  const deckelTag = Array.from({ length: 7 }, gruenerTag); deckelTag[5].kiDeckelErreicht = true;
+  const deckelTag = grueneTage(); deckelTag[5].kiDeckelErreicht = true;
   check("B9 Ein erreichter KI Deckel wird rot", K.bewerteBeobachtung(deckelTag).bestanden === false);
-  const anomalie = Array.from({ length: 7 }, gruenerTag); anomalie[1].dubletten = 1;
+  const anomalie = grueneTage(); anomalie[1].dubletten = 1;
   check("B10 Dubletten werden rot", K.bewerteBeobachtung(anomalie).bestanden === false);
+  const doppelterTag = grueneTage(); doppelterTag[4].datumUtc = doppelterTag[3].datumUtc;
+  check("B11 Ein doppelter statt sieben aufeinanderfolgender Kalendertage wird abgelehnt",
+    wirft(() => K.bewerteBeobachtung(doppelterTag), /lueckenlos/));
+  const unvollstaendig = grueneTage(); unvollstaendig[2].vollstaendig = false;
+  check("B12 Ein unvollstaendiger Kalendertag bleibt rot",
+    K.bewerteBeobachtung(unvollstaendig).bestanden === false);
+  const stufenwechsel = grueneTage(); stufenwechsel[4].aktiveMandate = 5;
+  check("B13 Ein Stufenwechsel im Beobachtungsfenster bleibt rot",
+    K.bewerteBeobachtung(stufenwechsel).bestanden === false);
 
   console.log("\n== C · Aktivierungstore bis 500 ==");
   check("C1 Es gibt nur die Stufen 10, 25, 50, 100, 200 und 500",
@@ -130,6 +149,9 @@ function main() {
   check("C12 PR 272 und danach PR 273 bleiben Voraussetzungen",
     K.bewerteEntscheidungsreife({ ...basis, codeUndMigrationen: { ...basis.codeUndMigrationen, pr272Merged: false, pr273Merged: false } })
       .gruende.filter((grund) => /PR 27/.test(grund)).length === 2);
+  const falscheVorstufe = K.bewerteBeobachtung(grueneTage(5));
+  check("C13 Sieben gruene Tage auf der falschen Vorstufe reichen nicht",
+    /Vorstufe 10/.test(K.bewerteEntscheidungsreife({ ...basis, beobachtung: falscheVorstufe }).gruende.join(" ")));
 
   console.log(`\nPASS ${pass}  FAIL ${fail}`);
   process.exit(fail ? 1 : 0);

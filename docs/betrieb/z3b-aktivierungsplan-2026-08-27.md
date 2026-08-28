@@ -27,7 +27,7 @@ keine Production Aenderung ist durch diesen Plan freigegeben.
 |---|---|---|
 | Supabase Messlaeufer | 51 PASS, 0 FAIL; A und B gruen | lokaler 500er Werkzeugvertrag und Mandatszuordnung gruen; echte Plattformwerte nur fuer A und B; temporaere Zugaenge und Workflows entfernt |
 | Azure Messlaeufer | 46 PASS, 0 FAIL | hoechstens 3 plus getrennt 21 Aufrufe; einzeln, ohne Wiederholung; Deploymentart, Region und tagesaktueller Preisbeleg sind Pflicht |
-| Kapazitaetsauswertung | 33 PASS, 0 FAIL | berechnet Deckel und Kosten nur aus vollstaendigen Messwerten; kann nichts aktivieren |
+| Kapazitaetsauswertung | 37 PASS, 0 FAIL | verlangt sieben vollstaendige aufeinanderfolgende UTC Tage derselben Vorstufe; kann nichts aktivieren |
 | PR #273 Korrektur | als Commit `2a01ea9e` hochgeladen | PR offen, gruen und mergefaehig; kein Merge, kein Production Deployment und keine Production Migration |
 
 ## Kontrollierte Merge Vorbereitung
@@ -155,7 +155,8 @@ Production Aenderung und bleibt bis zur ausdruecklichen Freigabe gesperrt.
 ## Gruenes Beobachtungsfenster
 
 Vor jeder naechsten Aktivierungsstufe braucht die vorherige Stufe mindestens sieben
-vollstaendige Tage. Jeder einzelne Tag muss folgende Bedingungen erfuellen:
+vollstaendige, lueckenlos aufeinanderfolgende UTC Kalendertage. Alle muessen dieselbe
+aktive Vorstufe belegen. Jeder einzelne Tag muss folgende Bedingungen erfuellen:
 
 1. Abfluss ist mindestens so gross wie Ankunft.
 2. Keine offene Arbeit ist 24 Stunden oder aelter.
