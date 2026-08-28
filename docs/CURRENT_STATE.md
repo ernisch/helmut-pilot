@@ -240,7 +240,7 @@ Im Testprojekt bleiben damit freigabegemäß 50 synthetische Zeilen, alle 50 abg
 0 offen, wartend, laufend, fehlgeschlagen oder mit aktiver Lease.
 
 Offline grün bleiben Supabase-Messläufer **51 PASS** einschließlich lokaler 500er Gegenprobe,
-Azure-Messläufer **46 PASS** und Kapazitätsauswertung **33 PASS**. Der Messläufer verifiziert
+Azure-Messläufer **46 PASS** und Kapazitätsauswertung **53 PASS**. Der Messläufer verifiziert
 jetzt jede Mandatszuordnung aus dem Claim und stoppt vor dem Abschluss bei jeder Abweichung.
 Noch ungemessen sind die Supabase Läufe C und D, alle echten
 Azure Laufzeit- und Tokenwerte, daraus KI Deckel und Kostenobergrenze sowie die späteren neuen
@@ -251,6 +251,9 @@ wird kein Preis geraten. Kanonisch:
 [`betrieb/z3b-supabase-testplan-2026-08-27.md`](betrieb/z3b-supabase-testplan-2026-08-27.md),
 [`betrieb/z3b-azure-messplan-2026-08-27.md`](betrieb/z3b-azure-messplan-2026-08-27.md) und
 [`betrieb/z3b-aktivierungsplan-2026-08-27.md`](betrieb/z3b-aktivierungsplan-2026-08-27.md).
+
+**K1:** Deckel 100 ergibt für 200/500 Mandate 96/240 h Rotation; tägliche Bedienung verlangt
+beim 50-%-Anteil mindestens 399/999. Das Tor blockiert kleinere Werte fail-closed; Details im Aktivierungsplan.
 
 PR #273 trägt die lokale Korrektur inzwischen als Commit `2a01ea9e`; #272 und #273 sind offen,
 mergefähig und grün, aber ungemergt. Der natürliche Production Lauf am 27.08.2026 um 21:30 UTC

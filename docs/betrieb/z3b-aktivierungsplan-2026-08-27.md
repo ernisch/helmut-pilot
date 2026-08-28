@@ -149,6 +149,23 @@ berechnet:
 4. Echte Azure p95 Token je Arbeitsform mit dem Tagesbedarf multiplizieren.
 5. Mit dem am Lauftag belegten Azure Preis die Tages- und Deckelobergrenze berechnen.
 
+### Fairness-Untergrenze K1
+
+Die reine Bedarfsrechnung reicht nicht. Der wirksame Tagesplan reserviert standardmaessig
+50 Prozent des Gesamtdeckels fuer globale Arbeit. Bei Gesamtdeckel 100 bleiben deshalb nur
+50 Mandatsplaetze je Tag. Die vollstaendige faire Rotation dauert damit bei 200 Mandaten
+4 Tage beziehungsweise 96 Stunden und bei 500 Mandaten 10 Tage beziehungsweise 240 Stunden.
+Beides liegt ueber der 48-Stunden-Obergrenze des Budgetwartens; nicht bediente
+`tenant_narrative`-Auftraege koennen danach endgueltig scheitern und werden von der
+Wiedervorlage nicht automatisch geheilt.
+
+Fuer ein taegliches Narrativ jedes aktiven Mandats muss der Deckel bei unveraendertem
+Globalanteil mindestens `2n - 1` betragen: 399 fuer 200 und 999 fuer 500 Mandate. Die spaetere
+Empfehlung ist deshalb das Maximum aus gemessenem Tagesbedarf mit 25 Prozent Reserve und
+dieser Fairness-Untergrenze. Das Z3b-Entscheidungstor prueft beides fail-closed. Es setzt
+keinen Deckel und entscheidet weder den Globalanteil noch die Kosten; das bleiben getrennte
+Betreiberentscheidungen.
+
 Das Ergebnis ist eine Betreiberempfehlung. Das Setzen des Deckels ist eine gesonderte
 Production Aenderung und bleibt bis zur ausdruecklichen Freigabe gesperrt.
 

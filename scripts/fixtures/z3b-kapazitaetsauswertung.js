@@ -12,6 +12,8 @@ const SLOT_STOP_MS_STANDARD = 280000;
 const BEOBACHTUNGSTAGE_MIN = 7;
 const AZURE_STICHPROBEN_JE_KLASSE_MIN = 7;
 const TAG_MS = 24 * 60 * 60 * 1000;
+const KI_GLOBAL_ANTEIL_STANDARD = 0.5;
+const BUDGET_AUFGABENFRIST_STUNDEN = 48;
 
 function endlicheZahl(wert, name, { nullErlaubt = false, minimum = 0 } = {}) {
   if (nullErlaubt && (wert === null || wert === undefined)) return null;
@@ -24,6 +26,72 @@ function reserveAnteil(wert) {
   const anteil = endlicheZahl(wert, "Reserveanteil");
   if (anteil <= 0 || anteil >= 0.5) throw new Error("Reserveanteil muss groesser 0 und kleiner 0,5 sein");
   return anteil;
+}
+
+function globalAnteil(wert = KI_GLOBAL_ANTEIL_STANDARD) {
+  const anteil = endlicheZahl(wert, "KI Globalanteil");
+  if (anteil <= 0 || anteil >= 1) {
+    throw new Error("KI Globalanteil muss groesser 0 und kleiner 1 sein");
+  }
+  return anteil;
+}
+
+function mandatsPlaetzeJeTag(deckel, anteil) {
+  return deckel - Math.floor(deckel * anteil);
+}
+
+// Kleinster ganzzahliger Gesamtdeckel, dessen Mandatstopf bei der tatsaechlichen
+// Fairnessaufteilung jedes aktive Mandat einmal pro Tag bedienen kann. Beim heutigen
+// Standardanteil 0,5 ergibt das exakt 2n-1 (500 Mandate -> 999), nicht 2n.
+function erforderlicherDeckelFuerTaeglicheMandate(aktiveMandate, anteil = KI_GLOBAL_ANTEIL_STANDARD) {
+  const mandate = endlicheZahl(aktiveMandate, "aktive Mandate", { minimum: 1 });
+  if (!Number.isInteger(mandate)) throw new Error("aktive Mandate ist keine ganze Zahl");
+  const global = globalAnteil(anteil);
+  let unten = 0;
+  let oben = Math.max(1, mandate);
+  while (mandatsPlaetzeJeTag(oben, global) < mandate) oben *= 2;
+  while (unten + 1 < oben) {
+    const mitte = Math.floor((unten + oben) / 2);
+    if (mandatsPlaetzeJeTag(mitte, global) >= mandate) oben = mitte;
+    else unten = mitte;
+  }
+  return oben;
+}
+
+// Reine Kapazitaetsrechnung des bestehenden `llm-budget-fair.tagesplan`-Vertrags.
+// Sie setzt keinen Deckel und trifft keine Produktentscheidung. `bestanden` bedeutet hier
+// bewusst TAeGLICHE Bedienung: eine faire Rotation nach mehreren Tagen verhindert zwar
+// dauerhaftes Verhungern, liefert aber kein taegliches Mandatsnarrativ.
+function bewerteMandatsrotation({ aktiveMandate, deckel,
+  globalAnteil: globalAnteilWert = KI_GLOBAL_ANTEIL_STANDARD,
+  aufgabenfristStunden = BUDGET_AUFGABENFRIST_STUNDEN } = {}) {
+  const mandate = endlicheZahl(aktiveMandate, "aktive Mandate", { minimum: 1 });
+  const gesamtdeckel = endlicheZahl(deckel, "KI Tagesdeckel", { minimum: 1 });
+  const frist = endlicheZahl(aufgabenfristStunden, "Budget Aufgabefrist", { minimum: 1 });
+  if (!Number.isInteger(mandate) || !Number.isInteger(gesamtdeckel)) {
+    throw new Error("aktive Mandate und KI Tagesdeckel muessen ganze Zahlen sein");
+  }
+  const global = globalAnteil(globalAnteilWert);
+  const mandatsPlaetze = mandatsPlaetzeJeTag(gesamtdeckel, global);
+  const rotationsTage = Math.ceil(mandate / mandatsPlaetze);
+  const rotationsStunden = rotationsTage * 24;
+  const taeglichVollstaendig = mandatsPlaetze >= mandate;
+  const erforderlicherTagesdeckel = erforderlicherDeckelFuerTaeglicheMandate(mandate, global);
+  return Object.freeze({
+    bestanden: taeglichVollstaendig,
+    aktiveMandate: mandate,
+    deckel: gesamtdeckel,
+    globalAnteil: global,
+    globalTopf: Math.floor(gesamtdeckel * global),
+    mandatsPlaetze,
+    rotationsTage,
+    rotationsStunden,
+    aufgabenfristStunden: frist,
+    // Gleichstand hat keine Reserve gegen Slotverzug und gilt deshalb nicht als sicher.
+    aufgabenfristSicher: rotationsStunden < frist,
+    taeglichVollstaendig,
+    erforderlicherTagesdeckel
+  });
 }
 
 function jeKlasse(objekt, name, pruefung) {
@@ -52,8 +120,13 @@ function datumUtc(wert, name) {
   return Object.freeze({ text, zeit });
 }
 
-function berechneKiDeckel({ tagesbedarf, azure, preis, reserve = RESERVE_ANTEIL_STANDARD } = {}) {
+function berechneKiDeckel({ aktiveMandate, tagesbedarf, azure, preis,
+  reserve = RESERVE_ANTEIL_STANDARD,
+  globalAnteil: globalAnteilWert = KI_GLOBAL_ANTEIL_STANDARD } = {}) {
   const reserveWert = reserveAnteil(reserve);
+  const mandate = endlicheZahl(aktiveMandate, "aktive Mandate", { minimum: 1 });
+  if (!Number.isInteger(mandate)) throw new Error("aktive Mandate ist keine ganze Zahl");
+  const global = globalAnteil(globalAnteilWert);
   const bedarf = jeKlasse(tagesbedarf, "Tagesbedarf", (wert, name) =>
     endlicheZahl(wert, name, { minimum: 0 }));
   const azureWerte = jeKlasse(azure, "Azure Messwert", (wert, name) => {
@@ -78,7 +151,9 @@ function berechneKiDeckel({ tagesbedarf, azure, preis, reserve = RESERVE_ANTEIL_
   const gesamtAufrufeP95 = KLASSEN.reduce((summe, klasse) => summe + bedarf[klasse], 0);
   if (gesamtAufrufeP95 <= 0) throw new Error("Tagesbedarf ist insgesamt null");
   const nutzbarerAnteil = 1 - reserveWert;
-  const empfohlenerGesamtdeckel = Math.ceil(gesamtAufrufeP95 / nutzbarerAnteil);
+  const deckelAusGemessenemBedarf = Math.ceil(gesamtAufrufeP95 / nutzbarerAnteil);
+  const fairnessMindestdeckel = erforderlicherDeckelFuerTaeglicheMandate(mandate, global);
+  const empfohlenerGesamtdeckel = Math.max(deckelAusGemessenemBedarf, fairnessMindestdeckel);
   const empfohleneUnderstandingReserve = Math.min(
     empfohlenerGesamtdeckel,
     Math.ceil(bedarf.understanding / nutzbarerAnteil)
@@ -98,7 +173,11 @@ function berechneKiDeckel({ tagesbedarf, azure, preis, reserve = RESERVE_ANTEIL_
   return Object.freeze({
     beweisart: "Rechnung aus aggregierten echten Messwerten, kein Lastnachweis",
     reserveAnteil: reserveWert,
+    aktiveMandate: mandate,
+    globalAnteil: global,
     gesamtAufrufeP95,
+    deckelAusGemessenemBedarf,
+    fairnessMindestdeckel,
     empfohlenerGesamtdeckel,
     empfohleneUnderstandingReserve,
     nichtPriorisierteKapazitaet,
@@ -204,7 +283,7 @@ function erforderlicheMessstufe(zielMandate) {
 
 function bewerteEntscheidungsreife({ zielMandate, vorherigeAktivstufe, fachwegGemessenBis,
   supabaseGemessenBis, supabaseFehler = 0, azureStichprobenJeKlasse, kiDeckelEmpfohlen,
-  kiDeckelKonfiguriert, kiUnderstandingReserveEmpfohlen,
+  kiDeckelKonfiguriert, kiGlobalAnteilKonfiguriert, kiUnderstandingReserveEmpfohlen,
   kiUnderstandingReserveKonfiguriert, slot, beobachtung, codeUndMigrationen = {} } = {}) {
   const ziel = Number(zielMandate);
   const messstufe = erforderlicheMessstufe(ziel);
@@ -256,6 +335,30 @@ function bewerteEntscheidungsreife({ zielMandate, vorherigeAktivstufe, fachwegGe
     && konfiguriert - reserveKonfiguriert < empfohlen - reserveEmpfohlen) {
     gruende.push("Understanding Reserve laesst zu wenig Kapazitaet fuer Lage und Buero");
   }
+  let kiRotation = null;
+  let fairnessMindestdeckel = null;
+  let globalKonfiguriert = null;
+  try {
+    if (kiGlobalAnteilKonfiguriert === null || kiGlobalAnteilKonfiguriert === undefined
+      || String(kiGlobalAnteilKonfiguriert).trim() === "") {
+      throw new Error("KI Globalanteil fehlt");
+    }
+    globalKonfiguriert = globalAnteil(kiGlobalAnteilKonfiguriert);
+    fairnessMindestdeckel = erforderlicherDeckelFuerTaeglicheMandate(ziel, globalKonfiguriert);
+    if (empfohlen < fairnessMindestdeckel) {
+      gruende.push(`empfohlener KI Deckel unterschreitet taegliche Fairness Untergrenze ${fairnessMindestdeckel}`);
+    }
+    if (konfiguriert !== null && Number.isInteger(konfiguriert)) {
+      kiRotation = bewerteMandatsrotation({
+        aktiveMandate: ziel, deckel: konfiguriert, globalAnteil: globalKonfiguriert
+      });
+      if (!kiRotation.taeglichVollstaendig) {
+        gruende.push(`KI Deckel bedient bei Fairnessaufteilung nicht alle ${ziel} Mandate taeglich`);
+      }
+    }
+  } catch (_) {
+    gruende.push("KI Globalanteil ist nicht gueltig belegt");
+  }
   if (!slot || slot.bestanden !== true) gruende.push("Slot Kapazitaet hat keine 25 Prozent Reserve");
   if (!beobachtung || beobachtung.bestanden !== true) {
     gruende.push("siebentaegige Vorstufenbeobachtung ist nicht gruen");
@@ -275,6 +378,9 @@ function bewerteEntscheidungsreife({ zielMandate, vorherigeAktivstufe, fachwegGe
     zielMandate: ziel,
     vorherigeAktivstufe: VORSTUFE[ziel],
     erforderlicheMessstufe: messstufe,
+    fairnessMindestdeckel,
+    kiGlobalAnteil: globalKonfiguriert,
+    kiRotation,
     aktiviert: false,
     freigegeben: false,
     gruende: Object.freeze(gruende)
@@ -290,6 +396,10 @@ module.exports = {
   SLOT_STOP_MS_STANDARD,
   BEOBACHTUNGSTAGE_MIN,
   AZURE_STICHPROBEN_JE_KLASSE_MIN,
+  KI_GLOBAL_ANTEIL_STANDARD,
+  BUDGET_AUFGABENFRIST_STUNDEN,
+  erforderlicherDeckelFuerTaeglicheMandate,
+  bewerteMandatsrotation,
   berechneKiDeckel,
   bewerteSlot,
   bewerteBeobachtung,

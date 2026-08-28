@@ -3,6 +3,8 @@
 // Rein lokaler Vertragstest fuer die spaetere Z3b Kapazitaetsentscheidung.
 
 const K = require("./fixtures/z3b-kapazitaetsauswertung");
+const FAIR = require("../lib/helmut/llm-budget-fair");
+const PIPELINE = require("../lib/helmut/scalable-pipeline");
 
 let pass = 0;
 let fail = 0;
@@ -41,7 +43,7 @@ function main() {
   console.log("Helmut — lokaler Vertragstest der Z3b Kapazitaetsauswertung\n");
 
   console.log("== A · KI Deckel aus Messwerten ==");
-  const deckel = K.berechneKiDeckel({ tagesbedarf, azure, preis });
+  const deckel = K.berechneKiDeckel({ aktiveMandate: 25, tagesbedarf, azure, preis });
   check("A1 Der Gesamtbedarf wird aus allen drei Arbeitsformen gebildet", deckel.gesamtAufrufeP95 === 250);
   check("A2 25 Prozent freie Kapazitaet bedeutet Bedarf geteilt durch 0,75", deckel.empfohlenerGesamtdeckel === 334);
   check("A3 Die Understanding Reserve liegt innerhalb des Gesamtdeckels",
@@ -54,17 +56,48 @@ function main() {
   check("A6 Die Kostenobergrenze verwendet den teuersten p95 Aufruf fuer den ganzen Deckel",
     deckel.kostenObergrenzeBeiVollemDeckelUsd >= deckel.kostenP95ProTagUsd);
   check("A7 Weniger als sieben Azure Werte je Klasse werden abgelehnt",
-    wirft(() => K.berechneKiDeckel({ tagesbedarf, azure: {
+    wirft(() => K.berechneKiDeckel({ aktiveMandate: 25, tagesbedarf, azure: {
       ...azure, lage: { ...azure.lage, stichproben: 6 }
     }, preis }), /mindestens 7/));
   check("A8 Eine fehlende Arbeitsform wird abgelehnt",
-    wirft(() => K.berechneKiDeckel({ tagesbedarf: { understanding: 1, lage: 1 }, azure, preis }), /buero/));
+    wirft(() => K.berechneKiDeckel({ aktiveMandate: 25, tagesbedarf: { understanding: 1, lage: 1 }, azure, preis }), /buero/));
   check("A9 Unbekannte Arbeitsformen werden abgelehnt",
-    wirft(() => K.berechneKiDeckel({ tagesbedarf: { ...tagesbedarf, fremd: 1 }, azure, preis }), /unbekannte/));
+    wirft(() => K.berechneKiDeckel({ aktiveMandate: 25, tagesbedarf: { ...tagesbedarf, fremd: 1 }, azure, preis }), /unbekannte/));
   check("A10 Ohne belegte Preisquelle gibt es keine Kostenrechnung",
-    wirft(() => K.berechneKiDeckel({ tagesbedarf, azure, preis: { ...preis, quelle: "" } }), /Preisquelle/));
+    wirft(() => K.berechneKiDeckel({ aktiveMandate: 25, tagesbedarf, azure, preis: { ...preis, quelle: "" } }), /Preisquelle/));
   check("A11 Eine Reserve von 25 Prozent wird nicht als Zuschlag gerechnet",
     deckel.empfohlenerGesamtdeckel !== Math.ceil(deckel.gesamtAufrufeP95 * 1.25));
+  const rotation200 = K.bewerteMandatsrotation({ aktiveMandate: 200, deckel: 100 });
+  const rotation500 = K.bewerteMandatsrotation({ aktiveMandate: 500, deckel: 100 });
+  check("A12 Deckel 100 ergibt bei 200/500 Mandaten exakt 96/240 Stunden Vollrotation",
+    rotation200.mandatsPlaetze === 50 && rotation200.rotationsStunden === 96
+      && rotation500.mandatsPlaetze === 50 && rotation500.rotationsStunden === 240);
+  check("A13 Die taegliche Fairness Untergrenze folgt 2n-1: 399 fuer 200 und 999 fuer 500",
+    rotation200.erforderlicherTagesdeckel === 399 && rotation500.erforderlicherTagesdeckel === 999);
+  check("A14 Beide Rotationen reissen die 48-h-Aufgabenfrist und bestehen nicht",
+    rotation200.aufgabenfristSicher === false && rotation500.aufgabenfristSicher === false
+      && rotation200.bestanden === false && rotation500.bestanden === false);
+  const deckel500 = K.berechneKiDeckel({
+    aktiveMandate: 500,
+    tagesbedarf: { understanding: 210, lage: 500, buero: 15 },
+    azure, preis
+  });
+  check("A15 Die 500er Empfehlung nimmt die groessere Fairness Untergrenze statt nur Bedarf/0,75",
+    deckel500.deckelAusGemessenemBedarf === 967 && deckel500.fairnessMindestdeckel === 999
+      && deckel500.empfohlenerGesamtdeckel === 999);
+  check("A16 Ohne aktive Mandatszahl gibt es keine scheinbar vollstaendige Deckelempfehlung",
+    wirft(() => K.berechneKiDeckel({ tagesbedarf, azure, preis }), /aktive Mandate/));
+  check("A17 Fairnessanteil und 48-h-Frist sind an die echten Produktionskonstanten gebunden",
+    K.KI_GLOBAL_ANTEIL_STANDARD === FAIR.GLOBAL_ANTEIL_STANDARD
+      && K.BUDGET_AUFGABENFRIST_STUNDEN * 3600e3 === PIPELINE.BUDGET_MAX_WARTE_MS);
+  const echterPlan500 = FAIR.tagesplan({
+    mandate: Array.from({ length: 500 }, (_, i) => `m-${i + 1}`),
+    deckel: 100, tag: "2026-08-28"
+  });
+  check("A18 Der echte Tagesplan bestaetigt die berechneten 50 Mandatsplaetze bei Deckel 100",
+    echterPlan500.mandatsTopf === rotation500.mandatsPlaetze
+      && echterPlan500.zugeteilt === rotation500.mandatsPlaetze
+      && echterPlan500.notwendigOffen === 450);
 
   console.log("\n== B · Slot und sieben natuerliche Tage ==");
   const slotGruen = K.bewerteSlot({ p95Ms: 210000, maxMs: 280000 });
@@ -113,6 +146,7 @@ function main() {
       zielMandate: 50, vorherigeAktivstufe: 10, fachwegGemessenBis: 100,
       supabaseGemessenBis: 100, azureStichprobenJeKlasse: { understanding: 7, lage: 7, buero: 7 },
       kiDeckelEmpfohlen: 334, kiDeckelKonfiguriert: 334,
+      kiGlobalAnteilKonfiguriert: 0.5,
       kiUnderstandingReserveEmpfohlen: 280, kiUnderstandingReserveKonfiguriert: 280,
       slot: slotGruen, beobachtung,
       codeUndMigrationen: { pr272Merged: true, pr273Merged: true, f9Applied: true, z22Applied: true }
@@ -122,6 +156,7 @@ function main() {
     supabaseGemessenBis: 25, supabaseFehler: 0,
     azureStichprobenJeKlasse: { understanding: 7, lage: 7, buero: 7 },
     kiDeckelEmpfohlen: 334, kiDeckelKonfiguriert: 334,
+    kiGlobalAnteilKonfiguriert: 0.5,
     kiUnderstandingReserveEmpfohlen: 280, kiUnderstandingReserveKonfiguriert: 280,
     slot: slotGruen, beobachtung,
     codeUndMigrationen: { pr272Merged: true, pr273Merged: true, f9Applied: true, z22Applied: true }
@@ -184,6 +219,29 @@ function main() {
   check("C19 Unendliche und nichtnumerische Messstaende bleiben fail closed",
     ungueltigeMessstaende.status === "nicht-entscheidungsreif"
       && ungueltigeMessstaende.gruende.filter((grund) => /gueltigen Messstand/.test(grund)).length === 2);
+  const basis500 = {
+    ...basis,
+    zielMandate: 500, vorherigeAktivstufe: 200,
+    fachwegGemessenBis: 500, supabaseGemessenBis: 500,
+    beobachtung: K.bewerteBeobachtung(grueneTage(200)),
+    kiDeckelEmpfohlen: 998, kiDeckelKonfiguriert: 998
+  };
+  const fairnessZuKlein = K.bewerteEntscheidungsreife(basis500);
+  check("C20 Selbst sonst vollstaendige 500er Belege bleiben mit Deckel 998 fail closed",
+    fairnessZuKlein.status === "nicht-entscheidungsreif"
+      && fairnessZuKlein.fairnessMindestdeckel === 999
+      && fairnessZuKlein.gruende.some((grund) => /Fairness Untergrenze 999/.test(grund))
+      && fairnessZuKlein.gruende.some((grund) => /nicht alle 500 Mandate taeglich/.test(grund)));
+  const fairnessAusreichend = K.bewerteEntscheidungsreife({
+    ...basis500, kiDeckelEmpfohlen: 999, kiDeckelKonfiguriert: 999
+  });
+  check("C21 Deckel 999 besteht nur das Fairnesstor, gibt aber weiterhin nichts automatisch frei",
+    fairnessAusreichend.status === "entscheidungsreif-nicht-freigegeben"
+      && fairnessAusreichend.kiRotation.taeglichVollstaendig === true
+      && fairnessAusreichend.aktiviert === false && fairnessAusreichend.freigegeben === false);
+  check("C22 Ein unbekannter KI Globalanteil bleibt fail closed",
+    K.bewerteEntscheidungsreife({ ...basis, kiGlobalAnteilKonfiguriert: undefined })
+      .gruende.includes("KI Globalanteil ist nicht gueltig belegt"));
 
   console.log(`\nPASS ${pass}  FAIL ${fail}`);
   process.exit(fail ? 1 : 0);
