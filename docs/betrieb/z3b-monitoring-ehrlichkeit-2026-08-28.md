@@ -5,8 +5,8 @@
 **Lokal abgeschlossen, insgesamt teilweise abgeschlossen.** Der Branch
 `codex/z3b-monitoring-honesty` steht auf dem lokalen Kopf von PR #275. Zwei
 bereits vorhandene Folgekorrekturen wurden getrennt übernommen, gemeinsam
-geprüft und um einen zusätzlichen Nennervertrag ergänzt. Ein Pull Request und
-Pflicht CI fehlen noch.
+geprüft und um einen zusätzlichen Nennervertrag ergänzt. **PR #276 ist offen,
+ungemergt und wartet auf seinen Pflicht CI Beleg.**
 
 Production, Supabase, echte Mandatsdaten, Migrationen, Umgebungswerte und
 Geheimnisse wurden nicht verändert. Die Korrekturen wiederholen keinen
@@ -75,7 +75,7 @@ Die Härtung wird als eigener Branch auf PR #275 aufgebaut. Die Reihenfolge ist:
 2. PR #273
 3. PR #274
 4. PR #275
-5. eigener Pull Request für Monitoring Ehrlichkeit
+5. PR #276 für Monitoring Ehrlichkeit
 
 Der Branch ist in `vercel.json` gegen automatische Vorschau Deployments
 gesperrt. Ein späterer Merge bleibt ein gesondert freizugebendes Production
@@ -135,7 +135,6 @@ Geheimnisrotation sind nicht nötig.
 
 ## Noch offen
 
-1. eigenen gestapelten Pull Request ohne Vorschau Deployment anlegen
-2. Pflicht CI vollständig grün belegen
-3. Merge erst nach #272 bis #275 sowie eigener Betreiberfreigabe
-4. Wirkung später rein lesend an natürlichen Production Befunden prüfen
+1. Pflicht CI vollständig grün belegen
+2. Merge erst nach #272 bis #275 sowie eigener Betreiberfreigabe
+3. Wirkung später rein lesend an natürlichen Production Befunden prüfen
