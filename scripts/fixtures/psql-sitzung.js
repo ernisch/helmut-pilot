@@ -102,7 +102,16 @@ function warteschlangeUeberPsql(sitzung) {
         + (ok ? "true" : "false") + "," + fehlerArg + "," + Math.max(0, Number(retryDelayMs) || 0) + ")");
       if (r.fehler) return { verfuegbar: false, grund: r.fehler.slice(0, 200) };
       const z = r.zeilen[0] || [];
-      return { verfuegbar: true, uebernommen: z[0] === "t" || z[0] === "true", status: z[1] || null };
+      // BELEGTER FEHLER (Skalierungssprint Z3, 2026-08-26). Hier stand nur `status`. Der
+      // Motor liest aber `abschluss.neuerStatus` (`lib/helmut/scalable-pipeline.js`), genau
+      // wie `storage.jobQueueFinish` es liefert. Ueber diese Fixture war `neuerStatus`
+      // deshalb IMMER `undefined`: ein endgueltig gescheiterter Auftrag wurde in der
+      // Workerbilanz als `wiederholt` verbucht, und `endgueltigFehlgeschlagen` blieb
+      // strukturell 0 — obwohl die Ablage `fehlgeschlagen` trug. Der Datenbankstand war
+      // richtig, die Quittung nicht (CLAUDE.md §4.10). Beide Namen werden jetzt geliefert;
+      // `status` bleibt als Altname erhalten, damit kein bestehender Aufrufer bricht.
+      const neuerStatus = z[1] || null;
+      return { verfuegbar: true, uebernommen: z[0] === "t" || z[0] === "true", neuerStatus, status: neuerStatus };
     },
     async extendLease({ id, owner, leaseMs = 120000 } = {}) {
       const r = await sitzung.frage(

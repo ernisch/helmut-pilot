@@ -73,6 +73,15 @@ function istLokalerHost(host) {
 const REINE_ZUGANGSDATEN = [
   "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_SERVICE_KEY", "SUPABASE_ANON_KEY",
   "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "GOOGLE_API_KEY", "SERPAPI_KEY",
+  // BELEGTE LUECKE (Skalierungssprint Z3, 2026-08-26). Der TATSAECHLICHE Produktionsanbieter
+  // fuer KI ist Azure (`lib/helmut/ai.js: isAzure()` -> `AZURE_OPENAI_KEY` +
+  // `AZURE_OPENAI_ENDPOINT`, Vorrang vor OpenAI laut `docs/betrieb/env-inventar.md` §38).
+  // Genau diese beiden Namen fehlten hier: in einer Cloud-Sitzung wurden sie deshalb an
+  // JEDEN Testkindprozess weitergereicht. Gehalten hat bisher allein die Laufzeitsperre —
+  // ein einziger Riegel, wo der Entwurf zwei vorsieht. Ein Handlauf mit umgangener oder
+  // aufgehobener Laufzeitsperre haette echte, kostenpflichtige Modellaufrufe auf dem
+  // Production-Konto ausgeloest. `AZURE_OPENAI_API_KEY` ist der dokumentierte Alias.
+  "AZURE_OPENAI_KEY", "AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT",
   "VERCEL_TOKEN", "BLOB_READ_WRITE_TOKEN", "VAPID_PRIVATE_KEY"
 ];
 // Bleibt als Gesamtliste erhalten: `scripts/lokal.js` entfernt genau diese Namen aus der
@@ -150,7 +159,7 @@ function abbrechen(gruende, anlass) {
   ];
   gruende.forEach((g, i) => zeilen.push(`    ${i + 1}. ${g}`));
   // Der Hinweis nennt GENAU die Variablen, die in DIESER Umgebung gefunden wurden. Eine feste
-  // Liste war hier falsch: der Riegel prueft elf Zugangsdaten, der Hinweis nannte fuenf — wer
+  // Liste war hier falsch: der Riegel prueft alle reinen Zugangsdaten, der Hinweis fuenf — wer
   // an VERCEL_TOKEN scheiterte, bekam einen Befehl, der nicht half (gefunden 2026-08-08 beim
   // Integrationslauf). Erste Empfehlung bleibt `scripts/lokal.js`, weil Handarbeit vergessen wird.
   const gefunden = REINE_ZUGANGSDATEN.filter((n) => String(process.env[n] || "").trim() !== "");
