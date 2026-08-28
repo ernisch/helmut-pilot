@@ -18,9 +18,11 @@ Aufrufen erneut unbekannt; ein Ergebnis wurde nicht gespeichert. Aggregiert lage
 537 CAS Vorgaenge, 535 abgeschlossene, 1 unbekannter und 1 aufgegebener Vorgang vor; 0 offen,
 reserviert oder laufend, 0 aktive oder haengende Leases, 0 endgueltige Auftragsfehler und
 weiterhin genau 5 aktive Mandate. Das ist kein neuer Skalierungsbeweis.
-PR #272 bis #276 bleiben offen, gruen, mergefaehig und ungemergt. Sie bauen in dieser
-Reihenfolge aufeinander auf: Z3a, Z22, KI Antwortumschlag, Planungszeitbudget und ehrliches
-Monitoring. Keine Migration und keine Production Aenderung ist durch diesen Plan freigegeben.
+PR #272 bis #277 bleiben offen und ungemergt. #272 bis #276 sind gruen und mergefaehig;
+#277 enthaelt diese Z3b Mess- und Entscheidungstore und wartet auf seine Pflicht CI. Sie bauen
+in dieser Reihenfolge aufeinander auf: Z3a, Z22, KI Antwortumschlag, Planungszeitbudget,
+ehrliches Monitoring und Z3b Tore. Keine Migration und keine Production Aenderung ist durch
+diesen Plan freigegeben.
 
 ## Was lokal bereits vorbereitet ist
 
@@ -69,7 +71,7 @@ Spaeterer Vollzug bleibt strikt getrennt:
 5. #273 nur nach einer zweiten Mergefreigabe mergen und das Deployment rein lesend pruefen.
 6. #274, #275 und #276 danach einzeln und nur mit jeweils eigener Mergefreigabe vollziehen;
    nach jedem Schritt Deployment und Basis des Nachfolgers erneut lesen.
-7. Dieser Z3b Mess- und Torzweig folgt erst nach gruener Pflicht CI und eigener Mergefreigabe.
+7. PR #277 folgt erst nach gruener Pflicht CI und eigener Mergefreigabe.
 8. F9 und Z22 in Production bleiben danach zwei eigene Migrationsentscheidungen. Keine
    Migration wird durch einen Merge mitfreigegeben.
 
@@ -78,7 +80,7 @@ Spaeterer Vollzug bleibt strikt getrennt:
 1. Roten Fuenferbefund durch den in PR #274 geprueften Parserfix beheben und danach natuerlich regressieren.
 2. PR #272 bis #276 streng in dieser Reihenfolge kontrollieren und jeden Merge sowie jedes
    folgende Production Deployment einzeln freigeben und pruefen.
-3. Den Z3b Mess- und Torzweig erst nach eigener Pflicht CI und Mergefreigabe vollziehen.
+3. PR #277 erst nach eigener Pflicht CI und Mergefreigabe vollziehen.
 4. F9 im Testprojekt nur nach eigener Migrationsfreigabe anwenden. **Erledigt.**
 5. Z22 im Testprojekt nicht veraendern. Eine lesende Bestandspruefung fand die korrigierte
    Fassung unter `20260827121931`, obwohl die freigegebene Kette Z22 ausschloss. Der Ursprung
