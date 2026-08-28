@@ -4647,8 +4647,12 @@ async function buildMotorHealthReport(politicianId, {
   const terminalOffen = (Number(k.endgueltigFehler) || 0) + (Number(dauerhaftBlockiert) || 0);
 
   const fmt = motorHealth.fmtAlter;
+  const spiegelUeberlauf = /^blob-spiegel-ueberlauf:(\d+)$/.exec(String((ingest && ingest.reason) || ""));
+  const spiegelUeberlaufText = spiegelUeberlauf
+    ? ` · Blob-Lesespiegel unvollständig (${spiegelUeberlauf[1]} verworfen; relationale Ablage vollständig)`
+    : "";
   const motorZeile = ingest
-    ? `Motor: ${ingest.process} ${fmt(ageMs(ingest.startedAt || ingest.createdAt))} — ${slotPruefung.abrechnung.text}`
+    ? `Motor: ${ingest.process} ${fmt(ageMs(ingest.startedAt || ingest.createdAt))} — ${slotPruefung.abrechnung.text}${spiegelUeberlaufText}`
     : "Motor: noch keine Warteschlangen-Slot-Quittung lesbar";
   // TEIL 2 (2026-08-26): Vollständigkeit, Ergebnis und Erholung werden GETRENNT
   // angezeigt — die Zeilen entstehen in der reinen, testbaren Funktion
@@ -7562,6 +7566,7 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
   // Aktivierungslaufs 18.08.), kein Erfolg.
   const planFehlgeschlagen = !(plan && plan.ok !== false);
   const spiegelD = durchlauf.blobSpiegel || {};
+  const spiegelVerworfen = Math.max(0, Number(spiegelD.verworfen) || 0);
   const quittungsStatus = planFehlgeschlagen || bilanz.verfuegbar === false
     ? "failed"
     : ((bilanz.endgueltigFehlgeschlagen || 0) > 0 || ((bilanz.reserviert || 0) > 0 && (bilanz.erledigt || 0) === 0)
@@ -7585,6 +7590,9 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     // ausschliesslich die belegte Zahl null, nie der Rueckfall fuer "unbekannt".
     ...(Number.isFinite(plan && plan.geplant) ? { geplant: plan.geplant } : {}),
     ...(Number.isFinite(plan && plan.neu) ? { neuGeplant: plan.neu } : {}),
+    // Bestehende Semantik bewahren: gespeichert wird die wirklich in den Spiegel
+    // aufgenommene Menge. Die davor gesehene Gesamtmenge ergibt sich bei Ueberlauf
+    // aus diesem Wert plus dem strukturierten `reason`-Zaehler.
     spiegelGesammelt: spiegelD.gesammelt ?? 0,
     spiegelGeschrieben: spiegelD.geschrieben === true ? (spiegelD.neuImBlob ?? 0) : null,
     fehlerklasse: quittungsFehlerklasse,
@@ -7592,7 +7600,12 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
       ? String((plan && plan.grund) || "planung-fehlgeschlagen").slice(0, 120)
       : (spiegelD.geschrieben === false
         ? "blob-spiegel-fehlgeschlagen"
-        : ((!bilanz.verfuegbar && durchlauf.grund) ? String(durchlauf.grund).slice(0, 120) : null))
+        // Kein neues Schema/noetige Migration: `reason` ist der bestehende technische
+        // Kanal der relationalen Laufquittung. Der Motor liest diesen Wert und macht den
+        // bis hierher toten Ueberlaufzaehler als Hinweis sichtbar.
+        : (spiegelVerworfen > 0
+          ? `blob-spiegel-ueberlauf:${spiegelVerworfen}`
+          : ((!bilanz.verfuegbar && durchlauf.grund) ? String(durchlauf.grund).slice(0, 120) : null)))
   }).catch((error) => ({ ok: false, grund: String((error && error.message) || "fehler").slice(0, 120) }));
 
   console.log(`[cron/${cronName}/warteschlange] ${Date.now() - start}ms`
@@ -7606,6 +7619,7 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     + ` dispatch=${jobDispatch.dispatchModus()}`
     + ` weckVersand=${weckVersand.versendet || 0}/${weckVersand.vergeben || 0}`
     + ` spiegel=${spiegelD.geschrieben == null ? "leer" : (spiegelD.geschrieben ? `ok:${spiegelD.neuImBlob ?? "?"}` : "FEHLER")}`
+    + ` spiegelVerworfen=${spiegelVerworfen}`
     + ` quittung=${startQuittung && startQuittung.ok ? "start-ok" : "start-fehler"}/${endQuittung && endQuittung.ok ? "ende-ok" : "ende-fehler"}`
     + ` zustand=${(status && status.zustand) || "unbekannt"} lauf=${laufkennung}`);
 

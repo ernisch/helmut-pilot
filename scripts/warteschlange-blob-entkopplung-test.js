@@ -383,9 +383,9 @@ async function main() {
   abschnitt("5 · worker-betrieb.durchlauf: ein Slot, hoechstens ein Blob-Write");
   {
     const env = { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_WORKER_PARALLEL: "2" };
-    const baueSlot = ({ spiegelKaputt = false } = {}) => {
+    const baueSlot = ({ spiegelKaputt = false, jobs = 4, itemsProQuelle = 2 } = {}) => {
       const q = speicherWarteschlange();
-      for (let i = 1; i <= 4; i += 1) {
+      for (let i = 1; i <= jobs; i += 1) {
         q.enqueue({ jobType: "source_fetch", payload: { quelle: { id: `q${i}` } } });
       }
       const spiegelAufrufe = [];
@@ -395,7 +395,8 @@ async function main() {
         createGate: () => null, sharedLedger: () => null,
         crawlAllSources: async ([quelle]) => ({
           results: [{ ok: true, sourceId: quelle.id }],
-          rawItems: [rohitem(Number(quelle.id.slice(1)) * 100), rohitem(Number(quelle.id.slice(1)) * 100 + 1)]
+          rawItems: Array.from({ length: itemsProQuelle }, (_, j) =>
+            rohitem(Number(quelle.id.slice(1)) * 100000 + j, { quelle: quelle.id }))
         }),
         persistRohdokumente: async (items) => ({
           ok: true, neuIds: items.map((it) => dedup.toRawDocumentRow(it).id), vorhandene: 0
@@ -434,6 +435,22 @@ async function main() {
       && typeof laufKaputt.blobSpiegel.fehler === "string",
       JSON.stringify(laufKaputt.blobSpiegel));
 
+    // Die kanonische relationale Ablage nimmt weiterhin alle Rohdokumente auf. Nur der
+    // optionale Blob-Lesespiegel hat eine feste 5.000er Speichergrenze. Dieser Ueberlauf
+    // muss in der Slot-Bilanz bis zum Betriebsbericht messbar bleiben.
+    const ueber = baueSlot({ jobs: 1, itemsProQuelle: 5002 });
+    const laufUeber = await workerBetrieb.durchlauf({
+      env, deps: ueber.deps, kennung: "t5-ueberlauf", typen: ["source_fetch"]
+    });
+    check("5.7 Spiegel-Ueberlauf schreibt einmal exakt die ersten 5.000 Items",
+      laufUeber.erledigt === 1 && ueber.spiegelAufrufe.length === 1 && ueber.spiegelAufrufe[0] === 5000,
+      JSON.stringify({ erledigt: laufUeber.erledigt, writes: ueber.spiegelAufrufe }));
+    check("5.8 Die Bilanz nennt alle 5.002 gesehenen und 2 verworfenen Spiegel-Items ehrlich",
+      laufUeber.blobSpiegel && laufUeber.blobSpiegel.gesehen === 5002
+      && laufUeber.blobSpiegel.gesammelt === 5000 && laufUeber.blobSpiegel.verworfen === 2
+      && laufUeber.blobSpiegel.vollstaendig === false,
+      JSON.stringify(laufUeber.blobSpiegel));
+
     // Ein Slot ohne source_fetch (z. B. Narrativ-Slot) beruehrt den Blob NIE.
     const leer = baueSlot();
     leer.q.zeilen.length = 0;
@@ -443,7 +460,7 @@ async function main() {
     leer.deps.decisions = async () => ({ saved: 1 });
     leer.deps.offeneVorbedingungen = async () => ({ verfuegbar: true, offen: 0, wartend: 0, laufend: 0 });
     const laufLeer = await workerBetrieb.durchlauf({ env, deps: leer.deps, kennung: "t5c", typen: ["mandate_projection"] });
-    check("5.7 Ein Slot ohne Abrufauftraege macht 0 Spiegel-Writes (0 Blob-Zugriffe)",
+    check("5.9 Ein Slot ohne Abrufauftraege macht 0 Spiegel-Writes (0 Blob-Zugriffe)",
       laufLeer.erledigt === 1 && leer.spiegelAufrufe.length === 0
       && laufLeer.blobSpiegel.gesammelt === 0,
       JSON.stringify({ erledigt: laufLeer.erledigt, writes: leer.spiegelAufrufe.length }));
