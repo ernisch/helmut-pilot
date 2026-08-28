@@ -5,7 +5,7 @@
 **Lokal abgeschlossen, insgesamt teilweise abgeschlossen.** Der getrennte Branch
 `codex/planung-zeitbudget-hardening` steht auf dem lokalen, baumgleichen Stand
 von PR #274. Die gezielten Regressionen und der lokale Gesamtcheck sind gelaufen.
-Ein Pull Request und ein vollständiger CI Beleg fehlen noch. Production, Supabase, echte Mandatsdaten,
+**PR #275 ist offen, ungemergt und wartet auf seinen Pflicht CI Beleg.** Production, Supabase, echte Mandatsdaten,
 Migrationen, Umgebungswerte und Geheimnisse wurden nicht verändert.
 
 Diese Härtung ist kein Lastnachweis. Insbesondere wiederholt sie weder den
@@ -52,7 +52,7 @@ PR #272, #273 oder #274 hineingemischt werden. Die Reihenfolge ist damit:
 1. PR #272
 2. PR #273
 3. PR #274
-4. eigener Pull Request für das Planungszeitbudget
+4. PR #275 für das Planungszeitbudget
 
 Der Branch ist in `vercel.json` gegen automatische Vorschau Deployments
 gesperrt. Ein späterer Merge ist weiterhin ein Production Deployment und bleibt
@@ -120,7 +120,6 @@ Flagänderung oder Geheimnisrotation.
 
 ## Noch offen
 
-1. eigenen gestapelten Pull Request ohne Vorschau Deployment anlegen
-2. Pflicht CI vollständig grün belegen
-3. Merge erst nach #272, #273 und #274 sowie eigener Betreiberfreigabe
-4. Wirkung erst in einem später freigegebenen Production Lauf messen
+1. Pflicht CI vollständig grün belegen
+2. Merge erst nach #272, #273 und #274 sowie eigener Betreiberfreigabe
+3. Wirkung erst in einem später freigegebenen Production Lauf messen
