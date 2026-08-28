@@ -159,6 +159,7 @@ async function fuehreAus(konfiguration, env = process.env) {
     einordnung: "Vollstaendiger lokaler Fachwegnachweis der neuen Stufe, kein Production oder Anbieterlastnachweis",
     azureStichprobe: {
       belegHash: k.azureBeleg.hash,
+      modell: k.azure.modell,
       deploymentart: k.azure.deploymentart,
       region: k.azure.region,
       endpointHash: k.azure.endpointHash,

@@ -22,6 +22,7 @@ const {
 
 const ANTWORT_MAX_BYTES = 8 * 1024 * 1024;
 const DEPLOYMENTARTEN = Object.freeze(["global", "data-zone", "regional"]);
+const ERWARTETES_MODELL = "gpt-5-mini";
 const FREMDKENNUNGEN = Object.freeze([
   "SUPABASE_URL",
   "SUPABASE_SERVICE_ROLE_KEY",
@@ -91,6 +92,13 @@ function liesKonfiguration(env = process.env, { heuteUtc = new Date().toISOStrin
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(deployment)) {
     throw new Z3bAzureAbbruch("Z3b Azure Deployment fehlt oder ist ungueltig", "deployment");
   }
+  const modell = String(env.HELMUT_Z3B_AZURE_MODELL || "").trim();
+  if (modell !== ERWARTETES_MODELL) {
+    throw new Z3bAzureAbbruch(
+      `Z3b Azure Modell muss im Portal exakt als ${ERWARTETES_MODELL} belegt sein`,
+      "deployment"
+    );
+  }
   const deploymentart = String(env.HELMUT_Z3B_AZURE_DEPLOYMENTART || "").trim();
   if (!DEPLOYMENTARTEN.includes(deploymentart)) {
     throw new Z3bAzureAbbruch(
@@ -144,6 +152,7 @@ function liesKonfiguration(env = process.env, { heuteUtc = new Date().toISOStrin
     endpoint: ziel.url,
     endpointHash: endpointFingerabdruck(ziel.host),
     deployment,
+    modell,
     deploymentart,
     region,
     modus,
@@ -320,6 +329,7 @@ async function fuehreMesslauf(konfiguration, { fetchImpl = globalThis.fetch, jet
     modus: konfiguration.modus,
     laufKennung: konfiguration.laufKennung,
     deployment: konfiguration.deployment,
+    modell: konfiguration.modell,
     deploymentart: konfiguration.deploymentart,
     region: konfiguration.region,
     endpointHash: konfiguration.endpointHash,
@@ -368,6 +378,7 @@ if (require.main === module) main();
 
 module.exports = {
   DEPLOYMENTARTEN,
+  ERWARTETES_MODELL,
   FREMDKENNUNGEN,
   Z3bAzureAbbruch,
   positiveZahl,

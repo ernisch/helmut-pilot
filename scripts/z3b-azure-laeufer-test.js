@@ -38,6 +38,7 @@ function umgebung({ modus = "vorprobe", lauf = "azureprobe01", kostenlimit = "0.
     AZURE_OPENAI_ENDPOINT: "https://helmut-z3b-test.openai.azure.com",
     AZURE_OPENAI_KEY: TEST_KEY,
     AZURE_OPENAI_DEPLOYMENT: "gpt-5-mini",
+    HELMUT_Z3B_AZURE_MODELL: "gpt-5-mini",
     HELMUT_Z3B_AZURE_DEPLOYMENTART: "global",
     HELMUT_Z3B_AZURE_REGION: "swedencentral",
     HELMUT_Z3B_AZURE_MODUS: modus,
@@ -102,6 +103,7 @@ async function main() {
   check("B1 Exakter Azure OpenAI Ressourcenhost wird angenommen",
     basis.endpoint === "https://helmut-z3b-test.openai.azure.com"
       && basis.endpointHash.length === 12
+      && basis.modell === "gpt-5-mini"
       && basis.deploymentart === "global"
       && basis.region === "swedencentral"
       && /^\d{4}-\d{2}-\d{2}$/.test(basis.preisdatumUtc));
@@ -128,6 +130,12 @@ async function main() {
   const ohneDeployment = umgebung(); delete ohneDeployment.AZURE_OPENAI_DEPLOYMENT;
   check("B6 Ohne ausdrueckliches Deployment wird abgebrochen",
     wirft(() => Z.liesKonfiguration(ohneDeployment), /Deployment/));
+  const ohneModell = umgebung(); delete ohneModell.HELMUT_Z3B_AZURE_MODELL;
+  check("B6a Ohne separat im Portal belegten Modelltyp wird abgebrochen",
+    wirft(() => Z.liesKonfiguration(ohneModell), /Modell.*gpt-5-mini/));
+  const falschesModell = umgebung(); falschesModell.HELMUT_Z3B_AZURE_MODELL = "gpt-5";
+  check("B6b Ein anderer Modelltyp wird abgebrochen",
+    wirft(() => Z.liesKonfiguration(falschesModell), /Modell.*gpt-5-mini/));
   const ohneDeploymentart = umgebung(); delete ohneDeploymentart.HELMUT_Z3B_AZURE_DEPLOYMENTART;
   check("B7 Ohne ausdrueckliche Deploymentart wird abgebrochen",
     wirft(() => Z.liesKonfiguration(ohneDeploymentart), /Deploymentart/));
@@ -233,6 +241,8 @@ async function main() {
       && !berichtText.includes("Synthetischer politischer"));
   check("C9 Der Bericht nennt nur den Endpoint Fingerabdruck",
     bericht.endpointHash.length === 12 && !berichtText.includes("helmut-z3b-test.openai.azure.com"));
+  check("C9a Der Bericht traegt den separat belegten Modelltyp",
+    bericht.modell === "gpt-5-mini");
   check("C10 Keine Datenbank, Production Daten oder Quellenanbieter wurden beruehrt",
     bericht.productionDatenBeruehrt === false
       && bericht.datenbankBeruehrt === false

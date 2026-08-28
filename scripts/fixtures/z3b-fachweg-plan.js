@@ -73,6 +73,9 @@ function pruefeAzureBericht(bericht, { heuteUtc = new Date().toISOString().slice
       || !/^[a-z][a-z0-9]{1,31}$/.test(String(b.region || ""))) {
     throw new Error("Azure Deploymentart oder Region ist nicht belegt");
   }
+  if (b.modell !== "gpt-5-mini") {
+    throw new Error("Azure Modelltyp gpt-5-mini ist nicht belegt");
+  }
   if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/.test(String(b.deployment || ""))
       || !/^[a-f0-9]{12}$/.test(String(b.endpointHash || ""))) {
     throw new Error("Azure Deployment oder Zielfingerabdruck ist nicht belegt");
@@ -119,6 +122,7 @@ function pruefeAzureBericht(bericht, { heuteUtc = new Date().toISOString().slice
   const langsamstesMaximumMs = Math.ceil(Math.max(...KLASSEN.map((klasse) => klassen[klasse].dauerMsMax)));
   return Object.freeze({
     deployment: String(b.deployment || ""),
+    modell: b.modell,
     deploymentart: b.deploymentart,
     region: b.region,
     endpointHash: String(b.endpointHash || ""),

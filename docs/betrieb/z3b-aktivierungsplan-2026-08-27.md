@@ -29,9 +29,9 @@ diesen Plan freigegeben.
 | Baustein | Stand | Wirkung |
 |---|---|---|
 | Supabase Messlaeufer | 51 PASS, 0 FAIL; A bis D, 200 und 500 gruen | echter Plattformweg bis 500 bei Parallelitaet 32 belegt; temporaere Zugaenge und Workflows vollstaendig entfernt |
-| Azure Messlaeufer | 46 PASS, 0 FAIL | hoechstens 3 plus getrennt 21 Aufrufe; einzeln, ohne Wiederholung; Deploymentart, Region und tagesaktueller Preisbeleg sind Pflicht |
+| Azure Messlaeufer | 49 PASS, 0 FAIL | hoechstens 3 plus getrennt 21 Aufrufe; einzeln, ohne Wiederholung; Modelltyp, Deploymentart, Region und tagesaktueller Preisbeleg sind Pflicht |
 | Kapazitaetsauswertung | 56 PASS, 0 FAIL | verlangt sieben vollstaendige aufeinanderfolgende UTC Tage derselben Vorstufe und die deployten KI-, Planungs- und Monitoringhaertungen; kann nichts aktivieren |
-| Fachweglaeufer 200/500 | 32 PASS, 0 FAIL | startet je Freigabe genau eine neue Stufe zweimal; verlangt vorher die 21er Azure Stichprobe, sieben natuerliche Production Tage der Vorstufe und den vollstaendig deployten Haertungsstapel |
+| Fachweglaeufer 200/500 | 33 PASS, 0 FAIL | startet je Freigabe genau eine neue Stufe zweimal; verlangt vorher die 21er Azure Stichprobe mit belegtem Modelltyp, sieben natuerliche Production Tage der Vorstufe und den vollstaendig deployten Haertungsstapel |
 | KI Antwortumschlag | PR #274 offen, gruen, mergefaehig und ungemergt; Parser 25 PASS, Endpunktvertrag 10 PASS | rettet den beobachteten Steuerzeichenpfad, lehnt unvollstaendige Anbieterantworten ab und gibt keine Antwortfragmente im Fehler aus; nicht deployt |
 | Planungszeitbudget | PR #275 offen, gruen, mergefaehig und ungemergt | wartet einen bereits begonnenen Schreibaufruf ab und meldet nur belegte Zaehler; nicht deployt |
 | Monitoring Ehrlichkeit | PR #276 offen, gruen, mergefaehig und ungemergt | kennzeichnet gedeckelte Queuegruende als Stichprobe und traegt Blobspiegelueberlauf bis zum Motorbericht; nicht deployt |
@@ -205,7 +205,7 @@ Streuung bis zum langsamsten beobachteten Maximum. Azure wird waehrend des Fachw
 erneut aufgerufen. Der Gesamtbericht nennt das Ergebnis deshalb ausdruecklich lokalen
 Fachwegnachweis und niemals Production oder Anbieterlastnachweis.
 
-Der Vertrag steht bei 32 PASS und 0 FAIL. Ausgefuehrt wurde noch keine 200er oder 500er
+Der Vertrag steht bei 33 PASS und 0 FAIL. Ausgefuehrt wurde noch keine 200er oder 500er
 Fachwegmessung: Die dafuer zwingenden natuerlichen Vorstufen 100 beziehungsweise 200 liegen im
 heutigen Fuenferbetrieb nicht vor. Diesen Beobachtungszeitraum ersetzt das Werkzeug nicht.
 

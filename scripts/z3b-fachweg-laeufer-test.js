@@ -33,6 +33,7 @@ function azureBericht() {
     modus: "stichprobe",
     laufKennung: "azure2101",
     deployment: "gpt5mini-prod",
+    modell: "gpt-5-mini",
     deploymentart: "data-zone",
     region: "swedencentral",
     endpointHash: "123456789abc",
@@ -128,6 +129,11 @@ function main() {
   check("A8 Ohne belegte Tagespreise wird der Bericht abgelehnt",
     wirft(() => P.pruefeAzureBericht({ ...azureBericht(), preisquelle: "" },
       { heuteUtc: "2026-08-28" }), /Preisquelle/));
+  const ohneModell = azureBericht(); delete ohneModell.modell;
+  check("A9 Ein fehlender oder anderer Modelltyp wird abgelehnt",
+    wirft(() => P.pruefeAzureBericht(ohneModell, { heuteUtc: "2026-08-28" }), /Modelltyp.*gpt-5-mini/)
+      && wirft(() => P.pruefeAzureBericht({ ...azureBericht(), modell: "gpt-5" },
+        { heuteUtc: "2026-08-28" }), /Modelltyp.*gpt-5-mini/));
 
   console.log("\n== B · natuerliches Vorstufentor ==");
   const vor200 = P.pruefeVorstufenBericht(vorstufenBericht(100), 200);
