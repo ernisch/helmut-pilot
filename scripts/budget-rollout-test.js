@@ -67,6 +67,7 @@ https.request = function fakeRequest(url, options, callback) {
     setImmediate(() => {
       callback(res);
       res.emit("data", JSON.stringify({
+        status: "completed",
         output_text: JSON.stringify({ text: "Test-Entwurf aus der Fake-KI.", rationale: "Testlauf" }),
         usage: { input_tokens: 10, output_tokens: 12 }
       }));

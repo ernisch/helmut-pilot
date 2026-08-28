@@ -481,6 +481,7 @@ function starteKiEndpunkt({
         messung.erfolgreich += 1;
         beenden(200, {
           id: `resp_z3_${messung.aufrufe}`,
+          status: "completed",
           model: modell,
           output_text: ausgabe,
           output: [{ content: [{ type: "output_text", text: ausgabe }] }],
