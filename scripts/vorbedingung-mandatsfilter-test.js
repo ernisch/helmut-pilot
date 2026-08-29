@@ -373,6 +373,28 @@ async function main() {
       /drop function if exists public\.helmut_jobs_offen\(text\[\], text\[\], text\)/.test(rueck)
       && /create or replace function public\.helmut_jobs_offen\(/.test(rueck));
 
+    const korrektur = fs.readFileSync(path.join(ROOT,
+      "supabase/migrations/20260829123132_z22_mandatsfilter_zeilenkennung_korrigieren.sql"), "utf8");
+    const korrekturRumpf = ((korrektur.match(/as \$\$([\s\S]*?)\$\$;/) || [])[1] || "")
+      .split("\n").map((z) => z.replace(/--.*$/, "")).join("\n");
+    const korrekturRueck = fs.readFileSync(path.join(ROOT,
+      "supabase/migrations/rollback_20260829123132_z22_mandatsfilter_zeilenkennung_korrigieren.sql"), "utf8");
+    const korrekturRueckRumpf = ((korrekturRueck.match(/as \$\$([\s\S]*?)\$\$;/) || [])[1] || "")
+      .split("\n").map((z) => z.replace(/--.*$/, "")).join("\n");
+    check("6.5b Die neue Vorwaertskorrektur verlangt eine vorhandene dreistellige Z22-Fassung",
+      /to_regprocedure\('public\.helmut_jobs_offen\(text\[\],text\[\],text\)'\) is null/.test(korrektur)
+      && !/drop function/.test(korrektur));
+    check("6.5c Die neue Vorwaertskorrektur traegt denselben sicheren Vertrag wie Z22",
+      /nullif\s*\(\s*btrim\(p_mandat\s*,[^)]*\)\s*,\s*''\s*\)\s+is\s+null/.test(korrekturRumpf)
+      && /nullif\s*\(\s*btrim\(j\.tenant_id\s*,[^)]*\)\s*,\s*''\s*\)\s+is\s+null/.test(korrekturRumpf)
+      && !/j\.tenant_id\s+is\s+null/.test(korrekturRumpf));
+    check("6.5d Der neue Rueckweg behaelt Z22 dreistellig und stellt nur die alte Zeilenregel wieder her",
+      !/drop function/.test(korrekturRueck)
+      && /p_mandat\s+text\s+default\s+null/.test(korrekturRueck)
+      && /nullif\(btrim\(p_mandat\), ''\) is null/.test(korrekturRueckRumpf)
+      && /j\.tenant_id is null/.test(korrekturRueckRumpf)
+      && !/nullif\(btrim\(j\.tenant_id/.test(korrekturRueckRumpf));
+
     // ── GEGENPROBE, verhaltensseitig ────────────────────────────────────────────────────
     // Dieselben fuenf Zeilen wie §8b des Datenbanknachweises, hier gegen die Attrappe.
     // Erwartet ist die Zahl des SICHEREN Vertrags: null, '' und '   ' sind Arbeit ohne

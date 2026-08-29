@@ -935,3 +935,29 @@ Zwei kleinere Härtungen kamen aus derselben Prüfung:
 Nicht berührt: die Zahlen aus §10 und §13, der Befund Z22 selbst, Z2, Z3a und jede Aussage
 über Production. Der isolierte Supabase-Lauf mit 500 synthetischen Aufträgen beweist
 unverändert **nur den Warteschlangenmotor** und niemals 500 echte Mandate.
+
+### 14.4 Nachtrag 29.08. — angewendete Fassung und sicherer Konvergenzweg
+
+Die Abweichung ist jetzt exakt geklaert, ohne das isolierte Testprojekt zu veraendern. In
+`supabase_migrations.schema_migrations` liegt unter `20260827121931` eine Datei mit 6.873 Byte
+und SHA256 `081c9c43a6d1c03121bde40902850b7348dc8d971f57e0e35ee32ce96796408b`. Sie ist
+byteidentisch zur Repository-Fassung aus Commit `2a01ea9`. Die dort aktive dreistellige
+Funktion bestaetigt denselben Stand: leere Parameterkennung zaehlt global, aber die
+Zeilenkennung wird nur mit `tenant_id is null` als global behandelt.
+
+Der Kopf von PR #273 traegt fuer `20260826190000` dagegen 8.977 Byte und SHA256
+`f709747834898bf84b776f806429e95ffa4eeb727dd326f7dbf2d88d403c2f4e`. Diese Datei behandelt
+auch leere und aus der ausgeschriebenen Weissraummenge bestehende Zeilenkennungen global.
+Die beiden Fassungen unterscheiden sich damit byteweise und fachlich.
+
+Die angewendete Historie wird nicht ueberschrieben. Der neue Vorwaertsweg
+`20260829123132_z22_mandatsfilter_zeilenkennung_korrigieren.sql` ersetzt ausschliesslich eine
+bereits vorhandene dreistellige Z22-Funktion. Fehlt sie oder steht daneben noch die
+zweistellige Fassung, bricht die Transaktion ab. Der zugehoerige Rueckweg stellt die alte
+dreistellige Fassung aus `2a01ea9` wieder her und entfernt Z22 nicht. Der vollstaendige
+Z22-Rueckbau auf zwei Argumente bleibt dem vorhandenen, getrennten Rueckweg zugeordnet.
+
+Production besitzt zum Zeitpunkt der lesenden Pruefung weiterhin nur die zweistellige
+Vor-Z22-Funktion. Keine der beiden Datenbanken wurde in diesem Nachtrag veraendert. Eine
+spaetere Anwendung der neuen Migration auf das Testprojekt oder Production bleibt jeweils
+eine eigene Betreiberfreigabe.

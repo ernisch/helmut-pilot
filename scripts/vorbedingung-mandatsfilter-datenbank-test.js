@@ -6,7 +6,7 @@
 // ECHTEN PostgreSQL — nicht an der Attrappe. Die Anwendungsseite prueft
 // `scripts/vorbedingung-mandatsfilter-test.js`.
 //
-//   §1  Migration laeuft vorwaerts, rueckwaerts und erneut vorwaerts
+//   §1  Z22 und die vorwaerts gerichtete Korrektur laufen jeweils mit eigenem Rueckweg
 //   §2  Nach der Migration existiert GENAU EINE Fassung (kein mehrdeutiger Aufruf)
 //   §3  Sicherheit: keine Rechte fuer anon/authenticated, fester search_path, nur lesend
 //   §4  Ohne `p_mandat` zaehlt sie exakt wie die Vorfassung (Verhaltensgleichheit)
@@ -36,6 +36,10 @@ const MIGRATION = path.join(ROOT, "supabase", "migrations",
   "20260826190000_jobqueue_vorbedingung_mandatsfilter.sql");
 const RUECKWEG = path.join(ROOT, "supabase", "migrations",
   "rollback_20260826190000_jobqueue_vorbedingung_mandatsfilter.sql");
+const KORREKTUR = path.join(ROOT, "supabase", "migrations",
+  "20260829123132_z22_mandatsfilter_zeilenkennung_korrigieren.sql");
+const KORREKTUR_RUECKWEG = path.join(ROOT, "supabase", "migrations",
+  "rollback_20260829123132_z22_mandatsfilter_zeilenkennung_korrigieren.sql");
 
 const PG = {
   host: process.env.HELMUT_TEST_PG_HOST || "",
@@ -163,18 +167,47 @@ function main() {
   psql(null, { datei: BASIS });
   psql(null, { datei: ABHAENGIG });
 
-  // ═══ §1 · Vorwaerts, rueckwaerts, erneut vorwaerts ════════════════════════════════════════
-  abschnitt("1 · Migration laeuft vorwaerts, rueckwaerts und erneut vorwaerts");
+  // ═══ §1 · Z22 und vorwaerts gerichtete Korrektur ══════════════════════════════════════════
+  abschnitt("1 · Z22 und die vorwaerts gerichtete Korrektur haben getrennte Rueckwege");
   const stellen = () => psql(`select coalesce(string_agg(p.pronargs::text, ',' order by p.pronargs), '-')
                                 from pg_proc p join pg_namespace n on n.oid = p.pronamespace
                                where n.nspname = 'public' and p.proname = 'helmut_jobs_offen'`).out;
+  const definition = () => psql(`select pg_get_functiondef(p.oid)
+                                   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+                                  where n.nspname = 'public' and p.proname = 'helmut_jobs_offen'
+                                    and p.pronargs = 3`).out;
   check("1.1 Vorher gibt es die zweistellige Fassung", stellen() === "2", `Stellen ${stellen()}`);
+  const zuFrueh = psql(null, { datei: KORREKTUR, erwarteFehler: true });
+  check("1.2 Die Korrektur stoppt, wenn Z22 noch nicht installiert ist",
+    !zuFrueh.ok && /dreistellige Fassung|text\[\],text\[\],text|fehlt/.test(zuFrueh.out),
+    zuFrueh.ok ? "unerwartet erfolgreich" : zuFrueh.out.slice(0, 140));
+  check("1.3 Der Abbruch ist atomar und laesst nur die zweistellige Fassung stehen",
+    stellen() === "2", `Stellen ${stellen()}`);
   psql(null, { datei: MIGRATION });
-  check("1.2 Nach der Migration gibt es die dreistellige Fassung", stellen() === "3", `Stellen ${stellen()}`);
+  check("1.4 Nach Z22 gibt es die dreistellige Fassung", stellen() === "3", `Stellen ${stellen()}`);
   psql(null, { datei: RUECKWEG });
-  check("1.3 Der Rueckweg stellt die zweistellige Fassung wieder her", stellen() === "2", `Stellen ${stellen()}`);
+  check("1.5 Der Z22-Rueckweg stellt die zweistellige Fassung wieder her", stellen() === "2", `Stellen ${stellen()}`);
   psql(null, { datei: MIGRATION });
-  check("1.4 Erneut vorwaerts: wieder dreistellig (idempotent)", stellen() === "3", `Stellen ${stellen()}`);
+  check("1.6 Z22 erneut vorwaerts: wieder dreistellig", stellen() === "3", `Stellen ${stellen()}`);
+  psql(null, { datei: KORREKTUR_RUECKWEG });
+  const alteDefinition = definition();
+  check("1.7 Der Korrekturrueckweg behaelt die dreistellige Z22-Schnittstelle",
+    stellen() === "3", `Stellen ${stellen()}`);
+  check("1.8 Der Korrekturrueckweg stellt exakt die alte Zeilenregel wieder her",
+    /nullif\(btrim\(p_mandat\), ''\) is null/.test(alteDefinition)
+      && /or j\.tenant_id is null/.test(alteDefinition)
+      && !/nullif\(btrim\(j\.tenant_id/.test(alteDefinition));
+  psql(null, { datei: KORREKTUR });
+  const neueDefinition = definition();
+  check("1.9 Die Vorwaertskorrektur behaelt die dreistellige Z22-Schnittstelle",
+    stellen() === "3", `Stellen ${stellen()}`);
+  check("1.10 Die Vorwaertskorrektur trimmt Parameter und Zeilenkennung ausdruecklich",
+    /nullif\(btrim\(p_mandat, E' \\t\\n\\r\\f\\v'/.test(neueDefinition)
+      && /nullif\(btrim\(j\.tenant_id, E' \\t\\n\\r\\f\\v'/.test(neueDefinition)
+      && !/or j\.tenant_id is null/.test(neueDefinition));
+  psql(null, { datei: KORREKTUR });
+  check("1.11 Die Vorwaertskorrektur ist erneut anwendbar und bleibt dreistellig",
+    stellen() === "3", `Stellen ${stellen()}`);
 
   // ═══ §2 · Genau eine Fassung ══════════════════════════════════════════════════════════════
   abschnitt("2 · Genau EINE Fassung — kein mehrdeutiger Aufruf");
@@ -592,7 +625,8 @@ async function rueckfallGegenPostgrest() {
   } finally {
     if (tor) { try { await tor.stoppe(); } catch (_) { /* egal */ } }
     stoppe();
-    psql(null, { datei: MIGRATION });   // Pruefstand wieder auf den Sollstand
+    psql(null, { datei: MIGRATION });   // Z22 wieder herstellen
+    psql(null, { datei: KORREKTUR });   // kanonischen Konvergenzstand wieder herstellen
     try { fs.rmSync(arbeit, { recursive: true, force: true }); } catch (_) { /* egal */ }
   }
 }
