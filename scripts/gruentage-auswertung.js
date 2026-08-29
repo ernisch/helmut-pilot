@@ -173,7 +173,9 @@ async function sammleQuittung({ jetztMs = Date.now(), rueckblickTage = 3 } = {})
     `/rest/v1/llm_budget_counters?select=day,scope,used&scope=eq.global&day=gte.${utcTag(fensterStartIso)}&order=day.asc`);
 
   // 6) Mandatsbestand (nur Zaehler).
-  const mandate = await alleZeilen(`/rest/v1/mandate_profiles?select=aktiv,geloescht_at&order=id.asc`);
+  // mandate_profiles ist klein (einstellig); ohne order, weil die Tabelle keine
+  // id-Spalte traegt und eine Seite hier immer reicht (Deckel greift trotzdem).
+  const mandate = await alleZeilen(`/rest/v1/mandate_profiles?select=aktiv,geloescht_at`);
   const mandateAktiv = mandate.zeilen.filter((m) => m.aktiv === true).length;
 
   const vollstaendig = jobsNeu.vollstaendig && jobsOffenAlt.vollstaendig && jobsAbgeschlossenImFenster.vollstaendig
