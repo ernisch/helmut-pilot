@@ -1,6 +1,6 @@
 # Realistiknachweis Z3 — 25 / 50 / 100 Mandate (Sprint 2026-08-26)
 
-**Ausgangscommit:** `ade1674` (= `main`, Merge PR #271) · **Branch:** `claude/load-test-mandate-proof-wtlew0`
+**Ausgangscommit:** `ade1674` (= `main` am 26.08., Merge PR #271) · **Branch:** `claude/load-test-mandate-proof-wtlew0`
 **Kanonische Skalierungsdatei bleibt** [`skalierung-25-50-100.md`](skalierung-25-50-100.md).
 Diese Datei ist die **Belegdatei des realistischen Nachweises** und ergänzt dort §0.1 Punkt 3
 („Supabase unter realistischer Last ist ungeprüft") und die vier verstreuten Z3-Fehlstellen.
@@ -12,6 +12,10 @@ Diese Datei ist die **Belegdatei des realistischen Nachweises** und ergänzt dor
 > echte Anbieteraufrufe in Lasthöhe wären ein Massen‑Crawl (CLAUDE.md §5) und echte
 > Modellaufrufe kosten Geld. **Production wurde nicht verändert** — kein Schreibvorgang, keine
 > Migration, kein Flag, keine Env, kein Cron, kein manueller Lauf.
+>
+> *Der Absatz oben beschreibt den Sprint vom 26.08. Die Nachträge §13–§14 dokumentieren die
+> spätere Entwicklung; seit dem 29.08. ist Z22 mit ausdrücklicher Betreiberfreigabe in
+> Production angewendet (§14.6).*
 
 ---
 
@@ -770,7 +774,8 @@ ist die Richtung bei 25 und 50, nicht die zweite Stelle bei 100.
 Unverändert offen bleibt alles aus §8: die Anbieter sind lokal, weder Google noch Azure
 antwortet, geprüft ist PostgREST und nicht Supabase. **Z3 bleibt unvollständig, Z3b offen,
 Z4 nicht erteilt, Z5 unverändert fünf reale Mandate.** Die Migration ist **nicht** auf
-Production angewendet und bleibt freigabepflichtig.
+Production angewendet und bleibt freigabepflichtig *(Stand 26.08.; am 29.08. nach
+ausdrücklicher Betreiberfreigabe angewendet — §14.6)*.
 
 Und eine fachliche Grenze, die zur Korrektur selbst gehört: ein Mandat wartet jetzt nicht mehr
 auf die **persönliche** Namenssuche eines anderen Mandats. Ein Dokument, das ausschließlich
@@ -789,7 +794,8 @@ Beide standen in derselben Ursache: der Datenbankteil lief nicht wirklich, und d
 nicht auf, dass SQL und Attrappe an einer Stelle auseinanderliefen.
 
 **Keine Production-Aktion.** Migration weiterhin nicht angewendet, kein Deployment, kein
-Flag, keine Env, kein Cron, kein Import, keine echten Anbieteraufrufe, keine Kosten. Der
+Flag, keine Env, kein Cron, kein Import, keine echten Anbieteraufrufe, keine Kosten
+*(Stand 28.08.; Z22 ist seit dem 29.08. in Production angewendet — §14.6)*. Der
 gesamte Datenbankteil lief gegen eine **kurzlebige lokale PostgreSQL**, die für den Lauf
 angelegt und danach verworfen wird; die Zeilen sind ausschließlich synthetisch.
 
@@ -988,7 +994,7 @@ wiederholt; sein frueherer Beleg bleibt unveraendert auf den Warteschlangenmotor
 Production besass bei der letzten lesenden Pruefung weiterhin nur die zweistellige
 Vor-Z22-Funktion. Die Production-Datenbank wurde in diesem Nachtrag weder gelesen noch
 veraendert. Eine Production-Anwendung von Z22 und der Vorwaertskorrektur bleibt eine eigene
-Betreiberfreigabe.
+Betreiberfreigabe *(am 29.08. erteilt und vollzogen — §14.6)*.
 
 ### 14.5 Nachtrag 29.08. — Production-Vorpruefung ohne Anwendung
 
@@ -1037,4 +1043,57 @@ Die Vorpruefung ist **gruen**, aber sie ist keine Anwendungsfreigabe. Vor einer 
 Anwendung sind der aktuelle Vorzustand und 0 laufende Auftraege erneut zu bestaetigen. Danach
 braucht die Anwendung beider Vorwaertsschritte weiterhin eine eigene ausdrueckliche
 Betreiberfreigabe. Azure, echte Modellaufrufe und der 500er Plattformlasttest waren nicht Teil
-dieser Vorpruefung.
+dieser Vorpruefung. *(Die Freigabe wurde noch am 29.08. erteilt; Anwendung und Nachpruefung
+stehen in §14.6.)*
+
+### 14.6 Nachtrag 29.08. — Z22 in Production angewendet und gegengeprüft
+
+Nach der grünen Vorprüfung (§14.5) wurde der Vollzug in genau dieser Reihenfolge
+abgeschlossen: PR #280 wurde gemergt (`main` = `87bed2219f9d64f9c832b7b4baff63875f15ddab`),
+das automatische Vercel-Production-Deployment war grün, und die öffentliche
+Production-Adresse antwortete mit HTTP 200 und lieferte exakt diesen Commit. **Anschließend
+wurde Z22 mit ausdrücklicher Betreiberfreigabe auf das Production-Projekt
+`ddckuvvpcytqbyfmbvie` angewendet** — zuerst die Basismigration, danach die fail-closed
+Vorwärtskorrektur, wie es §14.5 verlangt.
+
+| Repository-Datei | Production-Buchung |
+|---|---|
+| `20260826190000_jobqueue_vorbedingung_mandatsfilter.sql` | `20260829175642` |
+| `20260829123132_z22_mandatsfilter_zeilenkennung_korrigieren.sql` | `20260829175749` |
+
+Wie schon bei der Testprojekt-Anwendung (§14.4) erzeugt das Supabase-Managementwerkzeug
+seine 14-stellige Buchungsnummer beim Lauf selbst; Repository-Version und Production-Buchung
+werden nicht stillschweigend gleichgesetzt.
+
+**Nachprüfung des Bestands:** 3.330 Aufträge, davon 3.122 `erledigt`, 208 `wartend`,
+0 `laeuft` und 0 `fehlgeschlagen`; 3.161 Zeilen ohne Mandatskennung, 0 leere und 0 nur aus
+der ausgeschriebenen Weißraummenge bestehende Zeilenkennungen; genau fünf brauchbare reale
+Mandatskennungen. Die Aggregate entsprechen unverändert der Vorprüfung (§14.5). **Keine
+Auftragsdaten wurden verändert**, keine Mandatskennung und kein Auftragsinhalt wurde
+ausgegeben.
+
+**Nachprüfung der Funktion:** Es steht genau **eine** dreistellige Funktion
+`public.helmut_jobs_offen(text[],text[],text)` mit drei Vorgabewerten; die alte zweistellige
+Fassung ist entfernt. `stable`, `security invoker` und `search_path=public, pg_temp` sind
+gesetzt; `anon` und `authenticated` besitzen kein Ausführungsrecht, `service_role` besitzt
+es. Fünf globale Funktionsgegenproben bestanden. Für alle fünf vorhandenen Mandate wurde das
+Funktionsergebnis rein lesend gegen die direkte SQL-Erwartung geprüft: **5 passend,
+0 Abweichungen.**
+
+**Rein lesende Laufzeitmessung:** 5,973 ms Gesamtlaufzeit, 922 gemeinsame Puffertreffer,
+0 gelesene, 0 veränderte und 0 geschriebene Blöcke. Wie in §14.5 gilt: eine Einzelmessung
+ist kein Lastbeweis.
+
+**Nicht berührt:** das isolierte Supabase-Testprojekt blieb unverändert, Azure wurde nicht
+aufgerufen — es gab keine Modellaufrufe und damit keine Azure-Modellkosten. **Z22 wird nicht erneut
+angewendet** — die Anwendung ist abgeschlossen; ein weiterer Lauf ist weder nötig noch
+freigegeben. Der partielle und der vollständige Rückweg bleiben unverändert die in §14.5
+gebundenen Dateien und sind nicht ausgeführt.
+
+**Beweisebenen nach diesem Nachtrag:** Z22 ist lokal, im Pflicht-CI, isoliert gegen Supabase
+und jetzt **in Production bewiesen** — als Funktions- und Plattformzustand. Ein neuer
+**Mandats- oder Skalierungsnachweis** entstand dadurch nicht: in Production bleiben genau
+fünf reale Mandate bewiesen, und die 500 synthetischen Mandate belegen weiterhin
+ausschließlich den isolierten Warteschlangenmotor. Offen bleiben §11 (Rückfall gegen echtes
+PostgREST), die übrigen still überspringenden Datenbanksuiten (§14.3), Z3b, Azure, der
+Parserfix aus PR #274 und die nächste natürliche Fünferprüfung.
