@@ -917,7 +917,8 @@ Zwei kleinere Härtungen kamen aus derselben Prüfung:
 | dieselbe Suite gegen den alten Stand | **30 PASS / 4 FAIL**, Exit 1 | die Gegenprobe greift wirklich |
 | fail-closed-Pfade | 3 von 3 wie erwartet | — |
 | **§11 Rückfall gegen echtes PostgREST** | **NICHT gelaufen** | kein PostgREST-Binary in dieser Umgebung |
-| dieselbe Suite **im Pflicht-CI** (Lauf `33243831751`, abgeschlossen 29.08. 08:51 UTC) | **34 PASS / 0 FAIL**, `UEBERSPRUNGEN 1` | erster echter CI-Beleg, **PostgreSQL 17.11** |
+| dieselbe Suite **im Pflicht-CI** (Lauf `33243831751`, abgeschlossen 29.08. 08:51 UTC) | **34 PASS / 0 FAIL**, `UEBERSPRUNGEN 1` | **älterer erster CI-Beleg**, **PostgreSQL 17.11** — abgelöst durch den späteren maßgeblichen Lauf `33260203246` (nächste Zeile) |
+| dieselbe Suite im **späteren maßgeblichen Pflichtlauf von PR #279** (`33260203246`) | **41 PASS / 0 FAIL**, **1 übersprungen** (§11 PostgREST) | **284/284 Offline-Suiten**, Browser/Mobil **32 PASS / 0 FAIL**, **PostgreSQL 17.11** |
 
 **Ehrlich benannt, dreierlei:**
 
