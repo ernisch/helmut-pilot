@@ -33,8 +33,11 @@
 --     Mandate. Verhaltensgleich und auch an der SQL-Grenze fail closed.
 --     Genau das ist der Rueckfall fuer Aufrufer ohne verwertbare Mandatskennung — mehr
 --     warten ist immer die sichere Seite, nie weniger (fail closed).
---   * `p_mandat` gesetzt  -> zaehlt GLOBALE Arbeit (`tenant_id is null`) PLUS die Arbeit
---     GENAU DIESES Mandats. Fremde mandatsgebundene Arbeit zaehlt nicht mehr mit.
+--   * `p_mandat` gesetzt  -> zaehlt GLOBALE Arbeit PLUS die Arbeit GENAU DIESES Mandats.
+--     Fremde mandatsgebundene Arbeit zaehlt nicht mehr mit. GLOBAL heisst dabei: die Zeile
+--     traegt keinen brauchbaren Mandatsbezug — `tenant_id` ist null, leer oder besteht nur
+--     aus Leerzeichen. Auch hier gilt fail closed in dieselbe Richtung: eine unbrauchbare
+--     Kennung fuehrt zu MEHR Warten (die Zeile gilt fuer alle), nie zu weniger.
 -- Der Vorgabewert haelt Altaufrufer mit zwei Argumenten lauffaehig; deshalb wird die
 -- zweistellige Fassung im selben Transaktionsblock entfernt (sonst waere ein Aufruf mit
 -- zwei Argumenten zwischen beiden Fassungen mehrdeutig: „function is not unique").
@@ -89,17 +92,37 @@ as $$
      and (p_typen   is null or j.job_type = any(p_typen))
      -- MANDATSFILTER. Ohne `p_mandat` bleibt alles wie bisher. Mit `p_mandat` zaehlt
      -- globale Arbeit (kein Mandatsbezug) UND die Arbeit dieses einen Mandats.
-     -- `j.tenant_id is null` ist die systemweite Arbeit — sie wird KEINEM Mandat
-     -- zugerechnet und gilt fuer alle.
+     -- Eine Zeile OHNE brauchbaren Mandatsbezug ist systemweite Arbeit — sie wird KEINEM
+     -- Mandat zugerechnet und gilt deshalb fuer alle.
+     --
+     -- LEERE KENNUNG AUF DER ZEILENSEITE (Korrektur 2026-08-28): `tenant_id` ist `text`
+     -- ohne NOT-NULL und ohne Pruefbedingung (`20260808_scalable_job_queue.sql` Z. 111) —
+     -- eine Zeile mit '' oder nur Leerzeichen ist also moeglich. Die Vorfassung pruefte nur
+     -- `j.tenant_id is null` und HAT SIE DAMIT AUSGESCHLOSSEN: ein Mandat haette auf eine
+     -- solche Zeile NICHT mehr gewartet, obwohl ihr Mandatsbezug unbrauchbar ist. Das ist
+     -- die falsche Richtung — weniger warten ist nie die sichere Seite. Die Attrappe
+     -- (`scripts/fixtures/jobqueue-speicher-treiber.js`) zaehlte sie bereits global; genau
+     -- diese Abweichung zwischen SQL und Attrappe schliesst die Korrektur.
+     --
+     -- Auf BEIDEN Seiten wird getrimmt. Das kann nur MEHR Zeilen treffen als der frueher
+     -- ungetrimmte Vergleich (jede vorher passende Zeile passt weiterhin) — fail closed.
+     --
+     -- WELCHE ZEICHEN GETRIMMT WERDEN, STEHT HIER AUSDRUECKLICH. `btrim(x)` mit EINEM
+     -- Argument entfernt in PostgreSQL ausschliesslich das Leerzeichen U+0020 —
+     -- `String.prototype.trim()` in der Attrappe entfernt dagegen JEDEN Weissraum. Ohne
+     -- diese ausgeschriebene Zeichenmenge waeren die beiden Seiten bei einer `tenant_id`
+     -- aus z. B. einem Tabulator wieder uneins: die Attrappe zaehlte global, SQL gar nicht
+     -- — und SQL laege damit erneut auf der unsicheren Seite. Die Menge ist deshalb auf
+     -- beiden Seiten dieselbe und wird auf beiden Seiten ausgeschrieben.
      and (
-       nullif(btrim(p_mandat), '') is null
-       or j.tenant_id is null
-       or j.tenant_id = btrim(p_mandat)
+       nullif(btrim(p_mandat, E' \t\n\r\f\v'), '') is null
+       or nullif(btrim(j.tenant_id, E' \t\n\r\f\v'), '') is null
+       or btrim(j.tenant_id, E' \t\n\r\f\v') = btrim(p_mandat, E' \t\n\r\f\v')
      );
 $$;
 
 comment on function public.helmut_jobs_offen(text[], text[], text) is
-  'OP-30/Z22: zaehlt offene/erledigte/fehlgeschlagene Auftraege ueber eine LISTE von Aktualitaetsfenstern, eine Typliste und OPTIONAL ein Mandat. Nur lesend. Ohne p_mandat oder mit einer nach dem Trimmen leeren Kennung verhaltensgleich zur zweistelligen Vorfassung (zaehlt alle Mandate). Mit p_mandat zaehlt sie globale Arbeit (tenant_id is null) plus die Arbeit dieses Mandats — fremde mandatsgebundene Arbeit blockiert damit kein anderes Mandat mehr (Befund Z22).';
+  'OP-30/Z22: zaehlt offene/erledigte/fehlgeschlagene Auftraege ueber eine LISTE von Aktualitaetsfenstern, eine Typliste und OPTIONAL ein Mandat. Nur lesend. Ohne p_mandat oder mit einer nach dem Trimmen leeren Kennung verhaltensgleich zur zweistelligen Vorfassung (zaehlt alle Mandate). Mit p_mandat zaehlt sie globale Arbeit plus die Arbeit dieses Mandats — fremde mandatsgebundene Arbeit blockiert damit kein anderes Mandat mehr (Befund Z22). Global ist jede Zeile ohne brauchbaren Mandatsbezug: tenant_id null, leer oder nur Leerzeichen. Beide Seiten werden getrimmt; eine unbrauchbare Kennung fuehrt immer zu MEHR Warten, nie zu weniger (fail closed).';
 
 -- Kein Browserzugriff (identische Zusage wie die Basistabelle und die Vorfassung).
 revoke all on function public.helmut_jobs_offen(text[], text[], text) from public, anon, authenticated;
