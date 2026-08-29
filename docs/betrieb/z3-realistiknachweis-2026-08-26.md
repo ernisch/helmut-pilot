@@ -911,13 +911,13 @@ Zwei kleinere Härtungen kamen aus derselben Prüfung:
 | dieselbe Suite gegen den alten Stand | **30 PASS / 4 FAIL**, Exit 1 | die Gegenprobe greift wirklich |
 | fail-closed-Pfade | 3 von 3 wie erwartet | — |
 | **§11 Rückfall gegen echtes PostgREST** | **NICHT gelaufen** | kein PostgREST-Binary in dieser Umgebung |
-| dieselbe Suite **im Pflicht-CI** (Lauf `33220833892`, 29.08. 08:40 UTC) | **34 PASS / 0 FAIL**, `UEBERSPRUNGEN 1` | erster echter CI-Beleg, **PostgreSQL 17.11** |
+| dieselbe Suite **im Pflicht-CI** (Lauf `33243831751`, abgeschlossen 29.08. 08:51 UTC) | **34 PASS / 0 FAIL**, `UEBERSPRUNGEN 1` | erster echter CI-Beleg, **PostgreSQL 17.11** |
 
 **Ehrlich benannt, dreierlei:**
 
 1. Die lokale PostgreSQL dieser Sitzung ist **16.13**, Production ist **17.6**. Der CI-Dienst
-   ist `postgres:17` — und dieser Lauf ist **erbracht**: am 29.08. um 08:40 UTC lief der
-   Nachweis im Pflichtjob gegen **PostgreSQL 17.11** mit **34 PASS / 0 FAIL**, gleicher
+   ist `postgres:17` — und dieser Lauf ist **erbracht**: am 29.08. um 08:51 UTC war der
+   Nachweis im Pflichtjob gegen **PostgreSQL 17.11** mit **34 PASS / 0 FAIL** abgeschlossen, gleicher
    Zugriffsweg (`Bitmap Index Scan on helmut_jobs_window_idx`), 1,114 ms gegen 1,166 ms.
    Die Hauptversion von Production ist damit im Gate belegt, nicht nur lokal.
 2. **§11 ist weiterhin offen.** Der Rückfall gegen echtes PostgREST ist der Nachweis, dass
