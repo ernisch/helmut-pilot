@@ -938,7 +938,7 @@ unverändert **nur den Warteschlangenmotor** und niemals 500 echte Mandate.
 
 ### 14.4 Nachtrag 29.08. — angewendete Fassung und sicherer Konvergenzweg
 
-Die Abweichung ist jetzt exakt geklaert, ohne das isolierte Testprojekt zu veraendern. In
+Die Abweichung wurde vor der Anwendung exakt und ausschliesslich lesend geklaert. In
 `supabase_migrations.schema_migrations` liegt unter `20260827121931` eine Datei mit 6.873 Byte
 und SHA256 `081c9c43a6d1c03121bde40902850b7348dc8d971f57e0e35ee32ce96796408b`. Sie ist
 byteidentisch zur Repository-Fassung aus Commit `2a01ea9`. Die dort aktive dreistellige
@@ -957,7 +957,35 @@ zweistellige Fassung, bricht die Transaktion ab. Der zugehoerige Rueckweg stellt
 dreistellige Fassung aus `2a01ea9` wieder her und entfernt Z22 nicht. Der vollstaendige
 Z22-Rueckbau auf zwei Argumente bleibt dem vorhandenen, getrennten Rueckweg zugeordnet.
 
-Production besitzt zum Zeitpunkt der lesenden Pruefung weiterhin nur die zweistellige
-Vor-Z22-Funktion. Keine der beiden Datenbanken wurde in diesem Nachtrag veraendert. Eine
-spaetere Anwendung der neuen Migration auf das Testprojekt oder Production bleibt jeweils
-eine eigene Betreiberfreigabe.
+Die Repository-Datei der Vorwaertskorrektur hat 4.568 Byte und SHA256
+`c4bb62673f2282f72a585ea4fa6e486a0ed62fdfe951523f066212239158cd23`; ihr getrennt
+gehaltener Rueckweg hat 3.363 Byte und SHA256
+`9791aa5061db85dd81186ec6f7ba2a77517855aa525ed2cd804c402812394a02`.
+
+**Anwendung im isolierten Testprojekt, 29.08. um 16:54:55 Tuerkei / 15:54:55 Berlin /
+13:54:55 UTC:** Nach ausdruecklicher Betreiberfreigabe wurde genau die Vorwaertskorrektur
+angewendet. Das Supabase-Managementwerkzeug erzeugt seine 14-stellige Buchungsnummer beim
+Lauf selbst. Deshalb steht die Repository-Version `20260829123132` im Testprojekt transparent
+unter Version `20260829135455` und dem Namen
+`repo_20260829123132_z22_mandatsfilter_zeilenkennung_korrigieren`; beide Nummern werden nicht
+stillschweigend gleichgesetzt. Der Rueckweg wurde nicht ausgefuehrt.
+
+**Vorpruefung:** Projekt `ffzaxdbatoamsovncrym` war `ACTIVE_HEALTHY`, PostgreSQL 17.6; genau
+eine dreistellige und keine zweistellige Funktion war vorhanden. Ihr Rumpf trug nachweislich
+die alte Regel aus `2a01ea9`. Die Tabelle enthielt 900 synthetische Auftraege ohne leere
+Zeilenkennung.
+
+**Nachpruefung:** weiterhin 900 Auftraege; genau eine dreistellige, `stable`,
+`security invoker`-Funktion mit festem `search_path`. `anon` und `authenticated` duerfen sie
+nicht ausfuehren, `service_role` darf es. Der gespeicherte Rumpf enthaelt die ausgeschriebene
+Weissraummenge auf Parameter- und Zeilenseite und nicht mehr die alte reine
+`tenant_id is null`-Regel. Fuer alle 500 vorhandenen Mandatskennungen wurde das
+Funktionsergebnis rein lesend gegen eine unabhaengige SQL-Zaehlogik verglichen:
+**500 geprueft, 0 Abweichungen.** Vor und nach der Anwendung meldeten die Supabase-Advisors
+keine neue Sicherheits- oder Leistungswarnung. Der 500er Plattformlasttest wurde nicht
+wiederholt; sein frueherer Beleg bleibt unveraendert auf den Warteschlangenmotor begrenzt.
+
+Production besass bei der letzten lesenden Pruefung weiterhin nur die zweistellige
+Vor-Z22-Funktion. Die Production-Datenbank wurde in diesem Nachtrag weder gelesen noch
+veraendert. Eine Production-Anwendung von Z22 und der Vorwaertskorrektur bleibt eine eigene
+Betreiberfreigabe.
