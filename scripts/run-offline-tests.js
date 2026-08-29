@@ -124,6 +124,14 @@ const DENYLIST = new Set([
   // fail-closed ist. Im Offline-Job liefe er nur als stiller SKIP mit — das
   // täuschte eine Abdeckung vor, die der andere Job wirklich erbringt.
   "browser-smoke-test.js",
+  // Gleiche Begruendung, gleiche Loesung (Korrektur 2026-08-28): Der Z22-Datenbanknachweis
+  // braucht eine ECHTE PostgreSQL. Ohne `HELMUT_TEST_PG_HOST` endete er mit Exit 0 — und der
+  // Runner kennt nur `exit === 0` => PASS. Er meldete also GRUEN fuer einen Nachweis, den
+  // niemand erbracht hat; genau darunter blieb die Abweichung zwischen SQL und Attrappe bei
+  // leerer `tenant_id` unentdeckt. Er hat jetzt einen EIGENEN, fail-closed CI-Schritt im Job
+  // "Syntax + Offline-Suiten" mit kurzlebigem Postgres-Dienst (HELMUT_REQUIRE_PG=1).
+  // Lokal: node scripts/lokal.js scripts/vorbedingung-mandatsfilter-datenbank-test.js
+  "vorbedingung-mandatsfilter-datenbank-test.js",
   "lage-backfill.js",
   "presentation-backfill.js",
   "staff-backfill.js",

@@ -660,7 +660,13 @@ const ALLE_FAMILIEN = [...G.FAMILIEN, ...G.ZUSATZFAMILIEN];
   // scripts/vorbedingung-mandatsfilter-datenbank-test.js an echter PostgreSQL 17.6;
   // Pruefung 8.8b prueft ihren Inhalt unabhaengig mit.
   "20260826190000_jobqueue_vorbedingung_mandatsfilter.sql",
-  "rollback_20260826190000_jobqueue_vorbedingung_mandatsfilter.sql"
+  "rollback_20260826190000_jobqueue_vorbedingung_mandatsfilter.sql",
+  // Vorwaerts gerichtete Z22-Konvergenz (2026-08-29): ersetzt ausschliesslich dieselbe
+  // dreistellige, rein lesende Funktion. Keine Tabelle, Spalte, Policy oder K2.1-Struktur.
+  // Die Inhaltspruefung 8.8b bleibt der unabhaengige Riegel und muss auch diese beiden
+  // Dateien vollstaendig lesen.
+  "20260829123132_z22_mandatsfilter_zeilenkennung_korrigieren.sql",
+  "rollback_20260829123132_z22_mandatsfilter_zeilenkennung_korrigieren.sql"
       ]);
       // Die Allowlist ist KEINE Abschwaechung: 8.8b prueft unabhaengig und INHALTLICH,
       // dass keine Migration im Repository den Kontextpfad beruehrt — auch keine der

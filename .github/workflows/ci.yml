@@ -34,6 +34,26 @@ jobs:
     name: Syntax + Offline-Suiten
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # KURZLEBIGE CI-TESTDATENBANK (Korrektur 2026-08-28, Befund „falsches Grün").
+    # ---------------------------------------------------------------------------
+    # Nur für den Z22-Datenbanknachweis unten. Der Dienst lebt genau so lange wie
+    # dieser Job, enthält ausschließlich synthetische Zeilen und hat mit Production
+    # nichts zu tun: kein Supabase, kein Secret, keine echte Mandatskennung.
+    # Hauptversion 17 wie Production (17.6) — die Prüfung liest u. a. Zugriffswege.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: helmut
+          POSTGRES_PASSWORD: helmut
+          POSTGRES_DB: postgres
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U helmut"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -72,6 +92,53 @@ jobs:
         env:
           HELMUT_SOURCE_MODE: "off"
         run: node scripts/run-offline-tests.js
+
+      - name: psql bereitstellen (Voraussetzung des Datenbanknachweises)
+        # Das ubuntu-latest-Image bringt psql heute mit — aber GitHub darf den Umfang
+        # jederzeit ändern, und seit der Nachweis fail-closed ist, würde ein fehlendes
+        # Binary JEDEN Merge blockieren, ohne dass jemand Code angefasst hat. Die
+        # Voraussetzung wird deshalb ausgesprochen statt vorausgesetzt. Ist psql schon da,
+        # kostet der Schritt nichts.
+        run: |
+          if command -v psql >/dev/null 2>&1; then
+            echo "psql vorhanden: $(psql --version)"
+          else
+            echo "psql fehlt — installiere postgresql-client"
+            sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+            psql --version
+          fi
+
+      - name: Z22-Datenbanknachweis §1–§10 gegen echte PostgreSQL (fail-closed)
+        # WARUM EIN EIGENER SCHRITT: Der Nachweis braucht eine echte PostgreSQL. In
+        # run-offline-tests.js lief er nur als stiller SKIP mit (Exit 0 = PASS) und
+        # täuschte damit eine Abdeckung vor, die niemand erbracht hatte — genau darunter
+        # blieb die Abweichung zwischen SQL und Attrappe bei leerer `tenant_id`
+        # unentdeckt. Er steht deshalb in der DENYLIST des Runners und läuft hier.
+        #
+        # HELMUT_REQUIRE_PG=1 macht ihn fail-closed: fehlt der Dienst, ist das ein
+        # FEHLSCHLAG, kein Skip. Derselbe Mechanismus wie HELMUT_REQUIRE_BROWSER=1 im
+        # browser-smoke-Job. Der Schritt bleibt im Job "Syntax + Offline-Suiten", damit
+        # kein neuer Required Check entsteht (CLAUDE.md §6).
+        #
+        # Der Lauf geht über scripts/lokal.js (CLAUDE.md §6) — hier gibt es zwar keine
+        # Production-Kennungen (permissions: contents: read, keine secrets), aber die
+        # Regel gilt ausnahmslos, und der Starter erzwingt zusätzlich den Netzschutz.
+        # HELMUT_TEST_PG_HOST ist NUR in diesem Schritt gesetzt: job-weit würden sonst
+        # ~35 weitere Datenbanksuiten unbeabsichtigt scharf geschaltet.
+        #
+        # §11 (Rückfall gegen echtes PostgREST) ist hier NICHT abgedeckt: dieser Abschnitt
+        # braucht zusätzlich ein PostgREST-Binary, das auf dem Runner nicht vorhanden ist.
+        # Der Schrittname sagt deshalb ausdrücklich „§1–§10", und der Nachweis nennt den
+        # übersprungenen Abschnitt in seiner Schlusszeile. Wer §11 verbindlich will, setzt
+        # HELMUT_REQUIRE_POSTGREST=1 und stellt das Binary bereit.
+        env:
+          HELMUT_SOURCE_MODE: "off"
+          HELMUT_REQUIRE_PG: "1"
+          HELMUT_TEST_PG_HOST: "127.0.0.1"
+          HELMUT_TEST_PG_PORT: "5433"
+          HELMUT_TEST_PG_USER: "helmut"
+          PGPASSWORD: "helmut"
+        run: node scripts/lokal.js scripts/vorbedingung-mandatsfilter-datenbank-test.js
 
   browser-smoke:
     name: Browser-/Mobile-Smoke (Chromium)
