@@ -314,7 +314,7 @@ async function main() {
   if (!manifestPruefung.ok) fail(`Backup-Inventar unvollstaendig oder ungueltig: ${manifestPruefung.fehler.join(" | ")}`);
   const dateiPruefung = pruefeBackupDateien(backupDir, manifest, manifestPruefung.erwartet);
   if (dateiPruefung.length) fail(`Backup-Dateivertrag verletzt: ${dateiPruefung.map((f) => `${f.tabelle}: ${f.fehler}`).join(" | ")}`);
-  if (!localDir && !targetUrl) fail("Ziel fehlt: --local <verzeichnis> ODER --target-url <supabase-url> angeben. (Production-Restore macht dieses Skript bewusst NICHT.)");
+  if (!localDir && !targetUrl) fail("Ziel fehlt: --local <verzeichnis> angeben. (--target-url wird konstruktiv verweigert: Remote-REST-Restore ist gesperrt; Production-Restore macht dieses Skript bewusst NICHT.)");
   if (localDir && targetUrl) fail("Nur EIN Ziel: entweder --local oder --target-url.");
 
   // Vollstaendige konstruktive Sperre VOR Key-Lesen oder irgendeinem Fetch.

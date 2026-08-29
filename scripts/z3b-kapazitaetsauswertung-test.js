@@ -329,18 +329,18 @@ function main() {
   delete ohneKlasse.fachwegtage[1].aufrufe.buero;
   check("A8 Eine fehlende Arbeitsform im Fachwegtag wird abgelehnt",
     wirft(() => K.berechneKiDeckel({
-      tagesbedarfsbericht: ohneKlasse, azureBericht: azureBericht(), heuteUtc: HEUTE_UTC
+      tagesbedarfsbericht: ohneKlasse, azureBericht: azureBericht(), heuteUtc: HEUTE_UTC, jetztUtc: JETZT_UTC
     }), /Arbeitsformen/));
   const fremdeKlasse = tagesbedarfsBericht();
   fremdeKlasse.fachwegtage[0].aufrufe.fremd = 1;
   check("A9 Unbekannte Arbeitsformen im Fachwegtag werden abgelehnt",
     wirft(() => K.berechneKiDeckel({
-      tagesbedarfsbericht: fremdeKlasse, azureBericht: azureBericht(), heuteUtc: HEUTE_UTC
+      tagesbedarfsbericht: fremdeKlasse, azureBericht: azureBericht(), heuteUtc: HEUTE_UTC, jetztUtc: JETZT_UTC
     }), /Arbeitsformen/));
   check("A10 Ohne Preisquelle im vollstaendigen Azure Bericht gibt es keine Kostenrechnung",
     wirft(() => K.berechneKiDeckel({
       tagesbedarfsbericht: tagesbedarfsBericht(),
-      azureBericht: { ...azureBericht(), preisquelle: "" }, heuteUtc: HEUTE_UTC
+      azureBericht: { ...azureBericht(), preisquelle: "" }, heuteUtc: HEUTE_UTC, jetztUtc: JETZT_UTC
     }), /Preisquelle/));
   check("A11 Eine Reserve von 25 Prozent wird nicht als Zuschlag gerechnet",
     deckel.empfohlenerGesamtdeckel
@@ -364,7 +364,7 @@ function main() {
   const ohneZiel = tagesbedarfsBericht(); delete ohneZiel.zielMandate;
   check("A16 Ohne Zielstufe im Fachwegbeleg gibt es keine Deckelempfehlung",
     wirft(() => K.berechneKiDeckel({
-      tagesbedarfsbericht: ohneZiel, azureBericht: azureBericht(), heuteUtc: HEUTE_UTC
+      tagesbedarfsbericht: ohneZiel, azureBericht: azureBericht(), heuteUtc: HEUTE_UTC, jetztUtc: JETZT_UTC
     }), /fehlt.*zielMandate|Zielstufe/));
   check("A17 Fairnessanteil und 48 Stunden Frist sind an die echten Produktionskonstanten gebunden",
     K.KI_GLOBAL_ANTEIL_STANDARD === FAIR.GLOBAL_ANTEIL_STANDARD
@@ -388,23 +388,23 @@ function main() {
   const einTag = tagesbedarfsBericht(); einTag.fachwegtage.pop();
   check("A20 Ein einzelner Fachwegtag reicht nicht",
     wirft(() => K.berechneKiDeckel({
-      tagesbedarfsbericht: einTag, azureBericht: azureBericht(), heuteUtc: HEUTE_UTC
+      tagesbedarfsbericht: einTag, azureBericht: azureBericht(), heuteUtc: HEUTE_UTC, jetztUtc: JETZT_UTC
     }), /mindestens 2/));
   check("A21 Production, Synthetik und Hochrechnung sind im Bedarfsbeleg fail closed",
     [
       { production: true }, { synthetisch: false }, { hochrechnung: true }, { lokalerFachweg: false }
     ].every((aenderung) => wirft(() => K.berechneKiDeckel({
       tagesbedarfsbericht: { ...tagesbedarfsBericht(), ...aenderung },
-      azureBericht: azureBericht(), heuteUtc: HEUTE_UTC
+      azureBericht: azureBericht(), heuteUtc: HEUTE_UTC, jetztUtc: JETZT_UTC
     }), /formale lokale Fachwegzusammenfassung/)));
   const kurzerHash = tagesbedarfsBericht(); kurzerHash.fachwegBelegHash = "abc";
   check("A22 Fachwegbeleg Hash und Git SHA sind zwingend",
     wirft(() => K.berechneKiDeckel({
-      tagesbedarfsbericht: kurzerHash, azureBericht: azureBericht(), heuteUtc: HEUTE_UTC
+      tagesbedarfsbericht: kurzerHash, azureBericht: azureBericht(), heuteUtc: HEUTE_UTC, jetztUtc: JETZT_UTC
     }), /64 Zeichen/)
       && wirft(() => K.berechneKiDeckel({
         tagesbedarfsbericht: { ...tagesbedarfsBericht(), gitSha: "abc" },
-        azureBericht: azureBericht(), heuteUtc: HEUTE_UTC
+        azureBericht: azureBericht(), heuteUtc: HEUTE_UTC, jetztUtc: JETZT_UTC
       }), /Git SHA/));
   check("A23 Alte missverstaendliche Bedarfs und Kostenfeldnamen sind entfernt",
     !("gesamtAufrufeP95" in deckel)
@@ -417,7 +417,7 @@ function main() {
   const ohneBueroMessung = tagesbedarfsBericht(25, { understanding: 210, lage: 25, buero: 0 });
   check("A25 Jede Arbeitsform muss im Fenster mindestens einmal tatsaechlich gemessen sein",
     wirft(() => K.berechneKiDeckel({
-      tagesbedarfsbericht: ohneBueroMessung, azureBericht: azureBericht(), heuteUtc: HEUTE_UTC
+      tagesbedarfsbericht: ohneBueroMessung, azureBericht: azureBericht(), heuteUtc: HEUTE_UTC, jetztUtc: JETZT_UTC
     }), /Jede Arbeitsform/));
   check("A26 Die reine Rechnung weist den fehlenden nachgeprueften Fachweg Gesamtbericht explizit aus",
     deckel.beleggrenzen.fachwegGesamtberichtInternNachgeprueft === false

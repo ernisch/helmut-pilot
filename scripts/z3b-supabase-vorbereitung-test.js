@@ -89,7 +89,7 @@ check("F9 ist eine eigene Gruppe",
 check("Z22 ist eine eigene Gruppe und verwendet die lokal korrigierte Datei",
   MIGRATIONSGRUPPEN.z22.length === 1
     && MIGRATIONSGRUPPEN.z22[0].vorwaerts === "20260826190000_jobqueue_vorbedingung_mandatsfilter.sql"
-    && /nullif\(btrim\(p_mandat\), ''\) is null/.test(fs.readFileSync(
+    && /nullif\(btrim\(p_mandat, E' \\t\\n\\r\\f\\v'\), ''\) is null/.test(fs.readFileSync(
       path.join(ROOT, "supabase", "migrations", MIGRATIONSGRUPPEN.z22[0].vorwaerts), "utf8")));
 check("OP03, Rollbacks und Seeds sind nie Vorwaertsmigrationen",
   vorwaerts.every((datei) => datei !== "20260720_crawl_runs_relational.sql"

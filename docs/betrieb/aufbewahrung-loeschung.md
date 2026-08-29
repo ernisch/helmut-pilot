@@ -9,7 +9,7 @@
 |---|---|
 | **Bezug** | Audit R11 / P3-1 · DSGVO Art. 5 (1) e (Speicherbegrenzung), Art. 17 (Löschung) |
 | **Werkzeug** | `scripts/retention-dryrun.js` (Trockenlauf-Default), `lib/helmut/retention.js` (reiner Planer) |
-| **Tests** | `scripts/retention-test.js` (Trockenlauf, Idempotenz, referenzielle Integrität) |
+| **Tests** | `scripts/retention-test.js` (Trockenlauf, Idempotenz, referenzielle Integrität) · `scripts/retention-storage-test.js` (Pagination fail-closed, konstruktive Executor-Sperre: 0 DELETE auch mit Flag) |
 | **Freigabe** | Fristen + künftiger atomarer Executor = Gründer + Rechtsfreigabe; das Flag allein schaltet keine Löschung frei |
 
 ## 1. Datenklassen-Matrix
@@ -27,7 +27,9 @@
 | Kosten/Audit | Auth-Blob `llmUsage` | nein | **365 Tage** | Ring-gedeckelt (≤5000) |
 | Nutzer-Ausgabe | `briefings` (payload) | **JA (politisches Profil)** | **90 Tage** | nutzergebunden löschbar (`deleteProfileDataV3`) |
 
-Die Matrix ist maschinenlesbar in `lib/helmut/retention.js` (`DATA_CLASSES`) und wird
+Die Matrix ist maschinenlesbar in `lib/helmut/retention.js` (`DATA_CLASSES`) — sie führt
+inzwischen mehr Klassen als die Tabelle oben (u. a. Warteschlangen-, Lease-, CAS- und
+Anbieterklassen als reine Freigabematrix ohne Aktivierung); maßgeblich ist der Code — und wird
 vom Planer + Test benutzt.
 
 ## 2. Begründete technische Empfehlung

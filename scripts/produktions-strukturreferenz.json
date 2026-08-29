@@ -12,10 +12,10 @@
   },
   "spaltenKatalog": null,
   "migrationsmanifest": {
-    "id": "production-migrations-2026-08-28-20260823063208",
-    "belegtAm": "2026-08-28T16:44:08.832Z",
-    "letzteVersion": "20260823063208",
-    "historyPruefsumme": "94364d903042ca13f9f3130e4773760368184d3086064a48cfb850db2271f9f7",
+    "id": "production-migrations-2026-08-29-20260829175749",
+    "belegtAm": "2026-08-29T19:44:00.000Z",
+    "letzteVersion": "20260829175749",
+    "historyPruefsumme": "f1f0a041543e903acbdb6913995c9ee8e58b88d5033d7cc7759d1738f8ca124e",
     "productionHistory": [
       ["20260712150418", "tenant_rls_policies"],
       ["20260712233227", "mandate_profile_fields"],
@@ -49,7 +49,9 @@
       ["20260815164026", "20260814090100_anbieter_steuerung"],
       ["20260815164241", "20260814180000_verstehen_cas"],
       ["20260823063140", "20260823043633_verstehen_aufgeben_erneut_freigegeben"],
-      ["20260823063208", "20260823043633_verstehen_aufgeben_erneut_freigegeben"]
+      ["20260823063208", "20260823043633_verstehen_aufgeben_erneut_freigegeben"],
+      ["20260829175642", "20260826190000_jobqueue_vorbedingung_mandatsfilter"],
+      ["20260829175749", "20260829123132_z22_mandatsfilter_zeilenkennung_korrigieren"]
     ],
     "repoStrukturMigrationen": [
       "20260711_presale_hardening.sql",
@@ -80,18 +82,20 @@
       "20260814090000_queue_verbraucher.sql",
       "20260814090100_anbieter_steuerung.sql",
       "20260814180000_verstehen_cas.sql",
-      "20260823043633_verstehen_aufgeben_erneut_freigegeben.sql"
+      "20260823043633_verstehen_aufgeben_erneut_freigegeben.sql",
+      "20260826190000_jobqueue_vorbedingung_mandatsfilter.sql",
+      "20260829123132_z22_mandatsfilter_zeilenkennung_korrigieren.sql"
     ],
     "nichtAngewendet": [
       "20260720_crawl_runs_relational.sql",
-      "20260825101500_jobqueue_ankunftskennzahl.sql",
-      "20260826190000_jobqueue_vorbedingung_mandatsfilter.sql"
+      "20260825101500_jobqueue_ankunftskennzahl.sql"
     ],
-    "repoSqlPruefsumme": "4310577988d8edcc74acac618c1c1780feb3ff5fa90e7702ce6ca559ef1a9f4c",
+    "repoSqlPruefsumme": "2a962c83a9ba1f1acce42e704e35e0f4ce087717931b51df4f30f1e5e6071591",
     "hinweise": [
       "Seeds in productionHistory sind Daten- und keine Restore-Strukturmigrationen.",
       "20260711_presale_hardening und 20260715_dedup_findings sind in der History nicht sauber benannt; ihre Strukturen sind durch Trigger beziehungsweise document_findings im aktuellen Katalog belegt.",
-      "20260823043633 wurde in Production zweimal SQL-wirkungsgleich erfasst; der lokale Strukturaufbau wendet die Repo-Datei genau einmal an."
+      "20260823043633 wurde in Production zweimal SQL-wirkungsgleich erfasst; der lokale Strukturaufbau wendet die Repo-Datei genau einmal an.",
+      "Nachfuehrung 29.08.2026: Z22 (20260826190000) und die Vorwaertskorrektur (20260829123132) sind mit Betreiberfreigabe in Production angewendet (Buchungen 20260829175642 und 20260829175749, Historie 35 Eintraege, rein lesend bestaetigt 29.08. 19:44 UTC). Offen bleiben nur 20260720 (crawl_runs) und F9 (20260825101500)."
     ]
   },
   "tabellen": [

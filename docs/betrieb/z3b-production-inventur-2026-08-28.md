@@ -1,5 +1,13 @@
 # Z3b Production Inventur fuer den Aufnahmebeweis bis 500
 
+> **Stand-Nachtrag 29.08.2026:** Diese Inventur ist ein datierter 28.08.-Schnappschuss.
+> Seitdem überholt: **Z22 samt Vorwärtskorrektur ist seit dem 29.08. in Production
+> angewendet** (Buchungen `20260829175642`/`20260829175749`, Historie jetzt 35 Einträge) —
+> „F9 und `crawl_runs` nicht angewendet" gilt weiter, „Z22 nicht angewendet" nicht mehr.
+> Aggregierte Zähler vom 29.08. (rein lesend): 3.330 Aufträge (3.122 erledigt, 208 wartend,
+> 0 laufend, 0 fehlgeschlagen), CAS 653 fertig · 1 unbekannt · 1 aufgegeben · 1 offen;
+> das natürliche Fünfertor bleibt rot.
+
 ## Zweck und Beweisgrenze
 
 Diese Inventur wurde am 28.08.2026 ausschliesslich lesend gegen das bekannte

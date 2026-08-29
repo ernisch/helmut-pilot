@@ -1,5 +1,17 @@
 # Z3b Mess- und Aktivierungsplan bis 500 Mandate vom 27.08.2026
 
+> **Stand-Nachtrag 29.08.2026** (der Plan darunter bleibt als datierter Beleg unverändert):
+> PR #272 und #273 sind **gemergt**; `main` = `bb0577a9`. **Z22 ist samt Vorwärtskorrektur seit
+> dem 29.08. mit Betreiberfreigabe in Production angewendet** (Buchungen `20260829175642` und
+> `20260829175749`) — die Vollzugsschritte 3–5 der Kette unten sind damit vollzogen; Z22 nie
+> erneut anwenden. F9 bleibt nicht angewendet. Die Stapel-PRs #274–#277 wurden am 29.08. per
+> normalen Merge-Commits auf den aktuellen `main` nachgeführt (#274 hängt an Basis `main`);
+> die unten genannten Köpfe/CI-Läufe bezeichnen den 27./28.08.-Stand. Aggregierter CAS-Stand
+> 29.08.: 653 fertig · 1 unbekannt · 1 aufgegeben · 1 offen. **Achtung Beobachtungsfenster:**
+> die planmäßigen Slotdauern vom 29.08. (Crawl 230 s, Pipeline bis 261 s) überschreiten die
+> p95-Grenze von 217,5 s bereits — ein grünes Fenster kann mit dem heutigen Slotverhalten
+> nicht beginnen; das ist vor dem Einfrieren zu klären.
+
 ## Ziel und heutiger Stand
 
 Das strategische Ziel ist **500 Mandate**. Es ist nicht zu spaet, darauf hinzuarbeiten. Der

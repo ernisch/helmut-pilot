@@ -323,7 +323,10 @@ function vorwaertsMigrationen(repoRoot) {
 }
 
 // Bindet den Restore an den am 2026-08-28 rein lesend erhobenen Production-
-// Katalog und die explizit belegte Supabase-Migrationshistorie. Der allgemeine
+// Katalog und die explizit belegte Supabase-Migrationshistorie (Migrations-
+// manifest am 2026-08-29 nachgefuehrt: Z22 samt Vorwaertskorrektur ist seit dem
+// 29.08. mit Betreiberfreigabe in Production angewendet, Buchungen
+// 20260829175642 + 20260829175749; offen bleiben nur crawl_runs und F9). Der allgemeine
 // CREATE-TABLE-Scan allein kann weder unversionierte Production-Tabellen noch
 // den tatsaechlich angewendeten Stand beweisen; deshalb muessen Katalogmenge,
 // angewendete Repo-Dateien, ausgeschlossene Vorwaertsdateien und beide
@@ -349,9 +352,9 @@ function pruefeProduktionsMigrationsmanifest(
   if (!manifest.belegtAm || !Number.isFinite(Date.parse(manifest.belegtAm))) {
     fehler.push("Migrationsmanifest hat keinen gueltigen Belegzeitpunkt");
   }
-  if (!Array.isArray(history) || history.length !== 33
+  if (!Array.isArray(history) || history.length !== 35
       || history.some((x) => !Array.isArray(x) || x.length !== 2 || !/^\d{14}$/.test(String(x[0])) || !String(x[1] || "").trim())) {
-    fehler.push("Production-Migrationshistorie ist nicht der belegte 33-Versionen-Vertrag");
+    fehler.push("Production-Migrationshistorie ist nicht der belegte 35-Versionen-Vertrag");
   } else {
     const versionen = history.map((x) => x[0]);
     if (new Set(versionen).size !== versionen.length) fehler.push("Production-Migrationshistorie enthaelt doppelte Versionen");
@@ -359,21 +362,20 @@ function pruefeProduktionsMigrationsmanifest(
     const historyPruefsumme = sha256(JSON.stringify(history));
     if (historyPruefsumme !== manifest.historyPruefsumme) fehler.push("Production-Migrationshistorie passt nicht zu historyPruefsumme");
   }
-  if (!Array.isArray(angewendet) || angewendet.length !== 29 || new Set(angewendet).size !== 29) {
-    fehler.push("Repo-Strukturmigrationsmenge ist nicht der belegte 29-Dateien-Vertrag");
+  if (!Array.isArray(angewendet) || angewendet.length !== 31 || new Set(angewendet).size !== 31) {
+    fehler.push("Repo-Strukturmigrationsmenge ist nicht der belegte 31-Dateien-Vertrag");
   } else if (JSON.stringify(angewendet) !== JSON.stringify(angewendet.slice().sort())) {
     fehler.push("Repo-Strukturmigrationen sind nicht in der belegten chronologischen Dateireihenfolge");
   }
-  if (!Array.isArray(nichtAngewendet) || nichtAngewendet.length !== 3 || new Set(nichtAngewendet).size !== 3) {
-    fehler.push("Menge nicht angewendeter Vorwaertsmigrationen ist nicht der belegte 3-Dateien-Vertrag");
+  if (!Array.isArray(nichtAngewendet) || nichtAngewendet.length !== 2 || new Set(nichtAngewendet).size !== 2) {
+    fehler.push("Menge nicht angewendeter Vorwaertsmigrationen ist nicht der belegte 2-Dateien-Vertrag");
   } else {
     const zwingendAusgeschlossen = [
       "20260720_crawl_runs_relational.sql",
-      "20260825101500_jobqueue_ankunftskennzahl.sql",
-      "20260826190000_jobqueue_vorbedingung_mandatsfilter.sql"
+      "20260825101500_jobqueue_ankunftskennzahl.sql"
     ];
     if (JSON.stringify(nichtAngewendet) !== JSON.stringify(zwingendAusgeschlossen)) {
-      fehler.push("nichtAngewendet ist nicht exakt crawl_runs/F9/Z22 in belegter Reihenfolge");
+      fehler.push("nichtAngewendet ist nicht exakt crawl_runs/F9 in belegter Reihenfolge");
     }
   }
 

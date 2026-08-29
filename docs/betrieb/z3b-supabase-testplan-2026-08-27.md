@@ -1,5 +1,12 @@
 # Z3b Supabase Testplan vom 27.08.2026
 
+> **Stand-Nachtrag 29.08.2026:** Im isolierten Testprojekt ist zusätzlich die
+> Z22-Vorwärtskorrektur angewendet (Repository-Datei `20260829123132` unter Buchung
+> `20260829135455`, nach ausdrücklicher Freigabe; 500 Kennungen geprüft, 0 Abweichungen).
+> In **Production** ist Z22 samt Korrektur seit dem 29.08. angewendet (Buchungen
+> `20260829175642`/`20260829175749`); die Aussage unten, die freigegebene Kette schließe
+> Z22 aus, beschreibt den 27.08.-Stand. Production bleibt für diesen Testplan gesperrt.
+
 ## Stand
 
 Das isolierte Projekt `Helmut Z3b Test` mit der Kennung `ffzaxdbatoamsovncrym` ist aktiv und

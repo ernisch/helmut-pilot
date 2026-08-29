@@ -317,14 +317,13 @@ function baueFixtureBackup(ueberschreibe) {
     JSON.stringify(refTabellen) === JSON.stringify(exportTabellen)
       && referenz.katalogBeleg.publicTabellen === 51
       && referenz.katalogBeleg.rlsNichtAktiv.length === 0);
-  check("9 · expliziter Production-Migrationsvertrag = 33 History-Eintraege, 29 Repo-Dateien, exakt crawl_runs/F9/Z22 offen",
+  check("9 · expliziter Production-Migrationsvertrag = 35 History-Eintraege, 31 Repo-Dateien, exakt crawl_runs/F9 offen (Z22 seit 29.08. angewendet)",
     inventar.production.ok
-      && inventar.production.manifest.productionHistory.length === 33
-      && inventar.production.angewendet.length === 29
+      && inventar.production.manifest.productionHistory.length === 35
+      && inventar.production.angewendet.length === 31
       && JSON.stringify(inventar.production.nichtAngewendet) === JSON.stringify([
         "20260720_crawl_runs_relational.sql",
-        "20260825101500_jobqueue_ankunftskennzahl.sql",
-        "20260826190000_jobqueue_vorbedingung_mandatsfilter.sql"
+        "20260825101500_jobqueue_ankunftskennzahl.sql"
       ]));
   check("9 · RESTORE_ORDER deckt alle Export-Tabellen",
     exportTabellen.every((t) => RESTORE_ORDER.includes(t)) && RESTORE_ORDER.length === exportTabellen.length,
@@ -391,7 +390,7 @@ function baueFixtureBackup(ueberschreibe) {
     r.migrationsmanifest.repoStrukturMigrationen.sort();
   });
   check("9 · Gegenbeispiel: F9 darf nicht als Production-angewendet etikettiert werden",
-    !f9Falsch.ok && f9Falsch.fehler.some((f) => /3-Dateien|crawl_runs\/F9\/Z22|29-Dateien/.test(f)));
+    !f9Falsch.ok && f9Falsch.fehler.some((f) => /2-Dateien|crawl_runs\/F9|31-Dateien/.test(f)));
   const historyManipuliert = mutiereReferenz((r) => { r.migrationsmanifest.productionHistory[0][1] = "manipuliert"; });
   check("9 · Gegenbeispiel: manipulierte Production-History verletzt ihre Pruefsumme",
     !historyManipuliert.ok && historyManipuliert.fehler.some((f) => /historyPruefsumme/.test(f)));
