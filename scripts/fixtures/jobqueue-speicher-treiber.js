@@ -239,7 +239,7 @@ function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
   // NEU (Sprint V3-Anbindung): dieselben drei Faehigkeiten wie die Datenbank —
   // Vorbedingungen zaehlen und einen Auftrag EHRLICH zurueckstellen.
   // Der Vertragstest prueft die Gleichheit von Attrappe und echter Datenbank.
-  async function offeneVorbedingungen({ fenster = null, typen = null } = {}) {
+  async function offeneVorbedingungen({ fenster = null, typen = null, mandat = null } = {}) {
     // Befund O3: `helmut_jobs_offen` nimmt seit der Korrektur eine LISTE von Fenstern
     // (`j.freshness_window = any(p_fenster)`), weil geteilte Abrufe in 8-h-Fenstern liegen,
     // mandatsbezogene Arbeit aber in einem 24-h-Fenster. Die Attrappe MUSS dasselbe tun —
@@ -257,6 +257,36 @@ function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
       ? null
       : new Set((Array.isArray(fenster) ? fenster : [fenster]).map(String));
     const typMenge = (typen == null || !typen.length) ? null : new Set(typen);
+    // MANDATSFILTER (Befund Z22, Migration 20260826190000) — WORTGLEICH zur Datenbank:
+    //   nullif(btrim(p_mandat,     E' \t\n\r\f\v'), '') is null
+    //   or nullif(btrim(j.tenant_id, E' \t\n\r\f\v'), '') is null
+    //   or btrim(j.tenant_id, E' \t\n\r\f\v') = btrim(p_mandat, E' \t\n\r\f\v')
+    // Ohne Kennung wird global gezaehlt (Verhalten vor Z22); mit Kennung zaehlt globale
+    // Arbeit plus die Arbeit genau dieses Mandats. Eine Attrappe, die hier ENGER filtert
+    // als die Datenbank, meldete zu wenige Vorbedingungen — genau das falsche Gruen, das
+    // der Vertragstest ausschliessen soll.
+    //
+    // BEIDE SEITEN WERDEN GETRIMMT (Korrektur 2026-08-28). Vorher pruefte die Attrappe
+    // `z.tenant_id !== ""`, die Datenbank aber `j.tenant_id is null` — eine Zeile mit
+    // tenant_id = "" zaehlte in der Attrappe global, in SQL gar nicht. Diese Abweichung
+    // blieb unentdeckt, weil der Datenbanknachweis ohne PostgreSQL still uebersprungen
+    // wurde. Massgeblich ist der sichere Vertrag: keine brauchbare Kennung auf der Zeile
+    // (null, leer, nur Leerzeichen) = globale Arbeit, auf die JEDES Mandat wartet.
+    // WELCHE ZEICHEN GETRIMMT WERDEN, STEHT AUSDRUECKLICH DA — und zwar auf beiden Seiten
+    // dieselben. `String.prototype.trim()` und PostgreSQLs `btrim(x)` sind NICHT dieselbe
+    // Zeichenmenge: `btrim` mit einem Argument entfernt nur U+0020, `trim()` jeden
+    // Weissraum. Bei einer `tenant_id` aus einem Tabulator waeren Attrappe und Datenbank
+    // dadurch erneut uneins — die Attrappe zaehlte global, SQL gar nicht, und SQL laege
+    // wieder auf der unsicheren Seite. Deshalb hier kein `trim()`, sondern genau die
+    // Menge, die auch in `btrim(…, E' \t\n\r\f\v')` der Migration steht.
+    const WEISSRAUM = /^[ \t\n\r\f\v]+|[ \t\n\r\f\v]+$/g;
+    const kennungVon = (roh) => {
+      if (typeof roh !== "string") return null;
+      const geschnitten = roh.replace(WEISSRAUM, "");
+      return geschnitten === "" ? null : geschnitten;
+    };
+    const mandatsKennung = kennungVon(mandat);
+    const zeilenKennung = kennungVon;
     let wartend = 0;
     let laufend = 0;
     let fehlgeschlagen = 0;
@@ -264,6 +294,8 @@ function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
     for (const z of zeilen.values()) {
       if (fensterMenge && !fensterMenge.has(z.freshness_window)) continue;
       if (typMenge && !typMenge.has(z.job_type)) continue;
+      const zeileMandat = zeilenKennung(z.tenant_id);
+      if (mandatsKennung && zeileMandat && zeileMandat !== mandatsKennung) continue;
       if (z.status === "wartend") wartend += 1;
       else if (z.status === "laeuft") laufend += 1;
       else if (z.status === "fehlgeschlagen") fehlgeschlagen += 1;
@@ -275,7 +307,8 @@ function erzeugeSpeicherWarteschlange({ now = () => Date.now() } = {}) {
       wartend,
       laufend,
       fehlgeschlagen,
-      erledigt
+      erledigt,
+      mandatsfilter: Boolean(mandatsKennung)
     };
   }
 

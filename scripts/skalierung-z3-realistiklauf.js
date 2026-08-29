@@ -371,14 +371,23 @@ function leseVergleich(mandate) {
 //      dass im Fenster noch Abrufe laufen. Sie ist ein Mengengeruest, kein Schuldbeweis.
 //   2. `alleinSlots` — Slots, an deren Ende die EINZIGE noch offene vorgelagerte Arbeit dem
 //      Fehlermandat gehoert, waehrend nachgelagerte Arbeit GESUNDER Mandate offen ist und im
-//      Slot mit `vorbedingung-offen` zurueckgestellt wurde. Nur DAS ist ein Nachweis der
-//      Kopplung: es gibt dann keinen anderen Grund mehr, auf den die gesunden Auftraege
-//      warten koennten.
-// Die Zuordnung selbst (welcher gesunde Auftrag auf welches Fenster wartet) wird hier
-// bewusst NICHT nachgerechnet — sie steckt in `scalable-pipeline.enthalteneFenster`, und
-// eine zweite, in SQL nachgebaute Fensterlogik waere ein eigener Fehlerherd. Den
-// unabhaengigen Gegenbeweis liefert stattdessen der KONTROLLLAUF ohne Fehlermandat
-// (`HELMUT_Z3_FEHLERMANDAT=aus`, Vergleich ueber `HELMUT_Z3_VERGLEICH`).
+//      Slot mit `vorbedingung-offen` zurueckgestellt wurde.
+//
+// WICHTIGE EINSCHRAENKUNG VON (2), seit die Vorbedingungszaehlung einen Mandatsfilter hat
+// (Migration 20260826190000): dieser Zaehler war der Kopplungsnachweis, SOLANGE die Zaehlung
+// mandatsblind war. Jetzt ist er es NICHT mehr. Er verbindet zwei Dinge, die auseinander
+// fallen koennen: Zurueckstellungen IRGENDWANN im Slot (sie koennen von geteilten Abrufen
+// stammen, die zu diesem Zeitpunkt noch liefen) und einen Zustand AM SLOTENDE. Ein gesunder
+// Auftrag, der am Slotende offen ist, kann laengst entkoppelt und schlicht noch nicht wieder
+// faellig sein. Der Zaehler bleibt als Rohsignal im Bericht, traegt aber kein Kriterium mehr.
+//
+// Den Nachweis fuehren jetzt Z22a und Z22: Z22a fragt die ECHTE Produktionsfunktion je Slot
+// zweimal (ohne Mandat = alte Sicht, mit gesundem Mandat = neue Sicht) und prueft das
+// Ergebnis gegen die Rohtabelle; Z22 stellt das Ergebnis dem KONTROLLLAUF ohne Fehlermandat
+// gegenueber (`HELMUT_Z3_FEHLERMANDAT=aus`, Vergleich ueber `HELMUT_Z3_VERGLEICH`). Die
+// Fensterzuordnung selbst wird weiterhin bewusst NICHT in SQL nachgebaut — sie steckt in
+// `scalable-pipeline.enthalteneFenster`, und eine zweite Fensterlogik waere ein eigener
+// Fehlerherd.
 function messwerteKopplung(slotBilanzen, rueckstauJeSlot) {
   let alleinSlots = 0, zurueckstellungen = 0;
   for (const b of slotBilanzen) {
@@ -535,6 +544,36 @@ async function fuehreStufeAus(mandate, umgebung) {
       fehlerMandat ? ` and coalesce(tenant_id,'') <> '${fehlerMandat}'` : "");
     const nachgelagertOffenGesund = offenTyp(NACH,
       fehlerMandat ? ` and coalesce(tenant_id,'') <> '${fehlerMandat}'` : "");
+    // ── DIREKTE GEGENPROBE DES MANDATSFILTERS (Befund Z22, Migration 20260826190000) ──────
+    // Gefragt wird die ECHTE Produktionsfunktion, zweimal, auf demselben Datenstand:
+    //   * ohne `p_mandat` -> die ALTE Sicht (alle Mandate)
+    //   * mit `p_mandat` eines GESUNDEN Mandats -> die NEUE Sicht (global + eigen)
+    // Die Differenz ist genau die Arbeit, auf die ein gesundes Mandat NICHT mehr wartet.
+    // `sichtGesund + vorgelagertOffenFehler === sichtGlobal` waere zu streng (auch andere
+    // gesunde Mandate fallen heraus); geprueft wird deshalb die Zusage selbst: die offene
+    // vorgelagerte Arbeit DES FEHLERMANDATS darf in der Sicht eines gesunden Mandats
+    // vollstaendig fehlen. Das ist der Kern von Z22 und direkt messbar.
+    const gesundesMandat = fehlerMandat
+      ? (erzeugeMandate(mandate).map((x) => x.id).find((m) => m !== fehlerMandat) || null)
+      : null;
+    const zaehleUeberFunktion = (mandatsArg) => Number(psql(
+      "select offen from public.helmut_jobs_offen(null, array['source_fetch','document_understanding']"
+      + `${mandatsArg === null ? "" : `, '${mandatsArg}'`})`));
+    let sichtGlobal = null;
+    let sichtGesund = null;
+    let erwartetGesund = null;
+    if (gesundesMandat) {
+      sichtGlobal = zaehleUeberFunktion(null);
+      sichtGesund = zaehleUeberFunktion(gesundesMandat);
+      // GEGENPROBE GEGEN DIE ROHTABELLE, nicht gegen die Zusage der Funktion: was die
+      // Funktion fuer das gesunde Mandat meldet, muss Zeile fuer Zeile das sein, was in
+      // `helmut_jobs` global-oder-eigen offen ist. Weicht das ab, ist der Filter falsch —
+      // und zwar unabhaengig davon, was der Kommentar in der Migration behauptet.
+      erwartetGesund = Number(psql(
+        "select count(*) from public.helmut_jobs where status in ('wartend','laeuft')"
+        + ` and job_type in ${VOR}`
+        + ` and (tenant_id is null or tenant_id = '${gesundesMandat}')`));
+    }
     // VERALTETE ARBEIT — die eigentliche Kapazitaetsfrage. „Rueckstau" heisst NICHT „am
     // Slotende steht nichts mehr offen": der letzte Slot eines Tages stellt regelmaessig
     // Projektionen und Briefings zurueck, die der erste Slot des naechsten Tages aufnimmt —
@@ -553,7 +592,8 @@ async function fuehreStufeAus(mandate, umgebung) {
     rueckstauJeSlot.push({
       slot: nr, tag: slotTag, offen: restOffen, gesundOffen,
       vorgelagertOffenFehler, vorgelagertOffenAndere, nachgelagertOffenGesund,
-      veraltetOffen, veraltetOffenGesund
+      veraltetOffen, veraltetOffenGesund,
+      sichtGlobal, sichtGesund, erwartetGesund, gesundesMandat
     });
     console.log(`  Slot ${nr} (${new Date(cronZeitFuerSlot(nr)).toISOString().slice(0, 16)}Z):`
       + ` ${ergebnis.bilanz.dauerMs} ms · geplant ${ergebnis.bilanz.plan.neu}`
@@ -756,57 +796,78 @@ async function fuehreStufeAus(mandate, umgebung) {
   }
 
   // ── Z22 · Wird ein gesundes Mandat durch das kranke aufgehalten? ────────────────────────
-  // STRUKTUR (belegte Tatsache, aus dem Code gelesen, nicht aus diesem Lauf): die
-  // Vorbedingungspruefung `helmut_jobs_offen` (Migration 20260808_jobqueue_abhaengigkeiten)
-  // filtert ueber AKTUALITAETSFENSTER und TYP — sie hat KEINEN Mandatsfilter. Solange also
-  // irgendein `source_fetch` im Fenster offen ist, wird JEDE Projektion und JEDES Briefing
-  // zurueckgestellt, auch die voellig gesunder Mandate.
-  // WIRKUNG (das, was dieser Lauf messen kann und was er NICHT messen kann): eine
-  // Zurueckstellung mit Grund `vorbedingung-offen` ist fuer sich genommen die Reihenfolge-
-  // zusage bei der Arbeit und KEIN Befund. Ein Nachweis der Kopplung ist erst ein Slot, an
-  // dessen Ende die einzige offene vorgelagerte Arbeit dem Fehlermandat gehoert, waehrend
-  // nachgelagerte Arbeit gesunder Mandate offen bleibt.
+  // STRUKTUR (belegte Tatsache, aus dem Code gelesen): `helmut_jobs_offen` filtert seit der
+  // Migration 20260826190000 ueber AKTUALITAETSFENSTER, TYP **und optional das Mandat**.
+  // Mit Mandatsfilter zaehlt sie GLOBALE Arbeit (`tenant_id is null` — geteilte Abrufe und
+  // Verstehen) plus die Arbeit GENAU DIESES Mandats. Fremde mandatsgebundene Arbeit — die
+  // persoenliche Namenssuche eines anderen Mandats, dessen Projektion — zaehlt nicht mehr.
+  // Vorher war die Zaehlung mandatsblind; das war der Befund Z22 (PR #272 §7).
+  //
+  // WIE HIER GEMESSEN WIRD — in drei Stufen, von der schwaechsten zur staerksten Aussage:
+  //   (a) Zurueckstellungen mit Grund `vorbedingung-offen`: ein MENGENGERUEST, kein Befund.
+  //       Sie entstehen auch voellig gesund, solange geteilte Abrufe laufen.
+  //   (b) Die Sicht der Produktionsfunktion, je Slot zweimal gefragt: einmal ohne Mandat
+  //       (die alte, mandatsblinde Sicht) und einmal mit einem GESUNDEN Mandat. Die
+  //       Differenz ist die Arbeit, auf die ein gesundes Mandat nicht mehr wartet.
+  //       Gegengeprueft gegen die Rohtabelle — nicht gegen die Zusage der Funktion.
+  //   (c) Der KONTROLLLAUF ohne Fehlermandat: liegengebliebene Arbeit gesunder Mandate.
+  // Erst (b) und (c) zusammen tragen eine Aussage.
   const VERGLEICH = leseVergleich(mandate);
   const gekoppelteSlots = messwerteKopplung(slotBilanzen, rueckstauJeSlot);
-  const kopplungText = `${gekoppelteSlots.alleinSlots} Slot(e), in denen NUR noch das `
-    + `Fehlermandat vorgelagert offen war und gesunde Mandate nachgelagert warteten · `
-    + `${gekoppelteSlots.zurueckstellungen} Zurueckstellungen mit Grund \`vorbedingung-offen\` `
-    + "(fuer sich genommen normal: Reihenfolgezusage) · Struktur: helmut_jobs_offen hat "
-    + "keinen Mandatsfilter (aus dem Code belegt, nicht aus diesem Lauf)";
+  const mitSicht = rueckstauJeSlot.filter((r) => r.sichtGesund != null);
+  const filterVerletzt = mitSicht.filter((r) => r.sichtGesund !== r.erwartetGesund);
+  const befreitGesamt = mitSicht.reduce((n, r) => n + Math.max(0, r.sichtGlobal - r.sichtGesund), 0);
+  const slotsMitBefreiung = mitSicht.filter((r) => r.sichtGlobal > r.sichtGesund).length;
+  const kopplungText = `${gekoppelteSlots.zurueckstellungen} Zurueckstellungen mit Grund `
+    + "`vorbedingung-offen` (Mengengeruest, fuer sich genommen normal: Reihenfolgezusage)";
+
   if (!fehlerMandat) {
     console.log(`  Z22/${P_} nicht anwendbar: ohne Fehlermandat gibt es nichts zu koppeln`
       + ` — ${gekoppelteSlots.zurueckstellungen} Zurueckstellungen \`vorbedingung-offen\`.`);
-  } else if (VERGLEICH.gefunden) {
-    // DER EIGENTLICHE NACHWEIS: derselbe Lauf ohne Fehlermandat. Was sich zwischen beiden
-    // Laeufen unterscheidet, kann NUR am Fehlermandat liegen — Mandatszahl, Quellen, Slots,
-    // Zeitpunkte und Ursprungsinhalt sind identisch.
-    const veraltetHier = letztesTagesende ? letztesTagesende.veraltetOffenGesund : null;
-    const mehrVeraltet = veraltetHier == null || VERGLEICH.veraltetOffenGesund == null
-      ? null : veraltetHier - VERGLEICH.veraltetOffenGesund;
-    const mehrZurueck = gekoppelteSlots.zurueckstellungen - VERGLEICH.zurueckstellungen;
-    const vz = (n) => `${n >= 0 ? "+" : ""}${n}`;
-    befund(`Z22/${P_}`, "Kein gesundes Mandat wird durch das fehlerhafte Mandat aufgehalten"
-      + " (gemessen gegen den Kontrolllauf ohne Fehlermandat)",
-      gekoppelteSlots.alleinSlots === 0 && (mehrVeraltet == null || mehrVeraltet <= 0),
-      `${kopplungText} · Vergleich mit/ohne Fehlermandat: liegengebliebene Arbeit gesunder`
-      + ` Mandate ${veraltetHier == null ? "?" : veraltetHier} gegen`
-      + ` ${VERGLEICH.veraltetOffenGesund == null ? "?" : VERGLEICH.veraltetOffenGesund}`
-      + `${mehrVeraltet == null ? "" : ` (${vz(mehrVeraltet)})`}`
-      + ` · Zurueckstellungen ${gekoppelteSlots.zurueckstellungen} gegen`
-      + ` ${VERGLEICH.zurueckstellungen} (${vz(mehrZurueck)})`);
   } else {
-    // OHNE KONTROLLLAUF WIRD HIER NICHTS ENTSCHIEDEN. Weder gruen noch rot: der Lauf hat die
-    // Zahlen, aber nicht den Gegenbeweis. Als offener Befund gefuehrt, damit die Stufe nicht
-    // als vollstaendig bestanden gilt, solange die Frage offen ist.
-    befundOffen += 1;
-    console.log(`  BEFUND OFFEN          Z22/${P_} Kopplung an das fehlerhafte Mandat —`
-      + " in einem EINZELLAUF nicht entscheidbar; es fehlt der Kontrolllauf"
-      + " (HELMUT_Z3_FEHLERMANDAT=aus, danach HELMUT_Z3_VERGLEICH)");
-    console.log(`      ${kopplungText}`);
-    kriterien.push({
-      id: `Z22/${P_}`, name: "Kopplung an das fehlerhafte Mandat", ok: false,
-      detail: `nicht entscheidbar ohne Kontrolllauf · ${kopplungText}`, art: "kapazitaet"
-    });
+    // (b) DIE DIREKTE GEGENPROBE — sie braucht keinen Kontrolllauf und ist die staerkste
+    // Einzelaussage dieses Laufs: die Produktionsfunktion selbst, an echten Daten, je Slot.
+    check(`Z22a/${P_}`, "Der Mandatsfilter der Vorbedingungszaehlung stimmt mit der Ablage ueberein",
+      mitSicht.length > 0 && filterVerletzt.length === 0,
+      mitSicht.length === 0
+        ? "keine Slotmessung vorhanden"
+        : `${mitSicht.length} Slots geprueft · ${filterVerletzt.length} Abweichungen`
+          + (filterVerletzt.length
+            ? ` (z. B. Slot ${filterVerletzt[0].slot}: Funktion ${filterVerletzt[0].sichtGesund},`
+              + ` Ablage ${filterVerletzt[0].erwartetGesund})`
+            : ""));
+
+    if (VERGLEICH.gefunden) {
+      // (c) DER KONTROLLLAUF: derselbe Lauf ohne Fehlermandat. Was sich zwischen beiden
+      // Laeufen unterscheidet, kann NUR am Fehlermandat liegen — Mandatszahl, Quellen,
+      // Slots, Zeitpunkte und Ursprungsinhalt sind identisch.
+      const veraltetHier = letztesTagesende ? letztesTagesende.veraltetOffenGesund : null;
+      const mehrVeraltet = veraltetHier == null || VERGLEICH.veraltetOffenGesund == null
+        ? null : veraltetHier - VERGLEICH.veraltetOffenGesund;
+      const vz = (n) => `${n >= 0 ? "+" : ""}${n}`;
+      befund(`Z22/${P_}`, "Kein gesundes Mandat wird durch das fehlerhafte Mandat aufgehalten"
+        + " (Mandatsfilter belegt, gemessen gegen den Kontrolllauf ohne Fehlermandat)",
+        filterVerletzt.length === 0 && (mehrVeraltet == null || mehrVeraltet <= 0),
+        `${kopplungText} · Mandatsfilter: in ${slotsMitBefreiung} von ${mitSicht.length} Slots `
+        + `sah ein gesundes Mandat weniger Vorbedingungen als die alte, mandatsblinde Zaehlung `
+        + `(zusammen ${befreitGesamt} Auftraege, auf die es nicht mehr wartet) · `
+        + `liegengebliebene Arbeit gesunder Mandate `
+        + `${veraltetHier == null ? "?" : veraltetHier} gegen `
+        + `${VERGLEICH.veraltetOffenGesund == null ? "?" : VERGLEICH.veraltetOffenGesund}`
+        + `${mehrVeraltet == null ? "" : ` (${vz(mehrVeraltet)})`}`);
+    } else {
+      // OHNE KONTROLLLAUF bleibt (c) offen. (a) und (b) stehen trotzdem in der Ausgabe.
+      befundOffen += 1;
+      console.log(`  BEFUND OFFEN          Z22/${P_} Wirkung auf gesunde Mandate —`
+        + " ohne Kontrolllauf nicht abschliessend entscheidbar"
+        + " (HELMUT_Z3_FEHLERMANDAT=aus, danach HELMUT_Z3_VERGLEICH)");
+      console.log(`      ${kopplungText} · Mandatsfilter in ${slotsMitBefreiung} von`
+        + ` ${mitSicht.length} Slots wirksam (${befreitGesamt} Auftraege)`);
+      kriterien.push({
+        id: `Z22/${P_}`, name: "Wirkung des Fehlermandats auf gesunde Mandate", ok: false,
+        detail: `nicht entscheidbar ohne Kontrolllauf · ${kopplungText}`, art: "kapazitaet"
+      });
+    }
   }
 
   befund(`Z23/${P_}`, "Die Nebenlaeufigkeit erzeugt keine nennenswerte Konfliktrate an der Datenbank",
