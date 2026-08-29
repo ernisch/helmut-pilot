@@ -17,8 +17,11 @@ aggregierten Zählern).
   4 inaktive / 0 gelöschte Mandatsprofile. 3.330 Aufträge (3.122 erledigt, 208 wartend,
   0 laufend, 0 fehlgeschlagen), 0 Dubletten, 0 Leases, 0 fällige Arbeit ≥ 24 h.
   CAS: 653 fertig · **1 unbekannt** · 1 aufgegeben · 1 offen — das Fünfertor bleibt rot.
-- Der natürliche 21:30-UTC-Lauf hatte zum Sitzungsende (≈ 21:00 UTC) noch nicht
-  stattgefunden; der 05:30-Lauf war `success` (227 s).
+- Der natürliche 21:30-UTC-Lauf **hat stattgefunden** (Start 21:30:33, `success`,
+  215,4 s, 16 verarbeitet, 25 vertagt). Der Parserfix war dabei **nicht deployt** —
+  der Lauf zählt nicht als Parsernachweis; der unbekannte Vorgang besteht unverändert
+  (CAS danach: 680 fertig · **1 unbekannt** · 1 aufgegeben · 10 offen, laufende Charge).
+  Der 05:30-Lauf war `success` (227 s).
 - Slotdauern 29.08.: Crawl 230,1 s · Pipeline bis 261,0 s (3 Pipeline-Quittungen:
   11:43/…/16:01) — die 217,5-s-p95-Grenze des Beobachtungsfensters ist gerissen;
   **kein grüner Tag**, Siebentagenachweis **nicht begonnen**.
@@ -84,6 +87,12 @@ in jedem Lauf gesperrt, bis ein neuer spaltengenauer Production-Abzug verankert 
    Behoben und mit 8/8 grünen Wiederholungen belegt. Damit ist der Weg frei, die
    DB-Suiten später auch im CI scharf zu schalten — das bleibt ein eigener,
    bewusst zu entscheidender Schritt (Laufzeit +~160 s im Gate).
+6. **PR #282** bündelt die Punkte 1–3 und den Testfix. Sein erster Pflichtlauf
+   (`33275194649`) war **rot** und bewies damit den Wert des neuen fail-closed-Schritts:
+   der `postgres:17`-Dienst verlangt scram-sha-256, die passwortlose
+   `authenticator`-Rolle konnte sich nicht verbinden. Nach dem Fix (Laufpasswort in
+   Rolle und PostgREST-URI) ist der Pflichtlauf **grün** (`33276072844`) — §11 läuft
+   damit erstmals nachweislich im echten Gate-Runner.
 
 ## 5 · Beweisebenen nach diesem Sprint
 
