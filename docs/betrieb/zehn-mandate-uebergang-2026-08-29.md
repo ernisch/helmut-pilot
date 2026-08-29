@@ -30,7 +30,7 @@ aggregierten Zählern).
 | #274 KI-Umschlag | `codex/ki-antwortumschlag-hardening` | `32661d6` | **`main`** (umgestellt; alte Basis ist vollständig in `main`) | 285/285 Offline · Z22-DB **48/0 (§1–§11!)** · Browser 32/0 | **grün** `33272024555` |
 | #275 Planungszeitbudget | `codex/planung-zeitbudget-hardening` | `0c1ddc1` | #274 | 286/286 · 48/0 · 32/0 | **grün** `33272453956` |
 | #276 Monitoring | `codex/z3b-monitoring-honesty` | `372a618` | #275 | 286/286 · 48/0 · 32/0 | **grün** `33272920479` |
-| #277 Z3b-Tore | `codex/z3b-proof-gates-500` | `a705c18` | #276 | **294/294** · 48/0 · 32/0 | Lauf `33274186322` (bei Belegerstellung laufend) |
+| #277 Z3b-Tore | `codex/z3b-proof-gates-500` | `a705c18` | #276 | **294/294** · 48/0 · 32/0 | **grün** `33274186322` |
 
 Jeder Branch wurde aus einem frischen Arbeitsbaum vom Remote-Kopf per **normalem
 Merge-Commit** aktualisiert; Remote-Köpfe unmittelbar vor jedem Push erneut geprüft.
@@ -75,6 +75,15 @@ in jedem Lauf gesperrt, bis ein neuer spaltengenauer Production-Abzug verankert 
 4. **KI-Deckel-Rechnung lokal geprüft:** Kapazitätsauswertung aus PR #277 mit 90/0
    (Fairness-Untergrenze 2n−1: 399/999; Bindung an echte Produktionskonstanten), auf dem
    nachgeführten Stand.
+5. **Messlauf „Datenbanksuiten scharf":** der volle Offline-Lauf wurde einmalig mit
+   gesetztem `HELMUT_TEST_PG_HOST` gegen eine lokale PostgreSQL 17.6 gefahren — die
+   bisher still überspringenden DB-Suiten liefen also wirklich. Ergebnis **284/285**;
+   die eine rote Suite (`verstehen-aufgeben-erneut-freigegeben-test.js` §8.3) war ein
+   **Testfehler, kein Produktrennen**: `erlaubt||'|'||grund` castet den Boolean zu
+   `'true'`, der Test erkannte Reservierungs-Siege mit `/^t\|/` nie (flaky ~1 von 4).
+   Behoben und mit 8/8 grünen Wiederholungen belegt. Damit ist der Weg frei, die
+   DB-Suiten später auch im CI scharf zu schalten — das bleibt ein eigener,
+   bewusst zu entscheidender Schritt (Laufzeit +~160 s im Gate).
 
 ## 5 · Beweisebenen nach diesem Sprint
 
