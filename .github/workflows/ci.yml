@@ -108,7 +108,28 @@ jobs:
             psql --version
           fi
 
-      - name: Z22-Datenbanknachweis §1–§10 gegen echte PostgreSQL (fail-closed)
+      - name: PostgREST 12.2.3 bereitstellen (Voraussetzung des §11-Rückfallnachweises)
+        # §11 des Z22-Datenbanknachweises beweist, dass ein Deployment VOR der Migration
+        # die Reihenfolgezusage nicht still abschaltet (PGRST202-Rückfall). Dieser Beweis
+        # braucht ein echtes PostgREST. Version und Prüfsumme sind gepinnt, damit weder
+        # ein neues Release noch ein manipulierter Download das Merge-Gate unbemerkt
+        # verändern kann (gleiche Begründung wie der Playwright-Pin unten). Der Download
+        # wird bis zu dreimal versucht; ein dauerhaft unerreichbares GitHub-Release ist
+        # ein sichtbarer FEHLSCHLAG, kein stiller Skip.
+        run: |
+          set -e
+          for i in 1 2 3; do
+            curl -sSL --fail -o /tmp/postgrest.tar.xz \
+              https://github.com/PostgREST/postgrest/releases/download/v12.2.3/postgrest-v12.2.3-linux-static-x64.tar.xz \
+              && break
+            echo "Download-Versuch $i fehlgeschlagen"; sleep 5
+            [ "$i" = "3" ] && exit 1
+          done
+          echo "9f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c  /tmp/postgrest.tar.xz" | sha256sum -c -
+          tar -xJf /tmp/postgrest.tar.xz -C /tmp
+          /tmp/postgrest --version
+
+      - name: Z22-Datenbanknachweis §1–§11 gegen echte PostgreSQL + echtes PostgREST (fail-closed)
         # WARUM EIN EIGENER SCHRITT: Der Nachweis braucht eine echte PostgreSQL. In
         # run-offline-tests.js lief er nur als stiller SKIP mit (Exit 0 = PASS) und
         # täuschte damit eine Abdeckung vor, die niemand erbracht hatte — genau darunter
@@ -126,14 +147,16 @@ jobs:
         # HELMUT_TEST_PG_HOST ist NUR in diesem Schritt gesetzt: job-weit würden sonst
         # ~35 weitere Datenbanksuiten unbeabsichtigt scharf geschaltet.
         #
-        # §11 (Rückfall gegen echtes PostgREST) ist hier NICHT abgedeckt: dieser Abschnitt
-        # braucht zusätzlich ein PostgREST-Binary, das auf dem Runner nicht vorhanden ist.
-        # Der Schrittname sagt deshalb ausdrücklich „§1–§10", und der Nachweis nennt den
-        # übersprungenen Abschnitt in seiner Schlusszeile. Wer §11 verbindlich will, setzt
-        # HELMUT_REQUIRE_POSTGREST=1 und stellt das Binary bereit.
+        # §11 (Rückfall gegen echtes PostgREST) läuft seit 2026-08-29 MIT: das Binary
+        # kommt aus dem Schritt oben, HELMUT_REQUIRE_POSTGREST=1 macht auch diesen
+        # Abschnitt fail-closed — ein fehlendes oder nicht startendes PostgREST ist ein
+        # FEHLSCHLAG, kein Skip. Erstbeleg des vollständigen Laufs (§1–§11, 48 PASS):
+        # lokale PostgreSQL 17.6 + PostgREST 12.2.3, Sitzung vom 29.08.2026.
         env:
           HELMUT_SOURCE_MODE: "off"
           HELMUT_REQUIRE_PG: "1"
+          HELMUT_REQUIRE_POSTGREST: "1"
+          HELMUT_Z3_POSTGREST: "/tmp/postgrest"
           HELMUT_TEST_PG_HOST: "127.0.0.1"
           HELMUT_TEST_PG_PORT: "5433"
           HELMUT_TEST_PG_USER: "helmut"
