@@ -30,7 +30,7 @@ aggregierten Zählern).
 
 | PR | Branch | neuer Kopf | Basis | lokale Nachweise | Pflicht-CI |
 |---|---|---|---|---|---|
-| #274 KI-Umschlag | `codex/ki-antwortumschlag-hardening` | `32661d6` | **`main`** (umgestellt; alte Basis ist vollständig in `main`) | 285/285 Offline · Z22-DB **48/0 (§1–§11!)** · Browser 32/0 | **grün** `33272024555` |
+| #274 KI-Umschlag | `codex/ki-antwortumschlag-hardening` | `32661d6` | **`main`** (umgestellt) | 285/285 Offline · Z22-DB **48/0 (§1–§11!)** · Browser 32/0 | **grün** `33272024555` · **GEMERGT 29.08. 22:02 UTC** nach Betreiberfreigabe (alle fünf Vorbedingungen frisch geprüft) → `main` = `afc807e`, Vercel-Production-Deployment **READY**, öffentlicher Alias gebunden (rein lesend, Vercel-API) |
 | #275 Planungszeitbudget | `codex/planung-zeitbudget-hardening` | `0c1ddc1` | #274 | 286/286 · 48/0 · 32/0 | **grün** `33272453956` |
 | #276 Monitoring | `codex/z3b-monitoring-honesty` | `372a618` | #275 | 286/286 · 48/0 · 32/0 | **grün** `33272920479` |
 | #277 Z3b-Tore | `codex/z3b-proof-gates-500` | `a705c18` | #276 | **294/294** · 48/0 · 32/0 | **grün** `33274186322` |
@@ -111,10 +111,13 @@ in jedem Lauf gesperrt, bis ein neuer spaltengenauer Production-Abzug verankert 
 
 ## 6 · Nächster Schritt (genau eine Freigabe)
 
-**Merge-Freigabe für PR #274** (Merge = Production-Deployment des Parserfixes). Alles
-Weitere (natürlicher Fünferlauf als Regression, dann #275/#276, F9, Azure, #277, Deckel,
-Einfrieren, Fenster) folgt dem dokumentierten Gatterweg und braucht jeweils eigene
-Freigaben. Frühester ehrlicher Aktivierungszeitpunkt bei Abschluss aller Vorarbeiten bis
+~~Merge-Freigabe für PR #274~~ — **erteilt und vollzogen am 29.08. 22:02 UTC** (Merge
+`afc807e`, Deployment READY, rein lesend geprüft). Als Nächstes entscheidet **ohne
+weitere Freigabe** der nächste natürliche Understanding-Lauf (30.08. 05:30 UTC) die
+Fünferregression; der 21:30-Lauf vom 29.08. lief noch ohne den Fix. Die dann nächste
+Betreiberfreigabe ist die **Merge-Freigabe für PR #275** — empfohlen erst nach grüner
+Fünferregression. Alles Weitere (#276, F9, Azure, #277, Deckel, Einfrieren, Fenster)
+folgt dem dokumentierten Gatterweg mit jeweils eigenen Freigaben. Frühester ehrlicher Aktivierungszeitpunkt bei Abschluss aller Vorarbeiten bis
 30.08. 23:59 UTC: **2026-09-07 00:00 UTC** (7 volle grüne Tage 31.08.–06.09.); jede
 Verzögerung über eine UTC-Tagesgrenze verschiebt ihn mindestens einen Tag — die heutige
 Slotdauerlage macht einen grünen Start ohne vorherige Klärung unwahrscheinlich.
