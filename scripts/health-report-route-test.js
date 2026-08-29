@@ -21,6 +21,23 @@
 const http = require("http");
 const path = require("path");
 
+// Feste Wanduhr fuer die Slotpruefung, aber echte verstrichene Millisekunden fuer
+// Laufzeit- und Zeitbudgettests. So bleibt die Suite zu jeder UTC-Stunde gleich.
+const EchtesDate = Date;
+const echterStartNs = process.hrtime.bigint();
+const FESTER_TESTZEITPUNKT_MS = Date.parse("2026-08-26T12:00:00.000Z");
+class TestDate extends EchtesDate {
+  constructor(...args) {
+    super(...(args.length ? args : [TestDate.now()]));
+  }
+
+  static now() {
+    return FESTER_TESTZEITPUNKT_MS
+      + Number((process.hrtime.bigint() - echterStartNs) / 1000000n);
+  }
+}
+global.Date = TestDate;
+
 const SECRET = "health-report-routentest-geheim";
 process.env.CRON_SECRET = SECRET;
 process.env.HELMUT_OFFLINE_TEST = "1";
@@ -52,7 +69,7 @@ const scalablePipeline = require(path.join(root, "lib", "helmut", "scalable-pipe
 const monitoringWebhook = require(path.join(root, "lib", "helmut", "monitoring-webhook"));
 
 const H = 3600e3;
-const NOW = Date.now();
+const NOW = FESTER_TESTZEITPUNKT_MS;
 const iso = (ms) => new Date(ms).toISOString();
 // Der Slotplan haengt an UTC-Stunden. Damit die Fixture unabhaengig von der realen Uhrzeit
 // deterministisch ist, werden die Quittungen an den zuletzt ERZWUNGENEN Slot gelegt.
@@ -114,7 +131,7 @@ function zaehle(name) { aufrufe[name] = (aufrufe[name] || 0) + 1; }
 let F = null;
 function szenario(overrides = {}) {
   const tenants = overrides.tenants || ["m1"];
-  const tagKey = require(path.join(root, "lib", "helmut", "briefing-frische")).berlinTagKey(new Date());
+  const tagKey = require(path.join(root, "lib", "helmut", "briefing-frische")).berlinTagKey(new Date(NOW));
   return {
     tenantIds: tenants,
     tenantReason: "aktive-mandate",

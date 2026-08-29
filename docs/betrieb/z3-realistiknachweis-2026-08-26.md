@@ -1,6 +1,6 @@
 # Realistiknachweis Z3 — 25 / 50 / 100 Mandate (Sprint 2026-08-26)
 
-**Ausgangscommit:** `ade1674` (= `main`, Merge PR #271) · **Branch:** `claude/load-test-mandate-proof-wtlew0`
+**Ausgangscommit:** `ade1674` (= `main` am 26.08., Merge PR #271) · **Branch:** `claude/load-test-mandate-proof-wtlew0`
 **Kanonische Skalierungsdatei bleibt** [`skalierung-25-50-100.md`](skalierung-25-50-100.md).
 Diese Datei ist die **Belegdatei des realistischen Nachweises** und ergänzt dort §0.1 Punkt 3
 („Supabase unter realistischer Last ist ungeprüft") und die vier verstreuten Z3-Fehlstellen.
@@ -12,6 +12,10 @@ Diese Datei ist die **Belegdatei des realistischen Nachweises** und ergänzt dor
 > echte Anbieteraufrufe in Lasthöhe wären ein Massen‑Crawl (CLAUDE.md §5) und echte
 > Modellaufrufe kosten Geld. **Production wurde nicht verändert** — kein Schreibvorgang, keine
 > Migration, kein Flag, keine Env, kein Cron, kein manueller Lauf.
+>
+> *Der Absatz oben beschreibt den Sprint vom 26.08. Die Nachträge §13–§14 dokumentieren die
+> spätere Entwicklung; seit dem 29.08. ist Z22 mit ausdrücklicher Betreiberfreigabe in
+> Production angewendet (§14.6).*
 
 ---
 
@@ -770,7 +774,8 @@ ist die Richtung bei 25 und 50, nicht die zweite Stelle bei 100.
 Unverändert offen bleibt alles aus §8: die Anbieter sind lokal, weder Google noch Azure
 antwortet, geprüft ist PostgREST und nicht Supabase. **Z3 bleibt unvollständig, Z3b offen,
 Z4 nicht erteilt, Z5 unverändert fünf reale Mandate.** Die Migration ist **nicht** auf
-Production angewendet und bleibt freigabepflichtig.
+Production angewendet und bleibt freigabepflichtig *(Stand 26.08.; am 29.08. nach
+ausdrücklicher Betreiberfreigabe angewendet — §14.6)*.
 
 Und eine fachliche Grenze, die zur Korrektur selbst gehört: ein Mandat wartet jetzt nicht mehr
 auf die **persönliche** Namenssuche eines anderen Mandats. Ein Dokument, das ausschließlich
@@ -780,3 +785,316 @@ Abwägung trifft der Motor schon heute beim 7-Tage-Archivfenster („ein Briefin
 eine Hintergrundsuche mit Wochenkadenz warten") und bei der 6-Stunden-Obergrenze des Wartens.
 Vorgänge bleiben persistent, das Matching liest gespeicherte Vorgänge — verloren geht nichts,
 es kommt nur später.
+
+## 14 · Nachtrag 28.08. — zwei Nachweislücken im Z22-Beleg geschlossen
+
+Dieser Abschnitt gehört zu PR #273. Er korrigiert **nicht** den Befund Z22 selbst — der
+bleibt behoben wie in §13 beschrieben — sondern **zwei Lücken im Nachweis dieses Befunds**.
+Beide standen in derselben Ursache: der Datenbankteil lief nicht wirklich, und deshalb fiel
+nicht auf, dass SQL und Attrappe an einer Stelle auseinanderliefen.
+
+**Keine Production-Aktion.** Migration weiterhin nicht angewendet, kein Deployment, kein
+Flag, keine Env, kein Cron, kein Import, keine echten Anbieteraufrufe, keine Kosten
+*(Stand 28.08.; Z22 ist seit dem 29.08. in Production angewendet — §14.6)*. Der
+gesamte Datenbankteil lief gegen eine **kurzlebige lokale PostgreSQL**, die für den Lauf
+angelegt und danach verworfen wird; die Zeilen sind ausschließlich synthetisch.
+
+### 14.1 Lücke 1 — der Datenbanknachweis meldete grün, ohne zu laufen
+
+`scripts/vorbedingung-mandatsfilter-datenbank-test.js` beendete sich ohne
+`HELMUT_TEST_PG_HOST` mit **Exit 0**. `scripts/run-offline-tests.js` kennt aber nur
+`exit === 0` ⇒ `PASS`. Der kanonische Gesamtlauf zählte diesen Nachweis also als **grüne
+Suite**, obwohl gegen die Datenbank nichts geprüft wurde — genau das falsche Grün, das
+`CLAUDE.md` §4.4 verbietet. Die in §13 genannten „34 PASS" waren echt, stammten aber aus
+einem **Handlauf auf einer Arbeitsmaschine**, nicht aus dem Merge-Gate.
+
+Die Lösung folgt dem Muster, das im Repo für denselben Fall bereits existiert
+(`browser-smoke-test.js`):
+
+1. Der Nachweis steht jetzt in der **DENYLIST** von `run-offline-tests.js`. Ein stiller Skip
+   kann dort keine Abdeckung mehr vortäuschen. Der Runner zählt dadurch **eine Suite
+   weniger** (284 statt 285) — die Suite ist nicht verschwunden, sie läuft anderswo.
+2. Er hat einen **eigenen Schritt im Pflichtjob „Syntax + Offline-Suiten"** mit einem
+   kurzlebigen `postgres:17`-Dienst (Hauptversion wie Production 17.6). Der Schritt läuft
+   über `scripts/lokal.js` (CLAUDE.md §6). **Kein neuer Required Check** — der Jobname
+   bleibt unverändert.
+3. `HELMUT_REQUIRE_PG=1` macht ihn **fail-closed**: fehlende oder unerreichbare Datenbank
+   ist ein FEHLSCHLAG (Exit 1), kein Skip. Belegt, beide Wege:
+
+| Lauf | Erwartung | Ergebnis |
+|---|---|---|
+| `HELMUT_REQUIRE_PG=1`, kein Host | Exit 1 | **Exit 1**, „FEHLSCHLAG: kein HELMUT_TEST_PG_HOST gesetzt" |
+| `HELMUT_REQUIRE_PG=1`, Host auf totem Port 5999 | Exit 1 | **Exit 1**, „kein erreichbarer Server" |
+| lokal ohne Pflicht und ohne Host | Exit 0, ehrlicher Skip | **Exit 0**, Skip ausdrücklich benannt |
+
+`HELMUT_TEST_PG_HOST` wird **nur in diesem Schritt** gesetzt, nicht job-weit: sonst gingen
+rund 35 weitere Datenbanksuiten unbeabsichtigt scharf.
+
+**Dritter Befund, in derselben Lücke gefunden.** Der Nachweis legte die Supabase-Rollen nie
+selbst an. `20260808_scalable_job_queue.sql` enthält unbedingte
+`revoke … from public, anon, authenticated`; auf einem **frischen** Cluster bricht die
+Basismigration deshalb mit `role "anon" does not exist` ab — hier reproduziert. Er lief
+bisher nur, weil auf der Arbeitsmaschine eine **andere** Suite die Rollen bereits hinterlassen
+hatte (Rollen sind clusterweit, die Testdatenbank wird jedes Mal neu erzeugt): eine stille
+Abhängigkeit von der Laufreihenfolge. Der Nachweis legt `anon`, `authenticated`,
+`service_role` und `authenticator` jetzt selbst an — wortgleich zu den übrigen
+Datenbanksuiten.
+
+### 14.2 Lücke 2 — leere `tenant_id` auf der Zeile: SQL und Attrappe waren uneins
+
+`tenant_id` ist `text` **ohne** NOT-NULL und **ohne** Prüfbedingung
+(`20260808_scalable_job_queue.sql` Z. 111). Eine Zeile mit `''` oder nur Leerzeichen ist
+also möglich. Die beiden Umsetzungen behandelten sie **verschieden**:
+
+| Stand | Regel auf der Zeilenseite | Zeile `tenant_id = ''` bei Filter auf ein Mandat |
+|---|---|---|
+| SQL (vorher) | `j.tenant_id is null` | **fiel heraus** — das Mandat wartete nicht mehr auf sie |
+| Attrappe (vorher) | `z.tenant_id !== ""` | zählte mit, aber `'   '` galt als eigenes Mandat |
+| **beide (jetzt)** | `nullif(btrim(…), '') is null` | **zählt global** — jedes Mandat wartet auf sie |
+
+**Maßgeblich ist der sichere Production-Vertrag**, und der ist eindeutig: eine Zeile ohne
+brauchbaren Mandatsbezug ist geteilte Arbeit. Weniger zu warten ist nie die sichere Seite —
+dieselbe Richtung, die §13 für die leere Kennung als **Argument** bereits festhält. Die SQL-
+Seite lag auf der unsicheren Seite und wurde an die Attrappe angeglichen; beide trimmen
+jetzt auf beiden Seiten. Das Trimmen kann nur **mehr** Zeilen treffen als der frühere
+ungetrimmte Vergleich (jede vorher passende Zeile passt weiterhin) — fail closed.
+
+**Die Gegenprobe ist eindeutig, nicht behauptet.** Fünf Zeilen in einem eigenen
+Aktualitätsfenster — `null`, `''`, `'   '`, ein fremdes und das eigene Mandat — gefiltert
+auf das eigene Mandat:
+
+| | erwartet (sicherer Vertrag) | SQL vorher | Attrappe vorher |
+|---|---:|---:|---:|
+| offene Vorbedingungen | **4** | 2 | 3 |
+
+Gegen den Stand **vor** der Korrektur gefahren: `8b.2`, `8b.3`, `8b.4`, `8b.5` sind **rot**
+(`PASS 30 · FAIL 4`, Exit 1); nach der Korrektur grün (`PASS 34 · FAIL 0`). Die
+verhaltensgleiche Gegenprobe ohne Datenbank steht als `6.6`–`6.8` in
+`vorbedingung-mandatsfilter-test.js`, dazu `6.1b` gegen den Wortlaut der Migration.
+
+### 14.2b Was die Gegenprüfung des eigenen Fixes noch fand
+
+Die Korrektur wurde nach dem ersten Entwurf gegengeprüft. Vier Befunde daraus sind
+eingearbeitet — der erste war ein echter Fehler im Fix selbst:
+
+1. **`btrim()` und `String.prototype.trim()` sind nicht dieselbe Zeichenmenge.**
+   `btrim(x)` mit einem Argument entfernt in PostgreSQL **nur** U+0020, `trim()` in
+   JavaScript **jeden** Weißraum. Der erste Entwurf hätte SQL und Attrappe bei einer
+   `tenant_id` aus einem **Tabulator** erneut auseinanderlaufen lassen — wieder mit SQL
+   auf der unsicheren Seite. Gemessen: SQL 4, Attrappe 5. Beide Seiten schreiben die
+   Zeichenmenge jetzt aus (`E' \t\n\r\f\v'` bzw. `[ \t\n\r\f\v]`), und die
+   Gegenprobe enthält eine Tabulatorzeile.
+2. **§9 maß gar keinen Filter.** Die Vergleichsabfrage trug
+   `(null is null or j.tenant_id is null or …)`; `null is null` ist immer wahr, die
+   Klausel war eine Tautologie und wurde wegoptimiert. Sie trägt jetzt die echte
+   Mandatsklausel. Ergebnis unverändert: gleicher Zugriffsweg
+   (`Bitmap Index Scan on helmut_jobs_window_idx`), **kein neuer Index nötig**.
+3. **§6.1 hätte auf einem Kommentar grün werden können.** Die Textprüfung durchsuchte die
+   ganze Migrationsdatei — deren Kopfkommentar zitiert die alte Fassung wörtlich. Sie
+   prüft jetzt ausschließlich den Rumpf zwischen `as $$` und `$$;`, ohne SQL-Kommentare.
+4. **Die Zeitschranken in §9 waren als Pflicht-Check zu eng.** < 50 ms je Zählung
+   inklusive Prozessstart ist auf einem geteilten Runner mit Dienstcontainer ein
+   Merge-Blocker aus Maschinenrauschen. Sie sind jetzt großzügig (im CI Faktor 4 bzw.
+   400 ms) und ausdrücklich als Grobsicherung benannt; die Aussage von §9 trägt 9.1.
+
+Zwei kleinere Härtungen kamen aus derselben Prüfung:
+
+* **`PGHOSTADDR` fehlte im Netzschutz.** libpq benutzt `host` nur noch zur
+  Authentifizierung, sobald `hostaddr` gesetzt ist — ein `PGHOSTADDR` in der Umgebung
+  schlägt also das `-h` auf der Kommandozeile. Weil `psql` ein natives Binary ist, greift
+  die Laufzeitsperre dort nicht; die Umgebungsprüfung ist der einzige Riegel. Die Variable
+  steht jetzt in `DB_HOST_VARIABLEN` (`netzschutz-test.js`: 81 PASS).
+* **`psql` war eine unausgesprochene Voraussetzung.** Seit der Nachweis fail-closed im
+  Pflichtjob läuft, würde ein fehlendes Binary jeden Merge blockieren. Der Workflow prüft
+  es jetzt ausdrücklich und installiert `postgresql-client` nur, wenn es fehlt.
+
+### 14.3 Was jetzt wirklich gelaufen ist — und was nicht
+
+| Prüfung | Ergebnis | Grenze |
+|---|---|---|
+| `vorbedingung-mandatsfilter-test.js` | **45 PASS / 0 FAIL** (vorher 39) | ohne Netz und Datenbank |
+| `vorbedingung-mandatsfilter-datenbank-test.js` §1–§10 inkl. §8b | **34 PASS / 0 FAIL** | echte PostgreSQL, aber **16.13**, nicht 17.6 |
+| dieselbe Suite gegen den alten Stand | **30 PASS / 4 FAIL**, Exit 1 | die Gegenprobe greift wirklich |
+| fail-closed-Pfade | 3 von 3 wie erwartet | — |
+| **§11 Rückfall gegen echtes PostgREST** | **NICHT gelaufen** | kein PostgREST-Binary in dieser Umgebung |
+| dieselbe Suite **im Pflicht-CI** (Lauf `33243831751`, abgeschlossen 29.08. 08:51 UTC) | **34 PASS / 0 FAIL**, `UEBERSPRUNGEN 1` | **älterer erster CI-Beleg**, **PostgreSQL 17.11** — abgelöst durch den späteren maßgeblichen Lauf `33260203246` (nächste Zeile) |
+| dieselbe Suite im **späteren maßgeblichen Pflichtlauf von PR #279** (`33260203246`) | **41 PASS / 0 FAIL**, **1 übersprungen** (§11 PostgREST) | **284/284 Offline-Suiten**, Browser/Mobil **32 PASS / 0 FAIL**, **PostgreSQL 17.11** |
+
+**Ehrlich benannt, dreierlei:**
+
+1. Die lokale PostgreSQL dieser Sitzung ist **16.13**, Production ist **17.6**. Der CI-Dienst
+   ist `postgres:17` — und dieser Lauf ist **erbracht**: am 29.08. um 08:51 UTC war der
+   Nachweis im Pflichtjob gegen **PostgreSQL 17.11** mit **34 PASS / 0 FAIL** abgeschlossen, gleicher
+   Zugriffsweg (`Bitmap Index Scan on helmut_jobs_window_idx`), 1,114 ms gegen 1,166 ms.
+   Die Hauptversion von Production ist damit im Gate belegt, nicht nur lokal.
+2. **§11 ist weiterhin offen.** Der Rückfall gegen echtes PostgREST ist der Nachweis, dass
+   ein Deployment **vor** der Migration die Reihenfolgezusage nicht still abschaltet. Er
+   wurde am 26.08. einmal von Hand erbracht (§13) und läuft weder lokal noch im neuen
+   CI-Schritt mit — dort fehlt das PostgREST-Binary. Drei Dinge halten das ehrlich: der
+   CI-Schritt heißt ausdrücklich nur **„§1–§10"**, die Schlusszeile des Nachweises benennt
+   übersprungene Abschnitte namentlich (damit „FAIL 0" nicht als Vollständigkeit gelesen
+   wird), und `HELMUT_REQUIRE_POSTGREST=1` macht auch §11 fail-closed, sobald jemand das
+   Binary bereitstellt. **`HELMUT_REQUIRE_PG=1` erzwingt §1–§10, nicht §11.**
+3. Die rund **35 übrigen Datenbanksuiten** überspringen weiterhin still. Dieselbe Lücke
+   besteht dort unverändert; sie wurde hier **nicht** geschlossen, weil der Auftrag den
+   Z22-Nachweis betraf. Das ist ein eigener, benannter offener Punkt.
+
+Nicht berührt: die Zahlen aus §10 und §13, der Befund Z22 selbst, Z2, Z3a und jede Aussage
+über Production. Der isolierte Supabase-Lauf mit 500 synthetischen Aufträgen beweist
+unverändert **nur den Warteschlangenmotor** und niemals 500 echte Mandate.
+
+### 14.4 Nachtrag 29.08. — angewendete Fassung und sicherer Konvergenzweg
+
+Die Abweichung wurde vor der Anwendung exakt und ausschliesslich lesend geklaert. In
+`supabase_migrations.schema_migrations` liegt unter `20260827121931` eine Datei mit 6.873 Byte
+und SHA256 `081c9c43a6d1c03121bde40902850b7348dc8d971f57e0e35ee32ce96796408b`. Sie ist
+byteidentisch zur Repository-Fassung aus Commit `2a01ea9`. Die dort aktive dreistellige
+Funktion bestaetigt denselben Stand: leere Parameterkennung zaehlt global, aber die
+Zeilenkennung wird nur mit `tenant_id is null` als global behandelt.
+
+Der Kopf von PR #273 traegt fuer `20260826190000` dagegen 8.977 Byte und SHA256
+`f709747834898bf84b776f806429e95ffa4eeb727dd326f7dbf2d88d403c2f4e`. Diese Datei behandelt
+auch leere und aus der ausgeschriebenen Weissraummenge bestehende Zeilenkennungen global.
+Die beiden Fassungen unterscheiden sich damit byteweise und fachlich.
+
+Die angewendete Historie wird nicht ueberschrieben. Der neue Vorwaertsweg
+`20260829123132_z22_mandatsfilter_zeilenkennung_korrigieren.sql` ersetzt ausschliesslich eine
+bereits vorhandene dreistellige Z22-Funktion. Fehlt sie oder steht daneben noch die
+zweistellige Fassung, bricht die Transaktion ab. Der zugehoerige Rueckweg stellt die alte
+dreistellige Fassung aus `2a01ea9` wieder her und entfernt Z22 nicht. Der vollstaendige
+Z22-Rueckbau auf zwei Argumente bleibt dem vorhandenen, getrennten Rueckweg zugeordnet.
+
+Die Repository-Datei der Vorwaertskorrektur hat 4.568 Byte und SHA256
+`c4bb62673f2282f72a585ea4fa6e486a0ed62fdfe951523f066212239158cd23`; ihr getrennt
+gehaltener Rueckweg hat 3.363 Byte und SHA256
+`9791aa5061db85dd81186ec6f7ba2a77517855aa525ed2cd804c402812394a02`.
+
+**Anwendung im isolierten Testprojekt, 29.08. um 16:54:55 Tuerkei / 15:54:55 Berlin /
+13:54:55 UTC:** Nach ausdruecklicher Betreiberfreigabe wurde genau die Vorwaertskorrektur
+angewendet. Das Supabase-Managementwerkzeug erzeugt seine 14-stellige Buchungsnummer beim
+Lauf selbst. Deshalb steht die Repository-Version `20260829123132` im Testprojekt transparent
+unter Version `20260829135455` und dem Namen
+`repo_20260829123132_z22_mandatsfilter_zeilenkennung_korrigieren`; beide Nummern werden nicht
+stillschweigend gleichgesetzt. Der Rueckweg wurde nicht ausgefuehrt.
+
+**Vorpruefung:** Projekt `ffzaxdbatoamsovncrym` war `ACTIVE_HEALTHY`, PostgreSQL 17.6; genau
+eine dreistellige und keine zweistellige Funktion war vorhanden. Ihr Rumpf trug nachweislich
+die alte Regel aus `2a01ea9`. Die Tabelle enthielt 900 synthetische Auftraege ohne leere
+Zeilenkennung.
+
+**Nachpruefung:** weiterhin 900 Auftraege; genau eine dreistellige, `stable`,
+`security invoker`-Funktion mit festem `search_path`. `anon` und `authenticated` duerfen sie
+nicht ausfuehren, `service_role` darf es. Der gespeicherte Rumpf enthaelt die ausgeschriebene
+Weissraummenge auf Parameter- und Zeilenseite und nicht mehr die alte reine
+`tenant_id is null`-Regel. Fuer alle 500 vorhandenen Mandatskennungen wurde das
+Funktionsergebnis rein lesend gegen eine unabhaengige SQL-Zaehlogik verglichen:
+**500 geprueft, 0 Abweichungen.** Vor und nach der Anwendung meldeten die Supabase-Advisors
+keine neue Sicherheits- oder Leistungswarnung. Der 500er Plattformlasttest wurde nicht
+wiederholt; sein frueherer Beleg bleibt unveraendert auf den Warteschlangenmotor begrenzt.
+
+Production besass bei der letzten lesenden Pruefung weiterhin nur die zweistellige
+Vor-Z22-Funktion. Die Production-Datenbank wurde in diesem Nachtrag weder gelesen noch
+veraendert. Eine Production-Anwendung von Z22 und der Vorwaertskorrektur bleibt eine eigene
+Betreiberfreigabe *(am 29.08. erteilt und vollzogen — §14.6)*.
+
+### 14.5 Nachtrag 29.08. — Production-Vorpruefung ohne Anwendung
+
+Die ausdruecklich freigegebene, rein lesende Vorpruefung lief am 29.08. gegen das eindeutig
+vom isolierten Testprojekt getrennte Production-Projekt `ddckuvvpcytqbyfmbvie`. Zeitpunkt der
+Bestandsaufnahme: 19:55 Uhr Tuerkei, 18:55 Uhr Berlin, 16:55 Uhr UTC. Das Projekt war
+`ACTIVE_HEALTHY`, Region `eu-west-1`, PostgreSQL 17.6. Es wurde keine Migration angewendet,
+kein Funktionsrumpf ersetzt und keine Auftragszeile veraendert.
+
+**Migrationsstand:** Die Production-Historie endet mit den beiden bereits dokumentierten
+Buchungen `20260823063140` und `20260823063208` fuer denselben Aufgeben-Weg. Weder F9
+(`20260825101500`) noch Z22 (`20260826190000`) noch die Z22-Vorwaertskorrektur
+(`20260829123132`) sind gebucht. Ein spaeterer Z22-Lauf muss deshalb zuerst die Basismigration
+und danach die fail-closed Vorwaertskorrektur anwenden; die Korrektur darf wegen ihres
+Vorbedingungsriegels nicht allein starten.
+
+**Exakter Vorzustand:** Es existiert genau eine Funktion
+`public.helmut_jobs_offen(text[],text[])` und keine dreistellige Fassung. Definition,
+Rueckgabetyp, `stable`, `security invoker`, `search_path=public, pg_temp` und Rumpf stimmen mit
+`20260808_jobqueue_abhaengigkeiten.sql` ueberein. `anon` und `authenticated` besitzen kein
+Ausfuehrungsrecht, `service_role` besitzt es. Es gibt keine abhaengigen Datenbankobjekte, die
+das transaktionale Ersetzen der Signatur blockieren. Die erwarteten Fenster-, Typ-, Status-
+und Tenant-Indizes sind vorhanden.
+
+**Nur zusammengefasster Datenbestand:** 3.330 Auftraege, davon 3.122 `erledigt`, 208
+`wartend`, 0 `laeuft` und 0 `fehlgeschlagen`. 3.161 Zeilen tragen keine Mandatskennung; die
+restlichen Zeilen verteilen sich auf genau fuenf brauchbare Kennungen. Es existieren 0 leere
+und 0 nur aus der ausgeschriebenen Weissraummenge bestehende Zeilenkennungen. Keine Kennung
+und kein Auftragsinhalt wurde ausgegeben.
+
+**Production-Planprobe:** Die korrigierte Filterbedingung wurde als eigenstaendige
+`EXPLAIN (ANALYZE, BUFFERS)`-SELECT-Abfrage mit einer garantiert kuenstlichen Kennung gegen den
+Bestand gemessen. Ergebnis: 4,011 ms Gesamtlaufzeit, 481 Cache-Treffer, 0 gelesene,
+verschmutzte oder geschriebene Bloecke. Der heutige kleine Bestand wird sequenziell gelesen;
+die Anwendung erzeugt deshalb keinen neuen Index. Diese Einzelmessung ist kein Lastbeweis.
+
+**Gebundene Dateien und Rueckweg:** Basismigration SHA256
+`f709747834898bf84b776f806429e95ffa4eeb727dd326f7dbf2d88d403c2f4e`, Vorwaertskorrektur
+SHA256 `c4bb62673f2282f72a585ea4fa6e486a0ed62fdfe951523f066212239158cd23`.
+Der partielle Rueckweg zur alten dreistelligen Z22-Fassung hat SHA256
+`9791aa5061db85dd81186ec6f7ba2a77517855aa525ed2cd804c402812394a02`; der vollstaendige
+Rueckweg zur heutigen zweistelligen Fassung hat SHA256
+`3c3cde417f4f4fcb1c5335362eb43cb7d5c64fdf492dae2a2d35e88580cfe86d`.
+
+Die Vorpruefung ist **gruen**, aber sie ist keine Anwendungsfreigabe. Vor einer spaeteren
+Anwendung sind der aktuelle Vorzustand und 0 laufende Auftraege erneut zu bestaetigen. Danach
+braucht die Anwendung beider Vorwaertsschritte weiterhin eine eigene ausdrueckliche
+Betreiberfreigabe. Azure, echte Modellaufrufe und der 500er Plattformlasttest waren nicht Teil
+dieser Vorpruefung. *(Die Freigabe wurde noch am 29.08. erteilt; Anwendung und Nachpruefung
+stehen in §14.6.)*
+
+### 14.6 Nachtrag 29.08. — Z22 in Production angewendet und gegengeprüft
+
+Nach der grünen Vorprüfung (§14.5) wurde der Vollzug in genau dieser Reihenfolge
+abgeschlossen: PR #280 wurde gemergt (`main` = `87bed2219f9d64f9c832b7b4baff63875f15ddab`),
+das automatische Vercel-Production-Deployment war grün, und die öffentliche
+Production-Adresse antwortete mit HTTP 200 und lieferte exakt diesen Commit. **Anschließend
+wurde Z22 mit ausdrücklicher Betreiberfreigabe auf das Production-Projekt
+`ddckuvvpcytqbyfmbvie` angewendet** — zuerst die Basismigration, danach die fail-closed
+Vorwärtskorrektur, wie es §14.5 verlangt.
+
+| Repository-Datei | Production-Buchung |
+|---|---|
+| `20260826190000_jobqueue_vorbedingung_mandatsfilter.sql` | `20260829175642` |
+| `20260829123132_z22_mandatsfilter_zeilenkennung_korrigieren.sql` | `20260829175749` |
+
+Wie schon bei der Testprojekt-Anwendung (§14.4) erzeugt das Supabase-Managementwerkzeug
+seine 14-stellige Buchungsnummer beim Lauf selbst; Repository-Version und Production-Buchung
+werden nicht stillschweigend gleichgesetzt.
+
+**Nachprüfung des Bestands:** 3.330 Aufträge, davon 3.122 `erledigt`, 208 `wartend`,
+0 `laeuft` und 0 `fehlgeschlagen`; 3.161 Zeilen ohne Mandatskennung, 0 leere und 0 nur aus
+der ausgeschriebenen Weißraummenge bestehende Zeilenkennungen; genau fünf brauchbare reale
+Mandatskennungen. Die Aggregate entsprechen unverändert der Vorprüfung (§14.5). **Keine
+Auftragsdaten wurden verändert**, keine Mandatskennung und kein Auftragsinhalt wurde
+ausgegeben.
+
+**Nachprüfung der Funktion:** Es steht genau **eine** dreistellige Funktion
+`public.helmut_jobs_offen(text[],text[],text)` mit drei Vorgabewerten; die alte zweistellige
+Fassung ist entfernt. `stable`, `security invoker` und `search_path=public, pg_temp` sind
+gesetzt; `anon` und `authenticated` besitzen kein Ausführungsrecht, `service_role` besitzt
+es. Fünf globale Funktionsgegenproben bestanden. Für alle fünf vorhandenen Mandate wurde das
+Funktionsergebnis rein lesend gegen die direkte SQL-Erwartung geprüft: **5 passend,
+0 Abweichungen.**
+
+**Rein lesende Laufzeitmessung:** 5,973 ms Gesamtlaufzeit, 922 gemeinsame Puffertreffer,
+0 gelesene, 0 veränderte und 0 geschriebene Blöcke. Wie in §14.5 gilt: eine Einzelmessung
+ist kein Lastbeweis.
+
+**Nicht berührt:** das isolierte Supabase-Testprojekt blieb unverändert, Azure wurde nicht
+aufgerufen — es gab keine Modellaufrufe und damit keine Azure-Modellkosten. **Z22 wird nicht erneut
+angewendet** — die Anwendung ist abgeschlossen; ein weiterer Lauf ist weder nötig noch
+freigegeben. Der partielle und der vollständige Rückweg bleiben unverändert die in §14.5
+gebundenen Dateien und sind nicht ausgeführt.
+
+**Beweisebenen nach diesem Nachtrag:** Z22 ist lokal, im Pflicht-CI, isoliert gegen Supabase
+und jetzt **in Production bewiesen** — als Funktions- und Plattformzustand. Ein neuer
+**Mandats- oder Skalierungsnachweis** entstand dadurch nicht: in Production bleiben genau
+fünf reale Mandate bewiesen, und die 500 synthetischen Mandate belegen weiterhin
+ausschließlich den isolierten Warteschlangenmotor. Offen bleiben §11 (Rückfall gegen echtes
+PostgREST), die übrigen still überspringenden Datenbanksuiten (§14.3), Z3b, Azure, der
+Parserfix aus PR #274 und die nächste natürliche Fünferprüfung.
