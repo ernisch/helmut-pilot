@@ -989,3 +989,52 @@ Production besass bei der letzten lesenden Pruefung weiterhin nur die zweistelli
 Vor-Z22-Funktion. Die Production-Datenbank wurde in diesem Nachtrag weder gelesen noch
 veraendert. Eine Production-Anwendung von Z22 und der Vorwaertskorrektur bleibt eine eigene
 Betreiberfreigabe.
+
+### 14.5 Nachtrag 29.08. — Production-Vorpruefung ohne Anwendung
+
+Die ausdruecklich freigegebene, rein lesende Vorpruefung lief am 29.08. gegen das eindeutig
+vom isolierten Testprojekt getrennte Production-Projekt `ddckuvvpcytqbyfmbvie`. Zeitpunkt der
+Bestandsaufnahme: 19:55 Uhr Tuerkei, 18:55 Uhr Berlin, 16:55 Uhr UTC. Das Projekt war
+`ACTIVE_HEALTHY`, Region `eu-west-1`, PostgreSQL 17.6. Es wurde keine Migration angewendet,
+kein Funktionsrumpf ersetzt und keine Auftragszeile veraendert.
+
+**Migrationsstand:** Die Production-Historie endet mit den beiden bereits dokumentierten
+Buchungen `20260823063140` und `20260823063208` fuer denselben Aufgeben-Weg. Weder F9
+(`20260825101500`) noch Z22 (`20260826190000`) noch die Z22-Vorwaertskorrektur
+(`20260829123132`) sind gebucht. Ein spaeterer Z22-Lauf muss deshalb zuerst die Basismigration
+und danach die fail-closed Vorwaertskorrektur anwenden; die Korrektur darf wegen ihres
+Vorbedingungsriegels nicht allein starten.
+
+**Exakter Vorzustand:** Es existiert genau eine Funktion
+`public.helmut_jobs_offen(text[],text[])` und keine dreistellige Fassung. Definition,
+Rueckgabetyp, `stable`, `security invoker`, `search_path=public, pg_temp` und Rumpf stimmen mit
+`20260808_jobqueue_abhaengigkeiten.sql` ueberein. `anon` und `authenticated` besitzen kein
+Ausfuehrungsrecht, `service_role` besitzt es. Es gibt keine abhaengigen Datenbankobjekte, die
+das transaktionale Ersetzen der Signatur blockieren. Die erwarteten Fenster-, Typ-, Status-
+und Tenant-Indizes sind vorhanden.
+
+**Nur zusammengefasster Datenbestand:** 3.330 Auftraege, davon 3.122 `erledigt`, 208
+`wartend`, 0 `laeuft` und 0 `fehlgeschlagen`. 3.161 Zeilen tragen keine Mandatskennung; die
+restlichen Zeilen verteilen sich auf genau fuenf brauchbare Kennungen. Es existieren 0 leere
+und 0 nur aus der ausgeschriebenen Weissraummenge bestehende Zeilenkennungen. Keine Kennung
+und kein Auftragsinhalt wurde ausgegeben.
+
+**Production-Planprobe:** Die korrigierte Filterbedingung wurde als eigenstaendige
+`EXPLAIN (ANALYZE, BUFFERS)`-SELECT-Abfrage mit einer garantiert kuenstlichen Kennung gegen den
+Bestand gemessen. Ergebnis: 4,011 ms Gesamtlaufzeit, 481 Cache-Treffer, 0 gelesene,
+verschmutzte oder geschriebene Bloecke. Der heutige kleine Bestand wird sequenziell gelesen;
+die Anwendung erzeugt deshalb keinen neuen Index. Diese Einzelmessung ist kein Lastbeweis.
+
+**Gebundene Dateien und Rueckweg:** Basismigration SHA256
+`f709747834898bf84b776f806429e95ffa4eeb727dd326f7dbf2d88d403c2f4e`, Vorwaertskorrektur
+SHA256 `c4bb62673f2282f72a585ea4fa6e486a0ed62fdfe951523f066212239158cd23`.
+Der partielle Rueckweg zur alten dreistelligen Z22-Fassung hat SHA256
+`9791aa5061db85dd81186ec6f7ba2a77517855aa525ed2cd804c402812394a02`; der vollstaendige
+Rueckweg zur heutigen zweistelligen Fassung hat SHA256
+`3c3cde417f4f4fcb1c5335362eb43cb7d5c64fdf492dae2a2d35e88580cfe86d`.
+
+Die Vorpruefung ist **gruen**, aber sie ist keine Anwendungsfreigabe. Vor einer spaeteren
+Anwendung sind der aktuelle Vorzustand und 0 laufende Auftraege erneut zu bestaetigen. Danach
+braucht die Anwendung beider Vorwaertsschritte weiterhin eine eigene ausdrueckliche
+Betreiberfreigabe. Azure, echte Modellaufrufe und der 500er Plattformlasttest waren nicht Teil
+dieser Vorpruefung.

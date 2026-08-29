@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-29 — zuletzt aktualisiert zum isolierten Z22-Testprojektbeleg (§18).** Vollständige
+**Stand: 2026-08-29 — zuletzt aktualisiert zur Z22-Production-Vorprüfung (§18).** Vollständige
 Fassung vor dieser Verdichtung: byte-identisch in [`archive/project_state/2026_08_24_CURRENT_STATE_full.md`](archive/project_state/2026_08_24_CURRENT_STATE_full.md). Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Ablageregeln: [`archive/README.md`](archive/README.md), `CLAUDE.md` §9.
 
 **Kernlage in sechs Sätzen:** Der neue Warteschlangenmotor (`HELMUT_SCALABLE_PIPELINE=on`) ist **seit dem 23.08.2026 in Production eingeschaltet** (Vollbeleg Runbook §30.7). Die **fünf bestehenden Mandate sind mit 376 echten Abschlüssen bewiesen**; **Morgenlauf 5/5 und Lagelauf effektiv 5/5** aller aktiven Mandate waren erfolgreich. Der **R4-/GitHub-Actions-Watchdog-Nachweis ist grün**. Es gab **keine Doppelarbeit, keine verlorenen Aufträge, keine endgültigen Fehler, 0 `unbekannt`, 0 Lease-Probleme und 0 Fencing-Konflikte**; alle elf §28.6-Kontrollen sind erfüllt ([`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §30.7). Der Modus ist weiterhin **`HELMUT_JOB_DISPATCH_MODE=shadow`** (Cron-Antrieb; kein Ereignis-Antrieb, kein AWS). **Der Selbstweck ist seit 24.08. lokal Ende-zu-Ende belegt, aber in Production nie ausgeführt** (§14).
@@ -11,8 +11,8 @@ Fassung vor dieser Verdichtung: byte-identisch in [`archive/project_state/2026_0
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **`main` = `ae74a9bc` = Merge von PR #273** (Befund Z22, §18); davor `a966bf5c` (#278, UTC-stabiler Gesundheitsberichtstest) und `0ddb73e9` (#272). Das automatische Vercel-Production-Deployment ist grün; der öffentliche Alias antwortet mit HTTP 200 und liefert `ae74a9bc`.
-- **PR #273 ist gemergt.** Offen bleiben die gestapelten PRs #274–#277; sie sind nicht Teil von Production und brauchen nach den gemergten Grundlagen eine eigene Aktualisierung und Betreiberentscheidung.
+- **`main` = `4f019797` = Merge von PR #279** (Z22-Testprojektbeleg); davor `ae74a9bc` (#273), `a966bf5c` (#278, UTC-stabiler Gesundheitsberichtstest) und `0ddb73e9` (#272). Das automatische Vercel-Production-Deployment ist grün; der öffentliche Alias antwortet mit HTTP 200 und liefert `4f019797`. Vercel-Laufzeitlogs waren in dieser Sitzung nicht zugänglich.
+- **PR #273 und #279 sind gemergt.** Offen bleiben die gestapelten PRs #274–#277; sie sind nicht Teil von Production und brauchen nach den gemergten Grundlagen eine eigene Aktualisierung und Betreiberentscheidung.
 - Davor gemergt: #271, #270, #265, #262, #261, #260/#259/#256/#257, #225, #216; die PR-Bereinigung vom 23.08. (inkl. begründeter Schließungen) ist in Archivfassung und Runbook dokumentiert.
 - Merge nach `main` löst automatisch ein Production-Deployment aus.
 
@@ -195,7 +195,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 - **Sicherheitslücke geschlossen:** `scripts/lokal.js` räumte `AZURE_OPENAI_KEY`/`AZURE_OPENAI_ENDPOINT` **nicht** aus der Kindprozess-Umgebung — die echte Produktions-KI-Kennung lag in jedem Testkindprozess, gehalten allein von der Laufzeitsperre. Behoben, mit Laufzeit-Gegenprobe.
 - **Zwei Fehler im gemergten Z2-Werkzeug behoben:** `lasttest-worker.js` las `tenant_id` statt `tenantId`, `psql-sitzung.js` lieferte `status` statt `neuerStatus` — die Fehlereinspritzung traf deshalb nur einen Teil der Aufträge und `endgueltigFehlgeschlagen` blieb strukturell 0. Z2 danach **60 PASS / 0 FAIL**, jetzt **4** statt 2 endgültige Fehler.
 - **Preisbasis unverändert offen (F7):** die Preistabelle im Code ist ein **unbelegter Schätzwert**; die offizielle Azure-Preisseite ist aus Cloud-Sitzungen gesperrt. Alle Beträge sind **berechnet**, keine Rechnungsbeträge.
-- **Offen:** **Z3b** (echte Anbieter und Azure-Messungen) · Parserfix aus PR #274 · nächste natürliche Fünferprüfung · jede weitere Aktivierung.
+- **Offen:** **Z3b** (echte Anbieter und Azure-Messungen) · Parserfix aus PR #274 · nächste natürliche Fünferprüfung · jede weitere Aktivierung. Azure ist nicht erledigt: der letzte kontrollierte Portalversuch war am 28.08. um 17:55 UTC schon vor Kennworteingabe gesperrt; vor Ablauf von 24 Stunden am 29.08. um 17:55 UTC erfolgt kein neuer Versuch. Ein Portalversuch und echte Modellaufrufe bleiben getrennte Freigaben (Plan in PR #277).
 
 ## 18 · Befund Z22, Pflichtbeleg und isolierte Anwendung
 
@@ -204,5 +204,6 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 - **Ursache und Korrektur:** `helmut_jobs_offen` zählte persönliche Abrufe und Projektionen mandatsblind. Z22 ergänzt `p_mandat`; unbrauchbare Parameter- oder Zeilenkennung gilt sicher als globale Arbeit. Motor und Attrappe tragen denselben Vertrag.
 - **Pflichtbeleg:** aktueller Vertragsbeleg **48 PASS / 0 FAIL**. CI-Lauf `33254042453`: **284/284 Offline-Suiten**, Browser/Mobil **32/0** und der echte Datenbanknachweis gegen PostgreSQL **17.11 mit 41 PASS / 0 FAIL**; §11 gegen echtes PostgREST blieb ausdrücklich übersprungen.
 - **Migrationsabweichung geschlossen:** Die alte Z22-Fassung im isolierten Testprojekt bleibt unter `20260827121931` historisch erhalten. Die Vorwärtskorrektur aus Repository-Version `20260829123132` wurde dort unter `20260829135455` angewendet. Danach: **900 synthetische Aufträge unverändert**, **500 Mandatskennungen geprüft**, **0 Abweichungen**, genau eine dreistellige Funktion, Rechte geschlossen; kein Lasttest wurde wiederholt.
+- **Production-Vorprüfung 29.08., nur lesend:** Projekt gesund, PostgreSQL 17.6; Z22 und F9 fehlen in der Migrationshistorie. Genau die erwartete zweistellige Vor-Z22-Funktion steht aktiv, keine dreistellige Fassung und keine abhängigen Datenbankobjekte. Rechte: `anon`/`authenticated` gesperrt, `service_role` erlaubt. Bestand: **3.330 Aufträge**, davon 3.122 erledigt, 208 wartend, 0 laufend, 0 fehlgeschlagen; fünf brauchbare Mandatskennungen, keine leeren oder reinen Weissraumkennungen. Der korrigierte Filterplan lief lesend in **4,011 ms**, 0 geschriebene oder verschmutzte Blöcke. Anwendung und Rückbau wurden nicht ausgeführt; Details und Prüfsummen §14.5.
 - **Beweisebenen:** lokal und im Pflicht-CI ist Z22 belegt; isoliert gegen Supabase ist die Korrekturmigration belegt. Vollständig im Fachweg und in Production entstand dadurch **kein neuer Mandatsnachweis**. Production bleibt bei fünf realen Mandaten.
-- **Offen:** Production-Anwendung von Z22 samt Vorwärtskorrektur, §11, die übrigen still überspringenden Datenbanksuiten, Z3b, Azure, Parserfix und die nächste natürliche Fünferprüfung. Jede Production-Anwendung braucht eine eigene Freigabe.
+- **Offen:** Production-Anwendung von Z22 samt Vorwärtskorrektur, §11, die übrigen still überspringenden Datenbanksuiten, Z3b, Azure, Parserfix und die nächste natürliche Fünferprüfung. Die Vorprüfung ist keine Anwendungsfreigabe; jede Production-Anwendung braucht eine eigene Freigabe.
