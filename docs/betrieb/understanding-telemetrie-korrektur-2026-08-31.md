@@ -1,9 +1,11 @@
 # Understanding-Laufmeldung: roter Production-Befund vom 30.08.2026 und lokale Korrektur
 
 **Sprintzustand: teilweise abgeschlossen.** Die Diagnose ist vollständig und rein lesend
-belegt, die Korrektur ist lokal umgesetzt und getestet. **Nichts ist nach Production
-gebracht worden** — kein Merge, kein Deployment, kein Push, keine Migration, keine
-Datenänderung, keine Env-/Flag-Änderung, kein Cron-Lauf, kein Modellaufruf.
+belegt, die Korrektur ist umgesetzt und getestet. **Nichts ist nach Production gebracht
+worden** — kein Merge, kein Production-Deployment, keine Preview, keine Migration, keine
+Datenänderung, keine Env-/Flag-Änderung, kein Cron-Lauf, kein Modellaufruf, kein Pull
+Request. Der Branch wurde am 30.08. **ausschließlich zur Sicherung** nach GitHub gepusht,
+nachdem er sich in seiner eigenen `vercel.json` selbst für Deployments gesperrt hatte (§12).
 Der Production-Nachweis steht deshalb ausdrücklich aus (§9).
 
 **Untersuchter Lauf:** natürlicher `understanding-cron`, 2026-08-30
@@ -303,3 +305,40 @@ nur Zahlen): der Lauf ergibt jetzt `status = partial`, `saved_count = 18`,
    bezahlter Aufruf) und Behandlung des U+0000-Vorgangs aus §4.
 4. Unabhängig davon bleibt der Kapazitätsbefund aus §9.6 die eigentliche Blockade des
    Siebentagenachweises.
+
+## 12 · Gesicherter Push ohne Bereitstellung (30.08., Betreiberfreigabe)
+
+Der Branch wurde nach ausdrücklicher Freigabe nach GitHub gepusht — **nicht** als
+gewöhnlicher Branch-Push, sondern erst nachdem ein zusätzlicher Commit den Zweig in
+`vercel.json` unter `git.deploymentEnabled` selbst auf `false` gesetzt hatte.
+
+**Wirksamkeit VOR dem Push belegt (rein lesend).** Die Vercel-Dokumentation nennt Syntax
+und Semantik (nicht genannte Branches sind standardmäßig aktiviert), sagt aber nicht,
+aus welchem Branch die Datei gelesen wird. Das entscheidet ein natürliches Experiment im
+eigenen Projekt vom 29.08.: **vier** Zweige, die sich in ihrer **eigenen** `vercel.json`
+selbst sperren, wurden um 19:44:18, 19:54:57, 20:04:09 und 20:34:22 UTC gepusht — im
+Fenster 19:40–21:00 UTC entstand **kein einziges** Deployment. Im unmittelbar
+angrenzenden Fenster erhielt `claude/helmut-ten-mandate-transition-lg975i`, der sich
+**nicht** selbst sperrt, für **jeden** Push eine Preview (21:05, 21:26, 21:41 UTC).
+Entscheidend: `main` stand zu diesem Zeitpunkt auf `bb0577a` und trug **überhaupt kein**
+`deploymentEnabled` — die Sperreinträge existierten also ausschließlich im jeweils
+gepushten Branch. Vercel liest die Einstellung damit belegt aus dem **gepushten Commit**.
+
+**Lokale Vorabprüfung: 16 von 16 Zusicherungen** — JSON gültig, genau ein Eintrag
+ergänzt, kein Platzhalter, kein Eintrag für `main`, alle Werte exakt `false`, außerhalb
+von `git` ist `vercel.json` unverändert (`maxDuration` 300, `regions` unverändert). Die
+drei Repo-Suiten, die `vercel.json` lesen, bleiben grün: `selbstweck-ende-zu-ende` 31/0,
+`cron-globalphase` 176/0, `pipeline-zeitbudget` 21/0.
+
+**Nachweis nach dem Push (rein lesend, zwei unabhängige Systeme):**
+
+| Kontrolle | Ergebnis |
+|---|---|
+| Branch und alle Commits auf GitHub | ja — Remote-Kopf identisch mit lokal, 0 ungepushte Commits |
+| Vercel-Deployments seit dem Push | **0** (Vercel-API, Fenster ab 22:20 UTC; Push 22:56:50 UTC) |
+| Preview erstellt | **nein** — neuester `Preview`-Eintrag der GitHub-Deployments-API stammt vom 29.08. 22:06 UTC |
+| Commit-Status auf dem Kopf | keine Statuszeile — Vercel hat keinen Lauf angelegt |
+| GitHub-Actions-Läufe für den Branch | 0 (ohne Pull Request kein CI-Lauf) |
+| Production | unverändert `afc807e0`, Deployment `READY`, `target: production`, Alias gebunden; neuester `Production`-Eintrag weiterhin 29.08. 22:02 UTC |
+
+Kein Pull Request, kein Merge, kein Production-Deployment, keine Änderung an Supabase.
