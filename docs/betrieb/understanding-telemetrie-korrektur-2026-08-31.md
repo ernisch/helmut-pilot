@@ -179,12 +179,22 @@ vertagt        = erneut
 
 Statussemantik:
 
-| Status | Bedingung |
-|---|---|
-| `blocked` | Lauf ordnungsgemäß ohne Arbeit beendet (`skipped`, oder null Arbeitszeilen) |
-| `partial` | mindestens ein echter Fehlerfall **und** mindestens ein Ergebnis gespeichert |
-| `failed` | Fehlerfälle, aber nichts gespeichert — oder keine Fachtelemetrie (fail closed) |
-| `success` | kein Fehlerfall; auch ein Lauf, der **nur** vertagt hat |
+Geprüft wird in dieser Reihenfolge; ein **struktureller** Befund schlägt den fachlichen,
+weil er sagt, dass die Zahlen als Ganzes nicht belastbar sind:
+
+| # | Bedingung | Status | Fehlerklasse |
+|---|---|---|---|
+| 0 | `skipped` (kein Store, keine KI, nichts vorgemerkt, fremde Sperre) | `blocked` | — |
+| 1 | keine Fachtelemetrie | `failed` | `telemetrie-fehlt` |
+| 2 | ein vorhandener Gruppenwert ist keine nichtnegative Zahl | `failed` | `telemetrie-unvollstaendig` |
+| 3 | Arbeitsliste (`cluster`) fehlt oder ist unbrauchbar | gespeichert > 0 ? `partial` : `failed` | `telemetrie-unvollstaendig` |
+| 4 | Summe der vier Zähler ≠ `cluster` | gespeichert > 0 ? `partial` : `failed` | `zaehlerwiderspruch` |
+| 5 | mindestens ein echter Fehlerfall | gespeichert > 0 ? `partial` : `failed` | häufigster fehlerhafter Ergebnisschlüssel |
+| 6 | Arbeitsliste vorhanden, aber null Zeilen (`cluster = 0`) | `blocked` | — |
+| 7 | sonst | `success` | — |
+
+**Eine nicht stimmige Bilanz kann damit nie `success` werden** — und eine nicht
+abrechenbare Bilanz (Zeilen 1 und 2) liefert **alle** Zähler als `null`, nie als `0`.
 
 Vertagte Arbeit bleibt eigenständig sichtbar und wird **nie** als technischer Fehler
 gezählt. Ergebnisarten, die die Gruppenkarte nicht kennt, fallen in `gruppen.unbekannt`,
@@ -212,6 +222,25 @@ geladenen Rohdokumente (500) und ist damit eine **andere Einheit** als die Arbei
 `zielmenge`. Eine Umstellung würde die historische Reihe brechen und ist eine eigene
 Entscheidung.
 
+### 6.1 · Nachtrag 31.08. — unabhängige Prüfung schloss drei Reste
+
+Die erste Fassung berechnete `stimmig`, ließ es aber nicht auf den Status durchschlagen:
+der Status entschied sich allein an `fehlgeschlagen > 0`, und `server.js` protokollierte
+den Widerspruch nur, speicherte den berechneten Status jedoch weiter. Drei Reste, alle
+geschlossen:
+
+1. **Eine nicht stimmige Bilanz konnte `success` werden** — ebenso eine Bilanz ohne
+   brauchbare Arbeitsliste. Beides ist jetzt Zeile 3 bzw. 4 der Tabelle oben.
+2. **Ein ungültiger Gruppenwert wurde still zu `0`** (`summe()` glättete ihn). Die Bilanz
+   sah dann vollständig aus, war es aber nicht. Jetzt fail closed, Zeile 2.
+3. **`const processed = bilanz.gespeichert ?? 0`** machte aus einem unbekannten Wert
+   erneut eine gemessene Null. Jetzt bleibt `processed` unbekannt. Damit das bis in die
+   Ablage trägt, musste zusätzlich **`sanitizeProcessRun` in `lib/helmut/storage.js`**
+   denselben `num(null) === 0`-Fehler ablegen wie zuvor `blob-relational.js` — sonst
+   hätte der Speicherweg die Ehrlichkeit direkt wieder aufgehoben.
+
+Belegt durch `scripts/lauf-bilanz-test.js` §14 (45 zusätzliche Prüfungen).
+
 ## 7 · Wirkung auf bestehende Verbraucher
 
 - **Gesundheitsbericht** (`motor-health.js`): `partial` gilt seit der Watchdog-Korrektur
@@ -232,7 +261,7 @@ Entscheidung.
 
 | Prüfung | Ergebnis |
 |---|---:|
-| `lauf-bilanz-test.js` (neu) | **104 PASS / 0 FAIL** |
+| `lauf-bilanz-test.js` (neu) | **149 PASS / 0 FAIL** |
 | `verstehen-restzeit-test.js` | 50 PASS / 0 FAIL |
 | `ai-json-parse-test.js` | 25 / 25 |
 | `ki-antwortvertrag-test.js` | 10 PASS / 0 FAIL |

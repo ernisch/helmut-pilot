@@ -1822,11 +1822,15 @@ async function handleRequest(request, response) {
       // ein Nachholauf, der ausschliesslich bestehende Vorgaenge fortgeschrieben hat,
       // nicht als "0 verarbeitet" erscheint.
       const bilanz = laufBilanz(result);
-      const processed = bilanz.gespeichert ?? 0;
+      // NICHT `?? 0` (Review-Befund 2026-08-31): ist die Bilanz nicht abrechenbar, bleibt
+      // die verarbeitete Menge UNBEKANNT und wird als `null` gespeichert. Eine harte 0
+      // waere erneut eine Aussage, die der Lauf nie gemacht hat.
+      const processed = bilanz.gespeichert;
       console.log(`[cron/understanding] rawDocs=${rawDocs.length} Ergebnis: ${JSON.stringify({ processed, result })}`);
       if (bilanz.stimmig === false) {
-        // Die vier Hauptzaehler decken die Arbeitsliste nicht ab. Das ist ein echter
-        // Widerspruch in der Telemetrie und wird benannt, nie geglaettet.
+        // Die vier Hauptzaehler decken die Arbeitsliste nicht ab. Der Widerspruch schlaegt
+        // seit dem Review vom 31.08. bereits im STATUS durch (`partial`/`failed`, Fehlerklasse
+        // `zaehlerwiderspruch`); diese Zeile macht ihn zusaetzlich im Laufprotokoll sichtbar.
         console.error(`[cron/understanding] ZAEHLERWIDERSPRUCH ${JSON.stringify({
           runId, gespeichert: bilanz.gespeichert, uebersprungen: bilanz.uebersprungen,
           fehlgeschlagen: bilanz.fehlgeschlagen, vertagt: bilanz.vertagt,

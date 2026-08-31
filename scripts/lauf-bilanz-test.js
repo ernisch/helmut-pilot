@@ -28,6 +28,8 @@
 //   §11 Restzeitwache: vertagte Arbeit landet in `vertagt`, nie in `fehlgeschlagen` (Pflicht 10)
 //   §12 U+0000 aus dem Modelltext erreicht die Ablage nicht mehr (Production 30.08. 20:02 UTC)
 //   §13 Der Parservertrag aus PR #274 bleibt unveraendert streng (Pflicht 9)
+//   §14 REVIEW-BEFUND 31.08.: eine nicht stimmige Bilanz ergibt NIE `success`, und eine
+//       nicht abrechenbare Bilanz speichert `processed_count` als null statt als 0
 
 const assert = require("assert");
 const fs = require("fs");
@@ -330,6 +332,97 @@ async function main() {
       catch (e) { return e.code === "AI_RESPONSE_INVALID_JSON"; } })());
   check("die Rettung ist fuer gueltiges JSON ein No-op",
     ai.escapeControlCharsInJsonStrings('{"a":"b"}') === '{"a":"b"}');
+
+  // ── §14 ────────────────────────────────────────────────────────────────────────────────
+  abschnitt("§14 Nicht stimmige Bilanz ergibt nie success · unbekannt bleibt unbekannt");
+  // BELEGTER ANLASS (unabhaengige Pruefung 31.08.): `stimmig` wurde berechnet, aber der
+  // Status entschied sich allein an `fehlgeschlagen > 0`. Eine Bilanz, deren vier Zaehler
+  // die Arbeitsliste NICHT abdecken — oder bei der die Arbeitsliste ganz fehlte — konnte
+  // deshalb `success` werden; `server.js` protokollierte den Widerspruch nur und speicherte
+  // den berechneten Status trotzdem. Zusaetzlich machte `bilanz.gespeichert ?? 0` aus einem
+  // unbekannten Wert wieder eine gemessene Null.
+  const G = (o) => ({ verarbeitet: 0, zusammengefuehrt: 0, duplikate: 0, ausgeschlossen: 0,
+    fehlgeschlagen: 0, erneut: 0, unbekannt: 0, ...o });
+  const tele = (gruppen, cluster, ergebnisse = {}) => ({ telemetrie: { cluster, gruppen, ergebnisse } });
+
+  // (1) Zaehlersumme ungleich Cluster, MIT gespeicherten Ergebnissen -> partial
+  const w1 = laufBilanz(tele(G({ verarbeitet: 5, erneut: 2 }), 99));
+  check("(1) Summe != cluster mit gespeicherten ist NICHT success", w1.status !== "success", w1.status);
+  check("(1) … sondern partial", w1.status === STATUS.PARTIAL, w1.status);
+  check("(1) … Fehlerklasse zaehlerwiderspruch", w1.fehlerklasse === "zaehlerwiderspruch", String(w1.fehlerklasse));
+  check("(1) … stimmig meldet false", w1.stimmig === false, String(w1.stimmig));
+  check("(1) … die Zaehler selbst bleiben erhalten", w1.gespeichert === 5 && w1.vertagt === 2);
+
+  // (2) Zaehlersumme ungleich Cluster, OHNE gespeicherte Ergebnisse -> failed
+  const w2 = laufBilanz(tele(G({ erneut: 5 }), 99));
+  check("(2) Summe != cluster ohne gespeicherte ist NICHT success", w2.status !== "success", w2.status);
+  check("(2) … sondern failed", w2.status === STATUS.FAILED, w2.status);
+  check("(2) … Fehlerklasse zaehlerwiderspruch", w2.fehlerklasse === "zaehlerwiderspruch", String(w2.fehlerklasse));
+
+  // (3) Fehlendes bzw. unbrauchbares Cluster -> nie success
+  for (const [name, c] of [["null", null], ["undefined", undefined], ["Text", "viele"], ["negativ", -1]]) {
+    const b = laufBilanz(tele(G({ verarbeitet: 5 }), c));
+    check(`(3) cluster=${name} ergibt nicht success`, b.status !== "success", b.status);
+    check(`(3) cluster=${name} -> telemetrie-unvollstaendig`,
+      b.fehlerklasse === "telemetrie-unvollstaendig", String(b.fehlerklasse));
+    check(`(3) cluster=${name} -> stimmig ist nicht pruefbar (null)`, b.stimmig === null, String(b.stimmig));
+  }
+  check("(3) fehlendes cluster ohne gespeicherte Ergebnisse -> failed",
+    laufBilanz(tele(G({ erneut: 5 }), null)).status === STATUS.FAILED);
+
+  // (4) Ungueltiger Zaehlerwert -> nicht abrechenbar, fail closed
+  for (const [name, wert] of [["Text", "viele"], ["NaN", NaN], ["negativ", -3]]) {
+    const b = laufBilanz(tele(G({ verarbeitet: wert }), 5));
+    check(`(4) Zaehlerwert ${name} ergibt failed`, b.status === STATUS.FAILED, b.status);
+    check(`(4) Zaehlerwert ${name} -> telemetrie-unvollstaendig`,
+      b.fehlerklasse === "telemetrie-unvollstaendig", String(b.fehlerklasse));
+    check(`(4) Zaehlerwert ${name} -> nicht zaehlbar, alle Zaehler null`,
+      b.zaehlbar === false && b.gespeichert === null && b.vertagt === null);
+  }
+  check("(4) ein FEHLENDER Gruppenwert bleibt zulaessig (keine Mitglieder)",
+    laufBilanz(tele({ verarbeitet: 3, erneut: 2 }, 5)).status === STATUS.SUCCESS);
+
+  // (5) Nicht zaehlbare Bilanz -> processed_count bleibt null, nie 0
+  const nichtZaehlbar = laufBilanz({ pending: 4, results: [] });
+  check("(5) Vorbedingung: Bilanz ist nicht zaehlbar", nichtZaehlbar.zaehlbar === false);
+  const zeileUnbekannt = processRunToRelationalRow(sanitizeProcessRun({
+    process: "understanding-cron", runId: "t-4", zielmenge: 500,
+    processed: nichtZaehlbar.gespeichert,
+    gespeichert: nichtZaehlbar.gespeichert, uebersprungen: nichtZaehlbar.uebersprungen,
+    fehlgeschlagen: nichtZaehlbar.fehlgeschlagen, deferred: nichtZaehlbar.vertagt,
+    status: nichtZaehlbar.status, fehlerklasse: nichtZaehlbar.fehlerklasse
+  }));
+  check("(5) processed_count bleibt null statt 0", zeileUnbekannt.processed_count === null,
+    String(zeileUnbekannt.processed_count));
+  check("(5) saved_count bleibt null statt 0", zeileUnbekannt.saved_count === null,
+    String(zeileUnbekannt.saved_count));
+  check("(5) der Status ist trotzdem gesetzt", zeileUnbekannt.status === "failed", zeileUnbekannt.status);
+  check("(5) sanitizeProcessRun macht aus null keine 0",
+    sanitizeProcessRun({ process: "p", runId: "t-5", processed: null }).processed === null);
+  check("(5) ein WIRKLICH gemessener Nullwert bleibt 0",
+    sanitizeProcessRun({ process: "p", runId: "t-6", processed: 0 }).processed === 0);
+  check("(5) Quelltextvertrag: der Cron ersetzt unbekannt nicht durch 0",
+    !/const processed = bilanz\.gespeichert \?\? 0;/.test(src("server.js"))
+    && /const processed = bilanz\.gespeichert;/.test(src("server.js")));
+
+  // (6)(7)(8) Die bisher festgelegte Semantik bleibt unveraendert
+  check("(6) korrekte Bilanz ohne Fehler bleibt success",
+    laufBilanz(tele(G({ verarbeitet: 20, erneut: 30 }), 50)).status === STATUS.SUCCESS);
+  check("(6) korrekte Bilanz MIT Fehler bleibt partial und behaelt ihre Ergebnisklasse",
+    (() => { const b = laufBilanz(tele(G({ verarbeitet: 18, fehlgeschlagen: 1, erneut: 32 }), 51),
+      { gruppenKarte: ERGEBNISGRUPPEN });
+      return b.status === STATUS.PARTIAL; })());
+  check("(7) reine Vertagung bleibt success",
+    laufBilanz(tele(G({ erneut: 41 }), 41)).status === STATUS.SUCCESS);
+  check("(7) … und erzeugt keine Fehlerklasse",
+    laufBilanz(tele(G({ erneut: 41 }), 41)).fehlerklasse === null);
+  check("(8) ordnungsgemaesser Leerlauf (cluster 0, Summe 0) bleibt blocked",
+    laufBilanz(tele(G({}), 0)).status === STATUS.BLOCKED);
+  check("(8) skipped bleibt blocked",
+    laufBilanz({ skipped: true, reason: "no-pending" }).status === STATUS.BLOCKED);
+  // Und die Production-Zeile vom 30.08. bleibt unveraendert partial.
+  check("(8) der echte 21:30-Lauf bleibt partial/skipped-error",
+    b1.status === STATUS.PARTIAL && b1.fehlerklasse === "skipped-error");
 
   console.log(`\nErgebnis: ${pass} PASS / ${fail} FAIL`);
   if (fail > 0) process.exitCode = 1;
