@@ -332,7 +332,16 @@ const store = (llmUsage, processRuns = []) => async () => ({ llmUsage, processRu
   // Der dedizierte Understanding-Cron erzeugt eine eigene Laufkennung.
   // §29 (Reparatursprint 2026-08-20): das Fenster ist um die zwei Zeilen der
   // Restzeitwache (Kommentar + absolute Deadline im Aufruf) verlaengert.
-  const cronBlock = serverSrc.slice(serverSrc.indexOf('"/api/cron/understanding"'), serverSrc.indexOf('"/api/cron/understanding"') + 3200);
+  // BRUECHIGES FENSTER BEHOBEN (2026-08-31): der Block wurde bis dahin nach ZEICHENZAHL
+  // (3200) abgeschnitten. Die kanonische Laufbilanz verlaengerte den Routenblock, und der
+  // recordProcessRun-Aufruf fiel aus dem Fenster — der Test schlug fehl, obwohl der
+  // Quelltext den Vertrag erfuellte. Der Block wird jetzt bis zur NAECHSTEN Route
+  // abgegrenzt; damit prueft der Vertrag den ganzen Block statt eines Ausschnitts.
+  const cronStart = serverSrc.indexOf('"/api/cron/understanding"');
+  const cronEnde = serverSrc.indexOf('"/api/tasks"', cronStart);
+  check("Understanding-Routenblock ist eindeutig abgegrenzt", cronStart > 0 && cronEnde > cronStart,
+    `start=${cronStart} ende=${cronEnde}`);
+  const cronBlock = serverSrc.slice(cronStart, cronEnde);
   check("Understanding-Cron erzeugt eine Laufkennung", /const runId = helmutRunId\("understanding-cron"/.test(cronBlock));
   check("Understanding-Cron reicht die Laufkennung an den Kostenpfad durch",
     /runPendingUnderstandingShadow\([\s\S]{0,200}?runId[\s\S]{0,40}?\)/.test(cronBlock));

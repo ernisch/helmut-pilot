@@ -70,6 +70,7 @@ const resetTiming = require("./lib/helmut/reset-timing");
 const helmutFlags = require("./lib/helmut/flags");
 const { getRelevantParliamentaryItems } = require("./lib/helmut/dip");
 const { runPendingUnderstandingShadow, clusterRawDocuments, deriveVorgangId, diagnosePendingUnderstanding } = require("./lib/helmut/understanding");
+const { laufBilanz } = require("./lib/helmut/lauf-bilanz");
 const { generateOfficeOutput, isValidChannel } = require("./lib/helmut/office");
 const { buildLageBriefing } = require("./lib/helmut/lage");
 const { backfillProvenance } = require("./lib/helmut/backfill");
@@ -1814,11 +1815,28 @@ async function handleRequest(request, response) {
         budgetMs: Number(process.env.HELMUT_UNDERSTAND_BUDGET_MS || 240000),
         deadlineMs: understandingStartMs + 280000, runId
       });
-      // "processed" zaehlt jetzt auch Aktualisierungen bestehender Vorgaenge —
-      // vorher zaehlte nur `saved`, wodurch ein Nachholauf, der ausschliesslich
-      // bestehende Vorgaenge fortgeschrieben hat, als "0 verarbeitet" erschien.
-      const processed = (result && result.results && result.results.filter((r) => r && (r.status === "saved" || r.status === "updated")).length) || 0;
+      // KANONISCHE LAUFBILANZ (Befund 2026-08-30): Zaehler UND Gesamtstatus stammen aus
+      // EINER Ableitung ueber die Fachtelemetrie (lib/helmut/lauf-bilanz.js) — nicht
+      // mehr aus einer zweiten, hier von Hand gefuehrten Zaehlung ueber `results`.
+      // "processed" zaehlt weiterhin `saved` + `updated` (Gruppe `verarbeitet`), damit
+      // ein Nachholauf, der ausschliesslich bestehende Vorgaenge fortgeschrieben hat,
+      // nicht als "0 verarbeitet" erscheint.
+      const bilanz = laufBilanz(result);
+      // NICHT `?? 0` (Review-Befund 2026-08-31): ist die Bilanz nicht abrechenbar, bleibt
+      // die verarbeitete Menge UNBEKANNT und wird als `null` gespeichert. Eine harte 0
+      // waere erneut eine Aussage, die der Lauf nie gemacht hat.
+      const processed = bilanz.gespeichert;
       console.log(`[cron/understanding] rawDocs=${rawDocs.length} Ergebnis: ${JSON.stringify({ processed, result })}`);
+      if (bilanz.stimmig === false) {
+        // Die vier Hauptzaehler decken die Arbeitsliste nicht ab. Der Widerspruch schlaegt
+        // seit dem Review vom 31.08. bereits im STATUS durch (`partial`/`failed`, Fehlerklasse
+        // `zaehlerwiderspruch`); diese Zeile macht ihn zusaetzlich im Laufprotokoll sichtbar.
+        console.error(`[cron/understanding] ZAEHLERWIDERSPRUCH ${JSON.stringify({
+          runId, gespeichert: bilanz.gespeichert, uebersprungen: bilanz.uebersprungen,
+          fehlgeschlagen: bilanz.fehlgeschlagen, vertagt: bilanz.vertagt,
+          summe: bilanz.gesamt, cluster: bilanz.cluster
+        })}`);
+      }
       // P0-1: Understanding-Batch-Laufzeit persistieren (Auth-Store, scalar-only, PII-frei).
       // W-2: kein `.catch(() => {})` mehr — Telemetriefehler werden strukturiert
       // geloggt (recordProcessRun intern) und hier im Abschlussstatus ausgewiesen.
@@ -1827,11 +1845,17 @@ async function handleRequest(request, response) {
         startedAt: new Date(understandingStartMs).toISOString(), finishedAt: new Date().toISOString(),
         durationMs: Date.now() - understandingStartMs,
         processed,
-        deferred: result && result.deferred,
+        // Die vier disjunkten Hauptzaehler aus derselben Quelle wie der Status.
+        // Vertagte Arbeit bleibt eigenstaendig sichtbar und ist KEIN Fehler.
+        gespeichert: bilanz.gespeichert,
+        uebersprungen: bilanz.uebersprungen,
+        fehlgeschlagen: bilanz.fehlgeschlagen,
+        deferred: bilanz.vertagt,
         skippedStore: result && result.counts && result.counts["skipped-store"],
         reason: result && result.reason,
         zielmenge: rawDocs.length,
-        status: result && result.skipped ? "blocked" : "success",
+        status: bilanz.status,
+        fehlerklasse: bilanz.fehlerklasse,
         telemetrie: result && result.telemetrie
       });
       return {
