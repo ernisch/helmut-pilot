@@ -509,7 +509,11 @@ function laufGegenAblage(storage, zeile, { cronName, tenantIds, runId, startedMs
         // unveraendert; hinzu kommen ZWEI Zeitplaene der neuen Route
         // `/api/cron/lage-briefing-nachlauf` (zweiter und dritter Morgenslot). Sie hat KEINEN
         // Altpfad und startet bei ausgeschalteten OP-30-Flags nichts (server.js, drei Riegel).
-      check("Cron-Zeiten: neun Bestandseintraege unveraendert + zwei geschuetzte Nachlaufslots",
+        // KAPAZITAETSSPRINT 2026-08-31: ZWEI weitere Zeitplaene der Rueckstandsschleife
+        // `/api/cron/understanding-rueckstand` (11:30/17:30 UTC) — gleicher Verstehensmotor,
+        // aelteste zuerst, nicht priorisiert gebucht, fail-closed begrenzt
+        // (docs/betrieb/understanding-kapazitaet-2026-08-31.md).
+      check("Cron-Zeiten: elf Bestandseintraege unveraendert + zwei Rueckstandsslots",
         (vercel.crons || []).map((c) => `${c.path}=${c.schedule}`).join("|")
           === [
             "/api/cron/crawl=0 4 * * *",
@@ -522,7 +526,9 @@ function laufGegenAblage(storage, zeile, { cronName, tenantIds, runId, startedMs
             "/api/cron/lage-briefing=45 5 * * *",
             "/api/cron/lage-briefing-nachlauf=10 6 * * *",
             "/api/cron/lage-briefing-nachlauf=22 6 * * *",
-            "/api/cron/understanding=30 21 * * *"
+            "/api/cron/understanding=30 21 * * *",
+            "/api/cron/understanding-rueckstand=30 11 * * *",
+            "/api/cron/understanding-rueckstand=30 17 * * *"
           ].join("|"),
         JSON.stringify(vercel.crons));
       check("Die Reihenfolgelogik ist unangetastet (planTenantOrder unveraendert sortiert)",

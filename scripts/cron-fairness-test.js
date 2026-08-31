@@ -1395,13 +1395,22 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
     // Zeichen fuer Zeichen unveraendert; die Pruefung bleibt ein exakter Mengenvergleich.
     // Der neue Slot hat KEINEN Altpfad: bei ausgeschalteten OP-30-Flags bricht er ab, bevor
     // er irgendetwas schreibt oder ein Modell ruft (server.js, eigener Riegel).
-    check("Cron-Zeitplan: 9 unveraenderte Zeiten + zwei flaggeschuetzte Nachlaufslots",
-      (vercel.crons || []).length === 11 && plan === [
+    // KAPAZITAETSSPRINT 2026-08-31: ZWEI weitere Eintraege — die Rueckstandsschleife des
+    // Verstehens (`/api/cron/understanding-rueckstand`, 11:30 und 17:30 UTC, beide >= 30 min
+    // von jedem anderen Slot entfernt). Belegter Anlass: 9.080 wartende Vorgaenge, davon
+    // 8.895 aelter als 24 h, waehrend die jüngst-zuerst-Auswahl fast nur <24 h bediente
+    // (docs/betrieb/understanding-kapazitaet-2026-08-31.md). Die ELF bestehenden Zeiten
+    // bleiben Zeichen fuer Zeichen unveraendert; die Pruefung bleibt ein exakter
+    // Mengenvergleich. Die neue Route buchen ihre Modellaufrufe NICHT priorisiert
+    // (Tagesdeckel minus Verstehens-Reserve) und fahren denselben CAS-geschuetzten Motor.
+    check("Cron-Zeitplan: 11 unveraenderte Zeiten + zwei Rueckstandsslots",
+      (vercel.crons || []).length === 13 && plan === [
         "/api/cron/crawl@0 4 * * *", "/api/cron/crawl@0 20 * * *", "/api/cron/health-report@0 6 * * *",
         "/api/cron/lage-briefing@45 5 * * *", "/api/cron/lage-check@0 10 * * *",
         "/api/cron/morning-briefing@0 5 * * *", "/api/cron/pipeline@0 16 * * *",
         "/api/cron/understanding@30 21 * * *", "/api/cron/understanding@30 5 * * *",
-        "/api/cron/lage-briefing-nachlauf@10 6 * * *", "/api/cron/lage-briefing-nachlauf@22 6 * * *"
+        "/api/cron/lage-briefing-nachlauf@10 6 * * *", "/api/cron/lage-briefing-nachlauf@22 6 * * *",
+        "/api/cron/understanding-rueckstand@30 11 * * *", "/api/cron/understanding-rueckstand@30 17 * * *"
       ].sort().join("|"), plan);
     check("Funktionslimit unveraendert (maxDuration 300)", vercel.functions["api/index.js"].maxDuration === 300);
 
@@ -1879,9 +1888,12 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
       // Deadline-Berechnungen an derselben 280-s-Grenze (`t0 + 280000` im lage-check,
       // `understandingStartMs + 280000` im Understanding-Cron) — keine neue, keine
       // erhoehte Grenze. Die vier withTimeout-Grenzen selbst bleiben unveraendert.
-      check("Kein neues/erhoehtes Zeitlimit: vier 280 000-ms-Grenzen + zwei §29-Deadline-Bezuege",
-        (serverSrc.match(/280000/g) || []).length === 6
-        && (serverSrc.match(/\+ 280000/g) || []).length === 2,
+      // Kapazitaetssprint 2026-08-31: EIN drittes Deadline-Vorkommen an derselben
+      // 280-s-Grenze (`rueckstandStartMs + 280000` in /api/cron/understanding-rueckstand)
+      // — bewusst identisch zum Frischlauf, keine neue und keine erhoehte Grenze.
+      check("Kein neues/erhoehtes Zeitlimit: vier 280 000-ms-Grenzen + drei Deadline-Bezuege",
+        (serverSrc.match(/280000/g) || []).length === 7
+        && (serverSrc.match(/\+ 280000/g) || []).length === 3,
         String((serverSrc.match(/280000/g) || []).length));
       check("Kein neues Zeitbudget: 270 000 / 240 000 ms bleiben unveraendert",
         (serverSrc.match(/deadlineMs: 270000/g) || []).length === 2
