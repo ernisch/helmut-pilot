@@ -1950,6 +1950,9 @@ async function handleRequest(request, response) {
             laufDeckel: waechter.laufDeckel,
             budgetBoden: waechter.budgetBoden,
             erlaubnisse: waechter.erlaubnisse(),
+            // PR-C: billable Fehlversuche des Laufs — Zaehlergrundlage der
+            // Fehlversuchsquote im Gesundheitsbericht (Azure-Stoerungs-Sicht).
+            fehlversuche: bilanz.fehlgeschlagen,
             // Gate-Wiedervorlage (OP-18): eigener, getrennter Zählerblock — bei
             // nicht scharfem Gate steht hier ehrlich {skipped, reason}.
             wiedervorlage
@@ -4643,7 +4646,7 @@ async function buildHealthReport(politicianId, kontext = {}) {
 // derselbe Wert, N-mal bezahlt (Abnahme 26.08.). Jeder Lesefehler bleibt als benannte
 // Messlücke erhalten und wird NIE zu einem stillen Standardwert.
 async function motorLaufKontext({ fehlerText = (e) => String((e && e.message) || "unbekannt") } = {}) {
-  const [completeKoAt, errors, users, feedback, llmBreakdown, classificationCoverage, queueStatus, casKennzahlen, quittungen] = await Promise.all([
+  const [completeKoAt, errors, users, feedback, llmBreakdown, classificationCoverage, queueStatus, casKennzahlen, quittungen, drainSignale] = await Promise.all([
     getLatestCompleteKnowledgeObjectAt(), // fail-safe null
     accounts.listSystemErrors(100).catch(() => []),
     accounts.listUsers().catch(() => []),
@@ -4661,9 +4664,17 @@ async function motorLaufKontext({ fehlerText = (e) => String((e && e.message) ||
     // fehlende Slots). Ein Lesefehler wird hier zu „Status nicht bestimmbar".
     storageModul.listProcessRunsRelational({ limit: 120 })
       .then((runs) => ({ verfuegbar: true, runs }))
-      .catch((error) => ({ verfuegbar: false, grund: fehlerText(error) }))
+      .catch((error) => ({ verfuegbar: false, grund: fehlerText(error) })),
+    // PR-C Drain-Bilanz: drei fail-safe Lesegroessen (je null = nicht messbar).
+    // Promise.all ist hier sicher: jede Einzelfunktion faengt ihre Fehler selbst.
+    Promise.all([
+      storageModul.zaehleGateWuerdigeAnkunft(24),
+      storageModul.zaehleVerstandene(24),
+      storageModul.zaehlePendingVerarbeitbar()
+    ]).then(([ankunftWuerdig, abfluss, rueckstand]) => ({ ankunftWuerdig, abfluss, rueckstand }))
+      .catch(() => ({ ankunftWuerdig: null, abfluss: null, rueckstand: null }))
   ]);
-  return { completeKoAt, errors, users, feedback, llmBreakdown, classificationCoverage, queueStatus, casKennzahlen, quittungen };
+  return { completeKoAt, errors, users, feedback, llmBreakdown, classificationCoverage, queueStatus, casKennzahlen, quittungen, drainSignale };
 }
 
 // Motor-Gesundheitsbericht: vier Zustände (Gesund · Gesund mit Hinweisen ·
@@ -4688,7 +4699,7 @@ async function buildMotorHealthReport(politicianId, {
   // Kontext, holt der Bericht sie selbst — dann ist er langsamer, aber nie falsch.
   const kontextBauen = () => motorLaufKontext({ fehlerText });
   const globalerKontext = laufKontext || await kontextBauen();
-  const { completeKoAt, errors, users, feedback, llmBreakdown, classificationCoverage, queueStatus, casKennzahlen, quittungen } = globalerKontext;
+  const { completeKoAt, errors, users, feedback, llmBreakdown, classificationCoverage, queueStatus, casKennzahlen, quittungen, drainSignale } = globalerKontext;
   // MANDANTENBEZOGENE SIGNALE: Lage-Check und Push-Übersicht liegen in DERSELBEN
   // helmut_store-Zeile `main-p-<mandat>`. Der Aufrufer liest sie GEBÜNDELT für alle
   // Mandate (`leseMandantenSpeicherGebuendelt`) und reicht den fertigen Speicher
@@ -4838,6 +4849,16 @@ async function buildMotorHealthReport(politicianId, {
       + ` · Gate geparkt ${gateGeparkt}`
     : `Queue: nicht lesbar (${(queueStatus && queueStatus.grund) || "unbekannt"})`;
 
+  // PR-C Drain-Bilanz: die Abnahmegroesse des Kapazitätsziels als eigene, ehrliche
+  // Zeile (motorHealth.drainBilanzZeile — rein/testbar; jede Messluecke bleibt "?").
+  // Fehlversuchsquote der Rueckstandslaeufe aus den BEREITS geladenen Quittungen.
+  const drainZeile = motorHealth.drainBilanzZeile({
+    ...(drainSignale || {}),
+    gateGeparkt: casKennzahlen && casKennzahlen.gateGeparkt != null ? casKennzahlen.gateGeparkt : null,
+    fehlversuchsQuote: motorHealth.rueckstandFehlversuchsQuote(
+      quittungen && quittungen.verfuegbar !== false ? quittungen.runs : [], { nowMs: now })
+  });
+
   const text = [
     `${klass.emoji} Helmut: ${klass.label}.`,
     ...(klass.gruende.length ? [`Gestört: ${klass.gruende.join("; ")}.`] : []),
@@ -4847,6 +4868,7 @@ async function buildMotorHealthReport(politicianId, {
     ...(stoerungsZeile ? [stoerungsZeile] : []),
     ...(erholungsZeile ? [erholungsZeile] : []),
     queueZeile,
+    drainZeile,
     `Verstanden zuletzt: ${fmt(verstandenAlterMs)} · Fehler (24h): ${errors24} historisch aufgefangen · terminal offen: ${terminalOffen}`,
     lageHinweis.text,
     ...(coverage.available ? [`🏷️ Klassifikationsabdeckung: ${Math.round((coverage.establishedLevelCoverage != null ? coverage.establishedLevelCoverage : coverage.levelCoverage || 0) * 100)}% mit ermittelter Ebene (${coverage.withEstablishedLevel != null ? coverage.withEstablishedLevel : coverage.withLevel}/${coverage.total})${coverage.warn ? " · Hinweis, keine Störung" : ""}`] : []),
