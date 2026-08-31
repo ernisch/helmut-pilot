@@ -319,4 +319,7 @@ Idempotenz ohne Doppel-Writes · Eingabe-/Versions-Neubewertung · Betreiberfrei
 Rückweg on→shadow · Laufbilanz-Identität · Wiedervorlage inkl. Tagesrotation · unbekannte
 Flag-Werte fallen auf `off` · Strukturprüfungen). Nachgeführte Suite
 `scripts/understanding-gate-integration-test.js` **19 PASS / 0 FAIL** (u. a. `on` parkt einen
-echten Parken-Cluster vor dem Modell; ohne persistierbaren Beleg keine Parkung).
+echten Parken-Cluster vor dem Modell; ohne persistierbaren Beleg keine Parkung). Kanonischer
+Offline-Gesamtlauf mit dem Arm: **286/288 Suiten grün (581 s)** — rot ausschließlich die zwei
+bekannten lokalen npm-Fehlstände (`ical.js`, `@aws-sdk/client-sqs`), identisch zur Basis vor
+diesem Änderungssatz (§7).
