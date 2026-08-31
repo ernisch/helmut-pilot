@@ -254,3 +254,69 @@ bei dauerhafter Stilllegung SLOT_PLAN-Eintrag entfernen (Doku-Change).
    (Erlaubnisse ≤ 20, Boden gehalten, Altersverteilung des Abflusses verschiebt sich in die 8–30-Tage-Gruppe).
 3. Betreiberentscheidung §8 (Deckel 200 und/oder Gate) mit den dann gemessenen Slotleistungen nachschärfen.
 4. OP-06-Entscheidung für die 1.769 nicht verarbeitbaren Altfälle.
+
+## 12 · Gate-Arm (OP-18): der echte Vorfilter — Umsetzung 31.08. (zweiter Änderungssatz)
+
+**Anlass (belegt):** Die Gate-Freigabeprüfung ergab, dass `HELMUT_UNDERSTANDING_GATE=on` bis zu
+diesem Änderungssatz **mechanisch wirkungslos** war — `runUnderstandingShadow` protokollierte bei
+`on` nur (`blockiert: 0` hartkodiert), `runPendingUnderstandingShadow` (Pending-, Rückstands-,
+Lage-, Warteschlangenpfad) hatte **gar keinen** Gate-Bezug. Ein Flag-Umlegen wäre falsches Grün
+gewesen; der Betreiber hat es ausdrücklich untersagt und stattdessen den echten Arm beauftragt.
+Messgrundlage bleibt der Schattenbetrieb: 109.480 `gate_shadow_events`, davon **0** amtliche/
+kuratierte Dokumente mit Parken-Entscheidung, **0** Entscheidungen ohne Grund.
+
+**Kanonische Prüfstelle (genau eine):** `understandOneCluster` prüft bei Modus `on` — **vor**
+Restzeitwache, CAS-Reservierung, Vorgangswache und Budget — die Cluster-Entscheidung
+(`understandingGate.assessCluster`). Alle Erstverstehens-Pfade (Frisch-Cron, Rückstandsschleife,
+Warteschlangen-Verstehensphase, Lage, eager) laufen durch diese eine Funktion; es gibt keine
+zweite Gate-Logik und keinen Pfad daran vorbei (strukturgesichert,
+`scripts/understanding-gate-arm-test.js` §12). **Nie geparkt werden:** Aktualisierungen
+bestehender `complete`-Vorgänge, `failed`/`failed-final` (eigene Zustände) und ausdrückliche
+Betreiberfreigaben (`erneut` schlägt das Gate). Geparkt wird nur bei positivem Befund
+(Cluster-Entscheidung `parken` aus ≥ 1 bewertetem Dokument); leere/nicht ladbare Cluster und
+Gate-Fehler parken nichts.
+
+**Produktentscheidung geparkter Vorgänge (verbindlich umgesetzt):** eigener, sichtbarer,
+reversibler Zustand `understanding_status='gate-geparkt'` auf `knowledge_objects` — **keine
+Migration** (Spalte existiert, kein CHECK-Constraint; gegen `pg_constraint` verifiziert), kein
+Delete, keine Überladung von `failed`. Jede Parkung trägt Grund + Gate-Version +
+Entscheidungszeitpunkt als Belegzeilen in `gate_shadow_events`
+(`understanding_result='gate-geparkt@<GATE_VERSION>'`, Zeitpunkt = `created_at`), Reihenfolge
+fail-geschlossen **erst Beleg, dann Zustand** — scheitert irgendein Schritt, wird normal
+verarbeitet (kostet schlimmstenfalls einen Aufruf, nie Arbeitsverlust, nie beleglose Parkung).
+Geparkte verbrauchen kein Budget, keine CAS-Lease, und die pending-Auswahl schließt sie
+server- **und** clientseitig aus (kein sofortiges Wiedereinsammeln, kein Fensterverdrängen).
+Zählung getrennt: Gesundheitsbericht-Queue-Zeile `· Gate geparkt <n>` (null ⇒ „?", nie erfundene
+0), Lauftelemetrie-Gruppe `ausgeschlossen` (Laufbilanz-Identität aus PR #283 bleibt erhalten).
+
+**Rückwege (drei, alle belegt):**
+1. **Eingabeänderung:** erreicht ein Cluster-Pfad einen geparkten Vorgang und das Gate
+   befürwortet jetzt (neues Dokument), wird erst der Zustand auf `pending` zurückgesetzt, dann
+   normal verarbeitet.
+2. **Neue Gate-Version / Wiedervorlage:** `pruefeGeparkteNeuBewertung` läuft KI-frei als
+   begrenzter Vorlauf jedes Rückstandslaufs (nur bei `on`; Default 25, Deckel 50, Tagesrotation
+   über die älteste-zuerst sortierte geparkte Menge) und gibt inzwischen Befürwortete frei
+   (Beleg `gate-freigegeben@<version>`, dann Zustand). `GATE_VERSION` (aktuell `g2026-08-31.1`)
+   muss bei jeder fachlichen Regeländerung erhöht werden.
+3. **Betreiber:** `GET /api/admin/gate/geparkt` (Sicht) und
+   `POST /api/admin/gate/parkung-freigeben` (admin-geschützt, bestätigungspflichtig, explizite
+   Kennungen, max 200) — kontrollierte Rückgabe in die Bewertung.
+   Rückweg des Modus: `on → shadow` stoppt jede neue Parkung sofort; bereits Geparkte behalten
+   ihren Zustand bis zur Freigabe (einer der drei Wege) und blockieren nichts.
+
+**Aktivierung bewusst getrennt:** Dieser Änderungssatz lässt `helmut-flags.json` auf `shadow` —
+der Arm ist einsatzbereit, aber **nicht scharf**. Scharfschalten ist ein eigener, minimaler
+Folgeschritt (Flag `shadow → on`), erst nach rein lesender Prüfung der natürlichen
+Rückstandsläufe und der nachgeführten Kapazitätsrechnung (§8-Entscheidung). Wirkung bei `on`
+(aus Schattenmesswerten): ~55 % der bisherigen Aufrufe gingen an nicht gate-würdige Vorgänge —
+der Arm lenkt diese Aufrufe auf gate-würdige Arbeit um (kein Mehrverbrauch: Deckel/Reserve
+unverändert; Kostenwirkung ist eine **Umverteilung**, keine Erhöhung).
+
+**Testergebnisse (alle über `scripts/lokal.js`):** neue Suite
+`scripts/understanding-gate-arm-test.js` **48 PASS / 0 FAIL** (off/shadow byte-gleich ·
+Parkung verhindert Aufruf vor Budget/CAS · exakte Buchungen · 6 Fehlerpfade fail-geschlossen ·
+Idempotenz ohne Doppel-Writes · Eingabe-/Versions-Neubewertung · Betreiberfreigabe schlägt Gate ·
+Rückweg on→shadow · Laufbilanz-Identität · Wiedervorlage inkl. Tagesrotation · unbekannte
+Flag-Werte fallen auf `off` · Strukturprüfungen). Nachgeführte Suite
+`scripts/understanding-gate-integration-test.js` **19 PASS / 0 FAIL** (u. a. `on` parkt einen
+echten Parken-Cluster vor dem Modell; ohne persistierbaren Beleg keine Parkung).
