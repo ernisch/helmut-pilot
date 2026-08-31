@@ -53,7 +53,9 @@ function baueDeps(overrides = {}) {
     canSpend: () => { spuren.canSpendAufrufe += 1; return { allowed: true }; },
     requestUnderstanding: () => { spuren.modellAufrufe += 1; return Promise.resolve({}); },
     save: () => ({ saved: false }),
-    saveSources: (koId, docs) => { spuren.verknuepfungen.push({ koId, anzahl: (docs || []).length }); },
+    // Blocker-1-Vertrag (2026-09-01): der Parkpfad verlangt eine BELEGTE Verknuepfung —
+    // der Stub meldet wie das echte saveKoDocumentLinks { saved: <anzahl> }.
+    saveSources: (koId, docs) => { spuren.verknuepfungen.push({ koId, anzahl: (docs || []).length }); return { saved: (docs || []).length }; },
     markFailed: () => {},
     logSkip: (t) => spuren.logSkips.push(t),
     gateMode: () => "on",

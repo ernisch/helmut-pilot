@@ -4645,6 +4645,52 @@ async function buildHealthReport(politicianId, kontext = {}) {
 // Abfragen nimmt eine Mandantenkennung entgegen; sie je Mandat zu wiederholen wäre
 // derselbe Wert, N-mal bezahlt (Abnahme 26.08.). Jeder Lesefehler bleibt als benannte
 // Messlücke erhalten und wird NIE zu einem stillen Standardwert.
+// ── DRAIN-SIGNALE (Blocker 3, 500-Mandate-Reife 2026-09-01) ──────────────────────
+// Erhebt die ehrliche Drain-Bilanz: gate-wuerdige Ankunft (deterministisch
+// paginiert), ECHTER gate-wuerdiger Abfluss (Vorgangsabschluesse gegen die
+// persistierten Gate-Entscheidungen ihrer Dokumente) und der Rueckstandstrend
+// aus persistierten Tages-Schnappschuessen (CAS-Zeile, F-CAS-Muster). Der erste
+// Lauf eines UTC-Tages verankert den Tageswert; der Vergleichsanker ist der
+// juengste 20-40 h alte Eintrag. Fehlt irgendetwas, bleibt die jeweilige
+// Groesse null — der Bericht zeigt "?" und faellt NIE auf ein gruenes Urteil.
+async function leseDrainSignale({ nowMs = Date.now() } = {}) {
+  const leer = { ankunftWuerdig: null, abfluss: null, abflussUnbewertet: null, rueckstandAnfang: null, rueckstandEnde: null };
+  try {
+    const [ankunftWuerdig, abflussKlassen, rueckstandEnde] = await Promise.all([
+      storageModul.zaehleGateWuerdigeAnkunft(24),
+      storageModul.zaehleGateWuerdigerAbfluss(24),
+      storageModul.zaehlePendingVerarbeitbar()
+    ]);
+    // Tagesanker persistieren (erster Messwert des UTC-Tages gewinnt; CAS-gesichert,
+    // fail-safe: ein Schreibfehler laesst den Trend unvollstaendig, faelscht ihn nie).
+    let rueckstandAnfang = null;
+    const trendZeile = await storageModul.leseDrainTrendZeile();
+    if (trendZeile.ok) {
+      const anker = motorHealth.waehleTrendAnker(trendZeile.stand.eintraege, { nowMs });
+      rueckstandAnfang = anker ? anker.wert : null;
+      if (rueckstandEnde != null) {
+        const tag = new Date(nowMs).toISOString().slice(0, 10);
+        const geschrieben = await storageModul.schreibeDrainTrendSchnappschuss({
+          tag, wert: rueckstandEnde, um: new Date(nowMs).toISOString()
+        });
+        if (!geschrieben.ok) console.error("[drain-bilanz] Tages-Schnappschuss nicht persistiert:", geschrieben.fehler);
+      }
+    } else {
+      console.error("[drain-bilanz] Trendzeile nicht lesbar:", trendZeile.fehler);
+    }
+    return {
+      ankunftWuerdig,
+      abfluss: abflussKlassen ? abflussKlassen.gatewuerdig : null,
+      abflussUnbewertet: abflussKlassen ? abflussKlassen.unbewertet : null,
+      rueckstandAnfang,
+      rueckstandEnde
+    };
+  } catch (error) {
+    console.error("[drain-bilanz] Signale nicht erhebbar:", error && error.message);
+    return leer;
+  }
+}
+
 async function motorLaufKontext({ fehlerText = (e) => String((e && e.message) || "unbekannt") } = {}) {
   const [completeKoAt, errors, users, feedback, llmBreakdown, classificationCoverage, queueStatus, casKennzahlen, quittungen, drainSignale] = await Promise.all([
     getLatestCompleteKnowledgeObjectAt(), // fail-safe null
@@ -4665,14 +4711,10 @@ async function motorLaufKontext({ fehlerText = (e) => String((e && e.message) ||
     storageModul.listProcessRunsRelational({ limit: 120 })
       .then((runs) => ({ verfuegbar: true, runs }))
       .catch((error) => ({ verfuegbar: false, grund: fehlerText(error) })),
-    // PR-C Drain-Bilanz: drei fail-safe Lesegroessen (je null = nicht messbar).
-    // Promise.all ist hier sicher: jede Einzelfunktion faengt ihre Fehler selbst.
-    Promise.all([
-      storageModul.zaehleGateWuerdigeAnkunft(24),
-      storageModul.zaehleVerstandene(24),
-      storageModul.zaehlePendingVerarbeitbar()
-    ]).then(([ankunftWuerdig, abfluss, rueckstand]) => ({ ankunftWuerdig, abfluss, rueckstand }))
-      .catch(() => ({ ankunftWuerdig: null, abfluss: null, rueckstand: null }))
+    // PR-C Drain-Bilanz (Blocker-3-Korrektur 2026-09-01): fail-safe Lesegroessen
+    // inkl. ECHTEM gate-wuerdigem Abfluss und Rueckstandstrend (je null = nicht
+    // messbar). Jede Teilmessung faengt ihre Fehler selbst.
+    leseDrainSignale()
   ]);
   return { completeKoAt, errors, users, feedback, llmBreakdown, classificationCoverage, queueStatus, casKennzahlen, quittungen, drainSignale };
 }
