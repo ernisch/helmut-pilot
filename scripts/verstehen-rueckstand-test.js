@@ -241,9 +241,12 @@ async function main() {
     const storageSrc = src("lib/helmut/storage.js");
     check("§4.1 die Reihenfolgen sind eine Whitelist (neueste=updated_at.desc, aelteste=created_at.asc)",
       /KO_REIHENFOLGEN = Object\.freeze\(\{\s*\n\s*neueste: "updated_at\.desc",\s*\n\s*aelteste: "created_at\.asc"\s*\n\s*\}\)/.test(storageSrc));
+    // Gate-Arm 2026-08-31: die Durchreiche traegt zusaetzlich `ohneGateGeparkt: true`
+    // (geparkte Vorgaenge serverseitig raus, sonst verdraengen sie das Fenster) —
+    // die Reihenfolge-Durchreiche selbst ist unveraendert Vertragsinhalt.
     check("§4.2 listPendingKnowledgeObjects reicht die Reihenfolge durch",
       /listPendingKnowledgeObjects\(\{ limit = 50, reihenfolge = "neueste" \} = \{\}\)/.test(storageSrc)
-      && /listKnowledgeObjects\(\{ status: "pending", limit, reihenfolge \}\)/.test(storageSrc));
+      && /listKnowledgeObjects\(\{ status: "pending", limit, reihenfolge, ohneGateGeparkt: true \}\)/.test(storageSrc));
     check("§4.3 ein unbekannter Reihenfolgewert fällt geschlossen auf das Bestandsverhalten zurück",
       /KO_REIHENFOLGEN\[reihenfolge\] \|\| KO_REIHENFOLGEN\.neueste/.test(storageSrc));
   }
@@ -538,6 +541,43 @@ async function main() {
         const frisch = j >= 0 ? serverSrc.slice(j, j + 3600) : "";
         return j >= 0 && !/listPending:/.test(frisch) && !/reihenfolge/.test(frisch);
       })());
+  }
+
+  abschnitt("§12 Quittung trägt den Wächterblock (Befund 1. Naturlauf 31.08.)");
+  {
+    // BELEGTER ANLASS: der erste natuerliche Rueckstandslauf (31.08. 11:30 UTC,
+    // success, 18/0/0/95) quittierte OHNE seinen telemetrie.rueckstand-Block —
+    // sanitizeProcessRun und die relationale Projektion whitelisteten ihn weg,
+    // waehrend die Route glaubte, ihn zu persistieren (CLAUDE.md §4.10). Diese
+    // Pruefung laesst den Block durch die GESAMTE Kette laufen: sanitize ->
+    // relationale Zeile -> Rueckabbildung.
+    const { sanitizeProcessRun } = require("../lib/helmut/storage");
+    const { processRunToRelationalRow, relationalRowToProcessRun } = require("../lib/helmut/blob-relational");
+    const clean = sanitizeProcessRun({
+      process: "understanding-rueckstand", runId: "t-r1", status: "success",
+      telemetrie: {
+        cluster: 113,
+        rueckstand: {
+          fenster: 120, laufDeckel: 20, budgetBoden: 30, erlaubnisse: 18,
+          wiedervorlage: { skipped: true, reason: "gate-nicht-scharf" }
+        }
+      }
+    });
+    check("§12.1 sanitize behält den Wächterblock (nur Zahlen + Wiedervorlage-Marker)",
+      clean.rueckstand && clean.rueckstand.fenster === 120 && clean.rueckstand.laufDeckel === 20
+      && clean.rueckstand.budgetBoden === 30 && clean.rueckstand.erlaubnisse === 18
+      && clean.rueckstand.wiedervorlage && clean.rueckstand.wiedervorlage.uebersprungen === true);
+    check("§12.2 sanitize übernimmt KEINEN Freitext aus der Wiedervorlage (kein reason-Feld)",
+      !("reason" in (clean.rueckstand.wiedervorlage || {})));
+    const row = processRunToRelationalRow(clean);
+    check("§12.3 die relationale Projektion trägt den Block im telemetrie-jsonb",
+      row.telemetrie && row.telemetrie.rueckstand && row.telemetrie.rueckstand.erlaubnisse === 18);
+    const zurueck = relationalRowToProcessRun(row);
+    check("§12.4 die Rückabbildung liefert den Block unverändert (Dual-Read-Parität)",
+      zurueck.rueckstand && zurueck.rueckstand.laufDeckel === 20 && zurueck.rueckstand.budgetBoden === 30);
+    const ohne = sanitizeProcessRun({ process: "understanding", runId: "t-r2", status: "success", telemetrie: { cluster: 5 } });
+    check("§12.5 Läufe ohne Wächterblock bleiben byte-identisch (rueckstand=null, kein Geisterfeld)",
+      ohne.rueckstand === null && !("rueckstand" in (processRunToRelationalRow(ohne).telemetrie || {})));
   }
 
   console.log(`\nERGEBNIS: ${pass} PASS / ${fail} FAIL`);

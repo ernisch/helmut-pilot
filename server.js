@@ -69,7 +69,7 @@ const inviteMail = require("./lib/helmut/invite-mail");
 const resetTiming = require("./lib/helmut/reset-timing");
 const helmutFlags = require("./lib/helmut/flags");
 const { getRelevantParliamentaryItems } = require("./lib/helmut/dip");
-const { runPendingUnderstandingShadow, clusterRawDocuments, deriveVorgangId, diagnosePendingUnderstanding } = require("./lib/helmut/understanding");
+const { runPendingUnderstandingShadow, clusterRawDocuments, deriveVorgangId, diagnosePendingUnderstanding, pruefeGeparkteNeuBewertung } = require("./lib/helmut/understanding");
 const { laufBilanz } = require("./lib/helmut/lauf-bilanz");
 const verstehenRueckstand = require("./lib/helmut/verstehen-rueckstand");
 const { generateOfficeOutput, isValidChannel } = require("./lib/helmut/office");
@@ -1895,6 +1895,19 @@ async function handleRequest(request, response) {
         laufDeckel: verstehenRueckstand.rueckstandLaufDeckel(),
         budgetBoden: verstehenRueckstand.rueckstandBudgetBoden()
       });
+      // ── GATE-WIEDERVORLAGE (OP-18, nur bei scharfem Gate) ────────────────────────
+      // KI-freier, eng begrenzter Vorlauf (Default 25 Vorgänge, Tagesrotation): prüft
+      // einen Ausschnitt der gate-geparkten Vorgänge mit der aktuellen Gate-Version
+      // erneut und gibt inzwischen befürwortete frei (Zustand → pending; sie laufen
+      // dann regulär durch diese Rückstandsschleife). Bei 'off'/'shadow' ein No-op.
+      // FAIL-SAFE gekapselt: ein Fehler hier darf den Rückstandslauf nie verhindern —
+      // die nächste Rotation wiederholt die Prüfung.
+      let wiedervorlage = null;
+      try { wiedervorlage = await pruefeGeparkteNeuBewertung({ runId }); }
+      catch (e) {
+        wiedervorlage = { fehler: String((e && e.message) || "unbekannt").slice(0, 160) };
+        console.error("[cron/understanding-rueckstand] Gate-Wiedervorlage fehlgeschlagen (ignoriert):", e && e.message);
+      }
       // Rohdokumente wie im Frischlauf: der Verknüpfungspfad (listVorgangDocuments)
       // trägt die alten Vorgänge; das Fenster dient nur dem Kennungs-Rückfall.
       const rawDocs = await listRecentRawDocuments(500);
@@ -1936,7 +1949,10 @@ async function handleRequest(request, response) {
             fenster,
             laufDeckel: waechter.laufDeckel,
             budgetBoden: waechter.budgetBoden,
-            erlaubnisse: waechter.erlaubnisse()
+            erlaubnisse: waechter.erlaubnisse(),
+            // Gate-Wiedervorlage (OP-18): eigener, getrennter Zählerblock — bei
+            // nicht scharfem Gate steht hier ehrlich {skipped, reason}.
+            wiedervorlage
           }
         }
       });
@@ -2650,6 +2666,53 @@ async function handleRequest(request, response) {
         // Ehrlich: der weite Read ist gedeckelt; 'keine' heisst 'nicht in bis zu N gelesenen Dok.'
         weitGedeckelt: (widerDocs || []).length >= DIAG_RAW_LIMIT
       };
+    });
+  }
+
+  // ── GATE-ARM (OP-18): geparkte Vorgänge einsehen und kontrolliert freigeben ──────
+  // Sichtweg des Betreibers auf den GETRENNTEN Bestand 'gate-geparkt' (nie im
+  // normalen Rückstand mitgezählt). Rein lesend, nur Kennungen/Zeitstempel — kein
+  // Inhalt. limit/offset gedeckelt wie im Storage (max 200).
+  if (url.pathname === "/api/admin/gate/geparkt" && request.method === "GET") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleAsync(response, async () => {
+      const limit = Math.min(200, Math.max(1, Number(url.searchParams.get("limit")) || 50));
+      const offset = Math.max(0, Number(url.searchParams.get("offset")) || 0);
+      const [eintraege, gesamt] = await Promise.all([
+        storageModul.listGateGeparkteKnowledgeObjects({ limit, offset }),
+        storageModul.countGateGeparkt()
+      ]);
+      return { ok: true, gesamt, limit, offset, eintraege };
+    });
+  }
+  // Kontrollierte RÜCKGABE geparkter Vorgänge in die Bewertung (dokumentierter
+  // Rückweg neben Arm-Sofortfreigabe und Wiedervorlage-Rotation). NUR mit
+  // ausdrücklicher Bestätigung und expliziten Kennungen — keine Pauschalfreigabe.
+  // Reihenfolge wie überall: ERST Freigabe-Beleg ('gate-freigegeben@<version>',
+  // Grund 'betreiberfreigabe'), DANN konditionaler Zustandswechsel → pending.
+  // Scheitert der Beleg, wird NICHTS freigegeben (fail closed, ehrliche Antwort).
+  if (url.pathname === "/api/admin/gate/parkung-freigeben" && request.method === "POST") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleJson(request, response, async (body) => {
+      const vorgangIds = [...new Set((Array.isArray(body && body.vorgangIds) ? body.vorgangIds : [])
+        .filter((v) => typeof v === "string" && v).map((v) => v.slice(0, 200)))].slice(0, 200);
+      if (!vorgangIds.length) return { ok: false, grund: "keine-vorgangIds", freigegeben: 0 };
+      if (!body || body.confirm !== true) {
+        return { ok: false, bestaetigungErforderlich: true, betroffen: vorgangIds.length, freigegeben: 0 };
+      }
+      const gate = require("./lib/helmut/quellenarchitektur/understanding-gate");
+      const beleg = await storageModul.recordGateParkungBeleg(vorgangIds.map((vid) => ({
+        vorgang_id: vid, knowledge_object_id: `ko-${vid}`,
+        gate_decision: "verstehen", gate_reason: "betreiberfreigabe",
+        understanding_result: `gate-freigegeben@${gate.GATE_VERSION}`, model: null
+      })));
+      if (!beleg || beleg.ok !== true) {
+        return { ok: false, grund: `beleg-fehlgeschlagen:${(beleg && beleg.grund) || "unbekannt"}`, freigegeben: 0 };
+      }
+      const res = await storageModul.releaseUnderstandingGateGeparkt(vorgangIds);
+      return { ok: Boolean(res && res.ok), betroffen: vorgangIds.length,
+        freigegeben: (res && Number(res.freigegeben)) || 0,
+        ...(res && res.ok !== true ? { grund: res.reason || "unbekannt" } : {}) };
     });
   }
 
@@ -4764,10 +4827,15 @@ async function buildMotorHealthReport(politicianId, {
     slotPruefung,
     alter: (q) => fmt(ageMs(q.startedAt || q.createdAt))
   });
+  // Gate-Arm (OP-18): geparkte Vorgänge sind ein EIGENER, GETRENNTER Bestand —
+  // nie im normalen Rückstand mitgezählt, nie ein Fehler. null/fehlend = nicht
+  // messbar → "?" (nie eine erfundene 0, CLAUDE.md §4.4).
+  const gateGeparkt = casKennzahlen && casKennzahlen.gateGeparkt != null ? casKennzahlen.gateGeparkt : "?";
   const queueZeile = queueStatus && queueStatus.verfuegbar !== false
     ? `Queue: ${k.wartend ?? "?"} wartend · ${k.laufend ?? "?"} laufend · hängende Leases ${k.abgelaufeneLeases ?? "?"}`
       + ` · terminal offen ${terminalOffen}${dauerhaftBlockiert == null ? " (Blockierten-Sicht fehlt)" : ""}`
       + ` · CAS unbekannt ${klass.casUnbekannt ?? "?"}`
+      + ` · Gate geparkt ${gateGeparkt}`
     : `Queue: nicht lesbar (${(queueStatus && queueStatus.grund) || "unbekannt"})`;
 
   const text = [

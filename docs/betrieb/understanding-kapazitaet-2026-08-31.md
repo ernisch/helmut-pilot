@@ -254,3 +254,121 @@ bei dauerhafter Stilllegung SLOT_PLAN-Eintrag entfernen (Doku-Change).
    (Erlaubnisse ≤ 20, Boden gehalten, Altersverteilung des Abflusses verschiebt sich in die 8–30-Tage-Gruppe).
 3. Betreiberentscheidung §8 (Deckel 200 und/oder Gate) mit den dann gemessenen Slotleistungen nachschärfen.
 4. OP-06-Entscheidung für die 1.769 nicht verarbeitbaren Altfälle.
+
+## 12 · Gate-Arm (OP-18): der echte Vorfilter — Umsetzung 31.08. (zweiter Änderungssatz)
+
+**Anlass (belegt):** Die Gate-Freigabeprüfung ergab, dass `HELMUT_UNDERSTANDING_GATE=on` bis zu
+diesem Änderungssatz **mechanisch wirkungslos** war — `runUnderstandingShadow` protokollierte bei
+`on` nur (`blockiert: 0` hartkodiert), `runPendingUnderstandingShadow` (Pending-, Rückstands-,
+Lage-, Warteschlangenpfad) hatte **gar keinen** Gate-Bezug. Ein Flag-Umlegen wäre falsches Grün
+gewesen; der Betreiber hat es ausdrücklich untersagt und stattdessen den echten Arm beauftragt.
+Messgrundlage bleibt der Schattenbetrieb: 109.480 `gate_shadow_events`, davon **0** amtliche/
+kuratierte Dokumente mit Parken-Entscheidung, **0** Entscheidungen ohne Grund.
+
+**Kanonische Prüfstelle (genau eine):** `understandOneCluster` prüft bei Modus `on` — **vor**
+Restzeitwache, CAS-Reservierung, Vorgangswache und Budget — die Cluster-Entscheidung
+(`understandingGate.assessCluster`). Alle Erstverstehens-Pfade (Frisch-Cron, Rückstandsschleife,
+Warteschlangen-Verstehensphase, Lage, eager) laufen durch diese eine Funktion; es gibt keine
+zweite Gate-Logik und keinen Pfad daran vorbei (strukturgesichert,
+`scripts/understanding-gate-arm-test.js` §12). **Nie geparkt werden:** Aktualisierungen
+bestehender `complete`-Vorgänge, `failed`/`failed-final` (eigene Zustände) und ausdrückliche
+Betreiberfreigaben (`erneut` schlägt das Gate). Geparkt wird nur bei positivem Befund
+(Cluster-Entscheidung `parken` aus ≥ 1 bewertetem Dokument); leere/nicht ladbare Cluster und
+Gate-Fehler parken nichts.
+
+**Produktentscheidung geparkter Vorgänge (verbindlich umgesetzt):** eigener, sichtbarer,
+reversibler Zustand `understanding_status='gate-geparkt'` auf `knowledge_objects` — **keine
+Migration** (Spalte existiert, kein CHECK-Constraint; gegen `pg_constraint` verifiziert), kein
+Delete, keine Überladung von `failed`. Jede Parkung trägt Grund + Gate-Version +
+Entscheidungszeitpunkt als Belegzeilen in `gate_shadow_events`
+(`understanding_result='gate-geparkt@<GATE_VERSION>'`, Zeitpunkt = `created_at`), Reihenfolge
+fail-geschlossen **erst Beleg, dann Zustand** — scheitert irgendein Schritt, wird normal
+verarbeitet (kostet schlimmstenfalls einen Aufruf, nie Arbeitsverlust, nie beleglose Parkung).
+Geparkte verbrauchen kein Budget, keine CAS-Lease, und die pending-Auswahl schließt sie
+server- **und** clientseitig aus (kein sofortiges Wiedereinsammeln, kein Fensterverdrängen).
+Zählung getrennt: Gesundheitsbericht-Queue-Zeile `· Gate geparkt <n>` (null ⇒ „?", nie erfundene
+0), Lauftelemetrie-Gruppe `ausgeschlossen` (Laufbilanz-Identität aus PR #283 bleibt erhalten).
+
+**Rückwege (drei, alle belegt):**
+1. **Eingabeänderung:** erreicht ein Cluster-Pfad einen geparkten Vorgang und das Gate
+   befürwortet jetzt (neues Dokument), wird erst der Zustand auf `pending` zurückgesetzt, dann
+   normal verarbeitet.
+2. **Neue Gate-Version / Wiedervorlage:** `pruefeGeparkteNeuBewertung` läuft KI-frei als
+   begrenzter Vorlauf jedes Rückstandslaufs (nur bei `on`; Default 25, Deckel 50, Tagesrotation
+   über die älteste-zuerst sortierte geparkte Menge) und gibt inzwischen Befürwortete frei
+   (Beleg `gate-freigegeben@<version>`, dann Zustand). `GATE_VERSION` (aktuell `g2026-08-31.1`)
+   muss bei jeder fachlichen Regeländerung erhöht werden.
+3. **Betreiber:** `GET /api/admin/gate/geparkt` (Sicht) und
+   `POST /api/admin/gate/parkung-freigeben` (admin-geschützt, bestätigungspflichtig, explizite
+   Kennungen, max 200) — kontrollierte Rückgabe in die Bewertung.
+   Rückweg des Modus: `on → shadow` stoppt jede neue Parkung sofort; bereits Geparkte behalten
+   ihren Zustand bis zur Freigabe (einer der drei Wege) und blockieren nichts.
+
+**Aktivierung bewusst getrennt:** Dieser Änderungssatz lässt `helmut-flags.json` auf `shadow` —
+der Arm ist einsatzbereit, aber **nicht scharf**. Scharfschalten ist ein eigener, minimaler
+Folgeschritt (Flag `shadow → on`), erst nach rein lesender Prüfung der natürlichen
+Rückstandsläufe und der nachgeführten Kapazitätsrechnung (§8-Entscheidung). Wirkung bei `on`
+(aus Schattenmesswerten): ~55 % der bisherigen Aufrufe gingen an nicht gate-würdige Vorgänge —
+der Arm lenkt diese Aufrufe auf gate-würdige Arbeit um (kein Mehrverbrauch: Deckel/Reserve
+unverändert; Kostenwirkung ist eine **Umverteilung**, keine Erhöhung).
+
+**Testergebnisse (alle über `scripts/lokal.js`):** neue Suite
+`scripts/understanding-gate-arm-test.js` **48 PASS / 0 FAIL** (off/shadow byte-gleich ·
+Parkung verhindert Aufruf vor Budget/CAS · exakte Buchungen · 6 Fehlerpfade fail-geschlossen ·
+Idempotenz ohne Doppel-Writes · Eingabe-/Versions-Neubewertung · Betreiberfreigabe schlägt Gate ·
+Rückweg on→shadow · Laufbilanz-Identität · Wiedervorlage inkl. Tagesrotation · unbekannte
+Flag-Werte fallen auf `off` · Strukturprüfungen). Nachgeführte Suite
+`scripts/understanding-gate-integration-test.js` **19 PASS / 0 FAIL** (u. a. `on` parkt einen
+echten Parken-Cluster vor dem Modell; ohne persistierbaren Beleg keine Parkung). Kanonischer
+Offline-Gesamtlauf mit dem Arm: **286/288 Suiten grün (581 s)** — rot ausschließlich die zwei
+bekannten lokalen npm-Fehlstände (`ical.js`, `@aws-sdk/client-sqs`), identisch zur Basis vor
+diesem Änderungssatz (§7).
+
+## 13 · Naturlaufwerte (31.08.) — nachgeführte Rechnung und Kostenprojektion
+
+### 13.1 Die ersten beiden natürlichen Rückstandsläufe (rein lesend geprüft)
+
+| | Lauf 1 (11:30 UTC) | Lauf 2 (17:30 UTC) |
+|---|---|---|
+| Status / Commit | success · `3244f073` | success · `3244f073` |
+| Laufzeit | 222,9 s | 225,6 s |
+| Modellaufrufe | **17 echte** (18 Ergebnisse — 1 CAS-Idempotenz-Kurzschluss sparte einen bezahlten Aufruf) | **0** |
+| Begrenzer | **Zeitwache** (Budget ok) | **Budget-Boden**: used 83/100 ⇒ Rest 17 ≤ 30 ⇒ 39× skipped-budget, fail-closed |
+| Altersnachweis | alle 18 aus Gruppe **> 30 Tage** (26.07.) — Verhungern durchbrochen | keine Verarbeitung (budgetlos) |
+| Ehrlichkeit | 42× skipped-no-cluster = exakt die bekannte OP-06-Menge, 0 KI-Kosten | Zähleridentität 113 ✓, 39 Reservierungen sauber als `offen` freigegeben |
+| Sicherheiten | 0 hängende Leases · 0 neue unbekannt · Deckel/Reserve nie verletzt (alle Buchungen > 70 waren priorisierte Queue-/Lage-Aufrufe) | dito |
+
+**Beide Grenzen sind damit production-belegt** (Zeitwache UND Boden). Kernbefund: bei Deckel 100
+ist der 17:30-Slot nach den 04/05/10/16-Slots **regelmäßig budgetlos** — der Deckel, nicht die
+Slotzahl, ist ab jetzt der Begrenzer. Die Slotleistung 17–18 Aufrufe/Lauf bestätigt die
+Modellannahme (~19) fast exakt; die §5-Erwartung „+16–30/Tag" liegt real an der Unterkante
+(**+17–18/Tag**, nur der Morgenslot wird bedient). Betriebsnotiz: ein budgetloser Lauf verbrennt
+~225 s Lesearbeit (Ladepfad je Kandidat vor dem Budget-Check) — Vorab-Bodenprüfung als eigener
+kleiner Folge-PR vorgesehen, nicht Teil dieses Änderungssatzes.
+
+### 13.2 Kostenmessung vorher (Preisbasis F7 unbelegt — berechnete Werte)
+
+7 volle Tage (24.–30.08.): Ø 78,4 Aufrufe/Tag · Ø **0,25 USD/Tag** (≈ 7,6 USD/Monat) ·
+**0,00335 USD je Verstehens-Aufruf** (≈ 3.860 Token rein + 1.030 raus). Verstehen ist mit
+506 von 548 Aufrufen der globale Kostenblock; mandatsgebunden (lageBriefing + Entwürfe) nur
+~0,0072 USD/Tag beim heutigen 1-Mandat-Niveau.
+
+### 13.3 Kostenprojektion 5/10/25/100/500 Mandate (berechnet, F7 unbelegt)
+
+Verstehen ist GLOBAL (ein Vorgang wird genau einmal verstanden) und **deckel-gebunden** — es
+skaliert mit den Deckel-Stufen der Zielarchitektur, nicht mit der Mandatszahl. Mandatsgebundene
+Aufrufe (Lage/Entwürfe) skalieren linear:
+
+| Mandate | Deckel-Stufe (Zielarchitektur) | Verstehen/Tag (Obergrenze = Deckel) | mandatsgebunden/Tag | Summe/Tag | ~/Monat |
+|---|---|---|---|---|---|
+| 5 | 400 | ≤ 1,34 USD (real ~0,88 bei Bedarf 262) | 0,04 | ~0,9–1,4 | 27–42 USD |
+| 10 | 400 | wie 5 (globaler Block unverändert) | 0,07 | ~0,95–1,4 | 29–42 USD |
+| 25 | 500 | ≤ 1,68 (real ~1,0) | 0,18 | ~1,2–1,9 | 36–57 USD |
+| 100 | 650 | ≤ 2,18 (real ~1,2–1,6) | 0,72 | ~1,9–2,9 | 57–87 USD |
+| 500 | 1.100–1.400 | ≤ 3,7–4,7 (real ~1,5–2,0 bei Bedarf 455) | 3,6 | ~5,1–8,3 | 155–250 USD |
+
+Obergrenzen sind durch den atomaren Deckel **hart garantiert** (kein unbegrenzter Posten);
+„real" = gate-würdiger Bedarf aus dem gegengeprüften Mengenmodell. Dazu Vercel: +46
+Invocations/Tag durch PR-B, Vollast ≤ 3,2 Funktionsstunden/Tag (Tarif im Repo unbelegt —
+Betreiberprüfung). Die frühere 10-USD-Monatsannahme war laut Betreiber (31.08.) nur eine
+vorläufige Schätzung und ist KEINE Grenze; verbindlich sind die dokumentierten Tagesdeckel.

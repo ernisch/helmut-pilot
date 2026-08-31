@@ -340,9 +340,21 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 #### OP-18 · Understanding-Gate scharfschalten (shadow → on) + Cheap-Triage
 - **Status:** offen. **Statuszeile am 2026-08-08 entschärft (OP-30-Abnahmesprint):** belegt ist der **Dauerbetrieb** des Shadow-Modus über rund zwei Wochen (37 792 Zeilen am 2026-07-28 gegen 1 000 am 2026-07-15) und ein Ersparnispotenzial von ~54 % der Dokumente. **Nicht belegt ist die Fehlerfreiheit dieses Zeitraums:** ausgewertet wurden nur zwei Läufe vom 14./15.07., und `gate_shadow_events` wurde bis dahin von **keiner** Stelle im Repository gelesen. Zwischen „es ist nichts aufgefallen" und „es ist nichts passiert" lag genau diese fehlende Auswertung. **Neu (additiv, rein lesend, fail closed):** `scripts/gate-shadow-auswertung.js` liefert die Messbasis — Verteilung, Gründe, Herkunft und die entscheidende Frage, ob je ein amtliches Dokument blockiert worden wäre. Es läuft nur mit ausdrücklichem `HELMUT_GATE_AUSWERTUNG_ZUGRIFF=ja` und ändert nichts.
-- **Fehlender Schritt:** Gate-Flag auf `on` (Datei-Flag oder Env) + definiertes Beobachtungsfenster (Understanding-Zahl darf nicht unplausibel sinken); Cheap-Triage separat entscheiden.
+- **Geschärft 2026-08-31 (Kapazitätssprint):** Zwei entscheidende Befunde. (1) Die fehlende
+  Fehlerfreiheits-Auswertung ist nachgeholt — rein lesend über den **gesamten** Schattenzeitraum:
+  109 480 `gate_shadow_events`, **0** amtliche/kuratierte Dokumente mit Parken-Entscheidung, **0**
+  Entscheidungen ohne Grund. (2) `on` war bis dahin **mechanisch wirkungslos** (nur Protokoll,
+  `blockiert: 0` hartkodiert; die Pending-/Rückstands-/Lage-/Queue-Pfade hatten gar keinen
+  Gate-Bezug) — ein Flag-Flip allein wäre falsches Grün gewesen. Der **echte Gate-Arm** ist
+  seitdem implementiert und lokal bewiesen (kanonische Prüfung in `understandOneCluster` vor
+  Budget/CAS; Parkzustand `gate-geparkt` mit Beleg, Version, drei Rückwegen; keine Migration;
+  48+19 PASS): [`betrieb/understanding-kapazitaet-2026-08-31.md`](betrieb/understanding-kapazitaet-2026-08-31.md) §12.
+- **Fehlender Schritt:** Arm-PR mergen; danach Gate-Flag `shadow → on` als eigener minimaler
+  Folgeschritt + definiertes Beobachtungsfenster (Understanding-Zahl darf nicht unplausibel
+  sinken; `Gate geparkt`-Kennzahl im Gesundheitsbericht beobachten); Cheap-Triage separat entscheiden.
 - **Abhängigkeiten:** keine technischen; Telemetrie/Beweisprotokoll als Messbasis.
-- **Risiko:** mittel — erstmals blockierende Wirkung auf KI-Verarbeitung; Rollback per Flag.
+- **Risiko:** mittel — erstmals blockierende Wirkung auf KI-Verarbeitung; Rollback per Flag
+  (`on → shadow` stoppt neue Parkungen sofort; Geparkte über Admin-Weg/Wiedervorlage rückholbar).
 - **Parallelisierbarkeit:** eigenes Beobachtungsfenster.
 - **Freigabe:** **JA** (Verhaltensänderung mit Kosten-/Inhaltswirkung).
 
