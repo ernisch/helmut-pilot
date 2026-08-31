@@ -323,3 +323,52 @@ echten Parken-Cluster vor dem Modell; ohne persistierbaren Beleg keine Parkung).
 Offline-Gesamtlauf mit dem Arm: **286/288 Suiten grün (581 s)** — rot ausschließlich die zwei
 bekannten lokalen npm-Fehlstände (`ical.js`, `@aws-sdk/client-sqs`), identisch zur Basis vor
 diesem Änderungssatz (§7).
+
+## 13 · Naturlaufwerte (31.08.) — nachgeführte Rechnung und Kostenprojektion
+
+### 13.1 Die ersten beiden natürlichen Rückstandsläufe (rein lesend geprüft)
+
+| | Lauf 1 (11:30 UTC) | Lauf 2 (17:30 UTC) |
+|---|---|---|
+| Status / Commit | success · `3244f073` | success · `3244f073` |
+| Laufzeit | 222,9 s | 225,6 s |
+| Modellaufrufe | **17 echte** (18 Ergebnisse — 1 CAS-Idempotenz-Kurzschluss sparte einen bezahlten Aufruf) | **0** |
+| Begrenzer | **Zeitwache** (Budget ok) | **Budget-Boden**: used 83/100 ⇒ Rest 17 ≤ 30 ⇒ 39× skipped-budget, fail-closed |
+| Altersnachweis | alle 18 aus Gruppe **> 30 Tage** (26.07.) — Verhungern durchbrochen | keine Verarbeitung (budgetlos) |
+| Ehrlichkeit | 42× skipped-no-cluster = exakt die bekannte OP-06-Menge, 0 KI-Kosten | Zähleridentität 113 ✓, 39 Reservierungen sauber als `offen` freigegeben |
+| Sicherheiten | 0 hängende Leases · 0 neue unbekannt · Deckel/Reserve nie verletzt (alle Buchungen > 70 waren priorisierte Queue-/Lage-Aufrufe) | dito |
+
+**Beide Grenzen sind damit production-belegt** (Zeitwache UND Boden). Kernbefund: bei Deckel 100
+ist der 17:30-Slot nach den 04/05/10/16-Slots **regelmäßig budgetlos** — der Deckel, nicht die
+Slotzahl, ist ab jetzt der Begrenzer. Die Slotleistung 17–18 Aufrufe/Lauf bestätigt die
+Modellannahme (~19) fast exakt; die §5-Erwartung „+16–30/Tag" liegt real an der Unterkante
+(**+17–18/Tag**, nur der Morgenslot wird bedient). Betriebsnotiz: ein budgetloser Lauf verbrennt
+~225 s Lesearbeit (Ladepfad je Kandidat vor dem Budget-Check) — Vorab-Bodenprüfung als eigener
+kleiner Folge-PR vorgesehen, nicht Teil dieses Änderungssatzes.
+
+### 13.2 Kostenmessung vorher (Preisbasis F7 unbelegt — berechnete Werte)
+
+7 volle Tage (24.–30.08.): Ø 78,4 Aufrufe/Tag · Ø **0,25 USD/Tag** (≈ 7,6 USD/Monat) ·
+**0,00335 USD je Verstehens-Aufruf** (≈ 3.860 Token rein + 1.030 raus). Verstehen ist mit
+506 von 548 Aufrufen der globale Kostenblock; mandatsgebunden (lageBriefing + Entwürfe) nur
+~0,0072 USD/Tag beim heutigen 1-Mandat-Niveau.
+
+### 13.3 Kostenprojektion 5/10/25/100/500 Mandate (berechnet, F7 unbelegt)
+
+Verstehen ist GLOBAL (ein Vorgang wird genau einmal verstanden) und **deckel-gebunden** — es
+skaliert mit den Deckel-Stufen der Zielarchitektur, nicht mit der Mandatszahl. Mandatsgebundene
+Aufrufe (Lage/Entwürfe) skalieren linear:
+
+| Mandate | Deckel-Stufe (Zielarchitektur) | Verstehen/Tag (Obergrenze = Deckel) | mandatsgebunden/Tag | Summe/Tag | ~/Monat |
+|---|---|---|---|---|---|
+| 5 | 400 | ≤ 1,34 USD (real ~0,88 bei Bedarf 262) | 0,04 | ~0,9–1,4 | 27–42 USD |
+| 10 | 400 | wie 5 (globaler Block unverändert) | 0,07 | ~0,95–1,4 | 29–42 USD |
+| 25 | 500 | ≤ 1,68 (real ~1,0) | 0,18 | ~1,2–1,9 | 36–57 USD |
+| 100 | 650 | ≤ 2,18 (real ~1,2–1,6) | 0,72 | ~1,9–2,9 | 57–87 USD |
+| 500 | 1.100–1.400 | ≤ 3,7–4,7 (real ~1,5–2,0 bei Bedarf 455) | 3,6 | ~5,1–8,3 | 155–250 USD |
+
+Obergrenzen sind durch den atomaren Deckel **hart garantiert** (kein unbegrenzter Posten);
+„real" = gate-würdiger Bedarf aus dem gegengeprüften Mengenmodell. Dazu Vercel: +46
+Invocations/Tag durch PR-B, Vollast ≤ 3,2 Funktionsstunden/Tag (Tarif im Repo unbelegt —
+Betreiberprüfung). Die frühere 10-USD-Monatsannahme war laut Betreiber (31.08.) nur eine
+vorläufige Schätzung und ist KEINE Grenze; verbindlich sind die dokumentierten Tagesdeckel.
