@@ -213,9 +213,9 @@ Ein Sprint ist erst beendet, wenn:
 6. Branch-, Commit- und PR-Status dokumentiert sind,
 7. keine unerledigte Arbeit als erledigt markiert ist.
 
-**Nach-Merge-Abschluss ist Pflicht:** Ein autorisierter Merge oder ein
+**Nach-Merge-Abschluss ist Pflicht:** Ein autorisierter fachlich wirksamer Merge oder ein
 Production-Deployment verändert den tatsächlichen Projektstand erst nach dem Schreiben
-des PR-Texts. Deshalb muss nach jeder solchen Aktion die Wirkung rein lesend geprüft und
+des PR-Texts. Deshalb muss danach die Wirkung rein lesend geprüft und
 `docs/CURRENT_STATE.md` auf den belegten Endzustand nachgezogen werden. Ein im PR vor dem
 Merge geschriebener Satz wie „lokal fertig" oder „Merge offen" erfüllt diese Pflicht nach
 dem Merge nicht mehr.
@@ -226,6 +226,11 @@ Dokumentationskorrektur wegen einer Sicherheitssperre oder fehlender Merge-Freig
 vollzogen werden, lautet der Sprintzustand **teilweise abgeschlossen** oder **blockiert**.
 Die fehlende Aktualisierung wird ausdrücklich als Blocker genannt; der Sprint darf nicht
 als vollständig abgeschlossen bezeichnet werden.
+
+Ein abschließender PR, der ausschließlich diese Dokumentationspflicht erfüllt und weder
+Code, Konfiguration noch Daten verändert, löst **keinen rekursiven Folge-PR** aus. Sein
+eigener Merge-Commit und Deployment-Status werden aus der Git- und Deployment-Historie
+belegt. Diese Ausnahme darf niemals eine fachliche oder betriebliche Änderung verdecken.
 
 Das gilt **auch**, wenn kein Code geändert wurde, kein PR entstand, der Sprint
 blockiert oder gescheitert ist, eine Nutzerentscheidung aussteht oder nur eine

@@ -11,8 +11,8 @@ Fassung vor dieser Verdichtung: byte-identisch in [`archive/project_state/2026_0
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **`main` = `936b2676` = Merge von PR #286** (Dedup-Fenster, 31.08. 18:48 UTC); davor `3a153b50` (#287, Drain-Bilanz), `a03480bb` (#285, Gate-Arm), `3244f073` (#284, Rückstandsschleife) und `0f900e68` (#283). Das jüngste Production-Deployment ist `READY` auf `936b2676` (rein lesend geprüft, 31.08.).
-- **PR #273, #274, #279, #280, #281, #283–#287 sind gemergt.** Offen bleiben #275–#277 und **#282**; sie sind nicht in Production. Die lokalen Stände `672886c` und `be5bd15` sind nicht hochgeladen und außerhalb ihrer Sitzung nicht vollständig prüfbar.
+- **Letzter fachlich wirksamer Production-Code: `936b2676` aus #286**; davor `3a153b50` (#287), `a03480bb` (#285), `3244f073` (#284) und `0f900e68` (#283). Der reine Dokumentationsabschluss #288 (`cb47047c`) wurde danach erfolgreich deployt und änderte kein Laufzeitverhalten.
+- **PR #273, #274, #279, #280, #281, #283–#288 sind gemergt.** Spätere reine Dokumentationsabschlüsse ändern diesen fachlichen Stand nicht; Nachweis gemäß `CLAUDE.md` §9 über die Git-Historie. Offen bleiben #275–#277 und **#282**. `672886c` und `be5bd15` sind lokal und nicht vollständig prüfbar.
 - Davor gemergt: #271, #270, #265, #262, #261, #260/#259/#256/#257, #225, #216; die PR-Bereinigung vom 23.08. (inkl. begründeter Schließungen) ist in Archivfassung und Runbook dokumentiert.
 - Merge nach `main` löst automatisch ein Production-Deployment aus.
 
