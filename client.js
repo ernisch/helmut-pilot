@@ -3651,6 +3651,7 @@ function recoveryGrundText(grund) {
     duplicate: "Vollständige Duplikate – bereits verarbeitete Dokumente.",
     "skipped-terminal": "Bewusst ausgeschlossene Vorgänge (nicht erneut verstehen).",
     "skipped-failed": "Vorgänge nach KI-Fehlschlag geparkt – gezielt nachholbar.",
+    "skipped-gate-geparkt": "Vom Understanding-Gate geparkt – bewusst ohne KI-Aufruf, mit Beleg und Rückweg (kein Fehler).",
     "skipped-budget": "Zeitbudget erreicht – Rest bleibt pending (nächster Lauf holt nach).",
     "skipped-error": "KI-Aufruf für einzelne Vorgänge fehlgeschlagen.",
     "skipped-invalid": "KI-Ergebnis war nicht schema-valide.",

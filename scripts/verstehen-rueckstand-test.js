@@ -241,9 +241,12 @@ async function main() {
     const storageSrc = src("lib/helmut/storage.js");
     check("§4.1 die Reihenfolgen sind eine Whitelist (neueste=updated_at.desc, aelteste=created_at.asc)",
       /KO_REIHENFOLGEN = Object\.freeze\(\{\s*\n\s*neueste: "updated_at\.desc",\s*\n\s*aelteste: "created_at\.asc"\s*\n\s*\}\)/.test(storageSrc));
+    // Gate-Arm 2026-08-31: die Durchreiche traegt zusaetzlich `ohneGateGeparkt: true`
+    // (geparkte Vorgaenge serverseitig raus, sonst verdraengen sie das Fenster) —
+    // die Reihenfolge-Durchreiche selbst ist unveraendert Vertragsinhalt.
     check("§4.2 listPendingKnowledgeObjects reicht die Reihenfolge durch",
       /listPendingKnowledgeObjects\(\{ limit = 50, reihenfolge = "neueste" \} = \{\}\)/.test(storageSrc)
-      && /listKnowledgeObjects\(\{ status: "pending", limit, reihenfolge \}\)/.test(storageSrc));
+      && /listKnowledgeObjects\(\{ status: "pending", limit, reihenfolge, ohneGateGeparkt: true \}\)/.test(storageSrc));
     check("§4.3 ein unbekannter Reihenfolgewert fällt geschlossen auf das Bestandsverhalten zurück",
       /KO_REIHENFOLGEN\[reihenfolge\] \|\| KO_REIHENFOLGEN\.neueste/.test(storageSrc));
   }

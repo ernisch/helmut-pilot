@@ -1,9 +1,11 @@
 "use strict";
 
-// Integrationstest der Gate-Shadow-Verdrahtung in understanding.runUnderstandingShadow.
+// Integrationstest der Gate-Verdrahtung in understanding.runUnderstandingShadow.
 // Beweist: (off) Gate wird NIE aufgerufen, Verhalten byte-identisch; (shadow) Gate berechnet +
-// protokolliert, blockiert NICHTS (gleiche Anzahl Understanding-Calls); (on) erkannt, aber nicht
-// scharf (blockiert ebenfalls nichts). REINE LOGIK, injizierte Deps, kein echter KI-/DB-Call.
+// protokolliert, blockiert NICHTS (gleiche Anzahl Understanding-Calls); (on, Arm-Schritt
+// Kapazitätssprint 2026-08-31) der SCHARFE Vorfilter parkt 'parken'-Cluster VOR dem Modell —
+// kuratierte/verstehen-Cluster bleiben unblockiert, und ohne persistierbaren Beleg wird NIE
+// geparkt (fail-open zur Verarbeitung). REINE LOGIK, injizierte Deps, kein echter KI-/DB-Call.
 
 const { runUnderstandingShadow } = require("../lib/helmut/understanding");
 const { normalizeRawItem } = require("../lib/helmut/crawler");
@@ -49,11 +51,49 @@ function runWith(mode, opts = {}) {
   check("off: Cluster > 0 verarbeitet", off.res.clusters >= 3);
   check("off: Gate NIE aufgerufen (shadowCalls=0)", off.shadowCalls === 0);
   check("shadow: gleiche Understanding-Calls wie off (nichts blockiert)", shadow.understandingCalls === off.understandingCalls);
-  check("on: gleiche Understanding-Calls wie off (nicht scharf, nichts blockiert)", on.understandingCalls === off.understandingCalls);
+  // Diese Menge enthaelt KEINEN 'parken'-Cluster (kuratierte Quelle -> nie parken; zwei
+  // verstehen-Cluster): der scharfe Arm laesst hier deshalb ALLE Calls unveraendert durch.
+  check("on: kein parken-Cluster -> gleiche Understanding-Calls wie off", on.understandingCalls === off.understandingCalls);
   check("shadow: Gate-Aggregat protokolliert (shadowCalls>=1)", shadow.shadowCalls >= 1 && shadow.lastSummary && shadow.lastSummary.cluster >= 3);
   check("shadow: blockiert=0 im Protokoll", shadow.lastSummary && shadow.lastSummary.blockiert === 0);
-  check("on: Protokoll-Hinweis 'nicht scharf/freigabepflichtig'", /freigabepflichtig|nicht-scharf/.test((on.lastSummary && on.lastSummary.hinweis) || ""));
+  check("on: Protokoll-Hinweis 'Vorfilter aktiv (kanonisch in understandOneCluster)'", /vorfilter-aktiv/.test((on.lastSummary && on.lastSummary.hinweis) || ""));
   check("on: Gate-Entscheidungen berechnet (aggregat vorhanden)", on.lastSummary && typeof on.lastSummary.entscheidungen === "object");
+
+  // --- Arm-Schritt: 'on' parkt einen echten 'parken'-Cluster VOR dem Modell -------------------
+  const parkSrc = { id: "medien-y", name: "Medienquelle", type: "shadow", url: "https://e/m", priority: 0 };
+  const parkItems = [
+    normalizeRawItem({ title: "Wetterbericht fuer das sonnige Sommerwochenende an der Kueste", content: "Sonnig und warm", url: "https://m/wetter", publishedAt: new Date(Date.now() - 5 * 86400000).toISOString() }, parkSrc)
+  ];
+  async function runParkScenario(opts = {}) {
+    let understandingCalls = 0;
+    const belege = []; const parkungen = []; const pendings = [];
+    const deps = {
+      enabled: () => true, aiEnabled: () => true,
+      acquireLock: () => ({ granted: true }), releaseLock: () => {},
+      getExisting: () => null, canSpend: () => ({ allowed: true }),
+      modelName: () => "gpt-5-mini",
+      requestUnderstanding: () => { understandingCalls += 1; return Promise.resolve({}); },
+      save: () => ({ saved: false }), saveSources: () => {}, markFailed: () => {}, logSkip: () => {},
+      gateMode: () => "on",
+      recordGateShadow: () => {}, recordGateShadowRows: () => Promise.resolve({ written: 0 }),
+      savePending: (vid) => { pendings.push(vid); return Promise.resolve({ saved: true, id: `ko-${vid}` }); },
+      recordGateParkung: opts.belegKaputt
+        ? () => Promise.resolve({ ok: false, written: 0, grund: "test-kaputt" })
+        : (rows) => { belege.push(...(rows || [])); return Promise.resolve({ ok: true, written: (rows || []).length }); },
+      markGateGeparkt: (vid) => { parkungen.push(vid); return Promise.resolve({ ok: true }); }
+    };
+    const res = await runUnderstandingShadow(parkItems, deps);
+    return { res, understandingCalls, belege, parkungen, pendings };
+  }
+  const armOn = await runParkScenario();
+  check("on+arm: parken-Cluster erreicht das Modell NICHT (0 Calls)", armOn.understandingCalls === 0);
+  check("on+arm: Ergebnis 'skipped-gate-geparkt'", armOn.res.counts && armOn.res.counts["skipped-gate-geparkt"] === 1);
+  check("on+arm: Belegzeile traegt Version + Grund (gate-geparkt@<version>)",
+    armOn.belege.length === 1 && /^gate-geparkt@g\d{4}/.test(armOn.belege[0].understanding_result || "") && Boolean(armOn.belege[0].gate_reason));
+  check("on+arm: Zustand gesetzt + Traeger vorgemerkt (je genau 1)", armOn.parkungen.length === 1 && armOn.pendings.length === 1);
+  const armBelegKaputt = await runParkScenario({ belegKaputt: true });
+  check("on+arm: Beleg nicht persistierbar -> KEINE Parkung, Vorgang wird normal verarbeitet",
+    armBelegKaputt.understandingCalls === 1 && armBelegKaputt.parkungen.length === 0);
 
   // --- Je-Dokument-Telemetrie (gate_shadow_events-Zeilen) -------------------------------------
   check("off: KEINE Telemetrie-Zeilen", off.rows.length === 0);
