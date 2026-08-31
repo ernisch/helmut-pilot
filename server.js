@@ -1895,6 +1895,41 @@ async function handleRequest(request, response) {
         laufDeckel: verstehenRueckstand.rueckstandLaufDeckel(),
         budgetBoden: verstehenRueckstand.rueckstandBudgetBoden()
       });
+      // ── VORAB-BODENPRÜFUNG (Minimal-Cron-Vorbereitung 2026-09-01) ────────────────
+      // Dieselbe Boden-Frage wie der Wächter, EINMAL vor jeder Lesearbeit: ein
+      // budgetloser Lauf endet in Sekunden mit einer ehrlichen blocked-Quittung
+      // statt ~225 s Ladearbeit zu verbrennen (belegt 31.08. 17:30 UTC). Im
+      // vorbereiteten 48-Slot-Takt (lib/helmut/minimal-cron.js) ist das die
+      // Voraussetzung dafür, dass budgetlose Slots praktisch nichts kosten.
+      // Fail closed: ein unbestimmbarer Budgetstand überspringt den Lauf.
+      const vorabBoden = await verstehenRueckstand.vorabBodenPruefung({
+        canSpendGlobal: () => canSpendLlm(null),
+        budgetBoden: waechter.budgetBoden
+      });
+      if (vorabBoden.erlaubt !== true) {
+        const vorabTelemetrie = await recordProcessRun({
+          process: "understanding-rueckstand", runId, mode: "cron", location: helmutExecLocation(),
+          startedAt: new Date(rueckstandStartMs).toISOString(), finishedAt: new Date().toISOString(),
+          durationMs: Date.now() - rueckstandStartMs,
+          reason: vorabBoden.grund,
+          status: "blocked",
+          telemetrie: {
+            rueckstand: {
+              fenster,
+              laufDeckel: waechter.laufDeckel,
+              budgetBoden: waechter.budgetBoden,
+              erlaubnisse: 0,
+              vorabBoden: { grund: vorabBoden.grund, used: vorabBoden.used, limit: vorabBoden.limit, remaining: vorabBoden.remaining }
+            }
+          }
+        });
+        console.log(`[cron/understanding-rueckstand] Vorab-Bodenprüfung: übersprungen (${vorabBoden.grund}; used=${vorabBoden.used} limit=${vorabBoden.limit} rest=${vorabBoden.remaining})`);
+        return {
+          ok: true, uebersprungen: true, grund: vorabBoden.grund,
+          rueckstand: { fenster, laufDeckel: waechter.laufDeckel, budgetBoden: waechter.budgetBoden, erlaubnisse: 0, vorabBoden },
+          lauftelemetrie: { gespeichert: vorabTelemetrie.ok, vollstaendig: vorabTelemetrie.vollstaendig, fehler: vorabTelemetrie.fehler }
+        };
+      }
       // ── GATE-WIEDERVORLAGE (OP-18, nur bei scharfem Gate) ────────────────────────
       // KI-freier, eng begrenzter Vorlauf (Default 25 Vorgänge, Tagesrotation): prüft
       // einen Ausschnitt der gate-geparkten Vorgänge mit der aktuellen Gate-Version

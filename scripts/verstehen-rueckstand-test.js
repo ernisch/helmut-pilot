@@ -346,7 +346,12 @@ async function main() {
     // die unveränderten Defaults des Motors.
     const serverSrc = src("server.js");
     const i = serverSrc.indexOf('url.pathname === "/api/cron/understanding-rueckstand"');
-    const block = i >= 0 ? serverSrc.slice(i, i + 3200) : "";
+    // Blockgrenze statt festem Zeichenfenster (dasselbe Brüchigkeitsmuster wie der
+    // in PR #283 behobene kostenmessung-Test): der Vertrag liest die GANZE Route
+    // bis zur nächsten Route — Einschübe wie die Vorab-Bodenprüfung (2026-09-01)
+    // verschieben die Anker sonst still aus dem Fenster.
+    const ende = i >= 0 ? serverSrc.indexOf("if (url.pathname === ", i + 10) : -1;
+    const block = i >= 0 ? serverSrc.slice(i, ende > i ? ende : i + 8000) : "";
     check("§5.2 die Route existiert und ist cron-geschützt",
       i >= 0 && /authorizeCron\(request, url, response\)/.test(block));
     check("§5.3 nur listPending, canSpend und callType werden überschrieben",
