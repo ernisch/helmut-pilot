@@ -71,6 +71,7 @@ const helmutFlags = require("./lib/helmut/flags");
 const { getRelevantParliamentaryItems } = require("./lib/helmut/dip");
 const { runPendingUnderstandingShadow, clusterRawDocuments, deriveVorgangId, diagnosePendingUnderstanding } = require("./lib/helmut/understanding");
 const { laufBilanz } = require("./lib/helmut/lauf-bilanz");
+const verstehenRueckstand = require("./lib/helmut/verstehen-rueckstand");
 const { generateOfficeOutput, isValidChannel } = require("./lib/helmut/office");
 const { buildLageBriefing } = require("./lib/helmut/lage");
 const { backfillProvenance } = require("./lib/helmut/backfill");
@@ -1861,6 +1862,88 @@ async function handleRequest(request, response) {
       return {
         ok: true, rawDocsLoaded: rawDocs.length, processed, result, recovery,
         lauftelemetrie: { gespeichert: cronTelemetrie.ok, vollstaendig: cronTelemetrie.vollstaendig, fehler: cronTelemetrie.fehler }
+      };
+    });
+  }
+
+  // ── RÜCKSTANDSSCHLEIFE DES VERSTEHENS (Kapazitätssprint 2026-08-31) ─────────────────
+  // Eigene, zeitversetzte Läufe für die ÄLTESTEN wartenden Vorgänge. Der Motor ist
+  // byte-identisch derselbe (runPendingUnderstandingShadow: CAS, Fencing, Vorgangs-
+  // wache, Restzeitwache, Laufbilanz aus PR #283) — verändert sind ausschließlich
+  // drei Abhängigkeiten:
+  //   1. Auswahl: älteste zuerst (created_at.asc) statt jüngst-zuerst — behebt das
+  //      belegte Verhungern (8.895 von 9.080 pending älter als 24 h, Abfluss fast
+  //      nur <24 h; Beleg docs/betrieb/understanding-kapazitaet-2026-08-31.md).
+  //   2. Budgetklasse: callType 'understanding-rueckstand' bucht am atomaren
+  //      Choke-Point NICHT priorisiert (effectiveMax = Tagesdeckel − Reserve) —
+  //      Rückstandsarbeit kann der Frischverarbeitung nie die dokumentierte
+  //      Verstehens-Reserve nehmen und den Tagesdeckel nie überschreiten.
+  //   3. Vorprüfung: Laufdeckel + Budget-Boden (fail closed; unklarer Budgetstand
+  //      erlaubt nichts — Rückstandsabbau ist immer aufschiebbar).
+  // KEIN Recovery-Vorlauf (P1-4 gehört zum Frischpfad). Das globale Understanding-
+  // Schloss (TTL 10 min) und die CAS-Reservierung je Vorgang schließen Doppelarbeit
+  // mit den Frischläufen aus; die Cron-Zeiten (11:30/17:30 UTC) liegen zusätzlich
+  // ≥ 30 min von jedem anderen Slot entfernt.
+  if (url.pathname === "/api/cron/understanding-rueckstand") {
+    if (!authorizeCron(request, url, response)) return;
+    return handleAsync(response, async () => {
+      const rueckstandStartMs = Date.now();
+      const runId = helmutRunId("understanding-rueckstand", rueckstandStartMs);
+      const fenster = verstehenRueckstand.rueckstandFenster();
+      const waechter = verstehenRueckstand.baueRueckstandsWaechter({
+        canSpendGlobal: () => canSpendLlm(null),
+        laufDeckel: verstehenRueckstand.rueckstandLaufDeckel(),
+        budgetBoden: verstehenRueckstand.rueckstandBudgetBoden()
+      });
+      // Rohdokumente wie im Frischlauf: der Verknüpfungspfad (listVorgangDocuments)
+      // trägt die alten Vorgänge; das Fenster dient nur dem Kennungs-Rückfall.
+      const rawDocs = await listRecentRawDocuments(500);
+      const result = await runPendingUnderstandingShadow(rawDocs, {
+        budgetMs: Number(process.env.HELMUT_UNDERSTAND_BUDGET_MS || 240000),
+        deadlineMs: rueckstandStartMs + 280000, runId,
+        callType: verstehenRueckstand.RUECKSTAND_CALLTYPE,
+        listPending: () => listPendingKnowledgeObjects({ limit: fenster, reihenfolge: "aelteste" }),
+        canSpend: waechter.canSpend
+      });
+      const bilanz = laufBilanz(result);
+      // Wie im Frischlauf (PR #283): nicht abrechenbare Mengen bleiben null, nie 0.
+      const processed = bilanz.gespeichert;
+      console.log(`[cron/understanding-rueckstand] rawDocs=${rawDocs.length} fenster=${fenster} erlaubnisse=${waechter.erlaubnisse()} Ergebnis: ${JSON.stringify({ processed, result })}`);
+      if (bilanz.stimmig === false) {
+        console.error(`[cron/understanding-rueckstand] ZAEHLERWIDERSPRUCH ${JSON.stringify({
+          runId, gespeichert: bilanz.gespeichert, uebersprungen: bilanz.uebersprungen,
+          fehlgeschlagen: bilanz.fehlgeschlagen, vertagt: bilanz.vertagt,
+          summe: bilanz.gesamt, cluster: bilanz.cluster
+        })}`);
+      }
+      const rueckstandTelemetrie = await recordProcessRun({
+        process: "understanding-rueckstand", runId, mode: "cron", location: helmutExecLocation(),
+        startedAt: new Date(rueckstandStartMs).toISOString(), finishedAt: new Date().toISOString(),
+        durationMs: Date.now() - rueckstandStartMs,
+        processed,
+        gespeichert: bilanz.gespeichert,
+        uebersprungen: bilanz.uebersprungen,
+        fehlgeschlagen: bilanz.fehlgeschlagen,
+        deferred: bilanz.vertagt,
+        skippedStore: result && result.counts && result.counts["skipped-store"],
+        reason: result && result.reason,
+        zielmenge: rawDocs.length,
+        status: bilanz.status,
+        fehlerklasse: bilanz.fehlerklasse,
+        telemetrie: {
+          ...((result && result.telemetrie) || {}),
+          rueckstand: {
+            fenster,
+            laufDeckel: waechter.laufDeckel,
+            budgetBoden: waechter.budgetBoden,
+            erlaubnisse: waechter.erlaubnisse()
+          }
+        }
+      });
+      return {
+        ok: true, rawDocsLoaded: rawDocs.length, processed, result,
+        rueckstand: { fenster, laufDeckel: waechter.laufDeckel, budgetBoden: waechter.budgetBoden, erlaubnisse: waechter.erlaubnisse() },
+        lauftelemetrie: { gespeichert: rueckstandTelemetrie.ok, vollstaendig: rueckstandTelemetrie.vollstaendig, fehler: rueckstandTelemetrie.fehler }
       };
     });
   }

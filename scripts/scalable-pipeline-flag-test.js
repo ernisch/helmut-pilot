@@ -133,8 +133,12 @@ function main() {
   check("6.5 Die neun bestehenden Cron-Zeiten sind unveraendert",
     (() => {
       const v = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
+      // Kapazitaetssprint 2026-08-31: die Rueckstandsslots gehoeren wie die
+      // Nachlaufslots zu den spaeter ergaenzten Routen und werden hier ausgefiltert —
+      // geprueft wird, dass die NEUN urspruenglichen Zeiten zeichengleich bleiben.
       const bestand = (v.crons || []).map((c) => `${c.path}@${c.schedule}`)
-        .filter((s) => !s.startsWith("/api/cron/lage-briefing-nachlauf@")).sort().join("|");
+        .filter((s) => !s.startsWith("/api/cron/lage-briefing-nachlauf@")
+          && !s.startsWith("/api/cron/understanding-rueckstand@")).sort().join("|");
       return bestand === [
         "/api/cron/crawl@0 4 * * *", "/api/cron/crawl@0 20 * * *", "/api/cron/health-report@0 6 * * *",
         "/api/cron/lage-briefing@45 5 * * *", "/api/cron/lage-check@0 10 * * *",
@@ -142,13 +146,14 @@ function main() {
         "/api/cron/understanding@30 21 * * *", "/api/cron/understanding@30 5 * * *"
       ].sort().join("|");
     })(), "die neun Bestandszeiten muessen zeichengleich bleiben");
-  check("6.6 Die einzigen neuen Cron-Eintraege sind die zwei flaggeschuetzten Nachlaufslots",
+  check("6.6 Die einzigen neuen Cron-Eintraege sind Nachlauf- und Rueckstandsslots",
     (() => {
       const v = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
       const neu = (v.crons || []).map((c) => `${c.path}@${c.schedule}`)
         .filter((s) => !/^\/api\/cron\/(crawl|health-report|lage-briefing|lage-check|morning-briefing|pipeline|understanding)@/.test(s));
-      return v.crons.length === 11 && neu.length === 2
-        && neu.sort().join("|") === "/api/cron/lage-briefing-nachlauf@10 6 * * *|/api/cron/lage-briefing-nachlauf@22 6 * * *";
+      return v.crons.length === 13 && neu.length === 4
+        && neu.sort().join("|") === "/api/cron/lage-briefing-nachlauf@10 6 * * *|/api/cron/lage-briefing-nachlauf@22 6 * * *"
+          + "|/api/cron/understanding-rueckstand@30 11 * * *|/api/cron/understanding-rueckstand@30 17 * * *";
     })());
   check("6.7 Kein Cron ruft die OP-30-Maschinerie unmittelbar auf",
     !/jobqueue|scalable|worker/i.test(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8")));

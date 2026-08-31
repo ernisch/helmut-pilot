@@ -4,7 +4,8 @@
   "git": {
     "deploymentEnabled": {
       "codex/ki-antwortumschlag-hardening": false,
-      "claude/understanding-telemetrie-korrektur-ty5gb2": false
+      "claude/understanding-telemetrie-korrektur-ty5gb2": false,
+      "claude/understanding-kapazitaet-diagnose-7meqjr": false
     }
   },
   "functions": {
@@ -107,6 +108,14 @@
     {
       "path": "/api/cron/understanding",
       "schedule": "30 21 * * *"
+    },
+    {
+      "path": "/api/cron/understanding-rueckstand",
+      "schedule": "30 11 * * *"
+    },
+    {
+      "path": "/api/cron/understanding-rueckstand",
+      "schedule": "30 17 * * *"
     }
   ]
 }

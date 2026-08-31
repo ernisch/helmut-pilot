@@ -1568,7 +1568,7 @@ function sechsProfile() {
       && /280000,\s*\n\s*"cron-pipeline"/.test(serverSrc)
       // Und: die globale Phase erhoeht kein Budget, sie TEILT (Untergrenze 50 %).
       && /MIN_GLOBAL_ANTEIL = 0\.5/.test(fs.readFileSync(path.join(ROOT, "lib", "helmut", "cron-globalphase.js"), "utf8")));
-    check("9.11 kein Bestandscron wurde still veraendert (nur die zwei neuen Nachlaufslots kamen dazu)",
+    check("9.11 kein Bestandscron wurde still veraendert (neu nur Nachlauf- und Rueckstandsslots)",
       JSON.stringify(vercel.crons) === JSON.stringify([
         { path: "/api/cron/crawl", schedule: "0 4 * * *" },
         { path: "/api/cron/morning-briefing", schedule: "0 5 * * *" },
@@ -1582,7 +1582,12 @@ function sechsProfile() {
         // Altpfad, bei ausgeschalteten OP-30-Flags ohne jede Verarbeitung.
         { path: "/api/cron/lage-briefing-nachlauf", schedule: "10 6 * * *" },
         { path: "/api/cron/lage-briefing-nachlauf", schedule: "22 6 * * *" },
-        { path: "/api/cron/understanding", schedule: "30 21 * * *" }
+        { path: "/api/cron/understanding", schedule: "30 21 * * *" },
+        // KAPAZITAETSSPRINT 2026-08-31: Rueckstandsschleife des Verstehens — aelteste
+        // zuerst, nicht priorisiert gebucht, Laufdeckel/Budget-Boden fail closed
+        // (docs/betrieb/understanding-kapazitaet-2026-08-31.md).
+        { path: "/api/cron/understanding-rueckstand", schedule: "30 11 * * *" },
+        { path: "/api/cron/understanding-rueckstand", schedule: "30 17 * * *" }
       ]) && vercel.functions["api/index.js"].maxDuration === 300);
     check("9.12 kein Production-Flag wird als aktiv behauptet: die Dokumentation nennt den Pfad ausdruecklich AUS",
       /DEFAULT AUS/.test(fs.readFileSync(path.join(ROOT, "lib", "helmut", "cron-globalphase.js"), "utf8"))

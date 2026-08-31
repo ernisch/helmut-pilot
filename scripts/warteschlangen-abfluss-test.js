@@ -62,7 +62,11 @@ console.log("Helmut — Abflussplaetze der Warteschlange (Kapazitaetsgrundlage 2
 
 // ── 1 · Die Konfiguration ────────────────────────────────────────────────────────────────
 abschnitt("1 · Cron-Eintraege in vercel.json");
-check("1.1 Es sind genau 11 Cron-Eintraege konfiguriert", crons.length === 11, String(crons.length));
+// KAPAZITAETSSPRINT 2026-08-31: ZWEI Eintraege kommen dazu — die Rueckstandsschleife
+// des Verstehens (`/api/cron/understanding-rueckstand`, 11:30 und 17:30 UTC). Beide
+// fahren den DIREKTEN Verstehenspfad (runPendingUnderstandingShadow), nicht den
+// Warteschlangenabfluss — an der Abflusszahl DREI aendert sich nichts (Abschnitt 3).
+check("1.1 Es sind genau 13 Cron-Eintraege konfiguriert", crons.length === 13, String(crons.length));
 const pfade = crons.map((c) => c.path);
 console.log(`  Pfade: ${[...new Set(pfade)].join(", ")}`);
 
@@ -92,12 +96,18 @@ check("3.1 Genau DREI Cron-Eintraege fuehren in den Warteschlangenabfluss",
   abflussEintraege.length === 3,
   JSON.stringify(abflussEintraege.map((c) => `${c.path} @ ${c.schedule}`)));
 console.log(`  Abflusslaeufe: ${abflussEintraege.map((c) => `${c.path} @ ${c.schedule}`).join(" · ")}`);
-check("3.2 Die uebrigen acht Eintraege leeren die Warteschlange NICHT",
-  crons.length - abflussEintraege.length === 8,
+check("3.2 Die uebrigen zehn Eintraege leeren die Warteschlange NICHT",
+  crons.length - abflussEintraege.length === 10,
   String(crons.length - abflussEintraege.length));
-// Die Zahl 11 darf nie als Abflusszahl gelesen werden — genau das war der Fehler.
-check("3.3 Die Zahl der Eintraege (11) ist NICHT die Zahl der Abflusslaeufe (3)",
+// Die Eintragszahl darf nie als Abflusszahl gelesen werden — genau das war der Fehler.
+check("3.3 Die Zahl der Eintraege (13) ist NICHT die Zahl der Abflusslaeufe (3)",
   crons.length !== abflussEintraege.length && abflussEintraege.length === 3);
+// Und die neuen Rueckstandsslots duerfen NIE in den Warteschlangenabfluss zaehlen:
+// sie rufen runPendingUnderstandingShadow (Direktpfad), nicht cronSchwererPfad.
+check("3.4 understanding-rueckstand ist KEIN Warteschlangenabfluss",
+  !abflussPfade.includes("/api/cron/understanding-rueckstand")
+  && crons.filter((c) => c.path === "/api/cron/understanding-rueckstand").length === 2
+  && !/cronSchwererPfad\("understanding-rueckstand"/.test(serverSrc));
 
 // ── 4 · Die drei Narrativ-Zeiteintraege: typgebunden — aber NICHT alle drei inaktiv ──────
 // Diese Zusicherungen trennen, was frueher zu „drei inerten Narrativslots" verschmolzen war.
