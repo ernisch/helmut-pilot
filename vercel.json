@@ -5,7 +5,8 @@
     "deploymentEnabled": {
       "codex/ki-antwortumschlag-hardening": false,
       "claude/understanding-telemetrie-korrektur-ty5gb2": false,
-      "claude/understanding-kapazitaet-diagnose-7meqjr": false
+      "claude/understanding-kapazitaet-diagnose-7meqjr": false,
+      "claude/dedup-fenster-seitenweise": false
     }
   },
   "functions": {
