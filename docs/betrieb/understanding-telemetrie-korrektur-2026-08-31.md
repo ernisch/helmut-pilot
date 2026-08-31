@@ -1,12 +1,14 @@
 # Understanding-Laufmeldung: roter Production-Befund vom 30.08.2026 und lokale Korrektur
 
 **Sprintzustand: teilweise abgeschlossen.** Die Diagnose ist vollständig und rein lesend
-belegt, die Korrektur ist umgesetzt und getestet. **Nichts ist nach Production gebracht
-worden** — kein Merge, kein Production-Deployment, keine Preview, keine Migration, keine
-Datenänderung, keine Env-/Flag-Änderung, kein Cron-Lauf, kein Modellaufruf, kein Pull
-Request. Der Branch wurde am 30.08. **ausschließlich zur Sicherung** nach GitHub gepusht,
-nachdem er sich in seiner eigenen `vercel.json` selbst für Deployments gesperrt hatte (§12).
-Der Production-Nachweis steht deshalb ausdrücklich aus (§9).
+belegt, die Korrektur ist umgesetzt und getestet (Kopf `ae5c870`). **PR #283 ist gegen
+`main` eröffnet, die Pflicht-CI ist vollständig grün, der PR bleibt ungemergt.**
+**Nichts ist nach Production gebracht worden** — kein Merge, kein Production-Deployment,
+keine Preview, keine Migration, keine Datenänderung, keine Env-/Flag-Änderung, kein
+Cron-Lauf, kein Modellaufruf. Der Branch wurde am 30.08. **ausschließlich zur Sicherung**
+nach GitHub gepusht, nachdem er sich in seiner eigenen `vercel.json` selbst für
+Deployments gesperrt hatte (§12). Der Production-Nachweis steht deshalb ausdrücklich
+aus (§9).
 
 **Untersuchter Lauf:** natürlicher `understanding-cron`, 2026-08-30
 21:30:04,417–21:33:45,398 UTC, Laufzeit 220 981 ms, Production-Commit `afc807e0`,
