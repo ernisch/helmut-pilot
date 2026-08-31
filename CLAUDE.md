@@ -4,7 +4,7 @@ Diese Datei ist die **Einstiegsschicht**, kein Handbuch. Sie gibt Orientierung i
 zwei Minuten und verweist danach auf die kanonischen Dokumente. Sie wird **nur**
 geändert, wenn eine neue dauerhaft verbindliche Projektregel entsteht.
 
-**Stand:** 2026-08-24 (§6 geschärft: jeder Testlauf — auch ein einzelner — geht über `scripts/lokal.js`; belegter Anlass: zwei Production-Schreibvorgänge durch Handläufe)
+**Stand:** 2026-08-31 (§9 geschärft: ein autorisierter Merge oder ein Production-Deployment erzeugt eine eigene Nach-Merge-Dokumentationspflicht; ein vor dem Merge geschriebener Status genügt nicht)
 
 ---
 
@@ -212,6 +212,20 @@ Ein Sprint ist erst beendet, wenn:
 5. der nächste sinnvolle Schritt dokumentiert ist,
 6. Branch-, Commit- und PR-Status dokumentiert sind,
 7. keine unerledigte Arbeit als erledigt markiert ist.
+
+**Nach-Merge-Abschluss ist Pflicht:** Ein autorisierter Merge oder ein
+Production-Deployment verändert den tatsächlichen Projektstand erst nach dem Schreiben
+des PR-Texts. Deshalb muss nach jeder solchen Aktion die Wirkung rein lesend geprüft und
+`docs/CURRENT_STATE.md` auf den belegten Endzustand nachgezogen werden. Ein im PR vor dem
+Merge geschriebener Satz wie „lokal fertig" oder „Merge offen" erfüllt diese Pflicht nach
+dem Merge nicht mehr.
+
+Bei einer freigegebenen Kette aus mehreren PRs gilt diese Pflicht spätestens vor dem
+Beginn der nächsten fachlichen Phase und zwingend am Ende der Kette. Kann die
+Dokumentationskorrektur wegen einer Sicherheitssperre oder fehlender Merge-Freigabe nicht
+vollzogen werden, lautet der Sprintzustand **teilweise abgeschlossen** oder **blockiert**.
+Die fehlende Aktualisierung wird ausdrücklich als Blocker genannt; der Sprint darf nicht
+als vollständig abgeschlossen bezeichnet werden.
 
 Das gilt **auch**, wenn kein Code geändert wurde, kein PR entstand, der Sprint
 blockiert oder gescheitert ist, eine Nutzerentscheidung aussteht oder nur eine
