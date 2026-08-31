@@ -630,6 +630,19 @@ zurückgenommen**: er macht die Reihenfolge zwar deterministisch, aber determini
 **Empfehlung:** die Lage sollte gespeicherte Matchingergebnisse nach ihrer **Relevanz**
 ordnen, nicht nach der Schreibzeit. Das ist eine Zeile Code und eine Gründerentscheidung.
 
+> **Stand-Nachtrag 2026-09-01 (500-Mandate-Reifesprint, F-E2E geschlossen):** Die Empfehlung
+> ist per Betreiberauftrag umgesetzt. `listMatchingResults` sortiert jetzt
+> `created_at.desc,rank.asc.nullslast,id.asc` — bei Stapel-Gleichstand entscheidet der vom
+> Matcher **berechnete Rang** (Relevanz, nachvollziehbar und mandatsneutral), zuletzt die
+> eindeutige Kennung (Totalordnung). Der oben verworfene `id.desc`-Versuch bleibt verworfen —
+> der Rang, nicht die Kennung, ist der fachliche Zweitschlüssel. Zusätzlich stempelte der
+> **Audit-Publish-Pfad** des Testgerüsts (`publishRun`) weiterhin je Zeile — der 2026-08-08
+> nur in `saveMatchingResults` behobene Fehler; ebenfalls auf einen Stapelzeitstempel
+> korrigiert. Beleg: rein lesend gemessen trugen am 31.08. **24 Gleichstandsgruppen** der
+> aktuellen Production-Zeilen die undefinierte Reihenfolge; Nachweis der Stabilität: beide
+> Landes-E2E-Suiten je **20/20 grün unter 4-facher CPU-Fremdlast**
+> (`docs/betrieb/500-mandate-theoretische-bereitschaft-2026-09-01.md`).
+
 ### Was dieser Sprint an Zahlen belegt
 
 | | Wert | Grad |

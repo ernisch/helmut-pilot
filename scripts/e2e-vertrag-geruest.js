@@ -167,18 +167,14 @@ function neuerStore(opts) {
       // nebenbei aufgedeckt, dass der Lesepfad bei GLEICHEN Zeitstempeln gar keine
       // definierte Reihenfolge hat.
       //
-      // KORREKTUR DES KOMMENTARS (Abschlussreview 2026-08-08, portiert 2026-08-11): hier
-      // stand „dort jetzt `order=created_at.desc,id.desc`". Das ist NICHT so —
-      // `storage.listMatchingResults` sendet unveraendert nur `&order=created_at.desc`;
-      // welcher Vorgang bei Gleichstand zuerst angezeigt wird, ist eine offene
-      // Produktentscheidung. Der Kommentar behauptete eine Korrektur am
-      // Production-Lesepfad, die es nicht gibt.
-      //
-      // UND DER NICHTDETERMINISMUS IST NICHT ERLEDIGT, nur verkleinert: der eine
-      // Stapelzeitstempel unten stabilisiert die Reihenfolge INNERHALB eines Stapels.
-      // Schreibt der Matcher in MEHREREN Stapeln ueber eine Millisekundengrenze, kippt
-      // J8 weiterhin (im Abschlussreview 2026-08-08 in einem von sechs vollstaendigen
-      // Offline-Laeufen aufgetreten). F-E2E bleibt offen (CURRENT_STATE §9, Entwurf PR #224).
+      // F-E2E GESCHLOSSEN (500-Mandate-Reifesprint 2026-09-01): der Production-
+      // Lesepfad sortiert jetzt `created_at.desc,rank.asc.nullslast,id.asc`
+      // (Totalordnung; Zweitschluessel = der vom Matcher berechnete Rang), die
+      // Attrappe in listMatchingResults unten bildet exakt das ab. Der fruehere
+      // Restfall — mehrere Stapel ueber eine Millisekundengrenze, J8 kippt —
+      // ist damit geschlossen: auch bei verschiedenen Zeitstempeln je Stapel
+      // ordnet der Rang innerhalb des Stapels, und ueber Stapel hinweg gewinnt
+      // weiterhin der juengste Stapel (Relevanz je Lauf bleibt beisammen).
       const stapelZeit = new Date().toISOString();
       for (const r of rows || []) st.matchingResults.set(r.id, { ...r, aktuell: true, created_at: stapelZeit });
       return { saved: (rows || []).length };
@@ -194,15 +190,17 @@ function neuerStore(opts) {
     },
     listMatchingResults: ({ userId, limit = 50, includeAbgeloest = false } = {}) => {
       if (!userId) throw new Error("[tenant-guard] listMatchingResults: kein Mandant");
-      // Sortierung exakt wie der echte Lesepfad: `order=created_at.desc`, sonst nichts.
-      // `Array.prototype.sort` ist seit ES2019 STABIL — bei gleichem Zeitstempel bleibt
-      // damit die Einfuegereihenfolge erhalten, also die Reihenfolge, in der der Matcher
-      // die Zeilen geschrieben hat. Postgres GARANTIERT das nicht; die Attrappe bildet
-      // hier den gutmuetigen Fall ab. Der Unterschied ist ein belegter offener Befund
-      // (docs/betrieb/skalierungsgrundlage-1000.md §15) und ausdruecklich kein gruener Punkt.
+      // Sortierung exakt wie der echte Lesepfad (F-E2E-Korrektur 2026-09-01):
+      // `order=created_at.desc,rank.asc.nullslast,id.asc` — eine TOTALORDNUNG.
+      // Innerhalb eines Stapels (gleicher Zeitstempel) entscheidet der vom
+      // Matcher berechnete Rang, zuletzt die eindeutige Kennung. Die Attrappe
+      // darf sich NICHT mehr auf die Stabilitaet von Array.prototype.sort
+      // verlassen (Postgres garantiert bei Gleichstand keine Reihenfolge).
       return [...st.matchingResults.values()]
         .filter((r) => r.user_id === userId && (includeAbgeloest || r.aktuell === true))
-        .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+        .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))
+          || ((a.rank == null ? Infinity : Number(a.rank)) - (b.rank == null ? Infinity : Number(b.rank)))
+          || String(a.id).localeCompare(String(b.id)))
         .slice(0, limit);
     },
     getSourcesForVorgang: (vorgangId) => {
@@ -259,6 +257,8 @@ function neuerStore(opts) {
           }
         }
         st.matchingRuns.set(runId, { ...lauf, status: contract.RUN_STATUS.VOLLSTAENDIG, beendet_am: new Date().toISOString(), veroeffentlicht: rows.length, abgeloest });
+        // EIN Zeitstempel fuer den GANZEN Stapel (Postgres-Treue, s. u. F-E2E-URSACHE).
+        const publishStapelZeit = new Date().toISOString();
         rows.forEach((r, i) => {
           if (st.publishFehler === "mitten" && i === Math.floor(rows.length / 2)) {
             throw new Error("Abbruch WAEHREND der Ergebnisschreibung (simuliert)");
@@ -267,7 +267,14 @@ function neuerStore(opts) {
           if (!ziel || ziel.status !== contract.RUN_STATUS.VOLLSTAENDIG) {
             throw new Error("matching_results: Riegel run_complete verletzt");
           }
-          st.matchingResults.set(r.id, { ...r, aktuell: true, created_at: new Date().toISOString() });
+          // F-E2E-URSACHE (belegt 2026-09-01): hier stand `new Date()` INNERHALB
+          // der Schleife — der 2026-08-08 nur im Non-Audit-Pfad (saveMatchingResults)
+          // behobene Fehler lebte im AUDIT-Pfad weiter, und genau der laeuft in den
+          // Landes-E2E-Suiten (`auditEnabled: () => true`). Unter CPU-Knappheit
+          // rutschte der Stapel ueber eine Millisekundengrenze, `created_at.desc`
+          // drehte die Rangfolge, J8 kippte (1 von 25 unter Fremdlast). Wie in
+          // Postgres (now() je Transaktion konstant): EIN Zeitstempel je Stapel.
+          st.matchingResults.set(r.id, { ...r, aktuell: true, created_at: publishStapelZeit });
         });
         return { veroeffentlicht: rows.length, abgeloest };
       } catch (error) {
