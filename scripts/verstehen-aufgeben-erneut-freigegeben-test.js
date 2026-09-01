@@ -371,7 +371,11 @@ async function main() {
         psqlAsync(`select erlaubt||'|'||grund from public.helmut_verstehen_reserviere('${vg}','h2','w-rennen',300000)`)
       ]);
       const aufGewann = auf.out === "aufgegeben";
-      const resGewann = /^t\|/.test(res.out);
+      // `erlaubt||'|'||grund` castet den Boolean nach text ('true'/'false'), nicht in
+      // psqls Anzeigeform ('t'/'f'). Mit /^t\|/ wurde eine gewonnene Reservierung nie
+      // erkannt und als Widerspruch gezaehlt. Beide Formen gelten, damit der Test nicht
+      // an der Ausgabeform haengt.
+      const resGewann = /^(t|true)\|/.test(res.out);
       const endzustand = zeile(vg).zustand;
       const konsistent = (aufGewann && !resGewann && endzustand === "aufgegeben" && /aufgegeben/.test(res.out))
         || (!aufGewann && resGewann && endzustand === "reserviert" && auf.out === "nicht-blockiert");

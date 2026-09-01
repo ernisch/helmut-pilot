@@ -19,9 +19,9 @@ Dieser Beleg trennt **drei Nachweise strikt** — sie dürfen nie vermischt werd
 ## 1 · Aufnahmefähigkeit der Warteschlange — **ERBRACHT** (nicht wiederholt)
 
 Bereits am 28.08. erbracht (isoliertes Supabase-Testprojekt, GitHub-Actions-Lauf
-`33158170030`; Beleg: `z3b-supabase-testplan-2026-08-27.md` — liegt NICHT auf
-diesem Branch, sondern ungemergt in **PR #277, Kopf
-`a705c18d0355d86b21fc0136bd64917120da0bb7`**): **500 synthetische
+`33158170030`; Beleg:
+[`z3b-supabase-testplan-2026-08-27.md`](z3b-supabase-testplan-2026-08-27.md)):
+**500 synthetische
 Aufträge eingereiht, 500 reserviert, 500 abgeschlossen**; **1.040 von 1.040
 HTTP-Anfragen** mit Status 200; Latenz p50/p95/p99/max 127/382/440/1.266 ms;
 Gleichzeitigkeitsspitze 32; **0** Zeitüberschreitungen, Netzwerkfehler,
@@ -49,22 +49,17 @@ Betriebsbeweis (§3). Ein früherer Stand dieses Belegs nannte diese Ebene
 Ein mehrtägiger realer Betriebsnachweis liegt **nicht** vor und kann durch
 Offline-Tests oder Berechnungen **nicht ersetzt** werden. Es fehlen weiterhin:
 der Siebentagenachweis der jeweiligen Vorstufe (Stufentore 5→10→…→500,
-`z3b-aktivierungsplan-2026-08-27.md` — ungemergt, **PR #277, Kopf
-`a705c18d0355d86b21fc0136bd64917120da0bb7`**), echte Azure-Messwerte
+[`z3b-aktivierungsplan-2026-08-27.md`](z3b-aktivierungsplan-2026-08-27.md)), echte Azure-Messwerte
 (3er-Vorprobe + 21er-Stichprobe), der echte Google-Sonderweg unter Drosselung
 (OP-15), Import-/Aktivierungsfreigaben je Stufe, der gesetzte Zieldeckel,
 Speicher-/Tarif-/Aufbewahrungsentscheidungen (OP-01, R5) und neue 200er-/500er-
 Fachwegmessungen. Production läuft heute mit **5 aktiven Mandaten**.
 
-> **Quellenlage der zitierten Pläne (Befund 7, 2026-09-01):** Die drei
-> Planungsdokumente liegen **nicht auf `main` und nicht auf diesem Branch**,
-> sondern ausschließlich in offenen PRs — sie sind damit ungemergte, noch
-> nicht freigegebene Quellen: `z3b-aktivierungsplan-2026-08-27.md` und
-> `z3b-supabase-testplan-2026-08-27.md` in **PR #277** (Kopf
-> `a705c18d0355d86b21fc0136bd64917120da0bb7`),
-> `zehn-mandate-uebergang-2026-08-29.md` in **PR #282** (Kopf
-> `c55d2f82c336c52a7778d524eb11fc188ca8e0e9`). Relative Links auf diese
-> Dateien wären auf diesem Branch kaputt und werden deshalb nicht gesetzt.
+> **Quellenlage der zitierten Pläne (nachgezogen 01.09.2026):** Die drei
+> datierten Planungsdokumente wurden aus den später geschlossenen PRs #277
+> und #282 als historische Belege in diesen Ersatzstand übernommen. Ihre
+> Übernahmehinweise verweisen auf den aktuellen Status; die relative
+> Verlinkung ist wieder vollständig.
 > Aus den Plänen wurden in diesem Sprint folgende Regeln VERWENDET (Stand der
 > genannten Köpfe): die Stufentore 5→10→25→50→100→200→500 mit je sieben
 > grünen Tagen, die Deckelbestimmung aus echten p95-Tagesbedarfen je Fachweg
@@ -362,7 +357,7 @@ Die betroffenen Abschnitte oben sind auf den Endstand nachgezogen.
 | 4 | 2.416 war als „kleinster belegbar ausreichender Zieldeckel" zu grün etikettiert; drei verschiedene „455" (Aufträge@5 · KI-Aufrufe@500 · Erwartungswert) drohten vermengt zu werden | Einordnung `vorlaeufiger-szenario-planungswert`, Spanne 1.492–2.416, fünf offene Z3b-Messungen maschinenlesbar; Einheiten der drei 455er dokumentiert und testgesichert | `212b5a4` |
 | 5 | Aktivierungsvertrag nannte nur den Gesamtdeckel — die Verstehens-Reserve fehlte | siebter, GETRENNT freizugebender Schritt `verstehens-reserve` (`HELMUT_LLM_RESERVE_UNDERSTANDING`; Anteil IM Deckel, nie addiert; ohne belegte Reserve nicht bereit); Test verhindert Nur-Gesamtdeckel | `2c058fa` |
 | 6 | „kollisionsfrei" war zu stark: der 05:48-Slot kann in die bis zu 300 s lange Laufzeit des 05:45-Lage-Briefings fallen (kein gemeinsames Schloss) | nur noch Startzeitkollisionsfreiheit behauptet; Rückstand-zu-Rückstand belegt überschneidungsfrei; 05:45/05:48 ausdrücklich OFFEN, `laufzeitUeberschneidungen()` benennt das Paar, Nachweisschritt verlangt seine Prüfung | `2c058fa` |
-| 7 | Verweise auf `z3b-aktivierungsplan`/`z3b-supabase-testplan`/`zehn-mandate-uebergang` zeigten ins Leere (Dateien nur in PRs #277/#282); Archivkopie trug 44 kaputte relative Links | Verweise auf PR #277 (Kopf `a705c18d…`) / PR #282 (Kopf `c55d2f82…`) gebunden, ungemergte Quellenlage + verwendete Regeln offen benannt (§3); alle 44 Archiv-Links repariert; Link-Prüfung über alle geänderten MD-Dateien: 0 kaputt | `31ad167` |
+| 7 | Verweise auf `z3b-aktivierungsplan`/`z3b-supabase-testplan`/`zehn-mandate-uebergang` zeigten ins Leere | Im Korrektursprint zunächst an die PR-Köpfe gebunden; beim PR-Aufräumen 01.09. als datierte historische Belege übernommen und wieder relativ verlinkt | `31ad167` + Ersatzstand |
 
 **Testnachweise des Korrektursprints:** §9 (aktualisierte Stände). Der
 kanonische Offline-Gesamtlauf auf dem Endstand des Korrektursprints steht in
