@@ -346,7 +346,12 @@ async function main() {
     // die unveränderten Defaults des Motors.
     const serverSrc = src("server.js");
     const i = serverSrc.indexOf('url.pathname === "/api/cron/understanding-rueckstand"');
-    const block = i >= 0 ? serverSrc.slice(i, i + 3200) : "";
+    // Blockgrenze statt festem Zeichenfenster (dasselbe Brüchigkeitsmuster wie der
+    // in PR #283 behobene kostenmessung-Test): der Vertrag liest die GANZE Route
+    // bis zur nächsten Route — Einschübe wie die Vorab-Bodenprüfung (2026-09-01)
+    // verschieben die Anker sonst still aus dem Fenster.
+    const ende = i >= 0 ? serverSrc.indexOf("if (url.pathname === ", i + 10) : -1;
+    const block = i >= 0 ? serverSrc.slice(i, ende > i ? ende : i + 8000) : "";
     check("§5.2 die Route existiert und ist cron-geschützt",
       i >= 0 && /authorizeCron\(request, url, response\)/.test(block));
     check("§5.3 nur listPending, canSpend und callType werden überschrieben",
@@ -373,11 +378,15 @@ async function main() {
       JSON.stringify({ skipped: r.skipped, reason: r.reason }));
   }
   {
+    // Blockgrenze statt festem Fenster (Review-Befund 2026-09-01: die Vorab-
+    // Bodenprüfung schob die Deps aus dem 3.200er-Fenster — der Negativ-Guard
+    // war vakant und hätte ein acquireLock-Override nicht mehr gefangen).
     const serverSrc = src("server.js");
     const i = serverSrc.indexOf('url.pathname === "/api/cron/understanding-rueckstand"');
-    const block = i >= 0 ? serverSrc.slice(i, i + 3200) : "";
+    const ende = i >= 0 ? serverSrc.indexOf("if (url.pathname === ", i + 10) : -1;
+    const block = i >= 0 ? serverSrc.slice(i, ende > i ? ende : i + 12000) : "";
     check("§6.2 die Route überschreibt acquireLock NICHT (dasselbe globale Schloss)",
-      i >= 0 && !/acquireLock:/.test(block));
+      i >= 0 && block.includes("runPendingUnderstandingShadow") && !/acquireLock:/.test(block));
   }
 
   abschnitt("§7 Restzeitwache: keine neue Arbeit zu spät (P9)");
@@ -528,11 +537,13 @@ async function main() {
     const undSrc = src("lib/helmut/understanding.js");
     check("§11.6 der Standard-callType des Motors bleibt 'understanding' (Frischpfad byte-identisch)",
       /ctx && ctx\.callType \? String\(ctx\.callType\) : "understanding"/.test(undSrc));
+    // Blockgrenze statt festem Fenster (Review-Befund 2026-09-01, wie §6.2).
     const serverSrc = src("server.js");
     const i = serverSrc.indexOf('url.pathname === "/api/cron/understanding-rueckstand"');
-    const block = i >= 0 ? serverSrc.slice(i, i + 3200) : "";
+    const ende = i >= 0 ? serverSrc.indexOf("if (url.pathname === ", i + 10) : -1;
+    const block = i >= 0 ? serverSrc.slice(i, ende > i ? ende : i + 12000) : "";
     check("§11.7 die Route setzt KEINE Parallelität und lockert keine Grenze (P8)",
-      i >= 0 && !/PARALLELITAET|parallelitaet/i.test(block));
+      i >= 0 && block.includes("runPendingUnderstandingShadow") && !/PARALLELITAET|parallelitaet/i.test(block));
     check("§11.8 die Route quittiert als eigener Prozess 'understanding-rueckstand'",
       /process: "understanding-rueckstand"/.test(block));
     check("§11.9 der Frisch-Cron bleibt unverändert auf listPending-Default (kein Umbau des bewährten Pfads)",
@@ -578,6 +589,72 @@ async function main() {
     const ohne = sanitizeProcessRun({ process: "understanding", runId: "t-r2", status: "success", telemetrie: { cluster: 5 } });
     check("§12.5 Läufe ohne Wächterblock bleiben byte-identisch (rueckstand=null, kein Geisterfeld)",
       ohne.rueckstand === null && !("rueckstand" in (processRunToRelationalRow(ohne).telemetrie || {})));
+  }
+
+  abschnitt("§13 Vorab-Boden liest den ATOMAREN Tageszähler (Befund 3, 2026-09-01)");
+  {
+    // BELEGTER ANLASS: canSpendLlm liest das llmUsage-Log im Auth-Store — ein
+    // verlustbehaftetes Protokoll (~16 % Verlust dokumentiert). Die Budgetwahrheit
+    // ist der atomare Zähler llm_budget_counters (UTC-Tag, Scope global), gegen den
+    // auch helmut_reserve_llm_call bucht. Die Vorab-Bodenprüfung MUSS ihn lesen.
+    const altEnv = {
+      HELMUT_STORAGE_BACKEND: process.env.HELMUT_STORAGE_BACKEND,
+      SUPABASE_URL: process.env.SUPABASE_URL,
+      SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      HELMUT_MAX_LLM_CALLS_PER_DAY: process.env.HELMUT_MAX_LLM_CALLS_PER_DAY
+    };
+    process.env.HELMUT_STORAGE_BACKEND = "supabase";
+    process.env.SUPABASE_URL = "http://127.0.0.1:9";
+    process.env.SUPABASE_SERVICE_ROLE_KEY = "offline-test-kein-geheimnis";
+    process.env.HELMUT_MAX_LLM_CALLS_PER_DAY = "100";
+    try {
+      const anfragen = [];
+      const antwort = (rows) => (endpoint) => { anfragen.push(endpoint); return Promise.resolve(rows); };
+      // §13.1 Ein SELECT auf llm_budget_counters (UTC-Tag, Scope global), rein lesend.
+      const heute = new Date().toISOString().slice(0, 10);
+      const mitZeile = await storage.leseLlmTageszaehler(null, { request: antwort([{ used: 83 }]) });
+      check("§13.1 liest llm_budget_counters mit UTC-Tag + Scope global, ein einziges SELECT",
+        anfragen.length === 1
+        && anfragen[0].includes("/rest/v1/llm_budget_counters?")
+        && anfragen[0].includes(`day=eq.${heute}`) && anfragen[0].includes("scope=eq.global")
+        && anfragen[0].includes("select=used"),
+        anfragen[0]);
+      check("§13.2 vorhandene Tageszeile ⇒ used/limit/remaining aus dem Zähler (83/100/17)",
+        mitZeile.ok === true && mitZeile.used === 83 && mitZeile.limit === 100 && mitZeile.remaining === 17);
+      const ohneZeile = await storage.leseLlmTageszaehler(null, { request: antwort([]) });
+      check("§13.3 fehlende Tageszeile ⇒ echte 0 (heute wurde noch nichts reserviert)",
+        ohneZeile.ok === true && ohneZeile.used === 0 && ohneZeile.remaining === 100);
+      const kaputt = await storage.leseLlmTageszaehler(null, { request: () => Promise.reject(new Error("HTTP 500: kaputt")) });
+      check("§13.4 unlesbarer Zähler ⇒ ok:false mit Fehler (nie eine erfundene Zahl)",
+        kaputt.ok === false && /HTTP 500/.test(kaputt.fehler) && kaputt.used === null && kaputt.remaining === null);
+      const doppelt = await storage.leseLlmTageszaehler(null, { request: antwort([{ used: 1 }, { used: 2 }]) });
+      check("§13.5 mehrdeutige Antwort ⇒ ok:false (fail closed)", doppelt.ok === false);
+
+      // §13.6 REGRESSIONSKERN des Befunds: das Nutzungsprotokoll wäre frei
+      // (canSpendLlm sähe used≈0), der atomare Zähler steht am wirksamen
+      // Rückstandsdeckel (Rest 17 ≤ Boden 30) ⇒ die Vorab-Prüfung blockiert.
+      const regression = await rueckstand.vorabBodenPruefung({
+        leseTageszaehler: () => storage.leseLlmTageszaehler(null, { request: antwort([{ used: 83 }]) }),
+        budgetBoden: 30
+      });
+      check("§13.6 REGRESSION: Protokoll frei + Zähler am Deckel ⇒ blockiert (boden-erreicht, Rest 17)",
+        regression.erlaubt === false && regression.grund === "rueckstand-budget-boden-erreicht"
+        && regression.used === 83 && regression.remaining === 17);
+      const zaehlerWeg = await rueckstand.vorabBodenPruefung({
+        leseTageszaehler: () => storage.leseLlmTageszaehler(null, { request: () => Promise.reject(new Error("netz weg")) }),
+        budgetBoden: 30
+      });
+      check("§13.7 unlesbarer Zähler ⇒ geschlossen blockiert VOR jeder Lesearbeit (kein Log-Rückfall)",
+        zaehlerWeg.erlaubt === false && /^vorab-zaehler-nicht-lesbar:/.test(zaehlerWeg.grund));
+    } finally {
+      for (const [k, v] of Object.entries(altEnv)) {
+        if (v === undefined) delete process.env[k]; else process.env[k] = v;
+      }
+    }
+    // §13.8 Ohne Supabase-Backend meldet der Leser ehrlich ok:false (fail closed).
+    const ohneBackend = await storage.leseLlmTageszaehler(null, { request: () => Promise.resolve([]) });
+    check("§13.8 ohne Supabase-Backend ⇒ ok:false 'kein-supabase-backend' (nie stiller Lokalwert)",
+      ohneBackend.ok === false && ohneBackend.fehler === "kein-supabase-backend");
   }
 
   console.log(`\nERGEBNIS: ${pass} PASS / ${fail} FAIL`);

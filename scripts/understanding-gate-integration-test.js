@@ -73,7 +73,11 @@ function runWith(mode, opts = {}) {
       getExisting: () => null, canSpend: () => ({ allowed: true }),
       modelName: () => "gpt-5-mini",
       requestUnderstanding: () => { understandingCalls += 1; return Promise.resolve({}); },
-      save: () => ({ saved: false }), saveSources: () => {}, markFailed: () => {}, logSkip: () => {},
+      save: () => ({ saved: false }),
+      // Blocker-1-Vertrag (2026-09-01): Parkung nur bei belegter Verknuepfung —
+      // Stub meldet wie saveKoDocumentLinks { saved: <anzahl> }.
+      saveSources: (koId, docs) => ({ saved: (docs || []).length }),
+      markFailed: () => {}, logSkip: () => {},
       gateMode: () => "on",
       recordGateShadow: () => {}, recordGateShadowRows: () => Promise.resolve({ written: 0 }),
       savePending: (vid) => { pendings.push(vid); return Promise.resolve({ saved: true, id: `ko-${vid}` }); },

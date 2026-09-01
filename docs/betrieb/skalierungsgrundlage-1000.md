@@ -630,6 +630,28 @@ zurückgenommen**: er macht die Reihenfolge zwar deterministisch, aber determini
 **Empfehlung:** die Lage sollte gespeicherte Matchingergebnisse nach ihrer **Relevanz**
 ordnen, nicht nach der Schreibzeit. Das ist eine Zeile Code und eine Gründerentscheidung.
 
+> **Stand-Nachtrag 2026-09-01 (500-Mandate-Reifesprint, F-E2E geschlossen; nachgeschärft im
+> Korrektursprint am selben Tag, Befund 1):** Die Empfehlung ist per Betreiberauftrag
+> umgesetzt. Der erste Wurf (`created_at.desc,rank.asc.nullslast,id.asc`) war noch
+> unzureichend: `created_at` **friert beim ersten Auftreten eines Paares ein** (Migration
+> `20260728_matching_audit.sql`, Schritt 2 — der Publish-Upsert setzt es nie neu, den Rang
+> dagegen bei jedem Lauf). Rein lesend belegt (01.09.): die 140 aktuellen Production-Zeilen
+> aus 7 Läufen tragen **gemischte** created_at-Werte (bis 18 verschiedene je Lauf) mit
+> **588 Rang-Zeitstempel-Inversionen** — eine created_at-primäre Ordnung ist damit keine
+> aktuelle Relevanzordnung. `listMatchingResults` sortiert die **aktuelle Projektion**
+> deshalb jetzt **rank-primär**: `rank.asc.nullslast,id.asc` (der Rang jeder aktuellen Zeile
+> stammt vom jüngsten bestätigenden Lauf; ranglose Altzeilen ans Ende; `id.asc` macht die
+> Ordnung total). Der Historien-/Auditzugang (`includeAbgeloest: true`) bleibt zeitlich
+> (`created_at.desc,rank.asc.nullslast,id.asc`). Der oben verworfene `id.desc`-Versuch
+> bleibt verworfen — der Rang, nicht die Kennung, ist der fachliche Schlüssel. Zusätzlich
+> stempelte der **Audit-Publish-Pfad** des Testgerüsts (`publishRun`) weiterhin je Zeile —
+> der 2026-08-08 nur in `saveMatchingResults` behobene Fehler; korrigiert auf einen
+> Stapelzeitstempel, der wie in Postgres **einfriert** (Bestandszeilen behalten ihren
+> Erstauftritts-Zeitstempel). Belege: 24 Gleichstandsgruppen (31.08.), beide Landes-E2E-Suiten
+> je **20/20 grün unter 4-facher CPU-Fremdlast**; Regression rot-vor/grün-nach:
+> `scripts/matching-reihenfolge-test.js`
+> (`docs/betrieb/500-mandate-theoretische-bereitschaft-2026-09-01.md`).
+
 ### Was dieser Sprint an Zahlen belegt
 
 | | Wert | Grad |

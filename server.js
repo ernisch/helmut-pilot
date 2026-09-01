@@ -1895,6 +1895,46 @@ async function handleRequest(request, response) {
         laufDeckel: verstehenRueckstand.rueckstandLaufDeckel(),
         budgetBoden: verstehenRueckstand.rueckstandBudgetBoden()
       });
+      // ── VORAB-BODENPRÜFUNG (Minimal-Cron-Vorbereitung 2026-09-01; Befund 3:
+      // Quelle ist der ATOMARE Tageszähler) ─────────────────────────────────────────
+      // Dieselbe Boden-Frage wie der Wächter, EINMAL vor jeder Lesearbeit: ein
+      // budgetloser Lauf endet in Sekunden mit einer ehrlichen blocked-Quittung
+      // statt ~225 s Ladearbeit zu verbrennen (belegt 31.08. 17:30 UTC). Im
+      // vorbereiteten 48-Slot-Takt (lib/helmut/minimal-cron.js) ist das die
+      // Voraussetzung dafür, dass budgetlose Slots praktisch nichts kosten.
+      // QUELLE: storageModul.leseLlmTageszaehler — der maßgebliche atomare Zähler
+      // llm_budget_counters (UTC-Tag, Scope global), REIN LESEND. Nicht canSpendLlm:
+      // das llmUsage-Log ist verlustbehaftet (~16 %) und würde zu spät blockieren.
+      // Fail closed: ein unlesbarer Zähler überspringt den Lauf VOR Wiedervorlage
+      // und Rohdokument-/Rückstandslesen; kein Rückfall auf das Log.
+      const vorabBoden = await verstehenRueckstand.vorabBodenPruefung({
+        leseTageszaehler: () => storageModul.leseLlmTageszaehler(),
+        budgetBoden: waechter.budgetBoden
+      });
+      if (vorabBoden.erlaubt !== true) {
+        const vorabTelemetrie = await recordProcessRun({
+          process: "understanding-rueckstand", runId, mode: "cron", location: helmutExecLocation(),
+          startedAt: new Date(rueckstandStartMs).toISOString(), finishedAt: new Date().toISOString(),
+          durationMs: Date.now() - rueckstandStartMs,
+          reason: vorabBoden.grund,
+          status: "blocked",
+          telemetrie: {
+            rueckstand: {
+              fenster,
+              laufDeckel: waechter.laufDeckel,
+              budgetBoden: waechter.budgetBoden,
+              erlaubnisse: 0,
+              vorabBoden: { grund: vorabBoden.grund, used: vorabBoden.used, limit: vorabBoden.limit, remaining: vorabBoden.remaining }
+            }
+          }
+        });
+        console.log(`[cron/understanding-rueckstand] Vorab-Bodenprüfung: übersprungen (${vorabBoden.grund}; used=${vorabBoden.used} limit=${vorabBoden.limit} rest=${vorabBoden.remaining})`);
+        return {
+          ok: true, uebersprungen: true, grund: vorabBoden.grund,
+          rueckstand: { fenster, laufDeckel: waechter.laufDeckel, budgetBoden: waechter.budgetBoden, erlaubnisse: 0, vorabBoden },
+          lauftelemetrie: { gespeichert: vorabTelemetrie.ok, vollstaendig: vorabTelemetrie.vollstaendig, fehler: vorabTelemetrie.fehler }
+        };
+      }
       // ── GATE-WIEDERVORLAGE (OP-18, nur bei scharfem Gate) ────────────────────────
       // KI-freier, eng begrenzter Vorlauf (Default 25 Vorgänge, Tagesrotation): prüft
       // einen Ausschnitt der gate-geparkten Vorgänge mit der aktuellen Gate-Version
@@ -4645,6 +4685,51 @@ async function buildHealthReport(politicianId, kontext = {}) {
 // Abfragen nimmt eine Mandantenkennung entgegen; sie je Mandat zu wiederholen wäre
 // derselbe Wert, N-mal bezahlt (Abnahme 26.08.). Jeder Lesefehler bleibt als benannte
 // Messlücke erhalten und wird NIE zu einem stillen Standardwert.
+// ── DRAIN-SIGNALE (Blocker 3, 500-Mandate-Reife 2026-09-01; Befund 2 des
+// Korrektursprints am selben Tag: REIN LESEND) ────────────────────────────────────
+// Erhebt die ehrliche Drain-Bilanz: gate-wuerdige Ankunft (deterministisch
+// paginiert), ECHTER gate-wuerdiger Abfluss (Vorgangsabschluesse gegen die
+// persistierten Gate-Entscheidungen ihrer Dokumente) und der Rueckstandstrend
+// aus der persistierten Trendzeile — AUSSCHLIESSLICH GELESEN. Der fruehere
+// automatische Tages-Schnappschuss-Schreibvorgang (schreibeDrainTrendSchnappschuss)
+// ist ENTFERNT: er verletzte den Read-only-Vertrag des Gesundheitsberichts
+// (jeder Berichtsaufruf, auch ?dryRun=1, schrieb in helmut_store — eine
+// unautorisierte Production-Datenaenderung je Lauf). Solange kein separat
+// freigegebener Schreiber die Trendzeile befuellt, existiert kein historischer
+// Messpunkt: der Trend bleibt dann ehrlich `unvollstaendig` (nie gruen,
+// motor-health.bewerteRueckstandsTrend). Das Befuellen der Trendzeile ist eine
+// spaetere, ausdruecklich zu genehmigende Production-Datenaenderung (CLAUDE.md §5).
+async function leseDrainSignale({ nowMs = Date.now() } = {}) {
+  const leer = { ankunftWuerdig: null, abfluss: null, abflussUnbewertet: null, rueckstandAnfang: null, rueckstandEnde: null };
+  try {
+    const [ankunftWuerdig, abflussKlassen, rueckstandEnde] = await Promise.all([
+      storageModul.zaehleGateWuerdigeAnkunft(24),
+      storageModul.zaehleGateWuerdigerAbfluss(24),
+      storageModul.zaehlePendingVerarbeitbar()
+    ]);
+    // Vergleichsanker NUR aus der gelesenen Trendzeile (juengster 20-40 h alter
+    // Eintrag); ohne lesbaren historischen Messpunkt bleibt er null.
+    let rueckstandAnfang = null;
+    const trendZeile = await storageModul.leseDrainTrendZeile();
+    if (trendZeile.ok) {
+      const anker = motorHealth.waehleTrendAnker(trendZeile.stand.eintraege, { nowMs });
+      rueckstandAnfang = anker ? anker.wert : null;
+    } else {
+      console.error("[drain-bilanz] Trendzeile nicht lesbar:", trendZeile.fehler);
+    }
+    return {
+      ankunftWuerdig,
+      abfluss: abflussKlassen ? abflussKlassen.gatewuerdig : null,
+      abflussUnbewertet: abflussKlassen ? abflussKlassen.unbewertet : null,
+      rueckstandAnfang,
+      rueckstandEnde
+    };
+  } catch (error) {
+    console.error("[drain-bilanz] Signale nicht erhebbar:", error && error.message);
+    return leer;
+  }
+}
+
 async function motorLaufKontext({ fehlerText = (e) => String((e && e.message) || "unbekannt") } = {}) {
   const [completeKoAt, errors, users, feedback, llmBreakdown, classificationCoverage, queueStatus, casKennzahlen, quittungen, drainSignale] = await Promise.all([
     getLatestCompleteKnowledgeObjectAt(), // fail-safe null
@@ -4665,14 +4750,10 @@ async function motorLaufKontext({ fehlerText = (e) => String((e && e.message) ||
     storageModul.listProcessRunsRelational({ limit: 120 })
       .then((runs) => ({ verfuegbar: true, runs }))
       .catch((error) => ({ verfuegbar: false, grund: fehlerText(error) })),
-    // PR-C Drain-Bilanz: drei fail-safe Lesegroessen (je null = nicht messbar).
-    // Promise.all ist hier sicher: jede Einzelfunktion faengt ihre Fehler selbst.
-    Promise.all([
-      storageModul.zaehleGateWuerdigeAnkunft(24),
-      storageModul.zaehleVerstandene(24),
-      storageModul.zaehlePendingVerarbeitbar()
-    ]).then(([ankunftWuerdig, abfluss, rueckstand]) => ({ ankunftWuerdig, abfluss, rueckstand }))
-      .catch(() => ({ ankunftWuerdig: null, abfluss: null, rueckstand: null }))
+    // PR-C Drain-Bilanz (Blocker-3-Korrektur 2026-09-01): fail-safe Lesegroessen
+    // inkl. ECHTEM gate-wuerdigem Abfluss und Rueckstandstrend (je null = nicht
+    // messbar). Jede Teilmessung faengt ihre Fehler selbst.
+    leseDrainSignale()
   ]);
   return { completeKoAt, errors, users, feedback, llmBreakdown, classificationCoverage, queueStatus, casKennzahlen, quittungen, drainSignale };
 }

@@ -45,17 +45,50 @@ function antwort(body, status = 200) {
   });
 }
 
+// PostgreSQL-Emulation (Blocker 5, 2026-09-01): sortiert wie der echte Server.
+// Ist `id` NICHT Teil der Ordnung, ist die Reihenfolge innerhalb einer
+// created_at-Gleichstandsgruppe UNDEFINIERT — hier bewusst ADVERSARIAL: sie
+// rotiert mit jeder Anfrage. Genau so verliert eine Offset-Paginierung ohne
+// Totalordnung Zeilen oder liefert sie doppelt; mit `id.desc` ist die Ordnung
+// total und stabil.
+function sortiereWiePostgres(rows, orderParam, anfrageIndex) {
+  const mitId = /id\.desc/.test(orderParam);
+  const sorted = [...rows].sort((a, b) => {
+    const c = String(b.created_at || "").localeCompare(String(a.created_at || ""));
+    if (c !== 0) return c;
+    return String(b.id).localeCompare(String(a.id));
+  });
+  if (mitId) return sorted;
+  const out = [];
+  let i = 0;
+  while (i < sorted.length) {
+    let j = i;
+    while (j < sorted.length && String(sorted[j].created_at || "") === String(sorted[i].created_at || "")) j += 1;
+    const gruppe = sorted.slice(i, j);
+    const rot = anfrageIndex % Math.max(1, gruppe.length);
+    out.push(...gruppe.slice(rot), ...gruppe.slice(0, rot));
+    i = j;
+  }
+  return out;
+}
+
+let servierteIds = [];         // §7: welche ids der Server je Anfrage auslieferte
+
 function installiereFetchErsatz() {
   global.fetch = (url, options = {}) => {
     const method = String((options && options.method) || "GET").toUpperCase();
     const endpoint = String(url).replace("http://127.0.0.1:9", "");
     if (method === "GET" && /^\/rest\/v1\/raw_documents\?select=id,content_fingerprint/.test(endpoint)) {
+      const anfrageIndex = bestandsAbrufe.length;
       bestandsAbrufe.push(endpoint);
       if (bestandsFehler) return Promise.reject(new Error(bestandsFehler));
       const limit = Number((/[?&]limit=(\d+)/.exec(endpoint) || [])[1] || POSTGREST_KAPPE);
       const offset = Number((/[?&]offset=(\d+)/.exec(endpoint) || [])[1] || 0);
+      const orderParam = decodeURIComponent((/[?&]order=([^&]+)/.exec(endpoint) || [])[1] || "");
+      const geordnet = sortiereWiePostgres(bestand, orderParam, anfrageIndex);
       // ECHTE Serverkappe: nie mehr als 1.000, egal was limit sagt.
-      const seite = bestand.slice(offset, offset + Math.min(limit, POSTGREST_KAPPE));
+      const seite = geordnet.slice(offset, offset + Math.min(limit, POSTGREST_KAPPE));
+      servierteIds.push(seite.map((r) => r.id));
       return antwort(seite);
     }
     if (method === "POST" && /^\/rest\/v1\/raw_documents\?on_conflict=id/.test(endpoint)) {
@@ -75,10 +108,15 @@ function installiereFetchErsatz() {
   };
 }
 
+const BESTAND_BASIS_MS = Date.parse("2026-08-30T12:00:00Z");
 function baueBestand(n) {
-  // Neueste zuerst (der Code fragt order=created_at.desc): Index 0 = juengste Zeile.
+  // Neueste zuerst (der Code fragt order=created_at.desc,id.desc): Index 0 =
+  // juengste Zeile. Jede Zeile traegt einen EIGENEN Zeitstempel (Positions-
+  // kodierung), damit die Positionssemantik der Abschnitte §1-§5 unter der
+  // ordnungs-treuen Serveremulation erhalten bleibt; Gleichstaende baut nur §7.
   return Array.from({ length: n }, (_, i) => ({
     id: `bestand-${i}`,
+    created_at: new Date(BESTAND_BASIS_MS - i * 1000).toISOString(),
     content_fingerprint: `fp-${i}`,
     canonical_target_url: `https://beispiel.test/artikel-${i}`
   }));
@@ -183,6 +221,38 @@ function verankere(item, pos) {
     check("§6.3 Deckel ist konfigurierbar mit sicherem Default (12 Seiten = 12.000 Zeilen), fail-closed pro Aufruf gelesen",
       /function dedupBestandMaxSeiten\(\)[\s\S]{0,220}: 12;/.test(src)
       && /HELMUT_DEDUP_BESTAND_MAX_SEITEN/.test(src));
+    check("§6.4 Blocker 5: die Ordnung ist eine TOTALORDNUNG (created_at.desc + id.desc)",
+      /order=created_at\.desc,id\.desc/.test(src));
+  }
+
+  abschnitt("§7 Blocker 5: Gleichstandsgruppen über Seitengrenzen — kein Verlust, kein Duplikat");
+  {
+    // 2.500 Zeilen, davon teilen die Positionen 400-1899 EINEN Zeitstempel
+    // (1.500er-Gleichstandsgruppe über beide Seitengrenzen 1.000 und 2.000).
+    bestand = baueBestand(2500); bestandsAbrufe = []; bestandsFehler = null; servierteIds = [];
+    const gleichstand = new Date(BESTAND_BASIS_MS - 400 * 1000).toISOString();
+    for (let i = 400; i < 1900; i += 1) bestand[i] = { ...bestand[i], created_at: gleichstand };
+
+    // Meta-Beweis: die Emulation hat Zaehne. OHNE id-Zweitsortierung (alte
+    // Ordnung) rotiert die Gleichstandsgruppe je Anfrage — eine Offset-
+    // Paginierung verliert dann Zeilen UND liefert Duplikate.
+    const altePages = [0, 1, 2].map((k) => sortiereWiePostgres(bestand, "created_at.desc", k).slice(k * 1000, (k + 1) * 1000));
+    const alteIds = altePages.flat().map((r) => r.id);
+    const alteUnique = new Set(alteIds);
+    check("§7.1 Adversarial-Emulation: die ALTE Ordnung (ohne id) würde Zeilen verlieren und doppeln",
+      alteIds.length === 2500 && alteUnique.size < 2500);
+
+    // Der ECHTE Code (created_at.desc,id.desc) liest die Gruppe verlustfrei.
+    const r = await storage.persistRawDocumentsDeduped([verankere(neuesItem(7), 1700)]);
+    const gesehen = servierteIds.flat();
+    check("§7.2 drei Seiten, alle 2.500 Zeilen genau EINMAL serviert (Totalordnung)",
+      bestandsAbrufe.length === 3 && gesehen.length === 2500 && new Set(gesehen).size === 2500);
+    check("§7.3 Dublette MITTEN in der Gleichstandsgruppe (Position 1.700) wird erkannt",
+      r.persisted === 0 && r.zusammengefuehrt === 1 && r.bestandsTreffer === 1);
+    check("§7.4 jede Anfrage traegt die Totalordnung created_at.desc,id.desc",
+      bestandsAbrufe.every((e) => /order=created_at\.desc%2Cid\.desc|order=created_at\.desc,id\.desc/.test(e)));
+    check("§7.5 Fenstermessung bleibt ehrlich (zeilen=2500, nicht gedeckelt)",
+      r.bestandsfenster && r.bestandsfenster.zeilen === 2500 && r.bestandsfenster.gedeckelt === false);
   }
 
   global.fetch = ECHTES_FETCH;

@@ -188,8 +188,11 @@ const deps = { ready: () => true, request: fakeRequest };
     gesehene[0].includes("aktuell=is.true"));
   check("B2 Mandantenfilter bleibt Pflicht",
     gesehene[0].includes("user_id=eq.mdb-a"));
-  check("B3 Sortierung unveraendert (created_at.desc) — keine Rangaenderung",
-    gesehene[0].includes("order=created_at.desc"));
+  // NACHGEZOGEN (Befund 1, Korrektursprint 2026-09-01): die aktuelle Projektion
+  // sortiert rank-primaer — created_at friert beim Erstauftritt ein und traegt
+  // keine Relevanzordnung (Herleitung + Regression: matching-reihenfolge-test.js).
+  check("B3 aktuelle Projektion sortiert rank-primaer (rank.asc.nullslast,id.asc)",
+    gesehene[0].includes("order=rank.asc.nullslast,id.asc"));
 
   await storage.listMatchingResults({ userId: "mdb-a", limit: 12, includeAbgeloest: true }, deps);
   check("B4 Historienzugang bleibt erhalten (includeAbgeloest=true ohne Filter)",

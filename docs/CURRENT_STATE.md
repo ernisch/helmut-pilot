@@ -1,7 +1,7 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-08-31 — Phase 3 des Understanding-Kapazitätssprints, danach Sicherheitssperre (§20).** Vollständige
-Fassung vor dieser Verdichtung: byte-identisch in [`archive/project_state/2026_08_24_CURRENT_STATE_full.md`](archive/project_state/2026_08_24_CURRENT_STATE_full.md). Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Ablageregeln: [`archive/README.md`](archive/README.md), `CLAUDE.md` §9.
+**Stand: 2026-09-01 — Reifesprint (§21) + Korrektursprint: 7 Betreiber-Befunde behoben, Draft-PR zur CI (§21).** Vollständige
+Fassung vor dieser Verdichtung (01.09.): byte-identisch in [`archive/project_state/2026_09_01_CURRENT_STATE_full.md`](archive/project_state/2026_09_01_CURRENT_STATE_full.md). Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Ablageregeln: [`archive/README.md`](archive/README.md), `CLAUDE.md` §9.
 
 **Kernlage in sechs Sätzen:** Der neue Warteschlangenmotor (`HELMUT_SCALABLE_PIPELINE=on`) ist **seit dem 23.08.2026 in Production eingeschaltet** (Vollbeleg Runbook §30.7). Die **fünf bestehenden Mandate sind mit 376 echten Abschlüssen bewiesen**; **Morgenlauf 5/5 und Lagelauf effektiv 5/5** aller aktiven Mandate waren erfolgreich. Der **R4-/GitHub-Actions-Watchdog-Nachweis ist grün**. Im Aktivierungsfenster gab es **keine Doppelarbeit, keine verlorenen Aufträge, keine endgültigen Fehler, 0 Lease-Probleme und 0 Fencing-Konflikte**; alle elf §28.6-Kontrollen sind erfüllt ([`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §30.7). **Der Stand `0 unbekannt` gilt seit dem 30.08. nicht mehr: es stehen 3 Vorgänge auf `unbekannt` (§20).** Der Modus ist weiterhin **`HELMUT_JOB_DISPATCH_MODE=shadow`** (Cron-Antrieb; kein Ereignis-Antrieb, kein AWS). **Der Selbstweck ist seit 24.08. lokal Ende-zu-Ende belegt, aber in Production nie ausgeführt** (§14).
 
@@ -12,7 +12,7 @@ Fassung vor dieser Verdichtung: byte-identisch in [`archive/project_state/2026_0
 ## 2 · Stand auf `main` und Pull Requests
 
 - **Letzter fachlich wirksamer Production-Code: `936b2676` aus #286**; davor `3a153b50` (#287), `a03480bb` (#285), `3244f073` (#284) und `0f900e68` (#283). Der reine Dokumentationsabschluss #288 (`cb47047c`) wurde danach erfolgreich deployt und änderte kein Laufzeitverhalten.
-- **PR #273, #274, #279, #280, #281, #283–#288 sind gemergt.** Spätere reine Dokumentationsabschlüsse ändern diesen fachlichen Stand nicht; Nachweis gemäß `CLAUDE.md` §9 über die Git-Historie. Offen bleiben #275–#277 und **#282**. `672886c` und `be5bd15` sind lokal und nicht vollständig prüfbar.
+- **PR #273, #274, #279, #280, #281, #283–#289 sind gemergt.** Spätere reine Dokumentationsabschlüsse ändern diesen fachlichen Stand nicht; Nachweis gemäß `CLAUDE.md` §9 über die Git-Historie. Offen bleiben #275–#277 und **#282**. **`672886c` und `be5bd15` existieren nicht mehr** (01.09. geprüft: in keinem Remote-Branch); ihre Inhalte sind im 500-Mandate-Reifesprint aus kanonischer Doku rekonstruiert (§21).
 - Davor gemergt: #271, #270, #265, #262, #261, #260/#259/#256/#257, #225, #216; die PR-Bereinigung vom 23.08. (inkl. begründeter Schließungen) ist in Archivfassung und Runbook dokumentiert.
 - Merge nach `main` löst automatisch ein Production-Deployment aus.
 
@@ -108,7 +108,7 @@ K2/K3 und OP-25 sind abgeschlossen (OP-25 laut Betreiberfeststellung vom 24.08.)
 
 - **OP-25**: drittes Fenster BESTANDEN (2026-08-07/08); Geltung nur aktuelle Architektur mit 5 Mandaten — nach Stufenaktivierung vollständige Wiederholung. OP-14 offen.
 - **OP-31**: BESTANDEN (Morgenlauf 2026-08-11), Kopfstatus/UI nicht live abgerufen.
-- **F-E2E** (nichtdeterministische E2E-Rangfolge im CI) — Ursache offen; PR #224 (Draft) nicht abgenommen.
+- **F-E2E — Ursache belegt und lokal geschlossen (01.09., ungemergt, §21; nachgeschärft Befund 1):** `created_at` friert beim Erstauftritt ein (588 Rang-Zeitstempel-Inversionen in Production) — die **aktuelle** `listMatchingResults`-Projektion sortiert jetzt **rank-primär** (`rank.asc.nullslast,id.asc`), Historienzugang zeitlich; Gerüst friert Postgres-treu ein. Regression rot-vor/grün-nach `matching-reihenfolge-test.js` 15/0; Landes-E2E je 10/10 (zuvor 20/20 unter CPU-Fremdlast). PR #224 (Draft) überholt. Production-Nachweis steht bis zum Merge aus.
 - **29B** — wartet auf natürlich auftretende Fehlerzustände (künstliche Fehler verboten).
 - **OP-09/OP-10** (Lock-Deny/Fehlerpfad) — brauchen ein echtes Störereignis.
 - **Berlin:** ob `HELMUT_LANDESMODULE` in Production wirkt, ist unbewiesen.
@@ -168,45 +168,27 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 14 · Sprint 24./25.08. — Härtungssprint Selbstweck
 
-**Erfolgreich abgeschlossen**, PR #269 gemergt. Vollständig: Runbook §31. Kernpunkte: **`bereit` heißt Konfigurationsbereitschaft, nicht Zustellung** (`/api/ops/jobqueue`, Feld `ereignisbetrieb`; Nachweis `selbstweck-ende-zu-ende-test.js`, 31 PASS) · der 3-s-Abbruch bleibt ungeprüft, ein Vorschauversuch ist ohne belegte Datenisolierung verboten · aus zwei Production-Testzeilen folgte dauerhaft `CLAUDE.md` §6: **jeder** Testlauf über `scripts/lokal.js`.
+**Erfolgreich abgeschlossen** (PR #269; vollständig Runbook §31, Vollfassung [`archive/project_state/2026_09_01_CURRENT_STATE_full.md`](archive/project_state/2026_09_01_CURRENT_STATE_full.md) §14): `bereit` heißt Konfigurationsbereitschaft, nicht Zustellung; der 3-s-Abbruch bleibt ungeprüft (Vorschauversuch ohne belegte Datenisolierung verboten); seitdem gilt `CLAUDE.md` §6: **jeder** Testlauf über `scripts/lokal.js`.
 
 ## 15 · Sprint 25.08. — Skalierung 25/50/100 (Korrekturrunden 4 und 5)
 
-**Teilweise abgeschlossen**, **PR #270 am 26.08. gemergt**. Technische Vorbereitung, synthetischer Lastnachweis und dreizehn korrigierte Widersprüche sind erbracht; der realistische Nachweis (Z3) und jede Aktivierung bleiben offen und freigabepflichtig. Kanonisch mit allen Zahlen: [`betrieb/skalierung-25-50-100.md`](betrieb/skalierung-25-50-100.md) (§0.2/§0.3). Deckel, 7-Tage-Nachweis und Abflusszahl stehen in §6 und §7 — hier nur, was dort nicht steht:
-
-- **Anlage und Aktivierung sind technisch getrennt:** der Stapel legt ausschließlich **inaktiv** an, ein Aktivierungswunsch wird **abgelehnt statt umgedeutet**. **Kein Aktivierungspfad gebaut.**
-- `/api/cron/lage-briefing` (05:45) läuft bei ausgeschalteter Narrativwarteschlange über seinen **Direktpfad** weiter, ist aber typgebunden (`tenant_narrative`) und damit **kein** allgemeiner Abfluss.
-- **Indexfrage entschieden:** nicht der Index fehlt, sondern die **Form** der Abfrage sperrt einen vorhandenen Index aus. **Kein Index, F9 unverändert und nicht angewendet.** Die 500-MB-Free-Grenze reißt vorher (2,70 MB/Tag, 160 MB belegt); Ursache ist die fehlende Aufbewahrung (R5).
-- **Datenbanknachweis übertragbar:** die Lasttests liefen zusätzlich gegen eine lokale PostgreSQL **17.6** (Production-Hauptversion) — gleicher Plan, gleicher Faktor, gleiche 18 MB.
+**Teilweise abgeschlossen** (PR #270; kanonisch [`betrieb/skalierung-25-50-100.md`](betrieb/skalierung-25-50-100.md), Vollfassung Archiv §15). Kernpunkte: Anlage-Stapel legt ausschließlich **inaktiv** an (Aktivierungswunsch wird abgelehnt, kein Aktivierungspfad gebaut) · lage-briefing-Direktpfad ist typgebunden, **kein** allgemeiner Abfluss · **kein Index nötig, F9 nicht angewendet**; zuerst reißt die 500-MB-Free-Grenze (2,70 MB/Tag; Ursache fehlende Aufbewahrung R5). Z3/Aktivierung bleiben freigabepflichtig.
 
 ## 16 · Sprint 26.08. — Watchdog: Slotlogik, Briefingstufen, Skalierung
 
-**Erfolgreich abgeschlossen und gemergt (PR #271).** Merge = Deployment ist erfolgt; offen bleibt nur der reguläre 06:00-Nachweis. Alle Zahlen und Befunde: [`betrieb/watchdog-korrektur-2026-08-26.md`](betrieb/watchdog-korrektur-2026-08-26.md). Zwei Punkte mit Folgewirkung: **`partial` heißt nie „Slot fehlt"** (ohne die Korrektur bis zu 24 h Fehlalarm), und der offene Produktbefund **5 von 5 Briefings personalisiert, aber nur 1 von 5 mit registriertem Push-Empfänger** — `delivered` heißt Annahme durch den Push-Dienst, nie „zugestellt".
+**Erfolgreich abgeschlossen** (PR #271, deployt; alle Zahlen [`betrieb/watchdog-korrektur-2026-08-26.md`](betrieb/watchdog-korrektur-2026-08-26.md)): **`partial` heißt nie „Slot fehlt"**; offener Produktbefund: 5/5 Briefings personalisiert, aber nur 1/5 mit registriertem Push-Empfänger (`delivered` ≠ zugestellt).
 
 ## 17 · Sprint 26.08. — Realistiknachweis Z3a für 25/50/100
 
-**Teilweise abgeschlossen** — der realistische Nachweis ist **als Z3a erbracht und als Z3 offen**. PR #272 ist als Merge `0ddb73e9` in `main`. Alle Zahlen, Messreihen und Kriterien: [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md). Nur das Entscheidungsrelevante hier:
-
-- **Was Z3a belegt:** echte Fachhandler, Datenbank über HTTP → PostgREST → PostgreSQL 17.6, echtes Netz, echte Modellaufrufe, Cron-Slots. Über vier Stufen (5/25/50/100 Mandate) **92 Korrektheitskriterien erfüllt, 0 nicht erfüllt**, 0 Transportfehler, 0 Konflikte; langsamster Slot 216 s von 290 s.
-- **Was Z3a NICHT belegt:** die Anbieter sind lokal — weder Google noch Azure antwortet, der Google-Sonderweg bleibt ungeprüft. Das ist **Z3b** und bleibt offen.
-- **Kapazitätsbefund:** die Tagesarbeit floss auf allen vier Stufen in den drei regulären Slots ab. Die eigentliche Grenze ist der **ungedeckelte KI-Bedarf** — rund 89/208/311/369 Aufrufe je Betriebstag gegen einen heutigen Deckel von 100.
-- **Sicherheitslücke geschlossen:** `scripts/lokal.js` räumte `AZURE_OPENAI_KEY`/`_ENDPOINT` nicht aus der Kindprozess-Umgebung. Behoben, mit Laufzeit-Gegenprobe.
-- **Preisbasis unverändert offen (F7):** alle Beträge sind berechnet, keine Rechnungsbeträge; die Azure-Preisseite ist aus Cloud-Sitzungen gesperrt.
+**Teilweise abgeschlossen** (PR #272 = `0ddb73e9`; alle Messreihen [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md), Vollfassung Archiv §17): Z3a belegt echte Fachhandler/PostgREST/Netz/Modellaufrufe über 5/25/50/100 Mandate (92/92 Kriterien, 0 Fehler) — **nicht** aber die echten Anbieter (Google/Azure = **Z3b, offen**). Kapazitätsbefund: Grenze ist der ungedeckelte KI-Bedarf (89–369/Tag gegen Deckel 100). `lokal.js`-Azure-Leck geschlossen; Preisbasis F7 offen.
 
 ## 18 · Z22: Befund, Pflichtbeleg und Production-Abschluss
 
-**Erfolgreich abgeschlossen (29.08.).** Alle Zahlen, Prüfsummen und Buchungen: [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md) §13–§14.
+**Erfolgreich abgeschlossen (29.08.);** alle Zahlen/Buchungen [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md) §13–§14: `helmut_jobs_offen` zählte mandatsblind, Z22 ergänzt `p_mandat`. Production-Anwendung 29.08. mit Betreiberfreigabe (Buchungen `20260829175642`/`20260829175749`), Nachprüfung 5/5 grün — **Z22 nicht erneut anwenden.** Bewiesen lokal, im CI, isoliert und in Production; **offen:** §11-PostgREST-Rückfallnachweis, still überspringende DB-Suiten, Z3b/Azure.
 
-- **Ursache und Korrektur:** `helmut_jobs_offen` zählte persönliche Abrufe und Projektionen mandatsblind. Z22 ergänzt `p_mandat`; unbrauchbare Parameter- oder Zeilenkennung gilt sicher als globale Arbeit.
-- **Production-Anwendung 29.08.** mit ausdrücklicher Betreiberfreigabe auf `ddckuvvpcytqbyfmbvie`: Basis `20260826190000` unter Buchung `20260829175642`, Vorwärtskorrektur `20260829123132` unter `20260829175749`. Nachprüfung grün (5 von 5 Mandaten gegen die direkte SQL-Erwartung, 0 Abweichungen); keine Auftragsdaten verändert. **Z22 nicht erneut anwenden.**
-- **Beweisebenen:** lokal, im Pflicht-CI, isoliert gegen Supabase und **in Production** bewiesen — als Funktions- und Plattformzustand. Ein neuer **Mandatsnachweis** entstand nicht: Production bleibt bei fünf realen Mandaten.
-- **Offen:** §11 (echter PostgREST-Rückfallnachweis), die übrigen still überspringenden Datenbanksuiten, Z3b und Azure.
+## 19 · Sprint 31.08. — Understanding-Laufmeldung: roter Befund vom 30.08. behoben
 
-## 19 · Sprint 31.08. — Understanding-Laufmeldung: roter Befund vom 30.08. lokal behoben
-
-**Erfolgreich abgeschlossen (Nachtrag 31.08.): PR #283 ist am 31.08. 07:14 UTC gemergt und als `0f900e68` in Production deployt (`READY`).** Vollständiger Befund mit allen Zahlen: [`betrieb/understanding-telemetrie-korrektur-2026-08-31.md`](betrieb/understanding-telemetrie-korrektur-2026-08-31.md). Offen bleibt nur der natürliche Production-Nachweis der ehrlichen Zähler (erster Lauf auf dem neuen Commit: 31.08. 21:30 UTC).
-
-Kernpunkte (Details ausschließlich im Beleg): `lauf-bilanz.js` als **eine** kanonische Zähler-/Statusableitung (Fehlerklassen `zaehlerwiderspruch`/`telemetrie-unvollstaendig`; `Number(null)` ist nie mehr eine gemessene 0) · der 30.08.-Lauf heißt korrekt `partial · 18/0/1/32` (18+0+1+32 = 51 = `cluster`) · Parser (PR #274) und Restzeitwache unverändert — 217,5 s ist **keine** Laufzeitgrenze (K9-Tages-p95 aus ungemergtem PR #282) · U+0000-Fall (22P05) durch `cleanEntry`-Härtung geschlossen · Suite `lauf-bilanz-test.js` 149 PASS / 0 FAIL. **Offen:** inzwischen drei `unbekannt`-Vorgänge (Betreiberentscheidung). Der Kapazitätsbefund ist an §20 übergeben (die frühere Kurzzuschreibung „Obergrenze ist der KI-Tagesdeckel" war unvollständig — primär band die Slot-Laufzeit).
+**Erfolgreich abgeschlossen; PR #283 am 31.08. 07:14 UTC gemergt und als `0f900e68` deployt.** Vollständig: [`betrieb/understanding-telemetrie-korrektur-2026-08-31.md`](betrieb/understanding-telemetrie-korrektur-2026-08-31.md). Kernpunkte: `lauf-bilanz.js` als **eine** kanonische Zähler-/Statusableitung (`Number(null)` ist nie mehr eine gemessene 0) · 217,5 s ist **keine** Laufzeitgrenze (K9-Tages-p95, PR #282) · U+0000-Fall geschlossen. **Der natürliche Nachweis der ehrlichen Zähler ist erbracht: der 21:30-Lauf vom 31.08. trug belegte Zähler (§20-Nachträge).** Offen: drei `unbekannt`-Vorgänge (Betreiberentscheidung).
 
 ## 20 · Sprint 31.08. — Kapazitätssprint Understanding: Diagnose und Rückstandsschleife
 
@@ -218,5 +200,14 @@ Kernpunkte (Details ausschließlich im Beleg): `lauf-bilanz.js` als **eine** kan
 - **Phase 3 deployt:** #285 (`a03480bb`) Gate-Arm, #287 (`3a153b50`) Drain-Bilanz und #286 (`936b2676`) Dedup-Fenster. CI war je PR grün; Production ist `READY`. Gate weiter `shadow`, 0 `gate-geparkt`, keine Migration oder Mandatsänderung.
 - **Sicherheitssperre:** Der autonome Gate-Flip um 21:45 UTC wurde gelöscht. PR-B, Cron-Ausbau, Deckeländerungen und Testkohorten bleiben ungemergt und freigabepflichtig. Der natürliche 21:30-UTC-Lauf darf nur lesend ausgewertet werden.
 - **Vier Blocker vor jedem Gate-Flip:** Der Parkpfad kann einen Verknüpfungsfehler verschlucken und trotzdem `gate-geparkt` setzen; der Zustandswechsel meldet bei HTTP 204 auch für 0 geänderte Zeilen `ok:true`; die Drain-Bilanz vergleicht gate-würdige Ankunft mit allen Abschlüssen und belegt keinen Rückstandstrend; ihre Abfrage trifft erneut die PostgREST-1.000er-Kappe. Die Dedup-Paginierung braucht zusätzlich eine Zweitsortierung nach `id`.
-- **Messbefund rot:** Gate-würdige Ankunft übersteigt den echten Abfluss und der Rückstand wächst. Bis zur Korrektur keine Freigabegrundlage.
-- **Offen:** 21:30-UTC-Lauf auf `936b2676`, Blockerkorrektur, prüfbarer Upload von `672886c`/`be5bd15`, OP-06 (1 769 Altfälle) und Siebentagenachweis. Keine Aktivierung von zehn Mandaten.
+- **Messbefund rot:** Gate-würdige Ankunft übersteigt den echten Abfluss und der Rückstand wächst. Bis zur Korrektur (lokal erfolgt, §21) und deren Merge keine Freigabegrundlage.
+- **Nachträge 01.09.:** Der 21:30-UTC-Naturlauf vom 31.08. lief auf `72d9ec5` und ist rein lesend GRÜN ausgewertet (success, 216,5 s, ehrliche Zähler 6/0/0/44, 0 neue `unbekannt`, 0 Leases — aber Deckel 100/100 erreicht, 23× skipped-budget; Rückstand wächst weiter: 9 211). Die **vier Gate-Blocker sind (als fünf) lokal korrigiert** und die `672886c`/`be5bd15`-Frage ist geklärt (§21). **Offen:** Merge-Freigabe der Korrekturen, OP-06 (1 769 Altfälle), Siebentagenachweis. Keine Aktivierung von zehn Mandaten.
+
+## 21 · Sprint 31.08./01.09. — 500-Mandate-Reife + Korrektursprint (Draft-PR zur CI)
+
+**Teilweise abgeschlossen — architektonisch vorbereitet, finale Dimensionierung offen; Branch deploy-gesperrt gepusht, ein Draft-PR gegen `main` nur zur Pflicht-CI (kein Merge/Deploy).** Beleg (drei Urteile + Korrektursprint §14): [`betrieb/500-mandate-theoretische-bereitschaft-2026-09-01.md`](betrieb/500-mandate-theoretische-bereitschaft-2026-09-01.md). Branch `claude/helmut-500-mandate-readiness-6hxden` (Basis `72d9ec5` = `main`), Reifesprint-Commits `0381065`…`44499ee`; **Korrektursprint (7 Betreiber-Befunde, alle bestätigt + behoben; Details Beleg §14): `405e285` Matching rank-primär · `32b8e6e` Bericht rein lesend · `cca9260` Vorab-Boden auf atomaren Zähler · `212b5a4` 2.416 = vorläufiger Planungswert (Spanne 1.492–2.416) · `2c058fa` Reserve-Schritt, 05:45/05:48 OFFEN · `31ad167` PR-Quellenbindung + 44 Links.** Production nur lesend; Gate `shadow`, keine Migration, kein Modellaufruf, kein Lasttest.
+
+- **Urteile:** Warteschlangen-Aufnahmefähigkeit 500 **erbracht** (Altbeleg, nicht wiederholt) · rechnerisch-architektonisch **architektonisch vorbereitet, finale Dimensionierung offen** (offene Z3b-Messungen: p95/Azure/Fachwegbericht) · operativer Mehrtagesbetrieb **NICHT BEWIESEN**. Reifesprint-Gesamtlauf 294/294 (472 s); Korrektursprint-Gesamtlauf: Beleg §14.1.
+- **Alle fünf Gate-Blocker aus §20 korrigiert** (fail-geschlossene Park-Verknüpfung; belegter Zustandswechsel 0/1/n; ehrliche Drain-Bilanz, Trend nur GELESEN — ohne freigegebenen Schreiber unvollständig; begrenzte Pagination; Dedup-Totalordnung) + vier Review-Befunde.
+- **Minimal-Cron `18,48 * * * *` vorbereitet** (Vorab-Bodenprüfung aus dem atomaren Tageszähler; Crons/SLOT_PLAN unverändert, **7** Betreiberschritte inkl. getrennter Reserve) · **Kohorte 495** (20/75/400) validiert, inaktiv.
+- **Nächster sicherer Schritt:** Betreiber prüft Draft-PR + CI; nächste einzelne Freigabe = **Merge-Entscheidung**; danach natürliche Läufe rein lesend → Gate-/Deckel-/Minimal-Cron-Entscheidung entlang Stufenplan.
