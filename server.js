@@ -4909,8 +4909,12 @@ async function buildMotorHealthReport(politicianId, {
   const terminalOffen = (Number(k.endgueltigFehler) || 0) + (Number(dauerhaftBlockiert) || 0);
 
   const fmt = motorHealth.fmtAlter;
+  const spiegelUeberlauf = /^blob-spiegel-ueberlauf:(\d+)$/.exec(String((ingest && ingest.reason) || ""));
+  const spiegelUeberlaufText = spiegelUeberlauf
+    ? ` · Blob-Lesespiegel unvollständig (${spiegelUeberlauf[1]} verworfen; relationale Ablage vollständig)`
+    : "";
   const motorZeile = ingest
-    ? `Motor: ${ingest.process} ${fmt(ageMs(ingest.startedAt || ingest.createdAt))} — ${slotPruefung.abrechnung.text}`
+    ? `Motor: ${ingest.process} ${fmt(ageMs(ingest.startedAt || ingest.createdAt))} — ${slotPruefung.abrechnung.text}${spiegelUeberlaufText}`
     : "Motor: noch keine Warteschlangen-Slot-Quittung lesbar";
   // TEIL 2 (2026-08-26): Vollständigkeit, Ergebnis und Erholung werden GETRENNT
   // angezeigt — die Zeilen entstehen in der reinen, testbaren Funktion
@@ -7750,15 +7754,26 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     startedAt: new Date(start).toISOString(), finishedAt: null
   }).catch((error) => ({ ok: false, grund: String((error && error.message) || "fehler").slice(0, 120) }));
 
-  // PLANUNGSANTEIL: gedeckelt, damit eine langsame Profil-/Quellenabfrage nie den gesamten
-  // Slot frisst. Reicht die Zeit nicht, wird EHRLICH gemeldet und trotzdem gearbeitet —
-  // die Warteschlange traegt ja bereits Auftraege aus frueheren Laeufen.
+  // PLANUNGSANTEIL: gedeckelt, damit eine langsame Planung nie den gesamten Slot frisst.
+  // Die Grenze liegt IN `planeArbeit`, nicht als `withTimeout`/Promise.race hier: ein Race
+  // beendet die Planungs-Promise nicht. Der alte Pfad konnte deshalb `neu: 0` quittieren,
+  // waehrend derselbe Planer nach der Antwort weiter Auftraege schrieb. Die kooperative
+  // Grenze wartet den einen bereits gestarteten, selbst zeitbegrenzten Enqueue-Aufruf ab
+  // und beginnt danach keinen weiteren. Reicht die Zeit nicht, wird der tatsaechliche
+  // Teilstand EHRLICH gemeldet und trotzdem gearbeitet — die Warteschlange traegt ja
+  // bereits Auftraege aus frueheren Laeufen.
   const planBudgetMs = Math.min(60000, Math.floor(deadlineMs * 0.25));
-  const plan = await withTimeout(
-    scalablePipeline.planeArbeit({ jetztMs: start }),
-    planBudgetMs,
-    `cron-${cronName}-planung`
-  ).catch((error) => ({ ok: false, grund: "planung-timeout", fehler: error && error.message, geplant: 0, neu: 0 }));
+  const plan = await scalablePipeline.planeArbeit({
+    jetztMs: start,
+    planungsDeadlineMs: Date.now() + planBudgetMs
+  }).catch((error) => ({
+    ok: false,
+    grund: "planung-fehler",
+    fehler: error && error.message,
+    // Keine erfundenen Nullzaehler: bei einem unerwarteten Abbruch ist unbekannt, wie
+    // viele idempotente Einreihungen vor dem Fehler bereits die Datenbank erreicht haben.
+    zaehlerVollstaendig: false
+  }));
 
   // WIEDERVORLAGE VOR DER ARBEIT (OP-30, Befund O5). Endgueltig gescheiterte Auftraege
   // blockieren ihre Dokumentmenge dauerhaft, weil der Idempotenzschluessel des Verstehens
@@ -7829,12 +7844,13 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
   // Aktivierungslaufs 18.08.), kein Erfolg.
   const planFehlgeschlagen = !(plan && plan.ok !== false);
   const spiegelD = durchlauf.blobSpiegel || {};
+  const spiegelVerworfen = Math.max(0, Number(spiegelD.verworfen) || 0);
   const quittungsStatus = planFehlgeschlagen || bilanz.verfuegbar === false
     ? "failed"
     : ((bilanz.endgueltigFehlgeschlagen || 0) > 0 || ((bilanz.reserviert || 0) > 0 && (bilanz.erledigt || 0) === 0)
       ? "partial" : "success");
   const quittungsFehlerklasse = planFehlgeschlagen
-    ? "planung-fehlgeschlagen"
+    ? ((plan && plan.grund === "planung-zeitbudget") ? "planung-zeitbudget" : "planung-fehlgeschlagen")
     : (bilanz.verfuegbar === false
       ? "warteschlange-nicht-verfuegbar"
       : ((bilanz.reserviert || 0) > 0 && (bilanz.erledigt || 0) === 0
@@ -7848,15 +7864,32 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     zielmenge: bilanz.reserviert || 0, processed: bilanz.erledigt || 0,
     deferred: bilanz.zurueckgestellt || 0, fehlgeschlagen: bilanz.endgueltigFehlgeschlagen || 0,
     wiederholt: bilanz.wiederholt || 0, leaseVerloren: bilanz.leaseVerloren || 0,
-    geplant: (plan && plan.geplant) || 0, neuGeplant: (plan && plan.neu) || 0,
+    // Nur bekannte Zaehler persistieren. Ein fehlender Wert bleibt SQL NULL; `0` ist
+    // ausschliesslich die belegte Zahl null, nie der Rueckfall fuer "unbekannt".
+    ...(Number.isFinite(plan && plan.geplant) ? { geplant: plan.geplant } : {}),
+    ...(Number.isFinite(plan && plan.neu) ? { neuGeplant: plan.neu } : {}),
+    // Bestehende Semantik bewahren: gespeichert wird die wirklich in den Spiegel
+    // aufgenommene Menge. Die davor gesehene Gesamtmenge ergibt sich bei Ueberlauf
+    // aus diesem Wert plus dem strukturierten `reason`-Zaehler.
     spiegelGesammelt: spiegelD.gesammelt ?? 0,
     spiegelGeschrieben: spiegelD.geschrieben === true ? (spiegelD.neuImBlob ?? 0) : null,
     fehlerklasse: quittungsFehlerklasse,
-    reason: spiegelD.geschrieben === false ? "blob-spiegel-fehlgeschlagen" : ((!bilanz.verfuegbar && durchlauf.grund) ? String(durchlauf.grund).slice(0, 120) : null)
+    reason: planFehlgeschlagen
+      ? String((plan && plan.grund) || "planung-fehlgeschlagen").slice(0, 120)
+      : (spiegelD.geschrieben === false
+        ? "blob-spiegel-fehlgeschlagen"
+        // Kein neues Schema/noetige Migration: `reason` ist der bestehende technische
+        // Kanal der relationalen Laufquittung. Der Motor liest diesen Wert und macht den
+        // bis hierher toten Ueberlaufzaehler als Hinweis sichtbar.
+        : (spiegelVerworfen > 0
+          ? `blob-spiegel-ueberlauf:${spiegelVerworfen}`
+          : ((!bilanz.verfuegbar && durchlauf.grund) ? String(durchlauf.grund).slice(0, 120) : null)))
   }).catch((error) => ({ ok: false, grund: String((error && error.message) || "fehler").slice(0, 120) }));
 
   console.log(`[cron/${cronName}/warteschlange] ${Date.now() - start}ms`
-    + ` geplant=${plan && plan.geplant} neu=${plan && plan.neu}`
+    + ` geplant=${Number.isFinite(plan && plan.geplant) ? plan.geplant : "unbekannt"}`
+    + ` neu=${Number.isFinite(plan && plan.neu) ? plan.neu : "unbekannt"}`
+    + ` ausstehend=${Number.isFinite(plan && plan.ausstehend) ? plan.ausstehend : "unbekannt"}`
     + ` worker=${durchlauf.worker} erledigt=${bilanz.erledigt} wiederholt=${bilanz.wiederholt}`
     + ` endgueltigFehler=${bilanz.endgueltigFehlgeschlagen}`
     + ` wiedervorgelegt=${(wieder && wieder.wiedervorgelegt) ?? "n/v"}`
@@ -7864,6 +7897,7 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
     + ` dispatch=${jobDispatch.dispatchModus()}`
     + ` weckVersand=${weckVersand.versendet || 0}/${weckVersand.vergeben || 0}`
     + ` spiegel=${spiegelD.geschrieben == null ? "leer" : (spiegelD.geschrieben ? `ok:${spiegelD.neuImBlob ?? "?"}` : "FEHLER")}`
+    + ` spiegelVerworfen=${spiegelVerworfen}`
     + ` quittung=${startQuittung && startQuittung.ok ? "start-ok" : "start-fehler"}/${endQuittung && endQuittung.ok ? "ende-ok" : "ende-fehler"}`
     + ` zustand=${(status && status.zustand) || "unbekannt"} lauf=${laufkennung}`);
 
@@ -7872,7 +7906,7 @@ async function runCronUeberWarteschlange(cronName, { deadlineMs = 270000, runId 
   return {
     ok: Boolean(plan && plan.ok !== false) && bilanz.verfuegbar !== false,
     pfad: "warteschlange",
-    tenants: (plan && plan.profile) || 0,
+    tenants: Number.isFinite(plan && plan.profile) ? plan.profile : null,
     durationMs: Date.now() - start,
     lauf: { laufId: laufkennung },
     planung: plan,

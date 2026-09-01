@@ -325,6 +325,9 @@ check("Slot 04:00 um 08:00 erzwungen (Deadline 07:00 abgelaufen)",
     errors24: 2,
     lageHinweis: motorHealth.lageRotationsHinweis({ lageAlterMs: 44 * H, mandate: 5 })
   });
+  const h4 = motorHealth.leiteMotorHinweise({
+    ingest: { ...basis, reason: "blob-spiegel-ueberlauf:23" }
+  });
   check("0 neue Quellen nur bei positivem Beleg; gescheiterter Spiegel-Write wird ehrlich benannt (Number(null)!==0-Falle)",
     h1.includes("keine-neuen-quellen-im-letzten-lauf")
       && !h2.includes("keine-neuen-quellen-im-letzten-lauf")
@@ -332,6 +335,13 @@ check("Slot 04:00 um 08:00 erzwungen (Deadline 07:00 abgelaufen)",
   check("Abdeckung/Fehler/Lage-Rotation werden aus Rohsignalen abgeleitet",
     h3.includes("klassifikationsabdeckung-niedrig") && h3.includes("historische-fehler-aufgefangen:2")
       && h3.includes("lage-rotation-rueckstand") && !h3.includes("keine-neuen-quellen-im-letzten-lauf"));
+  check("Spiegel-Ueberlauf wird sichtbar und nie als 'keine neuen Quellen' fehlgedeutet",
+    h4.includes("spiegel-ueberlauf") && !h4.includes("keine-neuen-quellen-im-letzten-lauf"),
+    JSON.stringify(h4));
+  const r4 = klassifiziere({ hinweise: h4 });
+  check("Spiegel-Ueberlauf bleibt ein gesunder Hinweis, kein Motoralarm",
+    r4.zustand === Z.HINWEISE && r4.ok === true && r4.gruende.length === 0,
+    JSON.stringify({ zustand: r4.zustand, gruende: r4.gruende }));
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

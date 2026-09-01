@@ -355,6 +355,21 @@ async function main() {
     check("Slotzeile weist den ordnungsgemaessen Leerlauf aus, ohne Fehl- oder Stoermeldung",
       r.text.includes("Slot ordnungsgemäß leer gelaufen: understanding-cron@")
         && !r.text.includes("Slot fehlt") && !r.text.includes("aber gestört"), r.text);
+
+    const qUeberlauf = gesundeQuittungen().map((q, i) => (i === 0
+      ? { ...q, reason: "blob-spiegel-ueberlauf:23", spiegelGeschrieben: 0 }
+      : q));
+    const u = await lauf({ quittungen: qUeberlauf });
+    const ru = u.json.reports[0];
+    check("Spiegel-Ueberlauf erreicht Route, Zustand und stabilen Hinweis-Slug",
+      ru.state === "Gesund mit Hinweisen" && u.json.ok === true
+        && (ru.healthWarnings || []).includes("spiegel-ueberlauf")
+        && !(ru.healthWarnings || []).includes("keine-neuen-quellen-im-letzten-lauf"),
+      JSON.stringify({ state: ru.state, warnings: ru.healthWarnings }));
+    check("Bericht nennt die exakte Spiegel-Luecke und die vollstaendige relationale Ablage",
+      ru.text.includes("Blob-Lesespiegel unvollständig (23 verworfen; relationale Ablage vollständig)")
+        && !ru.text.includes("keine-neuen-quellen-im-letzten-lauf"),
+      ru.text);
   }
 
   abschnitt("3 · partial-Lauf mit erfolgreicher Erholung");

@@ -48,6 +48,9 @@ const PG = {
   db: process.env.HELMUT_TEST_PG_DB_Z22 || "helmut_test_z22_mandatsfilter"
 };
 
+// Pro Lauf zufaellig; nur Hex (URI-sicher). Siehe Rollenanlage und §11.
+const AUTHENTICATOR_PASSWORT = crypto.randomBytes(24).toString("hex");
+
 const FENSTER = "2026-08-26T00Z";
 const MANDAT_A = "synth-mandat-krank";
 const MANDAT_B = "synth-mandat-gesund";
@@ -164,6 +167,13 @@ function main() {
           if not exists (select 1 from pg_roles where rolname = 'authenticator') then create role authenticator login noinherit; end if;
         end $$;`);
   psql("grant anon, service_role to authenticator");
+  // §11 verbindet PostgREST als `authenticator` ueber TCP. Lokale Testcluster laufen
+  // meist mit trust-Auth, der CI-Dienstcontainer (postgres:17) verlangt fuer
+  // Host-Verbindungen aber scram-sha-256 — eine Rolle OHNE Passwort kann sich dort
+  // nie verbinden (belegt: Pflichtlauf 33275194649, "User \"authenticator\" has no
+  // password assigned"). Ein pro Lauf zufaelliges Passwort funktioniert unter beiden
+  // Auth-Methoden; es besteht nur aus Hex-Zeichen und bleibt im Prozess.
+  psql(`alter role authenticator with password '${AUTHENTICATOR_PASSWORT}'`);
   psql(null, { datei: BASIS });
   psql(null, { datei: ABHAENGIG });
 
@@ -540,7 +550,7 @@ async function rueckfallGegenPostgrest() {
   const geheim = crypto.randomBytes(32).toString("hex");
   const port = 3900 + (process.pid % 90);
   fs.writeFileSync(path.join(arbeit, "postgrest.conf"),
-    `db-uri = "postgres://authenticator@${PG.host}:${PG.port}/${PG.db}"\n`
+    `db-uri = "postgres://authenticator:${AUTHENTICATOR_PASSWORT}@${PG.host}:${PG.port}/${PG.db}"\n`
     + 'db-schemas = "public"\ndb-anon-role = "anon"\ndb-pool = 5\n'
     + `jwt-secret = "${geheim}"\nserver-host = "127.0.0.1"\nserver-port = ${port}\n`
     + 'log-level = "error"\n', "utf8");
