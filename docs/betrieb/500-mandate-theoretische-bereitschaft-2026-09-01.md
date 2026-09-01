@@ -180,7 +180,7 @@ wiederholbar, alle 495 Profile inaktiv; Größe gemessen: 196.275 Bytes gesamt,
 größtes Profil 412 Bytes.** Nichts provisioniert, nichts aktiviert.
 
 **Gezielte Suiten (alle über `scripts/lokal.js`):** gate-parken-persistenz
-**30/0** (neu) · verstehen-drain-bilanz **41/0** (neu gefasst) ·
+**30/0** (neu) · verstehen-drain-bilanz **47/0** (neu gefasst, inkl. Review-Fixes) ·
 dedup-bestandsfenster **24/0** · minimal-cron **29/0** (neu) · kapazitaet-500
 **26/0** (neu) · test-kohorte-500 **27/0** (neu) · verstehen-rueckstand 61/0 ·
 understanding-gate-arm grün · understanding-gate-integration grün · lauf-bilanz
@@ -229,9 +229,35 @@ Lasttest. Der Supabase-Zugriff dieser Sitzung war ausschließlich `SELECT`.
 
 ## 12 · Abschlussprüfungen dieses Sprints
 
-- **Adversariales Diff-Review (6 Dimensionen × 2 Gegenprüfer):** ERGEBNIS-NACHTRAG.
-- **Kanonischer Offline-Gesamtlauf (genau einer):** ERGEBNIS-NACHTRAG.
-- **`git diff --check`:** ERGEBNIS-NACHTRAG.
+- **Adversariales Diff-Review (18 Agenten: 6 Dimensionen, je Befund 2 unabhängige
+  Gegenprüfer, ~2,1 M Token):** 6 Befunde, **4 von beiden Gegenprüfern bestätigt
+  und alle 4 behoben** (Commit `5d34a86`): (1) Abfluss zählte updated_at-
+  Berührungen statt Erstabschlüsse → `ko_version=eq.1`-Filter (Production-Probe:
+  76 Erstabschlüsse vs. 11 Update-Berührungen/24 h; Restverzerrungen zeigen
+  dokumentiert nach Rot, nie nach Grün); (2) `vorabBoden`-Telemetrie wurde von
+  der Quittungs-Whitelist still verworfen → Whitelist-Eintrag + Kettentest;
+  (3) legitim volle `in.()`-Blöcke galten als Kappung → block-innere
+  deterministische Pagination (bewiesen mit 1.500- und 10.500-Zeilen-Blöcken);
+  (4) zwei Negativ-Guards der Rückstandsroute waren durch den Einschub vakant →
+  Blockgrenzen-Extraktion. 2 Befunde von beiden Gegenprüfern widerlegt
+  (Wiedervorlage-Skip an budgetlosen Tagen; angeblich gestrichene null-Wache —
+  die alte Regex hätte die Regression nie gefangen). Dimensionen
+  Mandantentrennung/DSGVO und CAS/Nebenläufigkeit: **0 Befunde.**
+- **Kanonischer Offline-Gesamtlauf (`scripts/lokal.js` → `run-offline-tests.js`)
+  auf dem Code-Endstand: 294/294 Suiten grün in 472 s** (nach dem Lauf änderten
+  sich nur noch wenige Doku-Zeilen; die einzige doku-sensitive Suite,
+  `current-state-groesse-test.js`, wurde auf dem finalen Doku-Stand separat
+  erneut ausgeführt: 4/4 grün) — erstmals VOLLSTÄNDIG
+  grün, weil die zwei historisch roten npm-Fehlstände (`ical.js`,
+  `@aws-sdk/client-sqs`) für diesen Lauf lokal nachinstalliert wurden
+  (`npm install --no-save`, package.json/Lockfile unverändert). Ein früherer
+  Laufansatz wurde abgebrochen, weil er `docs/CURRENT_STATE.md` mitten in der
+  Archiv-Verdichtung erwischt hatte (33.095 Zeichen Zwischenstand > 30.000-
+  Grenze) — bekannte, behobene Ursache, keine blinde Wiederholung; der hier
+  gezählte Lauf ist der eine vollständige auf dem Endstand.
+- **`git diff --check`:** sauber (keine Whitespace-/Konfliktmarker).
+- **Keine Migration im Diff** (`supabase/migrations/` unberührt); 21 Dateien,
+  +2.409/−163 Zeilen (vor dem Doku-Abschluss).
 
 ## 13 · Nächster sicherer Schritt
 
