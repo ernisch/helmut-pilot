@@ -1895,15 +1895,20 @@ async function handleRequest(request, response) {
         laufDeckel: verstehenRueckstand.rueckstandLaufDeckel(),
         budgetBoden: verstehenRueckstand.rueckstandBudgetBoden()
       });
-      // ── VORAB-BODENPRÜFUNG (Minimal-Cron-Vorbereitung 2026-09-01) ────────────────
+      // ── VORAB-BODENPRÜFUNG (Minimal-Cron-Vorbereitung 2026-09-01; Befund 3:
+      // Quelle ist der ATOMARE Tageszähler) ─────────────────────────────────────────
       // Dieselbe Boden-Frage wie der Wächter, EINMAL vor jeder Lesearbeit: ein
       // budgetloser Lauf endet in Sekunden mit einer ehrlichen blocked-Quittung
       // statt ~225 s Ladearbeit zu verbrennen (belegt 31.08. 17:30 UTC). Im
       // vorbereiteten 48-Slot-Takt (lib/helmut/minimal-cron.js) ist das die
       // Voraussetzung dafür, dass budgetlose Slots praktisch nichts kosten.
-      // Fail closed: ein unbestimmbarer Budgetstand überspringt den Lauf.
+      // QUELLE: storageModul.leseLlmTageszaehler — der maßgebliche atomare Zähler
+      // llm_budget_counters (UTC-Tag, Scope global), REIN LESEND. Nicht canSpendLlm:
+      // das llmUsage-Log ist verlustbehaftet (~16 %) und würde zu spät blockieren.
+      // Fail closed: ein unlesbarer Zähler überspringt den Lauf VOR Wiedervorlage
+      // und Rohdokument-/Rückstandslesen; kein Rückfall auf das Log.
       const vorabBoden = await verstehenRueckstand.vorabBodenPruefung({
-        canSpendGlobal: () => canSpendLlm(null),
+        leseTageszaehler: () => storageModul.leseLlmTageszaehler(),
         budgetBoden: waechter.budgetBoden
       });
       if (vorabBoden.erlaubt !== true) {

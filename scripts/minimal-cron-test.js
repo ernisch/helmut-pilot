@@ -108,26 +108,39 @@ const rueckstandSrc = fs.readFileSync(path.join(__dirname, "..", "lib", "helmut"
       && laufzeit.budgetloserSlotMs.ohneVorabBoden > 200000);
   }
 
-  abschnitt("§6 Vorab-Bodenprüfung: budgetlose Slots kosten praktisch nichts");
+  abschnitt("§6 Vorab-Bodenprüfung: budgetlose Slots kosten praktisch nichts (Quelle: atomarer Zähler)");
   {
-    const oben = await verstehenRueckstand.vorabBodenPruefung({ canSpendGlobal: () => ({ allowed: true, used: 10, limit: 100, remaining: 90 }), budgetBoden: 30 });
+    // BEFUND 3 (Korrektursprint 2026-09-01): die Vorab-Prüfung liest den
+    // MASSGEBLICHEN atomaren Tageszähler (llm_budget_counters via
+    // leseTageszaehler), nie mehr das verlustbehaftete llmUsage-Log.
+    const zaehler = (antwort) => () => antwort;
+    const oben = await verstehenRueckstand.vorabBodenPruefung({ leseTageszaehler: zaehler({ ok: true, used: 10, limit: 100, remaining: 90 }), budgetBoden: 30 });
     check("§6.1 Rest > Boden ⇒ erlaubt (mit belegten Zahlen)", oben.erlaubt === true && oben.remaining === 90 && oben.boden === 30);
-    const boden = await verstehenRueckstand.vorabBodenPruefung({ canSpendGlobal: () => ({ allowed: true, used: 83, limit: 100, remaining: 17 }), budgetBoden: 30 });
+    const boden = await verstehenRueckstand.vorabBodenPruefung({ leseTageszaehler: zaehler({ ok: true, used: 83, limit: 100, remaining: 17 }), budgetBoden: 30 });
     check("§6.2 Rest ≤ Boden ⇒ nicht erlaubt (der belegte 17:30-Naturlauffall: Rest 17 ≤ 30)",
       boden.erlaubt === false && boden.grund === "rueckstand-budget-boden-erreicht" && boden.remaining === 17);
-    const unbekannt = await verstehenRueckstand.vorabBodenPruefung({ canSpendGlobal: () => ({ allowed: true, used: 5, limit: 100, remaining: null }), budgetBoden: 30 });
+    const unbekannt = await verstehenRueckstand.vorabBodenPruefung({ leseTageszaehler: zaehler({ ok: true, used: 5, limit: null, remaining: null }), budgetBoden: 30 });
     check("§6.3 unbestimmbarer Rest ⇒ nicht erlaubt (fail closed; Number(null) wird NIE zu 0)",
       unbekannt.erlaubt === false && unbekannt.grund === "rueckstand-budget-unbekannt" && unbekannt.remaining === null);
-    const wirft = await verstehenRueckstand.vorabBodenPruefung({ canSpendGlobal: () => { throw new Error("kaputt"); }, budgetBoden: 30 });
-    check("§6.4 werfender Budgetleser ⇒ nicht erlaubt, nie Absturz", wirft.erlaubt === false);
+    const unlesbar = await verstehenRueckstand.vorabBodenPruefung({ leseTageszaehler: zaehler({ ok: false, fehler: "HTTP 500" }), budgetBoden: 30 });
+    check("§6.4a unlesbarer Zähler ⇒ geschlossen blockiert (kein Rückfall auf das Log)",
+      unlesbar.erlaubt === false && /^vorab-zaehler-nicht-lesbar:HTTP 500/.test(unlesbar.grund));
+    const wirft = await verstehenRueckstand.vorabBodenPruefung({ leseTageszaehler: () => { throw new Error("kaputt"); }, budgetBoden: 30 });
+    check("§6.4 werfender Zählerleser ⇒ nicht erlaubt, nie Absturz", wirft.erlaubt === false);
     const ohneLeser = await verstehenRueckstand.vorabBodenPruefung({});
-    check("§6.5 fehlender Budgetleser ⇒ nicht erlaubt", ohneLeser.erlaubt === false && ohneLeser.grund === "vorab-kein-budgetleser");
+    check("§6.5 fehlender Zählerleser ⇒ nicht erlaubt", ohneLeser.erlaubt === false && ohneLeser.grund === "vorab-kein-zaehlerleser");
+    const alteQuelle = await verstehenRueckstand.vorabBodenPruefung({ canSpendGlobal: () => ({ allowed: true, used: 10, limit: 100, remaining: 90 }), budgetBoden: 30 });
+    check("§6.5b REGRESSION: die alte Log-Quelle (canSpendGlobal 'frei') wird NICHT mehr akzeptiert — blockiert",
+      alteQuelle.erlaubt === false && alteQuelle.grund === "vorab-kein-zaehlerleser");
     // Struktur: die Prüfung sitzt VOR der Wiedervorlage UND vor dem Rohdokument-Laden.
     const vorabPos = serverSrc.indexOf("vorabBodenPruefung({");
     const wiedervorlagePos = serverSrc.indexOf("pruefeGeparkteNeuBewertung({ runId })");
     const ladePos = serverSrc.indexOf("listRecentRawDocuments(500)", serverSrc.indexOf("understanding-rueckstand\") {"));
     check("§6.6 Route: Vorab-Bodenprüfung VOR Gate-Wiedervorlage und VOR dem Ladepfad",
       vorabPos > 0 && wiedervorlagePos > vorabPos && ladePos > vorabPos);
+    check("§6.6b Route: die Vorab-Quelle ist storageModul.leseLlmTageszaehler (der atomare Zähler), nicht canSpendLlm",
+      /leseTageszaehler: \(\) => storageModul\.leseLlmTageszaehler\(\)/.test(serverSrc)
+      && !/vorabBodenPruefung\(\{\s*\n?\s*canSpendGlobal/.test(serverSrc));
     check("§6.7 der übersprungene Lauf quittiert ehrlich (status blocked + Grund + Wächterwerte)",
       /status: "blocked",\s*\n\s*telemetrie: \{\s*\n\s*rueckstand: \{/.test(serverSrc)
       && /vorabBoden: \{ grund: vorabBoden\.grund/.test(serverSrc));
