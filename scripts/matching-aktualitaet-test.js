@@ -12,7 +12,10 @@
 //   2  aktuell=false verdraengt wegen `limit` keine aktuellen Zeilen
 //   3  includeAbgeloest: true liefert die Historie nur beim ausdruecklichen Aufruf
 //   4  Tenant-Isolation bleibt bestehen
-//   5  Sortierung aktueller Ergebnisse bleibt unveraendert
+//   5  Sortierung: aktuelle Projektion rank-primaer, Historie zeitlich
+//      (nachgeschaerft 2026-09-01, Befund 1: created_at friert beim ersten
+//      Auftreten ein und traegt keine Relevanzordnung — Herleitung und
+//      Regression in scripts/matching-reihenfolge-test.js)
 //   6  Lage-Nutzerpfad erhaelt keine abgeloesten Ergebnisse
 //   7  Legacy-Zeilen (run_id = NULL, aktuell = true) funktionieren weiter
 //   8  keine Schreiboperation auf matching_results
@@ -39,7 +42,11 @@ const gesehene = [];
 
 // Minimaler PostgREST-Nachbau fuer genau die hier genutzten Operatoren:
 // filtern -> sortieren -> limitieren, in DIESER Reihenfolge. Das ist der Punkt
-// des Hotfixes: der Aktualitaetsfilter greift VOR dem Limit.
+// des Hotfixes: der Aktualitaetsfilter greift VOR dem Limit. Die Sortierung
+// wird GENERISCH aus dem order-Parameter angewendet (Postgres-Semantik:
+// asc default nullslast, desc default nullsfirst, Zahlen numerisch) — der
+// fruehere Nachbau sortierte nur bei exakt `order=created_at.desc` und
+// pruefte seit der Totalordnung faktisch keine Reihenfolge mehr.
 function fakePostgrest(bestand) {
   return (endpoint, options) => {
     gesehene.push({ endpoint, options: options || null });
@@ -49,8 +56,27 @@ function fakePostgrest(bestand) {
     const uid = params.get("user_id");
     if (uid && uid.startsWith("eq.")) rows = rows.filter((r) => r.user_id === uid.slice(3));
     if (params.get("aktuell") === "is.true") rows = rows.filter((r) => r.aktuell === true);
-    if (params.get("order") === "created_at.desc") {
-      rows = rows.slice().sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+    const order = params.get("order");
+    if (order) {
+      const schluessel = String(order).split(",").map((teil) => {
+        const st = teil.split(".");
+        const desc = st.includes("desc");
+        return { feld: st[0], desc, nullsFirst: st.includes("nullsfirst") || (desc && !st.includes("nullslast")) };
+      });
+      rows = rows.slice().sort((a, b) => {
+        for (const s of schluessel) {
+          const va = a[s.feld] == null ? null : a[s.feld];
+          const vb = b[s.feld] == null ? null : b[s.feld];
+          if (va == null && vb == null) continue;
+          if (va == null) return s.nullsFirst ? -1 : 1;
+          if (vb == null) return s.nullsFirst ? 1 : -1;
+          const cmp = (typeof va === "number" && typeof vb === "number")
+            ? va - vb
+            : String(va).localeCompare(String(vb));
+          if (cmp !== 0) return s.desc ? -cmp : cmp;
+        }
+        return 0;
+      });
     }
     const limit = Number(params.get("limit"));
     if (Number.isFinite(limit) && limit > 0) rows = rows.slice(0, limit);
@@ -84,10 +110,15 @@ for (let i = 0; i < 19; i += 1) {
     created_at: `2026-07-29T11:${String(i).padStart(2, "0")}:00.000Z`
   }));
 }
+// Die Raenge laufen bewusst GEGEN die created_at-Ordnung (das wichtigste
+// Ergebnis traegt den AELTESTEN eingefrorenen Zeitstempel) — genau die in
+// Production belegte Inversion (Befund 1, 2026-09-01): eine created_at-primaere
+// Sortierung wuerde hier die Rangfolge drehen.
 for (let i = 0; i < 8; i += 1) {
   bestandA.push(zeile({
     id: `mr-neu-${i}`,
     knowledge_object_id: `ko-neu-${i}`,
+    rank: 8 - i,
     created_at: `2026-07-29T10:${String(20 - i).padStart(2, "0")}:00.000Z`
   }));
 }
@@ -140,19 +171,20 @@ const deps = { ready: () => true, request: fakePostgrest(bestandA) };
     gesehene[1].endpoint.includes("user_id=eq.mdb-a")
     && ohneFilter.every((r) => r.user_id === "mdb-a"));
 
-  // 5 · Sortierung unveraendert
-  check("A10 Sortierung bleibt created_at.desc (keine Rangaenderung)",
-    gesehene[0].endpoint.includes("order=created_at.desc"));
-  const aktuelleAbsteigend = standard
-    .every((r, i) => i === 0 || String(standard[i - 1].created_at) >= String(r.created_at));
-  check("A11 aktuelle Ergebnisse behalten ihre Reihenfolge",
-    aktuelleAbsteigend);
-  check("A12 Reihenfolge entspricht exakt der ungefilterten Reihenfolge der aktuellen Zeilen",
-    JSON.stringify(standard.map((r) => r.knowledge_object_id))
-    === JSON.stringify(bestandA
-      .filter((r) => r.user_id === "mdb-a" && r.aktuell === true)
-      .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
-      .map((r) => r.knowledge_object_id)));
+  // 5 · Sortiervertrag (Befund 1, 2026-09-01): aktuelle Projektion rank-primaer,
+  // Historie zeitlich. Vollstaendige Herleitung + Rot-vor/Gruen-nach-Regression:
+  // scripts/matching-reihenfolge-test.js.
+  check("A10 aktuelle Projektion sortiert rank-primaer (rank.asc.nullslast,id.asc)",
+    gesehene[0].endpoint.includes("order=rank.asc.nullslast,id.asc"));
+  check("A10b Historienzugang bleibt zeitlich (created_at.desc als Erstschluessel)",
+    gesehene[1].endpoint.includes("order=created_at.desc"));
+  const raenge = standard.map((r) => (r.rank == null ? Infinity : r.rank));
+  check("A11 aktuelle Ergebnisse kommen in Rangordnung (rangloses Legacy zuletzt)",
+    raenge.every((r, i) => i === 0 || raenge[i - 1] <= r)
+    && standard[standard.length - 1].knowledge_object_id === "ko-legacy");
+  check("A12 Rangordnung gewinnt gegen die eingefrorene created_at-Ordnung (Inversion)",
+    standard[0].knowledge_object_id === "ko-neu-7"
+    && String(standard[0].created_at) < String(standard[1].created_at));
 
   // 7 · Legacy-Zeilen
   check("A13 Legacy-Zeile (run_id=NULL, aktuell=true) bleibt sichtbar",
@@ -216,11 +248,12 @@ const deps = { ready: () => true, request: fakePostgrest(bestandA) };
       if (lageAufruf.includeAbgeloest) {
         throw new Error("Nutzerpfad hat abgeloeste Zeilen angefordert");
       }
-      // Verhalten des korrigierten Lesepfads: nur aktuelle Zeilen.
+      // Verhalten des korrigierten Lesepfads: nur aktuelle Zeilen, rank-primaer.
       return bestandA
         .filter((r) => r.user_id === "mdb-a" && r.aktuell === true)
         .filter((r) => kos.some((k) => k.id === r.knowledge_object_id))
-        .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+        .sort((a, b) => ((a.rank == null ? Infinity : a.rank) - (b.rank == null ? Infinity : b.rank))
+          || String(a.id).localeCompare(String(b.id)));
     }
   };
 

@@ -167,16 +167,21 @@ function neuerStore(opts) {
       // nebenbei aufgedeckt, dass der Lesepfad bei GLEICHEN Zeitstempeln gar keine
       // definierte Reihenfolge hat.
       //
-      // F-E2E GESCHLOSSEN (500-Mandate-Reifesprint 2026-09-01): der Production-
-      // Lesepfad sortiert jetzt `created_at.desc,rank.asc.nullslast,id.asc`
-      // (Totalordnung; Zweitschluessel = der vom Matcher berechnete Rang), die
-      // Attrappe in listMatchingResults unten bildet exakt das ab. Der fruehere
-      // Restfall — mehrere Stapel ueber eine Millisekundengrenze, J8 kippt —
-      // ist damit geschlossen: auch bei verschiedenen Zeitstempeln je Stapel
-      // ordnet der Rang innerhalb des Stapels, und ueber Stapel hinweg gewinnt
-      // weiterhin der juengste Stapel (Relevanz je Lauf bleibt beisammen).
+      // F-E2E GESCHLOSSEN (Reifesprint 2026-09-01), NACHGESCHAERFT (Befund 1,
+      // Korrektursprint 2026-09-01): der Production-Lesepfad sortiert die
+      // AKTUELLE Projektion jetzt rank-primaer (`rank.asc.nullslast,id.asc`),
+      // weil `created_at` in Postgres beim ERSTEN Auftreten eines Paares
+      // einfriert (Upsert setzt es nie neu) und damit keine Relevanz- und
+      // nicht einmal eine Laufordnung traegt. Die Attrappe bildet BEIDES ab:
+      // created_at wird hier wie in Postgres nur beim Erstauftritt vergeben
+      // (Bestandszeile behaelt ihren Wert), und listMatchingResults unten
+      // sortiert exakt wie der echte Lesepfad. Regression:
+      // scripts/matching-reihenfolge-test.js.
       const stapelZeit = new Date().toISOString();
-      for (const r of rows || []) st.matchingResults.set(r.id, { ...r, aktuell: true, created_at: stapelZeit });
+      for (const r of rows || []) {
+        const bestand = st.matchingResults.get(r.id);
+        st.matchingResults.set(r.id, { ...r, aktuell: true, created_at: bestand ? bestand.created_at : stapelZeit });
+      }
       return { saved: (rows || []).length };
     },
     // M8 (HELMUT_MATCHING_RELEVANZ_GATE): der ECHTE Flag-Leser gegen die echte Umgebung.
@@ -190,17 +195,21 @@ function neuerStore(opts) {
     },
     listMatchingResults: ({ userId, limit = 50, includeAbgeloest = false } = {}) => {
       if (!userId) throw new Error("[tenant-guard] listMatchingResults: kein Mandant");
-      // Sortierung exakt wie der echte Lesepfad (F-E2E-Korrektur 2026-09-01):
-      // `order=created_at.desc,rank.asc.nullslast,id.asc` — eine TOTALORDNUNG.
-      // Innerhalb eines Stapels (gleicher Zeitstempel) entscheidet der vom
-      // Matcher berechnete Rang, zuletzt die eindeutige Kennung. Die Attrappe
-      // darf sich NICHT mehr auf die Stabilitaet von Array.prototype.sort
-      // verlassen (Postgres garantiert bei Gleichstand keine Reihenfolge).
+      // Sortierung exakt wie der echte Lesepfad (Befund 1, Korrektursprint
+      // 2026-09-01): die AKTUELLE Projektion ordnet rank-primaer
+      // (`rank.asc.nullslast,id.asc`), weil created_at beim Erstauftritt
+      // einfriert und keine Relevanzordnung traegt; der Historien-/Auditzugang
+      // (includeAbgeloest) bleibt zeitlich
+      // (`created_at.desc,rank.asc.nullslast,id.asc`). Beides TOTALORDNUNGEN —
+      // die Attrappe darf sich nicht auf die Stabilitaet von
+      // Array.prototype.sort verlassen (Postgres garantiert bei Gleichstand
+      // keine Reihenfolge).
+      const nachRang = (a, b) => ((a.rank == null ? Infinity : Number(a.rank)) - (b.rank == null ? Infinity : Number(b.rank)))
+        || String(a.id).localeCompare(String(b.id));
+      const zeitlich = (a, b) => String(b.created_at).localeCompare(String(a.created_at)) || nachRang(a, b);
       return [...st.matchingResults.values()]
         .filter((r) => r.user_id === userId && (includeAbgeloest || r.aktuell === true))
-        .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at))
-          || ((a.rank == null ? Infinity : Number(a.rank)) - (b.rank == null ? Infinity : Number(b.rank)))
-          || String(a.id).localeCompare(String(b.id)))
+        .sort(includeAbgeloest ? zeitlich : nachRang)
         .slice(0, limit);
     },
     getSourcesForVorgang: (vorgangId) => {
@@ -273,8 +282,13 @@ function neuerStore(opts) {
           // Landes-E2E-Suiten (`auditEnabled: () => true`). Unter CPU-Knappheit
           // rutschte der Stapel ueber eine Millisekundengrenze, `created_at.desc`
           // drehte die Rangfolge, J8 kippte (1 von 25 unter Fremdlast). Wie in
-          // Postgres (now() je Transaktion konstant): EIN Zeitstempel je Stapel.
-          st.matchingResults.set(r.id, { ...r, aktuell: true, created_at: publishStapelZeit });
+          // Postgres (now() je Transaktion konstant): EIN Zeitstempel je Stapel —
+          // und wie im echten Upsert (Migration 20260728, "created_at bleibt
+          // bewusst unangetastet") EINGEFROREN: eine Bestandszeile behaelt ihren
+          // Erstauftritts-Zeitstempel, nur neue Zeilen bekommen die Stapelzeit
+          // (Befund 1, Korrektursprint 2026-09-01).
+          const bestand = st.matchingResults.get(r.id);
+          st.matchingResults.set(r.id, { ...r, aktuell: true, created_at: bestand ? bestand.created_at : publishStapelZeit });
         });
         return { veroeffentlicht: rows.length, abgeloest };
       } catch (error) {
