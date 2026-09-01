@@ -308,6 +308,10 @@ function baueGateEvents(n, { distinctDocs = n, decision = "verstehen", abMs = Da
   }
 
   // ═════════ §6 · Trend-Schnappschuss: CAS, erster Wert des Tages gewinnt ═════════
+  // BEFUND 2 (2026-09-01): die Schreibfunktion ist ein VORBEREITETER, im
+  // Serverpfad NICHT verdrahteter Schreiber (§7.4 erzwingt das). Ihre
+  // CAS-Mechanik bleibt hier testgesichert, damit eine spaetere, separat
+  // freigegebene Verdrahtung auf gepruefter Basis aufsetzt.
   abschnitt("§6 schreibeDrainTrendSchnappschuss + leseDrainTrendZeile (F-CAS-Muster)");
   {
     trendRow = null; patchKonfliktEinmal = false;
@@ -344,8 +348,13 @@ function baueGateEvents(n, { distinctDocs = n, decision = "verstehen", abMs = Da
       && /zaehleGateWuerdigeAnkunft\(24\)/.test(serverSrc) && /zaehlePendingVerarbeitbar\(\)/.test(serverSrc));
     check("§7.3 die Bruttomenge (zaehleVerstandene) speist die Bilanz NICHT mehr",
       !/zaehleVerstandene\(24\)/.test(serverSrc));
-    check("§7.4 der Tagesanker wird CAS-gesichert persistiert und der Fehler laut gemeldet",
-      /schreibeDrainTrendSchnappschuss\(/.test(serverSrc) && /Tages-Schnappschuss nicht persistiert/.test(serverSrc));
+    check("§7.4 INVERTIERT (Befund 2): der Berichtspfad schreibt den Trend NICHT — kein "
+      + "schreibeDrainTrendSchnappschuss-Aufruf in server.js, Trendzeile wird nur GELESEN",
+      // Aufrufe laufen in server.js ausschliesslich ueber storageModul.<fn> —
+      // der Funktionsname darf in Kommentaren stehen, als Aufruf nie.
+      !/storageModul\.schreibeDrainTrendSchnappschuss/.test(serverSrc)
+      && /leseDrainTrendZeile\(\)/.test(serverSrc)
+      && /Trendzeile nicht lesbar/.test(serverSrc));
     check("§7.5 die Rückstandsroute quittiert fehlversuche (bilanz.fehlgeschlagen)",
       /fehlversuche: bilanz\.fehlgeschlagen/.test(serverSrc));
     check("§7.6 die Quittungs-Whitelist persistiert fehlversuche im rueckstand-Block",

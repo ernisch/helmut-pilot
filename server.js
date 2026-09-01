@@ -4680,14 +4680,20 @@ async function buildHealthReport(politicianId, kontext = {}) {
 // Abfragen nimmt eine Mandantenkennung entgegen; sie je Mandat zu wiederholen wäre
 // derselbe Wert, N-mal bezahlt (Abnahme 26.08.). Jeder Lesefehler bleibt als benannte
 // Messlücke erhalten und wird NIE zu einem stillen Standardwert.
-// ── DRAIN-SIGNALE (Blocker 3, 500-Mandate-Reife 2026-09-01) ──────────────────────
+// ── DRAIN-SIGNALE (Blocker 3, 500-Mandate-Reife 2026-09-01; Befund 2 des
+// Korrektursprints am selben Tag: REIN LESEND) ────────────────────────────────────
 // Erhebt die ehrliche Drain-Bilanz: gate-wuerdige Ankunft (deterministisch
 // paginiert), ECHTER gate-wuerdiger Abfluss (Vorgangsabschluesse gegen die
 // persistierten Gate-Entscheidungen ihrer Dokumente) und der Rueckstandstrend
-// aus persistierten Tages-Schnappschuessen (CAS-Zeile, F-CAS-Muster). Der erste
-// Lauf eines UTC-Tages verankert den Tageswert; der Vergleichsanker ist der
-// juengste 20-40 h alte Eintrag. Fehlt irgendetwas, bleibt die jeweilige
-// Groesse null — der Bericht zeigt "?" und faellt NIE auf ein gruenes Urteil.
+// aus der persistierten Trendzeile — AUSSCHLIESSLICH GELESEN. Der fruehere
+// automatische Tages-Schnappschuss-Schreibvorgang (schreibeDrainTrendSchnappschuss)
+// ist ENTFERNT: er verletzte den Read-only-Vertrag des Gesundheitsberichts
+// (jeder Berichtsaufruf, auch ?dryRun=1, schrieb in helmut_store — eine
+// unautorisierte Production-Datenaenderung je Lauf). Solange kein separat
+// freigegebener Schreiber die Trendzeile befuellt, existiert kein historischer
+// Messpunkt: der Trend bleibt dann ehrlich `unvollstaendig` (nie gruen,
+// motor-health.bewerteRueckstandsTrend). Das Befuellen der Trendzeile ist eine
+// spaetere, ausdruecklich zu genehmigende Production-Datenaenderung (CLAUDE.md §5).
 async function leseDrainSignale({ nowMs = Date.now() } = {}) {
   const leer = { ankunftWuerdig: null, abfluss: null, abflussUnbewertet: null, rueckstandAnfang: null, rueckstandEnde: null };
   try {
@@ -4696,20 +4702,13 @@ async function leseDrainSignale({ nowMs = Date.now() } = {}) {
       storageModul.zaehleGateWuerdigerAbfluss(24),
       storageModul.zaehlePendingVerarbeitbar()
     ]);
-    // Tagesanker persistieren (erster Messwert des UTC-Tages gewinnt; CAS-gesichert,
-    // fail-safe: ein Schreibfehler laesst den Trend unvollstaendig, faelscht ihn nie).
+    // Vergleichsanker NUR aus der gelesenen Trendzeile (juengster 20-40 h alter
+    // Eintrag); ohne lesbaren historischen Messpunkt bleibt er null.
     let rueckstandAnfang = null;
     const trendZeile = await storageModul.leseDrainTrendZeile();
     if (trendZeile.ok) {
       const anker = motorHealth.waehleTrendAnker(trendZeile.stand.eintraege, { nowMs });
       rueckstandAnfang = anker ? anker.wert : null;
-      if (rueckstandEnde != null) {
-        const tag = new Date(nowMs).toISOString().slice(0, 10);
-        const geschrieben = await storageModul.schreibeDrainTrendSchnappschuss({
-          tag, wert: rueckstandEnde, um: new Date(nowMs).toISOString()
-        });
-        if (!geschrieben.ok) console.error("[drain-bilanz] Tages-Schnappschuss nicht persistiert:", geschrieben.fehler);
-      }
     } else {
       console.error("[drain-bilanz] Trendzeile nicht lesbar:", trendZeile.fehler);
     }
