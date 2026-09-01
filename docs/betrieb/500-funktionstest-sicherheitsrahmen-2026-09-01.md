@@ -6,11 +6,22 @@ freizugebenden** Production-Funktionstest mit 500 aktiven Profilen
 **Branch:** `claude/security-sprint-functional-test-wap0q1`, Basis `main` =
 `b998e9bc6a0ecca0cd3d43e344f03101c0ede5f0`.
 
-**Dieser Sprint hatte KEINE Production-Wirkung.** Kein Modellaufruf, keine
-Production-Datenänderung, keine Provisionierung, keine Aktivierung, keine
-Migration, keine Cron-/Env-/Secret-/Flag-/Budget-Änderung, kein Merge, kein
-Deployment. Der Supabase-Zugriff dieser Sitzung war ausschließlich `SELECT`,
-der Vercel-Zugriff ausschließlich lesend.
+**Nachtrag 2026-09-01 (Doku-Commit, kein Code):** Nach dem Bau dieses Rahmens
+wurden **zwei einzeln freigegebene Azure-Messpakete tatsächlich ausgeführt**
+(Vorprobe 3 Aufrufe, Stichprobe 21 Aufrufe) und anschließend die Z3b-Belegprüfung
+gegen die **korrigierte** Telemetriequelle wiederholt. Alle daraus folgenden
+Messwerte, Korrekturen (K1–K6) und verbleibenden Lücken stehen in **§16**; die
+Abschnitte §3.1, §4, §11 und §12 sind entsprechend nachgezogen. Der Stand „kein
+Modellaufruf" gilt damit **nur noch für den Bausprint selbst**, nicht mehr für
+den Gesamtvorgang.
+
+**Dieser Sprint hatte KEINE Production-Wirkung.** Keine Production-Datenänderung,
+keine Provisionierung, keine Aktivierung, keine Migration, keine
+Cron-/Env-/Secret-/Flag-/Budget-Änderung, kein Merge, kein Deployment. Der
+Supabase-Zugriff dieser Sitzung war ausschließlich `SELECT`, der Vercel-Zugriff
+ausschließlich lesend. Die beiden Modellaufruf-Pakete liefen **außerhalb** des
+Repos, ohne Datenbankzugriff und mit `store: false` (§16.1); jedes hatte eine
+eigene, ausdrückliche Betreiberfreigabe.
 
 ---
 
@@ -35,7 +46,7 @@ Damit ist die Grundlinie des späteren Tests belegt: **9 Mandatszeilen, davon
 | Ebene | Stand |
 |---|---|
 | **Warteschlangen-Aufnahme für 500 Aufträge** | **ERBRACHT** (28.08., isoliertes Testprojekt, Actions-Lauf `33158170030`). In diesem Sprint auftragsgemäß **nicht wiederholt**. |
-| **Rechnerische/architektonische Tragfähigkeit** | **vorbereitet — finaler Production-Deckel OFFEN.** Die Spanne 1.492–2.416 Aufrufe/Tag bleibt eine **Szenariospanne**, kein Deckel (§4). |
+| **Rechnerische/architektonische Tragfähigkeit** | **vorbereitet — finaler Production-Deckel weiterhin OFFEN.** Seit 01.09. ist die Spanne 1.492–2.416 **gemessen unterfüttert** (Boden 1.496/Tag, §16.4) und **2.416/702 ist ein belegter Vorschlag** — gesetzt oder freigegeben ist er nicht (§4). |
 | **Fachlicher Production-Zyklus mit 5 realen + 495 aktiven synthetischen Profilen** | **NICHT BEWIESEN.** Weder durch diesen Sprint noch durch Offline-Tests ersetzbar. |
 
 ## 3 · Was gebaut wurde
@@ -89,24 +100,35 @@ ohne Rücksetzer und ein Verbot des Selbstbezugs (`vorprobeLauf === lauf`).
 > Laufkennung — mit ihm nicht mehr. Die verbleibende Lücke schließt allein die
 > getrennte Kostenfreigabe des zweiten Pakets.
 
-**In diesem Sprint wurde kein Modellaufruf ausgeführt.** Der Nachweis dafür ist
-kein Versprechen, sondern gemessen: `scripts/z3b-azure-freigaberiegel-test.js`
+**Im Bausprint selbst wurde kein Modellaufruf ausgeführt.** Der Nachweis dafür
+ist kein Versprechen, sondern gemessen: `scripts/z3b-azure-freigaberiegel-test.js`
 führt 25 unvollständige Konfigurationen gegen einen **zählenden** fetch-Ersatz
 und belegt einen Zählerstand von **0**.
+
+**Danach — und nur nach je eigener Betreiberfreigabe — liefen beide Pakete
+tatsächlich:** Vorprobe `vorprobe20260901` (3 Aufrufe) und Stichprobe
+`stichprobe20260901` (21 Aufrufe). Messwerte, Fingerabdrücke und Randbedingungen:
+**§16.1**. Die Kette hat dabei getragen: die Stichprobe wurde erst nach Übergabe
+von Laufkennung **und** Vorprobe-Fingerabdruck freigeschaltet. Die oben genannte
+ehrliche Grenze bleibt bestehen — erzwungen wird der **Besitz** des
+Vorprobeberichts, nicht dessen Echtheit gegenüber Azure.
 
 ## 4 · Kapazitäts- und Kostenriegel — Entscheidungstabelle
 
 Sieben Pflichtwerte. **Fehlt einer, meldet `pruefeKonfiguration()` `bereit=false`
 und der Test darf nicht beginnen.**
 
+Die Spalte „offen" gibt den Stand **nach** den Messläufen vom 01.09. wieder;
+belegte Werte sind mit ihrer Herkunft in §16 nachgewiesen.
+
 | Wert | Umgebungsname | Empfehlung | Herkunft | offen |
 |---|---|---|---|---|
-| Gesamtdeckel | `HELMUT_MAX_LLM_CALLS_PER_DAY` | **1.492–2.416 (Spanne)** | `kapazitaet-500.zielDeckel()`: konservativer Bedarf ÷ 0,75; Untergrenze 2n−1 = **999** | p95-Tagesbedarfe je Fachweg, Azure-Kontingente |
-| Verstehens-Reserve | `HELMUT_LLM_RESERVE_UNDERSTANDING` | **702** (Anteil **IM** Deckel) | konservativer priorisierter Frischbedarf | p95-Tagesbedarf Verstehen |
-| Anfragen/Minute | `HELMUT_TESTLAUF_MAX_RPM` | **OFFEN** | Azure-Portal, rein lesend | Azure-Kontingente/Rate-Limits |
-| Token/Minute | `HELMUT_TESTLAUF_MAX_TPM` | **OFFEN** | erst nach der 21er-Stichprobe belegbar | Azure-Kontingente, p95 je Fachweg |
-| Kostenbudget | `HELMUT_TESTLAUF_KOSTENBUDGET_USD` | **OFFEN** | Deckel × gemessene Kosten je Aufruf | Azure-Preis am Lauftag (F7 unbelegt) |
-| Vorrang reale Mandate | `HELMUT_TESTLAUF_VORRANG_REAL` | **mindestens 5** | Zahl der realen Mandate | p95-Tagesbedarf der 5 realen Mandate |
+| Gesamtdeckel | `HELMUT_MAX_LLM_CALLS_PER_DAY` | **2.416** (Spanne 1.492–2.416; oberer Rand als Vorschlag) | `kapazitaet-500.zielDeckel()`: konservativer Bedarf ÷ 0,75; Untergrenze 2n−1 = **999**; gemessener Boden **1.496/Tag** (§16.4) | Verstehenswachstum bei 500 Mandaten (geteiltes Korpus, §16.6) |
+| Verstehens-Reserve | `HELMUT_LLM_RESERVE_UNDERSTANDING` | **702** (Anteil **IM** Deckel) | konservativer priorisierter Frischbedarf; gestützt durch p95 Verstehen **82/Tag** bei 5 Mandaten (§16.3) | dasselbe Wachstum wie oben |
+| Anfragen/Minute | `HELMUT_TESTLAUF_MAX_RPM` | **250** (Deploymentgrenze) | Betreiberangabe 01.09.; Stichprobe erreichte **10,8 RPM = 4,3 %** (§16.1) | **Azure-Gesamtkontingent des Kontos** (getrennt von der Deploymentgrenze) — nur im Portal/ARM sichtbar |
+| Token/Minute | `HELMUT_TESTLAUF_MAX_TPM` | **250.000** (Deploymentgrenze) | Betreiberangabe 01.09.; Stichprobe erreichte **32.686 TPM = 13,1 %** (§16.1) | dasselbe Gesamtkontingent |
+| Kostenbudget | `HELMUT_TESTLAUF_KOSTENBUDGET_USD` | **≈ 7,10 USD/Tag** bei Deckel 2.416 (obere Schranke **8,11**) | Deckel × gemessene Mischkosten 0,002941 USD/Aufruf (§16.5) | Kontopreis am Lauftag (F7 bleibt unbelegt — Listenpreis) |
+| Vorrang reale Mandate | `HELMUT_TESTLAUF_VORRANG_REAL` | **mindestens 170** statt 5 | p95 **Gesamtbedarf 170/Tag** der 5 realen Mandate (Untergrenze, §16.3) — 5 schützt nur die Mandatszahl, nicht deren Tagesbedarf | Anteil je Mandat (Bedarf ist nicht je Mandat aufgeschlüsselt) |
 | Parallelität | `HELMUT_TESTLAUF_MAX_PARALLEL` | **1** | `HELMUT_VERSTEHEN_PARALLELITAET` ist ungesetzt und wirkt als 1 | — |
 
 **Verbindliche Semantik:** Die Reserven liegen **innerhalb** des Deckels und
@@ -114,9 +136,10 @@ werden **nie** addiert. Geprüfte Bindungen: Deckel ≥ 2n−1 · Reserve < Deck
 Verstehens-Reserve + Vorrangreserve < Deckel · Vorrangreserve ≥ 5 ·
 Parallelität ≤ RPM · Deckel ≤ RPM × 1440.
 
-**Die Werte 1.492–2.416 sind SZENARIEN, kein finaler Production-Deckel.** Die
-verbindliche Festlegung braucht zuvor die fünf offenen Messungen
-(`zielDeckel().offeneMessungen`) und bleibt eine getrennte Betreiberfreigabe.
+**2.416 ist ein belegt gestützter VORSCHLAG, kein gesetzter Production-Deckel.**
+Der Code wurde dafür **nicht** geändert: `zielDeckel()` gibt weiterhin die Spanne
+aus, und keine Umgebungsvariable ist gesetzt. Die verbindliche Festlegung bleibt
+eine getrennte Betreiberfreigabe.
 Solange eine davon fehlt, ist der Rahmen **nicht bereit** — auch bei sonst
 vollständiger und stimmiger Konfiguration (testgesichert §D).
 
@@ -363,10 +386,14 @@ Freigabe.** Kein Schritt dieses Plans wurde in diesem Sprint ausgeführt.
 
 1. Der **fachliche Production-Zyklus** mit 5 realen + 495 aktiven synthetischen
    Profilen (§2, Ebene 3).
-2. Die **echten Azure-Werte**: Vorprobe (3) und Stichprobe (21) sind gebaut,
-   aber **nicht ausgeführt**. Azure bleibt extern gesperrt (Anmelderiegel,
-   [`z3b-azure-messplan-2026-08-27.md`](z3b-azure-messplan-2026-08-27.md)).
-3. Der **finale Production-Deckel** und die zugehörige Verstehens-Reserve.
+2. **ERLEDIGT am 01.09.** — die echten Azure-Werte liegen vor: Vorprobe (3) und
+   Stichprobe (21) sind **ausgeführt**, 24/24 erfolgreich (§16.1). Was daran
+   **offen bleibt**: das Azure-**Gesamtkontingent des Kontos** (getrennt von der
+   Deploymentgrenze 250.000 TPM / 250 RPM) ist weiterhin nur im Portal/ARM
+   sichtbar und wurde nicht erhoben.
+3. Der **finale Production-Deckel** und die zugehörige Verstehens-Reserve —
+   Vorschlag 2.416/702 belegt (§16.4), aber **nicht gesetzt** und nicht
+   freigegeben.
 4. Die **05:45/05:48-Laufzeitüberschneidung** — offen, deshalb im Startfenster
    gesperrt (§7).
 5. Der **Kommunikationsriegel unter echter Production-Last**: offline für alle
@@ -378,22 +405,36 @@ Freigabe.** Kein Schritt dieses Plans wurde in diesem Sprint ausgeführt.
 
 ## 12 · Welche Messwerte fehlen
 
-| Messwert | Woher | Blockiert |
-|---|---|---|
-| `p95-tagesbedarf-verstehen` | natürliche Läufe | Deckel, TPM |
-| `p95-tagesbedarf-lage` | natürliche Läufe | Deckel |
-| `p95-tagesbedarf-buero` | natürliche Läufe | Deckel |
-| `azure-kontingente-und-rate-limits` | Azure-Portal, rein lesend | RPM, TPM |
-| `vollstaendiger-fachwegbericht` | Z3b | Deckel |
-| Azure-Preis am Lauftag (F7) | Kontopreis am Lauftag | Kostenbudget |
-| Laufzeit-/Tokenwerte je Arbeitsform | Vorprobe 3 + Stichprobe 21 | TPM, Kostenbudget |
+Stand nach den Messläufen und der korrigierten Belegprüfung vom 01.09. (§16).
+Die Bezeichner sind die Schlüssel aus `zielDeckel().offeneMessungen`; der Code
+führt sie **unverändert** weiter, weil keine Freigabe zum Setzen erteilt ist.
+
+| Messwert | Woher | Blockiert | Stand 01.09. |
+|---|---|---|---|
+| `p95-tagesbedarf-verstehen` | natürliche Läufe | Deckel, TPM | **belegt: 82/Tag** (§16.3) |
+| `p95-tagesbedarf-lage` | natürliche Läufe | Deckel | **belegt: 7/Tag** (§16.3) |
+| `p95-tagesbedarf-buero` | natürliche Läufe | Deckel | **belegt: 24/Tag** (§16.3) |
+| `azure-kontingente-und-rate-limits` | Azure-Portal, rein lesend | RPM, TPM | **teilweise:** Deploymentgrenze 250.000 TPM / 250 RPM belegt; **Gesamtkontingent des Kontos offen** |
+| `vollstaendiger-fachwegbericht` | Z3b | Deckel | **belegt** über alle drei Arbeitsformen (§16.1, §16.3) |
+| Azure-Preis am Lauftag (F7) | Kontopreis am Lauftag | Kostenbudget | **weiter offen** — nur **Listenpreis** 0,25 / 2,00 USD je Mio. Token, kein Kontopreis (§16.1) |
+| Laufzeit-/Tokenwerte je Arbeitsform | Vorprobe 3 + Stichprobe 21 | TPM, Kostenbudget | **belegt** (§16.1) |
+
+**Zusätzlich offen geblieben (neu erkannt, §16.6):** das Verstehenswachstum bei
+500 Mandaten (geteiltes Korpus, aus 5 Mandaten nicht ableitbar) · die ~12 %
+Untererfassung des Ringpuffers gegenüber dem atomaren Zähler · der operative
+Mehrtagesbetrieb · `HELMUT_TENANT_LLM_CAP` ist **aus**, die fünf realen Mandate
+haben damit keinen wirksamen Verdrängungsschutz.
 
 ## 13 · Die einzeln notwendigen Freigaben (streng getrennt)
 
-1. **Azure-Anmeldung** wieder freigeben (Anmelderiegel, 24-h-Wartezeit).
-2. **Vorprobe: 3 Modellaufrufe** — eigene Kostenfreigabe.
-3. **Stichprobe: 21 Modellaufrufe** — eigene Kostenfreigabe, erst nach grüner
-   Vorprobe; die Freigabekennung verlangt technisch deren Laufkennung.
+> **Stand 01.09.:** Die Punkte 1–3 sind **erteilt und ausgeführt** (§16.1). Die
+> Punkte 4–14 stehen unverändert aus.
+
+1. ~~**Azure-Anmeldung** wieder freigeben~~ — **erledigt 01.09.**
+2. ~~**Vorprobe: 3 Modellaufrufe**~~ — **erledigt 01.09.**, 3/3, 0,005236 USD.
+3. ~~**Stichprobe: 21 Modellaufrufe**~~ — **erledigt 01.09.**, 21/21, 0,035605 USD;
+   die Freigabekennung verlangte technisch Laufkennung und Fingerabdruck der
+   Vorprobe und hat das auch geleistet.
 4. **Deckel und Verstehens-Reserve** setzen (zwei getrennte Env-Werte).
 5. **RPM, TPM, Kostenbudget, Vorrangreserve, Parallelität** setzen.
 6. **Kommunikationsriegel scharf schalten** (`HELMUT_TESTLAUF_KOMMUNIKATION=gesperrt`).
@@ -474,3 +515,242 @@ angesetzten Prüfer gegengeprüft. Ergebnis: **31 Befunde gemeldet, 13 bestätig
 Die 18 widerlegten Befunde sind nicht eingearbeitet; sie betrafen unter anderem
 die Perzentil-Konvention bei n=21, die `messungen`-Deklarationskarte und den
 Schattentransport im Testfenster — jeweils mit ausgeführter Gegenprobe.
+
+---
+
+## 16 · Nachtrag 01.09. — ausgeführte Azure-Messläufe und korrigierte Z3b-Belegprüfung
+
+Dieser Abschnitt entstand in einem reinen **Dokumentationscommit** (kein Code,
+keine Konfiguration, keine Daten). Er trägt die Ergebnisse zweier einzeln
+freigegebener Messpakete und einer anschließend **zweimal** durchgeführten
+Belegprüfung nach — die zweite Prüfung korrigiert die erste (§16.7).
+
+### 16.1 · Die beiden ausgeführten Messpakete
+
+Randbedingungen beider Läufe: Parallelität 1 · keine Wiederholungen · nur
+synthetische Prompts · `store: false` · **kein Datenbankzugriff** — der Prozess
+wurde mit `env -i` gestartet und sah ausschließlich die übergebenen
+Azure-Werte, sodass ein Supabase-Zugriff nicht bloß verboten, sondern technisch
+unmöglich war. Beide Läufe liefen außerhalb des Repos und erzeugten keine Datei
+im Projekt.
+
+**Konfiguration (Betreiberangabe, 01.09.):** Deployment `gpt-5-mini` · Modell
+`gpt-5-mini`, Version `2025-08-07` · Deploymentart **Global Standard** · Region
+`swedencentral`, gemessen bestätigt durch den Antwortkopf `x-ms-region:
+Sweden Central` · Preise **0,25 / 2,00 USD je Mio. Token** (Eingabe/Ausgabe).
+
+> **Preisbasis bleibt F7-offen:** 0,25/2,00 ist der **öffentliche Listenpreis**
+> der Microsoft-Azure-OpenAI-Preisseite (Betreiberangabe, geprüft 01.09.), **kein
+> nachgewiesener Kontopreis**. Alle Kostenzahlen unten sind deshalb
+> Listenpreis-Rechnungen. Zwischenspeicher-Rabatte sind bewusst **nicht**
+> eingerechnet (konservativ).
+
+| | Vorprobe | Stichprobe |
+|---|---|---|
+| Laufkennung | `vorprobe20260901` | `stichprobe20260901` |
+| Aufrufe | **3/3 erfolgreich** | **21/21 erfolgreich** |
+| Gesamtlaufzeit | 21.477 ms | 116,4 s |
+| Eingabetoken | 7.464 (davon 4.224 aus dem Zwischenspeicher) | 52.094 (davon 29.568 aus dem Zwischenspeicher) |
+| Ausgabetoken | 1.685 | 11.291 |
+| Reasoning-Token | 0 | 0 |
+| Kosten (Listenpreis, ohne Cache-Rabatt) | **0,005236 USD** | **0,035605 USD** |
+| Kostenlimit des Pakets | 0,25 USD | 0,99 USD — ausgeschöpft zu **3,6 %** |
+| Fehler / Drosselung / Zeitüberschreitung | 0 / 0 / 0 | 0 / 0 / 0 |
+| Fingerabdruck (SHA256 über die Einzelmessungen) | `d69af1ae7477aac8170896c772ef9284339f56122a6d282b74e45a4c1bf7e30a` | `5baac1c0aa5a5209a02129470a5965eca6f08d9a080f660569733d9c7a685d77` |
+
+Die Stichprobe wurde technisch erst durch Übergabe der Vorprobe-Laufkennung
+**und** deren Fingerabdruck entriegelt (§3.1). Ihr Vorab-Kostendeckel lag bei
+0,192367 USD; die tatsächlichen Kosten blieben mit 0,035605 USD bei **19 %**
+davon.
+
+**Belastbare Vergleichswerte je Arbeitsform (n=7 je Form, Stichprobe):**
+
+| Arbeitsform | Laufzeit min / Median / p90 / max (ms) | Kosten je Aufruf (USD) |
+|---|---|---|
+| Verstehen | 8.367 / 9.110 / 9.893 / 10.431 | 0,003301 |
+| Lage | 3.473 / 4.342 / 5.106 / 5.632 | 0,001186 |
+| Büro | 2.285 / 2.832 / 3.511 / 3.662 | 0,000599 |
+
+**Auslastung gegen die Deploymentgrenzen:** 10,8 Anfragen/Minute (**4,3 %** von
+250) und 32.686 Token/Minute (**13,1 %** von 250.000). Beide Grenzen sind
+Betreiberangaben; das **Gesamtkontingent des Azure-Kontos** ist davon getrennt
+und wurde **nicht** erhoben (nur Portal/ARM).
+
+**Abgleich mit der echten Production-Telemetrie:** Verstehen weicht um 1,6 %,
+Lage um 6,7 % ab — die synthetischen Prompts sind für diese beiden Formen
+realistisch. **Büro liegt 52 % daneben**, weil der synthetische Büro-Prompt zu
+klein war (451 statt 1.372 Eingabetoken). Für Büro gelten deshalb die
+Production-Werte, nicht die Stichprobenwerte.
+
+### 16.2 · Korrigierte Datenquelle und ihre harte Grenze
+
+**Maßgeblich für die KI-Nutzung ist `helmut_store.data.llmUsage`** (Zeile
+`main-auth`), **nicht** die relationale Tabelle `llm_usage`. Letztere ist auf
+diesem Pfad leer; daraus folgt **nicht**, dass keine Aufrufe stattfanden — die
+Nutzung wird in den Blob geschrieben.
+
+> **Ringpuffergrenze 5.000 Einträge.** `lib/helmut/storage.js:622` kürzt die
+> Liste mit `slice(0, 5000)`. Das Beobachtungsfenster ist damit **durch die
+> Puffergröße begrenzt, nicht durch eine Aufbewahrungsregel**: ältere Einträge
+> fallen ohne Meldung heraus. Alles unten Berechnete gilt für das Fenster
+> **2026-07-02 bis 2026-09-01 (62 Tage)**, das diese 5.000 Einträge aufspannen.
+
+Zusammensetzung der 5.000 Einträge: **3.673 Erfolge · 19 technische Fehler ·
+1.260 Budgetablehnungen · 48 fachliche Übersprünge.**
+
+> **Budgetablehnungen sind keine Azure-Fehler.** Sie haben Azure nie erreicht;
+> sie sind die Wirkung des Tagesdeckels. Sie werden hier ausschließlich als
+> **Bedarfsnachweis** verwendet, nie als Fehlerquote.
+
+**Technische Azure-Fehlerquote: 19 von 3.692 = 0,51 %.**
+
+### 16.3 · Tagesbedarf, Verteilung und die Wirkung des Tagesdeckels
+
+Grundlage sind die **60 vollständigen Tage** 2026-07-03 bis 2026-08-31 (die
+Randtage 07-02 und 09-01 sind angeschnitten und bleiben außen vor).
+
+| Größe | min | Median | p90 | **p95** | max | Mittel |
+|---|---|---|---|---|---|---|
+| **ausgeführte** Aufrufe/Tag | 20 | 60 | 81 | 93 | 185 | 60,3 |
+| **Bedarf**/Tag (ausgeführt + abgelehnt) | — | 66 | 120 | **170** | 298 | 81,0 |
+
+**p95-Tagesbedarf je Fachweg: Verstehen 82 · Büro 24 · Lage 7.**
+
+> **Warum die ausgeführte Zahl den Bedarf nicht zeigt:** Der Tagesdeckel von 100
+> schneidet die **ausgeführten** Aufrufe ab — an 5 der 48 ausgewerteten Tage
+> wurde er erreicht. Die Messreihe ist damit **rechtsseitig zensiert**; p90/p95
+> der ausgeführten Zahl laufen gegen den Deckel und sind keine Bedarfsaussage.
+> Der Bedarf ist nur deshalb rekonstruierbar, weil die Ablehnungen **getrennt**
+> protokolliert werden.
+
+> **`p95 = 170` ist eine UNTERGRENZE, keine Punktschätzung.** Der Blob
+> untererfasst gegenüber dem atomaren Tageszähler: an **47 von 48** gemeinsamen
+> Tagen liegt der Zähler höher, im Mittel um **8,8 Aufrufe/Tag (rund 12 %)**. Die
+> Ursache ist **nicht** ermittelt. Solange sie offen ist, darf 170 nur als
+> Untergrenze verwendet werden.
+
+### 16.4 · Konservativer Vorschlag: Gesamtdeckel 2.416, Verstehens-Reserve 702
+
+**Gesamtdeckel: 2.416/Tag. Verstehens-Reserve: 702/Tag — innerhalb des Deckels,
+nicht zusätzlich.**
+
+Gestützt wird der Vorschlag durch eine **unabhängig gemessene Untergrenze**:
+Skaliert man die mandatsgebundenen Arbeitsformen (Lage, Büro) von 5 auf 500
+Mandate und lässt das geteilte Verstehenskorpus unskaliert, ergibt sich ein
+Boden von **1.122 Aufrufen/Tag**, mit dem im Rahmen verwendeten
+Auslastungsfaktor 0,75 also **1.496/Tag**. Das liegt **0,3 %** neben dem im Repo
+schon vorhandenen Szenariowert 1.492 — zwei unabhängige Wege, dasselbe Ergebnis.
+
+Zwei Rechenregeln, die dabei bewusst eingehalten wurden:
+
+1. **Nicht `p95 × 100`.** Die relative Streuung einer Summe aus 100 unabhängigen
+   Mandaten schrumpft mit √100; mandatsgebundene Arbeit wird deshalb vom
+   **Mittelwert** hochgerechnet, nicht vom p95.
+2. **Verstehen wird nicht linear skaliert.** Es verarbeitet ein **geteiltes**
+   Dokumentenkorpus einmal, unabhängig von der Mandatszahl.
+
+### 16.5 · Kosten
+
+Gemessene Production-Kosten je Aufruf (Listenpreis): Verstehen 0,003355 ·
+Lage 0,001266 · Büro 0,000913 · **gemischt 0,002941 USD**.
+
+Bei Deckel 2.416: **7,10 USD/Tag ≈ 213 USD/Monat (gemischt)**. Als **obere
+Schranke** — wenn der Verstehensanteil deutlich höher ausfällt als gemessen —
+**243 USD/Monat**. Beide Zahlen sind Listenpreis-Rechnungen ohne
+Zwischenspeicher-Rabatt (F7 offen, §16.1).
+
+### 16.6 · Verbleibende Blocker und Messlücken für den 500er-Funktionstest
+
+1. **Azure-Gesamtkontingent des Kontos** — nicht erhoben; nur Portal/ARM. Die
+   Deploymentgrenze (250.000 TPM / 250 RPM) ist **nicht** dasselbe.
+2. **Verstehenswachstum bei 500 Mandaten** — aus 5 Mandaten nicht ableitbar,
+   weil das Korpus geteilt ist. Das ist die größte verbleibende Unsicherheit im
+   Deckelvorschlag.
+3. **~12 % Untererfassung des Ringpuffers** gegenüber dem atomaren Zähler,
+   Ursache unbekannt (§16.3) — hält p95 170 auf dem Rang einer Untergrenze.
+4. **Ringpuffer 5.000** begrenzt jede künftige Messung; ein längeres Fenster
+   erfordert eine andere Ablage.
+5. **05:45/05:48-Laufzeitüberschneidung** — unverändert offen, im Startfenster
+   weiterhin gesperrt (§7).
+6. **`HELMUT_TENANT_LLM_CAP` ist aus (OP-03).** Die fünf realen Mandate haben
+   damit **keinen wirksamen Verdrängungsschutz**: der Vorrangwert im Rahmen
+   schützt den Testlauf, nicht den Production-Betrieb. Zusätzlich schützt
+   `HELMUT_TESTLAUF_VORRANG_REAL=5` nur die **Zahl** der Mandate — deren
+   Tagesbedarf liegt bei p95 **170** (§4).
+7. **Operativer Mehrtagesbetrieb** mit 500 Profilen — unverändert nicht bewiesen.
+8. **Preisbasis F7** — nur Listenpreis, kein Kontopreis.
+9. **Büro-Prompt der Stichprobe zu klein** (451 statt 1.372 Eingabetoken); für
+   Büro gelten die Production-Werte. Eine Wiederholung der Stichprobe mit
+   realistischerem Büro-Prompt wäre eine **neue**, getrennt freizugebende Messung.
+
+### 16.7 · Korrekturen K1–K6 gegenüber dem falschen Zwischenbericht
+
+Eine erste Belegprüfung stützte sich auf die **leere** Tabelle `llm_usage` und
+kam damit zu falschen Schlüssen. Sie wird hier nicht stillschweigend ersetzt,
+sondern ausdrücklich berichtigt (`CLAUDE.md` §4.4, §7.11):
+
+| # | Falsche Aussage der ersten Prüfung | Belegte Korrektur |
+|---|---|---|
+| **K1** | „Büro: keine Daten, `office_outputs` ist leer." | **Falsch.** 390 erfolgreiche `communicationDraft`-Aufrufe, **p95 24/Tag**. Ein leeres `office_outputs` heißt nur, dass dort keine Artefakte abgelegt werden — es sagt nichts über Modellaufrufe. |
+| **K2** | „Lage: keine Aufrufzuordnung möglich." | **Falsch.** 238 `lageBriefing`-Aufrufe, davon 230 erfolgreich, **p95 7/Tag**. |
+| **K3** | „Verstehen: p50 0/Tag, Mittel 1,8/Tag." | **Irreführend.** Tatsächlich **p50 46**, Mittel **46,4/Tag**. Die Fehlzahl stammte aus `process_runs.saved_count` — das zählt **gespeicherte Wissensobjekte**, nicht Modellaufrufe. |
+| **K4** | „`llm_usage` ist leer ⇒ p95 je Fachweg ist prinzipiell nicht erhebbar." | **Falscher Schluss.** Die relationale Tabelle war als einzige Quelle behandelt worden; maßgeblich ist `helmut_store.data.llmUsage` (§16.2). |
+| **K5** | „p95 des Gesamtbedarfs ist wegen Zensur nicht bestimmbar." | **Teilweise falsch.** Der **ausgeführte** Wert ist zensiert, der **Bedarf** nicht: weil Ablehnungen getrennt protokolliert werden, ist p95 **170/Tag** messbar — als Untergrenze (§16.3). |
+| **K6** | Fehlerquoten aus `process_runs` (u. a. `globalphase` 51/51). | **Ersetzt.** Maßgeblich ist die **technische Azure-Fehlerquote 19/3.692 = 0,51 %**; `process_runs`-Zustände mischen fachliche und Budgetgründe hinein. |
+
+### 16.8 · Zwei Punkte aus der Betreiberprüfung
+
+**(a) Vercel-Umgebungsvariablen — Betreiberangabe, in dieser Sitzung nicht selbst
+geprüft.** Der Betreiber berichtet: die sensiblen Variablen wurden in der
+Vercel-Oberfläche **maskiert** dargestellt, und Production arbeitet nachweislich
+korrekt. **Diese Sitzung konnte das nicht nachvollziehen** — Vercel-Env ist aus
+Claude-Sitzungen weder lesbar noch setzbar (§3 `CURRENT_STATE.md`,
+[`env-inventar.md`](env-inventar.md) §8); der Sitzungszugriff beschränkte sich
+auf das **lesende** Abrufen von Deployments. Die Angabe steht deshalb
+ausdrücklich als **Betreiberangabe**, nicht als eigener Befund.
+Was diese Sitzung **selbst belegen kann**, stützt den zweiten Teil der Aussage:
+die Telemetrie zeigt **3.673 erfolgreiche Modellaufrufe** über Azure im Fenster
+bis zum 01.09. bei **0,51 %** technischer Fehlerquote — der Azure-Zugang in
+Production ist also wirksam konfiguriert. Über die **Darstellung** in der
+Oberfläche sagt das nichts.
+
+**(b) Azure-Endpunktguard — offene Sicherheitsverbesserung (in dieser Sitzung
+geprüft).** Der **Production**-Pfad `lib/helmut/ai.js` baut die Ziel-URL direkt
+aus der Umgebungsvariablen:
+
+```js
+const apiUrl = isAzure()
+  ? `${process.env.AZURE_OPENAI_ENDPOINT}/openai/v1/responses`
+  : OPENAI_API_URL;
+```
+
+Der Wert wird **nicht validiert**: kein Schema-Zwang (`https:`), keine
+Host-Erlaubnisliste (etwa `*.openai.azure.com`), keine Prüfung auf
+eingebettete Zugangsdaten oder abweichenden Port. Zusammen mit dem
+`api-key`-Kopf bedeutet das: **ein falsch gesetzter oder manipulierter
+Umgebungswert schickt Prompt und Schlüssel an einen beliebigen Host.**
+
+Einordnung, ehrlich abgegrenzt:
+- Der Weg nutzt `https.request` und folgt Umleitungen **nicht** automatisch —
+  das Risiko ist der **Wert der Variablen**, nicht das Verfolgen von 3xx.
+- Der Angriffsweg setzt Schreibzugriff auf die Vercel-Env voraus; das ist eine
+  Betreiberberechtigung. Es ist eine **Verteidigung in der Tiefe**, kein
+  aktueller Vorfall — es gibt **keinen** Hinweis auf eine Fehlkonfiguration.
+- Der Messläufer dieses Sprints hat den entsprechenden Teil bereits geschlossen
+  (`redirect: "manual"`, Review-Befund 11, §15). Der **Production**-Pfad hat
+  diesen Schutz **nicht**.
+
+**Bewusst nicht behoben:** Der Auftrag dieses Commits erlaubt ausschließlich
+Dokumentation; `lib/helmut/ai.js` bleibt unverändert. Vorschlag für einen
+eigenen, kleinen Sprint: Erlaubnisliste + Schemaprüfung beim Start,
+fail-closed — ein unpassender Endpunkt verhindert den Start, statt still zu
+senden.
+
+### 16.9 · Was dieser Commit NICHT ist
+
+Kein Code, keine Konfiguration, keine Daten. Keine Umgebungsvariable gesetzt,
+kein Deckel aktiviert, keine Kohorte provisioniert, kein weiterer Modellaufruf,
+keine Azure-, Supabase- oder Vercel-Änderung, kein Merge, kein Deployment. **PR
+#294 bleibt Draft.** Alle 14 Freigaben aus §13 stehen unverändert aus; erledigt
+sind aus dieser Liste allein die Punkte 1–3 (Azure-Anmeldung, Vorprobe,
+Stichprobe).
