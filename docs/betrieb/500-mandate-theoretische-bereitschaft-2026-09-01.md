@@ -371,7 +371,16 @@ kanonische Offline-Gesamtlauf auf dem Endstand des Korrektursprints steht in
 ### 14.1 · Abschlussprüfungen des Korrektursprints
 
 - Offline-Gesamtlauf (`scripts/lokal.js` → `run-offline-tests.js`) auf dem
-  Endstand: **[wird nach dem Lauf eingetragen]**
-- `git diff --check`: **[wird eingetragen]**
-- Draft-PR: **[Nummer + Kopf-SHA + CI-Zustand werden im Abschlussbericht an
-  den Betreiber genannt; der PR selbst trägt sie maschinenlesbar]**
+  Code-Endstand: **295/295 Suiten grün in 452 s** (295 statt 294: die neue
+  Regressionssuite `matching-reihenfolge-test.js` zählt mit). Ein erster
+  Lauf zeigte 294/295 — die eine rote Suite (`matching-erklaerung` B3) pinnte
+  noch die alte created_at-primäre Ordnung und wurde auf den Endvertrag
+  nachgezogen (`4bec5c7`, kein blindes Wiederholen: benannte Ursache).
+  Nach dem grünen Lauf änderten sich ausschließlich diese
+  Doku-Zeilen (§14.1); die einzige doku-sensitive Suite
+  (`current-state-groesse-test.js`, misst nur `docs/CURRENT_STATE.md`) lief
+  auf dem finalen Doku-Stand separat: 4/4 grün.
+- `git diff --check`: sauber. Keine Migration im Diff; `vercel.json`
+  (Deploysperre + 13 Cron-Einträge) byte-unverändert gegenüber `44499ee`.
+- Draft-PR: Nummer, gebundener Kopf-SHA und CI-Zustand stehen im
+  Abschlussbericht an den Betreiber; der PR selbst trägt sie.
