@@ -16,7 +16,9 @@ Dieser Beleg trennt **drei Nachweise strikt** — sie dürfen nie vermischt werd
 ## 1 · Aufnahmefähigkeit der Warteschlange — **ERBRACHT** (nicht wiederholt)
 
 Bereits am 28.08. erbracht (isoliertes Supabase-Testprojekt, GitHub-Actions-Lauf
-`33158170030`, Beleg `z3b-supabase-testplan-2026-08-27.md`): **500 synthetische
+`33158170030`; Beleg: `z3b-supabase-testplan-2026-08-27.md` — liegt NICHT auf
+diesem Branch, sondern ungemergt in **PR #277, Kopf
+`a705c18d0355d86b21fc0136bd64917120da0bb7`**): **500 synthetische
 Aufträge eingereiht, 500 reserviert, 500 abgeschlossen**; **1.040 von 1.040
 HTTP-Anfragen** mit Status 200; Latenz p50/p95/p99/max 127/382/440/1.266 ms;
 Gleichzeitigkeitsspitze 32; **0** Zeitüberschreitungen, Netzwerkfehler,
@@ -38,11 +40,29 @@ zusammen. Es heißt NICHT, dass der Betrieb bewiesen wäre (§3).
 Ein mehrtägiger realer Betriebsnachweis liegt **nicht** vor und kann durch
 Offline-Tests oder Berechnungen **nicht ersetzt** werden. Es fehlen weiterhin:
 der Siebentagenachweis der jeweiligen Vorstufe (Stufentore 5→10→…→500,
-`z3b-aktivierungsplan-2026-08-27.md`), echte Azure-Messwerte (3er-Vorprobe +
-21er-Stichprobe), der echte Google-Sonderweg unter Drosselung (OP-15),
-Import-/Aktivierungsfreigaben je Stufe, der gesetzte Zieldeckel, Speicher-/
-Tarif-/Aufbewahrungsentscheidungen (OP-01, R5) und neue 200er-/500er-
+`z3b-aktivierungsplan-2026-08-27.md` — ungemergt, **PR #277, Kopf
+`a705c18d0355d86b21fc0136bd64917120da0bb7`**), echte Azure-Messwerte
+(3er-Vorprobe + 21er-Stichprobe), der echte Google-Sonderweg unter Drosselung
+(OP-15), Import-/Aktivierungsfreigaben je Stufe, der gesetzte Zieldeckel,
+Speicher-/Tarif-/Aufbewahrungsentscheidungen (OP-01, R5) und neue 200er-/500er-
 Fachwegmessungen. Production läuft heute mit **5 aktiven Mandaten**.
+
+> **Quellenlage der zitierten Pläne (Befund 7, 2026-09-01):** Die drei
+> Planungsdokumente liegen **nicht auf `main` und nicht auf diesem Branch**,
+> sondern ausschließlich in offenen PRs — sie sind damit ungemergte, noch
+> nicht freigegebene Quellen: `z3b-aktivierungsplan-2026-08-27.md` und
+> `z3b-supabase-testplan-2026-08-27.md` in **PR #277** (Kopf
+> `a705c18d0355d86b21fc0136bd64917120da0bb7`),
+> `zehn-mandate-uebergang-2026-08-29.md` in **PR #282** (Kopf
+> `c55d2f82c336c52a7778d524eb11fc188ca8e0e9`). Relative Links auf diese
+> Dateien wären auf diesem Branch kaputt und werden deshalb nicht gesetzt.
+> Aus den Plänen wurden in diesem Sprint folgende Regeln VERWENDET (Stand der
+> genannten Köpfe): die Stufentore 5→10→25→50→100→200→500 mit je sieben
+> grünen Tagen, die Deckelbestimmung aus echten p95-Tagesbedarfen je Fachweg
+> + echten Azure-Werten + vollständigem Fachwegbericht (als OFFENE Messungen
+> in `kapazitaet-500.zielDeckel().offeneMessungen` übernommen), der
+> 25-%-Reservefaktor (Bedarf ÷ 0,75) und die Fairness-Untergrenze `2n−1`.
+> Werden die PRs geändert oder verworfen, sind diese Übernahmen neu zu prüfen.
 
 ---
 
