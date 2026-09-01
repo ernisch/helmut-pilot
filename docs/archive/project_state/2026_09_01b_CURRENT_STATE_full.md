@@ -1,7 +1,7 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-09-01 — Sicherheitsrahmen für den 500er-Production-Funktionstest gebaut und offline bewiesen; Draft-PR offen, nichts gemergt (§23).** Vollständige
-Fassungen vor den beiden Verdichtungen vom 01.09.: byte-identisch in [`archive/project_state/2026_09_01_CURRENT_STATE_full.md`](archive/project_state/2026_09_01_CURRENT_STATE_full.md) und [`archive/project_state/2026_09_01b_CURRENT_STATE_full.md`](archive/project_state/2026_09_01b_CURRENT_STATE_full.md). Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Ablageregeln: [`archive/README.md`](archive/README.md), `CLAUDE.md` §9.
+**Stand: 2026-09-01 — Reife-/Korrektursprint und PR-Bereinigung abgeschlossen: PR #290 und #292 gemergt und deployt (§21–§22).** Vollständige
+Fassung vor dieser Verdichtung (01.09.): byte-identisch in [`archive/project_state/2026_09_01_CURRENT_STATE_full.md`](archive/project_state/2026_09_01_CURRENT_STATE_full.md). Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Ablageregeln: [`archive/README.md`](archive/README.md), `CLAUDE.md` §9.
 
 **Kernlage in sechs Sätzen:** Der neue Warteschlangenmotor (`HELMUT_SCALABLE_PIPELINE=on`) ist **seit dem 23.08.2026 in Production eingeschaltet** (Vollbeleg Runbook §30.7). Die **fünf bestehenden Mandate sind mit 376 echten Abschlüssen bewiesen**; **Morgenlauf 5/5 und Lagelauf effektiv 5/5** aller aktiven Mandate waren erfolgreich. Der **R4-/GitHub-Actions-Watchdog-Nachweis ist grün**. Im Aktivierungsfenster gab es **keine Doppelarbeit, keine verlorenen Aufträge, keine endgültigen Fehler, 0 Lease-Probleme und 0 Fencing-Konflikte**; alle elf §28.6-Kontrollen sind erfüllt ([`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §30.7). **Der Stand `0 unbekannt` gilt seit dem 30.08. nicht mehr: es stehen 3 Vorgänge auf `unbekannt` (§20).** Der Modus ist weiterhin **`HELMUT_JOB_DISPATCH_MODE=shadow`** (Cron-Antrieb; kein Ereignis-Antrieb, kein AWS). **Der Selbstweck ist seit 24.08. lokal Ende-zu-Ende belegt, aber in Production nie ausgeführt** (§14).
 
@@ -14,13 +14,12 @@ Fassungen vor den beiden Verdichtungen vom 01.09.: byte-identisch in [`archive/p
 - **Letzter fachlich wirksamer Production-Code: `9d6d18e5` aus #292** (§22; Vercel-Status `success`); davor `98cfedc1` (#290), `936b2676` (#286), `3a153b50` (#287), `a03480bb` (#285), `3244f073` (#284), `0f900e68` (#283).
 - **PR #273, #274, #279, #280, #281, #283–#290 und #292 sind gemergt.** #275–#277 und #282 wurden nach Inhaltskonsolidierung geschlossen, nicht gemergt; ihre Branches bleiben als Auditbelege erhalten. Es bestehen keine fachlichen offenen PRs. Spätere reine Dokumentationsabschlüsse ändern diesen Stand nicht; Nachweis gemäß `CLAUDE.md` §9 über die Git-Historie. **`672886c`/`be5bd15` existieren nicht mehr** (01.09. geprüft); Inhalte im Reifesprint rekonstruiert (§21).
 - Davor gemergt: #271, #270, #265, #262, #261, #260/#259/#256/#257, #225, #216; die PR-Bereinigung vom 23.08. (inkl. begründeter Schließungen) ist in Archivfassung und Runbook dokumentiert.
-- **Offen (Draft, NICHT gemergt):** der Sicherheitsrahmen des 500er-Funktionstests auf `claude/security-sprint-functional-test-wap0q1`, Basis `b998e9bc` (§23).
 - Merge nach `main` löst automatisch ein Production-Deployment aus.
 
 ## 3 · Production-Zustand
 
 - **Datenbank:** Supabase **Free-Plan** — keine nativen Backups, kein PITR (→ OP-01). Vollsicherung (40/40) und isolierter Restore seit 2026-07-28 geübt; RPO ≤ 24 h.
-- **Mandate (zwei Zählungen, nicht dasselbe — rein lesend bestätigt 01.09.):** **9 Mandatsprofile** (`mandate_profiles`), davon **5 aktiv** (Signatur `m5-9aee228dbf2c9f13`) und 4 deaktivierte Demo-Mandate (OP-04-Rest), 0 mit Löschmarke. Daneben **10 Identitätsprofile** (`profiles`), davon 1 ohne Mandatsprofil. **0 Testmandate, 0 `test-kohorte`-Zeilen.** Ein Identitätsprofil ist kein Mandat — nur die 5 aktiven Mandatsprofile erzeugen Last.
+- **Mandate (zwei Zählungen, nicht dasselbe — rein lesend bestätigt 25.08.):** **9 Mandatsprofile** (`mandate_profiles`), davon **5 aktiv** (Signatur `m5-9aee228dbf2c9f13`, K2-Gate ohne Widerspruch) und 4 deaktiviert (`angela-merkel`, `james-brown`, `max-mustermann`, `helmut-abnahme-berlin`; OP-04-Rest), 0 mit Löschmarke. Daneben **10 Identitätsprofile** (`profiles`), davon **1 ohne zugehöriges Mandatsprofil**; 0 Mandatsprofile ohne Identitätsprofil. **0 Testmandate.** Ein Identitätsprofil ist kein Mandat — nur die 5 aktiven Mandatsprofile erzeugen Last.
 - **Aufbewahrung Crawl-Läufe:** `HELMUT_CRAWL_RUN_RETENTION=36` (Mindestbedarf n=5: 30).
 - **Quellen:** 9 Pakete · 163 Abrufwege · 165 Zuordnungen; **146 von 163 Wegen Google-News** (Klumpenrisiko B1, OP-15); 18 Landesmodul-Wege (BE/BB) gesperrt. Seeds `20260713`/`20260717` **nicht eingespielt** ([`betrieb/quellen-seed-einspielung.md`](betrieb/quellen-seed-einspielung.md): BLOCKIERT).
 - **Crons (Production):** crawl 04:00/20:00 · pipeline 16:00 · morning-briefing 05:00 · understanding 05:30/21:30 · **understanding-rueckstand 11:30/17:30** · lage-briefing 05:45 · health 06:00 · lage-check 10:00 UTC · 2 Narrativ-Nachlaufslots 06:10/06:22 (inert). **PR-B mit `18,48 * * * *` ist nicht in Production.** Dazu der GitHub-Actions-Watchdog (`briefing-watchdog.yml`, täglich 05:30 UTC, oft 2–3 h verzögert).
@@ -131,9 +130,8 @@ Vollständige Begründungen: Archiv (§5 der Altfassung 2026-08-05).
 
 1. **Gründerentscheidung zur Skalierung** (Entscheidungsvorlage, §6): KI-Deckel, AWS-Frage, Reihenfolge 10 → 25.
 2. **Selbstweck-Vorlauf entscheiden:** die fünf Werte setzen (Betreiberaktion), Vorprüfung `/api/ops/jobqueue` → `ereignisbetrieb.bereit === true`, danach den **siebentägigen Nachweis** mit 5 Mandaten führen (Quittungen `warteschlange-*`, Briefings 5/5; bei Verletzung einer §28.6-Grenze gilt der dokumentierte Rückweg). Empfohlen davor: der kleinste Preview-Versuch zum 3-s-Abbruch (Zielarchitektur §27.3).
-3. **500er-Funktionstest:** Draft-PR prüfen und über die 14 getrennten Freigaben aus §23 entscheiden; ohne Azure-Messung bleibt der Rahmen fail-closed.
-4. **Rückkehr zu den P0-Verkaufsblockern OP-01…OP-04.**
-5. **Betreiberprüfung Doppelkanal** (OP-07, §7 Punkt 9) vor jedem Kanalschritt.
+3. **Rückkehr zu den P0-Verkaufsblockern OP-01…OP-04.**
+4. **Betreiberprüfung Doppelkanal** (OP-07, §7 Punkt 9) vor jedem Kanalschritt.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
@@ -165,58 +163,50 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 | OP-30 CAS: Verstehensvertrag | [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md) |
 | Paket-Inventur (B-3/B-4 Personensuchen) | [`quellenarchitektur/30-paket-inventur-production.md`](quellenarchitektur/30-paket-inventur-production.md) |
 | Watchdog-Korrektur 26.08. (Slotlogik, Briefingstufen, Skalierung) | [`betrieb/watchdog-korrektur-2026-08-26.md`](betrieb/watchdog-korrektur-2026-08-26.md) |
-| 500er-Funktionstest: Sicherheitsrahmen, Runbook, Ablaufplan | [`betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md`](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md) |
 | Production-Beweise | [`betrieb/production_beweisprotokoll.md`](betrieb/production_beweisprotokoll.md) |
 | Vollstände vor den Verdichtungen (24.08./17.08./05.08.) | [`archive/project_state/`](archive/project_state/) (Index: [`archive/README.md`](archive/README.md)) |
 
 ## 14 · Sprint 24./25.08. — Härtungssprint Selbstweck
 
-**Erfolgreich abgeschlossen** (PR #269; Runbook §31, Vollfassung Archiv §14): `bereit` heißt Konfigurationsbereitschaft, nicht Zustellung; der 3-s-Abbruch bleibt ungeprüft (Vorschauversuch ohne belegte Datenisolierung verboten). Seitdem gilt `CLAUDE.md` §6: **jeder** Testlauf über `scripts/lokal.js`.
+**Erfolgreich abgeschlossen** (PR #269; vollständig Runbook §31, Vollfassung [`archive/project_state/2026_09_01_CURRENT_STATE_full.md`](archive/project_state/2026_09_01_CURRENT_STATE_full.md) §14): `bereit` heißt Konfigurationsbereitschaft, nicht Zustellung; der 3-s-Abbruch bleibt ungeprüft (Vorschauversuch ohne belegte Datenisolierung verboten); seitdem gilt `CLAUDE.md` §6: **jeder** Testlauf über `scripts/lokal.js`.
 
 ## 15 · Sprint 25.08. — Skalierung 25/50/100 (Korrekturrunden 4 und 5)
 
-**Teilweise abgeschlossen** (PR #270; kanonisch [`betrieb/skalierung-25-50-100.md`](betrieb/skalierung-25-50-100.md)): Anlage-Stapel legt ausschließlich **inaktiv** an · lage-briefing-Direktpfad ist typgebunden · **kein Index nötig, F9 nicht angewendet**; zuerst reißt die 500-MB-Free-Grenze (2,70 MB/Tag). Z3/Aktivierung bleiben freigabepflichtig.
+**Teilweise abgeschlossen** (PR #270; kanonisch [`betrieb/skalierung-25-50-100.md`](betrieb/skalierung-25-50-100.md), Vollfassung Archiv §15). Kernpunkte: Anlage-Stapel legt ausschließlich **inaktiv** an (Aktivierungswunsch wird abgelehnt, kein Aktivierungspfad gebaut) · lage-briefing-Direktpfad ist typgebunden, **kein** allgemeiner Abfluss · **kein Index nötig, F9 nicht angewendet**; zuerst reißt die 500-MB-Free-Grenze (2,70 MB/Tag; Ursache fehlende Aufbewahrung R5). Z3/Aktivierung bleiben freigabepflichtig.
 
 ## 16 · Sprint 26.08. — Watchdog: Slotlogik, Briefingstufen, Skalierung
 
-**Erfolgreich abgeschlossen** (PR #271, deployt; [`betrieb/watchdog-korrektur-2026-08-26.md`](betrieb/watchdog-korrektur-2026-08-26.md)): **`partial` heißt nie „Slot fehlt"**; offener Produktbefund: 5/5 Briefings personalisiert, aber nur 1/5 mit registriertem Push-Empfänger.
+**Erfolgreich abgeschlossen** (PR #271, deployt; alle Zahlen [`betrieb/watchdog-korrektur-2026-08-26.md`](betrieb/watchdog-korrektur-2026-08-26.md)): **`partial` heißt nie „Slot fehlt"**; offener Produktbefund: 5/5 Briefings personalisiert, aber nur 1/5 mit registriertem Push-Empfänger (`delivered` ≠ zugestellt).
 
 ## 17 · Sprint 26.08. — Realistiknachweis Z3a für 25/50/100
 
-**Teilweise abgeschlossen** (PR #272; [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md)): Z3a belegt echte Fachhandler/PostgREST/Netz/Modellaufrufe über 5/25/50/100 Mandate (92/92, 0 Fehler) — **nicht** die echten Anbieter (Google/Azure = **Z3b, offen**). Grenze ist der ungedeckelte KI-Bedarf (89–369/Tag gegen Deckel 100). Preisbasis F7 offen.
+**Teilweise abgeschlossen** (PR #272 = `0ddb73e9`; alle Messreihen [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md), Vollfassung Archiv §17): Z3a belegt echte Fachhandler/PostgREST/Netz/Modellaufrufe über 5/25/50/100 Mandate (92/92 Kriterien, 0 Fehler) — **nicht** aber die echten Anbieter (Google/Azure = **Z3b, offen**). Kapazitätsbefund: Grenze ist der ungedeckelte KI-Bedarf (89–369/Tag gegen Deckel 100). `lokal.js`-Azure-Leck geschlossen; Preisbasis F7 offen.
 
 ## 18 · Z22: Befund, Pflichtbeleg und Production-Abschluss
 
-**Erfolgreich abgeschlossen (29.08.; CI-Nachweis 01.09.);** Zahlen/Buchungen [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md) §13–§14: `helmut_jobs_offen` zählte mandatsblind, Z22 ergänzt `p_mandat`. Buchungen `20260829175642`/`20260829175749`, Nachprüfung 5/5 grün — **Z22 nicht erneut anwenden.** Der §11-PostgREST-Rückfallnachweis läuft seit #292 fail-closed im Pflicht-CI. **Offen:** Z3b/Azure.
+**Erfolgreich abgeschlossen (29.08.; CI-Nachweis vervollständigt 01.09.);** alle Zahlen/Buchungen [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md) §13–§14: `helmut_jobs_offen` zählte mandatsblind, Z22 ergänzt `p_mandat`. Production-Anwendung 29.08. mit Betreiberfreigabe (Buchungen `20260829175642`/`20260829175749`), Nachprüfung 5/5 grün — **Z22 nicht erneut anwenden.** Bewiesen lokal, isoliert und in Production; der zuvor offene §11-PostgREST-Rückfallnachweis läuft seit #292 fail-closed im Pflicht-CI und war in Lauf `33485020305` grün. **Offen:** Z3b/Azure.
 
 ## 19 · Sprint 31.08. — Understanding-Laufmeldung: roter Befund vom 30.08. behoben
 
-**Erfolgreich abgeschlossen; PR #283 gemergt, deployt als `0f900e68`.** [`betrieb/understanding-telemetrie-korrektur-2026-08-31.md`](betrieb/understanding-telemetrie-korrektur-2026-08-31.md): `lauf-bilanz.js` als **eine** kanonische Zähler-/Statusableitung (`Number(null)` ist nie mehr eine gemessene 0) · 217,5 s ist **keine** Laufzeitgrenze · U+0000-Fall geschlossen. Der natürliche Nachweis ehrlicher Zähler ist erbracht (21:30-Lauf 31.08.). Offen: drei `unbekannt`-Vorgänge (Betreiberentscheidung).
+**Erfolgreich abgeschlossen; PR #283 am 31.08. 07:14 UTC gemergt und als `0f900e68` deployt.** Vollständig: [`betrieb/understanding-telemetrie-korrektur-2026-08-31.md`](betrieb/understanding-telemetrie-korrektur-2026-08-31.md). Kernpunkte: `lauf-bilanz.js` als **eine** kanonische Zähler-/Statusableitung (`Number(null)` ist nie mehr eine gemessene 0) · 217,5 s ist **keine** Laufzeitgrenze (K9-Tages-p95, PR #282) · U+0000-Fall geschlossen. **Der natürliche Nachweis der ehrlichen Zähler ist erbracht: der 21:30-Lauf vom 31.08. trug belegte Zähler (§20-Nachträge).** Offen: drei `unbekannt`-Vorgänge (Betreiberentscheidung).
 
 ## 20 · Sprint 31.08. — Kapazitätssprint Understanding: Diagnose und Rückstandsschleife
 
-**Blockiert — Gate-Flip und PR-B bleiben gestoppt.** Messreihen: [`betrieb/understanding-kapazitaet-2026-08-31.md`](betrieb/understanding-kapazitaet-2026-08-31.md). Belegt sind Verhungern und wachsender Rückstand (31.08.: 9.080 pending; Ankunft Ø 307/Tag, Abfluss Ø 68/Tag). #284–#287 sind deployt; die fünf Gate-Blocker wurden in #290 korrigiert (§21). Gate bleibt `shadow`; 0 `gate-geparkt`, keine Migration oder Mandatsänderung. **Offen:** natürlicher Nachweis des korrigierten Stands, OP-06 (1.769 Altfälle), Siebentagenachweis sowie jede getrennt freizugebende Gate-, Cron-, Deckel- oder Kohortenentscheidung.
+**Blockiert — Gate-Flip und PR-B bleiben gestoppt.** Vollständige Messreihen: [`betrieb/understanding-kapazitaet-2026-08-31.md`](betrieb/understanding-kapazitaet-2026-08-31.md). Belegt sind Verhungern und wachsender Rückstand (31.08.: 9.080 pending; Ankunft Ø 307/Tag, Abfluss Ø 68/Tag); der 11:30-Lauf brach die Altersverhungern, der 17:30-Lauf wurde korrekt vom Budgetboden gestoppt.
+
+- #284–#287 sind deployt; die fünf Gate-Blocker wurden in #290 korrigiert und deployt (§21). Gate bleibt `shadow`; 0 `gate-geparkt`, keine Migration oder Mandatsänderung.
+- **Offen:** natürlicher Nachweis des korrigierten Stands, OP-06 (1.769 Altfälle), Siebentagenachweis sowie jede getrennt freizugebende Gate-, Cron-, Deckel- oder Kohortenentscheidung. Keine Aktivierung von zehn Mandaten.
 
 ## 21 · Sprint 31.08./01.09. — 500-Mandate-Reife + Korrektursprint (PR #290 gemergt + deployt)
 
-**Erfolgreich abgeschlossen — Betreiberfreigabe 01.09.:** PR #290 per Merge-Commit `98cfedc1` gemergt (Pflicht-CI grün auf `9f924dd`), Production-Deployment `dpl_HGJ17UJVPxYizG5Pkn9ekMkeSDsk` READY. Vollbeleg (inkl. Nach-Merge-Prüfung §14.2): [`betrieb/500-mandate-theoretische-bereitschaft-2026-09-01.md`](betrieb/500-mandate-theoretische-bereitschaft-2026-09-01.md).
+**Erfolgreich abgeschlossen — Betreiberfreigabe 01.09.: PR #290 per Merge-Commit `98cfedc1` gemergt (Pflicht-CI grün auf `9f924dd`, Lauf 33459629140; 7 Vorbedingungen rein lesend bestätigt); Production-Deployment `dpl_HGJ17UJVPxYizG5Pkn9ekMkeSDsk` READY zum Merge-Commit. Fachliches Urteil unverändert: architektonisch vorbereitet, finale Dimensionierung offen.** Beleg (§14, Nach-Merge §14.2): [`betrieb/500-mandate-theoretische-bereitschaft-2026-09-01.md`](betrieb/500-mandate-theoretische-bereitschaft-2026-09-01.md). Branch `claude/helmut-500-mandate-readiness-6hxden` (Basis `72d9ec5`); **Korrektursprint: 7 Betreiber-Befunde, alle bestätigt + behoben (Matching rank-primär · Bericht rein lesend · Vorab-Boden auf atomaren Zähler · 2.416 = vorläufiger Planungswert, Spanne 1.492–2.416 · Reserve-Schritt · 05:45/05:48 OFFEN · PR-Quellenbindung; Commits Beleg §14).** Gate `shadow`, keine Migration, kein Modellaufruf, kein Lasttest.
 
-- **Drei getrennte Urteile, unverändert gültig:** Warteschlangen-Aufnahmefähigkeit 500 **erbracht** (Altbeleg, nicht wiederholt) · rechnerisch-architektonisch **vorbereitet, finale Dimensionierung offen** · operativer Mehrtagesbetrieb **NICHT BEWIESEN**.
-- Alle fünf Gate-Blocker aus §20 und sieben Betreiber-Befunde korrigiert (Matching rank-primär · Bericht rein lesend · Vorab-Boden auf atomaren Zähler · **2.416 = vorläufiger Planungswert, Spanne 1.492–2.416** · getrennte Verstehens-Reserve · **05:45/05:48 OFFEN** · PR-Quellenbindung). Gesamtläufe 294/294 und 295/295.
-- **Minimal-Cron `18,48 * * * *` vorbereitet, nicht aktiviert** (7 Betreiberschritte; Crons/SLOT_PLAN unverändert) · **Kohorte 495** validiert, inaktiv.
-- **500 aktive Mandate sind NICHT freigegeben.** Offen bleiben die Z3b-Messungen (p95 je Fachweg, Azure, Fachwegbericht) und je eigene Gate-, Deckel- und Kohortenfreigaben.
+- **Urteile:** Warteschlangen-Aufnahmefähigkeit 500 **erbracht** (Altbeleg, nicht wiederholt) · rechnerisch-architektonisch **architektonisch vorbereitet, finale Dimensionierung offen** (offene Z3b-Messungen: p95/Azure/Fachwegbericht) · operativer Mehrtagesbetrieb **NICHT BEWIESEN**. Gesamtläufe 294/294 und 295/295 (Beleg §14.1).
+- **Alle fünf Gate-Blocker aus §20 korrigiert** (Details Beleg §5; Drain-Trend nur GELESEN — ohne freigegebenen Schreiber unvollständig) + vier Review-Befunde.
+- **Minimal-Cron `18,48 * * * *` vorbereitet** (7 Betreiberschritte inkl. getrennter Reserve; Crons/SLOT_PLAN unverändert) · **Kohorte 495** validiert, inaktiv.
+- **Nach-Merge-Prüfung (01.09., rein lesend):** Migrationsliste unverändert (letzte `20260829175749`) · 13 Crons, kein `18,48` · 5 aktive/4 inaktive Mandate · 0 `test-kohorte`-Profile · 0 `gate-geparkt` · KI-Zähler 31 (natürlich; kein Modellaufruf/Lasttest der Sitzung). **500 aktive Mandate sind NICHT freigegeben.**
+- **Nächster sicherer Schritt:** natürliche Läufe auf `98cfedc1` rein lesend prüfen (Rang-Ordnung der Lage, Vorab-Boden-Quittungen, Drain-Zeile) → dann je eigene Freigabe: Gate-/Deckel-/Minimal-Cron-Entscheidung entlang Stufenplan und offenen Z3b-Messungen.
 
 ## 22 · Sprint 01.09. — Bereinigung der offenen Pull Requests (#292 gemergt + deployt)
 
-**Erfolgreich abgeschlossen — Betreiberfreigabe 01.09.:** #275–#277 und #282 wurden nach Einzelprüfung geschlossen, nicht gemergt; ihre Branches bleiben als Auditbeleg (aus #277 wurde in §23 der Messläufer wiederhergestellt). Die sicheren Teile gingen über #292 in Merge-Commit `9d6d18e5`; Pflichtlauf `33485020305` grün, Vercel `success`. Keine Migration, Daten-, Mandats-, Cron-, Env-, Secret-, Flag- oder Budgetänderung. Vollbeleg: [`betrieb/pr-bereinigung-2026-09-01.md`](betrieb/pr-bereinigung-2026-09-01.md).
-
-## 23 · Sprint 01.09. — Sicherheitsrahmen des 500er-Production-Funktionstests
-
-**Teilweise abgeschlossen — offline vollständig bewiesen, Draft-PR offen, nichts gemergt, keine Production-Wirkung.** Vollbeleg (Runbook, Ablaufplan, Entscheidungstabelle, Freigabeliste): [`betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md`](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). Branch `claude/security-sprint-functional-test-wap0q1`, Basis `b998e9bc`.
-
-- **Gebaut:** Azure-Messläufer wiederhergestellt (aus dem Auditbranch des geschlossenen PR #277) und um eine **strukturell unterbrochene Paketkette** ergänzt — die Stichproben-Freigabe trägt die Laufkennung einer bereits gelaufenen Vorprobe · **zentraler, fail-closed Kommunikationsriegel** (`lib/helmut/kommunikationsriegel.js`) vor **allen sechs** Außenkanälen, die bis dahin **keinen gemeinsamen Punkt** hatten · Kohorten-Betriebswerkzeuge (`lib/helmut/testkohorte-betrieb.js` + CLI) mit **Erlaubnislisten-Schutz** der realen Mandate · Kapazitäts-/Kostenriegel, **12 Abbruchregeln** und Startfensterprüfung (`lib/helmut/funktionstest-500.js`).
-- **Offline bewiesen:** 495/495 Kohortenprofile durch den echten Mail- und Push-Pfad bei voll konfigurierter Umgebung — **Netzzähler 0**; Messläufer über 25 unvollständige Konfigurationen — **Netzzähler 0**; exakte Mengen 20/75/400; Idempotenz; Rückbau; jede fehlende Grenze und jeder fehlende Messwert blockieren; falscher Production-Commit und 05:45/05:48-Fenster blockieren. Gezielte Suiten 64 · 20 · 39 · 74 · 92 PASS/0 FAIL; **Offline-Gesamtlauf 302/302 grün** (590 s; die zwei npm-Fehlstände sind auch auf `main` rot), Browser-Smoke 32/0.
-- **In Production NICHT bewiesen:** der fachliche Zyklus mit 5 realen + 495 aktiven synthetischen Profilen · echte Azure-Werte (Vorprobe 3 / Stichprobe 21 gebaut, **nicht ausgeführt**; Azure extern gesperrt) · finaler Deckel und Reserve · die 05:45/05:48-Laufzeitüberschneidung · der Riegel unter echter Last.
-- **Kein finaler Deckel ausgegeben:** 1.492–2.416 bleiben eine **Szenariospanne**. Solange eine der fünf offenen Messungen fehlt, meldet der Rahmen `bereit=false`.
-- **Unverändert:** 5 aktive / 4 inaktive Mandate · 0 `test-kohorte`-Zeilen · 13 Crons ohne `18,48` · Migrationsliste (letzte `20260829175749`) · Gate `shadow` · kein Modellaufruf, keine Provisionierung, keine Aktivierung, kein Merge, kein Deployment.
-- **Nächster Schritt:** die 14 einzeln aufgeführten Freigaben (Beleg §13) — beginnend mit der Azure-Anmeldung und der 3er-Vorprobe.
+**Erfolgreich abgeschlossen — Betreiberfreigabe 01.09.:** #275–#277 und #282 wurden nach Einzelprüfung geschlossen, nicht gemergt; ihre Branches bleiben als Auditbeleg. Die sicheren Teile gingen über #292 (`65701fd5`) in Merge-Commit `9d6d18e5`; der alte Architekturblock aus #277 blieb draußen. Pflichtlauf `33485020305` war einschließlich Browser, PostgreSQL und PostgREST §1–§11 grün; Vercel meldete `success`. Keine Migration, Production-Daten-, Mandats-, Cron-, Env-, Secret-, Flag- oder Budgetänderung. Vollbeleg: [`betrieb/pr-bereinigung-2026-09-01.md`](betrieb/pr-bereinigung-2026-09-01.md). Dieser reine Dokumentationsabschluss erzeugt gemäß `CLAUDE.md` §9 keinen Folge-PR.

@@ -9,7 +9,8 @@
       "claude/dedup-fenster-seitenweise": false,
       "claude/verstehen-drain-bilanz": false,
       "claude/helmut-500-mandate-readiness-6hxden": false,
-      "codex/pr-cleanup-consolidation-20260901": false
+      "codex/pr-cleanup-consolidation-20260901": false,
+      "claude/security-sprint-functional-test-wap0q1": false
     }
   },
   "functions": {

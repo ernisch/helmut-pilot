@@ -56,6 +56,7 @@ const { buildAlarmPayload, buildAlarmText } = require("./lib/helmut/alarm-payloa
 const rollingHealth = require("./lib/helmut/rolling-health");
 const motorHealth = require("./lib/helmut/motor-health");
 const monitoringWebhook = require("./lib/helmut/monitoring-webhook");
+const kommunikationsriegel = require("./lib/helmut/kommunikationsriegel");
 const { sourceMode } = require("./lib/helmut/quellenarchitektur/source-mode");
 const { sourceCoverageThresholds, effectiveActiveSourceCount } = require("./lib/helmut/source-coverage");
 const { runKoEnrichmentBackfill } = require("./lib/helmut/ko-enrichment");
@@ -5250,6 +5251,12 @@ async function sendMonitoringWebhook(report) {
 }
 
 async function sendCallMeBotMessage(text) {
+  // KOMMUNIKATIONSRIEGEL VOR DER SCHLUESSELPRUEFUNG: im scharfen Testfenster
+  // schweigt auch dieser Betreiberkanal, unabhaengig von gesetzten Schluesseln.
+  const riegelWhatsapp = kommunikationsriegel.pruefe({ kanal: "whatsapp" });
+  if (!riegelWhatsapp.erlaubt) {
+    return { sent: false, skipped: true, gesperrt: true, reason: riegelWhatsapp.grund, riegel: riegelWhatsapp };
+  }
   const phone = String(process.env.CALLMEBOT_PHONE || "").replace(/[^\d]/g, "");
   const apikey = String(process.env.CALLMEBOT_APIKEY || "").trim();
   if (!phone || !apikey) return { sent: false, skipped: true, reason: "CALLMEBOT_PHONE/CALLMEBOT_APIKEY nicht gesetzt." };
