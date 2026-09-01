@@ -5,9 +5,13 @@
 // ============================================================================
 // Vertragssuite des ausführbaren Rechenbelegs lib/helmut/kapazitaet-500.js:
 //  * die frühere „~455 Aufrufe/Tag"-Zahl wird als ERWARTUNGSWERT reproduziert
-//    (bestätigt) — der konservative Bedarf liegt belegbar darüber,
-//  * der Zieldeckel trägt mindestens den konservativen Bedarf inkl. 25 %
-//    Reserve UND die Fairness-Untergrenze 2n−1,
+//    (bestätigt) — der konservative Bedarf liegt belegbar darüber; die DREI
+//    verschiedenen 455er (Aufträge@5 · KI-Aufrufe@500 · Modell-Erwartungswert)
+//    sind im Modul mit Einheiten dokumentiert und werden nie vermengt (Befund 4),
+//  * der Zieldeckel ist ein VORLÄUFIGER SZENARIO-/PLANUNGSWERT mit Spanne und
+//    offenen Z3b-Messungen — kein „kleinster belegbar ausreichender" Wert; er
+//    trägt den konservativen Szenario-Bedarf inkl. 25 % Reserve UND die
+//    Fairness-Untergrenze 2n−1,
 //  * „zurückstellen" kostet einen vollen Modellaufruf (zählt im würdigen
 //    Anteil), nur echtes Parken spart,
 //  * die 48-Slot-Kapazität (minimal-cron) trägt den konservativen Fall; der
@@ -57,16 +61,22 @@ abschnitt("§2 Die frühere 455 ist der ERWARTUNGSWERT — bestätigt, aber nich
     kons.aufrufeProTag > e.aufrufeProTag && kons.profilVorgaenge > e.profilVorgaenge && kons.personVorgaenge > e.personVorgaenge);
   check("§2.3 unbekanntes Szenario ⇒ null (keine erfundene Zahl)",
     k.verstehensBedarf({ szenario: "banane" }) === null && k.tagesModell({ szenario: "" }) === null);
+  check("§2.4 EINHEITEN (Befund 4): die drei verschiedenen 455er sind dokumentiert und getrennt "
+    + "(Aufträge@5 aus skalierung-25-50-100 §2 · KI-Aufrufe@500 aus understanding-kapazitaet §13.3 · Modell-Erwartungswert)",
+    /WARTESCHLANGEN-AUFTRÄGE\/Tag bei\s*\n?\s*\/\/\s*5 Mandaten/.test(src)
+    && /KI-AUFRUFE\/Tag/.test(src)
+    && /ERWARTUNGSWERT des Verstehens-KI-Bedarfs bei 500/.test(src)
+    && /Zahlengleichheit von \(a\) mit \(b\) ist Zufall/.test(src));
 }
 
-abschnitt("§3 Zieldeckel: kleinster belegbar ausreichender Wert");
+abschnitt("§3 Zieldeckel: VORLÄUFIGER Szenario-/Planungswert (Spanne + offene Messungen)");
 {
   const z = k.zielDeckel({});
-  check("§3.1 Zieldeckel = konservativer Gesamtbedarf ÷ 0,75 (25 % freie Kapazität), aufgerundet",
+  check("§3.1 Planungswert = konservativer Gesamtbedarf ÷ 0,75 (25 % freie Kapazität), aufgerundet",
     z.zielDeckel === Math.ceil(z.konservativ.gesamtBedarfProTag / k.FREIE_KAPAZITAET_FAKTOR));
-  check("§3.2 Zieldeckel ≥ Fairness-Untergrenze 2n−1 = 999 (K1: tägliches Narrativ je Mandat)",
+  check("§3.2 Planungswert ≥ Fairness-Untergrenze 2n−1 = 999 (K1: tägliches Narrativ je Mandat)",
     z.zielDeckel >= 999 && z.konservativ.fairnessUntergrenze === 999);
-  check("§3.3 Zieldeckel trägt den konservativen Bedarf einschließlich Reserve",
+  check("§3.3 Planungswert trägt den konservativen Szenario-Bedarf einschließlich Reserve",
     z.zielDeckel * k.FREIE_KAPAZITAET_FAKTOR >= z.konservativ.gesamtBedarfProTag);
   check("§3.4 der Stresswert wird NICHT in den Deckel eingepreist (Warnschwellen statt Überdimensionierung)",
     z.zielDeckel < z.stress.erforderlicherDeckel);
@@ -78,6 +88,20 @@ abschnitt("§3 Zieldeckel: kleinster belegbar ausreichender Wert");
   const kleiner = k.tagesModell({ mandate: 100, szenario: "konservativ" });
   check("§3.7 Monotonie in der Mandatszahl: 100 Mandate brauchen weniger als 500",
     kleiner.gesamtBedarfProTag < z.konservativ.gesamtBedarfProTag);
+  check("§3.8 EINORDNUNG (Befund 4): der Wert trägt sich selbst als vorläufigen Szenario-Planungswert",
+    z.einordnung === "vorlaeufiger-szenario-planungswert"
+    && !/kleinsten belegbar ausreichenden Zieldeckel als\s*\n?\/\/ Betreiberempfehlung/.test(src));
+  check("§3.9 SPANNE statt grünem Punktwert: Erwartung < konservativ, beide ausgewiesen",
+    z.spanne && z.spanne.erwartung === z.erwartung.erforderlicherDeckel
+    && z.spanne.konservativ === z.zielDeckel && z.spanne.erwartung < z.spanne.konservativ);
+  check("§3.10 OFFENE Z3b-MESSUNGEN benannt: p95 Verstehen/Lage/Büro, Azure-Kontingente, Fachwegbericht",
+    Array.isArray(z.offeneMessungen) && z.offeneMessungen.length === 5
+    && ["p95-tagesbedarf-verstehen", "p95-tagesbedarf-lage", "p95-tagesbedarf-buero",
+      "azure-kontingente-und-rate-limits", "vollstaendiger-fachwegbericht"]
+      .every((x) => z.offeneMessungen.includes(x)));
+  check("§3.11 der hinweis-Text nennt die Vorläufigkeit und die Freigabepflicht in einem Satz",
+    /Vorläufiger Szenario-\/Planungswert/.test(z.hinweis) && /KEINE finale Dimensionierung/.test(z.hinweis)
+    && /freigabepflichtige Production-Änderung/.test(z.hinweis));
 }
 
 abschnitt("§4 Kopplung an die 48-Slot-Kapazität (minimal-cron)");
