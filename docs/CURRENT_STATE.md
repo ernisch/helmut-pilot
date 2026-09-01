@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-09-01 — Reifesprint + Korrektursprint: PR #290 gemergt und deployt (§21).** Vollständige
+**Stand: 2026-09-01 — Reife-/Korrektursprint und PR-Bereinigung abgeschlossen: PR #290 und #292 gemergt und deployt (§21–§22).** Vollständige
 Fassung vor dieser Verdichtung (01.09.): byte-identisch in [`archive/project_state/2026_09_01_CURRENT_STATE_full.md`](archive/project_state/2026_09_01_CURRENT_STATE_full.md). Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Ablageregeln: [`archive/README.md`](archive/README.md), `CLAUDE.md` §9.
 
 **Kernlage in sechs Sätzen:** Der neue Warteschlangenmotor (`HELMUT_SCALABLE_PIPELINE=on`) ist **seit dem 23.08.2026 in Production eingeschaltet** (Vollbeleg Runbook §30.7). Die **fünf bestehenden Mandate sind mit 376 echten Abschlüssen bewiesen**; **Morgenlauf 5/5 und Lagelauf effektiv 5/5** aller aktiven Mandate waren erfolgreich. Der **R4-/GitHub-Actions-Watchdog-Nachweis ist grün**. Im Aktivierungsfenster gab es **keine Doppelarbeit, keine verlorenen Aufträge, keine endgültigen Fehler, 0 Lease-Probleme und 0 Fencing-Konflikte**; alle elf §28.6-Kontrollen sind erfüllt ([`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §30.7). **Der Stand `0 unbekannt` gilt seit dem 30.08. nicht mehr: es stehen 3 Vorgänge auf `unbekannt` (§20).** Der Modus ist weiterhin **`HELMUT_JOB_DISPATCH_MODE=shadow`** (Cron-Antrieb; kein Ereignis-Antrieb, kein AWS). **Der Selbstweck ist seit 24.08. lokal Ende-zu-Ende belegt, aber in Production nie ausgeführt** (§14).
@@ -11,8 +11,8 @@ Fassung vor dieser Verdichtung (01.09.): byte-identisch in [`archive/project_sta
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **Letzter fachlich wirksamer Production-Code: `98cfedc1` aus #290** (§21; Deployment READY); davor `936b2676` (#286), `3a153b50` (#287), `a03480bb` (#285), `3244f073` (#284), `0f900e68` (#283).
-- **PR #273, #274, #279, #280, #281, #283–#290 sind gemergt.** Spätere reine Dokumentationsabschlüsse ändern diesen fachlichen Stand nicht; Nachweis gemäß `CLAUDE.md` §9 über die Git-Historie. Offen bleiben #275–#277 und **#282**. **`672886c`/`be5bd15` existieren nicht mehr** (01.09. geprüft); Inhalte im Reifesprint rekonstruiert (§21).
+- **Letzter fachlich wirksamer Production-Code: `9d6d18e5` aus #292** (§22; Vercel-Status `success`); davor `98cfedc1` (#290), `936b2676` (#286), `3a153b50` (#287), `a03480bb` (#285), `3244f073` (#284), `0f900e68` (#283).
+- **PR #273, #274, #279, #280, #281, #283–#290 und #292 sind gemergt.** #275–#277 und #282 wurden nach Inhaltskonsolidierung geschlossen, nicht gemergt; ihre Branches bleiben als Auditbelege erhalten. Es bestehen keine fachlichen offenen PRs. Spätere reine Dokumentationsabschlüsse ändern diesen Stand nicht; Nachweis gemäß `CLAUDE.md` §9 über die Git-Historie. **`672886c`/`be5bd15` existieren nicht mehr** (01.09. geprüft); Inhalte im Reifesprint rekonstruiert (§21).
 - Davor gemergt: #271, #270, #265, #262, #261, #260/#259/#256/#257, #225, #216; die PR-Bereinigung vom 23.08. (inkl. begründeter Schließungen) ist in Archivfassung und Runbook dokumentiert.
 - Merge nach `main` löst automatisch ein Production-Deployment aus.
 
@@ -108,7 +108,7 @@ K2/K3 und OP-25 sind abgeschlossen (OP-25 laut Betreiberfeststellung vom 24.08.)
 
 - **OP-25**: drittes Fenster BESTANDEN (2026-08-07/08); Geltung nur aktuelle Architektur mit 5 Mandaten — nach Stufenaktivierung vollständige Wiederholung. OP-14 offen.
 - **OP-31**: BESTANDEN (Morgenlauf 2026-08-11), Kopfstatus/UI nicht live abgerufen.
-- **F-E2E — Ursache belegt und lokal geschlossen (01.09., ungemergt, §21; nachgeschärft Befund 1):** `created_at` friert beim Erstauftritt ein (588 Rang-Zeitstempel-Inversionen in Production) — die **aktuelle** `listMatchingResults`-Projektion sortiert jetzt **rank-primär** (`rank.asc.nullslast,id.asc`), Historienzugang zeitlich; Gerüst friert Postgres-treu ein. Regression rot-vor/grün-nach `matching-reihenfolge-test.js` 15/0; Landes-E2E je 10/10 (zuvor 20/20 unter CPU-Fremdlast). PR #224 (Draft) überholt. Production-Nachweis steht bis zum Merge aus.
+- **F-E2E — Ursache belegt, korrigiert und seit #290 deployt (01.09., §21; nachgeschärft Befund 1):** `created_at` friert beim Erstauftritt ein (588 Rang-Zeitstempel-Inversionen in Production) — die **aktuelle** `listMatchingResults`-Projektion sortiert jetzt **rank-primär** (`rank.asc.nullslast,id.asc`), Historienzugang zeitlich; Gerüst friert Postgres-treu ein. Regression rot-vor/grün-nach `matching-reihenfolge-test.js` 15/0; Landes-E2E je 10/10 (zuvor 20/20 unter CPU-Fremdlast). PR #224 (Draft) ist überholt. Offen bleibt der natürliche Production-Nachweis der neuen Reihenfolge.
 - **29B** — wartet auf natürlich auftretende Fehlerzustände (künstliche Fehler verboten).
 - **OP-09/OP-10** (Lock-Deny/Fehlerpfad) — brauchen ein echtes Störereignis.
 - **Berlin:** ob `HELMUT_LANDESMODULE` in Production wirkt, ist unbewiesen.
@@ -184,7 +184,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 18 · Z22: Befund, Pflichtbeleg und Production-Abschluss
 
-**Erfolgreich abgeschlossen (29.08.);** alle Zahlen/Buchungen [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md) §13–§14: `helmut_jobs_offen` zählte mandatsblind, Z22 ergänzt `p_mandat`. Production-Anwendung 29.08. mit Betreiberfreigabe (Buchungen `20260829175642`/`20260829175749`), Nachprüfung 5/5 grün — **Z22 nicht erneut anwenden.** Bewiesen lokal, im CI, isoliert und in Production; **offen:** §11-PostgREST-Rückfallnachweis, still überspringende DB-Suiten, Z3b/Azure.
+**Erfolgreich abgeschlossen (29.08.; CI-Nachweis vervollständigt 01.09.);** alle Zahlen/Buchungen [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md) §13–§14: `helmut_jobs_offen` zählte mandatsblind, Z22 ergänzt `p_mandat`. Production-Anwendung 29.08. mit Betreiberfreigabe (Buchungen `20260829175642`/`20260829175749`), Nachprüfung 5/5 grün — **Z22 nicht erneut anwenden.** Bewiesen lokal, isoliert und in Production; der zuvor offene §11-PostgREST-Rückfallnachweis läuft seit #292 fail-closed im Pflicht-CI und war in Lauf `33485020305` grün. **Offen:** Z3b/Azure.
 
 ## 19 · Sprint 31.08. — Understanding-Laufmeldung: roter Befund vom 30.08. behoben
 
@@ -192,16 +192,10 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 ## 20 · Sprint 31.08. — Kapazitätssprint Understanding: Diagnose und Rückstandsschleife
 
-**Blockiert — Rückstandsschleife, Gate-Arm, Drain-Bilanz und Dedup-Fenster sind deployt; Gate-Flip und PR-B sind gestoppt.** Alle Messreihen + Arm: [`betrieb/understanding-kapazitaet-2026-08-31.md`](betrieb/understanding-kapazitaet-2026-08-31.md). Production wurde nach der Sicherheitssperre ausschließlich lesend vermessen (31.08.):
+**Blockiert — Gate-Flip und PR-B bleiben gestoppt.** Vollständige Messreihen: [`betrieb/understanding-kapazitaet-2026-08-31.md`](betrieb/understanding-kapazitaet-2026-08-31.md). Belegt sind Verhungern und wachsender Rückstand (31.08.: 9.080 pending; Ankunft Ø 307/Tag, Abfluss Ø 68/Tag); der 11:30-Lauf brach die Altersverhungern, der 17:30-Lauf wurde korrekt vom Budgetboden gestoppt.
 
-- **Frisch belegt:** Rückstand **9 080** pending (8 895 > 24 h, ältester 02.07.), Ankunft Ø **307**/Tag gegen Abfluss Ø **68**/Tag; Abfluss fast nur < 24 h alt — **Verhungern bewiesen**. Nur Ø **91**/Tag der Ankunft sind gate-würdig; **55 % der Aufrufe gingen an nicht gate-würdige Vorgänge**.
-- **Primärer Engpass: Slot-Laufzeit, nicht der Deckel** (Deckel 100 band nur an 4 von 47 Tagen; ~72 physisch mögliche Aufrufe/Tag). Sekundär: jüngst-zuerst-Auswahl (Verhungern), danach der Deckel selbst — eine Deckel-Erhöhung allein wäre wirkungslos (Beleg §8).
-- **Stufe 1 (PR #284, gemergt 31.08. 08:58 UTC = `3244f073`, deployt) — beide Naturläufe rein lesend GRÜN (Beleg §13):** 11:30: success, 222,9 s, 17 Aufrufe/18 Ergebnisse, **alle > 30 Tage alt** — Verhungern durchbrochen; 42× no-cluster = exakt die OP-06-Menge. 17:30: success, **0 Aufrufe — Budget-Boden griff live** (Rest 17 ≤ 30 ⇒ 39× skipped-budget, sauber freigegeben). 0 hängende Leases, 0 neue unbekannt, Deckel/Reserve nie verletzt. Befund: bei Deckel 100 ist der Abendslot regelmäßig budgetlos — der Deckel, nicht die Slotzahl, begrenzt jetzt.
-- **Phase 3 deployt:** #285 (`a03480bb`) Gate-Arm, #287 (`3a153b50`) Drain-Bilanz und #286 (`936b2676`) Dedup-Fenster. CI war je PR grün; Production ist `READY`. Gate weiter `shadow`, 0 `gate-geparkt`, keine Migration oder Mandatsänderung.
-- **Sicherheitssperre:** Der autonome Gate-Flip um 21:45 UTC wurde gelöscht. PR-B, Cron-Ausbau, Deckeländerungen und Testkohorten bleiben ungemergt und freigabepflichtig. Der natürliche 21:30-UTC-Lauf darf nur lesend ausgewertet werden.
-- **Vier Blocker vor jedem Gate-Flip:** Der Parkpfad kann einen Verknüpfungsfehler verschlucken und trotzdem `gate-geparkt` setzen; der Zustandswechsel meldet bei HTTP 204 auch für 0 geänderte Zeilen `ok:true`; die Drain-Bilanz vergleicht gate-würdige Ankunft mit allen Abschlüssen und belegt keinen Rückstandstrend; ihre Abfrage trifft erneut die PostgREST-1.000er-Kappe. Die Dedup-Paginierung braucht zusätzlich eine Zweitsortierung nach `id`.
-- **Messbefund rot:** Gate-würdige Ankunft übersteigt den echten Abfluss und der Rückstand wächst. Bis zur Korrektur (lokal erfolgt, §21) und deren Merge keine Freigabegrundlage.
-- **Nachträge 01.09.:** Der 21:30-UTC-Naturlauf vom 31.08. lief auf `72d9ec5` und ist rein lesend GRÜN ausgewertet (success, 216,5 s, ehrliche Zähler 6/0/0/44, 0 neue `unbekannt`, 0 Leases — aber Deckel 100/100 erreicht, 23× skipped-budget; Rückstand wächst weiter: 9 211). Die **vier Gate-Blocker sind (als fünf) lokal korrigiert** und die `672886c`/`be5bd15`-Frage ist geklärt (§21). **Offen:** Merge-Freigabe der Korrekturen, OP-06 (1 769 Altfälle), Siebentagenachweis. Keine Aktivierung von zehn Mandaten.
+- #284–#287 sind deployt; die fünf Gate-Blocker wurden in #290 korrigiert und deployt (§21). Gate bleibt `shadow`; 0 `gate-geparkt`, keine Migration oder Mandatsänderung.
+- **Offen:** natürlicher Nachweis des korrigierten Stands, OP-06 (1.769 Altfälle), Siebentagenachweis sowie jede getrennt freizugebende Gate-, Cron-, Deckel- oder Kohortenentscheidung. Keine Aktivierung von zehn Mandaten.
 
 ## 21 · Sprint 31.08./01.09. — 500-Mandate-Reife + Korrektursprint (PR #290 gemergt + deployt)
 
@@ -212,3 +206,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 - **Minimal-Cron `18,48 * * * *` vorbereitet** (7 Betreiberschritte inkl. getrennter Reserve; Crons/SLOT_PLAN unverändert) · **Kohorte 495** validiert, inaktiv.
 - **Nach-Merge-Prüfung (01.09., rein lesend):** Migrationsliste unverändert (letzte `20260829175749`) · 13 Crons, kein `18,48` · 5 aktive/4 inaktive Mandate · 0 `test-kohorte`-Profile · 0 `gate-geparkt` · KI-Zähler 31 (natürlich; kein Modellaufruf/Lasttest der Sitzung). **500 aktive Mandate sind NICHT freigegeben.**
 - **Nächster sicherer Schritt:** natürliche Läufe auf `98cfedc1` rein lesend prüfen (Rang-Ordnung der Lage, Vorab-Boden-Quittungen, Drain-Zeile) → dann je eigene Freigabe: Gate-/Deckel-/Minimal-Cron-Entscheidung entlang Stufenplan und offenen Z3b-Messungen.
+
+## 22 · Sprint 01.09. — Bereinigung der offenen Pull Requests (#292 gemergt + deployt)
+
+**Erfolgreich abgeschlossen — Betreiberfreigabe 01.09.:** #275–#277 und #282 wurden nach Einzelprüfung geschlossen, nicht gemergt; ihre Branches bleiben als Auditbeleg. Die sicheren Teile gingen über #292 (`65701fd5`) in Merge-Commit `9d6d18e5`; der alte Architekturblock aus #277 blieb draußen. Pflichtlauf `33485020305` war einschließlich Browser, PostgreSQL und PostgREST §1–§11 grün; Vercel meldete `success`. Keine Migration, Production-Daten-, Mandats-, Cron-, Env-, Secret-, Flag- oder Budgetänderung. Vollbeleg: [`betrieb/pr-bereinigung-2026-09-01.md`](betrieb/pr-bereinigung-2026-09-01.md). Dieser reine Dokumentationsabschluss erzeugt gemäß `CLAUDE.md` §9 keinen Folge-PR.

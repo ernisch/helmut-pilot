@@ -2,11 +2,12 @@
 
 ## Anlass und Grenze
 
-Geprüft wurden die offenen PRs #275, #276, #277 und #282 gegen `main`
-`51d7bfdd`. Die Prüfung und Vorbereitung erfolgten getrennt vom natürlichen
-Production-Lauf. Kein Merge, Deployment, Modellaufruf, Lasttest, Cron-, Env-,
-Secret-, Budget-, Migrations- oder Production-Datenzugriff gehörte zu dieser
-Bereinigung.
+Zum Prüfzeitpunkt waren die PRs #275, #276, #277 und #282 gegen `main`
+`51d7bfdd` offen. Prüfung und Vorbereitung erfolgten getrennt vom natürlichen
+Production-Lauf. Erst nach ausdrücklicher Betreiberfreigabe wurden die alten PRs
+geschlossen und der geprüfte Ersatzstand gemergt. Modellaufruf, Lasttest, Cron-,
+Env-, Secret-, Budget-, Migrations- oder Production-Datenzugriff gehörten nicht
+zu dieser Bereinigung.
 
 ## Befund und Entscheidung
 
@@ -33,8 +34,20 @@ Branch `codex/pr-cleanup-consolidation-20260901`, direkt auf aktuellem `main`:
 5. Branchgenaue Vercel-Deploymentsperre; die 13 Cron-Einträge bleiben
    unverändert.
 
-Der Ersatzstand wird nicht automatisch gemergt. Ein späterer Merge bleibt eine
-ausdrückliche Betreiberentscheidung und löst ein Production-Deployment aus.
+Mit Betreiberfreigabe wurde der Ersatzstand als PR #292 mit unverändertem Kopf
+`65701fd59818d40edc01df86d05ee7ceec10979e` gemergt. Der Merge-Commit ist
+`9d6d18e54cf507e64143d031ba865cbfc9c34cd3`. Die alten PRs #275–#277 und #282
+wurden geschlossen, nicht gemergt; ihre Branches bleiben erhalten.
+
+## Abschlussnachweis
+
+* Pflichtlauf `33485020305`: beide Jobs grün; darin Syntax, Offline-Suiten,
+  Browser-/Mobile-Smoke sowie echter PostgreSQL-/PostgREST-Nachweis §1–§11.
+* Git-Baum des geprüften Ersatzstands: `5e1f4351cb488638ca8c5d45f4a14ddad850e20c`.
+* GitHub-Vercel-Status des exakten Merge-Commits: `success`.
+* Nach dem fachlichen Merge: keine offenen Pull Requests.
+* Keine Migration, Production-Daten-, Mandats-, Cron-, Env-, Secret-, Flag- oder
+  Budgetänderung; keine Aktivierung und kein kostenverursachender Lauf.
 
 ## Beweisgrenze
 
@@ -44,4 +57,3 @@ Die Bereinigung ändert keines der drei 500er-Urteile:
 * Rechnerisch-architektonische Tragfähigkeit: vorbereitet, finale
   Dimensionierung offen.
 * Operativer Mehrtagesbetrieb mit 500 realen Mandaten: nicht bewiesen.
-
