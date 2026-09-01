@@ -74,12 +74,20 @@ Preisdatum müssen ausdrücklich übergeben und validiert werden.
 
 **Neu in diesem Sprint — keine automatische Fortsetzung:** Die Freigabekennung
 der Stichprobe lautet
-`z3b-azure:stichprobe:21:<lauf>:nach-vorprobe:<vorprobe-lauf>` und trägt damit
-die Laufkennung einer **bereits gelaufenen** Vorprobe. Diese Kennung kann es
-vor der Vorprobe nicht geben — die Kette ist strukturell unterbrochen, nicht
-nur organisatorisch. Zusätzlich: eine prozessweite Paketsperre ohne Rücksetzer,
-ein Verbot des Selbstbezugs (`vorprobeLauf === lauf`), und der Bericht führt den
-Vorprobebeleg mit (Schema `v3`).
+`z3b-azure:stichprobe:21:<lauf>:nach-vorprobe:<vorprobe-lauf>:<vorprobe-fingerabdruck>`.
+Der Fingerabdruck ist der SHA256 über die Einzelmessungen des Vorprobeberichts
+(`einzelmessungenSha256`, Schema `v4`) — ihn besitzt nur, wer einen echten
+Vorprobebericht in der Hand hält. Dazu kommen eine prozessweite Paketsperre
+ohne Rücksetzer und ein Verbot des Selbstbezugs (`vorprobeLauf === lauf`).
+
+> **Ehrliche Grenze dieser Kette (adversarialer Review 01.09., bestätigter
+> Befund):** Ein früherer Stand dieses Belegs nannte die Kette „strukturell
+> unterbrochen". Das war zu grün und ist zurückgenommen. Das Werkzeug führt
+> bewusst **kein Gedächtnis über Prozessgrenzen** (es hat keine Datenbank); es
+> kann den **Besitz** eines Vorprobeberichts erzwingen, nicht dessen Echtheit
+> gegenüber Azure. Ohne den Fingerabdruck genügte eine frei erfundene
+> Laufkennung — mit ihm nicht mehr. Die verbleibende Lücke schließt allein die
+> getrennte Kostenfreigabe des zweiten Pakets.
 
 **In diesem Sprint wurde kein Modellaufruf ausgeführt.** Der Nachweis dafür ist
 kein Versprechen, sondern gemessen: `scripts/z3b-azure-freigaberiegel-test.js`
@@ -162,6 +170,11 @@ Umgebungsvariablen:**
 - Das tragende Merkmal ist die **Kennungsfamilie** (`test-kohorte-`,
   `test-mdb-`, `synth-mandat-`, `stapel-`). Ein synthetisches Profil bleibt
   gesperrt, **auch wenn man ihm eine echte Adresse einträgt** (testgesichert).
+  **Damit das auf dem echten Mailweg auch gilt, reichen seit diesem Sprint alle
+  vier `sendAccessMail`-Aufrufer in `server.js` die Mandatskennung durch**
+  (`kennung: <konto>.politicianId`) — zuvor kam am Mailkanal keine Kennung an,
+  und dort trug allein das Adresssignal (adversarialer Review 01.09.,
+  bestätigter Befund; Vertragstest §H).
 - Die reservierte Maildomain und ein reserviertes Ziel sind **zweite und dritte,
   unabhängige** Signale. Ein Signal genügt zum Sperren.
 - Die Sperre wirkt bei **völlig leerer** und bei **voll konfigurierter**
@@ -184,8 +197,13 @@ Umgebung, gegen einen zählenden `fetch`-Ersatz. Ergebnis: 495/495 gesperrt,
 
 ## 7 · Zeitüberschneidung — der Test kollidiert nicht mit 05:45/05:48
 
-Der Minimal-Cron `18,48 * * * *` **bleibt aus**; `vercel.json` ist unverändert
-(13 Einträge, testgesichert). Dokumentiert und getestet ist:
+Der Minimal-Cron `18,48 * * * *` **bleibt aus**. In `vercel.json` sind die
+**13 Cron-Einträge byte-identisch** (testgesichert); die Datei selbst wurde in
+diesem Sprint an **einer** Stelle geändert — um die dokumentierte
+**Deploy-Selbstsperre** für den Sprintbranch
+(`git.deploymentEnabled["claude/security-sprint-functional-test-wap0q1"] = false`,
+belegtes Verfahren des 30.08.). Wirkung per Vercel-API belegt: seit dem Push
+**0** neue Deployments. Dokumentiert und getestet ist:
 
 - Ein Startfenster, das **05:45** und **05:48** berührt, wird **gesperrt**.
   Grund: Das 05:45-Lage-Briefing darf bis zu **300 s** laufen (`maxDuration`),
@@ -396,11 +414,11 @@ Alle Läufe über `scripts/lokal.js` (CLAUDE.md §6).
 
 | Suite | Ergebnis |
 |---|---|
-| `z3b-azure-laeufer-test.js` (wiederhergestellt) | **64 PASS / 0 FAIL** |
-| `z3b-azure-freigaberiegel-test.js` (neu) | **20 PASS / 0 FAIL** — Netzzähler 0 |
-| `kommunikationsriegel-test.js` (neu) | **39 PASS / 0 FAIL** — 495/495 gesperrt, Netzzähler 0 |
-| `testkohorte-betrieb-test.js` (neu) | **74 PASS / 0 FAIL** |
-| `funktionstest-500-test.js` (neu) | **92 PASS / 0 FAIL** |
+| `z3b-azure-laeufer-test.js` (wiederhergestellt + geschärft) | **66 PASS / 0 FAIL** |
+| `z3b-azure-freigaberiegel-test.js` (neu) | **24 PASS / 0 FAIL** — Netzzähler 0 |
+| `kommunikationsriegel-test.js` (neu) | **44 PASS / 0 FAIL** — 495/495 gesperrt, Netzzähler 0 |
+| `testkohorte-betrieb-test.js` (neu) | **83 PASS / 0 FAIL** |
+| `funktionstest-500-test.js` (neu) | **101 PASS / 0 FAIL** |
 
 **Kanonischer Offline-Gesamtlauf** (`scripts/lokal.js` → `run-offline-tests.js`) auf
 dem Code-Endstand: **302/302 Suiten grün in 590 s** — vollständig grün. Die zwei
@@ -429,3 +447,30 @@ das geprüfte Preisdatum als eigenen Bezugstag durch — damit prüfte sich das 
 gegen sich selbst, und eine veraltete Preisangabe kam durch (Netzzähler 1). Der
 Läufer selbst war korrekt; der Bezugstag ist jetzt fest und vom geprüften Feld
 unabhängig.
+
+## 15 · Adversariales Diff-Review (37 Agenten) — 13 bestätigte Befunde, alle behoben
+
+Über den gesamten Diff lief ein adversariales Review in sechs Dimensionen; jeder
+gemeldete Befund wurde von einem zweiten, ausdrücklich auf **Widerlegung**
+angesetzten Prüfer gegengeprüft. Ergebnis: **31 Befunde gemeldet, 13 bestätigt,
+18 widerlegt.** Alle 13 sind behoben und mit einer Regressionsprüfung belegt.
+
+| # | Schwere | Ort | Befund | Korrektur |
+|---|---|---|---|---|
+| 1 | hoch | `mail-transport.js` | Kein Produktionsaufrufer übergab die Mandatskennung — am Mailweg trug allein `.invalid` | alle vier `sendAccessMail`-Aufrufer reichen `politicianId` durch; `sendAccessMail` setzt den Kanal `einladung` selbst (§6, Test §H) |
+| 2 | mittel | `testkohorte-betrieb.js` | Isolationsprüfung las die **generierten** Adressen statt der hinterlegten | der Bestand führt die gelesene Adresse je Zeile (Pflichtfeld); die Prüfung nutzt sie |
+| 3 | hoch | `testkohorte-betrieb.js` | Löschmarken-Invariante verglich alle gegen nur reale Zeilen — eine Löschmarke auf einer Kohortenzeile hätte eine an einem **realen** Mandat verdeckt | Grundlinie führt `kohortenProfileGeloescht`; verglichen wird real gegen real |
+| 4 | mittel | `testkohorte-betrieb.js` | `Number(null)` machte einen nicht gelesenen Wert zur gemessenen 0 | strikte Typprüfung ohne Koerzierung (vgl. `CLAUDE.md` §4.4) |
+| 5 | mittel | `testkohorte-betrieb.js` | Isolation galt als belegt, obwohl **null** Kohortenzeilen gelesen wurden | die Prüfung verlangt die **vollständige** Kohorte (495) |
+| 6 | hoch | `funktionstest-500.js` | Minimal-Cron-Slots wurden nur zwischen 00:00 und 01:59 erkannt | echte Intervallüberlappung über alle Stunden |
+| 7 | hoch | `funktionstest-500.js` | Die 05:45/05:48-Sperre griff nicht, wenn das Fenster erst 05:46 begann | das Briefing belegt seine **Laufzeit** (05:45–05:50), nicht nur die Startminute |
+| 8 | hoch | `funktionstest-500.js` | `Number(false)`, `Number("")`, `Number([])` = 0 meldeten feste Nullgrenzen als eingehalten | numerische Regeln verlangen eine echte, endliche Zahl |
+| 9 | hoch | `skalierung-z3b-azure.js` | Die Paketkette war **deklarativ**, nicht strukturell: die Vorprobe-Laufkennung war frei erfindbar | Bindung an den Einzelmessungs-Fingerabdruck der Vorprobe **und** ehrliche Einordnung im Text (§3.1) |
+| 10 | mittel | `skalierung-z3b-azure.js` | Der Antwortrumpf wurde ohne Zeit- und Größengrenze gepuffert (Hänger/OOM möglich) | der Zeitgeber läuft bis nach dem Lesen; angekündigte Überlänge wird vorher abgelehnt |
+| 11 | mittel | `skalierung-z3b-azure.js` | `fetch` folgte Umleitungen — der Azure-Schlüssel wäre an einen ungeprüften Host gegangen | `redirect: "manual"`; jede 3xx-Antwort ist ein Abbruchgrund |
+| 12 | hoch | Beleg §6 | Doku behauptete die Kennungs-Garantie für den echten Mailweg, wo sie nicht galt | mit Befund 1 behoben; die Stelle nennt die Änderung ausdrücklich |
+| 13 | mittel | Beleg §7 | „`vercel.json` ist unverändert" — die Datei wurde geändert (Deploy-Selbstsperre) | präzisiert: die **Cron-Einträge** sind byte-identisch, die Selbstsperre ist benannt |
+
+Die 18 widerlegten Befunde sind nicht eingearbeitet; sie betrafen unter anderem
+die Perzentil-Konvention bei n=21, die `messungen`-Deklarationskarte und den
+Schattentransport im Testfenster — jeweils mit ausgeführter Gegenprobe.

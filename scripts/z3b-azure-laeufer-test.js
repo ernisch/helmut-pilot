@@ -37,7 +37,8 @@ function umgebung({
   modus = "vorprobe",
   lauf = "azureprobe01",
   kostenlimit = "0.25",
-  vorprobeLauf = modus === "stichprobe" ? "azurevorprobe9" : ""
+  vorprobeLauf = modus === "stichprobe" ? "azurevorprobe9" : "",
+  vorprobeBeleg = modus === "stichprobe" ? "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" : ""
 } = {}) {
   const env = {
     HELMUT_SOURCE_MODE: "off",
@@ -56,11 +57,13 @@ function umgebung({
     HELMUT_Z3B_AZURE_KOSTENLIMIT_USD: kostenlimit
   };
   if (vorprobeLauf) env.HELMUT_Z3B_AZURE_VORPROBE_LAUF = vorprobeLauf;
+  if (vorprobeBeleg) env.HELMUT_Z3B_AZURE_VORPROBE_BELEG = vorprobeBeleg;
   env.HELMUT_Z3B_AZURE_FREIGABE = Z.freigabeKennung({
     modus,
     laufKennung: lauf,
     aufrufe: P.MODI[modus] ? P.MODI[modus].aufrufe : 0,
-    vorprobeLauf
+    vorprobeLauf,
+    vorprobeBeleg
   });
   return env;
 }
@@ -419,12 +422,32 @@ async function main() {
     rundungsAngriff.einzelmessungen,
     rundungsAngriff.preis
   );
+  // Der Angriff zielt auf die RUNDUNG, nicht auf den Fingerabdruck: er wird
+  // deshalb passend nachgezogen, damit die Rundungswache ueberhaupt erreicht
+  // wird (der Fingerabdruck-Riegel greift sonst zuerst).
+  rundungsAngriff.einzelmessungenSha256 = require("crypto").createHash("sha256")
+    .update(B.kanonisch(rundungsAngriff.einzelmessungen)).digest("hex");
   rundungsAngriff.kostenlimitUsd = 0.00000001;
   rundungsAngriff.konservativeKostenobergrenzeVorherUsd = 0.00000001;
   check("D12 Kosten oberhalb des Limits koennen nicht auf das Limit abgerundet werden",
     wirft(() => B.pruefeAzureBericht(rundungsAngriff, {
       jetzt: stichEnde, heuteUtc: stichBericht.beendetUtc.slice(0, 10)
     }), /ungerundete.*Kosten.*ueber/));
+
+  const fingerabdruckAngriff = JSON.parse(JSON.stringify(stichBericht));
+  fingerabdruckAngriff.einzelmessungen[0].dauerMs += 1;
+  fingerabdruckAngriff.auswertung = B.auswertungAus(
+    fingerabdruckAngriff.einzelmessungen, fingerabdruckAngriff.preis);
+  check("D13 Ein nachtraeglich veraenderter Einzelwert bricht den Fingerabdruck",
+    wirft(() => B.pruefeAzureBericht(fingerabdruckAngriff, {
+      jetzt: stichEnde, heuteUtc: stichBericht.beendetUtc.slice(0, 10)
+    }), /Fingerabdruck passt nicht/));
+  const ohneFingerabdruck = JSON.parse(JSON.stringify(stichBericht));
+  delete ohneFingerabdruck.einzelmessungenSha256;
+  check("D14 Ein Bericht ohne Fingerabdruck wird abgelehnt",
+    wirft(() => B.pruefeAzureBericht(ohneFingerabdruck, {
+      jetzt: stichEnde, heuteUtc: stichBericht.beendetUtc.slice(0, 10)
+    }), /fehlt|Fingerabdruck/));
 
   console.log(`\nPASS ${pass}  FAIL ${fail}`);
   process.exit(fail ? 1 : 0);

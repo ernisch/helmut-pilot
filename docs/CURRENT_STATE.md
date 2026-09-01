@@ -149,10 +149,10 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 | Thema | Kanonische Quelle |
 |---|---|
 | Offene Punkte OP-01…OP-30 (verbindlich) | [`datenmotor-restliste.md`](datenmotor-restliste.md) |
-| OP-30: Aktivierungs-Runbook, Versuch 5, §30.7-Abschluss | [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) |
-| Skalierung 25/50/100: Abflussplätze, Modelllinien, Deckelsemantik, Indexnachweis | [`betrieb/skalierung-25-50-100.md`](betrieb/skalierung-25-50-100.md) |
-| Skalierungsrechnung (KI-Bedarf/Kosten je Mandatszahl) | [`betrieb/skalierung-200-mandate.md`](betrieb/skalierung-200-mandate.md) · Modellvergleich in `skalierung-25-50-100.md` §2c |
-| OP-30: Kapazität Morgenlage, Stufenplan 5→200 | [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) |
+| OP-30: Aktivierungs-Runbook, §30.7-Abschluss | [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) |
+| Skalierung 25/50/100: Abfluss, Modelllinien, Deckelsemantik | [`betrieb/skalierung-25-50-100.md`](betrieb/skalierung-25-50-100.md) |
+| Skalierungsrechnung (KI-Bedarf/Kosten je Mandatszahl) | [`betrieb/skalierung-200-mandate.md`](betrieb/skalierung-200-mandate.md) |
+| OP-30: Kapazität Morgenlage, Stufenplan | [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) |
 | Profil-Importvertrag (20-Profile-Paket) | [`betrieb/op30-profilvertrag-200-mandate.md`](betrieb/op30-profilvertrag-200-mandate.md) |
 | Entscheidungsvorlage Skalierung 10/25 | [`betrieb/entscheidungsvorlage-skalierung-2026-08-24.md`](betrieb/entscheidungsvorlage-skalierung-2026-08-24.md) |
 | OP-25: Ursachen, Korrekturen, Nachweisvertrag | [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7 |
@@ -160,11 +160,11 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 | Berlin-Aktivierung/-Rollback | [`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) |
 | Seed-Einspielung (blockiert) | [`betrieb/quellen-seed-einspielung.md`](betrieb/quellen-seed-einspielung.md) |
 | Backup/Restore | [`betrieb/backup-restore-runbook.md`](betrieb/backup-restore-runbook.md) |
-| Env-/Secret-Inventar, Cloud-Zugangsgrenzen | [`betrieb/env-inventar.md`](betrieb/env-inventar.md) |
+| Env-/Secret-Inventar | [`betrieb/env-inventar.md`](betrieb/env-inventar.md) |
 | OP-31: Frischevertrag | [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) |
 | OP-30 CAS: Verstehensvertrag | [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md) |
-| Paket-Inventur (B-3/B-4 Personensuchen) | [`quellenarchitektur/30-paket-inventur-production.md`](quellenarchitektur/30-paket-inventur-production.md) |
-| Watchdog-Korrektur 26.08. (Slotlogik, Briefingstufen, Skalierung) | [`betrieb/watchdog-korrektur-2026-08-26.md`](betrieb/watchdog-korrektur-2026-08-26.md) |
+| Paket-Inventur Production | [`quellenarchitektur/30-paket-inventur-production.md`](quellenarchitektur/30-paket-inventur-production.md) |
+| Watchdog-Korrektur 26.08. | [`betrieb/watchdog-korrektur-2026-08-26.md`](betrieb/watchdog-korrektur-2026-08-26.md) |
 | 500er-Funktionstest: Sicherheitsrahmen, Runbook, Ablaufplan | [`betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md`](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md) |
 | Production-Beweise | [`betrieb/production_beweisprotokoll.md`](betrieb/production_beweisprotokoll.md) |
 | Vollstände vor den Verdichtungen (24.08./17.08./05.08.) | [`archive/project_state/`](archive/project_state/) (Index: [`archive/README.md`](archive/README.md)) |
@@ -202,7 +202,7 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 **Erfolgreich abgeschlossen — Betreiberfreigabe 01.09.:** PR #290 per Merge-Commit `98cfedc1` gemergt (Pflicht-CI grün auf `9f924dd`), Production-Deployment `dpl_HGJ17UJVPxYizG5Pkn9ekMkeSDsk` READY. Vollbeleg (inkl. Nach-Merge-Prüfung §14.2): [`betrieb/500-mandate-theoretische-bereitschaft-2026-09-01.md`](betrieb/500-mandate-theoretische-bereitschaft-2026-09-01.md).
 
 - **Drei getrennte Urteile, unverändert gültig:** Warteschlangen-Aufnahmefähigkeit 500 **erbracht** (Altbeleg, nicht wiederholt) · rechnerisch-architektonisch **vorbereitet, finale Dimensionierung offen** · operativer Mehrtagesbetrieb **NICHT BEWIESEN**.
-- Alle fünf Gate-Blocker aus §20 und sieben Betreiber-Befunde korrigiert (Matching rank-primär · Bericht rein lesend · Vorab-Boden auf atomaren Zähler · **2.416 = vorläufiger Planungswert, Spanne 1.492–2.416** · getrennte Verstehens-Reserve · **05:45/05:48 OFFEN** · PR-Quellenbindung). Gesamtläufe 294/294 und 295/295.
+- Alle fünf Gate-Blocker aus §20 und sieben Betreiber-Befunde korrigiert (u. a. Matching rank-primär · Vorab-Boden auf atomaren Zähler · **2.416 = vorläufiger Planungswert, Spanne 1.492–2.416** · getrennte Verstehens-Reserve · **05:45/05:48 OFFEN**). Gesamtläufe 294/294 und 295/295.
 - **Minimal-Cron `18,48 * * * *` vorbereitet, nicht aktiviert** (7 Betreiberschritte; Crons/SLOT_PLAN unverändert) · **Kohorte 495** validiert, inaktiv.
 - **500 aktive Mandate sind NICHT freigegeben.** Offen bleiben die Z3b-Messungen (p95 je Fachweg, Azure, Fachwegbericht) und je eigene Gate-, Deckel- und Kohortenfreigaben.
 
@@ -214,9 +214,10 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
 **Teilweise abgeschlossen — offline vollständig bewiesen, Draft-PR offen, nichts gemergt, keine Production-Wirkung.** Vollbeleg (Runbook, Ablaufplan, Entscheidungstabelle, Freigabeliste): [`betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md`](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). Branch `claude/security-sprint-functional-test-wap0q1`, Basis `b998e9bc`.
 
-- **Gebaut:** Azure-Messläufer wiederhergestellt (aus dem Auditbranch des geschlossenen PR #277) und um eine **strukturell unterbrochene Paketkette** ergänzt — die Stichproben-Freigabe trägt die Laufkennung einer bereits gelaufenen Vorprobe · **zentraler, fail-closed Kommunikationsriegel** (`lib/helmut/kommunikationsriegel.js`) vor **allen sechs** Außenkanälen, die bis dahin **keinen gemeinsamen Punkt** hatten · Kohorten-Betriebswerkzeuge (`lib/helmut/testkohorte-betrieb.js` + CLI) mit **Erlaubnislisten-Schutz** der realen Mandate · Kapazitäts-/Kostenriegel, **12 Abbruchregeln** und Startfensterprüfung (`lib/helmut/funktionstest-500.js`).
-- **Offline bewiesen:** 495/495 Kohortenprofile durch den echten Mail- und Push-Pfad bei voll konfigurierter Umgebung — **Netzzähler 0**; Messläufer über 25 unvollständige Konfigurationen — **Netzzähler 0**; exakte Mengen 20/75/400; Idempotenz; Rückbau; jede fehlende Grenze und jeder fehlende Messwert blockieren; falscher Production-Commit und 05:45/05:48-Fenster blockieren. Gezielte Suiten 64 · 20 · 39 · 74 · 92 PASS/0 FAIL; **Offline-Gesamtlauf 302/302 grün** (590 s; die zwei npm-Fehlstände sind auch auf `main` rot), Browser-Smoke 32/0.
-- **In Production NICHT bewiesen:** der fachliche Zyklus mit 5 realen + 495 aktiven synthetischen Profilen · echte Azure-Werte (Vorprobe 3 / Stichprobe 21 gebaut, **nicht ausgeführt**; Azure extern gesperrt) · finaler Deckel und Reserve · die 05:45/05:48-Laufzeitüberschneidung · der Riegel unter echter Last.
+- **Gebaut:** Azure-Messläufer wiederhergestellt (aus dem Auditbranch des geschlossenen PR #277); die Stichproben-Freigabe verlangt Laufkennung **und** Fingerabdruck einer gelaufenen Vorprobe · **zentraler, fail-closed Kommunikationsriegel** (`lib/helmut/kommunikationsriegel.js`) vor **allen sechs** Außenkanälen, die bis dahin **keinen gemeinsamen Punkt** hatten · Kohorten-Betriebswerkzeuge (`lib/helmut/testkohorte-betrieb.js` + CLI) mit **Erlaubnislisten-Schutz** der realen Mandate · Kapazitäts-/Kostenriegel, **12 Abbruchregeln** und Startfensterprüfung (`lib/helmut/funktionstest-500.js`).
+- **Offline bewiesen:** 495/495 Kohortenprofile durch den echten Mail- und Push-Pfad bei voll konfigurierter Umgebung — **Netzzähler 0**; Messläufer über 25 unvollständige Konfigurationen — **Netzzähler 0**; exakte Mengen 20/75/400; Idempotenz; Rückbau; jede fehlende Grenze und jeder fehlende Messwert blockieren; falscher Production-Commit und 05:45/05:48-Fenster blockieren. Gezielte Suiten 66 · 24 · 44 · 83 · 101 PASS/0 FAIL; **Offline-Gesamtlauf 302/302 grün** (590 s; die zwei npm-Fehlstände sind auch auf `main` rot), Browser-Smoke 32/0.
+- **In Production NICHT bewiesen:** der fachliche Zyklus mit 5 realen + 495 aktiven Profilen · echte Azure-Werte (Vorprobe 3 / Stichprobe 21 gebaut, **nicht ausgeführt**) · finaler Deckel und Reserve · die 05:45/05:48-Überschneidung · der Riegel unter echter Last.
 - **Kein finaler Deckel ausgegeben:** 1.492–2.416 bleiben eine **Szenariospanne**. Solange eine der fünf offenen Messungen fehlt, meldet der Rahmen `bereit=false`.
 - **Unverändert:** 5 aktive / 4 inaktive Mandate · 0 `test-kohorte`-Zeilen · 13 Crons ohne `18,48` · Migrationsliste (letzte `20260829175749`) · Gate `shadow` · kein Modellaufruf, keine Provisionierung, keine Aktivierung, kein Merge, kein Deployment.
+- **Adversariales Diff-Review (37 Agenten, je Befund ein Gegenprüfer): 31 gemeldet, 13 bestätigt, alle behoben und regressionsgesichert** (Beleg §15) — u. a. trug der Mailweg mangels durchgereichter Mandatskennung allein `.invalid`, der Messläufer folgte Umleitungen (Schlüssel an ungeprüften Host), und feste Nullgrenzen ließen sich mit `false`/`""` als eingehalten melden.
 - **Nächster Schritt:** die 14 einzeln aufgeführten Freigaben (Beleg §13) — beginnend mit der Azure-Anmeldung und der 3er-Vorprobe.

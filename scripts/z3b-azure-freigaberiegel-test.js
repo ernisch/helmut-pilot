@@ -44,7 +44,8 @@ function zaehlenderFetch() {
 function vollstaendigeUmgebung({
   modus = "vorprobe",
   lauf = "azureprobe01",
-  vorprobeLauf = modus === "stichprobe" ? "azurevorprobe9" : ""
+  vorprobeLauf = modus === "stichprobe" ? "azurevorprobe9" : "",
+  vorprobeBeleg = modus === "stichprobe" ? "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" : ""
 } = {}) {
   const env = {
     HELMUT_SOURCE_MODE: "off",
@@ -63,11 +64,13 @@ function vollstaendigeUmgebung({
     HELMUT_Z3B_AZURE_KOSTENLIMIT_USD: "0.25"
   };
   if (vorprobeLauf) env.HELMUT_Z3B_AZURE_VORPROBE_LAUF = vorprobeLauf;
+  if (vorprobeBeleg) env.HELMUT_Z3B_AZURE_VORPROBE_BELEG = vorprobeBeleg;
   env.HELMUT_Z3B_AZURE_FREIGABE = Z.freigabeKennung({
     modus,
     laufKennung: lauf,
     aufrufe: P.MODI[modus] ? P.MODI[modus].aufrufe : 0,
-    vorprobeLauf
+    vorprobeLauf,
+    vorprobeBeleg
   });
   return env;
 }
@@ -166,15 +169,30 @@ async function main() {
   // Die Freigabekennung der Stichprobe enthält die fremde Vorprobenkennung —
   // sie kann vor der Vorprobe gar nicht gebildet werden.
   const kennung = Z.freigabeKennung({
-    modus: "stichprobe", laufKennung: "azureprobe02", aufrufe: 21, vorprobeLauf: "azurevorprobe9"
+    modus: "stichprobe", laufKennung: "azureprobe02", aufrufe: 21,
+    vorprobeLauf: "azurevorprobe9", vorprobeBeleg: "a".repeat(64)
   });
-  check("F5 Die Stichproben-Freigabe trägt die Kennung der vorherigen Vorprobe",
-    kennung === "z3b-azure:stichprobe:21:azureprobe02:nach-vorprobe:azurevorprobe9", kennung);
+  check("F5 Die Stichproben-Freigabe trägt Kennung UND Fingerabdruck der Vorprobe",
+    kennung === `z3b-azure:stichprobe:21:azureprobe02:nach-vorprobe:azurevorprobe9:${"a".repeat(64)}`,
+    kennung.slice(0, 70));
   check("F6 Die Vorproben-Freigabe trägt keinen Kettenanhang",
     Z.freigabeKennung({ modus: "vorprobe", laufKennung: "azureprobe01", aufrufe: 3 })
       === "z3b-azure:vorprobe:3:azureprobe01");
 
-  check("F7 Auch die Kettenprüfungen erzeugten keinen Netzaufruf", netzaufrufe === 0, `Zähler ${netzaufrufe}`);
+  check("F7 Die Stichprobe ohne Vorprobe-Fingerabdruck wird abgewiesen",
+    await bricht(vollstaendigeUmgebung({ modus: "stichprobe", vorprobeBeleg: "" }),
+      /Einzelmessungs-Fingerabdruck der gruenen Vorprobe/));
+  check("F8 Ein Fingerabdruck falscher Form wird abgewiesen",
+    await bricht(vollstaendigeUmgebung({ modus: "stichprobe", vorprobeBeleg: "kurz" }),
+      /Einzelmessungs-Fingerabdruck/));
+  const vorprobeMitFingerabdruck = vollstaendigeUmgebung({ modus: "vorprobe" });
+  vorprobeMitFingerabdruck.HELMUT_Z3B_AZURE_VORPROBE_BELEG = "b".repeat(64);
+  check("F9 Die Vorprobe kennt keinen eigenen Fingerabdruck",
+    await bricht(vorprobeMitFingerabdruck, /kennt keinen eigenen Vorprobebeleg/));
+  check("F10 Der Fingerabdruck stammt aus dem Bericht der Vorprobe, nicht aus der Umgebung",
+    /einzelmessungenSha256/.test(fs.readFileSync(path.join(ROOT, "scripts", "skalierung-z3b-azure.js"), "utf8")));
+
+  check("F11 Auch die Kettenprüfungen erzeugten keinen Netzaufruf", netzaufrufe === 0, `Zähler ${netzaufrufe}`);
 
   // ── G · Prozessweite Paketsperre im Einstieg ──────────────────────────────
   console.log("\n== G · Ein Prozess führt höchstens ein Freigabepaket aus ==");

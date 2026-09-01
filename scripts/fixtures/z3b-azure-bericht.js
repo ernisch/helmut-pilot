@@ -6,7 +6,7 @@
 
 const crypto = require("crypto");
 
-const SCHEMA_VERSION = "z3b-azure-bericht/v3";
+const SCHEMA_VERSION = "z3b-azure-bericht/v4";
 const ART = "Z3b Azure Laufzeit und Token Teilnachweis";
 const ERGEBNIS_FORMAL = "struktur-und-aggregate-intern-geprueft-externe-herkunft-offen";
 const KLASSEN = Object.freeze(["understanding", "lage", "buero"]);
@@ -197,7 +197,7 @@ function pruefeAzureBericht(bericht, {
     "productionDatenBeruehrt", "datenbankBeruehrt", "quellenanbieterAufrufe",
     "antwortinhalteGespeichert", "storeParameter", "preis", "preisquelle",
     "preisdatumUtc", "kostenlimitUsd", "konservativeKostenobergrenzeVorherUsd",
-    "einzelmessungen", "auswertung"
+    "einzelmessungen", "einzelmessungenSha256", "auswertung"
   ], "Azure Bericht");
   if (b.schemaVersion !== SCHEMA_VERSION || b.art !== ART
       || b.ergebnis !== ERGEBNIS_FORMAL || b.modus !== AZURE_MODUS) {
@@ -209,6 +209,9 @@ function pruefeAzureBericht(bericht, {
   // Die 21er Stichprobe ist nie die automatische Fortsetzung der Vorprobe. Der
   // Bericht muss deshalb die Laufkennung der getrennt bewerteten, vorher
   // gelaufenen Vorprobe tragen — und sie darf nicht die eigene sein.
+  if (typeof b.einzelmessungenSha256 !== "string" || !SHA256_RE.test(b.einzelmessungenSha256)) {
+    throw new Error("Azure Bericht traegt keinen vollen Fingerabdruck seiner Einzelmessungen");
+  }
   if (typeof b.vorprobeLauf !== "string" || !/^[a-z0-9]{6,32}$/.test(b.vorprobeLauf)) {
     throw new Error("Azure Stichprobe nennt keine getrennt freigegebene Vorprobe");
   }
@@ -313,6 +316,11 @@ function pruefeAzureBericht(bericht, {
     throw new Error("Azure Summe der Einzelmessungsdauern uebersteigt bei Parallelitaet 1 die Gesamtdauer");
   }
 
+  const fingerabdruck = crypto.createHash("sha256").update(kanonisch(einzelmessungen)).digest("hex");
+  if (b.einzelmessungenSha256 !== fingerabdruck) {
+    throw new Error("Azure Fingerabdruck passt nicht zu den ausgewiesenen Einzelmessungen");
+  }
+
   const auswertung = nurSchluessel(b.auswertung, ["gesamt", "jeKlasse"], "Azure Auswertung");
   const jeKlasse = nurSchluessel(auswertung.jeKlasse, KLASSEN, "Azure Klassenwerte");
   pruefeMessblockForm(auswertung.gesamt, "Azure Gesamtwerte", AZURE_AUFRUFE);
@@ -366,7 +374,7 @@ function pruefeAzureBericht(bericht, {
     preis,
     preisquelle: b.preisquelle,
     alterTage,
-    einzelmessungenSha256: crypto.createHash("sha256").update(kanonisch(einzelmessungen)).digest("hex"),
+    einzelmessungenSha256: fingerabdruck,
     gesamt: nachgerechnet.gesamt,
     klassen,
     lokalesKiProfil: Object.freeze({
@@ -378,6 +386,7 @@ function pruefeAzureBericht(bericht, {
 
 module.exports = {
   SCHEMA_VERSION,
+  kanonisch,
   ART,
   ERGEBNIS_FORMAL,
   KLASSEN,

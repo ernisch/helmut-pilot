@@ -23,7 +23,8 @@ const {
 const {
   SCHEMA_VERSION: BERICHT_SCHEMA_VERSION,
   ERGEBNIS_FORMAL: BERICHT_ERGEBNIS_FORMAL,
-  auswertungAus
+  auswertungAus,
+  kanonisch
 } = require("./fixtures/z3b-azure-bericht");
 
 const ANTWORT_MAX_BYTES = 8 * 1024 * 1024;
@@ -61,14 +62,20 @@ function positiveZahl(roh, name) {
   return wert;
 }
 
-function freigabeKennung({ modus, laufKennung, aufrufe, vorprobeLauf = "" }) {
+function freigabeKennung({ modus, laufKennung, aufrufe, vorprobeLauf = "", vorprobeBeleg = "" }) {
   const basis = `z3b-azure:${modus}:${aufrufe}:${laufKennung}`;
   // Die Stichprobe ist NIE die Fortsetzung des laufenden Prozesses, sondern ein
-  // eigenes Freigabepaket. Ihre Freigabe traegt deshalb die Laufkennung einer
-  // bereits abgeschlossenen, getrennt bewerteten Vorprobe. Diese Kennung kann es
-  // vor der Vorprobe nicht geben — die Kette ist damit strukturell und nicht nur
-  // organisatorisch unterbrochen.
-  return modus === "stichprobe" ? `${basis}:nach-vorprobe:${vorprobeLauf}` : basis;
+  // eigenes Freigabepaket. Ihre Freigabe traegt deshalb die Laufkennung UND den
+  // Einzelmessungs-Fingerabdruck einer bereits abgeschlossenen, getrennt
+  // bewerteten Vorprobe. Den Fingerabdruck kann nur besitzen, wer einen echten
+  // Vorprobebericht in der Hand hat — eine frei erfundene Laufkennung allein
+  // genuegt nicht mehr (adversarialer Review 01.09.).
+  // EHRLICHE GRENZE: Das Werkzeug fuehrt kein Gedaechtnis ueber Prozessgrenzen
+  // hinweg (es hat bewusst keine Datenbank). Der Riegel belegt deshalb den
+  // BESITZ eines Vorprobeberichts, nicht dessen Echtheit gegenueber Azure.
+  return modus === "stichprobe"
+    ? `${basis}:nach-vorprobe:${vorprobeLauf}:${vorprobeBeleg}`
+    : basis;
 }
 
 function utcDatum(roh, name, heuteUtc = new Date().toISOString().slice(0, 10)) {
@@ -151,6 +158,7 @@ function liesKonfiguration(env = process.env, { heuteUtc = new Date().toISOStrin
   // getrennt freigegebenen, gruenen Vorprobe ausdruecklich benannt werden und darf
   // nicht die eigene sein. Fuer die Vorprobe ist das Feld verboten.
   const vorprobeLauf = String(env.HELMUT_Z3B_AZURE_VORPROBE_LAUF || "").trim();
+  const vorprobeBeleg = String(env.HELMUT_Z3B_AZURE_VORPROBE_BELEG || "").trim().toLowerCase();
   if (modus === "stichprobe") {
     if (!/^[a-z0-9]{6,32}$/.test(vorprobeLauf)) {
       throw new Z3bAzureAbbruch(
@@ -164,7 +172,13 @@ function liesKonfiguration(env = process.env, { heuteUtc = new Date().toISOStrin
         "paketkette"
       );
     }
-  } else if (vorprobeLauf !== "") {
+    if (!/^[a-f0-9]{64}$/.test(vorprobeBeleg)) {
+      throw new Z3bAzureAbbruch(
+        "Z3b Azure Stichprobe verlangt den Einzelmessungs-Fingerabdruck der gruenen Vorprobe",
+        "paketkette"
+      );
+    }
+  } else if (vorprobeLauf !== "" || vorprobeBeleg !== "") {
     throw new Z3bAzureAbbruch("Z3b Azure Vorprobe kennt keinen eigenen Vorprobebeleg", "paketkette");
   }
 
@@ -176,7 +190,9 @@ function liesKonfiguration(env = process.env, { heuteUtc = new Date().toISOStrin
       "kosten"
     );
   }
-  const freigabe = freigabeKennung({ modus, laufKennung, aufrufe: auftraege.length, vorprobeLauf });
+  const freigabe = freigabeKennung({
+    modus, laufKennung, aufrufe: auftraege.length, vorprobeLauf, vorprobeBeleg
+  });
   if (String(env.HELMUT_Z3B_AZURE_FREIGABE || "") !== freigabe) {
     throw new Z3bAzureAbbruch("Z3b Azure Lauf ist nicht lauf und kostenbezogen freigeschaltet", "freigabe");
   }
@@ -191,6 +207,7 @@ function liesKonfiguration(env = process.env, { heuteUtc = new Date().toISOStrin
     modus,
     laufKennung,
     vorprobeLauf: modus === "stichprobe" ? vorprobeLauf : null,
+    vorprobeBeleg: modus === "stichprobe" ? vorprobeBeleg : null,
     aufrufe: auftraege.length,
     parallelitaet: PARALLELITAET,
     wiederholungen: WIEDERHOLUNGEN,
@@ -268,6 +285,11 @@ async function eineAnfrage(konfiguration, auftrag, fetchImpl = globalThis.fetch)
         "User-Agent": "helmut-z3b-azure-server/1.0"
       },
       body: JSON.stringify(bauePayload(auftrag, konfiguration.deployment)),
+      // KEINE UMLEITUNG. Ohne dies folgt Node einer 3xx-Antwort automatisch und
+      // sendet Prompt UND den api-key-Kopf an einen Host, den der Zielriegel nie
+      // geprueft hat (adversarialer Review 01.09.). Eine Umleitung ist hier
+      // kein normaler Fall, sondern ein Abbruchgrund.
+      redirect: "manual",
       signal: controller.signal
     });
   } catch (fehler) {
@@ -278,12 +300,38 @@ async function eineAnfrage(konfiguration, auftrag, fetchImpl = globalThis.fetch)
       timeout ? "timeout" : "netzfehler"
     );
   }
+  const status = Number.isSafeInteger(antwort && antwort.status) ? antwort.status : 0;
+  // Eine Umleitung wird NICHT verfolgt und nicht als Erfolg gewertet.
+  if (status >= 300 && status < 400) {
+    clearTimeout(timer);
+    throw new Z3bAzureAbbruch("Z3b Azure antwortete mit einer Umleitung; sie wird nicht verfolgt", "ziel");
+  }
+  // Eine angekuendigte Ueberlaenge wird abgelehnt, BEVOR gepuffert wird.
+  const angekuendigt = Number(antwort && antwort.headers && antwort.headers.get
+    ? antwort.headers.get("content-length")
+    : NaN);
+  if (Number.isFinite(angekuendigt) && angekuendigt > ANTWORT_MAX_BYTES) {
+    clearTimeout(timer);
+    controller.abort();
+    throw new Z3bAzureAbbruch("Z3b Azure kuendigte einen Rumpf groesser als 8 MiB an", "antwortform");
+  }
+  // DER ZEITGEBER LAEUFT WEITER, bis der Rumpf gelesen ist. Zuvor stand hier ein
+  // clearTimeout VOR dem Lesen — ein Endpunkt, der Kopfzeilen schickt und den
+  // Rumpf dann nur troepfelnd sendet, haette den Prozess unbegrenzt haengen
+  // lassen (adversarialer Review 01.09.).
+  let text = "";
+  try {
+    text = await antwort.text();
+  } catch (fehler) {
+    clearTimeout(timer);
+    const timeout = Boolean(fehler && fehler.name === "AbortError");
+    throw new Z3bAzureAbbruch(
+      timeout ? "Z3b Azure Rumpf hat die Zeitgrenze ueberschritten" : "Z3b Azure Antwort war nicht lesbar",
+      timeout ? "timeout" : "antwortform"
+    );
+  }
   clearTimeout(timer);
   const dauerMs = Math.max(0, Date.now() - beginn);
-  const status = Number.isSafeInteger(antwort && antwort.status) ? antwort.status : 0;
-  let text = "";
-  try { text = await antwort.text(); }
-  catch (_) { throw new Z3bAzureAbbruch("Z3b Azure Antwort war nicht lesbar", "antwortform"); }
   if (Buffer.byteLength(text, "utf8") > ANTWORT_MAX_BYTES) {
     throw new Z3bAzureAbbruch("Z3b Azure Antwort war groesser als 8 MiB", "antwortform");
   }
@@ -346,6 +394,10 @@ async function fuehreMesslauf(konfiguration, { fetchImpl = globalThis.fetch, jet
     usage: ergebnis.usage
   })));
   const auswertung = aggregiere(einzelmessungen, konfiguration.preis);
+  // Der eigene Fingerabdruck. Er ist der Beleg, den die spaeter GETRENNT
+  // freizugebende Stichprobe vorweisen muss (siehe freigabeKennung).
+  const einzelmessungenSha256 = crypto.createHash("sha256")
+    .update(kanonisch(einzelmessungen)).digest("hex");
   return Object.freeze({
     schemaVersion: BERICHT_SCHEMA_VERSION,
     art: "Z3b Azure Laufzeit und Token Teilnachweis",
@@ -376,6 +428,7 @@ async function fuehreMesslauf(konfiguration, { fetchImpl = globalThis.fetch, jet
     kostenlimitUsd: konfiguration.kostenlimitUsd,
     konservativeKostenobergrenzeVorherUsd: Math.round(konfiguration.kostenObergrenzeUsd * 1e8) / 1e8,
     einzelmessungen,
+    einzelmessungenSha256,
     auswertung
   });
 }

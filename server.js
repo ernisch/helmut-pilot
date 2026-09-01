@@ -2179,7 +2179,10 @@ async function handleRequest(request, response) {
       const mailContent = purpose === "reset"
         ? inviteMail.buildResetMail({ name: target.name, resetUrl: linkUrl })
         : inviteMail.buildInviteMail({ name: target.name, inviteUrl: linkUrl });
-      const mail = await inviteMail.sendAccessMail({ to: target.email, ...mailContent });
+      const mail = await inviteMail.sendAccessMail(
+        { to: target.email, ...mailContent },
+        { kennung: target.politicianId }
+      );
       const action = purpose === "reset" ? "admin.user.reset-link" : "admin.user.invite";
       await accounts.recordAudit({ action, userId: authUser.id, actorEmail: authUser.email, detail: target.email });
       return { ok: true, purpose, inviteUrl: linkUrl, expiresAt: issued.expiresAt, mail };
@@ -5671,7 +5674,10 @@ async function issueInvite(request, user) {
   const { token, expiresAt } = await accounts.createPasswordToken(user.id, "invite");
   const inviteUrl = passwordSetUrl(request, token);
   const mailContent = inviteMail.buildInviteMail({ name: user.name, inviteUrl });
-  const mail = await inviteMail.sendAccessMail({ to: user.email, ...mailContent });
+  const mail = await inviteMail.sendAccessMail(
+    { to: user.email, ...mailContent },
+    { kennung: user.politicianId }
+  );
   return { inviteUrl, expiresAt, mail };
 }
 
@@ -5718,7 +5724,10 @@ async function zustellenAnonymerReset(user, kontext) {
   const mailContent = purpose === "reset"
     ? inviteMail.buildResetMail({ name: user.name, resetUrl: linkUrl })
     : inviteMail.buildInviteMail({ name: user.name, inviteUrl: linkUrl });
-  await inviteMail.sendAccessMail({ to: user.email, ...mailContent });
+  await inviteMail.sendAccessMail(
+    { to: user.email, ...mailContent },
+    { kennung: user.politicianId }
+  );
   await accounts.recordAudit({ action: "password.reset-requested", userId: user.id, ip: kontext.ip });
 }
 
@@ -5765,7 +5774,10 @@ function handleAuthRequestReset(request, response) {
       const mailContent = purpose === "reset"
         ? inviteMail.buildResetMail({ name: user.name, resetUrl: linkUrl })
         : inviteMail.buildInviteMail({ name: user.name, inviteUrl: linkUrl });
-      const mail = await inviteMail.sendAccessMail({ to: user.email, ...mailContent });
+      const mail = await inviteMail.sendAccessMail(
+    { to: user.email, ...mailContent },
+    { kennung: user.politicianId }
+  );
       await accounts.recordAudit({ action: "password.reset-requested", userId: user.id, ip: auth.clientIp(request) });
       // Dem Besitzer ehrlich antworten: ohne Mail-Versand den Link direkt (Interim-
       // Kopierweg), mit Mail-Versand den Zustellstatus (Client zeigt den Toast).

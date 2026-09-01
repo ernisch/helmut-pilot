@@ -44,15 +44,22 @@ const GRUNDLINIE = Object.freeze({
   mandateGeloescht: 0,
   identitaetsprofile: 10,
   kohortenProfile: 0,
-  kohortenProfileAktiv: 0
+  kohortenProfileAktiv: 0,
+  kohortenProfileGeloescht: 0
 });
 
 const LEERER_BESTAND = Object.freeze({ kohorte: [], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0 });
 
-function bestandMit(aktiveIds = []) {
+// Der Bestand fuehrt die TATSAECHLICH gelesene Adresse je Zeile — nicht die
+// generierte. Eine nach der Anlage geaenderte Adresse muss auffallen koennen.
+function bestandMit(aktiveIds = [], { adressen = {} } = {}) {
   const aktiv = new Set(aktiveIds);
   return {
-    kohorte: K.KOHORTE_KENNUNGEN.map((id) => ({ id, aktiv: aktiv.has(id) })),
+    kohorte: K.KOHORTE_KENNUNGEN.map((id) => ({
+      id,
+      aktiv: aktiv.has(id),
+      email: adressen[id] || `${id}@test-kohorte.invalid`
+    })),
     fremdeGesamt: 9,
     fremdeAktiv: 5,
     fremdeGeloescht: 0
@@ -104,7 +111,7 @@ function main() {
   check("B5 Doppelte Kennungen brechen ab",
     wirft(() => K.pruefeZielmenge(["test-kohorte-a-001", "test-kohorte-a-001"]), "doppelte-kennung"));
   check("B6 Ein Bestand mit fremder Zeile wird abgewiesen",
-    wirft(() => K.pruefeBestand({ kohorte: [{ id: "ein-reales-mandat", aktiv: true }], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0 }), "fremde-kennung"));
+    wirft(() => K.pruefeBestand({ kohorte: [{ id: "ein-reales-mandat", aktiv: true, email: "a@b.invalid" }], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0 }), "fremde-kennung"));
   check("B7 Im Modul steht keine einzige reale Mandatskennung",
     (() => {
       const quelle = require("fs").readFileSync(require("path").join(__dirname, "..", "lib", "helmut", "testkohorte-betrieb.js"), "utf8");
@@ -126,7 +133,8 @@ function main() {
   check("C1 Ohne Grundlinie entsteht kein Plan",
     wirft(() => K.planeProvisionierung({ bestand: LEERER_BESTAND }), "grundlinie"));
   for (const feld of ["mandateGesamt", "mandateAktiv", "mandateInaktiv", "mandateGeloescht",
-    "identitaetsprofile", "kohortenProfile", "kohortenProfileAktiv", "erhobenUtc"]) {
+    "identitaetsprofile", "kohortenProfile", "kohortenProfileAktiv",
+    "kohortenProfileGeloescht", "erhobenUtc"]) {
     const luecke = { ...GRUNDLINIE };
     delete luecke[feld];
     check(`C2-${feld} Fehlender Pflichtwert blockiert`,
@@ -141,7 +149,7 @@ function main() {
   check("C6 Ohne Bestand entsteht kein Plan",
     wirft(() => K.planeProvisionierung({ grundlinie: GRUNDLINIE }), "bestand"));
   check("C7 Eine Bestandszeile ohne eindeutiges aktiv-Merkmal blockiert",
-    wirft(() => K.pruefeBestand({ kohorte: [{ id: "test-kohorte-a-001" }], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0 }), "bestand"));
+    wirft(() => K.pruefeBestand({ kohorte: [{ id: "test-kohorte-a-001", email: "a@b.invalid" }], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0 }), "bestand"));
   check("C8 Ein Bestand ohne gelesene Löschmarken blockiert",
     wirft(() => K.pruefeBestand({ kohorte: [], fremdeGesamt: 9, fremdeAktiv: 5 }), "bestand"));
 
@@ -191,7 +199,7 @@ function main() {
   check("E3 IDEMPOTENZ: der zweite Lauf plant null Anlagen",
     zweiterLauf.anzahlAnzulegen === 0 && zweiterLauf.bereitsErreicht === true);
   const halb = {
-    kohorte: K.KOHORTE_KENNUNGEN.slice(0, 200).map((id) => ({ id, aktiv: false })),
+    kohorte: K.KOHORTE_KENNUNGEN.slice(0, 200).map((id) => ({ id, aktiv: false, email: `${id}@test-kohorte.invalid` })),
     fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0
   };
   check("E4 Ein abgebrochener Lauf wird genau ergänzt",
@@ -204,8 +212,8 @@ function main() {
   const isolation = K.pruefeIsolation({ grundlinie: GRUNDLINIE, bestand: bestandMit() });
   check("F1 Die vollständige Kohorte ist isoliert",
     isolation.isoliert === true && isolation.offen.length === 0);
-  check("F2 Es werden sechs Einzelbefunde ausgewiesen (kein pauschales Grün)",
-    isolation.pruefungen.length === 6 && isolation.pruefungen.every((p) => typeof p.detail === "string"));
+  check("F2 Es werden sieben Einzelbefunde ausgewiesen (kein pauschales Grün)",
+    isolation.pruefungen.length === 7 && isolation.pruefungen.every((p) => typeof p.detail === "string"));
   const verschoben = K.pruefeIsolation({
     grundlinie: GRUNDLINIE,
     bestand: { ...bestandMit(), fremdeGesamt: 8 }
@@ -213,8 +221,25 @@ function main() {
   check("F3 Eine veränderte Zahl realer Mandate bricht die Isolation",
     verschoben.isoliert === false
       && verschoben.offen.includes("Reale Mandate zahlenmäßig unberührt"));
-  check("F4 Jede Kohortenkennung wird vom Kommunikationsriegel gesperrt",
+  check("F4 Jede Kohortenkennung wird über die KENNUNGSFAMILIE gesperrt",
     isolation.pruefungen.find((p) => p.name.startsWith("Kommunikationsriegel")).ok === true);
+
+  // ── Regressionen aus dem adversarialen Review 01.09. ──────────────────────
+  check("F5 Eine leer gelesene Kohorte gilt NICHT als isoliert",
+    K.pruefeIsolation({ grundlinie: GRUNDLINIE, bestand: LEERER_BESTAND }).isoliert === false);
+  check("F6 Eine unvollständig gelesene Kohorte gilt NICHT als isoliert",
+    K.pruefeIsolation({ grundlinie: GRUNDLINIE, bestand: halb }).offen
+      .includes("Vollständige Kohorte gelesen"));
+  const echteAdresse = bestandMit([], { adressen: { "test-kohorte-a-001": "buero@bundestag.de" } });
+  const mitEchter = K.pruefeIsolation({ grundlinie: GRUNDLINIE, bestand: echteAdresse });
+  check("F7 Eine nachträglich eingetragene ECHTE Adresse bricht die Isolation",
+    mitEchter.isoliert === false
+      && mitEchter.offen.includes("Keine zustellbare Adresse in der Kohorte"),
+    mitEchter.offen.join(", "));
+  check("F8 Die Riegelprüfung nutzt die GELESENE Adresse, nicht die generierte",
+    K.pruefeIsolation({ grundlinie: GRUNDLINIE, bestand: echteAdresse })
+      .pruefungen.find((p) => p.name.startsWith("Kommunikationsriegel")).ok === true,
+    "über die Kennungsfamilie bleibt auch die echte Adresse gesperrt");
 
   // ── G · Aktivierung nach Gruppen ──────────────────────────────────────────
   console.log("\n== G · Aktivierung nach Gruppen 20 / 75 / 400 ==");
@@ -277,6 +302,29 @@ function main() {
     }).zurueckgebaut === false);
   check("H8 Der Rückbau weist vier Einzelbefunde aus",
     rueckbau.pruefungen.length === 4);
+  // Regression: Löschmarken werden REAL gegen REAL verglichen. Eine Löschmarke
+  // auf einer Kohortenzeile darf keine neue an einem realen Mandat verdecken.
+  const nachAbbruch = {
+    ...GRUNDLINIE, mandateGesamt: 504, mandateInaktiv: 499, mandateGeloescht: 1,
+    kohortenProfile: 495, kohortenProfileGeloescht: 1
+  };
+  check("H10 Löschmarke auf einer Kohortenzeile verdeckt keine an einem realen Mandat",
+    K.pruefeRueckbau({
+      grundlinie: nachAbbruch,
+      bestand: { ...bestandMit(), fremdeGeloescht: 1 }
+    }).offen.includes("Keine neue Löschmarke an realen Mandaten"));
+  check("H11 Derselbe Stand ohne neue reale Löschmarke ist bestätigt",
+    K.pruefeRueckbau({ grundlinie: nachAbbruch, bestand: bestandMit() }).zurueckgebaut === true);
+  // Regression: ein nicht gelesener Wert ist keine gemessene Null.
+  check("H12 fremdeGeloescht = null blockiert, statt still zu 0 zu werden",
+    wirft(() => K.pruefeRueckbau({
+      grundlinie: GRUNDLINIE,
+      bestand: { kohorte: [], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: null }
+    }), "bestand"));
+  check("H13 Auch fremdeGesamt und fremdeAktiv dulden keine Koerzierung",
+    ["fremdeGesamt", "fremdeAktiv"].every((feld) => wirft(() => K.pruefeBestand({
+      kohorte: [], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0, [feld]: "9"
+    }), "bestand")));
   check("H9 Der erste Rückweg ist Deaktivierung, nicht Löschen",
     /gelöscht wird nichts/.test(abbau.hinweis));
 

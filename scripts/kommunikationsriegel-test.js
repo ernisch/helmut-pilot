@@ -234,6 +234,49 @@ async function main() {
       r > 0 && k > r, `Riegel@${r}, Konfig@${k}`);
   }
 
+  // ── H · Der Einladungs-/Passwortweg trägt die Mandatskennung ──────────────
+  // Ohne sie hinge dieser Weg allein am Adresssignal — genau das soll er nicht.
+  console.log("\n== H · Einladung/Passwort trägt die Mandatskennung ==");
+  const inviteMail = require("../lib/helmut/invite-mail");
+  const vorherH = netzaufrufe;
+  const echterFetch3 = globalThis.fetch;
+  globalThis.fetch = zaehlenderFetch;
+  let mitKennung;
+  let ohneAlles;
+  try {
+    // Kohortenprofil mit ECHTER, zustellbarer Adresse: nur die Kennung schützt hier.
+    mitKennung = await inviteMail.sendAccessMail(
+      { to: "echte.person@bundestag.de", subject: "Einladung", text: "x" },
+      { env: { HELMUT_MAIL_TRANSPORT: "resend", HELMUT_RESEND_API_KEY: "attrappe" },
+        kennung: "test-kohorte-b-042" }
+    );
+    ohneAlles = await inviteMail.sendAccessMail(
+      { subject: "Einladung", text: "x" },
+      { env: { HELMUT_MAIL_TRANSPORT: "resend", HELMUT_RESEND_API_KEY: "attrappe" } }
+    );
+  } finally {
+    globalThis.fetch = echterFetch3;
+  }
+  check("H1 Einladung an ein Kohortenprofil mit ECHTER Adresse ist gesperrt",
+    mitKennung.sent === false && mitKennung.gesperrt === true
+      && mitKennung.riegel.signale.includes("kennungsfamilie")
+      && mitKennung.riegel.kanal === "einladung",
+    mitKennung.reason);
+  check("H2 Einladung ohne jede zuordenbare Angabe ist gesperrt",
+    ohneAlles.sent === false && ohneAlles.gesperrt === true);
+  check("H3 sendAccessMail setzt den Kanal 'einladung' selbst",
+    /kanal: "einladung"/.test(fs.readFileSync(path.join(ROOT, "lib", "helmut", "invite-mail.js"), "utf8")));
+  check("H4 Alle vier sendAccessMail-Aufrufer in server.js reichen die Kennung durch",
+    (() => {
+      const quelle = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
+      const stellen = [...quelle.matchAll(/sendAccessMail\(/g)];
+      if (stellen.length !== 4) return false;
+      return stellen.every((treffer) =>
+        /kennung:\s*\w+\.politicianId/.test(quelle.slice(treffer.index, treffer.index + 260)));
+    })(),
+    "kennung: <konto>.politicianId an jeder Aufrufstelle");
+  check("H5 Auch dabei entstand kein Netzaufruf", netzaufrufe === vorherH, `Zähler ${netzaufrufe}`);
+
   check("G9 Am Ende steht der Netzzähler auf null", netzaufrufe === 0, `Zähler ${netzaufrufe}`);
 
   console.log(`\nPASS ${pass}  FAIL ${fail}`);

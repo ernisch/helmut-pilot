@@ -379,6 +379,47 @@ function main() {
       startfenster: { startUtc: "2026-09-10T13:00:00Z", dauerMinuten: 30, crons: VERCEL.crons },
       isolation: null, env: { [R.SCHALTER]: R.SCHALTER_WERT_GESPERRT }
     }).offen.some((n) => /Isolation/.test(n)));
+  // ── L · Regressionen aus dem adversarialen Review 01.09. ─────────────────
+  console.log("\n== L · Regressionen aus dem adversarialen Review ==");
+  check("L1 Ein Minimal-Cron-Slot am Nachmittag wird erkannt (nicht nur 00:00–01:59)",
+    F.pruefeStartfenster({
+      startUtc: "2026-09-10T13:40:00Z", dauerMinuten: 30, minimalCronAktiv: true
+    }).konflikte.some((k) => k.art === "minimal-cron-slot-im-fenster"));
+  check("L2 Der Slot wird in JEDER Stunde erkannt",
+    [0, 6, 13, 19, 23].every((stunde) => F.pruefeStartfenster({
+      startUtc: `2026-09-10T${String(stunde).padStart(2, "0")}:40:00Z`,
+      dauerMinuten: 30, minimalCronAktiv: true
+    }).startErlaubt === false));
+  check("L3 Die 05:45/05:48-Sperre greift auch, wenn das Fenster erst 05:46 beginnt",
+    F.pruefeStartfenster({
+      startUtc: "2026-09-10T05:46:00Z", dauerMinuten: 10, crons: VERCEL.crons, minimalCronAktiv: true
+    }).konflikte.some((k) => k.art === "offene-laufzeitueberschneidung-0545-0548"));
+  check("L4 Nach dem Ende der Briefinglaufzeit ist das Fenster wieder frei",
+    F.pruefeStartfenster({
+      startUtc: "2026-09-10T05:52:00Z", dauerMinuten: 5, crons: VERCEL.crons, minimalCronAktiv: false
+    }).startErlaubt === true);
+  check("L5 Ein stündlicher Bestandscron wird zu jeder Stunde erkannt",
+    F.pruefeStartfenster({
+      startUtc: "2026-09-10T17:15:00Z", dauerMinuten: 10,
+      crons: [{ path: "/api/x", schedule: "18 * * * *" }]
+    }).konflikte.some((k) => k.art === "bestandscron-im-fenster"));
+  check("L6 false, \"\" und [] gelten nicht als gemessene Null",
+    [false, "", [], "0", {}].every((wert) => F.pruefeAbbruch({
+      beobachtungen: { ...RUHIGE_LAGE, drosselungen: wert }, grenzen: VOLLE_GRENZEN
+    }).nichtBewertbar.includes("A06")));
+  check("L7 Auch bei konfigurierter Grenze wird nicht koerziert",
+    F.pruefeAbbruch({
+      beobachtungen: { ...RUHIGE_LAGE, kostenBisherUsd: "3.2" }, grenzen: VOLLE_GRENZEN
+    }).nichtBewertbar.includes("A04"));
+  check("L8 Eine Grenze als String macht die Regel unbewertbar",
+    F.pruefeAbbruch({
+      beobachtungen: RUHIGE_LAGE, grenzen: { ...VOLLE_GRENZEN, maxLaufzeitMinuten: "600" }
+    }).nichtBewertbar.includes("A05"));
+  check("L9 Die echte Null bleibt eine gültige Messung",
+    F.pruefeAbbruch({
+      beobachtungen: { ...RUHIGE_LAGE, drosselungen: 0 }, grenzen: VOLLE_GRENZEN
+    }).abbrechen === false);
+
   check("K5 Auch bei voller Bereitschaft bleibt der Start eine getrennte Freigabe",
     /getrennte Betreiberfreigabe/.test(allesGesetzt.meldung));
 
