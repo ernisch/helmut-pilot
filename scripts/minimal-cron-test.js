@@ -5,12 +5,15 @@
 // ============================================================================
 // Vertragssuite des vorbereiteten 48-Slot-Rhythmus `18,48 * * * *`:
 //   * der Rhythmus ist wohlgeformt und ergibt GENAU 48 tägliche Slots,
-//   * er kollidiert mit KEINEM bestehenden Cron (Mindestabstand belegt),
+//   * seine STARTZEITEN kollidieren mit keinem bestehenden Cron (Mindestabstand
+//     belegt); die LAUFZEITÜBERSCHNEIDUNG 05:45-Lage-Briefing → 05:48-Slot ist
+//     als OFFENER Punkt ausgewiesen und maschinenlesbar benannt (Befund 6),
 //   * Production bleibt UNVERÄNDERT (vercel.json trägt den Rhythmus nicht,
 //     die 13 Bestandseinträge und SLOT_PLAN sind unangetastet),
 //   * kein SQS, Parallelität 1, vorhandener Motor,
 //   * budgetlose Slots enden über die Vorab-Bodenprüfung VOR jeder Lesearbeit,
-//   * die Aktivierung ist als fail-closed dokumentierter Betreiberweg hinterlegt.
+//   * die Aktivierung ist als fail-closed dokumentierter Betreiberweg hinterlegt —
+//     mit Gesamtdeckel UND Verstehens-Reserve als ZWEI getrennten Freigaben (Befund 5).
 // REINE LOGIK + Quelltext-/Konfigurationsprüfung; kein Netz, kein Cron-Lauf.
 // Jeder Lauf gehört über scripts/lokal.js gestartet (CLAUDE.md §6).
 
@@ -51,15 +54,30 @@ const rueckstandSrc = fs.readFileSync(path.join(__dirname, "..", "lib", "helmut"
       && zeiten[0].stunde === 0 && zeiten[0].minute === 18 && zeiten[47].stunde === 23 && zeiten[47].minute === 48);
   }
 
-  abschnitt("§2 Kollisionsfreiheit mit den 13 Bestands-Crons");
+  abschnitt("§2 Startzeitkollisionsfreiheit + offene Laufzeitüberschneidung (Befund 6)");
   {
     const abstand = minimalCron.minutenAbstandZuBestehenden(vercel.crons);
-    check("§2.1 kleinster Minutenabstand zu jedem Bestandsslot ist 3 (05:45-Lage-Briefing → :48), nie 0",
+    check("§2.1 kleinster STARTZEITabstand zu jedem Bestandsslot ist 3 (05:45-Lage-Briefing → :48), nie 0",
       abstand === 3 && abstand > 0);
     check("§2.2 ein nicht parsebarer Bestandseintrag zählt fail-closed als Kollision (0)",
       minimalCron.minutenAbstandZuBestehenden([{ schedule: "*/5 * * * *" }]) === 0);
-    check("§2.3 Slottakt 30 min > Deadline 280 s: kein Lauf kann in den nächsten Slot hineinlaufen",
+    check("§2.3 Rückstand-zu-Rückstand belegt überschneidungsfrei: Deadline 280 s ≪ Slottakt 30 min",
       minimalCron.SLOT_DEADLINE_MS < 30 * 60000);
+    const offen = minimalCron.laufzeitUeberschneidungen(vercel.crons, { maxLaufzeitMs: 300000 });
+    check("§2.4 OFFEN benannt: genau EIN Slotstart fällt in eine mögliche Bestands-Laufzeit — "
+      + "lage-briefing 05:45 (+300 s) → Slot :48 (Abstand 3 min)",
+      Array.isArray(offen) && offen.length === 1
+      && offen[0].path === "/api/cron/lage-briefing" && offen[0].schedule === "45 5 * * *"
+      && offen[0].slotMinute === 48 && offen[0].abstandMin === 3);
+    check("§2.5 die eigenen Rückstandsslots zählen nicht als offene Überschneidung (per §2.3 belegt), "
+      + "nicht parsebare Einträge dagegen fail-closed schon",
+      (minimalCron.laufzeitUeberschneidungen([{ path: minimalCron.MINIMAL_CRON_ROUTE, schedule: "30 11 * * *" }], { maxLaufzeitMs: 300000 }) || []).length === 0
+      && (minimalCron.laufzeitUeberschneidungen([{ path: "/api/cron/x", schedule: "*/5 * * * *" }], { maxLaufzeitMs: 300000 }) || []).some((t) => t.grund === "nicht-parsebar"));
+    check("§2.6 der Modulvertrag behauptet KEINE allgemeine Überschneidungsfreiheit mehr — "
+      + "nur Startzeitkollisionsfreiheit; der 05:45/05:48-Punkt steht ausdrücklich als OFFEN im Quelltext",
+      /STARTZEITKOLLISIONSFREIHEIT/.test(minimalSrc)
+      && /NICHT belegt und ausdrücklich OFFEN/.test(minimalSrc)
+      && !/schließen Überlappung zusätzlich aus/.test(minimalSrc));
   }
 
   abschnitt("§3 Production unverändert: vercel.json und SLOT_PLAN tragen den Rhythmus NICHT");
@@ -150,14 +168,28 @@ const rueckstandSrc = fs.readFileSync(path.join(__dirname, "..", "lib", "helmut"
   {
     const schritte = minimalCron.aktivierungsVoraussetzungen();
     const namen = schritte.map((s) => s.schritt);
-    check("§7.1 die sechs Pflichtschritte sind vollständig benannt",
-      namen.join(",") === "betreiber-freigabe,vercel-json,slot-plan,cron-vertragstests,tagesdeckel,nachweis");
+    check("§7.1 die sieben Pflichtschritte sind vollständig benannt (inkl. getrennter Verstehens-Reserve)",
+      namen.join(",") === "betreiber-freigabe,vercel-json,slot-plan,cron-vertragstests,tagesdeckel,verstehens-reserve,nachweis");
     check("§7.2 der vercel-json-Schritt ersetzt exakt die zwei Bestandsslots (netto +46 Invocations)",
       /30 11 \* \* \* und 30 17 \* \* \*/.test(schritte[1].beschreibung) && /\+46 Invocations/.test(schritte[1].beschreibung));
     check("§7.3 der Deckel-Schritt bindet die Aktivierung an die Kapazitätsrechnung",
       /kapazitaet-500/.test(schritte[4].beschreibung));
     check("§7.4 kein Code-Pfad aktiviert den Rhythmus (kein Flag, keine Env-Weiche im Modul)",
       !/process\.env/.test(minimalSrc));
+    // BEFUND 5: ein Nur-Gesamtdeckel-Vertrag ist verboten — die Reserve ist ein
+    // EIGENER, GETRENNT freizugebender Schritt mit der richtigen Semantik.
+    const reserve = schritte.find((s) => s.schritt === "verstehens-reserve");
+    check("§7.5 der Reserve-Schritt existiert GETRENNT vom Deckel-Schritt und nennt HELMUT_LLM_RESERVE_UNDERSTANDING",
+      reserve && reserve !== schritte[4] && /HELMUT_LLM_RESERVE_UNDERSTANDING/.test(reserve.beschreibung)
+      && !/HELMUT_LLM_RESERVE_UNDERSTANDING/.test(schritte[4].beschreibung));
+    check("§7.6 Reserve-Semantik korrekt: Anteil INNERHALB des Deckels, NIE addiert, zwei getrennte Freigaben",
+      /INNERHALB des Deckels/.test(reserve.beschreibung) && /NIE addiert/.test(reserve.beschreibung)
+      && /GETRENNT freizugebender Wert/.test(reserve.beschreibung));
+    check("§7.7 ohne belegte, zum Deckel passende Reserve ist die Aktivierung ausdrücklich NICHT bereit",
+      /NICHT bereit/.test(reserve.beschreibung));
+    check("§7.8 der Nachweis-Schritt verlangt zwingend den 05:48-Slot neben dem 05:45-Lage-Briefing (offene Überschneidung)",
+      /05:48-Slot neben dem 05:45-Lage-Briefing/.test(schritte[6].beschreibung)
+      && /laufzeitUeberschneidungen/.test(schritte[6].beschreibung));
   }
 
   console.log(`\nERGEBNIS: ${pass} PASS / ${fail} FAIL`);
