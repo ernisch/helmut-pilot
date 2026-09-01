@@ -82,7 +82,13 @@ function installiereFetchErsatz() {
       return antwort(seite(gateEvents.filter((e) => docIds.has(e.raw_document_id)), endpoint));
     }
     if (method === "GET" && /^\/rest\/v1\/knowledge_objects\?select=id&understanding_status=eq\.complete/.test(endpoint)) {
-      return antwort(seite(completions, endpoint));
+      // Erstabschluss-Filter (Review-Fix 2026-09-01): der Server wendet
+      // ko_version=eq.1 wirklich an — Update-Berührungen (Version >= 2)
+      // erreichen den Zähler nie.
+      const nurErste = /ko_version=eq\.1/.test(endpoint)
+        ? completions.filter((c) => (c.ko_version == null ? 1 : c.ko_version) === 1)
+        : completions;
+      return antwort(seite(nurErste, endpoint));
     }
     if (method === "GET" && /^\/rest\/v1\/ko_document_links\?select=knowledge_object_id,raw_document_id/.test(endpoint)) {
       const koIds = new Set(ausInListe(endpoint, "knowledge_object_id") || []);
@@ -236,14 +242,21 @@ function baueGateEvents(n, { distinctDocs = n, decision = "verstehen", abMs = Da
       { id: 3, created_at: "2026-08-01T00:00:02Z", raw_document_id: "d-parken", gate_decision: "parken" }
     ];
     completions = [
-      { id: "ko-wuerdig" }, { id: "ko-zurueck" }, { id: "ko-nur-parken" }, { id: "ko-altbestand" }, { id: "ko-ohne-links" }
+      { id: "ko-wuerdig", ko_version: 1 }, { id: "ko-zurueck", ko_version: 1 }, { id: "ko-nur-parken", ko_version: 1 },
+      { id: "ko-altbestand", ko_version: 1 }, { id: "ko-ohne-links", ko_version: 1 },
+      // Update-Berührung eines ALTEN complete-Vorgangs (Review-Befund): darf
+      // NIE als frischer Abfluss zählen — sonst falsches Grün konstruierbar.
+      { id: "ko-alte-aktualisierung", ko_version: 2 }
     ];
     links = [
       { knowledge_object_id: "ko-wuerdig", raw_document_id: "d-wuerdig" },
       { knowledge_object_id: "ko-wuerdig", raw_document_id: "d-parken" },
       { knowledge_object_id: "ko-zurueck", raw_document_id: "d-zurueck" },
       { knowledge_object_id: "ko-nur-parken", raw_document_id: "d-parken" },
-      { knowledge_object_id: "ko-altbestand", raw_document_id: "d-unbewertet" }
+      { knowledge_object_id: "ko-altbestand", raw_document_id: "d-unbewertet" },
+      // die Update-Berührung hängt an einem würdigen Dokument — VOR dem
+      // Erstabschluss-Filter hätte sie den würdigen Abfluss inflationiert
+      { knowledge_object_id: "ko-alte-aktualisierung", raw_document_id: "d-wuerdig" }
     ];
     abrufe = [];
     const r = await storage.zaehleGateWuerdigerAbfluss(24);
@@ -251,12 +264,47 @@ function baueGateEvents(n, { distinctDocs = n, decision = "verstehen", abMs = Da
       r && r.gatewuerdig === 2 && r.nichtGatewuerdig === 1 && r.unbewertet === 2 && r.gesamt === 5);
     check("§5.2 die Entscheidungs-Suche ist ZEITUNABHÄNGIG (alte Entscheidung deckt heutigen Abschluss)",
       r.gatewuerdig === 2 /* Entscheidungen von 2026-08-01 zählten für Abschlüsse im 24h-Fenster */);
-    check("§5.3 die Abschluss-Lese trägt eine Totalordnung (updated_at.asc,id.asc)",
-      abrufe.some((e) => /knowledge_objects\?select=id&understanding_status=eq\.complete[^ ]*order=updated_at\.asc,id\.asc/.test(e)));
+    check("§5.3 die Abschluss-Lese trägt Totalordnung UND Erstabschluss-Filter (ko_version=eq.1)",
+      abrufe.some((e) => /knowledge_objects\?select=id&understanding_status=eq\.complete&ko_version=eq\.1[^ ]*order=updated_at\.asc,id\.asc/.test(e)));
+    check("§5.5 Review-Fix: die Update-Berührung (ko_version 2) am würdigen Dokument zählt NICHT als Abfluss",
+      r.gesamt === 5 && r.gatewuerdig === 2 /* ohne Filter wären es 6 bzw. 3 */);
     completions = []; links = [];
     const leer = await storage.zaehleGateWuerdigerAbfluss(24);
     check("§5.4 keine Abschlüsse -> ehrliche Nullen (kein null: 0 ist gemessen)",
       leer && leer.gesamt === 0 && leer.gatewuerdig === 0);
+  }
+
+  abschnitt("§5b Review-Fix: legitim volle in.()-Blöcke werden seitenweise gelesen, nie als Kappung verworfen");
+  {
+    // EIN Vorgang, EIN Dokument — aber 1.500 Schatten-Events auf diesem Dokument
+    // (Schattenläufe bewerten je Lauf; Events akkumulieren). Vorher: Block >= 1.000
+    // Zeilen ⇒ pauschal null. Jetzt: der Block wird seitenweise vollständig gelesen.
+    completions = [{ id: "ko-viele-events", ko_version: 1 }];
+    links = [{ knowledge_object_id: "ko-viele-events", raw_document_id: "d-viel" }];
+    gateEvents = Array.from({ length: 1500 }, (_, i) => ({
+      id: i + 1, created_at: new Date(Date.parse("2026-08-01T00:00:00Z") + i * 1000).toISOString(),
+      raw_document_id: "d-viel", gate_decision: i % 2 ? "verstehen" : "parken"
+    }));
+    abrufe = [];
+    const voll = await storage.zaehleGateWuerdigerAbfluss(24);
+    check("§5b.1 1.500 Entscheidungszeilen in EINEM Block ⇒ vollständig gelesen, Messwert NICHT null",
+      voll && voll.gatewuerdig === 1 && voll.gesamt === 1);
+    const blockAbrufe = abrufe.filter((e) => /gate_shadow_events\?select=raw_document_id,gate_decision&raw_document_id=in\./.test(e));
+    check("§5b.2 der Block wurde in zwei Seiten geholt (offset=0 und offset=1000)",
+      blockAbrufe.length === 2 && /offset=1000/.test(blockAbrufe[1]));
+    // Jenseits des Block-Deckels (10 x 1.000) gilt ehrlich: nicht messbar.
+    gateEvents = Array.from({ length: 10500 }, (_, i) => ({
+      id: i + 1, created_at: new Date(Date.parse("2026-08-01T00:00:00Z") + i * 1000).toISOString(),
+      raw_document_id: "d-viel", gate_decision: "verstehen"
+    }));
+    const fehlerZeilen = [];
+    const echterError = console.error;
+    console.error = (...a) => { fehlerZeilen.push(a.join(" ")); };
+    const gedeckelt = await storage.zaehleGateWuerdigerAbfluss(24);
+    console.error = echterError;
+    check("§5b.3 jenseits des Block-Deckels (10 Seiten) ⇒ null (laut gemeldet), nie eine falsche Zahl",
+      gedeckelt === null && fehlerZeilen.some((z) => /Block am Seiten-Deckel/.test(z)));
+    gateEvents = [];
   }
 
   // ═════════ §6 · Trend-Schnappschuss: CAS, erster Wert des Tages gewinnt ═════════
@@ -309,6 +357,25 @@ function baueGateEvents(n, { distinctDocs = n, decision = "verstehen", abMs = Da
       /zaehlePendingVerarbeitbar[\s\S]{0,900}understanding_status\.not\.in\.\(failed,failed-final,gate-geparkt\)/.test(storageSrc));
     check("§7.9 die Ankunftszählung dedupliziert je Rohdokument (distinct raw_document_id)",
       /zaehleGateWuerdigeAnkunft[\s\S]{0,1200}new Set\(geladen\.zeilen\.map\(\(r\) => r && r\.raw_document_id\)/.test(storageSrc));
+    check("§7.10 Review-Fix: die Quittungs-Whitelist behält den vorabBoden-Block (vorher still verworfen)",
+      (() => {
+        const clean = storage.sanitizeProcessRun({
+          process: "understanding-rueckstand", runId: "t-vb", status: "blocked",
+          telemetrie: { rueckstand: { fenster: 120, laufDeckel: 20, budgetBoden: 30, erlaubnisse: 0,
+            vorabBoden: { grund: "rueckstand-budget-boden-erreicht", used: 83, limit: 100, remaining: 17 } } }
+        });
+        return clean.rueckstand && clean.rueckstand.vorabBoden
+          && clean.rueckstand.vorabBoden.grund === "rueckstand-budget-boden-erreicht"
+          && clean.rueckstand.vorabBoden.remaining === 17 && clean.rueckstand.vorabBoden.used === 83;
+      })());
+    check("§7.11 Review-Fix: ohne vorabBoden bleibt der Block null (kein Geisterfeld mit erfundenen Werten)",
+      (() => {
+        const clean = storage.sanitizeProcessRun({
+          process: "understanding-rueckstand", runId: "t-vb2", status: "success",
+          telemetrie: { cluster: 5, rueckstand: { fenster: 120, laufDeckel: 20, budgetBoden: 30, erlaubnisse: 3 } }
+        });
+        return clean.rueckstand && clean.rueckstand.vorabBoden === null;
+      })());
   }
 
   global.fetch = ECHTES_FETCH;

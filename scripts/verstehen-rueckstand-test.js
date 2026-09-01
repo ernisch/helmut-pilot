@@ -378,11 +378,15 @@ async function main() {
       JSON.stringify({ skipped: r.skipped, reason: r.reason }));
   }
   {
+    // Blockgrenze statt festem Fenster (Review-Befund 2026-09-01: die Vorab-
+    // Bodenprüfung schob die Deps aus dem 3.200er-Fenster — der Negativ-Guard
+    // war vakant und hätte ein acquireLock-Override nicht mehr gefangen).
     const serverSrc = src("server.js");
     const i = serverSrc.indexOf('url.pathname === "/api/cron/understanding-rueckstand"');
-    const block = i >= 0 ? serverSrc.slice(i, i + 3200) : "";
+    const ende = i >= 0 ? serverSrc.indexOf("if (url.pathname === ", i + 10) : -1;
+    const block = i >= 0 ? serverSrc.slice(i, ende > i ? ende : i + 12000) : "";
     check("§6.2 die Route überschreibt acquireLock NICHT (dasselbe globale Schloss)",
-      i >= 0 && !/acquireLock:/.test(block));
+      i >= 0 && block.includes("runPendingUnderstandingShadow") && !/acquireLock:/.test(block));
   }
 
   abschnitt("§7 Restzeitwache: keine neue Arbeit zu spät (P9)");
@@ -533,11 +537,13 @@ async function main() {
     const undSrc = src("lib/helmut/understanding.js");
     check("§11.6 der Standard-callType des Motors bleibt 'understanding' (Frischpfad byte-identisch)",
       /ctx && ctx\.callType \? String\(ctx\.callType\) : "understanding"/.test(undSrc));
+    // Blockgrenze statt festem Fenster (Review-Befund 2026-09-01, wie §6.2).
     const serverSrc = src("server.js");
     const i = serverSrc.indexOf('url.pathname === "/api/cron/understanding-rueckstand"');
-    const block = i >= 0 ? serverSrc.slice(i, i + 3200) : "";
+    const ende = i >= 0 ? serverSrc.indexOf("if (url.pathname === ", i + 10) : -1;
+    const block = i >= 0 ? serverSrc.slice(i, ende > i ? ende : i + 12000) : "";
     check("§11.7 die Route setzt KEINE Parallelität und lockert keine Grenze (P8)",
-      i >= 0 && !/PARALLELITAET|parallelitaet/i.test(block));
+      i >= 0 && block.includes("runPendingUnderstandingShadow") && !/PARALLELITAET|parallelitaet/i.test(block));
     check("§11.8 die Route quittiert als eigener Prozess 'understanding-rueckstand'",
       /process: "understanding-rueckstand"/.test(block));
     check("§11.9 der Frisch-Cron bleibt unverändert auf listPending-Default (kein Umbau des bewährten Pfads)",
