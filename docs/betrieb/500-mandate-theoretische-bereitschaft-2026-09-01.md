@@ -5,12 +5,12 @@
 Stop-Hook-Aufforderung des Betreibers **gesichert gepusht**: erst Selbstsperre
 in `vercel.json` (`git.deploymentEnabled=false`, belegtes Verfahren des
 30.08., Telemetrie-Beleg §12), dann Push. **Korrektursprint 01.09. (§14):**
-sieben Betreiber-Befunde behoben; auftragsgemäß wird danach **genau ein
-deploygesperrter Draft-PR gegen `main`** eröffnet (nur für die Pflicht-CI —
-kein Merge, kein Deployment, kein Auto-Merge, kein Ready-for-Review).
-**Production wurde ausschließlich rein lesend geprüft** — kein Merge, kein Deployment,
-keine Migration, keine Daten-/Env-/Flag-/Cron-Änderung, kein Modellaufruf, keine
-Provisionierung, kein Lasttest. Das Gate bleibt `shadow`.
+sieben Betreiber-Befunde behoben, danach Draft-PR #290 zur Pflicht-CI.
+**Nach ausdrücklicher Betreiberfreigabe am 01.09. wurde PR #290 gemergt und
+deployt — der belegte Nach-Merge-Stand steht in §14.2.** Bis zu dieser
+Freigabe wurde Production ausschließlich rein lesend geprüft; unverändert
+gilt: keine Migration, keine Daten-/Env-/Flag-/Cron-Änderung, kein
+Modellaufruf, keine Provisionierung, kein Lasttest. Das Gate bleibt `shadow`.
 
 Dieser Beleg trennt **drei Nachweise strikt** — sie dürfen nie vermischt werden.
 
@@ -336,17 +336,17 @@ Lasttest. Der Supabase-Zugriff dieser Sitzung war ausschließlich `SELECT`.
 
 ## 13 · Nächster sicherer Schritt
 
-1. **Erledigt mit dem Korrektursprint (§14):** auftragsgemäß wird genau ein
-   **deploygesperrter Draft-PR gegen `main`** eröffnet, damit die Pflicht-CI
-   läuft (kein Merge, kein Deployment, kein Auto-Merge, nicht
-   Ready-for-Review; die Branch-Deploysperre in `vercel.json` bleibt).
-2. Betreiber: Draft-PR und CI-Ergebnis prüfen; die nächste einzelne Freigabe
-   ist die **Merge-Entscheidung** über diesen PR.
-3. Danach (je eigene Freigabe): natürliche Läufe rein lesend prüfen → erst
-   dann Gate-Flip-Entscheidung; Zieldeckel- und Minimal-Cron-Aktivierung nur
-   entlang der **sieben** dokumentierten Schritte (§7 — inkl. getrennter
-   Verstehens-Reserve) und des Stufenplans (§3); die verbindliche
-   Deckelfestlegung erst nach den offenen Z3b-Messungen (§8).
+1. **Erledigt:** Draft-PR #290 eröffnet, Pflicht-CI grün, und nach
+   ausdrücklicher Betreiberfreigabe am 01.09. **gemergt und deployt** (§14.2).
+2. Jetzt: natürliche Läufe auf dem neuen `main` (`98cfedc1`) rein lesend
+   prüfen (Rang-Ordnung der Lage, `blocked`-Quittungen der
+   Vorab-Bodenprüfung aus dem atomaren Zähler, Drain-Zeile mit ehrlich
+   unvollständigem Trend).
+3. Danach (je eigene Freigabe): Gate-Flip-Entscheidung; Zieldeckel- und
+   Minimal-Cron-Aktivierung nur entlang der **sieben** dokumentierten
+   Schritte (§7 — inkl. getrennter Verstehens-Reserve) und des Stufenplans
+   (§3); die verbindliche Deckelfestlegung erst nach den offenen
+   Z3b-Messungen (§8). **500 aktive Mandate sind nicht freigegeben.**
 
 ## 14 · Korrektursprint 2026-09-01 — sieben Betreiber-Befunde, alle bestätigt und behoben
 
@@ -382,5 +382,33 @@ kanonische Offline-Gesamtlauf auf dem Endstand des Korrektursprints steht in
   auf dem finalen Doku-Stand separat: 4/4 grün.
 - `git diff --check`: sauber. Keine Migration im Diff; `vercel.json`
   (Deploysperre + 13 Cron-Einträge) byte-unverändert gegenüber `44499ee`.
-- Draft-PR: Nummer, gebundener Kopf-SHA und CI-Zustand stehen im
-  Abschlussbericht an den Betreiber; der PR selbst trägt sie.
+- Draft-PR: **#290**, gebundener Kopf `9f924dd083275f1eebb5ecbe228489632fbe1460`,
+  Basis `main` = `72d9ec5`; Pflicht-CI im ersten Lauf vollständig grün
+  (Lauf 33459629140, 01:40–01:49 UTC: „Syntax + Offline-Suiten" ✓,
+  „Browser-/Mobile-Smoke (Chromium)" ✓); bis zur Freigabe kein Deployment
+  (Deploysperre wirksam, per Vercel-API belegt).
+
+### 14.2 · Nach-Merge-Stand (01.09., ausdrückliche Betreiberfreigabe)
+
+Alle sieben Merge-Vorbedingungen wurden unmittelbar vor dem Merge rein
+lesend bestätigt (offen + Draft · Kopf `9f924dd` · Basis `main` `72d9ec5` ·
+beide Pflicht-Checks grün · konfliktfrei · 0 Kommentare/Reviews/neue
+Commits · 27 Dateien ohne Migration). Danach:
+
+| Prüfpunkt (rein lesend) | Befund |
+|---|---|
+| Merge | PR #290 per **Merge-Commit `98cfedc1eb28ed50a9ac329997bb83b5a463c28c`**; neuer `main`-Kopf = dieser Commit |
+| Vercel-Production-Deployment | **`dpl_HGJ17UJVPxYizG5Pkn9ekMkeSDsk` READY**, target production, `githubCommitSha` exakt `98cfedc1…` — genau EIN neues Deployment |
+| Migrationen | Liste unverändert (35 Einträge, letzte `20260829175749`) — keine ausgeführt |
+| Crons | 13 Einträge byte-identisch; **kein `18,48 * * * *`** |
+| Gate/Flags | wirkungsgeprüft unverändert: 0 `gate-geparkt`, Gate `shadow`; Env/Secrets/Azure/Budgets/Reserve von der Sitzung nicht angefasst (Vercel-Env ist aus Sitzungen ohnehin weder les- noch setzbar) |
+| Mandate | **5 aktive / 4 inaktive**; keine aktiviert, provisioniert, gelöscht oder verändert |
+| Testkohorte | **0** Profile `test-kohorte…` in Production |
+| Modell/Last | kein Modellaufruf, kein Lasttest durch die Sitzung; `llm_budget_counters` heute 31 (natürlicher Cron-Verbrauch) |
+
+Die drei Urteile (§1–§3) bleiben unverändert getrennt bestehen: Aufnahme-
+fähigkeit **erbracht** · rechnerisch-architektonisch **architektonisch
+vorbereitet, finale Dimensionierung offen** · realer Mehrtagesbetrieb
+**NICHT BEWIESEN**. Offen bleiben die Z3b-Messungen (p95 je Fachweg, Azure,
+Fachwegbericht), die Stufentore 5→10→…→500 mit je sieben grünen Tagen und
+alle Freigaben aus §13. **500 aktive Mandate sind nicht freigegeben.**
