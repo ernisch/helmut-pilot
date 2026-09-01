@@ -4,7 +4,10 @@
 `claude/helmut-500-mandate-readiness-6hxden` — am 01.09. auf ausdrückliche
 Stop-Hook-Aufforderung des Betreibers **gesichert gepusht**: erst Selbstsperre
 in `vercel.json` (`git.deploymentEnabled=false`, belegtes Verfahren des
-30.08., Telemetrie-Beleg §12), dann Push; **kein PR, kein Deployment**.
+30.08., Telemetrie-Beleg §12), dann Push. **Korrektursprint 01.09. (§14):**
+sieben Betreiber-Befunde behoben; auftragsgemäß wird danach **genau ein
+deploygesperrter Draft-PR gegen `main`** eröffnet (nur für die Pflicht-CI —
+kein Merge, kein Deployment, kein Auto-Merge, kein Ready-for-Review).
 **Production wurde ausschließlich rein lesend geprüft** — kein Merge, kein Deployment,
 keine Migration, keine Daten-/Env-/Flag-/Cron-Änderung, kein Modellaufruf, keine
 Provisionierung, kein Lasttest. Das Gate bleibt `shadow`.
@@ -27,13 +30,19 @@ Mandate genau einmal vertreten. **Dieser Lasttest wurde auftragsgemäß NICHT
 wiederholt.** Er beweist den Plattform-/Warteschlangenweg — nicht den Fachweg
 und nicht den Betrieb.
 
-## 2 · Rechnerische und architektonische Tragfähigkeit — **BEREIT** (lokal, theoretisch)
+## 2 · Rechnerische und architektonische Tragfähigkeit — **ARCHITEKTONISCH VORBEREITET, finale Dimensionierung OFFEN**
 
-Urteil nach den 20 Abschlusskriterien des Auftrags: **BEREIT** — alle lokal
-prüfbaren Kriterien sind erfüllt (Detailtabelle §10; Testnachweise §9;
-Diffumfang §11). „Bereit" heißt hier ausschließlich: Code, Konfiguration,
-Kapazitätsmodell, Sicherheitsmechanismen, Tests und Dokumentation passen
-zusammen. Es heißt NICHT, dass der Betrieb bewiesen wäre (§3).
+Urteil (geschärft im Korrektursprint 01.09., §14): **architektonisch
+vorbereitet, finale Dimensionierung offen.** Alle lokal prüfbaren Kriterien
+sind erfüllt (Detailtabelle §10; Testnachweise §9; Diffumfang §11): Code,
+Konfiguration, Kapazitätsmodell, Sicherheitsmechanismen, Tests und
+Dokumentation passen zusammen. **Nicht enthalten** in diesem Urteil: die
+finale Dimensionierung (der Zieldeckel ist ein vorläufiger
+Szenario-/Planungswert, §8 — die verbindliche Deckelbestimmung braucht die
+offenen externen Messungen aus dem Z3b-Plan: p95-Tagesbedarfe je Fachweg,
+echte Azure-Werte, vollständiger Fachwegbericht) und erst recht nicht der
+Betriebsbeweis (§3). Ein früherer Stand dieses Belegs nannte diese Ebene
+„BEREIT" — das war zu grün und ist zurückgenommen.
 
 ## 3 · Echter operativer Betrieb mit 500 Mandaten — **NICHT BEWIESEN**
 
@@ -100,12 +109,15 @@ unbewiesen.
    **echten gate-würdigen Abfluss** verglichen (Abschlüsse → `ko_document_links`
    → persistierte Gate-Entscheidungen; `unbewertet` getrennt ausgewiesen, nie
    als würdig behauptet — Production-Probe 31.08.: 62 von 87 Abschlüssen
-   belegbar würdig). Rückstandstrend mit **Anfangswert/Endwert/Trend** über
-   CAS-gesicherte Tages-Schnappschüsse (F-CAS-Muster, eigene
-   `helmut_store`-Zeile, erster Tageswert gewinnt, selbstverankernd: ohne
-   Vortagswert ehrlich `unvollständig`). **Kein ✓ bei wachsendem Rückstand
-   oder Messlücke** — getestet wachsend/gleichbleibend/sinkend
-   (`verstehen-drain-bilanz-test.js` §1–§2, 41 PASS).
+   belegbar würdig). Rückstandstrend: der Bericht **liest** die
+   CAS-Trendzeile (F-CAS-Muster, eigene `helmut_store`-Zeile); der zunächst
+   eingebaute automatische Tages-Schnappschuss-SCHREIBER wurde im
+   Korrektursprint **entfernt** (Befund 2, §14 — er verletzte den
+   Read-only-Vertrag des Berichts). Ohne separat freigegebenen Schreiber
+   bleibt der Trend ehrlich `unvollständig` und wird **nie grün**. **Kein ✓
+   bei wachsendem Rückstand oder Messlücke** — getestet
+   wachsend/gleichbleibend/sinkend (`verstehen-drain-bilanz-test.js`, 47 PASS,
+   §7.4 erzwingt den schreibfreien Berichtspfad).
 4. **PostgREST-Grenze:** Ereignis- und Abschluss-Lesen laufen begrenzt und
    deterministisch paginiert (Totalordnung `created_at`/`updated_at` + `id`);
    die alte `limit=10000`-Abfrage (still bei 1.000 gekappt) ist ersetzt.
@@ -123,13 +135,20 @@ Ursache belegt (nicht gelockert, sondern behoben): der **Audit-Publish-Pfad**
 des Testgerüsts stempelte `created_at` je Zeile (der 2026-08-08-Fix traf nur
 den Non-Audit-Pfad), und `listMatchingResults` hatte bei Stapel-Gleichstand
 **keine definierte Reihenfolge** — rein lesend belegt: **24 Gleichstandsgruppen
-in den aktuellen Production-Zeilen**, der Fehler konnte also echte Ergebnisse
-beeinflussen. Korrektur: Totalordnung `created_at.desc,rank.asc.nullslast,id.asc`
-— die Zweitsortierung ist der **vom Matcher berechnete Rang** (nachvollziehbar,
-mandatsneutral, fachlich richtig; der 2026-08-08 verworfene willkürliche
-`id.desc`-Versuch bleibt verworfen) — plus Stapelzeitstempel im Gerüst
-(Postgres-Treue). **Nachweis: `berlin-e2e` 20/20 und `brandenburg-e2e` 20/20
-grün unter 4-facher CPU-Fremdlast** (zuvor 1 Fehlschlag je 25 Läufe).
+in den aktuellen Production-Zeilen**. Der erste Wurf
+(`created_at.desc,rank.asc.nullslast,id.asc`) wurde im Korrektursprint
+**nachgeschärft (Befund 1, §14)**: `created_at` friert beim ERSTEN Auftreten
+eines Paares ein (Migration 20260728, der Publish-Upsert setzt es nie neu —
+rein lesend belegt: 140 aktuelle Zeilen aus 7 Läufen mit bis zu 18
+verschiedenen created_at je Lauf und **588 Rang-Zeitstempel-Inversionen**),
+eine created_at-primäre Ordnung ist also keine aktuelle Relevanzordnung.
+Endstand: die **aktuelle Projektion** sortiert **rank-primär**
+(`rank.asc.nullslast,id.asc`, Totalordnung; Rang = vom jüngsten bestätigenden
+Lauf berechnet), der Historien-/Auditzugang bleibt zeitlich; das Gerüst friert
+`created_at` Postgres-treu ein. **Nachweis: Regression rot-vor/grün-nach
+`matching-reihenfolge-test.js` 15/0; `berlin-e2e` und `brandenburg-e2e` je
+10/10 nach der Umstellung** (zuvor im Reifesprint 20/20 unter 4-facher
+CPU-Fremdlast; ursprünglich 1 Fehlschlag je 25 Läufe).
 
 ## 7 · Minimal-Cron-Architektur — lokal fertig vorbereitet (Commit `e11b0ee`)
 
@@ -141,15 +160,30 @@ Funktionsstunden) · **keine Cron-Änderung in Production** (Rekonstruktion aus
 Doku; `672886c` existiert nicht).
 
 - `lib/helmut/minimal-cron.js`: strenger Rhythmus-Parser (exakt 48 Slots),
-  Kollisionsfreiheit (kleinster Abstand 3 min zum 05:45-Slot), Kapazität
-  48 × min(20; 19) = **912 Aufrufe/Tag**, Laufzeitvertrag, sechs fail-closed
-  dokumentierte Aktivierungsschritte (inkl. Nachführung von SLOT_PLAN und den
-  acht pinnenden Cron-Vertragssuiten **im selben Commit** wie die
-  vercel.json-Änderung). Kein Flag, keine Env-Weiche, kein Aktivierungspfad.
+  **Startzeitkollisionsfreiheit** (kleinster Startabstand 3 min zum
+  05:45-Slot; Rückstand-zu-Rückstand belegt überschneidungsfrei per
+  280-s-Deadline ≪ 30-min-Takt + Understanding-Schloss). **OFFEN (Befund 6,
+  §14):** der 05:48-Slot kann in die bis zu 300 s lange Laufzeit des
+  05:45-Lage-Briefings fallen — die beiden teilen kein Schloss; die
+  Überschneidungsfreiheit ist NICHT belegt, `laufzeitUeberschneidungen()`
+  benennt genau dieses eine Paar, der Aktivierungs-Nachweisschritt verlangt
+  seine Prüfung. Kapazität 48 × min(20; 19) = **912 Aufrufe/Tag**,
+  Laufzeitvertrag, **sieben** fail-closed dokumentierte Aktivierungsschritte:
+  inkl. Nachführung von SLOT_PLAN und den acht pinnenden Cron-Vertragssuiten
+  **im selben Commit** wie die vercel.json-Änderung, und (Befund 5, §14) der
+  **getrennt freizugebenden Verstehens-Reserve**
+  `HELMUT_LLM_RESERVE_UNDERSTANDING` (Anteil IM Deckel, nie addiert; ohne
+  belegte, zum Deckel passende Reserve nicht aktivierungsbereit). Kein Flag,
+  keine Env-Weiche, kein Aktivierungspfad.
 - **Vorab-Bodenprüfung** (`verstehen-rueckstand.js` + Route): ein budgetloser
   Lauf endet vor jeder Lesearbeit mit ehrlicher `blocked`-Quittung statt
   ~225 s zu verbrennen (belegt am Naturlauf 31.08. 17:30) — Voraussetzung des
-  48er-Takts. Fail closed, `Number(null)`-Falle behandelt.
+  48er-Takts. Fail closed, `Number(null)`-Falle behandelt. **Quelle seit dem
+  Korrektursprint (Befund 3, §14): der maßgebliche atomare Tageszähler**
+  `llm_budget_counters` (UTC-Tag, Scope global) über den rein lesenden
+  `storage.leseLlmTageszaehler` — nicht mehr das verlustbehaftete
+  llmUsage-Log (~16 % Verlust); unlesbarer Zähler blockiert geschlossen VOR
+  Wiedervorlage und Rohdokument-/Rückstandslesen.
 - **Cron-Vertragsbeleg:** `vercel.json` byte-unverändert (13 Einträge),
   SLOT_PLAN unverändert; alle acht pinnenden Vertragssuiten grün (§9).
 
@@ -157,7 +191,14 @@ Doku; `672886c` existiert nicht).
 
 **Nachrechnung der dokumentierten ~455:** Die Zahl entsteht im Modell als
 **Erwartungswert des Verstehens-Bedarfs (456)** — bestätigt, aber als
-Planungsgrundlage unvollständig: Sie unterstellte quellenkonstante Last. Rein
+Planungsgrundlage unvollständig: Sie unterstellte quellenkonstante Last.
+**Einheiten (Befund 4, §14) — es gibt DREI verschiedene „455", die nie
+vermengt werden dürfen:** (a) `skalierung-25-50-100.md` §2: 455
+**Warteschlangen-Aufträge**/Tag bei **5** Mandaten (338 source_fetch + 98
+verstehen + 19 mandatsgebunden — Aufträge, keine Modellaufrufe; die
+Zahlengleichheit mit (b) ist Zufall); (b) `understanding-kapazitaet-2026-08-31.md`
+§13.3: ~455 **KI-Aufrufe**/Tag Verstehens-Bedarf bei **500** Mandaten;
+(c) dieses Modell: 456 = Erwartungswert von (b). Rein
 lesend gemessen erzeugen die **profilgetriebenen Quellen schon bei 5 Mandaten
 ~51 Vorgänge/Tag** (1.716 Rohdokumente/30 T aus `<slug>-news*`), und die
 Personensuche ist heute krank (0,03/Mandat/Tag — OP-15-Versorgungsausfall),
@@ -170,12 +211,19 @@ kostet einen vollen Aufruf — nur echtes Parken spart**.
 | Szenario (500 Mandate, Aufrufe/Tag) | Verstehen | mandatsgebunden | Abbau | gesamt | erforderl. Deckel |
 |---|---:|---:|---:|---:|---:|
 | Erwartung | 456 | 600 | 53 | **1.119** | 1.492 |
-| **Konservativ (Dimensionierung)** | 702 | 1.000 | 100 | **1.812** | **2.416** |
+| **Konservativ (Planungswert)** | 702 | 1.000 | 100 | **1.812** | **2.416** |
 | Stress (Warnschwellen, nicht Deckel) | 989 | 1.500 | 133 | **2.632** | (3.510) |
 
-- **Zieldeckel (kleinster belegbar ausreichender): 2.416** = konservativer
-  Bedarf ÷ 0,75 (25 % Reserve) ≥ Fairness-Untergrenze 2n−1 = 999.
-  **Erforderliche Verstehens-Reserve: 702** (im Deckel, nie addiert).
+- **VORLÄUFIGER Szenario-/Planungswert: 2.416** (Befund 4, §14 — KEIN
+  „kleinster belegbar ausreichender Zieldeckel": die Grundlage sind
+  Szenarioannahmen, nicht finale Messungen). Rechnung: konservativer Bedarf
+  ÷ 0,75 (25 % Reserve) ≥ Fairness-Untergrenze 2n−1 = 999. **Spanne statt
+  Punktwert: 1.492 (Erwartung) bis 2.416 (konservativ).** Die VERBINDLICHE
+  Deckelfestlegung braucht zuvor die offenen Z3b-Messungen
+  (`zielDeckel().offeneMessungen`): p95-Tagesbedarf Verstehen/Lage/Büro,
+  echte Azure-Kontingente/Rate-Limits, vollständiger Fachwegbericht.
+  **Erforderliche Verstehens-Reserve: 702** (im Deckel, nie addiert; eigener
+  Aktivierungsschritt, §7).
 - **48-Slot-Kapazität: 984 Verstehens-Aufrufe/Tag** (912 Rückstands-Takt + 38
   Frisch + 29 Queue + 5 Lage). Konservative Slotlast 802 ≤ 984 ✓; Erwartung
   509 (Puffer > 30 %) ✓; **Stress 1.122 > 984 — ehrlich nicht slot-gedeckt**
@@ -202,18 +250,22 @@ Modul. **Alle 495 offline gültig (validateSpec: 0 Fehler), byte-identisch
 wiederholbar, alle 495 Profile inaktiv; Größe gemessen: 196.275 Bytes gesamt,
 größtes Profil 412 Bytes.** Nichts provisioniert, nichts aktiviert.
 
-**Gezielte Suiten (alle über `scripts/lokal.js`):** gate-parken-persistenz
-**30/0** (neu) · verstehen-drain-bilanz **47/0** (neu gefasst, inkl. Review-Fixes) ·
-dedup-bestandsfenster **24/0** · minimal-cron **29/0** (neu) · kapazitaet-500
-**26/0** (neu) · test-kohorte-500 **27/0** (neu) · verstehen-rueckstand 61/0 ·
+**Gezielte Suiten (alle über `scripts/lokal.js`; Stände nach dem
+Korrektursprint §14):** gate-parken-persistenz **30/0** (neu) ·
+verstehen-drain-bilanz **47/0** (§7.4 invertiert: schreibfreier Berichtspfad) ·
+dedup-bestandsfenster **24/0** · minimal-cron **39/0** (inkl. Befunde 5+6) ·
+kapazitaet-500 **31/0** (inkl. Befund 4) · test-kohorte-500 **27/0** (neu) ·
+verstehen-rueckstand **69/0** (inkl. §13 Zähler-Leser) ·
+**matching-reihenfolge 15/0 (neu, rot-vor/grün-nach)** ·
 understanding-gate-arm grün · understanding-gate-integration grün · lauf-bilanz
 149/0 · motor-health 65/0 · health-report-route 49/0 · vorgangs-lebenszyklus
 81/81 · understanding-konkurrenz 14/0 · lage 138 · op25-e3 55/0 · pilot-e2e
-96/0 · matching-audit 178/0 · matching-aktualitaet 29/0 · matching-erklaerung
-67/0 · relevanzordnung 47/0 · scoring 73/0 · env-inventar 38/0 ·
-provision-stapel 117/0 · profil-inventar-200 grün · **berlin-e2e 20/20 und
-brandenburg-e2e 20/20 unter 4-facher CPU-Fremdlast** · alle acht pinnenden
-Cron-Vertragssuiten exit 0. **Offline-Gesamtlauf: siehe §12.**
+96/0 · matching-audit 178/0 · matching-aktualitaet **30/0** (Sortiervertrag
+nachgezogen) · matching-erklaerung 67/0 · relevanzordnung 47/0 · scoring 73/0 ·
+env-inventar 38/0 · provision-stapel 117/0 · profil-inventar-200 grün ·
+**berlin-e2e und brandenburg-e2e je 10/10 nach der Sortierumstellung** (im
+Reifesprint 20/20 unter 4-facher CPU-Fremdlast) · alle acht pinnenden
+Cron-Vertragssuiten exit 0. **Offline-Gesamtlauf: siehe §12 und §14.**
 
 ## 10 · Die 17 technischen Voraussetzungen (Kurzbeleg)
 
@@ -233,9 +285,9 @@ Cron-Vertragssuiten exit 0. **Offline-Gesamtlauf: siehe §12.**
 | 12 | Warnschwellen | W1–W5 vertraglich (§8) |
 | 13 | Mandantentrennung | assertTenant/user_id-Filter unangetastet (matching-audit 178/0); neue Messgrößen sind ausdrücklich global/mandantenneutral |
 | 14 | Keine hartkodierten Mandate | Diff-Prüfung: reale Kennungen nur als Negativliste im Kohorten-Test (Kollisionsausschluss) |
-| 15 | Keine stillen Erfolge | Blocker 1+2 (§5); Vorab-Boden quittiert `blocked`; Schnappschuss-Fehler laut |
+| 15 | Keine stillen Erfolge | Blocker 1+2 (§5); Vorab-Boden quittiert `blocked` (Quelle: atomarer Zähler, §14 Befund 3); unlesbare Trendzeile laut gemeldet |
 | 16 | Keine ungebundenen Abfragen | jede neue Abfrage trägt limit + Totalordnung; Deckel ⇒ null |
-| 17 | Kein Satz ohne Rechenbeleg | Kapazitätsmodell ausführbar + testgesichert (26/0); Messwerte mit Herkunft |
+| 17 | Kein Satz ohne Rechenbeleg | Kapazitätsmodell ausführbar + testgesichert (31/0); Messwerte mit Herkunft |
 
 Zusätzlich lief ein **adversarialer Review-Workflow** über den gesamten Diff
 (6 Dimensionen, je Befund zwei unabhängige Gegenprüfer); Ergebnis: §12.
@@ -284,10 +336,42 @@ Lasttest. Der Supabase-Zugriff dieser Sitzung war ausschließlich `SELECT`.
 
 ## 13 · Nächster sicherer Schritt
 
-1. Betreiber: diesen (gesichert gepushten, deploy-gesperrten) Branch prüfen
-   und bei Zustimmung **PR-Eröffnung freigeben** — ein PR wurde auftragsgemäß
-   nicht eröffnet.
-2. Danach (je eigene Freigabe): Merge der Blockerkorrekturen → natürliche
-   Läufe rein lesend prüfen → erst dann Gate-Flip-Entscheidung; Zieldeckel-
-   und Minimal-Cron-Aktivierung nur entlang der sechs dokumentierten Schritte
-   (§7) und des Stufenplans (§3).
+1. **Erledigt mit dem Korrektursprint (§14):** auftragsgemäß wird genau ein
+   **deploygesperrter Draft-PR gegen `main`** eröffnet, damit die Pflicht-CI
+   läuft (kein Merge, kein Deployment, kein Auto-Merge, nicht
+   Ready-for-Review; die Branch-Deploysperre in `vercel.json` bleibt).
+2. Betreiber: Draft-PR und CI-Ergebnis prüfen; die nächste einzelne Freigabe
+   ist die **Merge-Entscheidung** über diesen PR.
+3. Danach (je eigene Freigabe): natürliche Läufe rein lesend prüfen → erst
+   dann Gate-Flip-Entscheidung; Zieldeckel- und Minimal-Cron-Aktivierung nur
+   entlang der **sieben** dokumentierten Schritte (§7 — inkl. getrennter
+   Verstehens-Reserve) und des Stufenplans (§3); die verbindliche
+   Deckelfestlegung erst nach den offenen Z3b-Messungen (§8).
+
+## 14 · Korrektursprint 2026-09-01 — sieben Betreiber-Befunde, alle bestätigt und behoben
+
+Auftrag des Betreibers nach Prüfung des Reifesprints; alle sieben Befunde
+wurden am Code bestätigt (keiner widerlegt) und auf diesem Branch behoben.
+Die betroffenen Abschnitte oben sind auf den Endstand nachgezogen.
+
+| # | Befund (bestätigt) | Korrektur | Commit |
+|---|---|---|---|
+| 1 | `matching_results.created_at` friert beim Erstauftritt ein — `created_at.desc,rank…` ist keine aktuelle Relevanzordnung (Production: 140 aktuelle Zeilen/7 Läufe, bis 18 created_at je Lauf, 588 Rang-Zeitstempel-Inversionen) | aktuelle Projektion rank-primär (`rank.asc.nullslast,id.asc`), Historienzugang bleibt zeitlich; Gerüst friert created_at Postgres-treu ein; Regression rot-vor/grün-nach (`matching-reihenfolge-test.js` 15/0, echter PostgREST-Order-Vertrag) | `405e285` |
+| 2 | Gesundheitsbericht schrieb je Aufruf (auch `?dryRun=1`) den Drain-Trend in `helmut_store` — Bruch des Read-only-Vertrags | automatischer Schreiber entfernt; Trendzeile wird nur gelesen, Trend ohne historischen Messpunkt ehrlich `unvollständig` (nie grün); Schreibfunktion bleibt unverdrahtet, Verdrahtung = separat freizugebende Production-Datenänderung; Suite §7.4 invertiert | `32b8e6e` |
+| 3 | `vorabBodenPruefung` las via `canSpendLlm` das verlustbehaftete llmUsage-Log (~16 % Verlust) — hätte zu spät blockiert | neuer rein lesender `storage.leseLlmTageszaehler` (llm_budget_counters, UTC-Tag, Scope global, ein SELECT); alte Log-Quelle wird nicht mehr akzeptiert; unlesbarer Zähler blockiert geschlossen VOR Wiedervorlage/Lesearbeit; Choke-Point unverändert | `cca9260` |
+| 4 | 2.416 war als „kleinster belegbar ausreichender Zieldeckel" zu grün etikettiert; drei verschiedene „455" (Aufträge@5 · KI-Aufrufe@500 · Erwartungswert) drohten vermengt zu werden | Einordnung `vorlaeufiger-szenario-planungswert`, Spanne 1.492–2.416, fünf offene Z3b-Messungen maschinenlesbar; Einheiten der drei 455er dokumentiert und testgesichert | `212b5a4` |
+| 5 | Aktivierungsvertrag nannte nur den Gesamtdeckel — die Verstehens-Reserve fehlte | siebter, GETRENNT freizugebender Schritt `verstehens-reserve` (`HELMUT_LLM_RESERVE_UNDERSTANDING`; Anteil IM Deckel, nie addiert; ohne belegte Reserve nicht bereit); Test verhindert Nur-Gesamtdeckel | `2c058fa` |
+| 6 | „kollisionsfrei" war zu stark: der 05:48-Slot kann in die bis zu 300 s lange Laufzeit des 05:45-Lage-Briefings fallen (kein gemeinsames Schloss) | nur noch Startzeitkollisionsfreiheit behauptet; Rückstand-zu-Rückstand belegt überschneidungsfrei; 05:45/05:48 ausdrücklich OFFEN, `laufzeitUeberschneidungen()` benennt das Paar, Nachweisschritt verlangt seine Prüfung | `2c058fa` |
+| 7 | Verweise auf `z3b-aktivierungsplan`/`z3b-supabase-testplan`/`zehn-mandate-uebergang` zeigten ins Leere (Dateien nur in PRs #277/#282); Archivkopie trug 44 kaputte relative Links | Verweise auf PR #277 (Kopf `a705c18d…`) / PR #282 (Kopf `c55d2f82…`) gebunden, ungemergte Quellenlage + verwendete Regeln offen benannt (§3); alle 44 Archiv-Links repariert; Link-Prüfung über alle geänderten MD-Dateien: 0 kaputt | `31ad167` |
+
+**Testnachweise des Korrektursprints:** §9 (aktualisierte Stände). Der
+kanonische Offline-Gesamtlauf auf dem Endstand des Korrektursprints steht in
+§14.1.
+
+### 14.1 · Abschlussprüfungen des Korrektursprints
+
+- Offline-Gesamtlauf (`scripts/lokal.js` → `run-offline-tests.js`) auf dem
+  Endstand: **[wird nach dem Lauf eingetragen]**
+- `git diff --check`: **[wird eingetragen]**
+- Draft-PR: **[Nummer + Kopf-SHA + CI-Zustand werden im Abschlussbericht an
+  den Betreiber genannt; der PR selbst trägt sie maschinenlesbar]**
