@@ -1,7 +1,10 @@
 # 500 Mandate — theoretische Bereitschaft (Beleg, 2026-09-01)
 
 **Sprint:** 500-Mandate-Reifesprint (Nachtauftrag 31.08./01.09.) · Branch
-`claude/helmut-500-mandate-readiness-6hxden` (lokal, ungepusht auftragsgemäß).
+`claude/helmut-500-mandate-readiness-6hxden` — am 01.09. auf ausdrückliche
+Stop-Hook-Aufforderung des Betreibers **gesichert gepusht**: erst Selbstsperre
+in `vercel.json` (`git.deploymentEnabled=false`, belegtes Verfahren des
+30.08., Telemetrie-Beleg §12), dann Push; **kein PR, kein Deployment**.
 **Production wurde ausschließlich rein lesend geprüft** — kein Merge, kein Deployment,
 keine Migration, keine Daten-/Env-/Flag-/Cron-Änderung, kein Modellaufruf, keine
 Provisionierung, kein Lasttest. Das Gate bleibt `shadow`.
@@ -261,9 +264,9 @@ Lasttest. Der Supabase-Zugriff dieser Sitzung war ausschließlich `SELECT`.
 
 ## 13 · Nächster sicherer Schritt
 
-1. Betreiber: diesen Branch prüfen; bei Zustimmung Push + PR freigeben
-   (auftragsgemäß wurde nichts gepusht — der Stand liegt nur in dieser
-   Arbeitsumgebung und in `docs/`-Belegen).
+1. Betreiber: diesen (gesichert gepushten, deploy-gesperrten) Branch prüfen
+   und bei Zustimmung **PR-Eröffnung freigeben** — ein PR wurde auftragsgemäß
+   nicht eröffnet.
 2. Danach (je eigene Freigabe): Merge der Blockerkorrekturen → natürliche
    Läufe rein lesend prüfen → erst dann Gate-Flip-Entscheidung; Zieldeckel-
    und Minimal-Cron-Aktivierung nur entlang der sechs dokumentierten Schritte
