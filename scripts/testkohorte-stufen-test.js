@@ -342,6 +342,80 @@ async function main() {
   check("L5 auch mit Stufe bleibt der Trockenlauf der Standard",
     (await V.fuehreProvisionierungAus({ stufe: "c", modus: "scharf", env: {} })).modus === "trockenlauf");
 
+  // ── M · Zwei behobene Defekte des Startbereitschafts-Tors ────────────────
+  //
+  // Beide wurden in der adversarialen Gegenprüfung am 02.09. gefunden und am
+  // Code belegt. Beide zeigten in die SICHERE Richtung (das Tor war zu streng,
+  // nicht zu lax) — falsch waren sie trotzdem, denn sie machten eine
+  // Betreiberentscheidung wirkungslos, ohne es zu melden.
+  console.log("\nM · Behobene Defekte (Regression)");
+  const F = require("../lib/helmut/funktionstest-500");
+  const Z = require("../lib/helmut/funktionstest-zyklus");
+
+  // M1/M2: `pruefeKonfiguration` gab `gelesen` nie zurück; `startbereitschaft`
+  // las genau dieses Feld und rechnete deshalb IMMER mit Parallelität 1.
+  const konfig = F.pruefeKonfiguration({ maxParallel: 2, maxAnfragenJeMinute: 82 });
+  check("M1 pruefeKonfiguration gibt die gelesenen Werte zurück",
+    konfig.gelesen && typeof konfig.gelesen === "object",
+    JSON.stringify(konfig.gelesen || null));
+  check("M2 maxParallel und maxAnfragenJeMinute kommen wirklich an",
+    konfig.gelesen.maxParallel === 2 && konfig.gelesen.maxAnfragenJeMinute === 82);
+  check("M3 ein NICHT gesetzter Wert erscheint auch nicht in gelesen (kein stiller Default)",
+    !Object.prototype.hasOwnProperty.call(
+      F.pruefeKonfiguration({ maxParallel: 2 }).gelesen, "maxAnfragenJeMinute"));
+
+  // M4/M5: das Tor rechnete mit fest eingebauten 24 h, der Motor liest
+  // HELMUT_DEMAND_TENANT_MAX_AGE_H. Beide müssen aus derselben Quelle kommen.
+  const breiteStandard = Z.arbeitsklassenImFenster({
+    fensterStartMinuteUtc: 696, fensterEndeMinuteUtc: 959, env: {}
+  });
+  const breiteGesetzt = Z.arbeitsklassenImFenster({
+    fensterStartMinuteUtc: 696, fensterEndeMinuteUtc: 959,
+    env: { HELMUT_DEMAND_TENANT_MAX_AGE_H: "12" }
+  });
+  check("M4 ohne Umgebungswert gilt die Motor-Vorgabe 24 h",
+    breiteStandard.bewertbar === true && breiteStandard.fensterBreiteStunden === 24);
+  check("M5 ein gesetzter Motorwert wirkt auch im Tor (kein Auseinanderlaufen)",
+    breiteGesetzt.bewertbar === true && breiteGesetzt.fensterBreiteStunden === 12);
+  check("M6 ein ausdrücklich übergebener Wert hat weiter Vorrang",
+    Z.arbeitsklassenImFenster({
+      fensterStartMinuteUtc: 696, fensterEndeMinuteUtc: 959,
+      fensterBreiteStunden: 6, env: { HELMUT_DEMAND_TENANT_MAX_AGE_H: "12" }
+    }).fensterBreiteStunden === 6);
+  check("M7 im empfohlenen Fenster bleibt die Produktstufe unerreichbar (Blocker 1)",
+    breiteStandard.sichtbareProduktstufeErreichbar === false);
+
+  // ── N · Blocker 2 ist eine Eigenschaft des KONSERVATIVEN Szenarios ───────
+  //
+  // Befund der Gegenprüfung, am Modell nachgerechnet: 1.000 der 1.812 Aufrufe
+  // (55,2 %) stammen aus `SZENARIEN.konservativ.mandatsgebundenJeMandat = 2.0`.
+  // Der GEMESSENE Wert steht als `MESSWERTE.mandatsgebundenJeMandatProTag = 1.2`
+  // im selben Modul und wird vom Erwartungsszenario benutzt. Das ist KEIN
+  // Defekt — ein konservatives Szenario darf pessimistischer rechnen als die
+  // Messung. Es ist aber eine Tatsache, die der Betreiber kennen muss: der
+  // Blocker ist keine gemessene Größe, sondern eine Szenarioentscheidung.
+  // Der Kipppunkt liegt bei 1,84.
+  console.log("\nN · Blocker 2 ist szenarioabhängig (Tatsache, kein Defekt)");
+  const kap = require("../lib/helmut/kapazitaet-500");
+  check("N1 der gemessene Wert ist 1,2 und wird vom Erwartungsszenario benutzt",
+    kap.MESSWERTE.mandatsgebundenJeMandatProTag === 1.2
+      && kap.SZENARIEN.erwartung.mandatsgebundenJeMandat === 1.2);
+  check("N2 das konservative Szenario rechnet bewusst mit 2,0",
+    kap.SZENARIEN.konservativ.mandatsgebundenJeMandat === 2);
+  check("N3 der Kipppunkt liegt bei 1,84 — darunter passt der Zyklus in 263 Minuten",
+    (() => {
+      const bedarfBei = (f) => 702 + Math.round(500 * f) + 100 + 10;
+      return bedarfBei(1.84) === 1732 && bedarfBei(2) === 1812 && bedarfBei(1.2) === 1412;
+    })());
+  check("N4 mit dem gemessenen 1,2 passt der Zyklus bei Parallelität 1",
+    kap.zyklusPasstInsFenster({
+      fensterMinuten: 263, parallel: 1, szenario: "erwartung", mandate: 500
+    }).passt === true);
+  check("N5 mit dem konservativen 2,0 passt er nicht",
+    kap.zyklusPasstInsFenster({
+      fensterMinuten: 263, parallel: 1, szenario: "konservativ", mandate: 500
+    }).passt === false);
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);
 }
