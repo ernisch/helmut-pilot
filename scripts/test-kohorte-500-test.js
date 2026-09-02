@@ -140,5 +140,32 @@ abschnitt("§7 Größenprüfung des Profilbestands (495 Profile)");
   check("§7.4 alle 495 Profile sind inaktiv", profile.every((p) => p.profileActive === false));
 }
 
+abschnitt("§8 EUR-Profildeckel (adversariale Analyse 02.09., bestätigter Befund)");
+{
+  // BEFUND: Die Spezifikation setzte weder `aiBudgetDailyCents` noch
+  // `aiBudgetMonthlyCents`. `evaluateTenantBudget` liefert dann
+  // `applied:false, allowed:true` — der EINZIGE heute produktiv wirksame
+  // Per-Mandant-Deckel war für alle 495 Kohortenprofile ein No-op, während er
+  // für reale Mandate mit gesetztem Profilbudget greift.
+  check("§8.1 jede Spezifikation trägt einen EUR-Tagesdeckel",
+    specs.every((s) => Number.isInteger(s.aiBudgetDailyCents) && s.aiBudgetDailyCents > 0));
+  check("§8.2 jede Spezifikation trägt einen EUR-Monatsdeckel",
+    specs.every((s) => Number.isInteger(s.aiBudgetMonthlyCents) && s.aiBudgetMonthlyCents > 0));
+  check("§8.3 der Tagesdeckel ist wirklich knapp (≤ 25 ct je synthetischem Profil)",
+    specs.every((s) => s.aiBudgetDailyCents <= 25));
+  check("§8.4 der Monatsdeckel ist nicht kleiner als der Tagesdeckel",
+    specs.every((s) => s.aiBudgetMonthlyCents >= s.aiBudgetDailyCents));
+  const profile = specs.map((s) => buildProfile(
+    kohorte.mitLaufzeitPasswort(s, { zufall: () => "x" }), { aktiv: false }
+  ));
+  check("§8.5 der Deckel überlebt buildProfile und steht im angelegten Profil",
+    profile.every((p) => p.aiBudgetDailyCents === 10 && p.aiBudgetMonthlyCents === 100));
+  // EHRLICHE GRENZE, ausdrücklich mitgeprüft: 495 × 10 ct liegt ÜBER der
+  // Kostenabbruchgrenze. Dieser Deckel ist ein Rückfallnetz gegen EIN
+  // durchdrehendes Profil, nicht die bindende Tagesgrenze.
+  check("§8.6 der Deckel ist ausdrücklich NICHT die bindende Tagesgrenze",
+    specs.length * specs[0].aiBudgetDailyCents > 1000);
+}
+
 console.log(`\nERGEBNIS: ${pass} PASS / ${fail} FAIL`);
 process.exit(fail ? 1 : 0);

@@ -10,6 +10,8 @@ const tenantContext = require("./lib/helmut/tenant-context");
 const { validateProfile } = require("./lib/helmut/profile-validation");
 const { bewerteBundestagsprofil } = require("./lib/helmut/profile-readiness");
 const sourceSafety = require("./lib/helmut/sourceSafety");
+// Kanonische Klassifizierung real/synthetisch (Vorrang der realen Mandate).
+const mandatsklasse = require("./lib/helmut/mandatsklasse");
 const { runLageCheck, runSourceCrawl, runGlobaleErfassung, runMandatsProjektion } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
 const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, getRunCostReport, llmPriceProvenance, recordLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, profileDbExclusiveEnabled, getProfileTelemetry, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState, getLlmCostSince, getAdminCostsPerUser, listSourceArchitectureRows, getSourceModeShadowLastRun, listSourceCrawlTelemetry, readCronFairnessState, saveCronFairnessState } = require("./lib/helmut/storage");
@@ -1650,6 +1652,15 @@ async function handleRequest(request, response) {
       }
       let profiles = await listProfiles().catch(() => []);
       if (!Array.isArray(profiles)) profiles = [];
+      // VORRANG DER REALEN MANDATE (Sprint 02.09.). Diese Schleife arbeitet gegen
+      // ein hartes Zeitbudget von 240 s und in FESTER Listenreihenfolge — anders
+      // als der Morgenlauf hat sie keine Fairnessrotation. Bei 5 realen und 495
+      // synthetischen Profilen entscheidet damit allein die Listenposition, wer
+      // vor dem Zeitbudget noch drankommt. Reale Mandate werden deshalb stabil
+      // nach vorn gestellt; die Reihenfolge INNERHALB einer Klasse bleibt
+      // unveraendert. Bei homogener Profilmenge (heutiger Stand: 0 synthetische
+      // Zeilen) ist die Liste element-identisch zu vorher.
+      profiles = mandatsklasse.sortiereRealZuerst(profiles, (p) => (p && p.id) || null);
       // KEIN Fallback auf ein Default-Mandat: ohne gespeicherte Profile ist der
       // Vorwaerm-Lauf ein ehrlicher Leerlauf.
       const results = [];
@@ -2184,10 +2195,21 @@ async function handleRequest(request, response) {
         : inviteMail.buildInviteMail({ name: target.name, inviteUrl: linkUrl });
       const mail = await inviteMail.sendAccessMail(
         { to: target.email, ...mailContent },
-        { kennung: target.politicianId }
+        { kennung: await kontoKennung(target) }
       );
       const action = purpose === "reset" ? "admin.user.reset-link" : "admin.user.invite";
-      await accounts.recordAudit({ action, userId: authUser.id, actorEmail: authUser.email, detail: target.email });
+      // VERSANDSPUR (ergaenzt 02.09., zweiter Reviewbefund): Der Auditeintrag wurde
+      // bisher UNABHAENGIG davon geschrieben, ob die Mail tatsaechlich hinausging —
+      // und er trug keine Mandatskennung. Damit war er als Nachweis eines externen
+      // Versands unbrauchbar: unter dem Kommunikationsriegel entsteht er auch dann,
+      // wenn nichts gesendet wurde. Er traegt jetzt die aufgeloeste Kennung UND den
+      // tatsaechlichen Versandstatus; erst damit ist er die Quelle, gegen die die
+      // Abbruchregel A10 rechnen kann.
+      await accounts.recordAudit({
+        action, userId: authUser.id, actorEmail: authUser.email,
+        politicianId: await kontoKennung(target),
+        detail: `${target.email} · versand=${mail && mail.sent === true ? "ja" : "nein"}`
+      });
       return { ok: true, purpose, inviteUrl: linkUrl, expiresAt: issued.expiresAt, mail };
     });
   }
@@ -5670,6 +5692,37 @@ function passwordSetUrl(request, token) {
   return `${publicBaseUrl(request)}/passwort-setzen?token=${encodeURIComponent(token)}`;
 }
 
+// ─── BEFUND 02.09. (adversariale Analyse, bestätigt): Kontokennung ──────────
+// `accounts.createUser` setzt `politicianId` NUR für die Rolle "abgeordneter"
+// (accounts.js:176-180); `updateUser` setzt sie bei jeder anderen Rolle hart auf
+// null. Die Mandatsbindung eines Referenten liegt ausschließlich in den
+// Zuweisungen. Die vier Mailaufrufer reichten bisher allein `user.politicianId`
+// durch — ein Referent mit ECHTER Dienstadresse, der einem synthetischen Mandat
+// zugewiesen ist, erzeugte damit einen Vorgang mit kennung="" und realer
+// Adresse: der Riegel stufte ihn als BEFUND_REAL ein und ließ die Einladungs-
+// bzw. Reset-Mail durch.
+//
+// Diese Auflösung ist bewusst FAIL-CLOSED und ändert den realen Mailweg nicht:
+//   * ist `user.politicianId` gesetzt, bleibt sie die Kennung — unverändert;
+//   * ist sie leer, gewinnt eine SYNTHETISCHE Zuweisung, falls es eine gibt;
+//   * gibt es nur reale Zuweisungen, bleibt es beim bisherigen Verhalten.
+// Es kann also nur ein Vorgang STRENGER werden, nie lockerer.
+async function kontoKennung(user) {
+  const eigene = (user && user.politicianId) || "";
+  if (eigene) return eigene;
+  let zuweisungen = [];
+  try {
+    zuweisungen = await accounts.assignmentsForUser((user && user.id) || "");
+  } catch {
+    // Ein Lesefehler darf keinen Kontoweg blockieren; er lässt die Kennung leer.
+    return "";
+  }
+  const synthetisch = (Array.isArray(zuweisungen) ? zuweisungen : [])
+    .map((e) => (e && e.politicianId) || "")
+    .find((id) => mandatsklasse.istSynthetischeKennung(id));
+  return synthetisch || "";
+}
+
 // Einladung erzeugen + Zustellung versuchen. Solange kein Mail-Dienst existiert
 // (Domain folgt), traegt die Antwort den Link fuer den Admin-Kopierweg (§6 Interim)
 // und einen ehrlichen mail.sent-Status — es wird NIE stillschweigend "gesendet".
@@ -5679,7 +5732,7 @@ async function issueInvite(request, user) {
   const mailContent = inviteMail.buildInviteMail({ name: user.name, inviteUrl });
   const mail = await inviteMail.sendAccessMail(
     { to: user.email, ...mailContent },
-    { kennung: user.politicianId }
+    { kennung: await kontoKennung(user) }
   );
   return { inviteUrl, expiresAt, mail };
 }
@@ -5727,11 +5780,15 @@ async function zustellenAnonymerReset(user, kontext) {
   const mailContent = purpose === "reset"
     ? inviteMail.buildResetMail({ name: user.name, resetUrl: linkUrl })
     : inviteMail.buildInviteMail({ name: user.name, inviteUrl: linkUrl });
-  await inviteMail.sendAccessMail(
+  const versandBefund = await inviteMail.sendAccessMail(
     { to: user.email, ...mailContent },
-    { kennung: user.politicianId }
+    { kennung: await kontoKennung(user) }
   );
-  await accounts.recordAudit({ action: "password.reset-requested", userId: user.id, ip: kontext.ip });
+  await accounts.recordAudit({
+    action: "password.reset-requested", userId: user.id, ip: kontext.ip,
+    politicianId: await kontoKennung(user),
+    detail: `${user.email} · versand=${versandBefund && versandBefund.sent === true ? "ja" : "nein"}`
+  });
 }
 
 // POST /api/auth/request-reset — { email }: antwortet IMMER generisch mit 200
@@ -5779,9 +5836,13 @@ function handleAuthRequestReset(request, response) {
         : inviteMail.buildInviteMail({ name: user.name, inviteUrl: linkUrl });
       const mail = await inviteMail.sendAccessMail(
     { to: user.email, ...mailContent },
-    { kennung: user.politicianId }
+    { kennung: await kontoKennung(user) }
   );
-      await accounts.recordAudit({ action: "password.reset-requested", userId: user.id, ip: auth.clientIp(request) });
+      await accounts.recordAudit({
+        action: "password.reset-requested", userId: user.id, ip: auth.clientIp(request),
+        politicianId: await kontoKennung(user),
+        detail: `${user.email} · versand=${mail && mail.sent === true ? "ja" : "nein"}`
+      });
       // Dem Besitzer ehrlich antworten: ohne Mail-Versand den Link direkt (Interim-
       // Kopierweg), mit Mail-Versand den Zustellstatus (Client zeigt den Toast).
       if (!mail.sent) return { ...generic, resetUrl: linkUrl, expiresAt: issued.expiresAt, mail };

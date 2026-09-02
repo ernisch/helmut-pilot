@@ -6,7 +6,8 @@
 //   * Kosten- und Aufrufdeckel
 //   * Understanding-Reserve (Anteil IM Deckel, nie addiert)
 //   * Azure-Minutenlimits (RPM/TPM)
-//   * die zwölf Abbruchregeln
+//   * die fünfzehn Abbruchregeln (A13 Dubletten, A14 Verdrängung eines realen
+//     Mandats und A15 Mindestumfang beobachteter Arbeit sind am 02.09. dazugekommen)
 //   * unvollständige Konfiguration blockiert
 //   * falscher Production-Commit blockiert
 //   * Cron-Überschneidung blockiert
@@ -18,6 +19,7 @@ const path = require("path");
 const F = require("../lib/helmut/funktionstest-500");
 const R = require("../lib/helmut/kommunikationsriegel");
 const minimalCron = require("../lib/helmut/minimal-cron");
+const KAP = require("../lib/helmut/kapazitaet-500");
 
 const ROOT = path.join(__dirname, "..");
 let pass = 0;
@@ -44,7 +46,11 @@ const BEISPIEL = Object.freeze({
   maxAnfragenJeMinute: 60,
   maxTokenJeMinute: 200000,
   kostenbudgetUsd: 12.5,
-  vorrangreserveReal: 60,
+  // ANGEHOBEN 02.09.: die Vorrangreserve muss den GEMESSENEN p95-Tagesbedarf der
+  // fünf realen Mandate decken (170, Untergrenze). 60 hätte die neue Bindung
+  // nicht erfüllt — und genau das war der Befund: eine Reserve, die nur die
+  // ANZAHL der Mandate schützt, schützt ihren Tagesbedarf nicht.
+  vorrangreserveReal: 200,
   maxParallel: 1
 });
 
@@ -55,25 +61,34 @@ const ALLE_MESSUNGEN = Object.freeze(Object.fromEntries(
 const VOLLE_GRENZEN = Object.freeze({
   maxFehlerquote: 0.05,
   kostenbudgetUsd: 12.5,
-  maxLaufzeitMinuten: 600,
+  // ANGEPASST 02.09.: die Laufzeitgrenze muss in das geprüfte Startfenster
+  // passen (neue Hürde in startbereitschaft). Die Testfenster unten sind
+  // 30 Minuten lang.
+  maxLaufzeitMinuten: 30,
   maxRueckstandWachstum: 200,
-  erwarteterCommit: COMMIT
+  erwarteterCommit: COMMIT,
+  mindestVerarbeiteteVorgaenge: 50
 });
 
-// Eine Beobachtungslage, in der alle zwölf Regeln bewertbar und still sind.
+// Eine Beobachtungslage, in der alle fünfzehn Regeln bewertbar und still sind.
 const RUHIGE_LAGE = Object.freeze({
   unbekannteModellaufrufe: 0,
   haengendeLeases: 0,
   fehlerquote: 0.01,
   kostenBisherUsd: 3.2,
-  laufzeitMinuten: 120,
+  laufzeitMinuten: 20,
   drosselungen: 0,
   rueckstandWachstum: 10,
   bilanzVollstaendig: true,
   realeMandateVeraendert: 0,
   kommunikationsversuche: 0,
   productionCommit: COMMIT,
-  fensterKonflikte: 0
+  fensterKonflikte: 0,
+  // Ergänzt 02.09. mit A13/A14.
+  dubletten: 0,
+  realeMandateOhneZuteilung: 0,
+  // A15: es MUSS gearbeitet worden sein — eine leere Bilanz ist nicht grün.
+  verarbeiteteVorgaenge: 240
 });
 
 function main() {
@@ -149,7 +164,9 @@ function main() {
   // Grenzfall: ein Deckel GENAU an der RPM-Tageskapazität (1 RPM × 1440 min)
   // ist zulässig — die Bindung prüft „erreichbar", nicht „mit Luft erreichbar".
   const rpmGrenzfall = F.pruefeKonfiguration(
-    { ...BEISPIEL, maxAnfragenJeMinute: 1, maxParallel: 1, gesamtdeckel: 1440 },
+    // Das Kostenbudget muss zum kleineren Deckel passen — seit 02.09. ist es an
+    // eine Bindung geknüpft (vorher kam jeder positive Betrag durch).
+    { ...BEISPIEL, maxAnfragenJeMinute: 1, maxParallel: 1, gesamtdeckel: 1440, kostenbudgetUsd: 6 },
     { messungen: ALLE_MESSUNGEN });
   check("C3 Ein Deckel genau an der RPM-Tageskapazität ist zulässig",
     rpmGrenzfall.bereit === true, rpmGrenzfall.gebrocheneBindungen.join(", "));
@@ -190,9 +207,27 @@ function main() {
   check("E5 Die Deckelzeile gibt eine Spanne aus, keinen Punktwert",
     /\d+–\d+/.test(deckelZeile.empfehlung) && /Szenariospanne/.test(deckelZeile.empfehlung),
     deckelZeile.empfehlung);
-  check("E6 RPM, TPM und Kostenbudget sind ehrlich als OFFEN ausgewiesen",
+  // AKTUALISIERT 02.09.: RPM, TPM und Kostenbudget sind seit den Azure-Messungen
+  // und der Betreiberbestätigung HERGELEITET, nicht mehr offen. Was offen BLEIBT,
+  // steht jetzt in der Spalte `offen` — und genau das wird hier geprüft, statt
+  // eine überholte Zusage grün zu halten.
+  check("E6 RPM, TPM und Kostenbudget sind hergeleitet — mit ehrlich benanntem Restoffenem",
     ["maxAnfragenJeMinute", "maxTokenJeMinute", "kostenbudgetUsd"]
-      .every((w) => /^OFFEN/.test(tabelle.zeilen.find((z) => z.wert === w).empfehlung)));
+      .every((w) => {
+        const zeile = tabelle.zeilen.find((z) => z.wert === w);
+        return !/^OFFEN/.test(zeile.empfehlung) && typeof zeile.offen === "string" && zeile.offen.length > 0;
+      }));
+  check("E6a Der RPM-Vorschlag ist der WIRKSAME Wert, nicht die Deploymentgrenze",
+    /82/.test(tabelle.zeilen.find((z) => z.wert === "maxAnfragenJeMinute").empfehlung)
+      && /NICHT die Deploymentgrenze 250/.test(tabelle.zeilen.find((z) => z.wert === "maxAnfragenJeMinute").empfehlung));
+  check("E6b Der Vorrangvorschlag widerspricht der Bindung nicht mehr",
+    (() => {
+      const zeile = tabelle.zeilen.find((z) => z.wert === "vorrangreserveReal");
+      return zeile.untergrenze === 170 && /200/.test(zeile.empfehlung);
+    })());
+  check("E6c Das Azure-GESAMTKONTINGENT des Kontos bleibt ausdrücklich offen",
+    ["maxAnfragenJeMinute", "maxTokenJeMinute"]
+      .every((w) => /Gesamtkontingent/i.test(tabelle.zeilen.find((z) => z.wert === w).offen)));
   check("E7 Das Modul setzt selbst keinen Production-Wert",
     (() => {
       const quelle = fs.readFileSync(path.join(ROOT, "lib", "helmut", "funktionstest-500.js"), "utf8");
@@ -202,7 +237,7 @@ function main() {
   // ── F · Abbruchgrenzen müssen vor Testbeginn gesetzt sein ────────────────
   console.log("\n== F · Abbruchgrenzen vor Testbeginn ==");
   check("F1 Ohne Grenzen ist der Testbeginn blockiert",
-    F.pruefeGrenzen({}).vollstaendig === false && F.pruefeGrenzen({}).fehlend.length === 5);
+    F.pruefeGrenzen({}).vollstaendig === false && F.pruefeGrenzen({}).fehlend.length === 6);
   for (const name of F.GRENZEN_PFLICHT) {
     const luecke = { ...VOLLE_GRENZEN };
     delete luecke[name];
@@ -218,12 +253,12 @@ function main() {
 
   // ── G · Die zwölf Abbruchregeln ───────────────────────────────────────────
   console.log("\n== G · Die zwölf Abbruchregeln ==");
-  check("G1 Es sind genau zwölf Regeln definiert",
-    F.ABBRUCHREGELN.length === 12);
+  check("G1 Es sind genau fünfzehn Regeln definiert",
+    F.ABBRUCHREGELN.length === 15);
   check("G2 Jede Regel nennt Beobachtungsgröße, Quelle und Beschreibung",
     F.ABBRUCHREGELN.every((r) => r.id && r.beobachtung && r.quelle && r.beschreibung));
   check("G3 Die Regel-IDs sind eindeutig",
-    new Set(F.ABBRUCHREGELN.map((r) => r.id)).size === 12);
+    new Set(F.ABBRUCHREGELN.map((r) => r.id)).size === 15);
 
   const ruhig = F.pruefeAbbruch({ beobachtungen: RUHIGE_LAGE, grenzen: VOLLE_GRENZEN });
   check("G4 Eine vollständig ruhige Lage bricht nicht ab",
@@ -255,8 +290,8 @@ function main() {
   // ── H · Fehlende Messwerte sind NICHT grün ────────────────────────────────
   console.log("\n== H · Ein fehlender Messwert ist nicht grün, sondern Abbruch ==");
   const ohneBeobachtung = F.pruefeAbbruch({ beobachtungen: {}, grenzen: VOLLE_GRENZEN });
-  check("H1 Ohne Beobachtungen sind alle zwölf Regeln nicht bewertbar",
-    ohneBeobachtung.nichtBewertbar.length === 12 && ohneBeobachtung.abbrechen === true);
+  check("H1 Ohne Beobachtungen sind alle fünfzehn Regeln nicht bewertbar",
+    ohneBeobachtung.nichtBewertbar.length === 15 && ohneBeobachtung.abbrechen === true);
   check("H2 Keine Regel meldet dabei fälschlich 'in Ordnung'",
     ohneBeobachtung.ausgeloest.length === 0
       && ohneBeobachtung.befunde.every((f) => f.bewertbar === false));
@@ -340,33 +375,115 @@ function main() {
       startUtc: "2026-09-10T13:00:00Z", dauerMinuten: 10,
       crons: [{ path: "/api/x", schedule: "kaputt" }]
     }).konflikte.some((k) => k.art === "cron-nicht-parsebar"));
-  check("J10 minimal-cron.laufzeitUeberschneidungen benennt weiterhin genau das 05:45-Paar",
+  // KORRIGIERT 02.09. (adversarialer Review, bestätigter Befund): die frühere
+  // Zusage „genau EIN Paar" war zu grün. `laufzeitUeberschneidungen` rechnete nur
+  // in eine Richtung (Slot startet in der Cron-Laufzeit) und übersah damit den
+  // umgekehrten Fall — ein Bestandscron startet, während der Slot noch arbeitet
+  // (Slot-Deadline 280 s). Mit beiden Richtungen sind es ZWEI Paare.
+  check("J10 laufzeitUeberschneidungen benennt BEIDE Richtungen — zwei Paare",
     (() => {
       const treffer = minimalCron.laufzeitUeberschneidungen(VERCEL.crons);
-      return Array.isArray(treffer) && treffer.length === 1
-        && treffer[0].path === "/api/cron/lage-briefing" && treffer[0].slotMinute === 48;
+      if (!Array.isArray(treffer) || treffer.length !== 2) return false;
+      const vorwaerts = treffer.find((t) => t.grund === "slot-startet-in-moeglicher-laufzeit");
+      const rueckwaerts = treffer.find((t) => t.grund === "cron-startet-in-slotlaufzeit");
+      return vorwaerts && vorwaerts.path === "/api/cron/lage-briefing" && vorwaerts.slotMinute === 48
+        && rueckwaerts && rueckwaerts.path === "/api/cron/lage-briefing-nachlauf" && rueckwaerts.slotMinute === 18;
     })());
-  check("J11 Der Minimal-Cron bleibt AUS — dieses Modul aktiviert ihn nicht",
+  // PRÄZISIERT 02.09.: Die Regel meint „dieses Modul liest und schreibt
+  // `vercel.json` nicht" — sie war als bloßes Namensverbot formuliert. Seit dem
+  // 02.09. nennt eine Hinweiszeile die Datei als Bezugsquelle für den Betreiber
+  // („die Liste kommt aus vercel.json"); das ist ein Text, kein Dateizugriff.
+  // Geprüft wird deshalb der Zugriff selbst.
+  check("J11 Der Minimal-Cron bleibt AUS — dieses Modul liest und schreibt vercel.json nicht",
     (() => {
       const quelle = fs.readFileSync(path.join(ROOT, "lib", "helmut", "funktionstest-500.js"), "utf8");
-      return !/vercel\.json/.test(quelle.replace(/\/\/.*$/gm, "")) && !/crons\s*\.push/.test(quelle);
+      const ohneKommentare = quelle.replace(/\/\/.*$/gm, "");
+      return !/require\(\s*["'`][^"'`]*vercel\.json/.test(ohneKommentare)
+        && !/readFileSync\([^)]*vercel/.test(ohneKommentare)
+        && !/writeFileSync/.test(ohneKommentare)
+        && !/crons\s*\.push/.test(ohneKommentare)
+        && !/require\(\s*["'`]fs["'`]\s*\)/.test(ohneKommentare);
     })());
 
   // ── K · Gesamtbereitschaft ────────────────────────────────────────────────
   console.log("\n== K · Gesamtbereitschaft ==");
   const nichtsGesetzt = F.startbereitschaft({});
+  // 8 statt 5 Hürden seit 02.09.: laufzeitwirksame Vorrangreserve, „Laufzeitgrenze
+  // passt in das Startfenster" und der Abgleich des Kostenbudgets zwischen
+  // Konfiguration und Abbruchgrenze sind dazugekommen.
   check("K1 Ohne alles ist der Test nicht startbereit",
-    nichtsGesetzt.startbereit === false && nichtsGesetzt.offen.length === 5);
+    // 9 statt 8 seit 02.09.: die neunte Hürde liest Tagesdeckel und
+    // Verstehens-Reserve aus der LAUFENDEN Umgebung und prüft sie gegen die
+    // Vorrangreserve (adversariales Diff-Review, bestätigter Befund).
+    // 11 statt 9 seit 02.09. (zweiter Reviewbefund): zwei STRUKTURELLE Hürden
+    // sind dazugekommen — „ist die sichtbare Produktstufe im Fenster fällig?"
+    // und „passt ein vollständiger Zyklus in das Fenster?". Beide sind heute
+    // nicht erfüllbar; genau deshalb stehen sie hier.
+    nichtsGesetzt.startbereit === false && nichtsGesetzt.offen.length === 11,
+    `${nichtsGesetzt.offen.length} offene Hürden`);
   const allesGesetzt = F.startbereitschaft({
     konfiguration: BEISPIEL,
     grenzen: VOLLE_GRENZEN,
     messungen: ALLE_MESSUNGEN,
     startfenster: { startUtc: "2026-09-10T13:00:00Z", dauerMinuten: 30, crons: VERCEL.crons, minimalCronAktiv: false },
     isolation: true,
-    env: { [R.SCHALTER]: R.SCHALTER_WERT_GESPERRT }
+    // Die Vorrangreserve wird jetzt aus der LAUFENDEN Umgebung gelesen, nicht
+    // mehr nur aus der Konfiguration (§16.6: „der Vorrangwert im Rahmen schützt
+    // den Testlauf, nicht den Production-Betrieb").
+    env: {
+      [R.SCHALTER]: R.SCHALTER_WERT_GESPERRT,
+      HELMUT_TESTLAUF_VORRANG_REAL: "200",
+      // ERGÄNZT 02.09. (adversariales Diff-Review, bestätigter Befund): K2
+      // zementierte „startbereit" für eine Umgebung OHNE Tagesdeckel und OHNE
+      // Verstehens-Reserve. Genau diese Asymmetrie war der Befund: die
+      // Vorrangreserve wurde zur Laufzeit gelesen, Deckel und Reserve blieben
+      // Papier. Beide gehören in dieselbe Umgebung, sonst prüft der Vertrag
+      // einen Zustand, den es scharf nie geben darf.
+      HELMUT_MAX_LLM_CALLS_PER_DAY: "2416",
+      HELMUT_LLM_RESERVE_UNDERSTANDING: "702"
+    }
   });
-  check("K2 Mit allen Vorbedingungen meldet der Rahmen startbereit",
-    allesGesetzt.startbereit === true, allesGesetzt.offen.join(", "));
+  // ─── K2 IST UMGEDREHT (02.09., zweiter Reviewbefund) ───────────────────────
+  // Bis hierher zementierte K2, dass „alle Vorbedingungen" zur Startbereitschaft
+  // führen. Das ist seit der Nachrechnung FALSCH, und der Test hätte die
+  // Falschaussage konserviert. Zwei Hürden sind mit den heutigen Cronzeiten und
+  // Parallelität 1 STRUKTURELL nicht erfüllbar:
+  //   * `briefing_materialization` ist erst ab 18:00 UTC fällig, das empfohlene
+  //     Fenster endet 15:59 — im Fenster entsteht kein einziges Briefing.
+  //   * Der konservative Tagesbedarf (1.812) übersteigt das, was in 263 Minuten
+  //     bei Parallelität 1 möglich ist (1.732).
+  // K2 pinnt jetzt genau das: der Rahmen behauptet KEINE Startbereitschaft,
+  // solange die Blocker gelten — und er benennt beide.
+  check("K2 Trotz aller gesetzten Werte ist der Test NICHT startbereit (zwei strukturelle Blocker)",
+    allesGesetzt.startbereit === false
+      && allesGesetzt.offen.some((o) => /Produktstufe/.test(o))
+      && allesGesetzt.offen.some((o) => /vollständiger Zyklus/.test(o)),
+    allesGesetzt.offen.join(" | "));
+  check("K2c Der Rahmen weist die Zyklusrechnung offen aus",
+    allesGesetzt.zyklusImFenster && allesGesetzt.zyklusImFenster.passt === false
+      && allesGesetzt.zyklusImFenster.benoetigteMinuten > 263);
+  check("K2d Und die Fälligkeitsrechnung ebenfalls",
+    allesGesetzt.arbeitsklassenImFenster
+      && allesGesetzt.arbeitsklassenImFenster.nichtImFensterFaellig.includes("briefing_materialization"));
+  check("K2a OHNE Tagesdeckel in der laufenden Umgebung ist der Test NICHT startbereit",
+    F.startbereitschaft({
+      konfiguration: BEISPIEL, grenzen: VOLLE_GRENZEN, messungen: ALLE_MESSUNGEN,
+      startfenster: { startUtc: "2026-09-10T13:00:00Z", dauerMinuten: 30, crons: VERCEL.crons },
+      isolation: true,
+      env: { [R.SCHALTER]: R.SCHALTER_WERT_GESPERRT, HELMUT_TESTLAUF_VORRANG_REAL: "200" }
+    }).startbereit === false);
+  check("K2b Ein Vorrangwert, der den LAUFENDEN Deckel sprengt, blockiert den Start",
+    F.startbereitschaft({
+      konfiguration: BEISPIEL, grenzen: VOLLE_GRENZEN, messungen: ALLE_MESSUNGEN,
+      startfenster: { startUtc: "2026-09-10T13:00:00Z", dauerMinuten: 30, crons: VERCEL.crons },
+      isolation: true,
+      env: {
+        [R.SCHALTER]: R.SCHALTER_WERT_GESPERRT,
+        HELMUT_TESTLAUF_VORRANG_REAL: "200",
+        HELMUT_MAX_LLM_CALLS_PER_DAY: "100",
+        HELMUT_LLM_RESERVE_UNDERSTANDING: "30"
+      }
+    }).startbereit === false);
   check("K3 Ohne scharfen Kommunikationsriegel ist der Test nicht startbereit",
     F.startbereitschaft({
       konfiguration: BEISPIEL, grenzen: VOLLE_GRENZEN, messungen: ALLE_MESSUNGEN,
@@ -420,8 +537,55 @@ function main() {
       beobachtungen: { ...RUHIGE_LAGE, drosselungen: 0 }, grenzen: VOLLE_GRENZEN
     }).abbrechen === false);
 
-  check("K5 Auch bei voller Bereitschaft bleibt der Start eine getrennte Freigabe",
-    /getrennte Betreiberfreigabe/.test(allesGesetzt.meldung));
+  // ── M · Slotkapazität (adversariale Analyse 02.09., bestätigter Befund) ────
+  // BEFUND: `tagesModell()` rechnet `slotKapazitaetReicht` seit jeher aus,
+  // aber KEINE Prüfung wertete das Feld aus. Ein später auf das Stressszenario
+  // angehobener Deckel hätte `bereit = true` gemeldet, obwohl die
+  // Verstehens-Slotlast die physische Kapazität übersteigt: die Reserve wäre im
+  // Deckel gebucht, aber physisch nicht abrufbar.
+  {
+    const slots = KAP.MESSWERTE.slotKapazitaetVerstehenProTag;
+    const name = "Verstehens-Reserve ist physisch abrufbar (Slotkapazität)";
+    const passend = F.pruefeKonfiguration({
+      gesamtdeckel: KAP.VORBEREITETER_DECKEL,
+      reserveVerstehen: KAP.VORBEREITETE_RESERVE_VERSTEHEN
+    });
+    const bindungPassend = passend.bindungen.find((b) => b.name === name);
+    check("M1 Die Bindung existiert überhaupt und wird ausgewertet", Boolean(bindungPassend));
+    check("M2 Die VORBEREITETE Reserve 702 passt in die Slotkapazität",
+      Boolean(bindungPassend && bindungPassend.ok === true),
+      `Reserve ${KAP.VORBEREITETE_RESERVE_VERSTEHEN} ≤ ${slots}`);
+    const zuGross = F.pruefeKonfiguration({
+      gesamtdeckel: 3510,
+      reserveVerstehen: slots + 1
+    });
+    const bindungZuGross = zuGross.bindungen.find((b) => b.name === name);
+    check("M3 Eine Reserve ÜBER der Slotkapazität schlägt die Bindung",
+      Boolean(bindungZuGross && bindungZuGross.ok === false));
+    check("M4 Und sie macht die Gesamtkonfiguration nicht mehr bereit",
+      zuGross.bereit === false);
+    check("M5 Ohne gelesene Reserve entsteht keine Bindung (keine Koerzierung)",
+      !F.pruefeKonfiguration({ gesamtdeckel: 2416 }).bindungen.some((b) => b.name === name));
+  }
+
+  check("K5 Die Meldung benennt die offenen Vorbedingungen ehrlich",
+    /NICHT startbereit/.test(allesGesetzt.meldung), allesGesetzt.meldung);
+  // Und die Gegenprobe: gäbe es ein Fenster, das beide Tore besteht, meldete der
+  // Rahmen es auch. Bei Parallelität 2 ist 17:36-19:59 genau so ein Fenster.
+  check("K6 Bei Parallelität 2 trägt 17:36-19:59 beide Tore",
+    (() => {
+      const Z = require("../lib/helmut/funktionstest-zyklus");
+      const s = F.sichereStartfenster({ crons: VERCEL.crons, mindestDauerMinuten: 30 });
+      const b = Z.bewerteFensterFuerZyklus({ fenster: s.fenster, parallel: 2, maxAnfragenJeMinute: 82 });
+      return b.gibtEinTragendesFenster === true && b.tragendeFenster.includes("17:36");
+    })());
+  check("K7 Bei Parallelität 1 trägt KEIN Fenster beide Tore",
+    (() => {
+      const Z = require("../lib/helmut/funktionstest-zyklus");
+      const s = F.sichereStartfenster({ crons: VERCEL.crons, mindestDauerMinuten: 30 });
+      return Z.bewerteFensterFuerZyklus({ fenster: s.fenster, parallel: 1, maxAnfragenJeMinute: 82 })
+        .gibtEinTragendesFenster === false;
+    })());
 
   console.log(`\nPASS ${pass}  FAIL ${fail}`);
   process.exit(fail ? 1 : 0);

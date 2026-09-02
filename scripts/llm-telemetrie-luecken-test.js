@@ -114,20 +114,42 @@ check("C2 fehlerKlasse gibt niemals eine rohe Meldung zurueck",
     return block.includes('return "ki-fehler";') && !block.includes("return nachricht;\n  }");
   })());
 
-// ── D · Die verbleibende Ursache: unbedingtes Lese-Aendere-Schreibe ─────────
-// Kein Fix, sondern eine MESSUNG. Sie haelt fest, dass der Blob-Schreibpfad
-// weiterhin unbedingt ist — damit die Restluecke nicht still verschwindet.
+// ── D · Die Ursache: unbedingtes Lese-Aendere-Schreibe im Blob ──────────────
+// STAND 02.09. (korrigiert): der Blob-Schreibpfad ist WEITERHIN unbedingt — das
+// bleibt richtig und wird hier weiter gemessen. Neu ist, dass er nicht mehr der
+// EINZIGE Pfad ist: `recordLlmUsage` schreibt seit dem Vorbereitungssprint
+// zusaetzlich relational (Dual-Write, Muster W-2/process_runs), sobald Flag
+// `HELMUT_LLM_USAGE_RELATIONAL` UND Migration 20260902121500 vorliegen. Beides
+// ist freigabepflichtig und AUS; der Blob bleibt in Phase 2 die Lesequelle.
+// Die frueheren Zusagen D1/D2 („bekannte Restluecke") sind damit nicht falsch
+// geworden, aber unvollstaendig — sie werden hier ausdruecklich ergaenzt statt
+// stillschweigend ersetzt (CLAUDE.md §4.4, §7.11).
 const storageQuelle = fs.readFileSync(path.join(ROOT, "lib/helmut/storage.js"), "utf8");
 const recordBlock = storageQuelle.slice(
   storageQuelle.indexOf("async function recordLlmUsage("),
   storageQuelle.indexOf("async function getLlmUsage(")
 );
-check("D1 recordLlmUsage ist weiterhin ein Lese-Aendere-Schreibe-Zyklus (bekannte Restluecke)",
+check("D1 Der BLOB-Spiegel ist weiterhin ein Lese-Aendere-Schreibe-Zyklus",
   recordBlock.includes("await readAuthStore()") && recordBlock.includes("await writeAuthStore(store)"));
 check("D2 Der Blob-Schreibvorgang ist unbedingt (kein Compare-and-Set)",
   !recordBlock.includes("If-Match") && !recordBlock.includes("compareAndSet"));
-check("D3 Die Ringpuffergrenze bleibt bei 5.000 Eintraegen (unveraendert)",
-  storageQuelle.includes("normalized.llmUsage = (normalized.llmUsage || []).slice(0, 5000)"));
+// NEU 02.09.: der kanonische Weg daneben.
+check("D1a recordLlmUsage schreibt zusaetzlich relational (Dual-Write, Muster W-2)",
+  recordBlock.includes("insertLlmUsageRelational") || recordBlock.includes("insert(llmUsageToRelationalRow"));
+check("D1b Der relationale Pfad ist Default AUS und braucht Flag UND bereites Ziel",
+  recordBlock.includes("llmUsageRelationalEnabled") && recordBlock.includes("v3StoreReady()"));
+check("D1c Der relationale Schreibvorgang ist ein reiner Insert (kein merge-duplicates)",
+  storageQuelle.includes("/rest/v1/llm_usage\"") && !storageQuelle.includes("llm_usage?on_conflict=id"));
+check("D1d Der Blob bleibt vollstaendig kompatibel — er wird weiter geschrieben",
+  recordBlock.includes("store.llmUsage = [record, ...(store.llmUsage || [])]"));
+// ANGEPASST 02.09.: Die nackte 5000 an der Kappstelle ist jetzt die benannte
+// Konstante LLM_USAGE_RING_MAX — GLEICHER WERT, gleiche Stelle. Die Konstante
+// existiert, weil `blobFensterVollstaendig` gegen genau diese Grenze
+// entscheidet, ob ein Berichtsfenster still gekuerzt wurde.
+check("D3 Die Ringpuffergrenze bleibt bei 5.000 Eintraegen (unveraendert, jetzt benannt)",
+  storageQuelle.includes("normalized.llmUsage = (normalized.llmUsage || []).slice(0, LLM_USAGE_RING_MAX)")
+    && storageQuelle.includes("const LLM_USAGE_RING_MAX = 5000;")
+    && require("../lib/helmut/storage").LLM_USAGE_RING_MAX === 5000);
 
 // Der Verlust ist REPRODUZIERBAR: zwei nebenlaeufige Schreiber auf demselben
 // Dokument, jeder liest den Stand vor dem anderen. Genau dieses Muster liegt
@@ -152,6 +174,63 @@ async function verlustProbe() {
     ids.length === 1 && ids[0] === "B", JSON.stringify(ids));
   check("D5 Der Verlust erzeugt KEINEN Fehler — er ist lautlos (deshalb unentdeckt geblieben)",
     ids.length === 1);
+
+  // ── E · Stille Fensterkürzung (adversariale Analyse 02.09., bestätigt) ────
+  // BEFUND: `writeAuthStore` kappt das Nutzungslog bei 5.000 Einträgen. Bei
+  // 5 Mandaten deckten diese 5.000 Einträge belegt 62 Tage ab — ein
+  // `days:30`-Bericht war vollständig. Bei 500 Profilen ist der Ring in unter
+  // zwei Tagen gefüllt, und derselbe Bericht deckt dann weniger als einen Tag
+  // ab, OHNE Hinweis. Das ist ein falsches Grün (CLAUDE.md §4.4).
+  const storage = require("../lib/helmut/storage");
+  const T0 = Date.UTC(2026, 8, 2, 0, 0, 0);
+  const eintraege = (n, abstandMs) => Array.from({ length: n }, (_, i) => ({
+    createdAt: new Date(T0 - i * abstandMs).toISOString()
+  }));
+  check("E1 Die Ringgröße ist benannt und nicht mehr eine nackte Zahl",
+    storage.LLM_USAGE_RING_MAX === 5000);
+  check("E2 Ein NICHT voller Ring deckt jedes Fenster ab",
+    (() => {
+      const b = storage.blobFensterVollstaendig(eintraege(4999, 1000), T0 - 30 * 86400000);
+      return b.vollstaendig === true && b.grund === "ring-nicht-voll";
+    })());
+  check("E3 Ein VOLLER Ring, dessen ältester Eintrag jünger ist als der Fensterbeginn, meldet die Kürzung",
+    (() => {
+      // 5.000 Einträge im Sekundentakt = knapp 1,4 Stunden statt 30 Tagen.
+      const b = storage.blobFensterVollstaendig(eintraege(5000, 1000), T0 - 30 * 86400000);
+      return b.vollstaendig === false && b.grund === "ring-voll-fenster-gekuerzt"
+        && typeof b.aeltesterIso === "string";
+    })());
+  check("E4 Ein voller Ring, der das Fenster tatsächlich abdeckt, bleibt vollständig",
+    (() => {
+      // 5.000 Einträge im Stundentakt = 208 Tage, deckt 30 Tage klar ab.
+      const b = storage.blobFensterVollstaendig(eintraege(5000, 3600000), T0 - 30 * 86400000);
+      return b.vollstaendig === true && b.grund === "ring-voll-aber-fenster-abgedeckt";
+    })());
+  check("E5 Ein voller Ring ganz ohne brauchbaren Zeitstempel gilt als unvollständig (fail closed)",
+    (() => {
+      const b = storage.blobFensterVollstaendig(
+        Array.from({ length: 5000 }, () => ({ createdAt: "kein-datum" })), T0 - 86400000);
+      return b.vollstaendig === false && b.grund === "ring-voll-ohne-zeitstempel";
+    })());
+  check("E6 Beide Admin-Kostenberichte reichen den Befund durch",
+    (() => {
+      const quelle = fs.readFileSync(path.join(ROOT, "lib/helmut/storage.js"), "utf8");
+      const stellen = [...quelle.matchAll(/fenster: blobFensterVollstaendig\(allUsage, cutoffMs\)/g)];
+      return stellen.length === 2;
+    })());
+  // EHRLICHE ABGRENZUNG: Die Kosten-Abbruchregel A04 des Funktionstests ist
+  // NICHT betroffen — sie rechnet gegen `llm_budget_counters` (relational),
+  // nicht gegen den Blob-Ring. Das wird hier ausdrücklich festgehalten, damit
+  // niemand später eine Kürzung dort vermutet.
+  check("E7 Die Stufenkontrolle leitet die KOSTEN relational ab, nicht aus dem Ring",
+    (() => {
+      const quelle = fs.readFileSync(path.join(ROOT, "lib/helmut/funktionstest-kontrolle.js"), "utf8");
+      // Der Kostenwert entsteht aus `llm_budget_counters` × bestaetigtem Preis.
+      // (Andere Beobachtungen des Moduls lesen sehr wohl llmUsage — das ist
+      // gewollt und betrifft die Kostenrechnung nicht.)
+      return /kostenBisherUsd:.*llm_budget_counters/.test(quelle)
+        && /const aufrufe = zahl\(kosten && kosten\.aufrufeHeute\);/.test(quelle);
+    })());
 
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);

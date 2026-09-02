@@ -48,23 +48,58 @@ const GRUNDLINIE = Object.freeze({
   kohortenProfileGeloescht: 0
 });
 
-const LEERER_BESTAND = Object.freeze({ kohorte: [], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0 });
+// ERGAENZT 02.09.: der Bestand traegt jetzt einen eigenen Erhebungszeitpunkt und
+// die Identitaets-/Kontoebene der Kohorte. Ohne sie bestaetigte der Rueckbau eine
+// deaktivierte Mandatszeile, waehrend Identitaet und Konto weiter bestanden.
+const BESTAND_BASIS = Object.freeze({
+  erhobenUtc: "2026-09-01T13:00:00.000Z",
+  identitaetenGesamt: 10,
+  kohortenIdentitaeten: 0,
+  kohortenKontenAktiv: 0,
+  fremdeGesamt: 9,
+  fremdeAktiv: 5,
+  fremdeGeloescht: 0
+});
+
+const LEERER_BESTAND = Object.freeze({ ...BESTAND_BASIS, kohorte: [] });
 
 // Der Bestand fuehrt die TATSAECHLICH gelesene Adresse je Zeile — nicht die
 // generierte. Eine nach der Anlage geaenderte Adresse muss auffallen koennen.
 function bestandMit(aktiveIds = [], { adressen = {} } = {}) {
   const aktiv = new Set(aktiveIds);
   return {
+    ...BESTAND_BASIS,
     kohorte: K.KOHORTE_KENNUNGEN.map((id) => ({
       id,
       aktiv: aktiv.has(id),
       email: adressen[id] || `${id}@test-kohorte.invalid`
     })),
-    fremdeGesamt: 9,
-    fremdeAktiv: 5,
-    fremdeGeloescht: 0
+    // Angelegte Kohortenprofile tragen Identitaetszeilen; nach dem Rueckbau sind
+    // ihre Konten inaktiv.
+    identitaetenGesamt: 10 + K.KOHORTE_KENNUNGEN.length,
+    kohortenIdentitaeten: K.KOHORTE_KENNUNGEN.length
   };
 }
+
+// ERGAENZT 02.09.: eine Aktivierung braucht seit diesem Sprint einen BESTANDENEN
+// Startfensterbefund. Ein fehlender Befund gilt nie als „frei" (fail closed) —
+// genau darin bestand die Luecke: die Fensterpruefung existierte, aber niemand
+// fragte sie, bevor Profile aktiviert wurden.
+// ERGÄNZT 02.09. (adversariale Analyse, bestätigter Befund): Ein Fensterbefund
+// ist seit diesem Sprint nur noch dann verwertbar, wenn er (a) gegen eine
+// nichtleere Cronliste gerechnet wurde und (b) JETZT gilt. Beides muss die
+// Vorrichtung mitliefern, sonst blockiert die Aktivierung — fail closed.
+const FENSTER_FREI = Object.freeze({
+  startErlaubt: true, konflikte: [], startMinuteUtc: 696, endeMinuteUtc: 959, gepruefteCrons: 13
+});
+const FENSTER_KONFLIKT = Object.freeze({
+  startErlaubt: false, konflikte: [{ art: "bestandscron-im-fenster" }],
+  startMinuteUtc: 696, endeMinuteUtc: 959, gepruefteCrons: 13
+});
+// 12:00 UTC = Minute 720, liegt in [696, 959).
+const JETZT_IM_FENSTER = "2026-09-10T12:00:00Z";
+// 05:47 UTC = Minute 347 — genau der gefährliche Moment aus dem Befund.
+const JETZT_AUSSERHALB = "2026-09-10T05:47:00Z";
 
 const SCHARF_ENV = (schritt) => ({
   [K.EXECUTE_FLAG]: "1",
@@ -111,7 +146,7 @@ function main() {
   check("B5 Doppelte Kennungen brechen ab",
     wirft(() => K.pruefeZielmenge(["test-kohorte-a-001", "test-kohorte-a-001"]), "doppelte-kennung"));
   check("B6 Ein Bestand mit fremder Zeile wird abgewiesen",
-    wirft(() => K.pruefeBestand({ kohorte: [{ id: "ein-reales-mandat", aktiv: true, email: "a@b.invalid" }], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0 }), "fremde-kennung"));
+    wirft(() => K.pruefeBestand({ ...BESTAND_BASIS, kohorte: [{ id: "ein-reales-mandat", aktiv: true, email: "a@b.invalid" }] }), "fremde-kennung"));
   check("B7 Im Modul steht keine einzige reale Mandatskennung",
     (() => {
       const quelle = require("fs").readFileSync(require("path").join(__dirname, "..", "lib", "helmut", "testkohorte-betrieb.js"), "utf8");
@@ -149,9 +184,9 @@ function main() {
   check("C6 Ohne Bestand entsteht kein Plan",
     wirft(() => K.planeProvisionierung({ grundlinie: GRUNDLINIE }), "bestand"));
   check("C7 Eine Bestandszeile ohne eindeutiges aktiv-Merkmal blockiert",
-    wirft(() => K.pruefeBestand({ kohorte: [{ id: "test-kohorte-a-001", email: "a@b.invalid" }], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0 }), "bestand"));
+    wirft(() => K.pruefeBestand({ ...BESTAND_BASIS, kohorte: [{ id: "test-kohorte-a-001", email: "a@b.invalid" }] }), "bestand"));
   check("C8 Ein Bestand ohne gelesene Löschmarken blockiert",
-    wirft(() => K.pruefeBestand({ kohorte: [], fremdeGesamt: 9, fremdeAktiv: 5 }), "bestand"));
+    wirft(() => K.pruefeBestand({ ...BESTAND_BASIS, kohorte: [], fremdeGeloescht: undefined }), "bestand"));
 
   // ── D · Trockenlauf ist Default, scharf braucht den doppelten Riegel ──────
   console.log("\n== D · Trockenlauf als Default, doppelter Riegel für scharf ==");
@@ -178,7 +213,9 @@ function main() {
     }).erteilt === false);
   check("D7 Jeder Schritt hat ein EIGENES Bestätigungswort",
     new Set(Object.values(K.FREIGABEWORTE)).size === Object.keys(K.FREIGABEWORTE).length
-      && Object.keys(K.FREIGABEWORTE).length === 5);
+      // 7 statt 5 seit 02.09.: das Aufräumen der Scheduler-Spur UND der Start des
+      // Fachzyklus sind je ein eigener Schritt mit eigenem Wort.
+      && Object.keys(K.FREIGABEWORTE).length === 7);
   check("D8 Die Freigabe der Anlage aktiviert nichts",
     K.freigabe("aktivierung-a", SCHARF_ENV("provisionierung")).erteilt === false);
   check("D9 Die Freigabe der Gruppe A aktiviert nicht die Gruppe C",
@@ -199,8 +236,10 @@ function main() {
   check("E3 IDEMPOTENZ: der zweite Lauf plant null Anlagen",
     zweiterLauf.anzahlAnzulegen === 0 && zweiterLauf.bereitsErreicht === true);
   const halb = {
+    ...BESTAND_BASIS,
     kohorte: K.KOHORTE_KENNUNGEN.slice(0, 200).map((id) => ({ id, aktiv: false, email: `${id}@test-kohorte.invalid` })),
-    fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0
+    identitaetenGesamt: 10 + 200,
+    kohortenIdentitaeten: 200
   };
   check("E4 Ein abgebrochener Lauf wird genau ergänzt",
     K.planeProvisionierung({ grundlinie: GRUNDLINIE, bestand: halb }).anzahlAnzulegen === 295);
@@ -243,20 +282,40 @@ function main() {
 
   // ── G · Aktivierung nach Gruppen ──────────────────────────────────────────
   console.log("\n== G · Aktivierung nach Gruppen 20 / 75 / 400 ==");
-  const aktivA = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a" });
+  const aktivA = K.planeAktivierung({
+    grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a", startfensterBefund: FENSTER_FREI, jetztUtc: JETZT_IM_FENSTER
+  });
   check("G1 Gruppe A plant exakt 20 Aktivierungen",
-    aktivA.anzahlZuAktivieren === 20 && aktivA.blockiert === false);
+    aktivA.anzahlZuAktivieren === 20 && aktivA.blockiert === false, aktivA.blockadeGruende.join(", "));
+  // ── Neue Bindung 02.09.: ohne freien Fensterbefund keine Aktivierung ───────
+  check("G1a OHNE Fensterbefund bleibt die Aktivierung blockiert (fail closed)",
+    (() => {
+      const ohne = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a" });
+      return ohne.blockiert === true
+        && ohne.startfensterGeprueft === false
+        && ohne.blockadeGruende.includes("startfenster-nicht-geprueft");
+    })());
+  check("G1b Mit KONFLIKTBEHAFTETEM Fensterbefund bleibt die Aktivierung blockiert",
+    (() => {
+      const konflikt = K.planeAktivierung({
+        grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a", startfensterBefund: FENSTER_KONFLIKT, jetztUtc: JETZT_IM_FENSTER
+      });
+      return konflikt.blockiert === true && konflikt.blockadeGruende.includes("startfenster-konflikt");
+    })());
+  check("G1c Der RÜCKWEG wird NIE durch ein Startfenster blockiert",
+    K.planeDeaktivierung({ grundlinie: GRUNDLINIE, bestand: bestandMit(K.GRUPPEN_KENNUNGEN.a) })
+      .anzahlZuDeaktivieren === 20);
   const nachA = bestandMit(K.GRUPPEN_KENNUNGEN.a);
   check("G2 IDEMPOTENZ: Gruppe A erneut geplant ergibt null",
-    K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachA, gruppe: "a" }).bereitsErreicht === true);
+    K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachA, gruppe: "a", startfensterBefund: FENSTER_FREI, jetztUtc: JETZT_IM_FENSTER }).bereitsErreicht === true);
   const bOhneA = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "b" });
   check("G3 Gruppe B ohne vollständige Gruppe A ist blockiert",
     bOhneA.blockiert === true && bOhneA.vorstufenOffen.includes("a"));
-  const bNachA = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachA, gruppe: "b" });
+  const bNachA = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachA, gruppe: "b", startfensterBefund: FENSTER_FREI, jetztUtc: JETZT_IM_FENSTER });
   check("G4 Gruppe B nach vollständiger Gruppe A plant exakt 75",
     bNachA.blockiert === false && bNachA.anzahlZuAktivieren === 75);
   const nachAB = bestandMit([...K.GRUPPEN_KENNUNGEN.a, ...K.GRUPPEN_KENNUNGEN.b]);
-  const cNachAB = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachAB, gruppe: "c" });
+  const cNachAB = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachAB, gruppe: "c", startfensterBefund: FENSTER_FREI, jetztUtc: JETZT_IM_FENSTER });
   check("G5 Gruppe C nach A und B plant exakt 400",
     cNachAB.blockiert === false && cNachAB.anzahlZuAktivieren === 400);
   const cOhneB = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachA, gruppe: "c" });
@@ -300,12 +359,36 @@ function main() {
     K.pruefeRueckbau({
       grundlinie: GRUNDLINIE, bestand: { ...bestandMit(), fremdeGeloescht: 1 }
     }).zurueckgebaut === false);
-  check("H8 Der Rückbau weist vier Einzelbefunde aus",
-    rueckbau.pruefungen.length === 4);
+  // ERWEITERT 02.09.: aus vier Einzelbefunden sind ACHT geworden (der Kommentar
+  // sagte zuvor "sechs" und widersprach der gepinnten Zahl). Zwei davon
+  // schliessen den gefaehrlichsten Fehlbefund des Moduls: ein LEERER Bestand
+  // ergab „0 aktive Kohortenzeilen" und damit einen gruenen Rueckbau ueber einer
+  // moeglicherweise noch aktiven Kohorte. Dazu die Identitaets-/Kontoebene.
+  check("H8 Der Rückbau weist acht Einzelbefunde aus",
+    rueckbau.pruefungen.length === 8, rueckbau.pruefungen.map((p) => p.name).join(" | "));
+  check("H8b Der leere Bestand gilt NICHT mehr als erfolgreicher Rückbau",
+    K.pruefeRueckbau({ grundlinie: GRUNDLINIE, bestand: LEERER_BESTAND }).zurueckgebaut === false);
+  check("H8c Ein VOR der Grundlinie erhobener Bestand wird abgewiesen",
+    K.pruefeRueckbau({
+      grundlinie: GRUNDLINIE,
+      bestand: { ...bestandMit(), erhobenUtc: "2026-08-31T10:00:00.000Z" }
+    }).offen.includes("Bestand ist NACH der Grundlinie erhoben"));
+  check("H8d Ein noch aktives Kohortenkonto bricht den Rückbau",
+    K.pruefeRueckbau({
+      grundlinie: GRUNDLINIE,
+      bestand: { ...bestandMit(), kohortenKontenAktiv: 1 }
+    }).offen.includes("Kein aktives Kohortenkonto"));
   // Regression: Löschmarken werden REAL gegen REAL verglichen. Eine Löschmarke
   // auf einer Kohortenzeile darf keine neue an einem realen Mandat verdecken.
+  // KORRIGIERT 02.09. (adversariales Diff-Review): Diese Vorrichtung war in sich
+  // widersprüchlich — sie setzte `kohortenProfile: 495`, ließ `identitaetsprofile`
+  // aber auf dem kohortenfreien Wert stehen. Die Grundlinien-SQL erhebt
+  // `identitaetsprofile` als GESAMTZAHL (`select count(*) from profiles`), die
+  // Kohorte ist darin also enthalten. Genau diese Inkonsistenz hat den Fehler im
+  // Rückbaubefund verdeckt.
   const nachAbbruch = {
     ...GRUNDLINIE, mandateGesamt: 504, mandateInaktiv: 499, mandateGeloescht: 1,
+    identitaetsprofile: GRUNDLINIE.identitaetsprofile + 495,
     kohortenProfile: 495, kohortenProfileGeloescht: 1
   };
   check("H10 Löschmarke auf einer Kohortenzeile verdeckt keine an einem realen Mandat",
@@ -319,12 +402,13 @@ function main() {
   check("H12 fremdeGeloescht = null blockiert, statt still zu 0 zu werden",
     wirft(() => K.pruefeRueckbau({
       grundlinie: GRUNDLINIE,
-      bestand: { kohorte: [], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: null }
+      bestand: { ...BESTAND_BASIS, kohorte: [], fremdeGeloescht: null }
     }), "bestand"));
   check("H13 Auch fremdeGesamt und fremdeAktiv dulden keine Koerzierung",
-    ["fremdeGesamt", "fremdeAktiv"].every((feld) => wirft(() => K.pruefeBestand({
-      kohorte: [], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0, [feld]: "9"
-    }), "bestand")));
+    ["fremdeGesamt", "fremdeAktiv", "identitaetenGesamt", "kohortenIdentitaeten", "kohortenKontenAktiv"]
+      .every((feld) => wirft(() => K.pruefeBestand({
+        ...BESTAND_BASIS, kohorte: [], [feld]: "9"
+      }), "bestand")));
   check("H9 Der erste Rückweg ist Deaktivierung, nicht Löschen",
     /gelöscht wird nichts/.test(abbau.hinweis));
 
@@ -337,6 +421,99 @@ function main() {
       && !/require\((["'])\.\/storage\1\)/.test(quelle));
   check("I2 Kein Provisionierungs- oder Kontozugriff",
     !/require\((["'])\.\/(provisioning|accounts)\1\)/.test(quelle));
+  // ── J · BEFUNDE DER ADVERSARIALEN ANALYSE (02.09.) ─────────────────────────
+  console.log("\n== J · Der Fensterbefund ist nicht mehr zeitlos ==");
+  {
+    const gestern = K.planeAktivierung({
+      grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a",
+      startfensterBefund: FENSTER_FREI, jetztUtc: JETZT_AUSSERHALB
+    });
+    check("J1 Ein gestern erhobener Befund erlaubt um 05:47 KEINEN Start",
+      gestern.blockiert === true
+        && gestern.startfensterFrei === false
+        && gestern.startfensterGiltJetzt === false
+        && gestern.blockadeGruende.includes("startzeit-ausserhalb-des-fensters"));
+    const ohneUhr = K.planeAktivierung({
+      grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a",
+      startfensterBefund: FENSTER_FREI
+    });
+    check("J2 Ohne `jetztUtc` bleibt die Aktivierung blockiert (fail closed)",
+      ohneUhr.blockiert === true && ohneUhr.blockadeGruende.includes("startzeit-fehlt"));
+    const ohneCrons = K.planeAktivierung({
+      grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a",
+      startfensterBefund: { ...FENSTER_FREI, gepruefteCrons: 0 }, jetztUtc: JETZT_IM_FENSTER
+    });
+    check("J3 Ein Befund gegen eine LEERE Cronliste gilt als ungeprüft",
+      ohneCrons.blockiert === true
+        && ohneCrons.startfensterGeprueft === false
+        && ohneCrons.blockadeGruende.includes("startfenster-ohne-cronliste"));
+    const gueltig = K.planeAktivierung({
+      grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a",
+      startfensterBefund: FENSTER_FREI, jetztUtc: JETZT_IM_FENSTER
+    });
+    check("J4 Ein geprüfter Befund, der JETZT gilt, lässt die Planung durch",
+      gueltig.startfensterFrei === true
+        && gueltig.startfensterGiltJetzt === true
+        && gueltig.startfensterGepruefteCrons === 13);
+    // Das Fenster darf über Mitternacht reichen — dann liegt `ende` über 1440.
+    const ueberMitternacht = K.planeAktivierung({
+      grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a",
+      startfensterBefund: { startErlaubt: true, konflikte: [], startMinuteUtc: 1400, endeMinuteUtc: 1500, gepruefteCrons: 13 },
+      jetztUtc: "2026-09-10T00:30:00Z" // Minute 30 → 30+1440 = 1470 ∈ [1400,1500)
+    });
+    check("J5 Ein Fenster über Mitternacht wird korrekt getroffen",
+      ueberMitternacht.startfensterGiltJetzt === true);
+  }
+  console.log("\n== J2 · Rückweg und Nacharbeit sind getrennt freigegeben ==");
+  // BEFUND 02.09. (adversariales Diff-Review): Der Befund „Zahl der realen
+  // Identitätsprofile unverändert" unterstellte eine Grundlinie mit 0
+  // Kohortenzeilen — `pruefeGrundlinie` verlangt das ausdrücklich NICHT.
+  // BEFUND 02.09.: Verglichen wurde der REALE Anteil von jetzt gegen die
+  // GESAMTZAHL von damals. Bei einer Grundlinie mit Kohorte war das still falsch.
+  const identitaetsbefund = (r) => r.pruefungen.find((p) => p.name.includes("realen Identitätsprofile"));
+  // Eine in sich STIMMIGE Grundlinie mit Kohorte: die 495 stehen in JEDER Zahl,
+  // die sie betreffen (Mandate, inaktiv, Identitätsprofile) — genau so, wie die
+  // Grundlinien-SQL sie erhebt.
+  const MIT_KOHORTE = Object.freeze({
+    ...GRUNDLINIE,
+    mandateGesamt: GRUNDLINIE.mandateGesamt + 495,
+    mandateInaktiv: GRUNDLINIE.mandateInaktiv + 495,
+    identitaetsprofile: GRUNDLINIE.identitaetsprofile + 495,
+    kohortenProfile: 495
+  });
+  check("J8 Eine in sich stimmige Grundlinie MIT Kohortenzeilen wird korrekt verglichen",
+    (() => {
+      // 495 Kohortenprofile stehen in BEIDEN Zahlen — der reale Anteil ist
+      // unverändert, der Befund muss zutreffen.
+      const g = MIT_KOHORTE;
+      const b = identitaetsbefund(K.pruefeRueckbau({ grundlinie: g, bestand: bestandMit() }));
+      return b && b.ok === true;
+    })());
+  check("J8a Die ALTE Rechnung hätte hier fälschlich abgelehnt (Gegenprobe)",
+    (() => {
+      const g = MIT_KOHORTE;
+      const ist = bestandMit();
+      // Alte Rechnung: realer Anteil jetzt gegen GESAMTZAHL damals.
+      return (ist.identitaetenGesamt - ist.kohortenIdentitaeten) !== g.identitaetsprofile;
+    })());
+  check("J8b Ein echter Verlust an realen Identitätsprofilen wird erkannt",
+    (() => {
+      const b = identitaetsbefund(K.pruefeRueckbau({
+        grundlinie: { ...GRUNDLINIE, identitaetsprofile: GRUNDLINIE.identitaetsprofile + 1 },
+        bestand: bestandMit()
+      }));
+      return b && b.ok === false;
+    })());
+  check("J9 Die kohortenfreie Grundlinie bleibt unverändert bewertbar",
+    (() => {
+      const b = identitaetsbefund(K.pruefeRueckbau({ grundlinie: GRUNDLINIE, bestand: bestandMit() }));
+      return b && b.ok === true;
+    })());
+  check("J6 Das Wort des Rückwegs räumt die Scheduler-Spur NICHT auf",
+    K.freigabe("scheduler-spur", SCHARF_ENV("deaktivierung")).erteilt === false);
+  check("J7 Das Wort der Nacharbeit deaktiviert NICHTS",
+    K.freigabe("deaktivierung", SCHARF_ENV("scheduler-spur")).erteilt === false);
+
   check("I3 Keine Uhr im Modul (die Grundlinie bringt ihren Zeitstempel mit)",
     !/Date\.now\(\)/.test(quelle) && !/new Date\(\)/.test(quelle));
 

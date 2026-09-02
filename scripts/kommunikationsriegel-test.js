@@ -266,15 +266,37 @@ async function main() {
     ohneAlles.sent === false && ohneAlles.gesperrt === true);
   check("H3 sendAccessMail setzt den Kanal 'einladung' selbst",
     /kanal: "einladung"/.test(fs.readFileSync(path.join(ROOT, "lib", "helmut", "invite-mail.js"), "utf8")));
-  check("H4 Alle vier sendAccessMail-Aufrufer in server.js reichen die Kennung durch",
+  // VERSCHÄRFT 02.09. (adversariale Analyse, bestätigter Befund): Die alte
+  // Fassung pinnte `kennung: <konto>.politicianId`. Genau das war die Lücke —
+  // `accounts.createUser` setzt `politicianId` NUR für die Rolle
+  // "abgeordneter", und ein Referent mit ECHTER Dienstadresse, der einem
+  // synthetischen Mandat zugewiesen ist, erzeugte damit einen Vorgang mit
+  // kennung="" und realer Adresse: BEFUND_REAL, Mail erlaubt. Der Test prüfte
+  // also die Syntax der Übergabe, nicht ihren Wert. Gepinnt ist jetzt die
+  // Auflösung über die tatsächliche Mandatsbindung.
+  check("H4 Alle vier sendAccessMail-Aufrufer in server.js lösen die Kennung über die Mandatsbindung auf",
     (() => {
       const quelle = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
       const stellen = [...quelle.matchAll(/sendAccessMail\(/g)];
       if (stellen.length !== 4) return false;
       return stellen.every((treffer) =>
-        /kennung:\s*\w+\.politicianId/.test(quelle.slice(treffer.index, treffer.index + 260)));
+        /kennung:\s*await\s+kontoKennung\(/.test(quelle.slice(treffer.index, treffer.index + 260)));
     })(),
-    "kennung: <konto>.politicianId an jeder Aufrufstelle");
+    "kennung: await kontoKennung(<konto>) an jeder Aufrufstelle");
+  check("H4a kontoKennung lässt eine SYNTHETISCHE Zuweisung gewinnen, wenn das Konto selbst keine Kennung trägt",
+    (() => {
+      const quelle = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
+      const block = quelle.slice(
+        quelle.indexOf("async function kontoKennung("),
+        quelle.indexOf("async function kontoKennung(") + 1200);
+      // Eigene Kennung hat Vorrang (realer Weg unverändert), sonst entscheidet
+      // die Zuweisung, und zwar ausschließlich über die synthetische Familie.
+      return /const eigene = \(user && user\.politicianId\) \|\| "";/.test(block)
+        && /if \(eigene\) return eigene;/.test(block)
+        && /assignmentsForUser/.test(block)
+        && /mandatsklasse\.istSynthetischeKennung/.test(block);
+    })(),
+    "eigene Kennung zuerst, dann synthetische Zuweisung — nie lockerer als vorher");
   check("H5 Auch dabei entstand kein Netzaufruf", netzaufrufe === vorherH, `Zähler ${netzaufrufe}`);
 
   check("G9 Am Ende steht der Netzzähler auf null", netzaufrufe === 0, `Zähler ${netzaufrufe}`);
