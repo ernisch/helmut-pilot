@@ -48,23 +48,45 @@ const GRUNDLINIE = Object.freeze({
   kohortenProfileGeloescht: 0
 });
 
-const LEERER_BESTAND = Object.freeze({ kohorte: [], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0 });
+// ERGAENZT 02.09.: der Bestand traegt jetzt einen eigenen Erhebungszeitpunkt und
+// die Identitaets-/Kontoebene der Kohorte. Ohne sie bestaetigte der Rueckbau eine
+// deaktivierte Mandatszeile, waehrend Identitaet und Konto weiter bestanden.
+const BESTAND_BASIS = Object.freeze({
+  erhobenUtc: "2026-09-01T13:00:00.000Z",
+  identitaetenGesamt: 10,
+  kohortenIdentitaeten: 0,
+  kohortenKontenAktiv: 0,
+  fremdeGesamt: 9,
+  fremdeAktiv: 5,
+  fremdeGeloescht: 0
+});
+
+const LEERER_BESTAND = Object.freeze({ ...BESTAND_BASIS, kohorte: [] });
 
 // Der Bestand fuehrt die TATSAECHLICH gelesene Adresse je Zeile — nicht die
 // generierte. Eine nach der Anlage geaenderte Adresse muss auffallen koennen.
 function bestandMit(aktiveIds = [], { adressen = {} } = {}) {
   const aktiv = new Set(aktiveIds);
   return {
+    ...BESTAND_BASIS,
     kohorte: K.KOHORTE_KENNUNGEN.map((id) => ({
       id,
       aktiv: aktiv.has(id),
       email: adressen[id] || `${id}@test-kohorte.invalid`
     })),
-    fremdeGesamt: 9,
-    fremdeAktiv: 5,
-    fremdeGeloescht: 0
+    // Angelegte Kohortenprofile tragen Identitaetszeilen; nach dem Rueckbau sind
+    // ihre Konten inaktiv.
+    identitaetenGesamt: 10 + K.KOHORTE_KENNUNGEN.length,
+    kohortenIdentitaeten: K.KOHORTE_KENNUNGEN.length
   };
 }
+
+// ERGAENZT 02.09.: eine Aktivierung braucht seit diesem Sprint einen BESTANDENEN
+// Startfensterbefund. Ein fehlender Befund gilt nie als „frei" (fail closed) —
+// genau darin bestand die Luecke: die Fensterpruefung existierte, aber niemand
+// fragte sie, bevor Profile aktiviert wurden.
+const FENSTER_FREI = Object.freeze({ startErlaubt: true, konflikte: [], startMinuteUtc: 696, endeMinuteUtc: 959 });
+const FENSTER_KONFLIKT = Object.freeze({ startErlaubt: false, konflikte: [{ art: "bestandscron-im-fenster" }] });
 
 const SCHARF_ENV = (schritt) => ({
   [K.EXECUTE_FLAG]: "1",
@@ -111,7 +133,7 @@ function main() {
   check("B5 Doppelte Kennungen brechen ab",
     wirft(() => K.pruefeZielmenge(["test-kohorte-a-001", "test-kohorte-a-001"]), "doppelte-kennung"));
   check("B6 Ein Bestand mit fremder Zeile wird abgewiesen",
-    wirft(() => K.pruefeBestand({ kohorte: [{ id: "ein-reales-mandat", aktiv: true, email: "a@b.invalid" }], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0 }), "fremde-kennung"));
+    wirft(() => K.pruefeBestand({ ...BESTAND_BASIS, kohorte: [{ id: "ein-reales-mandat", aktiv: true, email: "a@b.invalid" }] }), "fremde-kennung"));
   check("B7 Im Modul steht keine einzige reale Mandatskennung",
     (() => {
       const quelle = require("fs").readFileSync(require("path").join(__dirname, "..", "lib", "helmut", "testkohorte-betrieb.js"), "utf8");
@@ -149,9 +171,9 @@ function main() {
   check("C6 Ohne Bestand entsteht kein Plan",
     wirft(() => K.planeProvisionierung({ grundlinie: GRUNDLINIE }), "bestand"));
   check("C7 Eine Bestandszeile ohne eindeutiges aktiv-Merkmal blockiert",
-    wirft(() => K.pruefeBestand({ kohorte: [{ id: "test-kohorte-a-001", email: "a@b.invalid" }], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0 }), "bestand"));
+    wirft(() => K.pruefeBestand({ ...BESTAND_BASIS, kohorte: [{ id: "test-kohorte-a-001", email: "a@b.invalid" }] }), "bestand"));
   check("C8 Ein Bestand ohne gelesene Löschmarken blockiert",
-    wirft(() => K.pruefeBestand({ kohorte: [], fremdeGesamt: 9, fremdeAktiv: 5 }), "bestand"));
+    wirft(() => K.pruefeBestand({ ...BESTAND_BASIS, kohorte: [], fremdeGeloescht: undefined }), "bestand"));
 
   // ── D · Trockenlauf ist Default, scharf braucht den doppelten Riegel ──────
   console.log("\n== D · Trockenlauf als Default, doppelter Riegel für scharf ==");
@@ -199,8 +221,10 @@ function main() {
   check("E3 IDEMPOTENZ: der zweite Lauf plant null Anlagen",
     zweiterLauf.anzahlAnzulegen === 0 && zweiterLauf.bereitsErreicht === true);
   const halb = {
+    ...BESTAND_BASIS,
     kohorte: K.KOHORTE_KENNUNGEN.slice(0, 200).map((id) => ({ id, aktiv: false, email: `${id}@test-kohorte.invalid` })),
-    fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0
+    identitaetenGesamt: 10 + 200,
+    kohortenIdentitaeten: 200
   };
   check("E4 Ein abgebrochener Lauf wird genau ergänzt",
     K.planeProvisionierung({ grundlinie: GRUNDLINIE, bestand: halb }).anzahlAnzulegen === 295);
@@ -243,20 +267,40 @@ function main() {
 
   // ── G · Aktivierung nach Gruppen ──────────────────────────────────────────
   console.log("\n== G · Aktivierung nach Gruppen 20 / 75 / 400 ==");
-  const aktivA = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a" });
+  const aktivA = K.planeAktivierung({
+    grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a", startfensterBefund: FENSTER_FREI
+  });
   check("G1 Gruppe A plant exakt 20 Aktivierungen",
-    aktivA.anzahlZuAktivieren === 20 && aktivA.blockiert === false);
+    aktivA.anzahlZuAktivieren === 20 && aktivA.blockiert === false, aktivA.blockadeGruende.join(", "));
+  // ── Neue Bindung 02.09.: ohne freien Fensterbefund keine Aktivierung ───────
+  check("G1a OHNE Fensterbefund bleibt die Aktivierung blockiert (fail closed)",
+    (() => {
+      const ohne = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a" });
+      return ohne.blockiert === true
+        && ohne.startfensterGeprueft === false
+        && ohne.blockadeGruende.includes("startfenster-nicht-geprueft");
+    })());
+  check("G1b Mit KONFLIKTBEHAFTETEM Fensterbefund bleibt die Aktivierung blockiert",
+    (() => {
+      const konflikt = K.planeAktivierung({
+        grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a", startfensterBefund: FENSTER_KONFLIKT
+      });
+      return konflikt.blockiert === true && konflikt.blockadeGruende.includes("startfenster-konflikt");
+    })());
+  check("G1c Der RÜCKWEG wird NIE durch ein Startfenster blockiert",
+    K.planeDeaktivierung({ grundlinie: GRUNDLINIE, bestand: bestandMit(K.GRUPPEN_KENNUNGEN.a) })
+      .anzahlZuDeaktivieren === 20);
   const nachA = bestandMit(K.GRUPPEN_KENNUNGEN.a);
   check("G2 IDEMPOTENZ: Gruppe A erneut geplant ergibt null",
-    K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachA, gruppe: "a" }).bereitsErreicht === true);
+    K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachA, gruppe: "a", startfensterBefund: FENSTER_FREI }).bereitsErreicht === true);
   const bOhneA = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "b" });
   check("G3 Gruppe B ohne vollständige Gruppe A ist blockiert",
     bOhneA.blockiert === true && bOhneA.vorstufenOffen.includes("a"));
-  const bNachA = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachA, gruppe: "b" });
+  const bNachA = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachA, gruppe: "b", startfensterBefund: FENSTER_FREI });
   check("G4 Gruppe B nach vollständiger Gruppe A plant exakt 75",
     bNachA.blockiert === false && bNachA.anzahlZuAktivieren === 75);
   const nachAB = bestandMit([...K.GRUPPEN_KENNUNGEN.a, ...K.GRUPPEN_KENNUNGEN.b]);
-  const cNachAB = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachAB, gruppe: "c" });
+  const cNachAB = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachAB, gruppe: "c", startfensterBefund: FENSTER_FREI });
   check("G5 Gruppe C nach A und B plant exakt 400",
     cNachAB.blockiert === false && cNachAB.anzahlZuAktivieren === 400);
   const cOhneB = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachA, gruppe: "c" });
@@ -300,8 +344,24 @@ function main() {
     K.pruefeRueckbau({
       grundlinie: GRUNDLINIE, bestand: { ...bestandMit(), fremdeGeloescht: 1 }
     }).zurueckgebaut === false);
-  check("H8 Der Rückbau weist vier Einzelbefunde aus",
-    rueckbau.pruefungen.length === 4);
+  // ERWEITERT 02.09.: aus vier Einzelbefunden sind sechs geworden. Zwei davon
+  // schliessen den gefaehrlichsten Fehlbefund des Moduls: ein LEERER Bestand
+  // ergab „0 aktive Kohortenzeilen" und damit einen gruenen Rueckbau ueber einer
+  // moeglicherweise noch aktiven Kohorte. Dazu die Identitaets-/Kontoebene.
+  check("H8 Der Rückbau weist acht Einzelbefunde aus",
+    rueckbau.pruefungen.length === 8, rueckbau.pruefungen.map((p) => p.name).join(" | "));
+  check("H8b Der leere Bestand gilt NICHT mehr als erfolgreicher Rückbau",
+    K.pruefeRueckbau({ grundlinie: GRUNDLINIE, bestand: LEERER_BESTAND }).zurueckgebaut === false);
+  check("H8c Ein VOR der Grundlinie erhobener Bestand wird abgewiesen",
+    K.pruefeRueckbau({
+      grundlinie: GRUNDLINIE,
+      bestand: { ...bestandMit(), erhobenUtc: "2026-08-31T10:00:00.000Z" }
+    }).offen.includes("Bestand ist NACH der Grundlinie erhoben"));
+  check("H8d Ein noch aktives Kohortenkonto bricht den Rückbau",
+    K.pruefeRueckbau({
+      grundlinie: GRUNDLINIE,
+      bestand: { ...bestandMit(), kohortenKontenAktiv: 1 }
+    }).offen.includes("Kein aktives Kohortenkonto"));
   // Regression: Löschmarken werden REAL gegen REAL verglichen. Eine Löschmarke
   // auf einer Kohortenzeile darf keine neue an einem realen Mandat verdecken.
   const nachAbbruch = {
@@ -319,12 +379,13 @@ function main() {
   check("H12 fremdeGeloescht = null blockiert, statt still zu 0 zu werden",
     wirft(() => K.pruefeRueckbau({
       grundlinie: GRUNDLINIE,
-      bestand: { kohorte: [], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: null }
+      bestand: { ...BESTAND_BASIS, kohorte: [], fremdeGeloescht: null }
     }), "bestand"));
   check("H13 Auch fremdeGesamt und fremdeAktiv dulden keine Koerzierung",
-    ["fremdeGesamt", "fremdeAktiv"].every((feld) => wirft(() => K.pruefeBestand({
-      kohorte: [], fremdeGesamt: 9, fremdeAktiv: 5, fremdeGeloescht: 0, [feld]: "9"
-    }), "bestand")));
+    ["fremdeGesamt", "fremdeAktiv", "identitaetenGesamt", "kohortenIdentitaeten", "kohortenKontenAktiv"]
+      .every((feld) => wirft(() => K.pruefeBestand({
+        ...BESTAND_BASIS, kohorte: [], [feld]: "9"
+      }), "bestand")));
   check("H9 Der erste Rückweg ist Deaktivierung, nicht Löschen",
     /gelöscht wird nichts/.test(abbau.hinweis));
 

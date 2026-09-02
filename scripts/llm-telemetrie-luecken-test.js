@@ -114,18 +114,34 @@ check("C2 fehlerKlasse gibt niemals eine rohe Meldung zurueck",
     return block.includes('return "ki-fehler";') && !block.includes("return nachricht;\n  }");
   })());
 
-// ── D · Die verbleibende Ursache: unbedingtes Lese-Aendere-Schreibe ─────────
-// Kein Fix, sondern eine MESSUNG. Sie haelt fest, dass der Blob-Schreibpfad
-// weiterhin unbedingt ist — damit die Restluecke nicht still verschwindet.
+// ── D · Die Ursache: unbedingtes Lese-Aendere-Schreibe im Blob ──────────────
+// STAND 02.09. (korrigiert): der Blob-Schreibpfad ist WEITERHIN unbedingt — das
+// bleibt richtig und wird hier weiter gemessen. Neu ist, dass er nicht mehr der
+// EINZIGE Pfad ist: `recordLlmUsage` schreibt seit dem Vorbereitungssprint
+// zusaetzlich relational (Dual-Write, Muster W-2/process_runs), sobald Flag
+// `HELMUT_LLM_USAGE_RELATIONAL` UND Migration 20260902121500 vorliegen. Beides
+// ist freigabepflichtig und AUS; der Blob bleibt in Phase 2 die Lesequelle.
+// Die frueheren Zusagen D1/D2 („bekannte Restluecke") sind damit nicht falsch
+// geworden, aber unvollstaendig — sie werden hier ausdruecklich ergaenzt statt
+// stillschweigend ersetzt (CLAUDE.md §4.4, §7.11).
 const storageQuelle = fs.readFileSync(path.join(ROOT, "lib/helmut/storage.js"), "utf8");
 const recordBlock = storageQuelle.slice(
   storageQuelle.indexOf("async function recordLlmUsage("),
   storageQuelle.indexOf("async function getLlmUsage(")
 );
-check("D1 recordLlmUsage ist weiterhin ein Lese-Aendere-Schreibe-Zyklus (bekannte Restluecke)",
+check("D1 Der BLOB-Spiegel ist weiterhin ein Lese-Aendere-Schreibe-Zyklus",
   recordBlock.includes("await readAuthStore()") && recordBlock.includes("await writeAuthStore(store)"));
 check("D2 Der Blob-Schreibvorgang ist unbedingt (kein Compare-and-Set)",
   !recordBlock.includes("If-Match") && !recordBlock.includes("compareAndSet"));
+// NEU 02.09.: der kanonische Weg daneben.
+check("D1a recordLlmUsage schreibt zusaetzlich relational (Dual-Write, Muster W-2)",
+  recordBlock.includes("insertLlmUsageRelational") || recordBlock.includes("insert(llmUsageToRelationalRow"));
+check("D1b Der relationale Pfad ist Default AUS und braucht Flag UND bereites Ziel",
+  recordBlock.includes("llmUsageRelationalEnabled") && recordBlock.includes("v3StoreReady()"));
+check("D1c Der relationale Schreibvorgang ist ein reiner Insert (kein merge-duplicates)",
+  storageQuelle.includes("/rest/v1/llm_usage\"") && !storageQuelle.includes("llm_usage?on_conflict=id"));
+check("D1d Der Blob bleibt vollstaendig kompatibel — er wird weiter geschrieben",
+  recordBlock.includes("store.llmUsage = [record, ...(store.llmUsage || [])]"));
 check("D3 Die Ringpuffergrenze bleibt bei 5.000 Eintraegen (unveraendert)",
   storageQuelle.includes("normalized.llmUsage = (normalized.llmUsage || []).slice(0, 5000)"));
 

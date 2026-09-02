@@ -10,6 +10,8 @@ const tenantContext = require("./lib/helmut/tenant-context");
 const { validateProfile } = require("./lib/helmut/profile-validation");
 const { bewerteBundestagsprofil } = require("./lib/helmut/profile-readiness");
 const sourceSafety = require("./lib/helmut/sourceSafety");
+// Kanonische Klassifizierung real/synthetisch (Vorrang der realen Mandate).
+const mandatsklasse = require("./lib/helmut/mandatsklasse");
 const { runLageCheck, runSourceCrawl, runGlobaleErfassung, runMandatsProjektion } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
 const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, getRunCostReport, llmPriceProvenance, recordLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, profileDbExclusiveEnabled, getProfileTelemetry, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState, getLlmCostSince, getAdminCostsPerUser, listSourceArchitectureRows, getSourceModeShadowLastRun, listSourceCrawlTelemetry, readCronFairnessState, saveCronFairnessState } = require("./lib/helmut/storage");
@@ -1650,6 +1652,15 @@ async function handleRequest(request, response) {
       }
       let profiles = await listProfiles().catch(() => []);
       if (!Array.isArray(profiles)) profiles = [];
+      // VORRANG DER REALEN MANDATE (Sprint 02.09.). Diese Schleife arbeitet gegen
+      // ein hartes Zeitbudget von 240 s und in FESTER Listenreihenfolge — anders
+      // als der Morgenlauf hat sie keine Fairnessrotation. Bei 5 realen und 495
+      // synthetischen Profilen entscheidet damit allein die Listenposition, wer
+      // vor dem Zeitbudget noch drankommt. Reale Mandate werden deshalb stabil
+      // nach vorn gestellt; die Reihenfolge INNERHALB einer Klasse bleibt
+      // unveraendert. Bei homogener Profilmenge (heutiger Stand: 0 synthetische
+      // Zeilen) ist die Liste element-identisch zu vorher.
+      profiles = mandatsklasse.sortiereRealZuerst(profiles, (p) => (p && p.id) || null);
       // KEIN Fallback auf ein Default-Mandat: ohne gespeicherte Profile ist der
       // Vorwaerm-Lauf ein ehrlicher Leerlauf.
       const results = [];

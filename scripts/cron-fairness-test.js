@@ -1438,8 +1438,16 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
       !/HELMUT_MATCHING_(MIN_)?SIMILARITY|aehnlichkeitsSchwelle|similarityThreshold/i.test(serverSrc + lies("lib/helmut/cron-fairness.js")));
     // Nur echte Abhaengigkeiten pruefen (Kommentare duerfen den Befund benennen).
     const fairnessRequires = (lies("lib/helmut/cron-fairness.js").match(/require\((["'])[^"']+\1\)/g) || []).join(",");
+    // PRAEZISIERT 02.09.: die Regel meint „keine KI-, Matching- oder
+    // Speicher-Abhaengigkeit" — sie war als exakte Zeichenkette formuliert und
+    // verbot damit auch reine, IO-freie Logik. Seit dem Vorbereitungssprint
+    // bezieht der Fairnesspfad `mandatsklasse` (Klassifizierung real/synthetisch,
+    // kein Netz, keine Datenbank, keine Uhr, keine Secrets) fuer den Vorrang der
+    // realen Mandate. Geprueft wird jetzt die Absicht statt der Buchstaben.
+    const ERLAUBTE_REQUIRES = new Set(['require("crypto")', 'require("./mandatsklasse")']);
     check("Der Fairnesspfad zieht keine KI-, Matching- oder Speicher-Abhaengigkeit",
-      fairnessRequires === 'require("crypto")', fairnessRequires);
+      (lies("lib/helmut/cron-fairness.js").match(/require\((["'])[^"']+\1\)/g) || [])
+        .every((r) => ERLAUBTE_REQUIRES.has(r)), fairnessRequires);
     check("Kein Mandant ist im Fairnesspfad hartkodiert (CLAUDE.md §4.2)",
       !/cem|annika|klose|ince|mustermann/i.test(lies("lib/helmut/cron-fairness.js")));
   }

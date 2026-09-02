@@ -303,8 +303,20 @@ check("B0.8 Fuer JEDE Kombination: Gesamtobergrenze = Limit, nie Limit + Reserve
         && d.nichtPriorisiertMax === Math.max(0, d.limit - d.reserve)
         && summeWaereFalsch;
     }));
+// AKTUALISIERT 02.09.: `effectiveMax` traegt seit dem Vorbereitungssprint einen
+// dritten Summanden — die VORRANGRESERVE der realen Mandate. Sie ist Default 0
+// (`HELMUT_TESTLAUF_VORRANG_REAL` nicht gesetzt) und gilt ausschliesslich fuer
+// Aufrufe, die NICHT einem realen Mandat zuzuordnen sind; fuer reale Mandate ist
+// die Formel unveraendert. Das Modell oben bildet weiterhin genau diesen Fall ab
+// (Vorrangabzug 0), und die Pinnung folgt der neuen Zeile.
 check("B0.9 Das Modell bildet die Produktionsformel aus storage.js ab (effectiveMax)",
-  /const effectiveMax = priority \? limit : Math\.max\(0, limit - reserve\);/.test(storageSrc));
+  /const effectiveMax = Math\.max\(0, \(priority \? limit : limit - reserve\) - vorrang\.abzug\);/.test(storageSrc));
+check("B0.9a Die Vorrangreserve ist Default 0 — die Formel ist ohne sie unveraendert",
+  /HELMUT_TESTLAUF_VORRANG_REAL/.test(storageSrc)
+  && require("../lib/helmut/mandatsklasse").vorrangreserveReal({}).wert === 0);
+check("B0.9b Sie gilt NICHT fuer reale Mandate (deren Obergrenze bleibt limit − reserve)",
+  require("../lib/helmut/storage").llmVorrangAbzug("lageBriefing", "ein-reales-mandat",
+    { HELMUT_TESTLAUF_VORRANG_REAL: "200" }).abzug === 0);
 check("B0.10 Fehlt die Umgebungsvariable, greift laut Code das Schutzlimit 50 (fail closed)",
   SCHUTZLIMIT_AUS_CODE === 50, String(SCHUTZLIMIT_AUS_CODE));
 check("B0.11 Ein fehlender Production-Wert wird als UNBEKANNT gemeldet, nicht geraten",

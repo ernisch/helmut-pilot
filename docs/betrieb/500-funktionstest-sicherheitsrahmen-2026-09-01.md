@@ -954,3 +954,385 @@ Kontos** — es ist nur über Portal/ARM sichtbar und wurde nicht erhoben.
 `zielDeckel()` gibt unverändert die Spanne aus, und die Reserve liegt weiterhin
 **im** Deckel (nie addiert). Ebenfalls unverändert: die fünf realen Mandate,
 Gate (`shadow`), Crons, Migrationen und alle Production-Daten.
+
+---
+
+## 18 · Vorbereitungssprint 02.09. — Verdrängungsschutz, Ablauf und Rückweg
+
+**Teilweise abgeschlossen — offline vollständig bewiesen, keine Production-Wirkung.**
+Dieser Sprint schließt die technisch lösbaren Blocker des 500er-Funktionstests.
+**Nicht ausgeführt:** kein Merge, kein Deployment, keine Migration angewendet,
+keine Production-Datenänderung, keine Provisionierung, keine Aktivierung, keine
+Umgebungsvariable gesetzt, kein Deckel und keine Reserve verändert, kein Cron
+verändert, kein Modellaufruf, keine externe Nachricht, keine Azure-Änderung,
+keine kostenpflichtige Ressource. Der Supabase-Zugriff war ausschließlich
+`SELECT`, der Vercel-Zugriff ausschließlich lesend.
+
+### 18.1 · Ausgangsstand (rein lesend bestätigt, 2026-09-02)
+
+| Prüfpunkt | Befund |
+|---|---|
+| `origin/main` | `881739da0f8f06184a1bdf7dd86895d896cf0336` (Merge von PR #294) |
+| Vercel-Production-Deployment | `dpl_7pNLD8PgQXLEcyVtsuZEUhG5dhxB` **READY**, target `production`, `githubCommitSha` exakt `881739da…` |
+| Mandate | **9** Zeilen: **5 aktiv**, 4 inaktiv, **0** Löschmarken |
+| Synthetische Profile | **0** (`test-kohorte-*`, `synth-mandat-*`, `stapel-*`, `test-mdb-*`) |
+| Identitätsprofile / Kohortenkonten | 10 / **0 aktiv** |
+| Migrationen | **35**, letzte `20260829175749` — unverändert |
+| Crons | **13** in `vercel.json`, **kein** `18,48 * * * *` |
+| Unerwartete Production-Änderung seit dem Merge | **keine** — das jüngste Production-Deployment IST der Merge-Commit |
+
+### 18.2 · Der Kernbefund: die realen Mandate hatten keinen Verdrängungsschutz
+
+§16.6 nannte das für das KI-Budget. Der Sprint hat es **an vier Stellen** belegt,
+und an allen vieren war es dasselbe strukturelle Problem: **der Begriff
+„synthetisch" existierte außerhalb des Kommunikationsriegels nicht.**
+
+| Ebene | Befund (Code-belegt) | Wirkung bei 5 realen + 495 synthetischen |
+|---|---|---|
+| **KI-Budget** | `storage.reserveLlmCall` bucht alle Mandate gegen EINEN globalen Zähler, „wer zuerst kommt"; `HELMUT_TENANT_LLM_CAP` ist aus und begrenzt ohnehin nur je Mandant | die realen Mandate können den Tagesdeckel leer vorfinden |
+| **Priorisierung** | `llm-budget-fair.rotationsReihenfolge` sortiert rein nach SHA-256-Streuwert | bei Deckel 100 und Standardanteil 0,5 sind es 50 Plätze für 500 Mandate — je reales Mandat rund **10 % Chance je Tag** |
+| **Warteschlange** | `order by priority asc, due_at asc` — alle mandatsgebundenen Aufträge tragen dieselbe Zahl | ein reales Briefing steht hinter beliebig vielen synthetischen |
+| **Laufzeit** | die Lage-Briefing-Schleife (`server.js`) arbeitet in **fester Listenreihenfolge** gegen 240 s Zeitbudget | wer hinten steht, wird nie erreicht |
+
+**Gebaut wurde eine EINE kanonische Klassifizierung** —
+[`lib/helmut/mandatsklasse.js`](../../lib/helmut/mandatsklasse.js), reine Logik,
+wirft nie, **kein einziger realer Slug** (CLAUDE.md §4.2). Der
+Kommunikationsriegel führte diese Liste bisher als zweite Kopie und bezieht sie
+jetzt von dort; sein Verhalten ist unverändert (Gleichheitsvertrag testgesichert).
+
+Darauf setzen vier Schutzregeln auf:
+
+1. **Vorrangreserve im KI-Budget** (`HELMUT_TESTLAUF_VORRANG_REAL`, **Default 0,
+   nicht gesetzt**): der Wert wird vom wirksamen Tagesmaximum abgezogen — aber
+   **nur** für Aufrufe, die NICHT einem realen Mandat zuzuordnen sind. Reale
+   Mandate sehen unverändert `Deckel − Verstehens-Reserve`. Auch **geteilte**
+   Arbeit (Verstehen) ist betroffen: sie hat mit
+   `HELMUT_LLM_RESERVE_UNDERSTANDING` ihre eigene Reserve, und der Code erlaubte
+   ihr bis dahin den **vollen** Tagesdeckel. Eine fehlende Kennung bekommt
+   fail-closed die strengere Stellung.
+2. **Reale Mandate zuerst in der Tagesrotation** (`rotationsReihenfolge`).
+   Innerhalb jeder Klasse gilt unverändert dieselbe wandernde Rotation — die
+   Kohorte verhungert nicht.
+3. **+1 Prioritätsaufschlag** für mandatsgebundene Aufträge synthetischer
+   Profile (`source-demand.mandatsPrioritaet`) — eine zweite, von der
+   Fälligkeit unabhängige Lage.
+4. **Reale Mandate zuerst bei hartem Zeitbudget** (`cron-fairness.planTenantOrder`
+   und die Lage-Briefing-Schleife).
+
+**STRUKTURELL WIRKUNGSLOS IM HEUTIGEN PRODUCTION-ZUSTAND.** Alle vier Regeln
+entscheiden an der Kennungsklasse. Bei **0 synthetischen Zeilen** ist jede
+Mandatsmenge homogen, und die Ausgabe ist **byte-identisch** zur Fassung vor dem
+Sprint — nachgewiesen gegen eine im Test nachgebaute Kopie der alten Funktion
+(`scripts/mandatsklasse-test.js`, Abschnitt C). Die Vorrangreserve ist zusätzlich
+ohne gesetzte Umgebungsvariable ein reiner No-Op.
+
+**Zusätzlich abgeschaltet:** synthetische Profile bauen **keine eigenen
+Außenquellen** mehr (`scheduler.getSourcesForProfile`). Sonst entstünden je
+Zyklus rund **1.000 Google-News-Abrufe** nach Namen wie „Testmandat A-001" — das
+verschärft das belegte Klumpenrisiko OP-15 (146 von 163 Wegen) um zwei
+Größenordnungen und füllt das Verstehensfenster (die 500 jüngsten Rohdokumente)
+mit synthetischen Treffern. Ausdrücklich wieder einschaltbar:
+`HELMUT_TESTKOHORTE_QUELLEN=aktiv`.
+
+### 18.3 · `HELMUT_TENANT_LLM_CAP` — geprüft, und warum er das Problem NICHT löst
+
+Der Deckel ist **aus** (OP-03). Eingeschaltet begrenzt er je Mandant über
+`helmut_reserve_llm_call(p_day, 'tenant:<id>', p_max)` — **den globalen Topf hält
+er nicht frei**. Konkret: ohne
+`HELMUT_MAX_LLM_CALLS_PER_TENANT_PER_DAY` greift der Fallback **40 je Mandant**;
+495 × 40 = **19.800** — ein Vielfaches jedes diskutierten Tagesdeckels. Es gibt
+**keine Summenprüfung**. Und `HELMUT_TENANT_LLM_LIMITS` schlägt ausschließlich
+per **exaktem Schlüssel** zu: ein vertippter realer Schlüssel degradiert
+stillschweigend auf den uniformen Default.
+
+**Empfehlung, ausdrücklich:** `HELMUT_TENANT_LLM_CAP` für den Testtag **nicht**
+einschalten und `HELMUT_TENANT_LLM_LIMITS` **nicht** verwenden. Der wirksame
+Schutz ist die globale Vorrangreserve — sie braucht keine 500 Einzelwerte und
+kann nicht durch einen Tippfehler zerfallen.
+
+### 18.4 · Die exakt zu setzenden Werte (**nicht gesetzt**)
+
+Maschinenlesbar an einer Stelle: `kapazitaet-500.vorbereiteteBetreiberwerte()`,
+druckbar über `node scripts/funktionstest-500-ablauf.js werte`.
+
+| Umgebungsvariable | Wert | Herkunft |
+|---|---|---|
+| `HELMUT_MAX_LLM_CALLS_PER_DAY` | **2416** | konservatives Szenario ÷ 0,75; Fairness-Untergrenze 2n−1 = 999; gemessener Boden 1.496/Tag (§16.4) |
+| `HELMUT_LLM_RESERVE_UNDERSTANDING` | **702** | konservativer priorisierter Frischbedarf; **IM** Deckel, nie addiert |
+| `HELMUT_TESTLAUF_VORRANG_REAL` | **200** | gemessener p95-Tagesbedarf der 5 realen Mandate = **170** (UNTERGRENZE, §16.3) + Aufschlag für die bewiesene ~12 % Untererfassung (§17.2) |
+| `HELMUT_TESTLAUF_MAX_RPM` | **82** | **NICHT 250.** Bei gemessenen **3.018 Token je Aufruf** (52.094 + 11.291 auf 21 Aufrufe) ergäben 250 Anfragen/Minute **754.500 TPM** — das Dreifache der TPM-Grenze. Bindend ist 250.000 ÷ 3.018 = **82** |
+| `HELMUT_TESTLAUF_MAX_TPM` | **250000** | Deploymentgrenze (Betreiber 02.09.); eigene Messung 32.686 TPM = 13,1 % |
+| `HELMUT_TESTLAUF_KOSTENBUDGET_USD` | **10,00** | Deckel 2.416: Erwartung **7,11 USD/Tag**, obere Schranke (alles Verstehen) **8,11 USD/Tag**; die Abbruchgrenze liegt bewusst darüber |
+| `HELMUT_TESTLAUF_MAX_PARALLEL` | **1** | `HELMUT_VERSTEHEN_PARALLELITAET` ist ungesetzt und wirkt als 1 |
+| `HELMUT_TESTLAUF_KOMMUNIKATION` | **gesperrt** | Betriebsstellung des Testtages: jeder Außenkanal schweigt |
+
+**Kostenfolge bei Deckel 2.416:** ≈ **213 USD/Monat** (gemischt), obere Schranke
+**243 USD/Monat** — unverändert gegenüber §16.5.
+
+> **Ehrliche Grenze der Kostenabbruchgrenze (F7):** sie ist am **Listenpreis**
+> gerechnet. Läge der Kontopreis höher, unterschätzte die laufende Rechnung die
+> echten Kosten im selben Verhältnis, und A04 griffe zu spät. Was das Risiko
+> begrenzt, ist deshalb **nicht** diese Grenze, sondern der **Aufrufdeckel**:
+> mehr als 2.416 Aufrufe kann der Tag nicht kosten, zu welchem Preis auch immer.
+
+> **Der Deckel ist im sicheren Tagesfenster nicht ausschöpfbar** — und das ist
+> kein Fehler. Bei Parallelität 1 und gemessenen 9.110 ms je Verstehensaufruf
+> braucht der volle Deckel **367 Minuten** reiner Laufzeit; das längste sichere
+> Fenster tagsüber ist **263 Minuten**. Ein Tag, der den Deckel wirklich
+> ausschöpfen wollte, endet an Abbruchregel **A05 (Laufzeit)**, nicht am Deckel.
+> Der Deckel ist eine Obergrenze, kein Arbeitspensum.
+
+### 18.5 · `recordLlmUsage` — die Restlücke ist relational geschlossen (Phase 2)
+
+Nach exakt dem bereits bewährten Muster `W-2`/`process_runs`:
+
+* **`lib/helmut/llm-usage-relational.js`** — reine Projektion Blob ↔ relationale
+  Zeile. `"unknown"` wird **NULL**, niemals 0.
+* **Dual-Write in `recordLlmUsage`**, gesperrt durch Flag
+  `HELMUT_LLM_USAGE_RELATIONAL` (**Default AUS**) **und** `v3StoreReady()`.
+  **Der Blob-Pfad bleibt unverändert** — alle heutigen Leser (`getLlmUsage`,
+  `getLlmUsageToday`, `getRunCostReport`, Admin-Reports, `op25-nachweis`,
+  Kontolöschung) finden ihre Daten weiter dort. Ohne Flag ist das Verhalten
+  byte-identisch zum bisherigen Stand.
+* **Migration `20260902121500_llm_usage_relational.sql` + Rollback** — rein
+  **additiv**: `public.llm_usage` existiert seit `20260716` und wird um
+  `tenant_id`, `profile_id`, `run_id`, `pipeline_step` und **`kein_aufruf`**
+  ergänzt, dazu drei Indizes. **Nicht angewendet** (CLAUDE.md §5).
+* **`kein_aufruf` ist die Spalte, auf der der ganze Bedarfsnachweis ruht:** ohne
+  sie wären die 1.260 Budgetablehnungen des Messfensters relational nicht mehr
+  von Azure-Fehlern zu trennen — und p95 170 nicht mehr rekonstruierbar.
+
+**Zwei Korrekturen aus dem adversarialen Review am eigenen Entwurf:** der
+relationale Schreibvorgang ist ein **reiner Insert** (ein
+`resolution=merge-duplicates` hätte den stillen Verlust vom Blob in die Tabelle
+verlegt), und ein Schreibfehler wird zusätzlich **strukturiert geloggt** — alle
+bisherigen Aufrufer verwerfen den Rückgabewert.
+
+**Was NICHT geschlossen ist, ehrlich:** Phase 3 (Lesepfad bevorzugt relational)
+und Phase 4 (Blob-Schlüssel abschalten) sind **nicht** Teil dieses Sprints. Der
+Ringpuffer bleibt bei **5.000** und damit in Phase 2 die Lesegrenze. **p95 170
+bleibt eine Untergrenze.** Die DSGVO-Löschung erfasst `llm_usage` bereits
+(`V3_PRIVACY_CHILD_TABLES`, geprüft); die Aufbewahrungsmatrix kennt die Tabelle
+jetzt ebenfalls.
+
+### 18.6 · Kommunikationsriegel — geprüft und an vier Stellen gehärtet
+
+Der Riegel wurde adversarial gegen die Frage geprüft „welcher ausgehende Weg geht
+NICHT durch ihn?". Alle sieben dokumentierten Einhängepunkte sitzen belegt **vor**
+der jeweiligen Konfigurationsprüfung. Vier Befunde wurden behoben:
+
+1. **`push.sendPush`** prüfte den Riegel nur mit dem **Endpunkt**. Ein echter
+   FCM-Endpunkt trägt kein Synthetiksignal — die zweite Lage war ausgerechnet
+   für ihren Zweck (ein synthetisches Profil mit echtem Abo) wirkungslos. Die
+   Kennung wird jetzt durchgereicht.
+2. **`mail-transport.sendeMailpit` / `sendeResend`** sind exportiert und hatten
+   **keine** eigene Riegel-Lage; die Sperre hing allein an der Disziplin
+   künftiger Aufrufer. Zweite Lage ergänzt.
+3. **`job-dispatch.versendeAbsichten`** fragte den Riegel nur, wenn es den
+   Transport selbst baute — ein **injizierter** Transport umging ihn vollständig.
+   Der Riegel sitzt jetzt vor der ersten Vergabe, unabhängig vom Ursprung.
+4. **Der Modulkopf war zu grün.** Er versprach „ist der Empfänger nicht
+   bestimmbar, wird gesperrt". Tatsächlich gilt das, wenn **alle drei** Angaben
+   fehlen. Die Zusage ist auf den tatsächlichen Vertrag zurückgenommen.
+
+**Bewusst NICHT verschärft, mit Begründung:** „keine Kennung ⇒ gesperrt" würde
+das Verhalten des **echten** Mailwegs ändern — Einladungen an Betreiber- und
+Referentenkonten tragen bauartbedingt keine Mandatskennung
+(`accounts.createUser` setzt `politicianId` nur für die Rolle „abgeordneter").
+Genau diese Art Nebenwirkung hat schon einmal vier gepinnte Mailverträge
+gebrochen (§14). Für die Kohorte trägt ohnehin die Kennungsfamilie, alle vier
+`sendAccessMail`-Aufrufer reichen die Kennung durch (§H), und am Testtag sperrt
+`MODUS_TESTFENSTER` jeden Kanal.
+
+**Ausdrücklich NICHT im Riegel:** der **KI-Ausgang** (`ai.js`,
+`embedding-backfill.js`). Ein Modellaufruf ist keine Nachricht an einen
+Empfänger, und der Testtag braucht ihn — er wird durch das **Budget** begrenzt
+(Deckel, Reserven, A04), nicht durch den Kommunikationsriegel. Das ist eine
+Entscheidung, keine Lücke.
+
+### 18.7 · 05:45/05:48 — gelöst über ein sicheres manuelles Fenster
+
+**Kein Cron wurde verändert.** Neu ist die Antwort auf die andere Hälfte der
+Frage: *welches Fenster ist überhaupt sicher?* `funktionstest-500.sichereStartfenster()`
+rechnet die freien Blöcke des Tages aus den 13 Bestandscrons und ihrer
+`maxDuration` (300 s für **alle** Routen — `vercel.json` konfiguriert genau eine
+Funktion) aus. Zwei bewusst konservative Sperren: das ungeklärte
+05:45/05:48-Paar und der **Actions-Watchdog**, der 05:30 UTC startet und belegt
+„oft 2–3 h verzögert" ist — die Spanne **05:30–08:30 UTC** gilt deshalb als
+belegt.
+
+**Empfohlenes Testfenster: 11:36–15:59 UTC (263 Minuten)** = 13:36–17:59
+Berliner Zeit. Es ist das längste Fenster, das vollständig in der Arbeitszeit
+liegt; das absolut längste (21:36–03:59 UTC, 383 min) wird ausgewiesen, aber
+**nicht** empfohlen — ein kontrollierter Production-Funktionstest braucht
+Aufsicht.
+
+**Der Start wird jetzt automatisch verweigert.** Die Fensterprüfung existierte,
+aber **niemand fragte sie**, bevor Profile aktiviert wurden.
+`testkohorte-betrieb.planeAktivierung` verlangt seit diesem Sprint einen
+bestandenen `startfensterBefund`; fehlt er oder ist er negativ, fällt der Lauf
+auf den Trockenlauf zurück — die Freigabe allein genügt nicht. **Der RÜCKWEG
+(Deaktivierung, Rückbauprüfung) wird NIE durch ein Zeitfenster blockiert**, sonst
+wäre ein misslungener Lauf im ungünstigsten Moment nicht mehr abbaubar.
+
+**Fünf Härtungen aus dem adversarialen Review am eigenen Entwurf:** eine fehlende
+Cronliste galt als freier Tag (jetzt `cronliste-fehlt`, fail closed) · die
+verbindliche Prüfung kannte die Watchdogspanne nicht, war also **schwächer** als
+die Empfehlung · `ueberschneidung0545Belegt` hob die einzige unbedingte Sperre
+schon bei jedem truthy Wert auf (jetzt strikt `=== true`) · ein Cron des Vortags
+mit Laufzeit über Mitternacht war unsichtbar · der freie Block über Mitternacht
+wurde künstlich in zwei kürzere geteilt.
+
+**Neuer Befund zum 05:45/05:48-Komplex:** `minimal-cron.laufzeitUeberschneidungen`
+rechnete nur in **eine** Richtung („Slot startet in der Cron-Laufzeit") und
+meldete deshalb genau EIN Paar. Ein Slot läuft aber selbst bis zu 280 s. Mit
+beiden Richtungen sind es **ZWEI** Paare:
+
+1. `lage-briefing` 05:45 → Slot 05:48 *(Slot startet in der Cron-Laufzeit)*
+2. Slot 06:18 → `lage-briefing-nachlauf` 06:22 *(Cron startet in der Slot-Laufzeit)*
+
+Die frühere Aussage „genau EIN Paar" war zu grün und ist zurückgenommen. Sie
+betrifft nur die **Aktivierungsvoraussetzungen des Minimal-Crons** (Freigabe 14),
+nicht den Funktionstest selbst — der Minimal-Cron bleibt aus.
+
+### 18.8 · Stufen 20/75/400: die Abbruchkontrollen haben jetzt einen Aufrufer
+
+**Befund:** `pruefeAbbruch()` konnte Regeln auswerten — aber **niemand erhob die
+Messwerte**. Die Regeln liefen ausschließlich im Vertragstest. „Zwischen den
+Gruppen wird kontrolliert" war eine Absichtserklärung, kein Ablauf.
+
+Neu: **`lib/helmut/funktionstest-kontrolle.js`** + CLI
+`scripts/funktionstest-500-kontrolle.js`.
+
+* `sql` druckt das **rein lesende** Erhebungs-SQL (vier Blöcke; gegen die
+  Production-Schemata geprüft, nur `SELECT`).
+* `pruefe` bildet die erhobenen Zahlen auf die Beobachtungsgrößen ab und wertet
+  alle Regeln aus. **Keine Koerzierung:** ein nicht erhobener Wert wird nicht
+  übernommen — er fehlt, und eine Regel ohne Messwert bricht ab. Ohne bestätigten
+  **Preis** entsteht **keine** Kostenzahl.
+
+**Drei Regeln ergänzt** — der Auftrag verlangt je Stufe sieben Dimensionen
+(Fehler · Kosten · Laufzeit · Rückstand · hängende Leases · **Dubletten** ·
+Auswirkung auf reale Mandate); zwei fehlten, eine dritte fiel im Review auf:
+
+| # | Regel | Warum sie fehlte |
+|---|---|---|
+| **A13** | Dublette (doppelt ausgeführte Arbeit oder doppeltes Profil) | A02 misst die **Ursache** (hängende Lease), niemand die **Wirkung** |
+| **A14** | **Verdrängung** eines realen Mandats aus der Tagesleistung | A09 prüft, ob ein reales Mandat **verändert** wurde — nicht, ob es **verdrängt** wurde. Genau das ist der Schaden, den dieser Test anrichten kann, und er ist an keiner Mandatszeile sichtbar |
+| **A15** | Zu wenig beobachtete Arbeit | Keine andere Regel verlangt, dass überhaupt gearbeitet wurde. Eine **leere** Bilanz erfüllt A08 (0+0+0=0), alle Nullzähler stehen auf null — die Kontrolle wäre grün, **bevor der erste Cron gelaufen ist**. A15 ist die einzige Regel, die bei **Unterschreitung** auslöst |
+
+Damit sind es **fünfzehn** Regeln und **sechs** Pflichtgrenzen
+(`mindestVerarbeiteteVorgaenge` ergänzt).
+
+### 18.9 · Rückbau nach Gruppe C — der Rückweg existiert jetzt wirklich
+
+**Befund:** `testkohorte-betrieb` **plante** den Rückbau, und das CLI wies jeden
+scharfen Lauf ab. Es gab **keinen Weg**, die 495 Profile tatsächlich wieder
+abzuschalten — außer 495 Einzelaufrufen von `provision-tenant.js --deactivate`,
+**ohne** Erlaubnisliste. Für den gefährlichsten Moment des Vorhabens war das kein
+Rückweg.
+
+Neu: **`lib/helmut/testkohorte-rueckbau.js`** + CLI
+`scripts/testkohorte-rueckbau.js`. Dreifach verriegelt:
+
+1. **Erlaubnisliste** — wirkt ausschließlich auf die 495 deterministischen
+   Kennungen; eine fremde Kennung **bricht ab**, sie wird nicht gefiltert. Die
+   Einzelkennung wird zusätzlich unmittelbar **vor** jedem Schreibvorgang erneut
+   geprüft.
+2. **Zwei unabhängige Freigaben** — Flag **und** das Wort
+   `TESTKOHORTE_495_DEAKTIVIEREN_BESTAETIGT`. Ohne beides: Trockenlauf.
+3. **Nachprüfung je Zeile** — nach jedem Schreibvorgang wird der erreichte
+   Zustand **gelesen**; gemeldet wird nur, was die Ablage trägt (CLAUDE.md §4.10).
+
+**Ein Fehlschlag an EINER Kennung beendet den Lauf NICHT** — sonst bliebe der
+Rest der Kohorte aktiv stehen. Er wird gezählt, einzeln benannt, und das
+Gesamturteil ist `ok: false`. Der Lauf ist idempotent und wiederholbar.
+**Kein Löschpfad.**
+
+**Vier Härtungen der Rückbauprüfung** (adversarialer Review):
+
+* Sie bestätigte einen **LEEREN** Bestand als Erfolg — `bestand.kohorte = []`
+  ergab „0 aktive Kohortenzeilen" und damit `zurueckgebaut: true`, obwohl gar
+  nichts gelesen worden war. **Das ist der gefährlichste Fehlbefund, den dieses
+  Modul haben kann.** Jetzt: Vollständigkeitsprüfung als eigener Befund.
+* Der Bestand trug **keinen Erhebungszeitpunkt** — ein Bestand von **vor** der
+  Provisionierung hätte gegen eine Grundlinie von danach gehalten werden können.
+* Die **Identitäts- und Kontoebene** wurde nie geprüft: eine deaktivierte
+  Mandatszeile ist kein zurückgebautes Profil, solange das Konto weiter anmelden
+  kann. Zwei neue Befunde, zwei neue Spalten im Erhebungs-SQL.
+* Die Duplikatprüfung verglich **rohe**, die Zugehörigkeitsprüfung **getrimmte**
+  Werte — `[" test-kohorte-a-001", "test-kohorte-a-001"]` kam durch.
+
+Aus vier Einzelbefunden sind **acht** geworden.
+
+**Zusätzlich:** `provisioning.validateSpec` weist jetzt jede Kennung aus einer
+reservierten synthetischen Familie **hart ab**, sofern der Aufrufer sie nicht
+ausdrücklich erlaubt (`synthetischErlaubt: true`). Ein reales Mandat mit einer
+solchen Kennung wäre für alle vier Schutzriegel gleichzeitig synthetisch: seine
+Mails wären gesperrt, es stünde in der Warteschlange hinten, das Erhebungs-SQL
+zöge es in die Kohorte — und der Rückbau hätte es deaktiviert.
+
+### 18.10 · Der Ablaufplan: ausführbar beschrieben, vollständig gesperrt
+
+**`lib/helmut/funktionstest-ablaufplan.js`** + CLI
+`scripts/funktionstest-500-ablauf.js` machen aus der Tabelle in §10 eine
+**prüfbare Funktion**: 17 Schritte, je mit Befehl, Art (rein lesend /
+Production-Änderung / Umgebungsänderung), Vorbedingungen, Freigabe und
+zugeordneten Abbruchregeln.
+
+* **Vorwärts streng gesperrt:** fehlt eine Vorbedingung, darf der Schritt nicht
+  beginnen. Ohne Belege ist der einzige mögliche Schritt die Grundlinienerhebung.
+* **Rückwärts nie gesperrt:** Deaktivierung und Rückbauprüfung sind in **jedem**
+  Zustand erlaubt (ihre eigene Freigabe brauchen sie trotzdem).
+* **Keine Sammelfreigabe:** jede Stufe trägt ein eigenes Bestätigungswort; wer
+  Schritt 6 freigibt, hat Schritt 8 nicht freigegeben.
+* `ausfuehrbar: false` — der Plan führt **nichts** aus; ein `--scharf` gibt es in
+  diesem Werkzeug nicht.
+
+### 18.11 · Azure — was belegt ist und was ausdrücklich nicht
+
+**Belegt (Betreiberangabe 02.09., deckt sich mit der eigenen Messung):**
+Deployment `gpt-5-mini`, Modellversion **2025-08-07**, **Global Standard**,
+Region **Sweden Central**, **250.000 Token/Minute** und **250 Anfragen/Minute**.
+Die eigene 21er-Stichprobe lastete diese Grenzen zu **13,1 %** bzw. **4,3 %** aus.
+
+**Ausdrücklich NICHT belegt und daraus NICHT ableitbar:** das
+**Gesamtkontingent des Azure-Kontos**. Es ist von der Deploymentgrenze getrennt,
+nur über Portal/ARM sichtbar und wurde nie erhoben. `BELEGTE_MESSUNGEN` führt
+`azure-kontingente-und-rate-limits` deshalb weiterhin als **nicht belegt**, und
+`zielDeckel().offeneMessungen` bleibt **unverändert fünfteilig** — der Betreiber
+bringt jede Messung weiterhin ausdrücklich bei.
+
+### 18.12 · Testnachweise
+
+Alle Läufe über `scripts/lokal.js` (CLAUDE.md §6).
+
+| Suite | Ergebnis |
+|---|---|
+| `mandatsklasse-test.js` (neu) | **36 PASS / 0 FAIL** |
+| `verdraengungsschutz-test.js` (neu) | **23 PASS / 0 FAIL** |
+| `llm-usage-relational-test.js` (neu) | **35 PASS / 0 FAIL** |
+| `funktionstest-ablaufplan-test.js` (neu) | **52 PASS / 0 FAIL** |
+| `funktionstest-500-test.js` (erweitert) | **108 PASS / 0 FAIL** |
+| `testkohorte-betrieb-test.js` (erweitert) | **89 PASS / 0 FAIL** |
+| `kommunikationsriegel-test.js` | **44 PASS / 0 FAIL** — 495/495 gesperrt, Netzzähler 0 |
+| `llm-telemetrie-luecken-test.js` (erweitert) | **29 PASS / 0 FAIL** |
+
+### 18.13 · Was weiterhin NICHT bewiesen ist
+
+1. Der **fachliche Production-Zyklus** mit 5 realen + 495 aktiven synthetischen
+   Profilen (§2, Ebene 3). Unverändert.
+2. Das **Azure-Gesamtkontingent des Kontos**.
+3. Der **Verdrängungsschutz unter echter Last** — offline vollständig belegt, in
+   Production nie gelaufen (wie der Kommunikationsriegel).
+4. Das **Verstehenswachstum bei 500 Mandaten** (geteiltes Korpus) — die größte
+   verbleibende Unsicherheit im Deckelvorschlag.
+5. **p95 170 bleibt eine Untergrenze**: Phase 3/4 der relationalen Umstellung
+   sind nicht freigegeben, der Ringpuffer bleibt bei 5.000.
+6. Die **05:45/05:48-Verträglichkeit** selbst — sie wird umgangen, nicht bewiesen.
+7. **F7** — nur Listenpreis, kein nachgewiesener Kontopreis.
+8. Der **operative Mehrtagesbetrieb** mit 500 Profilen.
+9. `llm-budget-fair.mandantenDeckel`/`globalerTopf` hängen weiterhin **nicht** im
+   Produktionspfad (Flag `HELMUT_LLM_FAIRNESS`); wirksam ist allein die
+   **Reihenfolge**. Bewusst nicht in diesem Sprint geändert — das wäre eine
+   Verhaltensänderung am laufenden Budgetpfad.

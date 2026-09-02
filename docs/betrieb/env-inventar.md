@@ -1,6 +1,6 @@
 # Environment-Inventar — vollständige Referenz
 
-**Stand: 2026-08-24** (Härtungssprint Selbstweck: §7a neu — fünf statt drei Werte für die Umschaltung; Production-Zustand von `HELMUT_SCALABLE_PIPELINE`/`HELMUT_JOB_DISPATCH_MODE` und die Anwendung der OP-30-Migrationen berichtigt). Erstfassung 2026-07-15, Folgebranch.
+**Stand: 2026-09-02** (§3a neu: die vorbereiteten, NICHT gesetzten Werte des 500er-Funktionstests). Zuvor 2026-08-24 (Härtungssprint Selbstweck: §7a neu — fünf statt drei Werte für die Umschaltung; Production-Zustand von `HELMUT_SCALABLE_PIPELINE`/`HELMUT_JOB_DISPATCH_MODE` und die Anwendung der OP-30-Migrationen berichtigt). Erstfassung 2026-07-15, Folgebranch.
 
 **Zweck (Audit-Blocker):** Der Betrieb hing an einem Bus-Faktor 1 auch auf
 Konfigurationsebene — `.env.example` deckte nur ~35 von ~100 im Code gelesenen
@@ -103,6 +103,25 @@ weg, App läuft; fail-closed = Zugriff/Aktion wird verweigert) · Rotationsbedar
 | `HELMUT_UNDERSTANDING_MODEL` / `HELMUT_TEXT_MODEL` | O | Modell-Override (nur OpenAI-Pfad). **Zwei verschiedene Defaults** (berichtigt 2026-08-25 — hier stand pauschal „Default gpt-5-mini"): `HELMUT_UNDERSTANDING_MODEL` → **gpt-5-mini** (`ai.js:437-438`), `HELMUT_TEXT_MODEL` → **gpt-5.5** (`ai.js:8`, `ai.js:1152`). Im Azure-Pfad gilt stattdessen `AZURE_OPENAI_DEPLOYMENT` für **alle** Pfade. Die Verwechslung ist teuer: gpt-5.5 kostet offiziell 5,00/30,00 USD je 1 Mio. Token gegen 0,25/2,00 bei gpt-5-mini. | ai.js · alle · Default greift · — |
 | `HELMUT_OFFICE_DAILY_LIMIT` | O | Büro-Outputs/Tag (V3-Engine). Default 10. | office.js · alle · Default greift · — |
 | `HELMUT_MAX_DAILY_INPUTS` | O | Tagesinputs/Mandat. Default 3. | server.js · alle · Default greift · — |
+
+## 3a. 500er-Funktionstest — Vorbereitungswerte (Stand 2026-09-02, **NICHTS gesetzt**)
+
+Alle Werte dieses Abschnitts sind **vorbereitet, nicht gesetzt**. Jeder einzelne
+ist eine eigene, ausdrückliche Betreiberfreigabe (CLAUDE.md §5). Maschinenlesbar
+und mit Herkunft: `node scripts/funktionstest-500-ablauf.js werte`. Vollbeleg:
+[`500-funktionstest-sicherheitsrahmen-2026-09-01.md`](500-funktionstest-sicherheitsrahmen-2026-09-01.md) §18.
+
+| Variable | P/O | Zweck / Default | Merkmale |
+|---|---|---|---|
+| `HELMUT_TESTLAUF_VORRANG_REAL` | O (Freigabepunkt) | **Vorrangreserve der realen Mandate im KI-Tagesbudget.** Der Wert wird vom wirksamen Tagesmaximum abgezogen — aber NUR für Aufrufe, die NICHT einem realen Mandat zuzuordnen sind (synthetische Kennungsfamilie, fehlende Kennung, geteilte Arbeit). Reale Mandate sehen unverändert `Deckel − Verstehens-Reserve`. Die Reserve liegt IM Deckel und wird nie addiert. **Default 0 = verhaltensneutral.** Vorbereiteter Wert: **200** (gemessener p95-Tagesbedarf der 5 realen Mandate = 170, UNTERGRENZE, plus Aufschlag für die bewiesene ~12 % Untererfassung). | mandatsklasse.js/storage.js (`llmVorrangAbzug`) · Prod=leer (aus) · Default aus, ungültig → 0 mit Log-Warnung · — |
+| `HELMUT_TESTLAUF_KOMMUNIKATION` | O (Freigabepunkt) | `gesperrt` = **jeder** Außenkanal schweigt (Mail, Einladung, Push, WhatsApp, Monitoring-Webhook, Job-/Wecktransport, Lambda-Invoke) — auch Betreiberkanäle und auch reale Empfänger. Betriebsstellung des Testtages. Ohne Wert gilt der Standardmodus: gesperrt wird, was synthetisch oder nicht zuzuordnen ist. | kommunikationsriegel.js · Prod=leer · unlesbare Umgebung → strengere Stellung · — |
+| `HELMUT_TESTLAUF_MAX_RPM` | O (Freigabepunkt) | Harte Minutengrenze des Testlaufs. Vorbereiteter Wert **82** — **nicht** die Deploymentgrenze 250: bei gemessenen 3.018 Token je Aufruf ergäben 250 Anfragen/Minute 754.500 TPM, das Dreifache der TPM-Grenze. | funktionstest-500.js (nur Prüfung) · Prod=leer · fail-closed (kein Testbeginn ohne Wert) · — |
+| `HELMUT_TESTLAUF_MAX_TPM` | O (Freigabepunkt) | Harte Token-Minutengrenze. Vorbereiteter Wert **250000** (Deploymentgrenze `gpt-5-mini`, Global Standard, Version 2025-08-07, Sweden Central; Betreiberangabe 02.09.). Das **Gesamtkontingent des Azure-Kontos** ist davon getrennt und unbelegt. | funktionstest-500.js · Prod=leer · fail-closed · — |
+| `HELMUT_TESTLAUF_KOSTENBUDGET_USD` | O (Freigabepunkt) | Harte Kostenabbruchgrenze (Abbruchregel A04). Vorbereiteter Wert **10,00 USD**; bei Deckel 2.416 liegt die Erwartung bei 7,11 USD/Tag, die obere Schranke bei 8,11. **Listenpreis-Rechnung — F7 offen.** Der Test ist ein Tageslauf; die Tagesgrenze IST die Gesamtgrenze. | funktionstest-500.js · Prod=leer · fail-closed · — |
+| `HELMUT_TESTLAUF_MAX_PARALLEL` | O (Freigabepunkt) | Harte Grenze gleichzeitiger Modellaufrufe. Vorbereiteter Wert **1** (`HELMUT_VERSTEHEN_PARALLELITAET` ist ungesetzt und wirkt als 1). | funktionstest-500.js · Prod=leer · fail-closed · — |
+| `HELMUT_TESTKOHORTE_EXECUTE` · `HELMUT_TESTKOHORTE_CONFIRM` | O (Freigabepunkt) | **Zwei unabhängige Riegel** für jeden scharfen Kohortenschritt: Flag UND das exakte Bestätigungswort des jeweiligen Schrittes. Jeder Schritt hat ein EIGENES Wort — die Freigabe der Anlage aktiviert nichts, die Freigabe der Gruppe A aktiviert nicht die Gruppe C. Ohne beides fällt jeder Lauf auf den Trockenlauf zurück. | testkohorte-betrieb.js/testkohorte-rueckbau.js · Prod=leer · Default Trockenlauf · — |
+| `HELMUT_TESTKOHORTE_QUELLEN` | O | `aktiv` erlaubt synthetischen Profilen wieder EIGENE Außenquellen (Personensuche, Mandatsquellen). **Default AUS**: sonst entstünden je Zyklus rund 1.000 Google-News-Abrufe nach Testnamen — das verschärft OP-15 und füllt das Verstehensfenster mit synthetischen Treffern. In Production wirkungslos, solange kein synthetisches Profil existiert. | scheduler.js (`profilQuellenErlaubt`) · Prod=leer (aus) · Default aus · — |
+| `HELMUT_LLM_USAGE_RELATIONAL` | O (Freigabepunkt) | Dual-Write der KI-Nutzungstelemetrie in die relationale Tabelle `public.llm_usage` (Muster W-2/`process_runs`). **Default AUS.** Braucht zusätzlich die angewendete Migration `20260902121500_llm_usage_relational.sql` UND `v3StoreReady()`. Ohne beides reiner No-Op; der Blob-Pfad bleibt in Phase 2 unverändert die Lesequelle. | storage.js/llm-usage-relational.js · Prod=leer (aus) · Default aus · — |
 
 ## 4. Quellen / Crawl / PARDOK
 

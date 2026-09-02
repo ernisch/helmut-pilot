@@ -64,11 +64,21 @@ const rueckstandSrc = fs.readFileSync(path.join(__dirname, "..", "lib", "helmut"
     check("§2.3 Rückstand-zu-Rückstand belegt überschneidungsfrei: Deadline 280 s ≪ Slottakt 30 min",
       minimalCron.SLOT_DEADLINE_MS < 30 * 60000);
     const offen = minimalCron.laufzeitUeberschneidungen(vercel.crons, { maxLaufzeitMs: 300000 });
-    check("§2.4 OFFEN benannt: genau EIN Slotstart fällt in eine mögliche Bestands-Laufzeit — "
-      + "lage-briefing 05:45 (+300 s) → Slot :48 (Abstand 3 min)",
-      Array.isArray(offen) && offen.length === 1
-      && offen[0].path === "/api/cron/lage-briefing" && offen[0].schedule === "45 5 * * *"
-      && offen[0].slotMinute === 48 && offen[0].abstandMin === 3);
+    // KORRIGIERT 02.09. (adversarialer Review, bestätigter Befund): die frühere
+    // Zusage „genau EIN Paar" war zu grün. `laufzeitUeberschneidungen` rechnete
+    // nur in EINE Richtung (Slot startet in der Cron-Laufzeit) und übersah den
+    // umgekehrten Fall — ein Bestandscron startet, während der Slot noch
+    // arbeitet (Slot-Deadline 280 s). Mit beiden Richtungen sind es ZWEI Paare.
+    check("§2.4 OFFEN benannt: ZWEI Paare, je Richtung eins — "
+      + "lage-briefing 05:45 (+300 s) → Slot :48, und Slot :18 (+280 s) → lage-briefing-nachlauf 06:22",
+      Array.isArray(offen) && offen.length === 2
+      && offen.some((o) => o.path === "/api/cron/lage-briefing" && o.schedule === "45 5 * * *"
+        && o.slotMinute === 48 && o.abstandMin === 3
+        && o.grund === "slot-startet-in-moeglicher-laufzeit")
+      && offen.some((o) => o.path === "/api/cron/lage-briefing-nachlauf" && o.schedule === "22 6 * * *"
+        && o.slotMinute === 18 && o.abstandMin === 4
+        && o.grund === "cron-startet-in-slotlaufzeit"),
+      Array.isArray(offen) ? offen.map((o) => `${o.path}:${o.slotMinute}:${o.grund}`).join(" | ") : "");
     check("§2.5 die eigenen Rückstandsslots zählen nicht als offene Überschneidung (per §2.3 belegt), "
       + "nicht parsebare Einträge dagegen fail-closed schon",
       (minimalCron.laufzeitUeberschneidungen([{ path: minimalCron.MINIMAL_CRON_ROUTE, schedule: "30 11 * * *" }], { maxLaufzeitMs: 300000 }) || []).length === 0

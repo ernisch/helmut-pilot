@@ -46,6 +46,11 @@ const IDS = ["stapel-eins", "stapel-zwei", "stapel-drei", "stapel-fremd",
 function spec(id, extra = {}) {
   return {
     id,
+    // Seit 02.09. weist `validateSpec` jede Kennung aus einer reservierten
+    // synthetischen Familie ab, sofern der Aufrufer sie nicht AUSDRÜCKLICH
+    // erlaubt. Diese Suite arbeitet bewusst nur mit `stapel-*` — sie sagt es
+    // hier, statt das Verbot zu umgehen.
+    synthetischErlaubt: true,
     email: `${id}@synthetic.test`,
     name: `Testperson ${id}`,
     password: "stapel-pass-123",
