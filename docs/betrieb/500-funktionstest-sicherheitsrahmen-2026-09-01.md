@@ -2602,3 +2602,199 @@ Die in §24.1 formulierte Frage bleibt richtig, ihre Begründung ändert sich:
 
 Beides ist heute unbeantwortet, beides ist ohne Production-Lauf klärbar, und an beidem hängen
 die bisher als „ungedeckt" geführten Entscheidungen.
+
+---
+
+## §30 · Betreiberentscheidung 02.09. — das Startfenster-Tor prüft ab jetzt FÄLLIGKEIT
+
+**Entscheidung des Betreibers (02.09.):** Das Startfenster-Tor prüft die Fälligkeit, genau wie
+der Warteschlangenmotor. Maßgeblich ist, ob ein Auftrag nach `due_at <= jetzt` vom Motor
+beansprucht werden kann. Die bisherige Prüfung einer bloßen **Schnittmenge** zwischen
+Testfenster und Streuintervall beschreibt nicht das tatsächliche Verhalten des Motors und
+dient nicht länger als Startentscheidung.
+
+Die Entscheidung ist ausdrücklich **kein** Auftrag, pauschal „100 Prozent fällig" einzubauen.
+Die neue Prüfung ist datumsgenau, kohortengenau, reproduzierbar und fail closed.
+
+### §30.1 Welche Aussage ersetzt wurde
+
+| | bisher (§29.3) | ab jetzt |
+|---|---|---|
+| Frage des Tores | Wird in diesem Fenster ein Auftrag **erstmals** fällig? | Kann der Motor in diesem Fenster einen Auftrag **beanspruchen**? |
+| Formel | `ueberlapp(Fenster, Streuintervall) > 0` | `dueAt <= Fensterende` je Auftrag |
+| Datenquelle | Phasenanteile aus `MANDATSPHASEN` | die **echte** `source-demand.planeMandatsarbeit` |
+| Ergebnis | ein Ja/Nein je Klasse | sieben Kennzahlen je Klasse, kohortengenau |
+
+Beides fällt genau dann auseinander, wenn ein Fenster **nach** einer Phase liegt: die
+Aufträge sind längst fällig, aber ihr Streuintervall liegt hinter dem Fenster. Das traf
+ausgerechnet das Nachtfenster 21:36–03:59 UTC — das einzige, das das Kapazitätstor bei
+Parallelität 1 besteht.
+
+### §30.2 Warum Fälligkeit die maßgebliche Motorbedingung ist
+
+`helmut_claim_jobs` (Migration `20260808_scalable_job_queue.sql`) beansprucht nach genau
+dieser Bedingung, und nach keiner anderen:
+
+```sql
+where status = 'wartend' and due_at <= v_now and attempts < max_attempts
+order by priority asc, due_at asc, created_at asc
+for update skip locked
+```
+
+Das Streuintervall kommt darin **nicht vor**. Es entsteht einmalig bei der Planung
+(`dueAt = fensterStartMs + abMs + versatz`) und ist danach nur noch ein historischer Wert in
+der Zeile. `helmut_enqueue_job` schreibt zudem `on conflict (idempotency_key) do nothing` —
+ein bereits vorhandener Auftrag **behält seine `due_at`**. Ein Tor, das das Streuintervall
+prüft, misst also den Planungszeitpunkt; der Motor misst die Fälligkeit.
+
+### §30.3 Der Vertrag des neuen Tores (vor der Umsetzung festgelegt)
+
+`lib/helmut/funktionstest-faelligkeit.js` — `faelligkeitsBefund(…)`. Sechs Festlegungen:
+
+1. **Eine einzige Quelle.** Der Befund ruft `sourceDemand.planeMandatsarbeit` auf — dieselbe
+   Funktion wie der Motor. Es gibt **keine zweite Phasenlogik** und keinen hartkodierten
+   Ersatz; die Testsuite prüft das (Abschnitt B).
+2. **Pflichtklassen** sind `mandate_projection` und `briefing_materialization`;
+   `briefing_materialization` ist die **sichtbare Produktstufe** und entscheidet.
+3. **Sieben Kennzahlen je Klasse:** `geplant`, `beiStartFaellig`,
+   `imFensterZusaetzlichFaellig`, `bisFensterendeBeanspruchbar`, `nichtBeanspruchbar`,
+   `abdeckung`, `vollstaendigeAbdeckung`.
+4. **Kohortengenau.** Die Kohortengröße kommt aus `testkohorte-stufen.js` (A 20, B 95,
+   C 495 kumulativ). Eine Abdeckung wird gegen die **geforderte** Kohorte gerechnet, nicht
+   gegen ein einzelnes fälliges Briefing.
+5. **Fail closed.** Jede fehlende, unlesbare oder unplausible Eingabe führt zu
+   `bewertbar: false` mit Grund — nie zu einem Grün. `zahl()` weist `null`, `undefined`,
+   `""` und Wahrheitswerte **vor** `Number()` ab (sonst wäre ein fehlender
+   Planungszeitpunkt der 01.01.1970 gewesen).
+6. **Fälligkeit ist nicht Status.** `vollstaendigerZyklus` ist **`null` = NICHT BEWERTBAR**,
+   solange die Zahl **offener** Aufträge nicht rein lesend erhoben wurde. `null` ist
+   ausdrücklich kein Erfolg; die CLI beendet sich dann mit Exitcode 1.
+
+### §30.4 Gemessen: drei Fenster × drei Stufen (Tag 2026-09-03, Plan zum Fensterbeginn)
+
+Anteil der Kohorte, den der Motor bis Fensterende in der **sichtbaren Produktstufe**
+`briefing_materialization` beanspruchen könnte:
+
+| Fenster (UTC) | Türkei / Berlin | Stufe A (20) | Stufe B (95) | Stufe C (495) |
+|---|---|---|---|---|
+| 11:36–15:59 | 14:36–18:59 / 13:36–17:59 | 0/20 = **0,0 %** | 0/95 = **0,0 %** | 0/495 = **0,0 %** |
+| 17:36–19:59 | 20:36–22:59 / 19:36–21:59 | 16/20 = **80,0 %** | 55/95 = **57,9 %** | 273/495 = **55,1 %** |
+| 21:36–03:59 | 00:36–06:59 / 23:36–05:59 | 20/20 = **100,0 %** | 95/95 = **100,0 %** | 495/495 = **100,0 %** |
+
+Damit ist §29.3 **bestätigt und jetzt beziffert**: das Vormittagsfenster trägt in keiner Stufe
+eine sichtbare Produktstufe, das Abendfenster nur gut die Hälfte, und allein das Nachtfenster
+erreicht die volle Kohortenabdeckung — dasselbe Fenster, das das Kapazitätstor bei
+Parallelität 1 als einziges besteht.
+
+Die gemessenen Fälligkeitsspannen der Stufe C (identisch für alle Stufen, weil sie aus den
+Phasenanteilen des Frischefensters folgen):
+
+- `mandate_projection` 12:00:08 – 17:59:26 UTC
+- `briefing_materialization` 18:00:35 – 21:35:54 UTC
+
+### §30.5 Mitternacht — was bestätigt und was widerlegt wurde
+
+Das Nachtfenster überschreitet 00:00 UTC, also die Grenze des 24-Stunden-Frischefensters.
+Gemessen (Stufe C, Fenster 21:36–03:59 UTC, nur der **Planungszeitpunkt** variiert):
+
+| Plan geschrieben | Frischefenster des Plans | passt zum Fenster | Abdeckung |
+|---|---|---|---|
+| 03.09. 20:00 UTC | `2026-09-03T00Z` | ja | **100,0 %** |
+| 03.09. 21:36 UTC (Fensterbeginn) | `2026-09-03T00Z` | ja | **100,0 %** |
+| 04.09. 00:30 UTC | `2026-09-04T00Z` | **nein** | **0,0 %** |
+| 04.09. 02:00 UTC | `2026-09-04T00Z` | **nein** | **0,0 %** |
+
+**Bestätigt (§29.4 Punkt 1):** Mitternacht ist tatsächlich eine harte Grenze. Eine Planung
+**nach** 00:00 UTC legt die Fälligkeiten auf den **Folgetag** (12:00–21:36 UTC des 04.09.) —
+im Nachtfenster wäre dann kein einziger Auftrag beanspruchbar. Die Idempotenzschlüssel
+unterscheiden sich über Mitternacht (`typ|mandatsId|fenster`), es entstehen also **neue**
+Aufträge.
+
+**Widerlegt:** „100 % fällig ist selbst eine Annahme" gilt in dieser Pauschalität **nicht**.
+Wird der Plan **vor oder zum Fensterbeginn** geschrieben, behalten die Aufträge ihre `due_at`
+(`on conflict do nothing`) und bleiben über Mitternacht hinweg beanspruchbar — die 100 % sind
+dann gerechnet, nicht angenommen. Entscheidend ist allein der **Planungszeitpunkt**, nicht die
+Fensterlage. Der Befund führt deshalb `planPasstZumFenster` als eigene, harte Startbedingung.
+
+### §30.6 Fällt Blocker 1 damit weg?
+
+**Ja, für das Nachtfenster — und nur dort, und nur unter benannten Bedingungen.** Blocker 1
+lautete: „`briefing_materialization` ist 18:00–21:36 UTC fällig, der Schnitt mit 11:36–15:59
+ist leer." Das bleibt richtig; die Prüfung war nur die falsche. Nach Fälligkeit gerechnet
+trägt das Nachtfenster **100 %** in allen drei Stufen. Bedingung: der Plan wird **vor
+00:00 UTC** geschrieben (§30.5).
+
+**Nein für die beiden anderen Fenster.** 0,0 % bzw. 55,1 % sind keine vollständige
+Kohortenabdeckung. Das Tor verwirft sie weiterhin — jetzt aber mit einer Zahl statt mit einer
+Ja/Nein-Schnittmenge.
+
+### §30.7 Fällt Blocker 2 damit weg?
+
+**Nicht durch dieses Tor.** Blocker 2 ist die Kapazität und wurde in §23.2 mit 1.812 gegen
+1.732 in 263 min bei Parallelität 1 beziffert. Neu gerechnet für das **Nachtfenster**
+(383 min, Parallelität 1): **2.522 möglich ≥ 1.812 nötig** — es passt, mit 710 Aufrufen Luft.
+Nicht das Tor löst den Blocker, sondern die **Fensterwahl**, die das Tor jetzt erst zulässt.
+
+Neu und ausdrücklich getrennt (`kapazitaet-500.lastTrennung`, **beschreibend**, konservativ,
+500 Mandate):
+
+| Lastart | pro Tag | Anteil |
+|---|---|---|
+| Warteschlangenarbeit (die der Motor im Fenster treibt) | **802** | 44,3 % |
+| nutzergetrieben + eigene Crons (`communicationDraft`, `lageBriefing`, …) | **1.000** | 55,2 % |
+| andere Verbraucher | 10 | 0,6 % |
+| **Gesamtbedarf** | **1.812** | |
+| erforderlicher Tagesdeckel | 2.416 | |
+| Budgetreserve | 604 | |
+
+Die 802 sind **keine Fenstergröße**. Die nutzergetriebene Last hat keine Fensterbindung, kann
+gleichzeitig anfallen und zehrt vom **selben** Tagesdeckel. Deshalb bleibt die Kapazitätshürde
+auf 1.812 — die 812 aus §24.1 bleibt zurückgezogen (§29), und die 802 tritt **nicht** an ihre
+Stelle.
+
+### §30.8 Der Nachweis, der weiterhin fehlt — und wie er rein lesend zu holen ist
+
+Fälligkeit ist aus dem Plan berechenbar. **Status ist es nicht.** Ob ein fälliger Auftrag
+abends noch `wartend` ist, hängt davon ab, ob der 20:00-Crawl-Cron ihn bereits abgearbeitet
+hat: er findet in Stufe C **275/495** Briefings fällig (55,6 %) und treibt dieselbe
+Warteschlange an. Es wird deshalb **kein Grün gebaut**, wo eine Messung fehlt:
+`vollstaendigerZyklus` bleibt `null`, bis die Zahl offener Aufträge übergeben wird.
+
+`funktionstest-faelligkeit.erhebungsSql()` gibt die dafür nötige, **rein lesende** Abfrage
+aus. Sie bildet die Claim-Bedingung exakt nach und enthält kein `update`, kein `insert` und
+keinen Claim. Die Eingaben werden **validiert und abgewiesen**, nicht escaped. Aufruf:
+
+```
+node scripts/lokal.js -- node scripts/funktionstest-500-faelligkeit.js --sql --ende=<ISO>
+node scripts/lokal.js -- node scripts/funktionstest-500-faelligkeit.js \
+     --stufe=c --start=… --ende=… --geplant=… --offen=495,495
+node scripts/lokal.js -- node scripts/funktionstest-500-faelligkeit.js --alle --tag=2026-09-03
+```
+
+Das CLI rechnet und schreibt nichts, es öffnet keine Verbindung und ruft keine Route auf.
+Exitcode 0 nur bei einem **belegten** vollständigen Zyklus; `null` ist Exitcode 1.
+
+### §30.9 Elf harte Startbedingungen (`startbedingungen`)
+
+Das Nachtfenster trägt einen vollständigen Zyklus **bedingt**, also stehen die Bedingungen im
+Code und nicht in einer Empfehlung. Jede einzelne ist fail closed:
+
+Fälligkeitsbefund bewertbar · Plan passt zum Fenster (vor Mitternacht geschrieben) ·
+geforderte Kohortenabdeckung erreicht · offene Aufträge rein lesend gemessen · vollständiger
+Zyklus belegt (nicht `null`) · Aktivierung der Stufe abgeschlossen **vor** Fensterbeginn ·
+Restzeit im Fenster ≥ Mindestrestzeit · keine konkurrierende schwere Ausführung ·
+Vorbedingungen (`source_fetch`, `document_understanding`) erfüllt · Tagesdeckel wirksam ·
+Vorrangreserve für die fünf realen Mandate wirksam · Kommunikationsriegel scharf.
+
+### §30.10 Was dieser Nachtrag NICHT behauptet
+
+- Kein Production-Lauf, keine Migration, keine Route, keine Datenänderung. Alle Zahlen
+  entstehen offline aus der echten Planungsfunktion.
+- Der Durchsatz der **KI-freien** Warteschlangenklassen (`mandate_projection`,
+  `briefing_materialization`) ist **nicht gemessen**. Die Kapazitätsrechnung deckt die
+  Modellaufrufe ab; für die 990 KI-freien Aufträge im Fenster gibt es keine Laufzeitmessung.
+  Das bleibt eine offene Lücke.
+- Die Vorbedingungssperre (§29.4 Punkt 3) ist als Startbedingung **abgefragt**, aber ihre
+  Wirkung unter Last ist nicht gemessen.
+- Das Tor wählt kein Fenster aus. Es beziffert, was ein Fenster trägt; die Entscheidung
+  bleibt beim Betreiber.
