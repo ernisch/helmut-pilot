@@ -409,6 +409,94 @@ function main() {
   console.log("\nM · Mandantenneutralität (CLAUDE.md §4.2)");
   check("M1 das Tor enthält keinen realen Mandats-Slug", !/m5-[0-9a-f]{8}/.test(quelle));
 
+  // ── N · Der fehlende Nachweis als ausführbare Abfrage ───────────────────
+  //
+  // Punkt 17 des Auftrags: wenn die Fälligkeit nicht sicher aus Planungsdaten
+  // ableitbar ist, soll kein scheinbares Grün gebaut, sondern genau benannt
+  // werden, welcher lesende Nachweis fehlt. Hier steht er als Abfrage.
+  console.log("\nN · Der fehlende Nachweis");
+  const sql = F.erhebungsSql({ fensterEndeIso: "2026-09-04T03:59:00.000Z" });
+  check("N1 die Abfrage ist rein lesend (nur select)",
+    /^\s*select/im.test(sql)
+      && !/\b(insert|update|delete|drop|alter|truncate|create)\b/i.test(sql));
+  check("N2 sie bildet die Claim-Bedingung des Motors nach",
+    /status = 'wartend'/.test(sql)
+      && /due_at <= /.test(sql)
+      && /attempts < max_attempts/.test(sql));
+  check("N3 sie ist auf die Kohorte begrenzt",
+    /tenant_id like 'test-kohorte-%'/.test(sql));
+  check("N4 sie fragt genau die beiden Pflichtklassen ab",
+    F.PFLICHTKLASSEN.every((k) => sql.includes(k)));
+  check("N5 sie trägt das FENSTERENDE, nicht now()",
+    sql.includes("2026-09-04T03:59:00.000Z") && !/\bnow\(\)/.test(sql));
+  // Eine eingeschleuste Zeichenkette wird NICHT entschärft in die Abfrage
+  // geschrieben, sondern abgelehnt: ein escapter Fremdwert wäre zwar inert,
+  // stünde aber trotzdem in einer Abfrage, die ein Mensch dann ausführt.
+  check("N6 ein ungültiger Zeitpunkt wird abgelehnt, nicht escapt",
+    (() => {
+      try { F.erhebungsSql({ fensterEndeIso: "x'; drop table helmut_jobs; --" }); return false; }
+      catch (e) { return /kein gueltiger Zeitpunkt/.test(String(e.message)); }
+    })());
+  check("N7 ein unzulässiges Kennungspräfix wird abgelehnt",
+    (() => {
+      try { F.erhebungsSql({ kennungsPraefix: "x' or '1'='1" }); return false; }
+      catch (e) { return /Kennungspraefix/.test(String(e.message)); }
+    })());
+  check("N8 die Vorlage ohne Argumente bleibt lesbar",
+    /<FENSTERENDE-UTC>/.test(F.erhebungsSql()));
+
+  // ── O · Das Modul hat einen echten Aufrufer ─────────────────────────────
+  //
+  // Ein Vertrag ohne Ausführer ist in diesem Projekt schon zweimal entstanden
+  // (`funktionstest-kontrolle` hatte keinen Aufrufer, der Vorwärtsweg fehlte
+  // ganz). Dieser Abschnitt hält fest, dass es diesmal anders ist.
+  console.log("\nO · Aufrufer");
+  const cli = fs.readFileSync(path.join(ROOT, "scripts/funktionstest-500-faelligkeit.js"), "utf8");
+  check("O1 es gibt ein CLI, das das Tor aufruft",
+    /require\("\.\.\/lib\/helmut\/funktionstest-faelligkeit"\)/.test(cli)
+      && /faelligkeitsBefund\(/.test(cli));
+  check("O2 das CLI ist rein lesend — kein Netz, keine Datenbank, keine Route",
+    !/fetch\(|https?\.request|supabaseRequest|\/api\/cron\//.test(cli));
+  check("O3 ein NICHT bewertbares Urteil ist kein Erfolgs-Exitcode",
+    /vollstaendigerZyklus === true \? 0 : 1/.test(cli));
+  const rahmen = fs.readFileSync(path.join(ROOT, "lib/helmut/funktionstest-500.js"), "utf8");
+  check("O4 auch das Startbereitschafts-Tor ruft es auf",
+    /require\("\.\/funktionstest-faelligkeit"\)/.test(rahmen));
+  check("O5 die Hürde heißt nach der Fälligkeit, nicht nach der Schnittmenge",
+    /Kohortenabdeckung ist im Startfenster nach FÄLLIGKEIT erreicht/.test(rahmen));
+
+  // ── P · Das Tor als Startentscheidung im Rahmen ─────────────────────────
+  console.log("\nP · Einbau in die Startbereitschaft");
+  const R500 = require("../lib/helmut/funktionstest-500");
+  const ohne = R500.startbereitschaft({});
+  const huerde = (b) => b.huerden.find((h) => /Kohortenabdeckung/.test(h.name));
+  check("P1 ohne Fälligkeitsfenster ist die Hürde fail closed offen",
+    huerde(ohne).ok === false);
+  const mit = R500.startbereitschaft({
+    stufe: "c",
+    faelligkeitsfenster: {
+      fensterStartMs: FENSTER.C.start, fensterEndeMs: FENSTER.C.ende,
+      planungsZeitpunktMs: FENSTER.C.start
+    }
+  });
+  check("P2 mit Fenster, aber ohne Statusmessung: weiterhin offen",
+    huerde(mit).ok === false && /STATUS ist aber nicht gemessen/.test(huerde(mit).detail));
+  const voll2 = R500.startbereitschaft({
+    stufe: "c",
+    faelligkeitsfenster: {
+      fensterStartMs: FENSTER.C.start, fensterEndeMs: FENSTER.C.ende,
+      planungsZeitpunktMs: FENSTER.C.start,
+      offeneAuftraege: { mandate_projection: 495, briefing_materialization: 495 }
+    }
+  });
+  check("P3 mit vollständigem Nachweis ist die Hürde erfüllt", huerde(voll2).ok === true);
+  check("P4 der Befund steht im Rückgabeobjekt und ist prüfbar",
+    voll2.faelligkeitsBefund && voll2.faelligkeitsBefund.bewertbar === true);
+  check("P5 die alte Schnittmengenrechnung bleibt als BESCHREIBUNG erhalten",
+    voll2.arbeitsklassenImFenster && typeof voll2.arbeitsklassenImFenster === "object");
+  check("P6 eine erfüllte Fälligkeitshürde macht den Test NICHT startbereit",
+    voll2.startbereit === false, `${voll2.offen.length} weitere Hürden offen`);
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);
 }
