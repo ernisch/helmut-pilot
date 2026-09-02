@@ -2166,3 +2166,91 @@ erraten wäre genau die Sorte Annahme, die dieses Vorhaben schon zweimal teuer b
    ausschließen wollte.
 
 Beide behoben, beide regressionsgesichert (`testkohorte-stufen-test.js` Abschnitt M).
+
+---
+
+## §25 · Nachtrag zum zweiten Review — Parallelität, Vorrangschutz, Weg (c)
+
+### §25.1 „Parallelität 2" ist als Betreiberentscheidung unterbestimmt
+
+Im Warteschlangenpfad wirken **zwei multiplikative Parallelitätsebenen**, und das
+Kapazitätsmodell kennt nur **eine**:
+
+| Ebene | Variable | Heute | Bei „Parallelität 2" |
+|---|---|---|---|
+| Worker | `HELMUT_WORKER_PARALLEL` (Default **2**, 1–8) | 2 | 2 |
+| Verstehen | `HELMUT_VERSTEHEN_PARALLELITAET` (ungesetzt ⇒ 1) | 1 | 2 |
+| **Wirksame Gleichzeitigkeit der Modellaufrufe** | — | **2** | **4** |
+
+`kapazitaet-500.zyklusPasstInsFenster({parallel})` rechnet mit **einem** Faktor. Die Frage
+„soll Parallelität 2 freigegeben werden?" ist deshalb nicht eindeutig beantwortbar, solange
+nicht gesagt ist, **welche** Ebene gemeint ist und was das für die andere bedeutet.
+
+Weiter belegt:
+
+* **`HELMUT_VERSTEHEN_PARALLELITAET` wirkt ausschließlich in `runUnderstandingShadow`** — also
+  auf die **geteilte** Verstehensarbeit, die auch die fünf realen Mandate versorgt. Eine
+  Erhöhung lässt sich **nicht** auf die 495 synthetischen Profile beschränken.
+* Die vier dedizierten Verstehens-Cronslots (05:30, 21:30, 11:30, 17:30 UTC) laufen
+  unverändert seriell — Parallelität 2 beschleunigt sie **nicht**.
+* **RPM 82 bindet rechnerisch erst ab Parallelität ~13.** Bei Parallelität 2 liegt die Last bei
+  13,2 Anfragen/min (16 % der TPM-verträglichen 82 RPM, 5 % des Azure-Kontingents 250 RPM) und
+  bei 39.754 von 250.000 Token/min (16 % TPM). Die im Auftrag angenommenen Rate-Grenzen sind
+  bei Parallelität 2 also nicht nur unwirksam (§23.4) — sie wären selbst dann nicht bindend,
+  wenn es sie gäbe.
+* Die einzigen **instanzübergreifend** gebauten Begrenzer (`HELMUT_ANBIETER_STEUERUNG`,
+  `HELMUT_KLASSEN_GRENZEN`) sind dokumentiert **AUS**.
+
+### §25.2 Schutzbeleg der fünf realen Mandate — ehrlich formuliert
+
+Der Verdrängungsschutz aus #295 ist **gebaut**, aber **heute nicht wirksam**. Die Funktion sagt
+es selbst (rein lesend geprüft, Umgebung leer):
+
+> `HELMUT_TESTLAUF_VORRANG_REAL` ist nicht gesetzt — die realen Mandate haben **KEINEN**
+> wirksamen Verdrängungsschutz im KI-Tagesbudget. Für den 500er-Funktionstest ist das ein
+> Startblocker.
+
+**Das ist heute kein Risiko**, sondern eine Vorbedingung: bei **0 synthetischen Zeilen**
+(rein lesend bestätigt 02.09.) gibt es nichts, was verdrängen könnte. Der Schutz wird in genau
+dem Moment nötig, in dem das erste synthetische Profil aktiv wird — und er ist bis dahin zu
+setzen.
+
+Der Schutzbeleg lautet damit dreiteilig, und alle drei Teile gehören zusammen:
+
+1. **Strukturell:** vier Schutzregeln auf `mandatsklasse.js`, bei 0 synthetischen Zeilen
+   byte-identisch zum Vorzustand (testgesichert).
+2. **Laufzeitwirksam:** der Tagesdeckel wird atomar und fail closed reserviert
+   (`reserveLlmCall`) — das ist die einzige harte Grenze (§23.4).
+3. **Heute inaktiv:** die Vorrangreserve ist **0**, weil die Variable nicht gesetzt ist.
+   `startbereitschaft()` führt genau das als eigene Hürde und meldet deshalb — zusätzlich zu
+   den beiden strukturellen Blockern — nicht startbereit.
+
+Eine schon bekannte Einschränkung bleibt bestehen: das `llmUsage`-Protokoll wird unbedingt
+zurückgeschrieben (Lese-Ändere-Schreibe, `CLAUDE.md` §4.10). Das trifft **nicht** das Budget —
+das ist atomar —, sondern die **Meldung**: Kostenbilanz und Aufrufzählung. Die Ursache ist seit
+§23 des Vorsprints belegt; die relationale Ablage (Migration `20260902121500`, **nicht
+angewendet**) ist der vorbereitete Ausweg.
+
+### §25.3 Weg (c) — zusätzlich zu §23.5 belegt
+
+Der Eingriffsort wäre klein (eine Phasenliste, ein Produktionsaufrufer), und die `dueAt`-Werte
+der fünf realen Mandate blieben **gemessen** unverändert. Trotzdem bleibt (c) der schlechteste
+Weg, und zwar aus vier belegten Gründen:
+
+1. **Er beseitigt höchstens EINE der beiden Hürden.** Die Kapazitätshürde rechnet gegen einen
+   Tagesbedarf und kennt die Phasenlage überhaupt nicht — eine Phasenverschiebung ändert dort
+   keine einzige Zahl.
+2. **Er erzeugt für die Kohorte genau den Reihenfolgefehler, gegen den die Phasen gebaut
+   wurden:** verschoben würde nur die zweite Hälfte der Kette (Projektion/Briefing), nicht die
+   erste (Abruf/Verstehen). Für einen erheblichen Teil der Kohorte kehrte sich damit die
+   Reihenfolge um.
+3. **Die Vorbedingungssperre macht die verschobenen Briefings voraussichtlich wirkungslos:**
+   solange im selben Fenster noch ein geteilter Abruf oder ein Verstehensauftrag offen ist —
+   der Normalfall eines 500er-Lasttests —, stellt sich jedes fällige Briefing zurück.
+4. **Der Rückbau räumt nichts ab.** Nach dem Entfernen der Variable behalten alle während der
+   Scharfschaltung erzeugten synthetischen Aufträge ihr verschobenes `dueAt`, und es gibt
+   keinen mandatsgenauen Räumweg.
+
+Dazu kommen **drei** freigabepflichtige Production-Vorgänge (Merge/Deployment, Variable setzen
++ Redeploy, Variable löschen + Redeploy) am **live geschalteten Planer der realen Mandate**.
+**Weg (c) bleibt nicht empfohlen.**
