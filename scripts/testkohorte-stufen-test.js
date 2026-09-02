@@ -523,6 +523,66 @@ async function main() {
   check("Q5 eine echte Fensterkürzung wird dagegen fail closed gemeldet",
     gekuerzt.auswertbar === false && /gekuerzt|gekürzt/.test(String(gekuerzt.grund || "")));
 
+  // ── R · Drei Defekte aus der Gegenprüfung des EIGENEN Diffs ──────────────
+  //
+  // Alle drei trafen die in diesem Sprint neu gebauten Teile. Sie sind der
+  // Grund, warum ein adversariales Review des eigenen Diffs nicht optional ist.
+  console.log("\nR · Gegenprüfung des eigenen Diffs (behobene Defekte)");
+
+  // R1/R2: Ein Schreibfehler des Teardowns wurde verschluckt, sobald die
+  // Profilzeile verschwunden war. `teardownTenant` meldet ok:false genau bei
+  // einem TEILfehler (typischerweise Auth-Restzeilen) — das Profil ist dann weg,
+  // Reste bleiben stehen. Genau dieser Fall zählte als „entfernt".
+  const zustandsAblage = () => {
+    const weg = new Set();
+    return {
+      teilfehler: {
+        entferne: async (id) => { weg.add(id); return { ok: false, reason: "auth-restzeilen" }; },
+        leseZustand: async (id) => (weg.has(id)
+          ? { vorhanden: false, aktiv: false }
+          : { vorhanden: true, aktiv: false })
+      },
+      sauber: {
+        entferne: async (id) => { weg.add(id); return { ok: true }; },
+        leseZustand: async (id) => (weg.has(id)
+          ? { vorhanden: false, aktiv: false }
+          : { vorhanden: true, aktiv: false })
+      }
+    };
+  };
+  const teil = await E.fuehreEntfernungAus({
+    stufe: "a", modus: "scharf", env: FREI("a", "entfernung"), deps: zustandsAblage().teilfehler
+  });
+  check("R1 ein TEILfehler des Teardowns zählt NICHT als entfernt",
+    teil.entfernt === 0 && teil.fehlgeschlagen === 20 && teil.ok === false,
+    `entfernt=${teil.entfernt} fehlgeschlagen=${teil.fehlgeschlagen} ok=${teil.ok}`);
+  check("R2 der Zustand benennt den Teilfehler statt ihn zu verschweigen",
+    teil.ergebnisse[0].zustand === "teilweise-entfernt-schreibfehler"
+      && teil.ergebnisse[0].schreibfehler === "auth-restzeilen");
+  const sauber = await E.fuehreEntfernungAus({
+    stufe: "a", modus: "scharf", env: FREI("a", "entfernung"), deps: zustandsAblage().sauber
+  });
+  check("R3 der saubere Fall bleibt unverändert grün",
+    sauber.entfernt === 20 && sauber.fehlgeschlagen === 0 && sauber.ok === true);
+
+  // R4: `deleteTenantScopedData` schrieb den leeren Mandanten-Store UNBEDINGT
+  // zurück — ein Upsert, kein Löschen. Für eine Kennung ohne bestehenden Store
+  // legte der „Teardown" die Zeile damit ERST AN: 400 zusätzliche Dauerzeilen
+  // nach der Entfernung der 400er-Gruppe.
+  const storageQuelle = fs.readFileSync(path.join(ROOT, "lib/helmut/storage.js"), "utf8");
+  check("R4 der Teardown schreibt den leeren Mandanten-Store nur noch BEDINGT",
+    /const pStoreHatDaten = [^\n]*\n\s*if \(pStoreHatDaten\) await writeStore\(defaultPoliticianStore\(\), pKey\(uid\)\);/
+      .test(storageQuelle));
+  check("R5 kein unbedingtes writeStore(defaultPoliticianStore(), pKey(uid)) mehr",
+    !/\n\s*await writeStore\(defaultPoliticianStore\(\), pKey\(uid\)\);/.test(storageQuelle));
+
+  // R6: Die CLI beendete einen SCHARFEN Lauf mit ok:false trotzdem mit
+  // Exitcode 0 — ein `&& echo FERTIG` hätte Erfolg gemeldet.
+  const cliQuelle = fs.readFileSync(path.join(ROOT, "scripts/testkohorte-entfernung.js"), "utf8");
+  check("R6 ein scharfer Lauf ohne bestätigten Erfolg endet mit Exitcode 1",
+    /ergebnis\.modus === E\.MODUS_SCHARF && ergebnis\.ok !== true/.test(cliQuelle)
+      && /process\.exit\(1\)/.test(cliQuelle));
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);
 }

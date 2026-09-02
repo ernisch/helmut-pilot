@@ -2398,3 +2398,96 @@ einzige Regel gar nicht am Ring, sondern am atomaren relationalen Tageszähler.
 bleibt in jedem Fall unsichtbar. Die Migration **nicht** anzuwenden ist für den Testlauf
 selbst richtig; wer die Stufenkette gemeinsam auswerten will, braucht die beiden getrennten
 Freigaben (Schritte 19/20).
+
+---
+
+## §28 · Der 400er-Rückbau — drei Defekte im eigenen Diff, behoben
+
+**Der wichtigste Abschnitt dieses Sprints.** Die adversariale Gegenprüfung richtete sich
+ausdrücklich auch gegen das, was in diesem Sprint **neu gebaut** wurde — und sie fand dort drei
+Defekte. Alle drei sind behoben und regressionsgesichert
+(`scripts/testkohorte-stufen-test.js`, Abschnitt R).
+
+### §28.1 Der „Teardown" legte Zeilen an, statt sie zu entfernen
+
+`storage.deleteTenantScopedData` schrieb den leeren Mandanten-Store **unbedingt** zurück:
+
+```js
+await writeStore(defaultPoliticianStore(), pKey(uid));   // Upsert, kein Löschen
+```
+
+Für eine Kennung **ohne** bestehenden Mandanten-Store legte der Teardown die Zeile damit
+**erst an**. Eine „vollständige Entfernung" der 400er-Gruppe hätte so **400 zusätzliche
+Dauerzeilen** in `helmut_store` hinterlassen — also genau das Gegenteil ihres Zwecks, und
+genau die Zahl, die der Restbestandsbefund dann als „nicht vollständig entfernt" gemeldet
+hätte, ohne dass jemand die Ursache gekannt hätte.
+
+**Behoben** mit derselben Bedingung, die die Schwesterfunktion `deleteProfileData` zwei
+Funktionen weiter oben bereits benutzt (*„Politiker-Store nur leeren, wenn er überhaupt Daten
+trägt"*): eine nicht vorhandene Zeile liefert den Standard-Store ohne Inhalte, und der
+Schreibvorgang entfällt. Der Fix folgt damit einem im Repository etablierten Muster und ist
+kein neuer Entwurf.
+
+### §28.2 Ein Teilfehler des Teardowns wurde verschluckt
+
+`teardownTenant` liefert `ok: false` genau dann, wenn `deleteTenantScopedData` einen
+**Teil**fehler hatte — typischerweise Restzeilen der Auth-Löschung. Das Profil ist dann weg,
+die Reste bleiben stehen.
+
+Der neue Entfernungsausführer prüfte nach dem Schreiben nur `vorhanden === false` und zählte
+diesen Fall als **entfernt**. Ein Lauf konnte damit `ok: true` und `0 fehlgeschlagen` über
+einer **unvollständigen** Entfernung melden — dieselbe Sorte falsches Grün, gegen die dieser
+Ausführer gebaut wurde.
+
+**Behoben:** ein Schreibfehler ist jetzt **immer** ein Fehlschlag, auch wenn die Zeile, auf die
+gelesen werden kann, verschwunden ist. Der Zustand heißt dann ausdrücklich
+`teilweise-entfernt-schreibfehler` statt `entfernt`.
+
+### §28.3 Die CLI meldete Erfolg über einem gescheiterten scharfen Lauf
+
+Der Bibliotheksvertrag war ehrlich (`ok: false` bei leerer Zielmenge), die
+**Prozessschnittstelle** nicht: ein scharfer Lauf mit `ok: false` beendete sich mit
+**Exitcode 0**. Ein Aufruf wie
+
+```
+node scripts/testkohorte-entfernung.js --stufe=c --scharf --ids=,,  &&  echo FERTIG
+```
+
+hätte „FERTIG" gemeldet, ohne eine einzige Zeile entfernt zu haben. Wer den Rückbau skriptet,
+wäre genau daran vorbeigelesen.
+
+**Behoben:** ein **scharfer** Lauf ohne bestätigten Erfolg endet mit Exitcode 1, und eine leere
+Zielmenge wird dabei ausdrücklich als Aufrufparameterfehler benannt. Der **Trockenlauf** bleibt
+Exitcode 0 — er ist der Normalfall, kein Fehler.
+
+### §28.4 Was der Rückbau weiterhin NICHT abräumt
+
+Mindestens elf mandatsbezogene Ablagen überleben die Entfernung. Der Pfad deckt die relationale
+Profil- und Inhaltsebene ab (17 Kindtabellen plus `profiles` plus Auth-Blob), **nicht** die
+Warteschlangen-, Telemetrie- und Wissensebene. Namentlich:
+
+* `helmut_jobs` (trägt bei mandatsgebundener Arbeit die Kennung) und `helmut_job_outbox`
+* `crawl_runs.politician_id`
+* die **Rohdaten der Personenquelle** im geteilten `main`-Blob: die synthetischen Mandate
+  erzeugen ihre Personenquelle zur Laufzeit aus dem Profil (`scheduler.personNewsSource`,
+  `CLAUDE.md` §4.2); die entstehenden Rohdaten tragen `sourceId = "test-kohorte-…-news"`,
+  aber **keine** `politicianId` — der auf `politicianId` gescopte Filter greift dort nicht.
+
+**Das ist nicht verschwiegen, sondern erzwungen sichtbar:** der `restbestandsBefund` verlangt
+fünf **gezählte** Familien (darunter `warteschlangenAuftraege` und `storeZeilen`) und meldet
+jede Restzeile als **nicht vollständig entfernt**. Eine nicht durchgeführte Zählung gilt nie
+als Null.
+
+**Offen bleibt** — ehrlich als Lücke ausgewiesen, nicht als erledigt:
+
+1. Für drei der fünf Restbestandsfamilien existiert **keine Erhebungs-SQL**. Der Betreiber
+   müsste sie von Hand schreiben; der Riegel ist damit korrekt fail closed, aber praktisch
+   noch nicht bedienbar.
+2. Es gibt **keinen Räumweg** für die Warteschlangenreste (`helmut_jobs`) und die
+   Personenquellen-Rohdaten.
+3. Der Lauf über 400 Kennungen erzeugt rund **10.800 sequentielle Requests**, davon etwa 1.200
+   Schreibvorgänge auf **drei gemeinsam genutzte Zeilen** (`main`, `main-auth`,
+   `main-cron-fairness`) — beim Lese-Ändere-Schreibe-Muster derselbe Wettlauf wie in §27.3.
+4. Es gibt **keine Fortschrittsanzeige und keine Wiederaufnahmehilfe**. Bricht der Lauf bei
+   Kennung 200 ab, weiß der Betreiber nicht, welche 200 erledigt sind. Fachlich ist der Lauf
+   sauber wiederholbar (idempotent), betrieblich ist er blind.

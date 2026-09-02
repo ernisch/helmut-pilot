@@ -118,6 +118,23 @@ async function main() {
 
   if (ergebnis.uebersprungenAktiv > 0) process.exit(1);
 
+  // BEHOBEN 02.09. (adversariale Gegenpruefung): der Bibliotheksvertrag war
+  // ehrlich, die PROZESSSCHNITTSTELLE nicht. Ein scharfer Lauf mit `ok: false` —
+  // etwa eine leere Zielmenge — beendete sich mit Exitcode 0. Ein Aufruf wie
+  //   node scripts/testkohorte-entfernung.js --stufe=c --scharf --ids=,, && echo FERTIG
+  // meldete damit Erfolg, ohne eine einzige Zeile entfernt zu haben. Wer den
+  // Rueckbau skriptet, haette genau daran vorbeigelesen.
+  //
+  // Der Trockenlauf bleibt ausdruecklich Exitcode 0 — er ist der Normalfall und
+  // kein Fehler. Ein SCHARFER Lauf ohne `ok` ist dagegen ein Fehlschlag.
+  if (ergebnis.modus === E.MODUS_SCHARF && ergebnis.ok !== true) {
+    console.log("\nScharfer Lauf ohne bestaetigten Erfolg (ok=false) — Exitcode 1.");
+    if (ergebnis.zielGroesse === 0) {
+      console.log("Die Zielmenge war LEER. Das ist kein Erfolg, sondern ein Aufrufparameterfehler.");
+    }
+    process.exit(1);
+  }
+
   // Ein Trockenlauf ist kein Fehler — er ist der Normalfall.
   process.exit(0);
 }
