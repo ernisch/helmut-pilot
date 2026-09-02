@@ -36,12 +36,20 @@ const FENSTER = Object.freeze({
   C: { name: "21:36–03:59 UTC", start: t(`${TAG}T21:36:00Z`), ende: t("2026-09-04T03:59:00Z") }
 });
 
+// ERGAENZT 02.09. (zweiter adversarialer Review): kein Aufruf uebergab `env`,
+// waehrend die Gegenproben `planeMandatsarbeit({… env: {}})` benutzten. B4 verglich
+// damit `process.env` gegen `{}` — heute gleich, weil die Standardwerte greifen,
+// morgen ein stiller Unterschied. Jetzt lesen beide Seiten aus derselben,
+// ausdruecklich leeren Umgebung.
+const ENV = Object.freeze({});
+
 function befund(stufe, f, extra = {}) {
   return F.faelligkeitsBefund({
     stufe,
     fensterStartMs: f.start,
     fensterEndeMs: f.ende,
     planungsZeitpunktMs: extra.planungsZeitpunktMs ?? f.start,
+    env: ENV,
     ...extra
   });
 }
@@ -98,7 +106,11 @@ function main() {
   const erwartet = {
     // Fenster: [Stufe A, Stufe B, Stufe C] Abdeckung der Produktstufe
     A: { a: 0, b: 0, c: 0 },
-    B: { a: 16 / 20, b: 55 / 95, c: 273 / 495 },
+    // KORRIGIERT 02.09. nach dem Ausfuehrbarkeitsreview: der Befund uebergibt
+    // jetzt den ROTATIONSRANG an den Planer, so wie Production es tut. Ohne ihn
+    // fiel der Planer auf den tagesunabhaengigen Streuwert zurueck und meldete
+    // fuer Stufe A 16/20 statt 12/20. Die neuen Zahlen sind die des Motors.
+    B: { a: 12 / 20, b: 53 / 95, c: 273 / 495 },
     C: { a: 1, b: 1, c: 1 }
   };
   for (const [fk, f] of Object.entries(FENSTER)) {
@@ -291,8 +303,22 @@ function main() {
   const leer = F.startbedingungen({ befund: nacht });
   check("I1 ohne Angaben ist KEINE Startbedingung erfüllt (fail closed)",
     leer.erfuellt === false && leer.offene.length > 0, `${leer.offene.length} offen`);
+  // ZWOELFTE STARTBEDINGUNG (02.09.): der Rotationsrang muss VOLLSTAENDIG sein.
+  // Ein Befund ohne die uebrigen am Testtag aktiven Mandate rechnet mit einer
+  // anderen Rangkarte als Production und darf deshalb nicht starten.
+  const nachtMitRotation = befund("c", FENSTER.C, {
+    offeneAuftraege: { mandate_projection: 495, briefing_materialization: 495 },
+    weitereAktiveMandate: ["real-1", "real-2", "real-3", "real-4", "real-5"]
+  });
+  check("I1b ein Befund OHNE die übrigen aktiven Mandate scheitert an der Rotationsbedingung",
+    F.startbedingungen({
+      befund: nacht, aktivierungAbgeschlossenMs: t(`${TAG}T20:00:00Z`),
+      restzeitMinuten: 383, konkurrierendeSchwereAusfuehrung: false,
+      vorbedingungenErfuellt: true, tagesdeckelWirksam: true,
+      vorrangreserveWirksam: true, kommunikationsriegelScharf: true
+    }).offene.some((o) => /Rotationsrang/.test(o)));
   const voll = F.startbedingungen({
-    befund: nacht,
+    befund: nachtMitRotation,
     aktivierungAbgeschlossenMs: t(`${TAG}T20:00:00Z`),
     restzeitMinuten: 383,
     konkurrierendeSchwereAusfuehrung: false,
@@ -496,6 +522,228 @@ function main() {
     voll2.arbeitsklassenImFenster && typeof voll2.arbeitsklassenImFenster === "object");
   check("P6 eine erfüllte Fälligkeitshürde macht den Test NICHT startbereit",
     voll2.startbereit === false, `${voll2.offen.length} weitere Hürden offen`);
+
+  // ── Q · Regression: die neun Befunde der zwei unabhaengigen Reviews vom
+  // 02.09. Jeder Punkt hier ist ein Fehler, der IM EIGENEN NEUEN CODE stand
+  // und den erst die Gegenpruefung gefunden hat. ───────────────────────────
+  console.log("\nQ · Regression der Review-Befunde vom 02.09.");
+
+  // Q1/Q2 (Befund 1, hoch): Rotationsrang. Production ruft den Planer MIT
+  // `rotation: tagesplan.reihenfolge`; ohne sie faellt er auf den
+  // tagesunabhaengigen Streuwert zurueck und liefert andere Faelligkeiten.
+  const ohneWeitere = befund("a", FENSTER.B);
+  const mitWeitere = befund("a", FENSTER.B, {
+    weitereAktiveMandate: ["real-1", "real-2", "real-3", "real-4", "real-5"]
+  });
+  check("Q1 der Befund weist die Herkunft der Rotation aus",
+    ohneWeitere.rotationsQuelle === "berechnet-nur-kohorte"
+      && mitWeitere.rotationsQuelle === "berechnet-kohorte-und-weitere",
+    `${ohneWeitere.rotationsQuelle} / ${mitWeitere.rotationsQuelle}`);
+  check("Q2 eine unvollständige Rangkarte wird als solche gemeldet, nicht verschwiegen",
+    ohneWeitere.rotationVollstaendig === false && mitWeitere.rotationVollstaendig === true);
+  check("Q3 die übrigen aktiven Mandate verschieben die Fälligkeiten messbar",
+    produkt(ohneWeitere).bisFensterendeBeanspruchbar
+      !== produkt(mitWeitere).bisFensterendeBeanspruchbar,
+    `${produkt(ohneWeitere).bisFensterendeBeanspruchbar} gegen `
+      + `${produkt(mitWeitere).bisFensterendeBeanspruchbar} von 20`);
+  check("Q4 eine ausdrücklich übergebene Rotation gilt als vollständig",
+    befund("a", FENSTER.B, { rotation: [...S.kennungenBisStufe("a")] })
+      .rotationsQuelle === "uebergeben");
+
+  // Q5-Q7 (Befund 3, hoch): `Number(null) === 0` haette die Schwelle auf 0
+  // gesetzt — ein Fenster mit 0 % Abdeckung und 0 offenen Auftraegen waere als
+  // vollstaendiger Zyklus gemeldet worden.
+  for (const [name, wert] of [["null", null], ["Null", 0], ["leerer Text", ""],
+                              ["über 1", 1.5], ["Text", "viel"]]) {
+    check(`Q5 mindestAbdeckung ${name} ist NICHT bewertbar (kein pauschales Grün)`,
+      befund("c", FENSTER.A, { mindestAbdeckung: wert }).bewertbar === false);
+  }
+  check("Q6 das schlimmste Szenario: 0 % Abdeckung, 0 offene Aufträge, Schwelle 0",
+    befund("c", FENSTER.A, {
+      mindestAbdeckung: 0,
+      offeneAuftraege: { mandate_projection: 0, briefing_materialization: 0 }
+    }).bewertbar === false);
+  check("Q7 eine gültige Schwelle wird unverändert übernommen",
+    befund("c", FENSTER.C, { mindestAbdeckung: 0.8 }).mindestAbdeckung === 0.8);
+
+  // Q8 (Befund 4, mittel): dieselbe Koerzierungsfalle in der Restzeitschwelle.
+  check("Q8 mindestRestzeitMinuten null fällt auf 60 zurück, nicht auf 0",
+    F.startbedingungen({
+      befund: nacht, restzeitMinuten: 0, mindestRestzeitMinuten: null
+    }).bedingungen.find((b) => /Mindestrestzeit/.test(b.name)).erfuellt === false);
+
+  // Q9-Q11 (Befund 5, mittel): `kennungen` ohne Erlaubnisliste. Eine fremde
+  // Kennung waere geplant und als Stufenzahl berichtet worden — CLAUDE.md §4.2.
+  check("Q9 eine FREMDE Kennung in der Zielmenge ist nicht bewertbar",
+    befund("c", FENSTER.C, { kennungen: ["test-kohorte-a-001", "irgendein-echter-mandant"] })
+      .bewertbar === false);
+  check("Q10 ein Duplikat vergrößert die Kohorte NICHT",
+    befund("a", FENSTER.C, {
+      kennungen: ["test-kohorte-a-001", "test-kohorte-a-001", "test-kohorte-a-002"]
+    }).kohortenGroesse === 2);
+  check("Q11 eine Kennung der FALSCHEN Stufe wird abgewiesen",
+    befund("a", FENSTER.C, { kennungen: ["test-kohorte-c-001"] }).bewertbar === false);
+
+  // Q12-Q14 (Befund 2, hoch): die Erhebungsabfrage zaehlte fremde Frischefenster
+  // und fremde Stufen mit — zurueckgestellte Auftraege FRUEHERER Tage stehen
+  // ebenfalls auf `wartend`.
+  const sqlGefiltert = F.erhebungsSql({
+    fensterEndeIso: "2026-09-04T03:59:00Z", frischefenster: "2026-09-03T00Z", stufe: "a"
+  });
+  check("Q12 die Abfrage filtert das Frischefenster",
+    /freshness_window = '2026-09-03T00Z'/.test(sqlGefiltert));
+  check("Q13 die Abfrage filtert die Stufe kumulativ",
+    /tenant_id like 'test-kohorte-a-%'/.test(sqlGefiltert)
+      && !/test-kohorte-c-%/.test(sqlGefiltert));
+  check("Q14 Stufe C filtert alle drei Präfixe",
+    ["a", "b", "c"].every((x) =>
+      F.erhebungsSql({ stufe: "c" }).includes(`test-kohorte-${x}-%`)));
+  check("Q15 ohne Filter warnt die Abfrage sichtbar in sich selbst",
+    /ACHTUNG: OHNE Frischefensterfilter/.test(F.erhebungsSql())
+      && /ACHTUNG: OHNE Stufenfilter/.test(F.erhebungsSql()));
+  check("Q16 ein ungültiger Frischefensterschlüssel wird abgewiesen, nicht escapt",
+    (() => { try { F.erhebungsSql({ frischefenster: "2026-09-03'; drop table" }); return false; }
+             catch { return true; } })());
+  check("Q17 eine unbekannte Stufe wird abgewiesen",
+    (() => { try { F.erhebungsSql({ stufe: "z" }); return false; } catch { return true; } })());
+  check("Q18 auch die gefilterte Abfrage bleibt rein lesend",
+    /^select|\nselect/.test(sqlGefiltert)
+      && !/\b(update|insert|delete|drop|alter|truncate)\b/i.test(
+        sqlGefiltert.split("\n").filter((z) => !z.startsWith("--")).join("\n")));
+
+  // Q19 (Befund 9, niedrig): `zahl(0)` ist 0 — eine Aktivierung „1970-01-01"
+  // haette als gueltig gegolten.
+  check("Q19 ein Aktivierungszeitpunkt 0 gilt nicht als Aktivierung",
+    F.startbedingungen({ befund: nacht, aktivierungAbgeschlossenMs: 0 })
+      .bedingungen.find((b) => /Aktivierung/.test(b.name)).erfuellt === false);
+
+  // Q20 (Befund 10, niedrig): `getUTCDate()` verglich die Kalendertagsnummer.
+  check("Q20 ein Fenster über einen ganzen Monat überschreitet Mitternacht",
+    befund("a", { start: t(`${TAG}T21:36:00Z`), ende: t("2026-10-03T21:36:00Z") })
+      .ueberschreitetMitternacht === true);
+
+  // Q21 (Befund 8, niedrig): doppelte Rundung wies 273/495 als 55,1 % statt
+  // 55,2 % aus.
+  check("Q21 die Abdeckung wird genau EINMAL gerundet",
+    Math.abs(produkt(befund("c", FENSTER.B)).abdeckung - 273 / 495) < 1e-12
+      && produkt(befund("c", FENSTER.B)).abdeckungProzent === 55.2,
+    `${produkt(befund("c", FENSTER.B)).abdeckungProzent} %`);
+
+  // Q22 (Befund 7, niedrig): `--alle` lieferte Exitcode 0, obwohl es kein
+  // Urteil faellen kann — eine Automatisierung haette ein Gruen gelesen.
+  check("Q22 der Übersichtslauf beendet sich ausdrücklich ohne Erfolgscode",
+    (() => {
+      const q = require("fs").readFileSync("scripts/funktionstest-500-faelligkeit.js", "utf8");
+      const block = q.slice(q.indexOf("--alle"), q.indexOf("const stufe = argument"));
+      return /FÄLLT KEIN URTEIL/.test(block) && /process\.exit\(1\)/.test(block);
+    })());
+
+  // Q23 (Befund 6, niedrig): „bildet die Claim-Bedingung exakt nach" war zu
+  // stark — drei Teile des Claims fehlen. Sie stehen jetzt benannt dabei.
+  check("Q23 die drei nicht abgebildeten Teile des Claims sind benannt",
+    /Lease-Ruecklauf/.test(F.erhebungsSql())
+      && /Claim-Reihenfolge/.test(F.erhebungsSql())
+      && /Claim-Limit/.test(F.erhebungsSql()));
+
+  // Q24/Q25: WIE ROBUST ist das Ergebnis gegen die Rangkarte? Das Nachtfenster
+  // beginnt exakt am ENDE der Briefingphase (21:36 UTC) — jeder Auftrag ist
+  // dort schon faellig, gleich welchen Rang sein Mandat hat. Das Abendfenster
+  // liegt MITTEN in der Phase, dort entscheidet der Rang. Genau deshalb traegt
+  // die Entscheidung fuer das Nachtfenster, obwohl die Rangkarte unvollstaendig ist.
+  const rangVarianten = [null, ["r1", "r2", "r3", "r4", "r5"], ["z9", "z8", "z7"],
+                         ["a"], ["q1", "q2", "q3", "q4", "q5", "q6", "q7", "q8", "q9", "q10"]];
+  check("Q24 das NACHTFENSTER trägt 100 % für JEDE Rangkarte (strukturell, nicht zufällig)",
+    S.STUFEN.every((st) => rangVarianten.every((w) =>
+      produkt(befund(st, FENSTER.C, { weitereAktiveMandate: w })).abdeckungProzent === 100)));
+  const abendwerte = rangVarianten.map((w) =>
+    produkt(befund("a", FENSTER.B, { weitereAktiveMandate: w })).abdeckungProzent);
+  check("Q25 das ABENDFENSTER hängt dagegen stark an der Rangkarte",
+    new Set(abendwerte).size > 1
+      && Math.max(...abendwerte) - Math.min(...abendwerte) >= 20,
+    `Stufe A: ${abendwerte.join(" / ")} %`);
+
+  // ── R · Regression des ZWEITEN adversarialen Reviews (02.09.) ───────────
+  console.log("\nR · Regression des zweiten adversarialen Reviews");
+
+  // R1 (Befund 5, mittel): `Number([])` ist 0. Ein leeres Array — der typische
+  // Rueckgabewert einer FEHLGESCHLAGENEN Erhebung — waere als „1970" durchgegangen.
+  for (const [name, wert] of [["leeres Array", []], ["Array mit Zahl", [1e15]],
+                              ["Objekt", {}], ["Funktion", () => 1]]) {
+    check(`R1 ${name} als Zeitpunkt ist NICHT bewertbar`,
+      befund("a", { start: wert, ende: FENSTER.C.ende }).bewertbar === false);
+  }
+
+  // R2 (Befund 3, hoch): eine ERKLAERTE Parallelitaet ueber 1 darf die
+  // Kapazitaetshuerde nicht oeffnen, solange sie nicht belegt ist.
+  const K = require("../lib/helmut/kapazitaet-500");
+  const konfigVoll = {
+    maxParallel: 2, tagesdeckel: 2416, reserveVerstehen: 702, vorrangReal: 200,
+    maxAnfragenJeMinute: 82, maxTokenJeMinute: 250000, kostenbudgetUsd: 10,
+    kommunikation: "gesperrt"
+  };
+  check("R2 die erklärte Parallelität 2 würde die Rechnung tatsächlich kippen",
+    K.zyklusPasstInsFenster({ fensterMinuten: 263, parallel: 1, szenario: "konservativ" }).passt === false
+      && K.zyklusPasstInsFenster({ fensterMinuten: 263, parallel: 2, szenario: "konservativ" }).passt === true);
+  const T = require("../lib/helmut/funktionstest-500");
+  const huerdeVon = (belegt) => T.startbereitschaft({
+    stufe: "a", konfiguration: konfigVoll, parallelitaetBelegt: belegt,
+    startfenster: { startMinuteUtc: 17 * 60 + 36, endeMinuteUtc: 21 * 60 + 59 }
+  }).huerden.find((h) => /vollständiger Zyklus passt/.test(h.name));
+  check("R3 unbelegt wird mit 1 gerechnet und der Hinweis steht dabei",
+    /erklärte Parallelität 2 ist NICHT belegt/.test(huerdeVon(false).detail));
+  check("R4 belegt trägt den Hinweis NICHT",
+    !/NICHT belegt/.test(huerdeVon(true).detail));
+
+  // R5 (Befund 2, hoch): die Stufenhuerde konnte strukturell nie gruen werden —
+  // fuenf Freigabeworte gleichzeitig aus EINER Variablen mit EINEM Wort.
+  const startwortA = S.startfreigabe("a", {}).erwartetesWort;
+  const envMitFreigabe = { HELMUT_TESTKOHORTE_EXECUTE: "1", HELMUT_TESTKOHORTE_CONFIRM: startwortA };
+  check("R5 die Startfreigabe einer Stufe ist mit EINEM Wort erreichbar",
+    S.startfreigabe("a", envMitFreigabe).erteilt === true);
+  check("R6 die Stufenhürde wird damit tatsächlich grün",
+    T.startbereitschaft({ stufe: "a", bestandeneStufen: [], env: envMitFreigabe })
+      .huerden.find((h) => /Stufengenaue Freigaben/.test(h.name)).ok === true);
+  check("R7 ohne das Wort bleibt sie rot",
+    T.startbereitschaft({ stufe: "a", bestandeneStufen: [], env: {} })
+      .huerden.find((h) => /Stufengenaue Freigaben/.test(h.name)).ok === false);
+  check("R8 die späteren Freigaben werden benannt, aber NICHT gleichzeitig verlangt",
+    S.startfreigabe("a", {}).spaetereFreigaben.length === 4);
+
+  // R9 (Befund 4, hoch): der Stufenpfad verlor die Duplikatsperre des
+  // Bestandspfades — `--ids=x,x` haette zweimal provisioniert.
+  check("R9 der Stufenpfad weist Duplikate ab, wie der Bestandspfad",
+    (() => { try { S.pruefeStufenZielmenge("a", ["test-kohorte-a-001", "test-kohorte-a-001"]);
+                   return false; } catch (e) { return e.grund === "doppelte-kennung"; } })());
+
+  // R10 (Befund 6, mittel): `env` wurde an die Geschwisterrechnung nicht
+  // durchgereicht — zwei Teile desselben Befunds lasen aus zwei Umgebungen.
+  const Z2 = require("../lib/helmut/funktionstest-zyklus");
+  const engEnv = { HELMUT_DEMAND_TENANT_MAX_AGE_H: "6" };
+  const ausTor = (e) => T.startbereitschaft({
+    stufe: "a", startfenster: { startUtc: `${TAG}T21:36:00Z`, dauerMinuten: 383 }, env: e
+  }).arbeitsklassenImFenster;
+  check("R10 startbereitschaft reicht env an arbeitsklassenImFenster durch",
+    ausTor(engEnv).bewertbar === true
+      && JSON.stringify(ausTor(engEnv).klassen) === JSON.stringify(Z2.arbeitsklassenImFenster({
+        fensterStartMinuteUtc: 21 * 60 + 36, fensterEndeMinuteUtc: 21 * 60 + 36 + 383, env: engEnv
+      }).klassen),
+    `bewertbar: ${ausTor(engEnv).bewertbar}`);
+  check("R10b und die enge Umgebung ändert das Ergebnis wirklich",
+    JSON.stringify(ausTor(engEnv).klassen) !== JSON.stringify(ausTor({}).klassen));
+
+  // R11 (Befund 11, niedrig): der reale Mandats-Slug darf in Testfixtures nicht
+  // ausgeweitet werden (`CLAUDE.md` §4.2).
+  check("R11 der reale Mandats-Slug wurde NICHT in neue Dateien ausgeweitet",
+    (() => {
+      const fsx = require("fs");
+      // Das Muster wird ZUSAMMENGESETZT, damit diese Zusicherung nicht selbst
+      // eine Fundstelle ist und sich damit widerlegt.
+      const slug = ["m5", "9aee228dbf2c9f13"].join("-");
+      return ["scripts/testkohorte-stufen-test.js", "scripts/cron-ueberschneidung-test.js",
+              "lib/helmut/funktionstest-faelligkeit.js", "lib/helmut/testkohorte-stufen.js",
+              "lib/helmut/testkohorte-entfernung.js", "scripts/funktionstest-500-faelligkeit.js"]
+        .every((d) => !fsx.readFileSync(d, "utf8").includes(slug));
+    })());
 
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);

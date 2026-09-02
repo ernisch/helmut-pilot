@@ -82,11 +82,19 @@ function main() {
   // erst bei der Plattformgrenze — mit der internen Zahl zu rechnen wäre also
   // zu optimistisch (fail closed in die andere Richtung).
   console.log("\n2 · Überschneidung zweier Bestandscrons");
+  // KORRIGIERT 02.09. (zweiter adversarialer Review): hier stand `abstand > 0`.
+  // Damit fiel ausgerechnet der SCHLIMMSTE Fall heraus — zwei Crons zur selben
+  // Minute, also die vollstaendige Ueberschneidung. Ein 14. Cron auf `45 5 * * *`
+  // haette den kleinsten POSITIVEN Abstand bei 10 gelassen, beide Zusicherungen
+  // waeren gruen geblieben, und die Suite haette „koennen sich nicht
+  // ueberschneiden" gemeldet, waehrend zwei Crons gleichzeitig starten.
   let kleinsterAbstand = Infinity;
   let engstesPaar = null;
+  const gleichzeitige = [];
   for (let i = 1; i < minuten.length; i += 1) {
     const abstand = minuten[i].minute - minuten[i - 1].minute;
-    if (abstand > 0 && abstand < kleinsterAbstand) {
+    if (abstand === 0) gleichzeitige.push([minuten[i - 1], minuten[i]]);
+    if (abstand >= 0 && abstand < kleinsterAbstand) {
       kleinsterAbstand = abstand;
       engstesPaar = [minuten[i - 1], minuten[i]];
     }
@@ -95,11 +103,19 @@ function main() {
   // Folgetages. Ohne ihn wäre die Aussage nur für einen Tagesausschnitt wahr.
   if (minuten.length > 1) {
     const ueberNacht = (1440 - minuten[minuten.length - 1].minute) + minuten[0].minute;
-    if (ueberNacht > 0 && ueberNacht < kleinsterAbstand) {
+    if (ueberNacht === 0) gleichzeitige.push([minuten[minuten.length - 1], minuten[0]]);
+    if (ueberNacht >= 0 && ueberNacht < kleinsterAbstand) {
       kleinsterAbstand = ueberNacht;
       engstesPaar = [minuten[minuten.length - 1], minuten[0]];
     }
   }
+  check("2.0 KEIN Cronpaar startet zur selben Minute (der schlimmste Fall)",
+    gleichzeitige.length === 0,
+    gleichzeitige.length
+      ? `${gleichzeitige.length} gleichzeitige(s) Paar(e), erstes: `
+        + `${hhmm(gleichzeitige[0][0].minute)} ${gleichzeitige[0][0].pfad} und `
+        + `${gleichzeitige[0][1].pfad}`
+      : "keine");
   check("2.1 ein engstes Cronpaar wurde bestimmt",
     engstesPaar !== null && Number.isFinite(kleinsterAbstand),
     engstesPaar ? `${hhmm(engstesPaar[0].minute)} ${engstesPaar[0].pfad} → ${hhmm(engstesPaar[1].minute)} ${engstesPaar[1].pfad}` : "");
@@ -155,10 +171,16 @@ function main() {
       const quelle = fs.readFileSync(path.join(ROOT, "lib/helmut/minimal-cron.js"), "utf8");
       return !/briefing-watchdog|health-watch/.test(quelle);
     })());
-  check("5.3 die Frage „ist gleichzeitiger Betrieb unbedenklich?\" bleibt offen",
-    // Sie ist hier bewusst nicht als bestanden markiert: sie verlangt einen
-    // Production-Lauf mit aktivem Minimal-Cron, und der ist nicht freigegeben.
-    true, "beantwortbar nur über den Aktivierungsnachweis, nicht offline");
+  // KORRIGIERT 02.09.: hier stand `check(..., true, ...)` — eine trivial wahre
+  // Zusicherung, die nichts prueft, in einem Lauf, dessen PASS-Zahl als Beleg
+  // zitiert wird. Sie prueft jetzt, was sie behauptet: dass der Minimal-Cron
+  // `18,48` in Production TATSAECHLICH nicht eingetragen ist. Damit ist die
+  // Frage nach dem gleichzeitigen Betrieb offen, weil der Fall gar nicht
+  // eintreten kann — und die Zusicherung wird rot, sobald er eintritt.
+  check("5.3 der Minimal-Cron `18,48` steht NICHT in Production — die Frage nach "
+    + "gleichzeitigem Betrieb bleibt deshalb offen",
+    !JSON.stringify(vercel.crons || []).includes("18,48"),
+    "beantwortbar erst über einen Aktivierungsnachweis, nicht offline");
 
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);

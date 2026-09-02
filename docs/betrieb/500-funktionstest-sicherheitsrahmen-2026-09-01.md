@@ -2678,19 +2678,43 @@ Anteil der Kohorte, den der Motor bis Fensterende in der **sichtbaren Produktstu
 | Fenster (UTC) | Türkei / Berlin | Stufe A (20) | Stufe B (95) | Stufe C (495) |
 |---|---|---|---|---|
 | 11:36–15:59 | 14:36–18:59 / 13:36–17:59 | 0/20 = **0,0 %** | 0/95 = **0,0 %** | 0/495 = **0,0 %** |
-| 17:36–19:59 | 20:36–22:59 / 19:36–21:59 | 16/20 = **80,0 %** | 55/95 = **57,9 %** | 273/495 = **55,1 %** |
+| 17:36–19:59 | 20:36–22:59 / 19:36–21:59 | 12/20 = **60,0 %** | 53/95 = **55,8 %** | 273/495 = **55,2 %** |
 | 21:36–03:59 | 00:36–06:59 / 23:36–05:59 | 20/20 = **100,0 %** | 95/95 = **100,0 %** | 495/495 = **100,0 %** |
+
+> **Korrigiert am 02.09. nach dem Ausführbarkeitsreview (§31).** Eine erste Fassung dieser
+> Tabelle wies für das Abendfenster 80,0 / 57,9 / 55,1 % aus. Sie war falsch: der Befund
+> übergab dem Planer **keinen Rotationsrang**, Production aber schon
+> (`rotation: tagesplan.reihenfolge`). Die Zahlen oben sind die mit Rotation.
 
 Damit ist §29.3 **bestätigt und jetzt beziffert**: das Vormittagsfenster trägt in keiner Stufe
 eine sichtbare Produktstufe, das Abendfenster nur gut die Hälfte, und allein das Nachtfenster
 erreicht die volle Kohortenabdeckung — dasselbe Fenster, das das Kapazitätstor bei
 Parallelität 1 als einziges besteht.
 
-Die gemessenen Fälligkeitsspannen der Stufe C (identisch für alle Stufen, weil sie aus den
-Phasenanteilen des Frischefensters folgen):
+Die gemessenen Fälligkeitsspannen der Stufe C (die Klassengrenzen folgen den Phasenanteilen
+des Frischefensters, die Lage innerhalb der Phase dem Rotationsrang):
 
-- `mandate_projection` 12:00:08 – 17:59:26 UTC
-- `briefing_materialization` 18:00:35 – 21:35:54 UTC
+- `mandate_projection` 12:00:00 – 17:59:16 UTC
+- `briefing_materialization` 18:00:00 – 21:35:34 UTC
+
+### §30.4a Wie robust ist das gegen die Rangkarte?
+
+Der Rotationsrang verschiebt jede Fälligkeit **innerhalb** ihres Phasenfensters. Das
+Nachtfenster beginnt exakt am **Ende** der Briefingphase (21:36 UTC) — dort ist jeder Auftrag
+bereits fällig, **gleich welchen Rang** sein Mandat hat. Das Abendfenster liegt **mitten** in
+der Phase, dort entscheidet der Rang. Gemessen über fünf verschiedene Rangkarten:
+
+| Fenster | Stufe A | Stufe B | Stufe C |
+|---|---|---|---|
+| 21:36–03:59 | **100 % in allen fünf** | **100 % in allen fünf** | **100 % in allen fünf** |
+| 17:36–19:59 | 35–60 % | 50,5–55,8 % | 54,3–55,2 % |
+
+**Das ist der eigentliche Grund, warum das Nachtfenster trägt.** Es hängt nicht an einer
+Rangkarte, die diese Sitzung gar nicht kennen kann — die übrigen aktiven Mandate stehen
+bewusst nicht im Repo. Für die beiden anderen Fenster gilt das ausdrücklich **nicht**: ihre
+Prozentwerte sind ohne die vollständige Rangkarte **keine belastbaren Zahlen**. Deshalb ist
+`rotationVollstaendig` eine eigene, harte Startbedingung; das CLI nimmt die übrigen Mandate
+zur Laufzeit über `--weitere=` entgegen.
 
 ### §30.5 Mitternacht — was bestätigt und was widerlegt wurde
 
@@ -2774,17 +2798,19 @@ node scripts/lokal.js -- node scripts/funktionstest-500-faelligkeit.js --alle --
 Das CLI rechnet und schreibt nichts, es öffnet keine Verbindung und ruft keine Route auf.
 Exitcode 0 nur bei einem **belegten** vollständigen Zyklus; `null` ist Exitcode 1.
 
-### §30.9 Elf harte Startbedingungen (`startbedingungen`)
+### §30.9 Zwölf harte Startbedingungen (`startbedingungen`)
 
 Das Nachtfenster trägt einen vollständigen Zyklus **bedingt**, also stehen die Bedingungen im
 Code und nicht in einer Empfehlung. Jede einzelne ist fail closed:
 
 Fälligkeitsbefund bewertbar · Plan passt zum Fenster (vor Mitternacht geschrieben) ·
-geforderte Kohortenabdeckung erreicht · offene Aufträge rein lesend gemessen · vollständiger
-Zyklus belegt (nicht `null`) · Aktivierung der Stufe abgeschlossen **vor** Fensterbeginn ·
-Restzeit im Fenster ≥ Mindestrestzeit · keine konkurrierende schwere Ausführung ·
-Vorbedingungen (`source_fetch`, `document_understanding`) erfüllt · Tagesdeckel wirksam ·
-Vorrangreserve für die fünf realen Mandate wirksam · Kommunikationsriegel scharf.
+**Rotationsrang vollständig (alle am Testtag aktiven Mandate)** · vollständige Kohortenliste
+geplant · geforderte Kohortenabdeckung erreicht · offene Aufträge rein lesend gemessen ·
+vollständiger Zyklus belegt (nicht `null`) · Aktivierung der Stufe abgeschlossen **vor**
+Fensterbeginn und vor dem Frischefensterwechsel · Restzeit im Fenster ≥ Mindestrestzeit ·
+keine konkurrierende schwere Ausführung · Vorbedingungen (`source_fetch`,
+`document_understanding`) erfüllt · Tagesdeckel wirksam · Vorrangreserve für die fünf realen
+Mandate wirksam · Kommunikationsriegel scharf.
 
 ### §30.10 Was dieser Nachtrag NICHT behauptet
 
@@ -2796,5 +2822,246 @@ Vorrangreserve für die fünf realen Mandate wirksam · Kommunikationsriegel sch
   Das bleibt eine offene Lücke.
 - Die Vorbedingungssperre (§29.4 Punkt 3) ist als Startbedingung **abgefragt**, aber ihre
   Wirkung unter Last ist nicht gemessen.
+- Die **vollständige Rangkarte** liegt dieser Sitzung nicht vor (die übrigen aktiven Mandate
+  stehen bewusst nicht im Repo). Für das Nachtfenster ist das folgenlos (§30.4a), für die
+  beiden anderen Fenster sind die Prozentwerte damit **nicht belastbar**.
 - Das Tor wählt kein Fenster aus. Es beziffert, was ein Fenster trägt; die Entscheidung
   bleibt beim Betreiber.
+
+---
+
+## §31 · Zwei unabhängige Reviews — 24 Befunde, alle geschlossen
+
+Nach der Umsetzung der Betreiberentscheidung (§30) wurden zwei voneinander unabhängige
+Prüfungen angesetzt: **fachliche Ausführbarkeit** (läuft es, und stimmen seine Aussagen mit
+dem Motor überein?) und **adversariales Diff-Review** (wo entsteht ein falsches Grün?).
+
+**Alle 24 Befunde stammen aus Code, den dieser Sprint selbst gebaut hat** — zehn aus der
+Ausführbarkeitsprüfung (§31.1–§31.6), vierzehn aus dem adversarialen Diff-Review
+(§31.9–§31.12). Jeder ist am Code nachgeprüft, behoben und mit einer Regressionszusicherung
+versehen (Abschnitte **Q** und **R** der Suite `funktionstest-faelligkeit-test.js`).
+
+Der schwerste Befund war **blockierend**: die Korrektur des 400er-Teardowns aus §28 wirkte in
+Production **gar nicht** — sie verschob das Anlegen der Zeilen nur vom Schreib- auf den
+Lesevorgang. Ohne den zweiten Review wäre eine unwirksame Korrektur als „behoben"
+dokumentiert worden.
+
+### §31.1 Befund 1 (hoch) — der Plan wurde ohne Rotationsrang gerechnet
+
+**Der schwerste Befund.** `scalable-pipeline.planeArbeit` ruft den Planer mit
+`rotation: tagesplan.reihenfolge` auf; der Rang steuert den Versatz **innerhalb** des
+Phasenfensters. Das Tor übergab **keine** Rotation — der Planer fiel damit auf den
+tagesunabhängigen Streuwert zurück und lieferte **andere Fälligkeiten als Production**.
+
+Es war also dieselbe *Funktion*, aber nicht dieselben *Eingaben*. Gemessen für das
+Abendfenster 17:36–19:59 UTC:
+
+| Stufe | Tor vorher (ohne Rotation) | mit Rotation (wie Production) |
+|---|---|---|
+| A | 16/20 = 80,0 % | 12/20 = **60,0 %** |
+| B | 55/95 = 57,9 % | 53/95 = **55,8 %** |
+| C | 273/495 = 55,2 % | 273/495 = 55,2 % |
+
+**Behoben:** Der Befund baut die Rotation jetzt mit derselben reinen Funktion, die Production
+benutzt (`llm-budget-fair.tagesplan`), und übergibt sie. Neue Felder `rotationsQuelle`,
+`rotationsGroesse`, `rotationVollstaendig`; neuer Parameter `weitereAktiveMandate` für die am
+Testtag aktiven Mandate **außerhalb** der Kohorte, die in Production mit in der Rangkarte
+stehen. Fehlen sie, meldet der Befund `rotationVollstaendig: false`, und die **zwölfte harte
+Startbedingung** ist nicht erfüllt. Kein Mandant steht dafür im Repo — das CLI nimmt die Liste
+zur Laufzeit über `--weitere=` entgegen (`CLAUDE.md` §4.2).
+
+**Wichtig für die Entscheidung:** Das Nachtfenster ist von alldem **nicht betroffen**
+(§30.4a) — es beginnt am Ende der Phase, dort ist jeder Auftrag fällig, gleich welchen Rang
+sein Mandat hat. Die Korrektur ändert die Empfehlung also nicht, sie macht die Zahlen der
+**anderen** Fenster erst ehrlich.
+
+### §31.2 Befund 2 (hoch) — die Erhebungsabfrage zählte fremde Frischefenster und Stufen mit
+
+`erhebungsSql()` filterte `status`, `due_at`, `attempts`, Kennungspräfix und Auftragstyp —
+aber **nicht das Frischefenster** und **nicht die Stufe**. `helmut_defer_job` setzt
+zurückgestellte Aufträge wieder auf `wartend` (Aufbewahrung 14 Tage); Altbestände früherer
+Tage stehen also mit `due_at` in der Vergangenheit als `wartend` da.
+
+**Fehlerszenario:** Der 20:00-Crawl hat alle 495 heutigen Briefings abgearbeitet, es liegen
+aber 495 zurückgestellte des Vortags. Die Abfrage meldet 495, `vollstaendigerZyklus` wird
+`true` — obwohl im geprüften Fenster **kein einziger** Auftrag des richtigen Frischefensters
+offen ist. Zweite Variante: eine Stufe-A-Erhebung (20 Profile) zählt alle 495 provisionierten
+Kennungen mit und besteht damit immer.
+
+**Behoben:** Die Abfrage nimmt `frischefenster` und `stufe` entgegen, validiert beide (und
+weist sie ab, statt sie zu escapen) und erzeugt die kumulative Präfixliste. Fehlt ein Filter,
+schreibt sie einen sichtbaren **ACHTUNG-Hinweis in sich selbst**. Das CLI setzt beide Filter
+automatisch aus dem Befund.
+
+### §31.3 Befund 3 (hoch) — `mindestAbdeckung` koerzierte `null`/`0`/`""` zu einer Schwelle von 0
+
+`Number.isFinite(Number(mindestAbdeckung))` — und `Number(null)` wie `Number("")` sind 0 und
+endlich. **Genau die Falle, die dieses Modul an anderer Stelle ausdrücklich verbietet.** Der
+Aufrufer schützte nicht: `eingabe.mindestAbdeckung ?? 1` lässt `0` und `""` durch.
+
+**Fehlerszenario, real gemessen:** Fenster 11:36–15:59, Stufe C, `mindestAbdeckung: 0`,
+`offeneAuftraege: {0, 0}` → Schwelle 0, `abdeckungErreicht: true`, `vollstaendigerZyklus: true`,
+Urteil *„Vollständiger Zyklus"*. **Null beanspruchbare und null offene Aufträge wurden als
+vollständiger Zyklus gemeldet.**
+
+**Behoben:** Die Schwelle geht durch `zahl()` und muss echt größer 0 und höchstens 1 sein;
+alles andere ist `bewertbar: false` mit Grund. Der Aufrufer reicht den Wert jetzt **roh**
+durch, statt ihn zu veredeln.
+
+### §31.4 Befund 4 (mittel) — dieselbe Falle in der Restzeitschwelle
+
+`zahl(restzeitMinuten) >= Number(mindestRestzeitMinuten)`: die Schwelle ging an `zahl()`
+vorbei. Gemessen: `restzeitMinuten: 0, mindestRestzeitMinuten: null` → Bedingung **erfüllt**.
+Ein Fenster mit null Restminuten bestand die Mindestrestzeit. **Behoben:** ungültige Schwelle
+fällt auf den strengen Standardwert 60 zurück.
+
+### §31.5 Befund 5 (mittel) — `kennungen` überschrieb die Stufe ohne Erlaubnisliste
+
+Eine übergebene Kennungsliste hatte Vorrang vor der Stufe, wurde aber weder gegen
+`istKohortenKennung` geprüft noch entdoppelt — während das Feld `stufe` im Ergebnis weiter die
+angegebene Stufe trug.
+
+**Zwei Fehlerszenarien, beide real gemessen:** (a) Ein Duplikat vergrößerte die Kohorte
+rechnerisch, obwohl der Idempotenzschlüssel in der Warteschlange nur **eine** Zeile je Mandat
+erzeugt — `vollstaendigerZyklus: true` für eine Kohorte, die es so nicht gibt. (b) Eine
+**fremde** Kennung (etwa ein realer Pilotmandant) wurde geplant und als „Stufe C"-Zahl
+berichtet — im Widerspruch zu `CLAUDE.md` §4.2.
+
+**Behoben:** Erlaubnisliste, Entdoppelung, und bei gleichzeitig angegebener Stufe zusätzlich
+die Prüfung, dass jede Kennung zu dieser Stufe **oder darunter** gehört. Eine fremde Kennung
+ist ein Abbruchgrund, kein stiller Filter.
+
+### §31.6 Befunde 6–10 (niedrig) — fünf kleinere Korrekturen
+
+| Nr. | Was | Behoben |
+|---|---|---|
+| 6 | „bildet die Claim-Bedingung **exakt** nach" war zu stark: der vorgelagerte Lease-Rücklauf, `order by` und `limit` fehlen | Wortlaut korrigiert; die drei Auslassungen stehen benannt in der Abfrage, und die Zahl ist ausdrücklich eine **Untergrenze** |
+| 7 | `--alle` endete mit Exitcode **0**, obwohl es kein Urteil fällen kann — eine Automatisierung hätte ein Grün gelesen | Übersichtslauf endet mit **1** und sagt ausdrücklich, dass er kein Urteil fällt |
+| 8 | Doppelte Rundung: 273/495 = 55,1515 % wurde als **55,1 %** statt 55,2 % ausgewiesen | Vorrundung entfernt, neues Feld `abdeckungProzent` rundet **einmal** |
+| 9 | `aktivierungAbgeschlossenMs: 0` galt als gültige Aktivierung („1970-01-01") | `> 0` gefordert |
+| 10 | `ueberschreitetMitternacht` verglich die Kalendertagsnummer — ein Fenster über einen Monat meldete `false` | Vergleich über Tagesgrenzen |
+
+### §31.7 Was die Reviews ausdrücklich bestätigt haben
+
+- **Kein Netz, keine Datenbank, kein Schreibvorgang, kein Modellaufruf.** Der Ladegraph des
+  CLI wurde protokolliert: nur Rechenmodule, kein `http`/`https`/`net`/`dns`/`fetch`, keine
+  Supabase-Anbindung, keine `fs`-Schreibaufrufe.
+- **Keine zweite Phasenlogik, keine hartkodierten Prozentwerte.** `MANDATSPHASEN` liegt allein
+  in `source-demand.js`.
+- **`vollstaendigerZyklus === null` ist überall Nicht-Erfolg** — in der Hürde, in der
+  Startbedingung und im CLI-Exitcode.
+- **Das Frischefenster-Tor ist korrekt:** eine Planung nach 00:00 UTC führt zuverlässig zu
+  `planPasstZumFenster: false`.
+- **Die Kapazitätszahlen reproduzieren exakt:** 383 min bei Parallelität 1 → 2.522 möglich
+  gegen 1.812 nötig; Lasttrennung 802 / 1.000 / 10, Deckel 2.416, Reserve 604.
+
+### §31.8 Der Ablauf selbst, offen gesagt
+
+Der erste Anlauf lief als Workflow mit vier Prüfagenten und einer Gegenprüfung jedes Befunds.
+Er lieferte über eine Stunde **keine einzige Ausgabe** und wurde abgebrochen; die beiden
+Reviews wurden danach direkt beauftragt. Das kostet Zeit und ist hier vermerkt, weil ein
+abgebrochener Prüfweg sonst als „zwei Reviews durchgeführt" verschwinden würde.
+
+### §31.9 Befund A (BLOCKIEREND) — der Teardown-„Fix" aus §28 wirkte in Production nicht
+
+`§28` hielt fest: `deleteTenantScopedData` schrieb den leeren Mandanten-Store **unbedingt**
+zurück, ein Upsert — der „Teardown" der 400er-Gruppe hätte damit **400 Zeilen angelegt**. Die
+Korrektur ersetzte den unbedingten Schreibvorgang durch `readStore(...)` + Bedingung.
+
+**Das war keine Korrektur.** `readSupabaseStore` (`storage.js:486–489`) legt eine fehlende
+Zeile **beim Lesen selbst an**:
+
+```js
+const seeded = storeKey === "main" ? defaultStore() : defaultPoliticianStore();
+await writeSupabaseStore(seeded, storeKey);
+return seeded;
+```
+
+Der neu eingefügte Lesevorgang erzeugte in Production also **genau die Zeile**, die er
+verhindern sollte; die nachfolgende Bedingung sparte danach nur noch den zweiten
+Schreibvorgang ein. Netto: ein zusätzlicher Lese- **und** Schreibvorgang je Mandat, **kein**
+Nutzen — und `CURRENT_STATE.md` hätte den Defekt als „behoben" geführt, während der Rückbau
+der Stufe C weiterhin 400 Dauerzeilen hinterlassen hätte.
+
+**Behoben:** neue Funktion `pStoreHatDatenOhneAnlegen(storeKey)`. Sie fragt im
+Supabase-Pfad direkt nach der Zeile (`select=data`), legt **nichts** an und umgeht den
+Zwischenspeicher — eine Löschentscheidung darf nicht auf einer bis zu 10 s alten Kopie
+beruhen (das war Befund L). Im lokalen Pfad liest sie den lokalen Store, ebenfalls ohne
+Nebenwirkung.
+
+**Und die Tests, die das hätten finden müssen:** R4/R5 in `testkohorte-stufen-test.js` waren
+**reine Quelltextregexe** — sie prüften, ob die eigene Implementierungszeile im Text von
+`storage.js` vorkommt, riefen die Funktion nie auf und wären auch über der unwirksamen
+Korrektur grün geblieben. Sie prüfen jetzt das **Verhalten** (R5) und dass die
+Existenzprüfung in **keinem** Pfad schreibt (R4b).
+
+### §31.10 Befund B (hoch) — die neue Stufen-Hürde konnte strukturell nie grün werden
+
+Die Hürde verlangte `stufenvertrag(...).offeneFreigaben.length === 0`, also **alle fünf**
+schreibenden Vorgänge einer Stufe **gleichzeitig** freigegeben. `HELMUT_TESTKOHORTE_CONFIRM`
+ist aber **eine** Variable mit **einem** Wort. Gemessen mit der bestmöglichen Umgebung:
+*„Stufe A (20 Profile): 4 Freigabe(n) fehlen"* — und die Meldung hätte dem Betreiber vier
+Worte genannt, die er in ein einziges Feld schreiben soll.
+
+Fail closed war die Hürde, richtig nicht: die fünf Vorgänge laufen zu **verschiedenen**
+Zeitpunkten (anlegen → aktivieren → Fachzyklus → deaktivieren → entfernen). Niemand hält sie
+je gleichzeitig.
+
+**Behoben:** neue Funktion `startfreigabe(stufe, env)`. Zum **Starten** gebraucht wird genau
+eine Freigabe — die des Fachzyklus dieser Stufe. Dass die Aktivierung vorher abgeschlossen
+war, ist eine eigene Startbedingung, kein gleichzeitig zu haltendes Wort. Die vier späteren
+Freigaben werden als Kette **benannt**, aber nicht verlangt. Gegengeprüft: die Hürde wird mit
+einem einzigen korrekten Wort tatsächlich grün (R6) und bleibt ohne es rot (R7).
+
+### §31.11 Befund C (hoch) — der `gelesen`-Fix öffnete die Kapazitätshürde in die unsichere Richtung
+
+§24.6 behob, dass `pruefeKonfiguration()` das Feld `gelesen` nie zurückgab — die Zyklushürde
+rechnete deshalb **immer** mit Parallelität 1. Der Kommentar nannte die Richtung des alten
+Fehlers „die sichere". Was dort **nicht** stand: die Korrektur macht den vom Betreiber
+**erklärten** Wert zum Entscheider. Gemessen:
+
+| Fenster | Parallelität 1 | Parallelität 2 |
+|---|---|---|
+| 143 min | 941 gegen 1.812 → **passt nicht** | 1.883 gegen 1.812 → **passt** |
+| 263 min | 1.732 gegen 1.812 → **passt nicht** | 3.464 gegen 1.812 → **passt** |
+
+Ein eingetragenes `maxParallel: 2` hätte damit **beide** Tagesfenster von rot auf grün
+gekippt, ohne dass irgendwo eine erreichbare Parallelität **gemessen** wäre — „Parallelität 2"
+ist ausdrücklich unterbestimmt (§25.1).
+
+**Behoben:** neuer Parameter `parallelitaetBelegt` (Default **false**). Ohne ihn rechnet die
+Hürde weiter mit 1, und die Meldung sagt es: *„erklärte Parallelität 2 ist NICHT belegt,
+gerechnet wird mit 1. Eine erklärte Zahl ist keine gemessene."*
+
+### §31.12 Befund D (hoch) und die zehn kleineren
+
+**Befund D — der Stufenpfad verlor die Duplikatsperre des Bestandspfades.**
+`pruefeStufenZielmenge` prüfte fremde Kennungen und falsche Stufen, aber **keine Duplikate** —
+während `testkohorte-betrieb.pruefeZielmenge` das tut. Bei gesetzter Stufe benutzen
+Vorwärtsweg **und** Entfernung ausschließlich die neue, schwächere Prüfung. `--ids=x,x` hätte
+`provisionTenant` zweimal für dieselbe Kennung laufen lassen und bei der Entfernung den
+zweiten Durchgang als `nichtVorhanden` gezählt — mit `ok: true`. **Behoben.**
+
+| Nr. | Schwere | Was | Behoben |
+|---|---|---|---|
+| E | mittel | `zahl()` koerzierte **Arrays**: `Number([])` ist 0. Ein leeres Array — der typische Rückgabewert einer **fehlgeschlagenen** Erhebung — ging als „1970-01-01" durch und erzeugte ein Fenster von 31.000 Jahren, in dem trivialerweise alles fällig ist | nur `number` und `string` gelten |
+| F | mittel | `env` wurde an `arbeitsklassenImFenster` **nicht** durchgereicht — genau die Inkonsistenz, die derselbe Commit zu beheben behauptete; zwei Teile desselben Befunds lasen aus zwei Umgebungen | durchgereicht, gegengeprüft (R10/R10b) |
+| G | mittel | Der Cron-Nachweis filterte mit `abstand > 0` ausgerechnet den **schlimmsten Fall** heraus: zwei Crons zur selben Minute | neue Zusicherung **2.0**, `>= 0` |
+| H | mittel | Mehrere Zusicherungen waren **Quelltextregexe** statt Verhaltensprüfungen | R4/R4b/R5 auf Verhalten umgestellt; die übrigen als Struktur­prüfungen benannt |
+| I | mittel | `CURRENT_STATE.md` §25 trug noch **80,0 / 57,9 / 55,1 %**, der Code rechnete bereits mit Rotation | nachgezogen (**60,0 / 55,8 / 55,2 %**) |
+| J | niedrig | `check("5.3 …", true, …)` — eine **trivial wahre** Zusicherung in einem Lauf, dessen PASS-Zahl als Beleg zitiert wird | prüft jetzt, dass `18,48` nicht in `vercel.json` steht |
+| K | niedrig | Der reale Mandats-Slug wurde in **drei neuen** Testfixtures verwendet — `CLAUDE.md` §4.2 verbietet die Ausweitung ausdrücklich | durch eine erfundene Kennung ersetzt; **R11** hält es fest |
+| L | niedrig | Der Existenz-Lesevorgang im Teardown konnte aus einem bis zu **10 s alten** Zwischenspeicher antworten | die neue Prüfung umgeht ihn |
+| M | niedrig | Die Fälligkeitssuite übergab **nie** `env`, die Gegenproben aber `{}` — heute gleich, morgen ein stiller Unterschied | beide Seiten lesen aus derselben Umgebung |
+| N | niedrig | `--sql` mit ungültigem `--ende` brach mit einem **Stacktrace** ab | lesbare Abbruchmeldung, Exitcode 2 |
+
+### §31.13 Was der zweite Review ausdrücklich NICHT beanstandet hat
+
+Einschleusung über die SQL-Erzeugung (beide Eingaben werden normalisiert bzw. abgewiesen, kein
+Pfad erzeugt etwas anderes als ein `select`, und `helmut_jobs`/`tenant_id`/`freshness_window`
+existieren — die Abfrage ist tatsächlich ausführbar) · Mandantentrennung (kein hartkodierter
+Mandant in `lib/`, kein Pilot-Testnutzer, `assertTenant` an erster Stelle) · gemeinsamer
+Zustand (kein unbedingtes Lesen-Ändern-Schreiben im Diff) · schreibende Nebenwirkungen (außer
+dem beabsichtigten Teardown unter vierfacher Verriegelung keine; `vercel.json` ändert **keine
+Cronzeit**) · die Zahlen 802 + 1.000 + 10 = 1.812, Deckel 2.416, Reserve 604, 2.522 ≥ 1.812
+bei 383 min und Parallelität 1.

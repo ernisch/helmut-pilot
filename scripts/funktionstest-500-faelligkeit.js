@@ -17,7 +17,13 @@
 //        --stufe=c --start=2026-09-03T21:36:00Z --ende=2026-09-04T03:59:00Z
 //   … zusätzlich --geplant=2026-09-03T20:00:00Z  (Planungszeitpunkt; Standard: Fensterbeginn)
 //   … zusätzlich --offen=495,495                 (mandate_projection,briefing_materialization)
+//   … zusätzlich --weitere=<kennung,…>          die am Testtag AKTIVEN Mandate AUSSERHALB
+//                  der Kohorte. Sie stehen in Production mit in der Rangkarte und
+//                  verschieben die Fälligkeiten. Ohne sie meldet der Befund
+//                  `rotationVollstaendig: false` und die Startbedingung ist NICHT erfüllt.
+//                  Bewusst OHNE eingebauten Standardwert: kein Mandant steht in diesem Repo.
 //   … --sql        gibt die rein lesende Abfrage aus, die `--offen` liefert
+//                  (gefiltert mit --ende=, --fenster=<JJJJ-MM-TThhZ> und --stufe=)
 //   … --alle       rechnet alle drei empfohlenen Fenster gegen alle drei Stufen
 //
 // DER PLANUNGSZEITPUNKT IST NICHT KOSMETIK. Er entscheidet über den
@@ -49,6 +55,9 @@ function zeigeBefund(b, praefix = "") {
   console.log(`${praefix}Fenster ${b.fensterStartIso} → ${b.fensterEndeIso} (${b.fensterMinuten} min)`
     + `${b.ueberschreitetMitternacht ? " · überschreitet Mitternacht" : ""}`);
   console.log(`${praefix}Kohorte ${b.kohortenGroesse} · Plan geschrieben ${b.planungsZeitpunktIso}`);
+  console.log(`${praefix}Rotation: ${b.rotationsQuelle} über ${b.rotationsGroesse} Mandate · `
+    + `vollständig: ${b.rotationVollstaendig}`
+    + (b.rotationVollstaendig ? "" : "  ← ohne die übrigen aktiven Mandate NICHT Production"));
   console.log(`${praefix}Frischefenster: Plan ${b.frischefensterDesPlans} · Fensterbeginn `
     + `${b.frischefensterDesFensterbeginns} · passt: ${b.planPasstZumFenster}`);
   for (const k of b.klassen) {
@@ -57,7 +66,7 @@ function zeigeBefund(b, praefix = "") {
       + `im Fenster zusätzlich ${k.imFensterZusaetzlichFaellig}`);
     console.log(`${praefix}    bis Fensterende beanspruchbar ${k.bisFensterendeBeanspruchbar} · `
       + `nicht beanspruchbar ${k.nichtBeanspruchbar} · Abdeckung `
-      + `${(k.abdeckung * 100).toFixed(1)} % · vollständig: ${k.vollstaendigeAbdeckung}`);
+      + `${k.abdeckungProzent.toFixed(1)} % · vollständig: ${k.vollstaendigeAbdeckung}`);
     console.log(`${praefix}    Fälligkeit ${k.fruehesteFaelligkeitIso} … ${k.spaetesteFaelligkeitIso}`);
   }
   console.log(`${praefix}Abdeckung erreicht: ${b.abdeckungErreicht} · offene Aufträge gemessen: `
@@ -71,7 +80,13 @@ function main() {
 
   if (argv.includes("--sql")) {
     const ende = argument(argv, "ende");
-    console.log(F.erhebungsSql(ende ? { fensterEndeIso: ende } : {}));
+    const fenster = argument(argv, "fenster");
+    const stufeSql = argument(argv, "stufe");
+    console.log(F.erhebungsSql({
+      ...(ende ? { fensterEndeIso: ende } : {}),
+      ...(fenster ? { frischefenster: fenster } : {}),
+      ...(stufeSql ? { stufe: stufeSql } : {})
+    }));
     process.exit(0);
   }
 
@@ -79,6 +94,8 @@ function main() {
   // frei wählbar, weil die Fälligkeit datumsabhängig ist.
   if (argv.includes("--alle")) {
     const tag = argument(argv, "tag") || "2026-09-03";
+    const rohW = argument(argv, "weitere");
+    const weitereUebersicht = rohW ? rohW.split(",").map((x) => x.trim()).filter(Boolean) : null;
     const folgetag = new Date(Date.parse(`${tag}T00:00:00Z`) + 86400000).toISOString().slice(0, 10);
     const fenster = [
       ["11:36–15:59 UTC", `${tag}T11:36:00Z`, `${tag}T15:59:00Z`],
@@ -91,20 +108,29 @@ function main() {
       for (const stufe of S.STUFEN) {
         const b = F.faelligkeitsBefund({
           stufe, fensterStartMs: Date.parse(s), fensterEndeMs: Date.parse(e),
-          planungsZeitpunktMs: Date.parse(s)
+          planungsZeitpunktMs: Date.parse(s), weitereAktiveMandate: weitereUebersicht
         });
         const p = b.bewertbar ? b.produktstufe : null;
         console.log(`   Stufe ${stufe.toUpperCase()} (${b.kohortenGroesse ?? "?"} Profile): `
           + (p
             ? `Produktstufe ${p.bisFensterendeBeanspruchbar}/${p.geplant} = `
-              + `${(p.abdeckung * 100).toFixed(1)} % · Abdeckung erreicht: ${b.abdeckungErreicht}`
+              + `${p.abdeckungProzent.toFixed(1)} % · Abdeckung erreicht: ${b.abdeckungErreicht}`
             : `NICHT BEWERTBAR (${b.grund})`));
       }
     }
     console.log("\nHinweis: „Abdeckung erreicht\" ist die FÄLLIGKEIT. Für das Urteil "
       + "„vollständiger Zyklus\" fehlt die rein lesend erhobene Zahl OFFENER Aufträge "
       + "(`--sql` gibt die Abfrage aus).");
-    process.exit(0);
+    if (!weitereUebersicht) {
+      console.log("Ohne `--weitere=` fehlen die übrigen am Testtag aktiven Mandate in der "
+        + "Rangkarte — die Prozentwerte sind dann NICHT die von Production.");
+    }
+    // ÜBERSICHT IST KEIN URTEIL. `--alle` hat keine `--offen`-Zahlen, kann also
+    // keinen vollständigen Zyklus belegen — und darf deshalb keinen
+    // Erfolgs-Exitcode liefern: eine Automatisierung läse sonst ein Grün.
+    console.log("Dieser Übersichtslauf FÄLLT KEIN URTEIL und endet mit Exitcode 1. "
+      + "Ein Urteil liefert nur der Einzellauf mit `--offen=`.");
+    process.exit(1);
   }
 
   const stufe = argument(argv, "stufe");
@@ -132,9 +158,14 @@ function main() {
     offeneAuftraege = { mandate_projection: teile[0], briefing_materialization: teile[1] };
   }
 
+  const rohWeitere = argument(argv, "weitere");
+  const weitereAktiveMandate = rohWeitere
+    ? rohWeitere.split(",").map((x) => x.trim()).filter(Boolean)
+    : null;
+
   const befund = F.faelligkeitsBefund({
     stufe, fensterStartMs: start, fensterEndeMs: ende,
-    planungsZeitpunktMs: geplant, offeneAuftraege
+    planungsZeitpunktMs: geplant, offeneAuftraege, weitereAktiveMandate
   });
 
   console.log(`\n=== Fälligkeitsbefund Stufe ${String(stufe).toUpperCase()} (rein lesend) ===`);
@@ -142,7 +173,13 @@ function main() {
 
   if (befund.bewertbar === true && befund.offeneAuftraegeGemessen !== true) {
     console.log("\nDie fehlende Zahl liefert diese rein lesende Abfrage:");
-    console.log(F.erhebungsSql({ fensterEndeIso: befund.fensterEndeIso }));
+    // MIT Frischefenster- und Stufenfilter — ohne sie zählte die Abfrage
+    // zurückgestellte Aufträge FRÜHERER Tage und fremde Stufen mit.
+    console.log(F.erhebungsSql({
+      fensterEndeIso: befund.fensterEndeIso,
+      frischefenster: befund.frischefensterDesPlans,
+      stufe: befund.stufe
+    }));
   }
 
   // Exitcode: 0 nur bei einem belegten vollständigen Zyklus. `null` (nicht
@@ -151,4 +188,13 @@ function main() {
   process.exit(befund.bewertbar === true && befund.vollstaendigerZyklus === true ? 0 : 1);
 }
 
-main();
+// ABBRUCH STATT STACKTRACE (02.09., zweiter adversarialer Review): `erhebungsSql`
+// wirft bei ungueltigen Eingaben — richtig so, aber der Aufrufer soll dann eine
+// lesbare Meldung ausgeben, nicht einen Stacktrace. Vorbild:
+// `scripts/testkohorte-entfernung.js`.
+try {
+  main();
+} catch (fehler) {
+  console.error(`Abbruch: ${(fehler && fehler.message) || fehler}`);
+  process.exit(2);
+}

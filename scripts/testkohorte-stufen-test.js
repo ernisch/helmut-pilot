@@ -150,7 +150,7 @@ async function main() {
   // ── F · Erlaubnisliste je Stufe ──────────────────────────────────────────
   console.log("\nF · Erlaubnisliste");
   check("F1 eine fremde Kennung bricht ab",
-    await wirft(() => S.pruefeStufenZielmenge("a", ["m5-9aee228dbf2c9f13"]), "fremde-kennung"));
+    await wirft(() => S.pruefeStufenZielmenge("a", ["erfundener-fremder-mandant"]), "fremde-kennung"));
   check("F2 eine Kohortenkennung der FALSCHEN Stufe bricht ab",
     await wirft(() => S.pruefeStufenZielmenge("a", ["test-kohorte-c-001"]), "falsche-stufe"));
   check("F3 die eigene Stufe geht durch",
@@ -159,7 +159,7 @@ async function main() {
     S.stufeVonKennung("test-kohorte-a-001") === "a"
       && S.stufeVonKennung("test-kohorte-c-400") === "c");
   check("F5 stufeVonKennung liefert null für eine reale Kennung",
-    S.stufeVonKennung("m5-9aee228dbf2c9f13") === null && S.stufeVonKennung("") === null);
+    S.stufeVonKennung("erfundener-fremder-mandant") === null && S.stufeVonKennung("") === null);
 
   // ── G · Der Entfernungsausführer ─────────────────────────────────────────
   console.log("\nG · Entfernung — Trockenlauf ist Standard");
@@ -215,7 +215,7 @@ async function main() {
   const a7 = ablage();
   check("H9 eine untergeschobene fremde Kennung bricht ab, BEVOR geschrieben wird",
     await wirft(() => E.fuehreEntfernungAus({
-      stufe: "a", kennungen: ["test-kohorte-a-001", "m5-9aee228dbf2c9f13"],
+      stufe: "a", kennungen: ["test-kohorte-a-001", "erfundener-fremder-mandant"],
       modus: "scharf", env: FREI("a", "entfernung"), deps: a7.deps
     }), "fremde-kennung") && a7.aufrufe.length === 0);
 
@@ -569,12 +569,38 @@ async function main() {
   // zurück — ein Upsert, kein Löschen. Für eine Kennung ohne bestehenden Store
   // legte der „Teardown" die Zeile damit ERST AN: 400 zusätzliche Dauerzeilen
   // nach der Entfernung der 400er-Gruppe.
+  // NACHGESCHAERFT 02.09. (zweiter adversarialer Review): R4/R5 waren reine
+  // QUELLTEXTREGEXE. Sie haetten den eigentlichen Defekt nie gesehen — der erste
+  // Korrekturversuch pruefte naemlich mit `readStore`, und `readSupabaseStore`
+  // LEGT eine fehlende Zeile beim Lesen selbst an. Der „Fix" haette die 400 Zeilen
+  // also weiterhin erzeugt, nur beim Lesen statt beim Schreiben, und beide
+  // Regexe waeren gruen geblieben. Jetzt wird das VERHALTEN geprueft.
   const storageQuelle = fs.readFileSync(path.join(ROOT, "lib/helmut/storage.js"), "utf8");
-  check("R4 der Teardown schreibt den leeren Mandanten-Store nur noch BEDINGT",
-    /const pStoreHatDaten = [^\n]*\n\s*if \(pStoreHatDaten\) await writeStore\(defaultPoliticianStore\(\), pKey\(uid\)\);/
-      .test(storageQuelle));
-  check("R5 kein unbedingtes writeStore(defaultPoliticianStore(), pKey(uid)) mehr",
-    !/\n\s*await writeStore\(defaultPoliticianStore\(\), pKey\(uid\)\);/.test(storageQuelle));
+  check("R4 der Teardown prüft die Existenz OHNE anzulegen (nicht über readStore)",
+    /const pStoreHatDaten = await pStoreHatDatenOhneAnlegen\(pKey\(uid\)\);/.test(storageQuelle)
+      && /if \(pStoreHatDaten\) await writeStore\(defaultPoliticianStore\(\), pKey\(uid\)\);/
+        .test(storageQuelle));
+  check("R4b die Existenzprüfung schreibt in KEINEM Pfad",
+    (() => {
+      const i = storageQuelle.indexOf("async function pStoreHatDatenOhneAnlegen");
+      const block = storageQuelle.slice(i, storageQuelle.indexOf("function pKey(", i));
+      // Nur lesende Aufrufe: kein writeStore, kein writeSupabaseStore, kein
+      // readStore (das im Supabase-Pfad selbst schreibt), kein readSupabaseStore.
+      return i > 0 && !/writeStore|writeSupabaseStore|readStore\(|readSupabaseStore/.test(block)
+        && /select=data/.test(block);
+    })());
+  check("R5 VERHALTEN: ein Teardown ohne bestehenden Mandanten-Store legt keinen an",
+    await (async () => {
+      const store = require(path.join(ROOT, "lib/helmut/storage.js"));
+      const uid = `test-kohorte-a-001`;
+      // Lokaler Pfad (die Suite laeuft ueber `lokal.js`, also ohne Supabase).
+      const vorher = await store.readStore(`main-p-${uid}`).catch(() => null);
+      const leer = !vorher || !Object.values(vorher).some((v) => Array.isArray(v) && v.length > 0);
+      await store.deleteTenantScopedData(uid).catch(() => null);
+      const nachher = await store.readStore(`main-p-${uid}`).catch(() => null);
+      const nachherLeer = !nachher || !Object.values(nachher).some((v) => Array.isArray(v) && v.length > 0);
+      return leer && nachherLeer;
+    })());
 
   // R6: Die CLI beendete einen SCHARFEN Lauf mit ok:false trotzdem mit
   // Exitcode 0 — ein `&& echo FERTIG` hätte Erfolg gemeldet.
