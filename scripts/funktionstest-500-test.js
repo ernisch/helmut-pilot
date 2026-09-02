@@ -419,7 +419,10 @@ function main() {
     // sind dazugekommen — „ist die sichtbare Produktstufe im Fenster fällig?"
     // und „passt ein vollständiger Zyklus in das Fenster?". Beide sind heute
     // nicht erfüllbar; genau deshalb stehen sie hier.
-    nichtsGesetzt.startbereit === false && nichtsGesetzt.offen.length === 11,
+    // 12 statt 11 seit der Nachprüfung nach dem Merge von #295: die
+    // STUFENGENAUEN Freigaben. Gestuft war bis dahin nur die Aktivierung; ohne
+    // Angabe der zu startenden Stufe ist die Hürde fail closed nicht erfüllt.
+    nichtsGesetzt.startbereit === false && nichtsGesetzt.offen.length === 12,
     `${nichtsGesetzt.offen.length} offene Hürden`);
   const allesGesetzt = F.startbereitschaft({
     konfiguration: BEISPIEL,

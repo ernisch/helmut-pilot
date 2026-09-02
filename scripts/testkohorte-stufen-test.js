@@ -273,6 +273,75 @@ async function main() {
       !/m5-[0-9a-f]{8}/.test(quelle));
   }
 
+  // ── K · Welche Grenzen wirken zur LAUFZEIT, welche nur auf dem Papier? ────
+  //
+  // BEFUND 02.09. (Nachprüfung nach dem Merge von #295, am Code belegt):
+  // Der Auftrag spricht von „Parallelität 2 mit hartem RPM-, TPM-, Kosten- und
+  // Vorrangschutz". Drei dieser vier Schutzmechanismen sind NICHT hart:
+  //
+  //   HELMUT_TESTLAUF_MAX_RPM / _MAX_TPM  — kommen ausschließlich in
+  //     `funktionstest-500.js` (Konfigurationsprüfung), `kapazitaet-500.js`
+  //     (Planungsrechnung) und in Tests vor. KEIN Ausführungspfad liest sie.
+  //     Es gibt im gesamten `lib/helmut/` keinen Minutentakt-Begrenzer;
+  //     `azure-endpunkt.js` ist ein reiner Zieladressen-Wächter (Hostliste,
+  //     Port, Länge) und drosselt nichts.
+  //   HELMUT_TESTLAUF_KOSTENBUDGET_USD  — wirkt über die Abbruchregel A04, also
+  //     an den Kontrollpunkten ZWISCHEN den Stufen. Das ist eine ENTDECKENDE
+  //     Kontrolle, keine verhindernde: das Budget kann innerhalb einer Stufe
+  //     überschritten werden und wird erst danach bemerkt.
+  //
+  // HART ist allein der Tagesdeckel: `storage.reserveLlmCall` reserviert atomar
+  // gegen `HELMUT_MAX_LLM_CALLS_PER_DAY`, mit Verstehens-Reserve und
+  // Vorrangreserve der realen Mandate, und ist fail closed.
+  //
+  // Dieser Abschnitt hält den Befund fest, damit niemand später eine Drossel
+  // ANNIMMT, die es nicht gibt. Wird eine echte Ratenbegrenzung gebaut, wird
+  // dieser Test rot — dann ist er anzupassen, nicht zu löschen.
+  console.log("\nK · Welche Grenzen wirken zur Laufzeit (Befund, kein Wunsch)");
+  const quellen = fs.readdirSync(path.join(ROOT, "lib/helmut"))
+    .filter((f) => f.endsWith(".js"))
+    .map((f) => ({ datei: `lib/helmut/${f}`, text: fs.readFileSync(path.join(ROOT, "lib/helmut", f), "utf8") }));
+  const rpmLeser = quellen
+    .filter((q) => /HELMUT_TESTLAUF_MAX_(RPM|TPM)/.test(q.text))
+    .map((q) => q.datei);
+  check("K1 RPM/TPM werden ausschließlich in Konfigurations- und Planungsmodulen genannt",
+    rpmLeser.every((d) => d === "lib/helmut/funktionstest-500.js" || d === "lib/helmut/kapazitaet-500.js"),
+    rpmLeser.join(", ") || "keine Fundstelle");
+  check("K2 der Endpunktguard drosselt nicht, er prüft nur die Zieladresse",
+    (() => {
+      const guard = fs.readFileSync(path.join(ROOT, "lib/helmut/azure-endpunkt.js"), "utf8");
+      return !/setTimeout|sleep|warte|rateLimit|tokenBucket/i.test(guard);
+    })());
+  check("K3 der Tagesdeckel ist dagegen laufzeitwirksam und atomar reserviert",
+    (() => {
+      const st = fs.readFileSync(path.join(ROOT, "lib/helmut/storage.js"), "utf8");
+      return /async function reserveLlmCall/.test(st)
+        && /HELMUT_MAX_LLM_CALLS_PER_DAY/.test(st);
+    })());
+
+  // ── L · Die Provisionierung ist jetzt stufenfähig — ohne Bestandsbruch ────
+  console.log("\nL · Stufenweise Provisionierung");
+  const V = require("../lib/helmut/testkohorte-vorwaerts");
+  const ohneStufe = await V.fuehreProvisionierungAus({});
+  check("L1 OHNE Stufe unverändert: 495 Kennungen und das Bestandswort",
+    ohneStufe.zielGroesse === 495
+      && ohneStufe.freigabe.erwartetesWort === B.FREIGABEWORTE.provisionierung
+      && ohneStufe.stufe === null);
+  for (const s of S.STUFEN) {
+    const mitStufe = await V.fuehreProvisionierungAus({ stufe: s });
+    check(`L2-${s.toUpperCase()} MIT Stufe: ${S.STUFEN_UMFANG[s]} Kennungen und das Stufenwort`,
+      mitStufe.zielGroesse === S.STUFEN_UMFANG[s]
+        && mitStufe.freigabe.erwartetesWort === S.STUFEN_FREIGABEWORTE[s].provisionierung
+        && mitStufe.stufe === s);
+  }
+  check("L3 eine Kennung der falschen Stufe bricht ab",
+    await wirft(() => V.fuehreProvisionierungAus({ stufe: "a", kennungen: ["test-kohorte-c-001"] }),
+      "falsche-stufe"));
+  check("L4 eine unbekannte Stufe bricht ab",
+    await wirft(() => V.fuehreProvisionierungAus({ stufe: "z" }), "stufe"));
+  check("L5 auch mit Stufe bleibt der Trockenlauf der Standard",
+    (await V.fuehreProvisionierungAus({ stufe: "c", modus: "scharf", env: {} })).modus === "trockenlauf");
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);
 }

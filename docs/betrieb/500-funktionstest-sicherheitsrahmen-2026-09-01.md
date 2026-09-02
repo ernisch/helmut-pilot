@@ -1850,3 +1850,196 @@ Der Merge machte die Schutzregeln, die Ausführer **und beide Blocker-Hürden** 
 machte den 500er-Funktionstest **nicht** startbereit, und er sollte es nicht. Die beiden
 strukturellen Blocker aus §21.4/§21.5 gelten unverändert weiter; sie sind in §23 erneut und
 unabhängig am Code nachgeprüft.
+
+---
+
+## §23 · Nachprüfung 02.09. nach dem Merge — beide Blocker bestätigt, zwei neue Lücken geschlossen
+
+**Zweck.** Der Auftrag verlangt, beide verbleibenden Blocker **erneut und unabhängig**
+am Code nachzuprüfen, alle Zeitfenster und Kapazitäten reproduzierbar nachzurechnen und
+vier Lösungswege gegeneinander zu bewerten. Dieser Abschnitt ist das Ergebnis. Er entstand
+**ausschließlich lesend** gegenüber Production; jede Ausführung lief über
+`scripts/lokal.js` (Production-Kennungen aus der Kindprozess-Umgebung entfernt).
+
+### §23.1 Blocker 1 — bestätigt, Zahlen exakt reproduziert
+
+`lib/helmut/source-demand.js:84–87` ist die einzige Quelle der Phasenfenster:
+
+```
+MANDATSPHASEN = [
+  ["mandate_projection",        200, 0.50, 0.75],
+  ["briefing_materialization",  250, 0.75, 0.90]
+]
+```
+
+Die Anteile beziehen sich auf ein **24-Stunden-Frischefenster**; `dueAt` entsteht in
+`source-demand.js:542` als `fensterStartMs + versatz`, wobei `versatz` innerhalb
+`[ab·24 h, bis·24 h)` liegt. Daraus:
+
+| Arbeitsklasse | Anteil | Fällig (UTC) | Türkei | Berlin |
+|---|---|---|---|---|
+| `mandate_projection` | 0,50–0,75 | **12:00–18:00** | 15:00–21:00 | 14:00–20:00 |
+| `briefing_materialization` | 0,75–0,90 | **18:00–21:36** | 21:00–00:36 | 20:00–23:36 |
+
+Nachgerechnete Überdeckung der drei freien Fenster — jede Zahl ist der Quotient aus
+Schnittmenge und Phasendauer, nicht eine Schätzung:
+
+| Fenster (UTC) | Dauer | `briefing_materialization` | `mandate_projection` |
+|---|---|---|---|
+| 21:36–03:59 | 383 min | 0 min / 216 = **0,0 %** | 0 min / 360 = **0,0 %** |
+| **11:36–15:59** | **263 min** | 0 min / 216 = **0,0 %** | 239 min / 360 = **66,4 %** |
+| 17:36–19:59 | 143 min | 119 min / 216 = **55,1 %** | 24 min / 360 = **6,7 %** |
+
+**Alle vier im PR #295 genannten Prozentzahlen sind exakt bestätigt.** Der Schnitt von
+18:00–21:36 mit 11:36–15:59 ist die leere Menge — über die Warteschlange entsteht im
+empfohlenen sicheren Fenster **kein einziges Briefing**, unabhängig von Budget,
+Parallelität und Aufrufzahl.
+
+**Der Direktpfad bleibt die einzige Umgehung, und er bleibt ungeeignet** (`server.js:1637–1710`,
+am Code nachgeprüft): die Route iteriert über **alle** aktiven Profile, besitzt **keinen**
+Filterparameter (kein `nur`, `only`, `mandat`, `tenant`, `limit`), arbeitet gegen ein hartes
+Zeitbudget von **240 000 ms** (`server.js:1671`) und in fester Listenreihenfolge; nicht
+erreichte Profile bekommen `reason: "zeitbudget"`. Der Verdrängungsschutz aus #295 sortiert
+reale Mandate nach vorn (`server.js:1663`) — er verhindert damit ihre Verdrängung, aber
+**nicht**, dass sie überhaupt bearbeitet werden. Der Direktpfad erzeugt für die fünf realen
+Mandate Briefings zu einer unüblichen Stunde.
+
+### §23.2 Blocker 2 — bestätigt, aus den Einzelposten nachgerechnet
+
+Reproduzierbar über `node scripts/lokal.js -- node -e "…kapazitaet-500…"`:
+
+| Szenario | Bedarf/Tag bei 500 | 263 min · par 1 | passt | nötige Minuten |
+|---|---|---|---|---|
+| erwartung | 1.119 | 1.732 | ja | 170 |
+| **konservativ** | **1.812** | **1.732** | **nein** | **276** |
+| stress | 2.632 | 1.732 | nein | 400 |
+
+Grundwerte: `LAUFZEIT_JE_AUFRUF_MS = 9110`, `SCHEIBE_MS = 280000`, `TOKEN_JE_AUFRUF = 3018`.
+Rechnung: 263 min × 60 000 ms ÷ 9 110 ms = 1 732,2 → **1.732**; 1 812 × 9 110 ÷ 60 000 =
+275,1 → **276 min**. Beide Zahlen stimmen auf die Einheit.
+
+Über alle Fenster und beide Parallelitäten:
+
+| Fenster (UTC) | Dauer | par 1 möglich | par 2 möglich |
+|---|---|---|---|
+| 21:36–03:59 | 383 min | 2.522 (**passt**) | 5.045 (passt) |
+| 11:36–15:59 | 263 min | 1.732 (nein) | 3.464 (passt) |
+| 17:36–19:59 | 143 min | 941 (nein) | 1.883 (passt) |
+
+> **Präzisierung gegenüber #295:** Der Satz „bei Parallelität 1 trägt KEIN Fenster einen
+> vollständigen Zyklus" gilt für die **tagsüber** freien Fenster. Das Nachtfenster
+> 21:36–03:59 UTC (Türkei 00:36–06:59, Berlin 23:36–05:59) trägt den konservativen Zyklus
+> bei Parallelität 1 rechnerisch sehr wohl (2.522 ≥ 1.812) — es scheitert am **anderen**
+> Tor: dort ist **keine** der beiden Arbeitsklassen fällig (0,0 % / 0,0 %). Das Fenster ist
+> also nicht zu klein, sondern leer. Die Aussage bleibt im Ergebnis richtig, ihre Begründung
+> war zu grob.
+
+### §23.3 Zwei NEUE bestätigte Lücken — und was dagegen gebaut wurde
+
+**Lücke 1 — die Stufung war eine Stufung der Aktivierung, nicht des Tests.**
+`testkohorte-betrieb.FREIGABEWORTE` trägt **sieben** Worte. Stufengenau ist davon
+ausschließlich die **Aktivierung** (`aktivierung-a/-b/-c`). Provisionierung, Fachzyklus,
+Deaktivierung und Scheduler-Spur gelten pauschal für alle 495; der Ablaufplan sieht den
+Fachzyklus erst bei **500 aktiven Profilen** vor (Schritt 14) und die Auswertung nur
+**gemeinsam** (Schritt 15).
+
+*Folge:* Nach der Aktivierung von Gruppe A gab es keinen freigegebenen Weg, für genau diese
+20 Profile einen Fachzyklus zu fahren und ihn auszuwerten. Die Sicherheitsfrage „hält der
+Verdrängungsschutz unter Last?" wäre erst bei 500 gestellt worden — also genau dann, wenn
+ein Fehlschlag am teuersten ist.
+
+*Gebaut:* `lib/helmut/testkohorte-stufen.js` — **15 stufengenaue Freigaben**
+(3 Stufen × 5 schreibende Vorgänge). Die Auswertung ist rein lesend und bekommt bewusst
+**keine** Scheinfreigabe: eine Freigabe, die nichts schützt, entwertet die anderen. Die
+Reihenfolge C nach B nach A ist erzwungen, und `bestandeneStufen` kommt aus einer Messung,
+nicht aus einer Zusage. Die sieben Bestandsworte bleiben unverändert gültig; die Aktivierung
+übernimmt ihr Bestandswort, statt eine zweite Wahrheit zu erfinden.
+
+**Lücke 2 — es gab keinen Weg zur vollständigen Entfernung.**
+`testkohorte-rueckbau.js` sagt es selbst: „KEIN LÖSCHPFAD IM RÜCKWEG." Als Rückweg ist das
+richtig — er muss jederzeit sofort laufen dürfen, und Löschen ist keine Notbremse. Aber:
+
+* `provisioning.teardownTenant` (über `storage.deleteTenantScopedData`) **kann** vollständig
+  entfernen und ist über `isProtectedTenant` fail-closed gegen reale Mandate geschützt;
+* es war an **keinen** kohortengeschützten Ausführer angeschlossen.
+
+*Folge:* Die vollständige Entfernung der 400er-Gruppe wären **400 Einzelaufrufe von Hand**
+gewesen — ohne Erlaubnisliste, ohne Stufenfreigabe, ohne Nachprüfung, bei der gefährlichsten
+Operation des Vorhabens. Genau diesen Mangel hat #295 für das *Deaktivieren* behoben und für
+das *Löschen* offen gelassen. Ohne Entfernung trüge Production dauerhaft 495 zusätzliche
+Mandats- und 495 Identitätsprofile: die belegte Grundlinie 9/10 würde zu 504/505, und jede
+spätere Zählung müsste sie von Hand herausrechnen.
+
+*Gebaut:* `lib/helmut/testkohorte-entfernung.js` + `scripts/testkohorte-entfernung.js` mit
+**sechs** Riegeln: Trockenlauf ist Standard · Erlaubnisliste **je Stufe** (eine Kennung der
+falschen Stufe bricht genauso ab wie eine fremde) · eigene Stufenfreigabe · **aktive Profile
+werden übersprungen, nicht gelöscht** · Nachprüfung je Zeile · leere Zielmenge ist nie ein
+Erfolg. Ein nicht lesbarer Vorzustand führt fail closed **nicht** zur Löschung. Der
+`restbestandsBefund` verlangt **fünf** gezählte Familien (Mandatsprofile, Identitätsprofile,
+Store-Zeilen, Warteschlangenaufträge, Scheduler-Spuren) — eine nicht durchgeführte Zählung
+gilt nie als Null.
+
+### §23.4 Befund zu den Schutzgrenzen — drei von vier sind NICHT hart
+
+Der Auftrag spricht von „Parallelität 2 mit hartem RPM-, TPM-, Kosten- und Vorrangschutz".
+Am Code nachgeprüft gilt:
+
+| Grenze | Wirkt zur Laufzeit? | Beleg |
+|---|---|---|
+| Tagesdeckel + Verstehens-Reserve + Vorrang real | **JA**, atomar und fail closed | `storage.reserveLlmCall` |
+| `HELMUT_TESTLAUF_MAX_RPM` (82) | **NEIN** | kommt nur in `funktionstest-500.js` (Konfigurationsprüfung) und `kapazitaet-500.js` (Planung) vor |
+| `HELMUT_TESTLAUF_MAX_TPM` (250000) | **NEIN** | ebenso |
+| `HELMUT_TESTLAUF_KOSTENBUDGET_USD` (10,00) | **nur entdeckend** | Abbruchregel A04, ausgewertet an den Kontrollpunkten **zwischen** den Stufen |
+
+Es existiert im gesamten `lib/helmut/` **kein Minutentakt-Begrenzer**;
+`lib/helmut/azure-endpunkt.js` ist ein reiner Zieladressen-Wächter (Hostliste, Port, Länge)
+und drosselt nichts. **RPM 82 und TPM 250000 sind Planungswerte, keine Drosseln** — sie zu
+setzen ändert am Laufverhalten nichts. Das Kostenbudget kann innerhalb einer Stufe
+überschritten und erst danach bemerkt werden. Testgesichert:
+`scripts/testkohorte-stufen-test.js` Abschnitt K.
+
+### §23.5 Die vier Lösungswege, gegeneinander bewertet
+
+Bewertet nach den acht geforderten Kriterien. **Keiner ist heute vollständig belegbar.**
+
+| Kriterium | (a) Mehrfenster | (b) Nur-Kohorte-Briefing | (c) Testphasensteuerung | (d) Parallelität 2 |
+|---|---|---|---|---|
+| Schutz der 5 realen Mandate | gut (Klassentrennung greift) | **Eingriff** in die Route, die reale Mandate bedient | **Eingriff** in `dueAt` **aller** Mandate | Vorrang greift, aber ungetestet unter Last |
+| Vollständige fachliche Abdeckung | **nur mit par 2** | ja für Briefings, nicht für den Rest | ja | ja |
+| Laufzeit | 263 + 143 = 406 min über 2 Fenster | ≤ 240 s je Aufruf, viele Aufrufe | wie (a) | 138 min |
+| Kosten | unverändert (Bedarf ist gleich) | unverändert | unverändert | unverändert |
+| Rückbaubarkeit | vollständig (nur Ablaufplanung) | Code-Rückbau + Deployment | Flag löschen, **aber** veränderte `dueAt` bleiben in `helmut_jobs` stehen | Flag löschen + Redeploy |
+| Gefahr von Doppelarbeit | gering (Warteschlange idempotent) | gering (`fromCache`) | **hoch**: `idempotencyKey` ist `typ\|mandat\|fenster` — ein verschobenes `dueAt` bei gleichem Schlüssel erzeugt Zweideutigkeit | gering |
+| Gefahr externer Kommunikation | Riegel greift (7 Kanäle) | Riegel greift | Riegel greift | Riegel greift |
+| Abbruch und Wiederholung | sauber (Fenstergrenze erzwungen) | Teilabdeckung bleibt Teilabdeckung | unklar bei halb verschobener Warteschlange | sauber |
+| **Neue Voraussetzung** | Parallelität 2 **und** Teilabdeckung akzeptieren | **neue Route oder neuer Parameter** in Production-Code | Eingriff in den Datenmotor **aller** Mandate | **ungedeckte Betreiberentscheidung**; RPM/TPM schützen dabei **nicht** (§23.4) |
+
+**Urteil je Weg:**
+
+* **(a) Mehrfenster** — der sauberste Weg und der einzige ohne Eingriff in Production-Code.
+  Er trägt aber **nicht** bei Parallelität 1: 11:36–15:59 liefert keine Briefings (0 %), und
+  17:36–19:59 trägt bei par 1 nur 941 der 1.812 nötigen Aufrufe. Er hängt damit an (d).
+* **(b) Nur-Kohorte-Briefing** — verlangt einen **neuen Filterparameter oder eine neue Route**
+  im Production-Code, der die fünf realen Mandate bedient. Das ist ein Deployment und eine
+  Verhaltensänderung am laufenden System, für einen Test. Der Nutzen ist zudem begrenzt: es
+  löst Blocker 1, nicht Blocker 2.
+* **(c) Testphasensteuerung** — der gefährlichste Weg. Der Eingriff säße in
+  `source-demand.js`, also im `dueAt` **jedes** Mandats, und die Idempotenzschlüssel tragen
+  das Frischefenster, nicht die Phase. Rückbau ließe veränderte Fälligkeiten in der
+  Warteschlange stehen. **Nicht empfohlen.**
+* **(d) Parallelität 2** — löst Blocker 2 rechnerisch und macht (a) tragfähig. Aber:
+  `HELMUT_VERSTEHEN_PARALLELITAET` wirkt auf die **geteilte** Verstehensarbeit, also auch auf
+  die fünf realen Mandate; und die im Auftrag angenommenen harten RPM-/TPM-Grenzen existieren
+  nicht (§23.4). Parallelität 2 ist damit heute **nicht ausreichend bewiesen** — sie ist eine
+  Betreiberentscheidung mit offenem Restrisiko.
+
+### §23.6 Fazit dieser Nachprüfung
+
+**Beide Blocker bestehen unverändert.** Es wird **keine** Lösung ausgewählt und **kein**
+riskanter Ersatz gebaut: der einzige rechnerisch tragfähige Ablauf (zwei Fenster bei
+Parallelität 2) hängt an zwei ungedeckten Betreiberentscheidungen, von denen eine — die
+Parallelität — nicht durch die angenommenen Rate-Grenzen abgesichert ist.
+
+Geschlossen wurden stattdessen die zwei Lücken, die **vor jeder Stufe** geschlossen sein
+müssen, unabhängig davon, welchen Weg der Betreiber wählt: die stufengenaue Freigabe und der
+Weg zur vollständigen Entfernung.
