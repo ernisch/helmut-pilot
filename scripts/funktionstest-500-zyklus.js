@@ -60,8 +60,11 @@ async function main() {
     });
     drucke("Fälligkeit der Arbeitsklassen im Fenster", befund);
     if (befund.bewertbar && !befund.sichtbareProduktstufeErreichbar) {
-      console.log("\nBLOCKER: Die sichtbare Produktstufe je Mandat entsteht in diesem Fenster NICHT.");
-      console.log("Das ist ein struktureller Zeitkonflikt der Phasenfenster, kein Kapazitätsproblem.");
+      console.log("\nBLOCKER: Über die WARTESCHLANGE entsteht in diesem Fenster kein Briefing.");
+      console.log("Struktureller Zeitkonflikt der Phasenfenster, kein Kapazitätsproblem.");
+      console.log("Der Direktpfad /api/cron/lage-briefing ist davon unberührt — er ist aber je");
+      console.log("Aufruf auf 240 s begrenzt und wirkt auch auf die fünf REALEN Mandate. Dieser");
+      console.log("Startweg treibt ihn bewusst nicht an; das ist eine eigene Freigabe.");
       process.exit(1);
     }
     return;

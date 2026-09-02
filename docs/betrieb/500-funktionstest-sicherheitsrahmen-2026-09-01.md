@@ -1681,13 +1681,30 @@ die Fälligkeit der mandatsgebundenen Arbeit im 24-Stunden-Frischefenster fest:
 | `mandate_projection` | 50 %–75 % | 12:00–18:00 | **66,4 %** |
 | `briefing_materialization` | 75 %–90 % | 18:00–21:36 | **0 %** |
 
-Ein Auftrag wird erst bearbeitet, wenn er **fällig** ist. Im empfohlenen sicheren Fenster
-entsteht deshalb **kein einziges Briefing** — also genau die Stufe, die das Produkt
-sichtbar macht. Das ist **kein** Kapazitäts- und **kein** Budgetproblem, sondern ein
-struktureller Zeitkonflikt, und er ist mit **keinem** Aufruf bestehender Routen zu umgehen.
-Auflösen ließe er sich nur durch eine Änderung an Phasenfenstern (Code),
+Ein Auftrag wird erst bearbeitet, wenn er **fällig** ist. **Über die Warteschlange**
+entsteht im empfohlenen sicheren Fenster deshalb **kein einziges Briefing** — also genau
+die Stufe, die das Produkt sichtbar macht. Das ist **kein** Kapazitäts- und **kein**
+Budgetproblem, sondern ein struktureller Zeitkonflikt. Auflösen ließe er sich für den
+Warteschlangenweg nur durch eine Änderung an Phasenfenstern (Code),
 `HELMUT_DEMAND_TENANT_MAX_AGE_H` (Umgebung) oder der Cronliste — alle drei nach
 CLAUDE.md §5 getrennt freigabepflichtig und in diesem Auftrag verboten.
+
+**PRÄZISIERUNG (vierter Reviewbefund, nachgeprüft).** Hier stand zuerst, die Produktstufe
+entstehe „gar nicht" und der Konflikt sei „mit keinem Aufruf bestehender Routen zu
+umgehen". Das war **zu absolut und ist zurückgenommen** — ein überzogener Blocker ist so
+unehrlich wie ein verschwiegener. Richtig ist: der **Direktpfad**
+`/api/cron/lage-briefing` ruft `buildLageBriefing` je Profil unmittelbar auf und kennt die
+Phasenfenster der Warteschlange gar nicht. Er ist deshalb aber **kein gleichwertiger
+Ersatz**, und der Zyklus-Startweg treibt ihn bewusst nicht an:
+
+* Er ist je Aufruf auf **240 s** Arbeitszeit begrenzt und arbeitet die Profile in fester
+  Listenreihenfolge ab; bei 500 Profilen kommt je Aufruf nur ein Ausschnitt durch, der
+  Rest bekommt `reason: "zeitbudget"`.
+* Er wirkt auf **alle** aktiven Profile, also auch auf die **fünf realen Mandate** — er
+  erzeugte dort Briefings zu einer unüblichen Stunde.
+
+Wer ihn nutzen will, entscheidet das **getrennt und mit offenen Augen**. Die Hürde in
+`startbereitschaft()` heißt deshalb jetzt ausdrücklich „…über die Warteschlange fällig".
 
 ### 21.5 · NICHT SCHLIESSBAR (2): ein vollständiger Zyklus passt nicht in 263 Minuten
 

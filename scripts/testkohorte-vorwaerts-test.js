@@ -364,6 +364,37 @@ async function main() {
       geloescht.ok === false && geloescht.reason === "loeschmarke");
   }
 
+  console.log("\nK · Der Blocker ist genau benannt, nicht zu weit");
+  {
+    // VIERTER REVIEWBEFUND: Die erste Fassung sagte „die sichtbare Produktstufe
+    // entsteht GAR NICHT" und „mit keinem Aufruf bestehender Routen zu umgehen".
+    // Das war zu absolut: `/api/cron/lage-briefing` ruft `buildLageBriefing` je
+    // Profil unmittelbar auf und kennt die Phasenfenster der Warteschlange nicht.
+    // Ein überzogener Blocker ist so unehrlich wie ein verschwiegener.
+    const b = Z.arbeitsklassenImFenster({
+      fensterStartMinuteUtc: FENSTER.startMinuteUtc, fensterEndeMinuteUtc: FENSTER.endeMinuteUtc
+    });
+    check("K1 Die Meldung sagt ausdrücklich WARTESCHLANGE, nicht pauschal",
+      /WARTESCHLANGE/.test(b.meldung));
+    check("K2 Sie benennt den Direktpfad als davon unberührt",
+      /lage-briefing/.test(b.meldung) && /unberührt/.test(b.meldung));
+    check("K3 Und seine beiden Kosten: Zeitbudget und Wirkung auf die realen Mandate",
+      /240 s/.test(b.meldung) && /realen Mandate/.test(b.meldung));
+    check("K4 Der Befund trägt den Hinweis auch als eigenes Feld",
+      typeof b.direktpfadHinweis === "string" && /Warteschlange/.test(b.direktpfadHinweis));
+    check("K5 Der Direktpfad existiert wirklich und läuft NICHT über die Phasenfenster",
+      (() => {
+        const server = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
+        const i = server.indexOf('url.pathname === "/api/cron/lage-briefing"');
+        if (i < 0) return false;
+        const block = server.slice(i, i + 4000);
+        // Direkt gebaut, ohne briefing_materialization-Auftrag.
+        return /buildLageBriefing\(profile/.test(block) && !/briefing_materialization/.test(block);
+      })());
+    check("K6 Der Zyklus-Startweg treibt ihn bewusst NICHT an",
+      (await Z.fuehreZyklusAus({ env: {} })).treibtMandatsgebundeneBriefingRoutenAn === false);
+  }
+
   console.log("\nJ · Der Stufenvertrag wird gerechnet, nicht zugesagt");
   {
     const cli = fs.readFileSync(path.join(ROOT, "scripts/testkohorte-vorwaerts.js"), "utf8");
