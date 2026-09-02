@@ -412,7 +412,10 @@ function main() {
   // passt in das Startfenster" und der Abgleich des Kostenbudgets zwischen
   // Konfiguration und Abbruchgrenze sind dazugekommen.
   check("K1 Ohne alles ist der Test nicht startbereit",
-    nichtsGesetzt.startbereit === false && nichtsGesetzt.offen.length === 8,
+    // 9 statt 8 seit 02.09.: die neunte Hürde liest Tagesdeckel und
+    // Verstehens-Reserve aus der LAUFENDEN Umgebung und prüft sie gegen die
+    // Vorrangreserve (adversariales Diff-Review, bestätigter Befund).
+    nichtsGesetzt.startbereit === false && nichtsGesetzt.offen.length === 9,
     `${nichtsGesetzt.offen.length} offene Hürden`);
   const allesGesetzt = F.startbereitschaft({
     konfiguration: BEISPIEL,
@@ -425,11 +428,38 @@ function main() {
     // den Testlauf, nicht den Production-Betrieb").
     env: {
       [R.SCHALTER]: R.SCHALTER_WERT_GESPERRT,
-      HELMUT_TESTLAUF_VORRANG_REAL: "200"
+      HELMUT_TESTLAUF_VORRANG_REAL: "200",
+      // ERGÄNZT 02.09. (adversariales Diff-Review, bestätigter Befund): K2
+      // zementierte „startbereit" für eine Umgebung OHNE Tagesdeckel und OHNE
+      // Verstehens-Reserve. Genau diese Asymmetrie war der Befund: die
+      // Vorrangreserve wurde zur Laufzeit gelesen, Deckel und Reserve blieben
+      // Papier. Beide gehören in dieselbe Umgebung, sonst prüft der Vertrag
+      // einen Zustand, den es scharf nie geben darf.
+      HELMUT_MAX_LLM_CALLS_PER_DAY: "2416",
+      HELMUT_LLM_RESERVE_UNDERSTANDING: "702"
     }
   });
   check("K2 Mit allen Vorbedingungen meldet der Rahmen startbereit",
     allesGesetzt.startbereit === true, allesGesetzt.offen.join(", "));
+  check("K2a OHNE Tagesdeckel in der laufenden Umgebung ist der Test NICHT startbereit",
+    F.startbereitschaft({
+      konfiguration: BEISPIEL, grenzen: VOLLE_GRENZEN, messungen: ALLE_MESSUNGEN,
+      startfenster: { startUtc: "2026-09-10T13:00:00Z", dauerMinuten: 30, crons: VERCEL.crons },
+      isolation: true,
+      env: { [R.SCHALTER]: R.SCHALTER_WERT_GESPERRT, HELMUT_TESTLAUF_VORRANG_REAL: "200" }
+    }).startbereit === false);
+  check("K2b Ein Vorrangwert, der den LAUFENDEN Deckel sprengt, blockiert den Start",
+    F.startbereitschaft({
+      konfiguration: BEISPIEL, grenzen: VOLLE_GRENZEN, messungen: ALLE_MESSUNGEN,
+      startfenster: { startUtc: "2026-09-10T13:00:00Z", dauerMinuten: 30, crons: VERCEL.crons },
+      isolation: true,
+      env: {
+        [R.SCHALTER]: R.SCHALTER_WERT_GESPERRT,
+        HELMUT_TESTLAUF_VORRANG_REAL: "200",
+        HELMUT_MAX_LLM_CALLS_PER_DAY: "100",
+        HELMUT_LLM_RESERVE_UNDERSTANDING: "30"
+      }
+    }).startbereit === false);
   check("K3 Ohne scharfen Kommunikationsriegel ist der Test nicht startbereit",
     F.startbereitschaft({
       konfiguration: BEISPIEL, grenzen: VOLLE_GRENZEN, messungen: ALLE_MESSUNGEN,

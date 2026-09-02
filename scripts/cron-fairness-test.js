@@ -1445,9 +1445,14 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
     // kein Netz, keine Datenbank, keine Uhr, keine Secrets) fuer den Vorrang der
     // realen Mandate. Geprueft wird jetzt die Absicht statt der Buchstaben.
     const ERLAUBTE_REQUIRES = new Set(['require("crypto")', 'require("./mandatsklasse")']);
+    // VERSCHAERFT 02.09. (adversariales Diff-Review, bestaetigter Befund):
+    // `.every(...)` ist auf einer LEEREN Liste wahr. Aendert sich der Regex
+    // oder die Datei, meldete der Vertrag "erfuellt", ohne irgendetwas geprueft
+    // zu haben. Die Liste muss nachweislich Treffer enthalten.
+    const gefundeneRequires = lies("lib/helmut/cron-fairness.js").match(/require\((["'])[^"']+\1\)/g) || [];
     check("Der Fairnesspfad zieht keine KI-, Matching- oder Speicher-Abhaengigkeit",
-      (lies("lib/helmut/cron-fairness.js").match(/require\((["'])[^"']+\1\)/g) || [])
-        .every((r) => ERLAUBTE_REQUIRES.has(r)), fairnessRequires);
+      gefundeneRequires.length > 0 && gefundeneRequires.every((r) => ERLAUBTE_REQUIRES.has(r)),
+      fairnessRequires);
     check("Kein Mandant ist im Fairnesspfad hartkodiert (CLAUDE.md §4.2)",
       !/cem|annika|klose|ince|mustermann/i.test(lies("lib/helmut/cron-fairness.js")));
   }

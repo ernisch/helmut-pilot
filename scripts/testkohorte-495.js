@@ -176,7 +176,15 @@ function main() {
       ? F.pruefeStartfenster({
         startUtc: `2026-01-01T${start}:00Z`,
         dauerMinuten: Number(dauer),
-        crons: CRONS
+        crons: CRONS,
+        // KORRIGIERT 02.09. (adversariales Diff-Review, bestaetigter Befund):
+        // Das VERBINDLICHE Tor prueft hier schwaecher als die Empfehlung. Der
+        // GitHub-Actions-Watchdog startet 05:30 UTC und ist belegt "oft 2-3 h
+        // verzoegert"; `sichereStartfenster()` und `startbereitschaft()`
+        // beruecksichtigen ihn deshalb ausdruecklich. Ohne dieses Flag haette
+        // das Tor ein Fenster freigegeben, das die Empfehlung sperrt — ein Tor
+        // darf nie schwaecher sein als die Empfehlung, die es durchsetzt.
+        watchdogBeruecksichtigen: true
       })
       : null;
     drucke(`Aktivierungsplan Gruppe ${gruppe.toUpperCase()} (Trockenlauf)`,

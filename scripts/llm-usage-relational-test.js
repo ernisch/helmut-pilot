@@ -278,6 +278,41 @@ async function main() {
       return !/leseLlmUsageRelational/.test(getUsage);
     })(), "der Blob bleibt in Phase 2 die Lesequelle — ehrlich benannt, nicht heimlich getauscht");
 
+  // ── E · BEFUNDE DES ADVERSARIALEN DIFF-REVIEWS (02.09.) ────────────────────
+  console.log("\nE · Aequivalenzpruefung: NULL ist nie gleich einer Zahl");
+  {
+    // BEFUND: `Number(b) === a` meldete "gleich", wenn die relationale Spalte
+    // NULL ist und der Blob 0 traegt — `Number(null)` ist 0. Genau die
+    // Abweichung, die diese Pruefung finden soll (eine nicht geschriebene
+    // Zahlenspalte), sah damit korrekt aus.
+    const blob = { id: "u1", createdAt: "2026-09-02T10:00:00.000Z", promptTokens: 0, totalTokens: 0 };
+    const soll = P.llmUsageToRelationalRow(blob);
+    const zeileMitNull = { ...soll, prompt_tokens: null, total_tokens: null };
+    const v = P.vergleicheLlmUsageProjektion(blob, zeileMitNull);
+    check("E1 NULL statt 0 wird als Abweichung erkannt", v.gleich === false);
+    check("E2 Die betroffenen Felder werden benannt",
+      v.abweichungen.some((a) => a.feld === "prompt_tokens" || a.feld === "total_tokens"),
+      v.abweichungen.map((a) => a.feld).join(", "));
+    check("E3 Die echte Gleichheit bleibt gleich",
+      P.vergleicheLlmUsageProjektion(blob, soll).gleich === true);
+    check("E4 Eine leere Zeichenkette zaehlt ebenfalls nicht als Zahl",
+      P.vergleicheLlmUsageProjektion(blob, { ...soll, total_tokens: "" }).gleich === false);
+  }
+  console.log("\nF · Der Migrationskommentar behauptet keine Idempotenz mehr");
+  {
+    const sql = fs.readFileSync(path.join(ROOT, "supabase/migrations/20260902121500_llm_usage_relational.sql"), "utf8");
+    // BEFUND: Der Tabellenkommentar versprach "Insert mit id-Konflikt-Aufloesung,
+    // idempotent" — der Schreibpfad hat ausdruecklich KEIN on_conflict.
+    check("F1 Der Kommentar verspricht keine id-Konflikt-Aufloesung mehr",
+      !/Insert mit id-Konflikt-Aufloesung, idempotent/.test(sql));
+    check("F2 Er benennt den Schreibpfad ehrlich als nicht idempotent",
+      /reiner Insert OHNE on_conflict/.test(sql) && /NICHT idempotent/.test(sql));
+    const storageQuelle = fs.readFileSync(path.join(ROOT, "lib/helmut/storage.js"), "utf8");
+    const block = storageQuelle.slice(storageQuelle.indexOf("async function insertLlmUsageRelational"));
+    check("F3 Und der Code hat tatsaechlich kein on_conflict",
+      !/on_conflict/.test(block.slice(0, 1500)));
+  }
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);
 }

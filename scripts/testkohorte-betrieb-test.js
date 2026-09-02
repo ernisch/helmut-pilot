@@ -359,7 +359,8 @@ function main() {
     K.pruefeRueckbau({
       grundlinie: GRUNDLINIE, bestand: { ...bestandMit(), fremdeGeloescht: 1 }
     }).zurueckgebaut === false);
-  // ERWEITERT 02.09.: aus vier Einzelbefunden sind sechs geworden. Zwei davon
+  // ERWEITERT 02.09.: aus vier Einzelbefunden sind ACHT geworden (der Kommentar
+  // sagte zuvor "sechs" und widersprach der gepinnten Zahl). Zwei davon
   // schliessen den gefaehrlichsten Fehlbefund des Moduls: ein LEERER Bestand
   // ergab „0 aktive Kohortenzeilen" und damit einen gruenen Rueckbau ueber einer
   // moeglicherweise noch aktiven Kohorte. Dazu die Identitaets-/Kontoebene.
@@ -457,6 +458,22 @@ function main() {
       ueberMitternacht.startfensterGiltJetzt === true);
   }
   console.log("\n== J2 · Rückweg und Nacharbeit sind getrennt freigegeben ==");
+  // BEFUND 02.09. (adversariales Diff-Review): Der Befund „Zahl der realen
+  // Identitätsprofile unverändert" unterstellte eine Grundlinie mit 0
+  // Kohortenzeilen — `pruefeGrundlinie` verlangt das ausdrücklich NICHT.
+  check("J8 Eine Grundlinie MIT Kohortenzeilen macht den Identitätsbefund unbewertbar",
+    (() => {
+      const g = { ...GRUNDLINIE, kohortenProfile: 495 };
+      const r = K.pruefeRueckbau({ grundlinie: g, bestand: bestandMit() });
+      const befund = r.pruefungen.find((p) => p.name.includes("realen Identitätsprofile"));
+      return befund && befund.ok === false && /NICHT BEWERTBAR/.test(befund.detail);
+    })());
+  check("J9 Die kohortenfreie Grundlinie bleibt bewertbar",
+    (() => {
+      const r = K.pruefeRueckbau({ grundlinie: GRUNDLINIE, bestand: bestandMit() });
+      const befund = r.pruefungen.find((p) => p.name.includes("realen Identitätsprofile"));
+      return befund && befund.ok === true;
+    })());
   check("J6 Das Wort des Rückwegs räumt die Scheduler-Spur NICHT auf",
     K.freigabe("scheduler-spur", SCHARF_ENV("deaktivierung")).erteilt === false);
   check("J7 Das Wort der Nacharbeit deaktiviert NICHTS",

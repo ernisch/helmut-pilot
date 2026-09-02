@@ -44,17 +44,31 @@ const VOLLE_GRENZEN = Object.freeze({
 const VOLLE_QUELLEN = Object.freeze({
   warteschlange: { haengendeLeases: 0, dubletten: 0 },
   kosten: { aufrufeHeute: 800, preisJeAufrufUsd: 0.002941 },
-  modellaufrufe: { unbekannteModellaufrufe: 0, drosselungen: 0 },
+  // ANGEPASST 02.09. (adversariales Diff-Review, bestätigter Befund): Die
+  // Beobachtungen entstehen nur noch, wenn der Aufrufer die Quelle ausdrücklich
+  // als tragfähig erklärt. `public.llm_usage` ist in Phase 2 garantiert LEER —
+  // eine gemessene 0 gegen eine leere Tabelle war falsches Grün.
+  modellaufrufe: { relationalAktiv: true, unbekannteModellaufrufe: 0, drosselungen: 0 },
   realeMandate: { gesamt: 9, aktiv: 5, geloescht: 0 },
   grundlinie: { realeMandate: 9, realeMandateAktiv: 5, realeMandateGeloescht: 0 },
   laufbilanz: { verarbeitet: 240, fehlgeschlagen: 2, vollstaendig: true },
   drain: { rueckstandWachstum: 10 },
-  riegel: { durchgelassen: 0 },
+  // Der Riegel führt keinen persistenten Zähler; die Zahl muss ausgezählt und
+  // ausdrücklich als solche übergeben werden, sonst bleibt A10 unbewertbar.
+  riegel: { gezaehlt: true, durchgelassen: 0 },
   deployment: { githubCommitSha: "881739da0f8f06184a1bdf7dd86895d896cf0336" },
-  startfenster: { konflikte: [] },
+  // Ein Fensterbefund ohne `gepruefteCrons` gilt als ungeprüft und erzeugt
+  // keine Zahl — ein unbewertbares Fenster war zuvor eine gemessene 0.
+  startfenster: { startErlaubt: true, konflikte: [], gepruefteCrons: 13 },
   tagesplan: {
     klassen: { real: 5, synthetisch: 495, gemischt: true, realeVollstaendigBedient: true },
-    zuteilung: { "mandat-a": { notwendig: 1 }, "test-kohorte-a-001": { notwendig: 0 } }
+    // Alle fünf realen Mandate müssen in der Zuteilung stehen — fehlende gelten
+    // seit dem Diff-Review als verdrängt (totale Verdrängung war zuvor „0").
+    zuteilung: {
+      "mandat-a": { notwendig: 1 }, "mandat-b": { notwendig: 1 }, "mandat-c": { notwendig: 1 },
+      "mandat-d": { notwendig: 1 }, "mandat-e": { notwendig: 1 },
+      "test-kohorte-a-001": { notwendig: 0 }
+    }
   },
   laufzeitMinuten: 120
 });
@@ -355,6 +369,25 @@ async function main() {
       });
     } catch (fehler) { abgebrochen = fehler && fehler.grund === "fremde-kennung"; }
     check("DS6 Eine FREMDE Kennung bricht auch die Nacharbeit ab (kein stilles Filtern)", abgebrochen);
+  }
+
+  // BEFUND 02.09. (adversariales Diff-Review): eine LEERE Zielmenge meldete
+  // `ok: true` — "nichts getan" sah aus wie "vollstaendig zurueckgebaut".
+  {
+    const env = { [RB.EXECUTE_FLAG]: "1", [RB.CONFIRM_VARIABLE]: RB.FREIGABEWORT };
+    const leer = await RB.fuehreRueckbauAus({
+      kennungen: [], modus: RB.MODUS_SCHARF, env,
+      deps: { deaktiviere: async () => ({ ok: true }), leseZustand: async () => ({ vorhanden: true, aktiv: false }) }
+    });
+    check("D12 Eine LEERE Zielmenge gilt NICHT als erfolgreicher Rueckbau",
+      leer.ok === false && leer.zielGroesse === 0);
+    const leerSpur = await RB.entferneSchedulerSpur({
+      kennungen: [], modus: RB.MODUS_SCHARF,
+      env: { [RB.EXECUTE_FLAG]: "1", [RB.CONFIRM_VARIABLE]: RB.FREIGABEWORT_SPUR },
+      deps: { entferneSpur: async () => ({ ok: true }) }
+    });
+    check("D13 Dasselbe gilt fuer die Nacharbeit an der Scheduler-Spur",
+      leerSpur.ok === false && leerSpur.zielGroesse === 0);
   }
 
   const scharfEnv = { [RB.EXECUTE_FLAG]: "1", [RB.CONFIRM_VARIABLE]: RB.FREIGABEWORT };

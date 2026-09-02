@@ -724,6 +724,39 @@ async function anzahlProfile(id) {
     restore();
   }
 
+  // ── GEGENPROBE 02.09. (adversariales Diff-Review, bestätigter Befund) ───────
+  // Diese Suite setzt `synthetischErlaubt: true` für ALLE ihre Specs. Damit war
+  // der neue Schutz vor reservierten Kennungsfamilien hier durchgehend
+  // abgeschaltet — und nichts prüfte mehr, dass er überhaupt greift. Eine
+  // Ausnahme ohne Gegenprobe ist keine Ausnahme, sondern ein Loch.
+  {
+    const provisioning = require("../lib/helmut/provisioning");
+    const basis = {
+      email: "gegenprobe@synthetic.test",
+      name: "Gegenprobe",
+      password: "gegenprobe-pass-123",
+      party: "Partei Alpha",
+      parliamentType: "Landtag",
+      state: "Bayern"
+    };
+    for (const kennung of ["test-kohorte-a-001", "test-mdb-001", "synth-mandat-1", "stapel-x"]) {
+      // `validateSpec` WIRFT NICHT, es liefert eine Fehlerliste — genau deshalb
+      // steht die Gegenprobe hier: eine falsch geschriebene Prüfung hätte den
+      // Schutz für "kaputt" erklärt, obwohl er greift.
+      const fehler = provisioning.validateSpec({ ...basis, id: kennung });
+      const abgewiesen = Array.isArray(fehler)
+        && fehler.some((f) => /reservierten synthetischen Kennungsfamilie/i.test(String(f)));
+      if (abgewiesen) { pass += 1; console.log(`PASS  Gegenprobe: ${kennung} wird OHNE synthetischErlaubt abgewiesen`); }
+      else { fail += 1; console.log(`FAIL  Gegenprobe: ${kennung} kam OHNE synthetischErlaubt durch`); }
+    }
+    // Und mit ausdrücklicher Erlaubnis geht dieselbe Kennung durch.
+    const mitErlaubnis = provisioning.validateSpec({ ...basis, id: "stapel-x", synthetischErlaubt: true });
+    const durch = Array.isArray(mitErlaubnis)
+      && !mitErlaubnis.some((f) => /reservierten synthetischen Kennungsfamilie/i.test(String(f)));
+    if (durch) { pass += 1; console.log("PASS  Gegenprobe: MIT synthetischErlaubt geht dieselbe Kennung durch"); }
+    else { fail += 1; console.log("FAIL  Gegenprobe: MIT synthetischErlaubt blieb die Kennung gesperrt"); }
+  }
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail === 0 ? 0 : 1);
 })();

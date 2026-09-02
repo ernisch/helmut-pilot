@@ -69,7 +69,7 @@ create index if not exists llm_usage_keinaufruf_created_idx on public.llm_usage 
 comment on column public.llm_usage.kein_aufruf is
   'true = Budget-/Konfigurations-Skip: es gab KEINEN Modellaufruf und keine Kosten. Zaehlt als BEDARFSNACHWEIS, nie als Fehlerquote (Beleg: 500-funktionstest-sicherheitsrahmen §16.2).';
 comment on table public.llm_usage is
-  'Kanonische KI-Nutzungstelemetrie (W-2 fuer llmUsage). Loest den Last-Write-Wins-Blob-Ring helmut_store.data.llmUsage ab. Eine Zeile je Aufruf, Insert mit id-Konflikt-Aufloesung, idempotent. Nur technische Skalare, pseudonyme Kennungen und bereinigte Fehlercodes — kein Prompt, keine Antwort, kein Secret. Dual-Write freigabepflichtig (HELMUT_LLM_USAGE_RELATIONAL, Default aus).';
+  'Kanonische KI-Nutzungstelemetrie (W-2 fuer llmUsage). Loest den Last-Write-Wins-Blob-Ring helmut_store.data.llmUsage ab. Eine Zeile je Aufruf, reiner Insert OHNE on_conflict — der Schreibpfad ist ausdruecklich NICHT idempotent (korrigiert 02.09., adversariales Diff-Review): ein wiederholter Aufruf mit derselben id schlaegt fehl und wird als Telemetriefehler protokolliert, statt still zu ueberschreiben. Nur technische Skalare, pseudonyme Kennungen und bereinigte Fehlercodes — kein Prompt, keine Antwort, kein Secret. Dual-Write freigabepflichtig (HELMUT_LLM_USAGE_RELATIONAL, Default aus).';
 
 -- Rechte entziehen (identisch zu 20260727_process_runs_relational.sql).
 -- anon/authenticated existieren nur in Supabase; ein lokaler Prüfcluster kennt

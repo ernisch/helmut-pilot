@@ -220,6 +220,74 @@ async function main() {
   check("D4 Ohne gesetzte Umgebungsvariable ist die Vorrangreserve 0 (kein Deckelverlust)",
     M.vorrangreserveReal({}).wert === 0);
 
+  // ── E · BEFUNDE DES ADVERSARIALEN DIFF-REVIEWS (02.09.) ────────────────────
+  console.log("\nE · Vorrangreserve: ehrlich beschrieben und ohne stille Null");
+  {
+    // BEFUND 1: `mandatsklasse` zog die Reserve AUCH der geteilten Arbeit ab,
+    // waehrend storage.js und die betreibersichtbare Ausgabe das Gegenteil
+    // behaupteten. Zwei einander widersprechende Beschreibungen desselben
+    // Schutzmechanismus — und die falsche stand an der Entscheidungsstelle.
+    const storageQuelle = fs.readFileSync(path.join(ROOT, "lib/helmut/storage.js"), "utf8");
+    check("E1 storage.js behauptet NICHT mehr, geteilte Arbeit sei ausgenommen",
+      !/Reale Mandate und GETEILTE Arbeit \(Verstehen, Backfills\) sehen unveraendert/.test(storageQuelle));
+    check("E2 storage.js benennt die geteilte Arbeit ausdruecklich als betroffen",
+      /Die GETEILTE\n\/\/ Arbeit \(Verstehen, Backfills\) IST betroffen/.test(storageQuelle));
+    const A = require("../lib/helmut/funktionstest-ablaufplan");
+    const w = A.vorbereitung().vorrangreserve;
+    check("E3 Die BETREIBERAUSGABE beschreibt es richtig",
+      /GETEILTE Arbeit/.test(w.wirkung)
+        && /AUSGENOMMEN ist allein die mandatsgebundene Arbeit REALER Mandate/.test(w.wirkung));
+    check("E4 Sie warnt ausdruecklich vor einem Wert oberhalb des Deckels",
+      typeof w.warnung === "string" && /KLEINER/.test(w.warnung) && /100/.test(w.warnung));
+
+    // BEFUND 2: ohne Untergrenze ergab ein Vorrangwert >= Deckel fuer JEDEN
+    // Verstehensaufruf effectiveMax = 0 — der Datenmotor auch der fuenf REALEN
+    // Mandate haette stillgestanden, waehrend deren mandatsgebundene Aufrufe
+    // weiterliefen. Die Reserve haette den Mandaten die Inhalte abgeschaltet.
+    check("E5 Die Untergrenze steht im Code und schuetzt den geteilten/priorisierten Pfad",
+      /const untergrenze = vorrang\.abzug > 0 && \(priority \|\| vorrang\.befund\.klasse === "geteilt"\)/
+        .test(storageQuelle)
+      && /Math\.max\(untergrenze, Math\.max\(0, rohMax - vorrang\.abzug\)\)/.test(storageQuelle));
+
+    // BEFUND 3: startbereitschaft war ASYMMETRISCH — Vorrangreserve aus der
+    // Umgebung, Deckel und Verstehens-Reserve nur aus dem Papier.
+    const F = require("../lib/helmut/funktionstest-500");
+    const huerde = (env) => F.startbereitschaft({ konfiguration: {}, env })
+      .huerden.find((h) => h.name.includes("LAUFENDEN"));
+    check("E6 Deckel 100 gegen Vorrang 200 wird jetzt erkannt",
+      huerde({ HELMUT_MAX_LLM_CALLS_PER_DAY: "100", HELMUT_LLM_RESERVE_UNDERSTANDING: "30",
+        HELMUT_TESTLAUF_VORRANG_REAL: "200" }).ok === false);
+    check("E7 Die vorbereiteten Werte bestehen die Pruefung",
+      huerde({ HELMUT_MAX_LLM_CALLS_PER_DAY: "2416", HELMUT_LLM_RESERVE_UNDERSTANDING: "702",
+        HELMUT_TESTLAUF_VORRANG_REAL: "200" }).ok === true);
+    check("E8 Ein fehlender Deckel ist NICHT bewertbar und damit nicht erfuellt",
+      huerde({ HELMUT_TESTLAUF_VORRANG_REAL: "200" }).ok === false);
+  }
+
+  console.log("\nF · Rotation: die Klassentrennung darf niemanden verhungern lassen");
+  {
+    // BEFUND 4 (nachgemessen): der Versatz ist (tagesNummer * schritt) % laenge.
+    // Teilen sich schritt und laenge einen Teiler, werden Positionen NIE
+    // erreicht. Beim Aufteilen wandert die Laenge von 500 auf 495, die
+    // Schrittweite bleibt — gemessen blieben 5 synthetische Profile ueber 30
+    // Tage dauerhaft unbedient, entgegen dem Kommentar im Modul.
+    const real = ["r-eins", "r-zwei", "r-drei", "r-vier", "r-fuenf"];
+    const synth = Array.from({ length: 495 }, (_, i) => `test-kohorte-a-${String(i + 1).padStart(3, "0")}`);
+    const alle = [...real, ...synth];
+    const bedient = new Map(alle.map((id) => [id, 0]));
+    for (let t = 0; t < 30; t += 1) {
+      const plan = fair.tagesplan({ mandate: alle, deckel: 990, tag: `2026-10-${String(t + 1).padStart(2, "0")}` });
+      for (const [id, z] of Object.entries(plan.zuteilung || {})) {
+        if ((Number(z.notwendig) || 0) > 0) bedient.set(id, bedient.get(id) + 1);
+      }
+    }
+    const nie = [...bedient.entries()].filter(([, n]) => n === 0);
+    check("F1 Ueber 30 Tage bei Deckel 990 verhungert KEIN Mandat", nie.length === 0,
+      nie.length ? `nie bedient: ${nie.slice(0, 5).map(([id]) => id).join(", ")}` : "0 unbedient");
+    check("F2 Die realen Mandate werden an JEDEM Tag bedient",
+      real.every((id) => bedient.get(id) === 30));
+  }
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);
 }

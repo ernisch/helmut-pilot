@@ -1488,3 +1488,118 @@ besteht sie; eine Reserve über 984 macht die Konfiguration nicht mehr bereit.
 Kein Befund gegen den Verdrängungsschutz selbst, gegen die Erlaubnisliste, gegen die
 Zwei-Riegel-Freigaben oder gegen die Inertheit bei 0 synthetischen Zeilen. Der Bereich
 **Kohorte/Stufen/Rückbau** lieferte **null** bestätigte Befunde.
+
+---
+
+## §20 · Nachtrag 02.09. — adversariales Diff-Review: 20 Befunde, alle geschlossen
+
+Ein zweites, unabhängiges Review prüfte den **Diff dieses Sprints** über sechs Dimensionen
+(Sicherheit, Korrektheit, Inertheit, Fail-closed, Daten, Vertrag), jeder Befund
+adversarial gegengeprüft; 20 überlebten die Gegenprüfung, 20 sind geschlossen.
+
+**Der schwerste Befund traf die eigene Änderung dieses Sprints.**
+
+### 20.1 · Die Vorrangreserve war widersprüchlich beschrieben und konnte still auf 0 klemmen
+
+**Tatsache.** `mandatsklasse.vorrangGiltFuer` liefert für `geteilt === true` ausdrücklich
+`gilt: true` — die Vorrangreserve wird also **auch der geteilten Verstehensarbeit**
+abgezogen, und zwar auf dem Prioritätspfad, der bisher den vollen Deckel sah.
+`storage.js` und — schwerwiegender — die **betreibersichtbare Ausgabe** von
+`funktionstest-500-ablauf.js werte` behaupteten wörtlich das Gegenteil: „reale Mandate und
+geteilte Arbeit sehen unverändert dasselbe Maximum". Zwei einander widersprechende
+Beschreibungen desselben Schutzmechanismus, und die falsche stand genau dort, wo der
+Betreiber über den Wert entscheidet.
+
+**Wirkung (nachgerechnet).** Production-Deckel ist heute **100**, der vorbereitete
+Vorrangwert **200**. Ohne Untergrenze wäre `effectiveMax = max(0, 100 − 200) = 0` für
+**jeden** Verstehensaufruf: der Datenmotor **auch der fünf realen Mandate** stünde
+vollständig still, während deren mandatsgebundene Aufrufe weiterliefen. Die Reserve, die
+reale Mandate schützen soll, hätte ihnen die Inhalte abgeschaltet.
+
+**Geschlossen.** (a) Alle drei Beschreibungen sagen jetzt dasselbe wie der Code.
+(b) Neue **Untergrenze**: dem geteilten/priorisierten Pfad bleibt immer mindestens die
+Verstehens-Reserve — eine Fehlkonfiguration bremst, sie schaltet nicht ab, und sie wird
+**einmalig** protokolliert. (c) Die betreibersichtbare Ausgabe trägt jetzt eine
+ausdrückliche `warnung`, dass der Deckel **vor** der Vorrangreserve angehoben wird.
+
+### 20.2 · `startbereitschaft()` war asymmetrisch
+
+**Tatsache.** Die Vorrangreserve wurde zur **Laufzeit** aus der Umgebung gelesen,
+Tagesdeckel und Verstehens-Reserve blieben reines Papier aus der übergebenen
+Konfiguration. Ein Lauf konnte „startbereit" melden, während live 100 gegen 200 stand.
+
+**Geschlossen.** Neunte Hürde: `HELMUT_MAX_LLM_CALLS_PER_DAY` und
+`HELMUT_LLM_RESERVE_UNDERSTANDING` werden aus **derselben** Umgebung gelesen und gegen die
+Vorrangreserve geprüft. Fehlt einer, ist die Hürde nicht erfüllt (fail closed).
+
+### 20.3 · Die Klassentrennung ließ synthetische Profile verhungern
+
+**Tatsache, nachgemessen.** Der Rotationsversatz ist `(tagesNummer × schritt) % länge`.
+Teilen sich `schritt` und `länge` einen Teiler, werden Positionen **nie** erreicht. Beim
+Aufteilen wandert die Klassenlänge von 500 auf 495, die Schrittweite bleibt: über 30 Tage
+bei Deckel 990 blieben **5 synthetische Profile dauerhaft unbedient** — entgegen dem
+Kommentar, den ich selbst geschrieben hatte („rotiert gegen sich selbst und verhungert
+nicht").
+
+**Geschlossen.** Je Klasse eine zu ihrer Länge **teilerfremde** Schrittweite. Gemessen:
+0 unbediente Mandate über 30 Tage, die fünf realen an jedem Tag. Die Korrektur greift
+ausschließlich im aufgeteilten Fall — die homogene Liste (heutiger Production-Zustand)
+bleibt byte-identisch.
+
+### 20.4 · Sechs Befunde in der Stufenkontrolle — alle derselben Form
+
+Jede Abbruchregel meldete eine **gemessene 0**, obwohl gar nichts gemessen worden war.
+Das ist die gefährlichste Fehlerklasse in einem Sicherheitsnetz.
+
+| Regel | Befund | Geschlossen durch |
+|---|---|---|
+| **A13** Dubletten | `group by idempotency_key having count(*) > 1` — auf dieser Spalte liegt ein **UNIQUE-Index**. Die Abfrage konnte strukturell nie eine Zeile liefern: eine Abbruchregel, die niemals auslöst. | Gruppierung über die **fachliche** Arbeit (`job_type, tenant_id, freshness_window`) — das ist die echte Dublettenklasse: dieselbe Arbeit unter verschiedenen Schlüsseln. |
+| **A01/A06** unbekannte Aufrufe, Drosselungen | Gelesen aus `public.llm_usage` — einer Tabelle, die dieser Sprint bewusst **leer lässt** (Flag aus, Migration nicht angewendet). Genau der Fehlschluss K4. | Die Zahl entsteht nur bei ausdrücklich erklärter Quelle (`relationalAktiv` oder `blobAusgezaehlt`), sonst bleibt die Regel **unbewertbar**. |
+| **A10** Kommunikationsversuche | Gemessen wurde `durchgelassen` — am Testtag sperrt der Riegel jeden Kanal, die Zahl ist strukturell immer 0. Der Riegel führt zudem **keinen** persistenten Zähler: es gab keine erhebbare Quelle. | Beobachtung nur bei `gezaehlt: true`; sonst ausdrücklich unbewertbar. |
+| **A12** Fensterkonflikte | Gelesen wurde allein `konflikte.length`. Ein **nicht bewertbarer** Befund (leere Liste, `startErlaubt: false`) wurde zur gemessenen 0 und sah frei aus. | Nur bei `gepruefteCrons > 0`; ein gesperrtes Fenster ohne benannten Konflikt zählt als **mindestens ein** Konflikt. |
+| **A14** Verdrängung | Fehlten die realen Mandate in der Zuteilung **vollständig** — der Fall der totalen Verdrängung, den A14 fangen soll —, war die Zahl 0 und ununterscheidbar von „alles in Ordnung". | Fehlende reale Mandate zählen als verdrängt. |
+
+Neue Suite `scripts/funktionstest-kontrolle-test.js` (27 Prüfungen) pint durchgehend die
+Unterscheidung **„gemessen und in Ordnung"** gegen **„gar nicht bewertbar"**.
+
+### 20.5 · Weitere geschlossene Befunde
+
+- **Das verbindliche Aktivierungstor prüfte schwächer als die Empfehlung** — die
+  Watchdog-Vorsichtsspanne fehlte. Ein Tor darf nie schwächer sein als die Empfehlung, die
+  es durchsetzt. (`watchdogBeruecksichtigen: true`)
+- **Der Rückbau meldete `ok: true` für eine leere Zielmenge** — „nichts getan" sah aus wie
+  „vollständig zurückgebaut", und zwar in genau dem Moment, in dem der Rückweg zählt.
+- **Die Rückbauprüfung der Identitätsprofile** unterstellte eine Grundlinie mit 0
+  Kohortenzeilen, die `pruefeGrundlinie` ausdrücklich nicht verlangt. Sie ist jetzt nur bei
+  nachweislich kohortenfreier Grundlinie bewertbar.
+- **Die Äquivalenzprüfung des Dual-Write** meldete „gleich", wenn die relationale Spalte
+  NULL ist und der Blob 0 trägt — `Number(null)` ist 0. Genau die Abweichung, die sie finden
+  soll, sah korrekt aus.
+- **Der Tabellenkommentar der Migration** versprach „Insert mit id-Konflikt-Auflösung,
+  idempotent"; der Schreibpfad hat ausdrücklich **kein** `on_conflict`.
+
+### 20.6 · Fünf abgeschwächte Testverträge wieder geschärft
+
+Das Review prüfte auch, ob dieser Sprint **bestehende Verträge entschärft** hat. Fünfmal ja:
+
+- `kapazitaetsmodell-test` prüfte nur noch den Default-Fall — der gefährliche Fall
+  (Vorrangreserve > Deckel) blieb ungeprüft. Jetzt gepinnt, inklusive der neuen Untergrenze
+  und der ehrlichen Betreiberausgabe.
+- `funktionstest-500-test` K2 zementierte „startbereit" für eine Umgebung **ohne** Deckel
+  und **ohne** Verstehens-Reserve — genau die Asymmetrie aus §20.2. Ergänzt um K2a/K2b.
+- `provision-stapel-test` schaltete den neuen Familienschutz für **alle** Specs ab, ohne
+  Gegenprobe. Eine Ausnahme ohne Gegenprobe ist keine Ausnahme, sondern ein Loch — fünf
+  Gegenproben ergänzt. (Die erste Fassung der Gegenprobe war selbst falsch geschrieben und
+  erklärte den Schutz fälschlich für kaputt: `validateSpec` wirft nicht, es liefert eine
+  Fehlerliste. Auch das steht hier, weil ein Test, der aus dem falschen Grund grün oder rot
+  ist, kein Beleg ist.)
+- `cron-fairness-test` ersetzte eine exakte Pinnung durch eine Whitelist mit `.every(...)` —
+  auf einer **leeren** Liste wahr. Die Liste muss jetzt nachweislich Treffer enthalten.
+- `testkohorte-betrieb-test` H8: Begründungskommentar („sechs") widersprach der gepinnten
+  Zahl (acht).
+
+### 20.7 · Was das Review NICHT fand
+
+Kein Befund gegen die Erlaubnisliste, gegen die Zwei-Riegel-Freigaben, gegen den
+Kommunikationsriegel oder gegen die Inertheit bei 0 synthetischen Zeilen. Zwanzig Befunde
+wurden in der Gegenprüfung **widerlegt** und bewusst nicht umgesetzt.

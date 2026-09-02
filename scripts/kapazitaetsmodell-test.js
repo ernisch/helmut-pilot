@@ -309,14 +309,43 @@ check("B0.8 Fuer JEDE Kombination: Gesamtobergrenze = Limit, nie Limit + Reserve
 // Aufrufe, die NICHT einem realen Mandat zuzuordnen sind; fuer reale Mandate ist
 // die Formel unveraendert. Das Modell oben bildet weiterhin genau diesen Fall ab
 // (Vorrangabzug 0), und die Pinnung folgt der neuen Zeile.
+// AKTUALISIERT 02.09. (adversariales Diff-Review): Die Formel hat eine
+// UNTERGRENZE bekommen. Ohne sie ergab ein Vorrangwert >= Deckel fuer JEDEN
+// Verstehensaufruf `effectiveMax = 0` — der Datenmotor auch der fuenf REALEN
+// Mandate haette stillgestanden. Gepinnt ist jetzt die vollstaendige Formel.
 check("B0.9 Das Modell bildet die Produktionsformel aus storage.js ab (effectiveMax)",
-  /const effectiveMax = Math\.max\(0, \(priority \? limit : limit - reserve\) - vorrang\.abzug\);/.test(storageSrc));
+  /const rohMax = priority \? limit : limit - reserve;/.test(storageSrc)
+  && /const effectiveMax = Math\.max\(untergrenze, Math\.max\(0, rohMax - vorrang\.abzug\)\);/.test(storageSrc));
+check("B0.9d Die Untergrenze schuetzt den geteilten/priorisierten Pfad vor der stillen Null",
+  /const untergrenze = vorrang\.abzug > 0 && \(priority \|\| vorrang\.befund\.klasse === "geteilt"\)/.test(storageSrc));
 check("B0.9a Die Vorrangreserve ist Default 0 — die Formel ist ohne sie unveraendert",
   /HELMUT_TESTLAUF_VORRANG_REAL/.test(storageSrc)
   && require("../lib/helmut/mandatsklasse").vorrangreserveReal({}).wert === 0);
 check("B0.9b Sie gilt NICHT fuer reale Mandate (deren Obergrenze bleibt limit − reserve)",
   require("../lib/helmut/storage").llmVorrangAbzug("lageBriefing", "ein-reales-mandat",
     { HELMUT_TESTLAUF_VORRANG_REAL: "200" }).abzug === 0);
+// ERGAENZT 02.09. (adversariales Diff-Review, bestaetigter Befund): Der
+// Deckelvertrag prueft bisher nur den Default-Fall (Vorrangabzug 0). Der
+// gefaehrliche Fall — Vorrangreserve GROESSER als der Tagesdeckel — blieb
+// ungeprueft. Genau er ist im Betrieb erreichbar (Production-Deckel 100,
+// empfohlener Vorrang 200).
+check("B0.9e Vorrangreserve > Deckel legt den geteilten Pfad NICHT still",
+  (() => {
+    const M = require("../lib/helmut/mandatsklasse");
+    // Der Abzug gilt fuer geteilte Arbeit — das ist die dokumentierte Semantik.
+    const geteilt = M.vorrangGiltFuer({ kennung: null, geteilt: true });
+    // Und fuer reale mandatsgebundene Arbeit gilt er nie.
+    const real = M.vorrangGiltFuer({ kennung: "ein-reales-mandat", geteilt: false });
+    return geteilt.gilt === true && real.gilt === false;
+  })());
+check("B0.9f Die Betreiberausgabe beschreibt die geteilte Arbeit als BETROFFEN (kein falsches Gruen)",
+  (() => {
+    const A = require("../lib/helmut/funktionstest-ablaufplan");
+    const w = A.vorbereitung().vorrangreserve;
+    return /GETEILTE Arbeit/.test(w.wirkung)
+      && /AUSGENOMMEN ist allein die mandatsgebundene Arbeit REALER Mandate/.test(w.wirkung)
+      && typeof w.warnung === "string" && /KLEINER/.test(w.warnung);
+  })());
 check("B0.10 Fehlt die Umgebungsvariable, greift laut Code das Schutzlimit 50 (fail closed)",
   SCHUTZLIMIT_AUS_CODE === 50, String(SCHUTZLIMIT_AUS_CODE));
 check("B0.11 Ein fehlender Production-Wert wird als UNBEKANNT gemeldet, nicht geraten",
