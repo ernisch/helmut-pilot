@@ -2043,3 +2043,126 @@ Parallelität — nicht durch die angenommenen Rate-Grenzen abgesichert ist.
 Geschlossen wurden stattdessen die zwei Lücken, die **vor jeder Stufe** geschlossen sein
 müssen, unabhängig davon, welchen Weg der Betreiber wählt: die stufengenaue Freigabe und der
 Weg zur vollständigen Entfernung.
+
+---
+
+## §24 · Zweiter, unabhängiger Review 02.09. — die Kapazitätsfrage ist falsch gestellt
+
+**Vorgehen.** Nach der eigenen Nachprüfung (§23) lief ein zweiter, unabhängiger
+Review-Durchgang mit getrennten Prüfern je Thema und anschließender adversarialer
+Gegenprüfung. Die folgenden Befunde sind **von mir am Code nachgeprüft**, nicht ungeprüft
+übernommen; eine überzogene Behauptung ist ausdrücklich als widerlegt gekennzeichnet.
+
+### §24.1 Der schwerste Befund: 55 % des Bedarfs können im Fenster gar nicht entstehen
+
+Die Zahl **1.812**, gegen die beide Fenster geprüft werden, enthält **1.000 mandatsgebundene
+Modellaufrufe** (55,2 %). Die beiden mandatsgebundenen Arbeitsklassen der Warteschlange sind
+aber ausdrücklich **KI-frei**:
+
+* `handleMandatsProjektion` → `matching` + `decisions`, Kommentar im Code:
+  *„Beides KI-frei (V3-Vertrag §13.3/§13.4)"* (`lib/helmut/scalable-pipeline.js:1113`);
+* `handleBriefingMaterialization` → `buildV3Briefing`, Kommentar im Code:
+  *„reine Lese-Transformation, 0 KI"* (`lib/helmut/scalable-pipeline.js:1175`).
+
+Die gemessenen mandatsgebundenen **Modellaufrufe** (1,2–2,0 je Mandat und Tag) entstehen
+nicht hier, sondern auf den Narrativ-/Bürowegen der Morgen- und Lagecrons (05:00 / 05:45 UTC)
+— und die treibt der Fachzyklus ausdrücklich **nicht** an
+(`funktionstest-zyklus.js:427`, `treibtMandatsgebundeneBriefingRoutenAn: false`).
+
+**Folge, nachgerechnet:**
+
+| Größe | Wert |
+|---|---|
+| Tagesbedarf gesamt (konservativ, 500) | 1.812 |
+| davon mandatsgebunden — entsteht über Morgen-/Lagecron, **nicht** im Fenster | 1.000 |
+| **im Fenster über `/api/cron/pipeline` erzeugbar** | **812** |
+| Fenster 11:36–15:59 (263 min), Parallelität **1** | 1.732 möglich → **passt** (nötig 124 min) |
+| Fenster 17:36–19:59 (143 min), Parallelität **1** | 941 möglich → **passt** (nötig 124 min) |
+
+> **Wenn dieses Framing gilt, löst sich Blocker 2 vollständig auf — und Parallelität 2 wird
+> überflüssig.** Die Hürde vergleicht heute einen **Tagesbedarf** mit einer
+> **Fensterkapazität**; das ist nur dann die richtige Frage, wenn der Testlauf im Fenster
+> tatsächlich den ganzen Tagesbedarf erzeugen soll. Genau das kann er bauartbedingt nicht.
+
+**Diese Rechnung wurde NICHT in die Hürde eingebaut.** Ein Tor, das sich selbst grün rechnet,
+wäre das falsche Grün, das dieses Vorhaben mehrfach beseitigt hat. Was der Testlauf im Fenster
+tragen **soll**, ist eine Architekturentscheidung des Betreibers — sie ist der billigste und
+wirksamste nächste Schritt, weil an ihr zwei bisher als „ungedeckt" geführte Entscheidungen
+hängen.
+
+### §24.2 Blocker 2 ist eine Eigenschaft des konservativen Szenarios
+
+Auch ohne §24.1: von den 1.812 stammen 1.000 aus
+`SZENARIEN.konservativ.mandatsgebundenJeMandat = 2,0`. Der **gemessene** Wert steht als
+`MESSWERTE.mandatsgebundenJeMandatProTag = 1,2` im selben Modul (42 Aufrufe / 7 Tage /
+5 Mandate) und wird vom Erwartungsszenario benutzt.
+
+| Faktor | Bedarf | Minuten bei par 1 | passt in 263 min |
+|---|---|---|---|
+| 1,2 (**gemessen**) | 1.412 | 215 | **ja** |
+| **1,84 (Kipppunkt)** | 1.732 | 263 | ja (exakt) |
+| 2,0 (konservativ) | 1.812 | 276 | nein |
+
+Das ist **kein Defekt** — ein konservatives Szenario darf pessimistischer rechnen als die
+Messung. Es ist aber eine Tatsache, die der Betreiber kennen muss: **Blocker 2 ist keine
+gemessene Größe, sondern eine Szenarioentscheidung.** Testgesichert:
+`scripts/testkohorte-stufen-test.js` Abschnitt N.
+
+### §24.3 Blocker 1 — präzisiert, und eine Lücke in seiner Absolutheit
+
+**Präzisierung:** Die im Fenster gesperrte Arbeitsklasse `briefing_materialization` erzeugt
+`buildV3Briefing` — **0 KI**. Der Direktpfad `/api/cron/lage-briefing` erzeugt dagegen das
+Lage-**Narrativ** (`tenant_narrative`, mit KI). Beide sind also nicht nur „nicht
+gleichwertig", sie erzeugen **verschiedene Erzeugnisse**. Wer den Direktpfad als Ersatz nimmt,
+prüft eine andere Produktstufe als die, die der Test messen soll.
+
+**Lücke in der Absolutheit:** Der Satz „über die Warteschlange entsteht im Fenster kein
+Briefing" gilt streng nur für Aufträge, die **im laufenden Fenster geplant** wurden. Ein
+`briefing_materialization`-Auftrag eines **vorigen** Fensters, der noch `wartend` ist, ist zu
+jeder Uhrzeit fällig und würde im Fenster reserviert. Die Bereinigung löscht ausschließlich
+`status='erledigt'`. Für den Testlauf ist das eher Chance als Risiko — es heißt aber, dass die
+Aussage eine Bedingung trägt, die bisher nicht genannt war.
+
+### §24.4 Weitere bestätigte Befunde
+
+| Befund | Schwere | Beleg |
+|---|---|---|
+| **Zwischen und nach den Fenstern treiben Bestandscrons dieselbe Warteschlange über dieselben 500 aktiven Profile** (16:00 pipeline, 20:00 crawl). Die Fensterlogik schützt nur den MANUELLEN Lauf. | hoch | `server.js` `cronSchwererPfad` → `runCronUeberWarteschlange` |
+| **Parallelität 2 ist mit den acht vorbereiteten Werten gar nicht herstellbar** — `HELMUT_TESTLAUF_MAX_PARALLEL` ist eine reine Prüfgröße; die wirksame Parallelität hängt an `HELMUT_VERSTEHEN_PARALLELITAET` und weiterem. | blockierend | `HELMUT_TESTLAUF_MAX_PARALLEL` kommt nur in `kapazitaet-500.js` und `funktionstest-500.js` vor |
+| **Der Kommunikationsriegel wäre bei zwei Fenstern rund 8,4 h scharf statt 4,4 h** — er blendet in dieser Zeit auch Alarme der fünf realen Mandate aus. | mittel | 11:36–19:59 = 503 min gegen 263 min |
+| **Der Rückbau lässt Warteschlangenreste der Kohorte stehen** — kein Kohortenwerkzeug rührt `helmut_jobs` an (0 Treffer). | mittel | testgesichert, Abschnitt O4 |
+| **`sortiereRealZuerst` sortiert, filtert aber nicht**, und behandelt `unbestimmt` wie real — als Grundlage einer Begrenzung wäre das fail-open. | mittel | `lib/helmut/mandatsklasse.js:113–119` |
+| **Ein Kohortenlauf unter demselben `cronName` verschmutzte die Fairness-Buchführung der realen Mandate.** | hoch (für Weg b) | `lib/helmut/cron-fairness.js:307–326` |
+| **Die Briefing-Cronrouten lesen keinen einzigen Query-Parameter**, und `resolveCronTenants` ist ausdrücklich ohne Auswahl gebaut („KEIN Environment, KEIN Flag, KEIN über Environment ausgewählter Einzelmandant"). | hoch (für Weg b) | `lib/helmut/tenant-context.js:113–125` |
+
+### §24.5 Eine Behauptung ausdrücklich widerlegt
+
+Ein Prüfer meldete: *„Eine fachlich gescheiterte Scheibe gilt als Erfolg — die Zusage ‚eine
+fehlgeschlagene Scheibe beendet den Lauf' greift nicht."* **Das ist in dieser Form falsch.**
+`funktionstest-zyklus.js` bricht bei `!gut` ausdrücklich ab
+(`abgebrochen = "scheibe-fehlgeschlagen"; break;`), und `ok` verlangt zusätzlich
+`fehlgeschlagen === 0 && erfolgreich > 0`.
+
+**Richtig ist der engere Kern:** `antwort.ok` ist der **HTTP-Status**. Eine Scheibe, die
+HTTP 200 liefert, deren Körper aber fachliche Fehlschläge meldet, zählt als Erfolg. Diese
+Grenze ist jetzt **im Ergebnisobjekt benannt** (`abbruchEbene: "http"`,
+`fachlicheBewertungDurch: "funktionstest-kontrolle (A01–A15…)"`) statt stillschweigend zu
+gelten. Sie wurde **nicht** stillschweigend erweitert: welche Felder des Antwortkörpers einen
+fachlichen Fehlschlag bedeuten, ist ein Vertrag der Route, der hier nicht belegt ist — ihn zu
+erraten wäre genau die Sorte Annahme, die dieses Vorhaben schon zweimal teuer bezahlt hat.
+
+### §24.6 Zwei Defekte des Tors, behoben
+
+1. **`pruefeKonfiguration()` gab das Feld `gelesen` nie zurück**, während `startbereitschaft()`
+   genau `konfig.gelesen.maxParallel` und `konfig.gelesen.maxAnfragenJeMinute` las. Beide
+   Zugriffe liefen ins Leere: die Zyklushürde rechnete **immer** mit Parallelität 1 und ohne
+   Minutengrenze. Die Richtung war die sichere (zu streng, nie zu lax) — falsch war sie
+   trotzdem: eine Betreiberentscheidung für Parallelität 2 wäre im Tor wirkungslos geblieben,
+   ohne Hinweis.
+2. **`arbeitsklassenImFenster()` rechnete mit fest eingebauten 24 Stunden**, und kein Aufrufer
+   übergab etwas anderes. Der Motor liest die Breite aus `HELMUT_DEMAND_TENANT_MAX_AGE_H`
+   (`source-demand.fensterKonfig`). Wäre die Variable je gesetzt worden, hätten Tor und Motor
+   still mit verschiedenen Phasenfenstern gerechnet — genau das, was der Kommentar im Tor
+   ausschließen wollte.
+
+Beide behoben, beide regressionsgesichert (`testkohorte-stufen-test.js` Abschnitt M).

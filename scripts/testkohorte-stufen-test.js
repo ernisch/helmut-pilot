@@ -416,6 +416,32 @@ async function main() {
       fensterMinuten: 263, parallel: 1, szenario: "konservativ", mandate: 500
     }).passt === false);
 
+  // ── O · Ehrlich benannte Grenzen (keine stillen Annahmen) ────────────────
+  console.log("\nO · Ehrlich benannte Grenzen");
+  const zyklusPlan = await Z.fuehreZyklusAus({ env: {} });
+  check("O1 der Fachzyklus benennt seine Abbruchebene ausdrücklich als HTTP",
+    zyklusPlan.abbruchEbene === "http", String(zyklusPlan.abbruchEbene));
+  check("O2 er benennt auch, wer die fachliche Bewertung leistet",
+    /funktionstest-kontrolle/.test(String(zyklusPlan.fachlicheBewertungDurch || "")));
+  check("O3 der Zyklus läuft ohne Freigabe als Trockenlauf",
+    zyklusPlan.modus === "trockenlauf");
+
+  // Warteschlangenreste: KEIN Kohortenwerkzeug räumt `helmut_jobs`. Das ist eine
+  // bestätigte Lücke. Sie wird nicht verschwiegen, sondern erzwingt über den
+  // Restbestandsbefund ein „nicht vollständig entfernt".
+  check("O4 kein Kohortenwerkzeug räumt die Warteschlange — bestätigte Lücke",
+    ["lib/helmut/testkohorte-rueckbau.js", "lib/helmut/testkohorte-vorwaerts.js",
+      "lib/helmut/testkohorte-entfernung.js", "lib/helmut/testkohorte-betrieb.js"]
+      .every((d) => !/helmut_jobs/.test(fs.readFileSync(path.join(ROOT, d), "utf8"))));
+  check("O5 der Restbestandsbefund zählt die Warteschlange trotzdem mit und blockiert",
+    E.RESTBESTAND_FAMILIEN.includes("warteschlangenAuftraege")
+      && E.restbestandsBefund({
+        erhebung: {
+          mandatsprofile: 0, identitaetsprofile: 0, storeZeilen: 0,
+          warteschlangenAuftraege: 7, schedulerSpuren: 0
+        }
+      }).vollstaendigEntfernt === false);
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);
 }
