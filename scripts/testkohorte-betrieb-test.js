@@ -380,8 +380,15 @@ function main() {
     }).offen.includes("Kein aktives Kohortenkonto"));
   // Regression: Löschmarken werden REAL gegen REAL verglichen. Eine Löschmarke
   // auf einer Kohortenzeile darf keine neue an einem realen Mandat verdecken.
+  // KORRIGIERT 02.09. (adversariales Diff-Review): Diese Vorrichtung war in sich
+  // widersprüchlich — sie setzte `kohortenProfile: 495`, ließ `identitaetsprofile`
+  // aber auf dem kohortenfreien Wert stehen. Die Grundlinien-SQL erhebt
+  // `identitaetsprofile` als GESAMTZAHL (`select count(*) from profiles`), die
+  // Kohorte ist darin also enthalten. Genau diese Inkonsistenz hat den Fehler im
+  // Rückbaubefund verdeckt.
   const nachAbbruch = {
     ...GRUNDLINIE, mandateGesamt: 504, mandateInaktiv: 499, mandateGeloescht: 1,
+    identitaetsprofile: GRUNDLINIE.identitaetsprofile + 495,
     kohortenProfile: 495, kohortenProfileGeloescht: 1
   };
   check("H10 Löschmarke auf einer Kohortenzeile verdeckt keine an einem realen Mandat",
@@ -461,18 +468,46 @@ function main() {
   // BEFUND 02.09. (adversariales Diff-Review): Der Befund „Zahl der realen
   // Identitätsprofile unverändert" unterstellte eine Grundlinie mit 0
   // Kohortenzeilen — `pruefeGrundlinie` verlangt das ausdrücklich NICHT.
-  check("J8 Eine Grundlinie MIT Kohortenzeilen macht den Identitätsbefund unbewertbar",
+  // BEFUND 02.09.: Verglichen wurde der REALE Anteil von jetzt gegen die
+  // GESAMTZAHL von damals. Bei einer Grundlinie mit Kohorte war das still falsch.
+  const identitaetsbefund = (r) => r.pruefungen.find((p) => p.name.includes("realen Identitätsprofile"));
+  // Eine in sich STIMMIGE Grundlinie mit Kohorte: die 495 stehen in JEDER Zahl,
+  // die sie betreffen (Mandate, inaktiv, Identitätsprofile) — genau so, wie die
+  // Grundlinien-SQL sie erhebt.
+  const MIT_KOHORTE = Object.freeze({
+    ...GRUNDLINIE,
+    mandateGesamt: GRUNDLINIE.mandateGesamt + 495,
+    mandateInaktiv: GRUNDLINIE.mandateInaktiv + 495,
+    identitaetsprofile: GRUNDLINIE.identitaetsprofile + 495,
+    kohortenProfile: 495
+  });
+  check("J8 Eine in sich stimmige Grundlinie MIT Kohortenzeilen wird korrekt verglichen",
     (() => {
-      const g = { ...GRUNDLINIE, kohortenProfile: 495 };
-      const r = K.pruefeRueckbau({ grundlinie: g, bestand: bestandMit() });
-      const befund = r.pruefungen.find((p) => p.name.includes("realen Identitätsprofile"));
-      return befund && befund.ok === false && /NICHT BEWERTBAR/.test(befund.detail);
+      // 495 Kohortenprofile stehen in BEIDEN Zahlen — der reale Anteil ist
+      // unverändert, der Befund muss zutreffen.
+      const g = MIT_KOHORTE;
+      const b = identitaetsbefund(K.pruefeRueckbau({ grundlinie: g, bestand: bestandMit() }));
+      return b && b.ok === true;
     })());
-  check("J9 Die kohortenfreie Grundlinie bleibt bewertbar",
+  check("J8a Die ALTE Rechnung hätte hier fälschlich abgelehnt (Gegenprobe)",
     (() => {
-      const r = K.pruefeRueckbau({ grundlinie: GRUNDLINIE, bestand: bestandMit() });
-      const befund = r.pruefungen.find((p) => p.name.includes("realen Identitätsprofile"));
-      return befund && befund.ok === true;
+      const g = MIT_KOHORTE;
+      const ist = bestandMit();
+      // Alte Rechnung: realer Anteil jetzt gegen GESAMTZAHL damals.
+      return (ist.identitaetenGesamt - ist.kohortenIdentitaeten) !== g.identitaetsprofile;
+    })());
+  check("J8b Ein echter Verlust an realen Identitätsprofilen wird erkannt",
+    (() => {
+      const b = identitaetsbefund(K.pruefeRueckbau({
+        grundlinie: { ...GRUNDLINIE, identitaetsprofile: GRUNDLINIE.identitaetsprofile + 1 },
+        bestand: bestandMit()
+      }));
+      return b && b.ok === false;
+    })());
+  check("J9 Die kohortenfreie Grundlinie bleibt unverändert bewertbar",
+    (() => {
+      const b = identitaetsbefund(K.pruefeRueckbau({ grundlinie: GRUNDLINIE, bestand: bestandMit() }));
+      return b && b.ok === true;
     })());
   check("J6 Das Wort des Rückwegs räumt die Scheduler-Spur NICHT auf",
     K.freigabe("scheduler-spur", SCHARF_ENV("deaktivierung")).erteilt === false);
