@@ -442,6 +442,48 @@ async function main() {
         }
       }).vollstaendigEntfernt === false);
 
+  // ── P · Außenkanäle: „vollständig" heißt NICHT „alles gemessen" ──────────
+  //
+  // Befund der Gegenprüfung: `vollstaendig` bedeutet „alle MESSBAREN Kanäle
+  // erhoben". A10 hängt an diesem Feld. Wer nur den Namen liest, hält drei
+  // bauartbedingt unmessbare Kanäle für geprüft. Das Feld bleibt (A10 und seine
+  // Tests hängen daran), steht aber nicht mehr allein.
+  console.log("\nP · Außenkanäle (eine ungemessene Null ist keine Null)");
+  const N = require("../lib/helmut/funktionstest-nachweise");
+  const spur = N.werteKommunikationsspurenAus({
+    auditEvents: [], pushEreignisse: [], jobOutbox: [], vonMs: 0, bisMs: 1
+  });
+  check("P1 sieben Kanäle insgesamt", spur.kanaeleGesamt === 7, String(spur.kanaeleGesamt));
+  check("P2 vier davon sind messbar und wurden erhoben",
+    spur.kanaeleGemessen === 4, String(spur.kanaeleGemessen));
+  check("P3 drei sind bauartbedingt NICHT messbar und werden benannt",
+    spur.nichtMessbar.length === 3
+      && ["monitoring-webhook", "whatsapp", "lambda-invoke"].every((k) => spur.nichtMessbar.includes(k)),
+    spur.nichtMessbar.join(", "));
+  check("P4 `vollstaendig` ist true — es meint aber nur die messbaren Kanäle",
+    spur.vollstaendig === true);
+  check("P5 `alleKanaeleGemessen` ist FALSE und kann nicht fehlgelesen werden",
+    spur.alleKanaeleGemessen === false);
+  check("P6 die drei unmessbaren Kanäle erscheinen NICHT als 0 in jeKanal",
+    ["monitoring-webhook", "whatsapp", "lambda-invoke"]
+      .every((k) => !Object.prototype.hasOwnProperty.call(spur.jeKanal, k)));
+  check("P7 eine nicht übergebene Quelle gilt als NICHT gemessen, nicht als 0",
+    (() => {
+      const ohnePush = N.werteKommunikationsspurenAus({
+        auditEvents: [], jobOutbox: [], vonMs: 0, bisMs: 1
+      });
+      return ohnePush.nichtGemessen.includes("push")
+        && ohnePush.vollstaendig === false
+        && ohnePush.jeKanal.push === null;
+    })());
+  check("P8 der Kommunikationsriegel führt genau diese sieben Kanäle",
+    (() => {
+      const R = require("../lib/helmut/kommunikationsriegel");
+      return R.KANAELE.length === 7
+        && R.KANAELE_MANDATSGEBUNDEN.length === 3
+        && R.KANAELE_BETRIEBLICH.length === 4;
+    })());
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);
 }
