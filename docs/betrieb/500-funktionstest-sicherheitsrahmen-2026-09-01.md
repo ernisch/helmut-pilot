@@ -1761,3 +1761,92 @@ dafür **nicht** gebraucht. Wer sie dennoch will, braucht **zwei** getrennte Fre
 sie stehen jetzt als Schritte 19 und 20 im Ablaufplan: die Migration anwenden **und**
 `HELMUT_LLM_USAGE_RELATIONAL` einschalten. **Die acht Betreiberwerte allein genügen dafür
 ausdrücklich nicht.**
+
+---
+
+## §22 · Nach-Merge-Nachweis 02.09. — PR #295 ist gemergt und deployt
+
+**Zweck.** `CLAUDE.md` §9 verlangt nach einem autorisierten Merge einen **eigenen, rein
+lesenden** Nachweis des tatsächlichen Endzustands. Der vor dem Merge geschriebene PR-Text
+(„mergefähig", „nicht gemergt") erfüllt diese Pflicht danach nicht mehr. Dieser Abschnitt
+ist dieser Nachweis. Er entstand **ausschließlich lesend**: keine Route ausgeführt, keine
+Migration angewendet, kein Datensatz verändert.
+
+### §22.1 Der Merge — belegte Tatsachen
+
+| Gegenstand | Belegter Wert | Quelle |
+|---|---|---|
+| Pull Request | #295, `state: closed`, `merged: true` | GitHub-API, rein lesend |
+| Zusammengeführt am | **2026-09-02, 13:08:53 UTC** (Berlin 15:08:53, Türkei 16:08:53) | `merged_at` |
+| Zusammengeführt von | `ernisch` (Betreiber) | `merged_by` |
+| Geprüfter PR-Kopf | `04b9f07601b859031805d1043f87f8614d3dfba0` | `head.sha` |
+| Basis vor dem Merge | `881739da0f8f06184a1bdf7dd86895d896cf0336` | `base.sha` |
+| **Neuer `main`-Kopf (Merge-Commit)** | **`9079ac3cc7d5d60ee993f7c45684a0591a254802`** | `git cat-file -p` |
+| Eltern des Merge-Commits | `881739da…` **und** `04b9f076…` | `git cat-file -p` |
+| Umfang | 55 Dateien, +9.111/−204, 8 Commits | GitHub-API |
+
+Der Merge-Commit trägt eine **verifizierte Signatur** (`githubCommitVerification: verified`).
+
+### §22.2 Die beiden Pflichtprüfungen auf **genau diesem** Kopf
+
+Beide nach dem Merge gestarteten Pflicht-Checks liefen auf `9079ac3…` und sind **grün**.
+Maßgeblich ist Lauf **33634007860** (`.github/workflows/ci.yml`, Ereignis `push`, Branch `main`):
+
+| Pflichtprüfung | Ergebnis | Dauer | Job-Kennung |
+|---|---|---|---|
+| **Syntax + Offline-Suiten** | `success` | 13:09:05 → 13:17:50 UTC (8 min 45 s) | 100260175439 |
+| **Browser-/Mobile-Smoke (Chromium)** | `success` | 13:09:05 → 13:10:01 UTC (56 s) | 100260175015 |
+
+Im Job „Syntax + Offline-Suiten" ist auch der Schritt *„Z22-Datenbanknachweis §1–§11 gegen
+echte PostgreSQL + echtes PostgREST (fail-closed)"* grün — der §11-Rückfallnachweis läuft
+also weiterhin im Pflicht-CI.
+
+### §22.3 Das Production-Deployment — **die `dpl_`-Kennung ist jetzt belegt**
+
+Der Sprintbericht vom 02.09. musste festhalten, dass die interne Vercel-Kennung **nicht
+auslesbar** war; GitHub meldete nur `success` und „Deployment has completed". Diese Lücke
+ist geschlossen — die Kennung wurde am 02.09. rein lesend über die Vercel-API abgerufen:
+
+| Gegenstand | Belegter Wert |
+|---|---|
+| **Deployment-Kennung** | **`dpl_DHTnMxFsibaj3XxdkpgDzandursx`** |
+| Zustand | **`READY`** |
+| Ziel | **`production`** |
+| Commit | `9079ac3cc7d5d60ee993f7c45684a0591a254802` — **exakt der neue `main`-Kopf** |
+| Erstellt | 2026-09-02, 13:08:57 UTC (Berlin 15:08:57, Türkei 16:08:57) |
+| Projekt / Team | `helmut-pilot` (`prj_xbZ6QzTkr7YoxQI71lW59FT03IR3`) / `nohut` |
+| Rücksetzbar | `isRollbackCandidate: true` |
+
+Damit ist der Deployment-Beleg **vollständig**: Commit, Zustand, Ziel und interne Kennung
+stimmen überein. Eine frühere Sitzung durfte diese Kennung nicht behaupten — jetzt darf sie
+zitiert werden.
+
+### §22.4 Was der Merge **nicht** verändert hat (rein lesend nachgezählt, 02.09.)
+
+| Gegenstand | Wert nach dem Merge | Erwartet |
+|---|---|---|
+| Mandatsprofile gesamt | **9** | 9 |
+| davon aktiv | **5** | 5 |
+| davon inaktiv | **4** | 4 |
+| Löschmarken (`geloescht_at`) | **0** | 0 |
+| Identitätsprofile | **10** | 10 |
+| Synthetische Mandatszeilen (`test-kohorte-`, `test-mdb-`, `synth-mandat-`, `stapel-`) | **0** | 0 |
+| Synthetische Identitätszeilen | **0** | 0 |
+| Synthetische `helmut_store`-Zeilen | **0** | 0 |
+| `helmut_store`-Zeilen gesamt | **12** | — |
+| Angewendete Migrationen | **35**, letzte `20260829175749` | 35 |
+| Crons in `vercel.json` | **13** | 13 |
+
+Der Minimal-Cron `18,48 * * * *` ist **nicht** in `vercel.json` — er bleibt vorbereitet und
+unaktiviert. Migration `20260902121500` liegt weiterhin **nur als Datei** vor.
+`HELMUT_LLM_USAGE_RELATIONAL` ist **nicht** aktiv. Keiner der acht Betreiberwerte ist gesetzt.
+
+**Diese Nullen sind gezählt, nicht angenommen** — jede Zeile stammt aus einer `SELECT count(*)`-
+Abfrage gegen die Production-Datenbank bzw. aus `vercel.json` im gemergten Baum.
+
+### §22.5 Das Urteil nach dem Merge — unverändert
+
+Der Merge machte die Schutzregeln, die Ausführer **und beide Blocker-Hürden** wirksam. Er
+machte den 500er-Funktionstest **nicht** startbereit, und er sollte es nicht. Die beiden
+strukturellen Blocker aus §21.4/§21.5 gelten unverändert weiter; sie sind in §23 erneut und
+unabhängig am Code nachgeprüft.
