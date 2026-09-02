@@ -1,9 +1,8 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-09-01 — Reife-/Korrektursprint und PR-Bereinigung abgeschlossen: PR #290 und #292 gemergt und deployt (§21–§22).** Vollständige
-Fassung vor dieser Verdichtung (01.09.): byte-identisch in [`archive/project_state/2026_09_01_CURRENT_STATE_full.md`](archive/project_state/2026_09_01_CURRENT_STATE_full.md). Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Ablageregeln: [`archive/README.md`](archive/README.md), `CLAUDE.md` §9.
+**Stand: 2026-09-02 — Sicherheitsrahmen gebaut und offline bewiesen, beide Azure-Messpakete ausgeführt, Endpunktguard und Telemetriekorrektur nachgezogen; Draft-PR #294 offen, nichts gemergt (§23/§24).** Vollfassungen vor den drei Verdichtungen vom 01.09.: byte-identisch unter [`archive/project_state/`](archive/project_state/) (`2026_09_01`, `…01b`, `…01c`). Diese Datei enthält nur den aktuellen, entscheidungsrelevanten Zustand (Grenze 30.000 Zeichen / 350 Zeilen, testgesichert durch `scripts/current-state-groesse-test.js`). Ablageregeln: [`archive/README.md`](archive/README.md), `CLAUDE.md` §9.
 
-**Kernlage in sechs Sätzen:** Der neue Warteschlangenmotor (`HELMUT_SCALABLE_PIPELINE=on`) ist **seit dem 23.08.2026 in Production eingeschaltet** (Vollbeleg Runbook §30.7). Die **fünf bestehenden Mandate sind mit 376 echten Abschlüssen bewiesen**; **Morgenlauf 5/5 und Lagelauf effektiv 5/5** aller aktiven Mandate waren erfolgreich. Der **R4-/GitHub-Actions-Watchdog-Nachweis ist grün**. Im Aktivierungsfenster gab es **keine Doppelarbeit, keine verlorenen Aufträge, keine endgültigen Fehler, 0 Lease-Probleme und 0 Fencing-Konflikte**; alle elf §28.6-Kontrollen sind erfüllt ([`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §30.7). **Der Stand `0 unbekannt` gilt seit dem 30.08. nicht mehr: es stehen 3 Vorgänge auf `unbekannt` (§20).** Der Modus ist weiterhin **`HELMUT_JOB_DISPATCH_MODE=shadow`** (Cron-Antrieb; kein Ereignis-Antrieb, kein AWS). **Der Selbstweck ist seit 24.08. lokal Ende-zu-Ende belegt, aber in Production nie ausgeführt** (§14).
+**Kernlage:** Der Warteschlangenmotor (`HELMUT_SCALABLE_PIPELINE=on`) ist **seit 23.08.2026 in Production eingeschaltet** (Runbook §30.7); Modus weiterhin **`HELMUT_JOB_DISPATCH_MODE=shadow`** (Cron-Antrieb, kein Ereignis-Antrieb, kein AWS). Die **fünf Mandate sind mit 376 echten Abschlüssen bewiesen**, Morgenlauf 5/5 und Lagelauf effektiv 5/5; der R4-/Watchdog-Nachweis ist grün; im Aktivierungsfenster keine Doppelarbeit, keine verlorenen Aufträge, keine endgültigen Fehler, 0 Lease-/Fencing-Probleme, alle elf §28.6-Kontrollen erfüllt ([`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) §30.7). **Seit 30.08. stehen 3 Vorgänge auf `unbekannt` (§20).** **Der Selbstweck ist lokal Ende-zu-Ende belegt, in Production nie ausgeführt** (§14).
 
 ## 1 · Aktive Produktphase
 
@@ -12,20 +11,20 @@ Fassung vor dieser Verdichtung (01.09.): byte-identisch in [`archive/project_sta
 ## 2 · Stand auf `main` und Pull Requests
 
 - **Letzter fachlich wirksamer Production-Code: `9d6d18e5` aus #292** (§22; Vercel-Status `success`); davor `98cfedc1` (#290), `936b2676` (#286), `3a153b50` (#287), `a03480bb` (#285), `3244f073` (#284), `0f900e68` (#283).
-- **PR #273, #274, #279, #280, #281, #283–#290 und #292 sind gemergt.** #275–#277 und #282 wurden nach Inhaltskonsolidierung geschlossen, nicht gemergt; ihre Branches bleiben als Auditbelege erhalten. Es bestehen keine fachlichen offenen PRs. Spätere reine Dokumentationsabschlüsse ändern diesen Stand nicht; Nachweis gemäß `CLAUDE.md` §9 über die Git-Historie. **`672886c`/`be5bd15` existieren nicht mehr** (01.09. geprüft); Inhalte im Reifesprint rekonstruiert (§21).
-- Davor gemergt: #271, #270, #265, #262, #261, #260/#259/#256/#257, #225, #216; die PR-Bereinigung vom 23.08. (inkl. begründeter Schließungen) ist in Archivfassung und Runbook dokumentiert.
+- **Gemergt:** #273, #274, #279, #280, #281, #283–#290, #292; davor #271, #270, #265, #262, #261, #260/#259/#256/#257, #225, #216. #275–#277 und #282 wurden nach Konsolidierung **geschlossen, nicht gemergt**; ihre Branches bleiben Auditbelege. **`672886c`/`be5bd15` existieren nicht mehr** (01.09. geprüft), Inhalte in §21 rekonstruiert.
+- **Offen (Draft #294, NICHT gemergt):** Sicherheitsrahmen des 500er-Funktionstests auf `claude/security-sprint-functional-test-wap0q1`, Basis `b998e9bc` (§23). Sonst keine fachlichen offenen PRs.
 - Merge nach `main` löst automatisch ein Production-Deployment aus.
 
 ## 3 · Production-Zustand
 
-- **Datenbank:** Supabase **Free-Plan** — keine nativen Backups, kein PITR (→ OP-01). Vollsicherung (40/40) und isolierter Restore seit 2026-07-28 geübt; RPO ≤ 24 h.
-- **Mandate (zwei Zählungen, nicht dasselbe — rein lesend bestätigt 25.08.):** **9 Mandatsprofile** (`mandate_profiles`), davon **5 aktiv** (Signatur `m5-9aee228dbf2c9f13`, K2-Gate ohne Widerspruch) und 4 deaktiviert (`angela-merkel`, `james-brown`, `max-mustermann`, `helmut-abnahme-berlin`; OP-04-Rest), 0 mit Löschmarke. Daneben **10 Identitätsprofile** (`profiles`), davon **1 ohne zugehöriges Mandatsprofil**; 0 Mandatsprofile ohne Identitätsprofil. **0 Testmandate.** Ein Identitätsprofil ist kein Mandat — nur die 5 aktiven Mandatsprofile erzeugen Last.
-- **Aufbewahrung Crawl-Läufe:** `HELMUT_CRAWL_RUN_RETENTION=36` (Mindestbedarf n=5: 30).
-- **Quellen:** 9 Pakete · 163 Abrufwege · 165 Zuordnungen; **146 von 163 Wegen Google-News** (Klumpenrisiko B1, OP-15); 18 Landesmodul-Wege (BE/BB) gesperrt. Seeds `20260713`/`20260717` **nicht eingespielt** ([`betrieb/quellen-seed-einspielung.md`](betrieb/quellen-seed-einspielung.md): BLOCKIERT).
-- **Crons (Production):** crawl 04:00/20:00 · pipeline 16:00 · morning-briefing 05:00 · understanding 05:30/21:30 · **understanding-rueckstand 11:30/17:30** · lage-briefing 05:45 · health 06:00 · lage-check 10:00 UTC · 2 Narrativ-Nachlaufslots 06:10/06:22 (inert). **PR-B mit `18,48 * * * *` ist nicht in Production.** Dazu der GitHub-Actions-Watchdog (`briefing-watchdog.yml`, täglich 05:30 UTC, oft 2–3 h verzögert).
-- **Migrationen:** OP-30-Dateien seit 15.08. angewendet; `20260823043633` seit 23.08. installiert (Doppelbuchung dokumentiert, Runbook §30.6). **Z22 ist seit 29.08. mit ausdrücklicher Betreiberfreigabe in Production angewendet:** Basis `20260826190000` unter Production-Buchung `20260829175642`, Vorwärtskorrektur `20260829123132` unter `20260829175749`; Nachprüfung grün (§18), **Z22 nicht erneut anwenden**. Auf `main`, aber **nicht in Production angewendet**, liegen weiterhin `20260720` und F9 (`20260825101500`). Im isolierten Z3b-Testprojekt ist die alte Z22-Fassung unter `20260827121931` und die Korrektur unter der Buchung `20260829135455` angewendet (§18). Jede weitere Production-Anwendung bleibt freigabepflichtig.
-- **Kosten:** LLM ~0,14 USD/Betriebstag (Untergrenze, Preisbasis unbelegt, [`betrieb/kostenmessung.md`](betrieb/kostenmessung.md)).
-- **Zugangsgrenze jeder Claude-Sitzung:** Supabase lesend, Vercel-Deployments lesend; **Vercel-Env weder lesbar noch setzbar**; Flag-Zustände nur wirkungsbasiert prüfbar. Jede Flag-/Env-Änderung und jeder Rückbau ist Betreiberaktion ([`betrieb/env-inventar.md`](betrieb/env-inventar.md) §8). Die Parlamentsdomains sind aus Cloud-Sitzungen per Egress-Proxy gesperrt — bytegenaue Quellenprüfung läuft über den freigegebenen Actions-Weg (§14).
+- **Datenbank:** Supabase **Free-Plan** — keine nativen Backups, kein PITR (→ OP-01). Vollsicherung (40/40) und isolierter Restore seit 28.07. geübt; RPO ≤ 24 h.
+- **Mandate (zwei Zählungen, nicht dasselbe — rein lesend bestätigt):** **9 Mandatsprofile**, davon **5 aktiv** (`m5-9aee228dbf2c9f13`) und 4 deaktivierte Demo-Mandate (OP-04-Rest), 0 Löschmarken. Daneben **10 Identitätsprofile**. **0 Testmandate, 0 `test-kohorte`-Zeilen.** Nur die 5 aktiven erzeugen Last.
+- **Crawl-Lauf-Aufbewahrung:** `HELMUT_CRAWL_RUN_RETENTION=36` (Mindestbedarf n=5: 30).
+- **Quellen:** 9 Pakete · 163 Abrufwege · 165 Zuordnungen; **146/163 Google-News** (Klumpenrisiko B1, OP-15); 18 Landesmodul-Wege (BE/BB) gesperrt. Seeds `20260713`/`20260717` **nicht eingespielt** ([`betrieb/quellen-seed-einspielung.md`](betrieb/quellen-seed-einspielung.md): BLOCKIERT).
+- **Crons (Production, 13):** crawl 04:00/20:00 · pipeline 16:00 · morning-briefing 05:00 · understanding 05:30/21:30 · **rueckstand 11:30/17:30** · lage-briefing 05:45 · health 06:00 · lage-check 10:00 UTC · 2 Narrativslots 06:10/06:22 (inert). **`18,48 * * * *` ist nicht in Production.** Dazu der Actions-Watchdog (`briefing-watchdog.yml`, 05:30 UTC, oft 2–3 h verzögert).
+- **Migrationen:** 35 Einträge, letzte `20260829175749` (01.09. rein lesend bestätigt). **Z22 ist seit 29.08. mit Betreiberfreigabe angewendet** (Basis `20260826190000` → Buchung `20260829175642`, Vorwärtskorrektur `20260829123132` → `20260829175749`; Nachprüfung grün, §18) — **nicht erneut anwenden**. Auf `main`, aber **nicht in Production angewendet**: `20260720` und F9 (`20260825101500`). Jede weitere Production-Anwendung bleibt freigabepflichtig.
+- **Kosten:** LLM ~0,14 USD/Betriebstag (Untergrenze). Seit 01.09. gemessen: **0,002941 USD je Aufruf gemischt** (Listenpreis, Kontopreis weiter unbelegt — F7); bei Deckel 2.416 ≈ **213 USD/Monat**, obere Schranke 243 (§23). ([`betrieb/kostenmessung.md`](betrieb/kostenmessung.md))
+- **Zugangsgrenze jeder Claude-Sitzung:** Supabase lesend, Vercel-Deployments lesend; **Vercel-Env weder lesbar noch setzbar** — Aussagen über die Env-Oberfläche können in einer Sitzung nur als **Betreiberangabe** geführt werden (Beleg §16.8a). Flag-Zustände nur wirkungsbasiert prüfbar; jede Flag-/Env-Änderung ist Betreiberaktion ([`betrieb/env-inventar.md`](betrieb/env-inventar.md) §8). Parlamentsdomains sind per Egress-Proxy gesperrt — bytegenaue Quellenprüfung über den freigegebenen Actions-Weg.
 
 ## 4 · Aktivierte Funktionen (Production)
 
@@ -36,16 +35,16 @@ Fassung vor dieser Verdichtung (01.09.): byte-identisch in [`archive/project_sta
 | `HELMUT_MATCHING_AUDIT=on` | seit 2026-07-28 |
 | `HELMUT_PROCESS_RUNS_RELATIONAL=on` | seit 2026-07-27 |
 | `HELMUT_ATOMIC_LOCK` | an — atomare, fail-closed Sperren |
-| LLM-Tagesbudget: Gesamtdeckel **100**, davon **30** für Verstehen reserviert (nicht priorisiert: max. 70; nie 130) | Mechanismus fail-closed (Code). **Die Werte 100/30 sind dokumentiert, in dieser Sitzung nicht live verifiziert** — Vercel-Env ist weder lesbar noch setzbar, `llm_budget_counters` speichert nur den Verbrauch, nicht die Grenze. Fehlt die Variable, greift laut Code das Schutzlimit **50**. Tragfähigkeit: **25 offen (muss gemessen werden)**, **ab 50 reicht 100 in beiden Modelllinien nicht** (§6.3) |
+| LLM-Tagesbudget: Deckel **100**, davon **30** für Verstehen reserviert (Reserve liegt **im** Deckel ⇒ höchstens 70 nicht priorisiert, **nie 130**) | fail-closed im Code. **100/30 sind dokumentiert, nicht live verifiziert** (Vercel-Env nicht lesbar; `llm_budget_counters` speichert nur den Verbrauch). Fehlt die Variable, greift das Schutzlimit **50**. Tragfähigkeit 25 offen; **ab 50 reicht 100 nicht** (§6.3) |
 | `HELMUT_VERSTEHEN_CAS=on` | seit 2026-08-17; `HELMUT_VERSTEHEN_PARALLELITAET` nicht gesetzt ⇒ wirkt als 1 |
-| `HELMUT_SCALABLE_PIPELINE=on` | **seit 23.08. 16:47 UTC**, `HELMUT_JOB_DISPATCH_MODE=shadow`, Worker 4/25/25; Versuch 5 abgeschlossen, kein Rückbau nötig; Rückweg: Flag löschen + Redeploy (Betreiber) |
+| `HELMUT_SCALABLE_PIPELINE=on` | **seit 23.08. 16:47 UTC**, `HELMUT_JOB_DISPATCH_MODE=shadow`, Worker 4/25/25; Rückweg: Flag löschen + Redeploy (Betreiber) |
 | `HELMUT_CRON_GLOBALABRUF=on` | seit 2026-08-06 (Betreiber); Fortbestand ist Betreiberentscheidung |
 
 ## 5 · Deaktivierte Funktionen (bleiben aus, Aktivierung = Freigabe)
 
 | Funktion | Zustand |
 |---|---|
-| **Berlin (Landesmodul)** | inaktiv; `HELMUT_LANDESMODULE=berlin` gesetzt, aber wirkungslos (0 berechtigte Mandate); ob das Flag wirkt, ist **unbewiesen** ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22) |
+| **Berlin (Landesmodul)** | inaktiv; `HELMUT_LANDESMODULE=berlin` gesetzt, aber wirkungslos (0 berechtigte Mandate); Wirkung **unbewiesen** ([`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) §22) |
 | **Brandenburg** | inaktiv (`brandenburg-basis` `prepared`, 8/8 Wege gesperrt) |
 | M8 / `HELMUT_MATCHING_RELEVANZ_GATE` | aus (nie aktiviert) |
 | `HELMUT_CRON_GLOBALPHASE` | nicht gesetzt (aus) |
@@ -54,21 +53,21 @@ Fassung vor dieser Verdichtung (01.09.): byte-identisch in [`archive/project_sta
 | Mailversand Resend | gebaut, nicht aktiviert (AVV/DNS/Betreiberschritte offen) |
 | Retention/Löschung (`HELMUT_RETENTION_EXECUTE`) | nicht scharf (OP-12) |
 | `HELMUT_TENANT_LLM_CAP` | aus (OP-03) |
-| `HELMUT_PROFILE_DB_MODE` | Wirkung AN (laufzeitbelegt); Wert/Setzzeitpunkt nicht Betreiber-bestätigt |
+| `HELMUT_PROFILE_DB_MODE` | Wirkung AN (laufzeitbelegt); Wert/Setzzeitpunkt unbestätigt |
 | 5 Offline-Testmandate (`test-mdb-*`) | deaktivierte Repo-Daten, **nicht aktivieren** |
 
 ## 6 · Skalierung: was vor 10 und vor 25 Mandaten fehlt
 
-**Die 25 Mandate sind nicht aktiviert.** Die 20 zusätzlichen Profile existieren als **lokales, vollständig deaktiviertes Importpaket** (`aktiv: false`, kein Import in Production; §14). Voraussetzungen bleiben ausdrücklich:
+**Die 25 Mandate sind nicht aktiviert.** Die 20 zusätzlichen Profile sind ein **lokales, vollständig deaktiviertes Importpaket** (`aktiv: false`, kein Import in Production). Voraussetzungen:
 
-1. **Siebentägiger Nachweis des echten Warteschlangenbetriebs mit fünf Mandaten** — nicht begonnen. Verbindliche Quelle ist [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §14 **Stufe 2** (Abfluss ≥ Ankunft über 7 Tage, 0 Verlust/Doppelarbeit, Wartezeit < 24 h). Die frühere Angabe „`op30-kapazitaet-morgenslots-2026-08-09.md` §10" war **falsch**: dort steht der ältere **Slot-Stufenplan** (Morgenslots, 5→200 Mandate), nicht der Ereignis-Antrieb. Für die Umschaltung sind **fünf** Umgebungswerte nötig, nicht drei ([`betrieb/env-inventar.md`](betrieb/env-inventar.md) §7a).
-2. **Regionale Quellen Berlin/Brandenburg**: beide Landesmodule inaktiv, Wege gesperrt, Seeds nicht eingespielt; Wirkung von `HELMUT_LANDESMODULE` unbewiesen (§5).
-3. **KI-Tagesdeckel**: **100/30 sind dokumentierte Werte, in dieser Sitzung nicht live verifiziert** (Vercel-Env weder lesbar noch setzbar; `llm_budget_counters` speichert nur den Verbrauch, nicht die Grenze). Semantik: Gesamtobergrenze ist das Limit, die Reserve wird darin freigehalten und **nicht** addiert ⇒ 100 gesamt, höchstens 70 nicht priorisiert, **nie 130**; fehlt die Variable, greift laut Code das Schutzlimit **50**. **Für 25 Mandate ist die Tragfähigkeit offen und muss gemessen werden** (Linie A 88–265, Linie B 113–336). **Ab 50 Mandaten reicht 100 in beiden Modelllinien nicht.** (Semantik [`betrieb/llm-budget-reservierung.md`](betrieb/llm-budget-reservierung.md); Modellvergleich [`betrieb/skalierung-25-50-100.md`](betrieb/skalierung-25-50-100.md) §2c.)
-4. **Tägliche Lagekapazität**: der Altpfad schaffte 2 Mandate je Tageslauf; der Motor liefert seit 23.08. effektiv 5/5, für 25 ist der Nachweis offen (Stufenplan Stufe 2 inkl. OP-25-Wiederholung).
-5. **20 zusätzliche Profile**: gegen die amtlichen Live-Seiten abgeglichen und **amtlich bestätigt** (rein lesende Actions-Läufe 24.08.; Lauf 4 bestätigte alle 20 unter Strenge-Stufe 2, nicht amtlich Belegbares wurde entfernt statt behauptet — **maßgeblich ist der jeweils letzte Verifikationslauf am PR**, Protokoll: `daten/…-pruefstand.md`); Import/Aktivierung bleiben freigabepflichtig. **Berliner Wahl 20.09.2026** (berlin.de/wahlen): die zehn Berliner Profile gelten nur für die 19. WP — nach der Wahl erneute Prüfung, keine ungeprüfte Aktivierung; Terminrisiko für den 25er-Nachweis.
-6. **Echter Warteschlangenbetrieb (Ereignis-Antrieb):** **AWS ist dafür nicht technisch notwendig** (Korrektur 24.08.). Für den Fünfernachweis trägt der vorhandene **Selbstweck** — gebaut, verriegelt, lokal Ende-zu-Ende belegt, **in Production nie ausgeführt**; Freischaltung ist eine Betreiberentscheidung (Runbook §31). AWS (SQS/DLQ/KMS/IAM/Lambda) bleibt der kanonische Transport für **große** Mandatszahlen und eine getrennte, kostenpflichtige Gründerentscheidung — die frühere Aussage „Voraussetzung des Fünfernachweises" ist überholt.
+1. **Siebentägiger Nachweis des Warteschlangenbetriebs mit fünf Mandaten** — nicht begonnen. Verbindlich: [`betrieb/op30-zielarchitektur-2026-08-13.md`](betrieb/op30-zielarchitektur-2026-08-13.md) §14 **Stufe 2** (Abfluss ≥ Ankunft über 7 Tage, 0 Verlust, Wartezeit < 24 h). Umschaltung braucht **fünf** Umgebungswerte ([`betrieb/env-inventar.md`](betrieb/env-inventar.md) §7a).
+2. **Regionale Quellen BE/BB**: beide Landesmodule inaktiv, Wege gesperrt, Seeds nicht eingespielt; Wirkung von `HELMUT_LANDESMODULE` unbewiesen (§5).
+3. **KI-Tagesdeckel**: 100/30 dokumentiert, nicht live verifiziert; Semantik und Schutzlimit 50 siehe §4. **Für 25 Mandate ist die Tragfähigkeit offen** (Linie A 88–265, Linie B 113–336); **ab 50 reicht 100 in beiden Modelllinien nicht.** Seit 01.09. **gemessen**: p95-Tagesbedarf **170** bei 5 Mandaten, Deckelvorschlag 500 = **2.416** (§23). ([`betrieb/llm-budget-reservierung.md`](betrieb/llm-budget-reservierung.md); [`betrieb/skalierung-25-50-100.md`](betrieb/skalierung-25-50-100.md) §2c.)
+4. **Tägliche Lagekapazität**: Altpfad 2 Mandate je Tageslauf; der Motor liefert seit 23.08. effektiv 5/5, für 25 offen (Stufe 2 inkl. OP-25-Wiederholung).
+5. **20 zusätzliche Profile**: amtlich bestätigt (rein lesende Actions-Läufe 24.08., Lauf 4 unter Strenge-Stufe 2; **maßgeblich ist der letzte Verifikationslauf am PR**, `daten/…-pruefstand.md`); Import/Aktivierung freigabepflichtig. **Berliner Wahl 20.09.2026**: die zehn Berliner Profile gelten nur für die 19. WP — danach erneute Prüfung, keine ungeprüfte Aktivierung; Terminrisiko für den 25er-Nachweis.
+6. **Ereignis-Antrieb:** **AWS ist dafür nicht technisch notwendig** (Korrektur 24.08.). Den Fünfernachweis trägt der **Selbstweck** — gebaut, verriegelt, lokal belegt, **in Production nie ausgeführt** (Runbook §31). AWS bleibt kanonischer Transport für **große** Mandatszahlen und eine getrennte, kostenpflichtige Entscheidung.
 
-Entscheidungsgrundlage in einfacher Sprache: [`betrieb/entscheidungsvorlage-skalierung-2026-08-24.md`](betrieb/entscheidungsvorlage-skalierung-2026-08-24.md).
+Entscheidungsgrundlage: [`betrieb/entscheidungsvorlage-skalierung-2026-08-24.md`](betrieb/entscheidungsvorlage-skalierung-2026-08-24.md).
 
 ## 7 · Offene Blocker
 
@@ -78,9 +77,9 @@ Entscheidungsgrundlage in einfacher Sprache: [`betrieb/entscheidungsvorlage-skal
 4. **OP-04-Rest:** Umgang mit deaktivierten Demo-Mandaten.
 5. **Vercel-Schreibzugriff:** Flag-/Env-Änderungen bleiben Betreiberaktionen.
 6. **OP-11:** Branch Protection nicht aktiv; Pflicht-CI blockiert Merges nicht technisch.
-7. **OP-15:** Google-Klumpenrisiko (146/163 Wege); 29 von 42 Personensuchen lieferten im Betriebszeitraum nie (`circuit-open`) — Versorgungsausfall-Risiko, Production-Beweis der Härtung steht aus.
+7. **OP-15:** Google-Klumpenrisiko (146/163 Wege); 29 von 42 Personensuchen lieferten nie (`circuit-open`) — Versorgungsausfall-Risiko, Production-Beweis der Härtung steht aus.
 8. **Lage-/KI-Kapazität für Skalierung:** siehe §6 (Deckel, 7-Tage-Nachweis, Stufenplan). Neu belegt: **drei** reguläre Warteschlangenabflüsse/Tag, nicht elf ([`betrieb/skalierung-25-50-100.md`](betrieb/skalierung-25-50-100.md) §2a).
-9. **Zwei Testzeilen in Production — ERLEDIGT (25.08.).** Auftrag `371707a4…` und Outbox-Zeile `24ba14ec…` sind **entfernt**; die Neutralisierung lief gegen **10:02 Uhr türkischer Zeit** (09:02 Berlin, 07:02 UTC) genau einmal, nach getrennt erteilter Freigabe A (Trockenlauf) und Freigabe B (scharfer Lauf). **`endgueltig_fehler = 0`** — der aktuelle Datenbankfehler ist bereinigt, keine verwaiste Outbox-Zeile, keine fremde Zeile verändert. Der **historische rote Cron-Beleg bleibt erhalten**. Die regulären Motorläufe danach waren durchweg `success` (rein lesend, 25./26.08.); der Gesundheitsbot meldete am 26.08. dennoch „Gestört" — ein Meldefehler, kein Motorbefund (§16). Belege: Runbook §31.10.
+9. **Zwei Testzeilen in Production — ERLEDIGT (25.08.).** Beide entfernt, **`endgueltig_fehler = 0`**, keine fremde Zeile verändert; der historische rote Cron-Beleg bleibt erhalten. Belege: Runbook §31.10.
 10. **OP-07:** Monitoring-Zweitkanal stellt seit mind. 17.08. täglich zu; Ziel von `HELMUT_MONITORING_WEBHOOK_URL` und der doppelte WhatsApp-Eingang bleiben ungeklärt (Betreiberprüfung, kein Code-Fix vorher).
 
 K2/K3 und OP-25 sind abgeschlossen (OP-25 laut Betreiberfeststellung vom 24.08.). Nach einer weiteren OP-30-Stufenaktivierung muss OP-25 vollständig wiederholt werden.
@@ -89,30 +88,29 @@ K2/K3 und OP-25 sind abgeschlossen (OP-25 laut Betreiberfeststellung vom 24.08.)
 
 | Punkt | Was fehlt |
 |---|---|
-| Profilreife (OP-29/OP-04-Teil) | 29B (lesender Fehlerzustands-Nachweis); relationale Profilzeilen veraltete Schnappschüsse (F-P6) |
+| Profilreife (OP-29/OP-04-Teil) | 29B; relationale Profilzeilen veraltete Schnappschüsse (F-P6) |
 | Google-News-Härtung (OP-15) | Production-Beweislauf unter echter Drosselung |
 | `source_id`-Dubletten (OP-19) | Live-Nachweis „Telemetriezeilen = distinct `source_id`" |
-| Punkt 16 Quellenstörungs-Erkennung | 7 von 14 Klassen nur testbelegt |
-| Punkt 17 Kostenmessung | ~16 % Logverlust, Preisbasis unbelegt, Nicht-LLM ungemessen |
+| Punkt 16 Quellenstörung | 7 von 14 Klassen nur testbelegt |
+| Punkt 17 Kostenmessung | Logverlust (§24 Ursache belegt), Preisbasis unbelegt, Nicht-LLM ungemessen |
 | Punkt 23 Matching-Nachvollziehbarkeit | 23B-2 (Briefing-Historisierung) |
-| Punkt 26/27 (E2E Berlin/Brandenburg) | 26B blockiert durch Punkt 14, 27B durch Punkt 15; 27A-2-Messung offen |
+| Punkt 26/27 (E2E BE/BB) | 26B blockiert (Punkt 14), 27B (Punkt 15); 27A-2-Messung offen |
 | Punkt 29 Fehlervertrag | 29B offen |
-| Mail (#204/#205) | Mailpit-Bestätigungslauf; Production-Aktivierung freigabepflichtig |
-| Kalender-Machbarkeit 1 (#209) | vor Ausbau zuerst die Rechtsfrage ([`kalender-machbarkeit-1.md`](kalender-machbarkeit-1.md) §8) |
-| Berlin-Aktivierungsreife (Punkt 14) | Betreiber-Flagzugang + stabile Pipeline |
+| Mail (#204/#205) | Mailpit-Bestätigungslauf; Aktivierung freigabepflichtig |
+| Kalender-Machbarkeit 1 (#209) | zuerst die Rechtsfrage ([`kalender-machbarkeit-1.md`](kalender-machbarkeit-1.md) §8) |
+| Berlin-Reife (Punkt 14) | Betreiber-Flagzugang + stabile Pipeline |
 | Quellen-Seed-Einspielung | nur noch Betreiberfreigabe |
 | OP-06 terminales Aussortieren (34 Fälle) | Freigabe und Fachfrage |
-| Gesundheitsbot-Folgepunkt | Watchdog-Vorprüfung findet seit Aktivierung keine Altquittungen (Runbook §30.7) |
+| Gesundheitsbot-Folgepunkt | Watchdog-Vorprüfung findet keine Altquittungen (Runbook §30.7) |
 
 ## 9 · Ausstehende Production-Nachweise
 
-- **OP-25**: drittes Fenster BESTANDEN (2026-08-07/08); Geltung nur aktuelle Architektur mit 5 Mandaten — nach Stufenaktivierung vollständige Wiederholung. OP-14 offen.
-- **OP-31**: BESTANDEN (Morgenlauf 2026-08-11), Kopfstatus/UI nicht live abgerufen.
-- **F-E2E — Ursache belegt, korrigiert und seit #290 deployt (01.09., §21; nachgeschärft Befund 1):** `created_at` friert beim Erstauftritt ein (588 Rang-Zeitstempel-Inversionen in Production) — die **aktuelle** `listMatchingResults`-Projektion sortiert jetzt **rank-primär** (`rank.asc.nullslast,id.asc`), Historienzugang zeitlich; Gerüst friert Postgres-treu ein. Regression rot-vor/grün-nach `matching-reihenfolge-test.js` 15/0; Landes-E2E je 10/10 (zuvor 20/20 unter CPU-Fremdlast). PR #224 (Draft) ist überholt. Offen bleibt der natürliche Production-Nachweis der neuen Reihenfolge.
+- **OP-25**: drittes Fenster BESTANDEN (07./08.08.); gilt nur für die aktuelle Architektur mit 5 Mandaten — nach Stufenaktivierung vollständige Wiederholung. OP-14 offen. **OP-31**: BESTANDEN (Morgenlauf 11.08.), Kopfstatus/UI nicht live abgerufen.
+- **F-E2E — Ursache belegt, korrigiert, seit #290 deployt (§21):** `created_at` friert beim Erstauftritt ein (588 Inversionen); `listMatchingResults` sortiert jetzt **rank-primär** (`rank.asc.nullslast,id.asc`). Regression 15/0, Landes-E2E je 10/10; PR #224 (Draft) ist überholt. Offen: natürlicher Production-Nachweis der neuen Reihenfolge.
 - **29B** — wartet auf natürlich auftretende Fehlerzustände (künstliche Fehler verboten).
 - **OP-09/OP-10** (Lock-Deny/Fehlerpfad) — brauchen ein echtes Störereignis.
 - **Berlin:** ob `HELMUT_LANDESMODULE` in Production wirkt, ist unbewiesen.
-- **Selbstweck (neu, 24.08.):** **bleibt deaktiviert** und wurde in Production **nie ausgeführt**. Offen: (a) Preview-Beleg zum 3-s-Abbruch — **blockiert**, solange die Datenisolierung der Vorschau nicht belegt ist (Zielarchitektur §27.3.1), (b) das 7-Tage-Fenster, (c) Messung der zusätzlichen Vercel-Kosten. Bis dahin ist der Ereignis-Antrieb **nicht aktivierungsbereit** (Runbook §31.5).
+- **Selbstweck:** **bleibt deaktiviert**, in Production nie ausgeführt. Offen: (a) Preview-Beleg zum 3-s-Abbruch — **blockiert** ohne belegte Datenisolierung der Vorschau (Zielarchitektur §27.3.1), (b) 7-Tage-Fenster, (c) zusätzliche Vercel-Kosten. Der Ereignis-Antrieb ist **nicht aktivierungsbereit** (Runbook §31.5).
 
 ## 10 · Gescheiterte Ansätze — nicht wiederholen
 
@@ -124,20 +122,21 @@ Vollständige Begründungen: Archiv (§5 der Altfassung 2026-08-05).
 - **F-4** „Quellenbasis zu dünn": Fehlbefund.
 - **F-5** Feste Referenzzahl „145 Quellen": verworfen; gültig ist `Telemetriezeilen = distinct source_id` (B3).
 - **OP-25 Anlauf 1 + Fenster 1/2**: gescheitert (Werkzeug-/Vertragsfehler, E3); Fenster-Untergrenze 2026-08-04 bleibt verbindlich.
-- **Methodisch:** grüne Offline-Tests bewiesen hier nichts (falsche `runId`-Konvention, eine Profilwahrheit, feste Slot-Annahmen in Fixtures).
+- **Methodisch:** grüne Offline-Tests bewiesen hier nichts (falsche `runId`-Konvention, eine Profilwahrheit, feste Slot-Annahmen). **Neu:** auch eine leere Tabelle beweist nichts — `llm_usage` war leer, die Nutzung stand im Blob (§23, K4).
 
 ## 11 · Nächster empfohlener Schritt
 
-1. **Gründerentscheidung zur Skalierung** (Entscheidungsvorlage, §6): KI-Deckel, AWS-Frage, Reihenfolge 10 → 25.
-2. **Selbstweck-Vorlauf entscheiden:** die fünf Werte setzen (Betreiberaktion), Vorprüfung `/api/ops/jobqueue` → `ereignisbetrieb.bereit === true`, danach den **siebentägigen Nachweis** mit 5 Mandaten führen (Quittungen `warteschlange-*`, Briefings 5/5; bei Verletzung einer §28.6-Grenze gilt der dokumentierte Rückweg). Empfohlen davor: der kleinste Preview-Versuch zum 3-s-Abbruch (Zielarchitektur §27.3).
-3. **Rückkehr zu den P0-Verkaufsblockern OP-01…OP-04.**
-4. **Betreiberprüfung Doppelkanal** (OP-07, §7 Punkt 9) vor jedem Kanalschritt.
+1. **PR #294 prüfen und über den Merge entscheiden** (Draft, grün, ohne Datenwirkung). Danach von den 14 Freigaben aus §13 des Belegs: **1–3 erledigt**, als Nächstes **Deckel/Reserve setzen** (Vorschlag 2.416/702) und der Kommunikationsriegel.
+2. **Gründerentscheidung zur Skalierung** (Entscheidungsvorlage, §6): KI-Deckel, AWS-Frage, Reihenfolge 10 → 25.
+3. **Selbstweck-Vorlauf entscheiden:** fünf Werte setzen (Betreiberaktion), Vorprüfung `/api/ops/jobqueue` → `ereignisbetrieb.bereit === true`, danach den **siebentägigen Nachweis** mit 5 Mandaten. Davor empfohlen: kleinster Preview-Versuch zum 3-s-Abbruch (Zielarchitektur §27.3).
+4. **Rückkehr zu den P0-Verkaufsblockern OP-01…OP-04.**
+5. **Betreiberprüfung Doppelkanal** (OP-07, §7 Punkt 9) vor jedem Kanalschritt.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
 Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 
-- Kein Merge nach `main` (= Deployment), kein Deployment, keine Production-Datenänderung, keine Secret-/Env-/Flag-/Cron-Änderung ohne ausdrückliche Freigabe. In Production offen sind `20260720` und F9 (`20260825101500`); Z22 samt Vorwärtskorrektur ist seit 29.08. angewendet und wird **nicht erneut angewendet** (§18). Der isolierte Testprojektbeleg erteilt keine Production-Freigabe.
+- Kein Merge nach `main` (= Deployment), kein Deployment, keine Production-Datenänderung, keine Secret-/Env-/Flag-/Cron-Änderung ohne ausdrückliche Freigabe. In Production offen: `20260720` und F9 (`20260825101500`); Z22 ist seit 29.08. angewendet und wird **nicht erneut angewendet** (§18).
 - **Berlin, Brandenburg und M8 bleiben deaktiviert**; keine Testmandat-Aktivierung; **keines der 20 neuen Profile wird ohne gesonderte Freigabe importiert oder aktiviert**.
 - Keine kostenverursachenden Läufe (Backfills, Recovery, Massen-Crawls); `understanding-recovery.yml` nie ausführen (F-3); Retention nicht scharfschalten.
 - Mandantentrennung App-seitig (`assertTenant` + `user_id`-Filter); kein Mandant hartkodiert; gemeinsamer Zustand nur bedingt schreiben (CAS, `CLAUDE.md` §4.10).
@@ -147,66 +146,62 @@ Vollständig: `CLAUDE.md` §5. Insbesondere gilt unverändert:
 | Thema | Kanonische Quelle |
 |---|---|
 | Offene Punkte OP-01…OP-30 (verbindlich) | [`datenmotor-restliste.md`](datenmotor-restliste.md) |
-| OP-30: Aktivierungs-Runbook, Versuch 5, §30.7-Abschluss | [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) |
-| Skalierung 25/50/100: Abflussplätze, Modelllinien, Deckelsemantik, Indexnachweis | [`betrieb/skalierung-25-50-100.md`](betrieb/skalierung-25-50-100.md) |
-| Skalierungsrechnung (KI-Bedarf/Kosten je Mandatszahl) | [`betrieb/skalierung-200-mandate.md`](betrieb/skalierung-200-mandate.md) · Modellvergleich in `skalierung-25-50-100.md` §2c |
-| OP-30: Kapazität Morgenlage, Stufenplan 5→200 | [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) |
+| OP-30 Aktivierungs-Runbook (§30.7-Abschluss) | [`betrieb/op30-aktivierung-5-mandate.md`](betrieb/op30-aktivierung-5-mandate.md) |
+| Skalierung 25/50/100 (Abfluss, Modelllinien, Deckelsemantik) | [`betrieb/skalierung-25-50-100.md`](betrieb/skalierung-25-50-100.md) |
+| KI-Bedarf/Kosten je Mandatszahl | [`betrieb/skalierung-200-mandate.md`](betrieb/skalierung-200-mandate.md) |
+| Kapazität Morgenlage, Stufenplan | [`betrieb/op30-kapazitaet-morgenslots-2026-08-09.md`](betrieb/op30-kapazitaet-morgenslots-2026-08-09.md) |
 | Profil-Importvertrag (20-Profile-Paket) | [`betrieb/op30-profilvertrag-200-mandate.md`](betrieb/op30-profilvertrag-200-mandate.md) |
 | Entscheidungsvorlage Skalierung 10/25 | [`betrieb/entscheidungsvorlage-skalierung-2026-08-24.md`](betrieb/entscheidungsvorlage-skalierung-2026-08-24.md) |
-| OP-25: Ursachen, Korrekturen, Nachweisvertrag | [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7 |
+| OP-25 Ursachen und Nachweisvertrag | [`betrieb/vorgangskontext.md`](betrieb/vorgangskontext.md) §7.7 |
 | Cron-Fairness, F-CAS, F-POS, Watchdog-Verzug | [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) |
 | Berlin-Aktivierung/-Rollback | [`betrieb/berlin-aktivierung.md`](betrieb/berlin-aktivierung.md) |
 | Seed-Einspielung (blockiert) | [`betrieb/quellen-seed-einspielung.md`](betrieb/quellen-seed-einspielung.md) |
-| Backup/Restore | [`betrieb/backup-restore-runbook.md`](betrieb/backup-restore-runbook.md) |
-| Env-/Secret-Inventar, Cloud-Zugangsgrenzen | [`betrieb/env-inventar.md`](betrieb/env-inventar.md) |
-| OP-31: Frischevertrag | [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) |
-| OP-30 CAS: Verstehensvertrag | [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md) |
-| Paket-Inventur (B-3/B-4 Personensuchen) | [`quellenarchitektur/30-paket-inventur-production.md`](quellenarchitektur/30-paket-inventur-production.md) |
-| Watchdog-Korrektur 26.08. (Slotlogik, Briefingstufen, Skalierung) | [`betrieb/watchdog-korrektur-2026-08-26.md`](betrieb/watchdog-korrektur-2026-08-26.md) |
+| Backup/Restore · Env-/Secret-Inventar | [`betrieb/backup-restore-runbook.md`](betrieb/backup-restore-runbook.md) · [`betrieb/env-inventar.md`](betrieb/env-inventar.md) |
+| OP-31 Frischevertrag · OP-30 CAS Verstehensvertrag | [`betrieb/briefing-frischevertrag-2026-08-10.md`](betrieb/briefing-frischevertrag-2026-08-10.md) · [`betrieb/op30-verstehen-cas-2026-08-14.md`](betrieb/op30-verstehen-cas-2026-08-14.md) |
+| Paket-Inventur Production | [`quellenarchitektur/30-paket-inventur-production.md`](quellenarchitektur/30-paket-inventur-production.md) |
+| Watchdog-Korrektur 26.08. | [`betrieb/watchdog-korrektur-2026-08-26.md`](betrieb/watchdog-korrektur-2026-08-26.md) |
+| **500er-Funktionstest: Rahmen, Runbook, Ablaufplan, Azure-Messwerte, K1–K6** | [`betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md`](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md) |
 | Production-Beweise | [`betrieb/production_beweisprotokoll.md`](betrieb/production_beweisprotokoll.md) |
-| Vollstände vor den Verdichtungen (24.08./17.08./05.08.) | [`archive/project_state/`](archive/project_state/) (Index: [`archive/README.md`](archive/README.md)) |
+| Vollstände vor den Verdichtungen | [`archive/project_state/`](archive/project_state/) (Index: [`archive/README.md`](archive/README.md)) |
 
-## 14 · Sprint 24./25.08. — Härtungssprint Selbstweck
+## 14–17 · Sprints 24.–26.08. (Kurzform; Vollfassung im Archiv `2026_09_01c`)
 
-**Erfolgreich abgeschlossen** (PR #269; vollständig Runbook §31, Vollfassung [`archive/project_state/2026_09_01_CURRENT_STATE_full.md`](archive/project_state/2026_09_01_CURRENT_STATE_full.md) §14): `bereit` heißt Konfigurationsbereitschaft, nicht Zustellung; der 3-s-Abbruch bleibt ungeprüft (Vorschauversuch ohne belegte Datenisolierung verboten); seitdem gilt `CLAUDE.md` §6: **jeder** Testlauf über `scripts/lokal.js`.
+- **§14 Selbstweck-Härtung** (#269): `bereit` heißt Konfigurationsbereitschaft, **nicht** Zustellung; 3-s-Abbruch ungeprüft. Seither gilt `CLAUDE.md` §6: **jeder** Testlauf über `scripts/lokal.js`.
+- **§15 Skalierung 25/50/100** (#270): Anlage-Stapel legt nur **inaktiv** an · **kein Index nötig, F9 nicht angewendet**; zuerst reißt die 500-MB-Free-Grenze (2,70 MB/Tag).
+- **§16 Watchdog** (#271, deployt): **`partial` heißt nie „Slot fehlt"**; offen: 5/5 Briefings personalisiert, nur **1/5** mit registriertem Push-Empfänger.
+- **§17 Realistiknachweis Z3a** (#272): echte Fachhandler/PostgREST/Netz über 5/25/50/100 Mandate (92/92, 0 Fehler) — **nicht** die echten Anbieter; Z3b/Azure ist seit 01.09. gemessen (§23).
 
-## 15 · Sprint 25.08. — Skalierung 25/50/100 (Korrekturrunden 4 und 5)
+## 18–22 · Sprints 26.08.–01.09. (Kurzform; Vollfassung im Archiv `2026_09_01c`)
 
-**Teilweise abgeschlossen** (PR #270; kanonisch [`betrieb/skalierung-25-50-100.md`](betrieb/skalierung-25-50-100.md), Vollfassung Archiv §15). Kernpunkte: Anlage-Stapel legt ausschließlich **inaktiv** an (Aktivierungswunsch wird abgelehnt, kein Aktivierungspfad gebaut) · lage-briefing-Direktpfad ist typgebunden, **kein** allgemeiner Abfluss · **kein Index nötig, F9 nicht angewendet**; zuerst reißt die 500-MB-Free-Grenze (2,70 MB/Tag; Ursache fehlende Aufbewahrung R5). Z3/Aktivierung bleiben freigabepflichtig.
+- **§18 Z22** — *erfolgreich abgeschlossen (29.08., CI-Nachweis 01.09.)*, Zahlen in [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md) §13–§14: `helmut_jobs_offen` zählte mandatsblind, Z22 ergänzt `p_mandat`. Buchungen `20260829175642`/`20260829175749`, Nachprüfung 5/5 grün — **Z22 nicht erneut anwenden.** Der §11-PostgREST-Rückfallnachweis läuft seit #292 fail-closed im Pflicht-CI.
+- **§19 Understanding-Laufmeldung** — *erfolgreich* (#283, deployt als `0f900e68`): `lauf-bilanz.js` als **eine** kanonische Zähler-/Statusableitung (`Number(null)` ist nie mehr eine gemessene 0) · 217,5 s ist **keine** Laufzeitgrenze. Offen: drei `unbekannt`-Vorgänge.
+- **§20 Kapazität Understanding** — **BLOCKIERT**, Gate-Flip und PR-B bleiben gestoppt ([`betrieb/understanding-kapazitaet-2026-08-31.md`](betrieb/understanding-kapazitaet-2026-08-31.md)): belegt sind Verhungern und wachsender Rückstand (31.08.: 9.080 pending; Ankunft Ø 307/Tag, Abfluss Ø 68/Tag). Gate bleibt `shadow`. **Offen:** natürlicher Nachweis, OP-06 (1.769 Altfälle), Siebentagenachweis.
+- **§21 500-Mandate-Reife + Korrektursprint** — *erfolgreich, Betreiberfreigabe 01.09.* (#290 per `98cfedc1`, Deployment READY; [`betrieb/500-mandate-theoretische-bereitschaft-2026-09-01.md`](betrieb/500-mandate-theoretische-bereitschaft-2026-09-01.md)). **Drei getrennte Urteile, unverändert gültig:** Warteschlangen-Aufnahmefähigkeit 500 **erbracht** (Altbeleg) · rechnerisch-architektonisch **vorbereitet, finale Dimensionierung offen** · operativer Mehrtagesbetrieb **NICHT BEWIESEN**. Fünf Gate-Blocker und sieben Betreiber-Befunde korrigiert (u. a. Matching rank-primär, **05:45/05:48 OFFEN**); Gesamtläufe 294/294 und 295/295. **Minimal-Cron `18,48 * * * *` vorbereitet, nicht aktiviert** · **Kohorte 495** validiert, inaktiv.
+- **§22 PR-Bereinigung** — *erfolgreich, Betreiberfreigabe 01.09.*: #275–#277 und #282 nach Einzelprüfung **geschlossen, nicht gemergt** (Branches bleiben Auditbeleg; aus #277 stammt der in §23 wiederhergestellte Messläufer). Sichere Teile über #292 in `9d6d18e5`, Pflichtlauf grün, Vercel `success`. Keine Migration, Daten-, Mandats-, Cron-, Env-, Secret-, Flag- oder Budgetänderung. Vollbeleg: [`betrieb/pr-bereinigung-2026-09-01.md`](betrieb/pr-bereinigung-2026-09-01.md).
 
-## 16 · Sprint 26.08. — Watchdog: Slotlogik, Briefingstufen, Skalierung
+## 23 · Sprint 01.09. — Sicherheitsrahmen 500er-Funktionstest + Z3b-Messungen
 
-**Erfolgreich abgeschlossen** (PR #271, deployt; alle Zahlen [`betrieb/watchdog-korrektur-2026-08-26.md`](betrieb/watchdog-korrektur-2026-08-26.md)): **`partial` heißt nie „Slot fehlt"**; offener Produktbefund: 5/5 Briefings personalisiert, aber nur 1/5 mit registriertem Push-Empfänger (`delivered` ≠ zugestellt).
+**Teilweise abgeschlossen — offline vollständig bewiesen, Azure-Messungen ausgeführt, Draft-PR #294 offen, keine Production-Wirkung.** Vollbeleg (Runbook, Ablaufplan, Entscheidungstabelle, Freigaben, Messwerte, K1–K6): [`betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md`](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). Branch `claude/security-sprint-functional-test-wap0q1`, Basis `b998e9bc`.
 
-## 17 · Sprint 26.08. — Realistiknachweis Z3a für 25/50/100
+- **Gebaut und offline bewiesen:** Azure-Messläufer wiederhergestellt (Auditbranch von PR #277) · **zentraler, fail-closed Kommunikationsriegel** vor **allen sechs** Außenkanälen, die bis dahin **keinen gemeinsamen Punkt** hatten (495/495 Kohortenprofile gesperrt, **Netzzähler 0**) · Kohortenwerkzeuge mit **Erlaubnislisten-Schutz** der realen Mandate, Mengen 20/75/400, Idempotenz, Rückbau · Kapazitäts-/Kostenriegel, **12 Abbruchregeln**. **Diff-Review: 31 gemeldet, 13 bestätigt, alle behoben.**
+- **Ausgeführte Azure-Messungen** (je eigene Freigabe, `env -i`, `store: false`, kein DB-Zugriff; `gpt-5-mini`, Global Standard, `swedencentral`): Vorprobe **3/3**, Stichprobe **21/21** — zusammen **24/24, 0,040841 USD, 0 Fehler**; Fingerabdrücke `d69af1ae…` und `5baac1c0…`. Auslastung 4,3 % RPM / 13,1 % TPM. Verstehen und Lage decken sich mit Production (1,6 % / 6,7 %); **Büro liegt 52 % daneben** (Prompt zu klein) — dort gelten die Production-Werte.
+- **Korrigierte Datenquelle:** maßgeblich ist **`helmut_store.data.llmUsage`**, nicht die leere Tabelle `llm_usage`; **Ringpuffer 5.000**. Fenster 02.07.–01.09.: 3.673 Erfolge · **19 technische Azure-Fehler (0,51 %)** · 1.260 **Budgetablehnungen** (kein Azure-Fehler, sondern Bedarfsnachweis).
+- **Tagesbedarf (60 volle Tage):** ausgeführt p50 60 / p95 93 (durch Deckel 100 **zensiert**) · **Bedarf p95 170 / max 298**. **p95 je Fachweg: Verstehen 82 · Büro 24 · Lage 7.**
+- **Vorschlag (nicht gesetzt, nicht freigegeben): Deckel 2.416, Reserve 702** — Reserve liegt **im** Deckel. Gemessener Boden 1.496/Tag, 0,3 % neben dem Szenariowert 1.492. Kosten ≈ **213 USD/Monat**, obere Schranke 243 (Listenpreis; F7 offen).
+- **Sechs Korrekturen K1–K6** gegenüber einem falschen Zwischenbericht (leere Tabelle `llm_usage` als einzige Quelle behandelt), Beleg §16.7. **Betreiberangabe, nicht nachprüfbar:** Vercel zeigte die sensiblen Variablen **maskiert**, Production arbeitet korrekt; belegbar ist nur die **Wirkung** (§16.8a).
+- **Weiterhin NICHT bewiesen:** fachlicher Zyklus mit 5 realen + 495 aktiven Profilen · Azure-**Gesamtkontingent des Kontos** · Verstehenswachstum bei 500 Mandaten (geteiltes Korpus) · 05:45/05:48-Überschneidung · Riegel unter echter Last · operativer Mehrtagesbetrieb. **`HELMUT_TENANT_LLM_CAP` ist aus** — die fünf realen Mandate haben keinen wirksamen Verdrängungsschutz; ihr Tagesbedarf ist p95 **170**, nicht 5.
+- **Freigaben:** von den 14 aus §13 des Belegs sind **1–3 erledigt**, 4–14 stehen aus.
 
-**Teilweise abgeschlossen** (PR #272 = `0ddb73e9`; alle Messreihen [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md), Vollfassung Archiv §17): Z3a belegt echte Fachhandler/PostgREST/Netz/Modellaufrufe über 5/25/50/100 Mandate (92/92 Kriterien, 0 Fehler) — **nicht** aber die echten Anbieter (Google/Azure = **Z3b, offen**). Kapazitätsbefund: Grenze ist der ungedeckelte KI-Bedarf (89–369/Tag gegen Deckel 100). `lokal.js`-Azure-Leck geschlossen; Preisbasis F7 offen.
+## 24 · Sprint 01./02.09. — Azure-Endpunktguard und Telemetriekorrektur
 
-## 18 · Z22: Befund, Pflichtbeleg und Production-Abschluss
+**Teilweise abgeschlossen — offline bewiesen, Draft-PR #294 offen, keine Production-Wirkung.** Vollbeleg: [`betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md`](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md) §17.
 
-**Erfolgreich abgeschlossen (29.08.; CI-Nachweis vervollständigt 01.09.);** alle Zahlen/Buchungen [`betrieb/z3-realistiknachweis-2026-08-26.md`](betrieb/z3-realistiknachweis-2026-08-26.md) §13–§14: `helmut_jobs_offen` zählte mandatsblind, Z22 ergänzt `p_mandat`. Production-Anwendung 29.08. mit Betreiberfreigabe (Buchungen `20260829175642`/`20260829175749`), Nachprüfung 5/5 grün — **Z22 nicht erneut anwenden.** Bewiesen lokal, isoliert und in Production; der zuvor offene §11-PostgREST-Rückfallnachweis läuft seit #292 fail-closed im Pflicht-CI und war in Lauf `33485020305` grün. **Offen:** Z3b/Azure.
-
-## 19 · Sprint 31.08. — Understanding-Laufmeldung: roter Befund vom 30.08. behoben
-
-**Erfolgreich abgeschlossen; PR #283 am 31.08. 07:14 UTC gemergt und als `0f900e68` deployt.** Vollständig: [`betrieb/understanding-telemetrie-korrektur-2026-08-31.md`](betrieb/understanding-telemetrie-korrektur-2026-08-31.md). Kernpunkte: `lauf-bilanz.js` als **eine** kanonische Zähler-/Statusableitung (`Number(null)` ist nie mehr eine gemessene 0) · 217,5 s ist **keine** Laufzeitgrenze (K9-Tages-p95, PR #282) · U+0000-Fall geschlossen. **Der natürliche Nachweis der ehrlichen Zähler ist erbracht: der 21:30-Lauf vom 31.08. trug belegte Zähler (§20-Nachträge).** Offen: drei `unbekannt`-Vorgänge (Betreiberentscheidung).
-
-## 20 · Sprint 31.08. — Kapazitätssprint Understanding: Diagnose und Rückstandsschleife
-
-**Blockiert — Gate-Flip und PR-B bleiben gestoppt.** Vollständige Messreihen: [`betrieb/understanding-kapazitaet-2026-08-31.md`](betrieb/understanding-kapazitaet-2026-08-31.md). Belegt sind Verhungern und wachsender Rückstand (31.08.: 9.080 pending; Ankunft Ø 307/Tag, Abfluss Ø 68/Tag); der 11:30-Lauf brach die Altersverhungern, der 17:30-Lauf wurde korrekt vom Budgetboden gestoppt.
-
-- #284–#287 sind deployt; die fünf Gate-Blocker wurden in #290 korrigiert und deployt (§21). Gate bleibt `shadow`; 0 `gate-geparkt`, keine Migration oder Mandatsänderung.
-- **Offen:** natürlicher Nachweis des korrigierten Stands, OP-06 (1.769 Altfälle), Siebentagenachweis sowie jede getrennt freizugebende Gate-, Cron-, Deckel- oder Kohortenentscheidung. Keine Aktivierung von zehn Mandaten.
-
-## 21 · Sprint 31.08./01.09. — 500-Mandate-Reife + Korrektursprint (PR #290 gemergt + deployt)
-
-**Erfolgreich abgeschlossen — Betreiberfreigabe 01.09.: PR #290 per Merge-Commit `98cfedc1` gemergt (Pflicht-CI grün auf `9f924dd`, Lauf 33459629140; 7 Vorbedingungen rein lesend bestätigt); Production-Deployment `dpl_HGJ17UJVPxYizG5Pkn9ekMkeSDsk` READY zum Merge-Commit. Fachliches Urteil unverändert: architektonisch vorbereitet, finale Dimensionierung offen.** Beleg (§14, Nach-Merge §14.2): [`betrieb/500-mandate-theoretische-bereitschaft-2026-09-01.md`](betrieb/500-mandate-theoretische-bereitschaft-2026-09-01.md). Branch `claude/helmut-500-mandate-readiness-6hxden` (Basis `72d9ec5`); **Korrektursprint: 7 Betreiber-Befunde, alle bestätigt + behoben (Matching rank-primär · Bericht rein lesend · Vorab-Boden auf atomaren Zähler · 2.416 = vorläufiger Planungswert, Spanne 1.492–2.416 · Reserve-Schritt · 05:45/05:48 OFFEN · PR-Quellenbindung; Commits Beleg §14).** Gate `shadow`, keine Migration, kein Modellaufruf, kein Lasttest.
-
-- **Urteile:** Warteschlangen-Aufnahmefähigkeit 500 **erbracht** (Altbeleg, nicht wiederholt) · rechnerisch-architektonisch **architektonisch vorbereitet, finale Dimensionierung offen** (offene Z3b-Messungen: p95/Azure/Fachwegbericht) · operativer Mehrtagesbetrieb **NICHT BEWIESEN**. Gesamtläufe 294/294 und 295/295 (Beleg §14.1).
-- **Alle fünf Gate-Blocker aus §20 korrigiert** (Details Beleg §5; Drain-Trend nur GELESEN — ohne freigegebenen Schreiber unvollständig) + vier Review-Befunde.
-- **Minimal-Cron `18,48 * * * *` vorbereitet** (7 Betreiberschritte inkl. getrennter Reserve; Crons/SLOT_PLAN unverändert) · **Kohorte 495** validiert, inaktiv.
-- **Nach-Merge-Prüfung (01.09., rein lesend):** Migrationsliste unverändert (letzte `20260829175749`) · 13 Crons, kein `18,48` · 5 aktive/4 inaktive Mandate · 0 `test-kohorte`-Profile · 0 `gate-geparkt` · KI-Zähler 31 (natürlich; kein Modellaufruf/Lasttest der Sitzung). **500 aktive Mandate sind NICHT freigegeben.**
-- **Nächster sicherer Schritt:** natürliche Läufe auf `98cfedc1` rein lesend prüfen (Rang-Ordnung der Lage, Vorab-Boden-Quittungen, Drain-Zeile) → dann je eigene Freigabe: Gate-/Deckel-/Minimal-Cron-Entscheidung entlang Stufenplan und offenen Z3b-Messungen.
-
-## 22 · Sprint 01.09. — Bereinigung der offenen Pull Requests (#292 gemergt + deployt)
-
-**Erfolgreich abgeschlossen — Betreiberfreigabe 01.09.:** #275–#277 und #282 wurden nach Einzelprüfung geschlossen, nicht gemergt; ihre Branches bleiben als Auditbeleg. Die sicheren Teile gingen über #292 (`65701fd5`) in Merge-Commit `9d6d18e5`; der alte Architekturblock aus #277 blieb draußen. Pflichtlauf `33485020305` war einschließlich Browser, PostgreSQL und PostgREST §1–§11 grün; Vercel meldete `success`. Keine Migration, Production-Daten-, Mandats-, Cron-, Env-, Secret-, Flag- oder Budgetänderung. Vollbeleg: [`betrieb/pr-bereinigung-2026-09-01.md`](betrieb/pr-bereinigung-2026-09-01.md). Dieser reine Dokumentationsabschluss erzeugt gemäß `CLAUDE.md` §9 keinen Folge-PR.
+- **Endpunktguard gebaut** (`lib/helmut/azure-endpunkt.js`, reine Logik, wirft nie): **Erlaubnisliste** der drei Azure-Hostfamilien (`*.openai.azure.com`, `*.services.ai.azure.com`, `*.cognitiveservices.azure.com`) auf Labelgrenze; abgewiesen werden kein-HTTPS, Zugangsdaten, fremder Port, Pfad, Query, Steuerzeichen, Überlänge. Geprüft **vor jeder Budgetreservierung** und **vor jedem Netzaufruf** — in `ai.js` und in allen drei weiteren Aufrufstellen; die Ziel-URL entsteht aus der geprüften Basis, nicht mehr aus dem Rohwert. Eine ausdrücklich **angeforderte** Schleifenadresse bleibt für die eigenen Prüfwerkzeuge zulässig.
+- **Kein stiller, kostenpflichtiger Anbieterwechsel:** ist Azure beabsichtigt, aber fehlkonfiguriert (auch **halb** gesetzt), meldet `isAiEnabled()` AUS — die Fachpfade nehmen den kostenfreien Regelweg statt des bezahlten OpenAI-Direktwegs. Vertragsänderung von fail-open zu **fail-closed**, in [`betrieb/env-inventar.md`](betrieb/env-inventar.md) nachgezogen.
+- **Geheimnisredaktion:** `AZURE_OPENAI_ENDPOINT` fehlte als einziger Azure-Wert in `redact.js` (ergänzt, plus Musterregel für bloße Azure-Hostnamen) · der rohe `error.message` ging über `sourceNote` **an den angemeldeten Nutzer** und trug bei Netzfehlern den Azure-Ressourcennamen · `/api/debug/azure-ping` schrieb die letzten **vier Zeichen des Schlüssels** in die externe Logsenke · `understanding.js` schrieb den Hostnamen in eine Production-Tabelle. Alles korrigiert. Empirisch berichtigt: bei `https.request` steht der Rohwert **nicht** in `error.message`, sondern in `err.input`.
+- **Ursache der ~12 %-Telemetrieabweichung BEWIESEN:** unbedingter Lese-Ändere-Schreibe-Zyklus auf dem gemeinsamen `helmut_store`-Blob (last-write-wins) — im Code seit 27.07. als Befund **W-2** benannt und für `processRuns` relational gelöst, für `llmUsage` **nie**. Beweis aus einem unabhängigen Datenpaar im selben Schreibpfad: **26 von 328 Dual-Write-Läufen (7,9 %) nur relational vorhanden, 0 nur im Blob**. **Nach Gegenprüfung korrigiert:** eine erste Fassung nannte 17,3 % und zählte dabei 37 **relational-native** `warteschlange-*`-Quittungen mit, die nie eine Blob-Form hatten (`storage.js:2949`).
+- **Fünf Verlustpfade geschlossen** (Budgetslot verbraucht, kein Eintrag): Anbieter-Vertagung · synchroner Aufbaufehler · überlanger Antwortrumpf · fehlkonfigurierter Endpunkt · **Skip ohne `success:false`, der als erfolgreicher Modellaufruf erschien**. Der 400er-Fallback bleibt als **bekannter offener Punkt** unverändert (nur OpenAI-Weg, in Production inert) — die naheliegende Korrektur hätte die Anbieter-Ratengrenze geschwächt.
+- **Restlücke, ehrlich:** `recordLlmUsage` bleibt unbedingt — die Behebung braucht Migration und eigene Freigabe. **p95 170 bleibt Untergrenze**, jetzt mit bewiesener Ursache statt „unbekannt". Ringpuffer **unverändert 5.000**.
+- **Azure-Deploymentkontingent bestätigt** (Betreiber, 02.09.): 250.000 TPM / 250 RPM für `gpt-5-mini`, Global Standard, Version 2025-08-07 — deckt sich mit der gemessenen Auslastung 13,1 % / 4,3 %. **Gesamtkontingent des Kontos bleibt offen.**
+- **Adversariales Diff-Review (26 Agenten, je Befund ein Gegenprüfer): 20 gemeldet, 4 bestätigt, alle behoben** — drei weitere ungeprüfte Netzaufrufstellen schickten den echten `api-key` an eine roh gebaute Adresse; dazu die oben korrigierte Kennzahl. Zwei selbst verursachte Regressionen zurückgenommen.
+- **Nur dokumentiert, nicht gesetzt:** Deckel 2.416 / Reserve 702. Unverändert: 5 reale Mandate, Gate `shadow`, Crons, Migrationen, Production-Daten.

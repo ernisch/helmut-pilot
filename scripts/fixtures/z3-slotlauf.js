@@ -75,6 +75,11 @@ if (!istLokal(DATENBANK_URL) || !istLokal(KI_URL) || !istLokal(URSPRUNG_URL)) {
 process.env.SUPABASE_URL = DATENBANK_URL;
 process.env.SUPABASE_SERVICE_ROLE_KEY = arg("dienstschluessel");
 process.env.AZURE_OPENAI_ENDPOINT = KI_URL;
+// Der Azure-Endpunktguard (lib/helmut/azure-endpunkt.js) laesst die
+// Schleifenadresse nur auf ausdrueckliche Anforderung zu. Dieses Werkzeug
+// faehrt den ECHTEN KI-Pfad gegen einen lokalen HTTPS-Ersatz und fordert sie
+// deshalb hier an. Der Wert verlaesst die Maschine nicht.
+process.env.HELMUT_KI_LOOPBACK_ERLAUBT = "1";
 // Attrappenwerte fuer den LOKALEN Endpunkt. Sie berechtigen zu nichts: der KI-Endpunkt
 // verlangt nur, dass die Kopfzeile `api-key` ueberhaupt gesetzt ist, und beide Werte
 // erreichen ausschliesslich 127.0.0.1.
