@@ -94,6 +94,24 @@ async function main() {
       const s = leer.schritte.find((x) => x.id === "deaktivierung");
       return s.freigabe && s.freigabe.wort === "TESTKOHORTE_495_DEAKTIVIEREN_BESTAETIGT";
     })());
+  // ERGÄNZT 02.09.: die Nacharbeit an der Scheduler-Spur ist Schritt 18 und
+  // hängt hinter dem bestätigten Rückbau — aber sie ist NICHT Teil des
+  // Rückwegs (der bleibt in jedem Zustand sofort erlaubt).
+  check("A7a Die Nacharbeit an der Scheduler-Spur ist ein eigener, gesperrter Schritt",
+    (() => {
+      const spur = A.ablaufplan({ belegt: [] }).schritte.find((x) => x.id === "scheduler-spur");
+      return Boolean(spur)
+        && spur.nr === 18
+        && spur.immerErlaubt === false
+        && spur.darfBeginnen === false
+        && spur.vorbedingungen.includes("rueckbau")
+        && spur.freigabe && spur.freigabe.wort === "TESTKOHORTE_495_SCHEDULERSPUR_ENTFERNEN_BESTAETIGT";
+    })());
+  check("A7b Der Rückweg bleibt davon unberührt sofort erlaubt",
+    (() => {
+      const weg = A.ablaufplan({ belegt: [] }).schritte.find((x) => x.id === "deaktivierung");
+      return Boolean(weg) && weg.immerErlaubt === true;
+    })());
   check("A8 Jede Stufe trägt ein EIGENES Bestätigungswort",
     (() => {
       const worte = leer.schritte
@@ -290,6 +308,54 @@ async function main() {
         && !/teardown/i.test(code)
         && !/geloescht_at/i.test(code);
     })());
+
+  // ── D-Spur · Nacharbeit: die Scheduler-Spur (adversariale Analyse 02.09.) ──
+  // BEFUND: Der Rückweg deaktiviert, aber die Spur der 495 Kennungen bleibt in
+  // der EINEN Fairness-Zeile stehen — dort 90 Tage lang, und sie verlangsamt
+  // danach JEDEN Fairness-Schreibvorgang der fünf realen Mandate.
+  {
+    const trockenSpur = await RB.entferneSchedulerSpur({ env: {} });
+    check("DS1 Ohne Freigabe räumt die Nacharbeit nichts auf",
+      trockenSpur.modus === RB.MODUS_TROCKENLAUF
+        && trockenSpur.entfernt === 0
+        && trockenSpur.zielGroesse === 495);
+    check("DS2 Die Nacharbeit rührt ausdrücklich keine Profildaten an",
+      trockenSpur.beruehrtProfildaten === false && trockenSpur.realeMandateBeruehrt === 0);
+    check("DS3 Das Wort des Rückwegs schaltet die Nacharbeit NICHT scharf",
+      (await RB.entferneSchedulerSpur({
+        modus: RB.MODUS_SCHARF,
+        env: { [RB.EXECUTE_FLAG]: "1", [RB.CONFIRM_VARIABLE]: RB.FREIGABEWORT }
+      })).modus === RB.MODUS_TROCKENLAUF);
+    const spurEnv = { [RB.EXECUTE_FLAG]: "1", [RB.CONFIRM_VARIABLE]: RB.FREIGABEWORT_SPUR };
+    const beruehrt = [];
+    const scharfSpur = await RB.entferneSchedulerSpur({
+      kennungen: ["test-kohorte-a-001", "test-kohorte-a-002"],
+      modus: RB.MODUS_SCHARF,
+      env: spurEnv,
+      deps: { entferneSpur: async (id) => { beruehrt.push(id); return { ok: true }; } }
+    });
+    check("DS4 Mit eigenem Wort läuft sie scharf und meldet nur Bestätigtes",
+      scharfSpur.modus === RB.MODUS_SCHARF
+        && scharfSpur.entfernt === 2 && scharfSpur.fehlgeschlagen === 0
+        && scharfSpur.ok === true && beruehrt.length === 2);
+    const halb = await RB.entferneSchedulerSpur({
+      kennungen: ["test-kohorte-a-001", "test-kohorte-a-002"],
+      modus: RB.MODUS_SCHARF, env: spurEnv,
+      deps: { entferneSpur: async (id) => (id.endsWith("001") ? { ok: true } : { ok: false, grund: "rpc-fehlt" }) }
+    });
+    check("DS5 Ein Fehlschlag beendet den Lauf nicht, macht ihn aber nicht grün",
+      halb.entfernt === 1 && halb.fehlgeschlagen === 1 && halb.ok === false
+        && halb.ergebnisse.some((e) => e.fehler === "rpc-fehlt"));
+    let abgebrochen = false;
+    try {
+      await RB.entferneSchedulerSpur({
+        kennungen: ["test-kohorte-a-001", "fremdes-reales-mandat"],
+        modus: RB.MODUS_SCHARF, env: spurEnv,
+        deps: { entferneSpur: async () => ({ ok: true }) }
+      });
+    } catch (fehler) { abgebrochen = fehler && fehler.grund === "fremde-kennung"; }
+    check("DS6 Eine FREMDE Kennung bricht auch die Nacharbeit ab (kein stilles Filtern)", abgebrochen);
+  }
 
   const scharfEnv = { [RB.EXECUTE_FLAG]: "1", [RB.CONFIRM_VARIABLE]: RB.FREIGABEWORT };
   const geschrieben = [];

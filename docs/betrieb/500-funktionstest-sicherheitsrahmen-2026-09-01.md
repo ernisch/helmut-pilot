@@ -1357,3 +1357,134 @@ gegengeprüft (nur `SELECT`).
    Produktionspfad (Flag `HELMUT_LLM_FAIRNESS`); wirksam ist allein die
    **Reihenfolge**. Bewusst nicht in diesem Sprint geändert — das wäre eine
    Verhaltensänderung am laufenden Budgetpfad.
+
+---
+
+## §19 · Nachtrag 02.09. — sechs Befunde der breiten Gegenanalyse
+
+Nach dem Draft-PR #295 lief eine getrennte, breit angelegte Gegenanalyse über sieben
+Teilsysteme zu Ende (72 Agenten, jeder Befund adversarial gegengeprüft). Sie bestätigte
+acht Befunde. Zwei davon waren durch §18 bereits geschlossen (Planungsabbruch am
+Listenende, O(n²)-Quellenplanung). Die verbleibenden **sechs** sind hier geschlossen —
+jeder mit Regressionstest, keiner mit Production-Wirkung.
+
+### 19.1 · Einladung und Passwort-Reset trugen nie eine Mandatskennung  (schwer)
+
+**Tatsache.** `accounts.createUser` setzt `politicianId` **nur** für die Rolle
+`abgeordneter` (`accounts.js:176-180`); `updateUser` setzt sie bei jeder anderen Rolle
+hart auf `null`. Die Mandatsbindung eines Referenten liegt ausschließlich in den
+Zuweisungen. Alle vier `sendAccessMail`-Aufrufer reichten aber allein
+`user.politicianId` durch.
+
+**Wirkung.** Ein Referent mit **echter Dienstadresse**, der einem synthetischen Mandat
+zugewiesen ist, erzeugte einen Riegel-Vorgang mit `kennung=""` und realer Adresse →
+`BEFUND_REAL` → **erlaubt**. Eine echte Einladungs- bzw. Reset-Mail mit gültigem
+Passwort-Token hätte das System für ein synthetisches Mandat verlassen, ohne dass eine
+Fehlkonfiguration nötig gewesen wäre. Der bisherige Vertragstest H4 prüfte nur, dass die
+Aufrufer `kennung` **syntaktisch** mitgeben — nicht, dass der Wert je gefüllt ist.
+
+**Geschlossen.** Neue Auflösung `kontoKennung(user)` in `server.js`: eigene Kennung hat
+Vorrang (der reale Mailweg bleibt damit unverändert), sonst gewinnt eine **synthetische**
+Zuweisung. Ein Vorgang kann dadurch nur **strenger** werden, nie lockerer. H4 pint jetzt
+die Auflösung statt der Syntax; H4a pint die Reihenfolge.
+
+**Einordnung (Schlussfolgerung).** Die Kohorte selbst war doppelt geschützt
+(Kennungsfamilie **und** reservierte Maildomain `@test-kohorte.invalid`). Der Weg war nur
+über ein **von Hand angelegtes** Referentenkonto erreichbar. Der Befund ist damit real,
+aber er lag außerhalb des Runbooks.
+
+### 19.2 · Der EUR-Profildeckel war für alle 495 Kohortenprofile ein No-op  (mittel)
+
+**Tatsache.** `baueSpezifikation` setzte weder `aiBudgetDailyCents` noch
+`aiBudgetMonthlyCents`. `evaluateTenantBudget` liefert dann `applied:false, allowed:true`
+— der **einzige heute produktiv wirksame** Per-Mandant-Deckel griff für die Kohorte nicht,
+während er für reale Mandate mit gesetztem Profilbudget greift.
+
+**Geschlossen.** Die Spezifikation trägt jetzt `aiBudgetDailyCents: 10` und
+`aiBudgetMonthlyCents: 100`.
+
+**Ehrliche Grenze (ausdrücklich mitgeprüft, §8.6).** 495 × 10 ct liegt **über** der
+Kostenabbruchgrenze. Dieser Deckel ist ein Rückfallnetz gegen **ein** durchdrehendes
+Profil (gemessen ~0,27 ct/Aufruf ⇒ 10 ct kappen bei ~37 Aufrufen), **nicht** die bindende
+Tagesgrenze. Bindend bleiben Tagesdeckel und Kostenabbruchgrenze.
+
+### 19.3 · Der Fensterbefund war zeitlos  (mittel)
+
+**Tatsache.** `planeAktivierung` akzeptierte jedes Objekt mit `startErlaubt === true`.
+Es gab weder eine Gültigkeitsdauer noch eine Prüfung, gegen wie viele Croneinträge der
+Befund gerechnet wurde.
+
+**Wirkung.** Ein am Vortag korrekt für 11:36–15:59 erhobener Befund ließ einen scharfen
+Lauf am nächsten Morgen um **05:47** anstandslos durch — genau in die 05:45/05:48-Laufzeit,
+deren Verträglichkeit ausdrücklich **nicht** bewiesen ist.
+
+**Geschlossen.** `pruefeStartfenster` liefert `gepruefteCrons`; ein Befund ohne
+`gepruefteCrons > 0` gilt als **ungeprüft**. `planeAktivierung` verlangt zusätzlich
+`jetztUtc` und prüft, dass die aktuelle Minute **im** Fenster liegt (auch über
+Mitternacht). Fünf neue Blockadegründe benennen den Fall genau: `startfenster-nicht-geprueft`,
+`startfenster-ohne-cronliste`, `startfenster-konflikt`, `startzeit-fehlt`,
+`startzeit-ausserhalb-des-fensters`.
+
+### 19.4 · Die Fairness-Zeile überlebt den Rückbau  (schwer)
+
+**Tatsache.** Der Fairnesszustand ist **eine** `helmut_store`-Zeile, die je Mandatswechsel
+vollständig gelesen und geschrieben wird; `mergeState` kappt den Bereich `crons` nicht nach
+Anzahl, es gibt nur eine 90-Tage-Retention.
+
+**Wirkung.** 500 Mandate × 4 Crons ≈ 2.000 Einträge — grob 0,5 MB statt der im Code
+angenommenen ~4 KB. **Nachwirkung:** Der Rückbau deaktiviert, aber die Spur der 495
+Kennungen bleibt danach **90 Tage** stehen und verlangsamt jeden Fairness-Schreibvorgang
+der fünf realen Mandate weiter.
+
+**Geschlossen.** Neuer, **getrennt freigegebener** Schritt
+`testkohorte-rueckbau.entferneSchedulerSpur` mit eigenem Wort
+`TESTKOHORTE_495_SCHEDULERSPUR_ENTFERNEN_BESTAETIGT`. Er entfernt ausschließlich
+Scheduler-Metadaten (`storage.deleteCronFairnessTenant`), niemals Profil-, Inhalts- oder
+Kontodaten, und läuft durch dieselben drei Riegel wie der Rückweg. Bewusst **nicht** Teil
+von `fuehreRueckbauAus`: der Rückweg muss in jedem Moment sofort laufen dürfen, das
+Aufräumen hat Zeit. Testgesichert, dass keines der beiden Wörter das jeweils andere
+scharfschaltet.
+
+### 19.5 · Der 5.000er-Ringpuffer kürzte Berichtsfenster still  (schwer)
+
+**Tatsache.** `writeAuthStore` kappt das Nutzungslog bei 5.000 Einträgen. Bei 5 Mandaten
+umspannten diese 5.000 Einträge belegt **62 Tage** (§16.2) — ein `days:30`-Bericht war
+vollständig.
+
+**Schlussfolgerung (Arithmetik).** Bei 100-facher Profilzahl liegt der Tagesanfall in
+derselben Größenordnung 100× höher; Deckel 2.416 **plus** die Skip-Einträge füllen den Ring
+in unter zwei Tagen. Der Admin-Kostenbericht `days=30` zeigte dann eine Summe, die
+tatsächlich weniger als einen Tag abdeckt — **ohne jeden Hinweis**. Das ist ein falsches
+Grün (CLAUDE.md §4.4).
+
+**Geschlossen.** Neuer rein lesender Helfer `storage.blobFensterVollstaendig(alle, vonMs)`
+und ein additives Feld `fenster` in `getAdminStatsCosts` und `getAdminCostsPerUser`. Die
+Kürzung wird damit **sichtbar**, nicht behoben — der Ring bleibt bei 5.000, das ist
+weiterhin Phase 3/4 der relationalen Umstellung.
+
+**Abgrenzung (Tatsache, testgesichert E7).** Die Kosten-Abbruchregel **A04 ist nicht
+betroffen**: die Stufenkontrolle leitet den Kostenwert aus `llm_budget_counters` ×
+bestätigtem Preis ab, nicht aus dem Blob-Ring. Auch `op25-nachweis.kostenAusNutzung` meldet
+die Retentionsgrenze bereits selbst. Die Behauptung der Analyse, A04 rechne gegen dasselbe
+verkürzte Fenster, ist damit **widerlegt**.
+
+### 19.6 · `slotKapazitaetReicht` wurde berechnet, aber nie ausgewertet  (mittel)
+
+**Tatsache.** `tagesModell()` liefert das Feld seit jeher; weder `zielDeckel()` noch
+`pruefeKonfiguration()` wertete es aus.
+
+**Wirkung.** Ein später auf das Stressszenario (3.510) angehobener Deckel hätte
+`bereit = true` gemeldet, obwohl die Verstehens-Slotlast (1.122) die physische Kapazität
+(984/Tag) um 14 % übersteigt: die Reserve wäre im Deckel gebucht, aber physisch nicht
+abrufbar, und der Frischverstehens-Rückstand wüchse ab dem ersten Tag. Aufgefallen wäre das
+erst über Abbruchregel A07 — nach dem Schaden.
+
+**Geschlossen.** Neue Bindung in `pruefeKonfiguration()`:
+`reserveVerstehen ≤ slotKapazitaetVerstehenProTag`. Die vorbereitete Reserve **702 ≤ 984**
+besteht sie; eine Reserve über 984 macht die Konfiguration nicht mehr bereit.
+
+### 19.7 · Was die Gegenanalyse ausdrücklich NICHT fand
+
+Kein Befund gegen den Verdrängungsschutz selbst, gegen die Erlaubnisliste, gegen die
+Zwei-Riegel-Freigaben oder gegen die Inertheit bei 0 synthetischen Zeilen. Der Bereich
+**Kohorte/Stufen/Rückbau** lieferte **null** bestätigte Befunde.

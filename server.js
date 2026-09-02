@@ -2195,7 +2195,7 @@ async function handleRequest(request, response) {
         : inviteMail.buildInviteMail({ name: target.name, inviteUrl: linkUrl });
       const mail = await inviteMail.sendAccessMail(
         { to: target.email, ...mailContent },
-        { kennung: target.politicianId }
+        { kennung: await kontoKennung(target) }
       );
       const action = purpose === "reset" ? "admin.user.reset-link" : "admin.user.invite";
       await accounts.recordAudit({ action, userId: authUser.id, actorEmail: authUser.email, detail: target.email });
@@ -5681,6 +5681,37 @@ function passwordSetUrl(request, token) {
   return `${publicBaseUrl(request)}/passwort-setzen?token=${encodeURIComponent(token)}`;
 }
 
+// ─── BEFUND 02.09. (adversariale Analyse, bestätigt): Kontokennung ──────────
+// `accounts.createUser` setzt `politicianId` NUR für die Rolle "abgeordneter"
+// (accounts.js:176-180); `updateUser` setzt sie bei jeder anderen Rolle hart auf
+// null. Die Mandatsbindung eines Referenten liegt ausschließlich in den
+// Zuweisungen. Die vier Mailaufrufer reichten bisher allein `user.politicianId`
+// durch — ein Referent mit ECHTER Dienstadresse, der einem synthetischen Mandat
+// zugewiesen ist, erzeugte damit einen Vorgang mit kennung="" und realer
+// Adresse: der Riegel stufte ihn als BEFUND_REAL ein und ließ die Einladungs-
+// bzw. Reset-Mail durch.
+//
+// Diese Auflösung ist bewusst FAIL-CLOSED und ändert den realen Mailweg nicht:
+//   * ist `user.politicianId` gesetzt, bleibt sie die Kennung — unverändert;
+//   * ist sie leer, gewinnt eine SYNTHETISCHE Zuweisung, falls es eine gibt;
+//   * gibt es nur reale Zuweisungen, bleibt es beim bisherigen Verhalten.
+// Es kann also nur ein Vorgang STRENGER werden, nie lockerer.
+async function kontoKennung(user) {
+  const eigene = (user && user.politicianId) || "";
+  if (eigene) return eigene;
+  let zuweisungen = [];
+  try {
+    zuweisungen = await accounts.assignmentsForUser((user && user.id) || "");
+  } catch {
+    // Ein Lesefehler darf keinen Kontoweg blockieren; er lässt die Kennung leer.
+    return "";
+  }
+  const synthetisch = (Array.isArray(zuweisungen) ? zuweisungen : [])
+    .map((e) => (e && e.politicianId) || "")
+    .find((id) => mandatsklasse.istSynthetischeKennung(id));
+  return synthetisch || "";
+}
+
 // Einladung erzeugen + Zustellung versuchen. Solange kein Mail-Dienst existiert
 // (Domain folgt), traegt die Antwort den Link fuer den Admin-Kopierweg (§6 Interim)
 // und einen ehrlichen mail.sent-Status — es wird NIE stillschweigend "gesendet".
@@ -5690,7 +5721,7 @@ async function issueInvite(request, user) {
   const mailContent = inviteMail.buildInviteMail({ name: user.name, inviteUrl });
   const mail = await inviteMail.sendAccessMail(
     { to: user.email, ...mailContent },
-    { kennung: user.politicianId }
+    { kennung: await kontoKennung(user) }
   );
   return { inviteUrl, expiresAt, mail };
 }
@@ -5740,7 +5771,7 @@ async function zustellenAnonymerReset(user, kontext) {
     : inviteMail.buildInviteMail({ name: user.name, inviteUrl: linkUrl });
   await inviteMail.sendAccessMail(
     { to: user.email, ...mailContent },
-    { kennung: user.politicianId }
+    { kennung: await kontoKennung(user) }
   );
   await accounts.recordAudit({ action: "password.reset-requested", userId: user.id, ip: kontext.ip });
 }
@@ -5790,7 +5821,7 @@ function handleAuthRequestReset(request, response) {
         : inviteMail.buildInviteMail({ name: user.name, inviteUrl: linkUrl });
       const mail = await inviteMail.sendAccessMail(
     { to: user.email, ...mailContent },
-    { kennung: user.politicianId }
+    { kennung: await kontoKennung(user) }
   );
       await accounts.recordAudit({ action: "password.reset-requested", userId: user.id, ip: auth.clientIp(request) });
       // Dem Besitzer ehrlich antworten: ohne Mail-Versand den Link direkt (Interim-

@@ -25,6 +25,8 @@
 //   node scripts/lokal.js -- node scripts/testkohorte-rueckbau.js            (Trockenlauf)
 //   node scripts/lokal.js -- node scripts/testkohorte-rueckbau.js --ids=a,b  (Teilmenge)
 //   node scripts/testkohorte-rueckbau.js --scharf                            (nur mit Freigabe)
+//   node scripts/testkohorte-rueckbau.js --spur                              (Trockenlauf Nacharbeit)
+//   node scripts/testkohorte-rueckbau.js --spur --scharf                     (nur mit EIGENEM Wort)
 //
 // DIESER SPRINT HAT DAS WERKZEUG NICHT SCHARF AUSGEFÜHRT.
 
@@ -40,6 +42,42 @@ async function main() {
   const scharfGewuenscht = argv.includes("--scharf");
   const rohIds = argument(argv, "ids");
   const kennungen = rohIds ? rohIds.split(",").map((s) => s.trim()).filter(Boolean) : null;
+
+  // ── NACHARBEIT: `--spur` räumt die Scheduler-Spur auf (eigenes Wort) ───────
+  if (argv.includes("--spur")) {
+    if (scharfGewuenscht) {
+      console.log("!!! SCHARFE NACHARBEIT ANGEFORDERT — Production-Datenänderung !!!");
+      console.log("    Entfernt AUSSCHLIESSLICH Scheduler-Metadaten der Kohorte.");
+      console.log("    Keine Profil-, Inhalts- oder Kontodaten.");
+      console.log(`    Nötig: ${R.EXECUTE_FLAG}=1 und ${R.CONFIRM_VARIABLE}=${R.FREIGABEWORT_SPUR}\n`);
+    }
+    const spur = await R.entferneSchedulerSpur({
+      kennungen,
+      modus: scharfGewuenscht ? R.MODUS_SCHARF : R.MODUS_TROCKENLAUF,
+      env: process.env
+    });
+    console.log(`\n=== Scheduler-Spur (${spur.modus}) ===`);
+    console.log(spur.meldung);
+    console.log(JSON.stringify({
+      modus: spur.modus,
+      modusGewuenscht: spur.modusGewuenscht,
+      freigabe: spur.freigabe,
+      zielGroesse: spur.zielGroesse,
+      entfernt: spur.entfernt,
+      fehlgeschlagen: spur.fehlgeschlagen,
+      beruehrtProfildaten: spur.beruehrtProfildaten,
+      realeMandateBeruehrt: spur.realeMandateBeruehrt,
+      ok: spur.ok
+    }, null, 2));
+    if (spur.fehlgeschlagen > 0) {
+      console.log("\nNICHT bestätigt entfernt:");
+      for (const e of spur.ergebnisse.filter((x) => !x.entfernt)) {
+        console.log(`  ${e.id}: ${e.fehler || "unbekannt"}`);
+      }
+      process.exit(1);
+    }
+    return;
+  }
 
   if (scharfGewuenscht) {
     console.log("!!! SCHARFER RÜCKBAU ANGEFORDERT — Production-Datenänderung !!!");

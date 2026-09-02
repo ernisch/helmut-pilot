@@ -85,8 +85,21 @@ function bestandMit(aktiveIds = [], { adressen = {} } = {}) {
 // Startfensterbefund. Ein fehlender Befund gilt nie als „frei" (fail closed) —
 // genau darin bestand die Luecke: die Fensterpruefung existierte, aber niemand
 // fragte sie, bevor Profile aktiviert wurden.
-const FENSTER_FREI = Object.freeze({ startErlaubt: true, konflikte: [], startMinuteUtc: 696, endeMinuteUtc: 959 });
-const FENSTER_KONFLIKT = Object.freeze({ startErlaubt: false, konflikte: [{ art: "bestandscron-im-fenster" }] });
+// ERGÄNZT 02.09. (adversariale Analyse, bestätigter Befund): Ein Fensterbefund
+// ist seit diesem Sprint nur noch dann verwertbar, wenn er (a) gegen eine
+// nichtleere Cronliste gerechnet wurde und (b) JETZT gilt. Beides muss die
+// Vorrichtung mitliefern, sonst blockiert die Aktivierung — fail closed.
+const FENSTER_FREI = Object.freeze({
+  startErlaubt: true, konflikte: [], startMinuteUtc: 696, endeMinuteUtc: 959, gepruefteCrons: 13
+});
+const FENSTER_KONFLIKT = Object.freeze({
+  startErlaubt: false, konflikte: [{ art: "bestandscron-im-fenster" }],
+  startMinuteUtc: 696, endeMinuteUtc: 959, gepruefteCrons: 13
+});
+// 12:00 UTC = Minute 720, liegt in [696, 959).
+const JETZT_IM_FENSTER = "2026-09-10T12:00:00Z";
+// 05:47 UTC = Minute 347 — genau der gefährliche Moment aus dem Befund.
+const JETZT_AUSSERHALB = "2026-09-10T05:47:00Z";
 
 const SCHARF_ENV = (schritt) => ({
   [K.EXECUTE_FLAG]: "1",
@@ -200,7 +213,9 @@ function main() {
     }).erteilt === false);
   check("D7 Jeder Schritt hat ein EIGENES Bestätigungswort",
     new Set(Object.values(K.FREIGABEWORTE)).size === Object.keys(K.FREIGABEWORTE).length
-      && Object.keys(K.FREIGABEWORTE).length === 5);
+      // 6 statt 5 seit 02.09.: das Aufräumen der Scheduler-Spur nach dem
+      // Rückbau ist ein eigener Schritt mit eigenem Wort.
+      && Object.keys(K.FREIGABEWORTE).length === 6);
   check("D8 Die Freigabe der Anlage aktiviert nichts",
     K.freigabe("aktivierung-a", SCHARF_ENV("provisionierung")).erteilt === false);
   check("D9 Die Freigabe der Gruppe A aktiviert nicht die Gruppe C",
@@ -268,7 +283,7 @@ function main() {
   // ── G · Aktivierung nach Gruppen ──────────────────────────────────────────
   console.log("\n== G · Aktivierung nach Gruppen 20 / 75 / 400 ==");
   const aktivA = K.planeAktivierung({
-    grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a", startfensterBefund: FENSTER_FREI
+    grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a", startfensterBefund: FENSTER_FREI, jetztUtc: JETZT_IM_FENSTER
   });
   check("G1 Gruppe A plant exakt 20 Aktivierungen",
     aktivA.anzahlZuAktivieren === 20 && aktivA.blockiert === false, aktivA.blockadeGruende.join(", "));
@@ -283,7 +298,7 @@ function main() {
   check("G1b Mit KONFLIKTBEHAFTETEM Fensterbefund bleibt die Aktivierung blockiert",
     (() => {
       const konflikt = K.planeAktivierung({
-        grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a", startfensterBefund: FENSTER_KONFLIKT
+        grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a", startfensterBefund: FENSTER_KONFLIKT, jetztUtc: JETZT_IM_FENSTER
       });
       return konflikt.blockiert === true && konflikt.blockadeGruende.includes("startfenster-konflikt");
     })());
@@ -292,15 +307,15 @@ function main() {
       .anzahlZuDeaktivieren === 20);
   const nachA = bestandMit(K.GRUPPEN_KENNUNGEN.a);
   check("G2 IDEMPOTENZ: Gruppe A erneut geplant ergibt null",
-    K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachA, gruppe: "a", startfensterBefund: FENSTER_FREI }).bereitsErreicht === true);
+    K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachA, gruppe: "a", startfensterBefund: FENSTER_FREI, jetztUtc: JETZT_IM_FENSTER }).bereitsErreicht === true);
   const bOhneA = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "b" });
   check("G3 Gruppe B ohne vollständige Gruppe A ist blockiert",
     bOhneA.blockiert === true && bOhneA.vorstufenOffen.includes("a"));
-  const bNachA = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachA, gruppe: "b", startfensterBefund: FENSTER_FREI });
+  const bNachA = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachA, gruppe: "b", startfensterBefund: FENSTER_FREI, jetztUtc: JETZT_IM_FENSTER });
   check("G4 Gruppe B nach vollständiger Gruppe A plant exakt 75",
     bNachA.blockiert === false && bNachA.anzahlZuAktivieren === 75);
   const nachAB = bestandMit([...K.GRUPPEN_KENNUNGEN.a, ...K.GRUPPEN_KENNUNGEN.b]);
-  const cNachAB = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachAB, gruppe: "c", startfensterBefund: FENSTER_FREI });
+  const cNachAB = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachAB, gruppe: "c", startfensterBefund: FENSTER_FREI, jetztUtc: JETZT_IM_FENSTER });
   check("G5 Gruppe C nach A und B plant exakt 400",
     cNachAB.blockiert === false && cNachAB.anzahlZuAktivieren === 400);
   const cOhneB = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: nachA, gruppe: "c" });
@@ -398,6 +413,55 @@ function main() {
       && !/require\((["'])\.\/storage\1\)/.test(quelle));
   check("I2 Kein Provisionierungs- oder Kontozugriff",
     !/require\((["'])\.\/(provisioning|accounts)\1\)/.test(quelle));
+  // ── J · BEFUNDE DER ADVERSARIALEN ANALYSE (02.09.) ─────────────────────────
+  console.log("\n== J · Der Fensterbefund ist nicht mehr zeitlos ==");
+  {
+    const gestern = K.planeAktivierung({
+      grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a",
+      startfensterBefund: FENSTER_FREI, jetztUtc: JETZT_AUSSERHALB
+    });
+    check("J1 Ein gestern erhobener Befund erlaubt um 05:47 KEINEN Start",
+      gestern.blockiert === true
+        && gestern.startfensterFrei === false
+        && gestern.startfensterGiltJetzt === false
+        && gestern.blockadeGruende.includes("startzeit-ausserhalb-des-fensters"));
+    const ohneUhr = K.planeAktivierung({
+      grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a",
+      startfensterBefund: FENSTER_FREI
+    });
+    check("J2 Ohne `jetztUtc` bleibt die Aktivierung blockiert (fail closed)",
+      ohneUhr.blockiert === true && ohneUhr.blockadeGruende.includes("startzeit-fehlt"));
+    const ohneCrons = K.planeAktivierung({
+      grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a",
+      startfensterBefund: { ...FENSTER_FREI, gepruefteCrons: 0 }, jetztUtc: JETZT_IM_FENSTER
+    });
+    check("J3 Ein Befund gegen eine LEERE Cronliste gilt als ungeprüft",
+      ohneCrons.blockiert === true
+        && ohneCrons.startfensterGeprueft === false
+        && ohneCrons.blockadeGruende.includes("startfenster-ohne-cronliste"));
+    const gueltig = K.planeAktivierung({
+      grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a",
+      startfensterBefund: FENSTER_FREI, jetztUtc: JETZT_IM_FENSTER
+    });
+    check("J4 Ein geprüfter Befund, der JETZT gilt, lässt die Planung durch",
+      gueltig.startfensterFrei === true
+        && gueltig.startfensterGiltJetzt === true
+        && gueltig.startfensterGepruefteCrons === 13);
+    // Das Fenster darf über Mitternacht reichen — dann liegt `ende` über 1440.
+    const ueberMitternacht = K.planeAktivierung({
+      grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a",
+      startfensterBefund: { startErlaubt: true, konflikte: [], startMinuteUtc: 1400, endeMinuteUtc: 1500, gepruefteCrons: 13 },
+      jetztUtc: "2026-09-10T00:30:00Z" // Minute 30 → 30+1440 = 1470 ∈ [1400,1500)
+    });
+    check("J5 Ein Fenster über Mitternacht wird korrekt getroffen",
+      ueberMitternacht.startfensterGiltJetzt === true);
+  }
+  console.log("\n== J2 · Rückweg und Nacharbeit sind getrennt freigegeben ==");
+  check("J6 Das Wort des Rückwegs räumt die Scheduler-Spur NICHT auf",
+    K.freigabe("scheduler-spur", SCHARF_ENV("deaktivierung")).erteilt === false);
+  check("J7 Das Wort der Nacharbeit deaktiviert NICHTS",
+    K.freigabe("deaktivierung", SCHARF_ENV("scheduler-spur")).erteilt === false);
+
   check("I3 Keine Uhr im Modul (die Grundlinie bringt ihren Zeitstempel mit)",
     !/Date\.now\(\)/.test(quelle) && !/new Date\(\)/.test(quelle));
 

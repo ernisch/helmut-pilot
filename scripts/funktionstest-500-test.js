@@ -19,6 +19,7 @@ const path = require("path");
 const F = require("../lib/helmut/funktionstest-500");
 const R = require("../lib/helmut/kommunikationsriegel");
 const minimalCron = require("../lib/helmut/minimal-cron");
+const KAP = require("../lib/helmut/kapazitaet-500");
 
 const ROOT = path.join(__dirname, "..");
 let pass = 0;
@@ -481,6 +482,37 @@ function main() {
     F.pruefeAbbruch({
       beobachtungen: { ...RUHIGE_LAGE, drosselungen: 0 }, grenzen: VOLLE_GRENZEN
     }).abbrechen === false);
+
+  // ── M · Slotkapazität (adversariale Analyse 02.09., bestätigter Befund) ────
+  // BEFUND: `tagesModell()` rechnet `slotKapazitaetReicht` seit jeher aus,
+  // aber KEINE Prüfung wertete das Feld aus. Ein später auf das Stressszenario
+  // angehobener Deckel hätte `bereit = true` gemeldet, obwohl die
+  // Verstehens-Slotlast die physische Kapazität übersteigt: die Reserve wäre im
+  // Deckel gebucht, aber physisch nicht abrufbar.
+  {
+    const slots = KAP.MESSWERTE.slotKapazitaetVerstehenProTag;
+    const name = "Verstehens-Reserve ist physisch abrufbar (Slotkapazität)";
+    const passend = F.pruefeKonfiguration({
+      gesamtdeckel: KAP.VORBEREITETER_DECKEL,
+      reserveVerstehen: KAP.VORBEREITETE_RESERVE_VERSTEHEN
+    });
+    const bindungPassend = passend.bindungen.find((b) => b.name === name);
+    check("M1 Die Bindung existiert überhaupt und wird ausgewertet", Boolean(bindungPassend));
+    check("M2 Die VORBEREITETE Reserve 702 passt in die Slotkapazität",
+      Boolean(bindungPassend && bindungPassend.ok === true),
+      `Reserve ${KAP.VORBEREITETE_RESERVE_VERSTEHEN} ≤ ${slots}`);
+    const zuGross = F.pruefeKonfiguration({
+      gesamtdeckel: 3510,
+      reserveVerstehen: slots + 1
+    });
+    const bindungZuGross = zuGross.bindungen.find((b) => b.name === name);
+    check("M3 Eine Reserve ÜBER der Slotkapazität schlägt die Bindung",
+      Boolean(bindungZuGross && bindungZuGross.ok === false));
+    check("M4 Und sie macht die Gesamtkonfiguration nicht mehr bereit",
+      zuGross.bereit === false);
+    check("M5 Ohne gelesene Reserve entsteht keine Bindung (keine Koerzierung)",
+      !F.pruefeKonfiguration({ gesamtdeckel: 2416 }).bindungen.some((b) => b.name === name));
+  }
 
   check("K5 Auch bei voller Bereitschaft bleibt der Start eine getrennte Freigabe",
     /getrennte Betreiberfreigabe/.test(allesGesetzt.meldung));
