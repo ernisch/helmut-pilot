@@ -2254,3 +2254,63 @@ Weg, und zwar aus vier belegten Gründen:
 Dazu kommen **drei** freigabepflichtige Production-Vorgänge (Merge/Deployment, Variable setzen
 + Redeploy, Variable löschen + Redeploy) am **live geschalteten Planer der realen Mandate**.
 **Weg (c) bleibt nicht empfohlen.**
+
+---
+
+## §26 · Die Frage „05:45/05:48" — offline entschieden, soweit sie offline entscheidbar ist
+
+**Zwei Fragen stecken in einer.** `CURRENT_STATE.md` führt „05:45/05:48" seit dem
+Korrektursprint als offen. In dieser Formulierung stecken aber zwei verschiedene Fragen, und
+nur eine davon braucht einen Production-Lauf:
+
+| Frage | Status |
+|---|---|
+| (a) Tritt die Überschneidung **heute** auf? | **Offline entschieden: NEIN** (§26.1) |
+| (b) Ist gleichzeitiger Betrieb unbedenklich? | **Bleibt offen** — verlangt den Aktivierungsnachweis |
+
+### §26.1 Eine Auftragsannahme ist zu korrigieren: „05:48" ist kein regulärer Ablauf
+
+Um **05:45 UTC** (Türkei 08:45, Berlin 07:45) läuft `/api/cron/lage-briefing`. Um
+**05:48 UTC läuft heute NICHTS.** Der 05:48-Slot entsteht ausschließlich aus dem
+**vorbereiteten, nicht aktivierten** Minimal-Cron-Rhythmus `18,48 * * * *`
+(`lib/helmut/minimal-cron.js`) — und der steht nicht in `vercel.json` (gemessen).
+
+Weiter gemessen, gegen die tatsächliche Konfiguration gerechnet (`maxDuration` aus
+`vercel.json` gelesen, nicht abgeschrieben):
+
+| Größe | Wert |
+|---|---|
+| Crons in `vercel.json` | **13** |
+| Harte Plattformgrenze jeder Cron-Route | **300 s = 5 min** |
+| Kleinster Startabstand zweier Bestandscrons | **10 min** (06:00 `health-report` → 06:10 `lage-briefing-nachlauf`), Tagesübergang mitgerechnet |
+| **Überschneidung zweier Bestandscrons heute möglich?** | **NEIN** — 10 min Abstand gegen 5 min Grenze |
+
+**Das ist eine gerechnete Aussage, keine Annahme.** Testgesichert durch die neue Suite
+`scripts/cron-ueberschneidung-test.js` (**16/0**), die gegen `vercel.json` rechnet: ändert
+jemand einen Cron oder die Laufzeitgrenze, wird sie rot statt still falsch.
+
+### §26.2 Was wäre, wenn der Minimal-Cron aktiv wäre
+
+Dann gäbe es **genau zwei** Überschneidungspaare, beide unter der Plattformgrenze und damit
+real:
+
+| Paar | Abstand |
+|---|---|
+| `lage-briefing` 05:45 → Slot 05:48 | 3 min |
+| Slot 06:18 → `lage-briefing-nachlauf` 06:22 | 4 min |
+
+### §26.3 Was dabei ausdrücklich NICHT gezeigt ist
+
+* **Es gibt keine Sperre zwischen verschiedenen Cron-Pfaden.** Alle Sperren sind namensbasiert
+  und wirken nur gegen Aufrufer desselben Namens; die relevanten Namensräume sind disjunkt.
+* **Die reale Gefahr wäre nicht Doppelarbeit, sondern der gemeinsame `helmut_store`-Blob.**
+  Beide Pfade schreiben am Laufende ihre Prozesstelemetrie über `recordProcessRun`, und das
+  liest den ganzen Blob, hängt an und schreibt zurück (Last-Write-Wins, `CLAUDE.md` §4.10).
+  Der KI-Tagesdeckel dagegen wird atomar reserviert und kann nicht überschritten werden;
+  doppelte KI-Arbeit am selben Vorgang schließt die CAS-Reservierung mit Fencing aus.
+* **Der Actions-Watchdog ist der einzige Akteur, der 05:45 heute tatsächlich überschneiden
+  könnte** — er ist kein Vercel-Cron, löst aber eine echte Production-Route aus, startet
+  nominell 05:30 UTC und ist belegt oft 2–3 h verzögert. Die Überschneidungsrechnung sieht ihn
+  bauartbedingt **nicht** (sie bekommt nur `vercel.json`-Crons).
+* **Frage (b) bleibt offen** und wird hier nicht behauptet. Sie verlangt einen Production-Lauf
+  mit aktivem Minimal-Cron — und der ist nicht freigegeben.
