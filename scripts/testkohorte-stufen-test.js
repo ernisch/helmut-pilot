@@ -484,6 +484,45 @@ async function main() {
         && R.KANAELE_BETRIEBLICH.length === 4;
     })());
 
+  // ── Q · Der blinde Fleck der Ring-Vollständigkeitsprüfung ────────────────
+  //
+  // Befund der Gegenprüfung, hier experimentell nachgewiesen: die Prüfung
+  // entscheidet über LÄNGE und ÄLTESTEN Eintrag. Ein Lost Update entfernt einen
+  // JÜNGEREN Eintrag aus der Mitte und lässt beide Größen unverändert — er ist
+  // strukturell unsichtbar. Dieser Abschnitt hält das fest, damit niemand aus
+  // `auswertbar: true` schließt, es sei nichts verloren gegangen.
+  console.log("\nQ · Blinder Fleck: Lost Update im Nutzungsring");
+  const RING = 5000;
+  const t0 = Date.parse("2026-09-01T00:00:00Z");
+  const eintrag = (ms) => ({ createdAt: new Date(ms).toISOString(), callType: "understanding", success: true });
+  const vollerRing = Array.from({ length: RING }, (_, i) => eintrag(t0 + i * 1000));
+  const von = t0 + 1000 * 1000;
+  const bis = t0 + RING * 1000;
+
+  const heil = N.werteNutzungslogAus({ eintraege: vollerRing, vonMs: von, bisMs: bis, ringMax: RING });
+  check("Q1 ein vollständiger Ring mit altem Anfang ist auswertbar", heil.auswertbar === true);
+
+  // Lost Update nachgebaut: ein jüngerer Eintrag fehlt, die Länge bleibt 5.000,
+  // der älteste Eintrag bleibt derselbe.
+  const mitVerlust = [...vollerRing];
+  mitVerlust.splice(3000, 1);
+  mitVerlust.push(eintrag(t0 + 1));
+  const verlust = N.werteNutzungslogAus({ eintraege: mitVerlust, vonMs: von, bisMs: bis, ringMax: RING });
+  check("Q2 der Ring MIT Lost Update hat unverändert 5.000 Einträge",
+    mitVerlust.length === RING);
+  check("Q3 die Prüfung erkennt den Verlust NICHT — das ist der blinde Fleck",
+    verlust.auswertbar === true);
+  check("Q4 der blinde Fleck ist im Ergebnis ausdrücklich benannt",
+    verlust.verlustErkennung === "keine"
+      && /Lost Update/.test(String(verlust.verlustErkennungGrund || "")));
+
+  // Die Prüfung, die sehr wohl greift: gekürztes Fenster.
+  const gekuerzt = N.werteNutzungslogAus({
+    eintraege: vollerRing, vonMs: t0 - 100000, bisMs: bis, ringMax: RING
+  });
+  check("Q5 eine echte Fensterkürzung wird dagegen fail closed gemeldet",
+    gekuerzt.auswertbar === false && /gekuerzt|gekürzt/.test(String(gekuerzt.grund || "")));
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);
 }

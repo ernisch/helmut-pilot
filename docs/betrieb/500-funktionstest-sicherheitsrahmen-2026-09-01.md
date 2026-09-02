@@ -2314,3 +2314,87 @@ real:
   bauartbedingt **nicht** (sie bekommt nur `vercel.json`-Crons).
 * **Frage (b) bleibt offen** und wird hier nicht behauptet. Sie verlangt einen Production-Lauf
   mit aktivem Minimal-Cron — und der ist nicht freigegeben.
+
+---
+
+## §27 · Telemetrie für die Auswertung — der blinde Fleck der Vollständigkeitsprüfung
+
+**Frage.** Genügen die bestehenden relationalen Vorbereitungen für die Auswertung des
+500er-Tests, **ohne** die Migration `20260902121500` anzuwenden und **ohne**
+`HELMUT_LLM_USAGE_RELATIONAL` zu aktivieren?
+
+### §27.1 Der Vorbereitungsstand ist sauber
+
+* **Flag AUS ist ein vollständiger No-Op.** Ohne Flag und ohne Migration wird der relationale
+  Zweig gar nicht betreten; der Blob-Schreibweg ist byte-identisch zum bisherigen Stand.
+* Die Migration ist **rein additiv** (fünf Spalten, drei Indizes auf einer **bestehenden**
+  Tabelle) und durch einen Existenz-Guard geschützt. Das Rollback nimmt Struktur und Indizes
+  vollständig zurück; nicht zurückgenommen wird die Rechteentziehung — also die
+  **restriktive** Richtung, was hinnehmbar ist.
+* **Offene Lücke:** die Basis-Spaltenstruktur von `public.llm_usage` ist im Repository nirgends
+  definiert. Für zwölf der geschriebenen Spalten existiert weder eine anlegende Migration noch
+  ein Schema-Nachweis — der Dual-Write ist insoweit **unbewiesen**. Das ist heute folgenlos
+  (Flag AUS), wäre es aber nicht mehr, sobald jemand Schritt 19/20 des Ablaufplans freigibt.
+
+### §27.2 Reicht der Ring von 5.000 für die Auswertung? Je Stufe getrennt
+
+| Stufe | aktiv (synthetisch + 5 real) | Bedarf/Tag (konservativ) | Ringreichweite |
+|---|---|---|---|
+| **A** | 20 + 5 = 25 | 591 | ~8,5 Tage |
+| **B** | 95 + 5 = 100 | 733 | ~6,8 Tage |
+| **C** | 495 + 5 = 500 | 1.812 | **~2,8 Tage** |
+
+**Für einen einzelnen Testtag reicht der Ring in jeder Stufe** — ein Tag der Stufe C belegt
+36 % der 5.000 Plätze. **Eine gemeinsame Auswertung über die ganze Stufenkette reißt dagegen
+ab Tag 3–5.** Wer die drei Stufen zusammen auswerten will, braucht die relationale Ablage.
+
+> **Nebenbefund:** Der Codekommentar in `storage.js`, der Tagesanfall liege bei 500 Profilen
+> „in derselben Größenordnung 100× höher" und der Ring sei „in unter zwei Tagen gefüllt", ist
+> um **Faktor 3–7 überhöht**. Er unterstellt lineares Wachstum mit der Mandatszahl — genau das
+> schließt das eigene kanonische Modell aus (`kapazitaet-500.js`: der geteilte Katalog wächst
+> nicht mit, nur profilgetriebene Quellen und Personensuchen). Die Richtung des Kommentars
+> stimmt, seine Zahl nicht.
+
+### §27.3 Der eigentliche Riss: ein Lost Update ist strukturell unsichtbar
+
+Die Vollständigkeitsprüfung (`blobFensterVollstaendig`, `werteNutzungslogAus`) entscheidet über
+**genau zwei** Größen: die **Länge** der Liste und den **ältesten** Eintrag.
+
+Ein **Lost Update** — zwei gleichzeitige Läufe lesen denselben Blob, hängen je einen Eintrag an
+und schreiben unbedingt zurück (`CLAUDE.md` §4.10; die Ursache ist seit dem Sprint vom 01.09.
+belegt) — entfernt aber einen **jüngeren** Eintrag aus der Mitte. **Die Länge bleibt bei 5.000,
+der älteste Eintrag bleibt derselbe: beide Prüfungen melden weiterhin „auswertbar".**
+
+**Experimentell nachgewiesen** (`scripts/testkohorte-stufen-test.js`, Abschnitt Q): ein
+nachgebauter Ring mit einem verlorenen jüngeren Eintrag und unveränderter Länge wird von der
+Prüfung als auswertbar gemeldet. Eine echte Fensterkürzung wird dagegen korrekt fail closed
+zurückgewiesen.
+
+Das ist **kein neuer Defekt** — es ist die bekannte `CLAUDE.md`-§4.10-Verletzung, gesehen aus
+der Perspektive der Prüfung, die sie eigentlich auffangen sollte. Es wäre falsch, aus
+`auswertbar: true` zu schließen, dass kein Eintrag verloren ging. Das Ergebnisobjekt sagt das
+jetzt ausdrücklich (`verlustErkennung: "keine"` mit Begründung), statt es dem Leser zu
+überlassen.
+
+**Ein Nachweis dafür braucht einen vom Listeninhalt unabhängigen Zähler** — also genau die
+relationale Ablage oder ein bedingtes Schreiben. Beides bleibt freigabepflichtig und ist in
+diesem Sprint **nicht** geschehen.
+
+### §27.4 Größenordnung des Lese-Ändere-Schreibe-Objekts
+
+Bei vollem Ring ist das Objekt, das **jeder einzelne KI-Aufruf** liest und zurückschreibt, rund
+**2,9 MiB** groß. Bei 1.812 Aufrufen am Tag sind das grob **10 GiB Lese- und Schreibverkehr
+pro Tag über eine einzige `helmut_store`-Zeile** — zusätzlich zu allem anderen, was in
+derselben Zeile liegt. Das ist keine Sicherheits-, sondern eine Betriebs- und Kostenfrage, und
+sie gehört zu den Größen, die der Mehrtagesbetrieb erst beantworten kann.
+
+### §27.5 Urteil
+
+**Für die Auswertung EINES Testtags je Stufe genügt die heutige Telemetrie** — A01/A06 rechnen
+über dem Ring und melden eine Ringkürzung nachweislich fail closed; A04 (Kosten) hängt als
+einzige Regel gar nicht am Ring, sondern am atomaren relationalen Tageszähler.
+
+**Für eine stufenübergreifende Mehrtagesauswertung genügt sie nicht**, und der Lost Update
+bleibt in jedem Fall unsichtbar. Die Migration **nicht** anzuwenden ist für den Testlauf
+selbst richtig; wer die Stufenkette gemeinsam auswerten will, braucht die beiden getrennten
+Freigaben (Schritte 19/20).
