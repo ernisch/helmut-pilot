@@ -2491,3 +2491,114 @@ als Null.
 4. Es gibt **keine Fortschrittsanzeige und keine Wiederaufnahmehilfe**. Bricht der Lauf bei
    Kennung 200 ab, weiß der Betreiber nicht, welche 200 erledigt sind. Fachlich ist der Lauf
    sauber wiederholbar (idempotent), betrieblich ist er blind.
+
+---
+
+## §29 · Korrektur zu §24.1 — die Rechnung stimmt, die Begründung war falsch
+
+**Dieser Abschnitt nimmt eine eigene Aussage teilweise zurück.** Die adversariale
+Gegenprüfung dieses Sprints hat §24.1 widerlegt — nicht in den Zahlen, sondern in der
+Kausalkette. Ein überzogener Befund ist so unehrlich wie ein verschwiegener; deshalb steht die
+Rücknahme hier, und nicht als stille Umformulierung.
+
+### §29.1 Was bestätigt bleibt
+
+* Die Zerlegung **702 + 1.000 + 100 + 10 = 1.812** und der Anteil **55,19 %** sind exakt
+  nachgerechnet.
+* `mandate_projection` und `briefing_materialization` sind **belegt KI-frei** — strukturell
+  nachgeprüft, nicht nur am Kommentar: `matching.js` und `decisions.js` laden kein KI-Modul,
+  `buildV3Briefing` enthält keinen Modellaufruf.
+* Blocker 2 ist szenarioabhängig (Kipppunkt 1,84), und die Grenzen RPM/TPM sind keine Drosseln.
+
+### §29.2 Was FALSCH war und zurückgenommen wird
+
+**Die Behauptung, die 1.000 mandatsgebundenen Modellaufrufe könnten im Testfenster gar nicht
+entstehen, ist nicht belegt.** Die Kausalkette war falsch verknüpft:
+
+Die 1.000 stammen **nicht** aus `mandate_projection`/`briefing_materialization`, sondern aus
+`MESSWERTE.mandatsgebundenJeMandatProTag`. Deren Messgrundlage nennt das Modul selbst
+(`kapazitaet-500.js:318`): **390 `communicationDraft`-Aufrufe** gegen 238 `lageBriefing`-Aufrufe.
+`communicationDraft` ist
+
+* ein **echter** Modellaufruf (`ai.js:299`, `requestJson`, `callType: "communicationDraft"`),
+* **mandatsgebunden** (`politicianId: profile?.id`),
+* und wird über **`POST /api/communication/generate`** ausgelöst (`server.js:823–827`) — eine
+  **nutzergetriebene HTTP-Route** mit einer Ratengrenze von 18/Stunde und **ohne jede
+  Fensterbindung**.
+
+Er kann also in **jedem** Fenster entstehen. Damit ist der dominierende Posten der 1.000 genau
+**nicht** fensterfrei im behaupteten Sinne.
+
+**Folge:** Die Zahl **812 darf NICHT als Fenstergröße eingesetzt werden.** Sie kippt beide
+Fenster schon bei Parallelität 1 auf „passt" (1.732 bzw. 941 möglich) und erzeugte damit
+genau das falsche Grün, gegen das dieser Abschnitt geschrieben war.
+
+> **Was die Entscheidung gerettet hat:** §24.1 hat die Zahl ausdrücklich **nicht** in die
+> Hürde eingebaut. Diese Zurückhaltung war richtig — und sie ist der Grund, warum aus einem
+> falsch begründeten Befund kein falsches Grün geworden ist.
+
+Ergänzend zur Belastbarkeit: 812 ist bei Parallelität 1 auch rechnerisch **grenzwertig**, nicht
+komfortabel. Unter Berücksichtigung der Scheibenreserven (Planungsbudget, Abschlussreserve,
+Scheibenpause) liegt die reale Spanne bei etwa **660–840** Aufrufen je Fenster — 812 liegt
+darin, im ungünstigen Fall also **darunter**.
+
+### §29.3 Der stärkere Befund, der stattdessen gilt: das Tor prüft die falsche Bedingung
+
+Die Gegenprüfung hat dafür einen **besser belegten** Befund geliefert:
+
+| Ebene | Bedingung |
+|---|---|
+| **Motor** (Warteschlange) | `where j.status = 'wartend' and j.due_at <= v_now` — **Fälligkeit** |
+| **Tor** (`arbeitsklassenImFenster`) | `ueberlapp = max(0, min(bis, phaseBis) − max(von, phaseVon)) > 0` — **Schnittmenge mit dem Streuintervall** |
+
+Das sind **verschiedene Fragen**, und sie fallen auseinander, sobald ein Fenster **nach** einer
+Phase liegt. Ein Auftrag mit `dueAt` in 18:00–21:36, der noch nicht abgearbeitet ist, ist um
+22:00 **fällig** — das Tor meldet für ein Fenster ab 21:36 aber Überlappung 0 und damit
+„nicht fällig".
+
+**Gemessen:** Für das Fenster **21:36–03:59 UTC** (Türkei 00:36–06:59, Berlin 23:36–05:59)
+meldet das Tor `sichtbareProduktstufeErreichbar = false` — und genau dieses Fenster ist das
+**einzige**, das das Kapazitätstor bei **Parallelität 1** besteht (383 min → 2.522 möglich
+≥ 1.812 nötig).
+
+> **Wenn dieser Modellfehler zutrifft, verwirft das Tor als einziges das Fenster, das beide
+> Tore bei Parallelität 1 tragen könnte — und die Forderung nach Parallelität 2 wie auch der
+> Zwei-Fenster-Ablauf wären überflüssig.**
+
+Die Fehlerrichtung ist **ausschließlich fail closed**: `ueberlapp > 0` setzt voraus, dass ein
+Teil des Streuintervalls im Fenster liegt; dann werden dort tatsächlich Aufträge fällig. Ein
+falsches Grün kann daraus **nicht** entstehen. Der Schaden ist eine falsche
+Betreiberempfehlung und ein blockiertes, womöglich taugliches Fenster.
+
+### §29.4 Warum das Tor in diesem Sprint trotzdem NICHT geändert wurde
+
+Die naheliegende Korrektur — Fälligkeit statt Schnittmenge — ist **nicht** so einfach, wie sie
+aussieht, und eine Änderung würde einen der beiden Blocker aufheben. Das ist zu folgenreich für
+eine unbelegte Annahme:
+
+1. **Das Nachtfenster überschreitet 00:00 UTC**, also die Grenze des 24-Stunden-Frischefensters
+   (`fensterKennung`). Vor Mitternacht sind die Aufträge des laufenden Fensters fällig, danach
+   beginnt ein **neues** Fenster mit **neu geplanten** Aufträgen. „100 % fällig" ist damit
+   keine gesicherte Aussage, sondern selbst eine Annahme.
+2. Ob ein Briefingauftrag am Abend tatsächlich noch **offen** ist, hängt davon ab, ob der
+   20:00-Crawl-Cron ihn bereits abgearbeitet hat — er treibt dieselbe Warteschlange an.
+3. Die **Vorbedingungssperre** (`vorbedingungOffen`) stellt ein fälliges Briefing zurück,
+   solange im selben Fenster noch Abruf- oder Verstehensarbeit offen ist — im 500er-Lasttest
+   der Normalfall.
+
+**Urteil:** Der Modellfehler ist **bestätigt und belegt**; die daraus folgende Aussage „das
+Nachtfenster trägt beide Tore" ist **plausibel, aber nicht bewiesen**. Sie zu unterstellen und
+die Hürde entsprechend zu drehen, wäre dieselbe Sorte Fehler wie die 812. Der Befund gehört
+deshalb als **benannte, offene Frage** in die Betreiberentscheidung — und er ist die
+aussichtsreichste davon, weil er als einziger beide Blocker **ohne** zusätzliche Freigabe
+auflösen könnte.
+
+### §29.5 Was daraus für die nächste Freigabe folgt
+
+Die in §24.1 formulierte Frage bleibt richtig, ihre Begründung ändert sich:
+
+> **Nicht** „812 statt 1.812" — sondern: **Welcher Anteil des Tagesbedarfs ist im gewählten
+> Fenster überhaupt erzeugbar, und prüft das Tor Fälligkeit oder Streuintervall?**
+
+Beides ist heute unbeantwortet, beides ist ohne Production-Lauf klärbar, und an beidem hängen
+die bisher als „ungedeckt" geführten Entscheidungen.
