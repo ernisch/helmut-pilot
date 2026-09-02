@@ -251,6 +251,25 @@ async function main() {
   check("D6 Es gibt einen relationalen Lesepfad für die Gegenprobe",
     typeof storage.leseLlmUsageRelational === "function"
       && /leseLlmUsageRelational/.test(storageQuelle));
+  check("D6a Der Lesepfad weist eine Kennung ab, die den PostgREST-Filter umbauen würde",
+    await (async () => {
+      let abgewiesen = 0;
+      let durchgelassen = 0;
+      for (const boese of ["boese,id)", "a,b", "x)or=(", "a b", "ü"]) {
+        try {
+          await storage.leseLlmUsageRelational({ politicianId: boese }, { request: async () => [] });
+          durchgelassen += 1;
+        } catch (_) { abgewiesen += 1; }
+      }
+      return abgewiesen === 5 && durchgelassen === 0;
+    })(), "Komma und Klammer trennen in PostgREST Ausdrücke — Kodieren allein genügt hier nicht");
+  check("D6b Eine gültige Slug-Kennung geht unverändert in den Filter",
+    await (async () => {
+      let url = "";
+      await storage.leseLlmUsageRelational(
+        { politicianId: "mandat-a" }, { request: async (u) => { url = u; return []; } });
+      return url.includes("or=(politician_id.eq.mandat-a,user_id.eq.mandat-a)");
+    })());
   check("D7 Der Lesepfad ist NICHT im Produktionslesepfad verdrahtet (Phase 3 ist offen)",
     (() => {
       const getUsage = storageQuelle.slice(

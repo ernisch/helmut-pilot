@@ -1311,12 +1311,33 @@ Alle Läufe über `scripts/lokal.js` (CLAUDE.md §6).
 |---|---|
 | `mandatsklasse-test.js` (neu) | **36 PASS / 0 FAIL** |
 | `verdraengungsschutz-test.js` (neu) | **23 PASS / 0 FAIL** |
-| `llm-usage-relational-test.js` (neu) | **35 PASS / 0 FAIL** |
+| `llm-usage-relational-test.js` (neu) | **37 PASS / 0 FAIL** |
 | `funktionstest-ablaufplan-test.js` (neu) | **52 PASS / 0 FAIL** |
 | `funktionstest-500-test.js` (erweitert) | **108 PASS / 0 FAIL** |
 | `testkohorte-betrieb-test.js` (erweitert) | **89 PASS / 0 FAIL** |
 | `kommunikationsriegel-test.js` | **44 PASS / 0 FAIL** — 495/495 gesperrt, Netzzähler 0 |
 | `llm-telemetrie-luecken-test.js` (erweitert) | **29 PASS / 0 FAIL** |
+| `minimal-cron-test.js` (korrigiert) | **39 PASS / 0 FAIL** |
+| `kapazitaetsmodell-test.js` (nachgezogen) | **58 PASS / 0 FAIL** |
+| `cron-fairness-test.js` (präzisiert) | **285 PASS / 0 FAIL** |
+| `env-inventar-test.js` | **38 PASS / 0 FAIL** |
+
+**Kanonischer Offline-Gesamtlauf** (`scripts/lokal.js` → `run-offline-tests.js`) auf dem
+Code-Endstand: **308/308 Suiten grün in 694 s**, Exit 0 — vollständig grün. Die beiden
+zuvor lokal roten Suiten (`kalender-ics-test.js`, `lambda-paket-test.js`) sind grün, sobald
+die im Lockfile stehenden Abhängigkeiten installiert sind (`npm ci` im CI;
+`npm install --no-save` in dieser Sitzung — `package.json` und Lockfile **unverändert**).
+
+**Browser-/Mobile-Smoke** (`browser-smoke-test.js`, Chromium, `HELMUT_REQUIRE_BROWSER=1`):
+**32 PASS / 0 FAIL**.
+
+**Datenbankverträge:** alle 14 `*-datenbank-test.js`-Suiten grün. Der vollständige
+Z22-§1–§11-Nachweis gegen echte PostgreSQL + echtes PostgREST läuft im Pflicht-CI.
+
+**Rein lesende Production-Prüfungen** dieser Sitzung: Mandatszahlen, Identitäts- und
+Kontoebene, Migrationsliste, Warteschlangenspalten, Budgetzähler und Nutzungslog — alle
+vier SQL-Blöcke der neuen Stufenkontrolle wurden gegen das **echte** Schema
+gegengeprüft (nur `SELECT`).
 
 ### 18.13 · Was weiterhin NICHT bewiesen ist
 
