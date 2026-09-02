@@ -117,10 +117,21 @@ function main() {
     process.exit(2);
   }
   if (argv.includes("--scharf")) {
+    // PRÄZISIERT 02.09. (zweiter Reviewbefund): Der alte Text sagte, ein scharfer
+    // Lauf sei „nicht implementiert" — und das galt für das GANZE Vorhaben. Seit
+    // diesem Sprint existieren die Ausführer; dieses Werkzeug bleibt bewusst das
+    // reine PLANUNGSwerkzeug, verweist aber jetzt auf den richtigen Weg, statt
+    // eine Sackgasse zu melden.
     console.error(
-      "Ein scharfer Lauf ist in diesem Werkzeug NICHT implementiert.\n"
-      + "Die Provisionierung, Aktivierung und Deaktivierung sind Production-\n"
-      + "Datenänderungen und nach CLAUDE.md §5 einzeln freigabepflichtig."
+      "Dieses Werkzeug PLANT nur — ein scharfer Lauf gehört hier nicht hin.\n"
+      + "Die Ausführer liegen getrennt, jeder mit eigenem Bestätigungswort:\n"
+      + "  Provisionierung : node scripts/testkohorte-vorwaerts.js provisionierung --scharf\n"
+      + "  Aktivierung     : node scripts/testkohorte-vorwaerts.js aktivierung --gruppe=<a|b|c> --scharf\n"
+      + "  Fachzyklus      : node scripts/funktionstest-500-zyklus.js --scharf\n"
+      + "  Rückweg         : node scripts/testkohorte-rueckbau.js --scharf\n"
+      + "  Nacharbeit      : node scripts/testkohorte-rueckbau.js --spur --scharf\n"
+      + "Jeder davon ist eine Production-Datenänderung und nach CLAUDE.md §5\n"
+      + "einzeln freigabepflichtig; ohne Freigabe läuft jeder als Trockenlauf."
     );
     process.exit(2);
   }

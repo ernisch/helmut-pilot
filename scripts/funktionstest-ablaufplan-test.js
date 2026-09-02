@@ -48,14 +48,14 @@ const VOLLE_QUELLEN = Object.freeze({
   // Beobachtungen entstehen nur noch, wenn der Aufrufer die Quelle ausdrücklich
   // als tragfähig erklärt. `public.llm_usage` ist in Phase 2 garantiert LEER —
   // eine gemessene 0 gegen eine leere Tabelle war falsches Grün.
-  modellaufrufe: { relationalAktiv: true, unbekannteModellaufrufe: 0, drosselungen: 0 },
+  modellaufrufe: { auswertbar: true, quelle: "blob:test", unbekannteModellaufrufe: 0, drosselungen: 0 },
   realeMandate: { gesamt: 9, aktiv: 5, geloescht: 0 },
   grundlinie: { realeMandate: 9, realeMandateAktiv: 5, realeMandateGeloescht: 0 },
   laufbilanz: { verarbeitet: 240, fehlgeschlagen: 2, vollstaendig: true },
   drain: { rueckstandWachstum: 10 },
   // Der Riegel führt keinen persistenten Zähler; die Zahl muss ausgezählt und
   // ausdrücklich als solche übergeben werden, sonst bleibt A10 unbewertbar.
-  riegel: { gezaehlt: true, durchgelassen: 0 },
+  riegel: { auswertbar: true, quelle: "blob:test", kommunikationsversuche: 0 },
   deployment: { githubCommitSha: "881739da0f8f06184a1bdf7dd86895d896cf0336" },
   // Ein Fensterbefund ohne `gepruefteCrons` gilt als ungeprüft und erzeugt
   // keine Zahl — ein unbewertbares Fenster war zuvor eine gemessene 0.
@@ -86,11 +86,18 @@ async function main() {
       && leer.schritte.filter((s) => s.art === A.ART_PRODUCTION).every((s) => s.freigabe !== null));
   check("A3 Ohne Vorbedingungen darf nur die Grundlinienerhebung beginnen",
     leer.naechsterSchritt === "grundlinie");
-  check("A4 Die Provisionierung ist gesperrt, bis Grundlinie UND Sicherung vorliegen",
+  // VERSCHÄRFT 02.09. (zweiter Reviewbefund): Die Provisionierung braucht jetzt
+  // zusätzlich das geprüfte STARTFENSTER — sie ist eine Production-Datenänderung,
+  // und der Ausführer verlangt es zur Laufzeit ohnehin. Der Plan sagte das vorher
+  // nicht, obwohl es galt.
+  check("A4 Die Provisionierung ist gesperrt, bis Grundlinie, Sicherung UND Fenster vorliegen",
     leer.gesperrt.includes("provisionierung")
       && A.ablaufplan({ belegt: [A.VORBEDINGUNGEN.GRUNDLINIE] }).gesperrt.includes("provisionierung")
-      && !A.ablaufplan({
+      && A.ablaufplan({
         belegt: [A.VORBEDINGUNGEN.GRUNDLINIE, A.VORBEDINGUNGEN.SICHERUNG]
+      }).gesperrt.includes("provisionierung")
+      && !A.ablaufplan({
+        belegt: [A.VORBEDINGUNGEN.GRUNDLINIE, A.VORBEDINGUNGEN.SICHERUNG, A.VORBEDINGUNGEN.FENSTER]
       }).gesperrt.includes("provisionierung"));
   check("A5 Der Stufenvertrag steht auch im Plan: B braucht die Kontrolle nach A",
     (() => {

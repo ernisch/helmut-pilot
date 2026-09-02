@@ -1603,3 +1603,144 @@ Das Review prüfte auch, ob dieser Sprint **bestehende Verträge entschärft** h
 Kein Befund gegen die Erlaubnisliste, gegen die Zwei-Riegel-Freigaben, gegen den
 Kommunikationsriegel oder gegen die Inertheit bei 0 synthetischen Zeilen. Zwanzig Befunde
 wurden in der Gegenprüfung **widerlegt** und bewusst nicht umgesetzt.
+
+---
+
+## §21 · Nachtrag 02.09. — sechs Ausführungslücken, zwei davon nicht schließbar
+
+Ein dritter Review prüfte, ob der Test **tatsächlich durchführbar** ist. Ergebnis: der
+Abschlussbericht hatte „technisch vollständig vorbereitet" behauptet, während der Code an
+sechs Stellen keine Ausführung zuließ. **Alle sechs Befunde sind gegen den Kopf `331859a`
+bestätigt worden.** Vier sind geschlossen, **zwei sind strukturell nicht schließbar** und
+stehen ab jetzt als Blocker im Code, nicht nur in der Prosa.
+
+### 21.1 · Die sechs Befunde, einzeln geprüft
+
+| # | Befund | Prüfung gegen `331859a` |
+|---|---|---|
+| 1 | `scripts/testkohorte-495.js` verweigert jeden scharfen Lauf | **TRIFFT ZU** — `process.exit(2)` bei `--scharf` |
+| 2 | `funktionstest-ablaufplan.js` meldet `ausfuehrbar: false` | **TRIFFT ZU** |
+| 3 | Kein verriegelter Ausführer für Provisionierung und die drei Aktivierungsstufen | **TRIFFT ZU** — der einzige scharfe Ausführer war der Rückweg |
+| 4 | Schritt 14 nennt keinen ausführbaren Start; Fenster endet 15:59, Pipeline-Cron 16:00 | **TRIFFT ZU, und schwerer als beschrieben** (siehe 21.4) |
+| 5 | A10 akzeptiert nur ein von Hand gesetztes `gezaehlt: true` | **TRIFFT ZU** — der Riegel führt überhaupt keinen Zähler |
+| 6 | A01/A06 ohne relationale Telemetrie nicht automatisch messbar | **TRIFFT ZU** |
+
+### 21.2 · Geschlossen: der Vorwärtsweg (Befunde 1, 2, 3)
+
+Neu: `lib/helmut/testkohorte-vorwaerts.js` + `scripts/testkohorte-vorwaerts.js`. Es trägt
+**dieselben drei Riegel** wie der Rückweg — Erlaubnisliste (unmittelbar vor **jedem**
+Schreibvorgang erneut geprüft; eine fremde Kennung bricht ab, **bevor** irgendetwas
+geschrieben wurde), zwei unabhängige Freigaben je Schritt, Nachprüfung je Zeile gegen die
+Ablage — und **einen vierten, den der Rückweg ausdrücklich nicht hat: das Startfenster.**
+
+Der Rückweg bleibt fenster- und vorstufenfrei. Er muss in jedem Moment sofort laufen
+dürfen; testgesichert (E1–E3).
+
+Ergänzt wurde `provisioning.activateTenant(id)` als Spiegelbild zu `deactivateTenant`.
+Es schreibt **genau ein Feld** (`profileActive: true`) und rührt das **Konto absichtlich
+nicht an** — ein deaktiviertes Konto kann sich nicht anmelden und keine Mail auslösen; das
+ist für den Testtag die sicherere Stellung. Der Stapelvertrag („ein Stapellauf aktiviert
+kein Mandat") bleibt unverändert gültig.
+
+Ein versehentlich **aktiv** angelegtes Profil zählt in der Provisionierung als
+**Fehlschlag**, nicht als Erfolg — sonst wäre die Stufung umgangen.
+
+### 21.3 · Geschlossen: echte Auswerter statt menschlicher Zusagen (Befunde 5, 6)
+
+Neu: `lib/helmut/funktionstest-nachweise.js` + `scripts/funktionstest-500-nachweise.js`.
+Die Stufenkontrolle nimmt **keine Zusagen mehr an**: `blobAusgezaehlt: true` und
+`gezaehlt: true` erzeugen keine Beobachtung mehr, nur noch das Ergebnis eines Auswerters.
+
+**A01/A06** rechnen über `helmut_store.data.llmUsage` gegen den freigegebenen
+callType-Katalog. Der 5.000er-Ring meldet seine eigene Kürzung fail-closed — ein gekürztes
+Fenster liefert **keine** Zahl statt einer zu niedrigen. Damit sind beide Regeln **heute**
+messbar, ohne Migration und ohne Flag.
+
+**A10 musste zweimal gebaut werden.** Die erste Fassung zählte Auditereignisse als
+Mailversandspur. Eine Gegenprüfung widerlegte das: `recordAudit` wird von der **Route**
+geschrieben, unabhängig davon, ob die Mail hinausging — unter dem Riegel entsteht der
+Eintrag also auch dann, wenn nichts gesendet wurde, und er trug keine Mandatskennung. Als
+Versandnachweis war er ein Falschpositiv.
+
+Behoben **an der Quelle**: die Mailaufrufer schreiben jetzt die aufgelöste Kennung **und**
+`versand=ja|nein`. Nur `versand=ja` zählt. Dazu kommen die beiden Spuren, die der
+**Sendepfad selbst** schreibt: `pushEvents.delivered` (vom Push-Dienst angenommene
+Sendungen) und `helmut_job_outbox`.
+
+**Ehrlich benannt bleibt:** drei der sieben Kanäle haben bauartbedingt **keine**
+mandatsbezogene Versandspur — `whatsapp`, `lambda-invoke` und `monitoring-webhook`. Der
+Auswerter weist sie als `nichtMessbar` aus. Eine dort gemeldete 0 wäre kein Freispruch.
+
+### 21.4 · NICHT SCHLIESSBAR (1): die sichtbare Produktstufe entsteht im Fenster nicht
+
+**Tatsache.** `source-demand.MANDATSPHASEN` (jetzt die einzige Quelle dieser Zahlen) legt
+die Fälligkeit der mandatsgebundenen Arbeit im 24-Stunden-Frischefenster fest:
+
+| Arbeitsklasse | Anteil | UTC | im Fenster 11:36–15:59 |
+|---|---|---|---|
+| `mandate_projection` | 50 %–75 % | 12:00–18:00 | **66,4 %** |
+| `briefing_materialization` | 75 %–90 % | 18:00–21:36 | **0 %** |
+
+Ein Auftrag wird erst bearbeitet, wenn er **fällig** ist. Im empfohlenen sicheren Fenster
+entsteht deshalb **kein einziges Briefing** — also genau die Stufe, die das Produkt
+sichtbar macht. Das ist **kein** Kapazitäts- und **kein** Budgetproblem, sondern ein
+struktureller Zeitkonflikt, und er ist mit **keinem** Aufruf bestehender Routen zu umgehen.
+Auflösen ließe er sich nur durch eine Änderung an Phasenfenstern (Code),
+`HELMUT_DEMAND_TENANT_MAX_AGE_H` (Umgebung) oder der Cronliste — alle drei nach
+CLAUDE.md §5 getrennt freigabepflichtig und in diesem Auftrag verboten.
+
+### 21.5 · NICHT SCHLIESSBAR (2): ein vollständiger Zyklus passt nicht in 263 Minuten
+
+**Nachgerechnet** (`kapazitaet.zyklusPasstInsFenster`, Messwerte 9.110 ms/Aufruf):
+
+| Szenario | Bedarf/Tag | in 263 min bei Parallelität 1 möglich | passt |
+|---|---|---|---|
+| Erwartung | 1.119 | 1.732 | ja |
+| **Konservativ** | **1.812** | **1.732** | **nein** (nötig: 276 min) |
+| Stress | 2.632 | 1.732 | nein |
+
+Der **Deckel** 2.416 ist dabei ausdrücklich **nicht** das Arbeitspensum — er enthält 25 %
+Reserve. Verglichen wird der Bedarf.
+
+### 21.6 · Der einzige heute belegbare Ablauf — und was ihm fehlt
+
+`funktionstest-zyklus.bewerteFensterFuerZyklus` bewertet **alle** freien Fenster gegen
+**beide** Tore. Belegtes Ergebnis für die 13 Bestandscrons:
+
+| Fenster (UTC) | Dauer | Briefing fällig | Projektion | Zyklus par 1 | Zyklus par 2 |
+|---|---|---|---|---|---|
+| 21:36–03:59 | 383 | 0 % | 0 % | ja | ja |
+| 11:36–15:59 | 263 | **0 %** | 66,4 % | **nein** | ja |
+| **17:36–19:59** | 143 | **55,1 %** | 6,7 % | nein | **ja** |
+| 20:06–21:29 | 83 | 38,4 % | 0 % | nein | nein |
+
+> **Bei Parallelität 1 trägt KEIN einziges Fenster einen vollständigen Zyklus.**
+> Bei Parallelität 2 trägt genau eines beide Tore: **17:36–19:59**.
+
+Daraus folgt der einzige heute belegbare Ablauf: **zwei Fenster nacheinander** —
+11:36–15:59 für Abruf/Verstehen/Projektion, dann 17:36–19:59 für die Briefings. Er hat
+**zwei ungedeckte Voraussetzungen**, beide getrennte Betreiberentscheidungen und in
+diesem Sprint **nicht** getroffen:
+
+1. **Parallelität 2** (`HELMUT_VERSTEHEN_PARALLELITAET`) — eine Umgebungsänderung, die
+   ihren eigenen Nachweis braucht. Die acht vorbereiteten Betreiberwerte enthalten sie
+   **nicht**.
+2. **Teilabdeckung wird akzeptiert** — 55,1 % der Briefings, nicht 100 %.
+
+### 21.7 · Was daraus für die Startbereitschaft folgt
+
+`startbereitschaft()` hat zwei neue Hürden, die beide **fail closed** sind und heute beide
+**nicht erfüllt** werden. Der Rahmen meldet deshalb von sich aus **„nicht startbereit"**,
+auch wenn alle acht Betreiberwerte gesetzt sind. Der Vertragstest K2 pinnt das
+ausdrücklich — er behauptete vorher das Gegenteil.
+
+**Die Aussagen „technisch vollständig vorbereitet" und „kein Bauteil fehlt" sind damit
+zurückgenommen.** Sie waren falsch.
+
+### 21.8 · Zwei zusätzliche, getrennte Freigaben (Anforderung 11)
+
+A01/A06 sind über den Blob-Auswerter **heute** messbar; die relationale Telemetrie wird
+dafür **nicht** gebraucht. Wer sie dennoch will, braucht **zwei** getrennte Freigaben, und
+sie stehen jetzt als Schritte 19 und 20 im Ablaufplan: die Migration anwenden **und**
+`HELMUT_LLM_USAGE_RELATIONAL` einschalten. **Die acht Betreiberwerte allein genügen dafür
+ausdrücklich nicht.**

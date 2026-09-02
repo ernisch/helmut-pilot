@@ -2198,7 +2198,18 @@ async function handleRequest(request, response) {
         { kennung: await kontoKennung(target) }
       );
       const action = purpose === "reset" ? "admin.user.reset-link" : "admin.user.invite";
-      await accounts.recordAudit({ action, userId: authUser.id, actorEmail: authUser.email, detail: target.email });
+      // VERSANDSPUR (ergaenzt 02.09., zweiter Reviewbefund): Der Auditeintrag wurde
+      // bisher UNABHAENGIG davon geschrieben, ob die Mail tatsaechlich hinausging —
+      // und er trug keine Mandatskennung. Damit war er als Nachweis eines externen
+      // Versands unbrauchbar: unter dem Kommunikationsriegel entsteht er auch dann,
+      // wenn nichts gesendet wurde. Er traegt jetzt die aufgeloeste Kennung UND den
+      // tatsaechlichen Versandstatus; erst damit ist er die Quelle, gegen die die
+      // Abbruchregel A10 rechnen kann.
+      await accounts.recordAudit({
+        action, userId: authUser.id, actorEmail: authUser.email,
+        politicianId: await kontoKennung(target),
+        detail: `${target.email} · versand=${mail && mail.sent === true ? "ja" : "nein"}`
+      });
       return { ok: true, purpose, inviteUrl: linkUrl, expiresAt: issued.expiresAt, mail };
     });
   }
@@ -5769,11 +5780,15 @@ async function zustellenAnonymerReset(user, kontext) {
   const mailContent = purpose === "reset"
     ? inviteMail.buildResetMail({ name: user.name, resetUrl: linkUrl })
     : inviteMail.buildInviteMail({ name: user.name, inviteUrl: linkUrl });
-  await inviteMail.sendAccessMail(
+  const versandBefund = await inviteMail.sendAccessMail(
     { to: user.email, ...mailContent },
     { kennung: await kontoKennung(user) }
   );
-  await accounts.recordAudit({ action: "password.reset-requested", userId: user.id, ip: kontext.ip });
+  await accounts.recordAudit({
+    action: "password.reset-requested", userId: user.id, ip: kontext.ip,
+    politicianId: await kontoKennung(user),
+    detail: `${user.email} · versand=${versandBefund && versandBefund.sent === true ? "ja" : "nein"}`
+  });
 }
 
 // POST /api/auth/request-reset — { email }: antwortet IMMER generisch mit 200
@@ -5823,7 +5838,11 @@ function handleAuthRequestReset(request, response) {
     { to: user.email, ...mailContent },
     { kennung: await kontoKennung(user) }
   );
-      await accounts.recordAudit({ action: "password.reset-requested", userId: user.id, ip: auth.clientIp(request) });
+      await accounts.recordAudit({
+        action: "password.reset-requested", userId: user.id, ip: auth.clientIp(request),
+        politicianId: await kontoKennung(user),
+        detail: `${user.email} · versand=${mail && mail.sent === true ? "ja" : "nein"}`
+      });
       // Dem Besitzer ehrlich antworten: ohne Mail-Versand den Link direkt (Interim-
       // Kopierweg), mit Mail-Versand den Zustellstatus (Client zeigt den Toast).
       if (!mail.sent) return { ...generic, resetUrl: linkUrl, expiresAt: issued.expiresAt, mail };

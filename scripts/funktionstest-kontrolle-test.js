@@ -16,6 +16,9 @@
 
 const funktionstest = require("../lib/helmut/funktionstest-500");
 const K = require("../lib/helmut/funktionstest-kontrolle");
+const N = require("../lib/helmut/funktionstest-nachweise");
+
+const T0 = Date.UTC(2026, 8, 10, 12, 0, 0);
 
 let pass = 0;
 let fail = 0;
@@ -62,11 +65,21 @@ console.log("\n== B · Modellaufrufe: leere Quelle bleibt unbewertbar ==");
   });
   check("B2 Mit relationaler Ablage entsteht die Zahl",
     mitRelational.unbekannteModellaufrufe === 0 && mitRelational.drosselungen === 2);
-  const mitBlob = K.baueBeobachtungen({
-    modellaufrufe: { blobAusgezaehlt: true, unbekannteModellaufrufe: 1, drosselungen: 0 }
+  // VERSCHAERFT 02.09. (zweiter Reviewbefund): `blobAusgezaehlt: true` war eine
+  // menschliche ZUSAGE. Verlangt wird jetzt das Ergebnis des reproduzierbaren
+  // Auswerters `funktionstest-nachweise.werteNutzungslogAus`.
+  const mitAuswerter = K.baueBeobachtungen({
+    modellaufrufe: N.werteNutzungslogAus({
+      eintraege: [{ createdAt: new Date(T0).toISOString(), callType: "keine-bekannte-art" }],
+      vonMs: T0 - 3600000, bisMs: T0 + 3600000
+    })
   });
-  check("B3 Auch eine von Hand ausgezaehlte Blob-Quelle traegt",
-    mitBlob.unbekannteModellaufrufe === 1 && mitBlob.drosselungen === 0);
+  check("B3 Das Ergebnis des Blob-Auswerters traegt",
+    mitAuswerter.unbekannteModellaufrufe === 1 && mitAuswerter.drosselungen === 0);
+  check("B3a Eine von Hand gesetzte Zusage traegt NICHT mehr",
+    !("unbekannteModellaufrufe" in K.baueBeobachtungen({
+      modellaufrufe: { blobAusgezaehlt: true, unbekannteModellaufrufe: 1, drosselungen: 0 }
+    })));
   check("B4 Die fehlende Messung taucht als FEHLEND auf, nicht als bestanden",
     K.kontrolliere({ stufe: "a", quellen: {}, grenzen: {} })
       .fehlendeMesswerte.includes("unbekannteModellaufrufe"));
@@ -75,12 +88,28 @@ console.log("\n== B · Modellaufrufe: leere Quelle bleibt unbewertbar ==");
 // ── C · A10: der Riegel zaehlt nichts, also misst A10 nichts ────────────────
 console.log("\n== C · Kommunikationsversuche: ohne Zaehler keine Zahl ==");
 {
-  check("C1 Ohne ausgezaehlte Quelle entsteht KEINE Zahl",
-    !("kommunikationsversuche" in K.baueBeobachtungen({ riegel: { durchgelassen: 0 } })));
-  check("C2 Mit ausgezaehlter Quelle entsteht sie",
-    K.baueBeobachtungen({ riegel: { gezaehlt: true, durchgelassen: 0 } }).kommunikationsversuche === 0);
-  check("C3 Ein tatsaechlich durchgelassener Versuch wird uebernommen",
-    K.baueBeobachtungen({ riegel: { gezaehlt: true, durchgelassen: 1 } }).kommunikationsversuche === 1);
+  check("C1 Ohne Auswerterergebnis entsteht KEINE Zahl",
+    !("kommunikationsversuche" in K.baueBeobachtungen({ riegel: { gezaehlt: true, durchgelassen: 0 } })));
+  const spuren = (auditEvents) => N.werteKommunikationsspurenAus({
+    auditEvents, pushEreignisse: [], jobOutbox: [],
+    vonMs: T0 - 3600000, bisMs: T0 + 3600000
+  });
+  check("C2 Mit dem Ergebnis des Spurenauswerters entsteht sie",
+    K.baueBeobachtungen({ riegel: spuren([]) }).kommunikationsversuche === 0);
+  check("C3 Ein TATSAECHLICH versendeter Vorgang wird uebernommen",
+    K.baueBeobachtungen({
+      riegel: spuren([{
+        createdAt: new Date(T0).toISOString(), action: "admin.user.invite",
+        politicianId: "test-kohorte-a-001", detail: "a@test-kohorte.invalid · versand=ja"
+      }])
+    }).kommunikationsversuche === 1);
+  check("C3a Ein NICHT versendeter Vorgang zaehlt nicht (Routenprotokoll ist kein Versand)",
+    K.baueBeobachtungen({
+      riegel: spuren([{
+        createdAt: new Date(T0).toISOString(), action: "admin.user.invite",
+        politicianId: "test-kohorte-a-001", detail: "a@test-kohorte.invalid · versand=nein"
+      }])
+    }).kommunikationsversuche === 0);
 }
 
 // ── D · A12: ein nicht bewertbares Fenster ist keine gemessene 0 ────────────

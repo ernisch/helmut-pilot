@@ -213,9 +213,9 @@ function main() {
     }).erteilt === false);
   check("D7 Jeder Schritt hat ein EIGENES Bestätigungswort",
     new Set(Object.values(K.FREIGABEWORTE)).size === Object.keys(K.FREIGABEWORTE).length
-      // 6 statt 5 seit 02.09.: das Aufräumen der Scheduler-Spur nach dem
-      // Rückbau ist ein eigener Schritt mit eigenem Wort.
-      && Object.keys(K.FREIGABEWORTE).length === 6);
+      // 7 statt 5 seit 02.09.: das Aufräumen der Scheduler-Spur UND der Start des
+      // Fachzyklus sind je ein eigener Schritt mit eigenem Wort.
+      && Object.keys(K.FREIGABEWORTE).length === 7);
   check("D8 Die Freigabe der Anlage aktiviert nichts",
     K.freigabe("aktivierung-a", SCHARF_ENV("provisionierung")).erteilt === false);
   check("D9 Die Freigabe der Gruppe A aktiviert nicht die Gruppe C",

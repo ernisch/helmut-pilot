@@ -415,7 +415,11 @@ function main() {
     // 9 statt 8 seit 02.09.: die neunte Hürde liest Tagesdeckel und
     // Verstehens-Reserve aus der LAUFENDEN Umgebung und prüft sie gegen die
     // Vorrangreserve (adversariales Diff-Review, bestätigter Befund).
-    nichtsGesetzt.startbereit === false && nichtsGesetzt.offen.length === 9,
+    // 11 statt 9 seit 02.09. (zweiter Reviewbefund): zwei STRUKTURELLE Hürden
+    // sind dazugekommen — „ist die sichtbare Produktstufe im Fenster fällig?"
+    // und „passt ein vollständiger Zyklus in das Fenster?". Beide sind heute
+    // nicht erfüllbar; genau deshalb stehen sie hier.
+    nichtsGesetzt.startbereit === false && nichtsGesetzt.offen.length === 11,
     `${nichtsGesetzt.offen.length} offene Hürden`);
   const allesGesetzt = F.startbereitschaft({
     konfiguration: BEISPIEL,
@@ -439,8 +443,28 @@ function main() {
       HELMUT_LLM_RESERVE_UNDERSTANDING: "702"
     }
   });
-  check("K2 Mit allen Vorbedingungen meldet der Rahmen startbereit",
-    allesGesetzt.startbereit === true, allesGesetzt.offen.join(", "));
+  // ─── K2 IST UMGEDREHT (02.09., zweiter Reviewbefund) ───────────────────────
+  // Bis hierher zementierte K2, dass „alle Vorbedingungen" zur Startbereitschaft
+  // führen. Das ist seit der Nachrechnung FALSCH, und der Test hätte die
+  // Falschaussage konserviert. Zwei Hürden sind mit den heutigen Cronzeiten und
+  // Parallelität 1 STRUKTURELL nicht erfüllbar:
+  //   * `briefing_materialization` ist erst ab 18:00 UTC fällig, das empfohlene
+  //     Fenster endet 15:59 — im Fenster entsteht kein einziges Briefing.
+  //   * Der konservative Tagesbedarf (1.812) übersteigt das, was in 263 Minuten
+  //     bei Parallelität 1 möglich ist (1.732).
+  // K2 pinnt jetzt genau das: der Rahmen behauptet KEINE Startbereitschaft,
+  // solange die Blocker gelten — und er benennt beide.
+  check("K2 Trotz aller gesetzten Werte ist der Test NICHT startbereit (zwei strukturelle Blocker)",
+    allesGesetzt.startbereit === false
+      && allesGesetzt.offen.some((o) => /Produktstufe/.test(o))
+      && allesGesetzt.offen.some((o) => /vollständiger Zyklus/.test(o)),
+    allesGesetzt.offen.join(" | "));
+  check("K2c Der Rahmen weist die Zyklusrechnung offen aus",
+    allesGesetzt.zyklusImFenster && allesGesetzt.zyklusImFenster.passt === false
+      && allesGesetzt.zyklusImFenster.benoetigteMinuten > 263);
+  check("K2d Und die Fälligkeitsrechnung ebenfalls",
+    allesGesetzt.arbeitsklassenImFenster
+      && allesGesetzt.arbeitsklassenImFenster.nichtImFensterFaellig.includes("briefing_materialization"));
   check("K2a OHNE Tagesdeckel in der laufenden Umgebung ist der Test NICHT startbereit",
     F.startbereitschaft({
       konfiguration: BEISPIEL, grenzen: VOLLE_GRENZEN, messungen: ALLE_MESSUNGEN,
@@ -544,8 +568,24 @@ function main() {
       !F.pruefeKonfiguration({ gesamtdeckel: 2416 }).bindungen.some((b) => b.name === name));
   }
 
-  check("K5 Auch bei voller Bereitschaft bleibt der Start eine getrennte Freigabe",
-    /getrennte Betreiberfreigabe/.test(allesGesetzt.meldung));
+  check("K5 Die Meldung benennt die offenen Vorbedingungen ehrlich",
+    /NICHT startbereit/.test(allesGesetzt.meldung), allesGesetzt.meldung);
+  // Und die Gegenprobe: gäbe es ein Fenster, das beide Tore besteht, meldete der
+  // Rahmen es auch. Bei Parallelität 2 ist 17:36-19:59 genau so ein Fenster.
+  check("K6 Bei Parallelität 2 trägt 17:36-19:59 beide Tore",
+    (() => {
+      const Z = require("../lib/helmut/funktionstest-zyklus");
+      const s = F.sichereStartfenster({ crons: VERCEL.crons, mindestDauerMinuten: 30 });
+      const b = Z.bewerteFensterFuerZyklus({ fenster: s.fenster, parallel: 2, maxAnfragenJeMinute: 82 });
+      return b.gibtEinTragendesFenster === true && b.tragendeFenster.includes("17:36");
+    })());
+  check("K7 Bei Parallelität 1 trägt KEIN Fenster beide Tore",
+    (() => {
+      const Z = require("../lib/helmut/funktionstest-zyklus");
+      const s = F.sichereStartfenster({ crons: VERCEL.crons, mindestDauerMinuten: 30 });
+      return Z.bewerteFensterFuerZyklus({ fenster: s.fenster, parallel: 1, maxAnfragenJeMinute: 82 })
+        .gibtEinTragendesFenster === false;
+    })());
 
   console.log(`\nPASS ${pass}  FAIL ${fail}`);
   process.exit(fail ? 1 : 0);
