@@ -78,6 +78,11 @@ async function main() {
 
   // Produktive KI-Konfiguration auf den lokalen Mock zeigen lassen.
   process.env.AZURE_OPENAI_ENDPOINT = `https://127.0.0.1:${port}`;
+// Der Azure-Endpunktguard (lib/helmut/azure-endpunkt.js) laesst die
+// Schleifenadresse nur auf ausdrueckliche Anforderung zu. Dieses Werkzeug
+// faehrt den ECHTEN KI-Pfad gegen einen lokalen HTTPS-Ersatz und fordert sie
+// deshalb hier an. Der Wert verlaesst die Maschine nicht.
+  process.env.HELMUT_KI_LOOPBACK_ERLAUBT = "1";
   process.env.AZURE_OPENAI_KEY = "dummy-smoke-key";
   process.env.AZURE_OPENAI_DEPLOYMENT = "gpt-5-mini";
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // nur fuer das self-signed Mock-Zertifikat

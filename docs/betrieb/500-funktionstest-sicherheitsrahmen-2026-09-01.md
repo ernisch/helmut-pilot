@@ -754,3 +754,203 @@ keine Azure-, Supabase- oder Vercel-Änderung, kein Merge, kein Deployment. **PR
 #294 bleibt Draft.** Alle 14 Freigaben aus §13 stehen unverändert aus; erledigt
 sind aus dieser Liste allein die Punkte 1–3 (Azure-Anmeldung, Vorprobe,
 Stichprobe).
+
+---
+
+## 17 · Nachtsprint 01./02.09. — Endpunktguard und Telemetriekorrektur
+
+Letzte technische Härtung vor einer späteren Mergeentscheidung. **Keine
+Production-Wirkung:** kein Modellaufruf, keine Umgebungs-, Azure- oder
+Supabase-Änderung, kein Deployment, kein Merge, keine Aktivierung. Der
+Supabase-Zugriff dieses Sprints war ausschließlich `SELECT`.
+
+### 17.1 · Azure-Endpunktguard — die offene Sicherheitsverbesserung aus §16.8b ist geschlossen
+
+Neues Modul [`lib/helmut/azure-endpunkt.js`](../../lib/helmut/azure-endpunkt.js).
+Es ist reine Logik: kein Netz, keine Datenbank, keine Uhr, keine Secrets — und es
+**wirft nie**, sondern antwortet immer mit einer vollständigen Entscheidung.
+
+**Erlaubnisliste statt Sperrliste.** Akzeptiert werden ausschließlich gültige
+HTTPS-Adressen der drei vorgesehenen Azure-Hostfamilien:
+
+| erlaubt | Beispiel |
+|---|---|
+| `*.openai.azure.com` | `https://ressource.openai.azure.com` |
+| `*.services.ai.azure.com` | `https://ressource.services.ai.azure.com` |
+| `*.cognitiveservices.azure.com` | `https://ressource.cognitiveservices.azure.com` |
+
+Die Suffixregel greift auf **Labelgrenze**: `ressource.openai.azure.com.angreifer.de`
+und `openai.azure.com` (ohne Unterlabel) werden abgewiesen. Zusätzlich abgewiesen
+werden: kein HTTPS · eingebettete Zugangsdaten · abweichender Port · mitgegebener
+Pfad · Query oder Fragment · Steuerzeichen und Nullbytes · übermäßige Länge ·
+alles syntaktisch Unparsbare. Die Ziel-URL wird aus der **normalisierten,
+geprüften Basis neu zusammengesetzt** — der Rohwert wird nie mehr konkateniert.
+
+**Zwei Prüfstellen, und die Reihenfolge ist die eigentliche Aussage:**
+
+1. **Vor jeder Budgetreservierung** — ganz am Anfang von `requestOpenAI`. Vorher
+   fiel eine ungültige Adresse erst beim `https.request` auf; da war der
+   Reservierungsslot bereits verbraucht.
+2. **Unmittelbar vor dem Netzaufruf** — Verteidigung in der Tiefe.
+
+**Kein stiller, kostenpflichtiger Anbieterwechsel.** Ist Azure beabsichtigt
+(eine der beiden Azure-Variablen gesetzt), aber nicht sicher benutzbar, meldet
+`isAiEnabled()` **AUS**. Die Fachpfade nehmen dann ihren bereits vorgesehenen,
+kostenfreien Regelweg (Regelfassung, ehrlicher Leerzustand) — statt still auf den
+bezahlten OpenAI-Direktweg auszuweichen. Ausdrücklich erfasst ist auch die
+**halb gesetzte** Konfiguration (nur Schlüssel oder nur Endpunkt): genau dort
+schaltete der alte Code lautlos auf OpenAI um.
+
+**Keine Geheimnisse in der Diagnose.** Ein Fehler aus diesem Weg trägt nur einen
+Grund und einen sicheren Fingerabdruck (`ep:` + 12 Hexzeichen aus SHA-256) — nie
+den Wert, in keiner Eigenschaft.
+
+> **Empirische Korrektur einer verbreiteten Annahme** (Node v22.22.2, in diesem
+> Sprint gemessen): Bei `https.request` lautet die `message` eines
+> `ERR_INVALID_URL` nur „Invalid URL"; der Eingabewert steht in der aufzählbaren
+> Eigenschaft **`err.input`**. Der Leckweg ist also **nicht** `error.message`,
+> sondern jedes `console.error(err)` und jedes `JSON.stringify(err)` mit dem
+> rohen Fehlerobjekt. Bei `fetch` (undici) ist es umgekehrt: dort steht die
+> volle URL in der `message`. Und der praktisch häufigste Weg ist ein
+> **Netzfehler**: `getaddrinfo ENOTFOUND <ressource>.openai.azure.com` trägt den
+> Hostnamen in der `message`.
+
+Daraus folgten drei weitere Korrekturen:
+
+- **`lib/helmut/redact.js`**: `AZURE_OPENAI_ENDPOINT` fehlte als einziger
+  Azure-Wert in der Secret-Liste — obwohl `HELMUT_MONITORING_WEBHOOK_URL` seit
+  jeher darin steht, eine URL hier also grundsätzlich als schützenswert gilt.
+  Ergänzt, **plus** eine Musterregel über die drei Azure-KI-Hostfamilien: der
+  Endpunkt leckt meist als bloßer Hostname in einer Netzfehlermeldung, den ein
+  reiner Wertabgleich nicht trifft.
+- **`lib/helmut/ai.js`, `sourceNote`**: hier stand der rohe `error.message`, und
+  dieses Objekt geht unverändert als JSON an den angemeldeten Nutzer. Der
+  Azure-Ressourcenname des Mandanten verließ damit den Server im
+  Produktbildschirm. Jetzt nur noch die symbolische Fehlerklasse.
+- **`server.js`, `/api/debug/azure-ping`**: schrieb die letzten **vier Zeichen
+  des Azure-Schlüssels** in die HTTP-Antwort *und* in das Vercel-Konsolenlog,
+  das unbefristet in einer externen Logsenke liegt. Ersetzt durch den sicheren
+  Fingerabdruck, der dieselbe Diagnosefrage beantwortet („ist das noch derselbe
+  Schlüssel?"), ohne ein Zeichen preiszugeben.
+
+**Bewusst nicht geändert:** die admin-secret-gegateten Reparatur-Endpunkte
+(`/api/debug/status`, `/api/debug/pipeline-probe`), die den konfigurierten
+Endpunkt absichtlich anzeigen, damit der Betreiber ihn korrigieren kann. Sie sind
+zugangsgeschützt, und ihr Zweck ist genau diese Anzeige. Eine Umstellung auf
+Fingerabdrücke würde die Reparaturfähigkeit nehmen, ohne einen belegten Leckweg
+zu schließen — sie ist als eigener Punkt vermerkt, nicht still erledigt.
+
+### 17.2 · Telemetrieabweichung — Ursache bewiesen
+
+**Die Ursache ist der unbedingte Lese-Ändere-Schreibe-Zyklus auf dem gemeinsamen
+`helmut_store`-Blob** (`writeAuthStore`, Voll-Upsert mit
+`Prefer: resolution=merge-duplicates`, last-write-wins). Sie war im Code bereits
+benannt — als Befund **W-2** (`storage.js:2761–2767`): „parallele
+`recordLlmUsage` können sich gegenseitig Einträge überschreiben, der Zähler zählt
+dann sogar zu WENIG." Für `processRuns` wurde W-2 2026-07-27 durch eine
+relationale Tabelle gelöst; **`llmUsage` bekam diese Behandlung nie.**
+
+**Der Beweis kommt aus einem unabhängigen Datenpaar im selben Schreibpfad.**
+`recordProcessRun` schreibt **doppelt**: relational (atomarer Upsert, kanonisch)
+*und* in denselben Blob. Ein Lauf, der relational existiert, aber im Blob fehlt,
+ist damit ein bewiesener Blob-Schreibverlust — kein Ringpuffer-Effekt, denn das
+Vergleichsfenster ist das vom Blob selbst abgedeckte Zeitfenster:
+
+> **Korrektur nach adversarialem Gegenprüfer (2026-09-02).** Eine erste Fassung
+> dieses Abschnitts nannte **63 von 365 (17,3 %)**. Diese Zahl war **um rund den
+> Faktor 2 überhöht** und ist zurückgenommen. Grund: `warteschlange-*`-Quittungen
+> entstehen über `schreibeWarteschlangenLaufquittung` (`storage.js:2949`) und sind
+> **relational-nativ** — der Code sagt es ausdrücklich: „diese Quittung ist
+> relational-nativ und hat nie eine Blob-Form gehabt". Sie können im Blob gar
+> nicht fehlen, weil sie dort nie hingehörten. Belegend: im Fenster stehen **37**
+> solcher Zeilen relational und **0** im Blob — ein Verlustmechanismus erklärt
+> keinen 37-von-37-Totalausfall, ein relational-nativer Schreibpfad schon.
+> Verglichen werden dürfen nur die **echten Dual-Write-Prozesse**.
+
+| Messung (rein lesend, 2026-09-02, **nur Dual-Write-Prozesse**) | Wert |
+|---|---|
+| Blob-Einträge `processRuns` im Fenster | 300 |
+| Relationale Zeilen `process_runs` im Fenster, **ohne `warteschlange-*`** | 328 |
+| **Nur relational vorhanden — im Blob verloren** | **26 (7,9 %)** |
+| Nur im Blob vorhanden | **0** |
+| *nachrichtlich:* relational-native `warteschlange-*` (kein Verlust) | 37 relational / 0 im Blob |
+
+Ein Verlust in die eine Richtung, keiner in die andere — genau die Signatur eines
+Lost Update. Der reproduzierbare Mechanismus ist zusätzlich als Regressionstest
+festgehalten (`llm-telemetrie-luecken-test.js`, Abschnitt D): zwei nebenläufige
+Anhänge ohne Bedingung verlieren nachweislich einen Eintrag, **lautlos und ohne
+Fehler** — deshalb blieb er unentdeckt.
+
+**Was das für die llmUsage-Lücke heißt.** Der Mechanismus ist bewiesen und wirkt
+auf demselben Pfad; die Größenordnung (**7,9 %** gemessen bei den
+Dual-Write-`processRuns`, ~12 % beobachtet bei `llmUsage`) liegt in derselben
+Grössenordnung. Sie ist **kein Deckungsbeweis**: `llmUsage` wird bei jedem
+KI-Aufruf geschrieben und damit deutlich häufiger als Laufquittungen, sodass eine
+höhere Verlustquote plausibel ist — belegt ist das aber nicht. **Nicht beweisbar bleibt die exakte
+Zahl für `llmUsage`**: verlorene Einträge hinterlassen keine Spur, und der
+Tageszähler sättigt am Deckel 100. Die Tagesbilanz zeigt beides:
+
+- An Deckeltagen kippt die Lücke sogar ins Negative (07-20: Zähler 100, Blob 110),
+  weil der Zähler nicht über den Deckel hinaus zählt, `budgetExempt`-Aufrufe aber
+  protokolliert werden.
+- Die Lücke sinkt ab dem **24.08.** deutlich (von 15–20 % auf 1–5 %) — einen Tag
+  nach der Aktivierung des Warteschlangenmotors, der die Schreiblast serialisiert.
+  Das passt zur Ursache, ist aber ein zeitliches Zusammentreffen, kein Beweis.
+
+**Der Ringpuffer bleibt bei 5.000 Einträgen — unverändert** (testgesichert, D3).
+
+### 17.3 · Sechs geschlossene Verlustpfade
+
+Alle sechs sind Pfade, auf denen ein Budgetslot verbraucht wurde, ohne dass ein
+Eintrag entstand — jeder für sich belegt, jeder jetzt sichtbar:
+
+| # | Pfad | vorher | jetzt |
+|---|---|---|---|
+| 1 | **Anbieter-Vertagung** (`anbietergrenze`) liegt **nach** der Reservierung; jede Wiederholung reserviert erneut | Zähler +1, Blob +0 | als Nicht-Aufruf protokolliert |
+| 2 | **Synchroner Wurf** beim Aufbau der Anfrage (ungültige Adresse, ungültiges Kopfzeilenzeichen) — passiert **vor** der Registrierung des `error`-Listeners | kein Eintrag, kein Fehler, falsches Grün | abgefangen, bereinigt protokolliert |
+| 3 | **Überlanger Antwortrumpf** (`MAX_AI_RESPONSE_BYTES`) — voll kostenwirksam | kein Eintrag | `response-too-large` protokolliert |
+| 4 | **400er-Modell-Fallback** erbte nur `_budgetReserved`; `_anbieterGeprueft` ging verloren, der Retry konnte erneut vertagt werden | 1 Reservierung, 1 echter Aufruf, 0 Einträge | vollständige `options` werden vererbt |
+| 5 | **Fehlkonfigurierter Azure-Endpunkt** | Slot verbraucht, kein Eintrag | Riegel **vor** der Reservierung (§17.1) |
+| 6 | **Skip ohne `success:false`** | erschien als **erfolgreicher** Modellaufruf | Skip-Marker erzwingt `success:false` |
+
+Punkt 6 setzt die Vorgabe „Budgetablehnungen dürfen niemals als erfolgreiche
+Modellaufrufe erscheinen" technisch durch: `buildLlmUsageRecord` leitete `success`
+als `entry.success !== false` ab — ein **fehlendes** Feld bedeutete also Erfolg.
+Jetzt zieht der ausdrücklich gesetzte `skipped-`-Marker `success:false` nach,
+unabhängig davon, was der Aufrufer meldet.
+
+Alle technischen Aufruffehler werden weiterhin **bereinigt** protokolliert: nur
+symbolische Codes und Statuszeilen, nie Prompt, Antwort, Kennung oder Geheimnis.
+
+### 17.4 · Verbleibende Lücke — ehrlich benannt
+
+Die **Ursache ist behoben in ihren deterministischen Ausprägungen** (§17.3), aber
+**nicht in ihrer dominierenden**: `recordLlmUsage` bleibt ein unbedingter
+Lese-Ändere-Schreibe-Zyklus. Das ist Absicht dieses Sprints — die Behebung wäre
+eine Umstellung auf eine relationale Tabelle nach dem Muster W-2/`process_runs`
+und braucht **Migration und eigene Freigabe**, beides hier ausgeschlossen. Der
+Zustand ist deshalb als Messung festgehalten (Test D1/D2), damit er nicht still
+verschwindet.
+
+**Folge für die Zahlen aus §16:** der Tagesbedarf **p95 170** bleibt eine
+**Untergrenze**. Sie ist jetzt nicht mehr „Ursache unbekannt", sondern „Ursache
+bewiesen, Betrag nicht rekonstruierbar".
+
+### 17.5 · Azure-Deploymentkontingent (bestätigt)
+
+**Vom Betreiber bestätigt (2026-09-02):** **250.000 Token pro Minute** und
+**250 Anfragen pro Minute** für Deployment `gpt-5-mini`, **Global Standard**,
+Modellversion **2025-08-07**. Das deckt sich mit der eigenen Messung der 21er
+Stichprobe, die diese Grenzen zu **13,1 %** (32.686 TPM) bzw. **4,3 %**
+(10,8 RPM) auslastete (§16.1).
+
+**Unverändert offen** bleibt davon getrennt das **Azure-Gesamtkontingent des
+Kontos** — es ist nur über Portal/ARM sichtbar und wurde nicht erhoben.
+
+### 17.6 · Deckel und Reserve — nur dokumentiert
+
+**Gesamtdeckel 2.416** und **Understanding-Reserve 702** bleiben ein
+**dokumentierter Vorschlag**. Es wurde **keine Umgebungsvariable gesetzt**,
+`zielDeckel()` gibt unverändert die Spanne aus, und die Reserve liegt weiterhin
+**im** Deckel (nie addiert). Ebenfalls unverändert: die fünf realen Mandate,
+Gate (`shadow`), Crons, Migrationen und alle Production-Daten.

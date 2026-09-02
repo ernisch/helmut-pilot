@@ -61,6 +61,9 @@ const { sourceMode } = require("./lib/helmut/quellenarchitektur/source-mode");
 const { sourceCoverageThresholds, effectiveActiveSourceCount } = require("./lib/helmut/source-coverage");
 const { runKoEnrichmentBackfill } = require("./lib/helmut/ko-enrichment");
 const { generateCommunicationDraft, assessParliamentaryItem, isAiEnabled, activeModelName, extractKnowledgeObjectTags } = require("./lib/helmut/ai");
+// Sichere Fingerabdruecke fuer Diagnoseausgaben (nie der Rohwert).
+const azureEndpunktGuard = require("./lib/helmut/azure-endpunkt");
+const { redactSensitive } = require("./lib/helmut/redact");
 const { derivePolicyFields } = require("./lib/helmut/matching");
 const { pushStatus, sendBriefingReadyPush, sendLageChangePush, sendPushToPolitician } = require("./lib/helmut/push");
 const auth = require("./lib/helmut/auth");
@@ -8509,9 +8512,12 @@ async function handleDebugRequest(request, response, url) {
       let testEndpointParam = String(url.searchParams.get("testEndpoint") || "").replace(/\/+$/, "");
       let testEndpointRejected = false;
       if (testEndpointParam) {
+        // Haertung 2026-09-02: die frueher hier stehende Handpruefung sah NUR den
+        // Hostnamen. `http://ressource.openai.azure.com` kam damit durch — der
+        // echte Schluessel waere unverschluesselt gegangen. Der zentrale Guard
+        // prueft zusaetzlich Schema, Port, Pfad, Query und Zugangsdaten.
         try {
-          const host = new URL(testEndpointParam).hostname.toLowerCase();
-          if (!host.endsWith(".openai.azure.com") && !host.endsWith(".cognitiveservices.azure.com")) {
+          if (!azureEndpunktGuard.pruefeEndpunkt(testEndpointParam).gueltig) {
             testEndpointRejected = true;
             testEndpointParam = "";
           }
@@ -8524,7 +8530,13 @@ async function handleDebugRequest(request, response, url) {
       const isTesting = Boolean(testEndpointParam);
       const deployment = process.env.AZURE_OPENAI_DEPLOYMENT || "(nicht gesetzt)";
       const keySet = keyRaw.length > 0;
-      const keyPrefix = keySet ? `...${keyRaw.slice(-4)}` : "(nicht gesetzt)";
+      // SICHERHEIT (Haertung 2026-09-01): hier standen die letzten VIER Zeichen
+      // des Azure-Schluessels — in der HTTP-Antwort UND im Vercel-Konsolenlog,
+      // das unbefristet in einer externen Logsenke liegt. Ein Schluesselfragment
+      // gehoert dorthin nicht. Der sichere Fingerabdruck leistet dasselbe fuer
+      // die Diagnose ("ist das noch derselbe Schluessel?"), ohne ein Zeichen des
+      // Werts preiszugeben.
+      const keyPrefix = keySet ? azureEndpunktGuard.fingerabdruck(keyRaw).replace(/^ep:/, "key:") : "(nicht gesetzt)";
 
       if (!keySet || !endpointRaw) {
         return {
@@ -8541,6 +8553,21 @@ async function handleDebugRequest(request, response, url) {
       const pathSuffixMatch = endpointRaw.match(/^(https:\/\/[^/]+)(\/.*)?$/);
       const baseUrl = pathSuffixMatch ? pathSuffixMatch[1] : endpointRaw;
       const hasSuffix = endpointRaw !== baseUrl;
+
+      // ENDPUNKTGUARD VOR DEM NETZAUFRUF (Haertung 2026-09-02): geprueft wurde
+      // bisher NUR der optionale `testEndpoint`-Parameter. Ohne ihn ging der
+      // Env-Wert voellig ungeprueft ins Netz — samt echtem `api-key`-Kopf. Damit
+      // haette ein vertippter oder manipulierter Vercel-Wert den Schluessel an
+      // einen beliebigen Host geschickt, obwohl `ai.js` laengst dicht war.
+      const zielGeprueft = azureEndpunktGuard.pruefeEndpunkt(baseUrl);
+      if (!zielGeprueft.gueltig) {
+        return {
+          debug: true, ok: false,
+          reason: `endpunkt-abgewiesen: ${zielGeprueft.grund}`,
+          keyPrefix, deployment, endpointFingerabdruck: zielGeprueft.fingerabdruck,
+          hint: "Nur HTTPS-Adressen der Azure-Hostfamilien openai.azure.com, services.ai.azure.com und cognitiveservices.azure.com — ohne Pfad, Port, Query oder Zugangsdaten."
+        };
+      }
 
       // Deployments-Liste: kein Token-Verbrauch, nur Auth + Resource-Check.
       let httpStatus = null;
@@ -8827,10 +8854,26 @@ async function handleDebugRequest(request, response, url) {
       const azEndpoint = String(process.env.AZURE_OPENAI_ENDPOINT || "").replace(/\/+$/, "");
       const azKey = process.env.AZURE_OPENAI_KEY || "";
       const azDeployment = process.env.AZURE_OPENAI_DEPLOYMENT || "gpt-5-mini";
+      // ENDPUNKTGUARD VOR DEM NETZAUFRUF (Haertung 2026-09-02): hier wurde die
+      // Adresse roh aus dem Umgebungswert zusammengesetzt und mit dem echten
+      // `api-key`-Kopf plus Prompt abgesendet. `ai.js` war dicht, dieser Weg
+      // nicht — er war damit die verbliebene Stelle, an der ein falscher
+      // Umgebungswert Schluessel und Inhalt an einen fremden Host getragen haette.
+      // Die Diagnose laeuft trotzdem weiter (Supabase-Befund und Verdict bleiben
+      // erhalten) — sie meldet nur den abgewiesenen Endpunkt statt zu senden.
+      const azZiel = azureEndpunktGuard.pruefeEndpunkt(azEndpoint);
       if (!azEndpoint || !azKey) {
         out.azure = { ok: false, reason: !azKey ? "AZURE_OPENAI_KEY fehlt" : "AZURE_OPENAI_ENDPOINT fehlt" };
+      } else if (!azZiel.gueltig) {
+        out.azure = {
+          ok: false,
+          reason: `endpunkt-abgewiesen: ${azZiel.grund}`,
+          endpointFingerabdruck: azZiel.fingerabdruck,
+          deployment: azDeployment,
+          hint: "Nur HTTPS-Adressen der Azure-Hostfamilien openai.azure.com, services.ai.azure.com und cognitiveservices.azure.com — ohne Pfad, Port, Query oder Zugangsdaten."
+        };
       } else {
-        const apiUrl = `${azEndpoint}/openai/v1/responses`;
+        const apiUrl = `${azZiel.basis}/openai/v1/responses`;
         const startedAt = Date.now();
         try {
           const res = await fetch(apiUrl, {
@@ -8872,7 +8915,9 @@ async function handleDebugRequest(request, response, url) {
                     : res.ok ? "Azure-Call OK — der KI-Pfad funktioniert." : null
           };
         } catch (err) {
-          out.azure = { apiUrl, ok: false, deployment: azDeployment, error: String((err && err.message) || "fetch-fehler").slice(0, 200) };
+          // undici traegt bei einem URL-Fehler die VOLLE Adresse in der Meldung —
+          // deshalb durch die zentrale Redaction, nicht roh.
+          out.azure = { apiUrl, ok: false, deployment: azDeployment, error: redactSensitive(String((err && err.message) || "fetch-fehler")).slice(0, 200) };
         }
       }
 

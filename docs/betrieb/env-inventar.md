@@ -35,8 +35,21 @@ weg, App läuft; fail-closed = Zugriff/Aktion wird verweigert) · Rotationsbedar
 | `HELMUT_ADMIN_SECRET` | O·S | Admin-/Debug-Bypass für einzelne Endpunkte; Default = `CRON_SECRET` (empfohlen: SEPARAT setzen, sonst gewährt das Cron-Secret Debug-Vollzugriff). | server.js · Prod · fail-closed (404 ohne Secret) · Rot: bei Verdacht |
 | `CRON_SECRET` (GitHub-Secret: `HELMUT_CRON_SECRET`) | P·S | Bearer für alle `/api/cron/*`. **Fail-closed:** ohne → 503. **Doppelpflege:** identischer Wert in Vercel UND als GitHub-Secret `HELMUT_CRON_SECRET` (briefing-watchdog). | server.js · Prod+GitHub · fail-closed · Rot: beide Orte gleichzeitig |
 | `OPENAI_API_KEY` | P*·S | OpenAI-Key. *Pflicht nur, wenn Azure NICHT gesetzt. Ohne KI: Regel-Fallbacks. | ai.js · Prod (+GitHub staff-backfill) · fail-open (Regelmotor) · Rot: Provider-Konsole |
-| `AZURE_OPENAI_ENDPOINT` / `AZURE_OPENAI_KEY` | P*·S | Azure OpenAI (EU) — hat Vorrang vor OpenAI. Empfohlener Produktionspfad. | ai.js · Prod (+GitHub staff-backfill) · fail-open (Fallback OpenAI/Regeln) · Rot: Azure-Portal |
+| `AZURE_OPENAI_ENDPOINT` / `AZURE_OPENAI_KEY` | P*·S | Azure OpenAI (EU) — hat Vorrang vor OpenAI. Empfohlener Produktionspfad. **Der Endpunkt wird seit 2026-09-02 formatgeprüft** (Erlaubnisliste `*.openai.azure.com`, `*.services.ai.azure.com`, `*.cognitiveservices.azure.com`; nur HTTPS, kein Pfad/Port/Query/Zugangsdaten). | ai.js · Prod (+GitHub staff-backfill) · **fail-closed** (Regelmotor; **kein** Ausweichen auf OpenAI) · Rot: Azure-Portal |
 | `AZURE_OPENAI_DEPLOYMENT` | O | Deployment-Name. Default `gpt-5-mini`. | ai.js · Prod · Default greift · — |
+| `HELMUT_KI_LOOPBACK_ERLAUBT` | O | Nur für die eigenen Prüfwerkzeuge: erlaubt dem Endpunktguard eine **Schleifenadresse** (`https://127.0.0.1:<port>`) als KI-Endpunkt. Wird von `understanding-live-smoke.js` und `fixtures/z3-slotlauf.js` selbst gesetzt. **In Production nicht setzen.** | azure-endpunkt.js · lokal/CI · Default AUS · — |
+> **Vertragsänderung 2026-09-02 (Härtungssprint, Beleg [`500-funktionstest-sicherheitsrahmen-2026-09-01.md`](500-funktionstest-sicherheitsrahmen-2026-09-01.md) §17):**
+> Der Azure-Weg war bisher als **fail-open** geführt — eine fehlende oder
+> unbrauchbare Azure-Konfiguration fiel still auf `OPENAI_API_KEY` zurück. Das
+> war ein **stiller, kostenpflichtiger Anbieterwechsel**: eine gelöschte oder
+> vertippte Variable schickte den Verkehr unbemerkt zum bezahlten OpenAI-Konto.
+> Neu gilt: ist Azure **beabsichtigt** (eine der beiden Variablen gesetzt), aber
+> unbrauchbar (Schlüssel fehlt, Endpunkt ungültig oder nur halb konfiguriert),
+> meldet `isAiEnabled()` **AUS** — die Fachpfade nehmen den kostenfreien
+> Regelweg. Für die **Rotation** heißt das: beide Werte gehören in denselben
+> Vorgang; ein Zwischenzustand mit nur einem gesetzten Wert schaltet die KI ab,
+> statt sie umzuleiten.
+
 | `AZURE_OPENAI_API_KEY` | O·S | Nur Alias-Fallback für `AZURE_OPENAI_KEY` in den Embedding-Werkzeugen (Sprint 22B/22C1); die Repo-Konvention bleibt `AZURE_OPENAI_KEY`. Nicht zusätzlich setzen. | embedding-backfill.js/embedding-testlauf.js · Cloud-Session · fail-closed (ohne Key kein Embedding-Lauf) · Rot: Azure-Portal |
 | `HELMUT_EMBEDDING_DEPLOYMENT` | O·S | Azure-Deploymentname für semantische Embeddings (`text-embedding-3-small`, Sprint 22B/22C1). Nur für freigegebene Embedding-Läufe in der Cloud-Session nötig — **kein** Vercel-Runtime-Bedarf in 22C1 (die App liest die Shadow-Tabelle nicht). | embedding-backfill.js/embedding-testlauf.js · Cloud-Session · fail-closed (ohne Wert kein Lauf) · Rot: entfällt (kein Secret, nur Name) |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` (auch `HELMUT_VAPID_PUBLIC_KEY` / `HELMUT_VAPID_PRIVATE_KEY` / `HELMUT_VAPID_SUBJECT`) | O·S | Web-Push-Schlüssel. Ohne: Push deaktiviert (App läuft). Erzeugung: `scripts/generate-vapid-keys.js`. | push.js · Prod · fail-open (Push aus) · Rot: nur bei Kompromittierung (invalidiert ALLE Push-Abos) |
