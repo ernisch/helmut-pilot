@@ -55,7 +55,9 @@ const VOLLE_QUELLEN = Object.freeze({
   drain: { rueckstandWachstum: 10 },
   // Der Riegel führt keinen persistenten Zähler; die Zahl muss ausgezählt und
   // ausdrücklich als solche übergeben werden, sonst bleibt A10 unbewertbar.
-  riegel: { auswertbar: true, quelle: "blob:test", kommunikationsversuche: 0 },
+  // `vollstaendig: true` ist Pflicht — eine halbe Erhebung darf A10 nicht grün
+  // setzen (dritter Reviewbefund).
+  riegel: { auswertbar: true, vollstaendig: true, quelle: "blob:test", kommunikationsversuche: 0 },
   deployment: { githubCommitSha: "881739da0f8f06184a1bdf7dd86895d896cf0336" },
   // Ein Fensterbefund ohne `gepruefteCrons` gilt als ungeprüft und erzeugt
   // keine Zahl — ein unbewertbares Fenster war zuvor eine gemessene 0.
