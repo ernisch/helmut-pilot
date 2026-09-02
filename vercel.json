@@ -11,7 +11,8 @@
       "claude/helmut-500-mandate-readiness-6hxden": false,
       "codex/pr-cleanup-consolidation-20260901": false,
       "claude/security-sprint-functional-test-wap0q1": false,
-    "claude/helmut-500-test-prep-qpc12m": false
+    "claude/helmut-500-test-prep-qpc12m": false,
+      "claude/helmut-pilot-post-pr295-dveogp": false
     }
   },
   "functions": {
