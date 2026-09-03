@@ -1419,7 +1419,31 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Exit 2 wegen der zwei **Alt**-Demo-Mandate `angela-merkel`/`james-brown` (deaktiviert,
   inhaltlich unvollständig — Vorbestand, OP-04, in diesem Sprint nicht freigegeben).
   Details/Beweise: `docs/CURRENT_STATE.md` (Kopfeintrag 4. Durchgang 2026-08-04).
-- **Nachtrag 2026-09-03 (Widerspruch aufgelöst, rein lesend, keine Datenänderung):**
+- **Nachtrag 2026-09-03 (relationale Nachführung, mit ausdrücklicher Betreiberfreigabe —
+  Ausschussteil von OP-29 damit geschlossen):** Die Anwendung vom 04.08. wirkte nur im Blob;
+  weil Production relational liest, war bis zum 03.09. bei **allen fünf** aktiven Profilen der
+  alte Ausschussstand wirksam (`ausschuesse` bei vier inhaltlich falsch, `stellvertretende_ausschuesse`
+  bei fünf leer). Nur `ottilie-paola-klein-2` trug zusätzlich eine gegen die WP-21-Sollmenge
+  **nicht auflösbare** Angabe; die übrigen Fehlwerte waren formal auflösbar und liefen still
+  durch. Ausgeführt wurde eine **einzelne atomare Transaktion** auf `mandate_profiles`
+  (5 Zeilen, **8 Feldänderungen**, ausschließlich `ausschuesse`/`stellvertretende_ausschuesse`,
+  Compare-and-Set je Zeile, direkter SQL-Weg statt Admin-Pfad — dieser hätte mehrelementige
+  Listen auf ein Element gekappt). Vorher Sicherung `backup-export.js --scope=profil`
+  (`vollstaendig: true`). Abnahme rein lesend vollständig bestanden; relationale Sicht und Blob
+  sind jetzt deckungsgleich. **Weiter ausgeschlossen** (Modelllücke, Datenmodell unverändert):
+  Rechnungsprüfungsausschuss, Parlamentarischer Beirat für nachhaltige Entwicklung und
+  Zukunftsfragen, Schriftführer. **Weiter offen:** natürlicher Radar-Wirkungsbeleg,
+  `wahlkreis` von `ottilie-paola-klein-2`, (d) Testmandate, (e) OP-25-Production-Nachweis,
+  OP-04-Rest. Vollbeleg: [SR §35](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+- > **HISTORISCHER ZWISCHENSTAND — durch den vorstehenden Nachtrag „relationale
+  > Nachführung" ERSETZT.** Der folgende Absatz beschreibt den Stand **vor** der
+  > Korrektur und wird nur als Befundbeleg aufbewahrt. Seine Schlusssätze
+  > („offen und vor der ersten Aktivierung zwingend: amtlichen Ausschussstand belegen,
+  > relationale Profilkorrektur freigeben und rein lesend bestätigen") sind **erledigt** —
+  > ausgeführt und abgenommen am 03.09.2026. **Die relationale Ausschusskorrektur steht
+  > nicht mehr aus.** Weiterhin offen bleiben nur der natürliche Radar-Wirkungsbeleg,
+  > der `wahlkreis` von `ottilie-paola-klein-2` und die übrigen benannten Restpunkte.
+- **Nachtrag 2026-09-03 (Befund; HISTORISCH, siehe Kasten oben):**
   Production verwendet nachweislich die relationalen Profile aus `mandate_profiles`.
   Die Menge der jeweils ersten Ausschüsse der fünf relational aktiven Profile
   `{Arbeit und Soziales, Finanzen, Gesundheit, Haushalt}` entspricht exakt den am 03.09.
@@ -1434,8 +1458,9 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Beleg, weil der Lesepfad vom lokalen `process.env` abhängt und bei nicht gesetztem
   `HELMUT_PROFILE_DB_MODE` den Blob liest. Außerdem kann `readSupabaseStore` bei einer
   fehlenden Blob-Zeile einen Default-Store anlegen; der Pfad ist strukturell nicht
-  garantiert rein lesend. **Offen und vor der ersten Aktivierung synthetischer Profile
-  zwingend:** amtlichen Ausschussstand belegen, relationale Profilkorrektur separat als
+  garantiert rein lesend. **Damals offen und vor der ersten Aktivierung synthetischer
+  Profile zwingend — inzwischen vollständig ERLEDIGT (03.09.2026, siehe Kasten oben):**
+  amtlichen Ausschussstand belegen, relationale Profilkorrektur separat als
   Production-Datenänderung freigeben und danach rein lesend bestätigen. Vollbeleg:
   [`betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md`](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md)
   §34.13.6a/§34.13.6b. In diesem Dokumentationsschritt wurde nichts in Production verändert.

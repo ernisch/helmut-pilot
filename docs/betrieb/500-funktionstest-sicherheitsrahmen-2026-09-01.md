@@ -3928,6 +3928,12 @@ ist eine Momentaufnahme; kein Schritt dieses Sprints wirkt darauf schreibend ein
 
 #### §34.13.6a Production verwendet nachweislich den relationalen Profilstand
 
+> **BEFUNDPROTOKOLL vom 03.09., Stand VOR der Korrektur.** Die Kernaussage — Production
+> liest relational — gilt unverändert. Die **Bestandszahlen zu den Ausschussfeldern** in
+> diesem Abschnitt und in §34.13.6b sind dagegen überholt: die Ausschussfelder aller fünf
+> aktiven Profile wurden am 03.09. mit Betreiberfreigabe korrigiert und rein lesend
+> abgenommen. Aktueller Stand: **[§35](#35-fünferabgleich-und-ausgeführte-profilkorrektur-03092026-betreiberfreigabe)**.
+
 Die frühere Fassung ließ offen, ob der am 03.09. erhobene Ausschussbefund aus einer
 veralteten relationalen Momentaufnahme oder aus dem wirksamen Production-Pfad stammt.
 Diese Auslegung ist durch eine gezielte, rein lesende Production-Querprüfung entschieden.
@@ -3966,7 +3972,9 @@ kann `GET /api/admin/tenant-mode` die Booleans `profileDbModeFlagSet`,
 inaktiv, alle fünf aktiven auf Ebene Bundestag, keine Profile der Testkohorte. Genau
 eines der fünf aktiven realen Profile trägt relational
 `Bildung, Forschung und Technikfolgenabschätzung`. Der Zuschnitt wurde zur 21.
-Wahlperiode aufgeteilt; die Angabe ist gegen die heutige Sollmenge nicht auflösbar.
+Wahlperiode geändert; die Angabe ist gegen die heutige Sollmenge nicht auflösbar.
+**Sachkorrektur 03.09. (§35):** „aufgeteilt" war hier falsch — es war ein
+Zuschnittwechsel 2→2, keine Teilung 1→2.
 Die übrigen Ausschussangaben sind auflösbar, alle relationalen
 `stellvertretende_ausschuesse` der fünf aktiven Profile sind leer.
 
@@ -4003,15 +4011,19 @@ Auch die bisherige Klärempfehlung
    `listFullProfiles` kann `readStore` erreichen, und `readSupabaseStore` legt bei
    einer fehlenden Blob-Zeile über `writeSupabaseStore` einen Default-Store an.
 
-Daraus folgt verbindlich:
+Daraus folgte damals verbindlich (**Punkte 1–5 sind seit 03.09. abgearbeitet — §35**;
+insbesondere ist die relationale Ausschusskorrektur **ausgeführt und abgenommen**, sie
+steht nicht mehr aus):
 
 1. Keine Profilkorrektur in PR #297 und keine automatische Ersetzung.
 2. Den amtlichen aktuellen Ausschussstand des betroffenen realen Mandats fachlich
-   belegen; weder einen der zwei Nachfolgeausschüsse noch beide raten.
+   belegen; nichts raten. (Die Formulierung „zwei Nachfolgeausschüsse" ist sachlich
+   falsch — Sachkorrektur in §35. **Erledigt am 03.09.**, siehe §35.)
 3. Die relationale Production-Profilkorrektur als eigene Datenänderung ausdrücklich
    freigeben und danach rein lesend bestätigen.
 4. Die Abweichung muss vor der ersten Aktivierung synthetischer Profile behoben sein.
-   Eine vorherige inaktive Provisionierung bleibt eine getrennt freizugebende Aktion.
+   **Erledigt am 03.09. (§35)** — sie blockiert die erste Kohortenaktivierung nicht mehr.
+   Eine inaktive Provisionierung bleibt unverändert eine getrennt freizugebende Aktion.
 5. PR #297 bleibt auf Codeebene mergefähig, weil er das Profil nicht ändert. Vor einer
    Merge-Freigabe müssen jedoch diese Dokumentationskorrektur und beide Pflichtprüfungen
    am korrigierten Kopf abgeschlossen sein.
@@ -4103,3 +4115,166 @@ Die Nach-Merge-Dokumentation wird in einem abschließenden reinen Dokumentations
 geführt. Gemäß `CLAUDE.md` §9 erzeugt dessen späterer Merge keine rekursive
 Folgedokumentationspflicht; Commit und Deployment-Status bleiben über Git- und
 Deployment-Historie nachweisbar.
+
+---
+
+## §35 Fünferabgleich und ausgeführte Profilkorrektur (03.09.2026, Betreiberfreigabe)
+
+**Sprintzustand: erfolgreich abgeschlossen.** Eine Production-Datenänderung, ausgeführt.
+Kein Merge, kein Deployment, keine Provisionierung, keine Aktivierung, keine Migration,
+keine Umgebungsvariable, kein Cron, keine Azure-/Budget-/Reserveänderung, kein Modellaufruf.
+
+### §35.1 Belegquelle und ihre Grenze
+
+Die amtlichen WP-21-Ausschussmitgliedschaften aller fünf aktiven realen Mandate wurden am
+03.09.2026 **vom Betreiber** von den Abgeordnetenbiografien auf `bundestag.de` abgerufen und
+dieser Sitzung übergeben. **Diese Sitzung hat die Seiten nicht selbst abgerufen:** die gesamte
+Domainfamilie `*.bundestag.de` (www, apex, `dip.`, `search.dip.`, `dserver.`, `webarchiv.`)
+ist über den Egress-Proxy gesperrt; elf Abrufversuche endeten ausnahmslos mit
+`EGRESS_BLOCKED`, ohne HTTP-Antwort des Zielservers. Das ist die ehrliche Belegkette:
+extern beigebracht, nicht selbst verifiziert.
+
+### §35.2 Der Fünferbefund
+
+Die mit Freigabe am 04.08. angewandte Profilkorrektur wurde über `storage.saveProfile` nur in
+der **Blob**-Sicht vollzogen. Weil Production nachweislich **relational** liest (§34.13.6a) und
+`mergeProfileLists` das Blob-Profil bei gleicher Kennung vollständig durch das SQL-Profil
+ersetzt, blieb sie ohne Wirkung. Betroffen waren **alle fünf** aktiven Profile:
+
+| Profil | `ausschuesse` vorher (relational, wirksam) | `stellvertretende_ausschuesse` vorher |
+|---|---|---|
+| `annika-klose` | `{Gesundheit, Europäische Union, Kultur und Medien}` | `{}` |
+| `cem-ince` | `{Arbeit und Soziales}` — **korrekt** | `{}` |
+| `helmut-kleebank` | `{Finanzen, Haushalt}` | `{}` |
+| `ottilie-paola-klein-2` | `{Gesundheit, Digitales, Bildung, Forschung und Technikfolgenabschätzung}` | `{}` |
+| `ruppert-st-we` | `{Haushalt}` | `{}` |
+
+**Wesentliche Verschärfung gegenüber §34.13.6a:** dort war nur die eine *nicht auflösbare*
+Angabe benannt. Tatsächlich waren **vier** `ausschuesse`-Felder inhaltlich falsch und **fünf**
+Stellvertretungsfelder leer. Die drei übrigen Fehlwerte (`Gesundheit`, `Finanzen`, `Haushalt`
+u. a.) sind gegen die Sollmenge **formal auflösbar** und liefen deshalb still durch die
+Bereitschaftsprüfung — auflösbar ist nicht dasselbe wie richtig.
+
+### §35.3 Zielwerte und ihre Deckung
+
+| Profil | `ausschuesse` nachher | `stellvertretende_ausschuesse` nachher |
+|---|---|---|
+| `annika-klose` | `{Ausschuss für Arbeit und Soziales}` | `{Finanzausschuss}` |
+| `cem-ince` | **unverändert** `{Arbeit und Soziales}` | `{Ausschuss für Wirtschaft und Energie, Ausschuss für Digitales und Staatsmodernisierung}` |
+| `helmut-kleebank` | `{Ausschuss für Wirtschaft und Energie, Ausschuss für Umwelt, Klimaschutz, Naturschutz und nukleare Sicherheit}` | **unverändert** `{}` |
+| `ottilie-paola-klein-2` | `{Ausschuss für Kultur und Medien, Ausschuss für Arbeit und Soziales}` | `{Ausschuss für die Angelegenheiten der Europäischen Union, Finanzausschuss}` |
+| `ruppert-st-we` | `{Petitionsausschuss}` | `{Ausschuss für Forschung, Technologie, Raumfahrt und Technikfolgenabschätzung, Haushaltsausschuss, Ausschuss für Wohnen, Stadtentwicklung, Bauwesen und Kommunen}` |
+
+**Namensregel:** Was geändert wurde, trägt den kanonischen WP-21-Namen der Sollmenge (=
+exakt den Blob-Wert). Was bereits fachlich richtig und auflösbar war, blieb unangetastet.
+Folge: relationale Sicht und Blob sind jetzt **deckungsgleich** — ein späterer
+`scripts/profile-relational-backfill.js --execute` ist für diese Felder ein No-op statt einer
+stillen Rücknahme.
+
+**Ausdrücklich ausgeschlossen, weil kein ständiger Ausschuss der Sollmenge:**
+
+- **Rechnungsprüfungsausschuss** (Stüwe, ordentliches Mitglied) — Unterausschuss des
+  Haushaltsausschusses.
+- **Parlamentarischer Beirat für nachhaltige Entwicklung und Zukunftsfragen** (Kleebank,
+  stellvertretend).
+- **Schriftführer des Deutschen Bundestages** (Stüwe) — parlamentarisches Amt, gehört nach
+  `rolle`/`function`, nicht in eine Ausschussliste.
+
+Maßgeblich ist `profile-readiness.js:278-288`: `deputyCommittees` wird **exakt wie**
+`committees` gegen die WP-21-Sollmenge validiert. Ein Eintrag außerhalb der 24 ständigen
+Ausschüsse macht das Profil „nicht bereit" und erzeugt falsche Zuständigkeitsbelege im Radar.
+Das Datenmodell bleibt unverändert; die drei Fälle bleiben dokumentierte **Modelllücke**.
+
+### §35.4 Reihenfolge
+
+Nur `ausschuesse[0]` ist funktional wirksam — `scheduler.js:1103` baut daraus das
+profilbezogene Themenradar (`:1146-1150`). Die Reihenfolge in
+`stellvertretende_ausschuesse` hat **keine** Wirkung; dort wurde die Paketreihenfolge
+übernommen, um Blob-Parität zu erreichen.
+
+Eine echte Wahl bestand nur bei `helmut-kleebank` (zwei ordentliche Sitze). Die amtliche
+Listung nennt Umwelt zuerst, ist aber weder alphabetisch noch nach Ausschussnummer (9 vs. 16)
+geordnet und drückt damit keine Priorität aus. **Betreiberentscheidung 03.09.: Wirtschaft und
+Energie an erster Stelle** (Paket-/Blob-Reihenfolge).
+
+### §35.5 Ausführung
+
+Eine einzelne atomare Transaktion, **5 Zeilen, 8 Feldänderungen**, ausschließlich in den
+Spalten `ausschuesse` und `stellvertretende_ausschuesse`. Jede Zeile trug eine
+Compare-and-Set-Bedingung auf **beide** Spalten (`CLAUDE.md` §4.10); jede Abweichung hätte über
+`RAISE EXCEPTION` die gesamte Transaktion ohne Änderung abgebrochen. Zusätzlich eine
+Bestandswache (9 gesamt / 5 aktiv) vor dem ersten `UPDATE`. Direkter SQL-Weg, **nicht** der
+Admin-Schreibweg: `server.js:7314` (`next.committees = next.committee ? [next.committee] : …`)
+hätte jede mehrelementige Liste auf ein Element gekappt und zusätzlich die geteilte
+1,24-MB-Blob-Zeile unbedingt neu geschrieben.
+
+**Vorbedingungen erfüllt:** `origin/main` = `764a770` · alle fünf Ausgangswerte per `SELECT`
+gegen den vorbereiteten Bericht bestätigt · Sicherung `node scripts/backup-export.js
+--scope=profil` → `backups/2026-09-03T19-15-03-654Z/`, `vollstaendig: true`, 2/2 Tabellen
+(`profiles` 10, `mandate_profiles` 9), `fehler: []`, Prüfsummen je Tabelle, `mainCommit`
+`764a770`. Das Backup enthält den vollständigen Vorzustand aller fünf Zeilen.
+
+### §35.6 Abnahme (rein lesend, alle bestanden)
+
+1. Alle fünf Zeilen tragen exakt die freigegebenen Werte.
+2. Bestand unverändert: 9 Mandatsprofile, 5 aktiv, 4 inaktiv, 0 Löschmarken, 10 Identitätsprofile.
+3. `created_at` **und** `updated_at` **aller neun** Zeilen unverändert (auf `mandate_profiles`
+   liegt kein Trigger; per `pg_trigger` mit 0 Treffern bestätigt) — Beleg, dass kein
+   Anwendungs-Schreibpfad lief und keine weitere Spalte berührt wurde.
+4. Die vier inaktiven Zeilen inhaltlich unverändert (u. a. `max-mustermann`
+   `{Kultur und Medien}`), ebenso `wahlkreis`, `rolle`, `partei`, `onboarding_status` aller neun.
+5. `helmut_store` unverändert: alle acht Blob-Profile tragen unverändert ihre
+   `updatedAt`-Stände vom 17.07. bzw. 04.08.; kein Eintrag von heute.
+6. Resolver, offline über `scripts/lokal.js` gegen `resolveBundestagsausschuss` gemessen:
+   **12/12 Zielwerte lösen eindeutig auf**, **3/3 Ausschlüsse korrekt abgewiesen**
+   (`Rechnungsprüfungsausschuss`, `Parlamentarischer Beirat …`,
+   `Bildung, Forschung und Technikfolgenabschätzung` → jeweils „nicht in der Sollmenge").
+7. `scripts/profil-bereitschaft.js --production` blieb ausgeschlossen (§34.13.6b).
+8. Kein Crawl, kein Modellaufruf, keine Planung manuell ausgelöst.
+
+**Offen: der natürliche Radar-Wirkungsbeleg.** Erwartet im nächsten regulären Crawl-Slot in
+`source_crawl_telemetry`: `Gesundheit Themenradar` (bisher zwei Profile, 125 Läufe) entfällt,
+ebenso `Finanzen` und `Haushalt Themenradar`; neu treten
+`Ausschuss für Wirtschaft und Energie`, `Ausschuss für Arbeit und Soziales`,
+`Ausschuss für Kultur und Medien` und `Petitionsausschuss Themenradar` auf.
+`Arbeit und Soziales Themenradar` (cem-ince) bleibt unverändert. Liefert ein neues
+Langform-Radar dauerhaft 0 Treffer, ist die exakte Suchphrase zu eng — dann ist der Rückfall
+auf die Kurzform zu erwägen.
+
+### §35.7 Sachkorrektur: Zuschnittwechsel, keine Aufteilung
+
+Die bisherige Darstellung, der WP-20-Ausschuss „Ausschuss für Bildung, Forschung und
+Technikfolgenabschätzung" sei zur 21. WP „in zwei Nachfolgeausschüsse aufgeteilt" worden, ist
+**sachlich falsch**. Richtig ist ein **Zuschnittwechsel 2→2**:
+
+- Ausschuss **Nr. 18** wurde umbenannt in „Ausschuss für Forschung, Technologie, Raumfahrt und
+  Technikfolgenabschätzung": er gab die Zuständigkeit *Bildung* ab und erhielt *Technologie*
+  und *Raumfahrt* hinzu.
+- Ausschuss **Nr. 13** wurde von „Ausschuss für Familie, Senioren, Frauen und Jugend" in
+  „Ausschuss für Bildung, Familie, Senioren, Frauen und Jugend" umbenannt und erhielt *Bildung*.
+- Beide behielten ihre Ausschussnummer. Die Gesamtzahl der ständigen Ausschüsse sank von
+  **25** (20. WP) auf **24** (21. WP) — eine echte Teilung hätte sie erhöht.
+
+Im Repository war das an zwei Stellen bereits richtig beschrieben (`lib/helmut/sources.js:507-509`
+und `:529`); falsch waren `CURRENT_STATE.md`, dieser Rahmen (§34.13.6a/.6b) und
+`docs/multitenancy-profilbereitschaft-bundestag.md:128`. Alle drei sind mit diesem Sprint
+korrigiert. **Nicht angefasst** (Codedatei, kein Dokument):
+`scripts/fixtures/profil-reparatur-2026-08-04.js:181` trägt die alte Formulierung weiter.
+
+An der operativen Folge ändert das nichts: die gespeicherte Angabe blieb gegen die
+WP-21-Sollmenge nicht auflösbar, und es blieb verboten, einen der beiden Ausschüsse zu raten.
+
+### §35.8 Offene spätere Codearbeiten (eigener PR, hier bewusst nicht angefasst)
+
+1. **`VERALTETE_AUSSCHUSSNAMEN` unvollständig** (`seeds/bundestag-ausschuesse.js:122-127`).
+   Es fehlen mindestens „Ausschuss für Bildung, Forschung und Technikfolgenabschätzung" (WP 20)
+   und „Ausschuss für Familie, Senioren, Frauen und Jugend" (WP 20). Die erste fällt heute nur
+   zufällig über den Tokenabgleich durch; die zweite würde als Wortmenge
+   `{familie, senioren, frauen, jugend}` sogar **eindeutig auf Nr. 13 auflösen** und damit eine
+   WP-20-Angabe stillschweigend als aktuell durchgehen lassen.
+2. **Irreführende Kommentare in `scripts/profil-bereitschaft.js`.** Zeile 13 („`--production`
+   liest den Bestand rein lesend über `storage.listFullProfiles()`") und die Ausgabezeile 71
+   („… geprüft, rein lesend") sind strukturell zu stark: `listFullProfiles` kann `readStore`
+   erreichen, und `readSupabaseStore` legt bei fehlender Blob-Zeile über `writeSupabaseStore`
+   einen Default-Store an (`storage.js:485-489`). Der Text muss die Einschränkung nennen.
+3. **Zweite Ausschusswahrheit im Radar** (§34.13.7) — unverändert offen.

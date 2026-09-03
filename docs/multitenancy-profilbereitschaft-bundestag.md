@@ -5,6 +5,17 @@
 **Tests:** `scripts/profil-bereitschaft-test.js` (91/91) · **Seed:** `lib/helmut/quellenarchitektur/seeds/bundestag-testmandate.js`
 **Reparaturpaket:** `scripts/fixtures/profil-reparatur-2026-08-04.js` (nicht automatisch angewendet)
 
+> **Nachtrag 2026-09-03 — die Ausschussfelder sind jetzt auch RELATIONAL korrigiert.**
+> Die Anwendung vom 04.08. erfolgte über `storage.saveProfile` und wirkte nur in der
+> Blob-Sicht; Production liest jedoch relational, weshalb bis zum 03.09. bei **allen fünf**
+> aktiven Profilen der alte Stand wirksam war (`ausschuesse` bei vier falsch,
+> `stellvertretende_ausschuesse` bei fünf leer). Mit Betreiberfreigabe wurde am 03.09. eine
+> einzelne atomare Transaktion auf `mandate_profiles` ausgeführt (5 Zeilen, 8 Feldänderungen,
+> nur die beiden Ausschussspalten, Compare-and-Set je Zeile) und rein lesend abgenommen.
+> Vollbeleg: [SR §35](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+> Die drei Modelllücken (Rechnungsprüfungsausschuss, Parlamentarischer Beirat, Schriftführer)
+> bleiben ausdrücklich außerhalb der Ausschussfelder.
+
 > **Korrekturvermerk 2026-08-04/2 (kein falsches Grün):** Die Erstfassung dieses Dokuments
 > enthielt drei sachliche Fehler im Reparaturpaket, die eine externe Prüfung gegen die
 > amtlichen Biografien fand — die damals grünen Tests prüften Fixture-Erwartungen gegen
@@ -55,7 +66,17 @@ Es baut auf [`multitenancy-profilvalidierung.md`](multitenancy-profilvalidierung
 Jedes harte Pflichtfeld ist durch einen konkreten Codeverbraucher begründet — keine
 erfundenen Pflichtfelder. Kanonische Ablage: `profiles` (id, name) + `mandate_profiles`
 (alle Fachspalten) + `profil_extras` (Auffangbehälter); Mapping `storage.fromMandateProfileRow`.
-**Wirksamer Lesepfad heute: Blob** (`HELMUT_PROFILE_DB_MODE` in Production nicht gesetzt).
+**Wirksamer Lesepfad heute: RELATIONAL.** Production verwendet nachweislich die
+relationalen Profile aus `mandate_profiles`. Der **rohe Wert** von
+`HELMUT_PROFILE_DB_MODE` bleibt unbestätigt (Vercel-Env ist aus keiner Sitzung lesbar) —
+die **Wirkung** ist dreifach belegt: durch Telemetrie (die ausgeführten profilbezogenen
+Ausschussradare in `source_crawl_telemetry` entsprachen exakt den relationalen
+`committees[0]`, nie den abweichenden Blob-Werten), durch eine historische Kontrollgruppe
+(eine Blob-Deaktivierung vom 04.08. blieb ~30 h wirkungslos, erst die relationale vom
+06.08. beendete das Radar dauerhaft) und durch das Codeverhalten (`mergeProfileLists`
+ersetzt bei gleicher Kennung das Blob-Profil vollständig durch das SQL-Profil — SQL
+gewinnt). Beleg: [SR §34.13.6a/§35](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+Die frühere Angabe „wirksamer Lesepfad: Blob" war **falsch** und ist damit korrigiert.
 
 ### Technisch zwingend (ohne sie bricht Verarbeitung oder Zuordnung)
 
@@ -111,9 +132,20 @@ kein Benutzerkonto nötig, fehlende Daten werden benannt statt ergänzt.
   und Admin-Tabelle „Daten & Profile" zeigen die Bereitschaft additiv mit konkreten
   Blockern an; gespeichert wird **nichts** (immer frisch berechnet, keine Migration).
 
-## 4 · Bestandsprüfung der sechs aktiven Mandate (2026-08-04, rein lesend)
+## 4 · Bestandsprüfung der sechs aktiven Mandate (2026-08-04) — HISTORISCH
 
-Geprüft über die **wirksame** Profilsicht (Blob-Lesepfad) per
+> **Kein aktueller Production-Stand.** Dieser Abschnitt und die Tabelle darunter halten die
+> Bestandsprüfung vom **04.08.2026** fest. Sie wurde über die **Blob-Sicht** gefahren, die
+> damals irrtümlich für den wirksamen Lesepfad gehalten wurde — tatsächlich liest Production
+> **relational** (§1). Die Werte bleiben als **Befundbeleg** erhalten und dürfen nicht als
+> heutiger Stand gelesen werden: die Ausschussfelder aller fünf aktiven Profile sind am
+> **03.09.2026** mit Betreiberfreigabe relational korrigiert und rein lesend abgenommen
+> worden (Nachtrag oben, [SR §35](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md)).
+> Auch das damals verwendete Werkzeug `scripts/profil-bereitschaft.js --production` gilt
+> inzwischen als **kein zulässiger Klärbeleg** (Lesepfad hängt am lokalen `process.env`;
+> `readSupabaseStore` kann eine fehlende Blob-Zeile anlegen).
+
+Geprüft wurde damals über die für wirksam gehaltene Profilsicht (Blob-Lesepfad) per
 `node scripts/profil-bereitschaft.js --production` plus relationale Gegenprüfung
 (`profiles`/`mandate_profiles`, nur SELECT). Kein Production-Write, keine Auth-Daten
 gelesen. Die Mandats-Kennungen stehen bereits offen in der Repo-Doku (u. a.
@@ -125,7 +157,7 @@ gelesen. Die Mandats-Kennungen stehen bereits offen in der Repo-Doku (u. a.
 | `cem-ince` | **bereit** | — | keine Namensvarianten | — | latent: relationale `profiles.name` = Slug (§5); stv. Ausschüsse ergänzen (empfohlen) |
 | `helmut-kleebank` | **bereit** (Inhalt formal) | — · **aber:** Ausschüsse (Finanzen, Haushalt) ≠ WP-21-Mitgliedschaften (**Wirtschaft und Energie + Umwelt/Klimaschutz/Naturschutz/nukleare Sicherheit**) — formal gültige, inhaltlich falsche Angaben | keine Prioritäten, keine Namensvarianten | Radar-Zuständigkeitsbelege, Matching-Gewichte | Ausschüsse ersetzen |
 | `max-mustermann` (Demo) | **bereit** (Inhalt formal) | **Bestandsproblem:** trägt den Klarnamen einer realen Abgeordneten → identische Personensuche wie `ottilie-paola-klein-2` (Vermischung) | kein Wahlkreis, keine Prioritäten | Radar-Personensuche beider Mandate | Produktentscheidung OP-04 (Demo entfernen/umbenennen) |
-| `ottilie-paola-klein-2` | **nicht bereit** | ungültiger Ausschuss „Bildung, Forschung und Technikfolgenabschätzung" (WP-20-Bezeichnung, in WP 21 aufgeteilt); Namensduplikat mit Demo-Mandat | Wahlkreis unspezifisch („Berlin"), keine Prioritäten | Radar-Ausschussbeleg, Ausschuss-Themenradar, Personensuche | Ausschüsse → ordentlich **Kultur und Medien + Arbeit und Soziales**, stellvertretend **EU-Ausschuss + Finanzausschuss**; Wahlkreis präzisieren |
+| `ottilie-paola-klein-2` | **nicht bereit** | ungültiger Ausschuss „Bildung, Forschung und Technikfolgenabschätzung" (WP-20-Bezeichnung; zur WP 21 **im Zuschnitt gewechselt, nicht aufgeteilt** — [SR §35.7](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md)); Namensduplikat mit Demo-Mandat | Wahlkreis unspezifisch („Berlin"), keine Prioritäten | Radar-Ausschussbeleg, Ausschuss-Themenradar, Personensuche | Ausschüsse → ordentlich **Kultur und Medien + Arbeit und Soziales**, stellvertretend **EU-Ausschuss + Finanzausschuss**; Wahlkreis präzisieren |
 | `ruppert-st-we` | **bereit** (Inhalt formal) | — · Ausschussliste falsch geschnitten: ordentlich ist **nur der Petitionsausschuss** (+ Rechnungsprüfungsausschuss, außerhalb der Sollmenge → Modelllücke); der gespeicherte „Haushalt" ist eine **stellvertretende** Mitgliedschaft (dazu stv. Forschung/Technologie/Raumfahrt/TA und Wohnen/Stadtentwicklung); Schriftführer ist eine **Funktion** | keine Prioritäten, keine Namensvarianten | Zuständigkeitsbelege (falsch gewichtet) | ordentlich/stellvertretend trennen, Funktion nach `function` |
 
 **Antworten auf die Pflichtfragen des Auftrags:**
