@@ -4073,3 +4073,33 @@ und `scripts/matching-ausschuss-zustaendigkeit-test.js` tragen Ausschussnamen, d
 Sollmenge stehen. Beides sind **Testfixtures**, keine Production-Logik; sie laufen nicht durch die
 Reifeprüfung und sind heute grün. Sie werden hier nicht angefasst, weil eine Änderung an ihnen die
 Aussage der jeweiligen Suiten verschiebt, ohne dass dieser Sprint das beurteilen kann.
+#### §34.14 Nach-Merge-Abschluss PR #297 — 03.09.2026
+
+**Sprintzustand: erfolgreich abgeschlossen.** PR #297 wurde mit dem Merge-Commit
+`b0071fd2683837619483b45a340d399ca01309f2` nach `main` gemergt. Der PR-Kopf war
+`540b57bff293848b7f2a55488776e67c960cab34`; die beiden Pflichtjobs
+`Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)` waren im
+CI-Lauf `33755229167` erfolgreich.
+
+Der Vercel-Status am exakten Merge-Commit ist erfolgreich
+([Nachweis](https://vercel.com/nohut/helmut-pilot/8BLXbeq6PGzwG3P77z8BXRnnmF8f)).
+Interne Deployment-Details und eine `dpl_`-Kennung konnten über den verbundenen
+Vercel-Zugriff nicht zusätzlich aufgelöst werden; ein Laufzeitfehler-Scan ist damit
+nicht belegt. Die Commit-Zuordnung und der erfolgreiche Vercel-Status sind belegt.
+
+Mit dem Merge ist der Code aus §34 in Production angekommen. Der Merge selbst führte
+keine Provisionierung, Aktivierung, Profiländerung, Migration, Umgebungsvariable,
+Cron-, Azure-, Budget- oder Reserveänderung, keinen Modellaufruf und keine externe
+Nachricht aus. In Production existieren weiterhin keine synthetischen Kohortenprofile;
+die Kohortenpfade bleiben deshalb inert.
+
+**Der 500er-Funktionstest ist dadurch nicht startbereit.** Unverändert offen und
+getrennt freigabepflichtig bleiben die relationale Profilkorrektur vor der ersten
+Kohortenaktivierung, die aktuelle Grundlinie, die Sicherung vor jeder Provisionierung,
+die acht Betreiberwerte vor jeder Aktivierung sowie die stufenweisen Freigaben für
+Provisionierung und Aktivierung. Stufe A, B und C bleiben in dieser Reihenfolge.
+
+Die Nach-Merge-Dokumentation wird in einem abschließenden reinen Dokumentations-PR
+geführt. Gemäß `CLAUDE.md` §9 erzeugt dessen späterer Merge keine rekursive
+Folgedokumentationspflicht; Commit und Deployment-Status bleiben über Git- und
+Deployment-Historie nachweisbar.
