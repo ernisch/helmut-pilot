@@ -3609,8 +3609,14 @@ wirksam und geprüft sein.
 ### §34.12 Adversariales Review des Diffs — vier Linsen, zwei Widerleger je Feststellung
 
 Vier unabhängige Reviews (fail-closed des CLI · Konsistenz Plan/Code · Testvalidität/falsches
-Grün · Sicherheit/Mandanten/Production-Wirkung), jede Feststellung von zwei weiteren Prüfern
-adversarial gegengeprüft. **Bestätigt und behoben:**
+Grün · Sicherheit/Mandanten/Production-Wirkung) lieferten **24 Feststellungen**; jede wurde von
+zwei weiteren Prüfern adversarial gegengeprüft (52 Agenten, 42 Minuten). Ergebnis der Widerleger:
+**10 von beiden bestätigt, 0 strittig, 14 widerlegt** — davon **11 nur deshalb, weil die Korrektur
+im Arbeitsbaum bereits enthalten war** (die Widerleger prüften den laufend korrigierten Stand; sie
+sagen das ausdrücklich), und **3 in der Sache**: ungültige Fensterangaben waren fail closed (jetzt
+trotzdem Aufruffehler), die offenen Vorbedingungsketten wurden auf „niedrig" abgeschwächt (trotzdem
+geschlossen), ein stderr-Marker für den A0-Pin ist ein Gestaltungswunsch (nicht umgesetzt). Alle
+Feststellungen, einzeln:
 
 | Befund | Schwere | Behoben |
 |---|---|---|
@@ -3633,10 +3639,9 @@ adversarial gegengeprüft. **Bestätigt und behoben:**
 | A7a auf relative Ordnung abgeschwächt | niedrig | Gesamtzahl 28 und Position 26 wieder gepinnt |
 | Grundlinie/Sicherung sind Einmal-Kennungen, „vor JEDER Provisionierung" nicht erzwungen | niedrig | ehrlich benannt (Betreiberpflicht) |
 
-**Widerlegt:** „ungültige Fensterangaben werden still zum Trockenlauf" als Defekt — fail closed war
-gegeben; trotzdem sind sie jetzt Aufruffehler (D12–D14). **Bewusst nicht umgesetzt:** ein
-stderr-Marker für den A0-Pin im Runner (der Runner druckt Suitenausgaben nur bei Fehlschlag; der
-Blocker steht in `CURRENT_STATE.md` §7 und im Plan). **Vom Review ausdrücklich bestätigt:** kein
+**Bewusst nicht umgesetzt:** ein stderr-Marker für den A0-Pin im Runner (der Runner druckt
+Suitenausgaben nur bei Fehlschlag; der Blocker steht in `CURRENT_STATE.md` §7 und im Plan als
+Vorbedingung). **Vom Review ausdrücklich bestätigt:** kein
 Rückfall auf 495/Pauschalwort in keiner Aufrufform; vor dem Stufen-Abbruch werden keine
 Production-fähigen Module berührt; `--ids=` öffnet keinen Weg zu realen Mandaten; `pruefeIsolation`
 mit Stufe ist nicht schwächer als ohne; der 495er-Beleg ist unverändert; keine hartkodierten
