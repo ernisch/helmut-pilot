@@ -3754,9 +3754,9 @@ Drei Punkte dazu, ausdrücklich, weil sie im Review aufkamen:
    Mandat, dessen Ausschussfeld noch eine Bezeichnung einer früheren Wahlperiode trägt, wird dort ab
    jetzt als „ungültig" **angezeigt**. Das ist gewollt — es ist der Hinweis, die Angabe auf die
    laufende Wahlperiode zu ziehen —, aber es deaktiviert nichts, schreibt nichts um und blockiert
-   keinen Verarbeitungsschritt. **Ungeprüft:** ob eines der fünf realen Mandate betroffen ist; ein
-   lesender Production-Abgleich der Ausschussfelder war in dieser Sitzung nicht möglich (siehe
-   §34.13.6).
+   keinen Verarbeitungsschritt. **Inzwischen rein lesend in Production geprüft — siehe §34.13.6a:
+   genau ein aktives Mandat trägt eine nicht auflösbare Ausschussangabe, und zwar unabhängig von
+   diesem PR (derselbe Befund am Basisstand `a839c1b`).**
 
 #### §34.13.3 Der Beleg am echten Pfad — A0 ist gekippt, wie angekündigt
 
@@ -3848,10 +3848,13 @@ Dreizehnfache**.
 > eine Verdreizehnfachung der geteilten Abrufmenge. Im Env-Inventar §3a nachgezogen.
 
 **6 · Einordnung, damit die 54 → 138 nicht falsch gelesen wird.** Die Zahl gilt für die **Kohorte in
-Isolation**. Der Pilotmandant sitzt laut `seeds/packages.js` im Ausschuss für Arbeit und Soziales;
-ist sein Profil aktiv, ist das Paket bereits referenziert und der **marginale** Zuwachs in
-Production entsprechend kleiner, im Grenzfall **0**. Ungeprüft, weil ein lesender Production-Abgleich
-in dieser Sitzung nicht möglich war.
+Isolation**. Referenziert **irgendein** bereits aktives Mandat das Paket `arbeit-und-soziales`, ist
+es ohnehin geladen und der **marginale** Zuwachs in Production entsprechend kleiner, im Grenzfall
+**0**. **Ungeprüft:** ob das der Fall ist. Der Abgleich aus §34.13.6a erfasste die *Auflösbarkeit*
+der Ausschussangaben, nicht die daraus folgende Paketwahl. (Die frühere Fassung dieses Absatzes nannte
+an dieser Stelle den Pilotmandanten namentlich als Ausschussmitglied — das war eine Ausweitung der
+Pilotmandanten-Sonderlogik in neue Fließtextdokumentation und damit gegen `CLAUDE.md` §4.2;
+zurückgenommen 03.09.)
 
 **7 · Einschränkung, ausdrücklich:** gemessen wurde gegen den **Offline-Quellenkatalog**, weil
 `scripts/lokal.js` `HELMUT_SOURCE_MODE=off` erzwingt (`helmut-flags.json` setzt in Production `on`).
@@ -3923,12 +3926,151 @@ vorgeschriebene Sicherung der betroffenen Tabellen bleiben getrennte, spätere
 Betriebsvoraussetzungen. Die zuletzt gelesene Production-Warteschlange (207 wartend, 188 fällig)
 ist eine Momentaufnahme; kein Schritt dieses Sprints wirkt darauf schreibend ein.
 
-**Eine unbewiesene Aussage, ausdrücklich benannt:** ob eines der fünf realen Mandate in Production
-ein Ausschussfeld mit einer Bezeichnung einer früheren Wahlperiode trägt, ist **nicht geprüft**. Ein
-rein lesender Abgleich gegen Production war in dieser Sitzung nicht möglich. Wirkung im schlimmsten
-Fall: die Admin-Ansicht zeigt für dieses Mandat „ungültig: committees" an (Anzeige, keine Sperre —
-§34.13.2 Punkt 3), und eine **Neuaktivierung** dieses Mandats würde abgewiesen. Vor dem Merge lässt
-sich das mit einer einzigen lesenden Abfrage der Spalte `committees`/`deputy_committees` klären.
+#### §34.13.6a Der Production-Ausschussstand — rein lesend geprüft, Befund bestätigt
+
+Die frühere Fassung dieses Abschnitts führte als **unbewiesene Aussage**, ob eines der fünf realen
+Mandate ein Ausschussfeld einer früheren Wahlperiode trägt. Ein rein lesender Production-Abgleich
+war aus dieser Sitzung heraus nicht möglich. **Er wurde inzwischen getrennt und rein lesend
+durchgeführt; die Aussage wird hier ersetzt, nicht gestrichen.**
+
+**Herkunft und Grenze des Belegs, ausdrücklich:** die Erhebung erfolgte **betreiberseitig am
+03.09.2026, rein lesend**, und wurde diesem Sprint als Auftragsinhalt übermittelt. Sie ist aus
+dieser Sitzung heraus **nicht reproduzierbar** — kein Kommando, keine Ausgabe, kein Lesepfad wurden
+mitgeliefert, und diese Sitzung hat keinen Production-Lesezugriff. Damit ist der Befund eine
+**Betreiberangabe**, kein selbst erhobener Messwert; er hat denselben Rang wie jede andere
+Env-/Production-Angabe in diesem Projekt (§3 „Zugangsgrenze jeder Claude-Sitzung"). Das ist kein
+Formalismus: §34.13.6b zeigt, dass die Auslegung des Befunds vom **Lesepfad** abhängt.
+
+**Befund (rein lesend, ohne jede Datenänderung):**
+
+| Messung | Ergebnis |
+|---|---|
+| Mandatsprofile in Production | **9** — davon **5 aktiv**, **4 inaktiv** |
+| Profile der Testkohorte | **0** (unverändert; die Kohorte existiert in Production nicht) |
+| politische Ebene der fünf aktiven Profile | **alle fünf Bundestag** |
+| Profile mit einer nicht auflösbaren Ausschussangabe | **genau eines** der fünf aktiven |
+| betroffene Bezeichnung | `Bildung, Forschung und Technikfolgenabschätzung` |
+| übrige Ausschussangaben der fünf aktiven Profile | **auflösbar** |
+| `stellvertretende_ausschuesse` der fünf aktiven Profile | **alle leer** |
+
+Das betroffene Mandat wird hier **bewusst nicht benannt** — weder Name noch Mandatskennung
+(Mandantenneutralität, `START_HERE.md` §5). Für die Bewertung genügt „genau eines der fünf aktiven".
+
+> **Grenze dieser Anonymisierung, ehrlich benannt (Reviewbefund 03.09.).** Sie ist unvollständig und
+> darf nicht als erreichte Neutralität gelesen werden: die genannte Ausschussbezeichnung ist im
+> Repositorium bereits mit einem Mandats-Slug verknüpft
+> (`multitenancy-profilbereitschaft-bundestag.md` §4), und `production_beweisprotokoll.md` §9.3 löst
+> die Gruppenkennung `m5-…` namentlich auf. Wer beide Dokumente kennt, kann das Profil bestimmen.
+> Beides ist **Alt-Bestand** und wurde in diesem Sprint weder erzeugt noch erweitert; ein Rückbau
+> wäre eine eigene, fachliche Entscheidung über Bestandsdokumente und ist hier ausdrücklich **nicht**
+> vorgenommen worden. In `docs/CURRENT_STATE.md` — der Pflichtlektüre jedes neuen Threads — steht die
+> Bezeichnung deshalb **nicht**; dort ist der Befund ohne sie formuliert.
+
+**Entscheidend für die Merge-Bewertung: dieser Zustand ist NICHT durch PR #297 entstanden.**
+Gegengeprüft am Basisstand `a839c1b` (`main`, vor diesem PR) und am Kopf dieses Branches — der
+Resolver liefert in **beiden** Fassungen dasselbe Ergebnis:
+
+```
+resolveBundestagsausschuss("Bildung, Forschung und Technikfolgenabschätzung")
+  a839c1b (main)          -> { ok: false, grund: "nicht in der Sollmenge" }
+  Kopf dieses Branches    -> { ok: false, grund: "nicht in der Sollmenge" }
+```
+
+Der Grund ist **nicht** die Verschärfung aus §34.13.2: die Bezeichnung steht gar nicht auf der
+Negativliste `VERALTETE_AUSSCHUSSNAMEN`. Sie scheitert schlicht an der Sollmenge — der Zuschnitt
+wurde zur 21. Wahlperiode aufgeteilt (heute u. a. „Ausschuss für Forschung, Technologie, Raumfahrt
+und Technikfolgenabschätzung" und „Ausschuss für Bildung, Familie, Senioren, Frauen und Jugend").
+Die Bereitschaftsprüfung weist diese Angabe seit ihrer Einführung (Korrekturrunde 2026-08-25) ab;
+sie ist als Regressionsfall seit jeher in `profil-bereitschaft-test.js` Prüfung 9 gepinnt. Der
+Zustand ist also **heute schon in Production wirksam**, mit oder ohne diesen PR. `server.js` — der
+Anzeigepfad — ist von diesem PR **nicht berührt** (nicht im Diff).
+
+**Wirkung, eng begrenzt:**
+
+| | |
+|---|---|
+| Mandat wird deaktiviert | **nein** |
+| laufende Verarbeitung blockiert | **nein** |
+| Daten verändert | **nein** |
+| Admin-Ansicht | zeigt das Mandat als **nicht vollständig bereit** bzw. mit ungültigem Ausschussfeld |
+| spätere **Neuaktivierung** über den CLI-Provisionierungspfad | würde von der Reifeprüfung **abgewiesen** (`provisioning.provisionTenant`) |
+| Reaktivierung über den **Admin-Schreibpfad** | **nicht** durch die Reifeprüfung gesperrt — `server.js` behandelt die Bereitschaft dort ausdrücklich als Warnung, nicht als Sperre (§34.13.2 Punkt 3) |
+
+**Was daraus folgt — und was ausdrücklich nicht:**
+
+* Der Befund **blockiert den Merge von PR #297 technisch nicht.** Der PR ändert an diesem Profil
+  nichts: es war vorher nicht bereit und ist es nachher ebenso wenig.
+* Er begründet **keine** Änderung an der Reifeprüfung. Die Regel ist richtig: eine Bezeichnung, die
+  es in der laufenden Wahlperiode nicht gibt, erzeugt falsche Zuständigkeitsbelege im Radar.
+* Er begründet **keine** Ausnahme für Bestandsprofile. Eine solche Ausnahme würde genau den Schutz
+  aushebeln, den die Prüfung leistet, und wäre ein Sonderpfad für gewachsene Daten.
+* Er begründet **keine** automatische Ersetzung. Der fachlich richtige aktuelle Ausschussstand
+  dieses Mandats ist **nicht amtlich geprüft**; welcher der beiden WP-21-Nachfolgeausschüsse (oder
+  beide, oder keiner) zutrifft, ist eine Tatsachenfrage über ein reales Mandat. Raten ist hier
+  verboten (`CLAUDE.md` §4.3 Belegpflicht).
+* **Nötig ist eine spätere, fachlich bestätigte Profilkorrektur mit eigener Production-Freigabe:**
+  amtlichen Ausschussstand des Mandats belegen → Ausschussfeld entsprechend setzen → als
+  Production-Datenänderung ausdrücklich freigeben (`CLAUDE.md` §5). Das ist ein eigener Vorgang,
+  nicht Teil dieses PR, und in diesem Sprint wurde **keine Production-Datenänderung** vorgenommen.
+
+#### §34.13.6b Der Befund widerspricht OP-29 — und die wahrscheinlichste Erklärung ist der Lesepfad
+
+Die adversariale Schlussprüfung hat gegen den Befund aus §34.13.6a einen **Widerspruch in der
+kanonischen Restliste** gefunden. Er ist nachgeprüft und bestätigt, und er ändert die Auslegung.
+
+**Was `datenmotor-restliste.md` OP-29, Nachtrag 2026-08-04/4 dokumentiert:** genau dieses
+Ausschussfeld wurde am **2026-08-04 mit ausdrücklicher Betreiberfreigabe in Production korrigiert** —
+profilweise über `storage.saveProfile` („wirksame **Blob**-Sicht; identischer Pfad wie
+`/api/admin/profile/<id>`"), je Profil mit exaktem Ist-Vergleich vor dem Schreiben, sofortigem
+Rücklesen und sofortiger Bereitschaftsprüfung. Ergebnis der Nachprüfung dort: **alle fünf aktiven
+realen Profile BEREIT** (`scripts/profil-bereitschaft.js --production`). Für dasselbe Profil wurden
+damals außerdem **nicht-leere** `deputyCommittees` geschrieben.
+
+**Der neue Befund meldet das Gegenteil:** die alte WP-20-Bezeichnung und **leere** Stellvertretungen —
+also exakt den Zustand **vor** dieser Korrektur.
+
+**Die wahrscheinlichste Erklärung steht im selben Nachtrag.** OP-29 benennt dort die ehrliche Grenze
+der Korrektur wörtlich:
+
+> „die relationalen `mandate_profiles`-Zeilen bleiben veraltete Backfill-Schnappschüsse (der
+> wirksame Blob-Lesepfad pflegt sie bei `HELMUT_PROFILE_DB_MODE`-aus nicht mit; vor einem
+> DB-Cutover ist ein Backfill nötig — dokumentierte **F-P6**-Familie)"
+
+Der neue Befund ist in **relationalen Spaltennamen** formuliert — `ausschuesse` und
+`stellvertretende_ausschuesse` sind die Spalten von `mandate_profiles`, nicht die Felder der
+wirksamen Blob-Sicht (`committees` / `deputyCommittees`). Gelesen wurde also mit hoher
+Wahrscheinlichkeit **genau der Schnappschuss, den OP-29 als veraltet ausweist**. Dazu passt, dass
+der gemeldete Wert Zeichen für Zeichen der dokumentierte Ausgangswert von 2026-08-04 ist
+(`scripts/fixtures/profil-reparatur-2026-08-04.js`) und dass die Stellvertretungen leer sind.
+
+**Zwei Auslegungen, beide offen — diese Sitzung kann nicht entscheiden:**
+
+| | Auslegung | Folge |
+|---|---|---|
+| **(1)** | Gelesen wurde die **veraltete relationale Zeile** (F-P6). | Das **wirksame** Profil ist korrekt und bereit. Es gibt **nichts zu korrigieren**; offen bleibt allein der ohnehin dokumentierte F-P6-Backfill vor einem DB-Cutover. |
+| **(2)** | Gelesen wurde die **wirksame** Sicht. | Eine freigegebene Production-Korrektur vom 2026-08-04 ist **verloren gegangen**. Das wäre ein eigener, ernster Vorfall — Datenverlust an einem realen Mandat, nicht bloß ein Datenpflegepunkt. |
+
+**Was daraus folgt — bevor irgendetwas korrigiert wird:**
+
+1. **Zuerst den Lesepfad klären, nicht das Feld.** Der Abgleich ist über den **wirksamen** Pfad zu
+   wiederholen: `scripts/profil-bereitschaft.js --production` liest die Blob-Sicht und ist genau das
+   Werkzeug, mit dem OP-29 die Korrektur damals nachgeprüft hat. Erst sein Ergebnis entscheidet
+   zwischen (1) und (2).
+2. **Keine Profilkorrektur auf Basis des vorliegenden Befunds.** Unter Auslegung (1) würde ein
+   Schreibvorgang ein bereits korrektes Feld anfassen — im schlechtesten Fall überschreibt er den
+   guten Blob-Stand mit dem veralteten Schnappschuss. Das wäre eine durch diesen Sprint verursachte
+   Datenverschlechterung.
+3. **Die Merge-Bewertung von PR #297 ist von beiden Auslegungen unberührt.** In beiden Fällen gilt
+   unverändert: der Resolver verhält sich am Basisstand `a839c1b` identisch, `server.js` ist nicht im
+   Diff, und dieser PR ändert an dem Profil nichts.
+4. `datenmotor-restliste.md` OP-29 ist entsprechend gekennzeichnet (Nachtrag 2026-09-03), damit die
+   dortige Aussage „alle fünf aktiven realen Profile BEREIT" nicht still im Widerspruch stehen bleibt
+   (`CLAUDE.md` §7.11).
+
+**Ehrliches Fazit:** §34.13.6a gibt den übermittelten Befund unverändert wieder. Seine **Auslegung**
+ist offen, und die wahrscheinlichere der beiden ist die harmlose. Als „bestätigter Defekt eines
+aktiven realen Mandats" darf der Befund deshalb **nicht** zitiert werden, solange die Prüfung aus
+Punkt 1 aussteht.
 
 #### §34.13.7 Eine zweite Ausschusswahrheit im Radar — eigener, älterer Befund, hier NICHT repariert
 
