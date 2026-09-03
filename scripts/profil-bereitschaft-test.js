@@ -374,6 +374,38 @@ const vollstaendig = Object.freeze({
   const gateLandtag = pruefeNeuaktivierung({ ...landtagsprofil, state: "Berlin" });
   check("Z2. Neuaktivierungs-Gate greift für Landtag NICHT (Altregel bleibt)", gateLandtag.zutreffend === false && gateLandtag.zulaessig === true);
 
+  // ── VERALTETE AUSSCHUSSBEZEICHNUNGEN (Befund und Verschaerfung 03.09.) ─────
+  // Die Sollmenge fuehrt VERALTETE_AUSSCHUSSNAMEN ausdruecklich als
+  // Negativkontrolle. Angewandt wurde sie aber nur auf den KATALOG, nie auf ein
+  // PROFIL: `resolveBundestagsausschuss` las `veralteteBezeichnung` allein im
+  // Fehlerzweig und konnte deshalb nie feuern. Gemessen wurden DREI der vier
+  // dokumentierten WP-20-Namen als GUELTIG akzeptiert — ein Profil mit dem
+  // Ausschussnamen einer frueheren Wahlperiode galt als reif.
+  console.log("\n== Veraltete Ausschussbezeichnungen werden abgewiesen (Regression) ==");
+  {
+    const { VERALTETE_AUSSCHUSSNAMEN, AUSSCHUSS_NAMEN, STAENDIGE_AUSSCHUESSE, WAHLPERIODE } =
+      require("../lib/helmut/quellenarchitektur/seeds/bundestag-ausschuesse");
+
+    for (const v of VERALTETE_AUSSCHUSSNAMEN) {
+      const r = resolveBundestagsausschuss(v.name);
+      check(`R1-${v.wahlperiode} „${v.name}" (WP ${v.wahlperiode}) wird NICHT aufgeloest`,
+        r.ok === false && /veraltet/.test(r.grund), `grund=${r.grund}${r.key ? " key=" + r.key : ""}`);
+    }
+    check(`R2 Alle ${STAENDIGE_AUSSCHUESSE.length} gueltigen Bezeichnungen der WP ${WAHLPERIODE} bleiben aufloesbar`,
+      AUSSCHUSS_NAMEN.every((n) => resolveBundestagsausschuss(n).ok === true));
+    check("R3 Gebraeuchliche Kurzformen bleiben aufloesbar (die Verschaerfung ist kein Rundumschlag)",
+      ["Gesundheit", "Kultur und Medien", "Finanzen", "Innenausschuss", "Haushalt"]
+        .every((n) => resolveBundestagsausschuss(n).ok === true));
+    check("R4 Ein PROFIL mit veraltetem Ausschuss ist nicht mehr reif (ordentliche Mitgliedschaft)",
+      VERALTETE_AUSSCHUSSNAMEN.every((v) =>
+        pruefeNeuaktivierung({ ...vollstaendig, committees: [v.name] }).zulaessig === false));
+    check("R5 Dasselbe fuer die STELLVERTRETENDE Mitgliedschaft",
+      VERALTETE_AUSSCHUSSNAMEN.every((v) =>
+        pruefeNeuaktivierung({ ...vollstaendig, deputyCommittees: [v.name] }).zulaessig === false));
+    check("R6 Das Referenzprofil mit gueltigen Ausschuessen bleibt reif (keine Ueberabweisung)",
+      pruefeNeuaktivierung(vollstaendig).zulaessig === true);
+  }
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);
 })().catch((err) => {

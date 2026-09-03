@@ -3504,7 +3504,9 @@ dieselbe, beabsichtigte Semantik.
 
 Nicht behauptet: die Aktivierung ist hier nicht gelaufen — sie ist der Schritt, ab dem Last entsteht.
 
-### §34.7 NEUER BLOCKER — die Bundestagsreife-Sperre weist 18 von 20 Stufe-A-Profilen ab
+### §34.7 Der Blocker — die Bundestagsreife-Sperre wies 18 von 20 Stufe-A-Profilen ab
+
+> **GESCHLOSSEN am 03.09.2026 nach Variante (a) — der Beleg steht in [§34.13](#3413-variante-a-die-kohorte-richtet-sich-nach-der-regel).** Dieser Abschnitt bleibt unverändert als Befundprotokoll stehen; er beschreibt den Zustand VOR der Umsetzung. Nur eine Zahl ist korrigiert (siehe die Tabelle unten): die Aufteilung der Kohorte war hier mit 62/433 falsch angegeben.
 
 **Erstmals am echten Pfad gemessen** (alle bisherigen Suiten prüften den scharfen Pfad mit einer
 Attrappe für `legeAn`): `provisionTenant` verweigert in Schritt 2b („Bundestagsreife",
@@ -3526,7 +3528,9 @@ sie den scharfen Anlagelauf **unvollständig**:
 | Stufe | Landtag (passiert) | Bundestag (abgewiesen) |
 |---|---|---|
 | A (20) | 2 | **18** |
-| Kohorte (495) | 62 | **433** |
+| Kohorte (495) | 61 | **434** |
+
+*(Korrektur 03.09.: hier stand zunächst 62/433. Nachgemessen über `spezifikationen()` sind es **61 Landtags- und 434 Bundestagsprofile**; die Stufenzeile A (2/18) war richtig. Die falsche Zahl war in den PR-Text von #297 und in `CURRENT_STATE.md` übernommen worden und ist dort ebenfalls berichtigt.)*
 
 Gemessen für Stufe A: `angelegt: 2 · fehlgeschlagen: 18 · ok: false`. **Der Zustand danach ist
 sicher**: die Abweisung geschieht **vor** jedem Schreibvorgang (2 Profile, 2 Konten, 2
@@ -3540,9 +3544,11 @@ Funktionstest unter realistischer Last eher erwünscht als unerwünscht);
 (b) die Reife-Sperre für die synthetische Kennungsfamilie anders behandeln — **nicht empfohlen**,
 weil sie eine Schutzregel für reale Profile ist und die Kohorte dann mit Ausschüssen liefe, die
 im Radar nichts belegen;
-(c) nur die 62 Landtagsprofile anlegen — verändert Umfang und Aussage des Tests.
-Diese Entscheidung wurde in diesem Sprint **nicht** getroffen; der Test `A0` pinnt den Zustand als
-dokumentierten Blocker und kippt, sobald Kohorte oder Regel geändert werden.
+(c) nur die 61 Landtagsprofile anlegen — verändert Umfang und Aussage des Tests.
+Diese Entscheidung war beim Schreiben dieses Abschnitts **nicht** getroffen; der Test `A0` pinnte den
+Zustand als dokumentierten Blocker. **Noch am selben Tag** fiel die Entscheidung auf **(a)**; `A0` ist
+damit — wie angekündigt — gekippt und durch einen positiven Beleg des echten Pfades ersetzt worden
+(§34.13).
 
 ### §34.8 Stufenbewusste Isolationsprüfung
 
@@ -3586,22 +3592,26 @@ Bestand bis einschließlich der Stufe (exakt diese Kennungen, keine doppelt); oh
   Speicher enthält vor wie nach jedem Aufruf 0 Kohortenzeilen · Netz-Guard nie ausgelöst. (Die
   erste Fassung hashte das Datenverzeichnis bytegenau; im Gesamtlauf kippte der Hash durch einen
   fremden nebenläufigen Schreiber — deshalb der Schreibspion und die semantische Zählung.)
-- Neu `testkohorte-provisionierung-inaktiv-test.js` **44/0** (§34.6 einschließlich
-  Verstehens-Interessenprüfung, §34.7, §34.8 einschließlich Rückbau).
-- `funktionstest-ablaufplan-test.js` **81/0** (A4/A5/A7a auf den stufenweisen Vertrag
+- Neu `testkohorte-provisionierung-inaktiv-test.js` **44/0**, nach §34.13 **47/0** (§34.6
+  einschließlich Verstehens-Interessenprüfung, §34.8 einschließlich Rückbau; der frühere
+  Blocker-Pin `A0` ist durch den positiven Beleg des echten Pfades **A0.1–A0.4** und die
+  Gegenprobe **A0a.1–A0a.4** ersetzt).
+- `funktionstest-ablaufplan-test.js` **81/0**, nach §34.13 **82/0** (A4/A5/A7a auf den stufenweisen Vertrag
   umgestellt — die alten Zusicherungen pinnten den Sammelschritt; A7a pinnt wieder Gesamtzahl und
   Position; neu A4b, A19–A35).
 - Unverändert grün: `testkohorte-vorwaerts` 65/0 · `testkohorte-stufen` 103/0 ·
   `testkohorte-betrieb` 100/0 · `funktionstest-ablaufkette` 30/0 · `funktionstest-faelligkeit`
   175/0 · `funktionstest-500` 119/0 · `kapazitaetsmodell` 61/0 · `verdraengungsschutz` 38/0 ·
-  `kommunikationsriegel` 45/0 · `mandatsklasse` 36/0 · `profil-bereitschaft` 91/0.
+  `kommunikationsriegel` 45/0 · `mandatsklasse` 36/0 · `profil-bereitschaft` 91/0, nach §34.13
+  **100/0** · `test-kohorte-500` nach §34.13 **54/0**.
 - Offline-Gesamtlauf und Pflichtprüfungen des PR: siehe PR-Text und `CURRENT_STATE.md` §26.
 
 ### §34.11 Was dieser Sprint ausdrücklich NICHT ist
 
-Keine Freigabe, keine Provisionierung, keine Entscheidung zu §34.7. Der 500er-Funktionstest ist
-**weiterhin nicht startbereit**. Die Provisionierung der Stufe A darf erst nach Merge und
-Production-Prüfung dieser Korrektur **und** nach der Entscheidung zu §34.7 empfohlen werden; davor
+Keine Freigabe, keine Provisionierung. (§34.7 ist inzwischen entschieden und umgesetzt — §34.13;
+das ändert an dieser Grenze nichts.) Der 500er-Funktionstest ist **weiterhin nicht startbereit**.
+Die Provisionierung der Stufe A darf erst nach Merge und Production-Prüfung dieser Korrektur
+empfohlen werden; davor
 braucht es eine **aktuelle Grundlinie** und die vorgeschriebene **Sicherung der betroffenen
 Tabellen** (§9.1–9.2). Die Betreiberwerte müssen erst vor der **Aktivierung** der Stufe A gesetzt,
 wirksam und geprüft sein.
@@ -3647,3 +3657,154 @@ Production-fähigen Module berührt; `--ids=` öffnet keinen Weg zu realen Manda
 mit Stufe ist nicht schwächer als ohne; der 495er-Beleg ist unverändert; keine hartkodierten
 Mandanten oder Secrets; Profil-Embeddings sind deterministisch (kein Modellaufruf beim Anlegen);
 beide neuen Suiten laufen im Runner und in der CI; A0 ist ein ehrlicher Charakterisierungs-Pin.
+
+---
+
+### §34.13 Variante (a): die Kohorte richtet sich nach der Regel
+
+Entscheidung zu [§34.7](#347-der-blocker--die-bundestagsreife-sperre-wies-18-von-20-stufe-a-profilen-ab),
+umgesetzt am 03.09.2026 im selben Branch und im selben Pull Request (#297).
+
+**Die Regel bleibt, die Kohorte weicht.** Die Bundestagsreife-Sperre ist eine Schutzregel für reale
+Profile; eine Ausnahme für die synthetische Kennungsfamilie hätte genau die Prüfung ausgeschaltet,
+die der Funktionstest belegen soll. Deshalb wurde **nichts** an der Sperre gelockert, nichts im
+Provisionierer umgangen, kein Production-Sonderfall eingeführt — geändert wurde die
+Kohortenspezifikation.
+
+#### §34.13.1 Was sich in der Kohorte geändert hat
+
+`lib/helmut/test-kohorte-500.js` vergibt die Ausschüsse jetzt **abhängig von der politischen
+Ebene** des Profils:
+
+| Ebene | Anzahl | Ausschüsse | Herkunft |
+|---|---|---|---|
+| Bundestag | **434** | amtliche Bezeichnungen der 21. Wahlperiode | `quellenarchitektur/seeds/bundestag-ausschuesse.js` (`AUSSCHUSS_NAMEN`) |
+| Landtag | **61** | `Testausschuss 1…12` (synthetisch) | Modulkonstante `TESTAUSSCHUESSE` |
+
+Zwei Punkte sind dabei entscheidend:
+
+1. **Eine Ausschusswahrheit, keine zweite Namensliste.** Die Bundestagsnamen werden aus der
+   vorhandenen, extern verankerten Sollmenge **importiert**, nicht abgeschrieben. Eine Kopie wäre
+   eine zweite Wahrheit und liefe bei einer Umbenennung still auseinander. Testgesichert:
+   `test-kohorte-500-test.js` §11.9/§11.10 vergleichen die benutzten Namen bytegleich gegen
+   `STAENDIGE_AUSSCHUESSE`.
+2. **Landtagsprofile bekommen KEINE Bundestagsausschüsse.** Ein Bundestagsausschuss auf
+   Landesebene wäre eine falsche politische Ebene — fachlich falsch, und die Reifeprüfung ist für
+   Landtagsprofile ausdrücklich `zutreffend: false`, hätte den Fehler also nie gemeldet.
+   Testgesichert: §4.5a/§4.5b und §11.0.
+
+Die Zuweisung bleibt **deterministisch** (`index % n` und `(index + 5) % n`; 5 ist zu 24 und zu 12
+teilerfremd, die zwei Ausschüsse eines Profils sind also immer verschieden). **Unverändert
+synthetisch** bleiben: Kennungen `test-kohorte-<a|b|c>-<nnn>`, `.invalid`-Adressen, Mandatsnamen,
+Parteien (`Testpartei N`), Themen (`Testthema N`). Ein Ausschuss ist keine Person und kein
+Personendatum, sondern ein parlamentarischer Zuständigkeitsbereich — das ist der Grund, warum
+gerade dieses Feld echt sein darf, während alles andere synthetisch bleibt.
+
+#### §34.13.2 Dabei gefunden und geschlossen: veraltete Ausschussnamen wurden nicht abgewiesen
+
+Beim Absichern der neuen Zuweisung fiel ein **eigenständiger Mangel** in
+`lib/helmut/profile-readiness.js` auf, der nichts mit der Kohorte zu tun hat:
+
+`resolveBundestagsausschuss()` las die dokumentierte Negativliste `VERALTETE_AUSSCHUSSNAMEN` nur
+im **Fehlerzweig** — also erst, wenn die Tokenauflösung ohnehin schon gescheitert war. Weil die
+Sollmenge stabile Schlüssel führt und mehrere WP-21-Bezeichnungen **Obermengen** ihrer Vorgänger
+sind, lösten **drei von vier** dokumentierten Altbezeichnungen sauber auf und galten als gültig:
+
+| Eingabe (veraltet) | löste auf zu | jetzt |
+|---|---|---|
+| „Ausschuss für Ernährung und Landwirtschaft" (WP 20) | `landwirtschaft-ernaehrung-heimat` | abgewiesen |
+| „Ausschuss für Digitales" (WP 20) | `digitales-staatsmodernisierung` | abgewiesen |
+| „Ausschuss für Inneres und Heimat" (WP 20) | `inneres-heimat` | abgewiesen |
+| „Ausschuss für Verkehr und digitale Infrastruktur" (WP 19) | — (schon vorher abgewiesen) | abgewiesen |
+
+Die Negativliste war also **nur auf den Katalog** angewandt (Selbstschutz der Sollmenge), nie auf
+ein **Profil**. Behoben: die Prüfung auf veraltete Bezeichnungen läuft jetzt **zuerst** und weist
+ab. Das ist eine **Verschärfung**, keine Lockerung — und sie ist kein Rundumschlag: alle 24
+gültigen Bezeichnungen und die gebräuchlichen Kurzformen bleiben auflösbar (`profil-bereitschaft-test.js`
+R1–R6, `test-kohorte-500-test.js` §11.5–§11.8).
+
+#### §34.13.3 Der Beleg am echten Pfad — A0 ist gekippt, wie angekündigt
+
+`testkohorte-provisionierung-inaktiv-test.js` pinnte den Blocker (`A0`). Dieser Pin ist ersetzt
+durch einen **positiven Beleg des echten, unveränderten Provisionierungspfades**:
+
+- **A0.1** — der Lauf benutzt **keine Reife-Attrappe** (Prüfung über den eigenen Quelltext: der
+  Aufruf injiziert kein `readiness`).
+- **A0.2** — Stufe A: **20 angelegt, 0 fehlgeschlagen, `ok: true`**.
+- **A0.3** — **kein** `bundestagsprofil-nicht-bereit` in irgendeinem Ergebnis.
+- **A0.4** — die 18 Bundestags- und 2 Landtagsprofile der Stufe A sind je nach Ebene korrekt
+  behandelt.
+
+Und als Gegenprobe, damit die Sperre nicht bloß „grün" ist, sondern **wirkt**:
+
+- **A0a.1** — ein Profil mit unbekanntem Ausschuss wird weiterhin abgewiesen.
+- **A0a.2** — die Abweisung geschieht **vor jedem Schreibvorgang**: 0 Profile, 0 Konten, 0 Schreibvorgänge.
+- **A0a.3** — jede der vier veralteten Bezeichnungen wird abgewiesen.
+- **A0a.4** — im Provisionierer existiert **kein Sonderpfad** für die synthetische Kennungsfamilie
+  (Prüfung über `provisioning.js`).
+
+Die Reifeprüfung nimmt die **gesamte Kohorte** an: **495/495** bestehen die Prüfung ihrer
+politischen Ebene (434 Bundestagsprofile reif, 61 Landtagsprofile `zutreffend: false` und über
+`validateProfile` getragen); stufenweise **20/20 · 75/75 · 400/400**
+(`test-kohorte-500-test.js` §11.1–§11.4).
+
+#### §34.13.4 Welche Quellenpakete die echten Ausschussnamen ziehen — und was das an Last bedeutet
+
+Ausdrücklich nachgemessen, weil echte Ausschussnamen echte Paketlogik auslösen können.
+
+`resolveProfilePackages()` wertet von allen Ausschüssen **genau einen** aus:
+`normalizeCommittee(a) === "arbeit-und-soziales"`. Alle übrigen 23 Bezeichnungen ändern die
+Paketwahl **nicht**. Ergebnis über die Kohorte:
+
+| | Profile | Sachpakete | Quellen |
+|---|---|---|---|
+| unverändert | 453 | wie vorher | wie vorher |
+| **+1 Paket** (`arbeit-und-soziales`, Status aktiv) | **42** | +1 | je **+84** |
+
+Keine Mehrfachzuweisung: kein Profil erhält mehr als **ein** zusätzliches Paket
+(`test-kohorte-500-test.js` §11.14–§11.16).
+
+Warteschlangenwirkung, kohortenweit gemessen über den echten Planer:
+
+| Auftragsklasse | vorher | nachher |
+|---|---|---|
+| `source_fetch` (kohortenweit dedupliziert) | 54 | **138** (+84, **einmalig**) |
+| `mandate_projection` (je Profil) | 495 | 495 |
+| `briefing_materialization` (je Profil) | 495 | 495 |
+
+Der Zuwachs ist **einmalig und KI-frei** (Crawl-Arbeit, keine Modellaufrufe). Die
+mandatsgebundenen Klassen — die das Kapazitätsmodell in [§30.7](#307-kapazitätstor) tragen
+(1.812 gegen 2.522) — bleiben **unverändert**. Damit ist das Kapazitätstor von dieser Änderung
+nicht berührt. Der Zuwachs fällt in den bereits offenen Punkt „Laufzeit der KI-freien
+Warteschlangenklassen (ungemessen)".
+
+**Einschränkung, ausdrücklich:** gemessen wurde gegen den **Offline-Quellenkatalog**, weil
+`scripts/lokal.js` `HELMUT_SOURCE_MODE=off` erzwingt. Die Zahl 84 ist die Katalogzahl, nicht ein
+Production-Messwert. In Production kann die Paketgröße abweichen; die **Struktur** der Aussage
+(genau ein zusätzliches Paket für genau 42 Profile, mandatsgebundene Klassen unverändert) hängt
+nicht vom Katalog ab.
+
+Ob das erwünscht ist: **ja.** Ein Funktionstest, dessen Profile echte Zuständigkeiten tragen,
+erzeugt realistischere Quellenarbeit als einer mit Phantasieausschüssen — und er tut es hier ohne
+jede Wirkung auf die KI-Last.
+
+#### §34.13.5 Was sich am Ablaufplan geändert hat
+
+Der Schritt `kohortenreife` war eine **offene Betreiberentscheidung** („nie durch einen Lauf
+lieferbar"). Er ist jetzt ein **rein lesender Beleg**: `freigabe: null`, belegbar durch den Lauf
+der beiden genannten Suiten. Er bleibt **Vorbedingung jeder Anlage** — kein Anlegen ohne frischen
+Reifebeleg. Die Vorbedingungskennung heißt entsprechend
+`kohortenspezifikation-reifesperre-belegt` (vorher `…-entschieden`). Der Eintrag
+`blocker.kohortenreife` bleibt im Plan stehen, jetzt mit `offen: false` und Beleg — ein spurlos
+entfernter Blocker wäre die unehrlichere Variante. Gesamtzahl der Schritte unverändert **28**.
+
+#### §34.13.6 Was dieser Teil ausdrücklich NICHT ist
+
+Keine Production-Wirkung: keine Provisionierung, keine Aktivierung, keine Migration, keine
+Umgebungsvariable, keine Cron-, Azure-, Budget- oder Reserveänderung, kein Modellaufruf, keine
+externe Nachricht, kein Merge. In Production existiert **kein** synthetisches Kohortenprofil —
+diese Änderung berührt dort nichts. Sie macht den Funktionstest **auch nicht startbereit**: die
+acht Betreiberwerte, `HELMUT_TESTLAUF_VORRANG_REAL`, eine aktuelle Grundlinie und die
+vorgeschriebene Sicherung der betroffenen Tabellen bleiben getrennte, spätere
+Betriebsvoraussetzungen. Die zuletzt gelesene Production-Warteschlange (207 wartend, 188 fällig)
+ist eine Momentaufnahme; kein Schritt dieses Sprints wirkt darauf schreibend ein.

@@ -97,10 +97,10 @@ async function main() {
   // je Stufe — und die Betreiberwerte sind ausdrücklich KEINE Vorbedingung der
   // inaktiven Anlage (dafür A19–A31 unten).
   const VB = A.VORBEDINGUNGEN;
-  // BASIS = Grundlinie, Sicherung, Fenster UND die Betreiberentscheidung zur
-  // Reifesperre (§34.7) — ohne sie darf keine Stufe angelegt werden.
+  // BASIS = Grundlinie, Sicherung, Fenster UND der rein lesende Reifebeleg zur
+  // Bundestagsreife-Sperre (§34.7) — ohne ihn darf keine Stufe angelegt werden.
   const BASIS = [VB.GRUNDLINIE, VB.SICHERUNG, VB.FENSTER, VB.KOHORTE_ANLEGBAR];
-  check("A4 Die Anlage der Stufe A ist gesperrt, bis Grundlinie, Sicherung, Fenster UND Reifeentscheidung vorliegen",
+  check("A4 Die Anlage der Stufe A ist gesperrt, bis Grundlinie, Sicherung, Fenster UND Reifebeleg vorliegen",
     leer.gesperrt.includes("provisionierung-a")
       && A.ablaufplan({ belegt: [VB.GRUNDLINIE] }).gesperrt.includes("provisionierung-a")
       && A.ablaufplan({ belegt: [VB.GRUNDLINIE, VB.SICHERUNG] }).gesperrt.includes("provisionierung-a")
@@ -111,14 +111,32 @@ async function main() {
       const p = A.ablaufplan({ belegt: BASIS });
       return p.gesperrt.includes("provisionierung-b") && p.gesperrt.includes("provisionierung-c");
     })());
-  check("A4b Der Reifesperren-Blocker ist im Plan eine eigene, nie durch einen Lauf lieferbare Vorbedingung",
+  // GEAENDERT 03.09. (§34.7 Variante A): dieser Test pinnte bis eben den OFFENEN
+  // Blocker („18 von 20 abgewiesen", freigabe.art === "betreiber-entscheidung").
+  // Diese Aussage ist seit der Umsetzung falsch und wird deshalb ersetzt, nicht
+  // still gelockert: der Schritt bleibt Vorbedingung JEDER Anlage, wird aber
+  // jetzt durch einen rein lesenden Lauf belegt statt durch eine Entscheidung.
+  check("A4b Der Reifebeleg ist ein rein lesender Schritt und bleibt Vorbedingung jeder Anlage",
     (() => {
       const s = leer.schritte.find((x) => x.id === "kohortenreife");
-      return s && s.liefert === VB.KOHORTE_ANLEGBAR && s.freigabe && s.freigabe.art === "betreiber-entscheidung"
-        && /18 von 20/.test(s.befehl) && /§34\.7/.test(s.befehl) && /18 abgewiesen/.test(s.zweck)
-        && leer.blocker.kohortenreife.entschieden === false
-        && A.ablaufplan({ belegt: BASIS }).blocker.kohortenreife.entschieden === true
+      return s && s.liefert === VB.KOHORTE_ANLEGBAR
+        && s.art === "rein-lesend" && s.freigabe === null
+        && /20\/20/.test(s.befehl) && /495\/495/.test(s.befehl)
+        && /§34\.7/.test(s.zweck) && /Variante A/.test(s.zweck)
+        // Der Blocker ist geschlossen — aber er bleibt sichtbar dokumentiert.
+        && leer.blocker.kohortenreife.offen === false
+        && /§34\.7/.test(leer.blocker.kohortenreife.beleg)
+        && leer.blocker.kohortenreife.belegt === false
+        && A.ablaufplan({ belegt: BASIS }).blocker.kohortenreife.belegt === true
         && ["a", "b", "c"].every((st) => leer.schritte.find((x) => x.id === `provisionierung-${st}`).vorbedingungen.includes(VB.KOHORTE_ANLEGBAR));
+    })());
+  // Der Beleg darf die Sperre nicht ERSETZEN: die Reifepruefung selbst muss im
+  // echten Provisionierungspfad weiterhin greifen (Nachweis liegt in
+  // testkohorte-provisionierung-inaktiv-test.js A0a) — hier nur die Planaussage.
+  check("A4c Der Plan behauptet keine Lockerung der Reifesperre",
+    (() => {
+      const s = leer.schritte.find((x) => x.id === "kohortenreife");
+      return /verschärft/.test(s.zweck) && !/gelockert(?!\.)/.test(s.zweck.replace("NICHT gelockert", ""));
     })());
   check("A5 Der Stufenvertrag steht auch im Plan: B braucht die Kontrolle nach A — für Anlage, Isolation, Aktivierung, Fachzyklus UND Kontrolle",
     (() => {

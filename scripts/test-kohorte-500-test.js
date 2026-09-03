@@ -10,13 +10,24 @@
 //  6. keine Provisionierung durch das Modul, 7. keine Aktivierung,
 //  8. VOLLSTÄNDIGE Offline-Validierung aller 495 Spezifikationen gegen das
 //     ECHTE provisioning.validateSpec, 9. deterministische Wiederholbarkeit,
-//  10. Größenprüfung des Profilbestands.
+//  10. Größenprüfung des Profilbestands,
+//  11. REIFE JE POLITISCHER EBENE (ergänzt 03.09., §34.7 Variante A): jede der
+//      495 Spezifikationen besteht die für ihre Ebene zuständige Prüfung —
+//      Bundestagsprofile die Bundestagsreife gegen die Sollmenge der
+//      21. Wahlperiode, Landtagsprofile validateProfile. Mit Regressionsschutz
+//      gegen unbekannte und veraltete Ausschussbezeichnungen.
 // KEIN Netz, KEIN Storage, KEINE Anlage. Lauf über scripts/lokal.js (CLAUDE.md §6).
 
 const fs = require("fs");
 const path = require("path");
 const kohorte = require("../lib/helmut/test-kohorte-500");
 const { validateSpec, buildProfile } = require("../lib/helmut/provisioning");
+const reife = require("../lib/helmut/profile-readiness");
+const { validateProfile } = require("../lib/helmut/profile-validation");
+const {
+  AUSSCHUSS_NAMEN, STAENDIGE_AUSSCHUESSE, VERALTETE_AUSSCHUSSNAMEN, WAHLPERIODE
+} = require("../lib/helmut/quellenarchitektur/seeds/bundestag-ausschuesse");
+const { resolveProfilePackages } = require("../lib/helmut/quellenarchitektur/profile-packages");
 
 let pass = 0, fail = 0;
 function check(name, cond, detail) {
@@ -88,10 +99,21 @@ abschnitt("§4 Strikte Trennung und Neutralität");
     specs.every((s) => /^Testmandat [ABC]-\d{3}$/.test(s.name)));
   check("§4.4 alle E-Mails liegen auf der RFC-reservierten, nie zustellbaren .invalid-Domain",
     specs.every((s) => s.email === `${s.id}@test-kohorte.invalid`));
-  check("§4.5 alle Parteien/Ausschüsse/Themen sind synthetisch (Testpartei/Testausschuss/Testthema)",
+  // KORRIGIERT 03.09. (§34.7 Variante A): Die frühere Zusicherung „ALLE Ausschüsse
+  // sind synthetisch" ist seit der Reifekorrektur FALSCH und darf nicht still
+  // falsch stehen bleiben. Parteien und Themen bleiben synthetisch; die
+  // Ausschüsse hängen jetzt an der politischen Ebene — und zwar zwingend, weil
+  // die Bundestagsreife-Sperre echte Bezeichnungen der 21. WP verlangt.
+  check("§4.5 Parteien und Themen sind synthetisch (Testpartei/Testthema)",
     specs.every((s) => /^Testpartei [A-F]$/.test(s.party)
-      && s.committees.every((c) => /^Testausschuss \d+$/.test(c))
       && s.focusTopics.every((t) => /^Testthema \d+$/.test(t))));
+  check("§4.5a LANDTAGSprofile tragen ausschließlich SYNTHETISCHE Ausschüsse (keine Bundestagsbezeichnung auf Landesebene)",
+    specs.filter((s) => s.parliamentType === "Landtag")
+      .every((s) => s.committees.length > 0
+        && s.committees.every((c) => /^Testausschuss \d+$/.test(c) && !AUSSCHUSS_NAMEN.includes(c))));
+  check("§4.5b BUNDESTAGSprofile tragen ausschließlich AMTLICHE Ausschüsse der 21. Wahlperiode",
+    specs.filter((s) => s.parliamentType === "Bundestag")
+      .every((s) => s.committees.length === 2 && s.committees.every((c) => AUSSCHUSS_NAMEN.includes(c))));
   check("§4.6 Kennungen und E-Mails sind dublettfrei (je 495 verschiedene)",
     new Set(specs.map((s) => s.id)).size === 495 && new Set(specs.map((s) => s.email)).size === 495);
   check("§4.7 Landtag-Spezifikationen tragen Bundesland, Bundestag-Spezifikationen Wahlkreis",
@@ -165,6 +187,117 @@ abschnitt("§8 EUR-Profildeckel (adversariale Analyse 02.09., bestätigter Befun
   // durchdrehendes Profil, nicht die bindende Tagesgrenze.
   check("§8.6 der Deckel ist ausdrücklich NICHT die bindende Tagesgrenze",
     specs.length * specs[0].aiBudgetDailyCents > 1000);
+}
+
+abschnitt(`§11 Reife je politischer Ebene (§34.7 Variante A) — Sollmenge WP ${WAHLPERIODE}`);
+{
+  // Der Provisionierer prüft den INHALT (er hebt die beabsichtigte Inaktivität
+  // für die Prüfung auf: `inhaltsprofil`), deshalb hier ebenso.
+  const alsInhalt = (spec) => ({
+    ...buildProfile(kohorte.mitLaufzeitPasswort(spec, { zufall: () => "laufzeit-passwort-nur-im-test" }), { aktiv: false }),
+    profileActive: true
+  });
+  const bundestag = specs.filter((s) => s.parliamentType === "Bundestag");
+  const landtag = specs.filter((s) => s.parliamentType === "Landtag");
+  check("§11.0 die Kohorte ist auf beide Ebenen verteilt (kein leerer Teilbestand)",
+    bundestag.length + landtag.length === 495 && bundestag.length === 434 && landtag.length === 61,
+    `Bundestag ${bundestag.length}, Landtag ${landtag.length}`);
+
+  const btUnreif = bundestag.filter((s) => {
+    const r = reife.pruefeNeuaktivierung(alsInhalt(s));
+    return !(r.zutreffend === true && r.zulaessig === true);
+  });
+  check("§11.1 ALLE Bundestagsprofile bestehen die Bundestagsreife (kein bundestagsprofil-nicht-bereit)",
+    btUnreif.length === 0,
+    btUnreif.length ? `${btUnreif.length} unreif, erste: ${btUnreif[0].id} — ${(reife.pruefeNeuaktivierung(alsInhalt(btUnreif[0])).fehler || [])[0]}` : "");
+
+  const ltFalsch = landtag.filter((s) => {
+    const p = alsInhalt(s);
+    const r = reife.pruefeNeuaktivierung(p);
+    const v = validateProfile(p);
+    // Für Landtagsprofile ist die Bundestagsreife ausdrücklich NICHT zuständig
+    // (keine Vermischung der Ebenen); zuständig bleibt validateProfile.
+    return !(r.zutreffend === false && r.zulaessig === true) || v.state === "fehlerhaft" || v.state === "nicht_bereit";
+  });
+  check("§11.2 ALLE Landtagsprofile: Bundestagsreife nicht zuständig, validateProfile trägt",
+    ltFalsch.length === 0, ltFalsch.length ? `erste: ${ltFalsch[0].id}` : "");
+  check("§11.3 Damit besteht die GESAMTKOHORTE 495/495 die für ihre Ebene zuständige Prüfung",
+    btUnreif.length === 0 && ltFalsch.length === 0);
+
+  // Stufengenau — die Provisionierung läuft stufenweise, also muss der Beleg es auch sein.
+  const stufen = require("../lib/helmut/testkohorte-stufen");
+  const nachId = new Map(specs.map((s) => [s.id, s]));
+  for (const st of stufen.STUFEN) {
+    const ids = stufen.kennungenDerStufe(st);
+    const unreif = ids.filter((id) => {
+      const spec = nachId.get(id);
+      const r = reife.pruefeNeuaktivierung(alsInhalt(spec));
+      return !r.zulaessig;
+    });
+    check(`§11.4-${st.toUpperCase()} Stufe ${st.toUpperCase()}: ${ids.length}/${ids.length} zulässig`,
+      unreif.length === 0 && ids.length === stufen.STUFEN_UMFANG[st],
+      unreif.length ? `${unreif.length} unreif` : "");
+  }
+
+  // ── REGRESSIONSSCHUTZ (Auftragspunkt 15) ────────────────────────────────
+  // Diese Prüfungen müssen ROT werden, sobald ein Bundestagsprofil wieder einen
+  // unbekannten oder veralteten Ausschuss trägt. Sie prüfen die SPERRE selbst
+  // an einer Attrappe — nicht die Kohorte —, damit der Beleg oben nicht bloß
+  // „die Sperre feuert nie" bedeutet.
+  const bundestagsprofil = alsInhalt(bundestag[0]);
+  check("§11.5 REGRESSION: ein UNBEKANNTER Ausschuss macht ein Bundestagsprofil unreif",
+    (() => {
+      const r = reife.pruefeNeuaktivierung({ ...bundestagsprofil, committees: ["Testausschuss 1", AUSSCHUSS_NAMEN[0]] });
+      return r.zutreffend === true && r.zulaessig === false
+        && r.fehler.some((f) => /Testausschuss 1/.test(f) && /Sollmenge|aufloesbar/.test(f));
+    })());
+  check("§11.6 REGRESSION: eine VERALTETE Bezeichnung einer früheren Wahlperiode macht unreif",
+    VERALTETE_AUSSCHUSSNAMEN.every((v) => {
+      const r = reife.pruefeNeuaktivierung({ ...bundestagsprofil, committees: [v.name] });
+      return r.zulaessig === false;
+    }), `geprüft: ${VERALTETE_AUSSCHUSSNAMEN.map((v) => v.name).join(" · ")}`);
+  check("§11.7 REGRESSION: auch ein unbekannter STELLVERTRETENDER Ausschuss macht unreif",
+    reife.pruefeNeuaktivierung({ ...bundestagsprofil, deputyCommittees: ["Testausschuss 7"] }).zulaessig === false);
+  check("§11.8 Jede in der Kohorte verwendete Bundestagsbezeichnung ist einzeln auflösbar",
+    [...new Set(bundestag.flatMap((s) => s.committees))]
+      .every((c) => reife.resolveBundestagsausschuss(c).ok === true));
+
+  // ── EINE Ausschusswahrheit ───────────────────────────────────────────────
+  check("§11.9 Der Generator führt KEINE eigene Namensliste — er lädt die Sollmenge",
+    /require\("\.\/quellenarchitektur\/seeds\/bundestag-ausschuesse"\)/.test(moduleSrc)
+      && !/Ausschuss für /.test(moduleSrc.replace(/\/\/.*$/gm, "")),
+    "eine zweite Namensliste wäre eine zweite Ausschusswahrheit");
+  check("§11.10 Die verwendeten Bezeichnungen sind byte-identisch mit der Sollmenge",
+    kohorte.BUNDESTAGSAUSSCHUESSE === AUSSCHUSS_NAMEN
+      || JSON.stringify(kohorte.BUNDESTAGSAUSSCHUESSE) === JSON.stringify(AUSSCHUSS_NAMEN));
+  check("§11.11 Alle 24 Ausschüsse der Sollmenge werden auch wirklich genutzt (keine tote Teilmenge)",
+    new Set(bundestag.flatMap((s) => s.committees)).size === STAENDIGE_AUSSCHUESSE.length);
+  check("§11.12 Kein Profil trägt denselben Ausschuss doppelt",
+    specs.every((s) => new Set(s.committees).size === s.committees.length));
+  check("§11.13 Determinismus: zwei Aufrufe liefern dieselben Ausschüsse",
+    JSON.stringify(kohorte.baueKohorte().map((s) => s.committees))
+      === JSON.stringify(specs.map((s) => s.committees)));
+
+  // ── PAKETWIRKUNG (Auftragspunkt 12) ─────────────────────────────────────
+  // Die echten Bezeichnungen ziehen Fachpakete. Das ist gewollt (realistische
+  // Last), muss aber BEZIFFERT sein — eine unbemerkte Vervielfachung wäre ein
+  // Lastrisiko für den 500er-Testlauf.
+  const paketZaehler = new Map();
+  for (const spec of specs) {
+    for (const k of resolveProfilePackages(alsInhalt(spec)).optional) {
+      if (k.startsWith("profil-")) continue;   // personenbezogener Platzhalter, kein Paket
+      paketZaehler.set(k, (paketZaehler.get(k) || 0) + 1);
+    }
+  }
+  check("§11.14 Die echten Ausschüsse ziehen GENAU EIN zusätzliches Sachpaket, kein weiteres",
+    paketZaehler.size === 1 && paketZaehler.has("arbeit-und-soziales"),
+    `gezogen: ${[...paketZaehler].map(([k, n]) => `${k}=${n}`).join(", ") || "keines"}`);
+  check("§11.15 Es trifft 42 der 495 Profile — genau die mit dem Ausschuss für Arbeit und Soziales",
+    paketZaehler.get("arbeit-und-soziales") === 42
+      && specs.filter((s) => s.committees.includes("Ausschuss für Arbeit und Soziales")).length === 42);
+  check("§11.16 Jedes Profil bleibt bei höchstens EINEM Sachpaket (keine Mehrfachzuordnung)",
+    specs.every((s) => resolveProfilePackages(alsInhalt(s)).optional
+      .filter((k) => !k.startsWith("profil-")).length <= 1));
 }
 
 console.log(`\nERGEBNIS: ${pass} PASS / ${fail} FAIL`);

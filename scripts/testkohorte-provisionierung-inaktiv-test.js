@@ -12,9 +12,9 @@
 //   1. Der echte Provisionierer (`provisioning.provisionTenant`, neuAktiv:false)
 //      läuft über den echten Vorwärtsausführer für die 20 Kennungen der Stufe A
 //      gegen einen Arbeitsspeicher-Store — mit allen Riegeln erfüllt, also
-//      SCHARF. Dabei werden Netz (fetch/http/https/net/tls/dns), Kindprozesse,
-//      der Kommunikationsriegel und jede Funktion des KI-Moduls mitgezählt.
-//      Erwartung: 0 · 0 · 0 · 0.
+//      SCHARF, und mit UNVERÄNDERTER Reifeprüfung. Dabei werden Netz
+//      (fetch/http/https/net/tls/dns), Kindprozesse, der Kommunikationsriegel und
+//      jede Funktion des KI-Moduls mitgezählt. Erwartung: 0 · 0 · 0 · 0.
 //   2. Jedes angelegte Profil ist `profileActive:false`, jedes Konto gesperrt,
 //      und das Prädikat des Arbeitsplaners (`isDisabled`) hält sie für
 //      deaktiviert.
@@ -24,19 +24,20 @@
 //      die 0 keine Attrappen-0 ist).
 //   4. Die stufenbewusste Isolationsprüfung bestätigt den Zustand rein lesend.
 //
-// BEFUND DIESER SUITE (03.09., erstmals am ECHTEN Pfad gemessen): Die
-// Bundestagsreife-Sperre (`profile-readiness.pruefeNeuaktivierung`, Schritt 2b in
-// `provisionTenant`) weist JEDES Bundestagsprofil der Kohorte ab, weil die
-// Spezifikation bewusst synthetische Ausschüsse („Testausschuss N") trägt, die
-// Sperre aber Ausschüsse der WP-21-Sollmenge verlangt. In Stufe A sind das 18
-// von 20 (die zwei Landtagsprofile passieren). Alle bisherigen Suiten prüften den
-// scharfen Pfad mit einer Attrappe für `legeAn` — der Befund blieb unsichtbar.
-// Abschnitt A0 PINNT diesen Zustand als dokumentierten Blocker (Sicherheitsrahmen
-// §34); wird die Kohorte oder die Regel geändert, kippt A0 und die Doku muss
-// mitziehen. Die Lasteigenschaft (Abschnitte A–E) wird mit einer NUR IM TEST
-// ausgesetzten Reifesperre für alle 20 belegt — die Eigenschaft „inaktiv = keine
-// Last" hängt nicht an der Reifesperre, und die 18 abgewiesenen Profile haben
-// ohnehin keinen einzigen Schreibvorgang ausgelöst.
+// GESCHICHTE DIESER SUITE, ehrlich (nicht rückwirkend umgeschrieben):
+// Am 03.09. wies der ECHTE Pfad hier erstmals gemessen 18 von 20 Profilen der
+// Stufe A mit `bundestagsprofil-nicht-bereit` ab — die Kohorte trug synthetische
+// Ausschüsse („Testausschuss N"), die Bundestagsreife-Sperre verlangt aber
+// Ausschüsse der WP-21-Sollmenge. Alle früheren Suiten prüften den scharfen Pfad
+// mit einer Attrappe für `legeAn`; der Befund blieb dadurch unsichtbar. Abschnitt
+// A0 hielt diesen Zustand zunächst als dokumentierten BLOCKER fest.
+//
+// SEIT §34.7 VARIANTE A ist der Blocker geschlossen: die Kohorte richtet sich nach
+// der Regel (amtliche Ausschüsse für Bundestagsprofile), nicht die Regel nach der
+// Kohorte. A0 ist deshalb jetzt ein POSITIVBELEG des echten, unveränderten Pfads
+// (20 von 20, ohne Attrappe und ohne ausgesetzte Reifeprüfung), A0a die Gegenprobe,
+// dass die Sperre unverändert scharf ist. Die Lasteigenschaft (Abschnitte A–E)
+// wird an demselben, echt angelegten Bestand gemessen.
 //
 // Kein Netz, keine Datenbank, keine Datei, kein Modellaufruf.
 
@@ -85,6 +86,8 @@ for (const name of Object.keys(ki)) {
   if (typeof ki[name] === "function") ki[name] = sperre("ki");
 }
 
+const reife = require("../lib/helmut/profile-readiness");
+const { VERALTETE_AUSSCHUSSNAMEN } = require("../lib/helmut/quellenarchitektur/seeds/bundestag-ausschuesse");
 const V = require("../lib/helmut/testkohorte-vorwaerts");
 const K = require("../lib/helmut/testkohorte-betrieb");
 const S = require("../lib/helmut/testkohorte-stufen");
@@ -149,44 +152,108 @@ async function main() {
     }
   });
 
-  // ── A0 · Der ECHTE Pfad, unverändert: die Bundestagsreife-Sperre greift ───
-  console.log("A0 · BEFUND — der echte Provisionierer weist die Bundestagsprofile der Kohorte ab");
-  const echt = baueSpeicher();
-  const echtErgebnis = await laufStufeA(echt);
-  const abgewiesen = echtErgebnis.ergebnisse.filter((e) => e.zustand !== "angelegt-inaktiv");
-  check("A0.1 BLOCKER (dokumentiert, §34): 18 von 20 werden mit bundestagsprofil-nicht-bereit abgewiesen, nur die 2 Landtagsprofile entstehen",
-    echtErgebnis.modus === V.MODUS_SCHARF && echtErgebnis.angelegt === 2 && echtErgebnis.fehlgeschlagen === 18
-      && echtErgebnis.ok === false
-      && abgewiesen.length === 18
-      && abgewiesen.every((e) => e.schreibfehler === "bundestagsprofil-nicht-bereit"),
-    `angelegt=${echtErgebnis.angelegt} fehlgeschlagen=${echtErgebnis.fehlgeschlagen} `
-      + `gründe=${[...new Set(abgewiesen.map((e) => e.schreibfehler))].join(",")}`);
-  check("A0.2 Die Abweisung geschieht VOR jedem Schreibvorgang: genau 2 Profile, 2 Konten, 2 Schreibvorgänge",
-    echt.profile.size === 2 && echt.nutzer.length === 2 && echt.schreibvorgaenge() === 2);
-  check("A0.3 Der Grund ist die Ausschussregel der WP-21-Sollmenge, nicht ein Netz- oder Speicherfehler",
-    (() => {
-      const spec = require("../lib/helmut/test-kohorte-500").baueKohorte()[0];
-      const reife = require("../lib/helmut/profile-readiness");
-      const profil = provisioning.buildProfile({ ...spec, password: "laufzeit-passwort-nur-im-test-1234" }, { aktiv: false });
-      const r = reife.pruefeNeuaktivierung({ ...profil, profileActive: true });
-      return r.zutreffend === true && r.zulaessig === false
-        && r.fehler.every((f) => /Testausschuss/.test(f) && /Sollmenge/.test(f));
-    })());
-  check("A0.4 Auch der abgewiesene Lauf hat kein Netz, keinen Riegel und kein KI-Modul berührt",
-    zaehler.fetch === 0 && zaehler.http === 0 && zaehler.https === 0 && zaehler.riegel === 0 && zaehler.ki === 0);
-
-  // ── A · Scharfer Lauf der Stufe A mit dem ECHTEN Provisionierer ───────────
-  // Die Reifesperre wird HIER — und nur hier — ausgesetzt. Geprüft wird die
-  // Lasteigenschaft der inaktiven Anlage für alle 20, nicht die Sperre.
-  console.log("\nA · Stufe A (20) scharf gegen den Arbeitsspeicher — echter provisionTenant, Reifesperre im Test ausgesetzt");
+  // ── A0 · POSITIVBELEG: der ECHTE, UNVERÄNDERTE Provisionierungspfad ──────
+  //
+  // Bis 03.09. stand hier ein BLOCKER-Pin: der echte Pfad wies 18 von 20
+  // Bundestagsprofilen mit `bundestagsprofil-nicht-bereit` ab, weil die Kohorte
+  // „Testausschuss N" trug. Der Blocker ist mit §34.7 Variante A geschlossen —
+  // die Kohorte trägt jetzt amtliche Ausschüsse der 21. Wahlperiode. Der Pin ist
+  // deshalb durch diesen POSITIVBELEG ersetzt: KEINE Attrappe für `legeAn`,
+  // KEINE ausgesetzte Reifeprüfung, KEIN Sonderfall für die synthetische
+  // Kennungsfamilie — genau der Pfad, den ein reales Mandat ginge.
+  console.log("A0 · Der echte, unveränderte Pfad legt Stufe A vollständig an");
   const sp = baueSpeicher();
-  const ergebnis = await laufStufeA(sp, {
-    readiness: { pruefeNeuaktivierung: () => ({ zutreffend: false, zulaessig: true, fehler: [] }) }
-  });
-  check("A1 Der Lauf war SCHARF und vollständig: 20 angelegt, 0 fehlgeschlagen, ok",
-    ergebnis.modus === V.MODUS_SCHARF && ergebnis.angelegt === 20 && ergebnis.fehlgeschlagen === 0 && ergebnis.ok === true,
+  const ergebnis = await laufStufeA(sp);
+  const abgewiesen = ergebnis.ergebnisse.filter((e) => e.zustand !== "angelegt-inaktiv");
+  check("A0.1 Die Reifeprüfung ist NICHT ausgesetzt — der Lauf übergibt keine readiness-Attrappe",
+    (() => {
+      const quelle = require("fs").readFileSync(__filename, "utf8");
+      // Die Attrappe darf im scharfen Anlagelauf nicht vorkommen. Erlaubt bleibt
+      // sie ausschließlich als ausdrücklicher Negativfall in Abschnitt A0a.
+      return !/laufStufeA\(\s*sp\s*,\s*\{[\s\S]{0,200}?readiness/.test(quelle);
+    })());
+  check("A0.2 Der echte Provisionierer legt 20 von 20 an: 0 fehlgeschlagen, ok",
+    ergebnis.modus === V.MODUS_SCHARF && ergebnis.angelegt === 20
+      && ergebnis.fehlgeschlagen === 0 && ergebnis.ok === true,
     `modus=${ergebnis.modus} angelegt=${ergebnis.angelegt} fehlgeschlagen=${ergebnis.fehlgeschlagen}`
-      + (ergebnis.fehlgeschlagen ? ` · ${ergebnis.ergebnisse.filter((e) => e.zustand !== "angelegt-inaktiv").slice(0, 2).map((e) => `${e.id}:${e.zustand}:${e.schreibfehler}`).join(" ")}` : ""));
+      + (abgewiesen.length ? ` · ${abgewiesen.slice(0, 2).map((e) => `${e.id}:${e.zustand}:${e.schreibfehler}`).join(" ")}` : ""));
+  check("A0.3 KEINE Abweisung mit bundestagsprofil-nicht-bereit (der Blocker aus §34.7 ist geschlossen)",
+    abgewiesen.length === 0
+      && !ergebnis.ergebnisse.some((e) => e.schreibfehler === "bundestagsprofil-nicht-bereit"));
+  check("A0.4 Die Reife trägt für BEIDE Ebenen: 18 Bundestags- und 2 Landtagsprofile der Stufe A",
+    (() => {
+      const specs = require("../lib/helmut/test-kohorte-500").baueKohorte();
+      const ids = new Set(S.kennungenDerStufe("a"));
+      const stufeA = specs.filter((x) => ids.has(x.id));
+      const bt = stufeA.filter((x) => x.parliamentType === "Bundestag");
+      const lt = stufeA.filter((x) => x.parliamentType === "Landtag");
+      const reifBt = bt.every((x) => {
+        const profil = provisioning.buildProfile({ ...x, password: "laufzeit-passwort-nur-im-test-1234" }, { aktiv: false });
+        const r = reife.pruefeNeuaktivierung({ ...profil, profileActive: true });
+        return r.zutreffend === true && r.zulaessig === true;
+      });
+      const ltNichtZustaendig = lt.every((x) => {
+        const profil = provisioning.buildProfile({ ...x, password: "laufzeit-passwort-nur-im-test-1234" }, { aktiv: false });
+        return reife.pruefeNeuaktivierung({ ...profil, profileActive: true }).zutreffend === false;
+      });
+      return bt.length === 18 && lt.length === 2 && reifBt && ltNichtZustaendig;
+    })());
+
+  // ── A0a · Die Sperre ist NICHT gelockert — Gegenprobe ────────────────────
+  // Der Positivbeleg oben wäre wertlos, wenn die Sperre inzwischen alles
+  // durchließe. Diese Gegenprobe zeigt: sie feuert weiterhin, sobald ein
+  // Bundestagsprofil einen unbekannten oder veralteten Ausschuss trägt — und
+  // sie feuert VOR jedem Schreibvorgang.
+  console.log("\nA0a · Gegenprobe: die Bundestagsreife-Sperre ist unverändert scharf");
+  {
+    const kohorte500 = require("../lib/helmut/test-kohorte-500");
+    const spec = kohorte500.baueKohorte().find((x) => x.parliamentType === "Bundestag");
+    const kaputt = baueSpeicher();
+    const r = await V.fuehreProvisionierungAus({
+      stufe: "a",
+      kennungen: [spec.id],
+      modus: V.MODUS_SCHARF,
+      env: FREIGABE_A,
+      startfensterBefund: FENSTER,
+      jetztUtc: JETZT_DRIN,
+      deps: {
+        // Dasselbe Profil, nur mit einem Ausschuss, den die Sollmenge nicht kennt.
+        legeAn: (sp2) => provisioning.provisionTenant(
+          { ...sp2, committees: ["Testausschuss 1"] },
+          { storage: kaputt.storage, accounts: kaputt.accounts }, { neuAktiv: false }
+        ),
+        leseZustand: async (id) => {
+          const p2 = kaputt.profile.get(id);
+          return { vorhanden: Boolean(p2), aktiv: Boolean(p2 && p2.profileActive === true) };
+        },
+        zufall: () => "laufzeit-passwort-nur-im-test-1234"
+      }
+    });
+    check("A0a.1 Ein unbekannter Ausschuss wird weiterhin abgewiesen (bundestagsprofil-nicht-bereit)",
+      r.ok === false && r.angelegt === 0 && r.fehlgeschlagen === 1
+        && r.ergebnisse[0].schreibfehler === "bundestagsprofil-nicht-bereit",
+      `${r.ergebnisse[0] && r.ergebnisse[0].schreibfehler}`);
+    check("A0a.2 Und zwar VOR jedem Schreibvorgang: 0 Profile, 0 Konten, 0 Schreibvorgänge",
+      kaputt.profile.size === 0 && kaputt.nutzer.length === 0 && kaputt.schreibvorgaenge() === 0);
+    check("A0a.3 Auch eine VERALTETE Bezeichnung einer früheren Wahlperiode wird abgewiesen",
+      VERALTETE_AUSSCHUSSNAMEN.every((v) => {
+        const profil = provisioning.buildProfile({ ...spec, password: "laufzeit-passwort-nur-im-test-1234" }, { aktiv: false });
+        return reife.pruefeNeuaktivierung({ ...profil, profileActive: true, committees: [v.name] }).zulaessig === false;
+      }),
+      `geprüft: ${VERALTETE_AUSSCHUSSNAMEN.length} Bezeichnungen aus WP 19/20`);
+    check("A0a.4 Die synthetische Kennungsfamilie hat KEINEN Sonderweg — dieselbe Sperre wie ein reales Mandat",
+      (() => {
+        const quelle = require("fs").readFileSync(
+          require("path").join(ROOT, "lib/helmut/provisioning.js"), "utf8");
+        // Kein Ausnahmezweig, der die Reife an einer Kennung/Familie vorbeiführt.
+        return !/synthetischErlaubt[^\n]*readiness/i.test(quelle)
+          && !/istSynthetischeKennung[\s\S]{0,200}readiness/i.test(quelle)
+          && !/readiness[\s\S]{0,200}istSynthetischeKennung/i.test(quelle);
+      })());
+  }
+
+  // ── A · Eigenschaften der angelegten Stufe A ─────────────────────────────
+  console.log("\nA · Was der echte Lauf hinterlassen hat");
   check("A2 Genau die 20 Kennungen der Stufe A liegen im Store — keine andere",
     sp.profile.size === 20 && [...sp.profile.keys()].every((id) => S.stufeVonKennung(id) === "a"));
   check("A3 Jedes Profil ist INAKTIV (profileActive === false)",
