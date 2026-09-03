@@ -404,6 +404,50 @@ const vollstaendig = Object.freeze({
         pruefeNeuaktivierung({ ...vollstaendig, deputyCommittees: [v.name] }).zulaessig === false));
     check("R6 Das Referenzprofil mit gueltigen Ausschuessen bleibt reif (keine Ueberabweisung)",
       pruefeNeuaktivierung(vollstaendig).zulaessig === true);
+
+    // R7/R8 ERGAENZT 03.09. nach einem Reviewbefund: die erste Fassung der
+    // Verschaerfung verglich die veraltete Bezeichnung BYTEGENAU. Damit war sie
+    // durch Kleinschreibung, doppelte Leerzeichen, einen Punkt am Ende oder
+    // Bindestriche zu umgehen — der Tokenabgleich darunter normalisiert ja. Der
+    // Abgleich laeuft jetzt ueber dieselbe Faltung; R7 haelt das fest.
+    const veraltetVarianten = [];
+    for (const v of VERALTETE_AUSSCHUSSNAMEN) {
+      veraltetVarianten.push(
+        v.name,
+        v.name.toLowerCase(),
+        v.name.toUpperCase(),
+        v.name.replace(/ü/g, "ue").replace(/ä/g, "ae").replace(/ö/g, "oe"),
+        v.name.replace(/ /g, "  "),
+        `${v.name}.`,
+        `  ${v.name}  `,
+        v.name.replace(/ /g, "\t"),
+        v.name.replace(/ /g, "-")
+      );
+    }
+    const ausschussBeanstandet = (bezeichnung) => (bewerteBundestagsprofil({
+      ...vollstaendig, committees: [bezeichnung]
+    }).ungueltig || []).some((u) => /committee/i.test(String(u.feld || "")));
+    check(`R7 Schreibvarianten einer veralteten Bezeichnung werden ebenfalls abgewiesen (${veraltetVarianten.length} Formen)`,
+      veraltetVarianten.every((b) => ausschussBeanstandet(b)));
+    // Die Kehrseite derselben Normalisierung, bewusst gepinnt: sie darf KEINE
+    // gueltige Kurzform treffen. Besonders `inneres-heimat` — die stabile Kennung
+    // des heutigen "Innenausschuss" traegt genau die Woerter der veralteten
+    // Bezeichnung "Ausschuss fuer Inneres und Heimat". Ein Abgleich ueber eine
+    // Wortmenge statt der Wortfolge wuerde sie faelschlich abweisen.
+    check("R8 Gueltige Namen und Kurzformen bleiben unbeanstandet — auch `Inneres und Heimat` und `inneres-heimat`",
+      [...AUSSCHUSS_NAMEN, "Gesundheit", "Kultur und Medien", "Finanzen", "Innenausschuss",
+        "Haushalt", "Inneres und Heimat", "inneres-heimat", "Digitales"]
+        .every((b) => !ausschussBeanstandet(b)));
+    // R9 haelt eine ASYMMETRIE fest, die aus der Sollmenge folgt und kein
+    // Versehen ist: "Ausschuss fuer Digitales" ist der belegte AMTLICHE Name der
+    // 20. Wahlperiode und wird deshalb abgewiesen, waehrend die blosse Kurzform
+    // "Digitales" auf den heutigen "Ausschuss fuer Digitales und
+    // Staatsmodernisierung" aufloest. Wer die volle fruehere Bezeichnung
+    // hinschreibt, meint erkennbar den alten Zuschnitt — genau davor schuetzt die
+    // Negativkontrolle. Faellt der Name eines Tages aus VERALTETE_AUSSCHUSSNAMEN
+    // heraus, kippt dieser Test und die Entscheidung wird neu getroffen.
+    check("R9 Asymmetrie gepinnt: die volle WP-20-Bezeichnung wird abgewiesen, die Kurzform loest auf",
+      ausschussBeanstandet("Ausschuss für Digitales") && !ausschussBeanstandet("Digitales"));
   }
 
   console.log(`\n${pass} PASS, ${fail} FAIL`);

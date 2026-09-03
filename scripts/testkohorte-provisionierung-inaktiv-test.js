@@ -165,12 +165,19 @@ async function main() {
   const sp = baueSpeicher();
   const ergebnis = await laufStufeA(sp);
   const abgewiesen = ergebnis.ergebnisse.filter((e) => e.zustand !== "angelegt-inaktiv");
+  // A0.1 ist eine QUELLTEXTPRÜFUNG und damit die schwächste Zusicherung dieses
+  // Abschnitts (Reviewbefund 03.09.): sie erkennt eine wörtlich übergebene
+  // Attrappe, nicht eine über eine Variable eingeschleuste. Der eigentliche,
+  // VERHALTENSBASIERTE Beleg, dass die echte Sperre im selben Lauf wirklich
+  // greift, ist A0a.1/A0a.2 — dort wird ein Profil mit unbekanntem Ausschuss
+  // über genau denselben Pfad abgewiesen. Eine Attrappe, die A0.2 grün machte,
+  // müsste A0a rot machen. Beide zusammen tragen die Aussage; A0.1 allein nicht.
   check("A0.1 Die Reifeprüfung ist NICHT ausgesetzt — der Lauf übergibt keine readiness-Attrappe",
     (() => {
       const quelle = require("fs").readFileSync(__filename, "utf8");
-      // Die Attrappe darf im scharfen Anlagelauf nicht vorkommen. Erlaubt bleibt
-      // sie ausschließlich als ausdrücklicher Negativfall in Abschnitt A0a.
-      return !/laufStufeA\(\s*sp\s*,\s*\{[\s\S]{0,200}?readiness/.test(quelle);
+      // Kein `readiness` in irgendeinem Aufruf des scharfen Anlagelaufs. Erlaubt
+      // bleibt es ausschließlich als ausdrücklicher Negativfall in Abschnitt A0a.
+      return !/laufStufeA\([\s\S]{0,300}?readiness/.test(quelle);
     })());
   check("A0.2 Der echte Provisionierer legt 20 von 20 an: 0 fehlgeschlagen, ok",
     ergebnis.modus === V.MODUS_SCHARF && ergebnis.angelegt === 20
@@ -241,14 +248,42 @@ async function main() {
         return reife.pruefeNeuaktivierung({ ...profil, profileActive: true, committees: [v.name] }).zulaessig === false;
       }),
       `geprüft: ${VERALTETE_AUSSCHUSSNAMEN.length} Bezeichnungen aus WP 19/20`);
+    // ERWEITERT 03.09. (Reviewbefund): die erste Fassung las nur provisioning.js.
+    // Ein Sonderpfad könnte aber genauso gut in der Reifeprüfung selbst oder im
+    // Vorwärtsausführer stehen. Geprüft werden deshalb alle drei Dateien — und
+    // zusätzlich, dass in der Reifeprüfung überhaupt keine Kennungsfamilie
+    // vorkommt. Das bleibt eine Quelltextprüfung; der VERHALTENSBELEG steht
+    // daneben: A0a.5 fährt eine synthetische Kennung mit schlechtem Ausschuss
+    // durch denselben Pfad und erwartet dieselbe Abweisung wie ein reales Mandat.
     check("A0a.4 Die synthetische Kennungsfamilie hat KEINEN Sonderweg — dieselbe Sperre wie ein reales Mandat",
       (() => {
-        const quelle = require("fs").readFileSync(
-          require("path").join(ROOT, "lib/helmut/provisioning.js"), "utf8");
-        // Kein Ausnahmezweig, der die Reife an einer Kennung/Familie vorbeiführt.
-        return !/synthetischErlaubt[^\n]*readiness/i.test(quelle)
-          && !/istSynthetischeKennung[\s\S]{0,200}readiness/i.test(quelle)
-          && !/readiness[\s\S]{0,200}istSynthetischeKennung/i.test(quelle);
+        const fs = require("fs"), path = require("path");
+        const dateien = ["lib/helmut/provisioning.js", "lib/helmut/profile-readiness.js",
+          "lib/helmut/testkohorte-vorwaerts.js"];
+        for (const rel of dateien) {
+          const quelle = fs.readFileSync(path.join(ROOT, rel), "utf8");
+          if (/synthetischErlaubt[^\n]*readiness/i.test(quelle)) return false;
+          if (/istSynthetischeKennung[\s\S]{0,200}readiness/i.test(quelle)) return false;
+          if (/readiness[\s\S]{0,200}istSynthetischeKennung/i.test(quelle)) return false;
+        }
+        // In der Reifeprüfung darf die Kennungsfamilie gar nicht vorkommen.
+        const reifeQuelle = fs.readFileSync(path.join(ROOT, "lib/helmut/profile-readiness.js"), "utf8");
+        return !/test-kohorte/i.test(reifeQuelle);
+      })());
+    check("A0a.5 VERHALTENSBELEG: eine synthetische Kennung mit schlechtem Ausschuss wird genauso abgewiesen wie ein reales Mandat",
+      (() => {
+        const roh = require("../lib/helmut/test-kohorte-500").baueSpezifikation(0);
+        const profil = provisioning.buildProfile(
+          { ...roh, password: "laufzeit-passwort-nur-im-test-1234" }, { aktiv: false });
+        const synthetisch = reife.pruefeNeuaktivierung({
+          ...profil, profileActive: true, committees: ["Ausschuss für Digitales"]
+        });
+        const real = reife.pruefeNeuaktivierung({
+          ...profil, id: "erika-mustermann", fullName: "Erika Mustermann",
+          profileActive: true, committees: ["Ausschuss für Digitales"]
+        });
+        return synthetisch.zulaessig === false && real.zulaessig === false
+          && synthetisch.grund === real.grund;
       })());
   }
 

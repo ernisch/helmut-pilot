@@ -3546,7 +3546,8 @@ weil sie eine Schutzregel für reale Profile ist und die Kohorte dann mit Aussch
 im Radar nichts belegen;
 (c) nur die 61 Landtagsprofile anlegen — verändert Umfang und Aussage des Tests.
 Diese Entscheidung war beim Schreiben dieses Abschnitts **nicht** getroffen; der Test `A0` pinnte den
-Zustand als dokumentierten Blocker. **Noch am selben Tag** fiel die Entscheidung auf **(a)**; `A0` ist
+Zustand als dokumentierten Blocker. **Noch am selben Tag** entschied der Betreiber im Sprintauftrag
+auf **(a)** (§34.13); `A0` ist
 damit — wie angekündigt — gekippt und durch einen positiven Beleg des echten Pfades ersetzt worden
 (§34.13).
 
@@ -3665,6 +3666,13 @@ beide neuen Suiten laufen im Runner und in der CI; A0 ist ein ehrlicher Charakte
 Entscheidung zu [§34.7](#347-der-blocker--die-bundestagsreife-sperre-wies-18-von-20-stufe-a-profilen-ab),
 umgesetzt am 03.09.2026 im selben Branch und im selben Pull Request (#297).
 
+**Wer entschieden hat:** der Betreiber, im Sprintauftrag vom 03.09.2026 („Schließe den
+Bundestagsreife-Blocker im Pull Request #297 nach Sicherheitsrahmen §34.7 **Variante A**"). §34.7 hatte
+die Wahl zwischen (a), (b) und (c) ausdrücklich dem Betreiber vorbehalten; sie ist damit getroffen und
+nicht von der Umsetzung selbst hergeleitet. Was danach im Ablaufplan übrig bleibt, ist kein
+Entscheidungstor mehr, sondern ein Beleg — deshalb und nur deshalb ist der Schritt `kohortenreife`
+rein lesend geworden (§34.13.5).
+
 **Die Regel bleibt, die Kohorte weicht.** Die Bundestagsreife-Sperre ist eine Schutzregel für reale
 Profile; eine Ausnahme für die synthetische Kennungsfamilie hätte genau die Prüfung ausgeschaltet,
 die der Funktionstest belegen soll. Deshalb wurde **nichts** an der Sperre gelockert, nichts im
@@ -3721,7 +3729,33 @@ Die Negativliste war also **nur auf den Katalog** angewandt (Selbstschutz der So
 ein **Profil**. Behoben: die Prüfung auf veraltete Bezeichnungen läuft jetzt **zuerst** und weist
 ab. Das ist eine **Verschärfung**, keine Lockerung — und sie ist kein Rundumschlag: alle 24
 gültigen Bezeichnungen und die gebräuchlichen Kurzformen bleiben auflösbar (`profil-bereitschaft-test.js`
-R1–R6, `test-kohorte-500-test.js` §11.5–§11.8).
+R1–R9, `test-kohorte-500-test.js` §11.5–§11.8).
+
+Drei Punkte dazu, ausdrücklich, weil sie im Review aufkamen:
+
+1. **Der Abgleich ist normalisiert, nicht bytegenau.** Die erste Fassung verglich die Zeichenkette
+   exakt und wäre durch Kleinschreibung, doppelte Leerzeichen, einen Punkt am Ende oder Bindestriche
+   zu umgehen gewesen — während der Tokenabgleich darunter normalisiert. Jetzt läuft beides über
+   dieselbe Faltung. **Nicht** über eine Wortmenge: die stabile Kennung `inneres-heimat` (Kurzform
+   des heutigen „Innenausschuss") trägt genau die Wörter der veralteten Bezeichnung und würde dabei
+   fälschlich abgewiesen. Die Wortfolge bleibt deshalb erhalten. 36 Schreibvarianten geprüft, alle
+   abgewiesen; 32 gültige Namen und Kurzformen geprüft, keine abgewiesen (R7/R8).
+2. **Eine gewollte Asymmetrie.** „Ausschuss für Digitales" ist der belegte amtliche Name der 20. WP
+   und wird abgewiesen; die bloße Kurzform „Digitales" löst weiterhin auf den heutigen „Ausschuss
+   für Digitales und Staatsmodernisierung" auf. Wer die volle frühere Bezeichnung hinschreibt, meint
+   erkennbar den alten Zuschnitt — genau davor schützt die Negativkontrolle. Gepinnt in R9: fällt der
+   Name eines Tages aus `VERALTETE_AUSSCHUSSNAMEN` heraus, kippt der Test und die Entscheidung wird
+   neu getroffen.
+3. **Reichweite: eine Anzeige ändert sich, keine Sperre.** Der Resolver hat zwei Einstiege.
+   `pruefeNeuaktivierung` ist die harte Sperre und gilt nur dem **neuen** Aktivierungsübergang.
+   `bewerteBundestagsprofil` ist die rein lesende Bewertung und läuft auch über **bestehende**
+   Profile (Admin-Profilansicht, Speicher-Antwort, Mandatsliste in `server.js`). Ein bestehendes
+   Mandat, dessen Ausschussfeld noch eine Bezeichnung einer früheren Wahlperiode trägt, wird dort ab
+   jetzt als „ungültig" **angezeigt**. Das ist gewollt — es ist der Hinweis, die Angabe auf die
+   laufende Wahlperiode zu ziehen —, aber es deaktiviert nichts, schreibt nichts um und blockiert
+   keinen Verarbeitungsschritt. **Ungeprüft:** ob eines der fünf realen Mandate betroffen ist; ein
+   lesender Production-Abgleich der Ausschussfelder war in dieser Sitzung nicht möglich (siehe
+   §34.13.6).
 
 #### §34.13.3 Der Beleg am echten Pfad — A0 ist gekippt, wie angekündigt
 
@@ -3773,7 +3807,7 @@ Warteschlangenwirkung, kohortenweit gemessen über den echten Planer:
 | `briefing_materialization` (je Profil) | 495 | 495 |
 
 Der Zuwachs ist **einmalig und KI-frei** (Crawl-Arbeit, keine Modellaufrufe). Die
-mandatsgebundenen Klassen — die das Kapazitätsmodell in [§30.7](#307-kapazitätstor) tragen
+mandatsgebundenen Klassen — die das Kapazitätsmodell in [§30.7](#307-fällt-blocker-2-damit-weg) tragen
 (1.812 gegen 2.522) — bleiben **unverändert**. Damit ist das Kapazitätstor von dieser Änderung
 nicht berührt. Der Zuwachs fällt in den bereits offenen Punkt „Laufzeit der KI-freien
 Warteschlangenklassen (ungemessen)".
@@ -3808,3 +3842,10 @@ acht Betreiberwerte, `HELMUT_TESTLAUF_VORRANG_REAL`, eine aktuelle Grundlinie un
 vorgeschriebene Sicherung der betroffenen Tabellen bleiben getrennte, spätere
 Betriebsvoraussetzungen. Die zuletzt gelesene Production-Warteschlange (207 wartend, 188 fällig)
 ist eine Momentaufnahme; kein Schritt dieses Sprints wirkt darauf schreibend ein.
+
+**Eine unbewiesene Aussage, ausdrücklich benannt:** ob eines der fünf realen Mandate in Production
+ein Ausschussfeld mit einer Bezeichnung einer früheren Wahlperiode trägt, ist **nicht geprüft**. Ein
+rein lesender Abgleich gegen Production war in dieser Sitzung nicht möglich. Wirkung im schlimmsten
+Fall: die Admin-Ansicht zeigt für dieses Mandat „ungültig: committees" an (Anzeige, keine Sperre —
+§34.13.2 Punkt 3), und eine **Neuaktivierung** dieses Mandats würde abgewiesen. Vor dem Merge lässt
+sich das mit einer einzigen lesenden Abfrage der Spalte `committees`/`deputy_committees` klären.

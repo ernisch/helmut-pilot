@@ -130,13 +130,22 @@ async function main() {
         && A.ablaufplan({ belegt: BASIS }).blocker.kohortenreife.belegt === true
         && ["a", "b", "c"].every((st) => leer.schritte.find((x) => x.id === `provisionierung-${st}`).vorbedingungen.includes(VB.KOHORTE_ANLEGBAR));
     })());
-  // Der Beleg darf die Sperre nicht ERSETZEN: die Reifepruefung selbst muss im
-  // echten Provisionierungspfad weiterhin greifen (Nachweis liegt in
-  // testkohorte-provisionierung-inaktiv-test.js A0a) — hier nur die Planaussage.
-  check("A4c Der Plan behauptet keine Lockerung der Reifesperre",
+  // A4c prüft nicht die PROSA des Plans (das wäre wertlos), sondern ob die
+  // Aussage des Schrittes noch stimmt: der Beleg darf die Sperre nicht ERSETZEN.
+  // Deshalb wird die Reifeprüfung hier selbst aufgerufen — sie muss die Kohorte
+  // annehmen UND einen schlechten Ausschuss weiterhin abweisen. Kippt eines von
+  // beiden, ist der Schritt eine Lüge und dieser Test rot.
+  check("A4c Die Aussage des Schrittes hält der echten Reifeprüfung stand (annehmen UND abweisen)",
     (() => {
-      const s = leer.schritte.find((x) => x.id === "kohortenreife");
-      return /verschärft/.test(s.zweck) && !/gelockert(?!\.)/.test(s.zweck.replace("NICHT gelockert", ""));
+      const reife = require("../lib/helmut/profile-readiness");
+      const kohorte = require("../lib/helmut/test-kohorte-500");
+      const specs = kohorte.baueKohorte();
+      const bundestag = specs.filter((x) => x.parliamentType !== "Landtag");
+      const alleReif = bundestag.every((x) => reife.pruefeNeuaktivierung({ ...x, profileActive: true }).zulaessig === true);
+      const schlecht = reife.pruefeNeuaktivierung({
+        ...bundestag[0], profileActive: true, committees: ["Testausschuss 1"]
+      });
+      return specs.length === 495 && bundestag.length === 434 && alleReif && schlecht.zulaessig === false;
     })());
   check("A5 Der Stufenvertrag steht auch im Plan: B braucht die Kontrolle nach A — für Anlage, Isolation, Aktivierung, Fachzyklus UND Kontrolle",
     (() => {
