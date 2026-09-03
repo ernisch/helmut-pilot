@@ -1,6 +1,6 @@
 # Archiv — historische Projektstände und Nachweise
 
-**Stand:** 2026-08-24
+**Stand:** 2026-09-03 (zweiter Eintrag des Tages: `2026_09_03b`)
 
 ## Warum dieses Archiv existiert
 
@@ -21,6 +21,8 @@ ausschließlich aktueller Projektstatus neu aufgesetzt.
 | [`project_state/2026_09_01_CURRENT_STATE_full.md`](project_state/2026_09_01_CURRENT_STATE_full.md) | Der vollständige `CURRENT_STATE.md`-Stand vor der **ersten** Verdichtung vom 2026-09-01 (Reife-/Korrektursprint und PR-Bereinigung). **Byte-identisch archiviert** (SHA256 `8eae6083c670f054aa04b69364018cca50612aaa5b323df0de1e7ea71a199d97`). Beim Anlegen am 01.09. nicht in dieser Liste eingetragen — nachgetragen am 01.09. |
 | [`project_state/2026_09_01b_CURRENT_STATE_full.md`](project_state/2026_09_01b_CURRENT_STATE_full.md) | Der vollständige `CURRENT_STATE.md`-Stand vor der **zweiten** Verdichtung vom 2026-09-01 (Sicherheitsrahmen des 500er-Funktionstests). **Byte-identisch archiviert** (SHA256 `83147ee8567d3f551c8ec067a9722edd91f6ccd58f13f876a993b5c2faaf1075`). Enthält u. a. die ungekürzten Sprintabschnitte §14–§22 (24.08.–01.09.). |
 | [`project_state/2026_09_01c_CURRENT_STATE_full.md`](project_state/2026_09_01c_CURRENT_STATE_full.md) | Der vollständige `CURRENT_STATE.md`-Stand vor der **dritten** Verdichtung vom 2026-09-01 (Doku-Abschluss der Z3b-Messläufe zu PR #294). **Byte-identisch archiviert** (SHA256 `78f95e49dec79b45e44cfddce41993a8fe58868f947e9a822aceefc85e0a75af`). Enthält die ungekürzten Abschnitte §14–§23 in der Fassung vor der Aufnahme der Azure-Messwerte. |
+| [`project_state/2026_09_03_CURRENT_STATE_full.md`](project_state/2026_09_03_CURRENT_STATE_full.md) | Der vollständige `CURRENT_STATE.md`-Stand vor der Verdichtung vom 2026-09-03 (Korrektursprint stufenweise Provisionierung, Nach-Merge-Stand zu PR #296). **Byte-identisch archiviert** (SHA256 `c197552f77bb4bf9b2dcee2ca24f24f773195d9907faa1ac69886183e9db386d`). Enthält u. a. den ungekürzten Abschnitt §25 (Nachbereitung nach #295, Draft-Fassung vor dem Merge von #296). |
+| [`project_state/2026_09_03b_CURRENT_STATE_full.md`](project_state/2026_09_03b_CURRENT_STATE_full.md) | Der vollständige `CURRENT_STATE.md`-Stand vor der **zweiten** Verdichtung vom 2026-09-03 (Abschlusskorrektur zu PR #297: Aufnahme des rein lesend bestätigten Production-Ausschussbefunds). **Byte-identisch archiviert** (SHA256 `c66b9fc686a4d554dc239e199a678111871f81b37f35b6f0d94aec172e43f5c9`, 29.975 Zeichen — der Stand lag 25 Zeichen unter der harten Grenze). Enthält u. a. die ungekürzten Abschnitte §23–§26 vor der Verdichtung auf 26.000 Zeichen sowie die ungekürzte Sprintkurzform §14–§22. |
 
 ## Verbindliche Regeln
 

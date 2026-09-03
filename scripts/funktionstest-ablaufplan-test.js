@@ -92,20 +92,80 @@ async function main() {
   // zusätzlich das geprüfte STARTFENSTER — sie ist eine Production-Datenänderung,
   // und der Ausführer verlangt es zur Laufzeit ohnehin. Der Plan sagte das vorher
   // nicht, obwohl es galt.
-  check("A4 Die Provisionierung ist gesperrt, bis Grundlinie, Sicherung UND Fenster vorliegen",
-    leer.gesperrt.includes("provisionierung")
-      && A.ablaufplan({ belegt: [A.VORBEDINGUNGEN.GRUNDLINIE] }).gesperrt.includes("provisionierung")
-      && A.ablaufplan({
-        belegt: [A.VORBEDINGUNGEN.GRUNDLINIE, A.VORBEDINGUNGEN.SICHERUNG]
-      }).gesperrt.includes("provisionierung")
-      && !A.ablaufplan({
-        belegt: [A.VORBEDINGUNGEN.GRUNDLINIE, A.VORBEDINGUNGEN.SICHERUNG, A.VORBEDINGUNGEN.FENSTER]
-      }).gesperrt.includes("provisionierung"));
-  check("A5 Der Stufenvertrag steht auch im Plan: B braucht die Kontrolle nach A",
+  // UMGEBAUT 03.09.: Der Plan kennt keinen Sammelschritt „provisionierung" mehr.
+  // Jede Stufe wird EINZELN angelegt (provisionierung-a/-b/-c). Die Sperre gilt
+  // je Stufe — und die Betreiberwerte sind ausdrücklich KEINE Vorbedingung der
+  // inaktiven Anlage (dafür A19–A31 unten).
+  const VB = A.VORBEDINGUNGEN;
+  // BASIS = Grundlinie, Sicherung, Fenster UND der rein lesende Reifebeleg zur
+  // Bundestagsreife-Sperre (§34.7) — ohne ihn darf keine Stufe angelegt werden.
+  const BASIS = [VB.GRUNDLINIE, VB.SICHERUNG, VB.FENSTER, VB.KOHORTE_ANLEGBAR];
+  check("A4 Die Anlage der Stufe A ist gesperrt, bis Grundlinie, Sicherung, Fenster UND Reifebeleg vorliegen",
+    leer.gesperrt.includes("provisionierung-a")
+      && A.ablaufplan({ belegt: [VB.GRUNDLINIE] }).gesperrt.includes("provisionierung-a")
+      && A.ablaufplan({ belegt: [VB.GRUNDLINIE, VB.SICHERUNG] }).gesperrt.includes("provisionierung-a")
+      && A.ablaufplan({ belegt: [VB.GRUNDLINIE, VB.SICHERUNG, VB.FENSTER] }).gesperrt.includes("provisionierung-a")
+      && !A.ablaufplan({ belegt: BASIS }).gesperrt.includes("provisionierung-a"));
+  check("A4a Die Anlage der Stufen B und C bleibt dabei gesperrt (erst nach kontrollierter Vorstufe)",
     (() => {
-      const p = A.ablaufplan({ belegt: [A.VORBEDINGUNGEN.GRUPPE_A] });
-      return p.gesperrt.includes("aktivierung-b")
-        && !A.ablaufplan({ belegt: [A.VORBEDINGUNGEN.KONTROLLE_A] }).gesperrt.includes("aktivierung-b");
+      const p = A.ablaufplan({ belegt: BASIS });
+      return p.gesperrt.includes("provisionierung-b") && p.gesperrt.includes("provisionierung-c");
+    })());
+  // GEAENDERT 03.09. (§34.7 Variante A): dieser Test pinnte bis eben den OFFENEN
+  // Blocker („18 von 20 abgewiesen", freigabe.art === "betreiber-entscheidung").
+  // Diese Aussage ist seit der Umsetzung falsch und wird deshalb ersetzt, nicht
+  // still gelockert: der Schritt bleibt Vorbedingung JEDER Anlage, wird aber
+  // jetzt durch einen rein lesenden Lauf belegt statt durch eine Entscheidung.
+  check("A4b Der Reifebeleg ist ein rein lesender Schritt und bleibt Vorbedingung jeder Anlage",
+    (() => {
+      const s = leer.schritte.find((x) => x.id === "kohortenreife");
+      return s && s.liefert === VB.KOHORTE_ANLEGBAR
+        && s.art === "rein-lesend" && s.freigabe === null
+        && /20\/20/.test(s.befehl) && /495\/495/.test(s.befehl)
+        && /§34\.7/.test(s.zweck) && /Variante A/.test(s.zweck)
+        // Der Blocker ist geschlossen — aber er bleibt sichtbar dokumentiert.
+        // `offen` ist ein festgeschriebener Wert; dass er STIMMT, prueft nicht
+        // diese Zeile, sondern A4c (echte Reifepruefung ueber die echte Kohorte).
+        && leer.blocker.kohortenreife.offen === false
+        && /§34\.7/.test(leer.blocker.kohortenreife.beleg)
+        && leer.blocker.kohortenreife.belegt === false
+        && A.ablaufplan({ belegt: BASIS }).blocker.kohortenreife.belegt === true
+        && ["a", "b", "c"].every((st) => leer.schritte.find((x) => x.id === `provisionierung-${st}`).vorbedingungen.includes(VB.KOHORTE_ANLEGBAR));
+    })());
+  // A4c prüft nicht die PROSA des Plans (das wäre wertlos), sondern ob die
+  // Aussage des Schrittes noch stimmt: der Beleg darf die Sperre nicht ERSETZEN.
+  // Deshalb wird die Reifeprüfung hier selbst aufgerufen — sie muss die Kohorte
+  // annehmen UND einen schlechten Ausschuss weiterhin abweisen. Kippt eines von
+  // beiden, ist der Schritt eine Lüge und dieser Test rot.
+  check("A4c Die Aussage des Schrittes hält der echten Reifeprüfung stand (annehmen UND abweisen)",
+    (() => {
+      const reife = require("../lib/helmut/profile-readiness");
+      const kohorte = require("../lib/helmut/test-kohorte-500");
+      const specs = kohorte.baueKohorte();
+      const bundestag = specs.filter((x) => x.parliamentType !== "Landtag");
+      const alleReif = bundestag.every((x) => reife.pruefeNeuaktivierung({ ...x, profileActive: true }).zulaessig === true);
+      const schlecht = reife.pruefeNeuaktivierung({
+        ...bundestag[0], profileActive: true, committees: ["Testausschuss 1"]
+      });
+      return specs.length === 495 && bundestag.length === 434 && alleReif && schlecht.zulaessig === false;
+    })());
+  check("A5 Der Stufenvertrag steht auch im Plan: B braucht die Kontrolle nach A — für Anlage, Isolation, Aktivierung, Fachzyklus UND Kontrolle",
+    (() => {
+      const nurAktivA = A.ablaufplan({ belegt: [...BASIS, VB.GRUPPE_A] });
+      const nachKontrolleA = A.ablaufplan({ belegt: [...BASIS, VB.KONTROLLE_A] });
+      return nurAktivA.gesperrt.includes("provisionierung-b")
+        && nurAktivA.gesperrt.includes("aktivierung-b")
+        && !nachKontrolleA.gesperrt.includes("provisionierung-b")
+        // Die Aktivierung der Stufe B braucht zusätzlich Isolation B, Werte, Prüfung, Riegel.
+        && nachKontrolleA.gesperrt.includes("aktivierung-b")
+        && !A.ablaufplan({
+          belegt: [...BASIS, VB.KONTROLLE_A, VB.ISOLATION_B, VB.WERTE, VB.WERTE_GEPRUEFT, VB.RIEGEL]
+        }).gesperrt.includes("aktivierung-b")
+        // Reviewbefund 03.09.: auch Isolation, Fachzyklus und Kontrolle der Stufe B
+        // hängen an der kontrollierten Vorstufe — nicht nur Anlage und Aktivierung.
+        && A.ablaufplan({ belegt: [VB.STUFE_B_ANGELEGT] }).gesperrt.includes("isolation-b")
+        && A.ablaufplan({ belegt: [VB.GRUPPE_B] }).gesperrt.includes("fachzyklus-b")
+        && A.ablaufplan({ belegt: [VB.ZYKLUS_B] }).gesperrt.includes("kontrolle-b");
     })());
   check("A6 Der RÜCKWEG ist in JEDEM Zustand erlaubt",
     ["deaktivierung", "rueckbau"].every((id) => {
@@ -123,11 +183,18 @@ async function main() {
   check("A7a Die Nacharbeit an der Scheduler-Spur ist ein eigener, gesperrter Schritt",
     (() => {
       const spur = A.ablaufplan({ belegt: [] }).schritte.find((x) => x.id === "scheduler-spur");
-      return Boolean(spur)
-        && spur.nr === 18
+      const plan = A.ablaufplan({ belegt: [] });
+      const rueckbau = plan.schritte.find((x) => x.id === "rueckbau");
+      // Gesamtzahl und exakte Position wieder gepinnt (Reviewbefund 03.09.: eine
+      // relative Ordnung allein liesse einen versehentlich eingefuegten Schritt durch).
+      return Boolean(spur) && Boolean(rueckbau)
+        && plan.schritte.length === 28
+        && spur.nr === 26
+        && spur.nr > rueckbau.nr
         && spur.immerErlaubt === false
         && spur.darfBeginnen === false
-        && spur.vorbedingungen.includes("rueckbau")
+        && spur.vorbedingungen.includes(A.VORBEDINGUNGEN.RUECKBAU)
+        && rueckbau.liefert === A.VORBEDINGUNGEN.RUECKBAU
         && spur.freigabe && spur.freigabe.wort === "TESTKOHORTE_495_SCHEDULERSPUR_ENTFERNEN_BESTAETIGT";
     })());
   check("A7b Der Rückweg bleibt davon unberührt sofort erlaubt",
@@ -144,6 +211,138 @@ async function main() {
     })());
   check("A9 Kein realer Mandats-Slug im Ablaufplan",
     !/m5-[0-9a-f]{8}/.test(fs.readFileSync(path.join(ROOT, "lib/helmut/funktionstest-ablaufplan.js"), "utf8")));
+
+  // ── A19–A31 · STUFENWEISE PROVISIONIERUNG (Umbau 03.09.) ─────────────────
+  // BEFUND: Der Plan beschrieb „495 Profile INAKTIV provisionieren" als EINEN
+  // Schritt, obwohl die Bibliothek stufengenau anlegen konnte und das CLI die
+  // Stufe gar nicht durchreichte. Der maschinenlesbare Plan darf nicht länger
+  // behaupten, der nächste Provisionierungsschritt lege alle 495 gemeinsam an.
+  console.log("\nA19–A31 · Der Plan ist stufenweise, nicht gesamt");
+  const S = require("../lib/helmut/testkohorte-stufen");
+  const schrittNr = (plan, id) => { const s = plan.schritte.find((x) => x.id === id); return s ? s.nr : null; };
+  check("A19 Es gibt KEINEN Sammelschritt, der alle 495 gemeinsam anlegt",
+    !leer.schritte.some((s) => s.id === "provisionierung")
+      && leer.stufenweise === true
+      && JSON.stringify(leer.provisionierungsSchritte) === JSON.stringify(["provisionierung-a", "provisionierung-b", "provisionierung-c"])
+      && !leer.schritte.some((s) => s.art === A.ART_PRODUCTION && /\b495 Profile\b/.test(s.titel))
+      && /Kein Schritt dieses Plans legt alle 495/.test(leer.keinSammelschritt));
+  check("A20 Jede Anlage zielt auf ihre Stufe: 20 / 75 / 400 mit dem stufengenauen Wort",
+    ["a", "b", "c"].every((st) => {
+      const s = leer.schritte.find((x) => x.id === `provisionierung-${st}`);
+      return s && s.stufe === st
+        && new RegExp(`\\b${S.STUFEN_UMFANG[st]} Profile\\b`).test(s.titel)
+        && s.freigabe.wort === S.STUFEN_FREIGABEWORTE[st].provisionierung
+        && s.freigabe.wort !== "TESTKOHORTE_495_ANLEGEN_BESTAETIGT"
+        && s.befehl.includes(`--stufe=${st}`);
+    }));
+  check("A21 Die inaktive Anlage braucht die Betreiberwerte NICHT (keine Vorbedingung)",
+    (() => {
+      const p = A.ablaufplan({ belegt: BASIS });
+      const anlage = p.schritte.find((x) => x.id === "provisionierung-a");
+      return anlage.darfBeginnen === true
+        && !anlage.vorbedingungen.includes(VB.WERTE)
+        && !anlage.vorbedingungen.includes(VB.WERTE_GEPRUEFT)
+        && !anlage.vorbedingungen.includes(VB.RIEGEL)
+        && p.betreiberwerte.keineVorbedingungVon.includes("provisionierung-a")
+        && p.betreiberwerte.keineVorbedingungVon.includes("isolation-a");
+    })());
+  check("A22 Die Aktivierung der Stufe A verlangt gesetzte UND wirksam geprüfte Betreiberwerte",
+    (() => {
+      const basis = [VB.ISOLATION_A, VB.RIEGEL, VB.FENSTER];
+      const ohneWerte = A.ablaufplan({ belegt: basis });
+      const nurGesetzt = A.ablaufplan({ belegt: [...basis, VB.WERTE] });
+      const gesetztUndGeprueft = A.ablaufplan({ belegt: [...basis, VB.WERTE, VB.WERTE_GEPRUEFT] });
+      return ohneWerte.gesperrt.includes("aktivierung-a")
+        && nurGesetzt.gesperrt.includes("aktivierung-a")
+        && !gesetztUndGeprueft.gesperrt.includes("aktivierung-a")
+        && JSON.stringify(leer.betreiberwerte.vorbedingungVon) === JSON.stringify(["aktivierung-a", "aktivierung-b", "aktivierung-c"]);
+    })());
+  check("A23 Die Isolationsprüfung der Stufe A ist rein lesend, stufenbewusst und braucht die angelegte Stufe",
+    (() => {
+      const s = leer.schritte.find((x) => x.id === "isolation-a");
+      return s && s.art === A.ART_LESEND && s.freigabe === null
+        && s.befehl.includes("isolation --stufe=a")
+        && JSON.stringify(s.vorbedingungen) === JSON.stringify([VB.STUFE_A_ANGELEGT])
+        && s.liefert === VB.ISOLATION_A
+        && /INAKTIV/.test(s.zweck);
+    })());
+  check("A24 Die Reihenfolge: Anlage A → Isolation A → Werte → Prüfung → Aktivierung A → Zyklus A → Kontrolle A → Anlage B … → Anlage C",
+    (() => {
+      const folge = ["kohortenreife", "provisionierung-a", "isolation-a", "betreiberwerte", "riegel", "werte-pruefung",
+        "aktivierung-a", "fachzyklus-a", "kontrolle-a", "provisionierung-b", "isolation-b", "aktivierung-b",
+        "fachzyklus-b", "kontrolle-b", "provisionierung-c", "isolation-c", "aktivierung-c", "fachzyklus-c",
+        "kontrolle-c", "auswertung"];
+      const nrs = folge.map((id) => schrittNr(leer, id));
+      return nrs.every((n) => Number.isInteger(n)) && nrs.every((n, i) => i === 0 || n > nrs[i - 1]);
+    })());
+  check("A25 Der Fachzyklus ist je Stufe getrennt und trägt das stufengenaue Wort — kein pauschaler Fachzyklus mehr",
+    !leer.schritte.some((s) => s.id === "fachzyklus")
+      && ["a", "b", "c"].every((st) => {
+        const s = leer.schritte.find((x) => x.id === `fachzyklus-${st}`);
+        return s && s.art === A.ART_PRODUCTION
+          && s.freigabe.wort === S.STUFEN_FREIGABEWORTE[st].fachzyklus
+          && s.befehl.includes(`--stufe=${st}`)
+          && s.vorbedingungen.includes(VB[`GRUPPE_${st.toUpperCase()}`])
+          && s.vorbedingungen.includes(VB.WERTE_GEPRUEFT)
+          && s.vorbedingungen.includes(VB.RIEGEL)
+          && s.vorbedingungen.includes(VB.FENSTER);
+      }));
+  check("A26 Der nächste Schritt wandert stufenweise durch den Plan",
+    A.ablaufplan({ belegt: [VB.GRUNDLINIE] }).naechsterSchritt === "sicherung"
+      && A.ablaufplan({ belegt: [VB.GRUNDLINIE, VB.SICHERUNG] }).naechsterSchritt === "startfenster"
+      && A.ablaufplan({ belegt: [VB.GRUNDLINIE, VB.SICHERUNG, VB.FENSTER] }).naechsterSchritt === "kohortenreife"
+      && A.ablaufplan({ belegt: BASIS }).naechsterSchritt === "provisionierung-a"
+      && A.ablaufplan({ belegt: [...BASIS, VB.STUFE_A_ANGELEGT] }).naechsterSchritt === "isolation-a"
+      && A.ablaufplan({ belegt: [...BASIS, VB.STUFE_A_ANGELEGT, VB.ISOLATION_A] }).naechsterSchritt === "betreiberwerte");
+  check("A27 Jeder Provisionierungsschritt hat einen stufengenauen Ausführer; ein Sammelausführer existiert nicht",
+    ["a", "b", "c"].every((st) => String(leer.ausfuehrer[`provisionierung-${st}`]).includes(`--stufe=${st}`))
+      && !("provisionierung" in leer.ausfuehrer)
+      && !("fachzyklus" in leer.ausfuehrer));
+  check("A28 Der Plan sagt ausdrücklich, WANN die Betreiberwerte gebraucht werden",
+    /NICHT vor der rein inaktiven Provisionierung/.test(leer.betreiberwerte.hinweis)
+      && /bevor auch nur das erste synthetische Profil aktiviert wird/.test(leer.betreiberwerte.hinweis)
+      && A.vorbereitung().zeitpunkt.noetigVor === "aktivierung-a"
+      && A.vorbereitung().zeitpunkt.nichtNoetigVor === "provisionierung-a");
+  check("A29 Die acht Betreiberwerte umfassen Deckel, Verstehens-Reserve, Vorrangreserve und Kommunikationsriegel",
+    leer.betreiberwerte.werte.length === 8
+      && ["HELMUT_MAX_LLM_CALLS_PER_DAY", "HELMUT_LLM_RESERVE_UNDERSTANDING",
+        "HELMUT_TESTLAUF_VORRANG_REAL", "HELMUT_TESTLAUF_KOMMUNIKATION"]
+        .every((n) => leer.betreiberwerte.werte.includes(n)));
+  check("A30 Der Aktivierungsbefehl nennt kein handgetipptes --vorstufen-vollstaendig mehr (Plan = CLI)",
+    leer.schritte.filter((s) => s.id.startsWith("aktivierung-"))
+      .every((s) => !/vorstufen-vollstaendig/.test(s.befehl) && /--grundlinie=/.test(s.befehl) && /--bestand=/.test(s.befehl)));
+  check("A31 Die Wirksamkeitsprüfung der Werte ist ein eigener, rein lesender Schritt vor der Aktivierung",
+    (() => {
+      const s = leer.schritte.find((x) => x.id === "werte-pruefung");
+      return s && s.art === A.ART_LESEND && s.liefert === VB.WERTE_GEPRUEFT
+        && s.vorbedingungen.includes(VB.WERTE) && s.vorbedingungen.includes(VB.RIEGEL)
+        && /BETREIBERANGABE/.test(s.zweck) && /Vorrangreserve 0/.test(s.zweck)
+        && /LOKALEN Umgebung/.test(s.befehl)
+        && schrittNr(leer, "werte-pruefung") < schrittNr(leer, "aktivierung-a");
+    })());
+  check("A32 Jede Vorbedingung des Plans wird von genau einem Schritt geliefert (nichts muss von Hand behauptet werden)",
+    leer.nichtGelieferteVorbedingungen.length === 0
+      && leer.schritte.filter((s) => s.liefert).every((s) => leer.schritte.filter((x) => x.liefert === s.liefert).length === 1),
+    JSON.stringify(leer.nichtGelieferteVorbedingungen));
+  check("A33 Der Sicherungsbefehl läuft NICHT über scripts/lokal.js (der Starter entfernt die Kennungen, der Export bräche ab)",
+    (() => {
+      const s = leer.schritte.find((x) => x.id === "sicherung");
+      return s && !/lokal\.js/.test(s.befehl) && /backup-export\.js --scope=profil/.test(s.befehl) && /vollstaendig === true/.test(s.befehl);
+    })());
+  check("A34 Der Fachzyklus-Befehl der Stufen B und C reicht die bestandenen Vorstufen durch — A braucht keine",
+    (() => {
+      const a = leer.schritte.find((x) => x.id === "fachzyklus-a");
+      const b = leer.schritte.find((x) => x.id === "fachzyklus-b");
+      const c = leer.schritte.find((x) => x.id === "fachzyklus-c");
+      return !/bestandene-stufen/.test(a.befehl)
+        && b.befehl.includes(`--bestandene-stufen='["a"]'`)
+        && c.befehl.includes(`--bestandene-stufen='["a","b"]'`);
+    })());
+  check("A35 Der Rückbau-Beleg ist stufenbewusst benannt (nach Stufe A liegen 20 Zeilen vor, nicht 495)",
+    (() => {
+      const s = leer.schritte.find((x) => x.id === "rueckbau");
+      return s && /--stufe=/.test(s.befehl) && /20 Zeilen/.test(s.zweck) && s.immerErlaubt === true;
+    })());
 
   // Die vorbereiteten Werte — dokumentiert, nicht gesetzt.
   const vorbereitung = A.vorbereitung();

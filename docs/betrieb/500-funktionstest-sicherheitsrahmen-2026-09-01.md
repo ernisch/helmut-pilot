@@ -3345,3 +3345,731 @@ Eingaben: **0**.
   CLI-Exitcode.
 - **Kein Netzaufruf, keine Datenbankverbindung, kein Schreibvorgang, kein Modellaufruf** im
   neuen Pfad.
+
+---
+
+## §34 · Korrektursprint 03.09. — der Betreiberweg reichte die Stufe nicht durch
+
+**Branch `claude/stufenweise-provisionierung-fix-rg6sij`, PR #297, Basis `main` = `a839c1b19f55246bfe747efbfcfa2269f5e28842`
+(Merge von #296). Rein vorbereitender Sprint, KEINE Production-Wirkung:** keine Provisionierung,
+keine Aktivierung, keine Umgebungsvariable, keine Migration, kein Cron, keine Azure-Einstellung,
+kein Budget, keine Reserve, kein Modellaufruf, keine externe Nachricht, keine kostenpflichtige
+Ressource. Kein Supabase-Zugriff, kein Vercel-Zugriff aus dieser Sitzung.
+
+### §34.1 Nach-Merge-Beleg zu #296
+
+| Tatsache | Beleg |
+|---|---|
+| PR #296 **gemergt** 03.09. 05:08:15 UTC (geschlossen, kein Draft, `merged: true`) | GitHub, rein lesend |
+| Kopf des PR `ba0963300fbd2387e6fede6f3b642d379250dfe9`, Basis `9079ac3` | GitHub |
+| **`main`-Kopf `a839c1b19f55246bfe747efbfcfa2269f5e28842`** | `git rev-parse origin/main` |
+| Beide Pflichtprüfungen auf `a839c1b` grün (Syntax + Offline-Suiten · Browser-/Mobile-Smoke) | CI-Lauf **33717626724** auf `main`, `conclusion: success` (rein lesend bestätigt 03.09.) |
+| Vercel: „Deployment has completed" exakt für diesen Commit | <https://vercel.com/nohut/helmut-pilot/CCbSsp58pxGNMqjuGQziVZYknaHd> |
+| Interne Vercel-Deployment-Details / `dpl_`-Kennung | **nicht zusätzlich bestätigt** (Zugriff fehlte) |
+| Keine offenen Pull Requests vor Beginn dieses Sprints | GitHub, rein lesend |
+| Betreiberwerte, Production-Daten, Profile, Migrationen, Crons, Azure, Budgets | durch den Merge **unverändert** |
+
+### §34.2 Der Befund — reproduziert als isolierter Trockenlauf
+
+Am Kopf `a839c1b`, ausschließlich über `scripts/lokal.js`:
+
+```
+node scripts/lokal.js -- node scripts/testkohorte-vorwaerts.js provisionierung --stufe=a
+  "zielGroesse": 495
+  "erwartetesWort": "TESTKOHORTE_495_ANLEGEN_BESTAETIGT"
+  Exit 0 · nichts geschrieben
+```
+
+**Ursache:** Das CLI las `--stufe` nirgends und übergab `fuehreProvisionierungAus` keine `stufe`.
+Die Bibliothek konnte seit 02.09. (§23.3, Lücke 1) stufengenau anlegen — der einzige vorgesehene
+Betreiberweg nutzte das nicht. Wer „nur die 20 der Stufe A" wollte, hätte mit dem Pauschalwort
+**alle 495** angelegt. Die Angabe wurde **still ignoriert**; genau diese Klasse Fehler
+(Angabe wird nicht abgewiesen, sondern übergangen) ist der Kern.
+
+### §34.3 Die Korrektur am Betreiberweg (`scripts/testkohorte-vorwaerts.js`)
+
+- `--stufe=a|b|c` ist für die Provisionierung **Pflicht**. Fehlend, leer oder unbekannt →
+  **Exit 2** mit Meldung, **bevor** Fenster, Banner oder Bibliothek angesprochen werden. **Kein
+  Rückfall auf die vollständige Kohorte.** Auch mit gesetztem Pauschalwort, `--scharf` und gültigem
+  Fenster passiert ohne Stufe nichts (gemessen).
+- **Unbekannte Angaben brechen ab** (`--stuffe=a`, `--gruppe=` bei der Provisionierung, das
+  abgeschaffte `--vorstufen-vollstaendig`) — nie mehr still ignorieren.
+- `--ids=` erlaubt eine Teilmenge **derselben** Stufe (Ergänzung eines abgebrochenen Laufs); eine
+  Kennung einer anderen Stufe, eine fremde oder erfundene Kennung und ein Duplikat brechen über
+  `pruefeStufenZielmenge` ab (**Exit 1**, `falsche-stufe` / `fremde-kennung` / `doppelte-kennung`).
+- Die Aktivierung nimmt `--stufe` als Alias von `--gruppe`; ein Widerspruch bricht ab.
+- **Nach dem Review (§34.12) zusätzlich:** eine **mehrfach gesetzte** Angabe (`--stufe=c --stufe=a`)
+  bricht ab — „die erste gewinnt" wäre dieselbe stille Verschiebung; `--jetzt=` (Prüfuhr) wird
+  **im scharfen Lauf abgewiesen** — der dritte Riegel („Fenster gilt JETZT") misst an der
+  Systemuhr und ist nicht setzbar; `--start`/`--dauer`/`--jetzt` werden auf Format geprüft, ein
+  halbes Fensterpaar ist ein Aufruffehler (Exit 2), kein stiller Trockenlauf; eine `--ids=`-Liste
+  wird **vor dem Banner** gegen die Stufe gerechnet, damit kein Protokolleintrag etwas verspricht,
+  was der Lauf danach abbricht.
+- Das Banner des scharfen Laufs nennt die Stufe, nicht die 495.
+- **Die Bibliothek ist unverändert**: ohne `stufe` weiterhin 495 + Pauschalwort
+  (Regressionsvertrag `testkohorte-stufen-test.js` L1). Nur der Betreiberweg ist geschlossen.
+
+Ergebnis nach der Korrektur (Trockenläufe über `scripts/lokal.js`):
+
+| Aufruf | zielGroesse | erwartetesWort | Exit |
+|---|---|---|---|
+| `provisionierung --stufe=a` | **20** | `TESTKOHORTE_STUFE_A_PROVISIONIERUNG_BESTAETIGT` | 0 |
+| `provisionierung --stufe=b` | **75** | `TESTKOHORTE_STUFE_B_PROVISIONIERUNG_BESTAETIGT` | 0 |
+| `provisionierung --stufe=c` | **400** | `TESTKOHORTE_STUFE_C_PROVISIONIERUNG_BESTAETIGT` | 0 |
+| `provisionierung` (ohne Stufe) / `--stufe=` / `--stufe=z` | — | — | **2** |
+| `provisionierung --stufe=a --ids=test-kohorte-c-001` | — | — | **1** (`falsche-stufe`) |
+
+### §34.4 Der Ablaufplan ist jetzt stufenweise (`lib/helmut/funktionstest-ablaufplan.js`)
+
+Der maschinenlesbare Plan behauptete bis zu diesem Sprint einen Schritt „495 Profile INAKTIV
+provisionieren". Er kennt jetzt **28 Schritte** und **keinen Sammelschritt**
+(`keinSammelschritt`, `stufenweise: true`, `provisionierungsSchritte = [provisionierung-a, -b, -c]`):
+
+| Nr | Schritt | Art | Vorbedingungen |
+|---|---|---|---|
+| 1–3 | Grundlinie · Sicherung (`backup-export.js --scope=profil`, **ohne** `lokal.js`) · Startfenster | lesend | — |
+| 4 | **Betreiberentscheidung zur Kohortenspezifikation** (Bundestagsreife-Sperre, §34.7) | Entscheidung | — |
+| 5 | **Stufe A: 20 Profile INAKTIV provisionieren** | Production, Stufenwort | Grundlinie, Sicherung, Fenster, **Reifeentscheidung** |
+| 6 | **Stufe A: Isolation und Inaktivität rein lesend belegen** (`isolation --stufe=a`) | lesend | Stufe A angelegt |
+| 7 | **Die acht Betreiberwerte setzen** (Deckel, Verstehens-Reserve, Vorrangreserve, RPM, TPM, Kosten, Parallelität, Kommunikationsriegel) | Umgebung | Grundlinie |
+| 8 | Kommunikationsriegel scharf prüfen | lesend | Werte |
+| 9 | **Wirksamkeit der Werte prüfen** (ehrlich: nur der Deckel ist rein lesend belegbar) | lesend | Werte, Riegel |
+| 10 | **Stufe A aktivieren** (eigene Freigabe `aktivierung-a`) | Production | Isolation A, Werte, Werte geprüft, Riegel, Fenster |
+| 11–12 | Fachzyklus A (Stufenwort; braucht Werte geprüft, Riegel, Fenster) · Kontrolle A (A01–A15) | Production · lesend | Gruppe A aktiv · Zyklus A |
+| 13–17 | **Stufe B getrennt**: Anlage → Isolation → Aktivierung → Fachzyklus (`--bestandene-stufen='["a"]'`) → Kontrolle | | **jeder Schritt erst nach Kontrolle A** |
+| 18–22 | **Stufe C getrennt** | | **jeder Schritt erst nach Kontrolle B** |
+| 23 | Gemeinsame Auswertung | lesend | Kontrolle C |
+| 24–25 | Deaktivierung · Rückbauprüfung (`rueckbau --stufe=<bis-stufe>`) | **nie gesperrt** | — |
+| 26–28 | Scheduler-Spur · optional Migration/Flag | eigene Freigaben | Rückbau bestätigt · Migration angewendet |
+
+Jeder Befehl im Plan wurde gegen das tatsächliche CLI geprüft (`--stufe=` bei
+`testkohorte-495.js isolation`/`rueckbau`, `funktionstest-500-kontrolle.js pruefe`,
+`funktionstest-500-zyklus.js`; kein `--vorstufen-vollstaendig` mehr). Der Plan trägt
+`betreiberwerte.vorbedingungVon = [aktivierung-a, -b, -c]`, `keineVorbedingungVon =
+[provisionierung-*, isolation-*]`, `blocker.kohortenreife` und `nichtGelieferteVorbedingungen = []`
+(jede Vorbedingung wird von genau einem Schritt geliefert — nichts muss von Hand behauptet werden).
+Grundlinie und Sicherung sind Einmal-Kennungen: vor Stufe B und C erneut erheben und sichern ist
+**Betreiberpflicht, vom Plan nicht erzwungen** (so benannt).
+
+### §34.5 Der Zeitpunkt der Betreiberwerte — ausdrücklich
+
+> Die acht Betreiberwerte und `HELMUT_TESTLAUF_VORRANG_REAL` müssen **nicht** vor der rein
+> inaktiven Provisionierung gesetzt sein. Sie müssen aber **zwingend gesetzt, wirksam und
+> geprüft** sein, bevor auch nur das erste synthetische Profil aktiviert wird.
+
+„Gesetzt" heißt nicht „wirksam": Vercel-Env ist aus keiner Sitzung lesbar. **Rein lesend in
+Production belegbar ist heute allein `HELMUT_MAX_LLM_CALLS_PER_DAY`** (Whitelist von
+`/api/admin/overview`). Verstehens-Reserve, Vorrangreserve, RPM/TPM, Kostenbudget, Parallelität
+und Kommunikationsriegel sind nach dem Setzen **Betreiberangabe** — die Startbereitschaftshürden
+(„… in der LAUFENDEN Umgebung", „LAUFZEITWIRKSAM") lesen das `process.env` des Prozesses, der sie
+rechnet, lokal also die lokal gesetzten Werte, nicht Vercel (Reviewbefund §34.12; die erste
+Fassung dieses Abschnitts hatte hier mehr behauptet). **RPM/TPM liest ohnehin kein
+Ausführungspfad** (§23.4). Mit Vorrangreserve 0 ist der Verdrängungsschutz der fünf realen
+Mandate **nicht** wirksam (§25.2) — deshalb Schritt 9 vor Schritt 10. Eine Erweiterung der
+Overview-Whitelist um die drei Zahl-/Moduswerte wäre ein eigener, kleiner Code-PR.
+
+### §34.6 Verhaltensbeleg: die inaktive Provisionierung erzeugt keine Last
+
+Neu `scripts/testkohorte-provisionierung-inaktiv-test.js` (33/0). Der **echte** Provisionierer
+(`provisioning.provisionTenant`, `neuAktiv:false`) läuft über den echten Vorwärtsausführer für die
+20 Kennungen der Stufe A **scharf** gegen einen Arbeitsspeicher-Store; mitgezählt werden `fetch`,
+`http`/`https`, rohe Sockets/TLS, DNS, Kindprozesse, jeder Aufruf des Kommunikationsriegels und
+jede Funktion des KI-Moduls.
+
+| Messung | Ergebnis |
+|---|---|
+| fetch · http · https · net · tls · dns · Kindprozesse | **0 · 0 · 0 · 0 · 0 · 0 · 0** |
+| Kommunikationsriegel gefragt · KI-Modul aufgerufen | **0 · 0** |
+| Außenkanalmodule (mail-transport, job-dispatch, lambda-verbraucher, monitoring-webhook) | **nicht einmal geladen** |
+| Jedes Profil `profileActive:false`, jedes Konto `active:false`, `isDisabled` = true | 20/20 |
+| Echter Planer `planeArbeit` über die 20 inaktiven Profile | **0 Profile, 0 Aufträge, `enqueue` nie** |
+| Gegenprobe: ein einziges Profil aktiv | **2 Aufträge** (die 0 ist echt) |
+
+**Präzisierung nach dem Review (§34.12):** „keine Last" heißt kein Warteschlangenauftrag, keine
+Verstehensarbeit, kein Modellaufruf, keine Außenkommunikation. Die Anlage selbst **schreibt** je
+Kennung ein gesperrtes Konto in den Auth-Blob `main-auth` (unbedingter Vollschreib, Last-Write-Wins
+— Bestandsverhalten von `accounts.createUser`, bekannt und in `provisionTenant` durch eine
+Nachprüfung gegen den persistierten Stand flankiert) und das Profil (Blob und relationale Upserts).
+Schreibvorgänge sind Anlage, nicht Last.
+
+**Zweiter Konsument aller Profile, gefunden und geschlossen:** `scheduler.js` reicht
+`listFullProfiles()` (inklusive inaktiver Profile) an `lazyUnderstanding.interestedProfiles`. Ein
+inaktives Kohortenprofil zählte dort als „interessiert" (gemessen: Ähnlichkeit 0,92) und hätte —
+bei eingeschaltetem `HELMUT_V3_LAZY_UNDERSTANDING` (in Production **nicht gesetzt**, also heute
+inert) — Verstehensarbeit vorgemerkt, die später Modellaufrufe kostet. `interestedProfiles` filtert
+jetzt mit demselben Prädikat wie der Arbeitsplaner (`profile-validation.isDisabled`); belegt:
+dasselbe Profil aktiv → interessiert, inaktiv oder soft-gelöscht → nicht; der Shadow-Runner merkt
+für 20 inaktive Profile nichts vor. Für die vier deaktivierten Demo-Mandate in Production ist das
+dieselbe, beabsichtigte Semantik.
+
+Nicht behauptet: die Aktivierung ist hier nicht gelaufen — sie ist der Schritt, ab dem Last entsteht.
+
+### §34.7 Der Blocker — die Bundestagsreife-Sperre wies 18 von 20 Stufe-A-Profilen ab
+
+> **GESCHLOSSEN am 03.09.2026 nach Variante (a) — der Beleg steht in [§34.13](#3413-variante-a-die-kohorte-richtet-sich-nach-der-regel).** Dieser Abschnitt bleibt unverändert als Befundprotokoll stehen; er beschreibt den Zustand VOR der Umsetzung. Nur eine Zahl ist korrigiert (siehe die Tabelle unten): die Aufteilung der Kohorte war hier mit 62/433 falsch angegeben.
+
+**Erstmals am echten Pfad gemessen** (alle bisherigen Suiten prüften den scharfen Pfad mit einer
+Attrappe für `legeAn`): `provisionTenant` verweigert in Schritt 2b („Bundestagsreife",
+`profile-readiness.pruefeNeuaktivierung`) jedes **Bundestags**profil der Kohorte mit
+`bundestagsprofil-nicht-bereit` —
+
+```
+Ungueltige Angabe: committees = „Testausschuss 1" — nicht als staendiger Ausschuss der
+21. Wahlperiode aufloesbar (nicht in der Sollmenge)
+```
+
+Die Kohortenspezifikation trägt **bewusst synthetische Ausschüsse** („Testausschuss N";
+`test-kohorte-500.js`, testgesichert `test-kohorte-500-test.js` §4.5 — „alle
+Parteien/Ausschüsse/Themen sind synthetisch"); die Reife-Sperre (Korrekturrunde 2026-08-25)
+verlangt Ausschüsse der WP-21-Sollmenge. Die „Offline-Vollvalidierung" der Kohorte (§21) prüfte
+`validateSpec`, **nicht** die Reife-Sperre. Beide Regeln sind je für sich richtig — zusammen machen
+sie den scharfen Anlagelauf **unvollständig**:
+
+| Stufe | Landtag (passiert) | Bundestag (abgewiesen) |
+|---|---|---|
+| A (20) | 2 | **18** |
+| Kohorte (495) | 61 | **434** |
+
+*(Korrektur 03.09.: hier stand zunächst 62/433. Nachgemessen über `spezifikationen()` sind es **61 Landtags- und 434 Bundestagsprofile**; die Stufenzeile A (2/18) war richtig. Die falsche Zahl war in den PR-Text von #297 und in `CURRENT_STATE.md` übernommen worden und ist dort ebenfalls berichtigt.)*
+
+Gemessen für Stufe A: `angelegt: 2 · fehlgeschlagen: 18 · ok: false`. **Der Zustand danach ist
+sicher**: die Abweisung geschieht **vor** jedem Schreibvorgang (2 Profile, 2 Konten, 2
+Schreibvorgänge, alles inaktiv), der Rückweg ist anwendbar, kein Netz, kein Modellaufruf.
+
+**Entscheidung nötig, vor jeder Provisionierung:**
+(a) Kohortenspezifikation auf Ausschüsse der WP-21-Sollmenge umstellen — Kennungen und Adressen
+bleiben deterministisch und unverändert; das Prinzip „keine echten Ausschüsse" (§4.5) müsste
+bewusst aufgegeben werden, und die Profile erhielten damit echte Quellenpakete (für einen
+Funktionstest unter realistischer Last eher erwünscht als unerwünscht);
+(b) die Reife-Sperre für die synthetische Kennungsfamilie anders behandeln — **nicht empfohlen**,
+weil sie eine Schutzregel für reale Profile ist und die Kohorte dann mit Ausschüssen liefe, die
+im Radar nichts belegen;
+(c) nur die 61 Landtagsprofile anlegen — verändert Umfang und Aussage des Tests.
+Diese Entscheidung war beim Schreiben dieses Abschnitts **nicht** getroffen; der Test `A0` pinnte den
+Zustand als dokumentierten Blocker. **Noch am selben Tag** entschied der Betreiber im Sprintauftrag
+auf **(a)** (§34.13); `A0` ist
+damit — wie angekündigt — gekippt und durch einen positiven Beleg des echten Pfades ersetzt worden
+(§34.13).
+
+### §34.8 Stufenbewusste Isolationsprüfung
+
+`pruefeIsolation({grundlinie, bestand, stufe})` (`testkohorte-betrieb.js`) und
+`testkohorte-495.js isolation --stufe=`: mit Stufe gilt der Beleg für den Bestand **bis
+einschließlich** dieser Stufe (A = 20, A+B = 95, A+B+C = 495) und verlangt zusätzlich, dass genau
+diese Stufe **vollständig und INAKTIV** angelegt ist und **kein Kohortenkonto aktiv** ist. Ohne
+Stufe unverändert 495. Ohne diese Fassung war der Isolationsbeleg der Stufe A strukturell
+unerreichbar (er verlangte 495 gelesene Zeilen). Verhaltensbelegt: aktive Zeile, aktives Konto,
+vorzeitige Zeile der Stufe B, fehlende Zeile — jeweils **nicht** isoliert.
+
+**Dasselbe für den Rückweg (Reviewbefund §34.12):** `pruefeRueckbau` verlangte ebenfalls 495
+gelesene Zeilen. Nach Stufe A (20 Zeilen) hätte die Rückbaubestätigung dauerhaft „20 von 495" und
+`zurueckgebaut: false` gemeldet, obwohl alles deaktiviert war — ein **falsches Rot ausgerechnet am
+Rückweg**. `pruefeRueckbau({stufe})` und `testkohorte-495.js rueckbau --stufe=` prüfen jetzt den
+Bestand bis einschließlich der Stufe (exakt diese Kennungen, keine doppelt); ohne Stufe unverändert
+495. Verhaltensbelegt (D2.1–D2.5).
+
+### §34.9 Welche älteren Aussagen überholt sind
+
+| Ältere Aussage | Stand jetzt |
+|---|---|
+| §10 Zeile 4 „**495 Profile INAKTIV provisionieren** … F" | **überholt** — drei getrennte Schritte mit drei Stufenworten (§34.4) |
+| §10 Zeile 3 (Riegel/Env vor Schritt 4) und §13 Reihenfolge 4–6 vor 8 | **präzisiert** — die Werte sind vor der **Aktivierung** Pflicht, nicht vor der inaktiven Anlage (§34.5) |
+| §13 Punkt 8 „Provisionierung der 495 inaktiven Profile" | **überholt** — je Stufe eine eigene Freigabe |
+| §18.10 „17 Schritte" | **überholt** — 27 Schritte |
+| §21.2 Aufruf `provisionierung` ohne Stufe | **überholt** — `--stufe=` ist Pflicht |
+| §33 / PR #296: „Die eine nächste notwendige Freigabe: Provisionierung der Stufe A mit dem Wort `TESTKOHORTE_STUFE_A_PROVISIONIERUNG_BESTAETIGT`" | auf Bibliotheksebene richtig; über das CLI **bis zu dieser Korrektur nicht ausführbar**, und unter der Reife-Sperre auch danach **nicht vollständig** (§34.7) |
+| §21 (CURRENT_STATE) „Kohorte 495 validiert" | gilt für `validateSpec`; gegen die Bundestagsreife-Sperre **nicht** validiert |
+| §33.5 „kein Netzaufruf, kein Modellaufruf im neuen Pfad" | **bestätigt und erweitert** auf den echten Provisionierungspfad (§34.6) |
+
+### §34.10 Testnachweise
+
+- Neu `testkohorte-vorwaerts-cli-test.js` **55/0** — echte Kindprozesse des Betreiber-CLI:
+  20/75/400 mit Stufenwort · fehlende/leere/unbekannte Stufe Exit 2 · Tippfehler, `--gruppe=`,
+  doppelte Angaben, ungültige Fensterangaben, `--jetzt` im scharfen Lauf abgewiesen · `--scharf`
+  ohne Freigabe/Fenster bleibt Trockenlauf · fremdes Stufenwort, Pauschalwort, Aktivierungswort
+  schalten nicht scharf · fremde Stufe, fremde/erfundene/doppelte Kennung brechen ab (ohne Banner) ·
+  **zweifacher Schreibbeleg**: ein Schreibspion als Preload im Kindprozess protokolliert jeden
+  Dateischreibvorgang unter dem Repo (Positivkontrolle grün) — 0 über alle Aufrufe — und der lokale
+  Speicher enthält vor wie nach jedem Aufruf 0 Kohortenzeilen · Netz-Guard nie ausgelöst. (Die
+  erste Fassung hashte das Datenverzeichnis bytegenau; im Gesamtlauf kippte der Hash durch einen
+  fremden nebenläufigen Schreiber — deshalb der Schreibspion und die semantische Zählung.)
+- Neu `testkohorte-provisionierung-inaktiv-test.js` **44/0**, nach §34.13 **47/0** (§34.6
+  einschließlich Verstehens-Interessenprüfung, §34.8 einschließlich Rückbau; der frühere
+  Blocker-Pin `A0` ist durch den positiven Beleg des echten Pfades **A0.1–A0.4** und die
+  Gegenprobe **A0a.1–A0a.4** ersetzt).
+- `funktionstest-ablaufplan-test.js` **81/0**, nach §34.13 **82/0** (A4/A5/A7a auf den stufenweisen Vertrag
+  umgestellt — die alten Zusicherungen pinnten den Sammelschritt; A7a pinnt wieder Gesamtzahl und
+  Position; neu A4b, A19–A35).
+- Unverändert grün: `testkohorte-vorwaerts` 65/0 · `testkohorte-stufen` 103/0 ·
+  `testkohorte-betrieb` 100/0 · `funktionstest-ablaufkette` 30/0 · `funktionstest-faelligkeit`
+  175/0 · `funktionstest-500` 119/0 · `kapazitaetsmodell` 61/0 · `verdraengungsschutz` 38/0 ·
+  `kommunikationsriegel` 45/0 · `mandatsklasse` 36/0 · `profil-bereitschaft` 91/0, nach §34.13
+  **100/0** · `test-kohorte-500` nach §34.13 **54/0**.
+- Offline-Gesamtlauf und Pflichtprüfungen des PR: siehe PR-Text und `CURRENT_STATE.md` §26.
+
+### §34.11 Was dieser Sprint ausdrücklich NICHT ist
+
+Keine Freigabe, keine Provisionierung. (§34.7 ist inzwischen entschieden und umgesetzt — §34.13;
+das ändert an dieser Grenze nichts.) Der 500er-Funktionstest ist **weiterhin nicht startbereit**.
+Die Provisionierung der Stufe A darf erst nach Merge und Production-Prüfung dieser Korrektur
+empfohlen werden; davor
+braucht es eine **aktuelle Grundlinie** und die vorgeschriebene **Sicherung der betroffenen
+Tabellen** (§9.1–9.2). Die Betreiberwerte müssen erst vor der **Aktivierung** der Stufe A gesetzt,
+wirksam und geprüft sein.
+
+### §34.12 Adversariales Review des Diffs — vier Linsen, zwei Widerleger je Feststellung
+
+Vier unabhängige Reviews (fail-closed des CLI · Konsistenz Plan/Code · Testvalidität/falsches
+Grün · Sicherheit/Mandanten/Production-Wirkung) lieferten **24 Feststellungen**; jede wurde von
+zwei weiteren Prüfern adversarial gegengeprüft (52 Agenten, 42 Minuten). Ergebnis der Widerleger:
+**10 von beiden bestätigt, 0 strittig, 14 widerlegt** — davon **11 nur deshalb, weil die Korrektur
+im Arbeitsbaum bereits enthalten war** (die Widerleger prüften den laufend korrigierten Stand; sie
+sagen das ausdrücklich), und **3 in der Sache**: ungültige Fensterangaben waren fail closed (jetzt
+trotzdem Aufruffehler), die offenen Vorbedingungsketten wurden auf „niedrig" abgeschwächt (trotzdem
+geschlossen), ein stderr-Marker für den A0-Pin ist ein Gestaltungswunsch (nicht umgesetzt). Alle
+Feststellungen, einzeln:
+
+| Befund | Schwere | Behoben |
+|---|---|---|
+| Doppelte Angaben (`--stufe=c --stufe=a`) wurden still ignoriert — die erste gewann | mittel | Abbruch Exit 2, Test D9–D11 |
+| `--jetzt=` war auch im scharfen Lauf erlaubt — eine gesetzte Uhr hätte den dritten Riegel ausgehebelt | mittel | im scharfen Lauf abgewiesen (Exit 2, kein Banner), Test E3/I5 |
+| Der Plan kannte den §34.7-Blocker nicht: `provisionierung-a` galt als beginnbar | hoch | eigener Schritt `kohortenreife`, Vorbedingung jeder Anlage, `blocker.kohortenreife` |
+| Der Sicherungsbefehl lief über `lokal.js` — der Starter entfernt die Kennungen, der Export bricht mit Exit 2 ab | hoch | Befehl ohne `lokal.js`, Prüfung `vollstaendig === true` benannt |
+| `pruefeRueckbau` verlangte 495 Zeilen — nach Stufe A nie bestätigbar (falsches Rot am Rückweg) | hoch | stufenbewusst (`--stufe=`), Test D2.1–D2.5 |
+| `werte-pruefung` behauptete einen Laufzeitbeleg, den die Hürden nicht liefern (sie lesen das lokale `process.env`) | hoch | ehrlich: nur der Deckel ist rein lesend belegbar, der Rest Betreiberangabe |
+| Fachzyklus-Befehl für B/C ohne `--bestandene-stufen` — die Startbereitschaft wäre nie grün geworden | mittel | Befehl ergänzt, Test A34 |
+| Isolation/Fachzyklus/Kontrolle der Stufen B/C hingen nicht an der kontrollierten Vorstufe; der Fachzyklus nicht an geprüften Werten/Riegel/Fenster | mittel | Vorbedingungen geschlossen, Test A5/A25 |
+| Die Verstehens-Interessenprüfung iterierte alle Profile ohne `isDisabled` — „inaktiv = keine Last" galt nur für den Planer | mittel | Filter mit dem Planer-Prädikat, Test C2.1–C2.6 (§34.6) |
+| Die inaktiv-Suite verdeckte die realen Schreibvorgänge der Anlage (Auth-Blob-Vollschreib) | mittel | Aussage präzisiert (§34.6), A6 umbenannt |
+| Bundestagsreife-Blocker reproduziert; Zustand nach Abweisung sicher | hoch | dokumentiert §34.7, Plan-Vorbedingung |
+| Zwei Vorbedingungen lieferte kein Schritt (`rueckbau`, `migration-llm-usage-angewendet`) | niedrig | beide werden jetzt geliefert; Test A32 |
+| Banner nannte die Zielmenge vor der Prüfung der `--ids` | niedrig | Prüfung vor dem Banner |
+| `plan` druckte die neuen maschinenlesbaren Felder nicht | niedrig | gedruckt |
+| `testkohorte-495.js`-Hinweis warb für den pauschalen Fachzyklus; Zyklus-CLI-Kopf nannte `--startbereit=ja` | niedrig | korrigiert |
+| Speicher-Schnappschuss der CLI-Suite nur zwei Dateien, keine Positivkontrolle; JSON-Parser unterschied „kein Block" nicht von „unparsebar"; I1/I2 nur über eine Teilmenge | mittel/niedrig | Schreibspion mit Positivkontrolle, am Marker verankerter Parser, alle Aufrufe gesammelt (J1–J3) |
+| A7a auf relative Ordnung abgeschwächt | niedrig | Gesamtzahl 28 und Position 26 wieder gepinnt |
+| Grundlinie/Sicherung sind Einmal-Kennungen, „vor JEDER Provisionierung" nicht erzwungen | niedrig | ehrlich benannt (Betreiberpflicht) |
+
+**Bewusst nicht umgesetzt:** ein stderr-Marker für den A0-Pin im Runner (der Runner druckt
+Suitenausgaben nur bei Fehlschlag; der Blocker steht in `CURRENT_STATE.md` §7 und im Plan als
+Vorbedingung). **Vom Review ausdrücklich bestätigt:** kein
+Rückfall auf 495/Pauschalwort in keiner Aufrufform; vor dem Stufen-Abbruch werden keine
+Production-fähigen Module berührt; `--ids=` öffnet keinen Weg zu realen Mandaten; `pruefeIsolation`
+mit Stufe ist nicht schwächer als ohne; der 495er-Beleg ist unverändert; keine hartkodierten
+Mandanten oder Secrets; Profil-Embeddings sind deterministisch (kein Modellaufruf beim Anlegen);
+beide neuen Suiten laufen im Runner und in der CI; A0 ist ein ehrlicher Charakterisierungs-Pin.
+
+---
+
+### §34.13 Variante (a): die Kohorte richtet sich nach der Regel
+
+Entscheidung zu [§34.7](#347-der-blocker--die-bundestagsreife-sperre-wies-18-von-20-stufe-a-profilen-ab),
+umgesetzt am 03.09.2026 im selben Branch und im selben Pull Request (#297).
+
+**Wer entschieden hat:** der Betreiber, im Sprintauftrag vom 03.09.2026 („Schließe den
+Bundestagsreife-Blocker im Pull Request #297 nach Sicherheitsrahmen §34.7 **Variante A**"). §34.7 hatte
+die Wahl zwischen (a), (b) und (c) ausdrücklich dem Betreiber vorbehalten; sie ist damit getroffen und
+nicht von der Umsetzung selbst hergeleitet. Was danach im Ablaufplan übrig bleibt, ist kein
+Entscheidungstor mehr, sondern ein Beleg — deshalb und nur deshalb ist der Schritt `kohortenreife`
+rein lesend geworden (§34.13.5).
+
+**Die Regel bleibt, die Kohorte weicht.** Die Bundestagsreife-Sperre ist eine Schutzregel für reale
+Profile; eine Ausnahme für die synthetische Kennungsfamilie hätte genau die Prüfung ausgeschaltet,
+die der Funktionstest belegen soll. Deshalb wurde **nichts** an der Sperre gelockert, nichts im
+Provisionierer umgangen, kein Production-Sonderfall eingeführt — geändert wurde die
+Kohortenspezifikation.
+
+#### §34.13.1 Was sich in der Kohorte geändert hat
+
+`lib/helmut/test-kohorte-500.js` vergibt die Ausschüsse jetzt **abhängig von der politischen
+Ebene** des Profils:
+
+| Ebene | Anzahl | Ausschüsse | Herkunft |
+|---|---|---|---|
+| Bundestag | **434** | amtliche Bezeichnungen der 21. Wahlperiode | `quellenarchitektur/seeds/bundestag-ausschuesse.js` (`AUSSCHUSS_NAMEN`) |
+| Landtag | **61** | `Testausschuss 1…12` (synthetisch) | Modulkonstante `TESTAUSSCHUESSE` |
+
+Zwei Punkte sind dabei entscheidend:
+
+1. **Eine Ausschusswahrheit, keine zweite Namensliste.** Die Bundestagsnamen werden aus der
+   vorhandenen, extern verankerten Sollmenge **importiert**, nicht abgeschrieben. Eine Kopie wäre
+   eine zweite Wahrheit und liefe bei einer Umbenennung still auseinander. Testgesichert:
+   `test-kohorte-500-test.js` §11.10/§11.11 vergleichen die **tatsächlich erzeugten** Namen gegen
+   `STAENDIGE_AUSSCHUESSE`. **Grenze dieser Aussage:** sie gilt für die Kohorte und für die
+   Reifeprüfung, **nicht für das ganze System** — siehe [§34.13.7](#34137-eine-zweite-ausschusswahrheit-im-radar--eigener-älterer-befund-hier-nicht-repariert).
+2. **Landtagsprofile bekommen KEINE Bundestagsausschüsse.** Ein Bundestagsausschuss auf
+   Landesebene wäre eine falsche politische Ebene — fachlich falsch, und die Reifeprüfung ist für
+   Landtagsprofile ausdrücklich `zutreffend: false`, hätte den Fehler also nie gemeldet.
+   Testgesichert: §4.5a/§4.5b und §11.0.
+
+Die Zuweisung bleibt **deterministisch** (`index % n` und `(index + 5) % n`; 5 ist zu 24 und zu 12
+teilerfremd, die zwei Ausschüsse eines Profils sind also immer verschieden). **Unverändert
+synthetisch** bleiben: Kennungen `test-kohorte-<a|b|c>-<nnn>`, `.invalid`-Adressen, Mandatsnamen,
+Parteien (`Testpartei N`), Themen (`Testthema N`). Ein Ausschuss ist keine Person und kein
+Personendatum, sondern ein parlamentarischer Zuständigkeitsbereich — das ist der Grund, warum
+gerade dieses Feld echt sein darf, während alles andere synthetisch bleibt.
+
+#### §34.13.2 Dabei gefunden und geschlossen: veraltete Ausschussnamen wurden nicht abgewiesen
+
+Beim Absichern der neuen Zuweisung fiel ein **eigenständiger Mangel** in
+`lib/helmut/profile-readiness.js` auf, der nichts mit der Kohorte zu tun hat:
+
+`resolveBundestagsausschuss()` las die dokumentierte Negativliste `VERALTETE_AUSSCHUSSNAMEN` nur
+im **Fehlerzweig** — also erst, wenn die Tokenauflösung ohnehin schon gescheitert war. Weil die
+Sollmenge stabile Schlüssel führt und mehrere WP-21-Bezeichnungen **Obermengen** ihrer Vorgänger
+sind, lösten **drei von vier** dokumentierten Altbezeichnungen sauber auf und galten als gültig:
+
+| Eingabe (veraltet) | löste auf zu | jetzt |
+|---|---|---|
+| „Ausschuss für Ernährung und Landwirtschaft" (WP 20) | `landwirtschaft-ernaehrung-heimat` | abgewiesen |
+| „Ausschuss für Digitales" (WP 20) | `digitales-staatsmodernisierung` | abgewiesen |
+| „Ausschuss für Inneres und Heimat" (WP 20) | `inneres-heimat` | abgewiesen |
+| „Ausschuss für Verkehr und digitale Infrastruktur" (WP 19) | — (schon vorher abgewiesen) | abgewiesen |
+
+Die Negativliste war also **nur auf den Katalog** angewandt (Selbstschutz der Sollmenge), nie auf
+ein **Profil**. Behoben: die Prüfung auf veraltete Bezeichnungen läuft jetzt **zuerst** und weist
+ab. Das ist eine **Verschärfung**, keine Lockerung — und sie ist kein Rundumschlag: alle 24
+gültigen Bezeichnungen und die gebräuchlichen Kurzformen bleiben auflösbar (`profil-bereitschaft-test.js`
+R1–R9, `test-kohorte-500-test.js` §11.5–§11.8).
+
+Drei Punkte dazu, ausdrücklich, weil sie im Review aufkamen:
+
+1. **Der Abgleich ist normalisiert, nicht bytegenau.** Die erste Fassung verglich die Zeichenkette
+   exakt und wäre durch Kleinschreibung, doppelte Leerzeichen, einen Punkt am Ende oder Bindestriche
+   zu umgehen gewesen — während der Tokenabgleich darunter normalisiert. Jetzt läuft beides über
+   dieselbe Faltung. **Nicht** über eine Wortmenge: die stabile Kennung `inneres-heimat` (Kurzform
+   des heutigen „Innenausschuss") trägt genau die Wörter der veralteten Bezeichnung und würde dabei
+   fälschlich abgewiesen. Die Wortfolge bleibt deshalb erhalten. 36 Schreibvarianten geprüft, alle
+   abgewiesen; 32 gültige Namen und Kurzformen geprüft, keine abgewiesen (R7/R8).
+2. **Eine gewollte Asymmetrie.** „Ausschuss für Digitales" ist der belegte amtliche Name der 20. WP
+   und wird abgewiesen; die bloße Kurzform „Digitales" löst weiterhin auf den heutigen „Ausschuss
+   für Digitales und Staatsmodernisierung" auf. Wer die volle frühere Bezeichnung hinschreibt, meint
+   erkennbar den alten Zuschnitt — genau davor schützt die Negativkontrolle. Gepinnt in R9: fällt der
+   Name eines Tages aus `VERALTETE_AUSSCHUSSNAMEN` heraus, kippt der Test und die Entscheidung wird
+   neu getroffen.
+3. **Reichweite: eine Anzeige ändert sich, keine Sperre.** Der Resolver hat zwei Einstiege.
+   `pruefeNeuaktivierung` ist die harte Sperre und gilt nur dem **neuen** Aktivierungsübergang.
+   `bewerteBundestagsprofil` ist die rein lesende Bewertung und läuft auch über **bestehende**
+   Profile (Admin-Profilansicht, Speicher-Antwort, Mandatsliste in `server.js`). Ein bestehendes
+   Mandat, dessen Ausschussfeld noch eine Bezeichnung einer früheren Wahlperiode trägt, wird dort ab
+   jetzt als „ungültig" **angezeigt**. Das ist gewollt — es ist der Hinweis, die Angabe auf die
+   laufende Wahlperiode zu ziehen —, aber es deaktiviert nichts, schreibt nichts um und blockiert
+   keinen Verarbeitungsschritt. **Inzwischen rein lesend in Production geprüft — siehe §34.13.6a:
+   genau ein aktives Mandat trägt eine nicht auflösbare Ausschussangabe, und zwar unabhängig von
+   diesem PR (derselbe Befund am Basisstand `a839c1b`).**
+
+#### §34.13.3 Der Beleg am echten Pfad — A0 ist gekippt, wie angekündigt
+
+`testkohorte-provisionierung-inaktiv-test.js` pinnte den Blocker (`A0`). Dieser Pin ist ersetzt
+durch einen **positiven Beleg des echten, unveränderten Provisionierungspfades**:
+
+- **A0.1** — der Lauf benutzt **keine Reife-Attrappe** (Prüfung über den eigenen Quelltext: der
+  Aufruf injiziert kein `readiness`).
+- **A0.2** — Stufe A: **20 angelegt, 0 fehlgeschlagen, `ok: true`**.
+- **A0.3** — **kein** `bundestagsprofil-nicht-bereit` in irgendeinem Ergebnis.
+- **A0.4** — die 18 Bundestags- und 2 Landtagsprofile der Stufe A sind je nach Ebene korrekt
+  behandelt.
+
+Und als Gegenprobe, damit die Sperre nicht bloß „grün" ist, sondern **wirkt**:
+
+- **A0a.1** — ein Profil mit unbekanntem Ausschuss wird weiterhin abgewiesen.
+- **A0a.2** — die Abweisung geschieht **vor jedem Schreibvorgang**: 0 Profile, 0 Konten, 0 Schreibvorgänge.
+- **A0a.3** — jede der vier veralteten Bezeichnungen wird abgewiesen.
+- **A0a.4** — im Provisionierer existiert **kein Sonderpfad** für die synthetische Kennungsfamilie
+  (Prüfung über `provisioning.js`).
+
+Die Reifeprüfung nimmt die **gesamte Kohorte** an: **495/495** bestehen die Prüfung ihrer
+politischen Ebene (434 Bundestagsprofile reif, 61 Landtagsprofile `zutreffend: false` und über
+`validateProfile` getragen); stufenweise **20/20 · 75/75 · 400/400**
+(`test-kohorte-500-test.js` §11.1–§11.4).
+
+#### §34.13.4 Welche Quellenpakete die echten Ausschussnamen ziehen — und was das an Last bedeutet
+
+Ausdrücklich nachgemessen, weil echte Ausschussnamen echte Quellenlogik auslösen können.
+
+> **Korrektur 03.09. (Schlussprüfung).** Dieser Abschnitt stand zuerst mit drei zu günstigen
+> Aussagen hier: „+84 `source_fetch` **einmalig**", „**ohne jede Wirkung** auf die KI-Last" und „von
+> allen Ausschussbezeichnungen wertet **genau eine** aus". Alle drei sind unten berichtigt. Die
+> Größenordnung bleibt beherrschbar — aber die ursprüngliche Formulierung war schöner als der Befund.
+
+**1 · Paketauflösung: genau eine Bezeichnung zählt.** `resolveProfilePackages()` wertet von den 24
+Ausschüssen genau einen aus (`arbeit-und-soziales`); die übrigen 23 ändern die Paketwahl nicht.
+
+| | Profile | Sachpakete | Quellen |
+|---|---|---|---|
+| unverändert | 453 | wie vorher | wie vorher |
+| **+1 Paket** (`arbeit-und-soziales`, Status aktiv) | **42** | +1 | je **+84** |
+
+Kein Profil erhält mehr als **ein** zusätzliches Paket (`test-kohorte-500-test.js` §11.14–§11.16).
+Die 42 verteilen sich auf die Stufen **{A: 2, B: 6, C: 34}** — die volle +84-Wirkung entsteht also
+bereits in **Stufe A**, dem kleinsten und am besten kontrollierten Schritt. Das ist gut so.
+
+**2 · Warteschlangenwirkung, kohortenweit über den echten Bedarfscompiler gemessen:**
+
+| Auftragsklasse | vorher | nachher |
+|---|---|---|
+| `source_fetch` (kohortenweit dedupliziert, `tenantId: null`) | 54 | **138** (+84) |
+| `mandate_projection` (je Profil) | 495 | 495 |
+| `briefing_materialization` (je Profil) | 495 | 495 |
+
+**3 · BERICHTIGT: „einmalig" stimmt nicht.** Der Idempotenzschlüssel der geteilten Aufträge trägt
+eine **Fensterkennung**: `source_fetch|geteilt|<hash>|2026-09-03T00Z`. Die Fensterbreite ist
+`HELMUT_DEMAND_SHARED_WINDOW_H`, Standard **8 Stunden** → **3 Fenster pro Tag**. Nachgemessen: zwei
+Kompilierläufe 9 h auseinander liefern **138 und 138 Schlüssel mit 0 Überschneidung**. Der Zuwachs
+fällt also **je Fenster** an:
+
+| | je Fenster | pro Tag (3 Fenster) |
+|---|---|---|
+| vorher | 54 | 162 |
+| nachher | 138 | **414** |
+| Zuwachs | +84 | **+252** |
+
+**4 · BERICHTIGT: „ohne jede Wirkung auf die KI-Last" ist zu stark.** `source_fetch` selbst ist
+KI-frei. Die 84 zusätzlichen Abrufwege holen aber neue Rohdokumente (Summe der `maxItems` der 84
+Quellen: **882 Items je Fenster**), und die KI-tragende Klasse `document_understanding` hängt an der
+Rohdokumentmenge. Richtig ist: **die mandatsgebundenen Klassen, die das Kapazitätsmodell
+([§30.7](#307-fällt-blocker-2-damit-weg): 1.812 gegen 2.522) tragen, bleiben unverändert** — das
+Kapazitätstor ist von dieser Änderung nicht berührt. Der **Folgeschritt** über das Verstehen ist
+**nicht beziffert** und fällt in den bereits offenen Punkt „Laufzeit der KI-freien
+Warteschlangenklassen (ungemessen)" sowie in den Rückstand aus §20. Vor der Aktivierung der Stufe C
+gehört er gemessen.
+
+**5 · BERICHTIGT: eine zweite Auswertestelle der Ausschussnamen.** Neben der Paketauflösung baut
+`lib/helmut/scheduler.js` (`mandateNewsSources` Nr. 4, „Ausschuss-Themenradar") eine Suchanfrage
+**wörtlich aus `committees[0]`**. Kohortenweit gemessen: **60 → 120** verschiedene Abruf-URLs. Das
+ist heute **inert**, weil `profilQuellenErlaubt` für synthetische Kennungen `false` liefert — aber
+diese Sperre hängt an **einer einzigen Umgebungsvariablen**. Mit `HELMUT_TESTKOHORTE_QUELLEN=aktiv`
+gemessen: **1.802** `source_fetch` statt 138 (geteilt plus persönlich), also **rund das
+Dreizehnfache**.
+
+> Daraus folgt eine harte Betriebsaussage: **`HELMUT_TESTKOHORTE_QUELLEN` bleibt für den gesamten
+> 500er-Funktionstest AUS.** Sie war schon vorher als Freigabepunkt geführt; seit die Kohorte echte
+> Ausschussnamen trägt, ist ihr Einschalten nicht mehr nur „rund 1.000 Google-News-Abrufe", sondern
+> eine Verdreizehnfachung der geteilten Abrufmenge. Im Env-Inventar §3a nachgezogen.
+
+**6 · Einordnung, damit die 54 → 138 nicht falsch gelesen wird.** Die Zahl gilt für die **Kohorte in
+Isolation**. Referenziert **irgendein** bereits aktives Mandat das Paket `arbeit-und-soziales`, ist
+es ohnehin geladen und der **marginale** Zuwachs in Production entsprechend kleiner, im Grenzfall
+**0**. **Ungeprüft:** ob das der Fall ist. Der Abgleich aus §34.13.6a erfasste die *Auflösbarkeit*
+der Ausschussangaben, nicht die daraus folgende Paketwahl. (Die frühere Fassung dieses Absatzes nannte
+an dieser Stelle den Pilotmandanten namentlich als Ausschussmitglied — das war eine Ausweitung der
+Pilotmandanten-Sonderlogik in neue Fließtextdokumentation und damit gegen `CLAUDE.md` §4.2;
+zurückgenommen 03.09.)
+
+**7 · Einschränkung, ausdrücklich:** gemessen wurde gegen den **Offline-Quellenkatalog**, weil
+`scripts/lokal.js` `HELMUT_SOURCE_MODE=off` erzwingt (`helmut-flags.json` setzt in Production `on`).
+Alle Zahlen dieses Abschnitts sind **Katalogzahlen des Fallback-Pfads**, keine Production-Messwerte.
+Die **Struktur** der Aussagen — genau ein zusätzliches Paket für genau 42 Profile, mandatsgebundene
+Klassen unverändert, Zuwachs je Fenster statt einmalig, zweite Auswertestelle im Quellenbau — hängt
+nicht vom Katalog ab.
+
+**Ob das erwünscht ist: ja, mit Auflage.** Profile mit echten Zuständigkeiten erzeugen realistischere
+Quellenarbeit, und genau das soll ein Funktionstest unter Last prüfen. Die Auflage ist Punkt 5:
+`HELMUT_TESTKOHORTE_QUELLEN` bleibt aus, und der Verstehens-Folgeschritt aus Punkt 4 wird vor
+Stufe C beziffert.
+
+#### §34.13.4a Die Zusage „inaktiv" hatte zwei Löcher — eines geschlossen, eines benannt
+
+Die Schlussprüfung hat den echten `provisionTenant` verhaltensgemessen gegen die Frage
+„kann ein ausdrücklich inaktiver Lauf trotzdem aktivieren?". Sauber ist: ein fehlendes oder
+nicht-boolesches `neuAktiv` wirft, eine Spezifikation mit `profileActive/aktiv/active: true` wird
+trotzdem inaktiv angelegt (`buildProfile` ist eine Whitelist), ein Wiederholungslauf lässt inaktiv,
+das Konto ist gesperrt, und der Vorwärtsausführer wertet ein aktiv angelegtes Profil als Fehlschlag.
+Zwei Löcher blieben:
+
+**Geschlossen — `spec.reaktivieren` im Einzelpfad.** Der **Stapel**pfad weist einen
+Reaktivierungswunsch seit jeher über `aktivierungswunschBefund` ab. Der **Einzel**pfad
+`provisionTenant` — den die Kohorte über `testkohorte-vorwaerts.js` benutzt — prüfte ihn nicht: ein
+Lauf mit `neuAktiv:false` hätte ein deaktiviertes Bestandsprofil reaktiviert und `ok:true` gemeldet.
+Erreichbar war das nicht (die Kohortenspezifikation trägt das Feld nicht), aber die Zusage „die
+Anlage bleibt ausschließlich inaktiv" darf nicht daran hängen, dass niemand das Feld setzt. Jetzt
+bricht der Lauf **vor jedem Schreibvorgang** mit `reaktivierung-in-inaktivem-lauf` ab. Ein
+Reaktivierungslauf bleibt möglich — er muss sich nur als solcher ausweisen (`neuAktiv:true`), und die
+Aktivierung bleibt eine eigene Freigabe. Testgesichert: `testkohorte-provisionierung-inaktiv-test.js`
+**A0b.1–A0b.3**, inklusive der Gegenprobe, dass derselbe Fall ohne `reaktivieren` normal durchläuft.
+
+**Benannt, NICHT geändert — ein Bestandsprofil ohne aufgezeichneten Aktivierungszustand.**
+`aktivierungszustandBestimmbar` wertet `undefined`/`null` als „bestimmbar"; `mergeMitBestand` setzt
+dann `profileActive = true`, weil `validateProfile` nur `=== false` als deaktiviert liest. Ein
+inaktiver Lauf über eine **Alt-Blob-Zeile ohne das Feld** schreibt sie damit auf ausdrücklich aktiv.
+Warum das hier nicht geändert wird: die Merge-Semantik gilt für **alle** Aufrufer, auch den
+Stapelpfad unter dem 200-Mandate-Profilvertrag, und die sichere Richtung ist ohne diesen Vertrag
+nicht zu entscheiden — `false` zu erzwingen würde ein womöglich aktives reales Mandat abschalten.
+Reichweite: der relationale Pfad liest `aktiv` als Boolean und schreibt `profileActive !== false`,
+liefert also nie `undefined`; erreichbar ist der Fall nur über eine Alt-Blob-Zeile. **Für die Kohorte
+unerreichbar** — ihre 495 Kennungen sind neu, es gibt keine Bestandszeilen. Das gehört in einen
+eigenen PR gegen den Profilvertrag, nicht in diesen.
+
+**Ebenfalls nur benannt:** `testkohorte-vorwaerts.js` erlaubt eine beliebige `deps.legeAn`-Attrappe
+ohne Vertragsprüfung; ein Aufrufer mit `neuAktiv:true` würde aktiv anlegen. Der Lauf **meldet** das
+(`angelegt-aber-AKTIV`, `ok:false`), verhindert es aber nicht. Das ist eine Testschnittstelle, kein
+Betreiberweg — der Betreiberweg setzt `neuAktiv:false` fest.
+
+#### §34.13.5 Was sich am Ablaufplan geändert hat
+
+Der Schritt `kohortenreife` war eine **offene Betreiberentscheidung** („nie durch einen Lauf
+lieferbar"). Er ist jetzt ein **rein lesender Beleg**: `freigabe: null`, belegbar durch den Lauf
+der beiden genannten Suiten. Er bleibt **Vorbedingung jeder Anlage** — kein Anlegen ohne frischen
+Reifebeleg. Die Vorbedingungskennung heißt entsprechend
+`kohortenspezifikation-reifesperre-belegt` (vorher `…-entschieden`). Der Eintrag
+`blocker.kohortenreife` bleibt im Plan stehen, jetzt mit `offen: false` und Beleg — ein spurlos
+entfernter Blocker wäre die unehrlichere Variante. Gesamtzahl der Schritte unverändert **28**.
+
+#### §34.13.6 Was dieser Teil ausdrücklich NICHT ist
+
+Keine Production-Wirkung: keine Provisionierung, keine Aktivierung, keine Migration, keine
+Umgebungsvariable, keine Cron-, Azure-, Budget- oder Reserveänderung, kein Modellaufruf, keine
+externe Nachricht, kein Merge. In Production existiert **kein** synthetisches Kohortenprofil —
+diese Änderung berührt dort nichts. Sie macht den Funktionstest **auch nicht startbereit**: die
+acht Betreiberwerte, `HELMUT_TESTLAUF_VORRANG_REAL`, eine aktuelle Grundlinie und die
+vorgeschriebene Sicherung der betroffenen Tabellen bleiben getrennte, spätere
+Betriebsvoraussetzungen. Die zuletzt gelesene Production-Warteschlange (207 wartend, 188 fällig)
+ist eine Momentaufnahme; kein Schritt dieses Sprints wirkt darauf schreibend ein.
+
+#### §34.13.6a Production verwendet nachweislich den relationalen Profilstand
+
+Die frühere Fassung ließ offen, ob der am 03.09. erhobene Ausschussbefund aus einer
+veralteten relationalen Momentaufnahme oder aus dem wirksamen Production-Pfad stammt.
+Diese Auslegung ist durch eine gezielte, rein lesende Production-Querprüfung entschieden.
+
+**Aktueller Wirkungsbeleg aus `source_crawl_telemetry` vom 03.09.2026:**
+
+| Sicht | Jeweils erster Ausschuss der fünf aktiven Profile |
+|---|---|
+| relationale Sicht `mandate_profiles` | `{Arbeit und Soziales, Finanzen, Gesundheit, Haushalt}` |
+| tatsächlich ausgeführte profilbezogene Ausschussradare | `{Arbeit und Soziales, Finanzen, Gesundheit, Haushalt}` |
+| Blob-Sicht | fünf andere erste Ausschussformen; keine davon als profilbezogenes Radar ausgeführt |
+
+Die profilbezogenen Radare werden aus `committees[0]` gebaut und in
+`source_crawl_telemetry.source_name` festgehalten. Die exakte Mengengleichheit mit der
+relationalen Sicht und die vollständige Abweichung von der Blob-Sicht belegen deshalb:
+**Production verwendet für diese Verarbeitung die relationalen Profile.**
+
+Der Codebefund passt dazu: `listFullProfiles` liest bei aktivem Profil-DB-Modus SQL und
+Blob, und `mergeProfileLists` setzt bei gleicher Kennung das vollständige relationale
+Profil an die Stelle des Blob-Profils. SQL gewinnt vollständig; es findet keine
+feldweise Ergänzung aus dem Blob statt.
+
+**Historische Kontrollgruppe:** Ein später deaktiviertes Profil erhielt im Blob am
+04.08.2026 um 10:26:19 UTC `profileActive=false`. Trotzdem erzeugte es bis
+05.08.2026 um 16:03:48 UTC weiter profilbezogene Radar-Telemetrie, also rund 30 Stunden
+nach der Blob-Deaktivierung. Die relationale Zeile wurde erst am 06.08.2026 um
+08:01:31 UTC auf `aktiv=false` gesetzt; danach endete die Radararbeit dauerhaft.
+Damit bestätigt ein unabhängiger historischer Verlauf denselben relationalen Pfad.
+
+Der rohe Wert von `HELMUT_PROFILE_DB_MODE` ist weiterhin nicht direkt aus der
+Vercel-Umgebung gelesen. Das ändert den Wirkungsbeleg nicht. Mit einer Admin-Sitzung
+kann `GET /api/admin/tenant-mode` die Booleans `profileDbModeFlagSet`,
+`v3StoreReady` und `profileDbModeEnabled` zusätzlich anzeigen.
+
+**Production-Bestand, rein lesend bestätigt:** neun Mandatsprofile, fünf aktiv, vier
+inaktiv, alle fünf aktiven auf Ebene Bundestag, keine Profile der Testkohorte. Genau
+eines der fünf aktiven realen Profile trägt relational
+`Bildung, Forschung und Technikfolgenabschätzung`. Der Zuschnitt wurde zur 21.
+Wahlperiode aufgeteilt; die Angabe ist gegen die heutige Sollmenge nicht auflösbar.
+Die übrigen Ausschussangaben sind auflösbar, alle relationalen
+`stellvertretende_ausschuesse` der fünf aktiven Profile sind leer.
+
+Der Zustand bestand bereits am Basisstand `a839c1b`. Die Bereitschaftsprüfung weist
+diese konkrete Bezeichnung dort und am Kopf von PR #297 identisch als „nicht in der
+Sollmenge“ ab; sie steht nicht auf der in diesem PR verschärften Negativliste.
+`server.js` ist nicht im Diff. PR #297 hat die Abweichung deshalb weder verursacht
+noch verschärft.
+
+**Wirkung:** kein Profil wird deaktiviert, die normale Verarbeitung wird nicht
+blockiert und dieser Sprint verändert keine Daten. Die Admin-Ansicht zeigt das Profil
+als nicht vollständig bereit. Eine Neuaktivierung über den CLI-Provisionierungspfad
+würde abgewiesen; der Admin-Schreibpfad behandelt die Bereitschaft als Warnung.
+
+#### §34.13.6b OP-29 ist neu einzuordnen; das bisher empfohlene Werkzeug ist kein Klärbeleg
+
+Der Nachtrag OP-29 vom 04.08. bleibt als historischer Vorgang wahr: Die freigegebene
+Korrektur wurde über `storage.saveProfile` in der Blob-Sicht vorgenommen und dort
+zurückgelesen. Sie wurde jedoch nicht in die relationalen `mandate_profiles`-Zeilen
+übertragen. Weil Production nachweislich relational liest und SQL bei der
+Listenzusammenführung vollständig gewinnt, ist die alte relationale Ausschussangabe
+heute wirksam. Die frühere Deutung als harmloser, nicht wirksamer
+Backfill-Schnappschuss ist damit für den aktuellen Betrieb widerlegt.
+
+Auch die bisherige Klärempfehlung
+`scripts/profil-bereitschaft.js --production` ist für diesen Fall unzulässig:
+
+1. Das Werkzeug ruft `storage.listFullProfiles()` auf; dessen Pfad hängt vom lokalen
+   `process.env.HELMUT_PROFILE_DB_MODE` und von `v3StoreReady()` ab.
+2. Ist der Wert in der ausführenden Sitzung nicht gesetzt, liest das Werkzeug den
+   Blob und kann für genau diesen Fall fälschlich fünf von fünf Profilen als bereit
+   melden. Es beweist damit nicht, welche Sicht Production verwendet.
+3. Der Kommentar „ausschließlich lesend“ ist strukturell zu stark:
+   `listFullProfiles` kann `readStore` erreichen, und `readSupabaseStore` legt bei
+   einer fehlenden Blob-Zeile über `writeSupabaseStore` einen Default-Store an.
+
+Daraus folgt verbindlich:
+
+1. Keine Profilkorrektur in PR #297 und keine automatische Ersetzung.
+2. Den amtlichen aktuellen Ausschussstand des betroffenen realen Mandats fachlich
+   belegen; weder einen der zwei Nachfolgeausschüsse noch beide raten.
+3. Die relationale Production-Profilkorrektur als eigene Datenänderung ausdrücklich
+   freigeben und danach rein lesend bestätigen.
+4. Die Abweichung muss vor der ersten Aktivierung synthetischer Profile behoben sein.
+   Eine vorherige inaktive Provisionierung bleibt eine getrennt freizugebende Aktion.
+5. PR #297 bleibt auf Codeebene mergefähig, weil er das Profil nicht ändert. Vor einer
+   Merge-Freigabe müssen jedoch diese Dokumentationskorrektur und beide Pflichtprüfungen
+   am korrigierten Kopf abgeschlossen sein.
+
+In diesem Dokumentationsschritt wurde keine Production-Datenänderung, keine
+Profiländerung und kein Merge ausgeführt.
+
+#### §34.13.7 Eine zweite Ausschusswahrheit im Radar — eigener, älterer Befund, hier NICHT repariert
+
+Die adversariale Schlussprüfung dieses Sprints hat einen Befund gefunden, der **nicht** von dieser
+Änderung stammt und **nicht** zur Kohorte gehört — der aber die Aussage „eine Ausschusswahrheit"
+begrenzt und deshalb hier festgehalten wird, statt unter den Tisch zu fallen.
+
+`lib/helmut/quellenarchitektur/seeds/entities.js` führt unter `COMMITTEES` eine **zweite, kuratierte
+Liste** von **23** Bundestagsausschüssen. Sie ist kein Fixture: `lib/helmut/radarState.js` lädt sie
+als „vertrauenswürdige Referenz für den ‚voller amtlicher Name'-Beleg" und verlangt, dass der
+**kuratierte** Name eines Ausschusses wörtlich im Inhalt vorkommt, bevor ein Vorgang als
+Ausschussbeleg des Mandats zählt.
+
+Selbst nachgemessen gegen die Sollmenge (`normalizeCommittee` als Brücke):
+
+| Messung | Ergebnis |
+|---|---|
+| WP-21-Bezeichnungen mit kuratiertem Radar-Eintrag | **21 von 24** |
+| ohne Eintrag | „Ausschuss für Wahlprüfung, Immunität und Geschäftsordnung" · „Petitionsausschuss" · „Ausschuss für Forschung, Technologie, Raumfahrt und Technikfolgenabschätzung" |
+| kuratierte Namen, die **exakt** einer belegten WP-20-Bezeichnung entsprechen | **3** — „Ausschuss für Inneres und Heimat" · „Ausschuss für Ernährung und Landwirtschaft" · „Ausschuss für Digitales" |
+
+Die Folge ist eine **stille Lücke im Radar**, keine Fehlfunktion der Reifeprüfung: für ein Mandat im
+heutigen „Innenausschuss" sucht der Radar den alten vollen Namen im Dokumenttext; ein
+WP-21-Dokument schreibt ihn nicht mehr so. Für drei Ausschüsse fehlt der Eintrag ganz.
+
+**Warum das hier nicht repariert wird:**
+
+* Es ist **nicht durch diesen Sprint entstanden**. Der Befund besteht, seit die WP-21-Sollmenge
+  eingeführt wurde; er betrifft die **realen** Mandate, nicht die Kohorte.
+* Eine Korrektur würde das **Radarverhalten realer Mandate ändern** — eine fachliche Änderung an
+  Production-Logik, die weder Auftrag noch Freigabe dieses Sprints ist.
+* Für die Kohorte gibt es dadurch **keine Verschlechterung**: vorher trugen die Profile
+  „Testausschuss N" und fanden im kuratierten Register erst recht nichts. Der Zuwachs ist
+  21 von 24 statt 0 von 24.
+
+**Nächster Schritt (eigene Entscheidung, eigener PR):** `entities.js` gegen `vergleicheMitSollmenge`
+pinnen und die drei fehlenden Ausschüsse ergänzen — oder den Radar-Beleg von der kuratierten Liste
+auf die Sollmenge umstellen. Beides berührt die Klassifikation und gehört deshalb hinter eine eigene
+Prüfung, nicht in diesen PR.
+
+**Zwei weitere Beobachtungen aus der Schlussprüfung, ohne Fehlerwirkung, aber wissenswert:**
+
+* Die 61 Landtagsprofile liegen in nur **zwei** Bundesländern (Mecklenburg-Vorpommern 31, Thüringen
+  30), weil `index % 8 === 7` bei 16 Bundesländern nur die Indizes 7 und 15 trifft. Folge: kein
+  Berlin, kein Brandenburg — der 500er-Test übt den **Landesmodul-Pfad nie**. Vorbestand, von dieser
+  Änderung unberührt, aber es begrenzt die Aussagekraft des Tests und gehört vor einer Bewertung der
+  Landesmodule gewusst.
+* Die Landtagsprofile nutzen nur **6 der 12** synthetischen Ausschussnamen (dieselbe Rechnung mod 12).
+  Ohne Wirkung; nichts im Code oder in der Doku behauptet etwas anderes.
+
+Zwei kleinere Funde derselben Art, ebenfalls nur festgehalten: `scripts/fixtures/synthetische-mandate-1000.js`
+und `scripts/matching-ausschuss-zustaendigkeit-test.js` tragen Ausschussnamen, die nicht (mehr) in der
+Sollmenge stehen. Beides sind **Testfixtures**, keine Production-Logik; sie laufen nicht durch die
+Reifeprüfung und sind heute grün. Sie werden hier nicht angefasst, weil eine Änderung an ihnen die
+Aussage der jeweiligen Suiten verschiebt, ohne dass dieser Sprint das beurteilen kann.

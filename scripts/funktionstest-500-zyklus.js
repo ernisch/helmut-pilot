@@ -6,16 +6,22 @@
 // Standard ist IMMER der Trockenlauf: ohne `--scharf` wird KEIN Netzaufruf
 // gemacht. Ein scharfer Lauf verlangt vier voneinander unabhängige Dinge:
 //   1. `--scharf`,
-//   2. `HELMUT_TESTKOHORTE_EXECUTE=1` UND
-//      `HELMUT_TESTKOHORTE_CONFIRM=TESTKOHORTE_FACHZYKLUS_STARTEN_BESTAETIGT`,
+//   2. `HELMUT_TESTKOHORTE_EXECUTE=1` UND `HELMUT_TESTKOHORTE_CONFIRM=<Wort>` —
+//      mit `--stufe=a|b|c` das STUFENGENAUE Wort
+//      (`TESTKOHORTE_STUFE_<X>_FACHZYKLUS_BESTAETIGT`, `testkohorte-stufen.js`);
+//      ohne Stufe das Pauschalwort `TESTKOHORTE_FACHZYKLUS_STARTEN_BESTAETIGT`,
+//      das der stufenweise Ablaufplan (03.09.) nicht mehr vorsieht,
 //   3. ein geprüftes Startfenster, das JETZT gilt (`--start`/`--dauer`),
-//   4. eine ausdrücklich bestätigte Startbereitschaft (`--startbereit=ja`) —
-//      und die meldet `funktionstest-500.startbereitschaft()` derzeit NICHT.
+//   4. eine AUSGERECHNETE Startbereitschaft (`funktionstest-500.startbereitschaft()`
+//      aus `--konfiguration=`, `--grenzen=`, `--messungen=`, `--faelligkeitsfenster=`,
+//      `--bestandene-stufen=`, `--isolation-belegt`, `--parallelitaet-belegt`) —
+//      ein handgetipptes `--startbereit=ja` wird abgewiesen (§32.6 B).
 //
 // Aufruf:
-//   node scripts/funktionstest-500-zyklus.js --start=11:36 --dauer=263
-//   node scripts/funktionstest-500-zyklus.js --start=11:36 --dauer=263 --faelligkeit
-//   node scripts/funktionstest-500-zyklus.js --start=11:36 --dauer=263 --scharf
+//   node scripts/funktionstest-500-zyklus.js --stufe=a --start=21:36 --dauer=383
+//   node scripts/funktionstest-500-zyklus.js --stufe=a --start=21:36 --dauer=383 --faelligkeit
+//   node scripts/funktionstest-500-zyklus.js --stufe=b --bestandene-stufen='["a"]' --start=21:36 --dauer=383 …
+//   node scripts/funktionstest-500-zyklus.js --stufe=a --start=21:36 --dauer=383 … --scharf
 
 const path = require("path");
 const Z = require("../lib/helmut/funktionstest-zyklus");
