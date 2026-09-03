@@ -3350,7 +3350,7 @@ Eingaben: **0**.
 
 ## §34 · Korrektursprint 03.09. — der Betreiberweg reichte die Stufe nicht durch
 
-**Branch `claude/stufenweise-provisionierung-fix-rg6sij`, Basis `main` = `a839c1b19f55246bfe747efbfcfa2269f5e28842`
+**Branch `claude/stufenweise-provisionierung-fix-rg6sij`, PR #297, Basis `main` = `a839c1b19f55246bfe747efbfcfa2269f5e28842`
 (Merge von #296). Rein vorbereitender Sprint, KEINE Production-Wirkung:** keine Provisionierung,
 keine Aktivierung, keine Umgebungsvariable, keine Migration, kein Cron, keine Azure-Einstellung,
 kein Budget, keine Reserve, kein Modellaufruf, keine externe Nachricht, keine kostenpflichtige
