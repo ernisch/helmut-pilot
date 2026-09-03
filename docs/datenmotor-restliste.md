@@ -1405,31 +1405,40 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   gelöscht (OP-04-Teilschritt). **(c)** Relationale `profiles.name`-Zeile des Pilotmandats
   per **bedingtem PATCH** (Compare-and-Set auf den dokumentierten Ausgangswert, CLAUDE.md
   §4.10) auf den Klarnamen korrigiert — genau 1 Zeile, F-P6 damit für die Namenszeile
-  behoben. **Ergebnis der Nachprüfung:** alle **fünf aktiven realen Profile BEREIT** (zentrale
-  Prüfung `profil-bereitschaft.js --production`, nur zulässige Qualitätswarnungen); Mandate
+  behoben. **Ergebnis der damaligen Nachprüfung:** Das Werkzeug meldete alle **fünf aktiven realen Profile BEREIT**
+  (`profil-bereitschaft.js --production`, nur zulässige Qualitätswarnungen). Rückblickend belegt
+  dieses Ergebnis nur die in jener Sitzung gewählte Blob-Sicht, nicht den heute wirksamen
+  Production-Profilpfad; Mandate
   **8 → 8**, aktiv **6 → 5**; keine Testmandate angelegt/aktiviert; Nutzer/Zuordnungen/
   Einladungen, Quellen, Flags, Crons und Budgets unverändert; kein Crawl/Pipeline-Lauf
-  ausgelöst; globaler Abruf weiterhin deaktiviert. **Ehrliche Grenzen:** die relationalen
-  `mandate_profiles`-Zeilen bleiben veraltete Backfill-Schnappschüsse (der wirksame
-  Blob-Lesepfad pflegt sie bei `HELMUT_PROFILE_DB_MODE`-aus nicht mit; vor einem DB-Cutover
-  ist ein Backfill nötig — dokumentierte F-P6-Familie); das Prüfwerkzeug endet weiterhin mit
+  ausgelöst; globaler Abruf weiterhin deaktiviert. **Ehrliche Grenzen:** Die relationalen
+  `mandate_profiles`-Zeilen wurden durch diese Blob-Korrektur nicht mitgeführt. Damals wurde
+  dies als Backfill-Rest vor einem späteren DB-Cutover eingeordnet. Der Wirkungsbeleg vom
+  03.09. zeigt inzwischen, dass Production tatsächlich relational liest und dieser Rest daher
+  Production-wirksam ist; siehe folgenden Nachtrag; das Prüfwerkzeug endet weiterhin mit
   Exit 2 wegen der zwei **Alt**-Demo-Mandate `angela-merkel`/`james-brown` (deaktiviert,
   inhaltlich unvollständig — Vorbestand, OP-04, in diesem Sprint nicht freigegeben).
   Details/Beweise: `docs/CURRENT_STATE.md` (Kopfeintrag 4. Durchgang 2026-08-04).
-- **Nachtrag 2026-09-03 (Widerspruchsvermerk, NICHTS ausgeführt, nichts entschieden):** Eine
-  betreiberseitige, rein lesende Production-Erhebung vom 03.09.2026 meldet für **eines** der fünf
-  aktiven Mandate wieder die **alte WP-20-Ausschussbezeichnung** und **leere** Stellvertretungen —
-  also den Zustand **vor** der Korrektur aus /4. Die Aussage „alle fünf aktiven realen Profile
-  BEREIT" aus Nachtrag /4 steht damit **im Widerspruch** zu dieser Erhebung und ist bis zur Klärung
-  **nicht als aktueller Stand zu zitieren**. Die wahrscheinlichste Erklärung ist der **Lesepfad**:
-  der Befund ist in den relationalen Spaltennamen `ausschuesse`/`stellvertretende_ausschuesse`
-  formuliert, und /4 weist die relationalen `mandate_profiles`-Zeilen ausdrücklich als veraltete
-  Backfill-Schnappschüsse aus (**F-P6**). Dann wäre das wirksame Profil unverändert korrekt.
-  Andernfalls wäre eine freigegebene Production-Korrektur verloren gegangen. **Zu klären, bevor
-  irgendein Profilfeld angefasst wird:** den Abgleich über den **wirksamen** Pfad wiederholen
-  (`scripts/profil-bereitschaft.js --production`, dasselbe Werkzeug wie in /4). Vollbeleg und beide
-  Auslegungen: [`betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md`](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md)
-  §34.13.6a/§34.13.6b. In diesem Sprint wurde **keine** Production-Datenänderung vorgenommen.
+- **Nachtrag 2026-09-03 (Widerspruch aufgelöst, rein lesend, keine Datenänderung):**
+  Production verwendet nachweislich die relationalen Profile aus `mandate_profiles`.
+  Die Menge der jeweils ersten Ausschüsse der fünf relational aktiven Profile
+  `{Arbeit und Soziales, Finanzen, Gesundheit, Haushalt}` entspricht exakt den am 03.09.
+  in `source_crawl_telemetry` ausgeführten profilbezogenen Ausschussradaren; die fünf
+  abweichenden Blob-Erstformen wurden nicht ausgeführt. Eine historische Kontrollgruppe
+  bestätigt denselben Pfad: Die Blob-Deaktivierung vom 04.08. blieb rund 30 Stunden
+  wirkungslos, erst die relationale Deaktivierung vom 06.08. beendete das Radar dauerhaft.
+  Damit ist die alte relationale Ausschussangabe eines aktiven realen Mandats heute
+  Production-wirksam. Die Blob-Korrektur aus /4 wurde nicht in die relationale Sicht
+  übernommen; PR #297 hat diese Abweichung weder verursacht noch verschärft.
+  `scripts/profil-bereitschaft.js --production` ist für diese Klärung kein zulässiger
+  Beleg, weil der Lesepfad vom lokalen `process.env` abhängt und bei nicht gesetztem
+  `HELMUT_PROFILE_DB_MODE` den Blob liest. Außerdem kann `readSupabaseStore` bei einer
+  fehlenden Blob-Zeile einen Default-Store anlegen; der Pfad ist strukturell nicht
+  garantiert rein lesend. **Offen und vor der ersten Aktivierung synthetischer Profile
+  zwingend:** amtlichen Ausschussstand belegen, relationale Profilkorrektur separat als
+  Production-Datenänderung freigeben und danach rein lesend bestätigen. Vollbeleg:
+  [`betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md`](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md)
+  §34.13.6a/§34.13.6b. In diesem Dokumentationsschritt wurde nichts in Production verändert.
 - **Nachtrag 2026-08-04/3 (letzte fachliche Korrektur, extern gegen die amtlichen Profile
   geprüft):** Drei weitere Sachfehler in den fünf **Testmandaten** bestätigt und korrigiert —
   Stegner (stv. amtlich EU-Ausschuss + Innenausschuss; die frühere Nicht-Übernahme des
