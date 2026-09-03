@@ -3785,43 +3785,122 @@ politischen Ebene (434 Bundestagsprofile reif, 61 Landtagsprofile `zutreffend: f
 
 #### §34.13.4 Welche Quellenpakete die echten Ausschussnamen ziehen — und was das an Last bedeutet
 
-Ausdrücklich nachgemessen, weil echte Ausschussnamen echte Paketlogik auslösen können.
+Ausdrücklich nachgemessen, weil echte Ausschussnamen echte Quellenlogik auslösen können.
 
-`resolveProfilePackages()` wertet von allen Ausschüssen **genau einen** aus:
-`normalizeCommittee(a) === "arbeit-und-soziales"`. Alle übrigen 23 Bezeichnungen ändern die
-Paketwahl **nicht**. Ergebnis über die Kohorte:
+> **Korrektur 03.09. (Schlussprüfung).** Dieser Abschnitt stand zuerst mit drei zu günstigen
+> Aussagen hier: „+84 `source_fetch` **einmalig**", „**ohne jede Wirkung** auf die KI-Last" und „von
+> allen Ausschussbezeichnungen wertet **genau eine** aus". Alle drei sind unten berichtigt. Die
+> Größenordnung bleibt beherrschbar — aber die ursprüngliche Formulierung war schöner als der Befund.
+
+**1 · Paketauflösung: genau eine Bezeichnung zählt.** `resolveProfilePackages()` wertet von den 24
+Ausschüssen genau einen aus (`arbeit-und-soziales`); die übrigen 23 ändern die Paketwahl nicht.
 
 | | Profile | Sachpakete | Quellen |
 |---|---|---|---|
 | unverändert | 453 | wie vorher | wie vorher |
 | **+1 Paket** (`arbeit-und-soziales`, Status aktiv) | **42** | +1 | je **+84** |
 
-Keine Mehrfachzuweisung: kein Profil erhält mehr als **ein** zusätzliches Paket
-(`test-kohorte-500-test.js` §11.14–§11.16).
+Kein Profil erhält mehr als **ein** zusätzliches Paket (`test-kohorte-500-test.js` §11.14–§11.16).
+Die 42 verteilen sich auf die Stufen **{A: 2, B: 6, C: 34}** — die volle +84-Wirkung entsteht also
+bereits in **Stufe A**, dem kleinsten und am besten kontrollierten Schritt. Das ist gut so.
 
-Warteschlangenwirkung, kohortenweit gemessen über den echten Planer:
+**2 · Warteschlangenwirkung, kohortenweit über den echten Bedarfscompiler gemessen:**
 
 | Auftragsklasse | vorher | nachher |
 |---|---|---|
-| `source_fetch` (kohortenweit dedupliziert) | 54 | **138** (+84, **einmalig**) |
+| `source_fetch` (kohortenweit dedupliziert, `tenantId: null`) | 54 | **138** (+84) |
 | `mandate_projection` (je Profil) | 495 | 495 |
 | `briefing_materialization` (je Profil) | 495 | 495 |
 
-Der Zuwachs ist **einmalig und KI-frei** (Crawl-Arbeit, keine Modellaufrufe). Die
-mandatsgebundenen Klassen — die das Kapazitätsmodell in [§30.7](#307-fällt-blocker-2-damit-weg) tragen
-(1.812 gegen 2.522) — bleiben **unverändert**. Damit ist das Kapazitätstor von dieser Änderung
-nicht berührt. Der Zuwachs fällt in den bereits offenen Punkt „Laufzeit der KI-freien
-Warteschlangenklassen (ungemessen)".
+**3 · BERICHTIGT: „einmalig" stimmt nicht.** Der Idempotenzschlüssel der geteilten Aufträge trägt
+eine **Fensterkennung**: `source_fetch|geteilt|<hash>|2026-09-03T00Z`. Die Fensterbreite ist
+`HELMUT_DEMAND_SHARED_WINDOW_H`, Standard **8 Stunden** → **3 Fenster pro Tag**. Nachgemessen: zwei
+Kompilierläufe 9 h auseinander liefern **138 und 138 Schlüssel mit 0 Überschneidung**. Der Zuwachs
+fällt also **je Fenster** an:
 
-**Einschränkung, ausdrücklich:** gemessen wurde gegen den **Offline-Quellenkatalog**, weil
-`scripts/lokal.js` `HELMUT_SOURCE_MODE=off` erzwingt. Die Zahl 84 ist die Katalogzahl, nicht ein
-Production-Messwert. In Production kann die Paketgröße abweichen; die **Struktur** der Aussage
-(genau ein zusätzliches Paket für genau 42 Profile, mandatsgebundene Klassen unverändert) hängt
+| | je Fenster | pro Tag (3 Fenster) |
+|---|---|---|
+| vorher | 54 | 162 |
+| nachher | 138 | **414** |
+| Zuwachs | +84 | **+252** |
+
+**4 · BERICHTIGT: „ohne jede Wirkung auf die KI-Last" ist zu stark.** `source_fetch` selbst ist
+KI-frei. Die 84 zusätzlichen Abrufwege holen aber neue Rohdokumente (Summe der `maxItems` der 84
+Quellen: **882 Items je Fenster**), und die KI-tragende Klasse `document_understanding` hängt an der
+Rohdokumentmenge. Richtig ist: **die mandatsgebundenen Klassen, die das Kapazitätsmodell
+([§30.7](#307-fällt-blocker-2-damit-weg): 1.812 gegen 2.522) tragen, bleiben unverändert** — das
+Kapazitätstor ist von dieser Änderung nicht berührt. Der **Folgeschritt** über das Verstehen ist
+**nicht beziffert** und fällt in den bereits offenen Punkt „Laufzeit der KI-freien
+Warteschlangenklassen (ungemessen)" sowie in den Rückstand aus §20. Vor der Aktivierung der Stufe C
+gehört er gemessen.
+
+**5 · BERICHTIGT: eine zweite Auswertestelle der Ausschussnamen.** Neben der Paketauflösung baut
+`lib/helmut/scheduler.js` (`mandateNewsSources` Nr. 4, „Ausschuss-Themenradar") eine Suchanfrage
+**wörtlich aus `committees[0]`**. Kohortenweit gemessen: **60 → 120** verschiedene Abruf-URLs. Das
+ist heute **inert**, weil `profilQuellenErlaubt` für synthetische Kennungen `false` liefert — aber
+diese Sperre hängt an **einer einzigen Umgebungsvariablen**. Mit `HELMUT_TESTKOHORTE_QUELLEN=aktiv`
+gemessen: **1.802** `source_fetch` statt 138 (geteilt plus persönlich), also **rund das
+Dreizehnfache**.
+
+> Daraus folgt eine harte Betriebsaussage: **`HELMUT_TESTKOHORTE_QUELLEN` bleibt für den gesamten
+> 500er-Funktionstest AUS.** Sie war schon vorher als Freigabepunkt geführt; seit die Kohorte echte
+> Ausschussnamen trägt, ist ihr Einschalten nicht mehr nur „rund 1.000 Google-News-Abrufe", sondern
+> eine Verdreizehnfachung der geteilten Abrufmenge. Im Env-Inventar §3a nachgezogen.
+
+**6 · Einordnung, damit die 54 → 138 nicht falsch gelesen wird.** Die Zahl gilt für die **Kohorte in
+Isolation**. Der Pilotmandant sitzt laut `seeds/packages.js` im Ausschuss für Arbeit und Soziales;
+ist sein Profil aktiv, ist das Paket bereits referenziert und der **marginale** Zuwachs in
+Production entsprechend kleiner, im Grenzfall **0**. Ungeprüft, weil ein lesender Production-Abgleich
+in dieser Sitzung nicht möglich war.
+
+**7 · Einschränkung, ausdrücklich:** gemessen wurde gegen den **Offline-Quellenkatalog**, weil
+`scripts/lokal.js` `HELMUT_SOURCE_MODE=off` erzwingt (`helmut-flags.json` setzt in Production `on`).
+Alle Zahlen dieses Abschnitts sind **Katalogzahlen des Fallback-Pfads**, keine Production-Messwerte.
+Die **Struktur** der Aussagen — genau ein zusätzliches Paket für genau 42 Profile, mandatsgebundene
+Klassen unverändert, Zuwachs je Fenster statt einmalig, zweite Auswertestelle im Quellenbau — hängt
 nicht vom Katalog ab.
 
-Ob das erwünscht ist: **ja.** Ein Funktionstest, dessen Profile echte Zuständigkeiten tragen,
-erzeugt realistischere Quellenarbeit als einer mit Phantasieausschüssen — und er tut es hier ohne
-jede Wirkung auf die KI-Last.
+**Ob das erwünscht ist: ja, mit Auflage.** Profile mit echten Zuständigkeiten erzeugen realistischere
+Quellenarbeit, und genau das soll ein Funktionstest unter Last prüfen. Die Auflage ist Punkt 5:
+`HELMUT_TESTKOHORTE_QUELLEN` bleibt aus, und der Verstehens-Folgeschritt aus Punkt 4 wird vor
+Stufe C beziffert.
+
+#### §34.13.4a Die Zusage „inaktiv" hatte zwei Löcher — eines geschlossen, eines benannt
+
+Die Schlussprüfung hat den echten `provisionTenant` verhaltensgemessen gegen die Frage
+„kann ein ausdrücklich inaktiver Lauf trotzdem aktivieren?". Sauber ist: ein fehlendes oder
+nicht-boolesches `neuAktiv` wirft, eine Spezifikation mit `profileActive/aktiv/active: true` wird
+trotzdem inaktiv angelegt (`buildProfile` ist eine Whitelist), ein Wiederholungslauf lässt inaktiv,
+das Konto ist gesperrt, und der Vorwärtsausführer wertet ein aktiv angelegtes Profil als Fehlschlag.
+Zwei Löcher blieben:
+
+**Geschlossen — `spec.reaktivieren` im Einzelpfad.** Der **Stapel**pfad weist einen
+Reaktivierungswunsch seit jeher über `aktivierungswunschBefund` ab. Der **Einzel**pfad
+`provisionTenant` — den die Kohorte über `testkohorte-vorwaerts.js` benutzt — prüfte ihn nicht: ein
+Lauf mit `neuAktiv:false` hätte ein deaktiviertes Bestandsprofil reaktiviert und `ok:true` gemeldet.
+Erreichbar war das nicht (die Kohortenspezifikation trägt das Feld nicht), aber die Zusage „die
+Anlage bleibt ausschließlich inaktiv" darf nicht daran hängen, dass niemand das Feld setzt. Jetzt
+bricht der Lauf **vor jedem Schreibvorgang** mit `reaktivierung-in-inaktivem-lauf` ab. Ein
+Reaktivierungslauf bleibt möglich — er muss sich nur als solcher ausweisen (`neuAktiv:true`), und die
+Aktivierung bleibt eine eigene Freigabe. Testgesichert: `testkohorte-provisionierung-inaktiv-test.js`
+**A0b.1–A0b.3**, inklusive der Gegenprobe, dass derselbe Fall ohne `reaktivieren` normal durchläuft.
+
+**Benannt, NICHT geändert — ein Bestandsprofil ohne aufgezeichneten Aktivierungszustand.**
+`aktivierungszustandBestimmbar` wertet `undefined`/`null` als „bestimmbar"; `mergeMitBestand` setzt
+dann `profileActive = true`, weil `validateProfile` nur `=== false` als deaktiviert liest. Ein
+inaktiver Lauf über eine **Alt-Blob-Zeile ohne das Feld** schreibt sie damit auf ausdrücklich aktiv.
+Warum das hier nicht geändert wird: die Merge-Semantik gilt für **alle** Aufrufer, auch den
+Stapelpfad unter dem 200-Mandate-Profilvertrag, und die sichere Richtung ist ohne diesen Vertrag
+nicht zu entscheiden — `false` zu erzwingen würde ein womöglich aktives reales Mandat abschalten.
+Reichweite: der relationale Pfad liest `aktiv` als Boolean und schreibt `profileActive !== false`,
+liefert also nie `undefined`; erreichbar ist der Fall nur über eine Alt-Blob-Zeile. **Für die Kohorte
+unerreichbar** — ihre 495 Kennungen sind neu, es gibt keine Bestandszeilen. Das gehört in einen
+eigenen PR gegen den Profilvertrag, nicht in diesen.
+
+**Ebenfalls nur benannt:** `testkohorte-vorwaerts.js` erlaubt eine beliebige `deps.legeAn`-Attrappe
+ohne Vertragsprüfung; ein Aufrufer mit `neuAktiv:true` würde aktiv anlegen. Der Lauf **meldet** das
+(`angelegt-aber-AKTIV`, `ok:false`), verhindert es aber nicht. Das ist eine Testschnittstelle, kein
+Betreiberweg — der Betreiberweg setzt `neuAktiv:false` fest.
 
 #### §34.13.5 Was sich am Ablaufplan geändert hat
 
@@ -3889,6 +3968,16 @@ WP-21-Dokument schreibt ihn nicht mehr so. Für drei Ausschüsse fehlt der Eintr
 pinnen und die drei fehlenden Ausschüsse ergänzen — oder den Radar-Beleg von der kuratierten Liste
 auf die Sollmenge umstellen. Beides berührt die Klassifikation und gehört deshalb hinter eine eigene
 Prüfung, nicht in diesen PR.
+
+**Zwei weitere Beobachtungen aus der Schlussprüfung, ohne Fehlerwirkung, aber wissenswert:**
+
+* Die 61 Landtagsprofile liegen in nur **zwei** Bundesländern (Mecklenburg-Vorpommern 31, Thüringen
+  30), weil `index % 8 === 7` bei 16 Bundesländern nur die Indizes 7 und 15 trifft. Folge: kein
+  Berlin, kein Brandenburg — der 500er-Test übt den **Landesmodul-Pfad nie**. Vorbestand, von dieser
+  Änderung unberührt, aber es begrenzt die Aussagekraft des Tests und gehört vor einer Bewertung der
+  Landesmodule gewusst.
+* Die Landtagsprofile nutzen nur **6 der 12** synthetischen Ausschussnamen (dieselbe Rechnung mod 12).
+  Ohne Wirkung; nichts im Code oder in der Doku behauptet etwas anderes.
 
 Zwei kleinere Funde derselben Art, ebenfalls nur festgehalten: `scripts/fixtures/synthetische-mandate-1000.js`
 und `scripts/matching-ausschuss-zustaendigkeit-test.js` tragen Ausschussnamen, die nicht (mehr) in der

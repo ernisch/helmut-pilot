@@ -163,6 +163,12 @@ async function main() {
   // Kennungsfamilie — genau der Pfad, den ein reales Mandat ginge.
   console.log("A0 · Der echte, unveränderte Pfad legt Stufe A vollständig an");
   const sp = baueSpeicher();
+  // Schnappschuss VOR dem scharfen Lauf. B8 prüft die DIFFERENZ, nicht den absoluten
+  // Bestand: was die Suite selbst am Dateikopf lädt (und was daran haengt), ist keine
+  // Aussage über die Provisionierung. Ehrlich gesagt: `ai.js` liegt zu diesem
+  // Zeitpunkt bereits im Cache, weil `testkohorte-betrieb` es transitiv zieht — es
+  // wird aber vom Anlagelauf weder geladen noch aufgerufen (B7 zählt 0 Aufrufe).
+  const moduleVorLauf = new Set(Object.keys(require.cache));
   const ergebnis = await laufStufeA(sp);
   const abgewiesen = ergebnis.ergebnisse.filter((e) => e.zustand !== "angelegt-inaktiv");
   // A0.1 ist eine QUELLTEXTPRÜFUNG und damit die schwächste Zusicherung dieses
@@ -287,6 +293,47 @@ async function main() {
       })());
   }
 
+  // ── A0b · Ein inaktiver Lauf aktiviert NICHTS — auch nicht auf Wunsch ────
+  // ERGAENZT 03.09. (Reviewbefund): der STAPELpfad wies `spec.reaktivieren` seit
+  // jeher ab, der EINZELpfad `provisionTenant` — den die Kohorte benutzt — nicht.
+  // Ein Lauf mit `neuAktiv:false` haette ein deaktiviertes Bestandsprofil trotzdem
+  // reaktiviert und `ok:true` gemeldet. Die Kohortenspezifikation traegt das Feld
+  // nicht, der Fall war also nicht erreichbar — aber die Zusage „die Anlage bleibt
+  // ausschliesslich inaktiv" darf nicht daran haengen, dass niemand das Feld setzt.
+  console.log("\nA0b · Ein ausdruecklich inaktiver Lauf aktiviert nichts");
+  {
+    const roh = require("../lib/helmut/test-kohorte-500").baueSpezifikation(0);
+    const spec = { ...roh, password: "laufzeit-passwort-nur-im-test-1234" };
+    const deps = (speicher) => ({ storage: speicher.storage, accounts: speicher.accounts });
+    const bau = async (bestand) => {
+      const speicher = baueSpeicher();
+      speicher.profile.set(spec.id, bestand);
+      return { speicher, ergebnis: await provisioning.provisionTenant(
+        { ...spec, reaktivieren: true }, deps(speicher), { neuAktiv: false }) };
+    };
+    // Die Bestandszeile muss die provisionedBy-Marke tragen — ohne sie greift der
+    // aeltere Schutz `isProtectedTenant` schon vorher, und der Fall waere gar nicht
+    // erreichbar. Genau der interessante Fall ist eine Zeile, die dieses Werkzeug
+    // selbst angelegt und die jemand deaktiviert hat.
+    const deaktiviert = provisioning.buildProfile(
+      { ...spec, password: "laufzeit-passwort-nur-im-test-1234" }, { aktiv: false });
+    const { speicher: sp1, ergebnis: e1 } = await bau(deaktiviert);
+    check("A0b.1 `reaktivieren:true` in einem inaktiven Lauf bricht ab statt zu aktivieren",
+      e1.ok === false && e1.aborted === true && e1.reason === "reaktivierung-in-inaktivem-lauf",
+      `ok=${e1.ok} reason=${e1.reason}`);
+    check("A0b.2 Und zwar VOR dem Schreibvorgang: das Bestandsprofil bleibt deaktiviert",
+      sp1.profile.get(spec.id).profileActive === false && sp1.schreibvorgaenge() === 0,
+      `profileActive=${sp1.profile.get(spec.id).profileActive} schreibvorgaenge=${sp1.schreibvorgaenge()}`);
+    check("A0b.3 Der Abbruch haengt am Lauf, nicht am Wert: ohne `reaktivieren` laeuft derselbe Fall durch",
+      (await (async () => {
+        const speicher = baueSpeicher();
+        speicher.profile.set(spec.id, deaktiviert);
+        const e = await provisioning.provisionTenant(spec, deps(speicher), { neuAktiv: false });
+        return e.reason !== "reaktivierung-in-inaktivem-lauf"
+          && speicher.profile.get(spec.id).profileActive === false;
+      })()));
+  }
+
   // ── A · Eigenschaften der angelegten Stufe A ─────────────────────────────
   console.log("\nA · Was der echte Lauf hinterlassen hat");
   check("A2 Genau die 20 Kennungen der Stufe A liegen im Store — keine andere",
@@ -312,10 +359,21 @@ async function main() {
   check("B6 Der Kommunikationsriegel wurde 0-mal gefragt — kein Außenkanal hat auch nur angeklopft",
     zaehler.riegel === 0, String(zaehler.riegel));
   check("B7 Keine Funktion des KI-Moduls wurde aufgerufen (0 Modellaufrufe)", zaehler.ki === 0, String(zaehler.ki));
-  check("B8 Die Außenkanalmodule wurden nicht einmal GELADEN",
-    ["mail-transport.js", "job-dispatch.js", "lambda-verbraucher.js", "monitoring-webhook.js", "push-notifications.js"]
-      .every((m) => !Object.keys(require.cache).some((k) => k.endsWith(`${path.sep}lib${path.sep}helmut${path.sep}${m}`))),
-    Object.keys(require.cache).filter((k) => /mail-transport|job-dispatch|lambda-verbraucher|monitoring-webhook/.test(k)).map((k) => path.basename(k)).join(",") || "keines geladen");
+  // ERWEITERT 03.09. (Reviewbefund): die erste Fassung prüfte eine feste Fünferliste
+  // reiner Außenkanäle. Die KI- und Embedding-Module standen nicht darin — gerade sie
+  // sind aber die teuren. Dazu Crawler und DIP, die Netzarbeit auslösen würden.
+  const VERBOTENE_MODULE = ["mail-transport.js", "job-dispatch.js", "lambda-verbraucher.js",
+    "monitoring-webhook.js", "push-notifications.js", "ai.js", "embedding-backfill.js",
+    "embedding-shadow-pipeline.js", "crawler.js", "dip.js"];
+  const neuGeladen = Object.keys(require.cache).filter((k) => !moduleVorLauf.has(k));
+  const geladen = VERBOTENE_MODULE.filter((m) => neuGeladen
+    .some((k) => k.endsWith(`${path.sep}lib${path.sep}helmut${path.sep}${m}`)));
+  check(`B8 Die Provisionierung hat kein Außenkanal-, KI- oder Crawl-Modul NACHGELADEN (${VERBOTENE_MODULE.length} geprüft)`,
+    geladen.length === 0, geladen.join(", ") || "keines nachgeladen");
+  check("B8a Der Lauf hat überhaupt nur Fachmodule nachgeladen (Beleg, dass B8 nicht ins Leere prüft)",
+    neuGeladen.length > 0,
+    `${neuGeladen.length} Module: ${neuGeladen.filter((k) => k.includes(`${path.sep}lib${path.sep}helmut${path.sep}`))
+      .map((k) => path.basename(k)).sort().join(", ")}`);
 
   // ── C · Der echte Planer plant für inaktive Profile NICHTS ────────────────
   console.log("\nC · Der Arbeitsplaner erzeugt für die 20 inaktiven Profile keinen einzigen Auftrag");
