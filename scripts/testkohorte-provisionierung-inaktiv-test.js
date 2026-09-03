@@ -195,8 +195,10 @@ async function main() {
     sp.nutzer.length === 20 && sp.nutzer.every((u) => u.active === false && u.politicianId && S.stufeVonKennung(u.politicianId) === "a"));
   check("A5 Der Arbeitsplaner hält jedes dieser Profile für DEAKTIVIERT (dasselbe Prädikat wie planeArbeit)",
     [...sp.profile.values()].every((p) => isDisabled(p) === true));
-  check("A6 Es gab genau 20 Profil-Schreibvorgänge — einer je Kennung, sonst nichts",
-    sp.schreibvorgaenge() === 20);
+  check("A6 Gegen den Arbeitsspeicher-Store: genau 20 Profil-Schreibvorgänge — einer je Kennung",
+    sp.schreibvorgaenge() === 20,
+    "Produktiv schreibt provisionTenant je Kennung zusätzlich den Auth-Blob main-auth als Ganzes (Konto, Last-Write-Wins) — "
+      + "Schreibvorgänge sind nicht Last; Last entsteht erst durch Aufträge, Verstehen, Modellaufrufe");
 
   // ── B · Was NICHT passiert ist ────────────────────────────────────────────
   console.log("\nB · Kein Netz, kein Kindprozess, kein Außenkanal, kein Modellaufruf");
@@ -243,6 +245,48 @@ async function main() {
   check("C5 Auch die Gegenprobe braucht kein Netz und keinen Modellaufruf (Planen ist modellfrei)",
     zaehler.fetch === 0 && zaehler.http === 0 && zaehler.https === 0 && zaehler.ki === 0);
 
+  // ── C2 · Der zweite Konsument aller Profile: die Verstehens-Interessenprüfung ─
+  // REVIEWBEFUND 03.09.: `scheduler.js` reicht `listFullProfiles()` (inkl.
+  // inaktiver) an `lazyUnderstanding.interestedProfiles`; ein inaktives
+  // Kohortenprofil zählte dort als „interessiert" und hätte Verstehensarbeit
+  // vorgemerkt (später Modellaufrufe). Seit 03.09. filtert die Interessenprüfung
+  // mit demselben Prädikat wie der Arbeitsplaner (`isDisabled`).
+  console.log("\nC2 · Die Verstehens-Interessenprüfung übergeht inaktive Profile");
+  {
+    const LU = require("../lib/helmut/lazyUnderstanding");
+    const spec = require("../lib/helmut/test-kohorte-500").baueKohorte()[0];
+    const inaktivesProfil = [...sp.profile.values()].find((p) => p.id === spec.id);
+    const cluster = {
+      vorgang_id: "v-test-interesse-1",
+      title: `${spec.committees[0]} berät ${spec.focusTopics[0]}`,
+      summary: `${spec.focusTopics[0]} ${spec.committees[0]}`,
+      policy_field: spec.focusTopics, parteien: [spec.party], ausschuesse: spec.committees
+    };
+    const aktivKopie = { ...inaktivesProfil, profileActive: true };
+    const interesseAktiv = LU.interestedProfiles(cluster, [aktivKopie]);
+    check("C2.1 GEGENPROBE: dasselbe Profil AKTIV ist an einem passenden Vorgang interessiert",
+      interesseAktiv.length === 1 && interesseAktiv[0].userId === spec.id,
+      interesseAktiv.length ? `Ähnlichkeit ${interesseAktiv[0].similarity}` : "nicht interessiert");
+    check("C2.2 INAKTIV zählt es nicht als interessiert — kein Vormerken von Verstehensarbeit",
+      LU.interestedProfiles(cluster, [inaktivesProfil]).length === 0
+        && LU.interestedProfiles(cluster, [...sp.profile.values()]).length === 0);
+    check("C2.3 Auch ein soft-gelöschtes Profil zählt nicht (dasselbe Prädikat wie der Planer)",
+      LU.interestedProfiles(cluster, [{ ...aktivKopie, deletedAt: "2026-09-01T00:00:00Z" }]).length === 0);
+    check("C2.4 decideLazyUnderstanding über die 20 inaktiven Profile: skip-no-interest",
+      LU.decideLazyUnderstanding({ vorgangId: cluster.vorgang_id, cluster, profiles: [...sp.profile.values()] }).action === "skip-no-interest");
+    let vorgemerkt = 0;
+    const lauf = await LU.runLazyUnderstandingShadow({ cluster, profiles: [...sp.profile.values()], existingKo: null }, {
+      enabled: () => true,
+      getExisting: async () => null,
+      listProfiles: async () => [...sp.profile.values()],
+      savePending: async () => { vorgemerkt += 1; return { ok: true }; }
+    });
+    check("C2.5 Der Shadow-Runner (Flag an) merkt für 20 inaktive Profile NICHTS vor",
+      lauf.triggered === false && lauf.action === "skip-no-interest" && vorgemerkt === 0);
+    check("C2.6 Und weiterhin 0 Netz, 0 KI, 0 Riegel",
+      zaehler.fetch === 0 && zaehler.http === 0 && zaehler.https === 0 && zaehler.ki === 0 && zaehler.riegel === 0);
+  }
+
   // ── D · Die stufenbewusste Isolationsprüfung bestätigt den Zustand ────────
   console.log("\nD · Die rein lesende Isolationsprüfung ist stufenbewusst");
   const grundlinie = Object.freeze({
@@ -288,6 +332,27 @@ async function main() {
     })());
   check("D8 Eine unbekannte Stufe wirft (grund: stufe)",
     (() => { try { K.pruefeIsolation({ grundlinie, bestand: bestandAus(zeilenA), stufe: "z" }); return false; } catch (e) { return e && e.grund === "stufe"; } })());
+
+  // ── D2 · Auch der Rückbau-Beleg ist stufenbewusst (Reviewbefund 03.09.) ───
+  // Ohne `stufe` verlangte er 495 gelesene Zeilen — nach Stufe A (20 Zeilen)
+  // wäre der Rückweg damit NIE bestätigbar gewesen: ein falsches Rot.
+  console.log("\nD2 · Der Rückbau-Beleg ist stufenbewusst");
+  {
+    const bestandNachRueckbau = (zeilen) => bestandAus(zeilen, { erhobenUtc: "2026-09-11T02:00:00.000Z" });
+    const ohneStufe = K.pruefeRueckbau({ grundlinie, bestand: bestandNachRueckbau(zeilenA) });
+    check("D2.1 OHNE Stufe: 20 gelesene Zeilen sind nicht 495 → nicht bestätigt (Bestandsverhalten)",
+      ohneStufe.zurueckgebaut === false && ohneStufe.offen.includes("Vollständige Kohorte gelesen") && ohneStufe.stufe === null);
+    const mitStufe = K.pruefeRueckbau({ grundlinie, bestand: bestandNachRueckbau(zeilenA), stufe: "a" });
+    check("D2.2 MIT Stufe A: 20 inaktive Zeilen → Rückbau bestätigt",
+      mitStufe.zurueckgebaut === true && mitStufe.stufe === "a", mitStufe.offen.join("; ") || "alle Prüfungen bestanden");
+    check("D2.3 Eine noch aktive Zeile bricht den Beleg auch mit Stufe",
+      K.pruefeRueckbau({ grundlinie, bestand: bestandNachRueckbau(zeilenA.map((z, i) => (i === 0 ? { ...z, aktiv: true } : z))), stufe: "a" }).zurueckgebaut === false);
+    check("D2.4 Eine fehlende oder vorzeitige Zeile bricht den Beleg mit Stufe",
+      K.pruefeRueckbau({ grundlinie, bestand: bestandNachRueckbau(zeilenA.slice(1)), stufe: "a" }).zurueckgebaut === false
+        && K.pruefeRueckbau({ grundlinie, bestand: bestandNachRueckbau([...zeilenA, { id: "test-kohorte-b-001", aktiv: false, email: "test-kohorte-b-001@test-kohorte.invalid" }]), stufe: "a" }).zurueckgebaut === false);
+    check("D2.5 Eine unbekannte Stufe wirft (grund: stufe)",
+      (() => { try { K.pruefeRueckbau({ grundlinie, bestand: bestandNachRueckbau(zeilenA), stufe: "z" }); return false; } catch (e) { return e && e.grund === "stufe"; } })());
+  }
 
   // ── E · Was diese Suite NICHT behauptet ───────────────────────────────────
   console.log("\nE · Grenze dieser Suite, ehrlich");

@@ -15,6 +15,7 @@
 //   node scripts/lokal.js -- node scripts/testkohorte-495.js aktivierung --gruppe=a --grundlinie=g.json --bestand=b.json
 //   node scripts/lokal.js -- node scripts/testkohorte-495.js deaktivierung --grundlinie=g.json --bestand=b.json
 //   node scripts/lokal.js -- node scripts/testkohorte-495.js rueckbau   --grundlinie=g.json --bestand=b.json
+//   node scripts/lokal.js -- node scripts/testkohorte-495.js rueckbau   --stufe=a --grundlinie=g.json --bestand=b.json
 //   node scripts/lokal.js -- node scripts/testkohorte-495.js freigaben
 //
 // Der scharfe Lauf ist BEWUSST NICHT IMPLEMENTIERT. Er wäre eine
@@ -128,7 +129,7 @@ function main() {
       + "Die Ausführer liegen getrennt, jeder mit eigenem Bestätigungswort:\n"
       + "  Provisionierung : node scripts/testkohorte-vorwaerts.js provisionierung --stufe=<a|b|c> --scharf\n"
       + "  Aktivierung     : node scripts/testkohorte-vorwaerts.js aktivierung --gruppe=<a|b|c> --scharf\n"
-      + "  Fachzyklus      : node scripts/funktionstest-500-zyklus.js --scharf\n"
+      + "  Fachzyklus      : node scripts/funktionstest-500-zyklus.js --stufe=<a|b|c> … --scharf\n"
       + "  Rückweg         : node scripts/testkohorte-rueckbau.js --scharf\n"
       + "  Nacharbeit      : node scripts/testkohorte-rueckbau.js --spur --scharf\n"
       + "Jeder davon ist eine Production-Datenänderung und nach CLAUDE.md §5\n"
@@ -216,7 +217,12 @@ function main() {
     drucke("Deaktivierungsplan (Trockenlauf)", K.planeDeaktivierung({ grundlinie, bestand, env }));
     return;
   }
-  drucke("Rückbauprüfung", K.pruefeRueckbau({ grundlinie, bestand }));
+  // STUFENBEWUSST (03.09.): nach einer stufenweisen Provisionierung liegen nur
+  // die Zeilen bis zur angelegten Stufe vor; ohne `--stufe=` verlangt der Beleg
+  // wie bisher alle 495.
+  const stufeRueckbau = argument(argv, "stufe") || null;
+  drucke(`Rückbauprüfung${stufeRueckbau ? ` (bis Stufe ${String(stufeRueckbau).toUpperCase()})` : ""}`,
+    K.pruefeRueckbau({ grundlinie, bestand, stufe: stufeRueckbau }));
 }
 
 try {

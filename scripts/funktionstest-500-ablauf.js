@@ -69,7 +69,18 @@ function main() {
     }
     console.log(`\nNächster möglicher Schritt: ${plan.naechsterSchritt || "(keiner — alle Vorbedingungen offen oder erledigt)"}`);
     console.log(`Production-/Umgebungsschritte mit eigener Freigabe: ${plan.einzelfreigabenGesamt}`);
-    console.log(plan.hinweis);
+    // STUFENWEISE (03.09.): die zentralen neuen Aussagen des Plans, ausgedruckt —
+    // nicht nur im Modul lesbar.
+    console.log(`\n${plan.keinSammelschritt}`);
+    for (const st of plan.stufen) {
+      console.log(`  Stufe ${st.stufe.toUpperCase()} (${st.umfang} Profile): Anlage ${st.provisionierungswort}`
+        + ` · Aktivierung ${st.aktivierungswort} · Fachzyklus ${st.fachzykluswort}`);
+    }
+    console.log(`\nBetreiberwerte (${plan.betreiberwerte.werte.length}): ${plan.betreiberwerte.werte.join(", ")}`);
+    console.log(`  Vorbedingung von: ${plan.betreiberwerte.vorbedingungVon.join(", ")}`);
+    console.log(`  KEINE Vorbedingung von: ${plan.betreiberwerte.keineVorbedingungVon.join(", ")}`);
+    console.log(`  ${plan.betreiberwerte.hinweis}`);
+    console.log(`\n${plan.hinweis}`);
     return;
   }
 

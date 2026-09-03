@@ -21,6 +21,11 @@
 //   * Eine unbekannte Angabe (Tippfehler wie `--stuffe=a`, oder `--gruppe=` bei der
 //     Provisionierung) wird NICHT still ignoriert, sondern ist ebenfalls ein
 //     geschlossener Abbruch. Still ignorierte Angaben waren die Ursache des Befunds.
+//   * Eine MEHRFACH gesetzte Angabe (`--stufe=c --stufe=a`) ist ein Abbruch —
+//     „die erste gewinnt" wäre dieselbe Klasse stiller Verschiebung
+//     (Reviewbefund 03.09.).
+//   * `--start`/`--dauer`/`--jetzt` werden geprüft: falsches Format oder ein
+//     unvollständiges Fensterpaar ist ein Aufruffehler, kein stiller Trockenlauf.
 //   * Die Bibliothek behält ihre Rückwärtsverträglichkeit (ohne `stufe` weiter
 //     495 + Pauschalwort) — nur der Betreiberweg hier verlangt die Stufe.
 //
@@ -28,11 +33,15 @@
 //   1. `--scharf` auf der Kommandozeile,
 //   2. `HELMUT_TESTKOHORTE_EXECUTE=1` UND `HELMUT_TESTKOHORTE_CONFIRM=<Wort GENAU
 //      DIESER Stufe und DIESES Schrittes>`,
-//   3. ein geprüfter Startfensterbefund, der JETZT gilt (`--start`/`--dauer`).
+//   3. ein geprüfter Startfensterbefund, der JETZT gilt (`--start`/`--dauer`) —
+//      gemessen an der SYSTEMUHR. `--jetzt=` ist eine Prüfuhr für den
+//      Trockenlauf und wird im scharfen Lauf ABGEWIESEN (Reviewbefund 03.09.:
+//      eine vom Betreiber gesetzte Uhr hätte den dritten Riegel ausgehebelt).
 // Fehlt eines davon, fällt der Lauf auf den Trockenlauf zurück und sagt warum.
 //
 // Aufruf:
 //   node scripts/lokal.js -- node scripts/testkohorte-vorwaerts.js provisionierung --stufe=a
+//   node scripts/lokal.js -- node scripts/testkohorte-vorwaerts.js provisionierung --stufe=a --start=21:40 --dauer=240 --jetzt=2026-09-10T23:00:00Z
 //   node scripts/testkohorte-vorwaerts.js provisionierung --stufe=a --start=21:40 --dauer=240 --scharf
 //   node scripts/testkohorte-vorwaerts.js provisionierung --stufe=a --ids=test-kohorte-a-003 --start=… --dauer=… --scharf
 //   node scripts/testkohorte-vorwaerts.js aktivierung --gruppe=a --grundlinie=g.json --bestand=b.json --start=21:40 --dauer=240
@@ -40,7 +49,8 @@
 //
 // Exitcodes: 0 Lauf beendet (Trockenlauf oder bestätigter scharfer Lauf) ·
 // 1 Abbruch aus der Bibliothek (fremde/falsche/doppelte Kennung, Fehlschlag je Zeile) ·
-// 2 Aufruffehler (Werkzeug, Stufe oder Angabe fehlt/unbekannt) — VOR jedem Zugriff.
+// 2 Aufruffehler (Werkzeug, Stufe, Angabe, Fenster oder Uhr fehlt/unbekannt/ungültig)
+// — VOR jedem Zugriff.
 //
 // Der RÜCKWEG liegt bewusst in einem ANDEREN Werkzeug
 // (`scripts/testkohorte-rueckbau.js`) und braucht KEIN Fenster.
@@ -65,6 +75,7 @@ const ERLAUBTE_ANGABEN = Object.freeze({
 const ERLAUBTE_SCHALTER = Object.freeze(["--scharf"]);
 
 const EXIT_AUFRUFFEHLER = 2;
+const EXIT_BIBLIOTHEK = 1;
 
 function argument(argv, name) {
   const treffer = argv.find((a) => a.startsWith(`--${name}=`));
@@ -76,24 +87,33 @@ function drucke(titel, wert) {
   console.log(JSON.stringify(wert, null, 2));
 }
 
-function abbruch(meldung) {
+function abbruch(meldung, code = EXIT_AUFRUFFEHLER) {
   console.error(`Abbruch: ${meldung}`);
-  process.exit(EXIT_AUFRUFFEHLER);
+  process.exit(code);
 }
 
-// Unbekannte Angaben sind ein Abbruch, kein Hinweis.
+// Unbekannte UND mehrfach gesetzte Angaben sind ein Abbruch, kein Hinweis.
 function pruefeAngaben(werkzeug, argv) {
   const unbekannt = [];
+  const gesehen = new Map();
   for (const a of argv) {
-    if (ERLAUBTE_SCHALTER.includes(a)) continue;
+    if (ERLAUBTE_SCHALTER.includes(a)) { gesehen.set(a, (gesehen.get(a) || 0) + 1); continue; }
     const m = /^--([^=]+)=/.exec(a);
-    if (m && ERLAUBTE_ANGABEN[werkzeug].includes(m[1])) continue;
+    if (m && ERLAUBTE_ANGABEN[werkzeug].includes(m[1])) {
+      gesehen.set(`--${m[1]}=`, (gesehen.get(`--${m[1]}=`) || 0) + 1);
+      continue;
+    }
     unbekannt.push(a);
   }
   if (unbekannt.length) {
     abbruch(`unbekannte Angabe(n) für ${werkzeug}: ${unbekannt.map((u) => String(u).slice(0, 40)).join(", ")}. `
       + `Erlaubt sind ${ERLAUBTE_ANGABEN[werkzeug].map((n) => `--${n}=`).join(", ")} und --scharf. `
       + "Eine unbekannte Angabe wird nie still ignoriert.");
+  }
+  const mehrfach = [...gesehen.entries()].filter(([, n]) => n > 1).map(([name, n]) => `${name} (${n}-mal)`);
+  if (mehrfach.length) {
+    abbruch(`mehrfach gesetzte Angabe(n): ${mehrfach.join(", ")}. `
+      + "Welche gilt, wird nicht geraten — jede Angabe genau einmal.");
   }
 }
 
@@ -120,6 +140,34 @@ function kennungenAusArgv(argv) {
   return liste;
 }
 
+// Fenster und Uhr: geprüft, nicht geraten. Ein unvollständiges Paar oder ein
+// falsches Format ist ein Aufruffehler — der Betreiber erfährt es sofort, statt
+// im JSON einen stillen Trockenlauf zu lesen.
+function fensterAusArgv(argv, scharfGewuenscht) {
+  const start = argument(argv, "start");
+  const dauer = argument(argv, "dauer");
+  const jetzt = argument(argv, "jetzt");
+  if ((start === null) !== (dauer === null)) {
+    abbruch("--start= und --dauer= gehören zusammen — eines allein ergibt kein prüfbares Fenster.");
+  }
+  if (start !== null && !/^([01]\d|2[0-3]):[0-5]\d$/.test(String(start).trim())) {
+    abbruch(`--start=${String(start).slice(0, 12)} ist keine Uhrzeit HH:MM (UTC).`);
+  }
+  if (dauer !== null && !/^[1-9]\d*$/.test(String(dauer).trim())) {
+    abbruch(`--dauer=${String(dauer).slice(0, 12)} ist keine positive ganze Minutenzahl.`);
+  }
+  if (jetzt !== null) {
+    if (scharfGewuenscht) {
+      abbruch("--jetzt= ist eine Prüfuhr für den Trockenlauf. Im scharfen Lauf gilt ausschließlich die "
+        + "Systemuhr — eine gesetzte Uhr würde den dritten Riegel (Fenster gilt JETZT) aushebeln.");
+    }
+    if (!Number.isFinite(Date.parse(String(jetzt)))) {
+      abbruch(`--jetzt=${String(jetzt).slice(0, 30)} ist kein gültiger Zeitpunkt (ISO 8601, UTC).`);
+    }
+  }
+  return { start, dauer, jetzt };
+}
+
 async function main() {
   const argv = process.argv.slice(2);
   const werkzeug = (argv[0] || "").trim();
@@ -129,6 +177,7 @@ async function main() {
   }
   const rest = argv.slice(1);
   pruefeAngaben(werkzeug, rest);
+  const scharfGewuenscht = rest.includes("--scharf");
 
   // ── Die Zielstufe wird ZUERST festgelegt — vor Fenster, Banner und Bibliothek ──
   let stufe = null;
@@ -137,6 +186,16 @@ async function main() {
   if (werkzeug === "provisionierung") {
     stufe = pflichtStufe(rest, "stufe");
     kennungen = kennungenAusArgv(rest);
+    // Eine übergebene Teilmenge wird HIER gegen die Erlaubnisliste GENAU DIESER
+    // Stufe gerechnet (reine Logik, kein Zugriff) — vor dem Banner, damit kein
+    // Protokolleintrag etwas verspricht, was der Lauf danach abbricht.
+    if (kennungen) {
+      try {
+        kennungen = [...S.pruefeStufenZielmenge(stufe, kennungen, `Provisionierung (Stufe ${stufe.toUpperCase()})`)];
+      } catch (fehler) {
+        abbruch(`(${fehler.grund || "zielmenge"}) ${fehler.message}`, EXIT_BIBLIOTHEK);
+      }
+    }
   } else {
     // Die Aktivierung heißt ihre Stufe „Gruppe" (Bestandsbegriff). `--stufe=`
     // wird als Alias angenommen; ein Widerspruch zwischen beiden ist ein Abbruch.
@@ -149,14 +208,12 @@ async function main() {
     gruppe = pflichtStufe(rest, g !== null ? "gruppe" : "stufe");
   }
 
-  const scharfGewuenscht = rest.includes("--scharf");
-  const start = argument(rest, "start");
-  const dauer = argument(rest, "dauer");
+  const { start, dauer, jetzt } = fensterAusArgv(rest, scharfGewuenscht);
 
   // Der Fensterbefund wird HIER gerechnet, gegen die echten 13 Bestandscrons und
   // MIT der Watchdog-Vorsichtsspanne — ein Tor darf nie schwächer prüfen als die
   // Empfehlung, die es durchsetzt.
-  const startfensterBefund = start && dauer
+  const startfensterBefund = start !== null
     ? F.pruefeStartfenster({
       startUtc: `2026-01-01T${start}:00Z`,
       dauerMinuten: Number(dauer),
@@ -164,14 +221,15 @@ async function main() {
       watchdogBeruecksichtigen: true
     })
     : null;
-  // Die Uhr kommt vom Aufrufer, nicht aus dem Modul: der Befund muss JETZT gelten.
-  const jetztUtc = argument(rest, "jetzt") || new Date().toISOString();
+  // Die Uhr: im Trockenlauf wahlweise die Prüfuhr, im scharfen Lauf IMMER die
+  // Systemuhr (siehe fensterAusArgv). Der Befund muss JETZT gelten.
+  const jetztUtc = jetzt !== null ? new Date(jetzt).toISOString() : new Date().toISOString();
 
   if (scharfGewuenscht) {
     const zielStufe = stufe || gruppe;
     console.log("!!! SCHARFER VORWÄRTSSCHRITT ANGEFORDERT — Production-Datenänderung !!!");
     console.log(`    Es wirkt ausschließlich auf die ${S.STUFEN_UMFANG[zielStufe]} Kohortenkennungen `
-      + `der Stufe ${zielStufe.toUpperCase()}${kennungen ? ` (Teilmenge: ${kennungen.length})` : ""}. Nichts wird gelöscht.`);
+      + `der Stufe ${zielStufe.toUpperCase()}${kennungen ? ` (geprüfte Teilmenge: ${kennungen.length})` : ""}. Nichts wird gelöscht.`);
     console.log("    Der Rückweg bleibt jederzeit und ohne Zeitfenster ausführbar:");
     console.log("      node scripts/testkohorte-rueckbau.js --scharf\n");
   }
@@ -190,6 +248,7 @@ async function main() {
       modusGewuenscht: ergebnis.modusGewuenscht,
       stufe: ergebnis.stufe,
       stufenUmfang: S.STUFEN_UMFANG[stufe],
+      uhr: jetzt !== null ? "pruefuhr-trockenlauf" : "systemuhr",
       freigabe: ergebnis.freigabe,
       startfenster: ergebnis.startfenster,
       zielGroesse: ergebnis.zielGroesse,
@@ -207,7 +266,7 @@ async function main() {
       for (const e of ergebnis.ergebnisse.filter((x) => x.zustand !== "angelegt-inaktiv")) {
         console.log(`  ${e.id}: ${e.zustand}${e.schreibfehler ? ` · Schreibfehler: ${e.schreibfehler}` : ""}`);
       }
-      process.exit(1);
+      process.exit(EXIT_BIBLIOTHEK);
     }
     return;
   }
@@ -252,6 +311,7 @@ async function main() {
   drucke(`Aktivierung Gruppe ${(ergebnis.gruppe || "?").toUpperCase()} (${ergebnis.modus})`, {
     modus: ergebnis.modus,
     modusGewuenscht: ergebnis.modusGewuenscht,
+    uhr: jetzt !== null ? "pruefuhr-trockenlauf" : "systemuhr",
     freigabe: ergebnis.freigabe,
     startfenster: ergebnis.startfenster,
     vorstufenVollstaendig: ergebnis.vorstufenVollstaendig,
@@ -271,12 +331,12 @@ async function main() {
     for (const e of ergebnis.ergebnisse.filter((x) => x.zustand !== "aktiv")) {
       console.log(`  ${e.id}: ${e.zustand}${e.schreibfehler ? ` · Schreibfehler: ${e.schreibfehler}` : ""}`);
     }
-    process.exit(1);
+    process.exit(EXIT_BIBLIOTHEK);
   }
 }
 
 main().catch((fehler) => {
   const grund = fehler && fehler.grund ? ` (${fehler.grund})` : "";
   console.error(`Abbruch${grund}: ${(fehler && fehler.message) || fehler}`);
-  process.exit(1);
+  process.exit(EXIT_BIBLIOTHEK);
 });

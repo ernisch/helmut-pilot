@@ -3398,6 +3398,13 @@ Betreiberweg nutzte das nicht. Wer „nur die 20 der Stufe A" wollte, hätte mit
   Kennung einer anderen Stufe, eine fremde oder erfundene Kennung und ein Duplikat brechen über
   `pruefeStufenZielmenge` ab (**Exit 1**, `falsche-stufe` / `fremde-kennung` / `doppelte-kennung`).
 - Die Aktivierung nimmt `--stufe` als Alias von `--gruppe`; ein Widerspruch bricht ab.
+- **Nach dem Review (§34.12) zusätzlich:** eine **mehrfach gesetzte** Angabe (`--stufe=c --stufe=a`)
+  bricht ab — „die erste gewinnt" wäre dieselbe stille Verschiebung; `--jetzt=` (Prüfuhr) wird
+  **im scharfen Lauf abgewiesen** — der dritte Riegel („Fenster gilt JETZT") misst an der
+  Systemuhr und ist nicht setzbar; `--start`/`--dauer`/`--jetzt` werden auf Format geprüft, ein
+  halbes Fensterpaar ist ein Aufruffehler (Exit 2), kein stiller Trockenlauf; eine `--ids=`-Liste
+  wird **vor dem Banner** gegen die Stufe gerechnet, damit kein Protokolleintrag etwas verspricht,
+  was der Lauf danach abbricht.
 - Das Banner des scharfen Laufs nennt die Stufe, nicht die 495.
 - **Die Bibliothek ist unverändert**: ohne `stufe` weiterhin 495 + Pauschalwort
   (Regressionsvertrag `testkohorte-stufen-test.js` L1). Nur der Betreiberweg ist geschlossen.
@@ -3415,29 +3422,34 @@ Ergebnis nach der Korrektur (Trockenläufe über `scripts/lokal.js`):
 ### §34.4 Der Ablaufplan ist jetzt stufenweise (`lib/helmut/funktionstest-ablaufplan.js`)
 
 Der maschinenlesbare Plan behauptete bis zu diesem Sprint einen Schritt „495 Profile INAKTIV
-provisionieren". Er kennt jetzt **27 Schritte** und **keinen Sammelschritt**
+provisionieren". Er kennt jetzt **28 Schritte** und **keinen Sammelschritt**
 (`keinSammelschritt`, `stufenweise: true`, `provisionierungsSchritte = [provisionierung-a, -b, -c]`):
 
 | Nr | Schritt | Art | Vorbedingungen |
 |---|---|---|---|
-| 1–3 | Grundlinie · Sicherung · Startfenster | lesend | — |
-| 4 | **Stufe A: 20 Profile INAKTIV provisionieren** | Production, Stufenwort | Grundlinie, Sicherung, Fenster |
-| 5 | **Stufe A: Isolation und Inaktivität rein lesend belegen** (`isolation --stufe=a`) | lesend | Stufe A angelegt |
-| 6 | **Die acht Betreiberwerte setzen** (Deckel, Verstehens-Reserve, Vorrangreserve, RPM, TPM, Kosten, Parallelität, Kommunikationsriegel) | Umgebung | Grundlinie |
-| 7 | Kommunikationsriegel scharf prüfen | lesend | Werte |
-| 8 | **Wirksamkeit der Werte prüfen** | lesend | Werte, Riegel |
-| 9 | **Stufe A aktivieren** (eigene Freigabe `aktivierung-a`) | Production | Isolation A, Werte, Werte geprüft, Riegel, Fenster |
-| 10–11 | Fachzyklus A (Stufenwort) · Kontrolle A (A01–A15) | Production · lesend | Gruppe A aktiv · Zyklus A |
-| 12–16 | **Stufe B getrennt**: Anlage → Isolation → Aktivierung → Fachzyklus → Kontrolle | | **erst nach Kontrolle A** |
-| 17–21 | **Stufe C getrennt** | | **erst nach Kontrolle B** |
-| 22 | Gemeinsame Auswertung | lesend | Kontrolle C |
-| 23–24 | Deaktivierung · Rückbauprüfung | **nie gesperrt** | — |
-| 25–27 | Scheduler-Spur · optional Migration/Flag | eigene Freigaben | |
+| 1–3 | Grundlinie · Sicherung (`backup-export.js --scope=profil`, **ohne** `lokal.js`) · Startfenster | lesend | — |
+| 4 | **Betreiberentscheidung zur Kohortenspezifikation** (Bundestagsreife-Sperre, §34.7) | Entscheidung | — |
+| 5 | **Stufe A: 20 Profile INAKTIV provisionieren** | Production, Stufenwort | Grundlinie, Sicherung, Fenster, **Reifeentscheidung** |
+| 6 | **Stufe A: Isolation und Inaktivität rein lesend belegen** (`isolation --stufe=a`) | lesend | Stufe A angelegt |
+| 7 | **Die acht Betreiberwerte setzen** (Deckel, Verstehens-Reserve, Vorrangreserve, RPM, TPM, Kosten, Parallelität, Kommunikationsriegel) | Umgebung | Grundlinie |
+| 8 | Kommunikationsriegel scharf prüfen | lesend | Werte |
+| 9 | **Wirksamkeit der Werte prüfen** (ehrlich: nur der Deckel ist rein lesend belegbar) | lesend | Werte, Riegel |
+| 10 | **Stufe A aktivieren** (eigene Freigabe `aktivierung-a`) | Production | Isolation A, Werte, Werte geprüft, Riegel, Fenster |
+| 11–12 | Fachzyklus A (Stufenwort; braucht Werte geprüft, Riegel, Fenster) · Kontrolle A (A01–A15) | Production · lesend | Gruppe A aktiv · Zyklus A |
+| 13–17 | **Stufe B getrennt**: Anlage → Isolation → Aktivierung → Fachzyklus (`--bestandene-stufen='["a"]'`) → Kontrolle | | **jeder Schritt erst nach Kontrolle A** |
+| 18–22 | **Stufe C getrennt** | | **jeder Schritt erst nach Kontrolle B** |
+| 23 | Gemeinsame Auswertung | lesend | Kontrolle C |
+| 24–25 | Deaktivierung · Rückbauprüfung (`rueckbau --stufe=<bis-stufe>`) | **nie gesperrt** | — |
+| 26–28 | Scheduler-Spur · optional Migration/Flag | eigene Freigaben | Rückbau bestätigt · Migration angewendet |
 
 Jeder Befehl im Plan wurde gegen das tatsächliche CLI geprüft (`--stufe=` bei
-`testkohorte-495.js isolation`, `funktionstest-500-kontrolle.js pruefe`, `funktionstest-500-zyklus.js`;
-kein `--vorstufen-vollstaendig` mehr). Der Plan trägt `betreiberwerte.vorbedingungVon =
-[aktivierung-a, -b, -c]` und `keineVorbedingungVon = [provisionierung-*, isolation-*]`.
+`testkohorte-495.js isolation`/`rueckbau`, `funktionstest-500-kontrolle.js pruefe`,
+`funktionstest-500-zyklus.js`; kein `--vorstufen-vollstaendig` mehr). Der Plan trägt
+`betreiberwerte.vorbedingungVon = [aktivierung-a, -b, -c]`, `keineVorbedingungVon =
+[provisionierung-*, isolation-*]`, `blocker.kohortenreife` und `nichtGelieferteVorbedingungen = []`
+(jede Vorbedingung wird von genau einem Schritt geliefert — nichts muss von Hand behauptet werden).
+Grundlinie und Sicherung sind Einmal-Kennungen: vor Stufe B und C erneut erheben und sichern ist
+**Betreiberpflicht, vom Plan nicht erzwungen** (so benannt).
 
 ### §34.5 Der Zeitpunkt der Betreiberwerte — ausdrücklich
 
@@ -3445,11 +3457,16 @@ kein `--vorstufen-vollstaendig` mehr). Der Plan trägt `betreiberwerte.vorbeding
 > inaktiven Provisionierung gesetzt sein. Sie müssen aber **zwingend gesetzt, wirksam und
 > geprüft** sein, bevor auch nur das erste synthetische Profil aktiviert wird.
 
-„Gesetzt" heißt nicht „wirksam": Vercel-Env ist aus keiner Sitzung lesbar. Wirksam belegt sind nur
-Werte, die ein Laufzeitpfad liest — Deckel und Vorrangreserve über die Startbereitschaftshürden
-(„… in der LAUFENDEN Umgebung", „LAUFZEITWIRKSAM"), der Riegel über seinen Test; **RPM/TPM liest
-kein Ausführungspfad** (§23.4). Mit Vorrangreserve 0 ist der Verdrängungsschutz der fünf realen
-Mandate **nicht** wirksam (§25.2) — deshalb Schritt 8 vor Schritt 9.
+„Gesetzt" heißt nicht „wirksam": Vercel-Env ist aus keiner Sitzung lesbar. **Rein lesend in
+Production belegbar ist heute allein `HELMUT_MAX_LLM_CALLS_PER_DAY`** (Whitelist von
+`/api/admin/overview`). Verstehens-Reserve, Vorrangreserve, RPM/TPM, Kostenbudget, Parallelität
+und Kommunikationsriegel sind nach dem Setzen **Betreiberangabe** — die Startbereitschaftshürden
+(„… in der LAUFENDEN Umgebung", „LAUFZEITWIRKSAM") lesen das `process.env` des Prozesses, der sie
+rechnet, lokal also die lokal gesetzten Werte, nicht Vercel (Reviewbefund §34.12; die erste
+Fassung dieses Abschnitts hatte hier mehr behauptet). **RPM/TPM liest ohnehin kein
+Ausführungspfad** (§23.4). Mit Vorrangreserve 0 ist der Verdrängungsschutz der fünf realen
+Mandate **nicht** wirksam (§25.2) — deshalb Schritt 9 vor Schritt 10. Eine Erweiterung der
+Overview-Whitelist um die drei Zahl-/Moduswerte wäre ein eigener, kleiner Code-PR.
 
 ### §34.6 Verhaltensbeleg: die inaktive Provisionierung erzeugt keine Last
 
@@ -3467,6 +3484,23 @@ jede Funktion des KI-Moduls.
 | Jedes Profil `profileActive:false`, jedes Konto `active:false`, `isDisabled` = true | 20/20 |
 | Echter Planer `planeArbeit` über die 20 inaktiven Profile | **0 Profile, 0 Aufträge, `enqueue` nie** |
 | Gegenprobe: ein einziges Profil aktiv | **2 Aufträge** (die 0 ist echt) |
+
+**Präzisierung nach dem Review (§34.12):** „keine Last" heißt kein Warteschlangenauftrag, keine
+Verstehensarbeit, kein Modellaufruf, keine Außenkommunikation. Die Anlage selbst **schreibt** je
+Kennung ein gesperrtes Konto in den Auth-Blob `main-auth` (unbedingter Vollschreib, Last-Write-Wins
+— Bestandsverhalten von `accounts.createUser`, bekannt und in `provisionTenant` durch eine
+Nachprüfung gegen den persistierten Stand flankiert) und das Profil (Blob und relationale Upserts).
+Schreibvorgänge sind Anlage, nicht Last.
+
+**Zweiter Konsument aller Profile, gefunden und geschlossen:** `scheduler.js` reicht
+`listFullProfiles()` (inklusive inaktiver Profile) an `lazyUnderstanding.interestedProfiles`. Ein
+inaktives Kohortenprofil zählte dort als „interessiert" (gemessen: Ähnlichkeit 0,92) und hätte —
+bei eingeschaltetem `HELMUT_V3_LAZY_UNDERSTANDING` (in Production **nicht gesetzt**, also heute
+inert) — Verstehensarbeit vorgemerkt, die später Modellaufrufe kostet. `interestedProfiles` filtert
+jetzt mit demselben Prädikat wie der Arbeitsplaner (`profile-validation.isDisabled`); belegt:
+dasselbe Profil aktiv → interessiert, inaktiv oder soft-gelöscht → nicht; der Shadow-Runner merkt
+für 20 inaktive Profile nichts vor. Für die vier deaktivierten Demo-Mandate in Production ist das
+dieselbe, beabsichtigte Semantik.
 
 Nicht behauptet: die Aktivierung ist hier nicht gelaufen — sie ist der Schritt, ab dem Last entsteht.
 
@@ -3520,6 +3554,13 @@ Stufe unverändert 495. Ohne diese Fassung war der Isolationsbeleg der Stufe A s
 unerreichbar (er verlangte 495 gelesene Zeilen). Verhaltensbelegt: aktive Zeile, aktives Konto,
 vorzeitige Zeile der Stufe B, fehlende Zeile — jeweils **nicht** isoliert.
 
+**Dasselbe für den Rückweg (Reviewbefund §34.12):** `pruefeRueckbau` verlangte ebenfalls 495
+gelesene Zeilen. Nach Stufe A (20 Zeilen) hätte die Rückbaubestätigung dauerhaft „20 von 495" und
+`zurueckgebaut: false` gemeldet, obwohl alles deaktiviert war — ein **falsches Rot ausgerechnet am
+Rückweg**. `pruefeRueckbau({stufe})` und `testkohorte-495.js rueckbau --stufe=` prüfen jetzt den
+Bestand bis einschließlich der Stufe (exakt diese Kennungen, keine doppelt); ohne Stufe unverändert
+495. Verhaltensbelegt (D2.1–D2.5).
+
 ### §34.9 Welche älteren Aussagen überholt sind
 
 | Ältere Aussage | Stand jetzt |
@@ -3535,15 +3576,21 @@ vorzeitige Zeile der Stufe B, fehlende Zeile — jeweils **nicht** isoliert.
 
 ### §34.10 Testnachweise
 
-- Neu `testkohorte-vorwaerts-cli-test.js` **44/0** — 44 echte Kindprozesse des Betreiber-CLI:
-  20/75/400 mit Stufenwort · fehlende/leere/unbekannte Stufe Exit 2 · Tippfehler und
-  `--gruppe=` abgewiesen · `--scharf` ohne Freigabe/Fenster/Uhr im Fenster bleibt Trockenlauf ·
-  fremdes Stufenwort, Pauschalwort, Aktivierungswort schalten nicht scharf · fremde Stufe,
-  fremde/erfundene/doppelte Kennung brechen ab · der lokale Speicher blieb über alle 44 Aufrufe
-  byte-identisch (SHA-256 vorher/nachher) · Netz-Guard nie ausgelöst.
-- Neu `testkohorte-provisionierung-inaktiv-test.js` **33/0** (§34.6, §34.7, §34.8).
-- `funktionstest-ablaufplan-test.js` **76/0** (A4/A5/A7a auf den stufenweisen Vertrag
-  umgestellt — die alten Zusicherungen pinnten den Sammelschritt; neu A19–A31).
+- Neu `testkohorte-vorwaerts-cli-test.js` **55/0** — echte Kindprozesse des Betreiber-CLI:
+  20/75/400 mit Stufenwort · fehlende/leere/unbekannte Stufe Exit 2 · Tippfehler, `--gruppe=`,
+  doppelte Angaben, ungültige Fensterangaben, `--jetzt` im scharfen Lauf abgewiesen · `--scharf`
+  ohne Freigabe/Fenster bleibt Trockenlauf · fremdes Stufenwort, Pauschalwort, Aktivierungswort
+  schalten nicht scharf · fremde Stufe, fremde/erfundene/doppelte Kennung brechen ab (ohne Banner) ·
+  **zweifacher Schreibbeleg**: ein Schreibspion als Preload im Kindprozess protokolliert jeden
+  Dateischreibvorgang unter dem Repo (Positivkontrolle grün) — 0 über alle Aufrufe — und der lokale
+  Speicher enthält vor wie nach jedem Aufruf 0 Kohortenzeilen · Netz-Guard nie ausgelöst. (Die
+  erste Fassung hashte das Datenverzeichnis bytegenau; im Gesamtlauf kippte der Hash durch einen
+  fremden nebenläufigen Schreiber — deshalb der Schreibspion und die semantische Zählung.)
+- Neu `testkohorte-provisionierung-inaktiv-test.js` **44/0** (§34.6 einschließlich
+  Verstehens-Interessenprüfung, §34.7, §34.8 einschließlich Rückbau).
+- `funktionstest-ablaufplan-test.js` **81/0** (A4/A5/A7a auf den stufenweisen Vertrag
+  umgestellt — die alten Zusicherungen pinnten den Sammelschritt; A7a pinnt wieder Gesamtzahl und
+  Position; neu A4b, A19–A35).
 - Unverändert grün: `testkohorte-vorwaerts` 65/0 · `testkohorte-stufen` 103/0 ·
   `testkohorte-betrieb` 100/0 · `funktionstest-ablaufkette` 30/0 · `funktionstest-faelligkeit`
   175/0 · `funktionstest-500` 119/0 · `kapazitaetsmodell` 61/0 · `verdraengungsschutz` 38/0 ·
@@ -3558,3 +3605,40 @@ Production-Prüfung dieser Korrektur **und** nach der Entscheidung zu §34.7 emp
 braucht es eine **aktuelle Grundlinie** und die vorgeschriebene **Sicherung der betroffenen
 Tabellen** (§9.1–9.2). Die Betreiberwerte müssen erst vor der **Aktivierung** der Stufe A gesetzt,
 wirksam und geprüft sein.
+
+### §34.12 Adversariales Review des Diffs — vier Linsen, zwei Widerleger je Feststellung
+
+Vier unabhängige Reviews (fail-closed des CLI · Konsistenz Plan/Code · Testvalidität/falsches
+Grün · Sicherheit/Mandanten/Production-Wirkung), jede Feststellung von zwei weiteren Prüfern
+adversarial gegengeprüft. **Bestätigt und behoben:**
+
+| Befund | Schwere | Behoben |
+|---|---|---|
+| Doppelte Angaben (`--stufe=c --stufe=a`) wurden still ignoriert — die erste gewann | mittel | Abbruch Exit 2, Test D9–D11 |
+| `--jetzt=` war auch im scharfen Lauf erlaubt — eine gesetzte Uhr hätte den dritten Riegel ausgehebelt | mittel | im scharfen Lauf abgewiesen (Exit 2, kein Banner), Test E3/I5 |
+| Der Plan kannte den §34.7-Blocker nicht: `provisionierung-a` galt als beginnbar | hoch | eigener Schritt `kohortenreife`, Vorbedingung jeder Anlage, `blocker.kohortenreife` |
+| Der Sicherungsbefehl lief über `lokal.js` — der Starter entfernt die Kennungen, der Export bricht mit Exit 2 ab | hoch | Befehl ohne `lokal.js`, Prüfung `vollstaendig === true` benannt |
+| `pruefeRueckbau` verlangte 495 Zeilen — nach Stufe A nie bestätigbar (falsches Rot am Rückweg) | hoch | stufenbewusst (`--stufe=`), Test D2.1–D2.5 |
+| `werte-pruefung` behauptete einen Laufzeitbeleg, den die Hürden nicht liefern (sie lesen das lokale `process.env`) | hoch | ehrlich: nur der Deckel ist rein lesend belegbar, der Rest Betreiberangabe |
+| Fachzyklus-Befehl für B/C ohne `--bestandene-stufen` — die Startbereitschaft wäre nie grün geworden | mittel | Befehl ergänzt, Test A34 |
+| Isolation/Fachzyklus/Kontrolle der Stufen B/C hingen nicht an der kontrollierten Vorstufe; der Fachzyklus nicht an geprüften Werten/Riegel/Fenster | mittel | Vorbedingungen geschlossen, Test A5/A25 |
+| Die Verstehens-Interessenprüfung iterierte alle Profile ohne `isDisabled` — „inaktiv = keine Last" galt nur für den Planer | mittel | Filter mit dem Planer-Prädikat, Test C2.1–C2.6 (§34.6) |
+| Die inaktiv-Suite verdeckte die realen Schreibvorgänge der Anlage (Auth-Blob-Vollschreib) | mittel | Aussage präzisiert (§34.6), A6 umbenannt |
+| Bundestagsreife-Blocker reproduziert; Zustand nach Abweisung sicher | hoch | dokumentiert §34.7, Plan-Vorbedingung |
+| Zwei Vorbedingungen lieferte kein Schritt (`rueckbau`, `migration-llm-usage-angewendet`) | niedrig | beide werden jetzt geliefert; Test A32 |
+| Banner nannte die Zielmenge vor der Prüfung der `--ids` | niedrig | Prüfung vor dem Banner |
+| `plan` druckte die neuen maschinenlesbaren Felder nicht | niedrig | gedruckt |
+| `testkohorte-495.js`-Hinweis warb für den pauschalen Fachzyklus; Zyklus-CLI-Kopf nannte `--startbereit=ja` | niedrig | korrigiert |
+| Speicher-Schnappschuss der CLI-Suite nur zwei Dateien, keine Positivkontrolle; JSON-Parser unterschied „kein Block" nicht von „unparsebar"; I1/I2 nur über eine Teilmenge | mittel/niedrig | Schreibspion mit Positivkontrolle, am Marker verankerter Parser, alle Aufrufe gesammelt (J1–J3) |
+| A7a auf relative Ordnung abgeschwächt | niedrig | Gesamtzahl 28 und Position 26 wieder gepinnt |
+| Grundlinie/Sicherung sind Einmal-Kennungen, „vor JEDER Provisionierung" nicht erzwungen | niedrig | ehrlich benannt (Betreiberpflicht) |
+
+**Widerlegt:** „ungültige Fensterangaben werden still zum Trockenlauf" als Defekt — fail closed war
+gegeben; trotzdem sind sie jetzt Aufruffehler (D12–D14). **Bewusst nicht umgesetzt:** ein
+stderr-Marker für den A0-Pin im Runner (der Runner druckt Suitenausgaben nur bei Fehlschlag; der
+Blocker steht in `CURRENT_STATE.md` §7 und im Plan). **Vom Review ausdrücklich bestätigt:** kein
+Rückfall auf 495/Pauschalwort in keiner Aufrufform; vor dem Stufen-Abbruch werden keine
+Production-fähigen Module berührt; `--ids=` öffnet keinen Weg zu realen Mandaten; `pruefeIsolation`
+mit Stufe ist nicht schwächer als ohne; der 495er-Beleg ist unverändert; keine hartkodierten
+Mandanten oder Secrets; Profil-Embeddings sind deterministisch (kein Modellaufruf beim Anlegen);
+beide neuen Suiten laufen im Runner und in der CI; A0 ist ein ehrlicher Charakterisierungs-Pin.

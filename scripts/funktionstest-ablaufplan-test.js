@@ -97,31 +97,46 @@ async function main() {
   // je Stufe — und die Betreiberwerte sind ausdrücklich KEINE Vorbedingung der
   // inaktiven Anlage (dafür A19–A31 unten).
   const VB = A.VORBEDINGUNGEN;
-  check("A4 Die Anlage der Stufe A ist gesperrt, bis Grundlinie, Sicherung UND Fenster vorliegen",
+  // BASIS = Grundlinie, Sicherung, Fenster UND die Betreiberentscheidung zur
+  // Reifesperre (§34.7) — ohne sie darf keine Stufe angelegt werden.
+  const BASIS = [VB.GRUNDLINIE, VB.SICHERUNG, VB.FENSTER, VB.KOHORTE_ANLEGBAR];
+  check("A4 Die Anlage der Stufe A ist gesperrt, bis Grundlinie, Sicherung, Fenster UND Reifeentscheidung vorliegen",
     leer.gesperrt.includes("provisionierung-a")
       && A.ablaufplan({ belegt: [VB.GRUNDLINIE] }).gesperrt.includes("provisionierung-a")
       && A.ablaufplan({ belegt: [VB.GRUNDLINIE, VB.SICHERUNG] }).gesperrt.includes("provisionierung-a")
-      && !A.ablaufplan({
-        belegt: [VB.GRUNDLINIE, VB.SICHERUNG, VB.FENSTER]
-      }).gesperrt.includes("provisionierung-a"));
+      && A.ablaufplan({ belegt: [VB.GRUNDLINIE, VB.SICHERUNG, VB.FENSTER] }).gesperrt.includes("provisionierung-a")
+      && !A.ablaufplan({ belegt: BASIS }).gesperrt.includes("provisionierung-a"));
   check("A4a Die Anlage der Stufen B und C bleibt dabei gesperrt (erst nach kontrollierter Vorstufe)",
     (() => {
-      const p = A.ablaufplan({ belegt: [VB.GRUNDLINIE, VB.SICHERUNG, VB.FENSTER] });
+      const p = A.ablaufplan({ belegt: BASIS });
       return p.gesperrt.includes("provisionierung-b") && p.gesperrt.includes("provisionierung-c");
     })());
-  check("A5 Der Stufenvertrag steht auch im Plan: B braucht die Kontrolle nach A — für Anlage UND Aktivierung",
+  check("A4b Der Reifesperren-Blocker ist im Plan eine eigene, nie durch einen Lauf lieferbare Vorbedingung",
     (() => {
-      const nurAktivA = A.ablaufplan({ belegt: [VB.GRUNDLINIE, VB.SICHERUNG, VB.FENSTER, VB.GRUPPE_A] });
-      const nachKontrolleA = A.ablaufplan({ belegt: [VB.GRUNDLINIE, VB.SICHERUNG, VB.FENSTER, VB.KONTROLLE_A] });
+      const s = leer.schritte.find((x) => x.id === "kohortenreife");
+      return s && s.liefert === VB.KOHORTE_ANLEGBAR && s.freigabe && s.freigabe.art === "betreiber-entscheidung"
+        && /18 von 20/.test(s.befehl) && /§34\.7/.test(s.befehl) && /18 abgewiesen/.test(s.zweck)
+        && leer.blocker.kohortenreife.entschieden === false
+        && A.ablaufplan({ belegt: BASIS }).blocker.kohortenreife.entschieden === true
+        && ["a", "b", "c"].every((st) => leer.schritte.find((x) => x.id === `provisionierung-${st}`).vorbedingungen.includes(VB.KOHORTE_ANLEGBAR));
+    })());
+  check("A5 Der Stufenvertrag steht auch im Plan: B braucht die Kontrolle nach A — für Anlage, Isolation, Aktivierung, Fachzyklus UND Kontrolle",
+    (() => {
+      const nurAktivA = A.ablaufplan({ belegt: [...BASIS, VB.GRUPPE_A] });
+      const nachKontrolleA = A.ablaufplan({ belegt: [...BASIS, VB.KONTROLLE_A] });
       return nurAktivA.gesperrt.includes("provisionierung-b")
         && nurAktivA.gesperrt.includes("aktivierung-b")
         && !nachKontrolleA.gesperrt.includes("provisionierung-b")
         // Die Aktivierung der Stufe B braucht zusätzlich Isolation B, Werte, Prüfung, Riegel.
         && nachKontrolleA.gesperrt.includes("aktivierung-b")
         && !A.ablaufplan({
-          belegt: [VB.GRUNDLINIE, VB.SICHERUNG, VB.FENSTER, VB.KONTROLLE_A,
-            VB.ISOLATION_B, VB.WERTE, VB.WERTE_GEPRUEFT, VB.RIEGEL]
-        }).gesperrt.includes("aktivierung-b");
+          belegt: [...BASIS, VB.KONTROLLE_A, VB.ISOLATION_B, VB.WERTE, VB.WERTE_GEPRUEFT, VB.RIEGEL]
+        }).gesperrt.includes("aktivierung-b")
+        // Reviewbefund 03.09.: auch Isolation, Fachzyklus und Kontrolle der Stufe B
+        // hängen an der kontrollierten Vorstufe — nicht nur Anlage und Aktivierung.
+        && A.ablaufplan({ belegt: [VB.STUFE_B_ANGELEGT] }).gesperrt.includes("isolation-b")
+        && A.ablaufplan({ belegt: [VB.GRUPPE_B] }).gesperrt.includes("fachzyklus-b")
+        && A.ablaufplan({ belegt: [VB.ZYKLUS_B] }).gesperrt.includes("kontrolle-b");
     })());
   check("A6 Der RÜCKWEG ist in JEDEM Zustand erlaubt",
     ["deaktivierung", "rueckbau"].every((id) => {
@@ -139,12 +154,18 @@ async function main() {
   check("A7a Die Nacharbeit an der Scheduler-Spur ist ein eigener, gesperrter Schritt",
     (() => {
       const spur = A.ablaufplan({ belegt: [] }).schritte.find((x) => x.id === "scheduler-spur");
-      const rueckbau = A.ablaufplan({ belegt: [] }).schritte.find((x) => x.id === "rueckbau");
+      const plan = A.ablaufplan({ belegt: [] });
+      const rueckbau = plan.schritte.find((x) => x.id === "rueckbau");
+      // Gesamtzahl und exakte Position wieder gepinnt (Reviewbefund 03.09.: eine
+      // relative Ordnung allein liesse einen versehentlich eingefuegten Schritt durch).
       return Boolean(spur) && Boolean(rueckbau)
+        && plan.schritte.length === 28
+        && spur.nr === 26
         && spur.nr > rueckbau.nr
         && spur.immerErlaubt === false
         && spur.darfBeginnen === false
-        && spur.vorbedingungen.includes("rueckbau")
+        && spur.vorbedingungen.includes(A.VORBEDINGUNGEN.RUECKBAU)
+        && rueckbau.liefert === A.VORBEDINGUNGEN.RUECKBAU
         && spur.freigabe && spur.freigabe.wort === "TESTKOHORTE_495_SCHEDULERSPUR_ENTFERNEN_BESTAETIGT";
     })());
   check("A7b Der Rückweg bleibt davon unberührt sofort erlaubt",
@@ -187,7 +208,7 @@ async function main() {
     }));
   check("A21 Die inaktive Anlage braucht die Betreiberwerte NICHT (keine Vorbedingung)",
     (() => {
-      const p = A.ablaufplan({ belegt: [VB.GRUNDLINIE, VB.SICHERUNG, VB.FENSTER] });
+      const p = A.ablaufplan({ belegt: BASIS });
       const anlage = p.schritte.find((x) => x.id === "provisionierung-a");
       return anlage.darfBeginnen === true
         && !anlage.vorbedingungen.includes(VB.WERTE)
@@ -218,7 +239,7 @@ async function main() {
     })());
   check("A24 Die Reihenfolge: Anlage A → Isolation A → Werte → Prüfung → Aktivierung A → Zyklus A → Kontrolle A → Anlage B … → Anlage C",
     (() => {
-      const folge = ["provisionierung-a", "isolation-a", "betreiberwerte", "riegel", "werte-pruefung",
+      const folge = ["kohortenreife", "provisionierung-a", "isolation-a", "betreiberwerte", "riegel", "werte-pruefung",
         "aktivierung-a", "fachzyklus-a", "kontrolle-a", "provisionierung-b", "isolation-b", "aktivierung-b",
         "fachzyklus-b", "kontrolle-b", "provisionierung-c", "isolation-c", "aktivierung-c", "fachzyklus-c",
         "kontrolle-c", "auswertung"];
@@ -232,14 +253,18 @@ async function main() {
         return s && s.art === A.ART_PRODUCTION
           && s.freigabe.wort === S.STUFEN_FREIGABEWORTE[st].fachzyklus
           && s.befehl.includes(`--stufe=${st}`)
-          && JSON.stringify(s.vorbedingungen) === JSON.stringify([VB[`GRUPPE_${st.toUpperCase()}`]]);
+          && s.vorbedingungen.includes(VB[`GRUPPE_${st.toUpperCase()}`])
+          && s.vorbedingungen.includes(VB.WERTE_GEPRUEFT)
+          && s.vorbedingungen.includes(VB.RIEGEL)
+          && s.vorbedingungen.includes(VB.FENSTER);
       }));
   check("A26 Der nächste Schritt wandert stufenweise durch den Plan",
     A.ablaufplan({ belegt: [VB.GRUNDLINIE] }).naechsterSchritt === "sicherung"
       && A.ablaufplan({ belegt: [VB.GRUNDLINIE, VB.SICHERUNG] }).naechsterSchritt === "startfenster"
-      && A.ablaufplan({ belegt: [VB.GRUNDLINIE, VB.SICHERUNG, VB.FENSTER] }).naechsterSchritt === "provisionierung-a"
-      && A.ablaufplan({ belegt: [VB.GRUNDLINIE, VB.SICHERUNG, VB.FENSTER, VB.STUFE_A_ANGELEGT] }).naechsterSchritt === "isolation-a"
-      && A.ablaufplan({ belegt: [VB.GRUNDLINIE, VB.SICHERUNG, VB.FENSTER, VB.STUFE_A_ANGELEGT, VB.ISOLATION_A] }).naechsterSchritt === "betreiberwerte");
+      && A.ablaufplan({ belegt: [VB.GRUNDLINIE, VB.SICHERUNG, VB.FENSTER] }).naechsterSchritt === "kohortenreife"
+      && A.ablaufplan({ belegt: BASIS }).naechsterSchritt === "provisionierung-a"
+      && A.ablaufplan({ belegt: [...BASIS, VB.STUFE_A_ANGELEGT] }).naechsterSchritt === "isolation-a"
+      && A.ablaufplan({ belegt: [...BASIS, VB.STUFE_A_ANGELEGT, VB.ISOLATION_A] }).naechsterSchritt === "betreiberwerte");
   check("A27 Jeder Provisionierungsschritt hat einen stufengenauen Ausführer; ein Sammelausführer existiert nicht",
     ["a", "b", "c"].every((st) => String(leer.ausfuehrer[`provisionierung-${st}`]).includes(`--stufe=${st}`))
       && !("provisionierung" in leer.ausfuehrer)
@@ -262,8 +287,32 @@ async function main() {
       const s = leer.schritte.find((x) => x.id === "werte-pruefung");
       return s && s.art === A.ART_LESEND && s.liefert === VB.WERTE_GEPRUEFT
         && s.vorbedingungen.includes(VB.WERTE) && s.vorbedingungen.includes(VB.RIEGEL)
-        && /LAUFZEITWIRKSAM/.test(s.befehl) && /Vorrangreserve 0/.test(s.zweck)
+        && /BETREIBERANGABE/.test(s.zweck) && /Vorrangreserve 0/.test(s.zweck)
+        && /LOKALEN Umgebung/.test(s.befehl)
         && schrittNr(leer, "werte-pruefung") < schrittNr(leer, "aktivierung-a");
+    })());
+  check("A32 Jede Vorbedingung des Plans wird von genau einem Schritt geliefert (nichts muss von Hand behauptet werden)",
+    leer.nichtGelieferteVorbedingungen.length === 0
+      && leer.schritte.filter((s) => s.liefert).every((s) => leer.schritte.filter((x) => x.liefert === s.liefert).length === 1),
+    JSON.stringify(leer.nichtGelieferteVorbedingungen));
+  check("A33 Der Sicherungsbefehl läuft NICHT über scripts/lokal.js (der Starter entfernt die Kennungen, der Export bräche ab)",
+    (() => {
+      const s = leer.schritte.find((x) => x.id === "sicherung");
+      return s && !/lokal\.js/.test(s.befehl) && /backup-export\.js --scope=profil/.test(s.befehl) && /vollstaendig === true/.test(s.befehl);
+    })());
+  check("A34 Der Fachzyklus-Befehl der Stufen B und C reicht die bestandenen Vorstufen durch — A braucht keine",
+    (() => {
+      const a = leer.schritte.find((x) => x.id === "fachzyklus-a");
+      const b = leer.schritte.find((x) => x.id === "fachzyklus-b");
+      const c = leer.schritte.find((x) => x.id === "fachzyklus-c");
+      return !/bestandene-stufen/.test(a.befehl)
+        && b.befehl.includes(`--bestandene-stufen='["a"]'`)
+        && c.befehl.includes(`--bestandene-stufen='["a","b"]'`);
+    })());
+  check("A35 Der Rückbau-Beleg ist stufenbewusst benannt (nach Stufe A liegen 20 Zeilen vor, nicht 495)",
+    (() => {
+      const s = leer.schritte.find((x) => x.id === "rueckbau");
+      return s && /--stufe=/.test(s.befehl) && /20 Zeilen/.test(s.zweck) && s.immerErlaubt === true;
     })());
 
   // Die vorbereiteten Werte — dokumentiert, nicht gesetzt.
