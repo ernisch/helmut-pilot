@@ -10,9 +10,10 @@
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **`main`-Kopf: `764a7703a2d31f92a35eda137e1d8d3d79a9a3d9`** (Merge von #298, reine Nach-Merge-Doku, kein Code). **Letzter fachlich wirksamer Production-Code: `b0071fd2683837619483b45a340d399ca01309f2`** (Merge von #297, 03.09. 12:39:05 UTC); Vercel-Status am exakten Merge-Commit **erfolgreich** ([Nachweis](https://vercel.com/nohut/helmut-pilot/8BLXbeq6PGzwG3P77z8BXRnnmF8f)), interne Deployment-Details und `dpl_`-Kennung **nicht zusätzlich bestätigt**. Beide Pflicht-Checks am PR-Kopf `540b57b` grün (Lauf 33755229167).
-- **Gemergt:** zuletzt **#297**; die vollständige Merge-Folge steht in der PR-/Git-Historie. #275–#277 und #282 nach Konsolidierung **geschlossen, nicht gemergt** (Branches bleiben Auditbelege).
-- **Offene fachliche PRs:** keine. Die abschließende reine Nach-Merge-Dokumentation zu #297 wird getrennt geführt und löst gemäß `CLAUDE.md` §9 keinen rekursiven Folge-PR aus.
+- **`main`-Kopf zum Prüfzeitpunkt (03.09.): `764a7703a2d31f92a35eda137e1d8d3d79a9a3d9`** (Merge von #298) — zugleich die **Basis von PR #299**. Nach dem Merge weiterer PRs rückt der Kopf vor; die jeweils aktuelle Kennung ist der Git-Historie zu entnehmen, nicht dieser Zeile.
+- **Letzter fachlich wirksamer Production-Code: `b0071fd2683837619483b45a340d399ca01309f2`** (Merge von **#297**, 03.09. 12:39:05 UTC). Vercel-Status am exakten Merge-Commit **erfolgreich** ([Nachweis](https://vercel.com/nohut/helmut-pilot/8BLXbeq6PGzwG3P77z8BXRnnmF8f)), interne Deployment-Details und `dpl_`-Kennung **nicht zusätzlich bestätigt**. Beide Pflicht-Checks am PR-Kopf `540b57b` grün (Lauf 33755229167). **#298 und #299 ändern keinen Anwendungscode** — dieser Stand bleibt von ihnen unberührt.
+- **Zuletzt gemergt: #298** (reine Nach-Merge-Doku zu #297, kein Code); letzter **fachlicher** Merge war **#297**. Die vollständige Merge-Folge steht in der PR-/Git-Historie. #275–#277 und #282 nach Konsolidierung **geschlossen, nicht gemergt** (Branches bleiben Auditbelege).
+- **Offen: PR #299** — reiner Dokumentations-PR zum Sprint vom 03.09. (§27). Basis `764a770`, erster Kopf `298733c` (Stand zum Prüfzeitpunkt; die aktuelle Kopfkennung steht am PR). **Offene fachliche PRs: keine.** Ein reiner Dokumentations-PR löst gemäß `CLAUDE.md` §9 keinen rekursiven Folge-PR aus.
 
 ## 3 · Production-Zustand
 

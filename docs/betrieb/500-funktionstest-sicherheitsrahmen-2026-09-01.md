@@ -3928,6 +3928,12 @@ ist eine Momentaufnahme; kein Schritt dieses Sprints wirkt darauf schreibend ein
 
 #### §34.13.6a Production verwendet nachweislich den relationalen Profilstand
 
+> **BEFUNDPROTOKOLL vom 03.09., Stand VOR der Korrektur.** Die Kernaussage — Production
+> liest relational — gilt unverändert. Die **Bestandszahlen zu den Ausschussfeldern** in
+> diesem Abschnitt und in §34.13.6b sind dagegen überholt: die Ausschussfelder aller fünf
+> aktiven Profile wurden am 03.09. mit Betreiberfreigabe korrigiert und rein lesend
+> abgenommen. Aktueller Stand: **[§35](#35-fünferabgleich-und-ausgeführte-profilkorrektur-03092026-betreiberfreigabe)**.
+
 Die frühere Fassung ließ offen, ob der am 03.09. erhobene Ausschussbefund aus einer
 veralteten relationalen Momentaufnahme oder aus dem wirksamen Production-Pfad stammt.
 Diese Auslegung ist durch eine gezielte, rein lesende Production-Querprüfung entschieden.
@@ -4005,7 +4011,9 @@ Auch die bisherige Klärempfehlung
    `listFullProfiles` kann `readStore` erreichen, und `readSupabaseStore` legt bei
    einer fehlenden Blob-Zeile über `writeSupabaseStore` einen Default-Store an.
 
-Daraus folgt verbindlich:
+Daraus folgte damals verbindlich (**Punkte 1–5 sind seit 03.09. abgearbeitet — §35**;
+insbesondere ist die relationale Ausschusskorrektur **ausgeführt und abgenommen**, sie
+steht nicht mehr aus):
 
 1. Keine Profilkorrektur in PR #297 und keine automatische Ersetzung.
 2. Den amtlichen aktuellen Ausschussstand des betroffenen realen Mandats fachlich
@@ -4014,7 +4022,8 @@ Daraus folgt verbindlich:
 3. Die relationale Production-Profilkorrektur als eigene Datenänderung ausdrücklich
    freigeben und danach rein lesend bestätigen.
 4. Die Abweichung muss vor der ersten Aktivierung synthetischer Profile behoben sein.
-   Eine vorherige inaktive Provisionierung bleibt eine getrennt freizugebende Aktion.
+   **Erledigt am 03.09. (§35)** — sie blockiert die erste Kohortenaktivierung nicht mehr.
+   Eine inaktive Provisionierung bleibt unverändert eine getrennt freizugebende Aktion.
 5. PR #297 bleibt auf Codeebene mergefähig, weil er das Profil nicht ändert. Vor einer
    Merge-Freigabe müssen jedoch diese Dokumentationskorrektur und beide Pflichtprüfungen
    am korrigierten Kopf abgeschlossen sein.

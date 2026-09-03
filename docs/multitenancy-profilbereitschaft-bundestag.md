@@ -66,7 +66,17 @@ Es baut auf [`multitenancy-profilvalidierung.md`](multitenancy-profilvalidierung
 Jedes harte Pflichtfeld ist durch einen konkreten Codeverbraucher begründet — keine
 erfundenen Pflichtfelder. Kanonische Ablage: `profiles` (id, name) + `mandate_profiles`
 (alle Fachspalten) + `profil_extras` (Auffangbehälter); Mapping `storage.fromMandateProfileRow`.
-**Wirksamer Lesepfad heute: Blob** (`HELMUT_PROFILE_DB_MODE` in Production nicht gesetzt).
+**Wirksamer Lesepfad heute: RELATIONAL.** Production verwendet nachweislich die
+relationalen Profile aus `mandate_profiles`. Der **rohe Wert** von
+`HELMUT_PROFILE_DB_MODE` bleibt unbestätigt (Vercel-Env ist aus keiner Sitzung lesbar) —
+die **Wirkung** ist dreifach belegt: durch Telemetrie (die ausgeführten profilbezogenen
+Ausschussradare in `source_crawl_telemetry` entsprachen exakt den relationalen
+`committees[0]`, nie den abweichenden Blob-Werten), durch eine historische Kontrollgruppe
+(eine Blob-Deaktivierung vom 04.08. blieb ~30 h wirkungslos, erst die relationale vom
+06.08. beendete das Radar dauerhaft) und durch das Codeverhalten (`mergeProfileLists`
+ersetzt bei gleicher Kennung das Blob-Profil vollständig durch das SQL-Profil — SQL
+gewinnt). Beleg: [SR §34.13.6a/§35](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+Die frühere Angabe „wirksamer Lesepfad: Blob" war **falsch** und ist damit korrigiert.
 
 ### Technisch zwingend (ohne sie bricht Verarbeitung oder Zuordnung)
 
@@ -122,9 +132,20 @@ kein Benutzerkonto nötig, fehlende Daten werden benannt statt ergänzt.
   und Admin-Tabelle „Daten & Profile" zeigen die Bereitschaft additiv mit konkreten
   Blockern an; gespeichert wird **nichts** (immer frisch berechnet, keine Migration).
 
-## 4 · Bestandsprüfung der sechs aktiven Mandate (2026-08-04, rein lesend)
+## 4 · Bestandsprüfung der sechs aktiven Mandate (2026-08-04) — HISTORISCH
 
-Geprüft über die **wirksame** Profilsicht (Blob-Lesepfad) per
+> **Kein aktueller Production-Stand.** Dieser Abschnitt und die Tabelle darunter halten die
+> Bestandsprüfung vom **04.08.2026** fest. Sie wurde über die **Blob-Sicht** gefahren, die
+> damals irrtümlich für den wirksamen Lesepfad gehalten wurde — tatsächlich liest Production
+> **relational** (§1). Die Werte bleiben als **Befundbeleg** erhalten und dürfen nicht als
+> heutiger Stand gelesen werden: die Ausschussfelder aller fünf aktiven Profile sind am
+> **03.09.2026** mit Betreiberfreigabe relational korrigiert und rein lesend abgenommen
+> worden (Nachtrag oben, [SR §35](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md)).
+> Auch das damals verwendete Werkzeug `scripts/profil-bereitschaft.js --production` gilt
+> inzwischen als **kein zulässiger Klärbeleg** (Lesepfad hängt am lokalen `process.env`;
+> `readSupabaseStore` kann eine fehlende Blob-Zeile anlegen).
+
+Geprüft wurde damals über die für wirksam gehaltene Profilsicht (Blob-Lesepfad) per
 `node scripts/profil-bereitschaft.js --production` plus relationale Gegenprüfung
 (`profiles`/`mandate_profiles`, nur SELECT). Kein Production-Write, keine Auth-Daten
 gelesen. Die Mandats-Kennungen stehen bereits offen in der Repo-Doku (u. a.
