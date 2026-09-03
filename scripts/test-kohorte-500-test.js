@@ -217,9 +217,13 @@ abschnitt(`§11 Reife je politischer Ebene (§34.7 Variante A) — Sollmenge WP 
     const v = validateProfile(p);
     // Für Landtagsprofile ist die Bundestagsreife ausdrücklich NICHT zuständig
     // (keine Vermischung der Ebenen); zuständig bleibt validateProfile.
-    return !(r.zutreffend === false && r.zulaessig === true) || v.state === "fehlerhaft" || v.state === "nicht_bereit";
+    // GESCHAERFT 03.09. (Reviewbefund): die erste Fassung liess alles ausser
+    // "fehlerhaft"/"nicht_bereit" durch — sie waere gruen geblieben, wenn die
+    // Landtagsprofile auf "unvollstaendig" abgerutscht waeren. Gemessen sind es
+    // 61 von 61 "vollstaendig"; genau das wird jetzt zugesichert.
+    return r.zutreffend !== false || v.state !== "vollstaendig";
   });
-  check("§11.2 ALLE Landtagsprofile: Bundestagsreife nicht zuständig, validateProfile trägt",
+  check("§11.2 ALLE Landtagsprofile: Bundestagsreife nicht zuständig, validateProfile meldet `vollstaendig`",
     ltFalsch.length === 0, ltFalsch.length ? `erste: ${ltFalsch[0].id}` : "");
   check("§11.3 Damit besteht die GESAMTKOHORTE 495/495 die für ihre Ebene zuständige Prüfung",
     btUnreif.length === 0 && ltFalsch.length === 0);
@@ -263,13 +267,26 @@ abschnitt(`§11 Reife je politischer Ebene (§34.7 Variante A) — Sollmenge WP 
       .every((c) => reife.resolveBundestagsausschuss(c).ok === true));
 
   // ── EINE Ausschusswahrheit ───────────────────────────────────────────────
+  // §11.9 ist eine QUELLTEXTPRÜFUNG und damit schwach (Reviewbefund 03.09.): sie
+  // sieht Kurzformnamen wie „Innenausschuss", Unicode-Escapes und Blockkommentare
+  // nicht. Sie steht hier nur als früher, gut lesbarer Hinweis. Der TRAGENDE
+  // Beleg ist §11.11: die tatsächlich benutzte Namensmenge ist exakt die
+  // Sollmenge — eine abgeschriebene oder veraltete Kopie fiele dort auf.
   check("§11.9 Der Generator führt KEINE eigene Namensliste — er lädt die Sollmenge",
     /require\("\.\/quellenarchitektur\/seeds\/bundestag-ausschuesse"\)/.test(moduleSrc)
       && !/Ausschuss für /.test(moduleSrc.replace(/\/\/.*$/gm, "")),
     "eine zweite Namensliste wäre eine zweite Ausschusswahrheit");
-  check("§11.10 Die verwendeten Bezeichnungen sind byte-identisch mit der Sollmenge",
-    kohorte.BUNDESTAGSAUSSCHUESSE === AUSSCHUSS_NAMEN
-      || JSON.stringify(kohorte.BUNDESTAGSAUSSCHUESSE) === JSON.stringify(AUSSCHUSS_NAMEN));
+  // ERSETZT 03.09. (Reviewbefund): die erste Fassung verglich
+  // `BUNDESTAGSAUSSCHUESSE` gegen `AUSSCHUSS_NAMEN` — per Destructuring immer
+  // dasselbe Objekt, also eine Tautologie. Sie sagte nichts darüber, ob
+  // `baueSpezifikation` die Konstante auch BENUTZT. Geprüft wird deshalb der
+  // erzeugte Bestand gegen die Sollmenge, Element für Element.
+  check("§11.10 Jede erzeugte Bezeichnung steht byte-identisch in der Sollmenge",
+    (() => {
+      const soll = new Set(STAENDIGE_AUSSCHUESSE.map((a) => a.name));
+      const benutzt = [...new Set(bundestag.flatMap((s) => s.committees))];
+      return benutzt.length > 0 && benutzt.every((c) => soll.has(c));
+    })());
   check("§11.11 Alle 24 Ausschüsse der Sollmenge werden auch wirklich genutzt (keine tote Teilmenge)",
     new Set(bundestag.flatMap((s) => s.committees)).size === STAENDIGE_AUSSCHUESSE.length);
   check("§11.12 Kein Profil trägt denselben Ausschuss doppelt",

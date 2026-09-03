@@ -3694,8 +3694,9 @@ Zwei Punkte sind dabei entscheidend:
 1. **Eine Ausschusswahrheit, keine zweite Namensliste.** Die Bundestagsnamen werden aus der
    vorhandenen, extern verankerten Sollmenge **importiert**, nicht abgeschrieben. Eine Kopie wäre
    eine zweite Wahrheit und liefe bei einer Umbenennung still auseinander. Testgesichert:
-   `test-kohorte-500-test.js` §11.9/§11.10 vergleichen die benutzten Namen bytegleich gegen
-   `STAENDIGE_AUSSCHUESSE`.
+   `test-kohorte-500-test.js` §11.10/§11.11 vergleichen die **tatsächlich erzeugten** Namen gegen
+   `STAENDIGE_AUSSCHUESSE`. **Grenze dieser Aussage:** sie gilt für die Kohorte und für die
+   Reifeprüfung, **nicht für das ganze System** — siehe [§34.13.7](#34137-eine-zweite-ausschusswahrheit-im-radar--eigener-älterer-befund-hier-nicht-repariert).
 2. **Landtagsprofile bekommen KEINE Bundestagsausschüsse.** Ein Bundestagsausschuss auf
    Landesebene wäre eine falsche politische Ebene — fachlich falsch, und die Reifeprüfung ist für
    Landtagsprofile ausdrücklich `zutreffend: false`, hätte den Fehler also nie gemeldet.
@@ -3849,3 +3850,48 @@ rein lesender Abgleich gegen Production war in dieser Sitzung nicht möglich. Wi
 Fall: die Admin-Ansicht zeigt für dieses Mandat „ungültig: committees" an (Anzeige, keine Sperre —
 §34.13.2 Punkt 3), und eine **Neuaktivierung** dieses Mandats würde abgewiesen. Vor dem Merge lässt
 sich das mit einer einzigen lesenden Abfrage der Spalte `committees`/`deputy_committees` klären.
+
+#### §34.13.7 Eine zweite Ausschusswahrheit im Radar — eigener, älterer Befund, hier NICHT repariert
+
+Die adversariale Schlussprüfung dieses Sprints hat einen Befund gefunden, der **nicht** von dieser
+Änderung stammt und **nicht** zur Kohorte gehört — der aber die Aussage „eine Ausschusswahrheit"
+begrenzt und deshalb hier festgehalten wird, statt unter den Tisch zu fallen.
+
+`lib/helmut/quellenarchitektur/seeds/entities.js` führt unter `COMMITTEES` eine **zweite, kuratierte
+Liste** von **23** Bundestagsausschüssen. Sie ist kein Fixture: `lib/helmut/radarState.js` lädt sie
+als „vertrauenswürdige Referenz für den ‚voller amtlicher Name'-Beleg" und verlangt, dass der
+**kuratierte** Name eines Ausschusses wörtlich im Inhalt vorkommt, bevor ein Vorgang als
+Ausschussbeleg des Mandats zählt.
+
+Selbst nachgemessen gegen die Sollmenge (`normalizeCommittee` als Brücke):
+
+| Messung | Ergebnis |
+|---|---|
+| WP-21-Bezeichnungen mit kuratiertem Radar-Eintrag | **21 von 24** |
+| ohne Eintrag | „Ausschuss für Wahlprüfung, Immunität und Geschäftsordnung" · „Petitionsausschuss" · „Ausschuss für Forschung, Technologie, Raumfahrt und Technikfolgenabschätzung" |
+| kuratierte Namen, die **exakt** einer belegten WP-20-Bezeichnung entsprechen | **3** — „Ausschuss für Inneres und Heimat" · „Ausschuss für Ernährung und Landwirtschaft" · „Ausschuss für Digitales" |
+
+Die Folge ist eine **stille Lücke im Radar**, keine Fehlfunktion der Reifeprüfung: für ein Mandat im
+heutigen „Innenausschuss" sucht der Radar den alten vollen Namen im Dokumenttext; ein
+WP-21-Dokument schreibt ihn nicht mehr so. Für drei Ausschüsse fehlt der Eintrag ganz.
+
+**Warum das hier nicht repariert wird:**
+
+* Es ist **nicht durch diesen Sprint entstanden**. Der Befund besteht, seit die WP-21-Sollmenge
+  eingeführt wurde; er betrifft die **realen** Mandate, nicht die Kohorte.
+* Eine Korrektur würde das **Radarverhalten realer Mandate ändern** — eine fachliche Änderung an
+  Production-Logik, die weder Auftrag noch Freigabe dieses Sprints ist.
+* Für die Kohorte gibt es dadurch **keine Verschlechterung**: vorher trugen die Profile
+  „Testausschuss N" und fanden im kuratierten Register erst recht nichts. Der Zuwachs ist
+  21 von 24 statt 0 von 24.
+
+**Nächster Schritt (eigene Entscheidung, eigener PR):** `entities.js` gegen `vergleicheMitSollmenge`
+pinnen und die drei fehlenden Ausschüsse ergänzen — oder den Radar-Beleg von der kuratierten Liste
+auf die Sollmenge umstellen. Beides berührt die Klassifikation und gehört deshalb hinter eine eigene
+Prüfung, nicht in diesen PR.
+
+Zwei kleinere Funde derselben Art, ebenfalls nur festgehalten: `scripts/fixtures/synthetische-mandate-1000.js`
+und `scripts/matching-ausschuss-zustaendigkeit-test.js` tragen Ausschussnamen, die nicht (mehr) in der
+Sollmenge stehen. Beides sind **Testfixtures**, keine Production-Logik; sie laufen nicht durch die
+Reifeprüfung und sind heute grün. Sie werden hier nicht angefasst, weil eine Änderung an ihnen die
+Aussage der jeweiligen Suiten verschiebt, ohne dass dieser Sprint das beurteilen kann.

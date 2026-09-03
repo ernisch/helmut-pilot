@@ -124,6 +124,8 @@ async function main() {
         && /20\/20/.test(s.befehl) && /495\/495/.test(s.befehl)
         && /§34\.7/.test(s.zweck) && /Variante A/.test(s.zweck)
         // Der Blocker ist geschlossen — aber er bleibt sichtbar dokumentiert.
+        // `offen` ist ein festgeschriebener Wert; dass er STIMMT, prueft nicht
+        // diese Zeile, sondern A4c (echte Reifepruefung ueber die echte Kohorte).
         && leer.blocker.kohortenreife.offen === false
         && /§34\.7/.test(leer.blocker.kohortenreife.beleg)
         && leer.blocker.kohortenreife.belegt === false
