@@ -3345,3 +3345,216 @@ Eingaben: **0**.
   CLI-Exitcode.
 - **Kein Netzaufruf, keine Datenbankverbindung, kein Schreibvorgang, kein Modellaufruf** im
   neuen Pfad.
+
+---
+
+## §34 · Korrektursprint 03.09. — der Betreiberweg reichte die Stufe nicht durch
+
+**Branch `claude/stufenweise-provisionierung-fix-rg6sij`, Basis `main` = `a839c1b19f55246bfe747efbfcfa2269f5e28842`
+(Merge von #296). Rein vorbereitender Sprint, KEINE Production-Wirkung:** keine Provisionierung,
+keine Aktivierung, keine Umgebungsvariable, keine Migration, kein Cron, keine Azure-Einstellung,
+kein Budget, keine Reserve, kein Modellaufruf, keine externe Nachricht, keine kostenpflichtige
+Ressource. Kein Supabase-Zugriff, kein Vercel-Zugriff aus dieser Sitzung.
+
+### §34.1 Nach-Merge-Beleg zu #296
+
+| Tatsache | Beleg |
+|---|---|
+| PR #296 **gemergt** 03.09. 05:08:15 UTC (geschlossen, kein Draft, `merged: true`) | GitHub, rein lesend |
+| Kopf des PR `ba0963300fbd2387e6fede6f3b642d379250dfe9`, Basis `9079ac3` | GitHub |
+| **`main`-Kopf `a839c1b19f55246bfe747efbfcfa2269f5e28842`** | `git rev-parse origin/main` |
+| Beide Pflichtprüfungen auf `a839c1b` grün (Syntax + Offline-Suiten · Browser-/Mobile-Smoke) | CI-Lauf **33717626724** auf `main`, `conclusion: success` (rein lesend bestätigt 03.09.) |
+| Vercel: „Deployment has completed" exakt für diesen Commit | <https://vercel.com/nohut/helmut-pilot/CCbSsp58pxGNMqjuGQziVZYknaHd> |
+| Interne Vercel-Deployment-Details / `dpl_`-Kennung | **nicht zusätzlich bestätigt** (Zugriff fehlte) |
+| Keine offenen Pull Requests vor Beginn dieses Sprints | GitHub, rein lesend |
+| Betreiberwerte, Production-Daten, Profile, Migrationen, Crons, Azure, Budgets | durch den Merge **unverändert** |
+
+### §34.2 Der Befund — reproduziert als isolierter Trockenlauf
+
+Am Kopf `a839c1b`, ausschließlich über `scripts/lokal.js`:
+
+```
+node scripts/lokal.js -- node scripts/testkohorte-vorwaerts.js provisionierung --stufe=a
+  "zielGroesse": 495
+  "erwartetesWort": "TESTKOHORTE_495_ANLEGEN_BESTAETIGT"
+  Exit 0 · nichts geschrieben
+```
+
+**Ursache:** Das CLI las `--stufe` nirgends und übergab `fuehreProvisionierungAus` keine `stufe`.
+Die Bibliothek konnte seit 02.09. (§23.3, Lücke 1) stufengenau anlegen — der einzige vorgesehene
+Betreiberweg nutzte das nicht. Wer „nur die 20 der Stufe A" wollte, hätte mit dem Pauschalwort
+**alle 495** angelegt. Die Angabe wurde **still ignoriert**; genau diese Klasse Fehler
+(Angabe wird nicht abgewiesen, sondern übergangen) ist der Kern.
+
+### §34.3 Die Korrektur am Betreiberweg (`scripts/testkohorte-vorwaerts.js`)
+
+- `--stufe=a|b|c` ist für die Provisionierung **Pflicht**. Fehlend, leer oder unbekannt →
+  **Exit 2** mit Meldung, **bevor** Fenster, Banner oder Bibliothek angesprochen werden. **Kein
+  Rückfall auf die vollständige Kohorte.** Auch mit gesetztem Pauschalwort, `--scharf` und gültigem
+  Fenster passiert ohne Stufe nichts (gemessen).
+- **Unbekannte Angaben brechen ab** (`--stuffe=a`, `--gruppe=` bei der Provisionierung, das
+  abgeschaffte `--vorstufen-vollstaendig`) — nie mehr still ignorieren.
+- `--ids=` erlaubt eine Teilmenge **derselben** Stufe (Ergänzung eines abgebrochenen Laufs); eine
+  Kennung einer anderen Stufe, eine fremde oder erfundene Kennung und ein Duplikat brechen über
+  `pruefeStufenZielmenge` ab (**Exit 1**, `falsche-stufe` / `fremde-kennung` / `doppelte-kennung`).
+- Die Aktivierung nimmt `--stufe` als Alias von `--gruppe`; ein Widerspruch bricht ab.
+- Das Banner des scharfen Laufs nennt die Stufe, nicht die 495.
+- **Die Bibliothek ist unverändert**: ohne `stufe` weiterhin 495 + Pauschalwort
+  (Regressionsvertrag `testkohorte-stufen-test.js` L1). Nur der Betreiberweg ist geschlossen.
+
+Ergebnis nach der Korrektur (Trockenläufe über `scripts/lokal.js`):
+
+| Aufruf | zielGroesse | erwartetesWort | Exit |
+|---|---|---|---|
+| `provisionierung --stufe=a` | **20** | `TESTKOHORTE_STUFE_A_PROVISIONIERUNG_BESTAETIGT` | 0 |
+| `provisionierung --stufe=b` | **75** | `TESTKOHORTE_STUFE_B_PROVISIONIERUNG_BESTAETIGT` | 0 |
+| `provisionierung --stufe=c` | **400** | `TESTKOHORTE_STUFE_C_PROVISIONIERUNG_BESTAETIGT` | 0 |
+| `provisionierung` (ohne Stufe) / `--stufe=` / `--stufe=z` | — | — | **2** |
+| `provisionierung --stufe=a --ids=test-kohorte-c-001` | — | — | **1** (`falsche-stufe`) |
+
+### §34.4 Der Ablaufplan ist jetzt stufenweise (`lib/helmut/funktionstest-ablaufplan.js`)
+
+Der maschinenlesbare Plan behauptete bis zu diesem Sprint einen Schritt „495 Profile INAKTIV
+provisionieren". Er kennt jetzt **27 Schritte** und **keinen Sammelschritt**
+(`keinSammelschritt`, `stufenweise: true`, `provisionierungsSchritte = [provisionierung-a, -b, -c]`):
+
+| Nr | Schritt | Art | Vorbedingungen |
+|---|---|---|---|
+| 1–3 | Grundlinie · Sicherung · Startfenster | lesend | — |
+| 4 | **Stufe A: 20 Profile INAKTIV provisionieren** | Production, Stufenwort | Grundlinie, Sicherung, Fenster |
+| 5 | **Stufe A: Isolation und Inaktivität rein lesend belegen** (`isolation --stufe=a`) | lesend | Stufe A angelegt |
+| 6 | **Die acht Betreiberwerte setzen** (Deckel, Verstehens-Reserve, Vorrangreserve, RPM, TPM, Kosten, Parallelität, Kommunikationsriegel) | Umgebung | Grundlinie |
+| 7 | Kommunikationsriegel scharf prüfen | lesend | Werte |
+| 8 | **Wirksamkeit der Werte prüfen** | lesend | Werte, Riegel |
+| 9 | **Stufe A aktivieren** (eigene Freigabe `aktivierung-a`) | Production | Isolation A, Werte, Werte geprüft, Riegel, Fenster |
+| 10–11 | Fachzyklus A (Stufenwort) · Kontrolle A (A01–A15) | Production · lesend | Gruppe A aktiv · Zyklus A |
+| 12–16 | **Stufe B getrennt**: Anlage → Isolation → Aktivierung → Fachzyklus → Kontrolle | | **erst nach Kontrolle A** |
+| 17–21 | **Stufe C getrennt** | | **erst nach Kontrolle B** |
+| 22 | Gemeinsame Auswertung | lesend | Kontrolle C |
+| 23–24 | Deaktivierung · Rückbauprüfung | **nie gesperrt** | — |
+| 25–27 | Scheduler-Spur · optional Migration/Flag | eigene Freigaben | |
+
+Jeder Befehl im Plan wurde gegen das tatsächliche CLI geprüft (`--stufe=` bei
+`testkohorte-495.js isolation`, `funktionstest-500-kontrolle.js pruefe`, `funktionstest-500-zyklus.js`;
+kein `--vorstufen-vollstaendig` mehr). Der Plan trägt `betreiberwerte.vorbedingungVon =
+[aktivierung-a, -b, -c]` und `keineVorbedingungVon = [provisionierung-*, isolation-*]`.
+
+### §34.5 Der Zeitpunkt der Betreiberwerte — ausdrücklich
+
+> Die acht Betreiberwerte und `HELMUT_TESTLAUF_VORRANG_REAL` müssen **nicht** vor der rein
+> inaktiven Provisionierung gesetzt sein. Sie müssen aber **zwingend gesetzt, wirksam und
+> geprüft** sein, bevor auch nur das erste synthetische Profil aktiviert wird.
+
+„Gesetzt" heißt nicht „wirksam": Vercel-Env ist aus keiner Sitzung lesbar. Wirksam belegt sind nur
+Werte, die ein Laufzeitpfad liest — Deckel und Vorrangreserve über die Startbereitschaftshürden
+(„… in der LAUFENDEN Umgebung", „LAUFZEITWIRKSAM"), der Riegel über seinen Test; **RPM/TPM liest
+kein Ausführungspfad** (§23.4). Mit Vorrangreserve 0 ist der Verdrängungsschutz der fünf realen
+Mandate **nicht** wirksam (§25.2) — deshalb Schritt 8 vor Schritt 9.
+
+### §34.6 Verhaltensbeleg: die inaktive Provisionierung erzeugt keine Last
+
+Neu `scripts/testkohorte-provisionierung-inaktiv-test.js` (33/0). Der **echte** Provisionierer
+(`provisioning.provisionTenant`, `neuAktiv:false`) läuft über den echten Vorwärtsausführer für die
+20 Kennungen der Stufe A **scharf** gegen einen Arbeitsspeicher-Store; mitgezählt werden `fetch`,
+`http`/`https`, rohe Sockets/TLS, DNS, Kindprozesse, jeder Aufruf des Kommunikationsriegels und
+jede Funktion des KI-Moduls.
+
+| Messung | Ergebnis |
+|---|---|
+| fetch · http · https · net · tls · dns · Kindprozesse | **0 · 0 · 0 · 0 · 0 · 0 · 0** |
+| Kommunikationsriegel gefragt · KI-Modul aufgerufen | **0 · 0** |
+| Außenkanalmodule (mail-transport, job-dispatch, lambda-verbraucher, monitoring-webhook) | **nicht einmal geladen** |
+| Jedes Profil `profileActive:false`, jedes Konto `active:false`, `isDisabled` = true | 20/20 |
+| Echter Planer `planeArbeit` über die 20 inaktiven Profile | **0 Profile, 0 Aufträge, `enqueue` nie** |
+| Gegenprobe: ein einziges Profil aktiv | **2 Aufträge** (die 0 ist echt) |
+
+Nicht behauptet: die Aktivierung ist hier nicht gelaufen — sie ist der Schritt, ab dem Last entsteht.
+
+### §34.7 NEUER BLOCKER — die Bundestagsreife-Sperre weist 18 von 20 Stufe-A-Profilen ab
+
+**Erstmals am echten Pfad gemessen** (alle bisherigen Suiten prüften den scharfen Pfad mit einer
+Attrappe für `legeAn`): `provisionTenant` verweigert in Schritt 2b („Bundestagsreife",
+`profile-readiness.pruefeNeuaktivierung`) jedes **Bundestags**profil der Kohorte mit
+`bundestagsprofil-nicht-bereit` —
+
+```
+Ungueltige Angabe: committees = „Testausschuss 1" — nicht als staendiger Ausschuss der
+21. Wahlperiode aufloesbar (nicht in der Sollmenge)
+```
+
+Die Kohortenspezifikation trägt **bewusst synthetische Ausschüsse** („Testausschuss N";
+`test-kohorte-500.js`, testgesichert `test-kohorte-500-test.js` §4.5 — „alle
+Parteien/Ausschüsse/Themen sind synthetisch"); die Reife-Sperre (Korrekturrunde 2026-08-25)
+verlangt Ausschüsse der WP-21-Sollmenge. Die „Offline-Vollvalidierung" der Kohorte (§21) prüfte
+`validateSpec`, **nicht** die Reife-Sperre. Beide Regeln sind je für sich richtig — zusammen machen
+sie den scharfen Anlagelauf **unvollständig**:
+
+| Stufe | Landtag (passiert) | Bundestag (abgewiesen) |
+|---|---|---|
+| A (20) | 2 | **18** |
+| Kohorte (495) | 62 | **433** |
+
+Gemessen für Stufe A: `angelegt: 2 · fehlgeschlagen: 18 · ok: false`. **Der Zustand danach ist
+sicher**: die Abweisung geschieht **vor** jedem Schreibvorgang (2 Profile, 2 Konten, 2
+Schreibvorgänge, alles inaktiv), der Rückweg ist anwendbar, kein Netz, kein Modellaufruf.
+
+**Entscheidung nötig, vor jeder Provisionierung:**
+(a) Kohortenspezifikation auf Ausschüsse der WP-21-Sollmenge umstellen — Kennungen und Adressen
+bleiben deterministisch und unverändert; das Prinzip „keine echten Ausschüsse" (§4.5) müsste
+bewusst aufgegeben werden, und die Profile erhielten damit echte Quellenpakete (für einen
+Funktionstest unter realistischer Last eher erwünscht als unerwünscht);
+(b) die Reife-Sperre für die synthetische Kennungsfamilie anders behandeln — **nicht empfohlen**,
+weil sie eine Schutzregel für reale Profile ist und die Kohorte dann mit Ausschüssen liefe, die
+im Radar nichts belegen;
+(c) nur die 62 Landtagsprofile anlegen — verändert Umfang und Aussage des Tests.
+Diese Entscheidung wurde in diesem Sprint **nicht** getroffen; der Test `A0` pinnt den Zustand als
+dokumentierten Blocker und kippt, sobald Kohorte oder Regel geändert werden.
+
+### §34.8 Stufenbewusste Isolationsprüfung
+
+`pruefeIsolation({grundlinie, bestand, stufe})` (`testkohorte-betrieb.js`) und
+`testkohorte-495.js isolation --stufe=`: mit Stufe gilt der Beleg für den Bestand **bis
+einschließlich** dieser Stufe (A = 20, A+B = 95, A+B+C = 495) und verlangt zusätzlich, dass genau
+diese Stufe **vollständig und INAKTIV** angelegt ist und **kein Kohortenkonto aktiv** ist. Ohne
+Stufe unverändert 495. Ohne diese Fassung war der Isolationsbeleg der Stufe A strukturell
+unerreichbar (er verlangte 495 gelesene Zeilen). Verhaltensbelegt: aktive Zeile, aktives Konto,
+vorzeitige Zeile der Stufe B, fehlende Zeile — jeweils **nicht** isoliert.
+
+### §34.9 Welche älteren Aussagen überholt sind
+
+| Ältere Aussage | Stand jetzt |
+|---|---|
+| §10 Zeile 4 „**495 Profile INAKTIV provisionieren** … F" | **überholt** — drei getrennte Schritte mit drei Stufenworten (§34.4) |
+| §10 Zeile 3 (Riegel/Env vor Schritt 4) und §13 Reihenfolge 4–6 vor 8 | **präzisiert** — die Werte sind vor der **Aktivierung** Pflicht, nicht vor der inaktiven Anlage (§34.5) |
+| §13 Punkt 8 „Provisionierung der 495 inaktiven Profile" | **überholt** — je Stufe eine eigene Freigabe |
+| §18.10 „17 Schritte" | **überholt** — 27 Schritte |
+| §21.2 Aufruf `provisionierung` ohne Stufe | **überholt** — `--stufe=` ist Pflicht |
+| §33 / PR #296: „Die eine nächste notwendige Freigabe: Provisionierung der Stufe A mit dem Wort `TESTKOHORTE_STUFE_A_PROVISIONIERUNG_BESTAETIGT`" | auf Bibliotheksebene richtig; über das CLI **bis zu dieser Korrektur nicht ausführbar**, und unter der Reife-Sperre auch danach **nicht vollständig** (§34.7) |
+| §21 (CURRENT_STATE) „Kohorte 495 validiert" | gilt für `validateSpec`; gegen die Bundestagsreife-Sperre **nicht** validiert |
+| §33.5 „kein Netzaufruf, kein Modellaufruf im neuen Pfad" | **bestätigt und erweitert** auf den echten Provisionierungspfad (§34.6) |
+
+### §34.10 Testnachweise
+
+- Neu `testkohorte-vorwaerts-cli-test.js` **44/0** — 44 echte Kindprozesse des Betreiber-CLI:
+  20/75/400 mit Stufenwort · fehlende/leere/unbekannte Stufe Exit 2 · Tippfehler und
+  `--gruppe=` abgewiesen · `--scharf` ohne Freigabe/Fenster/Uhr im Fenster bleibt Trockenlauf ·
+  fremdes Stufenwort, Pauschalwort, Aktivierungswort schalten nicht scharf · fremde Stufe,
+  fremde/erfundene/doppelte Kennung brechen ab · der lokale Speicher blieb über alle 44 Aufrufe
+  byte-identisch (SHA-256 vorher/nachher) · Netz-Guard nie ausgelöst.
+- Neu `testkohorte-provisionierung-inaktiv-test.js` **33/0** (§34.6, §34.7, §34.8).
+- `funktionstest-ablaufplan-test.js` **76/0** (A4/A5/A7a auf den stufenweisen Vertrag
+  umgestellt — die alten Zusicherungen pinnten den Sammelschritt; neu A19–A31).
+- Unverändert grün: `testkohorte-vorwaerts` 65/0 · `testkohorte-stufen` 103/0 ·
+  `testkohorte-betrieb` 100/0 · `funktionstest-ablaufkette` 30/0 · `funktionstest-faelligkeit`
+  175/0 · `funktionstest-500` 119/0 · `kapazitaetsmodell` 61/0 · `verdraengungsschutz` 38/0 ·
+  `kommunikationsriegel` 45/0 · `mandatsklasse` 36/0 · `profil-bereitschaft` 91/0.
+- Offline-Gesamtlauf und Pflichtprüfungen des PR: siehe PR-Text und `CURRENT_STATE.md` §26.
+
+### §34.11 Was dieser Sprint ausdrücklich NICHT ist
+
+Keine Freigabe, keine Provisionierung, keine Entscheidung zu §34.7. Der 500er-Funktionstest ist
+**weiterhin nicht startbereit**. Die Provisionierung der Stufe A darf erst nach Merge und
+Production-Prüfung dieser Korrektur **und** nach der Entscheidung zu §34.7 empfohlen werden; davor
+braucht es eine **aktuelle Grundlinie** und die vorgeschriebene **Sicherung der betroffenen
+Tabellen** (§9.1–9.2). Die Betreiberwerte müssen erst vor der **Aktivierung** der Stufe A gesetzt,
+wirksam und geprüft sein.
