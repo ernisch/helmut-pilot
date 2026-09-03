@@ -16,7 +16,8 @@
 //   e) eine unbekannte Stufe bricht geschlossen ab,
 //   f) ohne `--scharf` bleibt alles ein Trockenlauf,
 //   g) ohne passende Freigabe und gültiges Startfenster findet kein
-//      Schreibvorgang statt (der lokale Speicher bleibt byte-identisch),
+//      Schreibvorgang statt (der lokale Speicher enthält vor und nach jedem
+//      Aufruf keine einzige Kohortenzeile),
 //   h) eine Kennung einer anderen Stufe kann nicht eingeschleust werden.
 //
 // Das Kind läuft mit denselben Riegeln wie `scripts/lokal.js`: Production-
@@ -29,7 +30,6 @@
 
 const fs = require("fs");
 const path = require("path");
-const crypto = require("crypto");
 const { spawnSync } = require("child_process");
 const K = require("../lib/helmut/testkohorte-betrieb");
 const S = require("../lib/helmut/testkohorte-stufen");
@@ -72,18 +72,50 @@ function kindUmgebung(extra = {}) {
   return { ...env, ...extra };
 }
 
-// Schnappschuss des lokalen Speichers: existiert die Datei, ihr Hash; sonst „fehlt".
-function speicherSchnappschuss() {
-  const dateien = ["store.json", "auth.json"];
-  const bild = {};
-  for (const d of dateien) {
-    const p = path.join(DATEN, d);
-    bild[d] = fs.existsSync(p)
-      ? crypto.createHash("sha256").update(fs.readFileSync(p)).digest("hex")
-      : "fehlt";
+// Schnappschuss des lokalen Speichers — SEMANTISCH, nicht bytegenau.
+// Gezählt werden die Kohortenzeilen (`test-kohorte-…`) in store.json (Profile,
+// Mandatsprofile) und auth.json (Konten). „Nichts geschrieben" heißt: vor und
+// nach dem Aufruf 0 Kohortenzeilen. Ein bytegenauer Hash des ganzen
+// Verzeichnisses war im Gesamtlauf nicht stabil: andere Suiten schreiben
+// dieselben Dateien (Profile fremder Tests), und ein nebenläufiger Schreiber
+// ließ den Hash zwischen zwei Aufrufen kippen, ohne dass das CLI irgendetwas
+// geschrieben hätte. Die Kohortenzählung ist genau die Zusicherung, um die es
+// geht, und sie ist gegen fremde Schreiber unempfindlich. Eine gerade
+// halb geschriebene Datei wird kurz erneut gelesen; bleibt sie unlesbar, gilt
+// das als Abweichung (fail closed), nie als 0.
+const KOHORTE_PRAEFIX = "test-kohorte-";
+function zaehleKohorte(objekt) {
+  let n = 0;
+  const besuche = (wert, tiefe) => {
+    if (tiefe > 6 || wert === null || typeof wert !== "object") return;
+    if (Array.isArray(wert)) { for (const w of wert) besuche(w, tiefe + 1); return; }
+    for (const [schluessel, w] of Object.entries(wert)) {
+      if (schluessel.startsWith(KOHORTE_PRAEFIX)) n += 1;
+      if ((schluessel === "id" || schluessel === "politicianId") && typeof w === "string" && w.startsWith(KOHORTE_PRAEFIX)) n += 1;
+      besuche(w, tiefe + 1);
+    }
+  };
+  besuche(objekt, 0);
+  return n;
+}
+function leseJson(p) {
+  for (let versuch = 0; versuch < 5; versuch += 1) {
+    if (!fs.existsSync(p)) return { fehlt: true };
+    try { return { wert: JSON.parse(fs.readFileSync(p, "utf8")) }; }
+    catch { const bis = Date.now() + 50; while (Date.now() < bis) { /* kurz warten */ } }
   }
-  bild.verzeichnis = fs.existsSync(DATEN) ? fs.readdirSync(DATEN).sort().join(",") : "fehlt";
+  return { unlesbar: true };
+}
+function speicherSchnappschuss() {
+  const bild = {};
+  for (const d of ["store.json", "auth.json"]) {
+    const r = leseJson(path.join(DATEN, d));
+    bild[d] = r.fehlt ? "fehlt" : (r.unlesbar ? "UNLESBAR" : `kohorte=${zaehleKohorte(r.wert)}`);
+  }
   return JSON.stringify(bild);
+}
+function speicherOhneKohorte(schnappschuss) {
+  return /"store\.json":"(fehlt|kohorte=0)"/.test(schnappschuss) && /"auth\.json":"(fehlt|kohorte=0)"/.test(schnappschuss);
 }
 
 function jsonAusAusgabe(stdout) {
@@ -105,7 +137,10 @@ function cli(args, extraEnv = {}) {
     stdout: String(r.stdout || ""),
     stderr: String(r.stderr || ""),
     json: jsonAusAusgabe(String(r.stdout || "")),
-    speicherUnveraendert: vorher === nachher
+    // Unverändert heißt: vorher wie nachher KEINE Kohortenzeile im Speicher.
+    speicherUnveraendert: vorher === nachher && speicherOhneKohorte(vorher) && speicherOhneKohorte(nachher),
+    speicherVorher: vorher,
+    speicherNachher: nachher
   };
 }
 
@@ -272,7 +307,7 @@ function main() {
 
   // ── I · Der lokale Speicher ist über die ganze Suite unverändert ──────────
   console.log("\nI · Über alle Aufrufe hinweg wurde nichts geschrieben");
-  check("I1 Kein einziger Aufruf dieser Suite hat den lokalen Speicher verändert",
+  check("I1 Kein einziger Aufruf dieser Suite hat eine Kohortenzeile in den lokalen Speicher geschrieben",
     [a, ohne, leer, ohneAberScharf, tippfehler, gruppe, scharfOhneAlles, freigabeOhneFenster,
       fensterFalscheZeit, nurWort, nurFlag, wortB, pauschal, aktivierungswort, fremdeStufe,
       gemischt, fremd, erfunden, doppelt, teilmenge, aktAlias, aktWiderspruch, aktOhne]
