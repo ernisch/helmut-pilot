@@ -3065,3 +3065,188 @@ Zustand (kein unbedingtes Lesen-Ändern-Schreiben im Diff) · schreibende Nebenw
 dem beabsichtigten Teardown unter vierfacher Verriegelung keine; `vercel.json` ändert **keine
 Cronzeit**) · die Zahlen 802 + 1.000 + 10 = 1.812, Deckel 2.416, Reserve 604, 2.522 ≥ 1.812
 bei 383 min und Parallelität 1.
+
+---
+
+## §32 · Der Kreisschluss zwischen Planung, Statusmessung und Startfreigabe
+
+**Betreiberbefund 02.09., unabhängig geprüft und in der Sache bestätigt** — aber nicht in der
+Form, in der er formuliert war. Der Unterschied ist wichtig, deshalb steht er vorn.
+
+### §32.1 Die Production-Nullmessung, korrekt benannt
+
+Eine rein lesende Abfrage über alle Kennungen mit dem Präfix `test-kohorte-` ergab am 02.09.:
+**0 Aufträge insgesamt · 0 wartend · 0 laufend · 0 erledigt · 0 endgültig fehlerhaft.**
+
+| Was sie beweist | Was sie NICHT beweist |
+|---|---|
+| Vor dem Test existiert **kein einziger** Kohortenauftrag. Eine saubere Nullbasis. | Die Zahl der Aufträge **nach** Provisionierung und Planung. |
+| Der Rückbau früherer Anläufe hat nichts hinterlassen. | Dass ein vollständiger Zyklus möglich ist. |
+
+Eine aussagekräftige Messung ist **erst möglich, nachdem die konkrete Stufe angelegt und
+geplant wurde**. Provisionierung, Aktivierung und Planung bleiben jeweils **freigabepflichtige
+Production-Änderungen**.
+
+Die alte Abfrage lieferte für diese Nullbasis **keine Gruppenzeile** — ein `group by` ohne
+Treffer liefert nichts. Genau das ist behoben (§32.5): die Klassen stehen jetzt links in einer
+`VALUES`-Liste, die Warteschlange hängt per `LEFT JOIN` daran. Es gibt immer zwei Zeilen, und
+eine 0 ist eine **gemessene** 0.
+
+### §32.2 Der Befund: kein Ring, aber ein unerreichbares Tor
+
+Die acht Behauptungen des Betreibers, einzeln am Code geprüft (Verhaltenstest, nicht
+Quelltextsuche — `scripts/funktionstest-ablaufkette-test.js`):
+
+| # | Behauptung | Ergebnis |
+|---|---|---|
+| 1 | `fuehreZyklusAus` verlangt bestätigte Startbereitschaft vor `/api/cron/pipeline` | **BEWIESEN** — gemessen 0 Routenaufrufe bei `startbereit` null/false |
+| 2 | `/api/cron/pipeline` plant und verarbeitet gemeinsam | **BEWIESEN** — `server.js:7849` (planen) und `:7891` (arbeiten) in einem Aufruf |
+| 3 | Ohne Planung existieren keine Kohortenaufträge | **BEWIESEN** als Satz |
+| 4 | Der natürliche Lauf plant und beginnt zugleich zu verarbeiten | **BEWIESEN** |
+| 5 | Erledigte Aufträge stehen nicht mehr auf `wartend` | **BEWIESEN** |
+| 6 | `offeneAuftraegeReichen` verlangte die volle geplante Menge als offen | **BEWIESEN** |
+| 7 | Ein korrekt erledigter Zyklus wird fälschlich blockiert | **BEWIESEN, gemessen** |
+| 8 | Kreisschluss | **TEILWEISE** — siehe unten |
+
+**Punkt 7, direkt am committeten Stand `5526f60` gemessen:**
+
+```
+Stufe A, Nachtfenster:
+  alle 20 geplant, ALLE noch offen        → vollstaendigerZyklus: true
+  alle 20 ERFOLGREICH erledigt (0 offen)  → vollstaendigerZyklus: false
+  Urteil: "Fällig wären genug Aufträge, aber die gemessene Zahl OFFENER Aufträge
+           reicht nicht — ein früherer Lauf hat sie bereits abgearbeitet."
+```
+
+Ein **vollständig und erfolgreich abgearbeiteter Zyklus** galt als gescheitert. Und
+schlimmer: „es wurde nie etwas geplant" (0 offen) und „alles ist fertig" (0 offen) waren für
+das Tor **nicht unterscheidbar**.
+
+**Punkt 8 in seiner Ringform ist WIDERLEGT.** Die Aufträge entstehen *nicht* erst durch den
+Lauf, den das Tor freigeben soll: `planeArbeit` hat in Production genau einen Aufrufer
+(`server.js:7849`), der aus drei **Bestandscrons** läuft. Für das Nachtfenster hat der
+20:00-Lauf bereits geplant.
+
+> **Das Ergebnis ist deshalb genauer als die Behauptung: es ist kein Deadlock, sondern ein
+> falsch-negatives Tor, dessen einziger grüner Zustand — „geplant, aber noch nichts
+> verarbeitet" — nur in den Sekunden zwischen Planung und erstem Claim INNERHALB desselben
+> Cron-Slots existiert. Eine rein lesende Messung um 21:36 trifft ihn praktisch nie. In der
+> Wirkung ist das ein Kreisschluss; in der Struktur ist es keiner.**
+
+### §32.3 Die tatsächliche Reihenfolge einer Stufe
+
+| Schritt | Wo | Freigabe |
+|---|---|---|
+| a) Provisionierung (**inaktiv**) | `testkohorte-vorwaerts.js:118` | stufengenau |
+| b) Aktivierung | `testkohorte-vorwaerts.js:267` | stufengenau |
+| c) **Planung** | `scalable-pipeline.js:320` `planeArbeit` — plant **alle aktiven Profile**, keine Kohortenauswahl | — (Bestandscron) |
+| d) Einreihung | `planeArbeit:434` → `helmut_enqueue_job`, `on conflict do nothing` | — |
+| e) Erste Verarbeitung | `server.js:1031` → `:7699` → `:7849` planen → `:7891` arbeiten → `helmut_claim_jobs` | — |
+| f) **Rein lesende Messung** | `erhebungsSql()` + CLI | keine |
+| g) Weitere Verarbeitung | `funktionstest-zyklus.js:382–414`, Scheiben à 280 s | Fachzyklus |
+| h) Auswertung | `funktionstest-500.pruefeAbbruch` (A01–A15) | **keine** (rein lesend) |
+| i) Deaktivierung | `testkohorte-rueckbau.js` | stufengenau (**neu**, §32.6) |
+| j) Entfernung | `testkohorte-entfernung.js:95` | stufengenau |
+
+Planung und Beanspruchung stecken in **einem** Routenaufruf. Jede Scheibe plant erneut mit
+(idempotent) und arbeitet erneut.
+
+### §32.4 Die sieben Mengen, streng getrennt
+
+Die alte Fassung kannte **eine** Zahl je Klasse. Jetzt sind es sieben:
+
+| Menge | Bedeutung |
+|---|---|
+| **erwartet** | was der echte Planer für diese Kohorte, Stufe und dieses Frischefenster erzeugen muss |
+| **vorhanden** | erwartete Aufträge, die in der Warteschlange existieren — unabhängig vom Status |
+| **wartend** | noch nicht abgeschlossen, im Testfenster beanspruchbar (Versuche **nicht** erschöpft) |
+| **laufend** | beansprucht, mit gültiger oder abgelaufener Lease |
+| **erledigt** | erfolgreich abgeschlossen, **exaktes** Frischefenster |
+| **endgültig fehlerhaft** | `fehlgeschlagen` **oder** `wartend` mit erschöpften Versuchen |
+| **fehlend** | erwartet, aber keine passende Zeile |
+
+**Zwei Fallstricke, die die Statusspalte nicht zeigt** und die jetzt aufgelöst sind:
+`wartend` mit erschöpften Versuchen ist **nicht** beanspruchbar (der nächste Claim setzt ihn
+auf `fehlgeschlagen`) und zählt als endgültiger Fehler; `laeuft` mit abgelaufener Lease kommt
+beim nächsten Claim **zurück** auf `wartend` und bleibt ausstehende Arbeit.
+
+### §32.5 Zwei getrennte Urteile
+
+| Urteil | Bedingung |
+|---|---|
+| **Fachzyklus vollständig** | nichts fehlt · nichts endgültig blockiert · nichts überzählig · jeder erwartete Auftrag ist **erledigt oder noch sicher abschließbar** |
+| **Lastbeweis vollständig** | die geforderte Menge wurde **im Testfenster selbst** verarbeitet (`finished_at` innerhalb des Fensters) |
+
+Gemessen (Stufe A, Nachtfenster, `funktionstest-ablaufkette-test.js`):
+
+| Zustand | Fachzyklus | Lastbeweis | Restlast |
+|---|---|---|---|
+| nichts geplant | **NEIN** | NEIN | 0 |
+| alles geplant, nichts verarbeitet | JA | NEIN | 40 |
+| Hälfte erledigt, Rest wartend | JA | NEIN | 20 |
+| alles erledigt **im** Fenster | **JA** | **JA** | 0 |
+| alles erledigt **vor** dem Fenster | **JA** | **NEIN** | 0 |
+| 3 endgültig fehlerhaft | NEIN | NEIN | — |
+| eine Klasse fehlt ganz | NEIN | NEIN | — |
+| nicht gemessen | **NICHT BEWERTBAR** | NICHT BEWERTBAR | n/a |
+
+Die vorletzte Zeile ist der Kern von Punkt 9 des Auftrags: **ein vor dem Nachtfenster
+erledigter Auftrag zählt für den Fachzyklus, beweist aber nichts über die Belastbarkeit des
+Fensters.** Die Restlast ist die **tatsächlich ausstehende** Arbeit, nicht die geplante Menge.
+
+### §32.6 Fünf weitere Befunde der Analyse — alle geschlossen
+
+| Nr. | Schwere | Was | Behoben |
+|---|---|---|---|
+| A | **blockierend** | Tor und Ausführer verlangten **zwei sich ausschließende Freigabeworte in derselben Variablen**: `startbereitschaft` wollte `TESTKOHORTE_STUFE_A_FACHZYKLUS_BESTAETIGT`, `fuehreZyklusAus` wollte `TESTKOHORTE_FACHZYKLUS_STARTEN_BESTAETIGT`, beide lesen `HELMUT_TESTKOHORTE_CONFIRM`. Welches Wort auch gesetzt war — die andere Seite fiel durch. **Die Kette blieb unerreichbar, genau wie vor der Korrektur der Stufenhürde in §31.10.** | `fuehreZyklusAus` nimmt jetzt eine `stufe` und nutzt dann dasselbe stufengenaue Wort wie das Tor. Ohne Stufe unverändert; eine **vertippte** Stufe fällt nie auf das Pauschalwort zurück |
+| B | mittel | `--startbereit=ja` **ersetzte die Messung durch eine Behauptung** und löste gemessen zwei echte scharfe Routenaufrufe aus. Weil das Tor im Zielfenster praktisch immer rot war, wäre genau das unter Zeitdruck der Ausweg gewesen | Schalter **entfernt**; das CLI rechnet die Startbereitschaft selbst aus und weist den alten Schalter mit Begründung ab |
+| C | mittel | Das abgeschaffte Feld `offeneAuftraege` wurde **stillschweigend ignoriert** — der Betreiber sah „nicht gemessen", obwohl er gemessen und übergeben hatte | wird jetzt **abgewiesen** mit Hinweis auf `bestand` |
+| D | mittel | Die Kapazitätshürde war **stufenunabhängig** und verlangte für 20 Profile denselben 500-Mandate-Zyklus (1.812 Aufrufe). Die kleine, billige Absicherungsstufe war damit nur im Nachtfenster zulässig — die gestufte Absicherung lief ins Leere | rechnet stufengenau: **25 / 100 / 500** Mandate (Kohorte + 5 reale). Gemessen: Stufe A (591 Aufrufe) passt jetzt auch in ein Tagesfenster, Stufe C weiterhin nur nachts |
+| E | mittel | Die **Deaktivierung** las das Pauschalwort für alle 495; das im Stufenvertrag deklarierte Stufenwort las **kein** Ausführer | `fuehreRueckbauAus` nimmt eine `stufe` und nutzt dann das Stufenwort |
+
+### §32.7 Der Planungsschritt — kein neuer schreibender Code
+
+Vier Wege wurden am Code geprüft (`funktionstest-faelligkeit.PLANUNGSWEGE`):
+
+| Weg | Befund |
+|---|---|
+| **a** reine Planungsfunktion | `planeArbeit` ist exportiert, idempotent, modellfrei und beansprucht **nichts** (kein Claim im ganzen Block). Aber sie **reiht selbst ein** (Schreibvorgang) und plant **alle aktiven Profile** — sie lässt sich nicht auf die Kohorte einschränken |
+| **b** getrennte Planungsphase | existiert nicht; verlangt **neuen schreibenden Code** |
+| **c** ein Pipeline-Abschnitt mit Kontrollstopp | möglich, aber die eine Scheibe **plant und verarbeitet zugleich** — genau die Vermischung, die den Befund erzeugt hat — und kostet Modellaufrufe |
+| **d** der natürliche Lauf | **GEWÄHLT.** Er plant die Kohorte automatisch, sobald die Stufe aktiv ist; die Aktivierung ist ohnehin freigabepflichtig. **Kein neuer Code, keine zusätzliche Freigabe** |
+
+> **Eine neue schreibende Planungsfunktion wird ausdrücklich NICHT gebaut.** Punkt 11 des
+> Auftrags erlaubt sie nur, wenn kein vorhandener sicherer Weg existiert — Weg (d) existiert.
+> Der Befund war kein fehlender Planungsweg, sondern eine falsche Statusbedingung.
+
+**Eine Korrektur zur Taktung, die die Analyse ergeben hat:** um 20:00 UTC läuft
+`/api/cron/crawl`, **nicht** `/api/cron/pipeline` (die steht auf `0 16 * * *`). Und je Slot ist
+immer nur **eine** der beiden mandatsgebundenen Klassen fällig — um 20:00 die
+Briefingmaterialisierung, um 16:00 die Projektion. Wer „den natürlichen 20:00-Pipeline-Lauf"
+sagt, zielt auf eine Route, die zu dieser Zeit gar nicht getaktet ist.
+
+### §32.8 Der Teardown, jetzt im Supabase-Pfad selbst geprüft
+
+§31.9 behob den Defekt, aber die Tests dazu blieben Quelltextregexe. Neu
+`scripts/teardown-supabasepfad-test.js`: ein Zähl-`fetch` unter der Speicherschicht, der jede
+HTTP-Methode gegen `helmut_store` mitschreibt. Gemessen:
+
+- Mandant **ohne** Store: **1 GET, 0 Schreibvorgänge**, keine Kohortenzeile angelegt.
+- Mandant **mit** Daten: **1 Schreibvorgang**, danach keine Nutzdaten mehr.
+
+Ehrlich benannt: `readSupabaseStore` legt beim Lesen weiterhin `main` und `main-auth` an —
+dieselbe Bauart, aber **keine** Kohortenzeile; beide existieren in Production ohnehin seit je.
+Die 400er-Gruppe hätte 400 **eigene** Zeilen erzeugt, und genau die entstehen nicht.
+
+### §32.9 Was weiterhin offen bleibt
+
+- **Die Nullbasis ist keine Zyklusmessung.** Erst nach Provisionierung und Planung einer
+  konkreten Stufe liefert die Erhebung verwertbare Zahlen — alle drei Schritte sind
+  freigabepflichtig.
+- **`HELMUT_TESTLAUF_VORRANG_REAL` ist ungesetzt**, die Vorrangreserve ist **0**. Der
+  Verdrängungsschutz der fünf realen Mandate ist damit **nicht wirksam** — bestätigter Befund,
+  eigener Startblocker (`vorrangreserveWirksam`).
+- **Die vollständige Rangkarte** liegt dieser Sitzung nicht vor; für das Nachtfenster
+  folgenlos (§30.4a), für die anderen Fenster nicht.
+- **Die Laufzeit der KI-freien Warteschlangenklassen** ist ungemessen.
+- **Der Lastbeweis** ist bisher in keiner Stufe erbracht — er verlangt einen echten Lauf.

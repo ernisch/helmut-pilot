@@ -16,7 +16,11 @@
 //   node scripts/lokal.js -- node scripts/funktionstest-500-faelligkeit.js \
 //        --stufe=c --start=2026-09-03T21:36:00Z --ende=2026-09-04T03:59:00Z
 //   … zusätzlich --geplant=2026-09-03T20:00:00Z  (Planungszeitpunkt; Standard: Fensterbeginn)
-//   … zusätzlich --offen=495,495                 (mandate_projection,briefing_materialization)
+//   … zusätzlich --bestand=<json>                der rein lesend erhobene BESTAND, z. B.
+//                  --bestand='{"gemessen":true,"klassen":{"mandate_projection":
+//                  {"wartend":0,"laufend":0,"erledigt":20,"endgueltigFehlerhaft":0,
+//                  "erledigtImTestfenster":20},"briefing_materialization":{…}}}'
+//                  `gemessen:true` NUR setzen, wenn die Abfrage nachweislich durchlief.
 //   … zusätzlich --weitere=<kennung,…>          die am Testtag AKTIVEN Mandate AUSSERHALB
 //                  der Kohorte. Sie stehen in Production mit in der Rangkarte und
 //                  verschieben die Fälligkeiten. Ohne sie meldet der Befund
@@ -69,9 +73,29 @@ function zeigeBefund(b, praefix = "") {
       + `${k.abdeckungProzent.toFixed(1)} % · vollständig: ${k.vollstaendigeAbdeckung}`);
     console.log(`${praefix}    Fälligkeit ${k.fruehesteFaelligkeitIso} … ${k.spaetesteFaelligkeitIso}`);
   }
-  console.log(`${praefix}Abdeckung erreicht: ${b.abdeckungErreicht} · offene Aufträge gemessen: `
-    + `${b.offeneAuftraegeGemessen} · vollständiger Zyklus: `
-    + `${b.vollstaendigerZyklus === null ? "NICHT BEWERTBAR" : b.vollstaendigerZyklus}`);
+  // ── DIE SIEBEN MENGEN ────────────────────────────────────────────────────
+  if (b.bestandGemessen) {
+    console.log(`${praefix}Bestand (rein lesend gemessen):`);
+    for (const m of b.bestand) {
+      console.log(`${praefix}  ${m.jobType}`);
+      console.log(`${praefix}    erwartet ${m.erwartet} · vorhanden ${m.vorhanden} · fehlend `
+        + `${m.fehlend}${m.ueberzaehlig ? ` · ÜBERZÄHLIG ${m.ueberzaehlig}` : ""}`);
+      console.log(`${praefix}    wartend ${m.wartend} · laufend ${m.laufend} · erledigt `
+        + `${m.erledigt} · endgültig fehlerhaft ${m.endgueltigFehlerhaft}`);
+      console.log(`${praefix}    davon im Testfenster erledigt: `
+        + `${m.erledigtImTestfenster === null ? "NICHT GEMESSEN" : m.erledigtImTestfenster}`
+        + ` · ausstehend ${m.ausstehend} · fachlich vollständig: ${m.fachlichVollstaendig}`);
+    }
+    console.log(`${praefix}Restlast (tatsächlich ausstehend, NICHT die geplante Menge): `
+      + `${b.restlast.ausstehendGesamt}`);
+  } else {
+    console.log(`${praefix}Bestand: NICHT GEMESSEN — `
+      + "`--sql` liefert die Abfrage, ihr Ergebnis gehört in `--bestand=`.");
+  }
+  const wort = (v) => (v === null ? "NICHT BEWERTBAR" : v ? "JA" : "NEIN");
+  console.log(`${praefix}Abdeckung nach Fälligkeit erreicht: ${b.abdeckungErreicht}`);
+  console.log(`${praefix}URTEIL 1 · Fachzyklus vollständig: ${wort(b.fachzyklusVollstaendig)}`);
+  console.log(`${praefix}URTEIL 2 · Lastbeweis vollständig: ${wort(b.lastbeweisVollstaendig)}`);
   console.log(`${praefix}${b.urteil}`);
 }
 
@@ -82,8 +106,10 @@ function main() {
     const ende = argument(argv, "ende");
     const fenster = argument(argv, "fenster");
     const stufeSql = argument(argv, "stufe");
+    const beginnSql = argument(argv, "start");
     console.log(F.erhebungsSql({
       ...(ende ? { fensterEndeIso: ende } : {}),
+      ...(beginnSql ? { fensterStartIso: beginnSql } : {}),
       ...(fenster ? { frischefenster: fenster } : {}),
       ...(stufeSql ? { stufe: stufeSql } : {})
     }));
@@ -144,18 +170,24 @@ function main() {
   const rohGeplant = argument(argv, "geplant");
   const geplant = rohGeplant ? zeit(rohGeplant, "--geplant") : start;
 
-  // `--offen=495,495` — die rein lesend erhobenen Zahlen. Ohne sie bleibt das
-  // Urteil ausdrücklich NICHT BEWERTBAR.
-  const rohOffen = argument(argv, "offen");
-  let offeneAuftraege = null;
-  if (rohOffen) {
-    const teile = rohOffen.split(",").map((x) => Number(String(x).trim()));
-    if (teile.length !== 2 || !teile.every((n) => Number.isFinite(n) && n >= 0)) {
-      console.error("Abbruch: --offen erwartet zwei nicht-negative Zahlen "
-        + "(mandate_projection,briefing_materialization), z. B. --offen=495,495");
+  // `--bestand=<json>` — das rein lesend erhobene Ergebnis der Abfrage aus `--sql`.
+  // Ohne ihn bleibt das Urteil ausdrücklich NICHT BEWERTBAR.
+  const rohBestand = argument(argv, "bestand");
+  let bestand = null;
+  if (rohBestand) {
+    try {
+      bestand = JSON.parse(rohBestand);
+    } catch (fehler) {
+      console.error(`Abbruch: --bestand ist kein gültiges JSON: ${(fehler && fehler.message) || fehler}`);
+      console.error("Die passende Abfrage liefert `--sql`; ihr Ergebnis gehört unverändert hier hinein.");
       process.exit(2);
     }
-    offeneAuftraege = { mandate_projection: teile[0], briefing_materialization: teile[1] };
+    if (!bestand || typeof bestand !== "object" || bestand.gemessen !== true) {
+      console.error("Abbruch: --bestand braucht ausdrücklich `\"gemessen\": true`. Ein leeres "
+        + "Abfrageergebnis zählt nur dann als gemessene Null, wenn die Abfrage nachweislich "
+        + "durchgelaufen ist — ein abgebrochener Messlauf bleibt NICHT GEMESSEN.");
+      process.exit(2);
+    }
   }
 
   const rohWeitere = argument(argv, "weitere");
@@ -165,27 +197,36 @@ function main() {
 
   const befund = F.faelligkeitsBefund({
     stufe, fensterStartMs: start, fensterEndeMs: ende,
-    planungsZeitpunktMs: geplant, offeneAuftraege, weitereAktiveMandate
+    planungsZeitpunktMs: geplant, bestand, weitereAktiveMandate
   });
 
   console.log(`\n=== Fälligkeitsbefund Stufe ${String(stufe).toUpperCase()} (rein lesend) ===`);
   zeigeBefund(befund, "");
 
-  if (befund.bewertbar === true && befund.offeneAuftraegeGemessen !== true) {
-    console.log("\nDie fehlende Zahl liefert diese rein lesende Abfrage:");
+  if (befund.bewertbar === true && befund.bestandGemessen !== true) {
+    console.log("\nDie fehlenden Zahlen liefert diese rein lesende Abfrage:");
     // MIT Frischefenster- und Stufenfilter — ohne sie zählte die Abfrage
     // zurückgestellte Aufträge FRÜHERER Tage und fremde Stufen mit.
     console.log(F.erhebungsSql({
+      fensterStartIso: befund.fensterStartIso,
       fensterEndeIso: befund.fensterEndeIso,
       frischefenster: befund.frischefensterDesPlans,
       stufe: befund.stufe
     }));
   }
 
-  // Exitcode: 0 nur bei einem belegten vollständigen Zyklus. `null` (nicht
+  // Exitcode: 0 nur bei einem belegten vollständigen FACHZYKLUS. `null` (nicht
   // bewertbar) ist ausdrücklich KEIN Erfolg — sonst wäre eine fehlende Messung
-  // ein grünes Ergebnis.
-  process.exit(befund.bewertbar === true && befund.vollstaendigerZyklus === true ? 0 : 1);
+  // ein grünes Ergebnis. Der LASTBEWEIS steht daneben und wird getrennt gemeldet;
+  // er ist eine eigene Frage und darf den Fachzyklus weder retten noch kippen.
+  if (befund.bewertbar === true && befund.fachzyklusVollstaendig === true
+      && befund.lastbeweisVollstaendig !== true) {
+    console.log("\nHINWEIS: Der Fachzyklus ist vollständig, der LASTBEWEIS aber "
+      + `${befund.lastbeweisVollstaendig === null ? "nicht bewertbar" : "NICHT erbracht"}. `
+      + "Ein vor dem Testfenster erledigter Auftrag zählt für den Fachzyklus, beweist aber "
+      + "nicht die Belastbarkeit des Fensters.");
+  }
+  process.exit(befund.bewertbar === true && befund.fachzyklusVollstaendig === true ? 0 : 1);
 }
 
 // ABBRUCH STATT STACKTRACE (02.09., zweiter adversarialer Review): `erhebungsSql`

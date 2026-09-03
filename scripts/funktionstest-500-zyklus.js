@@ -89,14 +89,58 @@ async function main() {
     console.log(`    Nötig: ${Z.EXECUTE_FLAG}=1 und ${Z.CONFIRM_VARIABLE}=${Z.FREIGABEWORT}\n`);
   }
 
+  // ── DER HANDSCHALTER IST WEG (Kreisschluss-Analyse 02.09., bestätigter Befund) ──
+  //
+  // Hier stand `startbereit: argument(argv, "startbereit") === "ja" ? true : null`.
+  // Das ersetzte die Messung durch eine BEHAUPTUNG: gemessen löste
+  // `--startbereit=ja` zwei echte scharfe Routenaufrufe gegen /api/cron/pipeline
+  // aus, ohne dass irgendeine Fälligkeits- oder Bestandsmessung stattgefunden
+  // hätte. Weil das Tor am alten Stand im Zielfenster praktisch immer rot war,
+  // wäre genau dieser Schalter unter Zeitdruck der naheliegende Ausweg gewesen —
+  // und damit ein falsches Grün im Sinne von `CLAUDE.md` §4.4.
+  //
+  // Die Startbereitschaft wird jetzt AUSGERECHNET, nicht behauptet. Wer sie ohne
+  // Messung will, bekommt sie nicht.
+  const stufe = argument(argv, "stufe") || null;
+  const rohFenster = argument(argv, "faelligkeitsfenster");
+  let faelligkeitsfenster = null;
+  if (rohFenster) {
+    try {
+      faelligkeitsfenster = JSON.parse(rohFenster);
+    } catch (fehler) {
+      console.error(`Abbruch: --faelligkeitsfenster ist kein gültiges JSON: `
+        + `${(fehler && fehler.message) || fehler}`);
+      process.exit(2);
+    }
+  }
+  const bereitschaft = require("../lib/helmut/funktionstest-500").startbereitschaft({
+    stufe, faelligkeitsfenster, env: process.env,
+    startfenster: startfensterBefund && startfensterBefund.eingabe ? startfensterBefund.eingabe : {}
+  });
+  if (argv.includes("--startbereit=ja")) {
+    console.error("Abbruch: `--startbereit=ja` gibt es nicht mehr. Die Startbereitschaft war "
+      + "damit eine Behauptung statt einer Messung — und der scharfe Fachzyklus lief gegen "
+      + "die echte Route, ohne dass je etwas gemessen wurde.");
+    console.error("Übergib stattdessen `--stufe=` und `--faelligkeitsfenster=<json>` "
+      + "(inklusive `bestand`), damit die Startbereitschaft ausgerechnet werden kann.");
+    process.exit(2);
+  }
+  if (scharfGewuenscht && bereitschaft.startbereit !== true) {
+    console.log(`\nStartbereitschaft AUSGERECHNET: nicht startbereit — `
+      + `${bereitschaft.offen.length} Hürde(n) offen:`);
+    for (const o of bereitschaft.offen) console.log(`  · ${o}`);
+    console.log("\nDer Lauf fällt deshalb auf den Trockenlauf zurück.");
+  }
+
   const ergebnis = await Z.fuehreZyklusAus({
     modus: scharfGewuenscht ? Z.MODUS_SCHARF : Z.MODUS_TROCKENLAUF,
     env: process.env,
     startfensterBefund,
     jetztUtc,
     parallel,
+    stufe,
     maxScheiben: argument(argv, "scheiben") ? Number(argument(argv, "scheiben")) : null,
-    startbereit: argument(argv, "startbereit") === "ja" ? true : null
+    startbereit: bereitschaft.startbereit === true ? true : null
   });
 
   drucke(`Fachzyklus (${ergebnis.modus})`, {

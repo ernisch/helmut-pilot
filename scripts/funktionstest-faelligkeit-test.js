@@ -54,11 +54,23 @@ function befund(stufe, f, extra = {}) {
   });
 }
 
+// BESTANDSBAUER (02.09., Kreisschluss-Korrektur). `n` Auftraege je Klasse, mit
+// frei waehlbarer Verteilung ueber die vier Statuswerte.
+function bestand(je) {
+  const k = (x) => ({
+    wartend: x.wartend ?? 0, laufend: x.laufend ?? 0, erledigt: x.erledigt ?? 0,
+    endgueltigFehlerhaft: x.fehlerhaft ?? 0,
+    ...(x.imFenster === undefined ? {} : { erledigtImTestfenster: x.imFenster })
+  });
+  return { gemessen: true, klassen: {
+    mandate_projection: k(je.mp || je), briefing_materialization: k(je.bm || je) } };
+}
+
 function produkt(b) {
   return b.produktstufe;
 }
 
-function main() {
+async function main() {
   // ── A · Der Vertrag: sieben Kennzahlen je Arbeitsklasse ──────────────────
   console.log("\nA · Vertrag des Tores");
   const bA = befund("c", FENSTER.C);
@@ -232,23 +244,29 @@ function main() {
     ohneStatus.vollstaendigerZyklus === null && ohneStatus.abdeckungErreicht === true);
   check("G2 null ist ausdrücklich kein false und kein true",
     ohneStatus.vollstaendigerZyklus !== false && ohneStatus.vollstaendigerZyklus !== true);
-  const mitStatus = befund("c", FENSTER.C, {
-    offeneAuftraege: { mandate_projection: 495, briefing_materialization: 495 }
+  const mitStatus = befund("c", FENSTER.C, { bestand: bestand({ wartend: 495, imFenster: 0 }) });
+  check("G3 alle geplant und noch wartend: Fachzyklus vollständig",
+    mitStatus.vollstaendigerZyklus === true && mitStatus.fachzyklusVollstaendig === true);
+  const zuWenig = befund("c", FENSTER.C, {
+    bestand: bestand({ mp: { wartend: 495, imFenster: 0 }, bm: { wartend: 220, imFenster: 0 } })
   });
-  check("G3 mit ausreichender gemessener Zahl offener Aufträge: vollständiger Zyklus",
-    mitStatus.vollstaendigerZyklus === true);
-  const zuWenigOffen = befund("c", FENSTER.C, {
-    offeneAuftraege: { mandate_projection: 495, briefing_materialization: 220 }
-  });
-  check("G4 (19l) zu wenige offene Aufträge: Abbruch statt Erfolg",
-    zuWenigOffen.vollstaendigerZyklus === false && zuWenigOffen.offeneAuftraegeReichen === false);
+  check("G4 (19l) eine Klasse ist unvollständig: Abbruch statt Erfolg",
+    zuWenig.vollstaendigerZyklus === false
+      && zuWenig.bestand.find((b) => b.jobType === "briefing_materialization").fehlend === 275);
   check("G5 ein unvollständiger Zähler gilt NICHT als Messung",
-    befund("c", FENSTER.C, { offeneAuftraege: { briefing_materialization: 495 } })
-      .offeneAuftraegeGemessen === false);
+    befund("c", FENSTER.C, {
+      bestand: { gemessen: true, klassen: { briefing_materialization: { wartend: 495 } } }
+    }).bestandGemessen === false);
   check("G6 ein negativer Zähler gilt nicht als Messung",
     befund("c", FENSTER.C, {
-      offeneAuftraege: { mandate_projection: -1, briefing_materialization: 495 }
-    }).offeneAuftraegeGemessen === false);
+      bestand: { gemessen: true, klassen: {
+        mandate_projection: { wartend: -1, laufend: 0, erledigt: 0, endgueltigFehlerhaft: 0 },
+        briefing_materialization: { wartend: 495, laufend: 0, erledigt: 0, endgueltigFehlerhaft: 0 } } }
+    }).bestandGemessen === false);
+  check("G7 ohne ausdrückliches `gemessen: true` bleibt es UNGEMESSEN (Auftrag Punkt 15)",
+    befund("c", FENSTER.C, {
+      bestand: { klassen: bestand({ wartend: 495 }).klassen }
+    }).bestandGemessen === false);
 
   // ── H · Teil- und Sonderfälle der Kohorte ───────────────────────────────
   console.log("\nH · Kohortenfälle");
@@ -297,9 +315,7 @@ function main() {
 
   // ── I · Startbedingungen des Nachtfensters ──────────────────────────────
   console.log("\nI · Harte Startbedingungen");
-  const nacht = befund("c", FENSTER.C, {
-    offeneAuftraege: { mandate_projection: 495, briefing_materialization: 495 }
-  });
+  const nacht = befund("c", FENSTER.C, { bestand: bestand({ wartend: 495, imFenster: 0 }) });
   const leer = F.startbedingungen({ befund: nacht });
   check("I1 ohne Angaben ist KEINE Startbedingung erfüllt (fail closed)",
     leer.erfuellt === false && leer.offene.length > 0, `${leer.offene.length} offen`);
@@ -307,7 +323,7 @@ function main() {
   // Ein Befund ohne die uebrigen am Testtag aktiven Mandate rechnet mit einer
   // anderen Rangkarte als Production und darf deshalb nicht starten.
   const nachtMitRotation = befund("c", FENSTER.C, {
-    offeneAuftraege: { mandate_projection: 495, briefing_materialization: 495 },
+    bestand: bestand({ wartend: 495, imFenster: 0 }),
     weitereAktiveMandate: ["real-1", "real-2", "real-3", "real-4", "real-5"]
   });
   check("I1b ein Befund OHNE die übrigen aktiven Mandate scheitert an der Rotationsbedingung",
@@ -357,13 +373,13 @@ function main() {
       vorbedingungenErfuellt: false, tagesdeckelWirksam: true,
       vorrangreserveWirksam: true, kommunikationsriegelScharf: true
     }).erfuellt === false);
-  check("I7 ein Befund OHNE gemessene offene Aufträge fällt an der Statusbedingung durch",
+  check("I7 ein Befund OHNE gemessenen Bestand fällt an der Statusbedingung durch",
     F.startbedingungen({
       befund: befund("c", FENSTER.C),
       aktivierungAbgeschlossenMs: t(`${TAG}T20:00:00Z`), restzeitMinuten: 383,
       konkurrierendeSchwereAusfuehrung: false, vorbedingungenErfuellt: true,
       tagesdeckelWirksam: true, vorrangreserveWirksam: true, kommunikationsriegelScharf: true
-    }).offene.some((n) => /OFFENE Aufträge/.test(n)));
+    }).offene.some((n) => /Bestand rein lesend gemessen/.test(n)));
   check("I8 ohne bewertbaren Befund gibt es gar keine Startbedingung",
     F.startbedingungen({ befund: null }).erfuellt === false);
 
@@ -448,7 +464,7 @@ function main() {
   check("N2 sie bildet die Claim-Bedingung des Motors nach",
     /status = 'wartend'/.test(sql)
       && /due_at <= /.test(sql)
-      && /attempts < max_attempts/.test(sql));
+      && /attempts < j\.max_attempts/.test(sql));
   check("N3 sie ist auf die Kohorte begrenzt",
     /tenant_id like 'test-kohorte-%'/.test(sql));
   check("N4 sie fragt genau die beiden Pflichtklassen ab",
@@ -484,7 +500,7 @@ function main() {
   check("O2 das CLI ist rein lesend — kein Netz, keine Datenbank, keine Route",
     !/fetch\(|https?\.request|supabaseRequest|\/api\/cron\//.test(cli));
   check("O3 ein NICHT bewertbares Urteil ist kein Erfolgs-Exitcode",
-    /vollstaendigerZyklus === true \? 0 : 1/.test(cli));
+    /fachzyklusVollstaendig === true \? 0 : 1/.test(cli));
   const rahmen = fs.readFileSync(path.join(ROOT, "lib/helmut/funktionstest-500.js"), "utf8");
   check("O4 auch das Startbereitschafts-Tor ruft es auf",
     /require\("\.\/funktionstest-faelligkeit"\)/.test(rahmen));
@@ -506,13 +522,13 @@ function main() {
     }
   });
   check("P2 mit Fenster, aber ohne Statusmessung: weiterhin offen",
-    huerde(mit).ok === false && /STATUS ist aber nicht gemessen/.test(huerde(mit).detail));
+    huerde(mit).ok === false && /BESTAND ist aber nicht gemessen/.test(huerde(mit).detail));
   const voll2 = R500.startbereitschaft({
     stufe: "c",
     faelligkeitsfenster: {
       fensterStartMs: FENSTER.C.start, fensterEndeMs: FENSTER.C.ende,
       planungsZeitpunktMs: FENSTER.C.start,
-      offeneAuftraege: { mandate_projection: 495, briefing_materialization: 495 }
+      bestand: bestand({ wartend: 495, imFenster: 0 })
     }
   });
   check("P3 mit vollständigem Nachweis ist die Hürde erfüllt", huerde(voll2).ok === true);
@@ -640,10 +656,10 @@ function main() {
 
   // Q23 (Befund 6, niedrig): „bildet die Claim-Bedingung exakt nach" war zu
   // stark — drei Teile des Claims fehlen. Sie stehen jetzt benannt dabei.
-  check("Q23 die drei nicht abgebildeten Teile des Claims sind benannt",
-    /Lease-Ruecklauf/.test(F.erhebungsSql())
-      && /Claim-Reihenfolge/.test(F.erhebungsSql())
-      && /Claim-Limit/.test(F.erhebungsSql()));
+  check("Q23 die nicht abgebildeten Teile des Claims sind benannt",
+    /Claim-Reihenfolge/.test(F.erhebungsSql())
+      && /Claim-Limit/.test(F.erhebungsSql())
+      && /Lease/.test(F.erhebungsSql()));
 
   // Q24/Q25: WIE ROBUST ist das Ergebnis gegen die Rangkarte? Das Nachtfenster
   // beginnt exakt am ENDE der Briefingphase (21:36 UTC) — jeder Auftrag ist
@@ -745,8 +761,102 @@ function main() {
         .every((d) => !fsx.readFileSync(d, "utf8").includes(slug));
     })());
 
+  // ── S · Regression der Kreisschluss-Analyse (02.09.) ────────────────────
+  console.log("\nS · Regression der Kreisschluss-Analyse");
+  const B = require("../lib/helmut/testkohorte-betrieb");
+  const Zk = require("../lib/helmut/funktionstest-zyklus");
+
+  // S1-S3 (BLOCKIEREND): Tor und Ausführer verlangten ZWEI SICH AUSSCHLIESSENDE
+  // Worte in DERSELBEN Variablen — die Kette blieb unerreichbar.
+  const stufenwort = S.startfreigabe("a", {}).erwartetesWort;
+  const pauschalwort = B.freigabe("fachzyklus", {}).erwartetesWort;
+  check("S1 die beiden Worte sind tatsächlich verschieden — der Konflikt war echt",
+    stufenwort !== pauschalwort, `${stufenwort} gegen ${pauschalwort}`);
+  const envStufe = { HELMUT_TESTKOHORTE_EXECUTE: "1", HELMUT_TESTKOHORTE_CONFIRM: stufenwort };
+  check("S2 EIN Wort erfüllt jetzt beide Seiten, wenn die Stufe genannt ist",
+    S.startfreigabe("a", envStufe).erteilt === true
+      && (await Zk.fuehreZyklusAus({
+        modus: "trockenlauf", env: envStufe, stufe: "a", startbereit: true,
+        startfensterBefund: { bewertbar: true, frei: true,
+          startMinuteUtc: 21 * 60 + 36, endeMinuteUtc: 23 * 60 + 59 },
+        jetztUtc: `${TAG}T22:00:00Z`,
+        deps: { rufeRouteAuf: async () => ({ ok: true }),
+          jetztMs: () => t(`${TAG}T22:00:00Z`), warte: async () => {} }
+      })).freigabe.erteilt === true);
+  check("S3 eine vertippte Stufe fällt NICHT auf das Pauschalwort zurück",
+    (await Zk.fuehreZyklusAus({
+      modus: "trockenlauf", env: { HELMUT_TESTKOHORTE_EXECUTE: "1",
+        HELMUT_TESTKOHORTE_CONFIRM: pauschalwort }, stufe: "z", startbereit: true,
+      startfensterBefund: { bewertbar: true, frei: true,
+        startMinuteUtc: 21 * 60 + 36, endeMinuteUtc: 23 * 60 + 59 },
+      jetztUtc: `${TAG}T22:00:00Z`,
+      deps: { rufeRouteAuf: async () => ({ ok: true }),
+        jetztMs: () => t(`${TAG}T22:00:00Z`), warte: async () => {} }
+    })).freigabe.erteilt === false);
+  check("S4 ohne Stufe bleibt das Bestandsverhalten (Pauschalwort) unverändert",
+    (await Zk.fuehreZyklusAus({
+      modus: "trockenlauf", env: { HELMUT_TESTKOHORTE_EXECUTE: "1",
+        HELMUT_TESTKOHORTE_CONFIRM: pauschalwort }, startbereit: true,
+      startfensterBefund: { bewertbar: true, frei: true,
+        startMinuteUtc: 21 * 60 + 36, endeMinuteUtc: 23 * 60 + 59 },
+      jetztUtc: `${TAG}T22:00:00Z`,
+      deps: { rufeRouteAuf: async () => ({ ok: true }),
+        jetztMs: () => t(`${TAG}T22:00:00Z`), warte: async () => {} }
+    })).freigabe.erteilt === true);
+
+  // S5 (mittel): der Handschalter `--startbereit=ja` ersetzte die Messung
+  // durch eine Behauptung und löste echte scharfe Routenaufrufe aus.
+  const zyklusCli = fs.readFileSync(path.join(ROOT, "scripts/funktionstest-500-zyklus.js"), "utf8");
+  // Kommentare herausnehmen: die alte Zeile steht dort ausdrücklich als
+  // Beschreibung dessen, was ENTFERNT wurde — sie darf nur nicht mehr LAUFEN.
+  const zyklusCode = zyklusCli.split("\n").filter((z) => !/^\s*(\/\/|\*|\/\*)/.test(z)).join("\n");
+  check("S5 der Handschalter --startbereit=ja ist entfernt und wird abgewiesen",
+    !/startbereit"\) === "ja"/.test(zyklusCode)
+      && /gibt es nicht mehr/.test(zyklusCode)
+      && /startbereitschaft\(/.test(zyklusCode)
+      && /startbereit: bereitschaft\.startbereit === true/.test(zyklusCode));
+
+  // S6 (mittel): das alte Feld wurde stillschweigend ignoriert.
+  const altesFeld = F.faelligkeitsBefund({
+    stufe: "c", fensterStartMs: FENSTER.C.start, fensterEndeMs: FENSTER.C.ende,
+    planungsZeitpunktMs: FENSTER.C.start,
+    offeneAuftraege: { mandate_projection: 495, briefing_materialization: 495 }
+  });
+  check("S6 das abgeschaffte Feld `offeneAuftraege` wird ABGEWIESEN, nicht ignoriert",
+    altesFeld.bewertbar === false && /gibt es nicht mehr/.test(altesFeld.grund));
+
+  // S7-S8 (mittel): die Kapazitätshürde war stufenunabhängig.
+  const kapHuerde = (st, dauer) => T.startbereitschaft({
+    stufe: st, startfenster: { startUtc: `${TAG}T11:36:00Z`, dauerMinuten: dauer }
+  }).huerden.find((h) => /vollständiger Zyklus passt/.test(h.name));
+  check("S7 die Kapazitätshürde rechnet stufengenau (Kohorte + 5 reale Mandate)",
+    /\(25 Mandate\)/.test(kapHuerde("a", 263).name)
+      && /\(100 Mandate\)/.test(kapHuerde("b", 263).name)
+      && /\(500 Mandate\)/.test(kapHuerde("c", 263).name));
+  check("S8 Stufe A passt damit auch in ein Tagesfenster, Stufe C nicht",
+    kapHuerde("a", 263).ok === true && kapHuerde("c", 263).ok === false);
+  check("S9 ohne Stufe bleibt es fail closed bei der größten Menge",
+    /\(500 Mandate\)/.test(T.startbereitschaft({
+      startfenster: { startUtc: `${TAG}T11:36:00Z`, dauerMinuten: 263 }
+    }).huerden.find((h) => /vollständiger Zyklus passt/.test(h.name)).name));
+
+  // S10 (mittel): die Deaktivierung las das Pauschalwort statt des Stufenworts.
+  const R = require("../lib/helmut/testkohorte-rueckbau");
+  const deaktWort = S.stufenFreigabe("a", "deaktivierung", {}).erwartetesWort;
+  const rueck = await R.fuehreRueckbauAus({
+    stufe: "a", kennungen: [...S.kennungenDerStufe("a")], modus: "trockenlauf",
+    env: { HELMUT_TESTKOHORTE_EXECUTE: "1", HELMUT_TESTKOHORTE_CONFIRM: deaktWort }
+  });
+  check("S10 das stufengenaue Deaktivierungswort wirkt jetzt tatsächlich",
+    rueck.freigabe.erteilt === true && rueck.freigabe.erwartetesWort === deaktWort);
+  check("S11 ohne Stufe bleibt das Pauschalwort maßgeblich",
+    (await R.fuehreRueckbauAus({
+      kennungen: [...S.kennungenDerStufe("a")], modus: "trockenlauf",
+      env: { HELMUT_TESTKOHORTE_EXECUTE: "1", HELMUT_TESTKOHORTE_CONFIRM: deaktWort }
+    })).freigabe.erteilt === false);
+
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);
 }
 
-main();
+main().catch((f) => { console.error("Abbruch:", (f && f.stack) || f); process.exit(1); });
