@@ -62,8 +62,12 @@ function bestand(je) {
     endgueltigFehlerhaft: x.fehlerhaft ?? 0,
     ...(x.imFenster === undefined ? {} : { erledigtImTestfenster: x.imFenster })
   });
-  return { gemessen: true, klassen: {
-    mandate_projection: k(je.mp || je), briefing_materialization: k(je.bm || je) } };
+  // HERKUNFT IST PFLICHT (Abschlussreview): ohne Frischefenster und Stufe kann
+  // das Modul nicht pruefen, ob die Zahlen zu diesem Fenster gehoeren.
+  return { gemessen: true, frischefenster: je.fenster || "2026-09-03T00Z",
+    stufe: je.stufe || "c",
+    klassen: {
+      mandate_projection: k(je.mp || je), briefing_materialization: k(je.bm || je) } };
 }
 
 function produkt(b) {
@@ -854,6 +858,95 @@ async function main() {
       kennungen: [...S.kennungenDerStufe("a")], modus: "trockenlauf",
       env: { HELMUT_TESTKOHORTE_EXECUTE: "1", HELMUT_TESTKOHORTE_CONFIRM: deaktWort }
     })).freigabe.erteilt === false);
+
+  // ── T · Regression der beiden Abschlussreviews (03.09.) ────────────────
+  console.log("\nT · Regression der Abschlussreviews");
+
+  // T1 (BLOCKIEREND): das Stufenwort für die Deaktivierung schaltete ALLE 495
+  // frei, weil die Zielmenge nicht auf die Stufe begrenzt wurde.
+  const Rb = require("../lib/helmut/testkohorte-rueckbau");
+  const deaktA = S.stufenFreigabe("a", "deaktivierung", {}).erwartetesWort;
+  const envDeakt = { HELMUT_TESTKOHORTE_EXECUTE: "1", HELMUT_TESTKOHORTE_CONFIRM: deaktA };
+  const rbA = await Rb.fuehreRueckbauAus({ stufe: "a", env: envDeakt, modus: "trockenlauf" });
+  check("T1 das Stufenwort A trifft OHNE Kennungsliste genau 20 Profile, nicht 495",
+    (rbA.zielGroesse ?? (rbA.ziel && rbA.ziel.length)) === 20,
+    `${rbA.zielGroesse ?? (rbA.ziel && rbA.ziel.length)}`);
+  check("T2 eine zu große Zielmenge wird abgewiesen, nicht stillschweigend gekürzt",
+    await (async () => {
+      try {
+        await Rb.fuehreRueckbauAus({ stufe: "a", kennungen: [...S.kennungenBisStufe("c")],
+          env: envDeakt, modus: "trockenlauf" });
+        return false;
+      } catch (e) { return e.grund === "falsche-stufe"; }
+    })());
+
+  // T3 (BLOCKIEREND): das Start-CLI konnte `startbereit` nie erreichen, weil es
+  // ein Feld übergab, das `pruefeStartfenster` gar nicht liefert.
+  const fensterBefund = T.pruefeStartfenster({
+    startUtc: `${TAG}T21:36:00Z`, dauerMinuten: 383, crons: []
+  });
+  check("T3 `pruefeStartfenster` liefert KEIN Feld `eingabe` — der alte Ausdruck war immer {}",
+    !("eingabe" in fensterBefund));
+  const zyklusCli2 = fs.readFileSync(path.join(ROOT, "scripts/funktionstest-500-zyklus.js"), "utf8");
+  const zyklusCode2 = zyklusCli2.split("\n").filter((z) => !/^\s*(\/\/|\*|\/\*)/.test(z)).join("\n");
+  check("T4 das CLI übergibt jetzt die echten Fenstereingaben statt `.eingabe`",
+    !/startfensterBefund\.eingabe/.test(zyklusCode2)
+      && /startUtc: `2026-01-01\$\{start\}/.test(zyklusCode2.replace(/T\$/, "$"))
+      || /dauerMinuten: Number\(dauer\), crons: CRONS/.test(zyklusCode2));
+  check("T5 die alte Schnittmengenrechnung beendet das CLI nicht mehr mit einem BLOCKER",
+    !/BLOCKER: Über die WARTESCHLANGE/.test(zyklusCode2));
+
+  // T6 (hoch): eine LEERE Rotationsliste galt als vollständige Rotation.
+  check("T6 eine leere Rotationsliste gilt NICHT als vollständige Rotation",
+    befund("a", FENSTER.C, { rotation: [] }).rotationVollstaendig === false
+      && befund("a", FENSTER.C, { rotation: [] }).rotationsQuelle !== "uebergeben");
+
+  // T7-T9 (hoch): der Bestand trug keine Herkunft — Zahlen des VORTAGES oder
+  // einer anderen Stufe wären für bare Münze genommen worden.
+  const gutBestand = bestand({ wartend: 495, imFenster: 0 });
+  check("T7 ein Bestand aus einem FREMDEN Frischefenster gilt als NICHT gemessen",
+    befund("c", FENSTER.C, {
+      bestand: { ...gutBestand, frischefenster: "2026-09-02T00Z" }
+    }).bestandGemessen === false);
+  check("T8 ein Bestand einer FREMDEN Stufe gilt als NICHT gemessen",
+    befund("c", FENSTER.C, { bestand: { ...gutBestand, stufe: "a" } }).bestandGemessen === false);
+  check("T9 ohne Herkunftsangabe gilt er ebenfalls als NICHT gemessen",
+    befund("c", FENSTER.C, {
+      bestand: { gemessen: true, klassen: gutBestand.klassen }
+    }).bestandGemessen === false);
+
+  // T10 (hoch): widersprüchliche Messung verschenkte den Lastbeweis.
+  check("T10 `erledigtImTestfenster` > `erledigt` macht den Lastbeweis NICHT BEWERTBAR",
+    befund("c", FENSTER.C, {
+      bestand: bestand({ wartend: 0, erledigt: 100, imFenster: 495 })
+    }).lastbeweisVollstaendig === null);
+
+  // T11 (hoch): der Fachzyklus wurde grün, obwohl der Rest im Fenster gar nicht
+  // mehr beanspruchbar ist.
+  const nichtBeanspruchbar = befund("c", FENSTER.A, {
+    bestand: bestand({ wartend: 495, imFenster: 0, fenster: "2026-09-03T00Z" })
+  });
+  check("T11 ausstehende Arbeit, die im Fenster NICHT beanspruchbar ist, macht den "
+    + "Fachzyklus nicht vollständig",
+    nichtBeanspruchbar.fachzyklusVollstaendig === false);
+
+  // T12 (mittel): `mindestAbdeckung` war ein frei absenkbarer Hebel.
+  check("T12 eine Schwelle unter 0,5 wird abgewiesen — kein Stichprobenbeweis",
+    befund("c", FENSTER.C, { mindestAbdeckung: 0.01 }).bewertbar === false
+      && befund("c", FENSTER.C, { mindestAbdeckung: 0.5 }).bewertbar === true);
+
+  // T13-T15 (BLOCKIEREND, beide Abschlussreviews): das CLI reichte weder
+  // Konfiguration noch Grenzen, Messungen, Isolation oder bestandene Stufen
+  // durch — `startbereit` war ueber den ausgelieferten Weg unerreichbar.
+  for (const opt of ["konfiguration", "grenzen", "messungen", "bestandene-stufen"]) {
+    check(`T13 das CLI nimmt --${opt}= entgegen und reicht es durch`,
+      new RegExp(`jsonArgument\\("${opt}"\\)`).test(zyklusCode2));
+  }
+  check("T14 es reicht auch Isolation und Parallelitätsbeleg durch",
+    /--isolation-belegt/.test(zyklusCode2) && /--parallelitaet-belegt/.test(zyklusCode2)
+      && /isolation,/.test(zyklusCode2) && /parallelitaetBelegt,/.test(zyklusCode2));
+  check("T15 die Startbereitschaft wird IMMER gedruckt, nicht nur im scharfen Lauf",
+    /Startbereitschaft \(ausgerechnet\)/.test(zyklusCode2));
 
   console.log(`\n${pass} PASS, ${fail} FAIL`);
   process.exit(fail ? 1 : 0);

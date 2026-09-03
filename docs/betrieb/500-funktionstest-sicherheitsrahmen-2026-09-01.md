@@ -3250,3 +3250,98 @@ Die 400er-Gruppe hätte 400 **eigene** Zeilen erzeugt, und genau die entstehen n
   folgenlos (§30.4a), für die anderen Fenster nicht.
 - **Die Laufzeit der KI-freien Warteschlangenklassen** ist ungemessen.
 - **Der Lastbeweis** ist bisher in keiner Stufe erbracht — er verlangt einen echten Lauf.
+
+---
+
+## §33 · Zwei Abschlussreviews des Kreisschluss-Diffs — zwei Blocker, elf Befunde
+
+Beide Reviews (fachliche Ausführbarkeit, adversariales Diff-Review) prüften ausdrücklich den
+Kreisschluss **und** die Erreichbarkeit des Starttores für alle drei Stufen.
+
+### §33.1 Das übereinstimmende Urteil
+
+> **Der Kreisschluss selbst ist im Modul aufgelöst — verhaltensbelegt.** Beide Prüfer haben die
+> Kette unabhängig nachgefahren: *nichts geplant* → `startbereit=false` (und unterscheidbar von
+> „alles fertig"), *geplant* → `true`, *teilweise verarbeitet* → `true`, *vollständig erledigt*
+> → `true`. Im alten Modell war genau der letzte Zustand rot.
+>
+> **Aber die Kette scheiterte danach an einer anderen Stelle: dem CLI.**
+
+Beide Prüfer bestätigten unabhängig: **das einzige Betreiber-CLI konnte `startbereit`
+strukturell nie erreichen.** `scripts/funktionstest-500-zyklus.js` übergab
+`startfensterBefund.eingabe` — ein Feld, das `pruefeStartfenster` **gar nicht liefert**
+(sie liefert `startErlaubt`, `grund`, `startMinuteUtc`, `endeMinuteUtc`, `gepruefteCrons`,
+`konflikte`, `meldung`). Der Ausdruck war also **immer `{}`**, und damit die Startfensterhürde
+unerfüllbar. Behoben: das CLI übergibt jetzt dieselben Eingaben, aus denen es den Befund baut.
+
+**Erreichbarkeit, von beiden Prüfern ausgeführt und belegt:** mit vollständiger Konfiguration
+und allen Messungen meldet `startbereitschaft` für **Stufe A, B und C** `startbereit: true`.
+Keine Hürde ist einzeln unerfüllbar. Stufe A und B erreichen das schon bei 143 Minuten
+Fensterdauer; Stufe C braucht ≥ 276 Minuten — genau der Unterschied, den die stufengenaue
+Kapazitätshürde (§32.6 D) erst sichtbar macht.
+
+### §33.2 Der zweite Blocker — selbst eingebaut
+
+Die stufengenaue Deaktivierung aus §32.6 E hatte einen Fehler, den erst der Review fand:
+**das Stufenwort schaltete die Zielmenge nicht mit um.** `fuehreRueckbauAus({stufe: "a"})`
+ohne Kennungsliste nahm weiterhin **alle 495** Kohortenkennungen — das Wort für 20 Profile
+hätte einen Rückbau aller 495 freigegeben. Genau die Verwechslung, die stufengenaue Freigaben
+verhindern sollen.
+
+**Behoben:** mit `stufe` ist die Zielmenge ohne ausdrückliche Liste **genau diese Stufe**, und
+eine zu große Liste wird über `pruefeStufenZielmenge` **abgewiesen** (`grund: "falsche-stufe"`),
+nicht stillschweigend gekürzt. Gemessen: 20 statt 495; eine 495er-Liste bricht ab.
+
+### §33.3 Vier weitere schwere Befunde — Messintegrität
+
+| Was | Fehlerszenario | Behoben |
+|---|---|---|
+| **Der Bestand trug keine Herkunft.** Das Modul konnte nicht prüfen, ob die übergebenen Zahlen zu *diesem* Fenster und *dieser* Stufe gehören | Zahlen des **Vortages** oder einer **anderen Stufe** hätten einen leeren Tag grün gemacht. Die Abfrage filtert korrekt — aber das Modul konnte nicht wissen, ob sie es getan hat | `bestand` muss `frischefenster` und `stufe` **mitbringen**; beides muss zum Befund passen, sonst gilt er als **nicht gemessen** |
+| **Widersprüchliche Messung** wurde nicht geprüft | `erledigtImTestfenster > erledigt` kann die Abfrage nicht liefern — der Wert hätte den **Lastbeweis verschenkt** | ein widersprüchlicher Wert gilt als **nicht gemessen**; der Lastbeweis wird `null` |
+| **Fachzyklus grün, obwohl der Rest im Fenster gar nicht beanspruchbar ist.** `Math.min(ausstehend, beanspruchbar)` ließ eine Klasse durch, solange nur genug **erledigt** war | Eine Klasse mit 495 wartenden Aufträgen im Fenster 11:36–15:59 (0 % beanspruchbar) galt als vollständig | beide Bedingungen gelten jetzt **getrennt**: nichts fehlt/blockiert **und** jeder ausstehende Auftrag ist im Fenster beanspruchbar |
+| **Eine leere Rotationsliste** galt als vollständige Rotation | `rotation: []` meldete `rotationVollstaendig: true`, während der Planer auf den tagesunabhängigen Streuwert zurückfällt — also genau den Zustand, den das Feld ausschließen soll | eine leere Liste wird behandelt, als wäre nichts übergeben |
+
+### §33.4 Drei kleinere Befunde
+
+- **`mindestAbdeckung` war ein frei absenkbarer Hebel ohne Untergrenze.** `0.01` hätte eine
+  Kohorte von 495 mit fünf Aufträgen „vollständig" gemeldet. Jetzt **Untergrenze 0,5** — der
+  Test soll eine Kohorte beweisen, keine Stichprobe.
+- **Das CLI nannte bei `--stufe=` das falsche Freigabewort** (das Pauschalwort statt des
+  stufengenauen) und hätte den Betreiber in genau die Falle aus §32.6 A geschickt. Korrigiert.
+- **Die alte Schnittmengenrechnung beendete das CLI mit einem BLOCKER** — ausgerechnet für das
+  tragende Nachtfenster, obwohl dort nach Fälligkeit 100 % beanspruchbar sind. Sie ist jetzt
+  reine **Beschreibung** und beendet den Lauf nicht mehr.
+
+### §33.4a Der Betriebsweg ist jetzt bedienbar — belegt
+
+Beide Prüfer stellten fest: `startbereit` war auf **Bibliotheksebene** erreichbar, über das
+**CLI** aber nicht — es reichte weder Konfiguration noch Abbruchgrenzen, Messungen, Isolation
+noch bestandene Stufen durch. Gemessen blieben 11 bis 12 Hürden offen, unabhängig davon, wie
+sorgfältig der Betreiber vorbereitet hatte.
+
+**Behoben:** `scripts/funktionstest-500-zyklus.js` nimmt jetzt `--konfiguration=`, `--grenzen=`,
+`--messungen=`, `--bestandene-stufen=` (je JSON), `--isolation-belegt`,
+`--parallelitaet-belegt` und `--stufe=` entgegen und reicht alles durch. Die Startbereitschaft
+wird **immer** gedruckt — auch im Trockenlauf, denn das ist der Weg, auf dem der Betreiber sie
+vorbereitet —, und jede offene Hürde wird namentlich genannt.
+
+**Ausgeführter Beleg** (Stufe A, Nachtfenster 21:36–03:59 UTC, alle Eingaben gesetzt):
+
+```
+=== Startbereitschaft (ausgerechnet) ===
+startbereit: true
+```
+
+Damit ist die Kette von der Messung bis zum Start **über den ausgelieferten Weg** vollständig
+bedienbar. Vorher: 12 offene Hürden; nach der Verdrahtung ohne Eingaben: 10; mit vollständigen
+Eingaben: **0**.
+
+### §33.5 Was die Reviews ausdrücklich bestätigt haben
+
+- **Der Lastbeweis geht in KEINE Entscheidung ein** (grep über `lib/` und `scripts/`: nur
+  Erzeugung und Anzeige) — er rettet den Fachzyklus nicht und kippt ihn nicht.
+- **Keine fehlende, abgebrochene oder leere Messung** geht als „gemessene Null" durch.
+- **`vollstaendigerZyklus === null` ist überall ein Nicht-Erfolg** — Hürde, Startbedingung,
+  CLI-Exitcode.
+- **Kein Netzaufruf, keine Datenbankverbindung, kein Schreibvorgang, kein Modellaufruf** im
+  neuen Pfad.

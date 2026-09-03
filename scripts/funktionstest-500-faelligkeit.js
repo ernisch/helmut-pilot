@@ -182,6 +182,11 @@ function main() {
       console.error("Die passende Abfrage liefert `--sql`; ihr Ergebnis gehört unverändert hier hinein.");
       process.exit(2);
     }
+    // Herkunft ergänzen, wenn die Abfrage sie nicht mitgeliefert hat: sie ergibt
+    // sich eindeutig aus den Argumenten dieses Laufs.
+    if (bestand && typeof bestand === "object") {
+      if (bestand.stufe === undefined) bestand.stufe = String(stufe).trim().toLowerCase();
+    }
     if (!bestand || typeof bestand !== "object" || bestand.gemessen !== true) {
       console.error("Abbruch: --bestand braucht ausdrücklich `\"gemessen\": true`. Ein leeres "
         + "Abfrageergebnis zählt nur dann als gemessene Null, wenn die Abfrage nachweislich "
@@ -194,6 +199,17 @@ function main() {
   const weitereAktiveMandate = rohWeitere
     ? rohWeitere.split(",").map((x) => x.trim()).filter(Boolean)
     : null;
+
+  // Das Frischefenster des Plans ist erst nach einem ersten Befund bekannt —
+  // deshalb wird es aus einem Vorlauf OHNE Bestand übernommen, wenn der Aufrufer
+  // es nicht selbst angegeben hat.
+  if (bestand && bestand.frischefenster === undefined) {
+    const vorlauf = F.faelligkeitsBefund({
+      stufe, fensterStartMs: start, fensterEndeMs: ende,
+      planungsZeitpunktMs: geplant, weitereAktiveMandate
+    });
+    if (vorlauf.bewertbar === true) bestand.frischefenster = vorlauf.frischefensterDesPlans;
+  }
 
   const befund = F.faelligkeitsBefund({
     stufe, fensterStartMs: start, fensterEndeMs: ende,

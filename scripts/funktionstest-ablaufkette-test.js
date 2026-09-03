@@ -115,7 +115,9 @@ class Warteschlange {
           && z.finishedAt >= fensterStartMs && z.finishedAt <= fensterEndeMs).length
       };
     }
-    return { gemessen: true, klassen };
+    // Die Erhebung sagt ausdruecklich, WORUEBER sie spricht — genau wie die
+    // echte Abfrage aus `erhebungsSql`.
+    return { gemessen: true, frischefenster, stufe, klassen };
   }
 }
 
