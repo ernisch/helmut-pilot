@@ -5,6 +5,17 @@
 **Tests:** `scripts/profil-bereitschaft-test.js` (91/91) · **Seed:** `lib/helmut/quellenarchitektur/seeds/bundestag-testmandate.js`
 **Reparaturpaket:** `scripts/fixtures/profil-reparatur-2026-08-04.js` (nicht automatisch angewendet)
 
+> **Nachtrag 2026-09-03 — die Ausschussfelder sind jetzt auch RELATIONAL korrigiert.**
+> Die Anwendung vom 04.08. erfolgte über `storage.saveProfile` und wirkte nur in der
+> Blob-Sicht; Production liest jedoch relational, weshalb bis zum 03.09. bei **allen fünf**
+> aktiven Profilen der alte Stand wirksam war (`ausschuesse` bei vier falsch,
+> `stellvertretende_ausschuesse` bei fünf leer). Mit Betreiberfreigabe wurde am 03.09. eine
+> einzelne atomare Transaktion auf `mandate_profiles` ausgeführt (5 Zeilen, 8 Feldänderungen,
+> nur die beiden Ausschussspalten, Compare-and-Set je Zeile) und rein lesend abgenommen.
+> Vollbeleg: [SR §35](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+> Die drei Modelllücken (Rechnungsprüfungsausschuss, Parlamentarischer Beirat, Schriftführer)
+> bleiben ausdrücklich außerhalb der Ausschussfelder.
+
 > **Korrekturvermerk 2026-08-04/2 (kein falsches Grün):** Die Erstfassung dieses Dokuments
 > enthielt drei sachliche Fehler im Reparaturpaket, die eine externe Prüfung gegen die
 > amtlichen Biografien fand — die damals grünen Tests prüften Fixture-Erwartungen gegen
@@ -125,7 +136,7 @@ gelesen. Die Mandats-Kennungen stehen bereits offen in der Repo-Doku (u. a.
 | `cem-ince` | **bereit** | — | keine Namensvarianten | — | latent: relationale `profiles.name` = Slug (§5); stv. Ausschüsse ergänzen (empfohlen) |
 | `helmut-kleebank` | **bereit** (Inhalt formal) | — · **aber:** Ausschüsse (Finanzen, Haushalt) ≠ WP-21-Mitgliedschaften (**Wirtschaft und Energie + Umwelt/Klimaschutz/Naturschutz/nukleare Sicherheit**) — formal gültige, inhaltlich falsche Angaben | keine Prioritäten, keine Namensvarianten | Radar-Zuständigkeitsbelege, Matching-Gewichte | Ausschüsse ersetzen |
 | `max-mustermann` (Demo) | **bereit** (Inhalt formal) | **Bestandsproblem:** trägt den Klarnamen einer realen Abgeordneten → identische Personensuche wie `ottilie-paola-klein-2` (Vermischung) | kein Wahlkreis, keine Prioritäten | Radar-Personensuche beider Mandate | Produktentscheidung OP-04 (Demo entfernen/umbenennen) |
-| `ottilie-paola-klein-2` | **nicht bereit** | ungültiger Ausschuss „Bildung, Forschung und Technikfolgenabschätzung" (WP-20-Bezeichnung, in WP 21 aufgeteilt); Namensduplikat mit Demo-Mandat | Wahlkreis unspezifisch („Berlin"), keine Prioritäten | Radar-Ausschussbeleg, Ausschuss-Themenradar, Personensuche | Ausschüsse → ordentlich **Kultur und Medien + Arbeit und Soziales**, stellvertretend **EU-Ausschuss + Finanzausschuss**; Wahlkreis präzisieren |
+| `ottilie-paola-klein-2` | **nicht bereit** | ungültiger Ausschuss „Bildung, Forschung und Technikfolgenabschätzung" (WP-20-Bezeichnung; zur WP 21 **im Zuschnitt gewechselt, nicht aufgeteilt** — [SR §35.7](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md)); Namensduplikat mit Demo-Mandat | Wahlkreis unspezifisch („Berlin"), keine Prioritäten | Radar-Ausschussbeleg, Ausschuss-Themenradar, Personensuche | Ausschüsse → ordentlich **Kultur und Medien + Arbeit und Soziales**, stellvertretend **EU-Ausschuss + Finanzausschuss**; Wahlkreis präzisieren |
 | `ruppert-st-we` | **bereit** (Inhalt formal) | — · Ausschussliste falsch geschnitten: ordentlich ist **nur der Petitionsausschuss** (+ Rechnungsprüfungsausschuss, außerhalb der Sollmenge → Modelllücke); der gespeicherte „Haushalt" ist eine **stellvertretende** Mitgliedschaft (dazu stv. Forschung/Technologie/Raumfahrt/TA und Wohnen/Stadtentwicklung); Schriftführer ist eine **Funktion** | keine Prioritäten, keine Namensvarianten | Zuständigkeitsbelege (falsch gewichtet) | ordentlich/stellvertretend trennen, Funktion nach `function` |
 
 **Antworten auf die Pflichtfragen des Auftrags:**
