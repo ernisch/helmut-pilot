@@ -1,0 +1,619 @@
+"use strict";
+
+// Offline-Vertragstest des STUFENVERTRAGS und des ENTFERNUNGSAUSFÜHRERS.
+//
+// Hintergrund (Prüfung 02.09. nach dem Merge von #295, Kopf 9079ac3):
+// Der Auftrag verlangt, dass die drei Stufen (20/75/400) GETRENNT behandelt
+// werden und jede Stufe getrennte Freigaben für sechs Vorgänge trägt. Vor
+// diesem Sprint war ausschließlich die AKTIVIERUNG gestuft; Provisionierung,
+// Fachzyklus, Deaktivierung und Nacharbeit galten pauschal für alle 495.
+// Einen Weg zur VOLLSTÄNDIGEN ENTFERNUNG gab es überhaupt nicht — der Rückweg
+// deaktiviert ausdrücklich nur.
+//
+// Diese Suite hält beides technisch fest. Die wichtigsten Nachweise sind die
+// NEGATIVEN: dass ohne Freigabe nichts geschrieben wird, dass eine Freigabe für
+// eine Stufe keine andere Stufe treffen kann, dass ein aktives Profil nicht
+// gelöscht wird, und dass eine leere oder ungezählte Menge NIE als Erfolg gilt.
+
+const fs = require("fs");
+const path = require("path");
+const S = require("../lib/helmut/testkohorte-stufen");
+const E = require("../lib/helmut/testkohorte-entfernung");
+const B = require("../lib/helmut/testkohorte-betrieb");
+
+const ROOT = path.join(__dirname, "..");
+let pass = 0;
+let fail = 0;
+
+function check(name, ok, detail = "") {
+  if (ok) { pass += 1; console.log(`  PASS  ${name}${detail ? ` — ${detail}` : ""}`); }
+  else { fail += 1; console.log(`  FAIL  ${name}${detail ? ` — ${detail}` : ""}`); }
+}
+
+async function wirft(fn, grund) {
+  try { await fn(); return false; } catch (e) { return grund ? e.grund === grund : true; }
+}
+
+// Eine Attrappe der Ablage: sie merkt sich, was entfernt wurde, und antwortet
+// beim Gegenlesen wahrheitsgemäß. Keine echte Datenbank, kein Netz.
+function ablage({ aktiv = false, vorhanden = true, schreibfehler = null } = {}) {
+  const weg = new Set();
+  const aufrufe = [];
+  return {
+    aufrufe,
+    weg,
+    deps: {
+      entferne: async (id) => {
+        aufrufe.push(id);
+        if (schreibfehler) return { ok: false, reason: schreibfehler };
+        weg.add(id);
+        return { ok: true };
+      },
+      leseZustand: async (id) => (weg.has(id)
+        ? { vorhanden: false, aktiv: false }
+        : { vorhanden, aktiv })
+    }
+  };
+}
+
+const FREI = (stufe, vorgang) => ({
+  HELMUT_TESTKOHORTE_EXECUTE: "1",
+  HELMUT_TESTKOHORTE_CONFIRM: S.STUFEN_FREIGABEWORTE[stufe][vorgang]
+});
+
+async function main() {
+  // ── A · Die Stufen stimmen mit der Kohortendefinition überein ─────────────
+  console.log("\nA · Stufenumfang");
+  check("A1 drei Stufen a/b/c", JSON.stringify(S.STUFEN) === JSON.stringify(["a", "b", "c"]));
+  check("A2 Umfang 20/75/400", S.STUFEN_UMFANG.a === 20 && S.STUFEN_UMFANG.b === 75 && S.STUFEN_UMFANG.c === 400,
+    JSON.stringify(S.STUFEN_UMFANG));
+  check("A3 Summe der Stufen = Kohortengröße",
+    S.STUFEN_UMFANG.a + S.STUFEN_UMFANG.b + S.STUFEN_UMFANG.c === B.KOHORTE_GESAMT,
+    `${S.STUFEN_UMFANG.a + S.STUFEN_UMFANG.b + S.STUFEN_UMFANG.c} vs ${B.KOHORTE_GESAMT}`);
+  check("A4 kumuliert 20/95/495",
+    S.STUFEN_AKTIV_KUMULIERT.a === 20 && S.STUFEN_AKTIV_KUMULIERT.b === 95 && S.STUFEN_AKTIV_KUMULIERT.c === 495);
+  check("A5 Stufe C plus 5 reale Mandate ergibt 500",
+    S.STUFEN_AKTIV_KUMULIERT.c + B.REALE_MANDATE === 500);
+  check("A6 kennungenDerStufe liefert genau den Stufenumfang",
+    S.STUFEN.every((s) => S.kennungenDerStufe(s).length === S.STUFEN_UMFANG[s]));
+  check("A7 kennungenBisStufe ist kumulativ",
+    S.kennungenBisStufe("b").length === 95 && S.kennungenBisStufe("c").length === 495);
+  check("A8 unbekannte Stufe wirft, statt eine leere Liste zu liefern",
+    await wirft(() => S.kennungenDerStufe("z")));
+
+  // ── B · Sechs Vorgänge, fünf davon schreibend ────────────────────────────
+  console.log("\nB · Vorgänge je Stufe");
+  check("B1 sechs Vorgänge", S.VORGANG_IDS.length === 6, S.VORGANG_IDS.join(", "));
+  check("B2 die sechs sind die geforderten",
+    ["provisionierung", "aktivierung", "fachzyklus", "auswertung", "deaktivierung", "entfernung"]
+      .every((v) => S.VORGANG_IDS.includes(v)));
+  check("B3 fünf schreibende Vorgänge (die Auswertung ist rein lesend)",
+    S.SCHREIBENDE_VORGAENGE.length === 5 && !S.SCHREIBENDE_VORGAENGE.includes("auswertung"));
+  check("B4 15 stufengenaue schreibende Vorgänge insgesamt",
+    S.alleStufenvertraege({}).schreibendeVorgaengeGesamt === 15);
+
+  // ── C · Freigaben sind fail closed ───────────────────────────────────────
+  console.log("\nC · Freigaben (fail closed)");
+  check("C1 ohne Umgebung ist KEINE schreibende Freigabe erteilt",
+    S.alleStufenvertraege({}).offeneFreigabenGesamt === 15);
+  check("C2 die Auswertung braucht keine Freigabe und behauptet keine",
+    S.stufenFreigabe("a", "auswertung", {}).erteilt === true
+      && S.stufenFreigabe("a", "auswertung", {}).schreibend === false
+      && S.stufenFreigabe("a", "auswertung", {}).erwartetesWort === null);
+  check("C3 Flag allein reicht nicht",
+    S.stufenFreigabe("c", "entfernung", { HELMUT_TESTKOHORTE_EXECUTE: "1" }).erteilt === false);
+  check("C4 Wort allein reicht nicht",
+    S.stufenFreigabe("c", "entfernung",
+      { HELMUT_TESTKOHORTE_CONFIRM: S.STUFEN_FREIGABEWORTE.c.entfernung }).erteilt === false);
+  check("C5 Flag UND Wort geben frei",
+    S.stufenFreigabe("c", "entfernung", FREI("c", "entfernung")).erteilt === true);
+  check("C6 das Wort einer ANDEREN Stufe gibt nicht frei",
+    S.stufenFreigabe("c", "entfernung", FREI("a", "entfernung")).erteilt === false);
+  check("C7 das Wort eines ANDEREN Vorgangs derselben Stufe gibt nicht frei",
+    S.stufenFreigabe("c", "entfernung", FREI("c", "deaktivierung")).erteilt === false);
+  check("C8 unbekannter Vorgang wirft", await wirft(() => S.stufenFreigabe("a", "loeschen-alles", {})));
+
+  // ── D · Bestandsverträglichkeit ──────────────────────────────────────────
+  console.log("\nD · Bestandsverträglichkeit (die sieben Altworte bleiben unverändert)");
+  check("D1 die Aktivierung übernimmt das Bestandswort, statt ein zweites zu erfinden",
+    S.STUFEN.every((s) => S.STUFEN_FREIGABEWORTE[s].aktivierung === B.FREIGABEWORTE[`aktivierung-${s}`]));
+  // KORREKTUR 02.09.: `FREIGABEWORTE` trägt SIEBEN Worte, nicht acht. Der
+  // Ablaufplan zählt acht freigabepflichtige SCHRITTE — zwei davon (Schritt 3
+  // Umgebungswerte, Schritte 19/20 Migration/Flag) sind reine Betreiberaktionen
+  // ohne Bestätigungswort. Schritt und Wort sind nicht dasselbe.
+  check("D2 alle sieben Bestandsworte existieren unverändert weiter",
+    Object.keys(B.FREIGABEWORTE).length === 7
+      && B.FREIGABEWORTE.provisionierung === "TESTKOHORTE_495_ANLEGEN_BESTAETIGT"
+      && B.FREIGABEWORTE.deaktivierung === "TESTKOHORTE_495_DEAKTIVIEREN_BESTAETIGT"
+      && B.FREIGABEWORTE.fachzyklus === "TESTKOHORTE_FACHZYKLUS_STARTEN_BESTAETIGT");
+  check("D3 die neuen Worte kollidieren mit keinem Bestandswort",
+    (() => {
+      const alt = new Set(Object.values(B.FREIGABEWORTE));
+      const neu = S.STUFEN.flatMap((s) => S.SCHREIBENDE_VORGAENGE
+        .filter((v) => v !== "aktivierung")
+        .map((v) => S.STUFEN_FREIGABEWORTE[s][v]));
+      return neu.every((w) => !alt.has(w)) && new Set(neu).size === neu.length;
+    })());
+
+  // ── E · Reihenfolge der Stufen ───────────────────────────────────────────
+  console.log("\nE · Reihenfolge");
+  check("E1 Stufe A ist ohne Vorstufe zulässig", S.pruefeStufenReihenfolge("a", []).zulaessig === true);
+  check("E2 Stufe C ohne bestandene Vorstufen ist NICHT zulässig",
+    S.pruefeStufenReihenfolge("c", []).zulaessig === false);
+  check("E3 Stufe C mit nur A ist NICHT zulässig",
+    S.pruefeStufenReihenfolge("c", ["a"]).zulaessig === false);
+  check("E4 Stufe C mit A und B ist zulässig",
+    S.pruefeStufenReihenfolge("c", ["a", "b"]).zulaessig === true);
+  check("E5 eine erfundene Stufe zählt nicht als bestandene Vorstufe",
+    S.pruefeStufenReihenfolge("b", ["z"]).zulaessig === false);
+
+  // ── F · Erlaubnisliste je Stufe ──────────────────────────────────────────
+  console.log("\nF · Erlaubnisliste");
+  check("F1 eine fremde Kennung bricht ab",
+    await wirft(() => S.pruefeStufenZielmenge("a", ["erfundener-fremder-mandant"]), "fremde-kennung"));
+  check("F2 eine Kohortenkennung der FALSCHEN Stufe bricht ab",
+    await wirft(() => S.pruefeStufenZielmenge("a", ["test-kohorte-c-001"]), "falsche-stufe"));
+  check("F3 die eigene Stufe geht durch",
+    S.pruefeStufenZielmenge("a", ["test-kohorte-a-001"]).length === 1);
+  check("F4 stufeVonKennung ordnet richtig zu",
+    S.stufeVonKennung("test-kohorte-a-001") === "a"
+      && S.stufeVonKennung("test-kohorte-c-400") === "c");
+  check("F5 stufeVonKennung liefert null für eine reale Kennung",
+    S.stufeVonKennung("erfundener-fremder-mandant") === null && S.stufeVonKennung("") === null);
+
+  // ── G · Der Entfernungsausführer ─────────────────────────────────────────
+  console.log("\nG · Entfernung — Trockenlauf ist Standard");
+  const g1 = await E.fuehreEntfernungAus({ stufe: "c", env: {} });
+  check("G1 ohne Modus läuft ein Trockenlauf", g1.modus === "trockenlauf" && g1.ok === false);
+  const a1 = ablage();
+  const g2 = await E.fuehreEntfernungAus({ stufe: "c", modus: "scharf", env: {}, deps: a1.deps });
+  check("G2 scharf OHNE Freigabe fällt auf Trockenlauf und schreibt nichts",
+    g2.modus === "trockenlauf" && a1.aufrufe.length === 0);
+  check("G3 ohne Stufe gibt es keinen Lauf",
+    await wirft(() => E.fuehreEntfernungAus({ modus: "scharf" }), "stufe"));
+  check("G4 unbekannter Modus bricht ab",
+    await wirft(() => E.fuehreEntfernungAus({ stufe: "a", modus: "vielleicht" }), "modus"));
+
+  console.log("\nH · Entfernung — scharf, mit injizierter Ablage");
+  const a2 = ablage({ aktiv: false });
+  const h1 = await E.fuehreEntfernungAus({
+    stufe: "a", modus: "scharf", env: FREI("a", "entfernung"), deps: a2.deps
+  });
+  check("H1 alle 20 der Stufe A entfernt, keiner fehlgeschlagen",
+    h1.entfernt === 20 && h1.fehlgeschlagen === 0 && h1.ok === true, h1.meldung.slice(0, 60));
+  check("H2 es wurden genau 20 Schreibvorgänge ausgelöst", a2.aufrufe.length === 20);
+  check("H3 kein realer Mandant berührt", h1.realeMandateBeruehrt === 0);
+
+  const a3 = ablage({ aktiv: true });
+  const h2 = await E.fuehreEntfernungAus({
+    stufe: "a", modus: "scharf", env: FREI("a", "entfernung"), deps: a3.deps
+  });
+  check("H4 ein NOCH AKTIVES Profil wird übersprungen, nicht gelöscht",
+    h2.entfernt === 0 && h2.uebersprungenAktiv === 20 && a3.aufrufe.length === 0);
+  check("H5 ein Lauf, der nur übersprungen hat, ist NICHT ok", h2.ok === false);
+
+  const a4 = ablage({ aktiv: false, schreibfehler: "abgelehnt" });
+  const h3 = await E.fuehreEntfernungAus({
+    stufe: "a", modus: "scharf", env: FREI("a", "entfernung"), deps: a4.deps
+  });
+  check("H6 ein Schreibfehler beendet den Lauf nicht, wird aber gezählt",
+    h3.fehlgeschlagen === 20 && h3.ergebnisse.length === 20 && h3.ok === false);
+
+  const a5 = ablage();
+  const h4 = await E.fuehreEntfernungAus({
+    stufe: "a", kennungen: [], modus: "scharf", env: FREI("a", "entfernung"), deps: a5.deps
+  });
+  check("H7 eine LEERE Zielmenge ist niemals ein Erfolg", h4.ok === false && h4.zielGroesse === 0);
+
+  const a6 = ablage();
+  const h5 = await E.fuehreEntfernungAus({
+    stufe: "c", modus: "scharf", env: FREI("a", "entfernung"), deps: a6.deps
+  });
+  check("H8 die Freigabe für Stufe A kann die 400 Profile der Stufe C NICHT entfernen",
+    h5.modus === "trockenlauf" && a6.aufrufe.length === 0);
+
+  const a7 = ablage();
+  check("H9 eine untergeschobene fremde Kennung bricht ab, BEVOR geschrieben wird",
+    await wirft(() => E.fuehreEntfernungAus({
+      stufe: "a", kennungen: ["test-kohorte-a-001", "erfundener-fremder-mandant"],
+      modus: "scharf", env: FREI("a", "entfernung"), deps: a7.deps
+    }), "fremde-kennung") && a7.aufrufe.length === 0);
+
+  // Ein nicht lesbarer Vorzustand darf nie zu einer Löschung führen.
+  const a8 = ablage();
+  const h6 = await E.fuehreEntfernungAus({
+    stufe: "a", modus: "scharf", env: FREI("a", "entfernung"),
+    deps: { entferne: a8.deps.entferne, leseZustand: async () => { throw new Error("DB weg"); } }
+  });
+  check("H10 nicht lesbarer Vorzustand: fail closed, es wird NICHT entfernt",
+    h6.entfernt === 0 && h6.fehlgeschlagen === 20 && a8.aufrufe.length === 0 && h6.ok === false);
+
+  // ── I · Der Restbestandsbefund ───────────────────────────────────────────
+  console.log("\nI · Restbestand (eine nicht durchgeführte Zählung ist keine Null)");
+  check("I1 ohne Erhebung nicht auswertbar", E.restbestandsBefund({}).auswertbar === false);
+  check("I2 ein FEHLENDER Zähler ist kein Nullwert",
+    E.restbestandsBefund({ erhebung: { mandatsprofile: 0 } }).auswertbar === false);
+  check("I3 ein negativer oder unbrauchbarer Zähler ist kein Nullwert",
+    E.restbestandsBefund({
+      erhebung: {
+        mandatsprofile: -1, identitaetsprofile: 0, storeZeilen: 0,
+        warteschlangenAuftraege: 0, schedulerSpuren: 0
+      }
+    }).auswertbar === false);
+  const voll = E.restbestandsBefund({
+    stufe: "c",
+    erhebung: {
+      mandatsprofile: 0, identitaetsprofile: 0, storeZeilen: 0,
+      warteschlangenAuftraege: 0, schedulerSpuren: 0
+    }
+  });
+  check("I4 alle fünf Familien gezählt 0 ergibt vollständig entfernt",
+    voll.auswertbar === true && voll.vollstaendigEntfernt === true && voll.restSumme === 0);
+  const rest = E.restbestandsBefund({
+    erhebung: {
+      mandatsprofile: 0, identitaetsprofile: 400, storeZeilen: 0,
+      warteschlangenAuftraege: 0, schedulerSpuren: 12
+    }
+  });
+  check("I5 Restzeilen werden benannt, nicht verschwiegen",
+    rest.vollstaendigEntfernt === false && rest.restSumme === 412
+      && rest.familienMitRest.includes("identitaetsprofile")
+      && rest.familienMitRest.includes("schedulerSpuren"));
+  check("I6 fünf Restbestandsfamilien werden geprüft", E.RESTBESTAND_FAMILIEN.length === 5);
+
+  // ── J · Mandantenneutralität ─────────────────────────────────────────────
+  console.log("\nJ · Mandantenneutralität (CLAUDE.md §4.2)");
+  for (const datei of [
+    "lib/helmut/testkohorte-stufen.js",
+    "lib/helmut/testkohorte-entfernung.js",
+    "scripts/testkohorte-entfernung.js"
+  ]) {
+    const quelle = fs.readFileSync(path.join(ROOT, datei), "utf8");
+    check(`J-${datei} enthält keinen realen Mandats-Slug`,
+      !/m5-[0-9a-f]{8}/.test(quelle));
+  }
+
+  // ── K · Welche Grenzen wirken zur LAUFZEIT, welche nur auf dem Papier? ────
+  //
+  // BEFUND 02.09. (Nachprüfung nach dem Merge von #295, am Code belegt):
+  // Der Auftrag spricht von „Parallelität 2 mit hartem RPM-, TPM-, Kosten- und
+  // Vorrangschutz". Drei dieser vier Schutzmechanismen sind NICHT hart:
+  //
+  //   HELMUT_TESTLAUF_MAX_RPM / _MAX_TPM  — kommen ausschließlich in
+  //     `funktionstest-500.js` (Konfigurationsprüfung), `kapazitaet-500.js`
+  //     (Planungsrechnung) und in Tests vor. KEIN Ausführungspfad liest sie.
+  //     Es gibt im gesamten `lib/helmut/` keinen Minutentakt-Begrenzer;
+  //     `azure-endpunkt.js` ist ein reiner Zieladressen-Wächter (Hostliste,
+  //     Port, Länge) und drosselt nichts.
+  //   HELMUT_TESTLAUF_KOSTENBUDGET_USD  — wirkt über die Abbruchregel A04, also
+  //     an den Kontrollpunkten ZWISCHEN den Stufen. Das ist eine ENTDECKENDE
+  //     Kontrolle, keine verhindernde: das Budget kann innerhalb einer Stufe
+  //     überschritten werden und wird erst danach bemerkt.
+  //
+  // HART ist allein der Tagesdeckel: `storage.reserveLlmCall` reserviert atomar
+  // gegen `HELMUT_MAX_LLM_CALLS_PER_DAY`, mit Verstehens-Reserve und
+  // Vorrangreserve der realen Mandate, und ist fail closed.
+  //
+  // Dieser Abschnitt hält den Befund fest, damit niemand später eine Drossel
+  // ANNIMMT, die es nicht gibt. Wird eine echte Ratenbegrenzung gebaut, wird
+  // dieser Test rot — dann ist er anzupassen, nicht zu löschen.
+  console.log("\nK · Welche Grenzen wirken zur Laufzeit (Befund, kein Wunsch)");
+  const quellen = fs.readdirSync(path.join(ROOT, "lib/helmut"))
+    .filter((f) => f.endsWith(".js"))
+    .map((f) => ({ datei: `lib/helmut/${f}`, text: fs.readFileSync(path.join(ROOT, "lib/helmut", f), "utf8") }));
+  const rpmLeser = quellen
+    .filter((q) => /HELMUT_TESTLAUF_MAX_(RPM|TPM)/.test(q.text))
+    .map((q) => q.datei);
+  check("K1 RPM/TPM werden ausschließlich in Konfigurations- und Planungsmodulen genannt",
+    rpmLeser.every((d) => d === "lib/helmut/funktionstest-500.js" || d === "lib/helmut/kapazitaet-500.js"),
+    rpmLeser.join(", ") || "keine Fundstelle");
+  check("K2 der Endpunktguard drosselt nicht, er prüft nur die Zieladresse",
+    (() => {
+      const guard = fs.readFileSync(path.join(ROOT, "lib/helmut/azure-endpunkt.js"), "utf8");
+      return !/setTimeout|sleep|warte|rateLimit|tokenBucket/i.test(guard);
+    })());
+  check("K3 der Tagesdeckel ist dagegen laufzeitwirksam und atomar reserviert",
+    (() => {
+      const st = fs.readFileSync(path.join(ROOT, "lib/helmut/storage.js"), "utf8");
+      return /async function reserveLlmCall/.test(st)
+        && /HELMUT_MAX_LLM_CALLS_PER_DAY/.test(st);
+    })());
+
+  // ── L · Die Provisionierung ist jetzt stufenfähig — ohne Bestandsbruch ────
+  console.log("\nL · Stufenweise Provisionierung");
+  const V = require("../lib/helmut/testkohorte-vorwaerts");
+  const ohneStufe = await V.fuehreProvisionierungAus({});
+  check("L1 OHNE Stufe unverändert: 495 Kennungen und das Bestandswort",
+    ohneStufe.zielGroesse === 495
+      && ohneStufe.freigabe.erwartetesWort === B.FREIGABEWORTE.provisionierung
+      && ohneStufe.stufe === null);
+  for (const s of S.STUFEN) {
+    const mitStufe = await V.fuehreProvisionierungAus({ stufe: s });
+    check(`L2-${s.toUpperCase()} MIT Stufe: ${S.STUFEN_UMFANG[s]} Kennungen und das Stufenwort`,
+      mitStufe.zielGroesse === S.STUFEN_UMFANG[s]
+        && mitStufe.freigabe.erwartetesWort === S.STUFEN_FREIGABEWORTE[s].provisionierung
+        && mitStufe.stufe === s);
+  }
+  check("L3 eine Kennung der falschen Stufe bricht ab",
+    await wirft(() => V.fuehreProvisionierungAus({ stufe: "a", kennungen: ["test-kohorte-c-001"] }),
+      "falsche-stufe"));
+  check("L4 eine unbekannte Stufe bricht ab",
+    await wirft(() => V.fuehreProvisionierungAus({ stufe: "z" }), "stufe"));
+  check("L5 auch mit Stufe bleibt der Trockenlauf der Standard",
+    (await V.fuehreProvisionierungAus({ stufe: "c", modus: "scharf", env: {} })).modus === "trockenlauf");
+
+  // ── M · Zwei behobene Defekte des Startbereitschafts-Tors ────────────────
+  //
+  // Beide wurden in der adversarialen Gegenprüfung am 02.09. gefunden und am
+  // Code belegt. Beide zeigten in die SICHERE Richtung (das Tor war zu streng,
+  // nicht zu lax) — falsch waren sie trotzdem, denn sie machten eine
+  // Betreiberentscheidung wirkungslos, ohne es zu melden.
+  console.log("\nM · Behobene Defekte (Regression)");
+  const F = require("../lib/helmut/funktionstest-500");
+  const Z = require("../lib/helmut/funktionstest-zyklus");
+
+  // M1/M2: `pruefeKonfiguration` gab `gelesen` nie zurück; `startbereitschaft`
+  // las genau dieses Feld und rechnete deshalb IMMER mit Parallelität 1.
+  const konfig = F.pruefeKonfiguration({ maxParallel: 2, maxAnfragenJeMinute: 82 });
+  check("M1 pruefeKonfiguration gibt die gelesenen Werte zurück",
+    konfig.gelesen && typeof konfig.gelesen === "object",
+    JSON.stringify(konfig.gelesen || null));
+  check("M2 maxParallel und maxAnfragenJeMinute kommen wirklich an",
+    konfig.gelesen.maxParallel === 2 && konfig.gelesen.maxAnfragenJeMinute === 82);
+  check("M3 ein NICHT gesetzter Wert erscheint auch nicht in gelesen (kein stiller Default)",
+    !Object.prototype.hasOwnProperty.call(
+      F.pruefeKonfiguration({ maxParallel: 2 }).gelesen, "maxAnfragenJeMinute"));
+
+  // M4/M5: das Tor rechnete mit fest eingebauten 24 h, der Motor liest
+  // HELMUT_DEMAND_TENANT_MAX_AGE_H. Beide müssen aus derselben Quelle kommen.
+  const breiteStandard = Z.arbeitsklassenImFenster({
+    fensterStartMinuteUtc: 696, fensterEndeMinuteUtc: 959, env: {}
+  });
+  const breiteGesetzt = Z.arbeitsklassenImFenster({
+    fensterStartMinuteUtc: 696, fensterEndeMinuteUtc: 959,
+    env: { HELMUT_DEMAND_TENANT_MAX_AGE_H: "12" }
+  });
+  check("M4 ohne Umgebungswert gilt die Motor-Vorgabe 24 h",
+    breiteStandard.bewertbar === true && breiteStandard.fensterBreiteStunden === 24);
+  check("M5 ein gesetzter Motorwert wirkt auch im Tor (kein Auseinanderlaufen)",
+    breiteGesetzt.bewertbar === true && breiteGesetzt.fensterBreiteStunden === 12);
+  check("M6 ein ausdrücklich übergebener Wert hat weiter Vorrang",
+    Z.arbeitsklassenImFenster({
+      fensterStartMinuteUtc: 696, fensterEndeMinuteUtc: 959,
+      fensterBreiteStunden: 6, env: { HELMUT_DEMAND_TENANT_MAX_AGE_H: "12" }
+    }).fensterBreiteStunden === 6);
+  check("M7 im empfohlenen Fenster bleibt die Produktstufe unerreichbar (Blocker 1)",
+    breiteStandard.sichtbareProduktstufeErreichbar === false);
+
+  // ── N · Blocker 2 ist eine Eigenschaft des KONSERVATIVEN Szenarios ───────
+  //
+  // Befund der Gegenprüfung, am Modell nachgerechnet: 1.000 der 1.812 Aufrufe
+  // (55,2 %) stammen aus `SZENARIEN.konservativ.mandatsgebundenJeMandat = 2.0`.
+  // Der GEMESSENE Wert steht als `MESSWERTE.mandatsgebundenJeMandatProTag = 1.2`
+  // im selben Modul und wird vom Erwartungsszenario benutzt. Das ist KEIN
+  // Defekt — ein konservatives Szenario darf pessimistischer rechnen als die
+  // Messung. Es ist aber eine Tatsache, die der Betreiber kennen muss: der
+  // Blocker ist keine gemessene Größe, sondern eine Szenarioentscheidung.
+  // Der Kipppunkt liegt bei 1,84.
+  console.log("\nN · Blocker 2 ist szenarioabhängig (Tatsache, kein Defekt)");
+  const kap = require("../lib/helmut/kapazitaet-500");
+  check("N1 der gemessene Wert ist 1,2 und wird vom Erwartungsszenario benutzt",
+    kap.MESSWERTE.mandatsgebundenJeMandatProTag === 1.2
+      && kap.SZENARIEN.erwartung.mandatsgebundenJeMandat === 1.2);
+  check("N2 das konservative Szenario rechnet bewusst mit 2,0",
+    kap.SZENARIEN.konservativ.mandatsgebundenJeMandat === 2);
+  check("N3 der Kipppunkt liegt bei 1,84 — darunter passt der Zyklus in 263 Minuten",
+    (() => {
+      const bedarfBei = (f) => 702 + Math.round(500 * f) + 100 + 10;
+      return bedarfBei(1.84) === 1732 && bedarfBei(2) === 1812 && bedarfBei(1.2) === 1412;
+    })());
+  check("N4 mit dem gemessenen 1,2 passt der Zyklus bei Parallelität 1",
+    kap.zyklusPasstInsFenster({
+      fensterMinuten: 263, parallel: 1, szenario: "erwartung", mandate: 500
+    }).passt === true);
+  check("N5 mit dem konservativen 2,0 passt er nicht",
+    kap.zyklusPasstInsFenster({
+      fensterMinuten: 263, parallel: 1, szenario: "konservativ", mandate: 500
+    }).passt === false);
+
+  // ── O · Ehrlich benannte Grenzen (keine stillen Annahmen) ────────────────
+  console.log("\nO · Ehrlich benannte Grenzen");
+  const zyklusPlan = await Z.fuehreZyklusAus({ env: {} });
+  check("O1 der Fachzyklus benennt seine Abbruchebene ausdrücklich als HTTP",
+    zyklusPlan.abbruchEbene === "http", String(zyklusPlan.abbruchEbene));
+  check("O2 er benennt auch, wer die fachliche Bewertung leistet",
+    /funktionstest-kontrolle/.test(String(zyklusPlan.fachlicheBewertungDurch || "")));
+  check("O3 der Zyklus läuft ohne Freigabe als Trockenlauf",
+    zyklusPlan.modus === "trockenlauf");
+
+  // Warteschlangenreste: KEIN Kohortenwerkzeug räumt `helmut_jobs`. Das ist eine
+  // bestätigte Lücke. Sie wird nicht verschwiegen, sondern erzwingt über den
+  // Restbestandsbefund ein „nicht vollständig entfernt".
+  check("O4 kein Kohortenwerkzeug räumt die Warteschlange — bestätigte Lücke",
+    ["lib/helmut/testkohorte-rueckbau.js", "lib/helmut/testkohorte-vorwaerts.js",
+      "lib/helmut/testkohorte-entfernung.js", "lib/helmut/testkohorte-betrieb.js"]
+      .every((d) => !/helmut_jobs/.test(fs.readFileSync(path.join(ROOT, d), "utf8"))));
+  check("O5 der Restbestandsbefund zählt die Warteschlange trotzdem mit und blockiert",
+    E.RESTBESTAND_FAMILIEN.includes("warteschlangenAuftraege")
+      && E.restbestandsBefund({
+        erhebung: {
+          mandatsprofile: 0, identitaetsprofile: 0, storeZeilen: 0,
+          warteschlangenAuftraege: 7, schedulerSpuren: 0
+        }
+      }).vollstaendigEntfernt === false);
+
+  // ── P · Außenkanäle: „vollständig" heißt NICHT „alles gemessen" ──────────
+  //
+  // Befund der Gegenprüfung: `vollstaendig` bedeutet „alle MESSBAREN Kanäle
+  // erhoben". A10 hängt an diesem Feld. Wer nur den Namen liest, hält drei
+  // bauartbedingt unmessbare Kanäle für geprüft. Das Feld bleibt (A10 und seine
+  // Tests hängen daran), steht aber nicht mehr allein.
+  console.log("\nP · Außenkanäle (eine ungemessene Null ist keine Null)");
+  const N = require("../lib/helmut/funktionstest-nachweise");
+  const spur = N.werteKommunikationsspurenAus({
+    auditEvents: [], pushEreignisse: [], jobOutbox: [], vonMs: 0, bisMs: 1
+  });
+  check("P1 sieben Kanäle insgesamt", spur.kanaeleGesamt === 7, String(spur.kanaeleGesamt));
+  check("P2 vier davon sind messbar und wurden erhoben",
+    spur.kanaeleGemessen === 4, String(spur.kanaeleGemessen));
+  check("P3 drei sind bauartbedingt NICHT messbar und werden benannt",
+    spur.nichtMessbar.length === 3
+      && ["monitoring-webhook", "whatsapp", "lambda-invoke"].every((k) => spur.nichtMessbar.includes(k)),
+    spur.nichtMessbar.join(", "));
+  check("P4 `vollstaendig` ist true — es meint aber nur die messbaren Kanäle",
+    spur.vollstaendig === true);
+  check("P5 `alleKanaeleGemessen` ist FALSE und kann nicht fehlgelesen werden",
+    spur.alleKanaeleGemessen === false);
+  check("P6 die drei unmessbaren Kanäle erscheinen NICHT als 0 in jeKanal",
+    ["monitoring-webhook", "whatsapp", "lambda-invoke"]
+      .every((k) => !Object.prototype.hasOwnProperty.call(spur.jeKanal, k)));
+  check("P7 eine nicht übergebene Quelle gilt als NICHT gemessen, nicht als 0",
+    (() => {
+      const ohnePush = N.werteKommunikationsspurenAus({
+        auditEvents: [], jobOutbox: [], vonMs: 0, bisMs: 1
+      });
+      return ohnePush.nichtGemessen.includes("push")
+        && ohnePush.vollstaendig === false
+        && ohnePush.jeKanal.push === null;
+    })());
+  check("P8 der Kommunikationsriegel führt genau diese sieben Kanäle",
+    (() => {
+      const R = require("../lib/helmut/kommunikationsriegel");
+      return R.KANAELE.length === 7
+        && R.KANAELE_MANDATSGEBUNDEN.length === 3
+        && R.KANAELE_BETRIEBLICH.length === 4;
+    })());
+
+  // ── Q · Der blinde Fleck der Ring-Vollständigkeitsprüfung ────────────────
+  //
+  // Befund der Gegenprüfung, hier experimentell nachgewiesen: die Prüfung
+  // entscheidet über LÄNGE und ÄLTESTEN Eintrag. Ein Lost Update entfernt einen
+  // JÜNGEREN Eintrag aus der Mitte und lässt beide Größen unverändert — er ist
+  // strukturell unsichtbar. Dieser Abschnitt hält das fest, damit niemand aus
+  // `auswertbar: true` schließt, es sei nichts verloren gegangen.
+  console.log("\nQ · Blinder Fleck: Lost Update im Nutzungsring");
+  const RING = 5000;
+  const t0 = Date.parse("2026-09-01T00:00:00Z");
+  const eintrag = (ms) => ({ createdAt: new Date(ms).toISOString(), callType: "understanding", success: true });
+  const vollerRing = Array.from({ length: RING }, (_, i) => eintrag(t0 + i * 1000));
+  const von = t0 + 1000 * 1000;
+  const bis = t0 + RING * 1000;
+
+  const heil = N.werteNutzungslogAus({ eintraege: vollerRing, vonMs: von, bisMs: bis, ringMax: RING });
+  check("Q1 ein vollständiger Ring mit altem Anfang ist auswertbar", heil.auswertbar === true);
+
+  // Lost Update nachgebaut: ein jüngerer Eintrag fehlt, die Länge bleibt 5.000,
+  // der älteste Eintrag bleibt derselbe.
+  const mitVerlust = [...vollerRing];
+  mitVerlust.splice(3000, 1);
+  mitVerlust.push(eintrag(t0 + 1));
+  const verlust = N.werteNutzungslogAus({ eintraege: mitVerlust, vonMs: von, bisMs: bis, ringMax: RING });
+  check("Q2 der Ring MIT Lost Update hat unverändert 5.000 Einträge",
+    mitVerlust.length === RING);
+  check("Q3 die Prüfung erkennt den Verlust NICHT — das ist der blinde Fleck",
+    verlust.auswertbar === true);
+  check("Q4 der blinde Fleck ist im Ergebnis ausdrücklich benannt",
+    verlust.verlustErkennung === "keine"
+      && /Lost Update/.test(String(verlust.verlustErkennungGrund || "")));
+
+  // Die Prüfung, die sehr wohl greift: gekürztes Fenster.
+  const gekuerzt = N.werteNutzungslogAus({
+    eintraege: vollerRing, vonMs: t0 - 100000, bisMs: bis, ringMax: RING
+  });
+  check("Q5 eine echte Fensterkürzung wird dagegen fail closed gemeldet",
+    gekuerzt.auswertbar === false && /gekuerzt|gekürzt/.test(String(gekuerzt.grund || "")));
+
+  // ── R · Drei Defekte aus der Gegenprüfung des EIGENEN Diffs ──────────────
+  //
+  // Alle drei trafen die in diesem Sprint neu gebauten Teile. Sie sind der
+  // Grund, warum ein adversariales Review des eigenen Diffs nicht optional ist.
+  console.log("\nR · Gegenprüfung des eigenen Diffs (behobene Defekte)");
+
+  // R1/R2: Ein Schreibfehler des Teardowns wurde verschluckt, sobald die
+  // Profilzeile verschwunden war. `teardownTenant` meldet ok:false genau bei
+  // einem TEILfehler (typischerweise Auth-Restzeilen) — das Profil ist dann weg,
+  // Reste bleiben stehen. Genau dieser Fall zählte als „entfernt".
+  const zustandsAblage = () => {
+    const weg = new Set();
+    return {
+      teilfehler: {
+        entferne: async (id) => { weg.add(id); return { ok: false, reason: "auth-restzeilen" }; },
+        leseZustand: async (id) => (weg.has(id)
+          ? { vorhanden: false, aktiv: false }
+          : { vorhanden: true, aktiv: false })
+      },
+      sauber: {
+        entferne: async (id) => { weg.add(id); return { ok: true }; },
+        leseZustand: async (id) => (weg.has(id)
+          ? { vorhanden: false, aktiv: false }
+          : { vorhanden: true, aktiv: false })
+      }
+    };
+  };
+  const teil = await E.fuehreEntfernungAus({
+    stufe: "a", modus: "scharf", env: FREI("a", "entfernung"), deps: zustandsAblage().teilfehler
+  });
+  check("R1 ein TEILfehler des Teardowns zählt NICHT als entfernt",
+    teil.entfernt === 0 && teil.fehlgeschlagen === 20 && teil.ok === false,
+    `entfernt=${teil.entfernt} fehlgeschlagen=${teil.fehlgeschlagen} ok=${teil.ok}`);
+  check("R2 der Zustand benennt den Teilfehler statt ihn zu verschweigen",
+    teil.ergebnisse[0].zustand === "teilweise-entfernt-schreibfehler"
+      && teil.ergebnisse[0].schreibfehler === "auth-restzeilen");
+  const sauber = await E.fuehreEntfernungAus({
+    stufe: "a", modus: "scharf", env: FREI("a", "entfernung"), deps: zustandsAblage().sauber
+  });
+  check("R3 der saubere Fall bleibt unverändert grün",
+    sauber.entfernt === 20 && sauber.fehlgeschlagen === 0 && sauber.ok === true);
+
+  // R4: `deleteTenantScopedData` schrieb den leeren Mandanten-Store UNBEDINGT
+  // zurück — ein Upsert, kein Löschen. Für eine Kennung ohne bestehenden Store
+  // legte der „Teardown" die Zeile damit ERST AN: 400 zusätzliche Dauerzeilen
+  // nach der Entfernung der 400er-Gruppe.
+  // NACHGESCHAERFT 02.09. (zweiter adversarialer Review): R4/R5 waren reine
+  // QUELLTEXTREGEXE. Sie haetten den eigentlichen Defekt nie gesehen — der erste
+  // Korrekturversuch pruefte naemlich mit `readStore`, und `readSupabaseStore`
+  // LEGT eine fehlende Zeile beim Lesen selbst an. Der „Fix" haette die 400 Zeilen
+  // also weiterhin erzeugt, nur beim Lesen statt beim Schreiben, und beide
+  // Regexe waeren gruen geblieben. Jetzt wird das VERHALTEN geprueft.
+  const storageQuelle = fs.readFileSync(path.join(ROOT, "lib/helmut/storage.js"), "utf8");
+  check("R4 der Teardown prüft die Existenz OHNE anzulegen (nicht über readStore)",
+    /const pStoreHatDaten = await pStoreHatDatenOhneAnlegen\(pKey\(uid\)\);/.test(storageQuelle)
+      && /if \(pStoreHatDaten\) await writeStore\(defaultPoliticianStore\(\), pKey\(uid\)\);/
+        .test(storageQuelle));
+  check("R4b die Existenzprüfung schreibt in KEINEM Pfad",
+    (() => {
+      const i = storageQuelle.indexOf("async function pStoreHatDatenOhneAnlegen");
+      const block = storageQuelle.slice(i, storageQuelle.indexOf("function pKey(", i));
+      // Nur lesende Aufrufe: kein writeStore, kein writeSupabaseStore, kein
+      // readStore (das im Supabase-Pfad selbst schreibt), kein readSupabaseStore.
+      return i > 0 && !/writeStore|writeSupabaseStore|readStore\(|readSupabaseStore/.test(block)
+        && /select=data/.test(block);
+    })());
+  check("R5 VERHALTEN: ein Teardown ohne bestehenden Mandanten-Store legt keinen an",
+    await (async () => {
+      const store = require(path.join(ROOT, "lib/helmut/storage.js"));
+      const uid = `test-kohorte-a-001`;
+      // Lokaler Pfad (die Suite laeuft ueber `lokal.js`, also ohne Supabase).
+      const vorher = await store.readStore(`main-p-${uid}`).catch(() => null);
+      const leer = !vorher || !Object.values(vorher).some((v) => Array.isArray(v) && v.length > 0);
+      await store.deleteTenantScopedData(uid).catch(() => null);
+      const nachher = await store.readStore(`main-p-${uid}`).catch(() => null);
+      const nachherLeer = !nachher || !Object.values(nachher).some((v) => Array.isArray(v) && v.length > 0);
+      return leer && nachherLeer;
+    })());
+
+  // R6: Die CLI beendete einen SCHARFEN Lauf mit ok:false trotzdem mit
+  // Exitcode 0 — ein `&& echo FERTIG` hätte Erfolg gemeldet.
+  const cliQuelle = fs.readFileSync(path.join(ROOT, "scripts/testkohorte-entfernung.js"), "utf8");
+  check("R6 ein scharfer Lauf ohne bestätigten Erfolg endet mit Exitcode 1",
+    /ergebnis\.modus === E\.MODUS_SCHARF && ergebnis\.ok !== true/.test(cliQuelle)
+      && /process\.exit\(1\)/.test(cliQuelle));
+
+  console.log(`\n${pass} PASS, ${fail} FAIL`);
+  process.exit(fail ? 1 : 0);
+}
+
+main().catch((e) => {
+  console.error(`FEHLER: ${(e && e.stack) || e}`);
+  process.exit(1);
+});

@@ -419,7 +419,10 @@ function main() {
     // sind dazugekommen — „ist die sichtbare Produktstufe im Fenster fällig?"
     // und „passt ein vollständiger Zyklus in das Fenster?". Beide sind heute
     // nicht erfüllbar; genau deshalb stehen sie hier.
-    nichtsGesetzt.startbereit === false && nichtsGesetzt.offen.length === 11,
+    // 12 statt 11 seit der Nachprüfung nach dem Merge von #295: die
+    // STUFENGENAUEN Freigaben. Gestuft war bis dahin nur die Aktivierung; ohne
+    // Angabe der zu startenden Stufe ist die Hürde fail closed nicht erfüllt.
+    nichtsGesetzt.startbereit === false && nichtsGesetzt.offen.length === 12,
     `${nichtsGesetzt.offen.length} offene Hürden`);
   const allesGesetzt = F.startbereitschaft({
     konfiguration: BEISPIEL,
@@ -454,9 +457,17 @@ function main() {
   //     bei Parallelität 1 möglich ist (1.732).
   // K2 pinnt jetzt genau das: der Rahmen behauptet KEINE Startbereitschaft,
   // solange die Blocker gelten — und er benennt beide.
+  //
+  // NACHGEZOGEN 02.09. (Betreiberentscheidung): Die erste Hürde hieß bis dahin
+  // „Die sichtbare Produktstufe ist im Startfenster über die Warteschlange
+  // fällig" und prüfte eine Schnittmenge. Sie heißt jetzt „Die geforderte
+  // Kohortenabdeckung ist im Startfenster nach FÄLLIGKEIT erreicht" und prüft die
+  // Motorbedingung `due_at <= now`. Die AUSSAGE des Tests ist unverändert: ohne
+  // konkretes Fälligkeitsfenster ist sie fail closed offen, und der Rahmen
+  // behauptet weiterhin keine Startbereitschaft.
   check("K2 Trotz aller gesetzten Werte ist der Test NICHT startbereit (zwei strukturelle Blocker)",
     allesGesetzt.startbereit === false
-      && allesGesetzt.offen.some((o) => /Produktstufe/.test(o))
+      && allesGesetzt.offen.some((o) => /Kohortenabdeckung/.test(o))
       && allesGesetzt.offen.some((o) => /vollständiger Zyklus/.test(o)),
     allesGesetzt.offen.join(" | "));
   check("K2c Der Rahmen weist die Zyklusrechnung offen aus",
