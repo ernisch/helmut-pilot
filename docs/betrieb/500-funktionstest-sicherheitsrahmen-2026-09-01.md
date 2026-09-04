@@ -4937,7 +4937,8 @@ bestehende `lib/helmut/production-schreibgate.js` wiederverwendet, keine zweite 
 |---|---|---|
 | `fuehreProvisionierungAus` · `fuehreAktivierungAus` · `fuehreEntfernungAus` | **ja**, Exit 2 | genau die Pfade, die Kohortenprofile anlegen, aktivieren oder entfernen |
 | `fuehreRueckbauAus` · `entferneSchedulerSpur` | **nein**, nur Bericht | Der Rückweg ist die **Notbremse**. `funktionstest-ablaufplan.js` führt ihn als `immerErlaubt: true` mit der ausdrücklichen Zusage, ein Rückbau dürfe **nie an einer Vorbedingung scheitern**; ein Riegel hätte diese Zusage gebrochen. Die Nacharbeit fasst `helmut_store.main` zudem **gar nicht** an — sie schreibt über `deleteCronFairnessTenant` nur die eigene Fairness-Zeile, und die bereits mit Compare-and-Set. Eine Riegelbegründung „sie schreibt den geteilten Blob" wäre dort schlicht falsch gewesen. |
-| `provision-tenant.js --allow-production` · `profile-blob-purge.js --execute` · `profile-relational-backfill.js --reverse --execute` | **nein**, nur Bericht | Onboarding-, Notfall- und Migrationspfade mit eigenen Runbooks; eine neue harte Vorbedingung hätte bestehende Betreiberverfahren gebrochen, ohne die Runbooks anzufassen. Der Schaden kann dort seit (2) ohnehin nicht mehr entstehen. |
+| `provision-tenant.js` — Production-Backend **und** `--allow-production` **und** schreibender Modus | **ja**, Exit 2 | **Nachgeschärft (Betreiberbefund, siehe §38.8).** Zuerst stand hier nur ein Bericht. Das genügte nicht: `saveProfile` schreibt den geteilten Blob unbedingt, die relationale Zeile nur bei wirksamem `HELMUT_PROFILE_DB_MODE` — ein echter Mandantenvorgang wäre ohne ihn **still blob-only** gelaufen. Das Runbook ist mitgezogen. `--validate`, der Stapel-Trockenlauf und jeder lokale Lauf bleiben unberührt. |
+| `profile-blob-purge.js --execute` · `profile-relational-backfill.js --reverse --execute` | **nein**, nur Bericht | Beide verlangen bereits **hart** `profileDbModeEnabled()` und brechen sonst mit Exit 2 ab — ein stilles Blob-only ist dort strukturell ausgeschlossen. Der Rückwärts-Backfill schaltet den relationalen Schreibmodus zudem absichtlich ab; ihn zu verlangen wäre widersprüchlich (`verlangeProfilSchreibpfad: false`). Sie bleiben bewusst reine Blob-Werkzeuge. |
 
 **Bewusste Ausnahme im Riegel:** Wer den Schreibvorgang selbst mitbringt (`deps.<schreiber>`, also
 jede Testattrappe), zielt nicht auf die echte Ablage und wird nicht geriegelt. Der Betreiberweg
@@ -4996,7 +4997,7 @@ ausdrücklich „NICHT BELEGT" mit Grund). Der Bericht erscheint auch dann, wenn
 auf den Trockenlauf zurückfällt — der Betreiber sieht sein tatsächliches Schreibziel, bevor
 irgendetwas geschieht.
 
-### §38.5 Regressionsnachweis: `scripts/speicherpfad-schutz-test.js` (neu, 61/61)
+### §38.5 Regressionsnachweis: `scripts/speicherpfad-schutz-test.js` (neu, 88/88)
 
 Fail closed, verhaltensbasiert (echte `compactStore`/`saveCrawlRun`/`saveProfile`/`activateTenant`
 gegen den lokalen Dateispeicher, echte Kindprozesse für die CLI-Riegel), mit einer mitgeführten
@@ -5013,13 +5014,15 @@ läse die Suite bis zu 10 s alte Daten und wäre still falsch.
 | 5 (2) | `saveCrawlRun` hält den Ring auf 36 statt ihn zu schrumpfen |
 | 6 (3) | **`activateTenant` kürzt den Ring nicht** — der Pfad, über den die Aktivierung der Stufe A 20 weitere Schreibvorgänge auslösen würde |
 | 7 (8) | Der Riegel beurteilt jede Konstellation; Blob und Relationales können nicht still auseinanderlaufen; der Bericht nennt Ziel, Zeile und Grenze |
+| 7b (8) | **Zeilenkennungen:** beide Variablen fehlen · beide ausdrücklich auf der Vorgabe · nur `main` ausdrücklich → **erlaubt**; abweichende Blob- · abweichende Auth- · beide Kennungen abweichend → **blockiert** |
+| 7c (2) | Die Programmmeldung nennt **keine Zahl** als aktuellen Production-Wert und verlangt den geprüft freigegebenen |
 | 8 (13) | Provisionierung · Aktivierung · Entfernung brechen mit `speicherpfad-unsicher` ab, **ohne zu schreiben**; der **Rückweg läuft bewusst weiter** (Notbremse) und fasst den Blob dabei nicht an; ohne Freigabe bleibt es der bisherige Trockenlauf; eine Attrappe läuft weiter |
 | 8b (6) | CLI-Ebene: Exitcode 2, ausgewiesenes Schreibziel, Stufe/Anzahl/Aktivierungsstatus, Trockenlauf unberührt |
-| 9 (5) | Stufe A bleibt inaktiv (**nicht leer-wahr:** fünf Profile werden dafür erst erzeugt) · Bestandsprofil byte-identisch · Ring weiterhin 36 · die **älteste** Laufzeile lebt noch |
+| 8c (15) | **`provision-tenant` als echtes CLI:** Production ohne `HELMUT_PROFILE_DB_MODE` · gesetzter, aber unwirksamer Profilmodus · fehlende Aufbewahrungsgrenze → je **Exit 2, nichts geschrieben**; vollständig sichere Umgebung → **nicht** geriegelt, Schreibziel trotzdem ausgewiesen; `--validate` und Stapel-Trockenlauf laufen weiter; kein blockierter Lauf erreicht den Provisionierer; keine Übergehungsoption |
+| 9 (7) | **Die VOLLE Stufe A:** 20 Profile aus der verbindlichen Stufendefinition werden angelegt (keine zweite Liste), alle 20 gehören zur Stufe A, alle 20 sind inaktiv · Bestandsprofil byte-identisch · Ring nach **20** Schreibvorgängen weiterhin 36 · die Positionen 21–36 leben noch |
 
-**Testergebnisse (04.09., alle über `scripts/lokal.js`):** Offline-Gesamtlauf **319/319 Suiten grün
-in 582 s** (318 vorher + die neue Suite) · Browser-/Mobile-Smoke **32 PASS / 0 FAIL** · neue Suite
-**61/61**. Zwei Suiten (`kalender-ics-test.js`, `lambda-paket-test.js`) schlugen anfangs fehl, weil
+**Testergebnisse (04.09., alle über `scripts/lokal.js`):** Offline-Gesamtlauf **319/319 Suiten grün**
+(318 vorher + die neue Suite) · Browser-/Mobile-Smoke **32 PASS / 0 FAIL** · neue Suite **88/88**. Zwei Suiten (`kalender-ics-test.js`, `lambda-paket-test.js`) schlugen anfangs fehl, weil
 `node_modules` in der Sitzung fehlte; nach `npm ci` sind beide grün (134/134 bzw. 43/0) — kein
 Zusammenhang mit dieser Änderung.
 
@@ -5049,3 +5052,49 @@ Der Code-PR braucht eine **eigene Mergefreigabe**. Erst nach seinem Merge und de
 Production-Deployment ist die Sperre aus §37.5 aufgehoben; danach wird Schritt 7 der Kette (die
 **acht Betreiberwerte**, eine Betreiberaktion an der Vercel-Env) wieder der nächste Schritt, und die
 **Aktivierung der Stufe A** bleibt darüber hinaus eine eigene Freigabe.
+
+### §38.8 Vier Nachbesserungen aus der Betreiberprüfung (04.09., zweite Runde)
+
+**(1) Explizite Standardkennungen wurden fälschlich blockiert.** `verschoben` war allein
+daraus abgeleitet, **ob** `HELMUT_SUPABASE_STORE_ID`/`_AUTH_STORE_ID` gesetzt ist. Damit hätte
+ein Betreiber, der den unveränderten Zielzustand **ausdrücklich** hinschreibt
+(`HELMUT_SUPABASE_STORE_ID=main`), sich selbst ausgesperrt. Verglichen werden jetzt die
+**aufgelösten wirksamen** Werte gegen `main`/`main-auth`. Erlaubt: beide Variablen fehlen ·
+beide ausdrücklich auf der Vorgabe · nur eine ausdrücklich auf der Vorgabe. Blockiert: jede
+**tatsächliche** Abweichung. Sechs Fälle testgesichert (§38.5, Abschnitt 7b).
+
+**(2) `provision-tenant.js` konnte in Production still blob-only schreiben.** Das Werkzeug
+**druckte** den Speicherpfadbericht nur. Der Riegel steht jetzt **vor dem ersten möglichen
+Production-Schreibvorgang** und greift, wenn alle drei Bedingungen zusammenkommen:
+Production-Backend (dieselbe Bedingung, mit der das Werkzeug seit jeher Production erkennt),
+ausdrückliches `--allow-production` und ein **schreibender** Modus. Schreibend sind
+`--spec`/`--spec-inline`, `--deactivate`, `--teardown` und `--paket --ausfuehren`; nicht
+schreibend sind `--validate` und der Stapel-Trockenlauf. Der Abbruch trägt `Exitcode 2`, das
+Schreibziel wird **auch im Erfolgsfall** ausgewiesen, und es gibt **keine Übergehungsoption**.
+Das Runbook (`zweitmandant-provisionierung-runbook.md`) ist mitgezogen — sein Ablauf ist
+tatsächlich betroffen. Fünfzehn verhaltensbasierte Assertions gegen das **echte CLI** als
+Kindprozess (§38.5, Abschnitt 8c), jeweils mit dem Nachweis, dass nichts geschrieben wurde.
+
+**(3) Der Stufe-A-Nachweis umfasste nur fünf Profile.** Fünf von zwanzig belegen „Stufe A ist
+inaktiv" nicht — und genau **zwanzig** Schreibvorgänge waren es, die am 04.09. den Ring
+gekürzt haben. Der Abschnitt legt jetzt die **volle** Kennungsliste an, bezogen aus der
+verbindlichen Stufendefinition (`lib/helmut/testkohorte-stufen.js`), **ohne** eine zweite
+hartkodierte Liste. Belegt: 20 im Bestand · alle 20 der Stufe A zugehörig · alle 20 inaktiv ·
+Bestandsprofil byte-identisch · `crawlRuns` nach 20 Schreibvorgängen weiterhin 36 · und
+ausdrücklich, dass die Aussage **nicht leer-wahr** ist.
+
+**(4) Die Programmmeldung behauptete einen unbestätigten Production-Wert.** Sie nannte
+`HELMUT_CRAWL_RUN_RETENTION (Production: 36)`, während derselbe Bericht 36 an anderer Stelle
+als **Betreiberangabe** führt, die aus dem Code nicht belegbar ist. Die Meldung verlangt
+jetzt den **für den konkreten Production-Vorgang ausdrücklich geprüften und freigegebenen
+Wert** (kein Vorgabewert, keine aus der Doku übernommene Zahl, ≥ dem Lesefenster 20) und nennt
+**keine Zahl** mehr als aktuellen Production-Wert. Testgesichert (§38.5, Abschnitt 7c).
+
+**Zusätzlich gegengeprüft, ohne Befund:** kein weiterer schreibender Production-Profilpfad in
+den geänderten Dateien behauptet Sicherheit und schreibt bei fehlendem Profilmodus weiter
+(`profile-blob-purge.js` und `profile-relational-backfill.js` verlangen `profileDbModeEnabled()`
+bereits **hart**) · die absichtlich reinen Blob-Werkzeuge sind nicht zu relationalen gemacht
+worden · `compactStore` verkleinert `crawlRuns` weiterhin in **keiner** Konfiguration
+(fünf Konfigurationen testgesichert) · die Aufbewahrungsgrenze wird im Anwendungscode an
+**genau einer** Stelle angewendet, in `saveCrawlRun` · der **Rückweg** bleibt als Notbremse
+ungeriegelt und ausführbar · es ist **keine** neue Übergehungsoption entstanden.

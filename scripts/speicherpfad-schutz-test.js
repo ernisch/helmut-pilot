@@ -313,6 +313,60 @@ function cli(skriptUndArgs, zusatzUmgebung = {}) {
         env: ohneProfilModus, verlangeProfilSchreibpfad: false
       }).sicher === true);
 
+    // ── 7b · Zeilenkennungen: nur eine TATSAECHLICHE Abweichung blockiert ─────
+    //
+    // Betreiberbefund: `verschoben` wurde zuerst allein daraus abgeleitet, OB eine
+    // der beiden Variablen gesetzt ist. Damit haette eine ausdrueckliche
+    // Bestaetigung der Vorgabe (`HELMUT_SUPABASE_STORE_ID=main`) den voellig
+    // unveraenderten Zielzustand blockiert. Verglichen werden jetzt die
+    // AUFGELOESTEN Werte gegen main/main-auth.
+    console.log("\n== 7b · Zeilenkennungen: Vorgabe erlaubt, Abweichung blockiert ==");
+    const ZEILENFAELLE = [
+      { name: "beide Variablen fehlen", env: {}, erlaubt: true },
+      {
+        name: "beide Standardwerte ausdruecklich gesetzt",
+        env: { HELMUT_SUPABASE_STORE_ID: "main", HELMUT_SUPABASE_AUTH_STORE_ID: "main-auth" },
+        erlaubt: true
+      },
+      { name: "nur main ausdruecklich gesetzt", env: { HELMUT_SUPABASE_STORE_ID: "main" }, erlaubt: true },
+      { name: "abweichende Blob-Kennung", env: { HELMUT_SUPABASE_STORE_ID: "anders" }, erlaubt: false },
+      { name: "abweichende Auth-Kennung", env: { HELMUT_SUPABASE_AUTH_STORE_ID: "anders-auth" }, erlaubt: false },
+      {
+        name: "beide Kennungen abweichend",
+        env: { HELMUT_SUPABASE_STORE_ID: "x", HELMUT_SUPABASE_AUTH_STORE_ID: "y" },
+        erlaubt: false
+      }
+    ];
+    const ZEILENPRUEFUNG = "Zeilenkennungen stehen auf der Vorgabe (main / main-auth)";
+    for (const f of ZEILENFAELLE) {
+      const befund = VORFLUG.pruefeSpeicherpfad({ env: { ...PRODUKTIV, ...f.env } });
+      const zeilenOk = !befund.offen.includes(ZEILENPRUEFUNG);
+      check(`7b.x ${f.name} → ${f.erlaubt ? "erlaubt" : "blockiert"}`,
+        zeilenOk === f.erlaubt && befund.sicher === f.erlaubt,
+        `sicher=${befund.sicher} offen=${JSON.stringify(befund.offen)}`);
+    }
+    // Und der aufgeloeste Wert steht im Bericht — auch wenn er nur aus der Vorgabe kommt.
+    check("7b.7 Der Bericht nennt die aufgeloeste Zeile und die Kontenzeile",
+      /Geteilte Zeile\s+:\s*main · Kontenzeile: main-auth/
+        .test(VORFLUG.pruefeSpeicherpfad({ env: PRODUKTIV }).meldung));
+    check("7b.8 Eine ausdrueckliche Vorgabe gilt NICHT als verschoben (gerechnet, nicht geraten)",
+      VORFLUG.zeilenkennungen({ HELMUT_SUPABASE_STORE_ID: "main" }).verschoben === false
+        && VORFLUG.zeilenkennungen({ HELMUT_SUPABASE_STORE_ID: "main" })
+          .ausdruecklichGesetzt.blob === true);
+
+    // ── 7c · Die Meldung behauptet keinen bestaetigten Production-Wert ────────
+    //
+    // Betreiberbefund: der Text nannte "HELMUT_CRAWL_RUN_RETENTION (Production: 36)".
+    // 36 ist eine Betreiberangabe, die aus dem Code nicht belegbar ist — eine
+    // Programmmeldung darf sie nicht als aktuellen Production-Wert ausgeben.
+    const UNSICHER_MELDUNG = VORFLUG.pruefeSpeicherpfad({ env: {} }).meldung;
+    check("7c.1 Die Meldung nennt KEINE Zahl als aktuellen Production-Wert",
+      !/Production:\s*\d/.test(UNSICHER_MELDUNG) && !/Production\s*36/.test(UNSICHER_MELDUNG),
+      UNSICHER_MELDUNG.split("\n").filter((z) => /Production/.test(z)).join(" | "));
+    check("7c.2 Sie verlangt stattdessen den geprueft freigegebenen Wert",
+      /ausdruecklich geprueften und freigegebenen Wert/.test(UNSICHER_MELDUNG)
+        && /HELMUT_CRAWL_RUN_RETENTION/.test(UNSICHER_MELDUNG));
+
     // ── 8 · Der Riegel greift GENAU DANN, wenn wirklich geschrieben wuerde ──
     //
     // Der Riegel sitzt im AUSFUEHRER, nicht im CLI-Banner: erst dort steht fest,
@@ -479,19 +533,157 @@ function cli(skriptUndArgs, zusatzUmgebung = {}) {
     check("8b.6 Der Trockenlauf bleibt unberuehrt (Exit 0)",
       cli(["scripts/testkohorte-vorwaerts.js", "provisionierung", "--stufe=a"]).status === 0);
 
+    // ── 8c · provision-tenant kann in Production nicht mehr still blob-only ──
+    //
+    // Betreiberbefund: dieses Werkzeug DRUCKTE den Speicherpfadbericht nur. Damit
+    // konnte ein echter Production-Vorgang ohne wirksamen HELMUT_PROFILE_DB_MODE
+    // still blob-only schreiben — genau das Ergebnis, das das Abnahmekriterium
+    // ausschliesst. Geprueft wird das ECHTE CLI als Kindprozess.
+    console.log("\n== 8c · provision-tenant: Riegel vor dem ersten Production-Schreibvorgang ==");
+    seedeStore(36);
+
+    // Eine gueltige Spec, ausserhalb des Repos abgelegt, damit sie weder den
+    // Speicher-Schnappschuss noch den Netz-Guard beruehrt. Rein synthetisch.
+    const specDir = fs.mkdtempSync(path.join(require("os").tmpdir(), "helmut-spec-"));
+    const specDatei = path.join(specDir, "spec.json");
+    // Die Kennung ist bewusst NICHT aus einer reservierten synthetischen Familie
+    // (`test-kohorte-`, `test-mdb-`, `synth-mandat-`, `stapel-`): `validateSpec`
+    // weist die naemlich ab, und dieser Abschnitt will den SPEICHERPFAD pruefen,
+    // nicht die Kennungsregel. Sie ist ebenso wenig ein reales Mandat.
+    fs.writeFileSync(specDatei, JSON.stringify({
+      id: "pruefmandat-vorflug-offline",
+      email: "pruefmandat-vorflug-offline@pruefmandat.invalid",
+      name: "Synthetisches Pruefmandat",
+      password: "nur-ein-testwert-kein-secret",
+      party: "Testpartei",
+      parliamentType: "Bundestag",
+      constituency: "Testwahlkreis",
+      committees: ["Innenausschuss"]
+    }, null, 2));
+
+    // Production-Umgebung mit nicht aufloesbarer `.invalid`-Adresse. Die
+    // LAUFZEITSPERRE des Netzschutzes bleibt aktiv; nur seine Umgebungspruefung
+    // wird uebersprungen, sonst braeche der Kindprozess mit Exit 3 ab, BEVOR das
+    // Werkzeug seine eigene Verweigerung zeigen kann (scripts/lokaler-netzschutz.js:283-296).
+    const PROD_BASIS = Object.freeze({
+      HELMUT_STORAGE_BACKEND: "supabase",
+      SUPABASE_URL: "https://beispiel.invalid",
+      SUPABASE_SERVICE_ROLE_KEY: "nur-ein-testwert-kein-secret",
+      HELMUT_V3_STORE: "1",
+      HELMUT_SCHUTZ_SIMULIERTE_UMGEBUNG: "ja"
+    });
+    const PROD_SICHER = Object.freeze({
+      ...PROD_BASIS, HELMUT_CRAWL_RUN_RETENTION: "36", HELMUT_PROFILE_DB_MODE: "1"
+    });
+
+    function provTenant(args, env) {
+      return cli(["scripts/provision-tenant.js", ...args], env);
+    }
+
+    // (1) Production-Vorgang OHNE HELMUT_PROFILE_DB_MODE.
+    const ohneModus = provTenant(["--allow-production", "--spec", specDatei],
+      { ...PROD_BASIS, HELMUT_CRAWL_RUN_RETENTION: "36" });
+    check("8c.1 Production-Vorgang ohne HELMUT_PROFILE_DB_MODE: Exit 2, nichts geschrieben",
+      ohneModus.status === 2 && ohneModus.speicherUnveraendert === true,
+      `exit=${ohneModus.status} ${ohneModus.fehler.trim().slice(0, 200)}`);
+    check("8c.1b Die Meldung nennt das stille Blob-only-Ergebnis",
+      /Blob-only/.test(ohneModus.aus + ohneModus.fehler));
+
+    // (2) Gesetzter, aber UNWIRKSAMER Profilmodus (HELMUT_V3_STORE fehlt).
+    const unwirksam = provTenant(["--allow-production", "--spec", specDatei],
+      { ...PROD_BASIS, HELMUT_V3_STORE: "0", HELMUT_CRAWL_RUN_RETENTION: "36", HELMUT_PROFILE_DB_MODE: "1" });
+    check("8c.2 Gesetzter, aber unwirksamer Profilmodus: Exit 2, nichts geschrieben",
+      unwirksam.status === 2 && unwirksam.speicherUnveraendert === true,
+      `exit=${unwirksam.status}`);
+
+    // (3) Fehlende Aufbewahrungsgrenze.
+    const ohneGrenze = provTenant(["--allow-production", "--spec", specDatei],
+      { ...PROD_BASIS, HELMUT_PROFILE_DB_MODE: "1" });
+    check("8c.3 Fehlende Aufbewahrungsgrenze: Exit 2, nichts geschrieben",
+      ohneGrenze.status === 2 && ohneGrenze.speicherUnveraendert === true,
+      `exit=${ohneGrenze.status}`);
+    check("8c.3b Die Meldung nennt HELMUT_CRAWL_RUN_RETENTION beim Namen",
+      /HELMUT_CRAWL_RUN_RETENTION/.test(ohneGrenze.aus + ohneGrenze.fehler));
+
+    // (4) VOLLSTAENDIG SICHERE Umgebung: der Riegel laesst durch.
+    //     Der Lauf scheitert danach an der nicht aufloesbaren `.invalid`-Adresse —
+    //     das ist erwartet und belegt gerade, dass der Riegel nicht die Ursache war.
+    const sicher = provTenant(["--allow-production", "--spec", specDatei], PROD_SICHER);
+    check("8c.4 Vollstaendig sichere Umgebung: der Riegel blockiert NICHT (kein Exit 2)",
+      sicher.status !== 2
+        && !/ABBRUCH \(speicherpfad-unsicher\)/.test(sicher.fehler)
+        && !/die Prozessumgebung traegt nicht jeden erforderlichen Wert/.test(sicher.aus + sicher.fehler),
+      `exit=${sicher.status} ${sicher.fehler.trim().slice(0, 200)}`);
+    check("8c.4b Auch im Erfolgsfall wird das Schreibziel ausgewiesen",
+      /Blob-Backend/.test(sicher.aus) && /Relationaler Schreibmodus/.test(sicher.aus)
+        && /crawlRuns-Aufbewahrung\s*:\s*36/.test(sicher.aus));
+    check("8c.4c Der lokale Speicher bleibt dabei unberuehrt",
+      sicher.speicherUnveraendert === true);
+
+    // (5) REINE VALIDIERUNG bleibt moeglich — auch in unsicherer Umgebung.
+    const validierung = provTenant(["--allow-production", "--validate", "--spec", specDatei], PROD_BASIS);
+    check("8c.5 Reine Validierung laeuft weiter durch (Exit 0), ohne Riegel und ohne Schreibvorgang",
+      validierung.status === 0
+        && /SPEC GÜLTIG/.test(validierung.aus)
+        && validierung.speicherUnveraendert === true,
+      `exit=${validierung.status} ${validierung.fehler.trim().slice(0, 160)}`);
+    check("8c.5b Die Validierung loest den Riegel gar nicht erst aus",
+      !/Speicherziel des Laufs/.test(validierung.aus));
+
+    // (5b) Der Stapel-TROCKENLAUF bleibt ebenfalls moeglich.
+    const paketDatei = path.join(specDir, "paket.json");
+    fs.writeFileSync(paketDatei, JSON.stringify([JSON.parse(fs.readFileSync(specDatei, "utf8"))], null, 2));
+    const trockenPaket = provTenant(["--allow-production", "--paket", paketDatei], PROD_BASIS);
+    check("8c.6 Der Stapel-Trockenlauf wird nicht geriegelt (kein Exit 2) und schreibt nichts",
+      trockenPaket.status !== 2
+        && !/ABBRUCH \(speicherpfad-unsicher\)/.test(trockenPaket.fehler)
+        && trockenPaket.speicherUnveraendert === true,
+      `exit=${trockenPaket.status} speicherUnveraendert=${trockenPaket.speicherUnveraendert}`);
+
+    // (6) Nachweis fuer JEDEN blockierten Fall: es wurde nichts geschrieben.
+    check("8c.7 Jeder blockierte Production-Vorgang hat NICHTS geschrieben",
+      [ohneModus, unwirksam, ohneGrenze].every((r) => r.speicherUnveraendert === true
+        && r.status === 2));
+    check("8c.8 Kein blockierter Lauf hat den Provisionierer ueberhaupt erreicht",
+      [ohneModus, unwirksam, ohneGrenze]
+        .every((r) => !/=== PROVISIONIERUNG|angelegt|aktualisiert/.test(r.aus)));
+    // Der lokale Speicher ist nach der ganzen Gruppe unveraendert 36 Laeufe lang.
+    check("8c.9 crawlRuns im lokalen Speicher unveraendert (36)",
+      liesStore().crawlRuns.length === 36, `length=${liesStore().crawlRuns.length}`);
+    // Es gibt keine Uebergehungsoption: das Werkzeug kennt keinen Schalter dafuer.
+    check("8c.10 Es existiert keine Uebergehungsoption im Werkzeug",
+      !/--(ignoriere|skip|force|ohne)[-a-z]*speicherpfad/i
+        .test(fs.readFileSync(path.join(ROOT, "scripts", "provision-tenant.js"), "utf8")));
+    fs.rmSync(specDir, { recursive: true, force: true });
+
     // ── 9 · Kein Kohortenprofil ist nach all dem aktiv ausser dem einen, den
     //        Abschnitt 6 absichtlich aktiviert hat ─────────────────────────────
-    console.log("\n== 9 · Stufe A bleibt inaktiv, Bestandsprofile unveraendert ==");
-    // ACHTUNG LEER-WAHRHEIT: eine Aussage ueber "alle Kohortenprofile" ist wertlos,
-    // wenn gar keins da ist. Deshalb wird der Endstand hier ERST ERZEUGT — mit
-    // genau den Schreibvorgaengen, die auch der Vorfallslauf ausgeloest hat — und
-    // die Anzahl vorher geprueft.
+    console.log("\n== 9 · Die VOLLE Stufe A bleibt inaktiv, Bestandsprofile unveraendert ==");
+    //
+    // KORRIGIERT (Betreiberbefund): Dieser Abschnitt legte fuenf Profile an und
+    // erklaerte danach "Stufe A" fuer inaktiv. Fuenf von zwanzig sind kein
+    // Nachweis fuer Stufe A — und genau zwanzig Schreibvorgaenge waren es, die am
+    // 04.09. den Ring gekuerzt haben. Geprueft wird jetzt die VOLLE dokumentierte
+    // Kennungsliste.
+    //
+    // KEINE zweite Liste: die Kennungen kommen aus der verbindlichen
+    // Stufendefinition (`lib/helmut/testkohorte-stufen.js`), nicht aus einer
+    // hartkodierten Aufzaehlung in dieser Suite.
+    const STUFE_A = ST.kennungenDerStufe("a");
+    check("9.0a Die Stufendefinition liefert genau 20 Kennungen (nicht leer-wahr)",
+      Array.isArray(STUFE_A) && STUFE_A.length === 20 && STUFE_A.length === ST.STUFEN_UMFANG.a,
+      `laenge=${Array.isArray(STUFE_A) ? STUFE_A.length : "kein Array"}`);
+
     seedeStore(36);
     const bestandVorher = JSON.stringify(liesStore().profiles[BESTANDSPROFIL_ID]);
-    for (let i = 1; i <= 5; i += 1) {
+    const ringVorher = liesStore().crawlRuns.length;
+    // Genau der Vorgang vom 04.09.: 20 Profil-Schreibvorgaenge auf die geteilte
+    // Zeile, ohne Aufbewahrungsvariable in der Umgebung.
+    delete process.env.HELMUT_CRAWL_RUN_RETENTION;
+    for (const id of STUFE_A) {
       await storage.saveProfile({
-        id: `test-kohorte-a-${String(i).padStart(3, "0")}`,
-        name: `Synthetisch ${i}`,
+        id,
+        name: `Synthetisch ${id}`,
         profileActive: false,
         committees: ["Innenausschuss"]
       });
@@ -499,24 +691,32 @@ function cli(skriptUndArgs, zusatzUmgebung = {}) {
     const endstand = liesStore();
     const kohortenprofile = Object.values(endstand.profiles || {})
       .filter((p) => String(p.id || "").startsWith("test-kohorte-"));
-    check("9.0 Die Aussage ist nicht leer-wahr: es liegen wirklich Kohortenprofile vor",
-      kohortenprofile.length === 5, `gefunden=${kohortenprofile.length}`);
-    check("9.1 Kein synthetisches Kohortenprofil ist im Endstand aktiv",
-      kohortenprofile.length === 5 && kohortenprofile.every((p) => p.profileActive !== true),
-      `aktiv: ${kohortenprofile.filter((p) => p.profileActive === true).map((p) => p.id).join(", ")}`);
-    check("9.2 Das Bestandsprofil ist nach fuenf fremden Schreibvorgaengen byte-identisch",
+
+    check("9.1 Es liegen genau 20 Kohortenprofile im Testbestand",
+      kohortenprofile.length === 20, `gefunden=${kohortenprofile.length}`);
+    check("9.2 Alle 20 gehoeren zur Stufe A (Abgleich gegen die Stufendefinition)",
+      kohortenprofile.length === 20
+        && kohortenprofile.every((p) => STUFE_A.includes(p.id))
+        && STUFE_A.every((id) => Boolean(endstand.profiles[id])),
+      `fremd: ${kohortenprofile.filter((p) => !STUFE_A.includes(p.id)).map((p) => p.id).join(", ")}`);
+    check("9.3 Alle 20 sind INAKTIV",
+      kohortenprofile.length === 20 && kohortenprofile.every((p) => p.profileActive === false),
+      `aktiv: ${kohortenprofile.filter((p) => p.profileActive !== false).map((p) => p.id).join(", ")}`);
+    check("9.4 Das Bestandsprofil ist nach 20 fremden Schreibvorgaengen byte-identisch",
       JSON.stringify(endstand.profiles[BESTANDSPROFIL_ID]) === bestandVorher
         && endstand.profiles[BESTANDSPROFIL_ID].updatedAt === "2026-08-01T00:00:00.000Z");
-    check("9.3 Der Ring steht nach fuenf fremden Schreibvorgaengen weiterhin auf 36",
-      endstand.crawlRuns.length === 36, `length=${endstand.crawlRuns.length}`);
+    check("9.5 crawlRuns bleibt nach 20 Schreibvorgaengen vollstaendig erhalten (36)",
+      ringVorher === 36 && endstand.crawlRuns.length === 36,
+      `vorher=${ringVorher} nachher=${endstand.crawlRuns.length} (am 04.09. fiel er hier auf 20)`);
     // Der Seed ist absteigend nach createdAt sortiert: Position 0 ist der juengste
     // Lauf (`lauf-000`), Position 35 der aelteste (`lauf-035`). Genau die Positionen
     // 21-36 hat der Vorfall am 04.09. entfernt.
-    check("9.4 Die aelteste Laufzeile (Position 36) lebt noch — genau sie fiel am 04.09. weg",
+    check("9.6 Die aeltesten Laufzeilen (Positionen 21-36) leben noch",
       endstand.crawlRuns.length === 36
         && endstand.crawlRuns[35].runId === "lauf-035"
         && endstand.crawlRuns[20].runId === "lauf-020",
       `pos35=${endstand.crawlRuns[35] && endstand.crawlRuns[35].runId}`);
+
   } finally {
     if (sicherung != null) fs.writeFileSync(storeFile, sicherung);
     else if (fs.existsSync(storeFile)) fs.unlinkSync(storeFile);
@@ -524,10 +724,10 @@ function cli(skriptUndArgs, zusatzUmgebung = {}) {
 
   // FAIL CLOSED: eine Suite, die aus Versehen fast nichts prueft, darf nicht
   // gruen sein. Die Untergrenze wird bewusst mitgefuehrt.
-  // Die Untergrenze liegt dicht unter dem tatsaechlichen Umfang (Stand 04.09.: 65).
+  // Die Untergrenze liegt dicht unter dem tatsaechlichen Umfang (Stand 04.09.: 88).
   // Sie ist kein Schaetzwert, sondern ein Riegel gegen eine Suite, die durch einen
   // frueh abbrechenden Zweig fast nichts mehr prueft und trotzdem gruen endet.
-  const MINDESTZAHL = 60;
+  const MINDESTZAHL = 84;
   console.log(`\n${passed}/${passed + failed} Speicherpfad-Schutz-Assertions erfolgreich.`);
   if (passed + failed < MINDESTZAHL) {
     console.error(`FEHLGESCHLAGEN: nur ${passed + failed} Assertions gelaufen, erwartet mindestens ${MINDESTZAHL}.`);

@@ -15,6 +15,14 @@
 //   node scripts/provision-tenant.js --teardown  tenant-alpha   (Vollentfernung)
 //   node scripts/provision-tenant.js --validate --spec spec.json (nur prüfen, kein Write)
 //
+// VORFLUG-RIEGEL (04.09.2026, SR §38.2): Ein Lauf, der WIRKLICH gegen Production
+// schreibt (Production-Backend + `--allow-production` + schreibender Modus),
+// prüft VOR dem ersten Schreibvorgang den Speicherpfad und bricht sonst mit
+// Exitcode 2 ab — ohne etwas zu schreiben. Grund: `saveProfile` schreibt den
+// geteilten Blob unbedingt, die relationale Zeile nur bei wirksamem
+// `HELMUT_PROFILE_DB_MODE`; ohne ihn wäre das Ergebnis still blob-only.
+// `--validate`, der Stapel-Trockenlauf und jeder lokale Lauf bleiben unberührt.
+//
 // Spec-Pflichtfelder: id, email, name, password, party|faction, parliamentType,
 //   (Landtag: state), region (constituency/state), committees|focusTopics.
 // Optional: aiBudgetDailyCents, aiBudgetMonthlyCents, tenantDailyCallLimit, focusTopics.
@@ -29,10 +37,25 @@ function arg(name) {
 }
 function has(name) { return process.argv.includes(name); }
 
-function refuseProductionBackend() {
+// Genau die Bedingung, mit der dieses Werkzeug seit jeher "Production" erkennt.
+// Als eigene Funktion, damit der Vorflug-Riegel unten dieselbe Definition benutzt
+// und keine zweite Wahrheit entsteht.
+function istProductionUmgebung() {
   const backend = String(process.env.HELMUT_STORAGE_BACKEND || "").toLowerCase();
-  const hasSupabase = backend === "supabase" || Boolean(process.env.SUPABASE_URL);
-  if (hasSupabase && !has("--allow-production")) {
+  return backend === "supabase" || Boolean(process.env.SUPABASE_URL);
+}
+
+// Schreibt der angeforderte Modus tatsaechlich? `--validate` prueft nur, und der
+// Stapel ist ohne `--ausfuehren` ein Trockenlauf. Alle uebrigen Einstiege
+// (`--deactivate`, `--teardown`, Einzelspec) schreiben.
+function schreibenderModus() {
+  if (has("--validate")) return false;
+  if (has("--paket")) return has("--ausfuehren");
+  return true;
+}
+
+function refuseProductionBackend() {
+  if (istProductionUmgebung() && !has("--allow-production")) {
     console.error("ABBRUCH: Ein Production-Backend (Supabase) ist konfiguriert.");
     console.error("Production-Provisionierung ist FREIGABEPFLICHTIG. Ohne ausdrückliche");
     console.error("Freigabe schreibt dieses Werkzeug nur im lokalen Dateimodus.");
@@ -52,23 +75,31 @@ function loadSpec() {
 (async () => {
   refuseProductionBackend();
 
-  // ── SCHREIBZIEL AUSWEISEN (SR §37.5 (4), Vorfall 04.09.) ──────────────────
-  // Jeder schreibende Einstieg dieses Werkzeugs endet in `storage.saveProfile`
-  // und schreibt damit die GETEILTE Blob-Zeile `main`. Der Bericht sagt vor dem
-  // Lauf, wohin das tatsächlich geht und welche Werte wirksam sind.
+  // ── VORFLUG-RIEGEL VOR DEM ERSTEN PRODUCTION-SCHREIBVORGANG ───────────────
   //
-  // BEWUSST KEIN harter Abbruch: dies ist der Onboarding- und Notfallpfad für
-  // ECHTE Mandanten, und sein Ablauf steht in
-  // docs/betrieb/zweitmandant-provisionierung-runbook.md. Eine neue harte
-  // Vorbedingung würde ein bestehendes Betreiberverfahren brechen. Der Schaden,
-  // gegen den ein Riegel hier schützen würde, kann seit dem 04.09. ohnehin nicht
-  // mehr entstehen: `compactStore` verkleinert `crawlRuns` in keiner
-  // Konfiguration mehr (lib/helmut/storage.js). Der harte Abbruch bleibt den
-  // Kohortenwerkzeugen vorbehalten (SR §38.2).
-  if (has("--allow-production") && !has("--validate")) {
-    console.log(`\n${VORFLUG.pruefeSpeicherpfad({
-      env: process.env, zweck: "Mandanten-Provisionierung gegen Production"
-    }).meldung}\n`);
+  // KORRIGIERT (Betreiberbefund): Hier stand nur ein BERICHT. Das genügte nicht.
+  // Jeder schreibende Einstieg dieses Werkzeugs endet in `storage.saveProfile`,
+  // und `saveProfile` schreibt den geteilten Blob UNBEDINGT, die relationale
+  // Zeile aber nur bei wirksamem `HELMUT_PROFILE_DB_MODE`. Ohne diesen Wert
+  // wäre ein echter Production-Vorgang **still blob-only** gelaufen — genau das
+  // Ergebnis, das das Abnahmekriterium ausschließt, und genau der zweite Befund
+  // vom 04.09. Ein gedruckter Hinweis verhindert das nicht; ein Riegel schon.
+  //
+  // Der Riegel greift NUR, wenn wirklich in Production geschrieben würde:
+  //   * die Umgebung IST ein Production-Backend (dieselbe Bedingung wie oben),
+  //   * der Betreiber hat das mit `--allow-production` ausdrücklich gewollt,
+  //   * und der Modus schreibt tatsächlich.
+  // `--validate` und der Stapel-Trockenlauf bleiben unberührt; ein rein lokaler
+  // Lauf ohne Supabase ebenfalls. Es gibt bewusst KEINE Übergehungsoption.
+  //
+  // Er steht VOR dem `require` des Provisionierers — also vor jedem Modul, das
+  // Production überhaupt erreichen könnte.
+  if (istProductionUmgebung() && has("--allow-production") && schreibenderModus()) {
+    const zweck = "Mandanten-Provisionierung gegen Production";
+    // Das tatsächliche Schreibziel wird IMMER ausgewiesen, auch im Erfolgsfall.
+    console.log(`\n${VORFLUG.pruefeSpeicherpfad({ env: process.env, zweck }).meldung}\n`);
+    // Derselbe technische Riegel wie in den Kohortenwerkzeugen — eine Wahrheit.
+    VORFLUG.erzwingeSpeicherpfadOderWirf({ env: process.env, zweck });
   }
 
   const provisioning = require("../lib/helmut/provisioning");
@@ -179,4 +210,16 @@ function loadSpec() {
   const res = await provisioning.provisionTenant(spec, {}, { neuAktiv: true });
   console.log(provisioning.formatProtocol(res));
   process.exit(res.ok ? 0 : 1);
-})().catch((e) => { console.error("FEHLER:", e && e.message || e); process.exit(1); });
+})().catch((e) => {
+  // Ein unsicherer Speicherpfad ist ein UMGEBUNGSfehler (Exitcode 2), kein
+  // fachlicher Fehlschlag (Exitcode 1). Der vollständige Befund steht bereits
+  // auf stdout; hier nur die eine Abbruchzeile, damit die Meldung nicht doppelt
+  // erscheint.
+  if (e && e.grund === "speicherpfad-unsicher") {
+    console.error("ABBRUCH (speicherpfad-unsicher): vor dem ersten Schreibvorgang gestoppt."
+      + " Es wurde NICHTS geschrieben. Der Befund steht oben.");
+    process.exit(2);
+  }
+  console.error("FEHLER:", (e && e.message) || e);
+  process.exit(1);
+});
