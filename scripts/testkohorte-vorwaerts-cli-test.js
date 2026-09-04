@@ -333,8 +333,22 @@ function main() {
     scharfOhneAlles.status === 0 && scharfOhneAlles.json && scharfOhneAlles.json.modus === "trockenlauf"
       && scharfOhneAlles.json.modusGewuenscht === "scharf" && scharfOhneAlles.json.angelegt === 0
       && scharfOhneAlles.json.uhr === "systemuhr" && scharfOhneAlles.speicherUnveraendert);
-  check("F2 Das Banner nennt die STUFE, nicht die Gesamtkohorte",
-    /20 Kohortenkennungen der Stufe A/.test(scharfOhneAlles.stdout) && !/495 Kohortenkennungen/.test(scharfOhneAlles.stdout));
+  // ANGEPASST 04.09. (SR §37.5 (4)): Das Banner ist jetzt strukturiert und weist
+  // zusaetzlich das tatsaechliche Schreibziel aus. Die Zusicherung ist unveraendert
+  // — es nennt die STUFE und deren Umfang, nie die Gesamtkohorte. Der frueher
+  // gedruckte Satz „Nichts wird gelöscht" ist entfallen: er war eine ungemessene
+  // Behauptung VOR jeder Pruefung (SR §36.9).
+  check("F2 Das Banner nennt die STUFE und ihren Umfang, nicht die Gesamtkohorte",
+    /Stufe\s+:\s*A\b/.test(scharfOhneAlles.stdout)
+      && /Vorgesehene Profilanzahl:\s*20\b/.test(scharfOhneAlles.stdout)
+      && !/495/.test(scharfOhneAlles.stdout));
+  check("F2b Das Banner weist Schreibziel, beide Schreibmodi und die wirksame Aufbewahrung aus",
+    /Blob-Backend/.test(scharfOhneAlles.stdout)
+      && /Blob-Schreibmodus/.test(scharfOhneAlles.stdout)
+      && /Relationaler Schreibmodus/.test(scharfOhneAlles.stdout)
+      && /crawlRuns-Aufbewahrung/.test(scharfOhneAlles.stdout));
+  check("F2c Das Banner nennt den Aktivierungsstatus (legt inaktiv an)",
+    /Aktivierungsstatus\s+:\s*legt INAKTIV an/.test(scharfOhneAlles.stdout));
   const freigabeOhneFenster = cli(["provisionierung", "--stufe=a", "--scharf"],
     { [K.EXECUTE_FLAG]: "1", [K.CONFIRM_VARIABLE]: WORT("a") });
   check("F3 Richtiges Stufenwort und Flag, aber KEIN Fenster: Trockenlauf (startfenster-nicht-geprueft), nichts geschrieben",

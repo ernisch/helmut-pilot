@@ -155,13 +155,31 @@ function main() {
       return !/PROTECTED_IDS|REALE_KENNUNGEN\s*=\s*\[/.test(quelle)
         && /Erlaubnisliste/.test(quelle);
     })());
-  check("B8 Jeder Plan meldet ausdrücklich null berührte reale Mandate",
-    K.planeProvisionierung({ grundlinie: GRUNDLINIE, bestand: LEERER_BESTAND }).realeMandateBeruehrt === 0
-      && K.planeDeaktivierung({ grundlinie: GRUNDLINIE, bestand: bestandMit(K.GRUPPEN_KENNUNGEN.a) }).realeMandateBeruehrt === 0
-      && K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a" }).realeMandateBeruehrt === 0);
+  // GEAENDERT 04.09. (SR §36.9 (1)): Bis hierher pruefte B8 die hartkodierten
+  // Literale `realeMandateBeruehrt: 0` / `loeschtNichts: true` gegen sich selbst —
+  // eine Tautologie. Beide Felder sind entfernt. Geprueft wird jetzt die
+  // Zusicherung, die wirklich DURCHGESETZT wird: eine fremde Kennung bricht den
+  // Plan ab, statt still gefiltert zu werden. Das ist Verhalten, keine Konstante.
+  check("B8 Eine fremde Zeile im Bestand bricht JEDEN Plan ab (kein stilles Filtern)",
+    wirft(() => K.planeDeaktivierung({
+      grundlinie: GRUNDLINIE,
+      bestand: {
+        ...BESTAND_BASIS,
+        kohorte: [{ id: "fremde-kennung-999", aktiv: true, email: "x@test-kohorte.invalid" }],
+        identitaetenGesamt: 11,
+        kohortenIdentitaeten: 1
+      }
+    }), "fremde-kennung"));
+  check("B8b Die abgeschafften Behauptungsfelder sind wirklich weg (keine stille Rueckkehr)",
+    (() => {
+      const p1 = K.planeProvisionierung({ grundlinie: GRUNDLINIE, bestand: LEERER_BESTAND });
+      const p2 = K.planeDeaktivierung({ grundlinie: GRUNDLINIE, bestand: bestandMit(K.GRUPPEN_KENNUNGEN.a) });
+      const p3 = K.planeAktivierung({ grundlinie: GRUNDLINIE, bestand: bestandMit(), gruppe: "a" });
+      return [p1, p2, p3].every((p) => !("realeMandateBeruehrt" in p) && !("loeschtNichts" in p));
+    })());
   check("B9 Es gibt keinen Löschpfad in der Deaktivierung",
-    K.planeDeaktivierung({ grundlinie: GRUNDLINIE, bestand: bestandMit(K.GRUPPEN_KENNUNGEN.a) }).loeschtNichts === true
-      && typeof K.teardownTenant === "undefined");
+    typeof K.teardownTenant === "undefined"
+      && typeof K.planeLoeschung === "undefined");
 
   // ── C · Unvollständige Konfiguration blockiert ────────────────────────────
   console.log("\n== C · Unvollständige Grundlinie oder Bestand blockiert ==");

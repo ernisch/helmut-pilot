@@ -182,7 +182,15 @@ async function main() {
   check("H1 alle 20 der Stufe A entfernt, keiner fehlgeschlagen",
     h1.entfernt === 20 && h1.fehlgeschlagen === 0 && h1.ok === true, h1.meldung.slice(0, 60));
   check("H2 es wurden genau 20 Schreibvorgänge ausgelöst", a2.aufrufe.length === 20);
-  check("H3 kein realer Mandant berührt", h1.realeMandateBeruehrt === 0);
+  // GEAENDERT 04.09. (SR §36.9 (1)): war `h1.realeMandateBeruehrt === 0`, eine
+  // hartkodierte Konstante ohne Messung. Sie ist entfernt; geprueft wird, dass sie
+  // nicht still zurueckkehrt, und dass wirklich nur Kennungen DIESER Stufe
+  // geschrieben wurden — das ist am Aufrufprotokoll der Attrappe messbar.
+  check("H3 Die Behauptungskonstante ist weg und bleibt weg",
+    !("realeMandateBeruehrt" in h1) && !("loeschtNichts" in h1));
+  check("H3b Es wurden ausschliesslich Kennungen der Stufe A geschrieben (gemessen am Aufrufprotokoll)",
+    a2.aufrufe.length === 20 && a2.aufrufe.every((id) => S.kennungenDerStufe("a").includes(id)),
+    `aufrufe=${a2.aufrufe.length}`);
 
   const a3 = ablage({ aktiv: true });
   const h2 = await E.fuehreEntfernungAus({

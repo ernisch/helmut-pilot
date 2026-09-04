@@ -58,6 +58,40 @@ Das CLI **verweigert** jeden Lauf, sobald ein Supabase-Backend konfiguriert ist
 (`HELMUT_STORAGE_BACKEND=supabase` oder `SUPABASE_URL` gesetzt), außer mit
 `--allow-production`. Production-Provisionierung ist **freigabepflichtig**:
 
+### Vorflug-Riegel auf dem Speicherpfad (seit 2026-09-04)
+Ein Lauf, der **wirklich** gegen Production schreibt — Production-Backend **und**
+`--allow-production` **und** ein schreibender Modus (`--spec`/`--spec-inline`,
+`--deactivate`, `--teardown`, `--paket --ausfuehren`) — prüft **vor dem ersten
+Schreibvorgang** den Speicherpfad und bricht sonst mit **Exitcode 2** ab, ohne
+etwas zu schreiben. Grund: `storage.saveProfile` schreibt den geteilten Blob
+`helmut_store.main` **unbedingt**, die relationale Zeile aber nur bei wirksamem
+`HELMUT_PROFILE_DB_MODE`; ohne ihn wäre das Ergebnis **still blob-only** — genau
+der Befund vom 04.09. (Sicherheitsrahmen §37/§38).
+
+**Vor einem Production-Lauf müssen deshalb in der Prozessumgebung stehen:**
+`HELMUT_PROFILE_DB_MODE` · `HELMUT_V3_STORE=1` · `HELMUT_STORAGE_BACKEND=supabase` ·
+`SUPABASE_URL` · Service-Role-Schlüssel · `HELMUT_CRAWL_RUN_RETENTION` **mit dem für
+diesen konkreten Vorgang ausdrücklich geprüften und freigegebenen Wert** (kein
+Vorgabewert, keine aus der Doku übernommene Zahl; er muss ≥ 20 sein, dem größten
+Lesefenster). Die Zeilenkennungen müssen auf der Vorgabe `main`/`main-auth` stehen;
+ein ausdrücklich auf die Vorgabe gesetzter Wert gilt als unverändert.
+
+Jede dieser Variablen ist für einen Production-Lauf **freigabepflichtig**, auch wenn
+sie nur im Prozess gesetzt wird (`CLAUDE.md` §4.9). Das Werkzeug gibt sein
+tatsächliches Schreibziel vor dem Lauf aus. Es gibt **keine Übergehungsoption**.
+
+**Nicht betroffen:** `--validate` **allein** (reine Prüfung, auch mit `--spec`), der
+Stapel-**Trockenlauf** (`--paket` ohne `--ausfuehren`) und jeder rein lokale Lauf ohne
+Supabase.
+
+**`--validate` entwertet keinen schreibenden Modus.** Der wirksame Vorgang wird genau
+einmal bestimmt; Riegel und Ausführung schalten auf dasselbe Ergebnis, unabhängig von der
+Argumentreihenfolge. `--deactivate` und `--teardown` sind **immer** schreibend, `--paket`
+nur mit `--ausfuehren`. Widersprüchliche Aufrufe (mehrere Hauptmodi, `--validate`
+zusammen mit einem Hauptmodus, `--ausfuehren` ohne `--paket`, ein Hauptmodus ohne eigenen
+Wert) enden mit **Exitcode 2**, bevor der Provisionierer überhaupt geladen ist
+(Sicherheitsrahmen §38.9).
+
 **Benötigte Freigabe für einen echten zweiten Mandanten:**
 1. Production-Write eines neuen Profils + Auth-Nutzers (`--allow-production`).
 2. Optional: `HELMUT_TENANT_LLM_LIMITS` um `{"<id>": <limit>}` ergänzen (Env-Änderung,

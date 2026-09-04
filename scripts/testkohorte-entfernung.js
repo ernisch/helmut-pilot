@@ -33,6 +33,8 @@
 
 const E = require("../lib/helmut/testkohorte-entfernung");
 const S = require("../lib/helmut/testkohorte-stufen");
+// SR §37.5 (3): reine Logik, keine Netz-/DB-/storage.js-Abhaengigkeit.
+const VORFLUG = require("../lib/helmut/speicherpfad-vorflug");
 
 function argument(argv, name) {
   const treffer = argv.find((a) => a.startsWith(`--${name}=`));
@@ -74,7 +76,17 @@ async function main() {
     console.log("!!! SCHARFE ENTFERNUNG ANGEFORDERT — Production-Zeilen werden GELÖSCHT !!!");
     console.log(`    Stufe ${String(stufe).toUpperCase()} · ausschließlich Kohortenkennungen DIESER Stufe.`);
     console.log("    Aktive Profile werden übersprungen, nicht gelöscht.");
-    console.log(`    Nötig: ${E.EXECUTE_FLAG}=1 und ${E.CONFIRM_VARIABLE}=${wort || "<unbekannte Stufe>"}\n`);
+    console.log(`    Nötig: ${E.EXECUTE_FLAG}=1 und ${E.CONFIRM_VARIABLE}=${wort || "<unbekannte Stufe>"}`);
+    console.log(`    Vorgesehene Profilanzahl: ${kennungen ? kennungen.length : (S.STUFEN_UMFANG[String(stufe).toLowerCase()] || "?")}`);
+    console.log("    Aktivierungsstatus      : entfernt nur INAKTIVE Zeilen — aktive werden übersprungen");
+    // ── VORFLUG-RIEGEL (SR §37.5 (3), Vorfall 04.09.) ───────────────────────
+    // Die Entfernung schreibt über `deleteProfileData`/`deleteTenantScopedData`
+    // ebenfalls die geteilte Zeile `main` und läuft dabei durch `compactStore`.
+    // Ohne belegte Umgebungswerte gilt hier dasselbe Risiko wie bei der
+    // Provisionierung: eine fremde Liste im selben Blob würde still gekürzt.
+    console.log(`\n${VORFLUG.pruefeSpeicherpfad({
+      env: process.env, zweck: `Kohorten-Entfernung Stufe ${String(stufe).toUpperCase()}`
+    }).meldung}\n`);
   }
 
   const ergebnis = await E.fuehreEntfernungAus({
@@ -97,7 +109,6 @@ async function main() {
     nichtVorhanden: ergebnis.nichtVorhanden,
     uebersprungenAktiv: ergebnis.uebersprungenAktiv,
     fehlgeschlagen: ergebnis.fehlgeschlagen,
-    realeMandateBeruehrt: ergebnis.realeMandateBeruehrt,
     ok: ergebnis.ok
   }, null, 2));
 
@@ -140,6 +151,10 @@ async function main() {
 }
 
 main().catch((fehler) => {
-  console.error(`Abbruch: ${(fehler && fehler.message) || fehler}`);
-  process.exit(1);
+  const grund = fehler && fehler.grund ? ` (${fehler.grund})` : "";
+  console.error(`Abbruch${grund}: ${(fehler && fehler.message) || fehler}`);
+  // Ein unsicherer Speicherpfad ist ein UMGEBUNGSfehler (Exitcode 2), kein
+  // fachlicher Fehlschlag (Exitcode 1) — er wird VOR dem ersten Schreibvorgang
+  // gemeldet (SR §37.5 (3)).
+  process.exit(fehler && fehler.grund === "speicherpfad-unsicher" ? 2 : 1);
 });

@@ -29,6 +29,14 @@
 //   * Die Bibliothek behält ihre Rückwärtsverträglichkeit (ohne `stufe` weiter
 //     495 + Pauschalwort) — nur der Betreiberweg hier verlangt die Stufe.
 //
+// VORFLUG-RIEGEL SEIT 04.09.2026 (SR §37.5): Ein scharfer Lauf prüft VOR dem
+// ersten Schreibvorgang, dass die Prozessumgebung jeden Wert trägt, der den
+// GETEILTEN Blob `helmut_store.main` beeinflusst, und weist sein tatsächliches
+// Schreibziel aus. Anlass: die inaktive Provisionierung der Stufe A hat am
+// 04.09. den Ring `crawlRuns` unbeabsichtigt von 36 auf 20 gekürzt, weil
+// `HELMUT_CRAWL_RUN_RETENTION` in der ausführenden Sitzung fehlte. Fehlt oder
+// widerspricht ein Wert, bricht der Lauf mit Exitcode 2 ab — VOR jedem Zugriff.
+//
 // Ein scharfer Lauf verlangt DREI voneinander unabhängige Dinge:
 //   1. `--scharf` auf der Kommandozeile,
 //   2. `HELMUT_TESTKOHORTE_EXECUTE=1` UND `HELMUT_TESTKOHORTE_CONFIRM=<Wort GENAU
@@ -60,6 +68,9 @@ const V = require("../lib/helmut/testkohorte-vorwaerts");
 const F = require("../lib/helmut/funktionstest-500");
 const K = require("../lib/helmut/testkohorte-betrieb");
 const S = require("../lib/helmut/testkohorte-stufen");
+// Reine Logik ohne Netz-, DB- oder storage.js-Abhängigkeit — der Trockenlauf
+// lädt dadurch weiterhin kein Außenkanal-, KI- oder Crawl-Modul nach.
+const VORFLUG = require("../lib/helmut/speicherpfad-vorflug");
 
 const VERCEL = require(path.join(__dirname, "..", "vercel.json"));
 const CRONS = VERCEL.crons || [];
@@ -227,11 +238,43 @@ async function main() {
 
   if (scharfGewuenscht) {
     const zielStufe = stufe || gruppe;
+    const vorgeseheneAnzahl = kennungen ? kennungen.length : S.STUFEN_UMFANG[zielStufe];
     console.log("!!! SCHARFER VORWÄRTSSCHRITT ANGEFORDERT — Production-Datenänderung !!!");
-    console.log(`    Es wirkt ausschließlich auf die ${S.STUFEN_UMFANG[zielStufe]} Kohortenkennungen `
-      + `der Stufe ${zielStufe.toUpperCase()}${kennungen ? ` (geprüfte Teilmenge: ${kennungen.length})` : ""}. Nichts wird gelöscht.`);
+    console.log(`    Werkzeug                : ${werkzeug}`);
+    console.log(`    Stufe                   : ${zielStufe.toUpperCase()}`);
+    console.log(`    Vorgesehene Profilanzahl: ${vorgeseheneAnzahl}`
+      + `${kennungen ? ` (geprüfte Teilmenge aus ${S.STUFEN_UMFANG[zielStufe]})` : ""}`);
+    console.log(`    Aktivierungsstatus      : ${werkzeug === "provisionierung"
+      ? "legt INAKTIV an — aktiviert nichts"
+      : "AKTIVIERT die Profile dieser Stufe (profileActive=true)"}`);
     console.log("    Der Rückweg bleibt jederzeit und ohne Zeitfenster ausführbar:");
-    console.log("      node scripts/testkohorte-rueckbau.js --scharf\n");
+    console.log("      node scripts/testkohorte-rueckbau.js --scharf");
+
+    // ── VORFLUG-RIEGEL (SR §37.5 (3), Vorfall 04.09.) ────────────────────────
+    // Beide Wege dieses Werkzeugs schreiben über `storage.saveProfile` die
+    // GETEILTE Blob-Zeile `main` — die Provisionierung je angelegtem Profil, die
+    // Aktivierung je aktiviertem Profil. Dabei läuft `compactStore` mit den
+    // Werten DER AUSFÜHRENDEN UMGEBUNG. Am 04.09. hat genau das den Ring
+    // `crawlRuns` von 36 auf 20 gekürzt, weil `HELMUT_CRAWL_RUN_RETENTION` in
+    // der Sitzung fehlte; und `HELMUT_PROFILE_DB_MODE` musste nachträglich
+    // gesetzt werden, weil der Lauf sonst still blob-only gelaufen wäre.
+    //
+    // Der Riegel steht VOR dem ersten Schreibvorgang und VOR jedem Bibliotheks-
+    // aufruf; er druckt das tatsächliche Schreibziel und bricht mit Exitcode 2
+    // ab, wenn die Prozessumgebung nicht jeden erforderlichen Wert trägt. Eine
+    // Verfahrensregel genügt hier ausdrücklich nicht — genau eine solche Regel
+    // hat gefehlt. Trockenläufe sind nicht betroffen.
+    // ── SCHREIBZIEL AUSWEISEN (SR §37.5 (4)) ────────────────────────────────
+    // Bis zum 04.09. stand in der Ausgabe NICHTS darüber, wohin der Lauf
+    // tatsächlich schreibt und mit welchen wirksamen Werten. Der Bericht wird
+    // hier gedruckt, damit der Betreiber ihn VOR dem Vorgang sieht — auch dann,
+    // wenn der Lauf anschließend aus einem anderen Grund auf den Trockenlauf
+    // zurückfällt. ABGEBROCHEN wird erst im Ausführer, und zwar genau dann,
+    // wenn wirklich geschrieben würde (Exitcode 2 über `speicherpfad-unsicher`).
+    console.log(`\n${VORFLUG.pruefeSpeicherpfad({
+      env: process.env,
+      zweck: `Kohorten-${werkzeug} Stufe ${zielStufe.toUpperCase()} (${vorgeseheneAnzahl} Profile)`
+    }).meldung}\n`);
   }
 
   if (werkzeug === "provisionierung") {
@@ -257,7 +300,6 @@ async function main() {
       fehlgeschlagen: ergebnis.fehlgeschlagen,
       legtInaktivAn: ergebnis.legtInaktivAn,
       aktiviertNichts: ergebnis.aktiviertNichts,
-      realeMandateBeruehrt: ergebnis.realeMandateBeruehrt,
       ok: ergebnis.ok
     });
     console.log(`\n${ergebnis.meldung}`);
@@ -322,7 +364,6 @@ async function main() {
     bereitsAktiv: ergebnis.bereitsAktiv,
     fehlgeschlagen: ergebnis.fehlgeschlagen,
     beruehrtKeineKonten: ergebnis.beruehrtKeineKonten,
-    realeMandateBeruehrt: ergebnis.realeMandateBeruehrt,
     ok: ergebnis.ok
   });
   console.log(`\n${ergebnis.meldung}`);
@@ -338,5 +379,10 @@ async function main() {
 main().catch((fehler) => {
   const grund = fehler && fehler.grund ? ` (${fehler.grund})` : "";
   console.error(`Abbruch${grund}: ${(fehler && fehler.message) || fehler}`);
-  process.exit(EXIT_BIBLIOTHEK);
+  // Ein unsicherer Speicherpfad ist ein UMGEBUNGSfehler (Exitcode 2), kein
+  // fachlicher Fehlschlag (Exitcode 1) — er trifft dieselbe Klasse wie eine
+  // fehlende Stufe und wird VOR dem ersten Schreibvorgang gemeldet.
+  process.exit(fehler && fehler.grund === "speicherpfad-unsicher"
+    ? EXIT_AUFRUFFEHLER
+    : EXIT_BIBLIOTHEK);
 });

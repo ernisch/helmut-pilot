@@ -13,6 +13,8 @@
 // Voraussetzung: HELMUT_PROFILE_DB_MODE=1 + HELMUT_V3_STORE + Supabase.
 
 const storage = require("../lib/helmut/storage");
+// SR §37.5 (3): reine Logik, keine Netz-/DB-Abhaengigkeit.
+const VORFLUG = require("../lib/helmut/speicherpfad-vorflug");
 
 async function main() {
   const execute = process.argv.slice(2).includes("--execute");
@@ -20,6 +22,17 @@ async function main() {
   if (!storage.profileDbModeEnabled()) {
     console.error("ABBRUCH: HELMUT_PROFILE_DB_MODE=1 + HELMUT_V3_STORE + Supabase erforderlich (relationale Praesenzpruefung).");
     return 2;
+  }
+  // ── SCHREIBZIEL AUSWEISEN (SR §37.5 (4), Vorfall 04.09.) ────────────────
+  // `purgeBlobProfiles` liest und schreibt die GETEILTE Zeile `main`; dabei
+  // laeuft `compactStore` mit den Werten DER AUSFUEHRENDEN UMGEBUNG und kuerzte
+  // bis zum 04.09. `crawlRuns` still auf den Code-Vorgabewert. Seit dem 04.09.
+  // verkleinert `compactStore` die Liste in keiner Konfiguration mehr; hier
+  // steht deshalb der Bericht, nicht der harte Abbruch (SR §38.2).
+  if (execute) {
+    console.log(`\n${VORFLUG.pruefeSpeicherpfad({
+      env: process.env, zweck: "Blob-Profil-Purge (main-Blob)"
+    }).meldung}\n`);
   }
   const rep = await storage.purgeBlobProfiles({ execute });
   if (rep.error) { console.error(`ABBRUCH: ${rep.error}`); return 2; }
