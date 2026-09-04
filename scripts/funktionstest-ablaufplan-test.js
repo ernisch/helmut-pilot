@@ -525,8 +525,10 @@ async function main() {
       // Kommentare gehören nicht zum Code — geprüft wird der ausführbare Teil.
       const code = fs.readFileSync(path.join(ROOT, "lib/helmut/testkohorte-rueckbau.js"), "utf8")
         .replace(/\/\/.*$/gm, "");
-      return trocken.loeschtNichts === true
-        && !/\bdelete\b/i.test(code)
+      // GEAENDERT 04.09. (SR §36.9 (1)): `trocken.loeschtNichts === true` war eine
+      // hartkodierte Konstante, die sich selbst bestaetigte. Geprueft wird jetzt nur
+      // noch der QUELLTEXT — die einzige Haelfte dieser Zusicherung, die wirklich misst.
+      return !/\bdelete\b/i.test(code)
         && !/teardown/i.test(code)
         && !/geloescht_at/i.test(code);
     })());
@@ -541,8 +543,14 @@ async function main() {
       trockenSpur.modus === RB.MODUS_TROCKENLAUF
         && trockenSpur.entfernt === 0
         && trockenSpur.zielGroesse === 495);
-    check("DS2 Die Nacharbeit rührt ausdrücklich keine Profildaten an",
-      trockenSpur.beruehrtProfildaten === false && trockenSpur.realeMandateBeruehrt === 0);
+    // GEAENDERT 04.09. (SR §36.9 (1)): `realeMandateBeruehrt === 0` war eine
+    // hartkodierte Konstante ohne Messung und ist entfernt. Geprueft wird jetzt,
+    // dass sie nicht still zurueckkehrt; `beruehrtProfildaten` bleibt, weil es
+    // eine strukturelle Eigenschaft des Pfades ist (er ruft ausschliesslich
+    // deleteCronFairnessTenant und fasst helmut_store.main nie an).
+    check("DS2 Die Nacharbeit rührt keine Profildaten an; die Behauptungskonstante ist weg",
+      trockenSpur.beruehrtProfildaten === false
+        && !("realeMandateBeruehrt" in trockenSpur));
     check("DS3 Das Wort des Rückwegs schaltet die Nacharbeit NICHT scharf",
       (await RB.entferneSchedulerSpur({
         modus: RB.MODUS_SCHARF,

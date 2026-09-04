@@ -93,10 +93,20 @@ const DOKUMENTIERTE_ERWARTETE_MANDATE = 5;
 // HELMUT_OP25_KOSTENRAHMEN_USD; ohne belastbaren Rahmen bleibt der Nachweis `blockiert`.
 const DOKUMENTIERTER_KOSTENRAHMEN_USD = Number(process.env.HELMUT_OP25_KOSTENRAHMEN_USD || 2);
 
-// Retention der Laufdatensaetze im Blob (storage.js: HELMUT_CRAWL_RUN_RETENTION, Default 20).
-// Die Aufbewahrungsgrenze der Nutzungseintraege steht im Kern (`vertrag.LLM_USAGE_RETENTION`),
-// damit Leser und Grenze nicht auseinanderlaufen koennen.
-const LAUF_RETENTION = Math.max(1, Number(process.env.HELMUT_CRAWL_RUN_RETENTION) || 20);
+// Retention der Laufdatensaetze im Blob. Die Aufbewahrungsgrenze der
+// Nutzungseintraege steht im Kern (`vertrag.LLM_USAGE_RETENTION`), damit Leser
+// und Grenze nicht auseinanderlaufen koennen.
+//
+// KORRIGIERT 04.09.2026 (SR §38.2): Hier stand die Formel
+// `Math.max(1, Number(process.env.HELMUT_CRAWL_RUN_RETENTION) || 20)` ein zweites
+// Mal ausgeschrieben — eine Kopie der Regel, die in storage.js entfernt wurde.
+// Sie haette den Nachweis mit einer Aufbewahrung rechnen lassen, die der Speicher
+// gar nicht mehr anwendet (z. B. "20", obwohl bei fehlender Variable ueberhaupt
+// nicht mehr gekuerzt wird). Gelesen wird jetzt dieselbe eine Wahrheit wie im
+// Speicher. Ist die Aufbewahrung nicht belegt, wird sie ehrlich als `null`
+// gefuehrt — nicht als erfundene Zahl.
+const AUFBEWAHRUNG = require("../lib/helmut/speicherpfad-vorflug").crawlRunAufbewahrung();
+const LAUF_RETENTION = AUFBEWAHRUNG.wirksam;
 
 function pfadErlaubt(pfad) {
   if (typeof pfad !== "string" || !pfad.startsWith("/rest/v1/")) return false;
@@ -567,6 +577,16 @@ async function erhebeBaseline({ mainStore, authStore, fairnessStore, dauerhafte,
       watchdogSlots: watchdogSlots.length,
       mandatszahl: aktiveMandate.length
     });
+    // Eine NICHT BELEGTE Aufbewahrung (LAUF_RETENTION === null) blockiert
+    // ausdruecklich, statt sich auf die Zahlenkoerzung von `null < n` zu
+    // verlassen: ein Nachweis, der nicht sagen kann, wie lange seine Belege
+    // liegen bleiben, ist kein Nachweis (fail closed, SR §38.2).
+    if (LAUF_RETENTION === null) {
+      console.error(`MESSFEHLER: ${AUFBEWAHRUNG.meldung}`);
+      console.error("Keine Startbaseline geschrieben — ohne belegte Aufbewahrung ist nicht"
+        + " berechenbar, ob die Belege des Fensters bis zur Auswertung liegen bleiben.");
+      process.exit(2);
+    }
     if (LAUF_RETENTION < bedarf.mindest) {
       console.error(`MESSFEHLER: ${vertrag.aufbewahrungsMeldung(bedarf, LAUF_RETENTION)}`);
       console.error("Keine Startbaseline geschrieben — ein Fenster, dessen Belege rechnerisch"

@@ -31,6 +31,8 @@
 // DIESER SPRINT HAT DAS WERKZEUG NICHT SCHARF AUSGEFÜHRT.
 
 const R = require("../lib/helmut/testkohorte-rueckbau");
+// SR §37.5 (3): reine Logik, keine Netz-/DB-/storage.js-Abhaengigkeit.
+const VORFLUG = require("../lib/helmut/speicherpfad-vorflug");
 
 function argument(argv, name) {
   const treffer = argv.find((a) => a.startsWith(`--${name}=`));
@@ -49,7 +51,14 @@ async function main() {
       console.log("!!! SCHARFE NACHARBEIT ANGEFORDERT — Production-Datenänderung !!!");
       console.log("    Entfernt AUSSCHLIESSLICH Scheduler-Metadaten der Kohorte.");
       console.log("    Keine Profil-, Inhalts- oder Kontodaten.");
-      console.log(`    Nötig: ${R.EXECUTE_FLAG}=1 und ${R.CONFIRM_VARIABLE}=${R.FREIGABEWORT_SPUR}\n`);
+      console.log(`    Nötig: ${R.EXECUTE_FLAG}=1 und ${R.CONFIRM_VARIABLE}=${R.FREIGABEWORT_SPUR}`);
+      console.log(`    Vorgesehene Profilanzahl: ${kennungen ? kennungen.length : "gesamte Kohorte"}`);
+      console.log("    Aktivierungsstatus      : aktiviert nichts — entfernt nur Scheduler-Metadaten");
+      // Auch die Nacharbeit schreibt über den geteilten Blob `main` und läuft
+      // dabei durch `compactStore`. Derselbe Riegel, dieselbe Begründung.
+      console.log(`\n${VORFLUG.pruefeSpeicherpfad({
+        env: process.env, zweck: "Kohorten-Nacharbeit (Scheduler-Spur)"
+      }).meldung}\n`);
     }
     const spur = await R.entferneSchedulerSpur({
       kennungen,
@@ -66,7 +75,6 @@ async function main() {
       entfernt: spur.entfernt,
       fehlgeschlagen: spur.fehlgeschlagen,
       beruehrtProfildaten: spur.beruehrtProfildaten,
-      realeMandateBeruehrt: spur.realeMandateBeruehrt,
       ok: spur.ok
     }, null, 2));
     if (spur.fehlgeschlagen > 0) {
@@ -82,7 +90,16 @@ async function main() {
   if (scharfGewuenscht) {
     console.log("!!! SCHARFER RÜCKBAU ANGEFORDERT — Production-Datenänderung !!!");
     console.log("    Es werden ausschließlich Kohortenkennungen deaktiviert. Nichts wird gelöscht.");
-    console.log(`    Nötig: ${R.EXECUTE_FLAG}=1 und ${R.CONFIRM_VARIABLE}=${R.FREIGABEWORT}\n`);
+    console.log(`    Nötig: ${R.EXECUTE_FLAG}=1 und ${R.CONFIRM_VARIABLE}=${R.FREIGABEWORT}`);
+    console.log(`    Vorgesehene Profilanzahl: ${kennungen ? kennungen.length : "gesamte Kohorte"}`);
+    console.log("    Aktivierungsstatus      : DEAKTIVIERT (profileActive=false) — löscht nichts");
+    // ── VORFLUG-RIEGEL (SR §37.5 (3)) ───────────────────────────────────────
+    // Der Rückbau ruft je Kennung `storage.saveProfile` und schreibt damit
+    // dieselbe geteilte Zeile `main` wie die Provisionierung. Ohne belegte
+    // Umgebungswerte gilt hier genau das Risiko vom 04.09.
+    console.log(`\n${VORFLUG.pruefeSpeicherpfad({
+      env: process.env, zweck: "Kohorten-Rückbau (Deaktivierung)"
+    }).meldung}\n`);
   }
 
   const ergebnis = await R.fuehreRueckbauAus({
@@ -101,8 +118,6 @@ async function main() {
     deaktiviert: ergebnis.deaktiviert,
     bereitsInaktiv: ergebnis.bereitsInaktiv,
     fehlgeschlagen: ergebnis.fehlgeschlagen,
-    realeMandateBeruehrt: ergebnis.realeMandateBeruehrt,
-    loeschtNichts: ergebnis.loeschtNichts,
     ok: ergebnis.ok
   }, null, 2));
 
@@ -123,6 +138,10 @@ async function main() {
 }
 
 main().catch((fehler) => {
-  console.error(`Abbruch: ${(fehler && fehler.message) || fehler}`);
-  process.exit(1);
+  const grund = fehler && fehler.grund ? ` (${fehler.grund})` : "";
+  console.error(`Abbruch${grund}: ${(fehler && fehler.message) || fehler}`);
+  // Ein unsicherer Speicherpfad ist ein UMGEBUNGSfehler (Exitcode 2), kein
+  // fachlicher Fehlschlag (Exitcode 1) — er wird VOR dem ersten Schreibvorgang
+  // gemeldet (SR §37.5 (3)).
+  process.exit(fehler && fehler.grund === "speicherpfad-unsicher" ? 2 : 1);
 });

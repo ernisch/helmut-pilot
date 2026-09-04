@@ -23,6 +23,8 @@
 // nur, wenn das Skript direkt gestartet wird.
 
 const storage = require("../lib/helmut/storage");
+// SR §37.5 (3): reine Logik, keine Netz-/DB-Abhaengigkeit.
+const VORFLUG = require("../lib/helmut/speicherpfad-vorflug");
 
 // Reine Planungsfunktion (kein I/O): baut aus einer Liste interner Profil-Objekte
 // den Backfill-Plan inkl. Feldabdeckung und Verlustkontrolle. Offline testbar.
@@ -129,6 +131,24 @@ async function main() {
     if (!storage.profileDbModeEnabled()) {
       console.error("ABBRUCH: --reverse erfordert HELMUT_PROFILE_DB_MODE=1 + Supabase (Lesen aus SQL).");
       return 2;
+    }
+    // ── SCHREIBZIEL AUSWEISEN (SR §37.5 (4), Vorfall 04.09.) ──────────────
+    // Der Rueckwaertslauf ist der haerteste Fall im Repo: er neutralisiert die
+    // Profil-Flags ABSICHTLICH, damit `saveProfile` garantiert den Blob-Pfad
+    // nimmt — also ein voller Schreibvorgang auf die geteilte Zeile `main` JE
+    // SQL-Profil, jeder davon durch `compactStore`. Seit dem 04.09. verkleinert
+    // `compactStore` `crawlRuns` in keiner Konfiguration mehr; hier steht
+    // deshalb der Bericht, nicht der harte Abbruch (SR §38.2).
+    //
+    if (execute) {
+      console.log(`\n${VORFLUG.pruefeSpeicherpfad({
+        env: process.env,
+        zweck: "Profil-REVERSE-Backfill (relational -> Blob)",
+        // Dieser Lauf SCHALTET den relationalen Schreibmodus bewusst ab; ihn hier
+        // zu verlangen waere widerspruechlich. Die Lesevoraussetzung ist eine
+        // Zeile darueber bereits geprueft.
+        verlangeProfilSchreibpfad: false
+      }).meldung}\n`);
     }
     const res = await runReverseBackfill({ execute });
     if (res.error) { console.error(`Fehler: ${res.error}`); return 2; }

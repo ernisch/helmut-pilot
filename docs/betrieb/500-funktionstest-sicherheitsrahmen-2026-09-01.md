@@ -4855,3 +4855,197 @@ Profiländerung, keine Aktivierung, keine neue Provisionierung, kein Modellaufru
 Umgebungsvariable, keine Anwendungscodeänderung, kein neuer Pull Request, kein Merge, kein
 Deployment, keine Stufe B oder C. Der Production-Zugriff war ausschließlich `SELECT`.
 **Stufe A ist unverändert vollständig inaktiv.**
+
+---
+
+
+## §38 Code-Sprint 04.09.: der Speicherpfad ist technisch abgesichert (eigener PR, NICHT gemergt)
+
+**Anlass:** die harte Sperre aus §37.5. Vor jeder weiteren Production-Profilaktion — der
+Aktivierung der Stufe A eingeschlossen — stand ein eigener Code-Sprint, der den Speicherpfad
+gegen fehlende oder falsche Laufzeitwerte absichert. Dieser Abschnitt ist sein Vollbeleg.
+
+**Sprintzustand: TEILWEISE ABGESCHLOSSEN.** Der Code ist fertig, offline bewiesen und liegt als
+eigener Pull Request vor. Er ist **nicht gemergt und nicht deployt**; die Sperre aus §37.5 bleibt
+bis dahin bestehen. Kein Production-Schreibvorgang, keine Umgebungsvariable, keine Migration.
+
+### §38.1 Die genaue technische Ursache, in einem Satz
+
+`compactStore` ist Teil des gemeinsamen **Transportwegs** jeder Schreibung auf die geteilte Zeile
+`helmut_store.main` (`storage.js` `writeStore`), und `crawlRuns` war dort die **einzige** Grenze,
+die aus `process.env` kam — als **Modulkonstante**, beim ersten `require` einmalig ausgewertet:
+
+```js
+const CRAWL_RUN_RETENTION = Math.max(1, Number(process.env.HELMUT_CRAWL_RUN_RETENTION) || 20);
+```
+
+Ein reiner Profil-Schreibvorgang, der `crawlRuns` nie anfasst, hat den Ring damit auf den
+**Code-Vorgabewert** gezogen, weil der ausführenden Sitzung die Production-Einstellung (36) fehlte.
+Ein Vorgabewert, der Daten löscht, ist kein sicherer Vorgabewert.
+
+### §38.2 Die gewählte Absicherung — und eine im Review verschärfte Entscheidung
+
+Die Absicherung sitzt an der **Ursache**, nicht am Aufrufer. Vier Bausteine:
+
+**(1) Eine Wahrheit über die Aufbewahrung — neues Modul `lib/helmut/speicherpfad-vorflug.js`.**
+Reine Logik, kein Netz, keine DB, kein `require` auf `storage.js`. `crawlRunAufbewahrung(env)`
+liefert einen vollständigen Befund (`gesetzt` · `gueltig` · `wirksam` · `grund` · `meldung`).
+`storage.js` liest die Regel **von dort**; sie steht damit an genau einer Stelle. Ausgewertet wird
+**pro Aufruf** statt einmal beim Modulladen — nur so ist sie testbar und nur so kann ein Riegel
+melden, was wirksam ist.
+
+**(2) `compactStore` verkleinert `crawlRuns` in KEINER Konfiguration mehr.**
+Die erste Fassung dieser Änderung kappte hier noch mit einer „belegten" Grenze. Der eigene
+adversariale Review hat das verworfen, und zu Recht: ein Betreiber, der in seiner Sitzung
+ausgerechnet `HELMUT_CRAWL_RUN_RETENTION=20` gesetzt hätte, hätte den Ring **erneut von 36 auf 20**
+gezogen — mit **grünem** Vorflugbericht, weil 20 formal gültig ist. Der Vorfall wäre per
+Umgebungsvariable wiederholbar geblieben. Die tragfähige Regel ist strenger und einfacher: **der
+gemeinsame Transportweg darf eine Liste, die er fachlich nicht anfasst, überhaupt nicht
+verkleinern.** Die Aufbewahrung durchzusetzen ist Sache des Ringeigentümers — und das ist
+`saveCrawlRun`, der **einzige** Schreiber. Ohne belegte Grenze hält dieser den Ring auf seiner
+vorgefundenen Länge (`max(Lesefenster, Bestand)`): er wächst nicht unbegrenzt, schrumpft aber nie.
+
+> **Preis, ehrlich benannt:** senkt ein Betreiber die Aufbewahrung, wirkt das erst beim nächsten
+> `saveCrawlRun`, nicht mehr rückwirkend beim nächsten beliebigen Schreibvorgang. Da seit dem
+> 23.08. kein Cron mehr `saveCrawlRun` erreicht (§37.3), heißt das in der heutigen Production:
+> **eine gesenkte Aufbewahrung wirkt vorerst gar nicht.** Das ist die sichere Richtung — sie
+> verliert nichts.
+
+**(3) Eine wirksame Grenze liegt nie unter dem Lesefenster (20).** Alle fünf Produktiv-Verbraucher
+lesen `listCrawlRuns(20)`. Ein kleinerer Wert würde den Google-Cooldown nicht verkürzen, sondern
+**still abschalten** (§37.2). Ein Wert unter 20 gilt deshalb als **ungültig** und wird nirgends
+angewendet — auch nicht von `saveCrawlRun`.
+
+**(4) Vorflug-Riegel — im Ausführer, nicht im Banner.** Erst im Ausführer steht fest, dass Freigabe
+**und** Startfenster **und** Vorstufe zusammen einen wirklich scharfen Lauf ergeben. Ein Lauf, der
+ohnehin auf den Trockenlauf zurückfällt, schreibt nichts und meldet weiterhin seinen eigenen,
+genaueren Grund (`freigabe-fehlt`, `startfenster-nicht-geprueft`, …) — der Riegel schneidet diese
+Meldung nicht ab. Wo wirklich geschrieben würde, bricht er **vor der ersten Zeile** ab, mit
+`grund: "speicherpfad-unsicher"`, das die CLIs auf **Exitcode 2** abbilden (Umgebungsfehler, nicht
+fachlicher Fehlschlag).
+
+Geprüft werden vier Dinge: die **wirksame Aufbewahrung**; die **Backend-Kohärenz** — dafür wird das
+bestehende `lib/helmut/production-schreibgate.js` wiederverwendet, keine zweite Wahrheit; die
+**Zeilenkennungen** (`HELMUT_SUPABASE_STORE_ID`/`_AUTH_STORE_ID` dürfen das Ziel nicht von
+`main`/`main-auth` wegschieben, sonst würde nach A geschrieben und gegen B kontrolliert); und der
+**wirksame Profil-Schreibmodus** (gesetzt **und** wirksam), damit ein fehlender
+`HELMUT_PROFILE_DB_MODE` nicht mehr zu einem stillen Blob-only-Ergebnis führen kann.
+
+**Wo der harte Riegel steht — und wo bewusst nicht:**
+
+| Pfad | harter Abbruch | Begründung |
+|---|---|---|
+| `fuehreProvisionierungAus` · `fuehreAktivierungAus` · `fuehreEntfernungAus` | **ja**, Exit 2 | genau die Pfade, die Kohortenprofile anlegen, aktivieren oder entfernen |
+| `fuehreRueckbauAus` · `entferneSchedulerSpur` | **nein**, nur Bericht | Der Rückweg ist die **Notbremse**. `funktionstest-ablaufplan.js` führt ihn als `immerErlaubt: true` mit der ausdrücklichen Zusage, ein Rückbau dürfe **nie an einer Vorbedingung scheitern**; ein Riegel hätte diese Zusage gebrochen. Die Nacharbeit fasst `helmut_store.main` zudem **gar nicht** an — sie schreibt über `deleteCronFairnessTenant` nur die eigene Fairness-Zeile, und die bereits mit Compare-and-Set. Eine Riegelbegründung „sie schreibt den geteilten Blob" wäre dort schlicht falsch gewesen. |
+| `provision-tenant.js --allow-production` · `profile-blob-purge.js --execute` · `profile-relational-backfill.js --reverse --execute` | **nein**, nur Bericht | Onboarding-, Notfall- und Migrationspfade mit eigenen Runbooks; eine neue harte Vorbedingung hätte bestehende Betreiberverfahren gebrochen, ohne die Runbooks anzufassen. Der Schaden kann dort seit (2) ohnehin nicht mehr entstehen. |
+
+**Bewusste Ausnahme im Riegel:** Wer den Schreibvorgang selbst mitbringt (`deps.<schreiber>`, also
+jede Testattrappe), zielt nicht auf die echte Ablage und wird nicht geriegelt. Der Betreiberweg
+über das CLI kann keine `deps` übergeben; die Ausnahme ist testgesichert (§38.5, 8.8).
+
+**Ausdrücklich NICHT umgesetzt:** Compare-and-Set auf der Zeile `main`. Das ist der eigentliche
+Architekturschritt (§37.5 (7), `HELMUT_PROFILE_DB_EXCLUSIVE`), braucht einen eigenen Nachweis und
+hätte diesen Sprint über die Sperre hinaus ausgeweitet. **Der Last-Write-Wins auf `main` besteht
+unverändert fort** — er ist die verbleibende Restlücke, gegen die dieser Sprint nichts unternimmt.
+
+### §38.3 Die beiden Werkzeugbefunde aus §36.9 sind geschlossen
+
+**(1) `realeMandateBeruehrt` und `loeschtNichts` sind ERSATZLOS entfernt** — an sieben
+Definitionsstellen in vier Modulen und in vier CLI-Ausgaben. Sie waren hartkodierte Literale, und
+`realeMandateBeruehrt: 0` war im Blobpfad **sachlich falsch**: `saveProfile` schreibt ohne
+`HELMUT_PROFILE_DB_EXCLUSIVE` die geteilte Zeile, die auch die realen Profile trägt, vollständig neu.
+
+Ein **Ersatzfeld** wurde erwogen (`fremdeKennungenImZiel`) und im eigenen Review wieder
+**verworfen**: jede Kennzahl über die Zielmenge ist strukturell invariant, weil
+`pruefeZielmenge`/`pruefeStufenZielmenge` **vorher** wirft, sobald eine fremde Kennung auftaucht.
+Ein Wert, der sich nie bewegen kann, ist wieder nur eine Behauptung in Zahlenform. Die Zusicherung
+wird deshalb dort geführt, wo sie wirklich durchgesetzt wird — **im Wurf** — und genau so getestet.
+Vier Bestandstests, die die alten Literale gegen sich selbst prüften (Tautologien), prüfen jetzt
+Verhalten: eine fremde Zeile bricht den Plan ab; die abgeschafften Felder kehren nicht still
+zurück; bei der Stufenentfernung wird am **Aufrufprotokoll** gemessen, dass nur Kennungen dieser
+Stufe geschrieben wurden. Ebenfalls entfallen: der Bannersatz „Nichts wird gelöscht", der **vor
+jeder Prüfung** gedruckt wurde.
+
+> **Offen geblieben, ausdrücklich benannt:** `beruehrtKeineKonten`, `legtInaktivAn`,
+> `aktiviertNichts`, `legtAktivAn` und `beruehrtProfildaten` sind weiterhin Konstanten. Sie sind
+> strukturelle Eigenschaften der jeweiligen Pfade und im Gegensatz zu den beiden entfernten nicht
+> sachlich falsch — aber sie messen ebenfalls nichts. Der Auftrag nannte nur die beiden; die
+> übrigen bleiben ein bekannter Restposten.
+
+**(2) `erhebungsSql()` liest die Adresse aus der Ablage, die sie führt.** Bis hierher nahm die
+Bestandserhebung `profiles.email` — in Production bei **allen** Profilen NULL, weil `buildProfile`
+`email` nie ins Profilobjekt überträgt und `mandate_profiles` gar keine E-Mail-Spalte hat. Der
+Isolationsbeleg brach dadurch **strukturell** an jeder Zeile ab, für Stufe A wie B und C. Gelesen
+wird jetzt der Auth-Blob (`helmut_store`, Zeile `main-auth`, `data->users[]` über `politicianId`)
+— dieselbe Zeile, aus der die Abfrage `kohortenKontenAktiv` schon immer geholt hat.
+
+**Rein lesend gegen Production gegengeprüft (04.09.):** die neue Abfrage liefert für die 20
+Kohortenzeilen **20 Adressen, alle auf `.invalid`, 20 eindeutig**; die alte lieferte 20 Leerwerte
+(`profiles.email` ist bei allen 30 Identitätszeilen NULL). **Bekannte Grenze:** die Zeilenkennung
+`main-auth` steht in der Abfrage als Literal — wie schon vorher bei `kohortenKontenAktiv`. Unter
+gesetztem `HELMUT_SUPABASE_STORE_ID`/`HELMUT_SUPABASE_AUTH_STORE_ID` wäre sie falsch; genau
+deshalb weist der Vorflug-Riegel diese Konstellation jetzt ab (§38.2 (4)), und in Production ist
+keine der beiden Variablen gesetzt (Wirkung belegt: die Abfrage findet die 20 Konten).
+
+### §38.4 Das Werkzeug weist sein Schreibziel aus (§37.5 (4))
+
+Vor jedem scharf angeforderten Vorgang druckt das CLI jetzt: **Werkzeug · Stufe · vorgesehene
+Profilanzahl · Aktivierungsstatus**, dann **Blob-Backend · geteilte Zeile und Kontenzeile ·
+Blob-Schreibmodus · relationaler Schreibmodus** und die **wirksame Aufbewahrungsgrenze** (oder
+ausdrücklich „NICHT BELEGT" mit Grund). Der Bericht erscheint auch dann, wenn der Lauf anschließend
+auf den Trockenlauf zurückfällt — der Betreiber sieht sein tatsächliches Schreibziel, bevor
+irgendetwas geschieht.
+
+### §38.5 Regressionsnachweis: `scripts/speicherpfad-schutz-test.js` (neu, 61/61)
+
+Fail closed, verhaltensbasiert (echte `compactStore`/`saveCrawlRun`/`saveProfile`/`activateTenant`
+gegen den lokalen Dateispeicher, echte Kindprozesse für die CLI-Riegel), mit einer mitgeführten
+Mindestzahl an Assertions, damit eine versehentlich fast leere Suite nicht grün werden kann. Der
+Store-Cache wird über `HELMUT_STORE_CACHE_MS=0` **vor dem ersten `require`** abgeschaltet — sonst
+läse die Suite bis zu 10 s alte Daten und wäre still falsch.
+
+| Abschnitt | Was belegt wird |
+|---|---|
+| 1 (5) | **Der Vorfall selbst:** 36 Laufzeilen überstehen `saveProfile` OHNE Aufbewahrungsvariable · Bestandsprofil unverändert · das angelegte Stufe-A-Profil ist inaktiv |
+| 2 (8) | `compactStore` verkleinert in **keiner** Konfiguration (ohne Variable · 36 · 25 · **20** · 5); der Befund wird trotzdem pro Aufruf neu gelesen |
+| 3 (6) | `abc` · `0` · `-5` · `12,5` · `20.5` · Leerstring werden abgewiesen |
+| 4 (7) | 1 · 5 · 19 unter dem Lesefenster werden abgewiesen; `listCrawlRuns(20)` liefert auch bei Aufbewahrung 5 die vollen 20; **auch der Vorfallswert 20 kürzt einen 36er-Ring nicht mehr** |
+| 5 (2) | `saveCrawlRun` hält den Ring auf 36 statt ihn zu schrumpfen |
+| 6 (3) | **`activateTenant` kürzt den Ring nicht** — der Pfad, über den die Aktivierung der Stufe A 20 weitere Schreibvorgänge auslösen würde |
+| 7 (8) | Der Riegel beurteilt jede Konstellation; Blob und Relationales können nicht still auseinanderlaufen; der Bericht nennt Ziel, Zeile und Grenze |
+| 8 (13) | Provisionierung · Aktivierung · Entfernung brechen mit `speicherpfad-unsicher` ab, **ohne zu schreiben**; der **Rückweg läuft bewusst weiter** (Notbremse) und fasst den Blob dabei nicht an; ohne Freigabe bleibt es der bisherige Trockenlauf; eine Attrappe läuft weiter |
+| 8b (6) | CLI-Ebene: Exitcode 2, ausgewiesenes Schreibziel, Stufe/Anzahl/Aktivierungsstatus, Trockenlauf unberührt |
+| 9 (5) | Stufe A bleibt inaktiv (**nicht leer-wahr:** fünf Profile werden dafür erst erzeugt) · Bestandsprofil byte-identisch · Ring weiterhin 36 · die **älteste** Laufzeile lebt noch |
+
+**Testergebnisse (04.09., alle über `scripts/lokal.js`):** Offline-Gesamtlauf **319/319 Suiten grün
+in 582 s** (318 vorher + die neue Suite) · Browser-/Mobile-Smoke **32 PASS / 0 FAIL** · neue Suite
+**61/61**. Zwei Suiten (`kalender-ics-test.js`, `lambda-paket-test.js`) schlugen anfangs fehl, weil
+`node_modules` in der Sitzung fehlte; nach `npm ci` sind beide grün (134/134 bzw. 43/0) — kein
+Zusammenhang mit dieser Änderung.
+
+**Eigener adversarialer Review:** fünf Linsen (Korrektheit · Umgehbarkeit · falsches Grün ·
+Anforderungserfüllung · Betriebswirkung), 30 Feststellungen, jede von zwei unabhängigen
+Widerlegern geprüft. Daraus umgesetzt: die Verschärfung in §38.2 (2), der Verzicht auf den Riegel
+im Rückweg, die Rücknahme des Ersatzfelds (§38.3 (1)), die Zeilenkennungen im Bericht und Riegel,
+die Schließung einer **zweiten Wahrheit** in `scripts/op25-production-nachweis.js` (dort stand die
+alte Formel ein zweites Mal ausgeschrieben; sie liest jetzt dieselbe eine Wahrheit und blockiert
+fail closed, wenn die Aufbewahrung nicht belegt ist) sowie fünf Testverschärfungen gegen
+Leer-Wahrheit und Tautologie.
+
+### §38.6 Was dieser Sprint ausdrücklich NICHT ist
+
+Keine Production-Datenänderung — der Production-Zugriff war ausschließlich `SELECT`. **Keine
+Wiederherstellung der 16 verlorenen `crawlRuns`** (§37.4 gilt unverändert: sie sind nicht
+rekonstruierbar, eine Rekonstruktion müsste Felder erfinden). Keine Aktivierung, keine
+Provisionierung, keine Profiländerung, keine Stufe B oder C. Keine Migration — sie war an keiner
+Stelle nötig, das Datenmodell bleibt unverändert. Keine Umgebungsvariable, kein Feature-Flag, keine
+Cron-, Azure-, Budget- oder Reserveänderung. Kein Modellaufruf, kein Crawl, kein Fachlauf, keine
+externe Nachricht. Kein Merge, kein Deployment. Die **acht Betreiberwerte** sind unverändert nicht
+gesetzt. **Stufe A ist unverändert vollständig inaktiv.**
+
+### §38.7 Nächster Schritt
+
+Der Code-PR braucht eine **eigene Mergefreigabe**. Erst nach seinem Merge und dem zugehörigen
+Production-Deployment ist die Sperre aus §37.5 aufgehoben; danach wird Schritt 7 der Kette (die
+**acht Betreiberwerte**, eine Betreiberaktion an der Vercel-Env) wieder der nächste Schritt, und die
+**Aktivierung der Stufe A** bleibt darüber hinaus eine eigene Freigabe.

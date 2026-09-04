@@ -20,6 +20,8 @@
 // Optional: aiBudgetDailyCents, aiBudgetMonthlyCents, tenantDailyCallLimit, focusTopics.
 
 const fs = require("fs");
+// SR §37.5 (3): reine Logik, keine Netz-/DB-/storage.js-Abhaengigkeit.
+const VORFLUG = require("../lib/helmut/speicherpfad-vorflug");
 
 function arg(name) {
   const i = process.argv.indexOf(name);
@@ -49,6 +51,26 @@ function loadSpec() {
 
 (async () => {
   refuseProductionBackend();
+
+  // ── SCHREIBZIEL AUSWEISEN (SR §37.5 (4), Vorfall 04.09.) ──────────────────
+  // Jeder schreibende Einstieg dieses Werkzeugs endet in `storage.saveProfile`
+  // und schreibt damit die GETEILTE Blob-Zeile `main`. Der Bericht sagt vor dem
+  // Lauf, wohin das tatsächlich geht und welche Werte wirksam sind.
+  //
+  // BEWUSST KEIN harter Abbruch: dies ist der Onboarding- und Notfallpfad für
+  // ECHTE Mandanten, und sein Ablauf steht in
+  // docs/betrieb/zweitmandant-provisionierung-runbook.md. Eine neue harte
+  // Vorbedingung würde ein bestehendes Betreiberverfahren brechen. Der Schaden,
+  // gegen den ein Riegel hier schützen würde, kann seit dem 04.09. ohnehin nicht
+  // mehr entstehen: `compactStore` verkleinert `crawlRuns` in keiner
+  // Konfiguration mehr (lib/helmut/storage.js). Der harte Abbruch bleibt den
+  // Kohortenwerkzeugen vorbehalten (SR §38.2).
+  if (has("--allow-production") && !has("--validate")) {
+    console.log(`\n${VORFLUG.pruefeSpeicherpfad({
+      env: process.env, zweck: "Mandanten-Provisionierung gegen Production"
+    }).meldung}\n`);
+  }
+
   const provisioning = require("../lib/helmut/provisioning");
 
   if (has("--deactivate")) {
