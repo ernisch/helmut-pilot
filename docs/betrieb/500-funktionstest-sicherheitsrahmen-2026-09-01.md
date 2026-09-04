@@ -15,6 +15,11 @@ Abschnitte §3.1, §4, §11 und §12 sind entsprechend nachgezogen. Der Stand �
 Modellaufruf" gilt damit **nur noch für den Bausprint selbst**, nicht mehr für
 den Gesamtvorgang.
 
+**Nachtrag 2026-09-04 (Reichweite dieses Belegdokuments):** Die Abschnitte **§35** und **§36**
+protokollieren **ausgeführte, einzeln freigegebene Production-Vorgänge** (relationale
+Profilkorrektur am 03.09.; inaktive Provisionierung der Stufe A am 04.09.). Der folgende
+Absatz gilt deshalb nur für den **Bausprint vom 01.09.**, nicht für das Dokument als Ganzes.
+
 **Dieser Sprint hatte KEINE Production-Wirkung.** Keine Production-Datenänderung,
 keine Provisionierung, keine Aktivierung, keine Migration, keine
 Cron-/Env-/Secret-/Flag-/Budget-Änderung, kein Merge, kein Deployment. Der
@@ -4278,3 +4283,334 @@ WP-21-Sollmenge nicht auflösbar, und es blieb verboten, einen der beiden Aussch
    erreichen, und `readSupabaseStore` legt bei fehlender Blob-Zeile über `writeSupabaseStore`
    einen Default-Store an (`storage.js:485-489`). Der Text muss die Einschränkung nennen.
 3. **Zweite Ausschusswahrheit im Radar** (§34.13.7) — unverändert offen.
+
+---
+
+## §36 Stufe A — inaktive Provisionierung der 20 synthetischen Profile (04.09.2026, ausgeführt)
+
+**Sprintzustand: erfolgreich abgeschlossen** — mit **einem** ausdrücklich benannten,
+nicht rückgängig gemachten Nebeneffekt (§36.8) und **zwei** Werkzeugbefunden für einen
+späteren Code-PR (§36.9). Der Test bleibt **nicht startbereit**; **nichts wurde aktiviert**.
+
+**Freigabe:** Betreiberauftrag vom 04.09.2026 — ausschließlich die einmalige Anlage der
+exakt 20 bereits definierten synthetischen Profile der Stufe A über den vorgesehenen
+Provisionierungspfad, alle 20 dauerhaft inaktiv. Ausdrücklich **nicht** freigegeben:
+Aktivierung, Stufe B/C, Migration, Anwendungscode, Konfiguration, Cron, Vercel-Env, Azure,
+Budget/Reserve, Modellaufruf, Crawl/Lagezyklus/Fachlauf, externe Nachricht, Merge,
+Deployment, Rollback, `scripts/profil-bereitschaft.js --production`.
+
+**Zeitpunkt des Production-Vorgangs** (ein einziger Lauf, 142 s):
+
+| Zone | Beginn | Ende |
+|---|---|---|
+| Türkei (UTC+3) | **04.09.2026 14:38:12** | 14:40:34 |
+| Berlin (CEST, UTC+2) | 04.09.2026 13:38:12 | 13:40:34 |
+| UTC | 04.09.2026 11:38:12 | 11:40:34 |
+
+**Stand:** `main` = `92a0716e7d227094d1a4119eb70d7886983c28aa` (Merge #299), Production-Deployment
+`dpl_9iYjTpHSxpdxXEUnvym3zfpVFJTR` **READY** (target `production`, `githubCommitSha` = derselbe
+Kopf, jüngstes Production-Deployment des Projekts). Arbeitszweig
+`claude/stufe-a-provisionierung-grzie1`, exakt von diesem Kopf. Kein Merge, kein Deployment.
+
+### §36.1 Die dreizehn Vorbedingungen — alle rein lesend belegt
+
+| # | Vorbedingung | Beleg | Ergebnis |
+|---|---|---|---|
+| 1 | `origin/main` = `92a0716…` | `git rev-parse origin/main` nach `git fetch` | erfüllt |
+| 2 | Zugehöriges Production-Deployment READY | Vercel `get_deployment`: `state: READY`, `target: production`, `sha 92a0716…` | erfüllt |
+| 3 | Bestand exakt 9 / 5 / 4 / 0 / 0 | `mandate_profiles`: 9 gesamt · 5 `aktiv` · 4 inaktiv · 0 `geloescht_at` · 0 `test-kohorte-%` | erfüllt |
+| 4 | Sicherung + Vergleichsgrundlage | `backup-export.js --scope=profil` → `backups/2026-09-04T10-48-20-242Z`, `art: pre-profil`, `vollstaendig: true`, 2/2 Tabellen, 0 Fehler, `profiles` 10 / `mandate_profiles` 9; **Inhalt zurückgelesen** (5 aktiv / 4 inaktiv / 0 Löschmarken / 0 Kohortenzeilen). Zusätzlich je Zeile ein `md5(zeile::text)` als Vergleichsgrundlage | erfüllt (Grenze: §36.10) |
+| 5 | 20 Profile verbindlich und reproduzierbar definiert | `baueKohorte()` deterministisch (Index → Merkmale, kein `Math.random`, kein `Date.now`); Stufe A = Indizes 0…19 | erfüllt |
+| 6 | alle 20 synthetisch | Kennungsfamilie `test-kohorte-`, Adressen auf der reservierten TLD `.invalid`, Testnamen/-parteien/-themen; einzig die **Ausschussbezeichnungen** sind echt (amtliche WP-21-Namen — von der Reifesperre verlangt, §34.13) | erfüllt |
+| 7 | Kennungen eindeutig, keine Kollision | 0 Treffer `test-kohorte-%` an **neun** Production-Orten: `mandate_profiles`, `profiles`, `profile_embeddings`, `helmut_jobs`, `briefings`, `main-auth.users`, `main.profiles`, `main.mandateProfiles`, `main-p-*`-Zeilen | erfüllt |
+| 8 | dokumentierter, getesteter Pfad **mit Stufenzwang** | Trockenlauf `provisionierung --stufe=a`: `zielGroesse: 20`, `erwartetesWort: TESTKOHORTE_STUFE_A_PROVISIONIERUNG_BESTAETIGT`; ohne Stufe Exit 2 ohne Rückfall auf 495 (§34.3) | erfüllt |
+| 9 | legt garantiert **inaktiv** an | `neuAktiv: false` fest im Vorwärtsausführer; „angelegt" heißt **vorhanden UND inaktiv** — ein aktiv angelegtes Profil zählt als Fehlschlag | erfüllt |
+| 10 | erzeugt keine Aufträge/Fachläufe/Modellaufrufe | `testkohorte-provisionierung-inaktiv-test.js` **52 PASS / 0 FAIL** (0 Netz · 0 KI · 0 Riegel · `planeArbeit` 0 Aufträge; Gegenprobe 1 aktives Profil → 2 Aufträge) | erfüllt |
+| 11 | Grundlinie · Sicherung · Betriebsfenster · Reifebeleg | Fenster **11:36–15:59 UTC** (263 min), vom Werkzeug selbst als `bestaetigt` mit **0 Konflikten** gegen 13 Bestandscrons + Watchdogspanne ausgewiesen; Reifebeleg A0.2 **20/20 angelegt, 0 abgewiesen** und §11.3 **495/495** | erfüllt |
+| 12 | kein unbekannter Merge / Production-Vorgang | letzter Merge #299 = `92a0716…`; `list_deployments` zeigt kein neueres Production-Deployment | erfüllt |
+| 13 | acht Betreiberwerte | für die **inaktive** Provisionierung nicht erforderlich (§34.5); **keiner gesetzt, keiner verändert, keiner erfunden** | erfüllt |
+
+**Betriebsruhe zum Startzeitpunkt** zusätzlich belegt: der 11:30-Cron `understanding-rueckstand`
+war um **11:33:55 UTC** beendet, `helmut_jobs` zeigte **0 offene Leases** und **0 Aufträge in
+Arbeit**; nächster Cron erst 16:00 UTC.
+
+### §36.2 Das Nachtfenster ist **keine** Bedingung der Provisionierung
+
+Ausdrücklich festgehalten, weil die Verwechslung naheliegt: das gemessene Nachtfenster
+**21:36–03:59 UTC** (§30.4) ist eine Aussage über die **Fälligkeitsabdeckung** und gilt für
+**Aktivierung und Fachzyklus**. Der scharfe Provisionierungslauf prüft ein reines
+**Betriebs-/Kollisionsfenster** gegen die 13 Bestandscrons (`pruefeStartfenster` →
+`fensterBefund`): `gepruefteCrons > 0`, `startErlaubt === true`, und die **Systemuhr** liegt
+jetzt im Intervall. Kapazität, Kosten, Parallelität und Fälligkeit werden dort **nirgends**
+geprüft — die stehen ausschließlich in `startbereitschaft()`, die nur der Fachzyklus aufruft.
+Deshalb war das vom Werkzeug selbst bestätigte **Tagesfenster 11:36–15:59 UTC** zulässig.
+
+### §36.3 Der ausgeführte Befehl — und warum **nicht** über `lokal.js`
+
+```
+HELMUT_TESTKOHORTE_EXECUTE=1 \
+HELMUT_TESTKOHORTE_CONFIRM=TESTKOHORTE_STUFE_A_PROVISIONIERUNG_BESTAETIGT \
+HELMUT_PROFILE_DB_MODE=1 \
+node scripts/testkohorte-vorwaerts.js provisionierung --stufe=a --start=11:36 --dauer=263 --scharf
+```
+
+Genau **einmal** gestartet, kein zweiter Versuch, kein Wiederholungslauf.
+
+- **Ohne `scripts/lokal.js`**, weil der Lauf die Production-Kennungen im Prozess braucht.
+  `lokal.js` entfernt sie — derselbe Befehl darüber hätte in den **lokalen Dateispeicher**
+  geschrieben und trotzdem `ok: true` gemeldet. Für **alle** rein lesenden und prüfenden
+  Läufe dieses Sprints wurde umgekehrt ausnahmslos `lokal.js` benutzt.
+- **`--start`/`--dauer` sind Pflicht:** `--scharf` **ohne** Fensterpaar ist kein Aufruffehler,
+  sondern ein **stiller Trockenlauf mit Exit 0** — obwohl das Warnbanner bereits gedruckt wurde.
+- **`--jetzt=` wurde nicht gesetzt** (im scharfen Lauf ohnehin abgewiesen).
+- Das Bestätigungswort wird **ohne `trim()`** verglichen; ein angehängtes Leerzeichen hätte die
+  Freigabe lautlos entwertet.
+- **Exitcode 0 ist kein Erfolgsbeleg:** er deckt den vollen scharfen Erfolg **und** den stillen
+  Rückfall auf den Trockenlauf ab. Maßgeblich sind die Felder `modus` und `ok` — hier
+  `"modus": "scharf"` und `"ok": true`.
+
+#### §36.3a `HELMUT_PROFILE_DB_MODE` — die eine notwendige Entscheidung, ausdrücklich
+
+**Befund vor dem Lauf:** `saveProfile` schreibt die relationalen Tabellen **nur**, wenn
+`profileDbModeEnabled()` wahr ist (`isFlagOn(HELMUT_PROFILE_DB_MODE) && v3StoreReady()`,
+`storage.js:6459`, `:6589`). In der ausführenden Sitzung war die Variable **nicht** gesetzt
+(Vercel-Env ist aus keiner Sitzung lesbar). Ohne sie hätte der Lauf die 20 Profile
+**ausschließlich in den Blob** geschrieben, `mandate_profiles` wäre bei 9 geblieben — und die
+Nachprüfung `getProfile` hätte sie aus genau diesem Blob wiedergefunden und **„angelegt-inaktiv"
+gemeldet**. Das wäre ein halber Zustand und ein falsches Grün gewesen, gegen einen
+Production-Lesepfad, der nachweislich **relational** liest (§34.13.6a/.6b).
+
+**Entscheidung:** `HELMUT_PROFILE_DB_MODE=1` **für genau diesen einen Befehl** in der
+Prozessumgebung — der **Dual Write** (Blob **und** relationale Upserts), den §34.6 als das
+Verhalten des Provisionierungspfades beschreibt. Das ist **keine** Vercel-Env-Änderung, **keine**
+Änderung an `helmut-flags.json` und **keine** Production-Konfigurationsänderung; die Freigabe
+nennt die „architektonisch erforderliche Anlage in den vorgesehenen Profilspeichern" ausdrücklich.
+`HELMUT_PROFILE_DB_EXCLUSIVE` blieb **aus** (dokumentierter Vorgabewert, additives Verhalten).
+`saveProfileToDb` setzt genau zwei idempotente Upserts auf dem Primärschlüssel ab
+(`profiles`, dann `mandate_profiles`) — kein Einbettungslauf, kein Modellaufruf.
+
+**Schreibziel vor dem Lauf rein lesend nachgewiesen:** `getStorageStatus()` → `backend: supabase`,
+`supabaseConfigured: true`, `storeId: main`; `SUPABASE_URL` = das Production-Projekt.
+Das ist nötig, weil das Werkzeug sein Schreibziel **nirgends ausweist**: fehlte allein
+`HELMUT_STORAGE_BACKEND`, gingen Blob und Konten in lokale Dateien, während `profiles`/
+`mandate_profiles` in Production landen — und der Bericht meldete trotzdem `ok: true`.
+
+### §36.4 Ergebnis des Laufs
+
+```
+"modus": "scharf" · "stufe": "a" · "zielGroesse": 20
+"freigabe": { "erteilt": true, "flagAn": true, "wortStimmt": true }
+"startfenster": { "frei": true, "grund": "fenster-gilt-jetzt", "gepruefteCrons": 13, "jetztMinuteUtc": 698 }
+"angelegt": 20 · "bereitsVorhanden": 0 · "fehlgeschlagen": 0 · "ok": true
+```
+
+> „Provisionierung ausgeführt: 20 angelegt, 0 bereits vorhanden, 0 fehlgeschlagen — jede Zeile
+> nach dem Schreiben als INAKTIV gegengelesen."
+
+**Nicht als Beleg verwendet:** die Felder `realeMandateBeruehrt: 0` und `loeschtNichts: true` sind
+**hartkodierte Konstanten** im Ergebnisobjekt (`testkohorte-vorwaerts.js:245-248`) — sie messen
+nichts. Die Unberührtheit der realen Mandate ist stattdessen relational nachgezählt (§36.6).
+
+### §36.5 Kontrolle — die fünfzehn Punkte, rein lesend, ausschließlich per SQL
+
+Alle Abfragen liefen **direkt als SQL** gegen Production, nie über `storage.js`: ein Lesezugriff
+dort kann eine fehlende Blob-Zeile **anlegen** (`readSupabaseStore`) — derselbe Grund, aus dem
+`profil-bereitschaft.js --production` unzulässig bleibt (§34.13, CURRENT_STATE).
+
+| # | Kontrolle | Messwert (11:40–11:44 UTC) | Ergebnis |
+|---|---|---|---|
+| 1 | 29 Profile insgesamt | `mandate_profiles` = **29** | ✔ |
+| 2 | exakt 5 aktiv | **5** | ✔ |
+| 3 | exakt 24 inaktiv | **24** | ✔ |
+| 4 | exakt 20 Profile der Stufe A | `test-kohorte-a-%` = **20** (B/C = **0**, keine Stufe übersprungen) | ✔ |
+| 5 | alle 20 der Stufe A inaktiv | 20 inaktiv, **0 aktiv** | ✔ |
+| 6 | 0 Löschmarken | `geloescht_at is not null` = **0** | ✔ |
+| 7 | die bisherigen 9 unverändert | 9/9 **bytegenau** (§36.6) | ✔ |
+| 8 | die fünf realen Profile unverändert | in 7 enthalten, einzeln geprüft | ✔ |
+| 9 | alle 20 Kennungen eindeutig | 20 distinct; 20 distinct Kontoadressen | ✔ |
+| 10 | relationale Sicht und Blob deckungsgleich | `main.profiles` 8→**28**, `main.mandateProfiles` 8→**28**, `mandate_profiles` 9→**29**, `profiles` 10→**30**, **0 Waisen** (`profiles` ohne `mandate_profiles`) | ✔ |
+| 11 | kein Auftrag für Stufe A | `helmut_jobs` **7205 → 7205**, davon `tenant_id like 'test-kohorte-%'` = **0**; `helmut_job_outbox` **6970 → 6970**; 0 neue Aufträge seit 11:38 | ✔ |
+| 12 | kein Crawl / Lagezyklus | `source_crawl_telemetry` **34.780 → 34.780** (0 seit 11:38); `process_runs` **402 → 402**; 0 neue `raw_documents`, 0 neue `matching_runs` | ✔ |
+| 13 | kein Modellaufruf | `llm_budget_counters` 04.09. `global.used` **68 → 68**; `llm_usage` 0; `llm_reservations` 0; `main-auth.llmUsage` 5.000 → 5.000 (Ring); 0 neue `helmut_verstehen_reservierungen` | ✔ |
+| 14 | keine neue Störung an den fünf realen Profilen | **0** neue `systemErrors` in `main` und `main-auth` seit 11:38; **0** fehlgeschlagene Aufträge; 0 neue Briefings | ✔ |
+| 15 | natürliche Radarbelege bestehen fort | `Ausschuss für Arbeit und Soziales Themenradar` (04.09. 10:01) und `Petitionsausschuss Themenradar` (04.09. 10:04) unverändert vorhanden; seit der Korrektur **keine** neuen Läufe von `Gesundheit`/`Finanzen`/`Haushalt Themenradar` (jeweils letzter Lauf 03.09. 10:0x) | ✔ (weiterhin nur **teilweise**, §36.7) |
+
+**Isolationsbeleg der Stufe A** (`testkohorte-495.js isolation --stufe=a`): **alle neun Befunde
+`ok`, `offen: []`** — 20 gelesene Kohortenzeilen, 20 von 20 inaktiv, 0 aktive Kohortenkonten,
+Kennungsfamilie getrennt, keine fremde Kennung, reale Mandate zahlenmäßig unberührt (9),
+20 Adressen **alle** auf `.invalid`, keine Adresskollision, Kommunikationsriegel sperrt jede
+Zeile über die Kennungsfamilie. Zur Herkunft der Adressen siehe §36.9 (2).
+
+### §36.6 Die bisherigen Zeilen: bytegenau unverändert
+
+Vor dem Lauf wurde je Zeile `md5(zeile::text)` erhoben, nach dem Lauf erneut. Verglichen wurden
+`md5` der Gesamtzeile, `aktiv`, `geloescht_at`, `created_at` und `updated_at`:
+
+- **`mandate_profiles`: 9 von 9 Zeilen identisch** — 0 Abweichungen.
+- **`profiles`: 10 von 10 Zeilen identisch** — 0 Abweichungen.
+
+Kein `updated_at` wurde angefasst, keine Löschmarke gesetzt, kein Aktivzustand verändert.
+
+**Schlüsselweiser Vergleich beider geteilter Blob-Zeilen** (vorher 10:52/11:37 UTC, nachher 11:42 UTC):
+
+| Zeile | unverändert | gewollt verändert | **ungewollt verändert** |
+|---|---|---|---|
+| `main` | `adminSettings`, `assignments`, `auditEvents` 6, `briefings` 6, `communicationDrafts`, `dailyInputs`, `dailyTasks`, `interactions` 61, `lageChecks` 7, `personalizedRecommendations` 8, `pipelineDebugReports` 4, `politicalItems` 9, `priorityChanges` 79, `pushEvents` 20, `pushSubscriptions` 1, `rawItems` 589, `sessions` 1, `sources` 151, `systemErrors` 3, `tasks` 1, `topicMemory` 55, `userNotes`, `users` 1 | `profiles` 8→**28**, `mandateProfiles` 8→**28** | **`crawlRuns` 36→20** (§36.8) |
+| `main-auth` | `adminRecoveryLastRun` 14, `adminSettings`, `assignments`, `auditEvents` 196, `dailyInputs`, `llmUsage` 5.000, `monitoringWebhookDelivery` 8, `passwordTokens` 1, `pipelineLocks` 4, `processRuns` 300, `sessions` 41, `sourceModeShadowLastRun` 12, `systemErrors` 114, `understandingRetries`, `updateRetries` 5 | `users` 5→**25** | **keine** |
+
+Damit ist auch die schwerste Risikoklasse des Laufs — ein **Lost Update** auf den beiden
+geteilten Blob-Zeilen, die beide unbedingt im Muster Lesen→Ändern→Schreiben ersetzt werden
+(`writeSupabaseStore`: `POST` mit `Prefer: resolution=merge-duplicates`, **kein**
+Compare-and-Set; CLAUDE.md §4.10, Befund F-CAS/W-2) — **rein lesend widerlegt**: außer den
+gewollten Zuwächsen und `crawlRuns` hat sich in beiden Zeilen **kein einziger Zähler** bewegt.
+Das Risiko war real und ist nur durch das cron-freie Fenster und die Betriebsruhe (§36.1) klein
+gehalten worden, **nicht** durch eine Sperre — eine solche gibt es auf diesem Pfad nicht.
+
+### §36.7 Die 20 Kennungen und ihr Zustand
+
+`test-kohorte-a-001` … `test-kohorte-a-020` (fortlaufend, dreistellig, ohne Lücke).
+
+**Alle 20 identisch im Zustand:** `aktiv = false` · `geloescht_at = null` · Konto vorhanden und
+**gesperrt** (`active = false`, 0 von 20 anmeldefähig) · Adresse
+`test-kohorte-a-NNN@test-kohorte.invalid` (reservierte TLD, 20 eindeutig) · Rolle
+`abgeordneter` · Blob- und relationale Zeile vorhanden · kein Auftrag, kein Briefing,
+kein Embedding.
+
+**Politische Ebene:** 18 `bundestag`, 2 `landtag` (`test-kohorte-a-008`, `test-kohorte-a-016`) —
+exakt die Aufteilung, die §34.13 für Stufe A angibt.
+
+**Anlagezeiten (UTC):** a-001 11:38:24 … a-020 11:40:34, im Mittel ~6,5 s je Profil.
+
+**Radar-Wirkungsbeleg (§9 CURRENT_STATE) bleibt *teilweise*:** natürlich belegt sind
+`annika-klose` (Arbeit und Soziales) und `ruppert-st-we` (Petitionsausschuss). Offen bleiben
+`helmut-kleebank`, `ottilie-paola-klein-2` und `cem-ince`. **Es wurde kein Lauf ausgelöst**;
+die Beobachtung war ausschließlich lesend.
+
+### §36.8 Der eine ungewollte Nebeneffekt: `crawlRuns` 36 → 20
+
+**Was geschah.** Im geteilten Blob `helmut_store.main` ist das Feld `crawlRuns` von **36 auf 20**
+Einträge gefallen. Verloren sind die **16 ältesten** Laufzusammenfassungen; die verbliebenen 20
+decken **2026-08-22T20:04 bis 2026-09-03T12:56 UTC** ab. Der jüngste Eintrag ist vorher wie
+nachher derselbe (`2026-09-03T12:56:29.066Z`), die Feldstruktur der Überlebenden ist unverändert
+(36 Felder je Eintrag).
+
+**Ursache, belegt.** `compactStore` läuft bei **jedem** Blob-Schreibvorgang und zieht `crawlRuns`
+auf `CRAWL_RUN_RETENTION` nach:
+
+```js
+const CRAWL_RUN_RETENTION = Math.max(1, Number(process.env.HELMUT_CRAWL_RUN_RETENTION) || 20);  // storage.js:5299
+crawlRuns: sortByDate(store.crawlRuns, "createdAt").slice(0, CRAWL_RUN_RETENTION)…              // storage.js:5583
+```
+
+Production hat `HELMUT_CRAWL_RUN_RETENTION=36` gesetzt (CURRENT_STATE §3). Die **ausführende
+Claude-Sitzung** hat diese Variable nicht — Vercel-Env ist aus keiner Sitzung lesbar. Der erste
+Schreibvorgang des Laufs hat den Ring deshalb mit dem **Code-Vorgabewert 20** statt mit dem
+Production-Wert 36 gekappt.
+
+**Die verallgemeinerte Lehre — und sie ist die wichtigere:** *jeder* Production-Schreibvorgang,
+der aus einer Claude-Sitzung durch `storage.writeStore` läuft, verdichtet die geteilte Blob-Zeile
+mit **der Umgebung dieser Sitzung**, nicht mit der von Production. Jede Aufbewahrungsgrenze, die
+Production setzt und die Sitzung nicht kennt, schrumpft geteilte Daten still.
+**`CRAWL_RUN_RETENTION` ist dabei die einzige umgebungsabhängige Obergrenze in `compactStore`** —
+alle übrigen (`rawItems` 600, `briefings` 4/320, `interactions` 80/4000, `lageChecks` 10/1000,
+`sessions` 500, `auditEvents` 1000, `systemErrors` 300 …) sind feste Konstanten und in jeder
+Umgebung gleich. Genau das bestätigt der schlüsselweise Vergleich in §36.6: **außer `crawlRuns`
+hat sich nichts bewegt.** Der Schaden ist damit vollständig eingegrenzt.
+
+**Tragweite.** `crawlRuns` im Blob ist die **Laufzusammenfassung**, die `getAdminStatsCrawl` /
+`getAdminStatsCrawlReport` über ein Tagesfenster auswerten. Ein 30-Tage-Crawlbericht sieht jetzt
+12 statt rund 20 Tage. **Nicht** betroffen ist die eigentliche Quellenwahrheit: die relationale
+`source_crawl_telemetry` trägt unverändert **34.780 Zeilen über 51 Tage** (16.07.–04.09.) und
+wurde von diesem Lauf nicht angefasst. Es gingen keine Mandats-, Profil-, Briefing- oder
+Telemetriedaten verloren. Der Ring füllt sich im Normalbetrieb wieder auf 36: die Crons
+04:00/20:00 UTC schreiben je Lauf einen Eintrag und kappen dann wieder auf den
+Production-Wert 36 — nach rund acht Betriebstagen ist der Stand wiederhergestellt. Bis dahin
+liegt der Bestand unter dem in CURRENT_STATE §3 genannten Bedarf (n=5: 30).
+
+**Nicht repariert — bewusst.** Ein Wiederherstellen wäre eine zweite, nicht freigegebene
+Production-Datenänderung; die Schutzgrenze des Auftrags verbietet nach einem Production-Vorgang
+jede Korrektur ohne gesonderte Freigabe. Die Sicherung `--scope=profil` deckt `helmut_store`
+ausdrücklich **nicht** ab (nur `profiles` und `mandate_profiles`), die 16 Einträge sind daher
+nicht wiederherstellbar. **Der Betreiber entscheidet, ob etwas geschehen soll; empfohlen wird:
+nichts.**
+
+**Zwingende Folge für Stufe B und C.** Stufe B (75) und C (400) schreiben denselben Blob
+**75-** bzw. **400-mal**. Vor jeder weiteren Provisionierung aus einer Sitzung muss deshalb
+entweder
+**(a)** `HELMUT_CRAWL_RUN_RETENTION=36` (bzw. der dann gültige Production-Wert) in der
+ausführenden Prozessumgebung mitgesetzt werden — die einfachste und ausreichende Maßnahme —,
+**oder (b)** der Provisionierungspfad darf den geteilten Blob nicht mehr über
+`storage.writeStore` anfassen (`HELMUT_PROFILE_DB_EXCLUSIVE`, eigener Code-PR, freigabepflichtig).
+Ohne eine der beiden wiederholt sich der Effekt.
+
+### §36.9 Zwei Werkzeugbefunde für einen späteren Code-PR (hier **nicht** repariert)
+
+1. **`realeMandateBeruehrt: 0` und `loeschtNichts: true` sind hartkodiert.** Beide stehen als
+   Konstanten im Ergebnisobjekt (`testkohorte-vorwaerts.js:245-248`, `:365-367`) und werden vom
+   CLI als Befund gedruckt, ohne dass irgendetwas sie misst. Im Blobpfad ist
+   `realeMandateBeruehrt: 0` sogar **sachlich falsch**: die geteilte Zeile, die die neun realen
+   Profile trägt, wird je Profil vollständig neu geschrieben. Die Aussage gehört entweder
+   gemessen oder aus dem Bericht entfernt.
+2. **`erhebungsSql()` liest die Adresse aus einer in Production leeren Spalte.** Die Erhebung
+   für den Bestand nimmt `profiles.email` — dort steht in Production **NULL, und zwar bei allen
+   Profilen**, auch bei den fünf realen. Grund: `buildProfile` überträgt `email` nicht ins
+   Profilobjekt, `saveProfileToDb` schreibt daher `email: null`; die Kontoadresse lebt
+   ausschließlich im Auth-Blob (`main-auth.users[].email`). Der Isolationsbeleg bricht mit dem
+   Literalergebnis der eigenen Erhebungs-SQL ab („Bestand: Zeile 1 führt keine gelesene
+   E-Mail-Adresse") — **strukturell, nicht wegen dieses Laufs, und für Stufe B und C genauso.**
+   Der Beleg in §36.5 wurde deshalb mit der **tatsächlich hinterlegten** Adresse aus dem
+   Auth-Blob geführt (rein lesend erhoben, 20/20 auf `.invalid`, 20 eindeutig) — also aus der
+   Ablage, in der `accounts` die Adresse wirklich führt. Die Erhebungs-SQL sollte in einem
+   eigenen PR auf diese Ablage gezogen werden.
+
+### §36.10 Ehrlich benannte Grenzen dieses Sprints
+
+- **Die Sicherung verlässt diese Sitzung nicht.** `backups/` ist gitignored und liegt in einem
+  flüchtigen Container. Verschlüsselung, Aufbewahrung und Löschung nach
+  `backup-restore-runbook.md` §1b sind eine **Betreiberaktion**; eine Entschlüsselungsprobe auf
+  dem Betreibergerät hat **nicht** stattgefunden. Der Inhalt wurde in dieser Sitzung
+  zurückgelesen und gegen die Grundlinie geprüft — mehr trägt der Beleg nicht.
+- **Die Sicherung deckt `helmut_store` nicht ab** — siehe §36.8.
+- **Kein Compare-and-Set auf dem Anlagepfad.** Beide geteilten Blob-Zeilen werden unbedingt
+  ersetzt. Dass kein Lost Update eingetreten ist, ist **gemessen** (§36.6), nicht **garantiert**.
+- **Der Lauf gibt bis zum Ende nichts aus.** Ein Prozessabbruch bei 12 von 20 hätte keinen
+  Bericht hinterlassen; der Zustand wäre nur per SQL feststellbar gewesen. Der Lauf wurde
+  deshalb mit Ausgabe in eine Datei und außerhalb der Werkzeug-Zeitgrenze gefahren.
+- **Kein Production-Beweis der Reifesperre.** „Stufe A 20/20" war vor dem Lauf **offline** gegen
+  einen Arbeitsspeicher-Store belegt; der Production-Lauf hat ihn jetzt bestätigt
+  (0 Abweisungen `bundestagsprofil-nicht-bereit`).
+- **Die inaktive Anlage ist nicht völlig folgenlos.** Der Altpfad von `/api/cron/lage-briefing`
+  (05:45 UTC; nur aktiv, solange `HELMUT_NARRATIV_QUEUE` aus ist) zieht **alle** Profile und lädt
+  jedes einzeln nach, **bevor** er deaktivierte überspringt (`server.js:1653-1690`) — ab jetzt
+  20 zusätzliche Profillesungen je Lauf gegen ein Zeitbudget von 240 s. Die fünf realen Mandate
+  sind dabei geschützt: `mandatsklasse.sortiereRealZuerst` stellt sie stabil an den Anfang.
+  Ebenso listet der Admin-Profilumschalter jetzt 29 statt 9 Mandate. Das Standardmandat eines
+  Admins ändert sich **nicht** (alphabetisch erste Kennung bleibt eine reale).
+- **Konten tragen `status: "aktiv"` bei `active: false`.** Wer im Bestand die Spalte `status`
+  liest, hält die 20 gesperrten Testkonten fälschlich für anmeldefähig. Maßgeblich ist allein
+  `active` — und das ist bei allen 20 `false`.
+
+### §36.11 Was dieser Sprint ausdrücklich **nicht** ist
+
+Keine Aktivierung — **kein einziges der 20 Profile ist aktiv**, und die Aktivierung bleibt eine
+eigene Freigabe. Keine Stufe B, keine Stufe C. Keine Änderung an den bisherigen 9 Profilen.
+Keine Löschung, keine automatische Bereinigung, keine manuelle SQL-Reparatur. Keine Migration,
+kein Anwendungscode, keine Konfiguration, keine Cron-Änderung, keine Vercel-Env-Variable, keine
+Azure-, Budget- oder Reserveänderung. Kein Modellaufruf, kein Crawl, kein Lagezyklus, kein
+Fachlauf, keine externe Nachricht. Kein Merge, kein Deployment, kein Rollback. Kein Lauf von
+`scripts/profil-bereitschaft.js --production`. Die acht Betreiberwerte sind **unverändert nicht
+gesetzt** und wurden weder erfunden noch angefasst.
+
+### §36.12 Nächster Schritt
+
+Die Kette steht jetzt bei Schritt 6 von 28 (Isolation A belegt). Als Nächstes wäre **Schritt 7**
+fällig: die **acht Betreiberwerte** setzen (Deckel 2.416 · Verstehens-Reserve 702 · Vorrang real
+200 · RPM 82 · TPM 250000 · Kosten 10,00 USD/Tag · Parallelität 1 · Kommunikation `gesperrt`) —
+eine **Betreiberaktion an der Vercel-Env**, gefolgt von Riegelprüfung (8) und Wirksamkeitsprüfung
+(9). Erst danach ist die **Aktivierung der Stufe A** (Schritt 10) überhaupt beantragbar, und sie
+braucht eine **eigene** Freigabe. `HELMUT_TENANT_LLM_CAP` bleibt aus, `HELMUT_TESTKOHORTE_QUELLEN`
+bleibt für den ganzen Test aus.
+
+**Vorbereitend erledigt** ist damit alles, was ohne die acht Werte möglich war. Die separate
+Aktivierung der Stufe A **kann vorbereitet werden**; startbereit ist sie nicht, solange die acht
+Werte nicht gesetzt und ihre Wirksamkeit nicht geprüft ist.
