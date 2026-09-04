@@ -17,18 +17,23 @@
 // FIX (N1, minimal):
 //   - server.js: listCrawlRuns(10) -> listCrawlRuns(20), angeglichen an die drei
 //     anderen bestehenden Aufrufstellen (scheduler.js, server.js an zwei weiteren
-//     Stellen) und an CRAWL_RUN_RETENTION (storage.js, Default 20).
+//     Stellen) und an die crawlRuns-Aufbewahrung (storage.js).
 //   - storage.js (saveCrawlRun): der Retention-Schnitt war hart auf 20 kodiert und
 //     lief damit dem bereits existierenden, dokumentierten Schalter
 //     HELMUT_CRAWL_RUN_RETENTION vollstaendig zuvor (das Environment-Feld war
-//     wirkungslos jenseits von 20). Jetzt an CRAWL_RUN_RETENTION angeglichen.
+//     wirkungslos jenseits von 20). Jetzt an die Aufbewahrung angeglichen.
 //
 // Diese Suite belegt beides direkt gegen den ECHTEN lokalen Dateispeicher
 // (kein Netz, keine Supabase, kein Mock der Storage-Funktionen selbst).
 
 process.env.HELMUT_STORAGE_BACKEND = "local";
 delete process.env.SUPABASE_URL;
-// Vor dem ersten require lesen (Modul-Konstante CRAWL_RUN_RETENTION in storage.js).
+// AKTUALISIERT 04.09.2026 (SR §38): Frueher war die Aufbewahrung eine Modulkonstante
+// in storage.js und MUSSTE deshalb vor dem ersten require stehen. Seit dem
+// crawlRuns-Vorfall wird sie pro Aufruf aus der Umgebung gelesen
+// (lib/helmut/speicherpfad-vorflug.js); die Setzung hier bleibt trotzdem an dieser
+// Stelle, weil sie fuer den ganzen Prozess gelten soll. Sie muss >= dem Lesefenster
+// (20) liegen, sonst gilt sie als ungueltig und wird nirgends angewendet.
 process.env.HELMUT_CRAWL_RUN_RETENTION = "30";
 
 const fs = require("fs");
