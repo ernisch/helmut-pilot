@@ -96,7 +96,7 @@ function liesStore() {
 
 // Ein echter Kindprozess je Umgebungsvariante — nur so ist belegbar, dass ein
 // Riegel WIRKLICH vor dem ersten Schreibvorgang greift.
-function cli(skriptUndArgs, zusatzUmgebung = {}) {
+function cli(skriptUndArgs, zusatzUmgebung = {}, preload = null) {
   const vorher = fs.existsSync(storeFile) ? fs.readFileSync(storeFile, "utf8") : null;
   const umgebung = { ...process.env, NO_NETWORK_TESTS: "1", HELMUT_SOURCE_MODE: "off" };
   for (const name of ["HELMUT_CRAWL_RUN_RETENTION", "HELMUT_PROFILE_DB_MODE",
@@ -104,9 +104,10 @@ function cli(skriptUndArgs, zusatzUmgebung = {}) {
     "SUPABASE_SERVICE_ROLE_KEY", "HELMUT_TESTKOHORTE_EXECUTE", "HELMUT_TESTKOHORTE_CONFIRM"]) {
     delete umgebung[name];
   }
-  const r = spawnSync(process.execPath, skriptUndArgs.map((a, i) => (i === 0 ? path.join(ROOT, a) : a)), {
-    cwd: ROOT, encoding: "utf8", timeout: 90000, env: { ...umgebung, ...zusatzUmgebung }
-  });
+  const argumente = skriptUndArgs.map((a, i) => (i === 0 ? path.join(ROOT, a) : a));
+  const r = spawnSync(process.execPath,
+    preload ? ["--require", preload, ...argumente] : argumente,
+    { cwd: ROOT, encoding: "utf8", timeout: 90000, env: { ...umgebung, ...zusatzUmgebung } });
   const nachher = fs.existsSync(storeFile) ? fs.readFileSync(storeFile, "utf8") : null;
   return {
     status: r.status,
@@ -654,10 +655,202 @@ function cli(skriptUndArgs, zusatzUmgebung = {}) {
     check("8c.10 Es existiert keine Uebergehungsoption im Werkzeug",
       !/--(ignoriere|skip|force|ohne)[-a-z]*speicherpfad/i
         .test(fs.readFileSync(path.join(ROOT, "scripts", "provision-tenant.js"), "utf8")));
-    fs.rmSync(specDir, { recursive: true, force: true });
 
     // ── 9 · Kein Kohortenprofil ist nach all dem aktiv ausser dem einen, den
     //        Abschnitt 6 absichtlich aktiviert hat ─────────────────────────────
+    // ── 8d · KEINE Argumentkombination umgeht den Riegel ─────────────────────
+    //
+    // Betreiberbefund (reproduziert): Die Einstufung sagte „`--validate` ⇒ liest
+    // nur" und stieg sofort aus; die AUSFUEHRUNG prüfte danach aber in der
+    // Reihenfolge --deactivate → --teardown → --paket → erst dann --validate.
+    // Damit erreichten
+    //   --allow-production --validate --deactivate <id>
+    //   --allow-production --validate --teardown <id>
+    //   --allow-production --validate --paket <datei> --ausfuehren
+    // einen echten Production-Schreibpfad, OHNE dass der Riegel je gelaufen wäre.
+    //
+    // Geprueft wird VERHALTEN, nicht Quelltext: das echte CLI laeuft als
+    // Kindprozess mit einem PRELOAD, der das Provisionierer-Modul abfaengt. Der
+    // Preload protokolliert (a) OB das Modul ueberhaupt geladen wurde und (b)
+    // JEDEN Aufruf einer schreibenden Funktion. Ein blockierter Fall muss beide
+    // Protokolle leer lassen.
+    console.log("\n== 8d · Keine Argumentkombination umgeht den Riegel ==");
+    const spionDir = fs.mkdtempSync(path.join(require("os").tmpdir(), "helmut-provspion-"));
+    const spionLog = path.join(spionDir, "erreicht.log");
+    const spionPreload = path.join(spionDir, "provisionierer-spion.js");
+    fs.writeFileSync(spionPreload, `"use strict";
+const fs = require("fs");
+const path = require("path");
+const Module = require("module");
+const LOG = ${JSON.stringify(spionLog)};
+const ZIEL = require.resolve(${JSON.stringify(path.join(ROOT, "lib", "helmut", "provisioning"))});
+function melde(was) { fs.appendFileSync(LOG, was + "\\n"); }
+const attrappe = {
+  deactivateTenant: async (id) => { melde("deactivateTenant:" + id); return { ok: true, log: [] }; },
+  teardownTenant: async (id) => { melde("teardownTenant:" + id); return { ok: true, log: [] }; },
+  provisionTenant: async () => { melde("provisionTenant"); return { ok: true, log: [] }; },
+  provisionBatch: async (specs, d, o) => {
+    melde("provisionBatch:ausfuehren=" + Boolean(o && o.ausfuehren));
+    return { ok: true, vorbefunde: [], ergebnisse: [], bilanz: { gesamt: 0 }, abgebrochen: false };
+  },
+  validateSpec: () => [],
+  formatProtocol: () => "(Attrappe)",
+  PROVISIONING_MARKER: "helmut-provisioning"
+};
+const echtesLoad = Module._load;
+Module._load = function (anfrage, elternteil, istHaupt) {
+  let aufgeloest = null;
+  try { aufgeloest = Module._resolveFilename(anfrage, elternteil, istHaupt); } catch { /* egal */ }
+  if (aufgeloest === ZIEL) { melde("MODUL-GELADEN"); return attrappe; }
+  return echtesLoad.apply(this, arguments);
+};
+`);
+
+    function spionZuruecksetzen() { try { fs.rmSync(spionLog, { force: true }); } catch { /* egal */ } }
+    function spionLesen() {
+      try { return fs.readFileSync(spionLog, "utf8").split("\n").filter(Boolean); } catch { return []; }
+    }
+    function provLauf(args, env) {
+      spionZuruecksetzen();
+      const r = cli(["scripts/provision-tenant.js", ...args], env, spionPreload);
+      return { ...r, erreicht: spionLesen() };
+    }
+
+    // Positivkontrolle: der Spion sieht wirklich. Ohne sie belegt keine der
+    // folgenden Leer-Aussagen etwas.
+    const positiv = provLauf(["--allow-production", "--spec", specDatei], PROD_SICHER);
+    check("8d.0 POSITIVKONTROLLE: bei sicherer Umgebung wird der Provisionierer geladen UND aufgerufen",
+      positiv.erreicht.includes("MODUL-GELADEN") && positiv.erreicht.includes("provisionTenant"),
+      JSON.stringify(positiv.erreicht));
+
+    const paketDatei2 = path.join(specDir, "paket2.json");
+    fs.writeFileSync(paketDatei2, JSON.stringify([JSON.parse(fs.readFileSync(specDatei, "utf8"))], null, 2));
+
+    // Jeder dieser Aufrufe MUSS mit Exitcode 2 enden, ohne den Provisionierer
+    // auch nur zu laden. Die Reihenfolge der Angaben ist bewusst durchmischt.
+    const UMGEHUNGSVERSUCHE = [
+      { name: "--validate + --deactivate", args: ["--allow-production", "--validate", "--deactivate", "mandat-x"] },
+      { name: "--validate + --teardown", args: ["--allow-production", "--validate", "--teardown", "mandat-x"] },
+      { name: "--validate + --paket + --ausfuehren", args: ["--allow-production", "--validate", "--paket", paketDatei2, "--ausfuehren"] },
+      { name: "Reihenfolge: --deactivate zuerst", args: ["--deactivate", "mandat-x", "--validate", "--allow-production"] },
+      { name: "Reihenfolge: --validate zuerst", args: ["--validate", "--allow-production", "--paket", paketDatei2, "--ausfuehren"] },
+      { name: "Reihenfolge: --ausfuehren zuerst", args: ["--ausfuehren", "--paket", paketDatei2, "--validate", "--allow-production"] },
+      { name: "Reihenfolge: --teardown ganz hinten", args: ["--validate", "--allow-production", "--teardown", "mandat-x"] },
+      { name: "zwei Hauptmodi: --deactivate + --teardown", args: ["--allow-production", "--deactivate", "a", "--teardown", "b"] },
+      { name: "zwei Hauptmodi: --paket + --deactivate", args: ["--allow-production", "--paket", paketDatei2, "--deactivate", "a"] },
+      { name: "drei Hauptmodi gleichzeitig", args: ["--allow-production", "--paket", paketDatei2, "--deactivate", "a", "--teardown", "b"] },
+      { name: "--ausfuehren ohne --paket", args: ["--allow-production", "--ausfuehren", "--spec", specDatei] },
+      { name: "--deactivate ohne eigenen Wert", args: ["--allow-production", "--deactivate", "--validate"] }
+    ];
+    for (const v of UMGEHUNGSVERSUCHE) {
+      // Bewusst mit VOLLSTAENDIG SICHERER Umgebung: dann kann der Abbruch nur am
+      // Widerspruch liegen, nicht an einem fehlenden Umgebungswert. Genau so ist
+      // der Nachweis scharf.
+      const r = provLauf(v.args, PROD_SICHER);
+      check(`8d.x ${v.name}: Exit 2, Provisionierer NICHT geladen, nichts geschrieben`,
+        r.status === 2 && r.erreicht.length === 0 && r.speicherUnveraendert === true,
+        `exit=${r.status} erreicht=${JSON.stringify(r.erreicht)} ${r.fehler.trim().slice(0, 160)}`);
+    }
+    check("8d.13 Die Abbruchmeldung benennt den Widerspruch",
+      /widersprüchlicher Aufruf/.test(
+        provLauf(["--allow-production", "--validate", "--deactivate", "mandat-x"], PROD_SICHER).fehler));
+
+    // Und dieselben Umgehungsversuche greifen auch bei UNSICHERER Umgebung nicht
+    // an den Provisionierer heran.
+    const unsicherUndWidersprüchlich = provLauf(
+      ["--allow-production", "--validate", "--paket", paketDatei2, "--ausfuehren"], PROD_BASIS);
+    check("8d.14 Auch bei unsicherer Umgebung: Exit 2, Provisionierer nicht geladen",
+      unsicherUndWidersprüchlich.status === 2
+        && unsicherUndWidersprüchlich.erreicht.length === 0
+        && unsicherUndWidersprüchlich.speicherUnveraendert === true);
+
+    // ── Die legitimen Aufrufe bleiben moeglich und werden richtig eingestuft ──
+    const echteValidierung = provLauf(["--allow-production", "--validate", "--spec", specDatei], PROD_BASIS);
+    check("8d.15 Echter reiner Validierungslauf: Exit 0, KEIN Schreibaufruf",
+      echteValidierung.status === 0
+        && !echteValidierung.erreicht.some((z) => /Tenant|provisionBatch/.test(z))
+        && echteValidierung.speicherUnveraendert === true,
+      `exit=${echteValidierung.status} erreicht=${JSON.stringify(echteValidierung.erreicht)}`);
+
+    const echterTrockenlauf = provLauf(["--allow-production", "--paket", paketDatei2], PROD_BASIS);
+    check("8d.16 Echter Paket-Trockenlauf: kein Exit 2, provisionBatch mit ausfuehren=false",
+      echterTrockenlauf.status !== 2
+        && echterTrockenlauf.erreicht.includes("provisionBatch:ausfuehren=false")
+        && echterTrockenlauf.speicherUnveraendert === true,
+      `exit=${echterTrockenlauf.status} erreicht=${JSON.stringify(echterTrockenlauf.erreicht)}`);
+
+    // Alle vier schreibenden Modi erreichen bei SICHERER Umgebung ihren Schreiber
+    // — der Riegel sperrt nichts Legitimes aus.
+    for (const [name, args, erwartet] of [
+      ["Einzelspec", ["--allow-production", "--spec", specDatei], "provisionTenant"],
+      ["--deactivate", ["--allow-production", "--deactivate", "mandat-x"], "deactivateTenant:mandat-x"],
+      ["--teardown", ["--allow-production", "--teardown", "mandat-x"], "teardownTenant:mandat-x"],
+      ["--paket --ausfuehren", ["--allow-production", "--paket", paketDatei2, "--ausfuehren"], "provisionBatch:ausfuehren=true"]
+    ]) {
+      const r = provLauf(args, PROD_SICHER);
+      check(`8d.x ${name} bei sicherer Umgebung erreicht seinen Schreiber`,
+        r.status !== 2 && r.erreicht.includes(erwartet),
+        `exit=${r.status} erreicht=${JSON.stringify(r.erreicht)}`);
+    }
+    // Und dieselben vier Modi werden bei UNSICHERER Umgebung samt und sonders
+    // geriegelt — inklusive derer, die vorher am Riegel vorbeikamen.
+    for (const [name, args] of [
+      ["Einzelspec", ["--allow-production", "--spec", specDatei]],
+      ["--deactivate", ["--allow-production", "--deactivate", "mandat-x"]],
+      ["--teardown", ["--allow-production", "--teardown", "mandat-x"]],
+      ["--paket --ausfuehren", ["--allow-production", "--paket", paketDatei2, "--ausfuehren"]]
+    ]) {
+      const r = provLauf(args, PROD_BASIS);
+      check(`8d.x ${name} bei unsicherer Umgebung: Exit 2, kein Schreibaufruf`,
+        r.status === 2 && !r.erreicht.some((z) => /Tenant|provisionBatch/.test(z))
+          && r.speicherUnveraendert === true,
+        `exit=${r.status} erreicht=${JSON.stringify(r.erreicht)}`);
+    }
+
+    // ── 8e · SYSTEMATISCH: alle Argumentkombinationen auf einmal ─────────────
+    //
+    // Einzelne Gegenbeispiele belegen nur, was jemand sich ausgedacht hat. Hier
+    // wird die INVARIANTE ueber den ganzen Kombinationsraum gefahren:
+    //
+    //   Bei einer Production-Umgebung, deren Speicherpfad NICHT belegt ist, darf
+    //   KEINE Kombination der vorhandenen Argumente einen schreibenden Aufruf
+    //   erreichen.
+    //
+    // Der Stapel-Trockenlauf (`provisionBatch` mit `ausfuehren=false`) zaehlt
+    // ausdruecklich NICHT als Schreibaufruf — er schreibt nichts.
+    console.log("\n== 8e · Systematischer Kombinationsdurchlauf ==");
+    const SWEEP_OPTIONEN = [
+      ["--validate"],
+      ["--deactivate", "mandat-x"],
+      ["--teardown", "mandat-y"],
+      ["--paket", paketDatei2],
+      ["--ausfuehren"],
+      ["--spec", specDatei]
+    ];
+    const lecks = [];
+    let kombinationen = 0;
+    for (let maske = 0; maske < (1 << SWEEP_OPTIONEN.length); maske += 1) {
+      const args = ["--allow-production"];
+      for (let i = 0; i < SWEEP_OPTIONEN.length; i += 1) {
+        if (maske & (1 << i)) args.push(...SWEEP_OPTIONEN[i]);
+      }
+      const r = provLauf(args, PROD_BASIS);
+      kombinationen += 1;
+      const schreibend = r.erreicht.filter((z) => /^(deactivateTenant|teardownTenant|provisionTenant)/.test(z)
+        || z === "provisionBatch:ausfuehren=true");
+      if (schreibend.length || r.speicherUnveraendert !== true) {
+        lecks.push({ args, exit: r.status, erreicht: r.erreicht });
+      }
+    }
+    check(`8e.1 Der Durchlauf hat wirklich alle ${1 << SWEEP_OPTIONEN.length} Kombinationen gefahren`,
+      kombinationen === (1 << SWEEP_OPTIONEN.length), `gefahren=${kombinationen}`);
+    check("8e.2 KEINE Kombination erreicht bei unbelegtem Speicherpfad einen Schreibaufruf",
+      lecks.length === 0,
+      `${lecks.length} Leck(s), erstes: ${JSON.stringify(lecks[0] || null)}`);
+
+    fs.rmSync(spionDir, { recursive: true, force: true });
+    fs.rmSync(specDir, { recursive: true, force: true });
+
     console.log("\n== 9 · Die VOLLE Stufe A bleibt inaktiv, Bestandsprofile unveraendert ==");
     //
     // KORRIGIERT (Betreiberbefund): Dieser Abschnitt legte fuenf Profile an und
@@ -724,10 +917,10 @@ function cli(skriptUndArgs, zusatzUmgebung = {}) {
 
   // FAIL CLOSED: eine Suite, die aus Versehen fast nichts prueft, darf nicht
   // gruen sein. Die Untergrenze wird bewusst mitgefuehrt.
-  // Die Untergrenze liegt dicht unter dem tatsaechlichen Umfang (Stand 04.09.: 88).
+  // Die Untergrenze liegt dicht unter dem tatsaechlichen Umfang (Stand 04.09.: 115).
   // Sie ist kein Schaetzwert, sondern ein Riegel gegen eine Suite, die durch einen
   // frueh abbrechenden Zweig fast nichts mehr prueft und trotzdem gruen endet.
-  const MINDESTZAHL = 84;
+  const MINDESTZAHL = 110;
   console.log(`\n${passed}/${passed + failed} Speicherpfad-Schutz-Assertions erfolgreich.`);
   if (passed + failed < MINDESTZAHL) {
     console.error(`FEHLGESCHLAGEN: nur ${passed + failed} Assertions gelaufen, erwartet mindestens ${MINDESTZAHL}.`);

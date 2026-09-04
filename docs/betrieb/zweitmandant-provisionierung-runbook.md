@@ -80,8 +80,17 @@ Jede dieser Variablen ist für einen Production-Lauf **freigabepflichtig**, auch
 sie nur im Prozess gesetzt wird (`CLAUDE.md` §4.9). Das Werkzeug gibt sein
 tatsächliches Schreibziel vor dem Lauf aus. Es gibt **keine Übergehungsoption**.
 
-**Nicht betroffen:** `--validate` (reine Prüfung), der Stapel-**Trockenlauf**
-(`--paket` ohne `--ausfuehren`) und jeder rein lokale Lauf ohne Supabase.
+**Nicht betroffen:** `--validate` **allein** (reine Prüfung, auch mit `--spec`), der
+Stapel-**Trockenlauf** (`--paket` ohne `--ausfuehren`) und jeder rein lokale Lauf ohne
+Supabase.
+
+**`--validate` entwertet keinen schreibenden Modus.** Der wirksame Vorgang wird genau
+einmal bestimmt; Riegel und Ausführung schalten auf dasselbe Ergebnis, unabhängig von der
+Argumentreihenfolge. `--deactivate` und `--teardown` sind **immer** schreibend, `--paket`
+nur mit `--ausfuehren`. Widersprüchliche Aufrufe (mehrere Hauptmodi, `--validate`
+zusammen mit einem Hauptmodus, `--ausfuehren` ohne `--paket`, ein Hauptmodus ohne eigenen
+Wert) enden mit **Exitcode 2**, bevor der Provisionierer überhaupt geladen ist
+(Sicherheitsrahmen §38.9).
 
 **Benötigte Freigabe für einen echten zweiten Mandanten:**
 1. Production-Write eines neuen Profils + Auth-Nutzers (`--allow-production`).

@@ -4997,7 +4997,7 @@ ausdrücklich „NICHT BELEGT" mit Grund). Der Bericht erscheint auch dann, wenn
 auf den Trockenlauf zurückfällt — der Betreiber sieht sein tatsächliches Schreibziel, bevor
 irgendetwas geschieht.
 
-### §38.5 Regressionsnachweis: `scripts/speicherpfad-schutz-test.js` (neu, 88/88)
+### §38.5 Regressionsnachweis: `scripts/speicherpfad-schutz-test.js` (neu, 115/115)
 
 Fail closed, verhaltensbasiert (echte `compactStore`/`saveCrawlRun`/`saveProfile`/`activateTenant`
 gegen den lokalen Dateispeicher, echte Kindprozesse für die CLI-Riegel), mit einer mitgeführten
@@ -5019,10 +5019,12 @@ läse die Suite bis zu 10 s alte Daten und wäre still falsch.
 | 8 (13) | Provisionierung · Aktivierung · Entfernung brechen mit `speicherpfad-unsicher` ab, **ohne zu schreiben**; der **Rückweg läuft bewusst weiter** (Notbremse) und fasst den Blob dabei nicht an; ohne Freigabe bleibt es der bisherige Trockenlauf; eine Attrappe läuft weiter |
 | 8b (6) | CLI-Ebene: Exitcode 2, ausgewiesenes Schreibziel, Stufe/Anzahl/Aktivierungsstatus, Trockenlauf unberührt |
 | 8c (15) | **`provision-tenant` als echtes CLI:** Production ohne `HELMUT_PROFILE_DB_MODE` · gesetzter, aber unwirksamer Profilmodus · fehlende Aufbewahrungsgrenze → je **Exit 2, nichts geschrieben**; vollständig sichere Umgebung → **nicht** geriegelt, Schreibziel trotzdem ausgewiesen; `--validate` und Stapel-Trockenlauf laufen weiter; kein blockierter Lauf erreicht den Provisionierer; keine Übergehungsoption |
+| 8d (25) | **Umgehungswege am echten CLI (§38.9):** `--allow-production --validate --deactivate` · `… --validate --teardown` · `… --validate --paket --ausfuehren` — je in umgekehrter Argumentreihenfolge, je bei unbelegtem Speicherpfad: **Exit 2, kein Schreibaufruf**, der Provisionierer wird **nie geladen** (`Module._load`-Spion). Gegenproben: dieselben Aufrufe bei sicherer Umgebung erreichen ihren Schreiber; `--validate --spec` bleibt lesend; `--paket` ohne `--ausfuehren` bleibt Trockenlauf; `--deactivate --teardown` und `--ausfuehren` ohne `--paket` enden als **Widerspruch** mit Exit 2 |
+| 8e (2) | **Systematischer Durchlauf aller 64 Argumentkombinationen** bei unbelegtem Speicherpfad: der Durchlauf ist nachweislich vollständig, und **keine** Kombination erreicht einen Schreibaufruf |
 | 9 (7) | **Die VOLLE Stufe A:** 20 Profile aus der verbindlichen Stufendefinition werden angelegt (keine zweite Liste), alle 20 gehören zur Stufe A, alle 20 sind inaktiv · Bestandsprofil byte-identisch · Ring nach **20** Schreibvorgängen weiterhin 36 · die Positionen 21–36 leben noch |
 
 **Testergebnisse (04.09., alle über `scripts/lokal.js`):** Offline-Gesamtlauf **319/319 Suiten grün**
-(318 vorher + die neue Suite) · Browser-/Mobile-Smoke **32 PASS / 0 FAIL** · neue Suite **88/88**. Zwei Suiten (`kalender-ics-test.js`, `lambda-paket-test.js`) schlugen anfangs fehl, weil
+(318 vorher + die neue Suite) · Browser-/Mobile-Smoke **32 PASS / 0 FAIL** · neue Suite **115/115**. Zwei Suiten (`kalender-ics-test.js`, `lambda-paket-test.js`) schlugen anfangs fehl, weil
 `node_modules` in der Sitzung fehlte; nach `npm ci` sind beide grün (134/134 bzw. 43/0) — kein
 Zusammenhang mit dieser Änderung.
 
@@ -5069,7 +5071,8 @@ Production-Schreibvorgang** und greift, wenn alle drei Bedingungen zusammenkomme
 Production-Backend (dieselbe Bedingung, mit der das Werkzeug seit jeher Production erkennt),
 ausdrückliches `--allow-production` und ein **schreibender** Modus. Schreibend sind
 `--spec`/`--spec-inline`, `--deactivate`, `--teardown` und `--paket --ausfuehren`; nicht
-schreibend sind `--validate` und der Stapel-Trockenlauf. Der Abbruch trägt `Exitcode 2`, das
+schreibend sind `--validate` und der Stapel-Trockenlauf. **Diese Einstufung war zunächst
+zweimal implementiert und über `--validate` umgehbar — geschlossen in §38.9.** Der Abbruch trägt `Exitcode 2`, das
 Schreibziel wird **auch im Erfolgsfall** ausgewiesen, und es gibt **keine Übergehungsoption**.
 Das Runbook (`zweitmandant-provisionierung-runbook.md`) ist mitgezogen — sein Ablauf ist
 tatsächlich betroffen. Fünfzehn verhaltensbasierte Assertions gegen das **echte CLI** als
@@ -5098,3 +5101,63 @@ worden · `compactStore` verkleinert `crawlRuns` weiterhin in **keiner** Konfigu
 (fünf Konfigurationen testgesichert) · die Aufbewahrungsgrenze wird im Anwendungscode an
 **genau einer** Stelle angewendet, in `saveCrawlRun` · der **Rückweg** bleibt als Notbremse
 ungeriegelt und ausführbar · es ist **keine** neue Übergehungsoption entstanden.
+
+### §38.9 Fünfte Nachbesserung: der Umgehungsweg über `--validate` (04.09., dritte Runde)
+
+**Der Befund.** Der Riegel aus §38.8 (2) und die Ausführung von `scripts/provision-tenant.js`
+beurteilten denselben Aufruf **zweimal, nach verschiedenen Regeln**:
+
+- `schreibenderModus()` gab **sofort `false`** zurück, sobald `--validate` im Aufruf stand.
+- Die Ausführung prüfte danach in dieser Reihenfolge: `--deactivate` → `--teardown` → `--paket`
+  → **erst zuletzt** `--validate`.
+
+Damit erreichten diese Aufrufe einen echten Schreibpfad, **ohne dass der Riegel überhaupt lief**:
+
+```
+node scripts/provision-tenant.js --allow-production --validate --deactivate <kennung>
+node scripts/provision-tenant.js --allow-production --validate --teardown  <kennung>
+node scripts/provision-tenant.js --allow-production --validate --paket <datei> --ausfuehren
+```
+
+Alle drei wurden vor der Korrektur **empirisch reproduziert** (Exit 0, Schreiber erreicht, kein
+Riegel). Ein Quelltextvergleich hätte den Befund nicht belegt — die beiden Regeln stehen weit
+auseinander im Programm und lesen einzeln jeweils plausibel.
+
+**Die Korrektur: eine einzige Einstufung.** `bestimmeVorgang()` bestimmt den wirksamen Vorgang
+**genau einmal**; Riegel **und** Ausführung schalten auf dasselbe Ergebnis (`vorgang.modus`,
+`vorgang.schreibend`). Die Hauptmodi stehen in **einer** Tabelle:
+
+| Hauptmodus | schreibend |
+|---|---|
+| `--deactivate <kennung>` | **immer** |
+| `--teardown <kennung>` | **immer** |
+| `--paket <datei>` | **nur** mit `--ausfuehren` (sonst Trockenlauf) |
+| kein Hauptmodus, `--validate` gesetzt | nein (reine Prüfung, auch mit `--spec`) |
+| kein Hauptmodus, kein `--validate` | ja (Einzelanlage) |
+
+`--validate` ist damit **kein Modus, der einen schreibenden Hauptmodus entwerten kann**. Die
+Reihenfolge der Argumente ist bedeutungslos — gelesen wird nur, **welche** Schalter vorhanden sind.
+
+**Widersprüchliche Aufrufe enden vor dem ersten möglichen Schreibvorgang.** `bestimmeVorgang()`
+liefert bei einem Widerspruch den Modus `widerspruch` mit `schreibend: true`; `weiseWidersprueche()`
+bricht dann mit **Exit 2** ab — **vor** `require("../lib/helmut/provisioning")`, also bevor
+irgendein Schreibpfad überhaupt geladen ist. Als Widerspruch gelten: mehrere Hauptmodi gleichzeitig ·
+`--validate` zusammen mit einem Hauptmodus · `--ausfuehren` ohne `--paket` · ein Hauptmodus ohne
+eigenen Wert (z. B. `--deactivate --teardown x`, wo `--deactivate` den nächsten Schalter als Wert
+gefressen hätte). Es gibt weiterhin **keine Übergehungsoption**.
+
+**Nachweis (verhaltensbasiert, echtes CLI als Kindprozess).** §38.5, Abschnitt 8d: 25 Assertions
+über die drei Umgehungswege, jeweils zusätzlich in **umgekehrter Argumentreihenfolge**, mit
+`Module._load`-Spion als Beweis, dass der Provisionierer **nie geladen** wurde; dazu die
+Gegenproben (sichere Umgebung → Schreiber erreicht; `--validate --spec` bleibt lesend; `--paket`
+ohne `--ausfuehren` bleibt Trockenlauf). Abschnitt 8e fährt **alle 64 Kombinationen** der sechs
+beteiligten Schalter gegen das echte CLI: **kein einziger Schreibaufruf** bei unbelegtem
+Speicherpfad.
+
+**Gegenprobe auf weitere Kombinationen.** Zusätzlich zum Suitendurchlauf wurde ein **breiterer**
+Durchlauf gefahren — acht Schalter statt sechs (zusätzlich `--allow-production` und
+`--weiter-bei-fehler`), also **256** Kombinationen — und zwar zweimal: gegen den Stand **vor** der
+Korrektur (`b69b175`, per `git archive` in ein Arbeitsverzeichnis ausgepackt) und gegen den
+korrigierten Stand. Vorher: **64 Lecks**, darunter Klassen, die im Befund gar nicht genannt waren,
+etwa `--deactivate` zusammen mit `--paket` **ohne** `--validate`. Nachher: **0 Lecks**. Damit ist
+nicht nur der gemeldete Weg geschlossen, sondern die ganze Klasse.
