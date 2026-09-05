@@ -5215,7 +5215,12 @@ bei 100; am 05.09. lief `understanding-rueckstand` um 11:30:13 auf `success` sta
 `mandate_profiles.updated_at` blieb bei allen 20 Zeilen auf dem `created_at` vom 04.09., obwohl `aktiv` von `false`
 auf `true` ging. Der relationale Zeitstempel belegt die Änderung **nicht**. Ursache und Behebung: §40.
 
-## §40 Lage-Check-Kapazität und `updated_at` (05.09.2026, PR #303, NICHT gemergt)
+## §40 Lage-Check-Kapazität und `updated_at` (05.09.2026, PR #303 — **gemergt als `33f1158`**)
+
+> **Stand der Überschrift korrigiert:** dieser Abschnitt entstand vor dem Merge und trug bis dahin den Zusatz
+> „NICHT gemergt". #303 wurde am 05.09. um 21:01:19 UTC gemergt; Merge-Commit, Eltern und Production-Deployment
+> sind in **§42** belegt. Die Ursachen- und Korrekturdarstellung unten bleibt unverändert gültig; der
+> unabhängig reproduzierte Kontextfehler und seine Behebung stehen in **§41.3**.
 
 ### §40.1 Der Blocker, Production belegt
 
@@ -5512,3 +5517,42 @@ Kommunikationsnachprüfung 21:10:17 UTC: keine neuen Audit Ereignisse oder Push 
 Gezielte A Nachprüfung 21:17 UTC: Der einzige offene Quellenauftrag `test-kohorte-a-014` wird erst seit 20:44:09.600 UTC fällig, also nach Ende des 20 Uhr Crawls. Null Versuche und kein Fehler; keine belegte Auslassung in diesem Lauf. Alle 20 Projektionen und zehn Briefings wurden wegen offener Vorbedingungen zurückgestellt, die anderen zehn Briefings wurden erst nach Crawlende fällig. Null abgeschlossene A Projektionen oder Briefings. Das erklärt den aktuellen Rückstand, ersetzt aber keinen vollständigen Stufenbeleg.
 
 Testumgebung: Ein erster Gesamtlauf wurde nach zwei fehlenden Browser Binärdateien abgebrochen. Die vorinstallierte Laufzeit lud Playwright 1.62.1, vorhanden war Chromium Revision 1194. Der abgeschlossene Gesamtlauf und die Browserprüfung nutzen die bereits vorhandene passende isolierte Playwright Version 1.56.1. Kein Repository Paket geändert. Ein unnötiger Browserdownload nach Zeitüberschreitung beendet. Jeder Test über `scripts/lokal.js`; der kanonische Runner erzwingt den Offline Netzriegel.
+
+
+## 43 · Nachtrag nach #305 und konsolidierter Dokumentations PR #304
+
+Der Betreiber bestätigt, dass Claude Code vollständig beendet ist und keine parallele Ausführung mehr stattfindet. Die Dokumentationsänderung #304 ist damit zugeordnet. Ihr ursprünglicher Inhalt wurde mit #305 abgeglichen; belastbare Angaben bleiben erhalten, unbelegte Aussagen über einen erfolgreichen Production Lage Check oder eine ausschließlich durch Timeout verhinderte Zustellung werden nicht übernommen. Freigaben und Grenzen aus §41 bleiben unverändert.
+
+### 43.1 #305: Merge, Eltern, Deployment und Tests
+
+PR [#305](https://github.com/ernisch/helmut-pilot/pull/305), Kopf **`972e2f47bda779c9d9f05f8cc8ad48213709d2aa`**, Basis **`33f1158694273425e3430344a850c9d1c9335625`**: sieben Dateien, 257 Einfügungen, 31 Entfernungen. Lokaler Commit `4e6943d6984ddef22a4738b56694c3d09990c0e8` und veröffentlichter Kopf haben exakt denselben Dateibaum **`896045168279edc8fa115a11360f8e8fad2ba56c`**. 321/321 kanonische Offline Suiten, 32/32 Browserprüfungen, 12 neue Fehlerprüfungen, 65 bestehende Vorwärtsprüfungen, Größenprüfung 4/4 und 43 relative Links grün. Keine neue Migration oder Kommunikationsöffnung.
+
+Externe Prüfung am exakten Kopf: GitHub Actions Syntax und Offline sowie Browser erfolgreich, Vercel Preview Comments erfolgreich, Vercel Status erfolgreich. Workflow `33993132693` abgeschlossen, Offline Ende 21:37:17 UTC. Keine Reviews und keine offenen Review Threads, mergefähig und konfliktfrei. Vorschau **`dpl_4bDkmadJ33xbzx49TPVHRXhms7m9` READY**, Commit exakt gleich.
+
+Merge am 06.09. **00:47:24 Türkei** / 05.09. **23:47:24 Berlin, 21:47:24 UTC**, Methode `merge`, `expected_head_sha` gesetzt: **`ab0467acf528131d4edeaf3729df3e0fe6db053f`**, genau zwei Eltern **`33f1158694273425e3430344a850c9d1c9335625`** und **`972e2f47bda779c9d9f05f8cc8ad48213709d2aa`**. Automatisches Production Deployment **`dpl_BMqhrgLri5VovsY1ekYG9e4RKwDn` READY**, Quelle git, Ziel production, `githubCommitSha` exakt Merge, Alias `helmut-pilot.vercel.app`. Kein manueller Deploy, Rollback oder Revert.
+
+Die Korrektur aus §42.4 ist damit ausgerollt. Kein Production Anlagefehler zur Probe erzeugt, keine Aktivierung und kein Fachlauf durch diese Sitzung. Ein erhaltener Teilbestand ist kein bestätigter Erfolg; ein Konto ohne Profil bleibt geschützt.
+
+### 43.2 Natürlicher Fortschritt und klarer Kostenumfang
+
+Rein lesend 05.09. 21:44 bis 21:49 UTC: Lauf **`understanding-cron-20260905213001-966l9`**, 21:30:01.434 bis 21:33:45.291 UTC, **223857 ms**, Status success, **20 verarbeitet und gespeichert, 30 zurückgestellt, null Fehler**. Laufcommit exakt `33f1158694273425e3430344a850c9d1c9335625`. Damit natürliche Ausführung nach #303 belegt, kein kontrollierter Lage Check.
+
+**Kostenumfang: gesamtes Helmut System, UTC Tag 05.09.2026 seit 00:00 bis etwa 21:45 Uhr, nur KI Modellkosten.** Nutzungsprotokoll `main-auth.data.llmUsage`: **118 erfolgreiche Modellaufrufe, 637856 protokollierte Token, geschätzt 0,385127 USD**; keine unbekannte Kostenangabe innerhalb der vorhandenen Protokolle. Kein Betrag pro Nutzer oder pro 20 Profile; zu diesem Zeitpunkt 25 aktive Profile, außerdem gemeinsame Hintergrundarbeit. Vercel, Datenbank und andere Betriebskosten sind nicht enthalten. Kein abgeschlossener Tagesbetrag oder Providerrechnungsbeleg.
+
+Reservierungszähler **124**, vorher 104. Der natürliche Lauf erhöhte ihn um 20, während 19 neue Nutzungsprotokolle mit geschätzt 0,062345 USD hinzukamen. Reservierungen, gespeicherte Ergebnisse und protokollierte Modellaufrufe sind unterschiedliche Messgrößen; keine vollständige Kostenerfassung behaupten. Der bisherige Stopp bei 100 ist widerlegt. Exakter Deckel 2416 und Reserve 702 bleiben als Rohwerte unbelegt. Tagesgrenze 10 USD und interner Sicherheitsstopp bei prognostiziert 9 USD unverändert, vier wirkungslose Testlaufwerte weiterhin kein Schutz.
+
+Bestand: **29 Mandatsprofile, 25 aktiv, vier inaktiv, null Löschmarken**; A 20 aktiv, B/C null. **30 relationale Identitätsprofile; 25 Auth Konten, drei aktiv, darunter 20 Kohortenkonten mit null aktiven Konten.** `crawlRuns` 20, Migrationen 35. A hat 19 erledigte Quellenaufträge, einen wartenden Quellenauftrag und je 20 wartende Projektionen und Briefings. Fortschritt ist belegt, vollständiger Fachzyklus von A weiterhin offen.
+
+Gesamtwarteschlange: `source_fetch` 6207 erledigt / 95 wartend, `document_understanding` 1627 / 41, `mandate_projection` 70 / 20, `briefing_materialization` 68 / 22. Keine anderen Statuswerte in dieser Momentaufnahme. Ein gewöhnlicher Rückstand allein ist keine Stoppschwelle; vor B fehlen weiterhin Lagebeleg, vollständige A Abnahme und geschützter Ausführungszugang.
+
+Nachprüfung nach #305 um **21:53:00.219334 UTC**: dieselben Bestandszahlen, keine neuen Push Ereignisse seit 19:11 UTC, Reservierungszähler 124 und geschätzte KI Kosten 0,385127 USD unverändert. Vollständiger Profilhash `ede70d5ae7b0bcdd4ea4c07129b92cda` mit `md5(jsonb_agg(to_jsonb(p) ORDER BY user_id)::text)` und Kontenhash `3e5eb40a84e4161a2fd1d2a24abc0761` mit `md5((data->'users')::text)` von `main-auth` exakt gleich der Grundlinie um 21:45 UTC. Diese Hashformeln unterscheiden sich von §42.2; nur identisch berechnete Werte wurden verglichen.
+
+### 43.3 Kommunikation, Zeitstempel und Fortsetzung
+
+Vollständige Storeprüfung um 21:48:41 UTC: `pushEvents` in allen zehn betroffenen Stores einschließlich `main-p-*` geprüft, nicht nur Altblob `main`. Jüngster Eintrag **05.09. 05:00:36.829 UTC**, **keine neuen Push Ereignisse seit 19:11 UTC**. Im gesamten UTC Tag existieren fünf Push Ereignisse mit Summe `delivered=1`, bereits vor dieser Sitzung. Auditprüfung aller Stores: keine neuen Ereignisse seit 19:11 UTC. Separater Monitoring Webhook unverändert **06:00:53.313 UTC, sent true, Status 200**. Keine Tagesnull behaupten; durch diese Arbeiten keine Zustellung ausgelöst. Globale Kommunikationssperre vor kontrolliertem Lage Check weiterhin wirksam zu belegen.
+
+`max(mandate_profiles.updated_at)` um 21:48:14 UTC: **`2026-09-04 11:40:34.994784+00`**. #303 setzt den Zeitstempel bei echter Änderung, ohne rückwirkende Migration. Ein unmittelbar nach Deployment unveränderter Wert ist deshalb erwartbar, aber kein Ersatz für den vollständigen Inventarvergleich. Die genaue Kontexttrennung ist bereits in [cron-globalphase §8a](cron-globalphase.md) beschrieben.
+
+Nächster natürlicher Lage Check laut unverändertem Cronplan: **06.09. 13:00 Türkei / 12:00 Berlin / 10:00 UTC**, nur geplanter Termin. Keine Behauptung seiner künftigen erfolgreichen Ausführung oder Versandfreiheit. Keine Vercel Variable verändert. Vercel Metadatenzugriff funktioniert; dem getesteten Skriptausführer fehlen weiterhin sicher bereitgestellte Production Zugangsdaten und belegte Betriebsparameter. Kein Secret in Chat oder Repository, keine Zugriffsumgehung oder neuer Ersatzweg.
+
+B mit 75 und C mit 400 Profilen bleiben nicht angelegt und nicht aktiviert. Vier andere inaktive Profile bleiben unangetastet. Bis zu belegtem Ausführungszugang und erfüllten Stufenbedingungen **BLOCKIERT bei 25 aktiven Testprofilen**. Der bestehende PR [#304](https://github.com/ernisch/helmut-pilot/pull/304) dient als konsolidierter Dokumentationsnachtrag nach #305; seine eigenen Merge und Deployment Metadaten werden nach Abschluss geprüft, nicht im Voraus erfunden.
