@@ -69,8 +69,12 @@ function check(name, cond) {
     rows.set(key, (rows.get(key) || 0) + 1);
     return [row];
   };
-  const run1 = await runBackfill([testPoliticianOne, testPoliticianTwo], { execute: true, deps: { upsert } });
-  const run2 = await runBackfill([testPoliticianOne, testPoliticianTwo], { execute: true, deps: { upsert } });
+  // `leseZeile` MUSS mitinjiziert werden (seit dem Sprint 05.09. liest saveProfileToDb die
+  // Bestandszeile). Ohne Injektion fiele der Lesevorgang auf das echte `tenantRequest` gegen
+  // SUPABASE_URL zurueck — die Suite verliesse offline und der NETZ-GUARD schlaegt an.
+  const leerImBestand = async () => [];
+  const run1 = await runBackfill([testPoliticianOne, testPoliticianTwo], { execute: true, deps: { upsert, leseZeile: leerImBestand } });
+  const run2 = await runBackfill([testPoliticianOne, testPoliticianTwo], { execute: true, deps: { upsert, leseZeile: leerImBestand } });
   check("Execute-Lauf schreibt beide Profile", run1.written === 2 && run1.errors.length === 0);
   check("Zweiter Lauf schreibt erneut (idempotent, keine Fehler)", run2.written === 2 && run2.errors.length === 0);
   const distinctKeys = [...rows.keys()].sort();
@@ -81,10 +85,32 @@ function check(name, cond) {
 
   console.log("== 6) saveProfileToDb nutzt korrektes on_conflict-Ziel je Tabelle ==");
   const seen = [];
-  const recordingUpsert = async (table, row, onConflict) => { seen.push({ table, onConflict }); return [row]; };
-  await storage.saveProfileToDb({ id: testPoliticianOne.id, fullName: "x" }, { strict: true, upsert: recordingUpsert });
+  const recordingUpsert = async (table, row, onConflict) => { seen.push({ table, onConflict, row }); return [row]; };
+  // `leseZeile` MUSS injiziert werden: seit dem Sprint 05.09. liest saveProfileToDb die
+  // Bestandszeile, um `updated_at` nur bei echter Aenderung zu setzen. Ohne Injektion faellt
+  // der Lesevorgang auf das echte `tenantRequest` zurueck und die Suite verliesse offline.
+  const bestand = [];
+  const leseZeile = async (id) => bestand.filter((z) => z.user_id === id);
+  await storage.saveProfileToDb({ id: testPoliticianOne.id, fullName: "x" }, { strict: true, upsert: recordingUpsert, leseZeile });
   check("profiles -> on_conflict=id", seen.some((s) => s.table === "profiles" && s.onConflict === "id"));
   check("mandate_profiles -> on_conflict=user_id", seen.some((s) => s.table === "mandate_profiles" && s.onConflict === "user_id"));
+
+  console.log("== 7) updated_at nur bei tatsaechlicher Aenderung (Befund 05.09.) ==");
+  const mandatsZeile = () => (seen.filter((s) => s.table === "mandate_profiles").pop() || {}).row || {};
+  check("Neue Zeile: updated_at wird gesetzt", typeof mandatsZeile().updated_at === "string");
+  check("created_at wird NIE geschrieben", mandatsZeile().created_at === undefined);
+  // Bestand nachbilden: exakt die eben geschriebene Zeile, plus die Spalten, die Postgres
+  // beim INSERT selbst gesetzt haette.
+  bestand.push({ ...mandatsZeile(), created_at: "2026-09-04T11:38:24.218261+00" });
+  seen.length = 0;
+  await storage.saveProfileToDb({ id: testPoliticianOne.id, fullName: "x" }, { strict: true, upsert: recordingUpsert, leseZeile });
+  check("Inhaltsgleicher zweiter Schreibvorgang setzt updated_at NICHT",
+    mandatsZeile().updated_at === undefined, JSON.stringify(mandatsZeile().updated_at));
+  bestand[0] = { ...bestand[0], aktiv: false };
+  seen.length = 0;
+  await storage.saveProfileToDb({ id: testPoliticianOne.id, fullName: "x" }, { strict: true, upsert: recordingUpsert, leseZeile });
+  check("Eine echte Aenderung (aktiv false -> true) setzt updated_at",
+    typeof mandatsZeile().updated_at === "string");
 
   process.env.HELMUT_STORAGE_BACKEND = "";
   delete process.env.HELMUT_PROFILE_DB_MODE;

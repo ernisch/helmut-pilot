@@ -12,7 +12,7 @@ const { bewerteBundestagsprofil } = require("./lib/helmut/profile-readiness");
 const sourceSafety = require("./lib/helmut/sourceSafety");
 // Kanonische Klassifizierung real/synthetisch (Vorrang der realen Mandate).
 const mandatsklasse = require("./lib/helmut/mandatsklasse");
-const { runLageCheck, runSourceCrawl, runGlobaleErfassung, runMandatsProjektion } = require("./lib/helmut/scheduler");
+const { runLageCheck, runSourceCrawl, runGlobaleErfassung, runMandatsProjektion, runGeteilteLageErfassung } = require("./lib/helmut/scheduler");
 const { buildLearningProfile } = require("./lib/helmut/learning");
 const { deleteProfileData, exportProfileData, getInteractions, getLatestCrawlRun, listCrawlRuns, getLatestLageCheck, getLatestPipelineDebugReport, getProfile, listProfiles, listFullProfiles, getStorageStatus, getStoreSummary, getTasks, getUserNotes, removePushSubscription, saveInteraction, saveProfile, saveFeedback, listFeedback, setFeedbackDone, savePushSubscription, saveTask, saveUserNote, updateTaskStatus, listPushEvents, saveKnowledgeObject, getKnowledgeObjectByVorgang, listPendingKnowledgeObjects, savePendingKnowledgeObject, listFailedKnowledgeObjects, resetUnderstandingToPending, markUnderstandingTerminal, getUnderstandingRetries, saveUnderstandingRetries, readAuthStore, writeAuthStore, getLlmUsage, getLlmUsageToday, getLlmUsageBreakdownToday, getRunCostReport, llmPriceProvenance, recordLlmUsage, canSpendLlm, getAdminStatsCosts, getAdminStatsCrawl, getAdminStatsOverview, getAdminStatsCrawlReport, getKnowledgeObjectCount, getClassificationCoverage, getAdminPeriodStats, listRecentRawDocuments, listKnowledgeObjects, getSources, getSourcesForVorgang, v3StoreReady, releasePipelineLock, understandingLockEnabled, bulkResetUnderstandingFailed, saveAdminRecoveryLastRun, getAdminRecoveryLastRun, getLatestCompleteKnowledgeObjectAt, saveWatchdogState, getLatestWatchdogState, tenantJwtModeEnabled, saveKnowledgeObjectEnrichment, profileDbModeEnabled, profileDbExclusiveEnabled, getProfileTelemetry, getProfileFromDb, diagnoseTenantJwt, recordProcessRun, listProcessRuns, saveMonitoringDeliveryState, getMonitoringDeliveryState, getLlmCostSince, getAdminCostsPerUser, listSourceArchitectureRows, getSourceModeShadowLastRun, listSourceCrawlTelemetry, readCronFairnessState, saveCronFairnessState } = require("./lib/helmut/storage");
 const llmBudgetLib = require("./lib/helmut/llm-budget");
@@ -1598,16 +1598,43 @@ async function handleRequest(request, response) {
       // Aeusseres Gesamt-Timeout 280s < maxDuration 300s: die Antwort kommt IMMER,
       // auch wenn ein einzelner Mandats-Check sein Einzelbudget ausschoepft.
       const laufId = helmutRunId("cron-lage-check", t0);
-      const summary = await withTimeout(runCronForTenants("lage-check", async (tenantId) => {
+      // GETEILTE ERFASSUNG (Befund 05.09.2026): der Quellenabruf des Lage-Checks ist fachlich
+      // global und lief trotzdem je Mandat. Er laeuft jetzt EINMAL im Vorlauf; jedes Mandat
+      // bekommt danach exakt die Sicht, die sein Einzelabruf ergeben haette. Scheitert der
+      // Vorlauf, faellt jedes Mandat unveraendert auf seinen Einzelabruf zurueck.
+      let lageErfassungLauf = null;
+      const summary = await withTimeout(runCronForTenants("lage-check", async (tenantId, scheibe) => {
         const profile = await activeProfile(tenantId);
         const val = validateProfile(profile);
         if (val.disabled) return { skipped: true, reason: "profil-deaktiviert" };
-        // RESTZEITWACHE (§29): absolute Deadline = Antwortzeitpunkt des aeusseren
-        // 280s-Race. Auch ein nach innerem Timeout verlassener Lauf startet damit
-        // keinen Modellaufruf mehr, der das Funktionsende nicht ueberleben wuerde.
-        const lageCheck = await withTimeout(runLageCheck(tenantId, { deadlineMs: t0 + 280000 }), 240000, "cron-lage-check")
+        // OBERGRENZE DIESES MANDATS (Befund 05.09.2026). Bis hierher stand hier ein fester
+        // innerer Timeout von 240 000 ms — exakt so gross wie das GESAMTE Laufbudget. Ein
+        // einziges langsames Mandat konnte damit alle uebrigen aushungern, und genau das ist
+        // am 05.09. passiert (Lauf `cron-lage-check-20260905100015-he8tk`: 241,7 s, ein Mandat
+        // begonnen und in seinen eigenen Timeout gelaufen, vier mit `zeitbudget` nie begonnen).
+        // Jetzt gilt die Zeitscheibe der Fairnessschleife: der faire Anteil an der RESTZEIT,
+        // nie mehr als das aeussere Funktionsfenster. Sie ist eine Obergrenze, keine
+        // Reservierung — wer frueher fertig ist, gibt die Restzeit sofort zurueck.
+        const funktionsFristMs = t0 + 280000;
+        const mandatsFristMs = Number(scheibe && scheibe.fristMs) > 0
+          ? Math.min(Number(scheibe.fristMs), funktionsFristMs)
+          : funktionsFristMs;
+        const mandatsBudgetMs = Math.max(1, Math.min(
+          Number(scheibe && scheibe.scheibeMs) > 0 ? Number(scheibe.scheibeMs) : 240000,
+          funktionsFristMs - Date.now()
+        ));
+        // RESTZEITWACHE (§29): absolute Deadline, jetzt zusaetzlich durch die Mandatsscheibe
+        // begrenzt. Auch ein nach innerem Timeout verlassener Lauf startet damit keinen
+        // Modellaufruf mehr, der das Funktionsende nicht ueberleben wuerde.
+        const lageCheck = await withTimeout(runLageCheck(tenantId, {
+          deadlineMs: mandatsFristMs,
+          geteilteErfassung: lageErfassungLauf
+        }), mandatsBudgetMs, "cron-lage-check")
           .catch((error) => ({ status: "stable", bounded: true, reason: "lage-check-timeout", error: error && error.message }));
-        const push = await withTimeout(sendLageChangePush(lageCheck, profile), 30000, "cron-lage-push")
+        // Der Push teilt sich die Scheibe mit dem Check: er bekommt hoechstens die Restzeit
+        // dieses Mandats, nie mehr die vollen 30 s aus einem bereits erschoepften Budget.
+        const pushBudgetMs = Math.max(1, Math.min(30000, mandatsFristMs - Date.now()));
+        const push = await withTimeout(sendLageChangePush(lageCheck, profile), pushBudgetMs, "cron-lage-push")
           .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
         // P29-1: der innere Timeout maskiert sich fuer die PUSH-Logik bewusst als
         // status:'stable' (kein Push auf unbekannter Lage) — fuer die Fairness-
@@ -1619,7 +1646,16 @@ async function handleRequest(request, response) {
           push,
           ...(lageTimeout || pushTimeout ? { ok: false, bounded: true, reason: lageTimeout ? (lageCheck.reason || "lage-check-timeout") : "push-timeout" } : {})
         };
-      }, { deadlineMs: 240000, runId: laufId }), 280000, "cron-lage-check-gesamt")
+      }, {
+        deadlineMs: 240000,
+        runId: laufId,
+        vorlauf: async (tenantIds, opts) => {
+          lageErfassungLauf = await runGeteilteLageErfassung({
+            tenantIds, runId: opts && opts.runId, deadlineMs: opts && opts.fristMs
+          });
+          return lageErfassungLauf;
+        }
+      }), 280000, "cron-lage-check-gesamt")
         .catch(async (error) => {
           const vermerk = await markiereAeusseresCronTimeout("lage-check", laufId, t0);
           return {
@@ -7514,7 +7550,7 @@ function sendMandateSelectionRequired(response, mandates = []) {
 // nachrechenbare Obergrenze ceil(n/k). Nicht begonnene Mandate werden NICHT als
 // versucht vermerkt und bleiben deshalb im naechsten Lauf vorn.
 // `HELMUT_CRON_FAIRNESS=off` ist der Rueckweg auf das alte Verhalten ohne Codeaenderung.
-async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, runId = null } = {}) {
+async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, runId = null, vorlauf = null } = {}) {
   const startedMs = Date.now();
   // R-6: die Laufkennung kommt jetzt von AUSSEN, wenn der Aufrufer sie kennt. Nur so kann
   // ein aeusserer Timeout-Catch (Promise.race, der NIE zurueckkehrt) genau DIESEN Lauf
@@ -7532,6 +7568,26 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, run
     }
     return { ok: !ladeStoerung, skipped: true, reason, tenants: 0, results: [] };
   }
+  // VORLAUF (optional, Befund 05.09.2026): einmalige, MANDANTENNEUTRALE Arbeit, die sonst
+  // je Mandat erneut liefe. Er laeuft NACH der Mandantenaufloesung und VOR der Schleife, damit
+  // er die tatsaechliche Mandatsliste kennt. Ein Fehler im Vorlauf bricht den Cron NICHT ab —
+  // die Mandate laufen dann unveraendert einzeln weiter (fail-safe, kein falsches Gruen).
+  let vorlaufErgebnis = null;
+  if (typeof vorlauf === "function") {
+    const vorlaufStart = Date.now();
+    vorlaufErgebnis = await vorlauf(tenantIds, {
+      runId: laufkennung,
+      // Absolute Frist des Gesamtlaufs — der Vorlauf teilt sich das Budget mit der
+      // Mandatsphase und erhoeht es NICHT.
+      fristMs: startedMs + deadlineMs
+    }).catch((error) => {
+      console.error(`[cron/${cronName}/vorlauf] fehlgeschlagen (Mandate laufen einzeln weiter):`, error && error.message);
+      return null;
+    });
+    console.log(`[cron/${cronName}/vorlauf] ${Date.now() - vorlaufStart}ms mandate=${tenantIds.length}`
+      + ` status=${(vorlaufErgebnis && vorlaufErgebnis.status) || "keiner"} lauf=${laufkennung}`);
+  }
+
   const fairnessAn = cronFairness.fairnessEnabled();
   const lauf = await cronFairness.runTenantsFairly({
     cronName,
@@ -7539,9 +7595,12 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, run
     // Zustands-IO. Der Rueckweg ist damit eine Env-Variable, kein Deployment.
     reihenfolge: fairnessAn ? "fair" : "unveraendert",
     tenantIds,
-    perTenant: async (tenantId) => {
+    perTenant: async (tenantId, scheibe) => {
       try {
-        return await perTenant(tenantId);
+        // `scheibe` = Zeitscheibe dieses Mandats aus der Fairnessschleife (Obergrenze, keine
+        // Reservierung). Sie wird unveraendert durchgereicht; Aufrufer, die sie nicht kennen,
+        // ignorieren sie.
+        return await perTenant(tenantId, scheibe, vorlaufErgebnis);
       } catch (error) {
         // Fehler-Isolation: nur DIESES Mandat scheitert; Fehler wird protokolliert.
         console.error(`[cron/${cronName}] Mandant ${tenantId} fehlgeschlagen (isoliert):`, error && error.message);

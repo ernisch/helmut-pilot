@@ -326,7 +326,10 @@ const store = (llmUsage, processRuns = []) => async () => ({ llmUsage, processRu
   // Alle Aufrufe der beiden Understanding-Einstiege samt Optionsobjekt einsammeln.
   const aufrufe = (code) => [...code.matchAll(/run(?:Pending)?UnderstandingShadow\(\s*[A-Za-z0-9_]+\s*,\s*\{([\s\S]{0,400}?)\}\s*\)/g)].map((m) => m[1]);
   const schedulerAufrufe = aufrufe(src("lib/helmut/scheduler.js"));
-  check("scheduler.js: beide Understanding-Aufrufe gefunden", schedulerAufrufe.length === 2, `gefunden=${schedulerAufrufe.length}`);
+  // DREI seit dem Sprint 05.09.: Crawl-Pfad (eager), Lage-Pfad (mandatsweise Faltung) und
+  // die GETEILTE Lage-Erfassung, die den Korpus einmal je Lauf global versteht. Die Zahl ist
+  // bewusst gepinnt: ein VIERTER Einstieg waere ein neuer Kostenweg und muss auffallen.
+  check("scheduler.js: alle drei Understanding-Aufrufe gefunden", schedulerAufrufe.length === 3, `gefunden=${schedulerAufrufe.length}`);
   check("scheduler.js: jeder Aufruf reicht runId durch", schedulerAufrufe.every((o) => /\brunId\b/.test(o)));
   const serverSrc = src("server.js");
   // Der dedizierte Understanding-Cron erzeugt eine eigene Laufkennung.

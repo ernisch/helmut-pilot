@@ -415,9 +415,18 @@ async function main() {
     const serverJs = src("server.js");
     const pipeline = src("lib/helmut/scalable-pipeline.js");
     const aiJs = src("lib/helmut/ai.js");
+    // Seit dem Sprint 05.09. ist die Deadline des Lage-Checks das MINIMUM aus der Zeitscheibe
+    // des Mandats und dem Funktionsfenster t0+280000 — also STRENGER als vorher, nie lockerer.
     check("§9.1 Lage-Pfad reicht die absolute Deadline in das Verstehen",
       /deadlineMs:\s*Number\(optionen\.deadlineMs\)/.test(scheduler)
-      && /runLageCheck\(tenantId,\s*\{\s*deadlineMs:\s*t0 \+ 280000\s*\}\)/.test(serverJs));
+      && /const funktionsFristMs = t0 \+ 280000;/.test(serverJs)
+      && /Math\.min\(Number\(scheibe\.fristMs\), funktionsFristMs\)/.test(serverJs)
+      && /runLageCheck\(tenantId,\s*\{\s*\n\s*deadlineMs: mandatsFristMs,/.test(serverJs));
+    check("§9.1b Auch der Vormerk-Loop des Lage-Pfads ist absolut begrenzt (war unbegrenzt)",
+      /vormerkDeadlineMs/.test(scheduler) && /vormerkBudgetMs/.test(scheduler)
+      && /const LAGE_VORMERK_BUDGET_MS = 20000;/.test(scheduler));
+    check("§9.1c Das Modellbudget des Lage-Pfads folgt der Restzeit statt fester 60 s",
+      /Math\.min\(lageRegelBudgetMs, verbleibendMs - LAGE_NACHLAUF_RESERVE_MS\)/.test(scheduler));
     check("§9.2 Eager-Pfad (Crawl) reicht eine absolute Deadline in das Verstehen",
       /deadlineMs:\s*eagerDeadlineMs/.test(scheduler));
     check("§9.3 Globalphase reicht die absolute Deadline in das Verstehen",
