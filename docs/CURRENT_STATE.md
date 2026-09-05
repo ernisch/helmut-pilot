@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-09-05, 21:05 UTC — nach dem Merge von #303.** `main`-Kopf **`33f1158`**, Production-Deployment **`dpl_36dEh3b6RPZBW5Ufokk2PuESJyZ2` READY** (§2). Production rein lesend bestätigt: **29 Mandatsprofile, 25 aktiv, 4 inaktiv**, Stufe A **20/20 aktiv**, B und C **0 angelegt**, 0 Löschmarken, `crawlRuns` **20**, Migrationen **35**. Alle Profile sind laut Betreiber synthetische Testprofile. Ziel ist **exakt 500 aktiv**; B (75) und C (400) sind jeweils nach eigener Abnahme bedingt freigegeben. **BLOCKIERT am sicheren Ausführungszugang**: die vorgeschriebenen Skripte haben in der ChatGPT-Sitzung keine Production-Zugangsdaten. **Der KI-Tagesdeckel ist erstmals mit einer Zahl belegt: der Zähler stand am 05.09. um 20:03 UTC auf 104** — er steigt also über 100, die Anhebung ist wirksam (§4). Der **kontrollierte Lagebeweis fehlt weiterhin**: der erste Lage-Check mit dem neuen Code läuft am 06.09. um 10:00 UTC. Vollbelege und Freigabegrenzen: [SR §41](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). Nur entscheidungsrelevanter Status; [Ablageregeln](archive/README.md), `CLAUDE.md` §9.
+**Stand: 2026-09-05, 21:53 UTC.** PR **#303 und #305 gemergt**, fachlicher `main` **`ab0467a`**, Production **`dpl_BMqhrgLri5VovsY1ekYG9e4RKwDn` READY**, exakter Merge Commit belegt. Weiter **29 Profile, 25 aktiv, vier inaktiv**, A 20/20 aktiv, B/C nicht angelegt, null Löschmarken, `crawlRuns` 20, Migrationen 35. Alle Profile sind laut Betreiber Testprofile. Ziel exakt 500, B (75) und C (400) getrennt bedingt freigegeben. Tageszähler **124**. **0,385127 USD geschätzte KI Modellkosten für das gesamte System am 05.09. von 00:00 bis etwa 21:45 UTC**, aus 118 Nutzungsprotokollen; kein Preis pro Profil, keine vollständigen Betriebskosten und keine Providerrechnung. Alter Stopp bei 100 überschritten, exakter Deckel 2416 nicht bewiesen. **BLOCKIERT am sicheren Ausführungszugang** für kontrollierten Lage Check und Kohortenanlage. Claude Code arbeitet laut Betreiber nicht mehr parallel. Nachweise: [SR §43](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 
 **Kernlage:** Der Warteschlangenmotor (`HELMUT_SCALABLE_PIPELINE=on`) ist **seit 23.08.2026 in Production eingeschaltet**, Modus **`HELMUT_JOB_DISPATCH_MODE=shadow`** (Cron-Antrieb, kein Ereignis-Antrieb, kein AWS). Die **fünf Mandate sind mit 376 echten Abschlüssen bewiesen**, Morgen-/Lagelauf 5/5, 0 Verlust, alle elf §28.6-Kontrollen erfüllt ([`op30-aktivierung-5-mandate §30.7`](betrieb/op30-aktivierung-5-mandate.md)). **Seit 30.08. stehen 3 Vorgänge auf `unbekannt` (§14–22).** **Der Selbstweck ist lokal belegt, in Production nie ausgeführt.**
 
@@ -10,21 +10,21 @@
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **`main`-Kopf (05.09., 21:01:19 UTC): `33f1158694273425e3430344a850c9d1c9335625`** — Merge von **#303**, Eltern `9407f8c` (alter Kopf) und `9aa95e0` (PR-Kopf). Production-Deployment **`dpl_36dEh3b6RPZBW5Ufokk2PuESJyZ2`, READY** (target `production`, `githubCommitSha` = Merge-Commit) — rein lesend bestätigt. Maßgeblich bleiben Git-Historie und Deployment-Metadaten.
-- **Letzter fachlich wirksamer Production-Code: `33f1158`** (Merge von **#303** — Lage-Check-Kapazität und `updated_at`, §31). Vorheriger fachlicher Stand **`8fa390d`** (#301, Speicherpfad-Schutz — §29); **#298–#300 und #302 änderten keinen Anwendungscode**.
-- **Zuletzt gemergt: #303** (Anwendungscode und Tests); davor **#302** (reine Doku) und **#301**. #275–#277 und #282 nach Konsolidierung **geschlossen, nicht gemergt** (Branches bleiben Auditbelege).
-- **Offen:** kein fachlicher PR. Dieser Dokumentationsnachtrag zieht den Nach-Merge-Beleg für #303 nach (`CLAUDE.md` §9).
+- **Letzter fachlicher Merge: `ab0467acf528131d4edeaf3729df3e0fe6db053f`** aus **#305**, mit erwartetem Kopf und zwei Eltern `33f1158` und `972e2f4`. Automatisches Production Deployment **`dpl_BMqhrgLri5VovsY1ekYG9e4RKwDn` READY**, Commit exakt gleich, Alias `helmut-pilot.vercel.app`.
+- **#303** brachte Lagekapazität, Vorgangskontexte, gemeinsame Fristen und `updated_at`; Merge `33f1158`, Production READY belegt. Kontrollierter Lagebeweis weiterhin offen. **#305** schützt die inaktive Kohortenanlage vor automatischer Kontolöschung und falschem Erfolg nach Schreibfehlern; kein Production Fehlerfall ausgelöst.
+- **Dokumentationsnachtrag #304:** auf den Stand nach #305 konsolidiert. Seine eigenen Merge und Deployment Metadaten sind nach Abschluss maßgeblich. Kein weiterer Anwendungscode in diesem Nachtrag.
+- #275 bis #277 und #282 nach Konsolidierung geschlossen, nicht gemergt; Branches bleiben Auditbelege.
 
 ## 3 · Production-Zustand
 
 - **Datenbank:** Supabase **Free-Plan** — keine nativen Backups, kein PITR (→ OP-01). Vollsicherung (40/40) und Restore seit 28.07. geübt, RPO ≤ 24 h.
-- **Mandate (05.09., 18:20 bis 18:33 UTC rein lesend):** **29 Profile, 25 aktiv, 4 inaktiv**, 0 Löschmarken. Stufe A `test-kohorte-a-001…020` vollständig aktiv, B/C nicht angelegt. **Alle einschließlich der fünf älteren sind laut Betreiber Testprofile**, keine echten Kunden. Die vier anderen inaktiven Profile bleiben unverändert. Getrennte Bestände: **30 relationale Identitätsprofile**, **25 Auth Konten, davon 3 aktiv**; **20 Kohortenkonten, davon 0 aktiv**. Natürliche Pipeline: 150 verarbeitet, 38 zurückgestellt, 0 Fehler; Kohorte 14 Abrufe erledigt, 46 Aufträge offen. Rückstandslauf 17:30 UTC: 18 verstanden, 94 zurückgestellt, 0 Fehler. Vollbeleg SR §41.
+- **Mandate (05.09., 21:53 UTC rein lesend):** **29 Profile, 25 aktiv, vier inaktiv**, null Löschmarken; A 20/20, B/C nicht angelegt. Alle einschließlich der fünf älteren sind laut Betreiber Testprofile. Vier andere inaktive Profile unverändert. **30 relationale Identitätsprofile**, **25 Auth Konten, drei aktiv**; davon **20 Kohortenkonten, null aktiv**. Profil und Kontenbestand vor/nach #303 sowie #305 mit identischen Hashformeln unverändert belegt. Natürlicher Crawl um 20:00 UTC: 111 verarbeitet, 71 zurückgestellt, null Fehler. A: 19 Quellenaufträge erledigt, 41 Aufträge offen. Natürlicher Understanding Lauf um 21:30 UTC: 20 gespeichert, 30 zurückgestellt, null Fehler; kein vollständiger A Fachzyklus. Vollbeleg SR §43.
 - **Crawl-Aufbewahrung:** `HELMUT_CRAWL_RUN_RETENTION=36` (Betreiberangabe, aus dem Code nicht unabhängig belegbar). Der Blob-Ring `crawlRuns` steht seit 04.09. auf **20** (§28) und **füllt sich nicht nach**: seit 23.08. erreicht kein Cron mehr `saveCrawlRun` (SR §37.3). Stillgelegter Altpfad-Puffer; kein Entscheidungspfad liest über Position 20 hinaus. **Der Schutz gegen erneute Kürzung ist seit dem #301-Merge im Production-Code enthalten** (§29) — **offline verhaltensbasiert belegt (115 Assertions), kein schreibender Production-Test des Riegels**.
 - **Quellen:** 9 Pakete · 163 Abrufwege · 165 Zuordnungen; **146/163 Google-News** (B1, OP-15); 18 Landesmodul-Wege (BE/BB) gesperrt. Seeds `20260713`/`20260717` **nicht eingespielt**, Einspielung [BLOCKIERT](betrieb/quellen-seed-einspielung.md) (nur noch Betreiberfreigabe).
 - **Crons (Production, 13, UTC):** crawl 04:00/20:00 · pipeline 16:00 · morning-briefing 05:00 · understanding 05:30/21:30 · **rueckstand 11:30/17:30** · lage-briefing 05:45 · health 06:00 · lage-check 10:00 · 2 Narrativslots 06:10/06:22 (inert). **`18,48 * * * *` nicht in Production.** Dazu Actions-Watchdog (`briefing-watchdog.yml`, 05:30, oft 2–3 h verzögert).
 - **Migrationen:** 35 Einträge, letzte `20260829175749` (05.09. rein lesend bestätigt). **Z22 seit 29.08. mit Freigabe angewendet** (§14–22) — **nicht erneut anwenden**. Auf `main`, **nicht in Production angewendet**: `20260720`, F9 (`20260825101500`), `20260902121500`. Jede weitere Anwendung bleibt freigabepflichtig.
 - **Kosten:** LLM ~0,14 USD/Betriebstag (Untergrenze); **0,002941 USD je Aufruf** (Listenpreis, Kontopreis unbelegt — F7); bei Deckel 2.416 ≈ **213 USD/Monat**, Schranke 243 ([`kostenmessung`](betrieb/kostenmessung.md)).
-- **Zugang dieser ChatGPT Sitzung (05.09.):** GitHub Lesen und deklarierte Schreibrechte, Vercel Metadaten und Supabase SQL lesend belegt. Der lokale getestete Skriptpfad fehlt nicht, seine geschützten Prozesszugänge fehlen. Anwendungszugriff über Vercel Fetch: `/api/ops/jobqueue` 401, `/api/cron/lage-check` 403 vor Fachausführung. Browser verlangt Vercel Anmeldung. Keine Zugangssperre umgangen; keine Env Änderung, kein kontrollierter Fachlauf. Details SR §41.
+- **Zugang dieser ChatGPT Sitzung:** GitHub Lesen, Schreiben und Merge sowie Vercel Metadaten und Supabase SQL lesend belegt. Der getestete Skriptpfad ist vorhanden, seine geschützten Prozesszugänge fehlen. Vercel CLI Anmeldung durch Ausführungsrichtlinie blockiert trotz bereits aktiviertem Work Netzwerkschalter; Connector Zugriff funktioniert. Anwendungsprüfung `/api/cron/pipeline-status`: 403 wegen fehlendem Cron Secret. Kein kontrollierter Fachlauf; keine Zugriffssperre umgangen. Details SR §42.
 
 ## 4 · Aktivierte Funktionen (Production)
 
@@ -35,7 +35,7 @@
 | `HELMUT_MATCHING_AUDIT=on` | seit 2026-07-28 |
 | `HELMUT_PROCESS_RUNS_RELATIONAL=on` | seit 2026-07-27 |
 | `HELMUT_ATOMIC_LOCK` | an — atomare, fail-closed Sperren |
-| LLM Tagesbudget: Betreiber meldet **2.416** und Understanding-Reserve **702**, danach Redeploy | **Wirkung über 100 ist seit 05.09. 20:03 UTC BELEGT: Zähler 104.** Damit ist die Anhebung nicht mehr nur wirkungsbasiert vermutet, sondern gezählt; der Rohwert bleibt aus einer Sitzung unlesbar. Tagesstand 05.09.: **99 protokollierte Modellaufrufe, 0,3228 USD**, davon **0 der Kohorte**. Kein harter USD-Schutz durch die vier wirkungslosen Testlaufwerte — der Deckel zählt Aufrufe. Schutzlimit ohne Deckelvariable weiterhin 50. |
+| LLM Tagesbudget: Betreiber meldet **2.416** und Understanding Reserve **702**, danach Redeploy | Zähler 05.09. **124**, somit alter Stopp bei 100 überschritten; 118 protokollierte Modellaufrufe für das gesamte System seit 00:00 bis etwa 21:45 UTC, geschätzt **0,385127 USD KI Modellkosten**, null unbekannte Kostenangaben innerhalb dieser Protokolle. Reservierungen und Protokolle sind nicht vollständig deckungsgleich. Exakte Rohwerte weiterhin unbelegt. Kein harter USD Schutz durch die vier wirkungslosen Testlaufwerte. Schutzlimit ohne Deckelvariable weiterhin 50. |
 | `HELMUT_VERSTEHEN_CAS=on` | seit 2026-08-17; `HELMUT_VERSTEHEN_PARALLELITAET` nicht gesetzt ⇒ wirkt als 1 |
 | `HELMUT_SCALABLE_PIPELINE=on` | **seit 23.08. 16:47 UTC**, Modus `shadow`, Worker 4/25/25; Rückweg: Flag löschen + Redeploy (Betreiber) |
 | `HELMUT_CRON_GLOBALABRUF=on` | seit 2026-08-06 (Betreiber); Fortbestand ist Betreiberentscheidung |
@@ -64,10 +64,10 @@
 **25 Profile sind aktiv.** Stufe B umfasst aus dem Code exakt 75 neue Kennungen, Stufe C 400. Anlage jeweils vollständig inaktiv, danach eigener Aktivierungsschritt und eigene Abnahme. Endbestand soll **504 insgesamt, 500 aktiv, 4 unverändert inaktiv** sein. Keine Kontoaktivierung.
 
 1. **Zugang:** sicherer authentifizierter Ausführungskontext für `scripts/testkohorte-vorwaerts.js` fehlt. Bestehende Admin Routen und SQL sind kein zugelassener Ersatz.
-2. **PR #303: GEMERGT und deployt** (§2, §31). Die Kontext- und Fristfehler wurden vor dem Merge korrigiert; am Kopf `9aa95e0` liefen lokal 320/320 Offline-Suiten, `lage-check-kapazitaet` 129/129, `vorgangskontext` 103/103, und alle fünf GitHub-Checks waren grün. **Der Production-Beleg fehlt weiterhin**: der erste Lage-Check mit dem neuen Code ist der 10:00-UTC-Lauf am 06.09.
-3. **Kommunikation — VOR dem 10:00-Lauf zu entscheiden:** die fünf älteren Testprofile gelten im Code als `real`; genau **eine** Push-Subscription ist vorhanden, auf **`cem-ince`** (angelegt 30.06.). Der Riegel lässt Push für diese Kennung ohne `HELMUT_TESTLAUF_KOMMUNIKATION=gesperrt` **zu** (nachgerechnet: `erlaubt=true`, mit Sperre `erlaubt=false`). Bisher unterblieb die Zustellung nur, **weil** der Lage-Check in den Timeout lief und sich für die Push-Logik als `stable` maskierte. Mit #303 läuft er durch — bei Status `changed` wird `sendLageChangePush` erreicht. **Wer keine Zustellung will, setzt die Sperre vor dem 06.09. 10:00 UTC.**
-4. **Provisionierung:** der bisherige Fehlerpfad löscht automatisch ein gerade angelegtes Konto. Vor B/C ist eine gezielte getestete Korrektur nötig, damit das aktuelle Löschverbot auch im Fehlerfall gilt. Geteilte Blobs bleiben ohne CAS.
-5. **Budget: ERFÜLLT.** Der Zähler stieg am 05.09. um 20:03 UTC auf **104** — die geforderte Bedingung „erfolgreich über 100" ist damit belegt. Der Rohwert bleibt unlesbar; der Deckel zählt Aufrufe, nicht USD. Tageskosten 05.09.: 0,3228 USD.
+2. **PR #303 gemergt und deployt:** Kontext und Fristfehler korrigiert, 129 gezielte Prüfungen und externe CI grün. Kontrollierter Production Lagebeleg fehlt wegen fehlendem Betriebszugang; SR §42.
+3. **Kommunikation:** die fünf älteren Testprofile gelten im Code weiter als regulär. Eine aktive Push Subscription ist vorhanden; vor kontrollierten Läufen muss der vollständige Riegel wirksam belegt sein.
+4. **Provisionierung:** #305 ist gemergt und deployt. Der echte inaktive Kohortenpfad verhindert automatische Kontolöschung und meldet Schreibfehler auch bei lesbarem Teilprofil ehrlich. Schutz offline und in CI belegt; kein schreibender Production Fehlerfall. Geteilte Blobs bleiben ohne CAS.
+5. **Budget:** Zähler 124 nach dem natürlichen 21:30 Lauf widerlegt den bisherigen Stopp bei 100. Exakte Betreiberwerte 2.416/702 und vollständige USD Kosten bleiben unbewiesen. Vor jedem Fachlauf Kostenobergrenze, Tagesverbrauch und Reserve frisch prüfen; keine Env Änderung.
 6. **Abnahme:** kontinuierlicher Fortschritt, keine systematischen Auslassungen, Datenintegrität, Kommunikation und Tageskosten je Stufe belegen. Gewöhnlicher Altbestand im Rückstand oder fehlende mehrtägige Beobachtung blockieren laut Betreiber für sich allein nicht. Mehrtagesbetrieb und Verkaufsreife werden dadurch nicht behauptet.
 
 Vollständige aktuelle Freigaben, Nachweisgrenzen und Fortsetzung: [SR §41](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
@@ -82,9 +82,9 @@ Vollständige aktuelle Freigaben, Nachweisgrenzen und Fortsetzung: [SR §41](bet
 6. **OP-11:** Branch Protection nicht aktiv; Pflicht-CI blockiert Merges nicht technisch.
 7. **OP-15:** Google-Klumpenrisiko (146/163 Wege); 29 von 42 Personensuchen lieferten nie (`circuit-open`) — Production-Beweis der Härtung steht aus (§8).
 8. **Lage-/KI-Kapazität für Skalierung:** siehe §6. Belegt: **drei** reguläre Warteschlangenabflüsse/Tag, nicht elf (§13).
-9. **500er Funktionstest: BLOCKIERT am sicheren Ausführungszugang** (§6, SR §41). A aktiv; B/C bedingt freigegeben, noch nicht angelegt. Pipeline Fortschritt mit 25 ist belegt, Lage und Deckel über 100 noch nicht. Kein Kundenschutzblocker: alle Profile sind laut Betreiber synthetisch.
+9. **500er Funktionstest: BLOCKIERT am sicheren Ausführungszugang** (§6, SR §41). A aktiv; B/C bedingt freigegeben, noch nicht angelegt. Pipeline Fortschritt mit 25 ist belegt, Lage noch nicht; der frühere Stopp bei 100 ist durch Zähler 124 widerlegt. Kein Kundenschutzblocker: alle Profile sind laut Betreiber synthetisch.
 10. **OP-07:** Monitoring-Zweitkanal stellt seit mind. 17.08. täglich zu; Ziel von `HELMUT_MONITORING_WEBHOOK_URL` und der doppelte WhatsApp-Eingang bleiben ungeklärt (Betreiberprüfung, kein Code-Fix vorher).
-11. **Profilpfad:** Speicherpfadschutz seit #301 ausgerollt, seine Schutzwirkung offline belegt (§29). A wurde später aktiviert (§30). B/C brauchen weiterhin den geprüften Ausführungspfad und ihre jeweilige Abnahme. Offene Datengefahr: `main` und `main-auth` werden ohne Compare-and-Set ersetzt; automatischer Löschpfad bei Anlagefehlern widerspricht dem aktuellen Auftrag (§6).
+11. **Profilpfad:** Speicherpfadschutz seit #301 ausgerollt, seine Schutzwirkung offline belegt (§29). A wurde später aktiviert (§30). B/C brauchen weiterhin den geprüften Ausführungspfad und ihre jeweilige Abnahme. Offene Datengefahr: `main` und `main-auth` werden ohne Compare-and-Set ersetzt; der automatische Löschpfad ist seit #305 ausschließlich für die inaktive Kohortenanlage gesperrt (§6).
 
 K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach einer weiteren OP-30-Stufenaktivierung muss OP-25 **vollständig wiederholt** werden.
 
@@ -121,11 +121,10 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-1. Korrigierten Stand von PR #303 vollständig am exakten Kopf prüfen; Ergebnisse und Sicherung auf dem bestehenden Branch im PR protokollieren. Keine Production Änderung, solange der sichere Ausführungszugang fehlt.
-2. Geschützte Prozesszugänge für den unveränderten geprüften Ausführer verfügbar machen, ohne Secrets im Chat oder Repository offenzulegen. Vor jedem scharfen Lauf Grundlinie, reale Uhr, laufende Prozesse, Kosten und Kommunikationsriegel frisch prüfen.
-3. Danach den bedingt freigegebenen Ablauf fortsetzen: PR #303 nach allen Kopfprüfungen mit `expectedHeadSha` mergen, automatisches Production Deployment bis READY prüfen, kontrollierten Lagebeweis für 25 und Zähler über 100 erbringen. Bei Deploymentfehler sofort stoppen, kein zweiter Versuch oder Rollback.
-4. Vor B Provisionierung den automatischen Löschfehlerpfad gezielt korrigieren und testen. B inaktiv anlegen, getrennt aktivieren und abnehmen; erst danach C. Vollständiges Nachtfenster laut Code: **21:36 bis 03:59 UTC**, vor Ausführung frisch belegen. Alle Prüfungen und Grenzen in SR §41.
-5. Erst nach 500 und Abschlussdokumentation wieder Verkaufsreife und die P0 Punkte bearbeiten. Ein gewöhnlicher Rückstand ist kein Grund, ohne weitere Prüfung abzubrechen.
+1. Geschützte Prozesszugänge für den unveränderten geprüften Ausführer verfügbar machen, ohne Secrets im Chat oder Repository offenzulegen. Vor jedem scharfen Lauf Grundlinie, reale Uhr, laufende Prozesse, maximale Zusatzkosten und Kommunikationsriegel frisch prüfen. Kein neuer Login Code ohne neue technische Erkenntnis.
+2. Kontrollierten Lagebeweis für 25 erbringen und A vollständig abnehmen. Zähler über 100 bereits natürlich belegt. Der nächste natürliche Lage Check ist laut Cronplan am **06.09. um 13:00 Türkei / 12:00 Berlin / 10:00 UTC** vorgesehen, seine Ausführung und die Kommunikationssperre sind dadurch nicht bewiesen.
+3. Anschließend B mit 75 Profilen inaktiv anlegen, getrennt aktivieren und abnehmen; erst danach C mit 400. Vollständiges Nachtfenster laut Code: **00:36 bis 06:59 Türkei / 23:36 bis 05:59 Berlin / 21:36 bis 03:59 UTC**, Tageswechsel beachten und vor Ausführung frisch belegen. Alle Prüfungen und Grenzen in SR §41 und §43.
+4. Bei Deploymentfehler sofort stoppen, kein zweiter Versuch oder Rollback. Erst nach 500 und Abschlussdokumentation wieder Verkaufsreife und P0 Punkte bearbeiten. Ein gewöhnlicher Rückstand ist kein Grund, ohne weitere Prüfung abzubrechen.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
@@ -219,27 +218,20 @@ scharfer Lauf, 11:38:13–11:38:58 UTC (45 s), Startfenster geprüft, Vorflug-Ri
 - **Kosten:** 0 Modellaufrufe durch den Lauf. Tagesverbrauch bis 11:33 UTC 63 Aufrufe / **0,2010 USD**, Kohorte **0**.
   Durchgesetzt wird eine **Aufrufzahl**, kein USD-Betrag; der wirksame `HELMUT_MAX_LLM_CALLS_PER_DAY` ist aus einer
   Sitzung **nicht lesbar** (SR §39.2).
-- **Deployment:** `dpl_GCZLTfUSmFoeMP1WSfxG2bEYeinP` (READY, production, `redeploy` von `9407f8c8…`). Danach keines.
+- **Deployment zum Abschluss von A:** `dpl_GCZLTfUSmFoeMP1WSfxG2bEYeinP` (READY, production, `redeploy` von `9407f8c8…`). Aktueller Nachfolger nach #303 siehe §2.
 - **Befund:** `mandate_profiles.updated_at` blieb bei allen 20 Zeilen auf dem `created_at` vom 04.09. → §31.
-## 31 · Lagekapazität und Übernahme am 05.09. · BLOCKIERT
+## 31 · Lagekapazität und Übernahme am 05.09. · TEILWEISE ABGESCHLOSSEN
 
-**Nach-Merge-Beleg (`CLAUDE.md` §9, Vollfassung [SR §40.7](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md)),
-rein lesend am 05.09. 21:02 UTC:** Merge-Commit `33f1158`, Eltern `9407f8c`/`9aa95e0`, 21:01:19 UTC; Deployment
-`dpl_36dEh3b6RPZBW5Ufokk2PuESJyZ2` READY. Production danach **unverändert** (29/25/4, Stufe A 20/20, B/C 0,
-0 Löschmarken, `crawlRuns` 20, 35 Migrationen); `max(updated_at)` weiterhin `2026-09-04 11:40:34` — korrekt, seither
-gab es keinen Profilschreibvorgang. Kohortenaufträge 19 erledigt / 41 wartend. **Kein schreibender Test, keine
-Aktivierung, keine Migration ausgelöst.**
+PR **#303 gemergt und Production READY**: faire Zeitscheiben, gemeinsame Erfassung, Vormerkgrenze und `mandate_profiles.updated_at`. Die unabhängige Kontextkorrektur verhindert die Vermischung unabhängiger Personenquellen und teilt ein absolutes Budget. Fünf externe Prüfungen am exakten Kopf grün, keine offenen Review Threads. Belege: [SR §40 bis §42](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 
-**Vor dem Merge korrigiert (Betreiber, `9aa95e0`):** die globale Faltung clusterte den gesamten Korpus in EINEM Batch
-und hätte Vorgänge über die **Mandatsgrenze** verschmolzen (Fehlerklasse K1-1); zudem hätte jeder Kontext ein frisches
-statt eines gemeinsamen Zeitbudgets bekommen. Beides behoben — [SR §40.6](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+**Offen:** kontrollierter Lage Check mit 25 Profilen, vollständiger Fachzyklus von A, B/C Anlage und Aktivierung. Der Tageszähler 124 widerlegt den bisherigen Stopp bei 100; er beweist nicht den exakten konfigurierten Deckel. **142 Sekunden für 25** und **acht Läufe für 500** bleiben Rechenmodelle. Kein Modellweg über `/api/debug/pipeline-probe`, da dort die Budgetreservierung laut Altbefund nicht gewährleistet ist.
 
-**Offen nach dem Merge:** der **Production-Beleg** (erster Lage-Check mit dem neuen Code: 06.09. 10:00 UTC) und die
-**Kommunikationsentscheidung zu `cem-ince`** (§6 Punkt 3).
+**Gezielte Folgekorrektur vor B:** Der Kohortenpfad behält bei Anlagefehlern einen möglichen inaktiven Kontoteilbestand und meldet auch einen teilweise gespeicherten Profilstand als Fehler. Konten ohne Profil bleiben durch den bestehenden Bestandsschutz gesperrt; keine automatische Übernahme und kein Ersatzaktivierungsweg. Als #305 gemergt und READY; Prüfstand SR §42 und §43.
 
+## 32 · Nachtrag #305 und natürlicher Understanding Lauf
 
-PR **#303**, Basis `9407f8c`, ursprünglicher Kopf `3f2752a`: faire Zeitscheibe, gemeinsame Erfassung, Vormerkgrenze und `mandate_profiles.updated_at`. **Nicht gemergt.** Anlass: natürlicher Lage Check 10:00 UTC, 0/5 erfolgreich, 1 begonnen, 4 nie begonnen. Vollbeleg [SR §40](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+**#305 gemergt und deployt:** 321/321 Offline Suiten, 32/32 Browserprüfungen; externe Prüfungen am exakten Kopf erfolgreich, keine offenen Review Threads. Kein Kohortenprofil angelegt oder aktiviert. Details und beide Merge Eltern in [SR §43](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 
-**Unabhängige Nachprüfung:** gemeinsame Faltung ohne Vorgangskontext reproduziert die bekannte Vermischung zweier unabhängiger Personenquellen. Eng begrenzte Korrektur verwendet die vorhandene Kontextplanung und ein gemeinsames absolutes Budget; zusätzliche Regression läuft gegen die echte Erfassungsfunktion. Abschließender Prüfstand und Zugangshindernis: **[SR §41](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md)**.
+Der natürliche Lauf um 21:30 UTC speicherte 20 Ergebnisse ohne Fehler. Reservierungszähler 124; 118 protokollierte Aufrufe und 0,385127 USD geschätzte KI Modellkosten insgesamt im UTC Tag bis etwa 21:45 Uhr. Keine belastbare Pro Profil Zuordnung und keine vollständige Rechnung. Seit 19:11 UTC keine neuen Push oder Audit Ereignisse in allen geprüften Stores; historische Tageszustellungen existieren. Keine Tagesnull behaupten.
 
-Die bisherigen Angaben **142 Sekunden für 25** und **acht Läufe für 500** sind Rechenmodelle, kein Production Nachweis, und müssen nach der Kontextkorrektur erneut gemessen werden. Durchsatz des Verstehens bleibt unabhängig davon offen. `updated_at` Altbestand wird nicht nachträglich geändert; kein neuer Auftragstyp, keine Migration, kein Cron oder Flag geändert. Kein Modellweg über `/api/debug/pipeline-probe`: dort ist die Budgetreservierung laut Altbefund nicht gewährleistet.
+Ein unverändertes `mandate_profiles.updated_at` nach dem Deployment ist erwartbar: #303 setzt es bei einem echten Profilwrite, ohne rückwirkende Migration. `max(updated_at)` am 05.09. um 21:48 UTC: `2026-09-04 11:40:34.994784+00`. Das ersetzt keinen Inventarvergleich. Zur Kontexttrennung siehe [cron-globalphase §8a](betrieb/cron-globalphase.md).

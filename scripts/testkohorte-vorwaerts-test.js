@@ -328,7 +328,7 @@ async function main() {
   {
     const quelle = fs.readFileSync(path.join(ROOT, "lib/helmut/testkohorte-vorwaerts.js"), "utf8");
     check("I1 Die Provisionierung übergibt neuAktiv: false, nicht ausfuehren",
-      /provisionTenant\(spec, \{\}, \{ neuAktiv: false \}\)/.test(quelle)
+      /provisionTenant\(spec, \{\}, \{ neuAktiv: false, kontoBeiFehlerBehalten: true \}\)/.test(quelle)
         && !/provisionTenant\([^)]*ausfuehren/.test(quelle));
     check("I2 Die Aktivierung ruft activateTenant auf",
       /require\("\.\/provisioning"\)\.activateTenant\(id\)/.test(quelle));
