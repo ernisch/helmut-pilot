@@ -158,11 +158,10 @@ Alle Pfade relativ zu `docs/`. **500er-Funktionstest** (Rahmen, Ablauf, Sprints 
 *Alle drei erfolgreich.* Vollbeleg: [SR §1–§33](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). Sie machten
 Schutzregeln und Ausführer wirksam — den Test **nicht** startbereit.
 
-- **Entscheidungsrelevant:** Telemetriequelle ist `helmut_store` Zeile `<id>-auth`, Schlüssel `llmUsage` (Ring 5.000),
-  **nicht** die Zeile `main` und **nicht** `llm_usage`; Tagesbedarf p95 **170** / max 298 (Untergrenze). Azure
-  250.000 TPM / 250 RPM, `gpt-5-mini`, Sweden Central; **Kontokontingent unbelegt**.
-- **Acht vorbereitete Betreiberwerte.** Welche davon zur Laufzeit überhaupt gelesen werden:
-  [env-inventar §3a](betrieb/env-inventar.md) (Codeprüfung 05.09.).
+- **Telemetriequelle** ist `helmut_store` Zeile `<id>-auth`, Schlüssel `llmUsage` (Ring 5.000), **nicht** die Zeile
+  `main` und **nicht** `llm_usage`; Tagesbedarf p95 **170** / max 298 (Untergrenze). Azure 250.000 TPM / 250 RPM,
+  `gpt-5-mini`, Sweden Central; **Kontokontingent unbelegt**.
+- **Acht vorbereitete Betreiberwerte.** Welche zur Laufzeit gelesen werden: [env-inventar §3a](betrieb/env-inventar.md).
 - **Startfenster-Tor prüft FÄLLIGKEIT** (`due_at <= jetzt`, fail closed): nur **21:36–03:59 UTC** trägt **100 %**.
 ## 26 · Sprint 03.09. — Stufenweise Provisionierung + §34.7 (**#297 gemergt, deployt**)
 
@@ -180,15 +179,15 @@ fehlende WP-20-Bezeichnungen in `VERALTETE_AUSSCHUSSNAMEN`; `profil-bereitschaft
 lesend" — für `--production` zu stark.
 ## 28 · Sprint 04.09. — Stufe A inaktiv provisioniert · **TEILWEISE ABGESCHLOSSEN**
 
-Vollbeleg: [SR §36/§37](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). Als **#300** gemergt
-(`350d901`, Deployment `dpl_DFHbTQo5T4fButYGbEXUHgzSsfnP`); kein Anwendungscode. Scharfer Lauf
-`provisionierung --stufe=a` (11:38–11:40 UTC): **20 Profile angelegt, 0 fehlgeschlagen, alle inaktiv und isoliert**
-(9/9); die 9 Mandats- und 10 Identitätszeilen **bytegenau unverändert**.
+Vollbeleg: [SR §36/§37](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). Als **#300** gemergt (`350d901`,
+Deployment `dpl_DFHbTQo5T4fButYGbEXUHgzSsfnP`); kein Anwendungscode. Scharfer Lauf `provisionierung --stufe=a`
+(11:38–11:40 UTC): **20 Profile angelegt, 0 fehlgeschlagen, alle inaktiv und isoliert** (9/9); die 9 Mandats- und
+10 Identitätszeilen **bytegenau unverändert**.
 
-**Warum nicht vollständig:** `crawlRuns` wurde unbeabsichtigt **36 → 20** gekürzt (Ursache und Wurzelfix: §29;
-**nicht wiederhergestellt**), und `HELMUT_PROFILE_DB_MODE` wurde für den einzelnen Prozess gesetzt, obwohl der
-Auftrag Umgebungsvariablen ausgeschlossen hatte — keine Vercel-Variable verändert, die Prozessvariable lag
-trotzdem außerhalb der wörtlichen Freigabegrenze.
+**Warum nicht vollständig:** `crawlRuns` wurde unbeabsichtigt **36 → 20** gekürzt (Wurzelfix: §29; **nicht
+wiederhergestellt**), und `HELMUT_PROFILE_DB_MODE` wurde für den einzelnen Prozess gesetzt, obwohl der Auftrag
+Umgebungsvariablen ausgeschlossen hatte — keine Vercel-Variable verändert, die Prozessvariable lag trotzdem
+außerhalb der wörtlichen Freigabegrenze.
 ## 29 · Sprint 04.09. — Speicherpfad-Schutz gemergt und deployt · **ERFOLGREICH ABGESCHLOSSEN**
 
 Vollbeleg: **[SR §38](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md)** (inkl. §38.9). Erfüllt SR §37.5.
@@ -205,61 +204,61 @@ READY. Production danach rein lesend unverändert geprüft.
   der 16 `crawlRuns`.
 ## 30 · Sprint 05.09. — Stufe A aktiviert · **ERFOLGREICH ABGESCHLOSSEN**
 
-Mit ausdrücklicher Freigabe ausgeführt. Ein scharfer Lauf `testkohorte-vorwaerts.js aktivierung --gruppe=a --scharf`,
-**11:38:13–11:38:58 UTC** (45 s), Startfenster `fenster-gilt-jetzt` (Systemuhr, 13 Crons geprüft), Vorflug-Riegel 5/5,
-Dual Write. Ergebnis **20 aktiviert, 0 bereits aktiv, 0 fehlgeschlagen**, `beruehrtKeineKonten: true`.
+Vollbeleg: **[SR §39](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md)**. Mit Freigabe ausgeführt: **ein**
+scharfer Lauf, 11:38:13–11:38:58 UTC (45 s), Startfenster geprüft, Vorflug-Riegel 5/5.
+**20 aktiviert, 0 fehlgeschlagen, `beruehrtKeineKonten: true`.**
 
-- **Rein lesend nachgeprüft (11:43 UTC):** 29 Profile → **25 aktiv / 4 inaktiv** (vorher 5/24), Stufe A **20/20 aktiv**,
-  Stufe B/C **0/0**, 0 Löschmarken, `crawlRuns` unverändert **20**, **35** Migrationen, Blobzeile `main` genau einmal
-  geschrieben (11:38:58,387), `main-auth` **unberührt** (11:34:06). **Invariante gehalten:** `max(updated_at)` der
-  9 Nicht-Kohortenprofile unverändert `2026-08-06 08:01:31,744+00`; alle `main-p-*`-Zeilen älter als der Lauf.
-- **Kosten:** 0 Modellaufrufe durch den Lauf. Tagesverbrauch 05.09. bis 11:33 UTC **63 Aufrufe / 0,2010 USD**
-  (04.09.: 108 / 0,3202) — rund **0,0032 USD je Aufruf**. Kohorte: **0**. Durchgesetzt wird eine **Aufrufzahl**,
-  kein USD-Betrag; der wirksame Wert von `HELMUT_MAX_LLM_CALLS_PER_DAY` ist aus einer Sitzung **nicht lesbar**.
-  Wirkungsbeleg für eine Anhebung: 03./04.09. stoppten exakt bei 100, am 05.09. lief `understanding-rueckstand`
-  um 11:30 auf `success` statt auf `blocked / rueckstand-budget-boden-erreicht`.
-- **Deployment:** `dpl_GCZLTfUSmFoeMP1WSfxG2bEYeinP` (READY, production, `redeploy` von `9407f8c8…`, 07:56:52 UTC).
-  Danach **kein weiteres Production-Deployment**.
-- **Befund aus der Nachprüfung:** `mandate_profiles.updated_at` blieb bei allen 20 Zeilen auf dem `created_at` vom
-  04.09. — die relationale Zeile belegt die Änderung **nicht**. Ursache und Behebung: §31.
+- **Rein lesend nachgeprüft (11:43 UTC):** 29 Profile → **25 aktiv / 4 inaktiv** (vorher 5/24), Stufe A **20/20**,
+  B/C **0/0**, 0 Löschmarken, `crawlRuns` **20**, **35** Migrationen. Zeile `main` genau **einmal** geschrieben
+  (11:38:58,387), `main-auth` **unberührt**. Invariante gehalten: `max(updated_at)` der 9 Nicht-Kohortenprofile
+  unverändert `2026-08-06 08:01:31,744+00`.
+- **Konten bleiben `active: false`** — der Bindungsvorgang brauchte keine Kontoaktivierung. Die Pipeline entscheidet
+  über `profileActive`, nicht über das Konto; die Verarbeitung ist dadurch nicht blockiert, nur der Login.
+- **Kosten:** 0 Modellaufrufe durch den Lauf. Tagesverbrauch bis 11:33 UTC 63 Aufrufe / **0,2010 USD**, Kohorte **0**.
+  Durchgesetzt wird eine **Aufrufzahl**, kein USD-Betrag; der wirksame `HELMUT_MAX_LLM_CALLS_PER_DAY` ist aus einer
+  Sitzung **nicht lesbar** (SR §39.2).
+- **Deployment:** `dpl_GCZLTfUSmFoeMP1WSfxG2bEYeinP` (READY, production, `redeploy` von `9407f8c8…`). Danach keines.
+- **Befund:** `mandate_profiles.updated_at` blieb bei allen 20 Zeilen auf dem `created_at` vom 04.09. → §31.
+## 31 · Sprint 05.09. — Lage-Check-Kapazität + `updated_at` · **TEILWEISE ABGESCHLOSSEN** (PR #303 offen)
 
-## 31 · Sprint 05.09. — Lage-Check-Kapazität + `updated_at` · **TEILWEISE ABGESCHLOSSEN** (PR offen)
+Vollbeleg: **[SR §40](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md)**.
 
-**Blocker, Production belegt:** Lauf `cron-lage-check-20260905100015-he8tk`, 10:00:15,104 → 10:04:16,853 UTC (241,7 s),
-`kapazitaet: 1`. Das erste Mandat (`cem-ince`) lief in seinen **eigenen 240-s-Timeout** (als *fehlgeschlagen* gebucht),
-vier Mandate wurden mit `zeitbudget` **nie begonnen** — also **0 von 5 erfolgreich, 1 von 5 begonnen**. Aufteilung:
-Abruf 19,5 s · Speichern/Telemetrie bis 10:00:42 · Verstehensfaltung **205,062 s (85 %)**, davon nur 52,077 s in vier
-Modellaufrufen und **152,985 s (75 %) Nicht-Modellzeit** — der **serielle Vormerk-Loop für 604 Cluster** (~1,7/s).
+**Blocker, Production belegt:** Lauf `cron-lage-check-20260905100015-he8tk`, 10:00:15,104 → 10:04:16,853 UTC
+(241,749 s), `kapazitaet: 1`. Das erste Mandat lief in seinen **eigenen 240-s-Timeout** (als *fehlgeschlagen*
+gebucht), vier wurden mit `zeitbudget` **nie begonnen** — **0 von 5 erfolgreich, 1 von 5 begonnen**. Von 205,062 s
+Verstehensfaltung waren nur 52,077 s Modellzeit; **127,4 s** entfielen auf den **seriellen Vormerk-Loop** für 604
+zurückgestellte Cluster.
 
 **Drei Ursachen, drei Behebungen** (Branch `claude/helmut-night-sprint-stage-a-gbof1z`, **nicht gemergt**):
 
-1. **Kein Mandatsbudget.** Das innere `withTimeout` war mit 240 000 ms exakt so groß wie das *gesamte* Laufbudget.
-   Jetzt bekommt jedes Mandat eine **Zeitscheibe** (`cron-fairness.mandatsScheibeMs`): fairer Anteil an der
-   **Restzeit**, Untergrenze ist die bestehende `reserveMs`. Obergrenze, keine Reservierung — ungenutzte Zeit fließt
-   sofort an das nächste Mandat. Die Bedingung, ab wann gar nicht mehr begonnen wird, ist **wörtlich unverändert**.
-2. **Globale Arbeit lief je Mandat.** Quellenabruf, Rohdokumente und **Verstehen** tragen keinen Mandantenbezug, liefen
-   aber n-mal für denselben Korpus. Jetzt **einmal je Lauf** (`scheduler.runGeteilteLageErfassung`, Vertrag in
-   `lib/helmut/lage-erfassung.js`), auf der geprüften Vereinigungsfunktion der Crawl-Globalphase
-   (`cron-globalphase.planGlobaleQuellen`, OP-25 K1). Je Mandat bleiben **Matching und Entscheidung**; jede
-   Mandatssicht wird exakt rekonstruiert (gleiche Quellen, Dedup-/Cap-Logik, Zählwerte). Scheitert die Erfassung,
-   fällt jedes Mandat **fail-safe** auf seinen Einzelabruf zurück.
-3. **Vormerk-Loop unbegrenzt.** Der Riegel existiert seit K4, war im Lage-Pfad nie verdrahtet (weder
-   `vormerkBudgetMs`/`vormerkDeadlineMs` — 0 = *kein* Limit — noch `savePendingBulk`). Beides jetzt übergeben,
-   wortgleich zum Crawl-Pfad; nicht mehr Vorgemerktes wird **gezählt** und vom Rückstandslauf erneut aufgegriffen.
-   Zusätzlich folgt das **Modellbudget** der Scheibe statt fester 60 s.
+1. **Kein Mandatsbudget** — das innere `withTimeout` war so groß wie das *gesamte* Laufbudget. Neu:
+   `cron-fairness.mandatsScheibeMs`, fairer Anteil an der **Restzeit**, Untergrenze die bestehende `reserveMs`.
+   Obergrenze, keine Reservierung; die Startbedingung ist **wörtlich unverändert**.
+2. **Globale Arbeit lief je Mandat** — Abruf, Rohdokumente und Verstehen tragen keinen Mandantenbezug. Neu:
+   `scheduler.runGeteilteLageErfassung` erledigt sie **einmal je Lauf** auf der geprüften Vereinigungsfunktion der
+   Crawl-Globalphase (OP-25 K1); je Mandat bleiben Matching und Entscheidung. Jede Mandatssicht wird exakt
+   rekonstruiert; scheitert die Erfassung, fällt jedes Mandat **fail-safe** auf den Einzelabruf zurück.
+3. **Vormerk-Loop unbegrenzt** — der Riegel existiert seit K4, war hier nie verdrahtet. Beides jetzt übergeben,
+   wortgleich zum Crawl-Pfad; Nichtvorgemerktes wird **gezählt** und vom Rückstandslauf aufgegriffen.
 
-**`mandate_profiles.updated_at`** (Befund aus §30): `MANDATE_PROFILE_COLUMNS` führt die Spalte nicht, `pickColumns`
-entfernt sie, und auf der Tabelle liegt **kein Trigger** (`pg_trigger` leer) — der Default greift nur beim INSERT.
-Behoben **app-seitig, ohne Migration**: `saveProfileToDb` liest die Bestandszeile (ausdrücklicher `user_id=eq.`-Filter,
-`CLAUDE.md` §4.1), vergleicht kanonisch und setzt `updated_at` **nur bei echter Inhaltsänderung**; `created_at` bleibt
-unberührt, **Altbestand unverändert**. Der zusätzliche Lesevorgang liegt **nicht** im Cron-Pfad (`saveProfile` wird
-ausschließlich aus HTTP-Routen gerufen).
+**Rechnung:** vorher 209 s je Mandat → **1** Mandat je Lauf → 25 Mandate = 25 Tage. Nachher 90 s **einmal** + 2,1 s je
+Mandat → **5 und 25 in einem Lauf**, 500 in **8 Läufen**. Eine Rechnung, keine Wanduhrmessung.
+
+**`updated_at`** (SR §40.5): keine Spalte in `MANDATE_PROFILE_COLUMNS`, kein Trigger, Default nur beim INSERT.
+Behoben **app-seitig ohne Migration** — Bestandszeile lesen (mit Mandantenfilter *und* Mandantenprüfung auf der
+Antwort), kanonisch vergleichen, `updated_at` **nur bei echter Änderung** setzen. `created_at` unberührt, Altbestand
+unverändert, kein Cron-Pfad betroffen.
 
 **NICHT enthalten:** keine Migration · kein neuer Auftragstyp in `helmut_jobs` (bräuchte eine Migration an
-`helmut_jobs_type_chk`) · keine Cron-Zeit/-Reihenfolge · kein neues Flag · keine neue Ressource · keine Erhöhung eines
-Zeitbudgets · keine Änderung an `updated_at` bestehender Zeilen.
+`helmut_jobs_type_chk`) · keine Cron-Zeit/-Reihenfolge · kein neues Flag · keine neue Ressource · keine Erhöhung
+eines Zeitbudgets · keine Änderung an `updated_at` bestehender Zeilen.
 
-**Offene Risiken:** Altbestand trägt `updated_at == created_at` — bei Zeilen von **vor** der Behebung **nicht** als
-„nie geändert" lesbar. Der wirksame KI-Tagesdeckel bleibt aus einer Sitzung unlesbar. `/api/debug/pipeline-probe`
-sendet einen echten Modellaufruf **ohne** Budgetreservierung (nur `HELMUT_ADMIN_SECRET` + Ratenbegrenzung) —
-Altbefund, außerhalb dieses Sprints.
+**Was die Behebung NICHT leistet** (adversarial gegengeprüft, SR §40.4): sie beseitigt den Timeout und die je Mandat
+wiederholte globale Arbeit — **nicht den Durchsatz des Verstehens**. Aus 903 Dokumenten entstanden 608 Cluster, **4**
+verstanden, **604** zurückgestellt; ein einziges Mandat bräuchte ~7.916 s serielle Modellzeit, das 26-Fache der
+Plattformgrenze. Der Rückstand steht bei **11.045** `pending` (31.08.: 9.080) und bleibt der als **§20 BLOCKIERT**
+geführte, davon getrennte Blocker.
+
+**Offene Risiken:** Zeilen von **vor** der Behebung tragen `updated_at == created_at` und sind nicht als „nie
+geändert" lesbar. Der wirksame KI-Tagesdeckel bleibt aus einer Sitzung unlesbar. `/api/debug/pipeline-probe` sendet
+einen echten Modellaufruf **ohne** Budgetreservierung — Altbefund, außerhalb dieses Sprints.

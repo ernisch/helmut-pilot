@@ -5161,3 +5161,136 @@ Korrektur (`b69b175`, per `git archive` in ein Arbeitsverzeichnis ausgepackt) un
 korrigierten Stand. Vorher: **64 Lecks**, darunter Klassen, die im Befund gar nicht genannt waren,
 etwa `--deactivate` zusammen mit `--paket` **ohne** `--validate`. Nachher: **0 Lecks**. Damit ist
 nicht nur der gemeldete Weg geschlossen, sondern die ganze Klasse.
+
+## §39 Stufe A aktiviert (05.09.2026, Betreiberfreigabe, ausgeführt)
+
+**Ein** scharfer Lauf, `testkohorte-vorwaerts.js aktivierung --gruppe=a --start=11:36 --dauer=263 --scharf`,
+**11:38:13–11:38:58 UTC** (45 s), bewusst **ohne** `scripts/lokal.js`. Freigabe über Flag
+`HELMUT_TESTKOHORTE_EXECUTE=1` und das schrittgenaue Wort
+`TESTKOHORTE_GRUPPE_A_20_AKTIVIEREN_BESTAETIGT`; Startfenster `fenster-gilt-jetzt` (Systemuhr, 13 Crons geprüft,
+`jetztMinuteUtc` 698); Vorflug-Riegel 5/5; Speicherziel `supabase:helmut_store`, Zeilen `main`/`main-auth`,
+Dual Write, `HELMUT_PROFILE_DB_MODE` gesetzt und wirksam, `crawlRuns`-Aufbewahrung 36 (Lesefenster 20).
+
+Ergebnis: `aktiviert 20 · bereitsAktiv 0 · fehlgeschlagen 0 · beruehrtKeineKonten true · ok true`, Exit 0.
+
+### §39.1 Nachprüfung, rein lesend (11:43 UTC)
+
+| Größe | vorher (11:37) | nachher (11:43) |
+|---|---|---|
+| Profile gesamt / aktiv / inaktiv | 29 / 5 / 24 | 29 / **25** / **4** |
+| Stufe A angelegt / aktiv | 20 / 0 | 20 / **20** |
+| Stufe B / C | 0 / 0 | 0 / 0 |
+| Löschmarken | 0 | 0 |
+| `crawlRuns` | 20 | 20 |
+| Migrationen | 35 | 35 |
+
+- Blobzeile `main`: md5 `c69d7fee…` @ 10:00:40,596 → `7aae10e8…` @ **11:38:58,387** — genau **ein** Schreibvorgang,
+  am Laufende. Zeile `main-auth` zuletzt **11:34:06**, also **vor** dem Lauf: die Konten sind unberührt.
+- Alle 20 Kohortenkonten weiterhin `active: false`, `status: "aktiv"`, Adressen auf `.invalid`, letzte Änderung
+  2026-09-04. Der Bindungsvorgang brauchte keine Kontoaktivierung; die dafür erteilte Freigabe blieb ungenutzt.
+  Die Pipeline entscheidet über `profileActive` (`profile-validation.isDisabled`), nicht über das Konto — die
+  Verarbeitung ist dadurch nicht blockiert, nur der Login.
+- Im Blob tragen alle 20 Einträge `profiles.<id>.profileActive: true`, Schreibzeitstempel **11:38:15,506 –
+  11:38:57,909** — lückenlos im Laufzeitfenster.
+- **Invariante gehalten:** `max(updated_at)` der 9 Nicht-Kohortenprofile unverändert `2026-08-06 08:01:31,744+00`;
+  jede mandantenspezifische Zeile (`main-p-*`) älter als der Lauf (jüngste `main-p-cem-ince` 10:00:42, regulärer Cron).
+- **Kosten:** der Lauf verbrauchte **0** Modellaufrufe (`llm_budget_counters` unverändert 67, zuletzt 11:33:41).
+  Tagesverbrauch 05.09. bis 11:33 UTC 63 Aufrufe / **0,2010 USD**; 04.09. 108 / 0,3202 USD. Rund **0,0032 USD**
+  je Aufruf — unter der vorab berechneten Reißgrenze 0,004139. Kohorte: **0** Aufrufe, **0** USD.
+- **Deployment:** `dpl_GCZLTfUSmFoeMP1WSfxG2bEYeinP`, READY, target production, `action: redeploy`,
+  `originalDeploymentId dpl_5vyVzomHBTy4soQLzq9dXwZVmwTU`, `githubCommitSha 9407f8c8…`, 07:56:52 UTC. Danach kein
+  weiteres Production-Deployment.
+
+### §39.2 Nachweisgrenze
+
+Durchgesetzt wird eine **Aufrufzahl**, kein USD-Betrag (`storage.llmDailyCallLimit`, fail-closed auf 50; atomare
+Reservierung `ON CONFLICT … WHERE used < p_max`). Der wirksame Wert von `HELMUT_MAX_LLM_CALLS_PER_DAY` ist aus
+einer Sitzung **nicht lesbar** — Vercel-Env ist gesperrt, die Diagnose-Whitelist in `server.js` zeigt ihn nur über
+`/api/admin/overview` mit echter Admin-Sitzung. **Wirkungsbeleg** für eine Anhebung: 03. und 04.09. stoppten exakt
+bei 100; am 05.09. lief `understanding-rueckstand` um 11:30:13 auf `success` statt wie zuvor auf
+`blocked / rueckstand-budget-boden-erreicht`. Das ist ein Indiz, kein Wert.
+
+### §39.3 Befund aus der Nachprüfung
+
+`mandate_profiles.updated_at` blieb bei allen 20 Zeilen auf dem `created_at` vom 04.09., obwohl `aktiv` von `false`
+auf `true` ging. Der relationale Zeitstempel belegt die Änderung **nicht**. Ursache und Behebung: §40.
+
+## §40 Lage-Check-Kapazität und `updated_at` (05.09.2026, PR #303, NICHT gemergt)
+
+### §40.1 Der Blocker, Production belegt
+
+Lauf `cron-lage-check-20260905100015-he8tk`, **10:00:15,104 → 10:04:16,853 UTC** (241,749 s), `status: teilweise`,
+`kapazitaet: 1`, `obergrenzeLaeufe: 5`. Ausgänge: `cem-ince: fehlgeschlagen` (beansprucht 10:00:16,167, als Fehler
+gebucht 10:04:16,698, `letzteDauerMs 240531`), `annika-klose` / `ruppert-st-we` / `helmut-kleebank` /
+`ottilie-paola-klein-2` jeweils `zeitbudget` — **nie begonnen**. Also **0 von 5 erfolgreich, 1 von 5 begonnen**.
+Der Systemfehler wurde 10:04:17,944 geschrieben.
+
+Aufteilung dieser 240,5 s (`main-p-cem-ince.lageChecks` und `process_runs`, run_id `lage-20260905100016-5bc8j`):
+
+| Abschnitt | Dauer | Anteil |
+|---|---|---|
+| Vorphase bis zum ersten `saveLageCheck` (Profil, Plan, Abruf 90 Quellen, `saveRawItems`, Telemetrie) | 25,266 s | 10 % |
+| `persistRawDocumentsShadow` (903 Dokumente) | ~9,4 s | 4 % |
+| `runUnderstandingShadow` | **205,062 s** | **85 %** |
+| — davon 4 Modellaufrufe | 52,077 s | 25 % der Faltung |
+| — davon serieller Vormerk-Loop, 604 Cluster | **127,367 s** | 62 % der Faltung |
+| — davon Speicherarbeit zwischen den Modellaufrufen | 19,683 s | |
+| — davon Clustering | 5,936 s | |
+
+Die Vormerkrate ist unabhängig gemessen: neun Production-Läufe mit `processed_count = 0` (also **ohne** Modellaufruf)
+ergeben 179,6–276,7 ms je Vormerkung, Median ~197,5 ms. 604 × ~198 ms ≈ 120 s.
+
+### §40.2 Drei Ursachen
+
+1. **Kein Mandatsbudget.** `withTimeout(runLageCheck(...), 240000)` (server.js:1608) war exakt so groß wie das
+   Budget der **gesamten** Mandatsschleife (`deadlineMs: 240000`, server.js:1622). Vor jedem Mandat wurde nur
+   geprüft, ob noch `reserveMs` (15 s) Restzeit bleibt — ein START-Gatter, kein STOPP-Gatter.
+2. **Globale Arbeit lief je Mandat.** Quellenabruf, Rohdokumente und Verstehen tragen keinen Mandantenbezug, liefen
+   aber je Mandat. Prozessweit dedupliziert wurde bisher nur der **Google**-Anteil (`sharedFetchLedger`); direkte
+   RSS-, HTML- und amtliche Wege wurden erneut geholt.
+3. **Vormerk-Loop unbegrenzt.** Der Riegel existiert seit K4 (`vormerkBudgetMs`/`vormerkDeadlineMs`,
+   `savePendingBulk`), war im Lage-Pfad aber **nie verdrahtet**; `0` bedeutet dort ausdrücklich *kein Limit*.
+   `understanding.js:2258-2266` beziffert genau diese Senke aus einem früheren 504-Vorfall im Crawl-Pfad — dort
+   wurde sie begrenzt, hier nicht.
+
+### §40.3 Behebung und Rechnung
+
+Umsetzung: `cron-fairness.mandatsScheibeMs` (Zeitscheibe je Mandat), `scheduler.runGeteilteLageErfassung` mit dem
+reinen Vertrag in `lib/helmut/lage-erfassung.js` (globale Arbeit einmal je Lauf, auf
+`cron-globalphase.planGlobaleQuellen` aus OP-25 K1), Vormerk-Riegel wortgleich zum Crawl-Pfad, Modellbudget folgt
+der Scheibe. Details im PR-Text von #303.
+
+| | je Mandat | Mandate je Lauf | 25 Mandate | 500 Mandate |
+|---|---|---|---|---|
+| vorher | 209 s | **1** | 25 Läufe = 25 Tage | 500 Läufe |
+| nachher | 90 s **einmal** + 2,1 s je Mandat | **71** | **1 Lauf** (142 s von 240 s) | `ceil(500/71)` = **8 Läufe** |
+
+Ausdrücklich eine **Rechnung** aus den oben gemessenen Zahlen, keine Wanduhrmessung der Änderung.
+
+### §40.4 Was die Behebung NICHT leistet (adversarial gegengeprüft)
+
+Sie beseitigt den **Timeout** und die je Mandat wiederholte globale Arbeit — sie erhöht **nicht den Durchsatz des
+Verstehens**. Am 05.09. entstanden aus 903 Dokumenten 608 Cluster; **4** wurden verstanden (52,077 s Modellzeit =
+86,8 % des 60-s-Modellbudgets), **604** zurückgestellt. Die Verstehensschleife wurde vom **Modellbudget** beendet,
+nicht von der Restzeitwache (bei Abbruch ~166 s Restzeit gegen 45 s Reserve). Bei ~13,0 s mittlerer Modellzeit je
+Cluster bräuchte **ein einziges** Mandat 608 × 13,0 s ≈ **7.916 s** serielle Modellzeit — das **26-Fache** der
+Plattformgrenze von 300 s. Der Rückstand steht am 05.09. bei **11.045** `pending` Wissensobjekten (31.08.: 9.080)
+und bleibt der als **§20 BLOCKIERT** geführte, davon getrennte Blocker.
+
+### §40.5 `mandate_profiles.updated_at`
+
+`MANDATE_PROFILE_COLUMNS` (storage.js:7242-7255) listet 35 Spalten und enthält weder `updated_at` noch `created_at`;
+`toMandateProfileRow` setzt `updated_at` nie, `pickColumns` würde es ohnehin entfernen. Auf der Tabelle liegt **kein**
+nicht-interner Trigger (`pg_trigger` leer); `created_at`/`updated_at` sind `timestamptz NOT NULL DEFAULT now()`, und
+ein Spaltendefault greift nur beim INSERT. Geschrieben wird per PostgREST-Upsert mit
+`Prefer: resolution=merge-duplicates` — der UPDATE-Zweig setzt ausschließlich Payload-Spalten.
+
+Behoben app-seitig, **ohne Migration**: `saveProfileToDb` liest die Bestandszeile (ausdrücklicher
+`user_id=eq.`-Filter **und** Mandantenprüfung auf der Antwort, `CLAUDE.md` §4.1), vergleicht kanonisch (Arrays
+reihenfolgetreu, JSONB schlüsselsortiert, Zeitstempel normalisiert, `null`/`undefined`/`""` gleichgesetzt) und setzt
+`updated_at` **nur bei echter Inhaltsänderung**. Ein Lesefehler setzt den Zeitstempel (sichere Richtung) und wird
+protokolliert. `created_at` wird nie geschrieben, Altbestand nicht nachträglich verändert. Der zusätzliche
+Lesevorgang liegt **nicht** im Cron-Pfad — `saveProfile` wird ausschließlich aus HTTP-Routen gerufen.
+
+**Dauerhafte Mehrdeutigkeit:** 24 von 29 Zeilen tragen weiterhin `updated_at == created_at`. Bei Zeilen von **vor**
+dieser Behebung darf das **nicht** als „nie geändert" gelesen werden.
