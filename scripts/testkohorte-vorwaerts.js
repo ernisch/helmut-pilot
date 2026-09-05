@@ -298,6 +298,13 @@ async function main() {
       angelegt: ergebnis.angelegt,
       bereitsVorhanden: ergebnis.bereitsVorhanden,
       fehlgeschlagen: ergebnis.fehlgeschlagen,
+      fehlerbefunde: ergebnis.ergebnisse
+        .filter((e) => e.zustand !== "angelegt-inaktiv")
+        .map((e) => ({
+          id: e.id, zustand: e.zustand,
+          schreibfehler: e.schreibfehler, lesefehler: e.lesefehler,
+          teilbestand: e.teilbestand || null
+        })),
       legtInaktivAn: ergebnis.legtInaktivAn,
       aktiviertNichts: ergebnis.aktiviertNichts,
       ok: ergebnis.ok
