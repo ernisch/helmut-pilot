@@ -5290,7 +5290,186 @@ Behoben app-seitig, **ohne Migration**: `saveProfileToDb` liest die Bestandszeil
 reihenfolgetreu, JSONB schlüsselsortiert, Zeitstempel normalisiert, `null`/`undefined`/`""` gleichgesetzt) und setzt
 `updated_at` **nur bei echter Inhaltsänderung**. Ein Lesefehler setzt den Zeitstempel (sichere Richtung) und wird
 protokolliert. `created_at` wird nie geschrieben, Altbestand nicht nachträglich verändert. Der zusätzliche
-Lesevorgang liegt **nicht** im Cron-Pfad — `saveProfile` wird ausschließlich aus HTTP-Routen gerufen.
+Lesevorgang liegt beim Schreiben eines Profils, nicht bei jedem Cron Matching. Auch die vorgesehenen
+Provisionierungs- und Aktivierungsskripte verwenden `saveProfile`; die frühere Aussage „ausschließlich HTTP" war falsch.
 
 **Dauerhafte Mehrdeutigkeit:** 24 von 29 Zeilen tragen weiterhin `updated_at == created_at`. Bei Zeilen von **vor**
 dieser Behebung darf das **nicht** als „nie geändert" gelesen werden.
+
+## §41 Übernahme durch ChatGPT und unabhängige Prüfung von PR #303 (05.09.2026)
+
+### §41.1 Aktueller Auftrag und harte Grenzen
+
+Der Betreiber hat ChatGPT am 05.09. zum einzigen technischen Ausführer bestimmt; Claude Code arbeitet laut
+Betreiber nicht parallel. **Alle 29 vorhandenen Mandatsprofile sind synthetische Testprofile**, einschließlich
+der fünf älteren aktiven Kennungen. Vier andere inaktive Profile bleiben unverändert. Ziel sind exakt
+**500 aktive Testprofile**. Dieser Auftrag ersetzt ältere pauschale Nichtfreigaben für B/C in diesem Dokument.
+
+Bedingt freigegeben sind: unabhängige Prüfung und kleine Korrekturen von #303 auf dessen bestehendem Branch,
+Commit und Push; Merge nach vollständig grünen lokalen und externen Prüfungen am exakten Kopf,
+`expectedHeadSha` und möglichst echtem Merge Commit mit zwei Eltern; automatische Production Deployments;
+rein lesende Kontrollen; ein kontrollierter Lage Check für 25 sowie notwendige kontrollierte Pipeline und
+Modellläufe; getrennte inaktive Provisionierung und anschließende Aktivierung B, danach C; nötige kleine
+Code PRs und abschließender Dokumentations PR, jeweils geprüft und gemergt. Analyse durch Unteragenten ist
+erlaubt, dieselben Dateien haben nur einen Editor.
+
+**A, B und C dürfen nicht übersprungen oder zusammen aktiviert werden.** B setzt den vollständigen 25er
+Production Beleg einschließlich wirksamem Aufrufzähler über 100 voraus. C setzt eine vollständig dokumentierte
+B Prüfung voraus. Ein gewöhnlicher Rückstand blockiert nicht, wenn er belegbar vorwärts arbeitet und nicht
+unkontrolliert wächst. Mehrtagesbeobachtung und besonderer Kundenschutz der fünf älteren Profile sind für
+diesen Test keine zusätzliche Bedingung. Das beweist keinen tragfähigen Mehrtagesbetrieb oder Verkaufsreife.
+
+Unverändert streng gelten:
+
+- Höchstens **10 USD Modellkosten je UTC Tag**, interner Sicherheitsstopp spätestens bei prognostiziert **9 USD**.
+  RPM, TPM, USD und Parallelität aus den vier wirkungslosen Testlaufwerten schützen nicht.
+- Keine externe Zustellung einschließlich E Mail, Push, WhatsApp und Betreiber Webhook. Kein Konto aktivieren,
+  die vier sonstigen inaktiven Profile nicht aktivieren, keine unbekannte Zielgruppe oder fremde Änderung.
+- Keine Löschung, Wiederherstellung verlorener `crawlRuns`, Migration, neue kostenpflichtige Ressource,
+  Azure Änderung, Vercel Env Änderung, Secret Ausgabe, direkte SQL Aktivierung oder Riegelumgehung.
+- Kein Rollback oder Revert ohne neue Betreiberfreigabe. Scheitert ein Production Deployment: **sofort stoppen**,
+  kein zweites Deployment. Vor jeder Aktivierung geprüfter scharfer Pfad und belegtes reales Zeitfenster.
+- Produktionsschreibrechte umfassen nur B/C Anlage und Aktivierung sowie die durch autorisierte Fachläufe
+  entstehenden Aufträge, Zustände, Briefings, Projektionen, Telemetrie und den erlaubten Modellverbrauch.
+
+### §41.2 Zugang und Grundlinie, rein lesend
+
+Prüfzeitraum **21:20 bis 21:33 Türkei / 20:20 bis 20:33 Berlin / 18:20 bis 18:33 UTC** am 05.09.:
+
+| Gegenstand | Unabhängiger Befund |
+|---|---|
+| Repository | `ernisch/helmut-pilot` erreichbar und lokal geklont. GitHub meldet Admin und Push Rechte; die Rechteprüfung selbst schrieb nichts. |
+| `origin/main` | Exakt `9407f8c83fa37ecb371c0423ff87e64284409f51`, keine unbekannten Commits. |
+| Ursprünglicher PR Kopf | `3f2752a60d01de8387399279e071fa1740a76ffc`, davor ausschließlich `07be6a7ca0c5868907ec776cec7a9ac138fed3ec`. Basis exakt obiges main. 16 Dateien, +1784/−103, keine Migration. |
+| Ursprüngliche Pflichtprüfungen | Alle fünf grün; CI `33970481140` mit beiden Jobs erfolgreich, außerdem Shadow Pilot und Sprint9B. Keine Review Threads, mergefähig, konfliktfrei, kein Draft. Diese Befunde gelten nur für den ursprünglichen Kopf. |
+| Ursprüngliche Vorschau | `dpl_4QrecdsNPTSB4Hv1NFeLUJpZEpXN`, READY am exakten Kopf `3f2752a…`. |
+| Production | `dpl_GCZLTfUSmFoeMP1WSfxG2bEYeinP`, READY, target production, `githubCommitSha` exakt `9407f8c83fa37ecb371c0423ff87e64284409f51`. Kein neuerer Production Stand in der Deploymentliste. |
+| Supabase | Projekt `ddckuvvpcytqbyfmbvie` erreichbar; sämtliche Sitzungsabfragen in ausdrücklich nur lesenden Transaktionen. |
+| Mandatsprofile | 29 gesamt, 25 aktiv, 4 inaktiv, 0 Löschmarken. A 20/20 aktiv, B 0, C 0. |
+| Andere getrennte Bestände | 30 relationale Identitätsprofile; 25 Auth Konten, davon 3 aktiv. Darunter 20 Kohortenkonten, davon 0 aktiv. |
+| Aufbewahrung und Schema | `crawlRuns` 20; 35 Migrationen. Keine Änderung durch diese Sitzung. |
+
+Die vorhandene Datei `scripts/testkohorte-vorwaerts.js` ist über Node ausführbar. **Es fehlt der sichere
+authentifizierte Ausführungskontext**, nicht das Skript: Im ausführenden Prozess sind weder Supabase Service
+Role Zugang noch Cron Secret oder Vercel Token verfügbar; die erforderlichen Production Speicherparameter
+sind ebenfalls nicht gesetzt. Übliche CLI Anmeldedateien fehlen. Die verbundenen Verwaltungszugänge geben
+Leserechte, aber keinen ausführbaren Cohort CLI Kontext. Der Supabase Connector bietet nur öffentliche
+Publishable Keys, keinen Service Role Schlüssel für den Skriptprozess.
+
+Der sichere Vercel Fetch Weg erreicht die Anwendung, scheitert aber an deren eigenem Zugang:
+`/api/ops/jobqueue` antwortet **401**, `/api/cron/lage-check` **403** vor Fachausführung. Der Browser verlangt eine
+Vercel Anmeldung. Keine vorhandene GitHub Action führt den Kohortenpfad aus; die Staff Backfill Actions sind
+andere, fest begrenzte Werkzeuge. Es wurde kein neuer Secret Transfer oder Ersatzaktivierungsweg gebaut.
+Damit ist die Betreibergrenze **fehlender sicherer Aktivierungsweg** erreicht. Angefangene lokale Korrektur und
+Prüfdokumentation werden auf dem bestehenden PR Branch gesichert; Production bleibt angehalten.
+
+### §41.3 Bestätigter Fehler im neuen Lagepfad und gezielte Korrektur
+
+Die ursprüngliche gemeinsame Lageerfassung faltete die gesamte Quellenvereinigung mit einem einzigen
+`runUnderstandingShadow(savedItems)`. Das umging den bestehenden Sichtbarkeitsvertrag aus OP-25 K2.1.
+Ein unabhängiger Verhaltenstest am tatsächlichen Erfassungsfunktionskörper mit echter Kontext- und
+Clusterbildung zeigte den bekannten F9 Fehler erneut: Pflegeheimbesuch in Spandau und Jugendzentrumsbesuch
+in Harburg aus getrennten Personenquellen wurden zu einem Vorgang verschmolzen.
+
+Die Korrektur in `scheduler.js` verwendet den vorhandenen `vorgangskontext` Vertrag einschließlich
+Mehrfachherkunft nach Hash Entdoppelung. Quellenabruf und Rohdokumentspeicherung bleiben geteilt;
+Understanding läuft pro Sichtbarkeitskontext. Alle Kontexte teilen dieselbe **absolute Modellfrist und
+Vormerkfrist**. Partition und Kontextgrenzen werden geprüft; die Lauftelemetrie enthält jede Kontextbilanz.
+Nicht abrechenbare Teile ergeben keinen behaupteten globalen Erfolg. Eine zweite Nachprüfung zeigte,
+dass nach der gemeinsamen Vormerkfrist trotzdem neue Kontexte begannen: Sperren und Telemetrie des
+Understanding Pfads passieren vor dessen eigenen Zeitgates. Die gezielte Ergänzung beendet deshalb die
+Kontextschleife an der gemeinsamen Frist und weist unbegonnene Kontexte mit ihrer Dokumentmenge als
+unvollständig aus. Sie behauptet weder eine bekannte Clusterzahl noch eine erledigte Vormerkung.
+
+Gezielter Beleg der ersten Korrektur: Die neue Kapazitätsregression lieferte gegen den ursprünglichen PR Kopf **115 PASS,
+7 FAIL**, mit Korrektur **122 PASS, 0 FAIL**. Die Restzeitprüfung bestand mit **52**, die vorhandene
+Bündelungsregression mit **56** bestandenen Prüfungen. Der alte Quelltextriegel in `vorgangskontext-test.js`
+prüft jetzt genau den unveränderten `runSourceCrawl` Körper; zuvor umfasste er irrtümlich auch die neu davor
+eingefügte Lagefunktion. Die Fachverträge bleiben erhalten.
+
+**Prüfstand vor dem Sicherungscommit:** Die ergänzte Deadline Regression scheiterte vor ihrer Behebung mit
+122 PASS / 7 FAIL; der korrigierte Kapazitätstest besteht mit **129 PASS / 0 FAIL**. Sein langsamer IO Fall
+verwendet den echten Understanding Unterpfad: drei Kontexte begonnen, sieben mit sieben Dokumenten nicht
+begonnen, ein bekannter Cluster nicht vorgemerkt; 109989 ms simulierte Laufzeit, ehrlich teilweise.
+Der separate Browser Smoke besteht mit **32 PASS / 0 FAIL**, Kostenvertrag 129/129, Syntax 14/14 geänderte
+JS Dateien; Größenprüfung 4/4 und 74/74 relative Dokumentlinks auflösbar.
+
+Zwischenläufe der Gesamtsuite endeten mit 317/320 und 318/320. Ursachen: anfangs fehlendes Chromium,
+zu breite beziehungsweise zu enge Quelltextsuchmuster und einmal ein lastabhängiger Wanduhrvergleich in
+`quellen-mehrfachabruf-test.js`. Chromium wurde in der CI Version außerhalb des Repositorys installiert,
+die Suchmuster wurden auf die tatsächlichen Funktionskörper und Dokumentzugriffe korrigiert; die Anzahl der
+Modellwege bleibt auf drei gepinnt. Der unveränderte Wanduhrtest bestand isoliert mit 19/19.
+Die vollständigen lokalen und externen Ergebnisse **am endgültigen korrigierten Kopf** werden im PR
+protokolliert. Vor einem Merge müssen alle fünf externen Prüfungen und die Vorschau am neuen Kopf bestätigt
+sein. Alte grüne Prüfungen gelten nicht als Nachweis für neue Commits.
+
+**Laufzeitgrenze:** Die Tests für 5, 25 und 500 Profile enthalten Fairnessrechnungen, keine Production
+Wanduhrmessung. 142 Sekunden beziehungsweise acht Läufe sind weiterhin nur Annahmen. Der Profilvorlauf
+liest alle Profile einzeln ohne eigene Deadline; `withTimeout` beendet bereits laufende Schreibvorgänge
+nicht. Durch die gemeinsame absolute Modellfrist kann die vorhandene Reserve weniger direkte Aufrufe
+zulassen; übrige Arbeit erreicht den Vormerkpfad. Fairness, Vollständigkeit und Fortsetzung brauchen den
+kontrollierten Production Beleg. #303 ist zu diesem Nachtragsstand **nicht gemergt**.
+
+### §41.4 Verbrauch und bereits natürlicher Fortschritt
+
+| Messgröße am 05.09. | Befund |
+|---|---|
+| UTC Tageszähler `llm_budget_counters` | `global.used = 93`, letzte Änderung 17:34:12.298663 UTC. |
+| Tatsächlich protokollierte, nicht übersprungene Modellaufrufe | 88, alle erfolgreich, 473217 Token; `main-auth.data.llmUsage`. Nicht aus der leeren relationalen `llm_usage` abgeleitet. |
+| Berechnete Tageskosten | **0,284848 USD**, 0 Einträge mit unbekannten Kosten. Keine Providerrechnung; Reservierungen und protokollierte Aufrufe sind verschiedene Zähler. |
+| Betreiberangabe Deckel | `HELMUT_MAX_LLM_CALLS_PER_DAY=2416`, Understanding Reserve 702 und anschließender Redeploy. Rohwert und Wirkung über 100 weiterhin unbelegt. |
+| Natürliche Pipeline | `cron-pipeline-20260905160041-5q20e`, 16:00:41.633 bis 16:05:01.448 UTC, success: 150 verarbeitet, 38 zurückgestellt, 0 Fehler. |
+| Natürlicher Rückstandslauf | `understanding-rueckstand-20260905173038-fu0bt`, 17:30:38.766 bis 17:34:22.222 UTC, success: 18 verarbeitet, 94 zurückgestellt, 0 Fehler. |
+| Kohortenaufträge | 14 `source_fetch` erledigt; 6 Abrufe, 20 Projektionen und 20 Briefing Materialisierungen wartend, zusammen 46 offen. |
+
+Diese Sitzung löste **keinen** Fachlauf und **keinen** Production Modellaufruf aus. Ein Maximum zusätzlicher
+Lagekosten wurde daher nicht als scharf ausführbare Planung freigegeben. Vor dem späteren Lauf müssen
+Obergrenze, Tagesverbrauch und Reserve frisch berechnet werden. Der gemeldete Altbestand von 11022 offenen
+Understanding Clustern ist hier Betreiberangabe; die obigen konkreten Laufquittungen sind unabhängig gelesen.
+Vollständiger Abbau des Altbestands ist keine Voraussetzung für B.
+
+### §41.5 Kommunikation und Datenintegrität vor weiteren Fachläufen
+
+Der Lage Cron ruft nach `runLageCheck` weiterhin `sendLageChangePush` auf. Die neue PR Änderung eröffnet
+keinen neuen Kanal, aber **der bestehende Lagepfad ist nicht von sich aus versandfrei**. Die Kennungsfamilie
+blockiert die Kohorten, nicht die fünf älteren Testkennungen. Für `cem-ince` wurden ein aktives Konto ohne
+deaktivierende Benachrichtigungseinstellung und ein aktives Push Abonnement gelesen. Vor einem kontrollierten
+25er Lauf muss deshalb `HELMUT_TESTLAUF_KOMMUNIKATION=gesperrt` wirksam belegt sein; keine eigenmächtige
+Env Änderung und keine behauptete Sperre aufgrund der neuen Betreiberbezeichnung „Testprofil".
+
+**Keine pauschale Tagesnull behaupten:** Die vorhandene Telemetrie enthält ältere Push Vorgänge und einen
+Monitoring Webhook mit `sent:true`, HTTP 200, am 05.09. um **06:00:53.313 UTC**, vor der Übernahme.
+Diese Sitzung hat keine Nachricht ausgelöst. Ohne Providerbeleg ist keine weitergehende Zustellaussage zulässig.
+
+Der vorgesehene Provisionierer ruft in drei Fehlerzweigen nach Kontoanlage `rolleNeuesKontoZurueck` auf;
+dies löscht das neue Konto über `accounts.deleteUser`. **Vor B/C ist ein gesonderter kleiner Code PR nötig**,
+der für den Kohortenpfad das neue Löschverbot auch im Fehlerfall wahrt, einen eventuell inaktiven Teilbestand
+ehrlich meldet und Wiederaufnahme prüft. Dieser Fehlerpfad wurde noch nicht verändert oder scharf ausgeführt.
+
+`main` und `main-auth` werden weiterhin ohne Compare and Set als ganze Blobs ersetzt. Konkurrenz durch
+Fachläufe oder Session Änderungen kann daher nicht allein mit einem Cronkalender ausgeschlossen werden.
+Lesende Grundlinien umfassen jede Profil-, Identitäts- und Kontozeile als Kennung und Hash; vor und nach
+jedem späteren Schreibschritt sind Umfang, fremde Änderungen und reale relationale Profile gesondert zu prüfen.
+
+### §41.6 Exakte Stufen und Fortsetzung
+
+| Stufe | Exakte neue Kennungen aus dem Code | Nach inaktiver Anlage | Nach getrennter Aktivierung |
+|---|---|---|---|
+| B | `test-kohorte-b-001…075`, **75** | 104 insgesamt, 25 aktiv | 104 insgesamt, 100 aktiv, 4 inaktiv |
+| C | `test-kohorte-c-001…400`, **400** | 504 insgesamt, 100 aktiv | **504 insgesamt, 500 aktiv, 4 inaktiv** |
+
+Quelle: `test-kohorte-500.js`, `testkohorte-stufen.js` und `testkohorte-vorwaerts.js`. Ausschließlich Adressen
+unter `test-kohorte.invalid`, keine aktiven Kohortenkonten. **B und C wurden nicht angelegt oder aktiviert.**
+
+Vorgesehener Pfad bleibt `node scripts/testkohorte-vorwaerts.js`: zuerst `provisionierung --stufe=b`, danach
+eigenständig `aktivierung --gruppe=b` mit Grundlinie, Bestand, echtem Zeitfenster, `--scharf` und den jeweiligen
+im Code verlangten Prozessbestätigungen. C folgt erst nach vollständiger B Abnahme. Kein `--jetzt` im scharfen
+Modus und keine SQL Abkürzung. Der vollständige Nachtkorridor aus dem aktuellen Cronvertrag ist
+**00:36 bis 06:59 Türkei / 23:36 bis 05:59 Berlin / 21:36 bis 03:59 UTC**. Unterschiedliche Tageswechsel beachten;
+vor dem konkreten Lauf Uhr, Cronplan, laufende Prozesse und benötigte Restdauer erneut belegen.
+
+Fortsetzung braucht keine neue fachliche Freigabe für bereits erlaubte Schritte. Zuerst muss der geprüfte
+Ausführer seine Production Zugangsdaten über eine **geschützte Laufzeitumgebung** erhalten, ohne Secret im
+Chat oder Git. Dann neue Grundlinie, Kommunikationsbeleg, vollständige #303 Kopfprüfung und Merge,
+zugehöriges Production READY, kontrollierter 25er Lagebeleg und Budgetzähler über 100; erst danach B und C
+mit den separaten Bedingungen. Endstatus dieser Übernahme bleibt bis dahin **BLOCKIERT**, nicht 500 aktiv.

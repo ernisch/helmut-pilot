@@ -324,10 +324,11 @@ const store = (llmUsage, processRuns = []) => async () => ({ llmUsage, processRu
   const root = path.join(__dirname, "..");
   const src = (f) => fs.readFileSync(path.join(root, f), "utf8");
   // Alle Aufrufe der beiden Understanding-Einstiege samt Optionsobjekt einsammeln.
-  const aufrufe = (code) => [...code.matchAll(/run(?:Pending)?UnderstandingShadow\(\s*[A-Za-z0-9_]+\s*,\s*\{([\s\S]{0,400}?)\}\s*\)/g)].map((m) => m[1]);
+  const aufrufe = (code) => [...code.matchAll(/run(?:Pending)?UnderstandingShadow\(\s*[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*\s*,\s*\{([\s\S]{0,400}?)\}\s*\)/g)].map((m) => m[1]);
   const schedulerAufrufe = aufrufe(src("lib/helmut/scheduler.js"));
   // DREI seit dem Sprint 05.09.: Crawl-Pfad (eager), Lage-Pfad (mandatsweise Faltung) und
-  // die GETEILTE Lage-Erfassung, die den Korpus einmal je Lauf global versteht. Die Zahl ist
+  // die GETEILTE Lage-Erfassung, die den Korpus nach Sichtbarkeitskontext versteht.
+  // Auch der Dokumentzugriff `teil.dokumente` muss erfasst sein. Die Zahl ist
   // bewusst gepinnt: ein VIERTER Einstieg waere ein neuer Kostenweg und muss auffallen.
   check("scheduler.js: alle drei Understanding-Aufrufe gefunden", schedulerAufrufe.length === 3, `gefunden=${schedulerAufrufe.length}`);
   check("scheduler.js: jeder Aufruf reicht runId durch", schedulerAufrufe.every((o) => /\brunId\b/.test(o)));

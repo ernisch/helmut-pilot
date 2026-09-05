@@ -32,6 +32,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const vm = require("vm");
 
 const ROOT = path.join(__dirname, "..");
 const F = require(path.join(ROOT, "lib", "helmut", "cron-fairness.js"));
@@ -39,6 +40,10 @@ const LE = require(path.join(ROOT, "lib", "helmut", "lage-erfassung.js"));
 const GP = require(path.join(ROOT, "lib", "helmut", "cron-globalphase.js"));
 const RIEGEL = require(path.join(ROOT, "lib", "helmut", "kommunikationsriegel.js"));
 const { deduplicateRawItems, limitRawCandidates } = require(path.join(ROOT, "lib", "helmut", "crawler.js"));
+const V = require(path.join(ROOT, "lib", "helmut", "vorgangskontext.js"));
+const U = require(path.join(ROOT, "lib", "helmut", "understanding.js"));
+const { toRawDocumentRow } = require(path.join(ROOT, "lib", "helmut", "dedup.js"));
+const { laufBilanz } = require(path.join(ROOT, "lib", "helmut", "lauf-bilanz.js"));
 
 let pass = 0;
 let fail = 0;
@@ -109,6 +114,79 @@ async function lauf({
 
 function mandate(n, praefix = "m") {
   return Array.from({ length: n }, (_, i) => `${praefix}-${String(i + 1).padStart(3, "0")}`);
+}
+
+// Echter Erfassungskoerper aus scheduler.js. Ersetzt sind ausschliesslich IO und Uhr;
+// Quellenvereinigung, Mandatssichten, Kontextbildung, Clusterbildung und Bilanz sind echt.
+// So faellt die neue globale Faltung selbst durch den Test, nicht nur ihre Textform.
+function erfassungsProbe({ quellenJeProfil, itemsJeQuelle, kostenJeKontextMs = 10000, env = {}, echtesUnderstanding = false }) {
+  const uhr = makeUhr();
+  const aufrufe = [];
+  const gruppen = [];
+  const quittungen = [];
+  let speicherAufrufe = 0;
+  class ProbeDate extends Date {
+    constructor(...args) { super(...(args.length ? args : [uhr.now()])); }
+    static now() { return uhr.now(); }
+  }
+  const src = lies("lib/helmut/scheduler.js");
+  const erfassung = src.slice(src.indexOf("async function runGeteilteLageErfassung("), src.indexOf("async function runLageCheck("));
+  const zusammenfassung = src.slice(src.indexOf("function fasseEagerErgebnisseZusammen("), src.indexOf("// Sperre der globalen Phase."));
+  const ctx = vm.createContext({
+    Date: ProbeDate, Map, Set, Object, Number, String, Array, Math,
+    process: { env }, console: { log() {}, error() {} },
+    lageErfassung: LE, cronGlobalphase: GP, vorgangskontext: V,
+    lageCheckSourceLimit: 90, LAGE_VORMERK_BUDGET_MS: 20000, LAGE_ABSCHLUSS_RESERVE_MS: 5000,
+    getActiveProfile: async (id) => ({ id }),
+    getSourcesForProfile: async (profile) => quellenJeProfil[profile.id],
+    selectLageCheckSources: (sources) => sources,
+    googleHardeningConfig: () => ({ enabled: false }),
+    crawlAllSources: async (sources) => ({
+      checkedSources: sources.length, successfulSources: sources.length, failedSources: 0,
+      results: sources.map((s) => ({ sourceId: s.id, ok: true, status: "ok", items: itemsJeQuelle[s.id] || [] }))
+    }),
+    rememberGoogleBreakerState() {}, deduplicateRawItems, limitRawCandidates, maxCrawlCandidates: 1000,
+    saveRawItems: async (items) => { speicherAufrufe += 1; return items; },
+    persistRawDocumentsShadow: async (items) => ({ persisted: items.length }),
+    runUnderstandingShadow: async (items, options) => {
+      aufrufe.push({ items, options, jetztMs: uhr.now() });
+      if (echtesUnderstanding) {
+        const originalNow = Date.now;
+        Date.now = uhr.now;
+        try {
+          // Echter Unterpfad, ausschliesslich IO ersetzt. Jede einzelne Anfrage bleibt
+          // knapp unter dem 10-s-Speichertimeout. Bereits seine Vorarbeiten kosten Zeit,
+          // bevor die Modell- und Vormerk-Gates im Understanding erreicht werden.
+          return await U.runUnderstandingShadow(items, {
+            ...options, enabled: () => true, aiEnabled: () => true,
+            acquireLock: async () => { uhr.vor(9999); return { granted: true }; },
+            releaseLock: async () => { uhr.vor(9999); },
+            gateMode: () => "shadow", recordGateShadow() {},
+            recordGateShadowRows: async () => { uhr.vor(9999); },
+            priorityEnabled: () => false, verstehenVertrag: () => null, verstehenParallelitaet: 1,
+            requestUnderstanding: async () => { throw new Error("Unerwarteter Modellaufruf im Deadline-Test"); }
+          });
+        } finally {
+          Date.now = originalNow;
+        }
+      }
+      const clusters = U.clusterRawDocuments(items.map(toRawDocumentRow));
+      gruppen.push(...clusters.map((c) => c.documents.map((d) => d.title)));
+      const results = clusters.map((c) => ({ status: "saved", documents: c.documents.length }));
+      uhr.vor(kostenJeKontextMs);
+      return { clusters: clusters.length, processed: results.length, deferred: 0, vorgemerkt: 0,
+        results, counts: { saved: results.length }, telemetrie: U.buildOutcomeTelemetry({ clusters, results }) };
+    },
+    savePendingKnowledgeObjectsBulk: async (entries) => {
+      if (echtesUnderstanding) uhr.vor(9999);
+      return { vorgemerkt: entries.length, fehlgeschlagen: 0 };
+    },
+    buildOutcomeTelemetry: U.buildOutcomeTelemetry, laufBilanz,
+    recordProcessRun: async (entry) => { quittungen.push(entry); }, executionLocation: () => "offline-review"
+  });
+  vm.runInContext(`${zusammenfassung}\n${erfassung}\nthis.run = runGeteilteLageErfassung;`, ctx);
+  return { run: () => ctx.run({ tenantIds: Object.keys(quellenJeProfil), runId: "lage-kontext-probe", deadlineMs: BASIS_MS + 240000 }),
+    aufrufe, gruppen, quittungen, speicherAufrufe: () => speicherAufrufe };
 }
 
 // ── Kostenmodell aus GEMESSENEN Production-Zahlen (05.09., Lauf lage-2026090510001) ──────────
@@ -447,6 +525,98 @@ const VORLAUF_MS = GEMESSEN.abrufMs + GEMESSEN.vorphaseRestMs + GEMESSEN.rohdoku
       LE.sichtBrauchbar({ status: LE.ERFASSUNG_TEILWEISE, sichten: { A: {} } }, "A").brauchbar === true);
   }
 
+  abschnitt("8b) Echte Lage-Erfassung wahrt die Sichtbarkeitskontexte (K1-Regression F9)");
+  {
+    const quelle = (id) => ({ id, active: true });
+    const item = (id, sourceId, title, summary, stunde) => ({
+      id, hash: id, sourceId, sourceName: sourceId, title, summary,
+      url: `https://beispiel.invalid/${id}`, publishedAt: `2026-09-05T${stunde}:00:00.000Z`, linkType: "article"
+    });
+    // Bestehende F9-Fallfamilie: zwei Personenquellen, zwei unabhaengige Ereignisse.
+    const a = item("f9-a", "mandat-a-news", "Abgeordneter besucht Pflegeheim in Spandau",
+      "Der Abgeordnete besuchte ein Pflegeheim in Spandau und sprach mit Beschaeftigten ueber die Personalsituation.", "09");
+    const b = item("f9-b", "mandat-b-news", "Abgeordnete besucht Jugendzentrum in Harburg",
+      "Die Abgeordnete besuchte ein Jugendzentrum in Harburg und sprach mit Jugendlichen ueber die Freizeitangebote.", "10");
+    const gemeinsam = item("geteilt", "katalog", "Bundesbank legt Waehrungsbericht vor",
+      "Die Bundesbank berichtet ueber Wechselkurse und Waehrungsreserven.", "08");
+    const probe = erfassungsProbe({
+      quellenJeProfil: { A: [quelle("mandat-a-news"), quelle("katalog")], B: [quelle("mandat-b-news"), quelle("katalog")] },
+      itemsJeQuelle: { "mandat-a-news": [a], "mandat-b-news": [b], katalog: [gemeinsam] }
+    });
+    const ergebnis = await probe.run();
+    check("Der echte Erfassungsweg verschmilzt F9 nicht zu einem Vorgang",
+      !probe.gruppen.some((g) => g.includes(a.title) && g.includes(b.title)), JSON.stringify(probe.gruppen));
+    check("Mandatseigene Quellen und geteilte Katalogquellen bilden drei getrennte Kontexte",
+      probe.aufrufe.length === 3, String(probe.aufrufe.length));
+    check("Jedes neue Dokument erreicht exakt einen Understanding-Batch",
+      probe.aufrufe.flatMap((r) => r.items).length === 3
+      && new Set(probe.aufrufe.flatMap((r) => r.items.map((i) => i.hash))).size === 3);
+    check("Die Mandatssichten bleiben trotz getrennter Faltung vollstaendig",
+      ergebnis.sichten.A.rawItems.length === 2 && ergebnis.sichten.B.rawItems.length === 2);
+    check("Die globale Telemetrie bilanziert alle Kontexte und bleibt zaehlbar",
+      probe.quittungen.length === 1 && probe.quittungen[0].status === "success"
+      && probe.quittungen[0].gespeichert === 3 && probe.quittungen[0].telemetrie.cluster === 3);
+    const deadlines = probe.aufrufe.map((r) => r.options.deadlineMs);
+    check("Alle Kontexte teilen dieselbe absolute Modellfrist statt eines neuen Einzelbudgets",
+      deadlines.length === 3 && new Set(deadlines).size === 1 && deadlines[0] === BASIS_MS + 60000,
+      JSON.stringify(deadlines));
+    check("Das verbleibende Modellbudget schrumpft nach der Arbeit im vorigen Kontext",
+      probe.aufrufe.map((r) => r.options.budgetMs).join(",") === "60000,50000,40000",
+      probe.aufrufe.map((r) => r.options.budgetMs).join(","));
+    check("Auch die Vormerkung teilt eine einzige absolute Frist",
+      new Set(probe.aufrufe.map((r) => r.options.vormerkDeadlineMs)).size === 1
+      && probe.aufrufe[0].options.vormerkDeadlineMs === BASIS_MS + 80000);
+    const geteilt = erfassungsProbe({
+      quellenJeProfil: { A: [quelle("katalog")], B: [quelle("katalog")] }, itemsJeQuelle: { katalog: [gemeinsam] }
+    });
+    await geteilt.run();
+    check("Eine von allen gesehene Quelle wird weiterhin genau einmal verstanden und gespeichert",
+      geteilt.aufrufe.length === 1 && geteilt.aufrufe[0].items.length === 1 && geteilt.speicherAufrufe() === 1);
+    const mehrfach = erfassungsProbe({
+      quellenJeProfil: { A: [quelle("mandat-a-news"), quelle("katalog")], B: [quelle("mandat-b-news"), quelle("katalog")] },
+      itemsJeQuelle: { "mandat-a-news": [a], "mandat-b-news": [{ ...a, sourceId: "mandat-b-news" }], katalog: [gemeinsam] }
+    });
+    await mehrfach.run();
+    check("Mehrfachherkunft ueber verschiedene Quellen bleibt nach Hash-Dedup gemeinsam sichtbar",
+      mehrfach.aufrufe.length === 1 && mehrfach.aufrufe[0].items.length === 2);
+    const ungueltig = erfassungsProbe({
+      quellenJeProfil: { A: [quelle("katalog")] }, itemsJeQuelle: { katalog: [gemeinsam] },
+      env: { HELMUT_LAGE_UNDERSTAND_BUDGET_MS: "ungueltig", HELMUT_LAGE_VORMERK_BUDGET_MS: "ungueltig" }
+    });
+    await ungueltig.run();
+    check("Ungueltige Budgetwerte erzeugen keine unbegrenzte Modell- oder Vormerkfrist",
+      ungueltig.aufrufe[0].options.deadlineMs === BASIS_MS + 60000
+      && ungueltig.aufrufe[0].options.vormerkDeadlineMs === BASIS_MS + 80000);
+
+    const vieleProfile = {};
+    const vieleItems = {};
+    for (let i = 0; i < 10; i += 1) {
+      vieleProfile[`m${i}`] = [quelle(`q${i}`)];
+      vieleItems[`q${i}`] = [item(`d${i}`, `q${i}`, `Vorlage ${i} zur Pruefung des Haushalts`,
+        `Der Ausschuss beraet die Vorlage ${i}.`, "09")];
+    }
+    const langsam = erfassungsProbe({ quellenJeProfil: vieleProfile, itemsJeQuelle: vieleItems, echtesUnderstanding: true });
+    const begrenzt = await langsam.run();
+    check("Nach der gemeinsamen Vormerkfrist beginnt kein weiterer echter Understanding-Kontext",
+      langsam.aufrufe.length === 3 && langsam.aufrufe.every((r) => r.jetztMs < r.options.vormerkDeadlineMs),
+      `${langsam.aufrufe.length} Kontexte, ${begrenzt.dauerMs} ms`);
+    check("Langsames IO beendet den Vorlauf nach dem letzten bereits begonnenen Kontext",
+      begrenzt.dauerMs === 109989, String(begrenzt.dauerMs));
+    check("Die sieben nicht begonnenen Kontexte und Dokumente werden genau gezaehlt",
+      begrenzt.globalTelemetrie.nichtBegonneneKontexte === 7
+      && begrenzt.globalTelemetrie.nichtBegonneneDokumente === 7);
+    const nichtBegonnen = (langsam.quittungen[0].telemetrie.kontextBilanzen || []).filter((k) => k.begonnen === false);
+    check("Nicht begonnene Kontexte erhalten keine erfundene Clusterzahl",
+      nichtBegonnen.length === 7 && nichtBegonnen.every((k) => k.cluster === null && k.dokumente === 1));
+    check("Eine Vormerkluecke bleibt als bekannter offener Cluster sichtbar",
+      begrenzt.globalTelemetrie.nichtVorgemerkteCluster === 1);
+    check("Ohne fertigen Vorgang bleiben alle zehn Dokumente im Lauf offen, auch die zwei vorgemerkten",
+      begrenzt.globalTelemetrie.offeneDokumente === 10);
+    check("Erfassung und persistierte Quittung melden den unvollstaendigen Lauf als teilweise",
+      begrenzt.status === LE.ERFASSUNG_TEILWEISE
+      && begrenzt.globalTelemetrie.status === "partial" && langsam.quittungen[0].status === "partial");
+  }
+
   // ══ 9 · Kostenriegel bleibt erhalten ══════════════════════════════════════════════════════
   abschnitt("9) Kostenriegel — unverändert erhalten");
   {
@@ -625,8 +795,8 @@ const VORLAUF_MS = GEMESSEN.abrufMs + GEMESSEN.vorphaseRestMs + GEMESSEN.rohdoku
 
   console.log(`\n== ERGEBNIS ==\nPASS ${pass}  FAIL ${fail}  (gesamt ${pass + fail})`);
   if (!fail) {
-    console.log("Der Lage-Check verarbeitet 5 und 25 Mandate vollstaendig und 500 fortsetzbar —");
-    console.log("ohne Migration, ohne neue Cron-Zeit, ohne neue Ressource, mit beiden Riegeln.");
+    console.log("Offline bestanden: Fairnessrechnung fuer 5/25/500 und Kontextvertraege des Lage-Checks.");
+    console.log("Die tatsaechliche Laufzeit und vollstaendige Versorgung brauchen Production-Belege.");
   }
   process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error("TESTFEHLER:", e && e.stack); process.exit(1); });
