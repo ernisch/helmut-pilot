@@ -5215,7 +5215,12 @@ bei 100; am 05.09. lief `understanding-rueckstand` um 11:30:13 auf `success` sta
 `mandate_profiles.updated_at` blieb bei allen 20 Zeilen auf dem `created_at` vom 04.09., obwohl `aktiv` von `false`
 auf `true` ging. Der relationale Zeitstempel belegt die Änderung **nicht**. Ursache und Behebung: §40.
 
-## §40 Lage-Check-Kapazität und `updated_at` (05.09.2026, PR #303, NICHT gemergt)
+## §40 Lage-Check-Kapazität und `updated_at` (05.09.2026, PR #303 — **gemergt als `33f1158`**)
+
+> **Stand der Überschrift korrigiert:** dieser Abschnitt entstand vor dem Merge und trug bis dahin den Zusatz
+> „NICHT gemergt". #303 wurde am 05.09. um 21:01:19 UTC gemergt; Merge-Commit, Eltern und Production-Deployment
+> sind in **§42** belegt. Die Ursachen- und Korrekturdarstellung unten bleibt unverändert gültig; der
+> unabhängig reproduzierte Kontextfehler und seine Behebung stehen in **§41.3**.
 
 ### §40.1 Der Blocker, Production belegt
 
