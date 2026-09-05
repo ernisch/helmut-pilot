@@ -333,12 +333,26 @@ const FLAG_BE = { HELMUT_LANDESMODULE: "berlin" };
   const serverText = fs.readFileSync(path.join(__dirname, "..", "server.js"), "utf8");
   const fairnessText = fs.readFileSync(path.join(__dirname, "..", "lib", "helmut", "cron-fairness.js"), "utf8");
   check("7g Die Cron-Schleife ist sequenziell und zeitbudgetiert",
-    // Die Signatur traegt seit R-6 zusaetzlich eine optionale Laufkennung (reine
-    // Beobachtbarkeit) — das Zeitbudget selbst ist unveraendert.
-    /runCronForTenants\(cronName, perTenant, \{ deadlineMs = \d+(, runId = null)? \}/.test(serverText)
+    // Die Signatur traegt seit R-6 eine optionale Laufkennung und seit dem Sprint 05.09.
+    // einen optionalen, standardmaessig ABWESENDEN Vorlauf (mandantenneutrale Arbeit, die
+    // sonst je Mandat erneut liefe) — das Zeitbudget selbst ist unveraendert.
+    /runCronForTenants\(cronName, perTenant, \{ deadlineMs = \d+(, runId = null)?(, vorlauf = null)? \}/.test(serverText)
     && /cronFairness\.runTenantsFairly\(/.test(serverText)
     && /reason: "zeitbudget"/.test(fairnessText)
-    && /for \(const kandidat of planung\.plan\)/.test(fairnessText));
+    // Die Schleife laeuft weiterhin ueber `planung.plan`, ein Mandat nach dem anderen.
+    && /for \(let index = 0; index < planung\.plan\.length; index \+= 1\)/.test(fairnessText)
+    && /await perTenant\(tenantId, \{/.test(fairnessText));
+  // Seit dem Sprint 05.09. bekommt jedes Mandat eine eigene Obergrenze. Verhaltensbeleg statt
+  // Quelltextbehauptung: bei fuenf offenen Mandaten und 240 s Budget darf keines mehr als den
+  // fairen Anteil bekommen — genau das fehlte am 05.09., als ein Mandat 240,5 s verbrauchte.
+  {
+    const cf = require(path.join(__dirname, "..", "lib", "helmut", "cron-fairness.js"));
+    const s5 = cf.mandatsScheibeMs({ jetztMs: 0, deadlineMs: 240000, offen: 5 });
+    const s1 = cf.mandatsScheibeMs({ jetztMs: 0, deadlineMs: 240000, offen: 1 });
+    check("7g-2 Jedes Mandat hat eine eigene Obergrenze (kein Aushungern mehr)",
+      s5.scheibeMs === 48000 && s5.scheibeMs < 240000 && s1.scheibeMs === 240000,
+      `offen=5 -> ${s5.scheibeMs} ms, offen=1 -> ${s1.scheibeMs} ms`);
+  }
   check("7h Ein vom Zeitbudget abgeschnittenes Mandat erzeugt einen systemError (nicht still)",
     /Zeitbudget erschoepft/.test(serverText) && /recordSystemError/.test(serverText));
   check("7i Die Mandatsliste ist deterministisch sortiert (reproduzierbare Eingabemenge)",

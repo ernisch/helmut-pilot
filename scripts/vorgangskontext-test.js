@@ -547,8 +547,14 @@ const ALLE_FAMILIEN = [...G.FAMILIEN, ...G.ZUSATZFAMILIEN];
       // §29 (Reparatursprint 2026-08-20): einzige bewusste Ergaenzung des Alt-Zweigs ist
       // das absolute Slotende fuer die Restzeitwache vor dem Verstehens-Modellaufruf.
       /if \(wahl\.pfad === "alt"\) \{[\s\S]{0,400}?return runCronForTenants\(cronName, \(tenantId\) => runSourceCrawl\(tenantId, \{ deadlineMs: startedMs \+ deadlineMs \}\), \{ deadlineMs, runId \}\);/.test(serverSrc));
+    // PR #303 bindet den bestehenden Kontextvertrag auch an die Lage-Erfassung an.
+    // Der Riegel gilt fuer runSourceCrawl selbst, nicht fuer spaeter eingefuegte
+    // Nachbarfunktionen vor dem historischen Schattenpfad-Kommentar.
+    const crawlStart = schedSrc.indexOf("async function runSourceCrawl(");
+    const crawlEnde = schedSrc.indexOf("async function foldLageItemsIntoV3(", crawlStart);
     check("8.2 `runSourceCrawl` kennt den Kontextbegriff nicht (der Altpfad wurde nicht angefasst)",
-      !/vorgangskontext/.test(schedSrc.slice(0, schedSrc.indexOf("OP-25 K1 — SCHATTENPFAD"))));
+      crawlStart >= 0 && crawlEnde > crawlStart
+      && !/vorgangskontext/.test(schedSrc.slice(crawlStart, crawlEnde)));
     check("8.3 die Vorgangsbildung selbst ist unveraendert (kein Eingriff in `vorgang-identity.js`)",
       !/vorgangskontext|Sichtbarkeitsmenge/.test(fs.readFileSync(path.join(ROOT, "lib", "helmut", "vorgang-identity.js"), "utf8")));
     check("8.4 das Understanding ist unveraendert (kein Eingriff in `understanding.js`)",

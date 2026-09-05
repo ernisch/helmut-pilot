@@ -1420,8 +1420,13 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
     check("Zeitbudget der Briefing-/Lage-Crons unveraendert (240 000 ms)",
       (serverSrc.match(/deadlineMs: 240000/g) || []).length === 2);
     check("Aeussere Zeitgrenzen unveraendert (280 000 ms)", (serverSrc.match(/280000/g) || []).length >= 3);
+    // Der Vorlauf (Sprint 05.09.) ist ein ZUSAETZLICHER, standardmaessig ABWESENDER Parameter:
+    // ohne ihn verhaelt sich runCronForTenants unveraendert. Beides wird geprueft.
     check("Standardbudget von runCronForTenants unveraendert (240 000 ms)",
-      /runCronForTenants\(cronName, perTenant, \{ deadlineMs = 240000, runId = null \}/.test(serverSrc));
+      /runCronForTenants\(cronName, perTenant, \{ deadlineMs = 240000, runId = null, vorlauf = null \}/.test(serverSrc));
+    check("Vorlauf ist standardmaessig AUS (kein Verhalten ohne ausdruecklichen Vorlauf)",
+      /vorlauf = null \} = \{\}\) \{/.test(serverSrc)
+      && /if \(typeof vorlauf === "function"\) \{/.test(serverSrc));
     check("Gesamtbudget des Crawls unveraendert (240 000 ms Default)",
       /HELMUT_CRAWL_GESAMTBUDGET_MS \|\| 240000/.test(lies("lib/helmut/scheduler.js")));
 
@@ -1520,9 +1525,16 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
       const ueberzogenMs = (uhr.now() - BASIS_MS) - 100000;
       check("Ursache 2: die innere Deadline ist ein START-Gatter — ein begonnenes Mandat zieht sie beliebig weit ueber",
         ueberzogenMs >= 400000, `${ueberzogenMs} ms ueber der Deadline`);
+      // Seit dem Sprint 05.09. steht die Pruefung in `mandatsScheibeMs`; die INVARIANTE ist
+      // unveraendert: sie liegt VOR dem Mandat, es gibt keine danach, und ihre Schwelle ist
+      // woertlich die alte (`Restzeit >= mindestMs` statt `!(jetzt + reserveMs > deadline)`).
       check("Ursache 2b: die Restzeitpruefung steht VOR dem Mandat, es gibt keine danach",
-        /if \(now\(\) \+ reserveMs > deadline\) \{[\s\S]{0,200}continue;/.test(fairnessSrc)
+        /const scheibe = mandatsScheibeMs\(\{[\s\S]{0,220}if \(!scheibe\.startbar\) \{[\s\S]{0,200}continue;/.test(fairnessSrc)
         && l.fairness.zeitbudget.length === 3, l.fairness.zeitbudget.join(","));
+      check("Ursache 2b: die Schwelle ist woertlich die bisherige (Restzeit >= Untergrenze)",
+        /startbar: restRoh >= untergrenze/.test(fairnessSrc));
+      check("Ursache 2b: nach perTenant folgt KEINE zweite Restzeitpruefung, die abbrechen wuerde",
+        !/await perTenant\([\s\S]{0,400}if \(now\(\) [^)]*> deadline\)[\s\S]{0,80}break;/.test(fairnessSrc));
       // (c) Kein `finally` traegt den Vertrag: der Vermerk entsteht LAUFEND, nicht am Ende.
       check("Ursache 3: der Vertrag haengt nicht an Abschlusscode (kein finally in runTenantsFairly)",
         !/\}\s*finally\s*\{/.test(fairnessSrc.slice(fairnessSrc.indexOf("async function runTenantsFairly"))));

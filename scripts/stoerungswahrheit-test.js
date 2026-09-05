@@ -173,7 +173,9 @@ function check(name, cond, detail = "") {
   check("runCronForTenants isoliert jedes Mandat (try/catch) und hat ein Zeitbudget (deadline)",
     /runCronForTenants[\s\S]{0,3000}cronFairness\.runTenantsFairly\(/.test(serverSource)
     && /runCronForTenants[\s\S]{0,3000}deadlineMs/.test(serverSource)
-    && /try \{[\s\S]{0,400}await perTenant\(tenantId\)[\s\S]{0,400}catch \(error\)/.test(fairnessSource)
+    // Seit dem Sprint 05.09. bekommt `perTenant` als ZWEITES Argument die Zeitscheibe des
+    // Mandats; Isolation und Zeitbudget sind unveraendert.
+    && /try \{[\s\S]{0,600}await perTenant\(tenantId,[\s\S]{0,400}catch \(error\)/.test(fairnessSource)
     && /const deadline = startedMs \+ deadlineMs;/.test(fairnessSource));
   check("Ein Mandat, das aus Zeitmangel nicht begann, gilt NICHT als versucht (Fairness, OP-25)",
     /reason: "zeitbudget"/.test(fairnessSource)
