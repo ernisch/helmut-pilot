@@ -5473,3 +5473,70 @@ Ausführer seine Production Zugangsdaten über eine **geschützte Laufzeitumgebu
 Chat oder Git. Dann neue Grundlinie, Kommunikationsbeleg, vollständige #303 Kopfprüfung und Merge,
 zugehöriges Production READY, kontrollierter 25er Lagebeleg und Budgetzähler über 100; erst danach B und C
 mit den separaten Bedingungen. Endstatus dieser Übernahme bleibt bis dahin **BLOCKIERT**, nicht 500 aktiv.
+
+### §40.6 Zwei Fehler vor dem Merge korrigiert (Betreiber, Commit `9aa95e0`)
+
+Die in §40.3 beschriebene Fassung hatte zwei Fehler. Beide wurden vor dem Merge von #303 auf demselben Branch
+behoben; die Korrektur ist Teil des gemergten Stands.
+
+**1 · Vorgangskontexte wurden vermischt.** Die globale Faltung übergab den **gesamten** Korpus in EINEM Batch an
+`runUnderstandingShadow`. Helmut entscheidet „gehört zusammen" in zwei Regimen unterschiedlicher Strenge:
+`clusterRawDocuments` bildet **innerhalb** eines Batches Zusammenhangskomponenten — eine einzige paarweise Kante
+genügt, und Kanten wirken **transitiv** (loses Regime); `resolveVorgang` prüft **zwischen** Batches Kern gegen Kern
+(strenges Regime). Eine globale Bündelung verschiebt damit alle Dokumente **mandatseigener** Quellen aus dem strengen
+in das lose Regime. Gemessene Folge (Befund K1-1, `lib/helmut/vorgangskontext.js`, `docs/betrieb/cron-globalphase.md`
+§8a): fachlich verschiedene Vorgänge verschmelzen (K1-1a), zusammengehörige werden getrennt (K1-1b), und Ketten laufen
+**über die Mandatsgrenze** (K1-1c) — die Fehlerklasse „Digest-Cluster".
+
+Das ist genau der Grund, warum das Modul `vorgangskontext.js` (OP-25 K2.1) existiert und warum `waehleCronPfad` die
+Flags `HELMUT_CRON_GLOBALPHASE` und `HELMUT_CRON_GLOBALABRUF` als einander ausschließend behandelt. Die verworfene
+Fassung hatte K1 übernommen, ohne K2.1 anzuwenden.
+
+Behoben: geclustert wird je **Sichtbarkeitskontext** (`planKontexte`). Geteilte Quellen bleiben ein gemeinsamer
+Kontext, mandatseigene Quellen bleiben getrennt. Vor der Faltung laufen zwei Vertragsprüfungen — `pruefePartition`
+(jedes Dokument in genau einem Kontext) und `pruefeAlleKontextgrenzen` (kein Kontext überschreitet seine Sichtbarkeit).
+Eine Verletzung wirft und fällt **fail-safe** auf die mandatsweise Faltung zurück.
+
+Zusätzlich: die Sichtbarkeit eines Dokuments stammt aus **allen** Mandatssichten, nicht aus der `sourceId` des
+gespeicherten Exemplars. Grund ist der Speicherauftrag aus §40.3 selbst — er entdoppelt über den Hash und kann damit
+mehrere Abrufwege auf ein Exemplar reduzieren, dessen `sourceId` danach nicht mehr die volle Herkunft trägt.
+
+**2 · Jeder Kontext hätte ein frisches Zeitbudget bekommen.** Aus einem Aufruf wurden n Aufrufe; ohne Korrektur hätte
+jeder Kontext das volle Modell- und Vormerkbudget erhalten, die Laufzeit also mit der Kontextzahl multipliziert.
+Behoben: **ein** gemeinsames Modellende (`modellFristMs`) und **eine** gemeinsame Vormerkfrist (`vormerkFristMs`,
+zusätzlich gegen die Laufdeadline minus Abschlussreserve gekappt) für alle Kontexte. Vor jedem Kontext wird gegen die
+Vormerkfrist geprüft, **bevor** `runUnderstandingShadow` gerufen wird — dieses macht Lock-IO, Clusterbildung und
+Telemetrie bereits vor seinen eigenen Zeitgates, und nach Fristende darf auch diese Vorarbeit nicht mehr beginnen.
+
+**Ehrliche Teilbilanz statt falschem Grün.** Eine globale Bilanz entsteht nur, wenn **jede** Teilmenge vollständig
+abrechenbar ist (`laufBilanz(...).zaehlbar && .stimmig`); sonst bleibt sie sichtbar unabrechenbar. `status` wird
+`partial`, sobald ein Kontext nicht begonnen wurde, Vormerkungen ausblieben oder fehlschlugen. Unbegonnene Kontexte
+werden nach **Dokumenten** gezählt — ihre Clusterzahl ist unbekannt und wird nicht geschätzt. `ERFASSUNG_TEILWEISE`
+greift jetzt auch, wenn die globale Phase kein `success` war.
+
+**Prüfungen am korrigierten Kopf `9aa95e0`:** Offline-Suiten **320/320** grün (668 s, lokal über `scripts/lokal.js`),
+`lage-check-kapazitaet-test.js` **129/129** (18 zusätzliche Fälle gegenüber der verworfenen Fassung),
+`vorgangskontext-test.js` **103/103**, `kostenmessung-test.js` **129/129**; alle fünf GitHub-Checks grün, Vercel-
+Vorschau READY.
+
+### §40.7 Nach-Merge-Beleg (`CLAUDE.md` §9)
+
+Gemergt als **#303**, Merge-Commit **`33f1158694273425e3430344a850c9d1c9335625`**, Eltern `9407f8c`/`9aa95e0`,
+05.09. 21:01:19 UTC. Production-Deployment **`dpl_36dEh3b6RPZBW5Ufokk2PuESJyZ2`**, READY, target `production`,
+`githubCommitSha` = Merge-Commit — rein lesend bestätigt.
+
+Production um 21:02 UTC rein lesend geprüft und **unverändert**: 29 Profile / 25 aktiv / 4 inaktiv, Stufe A 20/20,
+Stufe B und C 0, 0 Löschmarken, `crawlRuns` 20, 35 Migrationen, `max(mandate_profiles.updated_at)` weiterhin
+`2026-09-04 11:40:34,994+00`. Letzteres ist korrekt und kein Widerspruch zur `updated_at`-Korrektur: seit dem Merge
+gab es keinen Profilschreibvorgang, und der Zeitstempel entsteht erst beim nächsten **echten**. Kohortenaufträge
+19 erledigt / 41 wartend. Kein schreibender Test, keine Aktivierung, keine Migration ausgelöst.
+
+**KI-Tagesdeckel — erstmals mit einer Zahl belegt.** Der Zähler `llm_budget_counters` (05.09., scope `global`) stand
+um **20:03:48 UTC auf 104**. Am 03. und 04.09. stoppte er exakt bei 100. Damit ist die Anhebung **nicht mehr nur
+wirkungsbasiert vermutet, sondern gezählt**; der Rohwert der Umgebungsvariablen bleibt aus einer Sitzung unlesbar.
+Tagesstand: 99 protokollierte Modellaufrufe, **0,3228 USD**, davon **0 der Kohorte**. Der Deckel zählt weiterhin
+**Aufrufe, nicht USD**.
+
+**Offen und ausdrücklich nicht behauptet:** der **Production-Beleg der Behebung**. Der erste Lage-Check mit dem neuen
+Code ist der Lauf am **06.09. um 10:00 UTC**. Bis dahin ist die Wirkung ausschließlich rechnerisch und offline
+verhaltensbasiert belegt.

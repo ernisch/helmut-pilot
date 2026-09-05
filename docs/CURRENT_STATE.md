@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 2026-09-05, Übernahme durch ChatGPT.** Production rein lesend bestätigt: **29 Mandatsprofile, 25 aktiv, 4 inaktiv**, Stufe A **20/20 aktiv**, B und C **0 angelegt**, 0 Löschmarken, `crawlRuns` **20**, Migrationen **35**. Alle Profile sind laut Betreiber synthetische Testprofile. Ziel ist **exakt 500 aktiv**; B (75) und C (400) sind jeweils nach eigener Abnahme bedingt freigegeben. **BLOCKIERT am sicheren Ausführungszugang**: die vorgeschriebenen Skripte haben in dieser Sitzung keine Production Zugangsdaten. PR **#303 bleibt offen und ungemergt**; zwei bestätigte Fehler in Vorgangsfaltung und Laufzeitbegrenzung sind auf demselben Branch korrigiert. Abschlussprüfungen am neuen Kopf werden im PR protokolliert. `main` bleibt `9407f8c`, Production `dpl_GCZLTfUSmFoeMP1WSfxG2bEYeinP` READY. Der natürliche Pipeline Lauf mit 25 Profilen ist belegt; der kontrollierte Lagebeweis und ein wirksamer Deckel über 100 fehlen. Vollbelege und Freigabegrenzen: [SR §41](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). Nur entscheidungsrelevanter Status; [Ablageregeln](archive/README.md), `CLAUDE.md` §9.
+**Stand: 2026-09-05, 21:05 UTC — nach dem Merge von #303.** `main`-Kopf **`33f1158`**, Production-Deployment **`dpl_36dEh3b6RPZBW5Ufokk2PuESJyZ2` READY** (§2). Production rein lesend bestätigt: **29 Mandatsprofile, 25 aktiv, 4 inaktiv**, Stufe A **20/20 aktiv**, B und C **0 angelegt**, 0 Löschmarken, `crawlRuns` **20**, Migrationen **35**. Alle Profile sind laut Betreiber synthetische Testprofile. Ziel ist **exakt 500 aktiv**; B (75) und C (400) sind jeweils nach eigener Abnahme bedingt freigegeben. **BLOCKIERT am sicheren Ausführungszugang**: die vorgeschriebenen Skripte haben in der ChatGPT-Sitzung keine Production-Zugangsdaten. **Der KI-Tagesdeckel ist erstmals mit einer Zahl belegt: der Zähler stand am 05.09. um 20:03 UTC auf 104** — er steigt also über 100, die Anhebung ist wirksam (§4). Der **kontrollierte Lagebeweis fehlt weiterhin**: der erste Lage-Check mit dem neuen Code läuft am 06.09. um 10:00 UTC. Vollbelege und Freigabegrenzen: [SR §41](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). Nur entscheidungsrelevanter Status; [Ablageregeln](archive/README.md), `CLAUDE.md` §9.
 
 **Kernlage:** Der Warteschlangenmotor (`HELMUT_SCALABLE_PIPELINE=on`) ist **seit 23.08.2026 in Production eingeschaltet**, Modus **`HELMUT_JOB_DISPATCH_MODE=shadow`** (Cron-Antrieb, kein Ereignis-Antrieb, kein AWS). Die **fünf Mandate sind mit 376 echten Abschlüssen bewiesen**, Morgen-/Lagelauf 5/5, 0 Verlust, alle elf §28.6-Kontrollen erfüllt ([`op30-aktivierung-5-mandate §30.7`](betrieb/op30-aktivierung-5-mandate.md)). **Seit 30.08. stehen 3 Vorgänge auf `unbekannt` (§14–22).** **Der Selbstweck ist lokal belegt, in Production nie ausgeführt.**
 
@@ -10,10 +10,10 @@
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **`main`-Kopf (05.09., 18:20 UTC erneut bestätigt): `9407f8c83fa37ecb371c0423ff87e64284409f51`** — Merge von **#302** (reine Doku), Eltern `8fa390d` (alter Kopf) und `6dbe25d` (PR-Kopf). Production-Deployment **`dpl_5vyVzomHBTy4soQLzq9dXwZVmwTU`, READY** (`githubCommitSha` = Merge-Commit) — rein lesend bestätigt. Späterer Redeploy am selben Commit: **`dpl_GCZLTfUSmFoeMP1WSfxG2bEYeinP`, READY**, aktuell bestätigt. Maßgeblich bleiben Git Historie und Deployment Metadaten.
-- **Letzter fachlich wirksamer Production-Code: `8fa390d`** (Merge von **#301**, Speicherpfad-Schutz — §29). Vorheriger fachlicher Stand **`b0071fd`** (Merge von #297); **#298–#300 und #302 änderten keinen Anwendungscode**.
-- **Zuletzt gemergt: #302** (reine Doku: Nach-Merge-Beleg für #301, „wirksam" → „ausgerollt"); davor **#301** (Speicherpfad-Schutz, letzter fachlicher Code — §29) und **#300** (reine Doku). #275–#277 und #282 nach Konsolidierung **geschlossen, nicht gemergt** (Branches bleiben Auditbelege).
-- **Offen:** **ein fachlicher PR** — Kapazität und Vollständigkeit des Lage-Checks plus `mandate_profiles.updated_at` (§31), Branch `claude/helmut-night-sprint-stage-a-gbof1z`, Basis exakt `9407f8c`. **Nicht gemergt, nicht deployt.**
+- **`main`-Kopf (05.09., 21:01:19 UTC): `33f1158694273425e3430344a850c9d1c9335625`** — Merge von **#303**, Eltern `9407f8c` (alter Kopf) und `9aa95e0` (PR-Kopf). Production-Deployment **`dpl_36dEh3b6RPZBW5Ufokk2PuESJyZ2`, READY** (target `production`, `githubCommitSha` = Merge-Commit) — rein lesend bestätigt. Maßgeblich bleiben Git-Historie und Deployment-Metadaten.
+- **Letzter fachlich wirksamer Production-Code: `33f1158`** (Merge von **#303** — Lage-Check-Kapazität und `updated_at`, §31). Vorheriger fachlicher Stand **`8fa390d`** (#301, Speicherpfad-Schutz — §29); **#298–#300 und #302 änderten keinen Anwendungscode**.
+- **Zuletzt gemergt: #303** (Anwendungscode und Tests); davor **#302** (reine Doku) und **#301**. #275–#277 und #282 nach Konsolidierung **geschlossen, nicht gemergt** (Branches bleiben Auditbelege).
+- **Offen:** kein fachlicher PR. Dieser Dokumentationsnachtrag zieht den Nach-Merge-Beleg für #303 nach (`CLAUDE.md` §9).
 
 ## 3 · Production-Zustand
 
@@ -35,7 +35,7 @@
 | `HELMUT_MATCHING_AUDIT=on` | seit 2026-07-28 |
 | `HELMUT_PROCESS_RUNS_RELATIONAL=on` | seit 2026-07-27 |
 | `HELMUT_ATOMIC_LOCK` | an — atomare, fail-closed Sperren |
-| LLM Tagesbudget: Betreiber meldet **2.416** und Understanding Reserve **702**, danach Redeploy | Rohwerte und Wirkung über 100 **noch nicht belegt**. Zähler 05.09. **93**; 88 protokollierte Modellaufrufe, berechnet **0,284848 USD**, 0 unbepreisbare Aufrufe. Kein harter USD Schutz durch die vier wirkungslosen Testlaufwerte. Schutzlimit ohne Deckelvariable weiterhin 50. |
+| LLM Tagesbudget: Betreiber meldet **2.416** und Understanding-Reserve **702**, danach Redeploy | **Wirkung über 100 ist seit 05.09. 20:03 UTC BELEGT: Zähler 104.** Damit ist die Anhebung nicht mehr nur wirkungsbasiert vermutet, sondern gezählt; der Rohwert bleibt aus einer Sitzung unlesbar. Tagesstand 05.09.: **99 protokollierte Modellaufrufe, 0,3228 USD**, davon **0 der Kohorte**. Kein harter USD-Schutz durch die vier wirkungslosen Testlaufwerte — der Deckel zählt Aufrufe. Schutzlimit ohne Deckelvariable weiterhin 50. |
 | `HELMUT_VERSTEHEN_CAS=on` | seit 2026-08-17; `HELMUT_VERSTEHEN_PARALLELITAET` nicht gesetzt ⇒ wirkt als 1 |
 | `HELMUT_SCALABLE_PIPELINE=on` | **seit 23.08. 16:47 UTC**, Modus `shadow`, Worker 4/25/25; Rückweg: Flag löschen + Redeploy (Betreiber) |
 | `HELMUT_CRON_GLOBALABRUF=on` | seit 2026-08-06 (Betreiber); Fortbestand ist Betreiberentscheidung |
@@ -64,10 +64,10 @@
 **25 Profile sind aktiv.** Stufe B umfasst aus dem Code exakt 75 neue Kennungen, Stufe C 400. Anlage jeweils vollständig inaktiv, danach eigener Aktivierungsschritt und eigene Abnahme. Endbestand soll **504 insgesamt, 500 aktiv, 4 unverändert inaktiv** sein. Keine Kontoaktivierung.
 
 1. **Zugang:** sicherer authentifizierter Ausführungskontext für `scripts/testkohorte-vorwaerts.js` fehlt. Bestehende Admin Routen und SQL sind kein zugelassener Ersatz.
-2. **PR #303:** gemeinsame Lageerfassung darf getrennte Vorgangskontexte nicht vermischen. Bestätigte Kontext- und Fristfehler sind auf dem bestehenden Branch korrigiert (129 gezielte Prüfungen). Gesamtprüfung und externe Prüfungen am neuen Kopf siehe PR #303; Production Beleg fehlt.
-3. **Kommunikation:** die fünf älteren Testprofile gelten im Code weiter als regulär. Eine aktive Push Subscription ist vorhanden; vor kontrollierten Läufen muss der vollständige Riegel wirksam belegt sein.
+2. **PR #303: GEMERGT und deployt** (§2, §31). Die Kontext- und Fristfehler wurden vor dem Merge korrigiert; am Kopf `9aa95e0` liefen lokal 320/320 Offline-Suiten, `lage-check-kapazitaet` 129/129, `vorgangskontext` 103/103, und alle fünf GitHub-Checks waren grün. **Der Production-Beleg fehlt weiterhin**: der erste Lage-Check mit dem neuen Code ist der 10:00-UTC-Lauf am 06.09.
+3. **Kommunikation — VOR dem 10:00-Lauf zu entscheiden:** die fünf älteren Testprofile gelten im Code als `real`; genau **eine** Push-Subscription ist vorhanden, auf **`cem-ince`** (angelegt 30.06.). Der Riegel lässt Push für diese Kennung ohne `HELMUT_TESTLAUF_KOMMUNIKATION=gesperrt` **zu** (nachgerechnet: `erlaubt=true`, mit Sperre `erlaubt=false`). Bisher unterblieb die Zustellung nur, **weil** der Lage-Check in den Timeout lief und sich für die Push-Logik als `stable` maskierte. Mit #303 läuft er durch — bei Status `changed` wird `sendLageChangePush` erreicht. **Wer keine Zustellung will, setzt die Sperre vor dem 06.09. 10:00 UTC.**
 4. **Provisionierung:** der bisherige Fehlerpfad löscht automatisch ein gerade angelegtes Konto. Vor B/C ist eine gezielte getestete Korrektur nötig, damit das aktuelle Löschverbot auch im Fehlerfall gilt. Geteilte Blobs bleiben ohne CAS.
-5. **Budget:** Betreiberangabe 2.416/702 ist kein Wirkungsbeleg. Vor B muss der Zähler erfolgreich über 100 steigen; bei Stop exakt 100 keine Env Änderung und keine Aktivierung.
+5. **Budget: ERFÜLLT.** Der Zähler stieg am 05.09. um 20:03 UTC auf **104** — die geforderte Bedingung „erfolgreich über 100" ist damit belegt. Der Rohwert bleibt unlesbar; der Deckel zählt Aufrufe, nicht USD. Tageskosten 05.09.: 0,3228 USD.
 6. **Abnahme:** kontinuierlicher Fortschritt, keine systematischen Auslassungen, Datenintegrität, Kommunikation und Tageskosten je Stufe belegen. Gewöhnlicher Altbestand im Rückstand oder fehlende mehrtägige Beobachtung blockieren laut Betreiber für sich allein nicht. Mehrtagesbetrieb und Verkaufsreife werden dadurch nicht behauptet.
 
 Vollständige aktuelle Freigaben, Nachweisgrenzen und Fortsetzung: [SR §41](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
@@ -222,6 +222,21 @@ scharfer Lauf, 11:38:13–11:38:58 UTC (45 s), Startfenster geprüft, Vorflug-Ri
 - **Deployment:** `dpl_GCZLTfUSmFoeMP1WSfxG2bEYeinP` (READY, production, `redeploy` von `9407f8c8…`). Danach keines.
 - **Befund:** `mandate_profiles.updated_at` blieb bei allen 20 Zeilen auf dem `created_at` vom 04.09. → §31.
 ## 31 · Lagekapazität und Übernahme am 05.09. · BLOCKIERT
+
+**Nach-Merge-Beleg (`CLAUDE.md` §9, Vollfassung [SR §40.7](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md)),
+rein lesend am 05.09. 21:02 UTC:** Merge-Commit `33f1158`, Eltern `9407f8c`/`9aa95e0`, 21:01:19 UTC; Deployment
+`dpl_36dEh3b6RPZBW5Ufokk2PuESJyZ2` READY. Production danach **unverändert** (29/25/4, Stufe A 20/20, B/C 0,
+0 Löschmarken, `crawlRuns` 20, 35 Migrationen); `max(updated_at)` weiterhin `2026-09-04 11:40:34` — korrekt, seither
+gab es keinen Profilschreibvorgang. Kohortenaufträge 19 erledigt / 41 wartend. **Kein schreibender Test, keine
+Aktivierung, keine Migration ausgelöst.**
+
+**Vor dem Merge korrigiert (Betreiber, `9aa95e0`):** die globale Faltung clusterte den gesamten Korpus in EINEM Batch
+und hätte Vorgänge über die **Mandatsgrenze** verschmolzen (Fehlerklasse K1-1); zudem hätte jeder Kontext ein frisches
+statt eines gemeinsamen Zeitbudgets bekommen. Beides behoben — [SR §40.6](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+
+**Offen nach dem Merge:** der **Production-Beleg** (erster Lage-Check mit dem neuen Code: 06.09. 10:00 UTC) und die
+**Kommunikationsentscheidung zu `cem-ince`** (§6 Punkt 3).
+
 
 PR **#303**, Basis `9407f8c`, ursprünglicher Kopf `3f2752a`: faire Zeitscheibe, gemeinsame Erfassung, Vormerkgrenze und `mandate_profiles.updated_at`. **Nicht gemergt.** Anlass: natürlicher Lage Check 10:00 UTC, 0/5 erfolgreich, 1 begonnen, 4 nie begonnen. Vollbeleg [SR §40](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 
