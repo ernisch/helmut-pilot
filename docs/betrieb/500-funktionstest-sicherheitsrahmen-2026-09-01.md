@@ -5473,3 +5473,42 @@ Ausführer seine Production Zugangsdaten über eine **geschützte Laufzeitumgebu
 Chat oder Git. Dann neue Grundlinie, Kommunikationsbeleg, vollständige #303 Kopfprüfung und Merge,
 zugehöriges Production READY, kontrollierter 25er Lagebeleg und Budgetzähler über 100; erst danach B und C
 mit den separaten Bedingungen. Endstatus dieser Übernahme bleibt bis dahin **BLOCKIERT**, nicht 500 aktiv.
+
+
+## 42 · Fortsetzung 05.09.2026: #303 gemergt, Ausführungszugang weiter offen
+
+Der Betreiber hat die Fortsetzung des Gesamtauftrags nach der Zugangsprüfung bestätigt. Die ursprünglichen Freigaben und harten Grenzen gelten weiter. Insbesondere keine Löschung, keine Kontoaktivierung, keine Vercel Variablen Änderung, kein ungetesteter Aktivierungspfad und höchstens 10 USD Modellkosten je UTC Tag mit Sicherheitsstopp bei prognostiziert 9 USD.
+
+### 42.1 Merge und Production Beleg
+
+PR [#303](https://github.com/ernisch/helmut-pilot/pull/303) wurde am unveränderten Kopf `9aa95e02f57696f6f19bab0758c2624862a82e3a` erneut geprüft: Basis und main exakt `9407f8c83fa37ecb371c0423ff87e64284409f51`, nur die drei bekannten Commits, fünf externe Prüfungen erfolgreich, Preview `dpl_4UbqreL7gir2cB4cNRRdSyu96fCq` READY am exakten Kopf, keine Reviews oder offenen Review Threads, konfliktfrei mergefähig. Lokale Prüfungen siehe §41, unveränderter Kopf. Keine Migration, Änderung der Kostenriegel oder Öffnung eines Kommunikationskanals im Diff.
+
+Merge mit `expected_head_sha` und Methode `merge`: **`33f1158694273425e3430344a850c9d1c9335625`**, genau zwei Eltern **`9407f8c83fa37ecb371c0423ff87e64284409f51`** und **`9aa95e02f57696f6f19bab0758c2624862a82e3a`**. Automatisches Production Deployment **`dpl_36dEh3b6RPZBW5Ufokk2PuESJyZ2`**, Quelle git, Ziel production, **READY**, `githubCommitSha` exakt Merge Commit und Alias `helmut-pilot.vercel.app`. Kein manueller Deploy, Rollback oder Revert.
+
+### 42.2 Production Grundlinie und natürlicher Fortschritt
+
+Rein lesend 20:59:58 und nach Merge 21:06:53 UTC: **29 Mandatsprofile, 25 aktiv, vier inaktiv**, A 20 aktiv, B/C nicht angelegt; null Löschmarken, **30 relationale Identitätsprofile**, **25 Auth Konten, drei aktiv**; davon **20 Kohortenkonten, null aktiv**. Profilhash `f0b99507c2ba4428db16c17a51c8aab3` und Kontenhash `3772d79601d74742e175ac753e992408` vor/nach Merge gleich. Hashes über sortierte JSON Zeilen einschließlich Zeitstempel; keine Auth Inhalte ausgegeben. `crawlRuns` 20, Migrationen 35.
+
+Natürlicher Crawl `cron-crawl-20260905200038-hrrqr`, 20:00:38.964 bis 20:05:00.292 UTC: success, **111 verarbeitet, 71 zurückgestellt, null Fehler**. A Quellenaufträge: **19 erledigt, einer wartend**, zusätzlich je 20 Projektionen und Briefings wartend. Fortschritt gegenüber §41: fünf weitere Quellenaufträge erledigt, **41** Kohortenaufträge offen. Vollständiger Fachzyklus aller 20 weiterhin nicht belegt.
+
+UTC Tag 2026-09-05: **104 reservierte Modellaufrufe**, letzte Buchung 20:03:48.165 UTC. Der alte Stopp bei genau 100 ist damit überschritten. Telemetrie: **99 erfolgreiche Modellaufrufe, 0,322782 USD geschätzte Kosten**, keine unbekannte Kostenangabe. Reservierung und protokollierter Aufruf werden getrennt gezählt. Kein Beleg des exakten Deckels 2416, keine Provider Rechnung, keine neuen Modellaufrufe durch diese Sitzung. Die vier wirkungslosen Testlaufwerte sind weiterhin keine Schutzmechanismen.
+
+### 42.3 Tatsächliche Zugangsgrenze
+
+Vercel Connector liest Team, Projekt und Deployments. Die zusätzliche CLI Anmeldung scheiterte nach bestätigtem Gerätecode zweimal an der Ausführungsrichtlinie für `api.vercel.com`. Work Netzwerkzugriff war laut Betreiber bereits eingeschaltet. Eine fehlende Codex Cloud Umgebung oder ein abgelaufener Code erklären diesen Fehler nicht nachgewiesen. Kein neuer Bestätigungscode ohne neue technische Erkenntnis.
+
+Vorhandene Skripte sind lokal ausführbar, aber Supabase Service Zugang, Cron Secret und tatsächliche Betriebswerte fehlen im Agentenprozess. Der Connector übergibt diese Werte nicht und startet keinen Prozess. Rein lesender Anwendungsaufruf `/api/cron/pipeline-status` um 20:59:29 UTC: **403, fehlendes Cron Secret**. Kein vorhandener GitHub Workflow führt die geprüfte Kohorten CLI aus; keine neue Secret Brücke erstellt. Kontrollierter Lage Check weiterhin nicht ausgeführt. Die pauschale Kommunikationssperre für die fünf älteren Testprofile bleibt vor einem solchen Lauf zusätzlich zu belegen.
+
+### 42.4 Korrektur der Anlagefehler vor Stufe B
+
+Getrennter Branch **`codex/kohorten-anlage-ohne-loeschung`**, Basis Merge von #303. Zwei belegte Fehler: drei automatische Kontolöschzweige nach Anlagefehlern; außerdem wurde ein lesbares inaktives Profil nach einem Schreibfehler als erfolgreiche Wiederholung gezählt, obwohl ein teilweiser Dual Write vorliegen konnte.
+
+Der echte Kohortenaufruf setzt `neuAktiv:false` und `kontoBeiFehlerBehalten:true`. In allen drei Fehlerzweigen bleibt ein möglicher Teilbestand erhalten. Ein Schreibfehler bleibt ein Fehlschlag, auch bei lesbarem Profil. Konto ID und unterbundener Rückweg erscheinen im Fehlerbefund. Der reguläre Provisionierungspfad behält sein bisheriges Verhalten. Bestandsschutz, Bestätigungen, Zeitfenster, Aktivierung und Speichervorflug bleiben erhalten. Ein Konto ohne Profil darf bei Wiederholung weiterhin nicht automatisch übernommen werden; es ist rein lesend zu klären. Keine sichere Persistenz wird aus einem fehlgeschlagenen Lesezugriff abgeleitet.
+
+Abschlussprüfung vor PR: **321/321 Offline Suiten grün in 630 Sekunden**, Exit 0, **32/32 Browserprüfungen**, **12 neue Fehlerprüfungen**, einschließlich echtem Kohortenadapter mit Speicherattrappen, sowie **65 Vorwärtsprüfungen** erfolgreich. Größenprüfung 4/4 und 43 relative Links gültig. Unabhängiger Code Review ohne blockierenden Befund abgeschlossen. Externe Prüfungen und Merge werden am exakten Kopf separat belegt. Keine Production Anlage oder Aktivierung. Der zusätzliche alte Bibliotheksfehler bei scharfem Aufruf ohne Stufe betrifft den vorgeschriebenen CLI Pfad nicht, weil dieser die Stufe zwingend verlangt; nicht im vorliegenden Diff geändert.
+
+Kommunikationsnachprüfung 21:10:17 UTC: keine neuen Audit Ereignisse oder Push Ereignisse seit 19:11 UTC; jüngster gespeicherter Push 05:00:36.829 UTC. Der bereits vor dieser Sitzung protokollierte Monitoring Webhook meldet weiterhin 06:00:53.313 UTC, sent true, Status 200. Daher keine pauschale Behauptung von null externer Kommunikation für den ganzen UTC Tag. Keine Zustellung durch die hier ausgeführten Arbeiten. Die Logprüfung ersetzt keinen Laufzeitbeleg der globalen Kommunikationssperre.
+
+Gezielte A Nachprüfung 21:17 UTC: Der einzige offene Quellenauftrag `test-kohorte-a-014` wird erst seit 20:44:09.600 UTC fällig, also nach Ende des 20 Uhr Crawls. Null Versuche und kein Fehler; keine belegte Auslassung in diesem Lauf. Alle 20 Projektionen und zehn Briefings wurden wegen offener Vorbedingungen zurückgestellt, die anderen zehn Briefings wurden erst nach Crawlende fällig. Null abgeschlossene A Projektionen oder Briefings. Das erklärt den aktuellen Rückstand, ersetzt aber keinen vollständigen Stufenbeleg.
+
+Testumgebung: Ein erster Gesamtlauf wurde nach zwei fehlenden Browser Binärdateien abgebrochen. Die vorinstallierte Laufzeit lud Playwright 1.62.1, vorhanden war Chromium Revision 1194. Der abgeschlossene Gesamtlauf und die Browserprüfung nutzen die bereits vorhandene passende isolierte Playwright Version 1.56.1. Kein Repository Paket geändert. Ein unnötiger Browserdownload nach Zeitüberschreitung beendet. Jeder Test über `scripts/lokal.js`; der kanonische Runner erzwingt den Offline Netzriegel.
