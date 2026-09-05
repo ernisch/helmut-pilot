@@ -1,0 +1,48 @@
+name: "500 Testprofile: Zugang nur lesen"
+
+# Ein reiner Zugriffsnachweis, kein Ausfuehrer fuer Fachlaeufe oder Profilwrites.
+# Der enge Branchtrigger dient genau der ersten Pruefung ohne lokalen Rechner.
+# Keine Secrets bei Pull Requests, Forks, Zeitplaenen oder auf fremden Branches.
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [codex/500-github-zugangspruefung]
+    paths:
+      - .github/workflows/500-zugangspruefung.yml
+      - scripts/github-zugangspruefung.js
+
+permissions:
+  contents: read
+
+concurrency:
+  group: helmut-500-zugangspruefung
+  cancel-in-progress: false
+
+jobs:
+  zugang:
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' &&
+      (github.ref == 'refs/heads/main' ||
+       github.ref == 'refs/heads/codex/500-github-zugangspruefung')
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Geprueften reinen Leser ausfuehren
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+          HELMUT_STORAGE_BACKEND: ${{ vars.HELMUT_STORAGE_BACKEND }}
+          HELMUT_V3_STORE: ${{ vars.HELMUT_V3_STORE }}
+          HELMUT_PROFILE_DB_MODE: ${{ vars.HELMUT_PROFILE_DB_MODE }}
+          HELMUT_CRAWL_RUN_RETENTION: ${{ vars.HELMUT_CRAWL_RUN_RETENTION }}
+          HELMUT_MAX_LLM_CALLS_PER_DAY: ${{ vars.HELMUT_MAX_LLM_CALLS_PER_DAY }}
+          HELMUT_LLM_RESERVE_UNDERSTANDING: ${{ vars.HELMUT_LLM_RESERVE_UNDERSTANDING }}
+          HELMUT_TESTLAUF_KOMMUNIKATION: ${{ vars.HELMUT_TESTLAUF_KOMMUNIKATION }}
+        run: node scripts/github-zugangspruefung.js

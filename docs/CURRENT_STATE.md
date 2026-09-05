@@ -63,7 +63,7 @@
 
 **25 Profile sind aktiv.** Stufe B umfasst aus dem Code exakt 75 neue Kennungen, Stufe C 400. Anlage jeweils vollständig inaktiv, danach eigener Aktivierungsschritt und eigene Abnahme. Endbestand soll **504 insgesamt, 500 aktiv, 4 unverändert inaktiv** sein. Keine Kontoaktivierung.
 
-1. **Zugang:** sicherer authentifizierter Ausführungskontext für `scripts/testkohorte-vorwaerts.js` fehlt. Bestehende Admin Routen und SQL sind kein zugelassener Ersatz.
+1. **Zugang:** sicherer authentifizierter Ausführungskontext für `scripts/testkohorte-vorwaerts.js` fehlt. GitHub Zugangsprüfung auf `codex/500-github-zugangspruefung` vorbereitet: genau ein festes PostgREST GET auf `helmut_store.main`, keine Fachausführung und keine Secret Ausgabe. Vorhandene GitHub Secret Namen sind dokumentiert, ihre aktuelle Gültigkeit noch nicht belegt. Bestehende Admin Routen und SQL sind kein zugelassener Ersatz. Details SR §44.
 2. **PR #303 gemergt und deployt:** Kontext und Fristfehler korrigiert, 129 gezielte Prüfungen und externe CI grün. Kontrollierter Production Lagebeleg fehlt wegen fehlendem Betriebszugang; SR §42.
 3. **Kommunikation:** die fünf älteren Testprofile gelten im Code weiter als regulär. Eine aktive Push Subscription ist vorhanden; vor kontrollierten Läufen muss der vollständige Riegel wirksam belegt sein.
 4. **Provisionierung:** #305 ist gemergt und deployt. Der echte inaktive Kohortenpfad verhindert automatische Kontolöschung und meldet Schreibfehler auch bei lesbarem Teilprofil ehrlich. Schutz offline und in CI belegt; kein schreibender Production Fehlerfall. Geteilte Blobs bleiben ohne CAS.
@@ -121,7 +121,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-1. Geschützte Prozesszugänge für den unveränderten geprüften Ausführer verfügbar machen, ohne Secrets im Chat oder Repository offenzulegen. Vor jedem scharfen Lauf Grundlinie, reale Uhr, laufende Prozesse, maximale Zusatzkosten und Kommunikationsriegel frisch prüfen. Kein neuer Login Code ohne neue technische Erkenntnis.
+1. Zuerst die vorbereitete GitHub Zugangsprüfung ausführen und deren Ergebnis lesen (SR §44). Sie prüft ausschließlich Datenbankzugang und das Vorhandensein benannter Werte, keine Betriebsbereitschaft und keine Cron Autorisierung. Danach geschützte Prozesszugänge für den geprüften Ausführer klären. Vor jedem scharfen Lauf Grundlinie, reale Uhr, laufende Prozesse, maximale Zusatzkosten und Kommunikationsriegel frisch prüfen. Kein neuer Login Code ohne neue technische Erkenntnis.
 2. Kontrollierten Lagebeweis für 25 erbringen und A vollständig abnehmen. Zähler über 100 bereits natürlich belegt. Der nächste natürliche Lage Check ist laut Cronplan am **06.09. um 13:00 Türkei / 12:00 Berlin / 10:00 UTC** vorgesehen, seine Ausführung und die Kommunikationssperre sind dadurch nicht bewiesen.
 3. Anschließend B mit 75 Profilen inaktiv anlegen, getrennt aktivieren und abnehmen; erst danach C mit 400. Vollständiges Nachtfenster laut Code: **00:36 bis 06:59 Türkei / 23:36 bis 05:59 Berlin / 21:36 bis 03:59 UTC**, Tageswechsel beachten und vor Ausführung frisch belegen. Alle Prüfungen und Grenzen in SR §41 und §43.
 4. Bei Deploymentfehler sofort stoppen, kein zweiter Versuch oder Rollback. Erst nach 500 und Abschlussdokumentation wieder Verkaufsreife und P0 Punkte bearbeiten. Ein gewöhnlicher Rückstand ist kein Grund, ohne weitere Prüfung abzubrechen.
