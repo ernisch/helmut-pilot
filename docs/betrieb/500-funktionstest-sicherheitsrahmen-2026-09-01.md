@@ -5830,3 +5830,71 @@ dieser Fortsetzung; **500 aktive oder funktionierende Mandate werden nicht behau
 Dieser abschließende Nachtrag verändert ausschließlich Dokumentation nach dem wirksamen Code Merge
 und echten Leselauf. Sein eigener Merge Commit und Deploymentstand folgen aus der Historie; gemäß
 CLAUDE.md §9 entsteht daraus kein rekursiver Dokumentations PR.
+
+## §45 Fortsetzung und belegte Abruffehler (06.09.2026)
+
+Der Betreiber verlangt die Fortsetzung bis zur fehlerfreien Registrierung und zum stabilen Betrieb
+mit 500 Mandaten. §41 bleibt der Ausführungsrahmen. Die jüngsten Screenshots und dieser Codeauftrag
+ersetzen keine vollständige Stufenabnahme. Keine Stufenaktion oder kontrollierte Modellarbeit dieser
+Fortsetzung; keine Änderung von Daten, Ressourcen, Migrationen oder Vercel Variablen.
+
+### §45.1 Zugang, Screenshots und Dokumentationsabschluss
+
+Die minimale SQL Prüfung ohne Fachdatentabelle endet am 06.09. um **12:45 Türkei / 11:45 Berlin /
+09:45 UTC** erneut mit `Connection terminated due to connection timeout`. Keine erfolgreiche SQL
+Antwort mit `erreichbar = 1`, kein aktueller Bestandsnachweis und keine frischen Modellkosten.
+`ACTIVE_HEALTHY`, lesbare Auslastungsberichte und erfolgreiche Vercel Deployments beweisen keine
+funktionierende Datenbankverbindung.
+
+Die vom Betreiber nachgereichten Screenshots liegen jetzt im Gespräch vor. Sie zeigen an den
+jeweils ausgewählten Messpunkten CPU 4,24 Prozent, Memory Commitment 1,8 GB oberhalb der eingezeichneten
+Grenze und einen großen Swap Anteil; zuletzt steigt IOwait. Disk Usage liegt bei etwa 514 bis 516 MB
+von rund 1,93 GB, Verbindungen bei 15 mit sichtbarer Spitze 16, Disk Throughput bei 219,4 KB/s.
+Die Messpunkte sind nicht zeitgleich. **Speicherdruck ist ein Hinweis, keine belegte Ausfallursache.**
+16 ist eine Diagrammskala, kein belegtes Verbindungslimit; die Warnung zur abgelaufenen Schonfrist
+beweist bei angezeigtem Egress von 39 Prozent keine aktuelle Quotenüberschreitung. Der abgeschnittene
+Fehler `operator does not …` ist nicht vollständig auswertbar. Keine weiteren Screenshots verlangt.
+
+Der offene Dokumentations PR **#308** wurde nach dem frischen lokalen Gesamtlauf am exakten Kopf
+`6d19a4f13774119a957c702dea729dc2472b7cd7` übernommen. Kanonischer Aufruf über `scripts/lokal.js`,
+09:44:24 bis 09:51:55 UTC, separat erfasster Prozessabschluss **Exit 0**. Die Protokolldatei enthält nur
+einen Anfangsausschnitt; der frühere unterbrochene Lauf wird nicht als Erfolg gezählt. Externe CI
+`34021154856` mit beiden Pflichtjobs erfolgreich, Vorschau am selben Kopf READY, keine Reviews oder
+offenen Threads. Merge **`97e2aaaefba347b40689420bd39c581871107acd`**, Production
+**`dpl_9BUUWpYam8WM9MwUCi7jKoHcT7it` READY** am exakten Merge. Der frühere Dokumentationsblocker ist erledigt.
+
+### §45.2 Kleine Korrekturen für begrenzte und ehrliche Datenbankabrufe
+
+1. `performSupabaseFetch` löschte seine Frist direkt nach den Antwortheadern. Ein hängenbleibender
+   erfolgreicher oder fehlerhafter Antwortinhalt konnte danach unbegrenzt warten. Die Frist umfasst
+   jetzt auch `response.text()`, Abbruchfehler bleiben als Timeout erkennbar, Fehlertexte werden weiter
+   redigiert. Echte lokale HTTP Verbindungen beweisen vor der Korrektur **5 PASS / 2 FAIL**, danach
+   **7 PASS / 0 FAIL**, einschließlich geschlossener Verbindungen und erfolgreichem Folgeabruf.
+   [Fetch Antwortinhalt und Abbruch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch#canceling_a_request).
+2. Der relationale Exklusivmodus wandelte Profilfehler in `null` oder `[]` um. Der echte Cron
+   Mandantenleser meldete deshalb bei HTTP 522 `keine-aktiven-mandanten`. Jetzt werden Abruffehler und
+   ungültige Antwortformen weitergegeben; der bestehende Cron Fehlerpfad meldet eine Ladestörung.
+   Ein tatsächlich leeres Array bleibt leer, der Dualmodus behält seinen Blob Ersatzpfad. Regression
+   mit echter Speicherschicht: vorher **3 PASS / 5 FAIL**, danach **8 PASS / 0 FAIL**. Der isolierte
+   Leser löst nach Erholung 500 aktive aus 504 synthetischen Profilen korrekt auf.
+3. Der geteilte Lagevorlauf las die Profile weiter einzeln, im isolierten Nachweis **500 Abrufe**.
+   Er liest nun den vollständigen Bestand einmal und baut nur für die übergebenen Kennungen die
+   Quellenpläne, in derselben Reihenfolge und mit derselben Personalisierung. Die gemeinsame Frist
+   wird vor dem Profilabruf, zwischen den Plänen und vor dem Quellenabruf geprüft. Ein fehlendes
+   Profil wird ausgewiesen, keine neutrale Personalisierung erfunden. Die vier ursprünglichen
+   Regressionen scheitern vorher, bestehen danach; ein zusätzlicher Fall schützt fehlende Profile.
+
+Die Ablaufprüfung mit 500 Profilen misst die Abrufzahl und Fachzuordnung, **keine Production
+Wanduhrleistung, keine Registrierung und keinen vollständigen Produktionszyklus**. Ein schon laufender
+Quellenabruf erhält dadurch keine neue Abbruchgarantie. Die beiden Speicherpfade und die vorhandene
+Lagekapazitätsprüfung wurden gezielt mitgeprüft. Vollständige lokale und externe Prüfungen, genauer
+PR Kopf, Merge und Production Nachweis werden im zugehörigen PR festgehalten; bis dahin ist dieser
+neue Code nicht als ausgerollt belegt. Keine Erweiterung von Modellbudget oder Kommunikationsrechten.
+
+### §45.3 Fortsetzung
+
+Zuerst diesen begrenzten Codeumfang vollständig prüfen und übernehmen. Bei belegter Datenbankerholung
+frischen Bestand, Kosten, Laufzustände und Kommunikationssperre lesen. Danach den vollständigen 25er
+Fachbeleg erbringen, B getrennt anlegen und aktivieren, nach dessen Abnahme C. Die Bedingungen des
+tatsächlichen Nachtfensters gelten weiterhin. Parallel angelegte Konten und unbedingte Blobschreibvorgänge
+bleiben ein gesondert zu prüfendes Datenintegritätsrisiko; aus dem neuen Profilabruf folgt kein CAS Beleg.
