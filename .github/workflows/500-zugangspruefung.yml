@@ -4,7 +4,16 @@ name: "500 Testprofile: Zugang nur lesen"
 # Der enge Branchtrigger dient genau der ersten Pruefung ohne lokalen Rechner.
 # Keine Secrets bei Pull Requests, Forks, Zeitplaenen oder auf fremden Branches.
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      laufzeit_status:
+        description: "Neue Statusroute lesen, erst nach bestaetigtem Production READY"
+        type: boolean
+        default: false
+      production_commit:
+        description: "Vollstaendiger als Production READY bestaetigter Commit des ausgewaehlten Branches"
+        type: string
+        required: false
   push:
     branches: [codex/500-github-zugangspruefung]
     paths:
@@ -46,3 +55,9 @@ jobs:
           HELMUT_LLM_RESERVE_UNDERSTANDING: ${{ vars.HELMUT_LLM_RESERVE_UNDERSTANDING }}
           HELMUT_TESTLAUF_KOMMUNIKATION: ${{ vars.HELMUT_TESTLAUF_KOMMUNIKATION }}
         run: node scripts/github-zugangspruefung.js
+      - name: Production Laufzeitkonfiguration ausschliesslich lesen
+        if: github.event_name == 'workflow_dispatch' && inputs.laufzeit_status
+        env:
+          HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+          HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
+        run: node scripts/github-laufzeitpruefung.js

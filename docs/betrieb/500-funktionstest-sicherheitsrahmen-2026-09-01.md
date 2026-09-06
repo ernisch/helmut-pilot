@@ -5604,3 +5604,36 @@ Betriebswerte klären. Der bestehende GitHub Connector hat in dieser Sitzung kei
 `workflow_dispatch` Aufruf. Manuelle spätere Schritte können daher einen Start über GitHub durch den
 Betreiber brauchen; der enge erste Push Trigger führt ausschließlich diesen reinen Leser aus.
 Status: **teilweise abgeschlossen**, 500er Funktionsnachweis weiterhin **blockiert bei 25 aktiven Profilen**.
+
+### 44.1 Erster GitHub Ausführungsbeleg und ergänzte Laufzeitdiagnose
+
+GitHub Lauf **[33999766780](https://github.com/ernisch/helmut-pilot/actions/runs/33999766780)** am Commit
+**`bce11567c4d4dc3c7713845d4517b0cc8b08e172`** ist erfolgreich, Job `101396409325`, Node 22.23.2.
+Prüfzeit **06.09. 02:51:35 Türkei / 01:51:35 Berlin / 05.09. 23:51:35 UTC**.
+Supabase Production Ziel und vorhandene Zeile `main` bestätigt. Alle drei genannten Secrets vorhanden.
+Alle sieben im Bericht genannten GitHub Betriebswerte fehlen. Cron Secret nicht verwendet; kein
+Modellaufruf, kein Schreibaufruf. Nachkontrolle 23:58 UTC: weiterhin 29/25 Profile, B/C null, Tageszähler 124.
+Damit ist ein geschützter GitHub Ausführungsprozess bewiesen, kein vollständiger Kohortenpfad.
+
+Die angemeldete GitHub Browseransicht zeigt den erfolgreichen Lauf sowie seine Bedienaktionen.
+Der fehlende allgemeine Dispatch Aufruf im Connector ist daher kein Beleg, dass ein manueller Workflow
+nicht bedienbar ist. Der neue Workflow wird erst nach seinem Merge auf main manuell verfügbar.
+
+Zur belegten Lücke der alten Statusroute wurde `GET /api/cron/testnachweis-status` ergänzt:
+vor dem Account Vorlauf, bestehende Cron Autorisierung, ausschließlich reine Konfigurationsfunktionen.
+Antwort nur Versionsnummer, verifizierbarer Commit, Production Kennzeichnung, boolesche Speichermerkmale,
+wirksame Aufrufgrenze, Understanding Reserve, gültige Aufbewahrung und globaler Kommunikationsmodus.
+Keine Datenbankabfrage, kein Adminseed, keine freie Variable, kein Secret, keine Modellarbeit.
+Auch Fehlantworten passieren keinen schreibenden Auditpfad. Andere HTTP Methoden ergeben 405.
+
+`scripts/github-laufzeitpruefung.js` ruft nur diese feste Route auf, ohne Redirects und mit Zeitgrenze.
+Er verlangt einen separat als READY bestätigten vollständigen Production Commit identisch zu `GITHUB_SHA`;
+Antwortcommit und Production Kennzeichnung müssen ebenfalls stimmen. Ausgaben sind typgeprüft und auf
+eine feste Feldliste begrenzt. Im Workflow ist dies ein ausdrücklich gewählter **manueller** Leseschritt,
+nie Teil des ersten Push Lesers. Vorher muss das genaue Deployment unabhängig bestätigt sein, damit
+kein alter, noch nicht um diese Route ergänzter Server angesprochen wird.
+
+Gezielter Beleg: **24 PASS / 0 FAIL**. Echter HTTP Handler mit Account Modus und Schreibspionen:
+Erfolg, fehlendes/falsches Cron Secret, falsche Methode und absichtlich fehlerhafte Budgetfunktion;
+Adminseed, Blobleser und Fehlerpersistierung in allen Fällen **null Aufrufe**.
+Vollständige Prüfungen, Merge und tatsächlicher Production Laufzeitabruf stehen noch aus.

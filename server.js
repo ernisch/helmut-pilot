@@ -152,6 +152,40 @@ function isOutputStale(completeKoAt) {
 
 async function handleRequest(request, response) {
   const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
+  // Maschinenlesender Laufzeitbeleg VOR dem Account Vorlauf (Adminseed).
+  // Nur reine Konfigurationsfunktionen; auch Fehler werden ohne Auditwrite beantwortet.
+  if (url.pathname === "/api/cron/testnachweis-status") {
+    try {
+      if (request.method !== "GET") {
+        response.writeHead(405, jsonHeaders({ Allow: "GET" }));
+        response.end(JSON.stringify({ ok: false, grund: "nur-get" }));
+        return;
+      }
+      if (!authorizeCron(request, url, response)) return;
+      const vorflug = require("./lib/helmut/speicherpfad-vorflug");
+      const riegel = require("./lib/helmut/kommunikationsriegel");
+      const retention = vorflug.crawlRunAufbewahrung();
+      const commit = String(process.env.VERCEL_GIT_COMMIT_SHA || "");
+      sendJson(response, {
+        ok: true, schemaVersion: 1, reinLesend: true,
+        commit: /^[a-f0-9]{40}$/.test(commit) ? commit : null,
+        production: process.env.VERCEL_ENV === "production",
+        storageSupabase: getStorageStatus().backend === "supabase",
+        v3Bereit: v3StoreReady(),
+        profileRelational: profileDbModeEnabled(),
+        profileExclusive: profileDbExclusiveEnabled(),
+        retentionGueltig: retention.gueltig,
+        retention: retention.gueltig ? retention.wirksam : null,
+        tagesdeckel: storageModul.llmDailyCallLimit(),
+        understandingReserve: storageModul.llmUnderstandingReserve(),
+        kommunikationGesperrt: riegel.modus() === riegel.MODUS_TESTFENSTER
+      });
+    } catch {
+      response.writeHead(500, jsonHeaders());
+      response.end(JSON.stringify({ ok: false, grund: "laufzeitpruefung-fehlgeschlagen" }));
+    }
+    return;
+  }
   const previewMode = isPreviewMode(url);
   if (shouldRedirectToCanonicalHost(request, url)) {
     url.protocol = "https:";
