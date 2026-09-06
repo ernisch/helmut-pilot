@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 06.09.2026, 13:41 Türkei / 12:41 Berlin / 10:41 UTC.** **#309 gemergt (`d9671a0`), Production READY.** Abruffrist, ehrliche Profilfehler und ein Profilabruf statt 500 sind ausgerollt. **Supabase weiter gestört:** Minimalabfrage um 13:33 Türkei / 12:33 Berlin / 10:33 UTC scheitert beim Verbindungsaufbau. Letzte Grundlinie 00:28 UTC: **29 Profile, 25 aktiv, vier inaktiv**. Bestand und Kosten ungeprüft; 500 nicht bewiesen. In Arbeit: [Kontoschreibschutz #310](https://github.com/ernisch/helmut-pilot/pull/310); echte Mehrprozessprüfung zeigt zu frühes Aufgeben bei Konflikten; Wiederholung korrigiert, vollständiger Nachweis offen. §41 gilt; [Belege SR §45 und §46](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+**Stand: 06.09.2026, 14:40 Türkei / 13:40 Berlin / 11:40 UTC.** **#310 gemergt (`b183487`), Production READY.** **500 Kontoanlagen sind mit echtem PostgreSQL und fünf Prozessen belegt**, keine Production Mandatsabnahme. Abrufkorrekturen und Kontoschreibschutz sind ausgerollt. **500er Betrieb weiter BLOCKIERT:** SQL Minimalabfrage um 14:30:09 Türkei / 13:30:09 Berlin / 11:30:09 UTC scheitert; natürlicher Vercel Lauf bestätigt Datenbankfehler. Letzte Grundlinie 00:28 UTC: **29 Profile, 25 aktiv, vier inaktiv**. Frische Daten, Kosten und vollständige Fachnachweise für 25/100/500 fehlen. §41 gilt; [Abschluss SR §47](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 
 **Kernlage:** Der Warteschlangenmotor (`HELMUT_SCALABLE_PIPELINE=on`) ist **seit 23.08.2026 in Production eingeschaltet**, Modus **`HELMUT_JOB_DISPATCH_MODE=shadow`** (Cron-Antrieb, kein Ereignis-Antrieb, kein AWS). Die **fünf Mandate sind mit 376 echten Abschlüssen bewiesen**, Morgen-/Lagelauf 5/5, 0 Verlust, alle elf §28.6-Kontrollen erfüllt ([`op30-aktivierung-5-mandate §30.7`](betrieb/op30-aktivierung-5-mandate.md)). **Seit 30.08. stehen 3 Vorgänge auf `unbekannt` (§14–22).** **Der Selbstweck ist lokal belegt, in Production nie ausgeführt.**
 
@@ -10,7 +10,7 @@
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **Letzter Code Merge: `d9671a0c52f6cc552b526cb92ff533a5d6c86e46`** aus **#309**. Production **`dpl_AKZAJooLuTKfaKU1VB9v79gstbkM` READY** am exakten Commit. Lokal 326/326 am PR Kopf `cbb0e63`, externe CI **34026771963** einschließlich Browser und PostgreSQL erfolgreich. #307 brachte die unabhängigen Leser: Datenbank rot, Konfiguration grün im echten Leselauf **34020582488**.
+- **Letzter Code Merge: `b183487993011b6b0ccd4db075dd532d5efbc71b`** aus **[#310](https://github.com/ernisch/helmut-pilot/pull/310)**. Production **`dpl_ESStZD2WZHXssRS3JDCGMFACTRr8` READY** am exakten Commit. Lokal 327/327 am Kopf `64435e1`; externe CI **34030145466** mit Browser, 500 Kontoanlagen gegen PostgreSQL und 48/48 bisherigen Datenbankprüfungen grün. **#309** (`d9671a0`) brachte begrenzte Abrufe, ehrliche Profilfehler und einen Profilabruf statt 500; **#307** die unabhängigen Leser.
 - **#303** brachte Lagekapazität, Vorgangskontexte, gemeinsame Fristen und `updated_at`; Merge `33f1158`, Production READY belegt. Kontrollierter Lagebeweis weiterhin offen. **#305** schützt die inaktive Kohortenanlage vor automatischer Kontolöschung und falschem Erfolg nach Schreibfehlern; kein Production Fehlerfall ausgelöst.
 - **Dokumentation #308:** `97e2aaa`, Production `dpl_9BUUWpYam8WM9MwUCi7jKoHcT7it` READY. Lokaler Abschluss am exakten Kopf `6d19a4f` Exit 0; beide externen Pflichtjobs grün. Neuer Codeauftrag und Screenshotbefunde stehen in SR §45.
 - #275 bis #277 und #282 nach Konsolidierung geschlossen, nicht gemergt; Branches bleiben Auditbelege.
@@ -63,10 +63,10 @@
 
 **25 Profile sind aktiv.** Stufe B umfasst aus dem Code exakt 75 neue Kennungen, Stufe C 400. Anlage jeweils vollständig inaktiv, danach eigener Aktivierungsschritt und eigene Abnahme. Endbestand soll **504 insgesamt, 500 aktiv, 4 unverändert inaktiv** sein. Keine Kontoaktivierung.
 
-1. **Zugang:** GitHub Ausführung und reine Production Konfiguration sind belegt. Supabase antwortet auf den festen GET mit HTTP 522; SQL Verbindung gestört. Zuerst Datenbankberichte und Erreichbarkeit klären, danach frische Grundlinie. SR §44.4.
+1. **Zugang:** GitHub Ausführung und reine Production Konfiguration sind belegt. SQL Minimalabfrage und natürlicher Vercel Lauf um 11:30 UTC scheitern weiter an Datenbankzeitüberschreitungen. Nach Wiederkehr frische Grundlinie und Kosten erheben. SR §47.
 2. **PR #303 gemergt und deployt:** Kontext und Fristfehler korrigiert, 129 gezielte Prüfungen und externe CI grün. Kontrollierter Production Lagebeleg fehlt weiterhin; aktuell blockiert der Datenbankausfall. SR §44.4.
 3. **Kommunikation:** Vollständiger globaler Riegel am 06.09. um 07:59 UTC wirksam bestätigt. Vor einem späteren Fachlauf erneut prüfen. Frühere Push und Webhook Vorgänge sind kein Tagesnullbeleg.
-4. **Provisionierung:** #305 ist gemergt und deployt. Der echte inaktive Kohortenpfad verhindert automatische Kontolöschung und meldet Schreibfehler auch bei lesbarem Teilprofil ehrlich. Schutz offline und in CI belegt; kein schreibender Production Fehlerfall. Geteilte Blobs bleiben ohne CAS.
+4. **Provisionierung:** #305 ist gemergt und deployt. Der echte inaktive Kohortenpfad verhindert automatische Kontolöschung und meldet Schreibfehler auch bei lesbarem Teilprofil ehrlich. Schutz offline und in CI belegt. #310 schützt den Auth Blob mit CAS; 500 Kontoanlagen in PostgreSQL belegt. Keine schreibende Production Abnahme.
 5. **Budget:** Zähler 124 vom 05.09. sowie wirksamer Deckel 2.416 und Reserve 702 sind belegt. Tagesverbrauch und Kostenobergrenze vor Facharbeit frisch erheben. Kein harter USD Schutz aus den vier wirkungslosen Werten.
 6. **Abnahme:** kontinuierlicher Fortschritt, keine systematischen Auslassungen, Datenintegrität, Kommunikation und Tageskosten je Stufe belegen. Gewöhnlicher Altbestand im Rückstand oder fehlende mehrtägige Beobachtung blockieren laut Betreiber für sich allein nicht. Mehrtagesbetrieb und Verkaufsreife werden dadurch nicht behauptet.
 
@@ -82,9 +82,9 @@ Vollständige aktuelle Freigaben, Nachweisgrenzen und Fortsetzung: [SR §41](bet
 6. **OP-11:** Branch Protection nicht aktiv; Pflicht-CI blockiert Merges nicht technisch.
 7. **OP-15:** Google-Klumpenrisiko (146/163 Wege); 29 von 42 Personensuchen lieferten nie (`circuit-open`) — Production-Beweis der Härtung steht aus (§8).
 8. **Lage-/KI-Kapazität für Skalierung:** siehe §6. Belegt: **drei** reguläre Warteschlangenabflüsse/Tag, nicht elf (§13).
-9. **500er Funktionstest: BLOCKIERT am Datenbankausfall** (§6, SR §44.4). Letzte Grundlinie A aktiv, B/C nicht angelegt. Kommunikationssperre und Production Konfiguration jetzt belegt. Aktuelle Datenintegrität, Kosten und vollständige Fachnachweise für 25/100/500 bleiben offen.
+9. **500er Funktionstest: BLOCKIERT am Datenbankausfall** (§6, SR §47). Letzte Grundlinie A aktiv, B/C nicht angelegt. Kommunikationssperre und Production Konfiguration jetzt belegt. Aktuelle Datenintegrität, Kosten und vollständige Fachnachweise für 25/100/500 bleiben offen.
 10. **OP-07:** Monitoring-Zweitkanal stellt seit mind. 17.08. täglich zu; Ziel von `HELMUT_MONITORING_WEBHOOK_URL` und der doppelte WhatsApp-Eingang bleiben ungeklärt (Betreiberprüfung, kein Code-Fix vorher).
-11. **Profilpfad:** Exklusivmodus jetzt in Production belegt; ältere Dual Write Annahme überholt. Vor B/C Daten und Ausführungskontext frisch abgleichen. Geteilte Betriebs und Kontoblobs bleiben ohne CAS; der Schutz gegen automatische Kontolöschung aus #305 bleibt verpflichtend.
+11. **Profilpfad:** Exklusivmodus jetzt in Production belegt; ältere Dual Write Annahme überholt. Vor B/C Daten und Ausführungskontext frisch abgleichen. Der Auth Blob hat durch #310 CAS Schutz; übrige geteilte Blobs bleiben ein Risiko. Schutz gegen automatische Kontolöschung aus #305 bleibt verpflichtend.
 
 K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach einer weiteren OP-30-Stufenaktivierung muss OP-25 **vollständig wiederholt** werden.
 
@@ -135,7 +135,7 @@ Die konkrete Betreiberfreigabe vom 05.09. in [SR §41](betrieb/500-funktionstest
 3. Keine Löschung, Wiederherstellung verlorener `crawlRuns`, Migration, neue kostenpflichtige Ressource, Azure Änderung, Vercel Env Änderung, Secret Ausgabe, direkte SQL Aktivierung oder Riegelumgehung. Kein Rollback oder Revert ohne neue Betreiberfreigabe.
 4. Stufen getrennt, keine Auslassung. Vor jeder Aktivierung genaue Zielmenge, Zeitfenster und getesteten Ausführungsweg belegen. Kein unbekannter Profilumfang oder unbekannte Änderung außerhalb des Auftrags.
 5. Nach jedem erlaubten Merge automatisch deployen lassen und exakt zugehöriges READY belegen. Bei Fehlschlag sofort stoppen; kein zweites Deployment. Nach jedem Fachschritt unabhängig rein lesend kontrollieren.
-6. Mandantentrennung bleibt App seitig mit `assertTenant` und explizitem Filter. Keine hartkodierten Mandate. Unbedingte Blobschreibvorgänge bleiben ein offenes Risiko, kein behaupteter CAS Nachweis.
+6. Mandantentrennung bleibt App seitig mit `assertTenant` und explizitem Filter. Keine hartkodierten Mandate. Andere geteilte Blobs bleiben ein offenes Risiko; #310 belegt CAS für den Auth Blob.
 
 ## 13 · Detailnachweise und Archiv
 

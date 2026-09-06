@@ -6023,3 +6023,95 @@ Der echte Registrierungsnachweis wird innerhalb desselben CI Pflichtjobs vor die
 gezogen, damit ein Fehler dort sofort sichtbar ist. Kein vorhandener Pflichtschritt, Netzschutz,
 Datenbanknachweis oder Test wird entfernt. Bei Fehler zeigt der Versuch jetzt auch die gezählten
 SQL Bestände, bevor er mit Fehler endet. Die vollständige Prüfung am neuen Kopf steht noch aus.
+
+
+## §47 Abschluss der Korrekturen, 500 Kontoanlagen belegt, Production Fachabnahme blockiert
+
+**Stand 06.09.2026.** Der Codeauftrag zu Abrufgrenzen und Registrierung ist geprüft und ausgerollt.
+Der Gesamtauftrag eines stabilen Motors mit 500 aktiven Mandaten ist **blockiert**, nicht erledigt.
+Der Unterschied zwischen Kontoanlage, Mandatsprofil und vollständigem Fachzyklus bleibt verbindlich.
+
+### §47.1 Echter Registrierungsnachweis und vollständige Pflichtprüfungen
+
+[PR #310](https://github.com/ernisch/helmut-pilot/pull/310), endgültiger Kopf
+**`64435e1d190571ebacaff7116cd6faa694448717`**, Baum
+`0ef000557a07c642c82905a14ec506bfc97b54c1`. Der neue reale Test läuft über den unveränderten
+Anwendungspfad, ein lokales Datenbanktor, **PostgREST 12.2.3 und PostgreSQL 17.11**. Fünf getrennte
+Node Prozesse registrieren je 100 synthetische, inaktive Konten. Keine gemeinsame Prozesswarteschlange.
+
+**Direkt per SQL gezählt am 06.09. um 14:25:04 Türkei / 13:25:04 Berlin / 11:25:04 UTC:**
+500 Konten, 500 eindeutige Konto IDs, 500 eindeutige Adressen, 500 eindeutige Mandatskennungen,
+**null aktive Konten**. Bestehende Betriebsdaten sind erhalten, der veraltete Schreiber auf den
+Altbestand wird verweigert. **3 PASS / 0 FAIL**, keine übersprungene Prüfung. Der Test entfernt
+anschließend ausschließlich seine eigene kurzlebige Testdatenbank.
+
+Die endgültige Korrektur nutzt die Eingangsfrist von 30 Sekunden, höchstens 64 Konfliktversuche und
+breit gestreute Wartezeiten. Netzwerkfehler und unbekannter Schreibausgang werden nicht blind
+wiederholt. Die gezielte Suite besteht **13 PASS / 0 FAIL**, darunter eine Folge von 17 Konflikten,
+Schreibstopp nach Fristablauf, Antwortverlust und gemischte Konto, Sitzungs, Audit und Kostenablage.
+Die beiden fehlgeschlagenen Vorläufe aus §46 bleiben ausdrücklich Fehlerbelege, keine Erfolge.
+
+Kanonischer **lokaler Gesamtlauf am exakten Kopf: 327/327 Suiten, Exit 0**, von 14:24:37 bis
+14:32:28 Türkei / 13:24:37 bis 13:32:28 Berlin / 11:24:37 bis 11:32:28 UTC, 471 Sekunden.
+Vollständiges Protokoll und separater Prozessabschluss erfasst.
+[CI 34030145466](https://github.com/ernisch/helmut-pilot/actions/runs/34030145466) ist vollständig
+erfolgreich: 327/327 Offline Suiten in 539 Sekunden, Browser und **48/48** bisherige echte
+Datenbankprüfungen zusätzlich zum neuen 500er Versuch. Beide Pflichtjobs grün. Vorschau
+`dpl_C6PrG1V2URs9Nxbi8m71qAvhkpkw` READY am exakten Kopf, keine Reviews oder offenen Threads.
+Kein Netzschutz und keine Pflichtprüfung abgeschaltet.
+
+### §47.2 Übernahme und belegter Production Stand
+
+PR #310 mit erwartetem Kopf und Methode `merge` übernommen. Merge
+**`b183487993011b6b0ccd4db075dd532d5efbc71b`**, genau zwei Eltern
+`d9671a0c52f6cc552b526cb92ff533a5d6c86e46` und `64435e1d190571ebacaff7116cd6faa694448717`.
+Automatisches Production Deployment **`dpl_ESStZD2WZHXssRS3JDCGMFACTRr8` READY**, target production,
+Commit exakt bestätigt; Alias `helmut-pilot.vercel.app`. Kein manueller Deploy, kein Deploymentfehler
+und kein Rückweg. Die vorausgegangenen Abrufkorrekturen aus #309 sind Bestandteil dieses Standes.
+
+Keine Production Konten oder Profile angelegt oder aktiviert, keine kontrollierte Modellarbeit,
+kein Versand, keine Migration angewendet und keine Ressourcen oder Vercel Variablen geändert.
+Der Nachweis in PostgreSQL ist ein echter Test der Kontoablage, **kein Test der Production Datenbank**.
+Der gemeinsame Auth Store ist weiterhin ein Blob; CAS ist kein relationaler Umzug und kein
+allgemeiner Nachweis für alle übrigen geteilten Zustände. Andere Auth Schreiber können einen
+Konflikt weiterhin ausdrücklich melden, statt ihn automatisch fachlich zu wiederholen. Alte
+Funktionsinstanzen oder Werkzeuge ohne Revisionsprüfung dürfen bei späteren Stufenaktionen nicht
+mehr schreiben. Eine bestimmte Antwortzeit bei 500 gleichzeitigen HTTP Anmeldungen wird nicht zugesagt.
+
+### §47.3 Frischer, unabhängig bestätigter Betriebsblocker
+
+Die einzelne SQL Minimalabfrage ohne Fachdatentabelle endet am 06.09. um
+**14:30:09 Türkei / 13:30:09 Berlin / 11:30:09 UTC** mit
+`Connection terminated due to connection timeout`. Keine erfolgreiche Antwort mit `erreichbar = 1`.
+Die Abfrage enthält nur READ ONLY, eine lokale Statementfrist, SELECT 1 und die Prüfzeit.
+Die Verbindungsstörung liegt vor der Ausführung dieser SQL Abfrage.
+
+Der **reguläre**, nicht von dieser Sitzung ausgelöste Vercel Lauf
+`understanding-rueckstand-20260906113031-x44i0` bestätigt die Störung unabhängig:
+`/api/cron/understanding-rueckstand`, bisheriges Production Deployment
+`dpl_AKZAJooLuTKfaKU1VB9v79gstbkM`, erster gezeigter Fehler um
+**14:30:11 Türkei / 13:30:11 Berlin / 11:30:11 UTC**. Zeitüberschreitungen nach 10000 ms beim
+Lesen des Auth Stores und relationaler Profile, anschließend Fehler der Prozessablage und ein
+nicht lesbarer Budgetzähler. Der Vorlauf meldet `vorab-zaehler-nicht-lesbar`, `used=null` und
+`rest=null` bei Deckel 2416. **HTTP 200 ist hier kein erfolgreicher Fachlauf.** Der reine
+Protokollabruf wurde am 06.09. um etwa 11:32 UTC durchgeführt; keine Facharbeit dadurch gestartet.
+Lesbare Verwaltungsmetadaten oder ein READY Deployment widerlegen diese Fehler nicht.
+
+Letzte gesicherte Grundlinie bleibt **29 Profile, 25 aktiv, vier inaktiv**, vom 06.09. um 00:28 UTC.
+B und C sind nicht angelegt; frische Bestandsintegrität, Auftragszustände und Tageskosten sind
+nicht belegbar. Die Screenshotbefunde aus §45 zeigen einen Hinweis auf Speicherdruck, keine
+bewiesene Ausfallursache. Ein Neustart, bezahlte Ressourcenänderung oder Production Migration ist
+unter §41 weiterhin nicht freigegeben und wurde nicht vorgenommen.
+
+### §47.4 Nächster zulässiger Schritt und Abschluss
+
+Nach tatsächlich belegter Wiedererreichbarkeit frischen Datenbestand, Kosten, Aufträge,
+Kommunikationssperre und Speicherpfad prüfen. Dann A mit 25 Profilen vollständig funktional
+abnehmen. Anschließend B getrennt inaktiv anlegen und im tatsächlichen freigegebenen Fenster
+aktivieren, erst nach B Abnahme C. Konten bleiben inaktiv, die vier alten inaktiven Profile
+unverändert. Budget höchstens 10 USD je UTC Tag, Sicherheitsstopp bei prognostiziert 9 USD.
+Keine Abkürzung von A auf 500 aufgrund des neuen Registrierungsnachweises.
+
+Dieser abschließende Nachtrag erfüllt CLAUDE.md §9 nach dem fachlich wirksamen Merge. Er ändert
+nur Dokumentation, keine Funktion, Konfiguration oder Daten. Sein eigener Merge und Deploymentstand
+werden aus der Historie bestätigt; daraus entsteht kein rekursiver Dokumentations PR.
