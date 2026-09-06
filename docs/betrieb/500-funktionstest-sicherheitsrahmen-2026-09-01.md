@@ -5816,8 +5816,8 @@ HTTP 522 bezeichnet eine Zeitüberschreitung zwischen Cloudflare und dem Ursprun
 Supabase nennt Überlastung als häufige Ursache des hier ebenfalls beobachteten SQL Verbindungsfehlers
 ([Supabase](https://supabase.com/docs/guides/troubleshooting/failed-to-run-sql-query-connection-terminated-due-to-connection-timeout)).
 Die konkrete Ursache ist ungeklärt. Auslastungsberichte zu CPU, RAM, Disk IO und Verbindungen sind
-mit den vorhandenen Zugriffen nicht lesbar; der gesonderte Dashboard Browser verlangt Anmeldung,
-eine nutzbare Browseranmeldung ist hier nicht verfügbar. Kein automatischer Neustart, keine
+mit den vorhandenen Zugriffen nicht lesbar; der gesonderte Dashboard Browser verlangt eine
+zusätzliche Anmeldung. Die Berichte liegen noch nicht vor. Kein automatischer Neustart, keine
 Ressourcenänderung und keine Migration. Solche Eingriffe sind durch §41 nicht freigegeben.
 
 **Fortsetzung:** Zuerst Supabase Projektberichte und Erreichbarkeit klären. Nach Wiederkehr eine
