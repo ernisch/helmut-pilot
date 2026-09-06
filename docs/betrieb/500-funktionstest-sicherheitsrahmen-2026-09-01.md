@@ -5637,3 +5637,110 @@ Gezielter Beleg: **24 PASS / 0 FAIL**. Echter HTTP Handler mit Account Modus und
 Erfolg, fehlendes/falsches Cron Secret, falsche Methode und absichtlich fehlerhafte Budgetfunktion;
 Adminseed, Blobleser und Fehlerpersistierung in allen Fällen **null Aufrufe**.
 Vollständige Prüfungen, Merge und tatsächlicher Production Laufzeitabruf stehen noch aus.
+
+### 44.2 Geprüfter Merge #306, Production READY und verweigerter manueller Start
+
+**Abschlussbefund 06.09.2026, 03:28 Türkei / 02:28 Berlin / 00:28 UTC.**
+Der GitHub Ausführungszugang ist teilweise hergestellt. Der 500er Funktionsnachweis bleibt bei
+25 aktiven Profilen blockiert; die neue Statusroute wurde noch nicht gegen Production aufgerufen.
+
+**Prüfung und Merge:** Der exakte Kopf `b0cbd38eff05505215bef29171012d61525aadf9` besteht in einem
+frischen isolierten Checkout mit Playwright 1.56.1 **323/323 Offline Suiten in 638 Sekunden**.
+Browserprüfung **32/32**, gezielte Leserprüfungen **37 und 24 PASS**. Frühere lokale Zwischenläufe
+waren nicht grün: zunächst fehlendes Chromium, lokaler Auth Testbestand und der bestehende
+Wanduhrvergleich des Quellenabrufs. Diese betroffenen Tests bestehen unverändert im Abschlusslauf.
+Kein Test wurde entfernt oder abgeschwächt. Der Netzschutz blockierte einen Nicht Localhost Versuch
+des vorhandenen `pardok-shadow-test`; der kanonische Runner endete mit Exit 0.
+
+GitHub CI **[34000726276](https://github.com/ernisch/helmut-pilot/actions/runs/34000726276)** ist am selben
+Kopf erfolgreich, einschließlich beider Pflichtjobs und des echten Datenbanknachweises. Vercel
+Vorschau `dpl_6ZPCeHcBrAV5QLbd7dXUVpsu6RoP` READY; keine Reviews oder offenen Review Threads.
+Auch der zweite reine GitHub Datenbankleselauf **34000222331** war erfolgreich.
+
+[PR #306](https://github.com/ernisch/helmut-pilot/pull/306) wurde unter der bestehenden Freigabe aus §41
+mit erwartetem Kopf und echtem Merge Commit übernommen:
+`cfd18b20019b811b775371d9c11ddb2b6f5f5ba4`, Eltern `e0da151222eda74dbbfb89caa9b53faf0efde9ce` und
+`b0cbd38eff05505215bef29171012d61525aadf9`. Mergezeit **03:24:02 Türkei / 02:24:02 Berlin / 00:24:02 UTC**.
+Das automatische Deployment **`dpl_3NGtMs7AtsDK8zPQZKKaXdBAp2Gt`** ist unabhängig als **READY**, target
+`production`, am exakten Merge Commit bestätigt; Alias `helmut-pilot.vercel.app` zugeordnet.
+Keine Vercel Variable geändert, kein Deploymentfehler, kein Wiederholungsversuch und kein Rollback.
+
+**Konkrete Sperre:** Im angemeldeten GitHub Browser wurde das manuelle Startformular vorbereitet:
+Branch `main`, `laufzeit_status=true`, `production_commit` auf den separat bestätigten Merge gesetzt.
+Der letzte Klick auf **Run workflow** wurde von der automatischen Freigabeprüfung verweigert.
+Als Grund nennt sie fehlende ausdrückliche Bestätigung zum Aktionszeitpunkt für den manuellen
+Workflow mit Production Zugangsdaten, auch bei rein lesender Absicht und verifiziertem Commit.
+Das Formular blieb ungesendet. Die Actions Liste am Merge zeigt ausschließlich den normalen CI Pushlauf,
+keinen manuellen Statuslauf. Eine gezielte Suche nach einer zusätzlichen direkten Nutzerfreigabe
+speziell für diesen neuen GitHub Start ergab keinen weiteren belastbaren Beleg.
+Kein Wiederholungsversuch, kein anderer Trigger und keine Änderung von Schutzregeln als Umgehung.
+
+**Rein lesende Nachkontrolle 00:28:15 UTC:** 29 Mandatsprofile, 25 aktiv, vier inaktiv, null Löschmarken;
+B/C jeweils null; 30 Identitätsprofile, 25 Auth Konten, drei aktiv, `crawlRuns` 20. Keine Profil oder
+Kontoaktion dieser Sitzung. Im UTC Tag seit 00:00 keine neuen Modellprotokolle. Die letzte bezifferte
+Messung des Vortags umfasst 118 Aufrufe, geschätzt 0,385127 USD bis etwa 21:45 UTC;
+keine vollständigen Betriebskosten oder Providerrechnung. A um 00:18:53 UTC: 19 Quellenaufträge
+erledigt, ein Abruf sowie 20 Projektionen und 20 Briefings wartend, sämtlich im Fenster `2026-09-05T00Z`.
+
+**Fortsetzung:** ausdrückliche Bestätigung für genau einen manuellen rein lesenden Workflow Start
+einholen. Vor diesem Klick main und sein Production READY frisch abgleichen; nach einem weiteren
+Dokumentationsmerge muss das Eingabefeld den dann aktuellen Commit tragen. Der Workflow macht einen
+festen Supabase GET auf die vorhandene Zeile und einen festen GET auf die neue Konfigurationsroute,
+ohne Modell, Fachlauf oder Datenänderung. Erst mit erfolgreichem Bericht Betriebswerte auswerten und
+den geschützten Kohortenprozess fertig vorbereiten. A Fachbeleg, Kommunikation, Kosten und stufenweise
+B/C Bedingungen bleiben verpflichtend. Die allgemeine Betreiberfreigabe aus §41 wird dadurch nicht
+neu erfunden oder erweitert; die zusätzliche Bestätigung ist durch die automatische Prüfung verlangt.
+
+Dieser Nachtrag war zunächst als ausschließliche Dokumentation nach dem Code Merge vorgesehen.
+Die weitere Nutzeranweisung und der anschließend belegte Diagnosefehler erweitern #307 um die
+notwendige Korrektur aus §44.3. Damit ist #307 jetzt ein Code PR mit vollständigen Prüfgates.
+
+### 44.3 Neuer Nutzerauftrag, gestarteter Leselauf und unabhängige Diagnose
+
+**Zwischenstand 06.09.2026, 10:20 Türkei / 09:20 Berlin / 07:20 UTC.**
+Der Nutzer weist erneut ausdrücklich an: **Weiter**. main und Production wurden daraufhin frisch
+abgeglichen: weiterhin `cfd18b20019b811b775371d9c11ddb2b6f5f5ba4`, Deployment
+`dpl_3NGtMs7AtsDK8zPQZKKaXdBAp2Gt` READY. Derselbe vorbereitete manuelle Workflow wurde im
+angemeldeten GitHub Browser mit `laufzeit_status=true` und genau diesem Commit gestartet.
+Die automatische Prüfung ließ diesen Start nach dem neuen Nutzerauftrag zu. Die frühere
+Aktionsfreigabe ist damit nicht mehr der aktuelle Blocker; kein alternativer Trigger wurde benutzt.
+
+**Echter Lauf [34018371687](https://github.com/ernisch/helmut-pilot/actions/runs/34018371687):**
+Start **10:09:12 Türkei / 09:09:12 Berlin / 07:09:12 UTC**, `workflow_dispatch`, main, Kopf exakt wie
+Production. Checkout und Node Einrichtung erfolgreich. Der feste PostgREST GET meldet
+`http-fehler`, Ziel bestätigt, alle drei Secrets vorhanden, alle sieben GitHub Betriebswerte fehlend.
+Die damalige Ausgabe enthält keine HTTP Nummer; sie belegt daher insbesondere keinen bestimmten
+5xx Fehler. Die reine Production Konfigurationsprüfung wurde als nachfolgender Schritt übersprungen.
+Gesamtlauf fehlgeschlagen, null Modellaufrufe, null Schreibaufrufe.
+
+Auch zwei direkte, ausdrücklich nur lesende SQL Transaktionen melden im selben Zeitraum
+`Connection terminated due to connection timeout`. Projektmetadaten bleiben `ACTIVE_HEALTHY`;
+dies ist kein Nachweis funktionierender Abfragen. Die öffentliche Supabase Statusseite weist im
+Zeitpunkt der Prüfung keinen konkreten neuen Vorfall für unsere Datenbankregion aus. Ihr älterer
+JWT Vorfall erklärt die hier beobachteten Antworten nicht nachweislich. Kein Neustart, keine
+Ressourcenänderung und keine Migration durchgeführt.
+
+**Notwendige Korrektur in #307:** Der Konfigurationsleser liest ausschließlich bereits deployte
+Prozesswerte und braucht keine Datenbank. Sein Workflow Schritt verlangt deshalb ausdrücklich
+`!cancelled()`, erfolgreichen Checkout und erfolgreiche Node Einrichtung sowie den unveränderten
+manuellen Opt in. Das entspricht der dokumentierten GitHub Semantik: ohne Statusfunktion wird
+`success()` implizit ergänzt ([GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/expressions#status-check-functions)).
+Ein Datenbankfehler bleibt ein Jobfehler; kein `continue-on-error`, kein grüner Gesamtbericht trotz
+Fehler. Ziel, Secret Umgang, fester READY Commit und die Ablehnung scharfer Pfade bleiben erhalten.
+
+Beide Leser geben zusätzlich nur eine ganzzahlige HTTP Statusnummer von 100 bis 599 aus, sonst
+`null`. Keine Antwortkörper, Providerfehler, Zugangsdaten oder unvalidierten Statuswerte im Bericht.
+Checkout und Node Action sind auf die im Lauf 34018371687 erfolgreich ausgeführten Commits fixiert.
+Ein separat entdeckter späterer Pin Commit `2430d1e` auf dem alten Zugangsbranch wird nicht
+überschrieben und nicht als bereits auf main enthalten dargestellt.
+
+**Gezielte lokale Prüfung:** Datenbankleser **43 PASS / 0 FAIL**, Laufzeitleser **31 PASS / 0 FAIL**,
+jeweils über `scripts/lokal.js`. Dazu gehören der echte HTTP Handler ohne Schreibvorlauf und die
+Abweisung fremder Inhalte auch im Statusfeld. Vollständige lokale und externe Prüfungen am neuen
+Kopf sowie Merge, Production READY und echter erneuter Leselauf stehen noch aus.
+
+**Unveränderte Nachweisgrenze:** Letzter bestätigter Datenbestand vom 06.09. 00:28 UTC bleibt
+29 Profile, 25 aktiv, vier inaktiv, B/C null. Die zwischenzeitlichen natürlichen Morgenläufe und
+aktuellen Modellkosten sind ungeprüft. Deshalb keine Profilanlage, Aktivierung oder Modellarbeit.
+Vor jeder Fortsetzung frischen Bestand, Kommunikationsriegel, Budget und tatsächliches Zeitfenster
+prüfen; die Stufenfreigaben aus §41 bleiben bedingt. Das nächtliche Fenster ist inzwischen beendet.

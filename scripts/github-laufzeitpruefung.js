@@ -11,7 +11,7 @@ const BOOLEAN_FELDER = Object.freeze([
 const ZAHL_FELDER = Object.freeze(["retention", "tagesdeckel", "understandingReserve"]);
 
 async function pruefe({ env = process.env, fetchFn = global.fetch } = {}) {
-  const bericht = { ok: false, reinLesend: true, grund: "nicht-geprueft" };
+  const bericht = { ok: false, reinLesend: true, grund: "nicht-geprueft", httpStatus: null };
   const erwartet = env.HELMUT_PRODUCTION_COMMIT || "";
   // Der Checkout muss genau der separat als READY bestaetigte Commit sein.
   if (!/^[a-f0-9]{40}$/.test(erwartet) || erwartet !== env.GITHUB_SHA) {
@@ -23,6 +23,8 @@ async function pruefe({ env = process.env, fetchFn = global.fetch } = {}) {
       method: "GET", redirect: "error", signal: AbortSignal.timeout(20000),
       headers: { Authorization: `Bearer ${env.HELMUT_CRON_SECRET}`, Accept: "application/json" }
     });
+    bericht.httpStatus = Number.isInteger(response.status)
+      && response.status >= 100 && response.status <= 599 ? response.status : null;
     if (response.status !== 200) return { ...bericht, grund: "statuszugang-nicht-bestaetigt" };
     const body = await response.json();
     if (!body || body.ok !== true || body.schemaVersion !== 1 || body.reinLesend !== true
@@ -34,7 +36,7 @@ async function pruefe({ env = process.env, fetchFn = global.fetch } = {}) {
       return { ...bericht, grund: "konfigurationsantwort-ungueltig" };
     }
     return {
-      ok: true, reinLesend: true, grund: "production-laufzeit-gelesen", commit: erwartet,
+      ok: true, reinLesend: true, grund: "production-laufzeit-gelesen", httpStatus: 200, commit: erwartet,
       ...Object.fromEntries([...BOOLEAN_FELDER, ...ZAHL_FELDER].map((f) => [f, body[f]])),
       scharferPfadFreigegeben: false
     };
