@@ -6237,7 +6237,12 @@ Anlage, verschachtelte Cache Änderungen, bestätigter und gescheiterter Write, 
 neuerem Zwischenstand, ausdrücklich beauftragte Neuanlage, gleichzeitige lokale Writes und ein
 verspäteter GET. Kein externer HTTP Aufruf.
 Der vollständige lokale Lauf und die externen Pflichtprüfungen am endgültigen Kopf werden im PR
-festgehalten. Bis zu deren erfolgreichem Abschluss und geprüftem Deployment ist nichts ausgerollt.
+festgehalten. **Nachtrag nach dem Merge (CLAUDE.md §9, rein lesend belegt):** PR #313 ist als
+`d230067` auf `main`; beide Pflichtprüfungen sind grün (`Syntax + Offline-Suiten` 13:01:51 →
+13:12:01 UTC, `Browser-/Mobile-Smoke (Chromium)` 13:01:51 → 13:02:23 UTC, Lauf 34034848296). Das
+Production Deployment `dpl_DzrNcPGcmkfzin4RHugVb1rG3bUA` steht auf **READY** (13:12:32 UTC) und
+trägt genau diesen Commit. Der Satz „nichts ausgerollt" gilt damit **nicht mehr**; ausgerollt ist
+der Code, **nicht** seine Wirkung — die bleibt wegen des Datenbankausfalls unbelegt.
 
 **Grenze:** Dies ist kein allgemeines Compare and Set für `main` und die Mandatsspeicher.
 Vollständige Writes aus getrennten Instanzen können weiterhin konkurrieren. Die lokale Lesemarke
