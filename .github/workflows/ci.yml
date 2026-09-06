@@ -36,7 +36,7 @@ jobs:
     timeout-minutes: 15
     # KURZLEBIGE CI-TESTDATENBANK (Korrektur 2026-08-28, Befund „falsches Grün").
     # ---------------------------------------------------------------------------
-    # Nur für den Z22-Datenbanknachweis unten. Der Dienst lebt genau so lange wie
+    # Für die Datenbanknachweise zu Z22 und Kontoschreibschutz. Der Dienst lebt so lange wie
     # dieser Job, enthält ausschließlich synthetische Zeilen und hat mit Production
     # nichts zu tun: kein Supabase, kein Secret, keine echte Mandatskennung.
     # Hauptversion 17 wie Production (17.6) — die Prüfung liest u. a. Zugriffswege.
@@ -162,6 +162,16 @@ jobs:
           HELMUT_TEST_PG_USER: "helmut"
           PGPASSWORD: "helmut"
         run: node scripts/lokal.js scripts/vorbedingung-mandatsfilter-datenbank-test.js
+
+      - name: Kontoschreibschutz und 500 Registrierungen gegen PostgreSQL und PostgREST
+        timeout-minutes: 3
+        env:
+          HELMUT_TEST_PG_HOST: "127.0.0.1"
+          HELMUT_TEST_PG_PORT: "5433"
+          HELMUT_TEST_PG_USER: "helmut"
+          HELMUT_TEST_POSTGREST_BIN: "/tmp/postgrest"
+          PGPASSWORD: "helmut"
+        run: node scripts/lokal.js scripts/auth-store-cas-datenbank-test.js
 
   browser-smoke:
     name: Browser-/Mobile-Smoke (Chromium)

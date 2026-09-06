@@ -103,6 +103,7 @@ const WERKZEUG_VERWEIGERUNG = new Set([
 // Suiten, die NICHT offline lauffähig sind (Netz, Production-URL, Live-LLM, echte DB)
 // oder die keine Tests, sondern Werkzeuge/Backfills sind.
 const DENYLIST = new Set([
+  "auth-store-cas-datenbank-test.js", // eigener verpflichtender CI Schritt mit PostgreSQL + PostgREST
   "smoke-test.js", // zielt per Default auf die Production-URL
   "understanding-live-smoke.js", // echter HTTP-/LLM-Pfad
   "understanding-eval.js", // Goldset-Eval mit eigener Laufzeit/Reporting, kein PASS/FAIL-Gate

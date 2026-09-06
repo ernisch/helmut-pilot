@@ -5898,3 +5898,80 @@ frischen Bestand, Kosten, Laufzustände und Kommunikationssperre lesen. Danach d
 Fachbeleg erbringen, B getrennt anlegen und aktivieren, nach dessen Abnahme C. Die Bedingungen des
 tatsächlichen Nachtfensters gelten weiterhin. Parallel angelegte Konten und unbedingte Blobschreibvorgänge
 bleiben ein gesondert zu prüfendes Datenintegritätsrisiko; aus dem neuen Profilabruf folgt kein CAS Beleg.
+
+
+## §46 Kontoschreibschutz und Registrierung (06.09.2026)
+
+### §46.1 Abgeschlossener Abruffix und fortbestehender Zugangsausfall
+
+[PR #309](https://github.com/ernisch/helmut-pilot/pull/309) ist übernommen: Merge
+**`d9671a0c52f6cc552b526cb92ff533a5d6c86e46`**, Production
+**`dpl_AKZAJooLuTKfaKU1VB9v79gstbkM` READY** am exakten Merge und target production bestätigt.
+Der exakte PR Kopf `cbb0e637814ee08a23bd86f93e747e77d456b56d` besteht lokal **326/326 Suiten,
+Exit 0**, 06.09. von 13:18:38 bis 13:26:14 Türkei / 12:18:38 bis 12:26:14 Berlin /
+10:18:38 bis 10:26:14 UTC, 456 Sekunden. Vollständiges Protokoll und Prozessabschluss erfasst.
+Externe [CI 34026771963](https://github.com/ernisch/helmut-pilot/actions/runs/34026771963)
+mit beiden Pflichtjobs, Browser und echtem PostgreSQL erfolgreich; Vorschau READY am selben Kopf,
+keine Reviews oder offenen Threads. Der frühere lokale Kopf `f9d7d46` bestand ebenfalls 326/326;
+sein gesamter Baum ist bytegleich mit `cbb0e63`. Kein manueller Deploy, kein Rückweg ausgelöst.
+
+Eine einzelne neue SQL Minimalabfrage endet um **13:33:33 Türkei / 12:33:33 Berlin / 10:33:33 UTC**
+weiterhin mit `Connection terminated due to connection timeout`. Kein Bestandsabruf, keine
+Wiederholungsschleife, keine Modellarbeit oder Stufenaktion. Abrufkorrektur ist kein Beweis der
+Behebung der Supabase Störung. Letzte Grundlinie bleibt 29/25/4 von 00:28 UTC.
+
+### §46.2 Reproduzierter Verlust und begrenzte Korrektur
+
+Ein isolierter Lauf des echten `accounts.createUser` mit einem Transportersatz meldete für
+500 gleichzeitige Aufträge 500 Erfolge, speicherte aber nur **ein Konto**. Alle Aufträge hatten
+denselben alten Auth Blob gelesen und unbedingt überschrieben. Nur synthetische Adressen auf
+`.invalid`, keine echte Supabase Verbindung. Das ist ein Registrierungsfehler unabhängig vom Ausfall.
+
+Der gemeinsame Auth Store erhält jetzt eine UUID Revision im vorhandenen JSON. Ein gelesener Stand
+trägt eine unveränderliche interne Marke, die Objektkopien erhalten und JSON nicht ausgibt.
+Bestehende Zeilen werden per PostgREST PATCH nur bei passender Revision geschrieben; der Altbestand
+ohne Revision wird mit `is.null` geschützt. Eine fehlende Zeile wird ausschließlich eingefügt,
+niemals per überschreibendem Upsert. Nur genau eine bestätigte Zeile gilt als Schreiberfolg.
+Ungültige oder leere Fehlerantworten erzeugen keinen leeren Kontenbestand. Kein neues Schema,
+keine Migration und keine Umgebungsvariable nötig.
+
+Registrierung, Kontoänderung, Sitzungserstellung, Passwortlinks, Passwortsetzen, Loginzähler,
+Audit, Fehlerprotokoll und der Kostenbeleg wenden ihre Änderung auf einem frischen Stand an.
+Pro Instanz werden diese Änderungen geordnet, zwischen Instanzen schützt die Datenbankbedingung.
+Nur bestätigte Versionskonflikte werden begrenzt erneut gelesen, höchstens acht Versuche mit
+Rückstau und einer Frist von 30 Sekunden ab Eingang. Unklarer Schreibausgang oder Netzwerkfehler
+wird niemals blind wiederholt. Andere Auth Schreiber haben ebenfalls CAS Schutz; ein Konflikt
+wird dort als Fehler weitergegeben, nicht automatisch fachlich wiederholt. Der alte Pipeline
+Sperrpfad darf einen Konflikt oder Datenbankfehler nicht mehr als erworbene Sperre behandeln.
+Der bereits aktivierte relationale Sperrpfad bleibt erhalten.
+
+Gezielte Regression: vorher **1 PASS / 7 FAIL**, danach zunächst **8 PASS / 0 FAIL**. Ergänzt sind
+gemischte Registrierungen mit Sitzungen, Audit und Kostenbelegen sowie eine nicht gespeicherte
+Pipeline Sperre. Insgesamt **10 PASS / 0 FAIL**, keine Modellaufrufe. Bestehende Auth Entkopplung,
+Einladung, acht LLM Suiten, Kohortenanlage und atomare Sperren bestehen ihre gezielten Prüfungen.
+Die Auth Entkopplungsattrappe beachtet jetzt bedingte PATCH Schreibvorgänge und liest ihre
+synthetische Grundlinie vor dem Schreiben. Zwei alte Quelltextassertionen, die gerade den kaputten
+unbedingten LLM Blobpfad verlangten, sind durch den stärkeren gemischten Verhaltenstest ersetzt.
+Ringgrenzen, relationale Nebenablage, Kostenriegel und Kommunikationsrechte bleiben unverändert.
+
+### §46.3 Ausstehende Abnahme und Grenzen
+
+Ein zusätzlicher Pflichtschritt im bestehenden CI Job prüft den echten Anwendungspfad über das
+lokale Datenbanktor, PostgREST 12.2.3 und PostgreSQL 17. Fünf getrennte Node Prozesse sollen je
+100 Konten registrieren. SQL zählt danach 500 eindeutige Konten, Adressen und Mandatskennungen,
+null aktive Konten sowie unveränderte vorhandene Betriebsdaten. Der Altbestand und ein veralteter
+Schreiber werden ebenfalls geprüft. Die kurzlebige, zufällig benannte Testdatenbank enthält nur
+synthetische Daten und wird anschließend entfernt. Fehlende Werkzeuge sind Fehler, kein Skip.
+Dieser Nachweis ist aus dem Offline Sammellauf ausgeschlossen und wird ausdrücklich in CI verlangt.
+Der tatsächliche Ausgang, die vollständigen lokalen und externen Pflichtläufe sowie exakter Kopf,
+Merge und Deployment werden vor Übernahme im zugehörigen PR dokumentiert. Bis dahin kein
+behaupteter PostgreSQL oder Production Nachweis für diese neue Korrektur.
+
+CAS schützt nur gegen Schreiber, die die Revision respektieren. Alte Funktionsinstanzen oder alte
+manuelle Skripte mit unbedingtem Upsert dürfen während der späteren Stufenaktion nicht mehr laufen.
+Die kleinen Konfliktwiederholungen sind keine Garantie für 500 gleichzeitige HTTP Anmeldungen
+innerhalb einer bestimmten Antwortzeit. Kontoanlage allein umfasst weder ein vollständiges
+Mandatsprofil noch Personalisierung, Fachzyklus oder langfristigen 500er Betrieb.
+Nach belegter Datenbankerholung folgen frische Bestands und Kostenprüfung, vollständige Abnahme
+von A mit 25 Profilen, dann die separat freigegebenen Schritte B und C im tatsächlichen Nachtfenster.
+500 funktionierende Mandate sind weiter offen. Keine Konto oder Profilaktivierung dieser Sitzung.
