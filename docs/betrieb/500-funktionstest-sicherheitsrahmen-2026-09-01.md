@@ -6553,3 +6553,169 @@ Profilen, Integrität, Kommunikation, Kosten, Datenbankzustand und kontinuierlic
 **Stand dieses Nachtrags:** Vorbereitung des kleinen Code PRs; noch kein Merge dieses Einstiegs,
 kein kontrollierter Lageaufruf, keine B oder C Anlage oder Aktivierung. Neue Grundlinie belegt;
 vollständiger 25er Wiederanlauf und Stufenabnahme weiterhin offen.
+
+## §53 Wiederanlauf und kontrollierter 25er Lagebeleg, weiteres Starttor offen (06.09.2026)
+
+**Sprintzustand: BLOCKIERT.** Datenbankwiederanlauf, natürlicher Abendcrawl und kontrollierter
+Lagebeleg für 25 sind unabhängig bestätigt. Die vollständige A Abnahme ist nicht erreicht:
+elf Aufträge des heutigen A Fensters sind offen und der heutige Aufrufzähler liegt bei 74.
+Der vorgesehene Fachzyklus verlangt zusätzlich den weiterhin unbelegten Azure-Kontingentnachweis.
+Keine Stufe B oder C angelegt oder aktiviert. Maßgeblich bleiben §41 und die Übergabe vom 06.09.
+
+### §53.1 Geprüfter Code, Merge und Production
+
+| Gegenstand | Beleg |
+|---|---|
+| PR | [#320](https://github.com/ernisch/helmut-pilot/pull/320), Kopf `26596b0156e42ee3c8e5e15fc972de75e96d3c25`, Basis `252137afe7bf6bb7a8d7489ca86b0b064df48538` |
+| Änderung | Fester manueller Lageeinstieg aus §52.3; reine Production Statusroute ergänzt den wirksamen Kohortenquellenriegel. Keine neue Fachroute oder Production Konfiguration. |
+| Lokal am PR Kopf | Vollständiger kanonischer Lauf: **331/331 Suiten, Exit 0, 468 s**. Separater echter Browserlauf: **40 PASS / 0 FAIL**. Vorherige zwei lokal nicht vollständig belegte Ausführungen zählen nicht als Gesamtnachweis. |
+| Externe Pflichtprüfungen | PR CI **34056782489**, beide Jobs erfolgreich; PostgreSQL/PostgREST einschließlich 500 Kontoanlagen und Z22 §1–§11 erfolgreich. Drei Check Runs und Vercel Status erfolgreich, keine Reviews oder offenen Threads. |
+| Vorschau | `dpl_8mTFskseiCcr37L6hPGiJbwCWExW`, READY am exakten PR Kopf. |
+| Merge unter §41.1 | **`a059f27d5e3222d4a150248510eb6ea17df3280a`**, `expected_head_sha`, Methode `merge`; zwei Eltern: obige Basis und PR Kopf. Baum **`f3f492cf1def0b7a30c3d353131ede4698a78890`** identisch zum geprüften Kopf. |
+| Production | **`dpl_45iriLxyUgLQABCEwaD9rAHLMLvU` READY**, target production, Commit exakt obiger Merge; Hauptadresse `helmut-pilot.vercel.app` unabhängig bestätigt. Kein manueller Deploy oder zweiter Versuch. |
+| main CI | **34057952615**, beide Pflichtjobs einschließlich Datenbanknachweisen erfolgreich. |
+
+Unmittelbar vor Merge wurden Arbeitsbaum, origin/main, GitHub main, offener PR, Reviewstatus,
+Actions, Production und freie Leases erneut geprüft. Keine konkurrierende Fachausführung oder
+fremde Änderung. Die Merge und Deploymentfreigabe stammt aus §41.1, nicht aus dem 500er Ziel.
+
+### §53.2 Natürlicher Abendcrawl nach Micro Wiederanlauf
+
+Der Lauf wurde **nicht manuell ersetzt oder wiederholt**. Nach Wartepausen rein lesend bestätigt:
+
+| Messgröße | Befund |
+|---|---|
+| Lauf | `cron-crawl-20260906200037-3ggk4`, `warteschlange-crawl`, Code `252137a` |
+| Start / Ende UTC | **20:00:37.365 / 20:04:30.671**, rund **233,3 s** |
+| HTTP / Fachstatus | **200 / success**, 25 aktive Profile, `bounded:false`; Start und Ende quittiert |
+| Planung | 253 geplant, 169 neu geplant, 0 Planungsrest |
+| Bilanz | **425 reserviert = 274 erledigt + 151 vertagt**, 0 fehlgeschlagen, 0 Wiederholungen, 0 verlorene Leases |
+| Arbeitsklassen | +186 Quellenabrufe, +47 Understanding-Aufträge, +26 Projektionen, +15 Briefingmaterialisierungen erledigt |
+| Warteschlange | Vorher **202**, danach **158** wartend; keine laufenden oder endgültig fehlgeschlagenen Aufträge |
+| Spiegel / Dispatch | Spiegelquittung `ok`, 1586 geschrieben, 0 verworfen; Dispatch `shadow`, Weckversand 0/0 |
+| Modelle | **16 zusätzliche** protokollierte erfolgreiche Aufrufe, **0,052272 USD geschätzt** |
+| Datenbank nach Lauf | Dashboard ca. 20:13 UTC: **RAM 55 %, CPU 2 %, 19/60 Verbindungen**, healthy; SQL mehrfach erfolgreich |
+
+**Die Betriebsampel bleibt ehrlich kritisch.** Die tatsächlichen rein lesenden RPCs
+`helmut_job_metrics(1440)` und `helmut_jobs_blockiert(2)` ergeben um 20:24 UTC:
+158 wartend, 0 laufend, 0 aktive Leases, 0 endgültige Fehler und 0 dauerhaft blockiert.
+Zehn Understanding-Aufträge warten länger als 24 Stunden; älteste Wartezeit rund 28,4 Stunden.
+Es gibt keinen über 24 Stunden wartenden Mandatsauftrag. 64 Understanding-Aufträge tragen
+Abhängigkeitsgründe; das sind 64/158, keine dominierende Mehrheit. Der vorhandene Statusvertrag
+ordnet diesen Fall als **überfällig trotz Abfluss** ein: 525 Abschlüsse im 24-Stunden-Fenster.
+Der offene Understanding-Auftragsbestand stieg im Crawl von 50 auf 64, während 47 abgeschlossen
+wurden. Gesamtbestand und tatsächlicher Abfluss werden gemeinsam betrachtet. §41.1 erlaubt
+gewöhnlichen, nachweislich vorwärts arbeitenden Rückstand; daraus folgt keine Mehrtagestragfähigkeit.
+
+Die fünf älteren Profile erhielten je eine neue Projektion und Briefingmaterialisierung.
+Ihre Prioritäten 200/250 liegen vor den Kohortenprioritäten 201/251; die Beanspruchungszeiten
+zeigen keinen Stillstand hinter A. Alle neun Nichtkohorten-Profilzeilen blieben inhaltlich unverändert.
+
+### §53.3 Genau ein kontrollierter Lage Check
+
+Vor dem Start wurde §41.1, §41.4 und §41.5 erneut gegen die konkreten Bedingungen geprüft.
+Der reine GitHub Leser **34058091793**, Job **101553572960**, bestätigt um **20:28:31 UTC**
+den exakten Production Merge, Supabase Speicher, V3, relationalen exklusiven Profilpfad,
+Retention **36**, Kommunikationssperre **true**, Kohortenquellen gesperrt **true**, Tagesdeckel
+**2416** und Understanding Reserve **702**. Keine Env Änderung und keine Secret Ausgabe.
+
+**Frische Kostenplanung:** 74 Tagesreservierungen, 68 erfolgreiche gpt-5-mini Belege,
+**0,187167 USD geschätzt**, keine unbekannten Preise im Tagesring. Sechs fehlende Belege
+werden mit **0,30 USD** berücksichtigt, nicht als kostenfrei behauptet. Für den einzelnen
+Lauf werden **2 USD Zusatzreserve** angesetzt. Unabhängige Stressrechnung: höchstens 300 s
+Funktionsfenster, heute schnellster Understanding-Aufruf 6324 ms; 48 rechnerische Runden,
+vierfach schnellere Verarbeitung als Stressannahme = 192 Aufrufe. Eingabeannahme 10000 Token
+(heute maximal 4781), bestehende Ausgabekappe 3000 Token (heute maximal 1500), vorhandener
+Schätzpreis 0,25/2 USD pro Million ergibt 0,0085 USD je Aufruf und 1,632 USD Zusatzkosten,
+auf 2 USD aufgerundet. **Gesamtprognose 2,487167 USD < 9 USD.** Dies ist eine konservative
+Planungsrechnung mit benannten Annahmen, **keine technische USD Obergrenze und keine Rechnung**.
+Die wirkungslosen Testlaufwerte werden nicht als Laufzeitschutz verwendet.
+
+Unmittelbar vorher um **20:33:06 UTC**: main unverändert, natürlicher Crawl mit 274 Abschlüssen
+bestätigt, vollständiger Profilhash unverändert, keine Pipeline oder Auftragslease, Zähler 74.
+Cronplan unverändert, nächster Termin 21:30 UTC, ausreichend Restzeit. Risiken, unabhängige
+Nachkontrolle und fehlender automatischer Rückweg wurden vor dem einzigen Start benannt.
+
+| Gegenstand | Unabhängiger Befund |
+|---|---|
+| GitHub Lauf | **34058373267**, Job **101554349269**, erfolgreich am Merge `a059f27d…` |
+| Production Lauf | **`cron-lage-check-20260906203355-6subt`** |
+| Laufzeit | Start **20:33:55.452**, gespeichertes Ende **20:35:32.961 UTC**; Serverlog **97631 ms** |
+| HTTP / Durchführung | 200; **25 geplant, 25 begonnen, 25 erfolgreich**, 0 Fehler, 0 Zeitbudget, 0 Sperrverweigerung, 0 Persistenzabweichung |
+| Separat gelesene Fairnessablage | `main-cron-fairness`: gleicher Lauf, `abgeschlossen`, 25 geplante Kennungen, 25 Ausgänge `erfolgreich`, Zustand geladen, kein Fehler oder äußeres Timeout |
+| Erfassung | 103 unterschiedliche Quellen, alle erfolgreich, 1050 gespeicherte Elemente; Vorlauf 44,9 s. Pro Profil 90 Quellenprüfungen; Summe 2250 ist **kein** zusätzlicher globaler Abrufumfang. |
+| Gespeicherte Wirkung | **25 frische Lagechecks**, alle `changed`, alle `v3Refreshed:true`; alle mit relevanten Elementen, erfolgreichen Quellen und Quellenlink zur Lageänderung |
+| Understanding | 1049 Dokumente, 708 Cluster, **0 neu verstanden, 708 vorgemerkt/vertagt**, 0 Fehler/Unbekannt/Auffälligkeiten. Keine Behauptung, diese Dokumente seien vollständig verstanden. |
+| Kosten danach | Zähler weiterhin **74**, 68 Modellbelege, **0,187167 USD**; kein zusätzlicher Modellverbrauch durch diesen Lage Check |
+| Datenbank nach Lage Check | Um **20:51 UTC ACTIVE_HEALTHY**, Dashboard healthy, **RAM 55 %, CPU 2 %, 18/60 Verbindungen** |
+
+Der vorher sichtbare unautorisierte HTTP 403 Aufruf enthält keine fachliche Laufquittung.
+Der kontrollierte authentifizierte Fachlauf wurde genau einmal ausgeführt; kein Ersatzcrawl.
+Die strukturierte Quellen-/Ergebnisprüfung belegt die vorhandenen Artefakte. Sie ersetzt keine
+vollständige semantische Qualitätsabnahme der noch fehlenden A Briefings.
+
+### §53.4 Integrität, Kommunikation und verbleibende A Kriterien
+
+Reine Nachkontrollen bis **20:44:30 UTC**:
+
+- **29 Mandatsprofile, 25 aktiv, vier inaktiv, null gelöscht**; A 20/20, B/C 0; Identitätsprofile 30.
+  Vollständiger Profilhash **`ede70d5ae7b0bcdd4ea4c07129b92cda`**, Nichtkohortenhash
+  **`3953f27ddd56b0ea8e66af6857d153ec`**, jeweils unverändert vor/nach Crawl und Lage Check.
+- Auth: 25 Konten, drei aktiv; Kohorte 20 Konten, **null aktiv**, alle unter `test-kohorte.invalid`.
+  Auth Verbrauchs- und Anmeldemetadaten sind veränderliche Betriebsdaten, kein behaupteter unveränderter Gesamtblob.
+- `helmut_store`: **32 JSON Objekte** statt zuvor 12, darunter jetzt 29 p Stores.
+  Die 20 zusätzlichen A p Stores enthalten die erlaubten Lagezustände; **keine neuen Profile oder Konten**.
+  Keine fremde Mandatskennung in den p Store Lagezeilen. main, Auth und Mandatsspeicher lesbar.
+- `crawlRuns` weiterhin **20**, Migrationen weiterhin **35**; keine Wiederherstellung oder Migration.
+  Keine aktiven Pipeline-, Auftrags- oder Understanding-Leases nach dem Lauf.
+- Understanding-Reservierungen: 1316 fertig, 113 offen, **vier historisch unbekannt**, eine aufgegeben.
+  Jüngste Änderung der unbekannten Vorgänge **02.09., 11:33:43 UTC**, keine neue nach Wiederanlauf.
+  Wissensobjekte um 20:39 UTC: 3182 complete, 11147 pending, 32 historisch failed; keine Vollständigkeit behauptet.
+- Keine neuen Push Ereignisse oder Outbox Versandquittungen seit Crawl beziehungsweise Lagebeginn.
+  Globale Kommunikationssperre separat wirksam gelesen. Keine neuen Vercel error/fatal oder
+  Timeouttreffer in den abgefragten Zeiträumen seit Wiederherstellung. Historische Zustellungen bleiben historisch;
+  die Plattformprotokolle sind keine vollständige Providerabrechnung oder Zustellhistorie aller Kanäle.
+
+**A Bewertung:** Wirkung und stabiler Wiederanlauf belegt; strukturelle Lagequalität mit Quellenlinks
+25/25 belegt; fünf ältere Profile einschließlich Vorrang und Unversehrtheit belegt; Kommunikation
+gesperrt; Kosten niedrig und mit Reserve betrachtet; natürlicher Fortschritt belegt. **Vollständigkeit
+des heutigen Fachzyklus und heutiger Zähler über 100 fehlen.** A Fenster 05.09. hat inzwischen in
+allen drei Klassen 20 Abschlüsse. Fenster 06.09.: Quellen 19/20, Projektionen 20/20, Briefings 10/20.
+Ein Quellenauftrag wird um **20:44:09.6 UTC**, die letzten Briefingaufträge bis **21:27:21.6 UTC**
+fällig. Sie werden nicht per SQL vorgezogen. Historischer Zähler 124 vom 05.09. ersetzt den heutigen
+Nachweis nicht. B bleibt gesperrt, C setzt zusätzlich vollständige dokumentierte B Abnahme voraus.
+
+### §53.5 Tatsächlicher Fortsetzungspunkt
+
+Der nächste vorgesehene Fachzyklus läuft über `scripts/funktionstest-500-zyklus.js`, dessen
+`startbereitschaft()` die vorhandene `pruefeKonfiguration()` einfordert. Reine lokale Rechnung
+am unveränderten Code mit vollständigem Planungswertsatz (2416/702, 82 RPM, 250000 TPM,
+9 USD, Vorrangreserve 200, Parallelität 1) und den vorhandenen **tatsächlich belegten** Messungen:
+**`bereit:false`, keine fehlenden Werte, keine gebrochene Bindung, genau eine offene Messung:
+`azure-kontingente-und-rate-limits`.** Die Rechnung setzte keine Production Werte.
+
+Die dokumentierten 250 RPM / 250000 TPM sind Deploymentgrenzen; das getrennte Azure-Gesamtkontingent
+des Kontos ist in §16–§20 und `kapazitaet-500.BELEGTE_MESSUNGEN` ausdrücklich unbelegt.
+Kein verbundener Azure-Leser verfügbar; der rein lesend geöffnete Azure-Portalzugang verlangt eine
+Microsoft Anmeldung. Keine Zugangsdaten angefordert oder in Chat/Git übertragen, keine Azure Änderung.
+Ein handgesetztes `messungen["azure-kontingente-und-rate-limits"]=true` wäre kein Nachweis.
+Ein anderer HTTP Einstieg um dieses Tor wäre keine zulässige Lösung. Der scharfe Fachzyklus
+wurde deshalb nicht gestartet; auch kein Provisionierungs- oder Aktivierungsworkflow gebaut,
+der die fehlenden Voraussetzungen verdeckt.
+
+**Nächster Schritt:** geschützte Azure Anmeldung beziehungsweise vorhandenen belastbaren Kontingentbeleg
+bereitstellen und rein lesend prüfen. Danach den vorhandenen Fachzyklus mit sämtlichen frisch belegten
+Starttoren im geschützten Ausführungskontext nutzen, A Restarbeiten und Zählerwirkung abnehmen.
+Nächster natürlicher Understanding Cron **21:30 UTC**; scharfes vollständiges Nachtfenster
+**21:36–03:59 UTC / 23:36–05:59 Berlin / 00:36–06:59 Türkei** vor jedem Schritt neu prüfen.
+Erst nach vollständiger A Abnahme B exakt 75 inaktiv provisionieren, separat aktivieren und abnehmen;
+danach C exakt 400 ebenso separat. **Keine neue fachliche Betreiberfreigabe für die bereits in §41
+erlaubten Schritte nötig; der fehlende Nachweis und der Azure Zugang müssen tatsächlich vorliegen.**
+Eine Lockerung oder Umgehung des Starttores ist nicht freigegeben.
+
+Bewusst unverändert: Profile, Konten, vier inaktive Profile, Cronplan, Kommunikationsriegel,
+Kohortenquellen, Supabase Ressourcen/PITR, Azure, Vercel Env, Schema und Migrationen,
+verlorene crawlRuns, Recoverypfad, CLAUDE.md und ARCHITECTURE.md. Keine Löschung, Zustellung,
+Rücksetzung oder Rückabwicklung. Dieser reine Abschlussnachtrag erfüllt CLAUDE.md §9 nach
+dem fachlich wirksamen #320 Merge; eigener Merge und Deployment folgen aus der Historie,
+ohne rekursiven Dokumentationsfolge PR.
