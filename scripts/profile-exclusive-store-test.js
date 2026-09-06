@@ -55,16 +55,8 @@ async function fakeFetch(url, options = {}) {
   const minimal = prefer.includes("return=minimal");
 
   if (path.startsWith("/rest/v1/helmut_store")) {
-    if (method === "GET") {
-      const m = /id=eq\.([^&]+)/.exec(path);
-      const id = m ? decodeURIComponent(m[1]) : null;
-      const data = id && blobRows.has(id) ? blobRows.get(id) : null;
-      return makeRes(200, data ? [{ data }] : []);
-    }
-    if (method === "POST") {
-      if (body && body.id) blobRows.set(body.id, body.data);
-      return minimal ? makeRes(204, null) : makeRes(200, [body]);
-    }
+    const result = require("./fixtures/store-rest-memory")(blobRows, url, options);
+    return makeRes(result.status, result.body);
   }
 
   if (path.startsWith("/rest/v1/profiles")) {
@@ -109,7 +101,7 @@ async function fakeFetch(url, options = {}) {
 }
 
 function blobCalls() { return calls.filter((c) => c.path.startsWith("/rest/v1/helmut_store")); }
-function blobWrites() { return blobCalls().filter((c) => c.method === "POST"); }
+function blobWrites() { return blobCalls().filter((c) => ["POST", "PATCH"].includes(c.method)); }
 function endpointHit(re, methodFilter) { return calls.some((c) => re.test(c.path) && (!methodFilter || c.method === methodFilter)); }
 function findCall(re, methodFilter) { return calls.find((c) => re.test(c.path) && (!methodFilter || c.method === methodFilter)); }
 function reset() { calls = []; }

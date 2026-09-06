@@ -28,8 +28,8 @@ globalThis.fetch = async (url, opt = {}) => {
   const prefer = String((opt.headers && (opt.headers.Prefer || opt.headers.prefer)) || "");
   calls.push({ method, path });
   if (path.startsWith("/rest/v1/helmut_store")) {
-    if (method === "GET") { const m = /id=eq\.([^&]+)/.exec(path); const sid = m ? decodeURIComponent(m[1]) : null; return res(200, sid && blobRows.has(sid) ? [{ data: blobRows.get(sid) }] : []); }
-    if (method === "POST") { if (body && body.id) blobRows.set(body.id, body.data); return prefer.includes("return=minimal") ? res(204, null) : res(200, [body]); }
+    const result = require("./fixtures/store-rest-memory")(blobRows, url, opt);
+    return res(result.status, result.body);
   }
   if (path.startsWith("/rest/v1/profiles")) {
     if (method === "GET") {
@@ -41,7 +41,7 @@ globalThis.fetch = async (url, opt = {}) => {
   return res(200, []);
 };
 
-function mainStorePosts() { return calls.filter((c) => c.method === "POST" && c.path.startsWith("/rest/v1/helmut_store")).length; }
+function mainStorePosts() { return calls.filter((c) => ["POST", "PATCH"].includes(c.method) && c.path.startsWith("/rest/v1/helmut_store")).length; }
 
 (async () => {
   const A = "tenant-mit-sql", B = "tenant-nur-blob";

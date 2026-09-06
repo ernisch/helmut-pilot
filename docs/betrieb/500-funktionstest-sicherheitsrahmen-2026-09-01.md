@@ -6277,3 +6277,64 @@ Dieser abschließende Dokumentations PR ändert ausschließlich die zwei Statusd
 er löst keinen weiteren Dokumentations PR aus. Keine Production Datenänderung, Profilanlage,
 Aktivierung, Migration, Ressourcen oder Umgebungsänderung, externe Helmut Nachricht oder Modelllauf.
 Die Grenzen in §49.3 bleiben bestehen; der vollständige 500er Betrieb ist weiterhin nicht belegt.
+
+## §50 Bedingter Speicherschutz zwischen mehreren Serverinstanzen
+
+**06.09.2026, ausdrückliche Fortsetzung bis 500.** Basis `91112bbcf7392f7b2a910622147e9f6f67c3f73e`
+nach #314. Kein offener PR und kein neuerer passender Speicherbranch bei Beginn. Neuer Branch
+`codex/500-speicher-cas`. Die einmalige reine SQL Minimalabfrage scheitert weiterhin beim Verbindungsaufbau.
+Kein frischer Production Bestand und keine neue Kostenmessung. Bedingungen aus §41 bleiben verbindlich.
+
+### §50.1 Beleg und Korrektur
+
+Neun neue Prüfungen scheitern am bisherigen Code: konkurrierende Änderungen und Erstanlagen überschreiben
+Bestände; blinde Writes, ungültige Versionen und unklare Quittungen werden nicht sicher zurückgewiesen.
+`writeSupabaseStore` ersetzt den unbedingten Upsert durch INSERT bei belegter Abwesenheit und PATCH mit
+einer atomar geprüften JSON Revision bei vorhandener Zeile. Jeder bestätigte Write erzeugt eine neue UUID
+in `_storeRevision`. Der bestehende Primärschlüssel schützt konkurrierende Erstanlagen. Keine Migration.
+
+Die unveränderliche Lesemarke trägt Ziel, Existenz und Revision. Sie bleibt bei Cachekopien und
+Objektspreads erhalten und wird nicht als JSON gespeichert. Die technische Revision bleibt in der Ablage,
+nicht im normalisierten Nutzdatenobjekt. Ein fehlender Lesestand wird vor jedem Datenbankwrite verweigert.
+Bestehende Leerungspfade behalten ihre Lesemarke; sie werden hier nur im isolierten Test ausgeführt.
+
+Eine leere PATCH Antwort ergibt `STORE_WRITE_CONFLICT`, HTTP 409. Genau eine zum Ziel passende Zeile muss
+das Schreiben bestätigen. Konflikte verwerfen den Cache; ein neuer Abruf lädt den aktuellen Stand.
+Kein erneutes Schreiben alter Payloads, kein zusätzlicher Auth Write zur Protokollierung bestätigter
+Konkurrenz. Unklare Transportergebnisse bleiben Fehler. Auch der Schreibinhalt wird vor dem Warten kopiert,
+damit eine gleichzeitige lokale Änderung nicht als vermeintlich gespeicherter Cache erscheinen kann.
+
+### §50.2 Prüfungen und offene Abnahme
+
+Gezielte neue Suite: **13 PASS / 0 FAIL**. Enthalten sind 500 getrennte Mandatsspeicher sowie je fünf echte
+Node Prozesse für main, bestehenden Mandatsspeicher und Erstanlage. Eine Barriere erzwingt denselben
+Lesestand für alle fünf Prozesse. Genau ein erster Write gewinnt; nach erneutem Lesen und erneutem
+Anwenden ihrer Änderung speichern auch die vier anderen vollständig. Dieser erste Nachweis nutzt einen
+synthetischen lokalen HTTP Dienst, kein PostgreSQL und kein Production.
+
+Die bestehenden Speicherintegritätsprüfungen bestehen mit **21 PASS / 0 FAIL**, einschließlich
+des zusätzlichen Falls einer Eingabeänderung während des laufenden Writes. Alle **15/15**
+profilbezogenen Suiten bestehen. Vier ältere HTTP Nachbildungen unterstützten bisher nur POST;
+sie bilden nun auch die PATCH Bedingung und INSERT Konflikte ab. Schreibzähler erfassen beide
+Methoden. Kein fachliches Abnahmekriterium wurde entfernt oder abgeschwächt.
+
+Erster Gesamtlauf: **327/329** in 471 Sekunden, fehlgeschlagen. Zwei ältere Teardownprüfungen erkannten
+PATCH Writes nicht beziehungsweise verlangten noch den inzwischen ersetzten Existenzhelfer. Sie wurden
+auf bedingtes Schreiben mit gültiger Quittung, frischen Lesestand und erhaltene Lesemarke umgestellt.
+Die Verhaltensanforderung bleibt: keine Neuanlage beim Entfernen einer abwesenden Kennung, bestehende
+eigene Daten werden im autorisierten Testfall weiterhin geleert. Noch kein vollständiger Abschlussbeleg.
+
+Der bestehende Pflichtversuch `auth-store-cas-datenbank-test.js` enthält zusätzlich dieselben drei
+Prozessversuche gegen echtes PostgREST und PostgreSQL. Die 500 Kontoanlagen und ihre Bestandskontrollen
+bleiben erhalten. Alle Kinder laufen über `lokal.js`; der Netzschutz bleibt aktiv. Sämtliche neuen
+Datenbankwrites betreffen ausschließlich die eigens erzeugte kurzlebige Testdatenbank. Ergebnis und
+vollständige lokale sowie externe Pflichtprüfungen werden vor einer Übernahme am exakten Kopf belegt.
+
+Grenzen: Die Revision schützt nur teilnehmende neue Schreiber. Ältere noch laufende Programmversionen
+oder direkte unbedingte Fremdschreiber sind dadurch nicht nachträglich geriegelt. Der lokale Dateispeicher
+bleibt ohne Schutz zwischen Prozessen. Es gibt keine automatische Wiederholung ganzer Fachläufe, keine
+Transaktion über mehrere Speicherzeilen und weiterhin keinen vollständigen 25er, 100er oder 500er
+Production Fachnachweis. Bestehende Aufbewahrung, Budget und Kommunikationssperre werden nicht erweitert.
+
+Quellen zur geprüften Semantik: [PostgREST JSON Filter](https://docs.postgrest.org/en/v12/references/api/tables_views.html#json-columns)
+und [PostgreSQL bedingte Updates](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-READ-COMMITTED).

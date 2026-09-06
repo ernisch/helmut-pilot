@@ -144,7 +144,21 @@ async function main() {
     assert.equal(JSON.parse(psql("select data->'adminSettings' from public.helmut_store where id='main-auth'")).baseline, 2);
     console.log("PASS  500 von 500 Konten nach fuenf unabhaengigen Prozessen vollstaendig und eindeutig gespeichert");
     console.log("PASS  Konten bleiben inaktiv und vorhandene Betriebsdaten bleiben erhalten");
-    console.log(`PostgreSQL ${version}: 3 PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
+    // Derselbe echte PostgREST Dienst prueft jetzt auch main und p, jeweils mit
+    // fuenf frischen Prozessen und einer Barriere nach dem Lesen. Die bestehenden
+    // 500 Registrierungen und ihre SQL Bestandspruefungen bleiben unveraendert.
+    const { runWriters } = require("./fixtures/store-cas-processes");
+    for (const key of ["main", "p-cas-existing", "p-cas-new"]) {
+      const id = key === "main" ? "main" : `main-${key}`;
+      const existing = key !== "p-cas-new";
+      if (existing) psql(`insert into public.helmut_store values ('${id}', '{"userNotes":[{"id":"alt"}]}'::jsonb)`);
+      await runWriters({ base, token, key });
+      const actual = JSON.parse(psql(`select data->'userNotes' from public.helmut_store where id='${id}'`));
+      const expected = [...(existing ? ["alt"] : []), ...Array.from({ length: 5 }, (_, i) => `prozess-${i}`)].sort();
+      assert.deepEqual(actual.map((note) => note.id).sort(), expected);
+      console.log(`PASS  ${key}: vier veraltete Writes verweigert, nach frischem Lesen alle fuenf Aenderungen vollstaendig`);
+    }
+    console.log(`PostgreSQL ${version}: 6 PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
   } finally {
     if (api && api.pid && api.exitCode == null) {
       const ended = once(api, "exit").catch(() => {});

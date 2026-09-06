@@ -137,7 +137,13 @@ einen Zustand ab (gesund · eingeschränkt · ausgefallen · inaktiv · unbekann
   ohne Bedingung verlor die Zeile dadurch nachweislich einen Abschluss. Monotone
   Verschmelzung allein schützt **nicht**; sie ist monoton gegenüber dem *gelesenen* Stand.
   Kanonisch: [`betrieb/cron-fairness.md`](betrieb/cron-fairness.md) §13).
-  Der Blob ist **Last-Write-Wins** — dort ist das Verlustrisiko (→ OP-01).
+  **Speicherschutz ab 06.09.2026:** Der Auth Blob schreibt mit CAS über `_authStoreRevision`.
+  Main und Mandatsspeicher nutzen ebenfalls bedingte Writes über `_storeRevision`: INSERT nur
+  nach belegter Abwesenheit, sonst PATCH mit der gelesenen Revision und eindeutiger Quittung.
+  Veraltete Schreibstände werden verworfen; nach frischem Lesen muss die fachliche Änderung
+  erneut angewendet werden. Cachekopien tragen eine unveränderliche Lesemarke. Kein Schutz
+  gegen alte unbedingte Fremdschreiber und keine Transaktion über mehrere Zeilen. Der lokale
+  Dateispeicher ist zwischen Prozessen weiterhin ungeschützt. Rolloutstand: `CURRENT_STATE.md`, SR §50.
   **Belegt am 2026-07-27 (Befund W-2):** parallele Auth-Store-Writer überschreiben
   einander die Prozess-Lauftelemetrie (`processRuns`). Deshalb ist die
   **kanonische Lauftelemetrie seit 2026-07-27 relational**: `public.process_runs`,

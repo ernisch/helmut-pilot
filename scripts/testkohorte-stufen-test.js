@@ -584,17 +584,17 @@ async function main() {
   // also weiterhin erzeugt, nur beim Lesen statt beim Schreiben, und beide
   // Regexe waeren gruen geblieben. Jetzt wird das VERHALTEN geprueft.
   const storageQuelle = fs.readFileSync(path.join(ROOT, "lib/helmut/storage.js"), "utf8");
-  check("R4 der Teardown prüft die Existenz OHNE anzulegen (nicht über readStore)",
-    /const pStoreHatDaten = await pStoreHatDatenOhneAnlegen\(pKey\(uid\)\);/.test(storageQuelle)
-      && /if \(pStoreHatDaten\) await writeStore\(defaultPoliticianStore\(\), pKey\(uid\)\);/
+  // Seit dem Lesefix vom 06.09. legt readStore keine fehlende Zeile mehr an.
+  // Der frische Lesestand traegt jetzt auch die fuer das Leeren benoetigte CAS Marke.
+  check("R4 der Teardown liest frisch und behaelt den Lesestand beim bedingten Leeren",
+    /const pStore = await readStore\(pKey\(uid\), \{ fresh: true \}\);/.test(storageQuelle)
+      && /if \(pStoreHatDaten\) await writeStore\(\{ \.\.\.pStore, \.\.\.defaultPoliticianStore\(\) \}, pKey\(uid\)\);/
         .test(storageQuelle));
-  check("R4b die Existenzprüfung schreibt in KEINEM Pfad",
+  check("R4b eine gueltige Leerantwort des Lesers loest keine Anlage aus",
     (() => {
-      const i = storageQuelle.indexOf("async function pStoreHatDatenOhneAnlegen");
-      const block = storageQuelle.slice(i, storageQuelle.indexOf("function pKey(", i));
-      // Nur lesende Aufrufe: kein writeStore, kein writeSupabaseStore, kein
-      // readStore (das im Supabase-Pfad selbst schreibt), kein readSupabaseStore.
-      return i > 0 && !/writeStore|writeSupabaseStore|readStore\(|readSupabaseStore/.test(block)
+      const i = storageQuelle.indexOf("async function readSupabaseStore");
+      const block = storageQuelle.slice(i, storageQuelle.indexOf("function storeTarget(", i));
+      return i > 0 && !/writeStore\(|writeSupabaseStore\(|method:\s*["']POST["']/.test(block)
         && /select=data/.test(block);
     })());
   check("R5 VERHALTEN: ein Teardown ohne bestehenden Mandanten-Store legt keinen an",
