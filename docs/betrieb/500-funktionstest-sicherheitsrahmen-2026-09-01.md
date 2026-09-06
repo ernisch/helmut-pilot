@@ -6236,8 +6236,8 @@ Budget, keinen Kommunikationsweg und keine Production Schreibfreigabe.
 Anlage, verschachtelte Cache Änderungen, bestätigter und gescheiterter Write, verlorene Antwort mit
 neuerem Zwischenstand, ausdrücklich beauftragte Neuanlage, gleichzeitige lokale Writes und ein
 verspäteter GET. Kein externer HTTP Aufruf.
-Der vollständige lokale Lauf und die externen Pflichtprüfungen am endgültigen Kopf werden im PR
-festgehalten. Bis zu deren erfolgreichem Abschluss und geprüftem Deployment ist nichts ausgerollt.
+Der vollständige lokale Lauf und beide externen Pflichtjobs am endgültigen Kopf sind erfolgreich.
+Die Übernahme und das genau zugehörige Production READY sind in §49.4 belegt.
 
 **Grenze:** Dies ist kein allgemeines Compare and Set für `main` und die Mandatsspeicher.
 Vollständige Writes aus getrennten Instanzen können weiterhin konkurrieren. Die lokale Lesemarke
@@ -6250,3 +6250,30 @@ Kein Nachweis für 500 vollständige Mandatsprofile, Fachzyklen oder dauerhaft s
 Nach erfolgreicher Übernahme zuerst belegte SQL Erholung, frische Grundlinie und Kosten sowie
 vollständige A Abnahme; erst danach B und C getrennt im belegten Zeitfenster. Der Gesamtauftrag
 bleibt bis zu diesen Nachweisen **teilweise abgeschlossen und am Datenbankzugang blockiert**.
+
+### §49.4 Geprüfte Übernahme und Production Abschluss
+
+Am **06.09.2026 um 16:13:34 Europe/Istanbul, 15:13:34 Europe/Berlin, 13:13:34 UTC**
+wurde die Hauptadresse `helmut-pilot.vercel.app` rein lesend dem neuen Production Deployment
+zugeordnet. Dies belegt den ausgerollten Code, keine erfolgreiche Datenbankabfrage oder Fachausführung.
+
+| Nachweis | Tatsächlicher Stand |
+|---|---|
+| Code PR | [#313](https://github.com/ernisch/helmut-pilot/pull/313), Kopf `a449a32b7c1297b47a200be94bbfab20ebe02aa9` |
+| Lokale Abschlussprüfung | `node scripts/lokal.js -- node scripts/run-offline-tests.js`: **328/328 Suiten grün in 469 Sekunden**, direkt am obigen Kopf; gezielter Speicherschutz **20/20** |
+| Externe Prüfung | [CI 34034848296](https://github.com/ernisch/helmut-pilot/actions/runs/34034848296): beide Pflichtjobs erfolgreich, einschließlich Browser, 500 Kontoanlagen gegen PostgreSQL und PostgREST sowie bisherigen Datenbanknachweisen |
+| Review und Vorschau | Keine offenen Review Threads oder Änderungsforderungen. `dpl_Hf5KbSstQn4gEv4XWXZMzqSiJ4Wi` READY am exakten Kopf |
+| Merge | `d230067e153d4c168be58bebd6287fbfa5592591`; mit `expected_head_sha` und zwei Eltern: `54aedba11178f491fa36c23cad3659a79d1b9632`, `a449a32b7c1297b47a200be94bbfab20ebe02aa9` |
+| Inhaltsgleichheit | Baum von PR Kopf und Merge identisch: `84e7cdf9539633add4e8e941a7d25ecffc3fa409` |
+| Production | `dpl_DzrNcPGcmkfzin4RHugVb1rG3bUA`, target production, READY, `githubCommitSha` exakt obiger Merge; über die Hauptadresse bestätigt |
+| Bestehender Nachtrag | #311 ist über seinen Kopf `6bbe9296bf88a53bc8038294cb666d3f9076e0bd` enthalten und von GitHub als gemergt geschlossen. Keine separate zweite Codeübernahme |
+
+Der Upload erfolgte über die verbundene GitHub App in das als öffentlich und im Eigentum des
+angemeldeten Betreibers bestätigte Repository. Die Kommandozeile selbst hat keine GitHub Anmeldung.
+Es wurden nur die fünf geprüften Dateien des Code PRs übertragen, keine Secrets oder Konfiguration.
+
+Dieser abschließende Dokumentations PR ändert ausschließlich die zwei Statusdokumente und erfüllt
+`CLAUDE.md` §9. Sein eigener Merge und Deployment Stand werden aus der jeweiligen Historie belegt;
+er löst keinen weiteren Dokumentations PR aus. Keine Production Datenänderung, Profilanlage,
+Aktivierung, Migration, Ressourcen oder Umgebungsänderung, externe Helmut Nachricht oder Modelllauf.
+Die Grenzen in §49.3 bleiben bestehen; der vollständige 500er Betrieb ist weiterhin nicht belegt.
