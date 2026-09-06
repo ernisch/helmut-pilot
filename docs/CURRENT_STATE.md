@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 06.09.2026. #318 gemergt (`2df5dd4`), Production READY.** Appstart bei Datenbankausfall korrigiert; Anmeldung im Browser um 16:20 UTC sichtbar. **330/330** Suiten, **40/40** Browserprüfungen und **500 Kontoanlagen in PostgreSQL belegt**. Vollständiger Betrieb weiter **BLOCKIERT**: SQL um 16:09 UTC mit Verbindungszeitüberschreitung. Letzte Grundlinie 00:28 UTC: **29 Profile, 25 aktiv, vier inaktiv**. Frische Daten, Kosten und Fachnachweise fehlen. §41 gilt; [Abschluss §47 bis §51](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+**Stand: 06.09.2026, 19:24 UTC. #319 gemergt (`252137a`), Production READY. Supabase wieder erreichbar.** Pro und Micro unabhängig bestätigt; mehrere zeitlich getrennte SQL Abfragen erfolgreich. **29 Profile, 25 aktiv, vier inaktiv**, Bestand unverändert. Letzter Codeprüfstand: **330/330** Suiten, **40/40** Browserprüfungen und **500 Kontoanlagen in PostgreSQL belegt**. Der vollständige 25er Funktionsnachweis steht noch aus; natürlicher Abendcrawl um **20:00 UTC** wird abgewartet. B und C bleiben unangelegt. §41 gilt; [Wiederanlauf §52](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 
 **Kernlage:** Der Warteschlangenmotor (`HELMUT_SCALABLE_PIPELINE=on`) ist **seit 23.08.2026 in Production eingeschaltet**, Modus **`HELMUT_JOB_DISPATCH_MODE=shadow`** (Cron-Antrieb, kein Ereignis-Antrieb, kein AWS). Die **fünf Mandate sind mit 376 echten Abschlüssen bewiesen**, Morgen-/Lagelauf 5/5, 0 Verlust, alle elf §28.6-Kontrollen erfüllt ([`op30-aktivierung-5-mandate §30.7`](betrieb/op30-aktivierung-5-mandate.md)). **Seit 30.08. stehen 3 Vorgänge auf `unbekannt` (§14–22).** **Der Selbstweck ist lokal belegt, in Production nie ausgeführt.**
 
@@ -10,23 +10,22 @@
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **Letzter Code Merge: `2df5dd49908f3d170590d46fc46ccf9e69191728`**, **[#318](https://github.com/ernisch/helmut-pilot/pull/318)**. Production **`dpl_HzcpWQzStkAAr6ZyXi7s2xzV9NRY` READY**, Hauptadresse und Assetversion passend; Anmeldung ohne Eingabe sichtbar. Lokal **330/330** und **40/40** Browserprüfungen am Kopf `51c8c26`; beide Pflichtjobs in **CI 34044437950** grün. PostgreSQL: 500 Konten und bisheriger Konkurrenzschutz bestätigt. **#316** (`a2d096c`) schützt main und p zwischen teilnehmenden Instanzen (§50). Appstart und Grenzen: §51.
+- **Aktueller geprüfter main Kopf:** `252137afe7bf6bb7a8d7489ca86b0b064df48538`, [#319](https://github.com/ernisch/helmut-pilot/pull/319), Production `dpl_34VKrFJdMLZvZYsm5NZaYn7egahj` **READY** am exakten Kopf. CI `34047044573` erfolgreich, keine offenen PRs bei der Grundlinie. Ein manueller, fest begrenzter GitHub Einstieg für den erlaubten 25er Lage Check wird vorbereitet; Merge, Deployment und Ausführung sind zu diesem Belegstand noch offen (§52).
+- **Letzter Code Merge: #318 (`2df5dd4`)** behebt den Appstart bei Datenbankausfall. Lokal **330/330** Suiten und **40/40** Browserprüfungen am Kopf `51c8c26`; beide Pflichtjobs in **CI 34044437950** grün. PostgreSQL: 500 Konten und Konkurrenzschutz bestätigt. **#316** schützt main und p zwischen teilnehmenden Instanzen (§50). Vollbelege und Grenzen: §51.
 - **#310** (`b183487`) schützt den Auth Speicher mit CAS, 500 Kontoanlagen mit fünf Prozessen belegt. **#309** (`d9671a0`) brachte begrenzte Abrufe, ehrliche Profilfehler und einen Profilabruf statt 500; **#307** die unabhängigen Leser.
 - **#303** brachte Lagekapazität, Vorgangskontexte, gemeinsame Fristen und `updated_at`; Merge `33f1158`, Production READY belegt. Kontrollierter Lagebeweis weiterhin offen. **#305** schützt die inaktive Kohortenanlage vor automatischer Kontolöschung und falschem Erfolg nach Schreibfehlern; kein Production Fehlerfall ausgelöst.
-- **Dokumentation #308:** `97e2aaa`, Production `dpl_9BUUWpYam8WM9MwUCi7jKoHcT7it` READY. Lokaler Abschluss am exakten Kopf `6d19a4f` Exit 0; beide externen Pflichtjobs grün. Neuer Codeauftrag und Screenshotbefunde stehen in SR §45.
-- **#313** (`d230067`) brachte Leseprüfung, Cachekopien und Schutz innerhalb einer Instanz; Dokumentation #314 (`91112bb`) war die Basis von #316. **#311** ist in #313 enthalten und als gemergt geschlossen. Die unbelegte Anbieterursache wurde präzisiert. **#312** (`54aedba`) bleibt historischer Beleg.
-- #275 bis #277 und #282 nach Konsolidierung geschlossen, nicht gemergt; Branches bleiben Auditbelege.
+- **#313** brachte Leseprüfung, Cachekopien und Schutz innerhalb einer Instanz. Frühere Code und Dokumentationsbelege: SR §41 bis §51; Branches bleiben Auditbelege.
 
 ## 3 · Production-Zustand
 
-- **Datenbank:** Supabase **Free-Plan** — keine nativen Backups, kein PITR (→ OP-01). Vollsicherung (40/40) und Restore seit 28.07. geübt, RPO ≤ 24 h.
-- **Mandate (06.09., 00:28 UTC rein lesend):** **29 Profile, 25 aktiv, vier inaktiv**, null Löschmarken; A 20/20, B/C nicht angelegt. **30 relationale Identitätsprofile**, **25 Auth Konten, drei aktiv**; Kohortenkonten laut letzter Detailgrundlinie inaktiv. Keine Profil oder Kontoaktion dieser Sitzung. A um 00:18 UTC: 19 Quellenaufträge erledigt; ein Abruf, 20 Projektionen und 20 Briefings warten, Frischefenster `2026-09-05T00Z`. Die natürlichen Läufe vom 05.09. belegen Fortschritt, keinen vollständigen A Fachzyklus. Vollbelege SR §43 und §44.2.
-- **Crawl-Aufbewahrung:** Wirksame Grenze **36** ist am 06.09. um 07:59 UTC durch die reine Production Konfigurationsroute bestätigt. Letzter gelesener Blob Ring **20**, kein frischer Bestandsabruf möglich. Die verlorenen 16 Laufzeilen werden nicht wiederhergestellt; Schutzcode aus #301 bleibt deployt (SR §37).
+- **Datenbank:** Supabase **Pro**, **Micro (`t4g.micro`, 1 GB)**, `ACTIVE_HEALTHY`. Neustart laut SQL **18:35:07 UTC**; SQL zwischen **18:55 und 19:23 UTC** wiederholt erfolgreich. Dashboard gegen 19:05 UTC: RAM **46 %**, CPU **0 %**, **14/60 Verbindungen**. Native Sicherung vom 06.09. um **18:38:15 UTC** sichtbar. **PITR nicht aktiviert**, getrennte Kostenentscheidung (OP-01). Speicherengpass als Ursache plausibel, nicht abschließend bewiesen.
+- **Mandate (06.09., 18:57 bis 19:23 UTC rein lesend):** **29 Profile, 25 aktiv, vier inaktiv**, null Löschmarken; A genau 20/20, B 0, C 0. **30 relationale Identitätsprofile**, **25 Auth Konten, drei aktiv**; darunter 20 Kohortenkonten, alle inaktiv und ausschließlich `.invalid`. Vollständiger Profilhash identisch zur Grundlinie vom 05.09. Keine Profil oder Kontoaktion dieser Sitzung. A für das Fenster 05.09.: 20 Quellenaufträge, 19 Projektionen und 20 Briefings erledigt, eine Projektion wartet. Für 06.09. warten jeweils 20 Aufträge. Der neue natürliche Lauf und die vollständige A Abnahme bleiben offen. SR §52.
+- **Crawl-Aufbewahrung:** Wirksame Grenze **36** am 06.09. um 19:00 UTC erneut bestätigt. Frisch gelesener Blob Ring **20**; keine Wiederherstellung der verlorenen 16 Laufzeilen. Schutzcode aus #301 bleibt deployt (SR §37).
 - **Quellen:** 9 Pakete · 163 Abrufwege · 165 Zuordnungen; **146/163 Google-News** (B1, OP-15); 18 Landesmodul-Wege (BE/BB) gesperrt. Seeds `20260713`/`20260717` **nicht eingespielt**, Einspielung [BLOCKIERT](betrieb/quellen-seed-einspielung.md) (nur noch Betreiberfreigabe).
 - **Crons (Production, 13, UTC):** crawl 04:00/20:00 · pipeline 16:00 · morning-briefing 05:00 · understanding 05:30/21:30 · **rueckstand 11:30/17:30** · lage-briefing 05:45 · health 06:00 · lage-check 10:00 · 2 Narrativslots 06:10/06:22 (inert). **`18,48 * * * *` nicht in Production.** Dazu Actions-Watchdog (`briefing-watchdog.yml`, 05:30, oft 2–3 h verzögert).
 - **Migrationen:** 35 Einträge, letzte `20260829175749` (05.09. rein lesend bestätigt). **Z22 seit 29.08. mit Freigabe angewendet** (§14–22) — **nicht erneut anwenden**. Auf `main`, **nicht in Production angewendet**: `20260720`, F9 (`20260825101500`), `20260902121500`. Jede weitere Anwendung bleibt freigabepflichtig.
 - **Kosten:** LLM ~0,14 USD/Betriebstag (Untergrenze); **0,002941 USD je Aufruf** (Listenpreis, Kontopreis unbelegt — F7); bei Deckel 2.416 ≈ **213 USD/Monat**, Schranke 243 ([`kostenmessung`](betrieb/kostenmessung.md)).
-- **Zugang:** GitHub Lesen, Schreiben, Merge und manuelle Ausführung funktionieren. Im echten Leselauf **34020582488** liefert der feste Datenbank GET **HTTP 522**, der feste Production Status GET **HTTP 200** mit passendem Commit. Projektmetadaten `ACTIVE_HEALTHY` widerlegen die beobachtete Störung nicht. Direkte SQL Lesezugriffe scheitern ebenfalls; Vercel Protokolle belegen Datenbankzeitüberschreitungen in natürlichen Morgenläufen. Nachgereichte Screenshots zeigen Speicherdruck als Hinweis, keine belegte Ausfallursache. Details SR §45.
+- **Zugang:** GitHub Lesen, Schreiben, Merge und manuelle Ausführung funktionieren. Frischer rein lesender Lauf **34053478989** erfolgreich: Datenbank GET **200**, `main` vorhanden, feste Production Konfigurationsroute **200** mit passendem Commit, Speicherpfad und Riegeln. SQL ebenfalls erreichbar. Seit 18:36 UTC bis zur Grundlinie keine neuen Vercel Fehler oder Treffer für `timeout`. Die früheren Ausfälle bleiben historische Befunde (§45 bis §51), kein aktueller Datenbankblocker. Natürlicher Fachbetrieb nach dem Neustart noch nicht abgenommen (§52).
 
 ## 4 · Aktivierte Funktionen (Production)
 
@@ -37,7 +36,7 @@
 | `HELMUT_MATCHING_AUDIT=on` | seit 2026-07-28 |
 | `HELMUT_PROCESS_RUNS_RELATIONAL=on` | seit 2026-07-27 |
 | `HELMUT_ATOMIC_LOCK` | an — atomare, fail-closed Sperren |
-| LLM Tagesbudget | **2.416 Aufrufe und Reserve 702 am 06.09. unabhängig aus Production gelesen.** Zähler am 05.09. 124; 118 protokollierte Aufrufe, geschätzt 0,385127 USD Modellkosten bis etwa 21:45 UTC. Aktueller Tagesverbrauch ungeprüft, kein vollständiger Rechnungsbeleg. Maximal 10 USD mit Stopp bei prognostiziert 9 USD bleibt verbindlich. |
+| LLM Tagesbudget | **2.416 Aufrufe und Reserve 702 am 06.09. um 19:00 UTC erneut unabhängig gelesen.** Zähler am 06.09. **58**, **52** erfolgreiche protokollierte Aufrufe, geschätzt **0,134895 USD**. Sechs Reservierungen ohne passenden Eintrag sind keine belegte Kostenfreiheit. Am 05.09. Zähler **124**, 118 protokollierte Aufrufe, **0,385127 USD**. Kein Rechnungsbeleg oder atomarer USD Riegel. Maximal 10 USD mit Stopp bei prognostiziert 9 USD bleibt verbindlich. |
 | `HELMUT_VERSTEHEN_CAS=on` | seit 2026-08-17; `HELMUT_VERSTEHEN_PARALLELITAET` nicht gesetzt ⇒ wirkt als 1 |
 | `HELMUT_SCALABLE_PIPELINE=on` | **seit 23.08. 16:47 UTC**, Modus `shadow`, Worker 4/25/25; Rückweg: Flag löschen + Redeploy (Betreiber) |
 | `HELMUT_CRON_GLOBALABRUF=on` | seit 2026-08-06 (Betreiber); Fortbestand ist Betreiberentscheidung |
@@ -54,7 +53,7 @@
 | Mailversand Resend | gebaut, nicht aktiviert (AVV/DNS offen) |
 | Retention (`HELMUT_RETENTION_EXECUTE`) | nicht scharf (OP-12) |
 | `HELMUT_TENANT_LLM_CAP` | aus (OP-03). **Für den 500er-Test ausdrücklich NICHT einschalten** (§23–25) |
-| `HELMUT_TESTLAUF_*` | **Kommunikation am 06.09. um 07:59 UTC gesperrt**, über die reine Production Route belegt. RPM, TPM, USD und Parallelität haben keinen Laufzeitleser. Historische Zustellungen werden durch diesen aktuellen Befund nicht zu null. |
+| `HELMUT_TESTLAUF_*` | **Kommunikation am 06.09. um 19:00 UTC erneut gesperrt**, über die reine Production Route belegt. Seit Neustart keine neuen protokollierten Kommunikationsereignisse. RPM, TPM, USD und Parallelität haben keinen Laufzeitleser. Historische Zustellungen werden dadurch nicht zu null. |
 | `HELMUT_TESTKOHORTE_EXECUTE`/`_CONFIRM`/`_QUELLEN` | **im aktuellen Prozess nicht gesetzt**. Freigaben gelten ausschließlich pro vorgesehenem scharfen Schritt mit dessen Bestätigung; Vercel nicht ändern. `_QUELLEN` bleibt AUS (§26) |
 | `HELMUT_LLM_USAGE_RELATIONAL` | aus; Migration `20260902121500` nicht angewendet (§3) |
 | `HELMUT_PROFILE_DB_MODE` | **Relationaler Profilpfad und Exklusivmodus am 06.09. um 07:59 UTC wirksam belegt.** Frühere Annahme `HELMUT_PROFILE_DB_EXCLUSIVE` sei aus ist damit überholt. Keine Env Änderung durch diese Sitzung; vor B/C den ausführenden Prozess an den tatsächlichen Speicherpfad binden und Bestand neu erheben. |
@@ -65,9 +64,9 @@
 
 **25 Profile sind aktiv.** Stufe B umfasst aus dem Code exakt 75 neue Kennungen, Stufe C 400. Anlage jeweils vollständig inaktiv, danach eigener Aktivierungsschritt und eigene Abnahme. Endbestand soll **504 insgesamt, 500 aktiv, 4 unverändert inaktiv** sein. Keine Kontoaktivierung.
 
-1. **Zugang:** GitHub Ausführung und reine Production Konfiguration sind belegt. SQL Minimalabfrage und natürlicher Vercel Lauf um 11:30 UTC scheitern weiter an Datenbankzeitüberschreitungen. Nach Wiederkehr frische Grundlinie und Kosten erheben. SR §47.
-2. **PR #303 gemergt und deployt:** Kontext und Fristfehler korrigiert, 129 gezielte Prüfungen und externe CI grün. Kontrollierter Production Lagebeleg fehlt weiterhin; aktuell blockiert der Datenbankausfall. SR §44.4.
-3. **Kommunikation:** Vollständiger globaler Riegel am 06.09. um 07:59 UTC wirksam bestätigt. Vor einem späteren Fachlauf erneut prüfen. Frühere Push und Webhook Vorgänge sind kein Tagesnullbeleg.
+1. **Wiederanlauf:** Datenbank und geschützte GitHub Leseausführung wieder erfolgreich. Frische Grundlinie zu Bestand, Kosten und Speichern erhoben. Zuerst den natürlichen Crawl um 20:00 UTC abwarten und fachlich prüfen; kein manueller Ersatzlauf. SR §52.
+2. **PR #303 gemergt und deployt:** Kontext und Fristfehler korrigiert, 129 gezielte Prüfungen und externe CI grün. Kontrollierter Production Lagebeleg fehlt weiterhin. Der gescheiterte Lauf vom 06.09. um 10:00 UTC erreichte 0/25 und zählt nicht. Ein begrenzter manueller Einstieg wird vorbereitet.
+3. **Kommunikation:** Vollständiger globaler Riegel am 06.09. um 19:00 UTC wirksam bestätigt. Vor einem späteren Fachlauf erneut prüfen. Frühere Push und Webhook Vorgänge sind kein Tagesnullbeleg.
 4. **Provisionierung:** #305 ist gemergt und deployt. Der echte inaktive Kohortenpfad verhindert automatische Kontolöschung und meldet Schreibfehler auch bei lesbarem Teilprofil ehrlich. Schutz offline und in CI belegt. #310 schützt den Auth Blob mit CAS; 500 Kontoanlagen in PostgreSQL belegt. Keine schreibende Production Abnahme.
 5. **Budget:** Zähler 124 vom 05.09. sowie wirksamer Deckel 2.416 und Reserve 702 sind belegt. Tagesverbrauch und Kostenobergrenze vor Facharbeit frisch erheben. Kein harter USD Schutz aus den vier wirkungslosen Werten.
 6. **Abnahme:** kontinuierlicher Fortschritt, keine systematischen Auslassungen, Datenintegrität, Kommunikation und Tageskosten je Stufe belegen. Gewöhnlicher Altbestand im Rückstand oder fehlende mehrtägige Beobachtung blockieren laut Betreiber für sich allein nicht. Mehrtagesbetrieb und Verkaufsreife werden dadurch nicht behauptet.
@@ -76,7 +75,7 @@ Vollständige aktuelle Freigaben, Nachweisgrenzen und Fortsetzung: [SR §41](bet
 
 ## 7 · Offene Blocker
 
-1. **OP-01:** Supabase Pro + PITR (Kostenentscheidung).
+1. **OP-01:** Pro aktiv; PITR und anschließende PITR Restore Übung bleiben offen (getrennte Kostenentscheidung).
 2. **OP-02:** Pilotvertrag, AVV, DSFA extern ungeprüft; blockiert OP-12 und Mail.
 3. **OP-03:** Freigabepaket erster zahlender Zweitmandant (inkl. `20260720`).
 4. **OP-04-Rest:** Umgang mit den deaktivierten Demo-Mandaten.
@@ -84,7 +83,7 @@ Vollständige aktuelle Freigaben, Nachweisgrenzen und Fortsetzung: [SR §41](bet
 6. **OP-11:** Branch Protection nicht aktiv; Pflicht-CI blockiert Merges nicht technisch.
 7. **OP-15:** Google-Klumpenrisiko (146/163 Wege); 29 von 42 Personensuchen lieferten nie (`circuit-open`) — Production-Beweis der Härtung steht aus (§8).
 8. **Lage-/KI-Kapazität für Skalierung:** siehe §6. Belegt: **drei** reguläre Warteschlangenabflüsse/Tag, nicht elf (§13).
-9. **500er Funktionstest: BLOCKIERT am Datenbankausfall** (§6, SR §47). Letzte Grundlinie A aktiv, B/C nicht angelegt. Kommunikationssperre und Production Konfiguration jetzt belegt. Aktuelle Datenintegrität, Kosten und vollständige Fachnachweise für 25/100/500 bleiben offen.
+9. **500er Funktionstest: Wiederanlauf und A Abnahme offen** (§6, SR §52). Datenbank wieder erreichbar, A aktiv, B/C nicht angelegt. Datenintegrität, Kosten und Kommunikationssperre frisch gelesen; vollständige Fachnachweise für 25/100/500 noch nicht erbracht.
 10. **OP-07:** Monitoring-Zweitkanal stellt seit mind. 17.08. täglich zu; Ziel von `HELMUT_MONITORING_WEBHOOK_URL` und der doppelte WhatsApp-Eingang bleiben ungeklärt (Betreiberprüfung, kein Code-Fix vorher).
 11. **Profilpfad:** Exklusivmodus in Production belegt; ältere Dual Write Annahme überholt. Vor B/C Daten und Ausführungskontext frisch abgleichen. Auth, main und p haben CAS Schutz; alte Instanzen und direkte Fremdschreiber bleiben ausgenommen. Schutz gegen automatische Kontolöschung aus #305 bleibt verpflichtend.
 

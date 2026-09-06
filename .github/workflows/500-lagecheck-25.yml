@@ -1,0 +1,49 @@
+name: "25 Testprofile: kontrollierter Lage Check"
+
+# Kein automatischer Trigger. Voraussetzung: SR §41 und erfolgreicher Abendcrawl.
+on:
+  workflow_dispatch:
+    inputs:
+      production_commit:
+        description: "Vollstaendiger unabhaengig als Production READY bestaetigter Commit"
+        type: string
+        required: true
+      naturlauf_id:
+        description: "Unabhaengig abgenommener natuerlicher Abendcrawl desselben UTC Tages"
+        type: string
+        required: true
+      bestaetigung:
+        description: "LAGECHECK_25_NACH_NATURLAUF_BESTAETIGT"
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: helmut-500-kontrollierte-facharbeit
+  cancel-in-progress: false
+
+jobs:
+  lagecheck:
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' &&
+      github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Voraussetzungen pruefen und genau einen Lage Check ausfuehren
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+          HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
+          HELMUT_NATURLAUF_ID: ${{ inputs.naturlauf_id }}
+          HELMUT_LAGE_25_CONFIRM: ${{ inputs.bestaetigung }}
+        run: node scripts/github-lagecheck-25.js

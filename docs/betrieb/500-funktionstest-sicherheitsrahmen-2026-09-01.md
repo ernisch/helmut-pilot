@@ -6465,3 +6465,91 @@ dann 25 vollständig abnehmen und erst danach B und C nach §41 fortsetzen. Die 
 
 Dieser Nachtrag erfüllt CLAUDE.md §9 nach dem Code Merge. Sein eigener Merge und Deploymentstand werden
 aus der Historie belegt und lösen keinen rekursiven Dokumentations PR aus.
+
+## §52 Wiederanlauf nach Micro Umstellung und neue 25er Grundlinie (06.09.2026)
+
+### §52.1 Auftrag und wiederhergestellte Datenbank
+
+Der Betreiber bestätigt §41 und verlangt zuerst die Abnahme der vorhandenen 25 aktiven Profile.
+Der natürliche Crawl am **06.09. um 20:00 UTC / 22:00 Berlin / 23:00 Türkei** wird abgewartet;
+kein manueller Ersatzcrawl. Danach kontrollierter Lagebeleg und vollständige A Bewertung, erst
+anschließend B und C jeweils getrennt. Keine weitere Ressourcenänderung ist erlaubt.
+
+Betreiberangabe: Am 06.09. Pro gebucht und gegen 18:36 UTC von Nano auf Micro mit 1 GB umgestellt.
+Vorher 94 Prozent RAM, TCP Fehler und `CONNECT_TIMEOUT`; nach Neustart echte Anmeldung bestätigt.
+Diese Sitzung verändert weder Ressourcen noch Konten, Profile oder Datenbankstruktur.
+
+**Unabhängige Belege, 18:55 bis 19:24 UTC:**
+
+| Gegenstand | Gelesener Befund |
+|---|---|
+| GitHub | main `252137afe7bf6bb7a8d7489ca86b0b064df48538`, Merge #319. Keine offenen PRs oder konkurrierende Fachausführung in Actions bei der Grundlinie. CI `34047044573` erfolgreich. |
+| Production | `dpl_34VKrFJdMLZvZYsm5NZaYn7egahj`, READY, Ziel production, `helmut-pilot.vercel.app`, exakt obiger Commit. Öffentliche Anwendung HTTP 200; allein kein Fachnachweis. |
+| Supabase | `ddckuvvpcytqbyfmbvie`, eu-west-1, `ACTIVE_HEALTHY`. SQL meldet Postmasterstart **18:35:07.765327 UTC**. Minimalabfrage 18:55:39 UTC sowie getrennte Abfragen 18:57, 18:59, 19:01 und 19:23 UTC erfolgreich. Ausdrücklich `BEGIN READ ONLY`, begrenzte Abfragefrist. |
+| Tarif und Größe | Authentifiziertes Dashboard: **Pro**, **Micro / t4g.micro**. Gegen 19:05 UTC **46 Prozent RAM**, **0 Prozent CPU**, **14/60 Verbindungen**, Disk 26 Prozent. SQL zuvor 13 Clientverbindungen, zwölf idle und die eigene Abfrage aktiv; keine wartenden Datenbanksperren. Momentaufnahme, kein Skalierungsbeleg. |
+| Sicherung | Native physische Sicherung **06.09., 18:38:15.535 UTC** sichtbar. PITR Seite bietet Zusatzaktivierung an: **nicht aktiviert**. Keine Sicherung eingespielt und keine Restore Übung dieser Sitzung. |
+| Schema und Speicher | 35 angewendete Migrationen; öffentliche Tabellen erreichbar. Auth, main und neun ältere Mandatsspeicher als JSON Objekte lesbar, zwölf Speicherzeilen insgesamt. Keine Blobinhalte ausgegeben. |
+
+Die Datenbankstörung ist aktuell **wiederhergestellt**. Speicherengpass und Erholung nach der
+Größenänderung passen stark zusammen; die genaue Ursache bleibt unbewiesen. §45 bis §51 bleiben
+historische Störungsbelege. Pro ist abgeschlossen, PITR bleibt getrennte Betreiberentscheidung (OP-01).
+
+### §52.2 Bestand, Integrität, Arbeit und Kosten vor dem Abendcrawl
+
+| Gegenstand | Gelesener Befund |
+|---|---|
+| Profile | **29 gesamt, 25 aktiv, vier inaktiv, null Löschmarken**. A exakt 20/20 aktiv, B 0, C 0, fünf ältere aktive Profile. 30 relationale Identitätsprofile. |
+| Vollständiger Profilhash | `md5(jsonb_agg(to_jsonb(m) ORDER BY user_id)::text)` = **`ede70d5ae7b0bcdd4ea4c07129b92cda`**, 18:57 bis 19:23 UTC unverändert und identisch zu §43.2 vom 05.09. Hash der neun sonstigen Profile: `3953f27ddd56b0ea8e66af6857d153ec`. |
+| Konten | 25 gesamt, drei aktiv; 20 Kohortenkonten, **null aktiv**, keine Kohortenadresse außerhalb `test-kohorte.invalid`. Auth Benutzerhash `4083a463e2d3f9d378424d32e623d7cd` zwischen 18:59 und 19:01 UTC unverändert. Kein behaupteter Gleichstand mit älteren Auth Hashes wegen legitimer Anmeldemetadaten. |
+| Speicherringe | main zuletzt 04:04:51 UTC, Auth 18:39:34 UTC; `crawlRuns` **20**, wirksame Aufbewahrung **36**. Keine Wiederherstellung verlorener Laufzeilen. |
+| Sperren | Keine `pipeline_locks` Zeile; keine aktive Auftragslease oder abgelaufene noch zugeordnete Lease. Morgendlicher 04:00 Crawl in `process_runs` noch running ohne Abschluss: veraltete Telemetrie, **kein Beleg laufender Arbeit**. Nicht bereinigt oder erneut ausgeführt. |
+| Aufträge 18:58 UTC | `source_fetch`: 6399 erledigt, 101 warten, 97 fällig. `document_understanding`: 1645 erledigt, 50 warten und fällig. `mandate_projection`: 89 erledigt, 26 warten. `briefing_materialization`: 90 erledigt, 25 warten, sieben fällig. Keine anderen Statuswerte. |
+| A nach Fenster | Für 05.09. je 20 Quellenaufträge und Briefings erledigt, 19 Projektionen erledigt und eine wartend. Für 06.09. jeweils 20 Quellenaufträge, Projektionen und Briefings unbegonnen wartend. Kein neuer Fortschrittsbeleg. |
+| Qualitätsgrundlinie | Letzte Briefings für alle 25 vorhanden: fünf ältere Profile 05:45 bis 05:46 UTC, A 05:00 bis 05:49 UTC. Aktuelle Matchingzeilen für 19 A Profile und alle fünf älteren Profile. Understanding Bestand: 3166 vollständig, 11001 pending, 32 historisch fehlgeschlagen. Neue Qualität noch ungeprüft. |
+| Heutiges Budget | UTC Tageszähler **58**; **52** erfolgreiche protokollierte Modellaufrufe, 176094 Eingabe und 45433 Ausgabetoken, geschätzt **0,134895 USD**, kein unbekannter Einzelpreis. Sechs Reservierungen ohne passenden Eintrag sind keine belegte Kostenfreiheit. |
+| Aufrufarten | Understanding 32 / 0,109660 USD; Lagebriefing 17 / 0,022956 USD; Kommunikationsentwurf drei / 0,002279 USD. Alle protokollierten Modelle `gpt-5-mini`. Entwurf ist keine Zustellung. |
+| Vorheriger Tag | 05.09.: Zähler **124**, 118 erfolgreiche protokollierte Aufrufe, **0,385127 USD**. Wirkung über 100 historisch belegt; heutiger Zähler erst 58. Keine Providerrechnung, kein harter USD Laufzeitdeckel. |
+
+[Geschützte reine GitHub Leseausführung 34053478989](https://github.com/ernisch/helmut-pilot/actions/runs/34053478989)
+um 19:00 UTC erfolgreich: bestehende Secrets bleiben innerhalb Actions; Datenbank GET 200 und main
+vorhanden. Reine Production Route bestätigt exakten Commit, Supabase, V3, relationalen und exklusiven
+Profilpfad, Aufbewahrung 36, **globalen Deckel 2416**, **Understanding Reserve 702** und **vollständige
+Kommunikationssperre**. Kein Fachwrite, kein Modellaufruf; Tageszähler anschließend unverändert 58.
+
+Seit **18:36 UTC** bis zur Grundlinie: keine neuen Vercel Fehler oder Treffer auf `timeout`, keine neuen
+gespeicherten Systemfehler, Audit oder Push Ereignisse. Heutige Push Ereignisse null. Outbox enthält
+historische `verzichtet/shadow`, `offen` und `verzichtet` Zustände, keine neue Versandquittung seit Neustart.
+Der alte Monitoring Webhook vom **05.09., 06:00:53.313 UTC**, `sent:true`, HTTP 200 bleibt historischer
+Beleg; keine pauschale Zustellnull behaupten.
+
+### §52.3 Begrenzter Einstieg für den erlaubten Lagebeleg, noch nicht ausgeführt
+
+Der vorhandene GitHub Zugang hat ausschließlich Leser. Für §41 wird der manuelle Workflow
+`500-lagecheck-25.yml` mit `scripts/github-lagecheck-25.js` ergänzt: vorhandene geschützte Secrets,
+genau die bestehende Production Route `/api/cron/lage-check`, keine freie URL oder Shell Eingabe,
+kein anderer Fachpfad und kein automatischer Trigger. Die reine Statusroute ergänzt den wirksamen
+Quellenriegel über die vorhandene reine Schedulerfunktion; weiterhin keine Fachlesung oder Writes.
+
+Voraussetzungen des einzigen Aufrufs: main am unabhängig bestätigten Production Commit, gesonderte
+Bestätigung, exakter Bestand 29/25 mit A 20/20, erfolgreicher abgeschlossener natürlicher Abendcrawl
+desselben UTC Tages mit Fortschritt und null Fehlern, keine aktive Pipeline oder Auftragslease,
+passende Speicherparameter, Kommunikationssperre und ausgeschaltete Kohortenquellen. Acht Minuten
+Abstand zu jedem Cron aus dem realen Cronplan und Abstand zum UTC Tageswechsel; Grundlinie vor
+Auslösung höchstens 90 Sekunden alt. Kein Cronplan und keine Umgebungsvariable werden geändert.
+
+Die Kostenprüfung addiert heutige protokollierte Kosten, je nicht zugeordnetem Zählerstand mindestens
+0,05 USD beziehungsweise den höchsten heutigen Einzelpreis sowie **2 USD Planungsreserve**. Ab
+prognostiziert **9 USD** Verweigerung vor dem Aufruf. **Keine bewiesene technische Kostenobergrenze**:
+§41.4 verlangt weiterhin die unabhängige frische Berechnung von Laufobergrenze, Tagesverbrauch und
+Reserve vor scharfer Nutzung. Kein atomarer USD Schutz. Kosten und Profilbestand werden danach erneut
+gelesen. HTTP Fehler oder Antwortverlust erlauben **keinen zweiten Versuch**; Clientabbruch beendet
+bereits laufende Serverarbeit nicht zuverlässig.
+
+HTTP 200 genügt nicht: exakt die 25 aktiven Kennungen müssen geplant, begonnen und erfolgreich sein,
+ohne Auslassung, Sperrverweigerung, Fairnessstörung oder Persistenzwiderspruch. Die Fairnessablage muss
+abgeschlossen melden. Auch Grün ersetzt nicht die unabhängige Prüfung von Wirkung, Qualität, älteren
+Profilen, Integrität, Kommunikation, Kosten, Datenbankzustand und kontinuierlichem Fortschritt.
+
+**Stand dieses Nachtrags:** Vorbereitung des kleinen Code PRs; noch kein Merge dieses Einstiegs,
+kein kontrollierter Lageaufruf, keine B oder C Anlage oder Aktivierung. Neue Grundlinie belegt;
+vollständiger 25er Wiederanlauf und Stufenabnahme weiterhin offen.

@@ -12,7 +12,7 @@ async function main() {
   const payload = { ok: true, schemaVersion: 1, reinLesend: true, production: true, commit: sha,
     storageSupabase: true, v3Bereit: true, profileRelational: true, profileExclusive: false,
     retentionGueltig: true, retention: 36, tagesdeckel: 2416, understandingReserve: 702,
-    kommunikationGesperrt: true, secret: geheim };
+    kommunikationGesperrt: true, kohortenQuellenGesperrt: true, secret: geheim };
   let calls = 0;
   const fetchFn = async (url, opts) => {
     calls++;
@@ -74,6 +74,10 @@ async function main() {
     check(r.status === 200 && r.body.reinLesend === true && r.body.commit === sha, "echter Handler erreicht Status");
     check(r.body.tagesdeckel === 2416 && r.body.understandingReserve === 702, "echte Budgetfunktionen");
     check(r.body.retention === 36 && r.body.kommunikationGesperrt === true, "echte Schutzfunktionen");
+    check(r.body.kohortenQuellenGesperrt === true, "Kohortenquellen standardmaessig gesperrt");
+    process.env.HELMUT_TESTKOHORTE_QUELLEN = "aktiv";
+    check((await request("GET", geheim)).body.kohortenQuellenGesperrt === false, "echter Quellenriegel wird abgefragt");
+    delete process.env.HELMUT_TESTKOHORTE_QUELLEN;
     check(!JSON.stringify(r).includes(geheim), "HTTP Antwort ohne Secret");
     check((await request("GET", "falsch")).status === 403, "falsche Autorisierung geschlossen");
     check((await request("GET", null)).status === 403, "fehlende Autorisierung geschlossen");

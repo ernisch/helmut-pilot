@@ -178,7 +178,9 @@ async function handleRequest(request, response) {
         retention: retention.gueltig ? retention.wirksam : null,
         tagesdeckel: storageModul.llmDailyCallLimit(),
         understandingReserve: storageModul.llmUnderstandingReserve(),
-        kommunikationGesperrt: riegel.modus() === riegel.MODUS_TESTFENSTER
+        kommunikationGesperrt: riegel.modus() === riegel.MODUS_TESTFENSTER,
+        kohortenQuellenGesperrt: !require("./lib/helmut/scheduler")
+          .profilQuellenErlaubt({ id: "test-kohorte-a-001" })
       });
     } catch {
       response.writeHead(500, jsonHeaders());
