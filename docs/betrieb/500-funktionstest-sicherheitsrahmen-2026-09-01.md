@@ -6115,3 +6115,138 @@ Keine Abkürzung von A auf 500 aufgrund des neuen Registrierungsnachweises.
 Dieser abschließende Nachtrag erfüllt CLAUDE.md §9 nach dem fachlich wirksamen Merge. Er ändert
 nur Dokumentation, keine Funktion, Konfiguration oder Daten. Sein eigener Merge und Deploymentstand
 werden aus der Historie bestätigt; daraus entsteht kein rekursiver Dokumentations PR.
+
+---
+
+## §48 Production-Beleg des Ausfalls und des Lage-Checks vom 06.09. um 10:00 UTC
+
+Rein lesende Beobachtung, ausschließlich aus Vercel-Laufzeitprotokollen und den Supabase-
+Projektprotokollen. **Kein künstlich ausgelöster Lauf, keine Datenänderung.** Dieser Abschnitt
+belegt den Vorfall, den §45.2 (2) als Fehlerklasse beschreibt — hier mit dem tatsächlichen
+Production-Vorkommen und dem Zeitverlauf.
+
+### §48.1 Zeitverlauf (alle Zeiten UTC, 06.09.2026)
+
+| Zeit | Beleg |
+|---|---|
+| 05:45:31 | `/api/cron/lage-briefing`: erster Telemetriefehler `blob / timeout` |
+| 05:49:54 | **letzter erfolgreicher Request** in den Supabase-`edge_logs` |
+| ab 05:49 | jeder weitere `edge_logs`-Eintrag ist **HTTP 522** (Gateway erreicht den Ursprung nicht) |
+| 06:00:38 | `/api/cron/health-report`: zweimal `listFullProfilesFromDb fehlgeschlagen` |
+| 06:10 / 06:22 | Narrativslots übersprungen (OP-30-Flags aus) — unauffällig |
+| 09:33:55 | `/api/cron/pipeline-status`: **HTTP 500** — der einzige Lauf, der ehrlich rot wurde |
+| 10:00:12 | `/api/cron/lage-check`: **HTTP 200**, `0 aktive Mandate — keine-aktiven-mandanten` |
+
+Stundenverteilung der `edge_logs`: 04:00 h **2 816** Requests, 05:00 h **2 405**, danach insgesamt
+**acht** Einträge (07:00 h zwei, 09:00 h sechs) — **alle acht mit Status 522**. Die Datenbankverbindung
+ist gestört; ihre Ursache ist damit nicht geklärt. `ACTIVE_HEALTHY` widerlegt die Störung nicht (§44.4).
+
+### §48.2 Der Lauf vom 10:00 UTC im Wortlaut
+
+```
+[v3Store] listFullProfilesFromDb fehlgeschlagen: Supabase storage timed out after 10000ms:
+  /rest/v1/profiles?select=*,mandate_profiles(*)&order=id.asc&limit=5000
+[cron/lage-check] 0 aktive Mandate — keine-aktiven-mandanten.
+[cron/lage-check] 10002ms tenants=0 bounded=false lauf=cron-lage-check-20260906100022-27f54
+```
+
+Bei **25 aktiven Mandaten** wurden **null** verarbeitet und der Lauf als gültiges Ergebnis gebucht:
+HTTP 200, `ok: true`, `skipped: true`, Protokollstufe `warn`, **kein Systemfehler**. Für ein
+Monitoring war dieser Lauf von einem echten Leerstand nicht unterscheidbar — falsches Grün nach
+CLAUDE.md §4.4. Genau diese Umwandlung ist mit §45.2 (2) behoben; der Lauf ist der Production-Beleg
+dafür, dass die Fehlerklasse real eingetreten ist und nicht nur theoretisch bestand.
+
+### §48.3 Zwei Folgerungen, die nicht vermischt werden dürfen
+
+1. **Der 10:00-Lauf ist KEIN Beleg für die Kapazitätsbehebung aus PR #303.** Er hat die
+   Kapazitätslogik nie erreicht — er scheiterte davor an der Mandantenliste. Der kontrollierte
+   Production-Lagebeleg für 25 Mandate steht unverändert aus. Nächster natürlicher Lage-Check:
+   **07.09., 10:00 UTC**.
+2. **Die Datenbankverbindung bleibt gestört; eine Ursache oder Behebung ist nicht belegt.**
+   Die Codekorrektur verhindert falsche Erfolgsmeldungen. Neustart oder Ressourcenänderung sind
+   weder eine nachgewiesene Lösung noch Teil der bestehenden Freigabe. Keine zusätzliche Verarbeitung.
+
+### §48.4 Doppelarbeit, offen benannt
+
+Parallel zu dieser Beobachtung wurde derselbe Fehler in einem eigenen Zweig ein zweites Mal
+behoben (`deps.strikt` als Opt-in in `listFullProfiles`). Die auf `main` gemergte Lösung aus
+§45.2 (2) greift **eine Ebene tiefer** — `listFullProfilesFromDb` gibt den Fehler im Exklusivmodus
+weiter — und deckt damit zusätzlich `getProfile` und die Anzeigepfade ab. Die eigene Fassung wurde
+deshalb **verworfen**, nicht gemergt; übrig bleiben dieser Beleg und eine ergänzende Prüfung des
+Request-Pfads (`resolveActiveTenant`) in `scripts/profile-read-failure-test.js`. Anlass für die
+Doppelarbeit war fehlender Abgleich mit den zeitgleich offenen Zweigen vor Beginn der Umsetzung
+(CLAUDE.md §6, erster Punkt).
+
+## §49 Speicherintegrität bei Leseantworten, Cache und verlorenen Schreibantworten
+
+**06.09.2026, Fortsetzung des Betreiberauftrags bis 500.** Grundlage ist `main` nach #312,
+`54aedba11178f491fa36c23cad3659a79d1b9632`. Production wurde rein lesend als READY auf genau
+diesem Commit bestätigt (`dpl_CXBA9MNSp77HEir3dTumYGHZ5HS3`, target production). Der einzelne
+SQL Erreichbarkeitstest dieser Fortsetzung scheitert erneut an einer Verbindungszeitüberschreitung.
+Keine neue Production Grundlinie, kein zusätzlicher Fachlauf, keine Stufenaktion und keine Modellkosten.
+
+### §49.1 Bestehende Arbeit und belegte Fehler
+
+Der offene Nachtrag #311, Kopf `6bbe9296bf88a53bc8038294cb666d3f9076e0bd`, enthält nur §48,
+eine Statuskorrektur und den Request Test. Beide Pflichtjobs in CI `34032637217` sind erfolgreich;
+keine Reviewmeldungen, Vercel Vorschau erfolgreich. Dieser Commit ist in den Fortsetzungsbranch
+übernommen. Seine Behauptung einer geklärten Anbieterursache wurde anhand der tatsächlichen
+Nachweise begrenzt: belegt sind Verbindungsfehler, nicht die technische Ursache des Ausfalls.
+
+Die gezielte Prüfung der echten Speicherschicht mit synthetischem HTTP Transport reproduziert
+drei weitere Fehlerklassen. Gegen den bisherigen Code scheitern **18 von 18 Prüfungen**:
+
+1. `readSupabaseStore` behandelte unvollständige Antworten wie einen leeren Bestand und schrieb
+   daraufhin einen Standardbestand. Selbst ein gültiges leeres Ergebnis löste diesen Upsert aus.
+   Entstand zwischen GET und POST eine Zeile in einem anderen Prozess, wurde deren Inhalt ersetzt.
+2. `readStore` gab das im Cache gehaltene Objekt selbst zurück. Schon das Ändern verschachtelter
+   Daten machte diese Änderung für andere Leser sichtbar, auch wenn der spätere Schreibvorgang
+   scheiterte. Eingabe und Rückgabe eines erfolgreichen Schreibens teilten ebenfalls Cache Verweise.
+3. `writeSupabaseStore` wiederholte unbedingte Upserts bei verlorenen Antworten. Der Test speichert
+   den ersten Write, ergänzt danach Daten aus einem anderen Prozess und verliert nur die Antwort.
+   Der automatische zweite Write überschreibt diesen neueren Zusatz und meldet trotzdem Erfolg.
+
+### §49.2 Begrenzte Korrektur
+
+Nur ein Array mit null oder einer gültigen Objektzeile gilt als Datenantwort. Ungültige Formen
+werfen `STORE_READ_INVALID`. Ein gültiger Leerzustand liefert den Standardbestand ausschließlich
+an den Aufrufer, ohne selbst eine Zeile anzulegen. Explizite Schreibaufträge können weiterhin anlegen.
+Die vorhandene technische Fehlertelemetrie bleibt erhalten; daraus folgt keine pauschale Aussage,
+dass jeder übergeordnete Diagnosepfad ohne Schreibnebenwirkung ist.
+
+Der Cache hält eigene Kopien und gibt eigene Kopien aus. Erst ein bestätigter Schreibvorgang
+aktualisiert ihn. Ein Schreibfehler verwirft den betreffenden Cacheeintrag, damit der nächste Leser
+den tatsächlich gespeicherten Stand lädt. Erfolgreiche Cachetreffer sparen weiterhin Datenbankabrufe.
+Die Gegenprüfung der ersten Fassung zeigte zwei ergänzende Konfliktfälle: parallele Änderungen aus
+derselben Instanz und ein alter GET, der erst nach einem neueren Write fertig wird. Beide Prüfungen
+scheiterten zunächst (**18 PASS / 2 FAIL**). Schreibvorgänge werden deshalb je Speicherschlüssel
+geordnet; eine lokale Lesemarke verhindert, dass ein inzwischen veralteter Stand erneut geschrieben
+wird (`STORE_WRITE_CONFLICT`, HTTP 409). Eine frische Lektüre erlaubt die erneute fachliche Änderung.
+Ein verspäteter GET ersetzt keinen neueren Cacheeintrag. Die Marke wird nicht als JSON gespeichert.
+
+Unbedingte Blob Writes erhalten `allowReplay:false`: ein Versuch, Fehleraufzeichnung und sichtbarer
+Fehler statt blindem Wiederholen. Lesewiederholungen bleiben begrenzt erhalten; Auth CAS und dessen
+ausschließlich bestätigte Konfliktwiederholungen bleiben unverändert. Die Korrektur erweitert kein
+Budget, keinen Kommunikationsweg und keine Production Schreibfreigabe.
+
+### §49.3 Prüfung, Grenzen und Fortsetzung
+
+`node scripts/lokal.js -- node scripts/store-read-integrity-test.js`: nach der Korrektur
+**20 PASS / 0 FAIL**. Erfasst sind neun ungültige Antwortformen, beide Speicherarten, konkurrierende
+Anlage, verschachtelte Cache Änderungen, bestätigter und gescheiterter Write, verlorene Antwort mit
+neuerem Zwischenstand, ausdrücklich beauftragte Neuanlage, gleichzeitige lokale Writes und ein
+verspäteter GET. Kein externer HTTP Aufruf.
+Der vollständige lokale Lauf und die externen Pflichtprüfungen am endgültigen Kopf werden im PR
+festgehalten. Bis zu deren erfolgreichem Abschluss und geprüftem Deployment ist nichts ausgerollt.
+
+**Grenze:** Dies ist kein allgemeines Compare and Set für `main` und die Mandatsspeicher.
+Vollständige Writes aus getrennten Instanzen können weiterhin konkurrieren. Die lokale Lesemarke
+verhindert keine veraltete Änderung aus einem anderen Prozess; sie schützt nur Änderungen derselben
+Instanz mit vorhandenem Lesestand. Explizite Vollschreibaufträge ohne Lesemarke bleiben gesondert.
+Die bestehende
+Normalisierung und Aufbewahrung werden nicht erweitert; alle Stufenbedingungen aus §41 bleiben.
+Kein Nachweis für 500 vollständige Mandatsprofile, Fachzyklen oder dauerhaft stabilen Betrieb.
+
+Nach erfolgreicher Übernahme zuerst belegte SQL Erholung, frische Grundlinie und Kosten sowie
+vollständige A Abnahme; erst danach B und C getrennt im belegten Zeitfenster. Der Gesamtauftrag
+bleibt bis zu diesen Nachweisen **teilweise abgeschlossen und am Datenbankzugang blockiert**.
