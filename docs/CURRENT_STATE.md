@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 06.09.2026. #313 gemergt (`d230067`), Production READY.** Speicherschutz mit **20/20** gezielten Prüfungen und **328/328** lokalen Suiten ausgerollt. **500 Kontoanlagen mit PostgreSQL und fünf Prozessen belegt**, vollständiger Betrieb weiter **BLOCKIERT**: letzte SQL Minimalabfrage mit Verbindungszeitüberschreitung. Letzte Grundlinie 00:28 UTC: **29 Profile, 25 aktiv, vier inaktiv**. Frische Daten, Kosten und Fachnachweise für 25/100/500 fehlen. §41 gilt; [Abschluss §47, Ausfall §48, Speicherschutz §49](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+**Stand: 06.09.2026. #316 gemergt (`a2d096c`), Production READY.** Schutz gegen Überschreiben zwischen Serverinstanzen mit **329/329** lokalen Suiten und echtem PostgreSQL geprüft. **500 Kontoanlagen aus fünf Prozessen belegt**, vollständiger Betrieb weiter **BLOCKIERT**: SQL Minimalabfrage um 14:34 UTC mit Verbindungszeitüberschreitung. Letzte Grundlinie 00:28 UTC: **29 Profile, 25 aktiv, vier inaktiv**. Frische Daten, Kosten und Fachnachweise für 25/100/500 fehlen. §41 gilt; [Abschluss §47, Ausfall §48, Speicherschutz §49 und §50](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 
 **Kernlage:** Der Warteschlangenmotor (`HELMUT_SCALABLE_PIPELINE=on`) ist **seit 23.08.2026 in Production eingeschaltet**, Modus **`HELMUT_JOB_DISPATCH_MODE=shadow`** (Cron-Antrieb, kein Ereignis-Antrieb, kein AWS). Die **fünf Mandate sind mit 376 echten Abschlüssen bewiesen**, Morgen-/Lagelauf 5/5, 0 Verlust, alle elf §28.6-Kontrollen erfüllt ([`op30-aktivierung-5-mandate §30.7`](betrieb/op30-aktivierung-5-mandate.md)). **Seit 30.08. stehen 3 Vorgänge auf `unbekannt` (§14–22).** **Der Selbstweck ist lokal belegt, in Production nie ausgeführt.**
 
@@ -10,11 +10,11 @@
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **Letzter Code Merge: `d230067e153d4c168be58bebd6287fbfa5592591`**, **[#313](https://github.com/ernisch/helmut-pilot/pull/313)**. Production **`dpl_DzrNcPGcmkfzin4RHugVb1rG3bUA` READY** am exakten Commit, Hauptadresse um 13:13 UTC bestätigt. Lokal **328/328** am Kopf `a449a32`; beide Pflichtjobs in **CI 34034848296**, Browser, 500 Kontoanlagen gegen PostgreSQL und bisherige Datenbanknachweise grün. Speicherfehler werden abgefangen; der Konfliktschutz für main und p gilt nur innerhalb einer Instanz (§49).
+- **Letzter Code Merge: `a2d096c30ec44d87bcf4076bfcaebe29e4f06d46`**, **[#316](https://github.com/ernisch/helmut-pilot/pull/316)**. Production **`dpl_5maBHLkM8WFdioiNiWQJXKnCUQUN` READY** am exakten Commit, Hauptadresse um 14:33 UTC bestätigt. Lokal **329/329** am Kopf `d4f7b3d`; beide Pflichtjobs in **CI 34038072164** grün. PostgreSQL: 500 Kontoanlagen vollständig, zusätzlich drei Konkurrenzversuche mit je fünf Prozessen für main und p erfolgreich. Der Schutz gilt zwischen neuen teilnehmenden Instanzen (§50).
 - **#310** (`b183487`) schützt den Auth Speicher mit CAS, 500 Kontoanlagen mit fünf Prozessen belegt. **#309** (`d9671a0`) brachte begrenzte Abrufe, ehrliche Profilfehler und einen Profilabruf statt 500; **#307** die unabhängigen Leser.
 - **#303** brachte Lagekapazität, Vorgangskontexte, gemeinsame Fristen und `updated_at`; Merge `33f1158`, Production READY belegt. Kontrollierter Lagebeweis weiterhin offen. **#305** schützt die inaktive Kohortenanlage vor automatischer Kontolöschung und falschem Erfolg nach Schreibfehlern; kein Production Fehlerfall ausgelöst.
 - **Dokumentation #308:** `97e2aaa`, Production `dpl_9BUUWpYam8WM9MwUCi7jKoHcT7it` READY. Lokaler Abschluss am exakten Kopf `6d19a4f` Exit 0; beide externen Pflichtjobs grün. Neuer Codeauftrag und Screenshotbefunde stehen in SR §45.
-- **#311** ist in #313 enthalten und von GitHub als gemergt geschlossen. Die unbelegte Anbieterursache wurde präzisiert. **#312** (`54aedba`) war der zuvor bestätigte Production Stand.
+- **#313** (`d230067`) brachte Leseprüfung, Cachekopien und Schutz innerhalb einer Instanz; Dokumentation #314 (`91112bb`) war die Basis von #316. **#311** ist in #313 enthalten und als gemergt geschlossen. Die unbelegte Anbieterursache wurde präzisiert. **#312** (`54aedba`) bleibt historischer Beleg.
 - #275 bis #277 und #282 nach Konsolidierung geschlossen, nicht gemergt; Branches bleiben Auditbelege.
 
 ## 3 · Production-Zustand
@@ -86,7 +86,7 @@ Vollständige aktuelle Freigaben, Nachweisgrenzen und Fortsetzung: [SR §41](bet
 8. **Lage-/KI-Kapazität für Skalierung:** siehe §6. Belegt: **drei** reguläre Warteschlangenabflüsse/Tag, nicht elf (§13).
 9. **500er Funktionstest: BLOCKIERT am Datenbankausfall** (§6, SR §47). Letzte Grundlinie A aktiv, B/C nicht angelegt. Kommunikationssperre und Production Konfiguration jetzt belegt. Aktuelle Datenintegrität, Kosten und vollständige Fachnachweise für 25/100/500 bleiben offen.
 10. **OP-07:** Monitoring-Zweitkanal stellt seit mind. 17.08. täglich zu; Ziel von `HELMUT_MONITORING_WEBHOOK_URL` und der doppelte WhatsApp-Eingang bleiben ungeklärt (Betreiberprüfung, kein Code-Fix vorher).
-11. **Profilpfad:** Exklusivmodus jetzt in Production belegt; ältere Dual Write Annahme überholt. Vor B/C Daten und Ausführungskontext frisch abgleichen. Der Auth Blob hat durch #310 CAS Schutz; übrige geteilte Blobs bleiben ein Risiko. Schutz gegen automatische Kontolöschung aus #305 bleibt verpflichtend.
+11. **Profilpfad:** Exklusivmodus in Production belegt; ältere Dual Write Annahme überholt. Vor B/C Daten und Ausführungskontext frisch abgleichen. Auth, main und p haben CAS Schutz; alte Instanzen und direkte Fremdschreiber bleiben ausgenommen. Schutz gegen automatische Kontolöschung aus #305 bleibt verpflichtend.
 
 K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach einer weiteren OP-30-Stufenaktivierung muss OP-25 **vollständig wiederholt** werden.
 
@@ -123,7 +123,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-1. Fortsetzung `codex/500-speicher-cas`: bedingtes Schreiben auch für main und Mandatsspeicher umgesetzt, 13/13 gezielte Prüfungen einschließlich fünf getrennter Prozesse mit synthetischem HTTP bestanden. Vollständige Prüfung und PostgreSQL Nachweis vor Übernahme offen (SR §50). #309/#310/#313 sind ausgerollt. Nach erfolgreicher Minimalabfrage Bestand, Kosten und Laufzustände frisch erheben. Neustart und Ressourcenänderung bleiben gesondert freigabepflichtig.
+1. #316 ist geprüft und ausgerollt (SR §50.3). Nach erfolgreicher Minimalabfrage zuerst Bestand, Kosten, Laufzustände und wirksame Kommunikationssperre frisch erheben. Der SQL Versuch nach dem Merge scheitert weiter beim Verbindungsaufbau. Neustart und Ressourcenänderung bleiben gesondert freigabepflichtig.
 2. Kontrollierten Lagebeweis für 25 erbringen und A vollständig abnehmen. Zähler über 100 bereits natürlich belegt. Der Lauf vom **06.09. um 10:00 UTC ist gelaufen und beweist nichts**: 0 von 25 Mandaten, Abbruch vor der Kapazitätslogik an der nicht ladbaren Mandantenliste, gebucht als `keine-aktiven-mandanten` mit `ok:true` — der Production Beleg der mit SR §45.2 behobenen Fehlerklasse. Nächster natürlicher Lage Check **07.09. um 10:00 UTC**. SR §48.
 3. Anschließend B mit 75 Profilen inaktiv anlegen, getrennt aktivieren und abnehmen; erst danach C mit 400. Vollständiges Nachtfenster laut Code: **00:36 bis 06:59 Türkei / 23:36 bis 05:59 Berlin / 21:36 bis 03:59 UTC**, Tageswechsel beachten und vor Ausführung frisch belegen. Alle Prüfungen und Grenzen in SR §41 und §43.
 4. Bei Deploymentfehler sofort stoppen, kein zweiter Versuch oder Rollback. Erst nach 500 und Abschlussdokumentation wieder Verkaufsreife und P0 Punkte bearbeiten. Ein gewöhnlicher Rückstand ist kein Grund, ohne weitere Prüfung abzubrechen.
@@ -137,7 +137,7 @@ Die konkrete Betreiberfreigabe vom 05.09. in [SR §41](betrieb/500-funktionstest
 3. Keine Löschung, Wiederherstellung verlorener `crawlRuns`, Migration, neue kostenpflichtige Ressource, Azure Änderung, Vercel Env Änderung, Secret Ausgabe, direkte SQL Aktivierung oder Riegelumgehung. Kein Rollback oder Revert ohne neue Betreiberfreigabe.
 4. Stufen getrennt, keine Auslassung. Vor jeder Aktivierung genaue Zielmenge, Zeitfenster und getesteten Ausführungsweg belegen. Kein unbekannter Profilumfang oder unbekannte Änderung außerhalb des Auftrags.
 5. Nach jedem erlaubten Merge automatisch deployen lassen und exakt zugehöriges READY belegen. Bei Fehlschlag sofort stoppen; kein zweites Deployment. Nach jedem Fachschritt unabhängig rein lesend kontrollieren.
-6. Mandantentrennung bleibt App seitig mit `assertTenant` und explizitem Filter. Keine hartkodierten Mandate. Andere geteilte Blobs bleiben ein offenes Risiko; #310 belegt CAS für den Auth Blob.
+6. Mandantentrennung bleibt App seitig mit `assertTenant` und explizitem Filter. Keine hartkodierten Mandate. CAS für Auth, main und p belegt; keine Garantie für alte Fremdschreiber, lokale Dateien zwischen Prozessen oder Transaktionen über mehrere Zeilen.
 
 ## 13 · Detailnachweise und Archiv
 
