@@ -33,6 +33,14 @@ async function main() {
     r = await pruefe({ env, fetchFn: async () => ({ status: 200, json: async () => ({ ...payload, ...changed }) }) });
     check(!r.ok && !JSON.stringify(r).includes(geheim), "falsche Antwort ohne Rohdaten abgewiesen");
   }
+  for (const status of [401, 503]) {
+    r = await pruefe({ env, fetchFn: async () => ({ status, json: async () => { throw Error(geheim); } }) });
+    check(!r.ok && r.httpStatus === status && !JSON.stringify(r).includes(geheim), "HTTP Status ohne Antworttext");
+  }
+  for (const status of [geheim, { text: geheim }, undefined, NaN, 999]) {
+    r = await pruefe({ env, fetchFn: async () => ({ status }) });
+    check(!r.ok && r.httpStatus === null && !JSON.stringify(r).includes(geheim), "ungueltiger HTTP Status ohne Rohdaten");
+  }
   r = await pruefe({ env, fetchFn: async () => { throw Error(geheim); } });
   check(!r.ok && !JSON.stringify(r).includes(geheim), "Netzfehler ohne Secret");
 

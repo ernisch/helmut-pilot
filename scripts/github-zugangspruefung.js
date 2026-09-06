@@ -29,7 +29,7 @@ async function pruefe({ env = process.env, fetchFn = global.fetch, jetzt = new D
     modus: "rein-lesend",
     secretsVorhanden: Object.fromEntries(SECRET_NAMEN.map((n) => [n, vorhanden(env, n)])),
     betriebswerteVorhanden: Object.fromEntries(BETRIEBSWERTE.map((n) => [n, vorhanden(env, n)])),
-    supabase: { erreicht: false, zielBestaetigt: false, grund: "nicht-geprueft" },
+    supabase: { erreicht: false, zielBestaetigt: false, grund: "nicht-geprueft", httpStatus: null },
     cron: { authentifiziert: false, grund: "nicht-aufgerufen" },
     scharferPfadFreigegeben: false,
     modellaufrufe: 0,
@@ -57,6 +57,9 @@ async function pruefe({ env = process.env, fetchFn = global.fetch, jetzt = new D
       },
       signal: AbortSignal.timeout(20000)
     });
+    // Nur eine gueltige Statusnummer, niemals fremden Antworttext ausgeben.
+    bericht.supabase.httpStatus = Number.isInteger(response.status)
+      && response.status >= 100 && response.status <= 599 ? response.status : null;
     if (response.status !== 200) {
       bericht.supabase.grund = [401, 403].includes(response.status)
         ? "zugang-abgewiesen" : "http-fehler";

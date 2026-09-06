@@ -36,10 +36,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        id: checkout
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        id: node
         with:
           node-version: "22"
       - name: Geprueften reinen Leser ausfuehren
@@ -56,7 +58,12 @@ jobs:
           HELMUT_TESTLAUF_KOMMUNIKATION: ${{ vars.HELMUT_TESTLAUF_KOMMUNIKATION }}
         run: node scripts/github-zugangspruefung.js
       - name: Production Laufzeitkonfiguration ausschliesslich lesen
-        if: github.event_name == 'workflow_dispatch' && inputs.laufzeit_status
+        # Die reine Konfigurationsroute benoetigt keine Datenbankverbindung.
+        # Ein fehlgeschlagener Datenbankabruf bleibt trotzdem ein Jobfehler.
+        if: >-
+          ${{ !cancelled() && steps.checkout.outcome == 'success' &&
+              steps.node.outcome == 'success' &&
+              github.event_name == 'workflow_dispatch' && inputs.laufzeit_status }}
         env:
           HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
           HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}

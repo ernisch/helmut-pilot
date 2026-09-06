@@ -17,7 +17,7 @@ async function main() {
     return { status: 200, json: async () => [{ id: "main" }] };
   };
   let r = await pruefe({ env, fetchFn });
-  check(r.supabase.erreicht === true, "bestehende Betriebszeile belegt den Zugang");
+  check(r.supabase.erreicht === true && r.supabase.httpStatus === 200, "bestehende Betriebszeile belegt den Zugang");
   check(calls.length === 1, "genau ein Abruf");
   check(calls[0].url === PROJEKT_ORIGIN + LESEPFAD, "nur festes Ziel und feste Spalten");
   check(calls[0].options.method === "GET" && !calls[0].options.body, "kein Schreibrequest");
@@ -40,9 +40,13 @@ async function main() {
     r = await pruefe({ env, fetchFn: async () => ({ status: 200, json: async () => rows }) });
     check(!r.supabase.erreicht, "leere oder unpassende Antwort beweist keinen Zugang");
   }
-  for (const status of [401, 403, 500, 302]) {
+  for (const status of [401, 403, 500, 503, 302]) {
     r = await pruefe({ env, fetchFn: async () => ({ status, json: async () => { throw Error(secret); } }) });
-    check(!r.supabase.erreicht && !JSON.stringify(r).includes(secret), "HTTP Fehler ohne Rohtext");
+    check(!r.supabase.erreicht && r.supabase.httpStatus === status && !JSON.stringify(r).includes(secret), "HTTP Status ohne Rohtext");
+  }
+  for (const status of [secret, { text: secret }, undefined, NaN, 999]) {
+    r = await pruefe({ env, fetchFn: async () => ({ status }) });
+    check(!r.supabase.erreicht && r.supabase.httpStatus === null && !JSON.stringify(r).includes(secret), "ungueltige Statuswerte werden nicht ausgegeben");
   }
   r = await pruefe({ env, fetchFn: async () => { throw Error(secret); } });
   check(r.supabase.grund === "netz-oder-antwortfehler" && !JSON.stringify(r).includes(secret), "Netzfehler ohne Geheimnis");

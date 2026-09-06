@@ -5691,5 +5691,56 @@ den geschützten Kohortenprozess fertig vorbereiten. A Fachbeleg, Kommunikation,
 B/C Bedingungen bleiben verpflichtend. Die allgemeine Betreiberfreigabe aus §41 wird dadurch nicht
 neu erfunden oder erweitert; die zusätzliche Bestätigung ist durch die automatische Prüfung verlangt.
 
-Dieser Nachtrag aktualisiert ausschließlich Dokumentation nach dem erfolgten Code Merge.
-Sein eigener Merge Commit und Deploymentbeleg folgen aus der Historie; kein rekursiver Folge PR.
+Dieser Nachtrag war zunächst als ausschließliche Dokumentation nach dem Code Merge vorgesehen.
+Die weitere Nutzeranweisung und der anschließend belegte Diagnosefehler erweitern #307 um die
+notwendige Korrektur aus §44.3. Damit ist #307 jetzt ein Code PR mit vollständigen Prüfgates.
+
+### 44.3 Neuer Nutzerauftrag, gestarteter Leselauf und unabhängige Diagnose
+
+**Zwischenstand 06.09.2026, 10:20 Türkei / 09:20 Berlin / 07:20 UTC.**
+Der Nutzer weist erneut ausdrücklich an: **Weiter**. main und Production wurden daraufhin frisch
+abgeglichen: weiterhin `cfd18b20019b811b775371d9c11ddb2b6f5f5ba4`, Deployment
+`dpl_3NGtMs7AtsDK8zPQZKKaXdBAp2Gt` READY. Derselbe vorbereitete manuelle Workflow wurde im
+angemeldeten GitHub Browser mit `laufzeit_status=true` und genau diesem Commit gestartet.
+Die automatische Prüfung ließ diesen Start nach dem neuen Nutzerauftrag zu. Die frühere
+Aktionsfreigabe ist damit nicht mehr der aktuelle Blocker; kein alternativer Trigger wurde benutzt.
+
+**Echter Lauf [34018371687](https://github.com/ernisch/helmut-pilot/actions/runs/34018371687):**
+Start **10:09:12 Türkei / 09:09:12 Berlin / 07:09:12 UTC**, `workflow_dispatch`, main, Kopf exakt wie
+Production. Checkout und Node Einrichtung erfolgreich. Der feste PostgREST GET meldet
+`http-fehler`, Ziel bestätigt, alle drei Secrets vorhanden, alle sieben GitHub Betriebswerte fehlend.
+Die damalige Ausgabe enthält keine HTTP Nummer; sie belegt daher insbesondere keinen bestimmten
+5xx Fehler. Die reine Production Konfigurationsprüfung wurde als nachfolgender Schritt übersprungen.
+Gesamtlauf fehlgeschlagen, null Modellaufrufe, null Schreibaufrufe.
+
+Auch zwei direkte, ausdrücklich nur lesende SQL Transaktionen melden im selben Zeitraum
+`Connection terminated due to connection timeout`. Projektmetadaten bleiben `ACTIVE_HEALTHY`;
+dies ist kein Nachweis funktionierender Abfragen. Die öffentliche Supabase Statusseite weist im
+Zeitpunkt der Prüfung keinen konkreten neuen Vorfall für unsere Datenbankregion aus. Ihr älterer
+JWT Vorfall erklärt die hier beobachteten Antworten nicht nachweislich. Kein Neustart, keine
+Ressourcenänderung und keine Migration durchgeführt.
+
+**Notwendige Korrektur in #307:** Der Konfigurationsleser liest ausschließlich bereits deployte
+Prozesswerte und braucht keine Datenbank. Sein Workflow Schritt verlangt deshalb ausdrücklich
+`!cancelled()`, erfolgreichen Checkout und erfolgreiche Node Einrichtung sowie den unveränderten
+manuellen Opt in. Das entspricht der dokumentierten GitHub Semantik: ohne Statusfunktion wird
+`success()` implizit ergänzt ([GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/expressions#status-check-functions)).
+Ein Datenbankfehler bleibt ein Jobfehler; kein `continue-on-error`, kein grüner Gesamtbericht trotz
+Fehler. Ziel, Secret Umgang, fester READY Commit und die Ablehnung scharfer Pfade bleiben erhalten.
+
+Beide Leser geben zusätzlich nur eine ganzzahlige HTTP Statusnummer von 100 bis 599 aus, sonst
+`null`. Keine Antwortkörper, Providerfehler, Zugangsdaten oder unvalidierten Statuswerte im Bericht.
+Checkout und Node Action sind auf die im Lauf 34018371687 erfolgreich ausgeführten Commits fixiert.
+Ein separat entdeckter späterer Pin Commit `2430d1e` auf dem alten Zugangsbranch wird nicht
+überschrieben und nicht als bereits auf main enthalten dargestellt.
+
+**Gezielte lokale Prüfung:** Datenbankleser **43 PASS / 0 FAIL**, Laufzeitleser **31 PASS / 0 FAIL**,
+jeweils über `scripts/lokal.js`. Dazu gehören der echte HTTP Handler ohne Schreibvorlauf und die
+Abweisung fremder Inhalte auch im Statusfeld. Vollständige lokale und externe Prüfungen am neuen
+Kopf sowie Merge, Production READY und echter erneuter Leselauf stehen noch aus.
+
+**Unveränderte Nachweisgrenze:** Letzter bestätigter Datenbestand vom 06.09. 00:28 UTC bleibt
+29 Profile, 25 aktiv, vier inaktiv, B/C null. Die zwischenzeitlichen natürlichen Morgenläufe und
+aktuellen Modellkosten sind ungeprüft. Deshalb keine Profilanlage, Aktivierung oder Modellarbeit.
+Vor jeder Fortsetzung frischen Bestand, Kommunikationsriegel, Budget und tatsächliches Zeitfenster
+prüfen; die Stufenfreigaben aus §41 bleiben bedingt. Das nächtliche Fenster ist inzwischen beendet.
