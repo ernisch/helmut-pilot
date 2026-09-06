@@ -5744,3 +5744,89 @@ Kopf sowie Merge, Production READY und echter erneuter Leselauf stehen noch aus.
 aktuellen Modellkosten sind ungeprüft. Deshalb keine Profilanlage, Aktivierung oder Modellarbeit.
 Vor jeder Fortsetzung frischen Bestand, Kommunikationsriegel, Budget und tatsächliches Zeitfenster
 prüfen; die Stufenfreigaben aus §41 bleiben bedingt. Das nächtliche Fenster ist inzwischen beendet.
+
+### 44.4 Merge #307, echte Konfiguration und belegter Datenbankausfall
+
+**Abschlussbefund 06.09.2026, 11:00 Türkei / 10:00 Berlin / 08:00 UTC: BLOCKIERT.**
+Der GitHub Ausführungszugang und die reine Production Konfigurationsprüfung funktionieren.
+Die Datenbankstörung verhindert aktuelle Bestands und Kostennachweise und damit die Stufenfortsetzung.
+
+**Prüfung und Merge:** Kopf `26741a8b6a8334fe53c2ecce30f26bf65af2863b` besteht im frischen isolierten
+Checkout vollständig mit **323/323 lokalen Offline Suiten in 553 Sekunden**. Gezielte Leserprüfungen
+43 und 31 PASS. Externe CI **[34019505595](https://github.com/ernisch/helmut-pilot/actions/runs/34019505595)**
+erfolgreich, 323/323 Offline Suiten in 534 Sekunden, beide Pflichtjobs einschließlich Browser und
+echtem Datenbanknachweis grün. Vorschau `dpl_Cxie86uox9ayZ9kDbGGr6MESQoRq` READY am selben Kopf;
+keine Reviews oder Review Threads und alle weiteren ausgelösten Prüfungen grün.
+
+Zwischenstände waren nicht vollständig grün: Die externe CI am ersten Codekopf bestand 322/323;
+nur die unveränderte Zeichengrenze des Statusdokuments war um 136 Zeichen überschritten. Der Text
+wurde gekürzt, die Grenze nicht erhöht. Lokal fehlte nach der Sitzungspause Chromium; die vorhandene
+Playwright Version 1.56.1 wurde ergänzt. Zwei lokale Zwischenläufe lieferten kein vollständiges
+auswertbares Protokoll und endeten mit Fehler; sie gelten nicht als Nachweis. Ein weiterer Anlauf
+wurde vorzeitig beendet, um einen frischen isolierten Checkout mit direkt ausgegebenen Fehlern und
+vollständig erhaltenem Protokoll zu benutzen. Nur der oben genannte vollständige Abschluss zählt.
+Keine Prüfung wurde entfernt oder abgeschwächt. Der kanonische Netzschutz meldet weiterhin den
+bekannten blockierten Versuch im bestehenden `pardok-shadow-test`, Abschluss Exit 0.
+
+[PR #307](https://github.com/ernisch/helmut-pilot/pull/307) unter §41 mit erwartetem Kopf und Methode
+`merge` übernommen: **`b836cef041a542c83de23dfbe7a658caedab446d`**, genau zwei Eltern
+`cfd18b20019b811b775371d9c11ddb2b6f5f5ba4` und `26741a8b6a8334fe53c2ecce30f26bf65af2863b`.
+Mergezeit **10:57:43 Türkei / 09:57:43 Berlin / 07:57:43 UTC**. Automatisches Production Deployment
+**`dpl_DUnsweYKYS2E8m7ccBPBVhFAZMn7` READY**, target production und Commit exakt bestätigt;
+Alias `helmut-pilot.vercel.app`. Kein manueller Deploy, kein Deploymentfehler oder Rollback.
+
+**Tatsächlicher Leselauf [34020582488](https://github.com/ernisch/helmut-pilot/actions/runs/34020582488):**
+Manuell um **10:58:58 Türkei / 09:58:58 Berlin / 07:58:58 UTC** gestartet, main, exakt obiger READY
+Commit. GitHub Checkout und Node Einrichtung erfolgreich. Fester Supabase GET auf `main` liefert
+**HTTP 522**, Ziel bestätigt, alle drei Secrets vorhanden, sieben GitHub Betriebswerte weiterhin
+fehlend. Die nachfolgende reine Konfigurationsprüfung läuft trotz dieses Fehlers erfolgreich.
+Der Gesamtlauf bleibt fehlgeschlagen. Damit ist die unabhängige Diagnose im echten Fehlerfall belegt.
+
+| Production Konfiguration, um 07:59 UTC unabhängig gelesen | Befund |
+|---|---|
+| Statuszugang | HTTP 200, passender Commit, production und reinLesend true |
+| Betriebsbackend | Supabase true, V3 bereit true |
+| Relationale Profile | true |
+| Exklusivmodus für Profile | **true**; vorherige Annahme aus damit überholt |
+| Aufbewahrung | gültig, wirksame Grenze **36** |
+| Globaler Aufrufdeckel | **2.416** |
+| Understanding Reserve | **702** |
+| Vollständige Kommunikationssperre | **true** |
+| Freigabe von Facharbeit durch den Bericht | **false** |
+
+Der Exklusivbefund stammt aus der echten Funktion `profileDbExclusiveEnabled`, die sowohl den
+relationalen Modus als auch das aktivierte Exklusivflag verlangt. Zeitpunkt und Urheber einer
+früheren Env Einstellung sind dadurch nicht bewiesen. Diese Sitzung änderte keine Vercel Variable.
+Vor B/C muss der ausführende Prozess den tatsächlich belegten Speicherpfad verwenden; alte
+Annahmen dürfen nicht als neue Betriebswerte übernommen werden. Das beseitigt keine Konkurrenz
+auf geteilten Betriebs oder Kontoblobs und ersetzt keine frische Datenprüfung.
+
+**Unabhängige Störungsbelege:** Vercel Protokolle am vorherigen Production Deployment `dpl_3NGt…`
+zeigen im natürlichen 04:00 Crawl einen Fehler von `matchKnowledgeObjectsByEmbedding` mit HTTP 500,
+SQLSTATE `57014`, `statement timeout`. Der natürliche 05:45 Lagebriefinglauf
+`briefing-lage-20260906054532-f2eko` meldet einen Timeout beim Speichern der Telemetrie. 06:00,
+06:10 und 06:22 folgen Zeitüberschreitungen beim Lesen von `main-auth` und relationalen Profilen.
+Die HTTP Antworten 200 dieser Läufe beweisen daher keinen erfolgreichen Fachzyklus.
+Direkte SQL Leseverbindungen scheitern wiederholt, auch eine minimale Abfrage ohne Tabelle um
+07:38 UTC. Projektmetadaten melden um 08:00 UTC weiterhin `ACTIVE_HEALTHY`; das widerlegt diese
+Störung nicht. Es wird kein aktueller Bestand aus alten Zahlen oder leeren Fehlerantworten abgeleitet.
+
+HTTP 522 bezeichnet eine Zeitüberschreitung zwischen Cloudflare und dem Ursprungsserver
+([Cloudflare](https://developers.cloudflare.com/support/troubleshooting/http-status-codes/cloudflare-5xx-errors/error-522/)).
+Supabase nennt Überlastung als häufige Ursache des hier ebenfalls beobachteten SQL Verbindungsfehlers
+([Supabase](https://supabase.com/docs/guides/troubleshooting/failed-to-run-sql-query-connection-terminated-due-to-connection-timeout)).
+Die konkrete Ursache ist ungeklärt. Auslastungsberichte zu CPU, RAM, Disk IO und Verbindungen sind
+mit den vorhandenen Zugriffen nicht lesbar; der gesonderte Dashboard Browser verlangt eine
+zusätzliche Anmeldung. Die Berichte liegen noch nicht vor. Kein automatischer Neustart, keine
+Ressourcenänderung und keine Migration. Solche Eingriffe sind durch §41 nicht freigegeben.
+
+**Fortsetzung:** Zuerst Supabase Projektberichte und Erreichbarkeit klären. Nach Wiederkehr eine
+frische relationale Grundlinie samt Konten, Identitäten, Blobintegrität, Aufträgen und Modellkosten
+erheben; Kommunikation, Speicherpfad und tatsächliches Fenster erneut prüfen. Danach A vollständig
+abnehmen, B getrennt inaktiv anlegen und aktivieren, erst nach belegter B Abnahme C. Letzte bekannte
+Grundlinie bleibt 29/25/4 um 00:28 UTC. Keine Stufenaktion und keine kontrollierte Modellarbeit
+dieser Fortsetzung; **500 aktive oder funktionierende Mandate werden nicht behauptet**.
+
+Dieser abschließende Nachtrag verändert ausschließlich Dokumentation nach dem wirksamen Code Merge
+und echten Leselauf. Sein eigener Merge Commit und Deploymentstand folgen aus der Historie; gemäß
+CLAUDE.md §9 entsteht daraus kein rekursiver Dokumentations PR.
