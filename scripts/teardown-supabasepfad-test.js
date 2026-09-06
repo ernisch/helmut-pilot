@@ -39,23 +39,11 @@ function baueFetch({ zeilen }) {
     const methode = String((options && options.method) || "GET").toUpperCase();
     const pfad = String(url);
     aufrufe.push({ methode, pfad, koerper: options && options.body ? String(options.body) : null });
-    // Lesen aus `helmut_store`
-    if (methode === "GET" && /\/rest\/v1\/helmut_store\?/.test(pfad)) {
-      const treffer = decodeURIComponent(pfad).match(/id=eq\.([^&]+)/);
-      const id = treffer ? treffer[1] : null;
-      const zeile = id && Object.prototype.hasOwnProperty.call(zeilen, id)
-        ? [{ data: zeilen[id] }] : [];
-      return antwort(zeile);
-    }
-    // Schreiben nach `helmut_store`
-    if ((methode === "POST" || methode === "PATCH" || methode === "PUT")
-        && /\/rest\/v1\/helmut_store/.test(pfad)) {
-      try {
-        const nutz = JSON.parse(options.body || "{}");
-        const eintraege = Array.isArray(nutz) ? nutz : [nutz];
-        for (const e of eintraege) if (e && e.id) zeilen[e.id] = e.data;
-      } catch { /* Form egal — gezählt wird trotzdem */ }
-      return antwort([]);
+    if (/\/rest\/v1\/helmut_store/.test(pfad)) {
+      const rows = new Map(Object.entries(zeilen));
+      const result = require("./fixtures/store-rest-memory")(rows, url, options);
+      for (const [id, data] of rows) zeilen[id] = data;
+      return antwort(result.body, result.status);
     }
     // Alles andere (V3-Tabellen, Auth, Fairness) beantworten wir leer.
     return antwort([]);
@@ -63,9 +51,9 @@ function baueFetch({ zeilen }) {
   return { aufrufe, wiederherstellen: () => { globalThis.fetch = echterFetch; } };
 }
 
-function antwort(daten) {
+function antwort(daten, status = 200) {
   return {
-    ok: true, status: 200,
+    ok: status < 400, status,
     json: async () => daten,
     text: async () => JSON.stringify(daten),
     headers: { get: () => "application/json" }
@@ -102,7 +90,8 @@ async function main() {
 
   const storeAufrufe = stub.aufrufe.filter((a) => /\/rest\/v1\/helmut_store/.test(a.pfad));
   const schreibend = storeAufrufe.filter((a) => a.methode !== "GET");
-  const aufPKey = schreibend.filter((a) => (a.koerper || "").includes(`"${pKey}"`));
+  const aufPKey = schreibend.filter((a) => decodeURIComponent(a.pfad).includes(`id=eq.${pKey}`)
+    || (a.koerper || "").includes(`"${pKey}"`));
 
   const pKeyAufrufe = storeAufrufe.filter((a) => decodeURIComponent(a.pfad).includes(pKey)
     || (a.koerper || "").includes(`"${pKey}"`));
@@ -116,10 +105,8 @@ async function main() {
   check("A3 und die Zeile existiert danach immer noch NICHT — nichts wurde angelegt",
     !Object.prototype.hasOwnProperty.call(zeilen, pKey),
     `angelegte Zeilen: ${Object.keys(zeilen).join(", ") || "(keine)"}`);
-  // EHRLICH BENANNT: `main` und `main-auth` legt `readSupabaseStore` beim Lesen an —
-  // dieselbe Bauart, aber KEINE Kohortenzeile. Beide existieren in Production ohnehin
-  // seit je; die 400er-Gruppe haette 400 EIGENE Zeilen erzeugt, und genau die
-  // entstehen nicht. Der Unterschied wird hier festgehalten, nicht verschwiegen.
+  // Der Main Leser legt seit dem 06.09. keine Zeile mehr an. Der uebergeordnete
+  // Teardown kann weiterhin Bestandsmetadaten in main-auth schreiben.
   check("A4 die einzigen angelegten Zeilen sind die Bestandsstores, KEINE Kohortenzeile",
     Object.keys(zeilen).every((id) => !id.includes("test-kohorte-")),
     `angelegt: ${Object.keys(zeilen).join(", ") || "(keine)"}`);
@@ -134,7 +121,8 @@ async function main() {
     stub2.wiederherstellen();
   }
   const schreib2 = stub2.aufrufe.filter((a) => /\/rest\/v1\/helmut_store/.test(a.pfad)
-    && a.methode !== "GET" && (a.koerper || "").includes(`"${pKey}"`));
+    && a.methode !== "GET" && (decodeURIComponent(a.pfad).includes(`id=eq.${pKey}`)
+      || (a.koerper || "").includes(`"${pKey}"`)));
   check("B1 ein Store MIT Daten wird sehr wohl geleert",
     schreib2.length > 0, `${schreib2.length} Schreibvorgang/-vorgänge`);
   check("B2 danach trägt er keine Nutzdaten mehr",

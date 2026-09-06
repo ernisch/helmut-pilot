@@ -6314,9 +6314,15 @@ synthetischen lokalen HTTP Dienst, kein PostgreSQL und kein Production.
 
 Die bestehenden Speicherintegritätsprüfungen bestehen mit **21 PASS / 0 FAIL**, einschließlich
 des zusätzlichen Falls einer Eingabeänderung während des laufenden Writes. Alle **15/15**
-profilbezogenen Suiten bestehen. Drei ältere HTTP Nachbildungen unterstützten bisher nur POST;
+profilbezogenen Suiten bestehen. Vier ältere HTTP Nachbildungen unterstützten bisher nur POST;
 sie bilden nun auch die PATCH Bedingung und INSERT Konflikte ab. Schreibzähler erfassen beide
 Methoden. Kein fachliches Abnahmekriterium wurde entfernt oder abgeschwächt.
+
+Erster Gesamtlauf: **327/329** in 471 Sekunden, fehlgeschlagen. Zwei ältere Teardownprüfungen erkannten
+PATCH Writes nicht beziehungsweise verlangten noch den inzwischen ersetzten Existenzhelfer. Sie wurden
+auf bedingtes Schreiben mit gültiger Quittung, frischen Lesestand und erhaltene Lesemarke umgestellt.
+Die Verhaltensanforderung bleibt: keine Neuanlage beim Entfernen einer abwesenden Kennung, bestehende
+eigene Daten werden im autorisierten Testfall weiterhin geleert. Noch kein vollständiger Abschlussbeleg.
 
 Der bestehende Pflichtversuch `auth-store-cas-datenbank-test.js` enthält zusätzlich dieselben drei
 Prozessversuche gegen echtes PostgREST und PostgreSQL. Die 500 Kontoanlagen und ihre Bestandskontrollen
