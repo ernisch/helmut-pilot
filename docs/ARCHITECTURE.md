@@ -64,6 +64,14 @@ Vercel Cron ──► /api/cron/crawl ──► scheduler.runSourceCrawl
 Ergänzend: `/api/cron/morning-briefing` und `/api/cron/lage-briefing` erzeugen das
 Briefing, `/api/cron/health-report` den Betriebsbericht (Watchdog + Alarmpfad).
 
+**Appstart bei Datenbankausfall:** Die öffentliche Shell und die bestehende Liste öffentlicher
+Dateien werden bei GET und HEAD vor der Konten und Mandatsauflösung ausgeliefert. Der frühere
+Pilotzugang bleibt davor wirksam. Alle Fachrouten behalten ihre Identitäts und Mandatsprüfung.
+Die Adminvorbereitung läuft erst beim begrenzten Anmeldeauftrag. Ein nicht prüfbares Sessioncookie
+liefert 503 ohne Cookieänderung; die Oberfläche zeigt eine Störung und gibt keinen Cache für eine
+unbekannte Identität frei. Der Sessionabruf wird einschließlich Antwortinhalt nach sechs Sekunden
+abgebrochen. Aktueller Übernahmestand und Grenzen: `CURRENT_STATE.md`, Sicherheitsrahmen §51.
+
 ## 3 · Quellenarchitektur
 
 Drei sauber getrennte Ebenen (Details:

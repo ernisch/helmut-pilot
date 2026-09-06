@@ -328,15 +328,21 @@ async function handleRequest(request, response) {
   const accountAuth = auth.authMode();
   let authUser = null;
 
+  // Die vorhandene Pilotpruefung bleibt vor jeder oeffentlichen Auslieferung.
+  if (!accountAuth && !hasPilotAccess(request, url)) {
+    if (wantsHtml(request, url)) return sendPilotUnlockPage(response, url);
+    return sendPilotUnauthorized(response);
+  }
+  // Die Shell enthaelt keine Konten oder Mandatsdaten. Auch mit Sessioncookie
+  // muss sie bei Datenbankausfall laden; nur die bestehende Assetliste ist frei.
+  if (["GET", "HEAD"].includes(request.method)
+      && (isAppEntryPath(url.pathname) || isPublicAssetPath(url.pathname))) {
+    return sendAppAsset(response, url);
+  }
+
   if (accountAuth) {
     // Account-Modus (Feature-Flag HELMUT_AUTH_MODE=accounts): Login per Session-Cookie
     // statt geteiltem Pilot-Code. Identitaet stammt ausschliesslich aus der Session.
-    try {
-      await accounts.ensureAdminSeed();
-    } catch (error) {
-      console.error("Admin seed failed", error);
-    }
-
     // Oeffentliche Auth-Endpunkte: ohne bestehende Session erreichbar.
     if (url.pathname === "/api/auth/login" && request.method === "POST") {
       return handleAuthLogin(request, response, url);
@@ -365,11 +371,14 @@ async function handleRequest(request, response) {
       return handleAsync(response, () => accounts.getSetupStatus({ includeSensitive }));
     }
 
-    const ctx = await auth.getAuthContext(request).catch(() => null);
+    let ctx;
+    try { ctx = await auth.getAuthContext(request); }
+    catch { return sendAuthUnavailable(response); }
     authUser = ctx?.user || null;
 
     if (url.pathname === "/api/auth/session") {
-      return handleAuthSession(response, authUser, ctx?.token);
+      try { return await handleAuthSession(response, authUser, ctx?.token); }
+      catch { return sendAuthUnavailable(response); }
     }
 
     if (!authUser) {
@@ -381,10 +390,6 @@ async function handleRequest(request, response) {
       }
       // sonst: durchfallen zur statischen Auslieferung / Cron-Routen unten
     }
-  } else if (!hasPilotAccess(request, url)) {
-    // Legacy-Pilotgate (Feature-Flag aus): unveraendert, damit Produktion nicht bricht.
-    if (wantsHtml(request, url)) return sendPilotUnlockPage(response, url);
-    return sendPilotUnauthorized(response);
   }
 
   // Mandant-Aufloesung. SICHERHEITSKERN: Im Account-Modus wird politicianId
@@ -424,7 +429,7 @@ async function handleRequest(request, response) {
       }
       // sonst: statische Auslieferung bzw. mandatsfreier Admin-/Auth-Pfad, kein Fremddaten-Read.
     }
-  } else {
+  } else if (!accountAuth) {
     // Legacy-Zugang (geteiltes PILOT_SECRET, keine Accounts): Es gibt KEIN bevorzugtes,
     // konfiguriertes oder geratenes Mandat. Die AKTIVEN Mandate der Datenbank sind die
     // Zugriffsmenge (allgemeine, datenbankbasierte Zugangszuordnung):
@@ -2963,6 +2968,10 @@ async function handleRequest(request, response) {
     return handleAsync(response, () => buildAdminSourcesStatus());
   }
 
+  return sendAppAsset(response, url);
+}
+
+function sendAppAsset(response, url) {
   // SICHERHEIT: dieser Fallback bediente frueher JEDEN auf dem Server liegenden Pfad
   // (server.js, lib/helmut/*.js, supabase/schema.sql, docs/*, .env.example, sogar .git/*)
   // an JEDEN Aufrufer ohne Session — im Account-Modus faellt ein nicht eingeloggter
@@ -5707,6 +5716,10 @@ function handleAuthLogin(request, response, url) {
   return handleJson(request, response, async (body) => {
     const email = accounts.normalizeEmail(body.email);
     const password = String(body.password || "");
+    // Erst beim ratenbegrenzten Anmeldeauftrag vorbereiten, niemals beim Lesen
+    // der Seite, ihrer Dateien, einer Session oder eines Cronendpunkts.
+    try { await accounts.ensureAdminSeed(); }
+    catch { return sendAuthUnavailable(response); }
     const user = await accounts.getUserByEmailRaw(email);
     // Generische Antwort: keine Unterscheidung zwischen "kein Nutzer", "deaktiviert"
     // oder "falsches Passwort" (kein User-Enumeration). SICHERHEIT: verifyPassword wird
@@ -5952,6 +5965,13 @@ function handleAuthPasswordToken(request, response, url) {
     const check = await accounts.inspectPasswordToken(token);
     return { valid: check.valid === true, purpose: check.valid ? check.purpose : null };
   });
+}
+
+function sendAuthUnavailable(response) {
+  console.error("Kontenablage fuer die Anmeldung nicht erreichbar");
+  response.writeHead(503, jsonHeaders({ "Retry-After": "30" }));
+  response.end(JSON.stringify({ reason: "auth-unavailable", error: "Die Anmeldung ist vorübergehend nicht erreichbar. Bitte versuche es später erneut." }));
+  return null;
 }
 
 async function handleAuthSession(response, authUser, token) {

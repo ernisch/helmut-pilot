@@ -6366,3 +6366,62 @@ Production Daten direkt geändert und kein Betriebswert verändert. Nach belegte
 zuerst Datenbestand, Kosten, Laufzustände und Kommunikationssperre prüfen, danach 25 vollständig abnehmen;
 erst anschließend B mit 75 und C mit 400 nach §41. Dieser Nachtrag erfüllt den Dokumentationsabschluss
 nach CLAUDE.md §9; sein eigener Merge und Deployment werden aus der Historie belegt, ohne rekursiven Folge PR.
+
+## §51 Appstart während der Datenbankstörung
+
+**06.09.2026, Betreiber meldet zusätzlich eine nicht ladende App und beauftragt die Behebung.**
+Basis nach Dokumentationsabschluss #317: `1281c7c4361feeb8401f05beff24a1fed4e565b3`, Production
+`dpl_ADz3yfMqoFc6Nm6m4yVxXZTsnxbr` READY am exakten Commit. Neuer Branch
+`codex/app-start-datenbankausfall`. Keine andere offene passende Umsetzung bei Beginn gefunden.
+
+### §51.1 Tatsächlicher Fehler und Grenzen der Diagnose
+
+Production Protokolle vom 06.09. um 14:33 bis 14:38 UTC belegen beim GET auf `/` und mehreren
+Startendpunkten `Admin seed failed` mit `Supabase storage timed out after 10000ms` auf `main-auth`.
+Auch der Profilabruf läuft in eine Zeitüberschreitung. Der Browser erreicht nach einem gemeldeten
+Navigationszeitablauf schließlich die Anmeldung; das ist kein Nachweis eines funktionierenden Kontos.
+
+Der Code wartet vor der Auslieferung selbst öffentlicher Startdateien auf `ensureAdminSeed` und
+die Sessionprüfung. Ohne ermittelte Kontenidentität fällt er zusätzlich in die Mandatsauflösung des
+alten Pilotmodus. Ein Fehler von `getAuthContext` wird als `null` behandelt und kann dadurch als
+abgemeldet mit HTTP 200 beziehungsweise 401 erscheinen. Im Client wird auch eine fehlgeschlagene
+Sessionantwort als möglicher Pilotmodus gewertet. Diese Fehler erklären die zusätzliche Blockade
+der Oberfläche. Sie beweisen nicht die Ursache der Supabase Störung selbst.
+
+Die [öffentliche Supabase Statusseite](https://status.supabase.com/) zeigt am 06.09. weiterhin einen
+Vorfall mit JWT Ablehnungen und HTTP 401. Dieser Vorfall belegt keine Ursache unserer unabhängigen
+SQL Verbindungszeitüberschreitungen und des früheren HTTP 522. Auch der Speicherverdacht aus §45
+bleibt ohne aktuelle Projektmesswerte unbewiesen. Es wurde kein Neustart, Tarifwechsel oder
+anderer Eingriff in Supabase vorgenommen.
+
+### §51.2 Korrektur und gezielte Nachweise
+
+Die neue HTTP Prüfung reproduziert zunächst **4 PASS / 19 FAIL**. Nun werden nur die bereits
+öffentlichen Startpfade und Dateien bei GET und HEAD ohne Konten oder Profilzugriff ausgeliefert.
+Der Pilotzugang bleibt davor bestehen. Interne Dateien und Fachrouten werden nicht freigegeben.
+Unangemeldete Kontenaufrufe verwenden keine Mandatsauflösung des Pilotmodus mehr.
+
+Die Adminvorbereitung läuft erst innerhalb des begrenzten POST zur Anmeldung. Ein fehlgeschlagener
+Leseversuch bleibt nicht für die Lebensdauer des Prozesses als abgelehnte Promise gespeichert:
+Ein späterer ausdrücklicher Anmeldeversuch kann nach Erholung erneut lesen. Gleichzeitig eintreffende
+Vorbereitungen bleiben gebündelt. Es gibt keine automatische Wiederholung oder blinden Schreibversuch.
+
+Eine nicht prüfbare Session oder fehlgeschlagene Sessionantwort liefert **503**, einen allgemeinen
+Hinweis und keine Cookieänderung. Der Client verwechselt Fehler nicht mehr mit einem anderen
+Zugangsmodus. Eine eigene Abbruchgrenze von sechs Sekunden gilt bis zum Ende des Antwortinhalts
+und bricht den zugrunde liegenden Abruf ab. Die vorhandene Startansicht zeigt eine verständliche
+Störung mit erneutem Ladeversuch; kein politischer Datenbestand wird für eine unbekannte Identität
+aus dem Browsercache angezeigt.
+
+Gezielt **26 PASS / 0 FAIL**: echte HTTP Auslieferung, hängende Vorbereitung, sieben öffentliche
+Startpfade, anonyme und ungültige Sessions, 503 ohne Cookieverlust, gesperrte interne Dateien und
+Adminroute, unveränderter Pilotzugang, ungültige und abgebrochene Antworten sowie spätere Erholung
+der Vorbereitung. Die vollständige Browserprüfung besteht **40 PASS / 0 FAIL**. Darin sind acht
+neue Nachweise auf Desktop und Mobil: Störungsmeldung, beendeter Splash, keine falsche Anmeldung,
+kein Fachabruf mit unbekannter Identität und normaler Start nach simulierter Erholung.
+
+Vollständige lokale und externe Prüfung sowie Übernahme stehen zu diesem Zeitpunkt noch aus.
+Die Prüfung verwendet ausschließlich lokale synthetische Daten. Kein Production Login, keine
+neue Kontoanlage, kein Fachlauf, kein Modellaufruf und keine externe Helmut Zustellung wurde ausgelöst.
+Eine schnell erreichbare Oberfläche ist weder eine wieder erreichbare Datenbank noch eine vollständige
+Abnahme der Stufen 25, 100 und 500. Deren Voraussetzungen aus §41 gelten unverändert.

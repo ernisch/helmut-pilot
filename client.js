@@ -991,18 +991,26 @@ function bindPasswordToggles(root) {
 }
 
 async function fetchAuthState() {
+  const controller = new AbortController();
+  // Gilt auch fuer den Antwortinhalt und beendet den zugrunde liegenden Abruf.
+  const timeout = window.setTimeout(() => controller.abort(), 6000);
   try {
-    // HARTER TIMEOUT: /api/auth/session ist der ERSTE Boot-Await. Ohne Timeout
-    // konnte ein haengender Request (langsames Mobilnetz / Brave-Shields) den
-    // gesamten Start blockieren -> Splash blieb dauerhaft haengen. Bei Timeout
-    // faellt der catch unten auf null (Pilot-/Login-Pfad laeuft weiter).
-    const res = await fetchWithTimeout("/api/auth/session", { cache: "no-store" }, 6000);
+    // Ein Ausfall beweist weder einen abgemeldeten Nutzer noch den Pilotmodus.
+    // Die Startfehleransicht beendet den Splash. Eine unbekannte Identitaet
+    // darf keinen Cache freigeben.
+    const res = await fetchWithTimeout("/api/auth/session", { cache: "no-store", signal: controller.signal }, 6000);
+    if (res.status >= 500) throw new Error("auth-service-unavailable");
     if (!res.ok) return null;
     if (!String(res.headers.get("content-type") || "").includes("application/json")) return null;
     const data = await res.json();
-    return typeof data.authenticated === "boolean" ? data : null;
+    if (typeof data?.authenticated !== "boolean") throw new Error("auth-response-invalid");
+    return data;
   } catch {
-    return null;
+    const error = new Error("Die Anmeldung ist vorübergehend nicht erreichbar.");
+    error.code = "AUTH_UNAVAILABLE";
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
   }
 }
 
@@ -13506,11 +13514,12 @@ loadBriefing()
         <section class="loading-card">
           <div class="loading-logo"><span>H</span></div>
           <p>Helmut</p>
-          <h1>Briefing konnte nicht geladen werden.</h1>
+          <h1>${error?.code === "AUTH_UNAVAILABLE" ? "Helmut ist gerade nicht erreichbar." : "Briefing konnte nicht geladen werden."}</h1>
+          ${error?.code === "AUTH_UNAVAILABLE" ? "<p>Die Verbindung zum Server oder zur Datenbank ist gestört. Bitte versuche es später erneut.</p>" : ""}
           <button class="primary-button" type="button" onclick="window.location.reload()">Neu laden</button>
         </section>
       `;
-      showToast("Briefing konnte nicht geladen werden");
+      showToast(error?.code === "AUTH_UNAVAILABLE" ? "Anmeldung derzeit nicht erreichbar" : "Briefing konnte nicht geladen werden");
     }
     hideStartupSplash();
   });
