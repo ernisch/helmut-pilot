@@ -6322,13 +6322,14 @@ Erster Gesamtlauf: **327/329** in 471 Sekunden, fehlgeschlagen. Zwei ältere Tea
 PATCH Writes nicht beziehungsweise verlangten noch den inzwischen ersetzten Existenzhelfer. Sie wurden
 auf bedingtes Schreiben mit gültiger Quittung, frischen Lesestand und erhaltene Lesemarke umgestellt.
 Die Verhaltensanforderung bleibt: keine Neuanlage beim Entfernen einer abwesenden Kennung, bestehende
-eigene Daten werden im autorisierten Testfall weiterhin geleert. Noch kein vollständiger Abschlussbeleg.
+eigene Daten werden im autorisierten Testfall weiterhin geleert. Zu diesem Zeitpunkt lag noch kein
+vollständiger Abschlussbeleg vor; der endgültige Nachweis steht in §50.3.
 
 Der bestehende Pflichtversuch `auth-store-cas-datenbank-test.js` enthält zusätzlich dieselben drei
 Prozessversuche gegen echtes PostgREST und PostgreSQL. Die 500 Kontoanlagen und ihre Bestandskontrollen
 bleiben erhalten. Alle Kinder laufen über `lokal.js`; der Netzschutz bleibt aktiv. Sämtliche neuen
 Datenbankwrites betreffen ausschließlich die eigens erzeugte kurzlebige Testdatenbank. Ergebnis und
-vollständige lokale sowie externe Pflichtprüfungen werden vor einer Übernahme am exakten Kopf belegt.
+vollständige lokale sowie externe Pflichtprüfungen am exakten Kopf sind nachstehend belegt.
 
 Grenzen: Die Revision schützt nur teilnehmende neue Schreiber. Ältere noch laufende Programmversionen
 oder direkte unbedingte Fremdschreiber sind dadurch nicht nachträglich geriegelt. Der lokale Dateispeicher
@@ -6338,3 +6339,30 @@ Production Fachnachweis. Bestehende Aufbewahrung, Budget und Kommunikationssperr
 
 Quellen zur geprüften Semantik: [PostgREST JSON Filter](https://docs.postgrest.org/en/v12/references/api/tables_views.html#json-columns)
 und [PostgreSQL bedingte Updates](https://www.postgresql.org/docs/current/transaction-iso.html#XACT-READ-COMMITTED).
+
+### §50.3 Übernommen und Production geprüft, vollständiger Fachnachweis weiter blockiert
+
+**06.09.2026.** [PR #316](https://github.com/ernisch/helmut-pilot/pull/316) ist am unveränderten Kopf
+`d4f7b3dccaa88874e1b70f6cd8a42f477a456023` geprüft und mit erwartetem Kopf sowie Methode `merge` übernommen.
+
+| Prüfung | Beleg |
+|---|---|
+| Lokaler Pflichtlauf | `node scripts/lokal.js -- node scripts/run-offline-tests.js`: **329/329** in **473 Sekunden**, Exit 0, direkt am obigen Kopf |
+| Externe Pflichtprüfung | [CI 34038072164](https://github.com/ernisch/helmut-pilot/actions/runs/34038072164), beide Pflichtjobs erfolgreich; Gesamtsuite **329/329** in **556 Sekunden**, bestehender Z22 Nachweis **48 PASS / 0 FAIL** |
+| Echte Datenbank | PostgreSQL **17.11**, PostgREST **12.2.3**, **6 PASS / 0 FAIL**. SQL Bestand `500|500|500|500|0`: 500 Konten, eindeutige IDs, Adressen und Mandatskennungen; kein Konto aktiv |
+| Konkurrenzbeleg | main, bestehendes p und neu angelegtes p: jeweils fünf getrennte Prozesse lesen dieselbe Grundlinie; vier veraltete Writes werden verweigert; nach frischem Lesen bleiben alle fünf Änderungen und der Altbestand erhalten |
+| Review und Vorschau | Keine Review Einwände oder offenen Threads. Vercel Vorschau `dpl_6Zb6U5mBsnp9UuCV65Ht4mxaw3w5` READY am geprüften Kopf |
+| Code Merge | `a2d096c30ec44d87bcf4076bfcaebe29e4f06d46`, zwei Eltern: Basis `91112bbcf7392f7b2a910622147e9f6f67c3f73e` und obiger PR Kopf; Baum identisch mit dem geprüften Kopf |
+| Production | `dpl_5maBHLkM8WFdioiNiWQJXKnCUQUN` **READY**, Ziel `production`, exakt obiger Merge Commit; `helmut-pilot.vercel.app` um **17:33 Türkei / 16:33 Berlin / 14:33 UTC** rein lesend bestätigt |
+
+Die erneute reine Minimalabfrage nach dem Merge endet am **06.09. um 17:34 Türkei / 16:34 Berlin /
+14:34 UTC** mit `Connection terminated due to connection timeout`. Kein erfolgreicher SQL Datensatz,
+keine frische Bestands oder Kostenmessung und kein neuer Fachnachweis. Die 29 Profile mit 25 aktiven und
+vier inaktiven bleiben die letzte belegte Grundlinie. Eine Anbieterursache ist weiterhin nicht bewiesen.
+
+**Codekorrektur übernommen und ausgerollt; vollständiger 500er Betrieb weiterhin blockiert.** Die Grenzen
+aus §50.2 bleiben bestehen. Kein autorisierter Fachlauf wurde in dieser Fortsetzung ausgelöst, keine
+Production Daten direkt geändert und kein Betriebswert verändert. Nach belegter SQL Wiedererreichbarkeit
+zuerst Datenbestand, Kosten, Laufzustände und Kommunikationssperre prüfen, danach 25 vollständig abnehmen;
+erst anschließend B mit 75 und C mit 400 nach §41. Dieser Nachtrag erfüllt den Dokumentationsabschluss
+nach CLAUDE.md §9; sein eigener Merge und Deployment werden aus der Historie belegt, ohne rekursiven Folge PR.
