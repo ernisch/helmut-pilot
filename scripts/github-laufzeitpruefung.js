@@ -6,7 +6,7 @@
 const STATUS_URL = "https://helmut-pilot.vercel.app/api/cron/testnachweis-status";
 const BOOLEAN_FELDER = Object.freeze([
   "storageSupabase", "v3Bereit", "profileRelational", "profileExclusive",
-  "retentionGueltig", "kommunikationGesperrt"
+  "retentionGueltig", "kommunikationGesperrt", "kohortenQuellenGesperrt"
 ]);
 const ZAHL_FELDER = Object.freeze(["retention", "tagesdeckel", "understandingReserve"]);
 

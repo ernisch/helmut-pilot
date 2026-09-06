@@ -167,7 +167,7 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 ### P0 — Verkaufsblocker
 
 #### OP-01 · Supabase Pro + Point-in-Time-Recovery (früher FA-7) — DRINGEND
-- **Status:** **teilweise abgeschlossen (2026-07-28): Sicherung und isolierter Restore bewiesen, Tarifentscheidung für PITR ausstehend.**
+- **Status:** **teilweise abgeschlossen (06.09.2026): Pro aktiv, Micro und native Sicherung unabhängig bestätigt; PITR bleibt ausgeschaltet.** Neuer Beleg: [Sicherheitsrahmen §52](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). Sicherung und isolierter Restore vom 28.07. bleiben bewiesen; die getrennte PITR Kostenentscheidung steht aus.
   Der kostenfreie Teil ist vollständig: aktuelle Production-Vollsicherung (40/40 Tabellen, 74 844
   Datensätze, Prüfsumme `c63f1d95…`, gitignored, gebunden an `main` `0f8d33a`) **und** ein praktisch
   durchgeführter, feld- und mengenmäßig bewiesener Restore in eine isolierte lokale PostgreSQL —
@@ -176,9 +176,9 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
   Beweis 20 s). Dabei geschlossen: Backup-Deckungslücke (38→40 Tabellen — `source_crawl_telemetry`,
   `process_runs` fehlten). Beleg: [`betrieb/restore-uebung-2026-07-28.md`](betrieb/restore-uebung-2026-07-28.md),
   Werkzeuge `scripts/restore-verify-local.js` (+ Test), Runbook §0/3c/3d aktualisiert (RPO/RTO/Datenklassen).
-  Free-Plan-Grenze bleibt: **RPO bis 24 h**, kein echter Snapshot, kein PITR.
-- **Fehlender Schritt:** Betreiberentscheidung Supabase-Dashboard → Billing → Pro (~25 $/Monat) →
-  PITR aktivieren; danach eine PITR-Restore-Übung dokumentieren (Runbook §3). Zusätzlich offen
+  Die frühere Free Plan Aussage ist überholt: native Sicherung vom 06.09. um 18:38:15 UTC sichtbar, weiterhin kein PITR. Die ältere isolierte Restore Übung beweist keine Wiederherstellung aus dieser neuen nativen Sicherung.
+- **Fehlender Schritt:** Gesonderte Betreiberentscheidung über PITR; nach erlaubter Aktivierung
+  eine PITR-Restore-Übung dokumentieren (Runbook §3). Zusätzlich offen
   (klein, kein Blocker): belegten Schema-Drift Repo↔Production bereinigen
   (`scripts/produktions-strukturreferenz.json` → `schemaDrift`; Migration oder schema.sql-Angleich).
 - **Abhängigkeiten:** keine.
