@@ -5938,7 +5938,7 @@ keine Migration und keine Umgebungsvariable nötig.
 Registrierung, Kontoänderung, Sitzungserstellung, Passwortlinks, Passwortsetzen, Loginzähler,
 Audit, Fehlerprotokoll und der Kostenbeleg wenden ihre Änderung auf einem frischen Stand an.
 Pro Instanz werden diese Änderungen geordnet, zwischen Instanzen schützt die Datenbankbedingung.
-Nur bestätigte Versionskonflikte werden begrenzt erneut gelesen, höchstens 16 Versuche mit
+Nur bestätigte Versionskonflikte werden begrenzt erneut gelesen, höchstens 64 Versuche mit
 verteilter Wartezeit und einer Frist von 30 Sekunden ab Eingang. Unklarer Schreibausgang oder Netzwerkfehler
 wird niemals blind wiederholt. Andere Auth Schreiber haben ebenfalls CAS Schutz; ein Konflikt
 wird dort als Fehler weitergegeben, nicht automatisch fachlich wiederholt. Der alte Pipeline
@@ -6001,3 +6001,25 @@ besteht danach mit **11 PASS / 0 FAIL**, 500 gespeicherten Konten aus fünf getr
 Die Startkorrektur schaltet keinen Schutz ab; die Konfliktkorrektur erweitert nur den begrenzten
 Wiederholungsrahmen. Produktionsrechte bleiben unverändert. Der erneute
 vollständige Datenbanknachweis bleibt bis zum tatsächlichen erfolgreichen Abschluss offen.
+
+
+**Zweiter tatsächlicher CI Versuch:** Auch Kopf `6fd9dd984fd2f51f7f733795b2e4a02a0e0b7506`
+besteht lokal 327/327 Suiten, Exit 0, 06.09. von 14:08:24 bis 14:16:05 Türkei /
+13:08:24 bis 13:16:05 Berlin / 11:08:24 bis 11:16:05 UTC (461 Sekunden).
+[CI 34029348938](https://github.com/ernisch/helmut-pilot/actions/runs/34029348938) besteht
+Offline, Browser und die bisherigen Datenbankprüfungen. Der echte neue 500er Versuch scheitert
+jedoch erneut: ein Prozess meldet **99 von 100 erfolgreich**, `AUTH_STORE_CONFLICT`, obwohl die
+Gesamtzeitgrenze noch nicht erreicht ist. Der Gesamtlauf ist fehlgeschlagen, kein Merge.
+
+Die Eingangsfrist bleibt deshalb führend; eine zusätzliche harte Grenze von 64 statt 16 Versuchen
+begrenzt die Anfragemenge. Zwischen bestätigten Konflikten liegen mindestens 50 Millisekunden,
+mit breit gestreuter Wartezeit bis etwa einer Sekunde. Unklare Schreibausgänge und Netzwerkfehler
+werden weiterhin nicht wiederholt. Ein gezielter Verhaltenstest erzwingt 17 aufeinanderfolgende
+Versionskonflikte und bestätigt anschließenden Erfolg. Ein weiterer bestätigt, dass nach Ablauf
+der Eingangsfrist kein Schreibversuch mehr beginnt. **13 PASS / 0 FAIL**, einschließlich fünf
+getrennter Prozesse mit 500 Konten über den lokalen HTTP Ersatz. Kein PostgreSQL Ersatzbeweis.
+
+Der echte Registrierungsnachweis wird innerhalb desselben CI Pflichtjobs vor die längeren Suiten
+gezogen, damit ein Fehler dort sofort sichtbar ist. Kein vorhandener Pflichtschritt, Netzschutz,
+Datenbanknachweis oder Test wird entfernt. Bei Fehler zeigt der Versuch jetzt auch die gezählten
+SQL Bestände, bevor er mit Fehler endet. Die vollständige Prüfung am neuen Kopf steht noch aus.

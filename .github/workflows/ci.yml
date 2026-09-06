@@ -76,23 +76,6 @@ jobs:
             node --check "$f"
           done
           echo "Syntax OK"
-      - name: Offline-Testsuiten (ohne Netz/DB/LLM/Secrets)
-        # Der Runner erzwingt Offline technisch: jede Suite läuft mit einem
-        # --require-Netz-Guard (blockt http/https/fetch auf Nicht-Localhost)
-        # und NO_NETWORK_TESTS=1. browser-smoke-test.js darf hier mangels
-        # Playwright SKIPpen (HELMUT_OFFLINE_TEST=1) — die Browser-Pflicht
-        # liegt beim browser-smoke-Job unten (dort fail-closed).
-        #
-        # HELMUT_SOURCE_MODE=off ist seit dem lokalen Production-Schutz PFLICHT
-        # (scripts/lokaler-netzschutz.js, Bedingung 5). Der Schutz bricht fail closed ab,
-        # wenn der Quellenmodus nicht eindeutig "off" ist — im CI war er bisher gar nicht
-        # gesetzt. Ohne diese Zeile hätte der Schutz das gesamte Merge-Gate mit Exit 3
-        # abgebrochen (belegt am 2026-08-08). Die Zeile schwächt nichts ab: sie sagt
-        # ausdrücklich, was hier ohnehin gilt — dieser Lauf ist offline.
-        env:
-          HELMUT_SOURCE_MODE: "off"
-        run: node scripts/run-offline-tests.js
-
       - name: psql bereitstellen (Voraussetzung des Datenbanknachweises)
         # Das ubuntu-latest-Image bringt psql heute mit — aber GitHub darf den Umfang
         # jederzeit ändern, und seit der Nachweis fail-closed ist, würde ein fehlendes
@@ -129,6 +112,36 @@ jobs:
           tar -xJf /tmp/postgrest.tar.xz -C /tmp
           /tmp/postgrest --version
 
+      # Der echte Registrierungsnachweis kommt vor den laengeren Suiten, damit
+      # Fehler im neuen Datenbankpfad sofort sichtbar sind. Alle bisherigen
+      # Pflichtschritte bleiben im selben blockierenden Job erhalten.
+      - name: Kontoschreibschutz und 500 Registrierungen gegen PostgreSQL und PostgREST
+        timeout-minutes: 3
+        env:
+          HELMUT_TEST_PG_HOST: "127.0.0.1"
+          HELMUT_TEST_PG_PORT: "5433"
+          HELMUT_TEST_PG_USER: "helmut"
+          HELMUT_TEST_POSTGREST_BIN: "/tmp/postgrest"
+          PGPASSWORD: "helmut"
+        run: node scripts/lokal.js scripts/auth-store-cas-datenbank-test.js
+
+      - name: Offline-Testsuiten (ohne Netz/DB/LLM/Secrets)
+        # Der Runner erzwingt Offline technisch: jede Suite läuft mit einem
+        # --require-Netz-Guard (blockt http/https/fetch auf Nicht-Localhost)
+        # und NO_NETWORK_TESTS=1. browser-smoke-test.js darf hier mangels
+        # Playwright SKIPpen (HELMUT_OFFLINE_TEST=1) — die Browser-Pflicht
+        # liegt beim browser-smoke-Job unten (dort fail-closed).
+        #
+        # HELMUT_SOURCE_MODE=off ist seit dem lokalen Production-Schutz PFLICHT
+        # (scripts/lokaler-netzschutz.js, Bedingung 5). Der Schutz bricht fail closed ab,
+        # wenn der Quellenmodus nicht eindeutig "off" ist — im CI war er bisher gar nicht
+        # gesetzt. Ohne diese Zeile hätte der Schutz das gesamte Merge-Gate mit Exit 3
+        # abgebrochen (belegt am 2026-08-08). Die Zeile schwächt nichts ab: sie sagt
+        # ausdrücklich, was hier ohnehin gilt — dieser Lauf ist offline.
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        run: node scripts/run-offline-tests.js
+
       - name: Z22-Datenbanknachweis §1–§11 gegen echte PostgreSQL + echtes PostgREST (fail-closed)
         # WARUM EIN EIGENER SCHRITT: Der Nachweis braucht eine echte PostgreSQL. In
         # run-offline-tests.js lief er nur als stiller SKIP mit (Exit 0 = PASS) und
@@ -163,15 +176,6 @@ jobs:
           PGPASSWORD: "helmut"
         run: node scripts/lokal.js scripts/vorbedingung-mandatsfilter-datenbank-test.js
 
-      - name: Kontoschreibschutz und 500 Registrierungen gegen PostgreSQL und PostgREST
-        timeout-minutes: 3
-        env:
-          HELMUT_TEST_PG_HOST: "127.0.0.1"
-          HELMUT_TEST_PG_PORT: "5433"
-          HELMUT_TEST_PG_USER: "helmut"
-          HELMUT_TEST_POSTGREST_BIN: "/tmp/postgrest"
-          PGPASSWORD: "helmut"
-        run: node scripts/lokal.js scripts/auth-store-cas-datenbank-test.js
 
   browser-smoke:
     name: Browser-/Mobile-Smoke (Chromium)

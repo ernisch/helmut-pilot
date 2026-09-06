@@ -12,6 +12,7 @@ const originalFetch = globalThis.fetch;
 let blob;
 let calls;
 let conflictOnce;
+let conflictSequence;
 let loseReply;
 let malformedRead;
 let passed = 0;
@@ -32,9 +33,10 @@ globalThis.fetch = async (url, options = {}) => {
   const prefer = String(options.headers.Prefer || "");
   if (method === "PATCH") {
     assert.equal(u.searchParams.get("id"), "eq.main-auth");
-    if (conflictOnce) {
+    if (conflictOnce || conflictSequence > 0) {
       conflictOnce = false;
-      blob = { ...blob, _authStoreRevision: "11111111-1111-4111-8111-111111111111", systemErrors: [{ id: "peer" }] };
+      conflictSequence = Math.max(0, conflictSequence - 1);
+      blob = { ...blob, _authStoreRevision: require("node:crypto").randomUUID(), systemErrors: [{ id: "peer" }] };
     }
     const expected = u.searchParams.get("data->>_authStoreRevision");
     const current = blob?._authStoreRevision;
@@ -55,7 +57,7 @@ function user(i, extra = {}) {
 }
 async function check(name, run) {
   blob = { users: [], adminSettings: { existing: "preserve" } };
-  calls = []; conflictOnce = false; loseReply = false; malformedRead = false;
+  calls = []; conflictOnce = false; conflictSequence = 0; loseReply = false; malformedRead = false;
   try { await run(); passed += 1; console.log(`PASS  ${name}`); }
   catch (error) { failed += 1; console.error(`FAIL  ${name}: ${error.message}`); }
 }
@@ -86,6 +88,28 @@ async function check(name, run) {
       assert.equal(blob.users.length, 1);
       assert.deepEqual(blob.systemErrors, [{ id: "peer" }]);
       assert.equal(calls.filter((c) => c.method === "PATCH").length, 2);
+    });
+    await check("Fortgesetzte Konfliktfolge innerhalb der Eingangsfrist gibt nicht nach 16 Versuchen auf", async () => {
+      conflictSequence = 17;
+      const result = await accounts.createUser(user(1));
+      assert.equal(blob.users.length, 1);
+      assert.equal(blob.users[0].id, result.id);
+      assert.deepEqual(blob.systemErrors, [{ id: "peer" }]);
+      assert.equal(calls.filter((c) => c.method === "PATCH").length, 18);
+    });
+    await check("Nach Ablauf der Eingangsfrist wird kein Schreibversuch gestartet", async () => {
+      const transport = globalThis.fetch;
+      const clock = Date.now;
+      globalThis.fetch = async (...args) => {
+        const result = await transport(...args);
+        Date.now = () => clock() + 31000;
+        return result;
+      };
+      try {
+        await assert.rejects(accounts.createUser(user(1)), { statusCode: 503 });
+        assert.equal(blob.users.length, 0);
+        assert.equal(calls.filter((c) => c.method !== "GET").length, 0);
+      } finally { Date.now = clock; globalThis.fetch = transport; }
     });
     await check("Registrierung, Sitzungen, Audit und Kostenbelege verdrangen einander nicht", async () => {
       const results = await Promise.all(Array.from({ length: 50 }, async (_, i) => {

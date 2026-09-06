@@ -137,8 +137,9 @@ async function main() {
     // Kein Prozess bleibt als Schreiber zurueck, waehrend die Testdatenbank faellt.
     const runs = await Promise.allSettled(Array.from({ length: 5 }, (_, index) => startRegistrationWorker({ base, token, index })));
     const rejected = runs.find((r) => r.status === "rejected");
-    if (rejected) throw rejected.reason;
     const counts = psql(`select count(*)||'|'||count(distinct u->>'id')||'|'||count(distinct u->>'email')||'|'||count(distinct u->>'politicianId')||'|'||count(*) filter (where u->>'active'='true') from public.helmut_store s cross join lateral jsonb_array_elements(s.data->'users') u where s.id='main-auth'`);
+    console.log(`SQL Bestand: Konten|eindeutige IDs|Adressen|Mandatskennungen|aktiv = ${counts}`);
+    if (rejected) throw rejected.reason;
     assert.equal(counts, "500|500|500|500|0");
     assert.equal(JSON.parse(psql("select data->'adminSettings' from public.helmut_store where id='main-auth'")).baseline, 2);
     console.log("PASS  500 von 500 Konten nach fuenf unabhaengigen Prozessen vollstaendig und eindeutig gespeichert");
