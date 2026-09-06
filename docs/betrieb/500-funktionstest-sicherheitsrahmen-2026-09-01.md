@@ -5556,3 +5556,84 @@ Vollständige Storeprüfung um 21:48:41 UTC: `pushEvents` in allen zehn betroffe
 Nächster natürlicher Lage Check laut unverändertem Cronplan: **06.09. 13:00 Türkei / 12:00 Berlin / 10:00 UTC**, nur geplanter Termin. Keine Behauptung seiner künftigen erfolgreichen Ausführung oder Versandfreiheit. Keine Vercel Variable verändert. Vercel Metadatenzugriff funktioniert; dem getesteten Skriptausführer fehlen weiterhin sicher bereitgestellte Production Zugangsdaten und belegte Betriebsparameter. Kein Secret in Chat oder Repository, keine Zugriffsumgehung oder neuer Ersatzweg.
 
 B mit 75 und C mit 400 Profilen bleiben nicht angelegt und nicht aktiviert. Vier andere inaktive Profile bleiben unangetastet. Bis zu belegtem Ausführungszugang und erfüllten Stufenbedingungen **BLOCKIERT bei 25 aktiven Testprofilen**. Der bestehende PR [#304](https://github.com/ernisch/helmut-pilot/pull/304) dient als konsolidierter Dokumentationsnachtrag nach #305; seine eigenen Merge und Deployment Metadaten werden nach Abschluss geprüft, nicht im Voraus erfunden.
+
+## 44 · Wiederaufnahme und GitHub Zugangsprüfung (06.09.2026 Türkei)
+
+Der Betreiber bat um Wiederaufnahme des verlorenen Gesprächsanschlusses und Fortsetzung bis zum 500er Nachweis.
+Die Bedingungen aus §41 gelten fort. Grundlinie am **06.09. 02:42 Türkei / 01:42 Berlin / 05.09. 23:42 UTC**,
+in ausdrücklich lesender SQL Transaktion: 29 Profile, 25 aktiv, vier inaktiv, A 20/20, B/C null.
+`main` ist **`e0da151222eda74dbbfb89caa9b53faf0efde9ce`** nach dem Dokumentationsmerge #304.
+Production **`dpl_65VnCHYf74uDGrzykK8E4Kbx6npQ` READY**, Ziel production, Commit exakt main.
+Lokaler Checkout sauber vor dem neuen Branch; keine weitere passende offene Arbeit gefunden.
+
+**Vorbereitung auf `codex/500-github-zugangspruefung`:** `scripts/github-zugangspruefung.js` und
+`.github/workflows/500-zugangspruefung.yml`. Die bestehenden Staff Workflows und `env-inventar.md` §8
+benennen GitHub Secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` und `HELMUT_CRON_SECRET`.
+Das beweist ihre aktuelle Verfügbarkeit noch nicht. Die neue Prüfung verwendet vorhandene Secrets
+ausschließlich innerhalb des GitHub Prozesses, erstellt und exportiert keine Zugangsdaten.
+
+**Technischer Lesebeweis:** kein Import von `storage.js`, Provisionierer, Accounts, Scheduler oder KI.
+Genau ein GET auf das fest geprüfte Production Projekt, Pfad
+`/rest/v1/helmut_store?id=eq.main&select=id&limit=1`; keine RPC, kein Request Body und keine Folgerequests.
+Redirects sind verboten, die Anfrage ist auf 20 Sekunden begrenzt. Fehlende oder fremde Zielwerte führen
+vor jedem Netzaufruf zum Abbruch. Antwortinhalt und Providerfehler werden nicht ausgegeben.
+Nur ein vorhandener Eintrag mit `id=main` ergibt einen positiven Datenbankzugangsbeleg.
+Der Cron Secret Wert wird ausschließlich auf Vorhandensein geprüft und nie verwendet oder ausgegeben.
+
+**Warum keine vorhandene Helmut Statusroute:** `server.js` ruft im Account Vorlauf
+`accounts.ensureAdminSeed()` auf; `/api/cron/pipeline-status` gelangt über `getLatestCrawlRun()` zu
+`readSupabaseStore()`, das bei fehlender Zeile `writeSupabaseStore()` aufruft. Ein GET oder der Kommentar
+„rein lesend“ belegt daher keinen technisch schreibfreien Pfad. Diese Route wurde hier nicht aufgerufen.
+Der bisherige 403 Beleg bestätigt nur die damalige fehlende Autorisierung, keinen allgemeinen Lesebeweis.
+
+**Workflow Umfang:** manuell sowie ein enger Push Trigger nur für diesen Vorbereitungsbranch und die
+beiden Ausführungsdateien. Kein Zeitplan, keine Secrets auf Pull Request Ereignissen, keine Fork Ausführung,
+keine Git Schreibrechte im Checkout, kein Modellkey, keine Freigabeflags, drei Minuten Jobgrenze.
+Die Prüfung darf weder eine Kohorte aktivieren noch den geprüften Kohortenausführer ersetzen.
+Ein grüner Zugang belegt weder gültiges Cron Secret noch wirksame Production Betriebswerte, Kostenriegel,
+Kommunikationssperre, A Abnahme oder 500 aktive Profile.
+
+**Gezielte Offline Prüfung:** `node scripts/lokal.js -- node scripts/github-zugangspruefung-test.js`:
+**37 PASS / 0 FAIL**, einschließlich falschem Ziel, Redirects, fehlenden Secrets, leerer Datenbankantwort,
+Providerfehlern ohne Secret Ausgabe und CLI Abbruch bei jedem zusätzlichen Argument.
+Vollständige lokale und externe Prüfungen sowie GitHub Ausführung stehen zu diesem Vorbereitungsstand aus.
+Keine Production Änderung, kein Fachlauf, kein neuer Modellverbrauch, keine Zustellung, keine Vercel Änderung.
+
+**Fortsetzung:** ersten GitHub Zugangsbeleg abwarten; danach die konkret fehlenden Zugänge und
+Betriebswerte klären. Der bestehende GitHub Connector hat in dieser Sitzung keinen allgemeinen
+`workflow_dispatch` Aufruf. Manuelle spätere Schritte können daher einen Start über GitHub durch den
+Betreiber brauchen; der enge erste Push Trigger führt ausschließlich diesen reinen Leser aus.
+Status: **teilweise abgeschlossen**, 500er Funktionsnachweis weiterhin **blockiert bei 25 aktiven Profilen**.
+
+### 44.1 Erster GitHub Ausführungsbeleg und ergänzte Laufzeitdiagnose
+
+GitHub Lauf **[33999766780](https://github.com/ernisch/helmut-pilot/actions/runs/33999766780)** am Commit
+**`bce11567c4d4dc3c7713845d4517b0cc8b08e172`** ist erfolgreich, Job `101396409325`, Node 22.23.2.
+Prüfzeit **06.09. 02:51:35 Türkei / 01:51:35 Berlin / 05.09. 23:51:35 UTC**.
+Supabase Production Ziel und vorhandene Zeile `main` bestätigt. Alle drei genannten Secrets vorhanden.
+Alle sieben im Bericht genannten GitHub Betriebswerte fehlen. Cron Secret nicht verwendet; kein
+Modellaufruf, kein Schreibaufruf. Nachkontrolle 23:58 UTC: weiterhin 29/25 Profile, B/C null, Tageszähler 124.
+Damit ist ein geschützter GitHub Ausführungsprozess bewiesen, kein vollständiger Kohortenpfad.
+
+Die angemeldete GitHub Browseransicht zeigt den erfolgreichen Lauf sowie seine Bedienaktionen.
+Der fehlende allgemeine Dispatch Aufruf im Connector ist daher kein Beleg, dass ein manueller Workflow
+nicht bedienbar ist. Der neue Workflow wird erst nach seinem Merge auf main manuell verfügbar.
+
+Zur belegten Lücke der alten Statusroute wurde `GET /api/cron/testnachweis-status` ergänzt:
+vor dem Account Vorlauf, bestehende Cron Autorisierung, ausschließlich reine Konfigurationsfunktionen.
+Antwort nur Versionsnummer, verifizierbarer Commit, Production Kennzeichnung, boolesche Speichermerkmale,
+wirksame Aufrufgrenze, Understanding Reserve, gültige Aufbewahrung und globaler Kommunikationsmodus.
+Keine Datenbankabfrage, kein Adminseed, keine freie Variable, kein Secret, keine Modellarbeit.
+Auch Fehlantworten passieren keinen schreibenden Auditpfad. Andere HTTP Methoden ergeben 405.
+
+`scripts/github-laufzeitpruefung.js` ruft nur diese feste Route auf, ohne Redirects und mit Zeitgrenze.
+Er verlangt einen separat als READY bestätigten vollständigen Production Commit identisch zu `GITHUB_SHA`;
+Antwortcommit und Production Kennzeichnung müssen ebenfalls stimmen. Ausgaben sind typgeprüft und auf
+eine feste Feldliste begrenzt. Im Workflow ist dies ein ausdrücklich gewählter **manueller** Leseschritt,
+nie Teil des ersten Push Lesers. Vorher muss das genaue Deployment unabhängig bestätigt sein, damit
+kein alter, noch nicht um diese Route ergänzter Server angesprochen wird.
+
+Gezielter Beleg: **24 PASS / 0 FAIL**. Echter HTTP Handler mit Account Modus und Schreibspionen:
+Erfolg, fehlendes/falsches Cron Secret, falsche Methode und absichtlich fehlerhafte Budgetfunktion;
+Adminseed, Blobleser und Fehlerpersistierung in allen Fällen **null Aufrufe**.
+Vollständige Prüfungen, Merge und tatsächlicher Production Laufzeitabruf stehen noch aus.
