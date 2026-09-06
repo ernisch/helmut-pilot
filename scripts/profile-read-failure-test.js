@@ -56,6 +56,13 @@ async function check(name, run) {
     await check("Cron meldet Ladestoerung statt erfolgreichem Leerlauf", async () => {
       assert.deepEqual(await tenantContext.resolveCronTenants(), { tenantIds: [], reason: "mandanten-liste-nicht-ladbar" });
     });
+    // Der Request-Pfad ohne Account-Session teilt sich denselben Leser. Er darf bei
+    // einer Ladestoerung KEINEN Mandanten raten — auch dann nicht, wenn einer
+    // ausdruecklich angefragt wurde (Production-Beleg 06.09., SR Paragraf 48).
+    await check("Request-Pfad raet bei Ladestoerung keinen Mandanten", async () => {
+      assert.deepEqual(await tenantContext.resolveActiveTenant({ requested: "local-test" }),
+        { tenantId: "", activeIds: [], reason: "mandanten-liste-nicht-ladbar" });
+    });
     status = 200;
     for (const invalid of [null, { message: "keine auswertbare Antwort" }]) {
       payload = invalid;
