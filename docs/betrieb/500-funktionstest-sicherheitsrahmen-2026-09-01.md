@@ -5637,3 +5637,59 @@ Gezielter Beleg: **24 PASS / 0 FAIL**. Echter HTTP Handler mit Account Modus und
 Erfolg, fehlendes/falsches Cron Secret, falsche Methode und absichtlich fehlerhafte Budgetfunktion;
 Adminseed, Blobleser und Fehlerpersistierung in allen Fällen **null Aufrufe**.
 Vollständige Prüfungen, Merge und tatsächlicher Production Laufzeitabruf stehen noch aus.
+
+### 44.2 Geprüfter Merge #306, Production READY und verweigerter manueller Start
+
+**Abschlussbefund 06.09.2026, 03:28 Türkei / 02:28 Berlin / 00:28 UTC.**
+Der GitHub Ausführungszugang ist teilweise hergestellt. Der 500er Funktionsnachweis bleibt bei
+25 aktiven Profilen blockiert; die neue Statusroute wurde noch nicht gegen Production aufgerufen.
+
+**Prüfung und Merge:** Der exakte Kopf `b0cbd38eff05505215bef29171012d61525aadf9` besteht in einem
+frischen isolierten Checkout mit Playwright 1.56.1 **323/323 Offline Suiten in 638 Sekunden**.
+Browserprüfung **32/32**, gezielte Leserprüfungen **37 und 24 PASS**. Frühere lokale Zwischenläufe
+waren nicht grün: zunächst fehlendes Chromium, lokaler Auth Testbestand und der bestehende
+Wanduhrvergleich des Quellenabrufs. Diese betroffenen Tests bestehen unverändert im Abschlusslauf.
+Kein Test wurde entfernt oder abgeschwächt. Der Netzschutz blockierte einen Nicht Localhost Versuch
+des vorhandenen `pardok-shadow-test`; der kanonische Runner endete mit Exit 0.
+
+GitHub CI **[34000726276](https://github.com/ernisch/helmut-pilot/actions/runs/34000726276)** ist am selben
+Kopf erfolgreich, einschließlich beider Pflichtjobs und des echten Datenbanknachweises. Vercel
+Vorschau `dpl_6ZPCeHcBrAV5QLbd7dXUVpsu6RoP` READY; keine Reviews oder offenen Review Threads.
+Auch der zweite reine GitHub Datenbankleselauf **34000222331** war erfolgreich.
+
+[PR #306](https://github.com/ernisch/helmut-pilot/pull/306) wurde unter der bestehenden Freigabe aus §41
+mit erwartetem Kopf und echtem Merge Commit übernommen:
+`cfd18b20019b811b775371d9c11ddb2b6f5f5ba4`, Eltern `e0da151222eda74dbbfb89caa9b53faf0efde9ce` und
+`b0cbd38eff05505215bef29171012d61525aadf9`. Mergezeit **03:24:02 Türkei / 02:24:02 Berlin / 00:24:02 UTC**.
+Das automatische Deployment **`dpl_3NGtMs7AtsDK8zPQZKKaXdBAp2Gt`** ist unabhängig als **READY**, target
+`production`, am exakten Merge Commit bestätigt; Alias `helmut-pilot.vercel.app` zugeordnet.
+Keine Vercel Variable geändert, kein Deploymentfehler, kein Wiederholungsversuch und kein Rollback.
+
+**Konkrete Sperre:** Im angemeldeten GitHub Browser wurde das manuelle Startformular vorbereitet:
+Branch `main`, `laufzeit_status=true`, `production_commit` auf den separat bestätigten Merge gesetzt.
+Der letzte Klick auf **Run workflow** wurde von der automatischen Freigabeprüfung verweigert.
+Als Grund nennt sie fehlende ausdrückliche Bestätigung zum Aktionszeitpunkt für den manuellen
+Workflow mit Production Zugangsdaten, auch bei rein lesender Absicht und verifiziertem Commit.
+Das Formular blieb ungesendet. Die Actions Liste am Merge zeigt ausschließlich den normalen CI Pushlauf,
+keinen manuellen Statuslauf. Eine gezielte Suche nach einer zusätzlichen direkten Nutzerfreigabe
+speziell für diesen neuen GitHub Start ergab keinen weiteren belastbaren Beleg.
+Kein Wiederholungsversuch, kein anderer Trigger und keine Änderung von Schutzregeln als Umgehung.
+
+**Rein lesende Nachkontrolle 00:28:15 UTC:** 29 Mandatsprofile, 25 aktiv, vier inaktiv, null Löschmarken;
+B/C jeweils null; 30 Identitätsprofile, 25 Auth Konten, drei aktiv, `crawlRuns` 20. Keine Profil oder
+Kontoaktion dieser Sitzung. Im UTC Tag seit 00:00 keine neuen Modellprotokolle. Die letzte bezifferte
+Messung des Vortags umfasst 118 Aufrufe, geschätzt 0,385127 USD bis etwa 21:45 UTC;
+keine vollständigen Betriebskosten oder Providerrechnung. A um 00:18:53 UTC: 19 Quellenaufträge
+erledigt, ein Abruf sowie 20 Projektionen und 20 Briefings wartend, sämtlich im Fenster `2026-09-05T00Z`.
+
+**Fortsetzung:** ausdrückliche Bestätigung für genau einen manuellen rein lesenden Workflow Start
+einholen. Vor diesem Klick main und sein Production READY frisch abgleichen; nach einem weiteren
+Dokumentationsmerge muss das Eingabefeld den dann aktuellen Commit tragen. Der Workflow macht einen
+festen Supabase GET auf die vorhandene Zeile und einen festen GET auf die neue Konfigurationsroute,
+ohne Modell, Fachlauf oder Datenänderung. Erst mit erfolgreichem Bericht Betriebswerte auswerten und
+den geschützten Kohortenprozess fertig vorbereiten. A Fachbeleg, Kommunikation, Kosten und stufenweise
+B/C Bedingungen bleiben verpflichtend. Die allgemeine Betreiberfreigabe aus §41 wird dadurch nicht
+neu erfunden oder erweitert; die zusätzliche Bestätigung ist durch die automatische Prüfung verlangt.
+
+Dieser Nachtrag aktualisiert ausschließlich Dokumentation nach dem erfolgten Code Merge.
+Sein eigener Merge Commit und Deploymentbeleg folgen aus der Historie; kein rekursiver Folge PR.
