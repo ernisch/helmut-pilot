@@ -5938,8 +5938,8 @@ keine Migration und keine Umgebungsvariable nötig.
 Registrierung, Kontoänderung, Sitzungserstellung, Passwortlinks, Passwortsetzen, Loginzähler,
 Audit, Fehlerprotokoll und der Kostenbeleg wenden ihre Änderung auf einem frischen Stand an.
 Pro Instanz werden diese Änderungen geordnet, zwischen Instanzen schützt die Datenbankbedingung.
-Nur bestätigte Versionskonflikte werden begrenzt erneut gelesen, höchstens acht Versuche mit
-Rückstau und einer Frist von 30 Sekunden ab Eingang. Unklarer Schreibausgang oder Netzwerkfehler
+Nur bestätigte Versionskonflikte werden begrenzt erneut gelesen, höchstens 16 Versuche mit
+verteilter Wartezeit und einer Frist von 30 Sekunden ab Eingang. Unklarer Schreibausgang oder Netzwerkfehler
 wird niemals blind wiederholt. Andere Auth Schreiber haben ebenfalls CAS Schutz; ein Konflikt
 wird dort als Fehler weitergegeben, nicht automatisch fachlich wiederholt. Der alte Pipeline
 Sperrpfad darf einen Konflikt oder Datenbankfehler nicht mehr als erworbene Sperre behandeln.
@@ -5975,3 +5975,29 @@ Mandatsprofil noch Personalisierung, Fachzyklus oder langfristigen 500er Betrieb
 Nach belegter Datenbankerholung folgen frische Bestands und Kostenprüfung, vollständige Abnahme
 von A mit 25 Profilen, dann die separat freigegebenen Schritte B und C im tatsächlichen Nachtfenster.
 500 funktionierende Mandate sind weiter offen. Keine Konto oder Profilaktivierung dieser Sitzung.
+
+
+**Erster tatsächlicher CI Versuch:** Kopf `5b1ffe18638f90e90e2ca472d838f219c3bc1b61`
+besteht auch lokal vollständig mit **327/327 Suiten, Exit 0**, 06.09. von 13:50:08 bis 13:57:45
+Türkei / 12:50:08 bis 12:57:45 Berlin / 10:50:08 bis 10:57:45 UTC, 457 Sekunden.
+[CI 34028508579](https://github.com/ernisch/helmut-pilot/actions/runs/34028508579) besteht
+327/327 Offline Suiten in 542 Sekunden, Browser und 48/48 bestehende echte Datenbankprüfungen.
+Der neue echte JSONB Vergleich schützt den Altbestand und verweigert den veralteten Schreiber.
+Die fünf Registrierungsprozesse starten jedoch mit Exit 3 nicht: `NODE_OPTIONS` lädt den Netzschutz
+schon vor `lokal.js`; die vom Test erzeugten lokalen Supabase Werte lagen zu früh in ihrer Umgebung.
+Der Gesamtlauf ist deshalb **fehlgeschlagen**, kein 500er Datenbankbeleg und kein Merge.
+
+Die Korrektur entfernt die zentral gelisteten Zugangsnamen bereits vor dem Start des ersten
+Kindprozesses. Der Netzschutz bleibt in beiden Prozessen geladen. Nur die ausdrücklich lokale
+Testadresse und der erzeugte Testwert werden nach geschütztem Start für den Anwendungstest gesetzt.
+Ein zusätzlicher Offline Verhaltenstest startet genau diesen getrennten Prozess gegen einen lokalen
+HTTP Ersatz und bestätigt zunächst 100 gespeicherte inaktive Konten. Die Erweiterung auf
+fünf Prozesse mit insgesamt 500 Konten deckt zusätzlich ein zu frühes Aufgeben auf: ein Prozess
+speichert nur 99 von 100 Konten und meldet `AUTH_STORE_CONFLICT`. Der kurze Rahmen mit acht
+Versuchen und sehr geringer Streuung wird deshalb auf höchstens 16 Versuche mit breiter
+Streuung und unveränderter Gesamtfrist von 30 Sekunden korrigiert. Die strengere Prüfung
+besteht danach mit **11 PASS / 0 FAIL**, 500 gespeicherten Konten aus fünf getrennten Prozessen
+über echten lokalen HTTP Verkehr; der Transportersatz beweist noch keine PostgreSQL Semantik. Der Test wartet auf alle fünf Prozesse, bevor er seine Testdatenbank entfernt.
+Die Startkorrektur schaltet keinen Schutz ab; die Konfliktkorrektur erweitert nur den begrenzten
+Wiederholungsrahmen. Produktionsrechte bleiben unverändert. Der erneute
+vollständige Datenbanknachweis bleibt bis zum tatsächlichen erfolgreichen Abschluss offen.

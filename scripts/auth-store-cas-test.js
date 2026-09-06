@@ -145,6 +145,37 @@ async function check(name, run) {
       await accounts.createUser(user(2));
       assert.equal(blob.users.length, 2, "ein Fehler blockiert die naechste Kontoanlage nicht");
     });
+    await check("Fuenf getrennte Prozesse speichern mit Netzschutz 500 Konten", async () => {
+      const http = require("node:http");
+      const { once } = require("node:events");
+      const { startRegistrationWorker } = require("./auth-store-cas-datenbank-test");
+      const server = http.createServer(async (req, res) => {
+        try {
+          let body = "";
+          for await (const chunk of req) body += chunk;
+          const answer = await globalThis.fetch(`https://example.invalid${req.url}`, {
+            method: req.method, body: body || undefined,
+            headers: { Prefer: req.headers.prefer || "" }
+          });
+          res.writeHead(answer.status, { "Content-Type": "application/json" });
+          res.end(await answer.text());
+        } catch (_) { res.writeHead(500); res.end("{}"); }
+      });
+      server.listen(0, "127.0.0.1");
+      await once(server, "listening");
+      try {
+        const base = `http://127.0.0.1:${server.address().port}`;
+        const results = await Promise.allSettled(Array.from({ length: 5 }, (_, index) =>
+          startRegistrationWorker({ base, token: "nur-lokaler-testwert", index })));
+        const failure = results.find((r) => r.status === "rejected");
+        if (failure) throw failure.reason;
+        assert.ok(results.every((r) => r.value.includes('"successful":100')));
+        assert.equal(blob.users.length, 500);
+        assert.equal(new Set(blob.users.map((u) => u.email)).size, 500);
+        assert.equal(new Set(blob.users.map((u) => u.politicianId)).size, 500);
+        assert.ok(blob.users.every((u) => u.active === false));
+      } finally { await new Promise((resolve) => server.close(resolve)); }
+    });
   } finally { globalThis.fetch = originalFetch; }
   console.log(`\n${passed} PASS, ${failed} FAIL`);
   process.exitCode = failed ? 1 : 0;

@@ -31,6 +31,36 @@ async function worker() {
   if (failures.length) process.exitCode = 1;
 }
 
+function startRegistrationWorker({ base, token, index }) {
+  assert.equal(new URL(base).hostname, "127.0.0.1");
+  assert.ok(Number.isInteger(index) && index >= 0 && index < 5);
+  // NODE_OPTIONS laedt den Netzschutz bereits VOR lokal.js. Deshalb duerfen
+  // selbst die generierten lokalen Supabase Testwerte nicht in dessen erster
+  // Prozessumgebung liegen. Der Schutz bleibt fuer beide Prozesse aktiv.
+  const env = { ...process.env, HELMUT_STORAGE_BACKEND: "local",
+    HELMUT_TEST_AUTH_CAS_URL: base, HELMUT_TEST_AUTH_CAS_KEY: token };
+  for (const name of require("./lokaler-netzschutz").PRODUCTION_KENNUNGEN) delete env[name];
+  delete env.HELMUT_V3_STORE;
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [path.join(__dirname, "lokal.js"), __filename, "worker", String(index)], {
+      env, stdio: ["ignore", "pipe", "pipe"]
+    });
+    let output = "";
+    let diagnostics = "";
+    child.stdout.on("data", (chunk) => { output += chunk; });
+    child.stderr.on("data", (chunk) => { diagnostics += chunk; });
+    child.once("error", reject);
+    child.once("exit", (code) => {
+      if (code === 0) resolve(output);
+      else {
+        // Nur die Fehlerklasse nennen. Ein Rohlog kann Testtokens tragen.
+        const guard = /LOKAL|NETZ|PRODUCTION/i.test(diagnostics) ? " (lokaler Schutz)" : "";
+        reject(new Error(`Registrierungsprozess ${index} meldet Exit ${code}${guard}: ${output.slice(-300)}`));
+      }
+    });
+  });
+}
+
 async function main() {
   const host = process.env.HELMUT_TEST_PG_HOST;
   assert.ok(host === "127.0.0.1" || host === "localhost", "HELMUT_TEST_PG_HOST muss auf einen lokalen Testcluster zeigen");
@@ -48,7 +78,6 @@ async function main() {
   psql(`create database ${db}`, "postgres");
   let api;
   let gateway;
-  const children = [];
   try {
     psql("do $$ begin if not exists (select 1 from pg_roles where rolname='service_role') then create role service_role nologin bypassrls; end if; end $$;");
     psql("create table public.helmut_store(id text primary key, data jsonb not null); grant usage on schema public to service_role; grant select, insert, update on public.helmut_store to service_role;");
@@ -104,22 +133,11 @@ async function main() {
     assert.equal(JSON.parse(psql("select data->'adminSettings' from public.helmut_store where id='main-auth'")).baseline, 2);
     console.log("PASS  Echter JSONB Vergleich verweigert veraltetes Schreiben auf den Altbestand");
 
-    const runs = Array.from({ length: 5 }, (_, i) => new Promise((resolve, reject) => {
-      const child = spawn(process.execPath, [path.join(__dirname, "lokal.js"), __filename, "worker", String(i)], {
-        env: { ...process.env, HELMUT_TEST_AUTH_CAS_URL: base, HELMUT_TEST_AUTH_CAS_KEY: token },
-        stdio: ["ignore", "pipe", "pipe"]
-      });
-      children.push(child);
-      let output = "";
-      child.stdout.on("data", (chunk) => { output += chunk; });
-      child.stderr.resume();
-      child.once("error", reject);
-      child.once("exit", (code) => {
-        if (code === 0) resolve(output);
-        else reject(new Error(`Registrierungsprozess ${i} meldet Exit ${code}: ${output.slice(-300)}`));
-      });
-    }));
-    await Promise.all(runs);
+    // Alle Prozesse abschliessen lassen, auch wenn einer einen Fehler meldet.
+    // Kein Prozess bleibt als Schreiber zurueck, waehrend die Testdatenbank faellt.
+    const runs = await Promise.allSettled(Array.from({ length: 5 }, (_, index) => startRegistrationWorker({ base, token, index })));
+    const rejected = runs.find((r) => r.status === "rejected");
+    if (rejected) throw rejected.reason;
     const counts = psql(`select count(*)||'|'||count(distinct u->>'id')||'|'||count(distinct u->>'email')||'|'||count(distinct u->>'politicianId')||'|'||count(*) filter (where u->>'active'='true') from public.helmut_store s cross join lateral jsonb_array_elements(s.data->'users') u where s.id='main-auth'`);
     assert.equal(counts, "500|500|500|500|0");
     assert.equal(JSON.parse(psql("select data->'adminSettings' from public.helmut_store where id='main-auth'")).baseline, 2);
@@ -127,7 +145,6 @@ async function main() {
     console.log("PASS  Konten bleiben inaktiv und vorhandene Betriebsdaten bleiben erhalten");
     console.log(`PostgreSQL ${version}: 3 PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
   } finally {
-    for (const child of children) if (child.exitCode == null) child.kill("SIGTERM");
     if (api && api.pid && api.exitCode == null) {
       const ended = once(api, "exit").catch(() => {});
       api.kill("SIGTERM");
@@ -138,7 +155,10 @@ async function main() {
   }
 }
 
-(process.argv[2] === "worker" ? worker() : main()).catch((error) => {
-  console.error(`FAIL  ${error.message}`);
-  process.exitCode = 1;
-});
+module.exports = { startRegistrationWorker };
+if (require.main === module) {
+  (process.argv[2] === "worker" ? worker() : main()).catch((error) => {
+    console.error(`FAIL  ${error.message}`);
+    process.exitCode = 1;
+  });
+}
