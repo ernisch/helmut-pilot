@@ -97,6 +97,13 @@ check("Unbekannte Kosten werden mit Reserve statt mit null bewertet", () => {
   assert.strictEqual(b.unbekannteKosten, 1);
   assert.strictEqual(b.prognoseUsd, 2.05);
 });
+check("Historischer Modellplatzhalter gilt nur als reservierte Kostenlücke", () => {
+  const erlaubt = G.kostenBefund({ llmUsage: [{ createdAt: `${TAG}T22:00:00Z`,
+    model: "none", estimatedCost: null }] }, 1, TAG);
+  assert.strictEqual(erlaubt.prognoseUsd, 2.05);
+  assert.throws(() => G.kostenBefund({ llmUsage: [{ createdAt: `${TAG}T22:00:00Z`,
+    model: "none", estimatedCost: 0.01 }] }, 1, TAG));
+});
 check("Eine unvollständige Pflichtklasse wird abgewiesen", () => {
   assert.throws(() => G.bestandAusJobs(jobs().slice(1), FENSTER));
 });
@@ -131,5 +138,5 @@ check("Eine unvollständige Pflichtklasse wird abgewiesen", () => {
     assert.strictEqual(falscheZeit.ausgeloest, false);
     assert.strictEqual(falscheZeit.grund, "a-fachzyklus-ausserhalb-des-heutigen-sicheren-fensters");
   });
-  console.log(`\n${pass}/6 Prüfungen erfolgreich.`);
+  console.log(`\n${pass}/7 Prüfungen erfolgreich.`);
 })().catch((error) => { console.error(error); process.exitCode = 1; });

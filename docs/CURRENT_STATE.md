@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 06.09.2026, 22:22 UTC. Sprint BLOCKIERT; Wiederanlauf und Lage 25/25 belegt.** main `f8374d1f`, Production READY, Supabase gesund, Bestand **29/25/4**. Azure: **2 Mio. TPM gesamt, 250.000 TPM zugeteilt**. **A offen:** elf Aufträge und Tageszähler 92. Understanding 21:30 UTC: 17 verarbeitet, ein Modelltimeout, kein endgültiger Auftragsfehler. B/C unangelegt. [Belege: SR §53–§54](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+**Stand: 06.09.2026, 23:18 UTC. Sprint BLOCKIERT; Wiederanlauf und Lage 25/25 belegt.** main `7523c3b2`, Production READY, Supabase gesund, Bestand **29/25/4**. Azure: **2 Mio. TPM gesamt, 250.000 TPM zugeteilt**. **A offen:** elf Aufträge und Tageszähler 92. Der erste manuelle Vorlauf stoppte vor Production an einem historischen Modellplatzhalter; Bestand und Kosten unverändert. Korrektur in Prüfung, B/C unangelegt. [Belege: SR §53–§54](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 
 **Kernlage:** Warteschlangenmotor seit 23.08. in Production `on`, Dispatch `shadow` (Cron-Antrieb, kein AWS). Fünferbeleg mit 376 Abschlüssen: [OP-30 §30.7](betrieb/op30-aktivierung-5-mandate.md). **Aktuell vier historische Vorgänge `unbekannt`, jüngste Änderung 02.09., 11:33 UTC; keine neue unbekannte Reservierung nach Wiederanlauf.** Selbstweck in Production nie ausgeführt.
 
@@ -12,6 +12,7 @@
 
 - **Fachlich wirksamer Kopf:** `a059f27d` aus [#320](https://github.com/ernisch/helmut-pilot/pull/320), lokal **331/331**, Browser **40/40**, PR und main CI grün, Lage Workflow erfolgreich (§53).
 - **Aktueller main:** `f8374d1feeb10d1354e49d128f2ff5616a64b7db` aus #321. Production `dpl_CP7hjW9nk5NpMZ4wa63jWibH8uhm` **READY** am exakten Kopf; main CI `34060448468` grün. Keine offenen Pull Requests um 22:21 UTC.
+- **Nachtrag:** #322 gemergt; main `7523c3b2d8207d1c690f23e423853794a08b1fff`, Production `dpl_DFFX2Zg8f3LXeqwwaAwsYwjSm7eu` READY, PR und main CI vollständig grün.
 - **#318 (`2df5dd4`)** hält den Appstart bei Datenbankausfall frei; **#316** schützt main und p zwischen teilnehmenden Instanzen. Vollbelege und Grenzen: SR §50–§51.
 - **#310** (`b183487`) schützt den Auth Speicher mit CAS, 500 Kontoanlagen mit fünf Prozessen belegt. **#309** (`d9671a0`) brachte begrenzte Abrufe, ehrliche Profilfehler und einen Profilabruf statt 500; **#307** die unabhängigen Leser.
 - **#303** brachte Lagekapazität, Vorgangskontexte, gemeinsame Fristen und `updated_at`; kontrollierter **25er Lagebeleg jetzt erbracht** (SR §53). **#305** schützt die inaktive Kohortenanlage vor automatischer Kontolöschung und falschem Erfolg; kein Production Fehlerfall ausgelöst.
@@ -124,7 +125,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 ## 11 · Nächster Schritt
 
 1. **Azure-Beleg erledigt:** Foundry zeigt `gpt-5-mini` Global Standard mit 2 Mio. TPM gesamt und 250.000 TPM Production-Zuordnung. `BELEGTE_MESSUNGEN` wird entsprechend korrigiert.
-2. A Rest über den geschützten Fachzyklus ausführen: **eine Quelle und zehn Briefings**, alle fällig. Ein manueller GitHub-Ausführer für eine Pipeline-Scheibe wird mit allen Toren und ohne Wiederholung vorbereitet. **Tageszähler >100 fehlt.** Lage 25/25 um 20:33–20:35 UTC gilt; der Lauf um 10:00 zählt nicht.
+2. A Rest über den geschützten Fachzyklus ausführen: **eine Quelle und zehn Briefings**. Der erste Vorlauf `34066395564` stoppte vor Production, weil ein alter `model:none` Beleg ohne Kosten fälschlich als fremdes Modell galt. Die enge Korrektur lässt ihn nur als reservierte Kostenlücke zu; fremde Modelle bleiben gesperrt. **Tageszähler >100 fehlt.** Lage 25/25 gilt.
 3. Anschließend B mit 75 Profilen inaktiv anlegen, getrennt aktivieren und abnehmen; erst danach C mit 400. Vollständiges Nachtfenster laut Code: **00:36 bis 06:59 Türkei / 23:36 bis 05:59 Berlin / 21:36 bis 03:59 UTC**, Tageswechsel beachten und vor Ausführung frisch belegen. Alle Prüfungen und Grenzen in SR §41 und §43.
 4. Bei Deploymentfehler sofort stoppen, kein zweiter Versuch oder Rollback. Erst nach 500 und Abschlussdokumentation wieder Verkaufsreife und P0 Punkte bearbeiten. Ein gewöhnlicher Rückstand ist kein Grund, ohne weitere Prüfung abzubrechen.
 
