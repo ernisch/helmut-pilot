@@ -6425,3 +6425,43 @@ Die Prüfung verwendet ausschließlich lokale synthetische Daten. Kein Productio
 neue Kontoanlage, kein Fachlauf, kein Modellaufruf und keine externe Helmut Zustellung wurde ausgelöst.
 Eine schnell erreichbare Oberfläche ist weder eine wieder erreichbare Datenbank noch eine vollständige
 Abnahme der Stufen 25, 100 und 500. Deren Voraussetzungen aus §41 gelten unverändert.
+
+### §51.3 Appstart übernommen, Datenbank und Fachabnahme weiterhin blockiert
+
+**06.09.2026.** Die unterbrochene Fortsetzung ist abgeschlossen. [PR #318](https://github.com/ernisch/helmut-pilot/pull/318)
+enthält acht Dateien, 306 hinzugefügte und 24 entfernte Zeilen. Keine Konfiguration oder Migration geändert.
+
+| Prüfung | Beleg |
+|---|---|
+| Geprüfter Kopf | `51c8c265fce78a105195c628b97e229b5713b51e`, Baum `ed7750c76879ac0f3af33c76939ee09c408b2004` |
+| Lokale Pflichtprüfungen | Am obigen Kopf **330/330** Suiten in **479 Sekunden**, Exit 0; Browser **40 PASS / 0 FAIL**. Der Netzschutz bleibt aktiv. |
+| GitHub | [CI 34044437950](https://github.com/ernisch/helmut-pilot/actions/runs/34044437950): beide Pflichtjobs erfolgreich, Gesamtsuite **330/330** in **564 Sekunden** |
+| Echte Testdatenbank | PostgreSQL **17.11**, **6 PASS / 0 FAIL**, SQL Bestand **500\|500\|500\|500\|0**: 500 Konten und eindeutige IDs, Adressen und Mandatskennungen; kein Konto aktiv. Der bisherige Konkurrenzschutz und Z22 Pflichtschritt bestehen. |
+| Review und Vorschau | Keine Review Einwände oder offenen Threads; `dpl_CHEr7qSHaT8xf3gbYitnHrdXnqvu` READY am geprüften Kopf. Der direkte Browserzugang zur Vorschau verlangt eine Vercel Anmeldung und zählt nicht als sichtbarer Appnachweis. |
+| Merge | `2df5dd49908f3d170590d46fc46ccf9e69191728`, zwei Eltern: `1281c7c4361feeb8401f05beff24a1fed4e565b3` und obiger Kopf; Baum identisch mit dem geprüften Baum |
+| Production | `dpl_HzcpWQzStkAAr6ZyXi7s2xzV9NRY` **READY**, Ziel `production`, exakt obiger Merge; Hauptadresse um **19:19 Istanbul / 18:19 Berlin / 16:19 UTC** bestätigt |
+| Tatsächliche Oberfläche | GET auf `helmut-pilot.vercel.app/` liefert **HTTP 200**, beide Assetversionen `2df5dd49`. Im Browser um **19:20 Istanbul / 18:20 Berlin / 16:20 UTC** ist das Anmeldeformular sichtbar und der Splash beendet. Keine Anmeldung abgesendet. |
+
+Die einzelne reine SQL Minimalabfrage dieser Fortsetzung endet am **06.09. um 19:09 Istanbul /
+18:09 Berlin / 16:09 UTC** erneut mit `Connection terminated due to connection timeout`. Auch der
+natürliche Pipelineaufruf um 16:00 UTC meldet Datenbankzeitüberschreitungen, `erledigt=0` und
+`zustand=unbekannt`. Ein GET auf die alte Startversion um 16:06 UTC zeigt noch den früheren
+Adminvorbereitungsfehler. Diese Protokolle wurden nur gelesen; kein Fachlauf wurde ausgelöst.
+
+Die [Supabase Anleitung zu dieser SQL Zeitüberschreitung](https://supabase.com/docs/guides/troubleshooting/failed-to-run-sql-query-connection-terminated-due-to-connection-timeout)
+beschreibt Überlastung als mögliche Ursache und einen Neustart als möglichen vorläufigen Wiederanlauf.
+Die [Anleitung zum nicht lesbaren Tabellenbestand](https://supabase.com/docs/guides/troubleshooting/failed-to-retrieve-tables)
+nennt auch HTTP 522 nach einem möglichen Speicherabsturz und verlangt vor einem Neustart die Entlastung
+laufender großer Abfragen. Das sind Anbieterhinweise, **kein projektspezifischer Ursachennachweis**.
+Die hier verbundene Supabase App bietet keine Neustartfunktion oder Serverprotokollfunktion. Pausieren
+und Wiederherstellen wurden nicht als Ersatz benutzt. Neustart und Ressourcenänderung bleiben gemäß
+§41 gesondert freigabepflichtig; aktuelle Daten zu aktiven Datenbankabfragen fehlen.
+
+**Appkorrektur abgeschlossen; vollständiger 500er Betrieb weiterhin blockiert.** Nächster betrieblicher
+Schritt ist ein kontrollierter Supabase Wiederanlauf beziehungsweise eine Anbieterdiagnose. Erst nach
+erfolgreichem SQL die frische Grundlinie zu Daten, Kosten, Aufträgen und Kommunikationssperre erheben,
+dann 25 vollständig abnehmen und erst danach B und C nach §41 fortsetzen. Die letzte Grundlinie bleibt
+29 Profile, 25 aktiv, vier inaktiv. Keine Production Daten direkt geändert, keine externe Zustellung.
+
+Dieser Nachtrag erfüllt CLAUDE.md §9 nach dem Code Merge. Sein eigener Merge und Deploymentstand werden
+aus der Historie belegt und lösen keinen rekursiven Dokumentations PR aus.
