@@ -1,0 +1,56 @@
+name: "25 Testprofile: eine kontrollierte Pipeline Runde"
+
+# Kein automatischer Trigger. Genau eine Scheibe fuer die bestehende Stufe A.
+on:
+  workflow_dispatch:
+    inputs:
+      production_commit:
+        description: "Vollstaendiger unabhaengig als Production READY bestaetigter Commit"
+        type: string
+        required: true
+      naturlauf_id:
+        description: "Unabhaengig abgenommener natuerlicher Abendcrawl desselben UTC Tages"
+        type: string
+        required: true
+      bestaetigung:
+        description: "FACHZYKLUS_A_EINE_SCHEIBE_BESTAETIGT"
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: helmut-500-kontrollierte-facharbeit
+  cancel-in-progress: false
+
+jobs:
+  fachzyklus-a:
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' &&
+      github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Starttore pruefen und genau eine Pipeline Runde ausfuehren
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+          HELMUT_STORAGE_BACKEND: ${{ vars.HELMUT_STORAGE_BACKEND }}
+          HELMUT_V3_STORE: ${{ vars.HELMUT_V3_STORE }}
+          HELMUT_PROFILE_DB_MODE: ${{ vars.HELMUT_PROFILE_DB_MODE }}
+          HELMUT_CRAWL_RUN_RETENTION: ${{ vars.HELMUT_CRAWL_RUN_RETENTION }}
+          HELMUT_MAX_LLM_CALLS_PER_DAY: ${{ vars.HELMUT_MAX_LLM_CALLS_PER_DAY }}
+          HELMUT_LLM_RESERVE_UNDERSTANDING: ${{ vars.HELMUT_LLM_RESERVE_UNDERSTANDING }}
+          HELMUT_TESTLAUF_KOMMUNIKATION: ${{ vars.HELMUT_TESTLAUF_KOMMUNIKATION }}
+          HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
+          HELMUT_NATURLAUF_ID: ${{ inputs.naturlauf_id }}
+          HELMUT_FACHZYKLUS_A_CONFIRM: ${{ inputs.bestaetigung }}
+        run: node scripts/github-fachzyklus-a.js

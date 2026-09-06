@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 06.09.2026, 20:44 UTC. Sprint BLOCKIERT, Wiederanlauf und Lagebeleg 25/25 erbracht.** #320 gemergt (`a059f27d`), Production READY; Supabase Pro/Micro gesund. Natürlicher Crawl: **274 erledigt, 0 Fehler**. Kontrollierter Lage Check: **25/25 erfolgreich**, Profilbestand unverändert **29/25/4**. Codeprüfstand **331/331** Suiten, **40/40** Browserprüfungen, beide Pflichtjobs grün. **A noch nicht vollständig abgenommen:** elf Aufträge offen, heutiger Zähler 74. Das Fachzyklustor verlangt den unbelegten Azure-Kontingentnachweis; Portal fordert Anmeldung. B/C bleiben unangelegt. [Belege und Fortsetzung: SR §53](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+**Stand: 06.09.2026, 22:22 UTC. Sprint BLOCKIERT; Wiederanlauf und Lage 25/25 belegt.** main `f8374d1f`, Production READY, Supabase gesund, Bestand **29/25/4**. Azure: **2 Mio. TPM gesamt, 250.000 TPM zugeteilt**. **A offen:** elf Aufträge und Tageszähler 92. Understanding 21:30 UTC: 17 verarbeitet, ein Modelltimeout, kein endgültiger Auftragsfehler. B/C unangelegt. [Belege: SR §53–§54](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 
 **Kernlage:** Warteschlangenmotor seit 23.08. in Production `on`, Dispatch `shadow` (Cron-Antrieb, kein AWS). Fünferbeleg mit 376 Abschlüssen: [OP-30 §30.7](betrieb/op30-aktivierung-5-mandate.md). **Aktuell vier historische Vorgänge `unbekannt`, jüngste Änderung 02.09., 11:33 UTC; keine neue unbekannte Reservierung nach Wiederanlauf.** Selbstweck in Production nie ausgeführt.
 
@@ -10,7 +10,8 @@
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **Letzter fachlich wirksamer main Kopf:** `a059f27d5e3222d4a150248510eb6ea17df3280a`, [#320](https://github.com/ernisch/helmut-pilot/pull/320). Production `dpl_45iriLxyUgLQABCEwaD9rAHLMLvU` **READY**, Baum identisch zum geprüften PR Kopf `26596b0`. Lokal **331/331**, Browser **40/40**; PR CI `34056782489` und main CI `34057952615` erfolgreich, einschließlich PostgreSQL/PostgREST. Lage Workflow `34058373267` erfolgreich. Dieser reine Abschlussnachtrag dokumentiert die Wirkung nach Merge; eigener Commit/PR/Deployment folgen aus der Historie, kein rekursiver Folge PR (§53).
+- **Fachlich wirksamer Kopf:** `a059f27d` aus [#320](https://github.com/ernisch/helmut-pilot/pull/320), lokal **331/331**, Browser **40/40**, PR und main CI grün, Lage Workflow erfolgreich (§53).
+- **Aktueller main:** `f8374d1feeb10d1354e49d128f2ff5616a64b7db` aus #321. Production `dpl_CP7hjW9nk5NpMZ4wa63jWibH8uhm` **READY** am exakten Kopf; main CI `34060448468` grün. Keine offenen Pull Requests um 22:21 UTC.
 - **#318 (`2df5dd4`)** hält den Appstart bei Datenbankausfall frei; **#316** schützt main und p zwischen teilnehmenden Instanzen. Vollbelege und Grenzen: SR §50–§51.
 - **#310** (`b183487`) schützt den Auth Speicher mit CAS, 500 Kontoanlagen mit fünf Prozessen belegt. **#309** (`d9671a0`) brachte begrenzte Abrufe, ehrliche Profilfehler und einen Profilabruf statt 500; **#307** die unabhängigen Leser.
 - **#303** brachte Lagekapazität, Vorgangskontexte, gemeinsame Fristen und `updated_at`; kontrollierter **25er Lagebeleg jetzt erbracht** (SR §53). **#305** schützt die inaktive Kohortenanlage vor automatischer Kontolöschung und falschem Erfolg; kein Production Fehlerfall ausgelöst.
@@ -19,13 +20,13 @@
 ## 3 · Production-Zustand
 
 - **Datenbank:** Supabase **Pro/Micro (`t4g.micro`, 1 GB)**, `ACTIVE_HEALTHY`; SQL **18:55–20:44 UTC** wiederholt erfolgreich, Neustart **18:35:07 UTC**. Nach Lage Check um **20:51 UTC RAM 55 %, CPU 2 %, 18/60 Verbindungen**. Native Sicherung **18:38:15 UTC**, **PITR aus**. Speicherengpass als Ursache plausibel, nicht abschließend bewiesen; keine Ressourcenänderung durch diese Sitzung.
-- **Bestand bis 20:44 UTC:** **29 gesamt, 25 aktiv, vier inaktiv, null Löschmarken**; A 20/20, B/C 0. Identitätsprofile 30, Auth Konten 25/3 aktiv, Kohortenkonten 20/0 aktiv. Profilhash unverändert. Natürlicher Crawl **274 erledigt, 151 vertagt, 0 Fehler**; Warteschlange 202 → 158 offen. A Fenster 05.09. vollständig; 06.09.: Quellen 19/20, Projektionen 20/20, Briefings 10/20 erledigt. Kontrollierter Lage Check **25/25** einschließlich gespeicherter Fairness, relevanter Inhalte und Quellenlinks; kein vollständiger A Fachzyklus. SR §53.
+- **Bestand 22:22 UTC:** **29 gesamt, 25 aktiv, vier inaktiv, null gelöscht**; A 20/20, B/C 0. Identitäten 30, Auth 25/3 aktiv, Kohortenkonten 20/0 aktiv; Hashes unverändert. Crawl **274 erledigt, 151 vertagt, 0 Fehler**, 158 offen. A heute: Quellen 19/20, Projektionen 20/20, Briefings 10/20. Understanding 21:30: teilweise, 17 verarbeitet, ein Modelltimeout und eine abgefangene CAS Kollision; relationale Laufzeile vorhanden. Keine aktive/verwaiste Lease oder endgültigen Auftragsfehler. Lage **25/25** gültig; A Fachzyklus offen (§53–§54).
 - **Crawl-Aufbewahrung:** Wirksame Grenze **36** am 06.09. um 19:00 UTC erneut bestätigt. Frisch gelesener Blob Ring **20**; keine Wiederherstellung der verlorenen 16 Laufzeilen. Schutzcode aus #301 bleibt deployt (SR §37).
 - **Quellen:** 9 Pakete · 163 Abrufwege · 165 Zuordnungen; **146/163 Google-News** (B1, OP-15); 18 Landesmodul-Wege (BE/BB) gesperrt. Seeds `20260713`/`20260717` **nicht eingespielt**, Einspielung [BLOCKIERT](betrieb/quellen-seed-einspielung.md) (nur noch Betreiberfreigabe).
 - **Crons (Production, 13, UTC):** crawl 04:00/20:00 · pipeline 16:00 · morning-briefing 05:00 · understanding 05:30/21:30 · **rueckstand 11:30/17:30** · lage-briefing 05:45 · health 06:00 · lage-check 10:00 · 2 Narrativslots 06:10/06:22 (inert). **`18,48 * * * *` nicht in Production.** Dazu Actions-Watchdog (`briefing-watchdog.yml`, 05:30, oft 2–3 h verzögert).
 - **Migrationen:** 35 Einträge, letzte `20260829175749` (05.09. rein lesend bestätigt). **Z22 seit 29.08. mit Freigabe angewendet** (§14–22) — **nicht erneut anwenden**. Auf `main`, **nicht in Production angewendet**: `20260720`, F9 (`20260825101500`), `20260902121500`. Jede weitere Anwendung bleibt freigabepflichtig.
-- **Kosten:** LLM ~0,14 USD/Betriebstag (Untergrenze); **0,002941 USD je Aufruf** (Listenpreis, Kontopreis unbelegt — F7); bei Deckel 2.416 ≈ **213 USD/Monat**, Schranke 243 ([`kostenmessung`](betrieb/kostenmessung.md)).
-- **Zugang:** Leser **34058091793** bestätigt am exakten #320 Merge Production Speicherpfad, Riegel, Deckel/Reserve und Retention. Seit 18:36 UTC keine neuen Vercel Fehler/Timeouttreffer in den abgefragten Zeiträumen. GitHub Fachaufruf funktioniert; **Azure Portal nicht angemeldet**, kein Azure Connector. Kontingentnachweis für das unveränderte Fachzyklustor offen (SR §53).
+- **Kosten:** Listenpreis **0,002941 USD/Aufruf**. Um 22:22 UTC: Zähler 92, 87 Belege, bekannt 0,243678 USD; mit sechs Lücken à 0,05 USD und 2 USD Reserve **2,543678 USD Prognose**, unter Stopp 9 USD. Monatsrechnung und Grenzen: [`kostenmessung`](betrieb/kostenmessung.md).
+- **Zugang:** Azure und Foundry geschützt per Microsoft E Mail erreicht, keine Zugangsdaten offengelegt. Rein lesend: `gpt-5-mini` Global Standard **250.000/2.000.000 TPM**, Zuordnung 250.000 TPM, bekannte Grenze 250 RPM. Keine Azure Änderung. Production Leser **34058091793** bleibt gültig (§54).
 
 ## 4 · Aktivierte Funktionen (Production)
 
@@ -36,7 +37,7 @@
 | `HELMUT_MATCHING_AUDIT=on` | seit 2026-07-28 |
 | `HELMUT_PROCESS_RUNS_RELATIONAL=on` | seit 2026-07-27 |
 | `HELMUT_ATOMIC_LOCK` | an — atomare, fail-closed Sperren |
-| LLM Tagesbudget | **Deckel 2416 / Reserve 702**, Production am 06.09., 20:28 UTC gelesen. Tageszähler **74**, **68** erfolgreiche Modellbelege, **0,187167 USD geschätzt**; sechs unbelegte Reservierungen mit 0,30 USD Reserve behandelt. Lage Check ohne Mehrverbrauch. Historisch 05.09. Zähler 124; **heutiger Beleg über 100 fehlt**. Maximal 10 USD, Prognosestopp 9 USD; kein Rechnungsbeleg oder atomarer USD Riegel. |
+| LLM Tagesbudget | **Deckel 2416 / Reserve 702**, Production am 06.09., 20:28 UTC gelesen. Tageszähler um 22:22 UTC **92**, 87 Modellbelege, bekannte Kosten **0,243678 USD**; eine unbekannte Kostenzeile und fünf fehlende Belege zusammen mit 0,30 USD Reserve behandelt. **Heutiger Beleg über 100 fehlt.** Maximal 10 USD, Prognosestopp 9 USD; kein Rechnungsbeleg oder atomarer USD Riegel. |
 | `HELMUT_VERSTEHEN_CAS=on` | seit 2026-08-17; `HELMUT_VERSTEHEN_PARALLELITAET` nicht gesetzt ⇒ wirkt als 1 |
 | `HELMUT_SCALABLE_PIPELINE=on` | **seit 23.08. 16:47 UTC**, Modus `shadow`, Worker 4/25/25; Rückweg: Flag löschen + Redeploy (Betreiber) |
 | `HELMUT_CRON_GLOBALABRUF=on` | seit 2026-08-06 (Betreiber); Fortbestand ist Betreiberentscheidung |
@@ -122,8 +123,8 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-1. **Azure-Gesamtkontingent rein lesend belegen:** Portal benötigt Anmeldung. `pruefeKonfiguration()` bleibt mit den vorhandenen Messungen `bereit:false`; keine Bestätigung erfinden und keinen Ersatzweg um das Fachzyklustor bauen. Bestehende §41 Freigabe reicht für die vorgesehenen Arbeiten, ersetzt diesen Nachweis nicht.
-2. Danach fehlende A Arbeiten über den vorgesehenen, geschützten Fachzyklus ausführen und abnehmen; heute noch **ein Quellenauftrag und zehn Briefingaufträge**, vollständig fällig bis **21:27:21 UTC**. Natürlicher Understanding Cron **21:30 UTC**; anschließend Sperren, Kosten und Fortschritt neu lesen. **Heutiger Zähler >100 fehlt.** Lagebeleg 25/25 vom 06.09., **20:33–20:35 UTC**, ist erbracht; der gescheiterte 10:00 Lauf zählt weiterhin nicht.
+1. **Azure-Beleg erledigt:** Foundry zeigt `gpt-5-mini` Global Standard mit 2 Mio. TPM gesamt und 250.000 TPM Production-Zuordnung. `BELEGTE_MESSUNGEN` wird entsprechend korrigiert.
+2. A Rest über den geschützten Fachzyklus ausführen: **eine Quelle und zehn Briefings**, alle fällig. Ein manueller GitHub-Ausführer für eine Pipeline-Scheibe wird mit allen Toren und ohne Wiederholung vorbereitet. **Tageszähler >100 fehlt.** Lage 25/25 um 20:33–20:35 UTC gilt; der Lauf um 10:00 zählt nicht.
 3. Anschließend B mit 75 Profilen inaktiv anlegen, getrennt aktivieren und abnehmen; erst danach C mit 400. Vollständiges Nachtfenster laut Code: **00:36 bis 06:59 Türkei / 23:36 bis 05:59 Berlin / 21:36 bis 03:59 UTC**, Tageswechsel beachten und vor Ausführung frisch belegen. Alle Prüfungen und Grenzen in SR §41 und §43.
 4. Bei Deploymentfehler sofort stoppen, kein zweiter Versuch oder Rollback. Erst nach 500 und Abschlussdokumentation wieder Verkaufsreife und P0 Punkte bearbeiten. Ein gewöhnlicher Rückstand ist kein Grund, ohne weitere Prüfung abzubrechen.
 
