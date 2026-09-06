@@ -392,10 +392,12 @@ async function main() {
     kosten.empfehlungUsd > kosten.obereSchrankeUsdProTag && kosten.empfehlungUsd === 10);
   check("A16 Die Preisbasis wird ehrlich als Listenpreis benannt (F7 offen)",
     /Listenpreis/.test(kosten.preisbasis) && /kein nachgewiesener Kontopreis/i.test(kosten.preisbasis));
-  check("A17 Die belegten Messungen sind hinterlegt — das Azure-Gesamtkontingent NICHT",
+  check("A17 Alle externen Messungen sind hinterlegt — Azure seit 06.09. vollständig belegt",
     kapazitaet.BELEGTE_MESSUNGEN["p95-tagesbedarf-verstehen"].belegt === true
       && kapazitaet.BELEGTE_MESSUNGEN["p95-tagesbedarf-verstehen"].wert === 82
-      && kapazitaet.BELEGTE_MESSUNGEN["azure-kontingente-und-rate-limits"].belegt === false);
+      && kapazitaet.BELEGTE_MESSUNGEN["azure-kontingente-und-rate-limits"].belegt === true
+      && kapazitaet.BELEGTE_MESSUNGEN["azure-kontingente-und-rate-limits"].wert.gesamtTpm === 2000000
+      && kapazitaet.BELEGTE_MESSUNGEN["azure-kontingente-und-rate-limits"].wert.zugeteiltTpm === 250000);
   check("A18 zielDeckel() führt die offenen Messungen UNVERÄNDERT weiter",
     kapazitaet.zielDeckel().offeneMessungen.length === 5,
     "der Betreiber trägt sie weiterhin ausdrücklich bei — nichts wird still als erledigt gewertet");

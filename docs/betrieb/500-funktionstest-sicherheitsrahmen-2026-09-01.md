@@ -6719,3 +6719,67 @@ verlorene crawlRuns, Recoverypfad, CLAUDE.md und ARCHITECTURE.md. Keine Löschun
 Rücksetzung oder Rückabwicklung. Dieser reine Abschlussnachtrag erfüllt CLAUDE.md §9 nach
 dem fachlich wirksamen #320 Merge; eigener Merge und Deployment folgen aus der Historie,
 ohne rekursiven Dokumentationsfolge PR.
+
+## §54 Wiederanlauf nach Azure Anmeldung und geschützter A Fachzyklus (06.09.2026)
+
+### §54.1 Microsoft Anmeldung und Kontingentbeleg
+
+Der Azure Zugang wurde über die geschützte Microsoft E Mail Anmeldung hergestellt. Der zuerst
+angebotene GitHub Weg hätte die GitHub Zugangsdaten dauerhaft mit dem vorhandenen Microsoft Konto
+verknüpft; dieser Schritt wurde vor der Bestätigung verlassen. Auch der danach angebotene Weg zur
+Kontenerstellung wurde abgebrochen. Es wurde kein Konto erstellt und keine GitHub Identität verknüpft.
+Zugangsdaten waren für den Ausführer nicht sichtbar und wurden weder ausgegeben noch gespeichert.
+
+Microsoft Foundry zeigte am 06.09. um etwa **22:18 UTC** im Projekt `Helmut` rein lesend:
+
+| Beleg | Gelesener Wert |
+|---|---:|
+| Abonnementweites Kontingent, `gpt-5-mini`, Global Standard | 2.000.000 TPM |
+| Der Bereitstellung auf `helmut-resource` zugeteilt | 250.000 TPM |
+| Aktuelle Auslastung im Portal | 0 % |
+| Bereits bekannte Bereitstellungsgrenze | 250.000 TPM / 250 RPM |
+
+Damit ist die in §53.5 noch offene Messung `azure-kontingente-und-rate-limits` belegt. Die
+Momentaufnahme ist keine Lastzusage und ersetzt weder den frischen Kostenstopp noch die übrigen
+Starttore. Es wurde kein Kontingent beantragt, kein Grenzwert geändert und keine Azure Ressource
+angelegt oder verändert.
+
+### §54.2 Frische Lage nach dem natürlichen Understanding Lauf
+
+GitHub und Production waren um 22:21 UTC unverändert: main
+`f8374d1feeb10d1354e49d128f2ff5616a64b7db`, keine offenen Pull Requests, main CI
+`34060448468` erfolgreich und Production Deployment `dpl_CP7hjW9nk5NpMZ4wa63jWibH8uhm`
+am exakten Kopf READY.
+
+Die rein lesende Datenbankmessung um 22:22 UTC bestätigte **29 Profile gesamt, 25 aktiv,
+vier inaktiv, null gelöscht**, A **20/20 aktiv**, B/C **0**, 30 relationale Identitätsprofile,
+20 inaktive Kohortenkonten, unveränderte Profilhashes und keine aktive oder verwaiste Lease.
+Seit dem natürlichen Lauf trat kein endgültig fehlgeschlagener Auftrag hinzu und es gab keine
+bestätigte Kommunikationssendung.
+
+Der natürliche Understanding Cron um 21:30 UTC endete `partial`: 17 Arbeiten wurden verarbeitet,
+ein Modellaufruf lief in einen Timeout. Eine zusätzliche Blob Telemetriespeicherung verlor einen
+CAS Konflikt; die relationale `process_runs` Zeile blieb erhalten. Das ist kein neuer Datenbankausfall.
+Der A Rest blieb **eine Quellenarbeit und zehn Briefingmaterialisierungen**. Der Tageszähler stand
+bei 92, 87 Modellbelege summierten sich auf 0,243678 USD. Eine unbekannte Kostenzeile und fünf
+Zählerlücken wurden zusammen mit 0,30 USD angesetzt; mit 2 USD Laufreserve beträgt die konservative
+Prognose **2,543678 USD** und liegt unter dem Sicherheitsstopp bei 9 USD.
+
+### §54.3 Kleine Korrektur für den kontrollierten A Fachzyklus
+
+Der Azure Beleg wird in `BELEGTE_MESSUNGEN` eingetragen. Ein ausschließlich manuell startbarer
+GitHub Ausführer bereitet genau **eine** bestehende Production Route `/api/cron/pipeline` vor. Er
+prüft unmittelbar vor dem Aufruf main und Production Commit, das natürliche Abendcrawl Ergebnis,
+Production Konfiguration, exakten Profil und Kontenbestand, 30 Identitätsprofile, A Auftragsklassen,
+Sperren, Kosten, Kommunikationssperre, alle externen Messungen, Fälligkeit und Zeitfenster. B und C
+können über diesen Weg weder angelegt noch aktiviert werden.
+
+Nach dem einen Aufruf liest der Ausführer Profile, Konten, Identitäten, A Aufträge, Tageszähler,
+Kosten, Kommunikationsspuren und Sperren erneut. Ein fachlicher oder technischer Fehler beendet den
+Workflow ohne automatische Wiederholung. Der Workflow gibt nur Summen und Wahrheitswerte aus,
+keine Profilkennungen, vollständigen Speicherinhalte oder Secrets.
+
+Stand dieses Nachtrags ist die Korrektur lokal vorbereitet und gezielt geprüft. Commit, Pull Request,
+Merge, Production Deployment und der scharfe Fachzyklus sind noch nicht erfolgt. Grundlage für diese
+kleine notwendige Korrektur sowie den späteren kontrollierten Pipeline und Modelllauf ist die konkrete
+Betreiberfreigabe in **§41.1**; alle dortigen Grenzen bleiben bestehen.
