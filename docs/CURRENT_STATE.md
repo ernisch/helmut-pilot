@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 06.09.2026, 11:00 Türkei / 10:00 Berlin / 08:00 UTC.** **#307 gemergt**, Codebasis **`b836cef`**, Production **READY**. Echter GitHub Leselauf belegt Vercel Konfiguration einschließlich Kommunikationssperre und 2.416/702. **BLOCKIERT: Supabase HTTP 522 und SQL Verbindungszeitüberschreitungen.** Letzte Grundlinie 00:28 UTC: **29 Profile, 25 aktiv, vier inaktiv**, B/C und Löschmarken null. Aktueller Bestand und Kosten ungeprüft; 500 nicht bewiesen. §41 bleibt verbindlich. Belege: [SR §44.4](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+**Stand: 06.09.2026, 12:55 Türkei / 11:55 Berlin / 09:55 UTC.** **#308 gemergt (`97e2aaa`), Production READY**, Code aus #307. **Supabase weiter gestört:** Minimalabfrage um 12:45 Türkei / 11:45 Berlin / 09:45 UTC scheitert beim Verbindungsaufbau. Letzte Grundlinie 00:28 UTC: **29 Profile, 25 aktiv, vier inaktiv**. Aktueller Bestand und Kosten ungeprüft; 500 nicht bewiesen. In Arbeit: vollständige Abruffrist, ehrliche Profilfehler und ein Profilabruf statt 500 im Lagevorlauf. §41 gilt weiter. Belege: [SR §45](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 
 **Kernlage:** Der Warteschlangenmotor (`HELMUT_SCALABLE_PIPELINE=on`) ist **seit 23.08.2026 in Production eingeschaltet**, Modus **`HELMUT_JOB_DISPATCH_MODE=shadow`** (Cron-Antrieb, kein Ereignis-Antrieb, kein AWS). Die **fünf Mandate sind mit 376 echten Abschlüssen bewiesen**, Morgen-/Lagelauf 5/5, 0 Verlust, alle elf §28.6-Kontrollen erfüllt ([`op30-aktivierung-5-mandate §30.7`](betrieb/op30-aktivierung-5-mandate.md)). **Seit 30.08. stehen 3 Vorgänge auf `unbekannt` (§14–22).** **Der Selbstweck ist lokal belegt, in Production nie ausgeführt.**
 
@@ -12,7 +12,7 @@
 
 - **Letzter Code Merge: `b836cef041a542c83de23dfbe7a658caedab446d`** aus **#307**, zwei Eltern `cfd18b2` und `26741a8`. Production **`dpl_DUnsweYKYS2E8m7ccBPBVhFAZMn7` READY** am exakten Commit. Lokale Gesamtsuite 323/323 in 553 Sekunden und externe CI **34019505595** am Kopf `26741a8` grün; Vorschau READY, keine Reviews. Der echte Leselauf **34020582488** beweist die unabhängigen Leser: Datenbank rot, Konfiguration grün, Gesamtlauf weiter rot.
 - **#303** brachte Lagekapazität, Vorgangskontexte, gemeinsame Fristen und `updated_at`; Merge `33f1158`, Production READY belegt. Kontrollierter Lagebeweis weiterhin offen. **#305** schützt die inaktive Kohortenanlage vor automatischer Kontolöschung und falschem Erfolg nach Schreibfehlern; kein Production Fehlerfall ausgelöst.
-- **Dokumentation:** Dieser abschließende Nachtrag aktualisiert ausschließlich den tatsächlich belegten Zustand nach #307. Sein eigener Merge und Deploymentstand folgen aus der Historie; kein rekursiver Folge PR. #306 brachte den reinen Statuszugang, #304 dokumentierte #305.
+- **Dokumentation #308:** `97e2aaa`, Production `dpl_9BUUWpYam8WM9MwUCi7jKoHcT7it` READY. Lokaler Abschluss am exakten Kopf `6d19a4f` Exit 0; beide externen Pflichtjobs grün. Neuer Codeauftrag und Screenshotbefunde stehen in SR §45.
 - #275 bis #277 und #282 nach Konsolidierung geschlossen, nicht gemergt; Branches bleiben Auditbelege.
 
 ## 3 · Production-Zustand
@@ -121,7 +121,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-1. Supabase Auslastungsberichte für CPU, RAM, Disk IO und Verbindungen prüfen; der vorhandene Zugang liefert die Berichte nicht, die Browseransicht verlangt Anmeldung. Keine Ursache aus dem Status `ACTIVE_HEALTHY` ableiten. Danach genau einen frischen Datenbanklesebeleg und aktuelle Grundlinie, Modellkosten sowie Laufzustände erheben. Neustart oder Ressourcenänderung sind nicht freigegeben. SR §44.4.
+1. Abrufkorrekturen vollständig prüfen und gemäß §41 übernehmen. Screenshots zeigen viel Swap und steigenden IOwait, belegen aber keine Ursache. Erst nach erfolgreicher Minimalabfrage frischen Bestand, Modellkosten und Laufzustände erheben. Neustart und Ressourcenänderung bleiben gesondert freigabepflichtig. SR §45.
 2. Kontrollierten Lagebeweis für 25 erbringen und A vollständig abnehmen. Zähler über 100 bereits natürlich belegt. Der nächste natürliche Lage Check ist laut Cronplan am **06.09. um 13:00 Türkei / 12:00 Berlin / 10:00 UTC** vorgesehen, seine Ausführung und die Kommunikationssperre sind dadurch nicht bewiesen.
 3. Anschließend B mit 75 Profilen inaktiv anlegen, getrennt aktivieren und abnehmen; erst danach C mit 400. Vollständiges Nachtfenster laut Code: **00:36 bis 06:59 Türkei / 23:36 bis 05:59 Berlin / 21:36 bis 03:59 UTC**, Tageswechsel beachten und vor Ausführung frisch belegen. Alle Prüfungen und Grenzen in SR §41 und §43.
 4. Bei Deploymentfehler sofort stoppen, kein zweiter Versuch oder Rollback. Erst nach 500 und Abschlussdokumentation wieder Verkaufsreife und P0 Punkte bearbeiten. Ein gewöhnlicher Rückstand ist kein Grund, ohne weitere Prüfung abzubrechen.
