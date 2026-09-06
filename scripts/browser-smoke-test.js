@@ -198,6 +198,34 @@ function check(name, cond, detail = "") {
       await context.close();
     }
 
+    // Datenbankausfall beim Start: echte Oberflaeche, nur die lokale Sessionantwort
+    // gestoert. Kein falscher Pilotlogin und keine Fachabrufe nach unbekannter Identitaet.
+    for (const mobile of [false, true]) {
+      const context = await browser.newContext({ viewport: mobile ? { width: 390, height: 844 } : { width: 1280, height: 800 },
+        isMobile: mobile, hasTouch: mobile, serviceWorkers: "block", bypassCSP: true });
+      let unavailable = true, startCalls = 0;
+      await context.route("**/api/**", route => {
+        const pathname = new URL(route.request().url()).pathname;
+        if (pathname === "/api/auth/session" && unavailable) return route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ reason: "auth-unavailable" }) });
+        if (pathname === "/api/app/start") startCalls++;
+        return route.continue();
+      });
+      const page = await context.newPage();
+      await page.goto(baseUrl + "/", { waitUntil: "domcontentloaded", timeout: 30000 });
+      await page.waitForFunction("document.querySelector('#app')?.innerText.includes('Helmut ist gerade nicht erreichbar.')", null, { timeout: 5000 }).catch(() => {});
+      await page.waitForFunction("!document.body.classList.contains('is-loading')", null, { timeout: 5000 }).catch(() => {});
+      const text = await page.locator("#app").innerText();
+      const label = mobile ? "Mobil Ausfall" : "Desktop Ausfall";
+      check(`${label}: klare Stoerung mit erneutem Ladeversuch`, text.includes("Helmut ist gerade nicht erreichbar.") && text.includes("Neu laden"));
+      check(`${label}: Splash endet und kein falscher Login erscheint`, await page.evaluate("!document.body.classList.contains('is-loading') && !document.querySelector('#loginForm')") && !text.includes("Zugangscode"));
+      check(`${label}: keine Fachabfrage mit unbekannter Identitaet`, startCalls === 0);
+      unavailable = false;
+      await page.reload({ waitUntil: "domcontentloaded" });
+      await page.waitForSelector('[data-view="radar"]', { timeout: 20000 }).catch(() => {});
+      check(`${label}: nach Erholung wieder normaler Start`, await page.locator('[data-view="radar"]').count() > 0);
+      await context.close();
+    }
+
     // ── Querformat-Sperre (Smartphone-only) ─────────────────────────────────
     // Reale Viewport-/Touch-Emulation statt Annahmen: prueft, dass die Sperre
     // NUR bei Smartphone+Querformat sichtbar UND blockierend ist, waehrend
