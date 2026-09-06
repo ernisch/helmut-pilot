@@ -6783,3 +6783,22 @@ Stand dieses Nachtrags ist die Korrektur lokal vorbereitet und gezielt geprüft.
 Merge, Production Deployment und der scharfe Fachzyklus sind noch nicht erfolgt. Grundlage für diese
 kleine notwendige Korrektur sowie den späteren kontrollierten Pipeline und Modelllauf ist die konkrete
 Betreiberfreigabe in **§41.1**; alle dortigen Grenzen bleiben bestehen.
+
+### §54.4 Erster Vorlauf stoppt vor Production
+
+#322 wurde nach **332/332** lokalen Suiten, **40/40** Browserprüfungen und vollständig grüner
+PR CI am exakten Kopf gemergt. Production Deployment `dpl_DFFX2Zg8f3LXeqwwaAwsYwjSm7eu`
+erreichte READY am main Kopf `7523c3b2d8207d1c690f23e423853794a08b1fff`; auch main CI war grün.
+
+Workflow `34066395564` stoppte um 23:16 UTC mit `ausgeloest:false` und
+`grund:modell-unbekannt`. Es gab keinen Aufruf von `/api/cron/pipeline`, keinen Zähleranstieg und
+keine fachliche Änderung. Die unabhängige Lesekontrolle um 23:17 UTC bestätigte erneut 29/25/4,
+A 20 aktiv, B/C 0, 30 Identitätsprofile, A weiterhin 19 Quellen, 20 Projektionen und 10 Briefings
+erledigt, Zähler 92, keine Sperre, keine verwaiste Lease und keine Kommunikationssendung.
+
+Ursache ist genau ein historischer Kostenbeleg mit `model:none` und unbekannten Kosten neben 86
+Belegen für `gpt-5-mini`. Die enge Korrektur akzeptiert `none` ausschließlich zusammen mit unbekannten
+Kosten und behandelt ihn weiter als reservierte Lücke mit mindestens 0,05 USD. Derselbe Platzhalter
+mit Kostenwert und jeder andere Modellname bleiben gesperrt. Die Korrektur bestand **7/7** gezielte
+Prüfungen, erneut **332/332** lokale Suiten und **40/40** Browserprüfungen. Ein neuer Production
+Aufruf ist damit noch nicht erfolgt.

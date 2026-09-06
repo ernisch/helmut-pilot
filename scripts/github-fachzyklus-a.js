@@ -103,13 +103,18 @@ function kostenBefund(data, counter, utcDay) {
   fordere(Number.isSafeInteger(counter) && counter >= 0 && counter < 2416,
     "tageszaehler-ungueltig");
   fordere(counter === 0 || usage.length > 0, "kostenbelege-fehlen");
-  fordere(usage.every((r) => r.model === "gpt-5-mini"), "modell-unbekannt");
   const kosten = usage.map((r) => {
     const wert = typeof r.estimatedCost === "number" ? r.estimatedCost
       : (/^[0-9]+(?:\.[0-9]+)?$/.test(String(r.estimatedCost || ""))
         ? Number(r.estimatedCost) : null);
     return Number.isFinite(wert) && wert >= 0 ? wert : null;
   });
+  // Ein historischer Lückenbeleg kann ausdrücklich `model: "none"` tragen.
+  // Er ist nur zusammen mit ebenfalls unbekannten Kosten zulässig und wird
+  // unten wie jede andere Lücke konservativ reserviert. Ein fremdes Modell mit
+  // Kostenwert oder jeder andere Modellname bleibt fail closed gesperrt.
+  fordere(usage.every((r, i) => r.model === "gpt-5-mini"
+    || (r.model === "none" && kosten[i] === null)), "modell-unbekannt");
   const bekannteKostenUsd = kosten.reduce((n, wert) => n + (wert === null ? 0 : wert), 0);
   const unbekannteKosten = kosten.filter((wert) => wert === null).length;
   const reservierungsluecke = Math.max(0, counter - usage.length);
