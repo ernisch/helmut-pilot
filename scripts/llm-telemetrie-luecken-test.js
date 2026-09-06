@@ -9,12 +9,11 @@
 // Groessen entstehen an derselben Engstelle, koennen also nur auseinanderlaufen,
 // wenn ein Pfad reserviert, aber nicht protokolliert.
 //
-// Dieser Test haelt die geschlossenen Luecken fest. Er beweist NICHT, dass die
-// Abweichung damit verschwindet — die dominierende Ursache ist der
-// unbedingte Lese-Aendere-Schreibe-Zyklus auf dem gemeinsamen Blob
-// (`writeAuthStore`, Voll-Upsert, last-write-wins). Dieser Test misst sie in
-// Abschnitt D nach, aendert sie aber ausdruecklich NICHT: die Behebung ist eine
-// getrennt freizugebende Umstellung (relationale Tabelle, Muster W-2/process_runs).
+// Dieser Test haelt die Telemetrievertraege und den historischen Verlustmechanismus
+// fest. Seit dem Kontoschreibschutz am 06.09. schreibt der Auth-Store bedingt und
+// recordLlmUsage wiederholt nur bestaetigte Versionskonflikte auf frischem Stand.
+// Der echte gemischte Konto-/Session-/Audit-/Kostenpfad wird in
+// auth-store-cas-test.js geprueft. Die relationale Umstellung bleibt separat.
 
 const path = require("path");
 
@@ -114,25 +113,16 @@ check("C2 fehlerKlasse gibt niemals eine rohe Meldung zurueck",
     return block.includes('return "ki-fehler";') && !block.includes("return nachricht;\n  }");
   })());
 
-// ── D · Die Ursache: unbedingtes Lese-Aendere-Schreibe im Blob ──────────────
-// STAND 02.09. (korrigiert): der Blob-Schreibpfad ist WEITERHIN unbedingt — das
-// bleibt richtig und wird hier weiter gemessen. Neu ist, dass er nicht mehr der
-// EINZIGE Pfad ist: `recordLlmUsage` schreibt seit dem Vorbereitungssprint
-// zusaetzlich relational (Dual-Write, Muster W-2/process_runs), sobald Flag
-// `HELMUT_LLM_USAGE_RELATIONAL` UND Migration 20260902121500 vorliegen. Beides
-// ist freigabepflichtig und AUS; der Blob bleibt in Phase 2 die Lesequelle.
-// Die frueheren Zusagen D1/D2 („bekannte Restluecke") sind damit nicht falsch
-// geworden, aber unvollstaendig — sie werden hier ausdruecklich ergaenzt statt
-// stillschweigend ersetzt (CLAUDE.md §4.4, §7.11).
+// ── D · Blobspiegel und historischer Verlust ohne Schreibschutz ────────────
+// D1/D2 verlangten bisher im Quelltext gerade den bekannten kaputten Schreibweg.
+// Diese beiden Musterpruefungen sind durch den Verhaltenstest mit echter
+// Speicherschicht in auth-store-cas-test.js ersetzt. Der relationale Nebenpfad
+// und die Ringgrenze bleiben hier geprueft.
 const storageQuelle = fs.readFileSync(path.join(ROOT, "lib/helmut/storage.js"), "utf8");
 const recordBlock = storageQuelle.slice(
   storageQuelle.indexOf("async function recordLlmUsage("),
   storageQuelle.indexOf("async function getLlmUsage(")
 );
-check("D1 Der BLOB-Spiegel ist weiterhin ein Lese-Aendere-Schreibe-Zyklus",
-  recordBlock.includes("await readAuthStore()") && recordBlock.includes("await writeAuthStore(store)"));
-check("D2 Der Blob-Schreibvorgang ist unbedingt (kein Compare-and-Set)",
-  !recordBlock.includes("If-Match") && !recordBlock.includes("compareAndSet"));
 // NEU 02.09.: der kanonische Weg daneben.
 check("D1a recordLlmUsage schreibt zusaetzlich relational (Dual-Write, Muster W-2)",
   recordBlock.includes("insertLlmUsageRelational") || recordBlock.includes("insert(llmUsageToRelationalRow"));
@@ -153,7 +143,7 @@ check("D3 Die Ringpuffergrenze bleibt bei 5.000 Eintraegen (unveraendert, jetzt 
 
 // Der Verlust ist REPRODUZIERBAR: zwei nebenlaeufige Schreiber auf demselben
 // Dokument, jeder liest den Stand vor dem anderen. Genau dieses Muster liegt
-// `recordLlmUsage` zugrunde. Ohne Uhr, ohne Netz, ohne Zufall.
+// dem historischen Fehler zugrunde. Kein Nachweis des heutigen Schreibpfades.
 async function verlustProbe() {
   let dokument = { llmUsage: [] };
   const lies = async () => JSON.parse(JSON.stringify(dokument));

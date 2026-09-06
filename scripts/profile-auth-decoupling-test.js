@@ -50,7 +50,21 @@ async function fakeFetch(url, options = {}) {
       const id = m ? decodeURIComponent(m[1]) : null;
       return makeRes(200, id && blobRows.has(id) ? [{ data: blobRows.get(id) }] : []);
     }
-    if (method === "POST") { if (body && body.id) blobRows.set(body.id, body.data); return minimal ? makeRes(204, null) : makeRes(200, [body]); }
+    if (method === "POST") {
+      if (blobRows.has(body.id) && !prefer.includes("resolution=merge-duplicates")) return makeRes(409, { message: "duplicate key" });
+      if (body && body.id) blobRows.set(body.id, body.data);
+      return minimal ? makeRes(204, null) : makeRes(200, [body]);
+    }
+    if (method === "PATCH") {
+      const params = new URL(String(url)).searchParams;
+      const id = String(params.get("id") || "").replace(/^eq\./, "");
+      const current = blobRows.get(id);
+      const expected = params.get("data->>_authStoreRevision");
+      const matches = current && (expected === "is.null" ? current._authStoreRevision == null : expected === `eq.${current._authStoreRevision}`);
+      if (!matches) return makeRes(200, []);
+      blobRows.set(id, body.data);
+      return makeRes(200, [{ id }]);
+    }
   }
   if (path.startsWith("/rest/v1/profiles")) {
     if (method === "GET") {
@@ -77,7 +91,7 @@ async function fakeFetch(url, options = {}) {
   try {
     // Synthetischer Nutzer (klar kuenstlich) im Auth-Store.
     const user = { id: "user-alpha-1", email: "alpha@test.invalid", name: "Test User Alpha", role: "abgeordneter", politicianId: testPoliticianOne.id, active: true };
-    await storage.writeAuthStore({ users: [user], sessions: [] });
+    await storage.writeAuthStore({ ...await storage.readAuthStore(), users: [user], sessions: [] });
 
     console.log("== 1) Session-Lifecycle funktioniert (waehrend Profil-Exklusivmodus aktiv) ==");
     check("Exklusivmodus aktiv", storage.profileDbExclusiveEnabled() === true);
