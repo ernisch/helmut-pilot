@@ -37,8 +37,8 @@ globalThis.fetch = async (url, opt = {}) => {
   }
   calls.push({ method, path, storeId });
   if (path.startsWith("/rest/v1/helmut_store")) {
-    if (method === "GET") return res(200, storeId && blobRows.has(storeId) ? [{ data: blobRows.get(storeId) }] : []);
-    if (method === "POST") { if (body && body.id) blobRows.set(body.id, body.data); return prefer.includes("return=minimal") ? res(204, null) : res(200, [body]); }
+    const result = require("./fixtures/store-rest-memory")(blobRows, url, opt);
+    return res(result.status, result.body);
   }
   if (path.startsWith("/rest/v1/profiles")) {
     if (method === "GET") {
@@ -59,7 +59,7 @@ globalThis.fetch = async (url, opt = {}) => {
 
 const id = testPoliticianOne.id;
 function reset() { calls = []; }
-function mainPosts() { return calls.filter((c) => c.method === "POST" && c.storeId === "main").length; }
+function mainPosts() { return calls.filter((c) => ["POST", "PATCH"].includes(c.method) && c.storeId === "main").length; }
 function relDelete(table) { return calls.some((c) => c.method === "DELETE" && c.path.startsWith(table)); }
 function emptyMain() { return { profiles: {}, mandateProfiles: {}, rawItems: [] }; }
 

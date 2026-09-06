@@ -40,6 +40,16 @@ globalThis.fetch = async (input, options = {}) => {
   const id = body.id || url.searchParams.get("id").replace(/^eq\./, "");
   const data = body.data;
   calls.push({ method, id });
+  if (method === "POST" && rows.has(id)) {
+    return { ok: false, status: 409, text: async () => JSON.stringify({ code: "23505" }) };
+  }
+  if (method === "PATCH") {
+    const expected = url.searchParams.get("data->>_storeRevision");
+    const revision = rows.get(id)?._storeRevision ?? null;
+    if (!rows.has(id) || (expected === "is.null" ? revision !== null : expected !== `eq.${revision}`)) {
+      return { ok: true, status: 200, text: async () => "[]" };
+    }
+  }
   if (writeHooks.has(id)) await writeHooks.get(id)(copy(data));
   rows.set(id, copy(data));
   const represented = String(options.headers?.Prefer || "").includes("return=representation");
@@ -160,6 +170,17 @@ async function check(name, run) {
       assert.equal((await storage.readStore(key)).userNotes.at(-1).id, "parallel");
     });
 
+    await check("Aenderungen am Eingang waehrend des Writes gelangen nicht in den bestaetigten Cache", async () => {
+      const key = "p-write-input"; const id = rowId(key);
+      rows.set(id, { userNotes: [] });
+      const input = await storage.readStore(key);
+      input.userNotes.push({ id: "gesendet" });
+      writeHooks.set(id, () => input.userNotes.push({ id: "nicht-gesendet" }));
+      await storage.writeStore(input, key);
+      assert.deepEqual(rows.get(id).userNotes.map((n) => n.id), ["gesendet"]);
+      assert.deepEqual((await storage.readStore(key)).userNotes.map((n) => n.id), ["gesendet"]);
+    });
+
     await check("Ein ausdruecklicher Schreibauftrag kann einen fehlenden Mandatsspeicher anlegen", async () => {
       const key = "p-explicit-create";
       const store = await storage.readStore(key);
@@ -193,14 +214,15 @@ async function check(name, run) {
       const key = "p-late-read";
       const id = rowId(key);
       rows.set(id, { userNotes: [{ id: "alt" }] });
+      const writeBase = await storage.readStore(key);
       let finishRead;
       const held = new Promise((resolve) => { finishRead = resolve; });
       let readStarted;
       const started = new Promise((resolve) => { readStarted = resolve; });
       readHooks.set(id, async () => { readStarted(); await held; });
-      const reading = storage.readStore(key);
+      const reading = storage.readStore(key, { fresh: true });
       await started;
-      await storage.writeStore({ userNotes: [{ id: "neu" }] }, key);
+      await storage.writeStore({ ...writeBase, userNotes: [{ id: "neu" }] }, key);
       finishRead();
       const stale = await reading;
       assert.equal(stale.userNotes[0].id, "alt");
