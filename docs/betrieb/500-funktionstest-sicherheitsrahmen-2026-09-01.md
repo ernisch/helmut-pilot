@@ -7087,3 +7087,78 @@ bestehenden `pardok-shadow-test.js` wird wie bisher transparent ausgewiesen.
 Echter PostgreSQL Nachweis und externe Pflichtjobs bleiben vor Merge zwingend;
 Ergebnisse sowie exakter Merge und Production READY werden im zugehörigen PR festgehalten.
 Technischer lokaler Abschluss erfolgreich; kein Production Funktionsnachweis bei 500.
+
+
+### §56.1 Übernahme und unabhängiger Endstand nach #326
+
+**PR [#326](https://github.com/ernisch/helmut-pilot/pull/326) ist gemergt und deployt.**
+PR Kopf `86806f67041b3c5354b3e9edb11a9a59f58e7ccf`, Codebaum
+`eed0f7cae98bcf6871c6d5a8d9c9530e38cd2d0c`. Der lokale Git Push hatte keine CLI
+Anmeldung; der geprüfte identische Baum wurde über den vorhandenen verbundenen GitHub
+Zugang übertragen. SHA des gesamten Baums vor Branchanlage exakt abgeglichen, keine
+Zugangsdaten übertragen. Der lokale Prüfcommit `155bca653c49e8d1dd2532cef4539ed5859e13c7`
+hat denselben Baum. Das sind unterschiedliche Commitmetadaten, keine unterschiedliche Lösung.
+
+Externe Abnahme am exakten PR Kopf:
+
+| Nachweis | Ergebnis |
+|---|---|
+| CI `34091913335` | Beide Pflichtjobs erfolgreich; 334/334 Suiten in 571 Sekunden |
+| Echte Datenbank | PostgreSQL 17.11, PostgREST 12.2.3; 9/9 Prüfungen |
+| Provisionierung, 06:42:31 UTC | 475 echte Speicheroperationen, 504 insgesamt / 25 aktiv |
+| Aktivierung, 06:42:41 UTC | 475 echte Speicheroperationen, 504 insgesamt / 500 aktiv |
+| SQL Kontrolle im isolierten Test | Vier andere inaktiv, geschützte Bestandszeilen und main unverändert, keine zusätzlichen aktiven Konten |
+| Vorschau | `dpl_6grkwHgUZG2pGxDtsneePH1CaZJf` READY, PR Kopf exakt |
+| Review | Keine offenen Review Threads; Merge mit `expected_head_sha` und echtem Merge Commit |
+
+Merge **`619c023e18900a64aa636d7088892fb3ed41cabd`**, zwei Eltern:
+`a19fde7a9bab226afedd574da97f386c990863a1` und
+`86806f67041b3c5354b3e9edb11a9a59f58e7ccf`. Production
+**`dpl_8Qa7hywsuccM52AdpcySyjYyEju6` READY**, target production, exakt dieser Merge,
+Hauptalias `helmut-pilot.vercel.app` korrekt. Kein zweites Deployment ausgelöst.
+Die Übernahme stützt sich auf §41 und die aktuelle direkte Betreiberanweisung; keine
+zusätzliche Freigabe wurde für bereits autorisierte Schritte verlangt.
+
+Unabhängige rein lesende Production Kontrolle **06:49:41 → 06:55:51 UTC**:
+
+| Bestand | Unverändertes Ergebnis vor und nach Deployment |
+|---|---|
+| Mandatsprofile | 29 gesamt, 25 aktiv, vier inaktiv, null Löschmarken |
+| Vollständiger Mandatszeilenhash | `246194d2833646bf8ad8a8949defed09` |
+| Identitäten | 30; vollständiger Hash `22ba02fd4eb28c237e44e07c75c99188` |
+| Konten | 25, drei aktiv; vollständiger Nutzerarrayhash `a8653cac17ddf6bf3b6566a964f1a736` |
+| Schema und Laufhistorie | 35 Migrationen; crawlRuns 20 |
+| A Fenster 06.09. | 60 erledigte Aufträge |
+| Tagesreservierungen 07.09. | 59 |
+
+Die Zeilenhashes verwenden `md5(string_agg(row_to_json(p)::text,'' ORDER BY Kennung))`;
+der Kontenhash bezieht sich auf den vollständigen JSONB Nutzerarray. Nicht mit anders
+serialisierten älteren Hashverfahren gleichsetzen. Für keine Operation wurden Kontorohdaten,
+Passwörter oder Secrets als Belegdatei gespeichert. Die neue Einmandatsstichprobe im
+Lagebriefing hat gespeicherte Absätze und Vorgangskennungen; sie ist keine Gesamtprüfung
+aller 25 Qualitätsbelege und kein Nachweis der Aktualität jeder Quelle.
+
+**Sprintzustand: TEILWEISE ABGESCHLOSSEN.** Der technische direkte Ausbau und sein
+kontrollierter Testweg sind vollständig gebaut, geprüft und in Production bereitgestellt.
+Die tatsächlichen 475 zusätzlichen Mandate sind noch nicht angelegt oder aktiviert.
+Die bestehende A Qualitätsabnahme und ein aktueller Budgetbeleg über 100 fehlen; 59
+wird nicht als solcher Beleg umgedeutet. Das zulässige Nachtfenster ist um 06:55 UTC
+außerdem geschlossen. Kein Ersatzstart des zuvor abgelehnten A Workflows und keine
+Umgehung des Zeitfensters. Der vorhandene Test kann anhand natürlicher Fortschritte
+weiter abgenommen werden; für einen neuen A Workflowstart gilt §55.3 weiter.
+
+**Nächster Schritt:** A anhand vollständiger tatsächlicher Qualitäts und Kostenbelege
+abschließen, Belegdatei nach dem dokumentierten Vertrag erstellen und geprüft übernehmen.
+Dann im frisch geprüften Nachtfenster ab 21:36 UTC die 475 Profile inaktiv anlegen,
+unabhängig lesen und getrennt aktivieren. Anschließend tatsächliche Verarbeitung und
+Qualität aller 500 abnehmen. Es gibt keine Zusage, dass morgen bereits 500 aktiv sind.
+Dieser reine Abschlussnachtrag erfüllt CLAUDE.md §9 und verändert weder Code noch
+Konfiguration oder Production Daten. Sein eigener Merge und Deploymentstand kommen
+nach der dortigen Ausnahme aus Git und Deployment Historie; kein rekursiver Folge PR.
+
+
+**Abschlussprüfung:** main CI `34092963610` am Merge `619c023e` mit beiden Pflichtjobs
+vollständig erfolgreich. Der reine Dokumentationsabschluss besteht erneut mit
+**334/334 lokalen Suiten in 505 Sekunden**, 0 Fehler, über `scripts/lokal.js`.
+Relative Dokumentlinks auflösbar, CURRENT_STATE unter 350 Zeilen und 30000 Zeichen,
+`git diff --check` sauber. Nur CURRENT_STATE und dieser kanonische Nachtrag geändert.

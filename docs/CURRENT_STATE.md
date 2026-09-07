@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 07.09.2026. Direkter 500er Ausführer lokal geprüft: 334/334 Suiten, 40/40 Browser.** Production zu Sprintbeginn `a19fde7a` aus #325 READY, Bestand **29/25/4**. A Fenster 06.09. jetzt **60/60 erledigt**. Direkter Weg **25 → 500** mit getrennter Anlage, Aktivierung und begrenztem Fachlauf implementiert. Externe Pflichtprüfung und Übernahme werden im zugehörigen PR bestätigt. Fachliche A Abnahme und tatsächlicher Production Ausbau bleiben offen. [SR §56](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md) · [Ausführung](betrieb/direkter-ausbau-500.md).
+**Stand: 07.09.2026, 06:56 UTC. TEILWEISE ABGESCHLOSSEN.** Direkter Ausführer **25 → 500** als [#326](https://github.com/ernisch/helmut-pilot/pull/326) gemergt, Production `619c023e` READY. Lokal und extern **334/334 Suiten**, Browser **40/40**; alle **475 Anlagen und 475 Aktivierungen mit echtem PostgreSQL** bestanden. Production bleibt **29/25/4**, keine neue Aktivierung. A Fenster 06.09. **60/60 erledigt**; vollständige Qualität und aktueller Budgetbeleg über 100 fehlen noch. [SR §56](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md) · [Ausführung](betrieb/direkter-ausbau-500.md).
 
 **Kernlage:** Warteschlangenmotor seit 23.08. in Production `on`, Dispatch `shadow` (Cron-Antrieb, kein AWS). Fünferbeleg mit 376 Abschlüssen: [OP-30 §30.7](betrieb/op30-aktivierung-5-mandate.md). **Aktuell vier historische Vorgänge `unbekannt`, jüngste Änderung 02.09., 11:33 UTC; keine neue unbekannte Reservierung nach Wiederanlauf.** Selbstweck in Production nie ausgeführt.
 
@@ -11,14 +11,14 @@
 ## 2 · Stand auf `main` und Pull Requests
 
 - **Fachlich wirksamer Kopf:** `a059f27d` aus [#320](https://github.com/ernisch/helmut-pilot/pull/320), lokal **331/331**, Browser **40/40**, PR und main CI grün, Lage Workflow erfolgreich (§53).
-- **Letzter geprüfter Codekopf vor diesem Sprint:** `69d2b6048726e5f70a6a423e9d4acfb1176c569b` aus [#324](https://github.com/ernisch/helmut-pilot/pull/324). Production `dpl_5pKLEFMXjkiznnFpcPeB2fEvPTaa` **READY** am exakten Kopf; **332/332** lokale Suiten, **40/40** Browser, beide PR und main Pflichtjobs grün (main CI `34069947355`). Reiner Production Leser `34070000477` erfolgreich. Dieser reine Abschlussnachtrag hat keinen neuen Code; eigener Merge und Deployment folgen aus der Historie.
+- **Aktueller fachlicher Codekopf:** `619c023e18900a64aa636d7088892fb3ed41cabd` aus [#326](https://github.com/ernisch/helmut-pilot/pull/326), zwei Merge Eltern. Production `dpl_8Qa7hywsuccM52AdpcySyjYyEju6` **READY** am exakten Kopf, Hauptalias korrekt. PR CI `34091913335` und main CI `34092963610` mit beiden Pflichtjobs grün; **334/334** Suiten und **9/9** echte Datenbankprüfungen. Kein manueller Production Fachlauf oder Ausbau gestartet. Der nachfolgende reine Abschlussnachtrag wird über seine Git und Deployment Historie belegt.
 - **#322 und #323:** geschützter A Ausführer, Azure Beleg und enge Kostenlückenbehandlung. Je **332/332** lokale Suiten, **40/40** Browserprüfungen; PR und main CI grün. Beide Production Deployments READY. Der bisher einzige A Workflow `34066395564` scheiterte vor dem Production Aufruf; kein Wiederholungslauf angelegt (§55).
 - Frühere Schutzarbeiten **#303, #305, #307, #309, #310, #313, #316 und #318** sind deployt. Sie schützen Kontext, Leseantworten, Konten, gemeinsam genutzte Speicher und Appstart. Belege und Grenzen: SR §40–§51; Lage 25/25 seit §53.
 
 ## 3 · Production-Zustand
 
 - **Datenbank:** Supabase **Pro/Micro (`t4g.micro`, 1 GB)**, `ACTIVE_HEALTHY`; SQL bis **07.09., 00:32 UTC** wiederholt erfolgreich. Frisches Dashboard **00:19 UTC: RAM 43 %, CPU 2 %, 5/60 Verbindungen**. Neustart 06.09. 18:35:07, Sicherung 18:38:15 UTC, **PITR aus**. Speicherengpass als Ursache plausibel, nicht abschließend bewiesen; keine Ressourcenänderung durch diese Sitzung.
-- **Bestand 07.09., 00:32 UTC:** **29 gesamt, 25 aktiv, vier inaktiv, null gelöscht**; A 20/20, B/C 0. Identitäten 30, Auth 25/3 aktiv, Kohortenkonten 20/0 aktiv; vollständige Profilhashes unverändert. A Fenster 06.09.: Quellen 19/20, Projektionen 20/20, Briefings 10/20. Keine aktive oder verwaiste Lease. Seit UTC Tageswechsel kein Fachlauf; seit 23:50 UTC kein Push Ereignis und keine Versandquittung. main, Auth und 29 Mandatsspeicher lesbar; 35 Migrationen, crawlRuns 20. Keine Vercel Laufzeitfehler nach #324. Natürlicher Crawl und Lage **25/25** bleiben gültig (§53–§55).
+- **Bestand 07.09., 06:55 UTC, nach #326:** **29 gesamt, 25 aktiv, vier inaktiv, null gelöscht**; A 20, B/C 0. Identitäten 30; Konten 25/3 aktiv. Vollständige Hashes von Mandatszeilen, Identitätszeilen und Konten gegenüber 06:49 unverändert. 35 Migrationen, crawlRuns 20, Tageszähler 59. A Fenster 06.09. jetzt je 20 Quellenabrufe, Projektionen und Materialisierungen erledigt. Natürliche Morgenlage und Lagebriefing heute je 25. Keine schreibende Production Abnahme; Beleg und Nachweisgrenzen SR §56.
 - **Crawl-Aufbewahrung:** Wirksame Grenze **36** am 06.09. um 19:00 UTC erneut bestätigt. Frisch gelesener Blob Ring **20**; keine Wiederherstellung der verlorenen 16 Laufzeilen. Schutzcode aus #301 bleibt deployt (SR §37).
 - **Quellen:** 9 Pakete · 163 Abrufwege · 165 Zuordnungen; **146/163 Google-News** (B1, OP-15); 18 Landesmodul-Wege (BE/BB) gesperrt. Seeds `20260713`/`20260717` **nicht eingespielt**, Einspielung [BLOCKIERT](betrieb/quellen-seed-einspielung.md) (nur noch Betreiberfreigabe).
 - **Crons (Production, 13, UTC):** crawl 04:00/20:00 · pipeline 16:00 · morning-briefing 05:00 · understanding 05:30/21:30 · **rueckstand 11:30/17:30** · lage-briefing 05:45 · health 06:00 · lage-check 10:00 · 2 Narrativslots 06:10/06:22 (inert). **`18,48 * * * *` nicht in Production.** Dazu Actions-Watchdog (`briefing-watchdog.yml`, 05:30, oft 2–3 h verzögert).
@@ -35,7 +35,7 @@
 | `HELMUT_MATCHING_AUDIT=on` | seit 2026-07-28 |
 | `HELMUT_PROCESS_RUNS_RELATIONAL=on` | seit 2026-07-27 |
 | `HELMUT_ATOMIC_LOCK` | an — atomare, fail-closed Sperren |
-| LLM Tagesbudget | **Deckel 2416 / Understanding Reserve 702 / Vorrangreserve 200**, Production am **07.09., 00:30 UTC** gelesen. Für 06.09.: Zähler 92, 87 Belege, bekannt 0,243678 USD plus 0,30 USD Lückenreserve. Für 07.09. um 00:17 UTC noch keine Zählerzeile und keine Modellbelege. **Aktueller Beleg über 100 fehlt.** Maximal 10 USD, Prognosestopp 9 USD; kein Rechnungsbeleg oder atomarer USD Riegel. |
+| LLM Tagesbudget | **Deckel 2416 / Understanding Reserve 702 / Vorrangreserve 200**, Production am **07.09., 00:30 UTC** gelesen. Für 06.09.: Zähler 92, 87 Belege, bekannt 0,243678 USD plus 0,30 USD Lückenreserve. Für 07.09. um 06:55 UTC Zähler 59. **Aktueller Beleg über 100 fehlt.** Maximal 10 USD, Prognosestopp 9 USD; kein Rechnungsbeleg oder atomarer USD Riegel. |
 | `HELMUT_VERSTEHEN_CAS=on` | seit 2026-08-17; `HELMUT_VERSTEHEN_PARALLELITAET` nicht gesetzt ⇒ wirkt als 1 |
 | `HELMUT_SCALABLE_PIPELINE=on` | **seit 23.08. 16:47 UTC**, Modus `shadow`, Worker 4/25/25; Rückweg: Flag löschen + Redeploy (Betreiber) |
 | `HELMUT_CRON_GLOBALABRUF=on` | seit 2026-08-06 (Betreiber); Fortbestand ist Betreiberentscheidung |
@@ -61,7 +61,7 @@
 
 ## 6 · Skalierung von 25 auf exakt 500 Testprofile
 
-**25 Profile sind aktiv.** Zum Ziel fehlen **475** synthetische Profile: vorhandene Kennungsmengen B 75 und C 400. Neuer Betreiberwunsch: nach dem bestehenden Test direkt auf **500 aktiv**, ohne eigene Abnahme bei 100. Inaktive Anlage und anschließende Aktivierung bleiben getrennte Vorgänge. Endbestand **504 insgesamt, 500 aktiv, 4 unverändert inaktiv**. Keine Kontoaktivierung. Der ausdrückliche Zielweg ist implementiert und wird vor Übernahme vollständig geprüft; [Ablauf](betrieb/direkter-ausbau-500.md) und SR §56.
+**25 Profile sind aktiv.** Zum Ziel fehlen **475** synthetische Profile: vorhandene Kennungsmengen B 75 und C 400. Neuer Betreiberwunsch: nach dem bestehenden Test direkt auf **500 aktiv**, ohne eigene Abnahme bei 100. Inaktive Anlage und anschließende Aktivierung bleiben getrennte Vorgänge. Endbestand **504 insgesamt, 500 aktiv, 4 unverändert inaktiv**. Keine Kontoaktivierung. Der ausdrückliche Zielweg ist mit #326 geprüft, gemergt und deployt; [Ablauf](betrieb/direkter-ausbau-500.md) und SR §56.
 
 1. **Wiederanlauf erledigt:** Datenbank wiederholt erreichbar, geschützte Leser erfolgreich. Natürlicher Crawl um 20:00 UTC abgeschlossen und unabhängig geprüft, kein Ersatzcrawl. SR §53.
 2. **Lagebeleg erledigt:** kontrollierter Lauf um 20:33 UTC erreichte **25/25** mit gespeicherter Wirkung und Quellenlinks. Der gescheiterte 10:00 UTC Lauf zählt weiterhin nicht. Am 07.09. morgens sind alle 60 A Aufträge des Fensters 06.09. erledigt. Vollständige Briefingqualität und aktueller Zählerbeleg über 100 bleiben offen.
@@ -82,7 +82,7 @@ Bestehende Grenzen und Freigaben: [SR §41 und neuere Betreiberänderung §55](b
 6. **OP-11:** Branch Protection nicht aktiv; Pflicht-CI blockiert Merges nicht technisch.
 7. **OP-15:** Google-Klumpenrisiko (146/163 Wege); 29 von 42 Personensuchen lieferten nie (`circuit-open`) — Production-Beweis der Härtung steht aus (§8).
 8. **Lage-/KI-Kapazität für Skalierung:** siehe §6. Belegt: **drei** reguläre Warteschlangenabflüsse/Tag, nicht elf (§13).
-9. **500er Funktionstest: A Abnahme und scharfer Ausbau offen** (§6, SR §56). Direkter Ausführungsweg implementiert, technische Übernahme in Prüfung. Wiederanlauf belegt, A aktiv, B/C unangelegt. Automatische Freigabeprüfung sperrte den neuen A Workflowstart als möglichen Wiederholungsversuch. Bestehender Ausführer startet nur 21:36 bis vor 23:54 UTC; am 06.09. verstrichen. Keine Umgehung. Klare erneute Freigabe und frische Starttore erforderlich.
+9. **500er Funktionstest: A Abnahme und scharfer Ausbau offen** (§6, SR §56). Direkter Ausführungsweg mit #326 übernommen und READY. Wiederanlauf belegt, A aktiv, B/C unangelegt. Automatische Freigabeprüfung sperrte den neuen A Workflowstart als möglichen Wiederholungsversuch. Bestehender Ausführer startet nur 21:36 bis vor 23:54 UTC; am 06.09. verstrichen. Keine Umgehung. Klare erneute Freigabe und frische Starttore erforderlich.
 10. **OP-07:** Monitoring-Zweitkanal stellt seit mind. 17.08. täglich zu; Ziel von `HELMUT_MONITORING_WEBHOOK_URL` und der doppelte WhatsApp-Eingang bleiben ungeklärt (Betreiberprüfung, kein Code-Fix vorher).
 11. **Profilpfad:** Exklusivmodus in Production belegt; ältere Dual Write Annahme überholt. Vor B/C Daten und Ausführungskontext frisch abgleichen. Auth, main und p haben CAS Schutz; alte Instanzen und direkte Fremdschreiber bleiben ausgenommen. Schutz gegen automatische Kontolöschung aus #305 bleibt verpflichtend.
 
@@ -121,7 +121,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-1. Lokale Prüfung des direkten Ausbaus bestanden. Externe Pflichtprüfungen samt echtem Datenbanktest im zugehörigen PR bestätigen, geprüft übernehmen und exakt zugehöriges Production READY belegen. Vor Übernahme alle Pflichtprüfungen am endgültigen Kopf; bei Deploymentfehler sofort stoppen.
+1. **Technischer Ausbau erledigt:** #326 geprüft, gemergt und Production READY. Bei Fortsetzung aktuellen main Kopf und wirksame Production Konfiguration frisch lesen; keine neue Implementierung desselben Ausführers.
 2. Die A Aufträge des Fensters 06.09. sind natürlich fertig. Vollständige Qualitätsabnahme und aktuellen Budgetbeleg ergänzen. Der neue Zielweg verlangt echte Abnahmebelege, keinen handgesetzten Erfolg. Ein erneuter A Workflowstart bleibt an die besondere Freigabe aus SR §55.3 gebunden.
 3. Nach A Abnahme im belegten Nachtfenster **21:36 bis vor 03:58 UTC** die 475 Zielprofile inaktiv anlegen, unabhängig prüfen und getrennt aktivieren. Der neue Fachzyklus startet ausschließlich bei exakt 500 aktiven Profilen. [Ausführung](betrieb/direkter-ausbau-500.md).
 4. Danach die 500 fachlich abnehmen und dokumentieren. Erst anschließend Verkaufsreife und P0 Punkte bearbeiten. Keine automatische Wiederholung, kein Rollback oder Revert.
