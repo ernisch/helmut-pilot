@@ -8,7 +8,7 @@ const BOOLEAN_FELDER = Object.freeze([
   "storageSupabase", "v3Bereit", "profileRelational", "profileExclusive",
   "retentionGueltig", "kommunikationGesperrt", "kohortenQuellenGesperrt"
 ]);
-const ZAHL_FELDER = Object.freeze(["retention", "tagesdeckel", "understandingReserve"]);
+const ZAHL_FELDER = Object.freeze(["retention", "tagesdeckel", "understandingReserve", "vorrangreserveReal"]);
 
 async function pruefe({ env = process.env, fetchFn = global.fetch } = {}) {
   const bericht = { ok: false, reinLesend: true, grund: "nicht-geprueft", httpStatus: null };

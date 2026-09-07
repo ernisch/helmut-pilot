@@ -178,6 +178,7 @@ async function handleRequest(request, response) {
         retention: retention.gueltig ? retention.wirksam : null,
         tagesdeckel: storageModul.llmDailyCallLimit(),
         understandingReserve: storageModul.llmUnderstandingReserve(),
+        vorrangreserveReal: require("./lib/helmut/mandatsklasse").vorrangreserveReal().wert,
         kommunikationGesperrt: riegel.modus() === riegel.MODUS_TESTFENSTER,
         kohortenQuellenGesperrt: !require("./lib/helmut/scheduler")
           .profilQuellenErlaubt({ id: "test-kohorte-a-001" })

@@ -6802,3 +6802,152 @@ Kosten und behandelt ihn weiter als reservierte Lücke mit mindestens 0,05 USD. 
 mit Kostenwert und jeder andere Modellname bleiben gesperrt. Die Korrektur bestand **7/7** gezielte
 Prüfungen, erneut **332/332** lokale Suiten und **40/40** Browserprüfungen. Ein neuer Production
 Aufruf ist damit noch nicht erfolgt.
+
+## §55 Aktueller Abschluss, abgelehnter Start und direktes Betreiberziel 500 (06.09.2026)
+
+### §55.1 Neuere Betreiberanweisung und ihre Reichweite
+
+Der Betreiber hat in dieser Sitzung ausdrücklich und wiederholt angewiesen, **nach Abschluss des
+bestehenden Tests direkt auf 500 Mandate auszubauen**, ohne gesonderte Zwischenabnahme bei 100,
+und anschließend die festgestellten Fehler zu korrigieren. Er bestätigt, dass Helmut derzeit von
+keinen Kunden benutzt wird. Gemeint bleiben synthetische Testprofile. Diese neuere Anweisung
+ersetzt für diesen Auftrag die entgegenstehende Stufenfolge aus §41.1 und §41.6. Die frühere Aussage,
+der Betreiber könne seine eigene Stufenfreigabe nicht ändern, war zu pauschal und wurde korrigiert.
+
+Der Umfang ist **25 → 500 aktive Profile**, also **475 zusätzlich**. Die vorhandenen Kennungsmengen
+B (75) und C (400) beschreiben diese Zielmenge; 400 war nie eine eigene Gesamtstufe. Zielbestand
+bleibt 504 insgesamt, 500 aktiv, vier unverändert inaktiv. Die fünf älteren aktiven Profile bleiben
+geschützt. Keine Kohortenkontoaktivierung, keine externe Kommunikation, keine Lockerung der
+Kosten-, Speicher-, Ressourcen-, Migrations-, Secret- oder Deploymentgrenzen aus §41. Inaktive
+Provisionierung und anschließende Aktivierung bleiben getrennte Vorgänge.
+
+Der Betreiber möchte Berichte künftig zusätzlich einfach erklärt bekommen: zuerst in wenigen
+verständlichen Sätzen sagen, was funktioniert, was fehlt und welcher konkrete nächste Schritt
+nötig ist; technische Nachweise danach knapp verlinken. Dieser Berichtswunsch gilt auch für die
+Fortsetzung des Projekts.
+
+**Technischer Befund:** `scripts/testkohorte-vorwaerts.js` und `testkohorte-stufen.js` erzwingen
+weiterhin A/B/C und gemessene vollständige Vorstufen. Der direkte Zielweg ist daher noch nicht
+implementiert oder geprüft. Er braucht eine ausdrücklich erkennbare, getestete Anpassung des
+vorgesehenen Werkzeugs. Keine handgesetzte bestandene B Stufe, kein SQL Ersatz und keine Nutzung
+des pauschalen Bibliothekspfads hinter dem CLI. Die Betreiberanweisung ist kein Beleg dafür,
+dass 500 bereits sicher funktionieren. Dafür bleiben tatsächliche Wirkung, Qualität, Vollständigkeit,
+Fortschritt, Integrität, Kommunikation und Budget an der Zielmenge nachzuweisen.
+
+### §55.2 #323 gemergt, CI und Production unabhängig bestätigt
+
+- PR **#323**, Kopf `918a427bd44fadc33c3760f61f6453b12fe34bf2`, korrigiert ausschließlich die
+  enge Behandlung des historischen Modellplatzhalters sowie Tests und Belegdokumentation.
+- Lokaler Prüfstand vor PR: **332/332** Suiten, **40/40** Browserprüfungen, **7/7** gezielte
+  Ausführerprüfungen. PR CI vollständig erfolgreich am exakten Kopf.
+- Merge am **06.09., 23:39:11 UTC**: main **`420d48dad0641ceffe028933022ab8a3e1143156`**;
+  Codebaum **`90f39c60675a4b7d13ab9b2a66cc299c1419528e`** stimmt mit lokalem Prüfstand überein.
+- Production **`dpl_981LijkZDniacs7Q4YzQ4iPFyWKC`**, READY am exakten main Kopf, Hauptadresse
+  `helmut-pilot.vercel.app` korrekt und kein Aliasfehler; um 23:55 UTC erneut bestätigt.
+- Main CI **`34067493288`**: beide Pflichtjobs erfolgreich, um 23:50 UTC unabhängig gelesen.
+  Keine offenen Pull Requests und kein laufender Actions Auftrag vor dem Startversuch.
+
+### §55.3 Automatische Freigabeprüfung verhindert neuen Workflowstart
+
+Um etwa **02:52 Türkei / 01:52 Berlin am 07.09. / 23:52 UTC am 06.09.** wurde der manuelle
+Start der bereits geprüften Action `500-fachzyklus-a.yml` vorbereitet: genau eine bestehende
+Production Pipeline Runde am bestätigten main Kopf, natürlicher Crawl
+`cron-crawl-20260906200037-3ggk4` als Beleg, alle skripteigenen frischen Vorbedingungen und
+keine automatische Wiederholung. Direkt vorher wurden Änderung, Wirkung, Risiken, Nachkontrolle,
+fehlender automatischer Rückweg und §41.1 als bestehende Freigabe benannt.
+
+**Die automatische Freigabeprüfung lehnte das Absenden ab.** Begründung: Der Workflow kann
+Production Daten ändern und Modellkosten verursachen; wegen des bereits fehlgeschlagenen
+Vorlaufs sei die Freigabe dieses Wiederholungsversuchs und die erneute Erfüllung sämtlicher
+§41 Bedingungen nicht ausreichend eindeutig. Es wurde kein alternativer Ausführungsweg verwendet.
+Diese Ablehnung ist weder ein ausgeführter Pipelinefehler noch ein fehlgeschlagenes Deployment.
+
+Unabhängiger Gegenbeleg zum früheren Vorlauf: Job **101575790907** des einzigen A Workflows
+**34066395564** meldete um 23:16:11 UTC ausdrücklich `ausgeloest:false`, `grund:modell-unbekannt`.
+Auch nach der Ablehnung enthält GitHub **keinen neuen A Workflowlauf**. Die Datenbank weist seit
+23:50 UTC keinen neuen Prozesslauf aus. Die Ablehnung wurde nicht durch wiederholtes Absenden
+umgangen. Erforderlich ist eine klar auf einen neuen kontrollierten Start bezogene Betreiberfreigabe
+mit anschließend erneut belegten Voraussetzungen.
+
+Der bestehende A Ausführer erlaubt Start nur **21:36 bis vor 23:54 UTC** und reserviert damit
+Restzeit vor dem UTC Tageswechsel. Dieses engere Fenster ist am 06.09. inzwischen verstrichen.
+Das allgemeine Nachtfenster bis 03:59 UTC hebt diese Schranke nicht auf. Keine Uhrmanipulation,
+kein alter Tageszähler als neuer Tagesbeleg und kein identischer Aufruf nach Fensterschluss.
+
+### §55.4 Unabhängiger Endbestand und Nachweisgrenzen
+
+Rein lesend um **23:54–23:55 UTC**:
+
+| Gegenstand | Befund |
+|---|---|
+| Supabase | `ACTIVE_HEALTHY`, Minimalabfragen 23:51:18 / 23:54:08 / 23:55:40 UTC erfolgreich |
+| Ressourcen | Pro / Micro bleiben wie durch Betreiber eingerichtet; letzte unabhängig gelesene Dashboardwerte RAM 55 %, CPU 2 %, 18/60 Verbindungen (§53.3), keine neue RAM Messung nach der abgelehnten Action behauptet |
+| Profile | 29 gesamt, 25 aktiv, vier inaktiv, null gelöscht; A 20, B/C 0 |
+| Vollständige Profilhashes | Gesamt `ede70d5ae7b0bcdd4ea4c07129b92cda`, Nichtkohorte `3953f27ddd56b0ea8e66af6857d153ec`, unverändert gegenüber §53.4 |
+| Identitäten und Konten | 30 Identitätsprofile; 25 Auth Konten, drei aktiv; 20 Kohortenkonten, null aktiv |
+| A Fenster 06.09. | Quellen 19 erledigt / 1 wartend; Projektionen 20 erledigt; Briefings 10 erledigt / 10 wartend |
+| Sperren | Keine aktive Pipeline- oder Auftragslease |
+| Fachwirkung des abgelehnten Starts | Kein neuer Prozesslauf seit 23:50 UTC, kein zusätzliches Ergebnis; vollständige A Abnahme weiterhin offen |
+| Kosten des UTC Tages 06.09. | 92 Reservierungen, 87 Belege, 0,243678 USD bekannt; eine unbekannte Kostenzeile und fünf Reservierungslücken. Mit 0,30 USD Lückenreserve und 2 USD Zusatzreserve Prognose 2,543678 USD; keine Providerrechnung oder atomare USD Grenze |
+| Kommunikation | Keine neue Outbox Versandquittung seit 23:50 UTC; kein gestarteter Fachlauf. Der bisherige globale Sperrbeleg aus §53 bleibt historisch belegt und ist vor künftigem Start frisch zu lesen |
+| Laufzeitfehler | Vercel meldet keine Laufzeitfehler im Zeitfenster seit 23:39 UTC; kein neuer Datenbankausfall belegt |
+
+**Sprintstatus: BLOCKIERT.** Wiederanlauf, Azure Zugang, Lage 25/25 und die beiden notwendigen
+Codekorrekturen sind belegt. Es fehlen A Restabschluss, vollständige Briefingqualität und aktueller
+Zählernachweis über 100 sowie der geprüfte direkte Ausbauweg und der Funktionsnachweis bei 500.
+Das ist kein erfolgreicher Abschluss des 500er Ziels und keine behauptete Verkaufsreife.
+
+**Nächster Schritt:** Betreiberfreigabe für genau einen neuen Start des korrigierten kontrollierten
+A Workflows klären; vor Ausführung neues zulässiges Zeitfenster, aktuellen natürlichen Lauf,
+Production Kopf, Budget, Kommunikation und Datenbestand prüfen. Erst nach Abschluss des vorhandenen
+Tests den neu beauftragten direkten Ausbauweg fertig prüfen und einsetzen. Für die geänderte
+Zielreihenfolge selbst ist keine wiederholte Freigabe nötig; der konkrete Workflowstart ist durch
+die automatische Prüfung separat gesperrt. Keine neue Ressourcenentscheidung erforderlich.
+
+Unverändert: sämtliche Profile und Konten seit den erlaubten Fachläufen, vier inaktive Profile,
+Cronplan, Kommunikationsriegel, Kohortenquellen, Supabase Ressourcen und PITR, Azure, Vercel Env,
+Schema, Migrationen, verlorene crawlRuns, Recoverypfad, CLAUDE.md und ARCHITECTURE.md. Keine Löschung,
+Zustellung, Rücksetzung oder Rückabwicklung. Die folgende echte Schutzkorrektur wird mit diesem
+Nachtrag geprüft; nach ihrem Merge ist ihr Production Zustand einmal abschließend zu dokumentieren.
+
+### §55.5 Abschlussprüfung findet fehlenden tatsächlichen Vorrangbeleg (07.09.2026)
+
+Der A Ausführer aus #322 setzte in seinem GitHub Prozess `HELMUT_TESTLAUF_VORRANG_REAL=200`
+und meldete damit das Starttor erfüllt. Die eigentliche Pipeline läuft jedoch in Vercel; deren
+Konfigurationsantwort enthielt diesen Wert noch nicht. Der lokale Wert konnte somit keinen
+wirksamen Vorrangschutz in Production belegen. Dass die fünf älteren Profile nach bisherigen
+Läufen unversehrt blieben, ersetzt diesen fehlenden Konfigurationsbeleg nicht. Die automatische
+Ablehnung verhinderte den vorgesehenen scharfen Aufruf; die Lücke wurde in der anschließenden
+rein lesenden Codeprüfung entdeckt.
+
+Enge Korrektur: Die bestehende authentifizierte, rein lesende Statusroute gibt die wirksame
+`vorrangreserveReal` aus der tatsächlichen Serverumgebung zurück. Der Leser validiert den Wert.
+Der A Ausführer verlangt mindestens 200 und verwendet ausschließlich diesen gelesenen Wert
+für seinen lokalen Vorflug. Eine lokale 200 bei fehlender, ungültiger oder kleinerer Production
+Reserve gestattet keinen Pipeline Aufruf. Kein Vercel Wert wird durch diese Korrektur geändert.
+
+Beim UTC Tageswechsel wurde zudem die bestehende Zusicherung des Workflowformulars im Code
+nachgezogen: Der natürliche Crawl muss anhand Kennung und tatsächlicher Laufzeiten dem
+**20 Uhr Lauf desselben UTC Tages** entsprechen, abgeschlossen sein und darf nicht in der
+Zukunft liegen. Ein erfolgreicher alter Tageslauf oder Morgencrawl genügt nicht. Die bisherige
+Prüfung auf bloßen Erfolg setzte diese schon verlangte Frische nicht vollständig durch.
+
+Gezielte lokale Prüfungen über `scripts/lokal.js`: **13/13** A Ausführer, **37/37** Leser und
+echter HTTP Handler, **49/49** Lageausführer. Sie belegen insbesondere den Abbruch vor jedem
+Production Pipeline Aufruf bei unzureichender tatsächlicher Reserve oder falschem Naturlauf.
+Vollständige Tests, PR, CI, Merge und unabhängiger Production Leser werden am endgültigen Kopf
+ergänzt. Bis dahin bleibt der tatsächliche Vorrangwert unbekannt und ein neuer A Start gesperrt.
+Die Korrektur stützt sich auf die in §41.1 erlaubten notwendigen kleinen Code PRs; sie erweitert
+weder den direkten Ausbaupfad noch eine scharfe Startfreigabe.
+
+Ein noch während der Korrektur laufender Gesamtzwischenlauf endete mit **331/332** Suiten;
+`p1-security-check.js` meldete drei unerwartete HTTP Statuswerte. Derselbe unveränderte Test
+bestand unmittelbar danach isoliert. Die Ursache dieses Zwischenbefunds ist nicht abschließend
+bewiesen; er wird nicht als grüner Gesamtbeleg verwendet. Maßgeblich ist der anschließende
+vollständige Lauf am fertigen Code ohne parallele Browserprüfung.
+
+Der maßgebliche Gesamtlauf am fertigen Code bestand **332/332 Suiten**, dazu **40/40**
+Browserprüfungen. Der unveränderte `p1-security-check.js` bestand sowohl isoliert **332/332 Checks**
+als auch innerhalb dieses abschließenden Gesamtlaufs. Syntax, Dokumentgröße und lokale Dokumentlinks
+sind gültig. Damit sind die lokalen Voraussetzungen für den kleinen Korrektur PR erfüllt;
+externe Kopfprüfung und Production Beleg stehen noch aus.
