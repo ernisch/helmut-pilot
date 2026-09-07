@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 07.09.2026, 22:21 UTC. TEILWEISE ABGESCHLOSSEN.** main `b0342da` nach #331, Production READY, CI grün. Ursprüngliches A Fenster **60/60 erledigt**, heutiges Folgefenster 49/60. **Kein zusätzlicher A Start erforderlich.** Bestand **29/25/4 unverändert**, 147 Reservierungen, **0,428453 USD bekannt**, ein unbekannter Kostenbeleg. Zwei Ausführerfehler auf `codex/a-starttor-kostenbelege-20260907` korrigiert, **337/337 lokal grün**; [SR §59](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). Externe Prüfung und Übernahme offen. Briefingqualität fehlt, keine A oder 500er Abnahme.
+**Stand: 07.09.2026, 22:51 UTC. TEILWEISE ABGESCHLOSSEN.** #332 gemergt als `f27d5b9`, Production READY, PR und main CI grün. **337/337 lokal, Browser 40/40 extern.** Ursprüngliches A Fenster **60/60 fertig**, kein zusätzlicher A Start. Bestand **29/25/4 unverändert**, 147 Reservierungen, **0,428453 USD bekannt**, ein unbekannter Kostenbeleg. Reiner Statuslauf bestätigt Runtime 2416/702/200 und Kommunikationssperre. Nächste Quellenprüfung nach neuen Morgenbriefings eingeplant; [SR §59](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). Briefingqualität und 500er Nachweis fehlen.
 
 
 **Kernlage:** Warteschlangenmotor seit 23.08. in Production `on`, Dispatch `shadow` (Cron-Antrieb, kein AWS). Fünferbeleg mit 376 Abschlüssen: [OP-30 §30.7](betrieb/op30-aktivierung-5-mandate.md). **Aktuell vier historische Vorgänge `unbekannt`, jüngste Änderung 02.09., 11:33 UTC; keine neue unbekannte Reservierung nach Wiederanlauf.** Selbstweck in Production nie ausgeführt.
@@ -11,9 +11,10 @@
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **Aktueller Codekopf #330:** `2ca0e62b14aa0ef5928dc63969c655df620db1fa`, Production `dpl_5ZRdoym5m5U1R7iBerEE2fbBBrWV` READY am exakten Merge. PR CI `34117430546` mit beiden Pflichtjobs grün; 337/337 Suiten, Browser 40/40, echte Datenbankprüfungen 10/10 und 48/48. Zwei Merge Eltern und identischer geprüfter Baum bestätigt; SR §58.5. Ausführer aus #326/#328 wird weiterverwendet.
+- **Aktueller Codekopf #332:** `f27d5b922bbfdb01c41abf94f6d0c1c9d39f186b`, Production `dpl_7He1j1vAFjadT3xJmKXgqjPg6eMh` READY. PR CI `34166502961` beide Pflichtjobs grün, identischer geprüfter Baum und zwei Eltern. Kostenleser trennt belegte Nichtaufrufe; Vorflug nutzt gemessene Production Werte. SR §59.4.
+- **Quellenkorrektur #330:** `2ca0e62b14aa0ef5928dc63969c655df620db1fa`, Production `dpl_5ZRdoym5m5U1R7iBerEE2fbBBrWV` READY am exakten Merge. PR CI `34117430546` mit beiden Pflichtjobs grün; 337/337 Suiten, Browser 40/40, echte Datenbankprüfungen 10/10 und 48/48. Zwei Merge Eltern und identischer geprüfter Baum bestätigt; SR §58.5. Ausführer aus #326/#328 wird weiterverwendet.
 - **A Ausführer #322/#323:** deployt und geprüft; Einzelbelege SR §54/§55. Workflow `34066395564` scheiterte vor dem Production Aufruf; kein Wiederholungslauf.
-- **Übernommen (§57):** Quellenbindung, begrenzte Briefingprüfung und manueller Testabschluss für höchstens 495 Profile. Fortsetzung für das kommende Nachtfenster eingerichtet; konkreter Abschalttermin erst vor tatsächlicher Aktivierung festzulegen. Keine neue Production Facharbeit gestartet.
+- **Übernommen (§57):** Quellenbindung, begrenzte Briefingprüfung und manueller Testabschluss für höchstens 495 Profile. Fortsetzung nun nach den natürlichen Morgenbriefings; konkreter Abschalttermin erst vor tatsächlicher Aktivierung festzulegen. Keine neue Production Facharbeit gestartet.
 - Frühere Schutzarbeiten **#303, #305, #307, #309, #310, #313, #316 und #318** sind deployt. Sie schützen Kontext, Leseantworten, Konten, gemeinsam genutzte Speicher und Appstart. Belege und Grenzen: SR §40–§51; Lage 25/25 seit §53.
 
 ## 3 · Production-Zustand
@@ -122,8 +123,8 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-1. Die zwei Ausführerfehler aus SR §59 korrigieren, vollständig prüfen und übernehmen. Kein zusätzlicher A Start: ursprüngliche Arbeit ist vollständig abgeschlossen; Freigabe ungenutzt.
-2. A Fenster 06.09. fertig; Fenster 07.09. noch elf offen. Alle 25 neuen Briefings fachlich prüfen. `qualitaetspruefung-a-20260907.json` ist keine bestandene `abnahme-a.json`. Der separate Briefingausführer bleibt bei unbekannten Modellkosten gesperrt; keine Lockerung dieses Riegels.
+1. #332 ist übernommen und unabhängig nachkontrolliert, Abschluss in SR §59.4. Kein zusätzlicher A Start: ursprüngliche Arbeit ist vollständig abgeschlossen; Freigabe ungenutzt.
+2. Alle 25 neuen Briefings fachlich prüfen. Fortsetzung ab 08.09. 08:55 Türkei / 07:55 Berlin / 05:55 UTC, höchstens stündlich und begrenzt auf 18 Termine. A Fenster 06.09. fertig, Folgefenster 07.09. elf offen. Die alte Qualitätsdatei ist keine bestandene `abnahme-a.json`. Manueller Briefingweg bei unbekannten Kosten weiter gesperrt, keine Aktivierung durch diese Fortsetzung.
 3. Nach A Abnahme im belegten Nachtfenster **21:36 bis vor 03:58 UTC** die 475 Zielprofile inaktiv anlegen, unabhängig prüfen und erst mit ausdrücklicher Aktivierungszustimmung getrennt aktivieren. Der Fachzyklus startet ausschließlich bei exakt 500 aktiven Profilen. [Ausführung](betrieb/direkter-ausbau-500.md).
 4. Ab tatsächlicher Aktivierung **24 Stunden Test planen, höchstens 48 Stunden**. Endzeit und ausführbaren Abschluss vor Beginn festlegen; der neue manuelle Workflow allein ist kein automatischer Timer. Dann 495 synthetische Profile deaktivieren und unabhängig bestätigen: 504 erhalten, fünf ältere aktiv. 500er Funktionsbefund und Fehler dokumentieren; kein unbeaufsichtigter Wochenlauf.
 
