@@ -1,6 +1,7 @@
 # Direkter Ausbau von 25 auf 500
 
 Stand 07.09.2026. Umsetzung der Betreiberanweisung in [SR §55 und §56](500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+Der folgende Kurztest samt Qualitätskorrektur und geplantem Abschluss wird in **SR §57** ergänzt.
 Der Code bereitet den Ausbau und einen kontrollierten Test vor. Er behauptet weder
 500 aktive Production Profile noch deren erfolgreiche fachliche Abnahme.
 
@@ -111,6 +112,22 @@ Ein HTTP Fehler oder fehlender Beleg startet keinen zweiten Versuch.
 systematische Auslassungen, Quellenqualität, Briefingqualität, fortlaufenden Abfluss,
 Integrität, Kommunikation und Kosten anhand persistierter Ergebnisse auswerten. Die
 Ausgabe behält deshalb auch bei Erfolg `funktionsnachweis500:false`.
+
+## Kurztest und geplanter Abschluss
+
+Betreiber möchte ein bis zwei Tage testen. Ab tatsächlicher Aktivierung 24 Stunden planen,
+höchstens 48 Stunden; konkrete Endzeit und ausführbaren Abschluss vor Beginn festhalten.
+Der manuelle Workflow `500-testende.yml` prüft den Bestand und deaktiviert separat mit
+`TESTKOHORTE_495_DEAKTIVIEREN_BESTAETIGT` die aktiven synthetischen Zielprofile. Kein
+automatischer Timer ist allein durch diesen Workflow eingerichtet. Vertrag und Grenzen
+einschließlich laufender Arbeit: [SR §57.4](500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+
+Die am 07.09. dokumentierte Qualitätsprüfung aller 25 Lagebriefings hat Fehler gefunden
+und ist **keine** A Abnahme. Nach Übernahme der Quellenkorrektur neue tatsächliche Texte
+prüfen. Dafür hat der vorhandene manuelle 25er Workflow die separate Auswahl `briefing`
+mit eigenem Bestätigungswort und unabhängigen Datenbanknachweisen (SR §57.3). Der
+erfolgreiche natürliche Abendcrawl desselben UTC Tages und sämtliche vorhandenen
+Starttore bleiben erforderlich. Kein Ersatzstart des abgelehnten A Workflows.
 
 ## Prüfungen und Nachweisgrenzen
 

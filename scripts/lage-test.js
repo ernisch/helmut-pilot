@@ -35,9 +35,9 @@ async function run() {
       { text: "   ", vorgang_ids: ["vg-a"] } // leer -> raus
     ] };
     const out = ai.assembleLageParagraphs(raw, allowed);
-    ok("leerer Absatz wird entfernt", out.length === 2);
-    ok("fremde vorgang_id gefiltert", JSON.stringify(out[0].vorgang_ids) === JSON.stringify(["vg-a"]));
-    ok("Text normalisiert/getrimmt", out[0].text === "Absatz eins.");
+    ok("leerer und teilweise unbelegter Absatz werden entfernt", out.length === 1);
+    ok("nur vollstaendig belegter Absatz bleibt", JSON.stringify(out[0].vorgang_ids) === JSON.stringify(["vg-b"]));
+    ok("Text normalisiert/getrimmt", out[0].text === "Absatz zwei.");
   }
 
   // ── 2) 250-Woerter-Deckel ──

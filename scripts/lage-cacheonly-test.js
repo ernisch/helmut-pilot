@@ -45,7 +45,7 @@ function installMocks({ cachedNarrative = null } = {}) {
   storage.v3StoreReady = () => true;
   storage.listKnowledgeObjects = async () => [KO];
   storage.listMatchingResults = async () => []; // -> Fallback: neueste verstandene
-  storage.getSourcesForVorgang = async () => [{ url: "https://bmas.de/rente", source_name: "BMAS", title: "Rente", published_at: "2026-07-12T06:00:00Z" }];
+  storage.getSourcesForVorgang = async () => [{ url: "https://bmas.de/rente", source_name: "BMAS", title: "Rente", published_at: new Date().toISOString() }];
   storage.getRenderedBriefingV3 = async () => (cachedNarrative
     ? { payload: { paragraphs: cachedNarrative, koSetHash: null } }
     : null); // Default: Cache-Miss

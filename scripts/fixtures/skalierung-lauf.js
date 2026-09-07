@@ -211,6 +211,10 @@ function installiereNarrativWelt(w, u, konfig = {}) {
   const rateLimitRate = Math.max(0, Number(konfig.rateLimitRate) || 0);
   const timeoutRate = Math.max(0, Number(konfig.timeoutRate) || 0);
   const tagIso = new Date(T0).toISOString();
+  // Die Queue hat eine virtuelle Uhr, der echte Lagepfad liest die Wanduhr.
+  // Seine Belegfixture bleibt innerhalb eines Laufs gleich und aktuell; T0
+  // wuerde sonst irgendwann alle Modell- und Stoerproben als historisch sperren.
+  const quellenzeit = new Date(Date.now() - 3600000).toISOString();
 
   w.narrativ = {
     aufrufe: 0, erzeugt: 0, ausCache: 0, fehler: 0, rateLimits: 0, timeouts: 0,
@@ -273,7 +277,7 @@ function installiereNarrativWelt(w, u, konfig = {}) {
   };
   storage.getSourcesForVorgang = async (vg) => [{
     url: `https://beispiel.invalid/beleg/${vg}`, source_name: "Beispielquelle",
-    published_at: tagIso, title: `Beleg zu ${vg}`
+    published_at: quellenzeit, title: `Beleg zu ${vg}`
   }];
   storage.getRenderedBriefingV3 = async (userId, slot, day) =>
     w.narrativ.cache.get(`bf-${userId}-${slot}-${day}`) || null;

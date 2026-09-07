@@ -1,9 +1,17 @@
-name: "25 Testprofile: kontrollierter Lage Check"
+name: "25 Testprofile: kontrollierter Lage Check oder Briefing"
 
 # Kein automatischer Trigger. Voraussetzung: SR §41 und erfolgreicher Abendcrawl.
 on:
   workflow_dispatch:
     inputs:
+      schritt:
+        description: "Genau ein bestehender Aufruf, kein automatischer Folgelauf"
+        type: choice
+        options:
+          - lagecheck
+          - briefing
+        default: lagecheck
+        required: true
       production_commit:
         description: "Vollstaendiger unabhaengig als Production READY bestaetigter Commit"
         type: string
@@ -13,7 +21,7 @@ on:
         type: string
         required: true
       bestaetigung:
-        description: "LAGECHECK_25_NACH_NATURLAUF_BESTAETIGT"
+        description: "LAGECHECK_25_NACH_NATURLAUF_BESTAETIGT oder BRIEFING_25_NACH_NATURLAUF_BESTAETIGT"
         type: string
         required: true
 
@@ -38,7 +46,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "22"
-      - name: Voraussetzungen pruefen und genau einen Lage Check ausfuehren
+      - name: Voraussetzungen pruefen und genau einen ausgewaehlten Aufruf ausfuehren
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -46,4 +54,5 @@ jobs:
           HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
           HELMUT_NATURLAUF_ID: ${{ inputs.naturlauf_id }}
           HELMUT_LAGE_25_CONFIRM: ${{ inputs.bestaetigung }}
+          HELMUT_LAGE_25_SCHRITT: ${{ inputs.schritt }}
         run: node scripts/github-lagecheck-25.js

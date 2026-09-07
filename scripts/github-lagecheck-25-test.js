@@ -3,7 +3,7 @@
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
-const { ausfuehren, pruefeZeit, CONFIRM, PROJECT_URL, LAGE_URL } = require("./github-lagecheck-25");
+const { ausfuehren, pruefeZeit, CONFIRM, BRIEFING_CONFIRM, PROJECT_URL, LAGE_URL, BRIEFING_URL } = require("./github-lagecheck-25");
 const SHA = "a".repeat(40);
 const NOW = "2026-09-06T20:20:00.000Z";
 let passed = 0;
@@ -40,7 +40,7 @@ function fixture() {
     assert.ok(options.signal);
     const response = body => ({ status: 200, json: async () => structuredClone(body) });
     if (url.endsWith("/api/cron/testnachweis-status")) return response(f.config);
-    if (url === LAGE_URL) {
+    if (url === LAGE_URL || url === BRIEFING_URL) {
       f.executed += 1;
       if (f.lageError) throw new Error(f.lageError);
       if (f.afterLage) f.afterLage(f);
@@ -49,7 +49,12 @@ function fixture() {
     assert.ok(url.startsWith(PROJECT_URL + "/rest/v1/"));
     assert.equal(options.headers.apikey, env.SUPABASE_SERVICE_ROLE_KEY);
     if (url.includes("/mandate_profiles?")) return response(f.profiles);
-    if (url.includes("/process_runs?")) return response(f.natural);
+    if (url.includes("/process_runs?")) return response(url.includes("process=eq.briefing-lage") ? f.briefingRuns : f.natural);
+    if (url.includes("/briefings?")) {
+      const id = new URL(url).searchParams.get("user_id").slice(3);
+      assert.equal(new URL(url).searchParams.get("id"), `eq.bf-${id}-lage-2026-09-06`);
+      return response(f.briefings.filter(b => b.user_id === id));
+    }
     if (url.includes("/pipeline_locks?")) return response(f.locks);
     if (url.includes("/helmut_jobs?")) return response(f.leases);
     if (url.includes("/llm_budget_counters?")) return response([{ used: f.used }]);
@@ -62,6 +67,22 @@ function fixture() {
 
 async function test(name, fn) {
   await fn(); passed += 1; console.log(`PASS ${name}`);
+}
+
+function briefingFixture() {
+  const f = fixture();
+  f.env.HELMUT_LAGE_25_SCHRITT = "briefing"; f.env.HELMUT_LAGE_25_CONFIRM = BRIEFING_CONFIRM;
+  f.lageBody = { prewarmed: 29, uebersprungen: 4,
+    results: f.profiles.map(p => ({ userId: p.user_id, available: p.aktiv,
+      reason: p.aktiv ? null : "profil-deaktiviert" })),
+    lauftelemetrie: { gespeichert: true, vollstaendig: true, fehler: null } };
+  f.briefings = f.profiles.filter(p => p.aktiv).map(p => ({ user_id: p.user_id,
+    id: `bf-${p.user_id}-lage-2026-09-06`, slot: "lage", generated_at: "2026-09-06T20:20:00+00:00",
+    payload: { generatedAt: NOW, quellenVersion: 1, quellenHash: "a".repeat(64),
+      paragraphs: [{ text: "Ein belegter Text", vorgang_ids: ["vg-test"] }] } }));
+  f.briefingRuns = [{ run_id: "briefing-lage-20260906202000-abc12", process: "briefing-lage",
+    status: "success", started_at: NOW, finished_at: NOW, processed_count: 29 }];
+  return f;
 }
 
 (async () => {
@@ -152,6 +173,30 @@ async function test(name, fn) {
   await test("Kostenanstieg nach Lauf stoppt die Fortsetzung", async () => {
     const f = fixture(); f.afterLage = x => { x.usage.forEach(u => { u.estimatedCost = 0.2; }); };
     assert.equal((await f.run()).ok, false);
+  });
+  await test("Briefing Variante braucht eigenes Wort und ruft nur die gewaehlte Route auf", async () => {
+    const f = briefingFixture(), r = await f.run();
+    assert.equal(r.ok, true); assert.equal(f.executed, 1); assert.equal(r.zaehlwerte.gespeichert, 25);
+    assert.equal(r.inhaltlicheQualitaetsabnahmeOffen, true);
+    assert.equal(f.calls.filter(c => c.url === LAGE_URL).length, 0);
+    const wrong = briefingFixture(); wrong.env.HELMUT_LAGE_25_CONFIRM = CONFIRM;
+    assert.equal((await wrong.run()).ausgeloest, false); assert.equal(wrong.executed, 0);
+  });
+  for (const [name, mutate] of [
+    ["alter Cache", f => { delete f.briefings[0].payload.quellenVersion; }],
+    ["fehlende Speicherung", f => { f.briefings.pop(); }],
+    ["fehlende Laufquittung", f => { f.briefingRuns = []; }],
+    ["doppelte Laufquittung", f => { f.briefingRuns.push(f.briefingRuns[0]); }],
+    ["unvollstaendiger Durchlauf", f => { f.lageBody.results[0].reason = "zeitbudget"; f.lageBody.results[0].available = false; }],
+    ["falsche Telemetrie", f => { f.lageBody.lauftelemetrie.gespeichert = false; }]
+  ]) await test("Briefing ohne vollen Beleg bleibt offen: " + name, async () => {
+    const f = briefingFixture(); mutate(f); const r = await f.run();
+    assert.equal(r.ok, false); assert.equal(f.executed, 1); assert.equal(r.keineAutomatischeWiederholung, true);
+  });
+  await test("Ehrlicher Leerzustand ist kein bewiesenes Briefing fuer alle 25", async () => {
+    const f = briefingFixture(); Object.assign(f.lageBody.results[0], { available: false, reason: "no-current-sources" });
+    const r = await f.run(); assert.equal(r.ok, false); assert.equal(r.technischVollstaendig, true);
+    assert.equal(r.zaehlwerte.ehrlichLeer, 1); assert.equal(r.zaehlwerte.gespeichert, 24);
   });
   await test("Workflow ohne automatische Ausfuehrung oder freie Shell Eingaben", () => {
     const y = fs.readFileSync(path.join(__dirname, "../.github/workflows/500-lagecheck-25.yml"), "utf8");

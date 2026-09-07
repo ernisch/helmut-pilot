@@ -1,0 +1,2346 @@
+{
+  "schemaVersion": 1,
+  "art": "qualitaetspruefung-keine-abnahme",
+  "productionCommit": "33086bde6e562343dc936bb70ac80c8de5281204",
+  "productionDeployment": "dpl_3Y7B7ZS9gXaNY4qvi2PNHGQFzkqn",
+  "erhebungstagUtc": "2026-09-07",
+  "quelle": "Supabase Production, ausschliesslich BEGIN READ ONLY SELECT; briefings, knowledge_objects, ko_document_links und raw_documents",
+  "umfang": {
+    "lagebriefings": 25,
+    "referenzierteVorgaenge": 53,
+    "briefingsMitHistorischerQuelle": 21,
+    "positiveAbnahmen": 0
+  },
+  "grenzen": [
+    "Verknuepfte gespeicherte Quellen und Texte ausgewertet; nicht alle externen Originalseiten erneut abgerufen.",
+    "Befund ist keine A Abnahme und darf abnahme-a.json nicht ersetzen.",
+    "Gruene lokale Tests ersetzen keinen nachfolgenden Production Qualitaetsbeleg."
+  ],
+  "befunde": [
+    {
+      "id": "Q1",
+      "befund": "Analysezeit vom September wird fuer die Auswahl verwendet; Quellendatum gelangt nicht in den bisherigen Lageprompt.",
+      "beispiel": "vg-arbeitsbescheinigung-20230110-07d9a7",
+      "nachweis": "Originalquelle im Bestand vom 10.01.2023, heutiges Briefing A008 und A017."
+    },
+    {
+      "id": "Q2",
+      "befund": "Nicht durch Titel oder Auszug belegte Rechtsfolge aus frueherer Modellanalyse wird weitergegeben.",
+      "beispiel": "vg-rentenzulage-20260905-ab85d5",
+      "nachweis": "Titel nennt Rentenzulage und Herausgeber Gegen Hartz IV. Auszug fehlt. Die Analyse ergaenzt eine Nichtanrechnung auf Leistungen."
+    },
+    {
+      "id": "Q3",
+      "befund": "Profilseite wird als nicht konkretisierte politische Stellungnahme zusammengefasst.",
+      "beispiel": "vg-schwerd-20260221-97c471",
+      "nachweis": "Quellenpfad ist eine Kandidatenseite, ohne Inhaltsauszug. A012 und A018 geben eine Stellungnahme ohne Thema wieder."
+    }
+  ],
+  "qualitaetspruefung": [
+    {
+      "tenant_id": "annika-klose",
+      "briefingId": "bf-annika-klose-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:45:38.417+00:00",
+      "payloadSha256": "d0cea72a90510f47068ddf4e45bf1afcb30660cc3b60f8f503454e15ca3eece3",
+      "referenzierteVorgaenge": [
+        "vg-abschaffung-20260903-d463e2",
+        "vg-gesundheitsberufe-20260903-9b623b",
+        "vg-hauptwohnsitzhaushalten-20260827-404c8e",
+        "vg-konsequenzen-20260905-1a0475",
+        "vg-rentenreform-20260905-630b6c",
+        "vg-staatsministerium-20260812-c54899",
+        "vg-steigen-20260306-96bb22"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-steigen-20260306-96bb22"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "cem-ince",
+      "briefingId": "bf-cem-ince-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:45:42.436+00:00",
+      "payloadSha256": "1f0f337fccba2ace83ac0174e11250c8526e73fca37e5e10519c65c6425dad1a",
+      "referenzierteVorgaenge": [
+        "vg-hauptwohnsitzhaushalten-20260827-404c8e"
+      ],
+      "nurHistorischeQuellen": [],
+      "urteil": "offen",
+      "begruendung": "Keine ausschliesslich historische Quellenbasis gefunden; keine automatische positive semantische Abnahme."
+    },
+    {
+      "tenant_id": "helmut-kleebank",
+      "briefingId": "bf-helmut-kleebank-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:45:48.013+00:00",
+      "payloadSha256": "e86c0c7e9135a39392b1e8b598a22ee0692bde49d47de39e903d47e60ba27b61",
+      "referenzierteVorgaenge": [
+        "vg-gesundheitsberufe-20260903-9b623b",
+        "vg-interessenvertretung-20260901-ddad41",
+        "vg-mineralölsteuer-20260416-0f16a5",
+        "vg-reformplan-20260225-e521bf",
+        "vg-steuerreform-20260904-0c6df3"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-mineralölsteuer-20260416-0f16a5",
+        "vg-reformplan-20260225-e521bf"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "ottilie-paola-klein-2",
+      "briefingId": "bf-ottilie-paola-klein-2-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:45:52.263+00:00",
+      "payloadSha256": "e8cb0af92435f4956276b5fc357bd9af8d0d68fc2bb3f237c6d934fb78133313",
+      "referenzierteVorgaenge": [
+        "vg-steigen-20260306-96bb22"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-steigen-20260306-96bb22"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "ruppert-st-we",
+      "briefingId": "bf-ruppert-st-we-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:45:57.973+00:00",
+      "payloadSha256": "303d16ad79b0aebd4f14e8c0e1dc5da7e295075fb25dc3a9020b819fc8550b27",
+      "referenzierteVorgaenge": [
+        "vg-medizincannabis-20260223-b3a2be",
+        "vg-mineralölsteuer-20260416-0f16a5",
+        "vg-petitionsausschuss-20251201-55420d",
+        "vg-reformplan-20260225-e521bf"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-medizincannabis-20260223-b3a2be",
+        "vg-mineralölsteuer-20260416-0f16a5",
+        "vg-petitionsausschuss-20251201-55420d",
+        "vg-reformplan-20260225-e521bf"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-001",
+      "briefingId": "bf-test-kohorte-a-001-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:46:02.737+00:00",
+      "payloadSha256": "a646dd0fe2c755f036cfb5bd9a8475ff904b121330a559a213e0381453c199f8",
+      "referenzierteVorgaenge": [
+        "vg-entschließung-20260114-022b0a",
+        "vg-kommission-20260905-ee623c",
+        "vg-migrationspolitik-20251205-64732a",
+        "vg-stromtrassen-20260905-eff336"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-entschließung-20260114-022b0a",
+        "vg-migrationspolitik-20251205-64732a"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-002",
+      "briefingId": "bf-test-kohorte-a-002-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:46:09.751+00:00",
+      "payloadSha256": "b7cc58714ff5a07b6e441df0bd83514577b0e53c66aab80cd2d7d4787b4ac1a5",
+      "referenzierteVorgaenge": [
+        "vg-bundesregierung-20250214-08deb3",
+        "vg-bundesregierung-20260904-e51882",
+        "vg-gemeinschaften-20260901-7ab005",
+        "vg-großbritannien-20260906-982741",
+        "vg-handwerksblatt-20260225-9e972c",
+        "vg-kahlschlag-20260828-6dc00d",
+        "vg-medizincannabis-20260223-b3a2be",
+        "vg-sachsen-20260906-435c32",
+        "vg-steuerreform-20260904-0c6df3",
+        "vg-stromtrassen-20260905-eff336",
+        "vg-wirtschaftskrise-20250530-a3b34a"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-handwerksblatt-20260225-9e972c",
+        "vg-medizincannabis-20260223-b3a2be",
+        "vg-wirtschaftskrise-20250530-a3b34a"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-003",
+      "briefingId": "bf-test-kohorte-a-003-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:46:13.392+00:00",
+      "payloadSha256": "63990f3242902713cbac77991caf775dba0d4853360f98a6636730a30985feab",
+      "referenzierteVorgaenge": [
+        "vg-überlebende-20260905-6cead7"
+      ],
+      "nurHistorischeQuellen": [],
+      "urteil": "offen",
+      "begruendung": "Keine ausschliesslich historische Quellenbasis gefunden; keine automatische positive semantische Abnahme."
+    },
+    {
+      "tenant_id": "test-kohorte-a-004",
+      "briefingId": "bf-test-kohorte-a-004-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:46:18.625+00:00",
+      "payloadSha256": "0539d7f977fdad65ef7cfb138e19a0f9c74dda31bfca1a81a226b58f180a40e3",
+      "referenzierteVorgaenge": [
+        "vg-bundeshaushalt-20260904-aef022",
+        "vg-bundesregierung-20260904-e51882",
+        "vg-energieversorgung-20260905-62f8cd",
+        "vg-interessenvertretung-20260901-ddad41",
+        "vg-spritpreisen-20260406-733db0",
+        "vg-tatverdächtigen-20260905-ad062e"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-spritpreisen-20260406-733db0"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-005",
+      "briefingId": "bf-test-kohorte-a-005-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:46:22.887+00:00",
+      "payloadSha256": "93f7b0c895b1cef9ce48a25f295812a6ad239db8e985469e8cfc7d3bb2c57ebc",
+      "referenzierteVorgaenge": [
+        "vg-breitensport-20260109-7e0b38",
+        "vg-interessenvertretung-20260901-ddad41"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-breitensport-20260109-7e0b38"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-006",
+      "briefingId": "bf-test-kohorte-a-006-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:46:28.92+00:00",
+      "payloadSha256": "466095b862259fb46640b5c092e8e95abf7f2227f9307c94f00c29e927bd05a0",
+      "referenzierteVorgaenge": [
+        "vg-abschaffung-20260903-d463e2",
+        "vg-arbeitslosigkeit-20260731-2b45f7",
+        "vg-arbeitsmarkt-20250131-5ede93",
+        "vg-beschäftigungsflaute-20260830-098fe1",
+        "vg-hauptwohnsitzhaushalten-20260827-404c8e",
+        "vg-rentenreform-20260905-630b6c",
+        "vg-socialists-20260212-52c662",
+        "vg-tagesspiegel-20260223-3bf56f"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-arbeitslosigkeit-20260731-2b45f7",
+        "vg-socialists-20260212-52c662",
+        "vg-tagesspiegel-20260223-3bf56f"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-007",
+      "briefingId": "bf-test-kohorte-a-007-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:46:36.108+00:00",
+      "payloadSha256": "db370577908b6a1833ae760b40ed4dd6cfc2d3eb8f263cdc4c182b38cc318853",
+      "referenzierteVorgaenge": [
+        "vg-bundesregierung-20250214-08deb3",
+        "vg-bundesregierung-20260904-e51882",
+        "vg-iranische-20260905-954d6c",
+        "vg-kommission-20260905-ee623c",
+        "vg-russland-20260901-9aae88",
+        "vg-steuerreform-20260904-0c6df3",
+        "vg-ukrainischem-20260904-ab4955",
+        "vg-verwaltung-20260905-91bebe",
+        "vg-wirtschaftskrise-20250530-a3b34a"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-wirtschaftskrise-20250530-a3b34a"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-008",
+      "briefingId": "bf-test-kohorte-a-008-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:46:41.289+00:00",
+      "payloadSha256": "ec658c2e7d2f1a267a68a3e7541a9b9054d9e8ad432b80c5a22e477a611db274",
+      "referenzierteVorgaenge": [
+        "vg-arbeitsbescheinigung-20230110-07d9a7",
+        "vg-rückkehrzentren-20260310-df25de",
+        "vg-stromtrassen-20260905-eff336",
+        "vg-vereinfachten-20260202-1755b5"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-arbeitsbescheinigung-20230110-07d9a7",
+        "vg-rückkehrzentren-20260310-df25de",
+        "vg-vereinfachten-20260202-1755b5"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-009",
+      "briefingId": "bf-test-kohorte-a-009-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:46:51.201+00:00",
+      "payloadSha256": "9b13b8d807961a96ad5d8d362f9a691dae8e0da21bb609c39a7a5f20063d9b52",
+      "referenzierteVorgaenge": [
+        "vg-bundesregierung-20260904-e51882",
+        "vg-gesundheitsberufe-20260903-9b623b",
+        "vg-interessenvertretung-20260901-ddad41",
+        "vg-pflegeversicherung-20260604-661567",
+        "vg-spritpreisen-20260406-733db0",
+        "vg-stromtrassen-20260905-eff336"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-pflegeversicherung-20260604-661567",
+        "vg-spritpreisen-20260406-733db0"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-010",
+      "briefingId": "bf-test-kohorte-a-010-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:46:54.799+00:00",
+      "payloadSha256": "77768dd1fd876ccb96d5f57412970345dc29542267574b8c6011e4d387ae09ff",
+      "referenzierteVorgaenge": [
+        "vg-interessenvertretung-20260901-ddad41"
+      ],
+      "nurHistorischeQuellen": [],
+      "urteil": "offen",
+      "begruendung": "Keine ausschliesslich historische Quellenbasis gefunden; keine automatische positive semantische Abnahme."
+    },
+    {
+      "tenant_id": "test-kohorte-a-011",
+      "briefingId": "bf-test-kohorte-a-011-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:46:57.66+00:00",
+      "payloadSha256": "ea322d5458b3d8471f87066daffa5cbb729cddbb86abfbdbf4ecd0cc404fd89c",
+      "referenzierteVorgaenge": [
+        "vg-socialists-20260212-52c662"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-socialists-20260212-52c662"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-012",
+      "briefingId": "bf-test-kohorte-a-012-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:47:00.49+00:00",
+      "payloadSha256": "4e2a44b7bf038f8d04773a7bb557734284cb0c6358f2281083f485256654260b",
+      "referenzierteVorgaenge": [
+        "vg-schwerd-20260221-97c471"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-schwerd-20260221-97c471"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-013",
+      "briefingId": "bf-test-kohorte-a-013-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:47:07.922+00:00",
+      "payloadSha256": "9c9821a16b778c130b0ff45f6b4c45a96a468862c963779b24127cc59505b3ef",
+      "referenzierteVorgaenge": [
+        "vg-bundesregierung-20260904-e51882",
+        "vg-kommission-20260905-ee623c",
+        "vg-migrationspolitik-20251205-64732a",
+        "vg-rentenzulage-20260905-ab85d5",
+        "vg-socialists-20260212-52c662",
+        "vg-sozialbeiträge-20260905-128e49",
+        "vg-steuerreform-20260904-0c6df3",
+        "vg-wirtschaftskrise-20250530-a3b34a"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-migrationspolitik-20251205-64732a",
+        "vg-socialists-20260212-52c662",
+        "vg-wirtschaftskrise-20250530-a3b34a"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-014",
+      "briefingId": "bf-test-kohorte-a-014-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:47:14.861+00:00",
+      "payloadSha256": "1302a93bb87b156faf6410202efa6c5d64350af204c8b20c84dee53e9b8ed548",
+      "referenzierteVorgaenge": [
+        "vg-gesundheitsberufe-20260903-9b623b",
+        "vg-koalitionsoptionen-20260905-f6d669",
+        "vg-landtagswahl-20260906-772e8b",
+        "vg-pflegeversicherung-20260604-661567",
+        "vg-sachsen-20260903-106616",
+        "vg-sachsen-20260906-435c32"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-pflegeversicherung-20260604-661567"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-015",
+      "briefingId": "bf-test-kohorte-a-015-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:47:18.377+00:00",
+      "payloadSha256": "ce3bd3ee68715efa7c7f0890bc7f2e67731167db6041fadd2dc4214342fd63bb",
+      "referenzierteVorgaenge": [
+        "vg-interessenvertretung-20260901-ddad41"
+      ],
+      "nurHistorischeQuellen": [],
+      "urteil": "offen",
+      "begruendung": "Keine ausschliesslich historische Quellenbasis gefunden; keine automatische positive semantische Abnahme."
+    },
+    {
+      "tenant_id": "test-kohorte-a-016",
+      "briefingId": "bf-test-kohorte-a-016-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:47:22.287+00:00",
+      "payloadSha256": "5957293a0fd88533b934b50d33f492bd2a83dedf79d083ad5ed42fc99ea9ce06",
+      "referenzierteVorgaenge": [
+        "vg-rückkehrzentren-20260310-df25de"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-rückkehrzentren-20260310-df25de"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-017",
+      "briefingId": "bf-test-kohorte-a-017-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:47:29.367+00:00",
+      "payloadSha256": "26623bb724d92dfdd12eb66c2267f8b2345956d24e66cab00bffbe33c4b74db4",
+      "referenzierteVorgaenge": [
+        "vg-arbeitsbescheinigung-20230110-07d9a7",
+        "vg-entschließung-20260114-022b0a",
+        "vg-handwerksblatt-20260225-9e972c",
+        "vg-konsequenzen-20260905-1a0475",
+        "vg-migrationspolitik-20251205-64732a",
+        "vg-millionenhöhe-20260906-630494",
+        "vg-ratingagenturen-20260905-dbd662",
+        "vg-schwerd-20260221-97c471",
+        "vg-stromtrassen-20260905-eff336",
+        "vg-verschärfte-20260206-bb344b"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-arbeitsbescheinigung-20230110-07d9a7",
+        "vg-entschließung-20260114-022b0a",
+        "vg-handwerksblatt-20260225-9e972c",
+        "vg-migrationspolitik-20251205-64732a",
+        "vg-schwerd-20260221-97c471",
+        "vg-verschärfte-20260206-bb344b"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-018",
+      "briefingId": "bf-test-kohorte-a-018-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:47:32.174+00:00",
+      "payloadSha256": "2be78a43970af950ae5ce5364091e383052a9af4671902d15458a3153647c4cb",
+      "referenzierteVorgaenge": [
+        "vg-schwerd-20260221-97c471"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-schwerd-20260221-97c471"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-019",
+      "briefingId": "bf-test-kohorte-a-019-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:47:39.616+00:00",
+      "payloadSha256": "02244239a74f4c8f76e0321ec5c859d4418739111424025d6049c6dd50914107",
+      "referenzierteVorgaenge": [
+        "vg-interessenvertretung-20260901-ddad41",
+        "vg-kommission-20260905-ee623c",
+        "vg-konsequenzen-20260905-1a0475",
+        "vg-medizincannabis-20260223-b3a2be",
+        "vg-socialists-20260212-52c662",
+        "vg-spritpreisen-20260406-733db0"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-medizincannabis-20260223-b3a2be",
+        "vg-socialists-20260212-52c662",
+        "vg-spritpreisen-20260406-733db0"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    },
+    {
+      "tenant_id": "test-kohorte-a-020",
+      "briefingId": "bf-test-kohorte-a-020-lage-2026-09-07",
+      "generatedAt": "2026-09-07T05:47:43.069+00:00",
+      "payloadSha256": "86e588e58681e7e5b8e2309dd61104d572c6cce9a225227c2b0cc1f9a6fbc6e0",
+      "referenzierteVorgaenge": [
+        "vg-rückkehrzentren-20260310-df25de"
+      ],
+      "nurHistorischeQuellen": [
+        "vg-rückkehrzentren-20260310-df25de"
+      ],
+      "urteil": "nicht-abgenommen",
+      "begruendung": "Mindestens ein referenzierter Vorgang hat ausschliesslich Quellen ausserhalb des bestehenden Vierzehntagefensters; zeitliche Einordnung im neuen Text erforderlich."
+    }
+  ],
+  "quellen": [
+    {
+      "vorgang_id": "vg-abschaffung-20260903-d463e2",
+      "koUpdatedAt": "2026-09-06 20:03:49.287+00",
+      "analyseSha256": "941b7fa70110c50eba491e0f468b7cb07c8c681e377fa122e455615495daf951",
+      "quellen": [
+        {
+          "id": "rd-67a9cd5cb5fca793543717f7ea6bc52d894c3cebdc38fe3e94fed7a03c5cc794",
+          "url": "https://www.merkur.de/verbraucher/erste-rente-mit-63-diese-jahrgaenge-trifft-es-als-94465401.html",
+          "publishedAt": "2026-09-03T17:34:09+00:00",
+          "retrievedAt": "2026-09-03T20:02:16.95+00:00",
+          "titelSha256": "a16b592404d16489b75246d4da66bb425281f6901f4ea72abe57ebb688263cc8",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-c63eb59093e95735b45759f6cb049b95ddee3d65f244f201d000c36fc2ee1c56",
+          "url": null,
+          "publishedAt": "2026-09-03T09:54:55+00:00",
+          "retrievedAt": "2026-09-06T20:03:21.694+00:00",
+          "titelSha256": "0d8c41e5c7624a46fcb4f08c19a3351b062bfec07193976dc223de608d263b1f",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-arbeitsbescheinigung-20230110-07d9a7",
+      "koUpdatedAt": "2026-09-07 04:02:28.312+00",
+      "analyseSha256": "95b68ed1ad3692edfa18f22121a2b7a57bdb2ae7d07f5c6ff95bcc4921bbdc27",
+      "quellen": [
+        {
+          "id": "rd-2a5098f4966f5a108f02ebc4e9386dd49afa6dc391d0d72b261bfbf501228524",
+          "url": "https://www.arbeitsagentur.de/datei/dok_ba033945.pdf",
+          "publishedAt": "2023-01-10T05:50:22+00:00",
+          "retrievedAt": "2026-09-06T04:01:07.839+00:00",
+          "titelSha256": "4a7b823344a424797627b9b75848f7f7d66fe87ba63f4fbf86b34da15c2465ae",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-arbeitslosigkeit-20260731-2b45f7",
+      "koUpdatedAt": "2026-09-07 04:03:03.325+00",
+      "analyseSha256": "335800b82a9604b9bd571f844424761a4b3a60e000f016ca788d69a2e31861fc",
+      "quellen": [
+        {
+          "id": "rd-0483a05f992e315b4cac500b54bd95e579c10b564a2388d37fd466089d9a6947",
+          "url": "https://www.ihre-vorsorge.de/soziales/nachrichten/ba-sommerloch-arbeitslosigkeit-nimmt-zu",
+          "publishedAt": "2026-07-31T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T04:01:20.74+00:00",
+          "titelSha256": "0e888533eeebf3cd3795b6b01b55c5aa1e0433a82d9787bcc29312c492042224",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-arbeitsmarkt-20250131-5ede93",
+      "koUpdatedAt": "2026-09-06 21:30:55.961+00",
+      "analyseSha256": "3eee02975bb9fba13cec6f33c50dfe08d0bac983a8a2497125448606a6b1838c",
+      "quellen": [
+        {
+          "id": "rd-d6f4ef9806a6c647ab5b97196dbd9f39a731cbcc3da68864733442b804690753",
+          "url": "https://www.wiwo.de/erfolg/management/arbeitsmarkt-schein-bewerber-koennen-teuer-werden-jetzt-hilft-ein-urteil/100248943.html",
+          "publishedAt": "2026-09-02T15:40:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:17.615+00:00",
+          "titelSha256": "171eeb861ef1cbb8d2bb41408b024b519591a5d877bea28eb8f9e26849ba7ac5",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-9dcad2bad02c5d42b655b23f5af2ebb920ae54d7fec19f36a7cc8bb684425f06",
+          "url": "https://www.wiwo.de/politik/konjunktur/arbeitsmarkt-arbeitslosigkeit-sinkt-kaum-und-sie-wird-teuer/100221342.html",
+          "publishedAt": "2026-05-01T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:17.485+00:00",
+          "titelSha256": "beb4204e928184234e14fc5ebcabf89b79ebe20e8d63da2fe1aa85b88a2c7634",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-396d96d006f981903c984405c3f25a29075d95ff726e19202959c2f47174843d",
+          "url": "https://www.tagesschau.de/wirtschaft/arbeitsmarkt/arbeitsmarkt-ausblick-2026-100.html",
+          "publishedAt": "2026-01-07T08:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:17.485+00:00",
+          "titelSha256": "4d5fa76b2446f21332ac317c2f1b8bb2b3b4d54e99cb93e028760ccf066d4418",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-ea48e0f72746689492e362c5b7df8617a6e2b6e05a9a804058b3f86f8f755c1b",
+          "url": "https://www.wiwo.de/politik/deutschland/arbeitsmarkt-die-arbeitslosigkeit-steigt-und-bringt-die-arbeitsagentur-in-die-bredouille/100138958.html",
+          "publishedAt": "2025-07-03T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:17.486+00:00",
+          "titelSha256": "d43217be1f055f1a5a1db3b0407012149d2b3ce8bcd7cc01595e1efed3c7edf8",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-fd49a08f033dc91a535606ff2d17ca21b2f6e9af688fde5279c147887770e819",
+          "url": "https://www.handelsblatt.com/politik/deutschland/arbeitsmarkt-arbeitslosigkeit-steigt-im-januar-kraeftig/100104604.html",
+          "publishedAt": "2025-01-31T08:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:17.485+00:00",
+          "titelSha256": "6f7fe61811e8174dc630ad448287ee37a8e644f4b0ed28ec463424e28d1e86ea",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-beschäftigungsflaute-20260830-098fe1",
+      "koUpdatedAt": "2026-09-05 20:01:10.591+00",
+      "analyseSha256": "0b3514913efe40d79f204896f1ee02bac17f51f3d1996196a838775404c0db45",
+      "quellen": [
+        {
+          "id": "rd-44fbac136984b7a8ac537235ac6eb06223cac9d7c2cd47c93af1f0004a921173",
+          "url": "https://www.wiwo.de/politik/deutschland/steuereinnahmen-bessere-konjunktur-sorgt-fuer-steuerplus-beschaeftigungsflaute-bremst-aber/100250597.html",
+          "publishedAt": "2026-08-30T08:00:54+00:00",
+          "retrievedAt": "2026-09-05T16:01:34.643+00:00",
+          "titelSha256": "a7d4f602eb2a91857bafc055f05d9a183f05384df6e4f5318a5293170ba7b147",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-breitensport-20260109-7e0b38",
+      "koUpdatedAt": "2026-09-05 11:31:34.913+00",
+      "analyseSha256": "7d61e79f490ee3cb3426d0f33caa86a34d1c6830fbd2763e59176680982b830f",
+      "quellen": [
+        {
+          "id": "rd-19fceb090e0ceedc39d8faca973e0d052ce768164f023b4fc356d3a39426e652",
+          "url": "https://www.sfv-online.de/news/details/futsal-breitensport-2026",
+          "publishedAt": "2026-01-09T08:00:00+00:00",
+          "retrievedAt": "2026-07-28T10:01:52.772+00:00",
+          "titelSha256": "d16e7a4619c15ab4b5b6bc4fb98fce4dcad1ed5f87555d1ca4d6da18cf5efc1a",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-bundeshaushalt-20260904-aef022",
+      "koUpdatedAt": "2026-09-05 21:30:28.986+00",
+      "analyseSha256": "c7088bf52fa57d0218bece1883ecb211ffbb1b53c26911938884db7ceca8bc2b",
+      "quellen": [
+        {
+          "id": "rd-3f509dcfef9b9347fa1c57987d57d279f5f73db773a2f9531432c7cc85df1a5c",
+          "url": "https://www.wiwo.de/politik/deutschland/bundeshaushalt-rechnungshof-warnt-vor-ausuferndem-schuldenkurs/100252048.html",
+          "publishedAt": "2026-09-04T09:34:21+00:00",
+          "retrievedAt": "2026-09-05T16:01:44.281+00:00",
+          "titelSha256": "5b84c94f56f6e96b6f0b5ed1444e3788a52d342d8683a7d4d41c30d2b99d7adb",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-bundesregierung-20250214-08deb3",
+      "koUpdatedAt": "2026-09-05 10:01:07.144+00",
+      "analyseSha256": "671624a629232c9e1039835972f2fdfb95e4bc43421896e98f5e6cae2b675597",
+      "quellen": [
+        {
+          "id": "rd-c76404655eaabadd8b5eb42801dc1deec1b2af492b373751abde6ad7661f6739",
+          "url": "https://www.deutschlandfunk.de/cdu-politiker-guentzler-gesetzentwurf-sorgt-nicht-fuer-wachstumsimpulse-102.html",
+          "publishedAt": "2026-09-03T17:45:41+00:00",
+          "retrievedAt": "2026-09-06T20:34:05.645+00:00",
+          "titelSha256": "d4b56eacd714228a8180c9372c6fca009e8b82883ca96b3d2aa2ceda81ff9c1c",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-fcd0826e3b5d1a32907f909963831ed8b681153e103ec2c1e0f3cd6e62779f03",
+          "url": "https://www.agrarheute.com/politik/minijobs-landwirtschaft-dreimal-so-teuer-einkommensteuerreform-enttaeuscht-642641",
+          "publishedAt": "2026-09-03T09:22:05+00:00",
+          "retrievedAt": "2026-09-06T20:34:07.078+00:00",
+          "titelSha256": "a7dc581e7928087ee5d1b0d965eec031617d88f08668eb7565742269e9e200ef",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-868aec9746b272ca7f3245a6e3df387a78fff947aab09b676d2a5851ae54d0a7",
+          "url": "https://www.nd-aktuell.de/artikel/1202223.drohnenanschlag-am-flughafen-in-leipzig-eu-und-nato-stellen-sich-hinter-deutschland.html",
+          "publishedAt": "2026-09-02T14:41:39+00:00",
+          "retrievedAt": "2026-09-06T20:34:08.46+00:00",
+          "titelSha256": "02df8e6d86b9bbf4c1c680e0b2b92877500c2c45171461e4cc4bcfa758509980",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-64d72962afd0569957b84286453786b02ebbcd1fd7b36aa07ae08889c42e7bd8",
+          "url": "https://www.gegen-hartz.de/news/kabinett-beschliet-neues-mietgesetz-das-soll-sich-fr-alle-mieter-und-vermieter-nun-ndern",
+          "publishedAt": "2026-09-02T11:29:43+00:00",
+          "retrievedAt": "2026-09-06T20:34:04.321+00:00",
+          "titelSha256": "826d91fc60c0b0c8e9cbf7759dda1bf54556b97d604d01a40b547fe5ca534d7a",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-49eb60ecc9daa131ca161563e6f0ebe07a0393a18e61375204a7e21cf9c2a3ae",
+          "url": "https://www.bibliomed-pflege.de/news/pflegereform-aok-zweifelt-an-einsparzielen",
+          "publishedAt": "2026-09-02T11:28:09+00:00",
+          "retrievedAt": "2026-09-05T10:00:27.608+00:00",
+          "titelSha256": "3448fc20ec33af707eda162d60e70e40717b67c59af60d3eaf8f8a7c4cf75df6",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-3c953c6e75044ab35b8c2e777e5fe688b7c7dd894c12d2daaa5970115a52c6a2",
+          "url": "https://www.heise.de/news/Kreml-erzuernt-ueber-deutsche-Sanktionen-nach-Drohnen-Vorfall-in-Leipzig-11437613.html",
+          "publishedAt": "2026-09-02T05:13:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:08.46+00:00",
+          "titelSha256": "0580a0ad27d7138d77b1fca5ee3a2e0a14b68f761cebfe3a40774a275f7345f8",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-3d467a009754d15c745e17098c5316c767affd3dd6a248df8c95b80269addb30",
+          "url": "https://www.stern.de/news/anschlagsversuch-in-leipzig--afd-spitzenkandidat-siegmund-fordert-diplomatie-statt-sanktionen-38193234.html",
+          "publishedAt": "2026-09-01T19:19:16+00:00",
+          "retrievedAt": "2026-09-05T10:00:25.446+00:00",
+          "titelSha256": "b6d04ab9e38ef63ba1a56c7b354d518420cf86fa6fec059345c2ed7b5752d2ec",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-591991c4fcfa4f3a4bf5290bd33f9330f37c4de647153d005b8f5aa8c06d6d8f",
+          "url": "https://www.fr.de/politik/russischer-anschlagsversuch-nato-und-eu-stellen-sich-hinter-deutschland-zr-94470619.html",
+          "publishedAt": "2026-09-01T18:31:03+00:00",
+          "retrievedAt": "2026-09-05T10:00:30.36+00:00",
+          "titelSha256": "dce7a8aa3c26d8e2c8283ffa57d958138545e5e06fb4131e444548c4fb19c554",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-5253afda79465aff037a2874a3606881972dd6da75272ca50c9292be717e4205",
+          "url": "https://www.krankenkasseninfo.de/ratgeber/gkv-reform/",
+          "publishedAt": "2026-09-01T15:20:43+00:00",
+          "retrievedAt": "2026-09-06T20:34:05.884+00:00",
+          "titelSha256": "920ece5ce5b80be0020dbd7c5e2ab7a8a9f09fc8b6d78f69afdf1878a02de496",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-3ff2cf6bef7ee82aefcc84a879398f40d46c18a27190dbab80af75e2c4fdc3dd",
+          "url": "https://www.deutschlandfunk.de/geplante-pflegereform-loest-weiter-besorgnis-aus-100.html",
+          "publishedAt": "2026-09-01T12:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:08.961+00:00",
+          "titelSha256": "6f94bdf9775ab4b85935f437789ab8718c68b5e80d68fd59ae389d29cab73202",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-260bf8184f3fa77199cd4e7a73d2be6ae29af84f57c2acafee9d853002a7f82b",
+          "url": "https://www.verdi.de/bb/presse/pressemitteilungen/eilt-charite-klagt-gegen-streik-pflegekraefte-pressekonferenz-verlegt-1030-uhr-dem-arbeitsgericht",
+          "publishedAt": "2026-09-01T11:21:00+00:00",
+          "retrievedAt": "2026-09-05T10:00:36.515+00:00",
+          "titelSha256": "0208e26874e68cff29de001415d104edad71a5a20406237bef11aa0a04b2c8af",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-e925e50728cf92a00b926e32d250015d119b74372488aa4d3814bf6c02773264",
+          "url": "https://www.bundestag.de/presse/hib/kurzmeldungen-1209656",
+          "publishedAt": "2026-09-01T10:21:28+00:00",
+          "retrievedAt": "2026-09-06T20:34:09.293+00:00",
+          "titelSha256": "1237585bae7231de7807f2e77742e80e09902039fd9bfce27a46cb9f02592f7a",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-49de5e6783ba9e87d7586aafcaedfa62b7bf3bd33c2cfd9c29079a98ff0176da",
+          "url": "https://www.dielinkebt.de/presse/pressemitteilungen/detail/mietenreport-muss-ein-weckruf-fuer-die-bundesregierung-sein/",
+          "publishedAt": "2026-09-01T09:25:03+00:00",
+          "retrievedAt": "2026-09-06T20:33:57.004+00:00",
+          "titelSha256": "f5d07bee2c50d1fdfbf649513d77d8028cddb1aca345a7ae8740894a5e316079",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-e35173b7e2713e0a8e77eec99404143c302f1789703c5e0d4c66f88917959bb8",
+          "url": "https://www.freiepresse.de/nachrichten/deutschland/wadephul-keine-ueberreaktion-als-antwort-auf-drohnen-vorfall-artikel14391255",
+          "publishedAt": "2026-09-01T08:33:43+00:00",
+          "retrievedAt": "2026-09-06T20:34:04.034+00:00",
+          "titelSha256": "d65222fec6bf27c2ee5cdc02c49f7150b15659cd2b692270885f7208005726f7",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-ac739329ca4a7c31f708a3cb6878d767613f1f7565511057dba9afb8d91dfb90",
+          "url": "https://www.ndr.de/nachrichten/info/sendungen/interviews/mohrmann-cdu-bundesregierung-muss-ihr-reformpaket-abarbeiten,audio-3445932.html",
+          "publishedAt": "2026-08-29T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:10.374+00:00",
+          "titelSha256": "9065b26639c9426208a7a464612edf54ac37ce9acdb0a9bbc9e0df7ca75c35cc",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-23d18c02da9adf3c62e069bff87a7a9e89a19a4dc879fdf5326d9a138ed90697",
+          "url": "https://www.tagesspiegel.de/politik/dpa-koalitionstreffen-in-munster-was-die-bundesregierung-bis-ende-des-jahres-schaffen-will-15993582.html",
+          "publishedAt": "2026-08-28T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:13.603+00:00",
+          "titelSha256": "19512ea6944900479954af82695f69a4f1c5ee176b4c939a395baf4b32c411a2",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-297bbdbc5ffed8168b1b1773d584aede7f8b1c630db535058c6010e7b4b33419",
+          "url": "https://www.faz.net/aktuell/wirtschaft/klima-nachhaltigkeit/bundesregierung-fuer-bewertung-der-emissionen-noch-viel-zu-frueh-201168308.html",
+          "publishedAt": "2026-08-28T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:06.466+00:00",
+          "titelSha256": "07ee55a5111ac604943d50aa28921331e56fca8da6be83694f29e3f29e9990d0",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-62e4b2b3ee7b2eb503ba97032db9947eff9a20ae3fc1ddcc9bcff56f19f76425",
+          "url": "https://www.friedenskooperative.de/friedensforum/artikel/was-kann-die-bundesregierung-fuer-die-menschenrechte-der-kurden-tun",
+          "publishedAt": "2026-08-23T08:54:40+00:00",
+          "retrievedAt": "2026-09-06T20:34:07.003+00:00",
+          "titelSha256": "10ba1ce56bc08b5fff29814e114724221d669de0e55230dd020728a98c586905",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-5880f3ec63f4e5619c496ab2f0bba653e59db982b14b04515c619c50ee01ba64",
+          "url": "https://netzpolitik.org/2026/intransparente-rechenzentren-ein-armutszeugnis-fuer-die-bundesregierung/",
+          "publishedAt": "2026-08-22T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:10.255+00:00",
+          "titelSha256": "72ee1972c35700e5ca6d9c954d11ba663e27380021ebe1bf33214464a92199b3",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-f70d16873a72d8ebe57f65413c4cc6621f4ac89d6b1003af504119e5798b8c0e",
+          "url": "https://www.mt.de/lokales/meinung/Klimafolgen-im-Kreis-Minden-Luebbecke-Waehrend-Kommunen-handeln-versagt-die-Bundesregierung-24401307.html",
+          "publishedAt": "2026-08-22T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:04.321+00:00",
+          "titelSha256": "94896bb39c03ed2c3de2e20aff9c66649b880aa3a04d8f91e1a7968f3f8c5850",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-3cedbd17c31dce2d4ec25f17bcb2e74f74bf7b58e573e4cd44a895b707266661",
+          "url": "https://www.oldenburger-onlinezeitung.de/nachrichten/bauern-fordern-sofortprogramm-von-bundesregierung-224004.html",
+          "publishedAt": "2026-08-18T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:07.078+00:00",
+          "titelSha256": "f64ce719f3f3c9c6fea799197dd79f4230f6334715b4cfe7ca254c45bdc26802",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-e2f08fd325c8a081522637fb69312a33284b49030e709ef65ba8168845dab64c",
+          "url": "https://www.faz.net/aktuell/gesellschaft/ungluecke/ernteausfaelle-muss-die-bundesregierung-jetzt-helfen-201137396.html",
+          "publishedAt": "2026-08-18T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:07.078+00:00",
+          "titelSha256": "9f22b0571eb3ecee06c55203856d4580b516773cf16fc33e8480dec724c9e9e6",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-f7c8b9f79fe0cb862fd07fbc800b903574127dbcb4229293ed2fcce35f58559b",
+          "url": "https://jacobin.de/kommunen-haushalt-bundesregierung-zukunftspakt-verschuldung-sozialstaat-sanierung/",
+          "publishedAt": "2026-08-17T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:04.321+00:00",
+          "titelSha256": "ccda9541b8053db8c6158a895f3cc98ad6ca8478173fd0da6b1743d0f43529ae",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-325164ea136a6ee593f027013e72a3455f7b31b8fe57180ae4121ed1ae8477da",
+          "url": "https://www.fr.de/politik/bundesregierung-schweigt-zur-hitzewelle-und-vermeidet-das-wort-klimawandel-94444264.html",
+          "publishedAt": "2026-08-14T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:06.466+00:00",
+          "titelSha256": "3ab22942240e9732d4d5b18a738c24f142f38962a00c1a74600e2ec289e82394",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-77c1ed769c70711109c783d9cd917d50601cc66d49c9b18aa8d53f1c070a8d9d",
+          "url": "https://www.zeit.de/politik/deutschland/2026-08/geheimdienstreform-bundesregierung-die-linke-ulrich-thoden",
+          "publishedAt": "2026-08-12T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:04.738+00:00",
+          "titelSha256": "32149648cc7e9553c6c50c144f20a1c83604deeccbe2c2a88f5cf715b9e0784e",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-3aba658ec3a7b3d23d2e8163ed8665da9e74371aaaad7bf43041a9907274876c",
+          "url": "https://www.zdfheute.de/politik/bundesregierung-entwurf-geheimdienstreform-100.html",
+          "publishedAt": "2026-08-12T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:06.296+00:00",
+          "titelSha256": "d45c2caf523febaa38afa03ac26b812240f711e39c8ac5c6e9f8af8a81f45cba",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-1dd4c453acf2b94f74f08414026839ef02b6ef0c1c434f93ee638a0f57300a52",
+          "url": "https://www.t-online.de/nachrichten/deutschland/innenpolitik/id_101385102/geheimdienst-reform-innenminister-dobrindt-weist-kritik-zurueck.html",
+          "publishedAt": "2026-08-12T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:06.296+00:00",
+          "titelSha256": "50f51701675868bbee7394655b538911aa2d942d089692efef04756bf3628ccb",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-fd6cae97ee1d86a1da1ac47bc69fd40c62e5d916784c041a012524f11e935d3a",
+          "url": "https://www.sueddeutsche.de/politik/spd-rente-vorbild-oesterreich-li.3526837",
+          "publishedAt": "2026-08-05T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:16.768+00:00",
+          "titelSha256": "a2952dde91d27c89d7c3e7d549ddbffb3e1dc03d42c84bdd7d70f2b5a824c19e",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-f6e3aca9edae1e0d180c2ee390b028cdf70e2e44918fb24f565366f7d0703dba",
+          "url": "https://www.faz.net/aktuell/wirtschaft/gueterverkehr-auf-der-schiene-versagt-die-bundesregierung-accg-201025685.html",
+          "publishedAt": "2026-08-01T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:08.205+00:00",
+          "titelSha256": "bc888f9103a78728816fb619b47f173f59edf6a9903f3d5144e12b7b9e47de91",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-adc92e4e1711f9f590105da86878ca301bc92fd916c253a2a41624815e3a62ab",
+          "url": "https://www.ihre-vorsorge.de/rente/nachrichten/renten-rebell-reddig-sieht-geplante-rentenreform-als-trendwende",
+          "publishedAt": "2026-07-24T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:16.175+00:00",
+          "titelSha256": "5ac96d8330c33d3b5fd7c0e35808420e55df704e915ac470b23ccc5dc9265752",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-061f2b1314587048190d23104992c986151e653cf8d5b315f3690faba5b8e7bb",
+          "url": "https://www.bundestag.de/presse/pressemitteilungen/2026/pm-260723-dasparlament-1200682",
+          "publishedAt": "2026-07-23T08:40:39+00:00",
+          "retrievedAt": "2026-09-06T20:33:56.968+00:00",
+          "titelSha256": "f4e52378cfb1b9cf2fc533cf9367ddb18ca7620d85ccd94cdf617bbfa3994046",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-44b60229457e46846dba638a2f6a2aedb417b991e74abc64d819b8bf8305168f",
+          "url": "https://www.dr-datenschutz.de/bundesregierung-will-geltung-der-dsgvo-reduzieren/",
+          "publishedAt": "2026-07-15T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:04.738+00:00",
+          "titelSha256": "f217d42c212264b427d6bb90d914c61e10994d1bc3e2991ed6ee614e69c6351f",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-40c0044a4037208e8d92a374fb81e09fb0b3e4f6f9f5e9ed264cbd919fa186bc",
+          "url": "https://www.juedische-allgemeine.de/israel/bundesregierung-bremst-in-eu-debatte-um-israel-sanktionen/",
+          "publishedAt": "2026-07-13T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:05.014+00:00",
+          "titelSha256": "28dccb2b0f9505de872b5b459a6002f729aa315d1d44af0c729e41f3b386c5c5",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-5d04c53b64c526f0bb61ef6564b72c40966794426da394e6c030f1ab787b80f7",
+          "url": "https://www.zeit.de/news/2026-07/10/abstimmung-im-bundestag-was-sich-beim-heizen-jetzt-aendert",
+          "publishedAt": "2026-07-10T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:09.172+00:00",
+          "titelSha256": "1805f5374fbffb23fc7b2eb1537986808ad58f62837065de08c408aad23ba22e",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-79ae0728d8828fba70906fd75d1cad928d172cb8ab55ebb8603a534f5ae2ddd7",
+          "url": "https://www.abgeordnetenwatch.de/bundestag/21/abstimmungen/gkv-reform",
+          "publishedAt": "2026-07-10T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:09.172+00:00",
+          "titelSha256": "8cb2d27f319225e801305aa6c3f371d2c0d395c915c609eed15f7fdcc6d73167",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-875edfc3fa084a04470fcfc686d97dcec57f9b7e7a8cc661be11d90eb06fb427",
+          "url": "https://www.spdfraktion.de/themen/groesste-reform-spitzensportfoerderung",
+          "publishedAt": "2026-07-10T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:07.912+00:00",
+          "titelSha256": "09fc3521c3ad4180e671c8f431137ebc64378eb75b223747560d87168877ce57",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-8b3e5ab187719e47296f43738bb5918050858604913ac5045f0ad79072b65bea",
+          "url": "https://www.tz.de/sport/mehr-medaillen-bundestag-stimmt-fuer-neues-sportfoerdergesetz-zr-94392269.html",
+          "publishedAt": "2026-07-10T07:00:00+00:00",
+          "retrievedAt": "2026-09-05T10:00:29.642+00:00",
+          "titelSha256": "fcd65d7fbe25117a0999803026c8edf4305dbe1bcb5bb515b29ed70ce6fba8a4",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-d21a3a15d51a11038c4c0f26542804d78bdd5dcd953d2c7d95523bcb3b328562",
+          "url": "https://www.mdr.de/sport/sport-im-osten/neues-sportfoerdergesetz-passiert-bundestag-,video-spitzensport-100.html",
+          "publishedAt": "2026-07-10T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:07.913+00:00",
+          "titelSha256": "3f22620371108cf71d538abe9849d6a3179a9b2b85f764a2a03f56fb9e5cc629",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-34e1ef9bc99c955b96973e5f29b336c18e6e9d493dff2b2628b65e86d333e60a",
+          "url": "https://www.lto.de/recht/nachrichten/n/2-bve-4/26-2bvq-47/26-2-bve-3/26-bundesverfassungsgericht-einstweilige-anordnung-sommerpause-heizungsgesetz-krankenkasse",
+          "publishedAt": "2026-07-09T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:09.172+00:00",
+          "titelSha256": "d09acdcddcd29ac6e3eaa12b5a97ad1ddf25115effba71134b4e6f85ea539599",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-e9d633c43632ed8eda181ffcb924d660b5d091d3a73c3c2232d356058987b9f5",
+          "url": "https://www.welt.de/politik/deutschland/plus6a4e0611bb0cf80de56a1df5/showdown-in-karlsruhe-im-kampf-fuer-die-gesundheitsreform-setzt-schwarz-rot-offenbar-auch-auf-foulspiel.html",
+          "publishedAt": "2026-07-08T17:23:14+00:00",
+          "retrievedAt": "2026-09-06T20:33:58.126+00:00",
+          "titelSha256": "d478040325719ae95c21b705a59fcc1efb9ba168ad6b80863f15218dda4a4c9a",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-25a376fedb1faea2431b7b7239fa82e4025b3bd4f6c74fd28ac9c293d4805bcc",
+          "url": "https://www.lto.de/recht/nachrichten/n/gruene-gesundheit-sparpaket-bundesverfassungsgericht",
+          "publishedAt": "2026-07-08T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:02.362+00:00",
+          "titelSha256": "f1749849059455af971f13379200538a27971a3771580266d792bfa8226abfb0",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-e536a4b01edc317f576eaffb1aeaa63a49d1ff930e375a6bdd4d171f9dff15a5",
+          "url": "https://www.aachener-zeitung.de/politik/das-steht-im-reformpaket-der-koalition/158149722.html",
+          "publishedAt": "2026-07-02T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:00.866+00:00",
+          "titelSha256": "f57030c6dab61d729873acc666e5efb087fe08b218ce29e605e07c1229d55b3e",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-43ff1b0848af38ca948d02f9ff24f5e98befd93c7faf99bbf5b8aac061c2cd89",
+          "url": "https://www.zdfheute.de/politik/deutschland/merz-koalition-treffen-reformen-100.html",
+          "publishedAt": "2026-07-02T07:00:00+00:00",
+          "retrievedAt": "2026-09-05T10:00:32.018+00:00",
+          "titelSha256": "6e972458fe8c3ef5f86f16d8a21c3ee38bcb575c174adecef045d11cdf22701d",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-9672c409a15ea1ff648590a928f3b575cfd69598308ec234e2b09f011f30730e",
+          "url": "https://logistra.de/news/bundestag-beschliesst-gesetz-fuer-schnellere-verkehrsprojekte-gruene-kritisieren-priorisierung-von-allem-498538.html",
+          "publishedAt": "2026-06-26T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:08.205+00:00",
+          "titelSha256": "81e72e2fa21c0675274e8997345e21bcc5b22d73fc8843525d2c1ec7bde706c7",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-d7d1fd56926ac1b4cd2a468fa440c374a86087859697219c7459c8060cc44ea2",
+          "url": "https://www.ihre-vorsorge.de/rente/nachrichten/merz-und-bas-umsetzung-der-rentenreform-bis-ende-des-jahres",
+          "publishedAt": "2026-06-23T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:16.176+00:00",
+          "titelSha256": "d62f77b7213e373459716404d323b715a33223eac54e63cbf18f0e8aa0e0ea3b",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-760e4c3346c8a37a3e82d5f95775905c1c57efd3e4e6e89d024785e9c4f8f42e",
+          "url": "https://www.zdfheute.de/politik/deutschland/rente-koalition-reform-100.html",
+          "publishedAt": "2026-06-22T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:16.768+00:00",
+          "titelSha256": "d8e4b4e6876db260625542bdad6029fcc464fd32d77ec81023ad9e8f6255a2f1",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-bd11a40955fdf760e79a1cf84081ba2e3558fc1fc327a3f6010bb638069a4ab5",
+          "url": "https://www.bibliomed-pflege.de/news/bundesrat-warnt-einschnitte-pflegebudget-gkv-reform",
+          "publishedAt": "2026-06-15T07:00:00+00:00",
+          "retrievedAt": "2026-09-05T10:00:32.665+00:00",
+          "titelSha256": "cacb3b7ded7f611d5c8459f91c518f431353602837cb8572f61be00cc8daab6a",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-0640487b7ba448d7e1db6a93a624db94e991124487e68899c808574e4b0576de",
+          "url": "https://www.zeit.de/politik/deutschland/2026-06/heizungsgesetz-gebaeudemodernisierung-oel-gasheizungen-biotreppe",
+          "publishedAt": "2026-06-11T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:12.95+00:00",
+          "titelSha256": "3eb4fafc9226fa5db4ce9e0d74b9c5b52ae7e5c40d43929aeaf6fad320585063",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-b88edb7316e52320d2cf9f29148600f5b0bc6b7fe7cbaa6ca0ca589b7e061373",
+          "url": "https://www.deutschlandfunk.de/bundesregierung-unterstuetzt-annaeherung-der-tuerkei-an-eu-108.html",
+          "publishedAt": "2026-05-20T07:00:00+00:00",
+          "retrievedAt": "2026-09-05T10:00:25.446+00:00",
+          "titelSha256": "e5256ffdbd69680fa3b3a1cf597648b31a3e3796eba4b7b08f5473b18babd4b3",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-4c428d07e565b76b50a95efc6db2b89530d50e12931c204054674f2911a41c41",
+          "url": "https://www.zdfheute.de/politik/deutschland/koalition-ausschuss-reformen-arbeitsprozess-100.html",
+          "publishedAt": "2026-05-13T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:33:58.509+00:00",
+          "titelSha256": "2fcacdd79c2ce4166f153ca0009bac794254f32a221b3f3e71607489847a1286",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-ccad72e60c8f97df4b51727bcc322a0b2dc65a19e13f453b8cad9fd6ac5bedb9",
+          "url": "https://www.deutschlandfunk.de/amnesty-trump-ist-brandbeschleuniger-bei-abbau-der-menschenrechte-bundesregierung-schweigt-zu-haeufi-100.html",
+          "publishedAt": "2026-04-21T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:07.003+00:00",
+          "titelSha256": "adaba6e59eba32c745df60165dda7dcc927f8fcc965d83c7fe3a0680ab875d17",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-f44a6d9c34938acee2b268247d7584229b53277a9587638f0546d24df5c04978",
+          "url": "https://www.spiegel.de/wirtschaft/flexiblere-arbeitszeit-bundesregierung-will-weg-vom-starren-acht-stunden-tag-a-95d4715b-df5d-479f-bda4-41ef451d2184",
+          "publishedAt": "2026-01-28T08:00:00+00:00",
+          "retrievedAt": "2026-09-05T10:00:29.86+00:00",
+          "titelSha256": "ec2de45cbb4cb720620aa0ca16d8f8f5ccd481c94c2aed650db65427c5ebf4d8",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-4846bf384b002a753d98fad0bd676532e64c718d7cca9a4265871066ef59b79b",
+          "url": "https://www.merkur.de/wirtschaft/rentensystem-renten-mythos-entlarvt-spd-politiker-verteidigt-milliarden-zuschuss-zr-94001250.html",
+          "publishedAt": "2025-10-24T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:00.866+00:00",
+          "titelSha256": "3f14bea15e483293fd85c84a23a17011df673f45a632dac53992d46807d87eb2",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-a00219f2dfa474dc3e7527ad1b9dbb026e7e19f2d51a16ab347746f086909c5d",
+          "url": "https://www.deutschlandfunk.de/wirtschaftsverbaende-zufrieden-mit-einigung-bei-buergergeld-und-verkehr-100.html",
+          "publishedAt": "2025-10-09T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:33:58.923+00:00",
+          "titelSha256": "5ef3a880a61701ada16420ba4f961a192ef2b5efd6ad1be93be9fc8bc5b6872e",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-c963a9655c6f4c8a1114c6a879b13717fdbb0cc6570d52f70230624e5551b94a",
+          "url": "https://www.zdfheute.de/politik/koalitionsausschuss-einigung-grundsicherung-100.html",
+          "publishedAt": "2025-10-09T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:33:58.923+00:00",
+          "titelSha256": "c166891436c4e27648349164a11e8a1cf78037023e3381703175ce4761f5a5bb",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-e01e91ee2d098d695b36221402a87044831155f31ad44a2d613ce6dac1d7bf49",
+          "url": "https://www.stern.de/politik/deutschland/koalitionsausschuss--neun-stunden--drei-ergebnisse--fuenf-lehren-daraus-36117028.html",
+          "publishedAt": "2025-10-09T07:00:00+00:00",
+          "retrievedAt": "2026-09-05T10:00:20.325+00:00",
+          "titelSha256": "efc0c52701ca4a2a825134fbe3e07bd9c84cd3492717b758bbef44f283cc3a70",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-4906271236fc9db65a48748ad5ef0b8c743b6e1602cf95412588db1fec9afba2",
+          "url": "https://www.bundestag.de/webarchiv/textarchiv/2019/kw11-de-regierungsbefragung-595168",
+          "publishedAt": "2025-03-28T06:04:37+00:00",
+          "retrievedAt": "2026-09-06T20:34:00.141+00:00",
+          "titelSha256": "fdf86325f92721dee443753e4c96e2eef4f3f37ad24f6d7e62cb80855c2922b5",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-3d5dfcd306ed7f5683e86993fac4bbf71fc3a30e79ebbe71a6285103d8bedf4f",
+          "url": "https://unterelbe.igmetall.de/kueste/artikel/20-25/naechste-bundesregierung-muss-ausbau-der-windenergie-weite",
+          "publishedAt": "2025-02-14T08:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:14.055+00:00",
+          "titelSha256": "f0f6398801f8ed36e52926cf77efff1611460966d3a23fa98f79915737afc827",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-bundesregierung-20260904-e51882",
+      "koUpdatedAt": "2026-09-06 04:01:49.975+00",
+      "analyseSha256": "824611be55d47738ccbf9d08f1715e68b09473c0c95732bb05a11e78e0ad5994",
+      "quellen": [
+        {
+          "id": "rd-20de3477b4317d875596ffc8d55e03cee54275df86236069303ec5bad8de68ac",
+          "url": "https://www.ad-hoc-news.de/politik/awo-praesident-gross-warnt-vor-sparkurs-der-bundesregierung-beim/70057244",
+          "publishedAt": "2026-09-05T08:03:05+00:00",
+          "retrievedAt": "2026-09-05T16:01:28.068+00:00",
+          "titelSha256": "c119b2dda7f5c50809137496b20f3f381e143128f2c56d853340cd6025cc3c1b",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-98250aaabccfb2de234dee39c7ec9187c620f5ffdb3f1f9ef6705ffa949ca4b4",
+          "url": "https://www.wiwo.de/unternehmen/auto/autoindustrie-bundesregierung-will-vw-unterstuetzen/100252132.html",
+          "publishedAt": "2026-09-04T13:40:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:08.781+00:00",
+          "titelSha256": "51e66cf1ff0b0a9e9a56237e19890bfe452b0f8479e0870b3532d722529235ce",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-409a60038b35bbaa0d68f4970db54adbeb461d37031edbb83ac32ae6a25fc55d",
+          "url": "https://www.sueddeutsche.de/auto/autoindustrie-bundesregierung-begruesst-verstaendigung-bei-vw-dpa.urn-newsml-dpa-com-20090101-260904-930-633630",
+          "publishedAt": "2026-09-04T12:12:41+00:00",
+          "retrievedAt": "2026-09-04T16:01:55.878+00:00",
+          "titelSha256": "82d24ae5a72bea215ad19cbea0ce91c516ff6fb07832a9f835e00a698dac135d",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-9fa63e3fb8952209f9291b96c0198c4118cc29d87182efe05764f480f8f5aee8",
+          "url": "https://der-betrieb.de/meldungen/bundesregierung-bringt-einkommensteuerreform-auf-den-weg/",
+          "publishedAt": "2026-09-03T15:40:52+00:00",
+          "retrievedAt": "2026-09-06T20:34:08.961+00:00",
+          "titelSha256": "3bc0b60621b003f08baa5330eea4f5e6b28e8d0351c07ce435f88bb1f99b9861",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-368a7ada10d614efc1642d553aebfe2b4fa78f2a4be6d3f17a57a20ce813867d",
+          "url": "https://www.dielinkebt.de/presse/pressemitteilungen/detail/wind-offshore-branche-akut-bedroht-bundesregierung-muss-jetzt-handeln/",
+          "publishedAt": "2026-09-03T07:36:08+00:00",
+          "retrievedAt": "2026-09-06T20:33:57.004+00:00",
+          "titelSha256": "5ebbc614734003438fff349a4819e60f3f258c7afa0402c92a4edd11158ea028",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-2912914d122af23f7e3d0c91a81b5d12ec711a6318f176f6379fc210cd0b5c8f",
+          "url": "https://www.topagrar.com/management-und-politik/news/einkommensteuerreform-2027-zahlen-landwirte-drauf-20028762.html",
+          "publishedAt": "2026-09-03T06:36:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:07.078+00:00",
+          "titelSha256": "f0ee5da83b9c84a9e1b0fcbcdfb66d0d3d723c537ebb43ad53dac62bd72b6663",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-fe3b4d25471f45c6cf292f57c15b3269628bc1101bf7395414d265327f97d246",
+          "url": "https://www.deutschlandfunk.de/kabinett-beschliesst-reform-der-einkommensteuer-kernpunkte-im-ueberblick-100.html",
+          "publishedAt": "2026-09-03T05:39:59+00:00",
+          "retrievedAt": "2026-09-06T20:34:05.645+00:00",
+          "titelSha256": "568c3ada84cd517c38b66044a3fff8ca8c12abeddafb14c16bea09dcb7c1731d",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-c6346a5ddfc0061d5a12516317f0d75ef9ddb53875695c227e9714d3a08c7035",
+          "url": "https://www.tagesschau.de/tagesthemen/video-1641762.html",
+          "publishedAt": "2026-09-02T19:46:25+00:00",
+          "retrievedAt": "2026-09-05T10:00:27.264+00:00",
+          "titelSha256": "118e2cb8fd23a240abadc94b375f78ea9fa0ac9181ed6eb033d36c451fdb7fd4",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-b44543c3d82d2d79987a69d1e5e3d500592ac0dedfebd0998797589895eda1ba",
+          "url": "https://www.faz.net/aktuell/wirtschaft/mehr-wirtschaft/einkommensteuerreform-klingbeil-lobt-beschluss-reiche-uebt-kritik-201182317.html",
+          "publishedAt": "2026-09-02T13:58:39+00:00",
+          "retrievedAt": "2026-09-05T10:00:27.263+00:00",
+          "titelSha256": "9065a5eec4521fbdf96458fe1b5b32a4e26cfd29a765248c9eda846852f24550",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-b2573db218bb752c8cc3ce5475c7a40f3c7592ed246b806b1888083b10bb5e1d",
+          "url": "https://www.dielinkebt.de/presse/pressemitteilungen/detail/einkommensteuer-reform-ist-ein-nullsummenspiel/",
+          "publishedAt": "2026-09-02T13:28:53+00:00",
+          "retrievedAt": "2026-09-06T20:33:57.004+00:00",
+          "titelSha256": "9a4213698cad7bfd6f36bec0e6f78cd246fa89f17fddda244a82c841de062a4c",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-6b24dc078971d40766f30d52239b920e0d99293a87818e94cedfd4cf63763d65",
+          "url": "https://www.ad-hoc-news.de/politik/gruene-attackieren-familienpolitik-der-schwarz-roten-bundesregierung/70043866",
+          "publishedAt": "2026-09-02T13:28:52+00:00",
+          "retrievedAt": "2026-09-05T10:00:26.744+00:00",
+          "titelSha256": "4641bbe778de357d7aac6af00a82c964268d24c048041f72d7d2e43afe33ecb5",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-87c39541009eba278a2daad0cd547b233f836951a2dc1f6c7fe962b567685f5c",
+          "url": "https://www.faz.net/video/einkommensteuerreform-ab-2027-beschlossen-201183139.html",
+          "publishedAt": "2026-09-02T12:16:44+00:00",
+          "retrievedAt": "2026-09-05T10:00:30.924+00:00",
+          "titelSha256": "d70c666ef110ea29825fc39a2cb2e696dc988209d8d9b9473a02a347917b6f01",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-0e8673e27a2afcfe47c3960ce85ee849c828a1656f2b33890356392d60d19a0e",
+          "url": "https://www.nn.de/politik/reform-der-einkommensteuer-die-koalition-zerredet-ihren-eigenen-kompromiss-1.15263379",
+          "publishedAt": "2026-09-02T12:14:49+00:00",
+          "retrievedAt": "2026-09-06T20:34:13.603+00:00",
+          "titelSha256": "d14d061939bd241bcdcd3d578fcc36732e5d45b0f2e3427a1a3c41162a8c728c",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-33904daca8c6ff22bb68643a2ed7364a3b88b1b3afcc2a9862ddce4f8e1e5fe2",
+          "url": "https://www.tagesschau.de/video/video-1641438.html",
+          "publishedAt": "2026-09-02T12:12:53+00:00",
+          "retrievedAt": "2026-09-06T20:34:05.645+00:00",
+          "titelSha256": "a1662e32038ab2b8572d007ab60d1bb937b1e58af03c272278de5cf5b16eb3f2",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-a92fc48a10b9d02a653d1001f77ac7f9572d75efc297a9e30411443a053ac68e",
+          "url": "https://www.zeit.de/politik/deutschland/2026-09/einkommensteuerreform-bundeskabinett-schwarz-rote-koalition-entlastung-reichensteuer-gxe",
+          "publishedAt": "2026-09-02T11:57:50+00:00",
+          "retrievedAt": "2026-09-06T20:34:05.645+00:00",
+          "titelSha256": "f6171a16e8ca06c7c3e244862d699d3e0148238cee05238971eec5e8057be7d5",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-d8b3cd6df7d7f1976e875750d5474d90a4eee7855e9253e9472f71ca888501f7",
+          "url": "https://www.deutschlandfunk.de/drohnen-vorfall-in-leipzig-bundesregierung-macht-russland-verantwortlich-russisches-generalkonsulat--100.html",
+          "publishedAt": "2026-09-02T10:58:02+00:00",
+          "retrievedAt": "2026-09-06T20:34:08.46+00:00",
+          "titelSha256": "d0c57526e7d0619048aa3e2e23060c200c2f482701c7f91776339f63867f7514",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-135c65d0e84447e1f489dcd7fadefca51efe184596c8195b9870060c50759d81",
+          "url": "https://www.spiegel.de/wirtschaft/soziales/kabinettsbeschluss-zur-einkommensteuer-so-berechnen-sie-die-entlastung-fuer-ihr-gehalt-a-d402d122-94fa-4ff6-8d9d-ab6d4bee9eab",
+          "publishedAt": "2026-09-02T10:38:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:05.645+00:00",
+          "titelSha256": "a773c4eb7569d24954a55163c275a704f62dc39586d7d326ae5a99f9d5a4a411",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-d2234a723191f6d933f1d173c240ce3b95cc441d1d791e16c5751b71d44005db",
+          "url": "https://www.zdfheute.de/politik/deutschland/bundeskabinett-reform-einkommensteuer-100.html",
+          "publishedAt": "2026-09-02T09:36:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:05.645+00:00",
+          "titelSha256": "e755ee08b085498f40d1a45f578ffc7045ac1c47f4e43129c5806f01624e0c6e",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-0fc03efca02bc4accde00d70681caa28821d9db984e575854b528d15254ec033",
+          "url": "https://www.haufe.de/steuern/gesetzgebung-politik/referentenentwurf-fuer-ein-einkommensteuerreformgesetz-2027_168_696022.html",
+          "publishedAt": "2026-09-02T07:00:00+00:00",
+          "retrievedAt": "2026-09-05T10:00:26.744+00:00",
+          "titelSha256": "f82fea0f27217aa0b957b1ca2e128b52d88aa8a6bd206d628da384b86b898dfa",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-f7016903017304ed9bbb523b32adce5a6cd1fe0413537b1e7a8bd5dc4ee7bae9",
+          "url": "https://www.boersen-zeitung.de/konjunktur-politik/mehr-einkommensteuerlast-im-mittelstand",
+          "publishedAt": "2026-09-02T06:21:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:08.782+00:00",
+          "titelSha256": "ba4c837ec1a112e54e32e607fe518e715e518eebd0b3d196eb6c41d5ce64c3d9",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-eec9981a2dce05249f117fc1f40f35789e65d6437b2cc3cc79142302b6c059c1",
+          "url": "https://www.zdfheute.de/politik/deutschland/einkommen-steuerreform-entwurf-kabinett-klingbeil-100.html",
+          "publishedAt": "2026-09-02T05:46:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:05.645+00:00",
+          "titelSha256": "1b7f6b6da71d9f6a9de6ee5773b78bcf6c78fe5d8c23f8517ac456dbc881c77c",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-d08b66dcd19596ce1da34c41a2fef9818d0c0e777ff7284a345d92859cf2dd19",
+          "url": "https://www.inforadio.de/rubriken/interviews/2026/09/02/bundesregierung-reaktion-drohnenvorfall-sanktionen-russland-linke-bartsch.html",
+          "publishedAt": "2026-09-02T05:25:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:04.033+00:00",
+          "titelSha256": "454792d248abfdab45a785b768271123da9346ba482f8154eee40c852381f844",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-b462e48019c29aed789832b7160359f6e67197b86256b100c07ffd70c6a19d79",
+          "url": "https://www.deutschlandfunk.de/bundesregierung-kuendigt-massnahmen-gegen-russland-an-110.html",
+          "publishedAt": "2026-09-01T22:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:08.459+00:00",
+          "titelSha256": "7dc8e9c1a23c1ce175b78a44c69ba1adbef808ffabd904f53babaac7b00f51f0",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-1c6c148b25128290b11054a6762040faf64f11c3872f8d315607d367aca48939",
+          "url": "https://www.zdfheute.de/politik/deutschland/drohnen-vorfall-leipzig-russland-verantwortlich-100.html",
+          "publishedAt": "2026-09-01T21:32:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:04.034+00:00",
+          "titelSha256": "7056e0f2e72065a7423fcdef39fa549f021835b6c4d1002034c643b1c7c697ab",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-22ce7229f10a2fd2592f8e37c2df83447dfd06ab6ef49c92f7cd300fde101fc4",
+          "url": "https://www.tagesschau.de/tagesthemen/video-1641180.html",
+          "publishedAt": "2026-09-01T18:49:25+00:00",
+          "retrievedAt": "2026-09-06T20:34:04.033+00:00",
+          "titelSha256": "d67d984f4490333bd16f1f6f43495080a52c08ad66ec4511b2269bae26bf3a9c",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-c3f8efe1049abe44fb08544afe1689a7a2c527cc245f8a6b1aa7f92e9383da8e",
+          "url": "https://www.gn-online.de/deutschland-und-welt/wadephul-keine-ueberreaktion-als-antwort-auf-drohnen-vorfall-620940.html",
+          "publishedAt": "2026-09-01T18:29:00+00:00",
+          "retrievedAt": "2026-09-05T10:00:25.446+00:00",
+          "titelSha256": "d48324664943e99619fa0605e8add2e3cc9562bc7f13ee682857ca9ee83d207d",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-fcedb7c9317941da21160740da4b1476335731dc965fb28e55715669c042deb5",
+          "url": "https://www.tageblatt.lu/International/Bundesregierung-sieht-Russland-hinter-dem-Vorfall-und-verhaengt-Strafmassnahmen-91204.html",
+          "publishedAt": "2026-09-01T17:20:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:04.034+00:00",
+          "titelSha256": "1a89b860b8ad599584cba817ce81231523351e3207e30a96e879589ae435dd54",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-d5ad15d7e8a6e1e1fc607995961c82a30d01c49e5f8ea658b0c7aa9474afd601",
+          "url": "https://www.nd-aktuell.de/artikel/1202205.reaktion-auf-drohnenvorfall-bundesregierung-russland-steckt-hinter-anschlag-n-brd-aber-nicht-im-krieg.html",
+          "publishedAt": "2026-09-01T16:50:18+00:00",
+          "retrievedAt": "2026-09-06T20:34:04.033+00:00",
+          "titelSha256": "38fc33f516f8571ac5fd2b2e1b7156c573c52bcaf79d48c157b1d3c76d603f51",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-b8ceb5e96989b07f7191fb97f232949623dd1a3513914d48e7a1ccf43d1d4ce7",
+          "url": "https://www.deutschlandfunk.de/bundeskabinett-einigt-sich-offenbar-auf-einkommensteuerreform-beschluss-fuer-morgen-erwartet-100.html",
+          "publishedAt": "2026-09-01T14:46:55+00:00",
+          "retrievedAt": "2026-09-06T20:34:11.559+00:00",
+          "titelSha256": "edb16427dd122f98c3169bfdbe4a38ddc6c5a0812932e8c87141cef8b173212e",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-ca5082b17bb8d09ac3adff6fcb42ad1b3d4a5fc08921e7d15639c1080fd6410e",
+          "url": "https://www.migazin.de/2026/09/01/fuer-abschiebungen-berlin-taliban-boot/",
+          "publishedAt": "2026-09-01T14:13:31+00:00",
+          "retrievedAt": "2026-09-05T10:00:27.946+00:00",
+          "titelSha256": "7b01dfe67357546bd0c7dd9f4b98cb06ad3ebe0e537817c4449e4a9d145762aa",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-698d982ff1f92881b46ec578e83a66ae0d4f49ae17fd3096109368ae4ec950f7",
+          "url": "https://www.deutschlandfunk.de/bundeskabinett-einigt-sich-offenbar-auf-einkommensteuerreform-beschluss-fuer-morgen-erwartet-102.html",
+          "publishedAt": "2026-09-01T12:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:11.559+00:00",
+          "titelSha256": "b2f773a5ef44be7b2766874f20d0ec62e20db3250e3db15bd0c5ab7b7da7dbc0",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-180db4f8998726bffa8fae43064d4c383b3f86a48ff683333a4adecb8a1564b0",
+          "url": "https://www.n-tv.de/ticker/Bundesregierung-will-Einkommensteuerreform-am-Mittwoch-beschliessen-id31255413.html",
+          "publishedAt": "2026-09-01T09:10:10+00:00",
+          "retrievedAt": "2026-09-05T10:00:30.923+00:00",
+          "titelSha256": "f751c25ad995e4d80e262d3092159c8537a76adfab8e69a2c1edaa365bace5a7",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-d8668b3e4ac716755be439a895935cfe460746f70afa5e2c154a75ec8b4e34b3",
+          "url": "https://bahnblogstelle.com/261471/bundesregierung-sieht-potenzial-durch-dak-nennt-aber-keine-konkrete-einsparquote/",
+          "publishedAt": "2026-08-26T13:45:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:08.205+00:00",
+          "titelSha256": "373ec4ee90857fe912341f4e8f648c8372356acac6ffb4daece098a32ab311e5",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-832b2d305e1527c9e3a8f288edbedf5c356f4eda3938296b09967797f4cdefe0",
+          "url": "https://www.swr.de/swraktuell-radio/info-date-am-mittag-2026-08-24-industrie-bundesregierung-muss-reformen-anpacken-100.html",
+          "publishedAt": "2026-08-24T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:08.782+00:00",
+          "titelSha256": "1cac1051ece60296cebd61620d81c2a8506e284256af70c8a0f1f12462001f1c",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-541ec4a8f482eaf4a3418568c2954b1a8442688a0f82b5a7b55fd2149702f8d8",
+          "url": "https://www.tagesschau.de/tagesschau_20_uhr/video-1635388.html",
+          "publishedAt": "2026-08-21T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:08.781+00:00",
+          "titelSha256": "e0556046c8e1946458874429c1ed75a80108a065a740b854b093bfa19c28473c",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-9c661814c593befd86cc8ba95cf965cf4f0ea2b63bc2d25781eb551a181ae614",
+          "url": "https://www.zeit.de/politik/deutschland/2026-08/steffen-krach-spd-berlin-reformpaket-bundesregierung-wohngeld-kuerzung",
+          "publishedAt": "2026-08-15T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:10.374+00:00",
+          "titelSha256": "bc140ad4c9a35048d741fe9964fe124773524fa11b8d221c22dfde84991ce29d",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-5a4c002f1708cee614272976be6a70439227ff2eef1d61b6f408eea69c926da2",
+          "url": "https://taz.de/Gesetzentwurf-der-Bundesregierung/!6203671/",
+          "publishedAt": "2026-08-11T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:11.559+00:00",
+          "titelSha256": "6ef437644cd2fc8cfc07e8de84cfd01ec8b4084bb4338ee82abbe26654b7fc0e",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-30d415ce3d5688bf3b864363aaa3a619d985a5c9057f3cadf20fefddfcb4e396",
+          "url": "https://www.swr.de/swraktuell-radio/schwarz-rot-in-der-krise-warum-sich-die-bundesregierung-mit-der-rentenreform-so-schwer-tut-100.html",
+          "publishedAt": "2026-08-10T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:10.255+00:00",
+          "titelSha256": "615114f553a640550e607b51fc98b99240ca845634c055120ce6ec4723addcf8",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-f908a621e4935a7facab4e622ed78321dc1b6036fa6bbf94faed3b7b4dfc23c2",
+          "url": "https://www.zeit.de/politik/deutschland/2026-07/abschlagsfreie-rente-63-beitraegsjahre-cdu-ostdeutschland-friedrich-merz",
+          "publishedAt": "2026-07-31T07:00:00+00:00",
+          "retrievedAt": "2026-09-05T10:00:32.018+00:00",
+          "titelSha256": "8092f08e54293dbd883ff5f162931825b89942aed273e4c1345b0253a8655bcc",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-c45993f5a0dfb62dc634ac797c864b73fcf4f4ee16569a89d2a6c159b447a24b",
+          "url": "https://www.fr.de/wirtschaft/schwerer-vorwurf-an-bundesregierung-ignoriert-der-kanzler-geltendes-recht-zr-94399400.html",
+          "publishedAt": "2026-07-15T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:02.362+00:00",
+          "titelSha256": "c72d5c2f0f8d7da9a3fb9bb88fa89680e7e69e04ab876da6eeab2be23511cd30",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-03fb4b535b7bcabc29668f0c7d6b12296cb34207b8ab81d8c0c199746d37740a",
+          "url": "https://www.rnd.de/politik/koalitionsausschuss-am-mittwoch-welche-reformen-sich-die-regierung-vorgenommen-hat-XWWIF2HJ6BG3NCENXAQFPOM6NY.html",
+          "publishedAt": "2026-06-28T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:33:58.509+00:00",
+          "titelSha256": "6500c539040df19ce8387b1453d7def738c60295df1c42e4125484f69b64437f",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-d55bb93c62d3bfe0f0e05c509d21b973562ba42e9bedf0c9d68f18b0a9626ac8",
+          "url": "https://www.zdfheute.de/politik/deutschland/grafik-rente-rentenreform-100.html",
+          "publishedAt": "2026-06-23T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:16.175+00:00",
+          "titelSha256": "8dec73fb3283948ad51d07b0f48da0e8464d8196ca7afda8e1ea9dd30764a401",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-bb7a16c1c53e98e4dd9aa3f025478d44af10ba8a8c8b77a0a5c7bd3c9d00a766",
+          "url": "https://www.faz.net/aktuell/wirtschaft/bundesregierung-doch-es-braucht-den-big-bang-der-reformen-200901795.html",
+          "publishedAt": "2026-06-05T07:00:00+00:00",
+          "retrievedAt": "2026-09-05T10:00:22.46+00:00",
+          "titelSha256": "08c1aadb2adeeff54b456b4367497e41670b34a6ad0843e9c94cd278aa7c96e2",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-33e387bf8167f0b8d1d5582f6e6f921974334bd7c34d7d4d78eb34c4ed166b42",
+          "url": "https://www.deutschlandfunk.de/bundesregierung-bringt-reform-auf-den-weg-schenderlein-cdu-verteidigt-standort-leipzig-fuer-spitzens-104.html",
+          "publishedAt": "2026-03-25T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:07.913+00:00",
+          "titelSha256": "ffa991db85309edd279e86128ad47e3ffa148885b76b2e9663e80265a0ee2746",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-3d5dfcd306ed7f5683e86993fac4bbf71fc3a30e79ebbe71a6285103d8bedf4f",
+          "url": "https://unterelbe.igmetall.de/kueste/artikel/20-25/naechste-bundesregierung-muss-ausbau-der-windenergie-weite",
+          "publishedAt": "2025-02-14T08:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:14.055+00:00",
+          "titelSha256": "f0f6398801f8ed36e52926cf77efff1611460966d3a23fa98f79915737afc827",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-energieversorgung-20260905-62f8cd",
+      "koUpdatedAt": "2026-09-05 21:31:59.662+00",
+      "analyseSha256": "abf24b597e9e9ae0a41d66936b8e1efd5a1af00e181daa122ca9ec402d9f9b95",
+      "quellen": [
+        {
+          "id": "rd-34f3e8a52a6b36c848dbedf33384752628b1b0056be747a34b1a115a2cb266d9",
+          "url": "https://www.deutschlandfunk.de/polizei-einsatz-in-sachsen-und-fahndung-nach-verdaechtigem-gehen-weiter-102.html",
+          "publishedAt": "2026-09-05T09:54:13+00:00",
+          "retrievedAt": "2026-09-05T10:00:18.73+00:00",
+          "titelSha256": "02fc8dcce264f3222ec395307c49019d823021f370ab35c40d98f8a697670476",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-entschließung-20260114-022b0a",
+      "koUpdatedAt": "2026-09-05 11:31:46.379+00",
+      "analyseSha256": "c3103c4436567ffca48c6d2a90c9d63545397d9492a46d7787375da385074e86",
+      "quellen": [
+        {
+          "id": "rd-80f733fb81164c09877abe0a2f27d0d85fef8cdc8df19d4b96a3ee10e52a31bc",
+          "url": "https://www.bundesrat.de/SharedDocs/TO/1062/erl/11.pdf?__blob=publicationFile&v=1",
+          "publishedAt": "2026-03-06T08:00:00+00:00",
+          "retrievedAt": "2026-08-11T16:03:17.836+00:00",
+          "titelSha256": "359e6334be8bde3459b7155878e75408ede3cb70f3748d2561a3684395319d02",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-650cee863b63568dbabd0bf4bedf720a1fe506f5c901cf642c6262cc9e02664d",
+          "url": "https://www.bundesrat.de/SharedDocs/drucksachen/2026/0001-0100/14-26.html",
+          "publishedAt": "2026-01-14T14:28:11+00:00",
+          "retrievedAt": "2026-09-01T10:00:35.829+00:00",
+          "titelSha256": "b7263e86c114129ac8943de0041125402c0308654f434d07eede193c44a12437",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-gemeinschaften-20260901-7ab005",
+      "koUpdatedAt": "2026-09-07 05:31:00.241+00",
+      "analyseSha256": "843f0aaba48f6f1a21dfac3ae75849d5141fbe8d4eed9b9f0ce3ae135f03194f",
+      "quellen": [
+        {
+          "id": "rd-2371b21b66259872997d690d7cc5b39effbc129e246fee4330020e8f7a5b6a04",
+          "url": "https://www.aerzteblatt.de/news/sorgende-gemeinschaften-niedersachsen-fordert-pflegeprojekte-6ec24b90-4649-4ee2-9d8d-6be438ce4aef",
+          "publishedAt": "2026-09-01T14:24:37+00:00",
+          "retrievedAt": "2026-09-07T04:00:48.911+00:00",
+          "titelSha256": "c026b812ce7bb3fe2dbc341e069ffa0d0f7a8e0faf543d640b5b1d3948480e25",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-gesundheitsberufe-20260903-9b623b",
+      "koUpdatedAt": "2026-09-07 04:03:48.329+00",
+      "analyseSha256": "78404852b6a6532e931d999c42112567068fc37227de819c842121c790ad6846",
+      "quellen": [
+        {
+          "id": "rd-69823ff7ce0678473390e9a4ab65b622cca87cf4cc58afad7b6d46efddeca410",
+          "url": "https://www.morgenpost.de/berlin/article413061461/spd-will-psychische-gesundheit-zum-schwerpunkt-machen.html",
+          "publishedAt": "2026-09-04T17:00:00+00:00",
+          "retrievedAt": "2026-09-04T20:01:44.495+00:00",
+          "titelSha256": "15169a4743a5eb41bf6b361fa884d8f307c85c84d289e9369130f9c3ce1cf6ca",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-ace8a8b68d71a495b9c1dc40afb8f30b0126a9f6f9f9d7617f74eda77b0c9843",
+          "url": "https://www.deutschlandfunk.de/kassenaerzte-warnen-vor-vollen-praxen-und-terminmangel-102.html",
+          "publishedAt": "2026-09-04T12:00:00+00:00",
+          "retrievedAt": "2026-09-06T04:01:23.107+00:00",
+          "titelSha256": "57ba351fcc9877727b656bba2af5834747dd7910ef8efc18c73a1fcd94a5ba6b",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-e03eadec6c40a6f166789ab553b614d66879d7067517d7fc8a3f2a9675dfa638",
+          "url": "https://www.tagesschau.de/inland/regional/brandenburg/rbb-mehr-auszubildende-mehr-abbrecher-pflegefall-gesundheitsberufe-100.html",
+          "publishedAt": "2026-09-03T04:28:00+00:00",
+          "retrievedAt": "2026-09-03T20:02:16.288+00:00",
+          "titelSha256": "6ff54a9af851c7bfc26091b5f24760085d93e957c68c1ffc7849de5ca9b98976",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-6878643b313bf8fbffc4ebb43d32ba0e335e3d4617f048046c08be15d4f7189b",
+          "url": "http://www.rbb-online.de/wirtschaft/beitrag/2026/09/auszubildende-pflege-gesundheitsberufe-berlin-brandenburg.html",
+          "publishedAt": "2026-09-03T04:26:00+00:00",
+          "retrievedAt": "2026-09-04T20:01:44.495+00:00",
+          "titelSha256": "4016a0865bec0d28746a3048e092f7e8c300cf6b5853ca97ef5db2d99f908134",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-großbritannien-20260906-982741",
+      "koUpdatedAt": "2026-09-07 04:01:24.07+00",
+      "analyseSha256": "ecbb9fc87a4a025fc39a47456da92981c932f026102c4287adb68d568e937784",
+      "quellen": [
+        {
+          "id": "rd-016c28ee597deef915af1f5e70686a2f3eb7681610a65b4cbce9f2b4ed861fa9",
+          "url": "https://www.deutschlandfunk.de/maskierte-demonstranten-bringen-faehrverkehr-in-dover-zum-erliegen-104.html",
+          "publishedAt": "2026-09-06T03:31:32+00:00",
+          "retrievedAt": "2026-09-06T04:00:59.537+00:00",
+          "titelSha256": "80816256ceb5f6de867d15fb8e6882fce1322c04c48fb15ea9f3f8585bec89f6",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-handwerksblatt-20260225-9e972c",
+      "koUpdatedAt": "2026-09-05 17:31:08.586+00",
+      "analyseSha256": "bfd904d1de90617d034a237b35c6b677e0be4eb271ed3780c92380f462e88d41",
+      "quellen": [
+        {
+          "id": "rd-c590e1606cccdac7359160924592b36b02980c75d93b0c666b9bfb94c5a78a28",
+          "url": "https://www.handwerksblatt.de/handwerkspolitik/shk-handwerk-tarifeinigung-in-nrw",
+          "publishedAt": "2026-02-25T15:13:14+00:00",
+          "retrievedAt": "2026-09-06T20:34:02.209+00:00",
+          "titelSha256": "c4ecdd0947824edde57acdcd551c9056c23578c85eff406fa36a00bbb95319bd",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-hauptwohnsitzhaushalten-20260827-404c8e",
+      "koUpdatedAt": "2026-09-05 20:01:54.594+00",
+      "analyseSha256": "edf1b50c047d5ad66ab88292184ecc8c804d300cc09d4f71109dea2dc3c9f9ad",
+      "quellen": [
+        {
+          "id": "rd-a01f25e8cb95776653a39749f86e3613301530109018047698dacfb1fa1d41cb",
+          "url": "https://www-genesis.destatis.de/datenbank/online/statistic/12241/table/12241-0015/search/s/JTIyZWlua29tbWVuJTIy",
+          "publishedAt": "2026-08-27T18:11:53+00:00",
+          "retrievedAt": "2026-09-05T16:01:35.042+00:00",
+          "titelSha256": "ed0447e6f53dbd0ca5dbde8ffc12c7f05356ce1b7d6797594da5c0b2fd1f0e94",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-d44d00f74f9c4397b4834a9504b275921f0926e9310a1bd076385c8fd8f9c2f6",
+          "url": null,
+          "publishedAt": "2026-08-27T18:11:53+00:00",
+          "retrievedAt": "2026-09-06T04:01:50.791+00:00",
+          "titelSha256": "ed0447e6f53dbd0ca5dbde8ffc12c7f05356ce1b7d6797594da5c0b2fd1f0e94",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-interessenvertretung-20260901-ddad41",
+      "koUpdatedAt": "2026-09-06 05:33:58.583+00",
+      "analyseSha256": "c416039045f6400947d6b8a180329b7e4dba08466114cab392cbaede08eb8a63",
+      "quellen": [
+        {
+          "id": "rd-c6b3628ec52806487600d1880e1bcf33460963a3ea48812ca6f4013ea3b72242",
+          "url": "https://www.photon.info/news/neu-gegruendete-interessenvertretung-fuer-netznutzer-legt-gesetzentwurf-zur-digitalisierung-der-energiewende-vor/",
+          "publishedAt": "2026-09-01T12:33:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:04.738+00:00",
+          "titelSha256": "1da3908d85c3c84d9979c414577e4b680256a393f8ed68362e4f41fd2593589f",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-iranische-20260905-954d6c",
+      "koUpdatedAt": "2026-09-06 05:31:45.667+00",
+      "analyseSha256": "4375910df8e3188e280be988df18a408accee846ef0dcaca9417484a533b436c",
+      "quellen": [
+        {
+          "id": "rd-8befa4798064b7e02e4f965ad2d783b51b9a3509eeb228ada502fa88ef5a1999",
+          "url": "https://www.tagesschau.de/ausland/asien/usa-iran-angriffe-tanker-100.html",
+          "publishedAt": "2026-09-05T15:17:36+00:00",
+          "retrievedAt": "2026-09-05T20:01:25.772+00:00",
+          "titelSha256": "84487ee8b6d43d17708cb3caf7dd7e627dec163778425b646ade852cbba36550",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-kahlschlag-20260828-6dc00d",
+      "koUpdatedAt": "2026-09-06 20:02:57.627+00",
+      "analyseSha256": "8bcf6aa93a0de1dd32aaaaa77528f04ebfefe2460b5e060b30aeb15a82193fac",
+      "quellen": [
+        {
+          "id": "rd-8870701f549c5b3ff5735360695dcdd82c428ca726dc6af0cdbd1e681be0ac22",
+          "url": "https://shsw.verdi.de/themen/nachrichten/++co++d64342c2-a1e2-11f1-927f-8ba8575e1818",
+          "publishedAt": "2026-09-06T04:07:19+00:00",
+          "retrievedAt": "2026-09-06T20:02:06.446+00:00",
+          "titelSha256": "52bae13c7f943880567ef45a6bd2097bbb222f8c695877afd01f919454de0677",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-bd7f5a186525a430228f73ebf879cdb7e598c409fcba25825447244d206f34f6",
+          "url": "https://nord.vdk.de/aktuelles/news-termine/veranstaltung/pinneberg-kundgebung-rote-karte-dem-kahlschlag/",
+          "publishedAt": "2026-08-28T10:10:05+00:00",
+          "retrievedAt": "2026-09-01T10:00:41.733+00:00",
+          "titelSha256": "c9b061ba6427b06b3e469106be0476ec9c9f18527fcaabe594a1807ef9064f66",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-koalitionsoptionen-20260905-f6d669",
+      "koUpdatedAt": "2026-09-06 05:31:55.738+00",
+      "analyseSha256": "24cdeb64815f2008a119a6df9f01554f1415b78fc36b167f1135f96dd26429da",
+      "quellen": [
+        {
+          "id": "rd-92b3661fb85e8837b9fc77f098aecc35f494c0cd240d63f13274528b20d54bd0",
+          "url": "https://www.tagesschau.de/inland/innenpolitik/landtagswahl-sachsen-anhalt-koalition-optionen-100.html",
+          "publishedAt": "2026-09-05T15:08:27+00:00",
+          "retrievedAt": "2026-09-05T20:01:25.773+00:00",
+          "titelSha256": "43e78a8ec35faf5c06ec2b6d961cd04d225f128ce661ab09783cd46d50b839dd",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-kommission-20260905-ee623c",
+      "koUpdatedAt": "2026-09-05 21:32:33.325+00",
+      "analyseSha256": "72362b4963e1b8afc4257abd0be9ce3677e3b582c51e48c946c1418442b62efe",
+      "quellen": [
+        {
+          "id": "rd-0d0e68b3172acc5c9dd95bca4284d301a45cd0cfaf718e050b27d7bcd18e455f",
+          "url": "https://www.tagesschau.de/wirtschaft/eu-regeln-kurzzeitvermietung-100.html",
+          "publishedAt": "2026-09-05T09:17:45+00:00",
+          "retrievedAt": "2026-09-05T10:00:18.708+00:00",
+          "titelSha256": "3c628da7e9d7940314ad4f2f41d60e57b8eaafb65131e78c2f6d7b73bf5bbeaa",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-konsequenzen-20260905-1a0475",
+      "koUpdatedAt": "2026-09-05 21:33:21.512+00",
+      "analyseSha256": "9c22870e67ad5eae601adac6b432c4e877dfdadc09f0c89ea18d1671b303a7bc",
+      "quellen": [
+        {
+          "id": "rd-15a8a724c2a371a84b20bb7b2bbf86077ff56367e2fe1d628c4ea71d493ef251",
+          "url": "https://www.die-glocke.de/kreis-warendorf/oelde/artikel/krankenhaus-oelde-kreis-spd-fordert-konsequenzen-1788588303",
+          "publishedAt": "2026-09-05T05:43:00+00:00",
+          "retrievedAt": "2026-09-05T10:00:34.458+00:00",
+          "titelSha256": "20cb5999dde3472e5a80f303bcddb13dafca23bdda5eab55efff67e3ab41dfd3",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-6b64e100cd2be56067982c3aa1d37c3c7d8bf97c15aff79729b4187891caad70",
+          "url": "https://www.die-glocke.de/kreis-warendorf/oelde/artikel/krankenhaus-oelde-kreis-spd-fordert-konsequenzen-1788588303?bo_pwl=1&cHash=ca75c05f7d115db6e3f779d614a47193",
+          "publishedAt": "2026-09-05T05:43:00+00:00",
+          "retrievedAt": "2026-09-05T20:01:36.152+00:00",
+          "titelSha256": "5a17d3fe25fc5b44e9ca5a82fdf0d0dfa871c1a57a3a637d96032ee36bd24b5a",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-landtagswahl-20260906-772e8b",
+      "koUpdatedAt": "2026-09-07 04:02:07.99+00",
+      "analyseSha256": "34389fa6bbf822bbd10b516d50601acf3148af8138356dacb1f8b1f86586fb08",
+      "quellen": [
+        {
+          "id": "rd-817ab4b070996233861f2b9050cd7c582e1767caaccef9734c56a1d0992d00f5",
+          "url": "https://www.deutschlandfunk.de/in-sachsen-anhalt-sind-rund-1-7-millionen-menschen-zur-stimmabgabe-aufgerufen-102.html",
+          "publishedAt": "2026-09-06T03:31:32+00:00",
+          "retrievedAt": "2026-09-06T04:00:59.537+00:00",
+          "titelSha256": "01efc6c1fe4a74b49fcc1294e22b3218e9970f792def19b3bfe86f5e6134777e",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-e3d040a1cd6ddbc6a30e7cf241c4ff23ec0702d631b5be85a07141be23945132",
+          "url": "https://www.tagesspiegel.de/politik/archiv/2026/09/06",
+          "publishedAt": "2026-09-06T02:43:43+00:00",
+          "retrievedAt": "2026-09-06T04:01:07.481+00:00",
+          "titelSha256": "e12773854ff7c89e97833df32837abc3fd4696eb17a21d22ddd5964307f28eb3",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-medizincannabis-20260223-b3a2be",
+      "koUpdatedAt": "2026-09-05 11:33:39.011+00",
+      "analyseSha256": "b985a0d7f5813ab364aa061b4ec5f72a01e1a8a1489e98b5c2d2de6fd6ca2b79",
+      "quellen": [
+        {
+          "id": "rd-0d08aa8f3657d16578dc7a39f2f50ab06536a24e03fe4d653cd9e5d68ea729e4",
+          "url": "https://www.aerztezeitung.de/Politik/Medizincannabis-Gesetz-Union-und-SPD-liegen-bei-Verschaerfungen-ueber-Kreuz-462119.html",
+          "publishedAt": "2026-02-23T08:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:07.314+00:00",
+          "titelSha256": "39281eefa7c0f07c8aaf4998dc58af038f0f1cdfe43f9a8578e887514b682962",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-migrationspolitik-20251205-64732a",
+      "koUpdatedAt": "2026-09-05 11:30:52.465+00",
+      "analyseSha256": "c32c1cccb393a864be0d447a68c411cedff86afdef46cc3a9c0e499b2c288bf3",
+      "quellen": [
+        {
+          "id": "rd-a619db9a879086f5e3723c04871e4041127d166523d4c5436d0d3e85694ff2a5",
+          "url": "https://www.tagesschau.de/inland/innenpolitik/verschaerfung-asylrecht-100.html",
+          "publishedAt": "2025-12-05T16:46:28+00:00",
+          "retrievedAt": "2026-08-23T04:00:23.842+00:00",
+          "titelSha256": "b152d10bc17da069becf22514bebadb280d7cf8b5ef4709f3e3e3a90333901dc",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-millionenhöhe-20260906-630494",
+      "koUpdatedAt": "2026-09-07 04:01:35.058+00",
+      "analyseSha256": "e9f5864843ca8412e794d948151b198a33137345cd406557f1439f28527bcf78",
+      "quellen": [
+        {
+          "id": "rd-2e3cef9fbdc6c70c8f454ac02b0f5f8865bcae8336eca5591791149c63e1d32d",
+          "url": "https://www.deutschlandfunk.de/ueber-50-000-antraege-fuer-e-auto-foerderung-bewilligt-108.html",
+          "publishedAt": "2026-09-06T03:31:32+00:00",
+          "retrievedAt": "2026-09-06T04:00:59.537+00:00",
+          "titelSha256": "809bac7a189cbb2cec704ee42040fc3553c9abcbd44b2e146899e88101ff9384",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-mineralölsteuer-20260416-0f16a5",
+      "koUpdatedAt": "2026-09-07 05:33:19.203+00",
+      "analyseSha256": "dbf51e65f42621b8deb78a017d84a51ad6fcd79549c07dece0fa626d2fb51355",
+      "quellen": [
+        {
+          "id": "rd-0a66173cd202ad74771876d44e45217933afe38ede409596d7108c6c9699342c",
+          "url": "https://www.deutschlandfunk.de/debatte-ueber-geplante-senkung-der-mineraloelsteuer-abgeordnete-von-union-und-spd-verteidigen-umstri-106.html",
+          "publishedAt": "2026-04-16T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T04:00:51.277+00:00",
+          "titelSha256": "e0e1ee05f55678dce40d6c388276212a864de2f1c43cc34321e3bbbe80758b1b",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-petitionsausschuss-20251201-55420d",
+      "koUpdatedAt": "2026-09-05 11:30:31.042+00",
+      "analyseSha256": "8b254811eaf7516a5f363b411d1fdf1b4b1e12a4a88bcf37f5a13f8d246d6671",
+      "quellen": [
+        {
+          "id": "rd-5caf9ff44e53c3e74c96b1ec9331d7507c0d2587d428d7f7611e43eb21bc5f36",
+          "url": "https://www.tagesschau.de/video/video-1530684.html",
+          "publishedAt": "2025-12-01T08:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:07.314+00:00",
+          "titelSha256": "aad7c2656e09f30da7e41134ad1a11dbbf4a8c7f27882475a7e7af784145d281",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-ba6b93825c426438867d54642bf711df86f808e884ed98fe1f5b0d6b15bd76b2",
+          "url": "https://www.radioeins.de/programm/sendungen/der_schoene_morgen/_/vermoegenssteuer-im-petitionsausschuss-des-bundestages.html",
+          "publishedAt": "2025-12-01T08:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:07.314+00:00",
+          "titelSha256": "0b5768fc999fd12b0e4a9beb1fe22981d5e9e6c9da816bce3417473bee6bb447",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-pflegeversicherung-20260604-661567",
+      "koUpdatedAt": "2026-09-07 04:02:43.695+00",
+      "analyseSha256": "c7b6d1179d09d3dfba517a3e9e55f1ac9e6ba3cd5e9329a680f493a6b5025774",
+      "quellen": [
+        {
+          "id": "rd-3beb3b4a93f4b95c4afc9f03591b75308d7d888bf01681f21df087ba103783c8",
+          "url": "https://www.spiegel.de/wirtschaft/pflegeversicherung-kommunen-fordern-eine-vollversicherung-a-c744a500-0edf-4579-891a-a3d7adf20bc1",
+          "publishedAt": "2026-08-21T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:04.321+00:00",
+          "titelSha256": "a57c1cc09a966fadef0e72d1116cfefc8b5022d8986aac1285f2eadf4e3d8753",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-84961905001908033af5876167da7fe8f10e27d7bbc08a3b28828b9bcdac1bf4",
+          "url": "https://www.tagesspiegel.de/politik/kommunen-pflegereform-stadtetag-fordert-umbau-zur-vollversicherung-15967194.html",
+          "publishedAt": "2026-08-21T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:05.884+00:00",
+          "titelSha256": "f5841458b33ccbe8c84bd32ef82455a0b40aad51184a4b9ac62e3e46765e841f",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-b017f4ad8ae2e82e79cf2c0674c17c26599bc42c4c4a8c73ba341ea87da7250d",
+          "url": "https://www.stern.de/politik/deutschland/kommunen--staedte-fuer-pflege-vollversicherung---mehr-sozialhilfekosten-38137708.html",
+          "publishedAt": "2026-08-21T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:04.321+00:00",
+          "titelSha256": "8611c06ca9ba0480fed768a914268dc8ddb61a1d1381ccce9a6b443844741790",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-93cf0097b98c4eb9a956fdff086a1365b250697685fe11f155d5a1c535fb11eb",
+          "url": "https://www.tagesschau.de/tagesschau_20_uhr/video-1593206.html",
+          "publishedAt": "2026-06-04T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:05.884+00:00",
+          "titelSha256": "75ad72d83ebf49564036137f47e99fe9cdd0996f1d99307a76d5332bd68074da",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-f16424942c808b1ab0967394a73db641a875b483f8e510617f505fd69773a0c4",
+          "url": "https://www.aerzteblatt.de/news/gesundheitsausschuss-befasst-sich-mit-finanzproblemen-von-kranken-und-pflegeversicherung-45e6ab38-12d0-4276-a30c-4dfa98d855fc",
+          "publishedAt": "2025-06-04T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T04:01:10.742+00:00",
+          "titelSha256": "b1e6425a551902baf857d0f9a7b4caacfbaf76824a0dd20eac8edb2495542c63",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-ratingagenturen-20260905-dbd662",
+      "koUpdatedAt": "2026-09-05 21:32:43.239+00",
+      "analyseSha256": "1b5fd92d3989da4995cb447118933c0b370f75604ba0c7a54af92ce23525d5f0",
+      "quellen": [
+        {
+          "id": "rd-745265cfef4576cc59a878afcb8e2acab6c66a6a8e9a62c4a09853fe3b36e4c8",
+          "url": "https://www.wiwo.de/politik/deutschland/bundeshaushalt-ratingagenturen-warnen-deutschland-vor-schuldenrisiken/100252048.html",
+          "publishedAt": "2026-09-05T07:59:00+00:00",
+          "retrievedAt": "2026-09-05T10:00:27.931+00:00",
+          "titelSha256": "88fba21a10e6432e5947a2a7a57a581aaeb4454ceb8b3511d555a2c9669295cc",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-reformplan-20260225-e521bf",
+      "koUpdatedAt": "2026-09-05 17:30:55.703+00",
+      "analyseSha256": "8badea10c7ff0e6e16f50123d74d2c3b3fd11947fef64e33c44619c549d74135",
+      "quellen": [
+        {
+          "id": "rd-078447be7f2bd17d41b0396bd73770288661bb13cb4008b9c74fa23b27a94e90",
+          "url": "https://fokus-afrika.de/alabali-radovan-verteidigt-reformplan-des-bmz-gegen-kritik-im-bundestag/",
+          "publishedAt": "2026-02-25T08:00:00+00:00",
+          "retrievedAt": "2026-07-27T10:00:35.605+00:00",
+          "titelSha256": "b2d0bea55ecc0a27c535e33d67f6504e8a488ece666e7f83d10b218331fd3471",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-rentenreform-20260905-630b6c",
+      "koUpdatedAt": "2026-09-06 04:02:10.375+00",
+      "analyseSha256": "51a126aa22e6fe9de9b10d79b332454b9a2b3d0a8f4024c6ea85dbd3f514cb72",
+      "quellen": [
+        {
+          "id": "rd-53f10549611e691b03f2c0282f30ad4ed42083fbf04dc9103f7535d916504570",
+          "url": "https://www.fr.de/verbraucher/ab-1965-betroffen-rentenreform-der-merz-regierung-schlaegt-voll-durch-alle-jahrgaenge-94474322.html",
+          "publishedAt": "2026-09-05T14:16:00+00:00",
+          "retrievedAt": "2026-09-05T16:01:28.067+00:00",
+          "titelSha256": "3582f10523299398d9fcec3fc5d3c7725bda0f39bf34d56e1931598a700f4139",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-c580f7ede99567ed3d18bd2cc2182338fc76f05da248526094ed8fe63693f6e4",
+          "url": "https://www.fr.de/verbraucher/1965-betroffen-rentenreform-der-merz-regierung-schlaegt-voll-durch-alle-jahrgaenge-ab-94474322.html",
+          "publishedAt": "2026-09-05T02:41:00+00:00",
+          "retrievedAt": "2026-09-05T09:12:01.745+00:00",
+          "titelSha256": "3582f10523299398d9fcec3fc5d3c7725bda0f39bf34d56e1931598a700f4139",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-rentenzulage-20260905-ab85d5",
+      "koUpdatedAt": "2026-09-07 05:32:30.36+00",
+      "analyseSha256": "75e7b63c6d3eb3c0bad2dd97bc3ec20e1d9a1a334c17f6aad6ff6a5a604d1628",
+      "quellen": [
+        {
+          "id": "rd-ce2f850437990c25612446c7c3cdc91457035fa7a691bcf498e062b86d8abb39",
+          "url": "https://www.gegen-hartz.de/news/rente-beschlossen-und-fix-ab-2027-540-euro-rentenzulage",
+          "publishedAt": "2026-09-05T15:19:10+00:00",
+          "retrievedAt": "2026-09-06T04:00:56.026+00:00",
+          "titelSha256": "2efe339ef4b03d894bf96e2bf0b148c145c9ffd97b2587d6b0c7a3fed4c7a9d4",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-rückkehrzentren-20260310-df25de",
+      "koUpdatedAt": "2026-09-05 17:32:13.947+00",
+      "analyseSha256": "e80ed9c59638389480c73f594c7116c996ddd194dcf71e9efe38b36cb75e5503",
+      "quellen": [
+        {
+          "id": "rd-deb88cf9ddbdd48385313c39b9fa8556b5ab87f3a546d7c982171da5bd1b71e1",
+          "url": "https://www.spiegel.de/ausland/migration-eu-ausschuss-stimmt-fuer-rueckkehrzentren-in-drittstaaten-a-3d4a6fcd-c646-46be-b6fb-afc8c80c57db",
+          "publishedAt": "2026-03-10T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:02.776+00:00",
+          "titelSha256": "156e9c7de9bc0d832575dc65f8d115ac119e3e0f6fc617de0293f5a3e4bf85d6",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-russland-20260901-9aae88",
+      "koUpdatedAt": "2026-09-06 04:03:43.957+00",
+      "analyseSha256": "811c2b4d1cee3db3a39ad96fb7491c6da6e78413b9c71dab00bcbbaff5f49500",
+      "quellen": [
+        {
+          "id": "rd-10fb7c44efd79f763b9629bd0b4b60d5f3b4b4ecfb0d75ddc6b1d51f33d846bb",
+          "url": "https://www.handelsblatt.com/politik/deutschland/drohnen-angriff-merz-an-russland-fest-entschlossen-uns-zu-verteidigen/100252284.html",
+          "publishedAt": "2026-09-05T15:57:48+00:00",
+          "retrievedAt": "2026-09-05T20:01:01.754+00:00",
+          "titelSha256": "f6231876de4e85d0d7cc1f15d47578886841d631ae5fd92007e9487781611f76",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-e1c03261ba7b396ec630c8ed9913591d13094ded31cacb37119682807831fc02",
+          "url": "https://www.handelsblatt.com/politik/deutschland/bedrohung-aus-russland-kreml-erzuernt-ueber-deutsche-sanktionen-nach-drohnen-vorfall/100251342.html",
+          "publishedAt": "2026-09-02T02:30:07+00:00",
+          "retrievedAt": "2026-09-02T04:02:23.261+00:00",
+          "titelSha256": "1db40ab95fd389441d47e0682abe7673e0ffcc4620dcb110a397b1cd5904a4aa",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-5321a2458d880b623d3dc0546eaac16e731f22d40f91a7e3ca8b0d0f945eadc8",
+          "url": "https://www.handelsblatt.com/video/politik/bundesregierung-ordnet-massnahmen-gegen-russland-an/100251297.html",
+          "publishedAt": "2026-09-01T18:57:23+00:00",
+          "retrievedAt": "2026-09-03T12:52:48.169+00:00",
+          "titelSha256": "f1fcb00076cba39e74f2ba87cfc9f3fbd21e9e8d2220d8dc824c2a9bd4d255e3",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-45f9c1a068139a86d6cf087b935f0854b1a41cec4e08e1090cfcd9220026f408",
+          "url": "https://www.handelsblatt.com/politik/deutschland/misslungener-anschlagsversuch-bundesregierung-russland-fuer-drohnen-angriff-verantwortlich/100251058.html",
+          "publishedAt": "2026-09-01T18:28:00+00:00",
+          "retrievedAt": "2026-09-02T04:02:23.261+00:00",
+          "titelSha256": "8e07b406afa18127ea4108573411f7bf18c0d4896e4606064ae355a4f5b7e1f4",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-e229af8359f05af8d481496ac264ce209974a989a64a50c7fc8ff6177afbd1c8",
+          "url": "https://www.handelsblatt.com/politik/deutschland/leipzig-bundesregierung-sieht-russland-hinter-drohnenangriff/100251085.html",
+          "publishedAt": "2026-09-01T09:50:46+00:00",
+          "retrievedAt": "2026-09-03T12:52:48.169+00:00",
+          "titelSha256": "1509b6a230fc39111321b6cc14e117ce91b55f26e500ab17dafef75026be0c2f",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-sachsen-20260903-106616",
+      "koUpdatedAt": "2026-09-05 20:03:06.768+00",
+      "analyseSha256": "5bc07c2a7a78e574a72207b298c53d92bdc3d312ac62ffc0d34b4374ff5e8196",
+      "quellen": [
+        {
+          "id": "rd-24ba43f93eebe03544dc93fe9e0b9fce65c3a28f11c25d034ea5797399eb95d1",
+          "url": "https://www.zdfheute.de/politik/deutschland/sachsen-anhalt-briefwahl-manipulation-vorwurf-seniorenheim-100.html",
+          "publishedAt": "2026-09-04T15:22:00+00:00",
+          "retrievedAt": "2026-09-05T04:01:13.402+00:00",
+          "titelSha256": "f9f99ec0340aa8b7d4e47efcf59a7ec59952bdbf22b5f9304ff35f2068a10bd3",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-502a9f7d67a7e68177ab917c0da287ee7d50e69f3bfb0f8f09b9c783830b95d5",
+          "url": "https://www.faz.net/aktuell/politik/wahl-in-sachsen-anhalt/wahl-sachsen-anhalt-2026-cdu-streitet-ueber-umgang-mit-der-linken-accg-201194037.html",
+          "publishedAt": "2026-09-04T11:37:12+00:00",
+          "retrievedAt": "2026-09-05T04:01:14.906+00:00",
+          "titelSha256": "745af1368059f23f72c9d6b7f39999f59614f6a24c9051a897c9cac77dd623c3",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-d5cd3942e3c9af5b2f65bd433b5bc2597dc337bb9ed6fb7c283f65281a1b7f6b",
+          "url": "https://www.welt.de/politik/deutschland/plus6a97c73c3ae913be367b61c8/wahl-sachsen-anhalt-lustlos-in-leuna-wenn-der-kanzler-zum-versteckten-wahlkaempfer-wird.html",
+          "publishedAt": "2026-09-04T06:20:46+00:00",
+          "retrievedAt": "2026-09-04T16:01:34.152+00:00",
+          "titelSha256": "8748f9f35ec3a7304c6608decce2fbdda7af95fc33299116144a3822be91d54d",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-10ff2654460bc464d9d647fc611db3932d546d2383b7a98f75c2ca9e2c8d14fe",
+          "url": "https://www.rnd.de/politik/kommt-die-afd-in-sachsen-anhalt-an-die-macht-mit-diesem-tool-koennen-sie-szenarien-durchspielen-04-4XAQI37XKRCQNOBUSKACLSOCSE.html",
+          "publishedAt": "2026-09-04T04:20:15+00:00",
+          "retrievedAt": "2026-09-05T16:01:42.26+00:00",
+          "titelSha256": "74aef3d38faceb2865a6cf3e2f4aedb17798ed359811e2ddbfab0ebfb64fb34d",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-741ddfdec3b2979820d9089d6b9c2eec21acecf51bc21d7d8859c0b6a17e9048",
+          "url": "https://www.welt.de/politik/ausland/article6a99406bdde98c923617feaa/wahl-in-sachsen-anhalt-darum-fuerchtet-polen-einen-afd-sieg.html",
+          "publishedAt": "2026-09-03T12:14:20+00:00",
+          "retrievedAt": "2026-09-04T16:01:34.152+00:00",
+          "titelSha256": "b3a4942a6b0b0afc66943200db897df982bcc44093d3f31a4eb97e89336b7f72",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-sachsen-20260906-435c32",
+      "koUpdatedAt": "2026-09-07 05:32:41.963+00",
+      "analyseSha256": "ee95e6cf776d0b6950e588ff7d897e3fd6da4e226ba2bb75071ab487e0f91221",
+      "quellen": [
+        {
+          "id": "rd-c12f6f92366cfdc4e320f0d9837a9d7226120827729403a4ad470ae4d592253e",
+          "url": "https://www.tagesschau.de/inland/innenpolitik/landtagswahl-sachsen-anhalt-fragen-antworten-100.html",
+          "publishedAt": "2026-09-06T03:02:56+00:00",
+          "retrievedAt": "2026-09-06T04:02:55.412+00:00",
+          "titelSha256": "860158ba9783862fd95da2f7c1c8e27f12bfeca8c7df6c416008a080c65710dc",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-schwerd-20260221-97c471",
+      "koUpdatedAt": "2026-09-05 20:02:24.292+00",
+      "analyseSha256": "3e99ac1d757c1868ec2740e0e434524f09a6d91be40ad897ec6996d899960a1a",
+      "quellen": [
+        {
+          "id": "rd-347232555accd5ed528f64da912f27377edf50e865203ee5f55345d75d3f70f0",
+          "url": "https://www.dielinke-nrw.de/landesverband/landesparteitage/landesvertreterinnenversammlung/kandidatinnen-landesliste/schwerd-daniel/",
+          "publishedAt": "2026-02-21T18:45:27+00:00",
+          "retrievedAt": "2026-09-06T20:34:16.879+00:00",
+          "titelSha256": "19ced2b809064b0c12d6af1e736a9eb96e6aad1bad1659d350c1776aea30cdb8",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-socialists-20260212-52c662",
+      "koUpdatedAt": "2026-09-05 11:33:04.999+00",
+      "analyseSha256": "44ce2bdd55dbe3a46978e6c1267e82bed880b8d0fc4223d8055f7789c24017f4",
+      "quellen": [
+        {
+          "id": "rd-dc55c03a19e706e53582fcddf84100fb35a74205b17bb4eb0120dfc8339e1339",
+          "url": "https://www.socialistsanddemocrats.eu/de/newsroom/europas-erste-strategie-zur-armutsbekaempfung-gibt-hoffnung-aber-93-millionen-menschen",
+          "publishedAt": "2026-05-06T07:00:00+00:00",
+          "retrievedAt": "2026-09-01T10:00:24.625+00:00",
+          "titelSha256": "868cb8d5c05a6e2f131c8fb00d35c1a69134a74ba506dcf6e17fa1ba5471b475",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-bc87d28d1951780f9e509e81b1b5f81445ddb439fd32a26c185df1de84c5be10",
+          "url": "https://www.socialistsanddemocrats.eu/de/newsroom/nimmt-europa-die-armut-endlich-ernst-20-milliarden-euro-fuer-kinder-sind-das-mindeste",
+          "publishedAt": "2026-02-12T08:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:00.14+00:00",
+          "titelSha256": "175c7609f26cd79a16c8eaae8f836d39ae438599dccf2b8e9ea2f3154f699f25",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-sozialbeiträge-20260905-128e49",
+      "koUpdatedAt": "2026-09-06 20:01:41.426+00",
+      "analyseSha256": "5ad5728870523b9c8848333aa8a61ec5caad25ec9acb3c533ce11b81b170fb98",
+      "quellen": [
+        {
+          "id": "rd-9ccc191534c9271fe2270cf641534887abce1247490b0d0605b01ffc96b62bae",
+          "url": null,
+          "publishedAt": "2026-09-05T02:57:27+00:00",
+          "retrievedAt": "2026-09-05T20:01:47.455+00:00",
+          "titelSha256": "200717b69631f10703812fc7fc6e28ad7d99c69a8a720fcf42479da2b285a50c",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-spritpreisen-20260406-733db0",
+      "koUpdatedAt": "2026-09-06 21:32:43.864+00",
+      "analyseSha256": "a34cad9e44d2496a0da8d0825ffed216a0da2bacc60dfdf31ce76777fa759b01",
+      "quellen": [
+        {
+          "id": "rd-f067e65a21b5c2f8b0b70f819adea799fce413690ff36a5c26168271e5f354ef",
+          "url": "https://www.tagesschau.de/video/video-1572592.html",
+          "publishedAt": "2026-04-06T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:16.214+00:00",
+          "titelSha256": "4627905c1d8285db32dc9a8e970b89a8b366ce92bb0d97e0d6085479563f3733",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-staatsministerium-20260812-c54899",
+      "koUpdatedAt": "2026-09-06 21:33:37.005+00",
+      "analyseSha256": "89eef6bec782caeadf062a0151aab9e6e653c9da4a29440fead93e2b2d81ca19",
+      "quellen": [
+        {
+          "id": "rd-b931b3e5148d8d84e5d34caa2eef4b00e5d3af3412b77c667d2091caab8af535",
+          "url": "https://www.stmas.bayern.de/themen/inklusion/aktionsplan/",
+          "publishedAt": "2026-08-27T02:21:41+00:00",
+          "retrievedAt": "2026-09-06T20:34:16.767+00:00",
+          "titelSha256": "600d0b9a332c147a2c237af568970fa982ef6508659645b7c35964963a345cf2",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-29e758259a8a73bed6e2cd1287ca61a0074c0024e022ab68d3d90abaf048c36e",
+          "url": "https://www.stmas.bayern.de/themen/ausbildung-weiterbildung/weiterbildung/",
+          "publishedAt": "2026-08-12T03:44:33+00:00",
+          "retrievedAt": "2026-09-06T20:34:16.768+00:00",
+          "titelSha256": "d8b65fc86e042688ac47fb2631857cf3d66cb32b9dfa70a6c52de2dffbaca019",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-steigen-20260306-96bb22",
+      "koUpdatedAt": "2026-09-05 17:32:02.126+00",
+      "analyseSha256": "a47a1b419496a8238486348af10c8bb89d00b26bb42c8f2571a71d0177d6d9c6",
+      "quellen": [
+        {
+          "id": "rd-3d41413aca08267dde02914643795e4e86e1f631aa38b414b15433413a8501d3",
+          "url": "https://www.boerse-online.de/nachrichten/geldundvorsorge/reicht-ihnen-das-so-stark-steigen-die-renten-zum-1-juli-und-das-koennen-sie-jetzt-tun-20396727.html",
+          "publishedAt": "2026-03-06T08:00:00+00:00",
+          "retrievedAt": "2026-08-23T16:00:59.628+00:00",
+          "titelSha256": "80e2d25a81dca19be4f127baa8387b357d92714a4d9e01e210ae1627bc80e5af",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-steuerreform-20260904-0c6df3",
+      "koUpdatedAt": "2026-09-06 04:01:12.527+00",
+      "analyseSha256": "f6dc3f127dad2fc8f49ed204f556b5b145e3de56553d591581cf38954e58ac2e",
+      "quellen": [
+        {
+          "id": "rd-62640af0b02d9df3dd05490ce40797814b540d6ac64b728cbbf61ff9ac886d94",
+          "url": "https://www.fr.de/wirtschaft/mehr-netto-bekommen-soll-klingbeil-plan-steuerreform-wer-ab-2027-94470855.html",
+          "publishedAt": "2026-09-05T02:45:00+00:00",
+          "retrievedAt": "2026-09-05T16:01:27.225+00:00",
+          "titelSha256": "00e674d7e824a9ba2f8edd03d952fb41dd8015f35807ce8d807fa0ae9f0515c4",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-c9fda4a9787605aafa3d907ca96a28a5335fedae65f43d0e51a219ac402cb76c",
+          "url": "https://www.fr.de/wirtschaft/bekommen-soll-klingbeil-plan-steuerreform-wer-ab-2027-mehr-netto-94470855.html",
+          "publishedAt": "2026-09-04T02:45:00+00:00",
+          "retrievedAt": "2026-09-04T16:01:40.071+00:00",
+          "titelSha256": "00e674d7e824a9ba2f8edd03d952fb41dd8015f35807ce8d807fa0ae9f0515c4",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-stromtrassen-20260905-eff336",
+      "koUpdatedAt": "2026-09-07 04:01:46.801+00",
+      "analyseSha256": "60768cf344f1be08e2b052d95b4cd28b27fa6014e36db38cd280f289df7bbf5a",
+      "quellen": [
+        {
+          "id": "rd-3761a8206b316279e71db4db1fa4bc8a1cdc424009785f8d18a9df00e8baa544",
+          "url": "https://www.deutschlandfunk.de/polizei-findet-zwoelf-sprengsaetze-an-stromtrassen-in-sachsen-fahndung-mit-foto-nach-tatverdaechtige-100.html",
+          "publishedAt": "2026-09-06T03:31:32+00:00",
+          "retrievedAt": "2026-09-06T04:00:59.537+00:00",
+          "titelSha256": "45190db4fc1a02f92119bd42a821e178262a9372f963caaa8030cd72adf3cfba",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-ab72dfbd5f9b0a46aaef5fa5c8af5148e9e34ed6296783a32cab9ee0a89c9849",
+          "url": "https://www.rnd.de/politik/anschlaege-polizei-stuermt-fahrzeug-von-sabotage-verdaechtigem-mann-jetzt-zu-fuss-auf-der-flucht-XBPL3EYESJFAZEO64SWTKD63JM.html",
+          "publishedAt": "2026-09-05T13:53:42+00:00",
+          "retrievedAt": "2026-09-06T20:01:40.303+00:00",
+          "titelSha256": "7a86fa0c95e98e77ce5c5018c37e08332cca294e14f4a6df747d3d6074369489",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-tagesspiegel-20260223-3bf56f",
+      "koUpdatedAt": "2026-09-05 11:33:49.779+00",
+      "analyseSha256": "21c7ad01727537700327c1fc2e0aa5f095fa6e101d647b2755c1d9aaba4000dd",
+      "quellen": [
+        {
+          "id": "rd-cca0d93218a40d2363b953a5be0e0e720445e3f7b3d547d2f351a5df0d335309",
+          "url": "https://www.tagesspiegel.de/politik/abschaffung-des-burgergelds-wo-die-reformplane-der-regierung-an-der-realitat-scheitern-15280756.html",
+          "publishedAt": "2026-02-23T08:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:00.363+00:00",
+          "titelSha256": "2c3e6e60aa8e875b609846fdee3d36f7ddc7d1c8da6e6cc9a4b52f5511969f6d",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-tatverdächtigen-20260905-ad062e",
+      "koUpdatedAt": "2026-09-07 04:01:58.806+00",
+      "analyseSha256": "4d8f72ef44b9e114de83591c7da0c6e0e1ada8eebdd5cd3ee99b1c5577fd9712",
+      "quellen": [
+        {
+          "id": "rd-9ed9405c5a13c1b7406a6fc7ab0d0796eed6d1a25eb226108833e9334375f599",
+          "url": "https://www.tagesspiegel.de/politik/nach-stromnetz-sabotage-in-mehreren-bundeslandern-polizei-veroffentlicht-fotos-des-tatverdachtigen-16021629.html",
+          "publishedAt": "2026-09-05T16:15:06+00:00",
+          "retrievedAt": "2026-09-06T04:01:07.481+00:00",
+          "titelSha256": "141b4c13da7580c7f8aad10727fa56ca48bca4549953eabd53647a94392ee1d2",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-überlebende-20260905-6cead7",
+      "koUpdatedAt": "2026-09-06 05:33:10.711+00",
+      "analyseSha256": "9515de0e90b7a9bedaeba87f34b7da840fcf900d43e6f2e1a30a892b96d11a4c",
+      "quellen": [
+        {
+          "id": "rd-57487469c581f09cee7809ccbbdb934130fea2ed84b126b3c869452a2a85fb2a",
+          "url": "https://www.tagesschau.de/ausland/asien/nepal-china-sturzflut-ueberlebende-100.html",
+          "publishedAt": "2026-09-05T10:08:35+00:00",
+          "retrievedAt": "2026-09-05T20:01:25.773+00:00",
+          "titelSha256": "74899b6b104cad94ad28a900ebbfeaef6daad4b53ac2ea9a4c83fb99ee0bc8f8",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-ukrainischem-20260904-ab4955",
+      "koUpdatedAt": "2026-09-05 20:03:57.923+00",
+      "analyseSha256": "36194b499c86b8d870e07f97f617d17e1d4c28f30dda948516fb189e7ad87c01",
+      "quellen": [
+        {
+          "id": "rd-eca843faf5a9ad442a4ec2dac06d702e80cc427f9577e700ba11b04839e2df98",
+          "url": "https://www.n-tv.de/politik/Russland-nimmt-die-ukrainische-Bahn-immer-massiver-unter-Beschuss-id31266649.html",
+          "publishedAt": "2026-09-05T08:58:43+00:00",
+          "retrievedAt": "2026-09-05T16:01:43.304+00:00",
+          "titelSha256": "8f0a4d5928cd3770e0080d3b8be257f8566fcb2b3c0ec4837967cf05d665e602",
+          "auszugVorhanden": false
+        },
+        {
+          "id": "rd-6423e1f2dc02f54f97774713db7fb0724a545c5d90ee0afe966379597dd2e4a5",
+          "url": "https://www.deutschlandfunk.de/mehrere-tote-bei-ukrainischem-beschuss-der-russischen-grenzregion-belgorod-100.html",
+          "publishedAt": "2026-09-04T09:52:43+00:00",
+          "retrievedAt": "2026-09-04T10:01:04.473+00:00",
+          "titelSha256": "44c7ef930d3d76a6fd418521e1c37482fe249b1d48ed2a484892f685a4ff4fc3",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-vereinfachten-20260202-1755b5",
+      "koUpdatedAt": "2026-09-06 21:32:35.002+00",
+      "analyseSha256": "cd9d05900956b7b398dc4ff47748bb64b60ef62f720124c5f690d95af01b0303",
+      "quellen": [
+        {
+          "id": "rd-40d091519c98cb8790ce971f00005ecd7e1cc6df8290ea709a4b290e4ac3d9af",
+          "url": "https://www.bundestag.de/dokumente/textarchiv/2026/kw09-de-ueberweisungen-1139496",
+          "publishedAt": "2026-02-02T09:19:56+00:00",
+          "retrievedAt": "2026-09-06T20:34:16.214+00:00",
+          "titelSha256": "6dd9d428acec6fbdf0d50e5d742a40d13f767cf926a47eceeff573e4e9debd1c",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-verschärfte-20260206-bb344b",
+      "koUpdatedAt": "2026-09-05 11:32:29.262+00",
+      "analyseSha256": "44090feb00f7abea81f1800260a7f6e58d0d9e79f3a4359666e210b7d1d0b264",
+      "quellen": [
+        {
+          "id": "rd-7315ec58e4d9ed301fbdd84335bc1d898c94f87e6fa44163e1d3442d71fadcee",
+          "url": "https://www.merkur.de/verbraucher/buergergeld-zeitplan-steht-verschaerfte-sanktionen-ab-april-moeglich-komplette-streichung-droht-94158870.html",
+          "publishedAt": "2026-02-06T08:00:00+00:00",
+          "retrievedAt": "2026-09-05T10:00:21.582+00:00",
+          "titelSha256": "8639cd3985e81eba70d575babed71919fd439f6580f70c657b0af7552f91d68b",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-verwaltung-20260905-91bebe",
+      "koUpdatedAt": "2026-09-06 05:33:23.316+00",
+      "analyseSha256": "93f8af0b8e4468969230740effd9bbbd324a1ee969fdc905d683508f4b3c6fd2",
+      "quellen": [
+        {
+          "id": "rd-5de594be14188615c2ee9778fca4c4fecf1a388137f0dd6f3ebd7bd24a9c02d7",
+          "url": "https://www.sueddeutsche.de/politik/hackerangriff-berlin-verwaltung-fragen-und-antworten-li.3542710",
+          "publishedAt": "2026-09-05T17:18:00+00:00",
+          "retrievedAt": "2026-09-05T20:01:20.629+00:00",
+          "titelSha256": "0e08f18e1b573ec97689bd3338d833caeed424821e6269a3f46f9e9f8a34ea88",
+          "auszugVorhanden": false
+        }
+      ]
+    },
+    {
+      "vorgang_id": "vg-wirtschaftskrise-20250530-a3b34a",
+      "koUpdatedAt": "2026-09-06 21:31:19.024+00",
+      "analyseSha256": "0205fd493f80f67deec4cee56a9c6282d654ce6e733deb16f867d0b7616d801a",
+      "quellen": [
+        {
+          "id": "rd-26a7e9a69f1afe79033a4ffd03f35042b9ef0d0355e33b386c45bda667170b5b",
+          "url": "https://www.spiegel.de/wirtschaft/soziales/wirtschaftskrise-bundesagentur-fuer-arbeit-benoetigt-milliardenhilfe-a-220f538f-62b4-4f36-8306-5de7ebd73cfa",
+          "publishedAt": "2025-05-30T07:00:00+00:00",
+          "retrievedAt": "2026-09-06T20:34:17.486+00:00",
+          "titelSha256": "5e22b9be574653c25b2054861dce2bdc31a28fd6b1cd4d84ce7ac83b176f01d8",
+          "auszugVorhanden": false
+        }
+      ]
+    }
+  ]
+}

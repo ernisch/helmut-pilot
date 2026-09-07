@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 07.09.2026, 06:56 UTC. TEILWEISE ABGESCHLOSSEN.** Direkter Ausführer **25 → 500** als [#326](https://github.com/ernisch/helmut-pilot/pull/326) gemergt, Production `619c023e` READY. Lokal und extern **334/334 Suiten**, Browser **40/40**; alle **475 Anlagen und 475 Aktivierungen mit echtem PostgreSQL** bestanden. Production bleibt **29/25/4**, keine neue Aktivierung. A Fenster 06.09. **60/60 erledigt**; vollständige Qualität und aktueller Budgetbeleg über 100 fehlen noch. [SR §56](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md) · [Ausführung](betrieb/direkter-ausbau-500.md).
+**Stand: 07.09.2026. TEILWEISE ABGESCHLOSSEN.** Direkter Ausführer **25 → 500** aus #326 ist deployt, aktueller Production Kopf nach #327 `33086bde` READY. Production um 08:01 UTC weiterhin **29/25/4**, A Fenster 06.09. **60/60 erledigt**, Tageszähler **59**. Die Prüfung aller 25 Lagebriefings hat konkrete Qualitätsfehler belegt; **keine positive A Abnahme**. Korrektur der Quellenbindung, begrenzter neuer Briefingaufruf und geplanter Testabschluss sind auf `codex/500-qualitaet-testende-20260907` in Prüfung. Betreiber möchte 500 für **ein bis zwei Tage**, keine Woche Dauerbetrieb. [SR §57](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md) · [Ausführung](betrieb/direkter-ausbau-500.md).
 
 **Kernlage:** Warteschlangenmotor seit 23.08. in Production `on`, Dispatch `shadow` (Cron-Antrieb, kein AWS). Fünferbeleg mit 376 Abschlüssen: [OP-30 §30.7](betrieb/op30-aktivierung-5-mandate.md). **Aktuell vier historische Vorgänge `unbekannt`, jüngste Änderung 02.09., 11:33 UTC; keine neue unbekannte Reservierung nach Wiederanlauf.** Selbstweck in Production nie ausgeführt.
 
@@ -10,9 +10,9 @@
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **Fachlich wirksamer Kopf:** `a059f27d` aus [#320](https://github.com/ernisch/helmut-pilot/pull/320), lokal **331/331**, Browser **40/40**, PR und main CI grün, Lage Workflow erfolgreich (§53).
-- **Aktueller fachlicher Codekopf:** `619c023e18900a64aa636d7088892fb3ed41cabd` aus [#326](https://github.com/ernisch/helmut-pilot/pull/326), zwei Merge Eltern. Production `dpl_8Qa7hywsuccM52AdpcySyjYyEju6` **READY** am exakten Kopf, Hauptalias korrekt. PR CI `34091913335` und main CI `34092963610` mit beiden Pflichtjobs grün; **334/334** Suiten und **9/9** echte Datenbankprüfungen. Kein manueller Production Fachlauf oder Ausbau gestartet. Der nachfolgende reine Abschlussnachtrag wird über seine Git und Deployment Historie belegt.
-- **#322 und #323:** geschützter A Ausführer, Azure Beleg und enge Kostenlückenbehandlung. Je **332/332** lokale Suiten, **40/40** Browserprüfungen; PR und main CI grün. Beide Production Deployments READY. Der bisher einzige A Workflow `34066395564` scheiterte vor dem Production Aufruf; kein Wiederholungslauf angelegt (§55).
+- **Direkter Ausbau #326:** Codekopf `619c023e`, Production READY, **334/334** Suiten, **40/40** Browser und **9/9** echte Datenbankprüfungen; PR und main CI grün. Vollbeleg einschließlich beider Merge Eltern in SR §56.1. Abschluss #327 auf `33086bde` ebenfalls READY. Keine 475 Production Anlagen oder Aktivierungen.
+- **A Ausführer #322/#323:** deployt und geprüft; Einzelbelege SR §54/§55. Workflow `34066395564` scheiterte vor dem Production Aufruf; kein Wiederholungslauf.
+- **Aktuelle Arbeit (§57):** tatsächliche datierte Quellen als Lageeingabe und Cachebindung, begrenzter neuer Briefingaufruf, manueller Testabschluss für höchstens 495 bekannte Profile. Noch kein Timer, Production Aufruf oder PR für diese Änderungen.
 - Frühere Schutzarbeiten **#303, #305, #307, #309, #310, #313, #316 und #318** sind deployt. Sie schützen Kontext, Leseantworten, Konten, gemeinsam genutzte Speicher und Appstart. Belege und Grenzen: SR §40–§51; Lage 25/25 seit §53.
 
 ## 3 · Production-Zustand
@@ -24,6 +24,7 @@
 - **Crons (Production, 13, UTC):** crawl 04:00/20:00 · pipeline 16:00 · morning-briefing 05:00 · understanding 05:30/21:30 · **rueckstand 11:30/17:30** · lage-briefing 05:45 · health 06:00 · lage-check 10:00 · 2 Narrativslots 06:10/06:22 (inert). **`18,48 * * * *` nicht in Production.** Dazu Actions-Watchdog (`briefing-watchdog.yml`, 05:30, oft 2–3 h verzögert).
 - **Migrationen:** 35 Einträge, letzte `20260829175749` (05.09. rein lesend bestätigt). **Z22 seit 29.08. mit Freigabe angewendet** (§14–22) — **nicht erneut anwenden**. Auf `main`, **nicht in Production angewendet**: `20260720`, F9 (`20260825101500`), `20260902121500`. Jede weitere Anwendung bleibt freigabepflichtig.
 - **Kosten 06.09., 23:54 UTC:** Zähler 92, 87 Belege, bekannt **0,243678 USD**; eine unbekannte Kostenzeile plus fünf Reservierungslücken à 0,05 USD und 2 USD Reserve ergeben **2,543678 USD Prognose**, unter Stopp 9 USD. Kein Mehrverbrauch durch den abgelehnten Start. Kein Rechnungsbeleg und keine atomare USD Grenze. Nach UTC Tageswechsel neu messen; [`kostenmessung`](betrieb/kostenmessung.md).
+- **Kosten 07.09., 07:49 UTC:** 59 Reservierungen und 59 protokollierte Einträge, null unbekannte Kostenzeilen, **0,141736 USD geschätzt**. Keine Rechnung. In der aktuellen Korrekturarbeit kein neuer kostenpflichtiger Production Lauf gestartet.
 - **Zugang:** Azure und Foundry geschützt per Microsoft E Mail erreicht, keine Zugangsdaten offengelegt. Rein lesend: `gpt-5-mini` Global Standard **250.000/2.000.000 TPM**, Zuordnung 250.000 TPM, bekannte Grenze 250 RPM. Keine Azure Änderung. Production Leser **34058091793** bleibt gültig (§54).
 
 ## 4 · Aktivierte Funktionen (Production)
@@ -82,7 +83,7 @@ Bestehende Grenzen und Freigaben: [SR §41 und neuere Betreiberänderung §55](b
 6. **OP-11:** Branch Protection nicht aktiv; Pflicht-CI blockiert Merges nicht technisch.
 7. **OP-15:** Google-Klumpenrisiko (146/163 Wege); 29 von 42 Personensuchen lieferten nie (`circuit-open`) — Production-Beweis der Härtung steht aus (§8).
 8. **Lage-/KI-Kapazität für Skalierung:** siehe §6. Belegt: **drei** reguläre Warteschlangenabflüsse/Tag, nicht elf (§13).
-9. **500er Funktionstest: A Abnahme und scharfer Ausbau offen** (§6, SR §56). Direkter Ausführungsweg mit #326 übernommen und READY. Wiederanlauf belegt, A aktiv, B/C unangelegt. Automatische Freigabeprüfung sperrte den neuen A Workflowstart als möglichen Wiederholungsversuch. Bestehender Ausführer startet nur 21:36 bis vor 23:54 UTC; am 06.09. verstrichen. Keine Umgehung. Klare erneute Freigabe und frische Starttore erforderlich.
+9. **500er Funktionstest: Qualitätsfehler und scharfer Ausbau offen** (§6, SR §57). 21 von 25 heutigen Lagebriefings referenzieren mindestens einen Vorgang mit ausschließlich über 14 Tage alten Quellen; außerdem unbelegte Rechtsfolge und inhaltsleere Personenmeldung. Quellenprüfung ist keine bestandene A Abnahme. Tageszähler zuletzt 59. Direkter Ausbau nur im Nachtfenster 21:36 bis vor 03:58 UTC. Für den früher automatisch abgelehnten neuen A Workflowstart gilt §55.3 separat weiter; natürliche Auftragsabschlüsse benötigen keinen Ersatzstart.
 10. **OP-07:** Monitoring-Zweitkanal stellt seit mind. 17.08. täglich zu; Ziel von `HELMUT_MONITORING_WEBHOOK_URL` und der doppelte WhatsApp-Eingang bleiben ungeklärt (Betreiberprüfung, kein Code-Fix vorher).
 11. **Profilpfad:** Exklusivmodus in Production belegt; ältere Dual Write Annahme überholt. Vor B/C Daten und Ausführungskontext frisch abgleichen. Auth, main und p haben CAS Schutz; alte Instanzen und direkte Fremdschreiber bleiben ausgenommen. Schutz gegen automatische Kontolöschung aus #305 bleibt verpflichtend.
 
@@ -121,10 +122,10 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-1. **Technischer Ausbau erledigt:** #326 geprüft, gemergt und Production READY. Bei Fortsetzung aktuellen main Kopf und wirksame Production Konfiguration frisch lesen; keine neue Implementierung desselben Ausführers.
-2. Die A Aufträge des Fensters 06.09. sind natürlich fertig. Vollständige Qualitätsabnahme und aktuellen Budgetbeleg ergänzen. Der neue Zielweg verlangt echte Abnahmebelege, keinen handgesetzten Erfolg. Ein erneuter A Workflowstart bleibt an die besondere Freigabe aus SR §55.3 gebunden.
+1. Quellenkorrektur und Testabschluss vollständig prüfen, per PR übernehmen und exakt Production READY belegen. Der Ausführer aus #326 wird weiterverwendet. Aktueller Branch und Grenzen in §2 und SR §57.
+2. Die A Aufträge des Fensters 06.09. sind natürlich fertig. Nach korrigiertem natürlichem oder ausdrücklich begrenztem Briefinglauf alle 25 Inhalte erneut prüfen und aktuellen Budgetbeleg ergänzen. `qualitaetspruefung-a-20260907.json` ist ausdrücklich keine bestandene `abnahme-a.json`. Ein erneuter A Workflowstart bleibt an die besondere Freigabe aus SR §55.3 gebunden.
 3. Nach A Abnahme im belegten Nachtfenster **21:36 bis vor 03:58 UTC** die 475 Zielprofile inaktiv anlegen, unabhängig prüfen und getrennt aktivieren. Der neue Fachzyklus startet ausschließlich bei exakt 500 aktiven Profilen. [Ausführung](betrieb/direkter-ausbau-500.md).
-4. Danach die 500 fachlich abnehmen und dokumentieren. Erst anschließend Verkaufsreife und P0 Punkte bearbeiten. Keine automatische Wiederholung, kein Rollback oder Revert.
+4. Ab tatsächlicher Aktivierung **24 Stunden Test planen, höchstens 48 Stunden**. Endzeit und ausführbaren Abschluss vor Beginn festlegen; der neue manuelle Workflow allein ist kein automatischer Timer. Dann 495 synthetische Profile deaktivieren und unabhängig bestätigen: 504 erhalten, fünf ältere aktiv. 500er Funktionsbefund und Fehler dokumentieren; kein unbeaufsichtigter Wochenlauf.
 
 ## 12 · Verbindliche Betriebsgrenzen
 

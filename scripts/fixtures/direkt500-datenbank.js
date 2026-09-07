@@ -78,5 +78,16 @@ async function pruefeDirektausbau({ psql, base, token }) {
   assert.equal(D.pruefeSnapshot(nach, "aktivierung").geschuetzterBestandHash, a.geschuetzterBestandHash);
   assert.equal(D.hash(nach.main), D.hash(vorher.main));
   console.log("PASS  Echte SQL Kontrolle: 500 aktiv, vier inaktiv, alle Bestandszeilen und main unveraendert, keine neuen aktiven Konten");
+  const T = require("../../lib/helmut/testkohorte-testende");
+  const ende = await T.ausfuehren({ scharf: true,
+    env: { ...env("aktivierung"), HELMUT_TESTKOHORTE_CONFIRM: T.CONFIRM }, deps: {
+      snapshot, deaktiviere: id => P.deactivateTenant(id, { storage, accounts }),
+      leseZiel: async id => (await request("mandate_profiles?select=*&user_id=eq." + id))[0]
+    } });
+  assert.equal(ende.ok, true, JSON.stringify(ende));
+  assert.equal(ende.bestaetigtInaktiv, 495);
+  assert.equal(ende.gesamt, 504); assert.equal(ende.aktiv, 5);
+  assert.equal(D.hash((await snapshot()).main), D.hash(vorher.main));
+  console.log("PASS  Testende: 495 echte Deaktivierungen, 504 erhalten, fuenf aktiv, geschuetzte Daten und main unveraendert");
 }
 module.exports = { pruefeDirektausbau };
