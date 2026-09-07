@@ -172,6 +172,11 @@ async function saasMandateHardeningChecks() {
   const storeFile = path.join(dataDir, "store.json");
   const storeExisted = fs.existsSync(storeFile);
   const storeSnapshot = storeExisted ? fs.readFileSync(storeFile) : null;
+  // Auch der Admin Seed braucht einen eigenen Ausgangsbestand: ein Admin aus
+  // einer vorherigen Suite verhindert sonst den Testlogin (401). Keine
+  // Produktionsaenderung; lokaler Testbestand wird bytegenau wiederhergestellt.
+  const authFile = path.join(dataDir, "auth.json");
+  const authSnapshot = fs.existsSync(authFile) ? fs.readFileSync(authFile) : null;
   const clearStore = () => { if (fs.existsSync(storeFile)) fs.rmSync(storeFile); };
   const restoreStore = () => {
     if (storeExisted) fs.writeFileSync(storeFile, storeSnapshot);
@@ -181,6 +186,7 @@ async function saasMandateHardeningChecks() {
   const prev = { mode: process.env.HELMUT_AUTH_MODE, email: process.env.HELMUT_ADMIN_EMAIL, pass: process.env.HELMUT_ADMIN_PASSWORD };
   try {
     clearStore();
+    if (fs.existsSync(authFile)) fs.rmSync(authFile);
 
     // A) MANDANTENNEUTRAL: kein Pilot-/Default-/Fallback-Mandat. Das Mandat ergibt
     //    sich ausschliesslich aus den AKTIVEN Datenbankmandaten — keine Env-Variable.
@@ -266,6 +272,8 @@ async function saasMandateHardeningChecks() {
     } finally { await new Promise((r) => server.close(r)); }
   } finally {
     restoreStore();
+    if (authSnapshot !== null) fs.writeFileSync(authFile, authSnapshot);
+    else if (fs.existsSync(authFile)) fs.rmSync(authFile);
     if (prev.mode === undefined) delete process.env.HELMUT_AUTH_MODE; else process.env.HELMUT_AUTH_MODE = prev.mode;
     if (prev.email === undefined) delete process.env.HELMUT_ADMIN_EMAIL; else process.env.HELMUT_ADMIN_EMAIL = prev.email;
     if (prev.pass === undefined) delete process.env.HELMUT_ADMIN_PASSWORD; else process.env.HELMUT_ADMIN_PASSWORD = prev.pass;

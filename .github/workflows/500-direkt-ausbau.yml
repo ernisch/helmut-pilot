@@ -1,0 +1,59 @@
+name: "500 Testprofile: direkter Ausbau"
+
+# Ausschliesslich manuell. Vorpruefung schreibt nichts. Jeder scharfe Vorgang
+# hat sein eigenes Wort; Anlage startet weder Aktivierung noch Facharbeit.
+on:
+  workflow_dispatch:
+    inputs:
+      schritt:
+        description: "Ein Vorgang; keine automatische Folgeaktion"
+        type: choice
+        options: [vorpruefung, provisionierung, aktivierung, fachzyklus]
+        default: vorpruefung
+        required: true
+      production_commit:
+        description: "Vollstaendiger unabhaengig als Production READY bestaetigter Commit"
+        type: string
+        required: true
+      bestaetigung:
+        description: "Exaktes Wort des gewaehlten Vorgangs; Vorpruefung braucht keines"
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: helmut-500-kontrollierte-facharbeit
+  cancel-in-progress: false
+
+jobs:
+  ausbau:
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' &&
+      github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Einen begrenzten Vorgang am bestaetigten Bestand ausfuehren
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+          HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
+          HELMUT_DIREKT_SCHRITT: ${{ inputs.schritt }}
+          HELMUT_TESTKOHORTE_EXECUTE: "1"
+          HELMUT_TESTKOHORTE_CONFIRM: ${{ inputs.bestaetigung }}
+        run: |
+          if [ "$HELMUT_DIREKT_SCHRITT" = "vorpruefung" ]; then
+            node scripts/testkohorte-vorwaerts.js vorpruefung --ziel=500
+          else
+            node scripts/testkohorte-vorwaerts.js "$HELMUT_DIREKT_SCHRITT" --ziel=500 --scharf
+          fi

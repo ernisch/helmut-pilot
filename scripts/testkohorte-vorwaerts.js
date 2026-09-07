@@ -182,6 +182,25 @@ function fensterAusArgv(argv, scharfGewuenscht) {
 async function main() {
   const argv = process.argv.slice(2);
   const werkzeug = (argv[0] || "").trim();
+  // Eigener, ausdruecklicher Zielvertrag. Weder --stufe noch --gruppe noch
+  // eine Handliste duerfen die 475er Zielmenge oder ihre Freigabe veraendern.
+  if (argv.some((a) => a.startsWith("--ziel"))) {
+    const rest = argv.slice(1);
+    if (![...WERKZEUGE, "vorpruefung", "fachzyklus"].includes(werkzeug)
+        || rest.filter((a) => a === "--ziel=500").length !== 1
+        || rest.some((a) => !["--ziel=500", "--scharf"].includes(a))
+        || rest.filter((a) => a === "--scharf").length > 1
+        || (werkzeug === "vorpruefung" && rest.includes("--scharf"))) {
+      abbruch("Direktziel: nur provisionierung|aktivierung|vorpruefung|fachzyklus --ziel=500, optional --scharf. "
+        + "Keine Stufe, Teilmenge oder gesetzte Uhr erlaubt; die Vorpruefung bleibt rein lesend.");
+    }
+    const r = await require("./github-direkt500").ausfuehren({ vorgang: werkzeug,
+      scharf: rest.includes("--scharf"),
+      fortschritt: (p) => console.log(JSON.stringify({ fortschritt: p })) });
+    console.log(JSON.stringify(r, null, 2));
+    process.exitCode = r.modus === "trockenlauf" || r.ok ? 0 : 1;
+    return;
+  }
   if (!WERKZEUGE.includes(werkzeug)) {
     console.error(`Werkzeug fehlt oder ist unbekannt. Erlaubt: ${WERKZEUGE.join(", ")}`);
     process.exit(EXIT_AUFRUFFEHLER);
