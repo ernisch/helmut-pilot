@@ -8,7 +8,9 @@ const { pruefe: leseKonfiguration } = require("./github-laufzeitpruefung");
 const CRONS = require("../vercel.json").crons;
 const PROJECT_URL = "https://ddckuvvpcytqbyfmbvie.supabase.co";
 const LAGE_URL = "https://helmut-pilot.vercel.app/api/cron/lage-check";
+const BRIEFING_URL = "https://helmut-pilot.vercel.app/api/cron/lage-briefing";
 const CONFIRM = "LAGECHECK_25_NACH_NATURLAUF_BESTAETIGT";
+const BRIEFING_CONFIRM = "BRIEFING_25_NACH_NATURLAUF_BESTAETIGT";
 const ZUSATZ_RESERVE_USD = 2;
 
 class Abbruch extends Error {}
@@ -54,13 +56,59 @@ function kostenBefund(usage, counter, utcDay) {
     prognoseUsd: mitLueckenreserveUsd + ZUSATZ_RESERVE_USD, atomarerUsdRiegel: false };
 }
 
+async function pruefeBriefings({ body, profiles, db, start, jetzt }) {
+  const results = Array.isArray(body?.results) ? body.results : [];
+  const aktive = profiles.filter(p => p.aktiv).map(p => p.user_id);
+  const ids = new Set(results.map(r => r?.userId));
+  const vollstaendig = results.length === 29 && ids.size === 29
+    && profiles.every(p => ids.has(p.user_id)) && body.prewarmed === 29 && body.uebersprungen === 4
+    && body.lauftelemetrie?.gespeichert === true && body.lauftelemetrie?.vollstaendig === true
+    && !body.lauftelemetrie?.fehler;
+  const belegt = results.filter(r => aktive.includes(r?.userId) && r.available === true && !r.reason);
+  const leer = results.filter(r => aktive.includes(r?.userId) && r.available === false
+    && ["no-vorgaenge", "no-current-sources"].includes(r.reason));
+  const inaktiv = results.filter(r => profiles.some(p => !p.aktiv && p.user_id === r?.userId)
+    && r.available === false && r.reason === "profil-deaktiviert");
+  const technischVollstaendig = vollstaendig && belegt.length + leer.length === 25 && inaktiv.length === 4;
+  let gespeichert = 0;
+  const day = require("../lib/helmut/briefing-frische").berlinTagKey(start);
+  for (const r of belegt) {
+    require("../lib/helmut/storage").assertTenant(r.userId, "briefing25Nachweis");
+    const rows = await db("briefings?select=id,user_id,slot,generated_at,payload&user_id=eq."
+      + encodeURIComponent(r.userId) + "&id=eq." + encodeURIComponent(`bf-${r.userId}-lage-${day}`) + "&slot=eq.lage&limit=2");
+    const row = rows.length === 1 ? rows[0] : null;
+    const p = row?.payload;
+    if (row?.user_id === r.userId && row.slot === "lage" && p?.quellenVersion === 1
+      && /^[a-f0-9]{64}$/.test(p.quellenHash || "") && Date.parse(p.generatedAt) === Date.parse(row.generated_at)
+      && Date.parse(row.generated_at) <= jetzt.getTime()
+      && require("../lib/helmut/briefing-frische").berlinTagKey(new Date(row.generated_at)) === day
+      && Array.isArray(p.paragraphs) && p.paragraphs.length > 0
+      && p.paragraphs.every(a => typeof a.text === "string" && a.text.trim()
+        && Array.isArray(a.vorgang_ids) && a.vorgang_ids.length > 0
+        && a.vorgang_ids.every(id => typeof id === "string" && id))) gespeichert++;
+  }
+  const runs = await db("process_runs?select=run_id,process,status,started_at,finished_at,processed_count&process=eq.briefing-lage"
+    + "&started_at=gte." + encodeURIComponent(start.toISOString()) + "&order=started_at.desc&limit=2");
+  const run = runs.length === 1 ? runs[0] : null;
+  const laufBestaetigt = Boolean(run && /^briefing-lage-\d{14}-[a-z0-9]{1,16}$/.test(run.run_id || "")
+    && run.process === "briefing-lage" && run.status === "success" && run.processed_count === 29
+    && Date.parse(run.started_at) >= start.getTime() && Date.parse(run.finished_at) >= Date.parse(run.started_at)
+    && Date.parse(run.finished_at) <= jetzt.getTime());
+  return { technischVollstaendig, fachlichVollstaendig: technischVollstaendig && gespeichert === 25 && laufBestaetigt,
+    laufBestaetigt, laufId: laufBestaetigt ? run.run_id : null,
+    zaehlwerte: { mitText: belegt.length, ehrlichLeer: leer.length, gespeichert, inaktiv: inaktiv.length },
+    inhaltlicheQualitaetsabnahmeOffen: true };
+}
+
 async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () => new Date() } = {}) {
   let ausgeloest = false;
   let vorKosten = null;
   try {
     fordere(env.GITHUB_REPOSITORY === "ernisch/helmut-pilot" && env.GITHUB_REF === "refs/heads/main"
       && env.GITHUB_EVENT_NAME === "workflow_dispatch", "nur-manuell-auf-main");
-    fordere(env.HELMUT_LAGE_25_CONFIRM === CONFIRM, "bestaetigung-fehlt");
+    const schritt = env.HELMUT_LAGE_25_SCHRITT || "lagecheck";
+    fordere(["lagecheck", "briefing"].includes(schritt), "schritt-ungueltig");
+    fordere(env.HELMUT_LAGE_25_CONFIRM === (schritt === "briefing" ? BRIEFING_CONFIRM : CONFIRM), "bestaetigung-fehlt");
     fordere(String(env.SUPABASE_URL || "").replace(/\/$/, "") === PROJECT_URL
       && env.SUPABASE_SERVICE_ROLE_KEY, "fester-datenbankzugang-fehlt");
     const nat = env.HELMUT_NATURLAUF_ID || "";
@@ -110,7 +158,7 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
     pruefeZeit(now());
     // Genau ein Versuch. Auch eine verlorene Antwort erlaubt keine Wiederholung.
     ausgeloest = true;
-    const response = await fetchFn(LAGE_URL, { method: "GET", redirect: "error",
+    const response = await fetchFn(schritt === "briefing" ? BRIEFING_URL : LAGE_URL, { method: "GET", redirect: "error",
       signal: AbortSignal.timeout(295000), headers: {
         Authorization: `Bearer ${env.HELMUT_CRON_SECRET}`, Accept: "application/json"
       } });
@@ -122,6 +170,12 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
     const nachKosten = await kostenLesen();
     const nachProfile = await db("mandate_profiles?select=user_id,aktiv,geloescht_at,updated_at&order=user_id.asc&limit=30");
     const bestandGleich = JSON.stringify(profiles) === JSON.stringify(nachProfile);
+    if (schritt === "briefing") {
+      const pruefung = await pruefeBriefings({ body, profiles, db, start, jetzt: now() });
+      return { ok: pruefung.fachlichVollstaendig && bestandGleich && nachKosten.prognoseUsd < 9,
+        ausgeloest, schritt, httpStatus: 200, bestandGleich, ...pruefung, vorKosten, nachKosten,
+        unabhaengigeProductionAbnahmeOffen: true, keineAutomatischeWiederholung: true };
+    }
     const aktive = profiles.filter(p => p.aktiv).map(p => p.user_id).sort();
     const identischeKennungen = ["geplant", "begonnen", "erfolgreich"].every(key =>
       f && Array.isArray(f[key]) && f[key].every(id => typeof id === "string")
@@ -148,4 +202,4 @@ if (require.main === module) {
   if (process.argv.length !== 2) { console.error("Keine Argumente erlaubt."); process.exitCode = 2; }
   else ausfuehren().then(r => { console.log(JSON.stringify(r, null, 2)); process.exitCode = r.ok ? 0 : 1; });
 }
-module.exports = { ausfuehren, pruefeProfile, pruefeZeit, kostenBefund, CONFIRM, PROJECT_URL, LAGE_URL };
+module.exports = { ausfuehren, pruefeProfile, pruefeZeit, kostenBefund, CONFIRM, BRIEFING_CONFIRM, PROJECT_URL, LAGE_URL, BRIEFING_URL };

@@ -35,7 +35,9 @@ let requestedLimit = null;
 storage.v3StoreReady = () => true;
 storage.listKnowledgeObjects = async (o) => { requestedLimit = o && o.limit; return KOS.slice(0, o && o.limit ? o.limit : KOS.length); };
 storage.listMatchingResults = async () => [];
-storage.getSourcesForVorgang = async () => [{ url: "https://example.org/x", source_name: "Quelle" }];
+const quellenzeit = new Date(Date.now() - 3600000).toISOString();
+storage.getSourcesForVorgang = async () => [{ url: "https://example.org/x", source_name: "Quelle",
+  title: "Aktueller Beleg zum Vorgang", published_at: quellenzeit }];
 storage.getRenderedBriefingV3 = async () => null;
 sourceSafety.guardKnowledgeObject = () => ({ status: "ok" });
 
@@ -43,7 +45,7 @@ sourceSafety.guardKnowledgeObject = () => ({ status: "ok" });
   const res = await lage.buildLageBriefing({ id: "test-politician-one", fullName: "Test Politician One" }, { politicianId: "test-politician-one", cacheOnly: true });
   check("Scan-Fenster >= 500 angefragt (deckt Bestand ab)", Number(requestedLimit) >= 500, `limit=${requestedLimit}`);
   check("KO auf Position 220 liegt im Scan-Fenster (vorher unsichtbar)", KOS.length <= Number(requestedLimit), `${KOS.length} <= ${requestedLimit}`);
-  check("Lage liefert Karten aus dem erweiterten Fenster", res.available === true && Array.isArray(res.vorgaenge));
+  check("Lage liefert Karten aus dem erweiterten Fenster", res.available === true && Array.isArray(res.vorgaenge) && res.vorgaenge.length > 0);
 
   Object.assign(storage, orig); sourceSafety.guardKnowledgeObject = orig.guardKnowledgeObject; ai.generateLageBriefing = orig.generateLageBriefing;
   console.log(`\n${passed}/${passed + failed} Radar-Scan-Limit-Assertions erfolgreich.`);

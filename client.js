@@ -4948,6 +4948,13 @@ function lageDisruption(data) {
       sub: "Neue Auswertungen pausieren bis morgen früh. Bereits ausgewertete Vorgänge bleiben gültig."
     };
   }
+  if (reason === "no-current-sources") {
+    return {
+      kind: "datenluecke",
+      title: "Keine ausreichend aktuellen Quellen für das Briefing",
+      sub: "Ältere Vorgänge bleiben als Hintergrund verfügbar. Für einen neuen Briefingtext fehlen aktuelle, datierte Quellen."
+    };
+  }
   if (reason === "no-vorgaenge") {
     return {
       kind: "datenluecke",

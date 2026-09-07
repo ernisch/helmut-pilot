@@ -264,6 +264,9 @@ async function main() {
     const leer = await H(basisAuftrag, basisDeps({ available: false, reason: "no-vorgaenge" }));
     check("4.8 Ehrlicher Leerzustand: ok, aber veroeffentlicht=false mit Grund",
       leer.ok === true && leer.veroeffentlicht === false && leer.grund === "no-vorgaenge");
+    const historisch = await H(basisAuftrag, basisDeps({ available: false, reason: "no-current-sources" }));
+    check("Historische Quellen werden ohne Wiederholungsversuch ehrlich abgeschlossen",
+      historisch.ok === true && historisch.veroeffentlicht === false && historisch.grund === "no-current-sources");
 
     // 4.9 Budget (inneres Gate) -> lange zurueckgestellt.
     const budgetKnapp = await H(basisAuftrag, basisDeps({ available: false, reason: "budget" }));
@@ -487,7 +490,8 @@ async function main() {
     storage.v3StoreReady = () => true;
     storage.listKnowledgeObjects = async () => [KO];
     storage.listMatchingResults = async () => [];
-    storage.getSourcesForVorgang = async () => [{ url: "https://bmas.de/rente", source_name: "BMAS", title: "Rente", published_at: "2026-08-08T06:00:00Z" }];
+    const quellenzeit = new Date().toISOString();
+    storage.getSourcesForVorgang = async () => [{ url: "https://bmas.de/rente", source_name: "BMAS", title: "Rente", published_at: quellenzeit }];
     storage.getRenderedBriefingV3 = async (userId, slot, day) => cache.get(`bf-${userId}-${slot}-${day}`) || null;
     storage.saveRenderedBriefingV3 = async (entry) => { cache.set(entry.id, { ...entry }); return { saved: true }; };
     storage.acquirePipelineLock = async () => true;

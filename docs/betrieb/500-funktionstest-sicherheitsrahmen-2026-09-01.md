@@ -7162,3 +7162,147 @@ vollständig erfolgreich. Der reine Dokumentationsabschluss besteht erneut mit
 **334/334 lokalen Suiten in 505 Sekunden**, 0 Fehler, über `scripts/lokal.js`.
 Relative Dokumentlinks auflösbar, CURRENT_STATE unter 350 Zeilen und 30000 Zeichen,
 `git diff --check` sauber. Nur CURRENT_STATE und dieser kanonische Nachtrag geändert.
+
+
+## §57 · 07.09.: echte Qualitätsbefunde, Korrektur und begrenztes Testende
+
+**Betreiberauftrag:** „Alles klar, dann arbeitet bitte weiter, damit die 500 aktiviert werden.“
+Der unmittelbar vorher besprochene Kostenrahmen bleibt Teil des Auftrags: 500 für ein
+bis zwei Tage testen, keine Woche mit täglich zehn USD ohne zahlende Kunden. Zehn USD
+ist eine Obergrenze, keine Tagespauschale. Geplant sind 24 Stunden ab tatsächlicher
+Aktivierung und höchstens 48 Stunden. Noch gibt es keinen Aktivierungszeitpunkt oder
+eingerichteten Abschalttimer. Die folgende Deaktivierung ist das geplante Ende dieser
+Testkohorte; sie löscht keine Daten und ist kein Code Rollback.
+
+### §57.1 Rein lesender Ausgangsbefund
+
+Vor Beginn keine offenen Pull Requests. main und Production nach #327 exakt
+`33086bde6e562343dc936bb70ac80c8de5281204`, Deployment
+`dpl_3Y7B7ZS9gXaNY4qvi2PNHGQFzkqn` READY. 08:01:34 UTC: 29 Mandatsprofile, 25 aktiv,
+A 20 vollständig aktiv, B/C unangelegt, Tagesbudgetzähler 59. Alle 60 A Aufträge des
+Fensters 06.09. sind erledigt. Lage und Morgenlage heute je 25 vorhanden. Die vorhandenen
+Auftragsabschlüsse erfordern keinen erneuten Start des in §55.3 gesperrten A Workflows.
+
+Alle 25 gespeicherten heutigen Lagebriefings wurden mit ihrem Mandatsfokus, allen
+53 referenzierten Vorgängen und den tatsächlichen gespeicherten Quellenverknüpfungen
+verglichen. Dauerhafter Befund: [Qualitätsprüfung](../../belege/500/qualitaetspruefung-a-20260907.json).
+Die Datei enthält 25 Einzelurteile, Payloadhashes, konkrete Quellenkennungen und Daten,
+aber keine Zugangsdaten oder Kontorohdaten. Sie heißt absichtlich nicht `abnahme-a.json`:
+**null positive Abnahmen**, 21 wegen historischen Quellen nicht abgenommen, vier offen.
+20 der 53 Vorgänge haben ausschließlich über 14 Tage alte Quellen. 21 Briefings mit
+mindestens einem solchen Verweis bedeuten nicht, dass jeder einzelne Satz dieser
+Briefings falsch ist. Die komplette externe Originalseitenprüfung ist noch nicht erbracht.
+
+Drei konkrete Befunde:
+
+| Befund | Tatsächlicher Beleg | Fehler |
+|---|---|---|
+| Q1 Aktualität | `vg-arbeitsbescheinigung-20230110-07d9a7`, BA PDF, veröffentlicht 10.01.2023, am 06.09. abgerufen | A008 und A017 stellen die Veröffentlichung als aktuelle Entwicklung dar; erneute Analyse machte eine alte Quelle scheinbar neu |
+| Q2 Quelleninhalt | `vg-rentenzulage-20260905-ab85d5`, gespeicherter Nachrichtentitel, Auszug fehlt | Die KO Analyse ergänzt unbelegte Nichtanrechnung auf Hartz IV; A013 übernimmt sie. „Gegen Hartz IV“ ist hier der Publikationsname |
+| Q3 Nutzbarkeit | `vg-schwerd-20260221-97c471`, Kandidatenseite „Schwerd_Daniel“, Auszug fehlt | A012 und A018 machen daraus eine öffentliche Stellungnahme ohne bekanntes Thema |
+
+Kosten zuletzt 07:49:52 UTC: 59 Reservierungen, 59 Belege, null unbekannte Kostenzeilen,
+0,141736 USD geschätzt. Der Vortag bleibt 92/87 mit einer unbekannten Zeile und bekannten
+0,243678 USD. Keine Rechnung, keine atomare USD Grenze. Kein künstlicher Aufruf nur zum
+Überschreiten des Zählers 100.
+
+### §57.2 Korrektur des Lagebriefings
+
+`lage-quellenbeleg.js` bindet die Eingabe an tatsächlich geladene Titel, Auszüge,
+Quellen und HTTP URLs mit gültigem Veröffentlichungsdatum innerhalb des bestehenden
+14 Tage Frischevertrags. Analysezeit und Abrufzeit ersetzen keine Veröffentlichung.
+Höchstens sechs Belege je Vorgang und insgesamt 16000 Zeichen. Der Generator bekommt
+diese Quellen samt Datum, keine alten Modellbehauptungen als Tatsachen. Quelleninhalte
+sind Daten, keine Anweisungen. Titel ohne Auszug erlauben keine erfundenen Einzelheiten
+oder Rechtsfolgen. Personenprofil und Formular sind keine neue Stellungnahme.
+
+Quelleninhalt und Version sind Teil der Cacheprüfung, auch bei verweigerter Generatorsperre.
+Alte Caches ohne diese Bindung sind für neue Texte ungültig. Absätze mit unbekannter
+oder fehlender Referenz werden vollständig verworfen; bloßes Entfernen der falschen
+Kennung würde den unbelegten Satz behalten. Fehler beim Erwerb der Sperre starten
+keinen neuen Modellaufruf. Fehlen aktuelle Quellen, bleiben ältere Vorgangskarten
+als Hintergrund verfügbar und die Oberfläche benennt den fehlenden aktuellen Beleg.
+Die optionale Narrativwarteschlange bestätigt diesen ehrlichen Leerzustand ohne
+wiederholte Modellversuche oder Veröffentlichung.
+
+**Grenzen:** Die Änderung repariert nicht rückwirkend jede KO Analyse oder jede
+Vorgangskarte. Sie beweist noch keine Qualität neu generierter Production Texte.
+Ranking, Quellenbeschaffung, Feature Flags und Kostenlimits sind unverändert.
+Die Wiederverwendung alter Analysefehler im neuen Lageprompt wird unterbunden,
+nicht pauschal jeder mögliche Modellfehler.
+
+### §57.3 Begrenzte neue Briefingprüfung
+
+Die vorhandene rein manuelle Action `500-lagecheck-25.yml` erhält die separate Auswahl
+`briefing` und das eigene Wort `BRIEFING_25_NACH_NATURLAUF_BESTAETIGT`. Sie ruft genau
+einmal die bestehende Route `/api/cron/lage-briefing` auf. Standard bleibt `lagecheck`.
+Keine automatische Verkettung oder Wiederholung, kein Ersatz des abgelehnten A Starts.
+Branch, exakter Production Kopf, 29/25/A20, tatsächliche Konfiguration, natürliche
+erfolgreiche Abendcrawlquittung desselben UTC Tages, Cronabstände, freie Leases und
+Kostenprognose bleiben verpflichtend. Sie erlauben keinen willkürlichen Tagesstart.
+
+Nach dem einmaligen Aufruf werden Bestand und Kosten neu gelesen. Die neue Variante
+verlangt 29 eindeutige Ergebnisse einschließlich der vier korrekt übersprungenen
+inaktiven Profile. Jeder verfügbare Text wird mit `assertTenant` und explizitem
+Mandatsfilter aus dem richtigen Berliner Tagescache unabhängig nachgelesen; Datum,
+Quellenbindung und Absätze müssen vorliegen. Eine separate `process_runs` Quittung
+muss genau diesen Lauf vollständig bestätigen. Ehrliche Leerzustände werden gezählt,
+sind aber kein Briefingnachweis für 25. Auch bei Erfolg bleibt die inhaltliche
+Qualitätsabnahme ausdrücklich offen.
+
+### §57.4 Geplantes Testende
+
+Die neue manuelle Action `500-testende.yml` hat getrennte Vorprüfung und Deaktivierung.
+Nur main, vorhandene Secrets, exakter Production Commit und frisch gelesener
+relationaler Exklusivpfad. Bestätigung `TESTKOHORTE_495_DEAKTIVIEREN_BESTAETIGT`.
+Sie deaktiviert ausschließlich tatsächlich aktive Profile aus der vorhandenen
+495er Kennungsliste, über den bestehenden Provisionierer. Bei heutigem Bestand wären
+das 20, nach vollständigem Ausbau 495. Vor und nach jeder Zieloperation wird die
+konkrete relationale Zeile separat gelesen. Ein Ziel wird pro Lauf höchstens einmal
+geschrieben; Fehler und Teilbestände werden ausgewiesen. Der Abschluss darf auch
+tagsüber oder bei erschöpftem Modellbudget erfolgen und löst keine KI Arbeit aus.
+
+Vollständige Vorher und Nachher Vergleiche schützen die fünf älteren aktiven Profile,
+die vier anderen inaktiven Profile, Identitäten, Kontoinhalte und übrigen Profilfelder.
+Kein neues aktives Konto, kein Löschen, kein SQL Aktivierungspfad, kein Schemaeingriff.
+Erwartet nach vollem Test: 504 Profile erhalten, fünf aktiv. Keine Transaktion über
+495 Zeilen und kein Abbruch bereits laufender Arbeit. Die regulären Folgeaufrufe
+sehen die Profile als deaktiviert; noch laufende Aufrufe können Kosten verursachen.
+
+**Der Workflow ist noch kein Timer.** Vor Aktivierung müssen tatsächliche Startzeit,
+verbindliche Endzeit und die ausführbare Abschlussaktion festgehalten werden. Ein
+unbeaufsichtigter Wochenlauf ist nicht autorisiert. Eine spätere Terminierung zählt
+nur bei erfolgreicher Werkzeugquittung als eingerichtet.
+
+### §57.5 Prüfung und offener Abschluss
+
+Branch `codex/500-qualitaet-testende-20260907`, Basis `33086bde`. Gezielte Prüfungen
+über `scripts/lokal.js`: Quellenbindung 11/11, bestehende Lage 138/138, CacheOnly 9/9,
+Narrativ 92/92, Testende 9/9, manueller Lage und Briefingadapter 57/57. Die geänderten
+Narrativfixtures verwendeten zunächst veraltete Augustquellen und scheiterten korrekt
+an der neuen Frischegrenze; ihr frisches Quellendatum wird jetzt einmal je Fixture
+festgehalten. Keine Lockerung einer Prüfaussage.
+
+Erster Gesamtlauf **333/336 in 484 Sekunden**. Zwei Narrativsimulationen verwendeten
+Quellen vom festen virtuellen 08.08. und prüften den echten Lagepfad gegen die heutige
+Wanduhr; dadurch fanden keine simulierten Modellstörungen mehr statt. Ihre Quelle
+erhält jetzt einmal pro Simulation einen aktuellen, danach unveränderlichen Zeitstempel.
+Der Radar Scan Test hatte eine URL ohne Titel und Veröffentlichungsdatum; seine
+Belegfixture ist ergänzt, die Aussage zusätzlich auf tatsächlich vorhandene Karten
+verschärft. Gezielter Radar Nachweis 3/3. Separater Browser Smoke **40/40**. Vollständiger
+Wiederholungslauf entscheidet über die Übernahme; kein bestandener Lauf wird erfunden.
+
+Zweiter Gesamtlauf **335/336 in 494 Sekunden**: sämtliche Codeprüfungen einschließlich
+beider Narrativsimulationen bestehen. Ausschließlich CURRENT_STATE lag während der
+laufenden Dokumentation um 81 Zeichen über seiner Grenze. Historische Wiederholungen
+wurden gekürzt, keine Grenze erhöht; die erneute Größenprüfung besteht **4/4** bei
+29765 Zeichen. 18 geänderte JavaScript Dateien sind syntaktisch geprüft. Der endgültige
+vollständige Lauf erfolgt mit diesem bereinigten Dokumentstand.
+
+Der bestehende verpflichtende PostgreSQL Test enthält zusätzlich nach den 475 Anlagen
+und 475 Aktivierungen alle 495 echten Deaktivierungen mit demselben Speicherpfad.
+Lokaler Gesamtlauf, Browser, externe Pflichtjobs, echter Datenbanklauf, PR, Merge
+und Production Übernahme werden am geprüften Kopf nachgetragen. Bis dahin kein
+Production Qualitätsnachweis und kein Ausbau. Der früheste nächste Beginn des
+Ausbauzeitfensters ist **08.09. 00:36 Türkei / 07.09. 23:36 Berlin / 07.09. 21:36 UTC**,
+sofern die übrigen Belege dann tatsächlich vorliegen.

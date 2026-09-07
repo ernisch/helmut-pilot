@@ -1,0 +1,56 @@
+name: "500 Testprofile: geplantes Testende"
+
+on:
+  workflow_dispatch:
+    inputs:
+      schritt:
+        description: "Vorpruefung oder bestaetigte Deaktivierung der synthetischen Kohorte"
+        type: choice
+        options: [vorpruefung, deaktivierung]
+        default: vorpruefung
+        required: true
+      production_commit:
+        description: "Unabhaengig als Production READY bestaetigter vollstaendiger Commit"
+        type: string
+        required: true
+      bestaetigung:
+        description: "TESTKOHORTE_495_DEAKTIVIEREN_BESTAETIGT; Vorpruefung ohne Wort"
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: helmut-500-kontrollierte-facharbeit
+  cancel-in-progress: false
+
+jobs:
+  testende:
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' &&
+      github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Geplantes Testende getrennt ausfuehren
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+          HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
+          HELMUT_TESTKOHORTE_EXECUTE: "1"
+          HELMUT_TESTKOHORTE_CONFIRM: ${{ inputs.bestaetigung }}
+          HELMUT_TESTENDE_SCHRITT: ${{ inputs.schritt }}
+        run: |
+          if [ "$HELMUT_TESTENDE_SCHRITT" = "deaktivierung" ]; then
+            node scripts/github-testende-500.js --scharf
+          else
+            node scripts/github-testende-500.js
+          fi
