@@ -7620,3 +7620,116 @@ Laufzeitpaketen. Der blockierte Versuch in `pardok-shadow-test` bleibt sichtbar.
 Nur CURRENT_STATE und dieser Sicherheitsrahmen sind gegenüber #330 geändert;
 sämtlicher Produkt und Testcode bleibt identisch. Externe Pflichtprüfungen
 und Übernahme des reinen Dokumentations PR werden anschließend ausgeführt.
+
+## §59 · 07.09.: A Vorflug aus Production und nachgewiesene Nichtaufrufe
+
+**Auftrag:** Nach wiederhergestellter Supabase Anmeldung direkt auf 500 vorbereiten
+und bis zum belegten Abschluss arbeiten. Kein Zwischenziel 100 oder 400. Die konkrete
+einmalige A Zustimmung vom 07.09. ist noch ungenutzt; die Historie enthält weiterhin
+nur `34066395564` mit Abbruch vor Production. Keine zusätzliche Aktivierungsfreigabe
+aus einer allgemeinen Fortsetzungsanweisung ableiten; §58.3 bleibt bestehen.
+
+### §59.1 Frische Grundlinie und konkrete Fehler
+
+main `b0342da4503e858ddc25096fddb19baddcc03e66` nach #331, Deployment
+`dpl_CAP42p9SdcM3reLAVh6oF72i7ThJ` READY am exakten Commit, Hauptalias korrekt.
+Beide Pflichtjobs in `34121650827` erfolgreich, keine offenen PRs oder laufenden
+Actions. Eigenständiger sauberer Checkout; keine parallelen Editoren.
+
+SQL am 07.09. um 21:51:17 und 21:51:53 UTC erfolgreich. Bestand 29/25/4, null
+Löschmarken, A20 aktiv, B/C0. Vollständiger Hash über jsonb_agg(to_jsonb(m) ORDER BY
+user_id) `ede70d5ae7b0bcdd4ea4c07129b92cda`; Nichtkohorte mit identischem Ausdruck
+`3953f27ddd56b0ea8e66af6857d153ec`, unverändert. Auth 25/3, Kohorte 20/0,
+30 Identitäten, main/Auth und 29 Mandatsspeicher als Objekte lesbar. Kein
+Push Ereignis oder Outbox Versandbeleg im UTC Tag. Keine aktive Sperre oder Lease.
+
+Natürlich abgeschlossen: `cron-crawl-20260907200037-ugtqu`, 20:00:37 bis
+20:04:27 UTC, 141 verarbeitet, null endgültige Fehler. Ein Google Quellenabruf
+lief in eine Zeitüberschreitung; dies ist kein vollständiger Qualitätsbeleg.
+`understanding-cron-20260907213003-blpru`, 21:30:03 bis 21:33:38 UTC,
+20 verarbeitet, null endgültige Fehler. Heutiges A Fenster 49/60 erledigt:
+19 Quellenabrufe, 20 Projektionen und zehn Briefings; elf warten. Vortagsfenster
+60/60 fertig. Neue A Auslösung fachlich nicht durch reine Zählererhöhung begründet.
+
+147 Reservierungen, 148 Protokollzeilen: 147 Modellbelege mit zusammen
+0,428453 USD bekannten Schätzkosten und einem unbekannten Betrag, dazu genau
+ein belegter Nichtaufruf. Keine Providerrechnung, kein Preis je Profil.
+Mit 0,05 USD Lückenreserve und 2 USD Zusatzreserve 2,478453 USD Prognose,
+kein atomarer USD Schutz. Dashboard nach neuer GitHub Anmeldung um 21:47 UTC:
+Pro/Micro, healthy, CPU 2 %, RAM 47 %, 7/60 Verbindungen. Letzte Minimalabfrage
+21:47:52 erfolgreich. Diese Ruhewerte beweisen keine 500er Last.
+
+Zwei lokal reproduzierte Ausführerfehler, beide vor einem scharfen Start:
+
+1. Der echte Producer schreibt bei `skipped-understanding-error` ausdrücklich
+   `keinAufruf:true`, `success:false`, `model:none`, Kosten und drei Tokenwerte
+   numerisch null. Der A Kostenleser lehnte diesen Beleg mit `modell-unbekannt`
+   ab. Der separate tatsächliche fehlgeschlagene Modellaufruf bleibt mit
+   unbekannten Kosten protokolliert; der Skip darf ihn nicht kostenfrei machen.
+2. Der reine GitHub Leser `34161147675` bestätigte um 20:54:28 UTC die tatsächlichen
+   Production Werte 2416/702/200 und gesperrte Kommunikation. Seine GitHub
+   Betriebsvariablen waren leer. Das A Starttor las Deckel, Reserve und
+   Kommunikation trotzdem aus diesen lokalen Werten und blieb deshalb rot.
+
+### §59.2 Enge Korrektur und Prüfstand
+
+Nur `github-fachzyklus-a.js` und seine Tests werden fachlich geändert.
+Ein Nichtaufruf wird ausschließlich bei vollständig widerspruchsfreiem
+Speichervertrag anerkannt, einschließlich explizitem Auditmarker, Skiptyp,
+fehlendem Erfolg, erlaubtem Platzhalter und drei numerischen Tokennullen.
+Er deckt keine Reservierungslücke. Echte unbekannte Kosten erhalten weiter
+die bestehende konservative Reserve; fremde Modelle bleiben gesperrt.
+Der direkte 500 Adapter verwendet denselben Kostenleser und profitiert von
+dieser Trennung. Der separate Briefingausführer behält seine strengere
+Ablehnung unbekannter Modellkosten unverändert.
+
+Das A Vorflugobjekt spiegelt Deckel, Understanding Reserve und Kommunikation
+erst nach authentifizierter strenger Prüfung der tatsächlichen Production
+Konfiguration, analog zur bereits belegten Vorrangreserve. Kein Setzen von
+Vercel oder GitHub Variablen, kein Ersatz durch ungemessene lokale Werte.
+Die übergebene Umgebung bleibt unverändert. Cronplan, Zeitfenster, Zahl der
+Pipelineaufrufe, Profilbestand, Konten, Quellen, Ressourcen und Secrets bleiben
+unverändert. Keine Wiederholung bei unbekanntem Ausgang.
+
+Vor der Korrektur scheiterten exakt die beiden neuen positiven Regressionen;
+die negativen Schutzfälle blieben grün. Danach einschließlich echter
+`buildLlmUsageRecord` Gegenprobe 22/22 A Tests und 10/10 Tests des direkten
+500 Adapters erfolgreich. Vollständige lokale sowie externe Prüfung folgen
+am endgültigen Kopf. Noch kein PR, Merge oder Production Fachstart.
+
+Erster Gesamtlauf: 334/337 in 641 Sekunden, Exit 1. Die globale `NODE_PATH`
+Umgebung lud eine fremde Playwright Installation ohne deren Chromium und
+ließ dadurch zwei optionale Browserabschnitte scheitern. Für den nächsten
+Lauf wird nur im Kindprozess `NODE_PATH` geleert; alle vier Laufzeitpakete
+werden aus dem unveränderten Lockfile lokal aufgelöst, genau wie im Offline
+CI Job. Keine Browserinstallation und kein lokaler Browsererfolg behauptet.
+Der bekannte Zeitvergleich `quellen-mehrfachabruf` scheiterte bei 1324 gegen
+1325 ms. Unverändert einzeln 1/1 grün, ebenso die beiden Umgebungssuiten
+nach Bereinigung. Keine Testbedingung gelockert; der vollständige Endlauf
+steht noch aus. `pardok-shadow-test` meldete den bekannten blockierten
+Außenabruf, keinen erfolgreichen Netzverkehr.
+
+**Lokaler Endbeleg:** 337/337 Suiten in 657 Sekunden, Exit 0, mit bereinigtem
+Modulpfad über `scripts/lokal.js`. Die beiden geänderten Codedateien blieben
+während des Endlaufs unverändert. Syntaxprüfung und `git diff --check` sauber,
+CURRENT_STATE unter 30000 Zeichen und 350 Zeilen. Externe Pflichtjobs,
+Merge und unabhängige Production Nachkontrolle folgen; keine Fachauslösung.
+
+### §59.3 Koordinationsentscheidung: kein überflüssiger A Start
+
+Die unabhängige SQL Kontrolle um 22:07:50 UTC bestätigt im ursprünglichen
+Fenster `2026-09-06T00Z` je Klasse genau 20 eindeutige Aufträge für genau
+20 A Profile, sämtlich erledigt. Letzte Abschlüsse: Quellen 07.09. 04:00:49,
+Projektionen 06.09. 20:02:09, Materialisierung 07.09. 04:01:32 UTC.
+Die 49 erledigten und elf wartenden Aufträge des Fensters 07.09. sind der
+Folgezyklus, keine elf unerledigten Aufgaben des ursprünglichen Tests.
+
+Der bestehende direkte 500 Vertrag prüft die 60 ursprünglichen Aufträge
+erneut anhand ihrer Kennungen und Abschlusszeiten. Er verlangt keinen
+künstlich wiederholten A Tageszyklus. Der heutige Zähler 147 erfüllt bereits
+die Verbrauchsschwelle; einzig dadurch entstehende Modellaufrufe sind verboten.
+Gemäß Koordinationsnachtrag wird deshalb kein zusätzlicher A Workflow ausgelöst.
+Die einmalige Zustimmung bleibt ungenutzt. Das ist keine vollständige A Abnahme:
+Neue tatsächlich quellengebundene Briefings und deren Inhaltsprüfung fehlen.
+Der manuelle Briefingweg lehnt den heutigen unbekannten Modellkostenbetrag ab;
+diese strengere Schranke bleibt unverändert. Kein Ersatz über eine andere Route.

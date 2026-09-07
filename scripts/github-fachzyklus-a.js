@@ -109,19 +109,32 @@ function kostenBefund(data, counter, utcDay) {
         ? Number(r.estimatedCost) : null);
     return Number.isFinite(wert) && wert >= 0 ? wert : null;
   });
+  // Persistierter Vertrag aus storage.buildLlmUsageRecord: Nur ein expliziter,
+  // widerspruchsfreier Skip mit drei numerischen Nullwerten ist ein Nichtaufruf.
+  // Er ist KEIN Verbrauchsbeleg und darf fehlende Reservierungen nicht verdecken.
+  const nichtaufrufe = usage.map((r) => r.keinAufruf === true && r.success === false
+    && typeof r.callType === "string" && r.callType.startsWith("skipped-")
+    && ["none", "kein-aufruf"].includes(r.model) && r.estimatedCost === 0
+    && r.promptTokens === 0 && r.completionTokens === 0 && r.totalTokens === 0);
+  fordere(usage.every((r, i) => r.keinAufruf !== true || nichtaufrufe[i]),
+    "nichtaufruf-widerspruechlich");
   // Ein historischer Lückenbeleg kann ausdrücklich `model: "none"` tragen.
   // Er ist nur zusammen mit ebenfalls unbekannten Kosten zulässig und wird
   // unten wie jede andere Lücke konservativ reserviert. Ein fremdes Modell mit
   // Kostenwert oder jeder andere Modellname bleibt fail closed gesperrt.
-  fordere(usage.every((r, i) => r.model === "gpt-5-mini"
+  fordere(usage.every((r, i) => nichtaufrufe[i] || r.model === "gpt-5-mini"
     || (r.model === "none" && kosten[i] === null)), "modell-unbekannt");
+  const belegteNichtaufrufe = nichtaufrufe.filter(Boolean).length;
+  const aufrufbelege = usage.length - belegteNichtaufrufe;
+  fordere(counter === 0 || aufrufbelege > 0, "kostenbelege-fehlen");
   const bekannteKostenUsd = kosten.reduce((n, wert) => n + (wert === null ? 0 : wert), 0);
   const unbekannteKosten = kosten.filter((wert) => wert === null).length;
-  const reservierungsluecke = Math.max(0, counter - usage.length);
+  const reservierungsluecke = Math.max(0, counter - aufrufbelege);
   const reserveJeLueckeUsd = Math.max(0.05, ...kosten.filter((wert) => wert !== null), 0);
   const mitLueckenreserveUsd = bekannteKostenUsd
     + (unbekannteKosten + reservierungsluecke) * reserveJeLueckeUsd;
   return { reservierungen: counter, protokollierteEintraege: usage.length,
+    belegteNichtaufrufe, aufrufbelege,
     bekannteKostenUsd, unbekannteKosten, reservierungsluecke, reserveJeLueckeUsd,
     zusatzReserveUsd: ZUSATZ_RESERVE_USD,
     prognoseUsd: mitLueckenreserveUsd + ZUSATZ_RESERVE_USD, atomarerUsdRiegel: false };
@@ -212,6 +225,11 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch,
     const laufEnv = { ...env, CRON_SECRET: env.HELMUT_CRON_SECRET, HELMUT_PUBLIC_URL: PUBLIC_URL,
       HELMUT_TESTKOHORTE_EXECUTE: "1",
       HELMUT_TESTKOHORTE_CONFIRM: S.startfreigabe("a", {}).erwartetesWort,
+      // Nur fuer den lokalen Vorflug: exakt die bereits authentifiziert und
+      // streng geprueften Serverwerte spiegeln, keine Vercel/GitHub Env aendern.
+      HELMUT_MAX_LLM_CALLS_PER_DAY: String(config.tagesdeckel),
+      HELMUT_LLM_RESERVE_UNDERSTANDING: String(config.understandingReserve),
+      HELMUT_TESTLAUF_KOMMUNIKATION: config.kommunikationGesperrt ? "gesperrt" : "",
       HELMUT_TESTLAUF_VORRANG_REAL: String(config.vorrangreserveReal) };
     const bereitschaft = F.startbereitschaft({
       stufe: "a", bestandeneStufen: [], env: laufEnv, isolation: true,
