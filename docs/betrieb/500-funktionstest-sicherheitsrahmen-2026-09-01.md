@@ -7306,3 +7306,83 @@ und Production Übernahme werden am geprüften Kopf nachgetragen. Bis dahin kein
 Production Qualitätsnachweis und kein Ausbau. Der früheste nächste Beginn des
 Ausbauzeitfensters ist **08.09. 00:36 Türkei / 07.09. 23:36 Berlin / 07.09. 21:36 UTC**,
 sofern die übrigen Belege dann tatsächlich vorliegen.
+
+
+### §57.6 Übernahme von #328 und unabhängiger Endstand
+
+**Technische Korrektur gemergt und Production READY.** PR
+[#328](https://github.com/ernisch/helmut-pilot/pull/328), geprüfter Kopf
+`0ae25c85bf87110e144c742d96fa8429ca9eea97`, lokaler Prüfcommit
+`4db0efc0cb8c5c0de3a39da8f5e7f0c88d420fd6`. Der vollständige Codebaum ist bei beiden
+exakt `5ef601d530041301fb01d01996bb8bc0e395e352`, vor Branchanlage verglichen
+und anschließend nochmals aus dem tatsächlich gefetchten GitHub Commit bestätigt.
+Übertragung über den bestehenden GitHub Zugang, keine Zugangsdaten übertragen.
+
+| Nachweis am exakten PR Kopf | Ergebnis |
+|---|---|
+| Endgültiger lokaler Gesamtlauf | 336/336, null Fehler, 502 Sekunden, über `scripts/lokal.js` |
+| Separater lokaler Browser Smoke | 40/40; Syntax aller 18 geänderten JS Dateien korrekt |
+| CI `34103404267` | Beide Pflichtjobs erfolgreich, 336/336 Suiten in 590 Sekunden |
+| PostgreSQL 17.11 und PostgREST 12.2.3 | 10 PASS, null FAIL |
+| Echte Anlage, 08:59:45 UTC | 475 Speicheroperationen, Bestand 504/25 |
+| Echte Aktivierung, 08:59:56 UTC | 475 Speicheroperationen, Bestand 504/500 |
+| Echtes Testende, 09:00:27 UTC | 495 Deaktivierungen, 504 erhalten, fünf aktiv, geschützte Daten und main unverändert |
+| Vorschau | `dpl_ATxL4iBcFULcFiGF2Mjkrxre7ZZf` READY am exakten PR Kopf |
+| Review | Keine offenen Threads, main und PR Basis vor Merge exakt gleich |
+
+Die Datenbankwerte sind **isolierte Testdaten**, keine Production Aktivierung.
+Erwartete Fehler aus negativen CAS und Migrationsprüfungen in den Containerlogs
+sind von den bestandenen Prüfaussagen getrennt; sie werden nicht als Production Fehler
+ausgegeben. Der bekannte blockierte Netzversuch von `pardok-shadow-test.js` bleibt
+im lokalen und externen Prüfprotokoll transparent.
+
+Merge **`f2f0594e6bd6f74954348cf621afe949c52a128e`**, zwei Eltern
+`33086bde6e562343dc936bb70ac80c8de5281204` und
+`0ae25c85bf87110e144c742d96fa8429ca9eea97`; mit `expected_head_sha` gemergt.
+Production **`dpl_FfBcz1BEQKYsFr9Pmv6RHzaV19qK`**, target production, **READY** am
+exakten Merge. Hauptalias `helmut-pilot.vercel.app` zeigt auf dieses Deployment.
+Kein zweiter Deploymentversuch, keine Änderung von Secrets, Flags, Cronzeiten oder Schema.
+
+Unabhängige SQL Kontrolle **08:47:59 → 09:12:46 UTC** vor und nach Übernahme:
+
+| Bestand | Unverändert |
+|---|---|
+| Mandatsprofile | 29 insgesamt, 25 aktiv, vier inaktiv, null Löschmarken |
+| Vollständiger Mandatszeilenhash | `246194d2833646bf8ad8a8949defed09` |
+| Identitäten | 30; vollständiger Hash `22ba02fd4eb28c237e44e07c75c99188` |
+| Konten | 25; vollständiger Nutzerarrayhash `a8653cac17ddf6bf3b6566a964f1a736` |
+| Tagesreservierungen | 59 |
+
+Hashverfahren wie §56.1: MD5 der vollständig sortierten JSON Zeilen beziehungsweise
+des vollständigen JSONB Nutzerarrays. Kein Ersatz für den gesonderten SHA256
+Bestandsschutz des scharfen Ausführers. In dieser Sitzung kein manueller Production
+Modelllauf, keine Provisionierung, keine Aktivierung und keine Deaktivierung gestartet.
+
+**Fortsetzung eingerichtet:** Die Werkzeugquittung bestätigt eine aktive einmalige
+Aufgabe „500er Test fortsetzen“. Gewählter Beginn am **07.09. 23:30 Türkei /
+07.09. 22:30 Berlin / 07.09. 20:30 UTC**, flexibel innerhalb einer Stunde. Die
+Vorbereitung beginnt nach dem natürlichen Abendcrawl, damit Qualitätsprüfung und
+Belegübernahme vor dem eigentlichen Ausbau Platz haben. Anlage und Aktivierung
+bleiben an ihr echtes Zeitfenster **ab 08.09. 00:36 Türkei / 07.09. 23:36 Berlin /
+07.09. 21:36 UTC** gebunden. Eine terminierte Fortsetzung ist keine Zusage, dass alle
+Starttore dann erfüllt sind. Sie ist auch noch kein Abschalttimer.
+
+Der Auftrag der Fortsetzung verlangt vollständige tatsächliche Qualitätsbelege,
+aktuellen Budgetnachweis, Prüfung der natürlichen Aufträge und unveränderten
+geschützten Bestand. Er verbietet den erneuten Start des zuvor abgelehnten A
+Workflows und künstliche Budgetaufrufe. Vor Aktivierung sind **24 Stunden geplante
+Testdauer, höchstens 48 Stunden**, konkrete Endzeit und tatsächlich ausführbare
+Abschlussaktion zu bestätigen. Nur erfolgreiche Werkzeugquittungen zählen als
+eingerichteter Termin. Kein unbeaufsichtigter Wochenbetrieb.
+
+**Sprintzustand: TEILWEISE ABGESCHLOSSEN.** Korrektur und geplanter Testabschluss sind
+gebaut, vollständig geprüft, übernommen und deployt. Quellen und Inhalte der neu
+erzeugten Production Briefings sind noch erneut fachlich abzunehmen. Keine positive
+A Abnahme, kein aktueller Zähler über 100, keine 475 zusätzlichen Production Profile
+und kein 500er Funktionsnachweis. Die negative Qualitätsprüfung bleibt unverändert
+als Befund erhalten. Der nächste scharfe Schritt hängt von frischen tatsächlichen
+Belegen und dem zulässigen Nachtfenster ab, nicht von einem erfundenen Erfolg.
+
+Dieser reine Dokumentationsabschluss erfüllt CLAUDE.md §9. Er verändert weder Code
+noch Konfiguration oder Production Daten und löst keinen rekursiven Folge PR aus.
+Sein eigener Merge und Deploymentstand sind aus Git und Deployment Historie zu belegen.
