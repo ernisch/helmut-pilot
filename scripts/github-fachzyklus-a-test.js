@@ -48,7 +48,7 @@ function antwort(body, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 }
 
-function attrappe() {
+function attrappe(vorrangreserveReal = 200) {
   let nachher = false;
   const usageVor = [{ createdAt: `${TAG}T20:00:00Z`, model: "gpt-5-mini", estimatedCost: 0.01 }];
   const usageNach = [...usageVor,
@@ -58,7 +58,7 @@ function attrappe() {
       production: true, commit: COMMIT, storageSupabase: true, v3Bereit: true,
       profileRelational: true, profileExclusive: true, retentionGueltig: true,
       kommunikationGesperrt: true, kohortenQuellenGesperrt: true, retention: 36,
-      tagesdeckel: 2416, understandingReserve: 702 });
+      tagesdeckel: 2416, understandingReserve: 702, vorrangreserveReal });
     const u = new URL(url);
     if (u.origin === G.PUBLIC_URL && u.pathname === "/api/cron/pipeline") {
       nachher = true;
@@ -131,12 +131,46 @@ check("Eine unvollständige Pflichtklasse wird abgewiesen", () => {
     assert.strictEqual(result.kontenGleich, true);
     assert.strictEqual(result.kommunikationGleich, true);
     assert.strictEqual(result.jobsNach.briefing_materialization.erledigt, 20);
+    assert.strictEqual(result.starttor.vorrangreserveReal, 200);
   });
+  for (const wert of [null, 0, 199, "200"]) {
+    let pipelineAufrufe = 0;
+    const fake = attrappe(wert);
+    const gesperrt = await G.ausfuehren({ env: { ...env, HELMUT_TESTLAUF_VORRANG_REAL: "200" },
+      fetchFn: async (url, options) => {
+        if (url === `${G.PUBLIC_URL}/api/cron/pipeline`) pipelineAufrufe++;
+        return fake(url, options);
+      }, now: () => new Date(`${TAG}T22:30:00Z`) });
+    check(`Lokale Reserve ersetzt keinen gültigen Production Wert (${JSON.stringify(wert)})`, () => {
+      assert.strictEqual(gesperrt.ausgeloest, false);
+      assert.strictEqual(gesperrt.grund, "production-konfiguration-nicht-bestaetigt");
+      assert.strictEqual(pipelineAufrufe, 0);
+    });
+  }
   const falscheZeit = await G.ausfuehren({ env, fetchFn: attrappe(),
     now: () => new Date(`${TAG}T20:00:00Z`) });
   check("Außerhalb des sicheren Tagesfensters wird vor jedem Aufruf gestoppt", () => {
     assert.strictEqual(falscheZeit.ausgeloest, false);
     assert.strictEqual(falscheZeit.grund, "a-fachzyklus-ausserhalb-des-heutigen-sicheren-fensters");
   });
-  console.log(`\n${pass}/7 Prüfungen erfolgreich.`);
+  for (const started_at of ["2026-09-05T20:00:00Z", `${TAG}T04:00:00Z`]) {
+    let pipelineAufrufe = 0;
+    const fake = attrappe();
+    const gesperrt = await G.ausfuehren({ env, fetchFn: async (url, options) => {
+      if (url === `${G.PUBLIC_URL}/api/cron/pipeline`) pipelineAufrufe++;
+      const response = await fake(url, options);
+      if (new URL(url).pathname.endsWith("/process_runs")) {
+        const rows = await response.json();
+        rows[0].started_at = started_at;
+        return antwort(rows);
+      }
+      return response;
+    }, now: () => new Date(`${TAG}T22:30:00Z`) });
+    check(`Nur der natürliche Abendcrawl desselben UTC Tages gilt (${started_at})`, () => {
+      assert.strictEqual(gesperrt.ausgeloest, false);
+      assert.strictEqual(gesperrt.grund, "erfolgreicher-natuerlicher-abendcrawl-fehlt");
+      assert.strictEqual(pipelineAufrufe, 0);
+    });
+  }
+  console.log(`\n${pass}/13 Prüfungen erfolgreich.`);
 })().catch((error) => { console.error(error); process.exitCode = 1; });

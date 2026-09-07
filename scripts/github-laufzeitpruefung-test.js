@@ -11,7 +11,7 @@ async function main() {
   const env = { HELMUT_PRODUCTION_COMMIT: sha, GITHUB_SHA: sha, HELMUT_CRON_SECRET: geheim };
   const payload = { ok: true, schemaVersion: 1, reinLesend: true, production: true, commit: sha,
     storageSupabase: true, v3Bereit: true, profileRelational: true, profileExclusive: false,
-    retentionGueltig: true, retention: 36, tagesdeckel: 2416, understandingReserve: 702,
+    retentionGueltig: true, retention: 36, tagesdeckel: 2416, understandingReserve: 702, vorrangreserveReal: 200,
     kommunikationGesperrt: true, kohortenQuellenGesperrt: true, secret: geheim };
   let calls = 0;
   const fetchFn = async (url, opts) => {
@@ -21,7 +21,8 @@ async function main() {
     return { status: 200, json: async () => payload };
   };
   let r = await pruefe({ env, fetchFn });
-  check(r.ok && r.tagesdeckel === 2416 && r.understandingReserve === 702, "Laufzeitwerte erhalten");
+  check(r.ok && r.tagesdeckel === 2416 && r.understandingReserve === 702
+    && r.vorrangreserveReal === 200, "Laufzeitwerte erhalten");
   check(!JSON.stringify(r).includes(geheim) && !r.scharferPfadFreigegeben, "keine fremden Felder oder Freigabe");
   check(calls === 1, "genau ein Request");
   for (const changed of [{ GITHUB_SHA: "b".repeat(40) }, { HELMUT_PRODUCTION_COMMIT: "" }, { HELMUT_CRON_SECRET: "" }]) {
@@ -29,7 +30,7 @@ async function main() {
     r = await pruefe({ env: { ...env, ...changed }, fetchFn });
     check(!r.ok && calls === 0, "fehlende Voraussetzung vor Netz abgefangen");
   }
-  for (const changed of [{ commit: "b".repeat(40) }, { production: false }, { reinLesend: false }, { tagesdeckel: geheim }, { kommunikationGesperrt: "true" }]) {
+  for (const changed of [{ commit: "b".repeat(40) }, { production: false }, { reinLesend: false }, { tagesdeckel: geheim }, { kommunikationGesperrt: "true" }, { vorrangreserveReal: undefined }, { vorrangreserveReal: "200" }]) {
     r = await pruefe({ env, fetchFn: async () => ({ status: 200, json: async () => ({ ...payload, ...changed }) }) });
     check(!r.ok && !JSON.stringify(r).includes(geheim), "falsche Antwort ohne Rohdaten abgewiesen");
   }
@@ -52,6 +53,7 @@ async function main() {
   process.env.HELMUT_LLM_RESERVE_UNDERSTANDING = "702";
   process.env.HELMUT_CRAWL_RUN_RETENTION = "36";
   process.env.HELMUT_TESTLAUF_KOMMUNIKATION = "gesperrt";
+  delete process.env.HELMUT_TESTLAUF_VORRANG_REAL;
   const accounts = require("../lib/helmut/accounts");
   const storage = require("../lib/helmut/storage");
   let writes = 0;
@@ -73,6 +75,10 @@ async function main() {
     r = await request("GET", geheim);
     check(r.status === 200 && r.body.reinLesend === true && r.body.commit === sha, "echter Handler erreicht Status");
     check(r.body.tagesdeckel === 2416 && r.body.understandingReserve === 702, "echte Budgetfunktionen");
+    check(r.body.vorrangreserveReal === 0, "fehlende Production Reserve ehrlich als null Aufrufe");
+    process.env.HELMUT_TESTLAUF_VORRANG_REAL = "200";
+    check((await request("GET", geheim)).body.vorrangreserveReal === 200, "Reserve aus der echten Laufzeit gelesen");
+    delete process.env.HELMUT_TESTLAUF_VORRANG_REAL;
     check(r.body.retention === 36 && r.body.kommunikationGesperrt === true, "echte Schutzfunktionen");
     check(r.body.kohortenQuellenGesperrt === true, "Kohortenquellen standardmaessig gesperrt");
     process.env.HELMUT_TESTKOHORTE_QUELLEN = "aktiv";

@@ -151,7 +151,8 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch,
     fordere(config.ok && config.storageSupabase && config.v3Bereit && config.profileRelational
       && config.profileExclusive && config.kommunikationGesperrt && config.kohortenQuellenGesperrt
       && config.retentionGueltig && config.retention === 36
-      && config.tagesdeckel === 2416 && config.understandingReserve === 702,
+      && config.tagesdeckel === 2416 && config.understandingReserve === 702
+      && config.vorrangreserveReal >= 200,
     "production-konfiguration-nicht-bestaetigt");
 
     async function db(pfad) {
@@ -173,9 +174,14 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch,
     const identitaetenHashVor = pruefeIdentitaeten(await db(identitaetenPfad));
     const natural = await db("process_runs?select=run_id,process,status,started_at,finished_at,processed_count,failed_count&run_id=eq."
       + encodeURIComponent(nat) + "&limit=2");
+    const natStart = natural.length === 1 ? Date.parse(natural[0].started_at) : NaN;
+    const natEnde = natural.length === 1 ? Date.parse(natural[0].finished_at) : NaN;
+    const abendStart = Date.parse(`${utcDay}T20:00:00Z`);
     fordere(natural.length === 1 && natural[0].process === "warteschlange-crawl"
+      && natural[0].run_id === nat && nat.startsWith(`cron-crawl-${utcDay.replace(/-/g, "")}20`)
       && natural[0].status === "success" && natural[0].processed_count > 0
-      && natural[0].failed_count === 0 && natural[0].finished_at,
+      && natural[0].failed_count === 0 && natStart >= abendStart
+      && natStart < abendStart + 3600000 && natEnde >= natStart && natEnde <= start.getTime(),
     "erfolgreicher-natuerlicher-abendcrawl-fehlt");
     const jetztIso = start.toISOString();
     fordere((await db("pipeline_locks?select=job_name&expires_at=gt."
@@ -206,12 +212,12 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch,
     const laufEnv = { ...env, CRON_SECRET: env.HELMUT_CRON_SECRET, HELMUT_PUBLIC_URL: PUBLIC_URL,
       HELMUT_TESTKOHORTE_EXECUTE: "1",
       HELMUT_TESTKOHORTE_CONFIRM: S.startfreigabe("a", {}).erwartetesWort,
-      HELMUT_TESTLAUF_VORRANG_REAL: "200" };
+      HELMUT_TESTLAUF_VORRANG_REAL: String(config.vorrangreserveReal) };
     const bereitschaft = F.startbereitschaft({
       stufe: "a", bestandeneStufen: [], env: laufEnv, isolation: true,
       konfiguration: { gesamtdeckel: 2416, reserveVerstehen: 702,
         maxAnfragenJeMinute: 82, maxTokenJeMinute: 250000, kostenbudgetUsd: 9,
-        vorrangreserveReal: 200, maxParallel: 1 },
+        vorrangreserveReal: config.vorrangreserveReal, maxParallel: 1 },
       grenzen: { maxFehlerquote: 0.05, kostenbudgetUsd: 9, maxLaufzeitMinuten: 5,
         maxRueckstandWachstum: 200, erwarteterCommit: env.GITHUB_SHA,
         mindestVerarbeiteteVorgaenge: 1 },
@@ -268,7 +274,8 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch,
         && authNach.kohortenAktiv === 0 && nachKosten.prognoseUsd < 9 && sperrenFrei,
       ausgeloest, keineAutomatischeWiederholung: true, route: ergebnis.route,
       scheiben: ergebnis.erfolgreich, httpFehler: ergebnis.fehlgeschlagen,
-      starttor: { bereit: bereitschaft.startbereit, offeneHuerden: bereitschaft.offen.length },
+      starttor: { bereit: bereitschaft.startbereit, offeneHuerden: bereitschaft.offen.length,
+        vorrangreserveReal: config.vorrangreserveReal },
       profileGleich, identitaetenGleich, kontenGleich, kommunikationGleich,
       kohortenKontenAktiv: authNach.kohortenAktiv,
       jobsVor: bestandVor.klassen, jobsNach: jobsNach.klassen,

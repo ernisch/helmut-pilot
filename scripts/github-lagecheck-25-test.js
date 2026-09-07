@@ -21,7 +21,7 @@ function fixture() {
   const config = { ok: true, schemaVersion: 1, reinLesend: true, production: true, commit: SHA,
     storageSupabase: true, v3Bereit: true, profileRelational: true, profileExclusive: true,
     retentionGueltig: true, kommunikationGesperrt: true, kohortenQuellenGesperrt: true, retention: 36,
-    tagesdeckel: 2416, understandingReserve: 702 };
+    tagesdeckel: 2416, understandingReserve: 702, vorrangreserveReal: 200 };
   const natural = [{ run_id: env.HELMUT_NATURLAUF_ID, process: "warteschlange-crawl", status: "success",
     started_at: "2026-09-06T20:00:30Z", finished_at: "2026-09-06T20:04:30Z", processed_count: 100, failed_count: 0 }];
   const usage = Array.from({ length: 52 }, () => ({ createdAt: "2026-09-06T18:00:00Z", model: "gpt-5-mini", estimatedCost: 0.003 }));
