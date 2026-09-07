@@ -104,8 +104,41 @@ check("Historischer Modellplatzhalter gilt nur als reservierte Kostenlücke", ()
   assert.throws(() => G.kostenBefund({ llmUsage: [{ createdAt: `${TAG}T22:00:00Z`,
     model: "none", estimatedCost: 0.01 }] }, 1, TAG));
 });
+const keinAufruf = { createdAt: `${TAG}T22:00:00Z`, model: "none", keinAufruf: true,
+  success: false, callType: "skipped-understanding-error", estimatedCost: 0,
+  promptTokens: 0, completionTokens: 0, totalTokens: 0 };
+check("Belegter Nichtaufruf ist kostenlos, deckt aber keine Reservierungslücke", () => {
+  const b = G.kostenBefund({ llmUsage: [keinAufruf,
+    { createdAt: `${TAG}T22:00:00Z`, model: "gpt-5-mini", estimatedCost: 0.01 }] }, 2, TAG);
+  assert.strictEqual(b.protokollierteEintraege, 2);
+  assert.strictEqual(b.belegteNichtaufrufe, 1);
+  assert.strictEqual(b.aufrufbelege, 1);
+  assert.strictEqual(b.reservierungsluecke, 1);
+  assert.strictEqual(b.prognoseUsd, 2.06);
+});
+check("Widersprüchliche oder unvollständige Nichtaufrufe bleiben gesperrt", () => {
+  for (const delta of [{ keinAufruf: false }, { success: true }, { callType: "understanding" },
+    { estimatedCost: 0.01 }, { promptTokens: 1 }, { completionTokens: 1 },
+    { totalTokens: 1 }, { totalTokens: null }, { model: "fremdes-modell" }, { model: "gpt-5-mini" }]) {
+    assert.throws(() => G.kostenBefund({ llmUsage: [{ ...keinAufruf, ...delta }] }, 1, TAG));
+  }
+});
 check("Eine unvollständige Pflichtklasse wird abgewiesen", () => {
   assert.throws(() => G.bestandAusJobs(jobs().slice(1), FENSTER));
+});
+check("Echter Speichervertrag trennt Skip und unbezahlbaren Providerfehler", () => {
+  const { buildLlmUsageRecord } = require("../lib/helmut/storage");
+  for (const model of ["none", "kein-aufruf"]) {
+    const skip = buildLlmUsageRecord({ model, keinAufruf: true, success: false,
+      callType: "skipped-understanding-error" }, { createdAt: `${TAG}T22:00:00Z` });
+    const b = G.kostenBefund({ llmUsage: [skip,
+      { createdAt: `${TAG}T22:00:00Z`, model: "gpt-5-mini", estimatedCost: "unknown" }] }, 1, TAG);
+    assert.strictEqual(b.belegteNichtaufrufe, 1);
+    assert.strictEqual(b.aufrufbelege, 1);
+    assert.strictEqual(b.unbekannteKosten, 1);
+    assert.strictEqual(b.prognoseUsd, 2.05);
+    assert.throws(() => G.kostenBefund({ llmUsage: [skip] }, 1, TAG));
+  }
 });
 
 (async () => {
@@ -133,6 +166,30 @@ check("Eine unvollständige Pflichtklasse wird abgewiesen", () => {
     assert.strictEqual(result.jobsNach.briefing_materialization.erledigt, 20);
     assert.strictEqual(result.starttor.vorrangreserveReal, 200);
   });
+  const ohneLokaleWerte = { ...env, HELMUT_MAX_LLM_CALLS_PER_DAY: "",
+    HELMUT_LLM_RESERVE_UNDERSTANDING: "", HELMUT_TESTLAUF_KOMMUNIKATION: "" };
+  const unveraendert = JSON.stringify(ohneLokaleWerte);
+  const ausProduction = await G.ausfuehren({ env: ohneLokaleWerte, fetchFn: attrappe(),
+    now: () => new Date(`${TAG}T22:30:00Z`) });
+  check("Starttor verwendet gemessene Production Werte ohne lokale Betriebsvariablen", () => {
+    assert.strictEqual(ausProduction.ok, true, JSON.stringify(ausProduction));
+    assert.strictEqual(JSON.stringify(ohneLokaleWerte), unveraendert);
+  });
+  for (const delta of [{ tagesdeckel: null }, { tagesdeckel: 100 },
+    { understandingReserve: null }, { understandingReserve: 0 },
+    { kommunikationGesperrt: false }]) {
+    let pipelineAufrufe = 0;
+    const fake = attrappe();
+    const abgelehnt = await G.ausfuehren({ env, fetchFn: async (url, options) => {
+      if (url === `${G.PUBLIC_URL}/api/cron/pipeline`) pipelineAufrufe++;
+      const response = await fake(url, options);
+      return url === STATUS_URL ? antwort({ ...await response.json(), ...delta }) : response;
+    }, now: () => new Date(`${TAG}T22:30:00Z`) });
+    check(`Lokale Werte ersetzen keine Production Konfiguration ${JSON.stringify(delta)}`, () => {
+      assert.strictEqual(abgelehnt.ausgeloest, false);
+      assert.strictEqual(pipelineAufrufe, 0);
+    });
+  }
   for (const wert of [null, 0, 199, "200"]) {
     let pipelineAufrufe = 0;
     const fake = attrappe(wert);
@@ -172,5 +229,5 @@ check("Eine unvollständige Pflichtklasse wird abgewiesen", () => {
       assert.strictEqual(pipelineAufrufe, 0);
     });
   }
-  console.log(`\n${pass}/13 Prüfungen erfolgreich.`);
+  console.log(`\n${pass}/22 Prüfungen erfolgreich.`);
 })().catch((error) => { console.error(error); process.exitCode = 1; });
