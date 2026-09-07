@@ -120,7 +120,8 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
     fordere(config.ok && config.storageSupabase && config.v3Bereit && config.profileRelational
       && config.profileExclusive && config.kommunikationGesperrt && config.kohortenQuellenGesperrt
       && config.retentionGueltig
-      && config.retention === 36 && config.tagesdeckel === 2416 && config.understandingReserve === 702,
+      && config.retention === 36 && config.tagesdeckel === 2416 && config.understandingReserve === 702
+      && Number.isSafeInteger(config.vorrangreserveReal) && config.vorrangreserveReal >= 200,
     "production-konfiguration-nicht-bestaetigt");
     async function db(pfad) {
       const res = await fetchFn(PROJECT_URL + "/rest/v1/" + pfad, {

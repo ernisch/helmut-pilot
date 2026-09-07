@@ -137,6 +137,13 @@ function briefingFixture() {
     const f = fixture(); mutate(f); const r = await f.run();
     assert.equal(r.ok, false); assert.equal(r.ausgeloest, false); assert.equal(f.executed, 0);
   });
+  for (const [name, make] of [["Lage", fixture], ["Briefing", briefingFixture]]) {
+    for (const reserve of [0, 199, undefined]) await test(`${name}: fehlender tatsaechlicher Vorrang verhindert Fachaufruf (${reserve})`, async () => {
+      const f = make(); f.config.vorrangreserveReal = reserve;
+      const r = await f.run();
+      assert.equal(r.ok, false); assert.equal(r.ausgeloest, false); assert.equal(f.executed, 0);
+    });
+  }
   await test("Antwortverlust wird nie wiederholt, Fehlertext bleibt verborgen", async () => {
     const f = fixture(); f.lageError = "secret-never-print"; const r = await f.run();
     assert.equal(r.ok, false); assert.equal(r.ausgeloest, true); assert.equal(f.executed, 1);

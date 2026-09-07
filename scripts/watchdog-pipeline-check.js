@@ -49,6 +49,7 @@ const { evaluatePipelineResponse } = require("./watchdog-eval");
 // K7: Slot-Rechnung mit den PUREN Vertragsfunktionen des OP-25-Kerns (kein IO dort) —
 // Watchdog und Nachweis rechnen die Regel-Slots damit identisch.
 const vertrag = require("../lib/helmut/op25-nachweis");
+const { pruefeWarteschlangenLauf } = require("../lib/helmut/pipeline-status");
 
 const CLIENT_TIMEOUT_MS = envInt("WATCHDOG_CLIENT_TIMEOUT_MS", 330000);
 const POLL_ATTEMPTS = envInt("WATCHDOG_STATUS_POLL_ATTEMPTS", 6);
@@ -130,6 +131,11 @@ async function pruefeRegulaerenErfolg(baseUrl, headers, nowMs, { fetchJsonFn = f
     return { ausgang: "lesefehler", grund: `Statuspfad HTTP ${res.status} — Zustand nicht belegbar` };
   }
   const latest = res.data.latestRun || null;
+  if ((res.data.quelle === "process_runs" && latest) || latest?.mode === "warteschlange") {
+    return { ...pruefeWarteschlangenLauf(latest, {
+      seitMs: slotMs, jetztMs: nowMs, toleranzMs: CLOCK_SKEW_MS
+    }), slotMs, latest };
+  }
   if (!latest || !latest.createdAt) {
     return { ausgang: "fehlt", grund: "kein abgeschlossener Lauf sichtbar", slotMs };
   }
@@ -207,6 +213,14 @@ async function confirmViaStatusPath(baseUrl, headers, startedAtMs) {
     }
     sawStatusPath = true;
     const latest = res.data.latestRun || null;
+    if (res.data.quelle === "process_runs" || latest?.mode === "warteschlange") {
+      const befund = pruefeWarteschlangenLauf(latest, {
+        seitMs: startedAtMs, jetztMs: Date.now(), toleranzMs: CLOCK_SKEW_MS
+      });
+      if (res.data.ok === true && befund.ausgang === "vorhanden") return { confirmed: true, latest };
+      log(`Statuspfad-Versuch ${attempt}/${POLL_ATTEMPTS}: ${befund.grund}.`);
+      continue;
+    }
     const createdMs = latest && latest.createdAt ? Date.parse(latest.createdAt) : NaN;
     log(`Statuspfad-Versuch ${attempt}/${POLL_ATTEMPTS}: letzter Lauf ${latest && latest.createdAt ? latest.createdAt : "(keiner)"}.`);
     if (Number.isFinite(createdMs) && createdMs >= startedAtMs - CLOCK_SKEW_MS) {
