@@ -7023,3 +7023,67 @@ belegt; daraus entsteht kein weiterer reiner Dokumentations PR.
 Der reine Abschlussnachtrag bestand erneut **332/332 lokale Suiten in 463 Sekunden** über
 `scripts/lokal.js`; Dokumentgröße und relative Links wurden ebenfalls geprüft. Der letzte Code
 bleibt unverändert der vollständig lokal, in PR CI und main CI bestätigte Kopf aus #324.
+
+
+## §56 Direkter Ausbau auf 500 implementiert (07.09.2026)
+
+Der Betreiber beauftragt ausdrücklich: „Baue jetzt auf 500 Mandate. Wir können morgen gleich
+auf 500 testen wenn wir durch sind. Baue bis wir fertig sind.“ Technische Umsetzung und
+Prüfung erfolgen jetzt; keine erneute Frage zur bereits geklärten Zielmenge. Die bestehende
+A Abnahme, getrennte Anlage und Aktivierung sowie Betriebsgrenzen aus §41 und §55 bleiben.
+
+Rein lesender Einstieg: main `a19fde7a9bab226afedd574da97f386c990863a1` aus #325,
+Production `dpl_6a2dXGmHWvphpi9Suu18F7zNkgXf` READY, Supabase ACTIVE_HEALTHY.
+Bestand am 07.09. morgens weiterhin 29/25/4, A 20, B/C 0. Der natürliche Morgenlauf
+`briefing-morning-20260907050021-5ihtr` verarbeitet 25; Crawl
+`cron-crawl-20260907040028-ph8vi` verarbeitet 273, Understanding
+`understanding-cron-20260907053027-e3a6s` verarbeitet 19 ohne Fehler.
+Das A Fenster `2026-09-06T00Z` ist nun vollständig: je 20 erledigte Quellenabrufe,
+Projektionen und Briefing Materialisierungen. Die elf offenen Aufträge aus §55 sind damit
+erledigt. Die 60 wartenden Aufträge des neuen Fensters 07.09. sind kein alter Rückstand.
+Tageszähler 07.09. zur Erhebung 59, 06.09. 92, 05.09. 124. Heute je 25 Mandate mit
+Morgenlage und Lagebriefing. Diese Summen ersetzen keine vollständige Qualitätsabnahme.
+
+Umsetzung: Der bestehende CLI erhält einen eigenen geprüften Vertrag `--ziel=500` für
+Vorprüfung, 475 inaktive Anlagen, getrennte Aktivierung und eine begrenzte Fachrunde.
+Die bisherige A/B/C Logik bleibt unverändert; kein fingiertes B Ergebnis. Ein manueller
+GitHub Adapter bindet den Prozess an frisch gelesene Production Konfiguration, ohne
+Vercel Variablen zu verändern. Bestehende Provisionierer, Aktivierer, CAS Schutz und Cron
+bleiben die tatsächlichen Speicher und Verarbeitungswege. [Vollständiger Ablauf und
+Belegvertrag](direkter-ausbau-500.md).
+
+Gezielte Tests: 15 Verträge für Zielmenge, vollständige 475er Anlage und Aktivierung,
+Teilbestände, Fehler und geschützte Daten; 10 Adapterverträge einschließlich begrenztem
+Fachlauf und unabhängiger persistierter Laufquittung. Der bisherige verpflichtende echte
+PostgreSQL und PostgREST Test wurde um sämtliche 475 Anlagen und 475 Aktivierungen mit
+`storage.js` und `accounts.js` ergänzt. Sein Ergebnis sowie volle Suiten, Browser, PR,
+CI und Production Übernahme werden am endgültigen Kopf protokolliert.
+
+**Zwischenstand: technische Umsetzung in Prüfung, Production Ausbau offen.** In dieser
+Sitzung kein Workflow zur Production Facharbeit oder Profiländerung gestartet. Kein
+Secret Transfer, keine Env Änderung, kein Schemaeingriff, keine Nachricht und kein
+Modellaufruf durch die neuen Werkzeuge. A Qualitätsabnahme und aktueller Budgetbeleg
+bleiben Voraussetzungen. Der neue Fachzyklus ist kein Ersatzweg für den zuvor abgelehnten
+A Start: Er verlangt bereits 500 aktive Profile und vorhandene A Abnahme. Keine pauschale
+Behauptung, dass 500 funktionieren oder morgen schon aktiv sein werden.
+
+Prüfumgebung: Im ersten vollen Zwischenlauf 330/334. Zwei Browserprüfungen fanden die
+Chromium Version des globalen Playwright Pakets nicht; die festgelegte Version 1.56.1
+wurde außerhalb des Repositorys bereitgestellt. Der separate Browser Smoke besteht
+40/40, der betroffene Admin Browsertest 75/75. Der vorhandene P1 Test hatte nur den
+Profilstore isoliert; ein Admin aus einer vorherigen Suite verhinderte seinen Seed
+und führte zu vier 401 Folgefehlern. Der Test sichert, leert und restauriert nun auch
+seinen lokalen Auth Store, ohne eine Prüfaussage zu lockern. Die bestehende Wanduhrprüfung
+`quellen-mehrfachabruf-test.js` scheiterte in diesem Zwischenlauf ebenfalls. Vollständiger
+Wiederholungslauf und externe Prüfung entscheiden über die Übernahme, nicht der Zwischenstand.
+
+**Lokaler Abschluss:** Vollständiger zweiter Lauf **334/334 Suiten, 0 Fehler, 518 Sekunden**
+über `scripts/lokal.js`, mit Playwright 1.56.1 außerhalb des Repositorys. Beide zuvor
+auffälligen Bestandstests P1 und Quellenzeitmessung bestehen. Die 25 neuen gezielten
+Verträge und der echte relationale Profilrundlauf in ihren Fixtures bestehen ebenfalls.
+Separater Browser Smoke **40/40**, Syntaxprüfung der neun betroffenen JavaScript Dateien
+bestanden. `git diff --check` ohne Befund. Der erwartete blockierte Netzversuch im
+bestehenden `pardok-shadow-test.js` wird wie bisher transparent ausgewiesen.
+Echter PostgreSQL Nachweis und externe Pflichtjobs bleiben vor Merge zwingend;
+Ergebnisse sowie exakter Merge und Production READY werden im zugehörigen PR festgehalten.
+Technischer lokaler Abschluss erfolgreich; kein Production Funktionsnachweis bei 500.

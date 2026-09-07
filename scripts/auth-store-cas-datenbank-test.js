@@ -158,7 +158,8 @@ async function main() {
       assert.deepEqual(actual.map((note) => note.id).sort(), expected);
       console.log(`PASS  ${key}: vier veraltete Writes verweigert, nach frischem Lesen alle fuenf Aenderungen vollstaendig`);
     }
-    console.log(`PostgreSQL ${version}: 6 PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
+    await require("./fixtures/direkt500-datenbank").pruefeDirektausbau({ psql, base, token });
+    console.log(`PostgreSQL ${version}: 9 PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
   } finally {
     if (api && api.pid && api.exitCode == null) {
       const ended = once(api, "exit").catch(() => {});

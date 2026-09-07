@@ -116,7 +116,8 @@ jobs:
       # Fehler im neuen Datenbankpfad sofort sichtbar sind. Alle bisherigen
       # Pflichtschritte bleiben im selben blockierenden Job erhalten.
       - name: Kontoschreibschutz und 500 Registrierungen gegen PostgreSQL und PostgREST
-        timeout-minutes: 3
+        # Einschliesslich 475 echter inaktiver Anlagen und 475 Aktivierungen.
+        timeout-minutes: 5
         env:
           HELMUT_TEST_PG_HOST: "127.0.0.1"
           HELMUT_TEST_PG_PORT: "5433"
