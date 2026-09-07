@@ -6951,3 +6951,75 @@ Browserprüfungen. Der unveränderte `p1-security-check.js` bestand sowohl isoli
 als auch innerhalb dieses abschließenden Gesamtlaufs. Syntax, Dokumentgröße und lokale Dokumentlinks
 sind gültig. Damit sind die lokalen Voraussetzungen für den kleinen Korrektur PR erfüllt;
 externe Kopfprüfung und Production Beleg stehen noch aus.
+
+### §55.6 #324 abgeschlossen: tatsächliche Reserve bestätigt, Fachlauf bleibt gesperrt
+
+PR **#324** wurde nach vollständig grünen lokalen und externen Prüfungen am Kopf
+`06629e81b3fdca69d91b60852dec6aa0030779fc` gemergt. PR CI **34069307389** bestand beide
+Pflichtjobs einschließlich der PostgreSQL/PostgREST Nachweise; die Vorschau
+`dpl_Fq7kvurxNPviFhWb2BQkukjLoLbc` war READY. Keine Reviews mit Änderungsforderungen,
+keine offenen Review Threads, keine konkurrierende Arbeit. Der vor der Codekorrektur angelegte
+Branch heißt `codex/abnahme-25-und-direktziel-500`; er implementiert noch keinen direkten Ausbau.
+
+**Main nach Merge:** `69d2b6048726e5f70a6a423e9d4acfb1176c569b`.
+**Production:** `dpl_5pKLEFMXjkiznnFpcPeB2fEvPTaa`, READY am exakten main Kopf, Hauptadresse
+korrekt und kein Aliasfehler. Der Codebaum `4034cfb4bc1aea9b568a0abb46b13536f35cfd4c`
+stimmt mit dem geprüften lokalen Stand überein. Main CI **34069947355** bestand ebenfalls
+beide Pflichtjobs; der erfolgreiche Abschluss wurde unabhängig gelesen.
+
+Der gesonderte **rein lesende** Workflow **34070000477**, Job **101585465677**, lief am
+07.09. um 00:29:56 UTC an und war erfolgreich. Er ist keine Wiederholung des abgelehnten
+Fachzyklus und rief keine Pipeline auf. Um **00:30:05 UTC** lieferte die authentifizierte
+Production Statusroute am obigen Commit:
+
+| Wirksame Eigenschaft | Wert |
+|---|---:|
+| Globaler Aufrufdeckel | 2416 |
+| Understanding Reserve | 702 |
+| Tatsächliche Vorrangreserve für die fünf älteren Profile | **200** |
+| Globale Kommunikation gesperrt | true |
+| Kohortenquellen gesperrt | true |
+| Supabase Speicher, V3, relationale Profile, Exklusivmodus | jeweils true |
+| Aufbewahrungsgrenze gültig / Wert | true / 36 |
+| Scharfer Pfad durch den Leser freigegeben | **false** |
+
+**Die fehlende Vorrangmessung ist damit erledigt.** Es war keine Env Änderung nötig. Der A
+Ausführer prüft diesen tatsächlichen Wert vor jedem zukünftigen Start erneut; die bestätigte
+Momentaufnahme ersetzt keine spätere frische Grundlinie.
+
+Unabhängige SQL Nachkontrolle um **00:31:56 UTC** und gezielter Speicherzählbeleg danach:
+29 Profile, 25 aktiv, vier inaktiv, null gelöscht; A 20/20 aktiv, B/C 0; 30 Identitätsprofile,
+25 Auth Konten, drei aktiv, Kohorte 20/0 aktiv. Beide vollständigen Profilhashes aus §53.4
+unverändert. main, Auth und 29 Mandatsspeicher als JSON Objekte lesbar, insgesamt 32 Zeilen;
+`crawlRuns` 20 und Migrationen 35. Keine aktive oder verwaiste Lease, kein Fachlauf seit
+UTC Tageswechsel, kein Push Ereignis und keine Outbox Versandquittung seit 06.09. 23:50 UTC.
+Vercel meldete nach #324 keine Laufzeitfehler im gelesenen Zeitfenster.
+
+Das frisch geladene Supabase Dashboard zeigte um **00:19 UTC** Pro, healthy, `t4g.micro`,
+**RAM 43 %, CPU 2 %, 5/60 Verbindungen**, Disk 26 %. Diese Ruhewerte sind kein 500er Lastbeleg.
+Für den UTC Tag 07.09. gab es um 00:17:47 noch keine globale Zählerzeile, keine Modellbelege und
+keinen Fachlauf. Die 92 Reservierungen und 0,243678 USD bekannten Kosten gehören zum **06.09.**
+und dürfen nach dem Tageswechsel nicht als aktueller Tageszähler verwendet werden.
+
+**Abschlussstatus bleibt BLOCKIERT.** Erledigt sind Wiederanlauf, Azure Zugang, Lage 25/25,
+die drei notwendigen Code PRs #322/#323/#324 und der echte Vorrangbeleg. Offen bleiben elf
+A Aufträge des Fensters 06.09., vollständige Briefingqualität und der aktuelle Nachweis über
+100 Reservierungen, die Freigabeklärung des abgelehnten Fachlaufstarts sowie der geprüfte direkte
+Ausbau und die vollständige Abnahme bei 500. Der gescheiterte 10 Uhr Lageversuch zählt nicht.
+
+**Konkrete nächste Freigabe:** genau ein neuer Start des korrigierten A Workflows, maximal eine
+Production Pipeline Runde, keine automatische Wiederholung, unter sämtlichen frisch geprüften
+Bedingungen. Das nächste durch diesen Ausführer erlaubte Startfenster beginnt
+**08.09., 00:36 Türkei / 07.09., 23:36 Berlin / 07.09., 21:36 UTC**. Er verlangt den natürlichen
+Abendcrawl dieses UTC Tages; bis dahin können natürliche Arbeiten weiterlaufen. Keine manuelle
+Crawlersatzrunde und keine Umgehung des engeren Codefensters. Die neue direkte Betreiberanweisung
+25 → 500 gilt bereits und braucht keine erneute pauschale Zustimmung.
+
+Dieser ausschließlich dokumentierende Abschlussnachtrag erfüllt die Nach-Merge-Pflicht für
+#324. Er verändert keinen Code, keine Profile, Konten, Ressourcen, Secrets, Cronzeiten, Migrationen,
+Kommunikations- oder Quellenriegel. Sein eigener Merge und sein Deployment werden aus der Historie
+belegt; daraus entsteht kein weiterer reiner Dokumentations PR.
+
+Der reine Abschlussnachtrag bestand erneut **332/332 lokale Suiten in 463 Sekunden** über
+`scripts/lokal.js`; Dokumentgröße und relative Links wurden ebenfalls geprüft. Der letzte Code
+bleibt unverändert der vollständig lokal, in PR CI und main CI bestätigte Kopf aus #324.
