@@ -24,6 +24,12 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
     assert.deepEqual(input([{ ...quelle, published_at: null }, { ...quelle, published_at: "ungueltig" },
       { ...quelle, published_at: "2026-09-08T08:00:00Z" }, { ...quelle, url: "javascript:1" }]), []);
   });
+  await pruefe("Nur oeffnende HTTPS Artikel tragen ein neues Briefing", () => {
+    for (const url of ["http://example.org/quelle", "https://example.org/", "https://news.google.com/rss/articles/test",
+      "https://name:passwort@example.org/quelle"]) assert.deepEqual(input([{ ...quelle, url }]), []);
+    const r = input([{ ...quelle, url: "https://news.google.com/rss/articles/test", canonical_url: quelle.url }]);
+    assert.equal(r[0].quellenbelege[0].url, quelle.url);
+  });
   await pruefe("Vierzehntagegrenze aus bestehendem Frischevertrag", () => {
     assert.equal(input([{ ...quelle, published_at: "2026-08-24T08:00:00Z" }]).length, 1);
     assert.equal(input([{ ...quelle, published_at: "2026-08-24T07:59:59Z" }]).length, 0);
@@ -60,7 +66,7 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
     "getRenderedBriefingV3", "saveRenderedBriefingV3", "acquirePipelineLock", "releasePipelineLock", "canSpendLlmForTenant"];
   const vorher = Object.fromEntries(namen.map(n => [n, storage[n]]));
   const vorAi = ai.generateLageBriefing, vorSafety = safety.guardKnowledgeObject;
-  let calls = 0, saved = null, lock = true, cached = null;
+  let calls = 0, saved = null, lock = true, cached = null, modelInput = null;
   let docs = [{ ...quelle, published_at: new Date(Date.now() - 3600000).toISOString() }];
   storage.v3StoreReady = () => true;
   storage.listKnowledgeObjects = async () => [ko];
@@ -72,7 +78,7 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
   storage.releasePipelineLock = async () => {};
   storage.canSpendLlmForTenant = async () => ({ allowed: true });
   safety.guardKnowledgeObject = () => ({ status: "ok" });
-  ai.generateLageBriefing = async (v) => { calls++; assert(!JSON.stringify(v).includes(ko.was_ist_passiert));
+  ai.generateLageBriefing = async (v) => { calls++; modelInput = structuredClone(v); assert(!JSON.stringify(v).includes(ko.was_ist_passiert));
     return { paragraphs: [{ text: "Die Quelle berichtet von einem Vorschlag.", vorgang_ids: ["vg-test"] }] }; };
   try {
     await pruefe("Echter Lagepfad speichert neue Quellenbindung und nutzt passenden Cache", async () => {
@@ -97,6 +103,28 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
       const r = await lage.buildLageBriefing({ id: "test-quellenbeleg" });
       assert.equal(r.reason, "no-current-sources"); assert.equal(r.vorgaenge.length, 1);
       assert.equal(calls, 1);
+    });
+    await pruefe("Absatzlinks stammen bei Erzeugung und Cache exakt aus der Modelleingabe", async () => {
+      const frisch = new Date(Date.now() - 3600000).toISOString();
+      docs = [{ ...quelle, url: "https://example.org/historisch", published_at: "2023-01-10T05:50:22Z" },
+        ...Array.from({ length: 7 }, (_, i) => ({ ...quelle, url: `https://example.org/aktuell-${i}`,
+          published_at: frisch }))];
+      cached = null; lock = true;
+      const neu = await lage.buildLageBriefing({ id: "test-quellenbeleg" });
+      const erwartet = modelInput[0].quellenbelege.map(q => q.url);
+      assert.equal(erwartet.length, 6);
+      assert.deepEqual(neu.paragraphs[0].sources.map(q => q.url), erwartet);
+      assert(neu.vorgaenge[0].sources.some(q => q.url.endsWith("/historisch")), "Hintergrundkarte bleibt erhalten");
+      const aufrufe = calls;
+      cached = { payload: saved.payload };
+      const ausCache = await lage.buildLageBriefing({ id: "test-quellenbeleg" }, { cacheOnly: true });
+      assert.equal(ausCache.fromCache, true);
+      assert.deepEqual(ausCache.paragraphs[0].sources.map(q => q.url), erwartet);
+      lock = false;
+      const gesperrt = await lage.buildLageBriefing({ id: "test-quellenbeleg" }, { force: true });
+      assert.equal(gesperrt.fromCache, true);
+      assert.deepEqual(gesperrt.paragraphs[0].sources.map(q => q.url), erwartet);
+      assert.equal(calls, aufrufe);
     });
   } finally { Object.assign(storage, vorher); ai.generateLageBriefing = vorAi; safety.guardKnowledgeObject = vorSafety; }
   console.log(`${bestanden}/${bestanden} Quellenbelegpruefungen bestanden`);

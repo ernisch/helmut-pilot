@@ -1338,6 +1338,9 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/cron/pipeline-status") {
     if (!authorizeCron(request, url, response)) return;
     return handleAsync(response, async () => {
+      if (scalablePipeline.skalierbarerPfadAktiv(process.env)) {
+        return require("./lib/helmut/pipeline-status").leseWarteschlangenStatus();
+      }
       const latest = await getLatestCrawlRun();
       return {
         ok: true,

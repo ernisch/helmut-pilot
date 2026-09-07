@@ -7386,3 +7386,162 @@ Belegen und dem zulässigen Nachtfenster ab, nicht von einem erfundenen Erfolg.
 Dieser reine Dokumentationsabschluss erfüllt CLAUDE.md §9. Er verändert weder Code
 noch Konfiguration oder Production Daten und löst keinen rekursiven Folge PR aus.
 Sein eigener Merge und Deploymentstand sind aus Git und Deployment Historie zu belegen.
+
+
+## §58 · 07.09.: Quellenzuordnung und Vorrang vor der Briefingprüfung
+
+**Auftrag:** Weiterarbeiten bis 500 stabil möglich sind, belegte Fehler unmittelbar beheben.
+Die genaue Zielmenge aus §55 bleibt bestehen. Keine neue Profilaktivierung durch diesen
+Korrektursprint; Voraussetzungen, Kostenlimit und Testdauer aus §57 bleiben verpflichtend.
+
+### §58.1 Tatsächlicher Ausgangszustand
+
+main nach dem reinen Dokumentationsabschluss #329 exakt
+`c3cc9fd9d7cd47611bc84dcf99dcff594cad67fc`, Production
+`dpl_Hd1wFD4w7yofcSSSD1JE73Z9iBcC` READY, Hauptalias korrekt. Keine offenen PRs.
+Eigener sauberer Checkout, Branch `codex/500-briefing-quellenzuordnung-20260907`;
+keine Bearbeitung der Arbeitsverzeichnisse anderer Threads.
+
+Rein lesende SQL Kontrolle am 07.09., **13:40 Türkei / 12:40 Berlin / 10:40 UTC**:
+29 Mandatsprofile, 25 aktiv, vier inaktiv, null gelöscht, A20 aktiv, B/C unangelegt.
+Vollständiger Mandatszeilenhash `246194d2833646bf8ad8a8949defed09`, 30 Identitäten
+mit Hash `22ba02fd4eb28c237e44e07c75c99188`, 25 Konten mit Nutzerarrayhash
+`a8653cac17ddf6bf3b6566a964f1a736`; gegenüber §57.6 unverändert.
+66 globale Reservierungen und 66 protokollierte Aufrufe, keine unbekannten Kosten,
+**0,165181 USD geschätzte Modellkosten im gesamten System seit UTC Tagesbeginn**.
+Keine Providerrechnung und kein Preis je Profil.
+
+Der Lauf `cron-pipeline-20260907103404-r0pzn` speicherte
+194 verarbeitete Aufträge, zehn Wiederholungen, 33 Vertagungen, null endgültige Fehler
+bei 237364 ms. Diese Sitzung löste ihn nicht aus. Der planmäßige GitHub Watchdog
+**34112102689**, Job **101710451402**, startete ihn nach verspätetem Beginn.
+Sein Log nennt als letzten Erfolg den **03.09. um 12:56:29 UTC**, obwohl die
+kanonischen Laufquittungen den heutigen Morgenlauf belegen. Vercel meldete dazu zehn Google Quellenfehler, acht
+Zeitüberschreitungen und zwei HTTP 503. Einzelne Quellenfehler und endgültige
+Auftragsfehler sind verschiedene Größen. Kein Nachweis einer 500er Last.
+
+### §58.2 Reproduzierte Fehler und enge Korrekturen
+
+1. `lage.js` gab Absatzlinks aus allen Quellen der referenzierten Vorgänge aus.
+   Die KI hatte seit #328 dagegen nur die aktuelle, begrenzte Auswahl gesehen.
+   Der neue Regressionstest lieferte vor Korrektur zusätzlich eine Quelle von 2023
+   und eine siebte Quelle außerhalb der Modelleingabe. Die Absatzlinks kommen nun
+   in Erzeugung, normalem Cache und Cache bei verweigerter Generatorsperre aus exakt
+   derselben Eingabe. Die vorhandene Quellenhistorie bleibt an den Vorgangskarten.
+2. Der neue Eingabeadapter akzeptierte HTTP, Herausgeberstartseiten und Google
+   Weiterleitungen. Er verwendet jetzt die bestehende Artikelregel aus
+   `radarState.oeffnendeArtikelUrl`: HTTPS mit Artikelpfad, keine Google Weiterleitung,
+   zusätzlich keine Zugangsdaten in der URL. Eine gespeicherte gültige kanonische
+   Artikeladresse hat Vorrang. Keine URL wird erfunden oder neu abgerufen.
+3. `github-lagecheck-25.js` las die tatsächliche Vorrangreserve, verlangte aber
+   nicht mindestens 200. Mit Reserve null löste die alte Fassung den simulierten
+   Fachaufruf aus. Beide Varianten, Lage und Briefing, stoppen jetzt vor jedem
+   Fachaufruf bei fehlender Reserve oder einem Wert unter 200. Kein Betriebswert
+   wird geändert; dies ergänzt die bereits im A Ausführer vorhandene Prüfung.
+
+Gezielte Tests nach Korrektur über `scripts/lokal.js`: Quellenbelege **13/13**,
+Lage und Briefingausführer **63/63**. Die beiden neuen Verhaltensregressionen und
+der Artikelregeltest wurden vorher rot nachgewiesen. Keine echten Modellaufrufe
+oder Production Datenänderungen durch diese Prüfungen. Vollständige lokale und
+externe Prüfungen sowie Übernahme stehen vorerst aus.
+
+**Grenzen:** Eine passende Quellenauswahl beweist noch nicht jede einzelne
+Modellaussage. Neu erzeugte Production Texte aller 25 sind weiter fachlich zu
+prüfen. Historische Karten und alte KO Analysen werden nicht rückwirkend repariert.
+Ranking, Cronzeiten, Profile, Konten, Schema, Ressourcen und Kostenwerte unverändert.
+Die strengere Artikelprüfung kann einen ehrlichen Leerzustand ergeben, wenn nur
+ungeeignete Links vorhanden sind. Kein Ersatzcrawl und kein neuer A Workflowstart.
+
+4. Der Watchdog las über `/api/cron/pipeline-status` ausschließlich den alten
+   `crawlRuns` Blob. Seit der Motorumschaltung liegen aktuelle schwere
+   Laufquittungen in `process_runs`. Die Statusroute liest bei aktivem Motor nun
+   ausschließlich die jüngste kanonische Zeile der beiden Warteschlangenklassen,
+   mit GET und einem gezielten Filter. Der bisherige Motor behält seinen Pfad.
+   Der Watchdog verlangt bei diesem neuen Status vollständig lesbare Laufdaten,
+   passenden Prozess und Laufkennung, richtigen Beginn, Abschluss, positive
+   Verarbeitung und exakt null endgültige Fehler. Ein Datenbankfehler startet
+   keinen Ersatzlauf. Auch nach Antwortverlust wird nur dieser tatsächliche
+   Fortschritt bestätigt; kein zweiter Fachaufruf. Der Cronplan bleibt unverändert.
+   Die reine Statusprüfung und der echte Handler bestehen 13/13; der Watchdog
+   besteht mit den beiden neuen Fällen nach Antwortverlust **28/28**. Ungültige
+   Datenbankzeilen werden ebenfalls als Lesefehler behandelt.
+
+Die Quellenzählung um **13:47 Türkei / 12:47 Berlin / 10:47 UTC** bestätigt
+25 heutige Caches, **null** mit neuer Quellenbindung. 21 referenzieren mindestens
+einen nur historisch belegten Vorgang. Sieben enthalten mindestens einen Vorgang
+mit gemischten alten und neuen Quellen. Letzteres quantifiziert die mögliche
+Quellenzuordnungslücke, ersetzt aber keine Aussageprüfung. Eine erste lesende
+Auswertungsabfrage nutzte irrtümlich `document_id` und scheiterte vor Ausführung;
+mit der tatsächlichen Spalte `raw_document_id` wurde sie erfolgreich gelesen.
+
+### §58.3 Lokale Prüfung und koordinierte Fortsetzung
+
+Der erste vollständige Zwischenlauf endete mit **333/336**, nicht grün. Der
+Pakettest fand die nur über `NODE_PATH` angebotenen Abhängigkeiten nicht. Alle
+vier installierten Laufzeitpakete wurden gegen die exakten Versionsvorgaben
+geprüft und für den lokalen Paketbau zugänglich gemacht; danach 1/1 grün.
+Die unveränderten Zeitmessungen `quellen-mehrfachabruf` und
+`reset-timing-seitenkanal` scheiterten an ihren Laufzeitvergleichen und bestanden
+einzeln jeweils 1/1. Keine Schranke oder Produktionsfunktion wurde dafür
+gelockert. Der vollständige Endlauf am fertigen Code bleibt erforderlich.
+Der bekannte blockierte Netzversuch in `pardok-shadow-test` wurde vom Schutz
+abgewiesen; kein durchgeführter externer Abruf. Dieser Zwischenlauf erfasst
+die neue Statussuite noch nicht und ist kein Endbeleg.
+
+Der folgende Zwischenlauf fand eine unvollständige lokale Browserinstallation:
+Playwright 1.56.1 war vorhanden, Chromium 1194 nicht zugänglich. Zwei optionale
+Browserabschnitte scheiterten deshalb. Ein Downloadversuch endete mit
+Zeitüberschreitung und abgebrochener Netzfreigabe; kein weiterer Downloadweg.
+Die lokale Umgebung verwendet danach genau die vier Laufzeitpakete des regulären
+Offline CI Jobs. Die vorgeschriebene eigenständige Browserprüfung wird auf
+GitHub ausgeführt und nicht als lokal bestanden ausgegeben.
+Dieser Zwischenlauf endete mit **334/337 in 759 Sekunden**; der dritte Fehler
+war der nachfolgend beschriebene Resend Zeitvergleich.
+
+Zusätzlich scheiterte der unveränderte Resend Reihenfolgentest an **244,9 ms
+Antwortzeit gegenüber einem 150 ms Transporttimer**. Das misst unter Rechnerlast
+nicht verlässlich, ob die Antwort auf den Versand wartet. Der Test hält den
+simulierten Transport nun bis zur tatsächlich empfangenen HTTP Antwort offen.
+Ein synchron wartender Server scheitert am begrenzten Antwortwächter; der
+Versand wird auch im Fehlerfall freigegeben. Die Zeitgitter, Verteilungsgrenzen
+und der gesamte produktive Passwortschutz bleiben unverändert. Diese enge
+Prüfkorrektur besteht die unveränderte Gegenprobe; **8/8** absichtlich
+eingebaute Schutzverletzungen werden weiterhin erkannt.
+
+Ein weiterer Gesamtlauf wurde früh mit Exit 130 beendet, als trotz bereinigter
+lokaler Pakete noch das globale `NODE_PATH` eine andere Browserbibliothek lud.
+Keine Codedatei wurde dafür geändert. Der Endlauf setzt nun ausschließlich
+den Pfad zu den vier verifizierten Laufzeitpaketen; die zuvor scheiternde
+Administratorsuite bestand damit einzeln 1/1. Es liefen keine Testprozesse
+mehr, bevor die lokalen Zwischenlaufdaten beiseitegelegt wurden. Der nächste
+Gesamtlauf beginnt mit frischem Testspeicher und unverändertem Produktcode.
+
+**Lokaler Endbeleg:** Der bereinigte kanonische Lauf besteht **337/337 Suiten
+in 724 Sekunden**, Exit 0. Alle elf geänderten Codedateien blieben während
+dieses Laufs unverändert. Quellenbeleg 13/13, Lageausführer 63/63, Motorstatus
+13/13 und Watchdog 28/28 sind enthalten. Zusätzlich Gegenprobe grün und
+8/8 Sicherheitsmutationen erkannt. Syntax der neuen und betroffenen
+Einstiege sowie `git diff --check` sauber. Kein lokaler Browsererfolg behauptet;
+externe Pflichtjobs und Production Übernahme folgen.
+
+Die zwei bereits vorhandenen Fortsetzungen wurden am 07.09. um **10:57 und
+11:01 UTC** ausschließlich in ihren Anweisungen koordiniert; Uhrzeiten und
+Aktivzustand anschließend unverändert gegengelesen. Aufgabe
+`6a9e7e7bbc988191988145c5f72bbf94` liest §58 vor weiterer Arbeit und startet
+keinen eigenen A Fachlauf. Aufgabe `6a9e47875df88191939e27e901019ed1` prüft zuerst,
+ob natürliche Abschlüsse den zusätzlichen Lauf bereits überflüssig machen.
+Beide lesen vor jedem Fachschritt laufende Arbeiten und Sperren, lösen keinen
+zweiten Versuch auf unklarem Zustand aus und erteilen keine neue Aktivierung.
+Die neuere ausdrückliche Betreibergrenze vom 07.09., 09:49 UTC gilt fort:
+Vorbereitung abschließen, aber zusätzliche Aktivierungen erst mit ausdrücklicher
+Zustimmung. Kein künstlicher Verbrauch zum Erreichen eines Zählerwerts.
+
+### §58.4 Nächster Schritt
+
+Nach vollständig grünen Prüfungen die autorisierte kleine Korrektur übernehmen,
+exaktes Production READY und Datenintegrität unabhängig bestätigen. Danach die
+koordinierten Fortsetzungen für natürliche Fortschritte und echte neue Briefings
+verwenden. Keine
+bestandene `abnahme-a.json` ohne tatsächliche Vollbelege; keine künstlichen
+Modellaufrufe zum Überschreiten von 100. Anlage und Aktivierung weiterhin nur
+im gültigen Nachtfenster mit vorher festgelegtem Testende nach §57.

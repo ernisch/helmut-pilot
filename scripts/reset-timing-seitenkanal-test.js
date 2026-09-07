@@ -564,30 +564,48 @@ function verteilung(name, werte) {
     {
       const echtesFetch = globalThis.fetch;
       const aufrufe = [];
+      // Die Reihenfolge ist der Vertrag. Unter Rechnerlast kamen 244,9 ms
+      // Antwortzeit trotz entkoppeltem Versand vor; der Vergleich gegen einen
+      // 150-ms-Timer war dann falsch rot. Der Transport bleibt jetzt offen,
+      // bis die HTTP-Antwort wirklich angekommen ist. Synchrones Warten faellt
+      // weiterhin durch den begrenzten Antwortwaechter auf.
+      let versandFreigeben, versandFertig = false, antwortWaechter;
+      const versandWartet = new Promise(resolve => { versandFreigeben = resolve; });
       globalThis.fetch = async (url, optionen) => {
         aufrufe.push(String(url));
-        await schlafe(VERZOEGERUNG_MS);
+        await versandWartet;
+        versandFertig = true;
         return { status: 200, text: async () => JSON.stringify({ id: "stub-resend" }) };
       };
       process.env.HELMUT_MAIL_TRANSPORT = "resend";
       process.env.HELMUT_RESEND_API_KEY = PLATZHALTER_SCHLUESSEL;
       try {
-        const iBekannt = await resetAnfrage(BEKANNT);
+        const iBekannt = await Promise.race([
+          resetAnfrage(BEKANNT),
+          new Promise((_, reject) => {
+            antwortWaechter = setTimeout(() => reject(new Error("Resend Antwort wartet auf den Versandabschluss")), 5000);
+          })
+        ]);
+        clearTimeout(antwortWaechter);
         const iUnbekannt = await resetAnfrage(UNBEKANNT);
         check("I Resend: identische Antwort",
           iBekannt.status === iUnbekannt.status && iBekannt.body === iUnbekannt.body
           && kopfzeilenOhneDatum(iBekannt.headers) === kopfzeilenOhneDatum(iUnbekannt.headers));
         check("I Resend: Antwort kommt VOR dem Versand zurueck (entkoppelt)",
-          iBekannt.dauerMs < VERZOEGERUNG_MS, `${iBekannt.dauerMs.toFixed(1)} ms < ${VERZOEGERUNG_MS} ms`);
+          !versandFertig && aufrufe.length === 1, "Transport muss bei angekommener Antwort noch offen sein");
         check("I Resend: beide Antworten auf dem Zeitgitter",
           iBekannt.dauerMs >= FENSTER_MS - 10 && iUnbekannt.dauerMs >= FENSTER_MS - 10,
           `${iBekannt.dauerMs.toFixed(1)} / ${iUnbekannt.dauerMs.toFixed(1)}`);
+        versandFreigeben();
         await resetTiming.offeneArbeit();
         check("I Resend: genau EIN Versandaufruf, nur fuer die bekannte Adresse",
           aufrufe.length === 1, `n=${aufrufe.length}`);
         check("I Resend: Ziel ist die Code-Konstante",
           aufrufe[0] === "https://api.resend.com/emails", String(aufrufe[0]));
       } finally {
+        clearTimeout(antwortWaechter);
+        versandFreigeben();
+        await resetTiming.offeneArbeit();
         globalThis.fetch = echtesFetch;
         process.env.HELMUT_MAIL_TRANSPORT = "mailpit";
         delete process.env.HELMUT_RESEND_API_KEY;

@@ -242,6 +242,22 @@ const hang = () => { /* Antwort absichtlich nie senden -> Client-Timeout */ };
       `pipeline-calls=${c.pipeline} · ${r.out.slice(-300)}`);
   }
 
+  for (const processedCount of [273, 0]) {
+    const now = new Date().toISOString();
+    const latestRun = { mode: "warteschlange", runId: "cron-pipeline-20260907103404-r0pzn",
+      process: "warteschlange-pipeline", status: "success", startedAt: now, createdAt: now,
+      processedCount, failedCount: 0, deferredCount: 20 };
+    const mock = await startMock({
+      pipeline: hang,
+      status: (req, res, counts) => json(res, 200, counts.pipeline === 0
+        ? { ok: true, quelle: "process_runs", latestRun: null }
+        : { ok: true, quelle: "process_runs", latestRun })
+    });
+    const r = await runCheck(mock.url); const c = mock.counts; await mock.close();
+    check(`Warteschlange nach Antwortverlust: ${processedCount} verarbeitet, genau ein Versuch`,
+      r.code === (processedCount > 0 ? 0 : 1) && c.pipeline === 1, r.out.slice(-300));
+  }
+
   // ── 11) K7: frischer, aber UNBRAUCHBARER Lauf (0 Quellen) -> Ersatzlauf startet ──
   {
     const mock = await startMock({

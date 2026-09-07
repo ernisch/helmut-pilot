@@ -1,6 +1,7 @@
 # CURRENT STATE — Helmut
 
-**Stand: 07.09.2026, 09:16 UTC. TEILWEISE ABGESCHLOSSEN.** Quellenkorrektur und geplanter Testabschluss als [#328](https://github.com/ernisch/helmut-pilot/pull/328) gemergt, Production `f2f0594e` READY. Lokal und extern **336/336 Suiten**, Browser **40/40**, echter Datenbanknachweis **10/10** einschließlich 495 Deaktivierungen. Production weiterhin **29/25/4**, unveränderte Profile und Konten, Zähler **59**. **Keine positive A Abnahme und keine 500 Aktivierungen.** Die Fortsetzung nach dem Abendcrawl ist eingerichtet; Betreiber möchte 500 für **ein bis zwei Tage**. [SR §57.6](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md) · [Ausführung](betrieb/direkter-ausbau-500.md).
+**Stand: 07.09.2026, Quellen und Laufstatus lokal geprüft. TEILWEISE ABGESCHLOSSEN.** main und Production nach #329 exakt `c3cc9fd9`, READY. Kleine Korrektur auf `codex/500-briefing-quellenzuordnung-20260907`: Absatzlinks, Artikelregel, Vorrang und Watchdogstatus; zusätzlich ein unzuverlässiger Test repariert. **337/337 Suiten, 8/8 Sicherheitsmutationen erkannt.** Externe Prüfung und Übernahme offen. Production 10:40 UTC **29/25/4**, Profile und Konten unverändert; 66 Reservierungen, **0,165181 USD** geschätzt. **Keine A Abnahme oder 500 Aktivierungen.** Fortsetzungen koordiniert; [SR §58](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+
 
 **Kernlage:** Warteschlangenmotor seit 23.08. in Production `on`, Dispatch `shadow` (Cron-Antrieb, kein AWS). Fünferbeleg mit 376 Abschlüssen: [OP-30 §30.7](betrieb/op30-aktivierung-5-mandate.md). **Aktuell vier historische Vorgänge `unbekannt`, jüngste Änderung 02.09., 11:33 UTC; keine neue unbekannte Reservierung nach Wiederanlauf.** Selbstweck in Production nie ausgeführt.
 
@@ -122,7 +123,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-1. Quellenkorrektur und Testabschluss sind mit #328 geprüft, gemergt und READY. Die eingerichtete Fortsetzung nach dem Abendcrawl liest den dann aktuellen Kopf und alle Starttore erneut. Zeitpunkt und Grenzen in SR §57.6.
+1. Quellenbindung und manuellen Briefingausführer nach SR §58 abschließend prüfen und übernehmen. Zwei geplante Fortsetzungen müssen vor dem Nachtfenster abgestimmt sein; kein doppelter Fachstart. Danach aktuelle Starttore und tatsächliche Briefingqualität prüfen.
 2. Die A Aufträge des Fensters 06.09. sind natürlich fertig. Nach korrigiertem natürlichem oder ausdrücklich begrenztem Briefinglauf alle 25 Inhalte erneut prüfen und aktuellen Budgetbeleg ergänzen. `qualitaetspruefung-a-20260907.json` ist ausdrücklich keine bestandene `abnahme-a.json`. Ein erneuter A Workflowstart bleibt an die besondere Freigabe aus SR §55.3 gebunden.
 3. Nach A Abnahme im belegten Nachtfenster **21:36 bis vor 03:58 UTC** die 475 Zielprofile inaktiv anlegen, unabhängig prüfen und getrennt aktivieren. Der neue Fachzyklus startet ausschließlich bei exakt 500 aktiven Profilen. [Ausführung](betrieb/direkter-ausbau-500.md).
 4. Ab tatsächlicher Aktivierung **24 Stunden Test planen, höchstens 48 Stunden**. Endzeit und ausführbaren Abschluss vor Beginn festlegen; der neue manuelle Workflow allein ist kein automatischer Timer. Dann 495 synthetische Profile deaktivieren und unabhängig bestätigen: 504 erhalten, fünf ältere aktiv. 500er Funktionsbefund und Fehler dokumentieren; kein unbeaufsichtigter Wochenlauf.
