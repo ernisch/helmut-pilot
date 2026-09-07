@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 07.09.2026, Quellen und Laufstatus lokal geprüft. TEILWEISE ABGESCHLOSSEN.** main und Production nach #329 exakt `c3cc9fd9`, READY. Kleine Korrektur auf `codex/500-briefing-quellenzuordnung-20260907`: Absatzlinks, Artikelregel, Vorrang und Watchdogstatus; zusätzlich ein unzuverlässiger Test repariert. **337/337 Suiten, 8/8 Sicherheitsmutationen erkannt.** Externe Prüfung und Übernahme offen. Production 10:40 UTC **29/25/4**, Profile und Konten unverändert; 66 Reservierungen, **0,165181 USD** geschätzt. **Keine A Abnahme oder 500 Aktivierungen.** Fortsetzungen koordiniert; [SR §58](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+**Stand: 07.09.2026, Korrekturen #330 in Production geprüft. TEILWEISE ABGESCHLOSSEN.** Merge `2ca0e62b`, READY um 11:50 UTC. Absatzlinks, Artikelregel, Vorrang und Watchdogstatus korrigiert; ein unzuverlässiger Test repariert. Lokal und extern **337/337 Suiten**, Browser **40/40**, Datenbank **10/10 und 48/48**, Sicherheitsmutationen **8/8** erkannt. Nachkontrolle 11:51 UTC **29/25/4**, Profile und Konten unverändert; 86 Reservierungen, **0,22847 USD** geschätzt. **A Abnahme und 500er Betrieb offen:** 25 heutige Caches, null mit neuer Quellenbindung. Fortsetzungen koordiniert; [SR §58.5](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 
 
 **Kernlage:** Warteschlangenmotor seit 23.08. in Production `on`, Dispatch `shadow` (Cron-Antrieb, kein AWS). Fünferbeleg mit 376 Abschlüssen: [OP-30 §30.7](betrieb/op30-aktivierung-5-mandate.md). **Aktuell vier historische Vorgänge `unbekannt`, jüngste Änderung 02.09., 11:33 UTC; keine neue unbekannte Reservierung nach Wiederanlauf.** Selbstweck in Production nie ausgeführt.
@@ -11,7 +11,7 @@
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **Aktueller Codekopf #328:** `f2f0594e6bd6f74954348cf621afe949c52a128e`, Production `dpl_FfBcz1BEQKYsFr9Pmv6RHzaV19qK` READY am exakten Merge. PR CI `34103404267` mit beiden Pflichtjobs grün; 336/336 Suiten und 10/10 echte Datenbankprüfungen. Beide Merge Eltern, identische Codebäume und Grenzen in SR §57.6. Ausführer aus #326 wird weiterverwendet.
+- **Aktueller Codekopf #330:** `2ca0e62b14aa0ef5928dc63969c655df620db1fa`, Production `dpl_5ZRdoym5m5U1R7iBerEE2fbBBrWV` READY am exakten Merge. PR CI `34117430546` mit beiden Pflichtjobs grün; 337/337 Suiten, Browser 40/40, echte Datenbankprüfungen 10/10 und 48/48. Zwei Merge Eltern und identischer geprüfter Baum bestätigt; SR §58.5. Ausführer aus #326/#328 wird weiterverwendet.
 - **A Ausführer #322/#323:** deployt und geprüft; Einzelbelege SR §54/§55. Workflow `34066395564` scheiterte vor dem Production Aufruf; kein Wiederholungslauf.
 - **Übernommen (§57):** Quellenbindung, begrenzte Briefingprüfung und manueller Testabschluss für höchstens 495 Profile. Fortsetzung für das kommende Nachtfenster eingerichtet; konkreter Abschalttermin erst vor tatsächlicher Aktivierung festzulegen. Keine neue Production Facharbeit gestartet.
 - Frühere Schutzarbeiten **#303, #305, #307, #309, #310, #313, #316 und #318** sind deployt. Sie schützen Kontext, Leseantworten, Konten, gemeinsam genutzte Speicher und Appstart. Belege und Grenzen: SR §40–§51; Lage 25/25 seit §53.
@@ -19,13 +19,12 @@
 ## 3 · Production-Zustand
 
 - **Datenbank:** Supabase **Pro/Micro (`t4g.micro`, 1 GB)**, `ACTIVE_HEALTHY`; SQL bis **07.09., 00:32 UTC** wiederholt erfolgreich. Frisches Dashboard **00:19 UTC: RAM 43 %, CPU 2 %, 5/60 Verbindungen**. Neustart 06.09. 18:35:07, Sicherung 18:38:15 UTC, **PITR aus**. Speicherengpass als Ursache plausibel, nicht abschließend bewiesen; keine Ressourcenänderung durch diese Sitzung.
-- **Bestand 07.09., 09:12 UTC, nach #328:** **29 gesamt, 25 aktiv, vier inaktiv, null gelöscht**, 30 Identitäten und 25 Konten. Vollständige Mandatszeilen, Identitätszeilen und Konten gegenüber 08:47 unverändert; Zähler 59. A 20 aktiv, B/C unangelegt. A Fenster 06.09. um 08:01 mit 60/60 erledigten Aufträgen belegt, heutige Lage und Morgenlage je 25. Keine schreibende Production Abnahme; SR §57.6.
+- **Bestand 07.09., 11:51 UTC, nach #330:** **29 gesamt, 25 aktiv, vier inaktiv, null gelöscht**, 30 Identitäten und 25 Konten. Vollständige Zeilen und Konten gegenüber 10:40 unverändert; Zähler 86. A20 aktiv, B/C unangelegt. A Fenster 06.09. mit 60/60 erledigten Aufträgen belegt. 25 heutige Lagecaches, null mit neuer Quellenbindung; keine fachliche A Abnahme. Natürlicher Rückstandslauf 11:30: 20 verarbeitet, null endgültige Fehler; SR §58.5.
 - **Crawl-Aufbewahrung:** Wirksame Grenze **36** am 06.09. um 19:00 UTC erneut bestätigt. Frisch gelesener Blob Ring **20**; keine Wiederherstellung der verlorenen 16 Laufzeilen. Schutzcode aus #301 bleibt deployt (SR §37).
 - **Quellen:** 9 Pakete · 163 Abrufwege · 165 Zuordnungen; **146/163 Google-News** (B1, OP-15); 18 Landesmodul-Wege (BE/BB) gesperrt. Seeds `20260713`/`20260717` **nicht eingespielt**, Einspielung [BLOCKIERT](betrieb/quellen-seed-einspielung.md) (nur noch Betreiberfreigabe).
 - **Crons (Production, 13, UTC):** crawl 04:00/20:00 · pipeline 16:00 · morning-briefing 05:00 · understanding 05:30/21:30 · **rueckstand 11:30/17:30** · lage-briefing 05:45 · health 06:00 · lage-check 10:00 · 2 Narrativslots 06:10/06:22 (inert). **`18,48 * * * *` nicht in Production.** Dazu Actions-Watchdog (`briefing-watchdog.yml`, 05:30, oft 2–3 h verzögert).
 - **Migrationen:** 35 Einträge, letzte `20260829175749` (05.09. rein lesend bestätigt). **Z22 seit 29.08. mit Freigabe angewendet** (§14–22) — **nicht erneut anwenden**. Auf `main`, **nicht in Production angewendet**: `20260720`, F9 (`20260825101500`), `20260902121500`. Jede weitere Anwendung bleibt freigabepflichtig.
-- **Kosten 06.09., 23:54 UTC:** Zähler 92, 87 Belege, bekannt **0,243678 USD**; eine unbekannte Kostenzeile plus fünf Reservierungslücken à 0,05 USD und 2 USD Reserve ergeben **2,543678 USD Prognose**, unter Stopp 9 USD. Kein Mehrverbrauch durch den abgelehnten Start. Kein Rechnungsbeleg und keine atomare USD Grenze. Nach UTC Tageswechsel neu messen; [`kostenmessung`](betrieb/kostenmessung.md).
-- **Kosten 07.09., 07:49 UTC:** 59 Reservierungen und 59 protokollierte Einträge, null unbekannte Kostenzeilen, **0,141736 USD geschätzt**. Keine Rechnung. In der aktuellen Korrekturarbeit kein neuer kostenpflichtiger Production Lauf gestartet.
+- **Kosten 07.09., 11:51 UTC:** 86 Reservierungen und 86 protokollierte Einträge, null unbekannte Kostenzeilen, **0,22847 USD geschätzt**. Mit 2 USD Reserve aktuell 2,22847 USD Prognose, unter Stopp 9 USD. Kein Rechnungsbeleg und keine atomare USD Grenze. In dieser Korrekturarbeit kein kostenpflichtiger Production Lauf gestartet. Frühere Tagesbelege in SR §57; [`kostenmessung`](betrieb/kostenmessung.md).
 - **Zugang:** Azure und Foundry geschützt per Microsoft E Mail erreicht, keine Zugangsdaten offengelegt. Rein lesend: `gpt-5-mini` Global Standard **250.000/2.000.000 TPM**, Zuordnung 250.000 TPM, bekannte Grenze 250 RPM. Keine Azure Änderung. Production Leser **34058091793** bleibt gültig (§54).
 
 ## 4 · Aktivierte Funktionen (Production)
@@ -37,7 +36,7 @@
 | `HELMUT_MATCHING_AUDIT=on` | seit 2026-07-28 |
 | `HELMUT_PROCESS_RUNS_RELATIONAL=on` | seit 2026-07-27 |
 | `HELMUT_ATOMIC_LOCK` | an — atomare, fail-closed Sperren |
-| LLM Tagesbudget | **Deckel 2416 / Understanding Reserve 702 / Vorrangreserve 200**, Production am **07.09., 00:30 UTC** gelesen. Für 06.09.: Zähler 92, 87 Belege, bekannt 0,243678 USD plus 0,30 USD Lückenreserve. Für 07.09. um 06:55 UTC Zähler 59. **Aktueller Beleg über 100 fehlt.** Maximal 10 USD, Prognosestopp 9 USD; kein Rechnungsbeleg oder atomarer USD Riegel. |
+| LLM Tagesbudget | **Deckel 2416 / Understanding Reserve 702 / Vorrangreserve 200**, Production am **07.09., 00:30 UTC** gelesen. Am 07.09., 11:51 UTC: Zähler 86, 86 Kostenbelege, 0,22847 USD geschätzt. **Aktueller Beleg über 100 fehlt.** Maximal 10 USD, Prognosestopp 9 USD; kein Rechnungsbeleg oder atomarer USD Riegel. |
 | `HELMUT_VERSTEHEN_CAS=on` | seit 2026-08-17; `HELMUT_VERSTEHEN_PARALLELITAET` nicht gesetzt ⇒ wirkt als 1 |
 | `HELMUT_SCALABLE_PIPELINE=on` | **seit 23.08. 16:47 UTC**, Modus `shadow`, Worker 4/25/25; Rückweg: Flag löschen + Redeploy (Betreiber) |
 | `HELMUT_CRON_GLOBALABRUF=on` | seit 2026-08-06 (Betreiber); Fortbestand ist Betreiberentscheidung |
@@ -123,9 +122,9 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-1. Quellenbindung und manuellen Briefingausführer nach SR §58 abschließend prüfen und übernehmen. Zwei geplante Fortsetzungen müssen vor dem Nachtfenster abgestimmt sein; kein doppelter Fachstart. Danach aktuelle Starttore und tatsächliche Briefingqualität prüfen.
+1. Quellenkorrekturen und Motorstatus sind nach SR §58.5 übernommen. Die beiden Fortsetzungen sind abgestimmt. Nach dem natürlichen Abendcrawl aktuelle Starttore und neue tatsächliche Briefingqualität prüfen; kein doppelter Fachstart.
 2. Die A Aufträge des Fensters 06.09. sind natürlich fertig. Nach korrigiertem natürlichem oder ausdrücklich begrenztem Briefinglauf alle 25 Inhalte erneut prüfen und aktuellen Budgetbeleg ergänzen. `qualitaetspruefung-a-20260907.json` ist ausdrücklich keine bestandene `abnahme-a.json`. Ein erneuter A Workflowstart bleibt an die besondere Freigabe aus SR §55.3 gebunden.
-3. Nach A Abnahme im belegten Nachtfenster **21:36 bis vor 03:58 UTC** die 475 Zielprofile inaktiv anlegen, unabhängig prüfen und getrennt aktivieren. Der neue Fachzyklus startet ausschließlich bei exakt 500 aktiven Profilen. [Ausführung](betrieb/direkter-ausbau-500.md).
+3. Nach A Abnahme im belegten Nachtfenster **21:36 bis vor 03:58 UTC** die 475 Zielprofile inaktiv anlegen, unabhängig prüfen und erst mit ausdrücklicher Aktivierungszustimmung getrennt aktivieren. Der Fachzyklus startet ausschließlich bei exakt 500 aktiven Profilen. [Ausführung](betrieb/direkter-ausbau-500.md).
 4. Ab tatsächlicher Aktivierung **24 Stunden Test planen, höchstens 48 Stunden**. Endzeit und ausführbaren Abschluss vor Beginn festlegen; der neue manuelle Workflow allein ist kein automatischer Timer. Dann 495 synthetische Profile deaktivieren und unabhängig bestätigen: 504 erhalten, fünf ältere aktiv. 500er Funktionsbefund und Fehler dokumentieren; kein unbeaufsichtigter Wochenlauf.
 
 ## 12 · Verbindliche Betriebsgrenzen
