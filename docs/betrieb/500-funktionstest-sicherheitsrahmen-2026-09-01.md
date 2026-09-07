@@ -7733,3 +7733,61 @@ Die einmalige Zustimmung bleibt ungenutzt. Das ist keine vollständige A Abnahme
 Neue tatsächlich quellengebundene Briefings und deren Inhaltsprüfung fehlen.
 Der manuelle Briefingweg lehnt den heutigen unbekannten Modellkostenbetrag ab;
 diese strengere Schranke bleibt unverändert. Kein Ersatz über eine andere Route.
+
+### §59.4 Übernahme und unabhängige Nachkontrolle
+
+#332 nach grünen Pflichtjobs in `34166502961` übernommen. Geprüfter Kopf
+`caa4c11b06cbc49ddb9c659da749245e917667ab`, Merge
+`f27d5b922bbfdb01c41abf94f6d0c1c9d39f186b` mit zwei erwarteten Eltern.
+Lokaler und übernommener Baum identisch
+`804b480e1e1a5fe8f825854bf7c3de9cc5536ca7`. CI Offline 337/337 in 592 Sekunden,
+Browser 40/40; echte isolierte Datenbankprüfungen im Pflichtjob erfolgreich.
+Production `dpl_7He1j1vAFjadT3xJmKXgqjPg6eMh` READY am exakten main, Hauptalias
+`helmut-pilot.vercel.app`, kein Aliasfehler. main CI `34167313795` anschließend
+ebenfalls mit beiden Pflichtjobs erfolgreich: 337/337 in 591 Sekunden und
+erfolgreiche echte Datenbanknachweise, einschließlich 48/48.
+
+Am 07.09. um 22:39:22 UTC Profile 29/25/4, null Löschmarken, beide zuvor
+genannten vollständigen Profilhashes unverändert, 30 Identitäten, keine
+aktive Sperre und keine aktive oder verwaiste Auftragslease. Dashboard healthy,
+Pro/Micro, CPU 3 %, RAM 50 %, Disk 26 %, 8/60 Verbindungen. Dies sind Ruhewerte,
+kein Lastbeweis für 500. Um 22:41:41 UTC Auth 25/3 und Kohorte 20/0,
+vollständiger Nutzerarrayhash unverändert `a8653cac17ddf6bf3b6566a964f1a736`.
+147 Reservierungen, 148 Protokollzeilen, 0,428453 USD bekannte Schätzkosten,
+ein unbekannter Betrag und ein belegter Nichtaufruf. Prognose mit unveränderten
+Reserven 2,478453 USD; keine atomare USD Schranke. Null heutige Push Ereignisse
+und null Outbox Versandquittungen. Eine Diagnoseabfrage hatte einen falschen
+MD5 Typcast; korrigierte READ ONLY Abfrage erfolgreich, kein DB Timeout.
+
+Genau ein reiner Statuslauf `34167531258`, Job `101881453310`, erfolgreich.
+Er bestätigte um 22:41:48 UTC authentifiziert am erwarteten Commit Supabase,
+V3, relationale exklusive Profile, gültige Retention 36, Deckel 2416,
+Understanding Reserve 702, tatsächliche Vorrangreserve 200 sowie gesperrte
+Kommunikation und Kohortenquellen. GitHub Betriebsvariablen weiterhin leer,
+keine Änderung dieser Variablen. Keine Runtime Fehler oder Warnungen in den
+gelesenen Vercel Gruppen seit der Übernahme gefunden. Kein A, Lage oder
+500er Fachworkflow gestartet und keine Profile angelegt oder aktiviert.
+
+Der Qualitätsengpass ist unabhängig bestätigt: um 22:12:03 UTC alle 25
+heutigen Lagebriefings weiterhin vom Morgen, null mit neuer Quellenbindung.
+Diese alten Texte werden nicht erneut als neue Abnahme geprüft. Die bestehende
+Fortsetzung `6a9e7e7bbc988191988145c5f72bbf94` wurde um 22:45 UTC erfolgreich
+aktualisiert und anschließend unabhängig gegengelesen: ab 08.09. 08:55 Uhr
+Türkei, 07:55 Berlin, 05:55 UTC, höchstens stündlich und 18 Termine begrenzt.
+Sie liest neue natürliche Briefings und setzt nur die erlaubte Vorbereitung
+fort, ohne zusätzlichen A Start oder Aktivierung. Die andere A Aufgabe bleibt
+pausiert. Noch kein Abschalttimer und kein Testbeginn für 500; vor Aktivierung
+gelten konkrete Zustimmung und ausführbares Testende nach §57/§58 weiterhin.
+
+**Sprintzustand: TEILWEISE ABGESCHLOSSEN.** Die Werkzeugkorrektur ist übernommen;
+Quellenabnahme, vollständige A Abnahme, inaktive Provisionierung und konkrete
+Aktivierung samt 24 Stunden Test bleiben offen. Dieser reine
+Dokumentationsabschluss erfüllt CLAUDE.md §9. Sein eigener Merge und Deployment
+werden aus der Historie belegt; keine rekursive Dokumentationskette.
+
+Lokale Prüfung dieses reinen Nachtrags: **337/337 Suiten in 633 Sekunden**,
+Exit 0 über `scripts/lokal.js` mit den regulären Offline Laufzeitpaketen.
+Produkt und Testcode gegenüber #332 unverändert. `git diff --check` sauber,
+CURRENT_STATE unter 30000 Zeichen und 350 Zeilen. Der bekannte abgewehrte
+Außenabruf in `pardok-shadow-test` bleibt ausgewiesen. Externe Pflichtjobs
+und Übernahme dieses reinen Dokumentationsstands folgen.
