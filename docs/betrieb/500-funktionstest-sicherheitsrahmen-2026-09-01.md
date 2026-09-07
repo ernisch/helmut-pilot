@@ -7538,10 +7538,85 @@ Zustimmung. Kein künstlicher Verbrauch zum Erreichen eines Zählerwerts.
 
 ### §58.4 Nächster Schritt
 
-Nach vollständig grünen Prüfungen die autorisierte kleine Korrektur übernehmen,
-exaktes Production READY und Datenintegrität unabhängig bestätigen. Danach die
-koordinierten Fortsetzungen für natürliche Fortschritte und echte neue Briefings
-verwenden. Keine
+Die Korrekturen sind nach §58.5 übernommen und unabhängig nachgeprüft. Jetzt
+die koordinierten Fortsetzungen für natürliche Fortschritte und echte neue
+Briefings verwenden. Keine
 bestandene `abnahme-a.json` ohne tatsächliche Vollbelege; keine künstlichen
 Modellaufrufe zum Überschreiten von 100. Anlage und Aktivierung weiterhin nur
 im gültigen Nachtfenster mit vorher festgelegtem Testende nach §57.
+
+### §58.5 Übernahme und unabhängige Production Nachkontrolle
+
+[PR #330](https://github.com/ernisch/helmut-pilot/pull/330), Kopf
+`2248fe289495f8589022d9b9623d4c48795391d3`, wurde nach vollständigen Prüfungen
+mit `expected_head_sha` als echter Merge übernommen:
+`2ca0e62b14aa0ef5928dc63969c655df620db1fa`. Unmittelbar vorher waren main und
+PR Basis weiterhin `c3cc9fd9d7cd47611bc84dcf99dcff594cad67fc`, der PR konfliktfrei,
+Vercel grün, keine Reviews oder offenen Besprechungsfäden vorhanden. Beide
+Merge Eltern sind exakt diese Basis und der geprüfte Kopf. Der gesamte Baum
+`90fdff4d8219b60a022f6551d3a5ce337c03a145` stimmt vor Upload, am PR Kopf und
+nach Merge überein. Keine zusätzliche fachliche Änderung beim Übernehmen.
+
+PR CI **34117430546** gehört zum exakten Kopf. GitHub prüfte seinen
+synthetischen Merge `59456552f890a099e70ffe5e74c1ebc01a011ca1`; auch dessen
+beide Eltern und der identische Baum `90fdff4d8219b60a022f6551d3a5ce337c03a145`
+wurden unabhängig gelesen. Erfolgreiche Ergebnisse:
+
+- Job **101727406458**, Syntax und Offline Suiten: **337/337 in 587 Sekunden**.
+- Derselbe Job, Kontenschutz über PostgreSQL 17.11 und PostgREST: **10/10**.
+  Bestätigt sind 500 eindeutige Konten nach fünf unabhängigen Prozessen, 475
+  tatsächliche Aktivierungen zum Bestand 504/500, geschützte Bestandszeilen
+  und danach der geprüfte Abschluss. Dies ist eine kurzlebige Testdatenbank.
+- Z22 Datenbanknachweis im selben Job: **48/48**.
+- Job **101727406073**, Chromium auf Desktop und Mobil: **40/40**.
+- Preview `dpl_GLCj24CWG7Rksk9EzMBuRX8E2HF4` READY am PR Kopf. Lokal wie in
+  §58.3 **337/337**, dazu unveränderte Gegenprobe grün und **8/8** Mutationen
+  erkannt. Der lokale Browserdownload blieb unvollständig; 40/40 ist ein
+  tatsächlicher externer Browserbeleg, kein behaupteter lokaler Erfolg.
+
+Auch der anschließend tatsächlich auf main ausgeführte CI Lauf
+**34118628804** endete am Merge `2ca0e62b14aa0ef5928dc63969c655df620db1fa`
+erfolgreich; separat über die Actions API mit genau diesem `head_sha` gelesen.
+
+Das automatische Production Deployment
+`dpl_5ZRdoym5m5U1R7iBerEE2fbBBrWV` ist seit **07.09., 14:50 Türkei /
+13:50 Berlin / 11:50:04.812 UTC** READY, Ziel Production, exakter Merge
+`2ca0e62b14aa0ef5928dc63969c655df620db1fa`, Hauptalias korrekt, kein Aliasfehler.
+Keine manuelle Zweitauslösung, Konfigurationsänderung oder Rückabwicklung.
+
+Die unabhängige rein lesende SQL Nachkontrolle um **14:51 Türkei / 13:51
+Berlin / 11:51:03 UTC** bestätigt 29 Profile, 25 aktiv, vier inaktiv, null
+gelöscht. Vollständiger Mandatszeilenhash
+`246194d2833646bf8ad8a8949defed09`, 30 Identitäten mit
+`22ba02fd4eb28c237e44e07c75c99188`, 25 Konten mit
+`a8653cac17ddf6bf3b6566a964f1a736`: alle gegenüber 10:40 unverändert.
+86 globale Reservierungen und 86 Kostenbelege, null unbekannte Beträge,
+**0,22847 USD geschätzte Modellkosten seit UTC Tagesbeginn**. Mit zusätzlicher
+2 USD Reserve aktuell 2,22847 USD Prognose. Kein Rechnungsbeleg oder atomarer
+USD Schutz. Der natürliche Lauf `understanding-rueckstand-20260907113011-yfmv7`
+verarbeitete von 11:30:11 bis 11:33:56 UTC 20 Vorgänge bei null endgültigen
+Fehlern und 92 Vertagungen; unabhängig um 11:39 gelesen. Diese Sitzung hat
+keinen Production Fachlauf oder Modellaufruf gestartet.
+
+**Ehrlicher Rest:** 25 heutige Lagecaches, **null** mit neuer Quellenbindung.
+Weder ein Code Deployment noch grüne Tests beweisen deren neue fachliche
+Qualität. Die bestehenden 25 müssen nach tatsächlicher Neuberechnung erneut
+abgenommen werden. Auch der aktuelle Zähler über 100 fehlt noch. Keine
+bestandene A Belegdatei erzeugt, keine zusätzlichen Profile angelegt oder
+aktiviert, kein 500er Funktionsnachweis behauptet. Die beiden koordinierten
+Fortsetzungen aus §58.3 bleiben für das Abend und Nachtfenster zuständig.
+Der tatsächliche neue Watchdogentscheid wird erst an einem zukünftigen
+regulären Lauf beobachtbar; heute sind sein Codevertrag, die tatsächlichen
+Laufdaten und das exakte Deployment belegt.
+
+Die nachfolgende reine Dokumentationskorrektur zieht CURRENT_STATE auf diesen
+Endzustand nach. Sie verändert ausschließlich Dokumentation; ihr eigener
+Merge und ihr Deployment werden gemäß CLAUDE.md §9 aus der Historie belegt,
+ohne einen rekursiven weiteren Dokumentations PR zu erzeugen.
+
+Lokale Prüfung dieses Dokumentationsstands: **337/337 Suiten in 719 Sekunden**,
+Exit 0, vollständig über `scripts/lokal.js` und mit den verifizierten
+Laufzeitpaketen. Der blockierte Versuch in `pardok-shadow-test` bleibt sichtbar.
+Nur CURRENT_STATE und dieser Sicherheitsrahmen sind gegenüber #330 geändert;
+sämtlicher Produkt und Testcode bleibt identisch. Externe Pflichtprüfungen
+und Übernahme des reinen Dokumentations PR werden anschließend ausgeführt.
