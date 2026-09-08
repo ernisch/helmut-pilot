@@ -8249,3 +8249,53 @@ werden vor Merge am exakten Dokumentationskopf geprueft. Dieser
 abschliessende reine Dokumentationsmerge loest keinen rekursiven
 Folge PR aus; seine Uebernahme und Bereitstellung werden aus der
 Commit und Deployment Historie belegt.
+
+
+### §61.7 Automatischer Watchdog bleibt bei Statuslesefehler fail closed
+
+Der spaet gestartete Actions Watchdog **34212536121** las am 08.09. um
+**09:54:09 UTC** den Production Pfad `/api/cron/pipeline-status`. Vercel
+bestaetigt HTTP 200 am READY Deployment `dpl_5ReN8xjfaQDNfhVv7ooXsF8KeGcj`,
+der Antwortkoerper lieferte dem Watchdog aber keinen belegbaren Zustand.
+Der Schutz wirkte: Laufende oder bereits abgeschlossene Facharbeit wurde
+nicht geraten und es wurde **kein** schwerer Ersatzlauf gestartet. Workflow
+und Job endeten rot, weil diese Ungewissheit absichtlich fail closed ist.
+
+Unabhaengiges READ ONLY um **10:05:04 UTC** bestaetigt den letzten echten
+Warteschlangenlauf weiterhin vollstaendig: `cron-pipeline-20260908092119-yzio9`,
+success, 41 verarbeitet, eine Vertagung und null endgueltige Fehler. Bestand
+**504/500/4**, 505 Identitaeten und 500 Konten; die drei vollen MD5 sind
+gegenueber §61.6 unveraendert. Null aktive Sperren, aktive oder verwaiste
+Auftragsleases und null heutige Outbox Versandquittungen. 85 Reservierungen
+stehen 85 echten Modellbelegen gegenueber, bekannte Schaetzung 0,239680 USD,
+null unbekannte Betraege oder Reservierungsluecken, konservative Prognose
+2,239680 USD. Um 10:05 UTC waren 35 Auftraege tatsaechlich faellig; wegen des
+ungeklaerten Statuslesers wurde bewusst kein Fachzyklus gestartet.
+
+Die enge Korrektur ersetzt nur den zusammengesetzten PostgREST `in` Leser
+durch je einen gezielten GET Gleichheitsfilter fuer `warteschlange-crawl` und
+`warteschlange-pipeline`. Beide Antworten muessen erfolgreich, eindeutig und
+zeitlich lesbar sein; ein Teilergebnis bleibt ein Lesefehler. Erst danach wird
+deterministisch die juengste Zeile gewaehlt. Kein Schreiben, Modellaufruf,
+Ersatzlauf oder gelockertes Watchdog Urteil. Lokal bestehen Motorstatus
+**14/14** und Watchdog **28/28**. Die Vollsuite erreichte vor Installation der
+Lockfile Abhaengigkeiten 334/338; danach bestehen Kalender **134/134** und das
+Lambda Paket **43/43**. Zwei unveraenderte Browser Suiten bleiben lokal allein
+wegen eines dreimaligen CDN Zeitlimits beim Chromium Download ungeprueft.
+Externe Pflichtjobs, Merge, Production READY und ein echter erneuter Statusread
+stehen aus; bis dahin bleibt weitere Facharbeit gesperrt.
+
+
+Separater Funktionsbefund des natuerlichen Lage Checks um **10:00 UTC**:
+`cron-lage-check-20260908100012-bnctn` erfasste die globale Quellenphase
+vollstaendig mit 103 von 103 erfolgreichen Wegen, 1.256 von 1.257 aufgeloesten
+Google News Adressen und 1.033 gespeicherten Elementen. Die serielle
+Mandatsphase erreichte innerhalb 225.919 ms jedoch nur **83 von 500** Profilen,
+darunter alle fuenf realen und 78 synthetische. Persistierte Lage Checks und
+Fairnesszustand bestaetigen diesen Umfang; der Laufstatus ist ehrlich
+`teilweise`. **417 Profile blieben wegen des Zeitbudgets unverarbeitet.** Es
+gab keinen manuellen Ersatzlauf. Rotation schuetzt vor dauerhafter
+Verdraengung, kann die offene 500er Abdeckung vor dem fest geplanten Testende
+am 09.09. um 08:00 UTC aber ohne weiteren dafuer vorgesehenen Lauf nicht
+belegen. Das ist ein echter offener Funktionsblocker, kein Datenverlust und
+kein Kostenstopp.

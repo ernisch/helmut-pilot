@@ -12,9 +12,14 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
 const options = { seitMs: slot, jetztMs: jetzt, toleranzMs: 60000 };
 const read = r => leseWarteschlangenStatus({ request: async (url, opts) => {
   assert.equal(opts.method, "GET"); assert.equal(opts.body, undefined);
-  assert(url.includes("process=in.(warteschlange-crawl,warteschlange-pipeline)"));
+  assert.match(url, /process=eq\.warteschlange-(?:crawl|pipeline)/);
+  assert(!url.includes("process=in."));
   assert(url.includes("order=started_at.desc,run_id.desc&limit=1"));
-  return r;
+  if (!Array.isArray(r)) return r;
+  const prozess = url.includes("process=eq.warteschlange-crawl")
+    ? "warteschlange-crawl" : "warteschlange-pipeline";
+  const passende = r.filter((zeile) => zeile && zeile.process === prozess);
+  return passende.length ? passende : r.filter((zeile) => !zeile || typeof zeile !== "object" || Array.isArray(zeile));
 } });
 
 (async () => {
@@ -24,6 +29,13 @@ const read = r => leseWarteschlangenStatus({ request: async (url, opts) => {
     assert.equal(r.latestRun.processedCount, 273);
     assert.equal(pruefeWarteschlangenLauf(r.latestRun, options).ausgang, "vorhanden");
     assert.equal((await read([])).latestRun, null);
+  });
+  await test("Zwei einfache Gleichheitsfilter waehlen den juengsten der beiden Motorlaeufe", async () => {
+    const neuer = { ...row, run_id: "cron-pipeline-20260907050028-neu1",
+      process: "warteschlange-pipeline", started_at: "2026-09-07T05:00:28Z",
+      finished_at: "2026-09-07T05:04:10Z" };
+    const r = await read([row, neuer]);
+    assert.equal(r.ok, true); assert.equal(r.latestRun.runId, neuer.run_id);
   });
   await test("Lesefehler und ungueltige Antwort erzeugen keinen behaupteten Leerbestand", async () => {
     assert.equal((await leseWarteschlangenStatus({ request: async () => { throw new Error("secret"); } })).ok, false);
