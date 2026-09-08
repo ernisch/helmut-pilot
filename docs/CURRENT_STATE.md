@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 08.09.2026, 10:41 UTC. EXAKT 500 AKTIV.** Code `e6e33ee` READY; Nachlauf **34209508413 erfolgreich** mit 41 Abschluessen und null Fehlern. Watchdog `34212536121` blieb beim Statuslesefehler fail closed; PR #338 haertet nur den Leser. Der natuerliche Lage Check erreichte **83/500**, Fairnessstatus teilweise, 417 zeitbedingt offen. Bestand und Vollhashes unveraendert; 85 Reservierungen, 0,239680 USD. Testende **09.09., 08:00 UTC / 11:00 Tuerkei**. [SR §61](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). **Gesamtabnahme und Texte aller 500 offen.**
+**Stand: 08.09.2026, 14:35 UTC. EXAKT 500 AKTIV.** Production `b4550c3` READY. Lauf `cron-pipeline-20260908141047-l98rp`: 330 Abschluesse, 253 Vertagungen, null Fehler. Workflow `34236572532` wurde wegen eines falschen Quittungsvergleichs rot; Korrektur lokal geprueft. Lage Check weiter **83/500**, 417 offen. Hashes unveraendert; 114 Belege, 0,339308 USD. Testende **09.09., 08:00 UTC / 11:00 Tuerkei**. [SR §61](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). **Gesamtabnahme offen.**
 
 
 **Kernlage:** Warteschlangenmotor seit 23.08. in Production `on`, Dispatch `shadow` (Cron-Antrieb, kein AWS). Fünferbeleg mit 376 Abschlüssen: [OP-30 §30.7](betrieb/op30-aktivierung-5-mandate.md). **Aktuell vier historische Vorgänge `unbekannt`, jüngste Änderung 02.09., 11:33 UTC; keine neue unbekannte Reservierung nach Wiederanlauf.** Selbstweck in Production nie ausgeführt.
@@ -11,6 +11,7 @@
 
 ## 2 · Stand auf `main` und Pull Requests
 
+- **Fachlauf 08.09., 14:10 UTC:** `cron-pipeline-20260908141047-l98rp` success mit 330 Abschluessen, 253 Vertagungen und null Fehlern oder verlorenen Leases. GitHub `34236572532` verglich `processed_count` falsch mit erledigt plus vertagt. Korrektur: Bindung an `verarbeitung.erledigt`, keine Laufwiederholung, SR §61.8.
 - **Watchdog und Lage Check 08.09.:** `34212536121` startete bei unlesbarem Status keinen Ersatzlauf; PR #338 haertet den GET Leser. Der Lauf `cron-lage-check-20260908100012-bnctn` erfasste global 103/103 Quellen, speicherte aber nur 83/500 Mandatslagen. 417 bleiben zeitbedingt offen; keine Gesamtabnahme, SR §61.7.
 - **Aktueller Codekopf #336:** `e6e33eec9dd71573bf81ac3151efc18864345709`, Production `dpl_GpiuhLdg1bLLsmosg1HaJmdc8k2X` READY. Gepruefter Kopf `e4d2204`, zwei Merge Eltern, identischer Baum. CI `34208235963`: 338/338, Browser 40/40, PostgreSQL 10/10 und 48/48. Gesperrter Dispatch liefert den kanonischen Nullzaehler; echter Nachlauf und Kontrolle erfolgreich, SR §61.6.
 - **Planung #335:** `4cd56d7`, READY und beide Pflichtjobs gruen. Ab 100 Profilen hoechstens vier atomare Einreihungen gleichzeitig bei unveraenderten Vorranggruppen und Zeitgrenzen. Volle 500er Planungsabdeckung im echten Nachlauf bestaetigt, SR §61.4.
@@ -22,8 +23,8 @@
 
 ## 3 · Production-Zustand
 
-- **Datenbank:** Supabase **Pro/Micro (`t4g.micro`, 1 GB)**, gesund. Dashboard **08.09., 08:56 UTC: CPU 6 %, RAM 52 %, 11/60 Verbindungen**. SQL und volle Grundlinie nach dem Fachlauf unveraendert. PITR aus; keine Ressourcen oder Schemaaenderung.
-- **Bestand 08.09., 09:25 UTC:** **504/500/4**, davon fuenf reale und 495 synthetische aktiv. 505 Identitaeten, 500 Konten, davon drei vorherige aktiv und kein Testkonto aktiv. Die urspruenglichen 29 Mandate, 30 Identitaeten und 25 Konten sind unveraendert. Planung seit dem zweiten Fachlauf vollstaendig, 500/500 in beiden Mandatsklassen. Heute bisher 25 Morgenlagen und 22 neue Lagebriefings mit Quellenbindung; Abdeckung und Inhaltsqualitaet fuer alle 500 bleiben offen.
+- **Datenbank:** Supabase **Pro/Micro (`t4g.micro`, 1 GB)**, gesund. Um 14:35 UTC: 17 Verbindungen, eine aktiv, null aktive oder verwaiste Leases. Grundlinie unveraendert; PITR aus.
+- **Bestand 08.09., 14:35 UTC:** **504/500/4**, fuenf reale und 495 synthetische aktiv; 505 Identitaeten, 500 Konten, kein Testkonto aktiv. Vollhashes `4678db8` / `3c5b0b5` / `61530f4`. Faellig: 150 Projektionen und 15 Quellenabrufe; alle 500 Briefings zukunftsfaellig. 114 Belege zu 114 Reservierungen, 0,339308 USD bekannt, keine Luecke, Prognose 2,339308 USD. Keine Versandquittung; Gesamtqualitaet offen.
 - **Crawl-Aufbewahrung:** Wirksame Grenze **36** am 06.09. um 19:00 UTC erneut bestätigt. Frisch gelesener Blob Ring **20**; keine Wiederherstellung der verlorenen 16 Laufzeilen. Schutzcode aus #301 bleibt deployt (SR §37).
 - **Quellen:** 9 Pakete · 163 Abrufwege · 165 Zuordnungen; **146/163 Google-News** (B1, OP-15); 18 Landesmodul-Wege (BE/BB) gesperrt. Seeds `20260713`/`20260717` **nicht eingespielt**, Einspielung [BLOCKIERT](betrieb/quellen-seed-einspielung.md) (nur noch Betreiberfreigabe).
 - **Crons (Production, 13, UTC):** crawl 04:00/20:00 · pipeline 16:00 · morning-briefing 05:00 · understanding 05:30/21:30 · **rueckstand 11:30/17:30** · lage-briefing 05:45 · health 06:00 · lage-check 10:00 · 2 Narrativslots 06:10/06:22 (inert). **`18,48 * * * *` nicht in Production.** Dazu Actions-Watchdog (`briefing-watchdog.yml`, 05:30, oft 2–3 h verzögert).
