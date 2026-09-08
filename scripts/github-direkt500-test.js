@@ -150,19 +150,39 @@ async function main() {
     assert(!fertig.anfragen.some((u) => u.pathname === "/api/cron/pipeline"));
   });
   await test("Eine Runde fordert echte Laufquittung statt HTTP 200 oder leerem Gruen", async () => {
-    for (const defekt of ["leer", "mandate", "telemetrie", "quittung", "versand"]) {
+    for (const defekt of ["leer", "mandate", "telemetrie", "quittung", "versand", "versand-unbekannt"]) {
       const h = await bereitZumFachzyklus();
       if (defekt === "leer") h.pipeline = {};
       if (defekt === "mandate") h.pipeline.tenants = 25;
       if (defekt === "telemetrie") h.pipeline.lauftelemetrie.ende = false;
       if (defekt === "quittung") h.quittungen = [];
       if (defekt === "versand") h.pipeline.weckVersand.versendet = 1;
+      if (defekt === "versand-unbekannt") delete h.pipeline.weckVersand.versendet;
       const r = await G.ausfuehren(h.args);
       assert.equal(r.ok, false, defekt);
       assert.equal(r.ausgeloest, true);
       assert.equal(r.automatischeWiederholung, false);
       assert.equal(h.anfragen.filter((u) => u.pathname === "/api/cron/pipeline").length, 1);
     }
+  });
+  await test("Echter gesperrter Dispatcher liefert den Nullbeleg fuer die 500er Kontrolle", async () => {
+    const h = await bereitZumFachzyklus();
+    let zugriffe = 0;
+    const verboten = async () => { zugriffe++; throw new Error("Keine Vergabe oder Zustellung"); };
+    // Keine handgebaute Erfolgsantwort: genau der Production Rueckgabepfad
+    // bei aktivem Kommunikationsriegel muss den Ausfuehrer erreichen.
+    h.pipeline.weckVersand = await require("../lib/helmut/job-dispatch").versendeAbsichten({
+      env: { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_JOB_DISPATCH_MODE: "shadow",
+        HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt" },
+      deps: { naechste: verboten, bestaetige: verboten, zuruecklegen: verboten }
+    });
+    const r = await G.ausfuehren(h.args);
+    assert.equal(r.ok, true, JSON.stringify(r));
+    assert.equal(h.pipeline.weckVersand.versendet, 0);
+    assert.equal(h.pipeline.weckVersand.gesendet, 0); // bisheriges Feld bleibt kompatibel
+    assert.equal(h.pipeline.weckVersand.uebersprungen, true);
+    assert.equal(zugriffe, 0);
+    assert.equal(r.funktionsnachweis500, false);
   });
   await test("500er Fachrunde bestaetigt Fortschritt, behauptet keine Gesamtabnahme", async () => {
     const h = await bereitZumFachzyklus();

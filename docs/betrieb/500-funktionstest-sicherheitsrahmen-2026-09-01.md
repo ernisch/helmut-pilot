@@ -8082,3 +8082,89 @@ Groessentest noch nicht erfasst worden. Zusammenfassung jetzt gekuerzt,
 gezielte Groessenpruefung gruen; Code und saemtliche Codebelege unveraendert.
 Vor jedem weiteren Dokumentationsabschluss wird diese Grenze gesondert
 nach der letzten Textaenderung geprueft. Kein Merge mit rotem Pflichtjob.
+
+### §61.4 Korrektur uebernommen und echter Nachlauf
+
+Bereinigter PR Kopf `44155d5c66941c53674f41d16dbee787b983654f`, Baum
+`751f63ae8d764d67c129c868d9edcef106397487`, exakt zum lokalen Index geprueft.
+CI `34204208179`: beide Pflichtjobs erfolgreich, **338/338 in 580 s**,
+Browser **40/40**, reale PostgreSQL 17.11 Pruefungen **10/10 und 48/48**.
+Gezielter Groessentest nach letzter CURRENT_STATE Aenderung ebenfalls gruen.
+
+PR #335 wurde unter der fortbestehenden Freigabe mit exakt gebundenem Kopf
+gemergt als **`4cd56d725301e52f8ff3a4826de31922f025d223`**. Der separate
+Commitvergleich zeigt null Dateiaenderungen gegenueber dem geprueften Kopf,
+ein Commit voraus und keinen zurueck. Production
+**`dpl_FXDiYvcwmAbzmPxV4qieXhib2QK3` READY** am Hauptalias, exakter Merge
+Commit, kein Aliasfehler. Keine zweite Bereitstellung oder Konfigurationsaenderung.
+
+Vor neuem Fachlauf READ ONLY um 08:37:18 UTC: 500 aktive Profile,
+voller Profilhash weiterhin `4678db89143f6c3108bfb28f352b821b`, keine
+aktiven Sperren, aktiven oder verwaisten Leases, 62 Reservierungen.
+Workflow **34205569541**, Job **101994134207**, wurde um 08:38 UTC einmal
+auf dem neuen Commit als `fachzyklus` gestartet. Die Browserzeitueberschreitung
+wurde durch die separat gelesene Laufseite aufgeklaert; kein zweiter Klick.
+Dieser Absatz dokumentiert den Start, noch keinen erfolgreichen Abschluss.
+
+
+### §61.5 Erfolgreiche Planung, falscher Kontrollstatus und gezielte Korrektur
+
+Die separate Production Quittung `cron-pipeline-20260908083827-b369b`
+belegt den abgeschlossenen Lauf von **08:38:27.325 bis 08:42:22.537 UTC**:
+**SUCCESS**, 235.212 ms, 99 reservierte Auftraege, **78 fertig**, 21
+zurueckgestellt, null endgueltige Fehler, null Wiederholungen oder verlorene
+Leases. Der Vercel Laufbericht bestaetigt **1.678 geplant, 771 neu, null
+ausstehend, tenants=500** und Start sowie Ende der Telemetrie erfolgreich.
+Im aktuellen Fenster `2026-09-08T00Z` sind nun **500 Projektionen und 500
+Briefings** gespeichert; regulaere Faelligkeit spaeter am Tag. Das behebt
+den Planungsengpass. Es behauptet noch keine fertigen Texte fuer alle 500.
+
+Unabhaengig um **08:43:28 UTC**: 500 aktive Mandate, null aktive Sperren,
+aktive oder verwaiste Leases, 77 Tagesreservierungen und 77 echte
+Modellbelege mit ausschliesslich `gpt-5-mini`, null unbekannte Kosten oder
+Reservierungsluecken. Bekannte Schaetzung **0,212964 USD**, konservative
+Prognose mit 2 USD Reserve **2,212964 USD**. Keine heutige Outbox
+Versandquittung. Kein Rechnungsnachweis oder atomarer USD Riegel.
+
+Der GitHub Kontrollworkflow `34205569541` endete trotzdem rot mit
+`fachzyklus-kein-bestaetigter-fortschritt`: Der bei gesperrter Kommunikation
+verwendete Dispatcherzweig lieferte `gesendet:0`, waehrend der Ausfuehrer
+wie alle anderen Dispatcherzweige das kanonische `versendet:0` verlangt.
+Die unabhaengige Abschlussquittung und der vollstaendige Laufbericht
+klaeren den Fachlauf; keine blinde erneute Ausloesung. Korrektur ausschliesslich
+im Rueckgabeobjekt: `versendet:0` ergaenzt, bestehendes `gesendet:0` erhalten.
+Kommunikationssperre, strenger Kontrollausfuehrer und Schreibpfade unveraendert.
+
+Regression mit dem echten gesperrten Dispatcher reproduzierte vor Korrektur
+denselben roten Kontrollstatus. Nach Korrektur **github-direkt500 1/1 gruen
+in 27 s**; keine Vergabe oder Zustellung, beide Nullfelder bestaetigt.
+Ein fehlender Versandzaehler wird weiterhin abgelehnt, ohne automatische
+Wiederholung. Vollstaendige lokale Pruefung und externe Pflichtjobs folgen
+vor Merge; Production laeuft zu diesem Stand noch auf PR #335.
+
+Die aktive stuendliche Ueberwachung wurde um 08:49 UTC mit diesem Ergebnis
+und der laufenden Statuskorrektur fortgeschrieben. Sie soll bis zum neueren
+geprueften Nachlauf nur beobachten, keine parallele Korrektur oder zweite
+Pipeline erzeugen. Testende und aktivierter Zeitplan bleiben erhalten.
+
+READ ONLY nach dem Fachlauf um **08:54:26 UTC** bestaetigt auch die volle
+Nachaktivierungsgrundlinie: Mandate `4678db89143f6c3108bfb28f352b821b`,
+Identitaeten `3c5b0b5a6314f31c395b8758b166c5c3`, Konten nach `id`
+`61530f4d75514c37582e5ffd71d322f5`. Alle drei unveraendert; null aktive
+Sperren, aktive oder verwaiste Leases.
+
+Die zuvor zurueckgestellten Verstehensauftraege sind abgeflossen: READ ONLY
+um **08:55:58 UTC** findet 40 seit 07:40 abgeschlossene Verstehensauftraege,
+keinen wartenden, laufenden oder fehlgeschlagenen Verstehensauftrag. Das
+fruehere `understanding-locked` ist zu diesem Stand keine offene Blockade.
+Das frisch geladene Supabase Dashboard zeigt um **08:56 UTC Healthy**,
+CPU 6 %, RAM 52 %, Disk 27 %, 11/60 Verbindungen. Momentaufnahme nach dem
+Lauf, keine durchgehende Messung aller Lastspitzen.
+
+Vollstaendige lokale Pruefung der Statuskorrektur abgeschlossen: **338/338
+Suiten gruen in 717 s**, einschliesslich des echten Dispatcher Rueckgabepfads,
+fehlender Versandzaehler, Planung fuer 500 und simuliertem 1.000er Stress.
+Der bekannte Netz Guard Hinweis bleibt die blockierte Testanfrage aus
+`pardok-shadow-test.js`. CURRENT_STATE wird nach der letzten Fortschreibung
+separat auf seine Groessengrenze geprueft. Externe Pflichtjobs, Merge und
+Production Nachlauf folgen unter der vorhandenen Betreiberfreigabe.
