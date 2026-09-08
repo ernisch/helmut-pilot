@@ -2,38 +2,12 @@
 
 // Geschuetzter Adapter fuer den bestehenden Kohorten CLI. Anlage und
 // Aktivierung benutzen provisioning.js, Facharbeit den bestehenden Cron.
-const fs = require("fs");
-const path = require("path");
-const { execFileSync } = require("child_process");
 const D = require("../lib/helmut/testkohorte-direkt500");
 const { pruefe: leseKonfiguration } = require("./github-laufzeitpruefung");
 const { kostenBefund, PROJECT_URL } = require("./github-fachzyklus-a");
 const VORFLUG = require("../lib/helmut/speicherpfad-vorflug");
-const F = require("../lib/helmut/funktionstest-500");
-const CRONS = require("../vercel.json").crons;
-const ROOT = path.join(__dirname, "..");
-const ABNAHME_DATEI = "belege/500/abnahme-a.json";
-
-function ladeAbnahme() {
-  let a;
-  try { a = JSON.parse(fs.readFileSync(path.join(ROOT, ABNAHME_DATEI), "utf8")); }
-  catch { throw new D.DirektAbbruch("a-abnahmedatei-fehlt-oder-ungueltig"); }
-  for (const q of Array.isArray(a.qualitaet) ? a.qualitaet : []) {
-    D.fordere(typeof q.beleg === "string" && /^belege\/[a-zA-Z0-9_./-]+\.(json|md)$/.test(q.beleg)
-      && !q.beleg.includes(".."), "qualitaetsbeleg-pfad-ungueltig");
-    const datei = path.join(ROOT, q.beleg);
-    D.fordere(fs.realpathSync(datei).startsWith(path.join(ROOT, "belege") + path.sep)
-      && fs.statSync(datei).size > 0, "qualitaetsbeleg-nicht-vorhanden");
-  }
-  D.fordere(/^[a-f0-9]{40}$/.test(a.productionCommit || ""), "a-abnahme-commit-fehlt");
-  try { execFileSync("git", ["merge-base", "--is-ancestor", a.productionCommit, "HEAD"],
-    { cwd: ROOT, stdio: "ignore" }); }
-  catch { throw new D.DirektAbbruch("a-abnahme-commit-nicht-in-main"); }
-  return a;
-}
-
 async function ausfuehren({ vorgang, scharf = false, env = process.env,
-  fetchFn = global.fetch, now = () => new Date(), ladeBeleg = ladeAbnahme,
+  fetchFn = global.fetch, now = () => new Date(),
   schreibe = null, fortschritt = null } = {}) {
   const vorpruefung = vorgang === "vorpruefung";
   const plan = vorpruefung ? { ziel: 500, vorgang, reinLesend: true } : D.plan(vorgang);
@@ -51,10 +25,6 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       D.fordere(env.HELMUT_TESTKOHORTE_EXECUTE === "1"
         && env.HELMUT_TESTKOHORTE_CONFIRM === D.WORTE[vorgang], "direktfreigabe-fehlt");
       D.pruefeZeit(now());
-      const fenster = F.pruefeStartfenster({ startUtc: "2026-01-01T21:36:00Z",
-        dauerMinuten: 383, crons: CRONS, watchdogBeruecksichtigen: true });
-      D.fordere(fenster.startErlaubt === true && fenster.gepruefteCrons > 0,
-        "aktueller-cronplan-kollidiert-mit-direktausbau");
     }
     async function db(pfad) {
       const res = await fetchFn(PROJECT_URL + "/rest/v1/" + pfad, {
@@ -115,37 +85,16 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
     await pruefeBetrieb();
     const bestand = await snapshot();
     const vor = D.pruefeSnapshot(bestand, "vorpruefung");
-    let abnahme;
-    let abnahmeFehler = null;
-    try {
-      abnahme = ladeBeleg();
-      D.pruefeAbnahmeA(abnahme, now());
-      D.fordere(abnahme.geschuetzterBestandHash === vor.geschuetzterBestandHash,
-        "a-abnahme-passt-nicht-zum-bestand");
-      const ids = abnahme.auftraege.map((j) => j.id);
-      D.fordere(ids.every((id) => /^[a-zA-Z0-9_-]+$/.test(id)), "a-auftragskennung-ungueltig");
-      const jobs = await db("helmut_jobs?select=id,tenant_id,job_type,status,freshness_window,finished_at"
-        + "&id=in.(" + ids.join(",") + ")&limit=61");
-      D.fordere(jobs.length === 60 && jobs.every((j) => {
-        const b = abnahme.auftraege.find((r) => r.id === j.id);
-        return b && j.status === "erledigt" && b.tenant_id === j.tenant_id && b.job_type === j.job_type
-          && b.freshness_window === j.freshness_window
-          && Date.parse(b.finished_at) === Date.parse(j.finished_at);
-      }), "a-auftragsbeleg-nicht-mehr-gueltig");
-      const counter = await db("llm_budget_counters?select=used&scope=eq.global&day=eq."
-        + abnahme.budgetTag + "&limit=2");
-      D.fordere(counter.length === 1 && counter[0].used >= abnahme.reservierungen,
-        "a-budgetbeleg-nicht-bestaetigt");
-    } catch (error) { abnahmeFehler = error instanceof D.DirektAbbruch ? error.grund : "a-beleg-nicht-lesbar"; }
+    // Der Betreiber verlangt den direkten Test ohne vorgelagerte A Abnahme.
+    // Qualitaet wird am tatsaechlichen 500er Ergebnis bewertet, nie vorausgesetzt.
     if (vorpruefung) return { ...plan, ok: true, gesamt: vor.gesamt, aktiv: vor.aktiv,
       angelegteZielprofile: vor.vorhandene.length, aktiveZielprofile: vor.aktive.length,
       geschuetzterBestandHash: vor.geschuetzterBestandHash, kosten,
-      aAbnahmeBestaetigt: !abnahmeFehler, offeneAbnahme: abnahmeFehler,
-      bereitZurAnlage: !abnahmeFehler && vor.aktive.length === 0,
-      bereitZurAktivierung: !abnahmeFehler && vor.vorhandene.length === 475,
-      bereitZumFachzyklus: !abnahmeFehler && vor.aktiv === 500,
-      scharferSchrittFreigegeben: false };
-    D.fordere(!abnahmeFehler, abnahmeFehler);
+      aAbnahmeErforderlich: false, nachtfensterErforderlich: false,
+      bereitZurAnlage: vor.aktive.length === 0,
+      bereitZurAktivierung: vor.vorhandene.length === 475,
+      bereitZumFachzyklus: vor.aktiv === 500,
+      scharferSchrittFreigegeben: false, funktionsnachweis500: false };
 
     if (vorgang === "fachzyklus") {
       D.fordere(vor.gesamt === 504 && vor.aktiv === 500 && vor.aktive.length === 475,
@@ -218,7 +167,7 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         ? P.provisionTenant(spec, {}, { neuAktiv: false, kontoBeiFehlerBehalten: true })
         : P.activateTenant(id);
     });
-    return await D.fuehreAus({ vorgang, env: laufEnv, abnahmeA: abnahme,
+    return await D.fuehreAus({ vorgang, env: laufEnv, grundlinieHash: vor.geschuetzterBestandHash,
       deps: { leseSnapshot: snapshot, pruefeBetrieb, schreibe: writer, jetzt: now, fortschritt,
         leseZiel: async (id) => {
           // Nur bekannte Zielkennungen; expliziter Mandatsfilter, kein Fallback.
@@ -237,4 +186,4 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
   } finally { if (wiederherstellen) wiederherstellen(); }
 }
 
-module.exports = { ausfuehren, ladeAbnahme, ABNAHME_DATEI };
+module.exports = { ausfuehren };

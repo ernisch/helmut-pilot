@@ -81,15 +81,17 @@ async function main() {
       assert.equal(h.w.writes(), 0);
     }
   });
-  await test("Vorpruefung bleibt lesend und meldet fehlende A Abnahme ehrlich", async () => {
+  await test("Vorpruefung erlaubt direkten Test ohne A Abnahme und bleibt lesend", async () => {
     const h = kontext("vorpruefung");
     const r = await G.ausfuehren({ ...h.args, scharf: false,
       ladeBeleg: () => { throw new D.DirektAbbruch("a-abnahmedatei-fehlt-oder-ungueltig"); } });
     assert.equal(r.ok, true, JSON.stringify(r));
     assert.equal(r.reinLesend, true);
     assert.equal(r.aktiv, 25);
-    assert.equal(r.aAbnahmeBestaetigt, false);
-    assert.equal(r.bereitZurAnlage, false);
+    assert.equal(r.aAbnahmeErforderlich, false);
+    assert.equal(r.nachtfensterErforderlich, false);
+    assert.equal(r.bereitZurAnlage, true);
+    assert.equal(r.funktionsnachweis500, false);
     assert.equal(h.w.writes(), 0);
   });
   await test("Production Vorrang, Speicherwahl, Kommunikation und Kosten werden gelesen", async () => {
@@ -105,17 +107,19 @@ async function main() {
     assert.equal(r.grund, "kosten-sicherheitsstopp");
     assert.equal(h.w.writes(), 0);
   });
-  await test("Laufende Facharbeit und nicht mehr belegte A Jobs sperren", async () => {
-    for (const defekt of ["lease", "jobs"]) {
-      const h = kontext();
-      if (defekt === "lease") h.locks = [{ job_name: "anderer-lauf" }]; else h.jobFehler = true;
-      const r = await G.ausfuehren(h.args);
-      assert.equal(r.ok, false);
-      assert.equal(h.w.writes(), 0);
-    }
+  await test("Laufende Facharbeit schuetzt den Bestand weiter vor Konkurrenz", async () => {
+    const h = kontext();
+    h.locks = [{ job_name: "anderer-lauf" }];
+    const r = await G.ausfuehren(h.args);
+    assert.equal(r.grund, "aktive-oder-verwaiste-lease");
+    assert.equal(h.w.writes(), 0);
   });
   await test("Geschuetzter Adapter erreicht mit echtem Provisionierer 504/25/479", async () => {
     const h = kontext();
+    h.args.now = () => new Date("2026-09-10T08:30:00Z");
+    h.args.ladeBeleg = () => { throw new Error("Keine A Abnahme vorhanden"); };
+    h.counter = 57;
+    h.usage = h.usage.slice(0, 57).map(r => ({ ...r, createdAt: "2026-09-10T06:00:00Z" }));
     const r = await G.ausfuehren(h.args);
     assert.equal(r.ok, true, JSON.stringify(r));
     assert.equal(r.bestaetigt, 475);

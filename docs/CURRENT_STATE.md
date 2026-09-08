@@ -1,13 +1,13 @@
 # CURRENT STATE — Helmut
 
-**Stand: 07.09.2026, 22:51 UTC. TEILWEISE ABGESCHLOSSEN.** #332 gemergt als `f27d5b9`, Production READY, PR und main CI grün. **337/337 lokal, Browser 40/40 extern.** Ursprüngliches A Fenster **60/60 fertig**, kein zusätzlicher A Start. Bestand **29/25/4 unverändert**, 147 Reservierungen, **0,428453 USD bekannt**, ein unbekannter Kostenbeleg. Reiner Statuslauf bestätigt Runtime 2416/702/200 und Kommunikationssperre. Nächste Quellenprüfung nach neuen Morgenbriefings eingeplant; [SR §59](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). Briefingqualität und 500er Nachweis fehlen.
+**Stand: 08.09.2026, 06:15 UTC. TEILWEISE ABGESCHLOSSEN.** Production am aktuellen main `37ff794` READY; **29 Profile, 25 aktiv, vier inaktiv** unveraendert. Beide A Fenster 06./07.09. je 60/60 fertig. Heute 25 Morgenlagen und 22 neue Lagebriefings, 57 Modellbelege, **0,144399 USD** geschaetzt, keine unbekannten Kosten. Betreiber verlangt jetzt sofortigen Ausbau ohne Nachtfenster und ohne vorgeschaltete A Abnahme. Umsetzung und Korrektur eines belegten Laufprotokollkonflikts auf `codex/500-sofort-20260908`; gezielt 78 Pruefungen gruen, Gesamtpruefung und Uebernahme folgen. [SR §60](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). **Noch kein 500er Teststart oder Stabilitaetsnachweis.**
 
 
 **Kernlage:** Warteschlangenmotor seit 23.08. in Production `on`, Dispatch `shadow` (Cron-Antrieb, kein AWS). Fünferbeleg mit 376 Abschlüssen: [OP-30 §30.7](betrieb/op30-aktivierung-5-mandate.md). **Aktuell vier historische Vorgänge `unbekannt`, jüngste Änderung 02.09., 11:33 UTC; keine neue unbekannte Reservierung nach Wiederanlauf.** Selbstweck in Production nie ausgeführt.
 
 ## 1 · Aktive Produktphase
 
-**Kontrollierter Funktionsnachweis bis exakt 500 aktiven Testprofilen.** Die neuere Betreiberanweisung ersetzt die bisherige Zwischenabnahme bei 100: erst den bestehenden Test abschließen, danach direkt auf 500 ausbauen und dort abnehmen. Der neue ausdrückliche Zielweg `--ziel=500` ergänzt den vorhandenen Ausführer; keine vorgetäuschte B Abnahme. Vorrang haben Datenintegrität, Kommunikationssperre und höchstens 10 USD Modellkosten je UTC Tag mit Stopp bei prognostiziert 9 USD. Danach Verkaufsreife und P0 Punkte OP-01 bis OP-04; [OP Liste](datenmotor-restliste.md). Kein Kunden- oder Mehrtagesnachweis.
+**Kontrollierter Funktionsnachweis bis exakt 500 aktiven Testprofilen.** Die neuere Betreiberanweisung ersetzt die bisherige Zwischenabnahme bei 100: direkt auf 500 ausbauen und dort abnehmen; seit 08.09. keine vorherige A Abnahme und kein Nachtfenster mehr. Der neue ausdrückliche Zielweg `--ziel=500` ergänzt den vorhandenen Ausführer; keine vorgetäuschte B Abnahme. Vorrang haben Datenintegrität, Kommunikationssperre und höchstens 10 USD Modellkosten je UTC Tag mit Stopp bei prognostiziert 9 USD. Danach Verkaufsreife und P0 Punkte OP-01 bis OP-04; [OP Liste](datenmotor-restliste.md). Kein Kunden- oder Mehrtagesnachweis.
 
 ## 2 · Stand auf `main` und Pull Requests
 
@@ -63,7 +63,7 @@
 
 ## 6 · Skalierung von 25 auf exakt 500 Testprofile
 
-**25 Profile sind aktiv.** Zum Ziel fehlen **475** synthetische Profile: vorhandene Kennungsmengen B 75 und C 400. Neuer Betreiberwunsch: nach dem bestehenden Test direkt auf **500 aktiv**, ohne eigene Abnahme bei 100. Inaktive Anlage und anschließende Aktivierung bleiben getrennte Vorgänge. Endbestand **504 insgesamt, 500 aktiv, 4 unverändert inaktiv**. Keine Kontoaktivierung. Der ausdrückliche Zielweg ist mit #326 geprüft, gemergt und deployt; [Ablauf](betrieb/direkter-ausbau-500.md) und SR §56.
+**25 Profile sind aktiv.** Zum Ziel fehlen **475** synthetische Profile: vorhandene Kennungsmengen B 75 und C 400. Neuer Betreiberwunsch: sofort direkt auf **500 aktiv**, ohne eigene Abnahme bei 100. Inaktive Anlage und anschließende Aktivierung bleiben getrennte Vorgänge. Endbestand **504 insgesamt, 500 aktiv, 4 unverändert inaktiv**. Keine Kontoaktivierung. Der ausdrückliche Zielweg ist mit #326 geprüft, gemergt und deployt; [Ablauf](betrieb/direkter-ausbau-500.md) und SR §56.
 
 1. **Wiederanlauf erledigt:** Datenbank wiederholt erreichbar, geschützte Leser erfolgreich. Natürlicher Crawl um 20:00 UTC abgeschlossen und unabhängig geprüft, kein Ersatzcrawl. SR §53.
 2. **Lagebeleg erledigt:** kontrollierter Lauf am 06.09. um 20:33 UTC erreichte **25/25** mit gespeicherter Wirkung und Quellenlinks. Der gescheiterte 10:00 UTC Lauf zählt weiterhin nicht. Alle 60 A Aufträge des Fensters 06.09. sind erledigt, aktueller Tageszähler 147. Vollständige heutige Briefingqualität bleibt offen.
@@ -84,7 +84,7 @@ Bestehende Grenzen und Freigaben: [SR §41 und neuere Betreiberänderung §55](b
 6. **OP-11:** Branch Protection nicht aktiv; Pflicht-CI blockiert Merges nicht technisch.
 7. **OP-15:** Google-Klumpenrisiko (146/163 Wege); 29 von 42 Personensuchen lieferten nie (`circuit-open`) — Production-Beweis der Härtung steht aus (§8).
 8. **Lage-/KI-Kapazität für Skalierung:** siehe §6. Belegt: **drei** reguläre Warteschlangenabflüsse/Tag, nicht elf (§13).
-9. **500er Funktionstest: Qualitätsabnahme und Ausbau offen** (§6, SR §57–§59). Alte Briefings enthalten historische und unbelegte Aussagen; neue Quellenbindung ist noch fachlich abzunehmen. Aktueller Zähler 147 belegt mehr als 100 ohne künstliche Aufrufe. Die einmalige A Zustimmung bleibt ungenutzt: Alle ursprünglichen A Aufträge sind erledigt, elf wartende Folgeaufträge begründen keinen Ersatzstart. Ausbau nur 21:36 bis vor 03:58 UTC und nach vollständiger A Abnahme.
+9. **500er Funktionstest: Ausbau und Gesamtabnahme offen** (§6, SR §60). Direkter Test jetzt ausdruecklich freigegeben, keine A Abnahme oder Nachtzeit als Startbedingung. Quellenqualitaet, Abdeckung aller Profile und stabiler Betrieb bleiben am tatsaechlichen 500er Ergebnis zu pruefen. Bekannter Auth CAS Konflikt beim Lageprotokoll wird im Arbeitsbranch behoben.
 10. **OP-07:** Monitoring-Zweitkanal stellt seit mind. 17.08. täglich zu; Ziel von `HELMUT_MONITORING_WEBHOOK_URL` und der doppelte WhatsApp-Eingang bleiben ungeklärt (Betreiberprüfung, kein Code-Fix vorher).
 11. **Profilpfad:** Exklusivmodus in Production belegt; ältere Dual Write Annahme überholt. Vor B/C Daten und Ausführungskontext frisch abgleichen. Auth, main und p haben CAS Schutz; alte Instanzen und direkte Fremdschreiber bleiben ausgenommen. Schutz gegen automatische Kontolöschung aus #305 bleibt verpflichtend.
 
@@ -123,19 +123,19 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-1. #332 ist übernommen und unabhängig nachkontrolliert, Abschluss in SR §59.4. Kein zusätzlicher A Start: ursprüngliche Arbeit ist vollständig abgeschlossen; Freigabe ungenutzt.
-2. Alle 25 neuen Briefings fachlich prüfen. Fortsetzung ab 08.09. 08:55 Türkei / 07:55 Berlin / 05:55 UTC, höchstens stündlich und begrenzt auf 18 Termine. A Fenster 06.09. fertig, Folgefenster 07.09. elf offen. Die alte Qualitätsdatei ist keine bestandene `abnahme-a.json`. Manueller Briefingweg bei unbekannten Kosten weiter gesperrt, keine Aktivierung durch diese Fortsetzung.
-3. Nach A Abnahme im belegten Nachtfenster **21:36 bis vor 03:58 UTC** die 475 Zielprofile inaktiv anlegen, unabhängig prüfen und erst mit ausdrücklicher Aktivierungszustimmung getrennt aktivieren. Der Fachzyklus startet ausschließlich bei exakt 500 aktiven Profilen. [Ausführung](betrieb/direkter-ausbau-500.md).
-4. Ab tatsächlicher Aktivierung **24 Stunden Test planen, höchstens 48 Stunden**. Endzeit und ausführbaren Abschluss vor Beginn festlegen; der neue manuelle Workflow allein ist kein automatischer Timer. Dann 495 synthetische Profile deaktivieren und unabhängig bestätigen: 504 erhalten, fünf ältere aktiv. 500er Funktionsbefund und Fehler dokumentieren; kein unbeaufsichtigter Wochenlauf.
+1. Engen Sofortausbau und Laufprotokollkorrektur vollstaendig pruefen, per PR uebernehmen und exaktes Production READY bestaetigen. Keine erneute fachliche Freigabe fuer den bereits ausdruecklich verlangten Ausbau anfordern.
+2. Frischen Bestand, Kosten, Kommunikationsschutz und laufende Arbeit pruefen. Genau 475 zusaetzliche Profile inaktiv anlegen, unabhaengig nachlesen und anschliessend getrennt aktivieren. Ziel 504 erhaltene Profile, exakt 500 aktiv, vier sonstige inaktiv; keine Kontoaktivierung.
+3. Eine kontrollierte Pipeline Runde bei 500 starten und tatsaechliche Wirkung, Kosten und Fehler auswerten. Keine vorgetaeuschte Quellen oder Qualitaetsabnahme.
+4. Ab Aktivierung 24 Stunden Test planen, maximal 48 Stunden. Ausfuehrbares Testende terminieren, danach 495 synthetische Profile deaktivieren; fuenf aeltere bleiben aktiv. Endzeit vor Aktivierung konkret nennen.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
-Die konkrete Betreiberfreigabe vom 05.09. in [SR §41](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md) erlaubt bedingt Code PRs, Merges und kontrollierte Fachläufe. Die neuere direkte Betreiberanweisung in **§55** ändert die Zwischenstufenpflicht, nicht die übrigen Grenzen. Die automatische Ablehnung eines konkreten Workflowstarts bleibt ein eigener Blocker.
+Die konkrete Betreiberfreigabe vom 05.09. in [SR §41](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md) erlaubt bedingt Code PRs, Merges und kontrollierte Fachläufe. Die neueste Betreiberanweisung in **§60** erlaubt den sofortigen direkten Test und hebt die vorgelagerte A Abnahme sowie das Nachtfenster auf. Zugriffsschutz, Integritaet und Kostengrenze bleiben erhalten. Die automatische Ablehnung eines konkreten Workflowstarts bleibt ein eigener Blocker.
 
 1. Maximal **10 USD Modellkosten je UTC Tag**, Sicherheitsstopp spätestens bei prognostiziert **9 USD**. Die wirkungslosen RPM, TPM, USD und Parallelitätswerte sind kein Schutz.
 2. Keine Aktivierung der vier sonstigen inaktiven Profile, kein aktives Kohortenkonto, keine externe Nachricht oder Zustellung.
 3. Keine Löschung, Wiederherstellung verlorener `crawlRuns`, Migration, neue kostenpflichtige Ressource, Azure Änderung, Vercel Env Änderung, Secret Ausgabe, direkte SQL Aktivierung oder Riegelumgehung. Kein Rollback oder Revert ohne neue Betreiberfreigabe.
-4. Neue Zielreihenfolge laut §55: bestehenden Test abschließen, dann direkt 500. Vor jeder Aktivierung genaue Zielmenge, Zeitfenster und getesteten Ausführungsweg belegen; inaktive Anlage und Aktivierung getrennt. Bestehende Riegel nicht umgehen oder bestandene Messungen vortäuschen.
+4. Direkter Test laut §60: keine vorgeschaltete Stufenabnahme und keine Nachtzeitsperre. Vor Aktivierung genaue Zielmenge und geprueften Ausfuehrungsweg belegen; inaktive Anlage und Aktivierung getrennt. Messungen nicht vortaeuschen; Zugriffs und Datenintegritaetsschutz erhalten.
 5. Nach jedem erlaubten Merge automatisch deployen lassen und exakt zugehöriges READY belegen. Bei Fehlschlag sofort stoppen; kein zweites Deployment. Nach jedem Fachschritt unabhängig rein lesend kontrollieren.
 6. Mandantentrennung bleibt App seitig mit `assertTenant` und explizitem Filter. Keine hartkodierten Mandate. CAS für Auth, main und p belegt; keine Garantie für alte Fremdschreiber, lokale Dateien zwischen Prozessen oder Transaktionen über mehrere Zeilen.
 
