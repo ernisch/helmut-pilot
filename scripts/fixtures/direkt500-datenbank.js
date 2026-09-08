@@ -74,7 +74,8 @@ async function pruefeDirektausbau({ psql, base, token }) {
   const nach = await snapshot();
   assert.equal(nach.auth.users.length, 500);
   assert.equal(nach.auth.users.filter((u) => u.active).length, 3);
-  assert.equal(D.pruefeSnapshot(nach, "aktivierung").geschuetzterBestandHash, a.geschuetzterBestandHash);
+  assert.equal(D.pruefeSnapshot(nach, "aktivierung").geschuetzterBestandHash,
+    D.pruefeSnapshot(vorher, "vorpruefung").geschuetzterBestandHash);
   assert.equal(D.hash(nach.main), D.hash(vorher.main));
   console.log("PASS  Echte SQL Kontrolle: 500 aktiv, vier inaktiv, alle Bestandszeilen und main unveraendert, keine neuen aktiven Konten");
   const T = require("../../lib/helmut/testkohorte-testende");
