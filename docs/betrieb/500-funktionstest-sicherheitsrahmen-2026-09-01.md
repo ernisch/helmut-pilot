@@ -8744,3 +8744,196 @@ Bei **478 synthetischen Profilen** fehlt die Tageszeile. Um 18:00 UTC sind
 davon 323 durch erledigte Projektion vorbereitet und 155 noch nicht. Auch
 ein ausreichend langes Textfenster darf diese 155 Projektionsstufen nicht
 ueberspringen. Der Befund ist keine frische App oder Qualitaetsabnahme.
+
+## §64 Sichere Uebernahme und Einzelpruefung aller 500 Mandate
+
+### §64.1 Auftrag und belegte Uebernahme
+
+Der vorherige Codex Thread reagiert laut Betreiber nicht mehr. Der Betreiber
+hat die Fortsetzung hier und die Pruefung samt Texten fuer alle 500 Mandate
+verlangt. Das Ziel ist eine vollstaendige echte Textabdeckung. Die zuvor
+ausdruecklich gesetzte Grenze fuer Merge und Production Deployment wurde
+noch nicht eigens aufgehoben. Ein pauschaler Gruenstatus waere falsch.
+
+Vor eigener Bearbeitung wurden CLAUDE.md, START_HERE.md und CURRENT_STATE.md
+vollstaendig gelesen. Danach Repository, Branches, PR, GitHub Laeufe,
+Production, Sperren, Leases und gespeicherte Ergebnisse rein lesend geprueft.
+Es laeuft kein von dieser Uebernahme gestarteter Fach oder Modelllauf.
+GitHub meldete keinen laufenden Workflow; Production um **09.09., 01:03
+Tuerkei / 00:03 Berlin; 08.09., 22:03 UTC** null aktive Sperren, aktive
+Auftragsleases, verwaiste Leases oder laufende Prozessquittungen.
+
+Die stuendliche Codex Aufgabe `6a9e7e7bbc988191988145c5f72bbf94` wurde zur
+alleinigen Steuerung hier auf deaktiviert gesetzt und so zurueckgelesen.
+Die Aufgabenanzeige nennt dennoch einen letzten Start um 22:00:12 UTC.
+Deaktivierung beendet daher keinen bereits angestossenen Thread; massgeblich
+bleiben frische GitHub und Production Belege. Der alte Codex Thread wurde
+weder als erfolgreich beendet ausgegeben noch gewaltsam veraendert.
+Keine Production Cronkonfiguration wurde angefasst. Die separate Endaufgabe
+bleibt aktiviert: **09.09., 11:00 Tuerkei / 10:00 Berlin / 08:00 UTC**.
+
+### §64.2 Der vorherige Patch ist bereits veroeffentlicht und geprueft
+
+PR #340 steht auf `ecff53f86bd87f0638c1db078780a22f1c0090ed`, Baum
+`651cb776cef492c13be461f3e8906f6137b1a4c8`. Der alte lokale Commit
+`e7391c7e328e490f36d5cbc5974d06f28737cafb` besitzt exakt denselben Baum.
+Der Patch war nicht unvollstaendig. Keine Patchdatei wurde nochmals angewendet.
+Fuer die Dokumentation wurde eine getrennte lokale Arbeitskopie erstellt.
+
+Die echten Jobprotokolle wurden jetzt zusaetzlich gelesen:
+[CI 34261038509](https://github.com/ernisch/helmut-pilot/actions/runs/34261038509)
+bestaetigt **339/339 Suiten in 614 Sekunden**, **50 Browserpruefungen**,
+**10 und 48 Datenbankpruefungen**, jeweils null Fehlschlaege. Der fruehere
+lokale Stand 335/339 samt vier erfolgreichen Einzelkorrekturen ist damit
+extern vollstaendig nachgeprueft. Keine abgeschlossene Production
+Lastsimulation wurde wiederholt.
+
+main bleibt `8eb38930be943e05ff0a71550305aa0471b453d2`, Production
+`dpl_718ZaxA3voqr7xcmdkf57F8kMMya` READY. Der neue Textmodus ist nicht
+deployt. Diese Uebernahme ergaenzt ausschliesslich Nachweisdaten und
+Dokumentation im bestehenden PR; Anwendungscode und Schutzregeln bleiben
+der oben vollstaendig gepruefte Stand.
+
+### §64.3 Ein Ergebnis je Mandat und eine feste Tageszuordnung
+
+[500 Einzelbefunde](500-textpruefung-2026-09-08.json), SHA256
+`61071e80e2085560669aac413f42515f7f8c7283c331bffdee98d7bad7386f9e`.
+Die Datei enthaelt genau eine Zeile je aktivem Mandat, Projektions und
+Materialisierungsstatus, Textbestand, Absatz und Wortzahl sowie das
+Leseurteil. Fuenf reale Profile sind durch ihre Reihenfolge pseudonymisiert;
+keine vollstaendigen Texte, Profilinhalte, Konten oder Zugangsdaten publiziert.
+
+Erhebung in einer expliziten READ ONLY Transaktion um **09.09., 01:04:52
+Tuerkei / 00:04:52 Berlin; 08.09., 22:04:52 UTC**. Auswahl:
+`mandate_profiles.aktiv = true`; je Mandat `briefings.user_id` mit
+`slot = lage` und exakter Tageskennung; Auftraege ueber `tenant_id` und
+`freshness_window = 2026-09-08T00Z`. Alle 500 eindeutigen Kennungen und
+alle Summen wurden lokal unter `scripts/lokal.js` gegengeprueft.
+
+| Beleg fuer den Berliner Testtag 08.09. | Ergebnis |
+| --- | ---: |
+| Aktive Profile einzeln geprueft | 500 |
+| Reale / synthetische Profile | 5 / 495 |
+| Gespeicherte Lage Texte | 22 |
+| Vollstaendig gelesene Absaetze | 82 |
+| Fehlende Texte | 478 |
+| Fehlende Texte mit erledigter Projektion | 469 |
+| Fehlende Texte ohne erledigte Projektion | 9 |
+| Erledigte / wartende Projektionen insgesamt | 490 / 10 |
+| Erledigte / wartende Materialisierungen | 161 / 339 |
+| Texte mit dokumentiertem konkreten Mangel | 8 |
+| Weitere Texte ohne fachliche Gesamtabnahme | 14 |
+
+**Der Berliner Kalendertag hat inzwischen gewechselt.** Die 22 Zeilen
+gehoeren zum 08.09.; fuer den 09.09. waren zum Beobachtungszeitpunkt
+**null Tageszeilen** gespeichert. Ein heutiger 500er Nachweis darf die alten
+22 Zeilen nicht als neue Texte umetikettieren. `morgenlage` Prozessberichte
+und erledigte Materialisierungsauftraege zaehlen nicht als Lage Text.
+
+### §64.4 Warum 478 Texte fehlen
+
+Der gespeicherte Morgenlauf `briefing-lage-20260908054531-tfh6y` lief von
+05:45:31 bis 05:47:48 UTC, also **08:45:31 bis 08:47:48 Tuerkei /
+07:45:31 bis 07:47:48 Berlin**. Seine Zielmenge war 29, darunter vier
+inaktive Profile. Zu diesem Zeitpunkt existierten erst 25 aktive Profile.
+Die weiteren **475 Profile wurden erst danach angelegt**, zuletzt um
+07:30:11 UTC. Fuer sie wurde kein spaeterer Lage Textlauf belegt.
+Der allgemeine Pipeline Fachzyklus erzeugt diese Texte nicht.
+
+Drei alte A Profile, A005, A014 und A017, haben ebenfalls keine Tageszeile.
+Im Morgenfenster liegen genau 22 erfolgreiche Modellbelege vor. Der genaue
+Auslassungsgrund der drei anderen Profile ist nicht relational gespeichert
+und wird nicht erfunden. Die erfolgreiche Prozessquittung ist daher kein
+Beweis fuer erfolgreiche Texte aller Zielprofile.
+
+Vercel lieferte ausserdem fuer denselben Morgenlauf einen Telemetriefehler:
+die Spiegelung im Auth Blob wurde wegen einer parallelen Aenderung abgelehnt.
+Die relationale Prozessquittung und die 22 Textzeilen existieren. Daraus
+folgt kein Beweis, dass dieser Spiegelungsfehler die drei Texte verhindert
+haette. Keine Wiederholung oder Ruecksetzung zur vermeintlichen Reparatur.
+
+Der neue begrenzte Nachlauf in #340 waehlt ausschliesslich fehlende Texte
+mit erledigter und faelliger Projektion. Das Arbeitsbudget von 240 Sekunden,
+davon 90 Sekunden Reserve vor einem neuen Modell, garantiert weiterhin
+keine vollstaendige 500er Abdeckung. Jeder Folgeabschnitt muss sich auf
+erneut gelesene Luecken und den bestaetigten Abschluss des Vorgangs davor
+stuetzen. Ein unbekannter Ausgang darf niemals erneut ausgeloest werden.
+
+### §64.5 Qualitaet aller vorhandenen Texte
+
+Alle 22 gespeicherten Texte und 82 Absaetze wurden gelesen. Die 57 darin
+referenzierten Vorgangskennungen lassen sich relational binden. Innerhalb
+des Quellenfensters wurden 129 verschiedene gebundene Rohdokumente gelesen;
+bei **allen 129 ist summary leer**. Die Erzeugung liest Titel und summary,
+nicht den vollstaendigen Artikel. Der aktuelle Datenbestand erklaert damit
+die haeufigen Listen von Meldungstiteln. Dies ist kein vollstaendiger
+historischer Eingabesnapshot und keine externe Faktenpruefung aller Artikel.
+
+Konkrete neue Befunde neben der Stichprobe in §63.5:
+
+- A004 schreibt von einem Wahlerfolg in Polen. Die gespeicherte gebundene
+  Quellenueberschrift lautet dagegen „AfD-Wahlerfolg: Polen fuerchtet
+  Instabilitaet und Geschichtsrelativierung“. Das verwechselt Reaktionsort
+  und Wahlort; die Aussage ist schon durch den vorhandenen Beleg nicht gedeckt.
+- A018 zeigt `vorgang_ids` und die technischen Kennungen im Text aller
+  drei Absätze.
+- A019 hat fuenf Absätze, obwohl der Prompt zwei bis vier verlangt.
+- Sprachfehler unter anderem in A001, A010, A011 und A012; jeder konkrete
+  Befund ist in der Einzeldatei dokumentiert.
+- Fuenf Texte verwenden dieselbe breite Vorgangskennung in mehreren Absätzen.
+  Das ist ein Pruefhinweis, kein automatischer Nachweis identischer Inhalte.
+  Mehrere Texte mischen unabhaengige Themen ohne erkennbare Auswahlbegruendung.
+
+Alle Texte liegen unter 250 Woertern. Formal gueltige Kennungen und
+Quellenlinks reichen fuer eine inhaltliche Abnahme jedoch nicht. Die
+Anzeigeverbesserung in #340 repariert keinen bereits gespeicherten
+schwachen Text und erfindet keinen fehlenden Quelleninhalt. Die App Anzeige
+wurde in dieser Uebernahme nicht durch einen kostenpflichtigen Start getestet.
+
+### §64.6 Kosten, Integritaet und konkreter naechster Schritt
+
+Um **09.09., 01:10 Tuerkei / 00:10 Berlin; 08.09., 22:10 UTC**:
+178 Reservierungen, 179 Ringzeilen einschliesslich eines belegten
+Nichtaufrufs, 178 Modellbelege, **0,553248 USD bekannte Schaetzung**,
+eine unbekannte Kostenbuchung und keine Reservierungsluecke.
+Prognose nach bestehender Formel **2,603248 USD**. Der unbekannte
+Timeoutbeleg ist weiterhin `llm-1788888775385-5hzm5g`.
+Keine neue Modellgenerierung durch diese Uebernahme.
+
+Azure ist jetzt angemeldet erreichbar. An der dokumentierten Ressource
+`helmut-resource` wurde der Protokollzugang rein lesend geoeffnet.
+Die Tabellenliste meldet jedoch „Elemente koennen nicht geladen werden“.
+Damit liegt weiterhin kein dem Timeout zuordenbarer Anbieterbeleg vor.
+Ein Portalzugang oder eine aggregierte Metrik wird nicht als aufgeloeste
+Einzelbuchung ausgegeben. Kein Diagnoseziel, Budget oder Azure Dienst
+wurde angelegt oder geaendert.
+
+Volle Bestandspruefsummen weiterhin gleich:
+Mandate `4678db89143f6c3108bfb28f352b821b`,
+Identitaeten `3c5b0b5a6314f31c395b8758b166c5c3`,
+Konten `61530f4d75514c37582e5ffd71d322f5`.
+Spaetere Nachlesung ebenfalls null aktive Sperren, Leases oder laufende
+Prozessquittungen sowie null heutige Push oder Audit Ereignisse und null
+bestaetigte Outbox. Profile, Budgets, Umgebungsvariablen, Production Daten
+und Production Cronplaene wurden nicht veraendert.
+
+**Konkrete Freigabevorlage:** #340 mit dem fertig geprueften Anwendungscode
+uebernehmen und dadurch das automatische Production Deployment erlauben.
+Unmittelbar zuvor aktuellen PR Kopf und beide Pflichtjobs pruefen, danach
+den genau zugehoerigen Merge Commit als Production READY belegen. Keine
+Migration oder Flagaktivierung. Rueckfallziel bleibt die oben genannte
+Production Version; ein Rollback braucht nach bisheriger Anweisung eine
+gesonderte Betreiberfreigabe.
+
+Ein bezahlter Nachlauf darf erst danach und nur bei frisch vollstaendigen
+Kostenbelegen starten. Im vorhandenen Workflow
+`500-direkt-ausbau.yml` den Schritt `textnachlauf` am belegten main waehlen,
+mit dem bereits definierten Bestaetigungswort. Vor jedem weiteren Abschnitt
+Quittung, gespeicherte Tageszeilen, Kosten, Integritaet und Konkurrenz
+unabhaengig lesen. Bei Fehler, Nullfortschritt oder unbekanntem Ausgang
+anhalten; keine Profilanlage oder abgeschlossene Lastsimulation wiederholen.
+Vor jedem Tagessprung neu entscheiden, welcher Testtag nachgewiesen wird.
+
+**Zustand: 500 Einzelpruefungen dokumentiert, 500 Texte nicht bewiesen.**
+Der vorhandene Code ist fertig geprueft; Production Uebernahme, echte
+Textabdeckung und inhaltliche Gesamtabnahme bleiben offen.
