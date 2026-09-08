@@ -194,6 +194,21 @@ async function main() {
     assert.equal(D.hash(h.w.snapshot()), vorher);
     assert.equal(h.anfragen.filter((u) => u.pathname === "/api/cron/pipeline").length, 1);
   });
+  await test("Fachrunde bindet die Laufquittung an erledigt statt inklusive Zurueckstellungen", async () => {
+    const h = await bereitZumFachzyklus();
+    h.pipeline.verarbeitung = {
+      erledigt: 330,
+      verarbeitet: 585,
+      zurueckgestellt: 253,
+      wiederholt: 2,
+      endgueltigFehlgeschlagen: 0
+    };
+    h.quittungen[0].processed_count = 330;
+    const r = await G.ausfuehren(h.args);
+    assert.equal(r.ok, true, JSON.stringify(r));
+    assert.equal(r.verarbeitet, 330);
+    assert.equal(r.fertiggestellteAuftraege, 330);
+  });
   console.log(`\n${pass} PASS, 0 FAIL`);
 }
 main().catch((e) => { console.error(e); process.exitCode = 1; });

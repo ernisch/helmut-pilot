@@ -8299,3 +8299,45 @@ Verdraengung, kann die offene 500er Abdeckung vor dem fest geplanten Testende
 am 09.09. um 08:00 UTC aber ohne weiteren dafuer vorgesehenen Lauf nicht
 belegen. Das ist ein echter offener Funktionsblocker, kein Datenverlust und
 kein Kostenstopp.
+
+### §61.8 Begrenzter Fachlauf erfolgreich, Laufquittung falsch verglichen
+
+Nach frischer Bestaetigung von `main` und Production READY, null offenen
+Pull Requests, null aktiven Fachworkflows, Sperren oder Leases wurde am
+08.09. um **14:10:32 UTC** genau eine freigegebene Pipeline Runde ueber
+`500-direkt-ausbau.yml` gestartet. GitHub Lauf **34236572532** lief am
+Production Kopf `b4550c3a9a26fe09b27eb243c0ece7270abd885c`. Es gab keinen
+zweiten Ausloeseversuch.
+
+Die unabhaengige Datenbankquittung
+`cron-pipeline-20260908141047-l98rp` ist **success** von 14:10:47 bis
+14:14:54 UTC: Zielmenge 585, 330 tatsaechlich erledigt, 253 regulaer
+zurueckgestellt, null endgueltige Fehler, zwei Wiederholungen und null
+verlorene Leases. Zwei externe Quellenabrufe meldeten HTTP 503
+beziehungsweise Timeout; die Warteschlange behandelte sie ohne
+endgueltigen Fehler. Der Bestand blieb **504/500/4**. Die drei Vollhashes
+blieben `4678db89143f6c3108bfb28f352b821b`,
+`3c5b0b5a6314f31c395b8758b166c5c3` und
+`61530f4d75514c37582e5ffd71d322f5`. Null aktive oder verwaiste Leases
+und null Versandquittungen.
+
+Der GitHub Kontrollschritt endete trotzdem rot. Ursache ist ein enger
+Zaehlervertrag im Adapter: `process_runs.processed_count` zaehlt nur die
+erledigten Auftraege, wurde aber mit `verarbeitung.verarbeitet` verglichen,
+das auch regulaer zurueckgestellte Auftraege umfasst. Der Adapter bindet die
+Quittung nun an `verarbeitung.erledigt`. Der neue Regressionsfall bildet
+330 erledigte, 253 zurueckgestellte und zwei wiederholte Auftraege ab;
+alle **12/12** direkten Adaptertests sind gruen. Die volle lokale Suite
+erreichte **331/338**; sieben unveraenderte Suiten scheiterten ausschliesslich
+an in der getrennten Arbeitskopie fehlenden Paketen oder Chromium. Nach
+Einbindung der vorhandenen Lockfile Abhaengigkeiten bestehen Kalender
+**134/134** und Lambda Paket **43/43** erneut. Externe Pflichtjobs, Merge und
+Production READY stehen fuer diese Korrektur noch aus.
+
+Die Produktionsnachkontrolle um 14:35 UTC zaehlt 114 Reservierungen und
+114 echte Modellbelege, 0,339308 USD bekannte Schaetzung, null unbekannte
+Betraege oder Reservierungsluecken und 2,339308 USD konservative Prognose.
+Noch faellig sind 150 Projektionen und 15 Quellenabrufe; alle 500 Briefings
+sind regulaer zukunftsfaellig. Der Lage Check Befund **83/500** aus §61.7
+bleibt unveraendert der offene Funktionsblocker. Kein vollstaendiger 500er
+Funktions oder Stabilitaetsnachweis.
