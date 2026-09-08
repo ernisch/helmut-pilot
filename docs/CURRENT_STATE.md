@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 08.09.2026, 14:35 UTC. EXAKT 500 AKTIV.** Production `b4550c3` READY. Lauf `cron-pipeline-20260908141047-l98rp`: 330 Abschluesse, 253 Vertagungen, null Fehler. Workflow `34236572532` wurde wegen eines falschen Quittungsvergleichs rot; Korrektur lokal geprueft. Lage Check weiter **83/500**, 417 offen. Hashes unveraendert; 114 Belege, 0,339308 USD. Testende **09.09., 08:00 UTC / 11:00 Tuerkei**. [SR §61](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). **Gesamtabnahme offen.**
+**Stand: 08.09.2026, 18:31 Tuerkei / 17:31 Berlin / 15:31 UTC. EXAKT 500 AKTIV.** Kontrollfix #339 Production `8eb3893` READY. Folgekorrektur lokal **337/337 Offline Suiten bestanden**, Upload automatisch blockiert. **22 heutige Lage Texte, 478 fehlen.** Planung 500/500, Projektion 65/500, Briefing Materialisierung 0/500. Bestand unveraendert; 114 Aufrufe, 0,339308 USD geschaetzt. Testende **09.09., 11:00 Tuerkei / 10:00 Berlin / 08:00 UTC**. [SR §62](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). **Gesamtabnahme offen.**
 
 
 **Kernlage:** Warteschlangenmotor seit 23.08. in Production `on`, Dispatch `shadow` (Cron-Antrieb, kein AWS). Fünferbeleg mit 376 Abschlüssen: [OP-30 §30.7](betrieb/op30-aktivierung-5-mandate.md). **Aktuell vier historische Vorgänge `unbekannt`, jüngste Änderung 02.09., 11:33 UTC; keine neue unbekannte Reservierung nach Wiederanlauf.** Selbstweck in Production nie ausgeführt.
@@ -11,25 +11,26 @@
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **Fachlauf 08.09., 14:10 UTC:** `cron-pipeline-20260908141047-l98rp` success mit 330 Abschluessen, 253 Vertagungen und null Fehlern oder verlorenen Leases. GitHub `34236572532` verglich `processed_count` falsch mit erledigt plus vertagt. Korrektur: Bindung an `verarbeitung.erledigt`, keine Laufwiederholung, SR §61.8.
+- **#339 uebernommen:** `8eb3893`, Production `dpl_718ZaxA3voqr7xcmdkf57F8kMMya` READY. Auf `codex/500-laufquittung-20260908`: echter Serververtrag und ehrlicher Offline Katalog, 337/337 bestanden. Upload automatisch abgelehnt; kein Folge PR. [SR §62](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+- **Production #338:** `b4550c3a9a26fe09b27eb243c0ece7270abd885c`, `dpl_HzddrYsfEcumz6VRaRkbTxteqW7T` frisch READY; Statusleser uebernommen.
 - **Watchdog und Lage Check 08.09.:** `34212536121` startete bei unlesbarem Status keinen Ersatzlauf; PR #338 haertet den GET Leser. Der Lauf `cron-lage-check-20260908100012-bnctn` erfasste global 103/103 Quellen, speicherte aber nur 83/500 Mandatslagen. 417 bleiben zeitbedingt offen; keine Gesamtabnahme, SR §61.7.
-- **Aktueller Codekopf #336:** `e6e33eec9dd71573bf81ac3151efc18864345709`, Production `dpl_GpiuhLdg1bLLsmosg1HaJmdc8k2X` READY. Gepruefter Kopf `e4d2204`, zwei Merge Eltern, identischer Baum. CI `34208235963`: 338/338, Browser 40/40, PostgreSQL 10/10 und 48/48. Gesperrter Dispatch liefert den kanonischen Nullzaehler; echter Nachlauf und Kontrolle erfolgreich, SR §61.6.
+- **Dispatch #336:** `e6e33ee`, READY; CI 338/338, Browser 40/40, Datenbank 10/10 und 48/48. Nullbeleg und damaliger Nachlauf bestaetigt, SR §61.6.
 - **Planung #335:** `4cd56d7`, READY und beide Pflichtjobs gruen. Ab 100 Profilen hoechstens vier atomare Einreihungen gleichzeitig bei unveraenderten Vorranggruppen und Zeitgrenzen. Volle 500er Planungsabdeckung im echten Nachlauf bestaetigt, SR §61.4.
 - **Direkter Ausbau #334:** `ee675ed`, READY und beide Pflichtjobs gruen; Ausbau ohne A Vorabnahme und Nachtfenster sowie sichere CAS Wiederholung idempotenter Laufprotokolle, SR §60.
-- **Quellenkorrektur #330:** `2ca0e62b14aa0ef5928dc63969c655df620db1fa`, Production `dpl_5ZRdoym5m5U1R7iBerEE2fbBBrWV` READY am exakten Merge. PR CI `34117430546` mit beiden Pflichtjobs grün; 337/337 Suiten, Browser 40/40, echte Datenbankprüfungen 10/10 und 48/48. Zwei Merge Eltern und identischer geprüfter Baum bestätigt; SR §58.5. Ausführer aus #326/#328 wird weiterverwendet.
+- **Quellenkorrektur #330:** `2ca0e62`, READY, beide Pflichtjobs gruen; Nachweis SR §58.5. Ausfuehrer aus #326/#328 bleibt bestehen.
 - **A Ausführer #322/#323:** deployt und geprüft; Einzelbelege SR §54/§55. Workflow `34066395564` scheiterte vor dem Production Aufruf; kein Wiederholungslauf.
 - **Uebernommen (§57/§60/§61):** Quellenbindung und geplanter Testabschluss fuer 495 synthetische Profile. Abschlussaufgabe fuer **09.09., 08:00 UTC / 11:00 Tuerkei** aktiviert; der vorgesehene Deaktivierungspfad erhaelt alle Konten und Identitaeten. Anlage und Aktivierung sind abgeschlossen.
 - Frühere Schutzarbeiten **#303, #305, #307, #309, #310, #313, #316 und #318** sind deployt. Sie schützen Kontext, Leseantworten, Konten, gemeinsam genutzte Speicher und Appstart. Belege und Grenzen: SR §40–§51; Lage 25/25 seit §53.
 
 ## 3 · Production-Zustand
 
-- **Datenbank:** Supabase **Pro/Micro (`t4g.micro`, 1 GB)**, gesund. Um 14:35 UTC: 17 Verbindungen, eine aktiv, null aktive oder verwaiste Leases. Grundlinie unveraendert; PITR aus.
-- **Bestand 08.09., 14:35 UTC:** **504/500/4**, fuenf reale und 495 synthetische aktiv; 505 Identitaeten, 500 Konten, kein Testkonto aktiv. Vollhashes `4678db8` / `3c5b0b5` / `61530f4`. Faellig: 150 Projektionen und 15 Quellenabrufe; alle 500 Briefings zukunftsfaellig. 114 Belege zu 114 Reservierungen, 0,339308 USD bekannt, keine Luecke, Prognose 2,339308 USD. Keine Versandquittung; Gesamtqualitaet offen.
+- **Datenbank:** Supabase **Pro/Micro (`t4g.micro`, 1 GB)**, gesund. Dashboard **08.09., 08:56 UTC: CPU 6 %, RAM 52 %, 11/60 Verbindungen**. SQL und volle Grundlinie nach dem Fachlauf unveraendert. PITR aus; keine Ressourcen oder Schemaaenderung.
+- **Bestand 08.09., 15:31 UTC:** **504/500/4**, davon fuenf reale und 495 synthetische aktiv. Volle Hashes von Mandaten, Identitaeten und Konten unveraendert. Null aktive Sperren, aktive oder verwaiste Auftragsleases. Beide Mandatsklassen 500/500 geplant, Projektion 65/500 erledigt, Briefing Materialisierung 0/500. **22 gespeicherte Lage Texte**, alle von 05:45 bis 05:47 UTC, **478 fehlen**. Die 25 Morgenlage Datensaetze sind Laufbelege, keine 25 fertigen Texte. Gespeicherter Tagesstand ist kein aktueller App Nachweis; Quellenfrische und Qualitaet bleiben offen.
 - **Crawl-Aufbewahrung:** Wirksame Grenze **36** am 06.09. um 19:00 UTC erneut bestätigt. Frisch gelesener Blob Ring **20**; keine Wiederherstellung der verlorenen 16 Laufzeilen. Schutzcode aus #301 bleibt deployt (SR §37).
 - **Quellen:** 9 Pakete · 163 Abrufwege · 165 Zuordnungen; **146/163 Google-News** (B1, OP-15); 18 Landesmodul-Wege (BE/BB) gesperrt. Seeds `20260713`/`20260717` **nicht eingespielt**, Einspielung [BLOCKIERT](betrieb/quellen-seed-einspielung.md) (nur noch Betreiberfreigabe).
 - **Crons (Production, 13, UTC):** crawl 04:00/20:00 · pipeline 16:00 · morning-briefing 05:00 · understanding 05:30/21:30 · **rueckstand 11:30/17:30** · lage-briefing 05:45 · health 06:00 · lage-check 10:00 · 2 Narrativslots 06:10/06:22 (inert). **`18,48 * * * *` nicht in Production.** Dazu Actions-Watchdog (`briefing-watchdog.yml`, 05:30, oft 2–3 h verzögert).
 - **Migrationen:** 35 Einträge, letzte `20260829175749` (05.09. rein lesend bestätigt). **Z22 seit 29.08. mit Freigabe angewendet** (§14–22) — **nicht erneut anwenden**. Auf `main`, **nicht in Production angewendet**: `20260720`, F9 (`20260825101500`), `20260902121500`. Jede weitere Anwendung bleibt freigabepflichtig.
-- **Kosten 08.09., 09:25 UTC:** 85 Reservierungen und 85 echte Modellbelege, **0,239680 USD bekannte Schaetzung**, null unbekannte Kosten oder Reservierungsluecken. Konservative Prognose mit 2 USD Reserve **2,239680 USD**. Maximal 10 USD je UTC Tag, Prognosestopp 9 USD; kein Rechnungsbeleg oder atomarer USD Riegel. [`kostenmessung`](betrieb/kostenmessung.md).
+- **Kosten 08.09., 15:31 UTC:** 114 Reservierungen und 114 echte Modellbelege, **0,339308 USD bekannte Schaetzung**, null unbekannte Kosten oder Reservierungsluecken. Bestehender Kostenleser auf frischen Belegen: Prognose mit 2 USD Reserve **2,339308 USD**. Maximal 10 USD insgesamt je UTC Tag, Prognosestopp 9 USD; kein Rechnungsbeleg oder atomarer USD Riegel. [`kostenmessung`](betrieb/kostenmessung.md).
 - **Zugang:** Azure und Foundry geschützt per Microsoft E Mail erreicht, keine Zugangsdaten offengelegt. Rein lesend: `gpt-5-mini` Global Standard **250.000/2.000.000 TPM**, Zuordnung 250.000 TPM, bekannte Grenze 250 RPM. Keine Azure Änderung. Production Leser **34058091793** bleibt gültig (§54).
 
 ## 4 · Aktivierte Funktionen (Production)
@@ -88,7 +89,7 @@ Bestehende Grenzen und Freigaben: [SR §41 und neuere Betreiberänderung §55](b
 6. **OP-11:** Branch Protection nicht aktiv; Pflicht-CI blockiert Merges nicht technisch.
 7. **OP-15:** Google-Klumpenrisiko (146/163 Wege); 29 von 42 Personensuchen lieferten nie (`circuit-open`) — Production-Beweis der Härtung steht aus (§8).
 8. **Lage-/KI-Kapazität für Skalierung:** siehe §6. Belegt: **drei** reguläre Warteschlangenabflüsse/Tag, nicht elf (§13).
-9. **500er Funktionstest: Ausbau laeuft, Gesamtabnahme offen** (§6, SR §60). Direkte Anlage gestartet, keine A Abnahme oder Nachtzeit als Startbedingung. Quellenqualitaet, Abdeckung aller Profile und stabiler Betrieb sind am echten 500er Ergebnis zu pruefen. Korrektur des belegten Auth CAS Konflikts beim Lageprotokoll ist mit #334 online.
+9. **500er Gesamtabnahme offen:** 500 aktiv, aber 478 heutige Texte fehlen. Kontrollkorrektur online, gezielter Textnachlauf fehlt (SR §62).
 10. **OP-07:** Monitoring-Zweitkanal stellt seit mind. 17.08. täglich zu; Ziel von `HELMUT_MONITORING_WEBHOOK_URL` und der doppelte WhatsApp-Eingang bleiben ungeklärt (Betreiberprüfung, kein Code-Fix vorher).
 11. **Profilpfad:** Exklusivmodus in Production belegt; ältere Dual Write Annahme überholt. Vor B/C Daten und Ausführungskontext frisch abgleichen. Auth, main und p haben CAS Schutz; alte Instanzen und direkte Fremdschreiber bleiben ausgenommen. Schutz gegen automatische Kontolöschung aus #305 bleibt verpflichtend.
 
@@ -127,13 +128,20 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
+Lokale Folgekorrektur ist geprueft; Freigabe zum Upload und PR Entwurf fehlt.
+Der allgemeine Fachzyklus erzeugt **keine fehlenden Lage Texte**; der 25er
+Textausfuehrer passt nicht auf 500. Grenzen und naechster Schritt: [SR §62](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+
 1. Den laufenden 500er Test bis **09.09., 08:00 UTC / 11:00 Tuerkei** beobachten: Frische, Quellenbindung, faire Fortsetzung und tatsaechlich gespeicherte Ergebnisse aller 500. Faellige Arbeit ueber den vorhandenen begrenzten Fachzyklus abarbeiten; keinen Parallelwriter oder blinden Wiederholungslauf erzeugen.
 2. Vor jedem weiteren Fachlauf Bestand, Kosten, Kommunikationsschutz und laufende Arbeit frisch pruefen. Maximal 10 USD je UTC Tag, Prognosestopp 9 USD. Anlage und Aktivierung sind abgeschlossen.
 3. Zum geplanten Testende die bestehende Endaufgabe nach Vorpruefung ausfuehren: genau 495 synthetische Profile deaktivieren, fuenf reale aktiv und alle 504 Zeilen erhalten. Den bestaetigten Endzustand und verbleibende Qualitaetsbefunde dokumentieren.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
-Die konkrete Betreiberfreigabe vom 05.09. in [SR §41](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md) erlaubt bedingt Code PRs, Merges und kontrollierte Fachläufe. Die neueste Betreiberanweisung in **§60** erlaubt den sofortigen direkten Test und hebt die vorgelagerte A Abnahme sowie das Nachtfenster auf. Zugriffsschutz, Integritaet und Kostengrenze bleiben erhalten. Die automatische Ablehnung eines konkreten Workflowstarts bleibt ein eigener Blocker.
+Die frueheren Freigaben in SR §41 und §60 sind durch die neueste Anweisung
+fuer diesen Sprint begrenzt: Fehler beheben und pruefen, **kein Merge,
+Deployment oder kostenpflichtiger Lauf ohne passende Freigabe**. Grenzen
+und Bezug: [SR §62](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 
 1. Maximal **10 USD Modellkosten je UTC Tag**, Sicherheitsstopp spätestens bei prognostiziert **9 USD**. Die wirkungslosen RPM, TPM, USD und Parallelitätswerte sind kein Schutz.
 2. Keine Aktivierung der vier sonstigen inaktiven Profile, kein aktives Kohortenkonto, keine externe Nachricht oder Zustellung.

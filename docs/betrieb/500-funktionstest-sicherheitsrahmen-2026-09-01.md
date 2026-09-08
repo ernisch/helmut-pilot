@@ -8304,7 +8304,7 @@ kein Kostenstopp.
 
 Nach frischer Bestaetigung von `main` und Production READY, null offenen
 Pull Requests, null aktiven Fachworkflows, Sperren oder Leases wurde am
-08.09. um **14:10:32 UTC** genau eine freigegebene Pipeline Runde ueber
+08.09. um **14:10:32 UTC** genau eine Pipeline Runde ueber
 `500-direkt-ausbau.yml` gestartet. GitHub Lauf **34236572532** lief am
 Production Kopf `b4550c3a9a26fe09b27eb243c0ece7270abd885c`. Es gab keinen
 zweiten Ausloeseversuch.
@@ -8313,31 +8313,179 @@ Die unabhaengige Datenbankquittung
 `cron-pipeline-20260908141047-l98rp` ist **success** von 14:10:47 bis
 14:14:54 UTC: Zielmenge 585, 330 tatsaechlich erledigt, 253 regulaer
 zurueckgestellt, null endgueltige Fehler, zwei Wiederholungen und null
-verlorene Leases. Zwei externe Quellenabrufe meldeten HTTP 503
-beziehungsweise Timeout; die Warteschlange behandelte sie ohne
-endgueltigen Fehler. Der Bestand blieb **504/500/4**. Die drei Vollhashes
+verlorene Leases. Zwei externe Quellenabrufe meldeten laut damaliger
+Laufdiagnose HTTP 503 beziehungsweise Timeout; die Warteschlange behandelte
+sie ohne endgueltigen Fehler. Der Bestand blieb **504/500/4**. Die drei Vollhashes
 blieben `4678db89143f6c3108bfb28f352b821b`,
 `3c5b0b5a6314f31c395b8758b166c5c3` und
 `61530f4d75514c37582e5ffd71d322f5`. Null aktive oder verwaiste Leases
 und null Versandquittungen.
 
-Der GitHub Kontrollschritt endete trotzdem rot. Ursache ist ein enger
-Zaehlervertrag im Adapter: `process_runs.processed_count` zaehlt nur die
-erledigten Auftraege, wurde aber mit `verarbeitung.verarbeitet` verglichen,
-das auch regulaer zurueckgestellte Auftraege umfasst. Der Adapter bindet die
-Quittung nun an `verarbeitung.erledigt`. Der neue Regressionsfall bildet
-330 erledigte, 253 zurueckgestellte und zwei wiederholte Auftraege ab;
-alle **12/12** direkten Adaptertests sind gruen. Die volle lokale Suite
-erreichte **331/338**; sieben unveraenderte Suiten scheiterten ausschliesslich
-an in der getrennten Arbeitskopie fehlenden Paketen oder Chromium. Nach
-Einbindung der vorhandenen Lockfile Abhaengigkeiten bestehen Kalender
-**134/134** und Lambda Paket **43/43** erneut. Externe Pflichtjobs, Merge und
-Production READY stehen fuer diese Korrektur noch aus.
+Der GitHub Kontrollschritt endete trotzdem rot. `processed_count` zaehlt
+erledigte Auftraege, `verarbeitung.verarbeitet` dagegen Abschluesse plus
+Wiederholungen plus endgueltige Fehler, **ohne Vertagungen**. Der korrekte
+Antwortwert ist hier 332. Die erste Fassung von PR #339 behob zwar den
+Vergleich, beschrieb aber irrtuemlich Vertagungen als Bestandteil der Summe
+und testete mit handgebauten 585. Diese falsche Begruendung und Testgrundlage
+werden durch den echten Serververtrag in §62 ersetzt.
+
+Der erste lokale Pruefstand war 12/12 Adaptertests und 331/338 in der
+Vollsuite; sieben unveraenderte Suiten scheiterten an fehlenden Paketen oder
+Chromium. Kalender 134/134 und Lambda Paket 43/43 wurden danach bestaetigt.
+CI **34240913495** bestand beide Pflichtjobs am ersten Kopf `759e423`;
+dieser Erfolg ersetzt keine Pruefung der nachfolgenden Testkorrektur (§62).
 
 Die Produktionsnachkontrolle um 14:35 UTC zaehlt 114 Reservierungen und
 114 echte Modellbelege, 0,339308 USD bekannte Schaetzung, null unbekannte
 Betraege oder Reservierungsluecken und 2,339308 USD konservative Prognose.
-Noch faellig sind 150 Projektionen und 15 Quellenabrufe; alle 500 Briefings
-sind regulaer zukunftsfaellig. Der Lage Check Befund **83/500** aus §61.7
-bleibt unveraendert der offene Funktionsblocker. Kein vollstaendiger 500er
-Funktions oder Stabilitaetsnachweis.
+Noch faellig waren 150 Projektionen und 15 Quellenabrufe; alle 500 Briefings
+waren regulaer zukunftsfaellig. Der Lage Check Befund **83/500** aus §61.7
+blieb offen. Kein vollstaendiger 500er Funktions oder Stabilitaetsnachweis.
+
+## §62 Kontrollfehler mit Wiederholungen und frischer Briefingstand am 08.09.
+
+**Sprintzustand: teilweise abgeschlossen.** Die Betreiberanweisung erlaubt
+Fehlerkorrektur und erneute Pruefung. Die ausdruecklichen Grenzen des vorherigen
+Auftrags bleiben erhalten: kein neuer Test, zweiter Ausfuehrer, Merge, Deployment,
+kostenpflichtiger Lauf ohne passende Einzelfreigabe, Profilwrite, Budgetanstieg,
+Migration oder geaenderter Zeitplan. Lage, Radar und Briefing Fachlogik bleiben
+unveraendert. Testende weiter **09.09., 11:00 Tuerkei / 10:00 Berlin / 08:00 UTC**.
+
+### §62.1 Belegter Fehler und enge Korrektur
+
+Frisch bestaetigte Basis ist `b4550c3a9a26fe09b27eb243c0ece7270abd885c` auf `main`,
+Production `dpl_HzddrYsfEcumz6VRaRkbTxteqW7T` READY. Zu Beginn kein offener PR.
+Die Arbeit begann isoliert auf `codex/500-laufquittung-20260908`. Bei der
+erneuten Pruefung wurde der inzwischen um 14:50 UTC erstellte PR #339
+`codex/fachzyklus-quittung-20260908` gefunden. Dessen Codekorrektur ist richtig;
+seine Testsumme 585 war falsch. Vor einer Ergaenzung wurde der PR erneut gelesen:
+Er war um **15:06 UTC bereits uebernommen**.
+Unabhaengig frisch bestaetigt: `8eb38930be943e05ff0a71550305aa0471b453d2`,
+Production `dpl_718ZaxA3voqr7xcmdkf57F8kMMya` READY. Dieser aktive Sprint loeste
+weder Merge noch Deployment aus. Die Nachweiskorrektur wird deshalb auf diesem
+neuen Stand als Folgevorschlag vorbereitet; kein zweiter Production Ausfuehrer.
+
+Der bereits vorhandene manuelle Lauf
+`cron-pipeline-20260908141047-l98rp` lief von 14:10:47 bis 14:14:54 UTC.
+Seine relationale Quittung traegt `status=success`, `processed_count=330`,
+`failed_count=0`, `telemetrie.wiederholt=2`. Der bestehende Kontrollausfuehrer
+34236572532 endete trotzdem mit
+`fachzyklus-laufquittung-fehlt-oder-abweichend`. Dieser Sprint startete ihn nicht
+und wiederholte ihn nicht. Der Lauf bleibt als **manuell** gekennzeichnet.
+
+Die Ursache liegt ausschliesslich im Vergleich in `scripts/github-direkt500.js`:
+`runCronUeberWarteschlange` liefert als `verarbeitet` die Summe aus Abschluessen,
+Wiederholungen und endgueltigen Fehlern. Der Speicher schreibt dagegen nur die
+Abschluesse nach `processed_count`. Der alte Vergleich verlangte damit 330 = 332.
+Jetzt werden **gespeicherte Abschluesse mit `erledigt`** verglichen. Antwortzaehler
+muessen weiterhin ganzzahlig und widerspruchsfrei sein. Wiederholungen werden
+nicht zu fertigen Auftraegen erklaert. Quittung, Zeitbindung, positiver Fortschritt,
+null endgueltige Fehler und alle bisherigen Nachkontrollen bleiben erforderlich.
+Ein Kontrollfehler erlaubt unveraendert keine automatische Wiederholung.
+
+Die Regression fuehrt die echte Serverfunktion aus dem aktuellen `server.js` und
+`storage.schreibeWarteschlangenLaufquittung` mit lokalem Transport aus. Die
+330/332 Abweichung wird nicht als handgebauter Erfolg simuliert. Der alte Code
+scheiterte reproduzierbar; mit Korrektur bestehen **15/15 Testgruppen**. Gegenproben
+verweigern falsche oder unlesbare Abschlusszahlen, widerspruechliche Summen,
+endgueltige Fehler sowie nach dem Lauf erhoehte Kosten, aufgehobenen
+Kommunikationsschutz, konkurrierende Sperren und geaenderte Profile.
+
+Alle Tests laufen ueber `scripts/lokal.js`, ohne Production Zugang oder echte
+Modellaufrufe. Der erste Gesamtlauf endete nach **894 Sekunden mit 336/338**.
+Die zwei Ausfaelle sind gezielt behoben und erneut bestaetigt: der zuvor fehlende
+Chromium Testbrowser ist installiert, `admin-nutzer-loeschen-test.js` besteht;
+die gekuerzte Statusdatei besteht mit 4/4. Die zusaetzlichen Adapterfaelle bestehen
+nach Wiederverwendung der unveraenderten Offline Grundlinie erneut mit 15/15.
+
+Zusaetzlich meldete der Netzschutz einen blockierten externen Zugriff aus
+`pardok-shadow-test.js`. Das ist ein Live XML Diagnosewerkzeug mit eigenem
+PARDOK Workflow, keine Offline Suite. Sein aufgefangener Verbindungsfehler fuehrte
+zu Exit 0 und wurde bisher als PASS gezaehlt. Der Runner schliesst dieses Werkzeug
+nun korrekt ueber seine bestehende DENYLIST aus. Die echte lokale Parsersuite
+`pardok-parser-test.js` bleibt erhalten; der Live Nachweis wird nicht als bestanden
+behauptet. Damit umfasst der ehrliche Offline Katalog **337 Suiten**, nicht 338.
+Keine Netzsperre oder fachliche Assertion wird gelockert. Der externe Gesamtlauf
+am Folgevorschlag steht noch aus.
+
+**Abschliessender lokaler Gesamtlauf:** 337/337 Suiten bestanden in **833 Sekunden**,
+Exit 0, kein gemeldeter blockierter externer Netzversuch. Der neue Serververtrag
+ist darin mit 15/15 enthalten. Zusaetzlich gezielt: Netzschutz 81/81,
+Parserpruefung bestanden und Statusgroesse 4/4. Das ist ein Offline Nachweis;
+es ist weder ein neuer Production Test noch die 500er Funktionsabnahme.
+
+Der Publikationsversuch des lokalen Folgebranches wurde von der automatischen
+Freigabepruefung abgelehnt: Der Auftrag zum Korrigieren und Pruefen enthalte
+keine ausdrueckliche Erlaubnis, moeglicherweise private Quelltexte und
+Dokumentation nach `ernisch/helmut-pilot` hochzuladen. Der Push wurde nicht ueber
+einen anderen Schreibweg wiederholt. Eine gezielte Freigabe fuer diesen Branch
+und einen PR Entwurf ist damit erforderlich; Merge, Deployment und kostenpflichtige
+Laeufe bleiben davon getrennt. Die lokalen Pruefungen sind abgeschlossen.
+
+`vercel.json` sperrt ausschliesslich automatische
+Deployments dieses Korrekturbranches, damit dessen Bereitstellung zur Pruefung
+kein Preview ausloest. Production Konfiguration und Cron Eintraege bleiben gleich.
+
+### §62.2 Unabhaengiger READ ONLY Befund
+
+Abfrage um **17:51 bis 17:56 Tuerkei / 16:51 bis 16:56 Berlin / 14:51 bis
+14:56 UTC**, ohne Appstart oder Produktionsschreibweg:
+
+| Stufe | Tatsaechlicher Stand |
+| --- | --- |
+| Aktive Profile | 500 von 504, unveraendert |
+| Planung | 500 Projektionen und 500 Briefing Materialisierungen |
+| Erledigte Projektion | 65 von 500 |
+| Erledigte Briefing Materialisierung | 0 von 500; frueheste Faelligkeit 18:00 UTC |
+| Gespeicherte heutige Lage Texte | 22 von 500, alle 05:45:39 bis 05:47:48 UTC |
+| Texte seit Aktivierung der 500 | 0; bei 478 Profilen fehlt der heutige gespeicherte Text |
+| Verfuegbarkeit in der App | Durch diese Tabellenabfrage nicht bewiesen |
+| Laufende Sperren oder Leases | 0 aktiv, 0 verwaiste Leases |
+| Heutige bestaetigte Outbox Zustaellungen | 0 |
+
+Volle sortierte Zeilenhashes stimmen weiterhin mit der vorherigen Grundlinie:
+Mandate `4678db89143f6c3108bfb28f352b821b`, Identitaeten
+`3c5b0b5a6314f31c395b8758b166c5c3`, Konten
+`61530f4d75514c37582e5ffd71d322f5`. Keine Profile oder Konten wurden geaendert.
+
+Frische Modellbelege mit dem unveraenderten `kostenBefund` nachgerechnet:
+114 Reservierungen, 114 echte Aufrufbelege, nur `gpt-5-mini`, null unbekannte
+Kosten und Reservierungsluecken. **0,339308 USD bekannte Schaetzung**;
+Prognose einschliesslich bestehender 2 USD Reserve **2,339308 USD**.
+Die Grenze bleibt insgesamt 10 USD je UTC Tag mit Prognosestopp bei 9 USD.
+Es gibt weiterhin keinen nachgewiesenen atomaren USD Rechnungsriegel.
+
+READ ONLY um **18:31 Tuerkei / 17:31 Berlin / 15:31 UTC** bestaetigt danach
+weiter 22 gespeicherte Texte, 114 Reservierungen, null aktive Sperren oder Leases
+und keinen weiteren Process Run seit 15:00 UTC. Volle Bestands und Kontohashes
+bleiben gleich; null heutige Push oder Audit Ereignisse und Outbox Zustaellungen.
+Alle fuer `kostenBefund` relevanten frischen Belegwerte stimmen exakt mit der
+nachgerechneten Grundlinie ueberein. Der reine Kontrollfix ist jetzt
+bereitgestellt; ein neuer scharfer Wirksamkeitslauf wurde nicht ausgeloest.
+
+### §62.3 Fehlende Texte und kleinster weiterer Schritt
+
+Der vorhandene Fachzyklus ueber `/api/cron/pipeline` ist kein Textnachlauf:
+`handleBriefingMaterialization` liest mit `buildV3Briefing` vorhandene Daten und
+speichert kein Lage Narrativ. Dafuer existiert der gesondert geschaltete Typ
+`tenant_narrative`; im geprueften Tagesbestand gibt es davon keine Auftraege.
+Seine Aktivierung ist keine Zaehlerkorrektur und wurde nicht vorgenommen.
+
+Der bestehende manuelle Textweg `500-lagecheck-25.yml`, Schritt `briefing`, ruft
+`/api/cron/lage-briefing` auf. Er verlangt jedoch 29 Profile, davon 25 aktiv,
+und einen bestaetigten natuerlichen Abendcrawl desselben UTC Tages. Diese
+Voraussetzungen duerfen nicht fuer 500 uminterpretiert oder umgangen werden.
+Der direkte Cron durchlaeuft alle Profile mit 240 Sekunden Arbeitsbudget;
+er ist kein auf ausschliesslich fehlende Texte begrenzter Aufruf und kann
+vorhandene ungueltige Tagescaches ersetzen. Ein pauschaler Start ist daher
+durch die aktuelle Anweisung nicht gedeckt. Bereits gespeicherte Ergebnisse
+wurden nicht zurueckgesetzt.
+
+Die enge Kontrollkorrektur ist durch #339 online. Der Folgevorschlag berichtigt
+ihren Nachweis und die Offline Abgrenzung; seine Uebernahme bleibt offen.
+Fuer heutige neue Texte fehlt weiterhin
+ein gepruefter, gezielt begrenzter Textnachlauf im bestehenden Ausfuehrer mit
+unveraenderter Generatorlogik und eigener konkreter Freigabe. Ein weiterer
+allgemeiner Fachzyklus wuerde diese Luecke nicht schliessen. Die Gesamtabnahme
+aller 500 und die inhaltliche Qualitaet bleiben offen; dieser Sprint verspricht
+keinen vollstaendigen 500er Nachweis durch einen einzelnen Lauf.

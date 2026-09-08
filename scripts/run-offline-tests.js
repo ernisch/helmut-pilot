@@ -113,6 +113,7 @@ const DENYLIST = new Set([
   "shadow-ingest.js", // Werkzeug
   "shadow-pilot-crawl.js", // echter Crawl
   "pardok-structure-probe.js", // echte Parlaments-Endpunkte
+  "pardok-shadow-test.js", // Live XML Leser; eigener PARDOK Workflow, kein Offline Nachweis
   "sprint6-migration-dryrun.js", // Werkzeug gegen DB
   "sprint9b-verify-abrufwege.js", // echtes Netz
   "sprint9b-summary.js", // Reporting-Werkzeug

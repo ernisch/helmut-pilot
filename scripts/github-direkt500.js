@@ -120,15 +120,16 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         && /^cron-pipeline-[a-zA-Z0-9-]+$/.test(b.lauf?.laufId || "")
         && b.lauftelemetrie?.start === true && b.lauftelemetrie?.ende === true
         && b.lauftelemetrie?.status === "success" && Number.isSafeInteger(v?.erledigt) && v.erledigt > 0
+        && Number.isSafeInteger(v.wiederholt) && v.wiederholt >= 0
+        && Number.isSafeInteger(v.verarbeitet)
+        && v.verarbeitet === v.erledigt + v.wiederholt + v.endgueltigFehlgeschlagen
         && v.endgueltigFehlgeschlagen === 0 && b.weckVersand?.versendet === 0,
         "fachzyklus-kein-bestaetigter-fortschritt");
       const quittungen = await db("process_runs?select=run_id,process,status,started_at,finished_at,processed_count,failed_count"
         + "&run_id=eq." + encodeURIComponent(b.lauf.laufId) + "&process=eq.warteschlange-pipeline&limit=2");
       const q = quittungen[0];
-      // process_runs.processed_count zaehlt die tatsaechlich erledigten Auftraege.
-      // `verarbeitung.verarbeitet` umfasst dagegen auch regulär zurueckgestellte
-      // Auftraege. Bei einem groesseren Rueckstand sind beide Werte deshalb
-      // absichtlich verschieden; die Laufquittung muss an `erledigt` gebunden sein.
+      // Die Quittung speichert Abschluesse. `verarbeitet` in der Cronantwort
+      // enthaelt zusaetzlich Wiederholungen und endgueltige Fehler.
       D.fordere(quittungen.length === 1 && q.run_id === b.lauf.laufId && q.status === "success"
         && q.processed_count === v.erledigt && q.processed_count > 0 && q.failed_count === 0
         && Date.parse(q.started_at) >= start.getTime() && Date.parse(q.finished_at) >= Date.parse(q.started_at)
