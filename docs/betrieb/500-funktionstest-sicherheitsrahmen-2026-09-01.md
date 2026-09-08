@@ -7854,3 +7854,231 @@ Profilmutation oder zusaetzliche Facharbeit durch diese Sitzung. Die bestehende
 Fortsetzung ist waehrend der aktiven Ausfuehrung pausiert, um Parallelbearbeitung
 zu vermeiden. Testdauer nach Aktivierung 24 Stunden geplant, maximal 48 Stunden;
 konkretes ausfuehrbares Testende vor Aktivierung terminieren.
+
+### §60.5 Gepruefte Uebernahme und echter Ausbaubeginn
+
+Lokaler kanonischer Lauf: **337/337 in 725 Sekunden**, Browser **40/40** mit
+Playwright 1.56.1. Erstlauf der externen CI bestaetigte 500 Konten und den echten
+Testdatenbankbestand 504/500; anschliessend scheiterte eine Testassertion an der
+verbliebenen Variable `a`. Die Korrektur bindet den Vergleich an den bereits
+frisch gelesenen Ausgangssnapshot. Keine A Abnahme wird dadurch nachgebaut.
+
+PR [334](https://github.com/ernisch/helmut-pilot/pull/334), letzter Kopf
+`f795636f83ddc0275f1499f58bb7b96589ed5ad4`: beide Pflichtjobs in
+[34195656471](https://github.com/ernisch/helmut-pilot/actions/runs/34195656471)
+erfolgreich. Extern 337/337 in 452 Sekunden, Browser 40/40, PostgreSQL 17.11
+10/10 einschliesslich 475 Anlagen, 475 Aktivierungen und 495 Deaktivierungen;
+auch der gesonderte Z22 Datenbanknachweis ist erfolgreich.
+
+Merge mit gebundenem erwarteten Kopf und zwei Eltern:
+`ee675edb6097b1a6de7cba7841d703f467ca7e27`. Baum
+`ccaacf06fc149ae12e7a1af5e4d819394bdc4868` ist identisch zum geprueften Kopf.
+Production `dpl_8pJ6m8JJWEwUNjcAGRH1M4P7Pk8u` am exakten Merge **READY**, Alias
+`helmut-pilot.vercel.app` bestaetigt, kein Aliasfehler. Keine Konfigurationsaenderung,
+Migration, neue Ressource oder neuer Zugriff erforderlich.
+
+Production Vorpruefung
+[34196620666](https://github.com/ernisch/helmut-pilot/actions/runs/34196620666)
+um **06:52:49 UTC**: ok, 29 Profile, 25 aktiv, null B/C Zielprofile,
+`aAbnahmeErforderlich:false`, `nachtfensterErforderlich:false`, bereit zur Anlage.
+57 Reservierungen, 57 echte Modellbelege, keine unbekannten Kosten oder
+Reservierungsluecken; bekannte Schaetzung **0,144399 USD**, konservative Prognose
+einschliesslich 2 USD Reserve **2,144399 USD**. Das ist weiterhin keine atomare
+USD Sperre. Geschuetzte App Grundlinie SHA256
+`e6727f8e845685f7e05a3f2f92ee7467752e848aa6d12b1481be3f6bb26f8346`.
+
+Die ausdruecklich autorisierte Anlage wurde einmal als
+[34196796115](https://github.com/ernisch/helmut-pilot/actions/runs/34196796115)
+auf main `ee675ed` ausgeloest. Der Browser meldete danach eine Zeitueberschreitung;
+statt eines zweiten Klicks wurden Laufseite und Datenbank unabhaengig gelesen.
+Der Auftrag lief und neue Profile waren bereits gespeichert. Um **07:04 UTC**
+sind **135 von 475** weiteren Mandaten inaktiv angelegt; 25 bleiben aktiv.
+Dies ist ein laufender Zwischenstand, kein abgeschlossener 500er Nachweis.
+
+Der unabhängige Vergleich schliesst ausschliesslich `test-kohorte-b-*` und
+`test-kohorte-c-*` aus. Geschuetzte MD5 ueber sortierte volle JSONB Zeilen:
+Mandate `ede70d5ae7b0bcdd4ea4c07129b92cda`, Identitaeten
+`9d2690a1e17a067cc21f663c9c3df1de`, Konten nach `id` sortiert
+`877ca0af4e6466b8231c4101e79e5054`. Alle drei sind waehrend der bisherigen
+Anlage unveraendert. Keine aktiven oder verwaisten Leases, Tageszaehler weiter 57.
+Supabase um 06:43 UTC gesund: CPU 3 %, RAM 58 %, 8/60 Verbindungen.
+
+## §61 · 08.09.: laufende Fortsetzung bis 500
+
+Der Betreiber fordert erneut ausdruecklich die kontinuierliche Fertigstellung
+und den direkten Betrieb von 500 Profilen. Die Freigabe aus §60 gilt weiter.
+Die bestehende Ueberwachung war pausiert und hatte keinen automatischen Lauf.
+Der getrennte GitHub Ausbau lief bis zu seinem begrenzten Ende weiter.
+
+### §61.1 Bestaetigter Zwischenstand und Fortsetzung der Anlage
+
+Der erste Anlagevorgang `34196796115`, Job `101966214659`, endete am 08.09.
+um 07:15:06 UTC mit `direktausbau-zeitbudget-erreicht`: 307 Schreibversuche,
+307 unabhaengig gelesene Erfolge, kein unbekannter letzter Schreibausgang.
+Das ist ein unvollstaendiger Betriebsauftrag am 20 Minuten Limit, kein
+Nachweis eines Datenbankausfalls. Die Node 20 Abkuendigungswarnung ist
+hiervon getrennt; der Skriptprozess lief mit Node 22.23.2.
+
+READ ONLY um 07:16 UTC: 336 Profile, 25 aktiv, 311 inaktiv, 337 Identitaeten,
+332 Konten mit weiterhin drei aktiven und keiner aktiven Kohortenkennung.
+Alle 307 neuen Mandate haben genau den gespeicherten Konten und
+Identitaetsbestand; keine halben neuen Konten um 07:18 UTC. Geschuetzte
+MD5 unveraendert: Mandate `ede70d5ae7b0bcdd4ea4c07129b92cda`, Identitaeten
+`9d2690a1e17a067cc21f663c9c3df1de`, Konten
+`877ca0af4e6466b8231c4101e79e5054`. Null aktive Sperren, aktive oder
+verwaiste Auftragsleases, null heutige Outbox Versandquittungen.
+
+Aktueller main und Production erneut unabhaengig geprueft: `ee675ed`,
+Deployment `dpl_8pJ6m8JJWEwUNjcAGRH1M4P7Pk8u` READY am Hauptalias,
+keine offenen Pull Requests. Fuer die Fortsetzung existiert ein eigener
+Arbeitsbranch `codex/500-fortsetzung-20260908`; die noch ungesicherte
+Nachkontrolle aus §60.5 wurde vollstaendig uebernommen.
+
+Die neue, ausdruecklich gestartete Provisionierung
+`34198744341`, Job `101972416890`, setzt seit 07:19 UTC auf dem identischen
+Production Commit fort. Der bereits gepruefte Ausfuehrer liest alle
+vorhandenen Zielprofile, ueberspringt sie und legt nur die fehlenden 168
+inaktiv an. Keine Riegelaenderung, keine neue Facharbeit, keine
+Kontenaktivierung. Bei der Browserzeitueberschreitung wurde nicht erneut
+geklickt; GitHub Lauf und Datenbank bestaetigen die gestartete Ausfuehrung.
+
+Um 07:23:39 UTC: 401 Profile insgesamt, 372 zusaetzliche Zielprofile,
+weiterhin 25 aktiv. Kosten um 07:22:34 UTC: 57 Reservierungen und 57
+erfolgreiche Nutzungsbelege, 0,144399 USD bekannte Schaetzung, null unbekannte
+Betrage. Konservative Prognose einschliesslich 2 USD Reserve 2,144399 USD.
+Kein Rechnungsbeleg oder atomarer USD Riegel.
+
+Die Fortsetzung `34198744341` endete um **07:30:13 UTC erfolgreich**:
+168 weitere Schreibversuche, 168 bestaetigt, 307 bereits vorhanden und
+uebersprungen. Unabhaengiges READ ONLY um 07:34/07:35 UTC bestaetigt
+**504 Profile, 25 aktiv, 479 inaktiv**, genau 475 B/C Profile,
+505 Identitaeten und 500 Konten. Weiterhin nur drei aktive Konten,
+keine aktive Testkennung. Alle drei geschuetzten MD5 stimmen mit der
+Grundlinie ueberein; keine aktiven Sperren, aktiven oder verwaisten Leases.
+
+Vor Aktivierung wurde Production erneut am Hauptalias als READY auf
+`ee675edb6097b1a6de7cba7841d703f467ca7e27` bestaetigt. Der Tageszaehler
+bleibt 57; der Nutzungsring in `main-auth` enthaelt 57 Modellbelege,
+0,144399 USD bekannte Schaetzung, null unbekannte Betraege oder
+Reservierungsluecken, ausschliesslich `gpt-5-mini`. Prognose 2,144399 USD.
+
+Die autorisierte Aktivierung wurde um **07:36 UTC** einmal als
+`34200144998`, Job `101976828607`, auf diesem Commit gestartet.
+READ ONLY um 07:39:10 UTC: **504 Profile, 219 aktiv, 285 inaktiv**.
+Dies ist ein Zwischenstand; die Aktivierung war zu diesem Zeitpunkt
+noch nicht abgeschlossen. Kein Fachlauf wurde parallel ausgeloest.
+
+**Aktivierung abgeschlossen um 07:43:17 UTC:** Workflow `34200144998`
+erfolgreich, 475 Schreibversuche und 475 bestaetigte Aktivierungen.
+Unabhaengig um 07:43:22 UTC **504 Profile, exakt 500 aktiv, vier inaktiv**.
+Nachkontrolle um 07:43:49 UTC: 505 Identitaeten, 500 Konten, drei aktive
+Konten, keine aktiven Testkonten, alle drei geschuetzten MD5 unveraendert,
+null aktive Sperren, aktive oder verwaiste Leases. Der Codekopf und
+Production READY am Hauptalias wurden vor dem naechsten Vorgang nochmals
+unabhaengig als identischer Commit `ee675ed` bestaetigt. Damit ist der
+Ausbau abgeschlossen; die fachliche 500er Abnahme folgt an echten Ergebnissen.
+
+### §61.2 Geplanter Testabschluss
+
+Der bereits autorisierte Abschluss ist als ausfuehrende Aufgabe
+`6a9fb793e9b88191a306fe15d7c238c9` fuer **09.09.2026, 11:00 Uhr Tuerkei,
+10:00 Berlin, 08:00 UTC** eingerichtet. Die Aufgabe soll nach frischem
+Production READY und separater Vorpruefung den bestehenden Workflow
+`500-testende.yml` mit `TESTKOHORTE_495_DEAKTIVIEREN_BESTAETIGT` ausfuehren.
+Ziel: 504 erhaltene Profile, fuenf reale aktiv, 499 inaktiv; Konten und
+Identitaeten erhalten. Die Terminierung ist keine bereits ausgefuehrte
+Deaktivierung und kein unverletzbarer technischer Abschalttimer.
+
+Der Versuch soll ab der unmittelbar folgenden Aktivierung etwa 24 Stunden
+dauern, maximal 48 Stunden. Maximal 10 USD Modellkosten je UTC Tag,
+Prognosestopp 9 USD, ueber die zwei betroffenen UTC Tage also hoechstens
+20 USD freigegeben. Die bekannten Kosten sind Schaetzwerte aus der
+Nutzungstelemetrie, kein Rechnungsnachweis. Kein Wochenlauf.
+
+### §61.3 Erster echter 500er Lauf und begrenzte Planungskorrektur
+
+Workflow `34200832746`, Job `101978990316`, loeste nach vollstaendiger
+Aktivierung einmal die vorhandene Pipeline aus. Unabhaengige Laufquittung
+`cron-pipeline-20260908074429-c50ba`, 07:44:29 bis 07:46:34 UTC, Code
+`ee675ed`: **failed / planung-zeitbudget**, 125.400 ms, 1.678 geplant,
+823 neu eingereiht, 250 abgeschlossen, 35 zurueckgestellt, null endgueltige
+Fehler und null verlorene Leases. Der Ausfuehrer meldet mangels Vollerfolg
+ehrlich `zustandUnbekannt:true`; die separate Quittung und READ ONLY um
+07:47:36 klaeren den abgeschlossenen Teillauf. Keine automatische Wiederholung.
+
+Neue B/C Auftraege: alle 475 Quellenauftraege eingereiht, davon 169 fertig;
+je 174 neue Projektionen und Briefings eingereiht. Zusammen mit den
+vorhandenen 25 sind damit nur 199/500 Mandate in diesen beiden Klassen
+geplant. 18 neue Verstehensauftraege. Das ist ein belegter Planungsengpass,
+kein vollstaendiger 500er Funktionsbeleg. Nachkontrolle: 500 weiter aktiv,
+keine aktiven Sperren, aktiven/verwaisten Leases oder Weckzustellungen,
+62 Tagesreservierungen, 0,161413 USD bekannte Schaetzung.
+
+Korrektur auf `codex/500-fortsetzung-20260908`: Ab 100 Profilen hoechstens
+vier bereits atomare Einreihungen gleichzeitig. Kleinere Bestaende bleiben
+seriell. Reale, geteilte und synthetische Arbeit bleiben getrennte
+Vorranggruppen. Vor jedem Schreibbeginn gilt die bisherige Deadline;
+`Promise.allSettled` beobachtet bei Zeitablauf oder Fehler saemtliche
+bereits gestarteten RPCs vor Rueckgabe. Keine weitere Gruppe nach einem
+geworfenen Schreibfehler. Worker, KI, Abrufgrenzen und Production Umgebung
+unveraendert; keine Migration, neue Ressource oder neue Fachlogik.
+
+Der neue Test `planung-500-durchsatz-test.js` reproduziert am unveraenderten
+Planer mit 1.678 Auftraegen und kontrollierter 70 ms RPC Latenz den Fehler:
+858 eingereiht, 820 ausstehend an 60.060 ms. Mit Korrektur bestehen die
+Abdeckung aller 500 in beiden Mandatsklassen, hoechstens vier gleichzeitige
+RPCs, Vorranggruppen, Deadline, Fehlerabschluss und ehrliche Teilzaehler.
+Der bestehende Planungszeitbudgettest und der Mandatsklassentest bestehen.
+
+Lokale Testumgebung korrigiert: passendes bereits vorhandenes Playwright
+1.56.1 mit Chromium 1194 und die bestehenden Paketabhaengigkeiten benutzt.
+Der erste Lauf war 333/337, danach 336/337: ein vorhandener Crawlervergleich
+schwankte durch Wandzeitmessung (1.318 gegen 1.502 ms fuer die letzte direkte
+Quelle). Nur dieser Vergleich nutzt nun die kontrollierte Node Testuhr bei
+unveraenderten Aussagen und Assertions; gezielte Suite besteht. Der volle
+Lauf mit Planungskorrektur und neuem Test laeuft noch. CI, Merge und echte
+Nachkontrolle dieser Korrektur sind zu diesem Dokumentationsstand offen.
+
+READ ONLY um **08:02:45 UTC** bestaetigt 62 Nutzungsbelege mit ausschliesslich
+`gpt-5-mini`, null unbekannte Kosten und keine Reservierungsluecke. Konservative
+Prognose **2,161413 USD** einschliesslich 2 USD Reserve. Vollstaendige
+Grundlinie aller Zeilen nach Aktivierung: Mandate MD5
+`4678db89143f6c3108bfb28f352b821b`, Identitaeten
+`3c5b0b5a6314f31c395b8758b166c5c3`, Konten nach `id`
+`61530f4d75514c37582e5ffd71d322f5`.
+
+Fuenfunddreissig Verstehensauftraege wurden wegen `understanding-locked`
+zurueckgestellt; aelteste Faelligkeit heute 04:01 UTC, kein verbrauchter
+Fehlversuch. Sechs weitere Quellenauftraege sind inzwischen regulaer
+faellig, ohne Fehler. Projektionen und Briefings der bisher 199 geplanten
+Mandate sind erst spaeter am Tag faellig. Faelligkeit und Planungsabdeckung
+sind getrennte Befunde; die fehlenden 301 Mandate werden durch die
+Planungskorrektur adressiert, nicht durch vorgezogene Fachfaelligkeiten.
+
+Die bestehende Aufgabe `6a9e7e7bbc988191988145c5f72bbf94` wurde um 07:59 UTC
+wieder aktiviert und danach unabhaengig gelesen. Erste stuendliche Kontrolle
+08.09., **09:00 UTC / 12:00 Tuerkei**, 23 Termine bis 09.09., 07:00 UTC;
+getrennte Endaufgabe weiter aktiv fuer 08:00 UTC. Der Auftrag enthaelt
+die echte Aktivierung, den ersten Teillauf, die laufende Korrektur und den
+Schutz vor parallelen Schreibern und doppelten Ausloesungen. Neuere
+Belege in CURRENT_STATE/SR gehen diesem Zwischenstand vor. Die Terminierung
+ist weiterhin keine garantierte technische Abschaltung.
+
+Der vollstaendige lokale Lauf der Korrektur ist abgeschlossen: **338/338
+Suiten gruen in 719 s**, einschliesslich der neuen 500er Planungspruefung und
+des kontrollierten Crawlervergleichs. Diff Pruefung sauber. Der bekannte
+Netz Guard Hinweis von `pardok-shadow-test.js` bleibt eine blockierte
+Testanfrage, kein externer Zugriff. Externe Pflichtjobs, Merge und
+Production Nachkontrolle folgen unter der vorhandenen Freigabe.
+
+PR **#335**, erster Kopf `88ec4efa1c71faf0e1a346cfb766c68e8ded34ee`,
+Baum `80fae9a6790f3f50f3d0f2fff3353317e1cf2fbd` exakt gleich zum lokalen
+Index. CI `34202826533`: Browser **40/40**, reale PostgreSQL Registrierungs-
+und Kontenschutzpruefung erfolgreich; **337/338** Offline Suiten erfolgreich
+in 588 s. Einziger Fehler: CURRENT_STATE nach der Fortschreibung auf
+30.184 Zeichen angewachsen, Grenze 30.000. Die vor dem PR ergaenzten
+Dokumentationszeilen waren vom frueher im Gesamtlauf ausgefuehrten
+Groessentest noch nicht erfasst worden. Zusammenfassung jetzt gekuerzt,
+gezielte Groessenpruefung gruen; Code und saemtliche Codebelege unveraendert.
+Vor jedem weiteren Dokumentationsabschluss wird diese Grenze gesondert
+nach der letzten Textaenderung geprueft. Kein Merge mit rotem Pflichtjob.
