@@ -215,6 +215,30 @@ async function stufenlauf(quellen, stufenGroesse) {
   return { dauerMs: Date.now() - start, startBei, fertigBei };
 }
 
+// Der Vergleich zweier aufeinanderfolgender Laeufe darf CPU-Aufwaermen/Jitter
+// nicht als Netzlatenz messen. Am 08.09. kippte dadurch nur die letzte direkte
+// Quelle (1.318 gegen 1.502 ms), obwohl beide Laeufe dieselben 1.101 Anfragen
+// hatten. Die echte Crawler-/Gate-Logik und alle Assertions bleiben erhalten;
+// nur Date und ihre setTimeout-Wartezeiten laufen hier auf derselben Modelluhr.
+async function mitKontrollierterUhr(fn) {
+  const { mock } = require("node:test");
+  mock.timers.enable({ apis: ["setTimeout", "Date"], now: Date.now() });
+  let fertig = false, ergebnis, fehler;
+  const lauf = Promise.resolve().then(fn).then((wert) => { ergebnis = wert; fertig = true; },
+    (error) => { fehler = error; fertig = true; });
+  try {
+    for (let tick = 0; tick < 60000 && !fertig; tick += 1) {
+      // Echte nextTick-/Promise-Ketten bis zur naechsten Wartezeit ablaufen lassen.
+      await new Promise((resolve) => setImmediate(resolve));
+      mock.timers.tick(1);
+    }
+    if (!fertig) throw new Error("Crawler-Vergleich nach 60 s Modellzeit nicht abgeschlossen");
+    await lauf;
+    if (fehler) throw fehler;
+    return ergebnis;
+  } finally { mock.timers.reset(); }
+}
+
 // Die 181 GEMESSENEN Quellendauern des gescheiterten Production-Laufs, in Laufreihenfolge
 // (`source_crawl_telemetry`, `run_id = cron-pipeline-20260803160002-xm71n-global`).
 // Rohdaten, keine Annahme. Positionen der fuenf DIREKTEN Quellen (die einzigen ohne
@@ -370,17 +394,19 @@ function abrufUntergrenze(dauern, g) {
     // `maxItems` je Quelle (`sourceMaxItems` -> `parseRssItems`) — also der echte Produktionsweg.
     FEED_ITEMS = 40;
     installiereHttpErsatz();
-    const lauf20 = await stufenlauf(quellen, 20);
-    const anfragen20 = anfragen.length;
-    const lauf5 = await stufenlauf(quellen, 5);
-    const anfragen5 = anfragen.length - anfragen20;
+    const { lauf20, anfragen20, lauf5, anfragen5 } = await mitKontrollierterUhr(async () => {
+      const lauf20 = await stufenlauf(quellen, 20);
+      const anfragen20 = anfragen.length;
+      const lauf5 = await stufenlauf(quellen, 5);
+      return { lauf20, anfragen20, lauf5, anfragen5: anfragen.length - anfragen20 };
+    });
     entferneHttpErsatz();
 
     const letzteDirekte20 = Math.max(...direkteIds.map((id) => lauf20.fertigBei.get(id) || 0));
     const letzteDirekte5 = Math.max(...direkteIds.map((id) => lauf5.fertigBei.get(id) || 0));
-    console.log(`  [Messung am laufenden Code] Stufe 20: Gesamtlauf ${lauf20.dauerMs} ms,`
+    console.log(`  [Laufender Code, kontrollierte Uhr] Stufe 20: Gesamtlauf ${lauf20.dauerMs} ms,`
       + ` letzte direkte Quelle fertig nach ${letzteDirekte20} ms, ${anfragen20} Anfragen`);
-    console.log(`  [Messung am laufenden Code] Stufe  5: Gesamtlauf ${lauf5.dauerMs} ms,`
+    console.log(`  [Laufender Code, kontrollierte Uhr] Stufe  5: Gesamtlauf ${lauf5.dauerMs} ms,`
       + ` letzte direkte Quelle fertig nach ${letzteDirekte5} ms, ${anfragen5} Anfragen`);
 
     check("4.4 beide Stufengroessen rufen dieselbe Menge ab — der Vergleich ist fair",
