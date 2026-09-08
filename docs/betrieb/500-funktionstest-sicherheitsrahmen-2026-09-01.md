@@ -8070,3 +8070,15 @@ des kontrollierten Crawlervergleichs. Diff Pruefung sauber. Der bekannte
 Netz Guard Hinweis von `pardok-shadow-test.js` bleibt eine blockierte
 Testanfrage, kein externer Zugriff. Externe Pflichtjobs, Merge und
 Production Nachkontrolle folgen unter der vorhandenen Freigabe.
+
+PR **#335**, erster Kopf `88ec4efa1c71faf0e1a346cfb766c68e8ded34ee`,
+Baum `80fae9a6790f3f50f3d0f2fff3353317e1cf2fbd` exakt gleich zum lokalen
+Index. CI `34202826533`: Browser **40/40**, reale PostgreSQL Registrierungs-
+und Kontenschutzpruefung erfolgreich; **337/338** Offline Suiten erfolgreich
+in 588 s. Einziger Fehler: CURRENT_STATE nach der Fortschreibung auf
+30.184 Zeichen angewachsen, Grenze 30.000. Die vor dem PR ergaenzten
+Dokumentationszeilen waren vom frueher im Gesamtlauf ausgefuehrten
+Groessentest noch nicht erfasst worden. Zusammenfassung jetzt gekuerzt,
+gezielte Groessenpruefung gruen; Code und saemtliche Codebelege unveraendert.
+Vor jedem weiteren Dokumentationsabschluss wird diese Grenze gesondert
+nach der letzten Textaenderung geprueft. Kein Merge mit rotem Pflichtjob.
