@@ -7,7 +7,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 const D = require("../../lib/helmut/testkohorte-direkt500");
 const P = require("../../lib/helmut/provisioning");
-const { welt, beleg, env, JETZT } = require("./direkt500");
+const { welt, env } = require("./direkt500");
 
 async function pruefeDirektausbau({ psql, base, token }) {
   assert.equal(new URL(base).hostname, "127.0.0.1");
@@ -57,10 +57,9 @@ async function pruefeDirektausbau({ psql, base, token }) {
       main: stores.find((s) => s.id === "main").data };
   }
   const vorher = await snapshot();
-  const a = beleg(vorher);
   for (const vorgang of ["provisionierung", "aktivierung"]) {
-    const r = await D.fuehreAus({ vorgang, env: env(vorgang), abnahmeA: a, deps: {
-      jetzt: () => new Date(JETZT), leseSnapshot: snapshot, pruefeBetrieb: async () => {},
+    const r = await D.fuehreAus({ vorgang, env: env(vorgang), deps: {
+      jetzt: () => new Date("2026-09-10T08:30:00.000Z"), leseSnapshot: snapshot, pruefeBetrieb: async () => {},
       schreibe: ({ id, spec }) => vorgang === "provisionierung"
         ? P.provisionTenant(spec, { storage, accounts }, { neuAktiv: false, kontoBeiFehlerBehalten: true })
         : P.activateTenant(id, { storage, accounts }),
@@ -75,7 +74,8 @@ async function pruefeDirektausbau({ psql, base, token }) {
   const nach = await snapshot();
   assert.equal(nach.auth.users.length, 500);
   assert.equal(nach.auth.users.filter((u) => u.active).length, 3);
-  assert.equal(D.pruefeSnapshot(nach, "aktivierung").geschuetzterBestandHash, a.geschuetzterBestandHash);
+  assert.equal(D.pruefeSnapshot(nach, "aktivierung").geschuetzterBestandHash,
+    D.pruefeSnapshot(vorher, "vorpruefung").geschuetzterBestandHash);
   assert.equal(D.hash(nach.main), D.hash(vorher.main));
   console.log("PASS  Echte SQL Kontrolle: 500 aktiv, vier inaktiv, alle Bestandszeilen und main unveraendert, keine neuen aktiven Konten");
   const T = require("../../lib/helmut/testkohorte-testende");

@@ -45,15 +45,20 @@ async function main() {
     }
     assert.equal(w.writes(), 0);
   });
-  await test("Fehlende, alte oder nur behauptete A Abnahme stoppt vor Write", async () => {
-    for (const patch of [null, { bestanden: true, quellen: undefined }, { abgenommenAm: "2026-09-07T22:00:00.000Z" },
-      { reservierungen: 100 }, { qualitaet: [] }, { quellen: {} }]) {
-      const w = welt();
-      const abnahmeA = patch === null ? null : { ...w.beleg, ...patch };
-      const r = await lauf(w, "provisionierung", { abnahmeA });
-      assert.equal(r.ok, false, JSON.stringify(r));
-      assert.equal(w.writes(), 0);
-    }
+  await test("Direkter Test braucht keine A Abnahme und behauptet dadurch keine Qualitaet", async () => {
+    const w = welt();
+    w.deps.jetzt = () => new Date("2026-09-10T08:30:00Z");
+    const r = await lauf(w, "provisionierung", { abnahmeA: null });
+    assert.equal(r.ok, true, JSON.stringify(r));
+    assert.equal(r.bestaetigt, 475);
+    assert.equal(r.aAbnahmeErforderlich, false);
+    assert.equal(r.funktionsnachweis500, false);
+  });
+  await test("Abweichende frisch gelesene Grundlinie stoppt vor dem ersten Schreiben", async () => {
+    const w = welt();
+    const r = await lauf(w, "provisionierung", { grundlinieHash: "0".repeat(64) });
+    assert.equal(r.grund, "grundlinie-passt-nicht-zum-bestand");
+    assert.equal(w.writes(), 0);
   });
   await test("Doppelte A Jobs und wartende Jobs werden nicht abgenommen", () => {
     const w = welt();
@@ -133,11 +138,11 @@ async function main() {
     assert.equal(w.writes(), 0);
     assert.equal(w.deletes(), 0);
   });
-  await test("Verschwindendes Zeitfenster stoppt zwischen zwei Profilen", async () => {
+  await test("Begrenzte Laufzeit stoppt zwischen zwei Profilen", async () => {
     const w = welt();
     w.deps.jetzt = () => new Date(w.writes() ? "2026-09-11T04:00:00.000Z" : JETZT);
     const r = await lauf(w, "provisionierung");
-    assert.equal(r.grund, "direktausbau-ausserhalb-des-nachtfensters");
+    assert.equal(r.grund, "direktausbau-zeitbudget-erreicht");
     assert.equal(w.writes(), 1);
   });
   await test("Fremde Profilaenderung und gekuerzter Ring stoppen den Stapel", async () => {

@@ -7791,3 +7791,66 @@ Produkt und Testcode gegenüber #332 unverändert. `git diff --check` sauber,
 CURRENT_STATE unter 30000 Zeichen und 350 Zeilen. Der bekannte abgewehrte
 Außenabruf in `pardok-shadow-test` bleibt ausgewiesen. Externe Pflichtjobs
 und Übernahme dieses reinen Dokumentationsstands folgen.
+
+
+## §60 · 08.09.: ausdruecklich sofortiger Ausbau ohne Stufenabnahme und Nachtfenster
+
+Der Betreiber verlangt in dieser Sitzung ausdruecklich, die Sperren zu entfernen
+und sofort auf 500 auszubauen. Die vorgeschaltete A Abnahme, das Nachtfenster und
+der historische Mindestzaehler ueber 100 entfallen fuer `--ziel=500`. Das ersetzt
+die entsprechenden Startbedingungen aus §55 bis §59, nicht die Abnahmekriterien
+fuer einen spaeter behaupteten erfolgreichen 500er Betrieb. Die konkrete
+Aktivierungszustimmung liegt mit dieser Anweisung vor. Es wird keine weitere
+pauschale Ziel oder Aktivierungsfreigabe verlangt.
+
+Zugriffsschutz, bestaetigter Production Kopf, bestehende Kostengrenze 10 USD je
+UTC Tag mit Prognosestopp 9 USD, Kommunikationssperre, inaktive Konten, CAS und
+Schutz des vorhandenen Bestands bleiben erhalten. Keine SQL Aktivierung,
+Migration, Umgebungsvariablenaenderung oder neue Ressource. Anlage und Aktivierung
+bleiben zwei unabhaengig nachkontrollierte Vorgaenge mit exakt 475 zusaetzlichen
+Profilen. Die 20 Minuten Laufgrenze verhindert unbekannte ueberlange Stapel.
+
+### §60.1 Frischer Ausgangsbeleg
+
+main `37ff79451feb033d35445d6480bf3c77a85f0d91`, Production
+`dpl_9p4s63PfLdedDAyhQTBUq9uJfYeh` READY am identischen Commit und Hauptalias.
+GitHub Pull Requests: 0 offen; main CI erfolgreich. Eigener sauberer Branch
+`codex/500-sofort-20260908` vom bestaetigten main.
+
+READ ONLY Abfragen 06:04 bis 06:08 UTC: 29 Profile, 25 aktiv, vier inaktiv, null
+geloescht. MD5 ueber `jsonb_agg(to_jsonb(m) ORDER BY user_id)::text` weiterhin
+`ede70d5ae7b0bcdd4ea4c07129b92cda`. 25 Konten, Nutzerarrayhash unveraendert
+`a8653cac17ddf6bf3b6566a964f1a736`. Beide A Fenster 06.09. und 07.09. je 60/60
+erledigt; 08.09. neue 60 wartend, kein fehlgeschlagener Auftrag in dieser Auswahl.
+57 Tagesreservierungen und 57 erfolgreiche Modellbelege, 0,144399 USD geschaetzt,
+null unbekannte Kosten. Keine Outbox Versandquittung heute. Kein Rechnungsbeleg.
+
+25 Morgenlagen gespeichert. 22 neue Lagebriefings mit Quellenbindung; A005,
+A014 und A017 ohne heutigen Lagecache und ohne lageBriefing Modellaufruf. Ein
+Leerzustand ist moeglich, noch nicht abschliessend erklaert. Keine positive
+Qualitaetsabnahme behauptet. Supabase ACTIVE_HEALTHY. Nach geladenem Dashboard:
+CPU 3 Prozent, RAM 52 Prozent, 19/60 Verbindungen; Ruhewerte, kein 500er Lastbeweis.
+
+### §60.2 Kleiner bestaetigter Fehler und Umsetzung
+
+Vercel protokolliert fuer `briefing-lage-20260908054531-tfh6y` einen
+AUTH_STORE_CONFLICT beim Blob Spiegel. Relationale Quittung existiert, der
+entsprechende Blob Eintrag fehlt. `recordProcessRun` nutzte noch einen einmaligen
+Lese und Schreibzyklus. Die Korrektur verwendet die vorhandene `mutateAuthStore`
+Funktion: nur bestaetigte CAS Konflikte werden auf frischem Stand wiederholt,
+keine blinde Wiederholung nach unklarem Schreibausgang. Der relationale Pfad und
+die ehrliche Fehlerquittung bleiben erhalten.
+
+Der direkte Ausfuehrer liest seine Bestandsgrundlinie frisch und bindet alle
+folgenden Schreibschritte daran. A Belegdatei und Nachtfenster werden nicht mehr
+als Startvoraussetzung verlangt. Die qualitative Abnahme bleibt ein Ergebnis
+des anschliessenden Tests. Direkter Ausbau ohne A Beleg um 08:30 UTC, Kostenzahl
+unter 100, unveraenderter Schutzbestand, CAS Konkurrenz und Fehlerverhalten sind
+gezielt geprueft: 16 + 10 + 15 + 37 = 78 bestandene Pruefpunkte.
+
+Gesamtpruefung, exakter PR Kopf, Uebernahme und Production Ausbau werden erst mit
+tatsaechlichen Ergebnissen nachgetragen. Bis dahin 25 aktiv, keine Production
+Profilmutation oder zusaetzliche Facharbeit durch diese Sitzung. Die bestehende
+Fortsetzung ist waehrend der aktiven Ausfuehrung pausiert, um Parallelbearbeitung
+zu vermeiden. Testdauer nach Aktivierung 24 Stunden geplant, maximal 48 Stunden;
+konkretes ausfuehrbares Testende vor Aktivierung terminieren.

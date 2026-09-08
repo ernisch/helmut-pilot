@@ -89,6 +89,32 @@ async function check(name, run) {
       assert.deepEqual(blob.systemErrors, [{ id: "peer" }]);
       assert.equal(calls.filter((c) => c.method === "PATCH").length, 2);
     });
+    await check("Laufprotokoll bewahrt bei CAS Konflikt den fremden Stand und seinen eigenen Beleg", async () => {
+      conflictOnce = true;
+      const result = await storage.recordProcessRun({ process: "briefing-lage", runId: "lauf-cas",
+        status: "success", processed: 25 }, { relationalAktiv: false });
+      assert.equal(result.ok, true);
+      assert.equal(result.vollstaendig, true);
+      assert.deepEqual(blob.systemErrors, [{ id: "peer" }]);
+      assert.equal(blob.processRuns.length, 1);
+      assert.equal(blob.processRuns[0].runId, "lauf-cas");
+      assert.equal(calls.filter((c) => c.method === "PATCH").length, 2);
+    });
+    await check("Parallele Laufprotokolle und Modellbelege bleiben vollstaendig", async () => {
+      const results = await Promise.all(Array.from({ length: 50 }, (_, i) => Promise.all([
+        storage.recordProcessRun({ process: "briefing-lage", runId: `parallel-${i}`,
+          status: "success", processed: 1 }, { relationalAktiv: false }),
+        storage.recordLlmUsage({ callType: "test-kein-modellaufruf", model: "none",
+          keinAufruf: true, success: false })
+      ])));
+      assert.ok(results.every(([r]) => r.ok && r.vollstaendig));
+      assert.equal(new Set(blob.processRuns.map(r => r.runId)).size, 50);
+      assert.equal(blob.llmUsage.length, 50);
+      await storage.recordProcessRun({ process: "briefing-lage", runId: "parallel-0",
+        status: "success", processed: 2 }, { relationalAktiv: false });
+      assert.equal(blob.processRuns.length, 50);
+      assert.equal(blob.processRuns.find(r => r.runId === "parallel-0").processed, 2);
+    });
     await check("Fortgesetzte Konfliktfolge innerhalb der Eingangsfrist gibt nicht nach 16 Versuchen auf", async () => {
       conflictSequence = 17;
       const result = await accounts.createUser(user(1));

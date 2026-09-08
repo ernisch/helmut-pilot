@@ -1,6 +1,6 @@
 # Direkter Ausbau von 25 auf 500
 
-Stand 07.09.2026. Umsetzung der Betreiberanweisung in [SR §55 und §56](500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+Stand 08.09.2026. Die neuere Betreiberanweisung in SR §60 erlaubt den sofortigen Test ohne Nachtfenster und ohne vorgeschaltete A Abnahme. Urspruengliche Umsetzung in [SR §55 und §56](500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 Der folgende Kurztest samt Qualitätskorrektur und geplantem Abschluss wird in **SR §57** ergänzt.
 Der Code bereitet den Ausbau und einen kontrollierten Test vor. Er behauptet weder
 500 aktive Production Profile noch deren erfolgreiche fachliche Abnahme.
@@ -13,7 +13,7 @@ unverändert. Beide Verträge können nicht vermischt werden. Es gibt keine erfu
 
 | Schritt | Wirkung | Gesamt / aktiv / inaktiv danach |
 |---|---|---|
-| `vorpruefung` | Bestand, Production Konfiguration, Kosten und A Belege ausschließlich lesen | unverändert |
+| `vorpruefung` | Bestand, Production Konfiguration und Kosten ausschließlich lesen | unverändert |
 | `provisionierung` | B 75 und C 400 über den vorhandenen Provisionierer inaktiv anlegen | 504 / 25 / 479 |
 | `aktivierung` | Genau diese vollständig angelegten 475 Mandatsprofile aktivieren | 504 / 500 / 4 |
 | `fachzyklus` | Genau eine bestehende Pipeline Runde bei 500 aktiven Profilen | Profilbestand unverändert |
@@ -49,12 +49,17 @@ Ausführungswegs und ausdrücklich auszuweisen; sie verändert keine Vercel Konf
 
 Keine Action startet automatisch eine andere. Die gemeinsame Concurrency Gruppe sperrt
 gleichzeitige manuelle Testaktionen. Aktive oder verwaiste Leases verhindern den Beginn;
-der echte Cronplan wird vorab abgeglichen. Anlage und Aktivierung beginnen neue Zeilen nur
-zwischen 21:36 und vor 03:58 UTC, keine neue Zeile nach 20 Minuten pro Vorgang. Ein bereits laufender
+die aktuelle Systemuhr wird geprueft. Anlage und Aktivierung sind zu jeder Uhrzeit erlaubt;
+keine neue Zeile nach 20 Minuten pro Vorgang. Ein bereits laufender
 Speicheraufruf kann diese Frist überschreiten; ein unbekannter Ausgang bleibt offen. Ein Fachlauf benötigt
-sechs Minuten Restzeit im selben UTC Kostentag und im Nachtfenster. Keine Uhrmanipulation.
+sechs Minuten Restzeit im selben UTC Kostentag. Keine Uhrmanipulation.
 
-## A Abnahme vor dem Ausbau
+## Qualitaetsabnahme nach dem Teststart
+
+**Seit SR §60 keine Startvoraussetzung mehr.** Die 25er Abnahme, der damalige
+Zaehler ueber 100 und eine Abnahmedatei werden beim direkten Ausbau nicht verlangt.
+Bestandsintegritaet wird an den unmittelbar frisch gelesenen Stand gebunden.
+Die nachfolgende historische Belegbeschreibung bleibt zur Auswertung erhalten.
 
 Der feste Belegpfad lautet `belege/500/abnahme-a.json`. Er wird **erst aus tatsächlich
 erhobenen und geprüften Production Befunden** erzeugt. Ein Platzhalter mit `bestanden:true`
@@ -81,7 +86,7 @@ Der abgeschlossene Lagebeleg 25/25 und natürlicher Arbeitsfortschritt bleiben v
 Ein alter Zähler über 100 ist kein aktueller Tageskostenbeleg. Ein gewöhnlicher Rückstand
 allein ist kein Fehler. Ein gesonderter neuer Start des zuvor abgelehnten A Workflows bleibt
 an seine eigene Freigabe gebunden; der neue Fachzyklus kann A nicht ersetzen, weil er erst
-bei 500 und nach bestehender A Abnahme startet.
+bei exakt 500 startet. Eine fehlende A Abnahme blockiert ihn nicht mehr.
 
 ## Fehler, Fortsetzung und Nachkontrolle
 
