@@ -8284,3 +8284,18 @@ Lambda Paket **43/43**. Zwei unveraenderte Browser Suiten bleiben lokal allein
 wegen eines dreimaligen CDN Zeitlimits beim Chromium Download ungeprueft.
 Externe Pflichtjobs, Merge, Production READY und ein echter erneuter Statusread
 stehen aus; bis dahin bleibt weitere Facharbeit gesperrt.
+
+
+Separater Funktionsbefund des natuerlichen Lage Checks um **10:00 UTC**:
+`cron-lage-check-20260908100012-bnctn` erfasste die globale Quellenphase
+vollstaendig mit 103 von 103 erfolgreichen Wegen, 1.256 von 1.257 aufgeloesten
+Google News Adressen und 1.033 gespeicherten Elementen. Die serielle
+Mandatsphase erreichte innerhalb 225.919 ms jedoch nur **83 von 500** Profilen,
+darunter alle fuenf realen und 78 synthetische. Persistierte Lage Checks und
+Fairnesszustand bestaetigen diesen Umfang; der Laufstatus ist ehrlich
+`teilweise`. **417 Profile blieben wegen des Zeitbudgets unverarbeitet.** Es
+gab keinen manuellen Ersatzlauf. Rotation schuetzt vor dauerhafter
+Verdraengung, kann die offene 500er Abdeckung vor dem fest geplanten Testende
+am 09.09. um 08:00 UTC aber ohne weiteren dafuer vorgesehenen Lauf nicht
+belegen. Das ist ein echter offener Funktionsblocker, kein Datenverlust und
+kein Kostenstopp.

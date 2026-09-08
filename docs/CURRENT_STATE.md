@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 08.09.2026, 10:05 UTC. EXAKT 500 AKTIV.** Ausbau abgeschlossen; #335/#336 behoben. Code `e6e33ee` Production READY. Nachlauf **34209508413 erfolgreich**: **1.678 geplant, null ausstehend, 41 abgeschlossen, null endgueltige Fehler**. Watchdog `34212536121` blieb beim Statuslesefehler fail closed und startete keinen Ersatzlauf; Korrektur in Pruefung, SR §61.7. Bestand 504/500/4 und Vollhashes unveraendert; 85 Reservierungen, 0,239680 USD geschaetzt. Ueberwachung aktiv; Testende **09.09., 08:00 UTC / 11:00 Tuerkei**. [SR §61](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). **24 Stunden Gesamtabnahme und Texte aller 500 noch offen.**
+**Stand: 08.09.2026, 10:41 UTC. EXAKT 500 AKTIV.** Code `e6e33ee` READY; Nachlauf **34209508413 erfolgreich** mit 41 Abschluessen und null Fehlern. Watchdog `34212536121` blieb beim Statuslesefehler fail closed; PR #338 haertet nur den Leser. Der natuerliche Lage Check erreichte **83/500**, Fairnessstatus teilweise, 417 zeitbedingt offen. Bestand und Vollhashes unveraendert; 85 Reservierungen, 0,239680 USD. Testende **09.09., 08:00 UTC / 11:00 Tuerkei**. [SR §61](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). **Gesamtabnahme und Texte aller 500 offen.**
 
 
 **Kernlage:** Warteschlangenmotor seit 23.08. in Production `on`, Dispatch `shadow` (Cron-Antrieb, kein AWS). Fünferbeleg mit 376 Abschlüssen: [OP-30 §30.7](betrieb/op30-aktivierung-5-mandate.md). **Aktuell vier historische Vorgänge `unbekannt`, jüngste Änderung 02.09., 11:33 UTC; keine neue unbekannte Reservierung nach Wiederanlauf.** Selbstweck in Production nie ausgeführt.
@@ -11,7 +11,7 @@
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **Watchdog Lesefehler 08.09.:** Lauf `34212536121` erhielt HTTP 200, aber keinen belegbaren Status und startete deshalb keinen schweren Ersatzlauf. Production Laufzeile und Bestand sind separat gesund. Ein enger GET Leser mit zwei unabhaengigen Prozessfiltern ist lokal fachlich gruen; PR, externe Pflichtjobs, Merge und Production READY stehen noch aus, SR §61.7.
+- **Watchdog und Lage Check 08.09.:** `34212536121` startete bei unlesbarem Status keinen Ersatzlauf; PR #338 haertet den GET Leser. Der Lauf `cron-lage-check-20260908100012-bnctn` erfasste global 103/103 Quellen, speicherte aber nur 83/500 Mandatslagen. 417 bleiben zeitbedingt offen; keine Gesamtabnahme, SR §61.7.
 - **Aktueller Codekopf #336:** `e6e33eec9dd71573bf81ac3151efc18864345709`, Production `dpl_GpiuhLdg1bLLsmosg1HaJmdc8k2X` READY. Gepruefter Kopf `e4d2204`, zwei Merge Eltern, identischer Baum. CI `34208235963`: 338/338, Browser 40/40, PostgreSQL 10/10 und 48/48. Gesperrter Dispatch liefert den kanonischen Nullzaehler; echter Nachlauf und Kontrolle erfolgreich, SR §61.6.
 - **Planung #335:** `4cd56d7`, READY und beide Pflichtjobs gruen. Ab 100 Profilen hoechstens vier atomare Einreihungen gleichzeitig bei unveraenderten Vorranggruppen und Zeitgrenzen. Volle 500er Planungsabdeckung im echten Nachlauf bestaetigt, SR §61.4.
 - **Direkter Ausbau #334:** `ee675ed`, READY und beide Pflichtjobs gruen; Ausbau ohne A Vorabnahme und Nachtfenster sowie sichere CAS Wiederholung idempotenter Laufprotokolle, SR §60.
