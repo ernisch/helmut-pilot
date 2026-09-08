@@ -8142,7 +8142,7 @@ Ein fehlender Versandzaehler wird weiterhin abgelehnt, ohne automatische
 Wiederholung. Vollstaendige lokale Pruefung und externe Pflichtjobs folgen
 vor Merge; Production laeuft zu diesem Stand noch auf PR #335.
 
-Die aktive stuendliche Ueberwachung wurde um 08:49 UTC mit diesem Ergebnis
+Die aktive stuendliche Ueberwachung wurde um 08:53 UTC mit diesem Ergebnis
 und der laufenden Statuskorrektur fortgeschrieben. Sie soll bis zum neueren
 geprueften Nachlauf nur beobachten, keine parallele Korrektur oder zweite
 Pipeline erzeugen. Testende und aktivierter Zeitplan bleiben erhalten.
@@ -8168,3 +8168,84 @@ Der bekannte Netz Guard Hinweis bleibt die blockierte Testanfrage aus
 `pardok-shadow-test.js`. CURRENT_STATE wird nach der letzten Fortschreibung
 separat auf seine Groessengrenze geprueft. Externe Pflichtjobs, Merge und
 Production Nachlauf folgen unter der vorhandenen Betreiberfreigabe.
+
+Statuskorrektur als **PR #336**, Kopf
+`e4d22042422b8b09b81fb7f6328b3acfb521ec0b`, Baum
+`2028e4022234c448ff7d087da2f5e285249e77b2` identisch zum lokal geprueften
+Index. Vergleich gegen main `4cd56d7`: genau vier Dateien, nur der additive
+Rueckgabezaehler, der Regressionstest und die zwei Statusdokumente. CI
+`34208235963` laeuft; Browser Job `102002772595` ist erfolgreich mit
+**40/40**. Der zweite Pflichtjob `102002772298` ist noch nicht abgeschlossen.
+Kein vorgezogener Merge.
+
+
+### §61.6 Statuskorrektur uebernommen und Production Nachlauf
+
+Beide Pflichtjobs in CI `34208235963` sind erfolgreich: extern **338/338
+in 461 s**, Browser **40/40**, echte PostgreSQL 17.11 Pruefungen **10/10
+und 48/48**. Frischer PR Kopf weiterhin `e4d2204`, Basis `4cd56d7`,
+mergefaehig. Unter fortbestehender Betreiberfreigabe uebernommen als
+**`e6e33eec9dd71573bf81ac3151efc18864345709`**. Zwei Eltern `4cd56d7`
+und `e4d2204` separat im Browser bestaetigt; Commitvergleich gegen den
+geprueften Kopf: null Dateiaenderungen, ein Commit voraus, keiner zurueck.
+Der gepruefte Baum bleibt `2028e4022234c448ff7d087da2f5e285249e77b2`.
+
+Production **`dpl_GpiuhLdg1bLLsmosg1HaJmdc8k2X` READY** am Hauptalias,
+exakter Merge `e6e33ee`, kein Aliasfehler. Frischer main identisch.
+READ ONLY **09:20:05 UTC**: 504 Profile, 500 aktiv, volle drei MD5
+unveraendert; null aktive Sperren, aktive oder verwaiste Leases. 36
+Auftraege inzwischen faellig, 77 Reservierungen und 77 echte Modellbelege,
+null unbekannte Kosten, weiterhin 0,212964 USD Schaetzung und 2,212964 USD
+Prognose. Null heutige Outbox Versandquittungen. Keine offenen Pull Requests
+und keine laufenden Vorgaenger im direkten Fachworkflow.
+
+Genau ein neuer kontrollierter Fachzyklus als **34209508413**, Job
+**102006887474**, um 09:21 UTC am geprueften Commit ausgeloest. Die
+unabhaengig gelesene Laufseite bestaetigt den Start. Der erfolgreiche
+Abschluss wird erst nach Controller und gesonderter Datenbankquittung
+nachgetragen; keine vorgezogene Gesamtabnahme.
+
+**Nachlauf erfolgreich abgeschlossen:** Workflow `34209508413` und Job
+`102006887474` SUCCESS, Ausfuehrer `ok:true` um **09:23:30 UTC**. Separate
+Quittung `cron-pipeline-20260908092119-yzio9`: **09:21:19.725 bis
+09:23:28.095 UTC**, 128.370 ms, **41 fertig**, eine Zurueckstellung,
+null endgueltige Fehler, Wiederholungen oder verlorene Leases. Der
+Production Laufbericht bestaetigt **1.678 geplant, null neu, null
+ausstehend, tenants=500**, Weckversand 0/0, Start und Ende quittiert,
+Blob Spiegel 295 aufgenommen, null verworfen, Zustand gruen.
+
+Damit sind der belegte Planungsengpass und der falsche Kontrollstatus
+auch im echten Betrieb korrigiert. Der Ausfuehrer bestaetigt den
+unveraenderten vollen Profil-, Identitaets- und Kontenbestand, die
+Kommunikationsspur und die Kosten vor und nach dem Lauf. Er behauptet
+weiterhin ausdruecklich `funktionsnachweis500:false`: die zeitliche
+Gesamtabdeckung, Quellenqualitaet und faire Fortsetzung bleiben waehrend
+des geplanten 24 Stunden Versuchs zu beobachten.
+
+Unabhaengiges READ ONLY um **09:25:14 UTC**: **504/500/4**, alle drei
+vollen MD5 unveraendert, null aktive Sperren, aktive oder verwaiste
+Leases. **500 Projektionen und 500 Briefings** im aktuellen Tagesfenster
+vorhanden, jeweils regulaer erst spaeter faellig. **85 Reservierungen
+und 85 Modellbelege**, nur `gpt-5-mini`, null unbekannte Kosten oder
+Reservierungsluecken. Bekannte Schaetzung **0,239680 USD**, konservative
+Prognose **2,239680 USD**; keine heutige Outbox Versandquittung.
+
+Die aktivierte Ueberwachung erhielt um 09:25 UTC den erfolgreichen
+Codekopf und Nachlauf, aktuelle Kosten und unveraenderte Grundlinien.
+Keine erneute Anlage oder Aktivierung. Weitere vorhandene Fachzyklen
+bleiben bei belegter Faelligkeit und gesundem Zustand autorisiert;
+kein Parallelwriter. Die ausfuehrende Endaufgabe bleibt fuer 09.09.,
+08:00 UTC / 11:00 Tuerkei terminiert. Der Nachweis eines automatisch
+bereits gelaufenen Ueberwachungstermins liegt bislang nicht vor; die
+aktuellen Belege stammen aus dieser aktiven Sitzung. Terminierung ist
+keine garantierte technische Abschaltung.
+
+Der nun folgende reine Abschluss PR aktualisiert CURRENT_STATE und
+diesen Betriebsbeleg gemaess CLAUDE §9. Er aendert ausschliesslich
+Dokumentation. Der vollstaendige lokale Codebeleg 338/338 in 717 s
+bleibt fuer unveraenderten Code gueltig; die Groessenpruefung laeuft
+nach der letzten Textaenderung erneut. Beide externen Pflichtjobs
+werden vor Merge am exakten Dokumentationskopf geprueft. Dieser
+abschliessende reine Dokumentationsmerge loest keinen rekursiven
+Folge PR aus; seine Uebernahme und Bereitstellung werden aus der
+Commit und Deployment Historie belegt.
