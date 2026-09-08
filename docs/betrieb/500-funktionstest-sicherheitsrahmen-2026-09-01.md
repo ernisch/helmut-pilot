@@ -8727,3 +8727,20 @@ Production Belegsatz** ausgefuehrt: sie verweigert genau mit
 Kontrolle. Die bestehende stündliche Aufgabe ist aktiv, letzter verzeichneter
 Lauf 17:00:46 UTC; die Endaufgabe bleibt 09.09., 11:00 Tuerkei. Keine dieser
 Aufgaben oder ihrer Zeitplaene wurde durch diesen Sprint veraendert.
+
+**Letzte gezielte Korrektur:** Auch der serverseitige Textnachlauf liest jetzt
+hoechstens 50 Mandate je URL, jeweils mit strenger Antwort und Mandantenpruefung.
+Der alte Sammelleser haette alle 500 Kennungen in jeden URL Filter aufgenommen
+und Nichtarray Antworten still ignoriert. Dieser bestehende allgemeine Leser
+bleibt unberuehrt; der neue Modus benutzt ihn nicht. Test **10/10 Gruppen**,
+einschliesslich URL Laenge unter 4096 Zeichen fuer die gesamte 500er Fixture,
+fremder, doppelter, leerer und unlesbarer Antworten vor jeder Generierung.
+Der HTTP Schutzvertrag besteht erneut mit **42/42**.
+
+READ ONLY **08.09., 20:59 Tuerkei / 19:59 Berlin / 17:59 UTC**:
+Alle **5 realen Profile** und **17 von 495 synthetischen Profilen** haben einen
+heutigen gespeicherten Text, insgesamt **82 Textabsaetze**.
+Bei **478 synthetischen Profilen** fehlt die Tageszeile. Um 18:00 UTC sind
+davon 323 durch erledigte Projektion vorbereitet und 155 noch nicht. Auch
+ein ausreichend langes Textfenster darf diese 155 Projektionsstufen nicht
+ueberspringen. Der Befund ist keine frische App oder Qualitaetsabnahme.

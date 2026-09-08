@@ -40,7 +40,6 @@ function fixture() {
     fromMandateProfileRow: S.fromMandateProfileRow,
     acquirePipelineLock: async (name) => { h.locks.push({ job_name: name }); return true; },
     releasePipelineLock: async (name) => { h.locks = h.locks.filter(l => l.job_name !== name); },
-    listRenderedBriefingsV3ForTenants: async () => kopie(h.rows),
     getRenderedBriefingV3: async (id, slot, day, opts) => {
       assert.equal(slot, "lage"); assert.equal(day, "2026-09-08"); assert.equal(opts.strict, true);
       return kopie(h.rows.find(r => r.user_id === id) || null);
@@ -57,6 +56,14 @@ function fixture() {
       get: async path => {
         if (h.fault) throw new Error(h.fault);
         const u = new URL("https://example.invalid/" + path), table = u.pathname.slice(1);
+        if (table === "briefings") {
+          const ids = JSON.parse("[" + u.searchParams.get("user_id").slice(4, -1) + "]");
+          assert(ids.length <= 50); assert(path.length < 4096);
+          assert.equal(u.searchParams.get("slot"), "eq.lage");
+          assert.equal(u.searchParams.get("id"), "like.*-lage-2026-09-08");
+          assert.equal(u.searchParams.get("limit"), "51");
+          return kopie(h.rows.filter(r => ids.includes(r.user_id)));
+        }
         if (table === "mandate_profiles") {
           const id = u.searchParams.get("user_id")?.slice(3);
           return kopie(id ? s.mandate.filter(m => m.user_id === id) : s.mandate);
@@ -110,6 +117,19 @@ function fixture() {
     const r = await T.ausfuehren(h.args);
     assert(r.ok); assert(r.gespeichert > 0 && r.gespeichert < 478);
     assert(r.results.some(x => x.grund === "zeitbudget")); assert.equal(r.automatischeWiederholung, false);
+  });
+  await test("Unlesbare, doppelte oder fremde Textzeilen sperren die erste Generierung", async () => {
+    for (const bad of [{}, [null], [{ id: "fremd", user_id: "fremd" }], "duplicate"]) {
+      const h = fixture(), get = h.args.deps.get;
+      h.args.deps.get = async path => {
+        const rows = await get(path);
+        if (!path.startsWith("briefings?")) return rows;
+        return bad === "duplicate" && rows.length ? [rows[0], rows[0]] : bad === "duplicate" ? rows : bad;
+      };
+      const r = await T.ausfuehren(h.args);
+      assert.equal(r.grund, "nachlauf-textbestand-unlesbar");
+      assert.equal(h.calls.length, 0); assert.equal(h.receipts.length, 0);
+    }
   });
   await test("Nicht erledigte oder zukunftsfaellige Projektionen werden nicht vorgezogen", async () => {
     const h = fixture(); h.jobs.forEach(j => { j.status = "wartend"; j.due_at = "2026-09-08T20:00:00Z"; });
