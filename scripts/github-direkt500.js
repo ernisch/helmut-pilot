@@ -96,6 +96,72 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       bereitZumFachzyklus: vor.aktiv === 500,
       scharferSchrittFreigegeben: false, funktionsnachweis500: false };
 
+    if (vorgang === "textnachlauf") {
+      const T = require("../lib/helmut/testkohorte-textnachlauf");
+      D.fordere(config.textnachlaufVersion === 1, "textnachlauf-nicht-deployt");
+      D.fordere(vor.gesamt === 504 && vor.aktiv === 500 && vor.aktive.length === 475,
+        "textnachlauf-braucht-500-aktive-profile");
+      T.pruefeKosten(bestand.auth, kosten.reservierungen, now().toISOString().slice(0, 10));
+      D.fordere(/^[0-9]{5,20}$/.test(env.GITHUB_RUN_ID || "") && env.GITHUB_RUN_ATTEMPT === "1",
+        "textnachlauf-keine-wiederholung");
+      const hash = D.hash({ mandate: bestand.mandate, identitaeten: bestand.identitaeten, users: bestand.auth.users });
+      const runId = "nachlauf500-" + env.GITHUB_RUN_ID;
+      const kostenVorher = kosten;
+      const day = require("../lib/helmut/briefing-frische").berlinTagKey(now());
+      const ids = bestand.mandate.filter(m => m.aktiv).map(m => m.user_id);
+      async function leseTexte() {
+        const rows = [];
+        for (let i = 0; i < ids.length; i += 50) {
+          const teil = ids.slice(i, i + 50);
+          const result = await db("briefings?select=*&slot=eq.lage&user_id=in.("
+            + encodeURIComponent(teil.map(id => JSON.stringify(id)).join(",")) + ")&id=like.*-lage-" + day + "&limit=51");
+          D.fordere(result.length <= 50 && result.every(r => teil.includes(r.user_id)
+            && r.id === `bf-${r.user_id}-lage-${day}`), "textnachlauf-textbestand-ungueltig");
+          rows.push(...result);
+        }
+        D.fordere(new Set(rows.map(r => r.id)).size === rows.length, "textnachlauf-doppelte-texte");
+        return rows;
+      }
+      const texteVorher = await leseTexte();
+      fachlaufAusgeloest = true;
+      const res = await fetchFn("https://helmut-pilot.vercel.app/api/cron/lage-briefing?nachlauf=fehlende-500", {
+        method: "POST", redirect: "error", signal: AbortSignal.timeout(295000),
+        headers: { Authorization: `Bearer ${env.HELMUT_CRON_SECRET}`, Accept: "application/json",
+          "x-helmut-production-commit": env.GITHUB_SHA, "x-helmut-lauf": runId,
+          "x-helmut-bestaetigung": T.CONFIRM }
+      });
+      D.fordere(res.status === 200, "textnachlauf-http-fehler");
+      const b = await res.json();
+      D.fordere(b?.ok === true && b.schemaVersion === 1 && b.runId === runId
+        && b.modus === "manuell-fehlende-texte" && b.ziel === 500
+        && Number.isSafeInteger(b.gespeichert) && b.gespeichert >= 0 && b.gespeichert <= 500
+        && Array.isArray(b.results) && b.results.length === 500
+        && new Set(b.results.map(r => r.userId)).size === 500
+        && b.results.every(r => ids.includes(r.userId))
+        && b.results.filter(r => r.gespeichert === true).length === b.gespeichert
+        && b.funktionsnachweis500 === false, "textnachlauf-antwort-nicht-bestaetigt");
+      const rows = await db("process_runs?select=run_id,status,processed_count,failed_count,started_at,finished_at"
+        + "&process=eq." + T.PROCESS + "&run_id=eq." + runId + "&limit=2");
+      D.fordere(rows.length === 1 && rows[0].run_id === runId && rows[0].status === "success" && rows[0].failed_count === 0
+        && rows[0].processed_count === b.gespeichert && Date.parse(rows[0].started_at) >= Date.parse(startIso)
+        && Date.parse(rows[0].finished_at) >= Date.parse(rows[0].started_at)
+        && Date.parse(rows[0].finished_at) <= now().getTime(), "textnachlauf-quittung-abweichend");
+      await pruefeBetrieb();
+      const nach = await snapshot();
+      D.pruefeSnapshot(nach, "aktivierung");
+      D.fordere(hash === D.hash({ mandate: nach.mandate, identitaeten: nach.identitaeten, users: nach.auth.users }),
+        "textnachlauf-bestand-veraendert");
+      T.pruefeKosten(nach.auth, kosten.reservierungen, now().toISOString().slice(0, 10));
+      const texteNachher = await leseTexte();
+      D.fordere(texteVorher.every(r => texteNachher.some(n => n.id === r.id && D.hash(n) === D.hash(r))),
+        "textnachlauf-hat-vorhandenen-text-veraendert");
+      D.fordere(b.results.filter(r => r.gespeichert).every(r => !texteVorher.some(v => v.user_id === r.userId)
+        && texteNachher.some(n => n.user_id === r.userId && Date.parse(n.generated_at) >= Date.parse(startIso)
+          && Date.parse(n.generated_at) === Date.parse(r.generatedAt) && n.payload?.paragraphs?.length > 0)),
+      "textnachlauf-texte-nicht-gespeichert");
+      return { ...plan, ...b, ausgeloest: true, kostenVorher, kostenNachher: kosten };
+    }
+
     if (vorgang === "fachzyklus") {
       D.fordere(vor.gesamt === 504 && vor.aktiv === 500 && vor.aktive.length === 475,
         "fachzyklus-braucht-500-aktive-profile");

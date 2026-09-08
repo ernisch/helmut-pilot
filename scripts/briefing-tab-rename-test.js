@@ -41,8 +41,8 @@ check("3c currentHelmutState (API-Vertrag) wird weiter gelesen", clientSrc.inclu
 check("3d helmutAssessment (API-Vertrag) wird weiter gelesen", clientSrc.includes("helmutAssessment"));
 
 // --- 4) Reiterbezogene sichtbare Texte umbenannt ----------------------------------------
-check("4 Sprungbutton aus der Lage: 'Im Briefing öffnen' (statt 'In Helmut öffnen')",
-  clientSrc.includes("Im Briefing öffnen") && !clientSrc.includes("In Helmut öffnen"));
+check("4 Sprungbutton benennt die Empfehlung im Briefing (statt 'In Helmut öffnen')",
+  clientSrc.includes("Empfehlung im Briefing öffnen") && !clientSrc.includes("In Helmut öffnen"));
 check("4b Bereichs-ARIA: 'Briefing – aktueller Stabschefstand'",
   clientSrc.includes('aria-label="Briefing – aktueller Stabschefstand"'));
 check("4c Kein Zustands-Abschnitt traegt mehr exakt aria-label=\"Helmut\"",

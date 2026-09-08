@@ -316,6 +316,50 @@ async function main() {
       assert.equal(h.anfragen.filter(u => u.pathname === "/api/cron/pipeline").length, 1);
     }
   });
+  await test("Textnachlauf braucht deployte Faehigkeit und verweigert Actions Wiederholung", async () => {
+    const h = await bereitZumFachzyklus();
+    const args = { ...h.args, vorgang: "textnachlauf", env: { ...h.args.env,
+      HELMUT_TESTKOHORTE_CONFIRM: D.WORTE.textnachlauf, GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1" } };
+    let r = await G.ausfuehren(args);
+    assert.equal(r.grund, "textnachlauf-nicht-deployt");
+    h.config.textnachlaufVersion = 1;
+    r = await G.ausfuehren({ ...args, env: { ...args.env, GITHUB_RUN_ATTEMPT: "2" } });
+    assert.equal(r.grund, "textnachlauf-keine-wiederholung");
+    assert(!h.anfragen.some(u => u.pathname === "/api/cron/lage-briefing"));
+  });
+  await test("Textnachlauf nutzt genau einen geschuetzten POST und prueft gespeicherte Wirkung", async () => {
+    const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
+    h.config.textnachlaufVersion = 1;
+    const runId = "nachlauf500-123456789";
+    let calls = 0, claimed = 0;
+    h.quittungen = [{ run_id: runId, status: "success", processed_count: 0, failed_count: 0,
+      started_at: JETZT, finished_at: JETZT }];
+    const args = { ...h.args, vorgang: "textnachlauf", env: { ...h.args.env,
+      HELMUT_TESTKOHORTE_CONFIRM: D.WORTE.textnachlauf, GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1" },
+      fetchFn: async (url, init) => {
+        const u = new URL(url);
+        if (u.pathname === "/api/cron/lage-briefing") {
+          calls++; assert.equal(init.method, "POST"); assert.equal(init.redirect, "error");
+          assert.equal(u.search, "?nachlauf=fehlende-500");
+          assert.equal(init.headers["x-helmut-lauf"], runId);
+          assert.equal(init.headers["x-helmut-bestaetigung"], D.WORTE.textnachlauf);
+          const results = h.w.snapshot().mandate.filter(m => m.aktiv).map((m, i) => ({ userId: m.user_id,
+            ...(i < claimed ? { gespeichert: true, generatedAt: JETZT } : { grund: "zeitbudget" }) }));
+          return { status: 200, json: async () => ({ ok: true, schemaVersion: 1, runId,
+            modus: "manuell-fehlende-texte", ziel: 500, gespeichert: claimed, results, funktionsnachweis500: false }) };
+        }
+        if (u.pathname.endsWith("/briefings")) return { status: 200, json: async () => [] };
+        return fetch(url, init);
+      }
+    };
+    const r = await G.ausfuehren(args);
+    assert.equal(r.ok, true, JSON.stringify(r)); assert.equal(r.gespeichert, 0);
+    assert.equal(r.funktionsnachweis500, false); assert.equal(calls, 1);
+    claimed = 1; h.quittungen[0].processed_count = 1;
+    const falsch = await G.ausfuehren(args);
+    assert.equal(falsch.grund, "textnachlauf-texte-nicht-gespeichert");
+    assert.equal(falsch.automatischeWiederholung, false); assert.equal(calls, 2);
+  });
   console.log(`\n${pass} PASS, 0 FAIL`);
 }
 main().catch((e) => { console.error(e); process.exitCode = 1; });

@@ -152,6 +152,22 @@ function isOutputStale(completeKoAt) {
 
 async function handleRequest(request, response) {
   const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
+  // Derselbe Lage Cron, ausdruecklicher manueller Teilnachlauf. Vor jedem
+  // Account Vorlauf: dieser Modus darf keine Profile oder Konten reparieren.
+  if (url.pathname === "/api/cron/lage-briefing" && url.searchParams.has("nachlauf")) {
+    if (!authorizeCron(request, url, response)) return;
+    if (request.method !== "POST" || url.search !== "?nachlauf=fehlende-500") {
+      response.writeHead(400, jsonHeaders());
+      response.end(JSON.stringify({ ok: false, grund: "nachlauf-aufruf-ungueltig" }));
+      return;
+    }
+    return handleAsync(response, () => require("./lib/helmut/testkohorte-textnachlauf").ausfuehren({
+      commit: request.headers["x-helmut-production-commit"],
+      runId: request.headers["x-helmut-lauf"],
+      confirmation: request.headers["x-helmut-bestaetigung"],
+      config: () => testnachweisKonfiguration()
+    }));
+  }
   // Maschinenlesender Laufzeitbeleg VOR dem Account Vorlauf (Adminseed).
   // Nur reine Konfigurationsfunktionen; auch Fehler werden ohne Auditwrite beantwortet.
   if (url.pathname === "/api/cron/testnachweis-status") {
@@ -181,7 +197,8 @@ async function handleRequest(request, response) {
         vorrangreserveReal: require("./lib/helmut/mandatsklasse").vorrangreserveReal().wert,
         kommunikationGesperrt: riegel.modus() === riegel.MODUS_TESTFENSTER,
         kohortenQuellenGesperrt: !require("./lib/helmut/scheduler")
-          .profilQuellenErlaubt({ id: "test-kohorte-a-001" })
+          .profilQuellenErlaubt({ id: "test-kohorte-a-001" }),
+        textnachlaufVersion: 1
       });
     } catch {
       response.writeHead(500, jsonHeaders());
@@ -2975,6 +2992,24 @@ async function handleRequest(request, response) {
   }
 
   return sendAppAsset(response, url);
+}
+
+function testnachweisKonfiguration() {
+  const vorflug = require("./lib/helmut/speicherpfad-vorflug");
+  const riegel = require("./lib/helmut/kommunikationsriegel");
+  const retention = vorflug.crawlRunAufbewahrung();
+  return {
+    production: process.env.VERCEL_ENV === "production", commit: process.env.VERCEL_GIT_COMMIT_SHA,
+    storageSupabase: getStorageStatus().backend === "supabase", v3Bereit: v3StoreReady(),
+    profileRelational: profileDbModeEnabled(), profileExclusive: profileDbExclusiveEnabled(),
+    retentionGueltig: retention.gueltig, retention: retention.wirksam,
+    tagesdeckel: storageModul.llmDailyCallLimit(), understandingReserve: storageModul.llmUnderstandingReserve(),
+    vorrangreserveReal: require("./lib/helmut/mandatsklasse").vorrangreserveReal().wert,
+    kommunikationGesperrt: riegel.modus() === riegel.MODUS_TESTFENSTER,
+    kohortenQuellenGesperrt: !require("./lib/helmut/scheduler").profilQuellenErlaubt({ id: "test-kohorte-a-001" }),
+    atomicLock: storageModul.atomicLockEnabled(), narrativQueue: scalablePipeline.narrativUeberWarteschlange(),
+    modell: require("./lib/helmut/ai").understandingModelName(), azure: Boolean(process.env.AZURE_OPENAI_KEY)
+  };
 }
 
 function sendAppAsset(response, url) {

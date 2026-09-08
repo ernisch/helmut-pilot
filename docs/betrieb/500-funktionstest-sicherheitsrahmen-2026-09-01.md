@@ -8489,3 +8489,241 @@ unveraenderter Generatorlogik und eigener konkreter Freigabe. Ein weiterer
 allgemeiner Fachzyklus wuerde diese Luecke nicht schliessen. Die Gesamtabnahme
 aller 500 und die inhaltliche Qualitaet bleiben offen; dieser Sprint verspricht
 keinen vollstaendigen 500er Nachweis durch einen einzelnen Lauf.
+
+## §63 08.09.2026: Fehlende Texte gezielt nachholen und Anzeigen trennen
+
+### §63.1 Auftrag, Freigabe und tatsaechlicher Production Stand
+
+Der Betreiber hat jetzt den Upload des geprueften Folgebranches und einen PR
+Entwurf ausdruecklich erlaubt. Damit ist die in §62 dokumentierte automatische
+Ablehnung erledigt. Der unveraenderte Sechsdateienstand wurde als `27b2498`
+veroeffentlicht: [PR #340](https://github.com/ernisch/helmut-pilot/pull/340), Entwurf.
+Sein Git Baum stimmt exakt mit dem lokal geprueften Baum ueberein. Beide
+externen Pflichtjobs im Lauf `34254110816` bestanden. Diese Freigaben und
+Pruefungen gelten nicht automatisch fuer spaetere Codeergaenzungen.
+
+Die neueste Nachricht erlaubt ausserdem **hoechstens einen geprueften begrenzten
+Lauf** und anschliessenden Doppelungsabbau zwischen Lage, Radar und Briefing.
+**Merge und Deployment bleiben gemaess vorheriger ausdruecklicher Anweisung
+ausgeschlossen.** Keine Profile, Konten, Flags, Budgets oder Zeitplaene aendern.
+Der hier vorbereitete Textmodus ist noch nicht in Production. Kein bezahlter
+Lauf wurde durch diesen Sprint begonnen; kein neuer Test, zweiter Ausfuehrer
+oder automatischer Wiederholungslauf.
+
+Frischer rein lesender Stand vom **08.09., 19:54 Tuerkei / 18:54 Berlin /
+16:54 UTC**: main `8eb38930be943e05ff0a71550305aa0471b453d2`, zugehoerige
+Production `dpl_718ZaxA3voqr7xcmdkf57F8kMMya` READY, kein Aliasfehler.
+
+| Stufe | Gespeicherter Beleg |
+| --- | --- |
+| Bestand | 504 gesamt, 500 aktiv, 4 inaktiv; 5 reale und 495 synthetische aktiv |
+| Planung heute | 500 Projektionen und 500 Materialisierungen |
+| Projektion | 339 erledigt, 161 wartend, davon 71 bereits faellig |
+| Materialisierung | 0 erledigt, 500 wartend; zuerst 18:00 UTC faellig |
+| Heutiger fertiger Lage Text | 22 von 500; alle 05:45:39 bis 05:47:48 UTC |
+| Fehlender heutiger Text | 478 Profile; keine neuen Texte seit 500er Aktivierung |
+| App Verfuegbarkeit | Durch die Tabellenabfrage nicht belegt |
+| Aktive Konkurrenz | 0 Sperren, 0 aktive und 0 verwaiste Leases |
+| Kommunikation heute | 0 Push und Audit Ereignisse in allen Stores, 0 bestaetigte Outbox |
+
+Natuerlicher Lauf `cron-pipeline-20260908160039-mtomm`: 16:00:39 bis
+16:04:21 UTC, 349 erledigt, 7 zurueckgestellt, 0 Fehler, Wiederholungen oder
+verlorene Leases. Das ist Verarbeitungsfortschritt und kein neuer Textnachweis.
+Volle sortierte Zeilenhashes unveraendert gegen §62: Mandate
+`4678db89143f6c3108bfb28f352b821b`, Identitaeten
+`3c5b0b5a6314f31c395b8758b166c5c3`, Konten
+`61530f4d75514c37582e5ffd71d322f5`.
+
+Frischer Tageszaehler und kanonischer Aufrufring mit `kostenBefund` nachgerechnet:
+126 Reservierungen, 126 lesbare Modellbelege, null unbekannte Kosten und
+Reservierungsluecken, **0,380952 USD geschaetzt**. Einschliesslich bestehender
+2 USD Reserve: **2,380952 USD Prognose**. Insgesamt weiter hoechstens 10 USD
+je UTC Tag, Prognosestopp bei 9 USD. Die Aufrufbegrenzung ist keine atomare
+Rechnungssperre. Vor jedem spaeteren Start erneut lesen und nachrechnen.
+
+### §63.2 Konkreter begrenzter Lauf, noch nicht ausgefuehrt
+
+Der allgemeine Fachzyklus erzeugt weiterhin keine fehlenden Lage Texte (§62.3).
+Ein optionaler Modus ergaenzt deshalb **denselben** 500er GitHub Ausfuehrer und
+**denselben** Lage Cron. Der regulaere Cron, die Generatorprompts und die
+automatischen Zeitplaene bleiben gleich. Kein Queuejob wird neu eingereiht oder
+vorfaellig gemacht. Keine Umdeutung des alten 25er Ausfuehrers.
+
+- Weg: `.github/workflows/500-direkt-ausbau.yml`, Werkzeug `textnachlauf`,
+  Ziel `500`, ausdrueckliche Bestaetigung
+  `TESTKOHORTE_500_FEHLENDE_TEXTE_EINMAL_BESTAETIGT`.
+- Genau ein POST an `/api/cron/lage-briefing?nachlauf=fehlende-500`, mit
+  verifiziertem Production Commit, Cron Auth und an den ersten GitHub Versuch
+  gebundener Laufkennung `nachlauf500-<run_id>`. Actions Wiederholungen werden
+  abgewiesen. Der frische Serverstatus muss `textnachlaufVersion: 1` belegen.
+- Umfang: alle 500 aktiven Profile einmal beurteilen, vorhandene Tagestexte
+  unabhaengig von Cachegueltigkeit erhalten. Nur fehlende Texte mit bereits
+  erledigter und faelliger heutiger Projektion duerfen den vorhandenen Generator
+  erreichen. Reale Profile zuerst; Vorrangreserve mindestens 200 unveraendert.
+- Zeit: 240 Sekunden Arbeitsbudget, 90 Sekunden Restzeit vor jedem neuen
+  Modellaufruf, 295 Sekunden Antwortwartezeit, bestehende 300 Sekunden
+  Funktionsgrenze. Der GitHub Kontrolljob hat unveraendert 30 Minuten Grenze.
+  **478 neue Texte innerhalb eines solchen Fensters sind nicht zugesichert.**
+- Kosten: vor Start und jedem Modell frische globale Tagesbelege, Prognose
+  samt bestehender Reserve und einem weiteren Aufruf unter 9 USD. Bei
+  unbekannten Kosten oder Zaehlerluecke sofort stoppen. Keine zusaetzlichen
+  10 USD fuer diesen Lauf; keine Budgeterhoehung und kein Rechnungsversprechen.
+- Stopp: unlesbarer Stand, abweichendes Ziel oder Konfiguration, fremder Lauf,
+  aktive oder verwaiste Leases, Cronueberschneidung, UTC oder Berliner
+  Tageswechsel, aufgehobener Kommunikationsschutz, heutige Zustellung,
+  geaenderte Profile, Modellfehler, Kosten oder Speicherfehler.
+- Speicherung: bedingtes Insert mit `ignore-duplicates` und explizitem
+  Mandantenfilter. Auch ein zwischenzeitlich gespeicherter Text wird nicht
+  ueberschrieben. Erst ein strenges erneutes Lesen des gespeicherten Textes
+  bestaetigt Erfolg. Keine automatische Ruecksetzung.
+- Abbruch: GitHub Lauf abbrechen stoppt den Controller, aber nicht garantiert
+  einen schon laufenden Vercel Aufruf. Dessen bestehende Hoechstlaufzeit
+  abwarten, dann Laufquittung, Sperren, Kosten und Texte rein lesend pruefen.
+  Keine Sperre gewaltsam loeschen, keine gespeicherten Ergebnisse zuruecksetzen
+  und keinen zweiten Versuch starten, solange der Ausgang unklar ist.
+- Nachkontrolle: eigenstaendige Datenbanklesung aller 500 Tageszeilen,
+  unveraenderte alte Zeilen, passende neue Zeitstempel und Textabsaetze,
+  relationale `briefing-nachlauf-500` Quittung im Modus `manual`, Profile,
+  Identitaeten, Konten, Kosten, Kommunikation, Leases und Fehler. Ein Erfolg
+  bleibt eine benoetigte Teilmenge; `funktionsnachweis500` bleibt `false`.
+
+### §63.3 Trennung der Anzeigen aus dem anderen Gespraech
+
+Die Kontextsuche fand die Betreiberanweisung vom 08.09., 11:58 UTC und die
+Konkretisierung danach: Lage enthaelt politischen Vorgang, Bedeutung und
+Quellen; Radar persoenliche Erwaehnungen, Partei, Fraktion und Mandatsumfeld;
+Briefing Prioritaet, Empfehlung und Handlung. Gleiches Thema darf verknuepft
+werden, soll aber nicht dieselben Abschnitte nochmals anzeigen. Die Suche ist
+kein behaupteter vollstaendiger Zugriff auf den anderen Thread.
+
+Die Ergaenzung entfernt Empfehlungen aus Lage Karten und Details. Fuer denselben
+belegten Vorgang verweist die Lage auf das Briefing und das Briefing auf die
+bereits vorhandene Lage samt Quellen. Exakt gleiche Einordnungen werden im
+Briefing nicht nochmals gezeigt. Fehlt die zugehoerige Lage, bleibt die
+Einordnung im Briefing erhalten; fremde Themen bekommen keinen falschen Link.
+
+Radar bekommt eine gesonderte Anzeigeansicht: identischer Quelldokumentbeleg
+oder kanonische Artikel URL erscheint einmal. Weitere belegte Beziehungen und
+Signale werden zusammengefuehrt. Kein Zusammenlegen allein nach Titel oder
+altem breitem Vorgangsschluessel. Ohne belegten Bezug zu Person oder
+Mandatsumfeld entfaellt ein allgemeiner Radar Artikel. Rohe Belegarrays bleiben
+fuer fachliche Diagnose erhalten; Ranking, Prompts und Speicherdaten werden
+nicht geaendert. Die vollstaendige semantische Doppelungsquote in Production
+und die Qualitaet aller 500 Texte bleiben offen.
+
+### §63.4 Nachweise dieses Vorschlags
+
+Gezielt lokal bestanden: Textnachlauf 9/9 Gruppen, echter Controller 17 Gruppen,
+Lage und bedingter Speicher 19/19, Briefing Anzeige 57/57, echter HTTP Vertrag
+42 Pruefungen. Der Textnachlauf simuliert 500 Ziele mit 22 geschuetzten Texten
+und 478 lokalen Modellfixtures. Er belegt die Begrenzung und Speicherung im
+Code, **keine** 478 echten Production Texte. Gegenproben sperren Kostenluecken,
+Konkurrenz, unlesbare Zustaende, Zustellungen und Wiederholungen. Ein Fehler
+nach dem ersten Ergebnis stoppt die Fortsetzung, behaelt aber das Gespeicherte.
+
+Vollstaendige Offline Suite, aktuelle Browserpruefung und externe Pflichtjobs
+am neuen Kopf werden nach Abschluss hier nachgetragen. Das Testende bleibt
+unveraendert am **09.09., 11:00 Tuerkei / 10:00 Berlin / 08:00 UTC**.
+
+### §63.5 Erneute Production Kontrolle und konkrete Textstichprobe
+
+**08.09., 20:39 Tuerkei / 19:39 Berlin / 17:39 UTC:** main und Production
+unveraendert, 504/500/4, volle drei Bestandspruefsummen gleich, weiter 22 Texte,
+478 fehlend, 339 erledigte Projektionen und 0 erledigte Materialisierungen.
+Null aktive Sperren oder Leases, null verwaiste Auftragsleases, keine heutige
+Kommunikation. Der natuerliche Lauf
+`understanding-rueckstand-20260908173037-u96f8` lief 17:30:37 bis 17:34:12 UTC:
+17 gespeicherte Ergebnisse und ein Fehler, Gesamtstatus korrekt `partial`.
+
+**Neuer echter Startstopp:** Beleg `llm-1788888775385-5hzm5g` um 17:32:55 UTC,
+`durationMs: 30003`, `error: request-error`, Tokens und Kosten `unknown`.
+Die unabhaengige Reservierungszeile fuer `vg-buergergeld` (voller gespeicherter
+Schluessel `vg-bürgergeld-20260428-f23ece`) bestaetigt
+`modellfehler:OpenAI request timeout`, Zustand `unbekannt`, keine aktive Lease,
+ein Versuch und ein Modellaufruf. Insgesamt stehen jetzt sieben historische
+Vorgaenge auf `unbekannt`, nicht vier wie im ueberholten Kopfstatus.
+
+Frisch nachgerechnet: 145 Ringzeilen, davon ein belegter Nichtaufruf,
+144 Modellbelege bei 144 Reservierungen, **0,441256 USD bekannte Schaetzung**,
+**ein unbekannter Kostenwert**, keine Reservierungsluecke. Die bisherige Formel
+liefert mit Lueckenreserve und 2 USD Zusatzreserve **2,491256 USD Prognose**.
+Das ermittelt die fehlende Rechnung nicht. Der neue Nachlauf verweigert bei
+genau diesem Befund den Start. Keine Kostenzeile wird geschaetzt ueberschrieben,
+kein Zeitlimit erhoeht, keine Freigabe oder automatische Wiederholung erzeugt.
+Zur Aufloesung fehlt der Nutzungs oder Abrechnungsbeleg des Anbieters fuer
+diesen Aufruf. Ein entsprechender Azure Abrechnungszugang ist hier nicht
+verfuegbar. Eine lokale Codekorrektur kann die verlorene Modellantwort nicht
+nachtraeglich rekonstruieren.
+
+Die Textstichprobe wurde frisch aus `briefings.payload.paragraphs` gelesen:
+**5 von 22 vorhandenen Texten, 18 Absaetze; 5 von 500 Zielprofilen**. Bewusst
+vier reale Profile (`helmut-kleebank`, `annika-klose`, `cem-ince`,
+`ottilie-paola-klein-2`) und ein synthetisches (`test-kohorte-a-001`). Keine
+Zufallsstichprobe, keine Abnahme aller 500. Drei Quellengruppen mit sieben
+Rohdokumenten wurden relational gebunden; bei allen sieben war `summary` leer.
+Zwei verlinkte Originalseiten konnten extern inhaltlich gelesen werden, die
+VdK Seite konnte ueber den verfuegbaren Webzugang nicht geoeffnet werden.
+
+Tatsaechliche gespeicherte Auszuege, unveraendert zitiert:
+
+1. Helmut Kleebank: „Die Kassenärztliche Bundesvereinigung bzw. Kassenärzte
+   werden in einem Deutschlandfunk-Beitrag mit Warnungen vor vollen Praxen und
+   Terminmangel zitiert (Deutschlandfunk, veröffentlicht 2026-09-04).“
+   [Gebundene und gelesene Quelle](https://www.deutschlandfunk.de/kassenaerzte-warnen-vor-vollen-praxen-und-terminmangel-102.html).
+   Die Kernaussage ist gedeckt. Die Quelle nennt jedoch konkrete Forderungen
+   zur Gesundheitsreform und geplante Einsparungen, die im Text fehlen.
+2. Annika Klose, Satzanfang: „Berichte führen, dass die SPD interne Debatten
+   über ihren Reformkurs und über Sozialreformen nach dem Wahlergebnis
+   dokumentiert sind“.
+   [Eine der gebundenen und gelesenen Quellen](https://www.haeusliche-pflege.net/spd-stellt-reformkurs-infrage-folgen-fuer-die-pflege/).
+   Der Satz ist sprachlich misslungen und bleibt gegenueber den konkreten
+   Forderungen der Quelle zu unbestimmt.
+3. Testprofil A001, Satzanfang: „Das Sozialverband VdK Saarland e.V. kündigt
+   eine Demonstration 'Gemeinsam stark für Rente, Gesundheit und soziale
+   Sicherheit' am 26.09.2026 an“.
+   [Gespeicherte Quellenbindung, extern hier nicht verifiziert](https://saarland.vdk.de/aktuelles/veranstaltung/gemeinsam-stark-fuer-rente-gesundheit-und-soziale-sicherheit-demo-am-26092026/).
+   Grammatikfehler „Das Sozialverband“. Zwei verschiedene URLs derselben
+   Ankuendigung liegen vor; unterschiedliche URLs allein sind noch kein
+   Nachweis verschiedener Ereignisse.
+
+**Qualitaetsurteil: nicht abgenommen.** Die geprueften Texte nennen Quellen
+und Daten, bleiben aber oft Meldungslisten. Mehrere Themen teilen alte breite
+Vorgangsschluessel; die persoenliche Bedeutung und Prioritaet sind nicht
+zuverlaessig ausgearbeitet. Die neue Anzeige enthaelt bewusst keine erfundene
+Handlungsempfehlung, repariert jedoch auch keinen vorhandenen schwachen Text.
+App Verfuegbarkeit und vollstaendige semantische Doppelungsfreiheit sind
+weiterhin getrennt nachzuweisen. Kein bezahlter Appstart wurde zur Probe ausgeloest.
+
+Der echte Browserlauf besteht jetzt mit **50/50** auf Desktop und Mobil.
+Die neue Verknuepfung verwendet die bestehende Lage Detailansicht. Eine beim
+ersten Klicktest gefundene Fehlleitung und der dabei unpassende Geisterklickschutz
+sind korrigiert; der normale Kartenpfad behaelt seinen Schutz. Der Gesamtlauf
+aller Offline Suiten laeuft noch.
+
+### §63.6 Vollstaendiger lokaler Lauf und Korrektur der Quelltextpruefungen
+
+Der kanonische lokale Lauf endete nach **912 Sekunden mit 335/339**, nicht mit
+einem vollstaendig gruenen Exit. Vier vorhandene Quelltextpruefungen erkannten
+noch die alte Beschriftung beziehungsweise den ersten Pfadstring als den
+regulaeren Lage Handler. Durch den ausdruecklichen manuellen Query Modus steht
+derselbe Pfadstring jetzt zusaetzlich frueher im Server. Die drei Anker sind
+auf die genaue unveraenderte regulaere Routenbedingung eingegrenzt; alle
+Assertions fuer Vorrang, fruehen Ruecksprung, Direktpfad und Abflusszahl bleiben.
+Die Beschriftungspruefung erwartet jetzt den konkreten Empfehlungsverweis.
+
+Gezielte erneute Pruefung: `briefing-tab-rename-test.js` **20/20**,
+`tenant-narrativ-test.js` **92/92**, `testkohorte-vorwaerts-test.js` **65/65**,
+`warteschlangen-abfluss-test.js` **32/32**. Alle neuen Fach und Schutzpruefungen
+bestanden im Gesamtlauf. Browser separat **50/50**; Statusgroesse **4/4**.
+Kein externer Netzversuch wurde im kanonischen Lauf gemeldet. Die letzten
+Korrekturen aendern ausschliesslich diese Testanker, keine Anwendungsaussage
+oder Sicherheitssperre. Der anschliessende externe Gesamtlauf am veroeffentlichten
+Kopf muss alle 339 Suiten zusammen sowie den Browser und die Datenbankpruefungen
+bestaetigen. Sein Ergebnis wird an PR #340 belegt, nicht vorweggenommen.
+
+Zusaetzlich wurde die reine neue Kostenpruefung lokal mit dem **frischen echten
+Production Belegsatz** ausgefuehrt: sie verweigert genau mit
+`nachlauf-kosten-unklar`. Keine Netzabfrage oder Modellgenerierung in dieser
+Kontrolle. Die bestehende stündliche Aufgabe ist aktiv, letzter verzeichneter
+Lauf 17:00:46 UTC; die Endaufgabe bleibt 09.09., 11:00 Tuerkei. Keine dieser
+Aufgaben oder ihrer Zeitplaene wurde durch diesen Sprint veraendert.

@@ -4532,10 +4532,8 @@ function renderView() {
 // ─────────────────────────────────────────────────────────────────────────
 // Lage — reine Übersicht bereits vorhandener, quellengestützter Vorgänge.
 // Beantwortet AUSSCHLIESSLICH "Worüber muss ich heute Bescheid wissen?".
-// Erzeugt nichts, bewertet nichts global, priorisiert nichts global. Pro Karte
-// genau EINE kurze, ausschließlich auf diesen einen Vorgang bezogene Empfehlung
-// (bestehendes Feld v.empfehlung). Übergreifende Priorisierung, Strategie,
-// Kommunikation und Tagesentscheidung bleiben Helmut vorbehalten.
+// Fakten, Bedeutung und Quellen bleiben hier. Empfehlungen werden im Briefing
+// gezeigt; derselbe Empfehlungstext wird weder auf Karten noch im Detail kopiert.
 //
 // Titel, Kurzfassung, Warum-wichtig, Empfehlung und Kategorie kommen bevorzugt
 // aus den vom V3-Verstehensschritt EINMALIG erzeugten, dauerhaft gespeicherten
@@ -4548,6 +4546,23 @@ function renderView() {
 
 function lageData() {
   return (briefing && briefing.lageBriefing) || null;
+}
+
+function lageVorgangZumBriefing(item) {
+  if (!item || !item.id) return null;
+  return lageVisibleVorgaenge(lageData()).find(v => String(v.vorgangId || v.id) === String(item.id)) || null;
+}
+
+function lageBriefingVerweis(v) {
+  const state = briefing && briefing.currentHelmutState;
+  if (!state || !state.primaryItem || state.status === "error" || state.errorState
+      || String(state.primaryItem.id) !== String(v.vorgangId || v.id)) return "";
+  return `<button class="secondary-button compact-button" type="button" data-view="helmut">Empfehlung im Briefing öffnen</button>`;
+}
+
+function briefingLageVerweis(item) {
+  const v = lageVorgangZumBriefing(item);
+  return v ? `<button class="secondary-button compact-button" type="button" data-lage-verweis data-vorgang="${escapeAttribute(v.vorgangId || v.id)}">Einordnung und Quellen in der Lage öffnen</button>` : "";
 }
 
 function lageDateLabel() {
@@ -4851,7 +4866,6 @@ function renderVorgangCard(v) {
   const shortVp = lageIsShortViewport();
   const kurzfassung = lageFirstSentence(lageField(v.displaySummary) || summary.wasIstPassiert || "", shortVp ? 58 : 95);
   const warum = lageFirstSentence(lageHumanize(lageField(v.whyRelevant) || summary.warumWichtig || ""), shortVp ? 58 : 85);
-  const empfehlung = lageFirstSentence(lageHumanize(lageField(v.recommendation) || v.empfehlung || ""), shortVp ? 58 : 75);
   // Antippbar: öffnet die Detailansicht als Bottom Sheet (kein Seitenwechsel).
   // role/tabindex/aria machen die Karte für Tastatur & Screenreader bedienbar;
   // der eigentliche Tap-vs-Swipe-Handler sitzt in bindLageCarousel.
@@ -4873,11 +4887,6 @@ function renderVorgangCard(v) {
         <div class="lage2-card-row">
           <span class="lage2-card-row-head">Warum wichtig?</span>
           <p>${escapeHtml(warum)}</p>
-        </div>` : ""}
-        ${empfehlung ? `
-        <div class="lage2-card-row">
-          <span class="lage2-card-row-head">Empfehlung</span>
-          <p>${escapeHtml(empfehlung)}</p>
         </div>` : ""}
       </div>
     </article>`;
@@ -5339,14 +5348,13 @@ function vsheetContentHtml(v) {
   // dieser Abschnitt ist die persönliche Antwort auf "Was hat das mit meinem
   // Mandat zu tun?" — und die interessiert eine Abgeordnete zuerst.
   const relevanz = vsheetRelevanzHtml(v);
-  // (4) Empfehlung — bestehendes recommendation (Fallback: handlungsempfehlung).
-  const reco = lageHumanize(lageField(v.recommendation) || lageField(v.empfehlung));
+  const briefingLink = lageBriefingVerweis(v);
   // (5) Betroffene
   const betroffene = vsheetBetroffeneHtml(v);
   // (7) Chronologie — bereits in der Karte vorhanden (buildChronology), keine Neuberechnung.
   const chrono = Array.isArray(v.chronologie) ? v.chronologie : [];
 
-  const hasBody = kurz || relevanz || warumPoints.length || reco || betroffene || sourcesSorted.length || chrono.length;
+  const hasBody = kurz || relevanz || warumPoints.length || briefingLink || betroffene || sourcesSorted.length || chrono.length;
 
   return `
     <header class="vsheet-head">
@@ -5375,10 +5383,9 @@ function vsheetContentHtml(v) {
       </ul>
     </section>` : ""}
 
-    ${reco ? `
+    ${briefingLink ? `
     <section class="vsheet-sec">
-      <h3 class="vsheet-h">Empfehlung</h3>
-      <p class="vsheet-reco">${escapeHtml(reco)}</p>
+      ${briefingLink}
     </section>` : ""}
 
     ${betroffene}
@@ -5402,7 +5409,7 @@ function vsheetContentHtml(v) {
 
 // Öffnet das Bottom Sheet für einen Vorgang. Idempotent: ein bereits offenes
 // Sheet wird zuerst entfernt.
-function openVorgangSheet(id) {
+function openVorgangSheet(id, { viaClick = false } = {}) {
   const v = vsheetFindVorgang(id);
   if (!v) return;
   if (vsheetEl) { vsheetTeardown(); }
@@ -5445,6 +5452,14 @@ function openVorgangSheet(id) {
   root.querySelectorAll("[data-vsheet-close]").forEach((el) => {
     el.addEventListener("click", () => closeVorgangSheet());
   });
+  root.querySelectorAll('[data-view="helmut"]').forEach((el) => {
+    el.addEventListener("click", () => {
+      vsheetTeardown();
+      currentView = "helmut";
+      render();
+      window.scrollTo({ top: 0, behavior: "auto" });
+    });
+  });
 
   // ── Ghost-Click-Schutz (behebt „Sheet öffnet und schließt sofort") ────────
   // Der Tap, der das Sheet öffnet, endet mit pointerup auf der KARTE; direkt
@@ -5455,7 +5470,7 @@ function openVorgangSheet(id) {
   // einen nachfolgenden Klick in der CAPTURE-Phase ab (läuft vor dem Backdrop-
   // Handler) und lösen den Fänger danach wieder — spätere, bewusste Backdrop-
   // Klicks (neue Geste) schließen wie vorgesehen.
-  {
+  if (!viaClick) {
     let ghostTimer = 0;
     const swallow = (ev) => { ev.stopPropagation(); ev.preventDefault(); releaseGuard(); };
     const releaseGuard = () => {
@@ -5683,16 +5698,13 @@ function renderVorgangDetailView() {
               <span class="lage2-vtag">${escapeHtml(lageCardCategory(v))}</span>
               <h1 class="vdetail-title">${escapeHtml(v.title || "")} <span class="vdetail-star" aria-hidden="true">${lageStarIcon()}</span></h1>
             </div>
-            <button class="vdetail-helmut" type="button" data-view="helmut">${lageStarIcon()} Im Briefing öffnen</button>
+            ${lageBriefingVerweis(v)}
           </div>
           ${meta ? `<div class="vdetail-meta">${meta}</div>` : ""}
 
           <h2 class="vdetail-h2">Zusammenfassung</h2>
           <div class="vdetail-summary">${summaryHtml}</div>
 
-          ${v.empfehlung ? `
-          <h2 class="vdetail-h2">Empfehlung</h2>
-          <div class="vdetail-summary"><p>${escapeHtml(v.empfehlung)}</p></div>` : ""}
 
           ${chrono.length ? `
           <h2 class="vdetail-h2">Chronologie</h2>
@@ -6678,6 +6690,9 @@ function renderHstandProposal(state) {
 function renderHstandWhy(state) {
   const why = hstandText(state.whyItMatters);
   if (!why) return "";
+  const v = lageVorgangZumBriefing(state.primaryItem);
+  const vergleich = s => String(s || "").replace(/\s+/g, " ").trim();
+  if (v && [v.whyRelevant, v.summary?.warumWichtig].some(s => vergleich(s) === vergleich(why))) return "";
   return `
     <section class="hstand-card hstand-why" aria-label="Warum ist das wichtig">
       ${hstandKicker(HELMUT_ICON_EYE, "Warum ist das wichtig?", "accent")}
@@ -6799,6 +6814,7 @@ function renderHstandPrimary(state) {
         <div class="hstand-metric"><dt>Qualität</dt><dd>${hstandQuality(p.qualityStatus)}</dd></div>
       </dl>
       ${quelle ? `<a class="hstand-quelle-link" href="${escapeAttribute(quelle)}" target="_blank" rel="noopener noreferrer">Quelle öffnen${p.sourceName ? ` · ${escapeHtml(p.sourceName)}` : ""}</a>` : ""}
+      ${briefingLageVerweis(p)}
     </section>`;
 }
 
@@ -6829,13 +6845,20 @@ const HSTAND_FRISCHE_GRUPPEN = [
 ];
 
 function renderHstandItems(state) {
-  const items = (Array.isArray(state.items) ? state.items : []).filter((i) => i && (hstandText(i.displayTitle) || hstandText(i.title)));
+  const gesehen = new Set(state.primaryItem?.id ? [String(state.primaryItem.id)] : []);
+  const items = (Array.isArray(state.items) ? state.items : []).filter((i) => {
+    if (!i || !(hstandText(i.displayTitle) || hstandText(i.title))) return false;
+    if (i.id && gesehen.has(String(i.id))) return false;
+    if (i.id) gesehen.add(String(i.id));
+    return true;
+  });
   if (!items.length) return "";
   // Kompakte Liste: Titel + EIN kurzer Relevanzsatz + Dringlichkeit. Bewusst KEINE
   // Chipwolke und keine langen Sammeltexte (Beleg, nicht Hauptscreen).
   const zeile = (i) => {
     const title = hstandText(i.displayTitle) || hstandText(i.title);
-    const why = hstandText(i.whyRelevant);
+    const lageLink = briefingLageVerweis(i);
+    const why = lageLink ? "" : hstandText(i.whyRelevant);
     const urgency = hstandUrgencyChip(i.urgency);
     // Das Datum bleibt IMMER das tatsaechliche Datum der Meldung (Vertragspunkt 3):
     // eine Meldung vom spaeten Vorabend steht als "Gestern, 22:40" im heutigen Briefing.
@@ -6850,6 +6873,7 @@ function renderHstandItems(state) {
         </div>
         ${zeit ? `<p class="hstand-rel-when">${escapeHtml(zeit)}</p>` : ""}
         ${why ? `<p class="hstand-rel-why">${escapeHtml(why)}</p>` : ""}
+        ${lageLink}
         ${quelle ? `<a class="hstand-rel-quelle" href="${escapeAttribute(quelle)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : ""}
       </li>`;
   };
@@ -9423,6 +9447,7 @@ function renderRadarView() {
 }
 
 function renderRadarInner(state) {
+  state = state && state.anzeige ? state.anzeige : state;
   const body = (!state || !radarStateHasContent(state))
     ? renderRadarEmpty(state)
     : `
@@ -9530,6 +9555,7 @@ function renderRadarMentionCard(m) {
       <h3 class="radar2-card-title">${escapeHtml(m.title || "Erwähnung")}</h3>
       ${tag ? `<div class="radar2-card-foot">${tag}</div>` : ""}
       ${m.evidence ? `<p class="radar2-card-sub radar2-card-sub--block">${escapeHtml(m.evidence)}</p>` : ""}
+      ${radarAdditionalContext(m)}
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
   `;
@@ -9573,6 +9599,7 @@ function renderRadarEnvRow(e) {
     <div class="radar2-row-body">
       <h3 class="radar2-row-title">${escapeHtml(e.title || "Vorgang")}</h3>
       <div class="radar2-row-meta">${rel}<span class="radar2-row-sub">${escapeHtml(e.sourceName || "Quelle")}${time ? " · " + escapeHtml(time) : ""}</span></div>
+      ${radarAdditionalContext(e)}
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
   `;
@@ -9604,6 +9631,7 @@ function renderRadarDynamicCard(d) {
     <div class="radar2-card-body">
       <h3 class="radar2-card-title">${escapeHtml(d.title || "Entwicklung")}</h3>
       ${d.evidence ? `<p class="radar2-dyn-evidence">${escapeHtml(d.evidence)}</p>` : ""}
+      ${radarAdditionalContext(d)}
       <div class="radar2-card-foot">${tag}${time ? `<span class="radar2-card-sub">${escapeHtml(time)}</span>` : ""}</div>
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
@@ -9670,6 +9698,13 @@ function radarPrimaryRelationLabel(types) {
     if (types.includes(k)) return RADAR_RELATION_LABELS[k];
   }
   return "";
+}
+
+function radarAdditionalContext(item) {
+  const labels = [...new Set((item.relationTypes || []).map(t => RADAR_RELATION_LABELS[t]).filter(Boolean))];
+  const signals = [...new Set(item.zusatzSignale || [])].filter(s => s && s !== item.evidence);
+  const text = [...(labels.length > 1 ? [labels.join(" · ")] : []), ...signals];
+  return text.map(s => `<p class="radar2-card-sub radar2-card-sub--block">${escapeHtml(s)}</p>`).join("");
 }
 
 // --- Leerzustände + gemeinsame Bausteine ------------------------------------
@@ -11595,6 +11630,12 @@ function bindActions() {
 
   app.querySelectorAll("[data-vorgang]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.hasAttribute("data-lage-verweis")) {
+        // Dieser Handler laeuft bereits im click Ereignis. Nur der bestehende
+        // pointerup Kartenpfad muss einen nachfolgenden Geisterklick abfangen.
+        openVorgangSheet(button.dataset.vorgang, { viaClick: true });
+        return;
+      }
       selectedVorgangId = button.dataset.vorgang;
       detailOriginView = (currentView === "vorgang") ? detailOriginView : currentView;
       currentView = "vorgang";

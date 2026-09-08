@@ -125,7 +125,8 @@ check("4.3 Ohne die Flags wird der NACHLAUFSLOT ehrlich uebersprungen (kein stil
 // Die beiden Routenkoerper einzeln herausschneiden — jede Aussage wird an IHRER Route
 // geprueft, nicht irgendwo in server.js.
 function routenkoerper(pfad) {
-  const start = serverSrc.indexOf(`url.pathname === "${pfad}"`);
+  // Nur die regulaere Route ohne zusaetzlichen manuellen Query Modus.
+  const start = serverSrc.indexOf(`if (url.pathname === "${pfad}") {`);
   if (start < 0) return "";
   // Bis zum naechsten Routenkopf (oder Dateiende) — reicht fuer die Struktur des Handlers.
   const rest = serverSrc.slice(start + 10);

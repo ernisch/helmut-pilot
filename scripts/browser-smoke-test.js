@@ -189,6 +189,44 @@ function check(name, cond, detail = "") {
           check(`${label}: Bereich '${view}' rendert (Nav aktiv, andere inaktiv)`, activeIsView && othersActive === 0, `active=${activeIsView} andere=${othersActive}`);
         }
         check(`${label}: keine neuen JS-Fehler bei Tab-Wechseln`, pageErrors.length === 0, pageErrors.slice(0, 2).join(" | "));
+
+        // Vorhandene lokale Fachfixture durch den echten Vertragsadapter und die
+        // wirklichen Klickhandler fuehren. Kein Appstart in Production, kein Modell.
+        const contract = require("../lib/helmut/briefingContract");
+        const review = require("../lib/helmut/reviewFixture");
+        const at = new Date("2026-07-15T10:00:00Z"), fixture = review.buildReviewFixture(at);
+        const data = contract.toBriefingContractV3({ ...fixture, now: at });
+        const state = data.currentHelmutState;
+        data.lageBriefing = { available: true, vorgaenge: [{
+          id: state.primaryItem.id, vorgangId: state.primaryItem.id,
+          title: state.primaryItem.title, displayTitle: state.primaryItem.displayTitle,
+          displaySummary: "Die belegten Fakten gehoeren in die Lage.",
+          whyRelevant: state.whyItMatters, recommendation: state.recommendation,
+          sources: [{ name: "Testquelle", url: state.primaryItem.sourceUrl }]
+        }] };
+        await page.evaluate((fixtureData) => {
+          briefing = fixtureData; currentView = "helmut"; render();
+        }, data);
+        // Die normale Eintrittsanzeige endet per Timer; erst danach ist die
+        // Fachansicht sichtbar. Dieselbe Bedingung gilt fuer echte Nutzer.
+        await page.waitForSelector(".hstand-proposal", { timeout: 5000 });
+        const displayed = await page.evaluate(() => ({
+          proposals: document.querySelectorAll(".hstand-proposal").length,
+          why: document.querySelectorAll(".hstand-why").length
+        }));
+        check(`${label}: Briefing zeigt Empfehlung, aber keine doppelte Einordnung`,
+          displayed.proposals === 1 && displayed.why === 0, JSON.stringify(displayed));
+        await page.locator(".hstand [data-vorgang]").first().click();
+        await page.waitForSelector(".vsheet-title", { timeout: 5000 });
+        const sheetText = await page.locator(".vsheet-lede").innerText();
+        check(`${label}: Briefing Link oeffnet genau den vorhandenen Lage Text mit Quelle`,
+          sheetText === "Die belegten Fakten gehoeren in die Lage."
+            && await page.locator(".vsheet-src[href]").first().getAttribute("href") === state.primaryItem.sourceUrl);
+        check(`${label}: Lage Detail kopiert keine Empfehlung`, await page.locator(".vsheet-reco").count() === 0);
+        await page.getByRole("button", { name: "Empfehlung im Briefing öffnen", exact: true }).click();
+        check(`${label}: Rueckverweis schliesst Lage Detail und zeigt Briefing`,
+          await page.locator(".vsheet-title").count() === 0 && await page.locator(".hstand-proposal").count() === 1);
+        check(`${label}: keine JS Fehler beim Wechsel zwischen Einordnung und Empfehlung`, pageErrors.length === 0, pageErrors.slice(0, 2).join(" | "));
       }
 
       if (isMobile) {

@@ -581,9 +581,11 @@ async function main() {
     const fs = require("fs");
     const serverQuelltext = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
     // Anker auf die ROUTENBEDINGUNGEN (nicht auf das erste Vorkommen des Strings — der
-    // Debug-Pfad steht schon in Zeile ~264 in einer Gate-Liste).
+    // Debug-Pfad steht schon in einer Gate-Liste). Der ausdrueckliche manuelle
+    // Nachlauf steht separat davor und verlangt narrativQueue=false; diese
+    // Pruefung bindet weiterhin die unveraenderte regulaere Cron Route.
     const routenBlock = serverQuelltext.slice(
-      serverQuelltext.indexOf('url.pathname === "/api/cron/lage-briefing"'),
+      serverQuelltext.indexOf('if (url.pathname === "/api/cron/lage-briefing") {'),
       serverQuelltext.indexOf('url.pathname === "/api/debug/lage-backfill"')
     );
     check("8.1 Die Cron-Route prueft narrativUeberWarteschlange VOR der Direktschleife",

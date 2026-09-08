@@ -63,7 +63,7 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
   });
 
   const namen = ["v3StoreReady", "listKnowledgeObjects", "listMatchingResults", "getSourcesForVorgang",
-    "getRenderedBriefingV3", "saveRenderedBriefingV3", "acquirePipelineLock", "releasePipelineLock", "canSpendLlmForTenant"];
+    "getRenderedBriefingV3", "saveRenderedBriefingV3", "insertRenderedBriefingV3", "acquirePipelineLock", "releasePipelineLock", "canSpendLlmForTenant"];
   const vorher = Object.fromEntries(namen.map(n => [n, storage[n]]));
   const vorAi = ai.generateLageBriefing, vorSafety = safety.guardKnowledgeObject;
   let calls = 0, saved = null, lock = true, cached = null, modelInput = null;
@@ -125,6 +125,49 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
       assert.equal(gesperrt.fromCache, true);
       assert.deepEqual(gesperrt.paragraphs[0].sources.map(q => q.url), erwartet);
       assert.equal(calls, aufrufe);
+    });
+    await pruefe("Nachlauf schuetzt auch einen inzwischen ungueltigen Cache ohne Modellaufruf", async () => {
+      const vorherCalls = calls;
+      cached = { payload: { paragraphs: [{ text: "Alter geschuetzter Text" }] } };
+      const r = await lage.buildLageBriefing({ id: "test-quellenbeleg" }, { missingOnly: true, beforeGenerate: async () => {} });
+      assert.equal(r.reason, "existing-result"); assert.equal(calls, vorherCalls);
+    });
+    await pruefe("Nachlauf behandelt Cache Lesefehler nicht als fehlendes Ergebnis", async () => {
+      const vorherCalls = calls, reader = storage.getRenderedBriefingV3;
+      storage.getRenderedBriefingV3 = async (_id, _slot, _day, opts) => { assert.equal(opts.strict, true); throw new Error("Lesefehler"); };
+      await assert.rejects(lage.buildLageBriefing({ id: "test-quellenbeleg" }, { missingOnly: true }), /Lesefehler/);
+      assert.equal(calls, vorherCalls); storage.getRenderedBriefingV3 = reader;
+    });
+    await pruefe("Nachlauf verwendet echten Generator, Kostenpruefung, Insert und unabhängigen Readback", async () => {
+      cached = null; lock = true; let gate = 0, inserted = null;
+      storage.insertRenderedBriefingV3 = async row => { inserted = row; cached = row; return { saved: true }; };
+      const r = await lage.buildLageBriefing({ id: "test-quellenbeleg" }, { missingOnly: true,
+        beforeGenerate: async id => { assert.equal(id, "test-quellenbeleg"); gate++; } });
+      assert.equal(gate, 1); assert.equal(r.available, true); assert.equal(r.fromCache, false);
+      assert.deepEqual(inserted.payload.paragraphs.map(p => p.text), r.paragraphs.map(p => p.text));
+    });
+    await pruefe("Insert Konflikt liefert keinen behaupteten neuen Text und keine Wiederholung", async () => {
+      cached = null; lock = true; const vorherCalls = calls;
+      storage.insertRenderedBriefingV3 = async () => ({ saved: false, reason: "existing-result" });
+      const r = await lage.buildLageBriefing({ id: "test-quellenbeleg" }, { missingOnly: true, beforeGenerate: async () => {} });
+      assert.equal(r.reason, "existing-result"); assert.equal(r.available, false); assert.equal(calls, vorherCalls + 1);
+    });
+    await pruefe("Fehlender Readback verwirft die Erfolgsmeldung des Nachlaufs", async () => {
+      cached = null; lock = true;
+      storage.insertRenderedBriefingV3 = async () => ({ saved: true });
+      await assert.rejects(lage.buildLageBriefing({ id: "test-quellenbeleg" }, { missingOnly: true,
+        beforeGenerate: async () => {} }), /nachlauf-text-nicht-gespeichert/);
+    });
+    await pruefe("Echter Insert Transport behaelt vorhandene Zeile und erzwingt Mandatsfilter", async () => {
+      const entry = { id: "bf-test-quellenbeleg-lage-2026-09-08", user_id: "test-quellenbeleg", slot: "lage",
+        generated_at: "2026-09-08T17:00:00.000Z", payload: { paragraphs: [] } };
+      const r = await vorher.insertRenderedBriefingV3(entry, { bereit: true, request: async (url, opts) => {
+        assert.equal(new URL(url, "https://example.invalid").searchParams.get("user_id"), "eq.test-quellenbeleg");
+        assert.equal(opts.method, "POST"); assert.match(opts.headers.Prefer, /resolution=ignore-duplicates/);
+        assert.deepEqual(JSON.parse(opts.body), entry); return [];
+      } });
+      assert.equal(r.saved, false); assert.equal(r.reason, "existing-result");
+      await assert.rejects(vorher.insertRenderedBriefingV3(entry, { bereit: true, request: async () => [{ ...entry, user_id: "fremd" }] }), /mandantenuebergreifend/);
     });
   } finally { Object.assign(storage, vorher); ai.generateLageBriefing = vorAi; safety.guardKnowledgeObject = vorSafety; }
   console.log(`${bestanden}/${bestanden} Quellenbelegpruefungen bestanden`);
