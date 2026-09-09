@@ -25,6 +25,14 @@ async function main() {
     && r.vorrangreserveReal === 200, "Laufzeitwerte erhalten");
   check(!JSON.stringify(r).includes(geheim) && !r.scharferPfadFreigegeben, "keine fremden Felder oder Freigabe");
   check(calls === 1, "genau ein Request");
+  const quellenkontext = { version: 1, scoring: "off", relevanzordnung: false,
+    koScan: 500, lageMax: 12, relevanzTage: 14, sourceSafetyStandard: true, atomicLock: true, secret: geheim };
+  r = await pruefe({ env, fetchFn: async () => ({ status: 200, json: async () => ({ ...payload, quellenkontext }) }) });
+  check(r.quellenkontext?.relevanzTage === 14 && !JSON.stringify(r).includes(geheim), "Quellenlesepfad ohne fremde Felder bestaetigt");
+  for (const patch of [{ atomicLock: "true" }, { relevanzTage: -1 }, { lageMax: 12.5 }]) {
+    r = await pruefe({ env, fetchFn: async () => ({ status: 200, json: async () => ({ ...payload, quellenkontext: { ...quellenkontext, ...patch } }) }) });
+    check(!r.quellenkontext, "ungueltiger Quellenlesepfad nicht bestaetigt");
+  }
   for (const changed of [{ GITHUB_SHA: "b".repeat(40) }, { HELMUT_PRODUCTION_COMMIT: "" }, { HELMUT_CRON_SECRET: "" }]) {
     calls = 0;
     r = await pruefe({ env: { ...env, ...changed }, fetchFn });
@@ -78,6 +86,8 @@ async function main() {
     check(runtime.textnachlaufVersion === 2 && runtime.testKosten?.aktiv === true
       && runtime.testKosten.limitUsd === 4 && runtime.testKosten.maxManualCalls === 1000,
     "echter Handler und CLI Leser bestaetigen denselben Dollar Schutzvertrag");
+    check(runtime.quellenkontext?.version === 1 && runtime.quellenkontext.relevanzTage === 14
+      && runtime.quellenkontext.atomicLock === storage.atomicLockEnabled(), "echter Quellenlesepfad bis zum CLI Leser");
     check(r.body.tagesdeckel === 2416 && r.body.understandingReserve === 702, "echte Budgetfunktionen");
     check(r.body.vorrangreserveReal === 0, "fehlende Production Reserve ehrlich als null Aufrufe");
     process.env.HELMUT_TESTLAUF_VORRANG_REAL = "200";

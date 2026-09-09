@@ -79,3 +79,50 @@ verbindliche Gate vor einer Mergeempfehlung; sein Ergebnis ist hier noch offen.
 Rueckweg: bestehendes Deployment nur mit Betreiberfreigabe zuruecksetzen. Dabei
 entfaellt der neue Geldriegel; vor einer weiteren Modellarbeit muss das Fenster
 geschlossen bleiben. Kein Loeschen oder Zuruecksetzen der Kostenreservierungen.
+
+## Quellenkontext vor weiterer Modellarbeit
+
+Der manuelle Controller kennt zusaetzlich `quellenkontext`. Er benoetigt den
+unabhaengig als READY bestaetigten main Commit und das Wort
+`TESTKOHORTE_500_FEHLENDE_QUELLENAUSZUEGE_BESTAETIGT`. Die synthetische Kohorte
+muss geschlossen sein. Derselbe Actions Konkurrenzriegel und eine atomare
+zehnminuetige Sperre schuetzen den Schritt; acht Minuten Arbeitsbudget und
+40 Quellzeilen beziehungsweise Artikelabrufe begrenzen ihn. Kein Cron wird
+verschoben, keine automatische Fortsetzung eingerichtet.
+
+Der authentifizierte Statusleser bestaetigt zuerst die Auswahlparameter.
+Alle 500 Profilkontexte werden durch die vorhandene Lageauswahl gelesen.
+Nur die dort benoetigten, bisher leeren Originalauszuege sind Schreibziele.
+Ein identischer Rohspiegeleintrag oder die Metadaten desselben Artikels mit
+passender Adresse und passendem Titel liefern hoechstens 240 Zeichen.
+Unpassende Ziele, Portalseiten, Titelwiederholungen und fehlende Auszuege
+bleiben erfolglos. Der bestehende Crawler behaelt Anbietergrenzen und TLS;
+Weiterleitungen duerfen den bestaetigten Herausgeber nicht verlassen.
+
+Jede Ergaenzung schreibt ausschliesslich `summary` und technische Provenienz
+in `raw`, bedingt auf den unveraenderten vorherigen Feldern und der
+Artikelidentitaet. Vorhandene Metadaten bleiben erhalten. Vollstaendige
+Ruecklesung bestaetigt den persistierten Stand. Ein Versuch am gleichen
+Commit und UTC Tag wird nicht nochmals ausgefuehrt. Profilbestand und
+Modellverbrauch werden unabhaengig verglichen; nur bei unveraendertem
+Verbrauch wird null Modellarbeit bestaetigt. Quellenabdeckung ist kein
+Briefingnachweis und keine Faktenfreigabe.
+
+Rueckweg fuer diesen Schritt: keine weitere manuelle Ausfuehrung. Ergaenzte
+Originalauszuege bleiben erhalten; kein automatischer Rueckschreib oder
+Loeschpfad. Der 1000er Aufrufriegel und die 4 USD Grenze werden nicht erhoeht.
+
+Vor Merge der Quellenreparatur: lokaler kanonischer Lauf 343/347 Suiten in
+590 Sekunden. Vier Umgebungsfehler betreffen fehlendes Chromium, `ical.js`
+und AWS SDK. Die gezielten Quellenpruefungen bestehen mit 7/7, Controller
+8/8, Statusleser 53/53 und bestehender Direktcontroller 21/21. Ein zusaetzlicher
+Test am echten lokalen PostgreSQL und PostgREST prueft die neue JSONB Bedingung,
+die vollstaendige Ruecklesung sowie den Konflikt bei geaenderter Artikelidentitaet.
+Dieser Datenbankbeleg und die beiden Pflichtjobs sind vor Merge in CI zu bestaetigen.
+
+Zusaetzlich korrigiert die bestehende Briefingpruefung einen belegten Fehlalarm:
+derselbe Originaltitel in Helmut und Radar ist bei identischem Vorgang und
+nachgewiesen identischem Quelldokument ein erlaubter Alias. Fremde Zuordnung,
+wiederholte Fliesstexte und Kopien aus der Lage bleiben Fehler. Die erzeugten
+Ansichten werden dadurch nicht veraendert; es ist ausschliesslich eine
+Praezisierung der technischen Einzelpruefung.

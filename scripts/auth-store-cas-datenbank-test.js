@@ -81,6 +81,7 @@ async function main() {
   try {
     psql("do $$ begin if not exists (select 1 from pg_roles where rolname='service_role') then create role service_role nologin bypassrls; end if; end $$;");
     psql("create table public.helmut_store(id text primary key, data jsonb not null); grant usage on schema public to service_role; grant select, insert, update on public.helmut_store to service_role;");
+    require("./fixtures/quellenkontext-datenbank").bereiteVor({ psql });
     // Altbestand ohne Revision: gerade dieser erste CAS Schritt muss sicher sein.
     psql(`insert into public.helmut_store values ('main-auth', '{"users":[],"adminSettings":{"baseline":1}}'::jsonb)`);
     const listener = net.createServer();
@@ -160,7 +161,8 @@ async function main() {
     }
     await require("./fixtures/direkt500-datenbank").pruefeDirektausbau({ psql, base, token });
     await require("./fixtures/testkosten-datenbank").pruefeKosten({ psql, base, token });
-    console.log(`PostgreSQL ${version}: 13 PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
+    await require("./fixtures/quellenkontext-datenbank").pruefe({ base, token });
+    console.log(`PostgreSQL ${version}: 15 PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
   } finally {
     if (api && api.pid && api.exitCode == null) {
       const ended = once(api, "exit").catch(() => {});

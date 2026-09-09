@@ -221,7 +221,17 @@ async function handleRequest(request, response) {
         kohortenQuellenGesperrt: !require("./lib/helmut/scheduler")
           .profilQuellenErlaubt({ id: "test-kohorte-a-001" }),
         textnachlaufVersion: 2,
-        testKosten: require("./lib/helmut/testkosten-budget").konfiguration()
+        testKosten: require("./lib/helmut/testkosten-budget").konfiguration(),
+        quellenkontext: {
+          version: 1, scoring: require("./lib/helmut/scoring").scoringMode(),
+          relevanzordnung: require("./lib/helmut/relevanzordnung").relevanzordnungAktiv(),
+          koScan: Number(process.env.HELMUT_KO_SCAN_LIMIT || 500),
+          lageMax: Number(process.env.HELMUT_LAGE_MAX_VORGAENGE || 12),
+          relevanzTage: require("./lib/helmut/briefing-frische").relevanzTage(),
+          sourceSafetyStandard: ![process.env.HELMUT_SOURCE_BLOCKLIST, process.env.HELMUT_SOURCE_ALLOWLIST]
+            .some(v => String(v || "").split(",").some(x => x.trim())),
+          atomicLock: require("./lib/helmut/storage").atomicLockEnabled()
+        }
       });
     } catch {
       response.writeHead(500, jsonHeaders());
