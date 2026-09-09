@@ -59,7 +59,10 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
     return req;
   };
   let settled = false;
-  const result = ai.generateLageBriefing(vorgaenge, {}, { politicianId: "test-kohorte-b-023" })
+  const drafts = [], reviews = [];
+  const result = ai.generateLageBriefing(vorgaenge, {}, { politicianId: "test-kohorte-b-023",
+    onDraft: async value => { assert.equal(logs.length,1); assert.equal(requests,1); drafts.push(value); },
+    onReview: async value => { assert.equal(logs.length,2); assert.equal(requests,2); reviews.push(value); } })
     .then(value => ({ value }), error => ({ error })).then(r => { settled = true; return r; });
   await tick(); await tick();
   if (budget) assert.equal(settled, false, "Kein Abschluss vor Kostenquittung");
@@ -77,6 +80,9 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   assert(!JSON.stringify(logs).includes("GEHEIMER"), "Kostenlog verrät keinen Rohtext");
   assert.equal(requests, budget ? (expected ? 1 : 2) : 0, "Ein Generator und nur bei dessen Erfolg ein Quellenpruefer; kein Retry");
   assert.equal(logs.length, expected ? 1 : 2, "Jeder Modellversuch hat seinen eigenen Kostenbeleg");
+  if (!expected) { assert.equal(drafts.length,1); assert.equal(reviews.length,1); assert.deepEqual(reviews[0],review); }
+  if (expected === "ai-text-visible-id") assert.equal(drafts.length,1,"Auch fachlich verworfener Entwurf bleibt privat pruefbar");
+  if (expected === "ai-cost-receipt-missing") assert.equal(drafts.length,0,"Kein Entwurfsbeleg ohne bestaetigte Kostenquittung");
   checks++;
 }
 
