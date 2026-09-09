@@ -8,7 +8,9 @@
     "ersteAktivierungUtc": "2026-09-09T11:01:50.189Z",
     "alleSynthetischenInaktivUtc": "2026-09-09T11:21:40.004Z",
     "automationsId": "6aa13bdcd9b881919d1c18eac0e274c0",
-    "endautomationAktiv": false
+    "endautomationAktiv": false,
+    "endautomationBestaetigtUtc": "2026-09-09T11:57:26.178869Z",
+    "zwischenzeitlicheAktivanzeige": "11:56 UTC trotz Abschaltquittung erneut aktiv angezeigt; Ursache unbekannt. Nach unabhaengigem Lesen erneut deaktiviert und separat als aus bestaetigt."
   },
   "umfang": {
     "mandate": 500,
