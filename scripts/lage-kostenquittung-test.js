@@ -92,10 +92,22 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   await fall({ status: "incomplete", expected: "ai-response-incomplete" });
   await fall({ output: "GEHEIMER_UNGUELTIGER_MODELLTEXT", expected: "ai-response-invalid-json" });
   await fall({ mode: "malformed", expected: "ai-response-invalid-json" });
-  await fall({ output: JSON.stringify({ paragraphs: paragraphs.slice(0, 1) }), expected: "ai-text-invalid" });
+  await fall({ output: JSON.stringify({ paragraphs: paragraphs.slice(0, 1) }), expected: "ai-text-paragraph-count" });
   await fall({ output: JSON.stringify({ paragraphs: [
     { text: "wort ".repeat(251), vorgang_ids: ["vg-test"] }, paragraphs[1]
-  ] }), expected: "ai-text-invalid" });
+  ] }), expected: "ai-text-word-limit" });
+  await fall({ output: JSON.stringify({ paragraphs: [
+    { text: "Belegter Text", vorgang_ids: ["vg-fremd"] }, paragraphs[1]
+  ] }), expected: "ai-text-source-reference" });
+  await fall({ output: JSON.stringify({ paragraphs: [
+    { text: "Siehe vg-test", vorgang_ids: ["vg-test"] }, paragraphs[1]
+  ] }), expected: "ai-text-visible-id" });
+  await fall({ output: JSON.stringify({ paragraphs: [
+    { text: { inhalt: "Kein String" }, vorgang_ids: ["vg-test"] }, paragraphs[1]
+  ] }), expected: "ai-text-empty-or-type" });
+  await fall({ output: JSON.stringify({ paragraphs: [
+    { text: "   ", vorgang_ids: ["vg-test"] }, paragraphs[1]
+  ] }), expected: "ai-text-empty-or-type" });
   await fall({ budget: false, expected: "budget" });
   console.log(`${checks} PASS: Quittierung, Fehlerklassen, kein Retry, Absatzvertrag`);
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => {
