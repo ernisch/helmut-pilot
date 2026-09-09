@@ -385,7 +385,9 @@ async function main() {
     check("K5 Der Direktpfad existiert wirklich und läuft NICHT über die Phasenfenster",
       (() => {
         const server = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
-        const i = server.indexOf('url.pathname === "/api/cron/lage-briefing"');
+        // Die regulaere Route bleibt gemeint, nicht der gesondert bestaetigte
+        // manuelle Nachlauf mit zusaetzlichem Query Parameter.
+        const i = server.indexOf('if (url.pathname === "/api/cron/lage-briefing") {');
         if (i < 0) return false;
         const block = server.slice(i, i + 4000);
         // Direkt gebaut, ohne briefing_materialization-Auftrag.

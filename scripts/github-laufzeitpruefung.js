@@ -38,6 +38,7 @@ async function pruefe({ env = process.env, fetchFn = global.fetch } = {}) {
     return {
       ok: true, reinLesend: true, grund: "production-laufzeit-gelesen", httpStatus: 200, commit: erwartet,
       ...Object.fromEntries([...BOOLEAN_FELDER, ...ZAHL_FELDER].map((f) => [f, body[f]])),
+      ...(body.textnachlaufVersion === 1 ? { textnachlaufVersion: 1 } : {}),
       scharferPfadFreigegeben: false
     };
   } catch {

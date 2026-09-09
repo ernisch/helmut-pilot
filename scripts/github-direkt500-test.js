@@ -1,6 +1,9 @@
 "use strict";
 
 const assert = require("assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
+const vm = require("node:vm");
 const D = require("../lib/helmut/testkohorte-direkt500");
 const G = require("./github-direkt500");
 const { welt, env, kopie, JETZT, SHA } = require("./fixtures/direkt500");
@@ -18,7 +21,7 @@ function kontext(vorgang = "provisionierung") {
     pipeline: { ok: true, pfad: "warteschlange", tenants: 500,
       lauf: { laufId: "cron-pipeline-20260910220000-fixture" },
       lauftelemetrie: { start: true, ende: true, status: "success" },
-      verarbeitung: { erledigt: 20, verarbeitet: 20, endgueltigFehlgeschlagen: 0 },
+      verarbeitung: { erledigt: 20, verarbeitet: 20, wiederholt: 0, endgueltigFehlgeschlagen: 0 },
       weckVersand: { versendet: 0 } },
     quittungen: [{ run_id: "cron-pipeline-20260910220000-fixture", process: "warteschlange-pipeline",
       status: "success", processed_count: 20, failed_count: 0, started_at: JETZT, finished_at: JETZT }] };
@@ -62,6 +65,50 @@ async function bereitZumFachzyklus() {
     assert.equal(r.ok, true, JSON.stringify(r));
   }
   return h;
+}
+
+async function echterQuittungsvertrag(h) {
+  // Zahlen des belegten Laufs vom 08.09.: 330 Abschluesse und 2 Wiederholungen.
+  // Antwort und Datenbankzeile entstehen durch den echten Server und Speicherpfad,
+  // nicht durch eine im Test nachgebaute Zaehlerformel. Nur Arbeit und Transport
+  // sind lokal ersetzt. Die Testuhr gilt allein in diesem isolierten VM Kontext.
+  const src = fs.readFileSync(path.join(__dirname, "../server.js"), "utf8");
+  const begin = src.indexOf("async function runCronUeberWarteschlange(");
+  const end = src.indexOf("async function runCronMitGlobalerPhase(", begin);
+  assert(begin >= 0 && end > begin);
+  class TestDate extends Date {
+    constructor(...args) { super(...(args.length ? args : [JETZT])); }
+    static now() { return Date.parse(JETZT); }
+  }
+  const storage = require("../lib/helmut/storage");
+  h.quittungen = [];
+  const ctx = vm.createContext({
+    Date: TestDate, process: { env: {} }, console: { log() {} },
+    helmutExecLocation: () => "local",
+    storageModul: { schreibeWarteschlangenLaufquittung: (entry) =>
+      storage.schreibeWarteschlangenLaufquittung(entry, { bereit: true,
+        insertRelational: async (row) => { h.quittungen = [kopie(row)]; } }) },
+    scalablePipeline: {
+      planeArbeit: async () => ({ ok: true, profile: 500, geplant: 1678, neu: 0 }),
+      wiedervorlage: async () => ({ wiedervorgelegt: 0 }),
+      betriebsstatus: async () => ({ zustand: "bereit" })
+    },
+    jobDispatch: { abgleich: async () => ({ uebersprungen: true }), dispatchModus: () => "shadow",
+      versendeAbsichten: () => require("../lib/helmut/job-dispatch").versendeAbsichten({
+        env: { HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt" } }) },
+    workerBetrieb: { durchlauf: async () => ({ worker: 4, bilanzen: [{ verfuegbar: true }],
+      reserviert: 585, erledigt: 330, wiederholt: 2, zurueckgestellt: 253,
+      endgueltigFehlgeschlagen: 0, leaseVerloren: 0 }) },
+    buildV3Briefing: () => { throw new Error("Kein Briefinglauf im Vertragstest"); }
+  });
+  vm.runInContext(src.slice(begin, end), ctx, { filename: "server.js" });
+  h.pipeline = kopie(await ctx.runCronUeberWarteschlange("pipeline", {
+    runId: "cron-pipeline-20260910220000-fixture", startedMs: Date.parse(JETZT)
+  }));
+  assert.equal(h.pipeline.verarbeitung.verarbeitet, 332);
+  assert.equal(h.pipeline.verarbeitung.erledigt, 330);
+  assert.equal(h.quittungen[0].processed_count, 330);
+  assert.equal(h.quittungen[0].telemetrie.wiederholt, 2);
 }
 
 async function main() {
@@ -194,20 +241,124 @@ async function main() {
     assert.equal(D.hash(h.w.snapshot()), vorher);
     assert.equal(h.anfragen.filter((u) => u.pathname === "/api/cron/pipeline").length, 1);
   });
-  await test("Fachrunde bindet die Laufquittung an erledigt statt inklusive Zurueckstellungen", async () => {
+  await test("Echte Serverquittung mit Wiederholungen bestaetigt nur gespeicherte Abschluesse", async () => {
     const h = await bereitZumFachzyklus();
-    h.pipeline.verarbeitung = {
-      erledigt: 330,
-      verarbeitet: 585,
-      zurueckgestellt: 253,
-      wiederholt: 2,
-      endgueltigFehlgeschlagen: 0
-    };
-    h.quittungen[0].processed_count = 330;
+    await echterQuittungsvertrag(h);
+    const vorher = D.hash(h.w.snapshot());
     const r = await G.ausfuehren(h.args);
     assert.equal(r.ok, true, JSON.stringify(r));
     assert.equal(r.verarbeitet, 330);
     assert.equal(r.fertiggestellteAuftraege, 330);
+    assert.equal(r.funktionsnachweis500, false);
+    assert.equal(D.hash(h.w.snapshot()), vorher);
+    assert.equal(h.anfragen.filter(u => u.pathname === "/api/cron/pipeline").length, 1);
+    assert.equal(h.anfragen.filter(u => u.pathname === "/api/cron/testnachweis-status").length, 2);
+    assert(r.kostenNachher.prognoseUsd < 9);
+  });
+  await test("Abweichende Abschlussquittung bleibt gesperrt und erzeugt keinen Wiederholungslauf", async () => {
+    const h = await bereitZumFachzyklus();
+    for (const gespeichert of [332, 329, "330", null]) {
+      h.anfragen.length = 0;
+      await echterQuittungsvertrag(h);
+      h.quittungen[0].processed_count = gespeichert;
+      const r = await G.ausfuehren(h.args);
+      assert.equal(r.ok, false, String(gespeichert));
+      assert.equal(r.grund, "fachzyklus-laufquittung-fehlt-oder-abweichend");
+      assert.equal(r.automatischeWiederholung, false);
+      assert.equal(h.anfragen.filter(u => u.pathname === "/api/cron/pipeline").length, 1);
+    }
+  });
+  await test("Fehlende oder widerspruechliche Antwortzaehler sind kein Fortschrittsbeleg", async () => {
+    const h = await bereitZumFachzyklus();
+    for (const patch of [{ verarbeitet: null }, { verarbeitet: 330 }, { wiederholt: -1 },
+      { wiederholt: null }, { verarbeitet: "332" }, { endgueltigFehlgeschlagen: 1 }]) {
+      h.anfragen.length = 0;
+      await echterQuittungsvertrag(h);
+      Object.assign(h.pipeline.verarbeitung, patch);
+      const r = await G.ausfuehren(h.args);
+      assert.equal(r.ok, false, JSON.stringify(patch));
+      assert.equal(r.automatischeWiederholung, false);
+      assert.equal(h.anfragen.filter(u => u.pathname === "/api/cron/pipeline").length, 1);
+    }
+  });
+  await test("Nach Wiederholungen bleiben Kosten, Kommunikationsschutz, Sperren und Bestand geprueft", async () => {
+    const h = await bereitZumFachzyklus();
+    const fetch = h.args.fetchFn;
+    for (const [defekt, grund] of [["kosten", "kosten-sicherheitsstopp"],
+      ["kommunikation", "production-konfiguration-abweichend"],
+      ["sperre", "aktive-oder-verwaiste-lease"], ["bestand", "fachzyklus-hat-profilbestand-veraendert"]]) {
+      h.anfragen.length = 0;
+      h.usage[0].estimatedCost = 0.003;
+      h.config.kommunikationGesperrt = true;
+      h.locks = [];
+      await echterQuittungsvertrag(h);
+      let nachLauf = false;
+      h.args.fetchFn = async (url, init) => {
+        const u = new URL(url);
+        const res = await fetch(url, init);
+        if (u.pathname === "/api/cron/pipeline") {
+          nachLauf = true;
+          if (defekt === "kosten") h.usage[0].estimatedCost = 9;
+          if (defekt === "kommunikation") h.config.kommunikationGesperrt = false;
+          if (defekt === "sperre") h.locks = [{ job_name: "konkurrierender-lauf" }];
+        }
+        if (nachLauf && defekt === "bestand" && u.pathname.endsWith("/mandate_profiles")) {
+          const rows = await res.json();
+          rows[0].offlineTestAenderung = true;
+          return { ...res, json: async () => rows };
+        }
+        return res;
+      };
+      const r = await G.ausfuehren(h.args);
+      assert.equal(r.ok, false, defekt);
+      assert.equal(r.grund, grund, defekt);
+      assert.equal(r.automatischeWiederholung, false);
+      assert.equal(h.anfragen.filter(u => u.pathname === "/api/cron/pipeline").length, 1);
+    }
+  });
+  await test("Textnachlauf braucht deployte Faehigkeit und verweigert Actions Wiederholung", async () => {
+    const h = await bereitZumFachzyklus();
+    const args = { ...h.args, vorgang: "textnachlauf", env: { ...h.args.env,
+      HELMUT_TESTKOHORTE_CONFIRM: D.WORTE.textnachlauf, GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1" } };
+    let r = await G.ausfuehren(args);
+    assert.equal(r.grund, "textnachlauf-nicht-deployt");
+    h.config.textnachlaufVersion = 1;
+    r = await G.ausfuehren({ ...args, env: { ...args.env, GITHUB_RUN_ATTEMPT: "2" } });
+    assert.equal(r.grund, "textnachlauf-keine-wiederholung");
+    assert(!h.anfragen.some(u => u.pathname === "/api/cron/lage-briefing"));
+  });
+  await test("Textnachlauf nutzt genau einen geschuetzten POST und prueft gespeicherte Wirkung", async () => {
+    const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
+    h.config.textnachlaufVersion = 1;
+    const runId = "nachlauf500-123456789";
+    let calls = 0, claimed = 0;
+    h.quittungen = [{ run_id: runId, status: "success", processed_count: 0, failed_count: 0,
+      started_at: JETZT, finished_at: JETZT }];
+    const args = { ...h.args, vorgang: "textnachlauf", env: { ...h.args.env,
+      HELMUT_TESTKOHORTE_CONFIRM: D.WORTE.textnachlauf, GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1" },
+      fetchFn: async (url, init) => {
+        const u = new URL(url);
+        if (u.pathname === "/api/cron/lage-briefing") {
+          calls++; assert.equal(init.method, "POST"); assert.equal(init.redirect, "error");
+          assert.equal(u.search, "?nachlauf=fehlende-500");
+          assert.equal(init.headers["x-helmut-lauf"], runId);
+          assert.equal(init.headers["x-helmut-bestaetigung"], D.WORTE.textnachlauf);
+          const results = h.w.snapshot().mandate.filter(m => m.aktiv).map((m, i) => ({ userId: m.user_id,
+            ...(i < claimed ? { gespeichert: true, generatedAt: JETZT } : { grund: "zeitbudget" }) }));
+          return { status: 200, json: async () => ({ ok: true, schemaVersion: 1, runId,
+            modus: "manuell-fehlende-texte", ziel: 500, gespeichert: claimed, results, funktionsnachweis500: false }) };
+        }
+        if (u.pathname.endsWith("/briefings")) return { status: 200, json: async () => [] };
+        return fetch(url, init);
+      }
+    };
+    const r = await G.ausfuehren(args);
+    assert.equal(r.ok, true, JSON.stringify(r)); assert.equal(r.gespeichert, 0);
+    assert.equal(r.funktionsnachweis500, false); assert.equal(calls, 1);
+    claimed = 1; h.quittungen[0].processed_count = 1;
+    const falsch = await G.ausfuehren(args);
+    assert.equal(falsch.grund, "textnachlauf-texte-nicht-gespeichert");
+    assert.equal(falsch.automatischeWiederholung, false); assert.equal(calls, 2);
   });
   console.log(`\n${pass} PASS, 0 FAIL`);
 }

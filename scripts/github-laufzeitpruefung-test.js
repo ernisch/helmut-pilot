@@ -64,9 +64,9 @@ async function main() {
   const handler = require("../server");
   const server = http.createServer(handler);
   await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const request = (method, token) => new Promise((resolve, reject) => {
+  const request = (method, token, path = "/api/cron/testnachweis-status", headers = {}) => new Promise((resolve, reject) => {
     const req = http.request({ host: "127.0.0.1", port: server.address().port,
-      path: "/api/cron/testnachweis-status", method, headers: token ? { Authorization: `Bearer ${token}` } : {} }, (res) => {
+      path, method, headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...headers } }, (res) => {
       let text = ""; res.on("data", (c) => { text += c; });
       res.on("end", () => resolve({ status: res.statusCode, body: JSON.parse(text) }));
     }); req.on("error", reject); req.end();
@@ -96,6 +96,18 @@ async function main() {
     r = await request("GET", geheim);
     check(r.status === 500 && !JSON.stringify(r).includes(geheim), "Fehler ohne Rohtext oder Auditwrite");
     storage.llmDailyCallLimit = original;
+    const nachlauf = "/api/cron/lage-briefing?nachlauf=fehlende-500";
+    check((await request("POST", null, nachlauf)).status === 403, "Textnachlauf ohne Cron Autorisierung gesperrt");
+    check((await request("GET", geheim, nachlauf)).status === 400, "Textnachlauf nie per GET oder Prefetch");
+    check((await request("POST", geheim, nachlauf + "&force=1")).status === 400, "Textnachlauf akzeptiert keinen Force Parameter");
+    const ohneFreigabe = await request("POST", geheim, nachlauf);
+    check(ohneFreigabe.body.ok === false && ohneFreigabe.body.grund === "nachlauf-freigabe-fehlt", "Autorisierung allein ist keine Textlauf Freigabe");
+    const ohneProduction = await request("POST", geheim, nachlauf, {
+      "x-helmut-production-commit": sha, "x-helmut-lauf": "nachlauf500-123456789",
+      "x-helmut-bestaetigung": require("../lib/helmut/testkohorte-textnachlauf").CONFIRM
+    });
+    check(ohneProduction.body.ok === false && ohneProduction.body.grund === "nachlauf-konfiguration-abweichend",
+      "Echter Server prueft Laufzeit vor jedem Speicher oder Modellpfad");
     check(writes === 0, "Adminseed, Blobleser und Fehlerpersistierung nie erreicht");
   } finally {
     await new Promise((resolve) => server.close(resolve));

@@ -34,6 +34,8 @@ function loadClient() {
   // Test-Hook im SELBEN Scope anhaengen (Zugriff auf `briefing`-let + Render-Funktion).
   code += `\n;globalThis.__helmutTest = {
     render: () => renderHelmutStandView(),
+    lageCard: (v) => renderVorgangCard(v),
+    lageSheet: (v) => vsheetContentHtml(v),
     setBriefing: (b) => { briefing = b; },
     esc: (s) => escapeHtml(s)
   };`;
@@ -354,6 +356,29 @@ check("Review: KEINE Kostenwerte im gerenderten Review-Stand",
   !/cost|estimat|token|pipelineStep|€\s?\d|\$\d/i.test(fxHtml));
 check("Review: keine hartkodierte Partei / keine Personen-Logik im Fixture",
   !/\bcem\b|ince(?!Last)|\bSPD\b|\bCDU\b|\bAfD\b|\bFDP\b|Gr[üu]ne/i.test(JSON.stringify(fx).replace(/changedSinceLastVisit/g, "")));
+
+const geteilterVorgang = {
+  id: fxState.primaryItem.id, vorgangId: fxState.primaryItem.id,
+  title: fxState.primaryItem.title, displayTitle: fxState.primaryItem.displayTitle,
+  displaySummary: "Die belegten Fakten gehoeren in die Lage.",
+  whyRelevant: fxState.whyItMatters, recommendation: fxState.recommendation,
+  sources: [{ name: "Testquelle", url: fxState.primaryItem.sourceUrl }]
+};
+api.setBriefing({ ...fxBriefing, lageBriefing: { available: true, vorgaenge: [geteilterVorgang] } });
+const getrennt = api.render();
+const lageCard = api.lageCard(geteilterVorgang), lageSheet = api.lageSheet(geteilterVorgang);
+check("Geteiltes Thema: Empfehlung bleibt im Briefing", getrennt.includes("hstand-proposal") && getrennt.includes("Mein Vorschlag"));
+check("Lage Karte und Detail wiederholen keine Empfehlung", !lageCard.includes("Empfehlung")
+  && !lageSheet.includes('class="vsheet-reco"') && !lageSheet.includes(fxState.recommendation));
+check("Briefing verweist auf genau den vorhandenen Lage Vorgang", getrennt.includes(`data-vorgang="${geteilterVorgang.id}"`));
+check("Identische Einordnung erscheint einmal in der Lage", !getrennt.includes('class="hstand-card hstand-why"')
+  && lageSheet.includes("Warum wichtig?"));
+check("Lage Detail verlinkt die Empfehlung statt sie zu kopieren", lageSheet.includes('data-view="helmut"')
+  && lageSheet.includes("Empfehlung im Briefing öffnen"));
+api.setBriefing(fxBriefing);
+check("Ohne zugehoerige Lage bleibt Einordnung im Briefing erhalten", api.render().includes('class="hstand-card hstand-why"'));
+check("Fremder Vorgang bekommt keinen irrefuehrenden Briefing Verweis", !api.lageSheet({ ...geteilterVorgang,
+  id: "vg-fremd", vorgangId: "vg-fremd" }).includes('data-view="helmut"'));
 
 console.log(`\n${passed}/${passed + failed} Helmut-Tab-UI-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
