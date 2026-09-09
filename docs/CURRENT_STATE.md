@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 09.09., 08:31 Tuerkei / 07:31 Berlin / 05:31 UTC. EXAKT 500 AKTIV.** [PR #340](https://github.com/ernisch/helmut-pilot/pull/340) ist uebernommen. Production `3dbb505` / `dpl_5FsA9KBGBvK5tLa5qYVjCbut14ao` READY. Zwei Fachzyklen waren erfolgreich, erzeugten aber keine Lage Texte: alle 500 Projektionen werden erst zwischen 12:00 und 17:59 UTC faellig, nach dem Testende **11:00 Tuerkei / 10:00 Berlin / 08:00 UTC**. Heute noch 0/500 Texte. Tageskosten 32 belegte Aufrufe, 0,108866 USD, null unbekannte Kosten. Der Korrekturpatch ist lokal mit **339/339** Suiten geprueft. Keine Profile, Budgets, Umgebungsvariablen oder Cronplaene geaendert. [SR §65](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md). **500er Funktionsnachweis offen.**
+**Stand: 09.09., 09:33 Tuerkei / 08:33 Berlin / 06:33 UTC. EXAKT 500 AKTIV.** [PR #341](https://github.com/ernisch/helmut-pilot/pull/341) freigegeben, uebernommen und Production `d511d8d` READY. PR und main CI vollstaendig gruen. Ein kontrollierter Textnachlauf speicherte einen Text und stoppte bei `ai-unavailable`. Heute **39/500 Texte**, 461 fehlen. Alle 39 Texte gelesen. **Startstopp: 86 Reservierungen, 85 Kostenbelege, eine Luecke.** 0,201613 USD bekannte KI Kosten fuer den gesamten UTC Tag; Gesamtkosten unvollstaendig. Keine aktive Verarbeitung. Profile und Konten unveraendert. Testende **11:00 Tuerkei / 10:00 Berlin / 08:00 UTC** bleibt. [Aktueller Beleg](betrieb/500-nachlauf-2026-09-09.md). **500er Funktionsnachweis offen.**
 
 
 **Kernlage:** Warteschlangenmotor seit 23.08. in Production `on`, Dispatch `shadow`. Fuenferbeleg: [OP-30 §30.7](betrieb/op30-aktivierung-5-mandate.md). **Frisch sieben Vorgaenge `unbekannt`, juengster 08.09., 17:32 UTC nach Modelltimeout**; alte Viererangabe ueberholt. Keine automatische Wiederholung. Selbstweck nie ausgefuehrt.
@@ -11,7 +11,7 @@
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **#340 Production:** Merge `3dbb5058faeee48bf68cb073c186d4e7ce402802`, Deployment `dpl_5FsA9KBGBvK5tLa5qYVjCbut14ao` READY. PR und main Lauf `34312188670` gruen. Der neue Patch ist noch nicht uebernommen oder deployt; SR §65.
+- **#341 Production:** `d511d8d2d5d0b356b611ad6b1ac3f831f6db5aa8`, `dpl_5L7hHWTxKcxHA8ibbEcZyHVwvVic` READY. PR Lauf `34315835967` und main Lauf `34318569679` erfolgreich. Details im [aktuellen Beleg](betrieb/500-nachlauf-2026-09-09.md).
 - **Watchdog und Lage Check 08.09.:** `34212536121` startete bei unlesbarem Status keinen Ersatzlauf; PR #338 haertet den GET Leser. Der Lauf `cron-lage-check-20260908100012-bnctn` erfasste global 103/103 Quellen, speicherte aber nur 83/500 Mandatslagen. 417 bleiben zeitbedingt offen; keine Gesamtabnahme, SR §61.7.
 - **#334 bis #338 uebernommen:** direkter Ausbau, vollstaendige 500er Planung, begrenzter Dispatch und gehaerteter Statusleser; Einzelpruefungen und Production Belege SR §60 bis §62.
 - **Quellenkorrektur #330:** `2ca0e62`, READY, beide Pflichtjobs gruen; Nachweis SR §58.5. Ausfuehrer aus #326/#328 bleibt bestehen.
@@ -22,12 +22,12 @@
 ## 3 · Production-Zustand
 
 - **Datenbank:** Supabase **Pro/Micro (`t4g.micro`, 1 GB)**, gesund. Dashboard **08.09., 08:56 UTC: CPU 6 %, RAM 52 %, 11/60 Verbindungen**. SQL und volle Grundlinie nach dem Fachlauf unveraendert. PITR aus; keine Ressourcen oder Schemaaenderung.
-- **Bestand 09.09., 05:31 UTC:** **504/500/4**, fuenf reale und 495 synthetische aktiv. Grundlinie gleich. Null aktive Auftragsleases oder laufende Prozesse; nur der regulaere 05:30 Understanding Lock war aktiv. **0 Lage Texte.** 500 Projektionen faellig ab 12:00 UTC, Materialisierungen ab 18:00 UTC. [Nachweisdaten](betrieb/500-textpruefung-2026-09-08.json), [SR §64 und §65](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+- **Bestand 09.09., 06:33 UTC:** **504/500/4**, fuenf reale und 495 synthetische aktiv. Grundlinie gleich, keine aktive Verarbeitung. **39 Lage Texte, 461 fehlen.** 500 Projektionen faellig ab 12:00 UTC, Materialisierungen ab 18:00 UTC. [500 Einzelbefunde](betrieb/500-textpruefung-2026-09-09.json).
 - **Crawl-Aufbewahrung:** Wirksame Grenze **36** am 06.09. um 19:00 UTC erneut bestätigt. Frisch gelesener Blob Ring **20**; keine Wiederherstellung der verlorenen 16 Laufzeilen. Schutzcode aus #301 bleibt deployt (SR §37).
 - **Quellen:** 9 Pakete · 163 Abrufwege · 165 Zuordnungen; **146/163 Google-News** (B1, OP-15); 18 Landesmodul-Wege (BE/BB) gesperrt. Seeds `20260713`/`20260717` **nicht eingespielt**, Einspielung [BLOCKIERT](betrieb/quellen-seed-einspielung.md) (nur noch Betreiberfreigabe).
 - **Crons (Production, 13, UTC):** crawl 04:00/20:00 · pipeline 16:00 · morning-briefing 05:00 · understanding 05:30/21:30 · **rueckstand 11:30/17:30** · lage-briefing 05:45 · health 06:00 · lage-check 10:00 · 2 Narrativslots 06:10/06:22 (inert). **`18,48 * * * *` nicht in Production.** Dazu Actions-Watchdog (`briefing-watchdog.yml`, 05:30, oft 2–3 h verzögert).
 - **Migrationen:** 35 Einträge, letzte `20260829175749` (05.09. rein lesend bestätigt). **Z22 seit 29.08. mit Freigabe angewendet** (§14–22) — **nicht erneut anwenden**. Auf `main`, **nicht in Production angewendet**: `20260720`, F9 (`20260825101500`), `20260902121500`. Jede weitere Anwendung bleibt freigabepflichtig.
-- **Kosten 09.09., 05:31 UTC:** Tageszaehler 33, 32 belegte Modellaufrufe, **0,108866 USD bekannte Schaetzung**, null unbekannte Kosten. Prognose mit 2 USD Reserve **2,108866 USD**. Grenze 10 USD je UTC Tag, Prognosestopp 9 USD. Kein Rechnungsbeleg oder atomarer USD Riegel.
+- **Kosten 09.09., 06:33 UTC:** 86 Reservierungen, 85 Modellbelege, **0,201613 USD bekannte Schaetzung**, eine unbelegte Reservierung. Weitere Modellarbeit gesperrt. Grenze 10 USD je UTC Tag, Prognosestopp 9 USD. Kein Rechnungsbeleg oder atomarer USD Riegel.
 - **Zugang:** Azure und Foundry geschützt per Microsoft E Mail erreicht, keine Zugangsdaten offengelegt. Rein lesend: `gpt-5-mini` Global Standard **250.000/2.000.000 TPM**, Zuordnung 250.000 TPM, bekannte Grenze 250 RPM. Keine Azure Änderung. Production Leser **34058091793** bleibt gültig (§54).
 
 ## 4 · Aktivierte Funktionen (Production)
@@ -86,7 +86,7 @@ Bestehende Grenzen und Freigaben: [SR §41 und neuere Betreiberänderung §55](b
 6. **OP-11:** Branch Protection nicht aktiv; Pflicht-CI blockiert Merges nicht technisch.
 7. **OP-15:** Google-Klumpenrisiko (146/163 Wege); 29 von 42 Personensuchen lieferten nie (`circuit-open`) — Production-Beweis der Härtung steht aus (§8).
 8. **Lage-/KI-Kapazität für Skalierung:** siehe §6. Belegt: **drei** reguläre Warteschlangenabflüsse/Tag, nicht elf (§13).
-9. **500er Gesamtabnahme offen:** Fuer den heutigen Berliner Testtag fehlen 500 Texte. Die zugehoerigen Projektionsauftraege werden erst nach dem sicheren Testende faellig. Der Production Nachlauf aus #340 wuerde deshalb vorher keinen Text erzeugen. Ein gezielter Patch und die Qualitaetsriegel sind lokal vollstaendig geprueft; GitHub Pruefung, Uebernahme, Deployment, echter Nachlauf und Leseabnahme bleiben offen (SR §65).
+9. **500er Gesamtabnahme offen:** 39 heutige Texte gelesen, 461 fehlen. Der deployte Nachlauf speicherte einen Text, dann fehlte ein gueltiges KI Ergebnis. Tageszaehler 86 gegen 85 Kostenbelege. Keine Wiederholung ohne Aufklaerung. Zusaetzlich fehlen Quelldetails; konkrete Qualitaetsmaengel im [aktuellen Beleg](betrieb/500-nachlauf-2026-09-09.md).
 10. **OP-07:** Monitoring-Zweitkanal stellt seit mind. 17.08. täglich zu; Ziel von `HELMUT_MONITORING_WEBHOOK_URL` und der doppelte WhatsApp-Eingang bleiben ungeklärt (Betreiberprüfung, kein Code-Fix vorher).
 11. **Profilpfad:** Exklusivmodus in Production belegt; ältere Dual Write Annahme überholt. Vor B/C Daten und Ausführungskontext frisch abgleichen. Auth, main und p haben CAS Schutz; alte Instanzen und direkte Fremdschreiber bleiben ausgenommen. Schutz gegen automatische Kontolöschung aus #305 bleibt verpflichtend.
 
