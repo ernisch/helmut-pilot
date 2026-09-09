@@ -68,6 +68,10 @@ Ein positives Modellurteil ersetzt keine deterministische Pruefung bereits bekan
 
 Tests bilden umgeordnete JSONB Objektschluessel, einen erhaltenen Reparaturstand, echte Quellenveraenderungen und veraenderte Historie ab. Weitere Faelle verwerfen erfundene Aemter und Beschluesse trotz positiver Modellwerte, erhalten belegte Aemter und Verneinungen und sperren den betroffenen Cache. Die Linkpruefung verwendet einen realistischen Entwurf mit genau einer Quellenkennung: sechs Eingabedokumente ergeben keine sechs Belege fuer einen einzelnen Absatz. Keine Migration, keine Datenbereinigung, keine Budget oder Zeitplanaenderung und kein zusaetzlicher Modellaufruf.
 
+## Private Einzelstatus beim App-Nachweis
+
+Der vorhandene reine App-Nachweisleser gibt in oeffentlichen Actions-Logs nur feste Gesamtzahlen und feste Fehlerklassen aus. Die einzelnen Mandatshashes und ihre Pruefstatus bleiben im internen Rueckgabewert und werden nicht oeffentlich protokolliert. Erfolgreiche Abrufe, vollstaendige Pakete und Qualitaetsurteile bleiben getrennte Zaehler; auch 500 HTTP-Abrufe erzeugen keine fachliche Gesamtabnahme. Der Test prueft beide Ausgaenge, unveraenderte Gesamtzahlen und den Ausschluss aller 500 Hashkennungen sowie unbekannter Zusatzfelder.
+
 ### Erhaltener Stand aus CURRENT_STATE vor PR 353
 
 **Veroeffentlicht 09.09.:** [PR 351](https://github.com/ernisch/helmut-pilot/pull/351), `d710857060aa071819082aa7b549ff256205811e`, READY `dpl_4emadr3vHX84vrEiPK5qjJFFHk9a` am Hauptalias. Eindeutige Textart, private Pruefbegruendung und fachliche Themenauswahl. CI `34396450576`: 348/348 Suiten, 50 Browserpruefungen und beide Datenbankgates erfolgreich; PR und Merge baumgleich. [Nachweis](betrieb/lage-entwurfsbelege.md). Fachliche Gesamtabnahme offen.

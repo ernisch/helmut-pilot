@@ -65,7 +65,15 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
       gelesen: results.length, funktionsnachweis500: false, results };
   }
 }
+function oeffentlicherBericht(r) {
+  // Auch Hashkennungen mit Einzelstatus bleiben private Betreiberbelege.
+  // Nur feste Gesamtfelder verlassen den Leser ueber oeffentliche Actions-Logs.
+  const felder = ["ok", "reinLesend", "tag", "commit", "ziel", "gelesen", "abrufbar",
+    "strukturellVollstaendig", "qualitaetBestanden", "vollstaendigeFaktenpruefung",
+    "funktionsnachweis500", "grund"];
+  return Object.fromEntries(felder.filter(k => Object.hasOwn(r, k)).map(k => [k, r[k]]));
+}
 if (require.main === module) ausfuehren().then(r => {
-  console.log(JSON.stringify(r, null, 2)); process.exitCode = r.ok ? 0 : 1;
+  console.log(JSON.stringify(oeffentlicherBericht(r), null, 2)); process.exitCode = r.ok ? 0 : 1;
 });
-module.exports = { ausfuehren };
+module.exports = { ausfuehren, oeffentlicherBericht };
