@@ -3318,7 +3318,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     await loadMentionSourcesInto(profile, kandidaten, mentionSources);
     return briefingContract.toBriefingContractV3({
       profile, decisions: [], kosById: {}, sourcesByVorgang: mentionSources, reason, briefingType,
-      knowledgeObjects: kandidaten.filter(ko => require("./lib/helmut/briefing-quellenqualitaet").themenrein(mentionSources[ko.vorgang_id] || [])), now: new Date(), frischeFenster
+      knowledgeObjects: kandidaten.filter(ko => require("./lib/helmut/briefing-quellenqualitaet").quellengebunden(ko, mentionSources[ko.vorgang_id] || [])), now: new Date(), frischeFenster
     });
   };
 
@@ -3357,11 +3357,11 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   const safeDecisions = candidateDecisions.filter((d) => {
     const ko = kosById[d.knowledge_object_id];
     if (!ko) return false;
-    if (!require("./lib/helmut/briefing-quellenqualitaet").themenrein(sourcesByVorgang[ko.vorgang_id] || [])) return false;
+    if (!require("./lib/helmut/briefing-quellenqualitaet").quellengebunden(ko, sourcesByVorgang[ko.vorgang_id] || [])) return false;
     return sourceSafety.guardKnowledgeObject(ko, sourcesByVorgang[ko.vorgang_id] || []).status !== "quarantine";
   });
   const themenreineKos = understood.filter(ko => require("./lib/helmut/briefing-quellenqualitaet")
-    .themenrein(sourcesByVorgang[ko.vorgang_id] || []));
+    .quellengebunden(ko, sourcesByVorgang[ko.vorgang_id] || []));
   if (!safeDecisions.length) return emptyKeepMentions("keine-treffer", themenreineKos);
   const briefing = briefingContract.toBriefingContractV3({ profile, decisions: safeDecisions, kosById, sourcesByVorgang, now, briefingType, knowledgeObjects: themenreineKos, frischeFenster });
   // Read-only Auswahl-Diagnose (nur bei ?debugPrimary=1 -> opts.debug). Aus dem ECHTEN

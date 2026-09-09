@@ -29,6 +29,16 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     assert.equal(require("../lib/helmut/briefing-quellenqualitaet").themenrein([kita, energie]), false);
     assert.equal(require("../lib/helmut/briefing-quellenqualitaet").themenrein([kita, { ...kita, id: "k2" }]), true);
   });
+  await test("Alte Briefing- und Radartexte erhalten aus einer Ueberschrift kein erfundenes Amt oder einen Beschluss", () => {
+    const K = require("../lib/helmut/briefing-quellenqualitaet");
+    const quellen = [{ title: "Baerbock uebergibt Vorsitz der UNO-Generalversammlung an Nachfolger aus Bangladesch", summary: null }];
+    assert.equal(K.quellengebunden({ display_summary: "Außenministerin Annalena Baerbock hat den Vorsitz uebergeben." }, quellen), false);
+    assert.equal(K.quellengebunden({ display_summary: "Baerbock uebergibt den Vorsitz der UNO-Generalversammlung." }, quellen), true);
+    assert.equal(K.quellengebunden({ was_ist_passiert: "Das Kabinett hat die neuen Standards beschlossen." },
+      [{ title: "Vorschlag fuer neue Standards vorgelegt" }]), false);
+    assert.equal(K.quellengebunden({ was_ist_passiert: "Das Kabinett hat die neuen Standards beschlossen." },
+      [{ title: "Neue Standards beschlossen" }]), true);
+  });
   await test("RSS Originalauszug bleibt gekuerzt erhalten, Rohpayload und Skript fehlen", () => {
     const r = D.toRawDocumentRow({ title: "Neuer Entwurf", url: "https://example.org/a", content: "<script>ANGRIFF</script><p>Die Beratung beginnt morgen. " + "Kontext ".repeat(100) + "</p>", author: "private Autorendaten" });
     assert(r.summary.startsWith("Die Beratung beginnt morgen.")); assert(r.summary.length <= D.SUMMARY_MAX);
@@ -110,6 +120,15 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     await B.materialisiere(args); assert.equal(builds, 1, "Vorhandener gleicher Stand erzeugt keine pauschale Neuberechnung");
     row.payload.briefing.items[0].title = "Fremder Inhalt";
     await assert.rejects(B.lese({ userId: profile.id, day: "2026-09-09", profile, storage }), /nachweis-abweichend/);
+  });
+  await test("Wortgleiche lange Texte zwischen Radar und Briefing sind keine vollstaendige Qualitaetsabnahme", () => {
+    const text = "Das Kabinett beraet nach Angaben der Quelle den vorgelegten Entwurf fuer bundesweite Standards in Kindertagesstaetten.";
+    const r = B.pruefeInhalt({ available: true, items: [{ title: "Kita-Beratung" }],
+      currentHelmutState: { summary: text }, currentRadarState: { summary: text } },
+      { paragraphs, qualitaet: { version: 1 } });
+    assert.equal(r.strukturellVollstaendig, false);
+    assert(r.fehler.includes("wiederholung-zwischen-ansichten"));
+    assert.deepEqual(r.wiederholungen, ["briefing.currentRadarState.summary"]);
   });
   await test("Ausgebliebener Readback und gestoerter Quellenspeicher bleiben Fehler", async () => {
     const profile = { id: "test-kohorte-a-001" };
