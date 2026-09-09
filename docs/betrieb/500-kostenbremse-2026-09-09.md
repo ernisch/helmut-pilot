@@ -119,3 +119,10 @@ und AWS SDK. Die gezielten Quellenpruefungen bestehen mit 7/7, Controller
 Test am echten lokalen PostgreSQL und PostgREST prueft die neue JSONB Bedingung,
 die vollstaendige Ruecklesung sowie den Konflikt bei geaenderter Artikelidentitaet.
 Dieser Datenbankbeleg und die beiden Pflichtjobs sind vor Merge in CI zu bestaetigen.
+
+Zusaetzlich korrigiert die bestehende Briefingpruefung einen belegten Fehlalarm:
+derselbe Originaltitel in Helmut und Radar ist bei identischem Vorgang und
+nachgewiesen identischem Quelldokument ein erlaubter Alias. Fremde Zuordnung,
+wiederholte Fliesstexte und Kopien aus der Lage bleiben Fehler. Die erzeugten
+Ansichten werden dadurch nicht veraendert; es ist ausschliesslich eine
+Praezisierung der technischen Einzelpruefung.

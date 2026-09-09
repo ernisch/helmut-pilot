@@ -136,6 +136,22 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     await assert.rejects(B.materialisiere({ profile, userId: profile.id, storage, briefing: { available: false, reason: "store-error" } }), /speicherquelle-gestoert/);
     await assert.rejects(B.materialisiere({ profile, userId: profile.id, storage, briefing: { available: false, reason: "keine-vorgaenge", items: [] } }), /nicht-bestaetigt/);
   });
+  await test("Derselbe gebundene Artikeltitel in beiden Ansichten ist ein erlaubter Alias", () => {
+    const title = "Der Ausschuss beraet den vorgelegten Entwurf zur Finanzierung kommunaler Beratungsstellen in den Gemeinden";
+    const b = { available: true, items: [{ title: "Beratung" }],
+      currentHelmutState: { primaryItem: { id: "vg-fixture", sourceIds: ["rd-fixture"], title } },
+      currentRadarState: { articles: [{ vorgangId: "vg-fixture", documentId: "rd-fixture", title }] } };
+    const lage = { paragraphs, qualitaet: { version: 1 } };
+    assert.equal(B.pruefeInhalt(b, lage).strukturellVollstaendig, true);
+    for (const patch of [{ vorgangId: "vg-fremd" }, { documentId: "rd-fremd" }, { documentId: null }]) {
+      const changed = clone(b); Object.assign(changed.currentRadarState.articles[0], patch);
+      assert(B.pruefeInhalt(changed, lage).fehler.includes("wiederholung-zwischen-ansichten"));
+    }
+    b.currentHelmutState.primaryItem.summary = title;
+    b.currentRadarState.articles[0].summary = title;
+    assert(B.pruefeInhalt(b, lage).fehler.includes("wiederholung-zwischen-ansichten"));
+    assert(B.pruefeInhalt(b, { ...lage, paragraphs: [{ text: title }] }).fehler.includes("wiederholung-zwischen-ansichten"));
+  });
   await test("Ein spaeter gespeicherter Lage Text ergaenzt gezielt den zuvor unvollstaendigen Briefingstand", async () => {
     const profile = { id: "test-kohorte-a-001" }, now = new Date("2026-09-09T10:00:00Z");
     let row = null, lage = null, replacements = 0;
