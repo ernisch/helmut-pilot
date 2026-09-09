@@ -14,6 +14,7 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
   if (!scharf && !vorpruefung) return { ...plan, modus: "trockenlauf", schreibversuche: 0, ok: false };
   let wiederherstellen = null;
   let fachlaufAusgeloest = false;
+  let serverBefund = null;
   try {
     D.fordere(env.GITHUB_REPOSITORY === "ernisch/helmut-pilot" && env.GITHUB_REF === "refs/heads/main"
       && env.GITHUB_EVENT_NAME === "workflow_dispatch", "nur-manuell-auf-main");
@@ -132,6 +133,21 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       });
       D.fordere(res.status === 200, "textnachlauf-http-fehler");
       const b = await res.json();
+      // Eine fachlich gescheiterte HTTP-200-Antwort kann bereits Texte gespeichert
+      // haben. Nur feste Diagnoseklassen und validierte Zaehler uebernehmen;
+      // ohne unabhaengige Nachkontrolle bleibt der Zustand ausdruecklich unklar.
+      if (b?.ok === false && b.schemaVersion === 1 && b.runId === runId
+        && b.modus === "manuell-fehlende-texte" && b.ziel === 500
+        && Number.isSafeInteger(b.gespeichert) && b.gespeichert >= 0 && b.gespeichert <= 500) {
+        const gruende = ["ai-unavailable", "ai-cost-receipt-missing", "ai-response-incomplete",
+          "ai-response-invalid-json", "ai-provider-unavailable", "ai-text-invalid"]
+          .map(g => "nachlauf-textfehler-" + g);
+        const grund = gruende.includes(b.grund)
+          || /^nachlauf-textfehler-ai-provider-http-[45][0-9]{2}$/.test(b.grund || "")
+          ? b.grund : "nachlauf-fehler-ohne-freigegebene-diagnose";
+        serverBefund = { runId, grund, lautServerGespeichert: b.gespeichert,
+          unabhaengigBestaetigt: false };
+      }
       D.fordere(b?.ok === true && b.schemaVersion === 1 && b.runId === runId
         && b.modus === "manuell-fehlende-texte" && b.ziel === 500
         && Number.isSafeInteger(b.gespeichert) && b.gespeichert >= 0 && b.gespeichert <= 500
@@ -250,8 +266,9 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         }
       } });
   } catch (error) {
-    return { ...plan, ok: false, schreibversuche: 0, ausgeloest: fachlaufAusgeloest,
+    return { ...plan, ok: false, schreibversuche: fachlaufAusgeloest ? 1 : 0, ausgeloest: fachlaufAusgeloest,
       zustandUnbekannt: fachlaufAusgeloest, funktionsnachweis500: false,
+      ...(serverBefund ? { serverBefund } : {}),
       grund: error instanceof D.DirektAbbruch ? error.grund : "netz-speicher-oder-antwortfehler",
       automatischeWiederholung: false };
   } finally { if (wiederherstellen) wiederherstellen(); }

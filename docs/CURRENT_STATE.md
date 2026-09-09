@@ -11,6 +11,7 @@
 
 ## 2 · Stand auf `main` und Pull Requests
 
+- **#342 vorbereitet, nicht deployt:** bestaetigte KI Kostenquittierung, sichere Fehlerklassen und ehrlicher Fehlerausgang des Nachlaufs. Lokal 338/340 Suiten erfolgreich; zwei Browserpruefungen scheitern am fehlenden lokalen Chromium. Die GitHub Pruefung der Codeergaenzung steht aus. Azure belegt fuer den Nachlauf zwei HTTP 200 Antworten; keine Diagnoseprotokolle eingerichtet. Historischer Kostenbeleg und 500er Abnahme weiterhin offen. [Details](betrieb/500-nachlauf-2026-09-09.md).
 - **#341 Production:** `d511d8d2d5d0b356b611ad6b1ac3f831f6db5aa8`, `dpl_5L7hHWTxKcxHA8ibbEcZyHVwvVic` READY. PR Lauf `34315835967` und main Lauf `34318569679` erfolgreich. Details im [aktuellen Beleg](betrieb/500-nachlauf-2026-09-09.md).
 - **Watchdog und Lage Check 08.09.:** `34212536121` startete bei unlesbarem Status keinen Ersatzlauf; PR #338 haertet den GET Leser. Der Lauf `cron-lage-check-20260908100012-bnctn` erfasste global 103/103 Quellen, speicherte aber nur 83/500 Mandatslagen. 417 bleiben zeitbedingt offen; keine Gesamtabnahme, SR §61.7.
 - **#334 bis #338 uebernommen:** direkter Ausbau, vollstaendige 500er Planung, begrenzter Dispatch und gehaerteter Statusleser; Einzelpruefungen und Production Belege SR §60 bis §62.

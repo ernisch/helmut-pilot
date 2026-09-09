@@ -360,6 +360,36 @@ async function main() {
     assert.equal(falsch.grund, "textnachlauf-texte-nicht-gespeichert");
     assert.equal(falsch.automatischeWiederholung, false); assert.equal(calls, 2);
   });
+  await test("Teilweise gespeicherter Fehler bleibt rot und traegt nur sichere Diagnose", async () => {
+    const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
+    h.config.textnachlaufVersion = 1;
+    let calls = 0, grund = "nachlauf-textfehler-ai-response-incomplete";
+    const args = { ...h.args, vorgang: "textnachlauf", env: { ...h.args.env,
+      HELMUT_TESTKOHORTE_CONFIRM: D.WORTE.textnachlauf, GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1" },
+      fetchFn: async (url, init) => {
+        const u = new URL(url);
+        if (u.pathname === "/api/cron/lage-briefing") {
+          calls++; assert.equal(init.method, "POST");
+          return { status: 200, json: async () => ({ ok: false, schemaVersion: 1,
+            runId: "nachlauf500-123456789", modus: "manuell-fehlende-texte", ziel: 500,
+            gespeichert: 1, grund, raw: "GEHEIMER_MODELLTEXT" }) };
+        }
+        if (u.pathname.endsWith("/briefings")) return { status: 200, json: async () => [] };
+        return fetch(url, init);
+      } };
+    let r = await G.ausfuehren(args);
+    assert.equal(calls, 1); assert.equal(r.schreibversuche, 1);
+    assert.equal(r.ok, false); assert.equal(r.zustandUnbekannt, true);
+    assert.equal(r.automatischeWiederholung, false); assert.equal(r.funktionsnachweis500, false);
+    assert.equal(r.serverBefund.grund, grund);
+    assert.equal(r.serverBefund.lautServerGespeichert, 1);
+    assert.equal(r.serverBefund.unabhaengigBestaetigt, false);
+    assert(!JSON.stringify(r).includes("GEHEIMER"));
+    grund = "GEHEIMER_FEHLERTEXT";
+    r = await G.ausfuehren(args);
+    assert.equal(r.serverBefund.grund, "nachlauf-fehler-ohne-freigegebene-diagnose");
+    assert(!JSON.stringify(r).includes("GEHEIMER"));
+  });
   console.log(`\n${pass} PASS, 0 FAIL`);
 }
 main().catch((e) => { console.error(e); process.exitCode = 1; });
