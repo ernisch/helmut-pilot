@@ -104,7 +104,9 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
 
     if (vorgang === "textnachlauf") {
       const T = require("../lib/helmut/testkohorte-textnachlauf");
-      D.fordere(config.textnachlaufVersion === 1, "textnachlauf-nicht-deployt");
+      D.fordere(config.textnachlaufVersion === 2 && config.testKosten?.version === 1
+        && config.testKosten.aktiv === true && config.testKosten.limitUsd === 4
+        && config.testKosten.maxManualCalls === 1000, "textnachlauf-nicht-deployt");
       D.fordere(vor.gesamt === 504 && vor.aktiv === 500 && vor.aktive.length === zielAnzahl,
         "textnachlauf-braucht-500-aktive-profile");
       T.pruefeKosten(bestand.auth, kosten.reservierungen, now().toISOString().slice(0, 10));

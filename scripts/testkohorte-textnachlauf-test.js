@@ -29,7 +29,7 @@ function fixture() {
     profileRelational: true, profileExclusive: true, retentionGueltig: true, retention: 36,
     kommunikationGesperrt: true, kohortenQuellenGesperrt: true, tagesdeckel: 2416,
     understandingReserve: 702, vorrangreserveReal: 200, atomicLock: true, narrativQueue: false,
-    modell: "gpt-5-mini", azure: true };
+    modell: "gpt-5-mini", azure: true, testKosten: { version: 1, aktiv: true, limitUsd: 4, maxManualCalls: 1000 } };
   const h = { s, config, clock: Date.parse(start), stepMs: 10, calls: [], rows: [], locks: [], leases: [],
     orphans: [], outbox: [], events: [], runs: [], receipts: [], counter: 1, fault: null };
   s.auth.llmUsage = [{ createdAt: start, model: "gpt-5-mini", estimatedCost: 0.01 }];
@@ -136,6 +136,18 @@ function fixture() {
     assert(r.ok); assert(r.gespeichert > 0 && r.gespeichert < 478);
     assert(r.results.some(x => x.grund === "zeitbudget")); assert.equal(r.automatischeWiederholung, false);
   });
+  await test("Fortsetzung erreicht fehlende Texte bevor alte Briefingleser das Zeitfenster verbrauchen", async () => {
+    const h = fixture(), vorhanden = new Set(h.rows.map(r => r.user_id));
+    const events = [], build = h.args.deps.build;
+    h.args.deps.build = async (...args) => { events.push("modell"); return build(...args); };
+    h.args.deps.materialisiereBriefing = async (_p, id) => {
+      events.push(vorhanden.has(id) ? "cache" : "neues-briefing"); h.clock += 20000;
+      return { gespeichert: true };
+    };
+    const r = await T.ausfuehren(h.args);
+    assert(r.ok); assert.equal(events[0], "modell"); assert(r.gespeichert > 0);
+    assert.equal(r.results.length, 500); assert(r.gespeichert < 478);
+  });
   await test("Unlesbare, doppelte oder fremde Textzeilen sperren die erste Generierung", async () => {
     for (const bad of [{}, [null], [{ id: "fremd", user_id: "fremd" }], "duplicate"]) {
       const h = fixture(), get = h.args.deps.get;
@@ -181,10 +193,9 @@ function fixture() {
     assert.equal(h.calls.length, 1); assert.equal(r.gespeichert, 1); assert.equal(h.receipts.at(-1).status, "failed");
   });
   await test("Gespeicherter Text bleibt nach Briefingfehler einzeln quittiert, fehlende Arbeit wird nicht wiederholt", async () => {
-    const h = fixture(); let materialisiert = 0;
+    const h = fixture();
     h.args.deps.materialisiereBriefing = async () => {
-      if (++materialisiert > 22) throw new Error("speicher-gestoert");
-      return { gespeichert: true };
+      throw new Error("speicher-gestoert");
     };
     const r = await T.ausfuehren(h.args);
     assert.equal(r.ok, false); assert.equal(r.gespeichert, 1); assert.equal(h.calls.length, 1);

@@ -74,6 +74,10 @@ async function main() {
   try {
     r = await request("GET", geheim);
     check(r.status === 200 && r.body.reinLesend === true && r.body.commit === sha, "echter Handler erreicht Status");
+    const runtime = await pruefe({ env, fetchFn: async () => ({ status: r.status, json: async () => r.body }) });
+    check(runtime.textnachlaufVersion === 2 && runtime.testKosten?.aktiv === true
+      && runtime.testKosten.limitUsd === 4 && runtime.testKosten.maxManualCalls === 1000,
+    "echter Handler und CLI Leser bestaetigen denselben Dollar Schutzvertrag");
     check(r.body.tagesdeckel === 2416 && r.body.understandingReserve === 702, "echte Budgetfunktionen");
     check(r.body.vorrangreserveReal === 0, "fehlende Production Reserve ehrlich als null Aufrufe");
     process.env.HELMUT_TESTLAUF_VORRANG_REAL = "200";

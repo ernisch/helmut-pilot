@@ -1,3 +1,10 @@
+> Historischer Stand von 12:13 UTC am 09.09.2026. PR #346 und inzwischen
+> auch PR #347 sind mit ausdruecklicher Freigabe uebernommen. Der aktuelle
+> Nach Merge Stand steht in CURRENT_STATE.md und im technischen Kostenvertrag.
+> Neu erzeugte Einzelbelege werden separat fuer den Betreiber gesichert;
+> die historische Aussage unten, sie laegen in PR #346, ist ueberholt.
+> Alle ehemaligen realen Profile sind laut Betreiber ungenutzte Dummys.
+
 # Abschlussnachtrag nach der vollständigen Prüfung von PR #346
 
 Stand **09.09.2026, 15:13 Türkei / 14:13 Berlin / 12:13 UTC**.
