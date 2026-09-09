@@ -1,8 +1,8 @@
 # CURRENT STATE — Helmut
 
-**In Arbeit:** [Private Entwurfsbelege](betrieb/lage-entwurfsbelege.md) fuer gezielte Textkorrekturen; noch nicht veroeffentlicht.
+**Veroeffentlicht 09.09.:** [PR 350](https://github.com/ernisch/helmut-pilot/pull/350), `c110ae01366f4d9281442f57d6904bbe8140aa20`, READY `dpl_GGHopu8XYC8tJ4aSTWPY7ePcPKrM` am Hauptalias. CI `34385750014`: 348/348 Suiten, 50 Browserpruefungen und beide Datenbankgates erfolgreich; PR und Merge baumgleich. [Vertrag und Nachweis](betrieb/lage-entwurfsbelege.md). Fachliche Gesamtabnahme weiterhin offen.
 
-**Veroeffentlichung #348:** [PR 348](https://github.com/ernisch/helmut-pilot/pull/348) ist als `79fbde465ab955c43fed3a25208122521475ab5f` gemergt. PR CI `34374247585` und main CI `34377210042` erfolgreich: 347/347 Offline Suiten, 50 Browserpruefungen und die erforderlichen Datenbankpruefungen. PR Kopf und Merge haben denselben Dateibaum. Die folgenden Angaben zu #346/#347 und zur damals noch unveroeffentlichten Quellenreparatur sind historische Belege vor #348. Codepruefung ist keine fachliche Gesamtabnahme.
+**In Arbeit:** eindeutige Textart statt negiertem Fülltexturteil, private Prüfbegründung und präzisere Themenauswahl; [Vertrag](betrieb/lage-entwurfsbelege.md). Noch unveröffentlicht. **Historie vor #350:** überholte Betriebsstände bleiben als Belege erhalten.
 
 **Stand 09.09.2026: teilweise abgeschlossen, 0 von 500 vollstaendig abgenommen.** PR #346 und #347 sind mit ausdruecklicher Commit und Mergefreigabe uebernommen. Production `d0cee4198086dc34a50ce5bd1fa00065436b1294`, READY `dpl_7qCRjinKFKtWwRUeki1D96VnCYJm`. PR #347 CI `34360404495`: 345/345 Offline Suiten, 50 Browserpruefungen, 13 PostgreSQL Kontoschutz und Geldgruppen, 48 Z22 Datenbankpruefungen bestanden. main CI `34361936200` erfolgreich. PR #345 bleibt offen und muss vor Uebernahme auf diesen neueren Befund nachgezogen werden.
 

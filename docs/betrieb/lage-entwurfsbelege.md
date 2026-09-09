@@ -11,3 +11,23 @@ Es entsteht kein weiterer Modellaufruf. Tageskosten, manuelle Aufrufgrenze, Zeit
 Tests: `lage-entwurfsbeleg-test.js` kontrolliert Besitzerfilter, Fremdantworten, unveraenderliche Inserts, Kollisionen und Ruecklesen. `lage-kostenquittung-test.js` prueft die Reihenfolge Kostenquittung, Entwurfsbeleg, zweiter Modellaufruf, Pruefbeleg sowie die Erfassung eines fachlich abgelehnten Entwurfs. Kanonische Gesamtsuite und beide Pflichtjobs sind vor einer Veroeffentlichung erforderlich.
 
 Rueckweg: die beiden privaten Belegcallbacks im Lagepfad entfernen. Bereits gespeicherte Belege bleiben als Historie erhalten; keine Migration, Umgebungsvariable oder Cron Aenderung erforderlich.
+
+
+## Veroeffentlichungsnachweis 09.09.2026
+
+PR 350 wurde als c110ae01366f4d9281442f57d6904bbe8140aa20 veroeffentlicht. READY dpl_GGHopu8XYC8tJ4aSTWPY7ePcPKrM am Hauptalias bestaetigt. PR Kopf 92c850dee880378da3eb81721548b29109a28cc5 und Merge haben Baum 7d538e57a3b56dee213626a218b2b3ddf0da23b0. CI 34385750014: 348/348 Suiten in 650 Sekunden, 50 Browserpruefungen, 15 Kontoschutz und Kosten Gruppen gegen PostgreSQL/PostgREST sowie Z22 Datenbanknachweis erfolgreich. Dies belegt die Codepruefung, keine vollstaendige fachliche Versorgung.
+
+### Erhaltener Veroeffentlichungsabsatz vor PR 350
+
+**Veroeffentlichung #348:** [PR 348](https://github.com/ernisch/helmut-pilot/pull/348) ist als `79fbde465ab955c43fed3a25208122521475ab5f` gemergt. PR CI `34374247585` und main CI `34377210042` erfolgreich: 347/347 Offline Suiten, 50 Browserpruefungen und die erforderlichen Datenbankpruefungen. PR Kopf und Merge haben denselben Dateibaum. Die folgenden Angaben zu #346/#347 und zur damals noch unveroeffentlichten Quellenreparatur sind historische Belege vor #348. Codepruefung ist keine fachliche Gesamtabnahme.
+
+
+## Eindeutige Textart und begruendete Urteile
+
+Der bisherige Modellvertrag verwendet den negierten Wahrheitswert `keine_fuelltexte` und erklaert nur dessen Ablehnungsfall. Der neue Vertrag ersetzt ihn durch die eindeutigen Werte `konkreter_sachverhalt`, `fuelltext`, `wiederholung` und `unklar`. Ausschliesslich ein konkreter Sachverhalt kann bestehen. Quellenabdeckung, Themenreinheit und Profilbezug muessen weiterhin jeweils ausdruecklich bestaetigt sein. Eine unbekannte Einordnung, eine fehlende Begruendung oder eine Ablehnung verwirft weiterhin den gesamten Text. Alte Zusatzfelder koennen das neue Urteil nicht ersetzen.
+
+Die Pruefanweisung unterscheidet Quellenzuschreibung, fehlenden Profilbezug und tatsaechlichen Fuelltext. Eine kurze konkrete Aussage wird nicht allein wegen ihrer Laenge oder ihres Quellenhinweises zum Fuelltext. Ein exaktes Quellenzitat ist kein Duplikat eines anderen Absatzes. Eine knappe private Begruendung benennt Quellenabdeckung, das passende fachliche Profilfeld und die Textart. Diese Begruendung bleibt im privaten Pruefbeleg und gelangt weder in ausgelieferte Texte noch in oeffentliche Prozessdiagnosen.
+
+Der Generator prueft die gesamte vorhandene Quellenauswahl auf konkrete Ausschuss, Schwerpunkt oder Wahlkreisbezuege. Er soll nicht einfach die ersten Listeneintraege verwenden und keine Titel oder Quellenetiketten doppelt an den Text anhaengen. Quellenbindung und Inhaltsgrenzen gelten unveraendert. Die vorhandenen unabhaengigen Modellaufrufe bleiben bestehen; keine Wiederholung, erhoehte Aufrufgrenze oder automatische Anerkennung eines alten abgelehnten Entwurfs.
+
+Gezielte Tests pruefen jede abgelehnte und unbekannte Textart, alte widerspruechliche Zusatzfelder, fehlende und ueberlange Begruendungen sowie den Ausschluss privater Begruendungen aus Ausgabe und Diagnose. Der echte KI Transporttest prueft weiterhin beide Kostenquittungen und das Verbot automatischer Wiederholung. Production Wirkung und Gesamtabnahme sind vor Veroeffentlichung nicht belegt. Die zusaetzliche main CI zu PR 350, Lauf 34393098443, ist erfolgreich abgeschlossen.

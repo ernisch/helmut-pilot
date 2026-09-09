@@ -19,7 +19,7 @@ const paragraphs = [
 const vorgaenge = [{ vorgang_id: "vg-test", quellenbelege: [{ quelle_id: "q-test",
   titel: "Die Quelle berichtet ueber einen Entwurf. Ein Termin ist noch nicht benannt.", quelle: "Test" }] }];
 const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id: "q-test", beleg: p.text,
-  vollstaendig_belegt: true, themenrein: true, profilbezug: true, keine_fuelltexte: true })) };
+  vollstaendig_belegt: true, themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt", pruefbegruendung: "Benannter Vorschlag mit Quellenbeleg und Bezug zum Ausschuss." })) };
 const beleg = { _ablage: { blob: true } };
 let checks = 0;
 
