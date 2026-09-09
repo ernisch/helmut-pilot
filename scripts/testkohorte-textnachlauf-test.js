@@ -79,7 +79,9 @@ function fixture() {
           if (u.searchParams.has("job_type")) return kopie(h.jobs);
           return kopie(u.searchParams.has("or") ? h.orphans : h.leases);
         }
-        if (table === "process_runs") return kopie(u.searchParams.has("status") ? h.runs : h.receipts.filter(r => r.run_id === h.args.runId));
+        if (table === "process_runs") return kopie(u.searchParams.has("commit_ref")
+          ? h.receipts.filter(r => r.commit_ref === SHA && r.status !== "running")
+          : u.searchParams.has("status") ? h.runs : h.receipts.filter(r => r.run_id === h.args.runId));
         if (table === "llm_budget_counters") return [{ used: h.counter }];
         throw new Error("Unerwarteter Pfad " + path);
       },
@@ -194,6 +196,29 @@ function fixture() {
     const h = fixture(); h.receipts.push({ run_id: h.args.runId });
     const r = await T.ausfuehren(h.args);
     assert.equal(r.grund, "nachlauf-kennung-bereits-verwendet"); assert.equal(h.calls.length, 0); assert.equal(h.locks.length, 0);
+  });
+  await test("Quellenablehnung laesst andere Mandate weiterarbeiten und bleibt im Gesamtergebnis rot", async () => {
+    const h = fixture(), build = h.args.deps.build; let abgelehnt;
+    h.args.deps.build = async (p, opts) => {
+      if (!abgelehnt) { abgelehnt = p.id; await opts.beforeGenerate(p.id);
+        return { available: false, reason: "ai-text-source-support",
+          diagnose: { absatz: 1, fehler: ["profilbezug-fehlt", "GEHEIMER_TEXT"] } }; }
+      return build(p, opts);
+    };
+    const r = await T.ausfuehren(h.args);
+    assert.equal(r.ok, false); assert.equal(r.grund, "nachlauf-qualitaetsfehler");
+    assert.equal(r.qualitaetsfehler, 1); assert.equal(r.gespeichert, 477);
+    assert.equal(r.results.length, 500); assert.equal(h.receipts.at(-1).failed_count, 1);
+    const q = h.receipts.at(-1).telemetrie.mandatsErgebnisse.find(x => x.mandatHash === D.hash(abgelehnt));
+    assert.deepEqual(q.diagnose, { absatz: 1, fehler: ["profilbezug-fehlt"] });
+    assert(!JSON.stringify(h.receipts).includes("GEHEIMER"));
+    // Neue manuelle Laufkennung: bestaetigte Ablehnung desselben Commits nicht
+    // erneut generieren, auch wenn sie jetzt ganz vorne im Fehlbestand liegt.
+    h.args.runId = "nachlauf500-987654321";
+    h.args.deps.build = async () => { throw new Error("Abgelehntes Mandat darf nicht erneut zum Modell"); };
+    const next = await T.ausfuehren(h.args);
+    assert.equal(next.grund, "nachlauf-qualitaetsfehler"); assert.equal(next.gespeichert, 0);
+    assert.equal(next.results.find(x => x.userId === abgelehnt).bereitsAbgelehnt, true);
   });
   await test("Geaenderte Profile und gespeicherte Texte schlagen die Nachkontrolle fehl", async () => {
     for (const type of ["profile", "text"]) {

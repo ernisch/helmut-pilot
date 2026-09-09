@@ -366,6 +366,41 @@ async function main() {
     assert.equal(falsch.grund, "textnachlauf-texte-nicht-gespeichert");
     assert.equal(falsch.automatischeWiederholung, false); assert.equal(calls, 2);
   });
+  await test("Vollstaendige Qualitaetsbilanz bleibt rot, wird aber unabhaengig bestaetigt", async () => {
+    const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
+    h.config.textnachlaufVersion = 1;
+    const runId = "nachlauf500-123456789";
+    h.quittungen = [{ run_id: runId, status: "failed", processed_count: 0, failed_count: 1,
+      started_at: JETZT, finished_at: JETZT }];
+    let calls = 0;
+    const args = { ...h.args, vorgang: "textnachlauf", env: { ...h.args.env,
+      HELMUT_TESTKOHORTE_CONFIRM: D.WORTE.textnachlauf, GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1" },
+      fetchFn: async (url, init) => {
+        const u = new URL(url);
+        if (u.pathname === "/api/cron/lage-briefing") {
+          calls++; assert.equal(init.method, "POST");
+          const results = h.w.snapshot().mandate.filter(m => m.aktiv).map((m, i) => ({
+            userId: m.user_id, grund: i ? "zeitbudget" : "nachlauf-textfehler-ai-text-source-support" }));
+          return { status: 200, json: async () => ({ ok: false, schemaVersion: 1, runId,
+            modus: "manuell-fehlende-texte", ziel: 500, gespeichert: 0, results,
+            grund: "nachlauf-qualitaetsfehler", qualitaetsfehler: 1, automatischeWiederholung: false,
+            funktionsnachweis500: false }) };
+        }
+        if (u.pathname.endsWith("/briefings")) return { status: 200, json: async () => [] };
+        return fetch(url, init);
+      } };
+    const r = await G.ausfuehren(args);
+    assert.equal(r.ok, false); assert.equal(r.zustandUnbekannt, false);
+    assert.equal(r.serverBefund.unabhaengigBestaetigt, true);
+    assert.equal(r.funktionsnachweis500, false); assert.equal(r.automatischeWiederholung, false);
+    assert.equal(calls, 1);
+    h.quittungen[0].failed_count = 0;
+    const abweichend = await G.ausfuehren(args);
+    assert.equal(abweichend.grund, "textnachlauf-quittung-abweichend");
+    assert.equal(abweichend.zustandUnbekannt, true);
+    assert.equal(abweichend.serverBefund.unabhaengigBestaetigt, false);
+    assert.equal(calls, 2);
+  });
   await test("Teilweise gespeicherter Fehler bleibt rot und traegt nur sichere Diagnose", async () => {
     const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
     h.config.textnachlaufVersion = 1;
