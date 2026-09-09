@@ -220,7 +220,8 @@ async function handleRequest(request, response) {
         kommunikationGesperrt: riegel.modus() === riegel.MODUS_TESTFENSTER,
         kohortenQuellenGesperrt: !require("./lib/helmut/scheduler")
           .profilQuellenErlaubt({ id: "test-kohorte-a-001" }),
-        textnachlaufVersion: 1
+        textnachlaufVersion: 2,
+        testKosten: require("./lib/helmut/testkosten-budget").konfiguration()
       });
     } catch {
       response.writeHead(500, jsonHeaders());
@@ -3035,7 +3036,8 @@ function testnachweisKonfiguration() {
     kommunikationGesperrt: riegel.modus() === riegel.MODUS_TESTFENSTER,
     kohortenQuellenGesperrt: !require("./lib/helmut/scheduler").profilQuellenErlaubt({ id: "test-kohorte-a-001" }),
     atomicLock: storageModul.atomicLockEnabled(), narrativQueue: scalablePipeline.narrativUeberWarteschlange(),
-    modell: require("./lib/helmut/ai").understandingModelName(), azure: Boolean(process.env.AZURE_OPENAI_KEY)
+    modell: require("./lib/helmut/ai").understandingModelName(), azure: Boolean(process.env.AZURE_OPENAI_KEY),
+    testKosten: require("./lib/helmut/testkosten-budget").konfiguration()
   };
 }
 

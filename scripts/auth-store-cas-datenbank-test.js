@@ -159,7 +159,8 @@ async function main() {
       console.log(`PASS  ${key}: vier veraltete Writes verweigert, nach frischem Lesen alle fuenf Aenderungen vollstaendig`);
     }
     await require("./fixtures/direkt500-datenbank").pruefeDirektausbau({ psql, base, token });
-    console.log(`PostgreSQL ${version}: 11 PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
+    await require("./fixtures/testkosten-datenbank").pruefeKosten({ psql, base, token });
+    console.log(`PostgreSQL ${version}: 13 PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
   } finally {
     if (api && api.pid && api.exitCode == null) {
       const ended = once(api, "exit").catch(() => {});
