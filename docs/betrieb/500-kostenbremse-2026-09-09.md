@@ -79,3 +79,25 @@ verbindliche Gate vor einer Mergeempfehlung; sein Ergebnis ist hier noch offen.
 Rueckweg: bestehendes Deployment nur mit Betreiberfreigabe zuruecksetzen. Dabei
 entfaellt der neue Geldriegel; vor einer weiteren Modellarbeit muss das Fenster
 geschlossen bleiben. Kein Loeschen oder Zuruecksetzen der Kostenreservierungen.
+
+
+## Bestaetigter Abschluss der Codeveroeffentlichung
+
+PR #347 ist seit 09.09.2026 mit der vorliegenden Commit und Mergefreigabe
+uebernommen. Merge `d0cee4198086dc34a50ce5bd1fa00065436b1294`, Production
+READY `dpl_7qCRjinKFKtWwRUeki1D96VnCYJm` am Hauptalias. Gepruefter PR Kopf
+`a59e03f22dc6b2af331de2a8cb77a76644942123` und echter Merge enthalten denselben
+Baum `8c6aa4a327e24f40620549c288112192d48309fe`.
+
+[CI 34360404495](https://github.com/ernisch/helmut-pilot/actions/runs/34360404495)
+bestaetigt 345/345 Offline Suiten in 656 Sekunden, 50/50 Browserpruefungen,
+13/13 PostgreSQL Kontoschutz und Geldgruppen sowie 48/48 Z22 Datenbankpruefungen.
+Die lokale Einschraenkung oben ist historisch, der komplette CI Stand ist gruen.
+Keine Aktivierung und kein bezahlter Fachlauf durch diese Codeveroeffentlichung.
+
+
+Der anschliessende [reine Statuslauf 34362141423](https://github.com/ernisch/helmut-pilot/actions/runs/34362141423)
+ist completed/success auf demselben Production Commit. Am 09.09., 14:13:13 UTC
+bestaetigt die authentisierte Route `textnachlaufVersion: 2`, `testKosten.version: 1`,
+`aktiv: true`, `limitUsd: 4`, `maxManualCalls: 1000`. `scharferPfadFreigegeben`
+bleibt false. Die optionale 500er Briefingpruefung wurde nicht gestartet.
