@@ -177,6 +177,12 @@ async function main() {
       .every((u) => D.KENNUNGEN.includes(u.searchParams.get("user_id").slice(3))));
     assert(h.anfragen.filter((u) => u.pathname.endsWith("testnachweis-status")).length > 40);
   });
+  await test("Bestehende 475er Aktivierung bleibt nach Anlage mit ihrem geschuetzten Bestand kompatibel", async () => {
+    const h = kontext();
+    assert.equal((await G.ausfuehren(h.args)).ok, true);
+    const r = await G.ausfuehren({ ...h.args, vorgang: "aktivierung", env: env("aktivierung") });
+    assert.equal(r.ok, true, JSON.stringify(r)); assert.equal(r.aktiv, 500); assert.equal(r.bestaetigt, 475);
+  });
   await test("Netzfehler geben keine Zugangsdaten aus und starten keinen Ersatzweg", async () => {
     const h = kontext();
     const r = await G.ausfuehren({ ...h.args, fetchFn: async () => {
@@ -385,6 +391,8 @@ async function main() {
     assert.equal(r.serverBefund.lautServerGespeichert, 1);
     assert.equal(r.serverBefund.unabhaengigBestaetigt, false);
     assert(!JSON.stringify(r).includes("GEHEIMER"));
+    grund = "nachlauf-textfehler-ai-text-source-support";
+    r = await G.ausfuehren(args); assert.equal(r.serverBefund.grund, grund);
     grund = "GEHEIMER_FEHLERTEXT";
     r = await G.ausfuehren(args);
     assert.equal(r.serverBefund.grund, "nachlauf-fehler-ohne-freigegebene-diagnose");

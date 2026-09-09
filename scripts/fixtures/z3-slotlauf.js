@@ -245,6 +245,7 @@ async function main() {
     tagesplan: (plan && plan.tagesplan) || null,
     deps: {
       // Dieselbe Einreichung wie in `server.js`: `buildV3Briefing` steht dort, nicht in `lib/`.
+      materialisiereBriefing: require("./briefing-speicher").materialisierer(),
       buildV3Briefing: (profil, politicianId, opt) =>
         require(path.join(ROOT, "server.js")).__buildV3Briefing(profil, politicianId, opt)
     }

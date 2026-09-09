@@ -16,7 +16,10 @@ const paragraphs = [
   { text: "Die Quelle berichtet ueber einen Entwurf.", vorgang_ids: ["vg-test"] },
   { text: "Ein Termin ist noch nicht benannt.", vorgang_ids: ["vg-test"] }
 ];
-const vorgaenge = [{ vorgang_id: "vg-test", quellenbelege: [{ titel: "Entwurf", quelle: "Test" }] }];
+const vorgaenge = [{ vorgang_id: "vg-test", quellenbelege: [{ quelle_id: "q-test",
+  titel: "Die Quelle berichtet ueber einen Entwurf. Ein Termin ist noch nicht benannt.", quelle: "Test" }] }];
+const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id: "q-test", beleg: p.text,
+  vollstaendig_belegt: true, themenrein: true, profilbezug: true, keine_fuelltexte: true })) };
 const beleg = { _ablage: { blob: true } };
 let checks = 0;
 
@@ -34,6 +37,7 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   };
   https.request = (_url, _options, cb) => {
     requests++;
+    const thisOutput = requests === 1 ? output : JSON.stringify(review);
     if (mode === "construction") throw new Error("GEHEIMER_AUFBAUFEHLER");
     const req = new EventEmitter();
     req.write = () => { if (mode === "send") throw new Error("GEHEIMER_SEND_FEHLER"); };
@@ -47,7 +51,7 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
       cb(res);
       if (mode === "aborted") { res.destroy(); res.emit("error", new Error("GEHEIMER_STREAM")); return; }
       res.emit("data", JSON.stringify({ status, usage: { input_tokens: 20, output_tokens: 10 },
-        output: mode === "malformed" ? {} : [{ content: [{ type: "output_text", text: output }] }] }));
+        output: mode === "malformed" ? {} : [{ content: [{ type: "output_text", text: thisOutput }] }] }));
       res.emit("end");
       // Spaetes Netzwerkereignis darf keine zweite Quittung erzeugen.
       req.emit("error", new Error("GEHEIMER_SPAETFEHLER"));
@@ -71,7 +75,8 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   } else assert.equal(r.value?.paragraphs.length, 2);
   assert(!JSON.stringify(r).includes("GEHEIMER"), "Diagnose verrät keinen Rohtext");
   assert(!JSON.stringify(logs).includes("GEHEIMER"), "Kostenlog verrät keinen Rohtext");
-  assert.equal(requests, budget ? 1 : 0, "Kein Retry nach Speicher- oder Modellfehler");
+  assert.equal(requests, budget ? (expected ? 1 : 2) : 0, "Ein Generator und nur bei dessen Erfolg ein Quellenpruefer; kein Retry");
+  assert.equal(logs.length, expected ? 1 : 2, "Jeder Modellversuch hat seinen eigenen Kostenbeleg");
   checks++;
 }
 

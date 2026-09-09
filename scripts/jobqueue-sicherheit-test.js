@@ -107,6 +107,7 @@ async function main() {
       persistRohdokumente: async () => ({ ok: true, neuIds: [], vorhandene: 0 }),
       getActiveProfile: async () => null,
       matching: async () => ({}), decisions: async () => ({}),
+      materialisiereBriefing: require("./fixtures/briefing-speicher").materialisierer(),
       buildV3Briefing: async () => ({ available: false })
     };
     const faelle = [

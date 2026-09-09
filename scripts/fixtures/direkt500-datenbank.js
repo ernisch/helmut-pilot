@@ -62,7 +62,7 @@ async function pruefeDirektausbau({ psql, base, token }) {
       jetzt: () => new Date("2026-09-10T08:30:00.000Z"), leseSnapshot: snapshot, pruefeBetrieb: async () => {},
       schreibe: ({ id, spec }) => vorgang === "provisionierung"
         ? P.provisionTenant(spec, { storage, accounts }, { neuAktiv: false, kontoBeiFehlerBehalten: true })
-        : P.activateTenant(id, { storage, accounts }),
+        : P.setTestProfileParticipation(id, true, { storage }),
       leseZiel: async (id) => (await request("mandate_profiles?select=*&user_id=eq." + id))[0]
     } });
     assert.equal(r.ok, true, JSON.stringify(r));
@@ -81,7 +81,7 @@ async function pruefeDirektausbau({ psql, base, token }) {
   const T = require("../../lib/helmut/testkohorte-testende");
   const ende = await T.ausfuehren({ scharf: true,
     env: { ...env("aktivierung"), HELMUT_TESTKOHORTE_CONFIRM: T.CONFIRM }, deps: {
-      snapshot, deaktiviere: id => P.deactivateTenant(id, { storage, accounts }),
+      snapshot, deaktiviere: id => P.setTestProfileParticipation(id, false, { storage }),
       leseZiel: async id => (await request("mandate_profiles?select=*&user_id=eq." + id))[0]
     } });
   assert.equal(ende.ok, true, JSON.stringify(ende));
@@ -89,5 +89,19 @@ async function pruefeDirektausbau({ psql, base, token }) {
   assert.equal(ende.gesamt, 504); assert.equal(ende.aktiv, 5);
   assert.equal(D.hash((await snapshot()).main), D.hash(vorher.main));
   console.log("PASS  Testende: 495 echte Deaktivierungen, 504 erhalten, fuenf aktiv, geschuetzte Daten und main unveraendert");
+  const inaktiv = await snapshot();
+  const reaktiviert = await D.fuehreAus({ vorgang: "reaktivierung", env: env("reaktivierung"), deps: {
+    jetzt: () => new Date(), leseSnapshot: snapshot, pruefeBetrieb: async () => {},
+    schreibe: ({ id }) => P.setTestProfileParticipation(id, true, { storage }),
+    leseZiel: async id => (await request("mandate_profiles?select=*&user_id=eq." + id))[0]
+  } });
+  assert.equal(reaktiviert.ok, true, JSON.stringify(reaktiviert));
+  assert.equal(reaktiviert.bestaetigt, 495); assert.equal(reaktiviert.aktiv, 500);
+  const wiederAktiv = await snapshot();
+  assert.equal(D.hash(inaktiv.auth.users), D.hash(wiederAktiv.auth.users));
+  assert.equal(D.hash(inaktiv.identitaeten), D.hash(wiederAktiv.identitaeten));
+  assert.equal(D.pruefeSnapshot(inaktiv, "500-bestand").geschuetzterBestandHash,
+    D.pruefeSnapshot(wiederAktiv, "500-bestand").geschuetzterBestandHash);
+  console.log("PASS  Reaktivierung: 495 vorhandene Profile per echtem bedingtem PATCH, Konten und Identitaeten unveraendert");
 }
 module.exports = { pruefeDirektausbau };

@@ -71,6 +71,7 @@ function grundAttrappen(u, w) {
     getActiveProfile: async (id) => w.profile.find((p) => p.id === id) || null,
     matching: async () => ({ matched: 0 }),
     decisions: async () => ({ saved: 0 }),
+    materialisiereBriefing: require("./fixtures/briefing-speicher").materialisierer(),
     buildV3Briefing: async () => ({ available: false, reason: "kein-material", items: [] })
   };
 }

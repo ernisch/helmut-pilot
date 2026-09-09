@@ -164,6 +164,22 @@ function fixture() {
     assert.equal(r.ok, false); assert.equal(r.grund, "nachlauf-kosten-unklar");
     assert.equal(h.calls.length, 1); assert.equal(r.gespeichert, 1); assert.equal(h.receipts.at(-1).status, "failed");
   });
+  await test("Gespeicherter Text bleibt nach Briefingfehler einzeln quittiert, fehlende Arbeit wird nicht wiederholt", async () => {
+    const h = fixture(); let materialisiert = 0;
+    h.args.deps.materialisiereBriefing = async () => {
+      if (++materialisiert > 22) throw new Error("speicher-gestoert");
+      return { gespeichert: true };
+    };
+    const r = await T.ausfuehren(h.args);
+    assert.equal(r.ok, false); assert.equal(r.gespeichert, 1); assert.equal(h.calls.length, 1);
+    const result = r.results.find(x => x.gespeichert);
+    assert.equal(result.userId, h.calls[0]); assert.equal(result.grund, "nachlauf-netz-speicher-oder-antwortfehler");
+    const receipt = require("../lib/helmut/blob-relational").relationalRowToProcessRun(h.receipts.at(-1));
+    const einzel = receipt.mandatsErgebnisse.find(x => x.mandatHash === D.hash(result.userId));
+    assert.equal(einzel.lageGespeichert, true); assert.equal(einzel.briefingGespeichert, false);
+    assert.equal(receipt.mandatsErgebnisse.length, 500);
+    assert.equal(h.rows.filter(x => x.user_id === result.userId).length, 1);
+  });
   await test("Modellfehler stoppt, ein fehlender Quellennachweis bleibt ehrlich offen", async () => {
     for (const reason of ["ai-unavailable", "no-current-sources"]) {
       const h = fixture(); let calls = 0;

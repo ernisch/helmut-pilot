@@ -152,6 +152,8 @@ function welt({ dokumenteJeAbruf = 3 } = {}) {
     matching: async ({ profile }) => { w.matchingAufrufe += 1; return { matched: 1, profil: profile.id }; },
     decisions: async ({ profile }) => { w.entscheidungsAufrufe += 1; return { saved: 1, profil: profile.id }; },
 
+    materialisiereBriefing: require("./fixtures/briefing-speicher").materialisierer(),
+
     buildV3Briefing: async (profil, mandatsId) => {
       w.briefingAufrufe += 1;
       if (profil.id !== mandatsId) w.fremdzugriffe.push(`briefing ${profil.id} != ${mandatsId}`);

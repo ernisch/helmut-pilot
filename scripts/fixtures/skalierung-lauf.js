@@ -171,6 +171,7 @@ function welt({ profile, ausfall = [], drosselung = 0, dokumenteJeWeg = 2, decke
     getActiveProfile: async (id) => w.profile.find((p) => p.id === id) || null,
     matching: async () => ({ matched: 1 }),
     decisions: async () => ({ saved: 1 }),
+    materialisiereBriefing: require("./briefing-speicher").materialisierer(),
     buildV3Briefing: async (profil, mandatsId) => {
       if (profil.id !== mandatsId) w.fremdzugriffe.push(`${profil.id}!=${mandatsId}`);
       const eigeneWege = new Set(eigeneQuellen(profil).flatMap((q) => SD.abrufwege(q)).map(SD.kanonischeUrl));
