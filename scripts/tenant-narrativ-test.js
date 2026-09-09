@@ -486,7 +486,7 @@ async function main() {
     };
     const cache = new Map();
     let aiCalls = 0;
-    let aiAntwort = () => ({ paragraphs: [{ text: "Narrativ.", vorgang_ids: ["vg-1"] }], model: "gpt-5-mini", wordCount: 1 });
+    let aiAntwort = (v) => ({ paragraphs: [{ text: "Narrativ.", vorgang_ids: [v[0].vorgang_id] }], model: "gpt-5-mini", wordCount: 1 });
     storage.v3StoreReady = () => true;
     storage.listKnowledgeObjects = async () => [KO];
     storage.listMatchingResults = async () => [];
@@ -500,7 +500,11 @@ async function main() {
     storage.recordLlmUsage = async () => null;
     sourceSafety.guardKnowledgeObject = () => ({ status: "ok" });
     ai.generateLageBriefing = async (...a) => { aiCalls += 1; const r = await aiAntwort(...a);
-      return r ? { ...r, qualitaet: { version: 1 } } : r; };
+      // Der echte Generator liefert nach der Quellenpruefung die konkrete Quelle
+      // jedes Absatzes mit; die Wiederanlauf-Fixture bildet diesen Vertrag ab.
+      return r ? { ...r, paragraphs: r.paragraphs.map(p => ({ ...p,
+        quellen_ids: [a[0].find(v => v.vorgang_id === p.vorgang_ids[0]).quellenbelege[0].quelle_id]
+      })), qualitaet: { version: 1 } } : r; };
 
     try {
       const H = SP.HANDLER.tenant_narrative;
@@ -538,7 +542,7 @@ async function main() {
 
       // 7.4 Wiederholung nach Stoerung: neuer Datenstand wird veroeffentlicht und ERSETZT
       //     den alten Tagescache (neue Eingangsdaten ersetzen veraltete Ergebnisse).
-      aiAntwort = () => ({ paragraphs: [{ text: "Neu.", vorgang_ids: ["vg-1", "vg-2"] }], model: "gpt-5-mini", wordCount: 1 });
+      aiAntwort = (v) => ({ paragraphs: [{ text: "Neu.", vorgang_ids: [v[0].vorgang_id] }], model: "gpt-5-mini", wordCount: 1 });
       const dritter = await H(auftrag, deps);
       const eintrag = [...cache.values()][0];
       check("7.4 Nach der Stoerung: Wiederholung veroeffentlicht den NEUEN Datenstand",
