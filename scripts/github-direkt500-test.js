@@ -13,7 +13,7 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
 function kontext(vorgang = "provisionierung") {
   const w = welt();
   const anfragen = [];
-  const config = { ok: true, schemaVersion: 1, reinLesend: true, production: true, commit: SHA,
+  const config = { testKosten: { version: 1, aktiv: true, limitUsd: 4, maxManualCalls: 1000 }, ok: true, schemaVersion: 1, reinLesend: true, production: true, commit: SHA,
     storageSupabase: true, v3Bereit: true, profileRelational: true, profileExclusive: true,
     retentionGueltig: true, retention: 36, kommunikationGesperrt: true,
     kohortenQuellenGesperrt: true, tagesdeckel: 2416, understandingReserve: 702, vorrangreserveReal: 200 };
@@ -328,14 +328,14 @@ async function main() {
       HELMUT_TESTKOHORTE_CONFIRM: D.WORTE.textnachlauf, GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1" } };
     let r = await G.ausfuehren(args);
     assert.equal(r.grund, "textnachlauf-nicht-deployt");
-    h.config.textnachlaufVersion = 1;
+    h.config.textnachlaufVersion = 2;
     r = await G.ausfuehren({ ...args, env: { ...args.env, GITHUB_RUN_ATTEMPT: "2" } });
     assert.equal(r.grund, "textnachlauf-keine-wiederholung");
     assert(!h.anfragen.some(u => u.pathname === "/api/cron/lage-briefing"));
   });
   await test("Textnachlauf nutzt genau einen geschuetzten POST und prueft gespeicherte Wirkung", async () => {
     const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
-    h.config.textnachlaufVersion = 1;
+    h.config.textnachlaufVersion = 2;
     const runId = "nachlauf500-123456789";
     let calls = 0, claimed = 0;
     h.quittungen = [{ run_id: runId, status: "success", processed_count: 0, failed_count: 0,
@@ -369,7 +369,7 @@ async function main() {
   await test("Actions bestaetigt Alttextreparatur nur mit vollstaendiger unveraenderter Historie", async () => {
     for (const defekt of [null, "historie", "kennzeichnung"]) {
       const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
-      h.config.textnachlaufVersion = 1;
+      h.config.textnachlaufVersion = 2;
       const runId = "nachlauf500-123456789";
       const id = h.w.snapshot().mandate.find(m => m.aktiv).user_id;
       const day = require("../lib/helmut/briefing-frische").berlinTagKey(new Date(JETZT));
@@ -409,7 +409,7 @@ async function main() {
   });
   await test("Vollstaendige Qualitaetsbilanz bleibt rot, wird aber unabhaengig bestaetigt", async () => {
     const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
-    h.config.textnachlaufVersion = 1;
+    h.config.textnachlaufVersion = 2;
     const runId = "nachlauf500-123456789";
     h.quittungen = [{ run_id: runId, status: "failed", processed_count: 0, failed_count: 1,
       started_at: JETZT, finished_at: JETZT }];
@@ -444,7 +444,7 @@ async function main() {
   });
   await test("Teilweise gespeicherter Fehler bleibt rot und traegt nur sichere Diagnose", async () => {
     const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
-    h.config.textnachlaufVersion = 1;
+    h.config.textnachlaufVersion = 2;
     let calls = 0, grund = "nachlauf-textfehler-ai-response-incomplete";
     const args = { ...h.args, vorgang: "textnachlauf", env: { ...h.args.env,
       HELMUT_TESTKOHORTE_CONFIRM: D.WORTE.textnachlauf, GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1" },
