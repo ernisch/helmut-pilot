@@ -104,6 +104,8 @@ function fixture() {
     const r = await T.ausfuehren(h.args);
     assert.equal(r.ok, true, JSON.stringify(r)); assert.equal(r.gespeichert, 478);
     assert.equal(r.results.length, 500); assert.equal(new Set(h.calls).size, 478);
+    assert.deepEqual(r.projektionsbeleg, { gesamt: 500, erledigt: 500,
+      erledigtUndFaellig: 500, wartend: 0, laufend: 0, fehlgeschlagen: 0 });
     assert.equal(r.funktionsnachweis500, false); assert.equal(h.locks.length, 0);
     assert(texts.every(x => D.hash(h.rows.find(y => y.id === x.id)) === D.hash(x)));
     const q = h.receipts.at(-1);
@@ -131,11 +133,12 @@ function fixture() {
       assert.equal(h.calls.length, 0); assert.equal(h.receipts.length, 0);
     }
   });
-  await test("Nicht erledigte oder zukunftsfaellige Projektionen werden nicht vorgezogen", async () => {
+  await test("Spaetere Projektionen bleiben unveraendert sichtbar und sperren den Lage Text nicht", async () => {
     const h = fixture(); h.jobs.forEach(j => { j.status = "wartend"; j.due_at = "2026-09-08T20:00:00Z"; });
     const r = await T.ausfuehren(h.args);
-    assert(r.ok); assert.equal(h.calls.length, 0);
-    assert.equal(r.results.filter(x => x.grund === "projektion-noch-nicht-erledigt").length, 478);
+    assert(r.ok); assert.equal(h.calls.length, 478);
+    assert.deepEqual(r.projektionsbeleg, { gesamt: 500, erledigt: 0,
+      erledigtUndFaellig: 0, wartend: 500, laufend: 0, fehlgeschlagen: 0 });
   });
   await test("Konfiguration, Freigabe, UTC Wechsel und Cronkonkurrenz sperren vor Schreiben", async () => {
     for (const change of [h => h.config.kommunikationGesperrt = false, h => h.config.narrativQueue = true,
