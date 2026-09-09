@@ -15,7 +15,7 @@ const docs = [{ vorgang_id: "vg-test", quellenbelege: [{ quelle_id: "q-1", titel
 const paragraphs = [{ text: docs[0].quellenbelege[0].titel, vorgang_ids: ["vg-test"] },
   { text: docs[0].quellenbelege[1].titel, vorgang_ids: ["vg-test"] }];
 const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id: "q-" + (absatz + 1), beleg: p.text,
-  vollstaendig_belegt: true, themenrein: true, profilbezug: true, keine_fuelltexte: true })) };
+  vollstaendig_belegt: true, themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt", pruefbegruendung: "Benannter Vorschlag mit Quellenbeleg und Bezug zum Ausschuss." })) };
 (async () => {
   await test("Dokumentgattung und Ressort verbinden keine verschiedenen Ereignisse", () => {
     const V = require("../lib/helmut/vorgang-identity");
@@ -52,10 +52,32 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     assert.equal(r.qualitaet.vollstaendigeFaktenpruefung, false);
   });
   await test("Ein einzelner abgelehnter Sachverhalt verwirft den ganzen Text", () => {
-    for (const field of ["vollstaendig_belegt", "themenrein", "profilbezug", "keine_fuelltexte"]) {
+    for (const field of ["vollstaendig_belegt", "themenrein", "profilbezug"]) {
       const r = clone(review); r.pruefungen[1][field] = false;
       assert.equal(Q.pruefe(paragraphs, docs, r).grund, "ai-text-source-support");
     }
+  });
+  await test("Fuelltext, Wiederholung und unbekannte Textart bleiben trotz sonst positiver Urteile gesperrt", () => {
+    for (const textart of ["fuelltext", "wiederholung", "unklar", "", true, undefined]) {
+      const r = clone(review); r.pruefungen[1].textart = textart;
+      // Ein altes oder widerspruechliches Zusatzfeld ersetzt das neue Urteil nie.
+      r.pruefungen[1].keine_fuelltexte = true;
+      assert.equal(Q.pruefe(paragraphs, docs, r).grund, "ai-text-source-support");
+    }
+    assert.equal(Q.pruefe(paragraphs, docs, review).ok, true);
+  });
+  await test("Unbegruendete Urteile bleiben gesperrt und private Begruendungen verlassen die Pruefung nicht", () => {
+    for (const value of [undefined, "", "  ", {}, true, "x".repeat(801), " ".repeat(800) + "x"]) {
+      const r = clone(review); r.pruefungen[0].pruefbegruendung = value;
+      assert.equal(Q.pruefe(paragraphs, docs, r).ok, false);
+    }
+    const r = clone(review); r.pruefungen[0].pruefbegruendung = "Privater Hinweis auf das fachliche Profil.";
+    r.pruefungen[0].profilbezug = false;
+    const out = Q.pruefe(paragraphs, docs, r);
+    assert.deepEqual(out.diagnose.fehler, ["profilbezug-fehlt"]);
+    assert(!JSON.stringify(out).includes("Privater Hinweis"));
+    r.pruefungen[0].profilbezug = true;
+    assert(!JSON.stringify(Q.pruefe(paragraphs, docs, r)).includes("Privater Hinweis"));
   });
   await test("Unbelegte Ministerrolle und gefaelschte Zitate erhalten keinen Quellenbeleg", () => {
     const r = clone(review); r.pruefungen[0].beleg = "Die Aussenministerin hat beschlossen";
