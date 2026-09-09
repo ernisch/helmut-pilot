@@ -197,6 +197,19 @@ jobs:
           # Codeänderung rot/fälschlich grün machen. Bei Playwright-Update hier
           # bewusst anheben.
           npm i --no-save playwright@1.56.1
+          # Playwright liefert seinen eigenen gepinnten Chromium. Eine fremde
+          # Google-Chrome-APT-Liste lieferte am 09.09. falsche Hashes und
+          # blockierte bereits apt update. Nur diese unbenoetigte Liste wird
+          # im kurzlebigen Testrechner reversibel aus der APT-Auswahl genommen.
+          # Pruefsummen, Ubuntu-Abhaengigkeiten und Browserpflicht bleiben aktiv.
+          sudo python3 - <<'PY'
+          from pathlib import Path
+          for source in Path('/etc/apt/sources.list.d').glob('*.list'):
+              lines = [line.strip() for line in source.read_text().splitlines()
+                       if line.strip() and not line.lstrip().startswith('#')]
+              if lines and all('dl.google.com/linux/chrome-stable/deb' in line for line in lines):
+                  source.rename(source.with_suffix('.list.helmut-ci-disabled'))
+          PY
           npx playwright install --with-deps chromium
       - name: Browser-Smoke (Desktop + Mobil, lokaler In-Process-Server)
         # Fail-closed (Audit-Folgebranch): GitHub setzt CI=true automatisch,
