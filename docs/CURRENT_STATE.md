@@ -1,17 +1,17 @@
 # CURRENT STATE — Helmut
 
-**Stand: 09.09., 10:24 Tuerkei / 09:24 Berlin / 07:24 UTC. TEILWEISE ABGESCHLOSSEN.** PR #342 freigegeben, uebernommen und Production `f4c52fe` READY. PR CI 340/340 und Browser gruen. Historische Kostenluecke mit freigegebenem Nachtrag geschlossen. Fortsetzung `34323464496` speicherte fuenf Texte und stoppte bei `ai-text-invalid`. **44/500 Texte gelesen, 456 fehlen.** 92 Reservierungen, 92 Belege, 0,212737 USD geschaetzte Tagesmodellkosten. Profile und Konten unveraendert. Keine aktive Sperre oder Lease. Neue Prompt und Validierungsdiagnosekorrektur lokal vorbereitet, noch nicht deployt. Testende 11:00 Tuerkei / 10:00 Berlin / 08:00 UTC unveraendert. [Beleg](betrieb/500-nachlauf-2026-09-09.md). **500er Funktionsnachweis offen.**
+**Stand: 09.09., 11:37 Tuerkei / 10:37 Berlin / 08:37 UTC. TEST BEENDET, GESAMTABNAHME OFFEN.** Der geplante Ausfuehrer hat 495 synthetische Profile deaktiviert: **504 erhalten, fuenf reale aktiv, 499 inaktiv**. PR #343 mit ausdruecklicher Freigabe uebernommen, Production `4710c59` READY. PR CI 340/340, Browser und Datenbanknachweise erfolgreich. Nachkontrolle: Bestand seit Testende unveraendert, 92 Reservierungen und 92 Belege, 0,212737 USD geschaetzte Tagesmodellkosten. **44/500 Texte gelesen, 456 fehlen; Qualitaetsmaengel offen.** Kein neuer Testlauf und keine Reaktivierung. [Beleg](betrieb/500-nachlauf-2026-09-09.md). Weitere 500er Facharbeit braucht ein neues ausdruecklich freigegebenes Testfenster.
 
 
 **Kernlage:** Warteschlangenmotor seit 23.08. in Production `on`, Dispatch `shadow`. Fuenferbeleg: [OP-30 §30.7](betrieb/op30-aktivierung-5-mandate.md). **Frisch sieben Vorgaenge `unbekannt`, juengster 08.09., 17:32 UTC nach Modelltimeout**; alte Viererangabe ueberholt. Keine automatische Wiederholung. Selbstweck nie ausgefuehrt.
 
 ## 1 · Aktive Produktphase
 
-**Kontrollierter Funktionsnachweis bis exakt 500 aktiven Testprofilen.** Die neuere Betreiberanweisung ersetzt die bisherige Zwischenabnahme bei 100: direkt auf 500 ausbauen und dort abnehmen; seit 08.09. keine vorherige A Abnahme und kein Nachtfenster mehr. Der neue ausdrückliche Zielweg `--ziel=500` ergänzt den vorhandenen Ausführer; keine vorgetäuschte B Abnahme. Vorrang haben Datenintegrität, Kommunikationssperre und höchstens 10 USD Modellkosten je UTC Tag mit Stopp bei prognostiziert 9 USD. Danach Verkaufsreife und P0 Punkte OP-01 bis OP-04; [OP Liste](datenmotor-restliste.md). Kein Kunden- oder Mehrtagesnachweis.
+**500er Test beendet; vollstaendiger Funktionsnachweis weiterhin offen.** Die neuere Betreiberanweisung ersetzt die bisherige Zwischenabnahme bei 100: direkt auf 500 ausbauen und dort abnehmen; seit 08.09. keine vorherige A Abnahme und kein Nachtfenster mehr. Der neue ausdrückliche Zielweg `--ziel=500` ergänzt den vorhandenen Ausführer; keine vorgetäuschte B Abnahme. Vorrang haben Datenintegrität, Kommunikationssperre und höchstens 10 USD Modellkosten je UTC Tag mit Stopp bei prognostiziert 9 USD. Danach Verkaufsreife und P0 Punkte OP-01 bis OP-04; [OP Liste](datenmotor-restliste.md). Kein Kunden- oder Mehrtagesnachweis.
 
 ## 2 · Stand auf `main` und Pull Requests
 
-- **Neue Korrektur [PR #343](https://github.com/ernisch/helmut-pilot/pull/343) auf `codex/lage-textvalidierung-20260909`:** konsistentes JSON Beispiel mit zwei Absaetzen, genaue feste Textfehlerklassen und Typpruefung. Lokal 338/340 Suiten in 512s; zwei Browserpruefungen mangels Chromium blockiert, gezielt 19 Kostenquittierungsfaelle und 141 Lage Assertions erfolgreich. Erste GitHub CI: 339/340, nur Statusdatei 133 Zeichen zu lang; Browser gruen. Historie mit bestehenden Vollbelegen verdichtet, erneute CI und eigene Mergefreigabe offen. Kein weiterer Production Versuch.
+- **[PR #343](https://github.com/ernisch/helmut-pilot/pull/343) Production:** Merge `4710c59b1098ce0025d8858e156e11cc694a25d8`, Deployment `dpl_HRf48dKcZTn5M3EL4sGcG1VAsW7k` READY am Hauptalias. Konsistentes Absatzbeispiel und genaue Textfehlerklassen. Exakter PR Kopf `7025efc`, CI `34325744062`: 340/340 in 508s, Browser erfolgreich, Kontoschutz 10/10 und Z22 48/48. Nach Merge keine Modellarbeit; neuer 500er Wirkungsbeleg offen.
 
 - **#342 Production:** `f4c52fe66b04a0175b794575a90b60d98fddf455`, `dpl_7B9KWmSoXDRZufDMPJtx7z97EWUq` READY. PR CI `34321599919` vollstaendig erfolgreich; main CI `34322801570` erfolgreich. Kostenquittierung und Fehlerdiagnose deployt, freigegebener historischer Kostennachtrag ausgefuehrt. [Details](betrieb/500-nachlauf-2026-09-09.md).
 - **#341 Production:** `d511d8d2d5d0b356b611ad6b1ac3f831f6db5aa8`, `dpl_5L7hHWTxKcxHA8ibbEcZyHVwvVic` READY. PR Lauf `34315835967` und main Lauf `34318569679` erfolgreich. Details im [aktuellen Beleg](betrieb/500-nachlauf-2026-09-09.md).
@@ -19,13 +19,13 @@
 - **#334 bis #338 uebernommen:** direkter Ausbau, vollstaendige 500er Planung, begrenzter Dispatch und gehaerteter Statusleser; Einzelpruefungen und Production Belege SR §60 bis §62.
 - **Quellenkorrektur #330:** `2ca0e62`, READY, beide Pflichtjobs gruen; Nachweis SR §58.5. Ausfuehrer aus #326/#328 bleibt bestehen.
 - **A Ausführer #322/#323:** deployt und geprüft; Einzelbelege SR §54/§55. Workflow `34066395564` scheiterte vor dem Production Aufruf; kein Wiederholungslauf.
-- **Uebernommen (§57/§60/§61):** Quellenbindung und geplanter Testabschluss fuer 495 synthetische Profile. Abschlussaufgabe fuer **09.09., 08:00 UTC / 11:00 Tuerkei** aktiviert; der vorgesehene Deaktivierungspfad erhaelt alle Konten und Identitaeten. Anlage und Aktivierung sind abgeschlossen.
+- **Uebernommen (§57/§60/§61):** Quellenbindung und geplanter Testabschluss fuer 495 synthetische Profile. Geplanter Abschluss am **09.09., 08:34 UTC / 11:34 Tuerkei** bestaetigt: 495 synthetische Profile deaktiviert, alle Profile und Identitaeten erhalten.
 - Frühere Schutzarbeiten **#303, #305, #307, #309, #310, #313, #316 und #318** sind deployt. Sie schützen Kontext, Leseantworten, Konten, gemeinsam genutzte Speicher und Appstart. Belege und Grenzen: SR §40–§51; Lage 25/25 seit §53.
 
 ## 3 · Production-Zustand
 
 - **Datenbank:** Supabase **Pro/Micro (`t4g.micro`, 1 GB)**, gesund. Dashboard **08.09., 08:56 UTC: CPU 6 %, RAM 52 %, 11/60 Verbindungen**. SQL und volle Grundlinie nach dem Fachlauf unveraendert. PITR aus; keine Ressourcen oder Schemaaenderung.
-- **Bestand 09.09., 06:33 UTC:** **504/500/4**, fuenf reale und 495 synthetische aktiv. Grundlinie gleich, keine aktive Verarbeitung. Historisch 39 Lage Texte, aktuell 44 (07:24 UTC). 500 Projektionen faellig ab 12:00 UTC, Materialisierungen ab 18:00 UTC. [500 Einzelbefunde](betrieb/500-textpruefung-2026-09-09.json).
+- **Bestand 09.09., 08:37 UTC:** **504/5/499**, fuenf reale aktiv, alle 495 synthetischen inaktiv. Testende Workflow `34327808319` erfolgreich: 495 bestaetigt deaktiviert, 0 Fehler. Keine aktive Sperre, Lease oder junge Prozessquittung beim Mergevorflug. **44 gespeicherte Lage Texte fuer den 500er Testtag, 456 fehlen.** [Einzelbefunde](betrieb/500-textpruefung-2026-09-09.json).
 - **Crawl-Aufbewahrung:** Wirksame Grenze **36** am 06.09. um 19:00 UTC erneut bestätigt. Frisch gelesener Blob Ring **20**; keine Wiederherstellung der verlorenen 16 Laufzeilen. Schutzcode aus #301 bleibt deployt (SR §37).
 - **Quellen:** 9 Pakete · 163 Abrufwege · 165 Zuordnungen; **146/163 Google-News** (B1, OP-15); 18 Landesmodul-Wege (BE/BB) gesperrt. Seeds `20260713`/`20260717` **nicht eingespielt**, Einspielung [BLOCKIERT](betrieb/quellen-seed-einspielung.md) (nur noch Betreiberfreigabe).
 - **Crons (Production, 13, UTC):** crawl 04:00/20:00 · pipeline 16:00 · morning-briefing 05:00 · understanding 05:30/21:30 · **rueckstand 11:30/17:30** · lage-briefing 05:45 · health 06:00 · lage-check 10:00 · 2 Narrativslots 06:10/06:22 (inert). **`18,48 * * * *` nicht in Production.** Dazu Actions-Watchdog (`briefing-watchdog.yml`, 05:30, oft 2–3 h verzögert).
@@ -64,11 +64,11 @@
 | `HELMUT_LLM_USAGE_RELATIONAL` | aus; Migration `20260902121500` nicht angewendet (§3) |
 | `HELMUT_PROFILE_DB_MODE` | **Relationaler Profilpfad und Exklusivmodus am 06.09. um 07:59 UTC wirksam belegt.** Frühere Annahme `HELMUT_PROFILE_DB_EXCLUSIVE` sei aus ist damit überholt. Keine Env Änderung durch diese Sitzung; vor B/C den ausführenden Prozess an den tatsächlichen Speicherpfad binden und Bestand neu erheben. |
 | 5 Offline-Testmandate (`test-mdb-*`) | deaktivierte Repo-Daten, **nicht aktivieren** |
-| **495 synthetische Profile A/B/C** | A 20 seit 05.09. aktiv; B 75 und C 400 am **08.09., 07:43 UTC vollstaendig aktiviert**. Alle Testkonten weiterhin `active:false`, Adressen auf `.invalid`. Zusammen mit fuenf realen genau 500 aktive Profile (SR §61). |
+| **495 synthetische Profile A/B/C** | Seit **09.09., 08:34 UTC alle deaktiviert**. Alle Testkonten weiterhin inaktiv, Adressen auf `.invalid`. Fuenf reale Profile aktiv; alle Zeilen erhalten. Historische Aktivierung SR §61, Abschluss im aktuellen Beleg. |
 
 ## 6 · Skalierung von 25 auf exakt 500 Testprofile
 
-**Exakt 500 Profile sind seit 08.09., 07:43 UTC aktiv.** Die getrennten Schritte Anlage und Aktivierung aller 475 B/C Profile sind unabhaengig bestaetigt. Endbestand **504 insgesamt, 500 aktiv, vier unveraendert inaktiv**, ohne Kontoaktivierung. Planung mit PR #335 vollstaendig bestaetigt; PR #336 korrigiert den falschen Kontrollstatus und ist Production READY. Der weitere Fachlauf samt strenger Kontrolle ist erfolgreich beendet. [Ablauf](betrieb/direkter-ausbau-500.md) und SR §61.
+**Exakt 500 Profile waren ab 08.09., 07:43 UTC aktiv; seit 09.09., 08:34 UTC ist der Test beendet.** Anlage und Aktivierung aller 475 B/C Profile sowie Planung und begrenzte Fachlaeufe sind unabhaengig bestaetigt (SR §61). Das beweist keine vollstaendige heutige Textversorgung: 44/500 Texte vorhanden. Aktueller Endbestand 504/5/499, alle 495 synthetischen Profile und Konten inaktiv. [Ablauf](betrieb/direkter-ausbau-500.md) und [Abschluss](betrieb/500-nachlauf-2026-09-09.md).
 
 1. **Wiederanlauf erledigt:** Datenbank wiederholt erreichbar, geschützte Leser erfolgreich. Natürlicher Crawl um 20:00 UTC abgeschlossen und unabhängig geprüft, kein Ersatzcrawl. SR §53.
 2. **Lagebeleg erledigt:** kontrollierter Lauf am 06.09. um 20:33 UTC erreichte **25/25** mit gespeicherter Wirkung und Quellenlinks. Der gescheiterte 10:00 UTC Lauf zählt weiterhin nicht. Alle 60 A Aufträge des Fensters 06.09. sind erledigt, aktueller Tageszähler 147. Vollständige heutige Briefingqualität bleibt offen.
@@ -128,15 +128,15 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-PR #342 ist mit Freigabe uebernommen und deployed. Die Kostenluecke ist
-ausdruecklich freigegeben rekonstruiert. Der letzte Nachlauf speicherte fuenf
-Texte, dann scheiterte der Textvertrag. Neue Prompt und Diagnosekorrektur
-auf `codex/lage-textvalidierung-20260909` pruefen und als PR vorbereiten;
-Merge und Production erneut freigeben lassen. Keine blinde Wiederholung.
+PR #343 ist freigegeben, uebernommen und Production READY. Der geplante
+Testabschluss hat alle 495 synthetischen Profile deaktiviert. Fuenf reale
+Profile bleiben aktiv. Weitere 500er Modellarbeit erfordert ein neues
+freigegebenes Zeitfenster und eine gepruefte Reaktivierung. Kein vorhandener
+Lauf wird blind wiederholt.
 
-1. Den laufenden 500er Test bis **09.09., 08:00 UTC / 11:00 Tuerkei** beobachten: Frische, Quellenbindung, faire Fortsetzung und tatsaechlich gespeicherte Ergebnisse aller 500. Faellige Arbeit ueber den vorhandenen begrenzten Fachzyklus abarbeiten; keinen Parallelwriter oder blinden Wiederholungslauf erzeugen.
-2. Vor jedem weiteren Fachlauf Bestand, Kosten, Kommunikationsschutz und laufende Arbeit frisch pruefen. Maximal 10 USD je UTC Tag, Prognosestopp 9 USD. Anlage und Aktivierung sind abgeschlossen.
-3. Zum geplanten Testende die bestehende Endaufgabe nach Vorpruefung ausfuehren: genau 495 synthetische Profile deaktivieren, fuenf reale aktiv und alle 504 Zeilen erhalten. Den bestaetigten Endzustand und verbleibende Qualitaetsbefunde dokumentieren.
+1. Den belegten Teilstand erhalten: 44 Texte, 456 fehlend, Quellen und Qualitaetsbefunde im aktuellen Beleg.
+2. Vor erneuter Testfreigabe konkrete verbleibende Text und Quellenfehler behandeln. Keine vollstaendige Abnahme behaupten.
+3. Nach Merge Dokumentation auf `codex/343-production-abschluss-20260909` vorbereitet; ausschliesslich Status und Belege, keine weitere Betriebsaktion.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
@@ -144,7 +144,7 @@ Neuester Auftrag: Uebernahme hier und alle 500 Mandate samt Texten pruefen.
 Die fruehere ausdrueckliche Grenze **kein Merge oder Production Deployment
 ohne Freigabe** gilt fuer jede neue Aenderung. #342 und einzelner Kostennachtrag sind freigegeben und ausgefuehrt. Keine Profil, Konto, Budget oder Vercel Aenderung.
 Nur die stuendliche Testaufgabe wurde zur alleinigen Steuerung pausiert;
-Production Crons und Endaufgabe bleiben gleich. [SR §64](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
+Production Crons bleiben gleich; die Endaufgabe hat den Test bestaetigt beendet. [SR §64](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 
 1. Maximal **10 USD Modellkosten je UTC Tag**, Sicherheitsstopp spätestens bei prognostiziert **9 USD**. Die wirkungslosen RPM, TPM, USD und Parallelitätswerte sind kein Schutz.
 2. Keine Aktivierung der vier sonstigen inaktiven Profile, kein aktives Kohortenkonto, keine externe Nachricht oder Zustellung.
