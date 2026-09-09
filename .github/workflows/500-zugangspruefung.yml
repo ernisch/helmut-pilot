@@ -14,6 +14,14 @@ on:
         description: "Vollstaendiger als Production READY bestaetigter Commit des ausgewaehlten Branches"
         type: string
         required: false
+      briefing_nachweis:
+        description: "Gespeicherte App Ausgaben aller 500 Mandate ausschliesslich lesen"
+        type: boolean
+        default: false
+      briefing_tag:
+        description: "Kalendertag des gespeicherten Briefings, YYYY-MM-DD"
+        type: string
+        required: false
   push:
     branches: [codex/500-github-zugangspruefung]
     paths:
@@ -68,3 +76,26 @@ jobs:
           HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
           HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
         run: node scripts/github-laufzeitpruefung.js
+
+  briefing_nachweis:
+    needs: zugang
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' && github.ref == 'refs/heads/main' &&
+      github.event_name == 'workflow_dispatch' && inputs.briefing_nachweis
+    runs-on: ubuntu-latest
+    timeout-minutes: 17
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Alle 500 gespeicherten App Vertraege ausschliesslich lesen
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+          HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
+          HELMUT_NACHWEIS_TAG: ${{ inputs.briefing_tag }}
+        run: node scripts/github-briefingnachweis-500.js
