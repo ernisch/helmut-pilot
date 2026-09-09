@@ -1,5 +1,7 @@
 # CURRENT STATE — Helmut
 
+**In Arbeit:** [Private Entwurfsbelege](betrieb/lage-entwurfsbelege.md) fuer gezielte Textkorrekturen; noch nicht veroeffentlicht.
+
 **Veroeffentlichung #348:** [PR 348](https://github.com/ernisch/helmut-pilot/pull/348) ist als `79fbde465ab955c43fed3a25208122521475ab5f` gemergt. PR CI `34374247585` und main CI `34377210042` erfolgreich: 347/347 Offline Suiten, 50 Browserpruefungen und die erforderlichen Datenbankpruefungen. PR Kopf und Merge haben denselben Dateibaum. Die folgenden Angaben zu #346/#347 und zur damals noch unveroeffentlichten Quellenreparatur sind historische Belege vor #348. Codepruefung ist keine fachliche Gesamtabnahme.
 
 **Stand 09.09.2026: teilweise abgeschlossen, 0 von 500 vollstaendig abgenommen.** PR #346 und #347 sind mit ausdruecklicher Commit und Mergefreigabe uebernommen. Production `d0cee4198086dc34a50ce5bd1fa00065436b1294`, READY `dpl_7qCRjinKFKtWwRUeki1D96VnCYJm`. PR #347 CI `34360404495`: 345/345 Offline Suiten, 50 Browserpruefungen, 13 PostgreSQL Kontoschutz und Geldgruppen, 48 Z22 Datenbankpruefungen bestanden. main CI `34361936200` erfolgreich. PR #345 bleibt offen und muss vor Uebernahme auf diesen neueren Befund nachgezogen werden.
