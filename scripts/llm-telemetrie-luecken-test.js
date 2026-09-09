@@ -83,7 +83,7 @@ function abschnitt(von, bis) {
 
 const ueberlang = abschnitt("receivedBytes > MAX_AI_RESPONSE_BYTES", "data += chunk;");
 check("B1 Ueberlanger Antwortrumpf wird protokolliert",
-  ueberlang.includes("logLlmUsage(") && ueberlang.includes("response-too-large"), ueberlang.slice(0, 120));
+  ueberlang.includes("abschliessen(") && ueberlang.includes("response-too-large"), ueberlang.slice(0, 120));
 
 const vertagung = abschnitt("if (!res.erlaubt)", "return requestOpenAI(");
 check("B2 Die Anbieter-Vertagung wird protokolliert",
@@ -94,7 +94,8 @@ check("B3 Die Anbieter-Vertagung wird als Nicht-Aufruf gefuehrt",
 check("B4 Der synchrone Aufbaufehler wird abgefangen und protokolliert",
   aiQuelle.includes("request-konstruktion:") && aiQuelle.includes("providerAufbauFehler"));
 check("B5 Der Aufbaufehler reicht das Originalobjekt NICHT weiter",
-  aiQuelle.includes("fehler.ursacheCode = kode") && !aiQuelle.includes("reject(fehler);"));
+  aiQuelle.includes("fehler.ursacheCode = kode")
+    && abschnitt("} catch (fehler) {", "request.on(\"timeout\"").includes("providerAufbauFehler(kode)"));
 // B6: BEWUSST als offener Punkt festgehalten, nicht als Korrektur. Ein
 // Zwischenstand reichte hier `...options` durch; der Gegenpruefer belegte, dass
 // das die Anbieter-Ratengrenze schwaecht (der Retry ist ein zweiter echter
