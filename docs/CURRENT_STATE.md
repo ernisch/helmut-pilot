@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Stand: 09.09., 11:37 Tuerkei / 10:37 Berlin / 08:37 UTC. TEST BEENDET, GESAMTABNAHME OFFEN.** Der geplante Ausfuehrer hat 495 synthetische Profile deaktiviert: **504 erhalten, fuenf reale aktiv, 499 inaktiv**. PR #343 mit ausdruecklicher Freigabe uebernommen, Production `4710c59` READY. PR CI 340/340, Browser und Datenbanknachweise erfolgreich. Nachkontrolle: Bestand seit Testende unveraendert, 92 Reservierungen und 92 Belege, 0,212737 USD geschaetzte Tagesmodellkosten. **44/500 Texte gelesen, 456 fehlen; Qualitaetsmaengel offen.** Kein neuer Testlauf und keine Reaktivierung. [Beleg](betrieb/500-nachlauf-2026-09-09.md). Weitere 500er Facharbeit braucht ein neues ausdruecklich freigegebenes Testfenster.
+**Stand: 09.09., 12:38 Tuerkei / 11:38 Berlin / 09:38 UTC. GESAMTABNAHME OFFEN, CODEKORREKTUR VOR NEUEM TEST.** Alleinige Uebernahme geprueft; **504 erhalten, fuenf reale aktiv, 495 synthetische inaktiv**. Production weiterhin `4710c59` aus #343. Neues zeitlich begrenztes Testfenster mit exakt 500 ist ausdruecklich genehmigt; dieser Teststart braucht keine erneute Zustimmung. Die notwendigen neuen Codekorrekturen brauchen dagegen eine konkrete Merge und Production Freigabe. **44 Lage Texte, 456 fehlend; 151 Morgenlaufquittungen sind keine gespeicherten Briefinginhalte. 0/500 vollstaendige Briefings abgenommen.** Bis 09:38 UTC weiterhin 92 Reservierungen und 92 Belege, 0,212737 USD geschaetzte Tagesmodellkosten; neuer Test nicht gestartet, dessen Kosten 0 USD. [Beleg und Grenzen](betrieb/500-nachlauf-2026-09-09.md), [alle 500 Mandate](betrieb/500-vollstaendigkeitsnachweis-2026-09-09.json).
 
 
 **Kernlage:** Warteschlangenmotor seit 23.08. in Production `on`, Dispatch `shadow`. Fuenferbeleg: [OP-30 §30.7](betrieb/op30-aktivierung-5-mandate.md). **Frisch sieben Vorgaenge `unbekannt`, juengster 08.09., 17:32 UTC nach Modelltimeout**; alte Viererangabe ueberholt. Keine automatische Wiederholung. Selbstweck nie ausgefuehrt.
@@ -10,6 +10,8 @@
 **500er Test beendet; vollstaendiger Funktionsnachweis weiterhin offen.** Die neuere Betreiberanweisung ersetzt die bisherige Zwischenabnahme bei 100: direkt auf 500 ausbauen und dort abnehmen; seit 08.09. keine vorherige A Abnahme und kein Nachtfenster mehr. Der neue ausdrückliche Zielweg `--ziel=500` ergänzt den vorhandenen Ausführer; keine vorgetäuschte B Abnahme. Vorrang haben Datenintegrität, Kommunikationssperre und höchstens 10 USD Modellkosten je UTC Tag mit Stopp bei prognostiziert 9 USD. Danach Verkaufsreife und P0 Punkte OP-01 bis OP-04; [OP Liste](datenmotor-restliste.md). Kein Kunden- oder Mehrtagesnachweis.
 
 ## 2 · Stand auf `main` und Pull Requests
+
+- **[PR #344 wird fortgefuehrt](https://github.com/ernisch/helmut-pilot/pull/344):** Abschlussdokumentation von #343 bleibt erhalten. Arbeitsbranch `codex/500-vollstaendiger-nachweis-20260909`, Basis `dfff845` aus dem bisherigen PR. Korrekturen fuer Quellenauszuege, Themenbindung, unabhaengige Textpruefung, gespeicherte V3 Briefinginhalte, rein lesenden App Nachweis, ehrliche Laufzaehler und Reaktivierung aller 495 vorhandenen Testprofile. Lokal 339/341 Suiten; zwei Browserfehler wegen fehlendem Chromium. Gezielte Abschlusspruefungen 19/19 Adapter, 11/11 Nachlauf, 14/14 Vollstaendigkeit und 47/47 HTTP. Exakte Revision und GitHub Pflichtgates in der PR Beschreibung; noch kein Merge oder Production Deployment dieser Aenderungen.
 
 - **[PR #343](https://github.com/ernisch/helmut-pilot/pull/343) Production:** Merge `4710c59b1098ce0025d8858e156e11cc694a25d8`, Deployment `dpl_HRf48dKcZTn5M3EL4sGcG1VAsW7k` READY am Hauptalias. Konsistentes Absatzbeispiel und genaue Textfehlerklassen. Exakter PR Kopf `7025efc`, CI `34325744062`: 340/340 in 508s, Browser erfolgreich, Kontoschutz 10/10 und Z22 48/48. Nach Merge keine Modellarbeit; neuer 500er Wirkungsbeleg offen.
 
@@ -128,21 +130,16 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-PR #343 ist freigegeben, uebernommen und Production READY. Der geplante
-Testabschluss hat alle 495 synthetischen Profile deaktiviert. Fuenf reale
-Profile bleiben aktiv. Weitere 500er Modellarbeit erfordert ein neues
-freigegebenes Zeitfenster und eine gepruefte Reaktivierung. Kein vorhandener
-Lauf wird blind wiederholt.
-
-1. Den belegten Teilstand erhalten: 44 Texte, 456 fehlend, Quellen und Qualitaetsbefunde im aktuellen Beleg.
-2. Vor erneuter Testfreigabe konkrete verbleibende Text und Quellenfehler behandeln. Keine vollstaendige Abnahme behaupten.
-3. Nach Merge Dokumentation auf `codex/343-production-abschluss-20260909` vorbereitet; ausschliesslich Status und Belege, keine weitere Betriebsaktion.
+1. Notwendige Korrekturen in PR #344 fertig pruefen und einmal gebuendelt den konkreten Stand fuer Merge und Production vorlegen. Die Genehmigung des neuen Testfensters ersetzt diese getrennte Veroeffentlichungsfreigabe nicht.
+2. Nach Freigabe exaktes READY und alleinigen Ausfuehrungszustand erneut belegen. Vor erster Aktivierung konkrete UTC Zeiten fuer Ende und automatische Deaktivierung festlegen; anschliessend vorhandene 495 synthetische Profile gezielt reaktivieren. Fuenf reale Profile und alle Konten/Identitaeten schuetzen.
+3. Den bestehenden manuellen Fachlauf innerhalb dieses Fensters starten, belegte Fehlstellen gezielt fortsetzen und Kosten vor jedem Modellaufruf pruefen. Nicht auf regulaere Cron Termine warten, keine Faelligkeit verschieben, keine blinde Wiederholung unbekannter Schreibausgaenge.
+4. Fuer jedes Mandat Text UND Briefinginhalt speichern und ueber den App Vertrag lesen. Vollstaendige Strukturpruefung und Quellen/Profil/Textpruefung dokumentieren; vertiefte Quellenpruefung mit ihrem wirklichen Umfang ausweisen. Ein Statuszaehler oder Lage Text allein schliesst die Abnahme nicht ab.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
-Neuester Auftrag: Uebernahme hier und alle 500 Mandate samt Texten pruefen.
+Neuester Auftrag: alleinige Uebernahme und vollstaendiger Nachweis fuer alle 500 Mandate.
 Die fruehere ausdrueckliche Grenze **kein Merge oder Production Deployment
-ohne Freigabe** gilt fuer jede neue Aenderung. #342 und einzelner Kostennachtrag sind freigegeben und ausgefuehrt. Keine Profil, Konto, Budget oder Vercel Aenderung.
+ohne Freigabe** gilt fuer jede neue Aenderung. #342 und einzelner Kostennachtrag sind freigegeben und ausgefuehrt; keinen zweiten Kostennachtrag. Neu genehmigt sind die gezielte temporaere Teilnahme der 495 vorhandenen synthetischen Profile und manuelle regulaere Fachlaeufe. Keine Aenderung realer Profile, Identitaeten, Konten, Budgets, Umgebungsvariablen oder Cron Ablaeufe.
 Nur die stuendliche Testaufgabe wurde zur alleinigen Steuerung pausiert;
 Production Crons bleiben gleich; die Endaufgabe hat den Test bestaetigt beendet. [SR §64](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 

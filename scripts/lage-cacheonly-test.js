@@ -42,14 +42,15 @@ const orig = {
 
 let aiCalls = 0;
 function installMocks({ cachedNarrative = null } = {}) {
+  let written = null;
   storage.v3StoreReady = () => true;
   storage.listKnowledgeObjects = async () => [KO];
   storage.listMatchingResults = async () => []; // -> Fallback: neueste verstandene
   storage.getSourcesForVorgang = async () => [{ url: "https://bmas.de/rente", source_name: "BMAS", title: "Rente", published_at: new Date().toISOString() }];
-  storage.getRenderedBriefingV3 = async () => (cachedNarrative
+  storage.getRenderedBriefingV3 = async () => written || (cachedNarrative
     ? { payload: { paragraphs: cachedNarrative, koSetHash: null } }
     : null); // Default: Cache-Miss
-  storage.saveRenderedBriefingV3 = async () => ({ saved: true });
+  storage.saveRenderedBriefingV3 = async row => { written = row; return { saved: true }; };
   storage.acquirePipelineLock = async () => true;
   storage.releasePipelineLock = async () => {};
   storage.canSpendLlm = async () => ({ allowed: true });

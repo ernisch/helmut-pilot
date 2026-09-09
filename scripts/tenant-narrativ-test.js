@@ -499,7 +499,8 @@ async function main() {
     storage.canSpendLlmForTenant = async () => ({ allowed: true });
     storage.recordLlmUsage = async () => null;
     sourceSafety.guardKnowledgeObject = () => ({ status: "ok" });
-    ai.generateLageBriefing = async (...a) => { aiCalls += 1; return aiAntwort(...a); };
+    ai.generateLageBriefing = async (...a) => { aiCalls += 1; const r = await aiAntwort(...a);
+      return r ? { ...r, qualitaet: { version: 1 } } : r; };
 
     try {
       const H = SP.HANDLER.tenant_narrative;

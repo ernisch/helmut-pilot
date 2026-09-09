@@ -37,6 +37,12 @@ function welt() {
   }
   identitaeten.set("admin-fixture", { id: "admin-fixture", email: "admin@example.invalid" });
   const storage = {
+    setTestProfileActive: async (id, active) => {
+      const row = mandate.get(id);
+      if (!row || !id.startsWith("test-kohorte-")) throw new Error("Fremdes Testziel");
+      if (row.aktiv !== active) { writes++; row.aktiv = active; }
+      return { ok: true };
+    },
     getProfile: async (id) => mandate.has(id)
       ? S.fromMandateProfileRow(kopie(identitaeten.get(id)), kopie(mandate.get(id))) : null,
     saveProfile: async (p) => { writes++; speichern(p); return kopie(p); }

@@ -85,7 +85,11 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
     }
     await pruefeBetrieb();
     const bestand = await snapshot();
-    const vor = D.pruefeSnapshot(bestand, "vorpruefung");
+    const vollbestand = vorgang === "reaktivierung" || (bestand.mandate.length === 504
+      && ["vorpruefung", "fachzyklus", "textnachlauf"].includes(vorgang));
+    const snapshotModus = vollbestand ? "500-bestand" : "vorpruefung";
+    const zielAnzahl = vollbestand ? 495 : 475;
+    const vor = D.pruefeSnapshot(bestand, snapshotModus);
     // Der Betreiber verlangt den direkten Test ohne vorgelagerte A Abnahme.
     // Qualitaet wird am tatsaechlichen 500er Ergebnis bewertet, nie vorausgesetzt.
     if (vorpruefung) return { ...plan, ok: true, gesamt: vor.gesamt, aktiv: vor.aktiv,
@@ -93,14 +97,15 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       geschuetzterBestandHash: vor.geschuetzterBestandHash, kosten,
       aAbnahmeErforderlich: false, nachtfensterErforderlich: false,
       bereitZurAnlage: vor.aktive.length === 0,
-      bereitZurAktivierung: vor.vorhandene.length === 475,
+      bereitZurAktivierung: vor.vorhandene.length === zielAnzahl,
+      reaktivierung: vollbestand,
       bereitZumFachzyklus: vor.aktiv === 500,
       scharferSchrittFreigegeben: false, funktionsnachweis500: false };
 
     if (vorgang === "textnachlauf") {
       const T = require("../lib/helmut/testkohorte-textnachlauf");
       D.fordere(config.textnachlaufVersion === 1, "textnachlauf-nicht-deployt");
-      D.fordere(vor.gesamt === 504 && vor.aktiv === 500 && vor.aktive.length === 475,
+      D.fordere(vor.gesamt === 504 && vor.aktiv === 500 && vor.aktive.length === zielAnzahl,
         "textnachlauf-braucht-500-aktive-profile");
       T.pruefeKosten(bestand.auth, kosten.reservierungen, now().toISOString().slice(0, 10));
       D.fordere(/^[0-9]{5,20}$/.test(env.GITHUB_RUN_ID || "") && env.GITHUB_RUN_ATTEMPT === "1",
@@ -140,7 +145,10 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         && b.modus === "manuell-fehlende-texte" && b.ziel === 500
         && Number.isSafeInteger(b.gespeichert) && b.gespeichert >= 0 && b.gespeichert <= 500) {
         const gruende = ["ai-unavailable", "ai-cost-receipt-missing", "ai-response-incomplete",
-          "ai-response-invalid-json", "ai-provider-unavailable", "ai-text-invalid"]
+          "ai-response-invalid-json", "ai-provider-unavailable", "ai-text-invalid",
+          "ai-text-paragraph-count", "ai-text-empty", "ai-text-source-reference", "ai-text-visible-id",
+          "ai-text-word-limit", "ai-text-quality-incomplete", "ai-text-source-support",
+          "ai-text-evidence-quote", "ai-text-repetition"]
           .map(g => "nachlauf-textfehler-" + g);
         const grund = gruende.includes(b.grund)
           || /^nachlauf-textfehler-ai-provider-http-[45][0-9]{2}$/.test(b.grund || "")
@@ -164,7 +172,7 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         && Date.parse(rows[0].finished_at) <= now().getTime(), "textnachlauf-quittung-abweichend");
       await pruefeBetrieb();
       const nach = await snapshot();
-      D.pruefeSnapshot(nach, "aktivierung");
+      D.pruefeSnapshot(nach, snapshotModus);
       D.fordere(hash === D.hash({ mandate: nach.mandate, identitaeten: nach.identitaeten, users: nach.auth.users }),
         "textnachlauf-bestand-veraendert");
       T.pruefeKosten(nach.auth, kosten.reservierungen, now().toISOString().slice(0, 10));
@@ -179,7 +187,7 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
     }
 
     if (vorgang === "fachzyklus") {
-      D.fordere(vor.gesamt === 504 && vor.aktiv === 500 && vor.aktive.length === 475,
+      D.fordere(vor.gesamt === 504 && vor.aktiv === 500 && vor.aktive.length === zielAnzahl,
         "fachzyklus-braucht-500-aktive-profile");
       // Eine Runde muss vollstaendig in dasselbe Kostenfenster passen.
       const start = now();
@@ -218,7 +226,7 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         && Date.parse(q.finished_at) <= now().getTime(), "fachzyklus-laufquittung-fehlt-oder-abweichend");
       await pruefeBetrieb();
       const nach = await snapshot();
-      D.pruefeSnapshot(nach, "aktivierung");
+      D.pruefeSnapshot(nach, snapshotModus);
       D.fordere(profilHash === D.hash({ mandate: nach.mandate, identitaeten: nach.identitaeten,
         users: nach.auth.users }), "fachzyklus-hat-profilbestand-veraendert");
       return { ...plan, ok: true, ausgeloest: true, laufId: q.run_id, verarbeitet: q.processed_count,
@@ -252,13 +260,13 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       const P = require("../lib/helmut/provisioning");
       return vorgang === "provisionierung"
         ? P.provisionTenant(spec, {}, { neuAktiv: false, kontoBeiFehlerBehalten: true })
-        : P.activateTenant(id);
+        : P.setTestProfileParticipation(id, true);
     });
     return await D.fuehreAus({ vorgang, env: laufEnv, grundlinieHash: vor.geschuetzterBestandHash,
       deps: { leseSnapshot: snapshot, pruefeBetrieb, schreibe: writer, jetzt: now, fortschritt,
         leseZiel: async (id) => {
           // Nur bekannte Zielkennungen; expliziter Mandatsfilter, kein Fallback.
-          D.fordere(D.KENNUNGEN.includes(id), "fremde-zielkennung");
+          D.fordere((vorgang === "reaktivierung" ? D.ALLE_KENNUNGEN : D.KENNUNGEN).includes(id), "fremde-zielkennung");
           const rows = await db("mandate_profiles?select=user_id,aktiv,geloescht_at&user_id=eq."
             + encodeURIComponent(id) + "&limit=2");
           D.fordere(rows.length === 1, "zielantwort-nicht-eindeutig");

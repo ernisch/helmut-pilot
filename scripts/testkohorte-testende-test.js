@@ -12,7 +12,7 @@ function kontext() {
   const w = welt();
   return { w, args: { scharf: true, env: endeEnv(), deps: {
     snapshot: async () => w.snapshot(), leseZiel: async id => w.mandate.get(id),
-    deaktiviere: id => P.deactivateTenant(id, { storage: w.storage, accounts: w.accounts })
+    deaktiviere: id => P.setTestProfileParticipation(id, false, { storage: w.storage, accounts: w.accounts })
   } } };
 }
 function adapter() {

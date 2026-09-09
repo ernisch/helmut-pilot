@@ -47,7 +47,7 @@ async function ausfuehren({ scharf = false, env = process.env, fetchFn = global.
       } };
     }
     return await T.ausfuehren({ scharf, env, deps: { snapshot,
-      deaktiviere: deaktiviere || (id => require("../lib/helmut/provisioning").deactivateTenant(id)),
+      deaktiviere: deaktiviere || (id => require("../lib/helmut/provisioning").setTestProfileParticipation(id, false)),
       leseZiel: async (id) => {
         fordere(T.KOHORTE_KENNUNGEN.includes(id), "testende-fremde-kennung");
         require("../lib/helmut/storage").assertTenant(id, "testendeNachweis");

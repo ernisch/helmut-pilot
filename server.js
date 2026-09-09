@@ -152,6 +152,26 @@ function isOutputStale(completeKoAt) {
 
 async function handleRequest(request, response) {
   const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
+  // Betreiberabruf des gespeicherten App-Vertrags vor dem Account-Vorlauf.
+  // Kein Kontoseed, Nutzungs-Tracking, Profilrepair oder asynchroner KI-Aufruf.
+  if (url.pathname === "/api/cron/briefing-nachweis") {
+    if (!authorizeCron(request, url, response)) return;
+    if (request.method !== "GET" || [...url.searchParams.keys()].some(k => !["mandat", "tag"].includes(k))) {
+      response.writeHead(400, jsonHeaders()); response.end(JSON.stringify({ ok: false, grund: "nachweis-aufruf-ungueltig" })); return;
+    }
+    try {
+      const storage = require("./lib/helmut/storage"), userId = url.searchParams.get("mandat"), day = url.searchParams.get("tag");
+      storage.assertTenant(userId, "briefingNachweisApp");
+      const profile = await storage.getProfile(userId);
+      if (!profile || profile.id !== userId) throw new Error("nachweis-profil-fehlt");
+      const nachweisUrl = new URL("http://localhost/api/briefing/latest");
+      nachweisUrl.searchParams.set("gespeichert", day || "");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(day || "")) throw new Error("briefing-tag-ungueltig");
+      return sendJson(response, await latestBriefingPayload({ politicianId: userId, profile, url: nachweisUrl, compact: false }));
+    } catch (_) {
+      response.writeHead(500, jsonHeaders()); response.end(JSON.stringify({ ok: false, grund: "briefing-nachweis-nicht-lesbar" })); return;
+    }
+  }
   // Derselbe Lage Cron, ausdruecklicher manueller Teilnachlauf. Vor jedem
   // Account Vorlauf: dieser Modus darf keine Profile oder Konten reparieren.
   if (url.pathname === "/api/cron/lage-briefing" && url.searchParams.has("nachlauf")) {
@@ -165,7 +185,9 @@ async function handleRequest(request, response) {
       commit: request.headers["x-helmut-production-commit"],
       runId: request.headers["x-helmut-lauf"],
       confirmation: request.headers["x-helmut-bestaetigung"],
-      config: () => testnachweisKonfiguration()
+      config: () => testnachweisKonfiguration(),
+      deps: { materialisiereBriefing: (profile, userId) => require("./lib/helmut/briefing-speicher")
+        .materialisiere({ profile, userId, build: buildV3Briefing }) }
     }));
   }
   // Maschinenlesender Laufzeitbeleg VOR dem Account Vorlauf (Adminseed).
@@ -1769,7 +1791,7 @@ async function handleRequest(request, response) {
       const lageBriefingDeadline = lageBriefingStartMs + 240000;
       for (const p of profiles) {
         if (!p || !p.id) { skipped += 1; results.push({ userId: null, available: false, reason: "profil-ohne-id", vorgaenge: 0 }); continue; }
-        if (Date.now() > lageBriefingDeadline) { results.push({ userId: p.id, available: false, reason: "zeitbudget", vorgaenge: 0 }); continue; }
+        if (Date.now() > lageBriefingDeadline) { skipped += 1; results.push({ userId: p.id, available: false, reason: "zeitbudget", vorgaenge: 0 }); continue; }
         // Mehrmandantenfaehigkeit Phase 8: deaktivierte Profile nehmen an der
         // Verarbeitung NICHT teil (sie sollen kein Briefing erzeugen). VOLLSTAENDIGE
         // Fehler-Isolation je Mandat: auch activeProfile/validateProfile stehen im
@@ -1793,16 +1815,21 @@ async function handleRequest(request, response) {
       // P0-1: echte Lage-Briefing-Vorwaerm-Laufzeit persistieren (Zaehler/Status, kein Text).
       // W-2: kein `.catch(() => {})` mehr — recordProcessRun wirft nicht, sondern
       // liefert ein Ergebnis; ein Telemetriefehler wird im Abschlussstatus ausgewiesen.
+      const lageErfolg = results.filter(r => r.available === true).length;
+      const lageFehler = results.filter(r => !r.available
+        && !["zeitbudget", "profil-deaktiviert", "profil-ohne-id", "no-current-sources", "no-vorgaenge"].includes(r.reason)).length;
       const lageTelemetrie = await recordProcessRun({
         process: "briefing-lage", runId: lageBriefingRunId, mode: "cron", location: helmutExecLocation(),
         startedAt: new Date(lageBriefingStartMs).toISOString(), finishedAt: new Date().toISOString(),
         durationMs: Date.now() - lageBriefingStartMs,
-        processed: results.length, deferred: skipped,
+        processed: results.length - skipped, deferred: skipped, fehlgeschlagen: lageFehler,
         zielmenge: profiles.length,
-        status: "success"
+        status: lageFehler || results.some(r => r.reason === "zeitbudget") ? "failed" : "success"
       });
       return {
-        prewarmed: results.length, uebersprungen: skipped, results,
+        prewarmed: lageErfolg, gestartet: results.length - skipped, uebersprungen: skipped,
+        vollstaendig: lageErfolg === results.length - results.filter(r => r.reason === "profil-deaktiviert").length,
+        results,
         lauftelemetrie: { gespeichert: lageTelemetrie.ok, vollstaendig: lageTelemetrie.vollstaendig, fehler: lageTelemetrie.fehler }
       };
     });
@@ -3157,6 +3184,17 @@ async function ladeFrischeKontext(tenantId, jetzt = new Date()) {
 // Contract-Adapter). KEIN V2-Blob, KEIN Regel-Scoring, KEIN V2-Fallback. Fehlen
 // V3-Daten, liefert der Adapter einen EXPLIZITEN Leerzustand (available:false).
 async function latestBriefingPayload({ politicianId, profile, url, previewMode = false, compact = false }) {
+  // Expliziter historischer App-Abruf, rein lesend. Der normale aktuelle
+  // V3-Lesepfad bleibt frisch; ein gespeicherter Teststand ist kein neuer Tag.
+  const gespeichertTag = url?.searchParams?.get("gespeichert");
+  if (gespeichertTag) {
+    const row = await require("./lib/helmut/briefing-speicher").lese({ userId: politicianId, day: gespeichertTag, profile });
+    if (!row) return { available: false, reason: "briefing-nicht-gespeichert" };
+    return prepareBriefingResponse({ ...row.payload.briefing,
+      lageBriefing: require("./lib/helmut/briefing-speicher").lageAusgabe(row.payload.lage),
+      gespeicherterNachweis: { id: row.id, erzeugtAm: row.generated_at,
+        pruefung: row.payload.pruefung } }, { previewMode, compact, frischeKontext: null });
+  }
   // Optionaler Slot-Override (?slot=morning|midday|evening|daily) fuer Tests/Admin/
   // spaetere Cron-Nutzung. Ohne Parameter leitet buildV3Briefing den Slot aus der
   // Serverzeit (Europe/Berlin) ab. Ungueltige Werte -> 'daily' (kein Crash).
@@ -3275,11 +3313,12 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // UND (Review-Fix) die Erwaehnungs-Quellen nachladen: mit hartem
   // sourcesByVorgang:{} verschwanden belegte Eigenerwaehnungen ohne
   // best_source_url auf genau diesen Leerpfaden weiterhin still.
-  const emptyKeepMentions = async (reason) => {
+  const emptyKeepMentions = async (reason, kandidaten = understood) => {
     const mentionSources = {};
-    await loadMentionSourcesInto(profile, understood, mentionSources);
+    await loadMentionSourcesInto(profile, kandidaten, mentionSources);
     return briefingContract.toBriefingContractV3({
-      profile, decisions: [], kosById: {}, sourcesByVorgang: mentionSources, reason, briefingType, knowledgeObjects: understood, now: new Date(), frischeFenster
+      profile, decisions: [], kosById: {}, sourcesByVorgang: mentionSources, reason, briefingType,
+      knowledgeObjects: kandidaten.filter(ko => require("./lib/helmut/briefing-quellenqualitaet").themenrein(mentionSources[ko.vorgang_id] || [])), now: new Date(), frischeFenster
     });
   };
 
@@ -3318,10 +3357,13 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   const safeDecisions = candidateDecisions.filter((d) => {
     const ko = kosById[d.knowledge_object_id];
     if (!ko) return false;
+    if (!require("./lib/helmut/briefing-quellenqualitaet").themenrein(sourcesByVorgang[ko.vorgang_id] || [])) return false;
     return sourceSafety.guardKnowledgeObject(ko, sourcesByVorgang[ko.vorgang_id] || []).status !== "quarantine";
   });
-  if (!safeDecisions.length) return emptyKeepMentions("keine-treffer");
-  const briefing = briefingContract.toBriefingContractV3({ profile, decisions: safeDecisions, kosById, sourcesByVorgang, now, briefingType, knowledgeObjects: understood, frischeFenster });
+  const themenreineKos = understood.filter(ko => require("./lib/helmut/briefing-quellenqualitaet")
+    .themenrein(sourcesByVorgang[ko.vorgang_id] || []));
+  if (!safeDecisions.length) return emptyKeepMentions("keine-treffer", themenreineKos);
+  const briefing = briefingContract.toBriefingContractV3({ profile, decisions: safeDecisions, kosById, sourcesByVorgang, now, briefingType, knowledgeObjects: themenreineKos, frischeFenster });
   // Read-only Auswahl-Diagnose (nur bei ?debugPrimary=1 -> opts.debug). Aus dem ECHTEN
   // Read-Pfad, additiv, ohne die normale Antwort zu veraendern. Fehlerrobust (nie Crash).
   if (opts && opts.debug) {

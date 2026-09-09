@@ -50,7 +50,7 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
   await pruefe("Quellenkorrektur invalidiert Cache ohne KO Aenderung", () => {
     const a = input([quelle]);
     assert.notEqual(Q.hashEingabe(a), Q.hashEingabe(input([{ ...quelle, summary: "Beratung abgesagt." }])));
-    const payload = { paragraphs: [{ text: "Text", vorgang_ids: ["vg-test"] }], koSetHash: "k", quellenHash: Q.hashEingabe(a), quellenVersion: Q.VERSION };
+    const payload = { paragraphs: [{ text: "Text", vorgang_ids: ["vg-test"] }], qualitaet: { version: 1 }, koSetHash: "k", quellenHash: Q.hashEingabe(a), quellenVersion: Q.VERSION };
     assert(Q.cacheGueltig(payload, "k", Q.hashEingabe(a), a));
     assert(!Q.cacheGueltig({ ...payload, quellenVersion: undefined }, "k", Q.hashEingabe(a), a));
     assert(!Q.cacheGueltig(payload, "anderer-ko", Q.hashEingabe(a), a));
@@ -73,13 +73,13 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
   storage.listMatchingResults = async () => [{ knowledge_object_id: ko.id }];
   storage.getSourcesForVorgang = async () => docs;
   storage.getRenderedBriefingV3 = async () => cached;
-  storage.saveRenderedBriefingV3 = async (r) => { saved = r; return { saved: true }; };
+  storage.saveRenderedBriefingV3 = async (r) => { saved = r; cached = r; return { saved: true }; };
   storage.acquirePipelineLock = async () => { if (lock instanceof Error) throw lock; return lock; };
   storage.releasePipelineLock = async () => {};
   storage.canSpendLlmForTenant = async () => ({ allowed: true });
   safety.guardKnowledgeObject = () => ({ status: "ok" });
   ai.generateLageBriefing = async (v) => { calls++; modelInput = structuredClone(v); assert(!JSON.stringify(v).includes(ko.was_ist_passiert));
-    return { paragraphs: [{ text: "Die Quelle berichtet von einem Vorschlag.", vorgang_ids: ["vg-test"] }] }; };
+    return { paragraphs: [{ text: "Die Quelle berichtet von einem Vorschlag.", vorgang_ids: ["vg-test"] }], qualitaet: { version: 1 } }; };
   try {
     await pruefe("Echter Lagepfad speichert neue Quellenbindung und nutzt passenden Cache", async () => {
       assert.equal((await lage.buildLageBriefing({ id: "test-quellenbeleg" })).available, true);

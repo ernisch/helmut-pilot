@@ -108,6 +108,28 @@ async function main() {
     });
     check(ohneProduction.body.ok === false && ohneProduction.body.grund === "nachlauf-konfiguration-abweichend",
       "Echter Server prueft Laufzeit vor jedem Speicher oder Modellpfad");
+    const B = require("../lib/helmut/briefing-speicher");
+    const profile = { id: "test-kohorte-a-001", committees: ["Bildung"] };
+    const getProfileVorher = storage.getProfile, getBriefingVorher = storage.getRenderedBriefingV3;
+    const briefing = { available: true, items: [{ title: "Beratung ueber Schulbau" }], currentHelmutState: {}, currentRadarState: {} };
+    const lage = { paragraphs: [{ text: "Die Quelle berichtet ueber Schulbau.", vorgang_ids: ["vg-schule"], quellen_ids: ["q-schule"] }],
+      quellen: [{ vorgang_id: "vg-schule", quellenbelege: [{ quelle_id: "q-schule", quelle: "Testquelle", titel: "Schulbau", url: "https://example.org/schule" }] }], qualitaet: { version: 1 } };
+    const payload = { version: B.VERSION, mandat: profile.id, tag: "2026-09-09", profilHash: B.profilHash(profile),
+      briefing, lage, inhaltHash: B.hash({ briefing, lage }), pruefung: B.pruefeInhalt(briefing, lage) };
+    const row = { id: `bf-${profile.id}-mandatsbriefing-2026-09-09`, user_id: profile.id, slot: B.SLOT, payload };
+    let reads = 0;
+    storage.getProfile = async id => { reads++; return { ...profile, id }; };
+    storage.getRenderedBriefingV3 = async () => { reads++; return structuredClone(row); };
+    try {
+      const path = `/api/cron/briefing-nachweis?mandat=${profile.id}&tag=2026-09-09`;
+      check((await request("GET", null, path)).status === 403 && reads === 0, "Briefingbeleg ohne Autorisierung liest keine Mandatsdaten");
+      r = await request("GET", geheim, path);
+      check(r.status === 200 && r.body.gespeicherterNachweis.id === row.id, "echter App-Adapter liefert den gespeicherten Briefingstand");
+      check(r.body.lageBriefing.paragraphs[0].sources[0].url === "https://example.org/schule", "gespeicherter Text bleibt mit konkreter Quelle abrufbar");
+      r = await request("GET", geheim, path.replace(profile.id, "test-kohorte-a-002"));
+      check(r.status === 500 && !JSON.stringify(r.body).includes("Schulbau"), "fremde Speicherantwort wird nicht ausgeliefert");
+      check((await request("POST", geheim, path)).status === 400, "Nachweisroute ist ausschliesslich lesend");
+    } finally { storage.getProfile = getProfileVorher; storage.getRenderedBriefingV3 = getBriefingVorher; }
     check(writes === 0, "Adminseed, Blobleser und Fehlerpersistierung nie erreicht");
   } finally {
     await new Promise((resolve) => server.close(resolve));

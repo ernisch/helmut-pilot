@@ -581,6 +581,7 @@ async function main() {
       matchingAufgerufen === 1 && decisionsAufgerufen === 1 && r.ok === true);
     const b = await SP.HANDLER.briefing_materialization({ id: "j", payload: { mandatsId: "m1" } }, {
       getActiveProfile: async () => ({ id: "m1" }),
+      materialisiereBriefing: require("./fixtures/briefing-speicher").materialisierer(),
       buildV3Briefing: async () => ({ available: false, reason: "no-vorgaenge", items: [] })
     });
     check("10.12 Ein ehrlicher Leerzustand ist KEIN Fehlschlag",
@@ -794,6 +795,7 @@ async function main() {
       { id: "j-brief", payload: { mandatsId: "m1" }, freshnessWindow: null },
       {
         ...SP.workerDeps({ buildV3Briefing: async (p, id) => ({ available: true, items: [{ id }], reason: null }) }),
+        materialisiereBriefing: require("./fixtures/briefing-speicher").materialisierer(),
         getActiveProfile: async (id) => ({ id })
       });
     check("12.11 Mit eingereichtem buildV3Briefing (wie in server.js) laeuft die Briefingstufe",
