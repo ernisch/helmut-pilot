@@ -77,3 +77,18 @@ Der vorhandene reine App-Nachweisleser gibt in oeffentlichen Actions-Logs nur fe
 **Veroeffentlicht 09.09.:** [PR 351](https://github.com/ernisch/helmut-pilot/pull/351), `d710857060aa071819082aa7b549ff256205811e`, READY `dpl_4emadr3vHX84vrEiPK5qjJFFHk9a` am Hauptalias. Eindeutige Textart, private Pruefbegruendung und fachliche Themenauswahl. CI `34396450576`: 348/348 Suiten, 50 Browserpruefungen und beide Datenbankgates erfolgreich; PR und Merge baumgleich. [Nachweis](betrieb/lage-entwurfsbelege.md). Fachliche Gesamtabnahme offen.
 
 **In Arbeit 09.09.:** verbindlicher Quellenpruefvertrag und Originalbelegbindung, [Stand](betrieb/lage-entwurfsbelege.md). **Historie vor #351:** folgende Staende sind ueberholt; Belege bleiben erhalten.
+
+
+## Veroeffentlichung der Quellenhash- und Sachdetailkorrektur in PR 354
+
+PR 354 wurde als 913caff13e23bd0ea3c476bb4a64c67681183b97 uebernommen. Production READY dpl_Db1MsfWVzShEk2VVvYFvj7tqNM7W und Hauptalias helmut-pilot.vercel.app sind nach dem Merge bestaetigt. Gepruefter PR Kopf 708b2e5a0f4e4f80954ef2339fbc253a6da4d597 und Merge besitzen den identischen Dateibaum d7c006387c6bd981eed3cd26d7a8ae2ac6eb2001. CI 34407760954 erfolgreich: 348/348 Suiten in 661 Sekunden, 50 Browserpruefungen, 15 PostgreSQL/PostgREST Kontoschutz- und Kostengruppen sowie 48 Z22 Datenbankpruefungen. Die zusaetzliche main Pruefung wird separat in der Actions Historie gefuehrt.
+
+Die fachliche Gesamtabnahme ist weiterhin offen. Der neue rein lesende App-Nachweis gibt nur Gesamtzahlen und fest gezaehlte Abrufgruende oeffentlich aus; einzelne Mandatshashes mit Statuswerten bleiben privat. Der lokale Gesamtwiederholungslauf des finalen Kopfes wurde durch environment_offline unterbrochen. Der vollstaendige Nachweis dieses Kopfes stammt deshalb aus der erfolgreich abgeschlossenen GitHub CI; der abgebrochene lokale Lauf wird nicht als bestanden gezaehlt. Terminal und Browser waren beim Nachtrag nicht verbunden. Der vorhandene App-Startdialog wurde vorbereitet, aber kein neuer App-Leselauf ausgeloest. Die Arbeitsumgebung muss fuer diesen vorhandenen Bedienweg wieder erreichbar sein. Kosten-, Zeit-, Quellen- und Konkurrenzschutz bleiben unveraendert; die Veroeffentlichung belegt keine vollstaendige Versorgung.
+
+Dieser abschliessende Nachtrag aendert ausschliesslich Dokumentation. Die private Betreiberuebersicht bleibt der Ort fuer individuelle Ausgaben, Fehler und Quellenbelege. Die zusaetzliche main CI nach PR 353, Lauf 34402938789, ist inzwischen erfolgreich abgeschlossen.
+
+### Erhaltener Statuskopf vor PR 354
+
+**Veroeffentlicht 09.09.:** [PR 353](https://github.com/ernisch/helmut-pilot/pull/353), `e02c46ac6ca26df11c11a739df8a4996047672a1`, READY `dpl_CHhvvjEcFPmFKV46iEBRYH3tpHy6` am Hauptalias. Verbindlicher Quellenpruefvertrag und Originalbelegbindung. CI `34401562863`: 348/348 Suiten, 50 Browserpruefungen und beide Datenbankgates erfolgreich; PR und Merge baumgleich. [Nachweis](betrieb/lage-entwurfsbelege.md). Fachliche Gesamtabnahme offen.
+
+**In Arbeit 09.09.:** JSONB fester Quellenhash und feste Sachdetailpruefung, [Befund](betrieb/lage-entwurfsbelege.md). **Historie vor #353:** folgende Staende sind ueberholt; Nachweise bleiben erhalten.
