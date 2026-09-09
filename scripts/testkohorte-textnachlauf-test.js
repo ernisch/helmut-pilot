@@ -7,6 +7,7 @@ const S = require("../lib/helmut/storage");
 const P = require("../lib/helmut/provisioning");
 const { baueKohorte } = require("../lib/helmut/test-kohorte-500");
 const { welt, kopie, SHA } = require("./fixtures/direkt500");
+const { payload: belegterText } = require("./fixtures/lage-beleg");
 let passed = 0;
 async function test(name, fn) { await fn(); console.log("PASS " + name); passed++; }
 const start = "2026-09-08T17:00:00.000Z";
@@ -35,7 +36,7 @@ function fixture() {
   h.jobs = s.mandate.filter(m => m.aktiv).map(m => ({ tenant_id: m.user_id, status: "erledigt", due_at: start }));
   for (const m of s.mandate.filter(m => m.aktiv).slice(0, 22)) h.rows.push({ id: `bf-${m.user_id}-lage-2026-09-08`,
     user_id: m.user_id, slot: "lage", generated_at: "2026-09-08T05:45:00.000Z",
-    payload: { paragraphs: [{ text: "Vorhandener Text", vorgang_ids: ["vg-vorhanden"] }] } });
+    payload: belegterText() });
   const storage = {
     fromMandateProfileRow: S.fromMandateProfileRow,
     acquirePipelineLock: async (name) => { h.locks.push({ job_name: name }); return true; },
@@ -79,7 +80,9 @@ function fixture() {
           if (u.searchParams.has("job_type")) return kopie(h.jobs);
           return kopie(u.searchParams.has("or") ? h.orphans : h.leases);
         }
-        if (table === "process_runs") return kopie(u.searchParams.has("status") ? h.runs : h.receipts.filter(r => r.run_id === h.args.runId));
+        if (table === "process_runs") return kopie(u.searchParams.has("commit_ref")
+          ? h.receipts.filter(r => r.commit_ref === SHA && r.status !== "running")
+          : u.searchParams.has("status") ? h.runs : h.receipts.filter(r => r.run_id === h.args.runId));
         if (table === "llm_budget_counters") return [{ used: h.counter }];
         throw new Error("Unerwarteter Pfad " + path);
       },
@@ -90,8 +93,12 @@ function fixture() {
         h.calls.push(p.id); h.clock += h.stepMs;
         h.counter++; s.auth.llmUsage.push({ createdAt: new Date(h.clock).toISOString(), model: "gpt-5-mini", estimatedCost: 0.001 });
         const row = { id: `bf-${p.id}-lage-2026-09-08`, user_id: p.id, slot: "lage",
-          generated_at: new Date(h.clock).toISOString(), payload: { paragraphs: [{ text: "Neu", vorgang_ids: ["vg-test"] }] } };
-        h.rows.push(row);
+          generated_at: new Date(h.clock).toISOString(), payload: belegterText() };
+        const oldIndex = h.rows.findIndex(r => r.user_id === p.id);
+        if (oldIndex >= 0) {
+          assert.equal(opts.repairIncomplete, true);
+          row.payload.vorherigerStand = kopie(h.rows[oldIndex]); h.rows[oldIndex] = row;
+        } else h.rows.push(row);
         return { available: true, fromCache: false, paragraphs: row.payload.paragraphs };
       }
     } };
@@ -99,6 +106,15 @@ function fixture() {
 }
 
 (async () => {
+  await test("Ungepruefte Alttexte werden gezielt mit vollstaendiger Historie repariert", async () => {
+    const h = fixture(); delete h.rows[0].payload.qualitaet;
+    const before = kopie(h.rows[0]);
+    const r = await T.ausfuehren(h.args);
+    assert.equal(r.ok, true, JSON.stringify(r)); assert.equal(r.gespeichert, 479);
+    assert.equal(r.results.filter(x => x.repariert).length, 1);
+    assert.deepEqual(h.rows.find(x => x.id === before.id).payload.vorherigerStand, before);
+    assert.equal(h.rows.length, 500);
+  });
   await test("500 Zielprofile, vorhandene 22 geschuetzt, 478 lokale Textsimulationen und echte Quittung", async () => {
     const h = fixture(), baseline = D.hash(h.s), texts = kopie(h.rows);
     const r = await T.ausfuehren(h.args);
@@ -194,6 +210,29 @@ function fixture() {
     const h = fixture(); h.receipts.push({ run_id: h.args.runId });
     const r = await T.ausfuehren(h.args);
     assert.equal(r.grund, "nachlauf-kennung-bereits-verwendet"); assert.equal(h.calls.length, 0); assert.equal(h.locks.length, 0);
+  });
+  await test("Quellenablehnung laesst andere Mandate weiterarbeiten und bleibt im Gesamtergebnis rot", async () => {
+    const h = fixture(), build = h.args.deps.build; let abgelehnt;
+    h.args.deps.build = async (p, opts) => {
+      if (!abgelehnt) { abgelehnt = p.id; await opts.beforeGenerate(p.id);
+        return { available: false, reason: "ai-text-source-support",
+          diagnose: { absatz: 1, fehler: ["profilbezug-fehlt", "GEHEIMER_TEXT"] } }; }
+      return build(p, opts);
+    };
+    const r = await T.ausfuehren(h.args);
+    assert.equal(r.ok, false); assert.equal(r.grund, "nachlauf-qualitaetsfehler");
+    assert.equal(r.qualitaetsfehler, 1); assert.equal(r.gespeichert, 477);
+    assert.equal(r.results.length, 500); assert.equal(h.receipts.at(-1).failed_count, 1);
+    const q = h.receipts.at(-1).telemetrie.mandatsErgebnisse.find(x => x.mandatHash === D.hash(abgelehnt));
+    assert.deepEqual(q.diagnose, { absatz: 1, fehler: ["profilbezug-fehlt"] });
+    assert(!JSON.stringify(h.receipts).includes("GEHEIMER"));
+    // Neue manuelle Laufkennung: bestaetigte Ablehnung desselben Commits nicht
+    // erneut generieren, auch wenn sie jetzt ganz vorne im Fehlbestand liegt.
+    h.args.runId = "nachlauf500-987654321";
+    h.args.deps.build = async () => { throw new Error("Abgelehntes Mandat darf nicht erneut zum Modell"); };
+    const next = await T.ausfuehren(h.args);
+    assert.equal(next.grund, "nachlauf-qualitaetsfehler"); assert.equal(next.gespeichert, 0);
+    assert.equal(next.results.find(x => x.userId === abgelehnt).bereitsAbgelehnt, true);
   });
   await test("Geaenderte Profile und gespeicherte Texte schlagen die Nachkontrolle fehl", async () => {
     for (const type of ["profile", "text"]) {
