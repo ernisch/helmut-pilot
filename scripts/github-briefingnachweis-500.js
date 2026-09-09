@@ -71,7 +71,15 @@ function oeffentlicherBericht(r) {
   const felder = ["ok", "reinLesend", "tag", "commit", "ziel", "gelesen", "abrufbar",
     "strukturellVollstaendig", "qualitaetBestanden", "vollstaendigeFaktenpruefung",
     "funktionsnachweis500", "grund"];
-  return Object.fromEntries(felder.filter(k => Object.hasOwn(r, k)).map(k => [k, r[k]]));
+  const out = Object.fromEntries(felder.filter(k => Object.hasOwn(r, k)).map(k => [k, r[k]]));
+  const gruende = ["app-http-fehler", "briefing-nicht-gespeichert", "app-vertrag-gelesen",
+    "app-vertrag-unvollstaendig", "app-antwort-unlesbar"];
+  out.abrufGruende = {};
+  for (const result of r.results || []) {
+    const grund = gruende.includes(result.grund) ? result.grund : "sonstige";
+    out.abrufGruende[grund] = (out.abrufGruende[grund] || 0) + 1;
+  }
+  return out;
 }
 if (require.main === module) ausfuehren().then(r => {
   console.log(JSON.stringify(oeffentlicherBericht(r), null, 2)); process.exitCode = r.ok ? 0 : 1;
