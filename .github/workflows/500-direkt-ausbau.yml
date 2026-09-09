@@ -8,7 +8,7 @@ on:
       schritt:
         description: "Ein Vorgang; keine automatische Folgeaktion"
         type: choice
-        options: [vorpruefung, provisionierung, aktivierung, reaktivierung, fachzyklus, textnachlauf]
+        options: [vorpruefung, provisionierung, aktivierung, reaktivierung, fachzyklus, textnachlauf, quellenkontext]
         default: vorpruefung
         required: true
       production_commit:

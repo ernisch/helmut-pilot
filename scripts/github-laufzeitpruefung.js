@@ -39,6 +39,13 @@ async function pruefe({ env = process.env, fetchFn = global.fetch } = {}) {
       ok: true, reinLesend: true, grund: "production-laufzeit-gelesen", httpStatus: 200, commit: erwartet,
       ...Object.fromEntries([...BOOLEAN_FELDER, ...ZAHL_FELDER].map((f) => [f, body[f]])),
       ...([1, 2].includes(body.textnachlaufVersion) ? { textnachlaufVersion: body.textnachlaufVersion } : {}),
+      ...(body.quellenkontext?.version === 1 && ["on", "off", "shadow"].includes(body.quellenkontext.scoring)
+        && typeof body.quellenkontext.relevanzordnung === "boolean" && typeof body.quellenkontext.atomicLock === "boolean"
+        && Number.isSafeInteger(body.quellenkontext.koScan) && Number.isSafeInteger(body.quellenkontext.lageMax)
+        && Number.isFinite(body.quellenkontext.relevanzTage) && body.quellenkontext.relevanzTage > 0
+        && typeof body.quellenkontext.sourceSafetyStandard === "boolean"
+        ? { quellenkontext: Object.fromEntries(["version", "scoring", "relevanzordnung", "koScan", "lageMax", "relevanzTage", "sourceSafetyStandard", "atomicLock"]
+          .map(k => [k, body.quellenkontext[k]])) } : {}),
       ...(body.testKosten?.version === 1 && typeof body.testKosten.aktiv === "boolean"
         && body.testKosten.limitUsd === 4 && body.testKosten.maxManualCalls === 1000
         ? { testKosten: { version: 1, aktiv: body.testKosten.aktiv, limitUsd: 4, maxManualCalls: 1000 } } : {}),

@@ -56,7 +56,7 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
     let kosten;
     let kommunikationsHash = null;
     const startIso = now().toISOString();
-    async function pruefeBetrieb() {
+    async function pruefeBetrieb(eigeneSperre = null) {
       config = await leseKonfiguration({ env, fetchFn });
       D.fordere(config.ok && config.storageSupabase && config.v3Bereit && config.profileRelational
         && config.profileExclusive && config.retentionGueltig && config.retention === 36
@@ -66,7 +66,8 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       const jetzt = now();
       const iso = encodeURIComponent(jetzt.toISOString());
       const [locks, leases, verwaist, counters, auth, outbox] = await Promise.all([
-        db("pipeline_locks?select=job_name&expires_at=gt." + iso + "&limit=1"),
+        db("pipeline_locks?select=job_name&expires_at=gt." + iso
+          + (eigeneSperre === "500-quellenkontext" ? "&job_name=neq.500-quellenkontext" : "") + "&limit=1"),
         db("helmut_jobs?select=id&lease_expires_at=gt." + iso + "&limit=1"),
         db("helmut_jobs?select=id&status=eq.laeuft&or=(lease_expires_at.is.null,lease_expires_at.lt."
           + iso + ")&limit=1"),
@@ -86,7 +87,7 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
     await pruefeBetrieb();
     const bestand = await snapshot();
     const vollbestand = vorgang === "reaktivierung" || (bestand.mandate.length === 504
-      && ["vorpruefung", "fachzyklus", "textnachlauf"].includes(vorgang));
+      && ["vorpruefung", "fachzyklus", "textnachlauf", "quellenkontext"].includes(vorgang));
     const snapshotModus = vollbestand ? "500-bestand" : "vorpruefung";
     const zielAnzahl = vollbestand ? 495 : 475;
     const vor = D.pruefeSnapshot(bestand, snapshotModus);
@@ -253,7 +254,8 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       HELMUT_MAX_LLM_CALLS_PER_DAY: String(config.tagesdeckel),
       HELMUT_LLM_RESERVE_UNDERSTANDING: String(config.understandingReserve),
       HELMUT_TESTLAUF_VORRANG_REAL: String(config.vorrangreserveReal),
-      HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt" };
+      HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt",
+      ...(vorgang === "quellenkontext" ? { HELMUT_ATOMIC_LOCK: "1", HELMUT_ANBIETER_STEUERUNG: "on" } : {}) };
     const laufEnv = { ...env, ...gebunden };
     VORFLUG.erzwingeSpeicherpfadOderWirf({ env: laufEnv, zweck: "Direkter Ausbau auf 500" });
     if (!schreibe) {
@@ -265,6 +267,12 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
           if (v === undefined) delete process.env[k]; else process.env[k] = v;
         }
       };
+    }
+    if (vorgang === "quellenkontext") {
+      D.fordere(env === process.env && !schreibe, "quellenkontext-braucht-echten-geprueften-adapter");
+      D.fordere(vor.aktiv === 5 && vor.aktive.length === 0, "quellenkontext-nur-bei-geschlossener-kohorte");
+      return await require("./github-quellenkontext-500").ausfuehren({ bestand, config, env: laufEnv,
+        db, fetchFn, now, pruefeBetrieb, snapshot, fortschritt });
     }
     const writer = schreibe || (async ({ id, spec }) => {
       const P = require("../lib/helmut/provisioning");
