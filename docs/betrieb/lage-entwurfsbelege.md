@@ -31,3 +31,24 @@ Die Pruefanweisung unterscheidet Quellenzuschreibung, fehlenden Profilbezug und 
 Der Generator prueft die gesamte vorhandene Quellenauswahl auf konkrete Ausschuss, Schwerpunkt oder Wahlkreisbezuege. Er soll nicht einfach die ersten Listeneintraege verwenden und keine Titel oder Quellenetiketten doppelt an den Text anhaengen. Quellenbindung und Inhaltsgrenzen gelten unveraendert. Die vorhandenen unabhaengigen Modellaufrufe bleiben bestehen; keine Wiederholung, erhoehte Aufrufgrenze oder automatische Anerkennung eines alten abgelehnten Entwurfs.
 
 Gezielte Tests pruefen jede abgelehnte und unbekannte Textart, alte widerspruechliche Zusatzfelder, fehlende und ueberlange Begruendungen sowie den Ausschluss privater Begruendungen aus Ausgabe und Diagnose. Der echte KI Transporttest prueft weiterhin beide Kostenquittungen und das Verbot automatischer Wiederholung. Production Wirkung und Gesamtabnahme sind vor Veroeffentlichung nicht belegt. Die zusaetzliche main CI zu PR 350, Lauf 34393098443, ist erfolgreich abgeschlossen.
+
+
+## Veroeffentlichung der Textkorrektur in PR 351
+
+PR 351 wurde als d710857060aa071819082aa7b549ff256205811e uebernommen. Production READY dpl_4emadr3vHX84vrEiPK5qjJFFHk9a am Hauptalias bestaetigt. Gepruefter PR Kopf ca37aad42642a1e587d2ec79f6e83afda3d6fc61 und Merge besitzen den identischen Dateibaum dc7a7ec85b301896b96a7d22c6d208f7d7060971. CI 34396450576: 348/348 Suiten in 647 Sekunden, 50 Browserpruefungen, 15 PostgreSQL/PostgREST Kontoschutz und Kosten Gruppen sowie 48 Z22 Datenbankpruefungen erfolgreich. Die zusaetzliche main Pruefung 34397929866 laeuft noch.
+
+Die finale Generatoranweisung bindet technische Vorgangskennungen ausdruecklich an das JSON Referenzfeld. Der sichtbare Satz darf keine solchen Kennungen enthalten. Die Codepruefung ist abgeschlossen; die fachliche Production Wirkung muss weiterhin durch gespeicherte und abgerufene Ausgaben belegt werden. Dieser Dokumentationsnachtrag aendert keinen Fachpfad.
+
+## Verbindlicher Antwortvertrag der Quellenpruefung
+
+Der Quellenpruefer fordert jetzt als einziger bestehender Modellpfad `strict: true` an. Sein Schema verwendet nur den von [Azure Structured Outputs](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/structured-outputs) unterstuetzten Umfang. Alle Prueffelder sind Pflichtfelder; Freitextgrenzen werden weiterhin unabhaengig im Code geprueft. Andere strukturierte Modellvertraege bleiben unveraendert. Fehlende, zu lange oder fachlich ablehnende Urteile bleiben gesperrt.
+
+Das Modell waehlt die konkrete Quellenkennung und das vorhandene Originalfeld `titel` oder `auszug`. Der Server uebernimmt dessen Text als Zitatanker. Damit koennen eingefuegte Feldetiketten oder aus mehreren Stellen zusammengesetzte Modellzitate die Belegbindung nicht beschaedigen. Ein leeres Feld, eine fremde Quelle oder ein beliebiges anderes Feld wird abgelehnt. Die semantische Pruefung muss weiterhin jede Aussage gegen Titel UND Auszug desselben Dokuments bestaetigen. Ein Originalanker allein beweist keine Aussagenabdeckung. Es entsteht weder ein weiterer Modellaufruf noch ein automatischer Retry.
+
+Die Generatoranweisung vermeidet sichtbare redaktionelle Auswahlhinweise und Aemter, die in der Quelle fehlen. Der Transporttest prueft die tatsaechlich versendete Strict Einstellung, die Pflichtfelder und beide Kostenbelege. Die Inhaltspruefung deckt ungueltige und leere Belegfelder sowie weiterhin abgelehnte Aussagen trotz gueltigem Originalanker ab. Production Wirkung bleibt vor der Veroeffentlichung offen. Die zusaetzliche main CI nach PR 351, Lauf 34397929866, ist inzwischen erfolgreich.
+
+### Erhaltener Stand aus CURRENT_STATE vor PR 351
+
+**Veroeffentlicht 09.09.:** [PR 350](https://github.com/ernisch/helmut-pilot/pull/350), `c110ae01366f4d9281442f57d6904bbe8140aa20`, READY `dpl_GGHopu8XYC8tJ4aSTWPY7ePcPKrM` am Hauptalias. CI `34385750014`: 348/348 Suiten, 50 Browserpruefungen und beide Datenbankgates erfolgreich; PR und Merge baumgleich. [Vertrag und Nachweis](betrieb/lage-entwurfsbelege.md). Fachliche Gesamtabnahme weiterhin offen.
+
+**In Arbeit:** eindeutige Textart statt negiertem Fülltexturteil, private Prüfbegründung und präzisere Themenauswahl; [Vertrag](betrieb/lage-entwurfsbelege.md). Noch unveröffentlicht. **Historie vor #350:** überholte Betriebsstände bleiben als Belege erhalten.
