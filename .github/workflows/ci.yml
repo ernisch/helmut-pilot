@@ -204,11 +204,16 @@ jobs:
           # Pruefsummen, Ubuntu-Abhaengigkeiten und Browserpflicht bleiben aktiv.
           sudo python3 - <<'PY'
           from pathlib import Path
-          for source in Path('/etc/apt/sources.list.d').glob('*.list'):
+          import re
+          for source in Path('/etc/apt/sources.list.d').iterdir():
+              if source.suffix not in ('.list', '.sources'):
+                  continue
               lines = [line.strip() for line in source.read_text().splitlines()
                        if line.strip() and not line.lstrip().startswith('#')]
-              if lines and all('dl.google.com/linux/chrome-stable/deb' in line for line in lines):
-                  source.rename(source.with_suffix('.list.helmut-ci-disabled'))
+              urls = re.findall(r'https?://[^\s\]]+', '\n'.join(lines))
+              if urls and all(re.fullmatch(r'https?://dl\.google\.com/linux/chrome(?:-stable)?/deb/?', url) for url in urls):
+                  source.rename(source.with_name(source.name + '.helmut-ci-disabled'))
+                  print('Unbenoetigte Chrome Paketliste isoliert:', source.name)
           PY
           npx playwright install --with-deps chromium
       - name: Browser-Smoke (Desktop + Mobil, lokaler In-Process-Server)
