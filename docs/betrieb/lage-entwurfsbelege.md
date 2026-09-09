@@ -52,3 +52,28 @@ Die Generatoranweisung vermeidet sichtbare redaktionelle Auswahlhinweise und Aem
 **Veroeffentlicht 09.09.:** [PR 350](https://github.com/ernisch/helmut-pilot/pull/350), `c110ae01366f4d9281442f57d6904bbe8140aa20`, READY `dpl_GGHopu8XYC8tJ4aSTWPY7ePcPKrM` am Hauptalias. CI `34385750014`: 348/348 Suiten, 50 Browserpruefungen und beide Datenbankgates erfolgreich; PR und Merge baumgleich. [Vertrag und Nachweis](betrieb/lage-entwurfsbelege.md). Fachliche Gesamtabnahme weiterhin offen.
 
 **In Arbeit:** eindeutige Textart statt negiertem Fülltexturteil, private Prüfbegründung und präzisere Themenauswahl; [Vertrag](betrieb/lage-entwurfsbelege.md). Noch unveröffentlicht. **Historie vor #350:** überholte Betriebsstände bleiben als Belege erhalten.
+
+
+## Veroeffentlichung des verbindlichen Quellenpruefvertrags in PR 353
+
+PR 353 ist als e02c46ac6ca26df11c11a739df8a4996047672a1 veroeffentlicht. Production READY dpl_CHhvvjEcFPmFKV46iEBRYH3tpHy6 und Hauptalias bestaetigt. PR Kopf 0dc12aaeeaeed1e7ee2b7848df3c0748814392d3 und Merge besitzen denselben Dateibaum 1f75f9c8c2e8cfa6c15dfd2d2ca72ea0c49fd53e. CI 34401562863 erfolgreich: 348/348 Suiten in 645 Sekunden, 50 Browserpruefungen, PostgreSQL/PostgREST Kontoschutz und Kosten Gruppen sowie 48 Z22 Pruefungen. Der reine Nachtrag PR 352 ist als enthaltener Vorfahr ebenfalls uebernommen. Die zusaetzliche main Pruefung laeuft.
+
+Die fachliche Wirkung wird erst durch unabhaengig gelesene Ausgaben belegt. Dieser Nachtrag aendert ausschliesslich Dokumentation. Private Einzelbefunde bleiben beim Betreiber.
+
+## Quellenhash nach JSONB Speicherung und feste Sachdetailpruefung
+
+Die Quellenhashfunktion verwendete die Eingabereihenfolge der Objektschluessel. JSONB bewahrt den Inhalt, ordnet diese Schluessel jedoch neu. Deshalb konnte ein korrekt erhaltener Quellenstand nach dem Ruecklesen seinen eigenen Hash nicht mehr erfuellen. Die Funktion verwendet jetzt denselben kanonischen Inhaltshash wie der bestehende Briefingspeicher. Reihenfolgen in Arrays bleiben Teil des Belegs. Eine tatsaechliche Quellenveraenderung invalidiert den Hash weiterhin. Der vollstaendige Vergleich des vorherigen Textstands wird nicht abgeschwaecht.
+
+Ein positives Modellurteil ersetzt keine deterministische Pruefung bereits bekannter Sachdetails. Die Lagepruefung nutzt deshalb die bestehende Amts und Beschlusspruefung des Briefing und Radar Lesepfads gegen genau das ausgewaehlte Quelldokument. Dieser Schutz gilt auch beim Lesen eines gespeicherten Lage Texts. Eine explizit verneinte Entscheidung kann keinen behaupteten Beschluss belegen; eine in der Quelle bestaetigte Verneinung bleibt darstellbar. Dies ist eine begrenzte Detailpruefung und keine vollstaendige Faktenpruefung aller Aussagen.
+
+Tests bilden umgeordnete JSONB Objektschluessel, einen erhaltenen Reparaturstand, echte Quellenveraenderungen und veraenderte Historie ab. Weitere Faelle verwerfen erfundene Aemter und Beschluesse trotz positiver Modellwerte, erhalten belegte Aemter und Verneinungen und sperren den betroffenen Cache. Die Linkpruefung verwendet einen realistischen Entwurf mit genau einer Quellenkennung: sechs Eingabedokumente ergeben keine sechs Belege fuer einen einzelnen Absatz. Keine Migration, keine Datenbereinigung, keine Budget oder Zeitplanaenderung und kein zusaetzlicher Modellaufruf.
+
+## Private Einzelstatus beim App-Nachweis
+
+Der vorhandene reine App-Nachweisleser gibt in oeffentlichen Actions-Logs nur feste Gesamtzahlen und feste Fehlerklassen aus. Die einzelnen Mandatshashes und ihre Pruefstatus bleiben im internen Rueckgabewert und werden nicht oeffentlich protokolliert. Erfolgreiche Abrufe, vollstaendige Pakete und Qualitaetsurteile bleiben getrennte Zaehler; auch 500 HTTP-Abrufe erzeugen keine fachliche Gesamtabnahme. Der Test prueft beide Ausgaenge, unveraenderte Gesamtzahlen und den Ausschluss aller 500 Hashkennungen sowie unbekannter Zusatzfelder.
+
+### Erhaltener Stand aus CURRENT_STATE vor PR 353
+
+**Veroeffentlicht 09.09.:** [PR 351](https://github.com/ernisch/helmut-pilot/pull/351), `d710857060aa071819082aa7b549ff256205811e`, READY `dpl_4emadr3vHX84vrEiPK5qjJFFHk9a` am Hauptalias. Eindeutige Textart, private Pruefbegruendung und fachliche Themenauswahl. CI `34396450576`: 348/348 Suiten, 50 Browserpruefungen und beide Datenbankgates erfolgreich; PR und Merge baumgleich. [Nachweis](betrieb/lage-entwurfsbelege.md). Fachliche Gesamtabnahme offen.
+
+**In Arbeit 09.09.:** verbindlicher Quellenpruefvertrag und Originalbelegbindung, [Stand](betrieb/lage-entwurfsbelege.md). **Historie vor #351:** folgende Staende sind ueberholt; Belege bleiben erhalten.

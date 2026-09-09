@@ -33,6 +33,17 @@ const fetchFn = async (url, init) => {
   assert.equal(r.abrufbar, 5); assert.equal(r.strukturellVollstaendig, 0); assert.equal(r.qualitaetBestanden, 0);
   assert.equal(r.funktionsnachweis500, false); assert.equal(r.results.length, 500);
   assert(!JSON.stringify(r).includes("PRIVATER") && !JSON.stringify(r).includes("mandat-fixture"));
+  const publicReport = R.oeffentlicherBericht({ ...r, privaterZusatz: "PRIVAT" });
+  assert.equal(publicReport.gelesen, 500); assert.equal(publicReport.abrufbar, 5);
+  assert.equal(publicReport.funktionsnachweis500, false);
+  assert.deepEqual(publicReport.abrufGruende, { "briefing-nicht-gespeichert": 495, "app-vertrag-gelesen": 5 });
+  assert(!Object.hasOwn(publicReport, "results") && !JSON.stringify(publicReport).includes("PRIVAT"));
+  for (const result of r.results) assert(!JSON.stringify(publicReport).includes(result.mandatHash));
+  const failedReport = R.oeffentlicherBericht({ ok: false, grund: "nachweis-zeitbudget", gelesen: 7,
+    results: r.results.slice(0, 7), funktionsnachweis500: false });
+  assert.deepEqual(failedReport, { ok: false, gelesen: 7, funktionsnachweis500: false, grund: "nachweis-zeitbudget",
+    abrufGruende: { "briefing-nicht-gespeichert": 7 } });
+  assert.deepEqual(R.oeffentlicherBericht({ results: [{ grund: "PRIVATER_GRUND" }] }), { abrufGruende: { sonstige: 1 } });
   badTenant = true;
   assert.equal((await R.ausfuehren({ env, fetchFn })).abrufbar, 0);
   calls = 0;

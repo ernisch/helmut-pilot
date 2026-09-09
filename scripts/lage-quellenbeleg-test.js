@@ -50,7 +50,7 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
   await pruefe("Quellenkorrektur invalidiert Cache ohne KO Aenderung", () => {
     const a = input([quelle]);
     assert.notEqual(Q.hashEingabe(a), Q.hashEingabe(input([{ ...quelle, summary: "Beratung abgesagt." }])));
-    const payload = { paragraphs: [{ text: "Text", vorgang_ids: ["vg-test"] }], qualitaet: { version: 1 }, koSetHash: "k", quellenHash: Q.hashEingabe(a), quellenVersion: Q.VERSION };
+    const payload = { paragraphs: [{ text: "Text", vorgang_ids: ["vg-test"], quellen_ids: [a[0].quellenbelege[0].quelle_id] }], qualitaet: { version: 1 }, koSetHash: "k", quellenHash: Q.hashEingabe(a), quellenVersion: Q.VERSION };
     assert(Q.cacheGueltig(payload, "k", Q.hashEingabe(a), a));
     assert(!Q.cacheGueltig({ ...payload, quellenVersion: undefined }, "k", Q.hashEingabe(a), a));
     assert(!Q.cacheGueltig(payload, "anderer-ko", Q.hashEingabe(a), a));
@@ -79,7 +79,7 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
   storage.canSpendLlmForTenant = async () => ({ allowed: true });
   safety.guardKnowledgeObject = () => ({ status: "ok" });
   ai.generateLageBriefing = async (v) => { calls++; modelInput = structuredClone(v); assert(!JSON.stringify(v).includes(ko.was_ist_passiert));
-    return { paragraphs: [{ text: "Die Quelle berichtet von einem Vorschlag.", vorgang_ids: ["vg-test"] }], qualitaet: { version: 1 } }; };
+    return { paragraphs: [{ text: "Die Quelle berichtet von einem Vorschlag.", vorgang_ids: ["vg-test"], quellen_ids: [v[0].quellenbelege[0].quelle_id] }], qualitaet: { version: 1 } }; };
   try {
     await pruefe("Echter Lagepfad speichert neue Quellenbindung und nutzt passenden Cache", async () => {
       assert.equal((await lage.buildLageBriefing({ id: "test-quellenbeleg" })).available, true);
@@ -111,8 +111,8 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
           published_at: frisch }))];
       cached = null; lock = true;
       const neu = await lage.buildLageBriefing({ id: "test-quellenbeleg" });
-      const erwartet = modelInput[0].quellenbelege.map(q => q.url);
-      assert.equal(erwartet.length, 6);
+      assert.equal(modelInput[0].quellenbelege.length, 6);
+      const erwartet = [modelInput[0].quellenbelege[0].url];
       assert.deepEqual(neu.paragraphs[0].sources.map(q => q.url), erwartet);
       assert(neu.vorgaenge[0].sources.some(q => q.url.endsWith("/historisch")), "Hintergrundkarte bleibt erhalten");
       const aufrufe = calls;
