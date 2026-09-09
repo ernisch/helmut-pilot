@@ -35,9 +35,18 @@ async function run() {
       { text: "   ", vorgang_ids: ["vg-a"] } // leer -> raus
     ] };
     const out = ai.assembleLageParagraphs(raw, allowed);
-    ok("leerer und teilweise unbelegter Absatz werden entfernt", out.length === 1);
-    ok("nur vollstaendig belegter Absatz bleibt", JSON.stringify(out[0].vorgang_ids) === JSON.stringify(["vg-b"]));
-    ok("Text normalisiert/getrimmt", out[0].text === "Absatz zwei.");
+    ok("teilweise unbelegte Antwort wird als Ganzes verworfen", out.length === 0);
+    const gueltig = ai.assembleLageParagraphs({ paragraphs: [
+      { text: "  Absatz eins.  ", vorgang_ids: ["vg-a", "vg-a"] },
+      { text: "Absatz zwei.", vorgang_ids: ["vg-b"] }
+    ] }, allowed);
+    ok("zwei vollstaendig belegte Absaetze bleiben", gueltig.length === 2
+      && JSON.stringify(gueltig[0].vorgang_ids) === JSON.stringify(["vg-a"]));
+    ok("Text normalisiert und getrimmt", gueltig[0].text === "Absatz eins.");
+    ok("sichtbare technische Kennung verwirft die Antwort", ai.assembleLageParagraphs({ paragraphs: [
+      { text: "Technischer Wert vorgang_ids", vorgang_ids: ["vg-a"] },
+      { text: "Zweiter Absatz.", vorgang_ids: ["vg-b"] }
+    ] }, allowed).length === 0);
   }
 
   // ── 2) 250-Woerter-Deckel ──
@@ -57,6 +66,8 @@ async function run() {
     ok("verbietet Handlungsempfehlung", /KEINE Handlungsempfehlung/i.test(p));
     ok("verbietet Bewertung", /KEINE Bewertung/i.test(p));
     ok("Wortlimit im Prompt", /250 Woerter/i.test(p));
+    ok("Schema erzwingt zwei bis vier Absaetze", ai.LAGE_BRIEFING_SCHEMA.properties.paragraphs.minItems === 2
+      && ai.LAGE_BRIEFING_SCHEMA.properties.paragraphs.maxItems === 4);
     ok("Referent-Ton", /wissenschaftlicher Mitarbeiter/i.test(p));
     ok("vorgang_id enthalten", p.includes("[vg-a]"));
   }

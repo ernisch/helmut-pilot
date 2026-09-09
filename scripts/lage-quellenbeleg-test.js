@@ -58,7 +58,7 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
   await pruefe("Unbekannte Referenz verwirft den ganzen Absatz", () => {
     const p = [{ text: "Ohne Beleg", vorgang_ids: [] }, { text: "Gemischt", vorgang_ids: ["vg-test", "vg-fremd"] },
       { text: "Belegt", vorgang_ids: ["vg-test"] }];
-    assert.deepEqual(ai.assembleLageParagraphs({ paragraphs: p }, ["vg-test"]), [p[2]]);
+    assert.deepEqual(ai.assembleLageParagraphs({ paragraphs: p }, ["vg-test"]), []);
     assert.deepEqual(Q.gueltigeAbsaetze(p, input([quelle])), [p[2]]);
   });
 

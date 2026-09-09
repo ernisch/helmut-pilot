@@ -8937,3 +8937,96 @@ Vor jedem Tagessprung neu entscheiden, welcher Testtag nachgewiesen wird.
 **Zustand: 500 Einzelpruefungen dokumentiert, 500 Texte nicht bewiesen.**
 Der vorhandene Code ist fertig geprueft; Production Uebernahme, echte
 Textabdeckung und inhaltliche Gesamtabnahme bleiben offen.
+
+## §65 Production Uebernahme und belegte Faelligkeitsluecke am 09.09.
+
+### §65.1 Exakte Uebernahme von PR #340
+
+Nach ausdruecklicher Betreiberfreigabe wurde ausschliesslich PR #340
+uebernommen. Sein letzter Kopf `03074297f59cccde462834c71f8ea9d37c574dcf`
+hatte die beiden Pflichtpruefungen `Syntax + Offline-Suiten` und
+`Browser-/Mobile-Smoke (Chromium)` erfolgreich abgeschlossen. Der Merge
+`3dbb5058faeee48bf68cb073c186d4e7ce402802` besitzt den erwarteten Baum
+`0825d130e08a459c288f5d22ef6c37b8bd732429`. Der anschliessende main Lauf
+`34312188670` ist ebenfalls erfolgreich.
+
+Das automatische Production Deployment
+`dpl_5FsA9KBGBvK5tLa5qYVjCbut14ao` ist READY, traegt exakt diesen Merge und
+bedient `helmut-pilot.vercel.app`. Keine Migration, Profil, Budget,
+Umgebungsvariable oder Cronkonfiguration wurde dabei veraendert.
+
+### §65.2 Zwei begrenzte Fachzyklen und der Abbruchgrund
+
+Vor jedem Start waren aktive Locks, Auftragsleases und laufende oder junge
+Production Prozesse null. Es wurde nie parallel zu einem natuerlichen Lauf
+gestartet. Beide GitHub Ausfuehrer und ihre zugehoerigen Production
+Quittungen endeten erfolgreich:
+
+| GitHub Lauf | Production Quittung | Erledigt | Fehlgeschlagen |
+| --- | --- | ---: | ---: |
+| `34312701679` | `cron-pipeline-20260909045326-vemnh` | 84 | 0 |
+| `34313510560` | `cron-pipeline-20260909050607-ggd2f` | 9 | 0 |
+
+Der dazwischen natuerlich gestartete Morgenlauf um 05:00 UTC lief auf dem
+neuen Production Deployment, endete mit HTTP 200 und verarbeitete 151 von
+500 Profilen bis zum Zeitbudget. Dieser Pfad benutzt kein Modell und erzeugt
+keine Lage Texte. Zum Messpunkt 05:31 UTC lief ausschliesslich der regulaere
+05:30 Understanding Cron mit seinem erwarteten `global-understanding` Lock.
+Es wurde kein weiterer Production Lauf daneben gestartet.
+
+Die Kosten stiegen durch die beiden Fachzyklen von 12 Aufrufen und
+0,041954 USD auf 28 Aufrufe und 0,096663 USD. Um 05:31 UTC lagen fuer den
+gesamten UTC Tag 32 belegte Aufrufe mit 0,108866 USD sowie null unbekannte
+Kosten vor. Keine Reservierungsluecke wurde festgestellt. Mandats,
+Identitaets und Kontogrundlinie blieben gleich.
+
+Eine exakte READ ONLY Faelligkeitsabfrage erklaert den geringen Fortschritt:
+alle 500 `mandate_projection` Auftraege warten. Der erste wird um 12:00 UTC,
+der letzte um 17:59:16 UTC faellig. Alle 500 `briefing_materialization`
+Auftraege warten zwischen 18:00 und 21:35 UTC. Das sichere Testende liegt
+bereits um **09.09., 11:00 Tuerkei / 10:00 Berlin / 08:00 UTC**. Weitere
+Wiederholungen des Fachzyklus vor diesem Ende koennen diese Auftraege nicht
+abarbeiten und wurden deshalb beendet. Dies verhindert nutzlose Kosten und
+eine zweite Lastsimulation.
+
+### §65.3 Gezielte Korrektur fuer den heutigen Textnachlauf
+
+Der bestaetigte manuelle Textnachlauf verlangte bisher fuer jedes Mandat eine
+bereits erledigte und faellige Projektion. Damit konnte er am 09.09. vor dem
+Testende keinen der 500 fehlenden Lage Texte erzeugen. Der regulaere 05:45
+Lage Lauf baut den Text dagegen direkt aus den verstandenen Wissensobjekten
+und ihren Quellen. Er besitzt dieses Projektionsgate nicht.
+
+Der vorbereitete Patch richtet den ausdruecklich bestaetigten manuellen
+Fehlstellenlauf an derselben fachlichen Voraussetzung aus. Er verlangt
+weiterhin exakt 500 eindeutige Projektionszeilen mit gueltigem Status und
+gueltiger Faelligkeit und gibt ihre Verteilung als `projektionsbeleg` aus.
+Er veraendert weder Status noch `due_at`. Vorhandene Tageszeilen bleiben
+geschuetzt, fehlende Quellen oder ein Zeitbudgetabbruch bleiben sichtbare
+Einzelergebnisse, und automatische Wiederholung bleibt aus.
+
+Die Ausgabequalitaet wird an den bereits gelesenen Fehlern gehaertet:
+
+- Das strukturierte Schema erlaubt genau zwei bis vier Absaetze.
+- Eine Antwort ausserhalb dieser Grenze wird vollstaendig verworfen.
+- Eine teilweise unbelegte Antwort wird vollstaendig verworfen.
+- Sichtbare technische `vorgang_ids` oder `vg-...` Kennungen verwerfen die
+  Antwort, statt sie als Nutzertext zu speichern.
+
+Gezielte Pruefungen: Textnachlauf **10/10 Gruppen**, direkter 500er Ausfuehrer
+**17/17**, Lage **140 Aussagen**, Quellenbeleg **19/19**. Die gesamte lokale
+Offline Sammlung umfasst **339/339 erfolgreiche Suiten**. Vier zuerst
+fehlgeschlagene Gruppen wurden als lokale Werkzeugluecken belegt: fehlende
+npm Pakete und ein global sichtbares Playwright ohne Chromium. Nach exakter
+Installation der Projektpakete bestanden Kalender **134/134**, Lambda
+**43/43**, Admin **57/57** und Passwort **29/29**. Ein Browserdownload aus
+dem lokalen Netz war nicht erreichbar; die erforderliche GitHub Pruefung
+installiert den festgelegten Browser getrennt.
+
+**Offen:** Patch veroeffentlichen, beide GitHub Pflichtpruefungen am exakten
+Kopf abwarten und erst danach eine neue Betreiberfreigabe fuer Merge samt
+automatischem Production Deployment einholen. Bis dahin kein manueller
+Textnachlauf. Nach Deployment vor jedem Abschnitt erneut Konkurrenz, Kosten,
+Tageszeilen und Integritaet lesen. Nur der echte Bestand von 500 heutigen
+Texten und die anschliessende Einzelpruefung koennen den Funktionsnachweis
+abschliessen.
