@@ -2,7 +2,7 @@
 
 **Veroeffentlicht 09.09.:** [PR 351](https://github.com/ernisch/helmut-pilot/pull/351), `d710857060aa071819082aa7b549ff256205811e`, READY `dpl_4emadr3vHX84vrEiPK5qjJFFHk9a` am Hauptalias. Eindeutige Textart, private Pruefbegruendung und fachliche Themenauswahl. CI `34396450576`: 348/348 Suiten, 50 Browserpruefungen und beide Datenbankgates erfolgreich; PR und Merge baumgleich. [Nachweis](betrieb/lage-entwurfsbelege.md). Fachliche Gesamtabnahme offen.
 
-**Historie vor #351:** folgende Betriebsstaende sind ueberholt; fruehere Freigaben und Belege bleiben erhalten.
+**In Arbeit 09.09.:** verbindlicher Quellenpruefvertrag und Originalbelegbindung, [Stand](betrieb/lage-entwurfsbelege.md). **Historie vor #351:** folgende Staende sind ueberholt; Belege bleiben erhalten.
 
 **Stand 09.09.2026: teilweise abgeschlossen, 0 von 500 vollstaendig abgenommen.** PR #346 und #347 sind mit ausdruecklicher Commit und Mergefreigabe uebernommen. Production `d0cee4198086dc34a50ce5bd1fa00065436b1294`, READY `dpl_7qCRjinKFKtWwRUeki1D96VnCYJm`. PR #347 CI `34360404495`: 345/345 Offline Suiten, 50 Browserpruefungen, 13 PostgreSQL Kontoschutz und Geldgruppen, 48 Z22 Datenbankpruefungen bestanden. main CI `34361936200` erfolgreich. PR #345 bleibt offen und muss vor Uebernahme auf diesen neueren Befund nachgezogen werden.
 

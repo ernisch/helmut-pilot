@@ -32,7 +32,7 @@ const ko = id => ({ id, vorgang_id: "vg-" + id, understanding_status: "complete"
   await test("Fachliche Ablehnungsgruende sind genau und enthalten keine Modelltexte", () => {
     const p = [{ text: "Ein belegter Vorschlag.", vorgang_ids: ["vg-test"] }];
     const d = [{ vorgang_id: "vg-test", quellenbelege: [{ quelle_id: "q-test", titel: p[0].text }] }];
-    const r = { pruefungen: [{ absatz: 0, quelle_id: "q-test", beleg: p[0].text,
+    const r = { pruefungen: [{ absatz: 0, quelle_id: "q-test", belegfeld: "titel",
       vollstaendig_belegt: false, themenrein: true, profilbezug: false, textart: "konkreter_sachverhalt", pruefbegruendung: "Benannter Vorschlag mit Quellenbeleg und Bezug zum Ausschuss." }] };
     const result = Q.pruefe(p, d, r);
     assert.equal(result.ok, false); assert.equal(result.grund, "ai-text-source-support");

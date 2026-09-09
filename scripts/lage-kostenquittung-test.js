@@ -18,7 +18,7 @@ const paragraphs = [
 ];
 const vorgaenge = [{ vorgang_id: "vg-test", quellenbelege: [{ quelle_id: "q-test",
   titel: "Die Quelle berichtet ueber einen Entwurf. Ein Termin ist noch nicht benannt.", quelle: "Test" }] }];
-const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id: "q-test", beleg: p.text,
+const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id: "q-test", belegfeld: "titel",
   vollstaendig_belegt: true, themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt", pruefbegruendung: "Benannter Vorschlag mit Quellenbeleg und Bezug zum Ausschuss." })) };
 const beleg = { _ablage: { blob: true } };
 let checks = 0;
@@ -27,6 +27,7 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   status = "completed", http = 200, receipt = beleg, rejectReceipt = false, budget = true,
   expected = null } = {}) {
   let requests = 0, reservations = 0, logs = [], release;
+  const bodies = [];
   const gate = new Promise(resolve => { release = resolve; });
   storage.reserveLlmCall = async () => { reservations++; return { allowed: budget, reason: "daily-llm-budget-reached" }; };
   storage.recordLlmUsage = async info => {
@@ -40,7 +41,7 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
     const thisOutput = requests === 1 ? output : JSON.stringify(review);
     if (mode === "construction") throw new Error("GEHEIMER_AUFBAUFEHLER");
     const req = new EventEmitter();
-    req.write = () => { if (mode === "send") throw new Error("GEHEIMER_SEND_FEHLER"); };
+    req.write = body => { if (mode === "send") throw new Error("GEHEIMER_SEND_FEHLER"); bodies.push(JSON.parse(body)); };
     req.destroy = () => {};
     req.end = () => setImmediate(() => {
       if (mode === "network") { req.emit("error", new Error("GEHEIMER_NETZFEHLER")); return; }
@@ -80,7 +81,17 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   assert(!JSON.stringify(logs).includes("GEHEIMER"), "Kostenlog verrät keinen Rohtext");
   assert.equal(requests, budget ? (expected ? 1 : 2) : 0, "Ein Generator und nur bei dessen Erfolg ein Quellenpruefer; kein Retry");
   assert.equal(logs.length, expected ? 1 : 2, "Jeder Modellversuch hat seinen eigenen Kostenbeleg");
-  if (!expected) { assert.equal(drafts.length,1); assert.equal(reviews.length,1); assert.deepEqual(reviews[0],review); }
+  if (!expected) {
+    assert.equal(drafts.length,1); assert.equal(reviews.length,1); assert.deepEqual(reviews[0],review);
+    assert.equal(bodies[0].text.format.strict, false, "Andere Schemavertraege bleiben unveraendert");
+    assert.equal(bodies[1].text.format.strict, true, "Der Quellenpruefer muss alle Pflichtfelder liefern");
+    const schema = bodies[1].text.format.schema;
+    assert(!/\"(?:minLength|maxLength|pattern|format)\"\s*:/.test(JSON.stringify(schema)), "Azure Strict Schema nutzt nur unterstuetzte Schluessel");
+    const item = schema.properties.pruefungen.items;
+    assert.deepEqual([...item.required].sort(), Object.keys(item.properties).sort());
+    assert.equal(item.additionalProperties, false);
+    assert.deepEqual(item.properties.belegfeld.enum, ["titel", "auszug"]);
+  }
   if (expected === "ai-text-visible-id") assert.equal(drafts.length,1,"Auch fachlich verworfener Entwurf bleibt privat pruefbar");
   if (expected === "ai-cost-receipt-missing") assert.equal(drafts.length,0,"Kein Entwurfsbeleg ohne bestaetigte Kostenquittung");
   checks++;

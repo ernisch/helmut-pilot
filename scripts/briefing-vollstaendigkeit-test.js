@@ -14,7 +14,7 @@ const docs = [{ vorgang_id: "vg-test", quellenbelege: [{ quelle_id: "q-1", titel
   { quelle_id: "q-2", titel: "Netznutzer legen einen Vorschlag zur Energiewende vor.", auszug: "", url: "https://example.org/energie" }] }];
 const paragraphs = [{ text: docs[0].quellenbelege[0].titel, vorgang_ids: ["vg-test"] },
   { text: docs[0].quellenbelege[1].titel, vorgang_ids: ["vg-test"] }];
-const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id: "q-" + (absatz + 1), beleg: p.text,
+const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id: "q-" + (absatz + 1), belegfeld: "titel",
   vollstaendig_belegt: true, themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt", pruefbegruendung: "Benannter Vorschlag mit Quellenbeleg und Bezug zum Ausschuss." })) };
 (async () => {
   await test("Dokumentgattung und Ressort verbinden keine verschiedenen Ereignisse", () => {
@@ -79,11 +79,24 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     r.pruefungen[0].profilbezug = true;
     assert(!JSON.stringify(Q.pruefe(paragraphs, docs, r)).includes("Privater Hinweis"));
   });
-  await test("Unbelegte Ministerrolle und gefaelschte Zitate erhalten keinen Quellenbeleg", () => {
-    const r = clone(review); r.pruefungen[0].beleg = "Die Aussenministerin hat beschlossen";
-    assert.equal(Q.pruefe(paragraphs, docs, r).grund, "ai-text-evidence-quote");
-    r.pruefungen[0].beleg = paragraphs[0].text; r.pruefungen[0].quelle_id = "q-fremd";
+  await test("Nur vorhandene Originalfelder ergeben einen Quellenbeleg, kein freier Modelltext", () => {
+    for (const field of [undefined, "beleg", "url", "__proto__", "Die Aussenministerin hat beschlossen"]) {
+      const r = clone(review); r.pruefungen[0].belegfeld = field;
+      r.pruefungen[0].beleg = paragraphs[0].text;
+      assert.equal(Q.pruefe(paragraphs, docs, r).grund, "ai-text-evidence-quote");
+    }
+    const r = clone(review); r.pruefungen[1].belegfeld = "auszug";
+    assert.equal(Q.pruefe(paragraphs, docs, r).grund, "ai-text-evidence-quote", "Leerer Auszug bleibt gesperrt");
+    r.pruefungen[1].belegfeld = "titel"; r.pruefungen[0].quelle_id = "q-fremd";
     assert.equal(Q.pruefe(paragraphs, docs, r).grund, "ai-text-source-support");
+  });
+  await test("Titel und Auszug desselben Dokuments bleiben als Originalbeleg verfuegbar", () => {
+    const r = clone(review); r.pruefungen[0].belegfeld = "auszug";
+    const out = Q.pruefe(paragraphs, docs, r);
+    assert.equal(out.ok, true);
+    assert(JSON.stringify(out).includes(docs[0].quellenbelege[0].auszug));
+    r.pruefungen[0].vollstaendig_belegt = false;
+    assert.equal(Q.pruefe(paragraphs, docs, r).grund, "ai-text-source-support", "Ein Originalanker ersetzt niemals die Aussagepruefung");
   });
   await test("Fehlender, doppelter oder falscher Absatzindex ist kein vollstaendiges Urteil", () => {
     for (const rows of [review.pruefungen.slice(0, 1), [review.pruefungen[0], review.pruefungen[0]],
