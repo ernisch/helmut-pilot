@@ -51,6 +51,40 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     assert.deepEqual(r.paragraphs.map(p => p.quellen_ids), [["q-1"], ["q-2"]]);
     assert.equal(r.qualitaet.vollstaendigeFaktenpruefung, false);
   });
+  await test("JSONB Schluesselreihenfolge erhaelt Quellenhash und Reparaturnachweis", () => {
+    const umordnen = x => Array.isArray(x) ? x.map(umordnen) : x && typeof x === "object"
+      ? Object.fromEntries(Object.entries(x).reverse().map(([k, v]) => [k, umordnen(v)])) : x;
+    const out = Q.pruefe(paragraphs, docs, review);
+    const before = { id: "bf-test-lage-2026-09-09", user_id: "test", slot: "lage",
+      created_at: "2026-09-09T05:00:00Z", generated_at: "2026-09-09T05:00:00Z", payload: { paragraphs } };
+    const after = { ...before, generated_at: "2026-09-09T06:00:00Z", payload: {
+      paragraphs: out.paragraphs, qualitaet: out.qualitaet, quellen: docs,
+      quellenVersion: E.VERSION, quellenHash: E.hashEingabe(docs), koSetHash: "a".repeat(32), vorherigerStand: clone(before) } };
+    const stored = umordnen(after);
+    assert.equal(E.hashEingabe(stored.payload.quellen), after.payload.quellenHash);
+    assert.equal(E.gespeicherterTextGueltig(stored.payload), true);
+    assert.equal(E.bestandErhalten(before, stored), true);
+    const changed = clone(stored); changed.payload.quellen[0].quellenbelege[0].titel += " Andere Aussage.";
+    assert.equal(E.gespeicherterTextGueltig(changed.payload), false);
+    const history = clone(stored); history.payload.vorherigerStand.payload.paragraphs[0].text += " Fremdaenderung.";
+    assert.equal(E.bestandErhalten(before, history), false);
+  });
+  await test("Positives Modellurteil ueberstimmt keine unbelegten Aemter oder Beschluesse", () => {
+    for (const text of ["Wirtschaftsministerin Beispiel beraet ueber Kita-Standards.", "Das Kabinett hat die Kita-Standards beschlossen."]) {
+      const p = clone(paragraphs); p[0].text = text;
+      const out = Q.pruefe(p, docs, review);
+      assert.equal(out.ok, false); assert.deepEqual(out.diagnose.fehler, ["aussage-unbelegt"]);
+      const cached = { paragraphs: p.map((r, i) => ({ ...r, quellen_ids: ["q-" + (i + 1)] })),
+        qualitaet: { version: Q.VERSION }, koSetHash: "a", quellenHash: E.hashEingabe(docs), quellenVersion: E.VERSION };
+      assert.equal(E.cacheGueltig(cached, "a", cached.quellenHash, docs), false);
+    }
+    const belegteQuelle = clone(docs); belegteQuelle[0].quellenbelege[0].auszug = "Wirtschaftsministerin Beispiel stellt einen Vorschlag vor.";
+    const p = clone(paragraphs); p[0].text = "Wirtschaftsministerin Beispiel stellt einen Vorschlag vor.";
+    assert.equal(Q.pruefe(p, belegteQuelle, review).ok, true);
+    const negativ = clone(docs); negativ[0].quellenbelege[0].auszug = "Die Standards sind noch nicht beschlossen.";
+    p[0].text = "Die Standards sind noch nicht beschlossen.";
+    assert.equal(Q.pruefe(p, negativ, review).ok, true, "Eine belegte Verneinung wird nicht zur behaupteten Entscheidung");
+  });
   await test("Ein einzelner abgelehnter Sachverhalt verwirft den ganzen Text", () => {
     for (const field of ["vollstaendig_belegt", "themenrein", "profilbezug"]) {
       const r = clone(review); r.pruefungen[1][field] = false;
