@@ -366,6 +366,47 @@ async function main() {
     assert.equal(falsch.grund, "textnachlauf-texte-nicht-gespeichert");
     assert.equal(falsch.automatischeWiederholung, false); assert.equal(calls, 2);
   });
+  await test("Actions bestaetigt Alttextreparatur nur mit vollstaendiger unveraenderter Historie", async () => {
+    for (const defekt of [null, "historie", "kennzeichnung"]) {
+      const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
+      h.config.textnachlaufVersion = 1;
+      const runId = "nachlauf500-123456789";
+      const id = h.w.snapshot().mandate.find(m => m.aktiv).user_id;
+      const day = require("../lib/helmut/briefing-frische").berlinTagKey(new Date(JETZT));
+      const before = { id: `bf-${id}-lage-${day}`, user_id: id, slot: "lage",
+        generated_at: new Date(Date.parse(JETZT) - 3600000).toISOString(),
+        payload: { paragraphs: [{ text: "Unbelegter erhaltenswerter Alttext" }] } };
+      let gespeicherteZeile = before, calls = 0;
+      h.quittungen = [{ run_id: runId, status: "success", processed_count: 1, failed_count: 0,
+        started_at: JETZT, finished_at: JETZT }];
+      const args = { ...h.args, vorgang: "textnachlauf", env: { ...h.args.env,
+        HELMUT_TESTKOHORTE_CONFIRM: D.WORTE.textnachlauf, GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1" },
+        fetchFn: async (url, init) => {
+          const u = new URL(url);
+          if (u.pathname === "/api/cron/lage-briefing") {
+            calls++;
+            const vorherigerStand = kopie(before);
+            if (defekt === "historie") vorherigerStand.payload.paragraphs[0].text = "Verlorener Alttext";
+            gespeicherteZeile = { ...before, generated_at: JETZT,
+              payload: { ...require("./fixtures/lage-beleg").payload(), vorherigerStand } };
+            const results = h.w.snapshot().mandate.filter(m => m.aktiv).map(m => ({ userId: m.user_id,
+              ...(m.user_id === id ? { gespeichert: true, repariert: defekt !== "kennzeichnung", generatedAt: JETZT }
+                : { grund: "zeitbudget" }) }));
+            return { status: 200, json: async () => ({ ok: true, schemaVersion: 1, runId,
+              modus: "manuell-fehlende-texte", ziel: 500, gespeichert: 1, results, funktionsnachweis500: false }) };
+          }
+          if (u.pathname.endsWith("/briefings")) return { status: 200,
+            json: async () => u.searchParams.get("user_id").includes(JSON.stringify(id)) ? [kopie(gespeicherteZeile)] : [] };
+          return fetch(url, init);
+        } };
+      const r = await G.ausfuehren(args);
+      assert.equal(calls, 1);
+      assert.equal(r.ok, !defekt, JSON.stringify(r));
+      if (defekt) assert.equal(r.grund, defekt === "historie"
+        ? "textnachlauf-hat-vorhandenen-text-veraendert" : "textnachlauf-texte-nicht-gespeichert");
+      else assert.equal(r.gespeichert, 1);
+    }
+  });
   await test("Vollstaendige Qualitaetsbilanz bleibt rot, wird aber unabhaengig bestaetigt", async () => {
     const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
     h.config.textnachlaufVersion = 1;

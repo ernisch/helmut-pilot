@@ -7,6 +7,7 @@ const S = require("../lib/helmut/storage");
 const P = require("../lib/helmut/provisioning");
 const { baueKohorte } = require("../lib/helmut/test-kohorte-500");
 const { welt, kopie, SHA } = require("./fixtures/direkt500");
+const { payload: belegterText } = require("./fixtures/lage-beleg");
 let passed = 0;
 async function test(name, fn) { await fn(); console.log("PASS " + name); passed++; }
 const start = "2026-09-08T17:00:00.000Z";
@@ -35,7 +36,7 @@ function fixture() {
   h.jobs = s.mandate.filter(m => m.aktiv).map(m => ({ tenant_id: m.user_id, status: "erledigt", due_at: start }));
   for (const m of s.mandate.filter(m => m.aktiv).slice(0, 22)) h.rows.push({ id: `bf-${m.user_id}-lage-2026-09-08`,
     user_id: m.user_id, slot: "lage", generated_at: "2026-09-08T05:45:00.000Z",
-    payload: { paragraphs: [{ text: "Vorhandener Text", vorgang_ids: ["vg-vorhanden"] }] } });
+    payload: belegterText() });
   const storage = {
     fromMandateProfileRow: S.fromMandateProfileRow,
     acquirePipelineLock: async (name) => { h.locks.push({ job_name: name }); return true; },
@@ -92,8 +93,12 @@ function fixture() {
         h.calls.push(p.id); h.clock += h.stepMs;
         h.counter++; s.auth.llmUsage.push({ createdAt: new Date(h.clock).toISOString(), model: "gpt-5-mini", estimatedCost: 0.001 });
         const row = { id: `bf-${p.id}-lage-2026-09-08`, user_id: p.id, slot: "lage",
-          generated_at: new Date(h.clock).toISOString(), payload: { paragraphs: [{ text: "Neu", vorgang_ids: ["vg-test"] }] } };
-        h.rows.push(row);
+          generated_at: new Date(h.clock).toISOString(), payload: belegterText() };
+        const oldIndex = h.rows.findIndex(r => r.user_id === p.id);
+        if (oldIndex >= 0) {
+          assert.equal(opts.repairIncomplete, true);
+          row.payload.vorherigerStand = kopie(h.rows[oldIndex]); h.rows[oldIndex] = row;
+        } else h.rows.push(row);
         return { available: true, fromCache: false, paragraphs: row.payload.paragraphs };
       }
     } };
@@ -101,6 +106,15 @@ function fixture() {
 }
 
 (async () => {
+  await test("Ungepruefte Alttexte werden gezielt mit vollstaendiger Historie repariert", async () => {
+    const h = fixture(); delete h.rows[0].payload.qualitaet;
+    const before = kopie(h.rows[0]);
+    const r = await T.ausfuehren(h.args);
+    assert.equal(r.ok, true, JSON.stringify(r)); assert.equal(r.gespeichert, 479);
+    assert.equal(r.results.filter(x => x.repariert).length, 1);
+    assert.deepEqual(h.rows.find(x => x.id === before.id).payload.vorherigerStand, before);
+    assert.equal(h.rows.length, 500);
+  });
   await test("500 Zielprofile, vorhandene 22 geschuetzt, 478 lokale Textsimulationen und echte Quittung", async () => {
     const h = fixture(), baseline = D.hash(h.s), texts = kopie(h.rows);
     const r = await T.ausfuehren(h.args);

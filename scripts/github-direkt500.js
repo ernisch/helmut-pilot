@@ -181,9 +181,11 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         "textnachlauf-bestand-veraendert");
       T.pruefeKosten(nach.auth, kosten.reservierungen, now().toISOString().slice(0, 10));
       const texteNachher = await leseTexte();
-      D.fordere(texteVorher.every(r => texteNachher.some(n => n.id === r.id && D.hash(n) === D.hash(r))),
+      const Q = require("../lib/helmut/lage-quellenbeleg");
+      D.fordere(texteVorher.every(r => texteNachher.some(n => n.id === r.id && Q.bestandErhalten(r, n))),
         "textnachlauf-hat-vorhandenen-text-veraendert");
-      D.fordere(b.results.filter(r => r.gespeichert).every(r => !texteVorher.some(v => v.user_id === r.userId)
+      D.fordere(b.results.filter(r => r.gespeichert).every(r => (!texteVorher.some(v => v.user_id === r.userId)
+          || (r.repariert === true && texteVorher.some(v => v.user_id === r.userId && !Q.gespeicherterTextGueltig(v.payload))))
         && texteNachher.some(n => n.user_id === r.userId && Date.parse(n.generated_at) >= Date.parse(startIso)
           && Date.parse(n.generated_at) === Date.parse(r.generatedAt) && n.payload?.paragraphs?.length > 0)),
       "textnachlauf-texte-nicht-gespeichert");
