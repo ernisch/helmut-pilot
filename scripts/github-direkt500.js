@@ -186,10 +186,11 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         && b.results.every(r => ids.includes(r.userId))
         && b.results.filter(r => r.gespeichert === true).length === b.gespeichert
         && b.funktionsnachweis500 === false, "textnachlauf-antwort-nicht-bestaetigt");
-      const rows = await db("process_runs?select=run_id,status,processed_count,failed_count,started_at,finished_at"
+      const rows = await db("process_runs?select=run_id,status,reason,processed_count,failed_count,started_at,finished_at"
         + "&process=eq." + T.PROCESS + "&run_id=eq." + runId + "&limit=2");
       D.fordere(rows.length === 1 && rows[0].run_id === runId
         && rows[0].status === (qualitaetslauf || zeitlauf ? "failed" : "success")
+        && (!zeitlauf || rows[0].reason === b.grund)
         && rows[0].failed_count === (zeitlauf ? b.qualitaetsfehler + 1 : qualitaetslauf ? b.qualitaetsfehler : 0)
         && rows[0].processed_count === b.gespeichert && Date.parse(rows[0].started_at) >= Date.parse(startIso)
         && Date.parse(rows[0].finished_at) >= Date.parse(rows[0].started_at)

@@ -506,11 +506,14 @@ async function main() {
     assert.equal(abweichend.zustandUnbekannt, true);
     assert.equal(abweichend.serverBefund.unabhaengigBestaetigt, false);
     assert.equal(calls, 2);
-    stopGrund = "nachlauf-zeitbudget"; h.quittungen[0].failed_count = 2;
+    stopGrund = "nachlauf-zeitbudget"; h.quittungen[0].failed_count = 2; h.quittungen[0].reason = stopGrund;
     const zeit = await G.ausfuehren(args);
     assert.equal(zeit.ok, false); assert.equal(zeit.grund, stopGrund);
     assert.equal(zeit.zustandUnbekannt, false, "Bestaetigte Zeitgrenze ist kein unbekannter Ausgang");
     assert.equal(zeit.serverBefund.unabhaengigBestaetigt, true);
+    h.quittungen[0].reason = "nachlauf-textfehler-ai-provider-unavailable";
+    assert.equal((await G.ausfuehren(args)).zustandUnbekannt, true, "Anderer gespeicherter Abbruchgrund ist kein bestaetigter Zeitstopp");
+    h.quittungen[0].reason = stopGrund;
     h.quittungen[0].failed_count = 1;
     assert.equal((await G.ausfuehren(args)).zustandUnbekannt, true, "Zeitgrenze ohne passende Quittung bleibt unklar");
   });
