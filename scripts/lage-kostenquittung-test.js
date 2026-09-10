@@ -19,7 +19,9 @@ const paragraphs = [
 const vorgaenge = [{ vorgang_id: "vg-test", quellenbelege: [{ quelle_id: "q-test",
   titel: "Die Quelle berichtet ueber einen Entwurf. Ein Termin ist noch nicht benannt.", quelle: "Test" }] }];
 const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id: "q-test", belegfeld: "titel",
-  vollstaendig_belegt: true, themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt", pruefbegruendung: "Benannter Vorschlag mit Quellenbeleg und Bezug zum Ausschuss." })) };
+  vollstaendig_belegt: true, themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt", pruefbegruendung: "Benannter Vorschlag mit Quellenbeleg und Bezug zum Ausschuss." })),
+  vergleiche: [{ erster_absatz: 0, zweiter_absatz: 1, eigenstaendige_sachverhalte: true,
+    pruefbegruendung: "Der zweite Absatz nennt den noch offenen Termin als zusaetzliche Angabe." }] };
 const beleg = { _ablage: { blob: true } };
 let checks = 0;
 
@@ -100,6 +102,11 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
     }
     assert.equal(reviewBody.text.format.strict, true, "Der Quellenpruefer muss alle Pflichtfelder liefern");
     const schema = reviewBody.text.format.schema;
+    assert.deepEqual([...schema.required].sort(), ["pruefungen", "vergleiche"], "Derselbe Review-Aufruf verlangt alle Absatzvergleiche");
+    const pairItem = schema.properties.vergleiche.items;
+    assert.deepEqual([...pairItem.required].sort(), Object.keys(pairItem.properties).sort());
+    assert.equal(pairItem.additionalProperties, false);
+    assert.equal(pairItem.properties.eigenstaendige_sachverhalte.type, "boolean");
     assert(!/\"(?:minLength|maxLength|pattern|format)\"\s*:/.test(JSON.stringify(schema)), "Azure Strict Schema nutzt nur unterstuetzte Schluessel");
     const item = schema.properties.pruefungen.items;
     assert.deepEqual([...item.required].sort(), Object.keys(item.properties).sort());

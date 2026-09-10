@@ -15,7 +15,9 @@ const docs = [{ vorgang_id: "vg-test", quellenbelege: [{ quelle_id: "q-1", titel
 const paragraphs = [{ text: docs[0].quellenbelege[0].titel, vorgang_ids: ["vg-test"] },
   { text: docs[0].quellenbelege[1].titel, vorgang_ids: ["vg-test"] }];
 const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id: "q-" + (absatz + 1), belegfeld: "titel",
-  vollstaendig_belegt: true, themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt", pruefbegruendung: "Benannter Vorschlag mit Quellenbeleg und Bezug zum Ausschuss." })) };
+  vollstaendig_belegt: true, themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt", pruefbegruendung: "Benannter Vorschlag mit Quellenbeleg und Bezug zum Ausschuss." })),
+  vergleiche: [{ erster_absatz: 0, zweiter_absatz: 1, eigenstaendige_sachverhalte: true,
+    pruefbegruendung: "Kabinett beraet Kita-Standards; Netznutzer schlagen eine Energiewende-Regelung vor." }] };
 (async () => {
   await test("Dokumentgattung und Ressort verbinden keine verschiedenen Ereignisse", () => {
     const V = require("../lib/helmut/vorgang-identity");
