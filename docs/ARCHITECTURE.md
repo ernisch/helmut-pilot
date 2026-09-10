@@ -187,7 +187,8 @@ einen Zustand ab (gesund · eingeschränkt · ausgefallen · inaktiv · unbekann
 | **Herausgebererkennung (Herkunft ≠ Beleg)** | `herausgeber.js` |
 | Verstehen (LLM) | `understanding.js`, `quellenarchitektur/understanding-gate.js`, `ai.js` |
 | **Endzustand je Rohdokument + Watchdog** | `vorgangs-lebenszyklus.js` |
-| Kostendeckel (fail-closed) | `llm-budget.js` |
+| Aufrufzaehler und Vorrangreserven | `llm-budget.js` |
+| Atomarer Gelddeckel im Production Test | `testkosten-budget.js`, vor HTTP in `ai.js`; voller Betrag auch bei ungeklaertem Ausgang, bedingter Auth Schreiber, 4 USD je UTC Tag. Betriebsstand: [Kostenregel](betrieb/500-kostenabbruch-2026-09-10.md). |
 | Amtliche Vorgänge | `dip.js`, `quellenarchitektur/pardok-parser.js`, `pardok-dispatch.js` |
 
 Alle Läufe sind über **atomare, fail-closed Locks** (`pipeline_locks`) gegen

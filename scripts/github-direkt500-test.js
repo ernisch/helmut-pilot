@@ -13,7 +13,7 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
 function kontext(vorgang = "provisionierung") {
   const w = welt();
   const anfragen = [];
-  const config = { testKosten: { version: 1, aktiv: true, limitUsd: 4, maxManualCalls: 1000 }, ok: true, schemaVersion: 1, reinLesend: true, production: true, commit: SHA,
+  const config = { testKosten: { version: 2, aktiv: true, limitUsd: 4, maxManualCalls: null, maxWindowMs: null, unbekanntBleibtReserviert: true }, ok: true, schemaVersion: 1, reinLesend: true, production: true, commit: SHA,
     storageSupabase: true, v3Bereit: true, profileRelational: true, profileExclusive: true,
     retentionGueltig: true, retention: 36, kommunikationGesperrt: true,
     kohortenQuellenGesperrt: true, tagesdeckel: 2416, understandingReserve: 702, vorrangreserveReal: 200 };
@@ -177,6 +177,29 @@ async function main() {
       assert.equal(D.hash(h.w.snapshot()), vorher);
       assert(r.kostenStand.prognoseUsd < 9, "Auch eine kleine Schaetzung ist keine Freigabe");
     }
+  });
+  await test("Voll reservierter Altfehler blockiert keine andere Arbeit und bleibt sichtbar", async () => {
+    const B = require("../lib/helmut/testkosten-budget");
+    const h = await bereitZumFachzyklus();
+    h.usage[0].estimatedCost = "unknown";
+    h.kostenTage[JETZT.slice(0, 10)] = { version: B.VERSION, day: JETZT.slice(0, 10),
+      tarif: B.konfiguration().tarif, limit: 4000000, baseline: 0, manualCalls: 0, manualUntil: null,
+      frozen: "test-usd-ausgang-unklar", spent: (h.counter - 1) * 1000,
+      calls: Object.fromEntries(Array.from({ length: h.counter }, (_, i) => ["ticket-" + i,
+        { status: i ? "abgerechnet" : "reserviert", reserved: 212000, maxOutputTokens: 3000,
+          manual: false, createdAt: JETZT, ...(i ? { cost: 1000 } : {}) }])) };
+    const vorher = JSON.stringify(h.kostenTage);
+    const r = await G.ausfuehren(h.args);
+    assert.equal(r.ok, true, JSON.stringify(r));
+    assert.equal(r.kostenNachher.unbekannteKosten, 1);
+    assert.equal(r.kostenNachher.unbekannteVollstaendigReserviert, true);
+    assert.equal(r.kostenNachher.offeneReserveUsd, 0.212);
+    assert.equal(JSON.stringify(h.kostenTage), vorher, "Kontrolle schreibt keine Kosten um");
+    assert.equal(h.anfragen.filter(u => u.pathname === "/api/cron/pipeline").length, 1);
+    delete h.kostenTage[JETZT.slice(0, 10)].calls["ticket-1"];
+    h.kostenTage[JETZT.slice(0, 10)].spent -= 1000;
+    const blocked = await G.ausfuehren(h.args);
+    assert.equal(blocked.ok, false); assert.equal(blocked.ausgeloest, false);
   });
   await test("Kostenfehler nach erfolgreicher Serverquittung melden Stopp und erhalten belegten Fortschritt", async () => {
     for (const eingefroren of [false, true]) {

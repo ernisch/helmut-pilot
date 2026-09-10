@@ -1,6 +1,6 @@
 # Kostenbremse fuer das bestehende 500er Testfenster
 
-Stand 09.09.2026. Technischer Vertrag, kein Production Funktionsnachweis und keine Freigabe eines bezahlten Laufs.
+Stand 09.09.2026, historischer Vertrag der Regel 1. Der neuere Betreiberauftrag und die vorbereitete Regel 2 mit voll gebundenen unbekannten Kosten stehen im [aktuellen Betriebsbeleg](500-kostenabbruch-2026-09-10.md). Dort entfallen die hier beschriebenen manuellen Anzahl und Zeitgrenzen. Kein Production Nachweis der neuen Regel durch diesen Alttext.
 
 ## Wirkung
 

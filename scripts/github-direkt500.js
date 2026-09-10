@@ -79,13 +79,19 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       D.fordere(locks.length + leases.length + verwaist.length === 0, "aktive-oder-verwaiste-lease");
       D.fordere(counters.length <= 1, "tageszaehler-nicht-eindeutig");
       kosten = kostenBefund(auth, counters.length ? counters[0].used : 0, jetzt.toISOString().slice(0, 10));
-      // Eine niedrige Schaetzung hebt weder einen eingefrorenen Geldstand noch
-      // unbekannte Anbieterergebnisse auf. Auch NACH der Runde geschlossen pruefen.
-      D.fordere(!auth.testKostenTage?.[jetzt.toISOString().slice(0, 10)]?.frozen,
-        "kosten-ausgang-unklar");
-      D.fordere(kosten.unbekannteKosten === 0 && kosten.reservierungsluecke === 0
-        && kosten.aufrufbelege === kosten.reservierungen, "kosten-nachweis-unvollstaendig");
-      D.fordere(kosten.prognoseUsd < 9, "kosten-sicherheitsstopp");
+      D.fordere(kosten.reservierungsluecke === 0 && kosten.aufrufbelege === kosten.reservierungen,
+        "kosten-nachweis-unvollstaendig");
+      if (auth.testKostenTage?.[jetzt.toISOString().slice(0, 10)] && config.testKosten?.version === 2
+        && config.testKosten.aktiv === true && config.testKosten.limitUsd === 4
+        && config.testKosten.unbekanntBleibtReserviert === true) {
+        try { Object.assign(kosten, require("../lib/helmut/testkosten-budget")
+          .kontrolliere(auth, jetzt.toISOString().slice(0, 10), kosten.unbekannteKosten, kosten.aufrufbelege)); }
+        catch { D.fordere(false, "kosten-ausgang-unklar"); }
+      } else {
+        D.fordere(!auth.testKostenTage?.[jetzt.toISOString().slice(0, 10)]?.frozen, "kosten-ausgang-unklar");
+        D.fordere(kosten.unbekannteKosten === 0, "kosten-nachweis-unvollstaendig");
+        D.fordere(kosten.prognoseUsd < 9, "kosten-sicherheitsstopp");
+      }
       const spur = D.hash({ pushEvents: auth.pushEvents || [], auditEvents: auth.auditEvents || [] });
       D.fordere(outbox.length === 0 && (kommunikationsHash === null || kommunikationsHash === spur),
         "kommunikationsspur-veraendert");
@@ -112,9 +118,10 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
 
     if (vorgang === "textnachlauf") {
       const T = require("../lib/helmut/testkohorte-textnachlauf");
-      D.fordere(config.textnachlaufVersion === 2 && config.testKosten?.version === 1
+      D.fordere(config.textnachlaufVersion === 2 && config.testKosten?.version === 2
         && config.testKosten.aktiv === true && config.testKosten.limitUsd === 4
-        && config.testKosten.maxManualCalls === 1000, "textnachlauf-nicht-deployt");
+        && config.testKosten.maxManualCalls === null && config.testKosten.maxWindowMs === null
+        && config.testKosten.unbekanntBleibtReserviert === true, "textnachlauf-nicht-deployt");
       D.fordere(vor.gesamt === 504 && vor.aktiv === 500 && vor.aktive.length === zielAnzahl,
         "textnachlauf-braucht-500-aktive-profile");
       T.pruefeKosten(bestand.auth, kosten.reservierungen, now().toISOString().slice(0, 10));

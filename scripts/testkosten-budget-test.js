@@ -61,36 +61,66 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); count++
     const f = fixture(); f.counter = 1;
     await assert.rejects(B.reserviere(ARGS, f.deps));
   });
-  await test("Verlorene Antwort oder Kostenablage friert dauerhaft ein und erstattet keine Reserve", async () => {
+  await test("Verlorene Antwort bleibt voll gebunden; andere Tickets nutzen nur den verbleibenden Deckel", async () => {
     for (const receipt of [null, { ...RECEIPT, _ablage: { blob: false } },
-      { ...RECEIPT, completionTokens: null }, { ...RECEIPT, completionTokens: 3001 }]) {
+      { ...RECEIPT, completionTokens: null }]) {
       const h = fixture(), ticket = await B.reserviere(ARGS, h.deps);
       await assert.rejects(B.abschliessen(ticket, receipt, h.deps), { code: "TEST_USD_UNKNOWN" });
-      assert.equal(B.belegt(h.day()), 212000); assert(h.day().frozen);
-      await assert.rejects(B.reserviere({ ...ARGS, runId: "nachlauf500-999999999" }, h.deps));
+      assert.equal(h.day().calls[ticket.id].status, "ungeklaert");
+      assert.equal(B.belegt(h.day()), 212000); assert.equal(h.day().frozen, null);
+      await B.nichtGesendet(ticket, { kiNichtGesendet: true }, h.deps);
+      assert.equal(B.belegt(h.day()), 212000, "Ungeklaerte Aufrufe werden nicht nachtraeglich kostenlos");
+      const more = await Promise.allSettled(Array.from({ length: 40 }, () => B.reserviere(ARGS, h.deps)));
+      assert.equal(more.filter(r => r.status === "fulfilled").length, 17);
+      assert.equal(B.belegt(h.day()), 3816000);
+      await assert.rejects(B.reserviere(ARGS, h.deps), { reason: "test-usd-grenze-erreicht" });
     }
   });
-  await test("Prozessabbruch bleibt nach Neustart reserviert und sperrt nach fuenf Minuten", async () => {
-    const h = fixture(); await B.reserviere(ARGS, h.deps); h.advance(300000);
-    await assert.rejects(B.reserviere(ARGS, { ...h.deps }), { reason: "test-usd-ausgang-unklar" });
-    assert.equal(B.belegt(h.day()), 212000); assert(h.day().frozen);
+  await test("Belegte Ueberschreitung der reservierten Modellgrenzen stoppt weiterhin global", async () => {
+    for (const receipt of [{ ...RECEIPT, completionTokens: 3001 },
+      { ...RECEIPT, promptTokens: 400001 }, { ...RECEIPT, model: "anderes-modell" }]) {
+      const h = fixture(), ticket = await B.reserviere(ARGS, h.deps);
+      await assert.rejects(B.abschliessen(ticket, receipt, h.deps), { code: "TEST_USD_UNKNOWN" });
+      await assert.rejects(B.reserviere(ARGS, h.deps), { reason: "test-usd-fremde-sperre" });
+      assert.equal(B.belegt(h.day()), 212000);
+    }
+  });
+  await test("Prozessabbruch und alter eingefrorener Tag behalten jede Reserve nach Neustart", async () => {
+    for (const legacy of [false, true]) {
+      const h = fixture(), ticket = await B.reserviere(ARGS, h.deps);
+      if (legacy) await h.storage.mutateAuthStore(s => { s[B.KEY][DAY].frozen = "test-usd-ausgang-unklar"; });
+      else h.advance(300000);
+      const before = h.day().calls[ticket.id].reserved;
+      await B.reserviere(ARGS, h.deps);
+      assert.equal(h.day().calls[ticket.id].status, "ungeklaert");
+      assert.equal(h.day().calls[ticket.id].reserved, before);
+      assert.equal(B.belegt(h.day()), 424000); assert.equal(h.day().frozen, null);
+      if (legacy) assert.equal(h.day().fruehereSperre.grund, "test-usd-ausgang-unklar");
+      const report = B.kontrolliere(h.read(), DAY, 1);
+      assert.equal(report.gebundenUsd, 0.424); assert.equal(report.unbekannteVollstaendigReserviert, true);
+      assert.equal(report.anbieterrechnung, false);
+      assert.throws(() => B.kontrolliere(h.read(), DAY, 3), { reason: "test-usd-ungeklaerte-reserve-fehlt" });
+    }
   });
   await test("Nur belegbar nicht gesendete Aufrufe geben ihre Geldreserve frei", async () => {
     const h = fixture(), ticket = await B.reserviere(ARGS, h.deps);
     await B.nichtGesendet(ticket, Error("unbekannt"), h.deps); assert.equal(B.belegt(h.day()), 212000);
     await B.nichtGesendet(ticket, { kiNichtGesendet: true }, h.deps); assert.equal(B.belegt(h.day()), 0);
-    assert.equal(h.day().manualCalls, 1, "Versuch bleibt gegen Loop Grenze gezaehlt");
+    assert.equal(h.day().manualCalls, 1, "Versuch bleibt in der unveraenderten Historie gezaehlt");
   });
-  await test("Neue Laufkennungen umgehen weder 1000 Versuche noch sechs Stunden", async () => {
+  await test("Mehr als 1000 Versuche und abgelaufene alte sechs Stunden sperren kein gedecktes Geld", async () => {
     const h = fixture();
-    for (let i = 0; i < 1000; i++) {
+    for (let i = 0; i < 1001; i++) {
       const ticket = await B.reserviere({ ...ARGS, runId: "nachlauf500-" + (100000 + i) }, h.deps);
-      await B.nichtGesendet(ticket, { kiNichtGesendet: true }, h.deps);
+      await B.abschliessen(ticket, RECEIPT, h.deps);
     }
-    await assert.rejects(B.reserviere(ARGS, h.deps), { reason: "test-usd-fenster-geschlossen" });
-    const f = fixture(), ticket = await B.reserviere(ARGS, f.deps);
-    await B.abschliessen(ticket, RECEIPT, f.deps); f.advance(B.MAX_WINDOW_MS);
-    await assert.rejects(B.reserviere(ARGS, f.deps), { reason: "test-usd-fenster-geschlossen" });
+    assert.equal(h.day().manualCalls, 1001); assert.equal(h.day().spent, 130130);
+    await h.storage.mutateAuthStore(s => { s[B.KEY][DAY].manualUntil = "2026-09-09T18:00:00.000Z"; });
+    h.advance(6 * 60 * 60 * 1000);
+    await B.reserviere(ARGS, h.deps);
+    assert.equal(h.day().manualCalls, 1002); assert(B.belegt(h.day()) < B.LIMIT_MICRO_USD);
+    assert.equal(B.konfiguration(ENV).maxManualCalls, null);
+    assert.equal(B.konfiguration(ENV).maxWindowMs, null);
   });
   await test("Unbestaetigter Speicher verhindert Reservierung; korrumpierter Geldstand sperrt", async () => {
     const h = fixture(); h.fail = true;
@@ -99,7 +129,7 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); count++
     await h.storage.mutateAuthStore(s => { s[B.KEY][DAY].spent = 0; });
     await assert.rejects(B.reserviere(ARGS, h.deps), { reason: "test-usd-buch-unlesbar" });
   });
-  await test("Echter KI Einstieg reserviert vor HTTP, wartet auf Abrechnung und sperrt bei fehlender Usage", async () => {
+  await test("Echter KI Einstieg reserviert vor HTTP und erhaelt unbekannte Kosten bei neuer Arbeit", async () => {
     const https = require("node:https"), storage = require("../lib/helmut/storage");
     const anbieter = require("../lib/helmut/anbieter-steuerung"), ai = require("../lib/helmut/ai");
     const old = { env: { ...process.env }, request: https.request, mutate: storage.mutateAuthStore,
@@ -131,8 +161,13 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); count++
       assert.equal(h.read()[B.KEY][today].spent, 130, "Ergebnis erst nach Abrechnung");
       missing = true;
       await assert.rejects(ai.requestStructuredJson("offline", {}, { runId: ARGS.runId }), { code: "TEST_USD_UNKNOWN" });
-      await assert.rejects(ai.requestStructuredJson("offline", {}, { runId: ARGS.runId }), { code: "LLM_BUDGET_EXHAUSTED" });
-      assert.equal(requests, 2, "Kein dritter HTTP Versuch");
+      missing = false;
+      assert.deepEqual(await ai.requestStructuredJson("andere Arbeit", { type: "object" }, { runId: "nachlauf500-987654321" }), { ok: true });
+      const current = h.read()[B.KEY][today];
+      assert.equal(Object.values(current.calls).filter(c => c.status === "ungeklaert").length, 1);
+      assert.equal(current.spent, 260);
+      assert.equal(B.belegt(current), 212260, "Volle 3000 Token Reserve bleibt neben neuer Abrechnung gebunden");
+      assert.equal(requests, 3, "Nur ausdrueckliche neue Aufrufe, kein automatischer Retry");
     } finally {
       https.request = old.request; storage.mutateAuthStore = old.mutate;
       storage.leseLlmTageszaehler = old.counter; storage.reserveLlmCall = old.reserve;

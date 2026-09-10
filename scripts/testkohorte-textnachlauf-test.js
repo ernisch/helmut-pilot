@@ -29,7 +29,7 @@ function fixture() {
     profileRelational: true, profileExclusive: true, retentionGueltig: true, retention: 36,
     kommunikationGesperrt: true, kohortenQuellenGesperrt: true, tagesdeckel: 2416,
     understandingReserve: 702, vorrangreserveReal: 200, atomicLock: true, narrativQueue: false,
-    modell: "gpt-5-mini", azure: true, testKosten: { version: 1, aktiv: true, limitUsd: 4, maxManualCalls: 1000 } };
+    modell: "gpt-5-mini", azure: true, testKosten: { version: 2, aktiv: true, limitUsd: 4, maxManualCalls: null, maxWindowMs: null, unbekanntBleibtReserviert: true } };
   const h = { s, config, clock: Date.parse(start), stepMs: 10, calls: [], rows: [], locks: [], leases: [],
     orphans: [], outbox: [], events: [], runs: [], receipts: [], counter: 1, fault: null };
   s.auth.llmUsage = [{ createdAt: start, model: "gpt-5-mini", estimatedCost: 0.01 }];
@@ -129,6 +129,15 @@ function fixture() {
     // Kostenring darf wachsen; Profile, Identitaeten und Konten bleiben identisch.
     h.s.auth.llmUsage = [{ createdAt: start, model: "gpt-5-mini", estimatedCost: 0.01 }];
     assert.equal(D.hash(h.s), baseline);
+  });
+  await test("Manueller Fehlstellenlauf darf vor dem regulaeren Morgen beginnen", async () => {
+    const h = fixture(); h.clock = Date.parse("2026-09-08T02:00:00.000Z");
+    h.s.auth.llmUsage[0].createdAt = "2026-09-08T01:00:00.000Z";
+    h.jobs.forEach(j => { j.status = "wartend"; j.due_at = start; });
+    h.rows.forEach(r => { r.generated_at = "2026-09-08T01:00:00.000Z"; });
+    const r = await T.ausfuehren(h.args);
+    assert.equal(r.ok, true, JSON.stringify(r)); assert.equal(r.gespeichert, 478);
+    assert(h.jobs.every(j => j.due_at === start), "Keine Faelligkeit vorgezogen");
   });
   await test("Zeitgrenze endet mit ehrlicher Teilmenge, nie automatischer Fortsetzung", async () => {
     const h = fixture(); h.stepMs = 20000;
