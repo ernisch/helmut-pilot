@@ -1,0 +1,1180 @@
+{
+  "herkunft": "Rein lesender Production-Abzug vom 10.09.2026; auf die ersten14 voneinander unabhaengig bewerteten Kandidaten reduziert. Keine Mandatsidentitaet.",
+  "profile": {
+    "id": "mandat-auswahl-beleg",
+    "party": "Testpartei C",
+    "faction": "Testpartei C",
+    "committees": [
+      "Ausschuss für Digitales und Staatsmodernisierung",
+      "Petitionsausschuss"
+    ],
+    "committee": "Ausschuss für Digitales und Staatsmodernisierung",
+    "focusTopics": [
+      "Testthema 6",
+      "Testthema 13"
+    ],
+    "constituency": "Testwahlkreis 021",
+    "parliamentType": "Bundestag",
+    "politicalLevel": "Bund"
+  },
+  "kos": [
+    {
+      "affected_geographies": [
+        {
+          "geography_id": "geo-kommune-nds-salzgitter",
+          "herkunft": "ki",
+          "level": "kommune",
+          "name": "Salzgitter"
+        }
+      ],
+      "ausschuesse": [],
+      "best_source_url": null,
+      "classification_confidence": {
+        "entities": "medium",
+        "event_type": "medium",
+        "geography": "medium",
+        "geography_ermittelt_am": "2026-09-10T15:20:26.601Z",
+        "geography_indizien": [],
+        "geography_quelle": "ki",
+        "geography_wiederverwendet": false,
+        "level": "high",
+        "level_ermittelt_am": "2026-09-10T15:20:26.601Z",
+        "level_quelle": "ki",
+        "level_wiederverwendet": false
+      },
+      "decision_entities": [],
+      "decision_level": "bund",
+      "headline": "Tag der Arbeit: Kundgebung in Salzgitter",
+      "id": "ko-vg-kundgebung-20260502-d187ba",
+      "mentioned_committees": [],
+      "mentioned_geographies": [
+        {
+          "geography_id": "geo-kommune-nds-salzgitter",
+          "herkunft": "erwaehnung",
+          "level": "kommune",
+          "name": "Salzgitter"
+        }
+      ],
+      "mentioned_locations": [
+        "Salzgitter"
+      ],
+      "mentioned_parties": [
+        "SPD"
+      ],
+      "parteien": [
+        "SPD"
+      ],
+      "policy_field": [],
+      "political_level": "bund",
+      "related_entities": [
+        {
+          "confidence": "high",
+          "entity_id": "party-spd",
+          "name": "SPD",
+          "type": "party"
+        },
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Gewerkschaften",
+          "type": "organization"
+        }
+      ],
+      "related_levels": [
+        "land"
+      ],
+      "status": "neu",
+      "tags": [],
+      "understanding_status": "complete",
+      "updated_at": "2026-09-10 15:20:26.601+00",
+      "vorgang_id": "vg-kundgebung-20260502-d187ba",
+      "warum_wichtig": "Veranstaltung mobilisiert Wähler und Gewerkschaften im Wahlkreis; signalisiert öffentliche Stimmung zu Arbeitsfragen und kann lokale Politagenda beeinflussen.",
+      "was_ist_passiert": "Am 1. Mai fand in Salzgitter eine Kundgebung zum Tag der Arbeit statt. Vertreter*innen von Gewerkschaften und lokale Akteure nahmen teil und hielten Reden zu Arbeits- und Sozialthemen."
+    },
+    {
+      "affected_geographies": [
+        {
+          "geography_id": "geo-bund",
+          "herkunft": "ki",
+          "level": "bund",
+          "name": "Deutschland"
+        }
+      ],
+      "ausschuesse": [
+        "Innenausschuss",
+        "Finanzausschuss"
+      ],
+      "best_source_url": "https://www.augsburger-allgemeine.de/politik/digitalisierung-ausweis-auf-dem-handy-so-soll-die-geplante-brieftaschen-app-funktionieren-115170643",
+      "classification_confidence": {
+        "entities": "medium",
+        "event_type": "medium",
+        "geography": "medium",
+        "geography_ermittelt_am": "2026-09-10T15:07:17.251Z",
+        "geography_indizien": [],
+        "geography_quelle": "ki",
+        "geography_wiederverwendet": false,
+        "level": "high",
+        "level_ermittelt_am": "2026-09-10T15:07:17.251Z",
+        "level_quelle": "ki",
+        "level_wiederverwendet": false
+      },
+      "decision_entities": [
+        {
+          "confidence": "medium",
+          "entity_id": "committee-bt-inneres",
+          "name": "Ausschuss für Inneres und Heimat",
+          "type": "committee"
+        },
+        {
+          "confidence": "medium",
+          "entity_id": "committee-bt-finanzen",
+          "name": "Ausschuss für Finanzen",
+          "type": "committee"
+        },
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Bundesministerium des Innern und für Heimat",
+          "type": "ministry"
+        },
+        {
+          "confidence": "high",
+          "entity_id": "ministry-bmf",
+          "name": "Bundesministerium der Finanzen",
+          "type": "ministry"
+        },
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "BMinFin",
+          "type": "ministry"
+        },
+        {
+          "confidence": "high",
+          "entity_id": "ministry-bmi",
+          "name": "Bundesministerium des Innern",
+          "type": "ministry"
+        }
+      ],
+      "decision_level": "bund",
+      "headline": "Digitale Steuer- und Ausweisentwicklung: Startkapital und Brieftaschen-App",
+      "id": "ko-vg-digitalisierung-20260908-2b755c",
+      "mentioned_committees": [],
+      "mentioned_geographies": [
+        {
+          "geography_id": "geo-land-berlin",
+          "herkunft": "erwaehnung",
+          "level": "land",
+          "name": "Berlin"
+        }
+      ],
+      "mentioned_locations": [
+        "Berlin"
+      ],
+      "mentioned_parties": [
+        "SPD",
+        "CDU/CSU",
+        "Bündnis 90/Die Grünen"
+      ],
+      "parteien": [
+        "Bundestag Fraktionen"
+      ],
+      "policy_field": [],
+      "political_level": "bund",
+      "related_entities": [
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Bundestag Fraktionen",
+          "type": "party"
+        },
+        {
+          "confidence": "high",
+          "entity_id": "party-spd",
+          "name": "SPD",
+          "type": "party"
+        },
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "CDU/CSU",
+          "type": "party"
+        },
+        {
+          "confidence": "high",
+          "entity_id": "party-gruene",
+          "name": "Bündnis 90/Die Grünen",
+          "type": "party"
+        },
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Limetax",
+          "type": "organization"
+        }
+      ],
+      "related_levels": [
+        "land"
+      ],
+      "status": "neu",
+      "tags": [],
+      "understanding_status": "complete",
+      "updated_at": "2026-09-10 15:07:17.251+00",
+      "vorgang_id": "vg-digitalisierung-20260908-2b755c",
+      "warum_wichtig": "Verknüpft digitalwirtschaftliche Investitionen mit staatlicher Identitätsdigitalisierung; berührt Steuerberatung, Datenschutz und digitale Identitätsinfrastruktur relevant für Ausschuss- und Wahlkreisthemen.",
+      "was_ist_passiert": "Ein Berliner Startup hat 36 Millionen Euro Kapital für die Digitalisierung von Steuerberatung eingesammelt. Parallel werden Details zur geplanten Brieftaschen-App veröffentlicht, die einen Ausweis auf dem Handy ermöglichen soll."
+    },
+    {
+      "affected_geographies": [
+        {
+          "geography_id": "geo-bund",
+          "herkunft": "ki",
+          "level": "bund",
+          "name": "Deutschland"
+        }
+      ],
+      "ausschuesse": [
+        "Ausschuss für Arbeit und Soziales",
+        "Digitale Agenda (fiktiv)"
+      ],
+      "best_source_url": "https://www.der-paritaetische.de/magazin/ausgabe-03-2022-digitalisierung-und-wohlfahrt/digitale-teilhabe-von-menschen-mit-armutserfahrung/",
+      "classification_confidence": {
+        "entities": "medium",
+        "event_type": "medium",
+        "geography": "medium",
+        "geography_ermittelt_am": "2026-09-10T11:33:38.408Z",
+        "geography_indizien": [],
+        "geography_quelle": "ki",
+        "geography_wiederverwendet": false,
+        "level": "high",
+        "level_ermittelt_am": "2026-09-10T11:33:38.408Z",
+        "level_quelle": "ki",
+        "level_wiederverwendet": false
+      },
+      "decision_entities": [
+        {
+          "confidence": "high",
+          "entity_id": "committee-bt-arbeit-soziales",
+          "name": "Ausschuss für Arbeit und Soziales",
+          "type": "committee"
+        },
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Digitale Agenda (fiktiv)",
+          "type": "committee"
+        },
+        {
+          "confidence": "high",
+          "entity_id": "ministry-bmas",
+          "name": "Bundesministerium für Arbeit und Soziales",
+          "type": "ministry"
+        },
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Bundesministerium für Wirtschaft und Klimaschutz",
+          "type": "ministry"
+        },
+        {
+          "confidence": "medium",
+          "entity_id": "committee-bt-digitales",
+          "name": "Ausschuss für Digitales",
+          "type": "committee"
+        }
+      ],
+      "decision_level": "bund",
+      "headline": "Digitale Teilhabe und Armut: Stellungnahmen und Studien des Paritätischen",
+      "id": "ko-vg-paritätische-20220401-b4b082",
+      "mentioned_committees": [
+        "Ausschuss für Digitales (erwähnt)"
+      ],
+      "mentioned_geographies": [],
+      "mentioned_locations": [],
+      "mentioned_parties": [
+        "SPD",
+        "Die Linke",
+        "Bündnis 90/Die Grünen"
+      ],
+      "parteien": [
+        "Die Linke",
+        "SPD",
+        "Bündnis 90/Die Grünen"
+      ],
+      "policy_field": [],
+      "political_level": "bund",
+      "related_entities": [
+        {
+          "confidence": "high",
+          "entity_id": "party-linke",
+          "name": "Die Linke",
+          "type": "party"
+        },
+        {
+          "confidence": "high",
+          "entity_id": "party-spd",
+          "name": "SPD",
+          "type": "party"
+        },
+        {
+          "confidence": "high",
+          "entity_id": "party-gruene",
+          "name": "Bündnis 90/Die Grünen",
+          "type": "party"
+        },
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Der Paritätische Wohlfahrtsverband",
+          "type": "organization"
+        }
+      ],
+      "related_levels": [
+        "land"
+      ],
+      "status": "neu",
+      "tags": [],
+      "understanding_status": "complete",
+      "updated_at": "2026-09-10 11:33:38.408+00",
+      "vorgang_id": "vg-paritätische-20220401-b4b082",
+      "warum_wichtig": "Das Thema verbindet Sozialpolitik und Digitalpolitik; Erkenntnisse beeinflussen Förderansätze und Legislativdebatten zur Armutsbekämpfung. Relevanz für sozialpolitische Agenda und kommunale Hilfsprogramme ist hoch.",
+      "was_ist_passiert": "Der Paritätische Wohlfahrtsverband hat 2022/2023 mehrere Veröffentlichungen und Studien zur digitalen Teilhabe von Menschen mit Armutserfahrung und zu Wohnen und sozialer Teilhabe vorgelegt. Die Materialien dokumentieren Zusammenhänge zwischen Armut und digitaler Ausgrenzung sowie Empfehlungen zur Förderung digitaler Teilhabe."
+    },
+    {
+      "affected_geographies": [],
+      "ausschuesse": [],
+      "best_source_url": "https://www.igmetall.de/tarif/tariftabellen/metall-und-elektro-branchen-und-handwerke",
+      "classification_confidence": {
+        "entities": "medium",
+        "event_type": "medium",
+        "geography": "unknown",
+        "geography_ermittelt_am": null,
+        "geography_indizien": [],
+        "geography_quelle": null,
+        "geography_wiederverwendet": false,
+        "level": "high",
+        "level_ermittelt_am": "2026-09-10T11:33:05.735Z",
+        "level_quelle": "ki",
+        "level_wiederverwendet": false
+      },
+      "decision_entities": [
+        {
+          "confidence": "high",
+          "entity_id": "ministry-bmas",
+          "name": "Bundesministerium für Arbeit und Soziales",
+          "type": "ministry"
+        }
+      ],
+      "decision_level": "bund",
+      "headline": "",
+      "id": "ko-vg-tariftabellen-20211123-16596a",
+      "mentioned_committees": [],
+      "mentioned_geographies": [],
+      "mentioned_locations": [],
+      "mentioned_parties": [],
+      "parteien": [],
+      "policy_field": [],
+      "political_level": "bund",
+      "related_entities": [
+        {
+          "confidence": "high",
+          "entity_id": "union-ig-metall",
+          "name": "IG Metall",
+          "type": "union"
+        }
+      ],
+      "related_levels": [],
+      "status": "neu",
+      "tags": [],
+      "understanding_status": "complete",
+      "updated_at": "2026-09-10 11:33:05.735+00",
+      "vorgang_id": "vg-tariftabellen-20211123-16596a",
+      "warum_wichtig": "Tarifinformationen beeinflussen Lohnverhandlungen und politische Debatten zu Arbeitskosten, Fachkräftesicherung und Wettbewerbsfähigkeit. Relevanz für arbeitsmarkt- und wirtschaftspolitische Positionen des Mandats besteht, insbesondere gegenüber Gewerkschaftsforderungen.",
+      "was_ist_passiert": "IG Metall hat Tariftabellen für Metall- und Elektrobranche sowie Handwerke veröffentlicht bzw. bereitgestellt."
+    },
+    {
+      "affected_geographies": [],
+      "ausschuesse": [],
+      "best_source_url": "https://www.boeckler.de/de/vereinbarkeit-arbeit-und-leben.htm",
+      "classification_confidence": {
+        "entities": "medium",
+        "event_type": "medium",
+        "geography": "unknown",
+        "geography_ermittelt_am": null,
+        "geography_indizien": [],
+        "geography_quelle": null,
+        "geography_wiederverwendet": false,
+        "level": "high",
+        "level_ermittelt_am": "2026-09-10T11:31:56.222Z",
+        "level_quelle": "ki",
+        "level_wiederverwendet": false
+      },
+      "decision_entities": [
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Bundesministerium für Familie, Senioren, Frauen und Jugend (BMFSFJ)",
+          "type": "ministry"
+        },
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Bundesministerium für Arbeit und Soziales (BMAS)",
+          "type": "ministry"
+        },
+        {
+          "confidence": "high",
+          "entity_id": "ministry-bmfsfj",
+          "name": "Bundesministerium für Familie, Senioren, Frauen und Jugend",
+          "type": "ministry"
+        },
+        {
+          "confidence": "high",
+          "entity_id": "ministry-bmas",
+          "name": "Bundesministerium für Arbeit und Soziales",
+          "type": "ministry"
+        }
+      ],
+      "decision_level": "bund",
+      "headline": "Vereinbarkeit von Arbeit und Leben — Studie/Bericht (Boeckler)",
+      "id": "ko-vg-vereinbarkeit-20200320-e9f976",
+      "mentioned_committees": [],
+      "mentioned_geographies": [],
+      "mentioned_locations": [],
+      "mentioned_parties": [],
+      "parteien": [],
+      "policy_field": [],
+      "political_level": "bund",
+      "related_entities": [
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Hans-Boeckler-Stiftung",
+          "type": "organization"
+        }
+      ],
+      "related_levels": [],
+      "status": "neu",
+      "tags": [],
+      "understanding_status": "complete",
+      "updated_at": "2026-09-10 11:31:56.222+00",
+      "vorgang_id": "vg-vereinbarkeit-20200320-e9f976",
+      "warum_wichtig": "Das Thema berührt Familien-, Arbeitsmarkt- und Sozialpolitik und kann Gesetzes- und Förderdebatten beeinflussen. Die Veröffentlichung liefert Argumente für konkrete parlamentarische Forderungen zur Unterstützung von Vereinbarkeitsmaßnahmen.",
+      "was_ist_passiert": "Eine Veröffentlichung auf boeckler.de zum Thema Vereinbarkeit von Arbeit und Leben wurde publiziert (2020-03-20)."
+    },
+    {
+      "affected_geographies": [],
+      "ausschuesse": [],
+      "best_source_url": "https://www.boeckler.de/de/stipendium-fur-studierende-2655.htm",
+      "classification_confidence": {
+        "entities": "medium",
+        "event_type": "medium",
+        "geography": "unknown",
+        "geography_ermittelt_am": null,
+        "geography_indizien": [],
+        "geography_quelle": null,
+        "geography_wiederverwendet": false,
+        "level": "high",
+        "level_ermittelt_am": "2026-09-10T11:31:39.736Z",
+        "level_quelle": "ki",
+        "level_wiederverwendet": false
+      },
+      "decision_entities": [],
+      "decision_level": "bund",
+      "headline": "",
+      "id": "ko-vg-studierende-20200314-7d0f75",
+      "mentioned_committees": [],
+      "mentioned_geographies": [],
+      "mentioned_locations": [],
+      "mentioned_parties": [],
+      "parteien": [],
+      "policy_field": [],
+      "political_level": "bund",
+      "related_entities": [
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Hans-Böckler-Stiftung",
+          "type": "organization"
+        }
+      ],
+      "related_levels": [],
+      "status": "neu",
+      "tags": [],
+      "understanding_status": "complete",
+      "updated_at": "2026-09-10 11:31:39.736+00",
+      "vorgang_id": "vg-studierende-20200314-7d0f75",
+      "warum_wichtig": "Thema betrifft Bildungspolitik und mögliche Unterstützungsangebote für Studierende; relevant für Parlamentarier mit Bildungs- oder Sozialpolitikschwerpunkt.",
+      "was_ist_passiert": "Die Hans-Böckler-Stiftung bietet ein Stipendium für Studierende an (Publikation 2020-03-14)."
+    },
+    {
+      "affected_geographies": [
+        {
+          "geography_id": "geo-bund",
+          "herkunft": "ki",
+          "level": "bund",
+          "name": "Deutschland"
+        },
+        {
+          "geography_id": "geo-land-saarland",
+          "herkunft": "ki",
+          "level": "land",
+          "name": "Saarland"
+        }
+      ],
+      "ausschuesse": [],
+      "best_source_url": "https://www.wsi.de/de/faust-detail.htm?sync_id=9425",
+      "classification_confidence": {
+        "entities": "medium",
+        "event_type": "medium",
+        "geography": "medium",
+        "geography_ermittelt_am": "2026-09-10T11:31:26.311Z",
+        "geography_indizien": [],
+        "geography_quelle": "ki",
+        "geography_wiederverwendet": false,
+        "level": "high",
+        "level_ermittelt_am": "2026-09-10T11:31:26.311Z",
+        "level_quelle": "ki",
+        "level_wiederverwendet": false
+      },
+      "decision_entities": [],
+      "decision_level": "bund",
+      "headline": "",
+      "id": "ko-vg-wirtschafts-20200313-8ea9dc",
+      "mentioned_committees": [],
+      "mentioned_geographies": [
+        {
+          "geography_id": "geo-land-saarland",
+          "herkunft": "erwaehnung",
+          "level": "land",
+          "name": "Saarland"
+        }
+      ],
+      "mentioned_locations": [
+        "Saarland"
+      ],
+      "mentioned_parties": [],
+      "parteien": [],
+      "policy_field": [],
+      "political_level": "bund",
+      "related_entities": [
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Wirtschafts- und Sozialwissenschaftliches Institut",
+          "type": "organization"
+        },
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Wirtschaftsdienst",
+          "type": "organization"
+        }
+      ],
+      "related_levels": [
+        "land"
+      ],
+      "status": "neu",
+      "tags": [],
+      "understanding_status": "complete",
+      "updated_at": "2026-09-10 11:31:26.311+00",
+      "vorgang_id": "vg-wirtschafts-20200313-8ea9dc",
+      "warum_wichtig": "Neue Analysen liefern Evidenz zu Wirkungen und Umsetzungsproblemen des Mindestlohns; die Veröffentlichungen können laufende politische Entscheidungen und Debatten über Mindestlohnniveau, Tarifpolitik und Landesregelungen beeinflussen.",
+      "was_ist_passiert": "Mehrere Studien und Artikel des Wirtschafts- und Sozialwissenschaftlichen Instituts und verwandter Publikationen haben zwischen 2020 und 2022 Analysen, Bewertungen und Debattenbeiträge zum gesetzlichen Mindestlohn, zu Erfahrungen in der Systemgastronomie sowie zu Landesregelungen wie dem Tariftreue- und Fairer-Lohn-Gesetz veröffentlicht."
+    },
+    {
+      "affected_geographies": [
+        {
+          "geography_id": "geo-bund",
+          "herkunft": "ki",
+          "level": "bund",
+          "name": "Deutschland"
+        },
+        {
+          "geography_id": "geo-land-sachsen-anhalt",
+          "herkunft": "ki",
+          "level": "land",
+          "name": "Sachsen-Anhalt"
+        },
+        {
+          "geography_id": null,
+          "herkunft": "ki",
+          "level": "unknown",
+          "name": "EU"
+        }
+      ],
+      "ausschuesse": [],
+      "best_source_url": "https://www.deutschlandfunk.de/bsw-nimmt-gespraechsangebot-der-afd-an-alle-anderen-lehnen-ab-100.html",
+      "classification_confidence": {
+        "entities": "medium",
+        "event_type": "medium",
+        "geography": "medium",
+        "geography_ermittelt_am": "2026-09-09T20:01:39.378Z",
+        "geography_indizien": [],
+        "geography_quelle": "ki",
+        "geography_wiederverwendet": true,
+        "level": "high",
+        "level_ermittelt_am": "2026-09-09T20:01:39.378Z",
+        "level_quelle": "ki",
+        "level_wiederverwendet": true
+      },
+      "decision_entities": [],
+      "decision_level": "bund",
+      "headline": "Sachsen-Anhalt Landtagswahl: AfD-Sieg und bundesweite Reaktionen",
+      "id": "ko-vg-sachsen-20260908-92ee54",
+      "mentioned_committees": [],
+      "mentioned_geographies": [
+        {
+          "geography_id": "geo-bund",
+          "herkunft": "erwaehnung",
+          "level": "bund",
+          "name": "Deutschland"
+        },
+        {
+          "geography_id": "geo-land-berlin",
+          "herkunft": "erwaehnung",
+          "level": "land",
+          "name": "Berlin"
+        },
+        {
+          "geography_id": "geo-land-sachsen-anhalt",
+          "herkunft": "erwaehnung",
+          "level": "land",
+          "name": "Sachsen-Anhalt"
+        },
+        {
+          "geography_id": null,
+          "herkunft": "erwaehnung",
+          "level": "unknown",
+          "name": "Estland"
+        },
+        {
+          "geography_id": null,
+          "herkunft": "erwaehnung",
+          "level": "unknown",
+          "name": "EU"
+        },
+        {
+          "geography_id": null,
+          "herkunft": "erwaehnung",
+          "level": "unknown",
+          "name": "Finnland"
+        }
+      ],
+      "mentioned_locations": [
+        "Sachsen-Anhalt",
+        "Finnland",
+        "Estland",
+        "Berlin"
+      ],
+      "mentioned_parties": [
+        "BSW"
+      ],
+      "parteien": [
+        "AfD",
+        "CDU",
+        "SPD",
+        "FDP",
+        "Grüne"
+      ],
+      "policy_field": [],
+      "political_level": "bund",
+      "related_entities": [
+        {
+          "confidence": "high",
+          "entity_id": "party-afd",
+          "name": "AfD",
+          "type": "party"
+        },
+        {
+          "confidence": "high",
+          "entity_id": "party-cdu",
+          "name": "CDU",
+          "type": "party"
+        },
+        {
+          "confidence": "high",
+          "entity_id": "party-spd",
+          "name": "SPD",
+          "type": "party"
+        },
+        {
+          "confidence": "high",
+          "entity_id": "party-fdp",
+          "name": "FDP",
+          "type": "party"
+        },
+        {
+          "confidence": "high",
+          "entity_id": "party-gruene",
+          "name": "Bündnis 90/Die Grünen",
+          "type": "party"
+        },
+        {
+          "confidence": "high",
+          "entity_id": "party-bsw",
+          "name": "BSW",
+          "type": "party"
+        }
+      ],
+      "related_levels": [
+        "eu",
+        "land"
+      ],
+      "status": "neu",
+      "tags": [],
+      "understanding_status": "complete",
+      "updated_at": "2026-09-10 04:02:38.837+00",
+      "vorgang_id": "vg-sachsen-20260908-92ee54",
+      "warum_wichtig": "Verändert bundespolitische Debatten über Umgang mit der AfD und mögliche Koalitionsoptionen; beeinflusst Parteienstellungen und strategische Kommunikation im Bundestagswahljahr; kann Debatten über Verbotsverfahren und überparteiliche Rollen in Ländern auslösen.",
+      "was_ist_passiert": "Bei der Landtagswahl in Sachsen-Anhalt erzielte die AfD einen Wahlsieg. Bundes- und internationale Politiker sowie Parteien reagierten: Ex-Bundeskanzlerin Merkel äußerte Bestürzung; Bundeskanzler Merz kommentierte skeptisch zu einem AfD-Verbotsverfahren und äußerte separat Positionen zum EU-Haushalt; die kommunal/staatlich relevante BSW-Partei kündigte Gespräche mit der AfD an, andere Parteien lehnten Gespräche ab. Auslandreaktionen aus Finnland und Estland wurden berichtet."
+    },
+    {
+      "affected_geographies": [],
+      "ausschuesse": [],
+      "best_source_url": "https://www.wiwo.de/finanzen/geldanlage/altersvorsorgedepot-kampfpreise-bei-quirion-scalable-deka/100252676.html",
+      "classification_confidence": {
+        "entities": "medium",
+        "event_type": "medium",
+        "geography": "unknown",
+        "geography_ermittelt_am": null,
+        "geography_indizien": [],
+        "geography_quelle": null,
+        "geography_wiederverwendet": false,
+        "level": "high",
+        "level_ermittelt_am": "2026-09-09T21:33:39.541Z",
+        "level_quelle": "ki",
+        "level_wiederverwendet": false
+      },
+      "decision_entities": [
+        {
+          "confidence": "high",
+          "entity_id": "ministry-bmf",
+          "name": "Bundesministerium der Finanzen",
+          "type": "ministry"
+        }
+      ],
+      "decision_level": "bund",
+      "headline": "Kampfpreise bei Altersvorsorgedepots durch mehrere Anbieter",
+      "id": "ko-vg-altersvorsorgedepot-20260908-0c8129",
+      "mentioned_committees": [],
+      "mentioned_geographies": [],
+      "mentioned_locations": [],
+      "mentioned_parties": [],
+      "parteien": [],
+      "policy_field": [],
+      "political_level": "bund",
+      "related_entities": [
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Quirion",
+          "type": "organization"
+        },
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Scalable",
+          "type": "organization"
+        },
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Deka",
+          "type": "organization"
+        }
+      ],
+      "related_levels": [],
+      "status": "neu",
+      "tags": [],
+      "understanding_status": "complete",
+      "updated_at": "2026-09-09 21:33:39.541+00",
+      "vorgang_id": "vg-altersvorsorgedepot-20260908-0c8129",
+      "warum_wichtig": "Niedrige Preise beeinflussen Wettbewerbsbedingungen im Vorsorgemarkt und können Verbraucherentscheidungen sowie die Renditen von Standardangeboten verändern.",
+      "was_ist_passiert": "Mehrere Finanzanbieter (Quirion, Scalable, Deka) bieten Altersvorsorgedepots zu sehr niedrigen Preisen an, berichtete die WirtschaftsWoche am 8. September 2026."
+    },
+    {
+      "affected_geographies": [],
+      "ausschuesse": [],
+      "best_source_url": "https://www.dielinkebt.de/presse/pressemitteilungen/detail/bmf-entwurf-zur-besteuerung-von-krypto-werten-lobby-laesst-die-champagnerkorken-knallen/",
+      "classification_confidence": {
+        "entities": "medium",
+        "event_type": "medium",
+        "geography": "unknown",
+        "geography_ermittelt_am": null,
+        "geography_indizien": [],
+        "geography_quelle": null,
+        "geography_wiederverwendet": false,
+        "level": "high",
+        "level_ermittelt_am": "2026-09-09T21:32:15.891Z",
+        "level_quelle": "ki",
+        "level_wiederverwendet": false
+      },
+      "decision_entities": [
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Bundesfinanzministerium",
+          "type": "ministry"
+        }
+      ],
+      "decision_level": "bund",
+      "headline": "BMF-Referentenentwurf zur Besteuerung von Krypto-Werten sorgt für Kritik wegen zu lascher Regeln",
+      "id": "ko-vg-bundesfinanzministeriums-20260909-54c744",
+      "mentioned_committees": [],
+      "mentioned_geographies": [],
+      "mentioned_locations": [],
+      "mentioned_parties": [
+        "Die Linke"
+      ],
+      "parteien": [
+        "Die Linke"
+      ],
+      "policy_field": [],
+      "political_level": "bund",
+      "related_entities": [
+        {
+          "confidence": "high",
+          "entity_id": "party-linke",
+          "name": "Die Linke",
+          "type": "party"
+        },
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Krypto-Lobby",
+          "type": "organization"
+        }
+      ],
+      "related_levels": [],
+      "status": "neu",
+      "tags": [],
+      "understanding_status": "complete",
+      "updated_at": "2026-09-09 21:32:15.891+00",
+      "vorgang_id": "vg-bundesfinanzministeriums-20260909-54c744",
+      "warum_wichtig": "Der Entwurf verändert Steuerregeln für einen wachsenden Finanzmarkt und beeinflusst fiskalische Einnahmen sowie Regulierungsstandards. Er betrifft die finanzpolitische Positionierung der Abgeordneten und mögliche Interessenkonflikte durch Einflussnahme der Krypto-Lobby.",
+      "was_ist_passiert": "Das Bundesfinanzministerium hat einen Referentenentwurf zur Besteuerung von Kryptowerten veröffentlicht. Aus Kritikerkreisen, darunter Expert:innen der Linken, gibt es Berichte, dass der Entwurf gegenüber Lobbyinteressen nachgiebig sei."
+    },
+    {
+      "affected_geographies": [],
+      "ausschuesse": [],
+      "best_source_url": "https://www.spiegel.de/politik/deutschland/bundestag-afd-attackiert-regierung-kanzler-friedrich-merz-reagiert-defensiv-a-62e901c6-8df2-40c1-aed7-d229329e55d3",
+      "classification_confidence": {
+        "entities": "medium",
+        "event_type": "medium",
+        "geography": "unknown",
+        "geography_ermittelt_am": null,
+        "geography_indizien": [],
+        "geography_quelle": null,
+        "geography_wiederverwendet": false,
+        "level": "high",
+        "level_ermittelt_am": "2026-09-09T21:31:19.461Z",
+        "level_quelle": "ki",
+        "level_wiederverwendet": false
+      },
+      "decision_entities": [
+        {
+          "confidence": "high",
+          "entity_id": "government-bund",
+          "name": "Bundesregierung",
+          "type": "government"
+        }
+      ],
+      "decision_level": "bund",
+      "headline": "Kanzlerkritik in Medienbericht",
+      "id": "ko-vg-selbstbewusstsein-20260909-7b52dd",
+      "mentioned_committees": [],
+      "mentioned_geographies": [],
+      "mentioned_locations": [],
+      "mentioned_parties": [],
+      "parteien": [
+        "Bundesregierung-Fraktion"
+      ],
+      "policy_field": [],
+      "political_level": "bund",
+      "related_entities": [
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Bundesregierung-Fraktion",
+          "type": "party"
+        }
+      ],
+      "related_levels": [],
+      "status": "neu",
+      "tags": [],
+      "understanding_status": "complete",
+      "updated_at": "2026-09-09 21:31:19.461+00",
+      "vorgang_id": "vg-selbstbewusstsein-20260909-7b52dd",
+      "warum_wichtig": "Öffentliche Kritik am Regierungschef kann die Wahrnehmung der Regierungskompetenz und die Debattenlage im Parlament beeinflussen.",
+      "was_ist_passiert": "In einem Medienbeitrag wurde der Kanzler dafür kritisiert, kein Selbstbewusstsein ausgestrahlt zu haben."
+    },
+    {
+      "affected_geographies": [
+        {
+          "geography_id": "geo-bund",
+          "herkunft": "ki",
+          "level": "bund",
+          "name": "Deutschland"
+        }
+      ],
+      "ausschuesse": [],
+      "best_source_url": "https://www.rnd.de/politik/gasversorgung-in-deutschland-taegliches-update-zu-preisen-speichern-import-und-verbrauch-stand-09-09-GYGJF6NA3FHIPJ4CEZ2K23H2JU.html",
+      "classification_confidence": {
+        "entities": "medium",
+        "event_type": "medium",
+        "geography": "medium",
+        "geography_ermittelt_am": "2026-09-09T20:03:43.573Z",
+        "geography_indizien": [],
+        "geography_quelle": "ki",
+        "geography_wiederverwendet": false,
+        "level": "high",
+        "level_ermittelt_am": "2026-09-09T20:03:43.573Z",
+        "level_quelle": "ki",
+        "level_wiederverwendet": false
+      },
+      "decision_entities": [
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Bundesministerium für Wirtschaft und Klimaschutz",
+          "type": "ministry"
+        }
+      ],
+      "decision_level": "bund",
+      "headline": "",
+      "id": "ko-vg-gasversorgung-20260908-847be4",
+      "mentioned_committees": [],
+      "mentioned_geographies": [
+        {
+          "geography_id": "geo-bund",
+          "herkunft": "erwaehnung",
+          "level": "bund",
+          "name": "Deutschland"
+        }
+      ],
+      "mentioned_locations": [
+        "Deutschland"
+      ],
+      "mentioned_parties": [],
+      "parteien": [],
+      "policy_field": [],
+      "political_level": "bund",
+      "related_entities": [
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Energieversorger",
+          "type": "organization"
+        }
+      ],
+      "related_levels": [],
+      "status": "neu",
+      "tags": [],
+      "understanding_status": "complete",
+      "updated_at": "2026-09-09 20:03:43.573+00",
+      "vorgang_id": "vg-gasversorgung-20260908-847be4",
+      "warum_wichtig": "Versorgungslage beeinflusst Energie- und Wirtschaftspolitik sowie Haushaltskosten; Relevanz für energiepolitische Entscheidungen und parlamentarische Debatten besteht sofort.",
+      "was_ist_passiert": "Tägliches Lageupdate zur Gasversorgung in Deutschland veröffentlicht; enthält Angaben zu Speicherständen, Preisen, Importen und Verbrauchsentwicklung."
+    },
+    {
+      "affected_geographies": [
+        {
+          "geography_id": null,
+          "herkunft": "ki",
+          "level": "unknown",
+          "name": "Großbritannien"
+        }
+      ],
+      "ausschuesse": [],
+      "best_source_url": "https://www.deutschlandfunk.de/grossbritannien-rueckstau-sorgt-fuer-weitere-flugausfaelle-ruecktrittsforderungen-an-chef-der-flugsi-102.html",
+      "classification_confidence": {
+        "entities": "medium",
+        "event_type": "medium",
+        "geography": "medium",
+        "geography_ermittelt_am": "2026-09-09T20:02:29.391Z",
+        "geography_indizien": [],
+        "geography_quelle": "ki",
+        "geography_wiederverwendet": false,
+        "level": "high",
+        "level_ermittelt_am": "2026-09-09T20:02:29.391Z",
+        "level_quelle": "ki",
+        "level_wiederverwendet": false
+      },
+      "decision_entities": [],
+      "decision_level": "international",
+      "headline": "",
+      "id": "ko-vg-großbritannien-20260909-adae35",
+      "mentioned_committees": [],
+      "mentioned_geographies": [
+        {
+          "geography_id": null,
+          "herkunft": "erwaehnung",
+          "level": "unknown",
+          "name": "Großbritannien"
+        }
+      ],
+      "mentioned_locations": [
+        "Großbritannien"
+      ],
+      "mentioned_parties": [],
+      "parteien": [],
+      "policy_field": [],
+      "political_level": "international",
+      "related_entities": [
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "britische Flugsicherung",
+          "type": "organization"
+        },
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "Fluggesellschaften",
+          "type": "organization"
+        }
+      ],
+      "related_levels": [
+        "bund"
+      ],
+      "status": "neu",
+      "tags": [],
+      "understanding_status": "complete",
+      "updated_at": "2026-09-09 20:02:29.391+00",
+      "vorgang_id": "vg-großbritannien-20260909-adae35",
+      "warum_wichtig": "Starker, unmittelbar sichtbarer Ausfall in der Luftverkehrsinfrastruktur kann Reisende im Wahlkreis betreffen, politische Verantwortung und Regulierungsthemen auf nationaler Ebene neu aufwerfen sowie Debatten zu Betriebssicherheit und Personalführung auslösen.",
+      "was_ist_passiert": "In Großbritannien führten technische Störungen bei der Flugsicherung zu massiven Rückstaus; über 2.000 Flüge wurden an zwei Tagen gestrichen, und es gibt öffentliche Rücktrittsforderungen gegen den Chef der Flugsicherung."
+    },
+    {
+      "affected_geographies": [],
+      "ausschuesse": [],
+      "best_source_url": "https://www.bmas.de/DE/Service/Presse/Meldungen/2026/besuch-des-unicef-regionaldirektors-asien-im-bmas.html",
+      "classification_confidence": {
+        "entities": "medium",
+        "event_type": "medium",
+        "geography": "unknown",
+        "geography_ermittelt_am": null,
+        "geography_indizien": [],
+        "geography_quelle": null,
+        "geography_wiederverwendet": false,
+        "level": "high",
+        "level_ermittelt_am": "2026-09-09T17:31:55.894Z",
+        "level_quelle": "ki",
+        "level_wiederverwendet": false
+      },
+      "decision_entities": [
+        {
+          "confidence": "high",
+          "entity_id": "ministry-bmas",
+          "name": "Bundesministerium für Arbeit und Soziales",
+          "type": "ministry"
+        }
+      ],
+      "decision_level": "bund",
+      "headline": "Treffen BMAS mit UNICEF-Regionaldirektor Asien über Kinderrechte",
+      "id": "ko-vg-regionaldirektors-20260630-205704",
+      "mentioned_committees": [],
+      "mentioned_geographies": [],
+      "mentioned_locations": [],
+      "mentioned_parties": [],
+      "parteien": [],
+      "policy_field": [],
+      "political_level": "bund",
+      "related_entities": [
+        {
+          "confidence": "low",
+          "entity_id": null,
+          "name": "UNICEF",
+          "type": "organization"
+        }
+      ],
+      "related_levels": [],
+      "status": "neu",
+      "tags": [],
+      "understanding_status": "complete",
+      "updated_at": "2026-09-09 17:31:55.894+00",
+      "vorgang_id": "vg-regionaldirektors-20260630-205704",
+      "warum_wichtig": "Das BMAS signalisiert Engagement in internationalen Kinderrechtsfragen und mögliche Politikgestaltung oder Förderinitiativen. Thema berührt familien- und sozialpolitische Agenda des Abgeordneten und könnte Kooperationen sowie Öffentlichkeitsarbeit auslösen.",
+      "was_ist_passiert": "Der UNICEF-Regionaldirektor für Asien besuchte das Bundesministerium für Arbeit und Soziales (BMAS) und führte Gespräche über Kinderrechte und mögliche Kooperationen."
+    }
+  ],
+  "matches": [
+    {
+      "knowledge_object_id": "ko-vg-pflegeaufsicht-20260812-d3f2a8",
+      "matched_features": [],
+      "rank": 1
+    },
+    {
+      "knowledge_object_id": "ko-vg-andenregion",
+      "matched_features": [],
+      "rank": 2
+    },
+    {
+      "knowledge_object_id": "ko-vg-altersvorsorgedepot-20260908-0c8129",
+      "matched_features": [],
+      "rank": 3
+    },
+    {
+      "knowledge_object_id": "ko-vg-petitionsausschuss-20260416-b6549c",
+      "matched_features": [
+        {
+          "type": "ausschuss",
+          "value": "Petitionsausschuss"
+        }
+      ],
+      "rank": 4
+    },
+    {
+      "knowledge_object_id": "ko-vg-petitionsausschuss-20260610-cade7d",
+      "matched_features": [
+        {
+          "type": "ausschuss",
+          "value": "Petitionsausschuss"
+        }
+      ],
+      "rank": 5
+    },
+    {
+      "knowledge_object_id": "ko-vg-einkommensteuerreform-20260902-8002cc",
+      "matched_features": [],
+      "rank": 6
+    },
+    {
+      "knowledge_object_id": "ko-vg-steuerreform-20260728-9411d7",
+      "matched_features": [],
+      "rank": 7
+    },
+    {
+      "knowledge_object_id": "ko-vg-politische-20251201-ab0fd5",
+      "matched_features": [
+        {
+          "type": "ausschuss",
+          "value": "Petitionsausschuss"
+        }
+      ],
+      "rank": 8
+    },
+    {
+      "knowledge_object_id": "ko-vg-raketenangriff",
+      "matched_features": [],
+      "rank": 9
+    },
+    {
+      "knowledge_object_id": "ko-vg-steinprofis-20250625-96007e",
+      "matched_features": [],
+      "rank": 10
+    },
+    {
+      "knowledge_object_id": "ko-vg-commerzbank-20260827-b00017",
+      "matched_features": [],
+      "rank": 11
+    },
+    {
+      "knowledge_object_id": "ko-vg-arbeitsmarkt-20230921-a2be40",
+      "matched_features": [],
+      "rank": 12
+    }
+  ],
+  "gesuchterKandidat": "ko-vg-digitalisierung-20260908-2b755c"
+}
