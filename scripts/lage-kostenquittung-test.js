@@ -92,6 +92,12 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
     assert.equal(drafts.length,1); assert.equal(reviews.length,1); assert.deepEqual(reviews[0],review);
     if (!fortsetzen) assert.equal(bodies[0].text.format.strict, false, "Andere Schemavertraege bleiben unveraendert");
     const reviewBody = bodies[fortsetzen ? 0 : 1];
+    assert.equal(reviewBody.reasoning?.effort, "low", "Der Quellenpruefer braucht eigenen Denkaufwand fuer den vollstaendigen Mandatsvergleich");
+    assert.equal(reviewBody.max_output_tokens, 3000, "Reasoning und sichtbare Antwort teilen dieselbe unveraenderte Obergrenze");
+    if (!fortsetzen) {
+      assert.equal(bodies[0].reasoning?.effort, "minimal", "Nur das Review aendert seinen Aufwand");
+      assert.equal(bodies[0].max_output_tokens, 3000);
+    }
     assert.equal(reviewBody.text.format.strict, true, "Der Quellenpruefer muss alle Pflichtfelder liefern");
     const schema = reviewBody.text.format.schema;
     assert(!/\"(?:minLength|maxLength|pattern|format)\"\s*:/.test(JSON.stringify(schema)), "Azure Strict Schema nutzt nur unterstuetzte Schluessel");
