@@ -122,6 +122,9 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
 
     if (vorgang === "textnachlauf") {
       const T = require("../lib/helmut/testkohorte-textnachlauf");
+      const arbeitsbeginn = T.pruefeArbeitsbeginn(env.HELMUT_TEXTNACHLAUF_AB_POSITION || 1);
+      D.fordere(arbeitsbeginn === 1 || config.textnachlaufArbeitsauswahlVersion === 1,
+        "textnachlauf-arbeitsauswahl-nicht-deployt");
       D.fordere(config.textnachlaufVersion === 2 && config.testKosten?.version === 2
         && config.testKosten.aktiv === true && config.testKosten.limitUsd === 4
         && config.testKosten.maxManualCalls === null && config.testKosten.maxWindowMs === null
@@ -135,7 +138,12 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       const runId = "nachlauf500-" + env.GITHUB_RUN_ID;
       const kostenVorher = kosten;
       const day = require("../lib/helmut/briefing-frische").berlinTagKey(now());
-      const ids = bestand.mandate.filter(m => m.aktiv).map(m => m.user_id);
+      const ids = bestand.mandate.filter(m => m.aktiv).map(m => m.user_id).sort();
+      const arbeitsIdsErlaubt = new Set(ids.slice(arbeitsbeginn - 1));
+      const auswahlBestaetigt = b => (b?.arbeitsbeginn ?? 1) === arbeitsbeginn
+        && Array.isArray(b?.results) && b.results.every(r => arbeitsIdsErlaubt.has(r?.userId)
+          || (r?.gestartet === false && r?.gespeichert !== true && r?.lageVorhanden !== true
+            && r?.grund === "ausserhalb-arbeitsauswahl"));
       async function leseTexte() {
         const rows = [];
         for (let i = 0; i < ids.length; i += 50) {
@@ -155,7 +163,8 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         method: "POST", redirect: "error", signal: AbortSignal.timeout(295000),
         headers: { Authorization: `Bearer ${env.HELMUT_CRON_SECRET}`, Accept: "application/json",
           "x-helmut-production-commit": env.GITHUB_SHA, "x-helmut-lauf": runId,
-          "x-helmut-bestaetigung": T.CONFIRM }
+          "x-helmut-bestaetigung": T.CONFIRM,
+          ...(arbeitsbeginn > 1 ? { "x-helmut-arbeitsbeginn": String(arbeitsbeginn) } : {}) }
       });
       D.fordere(res.status === 200, "textnachlauf-http-fehler");
       const b = await res.json();
@@ -181,13 +190,13 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         // Auch bei verlorener DB-Endquittung vorhandene HTTP-Einzelbelege
         // erhalten. Dies sind ausdruecklich SERVERANGABEN, keine nachtraeglich
         // erfundene Abschlussquittung und keine Freigabe fuer Wiederholungen.
-        if (Array.isArray(b.results) && b.results.length === 500
+        if (auswahlBestaetigt(b) && Array.isArray(b.results) && b.results.length === 500
           && new Set(b.results.map(r => r?.userId)).size === 500
           && b.results.every(r => r && ids.includes(r.userId)
             && ["gestartet", "gespeichert", "lageVorhanden"].every(k => r[k] === undefined || typeof r[k] === "boolean"))
           && b.results.filter(r => r.gespeichert === true).length === b.gespeichert
           && b.funktionsnachweis500 === false) {
-          const einzelGruende = new Set([...festeGruende, "vorhanden-geschuetzt", "zeitbudget",
+          const einzelGruende = new Set([...festeGruende, "vorhanden-geschuetzt", "zeitbudget", "ausserhalb-arbeitsauswahl",
             "nicht-erreicht-nach-abbruch", "existing-result", "no-current-sources", "no-vorgaenge"]);
           serverBefund.einzelbelege = b.results.map(r => ({
             mandatHash: D.hash(r.userId), gestartet: r.gestartet === true,
@@ -204,6 +213,7 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         && Number.isSafeInteger(b.qualitaetsfehler) && b.qualitaetsfehler >= 0 && b.qualitaetsfehler < 500
         && Array.isArray(b.results) && b.results.filter(r => r.grund === "nachlauf-zeitbudget").length === 1;
       D.fordere((b?.ok === true || qualitaetslauf || zeitlauf) && b.schemaVersion === 1 && b.runId === runId
+        && auswahlBestaetigt(b)
         && b.modus === "manuell-fehlende-texte" && b.ziel === 500
         && Number.isSafeInteger(b.gespeichert) && b.gespeichert >= 0 && b.gespeichert <= 500
         && Array.isArray(b.results) && b.results.length === 500
@@ -227,6 +237,9 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         "textnachlauf-bestand-veraendert");
       T.pruefeKosten(nach.auth, kosten.reservierungen, now().toISOString().slice(0, 10));
       const texteNachher = await leseTexte();
+      D.fordere(texteNachher.filter(r => !arbeitsIdsErlaubt.has(r.user_id)).every(r =>
+        texteVorher.some(v => v.id === r.id && D.hash(v) === D.hash(r))),
+      "textnachlauf-ausserhalb-arbeitsauswahl-veraendert");
       const Q = require("../lib/helmut/lage-quellenbeleg");
       D.fordere(texteVorher.every(r => texteNachher.some(n => n.id === r.id && Q.bestandErhalten(r, n))),
         "textnachlauf-hat-vorhandenen-text-veraendert");

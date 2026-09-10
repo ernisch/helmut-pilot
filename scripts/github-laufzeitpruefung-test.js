@@ -83,7 +83,7 @@ async function main() {
     r = await request("GET", geheim);
     check(r.status === 200 && r.body.reinLesend === true && r.body.commit === sha, "echter Handler erreicht Status");
     const runtime = await pruefe({ env, fetchFn: async () => ({ status: r.status, json: async () => r.body }) });
-    check(runtime.textnachlaufVersion === 2 && runtime.testKosten?.aktiv === true
+    check(runtime.textnachlaufVersion === 2 && runtime.textnachlaufArbeitsauswahlVersion === 1 && runtime.testKosten?.aktiv === true
       && runtime.testKosten.limitUsd === 4 && runtime.testKosten.version === 2 && runtime.testKosten.maxManualCalls === null
       && runtime.testKosten.maxWindowMs === null && runtime.testKosten.unbekanntBleibtReserviert === true,
     "echter Handler und CLI Leser bestaetigen denselben Dollar Schutzvertrag");
@@ -123,6 +123,15 @@ async function main() {
     });
     check(ohneProduction.body.ok === false && ohneProduction.body.grund === "nachlauf-konfiguration-abweichend",
       "Echter Server prueft Laufzeit vor jedem Speicher oder Modellpfad");
+    const textlauf = require("../lib/helmut/testkohorte-textnachlauf"), originalTextlauf = textlauf.ausfuehren;
+    let arbeitsbeginn, auswahlVersion;
+    textlauf.ausfuehren = async args => { arbeitsbeginn = args.arbeitsbeginn;
+      auswahlVersion = (await args.config()).textnachlaufArbeitsauswahlVersion; return { ok: true }; };
+    try {
+      const scoped = await request("POST", geheim, nachlauf, { "x-helmut-arbeitsbeginn": "27" });
+      check(scoped.status === 200 && arbeitsbeginn === "27" && auswahlVersion === 1,
+        "Echter HTTP Handler transportiert die Arbeitsauswahl und meldet dieselbe Faehigkeit");
+    } finally { textlauf.ausfuehren = originalTextlauf; }
     const B = require("../lib/helmut/briefing-speicher");
     const profile = { id: "test-kohorte-a-001", committees: ["Bildung"] };
     const getProfileVorher = storage.getProfile, getBriefingVorher = storage.getRenderedBriefingV3;

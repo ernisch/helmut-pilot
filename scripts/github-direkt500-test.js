@@ -461,6 +461,55 @@ async function main() {
     assert.equal(falsch.grund, "textnachlauf-texte-nicht-gespeichert");
     assert.equal(falsch.automatischeWiederholung, false); assert.equal(calls, 2);
   });
+  await test("Actions verlangt die Arbeitsauswahl bis zur Antwort und zum unabhaengigen Speicherbeleg", async () => {
+    const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
+    h.config.textnachlaufVersion = 2; h.config.textnachlaufArbeitsauswahlVersion = 1;
+    const runId = "nachlauf500-123456789";
+    const ids = h.w.snapshot().mandate.filter(m => m.aktiv).map(m => m.user_id).sort();
+    let calls = 0, defekt = null, nachher = false;
+    const day = require("../lib/helmut/briefing-frische").berlinTagKey(new Date(JETZT));
+    const alt = { id: `bf-${ids[0]}-lage-${day}`, user_id: ids[0], slot: "lage",
+      generated_at: JETZT, payload: { paragraphs: [{ text: "Erhaltener Alttext" }] } };
+    h.quittungen = [{ run_id: runId, status: "success", processed_count: 0, failed_count: 0,
+      started_at: JETZT, finished_at: JETZT }];
+    const args = { ...h.args, vorgang: "textnachlauf", env: { ...h.args.env,
+      HELMUT_TESTKOHORTE_CONFIRM: D.WORTE.textnachlauf, GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1",
+      HELMUT_TEXTNACHLAUF_AB_POSITION: "27" }, fetchFn: async (url, init) => {
+      const u = new URL(url);
+      if (u.pathname === "/api/cron/lage-briefing") {
+        calls++; nachher = true; assert.equal(init.method, "POST");
+        assert.equal(init.headers["x-helmut-arbeitsbeginn"], "27");
+        const results = ids.map((userId, i) => ({ userId, gestartet: false,
+          grund: i < 26 ? "ausserhalb-arbeitsauswahl" : "zeitbudget" }));
+        if (defekt === "praefix-gestartet") results[0].gestartet = true;
+        if (defekt === "praefix-cache") results[0].lageVorhanden = true;
+        return { status: 200, json: async () => ({ ok: true, schemaVersion: 1, runId,
+          modus: "manuell-fehlende-texte", ziel: 500, gespeichert: 0, results, funktionsnachweis500: false,
+          ...(defekt === "echo-fehlt" ? {} : { arbeitsbeginn: defekt === "echo-falsch" ? 28 : 27 }) }) };
+      }
+      if (u.pathname.endsWith("/briefings")) {
+        const row = kopie(alt);
+        if (nachher && defekt === "praefix-speicher") row.payload = {
+          ...require("./fixtures/lage-beleg").payload(), vorherigerStand: kopie(alt) };
+        return { status: 200, json: async () => u.searchParams.get("user_id").includes(JSON.stringify(ids[0])) ? [row] : [] };
+      }
+      return fetch(url, init);
+    } };
+    for (const fehler of [null, "echo-fehlt", "echo-falsch", "praefix-gestartet", "praefix-cache", "praefix-speicher"]) {
+      defekt = fehler; nachher = false; const before = calls;
+      const r = await G.ausfuehren(args);
+      assert.equal(calls, before + 1); assert.equal(r.ok, fehler === null, JSON.stringify(r));
+      assert.equal(r.automatischeWiederholung, false); assert.equal(r.funktionsnachweis500, false);
+      if (fehler === "praefix-speicher") assert.equal(r.grund, "textnachlauf-ausserhalb-arbeitsauswahl-veraendert");
+      if (!fehler) { assert.equal(r.arbeitsbeginn, 27); assert.equal(r.results.length, 500); }
+    }
+    const before = calls;
+    delete h.config.textnachlaufArbeitsauswahlVersion;
+    assert.equal((await G.ausfuehren(args)).grund, "textnachlauf-arbeitsauswahl-nicht-deployt");
+    args.env.HELMUT_TEXTNACHLAUF_AB_POSITION = "027";
+    assert.equal((await G.ausfuehren(args)).grund, "nachlauf-arbeitsbeginn-ungueltig");
+    assert.equal(calls, before, "Ungueltige Auswahl und fehlende Deploymentfaehigkeit starten keinen POST");
+  });
   await test("Actions bestaetigt Alttextreparatur nur mit vollstaendiger unveraenderter Historie", async () => {
     for (const defekt of [null, "historie", "kennzeichnung"]) {
       const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
