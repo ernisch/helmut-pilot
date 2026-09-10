@@ -1,8 +1,12 @@
 # CURRENT STATE — Helmut
 
-**Veroeffentlicht 10.09. (Tuerkei):** [PR 354](https://github.com/ernisch/helmut-pilot/pull/354), `913caff13e23bd0ea3c476bb4a64c67681183b97`, READY `dpl_Db1MsfWVzShEk2VVvYFvj7tqNM7W` am Hauptalias. Quellenhash, Sachdetailpruefung und private App-Einzelstatus. CI `34407760954`: 348/348 Suiten, 50 Browserpruefungen und beide Datenbankgates erfolgreich; PR und Merge baumgleich. [Nachweis](betrieb/lage-entwurfsbelege.md).
+**Stand 10.09.2026: teilweise abgeschlossen.** Das erneut ausdruecklich freigegebene 500er Fenster wurde sicher geschlossen. Abschluss `34448732540` am 10.09., 10:19:43 Tuerkei / 09:19:43 Berlin / 07:19:43 UTC; unabhaengige SQL Aufnahme 07:22:25 UTC: 504 Profile, fuenf alte Dummys aktiv, 495 synthetische inaktiv, 505 Identitaeten, keine aktiven Sperren oder Leases. Inhalte und Konten unveraendert. Ein Fachlauf erledigte 406 Auftraege und erhoehte heutige Briefingpakete von 258 auf 375. Zwei heutige Lage Texte; kein Textnachlauf und keine vollstaendige 500er Abnahme.
 
-**Teilweise abgeschlossen:** Fachliche Gesamtabnahme offen. Naechster Schritt: vorhandener manueller Nachweis unter bestehenden Zeit- und Kostengrenzen. **Historie vor #354:** folgende Staende sind ueberholt.
+**Aktueller Blocker:** Ein Modellaufruf mit unbekannter Abrechnung hat den deployten Kostenriegel eingefroren. 0,219472 USD konservativ abgerechnet plus 0,212000 USD offene Reserve, zusammen 0,431472 USD gebunden; Tagesgrenze unveraendert 4 USD. Keine Reserve freigeben und keinen weiteren Lauf starten. Branch `codex/500-kostenabbruch-nachweis-20260910` korrigiert die irrefuehrend gruene Kontrollquittung und protokolliert Socket Timeouts eindeutig. Noch nicht gemergt oder deployt. [Aktueller Betriebsbeleg und Pruefstand](betrieb/500-kostenabbruch-2026-09-10.md).
+
+**Production:** main `53f0c67aad2e81f4a557d8ceb116b87696c909e9` nach Dokumentations PR #355, READY `dpl_2GPmsjF4f9wnjVjHU62qKYDXKuGW`. Technische Grundlage [PR #354](https://github.com/ernisch/helmut-pilot/pull/354), CI `34407760954`: 348/348 Suiten, 50 Browserpruefungen und beide Datenbankgates erfolgreich. [Veroeffentlichungsnachweis](betrieb/lage-entwurfsbelege.md).
+
+**Historie bis 09.09.2026:** Die folgenden frueheren Fenster, Zahlen und damaligen naechsten Schritte sind ueberholt, soweit sie dem aktuellen Befund oben widersprechen. Gueltige Betriebsgrenzen stehen in Abschnitt 12.
 **Stand 09.09.2026: teilweise abgeschlossen, 0 von 500 vollstaendig abgenommen.** PR #346 und #347 sind mit ausdruecklicher Commit und Mergefreigabe uebernommen. Production `d0cee4198086dc34a50ce5bd1fa00065436b1294`, READY `dpl_7qCRjinKFKtWwRUeki1D96VnCYJm`. PR #347 CI `34360404495`: 345/345 Offline Suiten, 50 Browserpruefungen, 13 PostgreSQL Kontoschutz und Geldgruppen, 48 Z22 Datenbankpruefungen bestanden. main CI `34361936200` erfolgreich. PR #345 bleibt offen und muss vor Uebernahme auf diesen neueren Befund nachgezogen werden.
 
 **Aktuelle gezielte Fortsetzung:** Die Geldgrenze von 4 USD je UTC Tag ist deployt und durch den lesenden Lauf `34362141423` bestaetigt. Das anschliessend ausdruecklich freigegebene Fenster wurde genutzt und sicher geschlossen. Von maximal 1000 manuellen Modellversuchen wurden 19 verbraucht, 981 bleiben. Branch `codex/500-quellenauszuege-20260909` bereitet ausschliesslich die begrenzte Ergaenzung fehlender Originalauszuege vor: keine KI, keine Profilaktivierung, maximal 40 Quellen je manuellem Schritt. Der Code ist hier noch nicht deployt. [Technischer Vertrag und Testweg](betrieb/500-kostenbremse-2026-09-09.md).
@@ -16,7 +20,7 @@
 
 ## 1 · Aktive Produktphase
 
-**Einmaliges 500er Testfenster am 09.09. ausgefuehrt und sicher geschlossen; vollstaendiger Funktionsnachweis weiterhin offen.** Die neuere Betreiberanweisung ersetzt die bisherige Zwischenabnahme bei 100: direkt auf 500 ausbauen und dort abnehmen; seit 08.09. keine vorherige A Abnahme und kein Nachtfenster mehr. Der neue ausdrückliche Zielweg `--ziel=500` ergänzt den vorhandenen Ausführer; keine vorgetäuschte B Abnahme. Vorrang haben Datenintegrität, Kommunikationssperre und höchstens 10 USD Modellkosten je UTC Tag mit Stopp bei prognostiziert 9 USD. Danach Verkaufsreife und P0 Punkte OP-01 bis OP-04; [OP Liste](datenmotor-restliste.md). Kein Kunden- oder Mehrtagesnachweis.
+**Freigegebene 500er Testfenster am 09.09. und 10.09. ausgefuehrt und sicher geschlossen; vollstaendiger Funktionsnachweis weiterhin offen.** Die neuere Betreiberanweisung ersetzt die bisherige Zwischenabnahme bei 100: direkt auf 500 ausbauen und dort abnehmen; seit 08.09. keine vorherige A Abnahme und kein Nachtfenster mehr. Der neue ausdrückliche Zielweg `--ziel=500` ergänzt den vorhandenen Ausführer; keine vorgetäuschte B Abnahme. Vorrang haben Datenintegrität, Kommunikationssperre und höchstens 4 USD Modellkosten insgesamt je UTC Tag. Unbekannte Abrechnung sperrt weitere Modellarbeit unabhängig von der verbleibenden Reserve. Danach Verkaufsreife und P0 Punkte OP-01 bis OP-04; [OP Liste](datenmotor-restliste.md). Kein Kunden- oder Mehrtagesnachweis.
 
 ## 2 · Stand auf `main` und Pull Requests
 
@@ -53,7 +57,7 @@
 | `HELMUT_MATCHING_AUDIT=on` | seit 2026-07-28 |
 | `HELMUT_PROCESS_RUNS_RELATIONAL=on` | seit 2026-07-27 |
 | `HELMUT_ATOMIC_LOCK` | an — atomare, fail-closed Sperren |
-| LLM Tagesbudget | **Deckel 2416 / Understanding Reserve 702 / Vorrangreserve 200**, im 500er Ausfuehrer frisch bestaetigt. Am 08.09., 09:25 UTC: 85 Reservierungen und Belege, 0,239680 USD geschaetzt. Kein Mindestzaehler als Startgate (§60). Maximal 10 USD, Prognosestopp 9 USD; kein Rechnungsbeleg oder atomarer USD Riegel. |
+| LLM Tagesbudget | **Deckel 2416 / Understanding Reserve 702 / Vorrangreserve 200** bestaetigt. Zusaetzlich atomarer Geldriegel **4 USD je UTC Tag**. Seit 10.09., 10:07:55 Tuerkei / 09:07:55 Berlin / 07:07:55 UTC wegen unbekanntem Aufruf eingefroren; 0,431472 USD konservativ gebunden. Keine Anbieterrechnung. |
 | `HELMUT_VERSTEHEN_CAS=on` | seit 2026-08-17; `HELMUT_VERSTEHEN_PARALLELITAET` nicht gesetzt ⇒ wirkt als 1 |
 | `HELMUT_SCALABLE_PIPELINE=on` | **seit 23.08. 16:47 UTC**, Modus `shadow`, Worker 4/25/25; Rückweg: Flag löschen + Redeploy (Betreiber) |
 | `HELMUT_CRON_GLOBALABRUF=on` | seit 2026-08-06 (Betreiber); Fortbestand ist Betreiberentscheidung |
@@ -70,12 +74,12 @@
 | Mailversand Resend | gebaut, nicht aktiviert (AVV/DNS offen) |
 | Retention (`HELMUT_RETENTION_EXECUTE`) | nicht scharf (OP-12) |
 | `HELMUT_TENANT_LLM_CAP` | aus (OP-03). **Für den 500er-Test ausdrücklich NICHT einschalten** (§23–25) |
-| `HELMUT_TESTLAUF_*` | **Kommunikation am 07.09., 00:30 UTC gesperrt**, Quellenriegel ebenfalls bestätigt; seit 06.09. 23:50 UTC keine neuen Push Ereignisse oder Outbox Versandquittungen. RPM, TPM, USD und Parallelität haben keinen Laufzeitleser. Historische Zustellungen werden dadurch nicht zu null. |
+| `HELMUT_TESTLAUF_*` | Kommunikation und Kohortenquellen gesperrt, am 10.09. im authentifizierten Leser bestaetigt. Der gesonderte atomare Kostenriegel ist aktiv; alte RPM, TPM, USD und Parallelitaetswerte ersetzen ihn nicht. Keine neue externe Zustellung durch das freigegebene Fenster. |
 | `HELMUT_TESTKOHORTE_EXECUTE`/`_CONFIRM`/`_QUELLEN` | **im aktuellen Prozess nicht gesetzt**. Freigaben gelten ausschließlich pro vorgesehenem scharfen Schritt mit dessen Bestätigung; Vercel nicht ändern. `_QUELLEN` bleibt AUS (§26) |
 | `HELMUT_LLM_USAGE_RELATIONAL` | aus; Migration `20260902121500` nicht angewendet (§3) |
 | `HELMUT_PROFILE_DB_MODE` | **Relationaler Profilpfad und Exklusivmodus am 06.09. um 07:59 UTC wirksam belegt.** Frühere Annahme `HELMUT_PROFILE_DB_EXCLUSIVE` sei aus ist damit überholt. Keine Env Änderung durch diese Sitzung; vor B/C den ausführenden Prozess an den tatsächlichen Speicherpfad binden und Bestand neu erheben. |
 | 5 Offline-Testmandate (`test-mdb-*`) | deaktivierte Repo-Daten, **nicht aktivieren** |
-| **495 synthetische Profile A/B/C** | Nach erneuter genehmigter Aktivierung seit **09.09., 14:21:40 Tuerkei / 13:21:40 Berlin / 11:21:40 UTC wieder alle deaktiviert**. Alle Testkonten weiterhin inaktiv, Adressen auf `.invalid`. Fuenf reale Profile aktiv; alle Zeilen erhalten. Historische Aktivierung SR §61, Abschluss im aktuellen Beleg. |
+| **495 synthetische Profile A/B/C** | Nach freigegebenem Fenster seit **10.09., 10:19:43 Tuerkei / 09:19:43 Berlin / 07:19:43 UTC alle inaktiv**. Unabhaengige SQL Aufnahme bestaetigt 504 erhaltene Profile, fuenf alte Dummys aktiv, 505 Identitaeten und unveraenderte Konten. |
 
 ## 6 · Skalierung von 25 auf exakt 500 Testprofile
 
@@ -139,10 +143,10 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-1. Vorbereitete Fachkorrektur auf `codex/500-quellenfenster-20260909` pruefbar als PR abschliessen: aktuelle Profilauswahl trotz alter Teiltreffer, genaue sichere Qualitaetsdiagnose und Fortsetzung anderer Mandate ohne Wiederholung bekannter Ablehnungen. Kosten und unbekannte Speicherzustaende bleiben globale Stopps.
-2. Konkreten geprueften Stand dem Betreiber fuer Merge und Production Veroeffentlichung vorlegen. #344 ist bereits vollstaendig ausgefuehrt; dafuer keine neue Freigabe. Das einmalige neue Testfenster wurde verbraucht und geschlossen; keine unbeaufsichtigte erneute Aktivierung.
-3. Neuer rein lesender App Nachweis soll alle 500 Abrufvertraege kontrollieren. Nach Freigabe und neuem fest begrenztem Fenster fehlende Inhalte gezielt bearbeiten. Vor jedem Abschnitt Zustand und Tageskosten lesen. Keine Faelligkeitsverschiebung oder blinde Modellwiederholung.
-4. Die 44 Alttexte und fuenf Teilpakete sind erhalten. Belegte Themenmischungen, unbelegte Namen/Rollen, abgeschnittene Empfehlungen, Quellenluecken und Wiederholungen gezielt beheben und Historie bewahren. Fuer alle 500 Lage UND vollstaendiges Briefing speichern, abrufen und Inhalt pruefen. Gespeicherte Titelketten ersetzen keine vollstaendige Faktenpruefung.
+1. Die vorbereitete Korrektur auf `codex/500-kostenabbruch-nachweis-20260910` mit echten Testergebnissen als PR vorlegen. Der erste Push wurde durch die automatische Freigabepruefung mangels ausdruecklicher Zustimmung zur Uebertragung an dieses GitHub Ziel abgelehnt; der Remote Branch wurde danach als nicht vorhanden bestaetigt. Konkrete Freigabe fuer Push, PR und dessen automatische Pruefungen steht aus. Unbekannte Kosten bleiben ein globaler Stopp, bestaetigte fertige Auftraege bleiben im Bericht sichtbar.
+2. Merge und Production Veroeffentlichung des konkreten geprueften Stands durch den Betreiber freigeben lassen. Diese Aenderung klaert die Abrechnung des fehlgeschlagenen Aufrufs nicht. Ohne Anbieterbeleg keine Aufhebung der Kostensperre oder neue Modellarbeit.
+3. Das aktuelle Fenster ist verbraucht und sicher geschlossen. Fuer spaetere fehlende Inhalte sind geklaerte Kosten und ein neues ausdruecklich begrenztes Fenster erforderlich. Erfolgreiche Auftraege und der bereits abgeschlossene Leser fuer den 09.09. werden nicht wiederholt. Kein Umetikettieren verspaeteter Briefings als historischer Tagesnachweis.
+4. Fachliche Gesamtabnahme bleibt offen: Fuer alle 500 Lage und vollstaendiges Briefing speichern, aus der App abrufen und Inhalte pruefen. Paketanzahl und gruene Prozessquittung ersetzen keine vollstaendige Faktenpruefung.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
@@ -152,7 +156,7 @@ ohne Freigabe** gilt fuer jede neue Aenderung. #342 und einzelner Kostennachtrag
 Nur die stuendliche Testaufgabe wurde zur alleinigen Steuerung pausiert;
 Production Crons bleiben gleich; die Endaufgabe hat den Test bestaetigt beendet. [SR §64](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 
-1. Maximal **10 USD Modellkosten je UTC Tag**, Sicherheitsstopp spätestens bei prognostiziert **9 USD**. Die wirkungslosen RPM, TPM, USD und Parallelitätswerte sind kein Schutz.
+1. Maximal **4 USD Modellkosten insgesamt je UTC Tag**, maximal 1000 manuell veranlasste Modellversuche und hoechstens 150 Minuten je ausdruecklich freigegebenem Fenster, Abschlussbeginn spaetestens Minute 120. Der deployte atomare Kostenriegel bleibt verbindlich; bei unbekanntem Ausgang bleibt die Reserve gebunden und weitere Modellarbeit gesperrt. Historische 10 USD und 9 USD Angaben sowie wirkungslose Umgebungswerte sind keine Freigabe.
 2. Keine Aktivierung der vier sonstigen inaktiven Profile, kein aktives Kohortenkonto, keine externe Nachricht oder Zustellung.
 3. Keine Löschung, Wiederherstellung verlorener `crawlRuns`, Migration, neue kostenpflichtige Ressource, Azure Änderung, Vercel Env Änderung, Secret Ausgabe, direkte SQL Aktivierung oder Riegelumgehung. Kein Rollback oder Revert ohne neue Betreiberfreigabe.
 4. Direkter Test laut §60: keine vorgeschaltete Stufenabnahme und keine Nachtzeitsperre. Vor Aktivierung genaue Zielmenge und geprueften Ausfuehrungsweg belegen; inaktive Anlage und Aktivierung getrennt. Messungen nicht vortaeuschen; Zugriffs und Datenintegritaetsschutz erhalten.
