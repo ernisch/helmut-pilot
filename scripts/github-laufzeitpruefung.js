@@ -46,6 +46,11 @@ async function pruefe({ env = process.env, fetchFn = global.fetch } = {}) {
         && typeof body.quellenkontext.sourceSafetyStandard === "boolean"
         ? { quellenkontext: Object.fromEntries(["version", "scoring", "relevanzordnung", "koScan", "lageMax", "relevanzTage", "sourceSafetyStandard", "atomicLock"]
           .map(k => [k, body.quellenkontext[k]])) } : {}),
+      ...(body.testKosten?.version === 2 && typeof body.testKosten.aktiv === "boolean"
+        && body.testKosten.limitUsd === 4 && body.testKosten.maxManualCalls === null
+        && body.testKosten.maxWindowMs === null && body.testKosten.unbekanntBleibtReserviert === true
+        ? { testKosten: { version: 2, aktiv: body.testKosten.aktiv, limitUsd: 4,
+          maxManualCalls: null, maxWindowMs: null, unbekanntBleibtReserviert: true } } : {}),
       ...(body.testKosten?.version === 1 && typeof body.testKosten.aktiv === "boolean"
         && body.testKosten.limitUsd === 4 && body.testKosten.maxManualCalls === 1000
         ? { testKosten: { version: 1, aktiv: body.testKosten.aktiv, limitUsd: 4, maxManualCalls: 1000 } } : {}),

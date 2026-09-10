@@ -84,7 +84,8 @@ async function main() {
     check(r.status === 200 && r.body.reinLesend === true && r.body.commit === sha, "echter Handler erreicht Status");
     const runtime = await pruefe({ env, fetchFn: async () => ({ status: r.status, json: async () => r.body }) });
     check(runtime.textnachlaufVersion === 2 && runtime.testKosten?.aktiv === true
-      && runtime.testKosten.limitUsd === 4 && runtime.testKosten.maxManualCalls === 1000,
+      && runtime.testKosten.limitUsd === 4 && runtime.testKosten.version === 2 && runtime.testKosten.maxManualCalls === null
+      && runtime.testKosten.maxWindowMs === null && runtime.testKosten.unbekanntBleibtReserviert === true,
     "echter Handler und CLI Leser bestaetigen denselben Dollar Schutzvertrag");
     check(runtime.quellenkontext?.version === 1 && runtime.quellenkontext.relevanzTage === 14
       && runtime.quellenkontext.atomicLock === storage.atomicLockEnabled(), "echter Quellenlesepfad bis zum CLI Leser");

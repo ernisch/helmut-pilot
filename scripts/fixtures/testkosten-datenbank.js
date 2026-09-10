@@ -16,7 +16,14 @@ async function worker() {
     const auth = await storage.readAuthStore(), day = "2026-09-09";
     const [id, call] = Object.entries(auth[B.KEY][day].calls)[0];
     await assert.rejects(B.abschliessen({ id, day, reserved: call.reserved }, null, deps), { code: "TEST_USD_UNKNOWN" });
-    console.log(JSON.stringify({ frozen: true })); return;
+    console.log(JSON.stringify({ ungeklärt: true })); return;
+  }
+  if (process.argv[2] === "settle") {
+    const auth = await storage.readAuthStore(), day = "2026-09-09";
+    const [id, call] = Object.entries(auth[B.KEY][day].calls).find(([, c]) => c.status === "reserviert");
+    await B.abschliessen({ id, day, reserved: call.reserved }, { model: "gpt-5-mini", promptTokens: 100,
+      completionTokens: 20, _ablage: { blob: true } }, deps);
+    console.log(JSON.stringify({ abgerechnet: true })); return;
   }
   let allowed = 0, blocked = 0;
   for (let i = 0; i < 8; i++) {
@@ -76,8 +83,17 @@ async function pruefeKosten({ psql, base, token }) {
   const restarted = await five();
   assert.equal(restarted.reduce((n, r) => n + r.allowed, 0), 0);
   auth = read(); t = B.pruefeTag(auth[B.KEY]["2026-09-09"], "2026-09-09");
-  assert.equal(B.belegt(t), 3816000); assert.equal(t.manualCalls, 18); assert(t.frozen);
-  console.log("PASS  Unklarer Ausgang bleibt nach fuenf Prozessneustarts gesperrt, keine Reserve verloren");
+  assert.equal(B.belegt(t), 3816000); assert.equal(t.manualCalls, 18); assert.equal(t.frozen, null);
+  assert.equal(Object.values(t.calls).filter(c => c.status === "ungeklaert").length, 1);
+  console.log("PASS  Unklarer Ausgang bleibt nach fuenf Prozessneustarts voll reserviert, Geldgrenze unveraendert");
+  await start({ base, token, mode: "settle" });
+  const continued = await five();
+  assert.equal(continued.reduce((n, r) => n + r.allowed, 0), 1);
+  auth = read(); t = B.pruefeTag(auth[B.KEY]["2026-09-09"], "2026-09-09");
+  assert.equal(B.belegt(t), 3816130); assert.equal(t.manualCalls, 19);
+  assert.equal(Object.values(t.calls).filter(c => c.status === "ungeklaert").length, 1);
+  assert.deepEqual(auth.users, [{ id: "bestand" }]);
+  console.log("PASS  Fuenf Neustarts nutzen nur belegbar freien Rest, ungeklaerte Reserve bleibt unangetastet");
 }
 module.exports = { pruefeKosten };
 if (require.main === module) worker().catch(() => { console.error("FAIL Kosten Datenbank Worker"); process.exitCode = 1; });

@@ -42,8 +42,9 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
     if (mode === "construction") throw new Error("GEHEIMER_AUFBAUFEHLER");
     const req = new EventEmitter();
     req.write = body => { if (mode === "send") throw new Error("GEHEIMER_SEND_FEHLER"); bodies.push(JSON.parse(body)); };
-    req.destroy = () => {};
+    req.destroy = error => { if (mode === "timeout") req.emit("error", error); };
     req.end = () => setImmediate(() => {
+      if (mode === "timeout") { req.emit("timeout"); return; }
       if (mode === "network") { req.emit("error", new Error("GEHEIMER_NETZFEHLER")); return; }
       const res = new EventEmitter();
       res.statusCode = http;
@@ -81,6 +82,11 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   assert(!JSON.stringify(logs).includes("GEHEIMER"), "Kostenlog verrät keinen Rohtext");
   assert.equal(requests, budget ? (expected ? 1 : 2) : 0, "Ein Generator und nur bei dessen Erfolg ein Quellenpruefer; kein Retry");
   assert.equal(logs.length, expected ? 1 : 2, "Jeder Modellversuch hat seinen eigenen Kostenbeleg");
+  if (mode === "timeout") {
+    assert.equal(logs[0].error, "request-error:ETIMEDOUT", "Zeitueberschreitung bleibt eindeutig protokolliert");
+    assert.equal(logs[0].success, false);
+    assert.equal(logs[0].usage, undefined, "Keine erfundenen Token nach verlorenem Ausgang");
+  }
   if (!expected) {
     assert.equal(drafts.length,1); assert.equal(reviews.length,1); assert.deepEqual(reviews[0],review);
     assert.equal(bodies[0].text.format.strict, false, "Andere Schemavertraege bleiben unveraendert");
@@ -107,6 +113,7 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   await fall({ receipt: { _ablage: { blob: false, relational: true } }, expected: "ai-cost-receipt-missing" });
   await fall({ rejectReceipt: true, expected: "ai-cost-receipt-missing" });
   await fall({ mode: "network", expected: "ai-provider-unavailable" });
+  await fall({ mode: "timeout", expected: "ai-provider-unavailable" });
   await fall({ mode: "aborted", expected: "ai-provider-unavailable" });
   await fall({ mode: "send", expected: "ai-provider-unavailable" });
   await fall({ mode: "construction", expected: "ai-provider-unavailable" });

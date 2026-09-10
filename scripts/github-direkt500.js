@@ -15,6 +15,8 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
   let wiederherstellen = null;
   let fachlaufAusgeloest = false;
   let serverBefund = null;
+  let pipelineBefund = null;
+  let kosten = null;
   try {
     D.fordere(env.GITHUB_REPOSITORY === "ernisch/helmut-pilot" && env.GITHUB_REF === "refs/heads/main"
       && env.GITHUB_EVENT_NAME === "workflow_dispatch", "nur-manuell-auf-main");
@@ -53,7 +55,6 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       return { mandate, identitaeten, auth, main };
     }
     let config;
-    let kosten;
     let kommunikationsHash = null;
     const startIso = now().toISOString();
     async function pruefeBetrieb(eigeneSperre = null) {
@@ -78,7 +79,19 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       D.fordere(locks.length + leases.length + verwaist.length === 0, "aktive-oder-verwaiste-lease");
       D.fordere(counters.length <= 1, "tageszaehler-nicht-eindeutig");
       kosten = kostenBefund(auth, counters.length ? counters[0].used : 0, jetzt.toISOString().slice(0, 10));
-      D.fordere(kosten.prognoseUsd < 9, "kosten-sicherheitsstopp");
+      D.fordere(kosten.reservierungsluecke === 0 && kosten.aufrufbelege === kosten.reservierungen,
+        "kosten-nachweis-unvollstaendig");
+      if (auth.testKostenTage?.[jetzt.toISOString().slice(0, 10)] && config.testKosten?.version === 2
+        && config.testKosten.aktiv === true && config.testKosten.limitUsd === 4
+        && config.testKosten.unbekanntBleibtReserviert === true) {
+        try { Object.assign(kosten, require("../lib/helmut/testkosten-budget")
+          .kontrolliere(auth, jetzt.toISOString().slice(0, 10), kosten.unbekannteKosten, kosten.aufrufbelege)); }
+        catch { D.fordere(false, "kosten-ausgang-unklar"); }
+      } else {
+        D.fordere(!auth.testKostenTage?.[jetzt.toISOString().slice(0, 10)]?.frozen, "kosten-ausgang-unklar");
+        D.fordere(kosten.unbekannteKosten === 0, "kosten-nachweis-unvollstaendig");
+        D.fordere(kosten.prognoseUsd < 9, "kosten-sicherheitsstopp");
+      }
       const spur = D.hash({ pushEvents: auth.pushEvents || [], auditEvents: auth.auditEvents || [] });
       D.fordere(outbox.length === 0 && (kommunikationsHash === null || kommunikationsHash === spur),
         "kommunikationsspur-veraendert");
@@ -105,9 +118,10 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
 
     if (vorgang === "textnachlauf") {
       const T = require("../lib/helmut/testkohorte-textnachlauf");
-      D.fordere(config.textnachlaufVersion === 2 && config.testKosten?.version === 1
+      D.fordere(config.textnachlaufVersion === 2 && config.testKosten?.version === 2
         && config.testKosten.aktiv === true && config.testKosten.limitUsd === 4
-        && config.testKosten.maxManualCalls === 1000, "textnachlauf-nicht-deployt");
+        && config.testKosten.maxManualCalls === null && config.testKosten.maxWindowMs === null
+        && config.testKosten.unbekanntBleibtReserviert === true, "textnachlauf-nicht-deployt");
       D.fordere(vor.gesamt === 504 && vor.aktiv === 500 && vor.aktive.length === zielAnzahl,
         "textnachlauf-braucht-500-aktive-profile");
       T.pruefeKosten(bestand.auth, kosten.reservierungen, now().toISOString().slice(0, 10));
@@ -235,6 +249,10 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         && q.processed_count === v.erledigt && q.processed_count > 0 && q.failed_count === 0
         && Date.parse(q.started_at) >= start.getTime() && Date.parse(q.finished_at) >= Date.parse(q.started_at)
         && Date.parse(q.finished_at) <= now().getTime(), "fachzyklus-laufquittung-fehlt-oder-abweichend");
+      // Bereits gespeicherte Arbeit bleibt auch bei einem nachfolgenden
+      // Kostenstopp belegt. Sie darf weder verschwinden noch erneut laufen.
+      pipelineBefund = { laufId: q.run_id, fertiggestellteAuftraege: q.processed_count,
+        unabhaengigBestaetigt: true };
       await pruefeBetrieb();
       const nach = await snapshot();
       D.pruefeSnapshot(nach, snapshotModus);
@@ -295,6 +313,8 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
     return { ...plan, ok: false, schreibversuche: fachlaufAusgeloest ? 1 : 0, ausgeloest: fachlaufAusgeloest,
       zustandUnbekannt: fachlaufAusgeloest, funktionsnachweis500: false,
       ...(serverBefund ? { serverBefund } : {}),
+      ...(pipelineBefund ? { pipelineBefund } : {}),
+      ...(kosten ? { kostenStand: kosten } : {}),
       grund: error instanceof D.DirektAbbruch ? error.grund : "netz-speicher-oder-antwortfehler",
       automatischeWiederholung: false };
   } finally { if (wiederherstellen) wiederherstellen(); }

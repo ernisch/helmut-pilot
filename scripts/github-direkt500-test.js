@@ -13,11 +13,11 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
 function kontext(vorgang = "provisionierung") {
   const w = welt();
   const anfragen = [];
-  const config = { testKosten: { version: 1, aktiv: true, limitUsd: 4, maxManualCalls: 1000 }, ok: true, schemaVersion: 1, reinLesend: true, production: true, commit: SHA,
+  const config = { testKosten: { version: 2, aktiv: true, limitUsd: 4, maxManualCalls: null, maxWindowMs: null, unbekanntBleibtReserviert: true }, ok: true, schemaVersion: 1, reinLesend: true, production: true, commit: SHA,
     storageSupabase: true, v3Bereit: true, profileRelational: true, profileExclusive: true,
     retentionGueltig: true, retention: 36, kommunikationGesperrt: true,
     kohortenQuellenGesperrt: true, tagesdeckel: 2416, understandingReserve: 702, vorrangreserveReal: 200 };
-  const h = { w, config, anfragen, locks: [], usage: [], counter: 124, jobFehler: false,
+  const h = { w, config, anfragen, locks: [], usage: [], kostenTage: {}, counter: 124, jobFehler: false,
     pipeline: { ok: true, pfad: "warteschlange", tenants: 500,
       lauf: { laufId: "cron-pipeline-20260910220000-fixture" },
       lauftelemetrie: { start: true, ende: true, status: "success" },
@@ -44,7 +44,7 @@ function kontext(vorgang = "provisionierung") {
       }
       if (table === "profiles") return antwort(s.identitaeten);
       if (table === "helmut_store") return antwort([{ data: u.searchParams.get("id") === "eq.main-auth"
-        ? { ...s.auth, llmUsage: h.usage } : s.main }]);
+        ? { ...s.auth, llmUsage: h.usage, testKostenTage: h.kostenTage } : s.main }]);
       if (table === "pipeline_locks") return antwort(h.locks);
       if (table === "process_runs") return antwort(h.quittungen);
       if (table === "helmut_jobs" && u.searchParams.has("id")) return antwort(h.jobFehler ? [] : w.beleg.auftraege);
@@ -160,6 +160,70 @@ async function main() {
     const r = await G.ausfuehren(h.args);
     assert.equal(r.grund, "aktive-oder-verwaiste-lease");
     assert.equal(h.w.writes(), 0);
+  });
+  await test("Ungeklaerte Kosten sperren vor Aktivierung oder Fachaufruf trotz niedriger Schaetzung", async () => {
+    for (const defekt of ["unbekannt", "zaehlerluecke", "eingefroren"]) {
+      const h = await bereitZumFachzyklus();
+      if (defekt === "unbekannt") h.usage[0].estimatedCost = "unknown";
+      if (defekt === "zaehlerluecke") h.counter++;
+      if (defekt === "eingefroren") h.kostenTage[JETZT.slice(0, 10)] = { frozen: "test-usd-ausgang-unklar" };
+      const vorher = D.hash(h.w.snapshot());
+      const r = await G.ausfuehren(h.args);
+      assert.equal(r.ok, false, defekt);
+      assert.equal(r.grund, defekt === "eingefroren" ? "kosten-ausgang-unklar" : "kosten-nachweis-unvollstaendig");
+      assert.equal(r.ausgeloest, false);
+      assert.equal(r.automatischeWiederholung, false);
+      assert(!h.anfragen.some(u => u.pathname === "/api/cron/pipeline"));
+      assert.equal(D.hash(h.w.snapshot()), vorher);
+      assert(r.kostenStand.prognoseUsd < 9, "Auch eine kleine Schaetzung ist keine Freigabe");
+    }
+  });
+  await test("Voll reservierter Altfehler blockiert keine andere Arbeit und bleibt sichtbar", async () => {
+    const B = require("../lib/helmut/testkosten-budget");
+    const h = await bereitZumFachzyklus();
+    h.usage[0].estimatedCost = "unknown";
+    h.kostenTage[JETZT.slice(0, 10)] = { version: B.VERSION, day: JETZT.slice(0, 10),
+      tarif: B.konfiguration().tarif, limit: 4000000, baseline: 0, manualCalls: 0, manualUntil: null,
+      frozen: "test-usd-ausgang-unklar", spent: (h.counter - 1) * 1000,
+      calls: Object.fromEntries(Array.from({ length: h.counter }, (_, i) => ["ticket-" + i,
+        { status: i ? "abgerechnet" : "reserviert", reserved: 212000, maxOutputTokens: 3000,
+          manual: false, createdAt: JETZT, ...(i ? { cost: 1000 } : {}) }])) };
+    const vorher = JSON.stringify(h.kostenTage);
+    const r = await G.ausfuehren(h.args);
+    assert.equal(r.ok, true, JSON.stringify(r));
+    assert.equal(r.kostenNachher.unbekannteKosten, 1);
+    assert.equal(r.kostenNachher.unbekannteVollstaendigReserviert, true);
+    assert.equal(r.kostenNachher.offeneReserveUsd, 0.212);
+    assert.equal(JSON.stringify(h.kostenTage), vorher, "Kontrolle schreibt keine Kosten um");
+    assert.equal(h.anfragen.filter(u => u.pathname === "/api/cron/pipeline").length, 1);
+    delete h.kostenTage[JETZT.slice(0, 10)].calls["ticket-1"];
+    h.kostenTage[JETZT.slice(0, 10)].spent -= 1000;
+    const blocked = await G.ausfuehren(h.args);
+    assert.equal(blocked.ok, false); assert.equal(blocked.ausgeloest, false);
+  });
+  await test("Kostenfehler nach erfolgreicher Serverquittung melden Stopp und erhalten belegten Fortschritt", async () => {
+    for (const eingefroren of [false, true]) {
+      const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
+      const vorher = D.hash(h.w.snapshot());
+      h.args.fetchFn = async (url, init) => {
+        const res = await fetch(url, init);
+        if (new URL(url).pathname === "/api/cron/pipeline") {
+          h.usage[0].estimatedCost = "unknown";
+          if (eingefroren) h.kostenTage[JETZT.slice(0, 10)] = { frozen: "test-usd-ausgang-unklar" };
+        }
+        return res;
+      };
+      const r = await G.ausfuehren(h.args);
+      assert.equal(r.ok, false);
+      assert.equal(r.grund, eingefroren ? "kosten-ausgang-unklar" : "kosten-nachweis-unvollstaendig");
+      assert.equal(r.ausgeloest, true);
+      assert.equal(r.automatischeWiederholung, false);
+      assert.deepEqual(r.pipelineBefund, { laufId: h.quittungen[0].run_id,
+        fertiggestellteAuftraege: 20, unabhaengigBestaetigt: true });
+      assert.equal(r.kostenStand.unbekannteKosten, 1);
+      assert.equal(h.anfragen.filter(u => u.pathname === "/api/cron/pipeline").length, 1);
+      assert.equal(D.hash(h.w.snapshot()), vorher);
+    }
   });
   await test("Geschuetzter Adapter erreicht mit echtem Provisionierer 504/25/479", async () => {
     const h = kontext();
