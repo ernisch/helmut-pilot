@@ -88,6 +88,9 @@ async function cronChecks() {
 // der Backfill selbst skippt (v3-store-not-ready), es wird also NIE etwas geschrieben;
 // geprueft wird die Absicherung (Secret, mutierende Methode) und die Flag-Logik.
 async function presentationBackfillEndpointChecks() {
+  const storage = require(path.join(root, "lib/helmut/storage.js"));
+  const storeFile = path.join(root, ".helmut-data", "store.json");
+  const storeSnapshot = fs.existsSync(storeFile) ? fs.readFileSync(storeFile) : null;
   const server = http.createServer(handler);
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   const p = "/api/admin/presentation-backfill";
@@ -96,6 +99,9 @@ async function presentationBackfillEndpointChecks() {
   // keine Tenant-Env noetig. Hier wird die Secret-Absicherung selbst getestet.
   const pid = `politicianId=${testPoliticianOne.id}`;
   try {
+    // Auch ohne Admin-Bypass muss das angefragte Testmandat existieren und aktiv
+    // sein, sonst prueft die Antwort nur die Mandatsauswahl (409), nicht das Secret.
+    await storage.saveProfile({ ...testPoliticianOne, profileActive: true });
     // 1) kein Secret -> 503 (fail closed)
     delete process.env.CRON_SECRET;
     const a = await request(server, { pathname: `${p}?${pid}`, headers: { Authorization: "Bearer irgendwas" } });
@@ -126,6 +132,9 @@ async function presentationBackfillEndpointChecks() {
   } finally {
     delete process.env.CRON_SECRET;
     await new Promise((r) => server.close(r));
+    // Vorherigen lokalen Bestand bytegenau erhalten; keine Produktionsdaten.
+    if (storeSnapshot) fs.writeFileSync(storeFile, storeSnapshot);
+    else if (fs.existsSync(storeFile)) fs.rmSync(storeFile);
   }
 }
 
@@ -876,6 +885,8 @@ function recoveryRenderChecks() {
   const fakeEl = new Proxy({}, { get: (t, p) => (p === "classList" ? { add: noop, remove: noop, toggle: noop, contains: () => false } : (p === "querySelectorAll" ? () => [] : noop)), set: () => true });
   const win = { addEventListener: noop, removeEventListener: noop, matchMedia: () => ({ matches: false, addEventListener: noop, addListener: noop }), location: { href: "", search: "", pathname: "/" }, navigator: { serviceWorker: null, userAgent: "t" } };
   const ctx = { window: win, document: { querySelector: () => fakeEl, querySelectorAll: () => [], getElementById: () => fakeEl, createElement: () => fakeEl, addEventListener: noop, body: fakeEl, documentElement: fakeEl, cookie: "", visibilityState: "visible" }, navigator: win.navigator, localStorage: { getItem: () => null, setItem: noop, removeItem: noop }, sessionStorage: { getItem: () => null, setItem: noop, removeItem: noop }, console, fetch: () => new Promise(() => {}), location: win.location, setTimeout: noop, clearTimeout: noop, setInterval: () => 0, clearInterval: noop, requestAnimationFrame: noop, URLSearchParams, Date, Math, JSON, Intl };
+  // Browser API fuer den Client-Boot; fetch bleibt eine lokale, offene Promise.
+  ctx.AbortController = AbortController;
   ctx.globalThis = ctx;
   let fns = null;
   try {
