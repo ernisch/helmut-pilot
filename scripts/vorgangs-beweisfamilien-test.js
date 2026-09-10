@@ -40,6 +40,25 @@ const d = (id, title, published_at, source_id = "s1") => ({ id, title, summary: 
 const bestand = (id, docs, extra = {}) => ({ vorgangId: id, documents: docs, ...extra });
 const urteil = (neu, alt) => V.sameVorgang({ documents: neu }, alt);
 
+// Production 10.09.: der geographische Begriff Bundesstaat wurde allein durch
+// Komposit-Enthalten zu einem starken Beleg fuer Bundesstaatsanwaltschaft.
+const staatUs = { ...d("us-parteitag", "Republikaner treffen sich in Dallas", "2026-09-09T19:56:07Z"),
+  summary: "Parteitag im US-Bundesstaat Texas." };
+const staatsAnwalt = [
+  d("at-justiz1", "Bundesstaatsanwaltschaft: Koalition sieht keinen Streit", "2026-09-09T09:50:00Z"),
+  d("at-justiz2", "Koalition optimistisch zur Bundesstaatsanwaltschaft", "2026-09-09T09:28:37Z")
+];
+check("Bundesstaat: kein Themenbeleg fuer Bundesstaatsanwaltschaft",
+  !V.docsShareEvent(staatUs, staatsAnwalt[0]).gleich);
+check("Bundesstaat: Ablehnung auch bei umgekehrter Reihenfolge",
+  !V.docsShareEvent(staatsAnwalt[0], staatUs).gleich);
+check("Bundesstaat: drei Dokumente bilden zwei unvermischt erhaltene Gruppen",
+  V.clusterRawDocuments([staatUs, ...staatsAnwalt]).map(g => g.documents.length).sort().join(",") === "1,2");
+check("Bundesstaat: kein Anhaengen an einen vorhandenen Justizvorgang",
+  !urteil([staatUs], bestand("vg-justiz", staatsAnwalt)).gleich);
+check("Bundesstaatsanwaltschaft bleibt ein spezifischer Beleg fuer echte Folgemeldungen",
+  V.docsShareEvent(staatsAnwalt[0], staatsAnwalt[1]).gleich);
+
 // =========================================================================
 // 1 · DER EXAKTE PRODUCTION-FALL
 // =========================================================================

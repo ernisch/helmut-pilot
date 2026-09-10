@@ -364,5 +364,44 @@ const neutralSerialized = JSON.stringify(neutralStaff).toLowerCase();
 check("Keine hartkodierte Partei/Person in leeren Stabschef-Feldern",
   !/cem|ince|spd|cdu|grüne|gruene|linke|afd|fdp/.test(neutralSerialized));
 
+// Production: die 240-Zeichen-Kappung verlor echte Satzenden. Weder neue
+// Antworten abschneiden noch alte Fragmente als vollstaendige Empfehlung lesen.
+const langeEmpfehlung = "Klaere zuerst die Finanzierung. ".repeat(10);
+const vollstaendigeAlternative = "Fordere Auskunft an, falls die Finanzierung offen bleibt.";
+const ueberlangeAnalyse = understanding.assembleKnowledgeObject({
+  recommendation: langeEmpfehlung, handlungsempfehlung: vollstaendigeAlternative
+}, cluster, "vg-test");
+check("assemble: ueberlange Empfehlung wird nicht zu einem Fragment gekappt",
+  ueberlangeAnalyse.recommendation === "" && ueberlangeAnalyse.handlungsempfehlung === vollstaendigeAlternative);
+function empfehlungImEchtenVertrag(recommendation, handlungsempfehlung = vollstaendigeAlternative) {
+  const ko = baseKo({ recommendation, handlungsempfehlung, understanding_status: "complete",
+    headline: "Finanzierung der Infrastruktur", updated_at: NOW.toISOString() });
+  const vorher = JSON.stringify(ko);
+  const b = contract.toBriefingContractV3({ profile: { id: "u-test" },
+    decisions: [{ knowledge_object_id: ko.id, vorgang_id: ko.vorgang_id, score: 80, decision: "Sofort reagieren" }],
+    kosById: { [ko.id]: ko }, sourcesByVorgang: { [ko.vorgang_id]: [
+      { id: "rd-test", title: ko.headline, url: "https://example.org/finanzierung", published_at: NOW.toISOString() }
+    ] }, now: NOW });
+  return { text: b.currentHelmutState.recommendation, item: b.items[0]?.recommendedAction,
+    unveraendert: JSON.stringify(ko) === vorher };
+}
+const schnittFinanz = "Lass heute Mittag die haushaltspolitische Linie intern bestätigen. Veröffentliche kein sofortiges längeres Statement; bereite statt dessen eine kurze parlamentarische Gegenrede und kernige Faktenpunkte bis morgen vor. Abstimmen mit Finanz- ";
+const schnittKosten = "Stimme kurzfristig eine inhaltliche Linie ab. Fordere noch diese Woche Auskunft vom Innenministerium zu Finanzierungs- und Umsetzungsplänen. Bereite eine schriftliche Kleine Anfrage und konkrete Änderungsforderungen vor, falls Kostenfolgen ";
+for (const [name, text] of [["Finanz-", schnittFinanz], ["Kostenfolgen", schnittKosten]]) {
+  const gelesen = empfehlungImEchtenVertrag(text);
+  check(`Contract: belegtes 240-Zeichen-Fragment ${name} nutzt nur die vorhandene ganze Alternative`,
+    text.length === 240 && gelesen.text === vollstaendigeAlternative && gelesen.item === vollstaendigeAlternative && gelesen.unveraendert,
+    JSON.stringify({ laenge: text.length, ...gelesen }));
+}
+check("Contract: ohne ganze Alternative bleibt die Empfehlung ehrlich leer",
+  empfehlungImEchtenVertrag(schnittFinanz, "").text === "");
+check("Contract: ebenfalls abgeschnittene Alternative wird nicht ausgegeben",
+  empfehlungImEchtenVertrag(schnittFinanz, "A".repeat(800)).text === "");
+const genauVoll = "A".repeat(239) + ".";
+check("Contract: volle 240 Zeichen mit Satzende bleiben erhalten",
+  empfehlungImEchtenVertrag(genauVoll).text === genauVoll);
+check("Contract: kurze Alt-Empfehlung ohne Punkt bleibt erhalten",
+  empfehlungImEchtenVertrag("Intern abstimmen").text === "Intern abstimmen");
+
 console.log(`\n${passed}/${passed + failed} Helmut-Fundament-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }

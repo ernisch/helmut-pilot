@@ -322,8 +322,8 @@ async function run() {
     }, cluster, "vg-swap-1", {});
     ok("why_relevant behaelt einen Wert oberhalb des (kleineren) recommendation-Caps",
       koSwapCheck1.why_relevant.length === overRecoUnderWhy.length);
-    ok("recommendation kappt denselben Wert exakt auf sein eigenes, kleineres Budget",
-      koSwapCheck1.recommendation.length === RECO_MAX);
+    ok("recommendation verwirft denselben zu langen Wert statt ein Fragment zu erzeugen",
+      koSwapCheck1.recommendation === "");
 
     const overWhyUnderSummary = "w".repeat(WHY_MAX + 10);
     const koSwapCheck2 = understanding.assembleKnowledgeObject({ ...base,
