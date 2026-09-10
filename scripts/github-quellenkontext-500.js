@@ -11,16 +11,19 @@ const payloadHash = s => D.hash({ mandate:s.mandate, identitaeten:s.identitaeten
 
 function pruefeQuellenKosten(auth, counter, tag, config) {
   const kosten = kostenBefund(auth, counter, tag);
-  D.fordere(kosten.reservierungsluecke === 0 && kosten.aufrufbelege === kosten.reservierungen,
-    "quellenkontext-kosten-unklar");
+  D.fordere(kosten.aufrufbelege <= kosten.reservierungen, "quellenkontext-kosten-unklar");
   if (auth.testKostenTage?.[tag]) {
     D.fordere(config.testKosten?.version === 2 && config.testKosten.aktiv === true
       && config.testKosten.limitUsd === 4 && config.testKosten.unbekanntBleibtReserviert === true,
     "quellenkontext-kostenregel-abweichend");
     try { Object.assign(kosten, require("../lib/helmut/testkosten-budget")
-      .kontrolliere(auth, tag, kosten.unbekannteKosten, kosten.aufrufbelege)); }
+      // Fehlende Nutzungszeilen sind unbekannte Kosten. Jede braucht eine
+      // eigene volle Reserve; die Ticketdeckung gilt fuer den echten Zaehler.
+      .kontrolliere(auth, tag, kosten.unbekannteKosten + kosten.reservierungsluecke,
+        kosten.reservierungen)); }
     catch { D.fordere(false, "quellenkontext-kosten-unklar"); }
-  } else D.fordere(kosten.unbekannteKosten === 0, "quellenkontext-kosten-unklar");
+  } else D.fordere(kosten.reservierungsluecke === 0 && kosten.unbekannteKosten === 0,
+    "quellenkontext-kosten-unklar");
   return kosten;
 }
 
@@ -156,7 +159,9 @@ async function ausfuehren({ bestand, config, env, db, fetchFn, now, pruefeBetrie
       D.fordere(rows.length===1,"quellenkontext-quellzeile-fehlt");
       const before=rows[0];
       if(before.summary) continue;
-      if(before.raw?.helmutQuellenkontext?.tag===tag && before.raw.helmutQuellenkontext.commit===env.GITHUB_SHA){report.bereitsGeprueft++;continue;}
+      // Ein neuer Codecommit ist kein neuer Artikel und keine Erlaubnis,
+      // den heute bereits versuchten Anbieterabruf blind zu wiederholen.
+      if(before.raw?.helmutQuellenkontext?.tag===tag){report.bereitsGeprueft++;continue;}
       let result=E.fromMirror(before,bestand.main.rawItems||[]);
       if(!result.ok){
         const url=Q.artikelUrl(before.canonical_url)||Q.artikelUrl(before.url), host=publisherHost(url);

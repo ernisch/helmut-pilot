@@ -1,5 +1,9 @@
 "use strict";
 const assert = require("node:assert/strict");
+const { mock } = require("node:test");
+// Regressionszeit: Der eine Stunde alte Bestand stammt bereits vom Vortag
+// in Berlin. Ein heute bezahlter Entwurf muss trotzdem unter HEUTE liegen.
+mock.timers.enable({ apis: ["Date"], now: Date.parse("2026-09-10T22:30:00Z") });
 const Q = require("../lib/helmut/lage-quellenbeleg");
 const { payload } = require("./fixtures/lage-beleg");
 const lage = require("../lib/helmut/lage");
@@ -78,7 +82,7 @@ const copy = structuredClone;
       const antwort = {paragraphs:sourceInputs[0].quellenbelege.map(q=>({text:q.titel,vorgang_ids:["vg-beleg"]}))};
       const oldRun = "nachlauf500-777777777", newRun = "nachlauf500-888888888";
       const entry = require("../lib/helmut/lage-entwurfsbeleg").baue({userId:id,runId:oldRun,phase:"entwurf",
-        antwort,quellen:sourceInputs,profile:{id},now:new Date(before.generated_at)});
+        antwort,quellen:sourceInputs,profile:{id},now:new Date()});
       storage.getLageEntwurfsbeleg = async (owner,key) => {
         assert.equal(owner,id);return key===entry.id ? entry : null;
       };
@@ -107,4 +111,4 @@ const copy = structuredClone;
     });
   } finally { Object.assign(storage, prior); ai.generateLageBriefing = generate; safety.guardKnowledgeObject = guard; }
   console.log(`${passed}/${passed} Reparaturpruefungen bestanden`);
-})().catch(e => { console.error(e); process.exitCode = 1; });
+})().catch(e => { console.error(e); process.exitCode = 1; }).finally(() => mock.timers.reset());

@@ -93,6 +93,43 @@ async function main() {
       else assert.equal(f.acquired, 0);
     }
   });
+  await test("Fehlende Nutzungszeilen brauchen je eine volle Reserve am echten Zaehler", async () => {
+    const B = require("../lib/helmut/testkosten-budget");
+    for (const mode of ["nur-fehlend", "beide-luecken", "eine-reserve-fehlt", "zaehler-zu-klein", "legacy-luecke", "falsches-limit"]) {
+      const f = fixture(), day = JETZT.slice(0, 10);
+      await B.reserviere({ model: "gpt-5-mini", maxOutputTokens: 3000 }, {
+        env: { VERCEL_ENV: "production", HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt", AZURE_OPENAI_KEY: "offline" },
+        now: () => new Date(JETZT), id: () => "fehlende-nutzung",
+        storage: { leseLlmTageszaehler: async () => ({ ok: true, used: 0 }),
+          mutateAuthStore: async fn => fn(f.bestand.auth) }
+      });
+      const buch = f.bestand.auth.testKostenTage[day];
+      buch.calls["fehlende-nutzung"].status = "ungeklaert";
+      buch.baselineCalls = 1; buch.baseline = 10; buch.spent = 10;
+      f.bestand.auth.llmUsage = [{ createdAt: JETZT, model: "gpt-5-mini", estimatedCost: 0.00001 }];
+      f.counter = 2;
+      f.args.config.testKosten = { version: 2, aktiv: true, limitUsd: 4, unbekanntBleibtReserviert: true };
+      if (["beide-luecken", "eine-reserve-fehlt"].includes(mode)) {
+        f.counter = 3;
+        f.bestand.auth.llmUsage.push({ createdAt: JETZT, model: "gpt-5-mini", estimatedCost: null });
+        if (mode === "beide-luecken") buch.calls["zweiter-unbekannter"] = kopie(buch.calls["fehlende-nutzung"]);
+      }
+      if (mode === "zaehler-zu-klein") f.bestand.auth.llmUsage = [0, 1, 2].map(() =>
+        ({ createdAt: JETZT, model: "gpt-5-mini", estimatedCost: 0.001 }));
+      if (mode === "legacy-luecke") delete f.bestand.auth.testKostenTage;
+      if (mode === "falsches-limit") f.args.config.testKosten.limitUsd = 5;
+      const before = D.hash(f.bestand.auth), erlaubt = ["nur-fehlend", "beide-luecken"].includes(mode);
+      const r = await G.ausfuehren(f.args);
+      assert.equal(r.ok, erlaubt, mode + ": " + JSON.stringify(r));
+      assert.equal(D.hash(f.bestand.auth), before, "Kein Nachtrag, keine Erstattung");
+      assert.equal(f.fetches, erlaubt ? 2 : 0); assert.equal(f.writes, erlaubt ? 2 : 0);
+      if (erlaubt) {
+        assert.equal(r.modellaufrufe, 0); assert.equal(r.kosten.reservierungsluecke, 1);
+        assert.equal(r.kosten.gebundenUsd, mode === "beide-luecken" ? 0.42401 : 0.21201);
+      } else { assert.equal(f.acquired, 0); assert.equal(r.grund, mode === "falsches-limit"
+        ? "quellenkontext-kostenregel-abweichend" : "quellenkontext-kosten-unklar"); }
+    }
+  });
   await test("500 Profile lesen, leere Originalauszuege ergaenzen, null Modellarbeit", async () => {
     const f = fixture(), before = D.hash(f.bestand);
     const r = await G.ausfuehren(f.args);
@@ -130,6 +167,12 @@ async function main() {
     assert.equal(r.profileOhneAuszug, 500); assert(f.documents.every(d => d.summary === null));
     const next = await G.ausfuehren(f.args);
     assert.equal(next.bereitsGeprueft, 2); assert.equal(f.fetches, 2); assert.equal(f.writes, 2);
+    f.args.env.GITHUB_SHA = "b".repeat(40);
+    f.fail = null;
+    const neuerCommit = await G.ausfuehren(f.args);
+    assert.equal(neuerCommit.ok, true); assert.equal(neuerCommit.bereitsGeprueft, 2);
+    assert.equal(neuerCommit.ergaenzt, 0); assert.equal(f.fetches, 2); assert.equal(f.writes, 2);
+    assert(f.documents.every(d => d.summary === null && d.raw.helmutQuellenkontext.commit === SHA));
   });
   await test("Aktive Kohorte, falsche Runtime oder Actions Wiederholung sperren vor Lock", async () => {
     for (const mode of ["aktiv", "runtime", "wiederholung"]) {
