@@ -199,6 +199,34 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     assert(r.fehler.includes("wiederholung-zwischen-ansichten"));
     assert.deepEqual(r.wiederholungen, ["briefing.currentRadarState.summary"]);
   });
+  await test("Die Inhaltspruefung folgt der tatsaechlichen Radar Anzeige und prueft deren sichtbare Fehler", () => {
+    const text = "Die Quelle berichtet ueber den vorgelegten Vorschlag zur Finanzierung kommunaler Beratungsstellen in den Gemeinden.";
+    const shown = { dynamics: [] };
+    const b = { available: true, items: [{ title: "Beratung" }],
+      currentHelmutState: { summary: text },
+      currentRadarState: { dynamics: [{ title: text }], anzeige: shown } };
+    const lage = { paragraphs, qualitaet: { version: 1 } }, before = clone(b);
+    // Den echten Clientselektor ausfuehren; nur die HTML-Unterrenderer sind Doubles.
+    const client = require("node:fs").readFileSync(require("node:path").join(__dirname, "../client.js"), "utf8");
+    const source = client.slice(client.indexOf("function renderRadarInner(state) {"), client.indexOf("function radarStateHasContent(state) {"));
+    let rendered;
+    const render = require("node:vm").runInNewContext(source + "; renderRadarInner", {
+      radarStateHasContent: () => false, renderRadarEmpty: () => "",
+      renderRadarHeader: state => { rendered = state; return ""; }
+    });
+    render(b.currentRadarState); assert.equal(rendered, shown);
+    const r = B.pruefeInhalt(b, lage);
+    assert.equal(r.strukturellVollstaendig, true);
+    assert.equal(r.bestanden, false); assert.equal(r.vollstaendigeFaktenpruefung, false);
+    assert.deepEqual(b, before, "Rohbelege werden weder geaendert noch entfernt");
+    b.currentRadarState.anzeige.dynamics.push({ title: text });
+    assert(B.pruefeInhalt(b, lage).fehler.includes("wiederholung-zwischen-ansichten"));
+    b.currentRadarState.anzeige.dynamics = [{ title: "Technischer Eintrag vg-fixture" }];
+    assert(B.pruefeInhalt(b, lage).fehler.includes("sichtbare-technische-kennung"));
+    delete b.currentRadarState.anzeige;
+    render(b.currentRadarState); assert.equal(rendered, b.currentRadarState);
+    assert(B.pruefeInhalt(b, lage).fehler.includes("wiederholung-zwischen-ansichten"));
+  });
   await test("Ausgebliebener Readback und gestoerter Quellenspeicher bleiben Fehler", async () => {
     const profile = { id: "test-kohorte-a-001" };
     const storage = { assertTenant: S.assertTenant, getRenderedBriefingV3: async () => null, insertRenderedBriefingV3: async () => ({ saved: true }) };
