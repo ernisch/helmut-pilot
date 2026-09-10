@@ -140,13 +140,12 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 12 · Verbindliche Betriebsgrenzen
 
-Neuester Auftrag: alleinige Uebernahme und vollstaendiger Nachweis fuer alle 500 Mandate.
-Die fruehere ausdrueckliche Grenze **kein Merge oder Production Deployment
-ohne Freigabe** gilt fuer jede neue Aenderung. #342 und einzelner Kostennachtrag sind freigegeben und ausgefuehrt; keinen zweiten Kostennachtrag. Die genehmigte einmalige temporaere Teilnahme der 495 vorhandenen synthetischen Profile und der manuelle Fachlauf sind ausgefuehrt; das Fenster ist geschlossen. Keine Aenderung realer Profile, Identitaeten, Konten, Budgets, Umgebungsvariablen oder Cron Ablaeufe.
+Neuester Auftrag am 10.09.: alleinige vollautonome Fortsetzung bis zum vollstaendigen Nachweis fuer alle 500 Testmandate innerhalb 4 USD je UTC Tag. Dazu gehoeren notwendige sichere Korrekturen, gepruefte Veroeffentlichung und kontrollierte Facharbeit; Routinefreigaben nicht erneut verlangen.
+Die neue ausdrueckliche Freigabe zur vollautonomen Fortsetzung gilt fuer erforderliche Korrekturen dieses Nachweises; andere Production Aenderungen brauchen weiter eine passende Freigabe. #342 und einzelner Kostennachtrag sind freigegeben und ausgefuehrt; keinen zweiten Kostennachtrag. Die genehmigte einmalige temporaere Teilnahme der 495 vorhandenen synthetischen Profile und der manuelle Fachlauf sind ausgefuehrt; das Fenster ist geschlossen. Keine Aenderung realer Profile, Identitaeten, Konten, Budgets, Umgebungsvariablen oder Cron Ablaeufe.
 Nur die stuendliche Testaufgabe wurde zur alleinigen Steuerung pausiert;
 Production Crons bleiben gleich; die Endaufgabe hat den Test bestaetigt beendet. [SR §64](betrieb/500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 
-1. Maximal **4 USD Modellkosten insgesamt je UTC Tag**. Neuere Betreiberanweisung 10.09. hebt die kuenstliche manuelle Anzahlgrenze, das Sechsstundenfenster und die Morgenwartezeit auf. Der Geldriegel bleibt verbindlich: Auch unbekannte Ausgaenge muessen mit ihrer vollen vor HTTP bestaetigten Reserve im Deckel bleiben. Neue Regel 2 noch nicht in Production. Alte Geldhistorie, betraege und Zaehler nicht loeschen oder erstatten.
+1. Maximal **4 USD Modellkosten insgesamt je UTC Tag**. Neuere Betreiberanweisung 10.09. hebt die kuenstliche manuelle Anzahlgrenze, das Sechsstundenfenster und die Morgenwartezeit auf. Der Geldriegel bleibt verbindlich: Auch unbekannte Ausgaenge muessen mit ihrer vollen vor HTTP bestaetigten Reserve im Deckel bleiben. Kostenregel 2 in Production seit 10.09. bestaetigt; siehe aktuellen Beleg oben. Alte Geldhistorie, betraege und Zaehler nicht loeschen oder erstatten.
 2. Keine Aktivierung der vier sonstigen inaktiven Profile, kein aktives Kohortenkonto, keine externe Nachricht oder Zustellung.
 3. Keine Löschung, Wiederherstellung verlorener `crawlRuns`, Migration, neue kostenpflichtige Ressource, Azure Änderung, Vercel Env Änderung, Secret Ausgabe, direkte SQL Aktivierung oder Riegelumgehung. Kein Rollback oder Revert ohne neue Betreiberfreigabe.
 4. Direkter Test laut §60: keine vorgeschaltete Stufenabnahme und keine Nachtzeitsperre. Vor Aktivierung genaue Zielmenge und geprueften Ausfuehrungsweg belegen; inaktive Anlage und Aktivierung getrennt. Messungen nicht vortaeuschen; Zugriffs und Datenintegritaetsschutz erhalten.

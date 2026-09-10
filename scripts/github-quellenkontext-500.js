@@ -9,6 +9,21 @@ const { PROJECT_URL, kostenBefund } = require("./github-fachzyklus-a");
 const LOCK = "500-quellenkontext", MAX_FETCH = 40, MAX_MS = 480000;
 const payloadHash = s => D.hash({ mandate:s.mandate, identitaeten:s.identitaeten, users:s.auth.users });
 
+function pruefeQuellenKosten(auth, counter, tag, config) {
+  const kosten = kostenBefund(auth, counter, tag);
+  D.fordere(kosten.reservierungsluecke === 0 && kosten.aufrufbelege === kosten.reservierungen,
+    "quellenkontext-kosten-unklar");
+  if (auth.testKostenTage?.[tag]) {
+    D.fordere(config.testKosten?.version === 2 && config.testKosten.aktiv === true
+      && config.testKosten.limitUsd === 4 && config.testKosten.unbekanntBleibtReserviert === true,
+    "quellenkontext-kostenregel-abweichend");
+    try { Object.assign(kosten, require("../lib/helmut/testkosten-budget")
+      .kontrolliere(auth, tag, kosten.unbekannteKosten, kosten.aufrufbelege)); }
+    catch { D.fordere(false, "quellenkontext-kosten-unklar"); }
+  } else D.fordere(kosten.unbekannteKosten === 0, "quellenkontext-kosten-unklar");
+  return kosten;
+}
+
 async function mapBounded(items, fn, parallel = 5) {
   const result = new Array(items.length);
   let cursor = 0;
@@ -78,8 +93,8 @@ async function ausfuehren({ bestand, config, env, db, fetchFn, now, pruefeBetrie
     D.fordere(target.length===500 && target.filter(p=>p.aktiv).length===5,"quellenkontext-zielmenge-abweichend");
     const profileHash=payloadHash(bestand), counterBefore=await read("llm_budget_counters?select=used&scope=eq.global&day=eq."+tag);
     D.fordere(counterBefore.length===1,"quellenkontext-kostenzaehler-fehlt");
-    const costBefore=kostenBefund(bestand.auth,counterBefore[0].used,tag);
-    D.fordere(costBefore.unbekannteKosten===0 && costBefore.reservierungsluecke===0,"quellenkontext-kosten-unklar");
+    const costBefore=pruefeQuellenKosten(bestand.auth,counterBefore[0].used,tag,config);
+    const kostenbuchHash=D.hash(bestand.auth.testKostenTage?.[tag] || null);
     locked=await storage.acquirePipelineLock(LOCK,600000);
     D.fordere(locked,"quellenkontext-bereits-aktiv");
     const guard=async(reserve=120000)=>{
@@ -180,7 +195,9 @@ async function ausfuehren({ bestand, config, env, db, fetchFn, now, pruefeBetrie
     const after=await snapshot(),counterAfter=await db("llm_budget_counters?select=used&scope=eq.global&day=eq."+tag);
     D.fordere(payloadHash(after)===profileHash,"quellenkontext-profilbestand-veraendert");
     D.fordere(counterAfter.length===1 && counterAfter[0].used===counterBefore[0].used
-      && D.hash(kostenBefund(after.auth,counterAfter[0].used,tag))===D.hash(costBefore),"quellenkontext-modellkosten-veraendert");
+      && D.hash(pruefeQuellenKosten(after.auth,counterAfter[0].used,tag,config))===D.hash(costBefore)
+      && D.hash(after.auth.testKostenTage?.[tag] || null)===kostenbuchHash,"quellenkontext-modellkosten-veraendert");
+    report.kosten=costBefore;
     report.modellaufrufe=0;
     report.ok=true;
   }catch(error){report.grund=error instanceof D.DirektAbbruch?error.grund:"quellenkontext-netz-speicher-oder-antwortfehler";report.zustandUnbekannt=patchPending;}
