@@ -140,11 +140,34 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
     });
     await pruefe("Nachlauf verwendet echten Generator, Kostenpruefung, Insert und unabhängigen Readback", async () => {
       cached = null; lock = true; let gate = 0, inserted = null;
-      storage.insertRenderedBriefingV3 = async row => { inserted = row; cached = row; return { saved: true }; };
+      storage.insertRenderedBriefingV3 = async row => {
+        inserted = row; cached = structuredClone(row);
+        // JSONB liefert gleichen Inhalt mit anderer Objektschluesselreihenfolge.
+        cached.payload.paragraphs = cached.payload.paragraphs.map(p => Object.fromEntries(Object.entries(p).reverse()));
+        assert.notEqual(JSON.stringify(cached.payload.paragraphs), JSON.stringify(row.payload.paragraphs));
+        return { saved: true };
+      };
       const r = await lage.buildLageBriefing({ id: "test-quellenbeleg" }, { missingOnly: true,
         beforeGenerate: async id => { assert.equal(id, "test-quellenbeleg"); gate++; } });
       assert.equal(gate, 1); assert.equal(r.available, true); assert.equal(r.fromCache, false);
       assert.deepEqual(inserted.payload.paragraphs.map(p => p.text), r.paragraphs.map(p => p.text));
+    });
+    await pruefe("Readback lehnt veraenderte Texte, Quellenbindung, Qualitaet und Zeit ohne Wiederholung ab", async () => {
+      for (const change of [
+        row => { row.payload.paragraphs[0].text += " Fremder Inhalt"; },
+        row => { row.payload.paragraphs[0].quellen_ids = ["q-fremd"]; },
+        row => { row.payload.quellenHash = "fremd"; },
+        row => { delete row.payload.qualitaet; },
+        row => { row.generated_at = "2000-01-01T00:00:00Z"; }
+      ]) {
+        cached = null; lock = true; const vorherCalls = calls; let writes = 0;
+        storage.insertRenderedBriefingV3 = async row => {
+          writes++; cached = structuredClone(row); change(cached); return { saved: true };
+        };
+        await assert.rejects(lage.buildLageBriefing({ id: "test-quellenbeleg" }, { missingOnly: true,
+          beforeGenerate: async () => {} }), /nachlauf-text-nicht-gespeichert/);
+        assert.equal(writes, 1); assert.equal(calls, vorherCalls + 1);
+      }
     });
     await pruefe("Insert Konflikt liefert keinen behaupteten neuen Text und keine Wiederholung", async () => {
       cached = null; lock = true; const vorherCalls = calls;
