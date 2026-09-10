@@ -270,6 +270,35 @@ function fixture() {
       assert.equal(r.ok, false); assert.equal(h.calls.length, 0); assert.equal(h.receipts.length, 0);
     }
   });
+  await test("Kostenkontrolle deckt fehlende Usage nur mit eigener Reserve und allen atomaren Tickets", async () => {
+    const B = require("../lib/helmut/testkosten-budget"), day = start.slice(0, 10);
+    const auth = { llmUsage: Array.from({ length: 254 }, (_, i) => ({ createdAt: start,
+      model: "gpt-5-mini", estimatedCost: i ? 0.001 : null })), testKostenTage: { [day]: {
+      version: B.VERSION, day, tarif: B.konfiguration().tarif, limit: 4000000,
+      baseline: 0, spent: 253000, manualCalls: 0, manualUntil: null, frozen: null,
+      calls: Object.fromEntries(Array.from({ length: 255 }, (_, i) => ["ticket-" + i,
+        { status: i < 2 ? "ungeklaert" : "abgerechnet", reserved: 212000, maxOutputTokens: 3000,
+          manual: false, createdAt: start, ...(i < 2 ? {} : { cost: 1000 }) }])) } } };
+    const vorher = JSON.stringify(auth), k = T.pruefeKosten(auth, 255, day);
+    assert.equal(k.reservierungsluecke, 1); assert.equal(k.unbekannteKosten, 1);
+    assert.equal(k.offeneReserveUsd, 0.424); assert.equal(k.unbekannteVollstaendigReserviert, true);
+    assert.equal(JSON.stringify(auth), vorher);
+    for (const defekt of ["reserve", "ticket", "belegueberhang", "buchfehlt"]) {
+      const a = kopie(auth), t = a.testKostenTage[day];
+      if (defekt === "reserve") { Object.assign(t.calls["ticket-1"], { status: "abgerechnet", cost: 1000 }); t.spent += 1000; }
+      if (defekt === "ticket") { delete t.calls["ticket-2"]; t.spent -= 1000; }
+      if (defekt === "belegueberhang") a.llmUsage.push(kopie(a.llmUsage[1]), kopie(a.llmUsage[1]));
+      if (defekt === "buchfehlt") delete a.testKostenTage;
+      const before = JSON.stringify(a);
+      assert.throws(() => T.pruefeKosten(a, 255, day), /nachlauf-kosten-unklar/, defekt);
+      assert.equal(JSON.stringify(a), before);
+    }
+    const h = fixture(); h.s.auth.llmUsage = auth.llmUsage; h.s.auth.testKostenTage = auth.testKostenTage;
+    h.counter = 255; h.config.testKosten.version = 1;
+    const r = await T.ausfuehren(h.args);
+    assert.equal(r.grund, "nachlauf-konfiguration-abweichend");
+    assert.equal(h.calls.length, 0); assert.equal(h.receipts.length, 0);
+  });
   await test("Neue Kostenluecke nach erstem Modell sperrt den zweiten ohne Wiederholung", async () => {
     const h = fixture(), build = h.args.deps.build;
     h.args.deps.build = async (...args) => { const r = await build(...args); h.counter++; return r; };
