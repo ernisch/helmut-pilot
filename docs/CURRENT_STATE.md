@@ -133,8 +133,8 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-1. Die ausdruecklich freigegebene Uebertragung ist erledigt: Branch `codex/500-kostenabbruch-nachweis-20260910`, erster Remote Commit `6f5e1c299d4f30feedb1df4ff383f8db5e074fc0`. Neue Kostenregel und Abbau kuenstlicher Testhuerden fertig pruefen und im selben PR bereitstellen. Keine doppelte Fachausfuehrung.
-2. Den konkreten geprueften PR zur Production Freigabe vorlegen. Danach Deployment und authentifizierte Geldregel 2 unabhaengig bestaetigen; die vorhandene offene Reserve bleibt voll erhalten. Keine zweite Freigabe fuer den bereits genehmigten Push verlangen.
+1. Die Kostenkorrektur aus PR #356 ist mit ausdruecklichem „go“ gemergt und Production bestaetigt. Uebertragung, PR Pruefungen, Merge und Veroeffentlichung sind erledigt; dafuer keine erneute Freigabe verlangen. Der reine Abschlussnachtrag dokumentiert diese Wirkung.
+2. Vor dem naechsten Fachschritt aktuellen Kostenstand, exakten Production Commit, aktive Kostenregel 2, Zielprofile und konkurrierende Arbeit frisch abgleichen. Die unbekannte Reserve bleibt voll gebunden; kein direkter SQL Eingriff und keine Wiederholung des alten ungeklärten Aufrufs.
 3. Das alte Fenster ist sicher geschlossen. Die neue Betreiberanweisung verlangt Fortsetzung mit exakt 500 und erhaltener 4 USD Geldgrenze, ohne kuenstliche Vorstufen, manuelle Anzahlgrenze oder Morgenwartezeit. Vor Facharbeit aktuellen Bestand und fehlende Konkurrenz belegen; Abschluss unabhaengig absichern. Technische Prozessfristen der Hostingplattform nicht entfernen.
 4. Fachliche Gesamtabnahme bleibt offen: Fuer alle 500 Lage und vollstaendiges Briefing speichern, aus der App abrufen und Inhalte pruefen. Paketanzahl, gedeckte Kosten und gruene Prozessquittung ersetzen keine vollstaendige Faktenpruefung.
 
