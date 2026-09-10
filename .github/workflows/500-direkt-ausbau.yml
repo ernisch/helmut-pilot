@@ -19,6 +19,10 @@ on:
         description: "Exaktes Wort des gewaehlten Vorgangs; Vorpruefung braucht keines"
         type: string
         required: false
+      text_ab_position:
+        description: "Nur Textnachlauf: erste Position der sortierten 500er Zielmenge (leer = 1)"
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -51,6 +55,7 @@ jobs:
           HELMUT_DIREKT_SCHRITT: ${{ inputs.schritt }}
           HELMUT_TESTKOHORTE_EXECUTE: "1"
           HELMUT_TESTKOHORTE_CONFIRM: ${{ inputs.bestaetigung }}
+          HELMUT_TEXTNACHLAUF_AB_POSITION: ${{ inputs.text_ab_position }}
         run: |
           if [ "$HELMUT_DIREKT_SCHRITT" = "vorpruefung" ]; then
             node scripts/testkohorte-vorwaerts.js vorpruefung --ziel=500

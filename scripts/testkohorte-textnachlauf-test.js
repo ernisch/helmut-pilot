@@ -132,6 +132,52 @@ function fixture() {
     h.s.auth.llmUsage = [{ createdAt: start, model: "gpt-5-mini", estimatedCost: 0.01 }];
     assert.equal(D.hash(h.s), baseline);
   });
+  await test("Arbeitsauswahl laesst den gesamten Praefix auch ohne Modell oder Materialisierung aus", async () => {
+    for (const arbeitsbeginn of [27, 500]) {
+      const h = fixture(), vorher = kopie(h.rows), materialisiert = [];
+      const ids = h.s.mandate.filter(m => m.aktiv).map(m => m.user_id).sort();
+      const erlaubt = new Set(ids.slice(arbeitsbeginn - 1));
+      h.config.textnachlaufArbeitsauswahlVersion = 1;
+      h.args.arbeitsbeginn = String(arbeitsbeginn);
+      h.args.deps.materialisiereBriefing = async (p, id) => {
+        assert(erlaubt.has(id)); materialisiert.push(id); return { gespeichert: true };
+      };
+      const r = await T.ausfuehren(h.args);
+      assert.equal(r.ok, true, JSON.stringify(r));
+      assert.equal(r.arbeitsbeginn, arbeitsbeginn); assert.equal(r.ausgewaehlteMandate, erlaubt.size);
+      assert.equal(r.results.length, 500); assert.equal(h.calls.length, erlaubt.size);
+      assert(h.calls.every(id => erlaubt.has(id))); assert.equal(materialisiert.length, erlaubt.size);
+      assert(vorher.every(v => D.hash(h.rows.find(n => n.id === v.id)) === D.hash(v)));
+      const ausgelassen = r.results.filter(x => !erlaubt.has(x.userId));
+      assert.equal(ausgelassen.length, arbeitsbeginn - 1);
+      assert(ausgelassen.every(x => x.gestartet === false && x.grund === "ausserhalb-arbeitsauswahl"
+        && x.gespeichert === undefined && x.lageVorhanden === undefined && x.briefing === undefined));
+      const q = h.receipts.at(-1);
+      assert.equal(q.telemetrie.mandatsErgebnisse.length, 500);
+      assert.equal(q.telemetrie.mandatsErgebnisse.filter(x => x.grund === "ausserhalb-arbeitsauswahl").length,
+        arbeitsbeginn - 1);
+      assert.equal(r.funktionsnachweis500, false);
+    }
+  });
+  await test("Arbeitsauswahl bleibt bei Providerabbruch in allen 500 Einzelquittungen erhalten", async () => {
+    const h = fixture(); h.config.textnachlaufArbeitsauswahlVersion = 1; h.args.arbeitsbeginn = 27;
+    h.args.deps.build = async (p, opts) => { await opts.beforeGenerate(p.id);
+      h.calls.push(p.id); throw Error("lokal simulierter unbekannter Providerabschluss"); };
+    const r = await T.ausfuehren(h.args);
+    assert.equal(r.ok, false); assert.equal(h.calls.length, 1);
+    assert.equal(r.results.length, 500);
+    assert.equal(r.results.filter(x => x.grund === "ausserhalb-arbeitsauswahl").length, 26);
+    assert.equal(h.receipts.at(-1).telemetrie.mandatsErgebnisse.filter(x => x.grund === "ausserhalb-arbeitsauswahl").length, 26);
+    assert.equal(r.automatischeWiederholung, false);
+  });
+  await test("Ungueltige oder nicht deployte Arbeitsauswahl schreibt nichts", async () => {
+    for (const arbeitsbeginn of [0, 501, 1.5, "027", "27 ", "", null, false, {}, 27]) {
+      const h = fixture(); h.args.arbeitsbeginn = arbeitsbeginn;
+      const r = await T.ausfuehren(h.args);
+      assert.equal(r.grund, arbeitsbeginn === 27 ? "nachlauf-arbeitsauswahl-nicht-deployt" : "nachlauf-arbeitsbeginn-ungueltig");
+      assert.equal(h.calls.length, 0); assert.equal(h.receipts.length, 0); assert.equal(h.locks.length, 0);
+    }
+  });
   await test("Manueller Fehlstellenlauf darf vor dem regulaeren Morgen beginnen", async () => {
     const h = fixture(); h.clock = Date.parse("2026-09-08T02:00:00.000Z");
     h.s.auth.llmUsage[0].createdAt = "2026-09-08T01:00:00.000Z";
