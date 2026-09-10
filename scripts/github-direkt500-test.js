@@ -201,6 +201,37 @@ async function main() {
     const blocked = await G.ausfuehren(h.args);
     assert.equal(blocked.ok, false); assert.equal(blocked.ausgeloest, false);
   });
+  await test("Fehlender Nutzungsbeleg braucht eigene Vollreserve und Ticketdeckung des gesamten Zaehlers", async () => {
+    const B = require("../lib/helmut/testkosten-budget"), day = JETZT.slice(0, 10);
+    for (const defekt of [null, "reserve", "ticket", "belegueberhang", "regel", "limit"]) {
+      const h = await bereitZumFachzyklus();
+      h.counter = 255;
+      h.usage = Array.from({ length: 254 }, (_, i) => ({ createdAt: JETZT,
+        model: "gpt-5-mini", estimatedCost: i ? 0.001 : null }));
+      const t = h.kostenTage[day] = { version: B.VERSION, day, tarif: B.konfiguration().tarif,
+        limit: 4000000, baseline: 0, spent: 253000, manualCalls: 0, manualUntil: null, frozen: null,
+        calls: Object.fromEntries(Array.from({ length: 255 }, (_, i) => ["ticket-" + i,
+          { status: i < 2 ? "reserviert" : "abgerechnet", reserved: 212000,
+            maxOutputTokens: 3000, manual: false, createdAt: JETZT, ...(i < 2 ? {} : { cost: 1000 }) }])) };
+      if (defekt === "reserve") { Object.assign(t.calls["ticket-1"], { status: "abgerechnet", cost: 1000 }); t.spent += 1000; }
+      if (defekt === "ticket") { delete t.calls["ticket-2"]; t.spent -= 1000; }
+      if (defekt === "belegueberhang") h.usage.push(kopie(h.usage[1]), kopie(h.usage[1]));
+      if (defekt === "regel") h.config.testKosten.version = 1;
+      if (defekt === "limit") h.config.testKosten.limitUsd = 5;
+      const vorher = JSON.stringify(h.kostenTage), bestand = D.hash(h.w.snapshot());
+      const r = await G.ausfuehren(h.args);
+      assert.equal(r.ok, defekt === null, JSON.stringify({ defekt, r }));
+      assert.equal(h.anfragen.filter(u => u.pathname === "/api/cron/pipeline").length, defekt ? 0 : 1);
+      assert.equal(JSON.stringify(h.kostenTage), vorher, "Keine Nachbuchung oder Erstattung");
+      assert.equal(D.hash(h.w.snapshot()), bestand);
+      if (!defekt) {
+        assert.equal(r.kostenNachher.reservierungsluecke, 1);
+        assert.equal(r.kostenNachher.unbekannteKosten, 1);
+        assert.equal(r.kostenNachher.offeneReserveUsd, 0.424);
+        assert.equal(r.kostenNachher.unbekannteVollstaendigReserviert, true);
+      } else { assert.equal(r.ausgeloest, false); assert.equal(r.automatischeWiederholung, false); }
+    }
+  });
   await test("Kostenfehler nach erfolgreicher Serverquittung melden Stopp und erhalten belegten Fortschritt", async () => {
     for (const eingefroren of [false, true]) {
       const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;

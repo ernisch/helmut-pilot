@@ -79,15 +79,19 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       D.fordere(locks.length + leases.length + verwaist.length === 0, "aktive-oder-verwaiste-lease");
       D.fordere(counters.length <= 1, "tageszaehler-nicht-eindeutig");
       kosten = kostenBefund(auth, counters.length ? counters[0].used : 0, jetzt.toISOString().slice(0, 10));
-      D.fordere(kosten.reservierungsluecke === 0 && kosten.aufrufbelege === kosten.reservierungen,
+      D.fordere(kosten.aufrufbelege <= kosten.reservierungen,
         "kosten-nachweis-unvollstaendig");
       if (auth.testKostenTage?.[jetzt.toISOString().slice(0, 10)] && config.testKosten?.version === 2
         && config.testKosten.aktiv === true && config.testKosten.limitUsd === 4
         && config.testKosten.unbekanntBleibtReserviert === true) {
         try { Object.assign(kosten, require("../lib/helmut/testkosten-budget")
-          .kontrolliere(auth, jetzt.toISOString().slice(0, 10), kosten.unbekannteKosten, kosten.aufrufbelege)); }
+          // Auch eine ganz fehlende Nutzungszeile braucht eine volle Reserve.
+          // Die Ticketdeckung muss den groesseren atomaren Zaehler abdecken.
+          .kontrolliere(auth, jetzt.toISOString().slice(0, 10),
+            kosten.unbekannteKosten + kosten.reservierungsluecke, kosten.reservierungen)); }
         catch { D.fordere(false, "kosten-ausgang-unklar"); }
       } else {
+        D.fordere(kosten.reservierungsluecke === 0, "kosten-nachweis-unvollstaendig");
         D.fordere(!auth.testKostenTage?.[jetzt.toISOString().slice(0, 10)]?.frozen, "kosten-ausgang-unklar");
         D.fordere(kosten.unbekannteKosten === 0, "kosten-nachweis-unvollstaendig");
         D.fordere(kosten.prognoseUsd < 9, "kosten-sicherheitsstopp");
