@@ -119,3 +119,10 @@ Getrennte Qualitaetsdiagnose rein lesend: Der gespeicherte private Entwurf und P
 
 
 Lokale kanonische Sammlung: Sitzung 78518, Protokoll ausserhalb des Repositorys helmut-jsonb-readback-offline-20260910.log. Noch kein Ende gemeldet; letzter sichtbarer Fortschritt berlin-aktivierung-test.js, 22 erfolgreiche Suiten und ein bekannter fehlender Chromium Test. Werkzeug meldet den Lauf weiterhin aktiv. Kein zweiter identischer Lauf oder automatische Wiederholung starten, auch nicht durch einen neuen PR, bis der Ausgang geklaert ist. Der Korrekturbranch kann bereits zur Sicherung uebertragen werden; ein PR und dessen weitere CI brauchen zunaechst den Abschluss dieses Laufs.
+
+
+### Konkrete Profilfreigabe erhalten, Fortsetzung wieder aufgenommen
+
+Der Betreiber bestaetigt in der anschliessenden Sitzung ausdruecklich die voruebergehende Aktivierung und anschliessende Deaktivierung der 495 vorhandenen synthetischen Testprofile innerhalb unveraendert 4 USD je UTC Tag. Der oben dokumentierte konkrete Freigabeblocker ist damit erledigt. Er wird nicht erneut abgefragt. Vorflug 14:15:43 Tuerkei / 13:15:43 Berlin / 11:15:43 UTC: main und Production unveraendert READY auf 13425f848106631d9e8c02fbbdf71571afac667b, keine laufenden Actions, aktiven Pipeline Locks oder jungen laufenden Prozesse. 500 aktive Profile und 0,443539 USD Bindung unveraendert. Zusaetzlicher Leser 14:16:46 / 13:16:46 / 11:16:46 bestaetigt null aktive Leases und verwaiste laufende Jobs. Danach bestehendes Testende einmal mit konkreter Freigabe ausgeloest; Ergebnis nachlesen.
+
+Lokale Sammlung 78518 bei Wiederaufnahme jetzt mit Exit 1 beendet. Protokoll bleibt bei 22 PASS und einem fehlenden Chromium Test ohne gesamte Abschlusszusammenfassung stehen. Kein vollstaendiger Suitenbeleg, keine Wiederholung. Die konkrete JSONB Regression und Reparaturpruefungen sind separat erfolgreich abgeschlossen. Nach belegt beendetem lokalen Prozess ist die notwendige unabhaengige PR CI keine konkurrierende Wiederholung. Der Korrekturbranch und die Quellenqualitaetsdiagnose bleiben erhalten. Vor Merge beide Pflichtjobs vollstaendig gruen sowie Testende und Produktionsruhe unabhaengig bestaetigen.
