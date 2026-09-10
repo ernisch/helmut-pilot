@@ -147,6 +147,60 @@ function fixture() {
     assert(r.ok); assert(r.gespeichert > 0 && r.gespeichert < 478);
     assert(r.results.some(x => x.grund === "zeitbudget")); assert.equal(r.automatischeWiederholung, false);
   });
+  await test("Echter Zeitstopp nach Teilfortschritt liefert dem Controller alle 500 Einzelbelege", async () => {
+    const h = fixture(), build = h.args.deps.build;
+    const before = kopie(h.rows);
+    let attempts = 0, posts = 0, response;
+    h.args.deps.build = async (p, opts) => {
+      attempts++;
+      if (attempts === 1) return build(p, opts);
+      await opts.beforeGenerate(p.id);
+      h.counter++;
+      h.s.auth.llmUsage.push({ createdAt: new Date(h.clock).toISOString(), model: "gpt-5-mini", estimatedCost: 0.001 });
+      if (attempts === 2) return { available: false, reason: "ai-text-source-support" };
+      h.clock = Date.parse(start) + T.BUDGET_MS - T.RESERVE_MS;
+      await opts.beforeGenerate(p.id); // Zeitstopp zwischen bezahltem Entwurf und Review.
+      throw new Error("Das Review darf nach Zeitstopp nicht starten");
+    };
+    const G = require("./github-direkt500");
+    const r = await G.ausfuehren({ vorgang: "textnachlauf", scharf: true,
+      env: { ...require("./fixtures/direkt500").env("textnachlauf"),
+        GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1" },
+      now: h.args.deps.now,
+      fetchFn: async (url, init) => {
+        const u = new URL(url);
+        if (u.pathname === "/api/cron/testnachweis-status") return { status: 200, json: async () => ({
+          ...h.config, ok: true, schemaVersion: 1, reinLesend: true, textnachlaufVersion: 2 }) };
+        if (u.pathname === "/api/cron/lage-briefing") {
+          assert.equal(init.method, "POST"); posts++;
+          response = await T.ausfuehren(h.args);
+          return { status: 200, json: async () => kopie(response) };
+        }
+        if (u.pathname.endsWith("/process_runs")) return { status: 200,
+          json: async () => kopie(h.receipts.filter(x => x.status !== "running")) };
+        assert.equal(init.method, "GET");
+        return { status: 200, json: async () => h.args.deps.get(u.pathname.split("/").pop() + u.search) };
+      } });
+    assert.equal(posts, 1); assert.equal(attempts, 3);
+    assert.equal(response.grund, "nachlauf-zeitbudget");
+    assert.equal(response.results.length, 500, "HTTP muss denselben vollstaendigen Zielbeleg wie die Datenbank liefern");
+    assert.equal(new Set(response.results.map(x => x.userId)).size, 500);
+    assert.equal(response.results.filter(x => x.gespeichert).length, 1);
+    assert.equal(response.results.filter(x => x.grund === "nachlauf-zeitbudget").length, 1);
+    assert.equal(response.results.filter(x => x.grund === "nicht-erreicht-nach-abbruch" && x.gestartet === false).length, 497);
+    const receipt = h.receipts.at(-1);
+    for (const row of response.results) {
+      const q = receipt.telemetrie.mandatsErgebnisse.find(x => x.mandatHash === D.hash(row.userId));
+      assert(q); assert.equal(q.gestartet, row.gestartet === true);
+      assert.equal(q.grund, row.grund || "gespeichert");
+    }
+    assert.equal(receipt.failed_count, 2); assert.equal(receipt.processed_count, 1);
+    assert.equal(r.ok, false); assert.equal(r.zustandUnbekannt, false, JSON.stringify(r));
+    assert.equal(r.serverBefund.unabhaengigBestaetigt, true);
+    assert.equal(r.automatischeWiederholung, false); assert.equal(r.funktionsnachweis500, false);
+    assert(before.every(old => D.hash(h.rows.find(x => x.id === old.id)) === D.hash(old)));
+    assert.equal(h.locks.length, 0);
+  });
   await test("Nur beendeter Zeitstopp reicht den eigenen Entwurf auch nach Codekorrektur weiter", async () => {
     const h = fixture(), build = h.args.deps.build;
     const target = h.s.mandate.filter(m=>m.aktiv).find(m=>!h.rows.some(r=>r.user_id===m.user_id)).user_id;
