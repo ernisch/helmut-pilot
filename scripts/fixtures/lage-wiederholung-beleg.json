@@ -1,0 +1,68 @@
+{
+  "paragraphs": [
+    {
+      "text": "Die Tagesschau berichtet, dass Bundeskanzler Merz sich skeptisch zu einem Verbotsverfahren gegen die AfD äußert und das Thema nach der Landtagswahl in Sachsen-Anhalt verstärkt die politische Debatte beschäftigt.",
+      "vorgang_ids": [
+        "vg-kommen-20260909-df72ef"
+      ]
+    },
+    {
+      "text": "Der Deutschlandfunk meldet, dass nach der Wahl in Sachsen-Anhalt Bundeskanzler Merz seine Skepsis zu den Erfolgsaussichten eines möglichen AfD-Verbotsverfahrens erneut geäußert hat.",
+      "vorgang_ids": [
+        "vg-sachsen-20260908-92ee54"
+      ]
+    }
+  ],
+  "quellen": [
+    {
+      "quellenbelege": [
+        {
+          "auszug": "Der Umgang mit der AfD beschäftigt die Politik nach der Wahl in Sachsen-Anhalt verstärkt - auch die Frage nach einem Verbotsverfahren. Der Kanzler bleibt skeptisch und sieht einen anderen Weg.",
+          "quelle": "Tagesschau Politik",
+          "quelle_id": "q-05a26fc5cb63f5a9b37b",
+          "titel": "Bundeskanzler Merz: AfD-Verbot löst das Problem nicht",
+          "url": "https://tagesschau.de/inland/innenpolitik/merz-afd-verbot-102.html",
+          "veroeffentlichtAm": "2026-09-09T19:38:18.000Z"
+        }
+      ],
+      "vorgang_id": "vg-kommen-20260909-df72ef"
+    },
+    {
+      "quellenbelege": [
+        {
+          "auszug": "Bundeskanzler Merz hat sich skeptisch zu den Erfolgschancen eines möglichen AfD-Verbotsverfahrens geäußert.",
+          "quelle": "Deutschlandfunk Politik",
+          "quelle_id": "q-8a0463d79828e3f75c51",
+          "titel": "Nach Sachsen-Anhalt-Wahl - Merz äußert sich skeptisch zu AfD-Verbotsverfahren",
+          "url": "https://deutschlandfunk.de/merz-aeussert-sich-skeptisch-zu-afd-verbotsverfahren-102.html",
+          "veroeffentlichtAm": "2026-09-09T19:56:07.000Z"
+        }
+      ],
+      "vorgang_id": "vg-sachsen-20260908-92ee54"
+    }
+  ],
+  "review": {
+    "pruefungen": [
+      {
+        "absatz": 0,
+        "belegfeld": "auszug",
+        "profilbezug": true,
+        "pruefbegruendung": "Auszug der Tagesschau belegt Merz' Skepsis und die Verstärkung der Debatte nach der Landtagswahl; bundespolitisch relevant für ein Bundestagsmandat.",
+        "quelle_id": "q-05a26fc5cb63f5a9b37b",
+        "textart": "konkreter_sachverhalt",
+        "themenrein": true,
+        "vollstaendig_belegt": true
+      },
+      {
+        "absatz": 1,
+        "belegfeld": "auszug",
+        "profilbezug": true,
+        "pruefbegruendung": "Auszug des Deutschlandfunk belegt, dass Merz erneut Skepsis zu den Erfolgsaussichten eines AfD-Verbotsverfahrens äußerte; bundespolitisch relevant für ein Bundestagsmandat.",
+        "quelle_id": "q-8a0463d79828e3f75c51",
+        "textart": "konkreter_sachverhalt",
+        "themenrein": true,
+        "vollstaendig_belegt": true
+      }
+    ]
+  }
+}
