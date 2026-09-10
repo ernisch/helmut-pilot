@@ -22,6 +22,22 @@ on:
         description: "Kalendertag des gespeicherten Briefings, YYYY-MM-DD"
         type: string
         required: false
+      privater_inhaltsnachweis:
+        description: "Begrenzte private Inhaltsprobe ausschliesslich verschluesselt lesen"
+        type: boolean
+        default: false
+      nachweis_ab_position:
+        description: "Private Inhaltsprobe: erste Position der sortierten 500er Zielmenge"
+        type: string
+        required: false
+      nachweis_anzahl:
+        description: "Private Inhaltsprobe: Anzahl 1 bis 25"
+        type: string
+        required: false
+      nachweis_public_key:
+        description: "Private Inhaltsprobe: oeffentlicher RSA3072 SPKI Schluessel in Base64"
+        type: string
+        required: false
   push:
     branches: [codex/500-github-zugangspruefung]
     paths:
@@ -99,3 +115,29 @@ jobs:
           HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
           HELMUT_NACHWEIS_TAG: ${{ inputs.briefing_tag }}
         run: node scripts/github-briefingnachweis-500.js
+
+  privater_inhaltsnachweis:
+    needs: zugang
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' && github.ref == 'refs/heads/main' &&
+      github.event_name == 'workflow_dispatch' && inputs.privater_inhaltsnachweis
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Begrenzte Inhaltsprobe nur lesen und vor Ausgabe verschluesseln
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+          HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
+          HELMUT_NACHWEIS_TAG: ${{ inputs.briefing_tag }}
+          HELMUT_PRIVAT_AB_POSITION: ${{ inputs.nachweis_ab_position }}
+          HELMUT_PRIVAT_ANZAHL: ${{ inputs.nachweis_anzahl }}
+          HELMUT_NACHWEIS_PUBLIC_KEY: ${{ inputs.nachweis_public_key }}
+        run: node scripts/github-privater-inhaltsnachweis-500.js
