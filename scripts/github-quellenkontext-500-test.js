@@ -63,6 +63,36 @@ function fixture(count = 2) {
 let pass = 0;
 async function test(name, fn) { await fn(); pass++; console.log("PASS " + name); }
 async function main() {
+  await test("Volle unbekannte Reserve erlaubt Quellenarbeit und bleibt unveraendert", async () => {
+    const B = require("../lib/helmut/testkosten-budget");
+    for (const mode of ["reserviert", "ungeklaert", "ohne-buch", "ohne-reserve", "alte-regel", "fremde-sperre"]) {
+      const f = fixture(), day = JETZT.slice(0, 10);
+      await B.reserviere({ model: "gpt-5-mini", maxOutputTokens: 3000 }, {
+        env: { VERCEL_ENV: "production", HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt", AZURE_OPENAI_KEY: "offline" },
+        now: () => new Date(JETZT), id: () => "unbekannter-aufuf",
+        storage: { leseLlmTageszaehler: async () => ({ ok: true, used: 0 }),
+          mutateAuthStore: async fn => fn(f.bestand.auth) }
+      });
+      const buch = f.bestand.auth.testKostenTage[day];
+      buch.frozen = "test-usd-ausgang-unklar";
+      f.bestand.auth.llmUsage = [{ createdAt: JETZT, model: "gpt-5-mini", estimatedCost: null }];
+      f.counter = 1;
+      f.args.config.testKosten = { version: 2, aktiv: true, limitUsd: 4, unbekanntBleibtReserviert: true };
+      if (mode === "ungeklaert") { Object.values(buch.calls)[0].status = "ungeklaert"; buch.frozen = null; }
+      if (mode === "ohne-buch") delete f.bestand.auth.testKostenTage;
+      if (mode === "ohne-reserve") buch.calls = {};
+      if (mode === "alte-regel") f.args.config.testKosten.version = 1;
+      if (mode === "fremde-sperre") buch.frozen = "test-usd-beleg-obergrenze-verletzt";
+      const before = D.hash(f.bestand.auth);
+      const r = await G.ausfuehren(f.args);
+      const erlaubt = ["reserviert", "ungeklaert"].includes(mode);
+      assert.equal(r.ok, erlaubt, JSON.stringify(r));
+      assert.equal(D.hash(f.bestand.auth), before, "Kein Kostenbuchwrite und keine Erstattung");
+      assert.equal(f.fetches, erlaubt ? 2 : 0); assert.equal(f.writes, erlaubt ? 2 : 0);
+      if (erlaubt) { assert.equal(r.modellaufrufe, 0); assert.equal(r.kosten.gebundenUsd, 0.212); }
+      else assert.equal(f.acquired, 0);
+    }
+  });
   await test("500 Profile lesen, leere Originalauszuege ergaenzen, null Modellarbeit", async () => {
     const f = fixture(), before = D.hash(f.bestand);
     const r = await G.ausfuehren(f.args);
