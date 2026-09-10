@@ -477,7 +477,7 @@ async function main() {
     const runId = "nachlauf500-123456789";
     h.quittungen = [{ run_id: runId, status: "failed", processed_count: 0, failed_count: 1,
       started_at: JETZT, finished_at: JETZT }];
-    let calls = 0;
+    let calls = 0, stopGrund = "nachlauf-qualitaetsfehler";
     const args = { ...h.args, vorgang: "textnachlauf", env: { ...h.args.env,
       HELMUT_TESTKOHORTE_CONFIRM: D.WORTE.textnachlauf, GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1" },
       fetchFn: async (url, init) => {
@@ -485,10 +485,11 @@ async function main() {
         if (u.pathname === "/api/cron/lage-briefing") {
           calls++; assert.equal(init.method, "POST");
           const results = h.w.snapshot().mandate.filter(m => m.aktiv).map((m, i) => ({
-            userId: m.user_id, grund: i ? "zeitbudget" : "nachlauf-textfehler-ai-text-source-support" }));
+            userId: m.user_id, grund: stopGrund === "nachlauf-zeitbudget" && i === 0 ? stopGrund
+              : i === (stopGrund === "nachlauf-zeitbudget" ? 1 : 0) ? "nachlauf-textfehler-ai-text-source-support" : "zeitbudget" }));
           return { status: 200, json: async () => ({ ok: false, schemaVersion: 1, runId,
             modus: "manuell-fehlende-texte", ziel: 500, gespeichert: 0, results,
-            grund: "nachlauf-qualitaetsfehler", qualitaetsfehler: 1, automatischeWiederholung: false,
+            grund: stopGrund, qualitaetsfehler: 1, automatischeWiederholung: false,
             funktionsnachweis500: false }) };
         }
         if (u.pathname.endsWith("/briefings")) return { status: 200, json: async () => [] };
@@ -505,6 +506,13 @@ async function main() {
     assert.equal(abweichend.zustandUnbekannt, true);
     assert.equal(abweichend.serverBefund.unabhaengigBestaetigt, false);
     assert.equal(calls, 2);
+    stopGrund = "nachlauf-zeitbudget"; h.quittungen[0].failed_count = 2;
+    const zeit = await G.ausfuehren(args);
+    assert.equal(zeit.ok, false); assert.equal(zeit.grund, stopGrund);
+    assert.equal(zeit.zustandUnbekannt, false, "Bestaetigte Zeitgrenze ist kein unbekannter Ausgang");
+    assert.equal(zeit.serverBefund.unabhaengigBestaetigt, true);
+    h.quittungen[0].failed_count = 1;
+    assert.equal((await G.ausfuehren(args)).zustandUnbekannt, true, "Zeitgrenze ohne passende Quittung bleibt unklar");
   });
   await test("Teilweise gespeicherter Fehler bleibt rot und traegt nur sichere Diagnose", async () => {
     const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;

@@ -167,7 +167,7 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
           "ai-text-word-limit", "ai-text-quality-incomplete", "ai-text-source-support",
           "ai-text-evidence-quote", "ai-text-repetition"]
           .map(g => "nachlauf-textfehler-" + g);
-        const grund = b.grund === "nachlauf-qualitaetsfehler" || gruende.includes(b.grund)
+        const grund = ["nachlauf-qualitaetsfehler", "nachlauf-zeitbudget"].includes(b.grund) || gruende.includes(b.grund)
           || /^nachlauf-textfehler-ai-provider-http-[45][0-9]{2}$/.test(b.grund || "")
           ? b.grund : "nachlauf-fehler-ohne-freigegebene-diagnose";
         serverBefund = { runId, grund, lautServerGespeichert: b.gespeichert,
@@ -175,7 +175,10 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       }
       const qualitaetslauf = b?.ok === false && b.grund === "nachlauf-qualitaetsfehler"
         && Number.isSafeInteger(b.qualitaetsfehler) && b.qualitaetsfehler > 0 && b.qualitaetsfehler <= 500;
-      D.fordere((b?.ok === true || qualitaetslauf) && b.schemaVersion === 1 && b.runId === runId
+      const zeitlauf = b?.ok === false && b.grund === "nachlauf-zeitbudget"
+        && Number.isSafeInteger(b.qualitaetsfehler) && b.qualitaetsfehler >= 0 && b.qualitaetsfehler < 500
+        && Array.isArray(b.results) && b.results.filter(r => r.grund === "nachlauf-zeitbudget").length === 1;
+      D.fordere((b?.ok === true || qualitaetslauf || zeitlauf) && b.schemaVersion === 1 && b.runId === runId
         && b.modus === "manuell-fehlende-texte" && b.ziel === 500
         && Number.isSafeInteger(b.gespeichert) && b.gespeichert >= 0 && b.gespeichert <= 500
         && Array.isArray(b.results) && b.results.length === 500
@@ -186,8 +189,8 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       const rows = await db("process_runs?select=run_id,status,processed_count,failed_count,started_at,finished_at"
         + "&process=eq." + T.PROCESS + "&run_id=eq." + runId + "&limit=2");
       D.fordere(rows.length === 1 && rows[0].run_id === runId
-        && rows[0].status === (qualitaetslauf ? "failed" : "success")
-        && rows[0].failed_count === (qualitaetslauf ? b.qualitaetsfehler : 0)
+        && rows[0].status === (qualitaetslauf || zeitlauf ? "failed" : "success")
+        && rows[0].failed_count === (zeitlauf ? b.qualitaetsfehler + 1 : qualitaetslauf ? b.qualitaetsfehler : 0)
         && rows[0].processed_count === b.gespeichert && Date.parse(rows[0].started_at) >= Date.parse(startIso)
         && Date.parse(rows[0].finished_at) >= Date.parse(rows[0].started_at)
         && Date.parse(rows[0].finished_at) <= now().getTime(), "textnachlauf-quittung-abweichend");

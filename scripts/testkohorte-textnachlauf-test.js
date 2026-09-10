@@ -80,6 +80,8 @@ function fixture() {
           if (u.searchParams.has("job_type")) return kopie(h.jobs);
           return kopie(u.searchParams.has("or") ? h.orphans : h.leases);
         }
+        if (table === "process_runs" && u.searchParams.has("reason"))
+          return kopie(h.receipts.filter(r => r.reason === "nachlauf-zeitbudget"));
         if (table === "process_runs") return kopie(u.searchParams.has("commit_ref")
           ? h.receipts.filter(r => r.commit_ref === SHA && r.status !== "running")
           : u.searchParams.has("status") ? h.runs : h.receipts.filter(r => r.run_id === h.args.runId));
@@ -144,6 +146,24 @@ function fixture() {
     const r = await T.ausfuehren(h.args);
     assert(r.ok); assert(r.gespeichert > 0 && r.gespeichert < 478);
     assert(r.results.some(x => x.grund === "zeitbudget")); assert.equal(r.automatischeWiederholung, false);
+  });
+  await test("Nur beendeter Zeitstopp reicht den eigenen Entwurf auch nach Codekorrektur weiter", async () => {
+    const h = fixture(), build = h.args.deps.build;
+    const target = h.s.mandate.filter(m=>m.aktiv).find(m=>!h.rows.some(r=>r.user_id===m.user_id)).user_id;
+    const old = {run_id:"nachlauf500-555555555",commit_ref:"b".repeat(40),status:"failed",reason:"nachlauf-zeitbudget",
+      finished_at:new Date(h.clock-1000).toISOString(),telemetrie:{mandatsErgebnisse:[{
+        mandatHash:D.hash(target),gestartet:true,grund:"nachlauf-zeitbudget"}]}};
+    h.receipts.push(old);
+    let candidates = 0;
+    h.args.deps.build = async (p,opts) => {
+      if(p.id===target){assert.equal(opts.fortsetzenNachZeitbudget,old.run_id);candidates++;}
+      else assert.equal(opts.fortsetzenNachZeitbudget,undefined);
+      return build(p,opts);
+    };
+    assert.equal((await T.ausfuehren(h.args)).ok,true);assert.equal(candidates,1);
+    const bad = fixture();bad.receipts.push({...old,finished_at:null});
+    assert.equal((await T.ausfuehren(bad.args)).grund,"nachlauf-vorige-ergebnisse-unlesbar");
+    assert.equal(bad.calls.length,0);
   });
   await test("Fortsetzung erreicht fehlende Texte bevor alte Briefingleser das Zeitfenster verbrauchen", async () => {
     const h = fixture(), vorhanden = new Set(h.rows.map(r => r.user_id));
