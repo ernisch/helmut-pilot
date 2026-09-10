@@ -6547,7 +6547,7 @@ function hstandWhen(iso) {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   try {
-    return new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }).format(d);
+    return new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(d);
   } catch { return ""; }
 }
 
@@ -6631,6 +6631,7 @@ function renderHstandHeader(state) {
   // belegtes Meldungsdatum (zeitLabel, Europe/Berlin) — nicht der Zeitpunkt, zu dem
   // Helmut die Zeile zuletzt angefasst hat (Audit 2026-08-10, Befund F2).
   const when = (state.primaryItem && state.primaryItem.zeitLabel)
+    || hstandWhen(state.primaryItem && state.primaryItem.meldungAt)
     || hstandWhen(state.sourcesSummary && state.sourcesSummary.lastUpdated)
     || hstandWhen(state.generatedAt);
   // Bei STALE (angezeigter Datenstand nicht von heute) darf NICHT der aktuelle Slot-Name

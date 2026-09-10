@@ -440,5 +440,48 @@ check("D5-7: kein Kosten-/Token-/LLM-Feld im fresh-aware State (nur V3-Daten)",
 check("D5-7: keine hartkodierte Partei/Personen-Logik durch die Auswahl",
   !/\bcem\b|ince|\bspd\b|\bcdu\b|gruene|grüne|\blinke\b|\bafd\b|\bfdp\b/i.test(serFresh));
 
+// Production Befund10.09.: 2021 veroeffentlicht, heute neu analysiert.
+// Der neue Analysezeitpunkt darf weder Primarywahl noch Badge verjuengen.
+{
+  const now = new Date("2026-09-10T13:04:37Z");
+  const oldKo = { ...koPrimary, id: "ko-alt", vorgang_id: "vg-alt",
+    created_at: "2021-09-27T07:00:00Z", updated_at: "2026-09-10T11:32:50Z" };
+  const newKo = { ...koPrimary, id: "ko-neu", vorgang_id: "vg-neu",
+    created_at: "2026-09-10T08:00:00Z", updated_at: "2026-09-10T08:00:00Z" };
+  const oldDec = { ...decisions[0], knowledge_object_id: oldKo.id, vorgang_id: oldKo.vorgang_id, score: 90 };
+  const newDec = { ...decisions[0], knowledge_object_id: newKo.id, vorgang_id: newKo.vorgang_id, score: 60 };
+  const kos = { [oldKo.id]: oldKo, [newKo.id]: newKo };
+  const docs = { "vg-alt": [{ id: "rd-alt", url: "https://example.invalid/alt", published_at: oldKo.created_at }],
+    "vg-neu": [{ id: "rd-neu", url: "https://example.invalid/neu", published_at: newKo.created_at }] };
+  const alone = contract.buildCurrentHelmutState({ profile, decisions: [oldDec], kosById: kos, sourcesByVorgang: docs, now });
+  check("Quellenalter: heutige Neuberechnung macht Meldung von2021 nicht aktuell", alone.status === "stale" && alone.staleState);
+  check("Quellenalter: beide echte Zeitstempel bleiben erhalten", alone.primaryItem.meldungAt === oldKo.created_at
+    && alone.primaryItem.lastUpdated === oldKo.updated_at && alone.datenstandTag === "2021-09-27");
+  // Originaler Clientheader samt Originalformatter, kein nachgebautes Datum.
+  const fs = require("node:fs"), vm = require("node:vm");
+  const client = fs.readFileSync(require("node:path").join(__dirname, "../client.js"), "utf8");
+  const take = (begin, end) => client.slice(client.indexOf(begin), client.indexOf(end, client.indexOf(begin)));
+  const ctx = vm.createContext({ Date, Intl, escapeHtml: x => String(x),
+    renderRefreshButton: () => "", renderHstandFrische: () => "", HELMUT_ICON_CLOCK: "", HELMUT_ICON_EYE: "" });
+  vm.runInContext(take("const HSTAND_STATUS_LABEL =", "// qualityStatus ist ehrlich")
+    + take("function hstandWhen(", "function hstandContextChips(")
+    + take("function renderHstandHeader(", "// Wichtigster Bereich: Mein Vorschlag"), ctx);
+  const header = ctx.renderHstandHeader(alone);
+  check("Quellenalter: echter Clientheader zeigt Publikationsdatum samt Jahr statt Neuberechnung", /27\./.test(header)
+    && header.includes("2021") && !header.includes("2026"));
+  const args = { profile, decisions: [oldDec, newDec], kosById: kos, sourcesByVorgang: docs, now };
+  const selected = contract.buildCurrentHelmutState(args);
+  check("Quellenalter: aktuelle Meldung verdraengt heute nachanalysierten Altvorgang", selected.primaryVorgangId === "vg-neu"
+    && selected.items.some(x => x.id === "vg-alt") && selected.status === "fresh");
+  const debug = contract.buildPrimarySelectionDebug({ ...args, understood: [oldKo, newKo],
+    decisionsBefore: args.decisions, decisionsAfter: args.decisions, state: selected });
+  check("Quellenalter: Diagnose fuehrt Neuberechnung nicht als frische Meldung", !debug.freshCandidates.some(x => x.vorgang_id === "vg-alt"));
+  const night = { ...docs, "vg-alt": [{ ...docs["vg-alt"][0], published_at: "2026-09-09T21:00:00Z" }] };
+  const previousEvening = contract.buildCurrentHelmutState({ ...args, decisions: [oldDec], sourcesByVorgang: night,
+    frischeFenster: { start: "2026-09-09T20:00:00Z", end: now.toISOString() } });
+  check("Quellenalter: belegter spaeter Vorabend bleibt im aktuellen Briefingfenster frisch", previousEvening.status === "fresh"
+    && previousEvening.datenstandVonHeute === false);
+}
+
 console.log(`\n${passed}/${passed + failed} CurrentHelmutState-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
