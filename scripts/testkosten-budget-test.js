@@ -129,13 +129,36 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); count++
     await h.storage.mutateAuthStore(s => { s[B.KEY][DAY].spent = 0; });
     await assert.rejects(B.reserviere(ARGS, h.deps), { reason: "test-usd-buch-unlesbar" });
   });
+  await test("Abbruch nach reserviertem Review behaelt Lauf, Mandatshash und Phase ohne nachtraeglichen Kostenbeleg", async () => {
+    const h = fixture(), legacy = await B.reserviere(ARGS, h.deps);
+    await h.storage.mutateAuthStore(s => { delete s[B.KEY][DAY].calls[legacy.id].bezug; });
+    const old = h.day().calls[legacy.id];
+    const args = { ...ARGS, politicianId: "mandat-offline", phase: "pruefung" };
+    const ticket = await B.reserviere(args, h.deps);
+    const bezug = { version: 1, runId: ARGS.runId,
+      mandatHash: require("../lib/helmut/testkohorte-direkt500").hash(args.politicianId), phase: args.phase };
+    assert.deepEqual(h.day().calls[ticket.id].bezug, bezug);
+    assert(!JSON.stringify(h.day()).includes(args.politicianId), "Kein Klartextprofil im Kostenbuch");
+    h.fail = true;
+    await assert.rejects(B.abschliessen(ticket, RECEIPT, h.deps), { code: "TEST_USD_UNKNOWN" });
+    assert.equal(h.day().calls[ticket.id].status, "reserviert");
+    assert.deepEqual(h.day().calls[ticket.id].bezug, bezug);
+    assert.deepEqual(h.day().calls[legacy.id], old, "Kein erfundener Bezug fuer alte Tickets");
+    assert.equal(B.belegt(h.day()), 424000);
+    h.fail = false;
+    for (const bad of [{ ...args, phase: "GEHEIMER_TEXT" }, { ...args, politicianId: null }])
+      await assert.rejects(B.reserviere(bad, h.deps), { reason: "test-usd-aufrufbezug-ungueltig" });
+    assert.equal(Object.keys(h.day().calls).length, 2, "Ungueltiger Bezug vor Reservierung abgewiesen");
+    await h.storage.mutateAuthStore(s => { s[B.KEY][DAY].calls[ticket.id].bezug.phase = "fremd"; });
+    await assert.rejects(B.reserviere(ARGS, h.deps), { reason: "test-usd-buch-unlesbar" });
+  });
   await test("Echter KI Einstieg reserviert vor HTTP und erhaelt unbekannte Kosten bei neuer Arbeit", async () => {
     const https = require("node:https"), storage = require("../lib/helmut/storage");
     const anbieter = require("../lib/helmut/anbieter-steuerung"), ai = require("../lib/helmut/ai");
     const old = { env: { ...process.env }, request: https.request, mutate: storage.mutateAuthStore,
       counter: storage.leseLlmTageszaehler, reserve: storage.reserveLlmCall, record: storage.recordLlmUsage,
       anbieter: anbieter.steuerungAktiv };
-    let requests = 0, missing = false;
+    let requests = 0, missing = false, expectedBezug = null;
     const h = fixture();
     try {
       Object.assign(process.env, ENV, { AZURE_OPENAI_ENDPOINT: "https://offline.openai.azure.com",
@@ -149,6 +172,7 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); count++
         requests++;
         const today = new Date().toISOString().slice(0, 10), t = h.read()[B.KEY][today];
         assert(Object.values(t.calls).some(c => c.status === "reserviert"), "Bestaetigte Reserve VOR HTTP");
+        if (expectedBezug) assert.deepEqual(Object.values(t.calls).at(-1).bezug, expectedBezug);
         const req = new EventEmitter(); req.write = () => {}; req.destroy = () => {};
         req.end = () => setImmediate(() => {
           const res = new EventEmitter(); res.statusCode = 200; res.setEncoding = () => {};
@@ -168,6 +192,11 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); count++
       assert.equal(current.spent, 260);
       assert.equal(B.belegt(current), 212260, "Volle 3000 Token Reserve bleibt neben neuer Abrechnung gebunden");
       assert.equal(requests, 3, "Nur ausdrueckliche neue Aufrufe, kein automatischer Retry");
+      expectedBezug = { version: 1, runId: ARGS.runId,
+        mandatHash: require("../lib/helmut/testkohorte-direkt500").hash("mandat-offline"), phase: "pruefung" };
+      await ai.requestStructuredJson("offline", {}, { runId: ARGS.runId,
+        politicianId: "mandat-offline", testKostenPhase: "pruefung" });
+      assert.equal(requests, 4);
     } finally {
       https.request = old.request; storage.mutateAuthStore = old.mutate;
       storage.leseLlmTageszaehler = old.counter; storage.reserveLlmCall = old.reserve;
