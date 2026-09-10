@@ -203,7 +203,8 @@ function fixture() {
   });
   await test("Nur beendeter Zeitstopp reicht den eigenen Entwurf auch nach Codekorrektur weiter", async () => {
     const h = fixture(), build = h.args.deps.build;
-    const target = h.s.mandate.filter(m=>m.aktiv).find(m=>!h.rows.some(r=>r.user_id===m.user_id)).user_id;
+    const target = h.s.mandate.filter(m=>m.aktiv && !h.rows.some(r=>r.user_id===m.user_id)).at(-1).user_id;
+    h.stepMs = 80000; // Ohne Vorrang wird dieser bezahlte Entwurf im kurzen Fenster nie erreicht.
     const old = {run_id:"nachlauf500-555555555",commit_ref:"b".repeat(40),status:"failed",reason:"nachlauf-zeitbudget",
       finished_at:new Date(h.clock-1000).toISOString(),telemetrie:{mandatsErgebnisse:[{
         mandatHash:D.hash(target),gestartet:true,grund:"nachlauf-zeitbudget"}]}};
@@ -215,6 +216,7 @@ function fixture() {
       return build(p,opts);
     };
     assert.equal((await T.ausfuehren(h.args)).ok,true);assert.equal(candidates,1);
+    assert.equal(h.calls[0],target,"Vorhandener bezahlter Entwurf kommt vor neuen Entwuerfen");
     const bad = fixture();bad.receipts.push({...old,finished_at:null});
     assert.equal((await T.ausfuehren(bad.args)).grund,"nachlauf-vorige-ergebnisse-unlesbar");
     assert.equal(bad.calls.length,0);
