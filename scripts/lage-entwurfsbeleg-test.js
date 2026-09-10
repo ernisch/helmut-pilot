@@ -51,5 +51,29 @@ const args = { userId: "test-entwurf-a", runId: "nachlauf500-123456", phase: "en
     assert.deepEqual(await B.speichere(args,{insertLageEntwurfsbeleg:async()=>({reason:"existing-result"}),getLageEntwurfsbeleg:async()=>entry}),{gespeichert:true});
     await assert.rejects(()=>B.speichere(args,{insertLageEntwurfsbeleg:async()=>({reason:"existing-result"}),getLageEntwurfsbeleg:async()=>({...entry,payload:{...entry.payload,antwort:{anders:true}}})}));
   });
+  const fortsetzen = { userId: args.userId, runId: args.runId, quellen: args.quellen, profile: args.profile, now: args.now };
+  const reader = (draft = entry, review = null) => ({ getLageEntwurfsbeleg: async (owner, id) => {
+    assert.equal(owner, args.userId); return id.endsWith("-pruefung") ? review : draft;
+  } });
+  await check("Identischer bezahlter Entwurf wird ohne Write fuer das fehlende Review gelesen", async () => {
+    const r = await B.leseFortsetzung(fortsetzen, reader());
+    assert.deepEqual(r.antwort, entry.payload.antwort); assert.equal(r.id, entry.id);
+    assert.notEqual(r.antwort, entry.payload.antwort); assert.equal(r.inhaltHash, entry.payload.inhaltHash);
+    const next = B.baue({ ...args, runId: "nachlauf500-987654", fortgesetztAus: r });
+    assert.deepEqual(next.payload.fortgesetztAus, {id:entry.id,inhaltHash:entry.payload.inhaltHash});
+    assert.equal(next.payload.auslieferbar, false); assert.notEqual(next.id, entry.id);
+  });
+  await check("Geaenderter Fachkontext darf keinen alten Entwurf wiederverwenden", async () => {
+    assert.equal(await B.leseFortsetzung({...fortsetzen,profile:{...args.profile,committees:["Umwelt"]}},reader()),null);
+    assert.equal(await B.leseFortsetzung({...fortsetzen,quellen:[]},reader()),null);
+  });
+  await check("Besitzer, Hash, Zeit und ausstehendes Review sind zwingend", async () => {
+    for (const patch of [{user_id:"fremd"},{id:"fremd"},{generated_at:"2099-01-01T00:00:00Z"},
+      {payload:{...entry.payload,antwort:{manipuliert:true}}}])
+      await assert.rejects(()=>B.leseFortsetzung(fortsetzen,reader({...entry,...patch})),/nicht-bestaetigt/);
+    await assert.rejects(()=>B.leseFortsetzung(fortsetzen,reader(entry,B.baue({...args,phase:"pruefung"}))),/nicht-bestaetigt/);
+    await assert.rejects(()=>B.leseFortsetzung(fortsetzen,{getLageEntwurfsbeleg:async()=>{throw new Error("read-unknown");}}));
+    assert.equal(await B.leseFortsetzung(fortsetzen,reader(null)),null);
+  });
   console.log(`${checks} PASS: private Entwurfsbelege, Mandatsbindung, unveraenderliche Ablage, Ruecklesen`);
 })().catch(e=>{console.error(e);process.exitCode=1;});

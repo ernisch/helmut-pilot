@@ -25,7 +25,7 @@ let checks = 0;
 
 async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   status = "completed", http = 200, receipt = beleg, rejectReceipt = false, budget = true,
-  expected = null } = {}) {
+  expected = null, fortsetzen = false, reviewResult = review } = {}) {
   let requests = 0, reservations = 0, logs = [], release;
   const bodies = [];
   const gate = new Promise(resolve => { release = resolve; });
@@ -38,7 +38,7 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   };
   https.request = (_url, _options, cb) => {
     requests++;
-    const thisOutput = requests === 1 ? output : JSON.stringify(review);
+    const thisOutput = requests === 1 && !fortsetzen ? output : JSON.stringify(reviewResult);
     if (mode === "construction") throw new Error("GEHEIMER_AUFBAUFEHLER");
     const req = new EventEmitter();
     req.write = body => { if (mode === "send") throw new Error("GEHEIMER_SEND_FEHLER"); bodies.push(JSON.parse(body)); };
@@ -63,8 +63,9 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   let settled = false;
   const drafts = [], reviews = [];
   const result = ai.generateLageBriefing(vorgaenge, {}, { politicianId: "test-kohorte-b-023",
-    onDraft: async value => { assert.equal(logs.length,1); assert.equal(requests,1); drafts.push(value); },
-    onReview: async value => { assert.equal(logs.length,2); assert.equal(requests,2); reviews.push(value); } })
+    gespeicherterEntwurf: fortsetzen ? { paragraphs } : undefined,
+    onDraft: async value => { assert.equal(logs.length,fortsetzen ? 0 : 1); assert.equal(requests,fortsetzen ? 0 : 1); drafts.push(value); },
+    onReview: async value => { assert.equal(logs.length,fortsetzen ? 1 : 2); assert.equal(requests,fortsetzen ? 1 : 2); reviews.push(value); } })
     .then(value => ({ value }), error => ({ error })).then(r => { settled = true; return r; });
   await tick(); await tick();
   if (budget) assert.equal(settled, false, "Kein Abschluss vor Kostenquittung");
@@ -80,8 +81,8 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   } else assert.equal(r.value?.paragraphs.length, 2);
   assert(!JSON.stringify(r).includes("GEHEIMER"), "Diagnose verrät keinen Rohtext");
   assert(!JSON.stringify(logs).includes("GEHEIMER"), "Kostenlog verrät keinen Rohtext");
-  assert.equal(requests, budget ? (expected ? 1 : 2) : 0, "Ein Generator und nur bei dessen Erfolg ein Quellenpruefer; kein Retry");
-  assert.equal(logs.length, expected ? 1 : 2, "Jeder Modellversuch hat seinen eigenen Kostenbeleg");
+  assert.equal(requests, budget ? (expected || fortsetzen ? 1 : 2) : 0, "Gesicherter Entwurf braucht nur den Quellenpruefer; kein Retry");
+  assert.equal(logs.length, expected || fortsetzen ? 1 : 2, "Jeder Modellversuch hat seinen eigenen Kostenbeleg");
   if (mode === "timeout") {
     assert.equal(logs[0].error, "request-error:ETIMEDOUT", "Zeitueberschreitung bleibt eindeutig protokolliert");
     assert.equal(logs[0].success, false);
@@ -89,9 +90,10 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   }
   if (!expected) {
     assert.equal(drafts.length,1); assert.equal(reviews.length,1); assert.deepEqual(reviews[0],review);
-    assert.equal(bodies[0].text.format.strict, false, "Andere Schemavertraege bleiben unveraendert");
-    assert.equal(bodies[1].text.format.strict, true, "Der Quellenpruefer muss alle Pflichtfelder liefern");
-    const schema = bodies[1].text.format.schema;
+    if (!fortsetzen) assert.equal(bodies[0].text.format.strict, false, "Andere Schemavertraege bleiben unveraendert");
+    const reviewBody = bodies[fortsetzen ? 0 : 1];
+    assert.equal(reviewBody.text.format.strict, true, "Der Quellenpruefer muss alle Pflichtfelder liefern");
+    const schema = reviewBody.text.format.schema;
     assert(!/\"(?:minLength|maxLength|pattern|format)\"\s*:/.test(JSON.stringify(schema)), "Azure Strict Schema nutzt nur unterstuetzte Schluessel");
     const item = schema.properties.pruefungen.items;
     assert.deepEqual([...item.required].sort(), Object.keys(item.properties).sort());
@@ -138,6 +140,10 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
     { text: "   ", vorgang_ids: ["vg-test"] }, paragraphs[1]
   ] }), expected: "ai-text-empty-or-type" });
   await fall({ budget: false, expected: "budget" });
+  await fall({ fortsetzen: true });
+  await fall({ fortsetzen: true, budget: false, expected: "budget" });
+  await fall({ fortsetzen: true, reviewResult: {pruefungen:review.pruefungen.map(r=>({...r,profilbezug:false}))},
+    expected: "ai-text-source-support" });
   console.log(`${checks} PASS: Quittierung, Fehlerklassen, kein Retry, Absatzvertrag`);
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => {
   https.request = original.request;

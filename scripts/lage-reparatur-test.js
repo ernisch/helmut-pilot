@@ -32,13 +32,13 @@ const copy = structuredClone;
     assert.equal(Q.bestandErhalten(validBefore, { ...after, payload: { ...payload(), vorherigerStand: validBefore } }), false);
   });
   const names = ["v3StoreReady", "listKnowledgeObjects", "listMatchingResults", "getSourcesForVorgang",
-    "getRenderedBriefingV3", "saveRenderedBriefingV3", "insertRenderedBriefingV3", "acquirePipelineLock", "releasePipelineLock", "canSpendLlmForTenant"];
+    "getRenderedBriefingV3", "saveRenderedBriefingV3", "insertRenderedBriefingV3", "getLageEntwurfsbeleg", "acquirePipelineLock", "releasePipelineLock", "canSpendLlmForTenant"];
   const prior = Object.fromEntries(names.map(n => [n, storage[n]]));
   const generate = ai.generateLageBriefing, guard = safety.guardKnowledgeObject;
   const id = "test-reparatur", day = require("../lib/helmut/briefing-frische").berlinTagKey(new Date());
   const before = { id: `bf-${id}-lage-${day}`, user_id: id, slot: "lage",
     generated_at: new Date(Date.now() - 3600000).toISOString(), payload: { paragraphs: [{ text: "Ungepruefter Alttext" }] } };
-  let row, calls, gates, saves;
+  let row, calls, gates, saves, sourceInputs;
   storage.v3StoreReady = () => true;
   storage.listKnowledgeObjects = async () => [{ id: "ko-beleg", vorgang_id: "vg-beleg", understanding_status: "complete",
     status: "neu", headline: "Beleg", was_ist_passiert: "Quellenbericht", updated_at: before.generated_at,
@@ -57,7 +57,7 @@ const copy = structuredClone;
   };
   safety.guardKnowledgeObject = () => ({ status: "ok" });
   ai.generateLageBriefing = async sources => {
-    calls++;
+    calls++; sourceInputs = copy(sources);
     return { paragraphs: sources[0].quellenbelege.map(q => ({ text: q.titel + ".", vorgang_ids: ["vg-beleg"],
       quellen_ids: [q.quelle_id], belegstellen: [{ quelle_id: q.quelle_id, text: q.titel }] })), qualitaet: { version: 1 } };
   };
@@ -72,6 +72,26 @@ const copy = structuredClone;
     });
     await test("Erneuter Reparaturabschnitt bezahlt denselben gueltigen Text nicht erneut", async () => {
       const r = await run(); assert.equal(r.reason, "existing-result"); assert.equal(calls, 1); assert.equal(saves, 1);
+    });
+    await test("Echter Lagepfad uebergibt denselben privaten Entwurf und prueft nur den verbleibenden Modellaufruf", async () => {
+      const fixtureGenerate = ai.generateLageBriefing;
+      const antwort = {paragraphs:sourceInputs[0].quellenbelege.map(q=>({text:q.titel,vorgang_ids:["vg-beleg"]}))};
+      const oldRun = "nachlauf500-777777777", newRun = "nachlauf500-888888888";
+      const entry = require("../lib/helmut/lage-entwurfsbeleg").baue({userId:id,runId:oldRun,phase:"entwurf",
+        antwort,quellen:sourceInputs,profile:{id},now:new Date(before.generated_at)});
+      storage.getLageEntwurfsbeleg = async (owner,key) => {
+        assert.equal(owner,id);return key===entry.id ? entry : null;
+      };
+      row=copy(before);calls=gates=saves=0;
+      ai.generateLageBriefing = async (sources,_profile,meta) => {
+        assert.deepEqual(meta.gespeicherterEntwurf,antwort);
+        await meta.beforeReview();
+        return fixtureGenerate(sources);
+      };
+      const result = await lage.buildLageBriefing({id},{missingOnly:true,repairIncomplete:true,costRunId:newRun,
+        fortsetzenNachZeitbudget:oldRun,beforeGenerate:async owner=>{assert.equal(owner,id);gates++;}});
+      assert.equal(result.available,true,JSON.stringify(result));assert.equal(calls,1);assert.equal(gates,1);
+      assert.equal(saves,1);assert.deepEqual(row.payload.vorherigerStand,before);
     });
     await test("Qualitaetsablehnung behaelt Alttext unveraendert", async () => {
       row = copy(before);
