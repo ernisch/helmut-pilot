@@ -549,6 +549,50 @@ async function main() {
     assert.equal(r.serverBefund.grund, "nachlauf-fehler-ohne-freigegebene-diagnose");
     assert(!JSON.stringify(r).includes("GEHEIMER"));
   });
+  await test("Verlorene Endquittung behaelt 500 sichere Serverangaben, bleibt unklar und startet nicht erneut", async () => {
+    const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
+    h.config.textnachlaufVersion = 2;
+    let calls = 0, defekt = null;
+    const ids = h.w.snapshot().mandate.filter(m => m.aktiv).map(m => m.user_id);
+    const args = { ...h.args, vorgang: "textnachlauf", env: { ...h.args.env,
+      HELMUT_TESTKOHORTE_CONFIRM: D.WORTE.textnachlauf, GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1" },
+      fetchFn: async (url, init) => {
+        const u = new URL(url);
+        if (u.pathname === "/api/cron/lage-briefing") {
+          calls++; assert.equal(init.method, "POST");
+          const results = ids.map((id, i) => ({ userId: id, gestartet: i < 2,
+            grund: i === 0 ? "nachlauf-textfehler-ai-text-source-support"
+              : i === 1 ? "nachlauf-netz-speicher-oder-antwortfehler" : "nicht-erreicht-nach-abbruch",
+            diagnose: { absatz: 1, fehler: ["profilbezug-fehlt", "GEHEIMER_TEXT"] }, raw: "GEHEIMER_MODELLTEXT" }));
+          if (defekt === "doppelt") results[1].userId = ids[0];
+          if (defekt === "fremd") results[1].userId = "FREMDES_MANDAT";
+          if (defekt === "typ") results[1].gestartet = "true";
+          if (defekt === "fehlend") results.pop();
+          if (defekt === "freitext") results[1].grund = "GEHEIMER_FEHLERTEXT";
+          return { status: 200, json: async () => ({ ok: false, schemaVersion: 1,
+            runId: "nachlauf500-123456789", modus: "manuell-fehlende-texte", ziel: 500,
+            gespeichert: 0, grund: "nachlauf-endquittung-fehlt", results, funktionsnachweis500: false }) };
+        }
+        if (u.pathname.endsWith("/briefings")) return { status: 200, json: async () => [] };
+        return fetch(url, init);
+      } };
+    for (const fehler of [null, "doppelt", "fremd", "typ", "fehlend", "freitext"]) {
+      defekt = fehler; const before = calls, r = await G.ausfuehren(args);
+      assert.equal(calls, before + 1, "Genau ein ausdruecklicher Aufruf je lokalem Szenario");
+      assert.equal(r.ok, false); assert.equal(r.zustandUnbekannt, true);
+      assert.equal(r.automatischeWiederholung, false); assert.equal(r.funktionsnachweis500, false);
+      assert.equal(r.serverBefund.grund, "nachlauf-endquittung-fehlt");
+      assert.equal(r.serverBefund.unabhaengigBestaetigt, false);
+      assert(!JSON.stringify(r).includes("GEHEIMER"));
+      if (!fehler || fehler === "freitext") {
+        assert.equal(r.serverBefund.einzelbelege.length, 500);
+        assert.equal(r.serverBefund.einzelbelege[0].mandatHash, D.hash(ids[0]));
+        assert.equal(r.serverBefund.einzelbelege[1].grund, fehler === "freitext"
+          ? "nicht-freigegebene-diagnose" : "nachlauf-netz-speicher-oder-antwortfehler");
+        assert.equal(r.serverBefund.einzelbelege.filter(x => x.gestartet).length, 2);
+      } else assert.equal(r.serverBefund.einzelbelege, undefined);
+    }
+  });
   console.log(`\n${pass} PASS, 0 FAIL`);
 }
 main().catch((e) => { console.error(e); process.exitCode = 1; });

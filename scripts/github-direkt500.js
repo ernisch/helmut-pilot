@@ -167,11 +167,32 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
           "ai-text-word-limit", "ai-text-quality-incomplete", "ai-text-source-support",
           "ai-text-evidence-quote", "ai-text-repetition"]
           .map(g => "nachlauf-textfehler-" + g);
-        const grund = ["nachlauf-qualitaetsfehler", "nachlauf-zeitbudget"].includes(b.grund) || gruende.includes(b.grund)
+        const festeGruende = ["nachlauf-qualitaetsfehler", "nachlauf-zeitbudget",
+          "nachlauf-endquittung-fehlt", "nachlauf-netz-speicher-oder-antwortfehler", ...gruende];
+        const grund = festeGruende.includes(b.grund)
           || /^nachlauf-textfehler-ai-provider-http-[45][0-9]{2}$/.test(b.grund || "")
           ? b.grund : "nachlauf-fehler-ohne-freigegebene-diagnose";
         serverBefund = { runId, grund, lautServerGespeichert: b.gespeichert,
           unabhaengigBestaetigt: false };
+        // Auch bei verlorener DB-Endquittung vorhandene HTTP-Einzelbelege
+        // erhalten. Dies sind ausdruecklich SERVERANGABEN, keine nachtraeglich
+        // erfundene Abschlussquittung und keine Freigabe fuer Wiederholungen.
+        if (Array.isArray(b.results) && b.results.length === 500
+          && new Set(b.results.map(r => r?.userId)).size === 500
+          && b.results.every(r => r && ids.includes(r.userId)
+            && ["gestartet", "gespeichert", "lageVorhanden"].every(k => r[k] === undefined || typeof r[k] === "boolean"))
+          && b.results.filter(r => r.gespeichert === true).length === b.gespeichert
+          && b.funktionsnachweis500 === false) {
+          const einzelGruende = new Set([...festeGruende, "vorhanden-geschuetzt", "zeitbudget",
+            "nicht-erreicht-nach-abbruch", "existing-result", "no-current-sources", "no-vorgaenge"]);
+          serverBefund.einzelbelege = b.results.map(r => ({
+            mandatHash: D.hash(r.userId), gestartet: r.gestartet === true,
+            lautServerLageGespeichert: r.gespeichert === true || r.lageVorhanden === true,
+            grund: einzelGruende.has(r.grund) ? r.grund
+              : r.grund == null && r.gespeichert === true ? "gespeichert" : "nicht-freigegebene-diagnose",
+            diagnose: require("../lib/helmut/lage-textqualitaet").sichereDiagnose(r.diagnose)
+          }));
+        }
       }
       const qualitaetslauf = b?.ok === false && b.grund === "nachlauf-qualitaetsfehler"
         && Number.isSafeInteger(b.qualitaetsfehler) && b.qualitaetsfehler > 0 && b.qualitaetsfehler <= 500;
