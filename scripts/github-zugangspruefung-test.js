@@ -14,18 +14,21 @@ async function main() {
   const env = { SUPABASE_URL: PROJEKT_ORIGIN, SUPABASE_SERVICE_ROLE_KEY: secret,
     HELMUT_CRON_SECRET: secret, GITHUB_SHA: commit };
   const calls = [];
+  const projektionen = Array.from({ length: 500 }, (_, i) => ({ tenant_id: `m-${i}`,
+    status: "erledigt", due_at: "2026-09-11T05:00:00.000Z" }));
   const fetchFn = async (url, options) => {
     calls.push({ url, options });
-    return url.endsWith(LESEPFAD)
-      ? { status: 200, json: async () => [{ id: "main" }] }
-      : { status: 200, json: async () => [{ run_id: "nachlauf500-34563444563",
+    if (url.endsWith(LESEPFAD)) return { status: 200, json: async () => [{ id: "main" }] };
+    if (url.includes("/process_runs?")) return { status: 200, json: async () => [{ run_id: "nachlauf500-34563444563",
         process: TEXT_PROCESS, status: "failed", reason: "nachlauf-vorige-ergebnisse-unlesbar",
         commit_ref: commit, processed_count: 0, failed_count: 1,
-        started_at: "2026-09-11T04:46:00.000Z", finished_at: "2026-09-11T04:46:23.000Z" }] };
+        started_at: "2026-09-11T04:46:00.000Z", finished_at: "2026-09-11T04:46:23.000Z",
+        telemetrie: { mandatsErgebnisse: [] } }] };
+    return { status: 200, json: async () => projektionen };
   };
   let r = await pruefe({ env, fetchFn, jetzt: new Date("2026-09-11T05:00:00.000Z") });
   check(r.supabase.erreicht === true && r.supabase.httpStatus === 200, "bestehende Betriebszeile belegt den Zugang");
-  check(calls.length === 2, "genau zwei rein lesende Abrufe");
+  check(calls.length === 3, "genau drei rein lesende Abrufe");
   check(calls[0].url === PROJEKT_ORIGIN + LESEPFAD, "nur festes Ziel und feste Spalten");
   check(calls[0].options.method === "GET" && !calls[0].options.body, "kein Schreibrequest");
   check(calls[0].options.redirect === "error", "keine Secret Weiterleitung");
@@ -35,8 +38,11 @@ async function main() {
   check(r.letzterTextlauf?.grund === "nachlauf-vorige-ergebnisse-unlesbar"
     && r.letzterTextlauf.aktuellerCommit === true, "feste Textlaufursache sicher lesbar");
   check(calls[1].options.method === "GET" && !calls[1].options.body
-    && /select=run_id,process,status,reason,commit_ref,processed_count,failed_count,started_at,finished_at/.test(calls[1].url)
-    && !/user_id|telemetrie|data/.test(calls[1].url), "Textleser fordert keine Mandatsinhalte an");
+    && /select=run_id,process,status,reason,commit_ref,processed_count,failed_count,started_at,finished_at,telemetrie/.test(calls[1].url)
+    && !/user_id|briefings|payload/.test(calls[1].url), "Textleser fordert keine Klartextinhalte an");
+  check(r.textVorbedingungen?.projektionsvertragVollstaendig === true
+    && r.textVorbedingungen.projektionen === 500
+    && !JSON.stringify(r).includes("m-0"), "Projektionsbeleg bleibt ein reines Aggregat");
   check(!r.scharferPfadFreigegeben && !r.cron.authentifiziert, "Zugang ist keine Aktivierungsfreigabe");
   check(r.modellaufrufe === 0 && r.schreibaufrufe === 0, "keine Facharbeit");
   for (const bad of ["https://anderes-projekt.supabase.co", `${PROJEKT_ORIGIN}/fremd`, `${PROJEKT_ORIGIN}?x=1`, `${PROJEKT_ORIGIN}#x`, `https://user:pass@ddckuvvpcytqbyfmbvie.supabase.co`, "http://ddckuvvpcytqbyfmbvie.supabase.co", ""]) {
@@ -66,11 +72,20 @@ async function main() {
   check(!r.supabase.erreicht && !JSON.stringify(r).includes(secret), "kaputte JSON Antwort ohne Geheimnis");
   r = await pruefe({ env, jetzt: new Date("2026-09-11T05:00:00.000Z"), fetchFn: async (url) => url.endsWith(LESEPFAD)
     ? ({ status: 200, json: async () => [{ id: "main" }] })
-    : ({ status: 200, json: async () => [{ run_id: "nachlauf500-34563444563", process: TEXT_PROCESS,
+    : url.includes("/process_runs?") ? ({ status: 200, json: async () => [{ run_id: "nachlauf500-34563444563", process: TEXT_PROCESS,
       status: "failed", reason: secret, commit_ref: commit, processed_count: 0, failed_count: 1,
-      started_at: "2026-09-11T04:46:00.000Z", finished_at: "2026-09-11T04:46:23.000Z" }] }) });
+      started_at: "2026-09-11T04:46:00.000Z", finished_at: "2026-09-11T04:46:23.000Z",
+      telemetrie: { mandatsErgebnisse: [{ mandatHash: secret }] } }] })
+      : ({ status: 200, json: async () => [] }) });
   check(r.letzterTextlauf?.grund === "nicht-freigegebene-diagnose"
-    && !JSON.stringify(r).includes(secret), "freie Textlaufursache bleibt verdeckt");
+    && !JSON.stringify(r).includes(secret), "freie Ursache und Mandatstelemetrie bleiben verdeckt");
+  r = await pruefe({ env, jetzt: new Date("2026-09-11T05:00:00.000Z"), fetchFn: async (url) => url.endsWith(LESEPFAD)
+    ? ({ status: 200, json: async () => [{ id: "main" }] })
+    : url.includes("/process_runs?") ? ({ status: 200, json: async () => [] })
+      : ({ status: 200, json: async () => projektionen.slice(0, 499) }) });
+  check(r.supabase.erreicht === true && r.textVorbedingungen.projektionen === 499
+    && r.textVorbedingungen.projektionsvertragVollstaendig === false,
+  "fehlender Projektionsbeleg wird ohne Schreibzugriff sichtbar");
   for (const arg of ["--scharf", "aktivierung", "--url=https://anders.invalid", "--help"]) {
     const child = spawnSync(process.execPath, [path.join(__dirname, "github-zugangspruefung.js"), arg], { env: { PATH: process.env.PATH }, encoding: "utf8" });
     check(child.status === 2 && !child.stdout, "CLI lehnt jeden Modus vor der Ausfuehrung ab");
