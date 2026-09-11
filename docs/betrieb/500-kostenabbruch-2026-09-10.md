@@ -1,5 +1,11 @@
 # 500er Fenster am 10.09.2026: Kostenstopp und sicherer Abschluss
 
+## 11.09., 01:48 UTC — PR372 Production und frischer Vorflug
+
+PR372 ist als `6a6f9444221f9fc0b2d7c43fa4685bfeae34f98f` gemergt und im Deployment `dpl_5j5bAn6dzfVYWxM8QnRThH7Fvmau` am Hauptalias READY. Kopf `1bb5debd360088eeaa2b7b5d528b3cc50e7ca406` und geprüfter Baum `84b5de9030fe1d70796ad85f6dd1db097f531893`. CI `34550711632` bestand 353/353 Suiten in 704s, Browser 50/50, PostgreSQL-Kontoschutz 15/15 und Z22/PostgREST 48/48. Die Korrektur verlangt pro Lageabsatz genau ein konkretes Quelldokument und ein wirklich vorhandenes Mandatsfeld; derselbe Beleg ist im Review verbindlich. Rollen-/Ortsvertauschungen und allgemeine Behörden-/Portalbeschreibungen gelten nicht als Nachrichtennachweis.
+
+Der ausschließlich lesende Vorflug68 (`34551952318`, Job `103116529799`) endete erfolgreich auf dem zuvor bestätigten Production-Commit: 504 Profilzeilen, 500 aktiv/495 synthetisch aktiv, geschützter Bestandshash `5004dbaa784278e0984fb1a5dfdbd4e1d72fbd2a181c18aae85180b6403fdfae` unverändert. UTC-Tag 11.09.: 0 Reservierungen, 0 protokollierte Einträge, 0 Aufrufbelege, 0 bekannte oder unbekannte Kosten, 0 Reservierungslücke; konservative Zusatzreserve/Prognose 2USD unter dem atomaren 4USD-Riegel. `funktionsnachweis500=false`; App25 bleibt 5/500 strukturell abrufbar und 0 Qualitätsabnahmen. Vor weiterer Facharbeit nur eine ausdrücklich aus den aktuellen Einzelergebnissen abgeleitete Textposition verwenden; frühere/abgelehnte oder unbekannte Aufrufe nicht wiederholen.
+
 Sprintzustand: teilweise abgeschlossen. Fruehere Testfenster sind sicher geschlossen; der aktuelle Nachweis laeuft mit 495 bestaetigt reaktivierten Testprofilen weiter. Die Kostenkorrektur ist mit Freigabe veroeffentlicht und rein lesend Production bestaetigt. Die vollstaendige fachliche 500er Abnahme steht weiterhin aus. Private Einzelbelege bleiben beim Betreiber.
 
 ## Historischer, sicher geschlossener Ablauf
