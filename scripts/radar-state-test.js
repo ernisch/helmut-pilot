@@ -684,7 +684,7 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
 
     // Pfad A: keine Decisions ('keine-treffer' VOR dem Hauptpfad).
     kosInStore = [koMentionNoBest];
-    docsByVorgang = { vnb: [{ id: "dnb", url: "https://tagesschau.de/nachgeladen", source_type: "media", published_at: oldIso }] };
+    docsByVorgang = { vnb: [{ id: "dnb", title: koMentionNoBest.display_title, url: "https://tagesschau.de/nachgeladen", source_type: "media", published_at: oldIso }] };
     decisionsEngine.decideForUser = () => [];
     const bA = await server.__buildV3Briefing(pServer, "u-lp", { slot: "daily" });
     const mA = ((bA.currentRadarState || {}).mentions || []);
@@ -697,7 +697,7 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
     // Pfad B: Decisions vorhanden, aber ALLE in Quarantaene ('keine-treffer' NACH dem Hauptpfad).
     kosInStore = [koQuarantine, koMentionNoBest];
     docsByVorgang = {
-      vnb: [{ id: "dnb", url: "https://tagesschau.de/nachgeladen", source_type: "media", published_at: oldIso }],
+      vnb: [{ id: "dnb", title: koMentionNoBest.display_title, url: "https://tagesschau.de/nachgeladen", source_type: "media", published_at: oldIso }],
       vq: [{ id: "dq", url: "https://unbekanntes-portal.example/x", source_type: "media", published_at: oldIso }]
     };
     decisionsEngine.decideForUser = () => [{

@@ -5,7 +5,7 @@ const ai = require("../lib/helmut/ai");
 const profile = { committees: ["Innenausschuss", "Testausschuss 4"],
   focusTopics: ["Testthema 11", "Datenschutz"], constituency: "Testwahlkreis 081",
   state: "Thueringen", party: "Beispielpartei" };
-const sources = [{ vorgang_id: "vg-ausweis", quellenbelege: [{ quelle_id: "q-ausweis",
+const sources = [{ vorgang_id: "vg-ausweis", quellenbelege: [{ quelle_id: "q-ausweis", url: "https://example.org/elektronischer-ausweis",
   titel: "Das Ministerium stellt den elektronischen Ausweis vor.", auszug: "Die Anwendung prueft die digitale Identitaet." }] }];
 const paragraph = { text: sources[0].quellenbelege[0].titel, vorgang_ids: ["vg-ausweis"],
   quelle_id: "q-ausweis", mandatsbezug: { feld: "schwerpunkt", wert: "Testthema 11" } };

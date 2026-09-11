@@ -6,8 +6,8 @@ const Q = require("../lib/helmut/lage-textqualitaet");
 const profil = { committees: ["Ausschuss für Wohnen, Stadtentwicklung, Bauwesen und Kommunen"],
   focusTopics: ["Stadtentwicklung"] };
 const vorgaenge = [{ vorgang_id: "vg-mischgruppe", quellenbelege: [
-  { quelle_id: "q-wohnen", titel: "Bund fördert kommunalen Wohnungsbau", auszug: "Das Programm unterstützt Städte beim Wohnungsbau." },
-  { quelle_id: "q-kassen", titel: "Krankenkassen melden Verluste", auszug: "Die Kassen erwarten steigende Beiträge." }
+  { quelle_id: "q-wohnen", url: "https://example.org/wohnungsbau", titel: "Bund fördert kommunalen Wohnungsbau", auszug: "Das Programm unterstützt Städte beim Wohnungsbau." },
+  { quelle_id: "q-kassen", url: "https://example.org/krankenkassen", titel: "Krankenkassen melden Verluste", auszug: "Die Kassen erwarten steigende Beiträge." }
 ] }];
 const bezug = { feld: "ausschuss", wert: profil.committees[0] };
 const basis = [

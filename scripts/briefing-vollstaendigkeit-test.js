@@ -33,13 +33,14 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
   });
   await test("Alte Briefing- und Radartexte erhalten aus einer Ueberschrift kein erfundenes Amt oder einen Beschluss", () => {
     const K = require("../lib/helmut/briefing-quellenqualitaet");
-    const quellen = [{ title: "Baerbock uebergibt Vorsitz der UNO-Generalversammlung an Nachfolger aus Bangladesch", summary: null }];
+    const url = "https://www.bundestag.de/dokumente/beispiel-quelle";
+    const quellen = [{ title: "Baerbock uebergibt Vorsitz der UNO-Generalversammlung an Nachfolger aus Bangladesch", summary: null, url }];
     assert.equal(K.quellengebunden({ display_summary: "Außenministerin Annalena Baerbock hat den Vorsitz uebergeben." }, quellen), false);
     assert.equal(K.quellengebunden({ display_summary: "Baerbock uebergibt den Vorsitz der UNO-Generalversammlung." }, quellen), true);
     assert.equal(K.quellengebunden({ was_ist_passiert: "Das Kabinett hat die neuen Standards beschlossen." },
-      [{ title: "Vorschlag fuer neue Standards vorgelegt" }]), false);
+      [{ title: "Vorschlag fuer neue Standards vorgelegt", url }]), false);
     assert.equal(K.quellengebunden({ was_ist_passiert: "Das Kabinett hat die neuen Standards beschlossen." },
-      [{ title: "Neue Standards beschlossen" }]), true);
+      [{ title: "Neue Standards beschlossen", url }]), true);
   });
   await test("RSS Originalauszug bleibt gekuerzt erhalten, Rohpayload und Skript fehlen", () => {
     const r = D.toRawDocumentRow({ title: "Neuer Entwurf", url: "https://example.org/a", content: "<script>ANGRIFF</script><p>Die Beratung beginnt morgen. " + "Kontext ".repeat(100) + "</p>", author: "private Autorendaten" });

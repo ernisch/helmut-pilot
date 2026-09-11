@@ -18,7 +18,7 @@ const paragraphs = [
   { text: "Ein Termin ist noch nicht benannt.", vorgang_ids: ["vg-test"], quelle_id: "q-test",
     mandatsbezug: { feld: "ausschuss", wert: "Arbeit und Soziales" } }
 ];
-const vorgaenge = [{ vorgang_id: "vg-test", quellenbelege: [{ quelle_id: "q-test",
+const vorgaenge = [{ vorgang_id: "vg-test", quellenbelege: [{ quelle_id: "q-test", url: "https://example.org/entwurf",
   titel: "Die Quelle berichtet ueber einen Entwurf. Ein Termin ist noch nicht benannt.", quelle: "Test" }] }];
 const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id: "q-test", belegfeld: "titel",
   vollstaendig_belegt: true, themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt", pruefbegruendung: "Benannter Vorschlag mit Quellenbeleg und Bezug zum Ausschuss." })),
