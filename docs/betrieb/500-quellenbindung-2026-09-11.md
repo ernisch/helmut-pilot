@@ -9,3 +9,16 @@ Die Gegenproben verwenden erfundene Quellen und Profile. Sie zeigen getrennte Er
 Die Aenderung nimmt keine gespeicherten Ergebnisse als bestanden ab und wiederholt keine bisherigen Ablehnungen oder unbekannten Aufrufe. Sie schreibt keine Profile, Quellen oder Briefings um. Relative Handlungsempfehlungen in alten Inhalten und die vollstaendige Inhaltspruefung aller Mandate bleiben gesondert offen. Der bestehende Schutz gespeicherter Ergebnisse bleibt verbindlich.
 
 Risiko: Quellen, die ausschliesslich das allgemeine Politikfeld gemeinsam haben, werden kuenftig getrennt; Texte ohne konkretes geeignetes Mandatsfeld werden abgelehnt. Das ist die beabsichtigte strengere Belegpflicht. Ruecknahme waere ein gesonderter gepruefter Code Revert, keine Datenrestauration. Vor weiterer Facharbeit sind Pflicht CI und das exakte Production READY abzuwarten und zu dokumentieren.
+
+## Folgekorrektur der Handlungsfristen
+
+Der echte Briefinglesepfad konnte einen Jahre alten Quellenbeleg mit einer heute erneuerten internen Schreibzeit und einer relativen Handlungsfrist als aktuelle Empfehlung ausgeben. Die Gegenprobe reproduzierte dies vor der Korrektur. Sie verwendet ausschliesslich erfundene Inhalte und einen lokalen Speicherersatz.
+
+Die Auswahl verwirft nun Empfehlungen mit den geprueften relativen Fristformen, wenn ihre Quellen nach dem bestehenden Relevanzfenster nur noch Hintergrund sind oder kein belegtes zulaessiges Quelldatum vorliegt. Massgeblich sind die Quelldaten; updated_at ersetzt sie nicht. Das vorhandene Relevanzfenster wird weder verlaengert noch verkuerzt. Historischer Hintergrund ohne relative Frist und belegte alte Eigenerwaehnungen bleiben lesbar. Gespeicherte Texte werden nicht veraendert.
+
+Gezielt bestehen 16 Fristenpruefungen mit echtem Briefinglesepfad, 23 Vollstaendigkeitspruefungen und 115 Radarpruefungen. Die kanonische Sammlung fuer diese Folgekorrektur wurde ausgefuehrt und endete mit Exit 1. Das lokale Protokoll ist nur als unvollstaendiger Zwischenstand erhalten; deshalb wird keine vollstaendige Ergebniszahl behauptet. Die abschliessende CI muss den gesamten gemeinsamen Dateistand pruefen. Diese begrenzte Regel bestaetigt keine Handlungsempfehlung semantisch und erkennt nicht beliebige natuerlichsprachliche Fristen. Alle verbleibenden Inhalte brauchen weiter die vollstaendige Einzelabnahme. Das Risiko sind weniger Handlungsangebote aus alten Quellen; es entstehen keine Ersatztexte. Ruecknahme waere ein gesondert gepruefter Code Revert ohne Datenrestauration.
+
+
+## Gemeinsame Pruefung in PR 378
+
+Die erste CI endete mit 354/355 Suiten in 713 Sekunden. Ausschliesslich die Groessengrenze von CURRENT_STATE war rot. Die 50 Browserfaelle und 15 PostgreSQL Kontoschutzpruefungen bestanden; der nachgelagerte Z22 Nachweis wurde wegen des roten Schritts noch nicht ausgefuehrt. Die historischen Kopfabschnitte wurden unveraendert ins verlinkte Archiv verschoben. Die unveraenderte Groessenpruefung besteht danach gezielt. Die folgende CI prueft Quellenbindung und Fristenschutz gemeinsam, einschliesslich aller Pflichtschritte. Bis dahin kein Merge und kein Production Nachweis fuer diese Korrekturen.
