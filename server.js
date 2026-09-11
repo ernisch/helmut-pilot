@@ -187,8 +187,17 @@ async function handleRequest(request, response) {
       confirmation: request.headers["x-helmut-bestaetigung"],
       arbeitsbeginn: request.headers["x-helmut-arbeitsbeginn"],
       config: () => testnachweisKonfiguration(),
-      deps: { materialisiereBriefing: (profile, userId) => require("./lib/helmut/briefing-speicher")
-        .materialisiere({ profile, userId, build: buildV3Briefing }) }
+      deps: {
+        pruefeBriefing: (profile, userId) => require("./lib/helmut/briefing-aussagenbindung")
+          .leseFuerNachlauf({ profile, userId, build: buildV3Briefing }),
+        materialisiereBriefing: async (profile, userId) => {
+          const check = await require("./lib/helmut/briefing-aussagenbindung")
+            .leseFuerNachlauf({ profile, userId, build: buildV3Briefing });
+          if (!check.bereit) throw new Error("briefing-aussagenpruefung-fehlt");
+          return require("./lib/helmut/briefing-speicher")
+            .materialisiere({ profile, userId, briefing: check.briefing });
+        }
+      }
     }));
   }
   // Maschinenlesender Laufzeitbeleg VOR dem Account Vorlauf (Adminseed).
@@ -3281,13 +3290,20 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   const decisionsEngine = require("./lib/helmut/decisions");
   const briefingLanguage = require("./lib/helmut/briefingLanguage");
   const userId = (profile && profile.id) || politicianId;
+  const now = opts.now ? new Date(opts.now) : new Date();
+  // Nur interne, rein lesende Fachpruefung; kein Queryparameter aktiviert sie.
+  const ausgabe = (briefing, sourcesByVorgang = {}) => opts.aussagenEingabe ? {
+    briefing, eingabe: require("./lib/helmut/briefing-aussagenbindung").baueEingabe({
+      briefing, sourcesByVorgang, profile, userId,
+      day: require("./lib/helmut/briefing-frische").berlinTagKey(now) })
+  } : briefing;
   // Slot bestimmen: expliziter Override hat Vorrang, sonst Zeit-Ableitung (Europe/Berlin).
   // normalizeBriefingType kappt ungueltige Overrides sicher auf 'daily' (nie Crash).
   const briefingType = (opts && opts.slot != null && String(opts.slot).trim() !== "")
     ? briefingLanguage.normalizeBriefingType(opts.slot)
-    : briefingLanguage.deriveBriefingTypeFromDate(new Date(), "Europe/Berlin");
+    : briefingLanguage.deriveBriefingTypeFromDate(now, "Europe/Berlin");
   const frischeFenster = (opts && opts.frischeFenster) || null;
-  const empty = (reason) => briefingContract.toBriefingContractV3({ profile, decisions: [], kosById: {}, sourcesByVorgang: {}, reason, briefingType, frischeFenster });
+  const empty = (reason) => ausgabe(briefingContract.toBriefingContractV3({ profile, decisions: [], kosById: {}, sourcesByVorgang: {}, reason, briefingType, frischeFenster, now }));
 
   // REVIEW-FIXTURE (nur PR-/Preview-/Lokal-Abnahme): streng hinter HELMUT_REVIEW_FIXTURE
   // (Default AUS). In main/Produktion nicht gesetzt -> dieser Zweig ist inert und der
@@ -3317,8 +3333,9 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     storeFailed = true;
   }
   if (storeFailed) return empty("store-error");
+  const ausgeschlossen = new Set(opts.aussagenEingabe ? opts.aussagenAuslassungen || [] : []);
   const understood = (kos || []).filter((k) =>
-    k && k.status !== "pending" && k.understanding_status === "complete" && (k.was_ist_passiert || k.warum_wichtig)
+    k && !ausgeschlossen.has(k.vorgang_id) && k.status !== "pending" && k.understanding_status === "complete" && (k.was_ist_passiert || k.warum_wichtig)
   );
   if (!understood.length) return empty("keine-vorgaenge");
   // Leerzustand, der ERWAEHNUNGEN erhaelt: buildMentions ("Ueber dich") arbeitet
@@ -3331,14 +3348,13 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   const emptyKeepMentions = async (reason, kandidaten = understood) => {
     const mentionSources = {};
     await loadMentionSourcesInto(profile, kandidaten, mentionSources);
-    return briefingContract.toBriefingContractV3({
+    return ausgabe(briefingContract.toBriefingContractV3({
       profile, decisions: [], kosById: {}, sourcesByVorgang: mentionSources, reason, briefingType,
-      knowledgeObjects: kandidaten.filter(ko => require("./lib/helmut/briefing-quellenqualitaet").quellengebunden(ko, mentionSources[ko.vorgang_id] || [])), now: new Date(), frischeFenster
-    });
+      knowledgeObjects: kandidaten.filter(ko => require("./lib/helmut/briefing-quellenqualitaet").quellengebunden(ko, mentionSources[ko.vorgang_id] || [])), now, frischeFenster
+    }), mentionSources);
   };
 
   // Deterministische Bewertung (0 KI). Nur für die getroffenen Vorgänge Quellen laden.
-  const now = new Date();
   const decisions = decisionsEngine.decideForUser(profile, understood, { userId, limit: 50 });
   if (!decisions.length) return emptyKeepMentions("keine-treffer");
   // Fresh-aware Kandidaten-Vervollstaendigung (on-read, 0 KI, deterministisch):
@@ -3417,7 +3433,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
       briefing.debugRadarRelations = { error: "debug-build-failed", message: error && error.message };
     }
   }
-  return briefing;
+  return ausgabe(briefing, sourcesByVorgang);
 }
 
 // Quellen aller Vorgänge PARALLEL laden (nicht seriell) — ein hängender Call darf

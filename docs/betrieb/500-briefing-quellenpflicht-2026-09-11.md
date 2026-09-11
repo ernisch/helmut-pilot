@@ -26,3 +26,77 @@ Risiko: Karten mit bisher fehlenden Artikelbelegen oder untragbaren Fristen vers
 Genau eine kanonische Sammlung lief vollstaendig: 349/358 Suiten in 601 Sekunden. Vier Ausfaelle betreffen vorhandene fehlende lokale Abhaengigkeiten: Chromium in admin-nutzer-loeschen und passwort-setzen-login-fix, ical.js in kalender-ics, @aws-sdk/client-sqs in lambda-paket. Fuenf weitere Suiten hatten unvollstaendige fiktive Quellen. Vier Lage-Fixtures tragen nun konkrete Beispielartikel-URLs; die Radar-Leerpfad-Fixture erhaelt den Titel ihrer bestehenden Beispielmeldung. Keine Erwartung oder fachliche Pruefung wurde abgeschwaecht. Danach gezielt Dokumentbindung 8/8, Kostenquittung 23 PASS, Paarvergleich 6/6, Platzhalterbindung 12/12 und Radar 115/115 gruen.
 
 Die erneute Eingabepruefung nach dem natuerlichen Cron fand zusaetzlich eine Januarquelle mit bis Mitte naechster Woche. Der bestehende relative Wochenzweig erfasst nun auch naechster und kommender; zwei weitere Gegenproben bestehen. Quellenpflicht abschliessend 23/23. Die gesamte finale Aenderung muss gemeinsam beide Pflicht CI Jobs bestehen; keine zweite identische lokale Sammlung. Weiterhin keine fachliche Freigabe des naechsten Briefings: vorhandene Aussagen gehen teilweise ueber die verfuegbaren Artikelkurzauszuege hinaus. Kein neuer Textstart.
+
+
+## Production Bestaetigung vor weiterer Facharbeit
+
+PR 380 ist als 9baa6a3285c19483d18814be0dff6bce68b8a746 gemergt. Lokaler Kopf 6f52c1084f1adab1e19525f77cd7e56b55ca2aa3, Remote Kopf 37dca393772be5c7964526c3e01054ffdfea5255, Mergekandidat 6c552f6665250393e03887430d60af41f1878648 und echter Merge haben exakt denselben Baum b21cc5d39fd8e7e546aa04d93d71451cbf86d202. Finale CI 34596373281 vollstaendig success: 358/358 in 679s, Browser 50 PASS/0 FAIL, Kontoschutz 15 PASS/0 FAIL auf PostgreSQL 17.11 und Z22/PostgREST 48 PASS/0 FAIL. Hauptalias zeigt dpl_5vMAhzRK3ZDdKD5RhwzMv14JSobr exakt READY fuer diesen Merge. Keine zweite Deploymentausloesung.
+
+Der frische Vorflug 12:09:58 bis 12:10:00 UTC bestaetigt 504 Profilzeilen, fuenf aktive Originale, 495 synthetische inaktiv, 505 Identitaeten und unveraenderten geschuetzten Hash. Keine aktive Sperre oder Lease, kein verwaister Job oder junger laufender Prozess. 96 Tickets/96 Belege/96 atomar: 95 abgerechnet, ein natuerlicher Timeout unbekannt und voll reserviert; 0.745625 USD inklusive 0.212000 Reserve von 4 USD. Automation weiter deaktiviert; zwei uralte queued Actions und Draft 345 unveraendert.
+
+Dieser Nachmergedokumentation auf codex/380-production-fortsetzung-20260911 folgt ausschliesslich die erneute Production-/App-Lesepruefung. Keine neue Aktivierung oder Textgenerierung: Die vollstaendig gelesene naechste Briefing-Eingabe hat nach Korrektur 25 Items und weiterhin unbelegte Aussagen, darunter eine sichtbare Finanzbehauptung ueber die verfuegbare Quelle hinaus. Gespeicherte Ergebnisse bleiben erhalten. Der vollstaendige 500er Nachweis ist offen.
+
+
+## Reiner App Abschluss und unveraenderter Ergebnisbestand
+
+Zugang-/App-Leser 34 / 34598001416 wurde am 11.09. um 12:15:35 UTC genau einmal angefordert und ist vollstaendig success. Zugangsjob 103258194287 bestaetigt den exakten Production Commit, Kommunikationssperre und Kostenregel 2 mit 4 USD; 0 Modell- und Schreibaufrufe. App Job 103258276398: 500 gelesen, 16 abrufbar und strukturell vollstaendig, 484 ohne gespeichertes Briefing, 0 qualitaetBestanden. VollstaendigeFaktenpruefung und funktionsnachweis500 bleiben false. Die private Zusatzprobe blieb aus. Kein weiterer Fachlauf oder Textstart.
+
+SQL Abschluss 12:19 UTC: 504 Profile, fuenf aktive Originale, 495 synthetische inaktiv, 505 Identitaeten; keine aktive Sperre oder Lease, kein verwaister Job oder junger laufender Prozess. Geschuetzter Hash unveraendert. Genau dieselben 1705 Ergebniszeilen und derselbe Manifest Hash wie vor den Korrekturen, keine verlorenen oder umgeschriebenen Ergebnisse. 96 Tickets/96 Belege/96 atomar, 0 ungedeckte Kostenluecke, 0.745625 USD einschliesslich der vollen 0.212000 unbekannten Reserve. Die natuerliche Timeout-Reserve wird weder geloescht noch als abgerechnet dargestellt.
+
+Main und Hauptalias weiterhin exakt 9baa6a3285c19483d18814be0dff6bce68b8a746 / dpl_5vMAhzRK3ZDdKD5RhwzMv14JSobr READY. Nur die zusaetzliche automatische main CI 34597637457 war beim Schlussabgleich noch aktiv; alle verpflichtenden PR Gates sind bereits vollstaendig bestanden. Automation bleibt deaktiviert. Offener Draft 345 und historische queued/running Eintraege bleiben unveraendert. Naechster fachlicher Schritt erst nach belegter Korrektur der offenen Briefingaussagen und erneut frischem Betriebsabgleich; keine blinde Wiederholung ab Position 80 und kein behaupteter 500er Vollnachweis.
+
+
+## Rein lesende Uebernahme und Aussagenbindung am 11.09.
+
+Die unabhaengige Uebernahme bestaetigt PR 380 auf dem unveraenderten Production Commit und Hauptalias. Die zuvor noch offene automatische main CI 34597637457 ist inzwischen vollstaendig erfolgreich. Der bereits abgeschlossene App Leser wurde aus seinem echten Jobprotokoll nachgelesen, nicht erneut gestartet: 500 gelesen, 16 abrufbar und strukturell vollstaendig, 484 ohne gespeichertes Briefing und 0 fachlich abgenommen. Die Steuerung war vor der Uebernahme freigegeben. Fuer die anschliessende Befundsicherung wurde sie versionsbedingt beansprucht. Es wurde kein Fachlauf gestartet.
+
+Die Kontrolle der exakt vorhandenen Kohortenkennungen bestaetigt den geschlossenen Bestand, geschuetzte Originale, erhaltene Identitaeten und inaktive synthetische Konten. Sperren, Leases, junge Fachprozesse und laufende Actions waren nicht vorhanden. Wartende Auftraege sind ein Rueckstand, keine laufende Ausfuehrung. Historische running und queued Statusreste wurden nicht bereinigt. Die beiden Ergebniszaehlungen wurden methodisch geklaert: Der vorherige Manifestbeleg umfasst die 500 Zielprofile; weitere gespeicherte Ergebnisse anderer Profile gehoeren nicht zu diesem Manifest. Innerhalb desselben Zielumfangs sind Anzahl und jeder im Manifest gebundene Zeileninhalt unveraendert.
+
+Der SQL Kostenabgleich stimmt mit der letzten vollstaendigen Buchung ueberein. Tageszaehler, Aufrufbelege und Tickets sind lueckenlos zugeordnet. Der unbekannte natuerliche Aufruf bleibt mit seiner vollen Reserve gebunden. Keine Anbieterrechnung, Erstattung oder Wiederholung behauptet. Die deaktivierte Fortsetzungsautomation bleibt unveraendert.
+
+### Neu reproduzierte fachliche Grenze
+
+Die 25 Wissensobjekte der letzten Briefingeingabe und ihre tatsaechlichen verknuepften Quelldokumente wurden erneut rein lesend aus Production erhoben. Alle untersuchten Aussagefelder sind gegenueber dem gesicherten Eingabecheckpoint unveraendert. Elf dieser Objekte haben keinen gespeicherten Quellenauszug. Ihre Titel koennen einzelne enge Aussagen tragen, liefern aber keinen Beleg fuer zusaetzliche Details.
+
+Der unveraenderte gemeinsame Pruefer quellengebunden akzeptiert lokal mit genau diesen frisch gelesenen Originalobjekten und Originalquellen 25 von 25. Auch der bereits belegte Finanzumfangfehler und die vermischten Ereignisse passieren. Ausgefuehrt ueber scripts/lokal.js mit gesperrtem externem Netz und ohne Schreibpfad. Das ist ein reproduzierter Schutzmangel und kein bestandener Inhaltsnachweis.
+
+Ursache: lib/helmut/briefing-quellenqualitaet.js prueft Artikeladresse, Themencluster und einzelne Amts und Beschlusswoerter. lib/helmut/briefingContract.js bevorzugt bei Titel und Kurzfassung dennoch die gespeicherten Modellaussagen. Empfehlungen, Begruendungen und Folgen werden ebenfalls aus diesen Analysen uebernommen. Der vorhandene Lagepruefer bewertet den erzeugten Lageabsatz; er prueft diese anderen Briefingfelder nicht automatisch mit. Der Speichervertrag kennzeichnet die vollstaendige Faktenpruefung bereits korrekt als offen.
+
+### Kleinster belastbarer Korrekturumfang
+
+Die fachliche Entscheidung ist vorbereitet, noch kein Produktfix: Im vorhandenen Briefingaufbau muss vor Ausgabe und Speicherung jede sichtbare Tatsachenbehauptung einem konkreten Artikel und einer inhaltlich tragenden Textstelle zugeordnet sein. Der Nachweis bindet den exakten Ausgabetext, Quelldokument, vorhandenen Auszug und Profilkontext. Eine URL, ein Worttreffer oder ein wortgetreues Teilzitat allein beweist die Bedeutung der ganzen Aussage nicht. Die vorhandene Bedeutungspruefung darf daher nicht durch eine neue Wortliste ersetzt oder als vollstaendige Abnahme umbenannt werden.
+
+Nicht gedeckte Tatsachen werden entfernt. Faellt dadurch die Grundlage von Handlung, Frist, Mandatsbezug oder Rangfolge weg, bleibt die gesamte abhaengige Karte unauslieferbar. Neue Fristen und politische Folgen duerfen nicht aus dem Veroeffentlichungsdatum oder einer allgemeinen Themenaehnlichkeit entstehen. Ein ausdrücklich als Vorschlag oder Hypothese gekennzeichneter Schluss braucht weiterhin einen belegten Anlass. Gespeicherte Alttexte, Profile und Quellenversuche bleiben erhalten. Ihre fehlende Abnahme wird sichtbar ausgewiesen.
+
+Der erste lokale Gegenbeleg muss mindestens Finanzumfang, Rollenbindung an die richtige Person, getrennte Ereignisse, angekuendigt gegen bereits geschehen, nur vorhandenen Titel und abhaengige Handlungsempfehlungen pruefen. Danach den echten Briefingaufbau auf dem erhaltenen Eingabestand vergleichen: keine fehlende Zuordnung, keine unbemerkt stehen gebliebenen Aliase, kein automatisches Gruen aus weniger Karten. Die vollstaendige Versorgung aller 500 bleibt davon getrennt.
+
+Eine pauschale Umstellung aller Karten auf Quellenkopien wuerde den geforderten Stabschefnutzen verlieren. Eine nur auf die bekannten Namen oder Stichwoerter zugeschnittene Sperrliste waere ebenfalls keine belastbare Loesung fuer die offenen Aussagen. Deshalb wurde in diesem Analyseabschnitt keine solche Produktkorrektur eingebaut. Der genaue technische Eingriff und seine vollstaendige lokale Abnahme bleiben offen.
+
+### Zustand und Freigabegrenze
+
+Teilweise abgeschlossen: Uebernahme und gezielte Ursachenanalyse sind belegt, die fachliche Korrektur und der 500er Nachweis stehen aus. Dieser Branch aendert ausschliesslich diese Belegdatei und den aktuellen Status. Kein neuer Produktcode, kein Pull Request, kein Merge, kein Production Deployment, keine neuen Quellen oder Modellaufrufe, keine Profilaktivierung. Der alte Draft 345 und fremde Arbeitskopien bleiben unangetastet.
+
+Die naechste lokale Umsetzung ist durch den Auftrag bereits erlaubt. Erst ein konkret gepruefter Korrektur PR kann zur Mergefreigabe vorgelegt werden; der Merge wuerde automatisch Production veroeffentlichen. Eine neue bezahlte Pruefung und eine erneute Teilnahme der 495 synthetischen Profile brauchen jeweils den ausdruecklich benannten Umfang, Kostenrahmen und Abschlussweg. Die aktuelle Analyse liefert dafuer keine Sammelfreigabe.
+
+
+## Lokaler Schutz fuer die weitere Aussagenpruefung am 11.09.
+
+Auf codex/500-briefing-aussagenbindung-20260911 ist ein begrenzter Schutz fuer die manuelle Fortsetzung vorbereitet. Der 500er Textnachlauf verlangt jetzt vor dem Generator und erneut vor jedem kostenpflichtigen Teilaufruf ein zum aktuellen Briefing passendes fachliches Urteil. Fehlende, abgelehnte oder veraltete Bindung stoppt ohne Modellfreigabe. Die bereits gespeicherten Ergebnisse bleiben erhalten; vorhandene Pakete werden nicht als fehlend umgedeutet.
+
+Der neue rein lesende Vertrag briefing-aussagenbindung erfasst Ausgabetexte einschliesslich Empfehlungsaliase und bindet Artikel, Originaltitel, Originalauszug, Datum, Profilkontext, Rangfolge und Zuordnung. Eine vorhandene Originaltextstelle kann ein negatives Sach-, Kontext- oder Mandatsurteil nicht ueberstimmen. Ein gueltiger Vertrag bescheinigt ausschliesslich die vollstaendige Zuordnung eines separat erstellten Fachurteils. Er ist kein eigener Bedeutungspruefer und setzt vollstaendigeFaktenpruefung niemals auf true. Die fiktiven Gegenproben testen genau diese technische Grenze, keine automatisch erkannte politische Wahrheit.
+
+Die gebundene Auslassung verwirft ganze Vorgaenge vor Ranking und Vertragsbau. Dadurch verschwinden ihre Aussagen, Empfehlungen und abgeleiteten Ansichten zusammen. Jede Auslassung ist an den Ursprung gebunden; auch das danach neu gebaute Paket braucht sein eigenes vollstaendiges Urteil. Das urspruengliche Wissensobjekt wird nicht veraendert. Der normale dynamische Appabruf und die historischen gespeicherten Pakete bekommen dadurch noch keine nachtraegliche Inhaltsfreigabe.
+
+Der Leser erwartet einen gesonderten, mandantengebundenen Pruefbeleg im bestehenden Briefingspeicher. In dieser Aenderung gibt es absichtlich keinen automatischen Erzeuger, Modellaufruf oder Import dieses Belegs. Seine fachlich gepruefte Erstellung und eine spaeter gesondert freigegebene Production Ablage sind offen. Ohne einen solchen Beleg bleibt die neue manuelle Fortsetzung gesperrt. Das ist ein vorbereiteter Schutz und Auslassungsweg, noch keine vollstaendige Reparatur der 25 Wissensobjekte oder der 500 Briefings.
+
+### Reproduzierter Vergleich
+
+Der private gesicherte Quellenbestand wurde lokal ueber den echten Serveraufbau gelesen. Ein erster Aufruf mit fortgeschrittener Tageszeit lieferte wegen der bestehenden Frist- und Frischepruefungen 18 statt 25 Karten. Fuer den sachgleichen Vergleich wurde anschliessend exakt der urspruengliche Zeitpunkt 11:54:19.184 UTC verwendet: 25 Karten, 1059 Textvorkommen mit Aliasen, fehlendes Fachurteil korrekt abgelehnt. Die beiden bereits beanstandeten sichtbaren Vorgaenge wurden ausschliesslich in diesem lokalen Vergleich ausgelassen; alle ihre Ausgaben verschwinden, 23 andere Karten bleiben fachlich ungeprueft. Insgesamt wurden 64 unterschiedliche lokal vorhandene Quellengruppen fuer beide Aufbauten benoetigt, keine fehlte. Keine neue Quellenverbindung, kein Modell und kein Production Write.
+
+Der vollstaendige private Vergleich ist als Helmut_Aussagenbindung_Lokal_20260911.json gesichert. Der Eingabehash lautet a95d1bd4932a1ef9cc596484b5f507b8c1c73709108452d06dc77113ca3f9d2e. Die rohen Profil- und Artikelinhalte werden nicht ins Repository kopiert.
+
+### Pruefung und Grenzen
+
+Gezielt bestanden: Aussagenbindung 14/14 Gruppen, Textnachlauf 25/25 Gruppen, bestehende Vollstaendigkeit 23/23. Dazu gehoeren der echte Vertragsaufbau mit Auslassung, unveraenderte Eingangsdaten, Mandantentrennung, geaenderte Quellen und Profile, fehlende und doppelte Urteile, Empfehlungsfelder sowie der Abbruch vor Generator und Kosten. Alle Modellantworten der Ablaufpruefung sind lokale Fixtures. Genau eine kanonische Offline Sammlung ist beendet: 355/359 Suiten in 589 Sekunden. Die vier Ausfaelle betreffen ausschliesslich bekannte fehlende lokale Abhaengigkeiten: Chromium in admin-nutzer-loeschen und passwort-setzen-login-fix, ical.js in kalender-ics und @aws-sdk/client-sqs in lambda-paket. Keine Wiederholung derselben Sammlung oder fehlgeschlagener Installationswege. Die Pflicht CI fuer den gesicherten PR Kopf bleibt abzuwarten.
+
+Teilweise abgeschlossen. Production ist weiterhin PR 380; kein Merge, Deployment, Modelllauf, Quellenabruf, neuer Pruefbeleg in Production oder Profilwrite. Naechster fachlicher Schritt ist die konkrete Korrektur und vollstaendige Pruefung einer belastbaren Briefingeingabe. Eine ganze Karte auszulassen ist keine Versorgungsgarantie. Der neue Schutz allein rechtfertigt weder den Start ab Position 80 noch die Aktivierung der 495 synthetischen Profile.

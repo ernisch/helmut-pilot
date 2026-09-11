@@ -54,6 +54,9 @@ function fixture() {
   };
   h.args = { commit: SHA, runId: "nachlauf500-123456789", confirmation: T.CONFIRM,
     config: () => config, deps: { storage, now: () => new Date(h.clock),
+      // Der Controller testet hier den Ablauf mit bereits gepruefter Eingabe.
+      // Der echte Aussagenvertrag wird separat ohne diese Attrappe geprueft.
+      pruefeBriefing: async () => ({ bereit: true }),
       get: async path => {
         if (h.fault) throw new Error(h.fault);
         const u = new URL("https://example.invalid/" + path), table = u.pathname.slice(1);
@@ -108,6 +111,25 @@ function fixture() {
 }
 
 (async () => {
+  await test("Fehlende oder negative Briefingpruefung stoppt vor Generator, Ticket und Materialisierung", async () => {
+    for (const pruefe of [undefined, async () => ({ bereit: false })]) {
+      const h = fixture(), vorher = kopie(h.rows); let materialisiert = 0;
+      h.args.deps.pruefeBriefing = pruefe;
+      h.args.deps.materialisiereBriefing = async () => { materialisiert++; };
+      const r = await T.ausfuehren(h.args);
+      assert.equal(r.ok, false); assert.equal(r.grund, "nachlauf-briefing-aussagenpruefung-fehlt");
+      assert.equal(h.calls.length, 0); assert.equal(h.counter, 1); assert.equal(materialisiert, 0);
+      assert.deepEqual(h.rows, vorher); assert.equal(r.freigegebeneModelle, 0);
+      assert.equal(r.results.length, 500); assert(r.results.every(x => !x.gespeichert));
+    }
+  });
+  await test("Zwischen Vorflug und Modell veraenderte Briefingbindung stoppt ohne Ticket", async () => {
+    const h = fixture(); let checks = 0;
+    h.args.deps.pruefeBriefing = async () => ({ bereit: ++checks === 1 });
+    const r = await T.ausfuehren(h.args);
+    assert.equal(r.grund, "nachlauf-briefing-aussagenpruefung-fehlt");
+    assert.equal(checks, 2); assert.equal(h.calls.length, 0); assert.equal(r.freigegebeneModelle, 0);
+  });
   await test("Nur feste Ablaufgruende duerfen eine private Diagnose verlassen", async () => {
     for (const grund of ["nachlauf-vorige-ergebnisse-unlesbar", "nachlauf-kostenstopp",
       "nachlauf-textfehler-ai-text-source-support", "nachlauf-textfehler-ai-provider-http-503"]) {
