@@ -33,6 +33,7 @@ async function pruefe({ env = process.env, fetchFn = global.fetch, jetzt = new D
     supabase: { erreicht: false, zielBestaetigt: false, grund: "nicht-geprueft", httpStatus: null },
     cron: { authentifiziert: false, grund: "nicht-aufgerufen" },
     letzterTextlauf: null,
+    textVorbedingungen: null,
     scharferPfadFreigegeben: false,
     modellaufrufe: 0,
     schreibaufrufe: 0
@@ -82,8 +83,8 @@ async function pruefe({ env = process.env, fetchFn = global.fetch, jetzt = new D
     // eingeschraenkt. Freitext und Mandatsdaten werden weder angefordert noch
     // ausgegeben.
     const tag = jetzt.toISOString().slice(0, 10);
-    const textResponse = await fetchFn(`${PROJEKT_ORIGIN}/rest/v1/process_runs?select=run_id,process,status,reason,commit_ref,processed_count,failed_count,started_at,finished_at`
-      + `&process=eq.${TEXT_PROCESS}&started_at=gte.${tag}T00:00:00Z&order=started_at.desc&limit=1`, {
+    const textResponse = await fetchFn(`${PROJEKT_ORIGIN}/rest/v1/process_runs?select=run_id,process,status,reason,commit_ref,processed_count,failed_count,started_at,finished_at,telemetrie`
+      + `&process=eq.${TEXT_PROCESS}&started_at=gte.${tag}T00:00:00Z&order=started_at.asc&limit=1000`, {
       method: "GET", redirect: "error",
       headers: {
         apikey: env.SUPABASE_SERVICE_ROLE_KEY,
@@ -98,12 +99,21 @@ async function pruefe({ env = process.env, fetchFn = global.fetch, jetzt = new D
       return bericht;
     }
     const textRows = await textResponse.json();
-    if (!Array.isArray(textRows) || textRows.length > 1) {
+    if (!Array.isArray(textRows) || textRows.length >= 1000) {
       bericht.supabase.erreicht = false;
       bericht.supabase.grund = "textlaufquittung-nicht-eindeutig";
       return bericht;
     }
-    const row = textRows[0];
+    bericht.textVorbedingungen = {
+      heutigeTextquittungen: textRows.length,
+      quittungenMitMandatsergebnissen: textRows.filter(r => Array.isArray(r?.telemetrie?.mandatsErgebnisse)).length,
+      zeitbudgetOhneMandatsergebnisse: textRows.filter(r => r?.status === "failed"
+        && r?.reason === "nachlauf-zeitbudget" && !Array.isArray(r?.telemetrie?.mandatsErgebnisse)).length,
+      projektionen: null,
+      eindeutigeProjektionsmandate: null,
+      projektionsvertragVollstaendig: false
+    };
+    const row = [...textRows].reverse().find(r => ["success", "failed"].includes(r?.status));
     if (row) {
       const T = require("../lib/helmut/testkohorte-textnachlauf");
       const gueltig = row.process === TEXT_PROCESS
@@ -131,6 +141,36 @@ async function pruefe({ env = process.env, fetchFn = global.fetch, jetzt = new D
         beendetAt: row.finished_at
       };
     }
+
+    const projektionResponse = await fetchFn(`${PROJEKT_ORIGIN}/rest/v1/helmut_jobs?select=tenant_id,status,due_at`
+      + `&job_type=eq.mandate_projection&freshness_window=eq.${tag}T00Z&limit=501`, {
+      method: "GET", redirect: "error",
+      headers: {
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        Accept: "application/json"
+      },
+      signal: AbortSignal.timeout(20000)
+    });
+    if (projektionResponse.status !== 200) {
+      bericht.supabase.erreicht = false;
+      bericht.supabase.grund = "projektionsbeleg-nicht-lesbar";
+      return bericht;
+    }
+    const projektionen = await projektionResponse.json();
+    if (!Array.isArray(projektionen) || projektionen.length > 500) {
+      bericht.supabase.erreicht = false;
+      bericht.supabase.grund = "projektionsbeleg-ungueltig";
+      return bericht;
+    }
+    const eindeutige = new Set(projektionen.map(r => r?.tenant_id)).size;
+    const gueltig = projektionen.every(r => r && typeof r.tenant_id === "string"
+      && ["wartend", "laeuft", "erledigt", "fehlgeschlagen"].includes(r.status)
+      && Number.isFinite(Date.parse(r.due_at)));
+    bericht.textVorbedingungen.projektionen = projektionen.length;
+    bericht.textVorbedingungen.eindeutigeProjektionsmandate = eindeutige;
+    bericht.textVorbedingungen.projektionsvertragVollstaendig = gueltig
+      && projektionen.length === 500 && eindeutige === 500;
   } catch {
     // Providerfehler koennen URLs oder Zugangsdaten enthalten. Nie ausgeben.
     bericht.supabase.erreicht = false;
