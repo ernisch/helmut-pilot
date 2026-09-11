@@ -1,5 +1,9 @@
 # 500er Fenster am 10.09.2026: Kostenstopp und sicherer Abschluss
 
+## Production Diagnose nach PR 377
+
+PR377 ist am 11.09. als `c2be9530a1a43fd80f67b50de2312b23ebf85f6c` gemergt und mit Deployment `dpl_AuK6g6sxQtNVvE8Hn85pXnAhqgN5` exakt READY. CI34569139282 bestand 353/353 Offline Suiten, 50 Browserfaelle, 15 Kontoschutzpruefungen und 48 Datenbankpruefungen. Die Aenderung erweitert ausschliesslich den bestehenden reinen Zugangsleser um sichere Aggregate zu aktuellen Projektionsvertraegen und vorhandenen Textprozessquittungen. Keine Mandatskennungen, Telemetrie oder freie Fehlertexte werden ausgegeben; der Leser hat null Schreib und Modellaufrufe. Die Kohorte bleibt geschlossen und der Kostenstand unveraendert. Vor jedem weiteren Textlauf wird genau ein solcher Nurleselauf ausgewertet; der vorherige Text79 wird nicht wiederholt.
+
 Sprintzustand: teilweise abgeschlossen. Fruehere Testfenster sind sicher geschlossen; der aktuelle Nachweis laeuft mit 495 bestaetigt reaktivierten Testprofilen weiter. Die Kostenkorrektur ist mit Freigabe veroeffentlicht und rein lesend Production bestaetigt. Die vollstaendige fachliche 500er Abnahme steht weiterhin aus. Private Einzelbelege bleiben beim Betreiber.
 
 ## Historischer, sicher geschlossener Ablauf
