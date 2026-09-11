@@ -3373,6 +3373,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     const ko = kosById[d.knowledge_object_id];
     if (!ko) return false;
     if (!require("./lib/helmut/briefing-quellenqualitaet").quellengebunden(ko, sourcesByVorgang[ko.vorgang_id] || [])) return false;
+    if (!require("./lib/helmut/briefing-quellenqualitaet").relativeFristZulaessig(ko, sourcesByVorgang[ko.vorgang_id] || [], now)) return false;
     return sourceSafety.guardKnowledgeObject(ko, sourcesByVorgang[ko.vorgang_id] || []).status !== "quarantine";
   });
   const themenreineKos = understood.filter(ko => require("./lib/helmut/briefing-quellenqualitaet")
