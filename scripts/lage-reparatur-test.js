@@ -80,10 +80,12 @@ const copy = structuredClone;
     });
     await test("Echter Lagepfad uebergibt denselben privaten Entwurf und prueft nur den verbleibenden Modellaufruf", async () => {
       const fixtureGenerate = ai.generateLageBriefing;
-      const antwort = {paragraphs:sourceInputs[0].quellenbelege.map(q=>({text:q.titel,vorgang_ids:["vg-beleg"]}))};
+      const fortsetzungsProfil = { id, committees: ["Haushalt"] };
+      const antwort = {paragraphs:sourceInputs[0].quellenbelege.map(q=>({text:q.titel,vorgang_ids:["vg-beleg"],
+        quelle_id:q.quelle_id,mandatsbezug:{feld:"ausschuss",wert:"Haushalt"}}))};
       const oldRun = "nachlauf500-777777777", newRun = "nachlauf500-888888888";
       const entry = require("../lib/helmut/lage-entwurfsbeleg").baue({userId:id,runId:oldRun,phase:"entwurf",
-        antwort,quellen:sourceInputs,profile:{id},now:new Date()});
+        antwort,quellen:sourceInputs,profile:fortsetzungsProfil,now:new Date()});
       storage.getLageEntwurfsbeleg = async (owner,key) => {
         assert.equal(owner,id);return key===entry.id ? entry : null;
       };
@@ -93,10 +95,30 @@ const copy = structuredClone;
         await meta.beforeReview();
         return fixtureGenerate(sources);
       };
-      const result = await lage.buildLageBriefing({id},{missingOnly:true,repairIncomplete:true,costRunId:newRun,
+      const result = await lage.buildLageBriefing(fortsetzungsProfil,{missingOnly:true,repairIncomplete:true,costRunId:newRun,
         fortsetzenNachZeitbudget:oldRun,beforeGenerate:async owner=>{assert.equal(owner,id);gates++;}});
       assert.equal(result.available,true,JSON.stringify(result));assert.equal(calls,1);assert.equal(gates,1);
       assert.equal(saves,1);assert.deepEqual(row.payload.vorherigerStand,before);
+    });
+    await test("Alter Entwurf ohne aktuellen Dokumentvertrag bleibt Beleg, wird aber nicht blind weiterverwendet", async () => {
+      const profil = { id, committees: ["Haushalt"] }, oldRun = "nachlauf500-666666666", newRun = "nachlauf500-999999999";
+      const veraltet = { paragraphs: sourceInputs[0].quellenbelege.map(q => ({ text: q.titel,
+        vorgang_ids: ["vg-beleg"] })) };
+      const entry = require("../lib/helmut/lage-entwurfsbeleg").baue({ userId: id, runId: oldRun,
+        phase: "entwurf", antwort: veraltet, quellen: sourceInputs, profile: profil, now: new Date() });
+      storage.getLageEntwurfsbeleg = async (owner, key) => { assert.equal(owner, id); return key === entry.id ? entry : null; };
+      row = copy(before); calls = gates = saves = 0;
+      ai.generateLageBriefing = async (sources, _profile, meta) => {
+        calls++; assert.equal(meta.gespeicherterEntwurf, undefined);
+        return { paragraphs: sources[0].quellenbelege.map(q => ({ text: q.titel + ".", vorgang_ids: ["vg-beleg"],
+          quellen_ids: [q.quelle_id], belegstellen: [{ quelle_id: q.quelle_id, text: q.titel }] })),
+          qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } };
+      };
+      const result = await lage.buildLageBriefing(profil, { missingOnly: true, repairIncomplete: true,
+        costRunId: newRun, fortsetzenNachZeitbudget: oldRun,
+        beforeGenerate: async owner => { assert.equal(owner, id); gates++; } });
+      assert.equal(result.available, true, JSON.stringify(result)); assert.equal(calls, 1); assert.equal(gates, 1);
+      assert.equal(saves, 1); assert.equal(entry.payload.antwort.paragraphs[0].quelle_id, undefined);
     });
     await test("Qualitaetsablehnung behaelt Alttext unveraendert", async () => {
       row = copy(before);

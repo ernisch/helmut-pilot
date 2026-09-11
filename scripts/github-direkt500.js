@@ -176,7 +176,8 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         && Number.isSafeInteger(b.gespeichert) && b.gespeichert >= 0 && b.gespeichert <= 500) {
         const gruende = ["ai-unavailable", "ai-cost-receipt-missing", "ai-response-incomplete",
           "ai-response-invalid-json", "ai-provider-unavailable", "ai-text-invalid",
-          "ai-text-paragraph-count", "ai-text-empty", "ai-text-source-reference", "ai-text-visible-id",
+          "ai-text-paragraph-count", "ai-text-empty", "ai-text-empty-or-type", "ai-text-source-reference",
+          "ai-text-profile-reference", "ai-text-visible-id",
           "ai-text-word-limit", "ai-text-quality-incomplete", "ai-text-source-support",
           "ai-text-evidence-quote", "ai-text-repetition"]
           .map(g => "nachlauf-textfehler-" + g);
