@@ -1,5 +1,14 @@
 # 500er Fenster am 10.09.2026: Kostenstopp und sicherer Abschluss
 
+## Nachtrag 11.09., 02:30 UTC — PR373 Production READY
+
+- PR373 korrigiert ausschliesslich den aus Text70 belegten Fortsetzungsvertrag: veraltete bezahlte Entwuerfe bleiben als Beleg erhalten, werden ohne aktuelle Dokument-/Mandatsbindung aber weder blind geprueft noch ausgeliefert. Eine frische Erzeugung durchlaeuft erneut den geltenden Kostenriegel.
+- Pflicht-CI `34553534655` auf Kopf `cba42e741d4c9f8d4846c1fb03f8139c2b30ee61`, Baum `d3521b5d89bcc3a48dd745682b51f0c5c5d94750`: 353/353 Suiten in 691s, Browser 50/50, PostgreSQL 15/15, Z22/PostgREST 48/48.
+- Merge `1d4076dd543a883663431b95a7fc5934a4ad790d`; Deployment `dpl_CTSTULCZA7U9j8vJDin4eYHQXfxa` ist fuer den exakten Merge auf Production READY.
+- Frischer Vorflug71 `34554675530`/`103124688569`: 504 Profile, 500 aktiv, 495 synthetisch aktiv, geschuetzter Hash `5004dbaa784278e0984fb1a5dfdbd4e1d72fbd2a181c18aae85180b6403fdfae` unveraendert; fuer UTC11 null Calls, Kosten, Reservierungen und Reservierungsluecke; Prognose 2 USD unter der Grenze von 4 USD.
+- Text70 `34552321480`/`103117619607` wurde nicht blind wiederholt: ein Start-/Schreibversuch, null Modellaufrufe, null Reservierungen, null Usage und null Kosten. Der neue Fix ist die Voraussetzung fuer genau eine kontrollierte Fortsetzung an der weiterhin begruendeten Position62.
+- Der 500er Funktions- und Inhaltsnachweis bleibt falsch; App25 belegt fuer Berliner Tag11.09. nur 5/500 abrufbare Strukturen und 0 Qualitaetsabnahmen.
+
 Sprintzustand: teilweise abgeschlossen. Fruehere Testfenster sind sicher geschlossen; der aktuelle Nachweis laeuft mit 495 bestaetigt reaktivierten Testprofilen weiter. Die Kostenkorrektur ist mit Freigabe veroeffentlicht und rein lesend Production bestaetigt. Die vollstaendige fachliche 500er Abnahme steht weiterhin aus. Private Einzelbelege bleiben beim Betreiber.
 
 ## Historischer, sicher geschlossener Ablauf
