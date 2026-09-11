@@ -23,7 +23,7 @@ const ko = { id: "ko-frist", vorgang_id: "vg-frist", status: "active", understan
   headline: "Ausschuss beraet den elektronischen Ausweis", display_title: "Ausschuss beraet den elektronischen Ausweis",
   was_ist_passiert: "Der Ausschuss beraet den elektronischen Ausweis.",
   display_summary: "Der Ausschuss beraet den elektronischen Ausweis.", warum_wichtig: "Digitale Identitaet betrifft die Verwaltung.",
-  recommendation: "Heute bis 12 Uhr eine interne Position festlegen.",
+  recommendation: "Morgen bis 12 Uhr eine interne Position festlegen.",
   created_at: old, updated_at: now.toISOString(),
   best_source_url: "https://www.bundestag.de/dokumente/beispiel-ausweis" };
 let sourceDate = old;

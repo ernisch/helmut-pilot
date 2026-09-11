@@ -42,7 +42,7 @@ test("Neue belegte Entscheidungen und Zahlen bleiben mit vollstaendiger Paarprue
     { text: "Das Parlament lehnt den Entwurf ab und fordert 40 Plaetze.", vorgang_ids: ["vg-test"] },
     { text: "Die Kommune eroeffnet am 12. September eine Beratungsstelle.", vorgang_ids: ["vg-test"] }
   ];
-  const quellen = [{ vorgang_id: "vg-test", quellenbelege: paragraphs.map((p, i) => ({ quelle_id: "q-" + i, titel: p.text })) }];
+  const quellen = [{ vorgang_id: "vg-test", quellenbelege: paragraphs.map((p, i) => ({ quelle_id: "q-" + i, url: "https://example.org/beleg-" + i, titel: p.text })) }];
   const review = { pruefungen: paragraphs.map((p, i) => ({ ...f.review.pruefungen[0], absatz: i, quelle_id: "q-" + i, belegfeld: "titel" })),
     vergleiche: [pair(0, 1), pair(0, 2), pair(1, 2)] };
   const out = Q.pruefe(paragraphs, quellen, review);
