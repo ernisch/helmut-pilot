@@ -624,6 +624,10 @@ async function main() {
     assert(!JSON.stringify(r).includes("GEHEIMER"));
     grund = "nachlauf-textfehler-ai-text-source-support";
     r = await G.ausfuehren(args); assert.equal(r.serverBefund.grund, grund);
+    grund = "nachlauf-textfehler-ai-text-profile-reference";
+    r = await G.ausfuehren(args); assert.equal(r.serverBefund.grund, grund);
+    grund = "nachlauf-textfehler-ai-text-empty-or-type";
+    r = await G.ausfuehren(args); assert.equal(r.serverBefund.grund, grund);
     grund = "GEHEIMER_FEHLERTEXT";
     r = await G.ausfuehren(args);
     assert.equal(r.serverBefund.grund, "nachlauf-fehler-ohne-freigegebene-diagnose");
