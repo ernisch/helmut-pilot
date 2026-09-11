@@ -119,11 +119,26 @@ async function ausfuehren({ bestand, config, env, db, fetchFn, now, pruefeBetrie
     }
     const lage=require("../lib/helmut/lage"), matcher=require("../lib/helmut/matching").matchProfileToKnowledgeObjects;
     const profiles=new Map(bestand.identitaeten.map(p=>[p.id,p]));
+    // Derselbe gezielte Leser wie im Lagepfad. Geteilte Treffer werden in
+    // diesem einen Lauf nur einmal gelesen, auch wenn viele Profile sie nutzen.
+    const koCache=new Map(kos.map(k=>[k.id,k]));
+    const leseTreffer=async ids=>{
+      const fehlend=[...new Set(ids.filter(id=>!koCache.has(id)))];
+      if(fehlend.length){
+        const rows=await storage.listKnowledgeObjectsByIds(fehlend);
+        D.fordere(Array.isArray(rows)&&rows.every(k=>k&&fehlend.includes(k.id))
+          &&new Set(rows.map(k=>k.id)).size===rows.length,"quellenkontext-treffer-unlesbar");
+        fehlend.forEach(id=>koCache.set(id,null));
+        rows.forEach(k=>koCache.set(k.id,k));
+      }
+      return ids.map(id=>koCache.get(id)).filter(Boolean);
+    };
     const ranked=[];
     for(const m of target){
       D.fordere(now().getTime()+120000<end,"quellenkontext-zeitbudget");
       const p=storage.fromMandateProfileRow(profiles.get(m.user_id),m);
       ranked.push(await lage.loadRankedVorgaenge({listKnowledgeObjects:async()=>kos,
+        listKnowledgeObjectsByIds:leseTreffer,
         listMatchingResults:async()=>matchRows.filter(r=>r.user_id===p.id).slice(0,12)},matcher,p,p.id));
     }
     report.gepruefteProfile=ranked.length;
@@ -159,9 +174,10 @@ async function ausfuehren({ bestand, config, env, db, fetchFn, now, pruefeBetrie
       D.fordere(rows.length===1,"quellenkontext-quellzeile-fehlt");
       const before=rows[0];
       if(before.summary) continue;
-      // Ein neuer Codecommit ist kein neuer Artikel und keine Erlaubnis,
-      // den heute bereits versuchten Anbieterabruf blind zu wiederholen.
-      if(before.raw?.helmutQuellenkontext?.tag===tag){report.bereitsGeprueft++;continue;}
+      // Weder ein neuer Tag noch ein Codecommit erlaubt die Wiederholung
+      // eines bekannten oder unklaren Abrufs. Der gespeicherte Versuch bleibt
+      // unveraendert; nur Quellen ohne bisherigen Versuch kommen weiter.
+      if(before.raw?.helmutQuellenkontext){report.bereitsGeprueft++;continue;}
       let result=E.fromMirror(before,bestand.main.rawItems||[]);
       if(!result.ok){
         const url=Q.artikelUrl(before.canonical_url)||Q.artikelUrl(before.url), host=publisherHost(url);
