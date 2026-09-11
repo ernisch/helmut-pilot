@@ -251,7 +251,8 @@ check("Ohne belegtes Quellendatum: lastUpdated leer und Status 'stale' (kein fal
 const empty = radarState.buildCurrentRadarState({ profile, decisions: [], kosById: {}, knowledgeObjects: [], sourcesByVorgang: {}, now: nowDate });
 check("Leerfall: status 'empty', alle Listen leer, ehrliche Zusammenfassung",
   empty.status === "empty" && empty.mentions.length === 0 && empty.dynamics.length === 0 &&
-  empty.articles.length === 0 && /keine neuen relevanten Signale/.test(empty.summary.text));
+  empty.articles.length === 0 && /Im vorliegenden Datenbestand.*keine zugeordneten Signale/.test(empty.summary.text)
+    && !/Heute gibt es keine/.test(empty.summary.text));
 const noName = radarState.buildCurrentRadarState({
   profile: { id: "u3", party: "" }, decisions: [], kosById: {}, knowledgeObjects: allKos, sourcesByVorgang: {}, now: nowDate
 });
