@@ -633,6 +633,39 @@ async function main() {
     assert.equal(r.serverBefund.grund, "nachlauf-fehler-ohne-freigegebene-diagnose");
     assert(!JSON.stringify(r).includes("GEHEIMER"));
   });
+  await test("Feste Nullkosten-Stopps werden mit passender Endquittung unabhaengig bestaetigt", async () => {
+    for (const grund of ["nachlauf-speicherfehler", "nachlauf-mandat-bereits-aktiv",
+      "nachlauf-kostenstopp", "nachlauf-netz-speicher-oder-antwortfehler",
+      "nachlauf-textfehler-unbekannt"]) {
+      const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
+      h.config.textnachlaufVersion = 2;
+      const runId = "nachlauf500-123456789";
+      h.quittungen = [{ run_id: runId, status: "failed", reason: grund,
+        processed_count: 0, failed_count: 1, started_at: JETZT, finished_at: JETZT }];
+      const ids = h.w.snapshot().mandate.filter(m => m.aktiv).map(m => m.user_id);
+      const args = { ...h.args, vorgang: "textnachlauf", env: { ...h.args.env,
+        HELMUT_TESTKOHORTE_CONFIRM: D.WORTE.textnachlauf,
+        GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1" },
+        fetchFn: async (url, init) => {
+          const u = new URL(url);
+          if (u.pathname === "/api/cron/lage-briefing") {
+            assert.equal(init.method, "POST");
+            return { status: 200, json: async () => ({ ok: false, schemaVersion: 1, runId,
+              modus: "manuell-fehlende-texte", ziel: 500, gespeichert: 0, qualitaetsfehler: 0,
+              results: ids.map((userId, i) => ({ userId, gestartet: i === 0,
+                grund: i === 0 ? grund : "nicht-erreicht-nach-abbruch" })),
+              grund, automatischeWiederholung: false, funktionsnachweis500: false }) };
+          }
+          if (u.pathname.endsWith("/briefings")) return { status: 200, json: async () => [] };
+          return fetch(url, init);
+        } };
+      const r = await G.ausfuehren(args);
+      assert.equal(r.ok, false); assert.equal(r.grund, grund);
+      assert.equal(r.zustandUnbekannt, false);
+      assert.equal(r.serverBefund.grund, grund);
+      assert.equal(r.serverBefund.unabhaengigBestaetigt, true);
+    }
+  });
   await test("Verlorene Endquittung behaelt 500 sichere Serverangaben, bleibt unklar und startet nicht erneut", async () => {
     const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;
     h.config.textnachlaufVersion = 2;
