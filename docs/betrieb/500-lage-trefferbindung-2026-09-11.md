@@ -17,3 +17,8 @@ Die erste vollstaendige Sammlung des erweiterten Codes erreichte zusaetzlich die
 ## Abschliessender lokaler Nachweis
 
 Der abschliessende kanonische Lauf besteht mit 353/357 Suiten in 590 Sekunden. Ausschliesslich vier bekannte lokale Abhaengigkeiten fehlen: Chromium in admin-nutzer-loeschen und passwort-setzen-login-fix, ical.js in kalender-ics sowie @aws-sdk/client-sqs in lambda-paket. Der 1000er Narrativtest besteht in 104344ms, der Stufentest in 62907ms bei unveraenderten Grenzen. Das vollstaendige Protokoll enthaelt alle 357 Suiteergebnisse. Die Pflicht CI mit installierten Abhaengigkeiten muss vor Merge vollstaendig bestehen.
+
+
+## Schutz bekannter Quellenversuche ueber Tagesgrenzen
+
+Die weitere reine Quellenpruefung zeigte fruehere abgelehnte oder unklare Abrufe ohne nutzbaren Auszug. Ein Tagwechsel ist keine Erlaubnis, sie zu wiederholen. Der Quellenkontext laesst deshalb jede Quelle mit einem gespeicherten Kontextversuch unveraendert aus; nur bisher unversuchte Quellen kommen weiter. 13/13 Controllergruppen bestehen, einschliesslich vier Ablehnungsklassen mit altem Tag und anderem Commit, jeweils ohne Fetch und ohne Write. Die kanonischen 353/357 oben beziehen sich auf den vorherigen Kopf; fuer diese eng begrenzte Folgeaenderung wurde die betroffene Suite geprueft. Die neue gemeinsame Pflicht CI muss den gesamten abschliessenden Kopf pruefen. Keine weitere kanonische Lokalsammlung und keine Wiederholung eines Production Abrufs.

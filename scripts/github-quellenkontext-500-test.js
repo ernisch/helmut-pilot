@@ -63,6 +63,16 @@ function fixture(count = 2) {
 let pass = 0;
 async function test(name, fn) { await fn(); pass++; console.log("PASS " + name); }
 async function main() {
+  await test("Ein neuer Tag und Commit wiederholt keine bekannte oder unklare Quellenablehnung", async () => {
+    for(const status of ["artikelabruf-nicht-bestaetigt","artikeltitel-abweichend","artikelziel-abweichend","kein-belastbarer-artikelauszug"]){
+      const f=fixture();
+      f.documents.forEach(d=>{d.raw.helmutQuellenkontext={version:1,tag:"2026-09-08",commit:"f".repeat(40),status};});
+      const before=kopie(f.documents),r=await G.ausfuehren(f.args);
+      assert.equal(r.ok,true,JSON.stringify(r)); assert.equal(r.bereitsGeprueft,2);
+      assert.equal(f.fetches,0);assert.equal(f.writes,0);assert.deepEqual(f.documents,before);
+      assert.equal(r.ergaenzt,0);assert.equal(r.funktionsnachweis500,false);
+    }
+  });
   await test("500 Profile teilen genau eine Nachlese fuer einen Treffer ausserhalb des Fensters", async () => {
     const f=fixture(), db=f.args.db; let reads=0;
     const wanted={id:"ko-vg-fixture-0",vorgang_id:"vg-fixture-0",status:"active",

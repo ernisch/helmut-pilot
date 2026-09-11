@@ -174,9 +174,10 @@ async function ausfuehren({ bestand, config, env, db, fetchFn, now, pruefeBetrie
       D.fordere(rows.length===1,"quellenkontext-quellzeile-fehlt");
       const before=rows[0];
       if(before.summary) continue;
-      // Ein neuer Codecommit ist kein neuer Artikel und keine Erlaubnis,
-      // den heute bereits versuchten Anbieterabruf blind zu wiederholen.
-      if(before.raw?.helmutQuellenkontext?.tag===tag){report.bereitsGeprueft++;continue;}
+      // Weder ein neuer Tag noch ein Codecommit erlaubt die Wiederholung
+      // eines bekannten oder unklaren Abrufs. Der gespeicherte Versuch bleibt
+      // unveraendert; nur Quellen ohne bisherigen Versuch kommen weiter.
+      if(before.raw?.helmutQuellenkontext){report.bereitsGeprueft++;continue;}
       let result=E.fromMirror(before,bestand.main.rawItems||[]);
       if(!result.ok){
         const url=Q.artikelUrl(before.canonical_url)||Q.artikelUrl(before.url), host=publisherHost(url);
