@@ -22,3 +22,10 @@ Gezielt bestehen 16 Fristenpruefungen mit echtem Briefinglesepfad, 23 Vollstaend
 ## Gemeinsame Pruefung in PR 378
 
 Die erste CI endete mit 354/355 Suiten in 713 Sekunden. Ausschliesslich die Groessengrenze von CURRENT_STATE war rot. Die 50 Browserfaelle und 15 PostgreSQL Kontoschutzpruefungen bestanden; der nachgelagerte Z22 Nachweis wurde wegen des roten Schritts noch nicht ausgefuehrt. Die historischen Kopfabschnitte wurden unveraendert ins verlinkte Archiv verschoben. Die unveraenderte Groessenpruefung besteht danach gezielt. Die folgende CI prueft Quellenbindung und Fristenschutz gemeinsam, einschliesslich aller Pflichtschritte. Bis dahin kein Merge und kein Production Nachweis fuer diese Korrekturen.
+
+
+## Belegter Stand nach dem Merge
+
+PR 378 wurde nach vollstaendig gruener gemeinsamer CI 34583882464 uebernommen: 356/356 Suiten in 532 Sekunden, 50/50 Browserfaelle, 15/15 Kontoschutzpruefungen und 48/48 Datenbankpruefungen gegen PostgreSQL und PostgREST. PR Kopf d10f779c869f7034687642ac361cf093d313f148, Mergekandidat und tatsaechlicher Merge 9169fcabf5b1335f445d53d813df82dc08c98968 besitzen denselben Baum 63dbbb3b4db5d0d61669077b5257786e9327d2a9. Vercel bestaetigt den exakten Merge als Production READY in dpl_BQQ6A1ztGvisPqsZ1eMNZW6KXUUd am Hauptalias helmut-pilot.vercel.app.
+
+Die Codekorrektur ist veroeffentlicht. Der Gesamtnachweis bleibt teilweise abgeschlossen: Neue App Ausgaben und alle fachlichen Einzelabnahmen sind damit noch nicht bewiesen. Naechster Schritt ist ein frischer reiner App Abruf mit gezielter Quellenpruefung vor weiterer autorisierter Facharbeit. Diese Nachmergedokumentation liegt auf codex/378-production-fortsetzung-20260911; sie aendert ausschliesslich die beiden belegten Dokumentationsstellen.
