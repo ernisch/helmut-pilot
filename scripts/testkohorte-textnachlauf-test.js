@@ -377,6 +377,19 @@ function fixture() {
       assert.equal(calls, reason === "no-current-sources" ? 478 : 1);
     }
   });
+  await test("Nichtmodell-Stopps werden fest klassifiziert und verraten keinen freien Fehlertext", async () => {
+    for (const [reason, erwartet] of [["store-error", "nachlauf-speicherfehler"],
+      ["generating", "nachlauf-mandat-bereits-aktiv"], ["budget", "nachlauf-kostenstopp"],
+      ["GEHEIMER_SPEICHERTEXT", "nachlauf-textfehler-unbekannt"]]) {
+      const h = fixture(); let builds = 0;
+      h.args.deps.build = async () => { builds++; return { available: false, reason }; };
+      const r = await T.ausfuehren(h.args);
+      assert.equal(builds, 1); assert.equal(r.ok, false); assert.equal(r.grund, erwartet);
+      assert.equal(r.gespeichert, 0); assert.equal(h.receipts.at(-1).status, "failed");
+      assert.equal(h.receipts.at(-1).reason, erwartet); assert.equal(h.receipts.at(-1).failed_count, 1);
+      assert(!JSON.stringify({ r, receipts: h.receipts }).includes("GEHEIMER"));
+    }
+  });
   await test("Bereits verwendete Laufkennung erzeugt keinen zweiten Lauf", async () => {
     const h = fixture(); h.receipts.push({ run_id: h.args.runId });
     const r = await T.ausfuehren(h.args);

@@ -168,21 +168,23 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       });
       D.fordere(res.status === 200, "textnachlauf-http-fehler");
       const b = await res.json();
+      const gruende = ["ai-unavailable", "ai-cost-receipt-missing", "ai-response-incomplete",
+        "ai-response-invalid-json", "ai-provider-unavailable", "ai-text-invalid",
+        "ai-text-paragraph-count", "ai-text-empty", "ai-text-empty-or-type", "ai-text-source-reference",
+        "ai-text-profile-reference", "ai-text-visible-id",
+        "ai-text-word-limit", "ai-text-quality-incomplete", "ai-text-source-support",
+        "ai-text-evidence-quote", "ai-text-repetition"]
+        .map(g => "nachlauf-textfehler-" + g);
+      const festeGruende = ["nachlauf-qualitaetsfehler", "nachlauf-zeitbudget",
+        "nachlauf-endquittung-fehlt", "nachlauf-netz-speicher-oder-antwortfehler",
+        "nachlauf-speicherfehler", "nachlauf-mandat-bereits-aktiv", "nachlauf-kostenstopp",
+        "nachlauf-konfiguration-abweichend", "nachlauf-textfehler-unbekannt", ...gruende];
       // Eine fachlich gescheiterte HTTP-200-Antwort kann bereits Texte gespeichert
       // haben. Nur feste Diagnoseklassen und validierte Zaehler uebernehmen;
       // ohne unabhaengige Nachkontrolle bleibt der Zustand ausdruecklich unklar.
       if (b?.ok === false && b.schemaVersion === 1 && b.runId === runId
         && b.modus === "manuell-fehlende-texte" && b.ziel === 500
         && Number.isSafeInteger(b.gespeichert) && b.gespeichert >= 0 && b.gespeichert <= 500) {
-        const gruende = ["ai-unavailable", "ai-cost-receipt-missing", "ai-response-incomplete",
-          "ai-response-invalid-json", "ai-provider-unavailable", "ai-text-invalid",
-          "ai-text-paragraph-count", "ai-text-empty", "ai-text-empty-or-type", "ai-text-source-reference",
-          "ai-text-profile-reference", "ai-text-visible-id",
-          "ai-text-word-limit", "ai-text-quality-incomplete", "ai-text-source-support",
-          "ai-text-evidence-quote", "ai-text-repetition"]
-          .map(g => "nachlauf-textfehler-" + g);
-        const festeGruende = ["nachlauf-qualitaetsfehler", "nachlauf-zeitbudget",
-          "nachlauf-endquittung-fehlt", "nachlauf-netz-speicher-oder-antwortfehler", ...gruende];
         const grund = festeGruende.includes(b.grund)
           || /^nachlauf-textfehler-ai-provider-http-[45][0-9]{2}$/.test(b.grund || "")
           ? b.grund : "nachlauf-fehler-ohne-freigegebene-diagnose";
@@ -213,7 +215,12 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       const zeitlauf = b?.ok === false && b.grund === "nachlauf-zeitbudget"
         && Number.isSafeInteger(b.qualitaetsfehler) && b.qualitaetsfehler >= 0 && b.qualitaetsfehler < 500
         && Array.isArray(b.results) && b.results.filter(r => r.grund === "nachlauf-zeitbudget").length === 1;
-      D.fordere((b?.ok === true || qualitaetslauf || zeitlauf) && b.schemaVersion === 1 && b.runId === runId
+      const festerFehlerlauf = b?.ok === false && festeGruende.includes(b.grund)
+        && !["nachlauf-qualitaetsfehler", "nachlauf-zeitbudget", "nachlauf-endquittung-fehlt"].includes(b.grund)
+        && Number.isSafeInteger(b.qualitaetsfehler) && b.qualitaetsfehler >= 0 && b.qualitaetsfehler < 500
+        && Array.isArray(b.results) && b.results.filter(r => r.grund === b.grund).length === 1;
+      D.fordere((b?.ok === true || qualitaetslauf || zeitlauf || festerFehlerlauf)
+        && b.schemaVersion === 1 && b.runId === runId
         && auswahlBestaetigt(b)
         && b.modus === "manuell-fehlende-texte" && b.ziel === 500
         && Number.isSafeInteger(b.gespeichert) && b.gespeichert >= 0 && b.gespeichert <= 500
@@ -225,9 +232,10 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       const rows = await db("process_runs?select=run_id,status,reason,processed_count,failed_count,started_at,finished_at"
         + "&process=eq." + T.PROCESS + "&run_id=eq." + runId + "&limit=2");
       D.fordere(rows.length === 1 && rows[0].run_id === runId
-        && rows[0].status === (qualitaetslauf || zeitlauf ? "failed" : "success")
-        && (!zeitlauf || rows[0].reason === b.grund)
-        && rows[0].failed_count === (zeitlauf ? b.qualitaetsfehler + 1 : qualitaetslauf ? b.qualitaetsfehler : 0)
+        && rows[0].status === (qualitaetslauf || zeitlauf || festerFehlerlauf ? "failed" : "success")
+        && (!(zeitlauf || festerFehlerlauf) || rows[0].reason === b.grund)
+        && rows[0].failed_count === (zeitlauf || festerFehlerlauf
+          ? b.qualitaetsfehler + 1 : qualitaetslauf ? b.qualitaetsfehler : 0)
         && rows[0].processed_count === b.gespeichert && Date.parse(rows[0].started_at) >= Date.parse(startIso)
         && Date.parse(rows[0].finished_at) >= Date.parse(rows[0].started_at)
         && Date.parse(rows[0].finished_at) <= now().getTime(), "textnachlauf-quittung-abweichend");
