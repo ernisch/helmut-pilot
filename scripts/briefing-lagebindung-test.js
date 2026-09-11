@@ -25,6 +25,7 @@ const urteil = { version: Q.VERSION, eingabeHash: eingabe.eingabeHash, ursprungH
     belege: [{ vorgangId: a.vorgangId, documentId: sourcesByVorgang[a.vorgangId][0].id,
       feld: "auszug", text: sourcesByVorgang[a.vorgangId][0].summary }] })) };
 const result = { briefing, eingabe, korrekturBasis: { kos, sourcesByVorgang } };
+urteil.gesamtpruefung = require("./fixtures/briefing-fachurteil")(result, urteil);
 let count = 0, cache = null, writes = 0, calls = 0, gates = 0, lastInput = null;
 const test = async (name, fn) => { await fn(); console.log("PASS " + name); count++; };
 const basis = () => B.baue(result, urteil);
@@ -64,6 +65,9 @@ ai.generateLageBriefing = async (input, p, opts) => {
       b => { b.korrekturBasis.kos[2].was_ist_passiert = "Geaendertes nicht sichtbares Objekt"; },
       b => { b.korrekturBasis.sourcesByVorgang["vg-a"][0].summary += " Nachtrag"; },
       b => { b.urteil.aussagen[0].sachlichGetragen = false; },
+      b => { delete b.urteil.gesamtpruefung; },
+      b => { b.urteil.gesamtpruefung.kriterien.rangfolge.bestanden = false; },
+      b => { b.urteil.gesamtpruefung.umfang.auswahl.reverse(); },
       b => { b.eingabe.tag = "2020-01-01"; }, b => { b.eingabe.mandat = "fremd"; }]) {
       reset(); const opts = options(); change(opts.briefingEingabe);
       await A.rejects(L.buildLageBriefing(profile, opts), /briefing-lagebindung-abweichend/);

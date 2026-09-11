@@ -3,6 +3,7 @@
   "regions": ["fra1"],
   "git": {
     "deploymentEnabled": {
+      "codex/500-fachurteil-import-vorbereitung-20260911": false,
       "codex/500-laufquittung-20260908": false,
       "codex/ki-antwortumschlag-hardening": false,
       "claude/understanding-telemetrie-korrektur-ty5gb2": false,

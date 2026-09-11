@@ -81,9 +81,11 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); passed+
   });
   await test("Gespeichertes Urteil bleibt mandantengebunden und der Leser schreibt nichts", async () => {
     const e = input(); let reads = 0, builds = 0;
+    const u = urteil(e);
+    u.gesamtpruefung = require("./fixtures/briefing-fachurteil")({ briefing, eingabe: e }, u);
     const storage = { assertTenant: S.assertTenant, getRenderedBriefingV3: async (id, slot, day, opts) => {
       reads++; A.equal(id, profile.id); A.equal(slot, Q.SLOT); A.equal(opts.strict, true);
-      return { id: `bf-${id}-${slot}-${day}`, user_id: id, slot, payload: urteil(e) };
+      return { id: `bf-${id}-${slot}-${day}`, user_id: id, slot, payload: u };
     } };
     const r = await Q.leseFuerNachlauf({ profile, userId: profile.id, now, storage,
       build: async () => { builds++; return { briefing, eingabe: e }; } });

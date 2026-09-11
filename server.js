@@ -3311,6 +3311,13 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     if (!opts.aussagenEingabe) return briefing;
     if (korrekturDaten) {
       briefing.pruefumfang = korrekturDaten.umfang;
+      // Eine begrenzte Entwurfsansicht erlaubt keine Entwarnung ueber die
+      // zurueckgehaltenen oder nicht einbezogenen Vorgaenge. Auch diese
+      // sichtbaren Zusammenfassungen gehen in die exakte Aussagenbindung ein.
+      const auswahlHinweis = `Begrenzte Auswahl mit ${briefing.items?.length || 0} Vorgängen. `
+        + "Daraus folgt keine Gesamtbewertung des Handlungsbedarfs. " + korrekturDaten.umfang.hinweis;
+      if (briefing.helmutAssessment) briefing.helmutAssessment.assessment = auswahlHinweis;
+      briefing.executiveSummary = auswahlHinweis;
       // Die Einschraenkung steht auch im tatsaechlich gerenderten Radartext.
       for (const state of [briefing.currentRadarState, briefing.currentRadarState?.anzeige]) {
         if (state?.summary) {
