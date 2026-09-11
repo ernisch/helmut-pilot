@@ -195,7 +195,8 @@ async function handleRequest(request, response) {
             .leseFuerNachlauf({ profile, userId, build: buildV3Briefing });
           if (!check.bereit) throw new Error("briefing-aussagenpruefung-fehlt");
           return require("./lib/helmut/briefing-speicher")
-            .materialisiere({ profile, userId, briefing: check.briefing });
+            .materialisiere({ profile, userId, briefing: check.briefing,
+              aussagenEingabeHash: check.eingabeHash });
         }
       }
     }));

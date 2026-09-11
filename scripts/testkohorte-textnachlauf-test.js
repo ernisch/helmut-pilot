@@ -56,7 +56,7 @@ function fixture() {
     config: () => config, deps: { storage, now: () => new Date(h.clock),
       // Der Controller testet hier den Ablauf mit bereits gepruefter Eingabe.
       // Der echte Aussagenvertrag wird separat ohne diese Attrappe geprueft.
-      pruefeBriefing: async () => ({ bereit: true }),
+      pruefeBriefing: async () => ({ bereit: true, eingabeHash: "a".repeat(64), lageEingabe: { fixture: true } }),
       get: async path => {
         if (h.fault) throw new Error(h.fault);
         const u = new URL("https://example.invalid/" + path), table = u.pathname.slice(1);
@@ -72,7 +72,10 @@ function fixture() {
           const id = u.searchParams.get("user_id")?.slice(3);
           return kopie(id ? s.mandate.filter(m => m.user_id === id) : s.mandate);
         }
-        if (table === "profiles") return kopie(s.identitaeten);
+        if (table === "profiles") {
+          const id = u.searchParams.get("id")?.slice(3);
+          return kopie(id ? s.identitaeten.filter(p => p.id === id) : s.identitaeten);
+        }
         if (table === "helmut_store") {
           if (u.searchParams.get("select").includes("pushEvents")) return [{ id: "main-auth", pushEvents: h.events, auditEvents: [] }];
           return [{ data: kopie(u.searchParams.get("id") === "eq.main-auth" ? s.auth : s.main) }];
@@ -125,10 +128,42 @@ function fixture() {
   });
   await test("Zwischen Vorflug und Modell veraenderte Briefingbindung stoppt ohne Ticket", async () => {
     const h = fixture(); let checks = 0;
-    h.args.deps.pruefeBriefing = async () => ({ bereit: ++checks === 1 });
+    h.args.deps.pruefeBriefing = async () => ({ bereit: ++checks === 1,
+      eingabeHash: "a".repeat(64), lageEingabe: { fixture: true } });
     const r = await T.ausfuehren(h.args);
     assert.equal(r.grund, "nachlauf-briefing-aussagenpruefung-fehlt");
     assert.equal(checks, 2); assert.equal(h.calls.length, 0); assert.equal(r.freigegebeneModelle, 0);
+  });
+  await test("Anderes positives Urteil darf die erste Eingabe vor Modell oder Speicherung nicht ersetzen", async () => {
+    for (const phase of ["modell", "speicherung"]) {
+      const h = fixture(); let checks = 0, gespeichert = 0;
+      h.args.deps.pruefeBriefing = async () => ({ bereit: true,
+        eingabeHash: (++checks === 1 ? "a" : "b").repeat(64), lageEingabe: { fixture: true } });
+      h.args.deps.build = async (p, opts) => {
+        assert.deepEqual(opts.briefingEingabe, { fixture: true });
+        if (phase === "modell") await opts.beforeGenerate(p.id);
+        else await opts.beforeSave(p.id);
+        gespeichert++; return { available: false };
+      };
+      const r = await T.ausfuehren(h.args);
+      assert.equal(r.grund, "nachlauf-briefing-aussagenpruefung-fehlt");
+      assert.equal(gespeichert, 0); assert.equal(h.counter, 1);
+    }
+  });
+  await test("Profil oder Identitaetsaenderung nach Modellfreigabe sperrt die Speicherung", async () => {
+    for (const table of ["mandate", "identitaeten"]) {
+      const h = fixture(); let gespeichert = false;
+      h.args.deps.build = async (p, opts) => {
+        await opts.beforeGenerate(p.id);
+        const row = h.s[table].find(r => (r.user_id || r.id) === p.id);
+        row.name = "Inzwischen geaendert";
+        await opts.beforeSave(p.id);
+        gespeichert = true; return { available: false };
+      };
+      const r = await T.ausfuehren(h.args);
+      assert.equal(r.grund, "nachlauf-zielprofil-veraendert");
+      assert.equal(gespeichert, false); assert.equal(h.counter, 1);
+    }
   });
   await test("Nur feste Ablaufgruende duerfen eine private Diagnose verlassen", async () => {
     for (const grund of ["nachlauf-vorige-ergebnisse-unlesbar", "nachlauf-kostenstopp",
