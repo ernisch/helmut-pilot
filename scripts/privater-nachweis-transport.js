@@ -45,7 +45,9 @@ function entschluesseln(envelope, privatePem, expected) {
   const empfaenger = pub.export({ format: "der", type: "spki" }).toString("base64");
   const fingerprint = publicKey(empfaenger).fingerprint;
   const meta = { version: 1, verfahren: "RSA-OAEP-SHA256/AES-256-GCM/gzip", empfaenger: fingerprint, ...kontext(expected) };
-  fordere(JSON.stringify(envelope?.meta) === JSON.stringify(meta));
+  // JSON-Objektfelder koennen beim Transport umgeordnet werden. Werte und
+  // Feldmenge bleiben exakt gebunden; AAD verwendet weiter die definierte Reihenfolge.
+  fordere(require("node:util").isDeepStrictEqual(envelope?.meta, meta));
   function bytes(value, length) {
     fordere(typeof value === "string" && value.length <= MAX_BYTES * 2 && /^[A-Za-z0-9+/]+={0,2}$/.test(value));
     const b = Buffer.from(value, "base64");

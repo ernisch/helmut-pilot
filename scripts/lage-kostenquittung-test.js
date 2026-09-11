@@ -22,10 +22,12 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
   vollstaendig_belegt: true, themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt", pruefbegruendung: "Benannter Vorschlag mit Quellenbeleg und Bezug zum Ausschuss." })),
   vergleiche: [{ erster_absatz: 0, zweiter_absatz: 1, eigenstaendige_sachverhalte: true,
     pruefbegruendung: "Der zweite Absatz nennt den noch offenen Termin als zusaetzliche Angabe." }] };
+const mitAuswahl = paragraphs.map(p => ({ ...p, auswahl: { quelle_id: "q-test", mandatsfeld: "ausschuesse",
+  mandatswert: "Arbeit und Soziales", begruendung: "Der benannte Entwurf betrifft den fachlichen Ausschuss." } }));
 const beleg = { _ablage: { blob: true } };
 let checks = 0;
 
-async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
+async function fall({ mode = "success", output = JSON.stringify({ paragraphs: mitAuswahl }),
   status = "completed", http = 200, receipt = beleg, rejectReceipt = false, budget = true,
   expected = null, fortsetzen = false, reviewResult = review } = {}) {
   let requests = 0, reservations = 0, logs = [], release;
@@ -64,7 +66,7 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   };
   let settled = false;
   const drafts = [], reviews = [];
-  const result = ai.generateLageBriefing(vorgaenge, {}, { politicianId: "test-kohorte-b-023",
+  const result = ai.generateLageBriefing(vorgaenge, { committees: ["Arbeit und Soziales"] }, { politicianId: "test-kohorte-b-023",
     gespeicherterEntwurf: fortsetzen ? { paragraphs } : undefined,
     onDraft: async value => { assert.equal(logs.length,fortsetzen ? 0 : 1); assert.equal(requests,fortsetzen ? 0 : 1); drafts.push(value); },
     onReview: async value => { assert.equal(logs.length,fortsetzen ? 1 : 2); assert.equal(requests,fortsetzen ? 1 : 2); reviews.push(value); } })
@@ -80,7 +82,8 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   else if (expected) {
     assert.equal(r.error?.code, "LAGE_AI_FAILURE");
     assert.equal(r.error?.grund, expected);
-  } else assert.equal(r.value?.paragraphs.length, 2);
+  } else { assert.equal(r.value?.paragraphs.length, 2);
+    assert(r.value.paragraphs.every(p => !Object.hasOwn(p, "auswahl")), "Private Auswahl nicht in der App"); }
   assert(!JSON.stringify(r).includes("GEHEIMER"), "Diagnose verrät keinen Rohtext");
   assert(!JSON.stringify(logs).includes("GEHEIMER"), "Kostenlog verrät keinen Rohtext");
   assert.equal(requests, budget ? (expected || fortsetzen ? 1 : 2) : 0, "Gesicherter Entwurf braucht nur den Quellenpruefer; kein Retry");
@@ -124,6 +127,8 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   process.env.OPENAI_API_KEY = "offline-dummy";
   anbieter.steuerungAktiv = () => false;
   await fall();
+  await fall({ output: JSON.stringify({ paragraphs }), expected: "ai-text-source-reference" });
+  await fall({ output: JSON.stringify({ paragraphs: mitAuswahl.map(p => ({...p, auswahl:{...p.auswahl, quelle_id:"q-fremd"}})) }), expected: "ai-text-source-reference" });
   await fall({ receipt: null, expected: "ai-cost-receipt-missing" });
   await fall({ receipt: { _ablage: { blob: false, relational: true } }, expected: "ai-cost-receipt-missing" });
   await fall({ rejectReceipt: true, expected: "ai-cost-receipt-missing" });

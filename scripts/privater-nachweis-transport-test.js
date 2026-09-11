@@ -8,6 +8,10 @@ const ctx = { runId: "123456789012", commit: "a".repeat(40), tag: "2026-09-11", 
 const payload = { mandate: [{ userId: "PRIVATER_MANDANT", text: "PRIVATER_INHALT" }], unicode: "äöü – Beleg" };
 const e = T.verschluesseln(payload, pub, ctx);
 A.deepEqual(T.entschluesseln(e, pem, ctx), payload);
+const reordered = { ...e, meta: Object.fromEntries(Object.entries(e.meta).sort(([a], [b]) => a.localeCompare(b))) };
+A.deepEqual(T.entschluesseln(reordered, pem, ctx), payload);
+A.throws(() => T.entschluesseln({ ...reordered, meta: { ...reordered.meta, fremd: true } }, pem, ctx));
+A.throws(() => T.entschluesseln({ ...reordered, meta: { ...reordered.meta, anzahl: "5" } }, pem, ctx));
 A(!JSON.stringify(e).includes("PRIVATER"));
 A(e.daten.every(s => s.length <= 4096));
 const e2 = T.verschluesseln(payload, pub, ctx);
