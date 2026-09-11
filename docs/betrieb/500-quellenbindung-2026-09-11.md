@@ -1,0 +1,11 @@
+# Quellenbindung vor weiterer Textarbeit
+
+Die Inhaltspruefung fand zwei reproduzierbare Fehlannahmen im vorhandenen Pruefpfad. Ein einzelnes allgemeines Politikfeld verband verschiedene Ereignisse zu einer vermeintlich themenreinen Quelle. Ausserdem konnte ein nummerierter Testplatzhalter als fachlicher Mandatsbezug bestehen, wenn das Modell den Bezug positiv bewertete.
+
+Die Korrektur behandelt Digitalisierung als generischen Ereignisanker. Andere konkrete gemeinsame Sachanker bleiben wirksam. Nummerierte Testthemen, Testausschuesse, Testwahlkreise und Testregionen koennen einen Absatz nicht mehr begruenden. Generierung und Quellenreview verlangen ein tatsaechlich passendes vorhandenes Mandatsfeld. Das Review muss genau das gewaehlte Feld pruefen.
+
+Die Gegenproben verwenden erfundene Quellen und Profile. Sie zeigen getrennte Ereignisse mit demselben Politikfeld, gueltige gemeinsame Ereignisbelege und eine trotz positivem Modellurteil ungueltige Platzhalterbindung. Beide neuen Suiten waren vor der Korrektur rot; danach bestehen 7 und 12 Pruefungen. Dokumentbindung, Vollstaendigkeit und Beweisfamilien bestehen gezielt mit 8, 23 und 108 Pruefungen. Die kanonische Sammlung endete mit 351/355 Suiten in 617 Sekunden. Vier bekannte lokale Umgebungsfehler betreffen zweimal fehlendes Chromium sowie ical.js und @aws-sdk/client-sqs. Die betroffenen Suiten werden in der verpflichtenden CI mit installierten Abhaengigkeiten geprueft; lokal wird kein vollstaendiges Gruen behauptet.
+
+Die Aenderung nimmt keine gespeicherten Ergebnisse als bestanden ab und wiederholt keine bisherigen Ablehnungen oder unbekannten Aufrufe. Sie schreibt keine Profile, Quellen oder Briefings um. Relative Handlungsempfehlungen in alten Inhalten und die vollstaendige Inhaltspruefung aller Mandate bleiben gesondert offen. Der bestehende Schutz gespeicherter Ergebnisse bleibt verbindlich.
+
+Risiko: Quellen, die ausschliesslich das allgemeine Politikfeld gemeinsam haben, werden kuenftig getrennt; Texte ohne konkretes geeignetes Mandatsfeld werden abgelehnt. Das ist die beabsichtigte strengere Belegpflicht. Ruecknahme waere ein gesonderter gepruefter Code Revert, keine Datenrestauration. Vor weiterer Facharbeit sind Pflicht CI und das exakte Production READY abzuwarten und zu dokumentieren.
