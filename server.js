@@ -3285,18 +3285,44 @@ async function loadMentionSourcesInto(profile, understood, sourcesByVorgang) {
   }
 }
 
+const AUSSAGEN_DATEN = Symbol("gepruefte-korrekturauswahl");
 async function buildV3Briefing(profile, politicianId, opts = {}) {
   const briefingContract = require("./lib/helmut/briefingContract");
   const decisionsEngine = require("./lib/helmut/decisions");
   const briefingLanguage = require("./lib/helmut/briefingLanguage");
   const userId = (profile && profile.id) || politicianId;
   const now = opts.now ? new Date(opts.now) : new Date();
+  if (opts.aussagenKorrektur) {
+    if (!opts.aussagenEingabe || opts.aussagenAuslassungen?.length)
+      throw new Error("briefing-korrektur-abweichend");
+    const original = await buildV3Briefing(profile, politicianId,
+      { ...opts, aussagenKorrektur: null, now });
+    if (!original.korrekturBasis) throw new Error("briefing-korrektur-abweichend");
+    const daten = require("./lib/helmut/briefing-korrektur").wendeAn({
+      eingabe: original.eingabe, profile, ...original.korrekturBasis, korrektur: opts.aussagenKorrektur });
+    return buildV3Briefing(profile, politicianId,
+      { ...opts, aussagenKorrektur: null, [AUSSAGEN_DATEN]: daten, now });
+  }
+  const korrekturDaten = opts[AUSSAGEN_DATEN];
+  let kos = [];
   // Nur interne, rein lesende Fachpruefung; kein Queryparameter aktiviert sie.
-  const ausgabe = (briefing, sourcesByVorgang = {}) => opts.aussagenEingabe ? {
-    briefing, eingabe: require("./lib/helmut/briefing-aussagenbindung").baueEingabe({
-      briefing, sourcesByVorgang, profile, userId,
-      day: require("./lib/helmut/briefing-frische").berlinTagKey(now) })
-  } : briefing;
+  const ausgabe = (briefing, sourcesByVorgang = {}) => {
+    if (!opts.aussagenEingabe) return briefing;
+    if (korrekturDaten) {
+      briefing.pruefumfang = korrekturDaten.umfang;
+      // Die Einschraenkung steht auch im tatsaechlich gerenderten Radartext.
+      for (const state of [briefing.currentRadarState, briefing.currentRadarState?.anzeige]) {
+        if (state?.summary) {
+          state.summary.line2 = [state.summary.line2, korrekturDaten.umfang.hinweis].filter(Boolean).join(" ");
+          state.summary.text = [state.summary.line1, state.summary.line2].filter(Boolean).join(" ");
+        }
+      }
+    }
+    return { briefing, eingabe: require("./lib/helmut/briefing-aussagenbindung").baueEingabe({
+      briefing, sourcesByVorgang, profile, userId, kos, korrekturHash: korrekturDaten?.korrekturHash || null,
+      day: require("./lib/helmut/briefing-frische").berlinTagKey(now) }),
+      korrekturBasis: structuredClone({ kos, sourcesByVorgang }) };
+  };
   // Slot bestimmen: expliziter Override hat Vorrang, sonst Zeit-Ableitung (Europe/Berlin).
   // normalizeBriefingType kappt ungueltige Overrides sicher auf 'daily' (nie Crash).
   const briefingType = (opts && opts.slot != null && String(opts.slot).trim() !== "")
@@ -3323,10 +3349,9 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // "es gibt keine Vorgaenge" aussehen. listKnowledgeObjects faengt intern und
   // liefert [] — deshalb hier zusaetzlich ueber ein Sentinel-Objekt unterscheiden,
   // ob der Read wirklich lief (auch 0 Treffer moeglich) oder scharf fehlschlug.
-  let kos = [];
   let storeFailed = false;
   try {
-    const res = await listKnowledgeObjects({ limit: koScanLimit, _signalError: true });
+    const res = korrekturDaten ? korrekturDaten.kos : await listKnowledgeObjects({ limit: koScanLimit, _signalError: true });
     if (res && res.__storeError) storeFailed = true; else kos = res || [];
   } catch (error) {
     console.error("[v3-briefing] listKnowledgeObjects fehlgeschlagen:", error && error.message);
@@ -3346,8 +3371,8 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // sourcesByVorgang:{} verschwanden belegte Eigenerwaehnungen ohne
   // best_source_url auf genau diesen Leerpfaden weiterhin still.
   const emptyKeepMentions = async (reason, kandidaten = understood) => {
-    const mentionSources = {};
-    await loadMentionSourcesInto(profile, kandidaten, mentionSources);
+    const mentionSources = korrekturDaten ? korrekturDaten.sourcesByVorgang : {};
+    if (!korrekturDaten) await loadMentionSourcesInto(profile, kandidaten, mentionSources);
     return ausgabe(briefingContract.toBriefingContractV3({
       profile, decisions: [], kosById: {}, sourcesByVorgang: mentionSources, reason, briefingType,
       knowledgeObjects: kandidaten.filter(ko => require("./lib/helmut/briefing-quellenqualitaet").quellengebunden(ko, mentionSources[ko.vorgang_id] || [])), now, frischeFenster
@@ -3374,7 +3399,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   const kosById = {};
   for (const ko of understood) if (ko && ko.id) kosById[ko.id] = ko;
   const selected = candidateDecisions.map((d) => kosById[d.knowledge_object_id]).filter(Boolean);
-  const sourcesByVorgang = await loadSourcesByVorgang(selected);
+  const sourcesByVorgang = korrekturDaten ? korrekturDaten.sourcesByVorgang : await loadSourcesByVorgang(selected);
   // Radar-Erwähnungen belegen (Audit-Folgebranch): "Über dich" zeigt eine
   // Eigenerwähnung nur mit echter Quellen-URL. Quellen wurden aber bisher NUR für
   // die Top-50-Decisions geladen; eine Erwähnung außerhalb davon fiel auf
@@ -3382,7 +3407,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // belegte Erwähnung STILL, obwohl echte URLs in raw_documents liegen. Fix:
   // für die wenigen Erwähnungs-KOs ohne geladene Quelle diese gezielt nachladen
   // (deterministisch, 0 KI, hart gedeckelt). Nur ADDITIV — keine Decision entsteht.
-  await loadMentionSourcesInto(profile, understood, sourcesByVorgang);
+  if (!korrekturDaten) await loadMentionSourcesInto(profile, understood, sourcesByVorgang);
   // Source Safety Guard (regelbasiert, 0 KI): kritische, unbestaetigte Claims aus
   // unbekannten/schwachen Quellen NICHT ins Helmut-Briefing. Quarantaene wird verworfen.
   const safeDecisions = candidateDecisions.filter((d) => {
