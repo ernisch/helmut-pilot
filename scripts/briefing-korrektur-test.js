@@ -46,6 +46,11 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); n++; }
     A.deepEqual({ kos, sources, profile }, initial);
     A.equal(clean.briefing.pruefumfang.zurueckgehalten, 1);
     A.equal(clean.briefing.pruefumfang.ausserhalbDerAuswahl, 1);
+    for (const t of [clean.briefing.helmutAssessment.assessment, clean.briefing.executiveSummary]) {
+      A(t.includes("keine Gesamtbewertung des Handlungsbedarfs"));
+      A(!t.includes("0 Vorgang/Vorgänge mit akutem Handlungsbedarf"));
+      A(clean.eingabe.aussagen.some(a => a.text === t && a.art === "ausgabe"));
+    }
     const radar = clean.briefing.currentRadarState;
     A((radar.anzeige || radar).summary.text.includes("fachliche Abnahme steht aus"));
     A.equal(Q.pruefe(clean.eingabe).bereit, false);
