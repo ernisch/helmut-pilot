@@ -2,6 +2,14 @@
 
 Sprintzustand: teilweise abgeschlossen. Fruehere Testfenster sind sicher geschlossen; der aktuelle Nachweis laeuft mit 495 bestaetigt reaktivierten Testprofilen weiter. Die Kostenkorrektur ist mit Freigabe veroeffentlicht und rein lesend Production bestaetigt. Die vollstaendige fachliche 500er Abnahme steht weiterhin aus. Private Einzelbelege bleiben beim Betreiber.
 
+## Aktueller sicherer Abschluss und PR376
+
+Text79/34563444563 endete am11.09. um04:46UTC nach genau einem ProductionPOST ohne gespeichertenText. Kostenbuch und Aufrufzaehler blieben exakt bei12Tickets/12Aufrufbelegen; damit0neueModelle,0neueKosten und keine unbekannteProviderwirkung. Der Lauf wird nicht wiederholt. Deaktivierung14/34563608954 und der unabhaengigeNurleser15/34564165631 bestaetigen504Profilzeilen,exakt5aktiveOriginalprofile,495synthetischeProfile inaktiv und0ausstehendeDeaktivierungen.
+
+PR376 wurde nach PflichtCI34566822948 gemergt. Belegt sind353/353Suiten in581s,50Browserpruefungen,15PostgreSQLKontoschutzpruefungen und48Z22/PostgRESTPruefungen. Merge `27795e78cb5086f4f7926e9c542477603a4fd872` ist als VercelProductiondeployment `dpl_CfdpL7tDDu4mMqHcQziCpRDbNcW2` am Hauptalias READY. Der ausschliessliche Zugangs Nurleser kann nun die letzte technische Textlaufquittung des aktuellen UTC Tags lesen und gibt nur fest erlaubte Ablaufklassen aus. Mandatsinhalte,Telemetrie,freieFehlertexte und Secrets werden nicht angefordert.
+
+LetzterKostenbeleg fuerUTC11:0,043693USD bekannt und0,087386USD konservativgebunden bei unveraenderterGrenze4USD;keineoffeneReserve/keineLuecke. NaechsterSchritt genau ein ausschliesslicherNurleselauf zur festenText79Ursache. Bis dahin bleiben Testkohorte und Modellarbeit geschlossen. Appnachweis5von500abrufbar/0Qualitaetsabnahmen; kein vollstaendiger500erNachweis.
+
 ## Historischer, sicher geschlossener Ablauf
 
 Production Basis fuer alle drei Schritte: `53f0c67aad2e81f4a557d8ceb116b87696c909e9`, READY `dpl_2GPmsjF4f9wnjVjHU62qKYDXKuGW`. Ausdrueckliches Betreiber Ja fuer vorhandene 495 Profile, begrenzte Facharbeit und unabhaengig abgesicherten Abschluss. Hoechstens 150 Minuten, Abschlussbeginn spaetestens Minute 120, 4 USD Modellkosten insgesamt je UTC Tag und 1000 manuell veranlasste Modellversuche.
