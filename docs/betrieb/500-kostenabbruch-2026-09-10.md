@@ -2,6 +2,14 @@
 
 Sprintzustand: teilweise abgeschlossen. Fruehere Testfenster sind sicher geschlossen; der aktuelle Nachweis laeuft mit 495 bestaetigt reaktivierten Testprofilen weiter. Die Kostenkorrektur ist mit Freigabe veroeffentlicht und rein lesend Production bestaetigt. Die vollstaendige fachliche 500er Abnahme steht weiterhin aus. Private Einzelbelege bleiben beim Betreiber.
 
+## Aktueller sicherer Abschluss und PR375
+
+Text79/34563444563 endete am11.09. um04:46UTC nach genau einem Production POST ohne gespeichertenText. Kostenbuch und Aufrufzaehler blieben exakt bei12Tickets/12Aufrufbelegen; damit entstanden0neueModelle,0neueKosten und keine unbekannteProviderwirkung. Der Lauf wird nicht wiederholt. Deaktivierung14/34563608954 und der unabhaengigeNurleser15/34564165631 bestaetigen danach504Profilzeilen, exakt5aktiveOriginalprofile,495synthetischeProfile inaktiv und0ausstehendeDeaktivierungen.
+
+PR375 wurde nach vollstaendig gruener CI34564635823 gemergt. Belegt sind353/353Suiten in708s,50Browserpruefungen,15PostgreSQLKontoschutzpruefungen und48Z22/PostgRESTPruefungen. Merge `ff22d04fb9ef1f1507b15a2b8a15e6b93be51af0` ist als VercelProductiondeployment `dpl_J2WGD1Z43e91njWQiX38HVCZ2cNN` am Hauptalias READY. Der neue reinlesende Vorflug gibt fuer den letzten beendetenTextlauf nur fest erlaubte, nicht geheime Ablaufklassen aus. Freitext, Mandatsdaten, Budget und Productiondaten bleiben unveraendert.
+
+Letzter Kostenbeleg fuer UTC11:0,043693USD bekannt und0,087386USD konservativ gebunden bei unveraenderter Grenze4USD; keine offeneReserve und keine Luecke. Naechster Schritt ist die konkrete gespeicherte Text79 Ursache rein lesend zu erheben. Bis dahin bleiben Testkohorte und Modellarbeit geschlossen. Der Appnachweis bleibt5von500 abrufbar und0Qualitaetsabnahmen; kein vollstaendiger500erNachweis.
+
 ## Historischer, sicher geschlossener Ablauf
 
 Production Basis fuer alle drei Schritte: `53f0c67aad2e81f4a557d8ceb116b87696c909e9`, READY `dpl_2GPmsjF4f9wnjVjHU62qKYDXKuGW`. Ausdrueckliches Betreiber Ja fuer vorhandene 495 Profile, begrenzte Facharbeit und unabhaengig abgesicherten Abschluss. Hoechstens 150 Minuten, Abschlussbeginn spaetestens Minute 120, 4 USD Modellkosten insgesamt je UTC Tag und 1000 manuell veranlasste Modellversuche.
