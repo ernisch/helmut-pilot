@@ -9,6 +9,7 @@
 
 const PROJEKT_ORIGIN = "https://ddckuvvpcytqbyfmbvie.supabase.co";
 const LESEPFAD = "/rest/v1/helmut_store?id=eq.main&select=id&limit=1";
+const TEXT_PROCESS = "briefing-nachlauf-500";
 const SECRET_NAMEN = Object.freeze([
   "SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "HELMUT_CRON_SECRET"
 ]);
@@ -31,6 +32,7 @@ async function pruefe({ env = process.env, fetchFn = global.fetch, jetzt = new D
     betriebswerteVorhanden: Object.fromEntries(BETRIEBSWERTE.map((n) => [n, vorhanden(env, n)])),
     supabase: { erreicht: false, zielBestaetigt: false, grund: "nicht-geprueft", httpStatus: null },
     cron: { authentifiziert: false, grund: "nicht-aufgerufen" },
+    letzterTextlauf: null,
     scharferPfadFreigegeben: false,
     modellaufrufe: 0,
     schreibaufrufe: 0
@@ -72,8 +74,66 @@ async function pruefe({ env = process.env, fetchFn = global.fetch, jetzt = new D
     }
     bericht.supabase.erreicht = true;
     bericht.supabase.grund = "bestehende-betriebszeile-gelesen";
+
+    // Zweiter ausschliesslich lesender Abruf. Er liefert nur feste
+    // Ablaufklassen und technische Quittungsfelder des letzten Textlaufs am
+    // aktuellen UTC Tag. Der Textlauf kann auf dem vorherigen Production
+    // Commit gelaufen sein, deshalb wird nicht auf den aktuellen Commit
+    // eingeschraenkt. Freitext und Mandatsdaten werden weder angefordert noch
+    // ausgegeben.
+    const tag = jetzt.toISOString().slice(0, 10);
+    const textResponse = await fetchFn(`${PROJEKT_ORIGIN}/rest/v1/process_runs?select=run_id,process,status,reason,commit_ref,processed_count,failed_count,started_at,finished_at`
+      + `&process=eq.${TEXT_PROCESS}&started_at=gte.${tag}T00:00:00Z&order=started_at.desc&limit=1`, {
+      method: "GET", redirect: "error",
+      headers: {
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        Accept: "application/json"
+      },
+      signal: AbortSignal.timeout(20000)
+    });
+    if (textResponse.status !== 200) {
+      bericht.supabase.erreicht = false;
+      bericht.supabase.grund = "textlaufquittung-nicht-lesbar";
+      return bericht;
+    }
+    const textRows = await textResponse.json();
+    if (!Array.isArray(textRows) || textRows.length > 1) {
+      bericht.supabase.erreicht = false;
+      bericht.supabase.grund = "textlaufquittung-nicht-eindeutig";
+      return bericht;
+    }
+    const row = textRows[0];
+    if (row) {
+      const T = require("../lib/helmut/testkohorte-textnachlauf");
+      const gueltig = row.process === TEXT_PROCESS
+        && /^nachlauf500-[0-9]{5,20}$/.test(row.run_id || "")
+        && ["success", "failed"].includes(row.status)
+        && /^[a-f0-9]{40}$/.test(row.commit_ref || "")
+        && Number.isSafeInteger(row.processed_count) && row.processed_count >= 0 && row.processed_count <= 500
+        && Number.isSafeInteger(row.failed_count) && row.failed_count >= 0 && row.failed_count <= 500
+        && Number.isFinite(Date.parse(row.started_at)) && Number.isFinite(Date.parse(row.finished_at))
+        && Date.parse(row.finished_at) >= Date.parse(row.started_at);
+      if (!gueltig) {
+        bericht.supabase.erreicht = false;
+        bericht.supabase.grund = "textlaufquittung-ungueltig";
+        return bericht;
+      }
+      bericht.letzterTextlauf = {
+        runId: row.run_id,
+        status: row.status,
+        grund: T.istSichererLaufgrund(row.reason) ? row.reason : "nicht-freigegebene-diagnose",
+        commit: row.commit_ref,
+        aktuellerCommit: /^[a-f0-9]{40}$/.test(env.GITHUB_SHA || "") && row.commit_ref === env.GITHUB_SHA,
+        verarbeitet: row.processed_count,
+        fehlgeschlagen: row.failed_count,
+        gestartetAt: row.started_at,
+        beendetAt: row.finished_at
+      };
+    }
   } catch {
     // Providerfehler koennen URLs oder Zugangsdaten enthalten. Nie ausgeben.
+    bericht.supabase.erreicht = false;
     bericht.supabase.grund = "netz-oder-antwortfehler";
   }
   return bericht;
@@ -96,4 +156,4 @@ if (require.main === module) main().catch(() => {
   process.exitCode = 1;
 });
 
-module.exports = { pruefe, PROJEKT_ORIGIN, LESEPFAD };
+module.exports = { pruefe, PROJEKT_ORIGIN, LESEPFAD, TEXT_PROCESS };
