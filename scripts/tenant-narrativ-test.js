@@ -504,7 +504,7 @@ async function main() {
       // jedes Absatzes mit; die Wiederanlauf-Fixture bildet diesen Vertrag ab.
       return r ? { ...r, paragraphs: r.paragraphs.map(p => ({ ...p,
         quellen_ids: [a[0].find(v => v.vorgang_id === p.vorgang_ids[0]).quellenbelege[0].quelle_id]
-      })), qualitaet: { version: 1 } } : r; };
+      })), qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } } : r; };
 
     try {
       const H = SP.HANDLER.tenant_narrative;

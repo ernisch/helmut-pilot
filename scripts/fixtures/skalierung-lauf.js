@@ -333,12 +333,15 @@ function installiereNarrativWelt(w, u, konfig = {}) {
     w.narrativ.erzeugt += 1;
     stand.erzeugt += 1;
     if (stand.erzeugt > 1) w.narrativ.doppeltErzeugt += 1;
-    const ids = (Array.isArray(koLite) ? koLite : []).map((k) => k && k.vorgang_id).filter(Boolean);
+    const belege = (Array.isArray(koLite) ? koLite : []).filter(k => k?.vorgang_id && k.quellenbelege?.[0]);
     return {
-      paragraphs: [
-        { text: "Die politische Lage des Tages, verdichtet auf das Wesentliche.", vorgang_ids: ids.slice(0, 6) },
-        ...(ids.length > 6 ? [{ text: "Weitere Entwicklungen im Blick.", vorgang_ids: ids.slice(6, 12) }] : [])
-      ],
+      paragraphs: belege.slice(0, 2).map((k, index) => ({
+        text: index === 0 ? "Die politische Lage des Tages, verdichtet auf das Wesentliche."
+          : "Eine weitere eigenstaendige Entwicklung bleibt im Blick.",
+        vorgang_ids: [k.vorgang_id],
+        quellen_ids: [k.quellenbelege[0].quelle_id]
+      })),
+      qualitaet: { version: require(path.join(ROOT, "lib/helmut/lage-textqualitaet.js")).VERSION },
       model: "gpt-5-mini",
       wordCount: 14
     };

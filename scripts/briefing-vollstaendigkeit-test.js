@@ -196,7 +196,7 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     const text = "Das Kabinett beraet nach Angaben der Quelle den vorgelegten Entwurf fuer bundesweite Standards in Kindertagesstaetten.";
     const r = B.pruefeInhalt({ available: true, items: [{ title: "Kita-Beratung" }],
       currentHelmutState: { summary: text }, currentRadarState: { summary: text } },
-      { paragraphs, qualitaet: { version: 1 } });
+      { paragraphs, qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } });
     assert.equal(r.strukturellVollstaendig, false);
     assert(r.fehler.includes("wiederholung-zwischen-ansichten"));
     assert.deepEqual(r.wiederholungen, ["briefing.currentRadarState.summary"]);
@@ -207,7 +207,7 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     const b = { available: true, items: [{ title: "Beratung" }],
       currentHelmutState: { summary: text },
       currentRadarState: { dynamics: [{ title: text }], anzeige: shown } };
-    const lage = { paragraphs, qualitaet: { version: 1 } }, before = clone(b);
+    const lage = { paragraphs, qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } }, before = clone(b);
     // Den echten Clientselektor ausfuehren; nur die HTML-Unterrenderer sind Doubles.
     const client = require("node:fs").readFileSync(require("node:path").join(__dirname, "../client.js"), "utf8");
     const source = client.slice(client.indexOf("function renderRadarInner(state) {"), client.indexOf("function radarStateHasContent(state) {"));
@@ -240,7 +240,7 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     const b = { available: true, items: [{ title: "Beratung" }],
       currentHelmutState: { primaryItem: { id: "vg-fixture", sourceIds: ["rd-fixture"], title } },
       currentRadarState: { articles: [{ vorgangId: "vg-fixture", documentId: "rd-fixture", title }] } };
-    const lage = { paragraphs, qualitaet: { version: 1 } };
+    const lage = { paragraphs, qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } };
     assert.equal(B.pruefeInhalt(b, lage).strukturellVollstaendig, true);
     for (const patch of [{ vorgangId: "vg-fremd" }, { documentId: "rd-fremd" }, { documentId: null }]) {
       const changed = clone(b); Object.assign(changed.currentRadarState.articles[0], patch);
@@ -262,7 +262,8 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     const briefing = { available: true, items: [{ title: "Kita-Beratung" }], currentHelmutState: {}, currentRadarState: {} };
     await B.materialisiere({ profile, userId: profile.id, now, storage, briefing });
     const before = clone(row);
-    lage = { payload: { paragraphs: Q.pruefe(paragraphs, docs, review).paragraphs, qualitaet: { version: 1 }, quellen: docs } };
+    lage = { payload: { paragraphs: Q.pruefe(paragraphs, docs, review).paragraphs,
+      qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION }, quellen: docs } };
     const r = await B.materialisiere({ profile, userId: profile.id, now: new Date(now.getTime() + 1000), storage, briefing });
     assert.equal(r.vollstaendig, true); assert.equal(r.qualitaetBestanden, false); assert.equal(replacements, 1);
     assert.deepEqual(row.payload.vorherigerStand, before);

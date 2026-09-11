@@ -137,7 +137,8 @@ async function main() {
     const getProfileVorher = storage.getProfile, getBriefingVorher = storage.getRenderedBriefingV3;
     const briefing = { available: true, items: [{ title: "Beratung ueber Schulbau" }], currentHelmutState: {}, currentRadarState: {} };
     const lage = { paragraphs: [{ text: "Die Quelle berichtet ueber Schulbau.", vorgang_ids: ["vg-schule"], quellen_ids: ["q-schule"] }],
-      quellen: [{ vorgang_id: "vg-schule", quellenbelege: [{ quelle_id: "q-schule", quelle: "Testquelle", titel: "Schulbau", url: "https://example.org/schule" }] }], qualitaet: { version: 1 } };
+      quellen: [{ vorgang_id: "vg-schule", quellenbelege: [{ quelle_id: "q-schule", quelle: "Testquelle", titel: "Schulbau", url: "https://example.org/schule" }] }],
+      qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } };
     const payload = { version: B.VERSION, mandat: profile.id, tag: "2026-09-09", profilHash: B.profilHash(profile),
       briefing, lage, inhaltHash: B.hash({ briefing, lage }), pruefung: B.pruefeInhalt(briefing, lage) };
     const row = { id: `bf-${profile.id}-mandatsbriefing-2026-09-09`, user_id: profile.id, slot: B.SLOT, payload };

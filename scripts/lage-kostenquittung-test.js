@@ -13,8 +13,10 @@ const original = { request: https.request, reserve: storage.reserveLlmCall,
 const env = { ...process.env };
 const tick = () => new Promise(resolve => setImmediate(resolve));
 const paragraphs = [
-  { text: "Die Quelle berichtet ueber einen Entwurf.", vorgang_ids: ["vg-test"] },
-  { text: "Ein Termin ist noch nicht benannt.", vorgang_ids: ["vg-test"] }
+  { text: "Die Quelle berichtet ueber einen Entwurf.", vorgang_ids: ["vg-test"], quelle_id: "q-test",
+    mandatsbezug: { feld: "ausschuss", wert: "Arbeit und Soziales" } },
+  { text: "Ein Termin ist noch nicht benannt.", vorgang_ids: ["vg-test"], quelle_id: "q-test",
+    mandatsbezug: { feld: "ausschuss", wert: "Arbeit und Soziales" } }
 ];
 const vorgaenge = [{ vorgang_id: "vg-test", quellenbelege: [{ quelle_id: "q-test",
   titel: "Die Quelle berichtet ueber einen Entwurf. Ein Termin ist noch nicht benannt.", quelle: "Test" }] }];
@@ -64,7 +66,7 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   };
   let settled = false;
   const drafts = [], reviews = [];
-  const result = ai.generateLageBriefing(vorgaenge, {}, { politicianId: "test-kohorte-b-023",
+  const result = ai.generateLageBriefing(vorgaenge, { committees: ["Arbeit und Soziales"] }, { politicianId: "test-kohorte-b-023",
     gespeicherterEntwurf: fortsetzen ? { paragraphs } : undefined,
     onDraft: async value => { assert.equal(logs.length,fortsetzen ? 0 : 1); assert.equal(requests,fortsetzen ? 0 : 1); drafts.push(value); },
     onReview: async value => { assert.equal(logs.length,fortsetzen ? 1 : 2); assert.equal(requests,fortsetzen ? 1 : 2); reviews.push(value); } })
@@ -138,19 +140,19 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   await fall({ mode: "malformed", expected: "ai-response-invalid-json" });
   await fall({ output: JSON.stringify({ paragraphs: paragraphs.slice(0, 1) }), expected: "ai-text-paragraph-count" });
   await fall({ output: JSON.stringify({ paragraphs: [
-    { text: "wort ".repeat(251), vorgang_ids: ["vg-test"] }, paragraphs[1]
+    { ...paragraphs[0], text: "wort ".repeat(251) }, paragraphs[1]
   ] }), expected: "ai-text-word-limit" });
   await fall({ output: JSON.stringify({ paragraphs: [
-    { text: "Belegter Text", vorgang_ids: ["vg-fremd"] }, paragraphs[1]
+    { ...paragraphs[0], text: "Belegter Text", vorgang_ids: ["vg-fremd"] }, paragraphs[1]
   ] }), expected: "ai-text-source-reference" });
   await fall({ output: JSON.stringify({ paragraphs: [
-    { text: "Siehe vg-test", vorgang_ids: ["vg-test"] }, paragraphs[1]
+    { ...paragraphs[0], text: "Siehe vg-test" }, paragraphs[1]
   ] }), expected: "ai-text-visible-id" });
   await fall({ output: JSON.stringify({ paragraphs: [
-    { text: { inhalt: "Kein String" }, vorgang_ids: ["vg-test"] }, paragraphs[1]
+    { ...paragraphs[0], text: { inhalt: "Kein String" } }, paragraphs[1]
   ] }), expected: "ai-text-empty-or-type" });
   await fall({ output: JSON.stringify({ paragraphs: [
-    { text: "   ", vorgang_ids: ["vg-test"] }, paragraphs[1]
+    { ...paragraphs[0], text: "   " }, paragraphs[1]
   ] }), expected: "ai-text-empty-or-type" });
   await fall({ budget: false, expected: "budget" });
   await fall({ fortsetzen: true });
