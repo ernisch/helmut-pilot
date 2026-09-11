@@ -11,6 +11,7 @@ const ko = id => ({ id, vorgang_id: "vg-" + id, understanding_status: "complete"
     const current = Array.from({ length: 15 }, (_, i) => ko("aktuell-" + i));
     const alt = ko("historisch"); let matches = 0;
     const store = { listKnowledgeObjects: async () => [alt, ...current],
+      listKnowledgeObjectsByIds: async () => [], // wirklich nicht mehr vorhandener Treffer
       listMatchingResults: async ({ userId }) => { assert.equal(userId, "mandat-test");
         return [{ knowledge_object_id: "historisch" }, { knowledge_object_id: "ausserhalb-des-fensters" }]; } };
     const profile = { id: "mandat-test", committees: ["Arbeit und Soziales"] };

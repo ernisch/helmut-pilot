@@ -242,6 +242,7 @@ function installiereNarrativWelt(w, u, konfig = {}) {
   const originale = {
     v3StoreReady: storage.v3StoreReady,
     listKnowledgeObjects: storage.listKnowledgeObjects,
+    listKnowledgeObjectsByIds: storage.listKnowledgeObjectsByIds,
     listMatchingResults: storage.listMatchingResults,
     getSourcesForVorgang: storage.getSourcesForVorgang,
     getRenderedBriefingV3: storage.getRenderedBriefingV3,
@@ -257,14 +258,19 @@ function installiereNarrativWelt(w, u, konfig = {}) {
   // Verstandene Vorgaenge der Welt als Knowledge Objects — updated_at konstant, damit der
   // Datenstand-Fingerabdruck (`hashKoSet`) nur von der MENGE abhaengt, wie in echt vom
   // Verstehensfortschritt.
-  storage.listKnowledgeObjects = async ({ limit = 500 } = {}) =>
-    [...w.verstandeneVorgaenge].slice(0, limit).map((vg) => ({
+  const wissenszeile = (vg) => ({
       id: `ko-${vg}`, vorgang_id: vg, status: "active", understanding_status: "complete",
       headline: `Vorgang ${vg}`,
       was_ist_passiert: `Zum Vorgang ${vg} liegt ein neuer Stand vor.`,
       warum_wichtig: "Beruehrt laufende Mandatsarbeit.",
       updated_at: tagIso
-    }));
+    });
+  storage.listKnowledgeObjects = async ({ limit = 500 } = {}) =>
+    [...w.verstandeneVorgaenge].slice(0, limit).map(wissenszeile);
+  // Auch ein gespeicherter Treffer ausserhalb des Fensters liest dieselbe
+  // In-Speicher-Welt. Kein Rueckfall auf den echten relationalen Adapter.
+  storage.listKnowledgeObjectsByIds = async ids => [...w.verstandeneVorgaenge]
+    .filter(vg => ids.includes(`ko-${vg}`)).map(wissenszeile);
   // Gespeicherte, personalisierte Matches (die Projektion des Vortags): deterministische,
   // mandatsabhaengige Auswahl — zwei Mandate sehen verschiedene Teilmengen.
   storage.listMatchingResults = async ({ userId, limit = 12 } = {}) => {
@@ -357,6 +363,7 @@ function installiereNarrativWelt(w, u, konfig = {}) {
     aufraeumen: () => {
       storage.v3StoreReady = originale.v3StoreReady;
       storage.listKnowledgeObjects = originale.listKnowledgeObjects;
+      storage.listKnowledgeObjectsByIds = originale.listKnowledgeObjectsByIds;
       storage.listMatchingResults = originale.listMatchingResults;
       storage.getSourcesForVorgang = originale.getSourcesForVorgang;
       storage.getRenderedBriefingV3 = originale.getRenderedBriefingV3;

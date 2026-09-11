@@ -63,6 +63,38 @@ function fixture(count = 2) {
 let pass = 0;
 async function test(name, fn) { await fn(); pass++; console.log("PASS " + name); }
 async function main() {
+  await test("500 Profile teilen genau eine Nachlese fuer einen Treffer ausserhalb des Fensters", async () => {
+    const f=fixture(), db=f.args.db; let reads=0;
+    const wanted={id:"ko-vg-fixture-0",vorgang_id:"vg-fixture-0",status:"active",
+      understanding_status:"complete",was_ist_passiert:"Eine oeffentliche Anhoerung ist geplant."};
+    f.args.deps.storage.listKnowledgeObjects=async()=>[];
+    f.args.deps.storage.listKnowledgeObjectsByIds=async ids=>{
+      reads++; assert.deepEqual(ids,[wanted.id]); return [wanted];
+    };
+    f.args.db=async path=>{
+      if(!path.startsWith("matching_results?"))return db(path);
+      const filter=new URL("https://offline.invalid/"+path).searchParams.get("user_id");
+      return f.bestand.mandate.filter(m=>filter.includes(JSON.stringify(m.user_id)))
+        .map(m=>({id:"m-"+m.user_id,user_id:m.user_id,knowledge_object_id:wanted.id,rank:1}));
+    };
+    const r=await G.ausfuehren(f.args);
+    assert.equal(r.ok,true,JSON.stringify(r)); assert.equal(r.gepruefteProfile,500);
+    assert.equal(reads,1); assert.equal(r.ergaenzt,2); assert.equal(r.modellaufrufe,0);
+  });
+  await test("Fehlgeschlagene Treffer Nachlese verhindert Quellenwrites und gibt die Sperre frei", async () => {
+    const f=fixture(), db=f.args.db;
+    f.args.deps.storage.listKnowledgeObjects=async()=>[];
+    f.args.deps.storage.listKnowledgeObjectsByIds=async()=>{throw Error("Lesefehler");};
+    f.args.db=async path=>{
+      if(!path.startsWith("matching_results?"))return db(path);
+      const filter=new URL("https://offline.invalid/"+path).searchParams.get("user_id");
+      return f.bestand.mandate.filter(m=>filter.includes(JSON.stringify(m.user_id)))
+        .map(m=>({id:"m-"+m.user_id,user_id:m.user_id,knowledge_object_id:"ko-fehlt",rank:1}));
+    };
+    const r=await G.ausfuehren(f.args);
+    assert.equal(r.ok,false); assert.equal(f.writes,0); assert.equal(f.fetches,0);
+    assert.equal(f.released,1); assert.equal(f.locked,false);
+  });
   await test("Volle unbekannte Reserve erlaubt Quellenarbeit und bleibt unveraendert", async () => {
     const B = require("../lib/helmut/testkosten-budget");
     for (const mode of ["reserviert", "ungeklaert", "ohne-buch", "ohne-reserve", "alte-regel", "fremde-sperre"]) {

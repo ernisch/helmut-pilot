@@ -1,0 +1,19 @@
+# Vorhandene Mandatstreffer in der Lage behalten
+
+Der Lagepfad las die juengsten 500 Wissensobjekte nach interner Aenderungszeit und suchte darin die bereits gespeicherten Mandatstreffer. Ein weiterhin passender Treffer ausserhalb dieses Fensters verschwand. Seine aktuelle Quelle wurde gar nicht mehr geladen. Die reine Eingabepruefung vor weiterer Textarbeit reproduzierte genau diesen Verlust.
+
+Die Korrektur verwendet den vorhandenen gezielten Wissensleser fuer die fehlenden Kennungen aus der begrenzten, mandantengefilterten Trefferliste. Bereits geladene Objekte werden nicht erneut angefordert. Unverstandene oder wirklich nicht mehr vorhandene Objekte bleiben ausgeschlossen. Ein Abruffehler oder eine fremde, doppelte oder unlesbare Antwort meldet eine Speicherstoerung. Das allgemeine Suchfenster, die Ausgabegrenze, die Quellenpruefung und die Kostenregeln bleiben erhalten.
+
+Die neue Gegenprobe verwendet erfundene Daten. Vor der Korrektur bestanden 2/7 Testgruppen, danach 7/7. Sie prueft auch den echten Quellenvertrag, ein leeres allgemeines Fenster, genau begrenzte Nachlese, den Weg ohne Zusatzabruf sowie Fehler und ungueltige Antworten. Bestehende Teiltreffer 3/3, Quellenauswahl 5/5, Quellenbeleg 21/21 und Reparatur 8/8 sind gruen. Zwei alte Speicherattrappen bilden jetzt den vorhandenen gezielten Leser ausdruecklich ab; die bisherigen fachlichen Erwartungen sind unveraendert. Auch der bestehende Quellenkontext verwendet denselben Leser und merkt sich bereits gelesene Kennungen innerhalb seines Laufs. 12/12 Controllergruppen bestehen, darunter 500 Profile mit genau einem geteilten Zusatzabruf sowie Abbruch ohne Quellenwrite bei Lesefehlern. Der erste kanonische Anlauf wurde vor dieser notwendigen Aufruferanpassung kontrolliert mit Exit 130 beendet. Die vollstaendige Sammlung des abschliessenden Codes und danach die verpflichtende CI folgen.
+
+Risiko: Betroffene App Lesezugriffe benoetigen eine zusaetzliche begrenzte Datenbanklesung. Eine Stoerung dabei wird sichtbar, statt durch andere Meldungen verdeckt zu werden. Die Korrektur bestaetigt weder die fachliche Eignung eines einzelnen Treffers noch die Inhalte eines Briefings. Gespeicherte Ergebnisse werden nicht geaendert, abgelehnte oder unbekannte Aufrufe nicht wiederholt. Ein Rueckweg waere ein gesondert gepruefter Code Revert ohne Datenrestauration.
+
+Stand: lokal vorbereitet auf codex/500-lage-trefferbindung-20260911, Basis 9169fcabf5b1335f445d53d813df82dc08c98968. Production enthaelt bereits PR 378 mit den Quellen- und Fristenkorrekturen; die vorliegende Nachlesekorrektur ist noch nicht veroeffentlicht. Der Gesamtnachweis fuer 500 bleibt offen.
+
+
+Die erste vollstaendige Sammlung des erweiterten Codes erreichte zusaetzlich die 180 Sekunden Grenze im 1000er Narrativtest und wurde danach kontrolliert beendet. Dessen In-Speicher-Welt projiziert Treffer aus dem gesamten simulierten Bestand, las bisher aber nur die ersten 500 Objekte. Fuer den neuen gezielten Abruf fehlte ihr Adapter. Die Fixture bildet nun auch diesen Leser aus demselben verstandenen Bestand ab und stellt ihn nach dem Test wieder her. Keine Testwelt, Quelle, Fehlerquote, Zeitgrenze oder Erwartung wird geaendert. Die abschliessende kanonische Sammlung prueft diesen finalen Stand.
+
+
+## Abschliessender lokaler Nachweis
+
+Der abschliessende kanonische Lauf besteht mit 353/357 Suiten in 590 Sekunden. Ausschliesslich vier bekannte lokale Abhaengigkeiten fehlen: Chromium in admin-nutzer-loeschen und passwort-setzen-login-fix, ical.js in kalender-ics sowie @aws-sdk/client-sqs in lambda-paket. Der 1000er Narrativtest besteht in 104344ms, der Stufentest in 62907ms bei unveraenderten Grenzen. Das vollstaendige Protokoll enthaelt alle 357 Suiteergebnisse. Die Pflicht CI mit installierten Abhaengigkeiten muss vor Merge vollstaendig bestehen.

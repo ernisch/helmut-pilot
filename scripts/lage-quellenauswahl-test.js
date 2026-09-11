@@ -9,6 +9,7 @@ async function test(name, fn) { try { await fn(); passed++; console.log("PASS " 
 const ko = (id, headline) => ({ id, vorgang_id: "vg-" + id, status: "neu",
   understanding_status: "complete", headline, was_ist_passiert: headline });
 const storage = (kos, matches) => ({ listKnowledgeObjects: async () => kos,
+  listKnowledgeObjectsByIds: async ids => kos.filter(k => ids.includes(k.id)),
   listMatchingResults: async () => matches });
 async function select(kos, profile, ranked = kos.slice(0, 12)) {
   return L.loadRankedVorgaenge(storage(kos, ranked.map(k => ({ knowledge_object_id: k.id }))),
