@@ -22,3 +22,10 @@ Der abschliessende kanonische Lauf besteht mit 353/357 Suiten in 590 Sekunden. A
 ## Schutz bekannter Quellenversuche ueber Tagesgrenzen
 
 Die weitere reine Quellenpruefung zeigte fruehere abgelehnte oder unklare Abrufe ohne nutzbaren Auszug. Ein Tagwechsel ist keine Erlaubnis, sie zu wiederholen. Der Quellenkontext laesst deshalb jede Quelle mit einem gespeicherten Kontextversuch unveraendert aus; nur bisher unversuchte Quellen kommen weiter. 13/13 Controllergruppen bestehen, einschliesslich vier Ablehnungsklassen mit altem Tag und anderem Commit, jeweils ohne Fetch und ohne Write. Die kanonischen 353/357 oben beziehen sich auf den vorherigen Kopf; fuer diese eng begrenzte Folgeaenderung wurde die betroffene Suite geprueft. Die neue gemeinsame Pflicht CI muss den gesamten abschliessenden Kopf pruefen. Keine weitere kanonische Lokalsammlung und keine Wiederholung eines Production Abrufs.
+
+
+## Production und Nachmergedokumentation
+
+PR 379 ist gemergt als bbdc46e3027cbcce9fc63f1525ca7b0421c5f7a3. Finaler PR Kopf 691ac623f9697a00b4ab56fd00d1f3bed0a80f83, Mergekandidat d17a654ffa7e9d45ae64e1d699bcb587c12909ca und echter Merge besitzen denselben Baum 309ef477d3f37688ddb4ee2e861bb3fe8768b004. Finale Pflicht CI 34588908415 ist vollstaendig success: 357/357 Suiten in 685 Sekunden, Browser 50 PASS/0 FAIL, Kontoschutz 15 PASS/0 FAIL und Z22/PostgREST 48 PASS/0 FAIL. Der vorherige durch Kopfaktualisierung abgebrochene CI Lauf wird nicht als Gesamtgruen gewertet.
+
+Production dpl_6yPTGSsEXD4zsMQguwvspBq3fzUM ist am Hauptalias fuer genau den Merge READY. Diese Nachmergedokumentation liegt vor weiterer Facharbeit auf codex/379-production-fortsetzung-20260911; sie ist ein reiner Dokumentationsnachtrag. Der frische Nurleseabgleich vor Merge bestaetigte die geschlossene Kohorte, unveraenderte Kosten, keine aktuelle Fachausfuehrung und deaktivierte Automation. Alte gespeicherte Ergebnisse bleiben erhalten. Die vollstaendige Quellenplanung fuer alle 500 erfolgt lesend; sie ist weder Quellenreparatur noch Textnachweis. Position 80 ist weiterhin nicht gestartet.
