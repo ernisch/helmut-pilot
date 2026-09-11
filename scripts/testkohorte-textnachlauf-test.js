@@ -108,6 +108,13 @@ function fixture() {
 }
 
 (async () => {
+  await test("Nur feste Ablaufgruende duerfen eine private Diagnose verlassen", async () => {
+    for (const grund of ["nachlauf-vorige-ergebnisse-unlesbar", "nachlauf-kostenstopp",
+      "nachlauf-textfehler-ai-text-source-support", "nachlauf-textfehler-ai-provider-http-503"]) {
+      assert.equal(T.istSichererLaufgrund(grund), true, grund);
+    }
+    assert.equal(T.istSichererLaufgrund("GEHEIMER_FEHLERTEXT"), false);
+  });
   await test("Ungepruefte Alttexte werden gezielt mit vollstaendiger Historie repariert", async () => {
     const h = fixture(); delete h.rows[0].payload.qualitaet;
     const before = kopie(h.rows[0]);

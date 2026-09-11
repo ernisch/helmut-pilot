@@ -141,6 +141,20 @@ async function main() {
     assert.equal(r.funktionsnachweis500, false);
     assert.equal(h.w.writes(), 0);
   });
+  await test("Vorpruefung liest den letzten Textlauf mit ausschliesslich fester Diagnose", async () => {
+    const h = kontext("vorpruefung");
+    h.quittungen = [{ run_id: "nachlauf500-123456789", process: "briefing-nachlauf-500",
+      status: "failed", reason: "nachlauf-vorige-ergebnisse-unlesbar", processed_count: 0,
+      failed_count: 1, started_at: JETZT, finished_at: JETZT }];
+    let r = await G.ausfuehren({ ...h.args, scharf: false });
+    assert.equal(r.ok, true); assert.equal(r.letzterTextlauf.grund, "nachlauf-vorige-ergebnisse-unlesbar");
+    assert.equal(r.letzterTextlauf.verarbeitet, 0); assert.equal(r.letzterTextlauf.fehlgeschlagen, 1);
+    h.quittungen[0].reason = "GEHEIMER_FEHLERTEXT";
+    r = await G.ausfuehren({ ...h.args, scharf: false });
+    assert.equal(r.letzterTextlauf.grund, "nicht-freigegebene-diagnose");
+    assert(!JSON.stringify(r).includes("GEHEIMER"));
+    assert.equal(h.w.writes(), 0);
+  });
   await test("Production Vorrang, Speicherwahl, Kommunikation und Kosten werden gelesen", async () => {
     for (const patch of [{ vorrangreserveReal: 0 }, { profileExclusive: false },
       { kommunikationGesperrt: false }, { kohortenQuellenGesperrt: false }, { retention: 20 }]) {

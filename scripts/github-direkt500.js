@@ -110,15 +110,35 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
     const vor = D.pruefeSnapshot(bestand, snapshotModus);
     // Der Betreiber verlangt den direkten Test ohne vorgelagerte A Abnahme.
     // Qualitaet wird am tatsaechlichen 500er Ergebnis bewertet, nie vorausgesetzt.
-    if (vorpruefung) return { ...plan, ok: true, gesamt: vor.gesamt, aktiv: vor.aktiv,
+    let letzterTextlauf = null;
+    if (vorpruefung) {
+      const T = require("../lib/helmut/testkohorte-textnachlauf");
+      const tag = now().toISOString().slice(0, 10);
+      const rows = await db("process_runs?select=run_id,process,status,reason,processed_count,failed_count,started_at,finished_at"
+        + "&process=eq." + T.PROCESS + "&commit_ref=eq." + env.GITHUB_SHA
+        + "&started_at=gte." + tag + "T00:00:00Z&order=started_at.desc&limit=1");
+      D.fordere(rows.length <= 1, "textnachlauf-letzter-lauf-nicht-eindeutig");
+      const row = rows[0];
+      if (row?.process === T.PROCESS && /^nachlauf500-[0-9]{5,20}$/.test(row.run_id || "")
+        && ["success", "failed"].includes(row.status)) {
+        letzterTextlauf = { runId: row.run_id, status: row.status,
+          grund: T.istSichererLaufgrund(row.reason) ? row.reason : "nicht-freigegebene-diagnose",
+          verarbeitet: Number.isSafeInteger(row.processed_count) ? row.processed_count : null,
+          fehlgeschlagen: Number.isSafeInteger(row.failed_count) ? row.failed_count : null,
+          gestartetAt: Number.isFinite(Date.parse(row.started_at)) ? row.started_at : null,
+          beendetAt: Number.isFinite(Date.parse(row.finished_at)) ? row.finished_at : null };
+      }
+      return { ...plan, ok: true, gesamt: vor.gesamt, aktiv: vor.aktiv,
       angelegteZielprofile: vor.vorhandene.length, aktiveZielprofile: vor.aktive.length,
       geschuetzterBestandHash: vor.geschuetzterBestandHash, kosten,
+      letzterTextlauf,
       aAbnahmeErforderlich: false, nachtfensterErforderlich: false,
       bereitZurAnlage: vor.aktive.length === 0,
       bereitZurAktivierung: vor.vorhandene.length === zielAnzahl,
       reaktivierung: vollbestand,
       bereitZumFachzyklus: vor.aktiv === 500,
       scharferSchrittFreigegeben: false, funktionsnachweis500: false };
+    }
 
     if (vorgang === "textnachlauf") {
       const T = require("../lib/helmut/testkohorte-textnachlauf");
@@ -175,18 +195,14 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         "ai-text-word-limit", "ai-text-quality-incomplete", "ai-text-source-support",
         "ai-text-evidence-quote", "ai-text-repetition"]
         .map(g => "nachlauf-textfehler-" + g);
-      const festeGruende = ["nachlauf-qualitaetsfehler", "nachlauf-zeitbudget",
-        "nachlauf-endquittung-fehlt", "nachlauf-netz-speicher-oder-antwortfehler",
-        "nachlauf-speicherfehler", "nachlauf-mandat-bereits-aktiv", "nachlauf-kostenstopp",
-        "nachlauf-konfiguration-abweichend", "nachlauf-textfehler-unbekannt", ...gruende];
+      const festeGruende = [...new Set([...T.SICHERE_LAUFGRUENDE, ...gruende])];
       // Eine fachlich gescheiterte HTTP-200-Antwort kann bereits Texte gespeichert
       // haben. Nur feste Diagnoseklassen und validierte Zaehler uebernehmen;
       // ohne unabhaengige Nachkontrolle bleibt der Zustand ausdruecklich unklar.
       if (b?.ok === false && b.schemaVersion === 1 && b.runId === runId
         && b.modus === "manuell-fehlende-texte" && b.ziel === 500
         && Number.isSafeInteger(b.gespeichert) && b.gespeichert >= 0 && b.gespeichert <= 500) {
-        const grund = festeGruende.includes(b.grund)
-          || /^nachlauf-textfehler-ai-provider-http-[45][0-9]{2}$/.test(b.grund || "")
+        const grund = T.istSichererLaufgrund(b.grund)
           ? b.grund : "nachlauf-fehler-ohne-freigegebene-diagnose";
         serverBefund = { runId, grund, lautServerGespeichert: b.gespeichert,
           unabhaengigBestaetigt: false };
