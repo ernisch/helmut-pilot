@@ -4,6 +4,7 @@
 // Die Herkunft wird separat am exakten Actions-Job/Commit geprueft: eine
 // Verschluesselung mit oeffentlichem Schluessel ist keine Absendersignatur.
 const C = require("node:crypto"), Z = require("node:zlib"), F = require("node:fs");
+const { isDeepStrictEqual } = require("node:util");
 const MAX_BYTES = 8 * 1024 * 1024;
 function fordere(ok) { if (!ok) throw new Error("privater-nachweis-transport-ungueltig"); }
 const sha = b => C.createHash("sha256").update(b).digest("hex");
@@ -45,7 +46,10 @@ function entschluesseln(envelope, privatePem, expected) {
   const empfaenger = pub.export({ format: "der", type: "spki" }).toString("base64");
   const fingerprint = publicKey(empfaenger).fingerprint;
   const meta = { version: 1, verfahren: "RSA-OAEP-SHA256/AES-256-GCM/gzip", empfaenger: fingerprint, ...kontext(expected) };
-  fordere(JSON.stringify(envelope?.meta) === JSON.stringify(meta));
+  // JSON-Objekte sind ungeordnet. Transport/JSONB darf die Feldreihenfolge
+  // aendern, ohne die authentisierten Werte zu veraendern. Die AAD bleibt
+  // weiterhin die beim Verschluesseln definierte kanonische Metareihenfolge.
+  fordere(isDeepStrictEqual(envelope?.meta, meta));
   function bytes(value, length) {
     fordere(typeof value === "string" && value.length <= MAX_BYTES * 2 && /^[A-Za-z0-9+/]+={0,2}$/.test(value));
     const b = Buffer.from(value, "base64");

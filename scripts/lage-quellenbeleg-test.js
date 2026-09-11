@@ -39,6 +39,12 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
     assert(p.includes(quelle.title) && p.includes(quelle.summary) && p.includes("2026-09-06T12:00:00.000Z"));
     assert(!p.includes(ko.headline) && !p.includes(ko.was_ist_passiert));
   });
+  await pruefe("Institutioneller Metatext ist kein aktueller Nachrichtenbeleg", () => {
+    const r = input([{ ...quelle,
+      summary: "Das Bundesministerium für wirtschaftliche Zusammenarbeit und Entwicklung ist zuständig für die deutsche Entwicklungspolitik." }]);
+    assert.equal(r.length, 1);
+    assert.equal(r[0].quellenbelege[0].auszug, "");
+  });
   await pruefe("Quellenmenge und Eingabe bleiben auch bei langen Quellen begrenzt", () => {
     const kos = Array.from({ length: 12 }, (_, i) => ({ ...ko, vorgang_id: "vg-" + i }));
     const docs = Object.fromEntries(kos.map(k => [k.vorgang_id, Array.from({ length: 20 }, (_, i) =>
@@ -50,14 +56,14 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
   await pruefe("Quellenkorrektur invalidiert Cache ohne KO Aenderung", () => {
     const a = input([quelle]);
     assert.notEqual(Q.hashEingabe(a), Q.hashEingabe(input([{ ...quelle, summary: "Beratung abgesagt." }])));
-    const payload = { paragraphs: [{ text: "Text", vorgang_ids: ["vg-test"], quellen_ids: [a[0].quellenbelege[0].quelle_id] }], qualitaet: { version: 1 }, koSetHash: "k", quellenHash: Q.hashEingabe(a), quellenVersion: Q.VERSION };
+    const payload = { paragraphs: [{ text: "Text", vorgang_ids: ["vg-test"], quellen_ids: [a[0].quellenbelege[0].quelle_id] }], qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION }, koSetHash: "k", quellenHash: Q.hashEingabe(a), quellenVersion: Q.VERSION };
     assert(Q.cacheGueltig(payload, "k", Q.hashEingabe(a), a));
     assert(!Q.cacheGueltig({ ...payload, quellenVersion: undefined }, "k", Q.hashEingabe(a), a));
     assert(!Q.cacheGueltig(payload, "anderer-ko", Q.hashEingabe(a), a));
   });
   await pruefe("Unbekannte Referenz verwirft den ganzen Absatz", () => {
     const p = [{ text: "Ohne Beleg", vorgang_ids: [] }, { text: "Gemischt", vorgang_ids: ["vg-test", "vg-fremd"] },
-      { text: "Belegt", vorgang_ids: ["vg-test"] }];
+      { text: "Belegt", vorgang_ids: ["vg-test"], quellen_ids: [input([quelle])[0].quellenbelege[0].quelle_id] }];
     assert.deepEqual(ai.assembleLageParagraphs({ paragraphs: p }, ["vg-test"]), []);
     assert.deepEqual(Q.gueltigeAbsaetze(p, input([quelle])), [p[2]]);
   });
@@ -79,7 +85,7 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
   storage.canSpendLlmForTenant = async () => ({ allowed: true });
   safety.guardKnowledgeObject = () => ({ status: "ok" });
   ai.generateLageBriefing = async (v) => { calls++; modelInput = structuredClone(v); assert(!JSON.stringify(v).includes(ko.was_ist_passiert));
-    return { paragraphs: [{ text: "Die Quelle berichtet von einem Vorschlag.", vorgang_ids: ["vg-test"], quellen_ids: [v[0].quellenbelege[0].quelle_id] }], qualitaet: { version: 1 } }; };
+    return { paragraphs: [{ text: "Die Quelle berichtet von einem Vorschlag.", vorgang_ids: ["vg-test"], quellen_ids: [v[0].quellenbelege[0].quelle_id] }], qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } }; };
   try {
     await pruefe("Echter Lagepfad speichert neue Quellenbindung und nutzt passenden Cache", async () => {
       assert.equal((await lage.buildLageBriefing({ id: "test-quellenbeleg" })).available, true);

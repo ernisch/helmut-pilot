@@ -56,7 +56,9 @@ function installMocks({ cachedNarrative = null } = {}) {
   storage.canSpendLlm = async () => ({ allowed: true });
   sourceSafety.guardKnowledgeObject = () => ({ status: "ok" });
   aiCalls = 0;
-  ai.generateLageBriefing = async () => { aiCalls += 1; return { paragraphs: [{ text: "Narrativ.", vorgang_ids: ["vg-1"] }], model: "gpt-x", wordCount: 1 }; };
+  ai.generateLageBriefing = async (vorgaenge) => { aiCalls += 1; return { paragraphs: [{ text: "Narrativ.",
+    vorgang_ids: ["vg-1"], quellen_ids: [vorgaenge[0].quellenbelege[0].quelle_id] }],
+    qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION }, model: "gpt-x", wordCount: 1 }; };
 }
 function restore() { Object.assign(storage, { v3StoreReady: orig.v3StoreReady, listKnowledgeObjects: orig.listKnowledgeObjects, listMatchingResults: orig.listMatchingResults, getSourcesForVorgang: orig.getSourcesForVorgang, getRenderedBriefingV3: orig.getRenderedBriefingV3, saveRenderedBriefingV3: orig.saveRenderedBriefingV3, acquirePipelineLock: orig.acquirePipelineLock, releasePipelineLock: orig.releasePipelineLock, canSpendLlm: orig.canSpendLlm }); sourceSafety.guardKnowledgeObject = orig.guardKnowledgeObject; ai.generateLageBriefing = orig.generateLageBriefing; }
 

@@ -63,7 +63,8 @@ const copy = structuredClone;
   ai.generateLageBriefing = async sources => {
     calls++; sourceInputs = copy(sources);
     return { paragraphs: sources[0].quellenbelege.map(q => ({ text: q.titel + ".", vorgang_ids: ["vg-beleg"],
-      quellen_ids: [q.quelle_id], belegstellen: [{ quelle_id: q.quelle_id, text: q.titel }] })), qualitaet: { version: 1 } };
+      quellen_ids: [q.quelle_id], belegstellen: [{ quelle_id: q.quelle_id, text: q.titel }] })),
+      qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } };
   };
   const run = () => lage.buildLageBriefing({ id }, { missingOnly: true, repairIncomplete: true,
     beforeGenerate: async owner => { assert.equal(owner, id); gates++; } });
@@ -105,7 +106,10 @@ const copy = structuredClone;
     });
     await test("Schreibkonflikt nach Generierung meldet Fehler statt Erfolg", async () => {
       row = copy(before);
-      ai.generateLageBriefing = async () => ({ paragraphs: [{ text: "Text", vorgang_ids: ["vg-beleg"] }] });
+      ai.generateLageBriefing = async sources => ({ paragraphs: sources[0].quellenbelege.map(q => ({
+        text: q.titel + ".", vorgang_ids: ["vg-beleg"], quellen_ids: [q.quelle_id],
+        belegstellen: [{ quelle_id: q.quelle_id, text: q.titel }]
+      })), qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } });
       storage.saveRenderedBriefingV3 = async () => ({ saved: false, reason: "conflict" });
       assert.equal((await run()).reason, "store-error"); assert.deepEqual(row, before);
     });

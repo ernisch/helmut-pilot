@@ -22,6 +22,7 @@ async function main() {
   await test("Kein Volltextfallback, Titelduplikat, Logintext oder abgeschnittener Satz", () => {
     assert.equal(E.fromHtml(document, { body: `<title>${title}</title><main>${summary}</main>`, finalUrl: raw.url }).ok, false);
     assert.equal(E.excerpt(title, title), null);
+    assert.equal(E.excerpt("Das Bundesministerium für wirtschaftliche Zusammenarbeit und Entwicklung ist zuständig für die deutsche Entwicklungspolitik.", title), null);
     assert.equal(E.excerpt("Bitte aktivieren Sie JavaScript und akzeptieren Sie unsere Cookies fuer die Anzeige der vollstaendigen Inhalte.", title), null);
     assert.equal(E.excerpt("Wort ".repeat(80), title), null);
     assert.equal(E.excerpt(summary + " Ein langer Folgesatz " + "wiederholt ".repeat(50), title), summary);
