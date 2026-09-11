@@ -1,5 +1,11 @@
 # 500er Fenster am 10.09.2026: Kostenstopp und sicherer Abschluss
 
+## Production Abschluss PR374 und sicherer Bestand am 11.09.
+
+PR374 ist nach vollstaendig gruenem Pflichtlauf34560194258 als `6eb3a5bb9287ff41d85c33a8578112086fdd7654` gemergt. Exakter Productionbeleg: `dpl_5JPqNQANZ56VHuK1VpJk7WwLP2Um`, READY auf dem Merge. CI:353/353Suiten in695s, Browser50PASS/0FAIL, PostgreSQL15PASS/0FAIL, Z22/PostgREST48PASS/0FAIL. Die Korrektur klassifiziert Speicher-, Sperr-, Budget-, Konfigurations- und bekannte Anbieterstopps fest und ohne freien internen Fehlertext. Ein fester Textfehler ist nur mit vollstaendiger500er Einzelbilanz und exakt passender `process_runs`-Endquittung unabhaengig bestaetigt. Unbekannte Antworten werden nicht wiederholt.
+
+Unmittelbar vor dem Merge bestaetigten zwei rein lesende Workflowbelege den Betrieb. Testende13/34561365660:504Profilzeilen,5aktiv,0zuDeaktivieren,0Schreibversuche. Direktvorflug75/34561464362:495 synthetische Profile vorhanden und0aktiv, geschuetzterHash unveraendert; aktive Kostenregel2 mit12Tickets/12Aufrufbelegen,0Luecken,0offenenReservierungen,0,043693USD bekannten und0,087386USD konservativ gebundenen Kosten bei4USD Grenze fuer UTC11. Der Leser prueft aktive Sperren, Leases und verwaiste Prozesse fail-closed. Kein Fachlauf wurde zwischen Vorflug, Merge, READY und diesem Nachtrag gestartet. App25 bleibt5/500abrufbar und0qualitaetsabgenommen; vollstaendiger Nachweis500 offen.
+
 Sprintzustand: teilweise abgeschlossen. Fruehere Testfenster sind sicher geschlossen; der aktuelle Nachweis laeuft mit 495 bestaetigt reaktivierten Testprofilen weiter. Die Kostenkorrektur ist mit Freigabe veroeffentlicht und rein lesend Production bestaetigt. Die vollstaendige fachliche 500er Abnahme steht weiterhin aus. Private Einzelbelege bleiben beim Betreiber.
 
 ## Historischer, sicher geschlossener Ablauf
