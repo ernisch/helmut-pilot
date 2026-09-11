@@ -132,3 +132,18 @@ Gezielte Gegenbelege: acht Korrekturgruppen sowie 14 Aussagenbindungsgruppen erf
 
 
 Lokaler Abschluss: Der komplette Lauf endete mit 355/360 in 612 Sekunden. Neben vier bereits bekannten Umgebungsfehlern erwartete `radar-state-test.js` noch den alten globalen Leertext. Diese einzelne Erwartung wurde auf die bewusste Begrenzung zum Datenbestand korrigiert; danach 115/115 Radarpruefungen erfolgreich. Die fehlenden lokalen Voraussetzungen bleiben Chromium in zwei Suiten, ical.js und @aws-sdk/client-sqs. Kein behauptetes lokales Vollgruen. Die Pflicht CI prueft den gepushten neuen Kopf mit ihren bereitgestellten Abhaengigkeiten und echten isolierten Datenbank und Browserdiensten.
+
+
+### Abschluss des Adapterabschnitts
+
+PR 381 steht auf 24a08767f87196e9b31acd2354609aafabafca28. Der veroeffentlichte Baum be5f5c7ea3b322d332d37813f3c7d97f72d5a4c9 ist exakt der lokal gesicherte Codebestand. Pflicht CI 34627562961 beendet am 11.09.2026 um 17:37:54 UTC: 360/360 Suiten in 615 Sekunden; Browser Job 103356247165 mit 50 PASS, Offline Job 103356247213 einschliesslich Kontoschutz 15 PASS und Z22 48 PASS gegen PostgreSQL 17.11 sowie PostgREST. Beide Jobs erfolgreich. Der neue Kopf bleibt Draft, kein Merge und keine Production Wirkung.
+
+Der private Vergleich enthaelt fuenf Vertragskarten, aber die aktuelle Hauptansicht zeigt nur den frischen Hauptvorgang und einen weiteren Vorgang. Drei gemaess bestehender Rangschwelle ignorierte Karten bleiben dort ausgeblendet. Die 120 Textvorkommen der technischen Pruefliste sind vollstaendig ausgewiesen und noch ohne positives Fachurteil. Dieser lokale Aufbau am erhaltenen Stand ist kein neuer Production App Lesebeleg.
+
+Frischer Schlussabgleich 17:35:44 UTC: main, Hauptalias, geschlossener Profilbestand und deaktivierte Automation unveraendert. Keine aktive Sperre, Lease, verwaister Auftrag oder junger Prozess. 16551 erledigte und 964 wartende Jobs. Zwei historische running Prozesszeilen bleiben historische Statusreste; zwei Actions aus dem August bleiben queued. Nur die eigene PR CI lief beim Abgleich noch und wurde danach erfolgreich abgeschlossen. Kein anderer Vordergrundausfuehrer belegt.
+
+Eine echte Aenderung im regulaeren Betrieb wurde separat aufgeklaert: understanding-rueckstand-20260911173037-97qbu lief von 17:30:37.308 bis 17:34:19.471 UTC erfolgreich. Alle 14 neuen Modellbelege nennen genau diesen Lauf; alle 14 neuen Tickets sind manual=false und abgerechnet. 14 Wissensobjekte wurden zwischen 17:31:03.415 und 17:34:19.197 aktualisiert. Keine Aktion dieses Arbeitsabschnitts hat diesen Lauf gestartet. Der gebundene lokale Entwurf darf nicht still auf diese veraenderte Production Eingabe uebertragen werden.
+
+Kosten jetzt: 110 Tickets, 110 echte Belege, 110 atomare Buchungen, 109 abgerechnet. 0.626306 USD verbucht plus 0.212000 USD volle Reserve fuer denselben unbekannten natuerlichen Aufruf, insgesamt 0.838306 von 4 USD. Kein Wiederholungsaufruf, keine Erstattung und keine Nullbuchung fuer den unbekannten Ausgang.
+
+Naechster Erkenntnisschritt: aktuellen Eingabestand ausschliesslich lesend gegen die erhaltene Pruefmatrix abgleichen und die sichere Lageanbindung vervollstaendigen. Die fachliche Freigabe aller Texte und der Rangfolge bleibt offen. Erst ein konkreter, fachlich gepruefter Merge und danach genau beschriebene Production Schritte duerfen separat freigegeben werden. Die 495 synthetischen Profile bleiben inaktiv. Dieser Abschluss veraendert nur Dokumentation auf einem eigenen Nachtragsbranch und startet keinen weiteren Test.
