@@ -1,10 +1,10 @@
 # Ersatzsteuerung fuer PR387
 
-Stand: 13.09.2026. Zustand: freigegeben und bedingt uebernommen; Merge und Nachkontrolle noch ausstehend.
+Stand: 13.09.2026. Zustand: Merge und Production bestaetigt; automatische main Pruefung und abschliessende Nachkontrolle noch offen.
 
 ## Zweck und ausdrueckliche Betreiberentscheidung
 
-Der bereits freigegebene Merge von PR387 scheitert derzeit am fehlenden direkten Zugriff auf den privaten Steuerungsbericht. Diese Vorlage ersetzt weder dessen Historie noch eine fachliche Abnahme. Sie beschreibt eine eng begrenzte alternative Koordination fuer genau PR387, dessen automatische Production Veroeffentlichung, lesende Nachkontrolle und Abschlussdokumentation.
+Der bereits freigegebene Merge von PR387 war durch den fehlenden direkten Zugriff auf den privaten Steuerungsbericht blockiert. Der ausdruecklich freigegebene Ersatzweg hat diese auf PR387 begrenzte Fortsetzung ermoeglicht. Diese Vorlage ersetzt weder dessen Historie noch eine fachliche Abnahme. Sie beschreibt eine eng begrenzte alternative Koordination fuer genau PR387, dessen automatische Production Veroeffentlichung, lesende Nachkontrolle und Abschlussdokumentation.
 
 Der Betreiber hat nach Einsicht in diese konkrete Ersatzregel mit ausdruecklichem Ja bestaetigt, dass alle anderen Chats mit Aenderungsauftraegen fuer Helmut gestoppt sind und diese Ersatzablage ausschliesslich fuer PR387 samt Abschluss verwendet werden darf. Damit gilt die bereits erteilte Mergefreigabe weiter. Eine umfassende technische Sicht auf andere Chats wird nicht behauptet.
 
@@ -74,7 +74,7 @@ SQL Zeitpunkt: 13.09.2026,02:27:59 Tuerkei /01:27:59 Berlin /12.09.2026,23:27:59
 
 Geschuetzter PostgreSQL JSONB Hash unveraendert: `96ae66918c06ed847f1673b47d60914bab814cdbd5833a345066db78f7ef45a1`. Die vier aelteren Admin Metadatenabweichungen bleiben offen; kein neuer Ursprungsbeleg wird behauptet.
 
-UTC Tag12.09.:110 Buchungen,0,710396USD abgerechnet,heutige offene Reserve0,Limit4USD fuer den gesamten Helmut Betrieb. Gegenueber der Uebergabe sind18 Buchungen und0,121371USD hinzugekommen. Diese Sitzung fuehrte keine Helmut Modellarbeit aus. Die Ursache des zwischenzeitlichen Zuwachses wird nicht allein aus dem Cron Zeitplan abgeleitet. Historische Reserven bleiben ihren Ursprungstagen zugeordnet.
+UTC Tag12.09.:110 Buchungen,0,710396USD im Helmut Kostenzaehler erfasst,heutige offene Reserve0,Limit4USD fuer den gesamten Helmut Betrieb. Gegenueber der Uebergabe sind18 Buchungen und0,121371USD hinzugekommen. Diese Sitzung fuehrte keine Helmut Modellarbeit aus. Die Ursache des zwischenzeitlichen Zuwachses wird nicht allein aus dem Cron Zeitplan abgeleitet. Historische Reserven bleiben ihren Ursprungstagen zugeordnet.
 
 Die Fachautomation ist deaktiviert und hat keinen naechsten Termin. Der separate Erreichbarkeitsmonitor darf nur eine minimale Leseabfrage durchfuehren. Kein umfassender Zugriff auf andere Chats oder deren kuenftige Aktionen wird behauptet.
 
@@ -88,4 +88,16 @@ Die lokale Vorbereitung liegt auf `codex/387-steuerung-vorbereitung-20260913`, C
 
 Frischer Vorflug am 12.09.2026,23:47:51 UTC /13.09.,01:47:51 Berlin /02:47:51 Tuerkei: PR Kopf, Basis, Kandidatbaum und erfolgreiche PR Pruefung unveraendert. Production weiterhin auf dem oben genannten alten Deployment. Profile504,Identitaeten505,fuenf aktiv,495 synthetische Profile und Konten inaktiv; Schutzhash unveraendert; alle geprueften Aktivitaetszaehler null. UTC12.09.:110 Buchungen,0,710396USD erfasst,Reserve0,Limit4USD. Fachautomation deaktiviert. Nur die beiden alten wartenden Actions vom06.08. vorhanden.
 
-Naechster Schritt: letzte Lesepruefung der eigenen Steuerung und des freigegebenen PR Standes, dann Merge mit festem Kopf. Production, automatische main Pruefung, lesende Nachkontrolle und Abschluss bleiben bis zum tatsaechlichen Beleg offen.
+## Tatsaechlicher Merge und erste Nachkontrolle
+
+[PR387](https://github.com/ernisch/helmut-pilot/pull/387) wurde am12.09.2026,23:50:16 UTC /13.09.,01:50:16 Berlin /02:50:16 Tuerkei mit festem `expected_head_sha` gemergt. Echter Mergecommit: `8d840d834f8ff312475d86e8c23509b75f63f91d`. Eltern exakt gepruefte Basis und Kopf, Baum `78d62fb947cde91efccf05224e4ce56839fed7c9` identisch mit dem geprueften Kandidaten. main und geschlossener PR wurden unabhaengig rueckgelesen.
+
+Automatisches Production Deployment `dpl_4JSVUt4v2ktF45Yt4XzLSWmW8fUn`, Adresse `helmut-pilot-agpey0c02-nohut.vercel.app`, READY seit12.09.,23:50:34 UTC. Hauptalias `helmut-pilot.vercel.app` zeigt exakt auf den echten Merge. Genau ein neues Deployment seit Uebernahme, ausschliesslich main;keines aus dem Dokumentationsbranch. Keine weitere Veroeffentlichung ausgeloest.
+
+Automatische [main Pruefung 34726446113](https://github.com/ernisch/helmut-pilot/actions/runs/34726446113), Ereignis push, Versuch1, exakter Merge. Browserjob103641278986 belegt50 PASS,0 FAIL und den echten Mergecheckout. Syntax sowie Kontoschreibschutzschritt erfolgreich;die Offline Suiten und der abschliessende Datenbanknachweis stehen noch aus. Keine Pruefung manuell gestartet oder wiederholt.
+
+Unmittelbarer Mergevorflug23:50:07UTC und Nachkontrolle23:51:07UTC am12.09.:504 Profile,505 Identitaeten,fuenf aktive Profile,495 synthetische Profile und Konten inaktiv. Geschuetzter PostgreSQL JSONB Hash `96ae66918c06ed847f1673b47d60914bab814cdbd5833a345066db78f7ef45a1` exakt erhalten. Laufende Jobs,Leases,Sperren,junge laufende Prozesse und andere aktive Datenbankclients jeweils0. Vier bekannte aeltere Admin Metadatenabweichungen offen.
+
+UTC12.09.:110 Buchungen,0,710396USD im Helmut Kostenzaehler erfasst,keine offene Tagesreserve,Limit4USD. Keine Helmut Modellarbeit durch diesen Mergeabschnitt. Laufzeitprotokolle des neuen Deployments ab23:50:16UTC lieferten bei der ersten lesenden Abfrage keine Eintraege mit error oder fatal. Das kurze Beobachtungsfenster ist keine fachliche Abnahme.
+
+Steuerung Revision2 mit eigenem Besitzer bedingt gespeichert und exakt rueckgelesen;Frist `2026-09-13T00:21:07.442Z`. Naechster Schritt: automatisches Gesamtergebnis abwarten,erneuter Schutz und Kostenabgleich,Abschlussdokumentation sichern und nur die eigene Steuerung bedingt freigeben. Keine weitere Production Aktion autorisiert.
