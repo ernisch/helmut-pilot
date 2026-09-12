@@ -1,0 +1,31 @@
+{
+  "schema": "helmut-pr387-steuerung-v1",
+  "status": "aktiv",
+  "revision": 1,
+  "owner": "foreground-pr387-72f4073d6152-20260912T234751Z",
+  "updated_at_utc": "2026-09-12T23:47:51.775Z",
+  "lease_expires_at_utc": "2026-09-13T00:17:51.775Z",
+  "operator_approved_replacement": true,
+  "operator_confirmed_single_executor": true,
+  "repository": "ernisch/helmut-pilot",
+  "coordination_branch": "codex/500-fachurteil-import-vorbereitung-20260911",
+  "coordination_path": "docs/betrieb/steuerung-pr387.json",
+  "pr": 387,
+  "approved_head_sha": "e77119ceed6de7b3e731f32049dc53fbafdb1bb7",
+  "approved_base_sha": "49fabbc9f95c78a7476aa8368db745d1bc95f41c",
+  "approved_candidate_sha": "780720d3a70e24fb7ccf3df653137f02f3c6074e",
+  "approved_tree_sha": "78d62fb947cde91efccf05224e4ce56839fed7c9",
+  "approved_ci_run_id": 34716196610,
+  "allowed_scope": [
+    "merge_unchanged_pr387_head",
+    "observe_automatic_production_deployment",
+    "read_only_postmerge_verification",
+    "technical_completion_documentation"
+  ],
+  "merge_sha": null,
+  "production_deployment_id": null,
+  "main_ci_run_id": null,
+  "completion_status": null,
+  "next_production_action_authorized": false,
+  "note": "Betreiber hat die konkrete Ersatzablage ausschliesslich fuer PR387 samt Abschluss und die alleinige Ausfuehrung ausdruecklich bestaetigt. Koordination nur nach bedingtem Schreiben und Ruecklesen gueltig. Alter privater Bericht nicht erreichbar."
+}
