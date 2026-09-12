@@ -1807,6 +1807,8 @@ async function handleRequest(request, response) {
       // KEIN Fallback auf ein Default-Mandat: ohne gespeicherte Profile ist der
       // Vorwaerm-Lauf ein ehrlicher Leerlauf.
       const results = [];
+      const lageDiagnose = require("./lib/helmut/lage-laufdiagnose");
+      const mandatsErgebnisse = [];
       let skipped = 0;
       // Hartes Zeitbudget wie im morning-briefing (240s < maxDuration 300s):
       // der Cron antwortet IMMER; nicht erreichte Mandate holt der naechste
@@ -1829,10 +1831,16 @@ async function handleRequest(request, response) {
             continue;
           }
           const res = await buildLageBriefing(profile, { politicianId: profile.id })
-            .catch((e) => ({ available: false, reason: "error", error: e && e.message }));
-          results.push({ userId: profile.id, available: res.available, fromCache: res.fromCache, reason: res.reason || null, vorgaenge: (res.vorgaenge || []).length });
+            .catch((e) => ({ available: false, reason: "error", diagnose: lageDiagnose.sichereDiagnose(e?.diagnose) }));
+          const diagnose = lageDiagnose.sichereDiagnose(res.diagnose);
+          results.push({ userId: profile.id, available: res.available, fromCache: res.fromCache, reason: res.reason || null,
+            vorgaenge: (res.vorgaenge || []).length, ...(diagnose ? { diagnose } : {}) });
+          mandatsErgebnisse.push(lageDiagnose.mandatsErgebnis(p.id, res));
         } catch (error) {
-          results.push({ userId: p.id, available: false, reason: "profil-fehler", error: error && error.message, vorgaenge: 0 });
+          const diagnose = lageDiagnose.sichereDiagnose(error?.diagnose);
+          const res = { available: false, reason: "profil-fehler", ...(diagnose ? { diagnose } : {}) };
+          results.push({ userId: p.id, ...res, vorgaenge: 0 });
+          mandatsErgebnisse.push(lageDiagnose.mandatsErgebnis(p.id, res));
         }
       }
       // P0-1: echte Lage-Briefing-Vorwaerm-Laufzeit persistieren (Zaehler/Status, kein Text).
@@ -1846,6 +1854,9 @@ async function handleRequest(request, response) {
         startedAt: new Date(lageBriefingStartMs).toISOString(), finishedAt: new Date().toISOString(),
         durationMs: Date.now() - lageBriefingStartMs,
         processed: results.length - skipped, deferred: skipped, fehlgeschlagen: lageFehler,
+        // Nur tatsaechlich bearbeitete Profile: inaktive/zeitbedingt ausgelassene
+        // Zeilen verdraengen keine der bis zu 500 Einzeldiagnosen im Speicher.
+        mandatsErgebnisse,
         zielmenge: profiles.length,
         status: lageFehler || results.some(r => r.reason === "zeitbudget") ? "failed" : "success"
       });
