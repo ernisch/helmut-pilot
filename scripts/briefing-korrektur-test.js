@@ -87,7 +87,10 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); n++; }
     const b = { items: [{ vorgangId: "vg-a", title: doc.title, sourceIds: ["rd-a"], lastUpdated: now.toISOString(),
       riskLevel: "unknown", neuerFachtext: "Zusatzbehauptung" }] };
     const e = Q.baueEingabe({ briefing: b, profile, userId: profile.id, day: "2026-09-11" });
-    A.deepEqual(e.aussagen.map(a => a.text), [doc.title, "Zusatzbehauptung"]);
+    A.equal(e.aussagen.length, 2);
+    A.deepEqual(Object.fromEntries(e.aussagen.map(a => [a.pfad, a.text])), {
+      "/items/0/title": doc.title, "/items/0/neuerFachtext": "Zusatzbehauptung"
+    });
     b.items[0].sourceIds[0] = "rd-neu";
     const changed = Q.baueEingabe({ briefing: b, profile, userId: profile.id, day: "2026-09-11" });
     A.notEqual(e.eingabeHash, changed.eingabeHash);
