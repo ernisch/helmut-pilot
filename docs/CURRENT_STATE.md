@@ -1,14 +1,16 @@
 # CURRENT STATE — Helmut
 
-**12.09.2026: Aussagenbindung lokal stabilisiert, Production unverändert, Fachabnahme offen.** main `e250e21ba512d7c0396f83be2f305087b01b5357`, READY `dpl_7nChnLQs8mmXeD2ohFUyJvZiUvdA` frisch bestätigt. main CI34707050925 zuvor erfolgreich:365 Suiten,50 Browser,15 Kontoschutz,48 Datenbanknachweise. Keine Wiederholung. [Aktueller Beleg](betrieb/briefing-schwerpunkt-frische-2026-09-12.md).
+**12.09.2026: Radartext lokal korrigiert, privater B055 Kandidat vollständig geprüft; Veröffentlichung und Fachabnahme offen.** Production weiter PR386, main `49fabbc9f95c78a7476aa8368db745d1bc95f41c`, Deployment `dpl_9xB1cLnRDtL6hAjMUxYFsycWsVEo` READY. [Aktueller Beleg](betrieb/briefing-schwerpunkt-frische-2026-09-12.md).
 
-B055:165 Textpfade technisch neu gebunden,alle Texte,Quellen und Urteile unverändert. Sechs Ersatzkarten,18 Rückhaltungen,drei negative Gruppen mit zwölf Pfaden erhalten. Vier der sechs Gesamturteile negativ. Eingefrorener privater Bestand17:52:05UTC,keine neue Fachbewertung oder Importbereitschaft. JSON Schlüsselumordnung hält die Bindung jetzt stabil;inhaltliche Änderungen entwerten alte Urteile. Gezielte Tests44/44. Alle366Suiten nach gezielten Nachprüfungen erfolgreich belegt.
+Gefilterte Radaransicht behauptet lokal keine Abwesenheit im gesamten Bestand mehr. Private K03 Titeldatierung kenntlich gemacht. Genau ein Kandidat: sechs Ersatzkarten,18 Rückhaltungen,165 Textpfade in42 Gruppen neu beurteilt. Alle zwölf vorgesehenen Textstellen korrigiert;158 Pfade getragen, sieben K07 Pfade wegen unvollständigem Abschlussbeleg negativ. Vier Gesamtkriterien weiter negativ. Keine Importbereitschaft.
 
-Nächste Freigabe:genau fünf geänderte Dateien an das öffentliche Repository ernisch/helmut-pilot übertragen,PR mit automatischen Prüfungen und möglicher Vorschau erstellen. Vor Merge stoppen. Branch `codex/briefing-aussagenbindung-stabil-20260912` nur lokal. Keine Artikel,Helmut Modelle,Production Schreibarbeit oder Importe.
+367/367 verschiedene Offline Suiten nachgewiesen:365 im Gesamtlauf, zwei nach Browserkorrektur. Browser50/50, gezielte Radarprüfungen17/17,11/11,115/115. Kein vollständig grüner erster Gesamtlauf. Production main CI34713815490 unverändert grün; neue PR Prüfung steht aus.
 
-Schutz21:39:40 Türkei /20:39:40 Berlin /18:39:40UTC:504Profile,505Identitäten,fünf Originale aktiv,495synthetische Profile und Konten inaktiv. Geschützter Bestand unverändert,vier ältere Admin Abweichungen offen.80 Buchungen,0,507552USD von4USD,Reserve heute0. Keine aktiven Jobs,Leases,Sperren,jungen Prozesse oder anderen DB Clients.
+Schutz23:00:06 Türkei /22:00:06 Berlin /20:00:06UTC unverändert:504 Profile,505 Identitäten,fünf Originale aktiv,495 synthetische Profile und Konten inaktiv. Vier ältere Admin Abweichungen offen.80 Buchungen,0,507552USD von4USD,heutige Reserve0. Keine aktive Datenbankarbeit, Fachautomation aus.
 
-500er Inventur17:17UTC bleibt datiert:303Pakete,197 fehlen;zwei Lagen,498 fehlen;keine gespeicherten Aussagenurteile. K03 Chronologie,Radar Widerspruch,natürlicher Fachnachweis,drei historische Ursachen und volle500er Abnahme offen. Nicht hochgeladen oder gemergt.
+Datierte500er Inventur19:33UTC:303/500 Pakete,197 fehlen;2/500 Lagen,498 fehlen;keine gespeicherten Aussagenurteile.145 Quellenbelege in vorhandenen Paketen,91 leere Auszüge,28 fehlende Artikeladressen. Keine neue Gesamtinventur oder vollständige Quellenabnahme.
+
+Lokaler Branch `codex/radar-anzeige-text-20260912`, noch kein PR. Nächste konkrete Freigabe: vier vorbereitete Dateien als PR bereitstellen, automatische CI und mögliche Vorschau. Kein Merge, Production Deployment, Quellenabruf, Helmut Modell, Import oder Profilwechsel. Private K03 Redaktion nicht veröffentlichen. K07 Beleglücke, Quellenklassifikation, Rangfolge, natürlicher Fachnachweis, drei historische Ursachen und vollständige500er Abnahme bleiben offen.
 
 Der bisherige Statuskopf vom 10.09. liegt unveraendert im [Archiv](archive/project_state/2026_09_11_500_statuskopf.md). Die nachfolgenden zeitlich aelteren Betriebsstaende sind Historie.
 
