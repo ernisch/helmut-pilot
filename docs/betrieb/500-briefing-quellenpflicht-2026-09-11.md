@@ -276,3 +276,57 @@ Fachlicher Blocker bleibt konkret: unvollstaendiger gespeicherter DLF Kontext, u
 504 Profile, 505 Identitaeten, fuenf Originale aktiv, alle 495 synthetischen Profile und Konten inaktiv. Geschuetzter voller Hash weiterhin 5004dbaa784278e0984fb1a5dfdbd4e1d72fbd2a181c18aae85180b6403fdfae. 134 Tickets und atomare Buchungen, 0.791216 USD verbucht plus volle unveraenderte unbekannte Reserve 0.212000 USD = 1.003216 USD von 4 am UTC Tag 11.09. Unbekannter Aufruf aa432f5e-bbe2-456b-9916-0ec6cb81899c unveraendert. Kein Retry, Refund oder Nullsetzen. Automation 6aa2872e75ec81919d4c0abe7d304ddb deaktiviert, naechster Lauf null. Keine eigene Modellversorgung, Urteilsimport oder Aktivierung. Historischer App Nachweis bleibt 500 gelesen, 16 abrufbar und strukturell vollstaendig, 484 fehlend, null fachlich abgenommen; SQL Speicherzahlen ersetzen ihn nicht. vollstaendigeFaktenpruefung=false, funktionsnachweis500=false.
 
 Dieser Abschluss ergaenzt nur CURRENT_STATE und diesen Betriebsbeleg im bestehenden eigenen Branch codex/500-fachurteil-import-vorbereitung-20260911, direkt auf dem echten Merge. Dessen exakte Vorschauabschaltung bleibt erhalten. Kein weiterer PR, keine erneute CI und kein eigener Deploymenttrigger fuer die Dokumentation. Neue Facharbeit beginnt nach Uebergabe mit frischem rein lesendem Vorflug; benoetigt wird Astra Max. Am Ende jeder Antwort Fortsetzung hier oder Threadwechsel sowie Astra Stufe nennen; Nutzerpraeferenz in der privaten Uebergabe dauerhaft festhalten.
+
+
+## Rein lesende Uebernahme am 12.09., aktueller Fachtag und Diagnosegrenze
+
+Sprintzustand: Uebernahmepruefung erfolgreich abgeschlossen; Production Gesamtnachweis weiterhin teilweise abgeschlossen. Keine neue Fachausfuehrung oder automatische Fortsetzung gestartet. Pflichtdateien wurden auf aktuellem main vollstaendig in Reihenfolge gelesen, danach privater Status 238, STEUERUNG und die ganze Uebergabe nach PR382 Version 1. Keine AGENTS.md im aktuellen Repositorybaum. Aktuelle Betreiberanweisung verlangt zuerst ausschliesslich lesende Uebernahme; neue kritische Production Wirkung nur mit einer konkret passenden ausdruecklichen Freigabe. Dies ist kein neuer Auftrag, alle aelteren pauschalen Freigaben sofort auszunutzen.
+
+Die letzte saubere Dokumentationsbasis 79342e171e2e0ad4269f202050b685bd4f5413a5 wurde isoliert auf dem bestehenden Branch codex/500-fachurteil-import-vorbereitung-20260911 weitergefuehrt. Seine automatische Vercel Vorschau ist bereits exakt abgeschaltet. Alte Arbeitskopien und fremde unfertige Aenderungen blieben erhalten. Dieser Abschluss aendert nur CURRENT_STATE und diesen Beleg; Produktcode und vercel.json stimmen weiterhin mit Production ueberein. Kein neuer PR, Merge oder Deployment.
+
+### Unabhaengige Systembelege
+
+Kontrollzeit 12.09. 09:15:23 Tuerkei / 08:15:23 Berlin / 06:15:23 UTC. Aktuelles GitHub main cae4121de41cc3e29f03a46d924786ed885bd0f8 stimmt mit dem ueber seine Kennung UND den Hauptalias gelesenen Production Deployment dpl_QxyP3J7Wz4dBfJ416o3VVk77dkkY ueberein, READY, fra1. Produktbaum 02c7085ab48ec1842ed6f0b6526369162c7da638. PR381 Merge e1a79be42072f7dcfda819bc2dfa0a91be824511 um 11.09. 20:12:20 UTC, PR382 Merge cae4121 um 22:16:55 UTC direkt bestaetigt. Main CI 34653300717 ist completed/success; beide Pflichtjobs einschliesslich saemtlicher Datenbankschritte erfolgreich. Keine erfolgreiche Sammlung wiederholt und keine neue Sammlung gestartet.
+
+Alle 430 Branchkoepfe wurden mit dem letzten gesicherten PR382 Branchbestand verglichen: null neue, geaenderte oder verschwundene Referenzen. Einziger offener PR ist alter Draft 345, Kopf 35029350866e7d90f2ac727699d5b435c8eeb229. Keine in_progress oder waiting Actions. Genau zwei historische queued Laeufe 31128435980 und 31126446647 vom 06.08. mit unveraenderten Koepfen und Aktualisierungszeiten; keine belegte aktuelle Fachausfuehrung. Keine gueltige Lease, aktive Pipeline Sperre, laufender oder verwaister Job, junge running Prozesszeile, fremde aktive Postgres Sitzung, lokaler Fachprozess oder Vercel Agent Run. Zwei alte running Prozesszeilen aus 06.09. und 10.09. sind keine aktuellen Ausfuehrer. 150 wartende Auftraege, 107 bereits faellig: 20 Briefingmaterialisierung, 29 Dokumentverstehen und 58 Quellenabrufe; kein Worker laeuft.
+
+Automation 6aa2872e75ec81919d4c0abe7d304ddb deaktiviert, next_run_time null. Die aktive reine Erreichbarkeitspruefung ist kein Fachausfuehrer. Die aeltere Automation fuer isolierte Testarbeit hat ihren letzten Lauf am 28.08., COUNT 8 erschoepft und keinen naechsten Termin. Keine umfassende Sicht in alle fremden Chat Threads behauptet. Betreiberstopp, freier privater Steuerungseintrag und aktuelle Systemindikatoren stimmen ueberein. Erst danach wurde die eigene Steuerung mit Versionsbedingung 238 in 239 und 30 Minuten Frist beansprucht. Die ueber stabile Kennung neu geladenen gespeicherten Bytes stimmten vollstaendig ueberein.
+
+### Profile, Kosten und Ergebnisbestand
+
+504 Profilzeilen, 505 Identitaeten; fuenf Originale aktiv. Exakt erwartete 495 synthetische Kennungen A001 bis A020, B001 bis B075, C001 bis C400 vorhanden, Profile und Konten inaktiv. Vier uebrige Altprofile weiterhin inaktiv. Kein geloeschtes Profil. Der volle kanonische SHA256 aus neun geschuetzten Profilen, zehn Identitaeten und fuenf Konten ist exakt 5004dbaa784278e0984fb1a5dfdbd4e1d72fbd2a181c18aae85180b6403fdfae. Kein Originalinhalt wurde geaendert oder in diesen neuen Beleg kopiert.
+
+UTC Kostentag 12.09. frisch: 36 Tickets und 36 Buchungen, 0.213563 USD konservativ verbucht, 0 heutige offene Reserve, frozen null, Grenzwert 4 USD. Historische unbekannte Reserven sind unveraendert voll erhalten: 10.09. zwei mal 0.212000 USD, 11.09. einmal 0.212000 USD. Insgesamt 0.636000 USD bleiben ihren Ursprungstagen zugeordnet. Keine Erstattung, Wiederholung, Nullsetzung oder Anbieterrechnung. Alle 36 heutigen Aufrufe tragen manual=false. Eigene Modellkosten dieses Abschnitts 0 USD.
+
+Bestandsabgleich um 09:14:07 Tuerkei / 08:14:07 Berlin / 06:14:07 UTC fuer den Berliner 12.09. und alle 500 Zielkennungen:
+
+| Merkmal | Anzahl | Aussagegrenze |
+|---|---:|---|
+| Gespeicherte mandatsbriefing Pakete |284| Datenbankspeicherung, kein neuer App Abruf |
+| Profile ohne heutiges Paket |216| Nicht mit Vortagespaketen erfuellt |
+| Pakete mit available=true und nichtleerer items Liste |284| Keine vollstaendige Textpruefung |
+| Leere/unverfuegbare Pakete |0| Nach gespeicherten Strukturmerkmalen |
+| Strukturell vollstaendige Pakete |0| Alle 284 ohne eingebundene Lage und Lage Quellenpruefung |
+| Separat vorhandene Lage Texte |2| Nur urspruengliche Profile; noch keine Komplettpakete |
+| Profile ohne Lage Text |498| Einschliesslich aller 495 synthetischen Profile |
+| Doppelte Profiltageszeilen/falsche Mandatszuordnung |0/0| Kein vollstaendiger semantischer Dublettenbeweis |
+| Fachlich abgenommene Pakete |0| Keine positive Vollpruefung |
+| Gespeicherte briefing-aussagen Urteile insgesamt |0| Manueller Fachnachlauf bleibt vor Modellkosten gesperrt |
+
+Alle 284 Pakete tragen denselben negativen Strukturstatus: lage-text-fehlt und lage-quellenpruefung-fehlt, strukturellVollstaendig=false und vollstaendigeFaktenpruefung=false. Payloadtag und Berliner Generierungsdatum stimmen ueberein. Die zwei separaten Lage Texte haben je zwei Absaetze und eine gespeicherte modellgestuetzte Quellenpruefung Version 2; auch deren vollstaendigeFaktenpruefung bleibt false. Kein neues positives Gesamturteil. Letzter echter App Nachweis bleibt 34598001416 vom 11.09. mit 500 gelesen, 16 abrufbar, 484 fehlend, 0 Fachabnahmen. Nicht mit der heutigen SQL Bestandsaufnahme vermischen.
+
+### Drei neue natuerliche Lage Fehler und konkrete Diagnosegrenze
+
+Der natuerliche Lauf briefing-lage-20260912054531-j8vuy begann 05:45:31.308 UTC auf aktuellem Production Commit und endete 05:47:14.806 UTC failed: 5 verarbeitet, 3 Fehler, 499 deaktivierte Profile zurueckgestellt. 2 Lage Texte sind separat gespeichert. Der Understanding Lauf understanding-cron-20260912053027-jquxm endete 05:34:04.086 UTC erfolgreich mit 17 gespeicherten Ergebnissen und 0 Fehlern. Keiner dieser Laeufe war bei Uebernahme noch aktiv.
+
+Fuer das Lagefenster sind neun KI Transportbelege vorhanden, alle success=true und error=null. Die drei fehlenden Originalprofile lassen sich bestimmen, die genaue Ursache ihrer Fehler aber nicht: process_runs und gespiegelter processRuns Eintrag enthalten nur die Summe 3, keine Fehlerklasse, keine mandatsErgebnisse und keine Diagnose. Vercel Runtime Logs liefern fuer die Cronroute nur HTTP 200; die gruppierte Fehlerabfrage ist leer. HTTP 200 beweist hier ausschliesslich die beantwortete Cronanfrage, keinen erfolgreichen Fachlauf.
+
+Die Codeinspektion belegt die Beobachtungsluecke: server.js sammelt results mit reason, uebergibt beim recordProcessRun aber ausschliesslich Summen. Die Rueckgabe von buildLageBriefing kann eine sichere Diagnose enthalten; diese wird im regulären Cron nicht uebernommen. Auch die interne Catch Fehlermeldung erreicht die nachfolgende results Zeile nicht. Die vorhandene mandatsErgebnisse Schnittstelle erlaubt einen eng begrenzten Folgeschritt zur dauerhaften, bereinigten Ergebnisdiagnose. Keine Ursache wie Anbieterfehler, fehlendes Budget, Qualitaetsablehnung oder neue Regression wird aus diesen Summen erfunden. Kein verlorener Modellaufruf wurde wiederholt. Vor einer Korrektur das bestehende Speicherformat und gezielte Gegenproben konkretisieren; kein grosser Umbau und keine Produktionsdatenkorrektur zur blossen Diagnose.
+
+### Was PR381 und PR382 bewirken und was als Naechstes fehlt
+
+Die tatsaechlichen Codeaenderungen beider Merges wurden gelesen. PR381 fuehrt den rein lesenden Aussagenvertrag ein: alle sichtbaren Texte und exakten Belegstellen, getrennte Sach/Kontext/Mandatsurteile, vollstaendige gebundene Ersatzobjekte statt weitervererbter alter Risiken oder Fristen, identische Auswahlliste und Quellenadressen fuer die Lage. Der manuelle Textnachlauf prueft diesen Vertrag vor Entwurf, Review und Speicherung. Radarleertexte beschraenken sich auf den vorhandenen Bestand.
+
+PR382 verlangt zusaetzlich sechs positive begruendete Gesamturteile zu Quellentiefe, Rangfolge, Mandatsbezug, Auslassungen, Zeitbezug und Vollstaendigkeit. Rangfolge, Hauptvorgang und Quellen sind exakt gebunden. Ein Titel ohne Auszug reicht nicht. Der enge Erstimport erlaubt genau eine neue Urteilszeile fuer ein synthetisches Profil und einen Berliner Tag, mit frischem Kontext, atomarer Neuanlage und Ruecklesung ohne Retry. Es gibt weiterhin keinen oeffentlichen HTTP oder Workfloweingang fuer diesen Import. Kein positives Production Urteil wurde importiert. Der branchbezogene Preview Ausschluss ist die einzige vercel.json Aenderung in PR382; kein Cronumbau.
+
+Wichtigster Blocker bleibt fachlich: kein vollstaendiges, aktuelles und sachlich belastbares Einzel und Gesamturteil fuer die ausgewählten Inhalte. Ein technischer gruener Vertrag erzeugt keine sachliche Wahrheit. Die alte begrenzte B055 Sichtung ist nach den natuerlichen Wissensaenderungen keine aktuelle Gesamtfreigabe. Naechster begrenzter Abschnitt: vorhandene Diagnoseaufnahme gezielt verbessern und aktuelle obere Quellen/Aussagen sowie Rangfolge pruefbar vorbereiten. Erst ausreichende Fachbelege, dann einen exakt benannten Import beziehungsweise 500er Lauf mit Umfang, Kosten, Ende und passender Freigabe konkret machen. Keine Aktivierung als Erfolg ausgeben, keine Schutzregel lockern und keine abgeschlossenen Tests ohne Grund wiederholen.
