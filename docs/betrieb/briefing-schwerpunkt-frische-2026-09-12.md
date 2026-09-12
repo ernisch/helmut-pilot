@@ -1,6 +1,112 @@
 # Briefing: gemeinsamer Schwerpunkt und belegter Datenstatus
 
-12.09.2026. Zustand: **teilweise abgeschlossen**. PR385 ausdrücklich freigegeben und veröffentlicht, Production READY und Schutz unverändert. Zusätzliche main Prüfung vollständig erfolgreich; fachlicher Wirkungsnachweis und Quellenabnahme stehen aus.
+## Lokale Radartextkorrektur und private K03 Neubewertung
+
+12.09.2026. Zustand: **teilweise abgeschlossen**. Freigegebene lokale Korrektur umgesetzt, genau ein privater B055 Kandidat vollständig geprüft. Veröffentlichung, fachliche Gesamtversorgung und Production Wirkungsnachweis bleiben offen.
+
+Weiter bestätigte die zuvor konkret vorgelegte lokale Radarformulierung, eine neue private K03 Redaktion und die vollständige gebundene Prüfung. Freie Steuerung288 gelesen,289 übernommen und gespeicherten Eigentümer separat rückgelesen. Keine konkurrierende offene Fachimplementierung gefunden; nur historischer Entwurf PR345. Production beim Vorflug unverändert auf main `49fabbc9f95c78a7476aa8368db745d1bc95f41c`, Deployment `dpl_9xB1cLnRDtL6hAjMUxYFsycWsVEo` READY am Hauptalias.
+
+In `lib/helmut/radarState.js` unterscheidet die deterministische Zusammenfassung jetzt zwischen dem gelesenen Bestand und der gefilterten Anzeige. Eine leere Ansicht sagt nur, dass dort keine zugeordneten Signale angezeigt werden. Auch eine fehlende direkte Erwähnung in der Anzeige wird auf diese Ansicht begrenzt. Auswahl, Filter, Rohdaten, Zuordnungen und Profiltrennung unverändert. Neue Regression `scripts/radar-anzeige-zusammenfassung-test.js` bildet eine leere Anzeige trotz einer Hintergrunddynamik und sechs Artikeln ab; dazu positive Erwähnung, zweites Profil und unveränderte Eingabedaten.
+
+Private K03 Redaktion nennt jetzt ausdrücklich den Bestandsbezug und die ungeklärte Datierung. Der Titel entsteht aus einer redaktionellen Quelle und wird regulär abgeleitet. Alle zehn gebundenen Titelvorkommen und beide sichtbaren Radartexte sind korrigiert. Im gesamten privaten Objekt ändern sich zusätzlich zwei rohe K03 Titelkopien des Radars, insgesamt14 Felder. Alle übrigen Darstellungsfelder sind identisch; keine direkten Eingriffe in abgeleitete Textpfade.
+
+Frischer B055 Bestand19:43:24UTC stimmt vollständig mit der vorigen Inventur überein: Profil, Identität, Paket, Wissensobjekte, Verknüpfungen und Quellen. Der private Kandidat behält den eingefrorenen Bewertungszeitpunkt17:52:05UTC und Quellenkontext. Sechs Ersatzkarten,18 Rückhaltungen,165 tatsächliche Textpfade in42 Wortlautgruppen und alle sechs Gesamtkriterien erneut gelesen und beurteilt. Eingabehash `d6d1aa5d804612dde61eaa63efb940fea997514c1a15df9c0de750a870a73e1c`.
+
+Alle zwölf vorgesehenen Textstellen jetzt im begrenzten Kontext getragen. Insgesamt158 Textpfade positiv, sieben negativ. **Neu präzisierter Restbefund K07:** Der gebundene Auszug endet nach „Abkommen“. Die Unterzeichnung beziehungsweise der vorausgesetzte Abschluss in Zusammenfassung und Handlung sind dadurch nicht vollständig belegt. Der frühere private Lesebericht beschreibt zwar einen Abschluss, hat aber keinen vollständigen Originalsatz dafür archiviert. Alte positive Bewertungen werden insoweit korrigiert; keine neue Recherche und keine zusätzliche Textkorrektur in diesem Abschnitt. Betroffen sind drei Zusammenfassungspfade und vier Handlungspfade. Einzelprüfung bleibt korrekt abgelehnt.
+
+Sieben ausgewählte Quellen und18 Rückhaltungen geprüft. Vier Gesamtkriterien bleiben negativ: Quellentiefe, Rangfolge, Zeitbezug und Vollständigkeit. Mandatsbezug und nachvollziehbare Auslassungen gelten nur für diesen begrenzten Kandidaten positiv. K03 Chronologie, Quellenklassifikation von ÄrzteZeitung und BMZ, K01 Auswahl trotz Ignorieren und unvollständiger aktueller Quellenbestand bleiben offen. Gesamtprüfung bleibt abgelehnt, keine Importbereitschaft. Die Rohzusammenfassung des Radars zählt eine technische Dynamik; daraus folgt kein zusätzlich abgenommener politischer Umfeldnachweis.
+
+Gezielte Regression zuerst mit der alten globalen Formulierung fehlgeschlagen, nach Korrektur17/17 erfolgreich. Bestehende Radarprüfungen11/11 und115/115 erfolgreich. Kanonischer Gesamtlauf beendet:365/367 in592s, Exit1. Die beiden Fehler bei Admin Löschung und Passwortsetzung betreffen fehlendes Chromium für das voreingestellte Playwright1.62.1. Mit bereits vorhandenem Playwright1.56.1 und Chromium1194, wie in CI, beide gezielten Nachprüfungen erfolgreich. Kein Download oder Produktumbau. Abgleich aller Protokolle mit dem kanonischen Soll ergibt367/367 verschiedene Suiten erfolgreich nachgewiesen, keine offene Suite. Kein einzelner vollständig grüner Gesamtlauf behauptet. Browserprüfung50 PASS,0 FAIL mit dieser kompatiblen Version. Ein irrtümlicher Passwortfilter wählte0 Suiten und zählt nicht als Nachweis; der richtige Filter prüfte anschließend genau eine Suite.
+
+Vorflug19:42:10UTC und Nachkontrolle23:00:06 Uhr Türkei /22:00:06 Uhr Berlin /20:00:06 Uhr UTC:504 Profile,505 Identitäten,fünf Originale aktiv,495 synthetische Profile und Konten inaktiv. Geschützter PostgreSQL JSONB Hash96ae66918c06ed847f1673b47d60914bab814cdbd5833a345066db78f7ef45a1 unverändert. Vier ältere Admin Metadatenabweichungen bleiben offen.80 Buchungen,0,507552USD von4USD je UTC Tag,heutige offene Reserve0. Historische Reserven0,636USD bleiben Ursprungstagen zugeordnet. Null aktive Jobs,Leases,Sperren,junge Prozesse oder andere aktive Datenbankclients beim Abschluss. Fachautomation frisch deaktiviert bestätigt; minimal lesender Erreichbarkeitsmonitor aktiv. Keine umfassende Sicht auf andere Chats vorausgesetzt. Production READY am Hauptalias unverändert auf PR386.
+
+Keine Quellenabrufe, Helmut Modellaufrufe, Production Schreibvorgänge, Importe, Profilwechsel, PR Erstellung oder Veröffentlichung. Der datierte500er Bestand19:33UTC bleibt303 Pakete und zwei Lagen,197 Pakete und498 Lagen fehlen. Keine neue500er Inventur aus dem Einzelkandidaten ableiten. Natürlicher Fachnachweis, drei historische Fehlerursachen und die vollständige Abnahme exakt500 gleichzeitig aktiver Profile bleiben offen.
+
+Lokaler Branch `codex/radar-anzeige-text-20260912`. Produktänderung in genau einer Datei plus einer neuen Regression; Status und dieser kanonische Beleg aktualisiert. Keine privaten Quelldaten, Profile oder Urteilsdateien im Repository. Nächster Freigabepunkt ist die Bereitstellung dieser vier Dateien als PR mit automatischer CI und möglicher Vorschau. Kein Merge oder Production Deployment in dieser Freigabe. K03 bleibt eine private Redaktion. Private K07 Beleglücke und weitere Facharbeit benötigen einen getrennten begrenzten Abschnitt.
+
+Die folgenden Abschnitte sind datierte Historie.
+
+## Lesende Fachinventur nach PR386
+
+12.09.2026, Inventur 22:33 Uhr Türkei / 21:33 Uhr Berlin / 19:33 Uhr UTC. Nachkontrolle 22:37:14 Uhr Türkei / 21:37:14 Uhr Berlin / 19:37:14 Uhr UTC.
+
+main Prüfung 34713815490 vollständig beendet und erfolgreich, Versuch 1 auf 49fabbc9f95c78a7476aa8368db745d1bc95f41c. 366/366 Suiten in 584 Sekunden, 50/50 Browser, 15/15 Kontoschutz, 48/48 Datenbanknachweise. Keine Prüfung erneut gestartet. Production dpl_9xB1cLnRDtL6hAjMUxYFsycWsVEo READY am Hauptalias helmut-pilot.vercel.app auf diesem Merge. Baum 99c817181cdaf0a887bb3493e77f5f244fa7db6c.
+
+504 Profile und 505 Identitäten erhalten. Fünf Originale aktiv, exakt 495 synthetische Profile und Konten inaktiv. Schutz zwischen Vorflug 19:32:12 UTC und Abschluss 19:37:14 UTC unverändert. Geschützter PostgreSQL JSONB Hash 96ae66918c06ed847f1673b47d60914bab814cdbd5833a345066db78f7ef45a1. Vier ältere Admin Metadatenabweichungen weiter offen, keine neue ursprüngliche Grundlinie. 80 Buchungen, 0,507552 USD von 4 USD, heutige offene Reserve 0. Historische Reserven 0,636 USD bleiben Ursprungstagen zugeordnet. Null aktive Jobs, Leases, Sperren, junge Prozesse oder andere aktive Datenbankclients. Keine laufenden GitHub Prüfungen, nur historischer Entwurf PR345 offen. Fachautomation deaktiviert; minimal lesender Erreichbarkeitsmonitor aktiv. Keine umfassende Sicht auf andere Chatfenster behauptet.
+
+| Bestand der festen 500 Zielprofile | Vorhanden | Fehlend |
+|---|---:|---:|
+| Heutige Pakete | 303 | 197 |
+| Separate heutige Lagen | 2 | 498 |
+| Strukturell vollständige Pakete | 0 | 500 |
+| Vollständig fachlich abgenommene Pakete | 0 | 500 |
+
+Alle 500 Zielkennungen vorhanden, fünf aktiv. Keine gespeicherten Aussagenurteilzeilen, weder heute noch global. Alle 303 Pakete melden lage-text-fehlt und lage-quellenpruefung-fehlt. Die vollständige Einzelmatrix liegt in 500_Bestand.json. Die Anzahl aller noch zu beurteilenden Aussagen lässt sich für die 197 fehlenden Pakete noch nicht bestimmen.
+
+In den 303 vorhandenen Paketen: 84 Vorgänge, 84 Wissensobjekte, 145 Quellenverknüpfungen und 145 Quellenbelege. Keine fehlenden Wissensobjekte oder unverknüpften Vorgänge. 91 leere Auszüge und 28 fehlende Artikeladressen. Das ist eine Metadateninventur, keine vollständige inhaltliche Quellenprüfung und keine Aussage über die noch fehlenden 197 Pakete.
+
+B055 unverändert gegenüber 17:52:05 UTC: Profil, Identität, Paket, Wissensobjekte, Links und Quellen identisch. 24 gespeicherte Karten, 954 Textpfade, 38 Quellen mit 22 leeren Auszügen und acht fehlenden Adressen. Frisch gelesene und alte Eingabe ergeben mit veröffentlichtem PR386 Code denselben Hash 09a382b5ca2425b99afa39f093ea5a923c14fdba0c73ee8ce3a30a5b937481dd. Reine lokale Rekonstruktion, kein natürlicher Laufzeitnachweis.
+
+Der getrennte private Entwurf hat sechs Ersatzkarten, 18 Rückhaltungen, 165 Textpfade und sechs Gesamturteile. Zwölf negative Pfade in drei Wortlautgruppen bleiben erhalten. Vier Gesamtkriterien bleiben negativ: Quellentiefe, Rangfolge, Zeitbezug und Vollständigkeit. Die zwei positiven Kriterien Mandatsbezug und Auslassungen gelten nur im dokumentierten begrenzten Umfang. Private Urteile passen nicht zum gespeicherten Production Paket; drei private Quellenauszüge unterscheiden sich. Kein neues Urteil, kein neuer Entwurf, kein Import.
+
+Nächste vorgeschlagene Aktion, noch nicht ausgeführt: lokal die leere Radaransicht korrekt als Anzeigezustand beschreiben und in einer neuen privaten K03 Redaktion den Datumswiderspruch im Titel kenntlich machen. Technischer Ursprung des Radartexts ist buildSummary in lib/helmut/radarState.js, das sowohl Hintergrunddaten als auch die gefilterte Anzeige mit derselben globalen Formulierung beschreibt. K03 ist eine private redaktionelle Titelfrage. Keine Filteränderung oder direkte Manipulation abgeleiteter JSON Textpfade.
+
+Abnahme: alle zehn K03 Vorkommen und beide Radartexte konsistent; gezielte Regression für leere Anzeige trotz eines Hintergrundsignals und sechs Artikeln; genau ein reproduzierbarer privater B055 Kandidat, dessen sämtliche tatsächlichen Textpfade und sechs Gesamtkriterien vollständig gebunden beurteilt werden. Bestehende Quellen-, Rangfolge-, Zeit- und Vollständigkeitslücken bleiben ohne neue Belege negativ. Einzelheiten in Naechste_Aktion.json.
+
+Keine Quellenabrufe, Helmut Modelle, Production Schreibvorgänge, Importe, Profilwechsel oder Veröffentlichung. Natürlicher Fachnachweis, drei historische Fehlerursachen, Quellenklassifikation, Rangfolge und vollständige Production Abnahme exakt 500 gleichzeitig aktiver Profile bleiben offen. Gleicher Thread, Astra hoch, ungefähr 20 bis 30 Minuten für die vorgeschlagene nächste Aktion. Stopp vor dieser Aktion bis zur konkreten Freigabe.
+
+Die folgenden Abschnitte sind datierte Historie.
+
+12.09.2026. Zustand: **teilweise abgeschlossen**. PR386 ausdrücklich freigegeben und veröffentlicht, Production READY und Schutz unverändert. Zusätzliche main Prüfung läuft noch; fachlicher Wirkungsnachweis und Quellenabnahme stehen aus.
+
+## Freigegebener Merge von PR386 und Production Nachkontrolle
+
+Weiter autorisierte ausschließlich den zuvor konkret vorgelegten Merge des geprüften PR386 Kopfes, automatische Production Veröffentlichung und lesende Nachkontrolle mit Abschlussdokumentation. Freie Steuerung284 und neuesten Status gelesen,285 übernommen und tatsächlich gespeicherten Eigentümer separat rückgelesen. Exakten Kopf,Basis,erfolgreiche PR Prüfung und Kandidatenbaum frisch bestätigt. Keine aktive konkurrierende Datenbankarbeit beim Vorflug. Merge mit erwarteter Kopfkennung gegen zwischenzeitliche Kopfänderung abgesichert.
+
+[PR386](https://github.com/ernisch/helmut-pilot/pull/386) am12.09.2026 um22:19:00 Uhr Türkei /21:19:00 Uhr Berlin /19:19:00 Uhr UTC gemergt als `49fabbc9f95c78a7476aa8368db745d1bc95f41c`. Geprüfter PR Kopf `431f530590f4e362f89db32fba531412716d4788`, Kandidat `e0cb8d0d715d7607278dde0ef9153b9e29ec39d0`. Vollständiger Baum in PR, geprüftem Kandidaten und echtem Merge gleich: `99c817181cdaf0a887bb3493e77f5f244fa7db6c`. Tatsächlicher main ebenfalls dieser Merge.
+
+Production `dpl_9xB1cLnRDtL6hAjMUxYFsycWsVEo` READY am Hauptalias helmut-pilot.vercel.app auf genau diesem Mergecommit. Automatische Veröffentlichung durch Merge, keine zusätzliche manuelle Deployment Aktion. Stabile Aussagenbindung damit technisch veröffentlicht. Kein natürlicher Fachlauf, keine neue positive Fachabnahme und kein vollständiger500er Production Funktionsnachweis daraus abgeleitet.
+
+PR Prüfung34712538494 weiterhin vollständig erfolgreich:366/366 Suiten,50/50 Browser,15/15 Kontoschutz,48/48 Datenbanknachweise. Zusätzliche automatische main Prüfung34713815490 läuft beim Nachtrag noch. Browserjob103607235248 inzwischen erfolgreich, beendetes Protokoll50 PASS,0 FAIL gelesen. Offline samt Datenbankjob103607235418 noch laufend, zuletzt beim Kontoschutz. Nächsten tatsächlichen Endstand zuerst lesen. Keine Prüfung erneut gestartet.
+
+Vorflug19:18:16UTC und Nachkontrolle22:19:49 Uhr Türkei /21:19:49 Uhr Berlin /19:19:49 Uhr UTC identisch:504 Profile,505 Identitäten,fünf Originalprofile aktiv,495 synthetische Profile und Konten inaktiv. Geschützter PostgreSQL JSONB Hash96ae66918c06ed847f1673b47d60914bab814cdbd5833a345066db78f7ef45a1 unverändert. Vier ältere Admin Metadatenabweichungen weiter offen,keine neue ursprüngliche Grundlinie.80 Buchungen,0,507552USD von4USD je UTC Tag,heutige offene Reserve0,keine Kostenänderung in diesem Abschnitt. Historische Reserven bleiben Ursprungstagen zugeordnet. Null aktive Jobs,Leases,Sperren,junge laufende Prozesse oder andere aktive Datenbankclients.
+
+Keine Artikel,Helmut Modelle,Fachläufe,Production Datenänderungen,Importe oder Profilwechsel. Privater eingefrorener B055 Entwurf und seine negativen Fachurteile unverändert. Keine neue500er Inventur; letzter Bestandsnachweis17:17UTC bleibt datiert.
+
+Lokaler Dokumentationsbranch `codex/386-production-abschluss-20260912` enthält den vorherigen Prüfabschluss und diesen tatsächlichen Mergeabschluss. Nicht erneut hochgeladen oder gemergt. main enthält deshalb den vorherigen Dokumentationsstand. Die technische Korrektur entspricht dem vollständig geprüften und veröffentlichten Baum.
+
+Nächster Abschnitt ausschließlich lesend:zusätzlichen main Endstand lesen,danach aktuelle fachliche Bindung und fehlende Einzelurteile,Gesamturteile und Quellenbelege bestimmen. Erst anschließend eine begrenzte konkrete Fachaktion mit Abnahmekriterien zur Freigabe vorlegen. Die gerade erteilte Freigabe ist nach Merge,Veröffentlichung und Nachkontrolle verbraucht.
+
+Die folgenden Abschnitte sind datierte Historie.
+
+## Freigegebene Bereitstellung von PR386
+
+Weiter autorisierte konkret die fünf vorbereiteten Dateien an das öffentliche Repository ernisch/helmut-pilot, PR Erstellung, automatische Prüfungen und mögliche Vorschau. Keine Mergefreigabe. Freie Steuerung282 gelesen,283 übernommen und tatsächlichen Eigentümer separat rückgelesen. Nur historischer Draft345 offen, keine konkurrierende Lösung.
+
+Der verbundene GitHub Zugang übertrug exakt die fünf freigegebenen Dateien auf unverändertem main. Vollständiger Baum vor Erstellung von Commit und Branch exakt gleich mit dem lokalen Stand: `99c817181cdaf0a887bb3493e77f5f244fa7db6c`. Lokaler Vorbereitungskopf `035bfbea891ea9836c69ef42eb0f914c592ff7e5`, übertragener Kopf `431f530590f4e362f89db32fba531412716d4788`. Unterschiedliche Commit Kennungen entstehen durch die Übertragung, bei vollständig gleichem Inhalt.
+
+[PR386](https://github.com/ernisch/helmut-pilot/pull/386) offen und konfliktfrei. Mergekandidat `e0cb8d0d715d7607278dde0ef9153b9e29ec39d0` hat denselben Baum und die erwarteten Eltern main und PR Kopf. Fünf Dateien,205 Ergänzungen und sieben Entfernungen einschließlich zuvor lokaler Dokumentationsnachträge nach PR385.
+
+[PR Prüfung34712538494](https://github.com/ernisch/helmut-pilot/actions/runs/34712538494) vollständig erfolgreich, genau ein automatischer Durchgang. Tatsächlich beendete Protokolle beider Jobs gelesen. Beide checkten Kandidat e0cb8d0d715d7607278dde0ef9153b9e29ec39d0 aus, dessen Baum vollständig dem PR und lokalen Stand entspricht.
+
+| Nachweis | Ergebnis |
+|---|---:|
+| Offline Suiten | 366/366 in684s |
+| Browser, Desktop und Mobil | 50 PASS,0 FAIL |
+| Kontoschutz, PostgreSQL und PostgREST | 15 PASS,0 FAIL |
+| Z22 echte Testdatenbank | 48 PASS,0 FAIL,0 übersprungen |
+
+Offline und Datenbankjob103603789997, Browserjob103603790130. PostgreSQL17.11,PostgREST12.2.3. PR Kopf und Basis vor Abschluss unverändert, offen und konfliktfrei. Keine alte Prüfung erneut gestartet. Die PR Beschreibung enthält die tatsächlichen Endergebnisse ebenfalls.
+
+Vorschau `dpl_4J8NQdBL2w8ekJmizt65bFrRi5uH` READY auf genau dem geprüften PR Kopf. Production am Hauptalias unverändert `dpl_7nChnLQs8mmXeD2ohFUyJvZiUvdA` READY auf main `e250e21ba512d7c0396f83be2f305087b01b5357`. Keine manuelle Deployment Aktion oder Merge ausgeführt.
+
+Schutzvorflug18:51:39UTC und Nachkontrolle22:08:11 Türkei /21:08:11 Berlin /19:08:11UTC identisch:504Profile,505Identitäten,fünf Originale aktiv,495synthetische Profile und Konten inaktiv. Geschützter PostgreSQL JSONB Hash unverändert96ae66918c06ed847f1673b47d60914bab814cdbd5833a345066db78f7ef45a1. Vier ältere Admin Metadatenabweichungen weiter offen, keine neue Grundlinie.80Buchungen,0,507552USD von4USD,Reserve heute0. Keine aktiven Jobs,Leases,Sperren,jungen Prozesse oder anderen aktiven Datenbankclients.
+
+Dieser Abschlussnachtrag liegt lokal auf `codex/386-pr-pruefabschluss-20260912` und verändert den geprüften PR Kopf nicht. Keine Artikel, Helmut Modelle, Production Datenänderungen, Importe oder Profilwechsel. Die private Neubindung und ihre negativen Urteile bleiben unverändert. Fachliche Fehler, natürlicher Fachnachweis, drei historische Ursachen und volle Abnahme exakt500gleichzeitig aktiver Testprofile bleiben offen.
+
+Nächste Freigabe: ausschließlich Merge des erfolgreich geprüften PR386 Kopfes, automatische Production Veröffentlichung und lesende Nachkontrolle mit Abschlussdokumentation. Abnahme: echter Mergebaum entspricht geprüftem Kandidaten, Deployment READY am Hauptalias auf genau diesem Merge, Profile und geschützter Bestand erhalten, Kosten innerhalb4USD und keine aktive Konkurrenz. Keine zusätzliche fachliche Ausführung daraus ableiten.
+
+Die folgenden Abschnitte sind datierte Historie.
 
 ## Lokale Stabilisierung der Aussagenbindung
 
