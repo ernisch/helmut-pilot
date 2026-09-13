@@ -348,3 +348,48 @@ Vor jeder Übertragung `git.deploymentEnabled` für den verwendeten Branch ausdr
 Review und Belege dauerhaft sichern und vollständig rücklesen. Original309 bei Übernahme frei und vollständig bytegleich,Übernahme310 bedingt gespeichert und bytegleich rückgelesen. Eigene Steuerung nur gegen unmittelbar vollständig bestätigte Version freigeben,Abschluss tatsächlich vollständig rücklesen. Keine zusätzliche Veröffentlichung,PR,Merge,Deployment,Modelle,Originalquellen,Importe oder bestehenden Profiländerungen. Keine Migrationen,Budgets,persistente Umgebungsvariablen,Cron Änderungen oder500er Facharbeit.
 
 Veröffentlichung bleibt bis zur begründeten neuen Bewertung zurückgestellt. Browserblocker für genau diese zwei Suiten erledigt,REST Nachweis bleibt bestanden. Technische Erfolge ersetzen weder fachliche Profilprüfung noch500er Abnahme. Nächster möglicher kleiner Auftrag:den vorhandenen Gesamtkandidaten samt Belegen für eine Veröffentlichung bewerten,ohne neue Tests oder Production Wirkung automatisch zu beginnen. Dafür kann derselbe Thread mit Denkstufe Hoch genutzt werden. Jetzt stoppen,kein automatischer Folgesprint.
+
+
+## Veröffentlichungsbewertung am 13.09.2026
+
+Status: Bewertung erfolgreich abgeschlossen. Der Produktkandidat ist für die Vorbereitung eines PR geeignet. Eine unmittelbare Merge oder Deployment Empfehlung wird nicht erteilt. Die beiden Browserblocker sind erledigt; die vorhandenen gezielten Nachweise reichen nicht als Ersatz für die bestehenden Pflichtprüfungen des tatsächlichen Mergekandidaten. Kein neuer Produktfehler im begrenzten Review festgestellt und keine Produktkorrektur vorgenommen.
+
+### Gegenstand und frische Belege
+
+Geprüft wurde der Gesamtunterschied zu main `8d840d834f8ff312475d86e8c23509b75f63f91d`, Baum `78d62fb947cde91efccf05224e4ce56839fed7c9`: 24 Dateien, davon genau zwei Produktdateien `lib/helmut/lage.js` und `lib/helmut/storage.js`. Übrige Änderungen betreffen Tests, zwei begrenzte Prüfworkflows, den Deploymentschutz des Testbranches und Dokumentation. Vier historische Dokumentationsdateien bleiben erhalten. Keine Migration, neue Laufzeitabhängigkeit oder Änderung an bestehenden CI Pflichten.
+
+Bewerteter Kandidat lokal `118471b8dd1f2b8a56216073af9ae8dd3ff8aa0e`, GitHub `f4eccdcaa58fa906c3b6bb31bb5718ce9eb6dd0d`, identischer Baum `acdadcbfda27a04cbc29339b057267576f1efd5f`. Lokaler Arbeitsbaum bei Beginn sauber. Unterschiedliche Commitgeschichte bleibt erhalten. GitHub main erneut unverändert, nur historischer PR345 offen und keine laufenden Actions sichtbar. Keine umfassende Sicht auf andere Chats. Fachautomation deaktiviert, `next_run_time` null. Keine neue Production Probe; frühere Daten und Deploymentbefunde bleiben ausdrücklich historisch.
+
+### Produktbewertung
+
+Aktuelle Quellenmetadaten werden vor der Auswahl der zwölf Vorgänge berücksichtigt. Höchstens sechs ausgewählte Dokumente werden anschließend anhand ihrer tatsächlichen KO Bindung und Kennungen einschließlich Auszug gezielt geladen. Damit kann eine aktuelle Quelle hinter dem allgemeinen 40er Fenster berücksichtigt werden. Der bestehende allgemeine Leser bleibt unverändert; seine Dokumente ergänzen nachrangig die gebundenen Belege.
+
+Die neuen Leser greifen auf globale Quellen und KO Verknüpfungen zu. Der vorhandene Nutzerleser `listMatchingResults` behält `assertTenant` und den expliziten `user_id` Filter. Keine neue mandantenbezogene Schreiboperation. Geänderte, fehlende, fremde oder doppelte Quellenbindungen führen im strengen Lesepfad zum erkennbaren Speicherfehler. Frische, Quellenprüfung, höchstens sechs Belege, Eingabegrenze, Cachebindung und Budgetkontrolle werden nicht aufgehoben. Ohne aktuelle zulässige Quellen bleibt der ehrliche Leerzustand erhalten. Der gebundene Briefingpfad wird nicht neu ausgewählt.
+
+Die beiden Produktdateien sind bytegleich zum tatsächlich bestandenen REST Stand und zum Browserstand. SHA256 Lage `be9ade1912cd541e49c3f37c680398f0ca96a5c44668479c0de9e0026586ed59`, Storage `322089fb3b882070177edc62faa8f428fd575f039cdf6c7bafa9d1a31ffb0d6a`. Beide Browserprüfungen und die bestehende CI Datei sind ebenfalls unverändert. Deshalb keine erneute Ausführung dieser gezielten Tests in diesem Review.
+
+Verbleibende technische Grenzen: zusätzliche Metadatenanfragen vor Cachezugriff, keine gemessene Production Latenz, kein gemeinsamer Datenbanksnapshot, Annahme von 1000 Antwortzeilen pro Seite und bewusst begrenzte 4000 Verknüpfungen je 100 KO Stapel. Eine kleinere serverseitige Seitengrenze kann Vollständigkeit beeinträchtigen. Die vorhandenen REST Belege gelten für PostgREST12.2.3 mit der geprüften Seitengrenze. Die Bindungsprüfung erkennt veränderte ausgewählte Metadaten, bietet aber keine transaktionale Momentaufnahme. Der endgültige Umfang bleibt zusätzlich durch Auszüge und 16000 Zeichen begrenzt. Diese Grenzen sind keine neu behobenen Eigenschaften und werden nicht als Production Leistungsnachweis ausgegeben.
+
+### Testlage und Freigabegates
+
+| Nachweis | Ergebnis | Aussagegrenze |
+| --- | --- | --- |
+| REST Lauf34749687054, Job103703790117 | 13 Gruppen, 24 tatsächliche GET, alle200 | Zwei Quellenleser; kein vollständiges Schema oder Production Nachweis |
+| Browser Lauf34750436568, Job103705893462 | Admin75/75 und Passwort39/39; davon24 tatsächliche Browserassertions | Bestehende begrenzte Suiten; kein vollständiger authentifizierter Appstart |
+| Elf betroffene Produktsuiten | Historisch dokumentiert bestanden | Kein neuer Gesamtlauf auf dem jetzigen Kandidaten |
+| Historischer Offline Stand | 366 von368 erfolgreiche Einzelnachweise nach Ergänzungen | Kein zusammenhängender vollständiger aktueller Lauf; inzwischen369 erfasste Suiten |
+| Bestehende Pflichtprüfungen auf GitHubf4eccdca | Actions Abfrage ergibt0 Läufe; Commitstatusliste leer | Kein aktuelles Grün für beide vorgeschriebenen CI Jobs |
+
+`CLAUDE.md` §6 verlangt vor einem PR den kanonischen Offline Lauf und vor einem Merge die bestehenden Jobs `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)`. Die zwei gezielten Browserprüfungen ersetzen den allgemeinen Browserjob nicht. Ein vorhandener historischer Teilerfolg darf nicht in einen neuen vollständigen Gesamterfolg umgerechnet werden. Ein nächster ausdrücklich freigegebener PR Auftrag hat deshalb einen konkreten Grund für die vorgeschriebenen Prüfungen; sie werden in diesem ausschließlich bewertenden Anschluss nicht pauschal gestartet.
+
+Zusätzlicher frischer Betriebsbefund: Die GitHub Antwort zu `branches/main` meldet `protected:false`, `protection.enabled:false`, `enforcement_level:off` und keine Required Check Kontexte. Ein klassischer Branchschutz ist damit nicht aktiv. Die Abfrage effektiver Branchregeln wird vom verfügbaren Connector als nicht unterstützter Endpunkt abgewiesen; ergänzende Rulesets sind nicht überprüfbar. Es wird daher weder vollständige Schutzlosigkeit noch eine automatisch wirksame Mergesperre behauptet. Vor einer Mergeentscheidung sind beide echten Ergebnisse ausdrücklich zu kontrollieren. Repositoryschutz nicht eigenmächtig geändert.
+
+### Konkreter nächster Schritt und Grenzen
+
+Empfohlen wird ein gesonderter kleiner Auftrag zur PR Vorbereitung einschließlich der nach §6 erforderlichen aktuellen Prüfungen. Vor einer Branchübertragung müssen eigener Steuerungsstand, aktueller main und Kandidat sowie der ausdrückliche Deploymentschutz erneut bestätigt werden. Der vorhandene Branch bleibt die Grundlage; keine blinde Übertragung der abweichenden lokalen Historie. Einen PR erst nach den vorgeschriebenen Vorprüfungen anlegen, danach bestehende Pflichtjobs am tatsächlichen PR Stand abwarten und bewerten. Keine zusätzlichen Required Checks und keine Abschwächung bestehender CI.
+
+Vorbereiteter PR Inhalt: Titel „Lage: aktuelle Quellen vor Auswahl berücksichtigen und gezielt binden“. Problem: aktuelle Artikel können hinter historischen Treffern im 40er Quellenfenster oder hinter der frühen Vorgangsauswahl verschwinden. Änderung: aktuelle Metadaten vor Auswahl auswerten und bis zu sechs exakt gebundene Dokumente nachladen. Resultat: belegte aktuelle Quellen werden erreichbar, ohne den allgemeinen Leser auszuweiten. Als Belege die oben datierten echten Ergebnisse nennen; aktuelle Pflichtprüfungen erst nach tatsächlichem Erfolg ergänzen. Risiken: zusätzliche Leseanfragen und genannte Konsistenzgrenzen. Rücknahme: bei autorisiertem Rückbau die zwei Produktdateien auf den bestätigten main Inhalt zurückführen und erforderliche Prüfungen ausführen; kein Daten oder Migrationsrollback erforderlich. Ein solcher Rückbau mit Veröffentlichung bleibt gesondert freigabepflichtig.
+
+Merge nach main löst gemäß Projektregel ein Production Deployment aus und braucht eine ausdrückliche spätere Entscheidung. Ein grüner PR allein ist keine fachliche Freigabe für 500 Profile. Zwei bekannte fachliche Profilfehler, Quellenqualität und fachlicher Gesamtnachweis exakt500 bleiben offen und werden hier weder untersucht noch korrigiert. Keine Modelle, politischen Originalquellen, Importe, Konten oder Profiländerungen; keine neuen PRs, CI Starts, Branchübertragungen, Merge oder Deployments in diesem Review.
+
+Nur dieser Betriebsbeleg und der kompakte aktuelle Status werden lokal dokumentarisch fortgeschrieben und committet. Der GitHub Kandidat bleibt unverändert. Review und eigenständige Belege werden dauerhaft gesichert und vollständig rückgelesen. Originalbericht gegen frisch bestätigte eigene Version aktualisieren und Steuerung bedingt freigeben. Danach stoppen. Für den direkten nächsten Auftrag genügt derselbe Thread mit Denkstufe Hoch. Ohne neue Freigabe bleibt die Veröffentlichung zurückgestellt.

@@ -1,16 +1,15 @@
 # CURRENT STATE — Helmut
 
-**13.09.2026: Beide begrenzten Browserabnahmen bestanden.** GitHub main `8d840d834f8ff312475d86e8c23509b75f63f91d` unverändert. Vercel READY `dpl_4JSVUt4v2ktF45Yt4XzLSWmW8fUn`,keine neue Bereitstellung seit09:45UTC. Keine Production Datenprobe. [Mergeabschluss](betrieb/387-ersatzsteuerung-2026-09-13.md).
+**13.09.2026: Veröffentlichungsbewertung abgeschlossen.** Kandidat GitHub `f4eccdca`, lokal `118471b`, Baum `acdadcbf`, für PR Vorbereitung geeignet; keine Mergeempfehlung. main `8d840d834f8ff312475d86e8c23509b75f63f91d` unverändert, nur PR345 offen. [Bewertung und Freigabegates](betrieb/500-lage-quellenfenster-2026-09-13.md).
 
-**Fachliche Production Abnahme exakt500 gleichzeitig aktiver Testprofile offen.** Inventur06:49UTC:500 Zielkennungen,fünf aktiv,zwei Pakete,zwei separate Lagen. [Inventur](betrieb/500-fachinventur-2026-09-13.md).
+Quellenfix unverändert: aktuelle Metadaten vor Zwölferlimit, bis sechs exakt gebundene Dokumente, allgemeiner40er Leser erhalten. Kein neuer Produktfehler. Browser34750436568: Admin75/75, Passwort39/39, davon24 Browserassertions und90 Vorprüfungen. REST34749687054:13 Gruppen,24GET,alle200. Eigene Testbestände entfernt. Kein neuer Gesamtlauf; historische Einzelnachweise bleiben datiert.
 
-Quellenfix `c3b08e3` unverändert:aktuelle Metadaten vor Zwölferlimit,gezieltes Nachladen höchstens sechs gebundener Dokumente,allgemeiner40er Leser erhalten. Zwei Profilfehler offen. [Aktuelle Belege und Grenzen](betrieb/500-lage-quellenfenster-2026-09-13.md).
+Aktuelle Pflichtjobs für den Kandidaten fehlen. CLAUDE §6 verlangt kanonischen Offline Lauf vor PR und beide bestehenden CI Jobs vor Merge. GitHub meldet klassischen main Schutz deaktiviert; ergänzende Rulesets nicht überprüfbar. Kein automatischer Schutz behauptet. Nächster gesonderter Auftrag: vorgeschriebene Prüfungen und PR Vorbereitung. Kein PR,CI,Transfer,Merge oder Deployment in dieser Bewertung; nur lokaler Dokumentationscommit.
 
-Browserlauf34750436568 auf GitHub `4e88293`,baumgleich zu lokal `23b11a0`:Admin75/75,davon14 Browser;Passwort39/39,davon10 Browser. Rest90 Vorprüfungen. Chromium1194,Playwright1.56.1,eigener Netzwerkraum nur Loopback,Testbestand entfernt. Vorlauf34750375171 ohne Job abgewiesen;neuen Workflowkontext korrigiert. Kein Produktfehler. Kein voller Appstart,keine Production Browserabnahme. REST34749687054 unverändert13/13 Gruppen,24GET,Testdatenbank entfernt. Kein neuer Gesamtlauf;historische Einzelnachweise bleiben datiert.
+**Fachliche Abnahme exakt500 offen; zwei Profilfehler offen.** [Inventur](betrieb/500-fachinventur-2026-09-13.md). Historischer Datenbeleg07:45UTC:504 Profile,505 Identitäten,fünf aktiv,495 synthetische inaktiv;39 Buchungen,0,234674USD,Reserve0,Grenze4USD täglich insgesamt. Vier Admin Abweichungen offen. Keine neue Dateninventur oder Production Probe. Vercel READY Vorbeleg `dpl_4JSVUt4v2ktF45Yt4XzLSWmW8fUn` historisch.
 
-Datenvorbeleg07:45:26UTC:504 Profile,505 Identitäten,fünf aktiv,495 synthetische inaktiv;Schutzhash unverändert.39 Buchungen,0,234674USD,Reserve0;historische0,636USD bleiben Ursprungstagen zugeordnet,Grenze4USD täglich insgesamt. Vier Admin Abweichungen offen. Keine neue Inventur.
+Übernahme312 bedingt gespeichert und vollständig bytegleich rückgelesen. Review und Belege fortschreiben, eigene Steuerung bedingt freigeben. Veröffentlichung bleibt zurückgestellt. Keine Modelle, Originalquellen, Importe oder bestehenden Profiländerungen. Fachautomation deaktiviert,next_run_time null. Sprint endet ohne Folgesprint.
 
-Übernahme310 bedingt gespeichert und bytegleich bestätigt. Nur neuer Browserworkflow auf `codex/500-lage-quellenfenster-20260913`,Deployment gesperrt,bestehende CI unverändert. Review und Abschlussbelege aktualisiert. Veröffentlichung bis begründeter neuer Bewertung zurückgestellt. Keine PR,Merge,Modelle,Originalabrufe,Importe oder bestehenden Profiländerungen. Fachautomation aus. Sprint endet ohne Folgesprint.
 
 Der bisherige Statuskopf vom 10.09. liegt unveraendert im [Archiv](archive/project_state/2026_09_11_500_statuskopf.md). Die nachfolgenden zeitlich aelteren Betriebsstaende sind Historie.
 

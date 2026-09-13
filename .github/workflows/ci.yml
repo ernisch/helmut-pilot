@@ -141,7 +141,7 @@ jobs:
         # ausdrücklich, was hier ohnehin gilt — dieser Lauf ist offline.
         env:
           HELMUT_SOURCE_MODE: "off"
-        run: node scripts/run-offline-tests.js
+        run: node scripts/lokal.js -- node scripts/run-offline-tests.js
 
       - name: Z22-Datenbanknachweis §1–§11 gegen echte PostgreSQL + echtes PostgREST (fail-closed)
         # WARUM EIN EIGENER SCHRITT: Der Nachweis braucht eine echte PostgreSQL. In
@@ -225,4 +225,4 @@ jobs:
           HELMUT_REQUIRE_BROWSER: "1"
           # Gleicher Grund wie oben: der Quellenmodus wird ausdrücklich als "off" erklärt.
           HELMUT_SOURCE_MODE: "off"
-        run: node scripts/browser-smoke-test.js
+        run: node scripts/lokal.js -- node scripts/browser-smoke-test.js
