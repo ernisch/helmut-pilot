@@ -21,8 +21,6 @@ jobs:
     name: Nutzerloeschung und Passwortformular in Chromium
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    env:
-      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/helmut-browser-abnahme
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,6 +31,8 @@ jobs:
           cache: npm
       - name: Bestehende gepinnte Browserinfrastruktur bereitstellen
         timeout-minutes: 5
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/helmut-browser-abnahme
         run: |
           set -euo pipefail
           npm ci --ignore-scripts
@@ -54,6 +54,8 @@ jobs:
           npx --no-install playwright install --with-deps chromium
       - name: Genau zwei Suiten nacheinander ohne externes Netz
         timeout-minutes: 3
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/helmut-browser-abnahme
         run: |
           set -euo pipefail
           git log -1 --format='%H %T'
@@ -99,6 +101,8 @@ jobs:
           SH
       - name: Eigenen kurzlebigen Bestand entfernen
         if: always()
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/helmut-browser-abnahme
         run: |
           set -euo pipefail
           sudo rm -rf -- .helmut-data "$RUNNER_TEMP/helmut-browser-home" "$PLAYWRIGHT_BROWSERS_PATH"
