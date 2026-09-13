@@ -35,7 +35,7 @@ const copy = structuredClone;
     const validBefore = { ...before, payload: payload() };
     assert.equal(Q.bestandErhalten(validBefore, { ...after, payload: { ...payload(), vorherigerStand: validBefore } }), false);
   });
-  const names = ["v3StoreReady", "listKnowledgeObjects", "listMatchingResults", "getSourcesForVorgang",
+  const names = ["v3StoreReady", "listAktuelleLageQuellen", "listKnowledgeObjects", "listMatchingResults", "getSourcesForVorgang",
     "getRenderedBriefingV3", "saveRenderedBriefingV3", "insertRenderedBriefingV3", "getLageEntwurfsbeleg", "acquirePipelineLock", "releasePipelineLock", "canSpendLlmForTenant"];
   const prior = Object.fromEntries(names.map(n => [n, storage[n]]));
   const generate = ai.generateLageBriefing, guard = safety.guardKnowledgeObject;
@@ -50,6 +50,8 @@ const copy = structuredClone;
   storage.listMatchingResults = async () => [{ knowledge_object_id: "ko-beleg" }];
   storage.getSourcesForVorgang = async () => payload().quellen[0].quellenbelege.map(q => ({
     title: q.titel, url: q.url, source_name: "Testquelle", published_at: before.generated_at }));
+  storage.listAktuelleLageQuellen = require("./fixtures/lage-quellenmetadaten")(() => storage.listKnowledgeObjects(),
+    vg => storage.getSourcesForVorgang(vg));
   storage.getRenderedBriefingV3 = async () => copy(row);
   storage.acquirePipelineLock = async () => true;
   storage.releasePipelineLock = async () => {};

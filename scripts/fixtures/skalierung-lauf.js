@@ -245,6 +245,7 @@ function installiereNarrativWelt(w, u, konfig = {}) {
     listKnowledgeObjectsByIds: storage.listKnowledgeObjectsByIds,
     listMatchingResults: storage.listMatchingResults,
     getSourcesForVorgang: storage.getSourcesForVorgang,
+    listAktuelleLageQuellen: storage.listAktuelleLageQuellen,
     getRenderedBriefingV3: storage.getRenderedBriefingV3,
     saveRenderedBriefingV3: storage.saveRenderedBriefingV3,
     acquirePipelineLock: storage.acquirePipelineLock,
@@ -286,6 +287,8 @@ function installiereNarrativWelt(w, u, konfig = {}) {
     url: `https://beispiel.invalid/beleg/${vg}`, source_name: "Beispielquelle",
     published_at: quellenzeit, title: `Beleg zu ${vg}`
   }];
+  storage.listAktuelleLageQuellen = require("./lage-quellenmetadaten")(() =>
+    [...w.verstandeneVorgaenge].map(wissenszeile), vg => storage.getSourcesForVorgang(vg));
   storage.getRenderedBriefingV3 = async (userId, slot, day) =>
     w.narrativ.cache.get(`bf-${userId}-${slot}-${day}`) || null;
   storage.saveRenderedBriefingV3 = async (entry) => {
@@ -366,6 +369,7 @@ function installiereNarrativWelt(w, u, konfig = {}) {
       storage.listKnowledgeObjectsByIds = originale.listKnowledgeObjectsByIds;
       storage.listMatchingResults = originale.listMatchingResults;
       storage.getSourcesForVorgang = originale.getSourcesForVorgang;
+      storage.listAktuelleLageQuellen = originale.listAktuelleLageQuellen;
       storage.getRenderedBriefingV3 = originale.getRenderedBriefingV3;
       storage.saveRenderedBriefingV3 = originale.saveRenderedBriefingV3;
       storage.acquirePipelineLock = originale.acquirePipelineLock;

@@ -1,5 +1,51 @@
 # Briefing: gemeinsamer Schwerpunkt und belegter Datenstatus
 
+## 13.09.2026: Fachinventur und private Textvorbereitung abgeschlossen
+
+Originalbericht wieder lesbar und beschreibbar;eigene Steuerung bedingt übernommen und rückgelesen. PR387 weiterhin exakt READY. Neuer Tagesbestand: zwei Pakete,zwei Lagen,keine vollständige500er Abnahme. Heutiger natürlicher Textlauf mit drei gespeicherten Fehlerklassen. Ein privater historischer Kandidat mit zwölf korrigierten Textpfaden und165 getragenen Einzeltexten;Gesamturteil bleibt negativ. [Kanonischer neuer Betriebsbeleg](500-fachinventur-2026-09-13.md). Keine Production Änderungen oder Veröffentlichungen. Die folgenden Abschnitte bleiben datierte Historie.
+
+## 13.09.2026: Freigegebener PR387 Merge erfolgreich nachkontrolliert
+
+PR387 ist als `8d840d834f8ff312475d86e8c23509b75f63f91d` gemergt. Exaktes READY am Hauptalias und automatische main CI34726446113 vollstaendig erfolgreich. [Kanonischer Abschluss mit Freigabe,Ersatzsteuerung,Pruefprotokollen,Schutz,Kostenleser und Grenzen](387-ersatzsteuerung-2026-09-13.md). Der terminale Freigabestatus steht in [steuerung-pr387.json](steuerung-pr387.json). Vollstaendige fachliche500er Abnahme bleibt offen. Die folgenden Abschnitte sind datierte Historie;die dortige alte Mergeblockade gilt fuer diesen ausdruecklich freigegebenen Ersatzweg nicht mehr.
+
+## 13.09.2026: Ersatzsteuerung konkret vorbereitet
+
+PR387,Kandidatbaum,CI und bisherige Production frisch unveraendert bestaetigt. Der direkte private Berichtszugriff fehlt weiterhin. Der neue Betreiberauftrag zur technischen Klaerung wurde mit einer vollstaendigen lesenden Vorpruefung und einer isolierten lokalen Vorlage bearbeitet. [Ersatzregel, Belege und noch erforderliche Zustimmung](387-ersatzsteuerung-2026-09-13.md). Keine gemeinsame Steuerung beansprucht,kein Remote Schreiben,kein Merge und keine Facharbeit. Der bestehende Dokumentationsbranch und PR Kopf wurden nicht veraendert. Die folgenden Abschnitte bleiben datierte Historie.
+
+## PR387 Merge freigegeben, Zuständigkeitsprüfung technisch blockiert
+
+12.09.2026. Zustand: **blockiert**. Weiter bestätigt die konkret vorgelegte Freigabe für Merge des Kopfes `e77119ceed6de7b3e731f32049dc53fbafdb1bb7`, automatische Production Veröffentlichung und lesende Nachkontrolle samt Dokumentation. Keine zusätzliche Freigabe für diesen unveränderten Umfang nötig.
+
+Pflichtdateien erneut vollständig in Reihenfolge gelesen; keine geltende AGENTS.md gefunden. Frische GitHub Abfrage: PR387 offen, konfliktfrei, mergeable true, Kopf und Basis `49fabbc9f95c78a7476aa8368db745d1bc95f41c` unverändert, Kandidat `780720d3a70e24fb7ccf3df653137f02f3c6074e`. CI34716196610 weiterhin completed success, Versuch1, Kopfbaum `78d62fb947cde91efccf05224e4ce56839fed7c9`. Keine Prüfung neu gestartet. Production frisch READY am Hauptalias auf PR386 und Deployment `dpl_9xB1cLnRDtL6hAjMUxYFsycWsVEo`.
+
+SQL rein lesend am13.09.,00:20:46 Türkei /12.09.,23:20:46 Berlin /21:20:46UTC:504 Profile,505 Identitäten,fünf aktive Profile,495 synthetische Profile und495 synthetische Konten inaktiv. Geschützter PostgreSQL JSONB Hash `96ae66918c06ed847f1673b47d60914bab814cdbd5833a345066db78f7ef45a1` unverändert; vier ältere Admin Abweichungen weiterhin offen.92 Buchungen,0,589025USD von4USD für den UTC Tag12.09.,heutige offene Reserve0. Jobs,Leases,Sperren,junge laufende Prozesse und andere aktive Datenbankclients jeweils0.
+
+Blocker: Die aktuellen Werkzeuge enthalten keine Lese oder Schreibfunktion für den privaten Steuerungsbericht. Ein Aufruf der zuvor verfügbaren Lesefunktion scheiterte vor Ausführung. Pluginverzeichnis bestätigt OpenAI Library installiert und aktiviert; trotzdem keine aufrufbare Dateifunktion in diesem Abschnitt. Die zuvor gespeicherte freie Version293 ersetzt keine aktuelle Konkurrenzprüfung. Kein Eigentümer übernommen, keine gespeicherte Steuerung geändert, kein Merge oder Deployment ausgelöst. Keine Facharbeit. Private Abschlussdatei konnte nicht aktualisiert werden.
+
+Sicherer nächster Schritt: Zugriff auf den privaten Bericht wiederherstellen, dessen tatsächlichen neuesten Status und STEUERUNG lesen, Zuständigkeit bedingt übernehmen und rücklesen. Danach Kopf,Basis,CI,Kandidatbaum,Production,Schutz und Kosten erneut bestätigen und die bereits freigegebene Veröffentlichung durchführen. Keine andere Chataktivität als ausgeschlossen behaupten. Dieser lokale Dokumentationsnachtrag bleibt auf `codex/387-pr-pruefabschluss-20260912` und wird nicht automatisch veröffentlicht.
+
+## PR387 bereitgestellt und vollständig geprüft
+
+12.09.2026. Zustand: **teilweise abgeschlossen**. Freigegebene PR Bereitstellung beendet, Merge und Production Wirkung offen.
+
+Weiter autorisierte exakt vier vorbereitete Repositorydateien, PR Erstellung, automatische CI und mögliche Vorschau. Freie Steuerung290 gelesen,291 übernommen und gespeicherten Eigentümer separat rückgelesen. Vollständigen Git Baum gegen tatsächliches main geprüft: nur die vier freigegebenen Dateien abweichend. Keine zusätzliche Produktänderung.
+
+[PR387](https://github.com/ernisch/helmut-pilot/pull/387), Kopf `e77119ceed6de7b3e731f32049dc53fbafdb1bb7`, Basis `49fabbc9f95c78a7476aa8368db745d1bc95f41c`, Mergekandidat `780720d3a70e24fb7ccf3df653137f02f3c6074e`. Baum in lokalem geprüftem Stand, übertragenem PR und Mergekandidat identisch: `78d62fb947cde91efccf05224e4ce56839fed7c9`. Lokaler Vorbereitungskopf `ab6a463cc6793615e2c68b16d0642f9fb0222543` hat wegen Übertragung über den verbundenen GitHub Zugang eine andere Kennung bei gleichem Inhalt. Exakt vier Dateien,169 Ergänzungen und zehn Entfernungen. Die zwei Dokumentationsdateien enthalten zusätzlich die zuvor lokalen Abschlussnachträge nach PR386.
+
+Automatische PR Prüfung34716196610 vollständig erfolgreich, genau ein Durchgang. Tatsächlichen Runstatus und beendete Protokolle ausgewertet. Offline und Datenbankjob103613763991, Browserjob103613764108: beide checkten den oben genannten Mergekandidaten aus.367/367 Offline Suiten in676s,50 PASS und0 FAIL Browser einschließlich Mobil,15 PASS und0 FAIL Kontoschutz mit500 Registrierungen in der getrennten Testdatenbank,48 PASS und0 FAIL Z22 Datenbanknachweise. PostgreSQL17.11 und PostgREST12.2.3. Keine übersprungenen Datenbankabschnitte und keine Prüfung erneut gestartet. Damit liegt jetzt ein vollständig grüner automatischer Gesamtdurchgang vor; die lokalen Browserprobleme sind im vorigen Abschnitt historisch erhalten.
+
+Vorschau `dpl_EyS56TTyYB5oL4wAPRXSfyFnALdX` READY auf dem exakten PR Kopf, Adresse helmut-pilot-3g64jl84v-nohut.vercel.app. Production am Hauptalias helmut-pilot.vercel.app unverändert `dpl_9xB1cLnRDtL6hAjMUxYFsycWsVEo` READY auf main `49fabbc9f95c78a7476aa8368db745d1bc95f41c`. Kein Merge und kein Production Deployment ausgeführt. PR Kopf, Basis und Kandidat vor Abschluss erneut geprüft.
+
+Vorflug20:06:38UTC und Nachkontrolle23:22:57 Uhr Türkei /22:22:57 Uhr Berlin /20:22:57 Uhr UTC identisch:504 Profile,505 Identitäten,fünf Originalprofile aktiv,495 synthetische Profile und Konten inaktiv. Geschützter PostgreSQL JSONB Hash96ae66918c06ed847f1673b47d60914bab814cdbd5833a345066db78f7ef45a1 unverändert. Vier ältere Admin Metadatenabweichungen bleiben offen.92 Buchungen,0,589025USD von4USD je UTC Tag,heutige offene Reserve0. Diese Kosten lagen bereits beim Vorflug vor; keine Kostenänderung in diesem PR Abschnitt. Historische Reserven0,636USD bleiben ihren Ursprungstagen zugeordnet. Null aktive Jobs,Leases,Sperren,junge laufende Prozesse oder andere aktive Datenbankclients. Keine umfassende Sicht auf andere Chats vorausgesetzt.
+
+Keine Fachausführung, Helmut Modelle, Quellenabrufe, Production Datenänderungen, Importe oder Profilwechsel. Der private B055 Kandidat und seine Urteile bleiben unverändert:165 Textpfade,158 getragen,sieben K07 Pfade negativ,vier Gesamtkriterien negativ. Quellenklassifikation, Chronologie, Rangfolge und vollständige500er Abnahme offen. Datierte Gesamtinventur19:33UTC bleibt303 Pakete und zwei Lagen;197 Pakete und498 Lagen fehlen. Keine neue Gesamtinventur aus der CI abgeleitet.
+
+Lokaler reiner Abschlussnachtrag auf `codex/387-pr-pruefabschluss-20260912`, nur CURRENT_STATE und dieser Betriebsbeleg. Nicht hochgeladen; der geprüfte PR Kopf bleibt unverändert. Kein weiterer PR für den Nachtrag automatisch angelegt.
+
+Nächste konkrete Freigabe: ausschließlich Merge des geprüften PR387 Kopfes `e77119ceed6de7b3e731f32049dc53fbafdb1bb7`, automatische Production Veröffentlichung und lesende Nachkontrolle samt Abschlussdokumentation. Vorher Zuständigkeit, Kopf, Basis, Prüfstatus, Mergekandidat, Schutz und Kosten erneut lesen. Merge gegen Kopfänderung absichern. Abnahme: echter Mergebaum gleich geprüftem Baum, Deployment READY am Hauptalias auf genau diesem Merge, Profile und Schutz erhalten,4USD Grenze eingehalten. Kein Fachlauf, Quellenabruf, Modellaufruf, Import oder Profilwechsel daraus ableiten.
+
+Die folgenden Abschnitte sind datierte Historie.
+
 ## Lokale Radartextkorrektur und private K03 Neubewertung
 
 12.09.2026. Zustand: **teilweise abgeschlossen**. Freigegebene lokale Korrektur umgesetzt, genau ein privater B055 Kandidat vollständig geprüft. Veröffentlichung, fachliche Gesamtversorgung und Production Wirkungsnachweis bleiben offen.

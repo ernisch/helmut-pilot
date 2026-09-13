@@ -68,7 +68,7 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
     assert.deepEqual(Q.gueltigeAbsaetze(p, input([quelle])), [p[2]]);
   });
 
-  const namen = ["v3StoreReady", "listKnowledgeObjects", "listMatchingResults", "getSourcesForVorgang",
+  const namen = ["v3StoreReady", "listAktuelleLageQuellen", "listKnowledgeObjects", "listMatchingResults", "getSourcesForVorgang",
     "getRenderedBriefingV3", "saveRenderedBriefingV3", "insertRenderedBriefingV3", "acquirePipelineLock", "releasePipelineLock", "canSpendLlmForTenant"];
   const vorher = Object.fromEntries(namen.map(n => [n, storage[n]]));
   const vorAi = ai.generateLageBriefing, vorSafety = safety.guardKnowledgeObject;
@@ -78,6 +78,8 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
   storage.listKnowledgeObjects = async () => [ko];
   storage.listMatchingResults = async () => [{ knowledge_object_id: ko.id }];
   storage.getSourcesForVorgang = async () => docs;
+  storage.listAktuelleLageQuellen = require("./fixtures/lage-quellenmetadaten")([ko],
+    vg => storage.getSourcesForVorgang(vg));
   storage.getRenderedBriefingV3 = async () => cached;
   storage.saveRenderedBriefingV3 = async (r) => { saved = r; cached = r; return { saved: true }; };
   storage.acquirePipelineLock = async () => { if (lock instanceof Error) throw lock; return lock; };
