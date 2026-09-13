@@ -133,13 +133,13 @@ async function main() {
         "Echter HTTP Handler transportiert die Arbeitsauswahl und meldet dieselbe Faehigkeit");
     } finally { textlauf.ausfuehren = originalTextlauf; }
     const B = require("../lib/helmut/briefing-speicher");
-    const profile = { id: "test-kohorte-a-001", committees: ["Bildung"] };
+    const profile = { id: "test-kohorte-a-001", committees: ["Bildung"], deputyCommittees: ["Haushaltsausschuss"] };
     const getProfileVorher = storage.getProfile, getBriefingVorher = storage.getRenderedBriefingV3;
     const briefing = { available: true, items: [{ title: "Beratung ueber Schulbau" }], currentHelmutState: {}, currentRadarState: {} };
     const lage = { paragraphs: [{ text: "Die Quelle berichtet ueber Schulbau.", vorgang_ids: ["vg-schule"], quellen_ids: ["q-schule"] }],
       quellen: [{ vorgang_id: "vg-schule", quellenbelege: [{ quelle_id: "q-schule", quelle: "Testquelle", titel: "Schulbau", url: "https://example.org/schule" }] }],
       qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } };
-    const payload = { version: B.VERSION, mandat: profile.id, tag: "2026-09-09", profilHash: B.profilHash(profile),
+    const payload = { version: B.VERSION, mandat: profile.id, tag: "2026-09-09", profilHash: B.profilHash(profile, 1),
       briefing, lage, inhaltHash: B.hash({ briefing, lage }), pruefung: B.pruefeInhalt(briefing, lage) };
     const row = { id: `bf-${profile.id}-mandatsbriefing-2026-09-09`, user_id: profile.id, slot: B.SLOT, payload };
     let reads = 0;
@@ -151,6 +151,22 @@ async function main() {
       r = await request("GET", geheim, path);
       check(r.status === 200 && r.body.gespeicherterNachweis.id === row.id, "echter App-Adapter liefert den gespeicherten Briefingstand");
       check(r.body.lageBriefing.paragraphs[0].sources[0].url === "https://example.org/schule", "gespeicherter Text bleibt mit konkreter Quelle abrufbar");
+      check(r.body.gespeicherterNachweis.profilbindung.version === 1
+        && r.body.gespeicherterNachweis.profilbindung.stellvertretungenImProfilhash === false
+        && r.body.gespeicherterNachweis.pruefung.bestanden === false,
+        "historischer Profilhash bleibt als alter Bindungsstand ohne neue Fachabnahme erkennbar");
+      payload.profilHashVersion = 2;
+      r = await request("GET", geheim, path);
+      check(r.status === 500 && !JSON.stringify(r.body).includes("Schulbau"), "neue Versionsbehauptung mit altem Hash wird auch historisch abgewiesen");
+      payload.profilHash = B.profilHash(profile);
+      r = await request("GET", geheim, path);
+      check(r.status === 200 && r.body.gespeicherterNachweis.profilbindung.version === 2
+        && r.body.gespeicherterNachweis.profilbindung.stellvertretungenImProfilhash === true,
+        "neuer gespeicherter Kontext bleibt mit seiner eigenen Bindung abrufbar");
+      profile.deputyCommittees = ["Verkehrsausschuss"];
+      r = await request("GET", geheim, path);
+      check(r.status === 500 && !JSON.stringify(r.body).includes("Schulbau"), "abweichende Stellvertretung wird beim neuen Beleg auch historisch abgewiesen");
+      profile.deputyCommittees = ["Haushaltsausschuss"];
       r = await request("GET", geheim, path.replace(profile.id, "test-kohorte-a-002"));
       check(r.status === 500 && !JSON.stringify(r.body).includes("Schulbau"), "fremde Speicherantwort wird nicht ausgeliefert");
       check((await request("POST", geheim, path)).status === 400, "Nachweisroute ist ausschliesslich lesend");

@@ -5,7 +5,7 @@
 
 ## 13.09.2026: Quellenfix unverändert, REST Vorbereitung teilweise abgeschlossen
 
-Neuester Abschnitt: reiner Dokumentationsabschluss nach dem tatsächlich bestätigten Merge von PR388 und Production Deployment. Die älteren Abschnitte erhalten ihren jeweiligen historischen Befund; frühere Sperren und nächste Schritte sind durch neuere Freigaben überholt.
+Neuester Abschnitt: authentische Git Basis und isolierte Pflichtlaufvorbereitung am Ende dieses Belegs. Die älteren Abschnitte erhalten ihren jeweiligen historischen Befund; frühere Sperren und nächste Schritte sind durch neuere Freigaben überholt.
 
 Ein reproduzierbarer Auswahlfehler ist lokal korrigiert. Aktuelle Quellen werden vor der Begrenzung auf zwölf Vorgänge berücksichtigt. Reviewvorbereitung ist abgeschlossen; Veröffentlichung und fachlicher Wirkungsnachweis stehen aus. Der abgeschlossene PR387 Merge bleibt ein eigener unveränderter Production Stand.
 
@@ -482,3 +482,199 @@ Die kanonische Vorprüfung34751774750 und beide PR388 Pflichtjobs34752297764 sin
 Vor jeder Übertragung Deploymentverbot auf dem bestehenden Branch erneut bestätigen. Reiner Dokumentations PR nach main,kein direkter Push auf main,kein Force Push. Nach erfolgreichem CI nur den erneut bestätigten PR Kopf mit erwarteter Kopfkennung mergen. Automatisches Production Deployment unabhängig am tatsächlichen Dokumentationsmerge und Hauptalias prüfen. Bei Fehlschlag stoppen,kein zweiter Versuch. Review und Belege einschließlich abschließendem main CI Befund von PR388 dauerhaft sichern und vollständig rücklesen. Original gegen frisch bestätigte eigene Version abschließen und Steuerung bedingt freigeben. Danach stoppen.
 
 Offen bleiben die zwei fachlichen Profilfehler und der vollständige500er Fachnachweis. Keine bestehenden Profile oder Konten,Production Daten,Modelle,Originalquellen,Importe,Migrationen,Budgets,persistenten Umgebungsvariablen oder Cron Änderungen. Fachautomation6aa2872e75ec81919d4c0abe7d304ddb bleibt deaktiviert,next_run_time null. Nach diesem technischen Abschluss ist für weitere fachliche Arbeit ein eigener kleiner Auftrag erforderlich.
+
+## Zwei Profilablehnungen: lokale Untersuchung am 13.09.2026
+
+Status: **teilweise abgeschlossen**. Vorhandene Eingaben ausgewertet, eine Kontextlücke reproduziert und kleinsten lokalen Kandidaten vorbereitet. Historische Ursachen beider Ablehnungen nicht vollständig beweisbar. Keine Veröffentlichungsempfehlung; konkrete Kompatibilitätsgrenze unten. Keine allgemeine Lage oder Quellenüberarbeitung.
+
+### Ausgangsstand und Zuständigkeit
+
+Pflichtdateien vollständig in Reihenfolge gelesen, danach Isolationsvertrag und betroffene Dateien. Keine geltende AGENTS.md. Erhaltener Arbeitsbaum sauber auf d1af1bf52d3c4ea45375f53e3c5bc4b9b51f88a2 mit Baum dcc9adfa383a3e73cb201c1dc09a3319ef0e04e5. Frischer GitHub main545d644ab72987062a6795e51097756cc2675718 trägt denselben Baum. Die entfernten Commits545d644 und2486583 fehlen lokal; der lokale Commit ist vorhanden. Eigene Arbeitskopie auf `codex/profilbezug-diagnose-20260913` aus diesem belegten identischen Baum, keine fremden Änderungen überschrieben. Kein Push oder Umschreiben der Geschichte.
+
+Der zuvor noch laufende automatische main Lauf34755086886 ist vollständig completed/success, Abschluss14:53:45 Türkei /13:53:45 Berlin /11:53:45UTC. Beide Pflichtjobs103717998166 und103717998179 samt Schritten erfolgreich. Kein neuer Lauf ausgelöst und keine neue Detailzählung aus Joblogs behauptet. Nur historischerPR345 offen, keine laufende Action oder sichtbarer lokaler Fachprozess. Fachautomation6aa2872e75ec81919d4c0abe7d304ddb frisch deaktiviert,next_run_time null. Keine umfassende Sicht auf andere Chats.
+
+Privater Originalbericht320 vollständig823735Bytes und SHA256d88c56707d4a8116508e41d5c0ca74674c392f8aa150fb68ed0fbaf2c146c309 bestätigt; Steuerung frei. Übernahme321 bedingt gegen unmittelbar frisch bestätigte320 gespeichert,824641Bytes,SHA25640febae36e52f58c0cae6241ff893e1df10a4bbc93f07791cf0097dad9e1e7ca vollständig erneut identisch gelesen. Der abschließende private Bericht trägt den tatsächlichen Freigabestand.
+
+### Was die erhaltenen Belege aussagen
+
+Ausgangsbeleg im privaten Originalbericht: natürlicher Prozess briefing-lage-20260913054531-i31ms vom13.09.,08:45:31 bis08:47:08 Türkei /07:45:31 bis07:47:08 Berlin /05:45:31 bis05:47:08UTC. Zwei Diagnosen `ai-text-source-support`, jeweils `profilbezug-fehlt`, einmal Absatz0 und einmal Absatz1. Keine neue Production Abfrage in diesem Sprint. Die verworfenen Entwürfe, gewählten Quellen und Mandatsfelder sowie ursprünglichen Reviewbegründungen fehlen.
+
+Das erhaltene private Eingabearchiv libfile_5c4a8560667c8191b87a1390879591c4 wurde frisch vollständig gelesen:586361Bytes,SHA25647396e6604614574e1d9476d45d30577be12178f2fecbfc28d5168bf889b93d8. ZIP Integrität und alle46 Manifestdateien bestätigt. Profile und Quellen wurden damals erst07:15 bis07:27UTC gelesen. Sie sind kein exakter Mitschnitt des früheren Modellaufrufs. Private Kennungen und Rohquellen bleiben außerhalb des Repository.
+
+| Fall | Erhaltener Kontext | Belegbarer Befund | Fehlender Nachweis |
+| --- | --- | --- | --- |
+| Ablehnung Absatz0 | Zwei ordentliche Ausschüsse und drei Schwerpunkte vollständig im Generator; keine Stellvertretungen im Profil | Kein Verlust dieser Profilfelder. Quelleingaben enthalten sowohl fachlich passende als auch sachfremde Dokumente | Welcher Absatz, welches Dokument und welches Mandatsfeld abgelehnt wurden; ob Generator oder Review fachlich irrte |
+| Ablehnung Absatz1 | Ein ordentlicher Ausschuss, drei Schwerpunkte und drei stellvertretende Ausschüsse im gemappten Profil | Alle drei Stellvertretungen fehlen im bisherigen gemeinsamen Lagekontext und in der erlaubten Ausschussbindung. Ordentlicher Ausschuss und Schwerpunkte sind erhalten | Ob dieser Verlust die historische Auswahl beeinflusste; kein Nachweis einer dadurch behobenen Ablehnung |
+
+Vorheriger Quellenvergleich:Fall0 sechs Gruppen/15 Dokumente/7 ohne Auszug;Fall1 sechs/9/7. Bereits korrigierte Quellenauswahl ausPR388:Fall0 zwölf/25/15, Fall1 zwölf/17/15. Quelleingaben jeweils unter16000Zeichen. Das sind gespeicherte spätere Diagnoseeingaben, keine neue fachliche Abnahme. Beim ersten Fall stehen unter anderem Gesundheit und Energie sachnah im Material; beim zweiten Pflege, daneben Stellenanzeigen und sachfremde Nachrichten. Die Inhalte wurden nicht extern verifiziert. Mehr Quellen oder ein gemeinsames Stichwort beweisen keinen tragfähigen Mandatsbezug.
+
+**Belegte technische Auslösung:** `lage-textqualitaet.pruefe` erzeugt `profilbezug-fehlt`, wenn der Reviewwert nicht exakt true ist. Eine nicht existierende Mandatsbindung würde bereits in `ai.pruefeLageParagraphs` mit `ai-text-profile-reference` scheitern. Fehlende Stellvertretungen erklären daher nicht unmittelbar die beobachtete Fehlerklasse. Sie könnten nur die Auswahl oder Einordnung beeinflusst haben. Der Prüfer meldet die erste fehlerhafte Absatzposition; die übrigen Absätze sind dadurch nicht vollständig abgenommen.
+
+**Plausible Erklärungen:** unpassende Quellenauswahl, Bindung an das falsche vorhandene Profilfeld oder ein falsches negatives Reviewurteil. Keine dieser Erklärungen ist ohne verworfene Antwort und Urteil als historische Ursache bewiesen. Insbesondere wird kein pauschaler Profilfehler oder leeres Profil behauptet.
+
+### Kleinster lokaler Kandidat und synthetischer Nachweis
+
+Genau zwei Produktdateien: `lib/helmut/lage-textqualitaet.js` ergänzt nichtleere Stellvertretungen als eigenes Kontextfeld und erlaubt deren exakte Werte beim bestehenden Bindungsfeld ausschuss. `lib/helmut/ai.js` erklärt diese erlaubte Bindung. Ordentliche und stellvertretende Mitgliedschaft bleiben getrennt; kein Amt wird daraus abgeleitet. Profile selbst, Quellenwahl, Schema, Budget, Modell und Wiederholungsregeln unverändert. Keine Sonderbehandlung echter Personen.
+
+Neue Suite `scripts/lage-stellvertretender-profilbezug-test.js`: auf unverändertem Produktcode zuerst fehlgeschlagen, weil der SQL Mapper Stellvertretungen erhält, der Kontext sie aber verwirft. Nach Korrektur neun positive und negative Vertragsgruppen sowie eine ausdrücklich als Kompatibilitätsgrenze bezeichnete Diagnosegruppe belegt. Alle zehn Gruppen erfolgreich ausgeführt. Sie benutzen ausschließlich erfundene Profile, Quellen und Urteile; kein tatsächliches Modell und keine fachliche Bewertung historischer Texte.
+
+Sechs betroffene bestehende Suiten zusätzlich: Dokumentbindung8/8, Platzhalterbindung12/12, Kostenquittung23, Entwurfsbeleg11, Aussagenbindung14/14, Lagebindung7/7. Alle erfolgreich über `node scripts/lokal.js -- node <Prüfung>`, lokal isoliert, ohne Installation. Kein pauschaler Gesamtlauf, Browser oder REST Wiederholung. Ein gesonderter reiner Formatvergleich der zwei erhaltenen Profile bestätigt unveränderten Mapper und alle bisherigen Kontextfelder; nur die drei Stellvertretungen eines Profils werden ergänzt. Dabei wurden keine Absätze rekonstruiert.
+
+### Konkrete Veröffentlichungsgrenze
+
+`briefing-speicher.profilHash` und `briefing-aussagenbindung` verwenden ebenfalls `profilKontext`. Bei nichtleeren Stellvertretungen ändert sich deshalb die Bindung gespeicherter Belege. Die zehnte neue Diagnosegruppe weist nach: Ein synthetisches Paket mit altem Profilhash wird vom unveränderten `briefing-speicher.lese` als `briefing-nachweis-abweichend` abgewiesen; gespeicherte Bytes bleiben unverändert. Ein entsprechender alter Entwurf wäre wegen abweichendem Profilhash keine gültige Fortsetzung. Profile ohne Stellvertretungen behalten ihren bisherigen Kontext und Hash.
+
+Das ist eine belegte Kompatibilitätsgrenze des lokalen Kandidaten, keine bestandene Veröffentlichung. Vor Veröffentlichung muss ein eigener kleiner Abschnitt klären, wie bestehende Belege geschützt und korrekt als historisch gebunden behandelt werden. Kein stiller Rückfall, keine pauschale Neugenerierung, keine Migration oder Belegumschreibung vorbereitet. Der Zugriff auf bestehende echte Profile darf durch eine Veröffentlichung nicht verschlechtert werden. Für die beiden historischen Ablehnungen und500 bleibt der fachliche Wirkungsnachweis offen.
+
+### Abschlussgrenzen
+
+Lokaler Commit mit genau zwei Produktdateien, einer synthetischen Suite und diesen zwei Dokumentationsdateien. Exakte Commitkennung, Review und vollständige neue Belege stehen im privaten Abschluss. CURRENT_STATE ändert nur den aktuellen Kopf; historische Abschnitte erhalten. Kein Push, neuer PR, Merge, Deployment,500er Lauf, Modell, politischer Originalabruf, Import, Profil oder Kontowechsel, Production Datenbankzugriff, Migration, Budget, persistente Umgebungsvariable oder Cron Änderung. Keine neue Automation und kein zusätzlicher Agent gestartet.
+
+Review und Belege dauerhaft sichern und vollständig rücklesen. Original ausschließlich gegen frisch bestätigte eigene Version abschließen und eigene Steuerung bedingt freigeben. Danach stoppen. Direkter nächster kleiner Auftrag: ausschließlich die lokale Kompatibilitätsgrenze dieses Kandidaten entscheiden und gegebenenfalls eng korrigieren, ohne den Quellen oder Fachumfang zu erweitern. Derselbe Thread mit Denkstufe Hoch ist geeignet. Keine Freigabe für diesen lokalen Abschluss mehr nötig; weitere Arbeit ist ein neuer begrenzter Auftrag, jede Veröffentlichung bleibt ausdrücklich gesperrt.
+
+
+## Lokale Kompatibilität historischer Briefings am 13.09.2026
+
+Status: **teilweise abgeschlossen**. Der Betreiberauftrag Weiter autorisiert den zuvor angebotenen kleinen lokalen Anschluss. Die konkret belegte Leseblockade ist für den ausdrücklichen historischen Zugriff synthetisch korrigiert. Neue Fachprüfungen bleiben an den erweiterten Profilkontext gebunden. Keine Veröffentlichung und kein Nachweis, dass die beiden historischen Ablehnungen fachlich behoben sind.
+
+### Frischer Ausgangspunkt und begrenzte Korrektur
+
+Pflichtdateien in vorgeschriebener Reihenfolge vollständig gelesen, danach Isolation; keine geltende AGENTS.md gefunden. Eigener Branch `codex/profilbezug-diagnose-20260913` sauber auf49f147b554ae211564809084a6431b16ff0335f1, Baumcb1324ae38fd65e21f47c3c75de0a93d8808718e. GitHub main545d644 und Baumdcc9adf unverändert, nur historischerPR345 offen, keine laufende Action. Der lokale Ausgangscommitd1af1bf ist erhalten; entfernte Commits545d644 und2486583 fehlen im lokalen Objektbestand. Kein blindes Übertragen und keine Annahme gleicher Geschichte aus gleichen Bäumen. ps scheiterte mit lokaler Bibliotheksmeldung; direktes Lesen der Prozesstabelle zeigte keine fremden Node oder Git Prozesse. Keine umfassende Sicht auf andere Chats.
+
+Originalbericht322 frisch vollständig833376Bytes,SHA2568e6f472004b42b7eeb7f8439dcfa64da191fd48daf9f5051c66f8ee8a801bb68 und frei bestätigt. Eigene Übernahme323 bedingt gegen322 gespeichert,834352Bytes,SHA256ec640cec51448bc7101c6cd27793eaa80fd192f78b95b06a38bf61e63b3d1682 vollständig identisch rückgelesen. Review10 frisch gelesen. Kein neues historisches Modellmaterial angefordert oder erfunden.
+
+Zwei Produktdateien ergänzen den bisherigen lokalen Kontextkandidaten:
+
+- `briefing-speicher.js` kennzeichnet neu materialisierte Pakete mit `profilHashVersion:2`. Der aktuelle Hash enthält Stellvertretungen. Fehlende Versionskennung bedeutet den bisherigen Vertrag1; unbekannte Kennungen werden abgewiesen. Nur `historisch:true` prüft den dazugehörigen alten Hash, der exakt den vorherigen Kontext ohne Stellvertretungen bildet. Es gibt keinen automatischen Rückfall bei fehlgeschlagener neuer Prüfung.
+- `server.js` verwendet diese ausdrückliche Lesart allein im bereits vorhandenen gespeicherten Lesepfad. Die Antwort nennt den Bindungsstand und ob Stellvertretungen im Profilhash enthalten sind. Das vorhandene Fachurteil bleibt unverändert. Der normale aktuelle Aufbau erhält keine historische Ausnahme.
+
+Auch historische Reads prüfen weiterhin Mandant, genaue Speicherkennung, Slot, Tag, Vertragsversion, Inhaltshash und die damals gebundenen Profilfelder. Ein alter Hash kann Änderungen der damals nicht enthaltenen Stellvertretungen grundsätzlich nicht nachweisen. Das wird durch den alten Bindungsstand kenntlich gemacht; es wird kein historischer Profilsnapshot rekonstruiert. Neue Version2 erkennt Änderungen der Stellvertretungen und lehnt sie ab. Profile ohne Stellvertretungen behalten ihren bisherigen Hash.
+
+Bestehende Materialisierung, Aussagenprüfung und Entwurfsfortsetzung verwenden weiter den aktuellen Kontext. Ein unvereinbarer Altbeleg stoppt vor Aufbau oder Schreiben; er wird weder gelöscht noch überschrieben. Ein alter Entwurf wird nicht unter dem erweiterten Kontext fortgesetzt. Diese Trennung schützt gespeicherte Inhalte und verhindert eine nachträgliche fachliche Aufwertung. Keine Migration, keine Umschreibung von Bestandsdaten und keine neue Modellarbeit vorbereitet.
+
+### Gezielte Ergebnisse und Beweisgrenzen
+
+Die neue synthetische Suite scheiterte vor der Korrektur beim historischen Lesen des alten Pakets. Danach bestehen zehn Gruppen in `briefing-profilkontext-kompatibilitaet-test.js`: exakter Altvertrag, unveränderte Bytes, strikte neue Prüfung, neue Version2, manipulierte Versionen, Mandant und Inhaltsabweichungen, Profile ohne Stellvertretungen, Stopp vor Materialisierung, keine Altentwurfsfortsetzung und historischer Serverzweig. Alle Profile und Inhalte sind erfunden; der Speicher ist injiziert.
+
+Der vorhandene echte lokale HTTP Handler in `github-laufzeitpruefung-test.js` wurde um historische Profile mit Stellvertretungen ergänzt:58/58 Assertions erfolgreich. Er liefert den Altbeleg samt alter Bindung und unverändert negativer Fachabnahme, weist eine neue Versionsbehauptung mit altem Hash ab, liefert einen korrekt gebundenen neuen Beleg und weist dessen abweichende Stellvertretung ab. Vorhandene Autorisierungs und Fremdmandantprüfungen bleiben erfolgreich. Loopback HTTP mit synthetischem Speicher ist kein Browser, Production REST oder Kontonachweis.
+
+Sieben angrenzende Suiten erfolgreich: Vollständigkeit23/23, Korrektur8/8, Urteilsimport10/10, Lagebindung7/7, Aussagenbindung14/14, Entwurfsbeleg11 und stellvertretender Profilbezug10/10. Diese Wiederholung ist durch die neue gemeinsame Hash und Speicheränderung begründet. Keine allgemeinen Quellen, Browser oder bisherigen Gesamtläufe wiederholt. Alle lokalen Prüfungen ausschließlich über `node scripts/lokal.js -- node <Prüfung>`; keine Installation oder Chromium Diagnose.
+
+Die letzte Diagnosegruppe des vorherigen Kandidaten weist weiterhin korrekt die Ablehnung im strikten Leser nach. Sie ist durch die historische Ausnahme nicht aufgehoben. Der fachliche Befund der zwei ursprünglichen Fälle bleibt unverändert: Kontextverlust bei einem erhaltenen Profil belegt; historische Kausalität und eine erfolgreiche fachliche Ausgabe unbelegt. Kein falsches Grün aus den technischen Tests.
+
+### Abschluss dieses begrenzten Anschlusses
+
+Produktänderungen, gezielte Tests und Dokumentation werden nachvollziehbar lokal committet. CURRENT_STATE ersetzt nur den kompakten Kopf, historische Abschnitte bleiben identisch. Exakte Commit und Baumkennung sowie Testausgaben und Patch werden im privaten Review und Belegarchiv gesichert und vollständig tatsächlich rückgelesen. Original nur gegen unmittelbar frisch bestätigte eigene Version aktualisieren, Steuerung bedingt freigeben und gesamten gespeicherten Abschluss erneut prüfen.
+
+Kein Push, neuer PR, Merge, Deployment,500er Lauf, Modellaufruf, politischer Originalabruf, Import, bestehendes Profil oder Konto, Datenbankeingriff, Migration, Budget, persistente Umgebungsvariable oder Cron geändert. Keine zusätzlichen Agenten. Fachautomation bleibt deaktiviert,next_run_time null. main und Production bleiben beim bestätigten Stand; veröffentlichte Dokumentation enthält diesen lokalen Kandidaten noch nicht. Daher bleibt der Gesamtstatus teilweise abgeschlossen.
+
+Danach stoppen, kein automatischer Folgesprint. Nächster begrenzter Auftrag wäre die abschließende Prüfung des kumulierten lokalen Kandidaten und der konkreten Veröffentlichungsvoraussetzungen. Keine Veröffentlichung aus Weiter ableiten. Denkstufe Hoch; bei neuem Thread ist der vollständige Übergabeprompt aus dem privaten Abschluss zu verwenden.
+
+
+## Kumulativer Profilkontextreview am 13.09.2026
+
+Status: **teilweise abgeschlossen**. Der beauftragte lokale Review ist durchgeführt und die Veröffentlichungsvoraussetzungen sind konkret bestimmt. Kein zusätzlich belegter Produktfehler und keine weitere Produktkorrektur. Veröffentlichung und fachlicher Wirkungsnachweis bleiben offen.
+
+### Ausgangsbelege und Umfang
+
+Pflichtdateien vollständig in Reihenfolge gelesen, danach lokale Isolation. Keine geltende AGENTS.md in der Verzeichniskette oder in den betroffenen Unterverzeichnissen gefunden. Arbeitsbaum sauber auf08c693d96b927dfd246c9b5874379b97a58290c0, Baumd69e9fa65e4895a4ec7548ea99f9652bcf61c2ff. Original324, Review11 und Kompatibilitätsarchiv0 frisch vollständig mit den übergebenen Bytes und SHA256 bestätigt; ZIP und alle zehn Manifestdateien geprüft. Eigene Übernahme325 ausschließlich bedingt gegen unmittelbar zuvor bestätigte324 gespeichert und vollständig bytegleich rückgelesen. Keine fremde aktive Zuständigkeit sichtbar.
+
+GitHub main545d644ab72987062a6795e51097756cc2675718 trägt unverändert den Baumdcc9adfa383a3e73cb201c1dc09a3319ef0e04e5 wie die lokale Basisd1af1bf52d3c4ea45375f53e3c5bc4b9b51f88a2. main CI34755086886 frisch completed/success, Abschluss11:53:45UTC. Nur historischerPR345 offen, keine laufende Action; zwei alte wartende CI Aufträge31128435980 und31126446647 vom06.08. Keine sichtbaren lokalen Node oder Git Prozesse. Fachautomation6aa2872e75ec81919d4c0abe7d304ddb deaktiviert,next_run_time null. Keine umfassende Sicht auf andere Chats oder laufende Datenbankprozesse behauptet; kein Datenbankzugriff.
+
+Die entfernten Commits545d644ab72987062a6795e51097756cc2675718 und2486583659012b5ecfef3eff0376e18fd122e113 fehlen weiterhin im lokalen Objektbestand. Der echte entfernte Commit545d644 ist über den vorhandenen GitHub Leser erreichbar und trägt die Eltern97ef157c19a0555b246250217ea4d494926f5c96 und2486583659012b5ecfef3eff0376e18fd122e113. Git origin verwendet github.com; direkter Git Transport wurde nicht ausgeführt oder als verfügbar behauptet. Keine Geschichte rekonstruiert, keine Objekte erfunden, kein Push. Ein Patcharchiv ersetzt keine vollständige Git Geschichte.
+
+### Betroffene Verbraucher und Bewertung
+
+| Verbraucher | Befund | Grenze |
+| --- | --- | --- |
+| Generator, Absatzbindung und Review | Gemeinsamer Kontext enthält Stellvertretungen getrennt; exakte Bindung erlaubt, negative Urteile bleiben wirksam | Kein echtes Modell oder historischer Wirkungsnachweis |
+| Historischer Briefingleser | Nur ausdrücklicher historischer Pfad verwendet den alten Hashvertrag; Profilhashversion2 enthält Stellvertretungen | Vertrag1 kann damalige Stellvertretungen nicht nachweisen; Metadaten sind keine Fachabnahme |
+| Materialisierung und Warteschlangenadapter | Aktueller Hashvergleich bleibt streng; unvereinbarer alter Tagesbeleg stoppt Materialisierung | Gleicher Tag kann betroffen sein; im Adapter erfolgt der normale Briefingaufbau bereits vor der Materialisierung. Kein pauschales Versprechen, im gesamten Aufruf gäbe es vorher keinen Aufbau |
+| Aussagenbindung, Urteilsimportprüfung und Nachlaufleser | Neuer Kontext verändert Eingabehash. Ein alter, intern konsistenter Urteilssatz wird für die neue Eingabe verworfen | Historische Prüfung mit ihrer originalen Eingabe bleibt historisch gültig; kein aktuelles Sachurteil daraus |
+| Gebundene Übergabe an Lage | Rekonstruiert den aktuellen Eingabevertrag und weist alten Ursprung sowie geänderte Stellvertretung ab | Technische Bindung und separat erforderliches Fachurteil sind verschieden |
+| Entwurfsfortsetzung | Alter Profilhash passt nicht; keine Wiederverwendung unter neuem Kontext | Bezahlte Altentwürfe bleiben erhalten, keine automatische Neugenerierung in diesem Review |
+| Privater Inhaltsleser | Liefert aktuellen Profilkontext neben unveränderten Belegzeilen; kein Gleichheitszwang zu jedem historischen Profilhash | Snapshotvergleich ist kein transaktionales Backup und kein Fachnachweis |
+| Öffentlicher App Nachweisleser | Liest gespeichertes Struktur und Qualitätsurteil; behauptet weiter keinen vollständigen Funktionsnachweis | Profilbindungsmetadaten werden nicht in seine Summen übernommen. Dessen Summen dürfen keine Abnahme des neuen Kontextes ersetzen |
+| Ungebundener Lagecache | Verwendet bestehende Quellen und Vorgangshashes, keine neue Profilhashbindung | Bereits vorhandener Text wird nicht durch das Update neu geprüft. Diese Dateien sind gegenüber der baumgleichen main Basis unverändert; keine neu eingeführte Cachekorrektur oder pauschale Neuerzeugung |
+
+Direkte Verbraucher des gemeinsamen Kontextes und Profilhashs sowie die genannten angrenzenden Übergaben wurden gezielt gelesen. Keine allgemeine Lage oder Quellenanalyse. Statische Prüfung des normalen Appzweigs zeigt keine neue historische Ausnahme außerhalb des ausdrücklich gespeicherten Abrufs. Der frühere echte lokale HTTP58/58 Beleg bleibt dafür ein datierter Vorbeleg; hier kein neuer Browser oder Production Abruf.
+
+### Neue gezielte synthetische Belege
+
+`scripts/profilkontext-verbraucher-test.js` besteht fünf neue Gruppen. Ein alter Eingabevertrag verwendet einen unabhängig festgeschriebenen früheren Fachkontext, erhält aber den schon zuvor vorhandenen Hash des vollständigen Rohprofils. Das ist eine synthetische Vertragsprobe, kein Nachbau der fehlenden historischen Modellantworten.
+
+1. Alter Aussagenvertrag und positives fiktives Urteil passen historisch zusammen; aktueller Vertrag weist dieses Urteil als veraltet ab. Die reine Urteilsimportprüfung lehnt es ebenfalls ab und akzeptiert den neu gebundenen synthetischen Satz. Kein Import ausgeführt.
+2. Der echte Nachlaufleser liest einmal und baut die aktuelle synthetische Eingabe einmal; alter Ursprung scheitert vor Ausgabe einer verwendbaren Lagebindung. Kein persistenter Speicher oder Modell.
+3. Die gebundene Lage weist den alten Urteilssatz und eine geänderte Stellvertretung ab. Der neue vollständige Vertrag wird akzeptiert. Ein negatives Mandatsurteil bleibt abgelehnt.
+4. Ohne Stellvertretungen ist der gesamte alte und neue Aussagenvertrag identisch, nicht nur sein Profilhash.
+5. Der alte Hash erkennt weder Entfernen noch Wechsel einer Stellvertretung. Der neue Hash erkennt beides; sämtliche Eingaben bleiben unverändert.
+
+Alle fünf Gruppen erfolgreich über `node scripts/lokal.js -- node scripts/profilkontext-verbraucher-test.js`. Kein roter Produktfall und daher keine weitere Produktdatei geändert. Historische zehn Kompatibilitätsgruppen, HTTP58/58 und frühere gezielte Suiten wurden nicht unverändert wiederholt. Kein Gesamtlauf, keine Installation oder Chromium Diagnose. Die neue Suite gehört automatisch zum späteren kanonischen Gesamtlauf.
+
+### Konkrete Veröffentlichungsvoraussetzungen
+
+1. **Echte Git Basis:** Vor Übertragung aktuellen main und Konkurrenz erneut lesen. In einer Arbeitskopie mit echter entfernter Geschichte den kumulierten Patch gegen die bestätigte Basis prüfen und auf einem eigenen Branch übernehmen. Vorherige lokale Commits erhalten. Gesamtdiff, Eltern, Baum, lokale Änderungen und ein möglicher entfernter Zielbranch sind abzugleichen. Kein blindes Pushen oder Force Push; keine entfernte Geschichte aus ähnlichen Bäumen ableiten.
+2. **Exakter Kandidat:** Der kanonische Gesamtlauf `node scripts/lokal.js -- node scripts/run-offline-tests.js` ist vor einem PR nach CLAUDE.md §6 erforderlich. Danach müssen beide bestehenden Pflichtjobs `Syntax + Offline-Suiten` und `Browser-/Mobile-Smoke (Chromium)` für den tatsächlich zu übernehmenden Kandidaten erfolgreich sein, einschließlich ihrer vorhandenen Datenbankgates. Frühere369 Suiten, Kontoschutz15, Z2248 und Browser50 gelten nur für ihre damaligen Prüfbäume. Kein unveränderter Chromiumversuch in dieser Umgebung ohne neue Voraussetzung.
+3. **Betriebliche Verträglichkeit:** Vor Freigabe einer tatsächlichen Veröffentlichung die aktuell betroffenen Profile mit nichtleeren Stellvertretungen und nur deren vorhandene Tagespakete gezielt rein lesend prüfen. Ein alter, noch für den aktuellen Tag materialisierter Hash führt zur dokumentierten Verweigerung. Vor Veröffentlichung muss der reguläre Materialisierungspfad einen verträglichen Ausgang haben oder diese konkrete Sperre ausdrücklich betrieblich geklärt sein. Keine allgemeine Inventur, keine automatische Umschreibung oder Wiederholung. Ein Kalendertageswechsel allein ersetzt den frischen Vorflug nicht.
+4. **Historische Beweisgrenze:** Abnahmeberichte müssen Hashbindung, gespeichertes altes Urteil und aktuelle Fachprüfung auseinanderhalten. Ein akzeptierter Cache oder historischer HTTP200 ist keine neue Prüfung mit Stellvertretungen. Die beiden früheren Ablehnungen bleiben ohne historische Antworten kausal ungeklärt.
+5. **Ausdrückliche Freigaben:** Der vorliegende Auftrag erlaubt keinen Push, PR, Merge oder Deployment. Ein späterer Merge würde automatisch Production deployen. Vorher konkrete Änderung, Wirkung, Risiko, rein lesende Nachkontrolle und Rückweg nennen. Nach einem freigegebenen Merge exakten Commit und READY samt Hauptadresse sowie den historischen und normalen Zugriff rein lesend bestätigen. Production Rücknahme braucht eigene Freigabe.
+6. **Spätere Fachabnahme:** Veröffentlichung ist kein Nachweis für exakt500. Ein fachlicher Wirkungsnachweis braucht einen eigenen begrenzten Auftrag und bei Modellarbeit vorher Profile, Laufzeit, maximale Gesamtkosten, Kostenschutz, Erfolgswerte und Stoppbedingungen. Die historischen Antworten werden nicht rekonstruiert.
+
+Diese Voraussetzungen bedeuten keine Veröffentlichungsempfehlung vor den offenen Gates. Es ist keine weitere Produktänderung allein für den Review erforderlich. Rückweg dieses lokalen Kandidaten: nicht veröffentlichen; kein Production Rückweg in diesem Sprint ausgeführt.
+
+### Abschluss
+
+Nur neue synthetische Suite und kompakte Dokumentation lokal committen. CURRENT_STATE verändert ausschließlich den aktuellen Kopf und bewahrt die Historie bytegleich. Produktcode gegenüber08c693d unverändert. Review und neues Belegarchiv enthalten exakten finalen Commit und Baum, kumulierten Patch, Anschlussdelta, wirkliche Testausgabe und Vorgängerarchiv. Vollständig dauerhaft sichern und tatsächlich rücklesen; Original gegen frisch bestätigte eigene Version abschließen, Steuerung bedingt freigeben und vollständige Bytes prüfen.
+
+Keine zusätzlichen Agenten, kein500er Lauf oder Aktivierung, kein Modell oder Originalabruf, keine Importe, Profile, Konten, Datenbankänderungen, Migrationen, Budgets, persistenten Umgebungsvariablen oder Cron Änderungen. Kein Push, PR, Merge oder Deployment. Production dpl_68HdBTJPHvevFbhPog7TQGovQMFu READY bleibt der datierte Vorbeleg11:46UTC, hier nicht neu bestätigt.
+
+Danach stoppen. Ein direkt anschließender kleiner Auftrag zur korrekten Übertragung und Pflichtprüfung passt in denselben Thread mit Denkstufe Hoch. Keine automatische Fortsetzung und kein Threadwechsel erforderlich.
+
+
+## Authentische Git Basis und Pflichtlaufvorbereitung am 13.09.2026
+
+Status: **teilweise abgeschlossen**. Auftrag Weiter setzt die angekündigte lokale Übertragung und Pflichtprüfung fort. Übertragung vorbereitet und geprüft; entfernter Gesamtlauf wegen ausdrücklich fehlender Push Freigabe noch nicht ausgeführt. Kein zusätzlicher Produktfehler oder Produktfix.
+
+### Übernahme und Ausgang
+
+Pflichtdateien vollständig in Reihenfolge gelesen; keine geltende AGENTS.md, gelesene Isolation unverändert. Original326 frisch frei,852805Bytes,SHA256fc41812ceff0c3b5b0241caec621e373d5df21999fef364300d8c5f1699855bc. Review12 frisch92465Bytes,SHA256c47e68beaf08e26265504d8f850185f78259be98b534aa4a1ba78b7351e6e9e2. Eigene Übernahme327 bedingt gegen326 gespeichert und vollständig bytegleich rückgelesen:853437Bytes,SHA256e8632c23df10f6d0cd9f3208361aaac60755dda72ef6e3a8f4399108ffb875b2. Keine laufende Action, nurPR345 offen, keine sichtbaren lokalen Fachprozesse. Keine umfassende Sicht auf andere Chats.
+
+Ursprünglicher Kandidat8319dd5b9b8887c0c961b0f0f007e9e8d673a1e4 in/workspace/scratch/ca5d7901fd32/helmut bleibt sauber und unverändert. Seine Geschichte unterscheidet sich weiterhin von GitHub. Die fehlenden entfernten Commits545d644 und2486583 sowie die gezielt geprüften Eltern97ef157,954cf4f,8d840d8 undcd300d1 sind dort nicht vorhanden. Keine breite Ahneninventur.
+
+### Authentisches Objekt und identischer Kandidatenbaum
+
+GitHub liefert für main545d644 den als valid verifizierten Signaturinhalt und die Signatur. Die daraus zusammengesetzten Originalcommitbytes ergeben unabhängig exakt den Git Objekthash545d644ab72987062a6795e51097756cc2675718. Keine Autorinformationen, Zeitstempel, Eltern oder Signatur geraten. Keine zusätzliche lokale GPG Vertrauenskette behauptet.
+
+Neue Arbeitskopie/workspace/scratch/5e17a0944d1a/fortsetzung/helmut: dieses authentische Commitobjekt und sämtliche schon lokal vorhandenen Objekte seines bestätigten Baumsdcc9adfa383a3e73cb201c1dc09a3319ef0e04e5. Kein Alternates Verweis und keine Abhängigkeit von der ursprünglichen Objektablage. Eine ausdrückliche normale shallow Grenze bei545d644 kennzeichnet die fehlende Vorgeschichte. Die echten Eltern97ef157c19a0555b246250217ea4d494926f5c96 und2486583659012b5ecfef3eff0376e18fd122e113 stehen unverändert im Commitobjekt. Keine fehlenden Eltern erfunden, keine vollständige Historie behauptet.
+
+Der kumulierte Patchd1af1bf..8319dd5 bestand git apply --check --index gegen diese Basis. Nach Anwendung ergab git write-tree exakt8eaf23249ebd579d13c1c50497f896ee3a698a78. Neuer lokaler Commit9451f2b564e1fb156ec07471e1b1ac98f63e1c47 hat diesen identischen Kandidatenbaum und echten Eltern545d644. git fsck --full --no-dangling erfolgreich. Direkter Git Netzwerktransport nicht genutzt, kein Force Push, ursprüngliche Arbeitskopie nicht umgeschrieben.
+
+### Vorhandener isolierter Prüfweg
+
+Reiner Listenmodus des unveränderten kanonischen Runners:372 Suiten. Keine ausgeführten372 Tests. scripts/lokal.js, scripts/run-offline-tests.js und .github/workflows/ci.yml bleiben unverändert.
+
+Die vorhandene .github/workflows/pr-vorpruefung-isoliert.yml läuft aufcodex/500-lage-quellenfenster-20260913 nur bei Push mit Änderung dieser Workflowdatei. Der entfernte Kopf2486583659012b5ecfef3eff0376e18fd122e113 wurde frisch über git/ref/heads gelesen und ist der bestätigte zweite Elterncommit vonmain. Eine spätere Übertragung des aufmain aufbauenden Kandidaten ist somit vorwärts möglich, wenn beide entfernten Kennungen unmittelbar vorher unverändert bleiben. Ein erster prozentkodierter Branchpfad wurde vom GitHub Leser abgewiesen; der passende Git Ref GET funktionierte. Kein Produktfehler oder Installationsversuch.
+
+Die neue lokale Arbeitskopie nutzt denselben bereits geschützten Testbranchnamen. Ihr ursprünglicher lokaler Zweigcodex/profilkontext-freigabe-20260913 bleibt als Referenz auf9451f2b erhalten. Der ursprüngliche Diagnosebranch in der anderen Arbeitskopie bleibt unverändert.
+
+vercel.json sperrt Deployments für genau diesen Testbranch bereits mit deploymentEnabled:false und wird nicht geändert. Im vorhandenen Vorworkflow wird nur der Kommentar auf den aktuellen Kandidaten und die erforderliche Push Freigabe präzisiert. Trigger, Berechtigungen, Isolation, Testbefehl, Zeitgrenzen und Bereinigung bleiben unverändert. Der konkrete Kommentarunterschied erfüllt nach einem freigegebenen Push den vorhandenen Pfadfilter. Kein neuer Workflow und keine geänderten Pflichtchecks.
+
+Der vorhandene Ablauf verwendet einen frischen GitHub Rechner, Lockfileabhängigkeiten, bereinigte Umgebung und eigenen Netzwerkraum mit ausschließlich Loopback. Testbefehl bleibt node scripts/lokal.js -- node scripts/run-offline-tests.js, als ursprünglicher Runnernutzer. Bestehende Bereinigung entfernt nur eigenen kurzlebigen Testbestand. Keine neue Testarchitektur.
+
+### Ausführungsgrenze und Freigabepaket
+
+Die erhaltenen früheren Browsererfolge stammen ausdrücklich von einem inzwischen entfernten GitHub Testrechner. Kein lokaler Browserbestand daraus abgeleitet. Die zwei im kanonischen Runner enthaltenen Suiten finden in dieser Work Umgebung das zuvor als unvollständig belegte globale Playwright. Keine erneute unveränderte Chromium Diagnose, Installation oder Testausführung mit bekanntem Browserfehler. Keine Entfernung von Abhängigkeiten, um einen Skip zu erzwingen. Kein verkürzter Gesamtlauf und kein falsches Grün.
+
+Der passende isolierte Vorprüfweg benötigt den Kandidaten im entfernten Testbranch. Push ist weiterhin ausdrücklich gesperrt. Deshalb wurde kein entfernter Lauf gestartet. Auch sein späterer Erfolg ersetzt weder Browserpflichtjob noch Datenbankgates der PR CI.
+
+Konkrete nächste Freigabe: ausschließlich den vorbereiteten finalen Kandidaten auf den bestehenden deploymentgesperrten Testbranch übertragen und den dadurch gestarteten kanonischen Vorlauf auswerten. Kein neuer PR, Merge oder Deployment. Unmittelbar vorher Originalsteuerung, main545d644, Zielbranch2486583 und deploymentEnabled:false frisch prüfen. Bei Abweichung stoppen statt überschreiben. Nach Übertragung exakten entfernten Commit und Baum vergleichen, tatsächlichen vollständigen Workflowabschluss, ausgewählte Suiten, Fehler und Bereinigung belegen. Keine automatische Wiederholung bei unklarem Ausgang.
+
+Ein späterer PR braucht eigene passende Freigabe und darf erst nach erfolgreicher Vorprüfung entstehen. Beide bestehenden Pflichtjobs einschließlich Datenbankgates bleiben erforderlich. Vor einem Merge ist zusätzlich der begrenzte lesende Vorflug auf alte Tagespakete betroffener Profile offen. Keine Production Korrektur hierfür vorbereitet.
+
+### Belege und Abschluss
+
+Produkt und Testcode gegenüber8319dd5 unverändert. Neu sind lediglich Kommentar im Vorworkflow und zwei Dokumentationsdateien. CURRENT_STATE Historie bytegleich. Verbraucher5, Kompatibilität10 und HTTP58/58 bleiben datierte Vorbelege und werden nicht wiederholt. Finalen lokalen Commit und Baum, tatsächliches Originalcommitobjekt, GitHub Nachweis, Patches, statische Prüfungen und Vorgängerarchiv dauerhaft sichern und vollständig rücklesen. Kein vollständiges Repository aus einem Archiv behaupten. Original nur gegen frisch bestätigte eigene Version abschließen; Steuerung bedingt freigeben und vollständige gespeicherte Bytes prüfen.
+
+Keine zusätzlichen Agenten,500er Arbeit, Aktivierung, Modelle, politischen Originalabrufe, Importe, Profile, Konten, Datenbankinventur oder Production Änderungen. Keine Budgets, Migrationen, persistenten Umgebungsvariablen oder Crons geändert. READY dpl_68HdBTJPHvevFbhPog7TQGovQMFu bleibt Vorbeleg11:46UTC. Fachabnahme500 und historische Ursache beider Ablehnungen weiterhin offen.
+
+Hier stoppen. Direkt anschließend passt die freizugebende Übertragung samt isolierter Vorprüfung in denselben Thread mit Denkstufe Hoch. Kein automatischer Folgesprint.

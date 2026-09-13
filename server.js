@@ -3224,11 +3224,12 @@ async function latestBriefingPayload({ politicianId, profile, url, previewMode =
   // V3-Lesepfad bleibt frisch; ein gespeicherter Teststand ist kein neuer Tag.
   const gespeichertTag = url?.searchParams?.get("gespeichert");
   if (gespeichertTag) {
-    const row = await require("./lib/helmut/briefing-speicher").lese({ userId: politicianId, day: gespeichertTag, profile });
+    const row = await require("./lib/helmut/briefing-speicher").lese({ userId: politicianId, day: gespeichertTag, profile, historisch: true });
     if (!row) return { available: false, reason: "briefing-nicht-gespeichert" };
     return prepareBriefingResponse({ ...row.payload.briefing,
       lageBriefing: require("./lib/helmut/briefing-speicher").lageAusgabe(row.payload.lage),
       gespeicherterNachweis: { id: row.id, erzeugtAm: row.generated_at,
+        profilbindung: require("./lib/helmut/briefing-speicher").profilBindungsstand(row),
         pruefung: row.payload.pruefung } }, { previewMode, compact, frischeKontext: null });
   }
   // Optionaler Slot-Override (?slot=morning|midday|evening|daily) fuer Tests/Admin/
