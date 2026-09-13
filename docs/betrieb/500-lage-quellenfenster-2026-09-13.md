@@ -1,5 +1,8 @@
 # Lokale Korrektur der Quellenwahl für den Lage Text
 
+**Aktueller Abschluss 13.09.2026 gegen09:34UTC: Der isolierte echte REST Nachweis ist bestanden,13/13 Gruppen. Die folgenden früheren Blocker und Empfehlungen sind datierte Historie. Maßgeblich ist der Abschlussabschnitt am Ende. Veröffentlichung und fachliche Abnahme bleiben offen.**
+
+
 ## 13.09.2026: Quellenfix unverändert, REST Vorbereitung teilweise abgeschlossen
 
 Neuester Abschnitt: isolierte REST Prüfung vorbereitet, tatsächliche Ausführung blockiert. Details und Abnahmekriterien stehen im letzten Abschnitt. Ältere Aussagen zu nächsten Schritten sind historische Aufträge.
@@ -269,3 +272,39 @@ Versionsgebundene Referenz für die vorbereiteten Erwartungen: [PostgREST12.2 Ve
 Review und CURRENT_STATE sind auf diesen Vorbereitungsstand zu beziehen. Der genaue neue Commit und Baum sowie die dauerhafte Sicherung stehen im privaten Review und Originalbericht. Original305 vollständig bestätigt, Übernahme306 gegen305 bedingt gespeichert und vollständig bytegleich rückgelesen. Abschluss nur gegen unmittelbar bestätigte eigene Version speichern und vollständig rücklesen.
 
 Veröffentlichung weiterhin zurückgestellt. Browserabnahme, REST Abnahme, zwei Profilfehler und fachlicher Nachweis für500 bleiben offen. Keine Production Wirkung, neue CI, Profile, Konten, Modellaufrufe oder Quellenabrufe. Nächster Schritt erst bei nachgewiesen verfügbarer isolierter Umgebung: genau diese Suite ausführen. Derselbe Thread mit Astra Hoch genügt für diesen kleinen direkten Anschluss; ein neuer Thread allein beseitigt den Umgebungsblocker nicht. Dieser Sprint endet hier ohne automatischen Folgeauftrag.
+
+
+## Tatsächlicher isolierter REST Nachweis am 13.09.2026
+
+Status: abgeschlossen und erfolgreich. Nach der konkreten Freigabefrage zur Übertragung des Kandidaten und genau einer isolierten GitHub Prüfung antwortete der Betreiber mit Weiter. Diese Freigabe umfasst den Testbranch und die isolierte REST CI. Sie umfasst keinen neuen PR, Merge, Deployment oder Production Zugriff. Der vorherige lokale Infrastrukturblocker bleibt historisch wahr; er wurde durch einen eigenen GitHub Dienst mit vorhandener CI Bauweise aufgelöst.
+
+### Geprüfter Stand und kleinste Änderungen
+
+Produktcode und vorbereitete Suite sind unverändert. Kein neu erkannter Produktfehler,keine Produktkorrektur und keine abgeschwächte Erwartung. Zwei zusätzliche Dateien gegenüber dem vorbereiteten Kandidaten e059dc4a64ba2018d34b054854ccfb3c46fdfc4b:
+
+1. vercel.json ergänzt ausschließlich git.deploymentEnabled für codex/500-lage-quellenfenster-20260913 um false. Vor jeder Branchübertragung wirksam mit übertragen;sonstige Konfiguration unverändert.
+2. .github/workflows/lage-quellen-rest.yml ergänzt genau eine Suite auf genau diesem Branch. Auslöser nur Änderungen an dieser Workflowdatei,der neuen REST Suite oder storage.js. Bestehende CI und andere Gates unverändert. Keine Repositorygeheimnisse,keine persistierenden Checkout Zugangsdaten,nur contents:read. Höchstens8Minuten Job und3Minuten Testschritt,keine Installationsschleife.
+
+Lokaler geprüfter Commit23517491a979f0969a7c3125280e2c2dc4834533 und GitHub Prüfcommit43f2351733f17e31c6ae19931c82c8ad312a7f0c besitzen unabhängig bestätigt exakt denselben Baum33ce0150b7867faf7a7ca6e4260ea6625619480a. Unterschiedliche Commitkennungen kommen von der Übertragung über GitHub Baum und Commit API. Lokale Historie bleibt erhalten;kein Force Push. Davor entspricht lokaler accf9e34ab0d8d4f4b2fa560e65074b8d5250982 dem GitHub b28e462f65a003248f05d91f1ec12bbbe5ad27fe mit Baum073cfeb8dbfd794463aad1e7102a49c39673e3d8. GitHub Elternstand ist main8d840d834f8ff312475d86e8c23509b75f63f91d. Ein anschließender reiner Dokumentationscommit ist kein neuer Prüflauf;exakte Abschlusskennungen stehen im privaten Review und Originalbericht.
+
+### Tatsächlich bestandener Lauf
+
+[GitHub Lauf34749687054](https://github.com/ernisch/helmut-pilot/actions/runs/34749687054),Job103703790117. Lauf erfolgreich abgeschlossen09:33:20UTC,Testschritt09:33:09bis09:33:14UTC. Tatsächlicher Start ausschließlich:
+
+```text
+node scripts/lokal.js -- node scripts/lage-quellen-rest-datenbank-test.js
+```
+
+13von13 oben beschriebene Prüfgruppen erfolgreich.24 tatsächliche HTTP GET auf ko_document_links,alle Status200,keine REST Fehler. Erfolgreich insbesondere Quelle41,gezielter gebundener Auszug,sechs Belege,Sonderzeichen,1001er Seitengrenze,101er Stapelgrenze und Ablehnung geänderter oder verlorener Bindungen. Die negative Auswahlprüfung verweigert doppelte oder mehr als sechs Kennungen vor REST. Keine künstliche Serverantwort als Integrationsnachweis ausgegeben.
+
+Node22.23.2,PostgreSQL Server17.11,psql Client16.15,PostgREST12.2.3. Releasearchiv SHA2569f71269e61ac3a940281e93ff415760f5957e430e475ba4c3889f3ede7d5527c erfolgreich geprüft. Frischer postgres:17 Dienst mit Image SHA25667f41722b7a8cbdb868a44a4995c846eddfdc2973bccb291ce937dce88ad5675. Die eigene zufällige synthetische Testdatenbank wurde entfernt und ihr Fehlen danach explizit abgefragt. Eigener PostgREST beendet,CI Dienst und Netzwerk anschließend entfernt. Kein bestehendes Profil,Konto oder externe Datenbank verändert.
+
+Das übernommene pg_isready Healthkommando ohne Datenbankparameter erzeugt im Dienstlog drei Meldungen zur nicht vorhandenen Standarddatenbank helmut. Das ist kein Quellenfehler: tatsächliche Verbindungen verwenden explizit postgres beziehungsweise die eigene Testdatenbank. Der Dienst war bereit und sämtliche Prüfungen samt Bereinigung erfolgreich. Keine zusätzliche Infrastrukturkorrektur vorgenommen.
+
+### Frische Betriebsprüfung und verbleibende Grenzen
+
+GitHub main nach dem Lauf unverändert8d840d8,nur historischer PR345 offen. Keine zusätzliche allgemeine CI gestartet. Nach den Branchübertragungen keine neue Vercel Bereitstellung im geprüften Zeitfenster seit08:00UTC;Projekt und Hauptalias verweisen weiter auf READY dpl_4JSVUt4v2ktF45Yt4XzLSWmW8fUn. Das ist ein frischer Deployment Metadatenbeleg,keine Production Funktions oder Datenprobe. Datenvorbelege gegen07:45UTC bleiben historisch. Fachautomation bleibt deaktiviert.
+
+Die13 REST Gruppen sind ein aktueller echter Integrationserfolg für genau die zwei Quellenleser. Sie beweisen weder vollständiges Supabase Schema/Auth/RLS noch den vollständigen Lagepfad mit Modell oder eine fachliche Abnahme. Keine Production Last oder Latenz bewertet. Allgemeiner40er Leser,Frische,sechs Belege,16000Zeichen,1000er Seitenannahme,4000er Grenze,fehlender gemeinsamer Snapshot und zusätzliche Anfragen vor Cache bleiben unverändert.
+
+Browserabnahme weiterhin offen,keine neue Diagnose oder Installation. Historische61und29 Vorprüfungen sind keine Browserprüfungen. Zwei Profilfehler und fachlicher500er Nachweis bleiben offen. Keine Wiederholung des Gesamtlaufs oder der elf historischen Produktsuiten bei unverändertem Produktcode. Veröffentlichung weiter zurückgestellt. Dieser Sprint endet nach Sicherung und bedingter Freigabe der eigenen Steuerung. Kein automatischer Folgesprint.

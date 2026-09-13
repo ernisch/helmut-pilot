@@ -1,16 +1,16 @@
 # CURRENT STATE — Helmut
 
-**13.09.2026: Isolierter REST Nachweis vorbereitet; Ausführung blockiert.** GitHub main `8d840d834f8ff312475d86e8c23509b75f63f91d` am13.09. gegen09:09UTC frisch bestätigt. READY `dpl_4JSVUt4v2ktF45Yt4XzLSWmW8fUn` bleibt Vorbeleg07:45UTC. [Mergeabschluss](betrieb/387-ersatzsteuerung-2026-09-13.md).
+**13.09.2026: Isolierter REST Nachweis bestanden,13/13 Gruppen.** GitHub main `8d840d834f8ff312475d86e8c23509b75f63f91d` gegen09:34UTC unverändert. READY `dpl_4JSVUt4v2ktF45Yt4XzLSWmW8fUn` frisch als Deployment bestätigt;keine neue Datenprüfung. [Mergeabschluss](betrieb/387-ersatzsteuerung-2026-09-13.md).
 
 **Fachliche Production Abnahme exakt500 gleichzeitig aktiver Testprofile offen.** Inventur06:49UTC:500 Zielkennungen,fünf aktiv,zwei Pakete,zwei separate Lagen. [Inventur](betrieb/500-fachinventur-2026-09-13.md).
 
-Quellenfix `c3b08e3` unverändert:aktuelle Metadaten vor Zwölferlimit,gezieltes Nachladen höchstens sechs gebundener Dokumente,allgemeiner40er Leser erhalten. Zwei Profilfehler offen. [Korrektur und REST Vorbereitung](betrieb/500-lage-quellenfenster-2026-09-13.md).
+Quellenfix `c3b08e3` unverändert:aktuelle Metadaten vor Zwölferlimit,gezieltes Nachladen höchstens sechs gebundener Dokumente,allgemeiner40er Leser erhalten. Zwei Profilfehler offen. [REST Ergebnis und Grenzen](betrieb/500-lage-quellenfenster-2026-09-13.md).
 
-Neue separate REST Suite mit13 vorbereiteten Gruppen;Vorflug Exit2 wegen fehlendem psql/PostgREST und nicht angegebenem isolierten Anschluss. Null bestätigte Integrationsgruppen. Syntax gültig,kein Produktfehler durch diesen Vorflug belegt. Aus Offlineauswahl ausgeschlossen,kein stiller PASS;CI unverändert. Historische elf betroffene Suiten erfolgreich;366von368 frühere Einzelnachweise,kein neuer Gesamtlauf. Runner weiterhin369 Offline Suiten. Browserabnahme unverändert offen,keine neue Browserdiagnose.
+Run34749687054 auf GitHub `43f2351`,baumgleich zu lokal `2351749`:13/13 echte REST Gruppen,24 GET,0 Fehler,Testdatenbank nachweislich entfernt. PostgreSQL17.11/PostgREST12.2.3,eigener synthetischer CI Dienst. Kein neuer Produktfehler. Historische elf betroffene Suiten erfolgreich;366von368 frühere Einzelnachweise,kein neuer Gesamtlauf. Runner369 Offline Suiten. Browserabnahme offen,keine neue Browserdiagnose.
 
 Datenvorbeleg07:45:26UTC:504 Profile,505 Identitäten,fünf aktiv,495 synthetische inaktiv;Schutzhash unverändert.39 Buchungen,0,234674USD,Reserve0;historische0,636USD bleiben Ursprungstagen zugeordnet,Grenze4USD täglich insgesamt. Vier Admin Abweichungen offen. Keine neue Inventur.
 
-Original305 vollständig bestätigt;Übernahme306 bedingt gespeichert und bytegleich rückgelesen. Fachautomation aus,keine laufende Action oder sichtbare lokale Fachkonkurrenz. Branch `codex/500-lage-quellenfenster-20260913`,Basis `c3b08e3`. Nur lokale Testvorbereitung und Doku. Kein Push,PR,CI Start,Deployment,Modell,Originalabruf,Import oder Profilwechsel. REST Ausführung benötigt eine nachgewiesen isolierte PostgreSQL17/PostgREST12.2.3 Umgebung. Veröffentlichung zurückgestellt;Sprint endet ohne Folgesprint.
+Übernahme308 bedingt gespeichert und bytegleich bestätigt. Nach ausdrücklichem Weiter auf Freigabefrage Kandidat übertragen und genau eine isolierte CI ausgeführt. Branch `codex/500-lage-quellenfenster-20260913` mit Deployment ausdrücklich gesperrt. Keine neue Veröffentlichung,PR,Merge,Modell,Originalabruf,Import oder Profiländerung. Fachautomation aus. REST Erfolg ersetzt keine fachliche Abnahme. Sprint endet ohne Folgesprint.
 
 Der bisherige Statuskopf vom 10.09. liegt unveraendert im [Archiv](archive/project_state/2026_09_11_500_statuskopf.md). Die nachfolgenden zeitlich aelteren Betriebsstaende sind Historie.
 
