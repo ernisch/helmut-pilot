@@ -161,6 +161,7 @@ async function rankWith(mode, { relevanzordnung = "on" } = {}) {
     require.cache[storagePath] = { id: storagePath, filename: storagePath, loaded: true, exports: {
       v3StoreReady: () => true,
       listKnowledgeObjects: async () => kos,
+      listAktuelleLageQuellen: require("./fixtures/lage-quellenmetadaten")(kos, async vg => sourcesByVg[vg] || []),
       listMatchingResults: async () => [],
       getSourcesForVorgang: async (vgId) => sourcesByVg[vgId] || []
     } };

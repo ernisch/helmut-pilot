@@ -27,7 +27,8 @@ KOS[TARGET_INDEX].headline = "Zielvorgang mit Beleg";
 
 const orig = {
   v3StoreReady: storage.v3StoreReady, listKnowledgeObjects: storage.listKnowledgeObjects,
-  listMatchingResults: storage.listMatchingResults, getSourcesForVorgang: storage.getSourcesForVorgang,
+  listMatchingResults: storage.listMatchingResults, listAktuelleLageQuellen: storage.listAktuelleLageQuellen,
+  getSourcesForVorgang: storage.getSourcesForVorgang,
   getRenderedBriefingV3: storage.getRenderedBriefingV3, guardKnowledgeObject: sourceSafety.guardKnowledgeObject
 };
 
@@ -38,6 +39,7 @@ storage.listMatchingResults = async () => [];
 const quellenzeit = new Date(Date.now() - 3600000).toISOString();
 storage.getSourcesForVorgang = async () => [{ url: "https://example.org/x", source_name: "Quelle",
   title: "Aktueller Beleg zum Vorgang", published_at: quellenzeit }];
+storage.listAktuelleLageQuellen = require("./fixtures/lage-quellenmetadaten")(KOS, vg => storage.getSourcesForVorgang(vg));
 storage.getRenderedBriefingV3 = async () => null;
 sourceSafety.guardKnowledgeObject = () => ({ status: "ok" });
 

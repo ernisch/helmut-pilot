@@ -1,16 +1,15 @@
 # CURRENT STATE — Helmut
 
-**12.09.2026: Radartext lokal korrigiert, privater B055 Kandidat vollständig geprüft; Veröffentlichung und Fachabnahme offen.** Production weiter PR386, main `49fabbc9f95c78a7476aa8368db745d1bc95f41c`, Deployment `dpl_9xB1cLnRDtL6hAjMUxYFsycWsVEo` READY. [Aktueller Beleg](betrieb/briefing-schwerpunkt-frische-2026-09-12.md).
+**13.09.2026: Veröffentlichungsbewertung abgeschlossen.** Kandidat GitHub `f4eccdca`, lokal `118471b`, Baum `acdadcbf`, für PR Vorbereitung geeignet; keine Mergeempfehlung. main `8d840d834f8ff312475d86e8c23509b75f63f91d` unverändert, nur PR345 offen. [Bewertung und Freigabegates](betrieb/500-lage-quellenfenster-2026-09-13.md).
 
-Gefilterte Radaransicht behauptet lokal keine Abwesenheit im gesamten Bestand mehr. Private K03 Titeldatierung kenntlich gemacht. Genau ein Kandidat: sechs Ersatzkarten,18 Rückhaltungen,165 Textpfade in42 Gruppen neu beurteilt. Alle zwölf vorgesehenen Textstellen korrigiert;158 Pfade getragen, sieben K07 Pfade wegen unvollständigem Abschlussbeleg negativ. Vier Gesamtkriterien weiter negativ. Keine Importbereitschaft.
+Quellenfix unverändert: aktuelle Metadaten vor Zwölferlimit, bis sechs exakt gebundene Dokumente, allgemeiner40er Leser erhalten. Kein neuer Produktfehler. Browser34750436568: Admin75/75, Passwort39/39, davon24 Browserassertions und90 Vorprüfungen. REST34749687054:13 Gruppen,24GET,alle200. Eigene Testbestände entfernt. Kein neuer Gesamtlauf; historische Einzelnachweise bleiben datiert.
 
-367/367 verschiedene Offline Suiten nachgewiesen:365 im Gesamtlauf, zwei nach Browserkorrektur. Browser50/50, gezielte Radarprüfungen17/17,11/11,115/115. Kein vollständig grüner erster Gesamtlauf. Production main CI34713815490 unverändert grün; neue PR Prüfung steht aus.
+Aktuelle Pflichtjobs für den Kandidaten fehlen. CLAUDE §6 verlangt kanonischen Offline Lauf vor PR und beide bestehenden CI Jobs vor Merge. GitHub meldet klassischen main Schutz deaktiviert; ergänzende Rulesets nicht überprüfbar. Kein automatischer Schutz behauptet. Nächster gesonderter Auftrag: vorgeschriebene Prüfungen und PR Vorbereitung. Kein PR,CI,Transfer,Merge oder Deployment in dieser Bewertung; nur lokaler Dokumentationscommit.
 
-Schutz23:00:06 Türkei /22:00:06 Berlin /20:00:06UTC unverändert:504 Profile,505 Identitäten,fünf Originale aktiv,495 synthetische Profile und Konten inaktiv. Vier ältere Admin Abweichungen offen.80 Buchungen,0,507552USD von4USD,heutige Reserve0. Keine aktive Datenbankarbeit, Fachautomation aus.
+**Fachliche Abnahme exakt500 offen; zwei Profilfehler offen.** [Inventur](betrieb/500-fachinventur-2026-09-13.md). Historischer Datenbeleg07:45UTC:504 Profile,505 Identitäten,fünf aktiv,495 synthetische inaktiv;39 Buchungen,0,234674USD,Reserve0,Grenze4USD täglich insgesamt. Vier Admin Abweichungen offen. Keine neue Dateninventur oder Production Probe. Vercel READY Vorbeleg `dpl_4JSVUt4v2ktF45Yt4XzLSWmW8fUn` historisch.
 
-Datierte500er Inventur19:33UTC:303/500 Pakete,197 fehlen;2/500 Lagen,498 fehlen;keine gespeicherten Aussagenurteile.145 Quellenbelege in vorhandenen Paketen,91 leere Auszüge,28 fehlende Artikeladressen. Keine neue Gesamtinventur oder vollständige Quellenabnahme.
+Übernahme312 bedingt gespeichert und vollständig bytegleich rückgelesen. Review und Belege fortschreiben, eigene Steuerung bedingt freigeben. Veröffentlichung bleibt zurückgestellt. Keine Modelle, Originalquellen, Importe oder bestehenden Profiländerungen. Fachautomation deaktiviert,next_run_time null. Sprint endet ohne Folgesprint.
 
-Lokaler Branch `codex/radar-anzeige-text-20260912`, noch kein PR. Nächste konkrete Freigabe: vier vorbereitete Dateien als PR bereitstellen, automatische CI und mögliche Vorschau. Kein Merge, Production Deployment, Quellenabruf, Helmut Modell, Import oder Profilwechsel. Private K03 Redaktion nicht veröffentlichen. K07 Beleglücke, Quellenklassifikation, Rangfolge, natürlicher Fachnachweis, drei historische Ursachen und vollständige500er Abnahme bleiben offen.
 
 Der bisherige Statuskopf vom 10.09. liegt unveraendert im [Archiv](archive/project_state/2026_09_11_500_statuskopf.md). Die nachfolgenden zeitlich aelteren Betriebsstaende sind Historie.
 

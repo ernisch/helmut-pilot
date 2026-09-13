@@ -103,6 +103,7 @@ const WERKZEUG_VERWEIGERUNG = new Set([
 // Suiten, die NICHT offline lauffähig sind (Netz, Production-URL, Live-LLM, echte DB)
 // oder die keine Tests, sondern Werkzeuge/Backfills sind.
 const DENYLIST = new Set([
+  "lage-quellen-rest-datenbank-test.js", // separater isolierter REST Nachweis; fehlende Umgebung ist kein PASS
   "auth-store-cas-datenbank-test.js", // eigener verpflichtender CI Schritt mit PostgreSQL + PostgREST
   "smoke-test.js", // zielt per Default auf die Production-URL
   "understanding-live-smoke.js", // echter HTTP-/LLM-Pfad

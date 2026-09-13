@@ -474,6 +474,7 @@ async function main() {
       v3StoreReady: storage.v3StoreReady,
       listKnowledgeObjects: storage.listKnowledgeObjects,
       listMatchingResults: storage.listMatchingResults,
+      listAktuelleLageQuellen: storage.listAktuelleLageQuellen,
       getSourcesForVorgang: storage.getSourcesForVorgang,
       getRenderedBriefingV3: storage.getRenderedBriefingV3,
       saveRenderedBriefingV3: storage.saveRenderedBriefingV3,
@@ -492,6 +493,8 @@ async function main() {
     storage.listMatchingResults = async () => [];
     const quellenzeit = new Date().toISOString();
     storage.getSourcesForVorgang = async () => [{ url: "https://bmas.de/rente", source_name: "BMAS", title: "Rente", published_at: quellenzeit }];
+    storage.listAktuelleLageQuellen = require("./fixtures/lage-quellenmetadaten")(
+      () => storage.listKnowledgeObjects(), vg => storage.getSourcesForVorgang(vg));
     storage.getRenderedBriefingV3 = async (userId, slot, day) => cache.get(`bf-${userId}-${slot}-${day}`) || null;
     storage.saveRenderedBriefingV3 = async (entry) => { cache.set(entry.id, { ...entry }); return { saved: true }; };
     storage.acquirePipelineLock = async () => true;
@@ -569,7 +572,7 @@ async function main() {
     } finally {
       Object.assign(storage, {
         v3StoreReady: orig.v3StoreReady, listKnowledgeObjects: orig.listKnowledgeObjects,
-        listMatchingResults: orig.listMatchingResults, getSourcesForVorgang: orig.getSourcesForVorgang,
+        listMatchingResults: orig.listMatchingResults, getSourcesForVorgang: orig.getSourcesForVorgang, listAktuelleLageQuellen: orig.listAktuelleLageQuellen,
         getRenderedBriefingV3: orig.getRenderedBriefingV3, saveRenderedBriefingV3: orig.saveRenderedBriefingV3,
         acquirePipelineLock: orig.acquirePipelineLock, releasePipelineLock: orig.releasePipelineLock,
         canSpendLlmForTenant: orig.canSpendLlmForTenant, recordLlmUsage: orig.recordLlmUsage

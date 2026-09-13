@@ -30,6 +30,7 @@ const orig = {
   v3StoreReady: storage.v3StoreReady,
   listKnowledgeObjects: storage.listKnowledgeObjects,
   listMatchingResults: storage.listMatchingResults,
+  listAktuelleLageQuellen: storage.listAktuelleLageQuellen,
   getSourcesForVorgang: storage.getSourcesForVorgang,
   getRenderedBriefingV3: storage.getRenderedBriefingV3,
   saveRenderedBriefingV3: storage.saveRenderedBriefingV3,
@@ -46,7 +47,8 @@ function installMocks({ cachedNarrative = null } = {}) {
   storage.v3StoreReady = () => true;
   storage.listKnowledgeObjects = async () => [KO];
   storage.listMatchingResults = async () => []; // -> Fallback: neueste verstandene
-  storage.getSourcesForVorgang = async () => [{ url: "https://bmas.de/rente", source_name: "BMAS", title: "Rente", published_at: new Date().toISOString() }];
+  storage.getSourcesForVorgang = async () => [{ url: "https://bmas.de/rente", source_name: "BMAS", title: "Rente", published_at: new Date(Date.now() - 3600000).toISOString() }];
+  storage.listAktuelleLageQuellen = require("./fixtures/lage-quellenmetadaten")([KO], vg => storage.getSourcesForVorgang(vg));
   storage.getRenderedBriefingV3 = async () => written || (cachedNarrative
     ? { payload: { paragraphs: cachedNarrative, koSetHash: null } }
     : null); // Default: Cache-Miss
@@ -60,7 +62,7 @@ function installMocks({ cachedNarrative = null } = {}) {
     vorgang_ids: ["vg-1"], quellen_ids: [vorgaenge[0].quellenbelege[0].quelle_id] }],
     qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION }, model: "gpt-x", wordCount: 1 }; };
 }
-function restore() { Object.assign(storage, { v3StoreReady: orig.v3StoreReady, listKnowledgeObjects: orig.listKnowledgeObjects, listMatchingResults: orig.listMatchingResults, getSourcesForVorgang: orig.getSourcesForVorgang, getRenderedBriefingV3: orig.getRenderedBriefingV3, saveRenderedBriefingV3: orig.saveRenderedBriefingV3, acquirePipelineLock: orig.acquirePipelineLock, releasePipelineLock: orig.releasePipelineLock, canSpendLlm: orig.canSpendLlm }); sourceSafety.guardKnowledgeObject = orig.guardKnowledgeObject; ai.generateLageBriefing = orig.generateLageBriefing; }
+function restore() { Object.assign(storage, { v3StoreReady: orig.v3StoreReady, listKnowledgeObjects: orig.listKnowledgeObjects, listMatchingResults: orig.listMatchingResults, getSourcesForVorgang: orig.getSourcesForVorgang, listAktuelleLageQuellen: orig.listAktuelleLageQuellen, getRenderedBriefingV3: orig.getRenderedBriefingV3, saveRenderedBriefingV3: orig.saveRenderedBriefingV3, acquirePipelineLock: orig.acquirePipelineLock, releasePipelineLock: orig.releasePipelineLock, canSpendLlm: orig.canSpendLlm }); sourceSafety.guardKnowledgeObject = orig.guardKnowledgeObject; ai.generateLageBriefing = orig.generateLageBriefing; }
 
 const profile = { id: "test-politician-one", fullName: "Test Politician One" };
 
