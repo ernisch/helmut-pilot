@@ -1,0 +1,109 @@
+name: Zwei Browserpruefungen isoliert
+
+# Ein freigegebener Testbranch, kein PR Gate oder Productionpfad.
+on:
+  push:
+    branches: [codex/500-lage-quellenfenster-20260913]
+    paths:
+      - .github/workflows/browser-abnahme-isoliert.yml
+      - scripts/admin-nutzer-loeschen-test.js
+      - scripts/passwort-setzen-login-fix-test.js
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-abnahme-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  browser:
+    name: Nutzerloeschung und Passwortformular in Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/helmut-browser-abnahme
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Bestehende gepinnte Browserinfrastruktur bereitstellen
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts
+          npm i --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+          # Dieselbe bereits belegte Paketlistenisolation wie im bestehenden CI Gate.
+          sudo python3 - <<'PY'
+          from pathlib import Path
+          import re
+          for source in Path('/etc/apt/sources.list.d').iterdir():
+              if source.suffix not in ('.list', '.sources'):
+                  continue
+              lines = [line.strip() for line in source.read_text().splitlines()
+                       if line.strip() and not line.lstrip().startswith('#')]
+              urls = re.findall(r'https?://[^\s\]]+', '\n'.join(lines))
+              if urls and all(re.fullmatch(r'https?://dl\.google\.com/linux/chrome(?:-stable)?/deb/?', url) for url in urls):
+                  source.rename(source.with_name(source.name + '.helmut-ci-disabled'))
+                  print('Unbenoetigte Chrome Paketliste isoliert:', source.name)
+          PY
+          npx --no-install playwright install --with-deps chromium
+      - name: Genau zwei Suiten nacheinander ohne externes Netz
+        timeout-minutes: 3
+        run: |
+          set -euo pipefail
+          git log -1 --format='%H %T'
+          test ! -e .helmut-data
+          test ! -e .env
+          test ! -e .env.local
+          mkdir -p "$RUNNER_TEMP/helmut-browser-home" "$RUNNER_TEMP/helmut-browser-logs"
+          # Eigener Netzwerkraum hat nur Loopback, keine Verbindung zum Hostnetz.
+          # env -i entfernt auch nicht von lokal.js gelistete Anbieterkennungen.
+          sudo env -i PATH="$PATH" HOME="$RUNNER_TEMP/helmut-browser-home" \
+            PLAYWRIGHT_BROWSERS_PATH="$PLAYWRIGHT_BROWSERS_PATH" \
+            LOG_DIR="$RUNNER_TEMP/helmut-browser-logs" \
+            unshare --net bash <<'SH'
+          set -euo pipefail
+          ip link set lo up
+          test "$(ip -o link show | wc -l)" -eq 1
+          test -z "$(ip route show)"
+          printf 'ISOLATION: nur Loopback, keine Route, leere Anbieterumgebung\n'
+          node -e 'const fs=require("fs"),p=require("playwright");console.log("Playwright",require("playwright/package.json").version);const b=p.chromium.executablePath();if(!fs.existsSync(b))throw Error("Chromium fehlt");console.log("Chromium",b)'
+          node scripts/lokal.js -- node scripts/admin-nutzer-loeschen-test.js 2>&1 | tee "$LOG_DIR/admin.log"
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          s=(Path(os.environ['LOG_DIR'])/'admin.log').read_text()
+          assert 'SKIP' not in s and 'FAIL ' not in s
+          assert '75/75 Assertions' in s
+          assert sum(line.startswith('PASS  Desktop:') or line.startswith('PASS  Mobil:') for line in s.splitlines()) == 14
+          assert not list(Path('.helmut-data').glob('*')), 'Testdaten nicht bereinigt'
+          print('BROWSERBELEG ADMIN: 14 Browserassertions, 61 Vorpruefungen, Store leer')
+          PY
+          node scripts/lokal.js -- node scripts/passwort-setzen-login-fix-test.js 2>&1 | tee "$LOG_DIR/passwort.log"
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          s=(Path(os.environ['LOG_DIR'])/'passwort.log').read_text()
+          assert 'SKIP' not in s and 'FAIL ' not in s
+          assert '39/39 Assertions' in s
+          browser=s.split('== Browser:',1)[1]
+          assert sum(line.startswith('PASS  ') for line in browser.splitlines()) == 10
+          assert not list(Path('.helmut-data').glob('*')), 'Testdaten nicht bereinigt'
+          print('BROWSERBELEG PASSWORT: 10 Browserassertions, 29 Vorpruefungen, Store leer')
+          PY
+          SH
+      - name: Eigenen kurzlebigen Bestand entfernen
+        if: always()
+        run: |
+          set -euo pipefail
+          sudo rm -rf -- .helmut-data "$RUNNER_TEMP/helmut-browser-home" "$PLAYWRIGHT_BROWSERS_PATH"
+          test ! -e .helmut-data
+          test ! -e "$RUNNER_TEMP/helmut-browser-home"
+          test ! -e "$PLAYWRIGHT_BROWSERS_PATH"
+          git diff --exit-code
+          printf 'BEREINIGUNG: eigener Store, Browserprofil und Browserprogramme entfernt\n'
