@@ -1,15 +1,14 @@
 # CURRENT STATE — Helmut
 
-**13.09.2026: Veröffentlichungsbewertung abgeschlossen.** Kandidat GitHub `f4eccdca`, lokal `118471b`, Baum `acdadcbf`, für PR Vorbereitung geeignet; keine Mergeempfehlung. main `8d840d834f8ff312475d86e8c23509b75f63f91d` unverändert, nur PR345 offen. [Bewertung und Freigabegates](betrieb/500-lage-quellenfenster-2026-09-13.md).
+**13.09.2026: PR388 gemergt, Production READY.** Ausdrückliche Betreiberfreigabe ausgeführt. main `97ef157c19a0555b246250217ea4d494926f5c96`,Baum `895bcea`,exakt der bestandene PR Prüfbaum. Merge11:13:02UTC,Deployment11:13:20.772UTC READY. Hauptadresse helmut-pilot.vercel.app unabhängig diesem Commit und Deployment `dpl_7NgTKJtNLLSbGYDqgQ9ttNx5EL7f` zugeordnet. [Betriebsbeleg](betrieb/500-lage-quellenfenster-2026-09-13.md).
 
-Quellenfix unverändert: aktuelle Metadaten vor Zwölferlimit, bis sechs exakt gebundene Dokumente, allgemeiner40er Leser erhalten. Kein neuer Produktfehler. Browser34750436568: Admin75/75, Passwort39/39, davon24 Browserassertions und90 Vorprüfungen. REST34749687054:13 Gruppen,24GET,alle200. Eigene Testbestände entfernt. Kein neuer Gesamtlauf; historische Einzelnachweise bleiben datiert.
+Vorprüfung34751774750:369/369 in639s. PR CI34752297764:369/369 in714s,Syntax erfolgreich,Browser50/50,Kontoschutz15/15,Z2248/48. Automatischer main Lauf34753858317:Browser erfolgreich,Offline bei Zwischenkontrolle laufend;kein manueller Wiederholungslauf. Historische REST34749687054:13Gruppen/24GET/alle200;Browser34750436568:75/75 und39/39,davon24 Browserassertions.
 
-Aktuelle Pflichtjobs für den Kandidaten fehlen. CLAUDE §6 verlangt kanonischen Offline Lauf vor PR und beide bestehenden CI Jobs vor Merge. GitHub meldet klassischen main Schutz deaktiviert; ergänzende Rulesets nicht überprüfbar. Kein automatischer Schutz behauptet. Nächster gesonderter Auftrag: vorgeschriebene Prüfungen und PR Vorbereitung. Kein PR,CI,Transfer,Merge oder Deployment in dieser Bewertung; nur lokaler Dokumentationscommit.
+Quellenfix unverändert:aktuelle Metadaten vor Zwölferlimit,bis sechs exakt gebundene Dokumente,allgemeiner40er Leser erhalten. Keine neue Produktkorrektur. Keine Production Funktions oder Datenprobe;READY ist keine fachliche Abnahme.
 
-**Fachliche Abnahme exakt500 offen; zwei Profilfehler offen.** [Inventur](betrieb/500-fachinventur-2026-09-13.md). Historischer Datenbeleg07:45UTC:504 Profile,505 Identitäten,fünf aktiv,495 synthetische inaktiv;39 Buchungen,0,234674USD,Reserve0,Grenze4USD täglich insgesamt. Vier Admin Abweichungen offen. Keine neue Dateninventur oder Production Probe. Vercel READY Vorbeleg `dpl_4JSVUt4v2ktF45Yt4XzLSWmW8fUn` historisch.
+**Gesamtsprint teilweise abgeschlossen gemäß CLAUDE §9:** Merge und Deployment erfolgreich;nachträgliche Dokumentation noch nicht auf main. Zwei Dokumentationsdateien auf vorhandenem geschütztem Branch sichern. Nächste Entscheidung:reiner Dokumentations PR samt Merge und automatischem Deployment;von PR388 Freigabe nicht gedeckt. Review und Original enthalten Abschlusskennungen. Klassischer main Branchschutz deaktiviert,ergänzende Rulesets nicht überprüfbar;Pflichtjobs ausdrücklich geprüft.
 
-Übernahme312 bedingt gespeichert und vollständig bytegleich rückgelesen. Review und Belege fortschreiben, eigene Steuerung bedingt freigeben. Veröffentlichung bleibt zurückgestellt. Keine Modelle, Originalquellen, Importe oder bestehenden Profiländerungen. Fachautomation deaktiviert,next_run_time null. Sprint endet ohne Folgesprint.
-
+**Fachliche Abnahme exakt500 und zwei Profilfehler offen.** Historischer Datenbeleg07:45UTC:504 Profile,505 Identitäten,fünf aktiv,495 synthetische inaktiv;39 Buchungen,0,234674USD,Reserve0,Grenze4USD täglich insgesamt. Vier Admin Abweichungen offen. Fachautomation deaktiviert,next_run_time null. Kein Fachlauf,Modell,Originalabruf,Import oder Profileingriff. Nach bedingtem Abschluss stoppen. Derselbe Thread,Denkstufe Hoch,für Dokumentationsentscheidung.
 
 Der bisherige Statuskopf vom 10.09. liegt unveraendert im [Archiv](archive/project_state/2026_09_11_500_statuskopf.md). Die nachfolgenden zeitlich aelteren Betriebsstaende sind Historie.
 
