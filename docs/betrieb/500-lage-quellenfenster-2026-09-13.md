@@ -1,6 +1,6 @@
 # Lokale Korrektur der Quellenwahl für den Lage Text
 
-**Aktueller Abschluss 13.09.2026 gegen09:34UTC: Der isolierte echte REST Nachweis ist bestanden,13/13 Gruppen. Die folgenden früheren Blocker und Empfehlungen sind datierte Historie. Maßgeblich ist der Abschlussabschnitt am Ende. Veröffentlichung und fachliche Abnahme bleiben offen.**
+**Aktueller Abschluss 13.09.2026 12:53:18 Türkei /11:53:18 Berlin /09:53:18UTC: Beide begrenzten Browserabnahmen bestanden,24 Browserassertions plus90 Vorprüfungen. REST Nachweis13/13 bleibt gültig. Maßgeblich ist der neue Abschlussabschnitt am Ende;ältere Blocker sind datierte Historie. Veröffentlichung und fachliche500er Abnahme bleiben offen.**
 
 
 ## 13.09.2026: Quellenfix unverändert, REST Vorbereitung teilweise abgeschlossen
@@ -308,3 +308,43 @@ GitHub main nach dem Lauf unverändert8d840d8,nur historischer PR345 offen. Kein
 Die13 REST Gruppen sind ein aktueller echter Integrationserfolg für genau die zwei Quellenleser. Sie beweisen weder vollständiges Supabase Schema/Auth/RLS noch den vollständigen Lagepfad mit Modell oder eine fachliche Abnahme. Keine Production Last oder Latenz bewertet. Allgemeiner40er Leser,Frische,sechs Belege,16000Zeichen,1000er Seitenannahme,4000er Grenze,fehlender gemeinsamer Snapshot und zusätzliche Anfragen vor Cache bleiben unverändert.
 
 Browserabnahme weiterhin offen,keine neue Diagnose oder Installation. Historische61und29 Vorprüfungen sind keine Browserprüfungen. Zwei Profilfehler und fachlicher500er Nachweis bleiben offen. Keine Wiederholung des Gesamtlaufs oder der elf historischen Produktsuiten bei unverändertem Produktcode. Veröffentlichung weiter zurückgestellt. Dieser Sprint endet nach Sicherung und bedingter Freigabe der eigenen Steuerung. Kein automatischer Folgesprint.
+
+
+## Beide vorhandenen Browserabnahmen bestanden am13.09.2026
+
+Status: erfolgreich abgeschlossen für den ausdrücklich begrenzten Browserauftrag. [Lauf34750436568](https://github.com/ernisch/helmut-pilot/actions/runs/34750436568),Job103705893462,Start12:52:35 Türkei /11:52:35 Berlin /09:52:35UTC,Abschluss12:53:18 Türkei /11:53:18 Berlin /09:53:18UTC. Genau zwei unveränderte Suiten nacheinander,jeweils ausschließlich über `node scripts/lokal.js -- node <Prüfung>`.
+
+| Suite | Vorprüfungen | Tatsächliche Browserassertions | Gesamt |
+| --- | ---: | ---: | ---: |
+| scripts/admin-nutzer-loeschen-test.js |61 |14 |75/75 |
+| scripts/passwort-setzen-login-fix-test.js |29 |10 |39/39 |
+
+Kein Skip,keine fehlgeschlagene Assertion,kein neuer Produktfehler. Die90 Vorprüfungen sind Quelltext,HTTP und Renderextraktion,keine Browserprüfungen. Admin Browserabschnitt12:53:12 Türkei /11:53:12 Berlin /09:53:12UTC;Passwort Browserabschnitt12:53:13bis12:53:16 Türkei /11:53:13bis11:53:16 Berlin /09:53:13bis09:53:16UTC. Keine pauschale Wiederholung des Offline Runners,der11 Produktsuiten oder des REST Nachweises.
+
+### Nachgewiesene Isolation
+
+Frischer GitHub Rechner ubuntu-latest,Node22.23.2,gepinntes Playwright1.56.1,Chromium und Headless Shell141.0.7390.37,Revision1194. Vor dem Test keine lokale Datenablage und keine .env/.env.local. Checkout ohne persistierende Zugangsdaten,Workflow nur contents:read,keine Repositorygeheimnisse,Datenbankdienste oder Umgebungsverknüpfung. Einziger neuer Workflow `.github/workflows/browser-abnahme-isoliert.yml`;bestehende CI und REST Workflow bytegleich erhalten.
+
+Nach Bereitstellung der bestehenden Browserabhängigkeiten werden die Suiten mit `env -i` in einem eigenen `unshare --net` Netzwerkraum gestartet. Tatsächlich genau ein Netzinterface,Loopback aktiv und keine Netzroute bestätigt. Auch Chromium kann dadurch keine externe Seite erreichen. Zusätzlich wirkt der unveränderte Starter mit lokalem Speicher,entfernten Production Kennungen und Netzschutz. Keine fremde Datenbank oder Production Probe. Nur eigene kurzlebige synthetische Konten,Profile und Beispieldaten innerhalb des frischen lokalen CI Speichers.
+
+Nach jeder Suite wurde die leere lokale Datenablage unabhängig bestätigt. Beide Browser schließen regulär;die Admin Suite entfernt ihre HTML Fragmente. Anschließend eigene Datenablage,temporäres Home und Browserprogramme entfernt,Fehlen ausdrücklich geprüft. Git diff blieb leer,abschließende Runnerbereinigung erfolgreich. Die Work Arbeitskopie und ihre bestehenden lokalen Daten wurden nicht für die Suiten benutzt. Keine lokale Chromium Diagnose oder Downloadwiederholung.
+
+### Prüfgrenzen
+
+Admin verwendet die tatsächliche aus client.js extrahierte Renderfunktion und tatsächliches styles.css in Chromium bei1280x900 und390x844. Bestanden:Sichtbarkeit,Farbton,Trefferfläche,Dialogtexte,keine Überbreite und kein Absturz. Echte lokale HTTP Löschung samt Kontenschutz wird separat geprüft. Kein durchgeklickter vollständiger Admin Appablauf im Browser.
+
+Passwort prüft die tatsächliche lokale Serverseite,Design und mobiles Formular einschließlich erfolgreichem Passwortsetzen und ausgelöster automatischer Weiterleitung. Das Weiterleitungsziel wird wie in der unveränderten bestehenden Suite abgefangen. Kein vollständiger authentifizierter Appstart,kein Production Loginbeleg und keine Prüfung der Quellenoberfläche. Diese Grenzen werden nicht durch114 erfolgreiche Assertions aufgehoben.
+
+### Korrigierter Fehler ausschließlich im neuen Prüfablauf
+
+Erster Start34750375171 auf GitHub6422d11/lokal6cac9a4,Baumff02157d12dd1ba290481bc42c88ae14f0006f01,am09:50:52UTC vor dem Anlegen eines Jobs abgewiesen. Null Testjobs,keine Browserausführung und keine Installation in diesem Start. Der neue Job env Block verwendete runner.temp an einer dort unzulässigen Stelle. Die [GitHub Kontextmatrix](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#context-availability) bestätigt,dass runner im env einzelner Schritte verfügbar ist,im Job env jedoch nicht. Kleinste Korrektur:Browserpfad in die drei betreffenden Schritte verschoben. Kein Schutz und keine Erwartung abgeschwächt. Die ursprüngliche GitHub Fehlerannotation war über den verfügbaren Leser nicht zugänglich;Codebefund und anschließender erfolgreicher Job belegen die Korrektur,kein erfundener Wortlaut der Annotation.
+
+Tatsächlich getesteter lokaler Commit23b11a0e941e531893a1b6f0250b8368e01874f4 entspricht GitHub4e882938efc1185dd7033f024495a338561990db,Baum5ebb80eb20d5f82a0737e884acf429ecc624ae57. Basis lokal404f692/GitHubdd297511,Baumb0a9f172. Unterschiedliche Historie erhalten,GitHub über Baum und Commit API nur vorwärts übertragen,kein Force Push. Nach Test ausschließlich Status und dieser Betriebsbeleg aktualisiert;exakte Abschlusskennungen stehen im privaten Review und Originalbericht. Gesamtbranch24 Dateien gegenüber main Baum78d62fb947cde91efccf05224e4ce56839fed7c9,einschließlich unveränderter vier historischer Dokumentationsdateien.
+
+### Betriebsabschluss und Entscheidung
+
+Vor jeder Übertragung `git.deploymentEnabled` für den verwendeten Branch ausdrücklich false bestätigt. Vercel Nachkontrolle:keine Bereitstellung seit09:45UTC,Production Hauptalias weiter READYdpl_4JSVUt4v2ktF45Yt4XzLSWmW8fUn. main8d840d8 unverändert,nur historischerPR345 offen,Fachautomation6aa2872e75ec81919d4c0abe7d304ddb deaktiviert,next_run_time null. Keine umfassende Sicht auf andere Chats behauptet. Keine neuen Datenbank oder Profileinventuren;alte Production Datenbelege bleiben historisch.
+
+Review und Belege dauerhaft sichern und vollständig rücklesen. Original309 bei Übernahme frei und vollständig bytegleich,Übernahme310 bedingt gespeichert und bytegleich rückgelesen. Eigene Steuerung nur gegen unmittelbar vollständig bestätigte Version freigeben,Abschluss tatsächlich vollständig rücklesen. Keine zusätzliche Veröffentlichung,PR,Merge,Deployment,Modelle,Originalquellen,Importe oder bestehenden Profiländerungen. Keine Migrationen,Budgets,persistente Umgebungsvariablen,Cron Änderungen oder500er Facharbeit.
+
+Veröffentlichung bleibt bis zur begründeten neuen Bewertung zurückgestellt. Browserblocker für genau diese zwei Suiten erledigt,REST Nachweis bleibt bestanden. Technische Erfolge ersetzen weder fachliche Profilprüfung noch500er Abnahme. Nächster möglicher kleiner Auftrag:den vorhandenen Gesamtkandidaten samt Belegen für eine Veröffentlichung bewerten,ohne neue Tests oder Production Wirkung automatisch zu beginnen. Dafür kann derselbe Thread mit Denkstufe Hoch genutzt werden. Jetzt stoppen,kein automatischer Folgesprint.
