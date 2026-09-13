@@ -5,7 +5,7 @@
 
 ## 13.09.2026: Quellenfix unverändert, REST Vorbereitung teilweise abgeschlossen
 
-Neuester Abschnitt: isolierte REST Prüfung vorbereitet, tatsächliche Ausführung blockiert. Details und Abnahmekriterien stehen im letzten Abschnitt. Ältere Aussagen zu nächsten Schritten sind historische Aufträge.
+Neuester Abschnitt: reiner Dokumentationsabschluss nach dem tatsächlich bestätigten Merge von PR388 und Production Deployment. Die älteren Abschnitte erhalten ihren jeweiligen historischen Befund; frühere Sperren und nächste Schritte sind durch neuere Freigaben überholt.
 
 Ein reproduzierbarer Auswahlfehler ist lokal korrigiert. Aktuelle Quellen werden vor der Begrenzung auf zwölf Vorgänge berücksichtigt. Reviewvorbereitung ist abgeschlossen; Veröffentlichung und fachlicher Wirkungsnachweis stehen aus. Der abgeschlossene PR387 Merge bleibt ein eigener unveränderter Production Stand.
 
@@ -467,3 +467,18 @@ Der technische Auftrag Merge und automatische Bereitstellung ist erfolgreich aus
 Der Nachtrag liegt zur begrenzten Folgeentscheidung bereit. Seine Übernahme nach main erfordert einen reinen Dokumentations PR samt gesondertem Merge und automatischem Deployment. Das folgt aus CLAUDE §9 und der auf PR388 begrenzten Betreiberfreigabe. Kein weiterer fachlicher Sprint wird begonnen. Die exakten lokalen und entfernten Dokumentationskennungen stehen im privaten Review und Originalbericht. Gleiche Bäume bedeuten bei der früheren API Übertragung keine gleiche Commitgeschichte.
 
 Review und neue Belege dauerhaft sichern und vollständig rücklesen. Original317 war als eigene aktive Übernahme bedingt gegen316 gespeichert und vollständig bytegleich bestätigt. Vor Abschluss frisch lesen, eigene Zuständigkeit bedingt freigeben und die vollständige tatsächlich gespeicherte Fassung erneut prüfen. Danach stoppen. Für die direkte Entscheidung über den vorbereiteten Dokumentationsabschluss genügt derselbe Thread mit Denkstufe Hoch.
+
+
+## Freigegebener reiner Dokumentationsabschluss am 13.09.2026
+
+Der Betreiber hat mit Go ausdrücklich den vorbereiteten reinen Dokumentations PR samt Merge und automatischem Deployment freigegeben. Diese Freigabe schließt genau die zuvor offene Pflicht aus CLAUDE §9. Sie erweitert den Produkt oder Fachumfang nicht. Dieser Nachtrag beschreibt den tatsächlichen Zustand nach dem fachlich wirksamen PR388;sein eigener Dokumentationsmerge und Deploymentstatus werden anschließend aus GitHub und Vercel Historie belegt. Gemäß ausdrücklicher Ausnahme in CLAUDE §9 entsteht daraus kein rekursiver Folge PR.
+
+Frischer Start:main97ef157c19a0555b246250217ea4d494926f5c96,veröffentlichter Baum895bceaa317439099381b903eec9a5b3d5d6d940. Nur historischerPR345 offen,keine andere erkennbare Arbeit am Dokumentationskandidaten. Lokaler Nachtrag131c050 und entfernter954cf4f haben identischen Baume85c4df;abweichende Geschichte erhalten. Beide bisherigen Abschlussnachträge bleiben vollständig enthalten. Vor Übernahme Original318 frei und vollständig bytegleich bestätigt,Übernahme319 bedingt gespeichert und vollständig tatsächlich rückgelesen. Keine umfassende Sicht auf andere Chats.
+
+Genau docs/CURRENT_STATE.md und dieser Betriebsbeleg unterscheiden sich vom veröffentlichten Dateibaum. Produktcode,Tests,CI,Deploymentkonfiguration und Abhängigkeiten sind unverändert. Der veraltete Orientierungssatz dieses Belegs wurde auf den neuesten Abschnitt verwiesen;historische Befunde bleiben erhalten. CURRENT_STATE ändert nur den kompakten aktuellen Abschnitt;der historische Rest bleibt bytegleich. Der neue Kopf behauptet keinen noch nicht ausgeführten Dokumentationsmerge.
+
+Die kanonische Vorprüfung34751774750 und beide PR388 Pflichtjobs34752297764 sind bereits vor diesem Dokumentations PR bestanden;ihre unveränderten Produktprüfungen werden als datierte Belege weiterverwendet. Kein zusätzlicher manueller Gesamt,REST oder Browserlauf für diese zwei Textdateien. Gezielte Größenprüfung über node scripts/lokal.js -- node scripts/current-state-groesse-test.js und diff check vor Übertragung. Die bestehenden automatischen Pflichtjobs des neuen PR müssen vor dessen Merge tatsächlich erfolgreich sein;keine CI Abschwächung oder Umgehung. Der automatische main Lauf34753858317 war bei der Zwischenkontrolle11:23UTC noch laufend,sein Browserjob bereits erfolgreich. Das ist als Zwischenstand datiert und wird nicht als Schlussbefund ausgegeben.
+
+Vor jeder Übertragung Deploymentverbot auf dem bestehenden Branch erneut bestätigen. Reiner Dokumentations PR nach main,kein direkter Push auf main,kein Force Push. Nach erfolgreichem CI nur den erneut bestätigten PR Kopf mit erwarteter Kopfkennung mergen. Automatisches Production Deployment unabhängig am tatsächlichen Dokumentationsmerge und Hauptalias prüfen. Bei Fehlschlag stoppen,kein zweiter Versuch. Review und Belege einschließlich abschließendem main CI Befund von PR388 dauerhaft sichern und vollständig rücklesen. Original gegen frisch bestätigte eigene Version abschließen und Steuerung bedingt freigeben. Danach stoppen.
+
+Offen bleiben die zwei fachlichen Profilfehler und der vollständige500er Fachnachweis. Keine bestehenden Profile oder Konten,Production Daten,Modelle,Originalquellen,Importe,Migrationen,Budgets,persistenten Umgebungsvariablen oder Cron Änderungen. Fachautomation6aa2872e75ec81919d4c0abe7d304ddb bleibt deaktiviert,next_run_time null. Nach diesem technischen Abschluss ist für weitere fachliche Arbeit ein eigener kleiner Auftrag erforderlich.
