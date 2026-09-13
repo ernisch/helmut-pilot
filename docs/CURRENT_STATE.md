@@ -1,14 +1,16 @@
 # CURRENT STATE — Helmut
 
-**13.09.2026: Quellenkorrektur aus PR388 in Production bestätigt.** Merge `97ef157c19a0555b246250217ea4d494926f5c96` am11:13:02UTC,geprüfter Baum `895bcea`. Automatisches Deployment `dpl_7NgTKJtNLLSbGYDqgQ9ttNx5EL7f` seit11:13:20.772UTC READY;Hauptadresse helmut-pilot.vercel.app direkt demselben Commit zugeordnet. [Kanonischer Betriebsbeleg](betrieb/500-lage-quellenfenster-2026-09-13.md).
+**13.09.2026: Kandidatengesamttest teilweise abgeschlossen.** Main545d644 und PR390 Kopf1006e72 unverändert. [Ergebnisse und konkrete Übertragungsvoraussetzungen](betrieb/500-lage-quellenfenster-2026-09-13.md).
 
-Vorprüfung34751774750:369/369 in639s. PR CI34752297764:369/369 in714s,Syntax erfolgreich,Browser50/50,Kontoschutz15/15,Z2248/48. Automatischer main Lauf34753858317 bei Kontrolle11:23UTC:Browser erfolgreich,Offline noch laufend;kein abschließendes Grün behauptet. REST34749687054:13Gruppen/24GET/alle200;gezielter Browser34750436568:75/75 und39/39,davon24 Browserassertions. Kein manueller allgemeiner Wiederholungslauf für reine Dokumentation.
+**Tatsächlich geprüft:** kanonischer Lauf auf06a8aac, Baum b238c5e:369/374 Suiten in672s, Exit1. Zwei Browserprüfungen scheitern an fehlendem Chromium1234; Kalender und Lambda Paketbau an fehlenden Abhängigkeiten. Ein alter Profilbezugstest gab Altzeilen unter fremder Kennung zurück. Nur diese Attrappe korrigiert, gezielt10/10 erfolgreich. Kein neuer Gesamtlauf daraus abgeleitet. Syntax688/688, Produktcode unverändert.
 
-Aktuelle Quellenmetadaten werden vor dem Zwölferlimit berücksichtigt,bis sechs exakt gebundene Dokumente geladen;allgemeiner40er Leser erhalten. Keine neue Produktkorrektur. READY belegt die Bereitstellung,keine fachliche Abnahme oder Production Latenz.
+**Integration bleibt lokal:** separate Kennung, unveränderter Vorgänger und strenge aktuelle Fachbasis. Neue Integrationssuiten im Gesamtlauf bestanden. Historischer Abruf bleibt erhalten; privater Export prüft keine Fachbasis am Vollprofil. Keine atomare Sperre über beide Belegzeilen.
 
-**Nachträglicher Dokumentationsabschluss für PR388:** Betreiber hat den reinen Dokumentations PR samt Merge und automatischem Deployment freigegeben. Dieser Nachtrag enthält den nach dem Produktmerge belegten Endzustand. Sein eigener Merge und Deploymentstatus werden gemäß CLAUDE §9 aus Git und Deploymenthistorie belegt;kein rekursiver Folge PR. Nur Status und Betriebsbeleg geändert. Frühere Veröffentlichungssperren darunter sind Historie. Klassischer main Branchschutz deaktiviert,Pflichtjobs deshalb ausdrücklich prüfen.
+**Nächstes Gate:** gesondert freigegebene Fast Forward Übertragung auf den bestehenden PR390 Branch und Pflicht CI auf neuem Kopf. Dort Installation aus Lockdatei, Node22, Browser und separate Datenbankgates. Vercel Deployment für diesen Testbranch aus; Merge mit Production Deployment separat freigeben. CI34763227370 auf altem1006e72 gilt nicht für diesen Kandidaten. NurPR390 undPR345 offen, keine laufende Action.
 
-**Fachliche Abnahme exakt500 und zwei Profilfehler offen.** Historischer Datenbeleg07:45UTC:504 Profile,505 Identitäten,fünf aktiv,495 synthetische inaktiv;39 Buchungen,0,234674USD,Reserve0,Grenze4USD täglich insgesamt. Vier Admin Abweichungen offen. Fachautomation deaktiviert,next_run_time null. Kein Fachlauf,Modell,Originalabruf,Import oder Profileingriff. Nach nachgewiesenem Dokumentationsabschluss stoppen. Nächster fachlicher Schritt braucht einen eigenen begrenzten Auftrag.
+Reale Altbelege und neue Fachurteile weiter offen. Vorflug15:11:18UTC bleibt Snapshot mit vier Stellvertretungsprofilen und zwei Hashkonflikten; keine neue Production Abfrage. Historische Kausalität, Behebung beider Fachfehler und500er Abnahme unbelegt.
+
+Kein Push, PR Update, Merge, Deployment oder Fachlauf. Fachautomation bleibt aus; letzter frischer Beleg im Integrationssprint,next_run_time null. READY bleibt Vorbeleg11:46UTC. Hier stoppen. Derselbe Thread, Hoch, für freigegebene Übertragung und CI.
 
 Der bisherige Statuskopf vom 10.09. liegt unveraendert im [Archiv](archive/project_state/2026_09_11_500_statuskopf.md). Die nachfolgenden zeitlich aelteren Betriebsstaende sind Historie.
 

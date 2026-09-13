@@ -1,6 +1,7 @@
 name: Kanonische Offline Vorpruefung isoliert
 
-# Nur der freigegebene Kandidat. Kein PR Trigger und kein Productionpfad.
+# Profilkontextkandidat: Ausfuehrung erst nach ausdruecklicher Push Freigabe.
+# Bestehender geschuetzter Testbranch. Kein PR Trigger und kein Productionpfad.
 on:
   push:
     branches: [codex/500-lage-quellenfenster-20260913]

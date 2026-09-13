@@ -11,6 +11,29 @@ const Q = require("../lib/helmut/lage-textqualitaet");
 const T = require("./privater-nachweis-transport");
 function fordere(ok) { if (!ok) throw new Error("privater-inhaltsnachweis-nicht-bestaetigt"); }
 
+function pruefeBelegzeilen(rows, profile, day) {
+  const id = S.assertTenant(profile?.id, "privaterBelegzeilenNachweis");
+  // Nur Belegstruktur: dieser private Archivleser laedt keine Identitaetsprofile.
+  // Vollprofilhash und neue Fachabnahme prueft ausschliesslich der aktuelle Leser.
+  for (const row of rows) {
+    fordere(row.user_id === id && row.payload && typeof row.payload === "object"
+      && !Array.isArray(row.payload) && Number.isFinite(Date.parse(row.generated_at)));
+    if (row.slot === "lage-pruefentwurf") {
+      const { inhaltHash, ...rest } = row.payload;
+      fordere(/^nachlauf500-\d{5,20}$/.test(rest.runId || "") && ["entwurf", "pruefung"].includes(rest.phase)
+        && row.id === `bf-${id}-${row.slot}-${day}-${rest.runId}-${rest.phase}`
+        && rest.version === 1 && rest.tag === day && rest.auslieferbar === false
+        && rest.qualitaetBestanden === false && inhaltHash === B.hash(rest));
+    } else if (row.slot === "mandatsbriefing" && row.payload.profilkontextUebergang) {
+      const alt = rows.find(r => r.id === `bf-${id}-mandatsbriefing-${day}`);
+      fordere(alt);
+      require("../lib/helmut/briefing-profilkontext").pruefeBelegstruktur(row, alt,
+        { userId: id, day, profile });
+    } else fordere(["lage", "mandatsbriefing"].includes(row.slot)
+      && row.id === `bf-${id}-${row.slot}-${day}`);
+  }
+}
+
 async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () => new Date() } = {}) {
   try {
     fordere(env.GITHUB_REPOSITORY === "ernisch/helmut-pilot" && env.GITHUB_REF === "refs/heads/main"
@@ -68,20 +91,9 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
       fordere(profiles.length === 1 && profiles[0].user_id === id && profiles[0].geloescht_at === null);
       const profile = S.fromMandateProfileRow({ id }, profiles[0]);
       const profileHash = B.profilHash(profile);
-      for (const row of rows) {
-        fordere(row.user_id === id && row.payload && typeof row.payload === "object"
-          && !Array.isArray(row.payload) && Number.isFinite(Date.parse(row.generated_at)));
-        if (row.slot === "lage-pruefentwurf") {
-          const { inhaltHash, ...rest } = row.payload;
-          fordere(/^nachlauf500-\d{5,20}$/.test(rest.runId || "") && ["entwurf", "pruefung"].includes(rest.phase)
-            && row.id === `bf-${id}-${row.slot}-${ctx.tag}-${rest.runId}-${rest.phase}`
-            && rest.version === 1 && rest.tag === ctx.tag && rest.auslieferbar === false
-            && rest.qualitaetBestanden === false && inhaltHash === B.hash(rest));
-        } else fordere(["lage", "mandatsbriefing"].includes(row.slot)
-          && row.id === `bf-${id}-${row.slot}-${ctx.tag}`);
-      }
+      pruefeBelegzeilen(rows, profile, ctx.tag);
       return { userId: id, profil: Q.profilKontext(profile), profilHash: profileHash,
-        belege: rows, snapshotHash: B.hash({ profil: profiles[0], belege: rows }) };
+        fachbasisAmVollprofilGeprueft: false, belege: rows, snapshotHash: B.hash({ profil: profiles[0], belege: rows }) };
     }
     const mandate = [];
     for (const id of ids) mandate.push(await leseMandat(id));
@@ -104,4 +116,4 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
 if (require.main === module) ausfuehren().then(r => {
   console.log(JSON.stringify(r, null, 2)); process.exitCode = r.ok ? 0 : 1;
 });
-module.exports = { ausfuehren };
+module.exports = { ausfuehren, pruefeBelegzeilen };

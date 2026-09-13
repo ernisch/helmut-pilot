@@ -714,3 +714,8 @@ audit/                                        # historische Auditberichte (kein 
 | **Sicherheit / Mandanten** | [`quellenarchitektur/05-sicherheitsmodell-rls.md`](quellenarchitektur/05-sicherheitsmodell-rls.md), [`sprint1-sicherheit/01-zugriffsmatrix.md`](sprint1-sicherheit/01-zugriffsmatrix.md), `tenant-context.js`, `auth.js`, `scripts/cross-tenant-security-test.js` |
 | **Betrieb / Production** | [`betrieb/deploy-rollback.md`](betrieb/deploy-rollback.md), [`betrieb/env-inventar.md`](betrieb/env-inventar.md), [`betrieb/branch-protection.md`](betrieb/branch-protection.md), `vercel.json`, `helmut-flags.json` |
 | **Monitoring / Alarm** | `rolling-health.js`, `watchdog-state.js`, `motor-health.js` (Motor-Quittungen bei aktivem OP-30-Pfad), `monitoring-webhook.js`, `alarm-payload.js` |
+
+
+## 13 · Lokaler Profilhash Übergang (13.09.2026, noch nicht veröffentlicht)
+
+`lib/helmut/briefing-profilkontext.js` kapselt eine getrennte Neuanlage für unvollständige Vertrag1 Tagesbelege bei erweitertem Profilhash. Vorgänger bleibt erhalten; Nachfolger liegt im bestehenden Slotmandatsbriefing unter einem durch aktuellen Profilhash bestimmten Schlüssel. Explizite aktuelle Fachbasis ist zwingend. Speicherleser und aktueller App Nachweis prüfen Vorgänger, Inhalt und vollständige Fachbindung. Historischer Abruf bleibt getrennt. Der private Archivexport prüft nur Belegstruktur und Fachkontext, keine neue Fachabnahme am Vollprofil. Kein zusätzlicher automatischer Start, keine Migration. Insert mitignore-duplicates und strenges Rücklesen sind keine atomare Sperre über beide Zeilen. Details und Veröffentlichungsvoraussetzungen im [kanonischen Betriebsbeleg](betrieb/500-lage-quellenfenster-2026-09-13.md).

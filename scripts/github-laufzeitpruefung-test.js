@@ -133,13 +133,13 @@ async function main() {
         "Echter HTTP Handler transportiert die Arbeitsauswahl und meldet dieselbe Faehigkeit");
     } finally { textlauf.ausfuehren = originalTextlauf; }
     const B = require("../lib/helmut/briefing-speicher");
-    const profile = { id: "test-kohorte-a-001", committees: ["Bildung"] };
+    const profile = { id: "test-kohorte-a-001", committees: ["Bildung"], deputyCommittees: ["Haushaltsausschuss"] };
     const getProfileVorher = storage.getProfile, getBriefingVorher = storage.getRenderedBriefingV3;
     const briefing = { available: true, items: [{ title: "Beratung ueber Schulbau" }], currentHelmutState: {}, currentRadarState: {} };
     const lage = { paragraphs: [{ text: "Die Quelle berichtet ueber Schulbau.", vorgang_ids: ["vg-schule"], quellen_ids: ["q-schule"] }],
       quellen: [{ vorgang_id: "vg-schule", quellenbelege: [{ quelle_id: "q-schule", quelle: "Testquelle", titel: "Schulbau", url: "https://example.org/schule" }] }],
       qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } };
-    const payload = { version: B.VERSION, mandat: profile.id, tag: "2026-09-09", profilHash: B.profilHash(profile),
+    const payload = { version: B.VERSION, mandat: profile.id, tag: "2026-09-09", profilHash: B.profilHash(profile, 1),
       briefing, lage, inhaltHash: B.hash({ briefing, lage }), pruefung: B.pruefeInhalt(briefing, lage) };
     const row = { id: `bf-${profile.id}-mandatsbriefing-2026-09-09`, user_id: profile.id, slot: B.SLOT, payload };
     let reads = 0;
@@ -149,12 +149,69 @@ async function main() {
       const path = `/api/cron/briefing-nachweis?mandat=${profile.id}&tag=2026-09-09`;
       check((await request("GET", null, path)).status === 403 && reads === 0, "Briefingbeleg ohne Autorisierung liest keine Mandatsdaten");
       r = await request("GET", geheim, path);
-      check(r.status === 200 && r.body.gespeicherterNachweis.id === row.id, "echter App-Adapter liefert den gespeicherten Briefingstand");
-      check(r.body.lageBriefing.paragraphs[0].sources[0].url === "https://example.org/schule", "gespeicherter Text bleibt mit konkreter Quelle abrufbar");
+      check(r.status === 500 && !JSON.stringify(r.body).includes("Schulbau"),
+        "aktueller Nachweis akzeptiert keinen historischen Hash mit verlorener Stellvertretung");
+      payload.profilHashVersion = 2;
+      r = await request("GET", geheim, path);
+      check(r.status === 500 && !JSON.stringify(r.body).includes("Schulbau"), "neue Versionsbehauptung mit altem Hash wird aktuell abgewiesen");
+      payload.profilHash = B.profilHash(profile);
+      r = await request("GET", geheim, path);
+      check(r.status === 200 && r.body.gespeicherterNachweis.profilbindung.version === 2
+        && r.body.gespeicherterNachweis.profilbindung.stellvertretungenImProfilhash === true,
+        "neuer gespeicherter Kontext bleibt mit seiner eigenen Bindung abrufbar");
+      check(r.body.gespeicherterNachweis.auswahl === "aktuell"
+        && r.body.gespeicherterNachweis.pruefung.bestanden === false,
+        "aktuelle Auswahl behauptet keine Fachabnahme");
+      check(r.body.lageBriefing.paragraphs[0].sources[0].url === "https://example.org/schule",
+        "gespeicherter Text bleibt mit konkreter Quelle abrufbar");
+      profile.deputyCommittees = ["Verkehrsausschuss"];
+      r = await request("GET", geheim, path);
+      check(r.status === 500 && !JSON.stringify(r.body).includes("Schulbau"), "abweichende Stellvertretung wird beim aktuellen Beleg abgewiesen");
+      profile.deputyCommittees = ["Haushaltsausschuss"];
       r = await request("GET", geheim, path.replace(profile.id, "test-kohorte-a-002"));
       check(r.status === 500 && !JSON.stringify(r.body).includes("Schulbau"), "fremde Speicherantwort wird nicht ausgeliefert");
       check((await request("POST", geheim, path)).status === 400, "Nachweisroute ist ausschliesslich lesend");
     } finally { storage.getProfile = getProfileVorher; storage.getRenderedBriefingV3 = getBriefingVorher; }
+    const fixture = require("./fixtures/profilhash-integration");
+    const f = fixture.fixture({ ...fixture.profile, id: "test-kohorte-a-001" });
+    await f.write();
+    storage.getProfile = async () => f.args.profile;
+    storage.getRenderedBriefingV3 = f.storage.getRenderedBriefingV3;
+    try {
+      const r = await request("GET", geheim,
+        `/api/cron/briefing-nachweis?mandat=${f.args.profile.id}&tag=${fixture.day}`);
+      check(r.status === 200 && r.body.gespeicherterNachweis.id === f.key
+        && r.body.gespeicherterNachweis.auswahl === "aktuell",
+        "echter HTTP Handler liefert den getrennten aktuellen Nachfolger");
+      f.rows.get(f.key).payload.profilkontextUebergang.vorgaengerHash = "a".repeat(64);
+      const bad = await request("GET", geheim,
+        `/api/cron/briefing-nachweis?mandat=${f.args.profile.id}&tag=${fixture.day}`);
+      check(bad.status === 500 && !JSON.stringify(bad.body).includes("Haushaltsentwurf"),
+        "beschaedigter Nachfolger faellt auch im echten HTTP Handler nicht auf Altstand zurueck");
+    } finally { storage.getProfile = getProfileVorher; storage.getRenderedBriefingV3 = getBriefingVorher; }
+    const A = require("../lib/helmut/briefing-aussagenbindung");
+    const oldCheck = A.leseFuerNachlauf, oldMaterial = B.materialisiere;
+    let accepted = true, transported;
+    A.leseFuerNachlauf = async () => ({ bereit: accepted, briefing: f.args.briefing,
+      eingabeHash: f.args.aussagenEingabeHash, lageEingabe: f.fachbasis });
+    B.materialisiere = async args => { transported = args; return { ok: true }; };
+    textlauf.ausfuehren = async args => {
+      if (!accepted) {
+        try { await args.deps.materialisiereBriefing(f.args.profile, f.args.profile.id); }
+        catch { return { ok: false }; }
+        throw new Error("Fehlende Fachfreigabe nicht gesperrt");
+      }
+      return args.deps.materialisiereBriefing(f.args.profile, f.args.profile.id);
+    };
+    try {
+      const result = await request("POST", geheim, nachlauf);
+      check(result.status === 200 && transported?.profilkontextUebergang === f.fachbasis,
+        "echter Serveranschluss uebergibt aktuelle Fachbasis an die Materialisierung");
+      accepted = false; transported = null;
+      const refused = await request("POST", geheim, nachlauf);
+      check(refused.body.ok === false && transported === null,
+        "fehlende Fachfreigabe erreicht am Serveranschluss keinen Writer");
+    } finally { A.leseFuerNachlauf = oldCheck; B.materialisiere = oldMaterial; textlauf.ausfuehren = originalTextlauf; }
     check(writes === 0, "Adminseed, Blobleser und Fehlerpersistierung nie erreicht");
   } finally {
     await new Promise((resolve) => server.close(resolve));
