@@ -1,16 +1,12 @@
 # CURRENT STATE — Helmut
 
-**13.09.2026: Kandidatengesamttest teilweise abgeschlossen.** Main545d644 und PR390 Kopf1006e72 unverändert. [Ergebnisse und konkrete Übertragungsvoraussetzungen](betrieb/500-lage-quellenfenster-2026-09-13.md).
+**14.09.2026: Fristenkandidat zur freigegebenen Pflichtprüfung vorbereitet.** [Beleg](betrieb/500-lage-quellenfenster-2026-09-13.md). Lokaler Produktstand68c4565: explizite heutige Uhrzeiten ohne bis werden nach Ablauf zurückgehalten; ein morgen im Nachbarfeld verschiebt kein ausdrückliches heute. Neue Suite31/31, bestehende Fristen16/16 und Quellenpflicht23/23 erfolgreich. Keine fachliche Freigabe.
 
-**Tatsächlich geprüft:** kanonischer Lauf auf06a8aac, Baum b238c5e:369/374 Suiten in672s, Exit1. Zwei Browserprüfungen scheitern an fehlendem Chromium1234; Kalender und Lambda Paketbau an fehlenden Abhängigkeiten. Ein alter Profilbezugstest gab Altzeilen unter fremder Kennung zurück. Nur diese Attrappe korrigiert, gezielt10/10 erfolgreich. Kein neuer Gesamtlauf daraus abgeleitet. Syntax688/688, Produktcode unverändert.
+**Stand:** GitHub main9b762f9b371aefc285bb22a844b71d1e30853030 unverändert bestätigt, nur alterPR345 offen, keine Action in_progress. Eigener Branch codex/b055-relative-fristen-20260914. Weiter nach konkret benannter Freigabeanforderung autorisiert Übertragung, notwendige Pflichtprüfungen und PR. Ergänzt sind ausschließlich die bestehende isolierte Vorprüfung für diesen Branch und seine automatische Deploymentsperre. Produktcode unverändert zum geprüften lokalen Kandidaten. Ursprüngliche Arbeitskopie und Dokumentationsnachträge erhalten.
 
-**Integration bleibt lokal:** separate Kennung, unveränderter Vorgänger und strenge aktuelle Fachbasis. Neue Integrationssuiten im Gesamtlauf bestanden. Historischer Abruf bleibt erhalten; privater Export prüft keine Fachbasis am Vollprofil. Keine atomare Sperre über beide Belegzeilen.
+**Fachliche Grenze:** B055 Urteil unverändert negativ. Gespeichertes lokales Standardszenario mit24 Vorgängen und870 Textpfaden, keine bestätigte Production Laufzeit oder Quellenteilmenge. Historische Originalantwort und ursprüngliche Eingaben fehlen. Der Fix bestätigt keine künftigen Fristen und ändert keine gespeicherten Texte. Quellenqualität, Zuständigkeiten und500er Nachweis offen. Keine Production Abfragen, Modelle, Originalabrufe oder Änderungen an Daten und den fünf realen Profilen.
 
-**Nächstes Gate:** gesondert freigegebene Fast Forward Übertragung auf den bestehenden PR390 Branch und Pflicht CI auf neuem Kopf. Dort Installation aus Lockdatei, Node22, Browser und separate Datenbankgates. Vercel Deployment für diesen Testbranch aus; Merge mit Production Deployment separat freigeben. CI34763227370 auf altem1006e72 gilt nicht für diesen Kandidaten. NurPR390 undPR345 offen, keine laufende Action.
-
-Reale Altbelege und neue Fachurteile weiter offen. Vorflug15:11:18UTC bleibt Snapshot mit vier Stellvertretungsprofilen und zwei Hashkonflikten; keine neue Production Abfrage. Historische Kausalität, Behebung beider Fachfehler und500er Abnahme unbelegt.
-
-Kein Push, PR Update, Merge, Deployment oder Fachlauf. Fachautomation bleibt aus; letzter frischer Beleg im Integrationssprint,next_run_time null. READY bleibt Vorbeleg11:46UTC. Hier stoppen. Derselbe Thread, Hoch, für freigegebene Übertragung und CI.
+**Einzelner nächster Schritt:** Exakten Kandidaten übertragen und kanonischen isolierten Gesamtlauf vor PR nachweisen. Danach PR und bestehende Pflicht CI. Frühere374 Suiten,50 Browser,15 Kontoschutz und48 Z22 sind Vorbelege. Merge samt automatischem Production Deployment benötigt separate Freigabe. Laufzeitnachweis bleibt beim vorher dokumentierten Bedienweg blockiert. Nach Sicherung Steuerung freigeben und stoppen. Derselbe Thread, Hoch.
 
 Der bisherige Statuskopf vom 10.09. liegt unveraendert im [Archiv](archive/project_state/2026_09_11_500_statuskopf.md). Die nachfolgenden zeitlich aelteren Betriebsstaende sind Historie.
 
