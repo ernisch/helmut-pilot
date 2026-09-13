@@ -47,7 +47,7 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
         if (b?.available === false && b.reason === "briefing-nicht-gespeichert") {
           results.push({ mandatHash, abrufbar: false, grund: "briefing-nicht-gespeichert" }); continue;
         }
-        const gueltig = n?.id === `bf-${p.user_id}-mandatsbriefing-${tag}` && b?.available === true
+        const gueltig = require("../lib/helmut/briefing-profilkontext").nachweisKennungGueltig(n, p.user_id, tag) && b?.available === true
           && Array.isArray(b.items) && b.items.length > 0 && b.currentHelmutState && b.currentRadarState
           && Array.isArray(b.lageBriefing?.paragraphs) && b.lageBriefing.paragraphs.length > 0;
         results.push({ mandatHash, abrufbar: Boolean(gueltig), grund: gueltig ? "app-vertrag-gelesen" : "app-vertrag-unvollstaendig",

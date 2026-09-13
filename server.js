@@ -165,7 +165,7 @@ async function handleRequest(request, response) {
       const profile = await storage.getProfile(userId);
       if (!profile || profile.id !== userId) throw new Error("nachweis-profil-fehlt");
       const nachweisUrl = new URL("http://localhost/api/briefing/latest");
-      nachweisUrl.searchParams.set("gespeichert", day || "");
+      nachweisUrl.searchParams.set("aktuellGespeichert", day || "");
       if (!/^\d{4}-\d{2}-\d{2}$/.test(day || "")) throw new Error("briefing-tag-ungueltig");
       return sendJson(response, await latestBriefingPayload({ politicianId: userId, profile, url: nachweisUrl, compact: false }));
     } catch (_) {
@@ -196,7 +196,7 @@ async function handleRequest(request, response) {
           if (!check.bereit) throw new Error("briefing-aussagenpruefung-fehlt");
           return require("./lib/helmut/briefing-speicher")
             .materialisiere({ profile, userId, briefing: check.briefing,
-              aussagenEingabeHash: check.eingabeHash });
+              aussagenEingabeHash: check.eingabeHash, profilkontextUebergang: check.lageEingabe });
         }
       }
     }));
@@ -3220,16 +3220,21 @@ async function ladeFrischeKontext(tenantId, jetzt = new Date()) {
 // Contract-Adapter). KEIN V2-Blob, KEIN Regel-Scoring, KEIN V2-Fallback. Fehlen
 // V3-Daten, liefert der Adapter einen EXPLIZITEN Leerzustand (available:false).
 async function latestBriefingPayload({ politicianId, profile, url, previewMode = false, compact = false }) {
-  // Expliziter historischer App-Abruf, rein lesend. Der normale aktuelle
-  // V3-Lesepfad bleibt frisch; ein gespeicherter Teststand ist kein neuer Tag.
-  const gespeichertTag = url?.searchParams?.get("gespeichert");
+  // Gespeicherter App Abruf: ausdruecklich historisch oder am aktuellen Profil
+  // geprueft. Ohne Auswahl bleibt der regulaere frische V3 Lesepfad aktiv.
+  const aktuellTag = url?.searchParams?.get("aktuellGespeichert");
+  const historischerTag = url?.searchParams?.get("gespeichert");
+  if (aktuellTag && historischerTag) throw new Error("briefing-nachweis-abweichend");
+  const gespeichertTag = aktuellTag || historischerTag;
   if (gespeichertTag) {
-    const row = await require("./lib/helmut/briefing-speicher").lese({ userId: politicianId, day: gespeichertTag, profile, historisch: true });
+    const row = await require("./lib/helmut/briefing-speicher").lese({ userId: politicianId, day: gespeichertTag, profile, historisch: !aktuellTag });
     if (!row) return { available: false, reason: "briefing-nicht-gespeichert" };
     return prepareBriefingResponse({ ...row.payload.briefing,
       lageBriefing: require("./lib/helmut/briefing-speicher").lageAusgabe(row.payload.lage),
       gespeicherterNachweis: { id: row.id, erzeugtAm: row.generated_at,
         profilbindung: require("./lib/helmut/briefing-speicher").profilBindungsstand(row),
+        auswahl: aktuellTag ? "aktuell" : "historisch", profilHash: row.payload.profilHash,
+        vorgaengerId: row.payload.profilkontextUebergang?.vorgaengerId || null,
         pruefung: row.payload.pruefung } }, { previewMode, compact, frischeKontext: null });
   }
   // Optionaler Slot-Override (?slot=morning|midday|evening|daily) fuer Tests/Admin/

@@ -1,14 +1,16 @@
 # CURRENT STATE — Helmut
 
-**13.09.2026: Profilkontextkandidat nach Freigabe übertragen.** Entfernter Testcommit850a6301b69357eac53b629398e6a8b581e436ab, Baum00abfbca7e5f76c443a49a9b129e2f981faf49cc exakt wie lokal7bd42da, Elternmain545d644. Vollständige echte Vorgeschichte jetzt vorhanden. Direkter Push ohne Anmeldedaten gescheitert; verbundener GitHub Zugang erfolgreich, ohneforce. [Prüflauf und Abschluss](betrieb/500-lage-quellenfenster-2026-09-13.md).
+**13.09.2026: Kandidatengesamttest teilweise abgeschlossen.** Main545d644 und PR390 Kopf1006e72 unverändert. [Ergebnisse und konkrete Übertragungsvoraussetzungen](betrieb/500-lage-quellenfenster-2026-09-13.md).
 
-**Teilweise abgeschlossen:** Übertragung und Vorprüfung erfolgreich. Lauf34761986007 completed/success um14:21:34UTC,372/372 Suiten in540s, Bereinigung bestätigt. Auswahl exakt vollständig; innere Skipzahlen im Runnerlog nicht sichtbar. Kein neuer Browser oder Datenbankgatenachweis. Nächste Freigabe: lokalen Dokumentationsnachtrag übertragen, PR erstellen und beide Pflichtjobs prüfen. Kein Merge oder Deployment.
+**Tatsächlich geprüft:** kanonischer Lauf auf06a8aac, Baum b238c5e:369/374 Suiten in672s, Exit1. Zwei Browserprüfungen scheitern an fehlendem Chromium1234; Kalender und Lambda Paketbau an fehlenden Abhängigkeiten. Ein alter Profilbezugstest gab Altzeilen unter fremder Kennung zurück. Nur diese Attrappe korrigiert, gezielt10/10 erfolgreich. Kein neuer Gesamtlauf daraus abgeleitet. Syntax688/688, Produktcode unverändert.
 
-GitHub main545d644 unverändert; nurPR345 offen. Testbranchcodex/500-lage-quellenfenster-20260913 unverändert deploymentEnabled:false. Kein neuer PR, Merge oder Deployment. Abschlussdokumentation nur lokal; ursprünglicher Diagnosekandidat8319dd5 erhalten.
+**Integration bleibt lokal:** separate Kennung, unveränderter Vorgänger und strenge aktuelle Fachbasis. Neue Integrationssuiten im Gesamtlauf bestanden. Historischer Abruf bleibt erhalten; privater Export prüft keine Fachbasis am Vollprofil. Keine atomare Sperre über beide Belegzeilen.
 
-Vor Veröffentlichung: beide CI Pflichtjobs einschließlich Datenbankgates und gezielter lesender Vorflug auf alte Tagespakete. Alte Hashbindung kann Materialisierung stoppen. Keine automatische Neuerzeugung. Historischer Cache ist keine neue Fachprüfung. Kontextverlust bei einem Profil belegt; historische Ursache beider Ablehnungen und500er Fachabnahme offen.
+**Nächstes Gate:** gesondert freigegebene Fast Forward Übertragung auf den bestehenden PR390 Branch und Pflicht CI auf neuem Kopf. Dort Installation aus Lockdatei, Node22, Browser und separate Datenbankgates. Vercel Deployment für diesen Testbranch aus; Merge mit Production Deployment separat freigeben. CI34763227370 auf altem1006e72 gilt nicht für diesen Kandidaten. NurPR390 undPR345 offen, keine laufende Action.
 
-Keine Profile, Konten, Modelle, Originalquellen oder Production Daten verändert. Fachautomation frisch aus,next_run_time null. READY dpl_68HdBTJPHvevFbhPog7TQGovQMFu bleibt Vorbeleg11:46UTC. Danach stoppen; derselbe Thread mit Hoch.
+Reale Altbelege und neue Fachurteile weiter offen. Vorflug15:11:18UTC bleibt Snapshot mit vier Stellvertretungsprofilen und zwei Hashkonflikten; keine neue Production Abfrage. Historische Kausalität, Behebung beider Fachfehler und500er Abnahme unbelegt.
+
+Kein Push, PR Update, Merge, Deployment oder Fachlauf. Fachautomation bleibt aus; letzter frischer Beleg im Integrationssprint,next_run_time null. READY bleibt Vorbeleg11:46UTC. Hier stoppen. Derselbe Thread, Hoch, für freigegebene Übertragung und CI.
 
 Der bisherige Statuskopf vom 10.09. liegt unveraendert im [Archiv](archive/project_state/2026_09_11_500_statuskopf.md). Die nachfolgenden zeitlich aelteren Betriebsstaende sind Historie.
 

@@ -100,9 +100,18 @@ pruefung("Profilhash bindet Stellvertretungen und erhält Profile ohne diese", (
     payload: { version: 1, mandat: userId, tag: day, briefing, lage,
       inhaltHash: B.hash({ briefing, lage }), profilHash: B.hash(alterKontext) } };
   const vorher = structuredClone(alt);
+  const abrufe = [];
   const mock = { assertTenant: id => assert.equal(id, userId),
-    getRenderedBriefingV3: async () => structuredClone(alt) };
+    getRenderedBriefingV3: async (id, slot, tag, opts) => {
+      assert.equal(id, userId); assert.equal(slot, B.SLOT); assert.equal(tag, day);
+      assert.equal(opts.strict, true); abrufe.push(opts.profilHash || null);
+      // Der neue Schluessel hat hier keinen Beleg. Keine Altzeile unter
+      // einer anderen Kennung vortaeuschen: echte Speicherleser tun das nicht.
+      if (opts.profilHash !== undefined) { assert.equal(opts.profilHash, B.profilHash(profil)); return null; }
+      return structuredClone(alt);
+    } };
   await assert.rejects(B.lese({ userId, day, profile: profil, storage: mock }), /briefing-nachweis-abweichend/);
+  assert.deepEqual(abrufe, [null, B.profilHash(profil)]);
   assert.deepEqual(alt, vorher);
   bestanden++;
   console.log("BELEGT Kompatibilitaetsgrenze: alter Profilhash wird abgewiesen, gespeicherter Beleg bleibt erhalten.");
