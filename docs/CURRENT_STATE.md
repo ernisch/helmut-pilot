@@ -1,14 +1,14 @@
 # CURRENT STATE — Helmut
 
-**13.09.2026: Profilkontextkandidat auf echte main Basis übertragen, teilweise abgeschlossen.** Lokaler Übertragungscommit9451f2b564e1fb156ec07471e1b1ac98f63e1c47 hat denselben Baum8eaf23249ebd579d13c1c50497f896ee3a698a78 wie8319dd5 und echten Eltern545d644. Originalcommit bytegenau bestätigt; flache Basis, keine vollständige Historie. Ursprüngliche Arbeitskopie unverändert. [Übertragung und Pflichtlauf](betrieb/500-lage-quellenfenster-2026-09-13.md).
+**13.09.2026: Profilkontextkandidat nach Freigabe übertragen.** Entfernter Testcommit850a6301b69357eac53b629398e6a8b581e436ab, Baum00abfbca7e5f76c443a49a9b129e2f981faf49cc exakt wie lokal7bd42da, Elternmain545d644. Vollständige echte Vorgeschichte jetzt vorhanden. Direkter Push ohne Anmeldedaten gescheitert; verbundener GitHub Zugang erfolgreich, ohneforce. [Prüflauf und Abschluss](betrieb/500-lage-quellenfenster-2026-09-13.md).
 
-**Vorprüfung vorbereitet, nicht ausgeführt:** Kanonischer Runner sammelt372 Suiten. Vorhandener isolierter Workflow aufcodex/500-lage-quellenfenster-20260913 vorbereitet; nur Kommentar geändert. Branch weiterhin deploymentEnabled:false. Pflichtchecks unverändert. Kein erneuter Chromiumversuch, kein neuer Gesamtlauf oder Kandidaten CI. Früherer Browsererfolg stammt vom entfernten GitHub Testrechner.
+**Teilweise abgeschlossen:** Übertragung und Vorprüfung erfolgreich. Lauf34761986007 completed/success um14:21:34UTC,372/372 Suiten in540s, Bereinigung bestätigt. Auswahl exakt vollständig; innere Skipzahlen im Runnerlog nicht sichtbar. Kein neuer Browser oder Datenbankgatenachweis. Nächste Freigabe: lokalen Dokumentationsnachtrag übertragen, PR erstellen und beide Pflichtjobs prüfen. Kein Merge oder Deployment.
 
-GitHub main545d644, Baumdcc9adfa383a3e73cb201c1dc09a3319ef0e04e5, CI34755086886 completed/success frisch bestätigt. NurPR345 offen, keine laufende Action. Entfernter Testbranch2486583659012b5ecfef3eff0376e18fd122e113 ist zweiter Elterncommit vonmain. Kein Push, PR, Merge oder Deployment. Direkter Git Transport nicht genutzt.
+GitHub main545d644 unverändert; nurPR345 offen. Testbranchcodex/500-lage-quellenfenster-20260913 unverändert deploymentEnabled:false. Kein neuer PR, Merge oder Deployment. Abschlussdokumentation nur lokal; ursprünglicher Diagnosekandidat8319dd5 erhalten.
 
-Vor Veröffentlichung: vollständige Vorprüfung, beide CI Pflichtjobs und begrenzter lesender Vorflug auf alte Tagespakete. Alte Hashbindung kann Materialisierung stoppen. Historischer Cache ist keine neue Fachprüfung. Verbraucher5, Kompatibilität10 und HTTP58/58 bleiben datierte Belege. Kontextverlust bei einem Profil belegt; historische Kausalität und500er Fachabnahme offen.
+Vor Veröffentlichung: beide CI Pflichtjobs einschließlich Datenbankgates und gezielter lesender Vorflug auf alte Tagespakete. Alte Hashbindung kann Materialisierung stoppen. Keine automatische Neuerzeugung. Historischer Cache ist keine neue Fachprüfung. Kontextverlust bei einem Profil belegt; historische Ursache beider Ablehnungen und500er Fachabnahme offen.
 
-Keine Profile, Konten, Modelle, Originalquellen oder Production Daten verändert. Fachautomation bleibt aus. READY dpl_68HdBTJPHvevFbhPog7TQGovQMFu bleibt Vorbeleg11:46UTC. Nächste Freigabe: Übertragung auf geschützten Testbranch samt isoliertem Vorlauf. Kein PR vor bestandenem Pflichtlauf. Hier stoppen; hier weiter mit Hoch.
+Keine Profile, Konten, Modelle, Originalquellen oder Production Daten verändert. Fachautomation frisch aus,next_run_time null. READY dpl_68HdBTJPHvevFbhPog7TQGovQMFu bleibt Vorbeleg11:46UTC. Danach stoppen; derselbe Thread mit Hoch.
 
 Der bisherige Statuskopf vom 10.09. liegt unveraendert im [Archiv](archive/project_state/2026_09_11_500_statuskopf.md). Die nachfolgenden zeitlich aelteren Betriebsstaende sind Historie.
 

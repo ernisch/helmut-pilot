@@ -5,7 +5,7 @@
 
 ## 13.09.2026: Quellenfix unverändert, REST Vorbereitung teilweise abgeschlossen
 
-Neuester Abschnitt: authentische Git Basis und isolierte Pflichtlaufvorbereitung am Ende dieses Belegs. Die älteren Abschnitte erhalten ihren jeweiligen historischen Befund; frühere Sperren und nächste Schritte sind durch neuere Freigaben überholt.
+Neuester Abschnitt: freigegebene Übertragung und isolierte Vorprüfung am Ende dieses Belegs. Die älteren Abschnitte erhalten ihren jeweiligen historischen Befund; frühere Sperren und nächste Schritte sind durch neuere Freigaben überholt.
 
 Ein reproduzierbarer Auswahlfehler ist lokal korrigiert. Aktuelle Quellen werden vor der Begrenzung auf zwölf Vorgänge berücksichtigt. Reviewvorbereitung ist abgeschlossen; Veröffentlichung und fachlicher Wirkungsnachweis stehen aus. Der abgeschlossene PR387 Merge bleibt ein eigener unveränderter Production Stand.
 
@@ -678,3 +678,45 @@ Produkt und Testcode gegenüber8319dd5 unverändert. Neu sind lediglich Kommenta
 Keine zusätzlichen Agenten,500er Arbeit, Aktivierung, Modelle, politischen Originalabrufe, Importe, Profile, Konten, Datenbankinventur oder Production Änderungen. Keine Budgets, Migrationen, persistenten Umgebungsvariablen oder Crons geändert. READY dpl_68HdBTJPHvevFbhPog7TQGovQMFu bleibt Vorbeleg11:46UTC. Fachabnahme500 und historische Ursache beider Ablehnungen weiterhin offen.
 
 Hier stoppen. Direkt anschließend passt die freizugebende Übertragung samt isolierter Vorprüfung in denselben Thread mit Denkstufe Hoch. Kein automatischer Folgesprint.
+
+
+## Freigegebene Übertragung und isolierte Vorprüfung am 13.09.2026
+
+### Auftrag und Übernahme
+
+Betreiber Ja gibt ausschließlich die Übertragung des vorbereiteten Kandidaten auf den bestehenden deploymentgesperrten Testbranch und den dadurch gestarteten vorhandenen isolierten Vorlauf frei. Kein PR, Merge oder Deployment. Pflichtdateien in Reihenfolge vollständig gelesen; keine geltende AGENTS.md gefunden. Lokaler Starter, Netzschutz, Vorworkflow und betroffene Pushfilter erneut gelesen. Kein Agent oder paralleler Ausführer.
+
+Original328 frisch frei,858619Bytes,SHA256ddf9747cb051aae6b7e138b930355c891989edade7143e3d885b582a6f2d3d6c. Review13 frisch102690Bytes,SHA25631ed55aada7b45ddfb49ab51147a6e8aa626460a965e15545bf1dc5ce7840de8. Übernahme329 ausschließlich bedingt gegen328 und vollständig bytegleich rückgelesen:859301Bytes,SHA2568d20543ffafb2ab301e70b207bd452280518dce845ee9113c7cc96909793f184. Eigene Steuerungwork-5e17a0944d1a-push-vorpruefung. Keine laufende Action oder sichtbarer lokaler Fachprozess, nur historischerPR345 offen. Keine umfassende Sicht auf andere Chats.
+
+### Übertragung und tatsächliche Git Geschichte
+
+Kandidat7bd42dadd87c3350254c9cf0c53476e66d1879f6, Baum00abfbca7e5f76c443a49a9b129e2f981faf49cc, sauber. GitHub main545d644 und Zielbranch2486583659012b5ecfef3eff0376e18fd122e113 frisch unverändert. deploymentEnabled:false für genaucodex/500-lage-quellenfenster-20260913 in entfernter und lokaler vercel.json bestätigt. Alle elf geänderten Pfade gegen den Zielbranch geprüft: die anderen vorhandenen Browser und REST Vorworkflows werden von diesem Delta nicht ausgelöst. CI reagiert erst auf PR odermain, kein Production Workflow durch diese Übertragung.
+
+Direkter Git Lesezugriff funktioniert. git fetch --unshallow hat die vollständige echte Vorgeschichte der angeforderten Zweige nachgeholt. Die bisher fehlenden Commitobjekte545d644,2486583 und ihre Vorgeschichte sind in dieser neuen Arbeitskopie vorhanden. Keine weiterhin flache Kopie, keine erfundenen Eltern. git merge-base --is-ancestor für2486583 zu7bd42da und git fsck erfolgreich. Ursprüngliche Arbeitskopie/workspace/scratch/ca5d7901fd32/helmut bleibt unverändert.
+
+Direkter git push endet vor Übertragung mit Exit128: keine Git Anmeldedaten, terminal prompts disabled. Keine Wiederholung mit geratenen Kennungen und keine Secretsuche. Ein erster lokaler Transferlesenversuch überschritt die Ausgabegrenze und wurde vor jedem GitHub Schreibaufruf verworfen; anschließend vollständige Dateiinhalte in begrenzten Stücken gelesen. Kein Test oder Produktfehler.
+
+Der verbundene GitHub Zugang erstellt den vollständigen Baum00abfbca exakt gleich zum freigegebenen Kandidaten. Neuer authentischer Übertragungscommit850a6301b69357eac53b629398e6a8b581e436ab mit echtem Eltern545d644. Neue Commitkennung wegen anderer Übertragungsmetadaten, kein veränderter Dateibaum. Vor Refänderung Commit, Baum, Eltern, main und Zielbranch frisch gelesen und verglichen. Der Ref wird ohneforce ausschließlich vorwärts auf850a630 gesetzt und sofort unabhängig rückgelesen. Anschließend authentischer Commit übergit fetch lokal nachgeholt; git diff7bd42da..850a630 vollständig leer.
+
+Lokale Arbeitskopie/workspace/scratch/5e17a0944d1a/fortsetzung/helmut. Neuer reiner Abschlussbranchcodex/profilkontext-pruefabschluss-20260913 baut auf850a630. Der lokale Vorbereitungskandidat7bd42da bleibt untercodex/profilkontext-vorpruefung-lokal-20260913 und dem bisherigen lokalen Testbranchnamen erhalten. Kein Reset oder Umschreiben. Der echte entfernte Testbranch enthält850a630.
+
+### Isolierter Prüflauf
+
+GitHub Lauf34761986007, Job103736320701, WorkflowKanonische Offline Vorpruefung isoliert, startet durch die freigegebene Refänderung am13.09.2026 um14:12:24UTC. Der Job arbeitet auf850a630 mit Baum00abfbca. Bereinigte Umgebung, Lockfileabhängigkeiten, eigener Netzwerkraum ausschließlich mit Loopback und ohne Route, normaler Runnernutzer. Tatsächlicher Testbefehl node scripts/lokal.js -- node scripts/run-offline-tests.js. Kein geänderter Runner, keine Filterung oder Abschwächung.
+
+**Tatsächlicher Abschluss:** Lauf34761986007 completed/success um14:21:34UTC (17:21:34Türkei,16:21:34Berlin); Job103736320701 und Bereinigung erfolgreich. Node22.23.2. Runner meldet372/372 in540Sekunden, exakt dieselben372 ausgewählten Suiten wie die vorbereitete Liste, keine fehlgeschlagene Suite. Die drei neuen Profilkontextsuiten sind einzeln im Erfolgslog enthalten.
+
+Die erfolgreichen Kindprozessausgaben unterdrückt der unveränderte Runner. Deshalb sind Einzelassertionszahlen und interne Skipzahlen aus diesem Log nicht bestimmbar. Kein neuer Browser oder echter Datenbankgatenachweis aus den372 erfolgreichen Prozessausgängen abgeleitet. Optionale Browserabschnitte gelten hier nicht als neuer Browsernachweis. Die bestehenden CI Pflichtjobs bleiben vollständig erforderlich. Kein neuer Produktfehler belegt und kein Produktfix.
+
+Status **teilweise abgeschlossen**: freigegebene Übertragung und kanonische Vorprüfung erfolgreich; PR, Veröffentlichung und fachlicher Wirkungsnachweis offen. Main545d644 und Testbranch850a630 beim Abschluss frisch unverändert; nurPR345 offen, keine laufende Action. Fachautomation6aa2872e75ec81919d4c0abe7d304ddb frisch deaktiviert,next_run_time null.
+
+Nächste konkrete Freigabe: den reinen lokalen Dokumentationsnachtrag auf denselben deploymentgesperrten Testbranch übertragen, den vorbereiteten PR erstellen und beide vorhandenen Pflichtjobs auswerten. Der Nachtrag ändert ausschließlich Dokumentation, keine erneute Workflowänderung oder automatisch neue Vorprüfung. Vorher Steuerung, main, Zielbranch und Änderungsumfang frisch bestätigen. Kein Merge oder Deployment damit freigegeben. PR Entwurf liegt mit Risiken und Ergebnis vor.
+
+
+### Grenzen und nächster Schritt
+
+Ein Erfolg dieser Vorprüfung ersetzt weder die beiden bestehenden CI Pflichtjobs mit ihren Datenbankgates noch einen neuen Browser, Production oder fachlichen Wirkungsnachweis. Alte Tagespakete von Profilen mit Stellvertretungen brauchen vor Veröffentlichung einen gezielten rein lesenden Vorflug. Alte Hashbindung kann reguläre Materialisierung stoppen; keine automatische Umschreibung oder Neuerzeugung. Historische Modellantworten fehlen weiterhin, die Ursache beider alten Ablehnungen und deren fachliche Behebung bleiben unbelegt.
+
+Keine zusätzlichen Agenten, Aktivierung,500er Fachläufe, Modelle, politischen Originalabrufe, Importe, Profile, Konten, Production Datenänderungen, Migrationen, Budgets, persistenten Umgebungsvariablen oder Cron Änderungen. Kein PR, Merge oder Deployment. Production READY dpl_68HdBTJPHvevFbhPog7TQGovQMFu bleibt Vorbeleg11:46UTC. Fachautomation bleibt aus.
+
+Abschlussdokumentation nur lokal committen, Review und Belege dauerhaft speichern und vollständig rücklesen. Original gegen unmittelbar frisch bestätigte eigene Version abschließen, eigene Steuerung bedingt freigeben und vollständige gespeicherte Bytes prüfen. Danach stoppen. Derselbe Thread mit Denkstufe Hoch bleibt passend.
