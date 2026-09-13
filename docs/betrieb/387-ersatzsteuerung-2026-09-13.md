@@ -1,6 +1,6 @@
 # Ersatzsteuerung fuer PR387
 
-Stand: 13.09.2026. Zustand: Merge und Production bestaetigt; automatische main Pruefung und abschliessende Nachkontrolle noch offen.
+Stand: 13.09.2026. Zustand: Merge, Production und automatische main Pruefung erfolgreich. Abschlussbeleg unten; terminaler Steuerungsstatus in steuerung-pr387.json.
 
 ## Zweck und ausdrueckliche Betreiberentscheidung
 
@@ -88,7 +88,7 @@ Die lokale Vorbereitung liegt auf `codex/387-steuerung-vorbereitung-20260913`, C
 
 Frischer Vorflug am 12.09.2026,23:47:51 UTC /13.09.,01:47:51 Berlin /02:47:51 Tuerkei: PR Kopf, Basis, Kandidatbaum und erfolgreiche PR Pruefung unveraendert. Production weiterhin auf dem oben genannten alten Deployment. Profile504,Identitaeten505,fuenf aktiv,495 synthetische Profile und Konten inaktiv; Schutzhash unveraendert; alle geprueften Aktivitaetszaehler null. UTC12.09.:110 Buchungen,0,710396USD erfasst,Reserve0,Limit4USD. Fachautomation deaktiviert. Nur die beiden alten wartenden Actions vom06.08. vorhanden.
 
-## Tatsaechlicher Merge und erste Nachkontrolle
+## Historischer Zwischenstand: Merge und erste Nachkontrolle
 
 [PR387](https://github.com/ernisch/helmut-pilot/pull/387) wurde am12.09.2026,23:50:16 UTC /13.09.,01:50:16 Berlin /02:50:16 Tuerkei mit festem `expected_head_sha` gemergt. Echter Mergecommit: `8d840d834f8ff312475d86e8c23509b75f63f91d`. Eltern exakt gepruefte Basis und Kopf, Baum `78d62fb947cde91efccf05224e4ce56839fed7c9` identisch mit dem geprueften Kandidaten. main und geschlossener PR wurden unabhaengig rueckgelesen.
 
@@ -101,3 +101,25 @@ Unmittelbarer Mergevorflug23:50:07UTC und Nachkontrolle23:51:07UTC am12.09.:504 
 UTC12.09.:110 Buchungen,0,710396USD im Helmut Kostenzaehler erfasst,keine offene Tagesreserve,Limit4USD. Keine Helmut Modellarbeit durch diesen Mergeabschnitt. Laufzeitprotokolle des neuen Deployments ab23:50:16UTC lieferten bei der ersten lesenden Abfrage keine Eintraege mit error oder fatal. Das kurze Beobachtungsfenster ist keine fachliche Abnahme.
 
 Steuerung Revision2 mit eigenem Besitzer bedingt gespeichert und exakt rueckgelesen;Frist `2026-09-13T00:21:07.442Z`. Naechster Schritt: automatisches Gesamtergebnis abwarten,erneuter Schutz und Kostenabgleich,Abschlussdokumentation sichern und nur die eigene Steuerung bedingt freigeben. Keine weitere Production Aktion autorisiert.
+
+## Abschluss der freigegebenen Fortsetzung
+
+Stand13.09.2026: Merge, exakte Production Veroeffentlichung, automatische main Pruefung und lesende Nachkontrolle erfolgreich. Dieser Abschluss betrifft ausschliesslich PR387. Die vollstaendige fachliche Production Abnahme fuer exakt500 gleichzeitig aktive Testprofile bleibt offen.
+
+Die automatische [main Pruefung34726446113](https://github.com/ernisch/helmut-pilot/actions/runs/34726446113) endete am13.09.,00:03:54UTC /02:03:54Berlin /03:03:54Tuerkei mit completed/success,Versuch1,Ereignis push. Beide beendeten Originalprotokolle belegen den echten Mergecheckout `8d840d834f8ff312475d86e8c23509b75f63f91d`. Offlinejob103641279136:367/367 Suiten in682s,Kontoschutz15 PASS/0 FAIL,Z22 Datenbank48 PASS/0 FAIL gegen die isolierte Testdatenbank. Browserjob103641278986:50 PASS/0 FAIL. Kein manuelles Starten oder Wiederholen einer Pruefung.
+
+Das erneut gelesene main zeigt auf den echten Merge. Production `dpl_4JSVUt4v2ktF45Yt4XzLSWmW8fUn` bleibt READY am Hauptalias `helmut-pilot.vercel.app` auf exakt diesem Commit. Der gepruefte PR,Kandidat und echte Merge haben denselben vollstaendigen Baum `78d62fb947cde91efccf05224e4ce56839fed7c9`. Seit Uebernahme genau die eine freigegebene automatische Production Veroeffentlichung. Keine vom Dokumentationsbranch ausgeloeste Action oder Veroeffentlichung festgestellt.
+
+Finaler Schutzabgleich13.09.,00:04:41UTC /02:04:41Berlin /03:04:41Tuerkei:504 Profile,505 Identitaeten,fuenf Profile aktiv.495 synthetische Profile und495 synthetische Konten ausdruecklich inaktiv. Geschuetzter PostgreSQL JSONB Hash unveraendert `96ae66918c06ed847f1673b47d60914bab814cdbd5833a345066db78f7ef45a1`. Laufende Jobs,gueltige Leases,aktive Sperren,junge laufende Prozesse und andere aktive Datenbankclients jeweils0. Vier aeltere Admin Metadatenabweichungen bleiben offen;dieser Hash ersetzt keine urspruengliche Grundlinie.
+
+Kostenabgleich13.09.,00:02:02UTC,aktuelle Buchungen nochmals00:04:41UTC:UTC12.09. unveraendert110 Buchungen und0,710396USD im Helmut Kostenzaehler,keine offene Tagesreserve. Fuer UTC13.09. noch kein Tagesbuch,keine Buchungen und keine offene Reserve. Die Grenze bleibt4USD fuer den gesamten Helmut Betrieb je UTC Tag. Das ist der gespeicherte Kostenzaehler,keine Anbieterrechnung. Historische gebundene Reserven frisch getrennt bestaetigt:0,424USD am10.09. und0,212USD am11.09.,zusammen0,636USD. Keine Umbuchung,Erstattung oder Wiederholung alter Aufrufe.
+
+Bei der Nachkontrolle wurde ein Fehler in der uebernommenen Leseabfrage erkannt:Der englische Vergleich `status='reserved'` erfasst die tatsaechlichen Zustaende nicht. Die rein lesende Kontrollabfrage verwendet jetzt `status IN ('reserviert','ungeklaert')`,entsprechend `lib/helmut/testkosten-budget.js`. Der erneute Abgleich am12.09.,23:57:34UTC und danach bestaetigt die heutigen0 sowie die historischen0,636USD. Zusaetzlich gilt fuer synthetische Konten ausdruecklich `active IS DISTINCT FROM 'false'` als Abweichung. Weder Produktcode noch Daten wurden dabei geaendert. Die urspruengliche Reserveabfrage allein wird nicht als ausreichender Beleg ausgegeben.
+
+Die erste Abfrage vorhandener Laufzeitprotokolle des exakten neuen Deployments ab23:50:16UTC ergab keine Eintraege mit error oder fatal. Dieses kurze Beobachtungsfenster und gruene CI ersetzen keine fachliche Abnahme. Keine App Fachaktion,kein Helmut Modellaufruf,Quellenabruf,Import,Profilwechsel,keine Migration oder Betriebsparameteraenderung ausgefuehrt.
+
+Die Abschlussdokumentation wird ausschliesslich in den vier freigegebenen Dateien auf `codex/500-fachurteil-import-vorbereitung-20260911` gesichert und nach jedem Schreiben rueckgelesen. `docs/CURRENT_STATE.md` enthaelt den kompakten Endstand,der Betriebsbeleg einen Verweis auf diesen kanonischen Abschluss. Der alte Dokumentationsbranch bleibt ungemergt;sein Produktcode ist keine neue main Basis. Lokale Spiegelung auf `codex/387-steuerung-vorbereitung-20260913`;fruehere lokale Commits `f967530` und `e71ead4` bleiben erhalten.
+
+Die eigene Steuerung bleibt waehrend der Abschlussablage aktiv. Als letzter Schreibschritt wird ausschliesslich der eigene Eintrag mit frisch gelesenem Datei SHA freigegeben und erneut gelesen. Der tatsaechliche terminale Zustand,die Revision und die Commitbelege der abgeschlossenen Dokumentation stehen in [steuerung-pr387.json](steuerung-pr387.json). Eine Freigabe ist nur aus dem dort gespeicherten Zustand `frei` mit leerem Besitzer abzuleiten.
+
+Der private Bericht bleibt nicht erreichbar und wurde nicht veraendert;keine neue private Version behauptet. Die zwei hochgeladenen alten Kopien bleiben unveraendert. Die vom Betreiber bestaetigte Ersatzregel endet mit diesem dokumentierten PR387 Abschnitt. Keine weitere Production Aktion autorisiert. Naechster fachlicher Gegenstand ist die noch offene500er Gesamtabnahme mit aktueller alleiniger Zustaendigkeit und passendem konkreten Auftrag;keine automatische Fortsetzung dieses Mergeauftrags.
