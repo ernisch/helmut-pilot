@@ -10,38 +10,84 @@
   "approved_ci_run_id": 34716196610,
   "approved_head_sha": "e77119ceed6de7b3e731f32049dc53fbafdb1bb7",
   "approved_tree_sha": "78d62fb947cde91efccf05224e4ce56839fed7c9",
-  "completion_status": "merge_production_ci_schutz_bestaetigt_abschlussspeicherung_laeuft",
+  "completion_status": "erfolgreich_abgeschlossen_nur_pr387",
   "coordination_branch": "codex/500-fachurteil-import-vorbereitung-20260911",
   "coordination_path": "docs/betrieb/steuerung-pr387.json",
-  "lease_expires_at_utc": "2026-09-13T00:34:41.045Z",
+  "lease_expires_at_utc": null,
   "main_ci_run_id": 34726446113,
   "merge_sha": "8d840d834f8ff312475d86e8c23509b75f63f91d",
   "next_production_action_authorized": false,
-  "note": "Betreiber hat die konkrete Ersatzablage ausschliesslich fuer PR387 samt Abschluss und die alleinige Ausfuehrung ausdruecklich bestaetigt. Koordination nur nach bedingtem Schreiben und Ruecklesen gueltig. Alter privater Bericht nicht erreichbar.",
+  "note": "Betreiberfreigegebener Ersatzabschnitt fuer PR387 beendet. Merge, identischer Baum, exaktes READY am Hauptalias, automatische main CI, Schutz und Kosten belegt. Abschlussdateien gespeichert und rueckgelesen. Diese Freigabe gilt nur fuer den eigenen Eintrag;keine automatische Uebernahme oder weitere Production Aktion daraus ableiten. Alter privater Bericht nicht erreichbar und unveraendert. Vollstaendige fachliche500er Abnahme offen.",
   "operator_approved_replacement": true,
   "operator_confirmed_single_executor": true,
-  "owner": "foreground-pr387-72f4073d6152-20260912T234751Z",
+  "owner": null,
   "pr": 387,
   "production_deployment_id": "dpl_4JSVUt4v2ktF45Yt4XzLSWmW8fUn",
   "repository": "ernisch/helmut-pilot",
-  "revision": 3,
+  "revision": 4,
   "schema": "helmut-pr387-steuerung-v1",
-  "status": "abschluss_dokumentation",
-  "updated_at_utc": "2026-09-13T00:04:41.045Z",
+  "status": "frei",
+  "updated_at_utc": "2026-09-13T00:11:29.222Z",
   "verification": {
-    "merge_tree_sha": "78d62fb947cde91efccf05224e4ce56839fed7c9",
-    "main_ci_conclusion": "success",
-    "main_ci_completed_at": "2026-09-13T00:03:54Z",
-    "suites": 367,
-    "browser_checks": 50,
     "account_protection_checks": 15,
+    "active_profiles": 5,
+    "browser_checks": 50,
     "database_checks": 48,
+    "full_500_production_acceptance": false,
+    "inactive_synthetic_accounts": 495,
+    "inactive_synthetic_profiles": 495,
+    "main_ci_completed_at": "2026-09-13T00:03:54Z",
+    "main_ci_conclusion": "success",
+    "merge_tree_sha": "78d62fb947cde91efccf05224e4ce56839fed7c9",
     "protected_pg_json_hash": "96ae66918c06ed847f1673b47d60914bab814cdbd5833a345066db78f7ef45a1",
     "protection_checked_at_utc": "2026-09-13T00:04:41.045Z",
-    "active_profiles": 5,
-    "inactive_synthetic_profiles": 495,
-    "inactive_synthetic_accounts": 495,
-    "technical_acceptance": true,
-    "full_500_production_acceptance": false
-  }
+    "suites": 367,
+    "technical_acceptance": true
+  },
+  "previous_owner": "foreground-pr387-72f4073d6152-20260912T234751Z",
+  "released_at_utc": "2026-09-13T00:11:29.222Z",
+  "completion_documents": [
+    {
+      "path": "docs/betrieb/387-ersatzsteuerung-2026-09-13.md",
+      "commit_sha": "6ba26d6418cd52e30e50a8852abb6bedd5269572",
+      "content_sha": "ebbd92c53a882041b648397f63ffd0750939fb61",
+      "readback_verified": true
+    },
+    {
+      "path": "docs/betrieb/briefing-schwerpunkt-frische-2026-09-12.md",
+      "commit_sha": "a23e5d4f040d67f2168f34ce7b5bd0d1435f827d",
+      "content_sha": "7a8dac49551d10fe63903dd2d27ab88664a13561",
+      "readback_verified": true
+    },
+    {
+      "path": "docs/CURRENT_STATE.md",
+      "commit_sha": "40fc479a53c81524fa2cf1622cddf0567d043271",
+      "content_sha": "1140dc898bd7ace671b18e928fa3416ae6034121",
+      "readback_verified": true
+    }
+  ],
+  "documentation_branch_not_merged": true,
+  "no_documentation_actions_or_deployments_observed": true,
+  "exactly_one_approved_production_deployment_observed": true,
+  "cost_verification": {
+    "checked_at_utc": "2026-09-13T00:02:02.200Z",
+    "limit_usd_per_utc_day": 4,
+    "previous_day": "2026-09-12",
+    "previous_day_bookings": 110,
+    "previous_day_spent_micro_usd": 710396,
+    "previous_day_open_reserve_micro_usd": 0,
+    "current_day": "2026-09-13",
+    "current_day_ledger_present": false,
+    "current_day_bookings": 0,
+    "current_day_open_reserve_micro_usd": 0,
+    "historical_reserves_micro_usd": {
+      "2026-09-10": 424000,
+      "2026-09-11": 212000
+    },
+    "correct_reserve_statuses": [
+      "reserviert",
+      "ungeklaert"
+    ]
+  },
+  "fachautomation_enabled": false
 }
