@@ -5,7 +5,7 @@
 
 ## 13.09.2026: Quellenfix unverändert, REST Vorbereitung teilweise abgeschlossen
 
-Neuester Abschnitt: isolierte REST Prüfung vorbereitet, tatsächliche Ausführung blockiert. Details und Abnahmekriterien stehen im letzten Abschnitt. Ältere Aussagen zu nächsten Schritten sind historische Aufträge.
+Neuester Abschnitt: reiner Dokumentationsabschluss nach dem tatsächlich bestätigten Merge von PR388 und Production Deployment. Die älteren Abschnitte erhalten ihren jeweiligen historischen Befund; frühere Sperren und nächste Schritte sind durch neuere Freigaben überholt.
 
 Ein reproduzierbarer Auswahlfehler ist lokal korrigiert. Aktuelle Quellen werden vor der Begrenzung auf zwölf Vorgänge berücksichtigt. Reviewvorbereitung ist abgeschlossen; Veröffentlichung und fachlicher Wirkungsnachweis stehen aus. Der abgeschlossene PR387 Merge bleibt ein eigener unveränderter Production Stand.
 
@@ -393,3 +393,92 @@ Vorbereiteter PR Inhalt: Titel „Lage: aktuelle Quellen vor Auswahl berücksich
 Merge nach main löst gemäß Projektregel ein Production Deployment aus und braucht eine ausdrückliche spätere Entscheidung. Ein grüner PR allein ist keine fachliche Freigabe für 500 Profile. Zwei bekannte fachliche Profilfehler, Quellenqualität und fachlicher Gesamtnachweis exakt500 bleiben offen und werden hier weder untersucht noch korrigiert. Keine Modelle, politischen Originalquellen, Importe, Konten oder Profiländerungen; keine neuen PRs, CI Starts, Branchübertragungen, Merge oder Deployments in diesem Review.
 
 Nur dieser Betriebsbeleg und der kompakte aktuelle Status werden lokal dokumentarisch fortgeschrieben und committet. Der GitHub Kandidat bleibt unverändert. Review und eigenständige Belege werden dauerhaft gesichert und vollständig rückgelesen. Originalbericht gegen frisch bestätigte eigene Version aktualisieren und Steuerung bedingt freigeben. Danach stoppen. Für den direkten nächsten Auftrag genügt derselbe Thread mit Denkstufe Hoch. Ohne neue Freigabe bleibt die Veröffentlichung zurückgestellt.
+
+
+## Pflichtprüfungen und PR388 am 13.09.2026
+
+Der Betreiber hat die vorgeschriebenen Prüfungen und bei Erfolg die Erstellung des PR ausdrücklich freigegeben. Merge und Deployment bleiben verboten. Der Auftrag betrifft ausschließlich den vorhandenen Quellenkandidaten und seine vorgeschriebenen Prüfungen, keine fachliche Arbeit an 500 Profilen.
+
+### Vorprüfung vor Erstellung des PR
+
+[Lauf34751774750](https://github.com/ernisch/helmut-pilot/actions/runs/34751774750),Job103709432610: **369/369 erfasste Suiten in639 Sekunden**, completed/success. Tatsächlicher Testschritt13:24:49 bis13:35:28 Türkei /12:24:49 bis12:35:28 Berlin /10:24:49 bis10:35:28UTC. Alle369 einzelnen PASS Zeilen und ihre unterschiedlichen Suitennamen im vollständigen Joblog bestätigt,keine FAIL Zeile.
+
+Aufruf exakt `node scripts/lokal.js -- node scripts/run-offline-tests.js`. Neuer eng begrenzter Workflow `.github/workflows/pr-vorpruefung-isoliert.yml`,nur eigener Testbranch und Änderung an dieser Workflowdatei,kein PR oder main Trigger. Frischer GitHub Rechner,Node22.23.2,Abhängigkeiten aus Lockdatei mit `npm ci --ignore-scripts`. Keine neue Produktabhängigkeit und keine Installationsschleife. Die Suiten laufen nacheinander als ursprünglicher Runnernutzer innerhalb eines eigenen Netzwerkraums. `env -i`,nur Loopback,ein Interface,keine Route,keine Anbieterumgebung,keine bestehende Datenablage oder Umgebungsdatei. Eigener synthetischer Testbestand und temporäres Home nach Lauf entfernt,Fehlen geprüft,Git diff leer,Runnerbereinigung abgeschlossen.
+
+Die Zahl369 beschreibt die vom unveränderten Runner erfassten Suiten mit erfolgreichem Exit. Optionale Browserabschnitte ohne Playwright und optionale echte Datenbankabschnitte ohne Dienst werden dadurch nicht zu neuen Browser oder Datenbanknachweisen. Ihre Detailausgaben druckt der vorhandene Runner bei Erfolg nicht. Der bestehende Browserpflichtjob und die zwei verpflichtenden Datenbankschritte liefern diese getrennten Belege. Keine erfundene vollständige Assertionzahl und kein aus historischen Teilläufen zusammengesetztes Grün.
+
+### Kandidat und Wirkung des PR
+
+[PR388](https://github.com/ernisch/helmut-pilot/pull/388) wurde erst nach erfolgreicher Vorprüfung am13:36:26 Türkei /12:36:26 Berlin /10:36:26UTC angelegt. Titel: Lage: aktuelle Quellen vor Auswahl berücksichtigen und gezielt binden. GitHub Kopf `cd300d1e6ca56c003cb2d1261cd6ef2c98c5a989`,lokaler Testcommit `bf2fbb1a2c9b131686fb7e86a10d44970141c6f3`,identischer Baum `895bceaa317439099381b903eec9a5b3d5d6d940`. Base main `8d840d834f8ff312475d86e8c23509b75f63f91d`. Genau26 Dateien im Gesamtunterschied:weiterhin zwei Produktdateien,Tests,Prüfabläufe,Deploymentschutz und Dokumentation. Keine neue Produktkorrektur in diesem Sprint.
+
+GitHub bereitet für die Prüfung den Commit `395d51319298acf06271ed14a2e0a439c3a20b1c` mit Eltern main und PR Kopf vor. Dessen vollständiger Baum ist ebenfalls `895bceaa317439099381b903eec9a5b3d5d6d940`. Dieser Commit ist ein Prüfstand und kein ausgeführter Merge. `merged:false`, `auto_merge:null` und offener PR bei der Nachkontrolle bestätigt. Unterschiedliche lokale und entfernte Commitgeschichte erhalten;kein Force Push.
+
+Der Testbranch trägt vor jeder Übertragung und vor PR Erstellung frisch geprüft `git.deploymentEnabled:false`. Vorheriger lokaler Dokumentationsabschlussa278617 wurde zusammen mit der Testvorbereitung über GitHub Baum und Commit API vorwärts übertragen. Der erzeugte Baum entspricht vollständig dem lokalen Testbaum. Vercel vor und nach PR Erstellung:keine Bereitstellung seit10:15UTC. Keine Production Funktions oder Datenprobe.
+
+Die bestehende CI bleibt vollständig erhalten. Genau zwei bisher direkte Aufrufe verwenden jetzt den gemäß CLAUDE §6 vorgeschriebenen Starter:Offline Runner und allgemeiner Browser Smoke. Alle Syntaxschritte,Datenbanknachweise,Jobnamen,Erwartungen,Fristen und fehlertoleranzfreien Browserbedingungen bleiben gleich. Das ist eine notwendige Starterkorrektur,keine Abschwächung. Die neue isolierte Vorprüfung ist kein neuer Required Check.
+
+### Beide bestehenden Pflichtjobs erfolgreich
+
+[Lauf34752297764](https://github.com/ernisch/helmut-pilot/actions/runs/34752297764), completed/success, Abschluss13:50:38 Türkei /12:50:38 Berlin /10:50:38UTC. Beide Jobs liefen auf dem oben baumgleich bestätigten GitHub Prüfcommit. Keine Wiederholung eines fehlgeschlagenen Jobs nötig.
+
+| Pflichtjob | Tatsächliches Ergebnis |
+| --- | --- |
+| Syntax + Offline-Suiten,Job103710753914 | Syntax erfolgreich;369/369 erfasste Suiten in714s;Kontoschreibschutz15 PASS/0 FAIL;Z22 Abschnitte1bis11 mit48 PASS/0 FAIL |
+| Browser-/Mobile-Smoke (Chromium),Job103710753813 | 50 PASS/0 FAIL,kein Skip;lokaler Testserver,Playwright1.56.1,Chromium141.0.7390.37,Revision1194 |
+
+Node22.23.2,PostgreSQL17.11,PostgREST12.2.3. CI Offline Abschluss13:50:29 Türkei /12:50:29 Berlin /10:50:29UTC;Z22 Abschluss13:50:35 /12:50:35 /10:50:35UTC. Allgemeiner Browserabschluss13:37:11 /12:37:11 /10:37:11UTC. Alle369 unterschiedlichen PASS Suitenzeilen und50 tatsächlichen Browser PASS Zeilen in den vollständigen dekodierten Logs unabhängig gezählt. Im Offline Job liefern die separaten Datenbankschritte den echten Datenbankbeleg;der Runner allein tut das nicht.
+
+Der bestehende CI Dienst enthält nur eigene kurzlebige synthetische Datenbanken. Keine Production Verbindung oder Repositorygeheimnisse. Die Datenbankumgebung gilt nur in den vorgesehenen Testschritten. GitHub hat den eigenen Container und das zugehörige Netzwerk nach Tests entfernt und verwaiste Prozesse bereinigt. Die beiden bestandenen Datenbankprüfungen sind keine Abnahme vorhandener Production Profile. Erwartete Fehler aus negativen SQL Fällen und die bekannte Healthprüfung einer nicht angelegten Standarddatenbankhelmut sind im Dienstlog sichtbar;die tatsächlichen Tests und Bereinigung sind erfolgreich. Keine Umdeutung solcher Logzeilen in einen neuen Produktfehler.
+
+Der isolierte Vorlauf und der danach automatisch ausgelöste Pflichtlauf sind zwei vorgeschriebene getrennte Prüfungen. Ihre714 und639 Sekunden oder369 Suiten werden nicht addiert,um eine größere Abdeckung zu behaupten. Kein dritter allgemeiner Lauf bei unverändertem Produktcode. Die korrigierten CI Starter haben im echten Lauf bestanden.
+
+### Aussagegrenzen und nächster Freigabepunkt
+
+Der Quellenfix bleibt bytegleich zu den gezielt bestandenen Produkt und REST Nachweisen. REST34749687054:13Gruppen,24GET,alle200. Browser34750436568:75/75 und39/39,davon24 Browserassertions. Diese datierten Erfolge werden nicht als neue Läufe ausgegeben. Zusätzliche Metadatenanfragen,fehlender gemeinsamer Snapshot,1000er Seitenannahme,4000er Grenze je100KO,16000Zeichen und ungemessene Production Latenz bleiben dokumentierte Grenzen.
+
+Klassischer main Branchschutz wird von GitHub weiterhin als deaktiviert gemeldet;ergänzende Rulesets sind über den verfügbaren Zugriff nicht überprüfbar. Vor einer späteren Mergeentscheidung daher beide tatsächlichen Pflichtjobs am unveränderten Kandidaten ausdrücklich kontrollieren. Keine Repositoryschutzkonfiguration geändert und kein automatischer Merge aktiviert.
+
+Zwei fachliche Profilfehler und vollständige fachliche Abnahme für exakt500 bleiben offen. Die synthetischen500 Registrierungen des bestehenden Kontoschutztests sind kein Production Fachnachweis. Keine vorhandenen Profile oder Konten,Modelle,politischen Originalquellen,Importe,Production Daten,Migrationen,Budgets,persistenten Umgebungsvariablen oder Cron Abläufe verändert. Fachautomation bleibt deaktiviert,next_run_time null.
+
+### Abschlussentscheidung
+
+Status: erfolgreich abgeschlossen für den freigegebenen Auftrag Pflichtprüfungen und PR Erstellung. Beide bestehenden Pflichtjobs am tatsächlichen Kandidaten sind grün. PR388 ist technisch für eine gesonderte Mergeentscheidung geeignet. Die Veröffentlichung selbst bleibt ausdrücklich nicht freigegeben. main unverändert,PR offen,merged:false,auto_merge:null,mergeable:true,mergeable_state:clean. Vercel Nachkontrolle nach CI:keine Bereitstellung seit10:15UTC. Kein neuer Produktfehler und keine Produktänderung in diesem Sprint.
+
+PR Beschreibung mit echten Ergebnissen aktualisiert. Dieser Betriebsbeleg und der kompakte CURRENT_STATE werden anschließend nur lokal dokumentarisch committet,um den geprüften PR Kopf unverändert zu lassen. Exakte lokale Abschlusskennung und Dokumentationspatch stehen im privaten Review und Originalbericht. Die vorherige Baumgleichheit gilt für den Testkandidaten;der spätere lokale Dokumentationsbaum ist davon zu unterscheiden. Der nächste Ausführer muss den lokalen Dokumentationsnachtrag beziehungsweise seinen gesicherten Patch beachten und darf ihn nicht als bereits übertragen ausgeben.
+
+Review und neue Belege dauerhaft sichern und vollständig rücklesen. Original313 bei Start frei und vollständig bestätigt,Übernahme314 sowie Verlängerung315 jeweils bedingt gespeichert und vollständig tatsächlich bytegleich rückgelesen. Eigene Steuerung nach frischem Versionsabgleich bedingt freigeben und den gespeicherten Abschluss vollständig prüfen. Keine umfassende Sicht auf andere Chats voraussetzen. Danach stoppen;kein automatischer Folgesprint. Für die direkte nächste Entscheidung kann derselbe Thread mit Denkstufe Hoch verwendet werden. Merge samt automatischem Production Deployment braucht weiterhin eine ausdrückliche neue Freigabe.
+
+## Merge PR388 und automatisches Deployment am 13.09.2026
+
+Der Betreiber hat ausdrücklich den Merge von PR388 samt automatischem Deployment freigegeben. GitHub hat genau den unmittelbar zuvor bestätigten Kopf `cd300d1e6ca56c003cb2d1261cd6ef2c98c5a989` mit erwarteter Kopfkennung und normalem Merge übernommen. Keine Änderung der Schutzkonfiguration und kein Force Push.
+
+Tatsächlicher Merge am 13.09.2026 um 14:13:02 Türkei / 13:13:02 Berlin / 11:13:02 UTC: `97ef157c19a0555b246250217ea4d494926f5c96`. PR388 ist geschlossen und merged:true. main wurde danach unabhängig auf denselben Commit geprüft. Baum `895bceaa317439099381b903eec9a5b3d5d6d940` entspricht exakt dem bereits bestandenen PR Prüfbaum. Der frühere Prüfcommit395d513 war nur der CI Stand;97ef157 ist der tatsächliche Merge.
+
+Vercel hat automatisch aus Git genau diesen main Commit bereitgestellt: `dpl_7NgTKJtNLLSbGYDqgQ9ttNx5EL7f`, Ziel production, Region fra1, Quelle git, readyState READY, aliasError null. Fertig am 13.09.2026 um 14:13:20.772 Türkei / 13:13:20.772 Berlin / 11:13:20.772 UTC. Adresse `helmut-pilot-hnjq1frli-nohut.vercel.app`. Die Hauptadresse `helmut-pilot.vercel.app` wurde zusätzlich direkt über die Deployment API aufgelöst und liefert dieselbe Deploymentkennung und exakt dieselbe Commitkennung. Auch die Projekt und main Aliase sind zugeordnet. Kein manueller Deployaufruf, kein erneuter Versuch und kein Rollback.
+
+Die beiden vor dem Merge bestandenen Pflichtjobs34752297764 gelten für genau diesen Dateibaum: Syntax und369/369 Suiten, Kontoschutz15/15, Z2248/48 sowie Browser50/50. Kein manueller Wiederholungslauf. Der durch den genehmigten Merge automatisch gestartete main Lauf34753858317 prüft Commit97ef157. Bei der dokumentierten Zwischenkontrolle ist Browserjob103714809754 completed/success; Offlinejob103714809807 läuft noch. Dieser Zwischenstand ist kein behauptetes abschließendes CI Grün.
+
+Die Prüfung der Bereitstellung war rein lesend über GitHub und Vercel Metadaten. Kein authentifizierter Production Appstart, keine neue fachliche500er Abnahme und keine Messung der Production Quellenqualität oder Latenz. Zwei Profilfehler bleiben offen. Fachautomation6aa2872e75ec81919d4c0abe7d304ddb bleibt deaktiviert,next_run_time null. Keine Modelle,politischen Originalabrufe,Importe,vorhandenen Profile oder Konten,Migrationen,Budgets,persistenten Umgebungsvariablen oder Cron Änderungen.
+
+### Dokumentationsabschluss und Grenze dieser Freigabe
+
+Der technische Auftrag Merge und automatische Bereitstellung ist erfolgreich ausgeführt. Der gesamte Sprint bleibt gemäß CLAUDE §9 teilweise abgeschlossen, solange der tatsächliche Endzustand nicht in der Dokumentation auf main angekommen ist. Die dort vorhandene Fassung ist der historische Stand vor dem Merge. CURRENT_STATE und dieser kanonische Betriebsbeleg sind nachträglich konkret aktualisiert; der bisherige lokale Dokumentationsnachtragf8eb047 ist erhalten. Ausschließlich diese zwei Dokumentationsdateien werden nachvollziehbar committet und auf dem vorhandenen Testbranch gesichert. Vor Übertragung wurde dessen Deploymentverbot frisch als false bestätigt. Die unveränderten Pfadfilter lösen für diese zwei Dokumentationsdateien keine zusätzlichen Suiten aus. Kein weiterer PR, Merge oder Deployment aus der Freigabe für PR388 abgeleitet.
+
+Der Nachtrag liegt zur begrenzten Folgeentscheidung bereit. Seine Übernahme nach main erfordert einen reinen Dokumentations PR samt gesondertem Merge und automatischem Deployment. Das folgt aus CLAUDE §9 und der auf PR388 begrenzten Betreiberfreigabe. Kein weiterer fachlicher Sprint wird begonnen. Die exakten lokalen und entfernten Dokumentationskennungen stehen im privaten Review und Originalbericht. Gleiche Bäume bedeuten bei der früheren API Übertragung keine gleiche Commitgeschichte.
+
+Review und neue Belege dauerhaft sichern und vollständig rücklesen. Original317 war als eigene aktive Übernahme bedingt gegen316 gespeichert und vollständig bytegleich bestätigt. Vor Abschluss frisch lesen, eigene Zuständigkeit bedingt freigeben und die vollständige tatsächlich gespeicherte Fassung erneut prüfen. Danach stoppen. Für die direkte Entscheidung über den vorbereiteten Dokumentationsabschluss genügt derselbe Thread mit Denkstufe Hoch.
+
+
+## Freigegebener reiner Dokumentationsabschluss am 13.09.2026
+
+Der Betreiber hat mit Go ausdrücklich den vorbereiteten reinen Dokumentations PR samt Merge und automatischem Deployment freigegeben. Diese Freigabe schließt genau die zuvor offene Pflicht aus CLAUDE §9. Sie erweitert den Produkt oder Fachumfang nicht. Dieser Nachtrag beschreibt den tatsächlichen Zustand nach dem fachlich wirksamen PR388;sein eigener Dokumentationsmerge und Deploymentstatus werden anschließend aus GitHub und Vercel Historie belegt. Gemäß ausdrücklicher Ausnahme in CLAUDE §9 entsteht daraus kein rekursiver Folge PR.
+
+Frischer Start:main97ef157c19a0555b246250217ea4d494926f5c96,veröffentlichter Baum895bceaa317439099381b903eec9a5b3d5d6d940. Nur historischerPR345 offen,keine andere erkennbare Arbeit am Dokumentationskandidaten. Lokaler Nachtrag131c050 und entfernter954cf4f haben identischen Baume85c4df;abweichende Geschichte erhalten. Beide bisherigen Abschlussnachträge bleiben vollständig enthalten. Vor Übernahme Original318 frei und vollständig bytegleich bestätigt,Übernahme319 bedingt gespeichert und vollständig tatsächlich rückgelesen. Keine umfassende Sicht auf andere Chats.
+
+Genau docs/CURRENT_STATE.md und dieser Betriebsbeleg unterscheiden sich vom veröffentlichten Dateibaum. Produktcode,Tests,CI,Deploymentkonfiguration und Abhängigkeiten sind unverändert. Der veraltete Orientierungssatz dieses Belegs wurde auf den neuesten Abschnitt verwiesen;historische Befunde bleiben erhalten. CURRENT_STATE ändert nur den kompakten aktuellen Abschnitt;der historische Rest bleibt bytegleich. Der neue Kopf behauptet keinen noch nicht ausgeführten Dokumentationsmerge.
+
+Die kanonische Vorprüfung34751774750 und beide PR388 Pflichtjobs34752297764 sind bereits vor diesem Dokumentations PR bestanden;ihre unveränderten Produktprüfungen werden als datierte Belege weiterverwendet. Kein zusätzlicher manueller Gesamt,REST oder Browserlauf für diese zwei Textdateien. Gezielte Größenprüfung über node scripts/lokal.js -- node scripts/current-state-groesse-test.js und diff check vor Übertragung. Die bestehenden automatischen Pflichtjobs des neuen PR müssen vor dessen Merge tatsächlich erfolgreich sein;keine CI Abschwächung oder Umgehung. Der automatische main Lauf34753858317 war bei der Zwischenkontrolle11:23UTC noch laufend,sein Browserjob bereits erfolgreich. Das ist als Zwischenstand datiert und wird nicht als Schlussbefund ausgegeben.
+
+Vor jeder Übertragung Deploymentverbot auf dem bestehenden Branch erneut bestätigen. Reiner Dokumentations PR nach main,kein direkter Push auf main,kein Force Push. Nach erfolgreichem CI nur den erneut bestätigten PR Kopf mit erwarteter Kopfkennung mergen. Automatisches Production Deployment unabhängig am tatsächlichen Dokumentationsmerge und Hauptalias prüfen. Bei Fehlschlag stoppen,kein zweiter Versuch. Review und Belege einschließlich abschließendem main CI Befund von PR388 dauerhaft sichern und vollständig rücklesen. Original gegen frisch bestätigte eigene Version abschließen und Steuerung bedingt freigeben. Danach stoppen.
+
+Offen bleiben die zwei fachlichen Profilfehler und der vollständige500er Fachnachweis. Keine bestehenden Profile oder Konten,Production Daten,Modelle,Originalquellen,Importe,Migrationen,Budgets,persistenten Umgebungsvariablen oder Cron Änderungen. Fachautomation6aa2872e75ec81919d4c0abe7d304ddb bleibt deaktiviert,next_run_time null. Nach diesem technischen Abschluss ist für weitere fachliche Arbeit ein eigener kleiner Auftrag erforderlich.
