@@ -1,10 +1,10 @@
 name: Kanonische Offline Vorpruefung isoliert
 
-# Profilkontextkandidat: Ausfuehrung erst nach ausdruecklicher Push Freigabe.
-# Bestehender geschuetzter Testbranch. Kein PR Trigger und kein Productionpfad.
+# Begrenzte Kandidaten: Ausfuehrung erst nach ausdruecklicher Push Freigabe.
+# Geschuetzte Testbranches. Kein PR Trigger und kein Productionpfad.
 on:
   push:
-    branches: [codex/500-lage-quellenfenster-20260913]
+    branches: [codex/500-lage-quellenfenster-20260913, codex/b055-relative-fristen-20260914]
     paths:
       - .github/workflows/pr-vorpruefung-isoliert.yml
 

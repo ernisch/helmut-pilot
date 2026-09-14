@@ -5,7 +5,7 @@
 
 ## 13.09.2026: Quellenfix unverändert, REST Vorbereitung teilweise abgeschlossen
 
-Neuester Abschnitt: Vollständiger lokaler Kandidatentest am Ende dieses Belegs. Die älteren Abschnitte erhalten ihren jeweiligen historischen Befund; frühere Sperren und nächste Schritte sind durch neuere Freigaben überholt.
+Neuester Abschnitt: B055 Fristenursprung und lokaler Uhrzeitfilter am14.09.2026 am Ende dieses Belegs. Die älteren Abschnitte erhalten ihren jeweiligen historischen Befund; frühere Sperren und nächste Schritte sind durch neuere Freigaben überholt.
 
 Ein reproduzierbarer Auswahlfehler ist lokal korrigiert. Aktuelle Quellen werden vor der Begrenzung auf zwölf Vorgänge berücksichtigt. Reviewvorbereitung ist abgeschlossen; Veröffentlichung und fachlicher Wirkungsnachweis stehen aus. Der abgeschlossene PR387 Merge bleibt ein eigener unveränderter Production Stand.
 
@@ -937,3 +937,307 @@ Der prüfbare Übertragungskandidat enthält diese einzelne Testkorrektur und de
 Kein echter Modellaufruf, politischer Originalabruf, Import, Fachlauf, Aktivierung oder Production Eingriff. Keine Profile, Konten, Migrationen, Budgets, persistenten Umgebungsvariablen oder Crons geändert. Keine weiteren Ausführer. Keine Übertragung oder PR Änderung. Die lokale Integration ist weiterhin technisch synthetisch belegt; reale Altbelege sind nicht neu vollständig geprüft und aktuelle echte Fachurteile fehlen. Historische Modellantworten und Reviewbegründungen fehlen weiterhin. Keine Rekonstruktion, keine Behauptung, beide damaligen Fachablehnungen seien behoben. Kein500er Gesamtnachweis.
 
 Review18 und vorheriges Integrationsarchiv frisch vollständig bestätigt; ZIP Integrität und36 Manifestdateien intakt. Kanonischer Betriebsbeleg und kompakter CURRENT_STATE werden ergänzt, historische Teile bleiben erhalten. Nach lokalem Commit Review und neue Belege sichern, vollständige gespeicherte Bytes zurücklesen und Original bedingt gegen frische eigene Version aktualisieren. Eigene Steuerung freigeben und gespeicherten Abschluss vollständig prüfen. Hier stoppen. Derselbe Thread mit Denkstufe Hoch passt für die gesondert freizugebende Übertragung auf PR390 und seine Pflichtchecks. Kein Merge, Deployment oder echter Fachlauf damit freigegeben.
+
+
+## PR390 Übertragung und vollständige Pflicht CI am 13.09.2026
+
+Der Betreiber hat die vorbereitete Übertragung auf den bestehenden PR390 samt CI Prüfung ausdrücklich freigegeben. Merge und Deployment sind ausgeschlossen. Original340 wurde frisch vollständig bestätigt und die freie Steuerung bedingt als Version341 übernommen. Vollständiges Rücklesen bestätigte 901870 Bytes und SHA256 ba4891c15516f4a380f00e24f7b5cb8c431ba39498a920a7b43de1ebc18a438a. Eigentümer work-5e17a0944d1a-pr390-integration-ci, gültig bis 17:48:34 UTC.
+
+## Übertragener Kandidat
+
+Lokaler Ausgang a33a99db6ba0c708bc27eb257f9e04ef349746cb auf codex/profilhash-gesamttest-20260913 war sauber. Regulärer Git Push scheiterte ohne Änderung des Zielbranchs an fehlender Anmeldung. Anschließend 15 geänderte Dateien über die bestehende GitHub Verbindung in einen Baum übertragen. GitHub meldet exakt bb7201924d3925b10b0eefe861e86d0e7cd05704, identisch mit dem lokalen Kandidaten. Neuer entfernter Commit af06791a7ab3a3eda9f11f9d8b64d56f8c16d5c9 hat als Elternteil den unmittelbar vorher erneut bestätigten PR Kopf1006e72b65e6b396518abd9747a2dd700abddf6c. Zielbranch mit force:false fortgeschrieben. Kein Force Push. Danach Commit erneut gelesen und lokal aus dem echten Repository geholt; vollständiger Git Diff zwischen a33a99d und af06791 ist leer.
+
+PR390 bleibt offen gegen main545d644ab72987062a6795e51097756cc2675718. Beschreibung aktualisiert und vollständig identisch rückgelesen. Produktcode und Tests in diesem Sprint unverändert. Der lokale Dokumentationsabschluss erfolgt separat auf codex/pr390-integration-ci-20260913, ausgehend vom tatsächlichen entfernten Commit.
+
+## Prüfzuordnung
+
+CI34770419531 prüft den von GitHub erzeugten PR Prüfcommit3fd38e6cd627dcc8d532675a4180353d8cfd7eab. Dessen Eltern sind main545d644 und PR Kopfaf06791. Sein Baum ist ebenfalls exakt bb7201924d3925b10b0eefe861e86d0e7cd05704. Dieser Prüfcommit ist kein Merge nach main.
+
+Die Änderung an storage.js startet zusätzlich den bestehenden Workflow Lage Quellen REST isoliert, Lauf34770415958. Dieser verwendet ausschließlich kurzlebige PostgreSQL und PostgREST Testdienste und den lokalen Schutz. Keine neue Workflowdatei oder Konfiguration. REST13/13 einschließlich Bereinigung bestanden, Lauf completed/success um20:03:42Türkei /19:03:42Berlin /17:03:42UTC. Browserjob der Haupt CI vollständig erfolgreich, tatsächliches Log50 PASS,0 FAIL. Der Hauptlauf ist jetzt vollständig completed/success um20:14:30Türkei /19:14:30Berlin /17:14:30UTC. Beide Pflichtjobs und alle abschließenden Schritte einschließlich Containerbereinigung sind erfolgreich.
+
+## Tatsächlich bestätigtes Endergebnis
+
+CI34770419531: Syntax erfolgreich,374/374 Suiten in526Sekunden. Die vollständige erfolgreiche Auswahl aus dem tatsächlichen Joblog stimmt in Reihenfolge und Inhalt mit den374 Einträgen der kanonischen Liste überein. Browser50/50, Kontoschutz gegen PostgreSQL und PostgREST15/15, Z22 Datenbanknachweis48/48. Alle Jobschritte einschließlich Bereinigung completed/success. Zusätzlicher REST Lauf13/13 samt Bereinigung erfolgreich. Vollständige tatsächliche Jobprotokolle erhalten.
+
+Der kanonische Runner zeigt erfolgreiche Kindprozessausgaben nicht an; interne Skipzahlen und vollständige Einzelassertionszahlen sind daraus nicht bestimmbar. Browser und beide Datenbankgates wurden daher separat aus ihren tatsächlichen Protokollen belegt. Der frühere lokale369/374 Lauf bleibt sein eigener roter Umgebungsbefund; keine rückwirkende Umdeutung. In diesem Sprint keine Code oder Teständerung und keine neue lokale Gesamtausführung. Beide neuen Profilhash Suiten und der korrigierte Profilbezugstest gehören zur bestätigten kanonischen Auswahl. Die500 Registrierungen im Kontoschutzjob sind synthetische Testdaten in einer kurzlebigen Datenbank, kein realer500er Fachlauf.
+
+PR Beschreibung nach dem Ergebnis aktualisiert und vollständig identisch rückgelesen. PR Kopfaf06791 und main545d644 unverändert, PR390 offen, auto_merge null; nur historischerPR345 daneben offen. Der aktuelle Testbranch bleibt in vercel.json deploymentEnabled:false. Kein Merge oder Deployment.
+
+## Verbleibende Veröffentlichungsvoraussetzungen
+
+Nach vollständiger Pflicht CI bleibt der eng begrenzte reale Altbelegnachweis offen. Vorflug15:11:18UTC zeigte vier aktive Stellvertretungsprofile und zwei alte Tagespakete mit Hashkonflikt. Das war keine vollständige Integritätsprüfung dieser Pakete. Als nächster eigener Auftrag sind ausschließlich diese zwei bekannten Tagespakete und ihre aktuellen Profilbindungen frisch lesend zu prüfen: exakte Kennung und Mandant, gespeicherter Inhalt und historischer Hashvertrag1, Vollständigkeit und Nachweisbindung, Abweichung zu Vertrag2 und Eignung für den eng begrenzten Übergang. Bereits bestehende Nachfolger wären anhand derselben exakten Kennungen zu berücksichtigen. Kein neuer Profilbestandsscan, keine politischen Originalabrufe, keine Modelle, keine Neuerzeugung und keine Datenänderung. Änderungen gegenüber dem Snapshot offen dokumentieren; fehlende historische Modellantworten nicht rekonstruieren.
+
+Ein technischer Erfolg ersetzt keine aktuelle Fachbasis. Neue Belege verlangen weiterhin echte aktuelle Einzelurteile und Gesamturteilprüfung; Metadaten stellvertretungenImProfilhash und bestandene synthetische Gruppen sind keine Fachabnahme. Der private Export prüft keine Fachbasis am vollständigen Identitätsprofil. Keine atomare Sperre über Vorgänger und Nachfolger: eine Fremdänderung im Zwischenraum kann eine unbrauchbare neue Zeile hinterlassen, die strenge Leser verweigern. Altbelege werden nicht umgeschrieben.
+
+Erst nach dem verbleibenden Belegnachweis eine gesonderte Entscheidung über Merge und damit Production Deployment. Danach wären Deploymentnachweis und eine eigens freizugebende begrenzte fachliche Prüfung erforderlich. Ein realer500er Lauf ist weder freigegeben noch belegt. Keine verlässliche Zusage für einen Abschluss heute aus technischen Testerfolgen ableitbar.
+
+## Grenzen
+
+Kein Merge, Deployment, Modellaufruf, politischer Originalabruf, Import, Fachlauf, Aktivierung oder Production Eingriff. Keine Profile, Konten, Migrationen, Budgets, persistenten Umgebungsvariablen oder Crons geändert. Fachautomation bleibt aus; ihr letzter frischer Nachweis stammt aus dem Integrationssprint mit next_run_time null. READY11:46UTC bleibt ein historischer Beleg. Keine zusätzlichen Ausführer. Keine erneute lokale Gesamtsammlung oder Chromium Diagnose. Die lokale Suitenauswahl wurde ausschließlich mit node scripts/lokal.js -- node scripts/run-offline-tests.js --list gelesen.
+
+Historische verworfene Antworten, Bindungen und Reviewbegründungen fehlen weiterhin. Historische Kausalität, Behebung beider früheren Fachablehnungen und500er Fachabnahme bleiben unbelegt. Hier nach dem Abschluss stoppen. Derselbe Thread und Denkstufe Hoch passen für den begrenzten nächsten Belegnachweis.
+
+
+## Lesender Nachweis der zwei bekannten Altbelege am 13.09.2026
+
+Sprintzustand: erfolgreich abgeschlossen für die beauftragte lesende Kompatibilitätsprüfung. Veröffentlichung und fachlicher500er Nachweis bleiben offen. Kein Produktfehler neu belegt und kein Produkt oder Testcode geändert.
+
+## Tatsächlicher Befund
+
+Zwei eng gefilterte SQL Transaktionen mit REPEATABLE READ und READ ONLY. Erste vollständige Momentaufnahme21:03:36Türkei /20:03:36Berlin /18:03:36UTC; Folgelesen21:06:17Türkei /20:06:17Berlin /18:06:17UTC. Jede Mandatstabelle und Briefingzeile ausschließlich über die beiden zuvor belegten Benutzerkennungen und exakten Paketkennungen gelesen. Identitätsprofil nur id und name, Mandatsprofil vollständig für die vorhandene Profilabbildung. Keine Konten, Sessions oder weiteren Profile abgefragt. Der Zieltag ist ausdrücklich13.09.2026; keine Verschiebung auf einen anderen Tag.
+
+Beide vollständigen gespeicherten Altzeilen passen zu Mandant, Kennung, Slot und Tag. Die berechneten Inhaltshashes stimmen mit den gespeicherten überein. Hashvertrag1 passt zu beiden aktuellen Profilkontexten ohne Stellvertretungen; Versionmetadatum fehlt wie beim ursprünglichen Vertrag vorgesehen. Vertrag2 weicht bei beiden ab. Die vorhandene Funktion pruefeAlt akzeptiert beide tatsächlich strukturell unvollständigen Belege als geeignete Vorgänger des begrenzten Übergangs. Das ist keine Erlaubnis, sie umzuschreiben oder ohne Fachbasis fortzusetzen.
+
+BelegA enthält24 Briefingelemente, BelegB25. Bei beiden available:true und lage:null. Gespeicherte und neu berechnete Prüfmetadaten sind vollständig identisch: lage-text-fehlt und lage-quellenpruefung-fehlt, strukturellVollstaendig:false, bestanden:false, vollstaendigeFaktenpruefung:false. Die Erzeugungszeitpunkte stimmen als Zeitpunkte überein; SQL und Payload verwenden unterschiedliche zulässige ISO Schreibweisen. Kein Fehler daraus konstruiert.
+
+Der frühere Vorflug15:11:18UTC stimmt in allen damals erhaltenen Feldern überein: Inhalts und Profilhash, Erzeugungszeit und hashrelevanter Profilkontext. Weil damals kein vollständiger Payload erhalten wurde, wird keine vollständige Bytegleichheit seit15:11 behauptet. Das jetzige Folgelesen hingegen bestätigt die vollständigen beiden Altzeilen, Identitätsprojektionen und Mandatsprofile inhaltlich identisch zum Erstlesen18:03:36UTC.
+
+Für die aus dem aktuellen Vertrag2 exakt abgeleiteten zwei Nachfolgerkennungen ist jeweils keine Zeile vorhanden. Bestehende historische und aktuelle Leser wurden unverändert über einen strikt auf diese Kennungen beschränkten Snapshotadapter ausgeführt. Historischer Leser akzeptiert beide Originale. Aktueller Leser verweigert beide mit briefing-nachweis-abweichend, da passende Nachfolger fehlen. Der Adapter bietet keinen Schreiber an; keine Materialisierung ausgeführt. Kein Production Handler oder App Abruf nachgebildet oder behauptet.
+
+Die gelesene App Normalisierung verändert die hashrelevanten Felder dieser beiden konkreten Eingaben nicht: Wahlkreis und Bundesland sind gültige getrimmte Texte; Ausschüsse und Schwerpunkte sind nichtleere eindeutige getrimmte Werte; Themengewichte sind gültige1bis5 Werte. Vorhandene Profilabbildung und Hashfunktionen wurden verwendet. Keine geratenen Ersatzprofile.
+
+## Belege und Prüfgrenzen
+
+Vollständige SQL Antworten und beide verarbeiteten Momentaufnahmen liegen im privaten Archiv, zusammen mit genauen Abfragen, lesenden Prüfscripten und tatsächlichen Ausgaben. Identitäten und Originalinhalte werden nicht neu in öffentliche Repositorybelege kopiert. Ausschließlich vorhandene gespeicherte Inhalte gelesen, keine Quellen URL geöffnet.
+
+Drei begrenzte lokale Auswertungen über node scripts/lokal.js -- node: Altvertrag samt Inhalts und Profilhash, historische und aktuelle Auswahl einschließlich Folgelesen sowie Eingabeinvarianten der App Normalisierung. Keine erneute synthetische Gesamtsammlung, kein neuer Browserlauf und keinCI Neustart. Die bereits bestätigte CI34770419531 aufPR390 gilt unverändert für Kandidatbaum bb7201924d3925b10b0eefe861e86d0e7cd05704:374/374 Suiten, Browser50, Kontoschutz15, Z2248. Das ist ein Vorbeleg, keine neue Prüfung dieses Sprints.
+
+## Veröffentlichung und nächster Schritt
+
+Die bisher offene Integritäts und Kompatibilitätsprüfung dieser zwei bekannten Altbelege ist erfüllt. Aus diesem begrenzten Befund ergibt sich keine weitere notwendige Codekorrektur. PR390 kann jetzt zur gesonderten Mergeentscheidung vorgelegt werden: Kopfaf06791a7ab3a3eda9f11f9d8b64d56f8c16d5c9, Baum bb7201924d3925b10b0eefe861e86d0e7cd05704, main545d644ab72987062a6795e51097756cc2675718. Vor einer Ausführung diese Werte und die vollständigen Pflichtchecks erneut bestätigen. Ein Merge löst automatisch ein Production Deployment aus und braucht dafür eine ausdrückliche Freigabe.
+
+Die Veröffentlichung allein erzeugt keine fehlenden Lage Texte. Bis ein fachlich gültiger neuer Beleg ausdrücklich erzeugt und gespeichert ist, bleibt die aktuelle gespeicherte Nachweisroute für diese Altpakete ablehnend. Historischer Abruf bleibt erhalten. Keine automatische Umschreibung, Neuerzeugung oder Fachabnahme. Ein späterer neuer Beleg verlangt die strenge aktuelle Fachbasis; fehlende historische Modellantworten werden nicht ersetzt oder rekonstruiert. Historische Kausalität und Behebung beider damaligen Fachablehnungen bleiben unbelegt.
+
+Kein tatsächlicher Schreibpfad mit Production Daten geprüft. Keine atomare Sperre zwischen Altzeile und Nachfolger behauptet; das dokumentierte Restrisiko eines zwischenzeitlich geänderten Vorgängers bleibt. Vor einem späteren Schreibschritt muss dessen aktueller Stand erneut gebunden werden. Keine Aussage zur Vollständigkeit anderer Tagespakete oder weiterer Mandate.
+
+Nach einem gesondert freigegebenen Merge den exakten Production Stand und READY prüfen; fachliche Fortsetzung wäre ein eigener Auftrag. Kein realer500er Lauf, keine Aktivierung oder neue echte Fachprüfung hier freigegeben. Keine Zusage,500 Mandate heute vollständig zu beweisen.
+
+## Grenzen und Abschluss
+
+Kein Push, PR Update, Merge, Deployment, Modellaufruf, politischer Originalabruf, Import, realer Fachlauf oder Production Schreibvorgang. Keine Profile, Konten, Migrationen, Budgets, persistenten Umgebungsvariablen oder Crons verändert. Fachautomation unverändert aus; letzter frischer Nachweis im früheren Integrationssprint,next_run_time null. Kein neuer Deploymentnachweis, READY11:46UTC bleibt Historie. Keine anderen Ausführer.
+
+Hier nach Dokumentation und bedingter Freigabe der eigenen Steuerung stoppen. Derselbe Thread mit Denkstufe Hoch passt für die getrennte Mergeentscheidung samt automatischem Deployment und anschließendem lesenden Deploymentnachweis.
+
+
+## PR390 Merge und Production Nachweis am 13.09.2026
+
+Der Betreiber hat den Merge des unveränderten PR390 Kopfes samt automatischem Production Deployment und anschließendem lesenden Nachweis ausdrücklich freigegeben. Original344 frisch frei und vollständig bestätigt, eigene Steuerung bedingt als345 übernommen und vollständig bytegleich rückgelesen. Keine fachliche Fortsetzung mit dieser Freigabe.
+
+## Veröffentlichung tatsächlich bestätigt
+
+PR390 wurde21:24:37Türkei /20:24:37Berlin /18:24:37UTC mit expected_head_sha af06791a7ab3a3eda9f11f9d8b64d56f8c16d5c9 als Squash gemergt. Neuer main Commit9b762f9b371aefc285bb22a844b71d1e30853030, Eltern545d644ab72987062a6795e51097756cc2675718. Vollständiger Baum bb7201924d3925b10b0eefe861e86d0e7cd05704 exakt identisch mit dem freigegebenen PR Kopf, ursprünglichem lokalem Kandidat a33a99d und früherem CI Prüfcommit3fd38e6. Nicht nur einzelne Dateihashes verglichen. Main Commit anschließend aus dem echten Repository lokal verfügbar; Git Diff zuaf06791 vollständig leer.
+
+Vor dem Merge PR Kopf und main erneut gleich bestätigt, keine Action in_progress. Pflicht CI34770419531 samt beiden Jobs und allen abschließenden Schritten erneut completed/success bestätigt. PR Beschreibung um den tatsächlich abgeschlossenen Altbelegnachweis und die aktuelle Mergefreigabe ergänzt; vollständig identisch rückgelesen. Keine weitere Produktänderung oder neue PR Erstellung.
+
+Automatisches Git Deployment dpl_BXHaZWQ2Uyr5Yq4obMPbgSY3yQ2A ist READY um21:25:01Türkei /20:25:01Berlin /18:25:01UTC. Zielproduction, Regionfra1, Quellbranchmain, githubCommitSha exakt9b762f9b371aefc285bb22a844b71d1e30853030, aliasError:null. Hauptaliashelmut-pilot.vercel.app sowie Projekt und main Alias sind zugeordnet. Build vom18:24:42.972 bis18:25:01.623UTC, rund18,7Sekunden. Kein zusätzliches Deployment, Promote oder Rollback ausgelöst.
+
+Die öffentliche Hauptadresse https://helmut-pilot.vercel.app/ wurde anschließend lesend abgerufen: HTTP200, styles.css?v=9b762f9b undclient.js?v=9b762f9b im tatsächlich gelieferten HTML. Damit sind Hauptadresse und Dateiversionen dem veröffentlichten Commit zugeordnet. Kein authentifizierter App Ablauf, Browsercheck oder fachlicher Inhaltsnachweis daraus behauptet.
+
+Deploymentbezogene Fehlerabfrage18:24:37bis18:26:22UTC fürerror undfatal liefert keine Einträge. Das ist ausschließlich ein kurzer Logbefund; kein Langzeitnachweis und keine allgemeine Zusicherung fehlerfreien Betriebs.
+
+## Automatische main CI
+
+Der Merge startete den bestehenden main Lauf34774533443 auf9b762f9. Kein manueller Start und kein Wiederholungslauf. Vollständig completed/success um21:39:04Türkei /20:39:04Berlin /18:39:04UTC. Beide Jobs und sämtliche Schritte einschließlich Bereinigung erfolgreich. Tatsächliche Protokolle:374/374 Suiten in718Sekunden, Browser50PASS/0FAIL, Kontoschutz15PASS/0FAIL, Z2248PASS/0FAIL. Alle374 ausgegebenen Suitennamen stimmen in derselben Reihenfolge mit der erhaltenen kanonischen Auswahl des identischen PR Baums überein. Interne Skipzahlen des Runners bleiben nicht bestimmbar; separate Pflichtprüfungen sind aus ihren eigenen Ausgaben belegt. Kontoschutz und Z22 arbeiten ausschließlich mit synthetischen Daten in der kurzlebigen CI Datenbank. Diese technischen500 Registrierungen sind keine500 fachlich erfolgreichen Mandate. Die vollständigen Containerlogs enthalten auch Meldungen der Dienstprüfung und der negativen Testfälle; kein pauschal fehlerfreies Log behauptet. Die längere Laufzeit gegenüber dem früheren PR Lauf ist gemessen, ihre Ursache wurde nicht ermittelt.
+
+## Dokumentation und verbleibende Facharbeit
+
+Die beiden bisherigen lokalen Dokumentationsabschlüsse39bddf4 und3d8bf1f wurden auf einen separaten neuen Branch ausgehend vom tatsächlichen main9b762f9 übernommen. Ihre Historie bleibt erhalten; nur CURRENT_STATE und der kanonische Betriebsbeleg unterscheiden sich vom veröffentlichten Dateibaum. Der anschließende aktuelle Nachtrag wird lokal committed. Kein zusätzlicher Push, PR oder Deployment nur wegen des Abschlussnachtrags.
+
+Die zwei bekannten Altbelege waren im vorherigen lesenden Sprint technisch intakt und nach Vertrag1 gültig, aber weiterhin unvollständig mitlage:null. Geeignete aktuelle Nachfolger fehlten. Diese Daten wurden hier weder neu abgefragt noch verändert. Veröffentlichung erzeugt keine fehlenden Lage Texte. Der historische Leser bleibt erhalten; der aktuelle gespeicherte Leser verweigert solche Altbelege bis zu einem passenden fachlich gültigen Nachfolger.
+
+Neue fachliche Urteile und vollständige Pakete sowie deren tatsächlicher App Abruf bleiben offen. Der private Export ersetzt keine Fachbasis am Vollprofil. Keine atomare Sperre zwischen Vorgänger und Nachfolger; aktuelle Bindung muss vor einem späteren Schreibschritt neu geprüft werden. Historische verworfene Antworten und Reviewbegründungen fehlen weiterhin. Historische Kausalität, Behebung beider damaligen Fachablehnungen und500er Fachabnahme werden nicht behauptet.
+
+Nächster sinnvoller eigener Auftrag ist die Vorbereitung der kontrollierten fachlichen Fortsetzung: aktuelle gespeicherte Eingaben, notwendige Fachbasis, verbleibende Kostenreserve und konkreten geschützten Ausführungsweg bestimmen. Dieser Mergeauftrag startet keinen Fachlauf und aktiviert keine Profile. Neue Modelle oder Schreibschritte erst im dafür freigegebenen Auftrag. Kein Datumstrick, kein pauschales Neugenerieren und kein unkontrollierter Wiederholungsversuch.
+
+Keine Profile, Konten, Datenbankdaten, Migrationen, Budgets, persistenten Umgebungsvariablen oder Crons geändert. Keine Modellaufrufe, politischen Originalabrufe, Importe, Aktivierungen oder zusätzlichen Ausführer. Fachautomation bleibt deaktiviert; letzter frischer Nachweis im früheren Integrationssprint,next_run_time null. Kein neuer Nachweis ihrer Konfiguration in diesem Mergeauftrag.
+
+Nach vollständiger Sicherung und bedingter Freigabe der eigenen Steuerung stoppen. Derselbe Thread mit Denkstufe Hoch passt für die getrennte Vorbereitung der fachlichen Fortsetzung. Kein automatischer Folgesprint.
+
+
+## Begrenzte Vorbereitung der fachlichen Fortsetzung am 13.09.2026
+
+Sprintzustand: **Erfolgreich abgeschlossen für die Bestimmung der konkreten Voraussetzungen.** Kein ausführungsreifer Fachlauf und keine500er Abnahme. Betreiber Weiter autorisiert die angekündigte Vorbereitung, keine Modelle, Aktivierung oder Production Datenänderung. Pflichtdateien vollständig in Reihenfolge, danach Isolation und gezielte Betriebsregeln gelesen. Keine geltende AGENTS.md gefunden. Keine zusätzlichen Ausführer.
+
+### Bestätigter Ausgang
+
+Main9b762f9b371aefc285bb22a844b71d1e30853030, Baum bb7201924d3925b10b0eefe861e86d0e7cd05704 unverändert. Hauptalias frisch auf dpl_BXHaZWQ2Uyr5Yq4obMPbgSY3yQ2A READY und exakt diesem Commit bestätigt. Main CI34774533443 vollständig success bleibt Vorbeleg:374/374 Suiten,50 Browser,15 Kontoschutz,48 Z22. Kein neuer Testlauf daraus ausgegeben. Nur historischerPR345 offen, gezielte Actions Abfrage in_progress:0. Fachautomation6aa2872e75ec81919d4c0abe7d304ddb frisch deaktiviert,next_run_time null. Keine umfassende Sicht auf andere Chats behauptet.
+
+Original346 vollständig frei und mit927307Bytes,SHA2567041f33126ae7b0928b8a46f64a1202c2ad38b1e7d366c1f74c8267c5df7ef13 bestätigt. Eigene Steuerung bedingt als347 übernommen und alle tatsächlich gespeicherten927866Bytes mitSHA256e9387905596b444566f07d12f1551f42571e3c0a0d373fb89b055ba47bf1d99b identisch rückgelesen.
+
+### Gespeicherte Eingaben, genau begrenzte Lesung
+
+SQL um21:53:59Türkei /20:53:59Berlin /18:53:59UTC: ausschließlich die zwei bekannten betroffenen Profile und das früher fachlich untersuchte synthetische Profil test-kohorte-b-055. Jeweils vollständige Mandatszeile, Identitätsprojektion id/name und Metadaten genau der heutigen Briefing, Lage, Aussagen und Entwurfsbelege. Jeder mandantenbezogene Join hat den expliziten Benutzerfilter. Transaktion REPEATABLE READ und READ ONLY, read_only:on. Keine Konten, Sessions, fremden Profile oder politischen Originalquellen gelesen. B055 wird wegen des vorhandenen begrenzten Erstimportvertrags betrachtet, nicht als neue Testkohorte.
+
+Die beiden Originalprofile sind aktiv; ihre unveränderten alten Tagespakete tragen weiter lage-text-fehlt und lage-quellenpruefung-fehlt. Keine heutige Lage, kein Aussagenurteil, kein Entwurfsbeleg und kein Nachfolger mit Version2 gefunden. Vollständige Mandatszeilen und Identitätsprojektionen stimmen mit dem früheren Folgelesen18:06UTC überein; gespeicherte Inhalts und Profilhashwerte sowie Prüfmetadaten ebenfalls. Hier wurden nur Paketmetadaten neu gelesen: kein erneutes vollständiges Hashen des Payloads und keine historische Modellantwort behauptet. Der vollständige Altbelegnachweis bleibt der unveränderte Vorbeleg.
+
+B055 ist inaktiv. Für den heutigen Berliner Tag fehlen in allen genannten Slots Belege. Die alte Fachsichtung vom11./12.09. ist deshalb kein heutiger Eingabevertrag. Kein fachlich positives Urteil wurde erzeugt. Die neue lokale lesende Auswertung benutzt die echten Profilabbilder und den echten Aussagenleser mit einem ausschließlich lesenden Snapshotadapter. Für alle drei Ziele lautet der tatsächliche Ausgang briefing-aussagenpruefung-fehlt; der Briefingaufbau wird wegen fehlender Zeile gar nicht aufgerufen. Kein Production HTTP oder App Nachweis daraus.
+
+### Kosten und Konkurrenz
+
+Separate SQL Momentaufnahme21:52:56Türkei /20:52:56Berlin /18:52:56UTC:87 Tageszählungen,87 Nutzungsbelege und87 Tickets. Das vollständige heutige Kostenbuch wurde ohne weitere Authdaten gelesen und mit dem bestehenden testkosten-budget.kontrolliere lokal ausgewertet.0,547587USD nach konservativem Buchvertrag gebunden,0 offene Reservierungen und0 unbekannte Kosten;3,452413USD rechnerisch bis zur unveränderten4USD Grenze frei. Die ältere Nutzungsprognose beträgt0,273793USD und verwendet eine andere Preisbasis; sie ersetzt weder den Geldriegel noch eine Anbieterrechnung. Kein Geld wurde reserviert, ausgegeben, erstattet oder zurückgesetzt.
+
+Nach dem bestehenden Code beträgt die maximale vorläufige Reserve je Modellaufruf0,212USD. Für einen neuen Entwurf plus anschließende Modellprüfung sind konservativ0,424USD freie Deckung anzusetzen. Das ist weder die tatsächliche Rechnung noch eine Zusage, wie viele Mandate versorgt werden können. Beide Aufrufe reservieren separat unmittelbar vor HTTP; natürliche Arbeit kann den freien Betrag dazwischen verändern. Unbekannte Ausgänge bleiben voll gebunden. Für einen reinen Urteilsimport sind0 Modellaufrufe vorgesehen.
+
+Zum SQL Zeitpunkt0 aktive Pipelinesperren,0 aktive Auftragsleases,0 verwaiste laufende Aufträge und0 junge laufende Prozessquittungen. Nur diese Momentaufnahme belegt Ruhe. Kein globaler Profil oder Kontenbestand neu inventarisiert. Die authentifizierte Laufzeitroute wurde in diesem Sprint nicht neu aufgerufen: wirksame Kommunikation, Quellenriegel, Scanumfang und Kostenkonfiguration müssen unmittelbar vor späterer Ausführung frisch bestätigt werden. READY und ein gültiges Kostenbuch ersetzen diesen Laufzeitbeleg nicht.
+
+### Konkrete Reihenfolge und verbleibende Voraussetzungen
+
+| Schritt | Vorhandener Weg | Voraussetzung und Grenze |
+| --- | --- | --- |
+| Aktuelle Fachgrundlage herstellen | server.__buildV3Briefing mit aussagenEingabe:true | Genau B055, tatsächliche aktuelle Zeit, frische vollständige Identität und Mandatszeile, bestätigter Runtimekontext, alle vom echten Aufbau benötigten gespeicherten Wissensobjekte und Quellen. Vollständiges Ergebnis aus briefing, eingabe und korrekturBasis sichern. Kein alter Snapshot als aktueller Modellaufruf ausgeben. |
+| Inhalte fachlich prüfen | briefing-aussagenbindung und briefing-fachurteil | Jeder Text mit exakter Belegstelle; Sachgehalt, Kontext und Mandatsbezug getrennt. Zusätzlich Quellentiefe, Rangfolge, Mandatsbezug, Auslassungen, Zeitbezug und Vollständigkeit begründen. Fehlende Auszüge, unbelegte Fristen oder negative Urteile bleiben offen. Kein Auffüllen positiver Felder nur zum Bestehen. |
+| Engen Import konkret anschließen | briefing-urteilsimport.ausfuehren | Der interne Vertrag ist veröffentlicht, hat aber keinen angeschlossenen Production CLI, HTTP oder Workflowaufrufer. Frischer Betriebsvorflug, vollständiger Kontextleser und echter Aufbau sind Pflichtinjektionen. Privates Urteil sicher übergeben; keine öffentlichen Actions Inputs und kein generisches Upsert. |
+| Exakten Erstimport freigeben | Vorhandener interner Writer und insertBriefingFachurteil | Genau ein synthetisches Profil, ein Berliner Tag, höchstens eine Neuanlage,0 Modellaufrufe. Freigabe bindet Commit, Urteilshash, Eingabehash, ganzen Kontexthash und Ablaufzeit. Diese Werte fehlen heute; kein gültiges Freigabeobjekt vorbereitet. |
+| Danach Lage und Paket fortsetzen | Geschützter Textnachlauf und briefing-profilkontext | Der bestehende500er Textnachlauf verlangt den vollständig freigegebenen500er Bestand. Ein einzelner Import aktiviert nichts und startet keinen Textlauf. Vor Aktivierung und fachlicher Verwendung Kontext erneut binden; keine künstliche Vorstufenabnahme aus dem technischen Erstimport ableiten. |
+
+Der synthetische Erstimport verweigert die beiden ursprünglichen Profilkennungen strukturell. Der neue Nachfolgervertrag ist davon unabhängig allgemein mandantenbezogen, setzt aber bereits eine gültige neue Fachbasis und einen dazu gebundenen Lagebeleg voraus. Deshalb kann der vorhandene synthetische Import nicht einfach für die beiden alten Pakete gestartet werden. Diese Grenze wird nicht gelockert. Ein späterer Bedarf für einen anderen Importumfang wäre gesondert zu prüfen; kein neu belegter Produktfehler und keine Codeänderung in diesem Sprint.
+
+Der kleinste nächste fachliche Auftrag ist die aktuelle Eingabeaufnahme und belastbare Einzel und Gesamtprüfung für B055, zunächst privat und ohne Import, Modelle oder Aktivierung. Die Aufnahme braucht die echten aktuellen gespeicherten Quellen; deren Vollständigkeit und Rangfolge wurden hier nicht erneut fachlich beurteilt. Der bestehende Scanumfang ist aus der Laufzeitroute zu übernehmen, nicht aus einem alten Standardwert zu erraten. Anschließend erst einen konkreten privaten Importadapter mit gezielten synthetischen Gegenproben vorbereiten, soweit tatsächlich erforderlich. Keine neue Menge aktivieren, um einen vorbereitenden Leser zum Laufen zu bringen.
+
+### Nachweisgrenzen und Abschluss
+
+Die reine Kostenauswertung und die drei Aussagenleser wurden ausschließlich mit node scripts/lokal.js -- node ausgeführt. Kein neuer synthetischer Produktfix, keine unveränderte Gesamtsammlung, keine Chromium Diagnose, keine neue CI. CURRENT_STATE Größenprüfung wird als eigene Dokumentationsprüfung gesichert. Historische Modellantworten, gewählte Bindungen und Reviewbegründungen fehlen weiter; weder historische Kausalität noch Behebung beider Fachfehler behauptet.
+
+Ausschließlich Dokumentation lokal auf codex/fachfortsetzung-vorbereitung-20260913, ausgehend vonab39ba7. Keine Profile, Konten, Production Daten, Budgets, Umgebungsvariablen, Migrationen oder Crons geändert. Keine Modelle, Originalabrufe, Importe, Aktivierung, neuen PRs, Pushes, Merges oder Deployments. Kein500er Fachlauf. Review und Belege dauerhaft sichern und vollständig rücklesen, Original bedingt fortschreiben, eigene Steuerung freigeben. Dann stoppen. Derselbe Thread und Denkstufe Hoch passen für den getrennten kleinen Fachprüfauftrag.
+
+
+# B055: aktuelle gespeicherte Inhalte fachlich geprüft
+
+Begrenzter Sprint am 13.09.2026. Das private Fachurteil ist **negativ**. Die Prüfung liefert konkrete Inhaltsbefunde, aber keine freigegebene Production Eingabe, keinen Import und keinen500er Nachweis.
+
+## Auftrag und Ausgang
+
+Go autorisiert die angekündigte aktuelle Eingabeaufnahme und fachliche Prüfung für das bereits untersuchte synthetische Profil B055. Pflichtdateien vollständig in Reihenfolge gelesen, geltende AGENTS Suche ohne Treffer, Isolation gelesen. Main9b762f9b371aefc285bb22a844b71d1e30853030 und Baum bb7201924d3925b10b0eefe861e86d0e7cd05704 unverändert. Lokaler Start39774b98ff8e445b5295e1f4546296495e35a00b, sauber. Nur alterPR345 offen, keine Action in_progress. CI34774533443 erneut completed/success auf exakt main bestätigt; ihre374 Suiten,50 Browser,15 Kontoschutz und48 Z22 bleiben Vorbelege, kein neuer Lauf. Fachautomation frisch aus,next_run_time null. Keine umfassende Sicht auf andere Chats behauptet.
+
+Original348 vollständig frei bestätigt:939752Bytes,SHA2564fa12a362c1199044304390a02bd81de80446c37e91e6d58e144b51f12aa0961. Übernahme bedingt349; tatsächlich gespeicherte940127Bytes vollständig identisch rückgelesen,SHA256f6fc84e16ac4df8fafec59fba524c29fc3adef1384d28164359265155e94ecdd. Eigener Besitzer work-5e17a0944d1a-b055pruefung, Frist19:59:45UTC. Kein fremder aktiver Besitzer übergangen.
+
+## Tatsächlich aufgenommene Daten und Grenze
+
+Um22:10:34Türkei /21:10:34Berlin /19:10:34UTC genau B055 vollständig aus public.profiles und mandate_profiles gelesen. Keine Konten oder Sessions. B055 bleibt inaktiv; keine Profiländerung. Um22:10:55Türkei /21:10:55Berlin /19:10:55UTC die500 zuletzt aktualisierten globalen Wissensobjekte mit exakt der Leseprojektion des bestehenden storage.js aufgenommen, ohne Embedding und ohne Statusvorfilter. Dies sind Eingaben für ein Profil, keine500er Profilinventur. Um22:13:07Türkei /21:13:07Berlin /19:13:07UTC genau die85 vom echten lokalen Builder angeforderten Quellengruppen samt259 Dokumentbindungen aufgenommen. Keine politische Originaladresse geöffnet.
+
+Alle SQL Aufnahmen sind READ ONLY und REPEATABLE READ. Gemeinsames Folgelesen um22:19:14Türkei /21:19:14Berlin /19:19:14UTC bestätigt in einer Transaktion vollständige Identität, Mandatszeile, geordnete500 Wissensobjekte und85 vollständige Quellengruppen identisch. Die ersten drei Aufnahmen lagen in getrennten Transaktionen; identische Endpunkte sind keine historische Modellaufnahme und keine kontinuierliche Sperre.
+
+**Die aktuelle authentifizierte Production Laufzeitkonfiguration konnte mit den verfügbaren Zugängen nicht bestätigt werden.** Der GitHub Connector bietet keinen Workflow Dispatch; kein neuer Workflow, Push oder Umweg wurde dafür erzeugt. Es wurde deshalb ausdrücklich nur ein lokales Standardszenario aufgebaut: scoring off, Relevanzordnung aus,500 Wissensobjekte,14 Relevanztage. Diese Werte sind keine behaupteten Production Werte. Aktuelle Production Auswahl und Ausführungskontext bleiben offen.
+
+Eine geladene Quellengruppe hat60 Verknüpfungen. Der bestehende allgemeine Leser begrenzt ohne vorangehende Ordnung auf40. Das lokale Szenario verwendet ausdrücklich40 nach Datum absteigend und Kennung geordnete Dokumente; diese Teilmenge ist keine bestätigte Production Teilmenge. Der betreffende Vorgang ist in den24 sichtbaren Einträgen nicht enthalten. Ein Einfluss auf die Gesamtauswahl wird dadurch nicht ausgeschlossen. Alle60 Originalbindungen bleiben im privaten Snapshot erhalten. Kein Quellenlimit, Leser oder Altbeleg wurde geändert.
+
+Der echte server.__buildV3Briefing mit aussagenEingabe:true arbeitete ausschließlich am lesenden Snapshotadapter. Ranking und Vertragsbau wurden nicht ersetzt. Vollständig gesichert sind briefing, eingabe, korrekturBasis, Profil und tatsächliche Einstellungen. Der zeitliche Bezug ist die neue Aufnahme vom19:10:55UTC, kein angeblicher Mitschnitt eines früheren Modellaufrufs. Aufbau erneut aus denselben Bytes mit identischen Eingabe und Darstellungshashes bestätigt.
+
+## Konkrete Inhaltsbefunde
+
+Die lokale Ausgabe enthält24 Vorgänge und870 gebundene Textpfade, entsprechend620 verschiedenen Kombinationen aus Vorgang und Text. Alle wurden in der privaten Lesefassung inhaltlich gesichtet; identische Aliase übernehmen dieselbe begründete Entscheidung. Titelkerne, Ausgabetexte, Sachfolgen, Fristen und Mandatsbezug werden getrennt behandelt. Ein negativer Wert heißt fehlende fachliche Bestätigung, nicht automatisch erwiesene Falschheit.
+
+Von40 Quellenbindungen der sichtbaren Auswahl haben nur vier einen Auszug;21 der24 Vorgänge haben keinen einzigen. Beim führenden Haushaltsvorgang trägt der Titel den Themenkern, aber weder einen konkreten Änderungsantrag noch heutige Handlungsfristen. Ein vorhandener Rettungsbericht trägt den Ereignisablauf, aber keine konkrete deutsche Zuständigkeit oder persönliche Handlungspflicht.
+
+Weitere konkrete Lücken: Ein Medienupdate wird in der Ausgabe der Bundesregierung zugeschrieben. Eine sportverbandliche Bundestag Bezeichnung wird ohne tragenden Beleg parlamentarisch eingeordnet. Eigene Ratsarbeit, Landesfraktionsarbeit und Disziplin einer fremden Partei werden einem Bundestagsprofil zugeordnet. Stellenanzeigen tragen keine Behauptung eines allgemeinen Pflegenotstands oder eines eigenen örtlichen Mandatsbezugs. Zwei vorhandene Auszüge betreffen andere Ereignisse als die zugewiesene Äußerung. Ein weiterer Auszug ist abgeschnitten und enthält abweichende Schreibweisen. Diese Befunde stammen aus den tatsächlich erhaltenen Titeln, Auszügen, Profilfeldern und Ausgabetexten; keine externe Tatsachenverifikation wird behauptet.
+
+Relative Fristen wie heute16Uhr und heute18Uhr liegen vor der Aufnahme um21:10Berlin. Alte Meldungen begründen ohne aktuelle Terminquelle kein neues heute, morgen oder Freitag. Auch ein rechnerisch niedriger Dringlichkeitswert bestätigt keine fachliche Entwarnung über Handlungsbedarf.
+
+## Einzel und Gesamturteil
+
+privates-negatives-urteil.json bindet alle870 Pfade exakt, ohne Doppelung oder ausgelassene Texte.24 vorgangsbezogene Begründungen plus die Sammelnennungen sind separat in fachentscheidungen.json erhalten. Quellenstellen sind wortgetreu gebunden; fehlende Auszüge und nicht gebundene Personennennungen werden nicht durch erfundene Zitate ergänzt.14 Pfade sind im engen Umfang vollständig positiv, vor allem wiederholte Titelkerne und begrenzte Ausgabetexte. Das sind keine14 fachlich fertigen Mandate und keine Gesamtfreigabe.
+
+Alle sechs Gesamtbedingungen sind ausdrücklich nicht bestanden: Quellentiefe, Rangfolge, Mandatsbezug, Auslassungen, Zeitbezug und Vollständigkeit. Die Ablehnungen sind jeweils begründet und an die konkrete Eingabe gebunden. Vollständigkeit der870 Reviewzeilen bedeutet keine vollständige Faktenprüfung des Wissensbestands oder aller Auslassungen.
+
+Eingabehash260c08f9308f8d98469226bb49b814c13d3051e8442e46797e67e98826645b52. Darstellungshashd526f418cd4a7417ced546d32592aee4e4bc1b563c31a8ce4be1e3706694763d. Urteilshash2560d48882ed49515719ab00dadc8c09f3de6f6425de63c491098f59f2ebdf03. Profilhash6217968c3a5a1c505b72c18f569fa03ca04bca6d73d30bd4fc9a0b014503b98e.
+
+Gezielte lokale Vertragsprüfung mit tatsächlichen Ausgaben: Aussagenprüfer briefing-aussagenpruefung-abgelehnt, Gesamtprüfer briefing-gesamtpruefung-abgelehnt. Beide bereit:false und vollstaendigeFaktenpruefung:false. Der bestehende Schutz funktioniert an diesem privaten negativen Urteil. Es wurde kein künstliches positives Urteil erzeugt. Die Prüfung ist keine synthetische Fachabnahme und kein Production HTTP oder Browsernachweis. Alle Node Ausführungen ausschließlich über node scripts/lokal.js -- node.
+
+## Kleinster notwendiger nächster Schritt
+
+Kein neu abgegrenzter Implementierungsfehler mit belegter Kausalität zum erweiterten Stellvertretungskontext. B055 hat keine Stellvertretungen. Deshalb keine Codekorrektur, keine breite Quellenüberarbeitung und keine weiteren unveränderten Tests. Der kleinste Kandidat dieses Sprints besteht aus Dokumentation und dem privaten negativen Prüfbeleg.
+
+Ein Import ist hier sachlich verfrüht. Zuerst braucht es bestätigte aktuelle Laufzeitwerte und eine dazu exakt aufgenommene Eingabe. Anschließend für eine eng ausgewählte, zum Mandat passende Meldung die fehlende Belegtiefe herstellen; unbelegte Rollen, Folgen und Fristen müssen in einer gesonderten privaten Korrekturauswahl entfernt oder tragfähig belegt werden. Die aktuellen negativen Urteile dürfen nicht als positives Importobjekt verwendet werden. Ein späterer Originalabruf benötigt eine konkrete Freigabe mit Quelle und Umfang. Erst eine tatsächlich positive Einzel und Gesamtprüfung rechtfertigt die Vorbereitung des konkreten privaten Erstimports. Der fehlende Production Importaufrufer bleibt ein weiterer späterer Schritt.
+
+Keine Modelle, Originalabrufe, Importe, Aktivierung, Profile, Konten, Production Daten, Migrationen, Budgets, persistente Umgebungsvariablen oder Crons geändert. Kein Push, PR, Merge oder Deployment. Keine zusätzliche Kostenaufnahme; der Kostenstand18:52UTC aus dem Vorbeleg ist ausdrücklich historisch. Keine Behauptung, die beiden ursprünglichen Fachfehler oder500 Mandate seien bewiesen. Historische Antworten, Bindungen und Reviewgründe bleiben unbekannt.
+
+Nur zwei Dokumente lokal committen, privaten Review und Belege dauerhaft sichern und vollständig rücklesen. Original gegen frisch bestätigte eigene Version aktualisieren und bedingt freigeben. Danach stoppen, kein automatischer Folgesprint. Derselbe Thread und Denkstufe Hoch passen für den nächsten eng begrenzten Auftrag.
+
+
+# Production Laufzeitnachweis: Zugriff konkret blockiert
+
+Sprintzustand: **Blockiert.** Die erforderliche authentifizierte Statusantwort fehlt. Der sichere bestehende Ausführungsweg und seine exakten Eingaben sind vorbereitet. Kein Fachlauf gestartet.
+
+Am13.09.2026 Pflichtdateien vollständig in Reihenfolge und Isolation gelesen. Keine geltende AGENTS.md gefunden. Lokaler Starta423caa29b6f2fb13e5c0d1561c80ed6ac4340ab, Baum7e68b018e71f639cbcf7f4510d0e89142a4d334c, sauber. GitHub main9b762f9b371aefc285bb22a844b71d1e30853030 unverändert, Baum bb7201924d3925b10b0eefe861e86d0e7cd05704. Hauptalias aufdpl_BXHaZWQ2Uyr5Yq4obMPbgSY3yQ2A READY mit genau diesem Commit frisch bestätigt. NurPR345 offen, keine Action in_progress. CI34774533443 frisch completed/success; frühere Testzahlen bleiben Vorbelege. Keine umfassende Sicht auf andere Chats.
+
+Original350 vollständig frei bestätigt:952346Bytes,SHA256a69c4543ab8130235a270a6c677a2a56a90a29104ba658c52baf2d6d13858790. Übernahme bedingt351, vollständiger tatsächlicher Rücklesevergleich952694Bytes,SHA256d13e3b21bba59af341b8bee3e860d1a108c660928876390e05f09a8af18ef8c4. Eigene Zuständigkeit work-5e17a0944d1a-laufzeitnachweis.
+
+## Tatsächlicher Zugriffsbeleg
+
+Um22:37:05Türkei /21:37:05Berlin /19:37:05UTC liefert der verbundene Vercel Leser für GET /api/cron/testnachweis-status HTTP403 mit der expliziten Meldung eines fehlenden oder ungültigen Cron Secrets. Keine allgemeine App Störung daraus ableiten. Der äußere Werkzeugstatus success:true bezeichnet den erfolgreichen HTTP Abruf, nicht einen erfolgreichen Helmut Statusnachweis. Die vollständige Antwort ist privat erhalten.
+
+Die Sitzungsumgebung hat keine GH_TOKEN, GITHUB_TOKEN, VERCEL_TOKEN oder HELMUT_CRON_SECRET Werte. Nur Vorhandensein geprüft, keine Werte ausgegeben. Die tatsächlich verfügbaren GitHub Funktionen besitzen keinen Workflow Dispatch. Projekt und Deploymentwerkzeuge liefern keine Laufzeitwerte. Eine Workflow Metadatenroute wird vom GitHub Connector als nicht unterstützter Endpunkt abgewiesen; der Inhalt der bekannten Workflowdatei ist dagegen lesbar und vollständig identisch mit main bestätigt.
+
+Browser Skill und dessen vollständige Laufzeitregeln wurden für den möglichen Oberflächenzugang geladen. Diese Regeln verbieten den Browser als Ersatzweg für fehlenden oder gescheiterten Pluginzugriff. Deshalb keine GitHub oder Vercel Seite im Browser geöffnet, kein Login, keine Installation und keine Wiederholung der früheren Chromium Diagnose. Der fehlende Startzugriff wird ausdrücklich benannt, kein alternativer Schlüssel gesucht und kein Schutz umgangen.
+
+## Konkreter bestehender Leser
+
+.github/workflows/500-zugangspruefung.yml und beide tatsächlich ausgeführten Skripte github-zugangspruefung.js sowie github-laufzeitpruefung.js gelesen. Workflowbytes stimmen mit dem aktuellen main überein,SHA2568872da030e767d42b555b536498746918f5e4744376e6b54b22c4c3ac2b221ea. Keine Datei davon geändert.
+
+Genauer einmaliger Bedienweg: Actions, Workflow500 Testprofile: Zugang nur lesen, Run workflow, Branchmain, laufzeit_status:true, production_commit:9b762f9b371aefc285bb22a844b71d1e30853030. briefing_nachweis:false und privater_inhaltsnachweis:false; sonstige Eingaben leer. Vollständige kurze Anleitung privat gesichert.
+
+Der erste Schritt liest vorhandene Betriebskennung, heutige technische Textlaufquittungen und Projektionsmetadaten mit bestehenden Grenzen1000 beziehungsweise501. Er liest keine vollständigen Profil oder Kontenbestände. Der zweite Schritt liest ausschließlich die Konfigurationsroute vor Accountinitialisierung. Kein Modell, Schreiber, Import oder Aktivierungsaufruf. Die beiden optionalen Inhaltsjobs bleiben aus. Der Job hat drei Minuten Timeout; Warteschlangenzeit kommt hinzu. Ein abweichender Checkout oder Production Commit führt zur Verweigerung des Laufzeitbelegs.
+
+Nach genau diesem Lauf dessen URL und beide tatsächlichen Schrittausgaben prüfen. Erwartet wird die authentifizierte Antwort des exakten Commits mit quellenkontext einschließlich Scoring, Relevanzordnung, Scanumfang, Zeitfenster und Standardsicherheit. Eine erfolgreiche Statusantwort bestätigt zunächst die Laufzeit, keine Fachqualität. Bei Änderung der Werte die B055 Eingabe passend neu aufnehmen; die nicht deterministisch belegte40er Quellenteilmenge bleibt gesondert zu klären. Ohne diese Antwort keine weitere vermeintlich aktuelle Production Eingabe erzeugen.
+
+## Grenzen und Abschluss
+
+Kein automatischer Retry, Workflowstart, Modellaufruf, politischer Originalabruf, Import, Aktivierung oder Production Schreibvorgang. Keine Profile, Konten, Budgets, Migrationen, Umgebungsvariablen oder Crons geändert. Keine neue Datenbankinventur oder erneute B055 Fachprüfung. Kein Push, PR, Merge oder Deployment. Automation nicht verändert; letzter bestätigter deaktivierter Zustand bleibt Vorbeleg.
+
+Die negative B055 Prüfung aus Review24 und Archiv libfile_fd091f8028508191ab0fa00423a0e3b6 bleibt unverändert. Kein neuer Produktkandidat. Ausschließlich den konkreten Zugriffsblocker und Bedienweg lokal dokumentieren und committen. CURRENT_STATE Größenprüfung gezielt über node scripts/lokal.js -- node. Review und neue Belege dauerhaft sichern, tatsächlich vollständig rücklesen, Original bedingt aktualisieren und eigene Steuerung freigeben. Dann stoppen. Derselbe Thread, Denkstufe Hoch, nach Übergabe des einmaligen lesenden GitHub Laufs.
+
+
+## 14.09.2026: B055 Fristenursprung und lokaler Uhrzeitfilter
+
+Status: **Erfolgreich abgeschlossen für den begrenzten lokalen Sprint.** Ursache bis zu den gespeicherten Eingabefeldern belegt, fehlende historische Evidenz benannt, kleinster Filterfix synthetisch geprüft. Keine Veröffentlichung, fachliche Abnahme oder500er Abnahme.
+
+Die vorhandene private B055 Prüfung hatte Zeitbezug bereits negativ bewertet. Neu zurückverfolgt wurden ausschließlich die relativen Zeitformulierungen dieser gespeicherten Ausgabe. Die beiden konkreten heutigen Uhrzeiten liegen wortgleich in action_items_struct[0].dueHint der jeweiligen Wissensobjekte, einmal zusätzlich in action_items. Beide deadline Felder sind null; die jeweils einzelne Quelle hat keinen Auszug und trägt keine konkrete Bürofrist. Private Kennungen, Pfade, Daten und Texte im kanonischen Review libfile_23ac0f0d0468819194303c2c2c02e16c, Analyseabschnitt14.09.; Ausgangsarchiv libfile_fd091f8028508191ab0fa00423a0e3b6 unverändert. Die ergänzende lexikalische Herkunftssuche findet132 Aussagepfade mit59 unterschiedlichen Zeittexten; alle haben wortgleiche KO Fundstellen. Dies ist keine erneute vollständige Faktenprüfung.
+
+Codekette: storage.js Wissensobjektprojektion, server.js buildV3Briefing mit relativeFristZulaessig, briefingContract.js normActionItems und koStaffFields bis toRecommendation. Der Adapter normalisiert lediglich Leerraum. Die Anzeige renderHstandActions zeigt dueHint ohne Datumserfindung. Empfehlungstexte stammen über koAction vorrangig aus recommendation, ersatzweise handlungsempfehlung; Risiko und Kommunikationszeilen werden über koStaffFields übernommen.
+
+**Belegter Produktfehler:** Der bestehende Uhrzeitfilter in lib/helmut/briefing-quellenqualitaet.js verlangte zwingend bis. Eine explizite heutige Uhrzeit ohne dieses Wort wurde trotz verstrichener Berliner Uhrzeit zugelassen, sofern das Quelldatum innerhalb des bestehenden Relevanzfensters lag. Genau eine reguläre Ausdruckszeile ist erweitert, plus zwei erklärende Kommentarzeilen. Keine Änderung der14Tage Grenze, allgemeiner Quellenlogik, Ranking, Zuständigkeit oder Profilkontext. Bestehendes Verhalten bleibt: eine betroffene Empfehlung wird insgesamt zurückgehalten, keine still umgeschriebene Ersatzfrist. Die Anzahl sichtbarer Empfehlungen kann dadurch sinken.
+
+**Historische Evidenzgrenze:** Der heutige understanding.js Prompt nennt relative dueHint Beispiele und fordert sichere Ableitbarkeit. sanitizeActionItems und assembleKnowledgeObject übernehmen Modellwerte, ohne diese konkreten Uhrzeiten deterministisch zu erzeugen. Das ist eine plausible Entstehungskette, kein Beweis des historischen Requests. Originalantwort, damalige Promptauswahl, exakter historischer Codekopf und Schreibpfad fehlen. Keine Rekonstruktion, kein Promptfix aus Vermutung.
+
+**Prüfungen:** Neuer synthetischer Test scripts/briefing-heutige-uhrzeit-test.js am unveränderten Produktcode17/28 erfolgreich,11 erwartete Fehler; nach der Korrektur28/28, Exit0. Darunter echte Builderweitergabe vor und nach Fristablauf, exakt erreichte Grenze, gültige Gegenfrist mit explizitem synthetischen Terminbeleg, Sommer und Winterzeit, morgen und übermorgen, fehlende, alte und zukünftige Quelldaten sowie Erhalt der Eingaben. Speicher und Ranking sind injiziert; echter Builder, Zeitfilter und Vertragsadapter aktiv. Bestehende briefing-handlungsfristen16/16 und briefing-quellenpflicht23/23 erfolgreich. Alle ausschließlich über scripts/lokal.js, nacheinander. Keine Wiederholung unveränderter Gesamtsuiten und kein neuer B055 Modell oder Production Lauf.
+
+**Private Empfehlung:** Unbelegte relative Angaben nicht als freigegebenen Arbeitsauftrag übernehmen. In einer späteren gesonderten privaten Korrekturauswahl nur mit konkretem Terminbeleg samt Datum, Zeitzone und exakter Quelle erhalten; sonst betreffende Frist entfernen oder Vorgang zurückhalten. Heute ohne Uhrzeit, morgen und Wochentage bleiben hier fachlich unbestätigt. Der minimale Filterfix stellt keine vollständige Zeit oder Quellenprüfung her. Das ursprüngliche negative Urteil und die Originalausgabe bleiben erhalten.
+
+**Veröffentlichungsvoraussetzungen:** Exakten lokalen Diff gegen aktuellen main prüfen, vorhandene reine Dokumentationsnachträge erhalten, dann ausdrücklich freigegebene Übertragung und PR. Vor PR kanonische Offlineprüfung gemäß CLAUDE§6; in der Pflicht CI Syntax und Offline Suiten sowie Browser und Mobile Smoke am exakten Kandidatenkopf. Kein bereits erfolgreicher Test wird ohne Pflichtgate oder betroffene Änderung wiederholt. Neue Freigabe vor Merge, der automatisch Production deployt; danach exakten Commit und Wirkung rein lesend prüfen. Keine Datenmigration nötig. Fachurteil und500er Nachweis bleiben getrennte spätere Aufgaben. Ein Production Rückweg benötigt eigene Freigabe.
+
+Eigener Branch codex/b055-relative-fristen-20260914 auf10407a4b7625fbb3e66f0c3e38329b4ec1fc06a3, separate Arbeitskopie /workspace/scratch/81d3314665e3/helmut. Vier auftragsbezogene Dateien: Produktfilter, neue Regression, CURRENT_STATE und dieser bestehende Beleg. Kein Push oder PR dieses Sprints. Private Ursachenanalyse vor der Korrektur als Review26 und Belegarchiv libfile_20b1058b05b48191a1124d4ba0099b50 Version0 gesichert. Abschließender exakter Commit, Prüflogs und Patch werden in denselben privaten Belegen fortgeschrieben. Keine parallele Statussammlung.
+
+Keine neuen Production Abfragen, Workflowstarts, Modelle, Originalabrufe, Profileingriffe, Kontenänderungen, Aktivierungen, Importe, Migrationen, Cron, Budget oder Umgebungsänderungen. Keine zusätzlichen Agenten. Alle fünf realen Profile unberührt. Nach abschließender Sicherung Steuerung freigeben und stoppen. Einzelner nächster Schritt ist begrenzter Kandidatenreview und Veröffentlichungsvorbereitung nach passender Freigabe, kein automatischer Folgesprint. Derselbe Thread ist geeignet; Denkstufe Hoch. Grobe Schätzung für diesen nächsten Schritt30bis45Minuten, größte Unsicherheit Pflichtprüfungsumgebung und aktueller main Vergleich.
+
+
+## 14.09.2026: Begrenzter Review des lokalen Fristenkandidaten
+
+Status: **Erfolgreich abgeschlossen für den lokalen Kandidatenreview.** Veröffentlichung offen. Weiter setzt die angekündigte lokale Prüfung und Veröffentlichungsvorbereitung fort; kein Push, PR, Workflow, Merge oder Deployment. Pflichtdateien vollständig erneut in Reihenfolge, Isolation und geltende Anweisungen geprüft. Main9b762f9 frisch unverändert, nur alterPR345 offen, keine Action in_progress. Lokaler Start ef3f263 sauber, Original354 frei und bedingt355 übernommen. Keine neuen Production Abfragen.
+
+Der Produktdiff betrifft weiterhin ausschließlich relativeFristZulaessig. Neu belegter Gegenfall im Review: Eine Beschreibung endet mit morgen, danach folgt dueHint mit explizitem heute und bereits verstrichener Uhrzeit. Wegen der Verkettung aller Textfelder greift die bisherige Morgen Ausnahme fälschlich. Drei neue synthetische Gruppen belegen dies an ef3f263 mit28/31 und Exit1. Kein zusätzlicher historischer B055 Befund und keine Behauptung, diese Kombination sei dort gespeichert.
+
+Kleinste Nachkorrektur: Die Morgen Ausnahme gilt nur, wenn der gefundene Uhrzeittext nicht ausdrücklich heute nennt. Eine Bedingungszeile und ein Kommentar, keine allgemeine Parserüberarbeitung. Danach31/31 einschließlich echtem Builder, beide Formen mit und ohne bis, Erhalt der Frist vor Ablauf, Ablehnung nach Ablauf sowie unveränderte Eingaben. Bestehende Fristen16/16 und Quellenpflicht23/23 erneut erfolgreich, sachlicher Wiederholungsgrund die geänderte Ausnahme. Alle nacheinander über scripts/lokal.js, jeweils Exit0. Syntax und git diff --check erfolgreich. Kanonischer Runner listet die neue Suite über --list --only korrekt; das ist kein Gesamtlauf.
+
+Reviewurteil: Der begrenzte Kandidat ist für die Pflichtvorprüfung geeignet. Es wird keine Veröffentlichungs oder Fachfreigabe erteilt. Gegen main eine Produktdatei, eine neue synthetische Suite und die zwei bestehenden Dokumentationsdateien; keine neuen Abhängigkeiten, Speicherpfade, Datenmigrationen oder Workflowänderungen. Das bestehende Zurückhalten ganzer Empfehlungen kann die sichtbare Menge senken. Unbelegte Zeitangaben außerhalb der zwei klaren Erkennungslücken bleiben fachlich offen.
+
+Konkreter nächster freizugebender Umfang: genau diesen lokalen Kandidaten auf eigenen GitHub Branch übertragen, notwendige isolierte Pflichtprüfungen ohne Modelle oder Production Daten ausführen und nach erfüllten Prüfvoraussetzungen einen PR erstellen. CLAUDE§6 verlangt vor PR den kanonischen Offline Gesamtlauf; beide Pflichtjobs müssen den exakten Kopf abdecken. Frühere grüne main Prüfungen ersetzen das nicht. Kein allgemeiner Umgebungsumbau und keine unveränderten Wiederholungsschleifen. Bei fehlender Abhängigkeit belegten Umgebungsblocker von Produktfehler trennen. Merge samt automatischem Production Deployment bleibt separat freigabepflichtig.
+
+Prüfplan und direkt verwendbarer PR Text im kanonischen privaten Review. Exakter Abschlusscommit und Wiederaufnahmepatches im vorhandenen Fristenarchiv libfile_20b1058b05b48191a1124d4ba0099b50. Vorheriger Reviewzwischenstand vor Produktänderung in Review28 gesichert. Kein neuer unabhängiger Fehlerkreis begonnen. Nach Sicherung Steuerung freigeben und stoppen. Derselbe Thread, Hoch; grobe Schätzung des nächsten Prüf und PR Schritts30bis60Minuten, größte Unsicherheit isolierte Pflichtprüfungsumgebung.
+
+
+## 14.09.2026: Freigegebene Übertragung und Pflichtprüfung des Fristenkandidaten
+
+Weiter nach der konkreten Abschlussanforderung autorisiert Übertragung, notwendige Pflichtprüfungen und PR. Kein Merge oder Deployment. Pflichtstart und Zuständigkeit erneut geprüft: lokaler68c4565 sauber, main9b762f9 unverändert, nur alterPR345 offen, keine Action in_progress. Neuer Remote Branch codex/b055-relative-fristen-20260914 bei gezielter Suche nicht vorhanden. Original356 frei, eigene Steuerung bedingt als357 gesichert.
+
+Produktcode und synthetische Fristensuite bleiben unverändert zu68c4565. Die vorhandene isolierte Vorprüfung erhält genau den neuen Branch in ihrer Positivliste; Ausführung weiterhin nur bei Änderung derselben Workflowdatei. Ihre Netzisolation, entfernte Anbieterumgebung, lokalen Daten, Bereinigung und kanonischen Tests bleiben unverändert. vercel.json sperrt ausschließlich automatische Deployments dieses Branches. Keine Cron, Budget, Production oder Anbieteränderung. Gegen main nun sechs Dateien einschließlich dieser beiden notwendigen Prüf und Deploymentschutzergänzungen; die beiden übernommenen Dokumentationsnachträge bleiben erhalten.
+
+Kanonischer Gesamtlauf vor PR auf dem übertragenen exakten Baum erforderlich, dann beide bestehenden Pflichtjobs. Die bekannte fehlende lokale Abhängigkeitsausstattung wird nicht durch wiederholte unveränderte Fehlversuche geprüft; dafür dient der vorhandene isolierte Testrechner. Einzeltests31/31,16/16,23/23 bleiben der lokale Produktnachweis. Kein grüner Gesamtlauf oder Browsernachweis vorweggenommen. Exakte lokale und übertragene Commits, Baumvergleich und tatsächliche Läufe werden in den bestehenden Belegen ergänzt. Private B055 Daten gelangen nicht in den PR.
+
+
+### Ergebnis der isolierten Vorprüfung vor PR
+
+Kandidat9a69b2d613f39460e24f9b94554da65be064880d auf main9b762f9b371aefc285bb22a844b71d1e30853030 übertragen. Alle sechs Blob SHAs und Gesamtbaum e308355ee6d06dac3b9061086c4084b613ca2503 exakt gleich zum lokalen7a0e43894d6208865aa3ada1d120eda857cc23a0 bestätigt. Die unterschiedlichen Commitkennungen folgen aus Eltern und Metadaten, nicht aus Dateiunterschieden.
+
+[Vorprüfung34786942785](https://github.com/ernisch/helmut-pilot/actions/runs/34786942785) erfolgreich:375/375 Suiten in600s. Log nennt exakten Commit und Baum, bestätigt reinen Loopback ohne Route und Anbieterumgebung, enthält PASS für briefing-heutige-uhrzeit-test.js und abschließende erfolgreiche Bereinigung. Vollständiger Log privat gesichert. Das ist der kanonische Gesamtlauf vor PR, kein Browser oder eigenständiger Datenbanknachweis. Optionale Datenbankabschnitte benötigen weiterhin den eigenen Pflichtjob; ein Suite PASS allein ersetzt diesen nicht.
+
+Dieser Nachtrag verändert ausschließlich die beiden bestehenden Dokumentationsdateien. Produkt, synthetische Tests, Vorprüfungsworkflow und Deploymentsperre bleiben exakt gleich zum erfolgreichen Prüfbaum. Danach PR mit den bestehenden Pflichtjobs am neuen Kopf. Keine neue fachliche Freigabe, kein Merge oder Deployment.

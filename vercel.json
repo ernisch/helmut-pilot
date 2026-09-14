@@ -3,6 +3,7 @@
   "regions": ["fra1"],
   "git": {
     "deploymentEnabled": {
+      "codex/b055-relative-fristen-20260914": false,
       "codex/500-lage-quellenfenster-20260913": false,
       "codex/500-fachurteil-import-vorbereitung-20260911": false,
       "codex/500-laufquittung-20260908": false,
