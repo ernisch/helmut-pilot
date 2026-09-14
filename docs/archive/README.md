@@ -15,6 +15,7 @@ ausschließlich aktueller Projektstatus neu aufgesetzt.
 
 | Datei | Inhalt |
 |---|---|
+| [`project_state/2026_09_14_CURRENT_STATE_vor_lesebelegabschluss.md`](project_state/2026_09_14_CURRENT_STATE_vor_lesebelegabschluss.md) | Unveränderte Statusfassung vor der Kürzung im Lesebelegabschluss am14.09.; insbesondere historische PR- und Deploymentdetails. |
 | [`project_state/2026_09_11_500_statuskopf.md`](project_state/2026_09_11_500_statuskopf.md) | Unveraenderte historische Kopfabschnitte des 500er Status vor der Quellenkorrektur vom 11.09. |
 | [`project_state/2026_08_05_CURRENT_STATE_full.md`](project_state/2026_08_05_CURRENT_STATE_full.md) | Der vollständige `CURRENT_STATE.md`-Stand bis einschließlich 2026-08-05 (11. OP-25-Durchgang): alle Sprintberichte, Durchgänge, Nachweise und historischen Tabellen. **Byte-identisch archiviert** (per `git mv`, SHA256 `bbc7cdd08824f49e596e3fc488973e49d5b4582961cd3948bb66e70c5732771d`); die Git-Historie der Datei ist über `git log --follow` erhalten. |
 | [`project_state/2026_08_17_CURRENT_STATE_full.md`](project_state/2026_08_17_CURRENT_STATE_full.md) | Der vollständige `CURRENT_STATE.md`-Stand vor der Verdichtung vom 2026-08-17. |

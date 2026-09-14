@@ -93,6 +93,60 @@ const test = async (name, fn) => { await fn(); console.log("PASS " + name); coun
     A.equal(Q.pruefe(r.eingabe, u).bereit, true); A.equal(F.pruefe(r, u).bereit, false);
     A.equal((await I.ausfuehren(h.args)).schreibversuche, 0);
   });
+  function mitLesebeleg() {
+    const h = harness(); h.sourcesByVorgang["vg-a"][0].summary = null;
+    const r = h.result(), u = h.args.urteil, q = r.eingabe.quellen.find(q => q.vorgangId === "vg-a");
+    u.eingabeHash = u.ursprungHash = r.eingabe.eingabeHash;
+    u.gesamtpruefung = makeGesamt(r, u);
+    u.gesamtpruefung.quellen.find(s => s.vorgangId === q.vorgangId).lesebeleg = {
+      version: 1, art: "redaktionelle-lesenotiz", url: q.url, gelesenAm: initialNow,
+      quellenHash: hash(q), notiz: "Fiktive Lesenotiz: Ausschuss beriet einen Entwurf, kein Beschluss behauptet.",
+      nachweisDateiHash: hash("Fiktiver separat gespeicherter Recherchebeleg"),
+      nachweisStelle: "Fiktiver Originalabruf: Abschnitt zur Ausschussberatung",
+      historischeFassungBestaetigt: false
+    };
+    h.args.freigabe.eingabeHash = u.eingabeHash; h.approve();
+    return h;
+  }
+  await test("Separat datierte Lesenotiz bleibt beim echten Writer und Reader als Notiz erhalten", async () => {
+    const h = mitLesebeleg(), r = await I.ausfuehren(h.args);
+    A.equal(r.verwendbar, true); A.equal(r.modellaufrufe, 0);
+    A.equal(h.sourcesByVorgang["vg-a"][0].summary, null);
+    const stored = [...h.rows.values()][0].payload.urteil.gesamtpruefung.quellen[0].lesebeleg;
+    A.equal(stored.art, "redaktionelle-lesenotiz");
+    A.equal(stored.historischeFassungBestaetigt, false);
+  });
+  await test("Fremde, undatierte, alte oder umetikettierte Lesenotiz erlaubt keinen Insert", async () => {
+    for (const mutate of [b => { b.url += "-fremd"; }, b => { b.quellenHash = "b".repeat(64); },
+      b => { b.gelesenAm = "2026-09-10T12:00:00Z"; }, b => { b.gelesenAm = "2026-09-12T12:00:00Z"; },
+      b => { b.gelesenAm = "gestern"; }, b => { b.gelesenAm = ""; },
+      b => { b.gelesenAm = "2026-02-30"; }, b => { b.gelesenAm = "2026-02-30T12:00:00Z"; },
+      b => { b.gelesenAm = "2026-09-10"; }, b => { b.gelesenAm = "2026-09-12"; },
+      b => { b.gelesenAm = "2026-09-11T22:30:00Z"; },
+      b => { b.art = "originalauszug"; }, b => { b.historischeFassungBestaetigt = true; },
+      b => { b.notiz = "Fiktive Ausschussberatung"; }, b => { b.notiz = ""; },
+      b => { b.nachweisDateiHash = "kein Hash"; }, b => { b.nachweisStelle = ""; },
+      b => { b.extra = true; }, b => { delete b.url; }]) {
+      const h = mitLesebeleg(); mutate(h.args.urteil.gesamtpruefung.quellen[0].lesebeleg); h.approve();
+      A.equal((await I.ausfuehren(h.args)).schreibversuche, 0); A.equal(h.counts().writes, 0);
+    }
+  });
+  await test("Tagesgenauer Recherchebeleg und Berliner Tagesgrenze ohne erfundene Uhrzeit", async () => {
+    for (const gelesenAm of [day, "2026-09-10T22:30:00Z"]) {
+      const h = mitLesebeleg(); h.args.urteil.gesamtpruefung.quellen[0].lesebeleg.gelesenAm = gelesenAm; h.approve();
+      A.equal((await I.ausfuehren(h.args)).verwendbar, true);
+      A.equal([...h.rows.values()][0].payload.urteil.gesamtpruefung.quellen[0].lesebeleg.gelesenAm, gelesenAm);
+    }
+  });
+  await test("Auch gebundene Lesenotizen heilen keine negativen Sach- oder Gesamturteile", async () => {
+    for (const mutate of [u => { u.aussagen[0].sachlichGetragen = false; },
+      u => { u.aussagen[0].kontextGetragen = false; },
+      ...F.KRITERIEN.map(k => u => { u.gesamtpruefung.kriterien[k].bestanden = false; }),
+      u => { u.gesamtpruefung.quellen[0].kontextGetragen = false; }]) {
+      const h = mitLesebeleg(); mutate(h.args.urteil); h.approve();
+      A.equal((await I.ausfuehren(h.args)).schreibversuche, 0); A.equal(h.counts().writes, 0);
+    }
+  });
   await test("Quellen-, Wissens-, Profil- und Identitaetsdrift verhindern den ersten Insert", async () => {
     for (const change of [h => { h.sourcesByVorgang["vg-a"][0].summary += " Nachtrag"; },
       h => { h.kos[1].was_ist_passiert += " Andere Analyse"; },

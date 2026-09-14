@@ -3332,7 +3332,10 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
       const tatsaechlichSichtbar = new Set((briefing.items || []).map(i => i.vorgangId)).size;
       const umfang = { ...korrekturDaten.umfang, tatsaechlichSichtbar,
         nichtAngezeigt: korrekturDaten.umfang.entwuerfe - tatsaechlichSichtbar };
-      umfang.hinweis = `Diese Entwurfsansicht zeigt ${tatsaechlichSichtbar} von ${umfang.vorherSichtbar} zuvor angezeigten Vorgängen. `
+      const ergaenzt = umfang.ergaenzteVorgaenge?.length || 0;
+      umfang.hinweis = (ergaenzt
+        ? `Diese Entwurfsansicht zeigt ${tatsaechlichSichtbar} Vorgänge aus ${umfang.vorherSichtbar} zuvor angezeigten und ${ergaenzt} ausdrücklich ergänzten Vorgängen. `
+        : `Diese Entwurfsansicht zeigt ${tatsaechlichSichtbar} von ${umfang.vorherSichtbar} zuvor angezeigten Vorgängen. `)
         + `${umfang.zurueckgehalten} Vorgänge wurden zur Klärung zurückgehalten. `
         + `Nicht angezeigte Entwürfe nach Anzeigeprüfung: ${umfang.nichtAngezeigt}. `
         + "Weitere Vorgänge sind nicht einbezogen. Die fachliche Abnahme steht aus.";
