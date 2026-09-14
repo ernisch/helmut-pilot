@@ -1435,3 +1435,56 @@ PR394 nach vollstaendigem Review mit bestehender ausdruecklicher Mergefreigabe a
 Vor Merge im PR und Nutzerbericht festgehalten: zusaetzliche Fristenerkennung, Wirkung nur auf Ausgabekopien, Risiko vorsorglich entfallender unzureichend belegter Zeitangaben, lesender Commit/READY/Versionsabgleich und gesondert freizugebender Revert als Rueckweg. Merge loest automatisch Production Deployment aus. Deployment dpl_HUs5drUAxtz51ruV26BCGBJQ2jGd READY auf exakt6ac7772f, Hauptalias helmut-pilot.vercel.app bestaetigt. Startseite HTTP200; client.js und styles.css tragen beide Version6ac7772f. Dies belegt die Bereitstellung, keinen authentifizierten fachlichen App Ablauf. Kein zusaetzliches Deployment ausgeloest.
 
 Fristenkorrektur abgeschlossen; allgemeine Fachabnahme bleibt negativ/offen. Nachtrag veraendert ausschliesslich CURRENT_STATE und diesen Beleg, keine weitere Fachphase. Das entspricht CLAUDE §9; dieser reine AbschlussPR verlangt keinen rekursiven FolgePR. Produktcode und Tests exakt gleich zum erfolgreichen Pflichtlauf; nur der Groessenvertrag des geaenderten Status wird lokal gezielt geprueft, beide Pflicht CI bleiben erforderlich. Kein500er Test, keine synthetische Profilaktivierung, kein Import und keine Production Datenveraenderung. Vor einer neuen unabhaengigen Inhalts/Quellenkorrektur eigene Umfangsentscheidung; vor dem500er Nachweis neue konkrete Startfreigabe. Hier weiter, Hoch.
+
+
+## 14.09.2026: Freigegebene B055 Inhaltsabnahme
+
+Teilweise abgeschlossen: alle30 Elemente anhand vorhandener Belege untersucht, Ausgabe fachlich abgelehnt. Weiter auf die konkrete Freigabefrage autorisierte diesen Folgesprint. Fristensprint bleibt abgeschlossen. Aufnahme und Ausgabe unverändert; kein neuer Production Mitschnitt behauptet.
+
+41 zugeordnete Quellenzeilen,38 ohne Auszug;27 Elemente nur mit Titelbelegen. Die drei Auszüge tragen begrenzte Ereigniskerne, nicht sämtliche Zusätze und Empfehlungen. Konkrete Mängel bei Akteursrollen, Ortsbezug, politischen Positionen und Folgen.925 Texte einschließlich647 unterschiedlicher Texte je Vorgang und Art exakt erfasst. Technische Werte und Aliase sind keine eigenständigen bewiesenen Fakten. Keine500er Inhaltsprüfung.
+
+Private Dokumentation: je Element Kern, Sachlücke, Mandatsbezug, Handlungsbewertung, Quellen und nächster Belegbedarf. Negatives Einzelurteil für925 Pfade, sechs nicht positiv belegte Gesamtkriterien. Keine geratenen externen Fakten und kein positives importfähiges Urteil. Eingabe4dbd79b119a936d1149ca621dd9338665b8e73be6f7967d9ad539c5825da239e, Darstellunga3ee17d5d3a1b99ddda2932901c90fce274814306e238e83d1fc3adecd118631.
+
+Private Prüfung über scripts/lokal.js: Eingabehash,925 Originaltexte,30 Kennungen und41 Quellenbewertungen korrekt gebunden. Einzelvertrag briefing-aussagenpruefung-abgelehnt, Gesamtvertrag briefing-gesamtpruefung-abgelehnt. Keine ungültige Belegstelle, kein fehlender Ausgabebezug. Kein Netz, Modell, Import, keine Auslassung oder Production Schreibvorgänge. Integritätsprüfung des negativen Urteils bestanden; keine fachliche Abnahme. Ein zunächst zu großer Statuskopf wurde vor dem Schreiben verworfen und gekürzt; Größe des tatsächlich geänderten Dokuments separat geprüft.
+
+Nur Dokumentation auf codex/b055-inhaltsabnahme-20260914. Kein neuer PR, Merge oder Deployment. Produkt main3e70030e bleibt unverändert und durch34843968679 erfolgreich geprüft:379/379 in746s, Browser50, Kontoschutz15, Z2248. Keine Wiederholung der Produktsuiten für diese Analyse.
+
+Nächster Schritt: privaten Musterentwurf aus belegtem BRICS oder Bulgarien Kern mit neutraler Empfehlung vorbereiten und streng prüfen. Reduzierte Auswahl nicht als vollständige30er oder500er Freigabe ausgeben. Für vollständige Inhalte fehlen Originaltexte und Rollenbelege laut privatem Bericht. Keine realen Orts oder Parteipositionen erfinden. Quellenbeschaffung wäre eine konkrete Erweiterung des Auftrags, keine allgemeine Quellenüberarbeitung.
+
+Keine Profile, Konten, Production Daten, Migrationen, Budgets, Azure, Umgebung oder Cron geändert. Keine kostenpflichtigen Modelle. Stopp vor500 und synthetischer Aktivierung. Alte Messungen bleiben historische Belege. Watchdog Folgeproblem unverändert und nicht untersucht.
+
+
+## 14.09.2026: Freigegebener privater B055 Musterentwurf
+
+Privater Korrekturentwurf erfolgreich erstellt und geprüft; vollständige Fachfreigabe bleibt aus. Zwei vorhandene Ereigniskerne, Original30 unverändert.28 andere Elemente nur in der Musteransicht mit Einzelbegründungen zurückgestellt. Keine Datenlöschung, kein500er Test.
+
+Vorhandener Korrekturadapter und echter Briefingaufbau verbrauchen ausschließlich die bereits aufgenommenen Antworten. Schreib, Netz und Modellpfade gesperrt. Im privaten Aufnahmeadapter nur optionales Korrekturargument ergänzt; Produktcode unverändert. Zweite Textfassung präzisiert zwei Aussagen auf den gespeicherten Auszug statt den ungelesenen Vollartikel. Beide Fassungen erhalten; zweite Fassung wegen geänderter Texte neu aufgebaut.
+
+83 Texte positiv als begrenzte Aussagen beziehungsweise neutrale Prüfschritte anhand der gespeicherten Titel/Auszüge und des Profils bewertet. Unveränderter Einzelvertrag bereit=true,83,keine Fehler. Gesamtvertrag bereit=false,briefing-gesamtpruefung-abgelehnt. Eingabe5df729089e6b99c3cdfd3d5bf2df8ad54bb4a5112f35e71cc715fc3732b3667b, Darstellung73195ca4154c6d4b80a1f219e8529752ef49cc1f619c02e8962369f226e52208. Aufnahmehash, Profilhash, Quellen und angeforderte Quellengruppen unverändert. Korrektur bindet genau2 Entwürfe und28 Rückstellungen an die ursprünglichen30. Einschränkung in den tatsächlich verwendeten Ausgabetexten geprüft. Keine umfassende Browserabnahme.
+
+Beide Muster40 Punkte/Beobachten, Reihenfolge wechselte zwischen erster und präzisierter Textfassung. Ursache und fachliche Rangfolge nicht untersucht; kein neuer Produktfehler behauptet. Von sechs Gesamtkriterien nur der begrenzte Mandatsbezug positiv. Quellentiefe der ganzen Ausgabe, Rangfolge, Auslassungen, Zeitbezug und Vollständigkeit bleiben nicht freigegeben. Historische Aufnahme ist keine neue Production Abnahme.
+
+Dokumentationsbranch codex/b055-privater-musterentwurf-20260914 setzt die noch ungemergte Inhaltsabnahmedokumentation fort. Kein PR, Merge oder Deployment. Einzelfunktionen über scripts/lokal.js geprüft; erfolgreiche Produktsuiten unverändert wiederverwendet. Nächster notwendiger Belegschritt: gezieltes Lesen der bereits dokumentierten Originalquellen und separate Speicherung ergänzender Belege. Kein allgemeiner Quellenumbau oder Erfinden von Profilmerkmalen.
+
+Keine Production Daten, Profile, Konten, Migrationen, Budgets, Azure, Umgebung oder Cron verändert. Keine bezahlten Modelle, neuen Quellenabrufe oder Importe. Stopp vor500 und synthetischer Aktivierung. Vollständiger privater Entwurf, Begründungen, Aufbau und Prüfprotokoll bleiben beim Betreiber erhalten.
+
+
+## 14.09.2026: Originalbelege und quellengebundene Personenliste
+
+Status teilweise abgeschlossen. Auftrag umfasst die dokumentierten B055 Inhaltsprobleme, lokale Korrekturen, notwendige Pruefungen sowie PR und Merge mit automatischem Production Deployment. Keine500er Aktivierung, Modelle oder Production Datenveraenderung. Exklusive private Steuerung381 nach freiem Stand380 uebernommen. Fremde Kopien und bestehende Dokumentationsbranches erhalten. Main3e70030e, READY dpl_CiHykEHn5dBQh6RBccEhdbTYyNVq und keine laufende Action frisch gelesen;offen nur historischer PR345. Keine aktuelle Datenbankmessung behauptet.
+
+### Ergaenzende Quellenbelege
+
+Alle41 zugeordneten Artikeladressen der30 Elemente wurden gezielt beruecksichtigt. Die zweite Haushaltsadresse ist das direkt bestaetigte Weiterleitungsziel der ersten. Artikelkoerper, Vorschau, Suchauszug, unzugaenglicher Abruf und veraenderte Artikelversion werden im privaten Quellenbericht getrennt. Originalaufnahme, historische Titel/Auszuege, Profil und negatives Fachurteil bleiben unveraendert. Neue Belege sind keine nachtraegliche historische Aufnahme.
+
+Die Originalmitteilung zum Pflegegremium bestaetigt eine Vertauschung von Urheber und Adressat. Ein weiterer Artikel bestaetigt einen falschen Vornamen in der Ausgabe. Haushalts und Kassenartikel haben jeweils URL Aliase derselben Artikelkennung. Die Gasuebersicht leitet inzwischen auf den14.09. weiter;die fruehere Fassung ist damit nicht belegt. Fuer mehrere Quellen fehlt weiterhin ein zugaenglicher Artikelkoerper. Das verhindert eine Gesamtfreigabe;fehlender Zugriff ist kein Beweis fuer eine objektiv falsche Meldung. Empfehlungen duerfen dem synthetischen Mandat weiterhin keine reale Parteiposition oder Ortszustaendigkeit zuschreiben.
+
+### Enger reproduzierter Produktfehler
+
+buildPersonMentions uebernahm jedes Label aus mentioned_mps und mentioned_people ohne Quellenvergleich. Derselbe Name wurde durch zwei Analysefelder doppelt gezaehlt. Eine synthetische Probe zeigte zunaechst zwei unbelegte Namen statt leerer Liste. Der fix beschraenkt sich auf diese Personenliste:Namensvorkommen mit Unicode Wortgrenzen in jeweils einem zugeordneten Titel oder Auszug mit gueltiger Artikeladresse;Rollenklammern werden nicht angezeigt. Keine Zusammenfuegung getrennter Felder oder Dokumente,kein KO oder Quellenname als Ersatz. Ein Vorgang zaehlt je normalisiertem Namen nur einmal.
+
+Grenzen:lexikalischer Beleg,keine semantische Personenidentitaet. Abweichende Schreibweisen oder in Quellen fehlende Vornamen koennen vorsorglich entfallen. Ein Nachname und ein Vollname werden ohne Identitaetsbeleg nicht automatisch zusammengelegt. Kartenzusammenfassungen und Mandatsempfehlungen werden dadurch nicht fachlich repariert;keine pauschale Abnahme durch Entfernen von Personenlabels.
+
+Gezielte neue Suite7/7, bestehender Adapter31/31 und Aussagenbindung14/14 erfolgreich ueber scripts/lokal.js. Gepaarter echter lokaler Aufbau aus unveraenderten aufgenommenen Antworten:30 Karten erhalten;gesamte Briefingausgabe ausser personMentions exakt gleich;Eingabehashes,Aufnahmehash und Korrekturbasis gleich. Zehn Labels werden drei quellentextgebundene Namen,je ein Vorgang. Originaldatei SHA25630f6f174ae31dfa8463209b2a7d467d8c0d2717d3e1768ab3462be1e39695b43 unveraendert. Guard im separaten privaten Adapter um genau den geprueften neuen Contracthash erweitert;Netz,Schreib und Modellblockaden erhalten.
+
+Lokaler kanonischer Gesamtlauf gestartet,am bekannten fehlenden Chromium1234 als Umgebungsmangel erkannt und ohne Gesamtgruen abgebrochen. Keine erneute Downloadschleife. Vorhandener isolierter Vorpruefworkflow erhaelt ausschliesslich diesen neuen autorisierten Branch im Pushfilter;Job,Offline Netzschutz,Berechtigungen und Bereinigung bleiben gleich. Produktabnahme durch Gesamtlauf und erforderliche PR CI noch offen. Keine500er Startbereitschaft.
