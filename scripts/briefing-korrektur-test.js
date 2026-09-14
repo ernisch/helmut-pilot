@@ -99,6 +99,49 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); n++; }
     const k = structuredClone(korrektur); k.ursprungHash = e.eingabeHash; k.entwuerfe[0].quellenIds.push("rd-z");
     A.throws(() => K.wendeAn({ eingabe: e, profile, kos, sourcesByVorgang: groups, korrektur: k }));
   });
+  await test("Explizite Korrektur eines zurueckgehaltenen Kandidaten durchlaeuft den echten Lesepfad", async () => {
+    kos[1].display_title = "Bundesminister stellt den Haushalt vor";
+    const b = await build();
+    A.deepEqual(b.briefing.items.map(i => i.vorgangId), ["vg-a"]);
+    const k = { version: K.VERSION, ursprungHash: b.eingabe.eingabeHash,
+      ergaenzungen: ["vg-b"], auslassungen: [], entwuerfe: ["a", "b"].map(id => ({
+        vorgangId: "vg-" + id, begruendung: "Unbelegte Amtszuordnung durch quellengetreue Fassung ersetzt.",
+        quellenIds: ["rd-" + id], inhalt: structuredClone(inhalt) })) };
+    const fixed = await build({ aussagenKorrektur: k });
+    A.deepEqual(fixed.briefing.items.map(i => i.vorgangId).sort(), ["vg-a", "vg-b"]);
+    A.equal(fixed.briefing.pruefumfang.vorherSichtbar, 1);
+    A.deepEqual(fixed.briefing.pruefumfang.ergaenzteVorgaenge, ["vg-b"]);
+    A.equal(fixed.briefing.pruefumfang.ausserhalbDerAuswahl, 1);
+    A(fixed.briefing.pruefumfang.hinweis.includes("1 zuvor angezeigten und 1 ausdrücklich ergänzten"));
+    A.equal(Q.pruefe(fixed.eingabe).bereit, false);
+    A(!JSON.stringify(fixed.briefing).includes("ALT"));
+    const rejected = structuredClone(k);
+    rejected.entwuerfe[1].inhalt.titel = kos[1].display_title;
+    const filtered = await build({ aussagenKorrektur: rejected });
+    A.deepEqual(filtered.briefing.items.map(i => i.vorgangId), ["vg-a"]);
+    A.equal(filtered.briefing.pruefumfang.nichtAngezeigt, 1);
+    for (const change of [x => { delete x.ergaenzungen; }, x => { x.ergaenzungen = ["vg-a"]; },
+      x => { x.ergaenzungen = ["vg-b", "vg-b"]; }, x => { x.ergaenzungen = ["vg-fremd"]; },
+      x => { x.entwuerfe.pop(); }, x => { x.entwuerfe[1].quellenIds = ["rd-a"]; }]) {
+      const wrong = structuredClone(k); change(wrong);
+      await A.rejects(build({ aussagenKorrektur: wrong }), /korrektur-abweichend/);
+    }
+    kos = structuredClone(initial.kos);
+    A.deepEqual({ kos, sources, profile }, initial);
+  });
+  await test("Ergaenzungen brauchen gelesene Quellen und verarbeitetes Wissen im gebundenen Ursprung", () => {
+    const k = structuredClone(korrektur);
+    k.ergaenzungen = ["vg-c"];
+    k.entwuerfe.push({ vorgangId: "vg-c", begruendung: "Synthetischer Kandidat ausserhalb der sichtbaren Menge.",
+      quellenIds: ["rd-c"], inhalt });
+    // Der unveraenderte Ursprung enthaelt keine fuer vg-c geladene Quellenzeile.
+    A.throws(() => apply(k), /korrektur-abweichend/);
+    const pending = structuredClone(kos); pending[2].status = pending[2].understanding_status = "pending";
+    const e = Q.baueEingabe({ briefing: original.briefing, profile, userId: profile.id,
+      day: "2026-09-11", kos: pending, sourcesByVorgang: sources });
+    k.ursprungHash = e.eingabeHash;
+    A.throws(() => K.wendeAn({ eingabe: e, profile, kos: pending, sourcesByVorgang: sources, korrektur: k }));
+  });
   await test("Korrektur braucht internen Pruefmodus und unverfaelschten Ursprung", async () => {
     await A.rejects(build({ aussagenEingabe: false, aussagenKorrektur: korrektur }));
     const e = structuredClone(original.eingabe); e.korrekturKontext.wissensDatenHash = hash([]);
