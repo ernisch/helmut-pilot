@@ -128,6 +128,21 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); n++; }
     A.equal(a.find(r => r.text === "Primaer").vorgangId, "vg-b");
     A.equal(a.find(r => r.text === "Pruefauftrag").vorgangId, "vg-a");
   });
+  await test("Leerer Schwerpunkt bindet Zustandswerte ohne erfundene Artikelbelege", () => {
+    const b = { currentHelmutState: { qualityStatus: "empty", sourcesSummary: { qualityStatus: "empty" },
+      recommendedCommunication: { recommendedChannel: "unknown", recommendedFormat: "unknown" } } };
+    const e = Q.baueEingabe({ briefing: b, profile, userId: profile.id, day: "2026-09-11" });
+    A.equal(e.aussagen.length, 0);
+    b.currentHelmutState.qualityStatus = "partial";
+    const changed = Q.baueEingabe({ briefing: b, profile, userId: profile.id, day: "2026-09-11" });
+    A.notEqual(e.darstellungsHash, changed.darstellungsHash);
+    for (const [object, key] of [[b.currentHelmutState, "qualityStatus"],
+      [b.currentHelmutState.recommendedCommunication, "recommendedChannel"],
+      [b.currentHelmutState.recommendedCommunication, "recommendedFormat"]]) {
+      object[key] = "Unbelegte Zusatzbehauptung";
+      A(Q.texte(b).some(a => a.text === object[key] && a.pfad.endsWith("/" + key)));
+    }
+  });
   await test("Ausgabeurteil braucht Vertragsbezug, Artikelzitat allein genuegt nicht", () => {
     const e = clean.eingabe;
     const u = { version: Q.VERSION, eingabeHash: e.eingabeHash, aussagen: e.aussagen.map(a => ({ ...a,
