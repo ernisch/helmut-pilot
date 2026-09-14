@@ -483,5 +483,26 @@ check("D5-7: keine hartkodierte Partei/Personen-Logik durch die Auswahl",
     && previousEvening.datenstandVonHeute === false);
 }
 
+// Ignorierte Vorgänge bleiben prüfbar, begründen aber keinen Hauptvorgang.
+{
+  const ignored = decisions.map(d => ({ ...d, decision: "Ignorieren" }));
+  const args = { profile, decisions: ignored, kosById, sourcesByVorgang: sources, now: NOW };
+  const result = contract.toBriefingContractV3(args);
+  check("Nur Ignorieren: kein Hauptvorgang und kein Thema des Tages",
+    result.currentHelmutState.primaryItem === null && result.themeOfDay === null);
+  check("Nur Ignorieren: alle Karten, Empfehlungen und Quellen bleiben erhalten",
+    result.items.length === 2 && result.personalizedRecommendations.length === 2
+    && result.items.every(i => i.sources.length > 0));
+  check("Explizites Ignorieren bestimmt beide Prioritaetslabels auch bei hohem Altscore",
+    result.items.every(i => i.priority === "Ignorieren")
+    && result.personalizedRecommendations.every(i => i.current_priority === "Ignorieren"));
+  const mixed = contract.buildCurrentHelmutState({ ...args, decisions: [ignored[0], decisions[1]] });
+  check("Ignorierter hoher Altscore verdraengt keinen relevanten Hauptvorgang", mixed.primaryVorgangId === "vg-2");
+  const low = contract.toBriefingContractV3({ ...args, decisions: ignored.map(d => ({ ...d, score: 16 })) });
+  check("Niedrige ignorierte Scores werden nicht als Beobachten bezeichnet",
+    low.items.every(i => i.priority === "Ignorieren")
+    && low.personalizedRecommendations.every(i => i.current_priority === "Ignorieren"));
+}
+
 console.log(`\n${passed}/${passed + failed} CurrentHelmutState-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }

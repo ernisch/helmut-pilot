@@ -3327,18 +3327,27 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   const ausgabe = (briefing, sourcesByVorgang = {}) => {
     if (!opts.aussagenEingabe) return briefing;
     if (korrekturDaten) {
-      briefing.pruefumfang = korrekturDaten.umfang;
+      // Erst nach den bestehenden Quellen- und Anzeigefiltern zaehlen. Ein
+      // eingereichter Entwurf ist noch kein tatsaechlich angezeigter Vorgang.
+      const tatsaechlichSichtbar = new Set((briefing.items || []).map(i => i.vorgangId)).size;
+      const umfang = { ...korrekturDaten.umfang, tatsaechlichSichtbar,
+        nichtAngezeigt: korrekturDaten.umfang.entwuerfe - tatsaechlichSichtbar };
+      umfang.hinweis = `Diese Entwurfsansicht zeigt ${tatsaechlichSichtbar} von ${umfang.vorherSichtbar} zuvor angezeigten Vorgängen. `
+        + `${umfang.zurueckgehalten} Vorgänge wurden zur Klärung zurückgehalten. `
+        + `Nicht angezeigte Entwürfe nach Anzeigeprüfung: ${umfang.nichtAngezeigt}. `
+        + "Weitere Vorgänge sind nicht einbezogen. Die fachliche Abnahme steht aus.";
+      briefing.pruefumfang = umfang;
       // Eine begrenzte Entwurfsansicht erlaubt keine Entwarnung ueber die
       // zurueckgehaltenen oder nicht einbezogenen Vorgaenge. Auch diese
       // sichtbaren Zusammenfassungen gehen in die exakte Aussagenbindung ein.
       const auswahlHinweis = `Begrenzte Auswahl mit ${briefing.items?.length || 0} Vorgängen. `
-        + "Daraus folgt keine Gesamtbewertung des Handlungsbedarfs. " + korrekturDaten.umfang.hinweis;
+        + "Daraus folgt keine Gesamtbewertung des Handlungsbedarfs. " + umfang.hinweis;
       if (briefing.helmutAssessment) briefing.helmutAssessment.assessment = auswahlHinweis;
       briefing.executiveSummary = auswahlHinweis;
       // Die Einschraenkung steht auch im tatsaechlich gerenderten Radartext.
       for (const state of [briefing.currentRadarState, briefing.currentRadarState?.anzeige]) {
         if (state?.summary) {
-          state.summary.line2 = [state.summary.line2, korrekturDaten.umfang.hinweis].filter(Boolean).join(" ");
+          state.summary.line2 = [state.summary.line2, umfang.hinweis].filter(Boolean).join(" ");
           state.summary.text = [state.summary.line1, state.summary.line2].filter(Boolean).join(" ");
         }
       }

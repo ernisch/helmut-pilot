@@ -55,6 +55,29 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); n++; }
     A((radar.anzeige || radar).summary.text.includes("fachliche Abnahme steht aus"));
     A.equal(Q.pruefe(clean.eingabe).bereit, false);
   });
+  await test("Umfang zaehlt die tatsaechliche Ausgabe nach Quellenpruefung", async () => {
+    const k = structuredClone(korrektur);
+    k.auslassungen = [];
+    k.entwuerfe.push({ vorgangId: "vg-b", begruendung: "Synthetischer Gegenfall zur Quellenpruefung.",
+      quellenIds: ["rd-b"], inhalt: { ...inhalt, titel: "Bundesminister stellt den Haushalt vor" } });
+    const filtered = await build({ aussagenKorrektur: k });
+    A.deepEqual(filtered.briefing.items.map(i => i.vorgangId), ["vg-a"]);
+    const scope = filtered.briefing.pruefumfang;
+    A.equal(scope.entwuerfe, 2); A.equal(scope.zurueckgehalten, 0);
+    A.equal(scope.tatsaechlichSichtbar, 1); A.equal(scope.nichtAngezeigt, 1);
+    A(scope.hinweis.includes("1 von 2 zuvor angezeigten Vorgängen"));
+    A(scope.hinweis.includes("Nicht angezeigte Entwürfe nach Anzeigeprüfung: 1"));
+    A(!JSON.stringify(filtered.briefing).includes("2 von 2 zuvor angezeigten"));
+    A(filtered.eingabe.aussagen.some(a => a.text === scope.hinweis));
+    A.deepEqual({ kos, sources, profile }, initial);
+    // Auch eine vollständig zurückgewiesene Ausgabe darf keine Vollständigkeit behaupten.
+    k.entwuerfe[0].inhalt.titel = k.entwuerfe[1].inhalt.titel;
+    const empty = await build({ aussagenKorrektur: k });
+    A.equal(empty.briefing.items.length, 0);
+    A.equal(empty.briefing.pruefumfang.tatsaechlichSichtbar, 0);
+    A.equal(empty.briefing.pruefumfang.nichtAngezeigt, 2);
+    A(empty.briefing.executiveSummary.includes("0 von 2 zuvor angezeigten Vorgängen"));
+  });
   await test("Veraltete Quelle, Altanalyse und Profil werden vor Ersatz abgelehnt", async () => {
     for (const change of [() => { sources["vg-a"][0].summary += " Nachtrag"; },
       () => { kos[2].risk_of_no_action = "Neue, nicht angezeigte Altanalyse"; },
