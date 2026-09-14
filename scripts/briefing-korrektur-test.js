@@ -15,10 +15,10 @@ let kos = ["a", "b", "c"].map(id => ({ ...base, id: "ko-" + id, vorgang_id: "vg-
 kos[2].updated_at = kos[2].created_at = "2026-09-08T09:00:00Z";
 let sources = Object.fromEntries(kos.map(k => [k.vorgang_id, [{ ...doc, id: "rd-" + k.id.slice(-1) }]]));
 const initial = structuredClone({ kos, sources, profile });
-let reads = 0;
+let reads = 0, sourceObserver = null;
 S.v3StoreReady = () => true;
 S.listKnowledgeObjects = async () => { reads++; return kos; };
-S.getSourcesForVorgang = async id => sources[id];
+S.getSourcesForVorgang = async id => sourceObserver ? sourceObserver(id) : sources[id];
 require("../lib/helmut/decisions").decideForUser = (_p, rows) => rows.slice(0, 2).map(k => ({
   knowledge_object_id: k.id, vorgang_id: k.vorgang_id, score: 50, decision: "Beobachten", matched_features: [] }));
 const server = require("../server");
@@ -134,8 +134,16 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); n++; }
     k.ergaenzungen = ["vg-c"];
     k.entwuerfe.push({ vorgangId: "vg-c", begruendung: "Synthetischer Kandidat ausserhalb der sichtbaren Menge.",
       quellenIds: ["rd-c"], inhalt });
-    // Der unveraenderte Ursprung enthaelt keine fuer vg-c geladene Quellenzeile.
-    A.throws(() => apply(k), /korrektur-abweichend/);
+    // Die interne Abnahme liest jetzt auch Quellen ausserhalb der Vorauswahl.
+    A.equal(original.korrekturBasis.sourcesByVorgang["vg-c"].length, 1);
+    A.equal(apply(k).kos.length, 2);
+    const ohne = structuredClone(original.korrekturBasis.sourcesByVorgang);
+    delete ohne["vg-c"];
+    const ohneEingabe = Q.baueEingabe({ briefing: original.briefing, profile,
+      userId: profile.id, day: "2026-09-11", kos, sourcesByVorgang: ohne });
+    const fehlt = { ...k, ursprungHash: ohneEingabe.eingabeHash };
+    A.throws(() => K.wendeAn({ eingabe: ohneEingabe, profile, kos,
+      sourcesByVorgang: ohne, korrektur: fehlt }), /korrektur-abweichend/);
     const pending = structuredClone(kos); pending[2].status = pending[2].understanding_status = "pending";
     const e = Q.baueEingabe({ briefing: original.briefing, profile, userId: profile.id,
       day: "2026-09-11", kos: pending, sourcesByVorgang: sources });
@@ -148,6 +156,82 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); n++; }
     A.throws(() => K.wendeAn({ eingabe: e, profile, ...original.korrekturBasis, korrektur }));
     A.throws(() => K.wendeAn({ eingabe: original.eingabe, profile: { ...profile, id: "anderer-mandant" },
       ...original.korrekturBasis, korrektur }));
+  });
+  await test("Belegte Adresskorrektur bindet die Originalzeile und bleibt eine Ausgabekopie", async () => {
+    const k = structuredClone(korrektur), zielUrl = "https://www.bundestag.de/textarchiv/haushalt-123456";
+    k.entwuerfe[0].quellenkorrekturen = [{ documentId: doc.id, ursprungHash: hash(sources["vg-a"][0]),
+      zielUrl, begruendung: "Die konkret gelesene Publikation liegt unter der berichtigten Adresse." }];
+    const b = await build({ aussagenKorrektur: k });
+    A.equal(b.briefing.items[0].url, zielUrl);
+    A.equal(b.eingabe.quellen[0].auszug, doc.summary);
+    A.deepEqual({ kos, sources, profile }, initial);
+    A.equal(Q.pruefe(b.eingabe).bereit, false);
+    for (const change of [u => { u.ursprungHash = "a".repeat(64); }, u => { u.zielUrl = "https://fremd.example/artikel"; },
+      u => { u.documentId = "rd-fremd"; }, u => { u.summary = "Erfundener Auszug"; }]) {
+      const bad = structuredClone(k); change(bad.entwuerfe[0].quellenkorrekturen[0]);
+      await A.rejects(build({ aussagenKorrektur: bad }), /korrektur-abweichend/);
+    }
+  });
+  await test("Redaktionelle Reihenfolge ist exakt gebunden und erfindet keine Dringlichkeit", async () => {
+    const k = structuredClone(korrektur);
+    k.auslassungen = [];
+    k.entwuerfe.push({ vorgangId: "vg-b", begruendung: "Zweiter vollstaendiger belegter Entwurf.",
+      quellenIds: ["rd-b"], inhalt });
+    k.priorisierung = ["b", "a"].map(id => ({ vorgangId: "vg-" + id,
+      entscheidung: "Beobachten", begruendung: "Begruendete interne Pruefreihenfolge fuer dieses Mandat." }));
+    const b = await build({ aussagenKorrektur: k });
+    A.deepEqual(b.briefing.items.map(i => i.vorgangId), ["vg-b", "vg-a"]);
+    A.equal(b.briefing.currentHelmutState.primaryVorgangId, "vg-b");
+    A(b.briefing.items.every(i => i.decision === "Beobachten" && i.finalScore === 40));
+    A.equal(b.korrekturBasis.kos[0].confidence_score, null);
+    A.equal(Q.pruefe(b.eingabe).bereit, false);
+    for (const change of [x => { x.priorisierung.pop(); }, x => { x.priorisierung.push(x.priorisierung[0]); },
+      x => { x.priorisierung[0].entscheidung = "Sofort reagieren"; },
+      x => { x.priorisierung[0].score = 99; }, x => { x.priorisierung = null; },
+      x => { x.priorisierung[0].vorgangId = "vg-fremd"; }]) {
+      const bad = structuredClone(k); change(bad);
+      await A.rejects(build({ aussagenKorrektur: bad }), /korrektur-abweichend/);
+    }
+    // Fachliche Reihenfolge hebt weder fehlenden Kontext noch Quellenfilter auf.
+    k.entwuerfe[1].inhalt = { ...inhalt, titel: "Bundesminister stellt den Haushalt vor" };
+    const filtered = await build({ aussagenKorrektur: k });
+    A.deepEqual(filtered.briefing.items.map(i => i.vorgangId), ["vg-a"]);
+    A.equal(filtered.briefing.pruefumfang.nichtAngezeigt, 1);
+  });
+  await test("Vollstaendige interne Quellenlekture bleibt begrenzt und erweitert keinen normalen Appabruf", async () => {
+    let active = 0, maximum = 0; const seen = new Set();
+    sourceObserver = async id => {
+      seen.add(id); active++; maximum = Math.max(maximum, active);
+      await new Promise(resolve => setImmediate(resolve)); active--; return sources[id];
+    };
+    try {
+      const template = kos[2];
+      for (let i = 0; i < 20; i++) {
+        const id = "vg-extra-" + i;
+        kos.push({ ...template, id: "ko-" + id, vorgang_id: id });
+        sources[id] = [{ ...doc, id: "rd-extra-" + i }];
+      }
+      kos.push({ ...template, id: "ko-pending", vorgang_id: "vg-pending", status: "pending" });
+      const full = await build();
+      A.equal(seen.size, 23); A(!seen.has("vg-pending")); A(maximum <= 8);
+      A.equal(Object.keys(full.korrekturBasis.sourcesByVorgang).length, 23);
+      A.deepEqual(full.briefing.items.map(i => i.vorgangId), ["vg-a", "vg-b"]);
+      seen.clear();
+      const normal = await build({ aussagenEingabe: false });
+      A.deepEqual(normal.items.map(i => i.vorgangId), ["vg-a", "vg-b"]);
+      A.equal(seen.size, 2);
+      const engine = require("../lib/helmut/decisions"), oldDecide = engine.decideForUser;
+      engine.decideForUser = () => [];
+      try {
+        seen.clear();
+        const noMatch = await build();
+        A.equal(seen.size, 23);
+        A.equal(Object.keys(noMatch.korrekturBasis.sourcesByVorgang).length, 23);
+        A.equal(noMatch.briefing.items.length, 0);
+      } finally { engine.decideForUser = oldDecide; }
+    } finally {
+      sourceObserver = null; kos = structuredClone(initial.kos); sources = structuredClone(initial.sources);
+    }
   });
   await test("Technische Metadaten bleiben hashgebunden, neue Fachtexte bleiben pruefpflichtig", () => {
     const b = { items: [{ vorgangId: "vg-a", title: doc.title, sourceIds: ["rd-a"], lastUpdated: now.toISOString(),

@@ -156,12 +156,18 @@ async function handleRequest(request, response) {
   // Kein Kontoseed, Nutzungs-Tracking, Profilrepair oder asynchroner KI-Aufruf.
   if (url.pathname === "/api/cron/briefing-nachweis") {
     if (!authorizeCron(request, url, response)) return;
-    if (request.method !== "GET" || [...url.searchParams.keys()].some(k => !["mandat", "tag"].includes(k))) {
+    if (request.method !== "GET" || [...url.searchParams.keys()].some(k => !["mandat", "tag", "modus"].includes(k))
+      || (url.searchParams.has("modus") && url.searchParams.get("modus") !== "eingabe")) {
       response.writeHead(400, jsonHeaders()); response.end(JSON.stringify({ ok: false, grund: "nachweis-aufruf-ungueltig" })); return;
     }
     try {
       const storage = require("./lib/helmut/storage"), userId = url.searchParams.get("mandat"), day = url.searchParams.get("tag");
       storage.assertTenant(userId, "briefingNachweisApp");
+      if (url.searchParams.get("modus") === "eingabe")
+        return sendJson(response, await require("./lib/helmut/briefing-pruefaufnahme").erfasse({
+          userId, tag: day, expectedCommit: request.headers["x-helmut-production-commit"],
+          commit: process.env.VERCEL_GIT_COMMIT_SHA, production: process.env.VERCEL_ENV === "production",
+          storage, build: buildV3Briefing }));
       const profile = await storage.getProfile(userId);
       if (!profile || profile.id !== userId) throw new Error("nachweis-profil-fehlt");
       const nachweisUrl = new URL("http://localhost/api/briefing/latest");
@@ -3408,7 +3414,8 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   // sourcesByVorgang:{} verschwanden belegte Eigenerwaehnungen ohne
   // best_source_url auf genau diesen Leerpfaden weiterhin still.
   const emptyKeepMentions = async (reason, kandidaten = understood) => {
-    const mentionSources = korrekturDaten ? korrekturDaten.sourcesByVorgang : {};
+    const mentionSources = korrekturDaten ? korrekturDaten.sourcesByVorgang
+      : opts.aussagenEingabe ? await loadPruefSourcesByVorgang(kandidaten) : {};
     if (!korrekturDaten) await loadMentionSourcesInto(profile, kandidaten, mentionSources);
     return ausgabe(briefingContract.toBriefingContractV3({
       profile, decisions: [], kosById: {}, sourcesByVorgang: mentionSources, reason, briefingType,
@@ -3437,7 +3444,12 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   const kosById = {};
   for (const ko of understood) if (ko && ko.id) kosById[ko.id] = ko;
   const selected = candidateDecisions.map((d) => kosById[d.knowledge_object_id]).filter(Boolean);
-  const sourcesByVorgang = korrekturDaten ? korrekturDaten.sourcesByVorgang : await loadSourcesByVorgang(selected);
+  // Die interne Inhaltsabnahme muss auch begruendete Auslassungen ausserhalb
+  // der automatischen Vorauswahl beurteilen koennen. Nur bereits eingelesene,
+  // verarbeitete KOs; keine neuen Kandidaten im normalen Appabruf.
+  const sourcesByVorgang = korrekturDaten ? korrekturDaten.sourcesByVorgang
+    : opts.aussagenEingabe ? await loadPruefSourcesByVorgang(understood)
+      : await loadSourcesByVorgang(selected);
   // Radar-Erwähnungen belegen (Audit-Folgebranch): "Über dich" zeigt eine
   // Eigenerwähnung nur mit echter Quellen-URL. Quellen wurden aber bisher NUR für
   // die Top-50-Decisions geladen; eine Erwähnung außerhalb davon fiel auf
@@ -3455,6 +3467,19 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     if (!require("./lib/helmut/briefing-quellenqualitaet").relativeFristZeitlichZulaessig(ko, sourcesByVorgang[ko.vorgang_id] || [], now)) return false;
     return sourceSafety.guardKnowledgeObject(ko, sourcesByVorgang[ko.vorgang_id] || []).status !== "quarantine";
   });
+  if (korrekturDaten?.priorisierung) {
+    for (const d of safeDecisions) {
+      const index = korrekturDaten.priorisierung.findIndex(r => r.vorgangId === kosById[d.knowledge_object_id].vorgang_id);
+      if (index < 0) throw new Error("briefing-korrektur-abweichend");
+      const p = korrekturDaten.priorisierung[index];
+      // Die Zahl bildet ausschliesslich die bestehende Anzeigeschwelle ab,
+      // keine neue Modellkonfidenz. Die Reihenfolge ist gesondert ordinal.
+      d.score = p.entscheidung === "Beobachten" ? 40 : 0;
+      d.decision = p.entscheidung;
+      d.priority_type = p.entscheidung === "Beobachten" ? "watch" : "ignore";
+      d.redaktionellerRang = index;
+    }
+  }
   // Fehlende Fristbelege entwerten nicht die belegten Sachinformationen.
   // Nur Handlungstexte/Fristfelder der Ausgabekopie bereinigen, nie gespeicherte KOs.
   const Q = require("./lib/helmut/briefing-quellenqualitaet");
@@ -3512,6 +3537,15 @@ async function loadSourcesByVorgang(kos) {
     return [ko.vorgang_id, docs || []];
   }));
   return Object.fromEntries(entries);
+}
+
+async function loadPruefSourcesByVorgang(kos) {
+  const sources = {};
+  // Der interne Vollumfang soll die Datenbank nicht mit bis zu500 gleichzeitigen
+  // Abrufen belasten. Bestehender Leservertrag, maximal acht Abrufe zugleich.
+  for (let i = 0; i < kos.length; i += 8)
+    Object.assign(sources, await loadSourcesByVorgang(kos.slice(i, i + 8)));
+  return sources;
 }
 
 function compactBriefingPayload(briefing) {

@@ -52,6 +52,15 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); passed+
       A.equal(Q.pruefe(e, r).bereit, false);
     }
   });
+  await test("Ergaenzungskennungen bleiben im Hash gebunden, unbekannter Freitext bleibt eine Aussage", () => {
+    const e = input({ ...briefing, pruefumfang: { ergaenzteVorgaenge: ["vg-a"] } });
+    A.equal(e.aussagen.length, input().aussagen.length);
+    const changed = input({ ...briefing, pruefumfang: { ergaenzteVorgaenge: [] } });
+    A.notEqual(e.darstellungsHash, changed.darstellungsHash);
+    A.equal(Q.pruefe(changed, urteil(e)).bereit, false);
+    const unknown = input({ ...briefing, pruefumfang: { ergaenzteVorgaenge: ["Neue Fachbehauptung"] } });
+    A(unknown.aussagen.some(a => a.text === "Neue Fachbehauptung" && a.art === "fachaussage"));
+  });
   await test("Titel ohne Auszug: erfundener Auszug heilt keinen fehlenden Beleg", () => {
     const e = input(briefing, profile, [{ ...doc, summary: "" }]), r = urteil(e);
     A.equal(Q.pruefe(e, r).bereit, false);

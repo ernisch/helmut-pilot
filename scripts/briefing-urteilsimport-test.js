@@ -116,12 +116,12 @@ const test = async (name, fn) => { await fn(); console.log("PASS " + name); coun
     A.equal(stored.art, "redaktionelle-lesenotiz");
     A.equal(stored.historischeFassungBestaetigt, false);
   });
-  await test("Fremde, undatierte, alte oder umetikettierte Lesenotiz erlaubt keinen Insert", async () => {
+  await test("Fremde, undatierte, kuenftige oder umetikettierte Lesenotiz erlaubt keinen Insert", async () => {
     for (const mutate of [b => { b.url += "-fremd"; }, b => { b.quellenHash = "b".repeat(64); },
-      b => { b.gelesenAm = "2026-09-10T12:00:00Z"; }, b => { b.gelesenAm = "2026-09-12T12:00:00Z"; },
+      b => { b.gelesenAm = "2026-09-12T12:00:00Z"; },
       b => { b.gelesenAm = "gestern"; }, b => { b.gelesenAm = ""; },
       b => { b.gelesenAm = "2026-02-30"; }, b => { b.gelesenAm = "2026-02-30T12:00:00Z"; },
-      b => { b.gelesenAm = "2026-09-10"; }, b => { b.gelesenAm = "2026-09-12"; },
+      b => { b.gelesenAm = "2026-09-12"; },
       b => { b.gelesenAm = "2026-09-11T22:30:00Z"; },
       b => { b.art = "originalauszug"; }, b => { b.historischeFassungBestaetigt = true; },
       b => { b.notiz = "Fiktive Ausschussberatung"; }, b => { b.notiz = ""; },
@@ -132,7 +132,7 @@ const test = async (name, fn) => { await fn(); console.log("PASS " + name); coun
     }
   });
   await test("Tagesgenauer Recherchebeleg und Berliner Tagesgrenze ohne erfundene Uhrzeit", async () => {
-    for (const gelesenAm of [day, "2026-09-10T22:30:00Z"]) {
+    for (const gelesenAm of [day, "2026-09-10", "2026-09-10T12:00:00Z", "2026-09-10T22:30:00Z"]) {
       const h = mitLesebeleg(); h.args.urteil.gesamtpruefung.quellen[0].lesebeleg.gelesenAm = gelesenAm; h.approve();
       A.equal((await I.ausfuehren(h.args)).verwendbar, true);
       A.equal([...h.rows.values()][0].payload.urteil.gesamtpruefung.quellen[0].lesebeleg.gelesenAm, gelesenAm);

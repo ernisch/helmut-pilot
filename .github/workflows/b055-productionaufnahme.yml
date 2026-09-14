@@ -1,0 +1,35 @@
+name: "B055: Production Briefing nur lesen"
+on:
+  workflow_dispatch:
+    inputs:
+      production_commit:
+        description: "Zuvor READY bestaetigter vollstaendiger Maincommit"
+        required: true
+        type: string
+      public_key:
+        description: "Oeffentlicher RSA3072 SPKI Schluessel in Base64"
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: helmut-b055-productionaufnahme
+  cancel-in-progress: false
+jobs:
+  lesen:
+    if: github.repository == 'ernisch/helmut-pilot' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Eine inaktive synthetische Briefingeingabe verschluesselt erfassen
+        env:
+          HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+          HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
+          HELMUT_NACHWEIS_PUBLIC_KEY: ${{ inputs.public_key }}
+        run: node scripts/github-b055-productionaufnahme.js

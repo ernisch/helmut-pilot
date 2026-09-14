@@ -171,6 +171,22 @@ async function main() {
       r = await request("GET", geheim, path.replace(profile.id, "test-kohorte-a-002"));
       check(r.status === 500 && !JSON.stringify(r.body).includes("Schulbau"), "fremde Speicherantwort wird nicht ausgeliefert");
       check((await request("POST", geheim, path)).status === 400, "Nachweisroute ist ausschliesslich lesend");
+      const P = require("../lib/helmut/briefing-pruefaufnahme"), oldCapture = P.erfasse;
+      let captured = null;
+      P.erfasse = async args => { captured = args; return { reinLesend: true, art: "production-briefing-eingabe" }; };
+      try {
+        const inputPath = path + "&modus=eingabe";
+        check((await request("GET", null, inputPath)).status === 403 && captured === null,
+          "Frische Aufnahme ohne Cron Autorisierung erreicht keinen Leser");
+        const read = await request("GET", geheim, inputPath, { "x-helmut-production-commit": sha });
+        check(read.status === 200 && captured.expectedCommit === sha && captured.commit === sha
+          && captured.production === true && typeof captured.build === "function"
+          && captured.storage === storage && captured.userId === profile.id,
+          "Echter HTTP Handler bindet frische Aufnahme an Commit, Mandat und echten Builder");
+        check((await request("POST", geheim, inputPath)).status === 400
+          && (await request("GET", geheim, path + "&modus=force")).status === 400,
+          "Aufnahme akzeptiert weder POST noch einen erzwungenen Modus");
+      } finally { P.erfasse = oldCapture; }
     } finally { storage.getProfile = getProfileVorher; storage.getRenderedBriefingV3 = getBriefingVorher; }
     const fixture = require("./fixtures/profilhash-integration");
     const f = fixture.fixture({ ...fixture.profile, id: "test-kohorte-a-001" });
