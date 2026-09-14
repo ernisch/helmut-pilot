@@ -25,6 +25,13 @@ const doc = { id: "d-quellenpflicht", title: ko.display_title,
   await test("Ein alter best_source_url ersetzt kein Quelldokument", () => assert.equal(Q.quellengebunden({ ...ko, best_source_url: doc.url }, []), false));
   await test("Ein konkretes Quelldokument bleibt zulaessig", () => assert.equal(Q.quellengebunden(ko, [doc]), true));
   await test("Eine alleinige kanonische Artikeladresse bleibt zulaessig", () => assert.equal(Q.quellengebunden(ko, [{ ...doc, url: null, canonical_url: doc.url }]), true));
+  for (const amt of ["Bundestagspräsidentin", "Landtagspräsident", "Parlamentspräsidentin"]) {
+    const behauptet = { ...ko, display_summary: `${amt} Alex Beispiel ordnet die Beratung ein.` };
+    await test(`Unbelegtes Parlamentsamt wird nicht aus dem Namen abgeleitet: ${amt}`, () =>
+      assert.equal(Q.quellengebunden(behauptet, [doc]), false));
+    await test(`Im Originaltext genanntes Parlamentsamt bleibt zulässig: ${amt}`, () =>
+      assert.equal(Q.quellengebunden(behauptet, [{ ...doc, summary: behauptet.display_summary }]), true));
+  }
   const old = [{ ...doc, published_at: "2020-03-20T08:00:00Z" }], now = new Date("2026-09-11T08:00:00Z");
   for (const text of ["Bis Monatsende entscheiden.", "In einer Woche abstimmen.", "Innerhalb von zwei Wochen pruefen.", "Bis Ende des Monats vorlegen.", "Bis Mitte nächster Woche abstimmen.", "Bis Ende kommender Woche vorlegen."])
     await test("Alte Quelle traegt keine Frist: " + text, () => assert.equal(Q.relativeFristZulaessig({ recommendation: text }, old, now), false));
