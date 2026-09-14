@@ -1,6 +1,6 @@
 name: Kanonische Offline Vorpruefung isoliert
 
-# B055 14.09.2026: isolierte Vorpruefung fuer Ausgabekonsistenz samt Leerzustandsbindung.
+# B055 14.09.2026: isolierte Vorpruefung fuer Ausgabekonsistenz samt tatsaechlichem Leerzustandstext.
 # Begrenzte Kandidaten: Ausfuehrung erst nach ausdruecklicher Push Freigabe.
 # Geschuetzte Testbranches. Kein PR Trigger und kein Productionpfad.
 on:

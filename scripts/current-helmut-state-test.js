@@ -502,6 +502,21 @@ check("D5-7: keine hartkodierte Partei/Personen-Logik durch die Auswahl",
   check("Niedrige ignorierte Scores werden nicht als Beobachten bezeichnet",
     low.items.every(i => i.priority === "Ignorieren")
     && low.personalizedRecommendations.every(i => i.current_priority === "Ignorieren"));
+  const fs = require("node:fs"), vm = require("node:vm");
+  const client = fs.readFileSync(require("node:path").join(__dirname, "../client.js"), "utf8");
+  const render = client.slice(client.indexOf("function renderHstandStateCard("), client.indexOf("const HELMUT_BUCKET_LABEL ="));
+  const ctx = vm.createContext({ escapeHtml: String, escapeAttribute: String,
+    briefingDisruption: () => null, renderHstandHeader: () => "" });
+  vm.runInContext(render, ctx);
+  const html = ctx.renderHstandStateCard(low.currentHelmutState, "empty");
+  check("Tatsaechlicher Client zeigt bei Ignorieren keine pauschale Entwarnung",
+    html.includes("Kein priorisierter Hauptvorgang")
+    && html.includes("keine Gesamtbewertung des Handlungsbedarfs") && !html.includes("Heute kein Handlungsbedarf"));
+  const binding = require("../lib/helmut/briefing-aussagenbindung").texte(low);
+  check("Beide sichtbaren Leerzustandstexte sind exakt ausgabebezogen pruefpflichtig",
+    ["headline", "detail"].every(key => binding.some(a => a.pfad === "/currentHelmutState/emptyState/" + key
+      && a.text === low.currentHelmutState.emptyState?.[key] && a.art === "ausgabe"))
+    && !binding.some(a => a.pfad === "/currentHelmutState/emptyState/kind"));
 }
 
 console.log(`\n${passed}/${passed + failed} CurrentHelmutState-Assertions erfolgreich.`);
