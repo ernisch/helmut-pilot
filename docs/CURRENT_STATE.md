@@ -2,13 +2,13 @@
 
 **14.09.2026: B055 Aufnahmeweg in Vorbereitung.** [Beleg](betrieb/500-lage-quellenfenster-2026-09-13.md). Neue ausdrueckliche Freigabe fuer notwendige Korrekturen, Pruefungen und Merges bis unmittelbar vor dem500er Test. Kein500er Start und keine Aktivierung. Fuenf reale Profile geschuetzt.
 
-**Lokaler Kandidat:** Vorbereitete Quellenaufnahme mit begrenztem GitHub Ausfuehrer verbunden. Genau B055, ausschliesslich GET, aktuelle Laufzeit vorher und nachher, Antwortbytes erhalten. Gepinnter Production Code in getrenntem Checkout; Builderkind ohne Zugangsdaten. Private Ausgabe vor Log verschluesselt. Aufnahmeauftrag noch AUS.18 synthetische Ablaufgruppen mit echtem lokalen Builder,21 Pruefergruppen und6 Transportgruppen erfolgreich. Vollstaendige isolierte Pflichtvorpruefung folgt vor der Aufnahme.
+**Lokaler Kandidat:** Vorbereitete Quellenaufnahme mit begrenztem GitHub Ausfuehrer verbunden. Genau B055, ausschliesslich GET, aktuelle Laufzeit vorher und nachher, Antwortbytes erhalten. Gepinnter Production Code in getrenntem Checkout; Builderkind ohne Zugangsdaten. Private Ausgabe vor Log verschluesselt. Einmalige B055 Aufnahme nach erfolgreicher Vorpruefung freigegeben.18 synthetische Ablaufgruppen mit echtem lokalen Builder,21 Pruefergruppen und6 Transportgruppen erfolgreich. Isolierte Vorpruefung34816238214 mit378/378 Suiten in669s erfolgreich.
 
 **Technischer Vorbeleg:** PR391 gemergt, main e7501a4b7cc010d2661cb0d7f34a6b259d07bb75, Production READY. Vorpruefung375/375, PR und main CI erfolgreich. Laufzeitleser34811933200 am14.09.,06:04UTC erfolgreich. Aktueller Produktcode unveraendert.
 
 **Fachliche Grenze:** B055 bleibt negativ. Historische Modell und REST Antworten fehlen. Beide Fristenvorgaenge hatten je eine ungekuerzte Quelle; der40er Schnitt erklaert ihre Uhrzeiten nicht. Neue Aufnahme wird lokal berechnet, kein Mitschnitt eines Production App Prozesses. Keine Fachfreigabe aus synthetischen Tests.
 
-**Naechster Schritt:** Isolierte Vorpruefung, danach genau eine verschluesselte B055 Aufnahme ueber vorhandene GitHub Secrets und private Bewertung. Keine neuen Schluessel fuer Production, Modelle, Originalquellenabrufe, Daten oder Profileingriffe, Migrationen, Budget oder Cron Aenderungen. Noch keine neue Veroeffentlichung oder Aufnahme ausgefuehrt. Derselbe Thread, Hoch.
+**Naechster Schritt:** Isolierte Vorpruefung, danach genau eine verschluesselte B055 Aufnahme ueber vorhandene GitHub Secrets und private Bewertung. Keine neuen Schluessel fuer Production, Modelle, Originalquellenabrufe, Daten oder Profileingriffe, Migrationen, Budget oder Cron Aenderungen. Kandidat a817ee7 veroeffentlicht, Aufnahme noch nicht bestaetigt. Derselbe Thread, Hoch.
 
 Der bisherige Statuskopf vom 10.09. liegt unveraendert im [Archiv](archive/project_state/2026_09_11_500_statuskopf.md). Die nachfolgenden zeitlich aelteren Betriebsstaende sind Historie.
 

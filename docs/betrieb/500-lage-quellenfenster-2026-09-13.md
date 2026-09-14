@@ -1366,3 +1366,10 @@ Gezielt erfolgreich ueber scripts/lokal.js:18 Ablaufgruppen einschliesslich echt
 Quellenkonventionen gegen aktuelle Supabase Dokumentation geprueft: https://supabase.com/changelog und https://supabase.com/docs/guides/api/securing-your-api. Markdown Abruf wurde vom Webleser abgewiesen, normaler Dokumentabruf erfolgreich. Keine neue Supabase Funktion, Schema oder Sicherheitseinstellung eingefuehrt. Begrenzung und tenantbezogene Filter nach bestehendem verbindlichem Sicherheitsmodell.
 
 Noch offen: volle isolierte Vorpruefung, unabhaengiger aktueller READY Beleg, Aktivierung genau dieses Aufnahmeauftrags, tatsaechliche private Aufnahme und Bewertung. Kein500er Start. Vollstaendiges privates Ergebnis im bestehenden Quellenreview, keine parallele Statusdatei.
+
+
+### Vorpruefung und einmalige Aufnahmefreigabe
+
+Remote Kandidat a817ee78556ffc8eb000fdba96bf7625d0465a38, exakter lokaler Baum87fb169e2dc5af28f3c4d34ede64dad64352e1c0. Isolierter kanonischer Lauf34816238214, Job103887391829, erfolgreich:378/378 Suiten in669s. Nur Loopback und keine externe Route, eigener Testbestand bereinigt, Diff sauber. Ausgeschalteter Aufnahmelauf34816238324, Job103887391909, bestaetigt: Auftrag AUS, Production Checkout und Secretleseschritt uebersprungen.
+
+Production Hauptalias unabhaengig READY auf dpl_FQyw7zFSpoU1cEVF12Xz7Sgo2veK und e7501a4 bestaetigt. Auftrag jetzt fuer genau eine Aufnahme mit kurzem Ablaufdatum und archiviertem Empfaengerschluessel vorbereiten. Start erfolgt durch bewusste Aenderung der Auftragsdatei; erster Versuch, exakter gepruefter Codecommit a817ee7 und unveraenderter separater Production Checkout zwingend. Keine Aenderung von Produktlogik oder Zugangsdaten, keine500er Ausfuehrung. Tatsaechlicher Aufnahmeausgang noch offen.
