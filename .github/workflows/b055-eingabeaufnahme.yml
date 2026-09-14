@@ -1,0 +1,41 @@
+name: "B055 Eingabeaufnahme nur lesen"
+# Einmaliger Betreiberauftrag nach isolierter Vorpruefung. Keine 500er Ausfuehrung.
+# Nur eine bewusste Aenderung der Auftragsdatei kann diesen Ablauf starten.
+on:
+  push:
+    branches: [codex/b055-relative-fristen-20260914]
+    paths: [scripts/b055-aufnahme/auftrag.json]
+permissions:
+  contents: read
+concurrency:
+  group: helmut-b055-eingabeaufnahme
+  cancel-in-progress: false
+jobs:
+  aufnahme:
+    if: github.repository == 'ernisch/helmut-pilot' && github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Auftrag vor jedem Secretzugriff pruefen
+        id: auftrag
+        run: node scripts/b055-aufnahme/auftrag-pruefen.js
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        if: steps.auftrag.outputs.enabled == 'true'
+        with:
+          ref: e7501a4b7cc010d2661cb0d7f34a6b259d07bb75
+          path: production-code
+          persist-credentials: false
+      - name: Genau B055 lesen und Ausgabe verschluesseln
+        if: steps.auftrag.outputs.enabled == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+        run: node scripts/b055-aufnahme/aufnahme.js scripts/b055-aufnahme/auftrag.json production-code

@@ -5,7 +5,8 @@ const decisions = require("../lib/helmut/decisions");
 const Q = require("../lib/helmut/briefing-quellenqualitaet");
 process.env.HELMUT_BRIEFING_RELEVANZ_TAGE = "14";
 const clock = new Date("2026-09-11T08:00:00Z");
-const datum = published_at => [{ published_at }];
+// Ein altes Publikationsdatum darf einen ausdruecklich belegten spaeteren Termin tragen.
+const datum = published_at => [{ published_at, summary: "Einreichungsfrist am 11.09.2026." }];
 assert.equal(Q.relativeFristZulaessig({ recommendation: "Bis Mitte der Woche abstimmen." }, datum("2020-01-01"), clock), false);
 assert.equal(Q.relativeFristZulaessig({ action_items_struct: [{ title: "Abstimmen", dueHint: "Bis Freitag" }] }, datum("2020-01-01"), clock), false);
 assert.equal(Q.relativeFristZulaessig({ recommended_communication_struct: { communicationLine: "Heute Stellung nehmen." } }, datum("2020-01-01"), clock), false);
@@ -32,7 +33,7 @@ const snapshot = JSON.stringify(ko);
 storage.v3StoreReady = () => true;
 storage.listKnowledgeObjects = async () => [{ ...ko, recommendation }];
 storage.getSourcesForVorgang = async () => [{ id: "d-frist", title: ko.headline,
-  summary: ko.was_ist_passiert, url: ko.best_source_url, source_name: "Deutscher Bundestag",
+  summary: ko.was_ist_passiert + " Einreichungsfrist morgen bis 12 Uhr.", url: ko.best_source_url, source_name: "Deutscher Bundestag",
   source_type: "parliament", published_at: sourceDate }];
 decisions.decideForUser = () => [{ knowledge_object_id: ko.id, vorgang_id: ko.vorgang_id,
   score: 60, decision: "Sofort reagieren", priority_type: "chance", matched_features: [], chance: "", risk: "" }];
