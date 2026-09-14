@@ -23,6 +23,23 @@ test('Zeitfreie Handlung bleibt unverändert möglich',()=>A.equal(Q.relativeFri
 test('Gültiger Beleg verhindert keine Ablaufprüfung',()=>A.equal(Q.relativeFristZulaessig(ko('heute 16 Uhr'),[doc('Abgabe am 14.09.2026 bis 16 Uhr.')],new Date('2026-09-14T14:00:00Z')),false));
 test('Unbelegte Wochenfrist wird zurückgehalten',()=>A.equal(Q.relativeFristZulaessig(ko('bis Ende dieser Woche'),[doc(null)],now),false));
 test('Wörtliche Wochenfrist mit gleichem Zeitanker bleibt möglich',()=>A.equal(Q.relativeFristZulaessig(ko('bis Ende dieser Woche'),[doc('Einreichungsfrist bis Ende dieser Woche.')],now),true));
+test('Unbelegte Tagesenden und verbleibende Dauerfristen werden zurückgehalten',()=>{
+ for(const hint of ['Bis Ende des Arbeitstages','48 Stunden','innerhalb 5 Werktage','bis zwei Tage','bis zwei Wochen','bei Bestätigung, bis eine Woche nach Trägergespräch','nächste Woche Mitte'])
+  A.equal(Q.relativeFristZulaessig(ko(hint),[doc(null)],now),false,hint);
+});
+test('Wortgleiche Dauerfrist verlangt denselben Quelltag',()=>{
+ for(const hint of ['bis Ende des Arbeitstages','innerhalb 5 Werktage','48 Stunden','nächste Woche Mitte']) {
+  A.equal(Q.relativeFristZulaessig(ko(hint),[doc('Einreichungsfrist '+hint+'.')],now),true,hint);
+  A.equal(Q.relativeFristZulaessig(ko(hint),[doc('Einreichungsfrist '+hint+'.','2026-09-13T06:00:00Z')],now),false,hint);
+ }
+});
+test('Tagesende und Dauerfristen werden nur in der Ausgabekopie entfernt',()=>{
+ const original={headline:'Beratung der Unterlagen',recommendation:'Bis Ende des Arbeitstages Unterlagen prüfen.',action_items_struct:[{title:'Unterlagen prüfen',dueHint:'48 Stunden'},{title:'Abstimmung vorbereiten',dueHint:'nach interner Einigung'}]};
+ const before=JSON.stringify(original),clean=Q.mitBelegtenHandlungsfristen(original,[doc(null)],now);
+ A.equal(clean.recommendation,'');A.equal(clean.action_items_struct[0].dueHint,'');
+ A.equal(clean.action_items_struct[0].title,'Unterlagen prüfen');A.equal(clean.action_items_struct[1].dueHint,'nach interner Einigung');
+ A.equal(clean.headline,original.headline);A.equal(JSON.stringify(original),before);
+});
 test('Komma trennt eine alte absolute Frist nicht von ihrer Uhrzeit',()=>A.equal(Q.relativeFristZulaessig(ko('heute 16 Uhr'),[doc('Abgabe am 13.09.2026, bis 16 Uhr.')],now),false));
 test('Verneinte oder aufgehobene Frist ist kein positiver Beleg',()=>{for(const text of ['Keine Abgabe heute 16 Uhr.','Frist heute 16 Uhr aufgehoben.','Nicht bis heute 16 Uhr einreichen.'])A.equal(Q.relativeFristZulaessig(ko('heute 16 Uhr'),[doc(text)],now),false);});
 test('Fremde Zeitzone wird nicht still als Berliner Uhrzeit behandelt',()=>A.equal(Q.relativeFristZulaessig(ko('heute 16 Uhr'),[doc('Abgabe am 14.09.2026 bis 16 Uhr UTC.')],now),false));
