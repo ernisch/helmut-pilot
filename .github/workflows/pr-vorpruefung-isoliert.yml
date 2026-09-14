@@ -1,11 +1,11 @@
 name: Kanonische Offline Vorpruefung isoliert
 
-# B055 Fristbeleg 14.09.2026: erneuter voller Nachweis fuer die begrenzte Produktkorrektur.
+# B055 Restfristen 14.09.2026: voller Nachweis fuer Tagesende und Dauerfristen.
 # Begrenzte Kandidaten: Ausfuehrung erst nach ausdruecklicher Push Freigabe.
 # Geschuetzte Testbranches. Kein PR Trigger und kein Productionpfad.
 on:
   push:
-    branches: [codex/500-lage-quellenfenster-20260913, codex/b055-relative-fristen-20260914]
+    branches: [codex/500-lage-quellenfenster-20260913, codex/b055-relative-fristen-20260914, codex/500-startplan-20260914]
     paths:
       - .github/workflows/pr-vorpruefung-isoliert.yml
 
