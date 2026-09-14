@@ -1,5 +1,9 @@
 # CURRENT STATE — Helmut
 
+**14.09.2026, laufende Inhaltsabnahme:** Kandidat auf `codex/lesebelege-inhaltsabnahme-20260914` bindet separat gelesene Originalkontexte als datierte Lesenotizen. Quellenpassagen bleiben unverändert; URL, Quellenhash, Nachweisdatei und Fundstelle werden streng geprüft. Negative Sachurteile oder eines der sechs negativen Gesamturteile sperren weiterhin.14 gezielte Testgruppen erfolgreich; erster kanonischer Lokallauf378/380, zwei Browserfälle wegen fehlendem lokalen Chromium offen. Pflicht CI am Kandidaten steht aus, kein Merge behauptet.
+
+**Frischer Betriebsbeleg:** Bestehender Mainlauf34896063575 vollständig erfolgreich. Zugangslauf34898738479 liest am21:25UTC die echte Productionkonfiguration für62f2ece: Speicher, Profilschutz, Kommunikationssperre, Kohortenquellensperre, Quellenkontext und Kostenregel2 bestätigt. Keine Modell oder Productionschreibaufrufe. Die private Quellen und Auswahlabnahme wird weitergeführt; Start mit500 bleibt gesperrt. [Fortsetzung](betrieb/500-lage-quellenfenster-2026-09-13.md#lesenotizen-und-auswahl-am-14092026).
+
 **14.09.2026: Parlamentsamtsschutz veröffentlicht; Inhaltsabnahme weiter offen.** PR402 gemergt als `e5d73603ddad8ed0bb8a984459e3a864334df6a8`. Production `dpl_2gMmPn3KRa6xzP5H8hRA36t54gyE` READY, exakter Commit und Hauptalias bestätigt. CI34892773687 am Kopf `f174cc36`:380/380 Suiten in721s, Browser50/50, Kontoschutz15/15 und Z2248/48. Kandidat und Mergebaum `3ad0d9af39c52031856c34576275ccb09e3fd9a5` identisch. [Beleg](betrieb/500-lage-quellenfenster-2026-09-13.md#textquellen-und-parlamentsaemter-am-14092026).
 
 **Videofrage:** Zwei Clipseiten kamen als Titel und Link aus einer Google Nachrichtensuche. Der Motor verarbeitet Texte, keine Videodateien. Ausreichende Seitenbeschreibungen können begrenzte Aussagen tragen; keine pauschale Vollvideopflicht.
