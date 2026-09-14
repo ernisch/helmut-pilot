@@ -2,7 +2,7 @@
   "version": 1,
   "mandat": "test-kohorte-b-055",
   "productionCommit": "e7501a4b7cc010d2661cb0d7f34a6b259d07bb75",
-  "freigegeben": true,
+  "freigegeben": false,
   "publicKey": "MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAoVVCWOHogIQkKB2YlFpRKrpgbKI/xWvp5723XEb7Gw7PDY9bOzK5Po2PE9FOLbLOjPAPq9g7qn8dkhE/FDJwPpEqUHK94g+SvIUmyO76BGuTEuaJbTbMd/fYI6SGh5S/ic2ucRjXoggCDQOqWfKE63qsaLglG7AuasjOWsalgxRtbCTGz7+I5NfD7W0Ks2rjjwdQCCGrgFlF6CaH4/vm8KQ8YljUmx0Rl4f+RdH1mGTKLAueT3IQQy1UW0/l59oZ4nz8OX/MrFEE2jI5K7M+B68z9wy+AJ91SC2vQNa9ltzeaNHbMw+W8HkGXatOAZBFRSVBoLAsR5OdnfE49JiIxIiOnvR5Ia7MKd0mycL9aqVZb7kvkpSgfllvdwYsvu5dYIVl2o/zhCdnLBwVf7t9fWTLU0q7NXi0O3SDNvjt8VH8zsJ/XxwCXu7hZmF2NkE+W5RgrMPKU9zVYNwmJ0ibdH9qUWiWSTq296gopzIipulWZdcEh2H99em9PSavJbSpAgMBAAE=",
   "nonce": "2e4c8b9b29b718801839d51d1fc28554",
   "codeCommit": "a817ee78556ffc8eb000fdba96bf7625d0465a38",
