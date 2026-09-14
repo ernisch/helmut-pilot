@@ -1,6 +1,6 @@
 name: Kanonische Offline Vorpruefung isoliert
 
-# B055 Aufnahmeweg 14.09.2026: voller isolierter Nachweis vor Freigabe des Abrufs.
+# B055 Fristbeleg 14.09.2026: erneuter voller Nachweis fuer die begrenzte Produktkorrektur.
 # Begrenzte Kandidaten: Ausfuehrung erst nach ausdruecklicher Push Freigabe.
 # Geschuetzte Testbranches. Kein PR Trigger und kein Productionpfad.
 on:

@@ -13,7 +13,8 @@ const ko = { id: "ko-quellenpflicht", vorgang_id: "vg-quellenpflicht", status: "
   was_ist_passiert: "Die Kommune stellt ihren Bericht zur Energieberatung vor.",
   warum_wichtig: "Die Energieberatung betrifft kommunale Aufgaben.",
   recommendation: "Den Bericht fachlich einordnen.", updated_at: new Date().toISOString() };
-const doc = { id: "d-quellenpflicht", title: ko.display_title, summary: ko.was_ist_passiert,
+const doc = { id: "d-quellenpflicht", title: ko.display_title,
+  summary: ko.was_ist_passiert + " Abgabefrist bis Monatsende. Weitere Fristen: heute Mittag, heute 14 Uhr und morgen bis 12 Uhr.",
   url: "https://www.bundestag.de/dokumente/beispiel-energieberatung",
   source_name: "Deutscher Bundestag", source_type: "parliament", published_at: new Date().toISOString() };
 (async () => {

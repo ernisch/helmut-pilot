@@ -50,19 +50,19 @@ const withHint = dueHint => ({ ...ko, action_items_struct: [{ ...ko.action_items
   await test("Exakte Grenze ist abgelaufen", () => assert.equal(Q.relativeFristZulaessig(ko, [doc], new Date("2026-09-13T14:00:00Z")), false));
   await test("Eine Minute vor der Grenze bleibt erreichbar", () => assert.equal(Q.relativeFristZulaessig(ko, [doc], new Date("2026-09-13T13:59:00Z")), true));
   for (const hint of ["morgen 16 Uhr", "bis morgen 16 Uhr", "Morgen bis 16 Uhr", "übermorgen 16 Uhr"])
-    await test("Keine Verwechslung mit heute: " + hint, () => assert.equal(Q.relativeFristZulaessig(withHint(hint), [doc], evening), true));
+    await test("Keine Verwechslung mit heute: " + hint, () => assert.equal(Q.relativeFristZulaessig(withHint(hint), [{ ...doc, summary: `Abgabe am ${hint.includes("übermorgen") ? "15" : "14"}.09.2026 bis 16 Uhr.` }], evening), true));
   for (const hint of ["heute 16 Uhr", "bis heute 16 Uhr"])
     await test("Morgen in einem Nachbarfeld verschiebt kein explizites heute: " + hint, () => {
       const mixed = withHint(hint);
       mixed.action_items_struct[0].description = "Weitere Beratung erst morgen";
       assert.equal(Q.relativeFristZulaessig(mixed, [doc], evening), false);
-      assert.equal(Q.relativeFristZulaessig(mixed, [doc], before), true);
+      assert.equal(Q.relativeFristZulaessig(mixed, [{ ...doc, summary: doc.summary + " Weitere Beratung morgen." }], before), true);
     });
   for (const date of [null, "unbekannt", "2020-01-01T08:00:00Z", "2026-09-14T08:00:00Z"])
     await test("Fehlender, alter oder zukuenftiger Zeitbeleg: " + date, () => assert.equal(Q.relativeFristZulaessig(ko, [{ ...doc, published_at: date }], before), false));
   await test("Ohne Quelldokument keine relative Frist", () => assert.equal(Q.relativeFristZulaessig(ko, [], before), false));
-  await test("Winterzeit: vor Berliner 16 Uhr", () => assert.equal(Q.relativeFristZulaessig(ko, [{ ...doc, published_at: "2026-01-13T08:00:00Z" }], new Date("2026-01-13T14:00:00Z")), true));
-  await test("Winterzeit: ab Berliner 16 Uhr", () => assert.equal(Q.relativeFristZulaessig(ko, [{ ...doc, published_at: "2026-01-13T08:00:00Z" }], new Date("2026-01-13T15:00:00Z")), false));
+  await test("Winterzeit: vor Berliner 16 Uhr", () => assert.equal(Q.relativeFristZulaessig(ko, [{ ...doc, summary: doc.summary.replace("13.09.2026", "13.01.2026"), published_at: "2026-01-13T08:00:00Z" }], new Date("2026-01-13T14:00:00Z")), true));
+  await test("Winterzeit: ab Berliner 16 Uhr", () => assert.equal(Q.relativeFristZulaessig(ko, [{ ...doc, summary: doc.summary.replace("13.09.2026", "13.01.2026"), published_at: "2026-01-13T08:00:00Z" }], new Date("2026-01-13T15:00:00Z")), false));
   await test("Keine Uhrzeit erfunden bei Hintergrund ohne Frist", () => assert.equal(Q.relativeFristZulaessig({ recommendation: "Die bisherigen Erfahrungen einordnen." }, [], evening), true));
   await test("Echter Builder erhaelt die synthetisch belegte erreichbare Frist", async () => {
     const b = await server.__buildV3Briefing(profile, profile.id, { now: before });
@@ -87,6 +87,7 @@ const withHint = dueHint => ({ ...ko, action_items_struct: [{ ...ko.action_items
   await test("Echter Builder erhaelt explizites heute trotz morgiger Nachbaraufgabe", async () => {
     input = structuredClone(ko); docs = [structuredClone(doc)];
     input.action_items_struct[0].description = "Weitere Beratung erst morgen";
+    docs[0].summary += " Weitere Beratung morgen.";
     const snapshot = JSON.stringify({ input, docs });
     const future = await server.__buildV3Briefing(profile, profile.id, { now: before });
     assert.equal(future.items.length, 1);
@@ -94,6 +95,18 @@ const withHint = dueHint => ({ ...ko, action_items_struct: [{ ...ko.action_items
     assert.equal(expired.items.length, 0);
     assert(!JSON.stringify(expired).includes("heute 16 Uhr"));
     assert.equal(JSON.stringify({ input, docs }), snapshot);
+  });
+  await test("Echter Builder erhaelt Sachinformationen und entfernt unbelegte Fristfelder", async () => {
+    input = structuredClone(ko); docs = [{ ...doc, summary:null }];
+    input.recommendation = "Heute 16 Uhr eine Position festlegen.";
+    const snapshot = JSON.stringify({input,docs});
+    const b = await server.__buildV3Briefing(profile,profile.id,{now:before});
+    assert.equal(b.items.length,1);
+    assert(!JSON.stringify(b).includes("heute 16 Uhr"));
+    assert(!JSON.stringify(b).includes("Heute 16 Uhr"));
+    assert.equal(b.personalizedRecommendations[0].actionItems[0].title,"Unterlagen einreichen");
+    assert.equal(b.personalizedRecommendations[0].actionItems[0].dueHint,"");
+    assert.equal(JSON.stringify({input,docs}),snapshot);
   });
   console.log(`${passed}/${passed + failed} Gruppen bestanden; ${failed} fehlgeschlagen.`);
   if (failed) process.exitCode = 1;

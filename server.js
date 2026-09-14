@@ -3400,7 +3400,8 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     if (!korrekturDaten) await loadMentionSourcesInto(profile, kandidaten, mentionSources);
     return ausgabe(briefingContract.toBriefingContractV3({
       profile, decisions: [], kosById: {}, sourcesByVorgang: mentionSources, reason, briefingType,
-      knowledgeObjects: kandidaten.filter(ko => require("./lib/helmut/briefing-quellenqualitaet").quellengebunden(ko, mentionSources[ko.vorgang_id] || [])), now, frischeFenster
+      knowledgeObjects: kandidaten.filter(ko => require("./lib/helmut/briefing-quellenqualitaet").quellengebunden(ko, mentionSources[ko.vorgang_id] || []))
+        .map(ko => require("./lib/helmut/briefing-quellenqualitaet").mitBelegtenHandlungsfristen(ko, mentionSources[ko.vorgang_id] || [], now)), now, frischeFenster
     }), mentionSources);
   };
 
@@ -3439,11 +3440,15 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
     const ko = kosById[d.knowledge_object_id];
     if (!ko) return false;
     if (!require("./lib/helmut/briefing-quellenqualitaet").quellengebunden(ko, sourcesByVorgang[ko.vorgang_id] || [])) return false;
-    if (!require("./lib/helmut/briefing-quellenqualitaet").relativeFristZulaessig(ko, sourcesByVorgang[ko.vorgang_id] || [], now)) return false;
+    if (!require("./lib/helmut/briefing-quellenqualitaet").relativeFristZeitlichZulaessig(ko, sourcesByVorgang[ko.vorgang_id] || [], now)) return false;
     return sourceSafety.guardKnowledgeObject(ko, sourcesByVorgang[ko.vorgang_id] || []).status !== "quarantine";
   });
-  const themenreineKos = understood.filter(ko => require("./lib/helmut/briefing-quellenqualitaet")
-    .quellengebunden(ko, sourcesByVorgang[ko.vorgang_id] || []));
+  // Fehlende Fristbelege entwerten nicht die belegten Sachinformationen.
+  // Nur Handlungstexte/Fristfelder der Ausgabekopie bereinigen, nie gespeicherte KOs.
+  const Q = require("./lib/helmut/briefing-quellenqualitaet");
+  const themenreineKos = understood.filter(ko => Q.quellengebunden(ko, sourcesByVorgang[ko.vorgang_id] || []))
+    .map(ko => Q.mitBelegtenHandlungsfristen(ko, sourcesByVorgang[ko.vorgang_id] || [], now));
+  for (const ko of themenreineKos) kosById[ko.id] = ko;
   if (!safeDecisions.length) return emptyKeepMentions("keine-treffer", themenreineKos);
   const briefing = briefingContract.toBriefingContractV3({ profile, decisions: safeDecisions, kosById, sourcesByVorgang, now, briefingType, knowledgeObjects: themenreineKos, frischeFenster });
   // Read-only Auswahl-Diagnose (nur bei ?debugPrimary=1 -> opts.debug). Aus dem ECHTEN
