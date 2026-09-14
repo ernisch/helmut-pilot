@@ -1467,3 +1467,24 @@ Beide Muster40 Punkte/Beobachten, Reihenfolge wechselte zwischen erster und prä
 Dokumentationsbranch codex/b055-privater-musterentwurf-20260914 setzt die noch ungemergte Inhaltsabnahmedokumentation fort. Kein PR, Merge oder Deployment. Einzelfunktionen über scripts/lokal.js geprüft; erfolgreiche Produktsuiten unverändert wiederverwendet. Nächster notwendiger Belegschritt: gezieltes Lesen der bereits dokumentierten Originalquellen und separate Speicherung ergänzender Belege. Kein allgemeiner Quellenumbau oder Erfinden von Profilmerkmalen.
 
 Keine Production Daten, Profile, Konten, Migrationen, Budgets, Azure, Umgebung oder Cron verändert. Keine bezahlten Modelle, neuen Quellenabrufe oder Importe. Stopp vor500 und synthetischer Aktivierung. Vollständiger privater Entwurf, Begründungen, Aufbau und Prüfprotokoll bleiben beim Betreiber erhalten.
+
+
+## 14.09.2026: Originalbelege und quellengebundene Personenliste
+
+Status teilweise abgeschlossen. Auftrag umfasst die dokumentierten B055 Inhaltsprobleme, lokale Korrekturen, notwendige Pruefungen sowie PR und Merge mit automatischem Production Deployment. Keine500er Aktivierung, Modelle oder Production Datenveraenderung. Exklusive private Steuerung381 nach freiem Stand380 uebernommen. Fremde Kopien und bestehende Dokumentationsbranches erhalten. Main3e70030e, READY dpl_CiHykEHn5dBQh6RBccEhdbTYyNVq und keine laufende Action frisch gelesen;offen nur historischer PR345. Keine aktuelle Datenbankmessung behauptet.
+
+### Ergaenzende Quellenbelege
+
+Alle41 zugeordneten Artikeladressen der30 Elemente wurden gezielt beruecksichtigt. Die zweite Haushaltsadresse ist das direkt bestaetigte Weiterleitungsziel der ersten. Artikelkoerper, Vorschau, Suchauszug, unzugaenglicher Abruf und veraenderte Artikelversion werden im privaten Quellenbericht getrennt. Originalaufnahme, historische Titel/Auszuege, Profil und negatives Fachurteil bleiben unveraendert. Neue Belege sind keine nachtraegliche historische Aufnahme.
+
+Die Originalmitteilung zum Pflegegremium bestaetigt eine Vertauschung von Urheber und Adressat. Ein weiterer Artikel bestaetigt einen falschen Vornamen in der Ausgabe. Haushalts und Kassenartikel haben jeweils URL Aliase derselben Artikelkennung. Die Gasuebersicht leitet inzwischen auf den14.09. weiter;die fruehere Fassung ist damit nicht belegt. Fuer mehrere Quellen fehlt weiterhin ein zugaenglicher Artikelkoerper. Das verhindert eine Gesamtfreigabe;fehlender Zugriff ist kein Beweis fuer eine objektiv falsche Meldung. Empfehlungen duerfen dem synthetischen Mandat weiterhin keine reale Parteiposition oder Ortszustaendigkeit zuschreiben.
+
+### Enger reproduzierter Produktfehler
+
+buildPersonMentions uebernahm jedes Label aus mentioned_mps und mentioned_people ohne Quellenvergleich. Derselbe Name wurde durch zwei Analysefelder doppelt gezaehlt. Eine synthetische Probe zeigte zunaechst zwei unbelegte Namen statt leerer Liste. Der fix beschraenkt sich auf diese Personenliste:Namensvorkommen mit Unicode Wortgrenzen in jeweils einem zugeordneten Titel oder Auszug mit gueltiger Artikeladresse;Rollenklammern werden nicht angezeigt. Keine Zusammenfuegung getrennter Felder oder Dokumente,kein KO oder Quellenname als Ersatz. Ein Vorgang zaehlt je normalisiertem Namen nur einmal.
+
+Grenzen:lexikalischer Beleg,keine semantische Personenidentitaet. Abweichende Schreibweisen oder in Quellen fehlende Vornamen koennen vorsorglich entfallen. Ein Nachname und ein Vollname werden ohne Identitaetsbeleg nicht automatisch zusammengelegt. Kartenzusammenfassungen und Mandatsempfehlungen werden dadurch nicht fachlich repariert;keine pauschale Abnahme durch Entfernen von Personenlabels.
+
+Gezielte neue Suite7/7, bestehender Adapter31/31 und Aussagenbindung14/14 erfolgreich ueber scripts/lokal.js. Gepaarter echter lokaler Aufbau aus unveraenderten aufgenommenen Antworten:30 Karten erhalten;gesamte Briefingausgabe ausser personMentions exakt gleich;Eingabehashes,Aufnahmehash und Korrekturbasis gleich. Zehn Labels werden drei quellentextgebundene Namen,je ein Vorgang. Originaldatei SHA25630f6f174ae31dfa8463209b2a7d467d8c0d2717d3e1768ab3462be1e39695b43 unveraendert. Guard im separaten privaten Adapter um genau den geprueften neuen Contracthash erweitert;Netz,Schreib und Modellblockaden erhalten.
+
+Lokaler kanonischer Gesamtlauf gestartet,am bekannten fehlenden Chromium1234 als Umgebungsmangel erkannt und ohne Gesamtgruen abgebrochen. Keine erneute Downloadschleife. Vorhandener isolierter Vorpruefworkflow erhaelt ausschliesslich diesen neuen autorisierten Branch im Pushfilter;Job,Offline Netzschutz,Berechtigungen und Bereinigung bleiben gleich. Produktabnahme durch Gesamtlauf und erforderliche PR CI noch offen. Keine500er Startbereitschaft.
