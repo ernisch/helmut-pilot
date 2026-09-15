@@ -2,7 +2,8 @@
 const A = require('node:assert/strict'), C = require('node:crypto'), fs = require('node:fs'), path = require('node:path');
 const {collect,localNeed} = require('./b055-aufnahme/aufnahme'), {gate} = require('./b055-aufnahme/auftrag-pruefen');
 const P = require('./b055-aufnahme/b055-aufnahme-pruefer'), T = require('./b055-aufnahme/transport');
-const root = path.resolve(__dirname,'..'), storageText = fs.readFileSync(path.join(root,'lib/helmut/storage.js'),'utf8');
+const root = path.resolve(__dirname,'..'), storageText = require('./fixtures/b055-historischer-storage')();
+const aktuellerStorageText = fs.readFileSync(path.join(root,'lib/helmut/storage.js'),'utf8');
 const pair = C.generateKeyPairSync('rsa',{modulusLength:3072});
 const publicKey = pair.publicKey.export({format:'der',type:'spki'}).toString('base64');
 const pem = pair.privateKey.export({format:'pem',type:'pkcs8'});
@@ -45,6 +46,7 @@ let passed=0;
 async function test(name,fn){await fn();passed++;console.log('PASS '+name);}
 (async()=>{
   await test('vollständige verschlüsselte GET Aufnahme bindet Daten und beide Commits',async()=>{const s=setup(),r=await collect(s.args),p=plain(r);A.equal(r.ok,true,JSON.stringify({failure:p.failure,calls:s.calls}));A.equal(s.calls.length,6);A.equal(p.complete,true);A.equal(p.packet.responses[0].rawBody,JSON.stringify([{raw_documents:doc}]));A.equal(p.input.identity.updated_at,identity.updated_at);A.equal(p.productionMitschnittBestaetigt,false);A.equal(p.fachlicheFreigabe,false);A(!JSON.stringify(r).includes(identity.name));A(!JSON.stringify(p).includes(env.SUPABASE_SERVICE_ROLE_KEY));});
+  await test('neuer Productioncode reaktiviert den gepinnten alten Auftrag nicht',async()=>{const s=setup({storageText:aktuellerStorageText});A.notEqual(P.hash(aktuellerStorageText),P.hash(storageText));await A.rejects(collect(s.args));A.equal(s.calls.length,0);});
   for(const [name,options] of [['fehlender Schlüssel',{env:{SUPABASE_SERVICE_ROLE_KEY:''}}],['falscher Ursprung',{env:{SUPABASE_URL:'https://example.invalid'}}],['fremdes Mandat',{request:{mandat:'fremd'}}],['falscher Code',{storageText:'fremd'}],['ausgeschalteter Auftrag',{request:{freigegeben:false}}],['falscher Empfänger',{request:{publicKey:'unbrauchbar'}}]])
     await test(name+' vor HTTP abgelehnt',async()=>{const s=setup(options);await A.rejects(collect(s.args));A.equal(s.calls.length,0);});
   for(const [name,options,phase,count] of [

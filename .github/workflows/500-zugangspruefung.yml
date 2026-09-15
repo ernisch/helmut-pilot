@@ -26,6 +26,10 @@ on:
         description: "Begrenzte private Inhaltsprobe ausschliesslich verschluesselt lesen"
         type: boolean
         default: false
+      pruefeingabe_500:
+        description: "Private Probe um aktuelle echte Eingaben aktiver Zielprofile ergaenzen, hoechstens 3"
+        type: boolean
+        default: false
       nachweis_ab_position:
         description: "Private Inhaltsprobe: erste Position der sortierten 500er Zielmenge"
         type: string
@@ -48,7 +52,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: helmut-500-zugangspruefung
+  group: helmut-500-kontrollierte-facharbeit
   cancel-in-progress: false
 
 jobs:
@@ -137,6 +141,7 @@ jobs:
           HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
           HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
           HELMUT_NACHWEIS_TAG: ${{ inputs.briefing_tag }}
+          HELMUT_PRUEFEINGABE_500: ${{ inputs.pruefeingabe_500 }}
           HELMUT_PRIVAT_AB_POSITION: ${{ inputs.nachweis_ab_position }}
           HELMUT_PRIVAT_ANZAHL: ${{ inputs.nachweis_anzahl }}
           HELMUT_NACHWEIS_PUBLIC_KEY: ${{ inputs.nachweis_public_key }}

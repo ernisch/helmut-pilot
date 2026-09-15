@@ -170,12 +170,17 @@ async function handleRequest(request, response) {
   if (url.pathname === "/api/cron/briefing-nachweis") {
     if (!authorizeCron(request, url, response)) return;
     if (request.method !== "GET" || [...url.searchParams.keys()].some(k => !["mandat", "tag", "modus"].includes(k))
-      || (url.searchParams.has("modus") && url.searchParams.get("modus") !== "eingabe")) {
+      || (url.searchParams.has("modus") && !["eingabe", "eingabe-500"].includes(url.searchParams.get("modus")))) {
       response.writeHead(400, jsonHeaders()); response.end(JSON.stringify({ ok: false, grund: "nachweis-aufruf-ungueltig" })); return;
     }
     try {
       const storage = require("./lib/helmut/storage"), userId = url.searchParams.get("mandat"), day = url.searchParams.get("tag");
       storage.assertTenant(userId, "briefingNachweisApp");
+      if (url.searchParams.get("modus") === "eingabe-500")
+        return sendJson(response, await require("./lib/helmut/briefing-pruefaufnahme-500").erfasse({
+          userId, tag: day, expectedCommit: request.headers["x-helmut-production-commit"],
+          commit: process.env.VERCEL_GIT_COMMIT_SHA, production: process.env.VERCEL_ENV === "production",
+          config: testnachweisKonfiguration, storage, build: buildV3Briefing }));
       if (url.searchParams.get("modus") === "eingabe")
         return sendJson(response, await require("./lib/helmut/briefing-pruefaufnahme").erfasse({
           userId, tag: day, expectedCommit: request.headers["x-helmut-production-commit"],
@@ -252,6 +257,7 @@ async function handleRequest(request, response) {
           .profilQuellenErlaubt({ id: "test-kohorte-a-001" }),
         textnachlaufVersion: 2,
         textnachlaufArbeitsauswahlVersion: 1,
+        test500PruefaufnahmeVersion: 1,
         testKosten: require("./lib/helmut/testkosten-budget").konfiguration(),
         quellenkontext: {
           version: 1, scoring: require("./lib/helmut/scoring").scoringMode(),

@@ -88,6 +88,70 @@ function mock(mode) {
     const m = mock(), r = await R.ausfuehren({ env: { ...env, ...change }, fetchFn: m.fetchFn });
     A.equal(r.ok, false, JSON.stringify(change)); A.equal(m.calls.length, 0);
   }
+
+  const P = require("../lib/helmut/briefing-pruefaufnahme-500");
+  const oldTarget = P.pruefeBestand;
+  const liveTime = new Date("2026-09-15T12:00:00Z");
+  function liveMock(mode) {
+    const base = mock();
+    return { calls: base.calls, fetchFn: async (url, init) => {
+      if (url.includes("/api/cron/briefing-nachweis")) {
+        base.calls.push(url); A.equal(init.method, "GET"); A.equal(init.redirect, "error");
+        A.equal(init.headers["x-helmut-production-commit"], SHA);
+        const u = new URL(url), id = u.searchParams.get("mandat"); A(ids.includes(id));
+        A.equal(u.searchParams.get("modus"), "eingabe-500");
+        if (mode === "raw-error") throw new Error("PRIVATE_TEST_CRON_KEY PRIVATER_ROHFEHLER");
+        return { status: 200, json: async () => ({ version: 1, art: "production-briefing-eingabe-500",
+          productionCommit: SHA, erfasstAm: liveTime.toISOString(),
+          profile: { id: mode === "foreign-live" ? "fremd" : id, profileActive: true },
+          result: { eingabe: { mandat: id, tag: "2026-09-15", eingabeHash: "f".repeat(64) } },
+          reinLesend: true, modellaufrufe: 0, schreibaufrufe: 0, ziel: 500,
+          zielHash: mode === "bad-target" ? "f".repeat(64) : P.ZIELHASH, testende: P.ENDE,
+          transaktionalerSnapshot: false, fachlicheFreigabe: mode === "fake-pass",
+          funktionsnachweis500: false }) };
+      }
+      // Archivspezifische Tagesfixture unveraendert fuer ihren alten Belegtag.
+      const r = await base.fetchFn(url.replaceAll("2026-09-15", DAY), init);
+      if (url.includes("testnachweis-status")) {
+        const body = await r.json();
+        return { ...r, json: async () => ({ ...body, test500PruefaufnahmeVersion: mode === "old-api" ? 0 : 1,
+          testKosten: { version: 2, aktiv: true, limitUsd: 4, maxManualCalls: null, maxWindowMs: null,
+            unbekanntBleibtReserviert: true },
+          quellenkontext: { version: 1, scoring: "on", relevanzordnung: true, atomicLock: true,
+            koScan: 100, lageMax: 10, relevanzTage: 7, sourceSafetyStandard: true } }) };
+      }
+      const rows = await r.json();
+      const value = JSON.parse(JSON.stringify(rows).replaceAll(DAY, "2026-09-15"));
+      // Nur leere Archivzeilen in der neuen Transportfixture; die echten alten
+      // Beleghashes werden im unveraenderten Test oben separat geprueft.
+      if (url.includes("/rest/v1/briefings")) return { status: 200, json: async () => [], headers: { get: () => "*/0" } };
+      return { ...r, json: async () => value };
+    } };
+  }
+  const liveEnv = { ...env, HELMUT_PRUEFEINGABE_500: "true", HELMUT_NACHWEIS_TAG: "2026-09-15" };
+  const wrong = liveMock();
+  A.equal((await R.ausfuehren({ env: liveEnv, fetchFn: wrong.fetchFn, now: () => liveTime })).ok, false,
+    "Gleiche 500er Anzahl ohne richtige reale Zielidentitaet bleibt gesperrt");
+  P.pruefeBestand = rows => rows.filter(p => p.profileActive).map(p => p.id).sort();
+  try {
+    const m = liveMock(), live = await R.ausfuehren({ env: liveEnv, fetchFn: m.fetchFn, now: () => liveTime });
+    A.equal(live.ok, true);
+    const plainLive = T.entschluesseln(live.envelope, pem, { runId: env.GITHUB_RUN_ID,
+      commit: SHA, tag: "2026-09-15", abPosition: 6, anzahl: 3 });
+    A.equal(plainLive.art, "aktive-500-pruefaufnahme"); A.equal(plainLive.fachlicheFreigabe, false);
+    A.equal(plainLive.mandate.length, 3); A(plainLive.mandate.every(x => x.pruefaufnahme.result.eingabe.mandat === x.userId));
+    A(!JSON.stringify(live).includes(ids[0]));
+    for (const mode of ["foreign-live", "bad-target", "fake-pass", "raw-error", "old-api"]) {
+      const m = liveMock(mode), r = await R.ausfuehren({ env: liveEnv, fetchFn: m.fetchFn, now: () => liveTime });
+      A.equal(r.ok, false, mode); A.equal(r.envelope, undefined); A(!JSON.stringify(r).includes("PRIVAT"));
+    }
+    for (const change of [{ HELMUT_PRIVAT_ANZAHL: "4" }, { HELMUT_PRUEFEINGABE_500: "force" }]) {
+      const m = liveMock(); A.equal((await R.ausfuehren({ env: { ...liveEnv, ...change },
+        fetchFn: m.fetchFn, now: () => liveTime })).ok, false); A.equal(m.calls.length, 0);
+    }
+    const ended = liveMock(); A.equal((await R.ausfuehren({ env: liveEnv, fetchFn: ended.fetchFn,
+      now: () => new Date(P.ENDE) })).ok, false); A.equal(ended.calls.length, 0);
+  } finally { P.pruefeBestand = oldTarget; }
   const workflow = F.readFileSync(require("node:path").join(__dirname, "../.github/workflows/500-zugangspruefung.yml"), "utf8");
   A.match(workflow, /privater_inhaltsnachweis:[\s\S]*?type: boolean\s+default: false/);
   A.match(workflow, /github.event_name == 'workflow_dispatch' && inputs.privater_inhaltsnachweis/);

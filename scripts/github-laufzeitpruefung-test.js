@@ -187,6 +187,23 @@ async function main() {
           && (await request("GET", geheim, path + "&modus=force")).status === 400,
           "Aufnahme akzeptiert weder POST noch einen erzwungenen Modus");
       } finally { P.erfasse = oldCapture; }
+      const P500 = require("../lib/helmut/briefing-pruefaufnahme-500"), old500 = P500.erfasse;
+      let called500 = null;
+      P500.erfasse = async args => { called500 = args; return { reinLesend: true, fachlicheFreigabe: false }; };
+      try {
+        const inputPath = path + "&modus=eingabe-500";
+        check((await request("GET", null, inputPath)).status === 403 && called500 === null,
+          "Aktive Aufnahme verlangt Cron Autorisierung vor jedem Lesen");
+        check((await request("POST", geheim, inputPath)).status === 400
+          && (await request("GET", geheim, inputPath + "&pruefeZielbestand=force")).status === 400
+          && called500 === null, "Aktive Aufnahme erlaubt weder Writer noch Zielueberschreibung");
+        const read500 = await request("GET", geheim, inputPath, { "x-helmut-production-commit": sha });
+        check(read500.status === 200 && called500.expectedCommit === sha
+          && called500.storage === storage && typeof called500.config === "function"
+          && typeof called500.build === "function" && called500.pruefeZielbestand === undefined,
+          "Aktive HTTP Aufnahme bindet echten Builder, Konfiguration und festen Zielpruefer");
+      } finally { P500.erfasse = old500; }
+
     } finally { storage.getProfile = getProfileVorher; storage.getRenderedBriefingV3 = getBriefingVorher; }
     const fixture = require("./fixtures/profilhash-integration");
     const f = fixture.fixture({ ...fixture.profile, id: "test-kohorte-a-001" });

@@ -9,6 +9,7 @@ const S = require("../lib/helmut/storage");
 const B = require("../lib/helmut/briefing-speicher");
 const Q = require("../lib/helmut/lage-textqualitaet");
 const T = require("./privater-nachweis-transport");
+const P = require("../lib/helmut/briefing-pruefaufnahme-500");
 function fordere(ok) { if (!ok) throw new Error("privater-inhaltsnachweis-nicht-bestaetigt"); }
 
 function pruefeBelegzeilen(rows, profile, day) {
@@ -46,10 +47,19 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
     T.publicKey(env.HELMUT_NACHWEIS_PUBLIC_KEY); // Vor jedem Netzabruf.
     fordere(String(env.SUPABASE_URL || "").replace(/\/$/, "") === PROJECT_URL
       && env.SUPABASE_SERVICE_ROLE_KEY && env.HELMUT_CRON_SECRET);
+    const eingabe500 = env.HELMUT_PRUEFEINGABE_500 === "true";
+    fordere([undefined, "", "false", "true"].includes(env.HELMUT_PRUEFEINGABE_500));
     const start = now().getTime();
+    const pruefeFenster = () => fordere(!eingabe500 || (anzahl <= 3
+      && now().getTime() >= Date.parse(P.BEGINN) && now().getTime() < Date.parse(P.ENDE)
+      && ctx.tag === require("../lib/helmut/briefing-frische").berlinTagKey(now())));
+    pruefeFenster();
     const config = await pruefe({ env, fetchFn });
     fordere(config.ok && config.profileRelational && config.profileExclusive && config.v3Bereit
       && config.kommunikationGesperrt && config.kohortenQuellenGesperrt);
+    if (eingabe500) fordere(config.test500PruefaufnahmeVersion === 1
+      && config.testKosten?.version === 2 && config.testKosten.aktiv === true
+      && config.testKosten.limitUsd === 4 && config.quellenkontext?.atomicLock === true);
     async function get(path, limit) {
       fordere(now().getTime() - start < 240000);
       const r = await fetchFn(PROJECT_URL + "/rest/v1/" + path, { method: "GET", redirect: "error",
@@ -77,7 +87,32 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
       && KOHORTE_KENNUNGEN.every(id => all.some(r => r.user_id === id)));
     const target = all.filter(r => cohort.has(r.user_id) || r.aktiv).map(r => r.user_id).sort();
     fordere(target.length === 500 && target.filter(id => !cohort.has(id)).length === 5);
+    if (eingabe500) {
+      const exact = P.pruefeBestand(all.map(r => ({ id: r.user_id, profileActive: r.aktiv })));
+      fordere(B.hash(exact) === B.hash(target));
+    }
     const ids = target.slice(abPosition - 1, abPosition - 1 + anzahl);
+    async function leseEingabe(id) {
+      pruefeFenster();
+      fordere(now().getTime() - start < 240000 && ids.includes(id));
+      const r = await fetchFn("https://helmut-pilot.vercel.app/api/cron/briefing-nachweis?modus=eingabe-500&mandat="
+        + encodeURIComponent(id) + "&tag=" + ctx.tag, { method: "GET", redirect: "error",
+        signal: AbortSignal.timeout(60000), headers: { Authorization: `Bearer ${env.HELMUT_CRON_SECRET}`,
+          Accept: "application/json", "x-helmut-production-commit": ctx.commit } });
+      fordere(r.status === 200);
+      const x = await r.json();
+      fordere(x?.version === 1 && x.art === "production-briefing-eingabe-500"
+        && x.productionCommit === ctx.commit && x.profile?.id === id && x.profile.profileActive === true
+        && x.result?.eingabe?.mandat === id && x.result.eingabe.tag === ctx.tag
+        && /^[a-f0-9]{64}$/.test(x.result.eingabe.eingabeHash || "")
+        && x.reinLesend === true && x.modellaufrufe === 0 && x.schreibaufrufe === 0
+        && x.ziel === 500 && x.zielHash === P.ZIELHASH && x.testende === P.ENDE
+        && x.transaktionalerSnapshot === false && x.fachlicheFreigabe === false
+        && x.funktionsnachweis500 === false
+        && Date.parse(x.erfasstAm) >= start && Date.parse(x.erfasstAm) <= now().getTime());
+      pruefeFenster();
+      return x;
+    }
     async function leseMandat(id) {
       S.assertTenant(id, "privaterInhaltsnachweis");
       fordere(ids.includes(id));
@@ -96,13 +131,21 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
         fachbasisAmVollprofilGeprueft: false, belege: rows, snapshotHash: B.hash({ profil: profiles[0], belege: rows }) };
     }
     const mandate = [];
-    for (const id of ids) mandate.push(await leseMandat(id));
+    for (const id of ids) {
+      const m = await leseMandat(id);
+      if (eingabe500) m.pruefaufnahme = await leseEingabe(id);
+      mandate.push(m);
+    }
     // Keine Behauptung eines transaktionalen Backups: zwei identische
     // Leseproben und keine beobachtete aktive Arbeit sind die konkrete Grenze.
     for (const before of mandate) fordere((await leseMandat(before.userId)).snapshotHash === before.snapshotHash);
     fordere(B.hash(await get(targetQuery, 505)) === B.hash(all));
     await ruhe();
-    const payload = { version: 1, ...ctx, ziel: 500, zielHash: B.hash(target),
+    if (eingabe500) {
+      pruefeFenster();
+      fordere(B.hash(await pruefe({ env, fetchFn })) === B.hash(config));
+    }
+    const payload = { version: 1, ...(eingabe500 ? { art: "aktive-500-pruefaufnahme", fachlicheFreigabe: false } : {}), ...ctx, ziel: 500, zielHash: B.hash(target),
       erhobenAm: now().toISOString(), transaktionalerSnapshot: false, mandate };
     const envelope = T.verschluesseln(payload, env.HELMUT_NACHWEIS_PUBLIC_KEY, ctx);
     return { ok: true, reinLesend: true, modellaufrufe: 0, schreibaufrufe: 0,
