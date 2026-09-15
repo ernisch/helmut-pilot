@@ -152,6 +152,19 @@ function isOutputStale(completeKoAt) {
 
 async function handleRequest(request, response) {
   const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
+  // Einmalige explizite B055-Freigabe vor jedem Account-/Profil-Vorlauf.
+  // Private Fachtexte kommen ausschliesslich aus dem gebundenen DB-Auftrag.
+  if (url.pathname === "/api/cron/b055-einzelabschluss") {
+    if (!authorizeCron(request, url, response)) return;
+    if (request.method !== "POST" || url.search) {
+      response.writeHead(400, jsonHeaders());
+      response.end(JSON.stringify({ ok: false, grund: "einzelaufruf-ungueltig" })); return;
+    }
+    return handleAsync(response, () => require("./lib/helmut/b055-einzelabschluss").ausfuehren({
+      commit: request.headers["x-helmut-production-commit"], commandHash: request.headers["x-helmut-auftrag-hash"],
+      confirmation: request.headers["x-helmut-bestaetigung"], config: () => testnachweisKonfiguration(), build: buildV3Briefing
+    }));
+  }
   // Betreiberabruf des gespeicherten App-Vertrags vor dem Account-Vorlauf.
   // Kein Kontoseed, Nutzungs-Tracking, Profilrepair oder asynchroner KI-Aufruf.
   if (url.pathname === "/api/cron/briefing-nachweis") {
