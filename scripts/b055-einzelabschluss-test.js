@@ -69,7 +69,7 @@ function fixture() {
         const u = new URL("https://example.invalid/" + path), t = u.pathname.slice(1), p = u.searchParams;
         if (t === "helmut_store") {
           if (p.get("select").includes("pushEvents")) return [{ id: "main-auth", pushEvents: clone(h.events), auditEvents: [] }];
-          return [{ data: clone(["eq." + E.COMMAND, "eq." + E.COMMAND_NEU].includes(p.get("id")) ? c : p.get("id") === "eq.main-auth" ? s.auth : s.main) }];
+          return [{ data: clone(["eq." + E.COMMAND, "eq." + E.COMMAND_NEU, "eq." + E.COMMAND_REDAKTION].includes(p.get("id")) ? c : p.get("id") === "eq.main-auth" ? s.auth : s.main) }];
         }
         if (t === "mandate_profiles") return clone(p.has("user_id") ? s.mandate.filter(m => m.user_id === p.get("user_id").slice(3)) : s.mandate);
         if (t === "profiles") return clone(p.has("id") ? s.identitaeten.filter(r => r.id === p.get("id").slice(3)) : s.identitaeten);

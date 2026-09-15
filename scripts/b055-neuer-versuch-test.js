@@ -20,7 +20,8 @@ function neu(){
  const get=h.args.deps.get; h.args.deps.get=async p=>p.startsWith('process_runs?select=*&process=')?[structuredClone(h.previous)]:get(p);
  h.args.confirmation=E.CONFIRM_NEU;h.approve();return h;
 }
-(async()=>{
+module.exports = { neu };
+if (require.main === module) (async()=>{
  let passed=0;
  const h=neu(),old=[E.START_ID,...[...h.rows.keys()].filter(x=>x.includes('pruefentwurf')||x.includes('briefing-aussagen'))].map(k=>[k,B.hash(h.rows.get(k))]);
  const r=await E.ausfuehren(h.args); A.equal(r.ok,true,JSON.stringify(r));A.equal(h.calls,2);A.equal(h.imports,0);A.equal(r.importbericht.wiederverwendet,true);
