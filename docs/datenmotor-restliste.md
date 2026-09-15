@@ -2398,17 +2398,10 @@ P-Schemata**. Ab sofort gilt genau EIN Schema:
 
 #### OP-28 · Lesefehler-Klassifikation: `401`/`403` schlagen als Teilstring durch (Sprint F-PORT 2026-08-03; P3)
 
-- **Status:** offen. Ursache belegt und reproduziert; Behebung der Production Logik nicht begonnen.
-- **Befund:** `klassifiziereLesefehler` prüft `401`/`403` als Teilstring der gesamten
-  Fehlerkette und vor spezifischeren Regeln für DNS, Verbindung und Timeout. Eine Portnummer
-  wie `40123` oder eine ISO Millisekunde `.401Z` kann deshalb eine Netzstörung fälschlich
-  als `auth` melden. Beleg: [`betrieb/befund-werkzeug-haertung-w1-w2.md`](betrieb/befund-werkzeug-haertung-w1-w2.md) §16.
-- **Folge:** kein falsches Grün, aber eine falsche Ursache für die betriebliche Fehlersuche.
-- **Fehlender Schritt:** Auth Erkennung später an echte Fehlertoken binden und per
-  Mutationsprobe belegen. Dafür ist eine eigene Freigabe nötig, weil sich
-  Production Telemetrieklassen ändern.
-- **CI:** die belegte Port Flackerursache in `werkzeug-lesefehler-test.js` ist testseitig
-  beseitigt. Das getrennte Restrisiko im Timeout Szenario bleibt offen.
+- **Status:** am15.09.2026 durch PR415 behoben und Production READY mit Hauptalias bestätigt: Main `4404883d41c0c88f5d31016d62b69290a4e14afe`, Deployment `dpl_CaxwF3Ps7p5svcoUL52f1JtHkzfs`. Auftragsbezogene Korrektur durch aktuelle Betreiberfreigabe gedeckt.
+- **Ursache und Korrektur:** `.401Z`, Ports und DNS-Namen konnten als Authfehler durchschlagen. Authstatus wird jetzt an strukturierte401/403 oder ausdrückliche HTTP-Statusmeldungen gebunden; echte Zugangsfehler bleiben gesperrt. Deterministische Reproduktion und Mutationsprobe belegt,17/17 gezielte Prüfungen.
+- **Pflichtbeleg:** finaler Head `eed39e33a7417f9a0600f6367f9fed6590db6a12`, lokal392/392, CI34973439609 ebenfalls392/392, Browser50, Kontoschutz15, Z22 48/0 ohne Überspringen. Der frühere CI-Abbruch390/391 bleibt dokumentiert; seine konkrete Kindprozess-Millisekunde war nicht im Log enthalten und wird nicht nachträglich erfunden.
+- **Grenze:** Behebung der falschen Fehlerklasse, keine Inhaltsabnahme. Historische B055 Schutzpins unverändert. [Vollständiger Vorgänger](archive/project_state/2026_09_15_OP28_vor_abschluss.md), [Testbeleg](betrieb/500-productiontest-2026-09-15.md).
 
 ---
 
