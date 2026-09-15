@@ -70,9 +70,9 @@ function startStub({ rawDocs = [], links = [], kos = [], status = 200, body = nu
 // Linux-Ephemeralbereichs (1,12 %); das ist die belegte Ursache des Flackerns.
 // Die Ziehung wird deshalb wiederholt, bis der Port keine Statuszahl enthaelt —
 // damit ist das Szenario wirklich deterministisch, nicht nur die Fehlerart.
-// Der ZUGRUNDELIEGENDE Klassifikationsfehler in lib/helmut/storage.js ist damit
-// NICHT behoben (Production-Logik, ausserhalb dieses Sprints) und als OP-28
-// gefuehrt: docs/betrieb/befund-werkzeug-haertung-w1-w2.md §16.
+// Historischer Stand: dies behob nur die Fixture. Die eigentliche
+// Statuszahl-Klassifikation wird seit dem reproduzierten CI-Befund vom
+// 15.09.2026 separat in lesefehler-klassifikation-test.js abgesichert.
 const PORT_STATUSZAHL = /401|403/;
 
 async function geschlossenerPortOhneStatuszahl() {
@@ -219,7 +219,8 @@ async function main() {
   const r4 = await laufe(["--vorschau"], kindUmgebung(stub4.port));
   stub4.server.close();
   check("Timeout: Exit 6", r4.code === 6, `Exit ${r4.code}`);
-  check("Timeout: Fehlerklasse timeout benannt", r4.err.includes("timeout"));
+  check("Timeout: Fehlerklasse timeout benannt", r4.err.includes("timeout"),
+    `Fixture-Port ${stub4.port} · stderr: ${r4.err.replace(/\s+/g, " ").slice(0, 250)}`);
   check("Timeout: KEIN 'Nichts nachzuholen'", !r4.alles.includes("Nichts nachzuholen"));
 
   // (5) Authfehler (401) -> Exit 6, Klasse auth.

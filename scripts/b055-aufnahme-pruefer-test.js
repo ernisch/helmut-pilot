@@ -1,7 +1,8 @@
 'use strict';
 const A=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const P=require('./b055-aufnahme/b055-aufnahme-pruefer');
-const source=fs.readFileSync(path.join(__dirname,'../lib/helmut/storage.js'),'utf8');
+const source=require('./fixtures/b055-historischer-storage')();
+const aktuellerSource=fs.readFileSync(path.join(__dirname,'../lib/helmut/storage.js'),'utf8');
 // Ausschließlich synthetische Antworten; kein gespeicherter politischer Inhalt.
 const vid='vg-synthetisch-aufnahme';
 const report={ok:true,reinLesend:true,httpStatus:200,grund:'production-laufzeit-gelesen',commit:P.COMMIT,
@@ -16,6 +17,7 @@ const docs=[{id:'synthetisch-alt',published_at:'2026-09-12T00:00:00Z',title:'Syn
 let passed=0;async function test(name,fn){await fn();passed++;console.log('PASS '+name);}
 async function rejects(change,code=source){let f=fixture(docs);change(f);await A.rejects(P.pruefe(f,code));}
 (async()=>{
+ await test('aktuelle Speicherdatei ist kein historischer Verbrauchercode',async()=>{A.notEqual(P.hash(aktuellerSource),P.hash(source));await rejects(()=>{},aktuellerSource);});
  await test('Rohbytes und Reihenfolge bleiben erhalten; echter Leser sortiert Verbrauch',async()=>{const f=fixture(docs),before=JSON.stringify(f),r=await P.pruefe(f,source);A.equal(JSON.stringify(f),before);A.equal(r.responses[0].rawBody,f.responses[0].rawBody);A.deepEqual(r.responses[0].responseRowIds,['synthetisch-alt','synthetisch-neu']);A.deepEqual(r.responses[0].consumedIds,['synthetisch-neu','synthetisch-alt']);A.equal(r.productionMitschnittBestaetigt,false);A.equal(r.fachlicheFreigabe,false);});
  await test('Gleiche Zeitstempel erhalten die tatsächliche Antwortreihenfolge',async()=>{const f=fixture(docs.map(d=>({...d,published_at:'2026-09-13T00:00:00Z'})));const r=await P.pruefe(f,source);A.deepEqual(r.responses[0].consumedIds,docs.map(d=>d.id));});
  await test('Exakt40 Zeilen sind vollständig für den begrenzten Leser',async()=>{const f=fixture(Array.from({length:40},(_,i)=>({id:'s-'+i,published_at:'2026-09-13T00:00:00Z'})));A.equal((await P.pruefe(f,source)).responses[0].consumedDocs.length,40);});
