@@ -9,7 +9,7 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch } = {}) {
   A.equal(env.GITHUB_REPOSITORY, "ernisch/helmut-pilot");
   A.equal(env.GITHUB_REF, "refs/heads/main"); A.equal(env.GITHUB_EVENT_NAME, "workflow_dispatch");
   A.equal(env.GITHUB_RUN_ATTEMPT, "1"); A.equal(env.HELMUT_PRODUCTION_COMMIT, env.GITHUB_SHA);
-  A([E.CONFIRM, E.CONFIRM_NEU].includes(env.HELMUT_EINZEL_BESTAETIGUNG));
+  A([E.CONFIRM, E.CONFIRM_NEU, E.CONFIRM_REDAKTION].includes(env.HELMUT_EINZEL_BESTAETIGUNG));
   A.match(env.HELMUT_PRODUCTION_COMMIT || "", /^[a-f0-9]{40}$/);
   A.match(env.HELMUT_EINZEL_AUFTRAG_HASH || "", /^[a-f0-9]{64}$/);
   publicKey(env.HELMUT_NACHWEIS_PUBLIC_KEY);
@@ -27,7 +27,7 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch } = {}) {
   let after = null; try { after = await R.pruefe({ env, fetchFn }); } catch { /* Bericht bleibt erhalten. */ }
   const payload = JSON.parse(raw);
   const ok = response.status === 200 && payload.ok === true && payload.userId === E.MANDAT
-    && payload.freigegebeneModelle === 2 && payload.briefing?.gespeichert === true
+    && payload.freigegebeneModelle === (env.HELMUT_EINZEL_BESTAETIGUNG === E.CONFIRM_REDAKTION ? 1 : 2) && payload.briefing?.gespeichert === true
     && JSON.stringify(before) === JSON.stringify(after);
   return { ok, envelope: T.encrypt({ version: 1, runtimeBefore: before, runtimeAfter: after,
     httpStatus: response.status, payload }, env.HELMUT_NACHWEIS_PUBLIC_KEY, ctx) };

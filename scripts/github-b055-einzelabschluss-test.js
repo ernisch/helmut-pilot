@@ -40,6 +40,13 @@ const fetchFn = async (url, opts) => {
     { HELMUT_PRODUCTION_COMMIT: "b".repeat(40) }, { HELMUT_NACHWEIS_PUBLIC_KEY: "ungueltig" }]) {
     calls = []; await A.rejects(P.ausfuehren({ env: { ...env, ...changes }, fetchFn, now: () => date })); A.equal(calls.length, 0);
   }
+  const originalConfirmation = env.HELMUT_EINZEL_BESTAETIGUNG;
+  env.HELMUT_EINZEL_BESTAETIGUNG = require("../lib/helmut/b055-einzelabschluss").CONFIRM_REDAKTION;
+  payload.freigegebeneModelle = 1; calls = [];
+  A.equal((await P.ausfuehren({ env, fetchFn })).ok, true); A.equal(calls.length, 3);
+  payload.freigegebeneModelle = 2;
+  A.equal((await P.ausfuehren({ env, fetchFn })).ok, false);
+  env.HELMUT_EINZEL_BESTAETIGUNG = originalConfirmation;
   payload.ok = false;
   const negative = await P.ausfuehren({ env, fetchFn }); A.equal(negative.ok, false);
   A(!JSON.stringify(negative).includes("Privater synthetischer Text"));
@@ -49,5 +56,5 @@ const fetchFn = async (url, opts) => {
   const ctx = { purpose: "b055-einzelabschluss-v1", runId: env.GITHUB_RUN_ID, workflowCommit: commit, productionCommit: commit };
   A.throws(() => T.decrypt(r.envelope, pair.privateKey.export({ format: "pem", type: "pkcs8" }),
     { ...ctx, purpose: "b055-eingabeaufnahme-v1" }));
-  console.log("4/4 Transportgruppen: genau ein POST, exakter Productionkontext, verschluesselte Fehlerbelege, Timeout ohne Wiederholung.");
+  console.log("5/5 Transportgruppen: genau ein POST, exakter Productionkontext, verschluesselte Fehlerbelege, Timeout ohne Wiederholung.");
 })().catch(e => { console.error(e); process.exitCode = 1; });
