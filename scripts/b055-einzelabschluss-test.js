@@ -45,7 +45,7 @@ function fixture() {
     tarif: "azure-gpt5-mini-obergrenze-20260909", limit: 4000000, spent: 0, baseline: 0, baselineCalls: 0,
     manualCalls: 0, manualUntil: null, calls: {}, frozen: null } };
   const h = { s, c, ctx, calls: 0, writes: 0, rows: new Map(), locks: [], runs: [], events: [],
-    leases: [], now: new Date(zeit), counter: 0, hooks: {}, imports: 0, materialisiert: 0 };
+    result, leases: [], now: new Date(zeit), counter: 0, hooks: {}, imports: 0, materialisiert: 0 };
   const config = { production: true, commit: SHA, storageSupabase: true, v3Bereit: true,
     profileRelational: true, profileExclusive: true, retentionGueltig: true, retention: 36,
     kommunikationGesperrt: true, kohortenQuellenGesperrt: true, tagesdeckel: 2416, understandingReserve: 702,
@@ -69,12 +69,12 @@ function fixture() {
         const u = new URL("https://example.invalid/" + path), t = u.pathname.slice(1), p = u.searchParams;
         if (t === "helmut_store") {
           if (p.get("select").includes("pushEvents")) return [{ id: "main-auth", pushEvents: clone(h.events), auditEvents: [] }];
-          return [{ data: clone(p.get("id") === "eq." + E.COMMAND ? c : p.get("id") === "eq.main-auth" ? s.auth : s.main) }];
+          return [{ data: clone(["eq." + E.COMMAND, "eq." + E.COMMAND_NEU].includes(p.get("id")) ? c : p.get("id") === "eq.main-auth" ? s.auth : s.main) }];
         }
         if (t === "mandate_profiles") return clone(p.has("user_id") ? s.mandate.filter(m => m.user_id === p.get("user_id").slice(3)) : s.mandate);
         if (t === "profiles") return clone(p.has("id") ? s.identitaeten.filter(r => r.id === p.get("id").slice(3)) : s.identitaeten);
-        if (t === "briefings") { A.equal(p.get("user_id"), "eq." + E.MANDAT); A.equal(p.get("id"), "eq." + E.START_ID);
-          return h.rows.has(E.START_ID) ? [clone(h.rows.get(E.START_ID))] : []; }
+        if (t === "briefings") { A.equal(p.get("user_id"), "eq." + E.MANDAT); const id = p.get("id").slice(3);
+          return h.rows.has(id) ? [clone(h.rows.get(id))] : []; }
         if (t === "pipeline_locks") return clone(h.locks);
         if (t === "helmut_jobs") return clone(h.leases);
         if (t === "process_runs") return clone(h.runs);
@@ -105,7 +105,8 @@ function fixture() {
 }
 let passed = 0;
 const test = async (name, f) => { await f(); passed++; console.log("PASS " + name); };
-(async () => {
+module.exports = { fixture };
+if (require.main === module) (async () => {
   await test("Ein inaktives Profil, zwei Modelle, zwei Kostenbelege, Ruecklesung", async () => {
     const h = fixture(), before = B.hash({ m: h.s.mandate, p: h.s.identitaeten, u: h.s.auth.users });
     const r = await E.ausfuehren(h.args); A.equal(r.ok, true, JSON.stringify(r));

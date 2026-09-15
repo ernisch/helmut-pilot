@@ -9,7 +9,7 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch } = {}) {
   A.equal(env.GITHUB_REPOSITORY, "ernisch/helmut-pilot");
   A.equal(env.GITHUB_REF, "refs/heads/main"); A.equal(env.GITHUB_EVENT_NAME, "workflow_dispatch");
   A.equal(env.GITHUB_RUN_ATTEMPT, "1"); A.equal(env.HELMUT_PRODUCTION_COMMIT, env.GITHUB_SHA);
-  A.equal(env.HELMUT_EINZEL_BESTAETIGUNG, E.CONFIRM);
+  A([E.CONFIRM, E.CONFIRM_NEU].includes(env.HELMUT_EINZEL_BESTAETIGUNG));
   A.match(env.HELMUT_PRODUCTION_COMMIT || "", /^[a-f0-9]{40}$/);
   A.match(env.HELMUT_EINZEL_AUFTRAG_HASH || "", /^[a-f0-9]{64}$/);
   publicKey(env.HELMUT_NACHWEIS_PUBLIC_KEY);
@@ -21,7 +21,7 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch } = {}) {
     method: "POST", redirect: "error", signal: AbortSignal.timeout(290000),
     headers: { Authorization: `Bearer ${env.HELMUT_CRON_SECRET}`, Accept: "application/json",
       "x-helmut-production-commit": env.HELMUT_PRODUCTION_COMMIT,
-      "x-helmut-auftrag-hash": env.HELMUT_EINZEL_AUFTRAG_HASH, "x-helmut-bestaetigung": E.CONFIRM } });
+      "x-helmut-auftrag-hash": env.HELMUT_EINZEL_AUFTRAG_HASH, "x-helmut-bestaetigung": env.HELMUT_EINZEL_BESTAETIGUNG } });
   const raw = await response.text(); A(Buffer.byteLength(raw) <= 8 * 1024 * 1024);
   // Auch negative Serverberichte sichern. Keine privaten Texte/Fehler ins Log.
   let after = null; try { after = await R.pruefe({ env, fetchFn }); } catch { /* Bericht bleibt erhalten. */ }
