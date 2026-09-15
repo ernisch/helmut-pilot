@@ -1,0 +1,47 @@
+name: "500 Testprofile: befristete Ueberwachung"
+
+on:
+  workflow_dispatch:
+    inputs:
+      dispatch_vorpruefung:
+        description: "Den automatischen Dispatch mit dem rein lesenden Abschlussvorflug pruefen"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "17 * 15,16 9 *"
+    - cron: "43 10 16 9 *"
+
+permissions:
+  contents: read
+  statuses: read
+  actions: write
+
+# Der Timer haelt dieselbe Sperre wie alle manuellen Testaktionen.
+# Nach dem einmaligen Dispatch verlaesst er die Gruppe; erst dann startet Testende.
+concurrency:
+  group: helmut-500-kontrollierte-facharbeit
+  cancel-in-progress: false
+
+jobs:
+  kontrolle:
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' && github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Bestand und Kosten lesen oder einmaligen Abschluss anfordern
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+          HELMUT_TIMER_CRON: ${{ github.event.schedule }}
+          HELMUT_TIMER_DISPATCH_PROBE: ${{ inputs.dispatch_vorpruefung }}
+        run: node scripts/github-testfenster-500.js
