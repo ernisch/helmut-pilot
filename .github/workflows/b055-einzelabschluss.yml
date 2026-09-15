@@ -1,0 +1,45 @@
+name: "B055: Einmaliger inaktiver Einzelabschluss"
+on:
+  workflow_dispatch:
+    inputs:
+      production_commit:
+        description: "Exakter READY Maincommit"
+        required: true
+        type: string
+      command_hash:
+        description: "SHA256 des privat hinterlegten freigegebenen Auftrags"
+        required: true
+        type: string
+      confirmation:
+        description: "B055_INAKTIV_EINMAL_ZWEI_MODELLE_MAX_0424_USD"
+        required: true
+        type: string
+      public_key:
+        description: "Oeffentlicher RSA3072 SPKI Schluessel in Base64"
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: helmut-b055-einzelabschluss
+  cancel-in-progress: false
+jobs:
+  abschluss:
+    if: github.repository == 'ernisch/helmut-pilot' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Genau einen gebundenen Abschluss ausfuehren und verschluesselt belegen
+        env:
+          HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+          HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
+          HELMUT_EINZEL_AUFTRAG_HASH: ${{ inputs.command_hash }}
+          HELMUT_EINZEL_BESTAETIGUNG: ${{ inputs.confirmation }}
+          HELMUT_NACHWEIS_PUBLIC_KEY: ${{ inputs.public_key }}
+        run: node scripts/github-b055-einzelabschluss.js
