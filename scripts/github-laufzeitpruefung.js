@@ -40,6 +40,7 @@ async function pruefe({ env = process.env, fetchFn = global.fetch } = {}) {
       ...Object.fromEntries([...BOOLEAN_FELDER, ...ZAHL_FELDER].map((f) => [f, body[f]])),
       ...([1, 2].includes(body.textnachlaufVersion) ? { textnachlaufVersion: body.textnachlaufVersion } : {}),
       ...(body.textnachlaufArbeitsauswahlVersion === 1 ? { textnachlaufArbeitsauswahlVersion: 1 } : {}),
+      ...(body.test500PruefaufnahmeVersion === 1 ? { test500PruefaufnahmeVersion: 1 } : {}),
       ...(body.quellenkontext?.version === 1 && ["on", "off", "shadow"].includes(body.quellenkontext.scoring)
         && typeof body.quellenkontext.relevanzordnung === "boolean" && typeof body.quellenkontext.atomicLock === "boolean"
         && Number.isSafeInteger(body.quellenkontext.koScan) && Number.isSafeInteger(body.quellenkontext.lageMax)
