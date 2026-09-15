@@ -1,6 +1,8 @@
 {
   "version": 2,
-  "regions": ["fra1"],
+  "regions": [
+    "fra1"
+  ],
   "git": {
     "deploymentEnabled": {
       "codex/b055-relative-fristen-20260914": false,
@@ -15,8 +17,9 @@
       "claude/helmut-500-mandate-readiness-6hxden": false,
       "codex/pr-cleanup-consolidation-20260901": false,
       "claude/security-sprint-functional-test-wap0q1": false,
-    "claude/helmut-500-test-prep-qpc12m": false,
-      "claude/helmut-pilot-post-pr295-dveogp": false
+      "claude/helmut-500-test-prep-qpc12m": false,
+      "claude/helmut-pilot-post-pr295-dveogp": false,
+      "codex/500-teststart-terminierung-20260915": false
     }
   },
   "functions": {
