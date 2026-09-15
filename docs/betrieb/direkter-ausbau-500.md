@@ -1,4 +1,24 @@
-# Direkter Ausbau von 25 auf 500
+# Direkter Production-Test mit exakt 500 aktiven Profilen
+
+## Aktuell gültiger Startweg am 15.09.2026
+
+Die Kohorte ist bereits vollständig angelegt: 504 Profile insgesamt, davon fünf bestehende aktive Profile, 495 synthetische inaktive Profile und vier weitere inaktive Profile. Für den nächsten gesondert freigegebenen Test gilt ausschließlich `reaktivierung --ziel=500`, ohne Neuanlage und ohne 25er oder 100er Zwischenabnahme. Die fünf bestehenden aktiven Profile, sämtliche Konten und Identitäten bleiben geschützt. In diesem Vorbereitungssprint wurde kein Profil aktiviert.
+
+| Schritt nach gesonderter Startfreigabe | Wirkung |
+|---|---|
+| `vorpruefung --ziel=500` | Exakten READY Commit, unveränderten Bestand, Betriebsriegel, Tageskosten und offene Reserven frisch lesen |
+| Testende verbindlich festlegen | Vor Aktivierung Start T und ausführbaren Abschluss T+24 Stunden festhalten, höchstens 48 Stunden |
+| `reaktivierung --ziel=500` | Ausschließlich die bestehenden 495 synthetischen Profile aktivieren; anschließend exakt 500 aktive Zielprofile unabhängig nachweisen |
+| `fachzyklus --ziel=500` und gebundener Textnachlauf | Bestehenden Fachweg ausführen, echte aktuelle Fachurteile und vollständige Kostenreserven verlangen, unbekannte Ausgänge nicht wiederholen |
+| `500-testende.yml` | Die 495 synthetischen Profile separat wieder inaktiv setzen und Bestand, Kosten und Kommunikation unabhängig nachweisen |
+
+Die Reaktivierung verlangt das eigene Bestätigungswort `TESTKOHORTE_ZIEL_500_495_REAKTIVIEREN_BESTAETIGT`. **Diese Dokumentation ist keine Startfreigabe.** Der Fortsetzungsauftrag bleibt deaktiviert. Vollständige aktuelle Nachweise stehen in [Startbereitschaft 15.09.2026](500-startbereitschaft-2026-09-15.md).
+
+Es gilt die harte atomare Gesamtgrenze von **4 USD je UTC Tag**. Bereits entstandene Tageskosten und offene Reservierungen zählen mit; vor jedem Modellaufruf muss die gesamte konservative Reserve gedeckt sein. Unbekannte Altvorgänge bleiben vollständig reserviert. Die frühere Prognosegrenze von 9 USD ist keine aktuelle Freigabe und ersetzt diesen Riegel nicht.
+
+## Historischer Ausgangsweg vom 08.09.2026
+
+Die folgenden Angaben zur Neuanlage von 475 Profilen beschreiben den damaligen Ausgangsbestand mit 25 aktiven Profilen. Sie bleiben als historische Belege erhalten und dürfen nicht anstelle des oben genannten aktuellen Reaktivierungswegs ausgeführt werden. Historische A-Abnahmen und Nachtfenster sind gemäß SR §60 keine Voraussetzung des direkten 500er Starts.
 
 Stand 08.09.2026. Die neuere Betreiberanweisung in SR §60 erlaubt den sofortigen Test ohne Nachtfenster und ohne vorgeschaltete A Abnahme. Urspruengliche Umsetzung in [SR §55 und §56](500-funktionstest-sicherheitsrahmen-2026-09-01.md).
 Der folgende Kurztest samt Qualitätskorrektur und geplantem Abschluss wird in **SR §57** ergänzt.
@@ -103,7 +123,7 @@ Kontolöschung oder Rückabwicklung. Ein später ausdrücklich gestarteter Lauf 
 vollständig vorhandene Zielprofile überspringen; Konten ohne Profil, unbekannte Inhalte und
 abweichende Kennungen stoppen ihn. Einen unklaren Teilbestand erst unabhängig lesen.
 
-Die Kostenkontrolle übernimmt den geprüften Kostenvertrag des A Ausführers: bekannte Kosten,
+**Historischer Kostenvertrag, durch den aktuellen atomaren 4-USD-Riegel oben abgelöst:** Die damalige Kostenkontrolle übernahm den Kostenvertrag des A Ausführers: bekannte Kosten,
 enge Reserve für historische Lücken und 2 USD zusätzliche Reserve; Stopp ab Prognose 9 USD.
 Das ist keine atomare USD Grenze und kein Rechnungsbeleg. Keine Änderung der Aufrufdeckel.
 
