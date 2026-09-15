@@ -44,7 +44,9 @@ async function fixture() {
   s.insertLageEntwurfsbeleg = async row => { A(!h.rows.has(row.id)); h.rows.set(row.id, clone(row)); return { saved: true }; };
   s.saveRenderedBriefingV3 = async (row, opts) => {
     A.deepEqual(opts.expectedLage, h.rows.get(row.id)); A.deepEqual(row.payload.vorherigerStand, opts.expectedLage);
-    h.rows.set(row.id, clone(row)); return { saved: true };
+    const saved = clone(row);
+    saved.generated_at = (h.dbZeitDiff ? new Date(Date.parse(row.generated_at) + 1).toISOString() : row.generated_at).replace(/Z$/, "+00:00");
+    h.rows.set(row.id, saved); return { saved: true };
   };
   s.tenantRequest = async (url, id, opts) => {
     A.equal(id, C.MANDAT); A.equal(opts.method, "PATCH");
@@ -53,7 +55,7 @@ async function fixture() {
     A.equal(q.get("generated_at"), "eq." + before.generated_at);
     const body = JSON.parse(opts.body); A.deepEqual(body.payload.vorherigerStand, before);
     if (h.patchLost) throw Error("Unbekannter Schreibausgang");
-    const row = { ...before, ...body }; h.rows.set(key, clone(row)); return [clone(row)];
+    const row = { ...before, ...body, generated_at: body.generated_at.replace(/Z$/, "+00:00") }; h.rows.set(key, clone(row)); return [clone(row)];
   };
   h.args.deps.redaktionGenerate = async (sources, p, meta) => {
     A.deepEqual(meta.gespeicherterEntwurf, h.c.redaktion.antwort); await meta.onDraft(meta.gespeicherterEntwurf);
@@ -94,11 +96,11 @@ async function fixture() {
     A.deepEqual(t.rows.get(t.old.briefing.id), t.old.briefing); A(!t.rows.has(C.START_REDAKTION)); passed++;
   }
   for (const mutate of [h => { h.review.pruefungen[0].vollstaendig_belegt = false; },
-    h => { h.doubleReview = true; }, h => { h.patchLost = true; }]) {
+    h => { h.doubleReview = true; }, h => { h.patchLost = true; }, h => { h.dbZeitDiff = true; }]) {
     const t = await fixture(), before = t.calls; mutate(t);
     A.equal((await C.ausfuehren(t.args)).ok, false); A.equal(t.calls - before, 1);
     A.deepEqual(t.rows.get(t.old.briefing.id), t.old.briefing);
     A.equal((await C.ausfuehren(t.args)).ok, false); A.equal(t.calls - before, 1); passed++;
   }
-  console.log(`${passed}/${passed} Redaktion: getrennte Startsperre, Vorgang/Kosten, echte Review-Gates, Altdaten, CAS und unbekannter Ausgang`);
+  console.log(`${passed}/${passed} Redaktion: getrennte Startsperre, Vorgang/Kosten, echte Review-Gates, Altdaten, Datenbank-Zeitzonen, CAS und unbekannter Ausgang`);
 })().catch(e => { console.error(e); process.exitCode = 1; });
