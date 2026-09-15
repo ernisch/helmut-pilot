@@ -2,6 +2,14 @@ name: "B055: Production Briefing nur lesen"
 on:
   workflow_dispatch:
     inputs:
+      modus:
+        description: "Eingabe lesen oder gespeicherte tatsaechliche Appausgabe nachweisen"
+        required: true
+        default: "eingabe"
+        type: choice
+        options:
+          - eingabe
+          - ausgabe
       production_commit:
         description: "Zuvor READY bestaetigter vollstaendiger Maincommit"
         required: true
@@ -32,4 +40,5 @@ jobs:
           HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
           HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
           HELMUT_NACHWEIS_PUBLIC_KEY: ${{ inputs.public_key }}
+          HELMUT_NACHWEIS_MODUS: ${{ inputs.modus }}
         run: node scripts/github-b055-productionaufnahme.js
