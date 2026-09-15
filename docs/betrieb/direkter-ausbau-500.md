@@ -16,6 +16,52 @@ Die Reaktivierung verlangt das eigene Bestätigungswort `TESTKOHORTE_ZIEL_500_49
 
 Es gilt die harte atomare Gesamtgrenze von **4 USD je UTC Tag**. Bereits entstandene Tageskosten und offene Reservierungen zählen mit; vor jedem Modellaufruf muss die gesamte konservative Reserve gedeckt sein. Unbekannte Altvorgänge bleiben vollständig reserviert. Die frühere Prognosegrenze von 9 USD ist keine aktuelle Freigabe und ersetzt diesen Riegel nicht.
 
+### Befristeter GitHub Timer für den freigegebenen Test am 15./16.09.2026
+
+Die ausdrückliche Startfreigabe vom 15.09. ersetzt den bisherigen Halt vor dem Start.
+Wegen widersprüchlicher Rücklesungen des externen Aufgabendienstes ergänzt
+`500-testfenster.yml` eine vom Chat unabhängige Überwachung auf GitHub Actions.
+Der vorhandene Deaktivierungsworkflow und seine Schutzprüfungen bleiben unverändert.
+Der neue Timer aktiviert oder provisioniert kein Profil und ruft kein Modell auf.
+
+Geplantes verbindliches Ende: **16.09.2026, 14:00 Türkei, 13:00 Berlin, 11:00 UTC**.
+Die tatsächliche Aktivierung soll ungefähr 24 Stunden davor erfolgen; erst nach
+veröffentlichtem Timer, bestandener reiner Vorprüfung und unabhängig bestätigtem
+Bestand starten. Eine spätere Aktivierung verschiebt diesen Abschluss nicht.
+Die genaue tatsächliche Laufzeit wird aus den Aktivierungsquittungen dokumentiert.
+
+| Auslösung | Wirkung |
+|---|---|
+| Manuell | Ausschließlich Vorprüfung; auch nach der Endzeit kein Dispatch |
+| Manuell mit `dispatch_vorpruefung=true` | Den echten automatischen Dispatch gegen `500-testende.yml` ausschließlich mit `schritt=vorpruefung` prüfen; keine Profiländerung |
+| Stündlich, Minute17, am15./16.09. | Bestand, geschützte Konten/Identitäten und vollständiges Tageskostenbuch lesen; nur Summen öffentlich ausgeben |
+| 16.09.,10:43 UTC | Höchstens17 Minuten im GitHub Runner bis11:00 UTC warten; dann genau einmal `500-testende.yml` mit eigenem Bestätigungswort anfordern |
+
+Der ausführbare Zeitriegel gilt ausschließlich vom15.09.2026,10:00 UTC bis zum
+16.09.2026,13:00 UTC. Wiederholte Endjobs (`GITHUB_RUN_ATTEMPT>1`), fremde
+Branches/Workflows/Ereignisse, ein inzwischen veränderter Maincommit, fehlender
+Vercel Erfolgsstatus oder ein abweichender Commit am Hauptalias sperren den Dispatch.
+Der Timer und die bestehenden manuellen Testaktionen teilen dieselbe Concurrency
+Gruppe ohne Abbruch laufender Arbeit. Der Timer verlässt die Gruppe nach dem Dispatch,
+damit der angeforderte Abschluss starten kann. Ab16.09.,10:00 UTC keine neue längere
+Fachaktion beginnen; alle eigenen Schreibabschnitte vor10:30 UTC beenden.
+
+Vor einem Endauftrag werden bestehende Abschlussläufe und der tatsächliche Bestand
+gelesen. Bei bereits inaktiver Kohorte kein neuer Abschluss. Ein laufender oder in
+den letzten30 Minuten gestarteter Abschluss sperrt einen zweiten Auftrag. Ein
+unbekannter HTTP Ausgang bleibt ausdrücklich offen; kein Retry und kein zweiter
+kostenpflichtiger Weg. Ein angenommenes GitHub Dispatch ist noch kein bestätigtes
+Testende. Abschlusslauf und unabhängige Profile müssen danach ausgewertet werden.
+Fehlendes oder ausgeschöpftes Budget verhindert die kostenfreie Deaktivierung nicht.
+
+GitHub kann Zeitpläne verzögern oder bei hoher Last auslassen; der Vorlauf reduziert
+dieses Risiko, beseitigt es aber nicht. Die aktivierte fachliche Begleitung muss den
+Endlauf daher zusätzlich kontrollieren. Quelle: [GitHub Zeitpläne](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule).
+Dispatch verwendet den dokumentierten API Vertrag2026-03-10 mit zurückgegebener
+Laufkennung: [GitHub Workflow Dispatch](https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event).
+Nach bestätigtem Testende den befristeten Zeitplan deaktivieren. Keine neue
+kostenpflichtige Ressource, keine neuen Anbieterzugänge und kein Versandweg.
+
 ## Historischer Ausgangsweg vom 08.09.2026
 
 Die folgenden Angaben zur Neuanlage von 475 Profilen beschreiben den damaligen Ausgangsbestand mit 25 aktiven Profilen. Sie bleiben als historische Belege erhalten und dürfen nicht anstelle des oben genannten aktuellen Reaktivierungswegs ausgeführt werden. Historische A-Abnahmen und Nachtfenster sind gemäß SR §60 keine Voraussetzung des direkten 500er Starts.
