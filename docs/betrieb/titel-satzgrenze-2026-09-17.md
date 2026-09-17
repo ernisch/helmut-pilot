@@ -32,6 +32,12 @@ Alle Tests ueber `scripts/lokal.js`. Kanonischer Gesamtlauf:395/397 Suiten in649
 
 ## Grenzen und Folgearbeit
 
+### Belegter CI Zeitabbruch und begrenzte Korrektur
+
+PR422 wurde am Head `09099cb52521d2efff75c51eb4f6c81bbbcba44c` angelegt. CI35207010979 ist **cancelled, nicht erfolgreich**. Originalprotokoll von Job105155141347:397/397 Suiten in779s erfolgreich bis17.09.10:02:24UTC; anschliessend `The operation was canceled`. Der gesamte Job lief seit09:47:16UTC und erreichte die15 Minuten Grenze. Vorbereitung, Syntax sowie Kontoschreibschutz und500 Registrierungen waren erfolgreich; der anschliessende Z22 Nachweis wurde uebersprungen. Der separate Browserjob105155141222 war mit50 PASS/0 FAIL erfolgreich. Kein Produktassert fehlgeschlagen, aber keine vollstaendige CI Abnahme.
+
+Der benoetigte enge Umgebungsfix erhoeht ausschliesslich das Gesamtzeitfenster von `offline-suite` in `.github/workflows/ci.yml` von15 auf20 Minuten. Aufbau und Datenbankvorlauf brauchen Zeit neben den397 Suiten. Alle Pruefungen, der verpflichtende Z22 Schritt, der Offline Netzschutz und die180 Sekunden Einzelgrenze des Suitenrunners bleiben unveraendert. Keine Cron, Production Laufzeit oder Budgetaenderung. Der neue PR Stand muss die gesamte CI einschliesslich Z22 bestehen. Kein blinder Wiederholungslauf unter unveraenderten Voraussetzungen und keine Umdeutung des abgebrochenen Laufs in Gruen. Anwendungscode seit dem lokalen Gesamtlauf unveraendert; lokal nur die betroffene Workflowkonfiguration und Dokumentationsgroesse erneut pruefen.
+
 Ersatztitel koennen laenger werden. Die bisherige Trennung am ersten Satzzeichen bleibt unveraendert; vorhandene Abkuerzungsprobleme, bereits im Quelltext oder Speicher gekuerzte Fragmente und unrichtige Aussagen werden hierdurch nicht semantisch erkannt oder repariert. Vorhandene komplette Altpakete werden nicht rueckwirkend umgeschrieben. Der spaetere Production Nachweis muss den tatsaechlich ausgelesenen Paketinhalt pruefen.
 
 Die fuenf Titelabbrueche sind auf Codeebene behoben. Zuschreibung, Ebenen, Ereignisaktualitaet, Profilbezug, Auswahl, Wiederholung und fehlender Quellentext bleiben offen. Insbesondere sind der als bevorstehend dargestellte abgeschlossene Gipfel und die Vermischung zweier Ministerreisen nicht behoben. Die bereits vorhandenen, jetzt im Titel vollstaendig sichtbaren Aussagen erhalten keine Fachfreigabe.

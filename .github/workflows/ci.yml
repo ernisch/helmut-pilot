@@ -33,7 +33,11 @@ jobs:
   offline-suite:
     name: Syntax + Offline-Suiten
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # CI35207010979: 397/397 Suiten erfolgreich in779s, aber inklusive Setup
+    # und Kontoschutz am15-Minuten-Jobende abgebrochen; Z22 wurde uebersprungen.
+    # Endliches Gesamtfenster fuer ALLE Pflichtschritte; Suiten und ihre
+    # Einzelzeitgrenzen bleiben unveraendert, kein uebersprungener Nachweis.
+    timeout-minutes: 20
     # KURZLEBIGE CI-TESTDATENBANK (Korrektur 2026-08-28, Befund „falsches Grün").
     # ---------------------------------------------------------------------------
     # Für die Datenbanknachweise zu Z22 und Kontoschreibschutz. Der Dienst lebt so lange wie
