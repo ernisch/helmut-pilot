@@ -194,14 +194,19 @@ einen Zustand ab (gesund · eingeschränkt · ausgefallen · inaktiv · unbekann
 Alle Läufe sind über **atomare, fail-closed Locks** (`pipeline_locks`) gegen
 Doppelstart geschützt. Ein bewusster Doppelstart in Production ist **verboten**.
 
-**Lokaler Artikelkontext (17.09.2026, vorbereitet, kein regulaerer Aufrufer).**
+**Expliziter Artikelkontext (17.09.2026, vorbereitet, keine automatische Versorgung).**
 `buildUnderstandingPrompt` erlaubt fuer einen ausdruecklichen lokalen Versuch
 genau einen gesonderten Originalabsatz mit maximal600 Zeichen. `artikelkontext.js`
 bindet ihn an eine bereits ausgewaehlte Quelle und deren unveraenderten Eingabestand.
 Der bisherige Auszug bleibt erhalten. Kein automatischer Abruf, keine Speicherung,
 keine neue Route oder Migration und kein implizites Lesen beliebiger Rohtextfelder.
-Regulaere Prompts bleiben ohne die Option bytegleich. Herkunftspruefung und fachliche
-Richtigkeit sind damit nicht automatisiert; [Vertrag und Nachweis](betrieb/gipfel-quellenluecke-2026-09-17.md#freigegebener-lokaler-artikelkontext).
+Erstverstehen und Aktualisierung reichen den ausdruecklichen Beleg weiter. Sie pruefen
+ihn vor Reservierung und Budget, halten Prompt und Quelldokumente fuer diesen Versuch
+fest und binden den genauen Prompt an den vorhandenen CAS Eingabehash. Ohne CAS kein
+Versuch mit Zusatz. Die regulaeren Einstiege liefern weiterhin keinen Artikelkontext;
+ohne Option bleiben Prompts und Reservierungskennungen unveraendert. Kein automatischer
+Neuversuch durch einen neuen Beleg. Der Hash speichert den Quellentext nicht und ersetzt
+keinen dauerhaften Herkunftsnachweis. [Vertrag und Nachweis](betrieb/gipfel-quellenluecke-2026-09-17.md#bindung-an-die-verstehenseingabe).
 
 **Mandantenreihenfolge (seit 2026-07-29, OP-25).** Die mandantenbezogenen Crons verarbeiten die
 aktiven Mandate **seriell** gegen ein hartes Zeitbudget — die Reihenfolge war deshalb
