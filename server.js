@@ -1036,14 +1036,25 @@ async function handleRequest(request, response) {
         // Erfolg, keine faelschlich zurueckgesetzte Fehlerserie.
         const buildTimeout = Boolean(briefing && briefing.reason === "build-timeout");
         const speicherfehler = Boolean(briefing && ["store-error", "v3-store-disabled"].includes(briefing.reason));
-        const laufErfolg = !buildTimeout && !speicherfehler;
+        const morgenversorgung = require("./lib/helmut/morgenversorgung");
+        const paket = !buildTimeout && !speicherfehler
+          ? await morgenversorgung.speicherePaket({ profile, userId: tenantId, briefing,
+            storage: storageModul, tag: berlinTag, now: new Date() })
+            .catch(() => ({ beleg: { tag: berlinTag, gespeichert: false, verifiziert: false,
+              vollstaendig: false, fehler: "morgenpaket-nicht-bestaetigt" } }))
+          : null;
+        const paketFehler = Boolean(paket && !paket.beleg.verifiziert);
+        const laufErfolg = !buildTimeout && !speicherfehler && !paketFehler;
+        // Bei einem bereits vollstaendigen Paket bleibt dessen gespeicherter
+        // Inhalt massgeblich, auch wenn der frische Bau inzwischen anders ist.
+        const ausgabe = paket?.briefing || briefing;
 
         // --- FRISCHEVERTRAG, Schritt 2: Wiederholung erkennen -----------------
         // Punkt 9: ein zweiter Lauf am selben Tag mit unveraendertem Inhalt erzeugt
         // KEIN zweites Briefing, KEINEN zweiten Push und KEINEN weiteren
         // Schreibvorgang. Das Narrativ dieses Tages liegt bereits im Tagescache
         // (bf-<mandat>-lage-<tag>) — es entsteht also auch kein weiterer KI-Aufruf.
-        const signatur = briefingLauf.inhaltsSignatur(briefing);
+        const signatur = briefingLauf.inhaltsSignatur(ausgabe);
         // Der Beleg wurde VOR dem Bau gelesen, und der Bau darf bis zu 60 s dauern. Ein
         // ueberlappender Lauf (Watchdog trifft auf den regulaeren Cron) haette in diesem
         // Fenster ebenfalls "kein Beleg" gesehen und ein zweites Mal gepusht. Deshalb
@@ -1056,16 +1067,18 @@ async function handleRequest(request, response) {
           : heutiger;
         const wiederholung = laufErfolg && briefingLauf.istWiederholung(belegVorPush.lauf, signatur);
 
-        const push = wiederholung
+        const push = !laufErfolg
+          ? { skipped: true, reason: "briefing-nicht-gespeichert" }
+          : wiederholung
           ? { skipped: true, reason: "wiederholung-gleicher-inhalt" }
-          : await withTimeout(sendBriefingReadyPush(briefing, profile), 30000, "cron-briefing-push")
+          : await withTimeout(sendBriefingReadyPush(ausgabe, profile), 30000, "cron-briefing-push")
             .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
         const pushTimeout = Boolean(push && push.ok === false && push.reason === "push-timeout");
 
         // --- FRISCHEVERTRAG, Schritt 3: Beleg schreiben und GEGENLESEN --------
         let quittung = { uebersprungen: true, grund: briefingFrische.vertragAktiv() ? "wiederholung" : "vertrag-aus" };
         if (briefingFrische.vertragAktiv() && !wiederholung) {
-          const state = (briefing && briefing.currentHelmutState) || {};
+          const state = (ausgabe && ausgabe.currentHelmutState) || {};
           const geschrieben = briefingLauf.quittung({
             tenantId,
             berlinTag,
@@ -1077,7 +1090,7 @@ async function handleRequest(request, response) {
             signatur,
             kennzahlen: (state.frische && state.frische.kennzahlen) || null,
             datenstand: (state.primaryItem && state.primaryItem.lastUpdated) || null,
-            grund: laufErfolg ? null : (briefing && briefing.reason) || "unbekannt"
+            grund: laufErfolg ? null : paketFehler ? "morgenpaket-nicht-bestaetigt" : (briefing && briefing.reason) || "unbekannt"
           });
           const ergebnis = await briefingLauf.schreibeQuittung(storageModul, geschrieben);
           quittung = { uebersprungen: false, ...ergebnis };
@@ -1089,7 +1102,8 @@ async function handleRequest(request, response) {
         }
 
         return {
-          available: Boolean(briefing && briefing.available),
+          available: Boolean(ausgabe && ausgabe.available),
+          paketBeleg: paket?.beleg || { tag: berlinTag, gespeichert: false, verifiziert: false, vollstaendig: false },
           pushSkipped: Boolean(push && push.skipped),
           pushReason: (push && push.reason) || null,
           // Bei gezogenem Not-Aus (`HELMUT_BRIEFING_FRISCHE=off`) gibt es bewusst KEINEN
@@ -1101,14 +1115,17 @@ async function handleRequest(request, response) {
             wiederholung,
             fensterStart: (fenster && fenster.start) || null,
             gespeichert: Boolean(quittung && quittung.gespeichert),
-            verifiziert: Boolean(quittung && quittung.verifiziert),
+            verifiziert: Boolean(wiederholung || (quittung && quittung.verifiziert)),
             fehler: (quittung && quittung.fehler) || null
           } } : {}),
-          ...(buildTimeout || pushTimeout || speicherfehler
-            ? { ok: false, bounded: true, reason: buildTimeout ? "build-timeout" : speicherfehler ? briefing.reason : "push-timeout" }
+          ...(buildTimeout || pushTimeout || speicherfehler || paketFehler
+            || (briefingFrische.vertragAktiv() && !wiederholung && !quittung.verifiziert)
+            ? { ok: false, bounded: true, reason: buildTimeout ? "build-timeout"
+              : speicherfehler ? briefing.reason : paketFehler ? "morgenpaket-nicht-bestaetigt"
+                : pushTimeout ? "push-timeout" : "frischebeleg-nicht-bestaetigt" }
             : {})
         };
-      }, { deadlineMs: 240000 });
+      }, { deadlineMs: 240000, gleichberechtigt: true, persistenzPflicht: true });
       // Abdeckung des Frischevertrags im heutigen Lauf: fuer wie viele Mandate ist ein
       // ERFOLGREICHES heutiges Briefing belegt? Ein uebersprungenes Mandat faellt hier
       // auf, statt still ohne aktuelles Briefing zu bleiben (kein falsches Gruen).
@@ -1142,18 +1159,22 @@ async function handleRequest(request, response) {
       // W-2: kanonische Zustaende (failed/success statt error/ok/empty; der
       // erfolgreiche Leerlauf bleibt success mit reason "keine-mandate") und
       // kein `.catch(() => {})` mehr — Telemetriefehler werden ausgewiesen.
+      const versorgung = require("./lib/helmut/morgenversorgung")
+        .bilanziere(summary, berlinTag, briefingFrische.vertragAktiv());
       const morningTelemetrie = await recordProcessRun({
         process: "briefing-morning", runId: helmutRunId("briefing-morning", t0), mode: "cron", location: helmutExecLocation(),
         startedAt: new Date(t0).toISOString(), finishedAt: new Date().toISOString(),
         durationMs: Date.now() - t0,
-        processed: (summary.results || []).filter((r) => r && r.available).length,
-        zielmenge: Number(summary.tenants) || 0,
-        reason: summary.tenants ? (summary.reason || null) : "keine-mandate",
-        status: (summary.ok === false || ((summary.results || []).length > 0 && (summary.results || []).every((r) => r && r.failed)))
-          ? "failed" : "success"
+        processed: versorgung.versorgt,
+        failed: versorgung.fehlgeschlagen,
+        deferred: versorgung.fehlt,
+        zielmenge: versorgung.ziel,
+        reason: summary.reason || (!summary.tenants ? "keine-mandate"
+          : versorgung.status !== "success" ? "morgenversorgung-unvollstaendig" : null),
+        status: versorgung.status
       });
       console.log(`[cron/morning-briefing] ${Date.now() - t0}ms tenants=${summary.tenants} reason=${summary.reason || "ok"} frischebelege=${frischeAbdeckung.belegt}/${frischeAbdeckung.mandate}${morningTelemetrie.ok ? "" : " LAUFTELEMETRIE-NICHT-GESPEICHERT"}`);
-      return { ...summary, frischevertrag: frischeAbdeckung, lauftelemetrie: { gespeichert: morningTelemetrie.ok, vollstaendig: morningTelemetrie.vollstaendig, fehler: morningTelemetrie.fehler } };
+      return { ...summary, versorgung, frischevertrag: frischeAbdeckung, lauftelemetrie: { gespeichert: morningTelemetrie.ok, vollstaendig: morningTelemetrie.vollstaendig, fehler: morningTelemetrie.fehler } };
     });
   }
 

@@ -1,12 +1,14 @@
 # CURRENT STATE — Helmut
 
-**17.09.2026: Quellenzeitvertrag als Draft PR419 offen; beide GitHub Pflichtpruefungen erfolgreich (Lauf35194395708, 07:39:22 UTC). Zweiter lokaler Sprint korrigiert aktive Lagezielmenge und gespeicherte Fortsetzung. Kein Merge und keine Production Wirkung.**
+**17.09.2026: PR419 und PR420 offen, Draft, ungemergt; beide GitHub Pflichtpruefungen erfolgreich. Dritter Folgebranch korrigiert Morgenpakete und Versorgungsstatus. Kein Merge und keine Production Wirkung.**
 
 Rein lesende Uebernahme bis 10:04 Tuerkei / 09:04 Berlin / 07:04 UTC: GitHub Main `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`; Vercel Production `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY. Keine neuen Deployments am 17.09. im geprueften Zeitraum. Keine laufenden Actions. Zwei wartende CI Laeufe vom 06.08. gehoeren zu anderen alten Branches. Einziger offener PR bei Uebernahme: historischer Draft345. Keine entfernte Motorreparatur gefunden. Relevante Testbegleitungsautomationen pausiert; kein lokaler alter Arbeitsprozess sichtbar. Das beweist keinen globalen Work Sitzungsstatus; der Betreiber hat den alten Lauf vor Uebernahme gestoppt.
 
 **Lokale Vorarbeit erhalten:** Der alte Branch `codex/motor-reparatur-20260916` hatte 40 veraenderte und 15 neue Dateien, ohne neuen Commit. Die Arbeitskopie bleibt unveraendert. Der neue Branch `codex/quellen-zeitvertrag-20260917` setzt nur den zusammenhaengenden Quellenzeitvertrag auf Main fort. Vorbereitete Cron, Versorgungs und Auswerterarbeiten sind nicht Bestandteil des ersten Sprints und nicht als abgenommen zu behandeln. [Ursache, Umfang, Tests und offene Arbeit](betrieb/quellen-zeitvertrag-2026-09-17.md).
 
-**Zweiter Reparaturteil:** Branch `codex/lage-aktive-fortsetzung-20260917` baut auf PR419 Commit `eea7c24f4d9f3ed8bb2cd74d7eaab87043c34d8e` auf. Der direkte Lagepfad nutzt jetzt aktive Profile und persistente gleichberechtigte Rotation, stoppt ohne Speicherbestaetigung und erhaelt bis zu 500 statt 200 Laufplaetze. JSON Zustandsversion3 schuetzt vor kuerzenden alten Schreibern; spaeterer Rueckweg muss sie erhalten. Lokale Regressionen bestanden; vollstaendig protokollierter Gesamtlauf 394/395, einzige betroffene Suite nach korrigierter Aufruferwartung 32/32 erfolgreich. Kein offener Testfehler. GitHub CI des Folge PR bleibt separat nachzuweisen. [Umfang, Grenzen und Tests](betrieb/lage-aktive-fortsetzung-2026-09-17.md). Keine neuen Crons oder Verarbeitungsspuren.
+**Zweiter Reparaturteil PR420:** Head `eb687a5c849cb0602a08035c2c4893c944a1d4ce`, Basis PR419 `eea7c24f4d9f3ed8bb2cd74d7eaab87043c34d8e`. Aktive Lagezielmenge, gleichberechtigte gespeicherte Rotation, bestaetigter Beginn und 500 Laufplaetze. JSON Zustandsversion3 muss bei spaeterem Rueckweg erhalten bleiben. GitHub CI35197748793 vollstaendig erfolgreich, am17.09. frisch nachgelesen. [Umfang und Grenzen](betrieb/lage-aktive-fortsetzung-2026-09-17.md).
+
+**Dritter Reparaturteil:** Branch `codex/morgen-paketnachweis-20260917` baut auf PR420 auf. Der Morgenlauf speichert und bestaetigt sein Paket, ergaenzt beim spaeteren Aufruf vorhandene Lage und meldet fehlende Versorgung als partial. Quittung, Paketvollstaendigkeit und fachliche Abnahme bleiben getrennt. 18 neue Routengruppen und gezielte Regressionen erfolgreich; vorgeschriebener Gesamtlauf in Pruefung. Kein neuer Cron oder Modellaufruf. [Ursache, Tests, Risiken und gesamte Reparaturrestliste](betrieb/morgen-paketnachweis-2026-09-17.md).
 
 **Historischer Testabschluss laut erhaltenem Bericht vom 16.09.:** Test beendet, 497 Mandatsbriefings, 131 Morgenquittungen, 5 Lage Texte, nur zwei Profile mit allen drei Ergebnissen. Kein vollstaendiger 500er Fachnachweis. Die dortige Datenbankaufnahme von 21:03:43 Tuerkei / 20:03:43 Berlin / 18:03:43 UTC nennt 504 Profile, 0 aktiv, 0 aktive Sperren und Leases, aber 829 wartende Jobs. Diese Zahlen wurden in diesem Sprint nicht neu gegen Production erhoben. Inaktive Profile stoppen globale Quellenarbeit nicht automatisch. Aktuelle Freigabe erlaubt keine Profil oder Jobmutation. [Status vor Uebernahme auf Main](archive/project_state/2026_09_17_vor_quellen_zeitvertrag.md) ist historisch.
 
@@ -85,7 +87,7 @@ Bestehende Grenzen und Freigaben: [SR §41 und neuere Betreiberänderung §55](b
 6. **OP-11:** Branch Protection nicht aktiv; Pflicht-CI blockiert Merges nicht technisch.
 7. **OP-15:** Google-Klumpenrisiko (146/163 Wege); 29 von 42 Personensuchen lieferten nie (`circuit-open`) — Production-Beweis der Härtung steht aus (§8).
 8. **Lage-/KI-Kapazität für Skalierung:** siehe §6. Belegt: **drei** reguläre Warteschlangenabflüsse/Tag, nicht elf (§13).
-9. **500er Gesamtabnahme nicht bestanden:** Abschlussfenster 15./16.09. mit 497 Paketen, 131 Morgenquittungen und 5 Lage Texten; keine vollstaendige fachliche Abnahme. Reparaturen und offene Voraussetzungen stehen im [aktuellen Sprintbeleg](betrieb/quellen-zeitvertrag-2026-09-17.md).
+9. **500er Gesamtabnahme nicht bestanden:** Abschlussfenster 15./16.09. mit 497 Paketen, 131 Morgenquittungen und 5 Lage Texten; keine vollstaendige fachliche Abnahme. Reparaturen und offene Voraussetzungen stehen im [aktuellen Sprintbeleg](betrieb/morgen-paketnachweis-2026-09-17.md).
 10. **OP-07:** Monitoring-Zweitkanal stellt seit mind. 17.08. täglich zu; Ziel von `HELMUT_MONITORING_WEBHOOK_URL` und der doppelte WhatsApp-Eingang bleiben ungeklärt (Betreiberprüfung, kein Code-Fix vorher).
 11. **Profilpfad:** Exklusivmodus in Production belegt; ältere Dual Write Annahme überholt. Vor B/C Daten und Ausführungskontext frisch abgleichen. Auth, main und p haben CAS Schutz; alte Instanzen und direkte Fremdschreiber bleiben ausgenommen. Schutz gegen automatische Kontolöschung aus #305 bleibt verpflichtend.
 
@@ -124,7 +126,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-PR419 und den darauf aufbauenden zweiten Reparaturteil ungemergt pruefen lassen. Lokale und GitHub Pruefung bleiben getrennt zu dokumentieren. Danach Morgenquittung und gespeichertes Gesamtpaket auf echte Vollstaendigkeit pruefen. Kapazitaet, Quellenqualitaet, Kosten und sicherer Testabschluss bleiben offen. Erneuter 500er Test braucht Zielmenge, Zeitfenster und ausdrueckliche Freigabe. Keine Aktivierung oder bezahlte Arbeit aus dieser Reparaturfreigabe ableiten.
+Die drei aufeinander aufbauenden Reparaturteile ungemergt pruefen lassen. Danach naechsten begrenzten Inhaltsblock anhand der Originalbefunde bearbeiten: abgebrochene Titel und doppelte Artikelkennungen. Quellenversorgung, Zuschreibung, Ereigniszeit und sachlicher Profilbezug bleiben fachlich offen. Die benoetigte Morgen und Lagekapazitaet samt Fortsetzungsplanung und sicherem Testende muss vor erneutem 500er Nachweis geklaert sein. Keine neue Startfreigabe aus dieser Codearbeit ableiten.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
