@@ -1,6 +1,6 @@
 # Artikelidentität und widersprüchliche Quellenzeiten
 
-Stand 17.09.2026. Fünfter begrenzter Reparaturteil auf PR422. Status: teilweise abgeschlossen. Korrektur und lokale Prüfungen fertig; unabhängige GitHub CI und spätere Production Wirkung getrennt im zugehörigen Draft PR nachweisen. Kein Merge und keine Production Wirkung.
+Stand 17.09.2026. Der aktuelle [FR Folgeschritt](#fr-folgekorrektur) baut auf PR431 auf. Der folgende WELT Bericht bleibt als Nachweis von PR423 erhalten. Status: teilweise abgeschlossen. Korrektur und lokale Prüfungen fertig; unabhängige GitHub CI und spätere Production Wirkung getrennt im zugehörigen Draft PR nachweisen. Kein Merge und keine Production Wirkung.
 
 ## Übernahme und Basis
 
@@ -46,3 +46,50 @@ Das maßgebliche Originaldatum und die Artikelversion bleiben fachlich ungeklär
 Nächster begrenzter Inhaltsblock: Zuschreibung und Ereignisbindung anhand dieser beiden erhaltenen Originalvergleiche. Zuerst den kleinsten gemeinsamen Fehlerpfad belegen, keine pauschale Faktenfreigabe. Dafür nach Abschluss dieses Sprints einen neuen Thread verwenden, Denkstufe Sehr hoch. Vor erneutem500er Nachweis bleiben Versorgungskapazität, begrenzte Fortsetzungsplanung, fachliche Aussagenprüfung, vollständiger App Abruf aller500, Kosten, zuverlässiges Testende und unabhängiger Abschluss erforderlich.
 
 Automatische Deployments dieses Branches sind vor Veröffentlichung in `vercel.json` ausgeschaltet. Alle13 Crondefinitionen unverändert. Kein Merge, Deployment, Migration, Profilwechsel, Production Datenänderung, Environment oder Azure Wechsel, Budgetwechsel, externer Versand oder bezahlter Modellaufruf. Lokaler Rückweg: nur diesen Folgebranch zurücknehmen. Ein späterer Production Rückweg braucht gesonderte Freigabe und muss die Zustandsversion3 aus PR420 erhalten. Merge würde Production deployen und ist nicht freigegeben. Ein neuer vollständiger500er Test braucht neue Startfreigabe.
+
+
+## FR Folgekorrektur
+
+Fortsetzung17.09.2026 UTC nach dem Betreiberauftrag, die belegten Fehler weiter zu bearbeiten. Basis PR431 `540eb4dd2f0950f404ed6ee86240c8bf2438dd8c`, Tree `49a951ab70c946b5d4135581a12b601e1e2cf33b`. Eigener Branch `codex/fr-artikelidentitaet-20260917`. PR431 CI35278563940 am exakten Head vollstaendig erfolgreich:405/405 in637s, Browser50/50, Kontoschutz15/15 samt500 isolierten Registrierungen, Z22 PASS48/FAIL0, keine Pflichtpruefung uebersprungen. Abschluss17.09.21:59:40UTC. Rein lesender Vorflug: Main und alle dreizehn Reparaturheads unveraendert, offen und Draft. Production weiterhin `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY auf Main mit Hauptalias. Seit17.09.00:00UTC bis Vorflug kein Deployment. Keine in_progress oder waiting Actions, nur die zwei alten queued Laeufe. Eigene und saubere Vorgaengerkopien unveraendert; fremde55 Vorarbeiten erhalten. Kein weiterer lokaler Reparaturprozess sichtbar; globaler Work Sitzungsstatus nicht abfragbar. Keine neue Datenbankaufnahme.
+
+### Originalbefund und kleinste Korrektur
+
+Q004 aus `Qualitaetsbefunde_erste_Apppruefung_20260915.json` im unveraenderten Originalpaket Version18 nennt zwei FR Links mit Artikelkennung94489670 und unterschiedlichen Tagesangaben. Der damalige Status war Pruefbedarf, keine erledigte Korrektur. Der frische oeffentliche Vergleich bestaetigt die Identitaet: [zweite Variante](https://www.fr.de/wirtschaft/ende-der-rente-mit-63-urteil-von-2004-garantiert-uebergangsfrist-zr-94489670.html) wird auf die [erste Variante](https://www.fr.de/wirtschaft/uebergangsfrist-ende-der-rente-mit-63-urteil-von-2004-garantiert-zr-94489670.html) weitergeleitet. Das belegt einen Artikel, kein zweites unabhaengiges Zeugnis. Es belegt weder das historische Originaldatum noch die rechtliche Richtigkeit des Inhalts.
+
+Die erhaltene Aufnahme `Pruefaufnahme_A001_34984794661.json` mit SHA256 `6da8ee383caede846d0e312f7366c6fbb81d8d5ebeed0dc7a1c9c6209f995455` enthaelt ausserdem zwei Varianten der FR Kennung94488644 innerhalb einer Quellenliste. Die [erste](https://www.fr.de/wirtschaft/bei-steuern-rente-und-pflege-das-plant-die-regierung-fuer-2027-zr-94488644.html) und [zweite](https://www.fr.de/wirtschaft/steuern-rente-und-pflege-das-plant-die-regierung-fuer-2027-bei-zr-94488644.html) liefern beim neuen Lesevergleich denselben Artikel mit weiter veraenderten Pfadtexten, aber verschiedenen angezeigten Staenden. Es wird keine Fassung zum massgeblichen Original erklaert. Beide alten Zeitkonflikte bleiben ungelöst.
+
+Die Ursache ist eng: Der vorhandene Projektionsschluessel erkennt bisher ausschliesslich das belegte WELT Format. Der vorhandene Gruppenvertrag wird unveraendert weiterverwendet und um exakt `https://fr.de` beziehungsweise `https://www.fr.de` mit Pfadende `-zr-` plus achtstelliger Kennung und `.html` ergaenzt. Keine einzelne Kennung ist hartkodiert. Fremde Hosts, weitere Subdomains, Zugangsdaten, Sonderports, HTTP und andere Formate bleiben getrennt. Der anbietergebundene Schluessel verhindert eine Gleichsetzung ueber Herausgeber hinweg.
+
+Alle Varianten samt Link, Titel, Auszug, Zeit und Dokumentkennung bleiben erhalten. Widerspruechliche Zeiten liefern keinen gemeinsamen Zeitpunkt und keinen Ersatz aus Analyse oder Ersterfassung. Der bisherige erste Link und seine Texte bleiben verbunden. Rohdaten, Hashes, Clustering, Wissensobjekte, separate Radarprojektion und Altpakete bleiben unveraendert. Dies ist eine Ergaenzung der bestehenden Erkennung fuer kuenftige Artikel desselben belegten Formats, kein Neubau von PR423 und keine Faktenkorrektur.
+
+### Pruefungen
+
+Neue synthetische Suite `briefing-fr-artikelidentitaet-test.js`:6/6 Gruppen. Vor der Korrektur scheiterte sie mit zwei statt einer Quelle. Sie prueft erhaltene Varianten, Grenzen von Host und Format, getrennte Herausgeber, Zeitkonflikte ohne Ersatzdatum, gleiche und fehlende Zeiten, Quellenzaehler in Briefing, Empfehlung und Detailstand sowie unveraenderte Rohdatenidentitaeten. Bestehende WELT Suite11/11, Vertragsadapter31/31, Detailstand92/92 und Quellen Dedup13/13 erfolgreich. Alle Tests ueber `scripts/lokal.js`.
+
+Privater Replay gegen PR431:123 Originalquellenlisten; genau zwei wechseln von zwei Quellen auf einen Artikel mit beiden vollstaendig erhaltenen Belegvarianten.121 Listen unveraendert. Die22 aus der Aufnahme mit rekonstruierten Entscheidungen projizierten Karten bleiben vollstaendig identisch; die beiden betroffenen Listen gehoeren zu anderen erhaltenen Vorgaengen. Die separate Radarprojektion bleibt identisch. Eingaben vor und nach dem Replay hashgleich; kein Modellaufruf, keine Production Speicherung und kein behaupteter neuer App Abruf.
+
+Kanonischer Gesamtlauf am finalen Anwendungscode: **406/406 Suiten in635 Sekunden, Exit0**. Danach nur Ergebnisdokumentation ergaenzt, Statusgroesse und Diff abschliessend geprueft. Der unabhaengige CI Nachweis am veroeffentlichten Head wird im zugehoerigen Draft PR belegt. Der Deployschutz sperrt ausschliesslich den neuen Folgebranch zusaetzlich; alle13 Crons und alle anderen Konfigurationswerte bleiben identisch.
+
+## Offene Fachabnahme
+
+Die Originalvergleiche bleiben die Abnahmegrundlage. Keine Wortersetzung und kein redaktioneller Einzelpatch wird als allgemeine Motorreparatur ausgegeben. Folgende zusammenhaengende Fehler sind trotz vorbereiteter Regeln fachlich offen:
+
+| Originalbefund | Vorbereitete Hilfe | Fehlender Nachweis |
+| --- | --- | --- |
+| Abgeschlossener Gipfel als bevorstehend | Quellentext von Metadaten getrennt; zusaetzlicher Originalabsatz erreicht beide Fachpfade | Echte neue Antwort beschreibt den Abschluss, ohne unbelegte Ereigniszeit |
+| Wahlvorbericht als bekanntgegebenes Ergebnis | Bestehende Modalitaetsregel aus PR419 | Kein Ergebnis und keine Sitzverteilung aus einem Vorbericht erfinden |
+| Pflegeleistung als Steuerregel, Entwurf als Entzug | Eingabegrenzen und Unsicherheitsregeln | Sachgebiet und Entwurfsstand im echten Ergebnis korrekt |
+| Falscher Vorname und innerparteilicher Konflikt | Quellengebundene Eingabe | Person und Parteien nur gemaess Beleg zuordnen |
+| Bundeskoalition als Landeskoalitionsbildung | Quellengebundene Eingabe | Ebene, Akteure und Ereignis im echten Ergebnis trennen |
+| Gastbeitrag als Position der Zeitung | Herausgeber ist keine automatisch belegte Urheberschaft | Autor und Beitragsart aus tragfaehigem Originaltext bestimmen |
+| Zwei Ministerreisen in einem Vorgang | PR424 trennt den reproduzierten Clusterfehler | Fachlicher Neuaufbau und gespeicherte Altvermischung bleiben offen |
+
+Zusaetzlich offen: Handlung fehlt trotz Reaktionsentscheidung; genaue aktuelle Profilbindung und Auswahl; Konzertereignis2027 gegen Reunion2025; fachlich bislang nicht erreichbare Originale. Ein vermuteter Zeitfehler bei der Litauen Verpflichtung wurde im Originalvergleich gerade nicht bestaetigt und wird nicht als Fehler repariert. Die Terminologie bleibt gesondert offen. Der rechtliche Inhalt des Rentenartikels ist nicht durch die Artikelidentitaet geprueft.
+
+Die aktuelle private Aufnahme traegt fuer Wahlvorbericht und Koalitionsbericht jeweils einen Quellentitel, aber keinen Auszug. Pflege, Personenverwechslung und Gastbeitrag fehlen in genau dieser Eingabeaufnahme; ihre alten negativen Kartenbefunde bleiben erhalten. Fehlende Listen beweisen keine Quellenlosigkeit in Production. Fuer keinen dieser Faelle liegt hier der exakte historische Modellrequest vor. Deshalb keine pauschale Behauptung derselben Ursache oder bereits behobener Faktenfehler.
+
+Naechste fachliche Entscheidung ist ein kleiner, gesondert freizugebender Modellversuch auf exakt gebundener Originaleingabe. Zuerst ein Gipfelaufruf mit dem bereits erhaltenen134 Zeichen Absatz, dem bestehenden Prompt und dem bestehenden mini Modell, anschliessend direkte Gegenpruefung der gesamten Antwort. Kein Modellvergleich, kein DeepSeek und kein bezahlter Richter. Die bisherigen Offlineantworten sind Attrappen und duerfen nicht als Modellnachweis gelten. Ein solcher Aufruf benoetigt die vorhandenen Budget, Kosten und Anbieterreservierungen; deren Schreibwirkung ist vor Freigabe ausdruecklich zu benennen. Keine Umgehung durch einen ungebuchten lokalen Direktaufruf. Fachliche Ausgaben bleiben isoliert und werden nicht in Production KOs oder Pakete importiert. Der private Pruefauftrag haelt Dokument, Beleg, Prompt, JSON Schema und Abnahmekriterien fest. Prompt SHA256 `3f286a3cddfcf05b30d540790c7825446f5b9cafb75490511c47eaf71f86d5b2`, exakt der bereits gepruefte Eingang. Vorschlag: ein mini Aufruf,3000 Ausgabetokens, keine automatische Wiederholung, maximal0,212 USD Vollreserve nach bestehendem Repositoryvertrag innerhalb des unveraenderten4 USD Tagesriegels. Kein neuer Tarif oder Rechnungsnachweis. Die lokale Arbeitsumgebung hat keinen Azure oder Datenbankzugang; der geschuetzte Ausfuehrungsweg ist vor einem spaeter autorisierten Aufruf noch offline zu pruefen. Der Auftrag enthaelt keinen ausfuehrbaren Live Modus.
+
+Vor allgemeiner Aktivierung fehlen weiterhin tragfaehige Zeitaufteilung, Ressourcenabnahme und Aufloesung dauerhaft blockierter Kontextstaende. Vor erneutem500er Test zusaetzlich Versorgungskapazitaet, begrenzte Fortsetzung, vollstaendiger App Abruf aller500, Kosten, zuverlaessiges Testende und unabhaengiger Abschluss. Alle Profile bleiben unangetastet. Ein Codeabschluss ist keine Behauptung, dass alle Fehler behoben sind.
+
+**Status: teilweise abgeschlossen.** Der begrenzte FR Codeeingriff ist pruefbar vorbereitet; reale fachliche Abnahme und spaetere Production Wirkung fehlen. Kein Merge, Deployment, neuer Modellaufruf oder neuer500er Test. Rueckweg: diesen ungemergten Folgebranch verwerfen. Kein Production Rueckweg und keine Migration erforderlich.
