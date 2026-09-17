@@ -1166,7 +1166,7 @@ async function handleRequest(request, response) {
         startedAt: new Date(t0).toISOString(), finishedAt: new Date().toISOString(),
         durationMs: Date.now() - t0,
         processed: versorgung.versorgt,
-        failed: versorgung.fehlgeschlagen,
+        fehlgeschlagen: versorgung.fehlgeschlagen,
         deferred: versorgung.fehlt,
         zielmenge: versorgung.ziel,
         reason: summary.reason || (!summary.tenants ? "keine-mandate"

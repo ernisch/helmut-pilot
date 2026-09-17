@@ -76,7 +76,7 @@ async function run(profiles = [profile], options = {}) {
     request: {}, response: {}, url: new URL("http://localhost/api/cron/morning-briefing"),
     authorizeCron: () => true, handleAsync: (_r, fn) => fn(), storageModul: st,
     briefingFrische: { ...require("../lib/helmut/briefing-frische"), vertragAktiv: () => options.contract !== false }, briefingLauf: L,
-    withTimeout: p => p, sendBriefingReadyPush: async b => { saved.pushes.push(clone(b)); return { skipped: true }; },
+    withTimeout: p => p, sendBriefingReadyPush: async b => { saved.pushes.push(clone(b)); if (options.pushError) throw new Error("offline-push-error"); return { skipped: true }; },
     tenantContext: { resolveCronTenants: () => T.resolveCronTenants({ listProfiles: async () => {
       if (options.listError) throw new Error("offline-list-error"); return profiles;
     } }) },
@@ -147,6 +147,7 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
       assert.equal(r.response.versorgung.paketeGespeichert, 0);
       assert.equal(r.response.frischevertrag.belegt, 0);
       assert.equal(r.saved.telemetry[0].status, "failed");
+      assert.equal(r.saved.telemetry[0].failed_count, 1);
       assert(!r.saved.rows.has(`bf-${profile.id}-${L.SLOT_ERFOLG}-${day}`));
       assert.equal(r.saved.pushes.length, 0);
     });
@@ -206,6 +207,9 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
     const saved = state(); for (const p of profiles) { const l = lage(p.id); saved.rows.set(l.id, l); }
     const r = await run(profiles, { saved });
     assert.equal(r.response.versorgung.versorgt, 500);
+    assert.equal(r.saved.telemetry[0].processed_count, 500);
+    assert.equal(r.saved.telemetry[0].failed_count, 0);
+    assert.equal(r.saved.telemetry[0].deferred_count, 0);
     assert.equal(r.response.versorgung.quittungen, 500);
     assert.equal(r.response.versorgung.paketeGespeichert, 500);
     assert.equal(r.response.versorgung.vollstaendig, true);
@@ -232,6 +236,12 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
     const failed = await run([profile], { buildError: true });
     assert.equal(failed.response.frischevertrag.belegt, 0);
     assert.equal(failed.saved.telemetry[0].status, "failed");
+    const push = await run([profile], { pushError: true });
+    assert.equal(push.response.results[0].reason, "push-timeout");
+    assert.equal(push.response.results[0].ok, false);
+    assert.equal(push.response.results[0].bounded, true);
+    assert.equal(push.response.fairness.erfolgreich.length, 0);
+    assert.equal(push.saved.telemetry[0].failed_count, 1);
     const off = await run([profile], { contract: false });
     assert.equal(off.response.frischevertrag.vertrag, "not-aus");
     assert.equal(off.response.frischevertrag.nichtPersistiert, 0);
