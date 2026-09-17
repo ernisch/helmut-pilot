@@ -43,6 +43,7 @@ test("Andere Artikelkennungen, Anbieter und aehnliche URLs bleiben getrennt", ()
     url("gleich").replace("www.welt.de", "example.org"),
     url("gleich").replace("www.welt.de", "welt.de.example.org"),
     url("gleich").replace("www.welt.de", "archiv.welt.de"),
+    url("gleich").replace("https:", "http:"),
     url("gleich").replace(id, id + "a"), url("gleich").replace("/article", "/notarticle")]) {
     A.equal(B.buildSources(ko, [docs[0], { ...docs[1], url: secondUrl }]).length, 2);
   }
@@ -50,6 +51,8 @@ test("Andere Artikelkennungen, Anbieter und aehnliche URLs bleiben getrennt", ()
   A.equal(D.weltArticleIdentity("javascript:alert(1)"), "");
   A.equal(D.weltArticleIdentity(url("a").replace("https://", "https://user@")), "");
   A.equal(D.weltArticleIdentity(url("a").replace("welt.de/", "welt.de:1234/")), "");
+  const mixed = [{ ...docs[0], url: docs[0].url.replace("https:", "http:") }, docs[1]];
+  A.equal(B.oeffnendeHelmutQuelle(ko, mixed).url, docs[1].url);
 });
 
 test("Rohdaten Identitaeten und echte Links werden nicht umgeschrieben", () => {
