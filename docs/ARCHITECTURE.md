@@ -194,6 +194,15 @@ einen Zustand ab (gesund · eingeschränkt · ausgefallen · inaktiv · unbekann
 Alle Läufe sind über **atomare, fail-closed Locks** (`pipeline_locks`) gegen
 Doppelstart geschützt. Ein bewusster Doppelstart in Production ist **verboten**.
 
+**Lokaler Artikelkontext (17.09.2026, vorbereitet, kein regulaerer Aufrufer).**
+`buildUnderstandingPrompt` erlaubt fuer einen ausdruecklichen lokalen Versuch
+genau einen gesonderten Originalabsatz mit maximal600 Zeichen. `artikelkontext.js`
+bindet ihn an eine bereits ausgewaehlte Quelle und deren unveraenderten Eingabestand.
+Der bisherige Auszug bleibt erhalten. Kein automatischer Abruf, keine Speicherung,
+keine neue Route oder Migration und kein implizites Lesen beliebiger Rohtextfelder.
+Regulaere Prompts bleiben ohne die Option bytegleich. Herkunftspruefung und fachliche
+Richtigkeit sind damit nicht automatisiert; [Vertrag und Nachweis](betrieb/gipfel-quellenluecke-2026-09-17.md#freigegebener-lokaler-artikelkontext).
+
 **Mandantenreihenfolge (seit 2026-07-29, OP-25).** Die mandantenbezogenen Crons verarbeiten die
 aktiven Mandate **seriell** gegen ein hartes Zeitbudget — die Reihenfolge war deshalb
 sicherheitsrelevant und ist es weiterhin. Sie folgt nicht mehr der Kennung (`ids.sort()`), sondern

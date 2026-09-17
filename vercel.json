@@ -26,7 +26,8 @@
       "codex/titel-satzgrenze-20260917": false,
       "codex/artikelidentitaet-20260917": false,
       "codex/ereignisbindung-20260917": false,
-      "codex/gipfel-quellenluecke-20260917": false
+      "codex/gipfel-quellenluecke-20260917": false,
+      "codex/artikelkontext-lokal-20260917": false
     }
   },
   "functions": {
