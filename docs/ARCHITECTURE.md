@@ -242,9 +242,13 @@ Clusterparallelitaet. Bestaetigte Belege brauchen keinen neuen Abrufplatz. Der
 Deckel ist keine globale Tages oder500er Kapazitaetszusage. Bestehende Anbietergrenzen
 und globale Reservierung je Dokumentstand bleiben wirksam.
 
-Die engere vorhandene absolute oder relative Laufzeit begrenzt die Versorgung;
-ohne Frist kein Artikelkontextversuch. Vor Bestandslesung, neuem Abruf und nach
+Die engere vorhandene absolute oder relative Laufzeit begrenzt bei aktivem
+Anschluss sowohl Versorgung als auch Verstehensschleife und Modellstart. Die
+relative Frist beginnt vor dem Vorlauf und wird danach nicht neu gestartet.
+Ohne Frist kein Artikelkontextversuch. Vor Bestandslesung, neuem Abruf und nach
 Beschaffung wird verbleibende Zeit einschliesslich Modellreserve geprueft.
+Zeitvertagungen bleiben vorgemerkt und im Auftrag offen; die Bilanz ist blocked
+oder bei Teilwirkung partial. Zeitbudgets und Reserven werden nicht erhoeht.
 Fehlender Kontext liefert `skipped-artikelkontext`, keinen Modellaufruf mit altem
 Auszug. Erstverstehen bleibt im vorhandenen Vormerkpfad, Aktualisierung im
 bestehenden CAS Wiederaufnahmevertrag. Die Laufbilanz bleibt blocked oder partial;
