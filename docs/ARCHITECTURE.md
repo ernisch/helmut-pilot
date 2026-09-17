@@ -208,6 +208,15 @@ ohne Option bleiben Prompts und Reservierungskennungen unveraendert. Kein automa
 Neuversuch durch einen neuen Beleg. Der Hash speichert den Quellentext nicht und ersetzt
 keinen dauerhaften Herkunftsnachweis. [Vertrag und Nachweis](betrieb/gipfel-quellenluecke-2026-09-17.md#bindung-an-die-verstehenseingabe).
 
+`artikelkontext-gewinnung.js` gewinnt aus einer expliziten HTML Antwort einen
+Version2 Beleg: Artikelidentitaet, ganzer HTML Absatz und strukturierter Artikeltext
+muessen zusammenpassen. Die eindeutige hoechste Zahl unterschiedlicher Titelwoerter
+bestimmt die Auswahl; Gleichstand, fehlender Text und Ueberlaenge bleiben Luecken.
+Antwortgrenze1MiB, Absatzgrenze600 Zeichen, keine Kuerzung. Antwort und Artikeltext
+werden gehasht, Absatzposition und Auswahlverfahren festgehalten. Das ist eine
+allgemeine Textauswahl, kein fachlicher Eignungsnachweis. Kein regulaerer Aufrufer
+beschafft oder speichert diese Antworten. [Gewinnung und Grenzen](betrieb/gipfel-quellenluecke-2026-09-17.md#automatische-absatzgewinnung).
+
 **Mandantenreihenfolge (seit 2026-07-29, OP-25).** Die mandantenbezogenen Crons verarbeiten die
 aktiven Mandate **seriell** gegen ein hartes Zeitbudget — die Reihenfolge war deshalb
 sicherheitsrelevant und ist es weiterhin. Sie folgt nicht mehr der Kennung (`ids.sort()`), sondern
