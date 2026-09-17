@@ -699,7 +699,9 @@ async function main() {
     const understandingSrc = fs.readFileSync(path.join(ROOT, "lib/helmut/understanding.js"), "utf8");
     check("15.1 Cron ruft runUnderstandingShadow", /runUnderstandingShadow\(/.test(schedulerSrc));
     check("15.2 Die Warteschlange ruft dieselbe Funktion ueber eagerUnderstanding",
-      /eagerUnderstanding:\s*lazy\("\.\/understanding",\s*"runUnderstandingShadow"\)/.test(pipelineSrc));
+      /eagerUnderstanding:\s*lazy\("\.\/artikelkontext-lauf",\s*"runUnderstandingShadow"\)/.test(pipelineSrc)
+      && /const U = require\("\.\/understanding"\)/.test(fs.readFileSync(path.join(ROOT, "lib/helmut/artikelkontext-lauf.js"), "utf8"))
+      && /return U\.runUnderstandingShadow\(dokumente, mitArtikelkontext\(overrides\)\)/.test(fs.readFileSync(path.join(ROOT, "lib/helmut/artikelkontext-lauf.js"), "utf8")));
     check("15.3 Der Lambda-/Wecksignal-Verbraucher ruft denselben Fachhandler",
       /fuehreAuftragAus/.test(verbraucherSrc));
     check("15.4 Der Vertrag haengt in defaultDeps — also an ALLEN drei Wegen",

@@ -194,7 +194,7 @@ einen Zustand ab (gesund · eingeschränkt · ausgefallen · inaktiv · unbekann
 Alle Läufe sind über **atomare, fail-closed Locks** (`pipeline_locks`) gegen
 Doppelstart geschützt. Ein bewusster Doppelstart in Production ist **verboten**.
 
-**Expliziter Artikelkontext (17.09.2026, vorbereitet, keine automatische Versorgung).**
+**Artikelkontext (17.09.2026, regulaerer Anschluss vorbereitet, Default AUS).**
 `buildUnderstandingPrompt` erlaubt fuer einen ausdruecklichen lokalen Versuch
 genau einen gesonderten Originalabsatz mit maximal600 Zeichen. `artikelkontext.js`
 bindet ihn an eine bereits ausgewaehlte Quelle und deren unveraenderten Eingabestand.
@@ -203,8 +203,7 @@ Schreibvorgang aus und liest keine beliebigen Rohtextfelder implizit.
 Erstverstehen und Aktualisierung reichen den ausdruecklichen Beleg weiter. Sie pruefen
 ihn vor Reservierung und Budget, halten Prompt und Quelldokumente fuer diesen Versuch
 fest und binden den genauen Prompt an den vorhandenen CAS Eingabehash. Ohne CAS kein
-Versuch mit Zusatz. Die regulaeren Einstiege liefern weiterhin keinen Artikelkontext;
-ohne Option bleiben Prompts und Reservierungskennungen unveraendert. Kein automatischer
+Versuch mit Zusatz. Ohne aktivierten Anschluss oder explizite Option bleiben Prompts und Reservierungskennungen unveraendert. Kein automatischer
 Neuversuch durch einen neuen Beleg. Der Hash speichert den Quellentext nicht und ersetzt
 keinen dauerhaften Herkunftsnachweis. [Vertrag und Nachweis](betrieb/gipfel-quellenluecke-2026-09-17.md#bindung-an-die-verstehenseingabe).
 
@@ -214,8 +213,7 @@ muessen zusammenpassen. Die eindeutige hoechste Zahl unterschiedlicher Titelwoer
 bestimmt die Auswahl; Gleichstand, fehlender Text und Ueberlaenge bleiben Luecken.
 Antwortgrenze1MiB, Absatzgrenze600 Zeichen, keine Kuerzung. Antwort und Artikeltext
 werden gehasht, Absatzposition und Auswahlverfahren festgehalten. Das ist eine
-allgemeine Textauswahl, kein fachlicher Eignungsnachweis. Kein regulaerer Aufrufer
-beschafft oder speichert diese Antworten. [Gewinnung und Grenzen](betrieb/gipfel-quellenluecke-2026-09-17.md#automatische-absatzgewinnung).
+allgemeine Textauswahl, kein fachlicher Eignungsnachweis. Die Versorgung wird ausschliesslich durch die unten beschriebene Ausfuehrungsschicht angefordert. [Gewinnung und Grenzen](betrieb/gipfel-quellenluecke-2026-09-17.md#automatische-absatzgewinnung).
 
 `artikelkontext-beschaffung.js` bereitet den ausdruecklichen Einzelabruf samt
 bestaetigter Ablage vor. Der reine Adapter `artikelkontext-belegspeicher.js`
@@ -226,9 +224,33 @@ reservierten Zustand, danach erneute Ruecklesung. Ein bestaetigter Version2 Bele
 bleibt unveraendert; Luecken und unklare Ausgaenge erlauben keinen neuen Abruf.
 Der Sonderpfad verlangt bestehende Anbietersteuerung, maximal einen HTTPS Request,
 20s und1MiB; Zieladressen werden am Socket DNS geprueft, nur oeffentliches IPv4.
-Keine neue Tabelle oder Migration. Kein regulaerer Einstieg ruft den Pfad auf.
-Der Anschluss und die spaetere Production Nutzung bleiben offen.
+Keine neue Tabelle oder Migration. Production Nutzung bleibt gesondert freizugeben.
 [Speichervertrag und Grenzen](betrieb/gipfel-quellenluecke-2026-09-17.md#begrenzter-abruf-und-bestaetigte-belegablage).
+
+`artikelkontext-lauf.js` verbindet die regulaeren Verstehenseinstiege in Server,
+Scheduler und Warteschlangenworker mit der Beschaffung. Default AUS; nur exaktes
+`HELMUT_ARTIKELKONTEXT=on` aktiviert den vorbereiteten Anschluss. Kein Datei Flag
+und keine Umgebung gesetzt. Der Fachkern erhaelt eine injizierte Versorgung und
+importiert weiterhin keinen Crawler. Er prueft nach Resolver und bestehenden
+Kurzschluessen, vor CAS Reservierung und Modellbudget. Snapshot, genaue
+Promptbindung, Quellenzahl und alle bestehenden Modellgrenzen bleiben erhalten.
+
+Genau der erste direkte Medienartikel der unveraenderten Auswahl von maximal
+zwoelf Dokumenten wird angefordert; keine Ersatzauswahl bei Fehlern. Pro Aufruf
+einer bestehenden Verstehensschleife maximal ein neuer Abruf, unabhaengig von deren
+Clusterparallelitaet. Bestaetigte Belege brauchen keinen neuen Abrufplatz. Der
+Deckel ist keine globale Tages oder500er Kapazitaetszusage. Bestehende Anbietergrenzen
+und globale Reservierung je Dokumentstand bleiben wirksam.
+
+Die engere vorhandene absolute oder relative Laufzeit begrenzt die Versorgung;
+ohne Frist kein Artikelkontextversuch. Vor Bestandslesung, neuem Abruf und nach
+Beschaffung wird verbleibende Zeit einschliesslich Modellreserve geprueft.
+Fehlender Kontext liefert `skipped-artikelkontext`, keinen Modellaufruf mit altem
+Auszug. Erstverstehen bleibt im vorhandenen Vormerkpfad, Aktualisierung im
+bestehenden CAS Wiederaufnahmevertrag. Die Laufbilanz bleibt blocked oder partial;
+der Warteschlangenhandler nutzt seine vorhandene begrenzte Vertagung.
+Dauerhafte Belegluecken und unbekannte Abrufausgaenge werden nicht automatisch
+freigegeben oder neu abgerufen. [Anschluss und Grenzen](betrieb/gipfel-quellenluecke-2026-09-17.md#regulaerer-anschluss-mit-begrenztem-abruf).
 
 **Mandantenreihenfolge (seit 2026-07-29, OP-25).** Die mandantenbezogenen Crons verarbeiten die
 aktiven Mandate **seriell** gegen ein hartes Zeitbudget — die Reihenfolge war deshalb

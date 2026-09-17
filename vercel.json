@@ -30,7 +30,8 @@
       "codex/artikelkontext-lokal-20260917": false,
       "codex/artikelkontext-eingabebindung-20260917": false,
       "codex/artikelkontext-gewinnung-20260917": false,
-      "codex/artikelkontext-belegablage-20260917": false
+      "codex/artikelkontext-belegablage-20260917": false,
+      "codex/artikelkontext-anschluss-20260917": false
     }
   },
   "functions": {

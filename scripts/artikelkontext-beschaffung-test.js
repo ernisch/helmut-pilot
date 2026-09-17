@@ -172,7 +172,7 @@ test("CAS Abschluss kann fremde Reservierung und fertigen Beleg nicht ueberschre
   assert.throws(() => erzeugeBelegspeicher({ request: async () => [], storeId: "main-p-tenant" }), /konfiguration/);
   await assert.rejects(u.speicher.lesen("x&user_id=evil"), /schluessel/);
 });
-test("Keine Aktivierung in bestehenden Einstiegen und kein neuer Produktionsschalter", () => {
+test("Kein direkter Beschaffer im Fachkern oder Server und keine Aktivierung in Konfigurationsdateien", () => {
   const root = path.join(__dirname, "..");
   for (const file of ["server.js", "lib/helmut/understanding.js"]) {
     assert(!fs.readFileSync(path.join(root, file), "utf8").includes("beschaffeArtikelkontext"));
