@@ -1,6 +1,6 @@
 # Vollstaendige Ersatztitel im Briefing
 
-Stand 17.09.2026. Vierter begrenzter Reparaturteil auf PR421. Keine Production Wirkung. Status: teilweise abgeschlossen bis Abschluss der Pflichtpruefungen und Sicherung im Draft PR.
+Stand 17.09.2026. Vierter begrenzter Reparaturteil auf PR421. Keine Production Wirkung. Status: teilweise abgeschlossen. Code und lokale Pruefung fertig; unabhaengige CI, Review und spaetere Production Wirkung getrennt im zugehoerigen Draft PR nachweisen.
 
 ## Verifizierte Uebernahme
 
@@ -10,7 +10,7 @@ Keine in_progress oder waiting Actions. Nur die beiden bekannten queued Laeufe31
 
 Vercel: Production `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY mit exakt diesem Main und Hauptalias. Keine neuen Deployments am17.09. im geprueften Zeitraum.
 
-Eigene Kopie `/workspace/scratch/522a567792fe/helmut`, Branch `codex/titel-satzgrenze-20260917`, Basis PR421. Keine Uebernahme der fremden Vorarbeiten.
+Eigene Kopie `/workspace/scratch/522a567792fe/helmut`, Branch `codex/titel-satzgrenze-20260917`, Basis PR421. Keine Uebernahme der fremden Vorarbeiten. Erster veroeffentlichter Zwischencommit `47bec11ba479229e4cd781388deaff638ddf1f96`, identischer Dateibaum `821a243f4be628e56fff17ed7397f03264eaefb9` zum lokalen Zwischencommit `630739ead38344e4a9f4332e6a5a164529475e71`. Direkter Git Push hatte keine Anmeldung; Veroeffentlichung ueber die vorhandene GitHub Verbindung. Lokalen Vorgänger erhalten, Arbeitsbranch anschliessend an den identischen veroeffentlichten Stand gebunden. Der folgende reine Abschlusscommit dokumentiert die tatsaechlichen Pruefergebnisse; finaler Head und CI sind im Draft PR eindeutig gebunden.
 
 ## Originalbefund und nachgewiesene Ursache
 
@@ -28,7 +28,7 @@ Neue synthetische Offline Suite:8/8 Gruppen. Vor der Korrektur scheitert der ers
 
 Privater Replay der echten Aufnahme:22/22 alte Titel exakt reproduziert;5/5 bestaetigte Abbrueche nach Korrektur durch den bereits vorhandenen ganzen ersten Satz ersetzt;17/17 weitere Titel identisch. Im direkten Vergleich beider Adapter aendern sich ausschliesslich10 Titelfelder in Karten und zugehoerigen Empfehlungen. Alle anderen Vertragsfelder und saemtliche Eingabedaten bleiben identisch. Dies ist ein Offline Replay des erhaltenen Bestands, kein neuer App Abruf und keine vollstaendige Fachpruefung.
 
-Alle Tests ueber `scripts/lokal.js`. Der vor jedem neuen PR vorgeschriebene kanonische Gesamtlauf und die neue GitHub CI folgen separat. Alte erfolgreiche PR Pruefungen wurden nur nachgelesen.
+Alle Tests ueber `scripts/lokal.js`. Kanonischer Gesamtlauf:395/397 Suiten in649 Sekunden. Die zwei Ausnahmen waren ausschliesslich fehlende lokale Abhaengigkeiten in der frisch geklonten Arbeitskopie: `ical.js` fuer Kalender und AWS SDK fuer Paketbau. Paketdateien und Lockdatei waren bytegleich zur abgeschlossenen Vorgaengerkopie. Nach zeitweiliger Nutzung ihrer bereits vorhandenen unveraenderten Abhaengigkeiten bestehen Kalender134/134 und Paketbau43/43 einschliesslich exaktem festgeschriebenem Abhaengigkeitsbaum. Kein Download, keine Paketdateiaenderung und keine Schutzabsenkung. Playwright1.56.1 und vorhandenes Chromium wurden von Anfang an passend zur CI verwendet. Es bleibt kein offener lokaler Testfehler. Dies ist Gesamtlauf plus gezielte Nachpruefungen, kein behaupteter neuer397/397 Gesamtlauf. Die neue GitHub CI wird getrennt am finalen PR Head nachgewiesen. Alte erfolgreiche PR Pruefungen wurden nur nachgelesen.
 
 ## Grenzen und Folgearbeit
 
