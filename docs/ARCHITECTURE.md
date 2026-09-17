@@ -198,8 +198,8 @@ Doppelstart geschützt. Ein bewusster Doppelstart in Production ist **verboten**
 `buildUnderstandingPrompt` erlaubt fuer einen ausdruecklichen lokalen Versuch
 genau einen gesonderten Originalabsatz mit maximal600 Zeichen. `artikelkontext.js`
 bindet ihn an eine bereits ausgewaehlte Quelle und deren unveraenderten Eingabestand.
-Der bisherige Auszug bleibt erhalten. Kein automatischer Abruf, keine Speicherung,
-keine neue Route oder Migration und kein implizites Lesen beliebiger Rohtextfelder.
+Der bisherige Auszug bleibt erhalten. Der Promptbau loest selbst keinen Abruf oder
+Schreibvorgang aus und liest keine beliebigen Rohtextfelder implizit.
 Erstverstehen und Aktualisierung reichen den ausdruecklichen Beleg weiter. Sie pruefen
 ihn vor Reservierung und Budget, halten Prompt und Quelldokumente fuer diesen Versuch
 fest und binden den genauen Prompt an den vorhandenen CAS Eingabehash. Ohne CAS kein
@@ -216,6 +216,19 @@ Antwortgrenze1MiB, Absatzgrenze600 Zeichen, keine Kuerzung. Antwort und Artikelt
 werden gehasht, Absatzposition und Auswahlverfahren festgehalten. Das ist eine
 allgemeine Textauswahl, kein fachlicher Eignungsnachweis. Kein regulaerer Aufrufer
 beschafft oder speichert diese Antworten. [Gewinnung und Grenzen](betrieb/gipfel-quellenluecke-2026-09-17.md#automatische-absatzgewinnung).
+
+`artikelkontext-beschaffung.js` bereitet den ausdruecklichen Einzelabruf samt
+bestaetigter Ablage vor. Der reine Adapter `artikelkontext-belegspeicher.js`
+haelt den Speicher unabhaengig vom Crawler. Eine globale `helmut_store` Zeile je Dokument und
+Quellenstand wird zuerst ausschliesslich eingefuegt und zurueckgelesen. Nur der
+Gewinner ruft ueber `crawler.fetchUrl` ab. Abschluss per CAS auf Versuch und
+reservierten Zustand, danach erneute Ruecklesung. Ein bestaetigter Version2 Beleg
+bleibt unveraendert; Luecken und unklare Ausgaenge erlauben keinen neuen Abruf.
+Der Sonderpfad verlangt bestehende Anbietersteuerung, maximal einen HTTPS Request,
+20s und1MiB; Zieladressen werden am Socket DNS geprueft, nur oeffentliches IPv4.
+Keine neue Tabelle oder Migration. Kein regulaerer Einstieg ruft den Pfad auf.
+Der Anschluss und die spaetere Production Nutzung bleiben offen.
+[Speichervertrag und Grenzen](betrieb/gipfel-quellenluecke-2026-09-17.md#begrenzter-abruf-und-bestaetigte-belegablage).
 
 **Mandantenreihenfolge (seit 2026-07-29, OP-25).** Die mandantenbezogenen Crons verarbeiten die
 aktiven Mandate **seriell** gegen ein hartes Zeitbudget — die Reihenfolge war deshalb
