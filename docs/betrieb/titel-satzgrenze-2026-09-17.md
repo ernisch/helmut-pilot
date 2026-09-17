@@ -1,0 +1,41 @@
+# Vollstaendige Ersatztitel im Briefing
+
+Stand 17.09.2026. Vierter begrenzter Reparaturteil auf PR421. Keine Production Wirkung. Status: teilweise abgeschlossen bis Abschluss der Pflichtpruefungen und Sicherung im Draft PR.
+
+## Verifizierte Uebernahme
+
+Rein lesender Abgleich bis 12:26 Tuerkei / 11:26 Berlin / 09:26 UTC: Main `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`. PR419 `eea7c24f4d9f3ed8bb2cd74d7eaab87043c34d8e`, PR420 `eb687a5c849cb0602a08035c2c4893c944a1d4ce`, PR421 `1129d9ad8b163ce1ccf16adc0a02d35fbcb96126` unveraendert, offen, Draft, mergeable und ungemergt. Die drei vorhandenen CI Laeufe35194395708,35197748793,35202842125 sind erfolgreich. Kein neuer Commit nach PR421 und kein anderer offener Reparatur PR; historischer Draft345 bleibt erhalten.
+
+Keine in_progress oder waiting Actions. Nur die beiden bekannten queued Laeufe31128435980 und31126446647 vom06.08. auf anderen Branches. Testbegleitung und Testendeautomationen deaktiviert. Kein anderer lokaler Reparaturprozess sichtbar, die sauberen Vorgängerkopien unveraendert und die55 fremden lokalen Aenderungen erhalten. Ein globaler Work Sitzungsstatus ist nicht abfragbar. Privater Uebergabebeleg Version505 nennt FREI und wird ausschliesslich historisch verwendet. Keine neue Production Datenbankaufnahme.
+
+Vercel: Production `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY mit exakt diesem Main und Hauptalias. Keine neuen Deployments am17.09. im geprueften Zeitraum.
+
+Eigene Kopie `/workspace/scratch/522a567792fe/helmut`, Branch `codex/titel-satzgrenze-20260917`, Basis PR421. Keine Uebernahme der fremden Vorarbeiten.
+
+## Originalbefund und nachgewiesene Ursache
+
+Der Originalbericht `Qualitaetsbefunde_A001_Zeit_Titel_20260915.json` bestaetigt manuell fuenf Titelabbrueche. Erhalten im privaten Belegpaket `Helmut_500_Productiontest_20260915_Belege.zip`, Version18. Nachfolgende Originalaufnahme `Pruefaufnahme_A001_34984794661.json`, Zeitpunkt15.09.14:55:22.508UTC, SHA256 `6da8ee383caede846d0e312f7366c6fbb81d8d5ebeed0dc7a1c9c6209f995455`, enthaelt dieselben fuenf Titel unter22 Karten und die unveraenderten zugrundeliegenden Wissensobjekte. Keine privaten Profilinhalte oder Originalkarten werden ins Repository kopiert.
+
+In allen fuenf Faellen sind `display_title` und `headline` leer. `display_summary` enthaelt den ganzen ersten Satz. `koTitle` in `briefingContract.js` rief `firstSentence(..., 90)` auf. Der Adapter schnitt nach90 Zeichen und anschliessend bis zur letzten Wortgrenze ab. Damit entstanden auch grammatische Fragmente, deren letztes Wort kein auffaelliges Funktionswort war. Der unveraenderte Adapter reproduziert alle22 Originaltitel und insbesondere jeden der fuenf bestaetigten Abbrueche exakt. Es ist kein fuer diesen Befund benoetigter Modellwechsel oder neuer Quelltextabruf.
+
+Der zweite Kandidat wurde ebenfalls am Originalbefund geprueft: `Qualitaetsbefund_A001_Doppelte_Artikelkennung_20260915.json` enthaelt zwei WELT URLs mit derselben Artikelkennung und verschiedenen Pfadtexten sowie Zeitangaben11./13.09. `buildSources` uebernimmt beide Dokumentzeilen; `canonicalizeUrl` normalisiert technische URL Varianten, vereinheitlicht aber keine WELT Artikelkennung bei verschiedenen Pfadtexten. Die Varianten sind daher keine unabhaengigen Belege. Massgeblicher Originalinhalt, Publikationszeit und ein sicherer Umgang mit unterschiedlichen Artikelversionen bleiben offen. Keine automatische Auswahl des aelteren oder juengeren Datums, keine Loeschung und keine Aenderung dieses Pfads in diesem Sprint.
+
+## Kleinste Korrektur und Abnahme
+
+Nur die drei Ersatztitelpfade verwenden die bestehende Satzgrenze ohne90 Zeichenlimit: `display_summary`, `was_ist_passiert`, hilfsweise Zusammenfassung der Primaerquelle. Bestehende Anzeigetitel und Headlines, Feldreihenfolge, Quellenauswahl und Sachzusammenfassungen bleiben gleich. Keine ergaenzten Woerter, keine neue KI, keine gespeicherten Daten aendern. Die allgemeine Kurztextfunktion und ihre uebrigen Aufrufer behalten ihre bisherigen Grenzen.
+
+Neue synthetische Offline Suite:8/8 Gruppen. Vor der Korrektur scheitert der erste Langsatzfall genau am abgeschnittenen Satz. Geprueft werden alle drei Ersatztitelpfade, Vorrang vorhandener Titel, kurze Saetze und trennbares Verbende `ein`, fehlende Satzzeichen, Whitespace, leerer Zustand und die Weitergabe an Briefing, Empfehlungen, Startkarten und Detailstand.
+
+Privater Replay der echten Aufnahme:22/22 alte Titel exakt reproduziert;5/5 bestaetigte Abbrueche nach Korrektur durch den bereits vorhandenen ganzen ersten Satz ersetzt;17/17 weitere Titel identisch. Im direkten Vergleich beider Adapter aendern sich ausschliesslich10 Titelfelder in Karten und zugehoerigen Empfehlungen. Alle anderen Vertragsfelder und saemtliche Eingabedaten bleiben identisch. Dies ist ein Offline Replay des erhaltenen Bestands, kein neuer App Abruf und keine vollstaendige Fachpruefung.
+
+Alle Tests ueber `scripts/lokal.js`. Der vor jedem neuen PR vorgeschriebene kanonische Gesamtlauf und die neue GitHub CI folgen separat. Alte erfolgreiche PR Pruefungen wurden nur nachgelesen.
+
+## Grenzen und Folgearbeit
+
+Ersatztitel koennen laenger werden. Die bisherige Trennung am ersten Satzzeichen bleibt unveraendert; vorhandene Abkuerzungsprobleme, bereits im Quelltext oder Speicher gekuerzte Fragmente und unrichtige Aussagen werden hierdurch nicht semantisch erkannt oder repariert. Vorhandene komplette Altpakete werden nicht rueckwirkend umgeschrieben. Der spaetere Production Nachweis muss den tatsaechlich ausgelesenen Paketinhalt pruefen.
+
+Die fuenf Titelabbrueche sind auf Codeebene behoben. Zuschreibung, Ebenen, Ereignisaktualitaet, Profilbezug, Auswahl, Wiederholung und fehlender Quellentext bleiben offen. Insbesondere sind der als bevorstehend dargestellte abgeschlossene Gipfel und die Vermischung zweier Ministerreisen nicht behoben. Die bereits vorhandenen, jetzt im Titel vollstaendig sichtbaren Aussagen erhalten keine Fachfreigabe.
+
+Naechster begrenzter Inhaltskandidat: Artikelidentitaet und widerspruechliche Quellenzeiten anhand des WELT Originalbelegs, mit Erhalt aller Rohbelege. Nicht nur den Quellenzaehler kosmetisch aendern. Fuer das unabhaengige Problemfeld neuer Thread, Denkstufe Sehr hoch. Vor erneutem500er Production Nachweis bleiben die [bereits dokumentierten Voraussetzungen](morgen-paketnachweis-2026-09-17.md): Versorgungskapazitaet, begrenzte Fortsetzungsplanung, fachliche Aussagenpruefung, vollstaendiger App Abruf aller500, Kosten und verlaessliches Testende mit unabhaengigem Abschluss.
+
+Automatische Deployments des Folgebranches sind vor Veroeffentlichung in `vercel.json` ausgeschaltet. Alle13 Crondefinitionen unveraendert. Kein Merge, Deployment, Migration, Profilwechsel, Production Datenzugriff mit Schreibwirkung, Umgebungswechsel, Budgetwechsel, externer Versand oder bezahlter Modellaufruf. Lokaler Rueckweg ist die Ruecknahme dieses Folgecommits. Jeder spaetere Production Rueckweg braucht eigene Freigabe und muss Zustandsversion3 aus PR420 erhalten. Merge loest Production Deployment aus und ist nicht freigegeben. Ein neuer500er Test braucht ausdruecklich neue Startfreigabe.

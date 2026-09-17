@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**17.09.2026: PR419 und PR420 offen, Draft, ungemergt; beide GitHub Pflichtpruefungen erfolgreich. Dritter Folgebranch korrigiert Morgenpakete und Versorgungsstatus. Kein Merge und keine Production Wirkung.**
+**17.09.2026: PR419, PR420 und PR421 offen, Draft, ungemergt; alle drei GitHub CI Laeufe erfolgreich. Vierter Folgebranch behebt die belegte Kuerzung von Ersatztiteln. Kein Merge und keine Production Wirkung.**
 
 Rein lesende Uebernahme bis 10:04 Tuerkei / 09:04 Berlin / 07:04 UTC: GitHub Main `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`; Vercel Production `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY. Keine neuen Deployments am 17.09. im geprueften Zeitraum. Keine laufenden Actions. Zwei wartende CI Laeufe vom 06.08. gehoeren zu anderen alten Branches. Einziger offener PR bei Uebernahme: historischer Draft345. Keine entfernte Motorreparatur gefunden. Relevante Testbegleitungsautomationen pausiert; kein lokaler alter Arbeitsprozess sichtbar. Das beweist keinen globalen Work Sitzungsstatus; der Betreiber hat den alten Lauf vor Uebernahme gestoppt.
 
@@ -9,6 +9,8 @@ Rein lesende Uebernahme bis 10:04 Tuerkei / 09:04 Berlin / 07:04 UTC: GitHub Mai
 **Zweiter Reparaturteil PR420:** Head `eb687a5c849cb0602a08035c2c4893c944a1d4ce`, Basis PR419 `eea7c24f4d9f3ed8bb2cd74d7eaab87043c34d8e`. Aktive Lagezielmenge, gleichberechtigte gespeicherte Rotation, bestaetigter Beginn und 500 Laufplaetze. JSON Zustandsversion3 muss bei spaeterem Rueckweg erhalten bleiben. GitHub CI35197748793 vollstaendig erfolgreich, am17.09. frisch nachgelesen. [Umfang und Grenzen](betrieb/lage-aktive-fortsetzung-2026-09-17.md).
 
 **Dritter Reparaturteil:** Branch `codex/morgen-paketnachweis-20260917` baut auf PR420 auf. Der Morgenlauf speichert und bestaetigt sein Paket, ergaenzt beim spaeteren Aufruf vorhandene Lage und meldet fehlende Versorgung als partial. Quittung, Paketvollstaendigkeit und fachliche Abnahme bleiben getrennt. 18 neue Routengruppen und gezielte Regressionen erfolgreich. Kanonischer Gesamtlauf393/396; beide Browserumgebungsfehler und die veraltete Strukturpruefung gezielt geschlossen. Kein offener lokaler Testfehler. Finaler Commit und GitHub CI im zugehoerigen Draft PR. Kein neuer Cron oder Modellaufruf. [Ursache, Tests, Risiken und gesamte Reparaturrestliste](betrieb/morgen-paketnachweis-2026-09-17.md).
+
+**Vierter Reparaturteil:** Branch `codex/titel-satzgrenze-20260917`, Basis PR421 `1129d9ad8b163ce1ccf16adc0a02d35fbcb96126`. Ersatztitel behalten den bereits vorhandenen ganzen ersten Satz statt einer Kuerzung bei90 Zeichen. Neue Suite8/8 erfolgreich. Privater Replay reproduziert22 Originaltitel;5 bestaetigte Abbrueche korrigiert,17 weitere Titel und alle anderen Vertragsfelder unveraendert. Pflichtgesamtlauf und neuer Draft PR folgen. Keine Quellen oder Faktenabnahme. WELT Artikelvarianten und widerspruechliche Datumsangaben bleiben eigener Inhaltsblock. [Belege, Grenzen und Folgearbeit](betrieb/titel-satzgrenze-2026-09-17.md).
 
 **Historischer Testabschluss laut erhaltenem Bericht vom 16.09.:** Test beendet, 497 Mandatsbriefings, 131 Morgenquittungen, 5 Lage Texte, nur zwei Profile mit allen drei Ergebnissen. Kein vollstaendiger 500er Fachnachweis. Die dortige Datenbankaufnahme von 21:03:43 Tuerkei / 20:03:43 Berlin / 18:03:43 UTC nennt 504 Profile, 0 aktiv, 0 aktive Sperren und Leases, aber 829 wartende Jobs. Diese Zahlen wurden in diesem Sprint nicht neu gegen Production erhoben. Inaktive Profile stoppen globale Quellenarbeit nicht automatisch. Aktuelle Freigabe erlaubt keine Profil oder Jobmutation. [Status vor Uebernahme auf Main](archive/project_state/2026_09_17_vor_quellen_zeitvertrag.md) ist historisch.
 
@@ -126,7 +128,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-Die drei aufeinander aufbauenden Reparaturteile ungemergt pruefen lassen. Danach naechsten begrenzten Inhaltsblock anhand der Originalbefunde bearbeiten: abgebrochene Titel und doppelte Artikelkennungen. Quellenversorgung, Zuschreibung, Ereigniszeit und sachlicher Profilbezug bleiben fachlich offen. Die benoetigte Morgen und Lagekapazitaet samt Fortsetzungsplanung und sicherem Testende muss vor erneutem 500er Nachweis geklaert sein. Keine neue Startfreigabe aus dieser Codearbeit ableiten.
+Die vier aufeinander aufbauenden Reparaturteile ungemergt pruefen lassen. Nach Abschluss des begrenzten Titelsprints naechsten Inhaltsblock anhand der WELT Originalbefunde bearbeiten: Artikelidentitaet und widerspruechliche Quellenzeiten. Quellenversorgung, Zuschreibung, Ereigniszeit und sachlicher Profilbezug bleiben fachlich offen. Die benoetigte Morgen und Lagekapazitaet samt Fortsetzungsplanung und sicherem Testende muss vor erneutem500er Nachweis geklaert sein. Keine neue Startfreigabe aus dieser Codearbeit ableiten.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
