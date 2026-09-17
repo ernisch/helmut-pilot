@@ -494,7 +494,7 @@ function laufGegenAblage(storage, zeile, { cronName, tenantIds, runId, startedMs
       const fairnessQuelle = fs.readFileSync(path.join(ROOT, "lib", "helmut", "cron-fairness.js"), "utf8");
       const serverQuelle = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
       const vercel = JSON.parse(fs.readFileSync(path.join(ROOT, "vercel.json"), "utf8"));
-      check("Die Schemaversion bleibt 2 (kein neuer Rollout-Zwang)", F.FAIRNESS_VERSION === 2);
+      check("Version 3 schuetzt 500 Laufplaetze vor alten Schreibern", F.FAIRNESS_VERSION === 3);
       check("Zeitbudgets unveraendert (270 000 / 240 000 ms)",
         /270000/.test(serverQuelle) && /240000/.test(serverQuelle));
       check("Aeussere Zeitlimits unveraendert (280 000 ms)",

@@ -1818,62 +1818,38 @@ async function handleRequest(request, response) {
       if (scalablePipeline.narrativUeberWarteschlange()) {
         return narrativSlotLauf({ slot: "morgen", startMs: lageBriefingStartMs, runId: lageBriefingRunId });
       }
-      let profiles = await listProfiles().catch(() => []);
-      if (!Array.isArray(profiles)) profiles = [];
-      // VORRANG DER REALEN MANDATE (Sprint 02.09.). Diese Schleife arbeitet gegen
-      // ein hartes Zeitbudget von 240 s und in FESTER Listenreihenfolge — anders
-      // als der Morgenlauf hat sie keine Fairnessrotation. Bei 5 realen und 495
-      // synthetischen Profilen entscheidet damit allein die Listenposition, wer
-      // vor dem Zeitbudget noch drankommt. Reale Mandate werden deshalb stabil
-      // nach vorn gestellt; die Reihenfolge INNERHALB einer Klasse bleibt
-      // unveraendert. Bei homogener Profilmenge (heutiger Stand: 0 synthetische
-      // Zeilen) ist die Liste element-identisch zu vorher.
-      profiles = mandatsklasse.sortiereRealZuerst(profiles, (p) => (p && p.id) || null);
-      // KEIN Fallback auf ein Default-Mandat: ohne gespeicherte Profile ist der
-      // Vorwaerm-Lauf ein ehrlicher Leerlauf.
-      const results = [];
       const lageDiagnose = require("./lib/helmut/lage-laufdiagnose");
       const mandatsErgebnisse = [];
-      let skipped = 0;
-      // Hartes Zeitbudget wie im morning-briefing (240s < maxDuration 300s):
-      // der Cron antwortet IMMER; nicht erreichte Mandate holt der naechste
-      // (idempotente) Lauf nach.
-      const lageBriefingDeadline = lageBriefingStartMs + 240000;
-      for (const p of profiles) {
-        if (!p || !p.id) { skipped += 1; results.push({ userId: null, available: false, reason: "profil-ohne-id", vorgaenge: 0 }); continue; }
-        if (Date.now() > lageBriefingDeadline) { skipped += 1; results.push({ userId: p.id, available: false, reason: "zeitbudget", vorgaenge: 0 }); continue; }
-        // Mehrmandantenfaehigkeit Phase 8: deaktivierte Profile nehmen an der
-        // Verarbeitung NICHT teil (sie sollen kein Briefing erzeugen). VOLLSTAENDIGE
-        // Fehler-Isolation je Mandat: auch activeProfile/validateProfile stehen im
-        // try/catch — ein Storage-Fehler bei EINEM Profil bricht die Schleife nicht
-        // (Befund der Cron-Inventur: frueher war nur buildLageBriefing gefangen).
+      // Dieselbe aktive Zielmenge und persistente Fortsetzung wie beim Morgenlauf.
+      // Keine Bevorzugung einzelner Profilklassen; Ablehnungen bleiben Ablehnungen.
+      const summary = await runCronForTenants("lage-briefing", async (tenantId) => {
         try {
-          const profile = await activeProfile(p.id);
-          const val = validateProfile(profile);
-          if (val.disabled) {
-            skipped += 1;
-            results.push({ userId: profile.id, available: false, reason: "profil-deaktiviert", vorgaenge: 0 });
-            continue;
-          }
-          const res = await buildLageBriefing(profile, { politicianId: profile.id })
-            .catch((e) => ({ available: false, reason: "error", diagnose: lageDiagnose.sichereDiagnose(e?.diagnose) }));
+          const profile = await activeProfile(tenantId);
+          if (validateProfile(profile).disabled)
+            return { userId: tenantId, available: false, reason: "profil-deaktiviert", ok: false };
+          const res = await buildLageBriefing(profile, { politicianId: tenantId })
+            .catch(e => ({ available: false, reason: "error", diagnose: lageDiagnose.sichereDiagnose(e?.diagnose) }));
           const diagnose = lageDiagnose.sichereDiagnose(res.diagnose);
-          results.push({ userId: profile.id, available: res.available, fromCache: res.fromCache, reason: res.reason || null,
-            vorgaenge: (res.vorgaenge || []).length, ...(diagnose ? { diagnose } : {}) });
-          mandatsErgebnisse.push(lageDiagnose.mandatsErgebnis(p.id, res));
+          const ergebnis = lageDiagnose.mandatsErgebnis(tenantId, res);
+          mandatsErgebnisse.push(ergebnis);
+          return { userId: tenantId, available: ergebnis.lageGespeichert, fromCache: res.fromCache,
+            reason: res.reason || null, vorgaenge: (res.vorgaenge || []).length,
+            ...(diagnose ? { diagnose } : {}), ...(ergebnis.lageGespeichert ? {} : { ok: false }) };
         } catch (error) {
           const diagnose = lageDiagnose.sichereDiagnose(error?.diagnose);
           const res = { available: false, reason: "profil-fehler", ...(diagnose ? { diagnose } : {}) };
-          results.push({ userId: p.id, ...res, vorgaenge: 0 });
-          mandatsErgebnisse.push(lageDiagnose.mandatsErgebnis(p.id, res));
+          mandatsErgebnisse.push(lageDiagnose.mandatsErgebnis(tenantId, res));
+          return { userId: tenantId, ...res, vorgaenge: 0, ok: false };
         }
-      }
+      }, { deadlineMs: 240000, runId: lageBriefingRunId, gleichberechtigt: true, persistenzPflicht: true });
+      const results = summary.results || [];
+      const skipped = results.filter(r => r.skipped || r.reason === "profil-deaktiviert").length;
       // P0-1: echte Lage-Briefing-Vorwaerm-Laufzeit persistieren (Zaehler/Status, kein Text).
       // W-2: kein `.catch(() => {})` mehr — recordProcessRun wirft nicht, sondern
       // liefert ein Ergebnis; ein Telemetriefehler wird im Abschlussstatus ausgewiesen.
       const lageErfolg = results.filter(r => r.available === true).length;
       const lageFehler = results.filter(r => !r.available
-        && !["zeitbudget", "profil-deaktiviert", "profil-ohne-id", "no-current-sources", "no-vorgaenge"].includes(r.reason)).length;
+        && !["zeitbudget", "laeuft-bereits", "profil-deaktiviert", "profil-ohne-id", "no-current-sources", "no-vorgaenge"].includes(r.reason)).length;
       const lageTelemetrie = await recordProcessRun({
         process: "briefing-lage", runId: lageBriefingRunId, mode: "cron", location: helmutExecLocation(),
         startedAt: new Date(lageBriefingStartMs).toISOString(), finishedAt: new Date().toISOString(),
@@ -1882,12 +1858,15 @@ async function handleRequest(request, response) {
         // Nur tatsaechlich bearbeitete Profile: inaktive/zeitbedingt ausgelassene
         // Zeilen verdraengen keine der bis zu 500 Einzeldiagnosen im Speicher.
         mandatsErgebnisse,
-        zielmenge: profiles.length,
-        status: lageFehler || results.some(r => r.reason === "zeitbudget") ? "failed" : "success"
+        zielmenge: summary.tenants,
+        status: summary.ok === false || lageFehler ? "failed"
+          : lageErfolg < summary.tenants || summary.fairnessGestoert ? "partial" : "success"
       });
       return {
         prewarmed: lageErfolg, gestartet: results.length - skipped, uebersprungen: skipped,
-        vollstaendig: lageErfolg === results.length - results.filter(r => r.reason === "profil-deaktiviert").length,
+        vollstaendig: summary.ok !== false && !summary.fairnessGestoert && lageErfolg === summary.tenants,
+        zielmenge: summary.tenants, fairness: summary.fairness,
+        ...(summary.reason ? { reason: summary.reason } : {}),
         results,
         lauftelemetrie: { gespeichert: lageTelemetrie.ok, vollstaendig: lageTelemetrie.vollstaendig, fehler: lageTelemetrie.fehler }
       };
@@ -7838,8 +7817,9 @@ function sendMandateSelectionRequired(response, mandates = []) {
 // vermerkt (eigene helmut_store-Zeile, keine Migration) — daraus folgt die
 // nachrechenbare Obergrenze ceil(n/k). Nicht begonnene Mandate werden NICHT als
 // versucht vermerkt und bleiben deshalb im naechsten Lauf vorn.
-// `HELMUT_CRON_FAIRNESS=off` ist der Rueckweg auf das alte Verhalten ohne Codeaenderung.
-async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, runId = null, vorlauf = null } = {}) {
+// `HELMUT_CRON_FAIRNESS=off` ist der Rueckweg fuer bisherige Aufrufer.
+// Der Lagepfad verlangt persistenzPflicht und beginnt dann keine Facharbeit.
+async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, runId = null, vorlauf = null, gleichberechtigt = false, persistenzPflicht = false } = {}) {
   const startedMs = Date.now();
   // R-6: die Laufkennung kommt jetzt von AUSSEN, wenn der Aufrufer sie kennt. Nur so kann
   // ein aeusserer Timeout-Catch (Promise.race, der NIE zurueckkehrt) genau DIESEN Lauf
@@ -7879,7 +7859,7 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, run
 
   const fairnessAn = cronFairness.fairnessEnabled();
   const lauf = await cronFairness.runTenantsFairly({
-    cronName,
+    cronName, gleichberechtigt, persistenzPflicht,
     // Fairness aus -> exakt die alte alphabetische Reihenfolge (ids.sort()) und kein
     // Zustands-IO. Der Rueckweg ist damit eine Env-Variable, kein Deployment.
     reihenfolge: fairnessAn ? "fair" : "unveraendert",
@@ -8003,13 +7983,16 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, run
   // stoerte, wuerde einen erfolgreichen Crawl als Ausfall melden und den Watchdog
   // fehlalarmieren. Die Stoerung steht deshalb als EIGENES Feld daneben, zusaetzlich
   // zum Systemfehler und zur Fehlerzeile im Protokoll: der Lauf sieht nicht sauber aus.
+  // Bei Pflichtpersistenz ist die Verarbeitung jedoch gesperrt und ok muss false sein.
   return {
-    ok: true,
+    ok: !persistenzPflicht || (lauf.zustandGeladen && !lauf.zustandFehler),
+    ...(persistenzPflicht && (!lauf.zustandGeladen || lauf.zustandFehler)
+      ? { reason: "fortsetzung-nicht-bestaetigt" } : {}),
     tenants: tenantIds.length,
     durationMs: Date.now() - startedMs,
     results,
     budgetSkipped: budgetSkipped.length,
-    fairnessGestoert: Boolean(fairnessAn && (!fairness.zustandGeladen || fairness.zustandFehler)),
+    fairnessGestoert: Boolean((fairnessAn || persistenzPflicht) && (!fairness.zustandGeladen || fairness.zustandFehler)),
     // F-CAS: getrennt ausgewiesen, weil es eine ANDERE Aussage ist als ein gestoerter
     // Zustand — hier war der Zustand nutzbar, aber gemeldete und gespeicherte Wahrheit
     // fielen auseinander. Leeres Feld = beide stimmen ueberein.

@@ -148,18 +148,19 @@ check("4.6 NACH diesem Zweig folgt im selben Handler die Direktschleife (der Alt
     const i = regulaer.indexOf("return narrativSlotLauf(");
     if (i < 0) return false;
     const danach = regulaer.slice(i);
-    return /listProfiles\(\)/.test(danach) && /buildLageBriefing\(/.test(danach);
+    return /runCronForTenants\("lage-briefing"/.test(danach) && /buildLageBriefing\(/.test(danach);
   })());
 check("4.7 Bei AUSGESCHALTETER Narrativwarteschlange ist der regulaere Slot also AKTIV, nicht inert",
-  /listProfiles\(\)/.test(regulaer) && /buildLageBriefing\(/.test(regulaer)
-  && !/uebersprungen — OP-30-Flags aus/.test(regulaer.slice(0, regulaer.indexOf("listProfiles()"))));
+  /runCronForTenants\("lage-briefing"/.test(regulaer) && /buildLageBriefing\(/.test(regulaer)
+  && !/uebersprungen — OP-30-Flags aus/.test(regulaer.slice(0, regulaer.indexOf('runCronForTenants("lage-briefing"'))));
 
 // (B) DER NACHLAUFSLOT HAT KEINEN ALTPFAD — er ist heute wirklich inaktiv.
 check("4.8 Der Nachlaufslot kehrt bei ausgeschalteten Flags VOR jeder Verarbeitung zurueck",
   /if \(!scalablePipeline\.narrativUeberWarteschlange\(\)\)/.test(nachlauf)
   && /uebersprungen — OP-30-Flags aus, keine Verarbeitung/.test(nachlauf));
 check("4.9 Der Nachlaufslot hat KEINEN Altpfad (keine Direktschleife im Handler)",
-  !/listProfiles\(\)/.test(nachlauf) && !/buildLageBriefing\(/.test(nachlauf));
+  !/listProfiles\(\)/.test(nachlauf) && !/runCronForTenants\(/.test(nachlauf)
+  && !/buildLageBriefing\(/.test(nachlauf));
 check("4.10 Der Quelltext haelt die Altpfadlosigkeit ausdruecklich fest",
   /reiner Warteschlangen-Slot: sie hat KEINEN Altpfad/.test(serverSrc));
 

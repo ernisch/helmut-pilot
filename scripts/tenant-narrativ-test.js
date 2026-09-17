@@ -596,9 +596,9 @@ async function main() {
       serverQuelltext.indexOf('if (url.pathname === "/api/cron/lage-briefing") {'),
       serverQuelltext.indexOf('url.pathname === "/api/debug/lage-backfill"')
     );
-    check("8.1 Die Cron-Route prueft narrativUeberWarteschlange VOR der Direktschleife",
+    check("8.1 Die Cron-Route prueft narrativUeberWarteschlange VOR der fairen Direktverarbeitung",
       /narrativUeberWarteschlange\(\)/.test(routenBlock)
-      && routenBlock.indexOf("narrativUeberWarteschlange") < routenBlock.indexOf("listProfiles"));
+      && routenBlock.indexOf("narrativUeberWarteschlange") < routenBlock.indexOf('runCronForTenants("lage-briefing"'));
     // KAPAZITAETSSPRINT 2026-08-09: der Slotablauf steht nicht mehr inline in der Route,
     // sondern in `narrativSlotLauf()` — EINE Umsetzung fuer alle drei Morgenslots (sonst
     // waeren daraus Kopien geworden, und Kopien laufen auseinander). Die Zusagen sind
@@ -616,8 +616,8 @@ async function main() {
     check("8.3b Beide Cron-Routen benutzen DIESELBE Umsetzung (keine Kopie)",
       (serverQuelltext.match(/return narrativSlotLauf\(/g) || []).length === 2
       && (serverQuelltext.match(/async function narrativSlotLauf/g) || []).length === 1);
-    check("8.4 Der Altpfad (Direktschleife je Profil) bleibt vollstaendig erhalten",
-      /buildLageBriefing\(profile, \{ politicianId: profile\.id \}\)/.test(routenBlock));
+    check("8.4 Der Direktpfad bindet die Facharbeit an die aufgeloeste aktive Kennung",
+      /buildLageBriefing\(profile, \{ politicianId: tenantId \}\)/.test(routenBlock));
 
     // Standardverdrahtung: die Narrativ-Abhaengigkeit loest sich wirklich auf (12.9-Lehre).
     const standard = SP.workerDeps();
