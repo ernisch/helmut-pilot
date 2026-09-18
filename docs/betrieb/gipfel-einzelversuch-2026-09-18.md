@@ -1,6 +1,6 @@
 # Ein freigegebener Gipfelversuch
 
-Stand18.09.2026. Status: Ausfuehrer als Draft PR433 veroeffentlicht und lokal vollstaendig geprueft. Uebertragung des Auftrags an GitHub durch automatische Freigabepruefung blockiert. Kein echter Modellaufruf und keine fachliche Freigabe.
+Stand18.09.2026 nach07:31UTC. Status: gescheitert. Uebertragung inzwischen ausdruecklich freigegeben und genau ein Actionsversuch ausgefuehrt. Abbruch vor Azure wegen nicht exportierter Speicherfunktion. Kein Modellaufruf, keine neue Buchung und keine fachliche Antwort. Der vorherige Freigabeblocker und seine Belege bleiben unten als Historie erhalten.
 
 ## Auftrag und Basis
 
@@ -53,3 +53,21 @@ Die gesamte echte Antwort wird anschliessend direkt am gelieferten Titel, Auszug
 Noch kein echter Aufruf und keine korrigierte Gipfelantwort. Weitere Originalfehler bleiben offen. Artikelkontext bleibt AUS und nicht allgemein aktivierungsbereit. Versorgung, begrenzte Fortsetzung, App Abruf aller500, Kosten, zuverlaessiges Ende und unabhaengiger Abschluss fehlen fuer einen neuen500er Nachweis. Dafuer ist eine eigene Freigabe erforderlich.
 
 Rueckweg vor Ausfuehrung: den ungemergten Folgebranch verwerfen. Nach einem begonnenen Versuch Kosten und Einmalquittung zwingend erhalten; unklarer Ausgang wird weder ausgebucht noch wiederholt. Die Anwendung in Production bleibt unveraendert.
+
+## Ausfuehrung nach ausdruecklicher Uebertragungsfreigabe
+
+Der Betreiber bestaetigte in dieser Uebernahme ausdruecklich die zuvor fehlende Weitergabe des exakt gebundenen Quellenprompts und oeffentlichen Empfaengerschluessels an GitHub Actions. Die Eingabe ist komprimiert, nicht verschluesselt, und im Actionsprotokoll sichtbar. Der private Schluessel wurde nicht uebertragen. Keine Secretwerte exportiert oder veraendert.
+
+Ausgefuehrter Commit `4d2ae8862a44f8c237f330e0a476a4b59c8a63d3`. Die erhaltene Eingabe verwies noch auf955c205; der Unterschied zum final geprueften Head betrifft ausschliesslich die zwei Dokumentationsdateien. Nur die Commitbindung der Eingabe wurde angepasst. Prompt SHA256 `3f286a3cddfcf05b30d540790c7825446f5b9cafb75490511c47eaf71f86d5b2`, Schema und Empfaenger unveraendert; Schluesselpaar lokal abgeglichen. Neue Eingabe SHA256 `75940a222eb1e0ef2b2a33f4ece2bdff207395b6dbcc7d82dd12a572ab500051`. Keine Codeaenderung oder neue Variante des Fachauftrags.
+
+Vorflug07:28:26UTC:504 Profile,0 aktiv,0 Sperren/Leases/junge offene Prozesse, keine Einmalquittung. Die inzwischen vorhandenen18 Aufrufe und0,116663USD stammen vom abgeschlossenen `understanding-cron-20260918053027-e5unl`, nicht vom Gipfelversuch. Alle18 Kostenbuchungen abgerechnet, keine offene Tagesreserve. Profilhash unveraendert gegen den alten Beleg. Neue geschuetzte Authgrundlinie vor dem Versuch separat gespeichert. Production weiter `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY auf Main; seit17.09.00:00UTC kein weiteres Deployment. Keine laufenden GitHub Actions; nur die beiden Altwartenden vom06.08.
+
+Genau ein Formularstart erzeugte [Actions35319793029](https://github.com/ernisch/helmut-pilot/actions/runs/35319793029), Versuch1, am18.09. gegen10:31 Tuerkei /09:31 Berlin /07:31UTC. Checkout und Nodebereitstellung erfolgreich. Job `gipfel-einzelversuch`, ID105519518824, scheiterte mit `GIPFEL_UNBESTAETIGT`; alter Backfilljob `one` korrekt uebersprungen. Keine Wiederholung, kein zweiter Workflowstart. Das Vercelprotokoll bestaetigt den vorangegangenen GET `/api/cron/testnachweis-status` um07:31:10UTC mit HTTP200.
+
+Ursache durch gezielte Offlineprobe eingegrenzt: `vorflug` ruft `storage.supabaseRequest` auf. Diese Funktion existiert intern, wird von `lib/helmut/storage.js` aber nicht exportiert. Mit echtem Speichermodul und ausschliesslich simulierter erfolgreicher Runtimeantwort entsteht `TypeError: storage.supabaseRequest is not a function`. Null echte Netzaufrufe, null Production Writes, null Modellaufrufe; Probe ueber `scripts/lokal.js`. Die bestehende Schutzsuite injiziert eine Attrappe mit genau dieser Methode und verdeckt damit die Schnittstellenluecke. Das externe Fehlerprotokoll selbst nennt nur den bereinigten Sammelcode; kein roher Stack aus Production.
+
+Native Nachkontrolle18.09.10:31:44 Tuerkei /09:31:44 Berlin /07:31:44UTC:504 Profile,0 aktiv, gleiche Profilgrundlinie und gleicher geschuetzter Authhash wie unmittelbar vorher. Keine Einmalquittung, weiterhin18 Kostenbuchungen mit0,116663USD und Tageszaehler18. Keine aktive Sperre, Lease oder junger offener Prozess. Der Code erreicht Azure erst nach bestaetigter Einmalquittung; diese wurde nicht angelegt. Kein Antwortumschlag, kein neuer Kostenumschlag, keine fachliche Antwort. Zusaetzliche Modellkosten dieses Versuchs0USD; vorhandene Kosten unveraendert erhalten.
+
+Abnahme: Uebertragung und einmaliger Actionsstart belegt; genau ein Modellaufruf und fachliches Ergebnis **nicht erbracht**. Gipfelzeitkorrektur bleibt offen. Kein Modellvergleich, kein neuer Artikelabruf, keine Profilmutation, keine allgemeine Artikelkontextaktivierung, kein Merge oder Deployment. Keine manuelle Wiederholung der erfolgreichen Pflicht CI am ausgefuehrten Head; sie ist kein Beweis fuer diesen echten Lauf. Der reine Dokumentationsabschluss kann automatisch neue CI ausloesen.
+
+Naechster kleiner Auftrag: Ausfuehrer an die vorhandene echte Speicherschnittstelle anbinden und die Luecke ohne Productionzugriff abdecken. In dieser Uebernahme wurde kein zweiter Versuch vorbereitet. Ein erneuter Actionsstart wird nicht aus der alten Einmalfreigabe abgeleitet und braucht ausdrueckliche Freigabe. Fehlerlauf und Kostenbelege nicht loeschen. Weitere Fachfehler und vollstaendiger500er Nachweis bleiben offen.
