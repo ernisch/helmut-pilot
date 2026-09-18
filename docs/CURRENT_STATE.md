@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**18.09.2026 UTC: PR419 bis PR432 offen, Draft und ungemergt; alle vierzehn CI Laeufe erfolgreich. Genau ein isolierter mini Gipfelversuch samt notwendiger Kostenbuchung freigegeben, Ausfuehrer lokal vorbereitet. Noch kein echter Aufruf. Artikelkontext AUS; weitere Fachfehler und500er Nachweis offen.**
+**18.09.2026 UTC: PR419 bis PR432 offen, Draft und ungemergt; alle vierzehn CI Laeufe erfolgreich. Ein mini Gipfelversuch freigegeben. Ausfuehrer in Draft PR433, CI gruen; Auftragsuebertragung an GitHub automatisch abgewiesen. Kein echter Aufruf. Artikelkontext AUS; weitere Fachfehler und500er Nachweis offen.**
 
 Vorflug18.09.: Main `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`, PR419 bis PR432 unveraendert. Production `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY auf Main mit Hauptalias; seit17.09.00:00UTC kein Deployment. Keine laufenden/wartenden Actions ausser den zwei alten queued Laeufen vom06.08. Fremde55 Vorarbeiten erhalten; kein weiterer lokaler Ausfuehrer sichtbar. Globaler Work Status nicht abfragbar. [Frischer Vorflug und enge Freigabe](betrieb/gipfel-einzelversuch-2026-09-18.md).
 
@@ -32,7 +32,7 @@ Vorflug18.09.: Main `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`, PR419 bis PR432 
 
 **Artikelidentitaet PR432:** Head `e63b49e82259e62f40cdb574ed228e9edf1cc06b`, Basis PR431. FR Varianten zaehlen einmal, alle Belege erhalten, Zeitkonflikte bleiben leer. Replay:2 von123 Listen korrigiert,121 und22 Karten unveraendert. CI35284649828 vollstaendig erfolgreich:406/406, Browser50/50, Kontoschutz15/15 samt500 Registrierungen, Z22 PASS48/FAIL0. [Belege](betrieb/artikelidentitaet-2026-09-17.md#fr-folgekorrektur).
 
-**Einzelversuch vorbereitet:** Branch `codex/gipfel-einzelversuch-20260918`, Basis PR432. Ein freigegebener mini Aufruf mit0,212 USD Vollreserve innerhalb4 USD; Einmalquittung, Kostenpfad und verschluesselte Ausgabe.9/9 neue Schutzgruppen und privater Offlineauftrag erfolgreich. Gesamtlauf407/407 in717s erfolgreich; CI und echte Antwort offen. Native Nurlesung18.09.03:45:35UTC:504 Profile,0 aktiv,0 Sperren/Leases. [Ausfuehrer, Abnahme und Grenzen](betrieb/gipfel-einzelversuch-2026-09-18.md).
+**Einzelversuch PR433:** Branch `codex/gipfel-einzelversuch-20260918`, Basis PR432. Ein freigegebener mini Aufruf mit0,212 USD Vollreserve innerhalb4 USD; Einmalquittung, Kostenpfad und verschluesselte Ausgabe.9/9 neue Schutzgruppen und privater Offlineauftrag erfolgreich. Lokal407/407 in717s; CI35306383500 vollstaendig gruen. Echte Antwort offen. Automatische Freigabe blockiert Promptuebertragung an GitHub. Native Nurlesung18.09.03:45:35UTC:504 Profile,0 aktiv,0 Sperren/Leases. [Ausfuehrer, Abnahme und Grenzen](betrieb/gipfel-einzelversuch-2026-09-18.md).
 
 **Historischer Testabschluss laut erhaltenem Bericht vom 16.09.:** Test beendet, 497 Mandatsbriefings, 131 Morgenquittungen, 5 Lage Texte, nur zwei Profile mit allen drei Ergebnissen. Kein vollstaendiger 500er Fachnachweis. Die dortige Datenbankaufnahme von 21:03:43 Tuerkei / 20:03:43 Berlin / 18:03:43 UTC nennt 504 Profile, 0 aktiv, 0 aktive Sperren und Leases, aber 829 wartende Jobs. Diese Zahlen wurden in diesem Sprint nicht neu gegen Production erhoben. Inaktive Profile stoppen globale Quellenarbeit nicht automatisch. Aktuelle Freigabe erlaubt keine Profil oder Jobmutation. [Status vor Uebernahme auf Main](archive/project_state/2026_09_17_vor_quellen_zeitvertrag.md) ist historisch.
 
@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-Den ausdruecklich freigegebenen isolierten Gipfelversuch nach Gesamtlauf und CI ausfuehren, gesamte Antwort und Kosten unabhaengig pruefen. Noch keine korrigierte Modellantwort. [Gebundener Auftrag](betrieb/gipfel-einzelversuch-2026-09-18.md), [weitere Fachfaelle](betrieb/artikelidentitaet-2026-09-17.md#offene-fachabnahme). Artikelkontext bleibt AUS; Zeitaufteilung, Ressourcen und dauerhaft blockierte Kontexte offen,60s unter65s Mindestreserve. Versorgung, Fortsetzung, App Abruf aller500, Kosten, Testende und unabhaengigen Abschluss vor erneutem500er Test klaeren. Keine Startfreigabe aus Codearbeit.
+Automatische Freigabepruefung blockiert die Uebertragung des Quellenprompts an GitHub. Dafuer ausdrueckliche Betreiberfreigabe noetig; kein Modellaufruf erfolgt. [Gebundener Auftrag](betrieb/gipfel-einzelversuch-2026-09-18.md), [weitere Fachfaelle](betrieb/artikelidentitaet-2026-09-17.md#offene-fachabnahme). Artikelkontext bleibt AUS; Zeitaufteilung, Ressourcen und dauerhaft blockierte Kontexte offen,60s unter65s Mindestreserve. Versorgung, Fortsetzung, App Abruf aller500, Kosten, Testende und unabhaengigen Abschluss vor erneutem500er Test klaeren. Keine Startfreigabe aus Codearbeit.
 
 ## 12 · Verbindliche Betriebsgrenzen
 

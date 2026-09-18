@@ -1,6 +1,6 @@
 # Ein freigegebener Gipfelversuch
 
-Stand18.09.2026. Status: Ausfuehrer lokal vorbereitet, echter Modellaufruf noch nicht erfolgt. Keine fachliche Freigabe.
+Stand18.09.2026. Status: Ausfuehrer als Draft PR433 veroeffentlicht und lokal vollstaendig geprueft. Uebertragung des Auftrags an GitHub durch automatische Freigabepruefung blockiert. Kein echter Modellaufruf und keine fachliche Freigabe.
 
 ## Auftrag und Basis
 
@@ -38,11 +38,15 @@ Neue Suite:9/9 Schutzgruppen. Fremde Eingabe, Ausfuehrung und Schutzwerte; aktiv
 
 Privater Offlineauftrag mit dem exakt gebundenen Originalprompt und Schema durchlaeuft ebenfalls den echten KI Pfad. Ein simulierter Request,0 echte Modellaufrufe,0 Production Writes;0,212 USD simulierte Vollreserve und0,006 USD simulierte Abrechnung. Beide vorbereitenden Abbrueche bleiben dokumentiert: geerbte lokale Testumgebung wurde zunaechst korrekt abgewiesen; anschliessend fiel der falsche angenommene Anbietername im integrierten Test auf. Nach Ursachenpruefung korrigiert und erfolgreich, kein bezahlter Wiederholungsversuch.
 
-Kanonischer Gesamtlauf:407/407 Suiten erfolgreich in717 Sekunden. Unabhaengige CI vor dem echten Versuch noch offen. Alle Tests ueber `scripts/lokal.js`. Die Strukturpruefung bestaetigt den sonst identischen alten Backfilljob und unveraenderte Crons. Der Folgebranch enthaelt keinen geaenderten Anwendungscode.
+Kanonischer Gesamtlauf:407/407 Suiten erfolgreich in717 Sekunden. CI35306383500 bestaetigt den veroeffentlichten Ausfuehrer `955c205cc07777a676adab53ae572d782ecc8d75`, Tree `4500db6737d2957d8f957011dc85ff0151ac3313`; vollstaendig erfolgreich mit407/407 in541s, Browser50/50, Kontoschutz15/15 samt500 isolierten Registrierungen und Z22 PASS48/FAIL0. Keine Pflichtpruefung uebersprungen. Abschluss18.09.07:28:42 Tuerkei /06:28:42 Berlin /04:28:42 UTC. Der folgende reine Dokumentationsabschluss haelt die Freigabeblockade fest; seine automatische CI wird separat im PR nachgewiesen. Alle Tests ueber `scripts/lokal.js`. Die Strukturpruefung bestaetigt den sonst identischen alten Backfilljob und unveraenderte Crons. Der Folgebranch enthaelt keinen geaenderten Anwendungscode.
 
 Der erste Gesamtlauf wurde nach dem belegten Fehlen von Chromium1194 am Standardpfad mit Exit130 beendet; kein gruener Gesamtnachweis. Der passende offizielle Browser wurde am festen Arbeitskopiepfad wiederhergestellt. Der zusaetzliche FFMPEG Installationsschritt endete an einer Installationssperre; FFMPEG ist fuer die betroffene Pruefung nicht erforderlich. Dieselbe zuvor gescheiterte Suite besteht anschliessend75/75 samt echtem Desktop und Mobilbrowser. Der folgende Gesamtlauf nutzt den expliziten Browserpfad, keine Testabsenkung oder Paketveraenderung.
 
 ## Abnahme und offene Arbeit
+
+Die automatische Freigabepruefung hat das Eintragen des gebundenen Auftrags in das GitHub Actions Formular abgewiesen. Genannter Grund: Die Uebertragung des aus den Originalbelegen abgeleiteten Prompts und des oeffentlichen Empfaengerschluessels an GitHub sei von der Freigabe des einen Azure Aufrufs nicht ausdruecklich umfasst. Kein zweiter Eintragsversuch und kein Ersatzweg. Der bereits gewaehlte Branch allein startet nichts. Das Formular wurde nicht abgesendet; kein Actions Fachlauf und keine eigene Production Buchung. Der private Entschluesselungsschluessel wird nicht an GitHub uebertragen. Native Gegenkontrolle18.09.07:23:41 Tuerkei /06:23:41 Berlin /04:23:41 UTC: Profil, Identitaets und geschuetzter Authhash unveraendert; keine Einmalquittung, Tageskosten, Aufrufzaehler oder Anbieterbuchung vorhanden,0 aktive Profile, Sperren, Leases und junge offene Prozesse.
+
+Vor Fortsetzung benoetigt der vorbereitete Weg die ausdrueckliche Freigabe, den exakt gebundenen Quellenprompt und oeffentlichen Empfaengerschluessel an GitHub Actions zu uebertragen und dort den bereits erlaubten einen Azure Aufruf auszufuehren. Die komprimierte Eingabe ist keine Verschluesselung; sie ist Workfloweingabe und kann GitHub bzw. Berechtigten zugaenglich sein. Antwort und Kostenbeleg bleiben verschluesselt. Einwilligung zum Modellaufruf, Kostenobergrenze und alle anderen Grenzen bleiben unveraendert. Tagesfenster des Ausfuehrers endet18.09.23:00UTC; bei spaeterer Fortsetzung erst neu pruefen, nicht ungeprueft starten.
 
 Die gesamte echte Antwort wird anschliessend direkt am gelieferten Titel, Auszug und Absatz geprueft. Keine bevorstehende Eroeffnung, kein erfundenes Ereignisdatum, keine unbelegten Teilnehmer/Beschluesse/Zuschreibungen und kein individueller Profilbezug ohne Profil. Risiken, Chancen, Handlung und strukturierte Felder sind eingeschlossen. Schemaerfolg, Buchungserfolg und sachliche Richtigkeit sind getrennte Ergebnisse.
 
