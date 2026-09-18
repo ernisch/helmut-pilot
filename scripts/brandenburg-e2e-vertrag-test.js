@@ -154,6 +154,9 @@ LAUF.zweitprofil = PROFIL_B.id;
 // gemeinsame Fachgebiet bleibt als thema-Beleg sichtbar. Die Mutationsprobe M15 nimmt
 // genau diese Pruefung zurueck und muss den Vertrag rot machen.
 // Regeldetails + verbleibende Restunschaerfe: docs/matching-nachvollziehbarkeit.md §50.
+// Die gelieferten Titel/Auszuege nennen diese Ressorts nicht. Die Modellattrappen
+// duerfen deshalb keine Ministerienlisten aus vermuteter Zustaendigkeit erfinden.
+// Quellenfixtures, uebrige Analysefelder und alle bisherigen Abnahmen bleiben erhalten.
 const AI_FIXTURES = [
   {
     marker: "Straf- und Gewalttaten",
@@ -164,12 +167,12 @@ const AI_FIXTURES = [
       wer_ist_betroffen: "Die Brandenburger Polizei, das Innenministerium und die Bevölkerung Brandenburgs.",
       handlungsempfehlung: "Die Antwort der Landesregierung im Ausschuss für Inneres und Kommunales aufgreifen und eigene Schwerpunkte zur Kriminalitätsbekämpfung setzen.",
       parteien: [], ausschuesse: ["Ausschuss für Inneres und Kommunales"],
-      ministerien: ["Ministerium des Innern und für Kommunales des Landes Brandenburg"],
+      ministerien: [],
       risiken: ["Steigende Fallzahlen können als Beleg für Defizite der Landesregierung bei der inneren Sicherheit gelesen werden"],
       chancen: ["Profilierung bei der inneren Sicherheit durch eine eigene Initiative zur Kriminalitätsbekämpfung im Land Brandenburg"],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
       mentioned_committees: ["Ausschuss für Inneres und Kommunales"],
-      mentioned_ministries: ["Ministerium des Innern und für Kommunales des Landes Brandenburg"],
+      mentioned_ministries: [],
       mentioned_locations: ["Brandenburg"], mentioned_organizations: [],
       tags: ["Innere Sicherheit", "Kriminalität"],
       zeitdruck: "mittel", confidence_score: 82,
@@ -189,10 +192,10 @@ const AI_FIXTURES = [
       warum_wichtig: "Die Kommunalverfassung regelt die Arbeit der Brandenburger Städte und Gemeinden.",
       wer_ist_betroffen: "Kommunen, Gemeindevertretungen und Hauptverwaltungsbeamte in Brandenburg.",
       handlungsempfehlung: "Beratungsverlauf verfolgen; kein unmittelbarer eigener Handlungsbedarf.",
-      parteien: [], ausschuesse: [], ministerien: ["Ministerium des Innern und für Kommunales des Landes Brandenburg"],
+      parteien: [], ausschuesse: [], ministerien: [],
       risiken: [], chancen: [],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
-      mentioned_committees: [], mentioned_ministries: ["Ministerium des Innern und für Kommunales des Landes Brandenburg"],
+      mentioned_committees: [], mentioned_ministries: [],
       mentioned_locations: ["Brandenburg"], mentioned_organizations: [],
       tags: ["Kommunales"],
       zeitdruck: "niedrig", confidence_score: 62,
@@ -235,10 +238,10 @@ const AI_FIXTURES = [
       warum_wichtig: "Die Gebührenordnung betrifft alle waffenrechtlichen Erlaubnisse im Land Berlin.",
       wer_ist_betroffen: "Waffenbesitzer und Schützenvereine in Berlin sowie die Berliner Innenverwaltung.",
       handlungsempfehlung: "Kein eigener Handlungsbedarf; Zuständigkeit liegt beim Abgeordnetenhaus von Berlin.",
-      parteien: [], ausschuesse: [], ministerien: ["Senatsverwaltung für Inneres"],
+      parteien: [], ausschuesse: [], ministerien: [],
       risiken: [], chancen: [],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
-      mentioned_committees: [], mentioned_ministries: ["Senatsverwaltung für Inneres"],
+      mentioned_committees: [], mentioned_ministries: [],
       mentioned_locations: ["Berlin"], mentioned_organizations: [],
       tags: ["Waffenrecht", "Innere Sicherheit"],
       zeitdruck: "niedrig", confidence_score: 60,
@@ -263,11 +266,11 @@ const AI_FIXTURES = [
       wer_ist_betroffen: "Polizei, Feuerwehr und Rettungsdienste in Berlin.",
       handlungsempfehlung: "Kein eigener Handlungsbedarf; die Zuständigkeit liegt beim Abgeordnetenhaus von Berlin.",
       parteien: [], ausschuesse: ["Ausschuss für Inneres, Sicherheit und Ordnung"],
-      ministerien: ["Senatsverwaltung für Inneres"],
+      ministerien: [],
       risiken: [], chancen: [],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
       mentioned_committees: ["Ausschuss für Inneres, Sicherheit und Ordnung"],
-      mentioned_ministries: ["Senatsverwaltung für Inneres"],
+      mentioned_ministries: [],
       mentioned_locations: ["Berlin"], mentioned_organizations: [],
       tags: ["Innere Sicherheit"],
       zeitdruck: "niedrig", confidence_score: 64,
@@ -287,10 +290,10 @@ const AI_FIXTURES = [
       warum_wichtig: "Das Waffengesetz des Bundes setzt den Rahmen, den die Länder im Vollzug anwenden.",
       wer_ist_betroffen: "Waffenbesitzer bundesweit, die Vollzugsbehörden der Länder.",
       handlungsempfehlung: "Beratungsverlauf im Bundestag verfolgen.",
-      parteien: [], ausschuesse: [], ministerien: ["Bundesministerium des Innern"],
+      parteien: [], ausschuesse: [], ministerien: [],
       risiken: [], chancen: [],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
-      mentioned_committees: [], mentioned_ministries: ["Bundesministerium des Innern"],
+      mentioned_committees: [], mentioned_ministries: [],
       mentioned_locations: [], mentioned_organizations: [],
       tags: ["Waffenrecht"],
       zeitdruck: "niedrig", confidence_score: 75,
@@ -486,6 +489,8 @@ function neuerStore() {
       && u1.telemetrie.gruppen && u1.telemetrie.gruppen.verarbeitet === 6);
 
   const kos = [...store.knowledgeObjects.values()];
+  check("D3b keine unbelegten Ressortlisten in gespeicherten Ergebnissen",
+    kos.length > 0 && kos.every(k => k.ministerien.length === 0 && k.mentioned_ministries.length === 0));
   const koRelevant = kos.find((k) => /Straf- und Gewalttaten/i.test(k.headline || ""));
   const koKommunal = kos.find((k) => /Kommunalverfassung/i.test(k.headline || ""));
   const koIrrelevant = kos.find((k) => /Alterspräsident/i.test(k.headline || ""));

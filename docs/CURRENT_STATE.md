@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-Gipfelzeit im echten Einzelversuch richtig, Fachantwort insgesamt nicht freigegeben. Naechster enger Block: unbelegte Beschluesse, Akteurszuordnungen, Fristen und Mandatsbezug anhand der gesicherten Antwort untersuchen und allgemein im Motor begrenzen. Kein artikelbezogener Sonderfall. Kein weiterer Modellversuch, keine Aktivierung. [Beleg](betrieb/gipfel-einzelversuch-2026-09-18.md#einmalige-ausfuehrung-des-korrigierten-ausfuehrers).
+18.09.: Gipfelversuch abgeschlossen uebernommen, keine Wiederholung. Folgebranch `codex/ministerien-quellenbindung-20260918` auf PR433: unbelegte Ministerienlisten sperren vor Speicherung. Lokal geprueft; CI siehe Draft PR. [Beleg und Grenzen](betrieb/ministerien-quellenbindung-2026-09-18.md). Beschluesse, Freitext, Fristen und Mandatsbezug bleiben offen; kein neuer Modellversuch oder Merge.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
