@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-18.09.: PR438 Head `0483654`, CI35353054035 erfolgreich:412/412 samt Pflichtstufen. Folgebranch `codex/ebenen-antwortkonsistenz-20260918` verwirft neue Antworten mit ausdruecklicher Ebene entgegen der erhaltenen Klassifikation. Bestandsschutz unveraendert. [Beleg und Grenzen](betrieb/ebenen-antwortkonsistenz-2026-09-18.md). Teilweise abgeschlossen: alte Fehlklassifikation und echte Modellwirkung offen. Danach Wahlvorbericht als Ergebnis gezielt untersuchen. Q006 abgeschlossen; Artikelkontext AUS; kein Merge, Modellaufruf oder500er Test freigegeben.
+18.09.: PR439 Head `1686a50`, CI35357140672 erfolgreich:413/413 samt Pflichtstufen. Folgebranch `codex/ergebnisstand-vertrag-20260918` unterscheidet Vorbericht und Ergebnisstand im gemeinsamen Prompt; Feldauftrag erzwingt keinen Vollzug. [Beleg und Grenzen](betrieb/ergebnisstand-vertrag-2026-09-18.md). Teilweise abgeschlossen: keine semantische Sperre, echte Modellwirkung offen. Danach falsche Personenzuschreibung untersuchen. Q006 abgeschlossen; Artikelkontext AUS; kein Merge, Modellaufruf oder500er Test freigegeben.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
