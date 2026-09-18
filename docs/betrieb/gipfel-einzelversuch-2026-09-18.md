@@ -1,0 +1,51 @@
+# Ein freigegebener Gipfelversuch
+
+Stand18.09.2026. Status: Ausfuehrer lokal vorbereitet, echter Modellaufruf noch nicht erfolgt. Keine fachliche Freigabe.
+
+## Auftrag und Basis
+
+Der Betreiber hat den vorgeschlagenen EINEN Azure Aufruf mit dem bestehenden `gpt-5-mini`, maximal3000 Ausgabetokens und0,212 USD Vollreserve innerhalb des unveraenderten4 USD UTC Tagesriegels ausdruecklich freigegeben. Eingeschlossen sind notwendige Aufruf, Anbieter und Kostenbuchungen. Keine automatische Wiederholung. Diese enge Freigabe ersetzt fuer diesen Auftrag das bisherige Verbot bezahlter Laeufe. Alle anderen Grenzen bleiben bestehen.
+
+Basis PR432 `e63b49e82259e62f40cdb574ed228e9edf1cc06b`, Tree `409d4b806f475c757622e6c61526eb80ebf839f0`. PR432 CI35284649828 vollstaendig erfolgreich:406/406, Browser50/50, Kontoschutz15/15 samt500 isolierten Registrierungen und Z22 PASS48/FAIL0. Abschluss18.09.02:12:58 Tuerkei /01:12:58 Berlin /17.09.23:12:58 UTC. Eigener Folgebranch `codex/gipfel-einzelversuch-20260918`.
+
+Frischer Vorflug: Main `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`, alle vierzehn Reparaturheads unveraendert, offen und Draft. Production `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY mit passendem Main und Hauptalias. Seit17.09.00:00UTC kein weiteres Deployment. Keine in_progress oder waiting Actions, nur31128435980 und31126446647 vom06.08. queued. Eigene und saubere Vorgaengerkopien unveraendert, fremde55 Vorarbeiten erhalten. Kein weiterer lokaler Reparaturprozess sichtbar. Globaler Work Sitzungsstatus bleibt nicht abfragbar.
+
+Native Nurlesung18.09.06:45:35 Tuerkei /05:45:35 Berlin /03:45:35 UTC:504 Profile,0 aktiv,0 aktive Sperren,0 aktive Auftragsleases. Das ist eine neue Aufnahme, keine Uebernahme der historischen Zahlen. Profil und Identitaetshashes sowie geschuetzter Authstand sind privat fuer den spaeteren Vergleich erhalten. Kein Tageskostenbuch fuer18.09. zu diesem Zeitpunkt; daraus wird noch kein zulaessiger Aufruf abgeleitet. Die vorhandene Geldreservierung prueft beim Anlegen erneut die gesamte Tageshistorie und den echten Zaehler.
+
+## Originalbefund und Zweck
+
+Der abgeschlossene Gipfel erscheint im alten Wissensobjekt als bevorstehend. Der erhaltene201 Zeichen Eingangsauszug enthaelt den Abschluss nicht. Der automatisch gebundene134 Zeichen Originalabsatz aus PR428 beschreibt den Gipfel rueckblickend. [Originalbefund und Eingabepfad](gipfel-quellenluecke-2026-09-17.md), [offene Fachfaelle](artikelidentitaet-2026-09-17.md#offene-fachabnahme).
+
+Exakt vorbereiteter Prompt SHA256 `3f286a3cddfcf05b30d540790c7825446f5b9cafb75490511c47eaf71f86d5b2`, bestehendes Schema SHA256 `bec2e28d8cc968739dd89e79d3d2119b000940be43cc350460231fbd8689202c`. Originaleingabe, Absatz und Abnahmekriterien bleiben privat. Kein neuer Artikelabruf und kein neues Prompttuning fuer diesen Versuch. Ein begrenzter Fall kann die Wirkung am erhaltenen Fehler belegen; er beweist keine allgemeine Fehlerfreiheit.
+
+## Ausfuehrungsweg
+
+Die lokale Arbeitsumgebung besitzt keinen Azure oder Datenbankprozesszugang. GitHub hat die notwendigen vorhandenen Secrets; nur deren Namen wurden gelesen. Keine Werte exportiert oder veraendert. Ein neuer manueller Workflow muesste laut GitHub auf dem Defaultbranch vorhanden sein. Deshalb ergaenzt der bestehende manuelle `staff-backfill-one.yml` einen getrennten Job ausschliesslich fuer den eigenen Folgebranch und den gebundenen Auftrag. Der alte Job bleibt sonst unveraendert und wird bei diesem Auftrag komplett uebersprungen. Kein alter Backfill, keine Aenderung der allgemeinen CI, kein automatischer bezahlter Lauf bei Push oder PR.
+
+`scripts/gipfel-modellversuch.js` prueft vor jedem Schreiben Repository, Branch, exakten Checkout, ersten Actionsversuch, Tagesfenster18.09. vor23:00UTC, Prompt, Schema, Empfaengerschluessel, Azure Ziel und Modell. Der Ausfuehrungsauftrag nutzt das vorhandene Bestaetigungsfeld als begrenztes komprimiertes JSON. Keine Eingabe wird als Shellcode eingesetzt. Der Auftrag enthaelt ausschliesslich den freigegebenen oeffentlichen Quellenprompt, Commit und oeffentlichen Verschluesselungsschluessel.
+
+Vor dem Start: authentifizierter Nurleser bestaetigt den deployten Main, Speicher, Kommunikationssperre und2416/702/200 Aufrufgrenzen sowie Kostenregel2. Aktive Profile, Sperren, Leases oder junge unvollstaendige Prozesse verhindern den Versuch. Eine dauerhaft erhaltene CAS Quittung im bestehenden Authspeicher verhindert jeden zweiten Versuch desselben Auftrags, auch bei neuem Actionslauf oder unbekanntem Ausgang. Bestaetigter Readback vor dem Modell. Kein Entfernen der Quittung zum Wiederholen.
+
+Der echte Aufruf geht durch unveraendertes `ai.requestStructuredJson`: zuerst0,212 USD Reserve, dann atomarer Tageszaehler, dann Anbieterreservierung, erst danach Azure. Keine internen Bypassflags. Der interne Anbietername lautet `azure`; die isolierte Ausfuehrung bindet deshalb `HELMUT_ANBIETER_AZURE_MINUTE=20`. Ein anders benannter Schluessel wuerde diesen Pfad nicht begrenzen. Das ist eine Prozesskonfiguration dieses Einzelauftrags, keine Aenderung der Production Umgebungsvariablen oder des Azure Kontingents. `minimal`, Schema strict=false und3000 Ausgabetokens entsprechen dem bestehenden Fachpfad. Kein Modellfallback auf Azure, keine Wiederholung.
+
+Die Antwort wird sofort mit dem vorhandenen RSA3072/AES256GCM Transport verschluesselt ausgegeben. Der private Schluessel bleibt beim Betreiberbeleg. Bei spaeterem Ablagefehler bleibt diese Antwort erhalten. Prompt und Antwort werden nicht in KOs oder Pakete geschrieben. Eine weitere verschluesselte Quittung enthaelt den passenden Nutzungsbeleg, neue Geldtickets und den Tageszaehler. Mehrdeutige oder fehlende Buchungen bleiben offen. Die abschliessende CAS Quittung enthaelt nur Kennungen, Hashes und Status. Sie ist keine positive Fachabnahme.
+
+Die gemeinsame Actionsgruppe `helmut-500-kontrollierte-facharbeit` verhindert konkurrierende kontrollierte Fachlaeufe. Der zusaetzliche Branchschutz verhindert automatische Deployments. Alle13 Crons bleiben identisch. Kein Merge, Deployment, Profilwechsel, Artikelkontextaktivierung, Migration, Budgetwechsel oder500er Test.
+
+## Lokale Pruefungen
+
+Neue Suite:9/9 Schutzgruppen. Fremde Eingabe, Ausfuehrung und Schutzwerte; aktiver Betrieb; unbekannter Schreibausgang und Readback; konkurrierender und erneuter Start; verschluesselte vollstaendige Antwort; Modellfehler ohne Retry; mehrdeutige Kosten. Ein integrierter Test durch den echten KI Code belegt Geldreserve, Aufrufreserve und Anbieterreserve vor dem simulierten HTTPS Request sowie Abrechnung vor dem Ergebnis. Keine positiven Fakten aus Attrappen.
+
+Privater Offlineauftrag mit dem exakt gebundenen Originalprompt und Schema durchlaeuft ebenfalls den echten KI Pfad. Ein simulierter Request,0 echte Modellaufrufe,0 Production Writes;0,212 USD simulierte Vollreserve und0,006 USD simulierte Abrechnung. Beide vorbereitenden Abbrueche bleiben dokumentiert: geerbte lokale Testumgebung wurde zunaechst korrekt abgewiesen; anschliessend fiel der falsche angenommene Anbietername im integrierten Test auf. Nach Ursachenpruefung korrigiert und erfolgreich, kein bezahlter Wiederholungsversuch.
+
+Kanonischer Gesamtlauf:407/407 Suiten erfolgreich in717 Sekunden. Unabhaengige CI vor dem echten Versuch noch offen. Alle Tests ueber `scripts/lokal.js`. Die Strukturpruefung bestaetigt den sonst identischen alten Backfilljob und unveraenderte Crons. Der Folgebranch enthaelt keinen geaenderten Anwendungscode.
+
+Der erste Gesamtlauf wurde nach dem belegten Fehlen von Chromium1194 am Standardpfad mit Exit130 beendet; kein gruener Gesamtnachweis. Der passende offizielle Browser wurde am festen Arbeitskopiepfad wiederhergestellt. Der zusaetzliche FFMPEG Installationsschritt endete an einer Installationssperre; FFMPEG ist fuer die betroffene Pruefung nicht erforderlich. Dieselbe zuvor gescheiterte Suite besteht anschliessend75/75 samt echtem Desktop und Mobilbrowser. Der folgende Gesamtlauf nutzt den expliziten Browserpfad, keine Testabsenkung oder Paketveraenderung.
+
+## Abnahme und offene Arbeit
+
+Die gesamte echte Antwort wird anschliessend direkt am gelieferten Titel, Auszug und Absatz geprueft. Keine bevorstehende Eroeffnung, kein erfundenes Ereignisdatum, keine unbelegten Teilnehmer/Beschluesse/Zuschreibungen und kein individueller Profilbezug ohne Profil. Risiken, Chancen, Handlung und strukturierte Felder sind eingeschlossen. Schemaerfolg, Buchungserfolg und sachliche Richtigkeit sind getrennte Ergebnisse.
+
+Noch kein echter Aufruf und keine korrigierte Gipfelantwort. Weitere Originalfehler bleiben offen. Artikelkontext bleibt AUS und nicht allgemein aktivierungsbereit. Versorgung, begrenzte Fortsetzung, App Abruf aller500, Kosten, zuverlaessiges Ende und unabhaengiger Abschluss fehlen fuer einen neuen500er Nachweis. Dafuer ist eine eigene Freigabe erforderlich.
+
+Rueckweg vor Ausfuehrung: den ungemergten Folgebranch verwerfen. Nach einem begonnenen Versuch Kosten und Einmalquittung zwingend erhalten; unklarer Ausgang wird weder ausgebucht noch wiederholt. Die Anwendung in Production bleibt unveraendert.
