@@ -4,8 +4,8 @@
 // KEIN Netz, KEINE KI. Prueft ausschliesslich die SPRACH-/PROMPT-Vorbereitung:
 //   1. briefingLanguage: drei Briefing-Typen + 'daily' vorhanden, typ-spezifische Sprache.
 //   2. buildBriefingTypeInstruction: bekannter Typ -> Block, unbekannt -> 'daily' (leer).
-//   3. buildUnderstandingPrompt: traegt Stabschef-Persona + Sprachverbote + Struct-Dimensionen.
-//   4. Rueckwaertsverträglich: OHNE briefingType KEIN Typ-Block, DSGVO-Vertrag erhalten.
+//   3. buildUnderstandingPrompt: globale Stabschef-Grundlage ohne persoenliche Ansprache.
+//   4. Kein persoenlicher Tagesauftrag ohne Profil, DSGVO-Vertrag erhalten.
 //   5. Keine Client-LLM-Calls, keine hartkodierte Partei/Person, keine Demo-Politik-Inhalte.
 
 const bl = require("../lib/helmut/briefingLanguage");
@@ -58,11 +58,10 @@ const cluster = { documents: [
 ] };
 const base = understanding.buildUnderstandingPrompt(cluster);
 
-// Stabschef-Persona + Ton (Grundprinzip A).
-check("Prompt: Stabschef-Persona (an die/den Abgeordnete/n)", /politische[rn]? Stabschef/i.test(base));
-check("Prompt: Rollenabgrenzung (kein Entwickler/Analyst/Monitoring)",
-  /NICHT ein Entwickler, Analyst/i.test(base) || /NICHT ein Entwickler/i.test(base));
-check("Prompt: professionelles Du im Ton", /professionellen Du/i.test(base));
+// Globale Grundlage ohne ein erfundenes Leserprofil (Fachbeleg 18.09.2026).
+check("Prompt: Grundlage fuer politischen Stabschef", /politische[rn]? Stabschef/i.test(base));
+check("Prompt: Rollenabgrenzung ohne Mandatsprofil", /globale Analyse ohne Mandatsprofil/.test(base));
+check("Prompt: keine persoenliche Ansprache ohne Profil", /keine persoenliche Du-Ansprache/.test(base));
 // Sprachverbote (I).
 check("Prompt: Sprachverbote-Block vorhanden", /SPRACHVERBOTE/.test(base));
 check("Prompt: verbietet 'befasst sich mit' + reine Monitoring-Sprache",
@@ -85,8 +84,8 @@ check("Prompt OHNE briefingType: KEIN typ-spezifischer Block (bleibt 'daily')",
 
 const promptMorning = understanding.buildUnderstandingPrompt(cluster, { briefingType: "morning" });
 const promptEvening = understanding.buildUnderstandingPrompt(cluster, { briefingType: "evening" });
-check("Prompt MIT briefingType=morning: Morgen-Block angehaengt", /BRIEFING-TYP: Morgenbriefing/.test(promptMorning));
-check("Prompt MIT briefingType=evening: Abend-Block angehaengt", /BRIEFING-TYP: Abendbriefing/.test(promptEvening));
+check("Globaler Prompt bleibt auch bei briefingType=morning mandatsneutral", promptMorning === base);
+check("Globaler Prompt bleibt auch bei briefingType=evening mandatsneutral", promptEvening === base);
 check("Prompt MIT unbekanntem briefingType: KEIN Block (Default daily)",
   !/BRIEFING-TYP/.test(understanding.buildUnderstandingPrompt(cluster, { briefingType: "quatsch" })));
 check("Prompt bleibt DSGVO-vollstaendig auch mit briefingType",

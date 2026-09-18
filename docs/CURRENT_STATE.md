@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**18.09.2026 UTC: PR419 bis PR433 offen, Draft und ungemergt. Gipfelversuch35325406170: genau1 Azure Aufruf,0,006921USD gebucht, Quittung erhalten. Zeitliche Kernfrage bestanden: Gipfel rueckblickend. Fachantwort nicht abgenommen: unbelegte Beschluesse, Ministerien, Fristen und Mandatsbezug. Keine Profilmutation; Artikelkontext AUS,500er Nachweis offen.**
+**18.09.2026 UTC: PR419 bis PR434 offen, Draft und ungemergt. Gipfelversuch35325406170: genau1 Azure Aufruf,0,006921USD gebucht, Quittung erhalten. Zeitliche Kernfrage bestanden: Gipfel rueckblickend. Fachantwort nicht abgenommen: unbelegte Beschluesse, Ministerien, Fristen und Mandatsbezug. Keine Profilmutation; Artikelkontext AUS,500er Nachweis offen.**
 
 Vorflug18.09.: Main `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`, PR419 bis PR432 unveraendert. Production `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY auf Main mit Hauptalias; seit17.09.00:00UTC kein Deployment. Keine laufenden/wartenden Actions ausser den zwei alten queued Laeufen vom06.08. Fremde55 Vorarbeiten erhalten; kein weiterer lokaler Ausfuehrer sichtbar. Globaler Work Status nicht abfragbar. [Frischer Vorflug und enge Freigabe](betrieb/gipfel-einzelversuch-2026-09-18.md).
 
@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-18.09.: Gipfelversuch abgeschlossen uebernommen, keine Wiederholung. Folgebranch `codex/ministerien-quellenbindung-20260918` auf PR433: unbelegte Ministerienlisten sperren vor Speicherung. Lokal geprueft; CI siehe Draft PR. [Beleg und Grenzen](betrieb/ministerien-quellenbindung-2026-09-18.md). Beschluesse, Freitext, Fristen und Mandatsbezug bleiben offen; kein neuer Modellversuch oder Merge.
+18.09.: PR434 CI35331099924 erfolgreich408/408. Gipfelversuch abgeschlossen uebernommen, keine Wiederholung. Folgebranch `codex/mandatsneutral-verstehen-20260918`: persoenlichen Mandatsauftrag ohne Profil durch globale Analyse ersetzen. [Ursache, Pruefung und Grenzen](betrieb/mandatsneutral-verstehen-2026-09-18.md). Reale Modellwirkung, Beschluesse und Fristen offen. Naechster enger Block: unbelegte Handlungsfristen. Kein neuer Modellversuch oder Merge.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
