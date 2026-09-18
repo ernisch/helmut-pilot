@@ -1458,6 +1458,8 @@ async function c7UnderstandingChecks() {
     understandCalls === 1 && saved.length === 1 && ok.counts && ok.counts.saved === 1, `calls=${understandCalls} saved=${saved.length}`);
   check("C7 Happy: gespeichertes KO ist valide UND mandantenlos (kein user_id/politicianId)",
     validateKnowledgeObject(saved[0]).valid === true && !("user_id" in saved[0]) && !("politicianId" in saved[0]));
+  check("C7 Happy: Quelle ohne Parteinennung speichert beide Parteienlisten leer",
+    saved[0]?.parteien?.length === 0 && saved[0]?.mentioned_parties?.length === 0);
   check("C7 nicht-pro-Nutzer: canSpend wird GLOBAL ohne Nutzer-Argument aufgerufen",
     canSpendCalls.length === 1 && canSpendCalls[0].length === 0);
 
@@ -1749,6 +1751,8 @@ async function c8UnderstandingChecks() {
     saved[0].understanding_model === "gpt-5-mini" && !("prompt" in saved[0]) && !("answer" in saved[0]) && !("email" in saved[0]));
   check("C8 complete: gespeichertes KO ist schema-valide UND mandantenlos (kein user_id/politicianId)",
     validateKnowledgeObject(saved[0]).valid === true && !("user_id" in saved[0]) && !("politicianId" in saved[0]));
+  check("C8 complete: Quelle ohne Parteinennung speichert beide Parteienlisten leer",
+    saved[0]?.parteien?.length === 0 && saved[0]?.mentioned_parties?.length === 0);
   check("C8 nicht-pro-Nutzer: canSpend wird GLOBAL ohne Nutzer-Argument aufgerufen",
     canSpendCalls.length === 1 && canSpendCalls[0].length === 0);
 

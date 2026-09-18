@@ -3,7 +3,7 @@
 const assert = require("node:assert/strict");
 const U = require("../lib/helmut/understanding");
 const A = require("../lib/helmut/artikelkontext");
-const { pruefeMinisterienQuellenbindung: pruefe } = require("../lib/helmut/ministerien-quellenbindung");
+const { pruefeAkteurslistenQuellenbindung: pruefe } = require("../lib/helmut/akteurslisten-quellenbindung");
 const ANALYSE = {
   headline: "Konferenz diskutiert Bahnverkehr", was_ist_passiert: "Die Konferenz endete.",
   warum_wichtig: "Bahnverkehr", wer_ist_betroffen: "Reisende", parteien: [], ausschuesse: [],
