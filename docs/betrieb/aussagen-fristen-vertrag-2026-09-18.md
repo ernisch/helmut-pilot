@@ -109,8 +109,15 @@ Gegenprobe mit unveraendertem Fachmodul aus PR435: dieselbe Suite scheitert an d
 alten dueHint Aufforderung. Keine Arbeitsdatei zurueckgesetzt oder Antwort manipuliert.
 Alle Testprozesse ueber `scripts/lokal.js` mit technischem Netzschutz.
 
-Der kanonische Gesamtlauf ist gemaess CLAUDE.md Paragraph 6 vor einem neuen PR
-verbindlich. Ergebnis und unabhaengige Pflicht CI werden nach Abschluss ergaenzt.
+Der gemaess CLAUDE.md Paragraph 6 vor einem neuen PR verbindliche kanonische
+Gesamtlauf bestand 410/410 Suiten in 787 Sekunden, Exit 0. Kein zweiter Gesamtlauf.
+Anwendungscode waehrend des Laufs unveraendert. Vorhandene Abhaengigkeiten und
+Chromium1194 wiederverwendet; kein Paketupdate. Sprachsuite 28/28 ebenfalls
+gezielt erfolgreich. Zwei vorbereitende Pruefungen der Statusgroesse waren zu
+lang; ausschliesslich den eigenen Statusabsatz gekuerzt, Grenze unveraendert.
+Der Gesamtlauf bestaetigt die korrigierte Groesse. Nach dem Lauf nur diesen Beleg
+und den Statusabschluss ergaenzt; abschliessende Groessen und Diffpruefung separat.
+Die automatische Pflicht CI am finalen Head wird im Draft PR nachgewiesen.
 
 ## Grenzen und Fortsetzung
 

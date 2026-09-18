@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-18.09.: PR435 CI35334858874 erfolgreich. Folgebranch `codex/aussagen-fristen-vertrag-20260918` auf PR435 korrigiert gemeinsam unbelegte Beschlussableitungen und Fristvorschlaege im globalen Prompt. Gezielte Offlinepruefung6/6 samt positiven Gegenfaellen. [Ursache, Nachweise und Grenzen](betrieb/aussagen-fristen-vertrag-2026-09-18.md). Status teilweise abgeschlossen; Pflichtgesamtlauf und Draft PR folgen. Reale Modellwirkung unbewiesen. Danach Inhaltsabnahme vorbereiten. Artikelkontext AUS; kein Modellaufruf, Merge oder neuer500er Test freigegeben.
+18.09.: PR435 CI35334858874 erfolgreich. Folgebranch `codex/aussagen-fristen-vertrag-20260918` auf PR435 korrigiert gemeinsam unbelegte Beschlussableitungen und Fristvorschlaege im globalen Prompt. Gezielte Offlinepruefung6/6 samt positiven Gegenfaellen. [Ursache, Nachweise und Grenzen](betrieb/aussagen-fristen-vertrag-2026-09-18.md). Status teilweise abgeschlossen; lokal410/410, Pflicht CI im Draft PR. Reale Modellwirkung unbewiesen. Danach Inhaltsabnahme vorbereiten. Artikelkontext AUS; kein Modellaufruf, Merge oder neuer500er Test freigegeben.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
