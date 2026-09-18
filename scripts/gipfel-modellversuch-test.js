@@ -6,6 +6,12 @@ const publicKey = pair.publicKey.export({ type: "spki", format: "der" }).toStrin
 const privateKey = pair.privateKey.export({ type: "pkcs8", format: "pem" });
 const now = () => new Date("2026-09-18T12:00:00Z");
 const input = { commit: "a".repeat(40), prompt: "SYNTHETISCHER QUELLENTEXT", publicKey };
+const betriebsPfade = [
+  "/rest/v1/mandate_profiles?select=user_id&aktiv=eq.true&limit=1",
+  "/rest/v1/pipeline_locks?select=job_name&expires_at=gt.2026-09-18T12%3A00%3A00.000Z&limit=1",
+  "/rest/v1/helmut_jobs?select=id&lease_expires_at=gt.2026-09-18T12%3A00%3A00.000Z&limit=1",
+  "/rest/v1/process_runs?select=run_id&finished_at=is.null&started_at=gt.2026-09-18T11%3A40%3A00.000Z&limit=1"
+];
 function environment() { return {
   GITHUB_REPOSITORY: "ernisch/helmut-pilot", GITHUB_REF: `refs/heads/${G.BRANCH}`,
   GITHUB_EVENT_NAME: "workflow_dispatch", GITHUB_RUN_ATTEMPT: "1", GITHUB_SHA: input.commit,
@@ -30,11 +36,19 @@ function harness(options = {}) {
         if (options.writeUnknown) throw new Error("unbekannt"); auth = copy; writes++; return r; });
       queue = next.catch(() => {}); return next;
     },
-    supabaseRequest: async path => { trace.push(path); return options.active ? [{}] : []; },
     leseLlmTageszaehler: async () => ({ ok: true, used, limit: 2416 })
   };
   const fetchFn = async (url, config) => {
     A.equal(config.method, "GET"); A.equal(config.redirect, "error");
+    A(config.signal instanceof AbortSignal); A.equal(config.signal.aborted, false);
+    if (url.startsWith(environment().SUPABASE_URL + "/rest/v1/")) {
+      const path = url.slice(environment().SUPABASE_URL.length); trace.push(path);
+      A(betriebsPfade.includes(path), "Nur die vier festen Betriebsabfragen sind erlaubt");
+      A.deepEqual(config.headers, { apikey: "synthetisch", Authorization: "Bearer synthetisch",
+        Accept: "application/json" });
+      A.equal(config.body, undefined);
+      return { status: 200, json: async () => options.activeAt === betriebsPfade.indexOf(path) ? [{}] : [] };
+    }
     A.equal(url, require("./github-laufzeitpruefung").STATUS_URL);
     return { status: 200, json: async () => ({ ok: true, reinLesend: true, schemaVersion: 1,
       production: true, commit: G.MAIN, storageSupabase: true, kommunikationGesperrt: true,
@@ -58,7 +72,7 @@ function harness(options = {}) {
     leseEingabe: () => input, emit: x => emits.push(x), ...extra });
   const decrypt = index => T.entschluesseln(emits[index].envelope, privateKey,
     { runId: environment().GITHUB_RUN_ID, commit: input.commit, tag: "2026-09-18", abPosition: 1, anzahl: 1 });
-  return { run, storage, decrypt, emits, trace, state: () => ({ auth, calls, writes }) };
+  return { run, storage, fetchFn, decrypt, emits, trace, state: () => ({ auth, calls, writes }) };
 }
 let passed = 0;
 async function test(name, fn) { await fn(); passed++; console.log("OK " + name); }
@@ -81,9 +95,53 @@ async function test(name, fn) { await fn(); passed++; console.log("OK " + name);
     for (const d of ["2026-09-17T12:00:00Z", "2026-09-18T23:00:00Z", "2026-09-19T00:00:00Z"])
       A.throws(() => G.konfiguration(input, environment(), new Date(d)));
   });
-  await test("Aktive Profile oder abweichende Laufzeit verhindern Startquittung und Modell", async () => {
-    for (const opts of [{ active: true }, { badRuntime: true }]) {
+  await test("Aktive Profile, Sperren, Leases, Prozesse oder fremde Laufzeit verhindern Start", async () => {
+    for (const opts of [...betriebsPfade.map((_, activeAt) => ({ activeAt })), { badRuntime: true }]) {
       const h = harness(opts); await A.rejects(h.run()); A.equal(h.state().calls, 0); A.equal(h.state().writes, 0);
+      A.equal(h.state().auth[G.KEY], undefined);
+    }
+  });
+  await test("Unlesbare Betriebsdaten stoppen ohne Buchung, Modell oder fremden Fehlertext", async () => {
+    for (const path of betriebsPfade) for (const failure of [403, 500, 206, "transport", "json", "objekt"]) {
+      const h = harness(); let hits = 0;
+      const fetchFn = async (url, config) => {
+        if (url !== environment().SUPABASE_URL + path) return h.fetchFn(url, config);
+        hits++;
+        if (failure === "transport") throw new Error("PRIVATER FEHLERTEXT");
+        return { status: typeof failure === "number" ? failure : 200, json: async () => {
+          if (failure === "json") throw new Error("PRIVATER ANTWORTINHALT");
+          return { daten: [] };
+        } };
+      };
+      await A.rejects(h.run({ fetchFn }), { code: "GIPFEL_BETRIEBSLESUNG", message: "GIPFEL_BETRIEBSLESUNG" });
+      A.equal(hits, 1); A.equal(h.state().calls, 0); A.equal(h.state().writes, 0);
+      A.equal(h.state().auth[G.KEY], undefined); A.equal(h.emits.length, 0);
+    }
+  });
+  await test("Vorflug mit echtem Speichermodul liest Betriebsdaten und Tageszaehler ohne Attrappenexport", async () => {
+    const S = require("../lib/helmut/storage"), envOld = { ...process.env }, fetchOld = global.fetch;
+    const h = harness(); let counterReads = 0;
+    // Ausschliesslich die HTTP Grenze ersetzen, keine Speicherfunktion erfinden.
+    try {
+      Object.assign(process.env, environment());
+      const fetchFn = async (url, config) => {
+        if (url === environment().SUPABASE_URL
+          + "/rest/v1/llm_budget_counters?day=eq.2026-09-18&scope=eq.global&select=used&limit=2") {
+          counterReads++; A.equal(config.method || "GET", "GET"); A.equal(config.body, undefined);
+          A.equal(config.headers.apikey, "synthetisch");
+          return new Response(JSON.stringify([{ used: 18 }]), { status: 200 });
+        }
+        return h.fetchFn(url, config);
+      };
+      global.fetch = fetchFn;
+      const r = await G.vorflug(environment(), S, fetchFn, now());
+      A.equal(r.commit, G.MAIN); A.equal(r.counter.used, 18); A.equal(r.counter.limit, 2416);
+      A.deepEqual(h.trace, betriebsPfade); A.equal(counterReads, 1);
+      A.equal(h.state().calls, 0); A.equal(h.state().writes, 0);
+    } finally {
+      global.fetch = fetchOld;
+      for (const key of Object.keys(process.env)) if (!(key in envOld)) delete process.env[key];
+      Object.assign(process.env, envOld);
     }
   });
   await test("Unbestaetigtes Schreiben und falscher Readback verhindern Modell", async () => {
@@ -119,8 +177,9 @@ async function test(name, fn) { await fn(); passed++; console.log("OK " + name);
   await test("Echter KI Pfad: Geld, Aufruf und Anbieter vor Transport; Abrechnung vor Ergebnis", async () => {
     const S = require("../lib/helmut/storage"), https = require("node:https"), { EventEmitter } = require("node:events");
     const h = harness(), trace = [], envOld = { ...process.env }, DateOld = Date, httpsOld = https.request;
-    const names = ["readAuthStore", "mutateAuthStore", "supabaseRequest", "leseLlmTageszaehler",
+    const names = ["readAuthStore", "mutateAuthStore", "leseLlmTageszaehler",
       "reserveLlmCall", "recordLlmUsage", "anbieterReserviere", "anbieterMelde"];
+    for (const name of names) A.equal(typeof S[name], "function", `Speicherexport fehlt: ${name}`);
     const old = Object.fromEntries(names.map(k => [k, S[k]])); let used = 0;
     try {
       global.Date = class extends DateOld {

@@ -69,8 +69,23 @@ async function vorflug(env, storage, fetchFn, now) {
     `helmut_jobs?select=id&lease_expires_at=gt.${zeit}&limit=1`,
     "process_runs?select=run_id&finished_at=is.null&started_at=gt."
       + encodeURIComponent(new Date(now.getTime() - 20 * 60 * 1000).toISOString()) + "&limit=1"]) {
-    const rows = await storage.supabaseRequest("/rest/v1/" + path);
-    fordere(Array.isArray(rows) && rows.length === 0, "GIPFEL_AKTIVER_BETRIEB");
+    // storage exportiert keinen allgemeinen Supabase Zugriff. Diese vier festen
+    // Betreiberabfragen sind ausschliesslich begrenzte GETs vor jeder Mutation.
+    let rows;
+    try {
+      const response = await fetchFn(env.SUPABASE_URL + "/rest/v1/" + path, {
+        method: "GET", redirect: "error", signal: AbortSignal.timeout(15000),
+        headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`, Accept: "application/json" }
+      });
+      fordere(response.status === 200, "GIPFEL_BETRIEBSLESUNG");
+      rows = await response.json();
+      fordere(Array.isArray(rows), "GIPFEL_BETRIEBSLESUNG");
+    } catch (_) {
+      // Keine Zugangsdaten, Antwortinhalte oder fremden Fehlertexte ins Log.
+      fordere(false, "GIPFEL_BETRIEBSLESUNG");
+    }
+    fordere(rows.length === 0, "GIPFEL_AKTIVER_BETRIEB");
   }
   const counter = await storage.leseLlmTageszaehler(now.toISOString());
   fordere(counter.ok === true && Number.isSafeInteger(counter.used) && counter.used >= 0
