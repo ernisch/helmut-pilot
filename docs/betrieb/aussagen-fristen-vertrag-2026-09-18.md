@@ -3,7 +3,9 @@
 Stand 18.09.2026. Status: teilweise abgeschlossen. Der gemeinsame Promptfehler ist
 korrigiert; eine verlaessliche semantische Antwortsperre und echte Modellwirkung sind
 damit nicht bewiesen. Folgebranch `codex/aussagen-fristen-vertrag-20260918`, Basis
-PR435 `6f122bbc41d27d64ad20a8b33ed8bcdec091ecfb`. Finaler Head und Pflicht CI im Draft PR.
+PR435 `6f122bbc41d27d64ad20a8b33ed8bcdec091ecfb`. Codehead
+`7646fc8e25fe9fe2951c00f9e97dbbcc62491d58`, CI35339144182 erfolgreich.
+Der anschliessende reine Dokumentationsabschluss wird in PR436 nachgewiesen.
 
 ## Beleg und Uebernahme
 
@@ -117,7 +119,16 @@ gezielt erfolgreich. Zwei vorbereitende Pruefungen der Statusgroesse waren zu
 lang; ausschliesslich den eigenen Statusabsatz gekuerzt, Grenze unveraendert.
 Der Gesamtlauf bestaetigt die korrigierte Groesse. Nach dem Lauf nur diesen Beleg
 und den Statusabschluss ergaenzt; abschliessende Groessen und Diffpruefung separat.
-Die automatische Pflicht CI am finalen Head wird im Draft PR nachgewiesen.
+Pflicht CI35339144182 am genannten Codehead: Versuch1 scheiterte ausschliesslich an
+der unveraenderten Authzeitmessung (151,0ms statt weniger als150ms).409/410 Suiten,
+Browser50/50 und Kontoschutz15/15 bestanden; Z22 dadurch noch nicht ausgefuehrt.
+Gezielte unveraenderte Nachpruefung80/80. Einmalig nur den fehlgeschlagenen Job
+wiederholt, keine Grenze oder Implementierung geaendert. Versuch2 erfolgreich:
+410/410 in774s, Kontoschutz15/15 samt500 isolierten Registrierungen und Z22 PASS48,
+FAIL0; Browsernachweis aus Versuch1 erhalten. Alle24 finalen Jobschritte erfolgreich.
+Abschluss18.09.14:50:21 Tuerkei /13:50:21 Berlin /11:50:21UTC. Der erste Fehlbeleg
+bleibt erhalten; Laufzeitschwankung ist eine begruendete Vermutung, kein bewiesener
+Infrastrukturdefekt. Details und Links in PR436.
 
 ## Grenzen und Fortsetzung
 
@@ -139,3 +150,59 @@ Crons und uebrigen Einstellungen unveraendert. Kein Merge, Deployment, Profilwec
 Production Datenzugriff, Migration, Environment oder Azure Wechsel. Rueckweg vor
 Merge: diesen ungemergten Folgebranch verwerfen. Merge nach main wuerde Production
 deployen und braucht eine eigene Freigabe.
+
+## Gemeinsame Abnahme von PR434 bis PR436
+
+Fortsetzung18.09.2026 nach dem Betreiberauftrag Weiter. Rein lesender Abgleich
+der drei aufeinander aufbauenden Korrekturen mit dem abgeschlossenen Fachurteil
+aus PR433. Keine erneute38 Felder Bewertung, kein Originalabruf und kein Modellaufruf.
+PR433 bis PR436 weiterhin offen, Draft und ungemergt, alle Heads unveraendert.
+Main weiterhin `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`. Keine relevanten laufenden
+oder wartenden Actions; nur die beiden Altwartenden vom06.08. Eigene Kopie sauber,
+kein weiterer lokaler Schreiber sichtbar; globaler Work Status nicht abfragbar.
+
+Abnahmegegenstand ist der vorbereitete gemeinsame Motorstand, nicht eine neue
+Modellantwort. Geprueft wurden Prompt, Ministerienvalidator, alle drei Aufrufgrenzen,
+Assemblierung und die einschlaegigen vorhandenen Testabnahmen. Die neuen Regeln
+werden in Erstverstehen, Aktualisierung und Auswertung gemeinsam benutzt. Der
+Ministerienvalidator prueft weiterhin die rohe Antwort gegen die abgesendeten
+Quellenzeilen vor Speicherung. Spiegelung freier und strukturierter Felder sowie
+nachgelagerte Klassifikation ersetzen keinen semantischen Quellenbeleg.
+
+| Belegter Fehler | Gemeinsamer Codestand | Tragfaehiger Nachweis und Grenze |
+| --- | --- | --- |
+| Ministerium ohne Nennung | PR434 sperrt die gesamte neue Antwort bei unbelegtem Listenwert | Negativ und Positivfaelle offline belegt; nur ministerien und mentioned_ministries, keine Beteiligungs oder Freitextpruefung |
+| Mandatsfolgen ohne Profil | PR435 entfernt den persoenlichen Auftrag aus der globalen Analyse | Auftrag und ehrliche Leerwerte geprueft; keine semantische Antwortsperre |
+| Beschluss oder Akteur aus Diskussion | PR436 erhaelt Modalitaet und Zuschreibung im Auftrag | Diskussion, Dementi und echter Beschluss als synthetische Gegenfaelle erhalten; Modellbefolgung offen |
+| Konkrete Frist ohne Beleg | PR436 bindet Frist, Handlung und Akteur zusammen | Echte absolute und relative Frist bleiben in beiden Fachpfaden und Auswerter erhalten; kein allgemeiner Fristenvalidator |
+
+Die Abnahme des engen Implementierungsumfangs ist nachvollziehbar vorbereitet.
+Eine Aussage, alle vier Fehler seien fachlich beseitigt, ist weiterhin unzulaessig.
+Insbesondere beweist eine feste korrekte Modellattrappe nicht, dass eine falsche
+freie Antwort verworfen wird. Die abschliessende410er CI enthaelt bereits die
+Suiten aller drei Korrekturen am gemeinsamen Stand; dafuer kein neuer Handlauf.
+Gegenbeispiele, Quellfixtures und Schutzregeln bleiben unveraendert. Kein weiterer
+kleiner Codefix ist durch diese gemeinsame Durchsicht neu belegt.
+
+Die [weiteren Originalbefunde aus dem500er Test](artikelidentitaet-2026-09-17.md#offene-fachabnahme)
+bleiben eigenstaendig offen: etwa Wahlvorbericht als Ergebnis, falsche Ebene oder
+Personenzuschreibung und fehlende Handlung trotz Reaktionsentscheidung. Fuer die
+damals aufgefuehrten Inhaltsfaelle fehlt laut erhaltenem Beleg der exakte historische
+Modellrequest. Die gemeinsame Promptregel ist kein Wirkungsnachweis fuer diese
+Faelle. Keine pauschale gemeinsame Ursache und kein weiterer Fehlerabschluss.
+
+Naechster erlaubter Schritt: einen dieser erhaltenen Originalbefunde mit seiner
+konkreten Ein und Ausgabe gezielt eingrenzen. Zuerst den Befund fehlender Handlung
+trotz Reaktionsentscheidung auf einen deterministischen Weitergabefehler pruefen;
+ein solcher Fehler waere ohne Modellaufruf reproduzierbar. Ursache und Eingabepfad
+sind dafuer noch nicht belegt. Keine Ersatzquelle erfinden und keine historische
+Production Aussage allein aus einer Attrappe ableiten. Reale Modellwirkung bleibt
+ein gesonderter Nachweis ausserhalb der jetzigen Freigabe. Weder Merge noch
+Artikelkontextaktivierung oder500er Test werden empfohlen oder ausgefuehrt.
+
+Dieser Abschluss aendert nur dieses Dokument und den kompakten Projektstatus im
+bestehenden PR436. Keine neue Anwendungsaenderung und kein neuer PR. Nur die neu
+geaenderte Statusgroesse gezielt pruefen; die automatische Pflicht CI des
+Dokumentationscommits bleibt gemaess bestehendem Vertrag aktiv. Ihr genauer Head
+und Abschluss stehen im PR, ohne dafuer einen weiteren Dokumentationscommit zu
+erzeugen. Status bleibt teilweise abgeschlossen.

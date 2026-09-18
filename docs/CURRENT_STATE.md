@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**18.09.2026 UTC: PR419 bis PR435 offen, Draft und ungemergt. Gipfelversuch35325406170: genau1 Azure Aufruf,0,006921USD gebucht, Quittung erhalten. Zeitliche Kernfrage bestanden: Gipfel rueckblickend. Fachantwort nicht abgenommen: unbelegte Beschluesse, Ministerien, Fristen und Mandatsbezug. Keine Profilmutation; Artikelkontext AUS,500er Nachweis offen.**
+**18.09.2026 UTC: PR419 bis PR436 offen, Draft und ungemergt. Gipfelversuch35325406170: genau1 Azure Aufruf,0,006921USD gebucht, Quittung erhalten. Zeitliche Kernfrage bestanden: Gipfel rueckblickend. Fachantwort nicht abgenommen: unbelegte Beschluesse, Ministerien, Fristen und Mandatsbezug. Keine Profilmutation; Artikelkontext AUS,500er Nachweis offen.**
 
 Vorflug18.09.: Main `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`, PR419 bis PR432 unveraendert. Production `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY auf Main mit Hauptalias; seit17.09.00:00UTC kein Deployment. Keine laufenden/wartenden Actions ausser den zwei alten queued Laeufen vom06.08. Fremde55 Vorarbeiten erhalten; kein weiterer lokaler Ausfuehrer sichtbar. Globaler Work Status nicht abfragbar. [Frischer Vorflug und enge Freigabe](betrieb/gipfel-einzelversuch-2026-09-18.md).
 
@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-18.09.: PR435 CI35334858874 erfolgreich. Folgebranch `codex/aussagen-fristen-vertrag-20260918` auf PR435 korrigiert gemeinsam unbelegte Beschlussableitungen und Fristvorschlaege im globalen Prompt. Gezielte Offlinepruefung6/6 samt positiven Gegenfaellen. [Ursache, Nachweise und Grenzen](betrieb/aussagen-fristen-vertrag-2026-09-18.md). Status teilweise abgeschlossen; lokal410/410, Pflicht CI im Draft PR. Reale Modellwirkung unbewiesen. Danach Inhaltsabnahme vorbereiten. Artikelkontext AUS; kein Modellaufruf, Merge oder neuer500er Test freigegeben.
+18.09.: PR436 Codehead `7646fc8e25fe9fe2951c00f9e97dbbcc62491d58`, CI35339144182 Versuch2 erfolgreich:410/410, Browser, Kontoschutz und Z22. PR434 bis PR436 gemeinsam geprueft: Ministerienlisten technisch gebunden; Mandatsbezug, Beschluesse und Fristen nur im Prompt korrigiert. [Abnahme und naechster Schritt](betrieb/aussagen-fristen-vertrag-2026-09-18.md#gemeinsame-abnahme-von-pr434-bis-pr436). Status teilweise abgeschlossen; reale Fachwirkung und weitere500er Originalbefunde offen. Artikelkontext AUS; kein Modellaufruf, Merge oder neuer500er Test freigegeben.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
