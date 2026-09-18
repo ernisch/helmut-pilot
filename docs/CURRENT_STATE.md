@@ -1,8 +1,8 @@
 # CURRENT STATE — Helmut
 
-**18.09.2026 UTC: Reparaturkette ab PR419 offen, Draft und ungemergt. Gipfelversuch35325406170: genau1 Azure Aufruf,0,006921USD gebucht, Quittung erhalten. Zeitliche Kernfrage bestanden: Gipfel rueckblickend. Fachantwort nicht abgenommen: unbelegte Beschluesse, Ministerien, Fristen und Mandatsbezug. Keine Profilmutation; Artikelkontext AUS,500er Nachweis offen.**
+**19.09.2026 Tuerkei: Reparaturkette ab PR419 weiterhin offen und ungemergt. Folgebranch auf PR443 schuetzt Akteursrollen und ausdrueckliche Unsicherheit. Vier Prosakategorien bleiben fachlich offen. Gipfelversuch abgeschlossen: genau1 Aufruf,0,006921USD, kein Retry. [Aktuelle Bereitschaft und Freigabegrenze](betrieb/500-bereitschaft-2026-09-19.md). Noch nicht bereit.**
 
-Vorflug18.09.: Main `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`, PR419 bis PR432 unveraendert. Production `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY auf Main mit Hauptalias; seit17.09.00:00UTC kein Deployment. Keine laufenden/wartenden Actions ausser den zwei alten queued Laeufen vom06.08. Fremde55 Vorarbeiten erhalten; kein weiterer lokaler Ausfuehrer sichtbar. Globaler Work Status nicht abfragbar. [Frischer Vorflug und enge Freigabe](betrieb/gipfel-einzelversuch-2026-09-18.md).
+Vorflug19.09.01:37 Tuerkei /00:37 Berlin /18.09.22:37UTC: Main `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`, Production `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY. 504 Profile,0 aktiv, keine lebende Sperre oder Lease, kein junger Fachlauf. PR419 bis443 linear. Keine laufende Action; nur zwei alte queued. Globale Work Sitzungen nicht abfragbar. Keine Production Aenderung.
 
 **Fremde Vorarbeit erhalten:** `codex/motor-reparatur-20260916` mit40 veraenderten und15 neuen Dateien bleibt unangetastet und unabgenommen. Die Reparaturkette uebernimmt daraus keine Cron, Versorgungs oder Auswerterarbeiten. [Erster Sprint](betrieb/quellen-zeitvertrag-2026-09-17.md).
 
@@ -86,7 +86,7 @@ Historische PR- und Deploymentdetails bis09.09. stehen unverändert im [archivie
 | `HELMUT_LLM_USAGE_RELATIONAL` | aus; Migration `20260902121500` nicht angewendet (§3) |
 | `HELMUT_PROFILE_DB_MODE` | **Relationaler Profilpfad und Exklusivmodus am 06.09. um 07:59 UTC wirksam belegt.** Frühere Annahme `HELMUT_PROFILE_DB_EXCLUSIVE` sei aus ist damit überholt. Keine Env Änderung durch diese Sitzung; vor B/C den ausführenden Prozess an den tatsächlichen Speicherpfad binden und Bestand neu erheben. |
 | 5 Offline-Testmandate (`test-mdb-*`) | deaktivierte Repo-Daten, **nicht aktivieren** |
-| **Alle 504 Profile** | Laut erhaltenem Bericht am 16.09.21:03:43 Tuerkei / 20:03:43 Berlin / 18:03:43 UTC inaktiv bestaetigt; hier nicht neu abgefragt. Erneute Teilnahme von exakt 500 ausgewaehlten Profilen braucht ausdrueckliche Freigabe. |
+| **Alle 504 Profile** | Laut erhaltenem Bericht am 16.09.21:03:43 Tuerkei / 20:03:43 Berlin / 18:03:43 UTC inaktiv bestaetigt; am19.09.01:37 Tuerkei frisch mit504/0 bestaetigt. Erneute Teilnahme von exakt 500 ausgewaehlten Profilen braucht ausdrueckliche Freigabe. |
 
 ## 6 · Skalierung von 25 auf exakt 500 Testprofile
 
@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-18.09.: PR442 `c78203b`, CI35376127262 erfolgreich:416/416 samt Pflichtstufen. Sammelauftrag: Sachgebiet, Vollzug, Prosazuschreibung und Konzertzeit als Ergebnis B dokumentiert, keine neue Reparatur.13 neutrale Faelle zeigen die semantische Grenze. Ruecknahmekandidat nicht eindeutig zugeordnet. [Befunde, Folgebranch und fehlende Nachweise](betrieb/inhaltliche-beleggrenzen-2026-09-18.md). Naechstes: gebundene Eingabe samt roher Antwort. Artikelkontext AUS; kein Merge, Modellaufruf oder500er Test freigegeben.
+19.09. Tuerkei: PR443 bleibt Basis. Folgebranch `codex/akteursrollen-erhalten-20260919` repariert Rollenaufwertung, ueberschriebene Unsicherheit, Ausschussidentitaet und Sachgebietsableitung. Historische Prosaursachen bleiben Ergebnis B; keine Modellabnahme. [Reparatur, Kettenpruefung und offene Testbereitschaft](betrieb/akteursrollen-erhalten-2026-09-19.md). Kein Merge, Deployment, Artikelkontextstart oder bezahlter Test freigegeben.
 
 ## 12 · Verbindliche Betriebsgrenzen
 

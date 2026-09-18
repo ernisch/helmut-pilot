@@ -197,14 +197,18 @@ check("B1 Bundes-KO ohne geografischen Nachweis -> Ebene bund, Geografie LEER", 
   return r.decision_level === "bund" && r.affected_geographies.length === 0;
 })());
 
-check("B2 EU-KO erzeugt keine erfundene EU-Geografie", (() => {
+check("B2 EU-Erwaehnung erzeugt weder Entscheidungsebene noch erfundene EU-Geografie", (() => {
   const r = C.classifyKnowledgeObject({ mentioned_organizations: ["Europäische Kommission"] }, {}, { jetzt: T1 });
-  return r.decision_level === "eu" && r.affected_geographies.length === 0;
+  const positiv = C.classifyKnowledgeObject({ headline: "Europäische Kommission veroeffentlicht Bericht" }, {}, { jetzt: T1 });
+  return r.decision_level === "unknown" && r.related_levels.includes("eu") && r.affected_geographies.length === 0
+    && positiv.decision_level === "eu" && positiv.affected_geographies.length === 0;
 })());
 
-check("B3 subnationale Institution ist ein inhaltlicher Nachweis (Abgeordnetenhaus von Berlin)", (() => {
+check("B3 erwaehnte Regionalinstitution bleibt Erwaehnung, belegte Handlung bleibt betroffen", (() => {
   const r = C.classifyKnowledgeObject({ mentioned_organizations: ["Abgeordnetenhaus von Berlin"] }, {}, { jetzt: T1 });
-  return ids(r.affected_geographies).join() === "geo-land-berlin" && r.affected_geographies[0].herkunft === "inhalt";
+  const positiv = C.classifyKnowledgeObject({ headline: "Abgeordnetenhaus von Berlin beschliesst Haushalt" }, {}, { jetzt: T1 });
+  return r.affected_geographies.length === 0 && ids(r.mentioned_geographies).join() === "geo-land-berlin"
+    && ids(positiv.affected_geographies).join() === "geo-land-berlin" && positiv.affected_geographies[0].herkunft === "inhalt";
 })());
 
 check("B3b eine Landesinstitution im FLIESSTEXT ist ebenso ein Nachweis (häufigster realer Fall)", (() => {
@@ -299,7 +303,7 @@ console.log("\nC · Verbindliche Testfälle 1-10");
 // 1 · Politische Ebene 'land', explizite Geografie Berlin -> Berlin wird betroffen gespeichert.
 check("C1 Ebene 'land' + explizite Geografie Berlin -> Berlin ist betroffene Geografie", (() => {
   const r = C.classifyKnowledgeObject(
-    { mentioned_organizations: ["Abgeordnetenhaus von Berlin"], headline: "Abgeordnetenhaus beschliesst Schulgesetz" },
+    { mentioned_organizations: ["Abgeordnetenhaus von Berlin"], headline: "Abgeordnetenhaus von Berlin beschliesst Schulgesetz" },
     { decision_level: "land" }, { jetzt: T1 }
   );
   return r.decision_level === "land" && ids(r.affected_geographies).join() === "geo-land-berlin";
@@ -316,8 +320,10 @@ check("C2 Ebene 'land' ohne erkennbare Region -> weder Deutschland noch Berlin n
 })());
 
 check("C2b auch der Deriver-Pfad 'land ohne Ort' erzeugt kein Deutschland", (() => {
-  const r = C.classifyKnowledgeObject({ mentioned_organizations: ["Staatskanzlei"] }, {}, { jetzt: T1 });
-  return r.decision_level === "land" && !r.affected_geographies.some((g) => g.geography_id === "geo-bund");
+  const r = C.classifyKnowledgeObject({ mentioned_organizations: ["Staatskanzlei"], headline: "Staatskanzlei legt Bericht vor" }, {}, { jetzt: T1 });
+  const erwaehnt = C.classifyKnowledgeObject({ mentioned_organizations: ["Staatskanzlei"] }, {}, { jetzt: T1 });
+  return r.decision_level === "land" && !r.affected_geographies.some((g) => g.geography_id === "geo-bund")
+    && erwaehnt.decision_level === "unknown" && erwaehnt.affected_geographies.length === 0;
 })());
 
 // 3 · Berliner Quelle berichtet über Brandenburg.
