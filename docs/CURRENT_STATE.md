@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-18.09.: PR441 `5b8879b`, CI35368789962 erfolgreich:415/415 samt Pflichtstufen. Folgebranch `codex/ausschuesse-quellenbindung-20260918` bindet beide Ausschusslisten; neutraler Speicherfehler vor Korrektur belegt. [Beleg und Grenzen](betrieb/ausschuesse-quellenbindung-2026-09-18.md). Teilweise abgeschlossen: historischer Request fehlt; falsches Sachgebiet, Vollzug und Gastbeitragszuschreibung in Prosa weiter moeglich. Danach Konzerttermin gegen Rueckblick eingrenzen. Artikelkontext AUS; kein Merge, Modellaufruf oder500er Test freigegeben.
+18.09.: PR442 `c78203b`, CI35376127262 erfolgreich:416/416 samt Pflichtstufen. Sammelauftrag: Sachgebiet, Vollzug, Prosazuschreibung und Konzertzeit als Ergebnis B dokumentiert, keine neue Reparatur.13 neutrale Faelle zeigen die semantische Grenze. Ruecknahmekandidat nicht eindeutig zugeordnet. [Befunde, Folgebranch und fehlende Nachweise](betrieb/inhaltliche-beleggrenzen-2026-09-18.md). Naechstes: gebundene Eingabe samt roher Antwort. Artikelkontext AUS; kein Merge, Modellaufruf oder500er Test freigegeben.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
