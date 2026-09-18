@@ -47,7 +47,9 @@
 // gemeinsames technisches Geruest in scripts/e2e-vertrag-geruest.js):
 //   1. Die LLM-Antwort: deterministische Fixture-Analysen je Cluster. Testdaten, KEIN
 //      Quellenbeleg — die Dokumente selbst stammen verbatim aus den Gold-Fixtures
-//      (test/fixtures/pardok/*, echte PARDOK-/parldok-Records).
+//      (test/fixtures/pardok/*, echte PARDOK-/parldok-Records). Fuer die positiven
+//      Ausschusszuordnungen kommen in Abschnitt D klar synthetische Testauszuege
+//      hinzu. Ohne diese Zusaetze muessen die Ausschussbehauptungen scheitern.
 //   2. Der Storage-Unterbau: In-Memory-Store mit denselben Vertragsgrenzen wie
 //      Supabase/PostgREST (Mandantenfilter, aktuell=is.true, Tenant-Guard, atomare
 //      publish-Semantik wie helmut_publish_matching_run).
@@ -148,8 +150,10 @@ LAUF.zweitprofil = PROFIL_B.id;
 // Ueberschneidung gilt nur noch als AUSSCHUSSMITGLIEDSCHAFT, wenn der institutionelle
 // Zustaendigkeitsraum passt (matching.ausschussBelegZulaessig).
 // Der Vertrag vermeidet den Fall nicht mehr, sondern BEWEIST ihn: der zusaetzliche echte
-// Berliner Gold-Record V-351616 ("Pyrotechnik an Silvester", Abschnitt F11-F14) nennt
-// ausdruecklich den REALEN Berliner Innenausschuss. Erwartung beim Brandenburger Profil:
+// Berliner Gold-Record V-351616 ("Pyrotechnik an Silvester", Abschnitt F11-F14) bekommt
+// fuer diesen Positivfall einen klar markierten synthetischen Auszug mit Nennung
+// des Berliner Innenausschusses. Der Originalexport enthaelt diese Nennung NICHT.
+// Erwartung beim Brandenburger Profil:
 // KEIN ausschuss-Beleg, KEINE Ausschussbegruendung, kein Ausschussgewicht — aber das
 // gemeinsame Fachgebiet bleibt als thema-Beleg sichtbar. Die Mutationsprobe M15 nimmt
 // genau diese Pruefung zurueck und muss den Vertrag rot machen.
@@ -254,7 +258,7 @@ const AI_FIXTURES = [
     }
   },
   {
-    // FREMDER LANDESFALL MIT ECHTER AUSSCHUSSNENNUNG (Regression zu Befund 27A-1).
+    // FREMDER LANDESFALL MIT SYNTHETISCHEM AUSSCHUSSBELEG (Regression zu Befund 27A-1).
     // Echter Berliner Gold-Record V-351616 (Muendliche Anfrage). Die Analyse nennt den
     // REALEN Innenausschuss des Abgeordnetenhauses von Berlin — genau die Konstellation,
     // die vor dem Fix beim Brandenburger Profil einen falschen Ausschussbeleg erzeugte.
@@ -460,8 +464,8 @@ function neuerStore() {
 
   // Regel 0 (Punkt 24): externe Identitaet Herausgeber+Kennung+Typ.
   const identitaet = (d) => DG.externalIdentity({ ...d, externe_id: d.raw && d.raw.externe_id }) || `${d.source_id}|${d.content_hash}`;
-  const eingabe = [rohRelevant, rohKommunal, rohIrrelevant, rohBE, rohBEPyro, bundRoh];
-  const identitaeten = eingabe.map(identitaet);
+  const originalEingabe = [rohRelevant, rohKommunal, rohIrrelevant, rohBE, rohBEPyro, bundRoh];
+  const identitaeten = originalEingabe.map(identitaet);
   check("C7 Regel 0: sechs Eingabedokumente -> sechs unterscheidbare globale Identitaeten",
     new Set(identitaeten).size === 6, identitaeten.join(" · "));
   check("C8 Regel 0 idempotent: gleiche Eingabe -> gleiche Identitaet",
@@ -474,10 +478,28 @@ function neuerStore() {
   check("C10 Mehrdokument-Vorgang: zwei Dokumentidentitaeten, EIN Vorgangsbezug — Dokument und Vorgang nicht vermischt",
     identitaet(rohKommunal) !== identitaet(rohKommunalPlpr)
       && rohKommunal.raw.vorgangsnummer === rohKommunalPlpr.raw.vorgangsnummer);
-  LAUF.normalisiert = eingabe.length; LAUF.rohdokumente = eingabe.length;
+  LAUF.normalisiert = originalEingabe.length; LAUF.rohdokumente = originalEingabe.length;
 
   // ═══ D · Understanding: echter Pfad, deterministische Analyse-Fixtures ═══
   abschnitt("D · Understanding (echte Orchestrierung, Fixture-Analysen)");
+  const originalStand = JSON.stringify(originalEingabe);
+  for (const [doc, marker] of [[rohRelevant, "Straf- und Gewalttaten"], [rohBEPyro, "Pyrotechnik"]]) {
+    const ohneAusschussbeleg = await understanding.evaluateUnderstandingCase({ raw_documents: [doc] },
+      async () => structuredClone(AI_FIXTURES.find(f => f.marker === marker).result));
+    check(`D0 ${marker}: Ausschussbehauptung ohne Zusatz wird gegen Originaleingabe abgewiesen`,
+      !ohneAusschussbeleg.valid && ohneAusschussbeleg.errors.includes("quellenbeleg-ausschuesse")
+        && ohneAusschussbeleg.errors.includes("quellenbeleg-mentioned_committees"));
+  }
+  // Unabhaengig von den Antwortlisten formulierte, klar synthetische Testtexte.
+  // Die Originalexporte bleiben unveraendert. Kein historischer Quellenbeleg.
+  const eingabe = originalEingabe.map(doc => doc === rohRelevant ? { ...doc,
+    summary: "Synthetischer Testauszug, kein Originalbeleg: Der Ausschuss für Inneres und Kommunales des Landtags Brandenburg berät die Straf- und Gewalttaten im Land."
+  } : doc === rohBEPyro ? { ...doc,
+    summary: "Synthetischer Testauszug, kein Originalbeleg: Der Ausschuss für Inneres, Sicherheit und Ordnung des Abgeordnetenhauses von Berlin berät Pyrotechnik an Silvester."
+  } : doc);
+  check("D0b Originale unveraendert; nur positive Testeingaben enthalten die markierten Auszuege",
+    JSON.stringify(originalEingabe) === originalStand && rohRelevant.summary === "" && rohBEPyro.summary === ""
+      && eingabe.filter(d => d.summary.startsWith("Synthetischer Testauszug, kein Originalbeleg:")).length === 2);
   const store = neuerStore();
   const u1 = await understanding.runUnderstandingShadow(eingabe, store.api);
   check("D1 sechs Cluster, sechs verarbeitet, keine Zurueckstellung",

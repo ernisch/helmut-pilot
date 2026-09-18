@@ -1904,6 +1904,13 @@ async function c8UnderstandingChecks() {
       namensErgebnis?.valid === true
         && JSON.stringify(namensErgebnis.ko[feld]) === JSON.stringify(["Dr. Erika Mustermann"]));
   }
+  const ausschussFall = goldset.cases.find(c => c.case_type === "ausschuss_bezug");
+  const ausschussErgebnis = evalGood.results.find(r => r.name === ausschussFall.name);
+  for (const feld of ["ausschuesse", "mentioned_committees"]) {
+    check(`C8 Goldset-Eval: ${feld} behaelt den ausdruecklich genannten Ausschuss`,
+      ausschussErgebnis?.valid === true
+        && JSON.stringify(ausschussErgebnis.ko[feld]) === JSON.stringify(["Ausschuss fuer Arbeit und Soziales"]));
+  }
   const badAi = () => ({ was_ist_passiert: "x", mentioned_people: ["kontakt@example.com"] });
   const evalBad = await u.evaluateUnderstandingGoldset(goldset, badAi);
   check("C8 Goldset-Eval: schlechte/PII-behaftete KI-Antwort -> 0 valide (fail-safe, nichts durchgelassen)",

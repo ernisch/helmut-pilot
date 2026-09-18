@@ -33,7 +33,9 @@
 // WAS ERSETZT WIRD (einzige Testdoubles, klar begrenzt):
 //   1. Die LLM-Antwort (deps.requestUnderstanding): deterministische Fixture-Analysen je
 //      Cluster. Testdaten, KEIN Quellenbeleg — die Dokumente selbst stammen verbatim aus den
-//      Gold-Fixtures (test/fixtures/pardok/*, echte PARDOK-/parldok-Records).
+//      Gold-Fixtures (test/fixtures/pardok/*, echte PARDOK-/parldok-Records). Fuer die
+//      positive Ausschusszuordnung kommt in Abschnitt D ein klar synthetischer
+//      Testauszug hinzu. Ohne diesen Zusatz muss die Ausschussbehauptung scheitern.
 //   2. Der Storage-Unterbau: ein In-Memory-Store mit denselben Vertragsgrenzen wie
 //      Supabase/PostgREST (Mandantenfilter user_id=eq., aktuell=is.true, Tenant-Guard bei
 //      Schreibzugriffen, atomare publish-Semantik wie helmut_publish_matching_run — modelliert
@@ -349,8 +351,21 @@ function neuerStore() {
 
   // ═══ D · Understanding: echter Pfad, deterministische Analyse-Fixtures ═══
   abschnitt("D · Understanding (echte Orchestrierung, Fixture-Analysen)");
+  // Der Originalexport nennt keinen Ausschuss. Den Matching-Positivfall mit
+  // offen ausgewiesenem Testauszug pruefen. XML und Originalobjekt bleiben erhalten.
+  const originalRelevant = JSON.stringify(rohRelevant);
+  const ohneAusschussbeleg = await understanding.evaluateUnderstandingCase({ raw_documents: [rohRelevant] },
+    async () => structuredClone(AI_FIXTURES.find(f => f.marker === "Waffengebührenordnung").result));
+  check("D0 Ausschussbehauptung ohne Zusatz wird gegen die Originaleingabe abgewiesen",
+    !ohneAusschussbeleg.valid && ohneAusschussbeleg.errors.includes("quellenbeleg-ausschuesse")
+      && ohneAusschussbeleg.errors.includes("quellenbeleg-mentioned_committees"));
   const store = neuerStore();
-  const eingabe = [rohRelevant, rohIrrelevant, rohBB, bundRoh];
+  const eingabe = [{ ...rohRelevant,
+    summary: "Synthetischer Testauszug, kein Originalbeleg: Der Ausschuss für Inneres, Sicherheit und Ordnung des Abgeordnetenhauses von Berlin berät die Waffengebührenordnung."
+  }, rohIrrelevant, rohBB, bundRoh];
+  check("D0b Originalobjekt unveraendert; nur positive Testeingabe enthaelt den markierten Auszug",
+    JSON.stringify(rohRelevant) === originalRelevant && rohRelevant.summary === ""
+      && eingabe[0].summary.startsWith("Synthetischer Testauszug, kein Originalbeleg:"));
   const u1 = await understanding.runUnderstandingShadow(eingabe, store.api);
   check("D1 vier Cluster, vier verarbeitet, keine Zurueckstellung",
     u1.clusters === 4 && u1.processed === 4 && u1.deferred === 0, JSON.stringify(u1.counts));

@@ -139,10 +139,10 @@ LAUF.zweitprofil = PROFIL_B.id;
 // spezifische Ankermengen; urheber/ressort sind nur beim Hauptfall gefuellt.
 const DIP_API_DOKUMENTE = [
   {
-    // Pflichtfall 1: klar relevanter Bundesvorgang mit echtem Ausschussbezug.
+    // Pflichtfall 1: synthetischer Bundesvorgang mit ausdruecklichem Ausschussbeleg.
     id: "9990001",
     drucksachetyp: "Gesetzentwurf",
-    titel: "Entwurf eines Gesetzes zur Staerkung der Tariftreue",
+    titel: "Entwurf eines Gesetzes zur Staerkung der Tariftreue im Ausschuss für Arbeit und Soziales",
     datum: "2026-07-28",
     fundstelle: { pdf_url: "https://bund.example/btd/21/9990001.pdf" },
     urheber: [{ titel: "Bundesregierung" }],
@@ -182,7 +182,7 @@ const MEDIEN_ITEMS = [
     // Pflichtfall 3: Landesvorgang mit aehnlich benanntem Ausschuss.
     id: "media-land-sozialbericht",
     title: "Landtag in Sachsen debattiert den Sozialbericht",
-    summary: "Der Landtag eroertert den Sozialbericht des Landes.",
+    summary: "Der Landtag eroertert den Sozialbericht des Landes. Der Ausschuss für Soziales, Gesundheit und Integration beraet den Bericht.",
     url: "https://medien.example/land/sozialbericht",
     sourceName: "Beispielmedien", sourceId: "medien-beispiel", sourceType: "media",
     linkType: "direct", confidence: "medium",

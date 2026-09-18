@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-18.09.: PR440 `f166db8`, CI35364385670 erfolgreich:414/414 samt Pflichtstufen. Folgebranch `codex/personen-quellenbindung-20260918` bindet beide Personenlisten an gelieferte Quelltexte; neutraler Speicherfehler vor Korrektur belegt. [Beleg](betrieb/personen-quellenbindung-2026-09-18.md). Teilweise abgeschlossen: historischer Request fehlt, falsche Prosa weiter moeglich. Danach Gastbeitrag als Zeitungsposition eingrenzen. Artikelkontext AUS; kein Merge, Modellaufruf oder500er Test freigegeben.
+18.09.: PR441 `5b8879b`, CI35368789962 erfolgreich:415/415 samt Pflichtstufen. Folgebranch `codex/ausschuesse-quellenbindung-20260918` bindet beide Ausschusslisten; neutraler Speicherfehler vor Korrektur belegt. [Beleg und Grenzen](betrieb/ausschuesse-quellenbindung-2026-09-18.md). Teilweise abgeschlossen: historischer Request fehlt; falsches Sachgebiet, Vollzug und Gastbeitragszuschreibung in Prosa weiter moeglich. Danach Konzerttermin gegen Rueckblick eingrenzen. Artikelkontext AUS; kein Merge, Modellaufruf oder500er Test freigegeben.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
