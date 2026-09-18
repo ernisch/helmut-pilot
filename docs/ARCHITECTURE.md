@@ -356,6 +356,13 @@ Institutionssignal mehr trug.
 | **Bestandszugang** | `storage.listKnowledgeObjectsByVorgangPrefix()` | Die Kandidatenprojektion liest `decision_level`/`political_level`/`classification_confidence` mit; ohne sie hätte der häufigste Aktualisierungspfad nichts zum Wiederverwenden |
 | **Ehrliche Abdeckung** | `storage.getClassificationCoverage()` | Gezählt wird die **ermittelte** Ebene (ohne `unknown`). `decision_level` ist seit Sprint 2 nie `null`, die alte Zählung `not.is.null` meldete deshalb strukturell ~100 % — falsches Grün |
 
+**Antwortkonsistenz (18.09.2026):** Nennt die neue Modellantwort eine gueltige
+`decision_level`, die von der assemblierten Ebene abweicht, verwirft
+`understanding.validateUnderstandingResult` die gesamte neue Antwort vor der
+Inhaltsspeicherung. Die Herkunftsregeln bleiben unveraendert; Updates erhalten
+den alten Inhalt und melden `skipped-invalid`. Fehlend/`unknown` ist kein solcher
+Konflikt. Keine semantische Pruefung von Prosa oder Quellenwahrheit.
+
 Kostenwirkung: **null zusätzliche KI-Aufrufe**. Der Deriver ist rein regelbasiert;
 gespart wird nicht Rechenzeit, sondern die bereits bezahlte Ermittlung, die vorher
 bei jeder Aktualisierung verworfen wurde.

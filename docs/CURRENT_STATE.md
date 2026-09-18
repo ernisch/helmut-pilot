@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-18.09.: PR437 Head `3fba735`, CI35348570671 erfolgreich:411/411 samt Pflichtstufen. Parteienbeleg abgeschlossen; Q006 nicht wiederholt. Folgebranch `codex/ebenen-ereignis-vertrag-20260918` bindet den Prompt an handelnde Rollen statt blosse Institutionen. [Beleg, Tests und Grenzen](betrieb/ebenen-ereignis-vertrag-2026-09-18.md). Teilweise abgeschlossen: echte Modellwirkung offen; gleichrangige falsche Bestandsebene bleibt trotz neuer Prosa erhalten. Kein semantischer Gesamtfilter. Artikelkontext AUS; kein Merge, Modellaufruf oder500er Test freigegeben.
+18.09.: PR438 Head `0483654`, CI35353054035 erfolgreich:412/412 samt Pflichtstufen. Folgebranch `codex/ebenen-antwortkonsistenz-20260918` verwirft neue Antworten mit ausdruecklicher Ebene entgegen der erhaltenen Klassifikation. Bestandsschutz unveraendert. [Beleg und Grenzen](betrieb/ebenen-antwortkonsistenz-2026-09-18.md). Teilweise abgeschlossen: alte Fehlklassifikation und echte Modellwirkung offen. Danach Wahlvorbericht als Ergebnis gezielt untersuchen. Q006 abgeschlossen; Artikelkontext AUS; kein Merge, Modellaufruf oder500er Test freigegeben.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
