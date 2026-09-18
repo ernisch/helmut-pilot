@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-18.09.: PR439 Head `1686a50`, CI35357140672 erfolgreich:413/413 samt Pflichtstufen. Folgebranch `codex/ergebnisstand-vertrag-20260918` unterscheidet Vorbericht und Ergebnisstand im gemeinsamen Prompt; Feldauftrag erzwingt keinen Vollzug. [Beleg und Grenzen](betrieb/ergebnisstand-vertrag-2026-09-18.md). Teilweise abgeschlossen: keine semantische Sperre, echte Modellwirkung offen. Danach falsche Personenzuschreibung untersuchen. Q006 abgeschlossen; Artikelkontext AUS; kein Merge, Modellaufruf oder500er Test freigegeben.
+18.09.: PR440 `f166db8`, CI35364385670 erfolgreich:414/414 samt Pflichtstufen. Folgebranch `codex/personen-quellenbindung-20260918` bindet beide Personenlisten an gelieferte Quelltexte; neutraler Speicherfehler vor Korrektur belegt. [Beleg](betrieb/personen-quellenbindung-2026-09-18.md). Teilweise abgeschlossen: historischer Request fehlt, falsche Prosa weiter moeglich. Danach Gastbeitrag als Zeitungsposition eingrenzen. Artikelkontext AUS; kein Merge, Modellaufruf oder500er Test freigegeben.
 
 ## 12 · Verbindliche Betriebsgrenzen
 

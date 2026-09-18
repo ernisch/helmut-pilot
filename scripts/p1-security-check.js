@@ -1897,6 +1897,13 @@ async function c8UnderstandingChecks() {
   const evalGood = await u.evaluateUnderstandingGoldset(goldset, perfect);
   check("C8 Goldset-Eval: perfekte KI-Antwort -> alle 7 Faelle valide (Pipeline erfuellt den Vertrag)",
     evalGood.total === 7 && evalGood.valid === 7, `valid=${evalGood.valid}/${evalGood.total}`);
+  const namensFall = goldset.cases.find(c => c.case_type === "abgeordneten_erwaehnung");
+  const namensErgebnis = evalGood.results.find(r => r.name === namensFall.name);
+  for (const feld of ["mentioned_people", "mentioned_mps"]) {
+    check(`C8 Goldset-Eval: ${feld} behaelt den quellenbelegten Namen ohne ergaenztes Rollenlabel`,
+      namensErgebnis?.valid === true
+        && JSON.stringify(namensErgebnis.ko[feld]) === JSON.stringify(["Dr. Erika Mustermann"]));
+  }
   const badAi = () => ({ was_ist_passiert: "x", mentioned_people: ["kontakt@example.com"] });
   const evalBad = await u.evaluateUnderstandingGoldset(goldset, badAi);
   check("C8 Goldset-Eval: schlechte/PII-behaftete KI-Antwort -> 0 valide (fail-safe, nichts durchgelassen)",
