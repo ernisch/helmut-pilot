@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-18.09.: PR436 Head `1abe01a`, CI35344294704 erfolgreich:410/410 samt Pflichtstufen. Folgebranch `codex/parteien-quellenbindung-20260918` bindet beide Parteienlisten an gelieferte Quellen. Q006:61 Punkte exakt reproduziert, unbelegter Parteitreffer; Fristenschutz korrekt. [Beleg und Tests](betrieb/parteien-quellenbindung-2026-09-18.md). Status teilweise abgeschlossen. Freitext, Mandatsbezug und Fristen nur im Prompt korrigiert; reale Fachwirkung und500er Nachweis offen. Artikelkontext AUS; kein Modellaufruf oder Merge freigegeben.
+18.09.: PR437 Head `3fba735`, CI35348570671 erfolgreich:411/411 samt Pflichtstufen. Parteienbeleg abgeschlossen; Q006 nicht wiederholt. Folgebranch `codex/ebenen-ereignis-vertrag-20260918` bindet den Prompt an handelnde Rollen statt blosse Institutionen. [Beleg, Tests und Grenzen](betrieb/ebenen-ereignis-vertrag-2026-09-18.md). Teilweise abgeschlossen: echte Modellwirkung offen; gleichrangige falsche Bestandsebene bleibt trotz neuer Prosa erhalten. Kein semantischer Gesamtfilter. Artikelkontext AUS; kein Merge, Modellaufruf oder500er Test freigegeben.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
