@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**18.09.2026 UTC: PR419 bis PR433 offen, Draft und ungemergt; Gipfelversuch35319793029 vor Azure gescheitert. Ausfuehrer korrigiert;11/11 Schutzgruppen und407/407 Offline Suiten erfolgreich. Pflicht CI am aktuellen PR Head nachlesen.0 Modellaufrufe,0 neue Kosten, keine Einmalquittung. Keine Wiederholung. Artikelkontext AUS; Fachfehler und500er Nachweis offen.**
+**18.09.2026 UTC: PR419 bis PR433 offen, Draft und ungemergt. Gipfelversuch35325406170: genau1 Azure Aufruf,0,006921USD gebucht, Quittung erhalten. Zeitliche Kernfrage bestanden: Gipfel rueckblickend. Fachantwort nicht abgenommen: unbelegte Beschluesse, Ministerien, Fristen und Mandatsbezug. Keine Profilmutation; Artikelkontext AUS,500er Nachweis offen.**
 
 Vorflug18.09.: Main `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`, PR419 bis PR432 unveraendert. Production `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY auf Main mit Hauptalias; seit17.09.00:00UTC kein Deployment. Keine laufenden/wartenden Actions ausser den zwei alten queued Laeufen vom06.08. Fremde55 Vorarbeiten erhalten; kein weiterer lokaler Ausfuehrer sichtbar. Globaler Work Status nicht abfragbar. [Frischer Vorflug und enge Freigabe](betrieb/gipfel-einzelversuch-2026-09-18.md).
 
@@ -32,7 +32,7 @@ Vorflug18.09.: Main `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`, PR419 bis PR432 
 
 **Artikelidentitaet PR432:** Head `e63b49e82259e62f40cdb574ed228e9edf1cc06b`, Basis PR431. FR Varianten zaehlen einmal, alle Belege erhalten, Zeitkonflikte bleiben leer. Replay:2 von123 Listen korrigiert,121 und22 Karten unveraendert. CI35284649828 vollstaendig erfolgreich:406/406, Browser50/50, Kontoschutz15/15 samt500 Registrierungen, Z22 PASS48/FAIL0. [Belege](betrieb/artikelidentitaet-2026-09-17.md#fr-folgekorrektur).
 
-**Einzelversuch PR433:** Ausgefuehrt `4d2ae8862a44f8c237f330e0a476a4b59c8a63d3`, Basis PR432. Nach ausdruecklicher Uebertragungsfreigabe scheiterte Actions35319793029 am18.09.07:31UTC vor Azure: `storage.supabaseRequest` nicht exportiert, offline reproduziert. Native Nachkontrolle07:31:44UTC:504/0, Profile/Auth unveraendert, keine Einmalquittung oder neue Buchung; Tagesstand18 fruehere Cronaufrufe/0,116663USD. Kein Retry. CI35307219042 am ausgefuehrten Head zuvor407/407 und alle Pflichtstufen erfolgreich. [Fehlbeleg und Grenzen](betrieb/gipfel-einzelversuch-2026-09-18.md#ausfuehrung-nach-ausdruecklicher-uebertragungsfreigabe).
+**Einzelversuch PR433:** Ausgefuehrt `50047dd04f768c6ad574dc431d62ec93f1466323`, CI35323101665 vollstaendig erfolgreich. Neuer Start ausdruecklich freigegeben; Actions35325406170 erfolgreich,1 Modellaufruf ohne Retry. Gipfel nicht mehr bevorstehend, aber gesamte Antwort fachlich nicht freigegeben. Native Nachkontrolle18.09.08:39:48UTC:504/0, Profile/main und geschuetzte Authfelder identisch, nur erlaubte Betriebsbuchungen. Tagesstand19 Aufrufe/0,123584USD. Einmalquittung erhalten. [Ergebnis und Grenzen](betrieb/gipfel-einzelversuch-2026-09-18.md#einmalige-ausfuehrung-des-korrigierten-ausfuehrers).
 
 **Historischer Testabschluss laut erhaltenem Bericht vom 16.09.:** Test beendet, 497 Mandatsbriefings, 131 Morgenquittungen, 5 Lage Texte, nur zwei Profile mit allen drei Ergebnissen. Kein vollstaendiger 500er Fachnachweis. Die dortige Datenbankaufnahme von 21:03:43 Tuerkei / 20:03:43 Berlin / 18:03:43 UTC nennt 504 Profile, 0 aktiv, 0 aktive Sperren und Leases, aber 829 wartende Jobs. Diese Zahlen wurden in diesem Sprint nicht neu gegen Production erhoben. Inaktive Profile stoppen globale Quellenarbeit nicht automatisch. Aktuelle Freigabe erlaubt keine Profil oder Jobmutation. [Status vor Uebernahme auf Main](archive/project_state/2026_09_17_vor_quellen_zeitvertrag.md) ist historisch.
 
@@ -150,11 +150,11 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-Ausfuehrer korrigiert: vier begrenzte Nurlesungen, echtes Speichermodul im Test.11/11 Schutzgruppen und407/407 Suiten erfolgreich; Pflicht CI im PR. Erneuter Actionsstart braucht ausdrueckliche Freigabe; keine zweite Eingabe vorbereitet. [Beleg](betrieb/gipfel-einzelversuch-2026-09-18.md#ausfuehrung-nach-ausdruecklicher-uebertragungsfreigabe). Artikelkontext AUS; weitere Fachfehler und500er Voraussetzungen offen.
+Gipfelzeit im echten Einzelversuch richtig, Fachantwort insgesamt nicht freigegeben. Naechster enger Block: unbelegte Beschluesse, Akteurszuordnungen, Fristen und Mandatsbezug anhand der gesicherten Antwort untersuchen und allgemein im Motor begrenzen. Kein artikelbezogener Sonderfall. Kein weiterer Modellversuch, keine Aktivierung. [Beleg](betrieb/gipfel-einzelversuch-2026-09-18.md#einmalige-ausfuehrung-des-korrigierten-ausfuehrers).
 
 ## 12 · Verbindliche Betriebsgrenzen
 
-**Betreiberauftrag17.09. samt enger Modell und Uebertragungsfreigabe18.09.: ein Actionsversuch vor Azure gescheitert. Kein Retry oder Ersatzweg vorbereitet; erneuter Start braucht Freigabe. Alle anderen Grenzen bleiben bestehen.**
+**Betreiberauftrag18.09.: erneuter einmaliger Actionsstart nach Reparatur ausdruecklich freigegeben und ausgefuehrt. Genau1 Azure Aufruf; Einmalquittung und Kosten erhalten. Keine weitere Ausfuehrung freigegeben.**
 
 1. Erlaubt: rein lesende Production Pruefung, eigener Branch, auftragsbezogener Code, Dokumentation, lokale Offlinepruefungen, Commit, Push und PR. Keine weiteren Agenten oder parallelen schreibenden Ausfuehrer.
 2. Nicht freigegeben: Merge, Deployment, Migration, Production Datenaenderung, Profilaktivierung, Aenderung laufender Crons oder Automationen, Environment oder Azure Aenderung, weitere bezahlte Modelllaeufe, neuer Production Test.
