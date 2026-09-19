@@ -331,8 +331,8 @@ async function run() {
     }, cluster, "vg-swap-2", {});
     ok("display_summary behaelt einen Wert oberhalb des (kleineren) why_relevant-Caps",
       koSwapCheck2.display_summary.length === overWhyUnderSummary.length);
-    ok("why_relevant kappt denselben Wert exakt auf sein eigenes, kleineres Budget",
-      koSwapCheck2.why_relevant.length === WHY_MAX);
+    ok("why_relevant verwirft denselben zu langen Wert ohne behauptendes Fragment",
+      koSwapCheck2.why_relevant === "");
   }
 
   // ── 6f) Qualitaetsgate fuer den Anzeige-Titel (isValidDisplayTitle):

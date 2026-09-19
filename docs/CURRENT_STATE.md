@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026: Einmaliger Quellenlauf ausgefuehrt; Satzgrenzenreparatur in Arbeit.** Main `a1268b0db0cbf44f28dc3d8ec6e23b239fb162ad`, READY `dpl_EF8wGwu8v6E17N6yUpB9VtCCx71X`; PR450 und Main CI gruen. Freigegebener Lauf35443741723:40 Versuche,22 Auszuege gespeichert,18 ohne Ergebnis,0 Modelle. SQL12:53 UTC:504/0, Schutzgrundlinie hashidentisch, keine Sperre/Lease/Reserve,0,258929 USD. Sichtung:15 ganze Auszuege,3 ganze Praefixe,4 Abbrueche. Kleiner Extraktor und Leserfix lokal geprueft; Integration offen. Altpakete weiterhin91/114 Objekte ohne Auszug,alle500 betroffen. Prosa,0→500→0,Vollversorgung und Fachabnahme offen. [Belege](betrieb/quellenkontext-ruhe-2026-09-19.md).
+**19.09.2026: Quellenfix451 integriert; getrennter Prosaabgleich gescheitert.** Main `2d239abca16e54371e102ff69384f6c981f86ff1`, READY `dpl_36YBDeCMzWVrh8iwr2ij3jQiPabP`, Leser35447091556 HTTP200; PR451 und Main CI erfolgreich. Einmaliger Quellenlauf40/22 abgeschlossen; weiterhin91/114 Altobjekte ohne wirksamen Auszug. PR452 ungemergt geschlossen: ein Aufruf,0,003921 USD, falsche Quellenurteile und21/22 Felder; dauerhaft gestoppt. SQL14:29 UTC:504/0, Kontenschutz unveraendert, keine Sperre/Lease/Reserve,0,262850 USD. Prosa,0→500→0 und Vollversorgung offen. [Quellen](betrieb/quellenkontext-ruhe-2026-09-19.md), [Fachstopp](betrieb/prosa-quellenpruefung-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp).
 
 **Integration PR419 bis448 abgeschlossen, alle28 alten Drafts erledigt.** PR447 CI35435242485:419/419, Browser50, Kontoschutz15, Z22 48;24 Pflichtschritte. Laufzeitleser35436180373 belegt Speicher, Kommunikationssperre und4 USD Riegel. Drei Prosaserien nach je einem Aufruf fachlich gestoppt, zusammen0,019647 USD; Folgenprompt verworfen, Anwendung nicht auf `low` umgestellt. [Fachstopps](betrieb/prosa-denktiefe-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp). Heutige Freigabe10 USD, enger4 USD Riegel und Artikelkontext AUS bleiben. Kein neuer500er Test; Quellenfrische und vollstaendige Fachabnahme offen. [Integrationsbelege und Restpunkte](betrieb/500-bereitschaft-2026-09-19.md#abschluss-nach-dem-denkvergleich).
 
@@ -148,14 +148,14 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-19.09.: Einmaliger Quellenlauf abgeschlossen. Satzgrenzenfix pruefen und integrieren, danach allgemeine Prosaursache weiterbearbeiten. Keine weitere gleiche Modellserie oder Quellenlauf ohne neuen Auftrag.0→500→0 samt Terminierung und Vollversorgung vorbereiten;500er Start verboten. [Befund und Folgereparatur](betrieb/quellenkontext-ruhe-2026-09-19.md#belegte-satzgrenzenluecke-und-kleine-folgereparatur).
+19.09.: Assembler Textgrenzen lokal422/422 geprueft, Integration offen. Danach dieselbe belegte Kuerzungsklasse in Mandat/Risiko/Lage beheben. Keine Wiederholung der drei Generierungsserien, des gescheiterten Quellenpruefers oder des einmaligen Quellenlaufs. Danach0→500→0 und expliziten Vollstaendigkeitsleser vorbereiten; allgemeine Prosa bleibt offen. Kein500er Start. [Fachstopp und Folge](betrieb/prosa-quellenpruefung-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp).
 
 ## 12 · Verbindliche Betriebsgrenzen
 
 **Neue ausdrueckliche Betreiberfreigabe19.09.: notwendige Reparaturen und gepruefte Merges samt Deployment selbststaendig ausfuehren; heute insgesamt hoechstens10 USD. Die alte Sperre fuer notwendige Betriebsbuchungen ist aufgehoben. Auftrag endet bei Bereitschaft zum500er Test; dieser wird noch nicht gestartet.**
 
 1. Ein schreibender Ausfuehrer; fremde Vorarbeit erhalten. Konten, Identitaeten, Kostenhistorie und Kommunikationssperre schuetzen.
-2. Beide Prosaserien dauerhaft nach je einem Aufruf geschlossen. Keine Fortsetzung oder Wiederholung. Vollstaendige Rohantworten, negative Fachurteile, Kosten und verdraengte Telemetrie erhalten. Weitere Versuche brauchen einen neuen sachlich begruendeten Auftrag innerhalb der vorhandenen Tagesfreigabe.
+2. Drei Prosaserien und der getrennte Quellenpruefer dauerhaft nach je einem Aufruf geschlossen. Keine Fortsetzung oder Wiederholung. Vollstaendige Rohantworten, negative Fachurteile, Kosten und verdraengte Telemetrie erhalten. Weitere Versuche brauchen einen neuen sachlich begruendeten Auftrag innerhalb der vorhandenen Tagesfreigabe.
 3. mini bleibt Referenz; bestehender atomarer4 USD Tagesriegel bleibt vorerst unveraendert. Eine Erhoehung ist nur bei belegtem Bedarf innerhalb der10 USD Tagesfreigabe zulaessig. Keine Kosten oder offenen Reserven loeschen.
 4. Alle504 Profile bleiben bis zum spaeteren500er Start inaktiv. Artikelkontext bleibt AUS. Keine neue Funktion und kein unnoetiger Umbau.
 5. Mandantentrennung mit `assertTenant` und explizitem Mandatsfilter; bedingte gemeinsame Schreibvorgaenge und persistente Gegenpruefung. Nicht pruefbar bedeutet niemals bestanden.
