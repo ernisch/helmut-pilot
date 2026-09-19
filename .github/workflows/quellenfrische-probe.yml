@@ -33,7 +33,10 @@ jobs:
       - name: Zwei bestaetigte Katalogfeeds einmal lesen
         env:
           HELMUT_QUELLENFRISCHE_IDS: '["deutschlandfunk-politik","tagesschau-politik"]'
-        run: node scripts/lokal.js -- node scripts/quellenfrische-probe.js --out quellenfrische-probe.json
+        # Der echte oeffentliche Leser ist kein Offline Test. env -i entfernt
+        # alle Zugangsdaten und NODE_OPTIONS; nur diese drei Werte erreichen
+        # ihn. Die Teststufe oben bleibt unter dem unveraenderten Schutzstarter.
+        run: env -i PATH="$PATH" HELMUT_STORAGE_BACKEND=local HELMUT_QUELLENFRISCHE_IDS="$HELMUT_QUELLENFRISCHE_IDS" node scripts/quellenfrische-probe.js --out quellenfrische-probe.json
       - name: Begrenzten Beleg sichern
         if: always()
         uses: actions/upload-artifact@v4
