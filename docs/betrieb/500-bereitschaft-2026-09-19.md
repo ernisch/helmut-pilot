@@ -1,6 +1,12 @@
 # Bereitschaft nach der Reparaturkette
 
 Stand 19.09.2026 Tuerkei. **Status: blockiert. Noch nicht bereit.**
+Nachtrag19.09.: PR444 und445 inzwischen vorhanden und technisch geprueft.
+Der Microsoft Listentarif ist numerisch belegt; der Fachnachweis ist weiterhin
+unausgefuehrt. Fruehere Achtfallfreigabe erhalten, notwendige Betriebsbuchungen
+stehen aber im Widerspruch zum aktuellen Production Schreibverbot.
+Aktueller [Tarif und Ausfuehrungsstand](prosa-fachnachweis-2026-09-19.md#numerischer-microsoft-tarifbeleg-und-fortsetzung-am-1909).
+Nachfolgende Betriebs und Kettenaufnahmen bleiben historische Vorflugbelege.
 Dies ist eine Vorbereitung, keine Freigabe fuer Merge, Deployment oder Test.
 Die aktuelle Rollenreparatur steht im [Reparaturbeleg](akteursrollen-erhalten-2026-09-19.md).
 
@@ -43,6 +49,26 @@ Der alte Gipfelversuch bleibt einmalig und abgeschlossen: 0,006921 USD.
 | O Betreiberfreigaben | Merge samt automatischem Deployment, jede Flag oder Cronaenderung, Profilaktivierung und Rueckweg sowie bezahlter Teststart sind getrennte kritische Aktionen. Diese Vorbereitung erteilt keine davon. |
 
 ## Belegte Betriebsgrenzen des naechsten Tests
+
+### Quellenalter und Zeitwahrheit bei der fachlichen Abnahme
+
+Das24 Stunden Kriterium beschreibt den aktuellen Datenstand und ist keine
+pauschale Altersgrenze fuer jeden Artikel. Aeltere Quellen bleiben zulaessig,
+wenn sie innerhalb des bestehenden Relevanzfensters noch sachlich relevant
+sind. Sie duerfen nicht als neue Entwicklung des heutigen Tages erscheinen.
+
+Fuer jedes der genau500 Profile die verwendeten Quellen erfassen: echtes
+`published_at` und dessen Herkunft, Alter zum Bezugszeitpunkt, bestehende
+Altersklassifizierung, Relevanzfenster und behauptete Ereigniszeit.
+Unbekanntes oder widerspruechliches Publikationsdatum als solches ausweisen;
+Abrufzeit niemals als Publikationszeit einsetzen. Rueckblick, aktuelle
+Entwicklung und Zukunftstermin muessen in den sichtbaren Aussagen stimmen.
+Ueberschreitungen, fehlende Belege und unbrauchbare Ergebnisse vollstaendig
+ausweisen. Eine Stichprobe bleibt eine Stichprobe und besteht keine
+vollstaendige Textpruefung aller500 Profile. Keine Aenderung des Motors oder
+Relevanzfensters durch diesen Abnahmezusatz.
+
+### Historische Ausfuehrer und neues Testfenster
 
 `scripts/github-testfenster-500.js` gilt nur fuer 15.09.10:00 bis
 16.09.11:00 UTC und gibt spaeter ohne Wirkung zurueck. Die zugehoerigen

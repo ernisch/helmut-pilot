@@ -1,8 +1,8 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026 Tuerkei: PR419 bis445 offen, Draft und linear. PR445 Ausfuehrer technisch geprueft: CI35425611492 mit418/418,24/24 Schritten. Vier Prosakategorien fachlich offen. Nachweis freigegeben:8 Aufrufe/1,696USD/20min; noch0 Aufrufe. Lesender Azure Zugang nun freigegeben und erfolgreich, Global Standard bestaetigt. Aktueller numerischer Tarif weiter unbelegt. [Auftrag und Grenze](betrieb/prosa-fachnachweis-2026-09-19.md). Noch nicht bereit fuer Integration oder500er Test.**
+**19.09.2026 Tuerkei: PR419 bis445 offen, Draft, linear. PR445 Head0dac7e9 CI35427331451 gruen:418/418,24/24 Schritte. Microsoft Listentarif0,25/2,00USD je Million Tokens belegt, Reserve unveraendert. Vier Prosakategorien offen,0 Modellaufrufe. Achtfallfreigabe erhalten; notwendige Buchungen gegen aktuelles Production Schreibverbot klaeren. [Tarif, Freigabegrenze und naechster Schritt](betrieb/prosa-fachnachweis-2026-09-19.md#numerischer-microsoft-tarifbeleg-und-fortsetzung-am-1909). Noch nicht500er bereit.**
 
-Vorflug19.09.01:37 Tuerkei /00:37 Berlin /18.09.22:37UTC: Main `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`, Production `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY. 504 Profile,0 aktiv, keine lebende Sperre oder Lease, kein junger Fachlauf. PR419 bis443 linear. Keine laufende Action; nur zwei alte queued. Globale Work Sitzungen nicht abfragbar. Keine Production Aenderung.
+Lesender Abgleich19.09.10:07:36 Tuerkei /09:07:36 Berlin /07:07:36UTC:504/0, keine Sperren/Leases/jungen offenen Laeufe, keine Prosaquittung,0 Prosaaufrufe. Tagesbuch0,113741USD, keine offene Reserve. Main/Production unveraendert. Keine laufende Action, nur zwei alte queued. Dieser Folgeauftrag aendert nur Dokumentation; kein Modellstart.
 
 **Fremde Vorarbeit erhalten:** `codex/motor-reparatur-20260916` mit40 veraenderten und15 neuen Dateien bleibt unangetastet und unabgenommen. Die Reparaturkette uebernimmt daraus keine Cron, Versorgungs oder Auswerterarbeiten. [Erster Sprint](betrieb/quellen-zeitvertrag-2026-09-17.md).
 
@@ -52,7 +52,7 @@ Historische PR- und Deploymentdetails bis09.09. stehen unverändert im [archivie
 - **Quellen:** 9 Pakete · 163 Abrufwege · 165 Zuordnungen; **146/163 Google-News** (B1, OP-15); 18 Landesmodul-Wege (BE/BB) gesperrt. Seeds `20260713`/`20260717` **nicht eingespielt**, Einspielung [BLOCKIERT](betrieb/quellen-seed-einspielung.md) (nur noch Betreiberfreigabe).
 - **Crons (Production, 13, UTC):** crawl 04:00/20:00 · pipeline 16:00 · morning-briefing 05:00 · understanding 05:30/21:30 · **rueckstand 11:30/17:30** · lage-briefing 05:45 · health 06:00 · lage-check 10:00 · 2 Narrativslots 06:10/06:22 (inert). **`18,48 * * * *` nicht in Production.** Dazu Actions-Watchdog (`briefing-watchdog.yml`, 05:30, oft 2–3 h verzögert).
 - **Migrationen:** 35 Einträge, letzte `20260829175749` (05.09. rein lesend bestätigt). **Z22 seit 29.08. mit Freigabe angewendet** (§14–22) — **nicht erneut anwenden**. Auf `main`, **nicht in Production angewendet**: `20260720`, F9 (`20260825101500`), `20260902121500`. Jede weitere Anwendung bleibt freigabepflichtig.
-- **Historische Kosten 09.09., 07:23 UTC (neue getrennte Kosten oben):** 92 Reservierungen, 92 Belege, **0,212737 USD Schaetzung**. Der historische Nachtrag ist als rekonstruiert gekennzeichnet. Keine neue Luecke. Grenze 10 USD je UTC Tag, Prognosestopp 9 USD. Kein Rechnungsbeleg oder atomarer USD Riegel.
+- **Historische Kosten 09.09.:** Rekonstruierter Altstand im [Nachlaufbeleg](betrieb/500-nachlauf-2026-09-09.md); heutige Buchung im Statuskopf, wirksamer4 USD Riegel unten.
 - **Zugang:** Azure und Foundry geschützt per Microsoft E Mail erreicht, keine Zugangsdaten offengelegt. Rein lesend: `gpt-5-mini` Global Standard **250.000/2.000.000 TPM**, Zuordnung 250.000 TPM, bekannte Grenze 250 RPM. Keine Azure Änderung. Production Leser **34058091793** bleibt gültig (§54).
 
 ## 4 · Aktivierte Funktionen (Production)
@@ -150,14 +150,14 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-19.09. Tuerkei: PR445 auf PR444 sichert den freigegebenen Achtfallnachweis. Ausfuehrer technisch geprueft. Scharfer Start blockiert am numerischen Tarifbeleg; keine weitere Lesefreigabe fehlt. Azure Preisliste bleibt nach zwei begrenzten Ladeversuchen leer. Danach Fachnachweis und Integrationspruefung. PR345 separat, kein pauschaler Merge. Kein Deployment oder500er Start.
+19.09. Tuerkei: Tarifluecke geschlossen. Naechster Fachblock Sachgebiet, erste feste Position des vorbereiteten Achtfallnachweises. Historische Modellursache bleibt unbelegt; kein pauschaler Promptumbau. Vor echtem Start notwendige Buchungen gegen das aktuelle Production Schreibverbot klaeren. Danach frischer Vorflug, unveraenderter begrenzter Nachweis und Integrationspruefung. Quellenalter und Zeitwahrheit im spaeteren500er Test ausdruecklich pruefen;24 Stunden Datenfrische ist keine Artikelaltersgrenze. PR345 separat. Kein Deployment oder500er Start.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
-**Betreiberauftrag19.09.: isolierter Achtfallnachweis samt Einmalquittung, Kosten und Aufruftelemetrie eng freigegeben. Gipfelversuch bleibt abgeschlossen, genau1 Aufruf/0,006921USD, keine Wiederholung.**
+**Aktueller Auftrag19.09.: keine Production Datenaenderung. Fruehere Achtfallfreigabe erhalten; Buchungsumfang vor Start klaeren. Gipfelversuch abgeschlossen:1 Aufruf/0,006921USD, kein Retry.**
 
 1. Erlaubt: rein lesende Production Pruefung, eigener Branch, auftragsbezogener Code, Dokumentation, lokale Offlinepruefungen, Commit, Push und PR. Keine weiteren Agenten oder parallelen schreibenden Ausfuehrer.
-2. Nicht freigegeben: Merge, Deployment, Migration, Production Datenaenderung ausser engen Versuchs und Kostenbuchungen, Profilaktivierung, Aenderung laufender Crons oder Automationen, Environment oder Azure Aenderung, bezahlte Modelllaeufe ausserhalb der engen Achtfallfreigabe, neuer Production Test.
+2. Hier nicht erlaubt: Merge, Deployment, Migration, Production Datenaenderung, Profilaktivierung, Cron oder Automationsaenderung, Environment oder Azure Aenderung, neuer Production Test. Achtfallgrenze siehe Statuskopf.
 3. mini bleibt technische Referenz. Harte 4 USD je UTC Tag inklusive voller offener Reserven bleiben bestehen. Kein weiterer Modellvergleich und keine bezahlten Richteraufrufe. Historische Kosten oder unbekannte Reserven nicht loeschen.
 4. Alle Profile duerfen fuer kuenftige Tests gleich behandelt werden. Aktuell bleiben alle 504 inaktiv. Konten, Identitaeten und Kommunikationssperre bleiben geschuetzt.
 5. Mandantentrennung mit `assertTenant` und explizitem Mandatsfilter; bedingte gemeinsame Schreibvorgaenge und persistente Gegenpruefung. Nicht pruefbar bedeutet niemals bestanden.

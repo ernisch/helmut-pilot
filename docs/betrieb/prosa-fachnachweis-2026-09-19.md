@@ -1,6 +1,6 @@
 # Vorbereiteter isolierter Prosanachweis
 
-**19.09.2026: eng begrenzt ausdruecklich freigegeben, noch nicht ausgefuehrt. Status: blockiert am aktuellen Tarifnachweis.**
+**19.09.2026: Microsoft Listentarif numerisch belegt, konservative Kostenreserve ausreichend. Noch nicht ausgefuehrt. Status: teilweise abgeschlossen; neuer Auftrag verlangt keine Production Datenaenderung. Die dafuer notwendigen Versuchs und Kostenbuchungen bleiben vor dem Start zu klaeren.**
 Basis ist der kumulative Stand des Rollen Folgebranches auf PR443. Die acht
 neutralen Eingaben und vorab festgelegten Erwartungen stehen in
 `prosa-fachnachweis-2026-09-19.json`. Sie sind ausschliesslich synthetisch.
@@ -138,7 +138,7 @@ negativen Abbruechen und acht verschiedenen einmaligen Positionen. Das ist
 kein Modellqualitaetsbeleg. Die Gesamtpruefung und reale Ausfuehrung werden
 anschliessend mit ihren tatsaechlichen Ergebnissen ergaenzt.
 
-## Tarifnachweis und automatische Zugriffssperre
+## Historischer Tarifnachweis und automatische Zugriffssperre
 
 Die bestehende konservative Preisbasis vom09.09. bleibt0,50/4,00 USD je Million
 Eingabe und Ausgabetokens. Sie ist keine neue Anbieterrechnung. Die aktuelle
@@ -232,3 +232,105 @@ alle inaktiv; keine aktive Sperre, Lease oder junge offene Verarbeitung.
 Keine Prosaquittung und0 Prosaaufrufe. Bestehende Tageskosten0,113741 USD
 unveraendert. Keine laufende Action beim Vorflug; kein weiterer lokaler
 Schreiber sichtbar. Globale Work Sitzungen bleiben technisch nicht abfragbar.
+
+## Numerischer Microsoft Tarifbeleg und Fortsetzung am 19.09.
+
+Die Uebernahme fand den inzwischen gesicherten Abschluss von PR444 und PR445.
+PR445 Head `0dac7e9404f7e35a0596a3ad9dcf0e9780f4563e` wurde durch
+CI35427331451 vollstaendig erfolgreich geprueft:418/418 Suiten,50 Browser,
+15 Kontoschutz,48 Z22 und24/24 Schritte. Kein Wiederholungslauf dieses Heads.
+Der aktuelle private Abschluss korrigiert ausserdem die fruehere DOM Aussage:
+Die Azure Ansicht zeigte eine Monatsliste fuer Nutzungsdateien. Nach zwei
+Betaetigungen von Vorbereiten wurde keine Datei erhalten. Serverseitiger
+Ausgang unbekannt; kein erneutes Vorbereiten in dieser Uebernahme.
+
+Am19.09.2026 um10:05:33 Tuerkei /09:05:33 Berlin /07:05:33 UTC lieferte die
+oeffentliche Microsoft Retail Prices API12 Preiszeilen fuer den tatsaechlichen
+Zahlernamen `GPT 5 Mini` in `swedencentral`, ohne weitere Seite.
+Die [vollstaendige strukturierte Antwort](azure-gpt5-mini-tarif-2026-09-19.json)
+enthaelt Abrufzeit, Abfrage, Waehrung, Einheit und die unveraenderten Zeilen.
+Die Azure Kontoansicht nennt dieselben Input und Output Produkte fuer Global
+und SE Central. Der bereits belegte Deploymenttyp bleibt Global Standard,
+Modellversion `2025-08-07`. Es wurde nichts bereitgestellt oder umgestellt.
+
+| Verbrauch | USD je Million Tokens | Microsoft Meter ID |
+| --- | --- | --- |
+| Eingabe, regulaer Global | 0,25 | `45f4acef-7483-5b10-8986-cea7d10ba581` |
+| Ausgabe, regulaer Global | 2,00 | `22dd2fde-fadb-570f-a541-ca915805441c` |
+| Wiederverwendete Eingabe, Global | 0,025 | `194df53e-2ba7-5722-a622-764bb468dcc3` |
+
+Alle drei Zeilen: `Consumption`, `unitOfMeasure=1M`, Mindestmenge0,
+Primaerzaehler, `effectiveStartDate=2025-08-01T00:00:00Z`.
+Dieses Wirksamkeitsdatum ist nicht das Abrufdatum. Batch und Data Zone Zeilen
+sind in der Antwort erhalten, werden aber nicht als Tarif dieses Auftrags
+verwendet. Die [Microsoft Dokumentation](https://learn.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices)
+bezeichnet USD Werte als oeffentliche Listenpreise ohne Rabatt. Das ist ein
+aktueller Anbieterpreisbeleg, keine individuelle Rechnung, keine bestaetigte
+Euro Umrechnung und kein Nachweis der tatsaechlichen acht Tokenverbraeuche.
+Die frueheren leeren Abfrageergebnisse beweisen keine fehlenden Tarife.
+
+Konservativer Vergleich mit derselben bestehenden Obergrenze:
+400000 Eingabetokens mal0,25/Million plus3000 Ausgabetokens mal2/Million
+ergeben0,106 USD pro Aufruf. Acht solche Obergrenzen ergeben0,848 USD.
+Die unveraenderte Motorreserve bleibt0,212 USD pro Aufruf und1,696 USD fuer
+acht Aufrufe. Die Motorbuchung mit0,50/4,00 bleibt eine konservative Schaetzung;
+keine Anpassung von Code, Preisregel, Kostengrenze oder Kostenhistorie.
+Tatsaechlicher Verbrauch und Anbieterantwort fehlen weiterhin.
+
+Rein lesende Betriebsaufnahme10:07:36 Tuerkei /09:07:36 Berlin /07:07:36 UTC:
+504 Profile,0 aktiv,0 unbekannte Aktivzustaende,0 aktive Sperren,0 Leases,
+0 junge offene Prozesse, keine Prosaquittung und0 Prosaaufrufe.
+Gebuchter Tagesstand0,113741 USD, keine offenen Reservierungseintraege.
+Damit rechnerisch3,886259 USD freie Tagesreserve, nach voller Achtfallreserve
+noch2,190259 USD. Diese Momentaufnahme ersetzt keinen frischen Startvorflug.
+Main und Production Alias bleiben auf `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`,
+Deployment `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY. Keine laufende Action,
+nur die zwei alten queued Laeufe. Kein weiterer lokaler Prozess sichtbar;
+globale Work Sitzungen weiterhin nicht direkt abfragbar.
+
+## Naechster bearbeitbarer Fachblock und aktuelle Auftragsgrenze
+
+Sachgebiet ist die erste Position des unveraenderten Achtfallmanifests:
+`sachgebiet-offen`, danach bei Erfolg `sachgebiet-belegt`.
+Die Rollen und Ausschussableitung aus PR444 ist technisch repariert und bereits
+geprueft. Sie beweist nicht die historische Ursache des Pflegefalls und nicht
+die korrekte Modellprosa. Die dokumentierten Grenzen zu Vollzug, Zuschreibung
+und Ereigniszeit bleiben ebenfalls offen. Kein weiterer belegter
+deterministischer Prosafix ergibt sich aus dieser Bestandspruefung.
+
+Kleinster naechster Beleg ist die erste echte Antwort des vorbereiteten
+Auftrags samt exakt gesicherter HTTP Eingabe, roher Antwort, Tokenverbrauch
+und Kostenquittung. Die ganze Antwort wird gegen die vorher festgelegten
+Erwartungen gelesen und offline durch beide Fachpfade verarbeitet. Erst bei
+Erfolg darf die naechste Position innerhalb desselben20 Minuten Fensters
+folgen. Beim ersten kritischen Fehler sichern und stoppen; kein Retry.
+Eine korrekte negative Antwort allein besteht noch nicht die Sachgebietsklasse.
+Fehlende historische Requests werden durch diesen neuen Nachweis nicht ersetzt.
+
+Die fruehere ausdrueckliche Achtfallfreigabe samt notwendigen Buchungen ist
+erhalten. Der aktuelle Uebernahmeauftrag verlangt zugleich keine Production
+Datenaenderung und keine Production Wirkung. `beanspruche` schreibt vor Azure
+die dauerhafte Quittung in `main-auth`; der echte KI Pfad schreibt Kosten,
+Aufrufzaehler und Telemetrie. Ein scharfer Start ist deshalb kein rein lesender
+oder lokaler Schritt. Diese Grenze wird nicht still als aufgehoben behandelt.
+Kein Start und keine neuen Buchungen in dieser Uebernahme. Vor der Ausfuehrung
+ist nur dieser Widerspruch zum aktuellen Schreibverbot zu klaeren; keine neue
+allgemeine Azure Lesefreigabe und keine hoehere Kostenfreigabe erforderlich.
+Der bestehende Ausfuehrer ist auf den19.09. vor23:00 UTC gebunden; keine stille
+Datumsverlaengerung oder Wiederverwendung nach Tageswechsel.
+
+Dieser Nachtrag aendert ausschliesslich Dokumentation und den oeffentlichen
+Tarifbeleg im bestehenden PR445. Kein neuer PR, Anwendungscode, Prompt,
+Schema, Manifest, Qualitaetswaechter, Workflow oder Konfiguration geaendert.
+Rueckweg: ungemergten Dokumentationsnachtrag nicht uebernehmen. Die bereits
+gruenen technischen Nachweise bleiben ihrem jeweiligen Head zugeordnet.
+
+Lokale Nachpruefung: drei eindeutige regulaere Global Tarifzeilen mit richtiger
+Waehrung, Einheit, Region und Meter ID; beide Kostenrechnungen und unveraenderte
+Motorreserve erfolgreich. Statusgroesse4/4 und `git diff --check` erfolgreich.
+Die zunaechst zu lange Statusdatei wurde durch Entfernen des ueberholten
+Vorflugs und Verweis auf historische Kostenbelege gekuerzt; keine Grenze
+angehoben. Alle lokalen Pruefungen ueber `scripts/lokal.js`. Kein neuer PR
+und kein wiederholter lokaler Gesamtlauf identischen Anwendungscodes.
+Die automatisch vorgeschriebene CI fuer den neuen Dokumentationshead wird
+separat abgewartet und in der bestehenden PR Beschreibung dokumentiert.
