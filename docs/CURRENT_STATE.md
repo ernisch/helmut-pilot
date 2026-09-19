@@ -1,10 +1,10 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026: Reparaturkette PR419–445 integriert, alle28 alten Drafts erledigt. Abschlussdokumentation PR446 gemergt: Main05feca37476e23d892ee45ef08d4706923486279. Fachliche500er Bereitschaft weiterhin offen.**
+**19.09.2026: Technische Reparaturkette und alle28 alten Drafts abgeschlossen. Gepruefter Integrationsstand d10d94b9f17273b133951077cce24ed271aa3048, READY dpl_FHFbpQJUQk4cXLy6whfP591agAaJ. Fachliche500er Bereitschaft blockiert.**
 
-Integrations-CI35433323295 und Dokumentations-CI35434499656 vollstaendig erfolgreich:418 Suiten, Browser50, Kontoschutz15, Z22 48, jeweils24 Schritte. Production Leser35434309651 bestaetigt vorherigen Anwendungskommit f4cb802, Speicher, Kommunikationssperre und4 USD Riegel. SQL09:31 UTC:504/0, keine Konkurrenz/offene Reserve, Tagesbuch0,124985 USD. Zwei negative Prosaserien dauerhaft geschlossen,0,011244 USD Kosten; Folgenprompt verworfen. Tarif0,25/2,00 USD je Million Tokens belegt. Code/Tests/Deployment belegen keinen500er Erfolg. [Integration](betrieb/500-bereitschaft-2026-09-19.md#bestaetigter-integrationsabschluss).
+PR447 CI35435242485:419/419 in574s, Browser50, Kontoschutz15, Z22 48,24/24 Schritte. Production Leser35436180373 bestaetigt den aktuellen Commit, Speicher, Kommunikationssperre und4 USD Riegel. SQL10:00 UTC:504/0, keine aktive Verarbeitung/offene Reserve, Tagesbuch0,133388 USD. Alle drei Prosaserien nach je einem Aufruf fachlich gestoppt; zusammen0,019647 USD. Folgenprompt verworfen; `low` nur isoliert geprueft, Anwendung bleibt unveraendert. [Vergleich und Grenzen](betrieb/prosa-denktiefe-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp).
 
-**Naechster enger Beleg:** [Denkaufwandvergleich](betrieb/prosa-denktiefe-2026-09-19.md) mit unveraendertem Originalprompt und `low`, eigener Quittung, maximal9 Aufrufe/1,908 USD/30 Minuten. Vorbereitung, noch kein Start und keine Anwendungsaenderung. Heutige Betreiberfreigabe10 USD gilt; Motor-Tagesriegel bleibt4 USD. Quellenfrische gehoert in die spaetere500er Abnahme.
+Code und technische Tests bereit; Deployment/Laufzeit belegt. Allgemeine Prosaqualitaet und500er Nachweis nicht bestanden. Kein neuer500er Test. [Offene Nachweise und naechster Schritt](betrieb/500-bereitschaft-2026-09-19.md#abschluss-nach-dem-denkvergleich). Betreiberfreigabe heute10 USD gilt; keine neue allgemeine Freigabe erforderlich. Motor-Tagesriegel4 USD, Artikelkontext AUS. Quellenfrische gehoert in die spaetere500er Abnahme.
 
 **Fremde Vorarbeit erhalten:** `codex/motor-reparatur-20260916` mit40 veraenderten und15 neuen Dateien bleibt unangetastet und unabgenommen. Die Reparaturkette uebernimmt daraus keine Cron, Versorgungs oder Auswerterarbeiten. [Erster Sprint](betrieb/quellen-zeitvertrag-2026-09-17.md).
 

@@ -1,15 +1,15 @@
 # Bereitschaft nach der Reparaturkette
 
 Stand 19.09.2026 Tuerkei. **Status: blockiert. Noch nicht bereit.**
-Nachtrag19.09.09:20 UTC: PR445 integriert und Production READY. Alle28
-bisherigen Drafts erledigt, kein weiterer offener PR vor diesem reinen
-Dokumentationsabschluss. Authentifizierter Laufzeitleser35434309651 erfolgreich.
-504 Profile weiterhin inaktiv, Tagesbuch0,124985 USD, keine offene Reserve.
-Beide Prosaserien negativ abgeschlossen; nicht abgenommener Folgenprompt
-zurueckgenommen. Fachqualitaet und500er Betriebsplanung bleiben offen.
-Die notwendige Betreiberfreigabe ist vorhanden; heute maximal10 USD,
-engerer4 USD Motorriegel unveraendert. Kein500er Start.
-Aktueller [Integrationsabschluss](#bestaetigter-integrationsabschluss).
+Nachtrag19.09.10:00 UTC: PR445 bis447 integriert und Production READY.
+Alle28 alten Drafts erledigt, kein offener PR vor diesem Dokumentationsabschluss.
+Aktueller Commit d10d94b9f17273b133951077cce24ed271aa3048,
+authentifizierter Laufzeitleser35436180373 erfolgreich.504 Profile weiterhin
+inaktiv, Tagesbuch0,133388 USD, keine offene Reserve. Drei Prosaserien negativ
+abgeschlossen; Folgenprompt verworfen, keine Umstellung der Anwendung auf `low`.
+Fachqualitaet und500er Betriebsplanung bleiben offen. Betreiberfreigabe liegt
+vor: heute maximal10 USD, enger4 USD Motorriegel unveraendert. Kein500er Start.
+Aktueller [Abschluss](#abschluss-nach-dem-denkvergleich).
 Nachfolgende Betriebs und Kettenaufnahmen bleiben historische Vorflugbelege.
 Die aktuelle Rollenreparatur steht im [Reparaturbeleg](akteursrollen-erhalten-2026-09-19.md).
 
@@ -280,3 +280,71 @@ Sein eigener Merge und Deploymentstatus werden in Git/Vercel belegt, ohne
 rekursiven Dokumentations-PR. Ergebnis getrennt: Code bereit und technisch
 geprueft; Production-Deployment/Laufzeit belegt; fachliche Gesamtwirkung nicht
 bewiesen;500er Nachweis nicht bestanden und kein neuer Test gestartet.
+
+## Abschluss nach dem Denkvergleich
+
+PR446 dokumentierte die technische Integration; seine CI35434499656 bestand
+418/418 Suiten und alle24 Pflichtschritte. PR447 untersuchte anschliessend
+genau eine neue Hypothese: unveraenderter Modellauftrag mit `low` statt
+`minimal`. Head70ef33c, CI35435242485:419/419, Browser50, Kontoschutz15,
+Z22 48 und24/24 Schritte. Auch dieser reale erste Fall bestand fachlich nicht.
+Die Anwendung wurde nicht umgestellt. [Vollstaendiger Vergleich und Grenzen](prosa-denktiefe-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp).
+
+Aktueller integrierter Stand d10d94b9f17273b133951077cce24ed271aa3048,
+Production READY dpl_FHFbpQJUQk4cXLy6whfP591agAaJ. Authentifizierter
+Leselauf35436180373 bestaetigt09:59:55 UTC exakt den Commit, Supabase/V3,
+exklusive relationale Profile, Kommunikations- und Kohortenquellensperre,
+Retention36, Tagesdeckel2416, Reserve702, Vorrang200, Relevanz14 Tage,
+Kostenregel2 mit4 USD. Die optionalen500er Inhaltsleser blieben aus.
+Alle28 ehemaligen Drafts erledigt. Kein offener PR vor dem finalen
+reinen Dokumentationsabschluss; keine fremden lokalen Aenderungen uebernommen.
+
+SQL10:00:24 UTC:504 Profile,0 aktiv,0 unbekannt; keine aktive Sperre,
+Lease oder junge Verarbeitung. Drei geschlossene Prosaserien mit zusammen
+0,019647 USD konservativen Kosten; Tagesbuch0,133388 USD, keine offene Reserve.
+Kein Azure-/Environment-Eingriff, keine Migration, keine Appinhaltsaenderung,
+keine Profilaktivierung und kein500er Start. Erlaubte Versuchsquittungen,
+Aufruftelemetrie und Kosten wurden geschrieben; „keine Production Wirkung"
+waere deshalb fuer die gesamte freigegebene Fortsetzung falsch.
+
+| Zustand | Belegter Abschluss |
+| --- | --- |
+| Code bereit | Technische Reparaturkette integriert; kein nachgewiesener neuer Prosafix |
+| Tests erfolgreich |419 Offline Suiten,50 Browser,15 Kontoschutz,48 Z22;24 Pflichtschritte |
+| Production bewiesen | Deployment und Laufzeitkonfiguration belegt; allgemeine Inhaltsqualitaet nicht bestanden |
+|500er Nachweis bestanden | Nein; kein neuer Test und weiterhin0 aktive Profile |
+
+**Naechster allgemeiner Motorblocker:** Unbelegte fachliche Bedeutung in
+globaler Prosa bei einer Quelle, die die konkrete Leistungsart nicht nennt.
+Der vorhandene Validator akzeptiert die drei gesicherten Gegenbeispiele;
+beide Speicherpfade erhalten die problematische Prosa. Geaenderter Prompt
+und hoeherer Denkaufwand erbrachten keinen bestandenen begrenzten Nachweis.
+Das breite Finanzen-Label allein wird weiterhin nicht als konkrete
+Fehlklassifikation ausgegeben. Historische Pflegefallursachen sind unbelegt.
+
+Kleinster weiterer fachlicher Nachweis: ein ausdruecklich quellengebundener
+Ausgabevertrag fuer unbestimmte Leistungsarten, offline gegen die drei
+vollstaendigen Fehlantworten und das unveraenderte positive Quellengegenpaar
+aus dem Manifest pruefen. Der positive belegte Sachinhalt muss nutzbar bleiben;
+pauschal leere Texte bestehen nicht. Vor einem Eingangsfilter dessen Wirkung
+auf die tatsaechlich verwendeten Quellen und Ergebnisse messen.97 Prozent
+fehlende Auszuege im Gesamtbestand erlauben keine blinde Sperre und keine
+Aussage,97 Prozent der kuenftigen500er Ausgaben seien betroffen.
+Ein einzelnes Wort wie „fiskalisch“ zu verbieten ist kein allgemeiner Fix.
+Weitere gleichartige Prompt-/Parameteriterationen werden aus diesem negativen
+Auftrag nicht abgeleitet. Fehlende historische Requests bleiben fehlend.
+
+Danach fehlen weiterhin der frisch gebundene0→500→0-Start-/Endweg,
+ein bestaetigter serieller Fortsetzungsplan und eine Kostenplanung fuer
+Entwurf **und** Pruefung jeder Lage innerhalb der heute erteilten10 USD.
+Keine alte495er Reaktivierung oder abgelaufenen Timer als passenden Nachweis
+ausgeben. Im spaeteren Test alle500 Profile vollstaendig ausweisen, einschliesslich
+fehlender, leerer, doppelter und unbrauchbarer Ergebnisse. Alle fachlich
+pruefbaren Texte nach vorher festgelegten Kriterien abnehmen; Stichproben
+nicht als Vollpruefung bezeichnen. Echtes `published_at`, Altersklasse,
+14 Tage Relevanz und Ereigniszeit getrennt vom24 Stunden Datenstand pruefen.
+
+Status **teilweise abgeschlossen**,500er Bereitschaft fachlich und betrieblich
+**blockiert**. Es fehlt keine weitere pauschale Betreiberfreigabe. Eine
+beliebige neue Promptregel oder ein gruenerer Qualitaetsriegel waere kein
+belastbarer Abschluss des Auftrags.
