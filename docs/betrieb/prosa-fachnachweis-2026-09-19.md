@@ -1,6 +1,9 @@
 # Vorbereiteter isolierter Prosanachweis
 
-**19.09.2026: notwendige Reparaturen, Betriebsbuchungen und gepruefte Merges samt Deployment freigegeben, Tagesobergrenze10 USD. Bestehender4 USD Motorriegel und enger Achtfallrahmen bleiben vorerst erhalten. Erster Start vor Modell und Quittung sicher gesperrt; konkrete Ausfuehrerkorrektur in Pruefung. Kein500er Start.**
+**19.09.2026: Erster echter Fall am Head0583307 fachlich gescheitert und dauerhaft geschlossen. Kosten0,005919 USD konservativ. Neue gezielte Vorgaben fuer Analysefelder und eigener Folgeauftrag in Pruefung: neun Faelle, maximal1,908 USD/30 Minuten innerhalb der freigegebenen10 USD heute; enger4 USD Tagesriegel bleibt. Kein500er Start.**
+Aktuell gilt der Schlussabschnitt. Die vorherigen Auftraege und Tarifschritte
+stehen nachfolgend als unveraenderte Historie; ihre alten Freigabesperren
+sind durch die ausdrueckliche Betreiberfreigabe am19.09. ueberholt.
 Basis ist der kumulative Stand des Rollen Folgebranches auf PR443. Die acht
 neutralen Eingaben und vorab festgelegten Erwartungen stehen in
 `prosa-fachnachweis-2026-09-19.json`. Sie sind ausschliesslich synthetisch.
@@ -377,3 +380,68 @@ Chromium1194 wurden genau diese vier Suiten erfolgreich nachgeprueft.
 Damit alle418 Suiten geprueft; kein zweiter identischer Gesamtlauf.
 Keine Testaussage abgeschwaecht, keine Paketdatei geaendert.
 Neue GitHub CI am korrigierten Head steht noch aus.
+
+## Erster echter Fall und gezielte Folgepruefung
+
+Head `0583307693fac1a72cc2c571601b5cc6d01b9be7`: CI35431115046
+vollstaendig erfolgreich,418/418 Suiten in778 Sekunden,50 Browser/Mobil,
+15 Kontoschutz,48 Z22, beide Jobs und alle24 Pflichtschritte erfolgreich.
+Der volle Nutzungsring ist damit technisch geprueft; kein alter CI-Lauf neu gestartet.
+
+Actions35431831013 fuehrte am19.09.08:22:49 bis08:23:05 UTC genau Fall1 aus.
+HTTP200, abgeschlossene Antwort,6301 Eingabe und692 Ausgabetokens.
+Rohantwort und geparstes Objekt sind inhaltlich identisch. Vollstaendiger Request,
+Rohantwort, Kosten und beide lokalen Fachpfade sind privat archiviert.
+Konservativ5919 Mikro USD; Tagesbuch danach119660 Mikro USD, keine offene Reserve.
+Listenring5000 erhalten und acht moeglicherweise verdraengte Altbelege gesichert.
+Profile, Identitaeten, geschuetzter Authinhalt und main-Blob haben unveraenderte
+SHA256 Grundlinien;504 Profile weiterhin inaktiv, keine aktive Konkurrenz.
+
+Fachurteil **nicht bestanden**. Die einzige inhaltliche Quelle lautet
+„Ausgleichsbetrag koennte entfallen“. Unter `chancen` ergaenzt das Modell
+Effizienzgewinne bei Verwaltungskosten. Die Quelle nennt weder Verwaltungskosten
+noch einen Verwaltungsprozess oder einen entsprechenden Wirkungszusammenhang.
+Eine als moeglich bezeichnete Folge erhaelt dadurch keinen Quellenbeleg.
+Erstverstehen und Update speichern diese Prosa unveraendert.
+Moeglicher Entfall und fehlender Beschluss bleiben dagegen korrekt offen.
+Keine Steuer, Pflege oder Verkehrsleistung wird konkret behauptet; das breite
+Label Finanzen ist deshalb kein Beweis einer falschen konkreten Leistungsart.
+
+Die eigene Quittung `prosaFachnachweis20260919` wurde08:25:56 UTC bedingt auf
+`fachlich-gestoppt` gesetzt, gegen exakte Revision und Quittungshash, anschliessend
+unabhaengig gegengelesen. Bewertung SHA256
+`293246372fc29b370dc58c44ff52dc13a1495eb4518f3b0cac212ea230f45aab`.
+Alle Kosten, Rohbelege und die technische Erfolgsquittung bleiben erhalten.
+Keine Position2 bis8 dieser Serie wird ausgefuehrt, keine Wiederholung.
+
+Damit ist die falsche Ergaenzung **in dieser neuen Modellantwort** belegt.
+Weder der innere Generierungsgrund noch eine historische Pflegefallursache ist
+bewiesen. Bestehende allgemeine Quellenregeln wurden bereits mitgeschickt.
+Ein pauschaler weiterer Faktenappell oder ein Wortfilter waere kein Nachweis.
+
+Kleinster Folgeversuch: Die bisher nur allgemein begrenzten Pflichtfelder
+`warum_wichtig` und `wer_ist_betroffen` erhalten ausdrueckliche Ausgaben bei
+fehlender Grundlage. Die bislang nur als Listen genannten `risiken` und
+`chancen` verlangen konkret eine gelieferte Folge samt Akteurs-/Gegenstandsbezug.
+Vorbehaltswoerter duerfen keine neue Folge erzeugen; keine Verlagerung in
+Schwesterfelder. Explizite Folgen bleiben ausdruecklich erlaubt. Das ist eine
+gezielte Aenderung des Modellauftrags, **keine deterministische Semantikpruefung**
+und noch keine bewiesene fachliche Reparatur. Schema und Qualitaetsregeln bleiben.
+
+Die ausdrueckliche10 USD Freigabe deckt die notwendige neue Pruefung des geaenderten
+Codes. Eigene Quittung `prosaFolgenFachnachweis20260919`, maximal neun einmalige
+Aufrufe,1,908 USD Vollreserve,30 Minuten, gleicher4 USD Tagesriegel, kein Import.
+Die urspruenglichen acht Eingaben **und Erwartungen bleiben identisch**; unabhaengige
+SHA256 Bindung ihrer JSON Inhalte samt Dokumentstandard:
+`8c1308af1c6da318d3d9187ae4431ad15539f4118db750a70b15beee9b93d477`.
+Ein neunter positiver Gegenfall liefert ausdruecklich eine Ersparnis und eine
+moegliche Verzoegerung. Beide muessen erhalten bleiben; pauschale leere Listen
+koennen die Folgepruefung deshalb nicht bestehen. Neues Manifest SHA256
+`ffe89d960c46b1bf325043728da03d2780bbe890705ac141cdbf8f7f4fd497b1`.
+Neue Promptbindungen im Ausfuehrer, Schemahash unveraendert. Der alte Auftrag
+bleibt geschuetzter Bestand, nicht umgeschrieben oder neu geoeffnet.
+
+14/14 Ausfuehrerschutzgruppen, Mandatsneutralitaet5/5 und Aussagen/Fristen6/6
+lokal bestanden. Vollstaendige lokale und anschliessende Head-CI stehen aus.
+Erst danach neue Ausfuehrung. Bei erneutem kritischen Befund wieder sofortiger
+Serienstopp; keine Optimierung der Eingaben oder Abnahmekriterien.

@@ -70,10 +70,15 @@ function harness(options = {}) {
 let pass = 0;
 async function test(name, fn) { await fn(); pass++; console.log("PASS " + name); }
 (async () => {
-  await test("Alle acht unveraenderten Prompts und Schema an Originalmanifest gebunden", () => {
-    A.equal(G.paket().length, 8); A.deepEqual(G.paket().map(f => f.promptHash), G.PROMPTS);
+  await test("Neun Folgeprompts und Schema an neues Manifest gebunden", () => {
+    A.equal(G.paket().length, 9); A.deepEqual(G.paket().map(f => f.promptHash), G.PROMPTS);
+    const m = JSON.parse(F.readFileSync(require("node:path").join(__dirname, "../docs/betrieb/prosa-fachnachweis-2026-09-19.json")));
+    A.equal(G.sha(JSON.stringify({ faelle: m.faelle.slice(0, 8), dokumentStandard: m.dokumentStandard })),
+      "8c1308af1c6da318d3d9187ae4431ad15539f4118db750a70b15beee9b93d477");
+    A.equal(m.faelle[8].id, "folgen-belegt"); A.equal(m.modellaufrufeMaximum, G.MAX_CASES);
+    A.equal(m.kostenMaximumMikroUsd, G.MAX_COST); A.equal(m.maximaleDauerMinuten * 60000, G.MAX_MS);
     A.deepEqual(G.eingabe(encode(input)), input);
-    for (const a of [{ ...input, position: 0 }, { ...input, position: 9 }, { ...input, previous: {} },
+    for (const a of [{ ...input, position: 0 }, { ...input, position: 10 }, { ...input, previous: {} },
       { ...input, position: 2 }, { ...input, extra: true }, { ...input, commit: "fremd" }]) A.throws(() => G.eingabe(encode(a)));
   });
   await test("Falsche Ausfuehrung und Konfiguration verhindern Start", () => {
@@ -99,16 +104,16 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
     await A.rejects(h.run({ ...input, position: 3, previous: { responseHash: "b".repeat(64), reviewHash: "c".repeat(64) } }));
     A.equal(h.state().calls, 1);
   });
-  await test("Acht verschiedene Positionen einmalig und nur nach gebundener Vorbewertung", async () => {
+  await test("Neun verschiedene Positionen einmalig und nur nach gebundener Vorbewertung", async () => {
     const h = harness(); await h.run();
-    for (let position = 2; position <= 8; position++) {
+    for (let position = 2; position <= 9; position++) {
       const previous = { responseHash: G.sha(JSON.stringify(answer)), reviewHash: G.sha(`Bewertung ${position - 1}`) };
       A.equal((await h.run({ ...input, position, previous }, { env: { ...env({ ...input, position, previous }),
         GITHUB_RUN_ID: String(12345678900 + position) } })).ok, true);
     }
-    A.equal(h.state().calls, 8); A.equal(h.state().auth[G.KEY].faelle.length, 8);
-    A.equal(h.state().auth[G.KEY].faelle.reduce((s, f) => s + f.kosten, 0), 6800);
-    await A.rejects(h.run()); A.equal(h.state().calls, 8);
+    A.equal(h.state().calls, 9); A.equal(h.state().auth[G.KEY].faelle.length, 9);
+    A.equal(h.state().auth[G.KEY].faelle.reduce((s, f) => s + f.kosten, 0), 7650);
+    await A.rejects(h.run()); A.equal(h.state().calls, 9);
   });
   await test("Falscher Antwortbezug, Wiederholung und paralleler Claim bleiben gesperrt", async () => {
     const h = harness(); const result = await Promise.allSettled([h.run(), h.run()]);
@@ -116,19 +121,19 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
     await A.rejects(h.run({ ...input, position: 2, previous: { responseHash: "f".repeat(64), reviewHash: "a".repeat(64) } }));
     A.equal(h.state().calls, 1);
   });
-  await test("Voller echter Nutzungsring behaelt alle Altbelege ueber acht neue Positionen", async () => {
+  await test("Voller echter Nutzungsring behaelt alle Altbelege ueber neun neue Positionen", async () => {
     const h = harness(), old = Array.from({ length: 5000 }, (_, i) => ({ runId: `alt-${i}`, createdAt: "2026-09-18T12:00:00Z", promptTokens: i }));
     await h.storage.mutateAuthStore(a => { a.llmUsage = structuredClone(old); });
-    for (let position = 1; position <= 8; position++) {
+    for (let position = 1; position <= 9; position++) {
       const a = { ...input, position, previous: position === 1 ? null : {
         responseHash: G.sha(JSON.stringify(answer)), reviewHash: G.sha(`Bewertung ${position - 1}`) } };
       A.equal((await h.run(a, { env: { ...env(a), GITHUB_RUN_ID: String(12345678900 + position) } })).ok, true);
       const auth = h.state().auth, archive = auth[G.KEY].archivierteAufruftelemetrie;
-      A.deepEqual(archive, old.slice(-8)); A.equal(auth.llmUsage.length, 5000);
+      A.deepEqual(archive, old.slice(-9)); A.equal(auth.llmUsage.length, 5000);
       A.deepEqual(auth.llmUsage.slice(position), old.slice(0, 5000 - position));
-      A.deepEqual([...auth.llmUsage.slice(position), ...archive.slice(8 - position)], old);
+      A.deepEqual([...auth.llmUsage.slice(position), ...archive.slice(9 - position)], old);
     }
-    A.equal(h.state().calls, 8);
+    A.equal(h.state().calls, 9);
   });
   await test("Fehlende Archivzeile und fremde Telemetrieaenderung bestehen nicht", () => {
     const old = Array.from({ length: 5000 }, (_, i) => ({ runId: `alt-${i}` })), usage = [{ runId: "neu" }];
@@ -147,11 +152,19 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
       A.equal(h.state().calls, 1);
     }
   });
-  await test("20 Minuten Gesamtzeit, Abschlussreserve und UTC Tag verhindern spaete Fortsetzung", async () => {
+  await test("30 Minuten Gesamtzeit, Abschlussreserve und UTC Tag verhindern spaete Fortsetzung", async () => {
     const h = harness(); await h.run(); const previous = { responseHash: G.sha(JSON.stringify(answer)), reviewHash: "c".repeat(64) };
-    for (const d of ["2026-09-19T12:17:01Z", "2026-09-19T12:18:01Z", "2026-09-19T12:20:01Z", "2026-09-20T00:00:00Z"])
+    for (const d of ["2026-09-19T12:27:01Z", "2026-09-19T12:28:01Z", "2026-09-19T12:30:01Z", "2026-09-20T00:00:00Z"])
       await A.rejects(h.run({ ...input, position: 2, previous }, { now: () => new Date(d) }));
     A.equal(h.state().calls, 1);
+  });
+  await test("Abgelehnte erste Serie und deren Kosten bleiben beim Folgeauftrag erhalten", async () => {
+    const h = harness(), alt = { status: "fachlich-gestoppt", faelle: [{ position: 1, kosten: 5919, fachpruefung: { bestanden: false } }] };
+    A.notEqual(G.KEY, "prosaFachnachweis20260919");
+    await h.storage.mutateAuthStore(a => { a.prosaFachnachweis20260919 = structuredClone(alt); });
+    A.equal((await h.run()).ok, true);
+    A.deepEqual(h.state().auth.prosaFachnachweis20260919, alt);
+    A.equal(h.state().auth[G.KEY].faelle.length, 1);
   });
   await test("Fehlende Kostenhistorie und volle Tagesreserve sperren vor Claim", async () => {
     const h = harness(); h.setUsed(1); await A.rejects(h.run()); A.equal(h.state().writes, 0);
