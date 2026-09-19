@@ -1,6 +1,6 @@
 # Vorbereiteter isolierter Prosanachweis
 
-**19.09.2026: Erster echter Fall am Head0583307 fachlich gescheitert und dauerhaft geschlossen. Kosten0,005919 USD konservativ. Neue gezielte Vorgaben fuer Analysefelder und eigener Folgeauftrag in Pruefung: neun Faelle, maximal1,908 USD/30 Minuten innerhalb der freigegebenen10 USD heute; enger4 USD Tagesriegel bleibt. Kein500er Start.**
+**19.09.2026: Zwei getrennte Serien nach je einem echten Aufruf dauerhaft gestoppt. Keine Fachabnahme. Neuer Folgenprompt zurueckgenommen; Integration bewahrt den technisch geprueften Stand0583307 und alle Fehlbelege. Gesamte Versuchskosten0,011244 USD konservativ, Tagesbuch0,124985 USD. Keine weiteren Modellstarts, kein500er Start.**
 Aktuell gilt der Schlussabschnitt. Die vorherigen Auftraege und Tarifschritte
 stehen nachfolgend als unveraenderte Historie; ihre alten Freigabesperren
 sind durch die ausdrueckliche Betreiberfreigabe am19.09. ueberholt.
@@ -445,3 +445,64 @@ bleibt geschuetzter Bestand, nicht umgeschrieben oder neu geoeffnet.
 lokal bestanden. Vollstaendige lokale und anschliessende Head-CI stehen aus.
 Erst danach neue Ausfuehrung. Bei erneutem kritischen Befund wieder sofortiger
 Serienstopp; keine Optimierung der Eingaben oder Abnahmekriterien.
+
+
+## Gescheiterter Folgenauftrag und begrenzte Integrationsentscheidung
+
+Kopf `e1f2ba5ddfe10c87ea7f2407a7548663c5361007`:418/418 lokale
+Offline Suiten in611 Sekunden,14/14 Ausfuehrerschutzgruppen. Die neue CI
+35432854396 lief gleichzeitig in isolierter Testdatenbank; kein paralleler
+Production Schreiber. Die vollstaendige lokale Pruefung und vorhandene
+Schutzpruefungen trugen den autorisierten Einzelstart. Merge blieb gesperrt.
+
+Actions35433020569 fuehrte08:49:14 bis08:49:30 UTC genau einen Modellaufruf
+mit veraendertem Prompt aus. HTTP200/completed,6666 Eingabe und498 Ausgabetokens,
+darunter3328 als gecacht gemeldet. Konservative Buchung5325 Mikro USD ohne
+Cacheabschlag. Rohinhalt identisch zur geparsten Antwort. Der Ausfuehrer
+brach wegen `PROSA_SCHEMA` ab: `display_title: zu lang (66 > 64)`.
+Die leere `headline` ist nach vorhandenem Schema zulaessig und **nicht**
+die Ursache. Eine vorlaeufige anderslautende Chatdiagnose wurde korrigiert.
+
+Vollstaendige Fachpruefung: Moeglichkeit bleibt erhalten, keine konkrete
+Steuer-/Pflege-/Verkehrsleistung erfunden, Risiken/Chancen leer. Trotzdem
+fuegen `warum_wichtig` und `why_relevant` potenzielle regulatorische Bedeutung
+hinzu, fuer die die blosse Nennung eines moeglichen Entfalls keinen Beleg
+liefert. Kein bestandenes Fachpaket; die acht weiteren Faelle wurden nicht
+begonnen. Auch der positive Folgengegenfall ist nicht nachgewiesen.
+
+Beide lokalen Speicherpfade speichern die bereinigte Antwort. Den zu langen
+Anzeigetitel verwerfen sie gemaess bestehendem Vertrag; kein neuer Fehler
+der Sanitisierung belegt. Die unbelegte Bedeutung bleibt gespeichert.
+Keine Schema- oder Titelgrenze wurde fuer ein grueneres Ergebnis gelockert.
+
+| Beleg | SHA256 |
+| --- | --- |
+| Rohe Transportantwort | `e169d71546533c0df9f6fdc1ce84038b55321c5ffed440e3782dbc6f5fb86870` |
+| Exakter Request | `2b6b5c4494443f9127666b1e74146ecc54bd86556177e01d934e35970e98a44a` |
+| Ganze geparste Antwort | `f91f29d773d87fe29007ff089ab819e7f27a73e8cb612478c1c054e7f7f39f42` |
+| Vollstaendige negative Fachbewertung | `7452499e27e54fe796797d393eec0b0d561fb6cd9d4660da7323f08069d73e0a` |
+
+Eigene Quittung `prosaFolgenFachnachweis20260919` um08:52:38 UTC gegen
+Revision und Quittungshash bedingt fachlich geschlossen, danach gegengelesen.
+Alte Serie unveraendert, deren Hash
+`d529ee0b237f94d8a2583aa03d002bba2a823bef428f147c3fd2c16e12786dbf`.
+504 Profile weiter inaktiv. Unabhaengige Grundlinien fuer Profile, Identitaeten,
+geschuetzten Authinhalt und main-Blob unveraendert. Neun moeglich verdraengte
+Altbelege gesichert; keine Kostenhistorie geloescht. Tagesbuch08:53:41 UTC:
+124985 Mikro USD, keine offene Reservierung, keine aktive Verarbeitung.
+
+Der nicht abgenommene Folgenprompt wird **nicht** integriert. Anwendungscode,
+Ausfuehrer, Manifest und zugehoerige Tests werden bytegleich auf0583307
+zurueckgenommen; die abgelehnte Aenderung und ihr genauer Auftrag bleiben
+im Commit e1f2ba5 und privaten Belegpaket erhalten. Der wiederhergestellte
+alte Ausfuehrer kann seine geschlossene Serie nicht erneut beginnen.
+Keine weitere gleichlautende Promptiteration, keine Wortlistenwahrheit.
+
+Die technischen, bereits geprueften Reparaturen der Kette bleiben sinnvoll
+und werden mit der vorhandenen Mergefreigabe integriert. Das ist weder eine
+Fachabnahme der vier Prosakategorien noch500er Startbereitschaft. Der naechste
+begruendete Fachnachweis muss die Informationsgrundlage gegen eine vollstaendig
+gebundene Antwort abgrenzen; eine pauschale Sperre aller titelbasierten Quellen
+ist keine kleine risikofreie Korrektur. Produktionsauswirkung vorher messen.
+Historische Requests fehlen weiterhin teilweise; neuer Befund beweist keine
+historische Entstehungsursache.

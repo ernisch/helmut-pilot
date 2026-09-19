@@ -1,10 +1,6 @@
 "use strict";
 
-// Zweiter isolierter Neunfallauftrag nach gezielter Folgenvertragsaenderung.
-// Der erste Auftrag bleibt mit eigener Quittung fachlich-gestoppt erhalten.
-// Identische acht Eingaben und Kriterien plus positiver Folgengegenfall.
-// Kein Retry des alten Auftrags.
-// Keine Appinhalte oder Profile schreiben.
+// Isolierter, einmaliger Achtfallauftrag. Keine Appinhalte oder Profile schreiben.
 // Jeder Actionslauf verbraucht genau eine bisher unbenutzte Position. Der naechste
 // braucht die direkte Fachbewertung der vorigen Antwort, kein automatischer Loop.
 const C = require("node:crypto"), F = require("node:fs"), P = require("node:path"), Z = require("node:zlib");
@@ -13,24 +9,23 @@ const T = require("./privater-nachweis-transport"), G = require("./gipfel-modell
 const K = require("../lib/helmut/testkosten-budget");
 const U = require("../lib/helmut/understanding");
 const { KNOWLEDGE_OBJECT_SCHEMA: SCHEMA, validateKnowledgeObject } = require("../lib/helmut/understanding-schema");
-const KEY = "prosaFolgenFachnachweis20260919", PREFIX = "PROSA_EINMAL:";
+const KEY = "prosaFachnachweis20260919", PREFIX = "PROSA_EINMAL:";
 const BRANCH = "codex/prosa-fachnachweis-20260919";
-const MANIFEST = "ffe89d960c46b1bf325043728da03d2780bbe890705ac141cdbf8f7f4fd497b1";
+const MANIFEST = "3c9fabd194af11a6d33cc0f90745448a1dd8fc4f10861b279b4f6f861275f7e6";
 const SCHEMA_HASH = "bec2e28d8cc968739dd89e79d3d2119b000940be43cc350460231fbd8689202c";
 const PROMPTS = [
-  "15d438b21532f317433b491eaa5cbd80cba2ba0e28b7c1f550f52fdfe4147b75",
-  "5b8f07dcc3402dc383aef79052b8dc9a66e9a8d203f337a1ec3e25c1230553c7",
-  "bd7d6fd4a8708373f4a9482901ceb779852388f67927c5974e2352e8d240906e",
-  "54aef4f7074d639f73cff2c6823a9941f9e0dd085a498c8c13d430b2c897b7ef",
-  "7dbdbb7618a9cd23bc96c9794630a94e8265f5b640d5855c4df1e29406b95baa",
-  "f7b92c1608f34328d940a881f1935ceb0d1446a50060c613864299484a36db56",
-  "5125177cb68fe234a64806d58cd3f94a80503c3d8e8a51c3e07298bcccf322b3",
-  "3286f2358245625fed71f6ff28d3246c233a270dd456b6fff1db74d7bf4ffe39",
-  "a812080227c33c6cafddd2a647b15c6f37404fe1a30e7028d180514bda18c62e"
+  "662fb1f1af3c2a13adb1cc71fc57c039aba9c9c7c01f34fb4ab35a1cd7b3cad2",
+  "868b015c5c947f3cd57d3e1e4e546666df5212bd5f6526f1e5cd08ab22339c11",
+  "e59d1b1fb6bb1b1a56c4b86532f1f658b0faacdfa425b4da81f43a4159bb423d",
+  "140226b405ba5d8eeb8346c74e8c0f35af10965ed67feb8b1b0523de648a2778",
+  "dce970a1512cbfc6c91a05842e9742e5f34b90b4ab53a35b7b15eebb8605acf0",
+  "ba3ab3e7ad86880b48dd952fbaec42ebad69f8fab7f8cf3ffe49b65a56d48fe6",
+  "4af3b41da5cb2a2d90096798f03fe8a1bf6fa7fe16f2dbb0c4724c03bb463816",
+  "5085d8c5ffb9a016f54ea4f805f523a2f77dd128fba27660af687dec6ecaf600"
 ];
 // Der ganze Actionsjob ist auf drei Minuten begrenzt. Eine neue Position
 // braucht mindestens dieses komplette Restfenster, einschliesslich Abschluss.
-const MAX_CASES = 9, MAX_MS = 30 * 60000, RESERVE_MS = 180000, MAX_COST = MAX_CASES * 212000;
+const MAX_MS = 20 * 60000, RESERVE_MS = 180000, MAX_COST = 1696000;
 const USAGE_MAX = require("../lib/helmut/storage").LLM_USAGE_RING_MAX;
 const sha = x => C.createHash("sha256").update(x).digest("hex");
 function fordere(ok, code) { if (!ok) { const e = new Error(code); e.code = code; throw e; } }
@@ -38,7 +33,7 @@ function paket() {
   const raw = F.readFileSync(P.join(__dirname, "../docs/betrieb/prosa-fachnachweis-2026-09-19.json"));
   fordere(sha(raw) === MANIFEST && sha(JSON.stringify(SCHEMA)) === SCHEMA_HASH, "PROSA_PAKET");
   const m = JSON.parse(raw);
-  fordere(m.faelle.length === MAX_CASES, "PROSA_PAKET");
+  fordere(m.faelle.length === 8, "PROSA_PAKET");
   return m.faelle.map((f, i) => {
     const d = m.dokumentStandard;
     const cluster = { documents: [{ id: `rd-prosa-${f.id}`, title: f.title, summary: f.summary,
@@ -55,7 +50,7 @@ function eingabe(text) {
   fordere(bytes.toString("base64") === encoded, "PROSA_EINGABE");
   const a = JSON.parse(Z.gunzipSync(bytes, { maxOutputLength: 6000 }));
   fordere(a && Object.keys(a).sort().join(",") === "commit,position,previous,publicKey"
-    && /^[a-f0-9]{40}$/.test(a.commit) && Number.isInteger(a.position) && a.position >= 1 && a.position <= MAX_CASES,
+    && /^[a-f0-9]{40}$/.test(a.commit) && Number.isInteger(a.position) && a.position >= 1 && a.position <= 8,
   "PROSA_BINDUNG");
   fordere(a.position === 1 ? a.previous === null : a.previous
     && Object.keys(a.previous).sort().join(",") === "responseHash,reviewHash"
@@ -120,8 +115,8 @@ async function beanspruche(storage, a, runId, now, counter) {
         empfaenger: T.publicKey(a.publicKey).fingerprint, begonnenAm: now.toISOString(),
         ende: new Date(now.getTime() + MAX_MS).toISOString(), tag: day, faelle: [],
         // Der bestehende Ring bleibt begrenzt. Vor dem ersten Modellstart
-        // genau die hoechstens neun verdraengbaren Altbelege dauerhaft sichern.
-        archivierteAufruftelemetrie: structuredClone(auth.llmUsage.slice(Math.max(0, USAGE_MAX - MAX_CASES))),
+        // genau die hoechstens acht verdraengbaren Altbelege dauerhaft sichern.
+        archivierteAufruftelemetrie: structuredClone(auth.llmUsage.slice(Math.max(0, USAGE_MAX - 8))),
         aufruftelemetrieGrundlageHash: sha(JSON.stringify(auth.llmUsage)) };
     } else {
       fordere(r?.version === 1 && r.manifestHash === MANIFEST && r.schemaHash === SCHEMA_HASH
@@ -134,7 +129,7 @@ async function beanspruche(storage, a, runId, now, counter) {
       fordere(r.faelle.every(f => f.fachpruefung?.bestanden && f.kosten <= 212000), "PROSA_VORPRUEFUNG");
     }
     zeit(r, now, RESERVE_MS);
-    fordere(r.faelle.length < MAX_CASES && r.faelle.reduce((s, f) => s + f.kosten, 0) + 212000 <= MAX_COST,
+    fordere(r.faelle.length < 8 && r.faelle.reduce((s, f) => s + f.kosten, 0) + 212000 <= MAX_COST,
       "PROSA_AUFTRAGSLIMIT");
     r.faelle.push({ position: a.position, id: paket()[a.position - 1].id, runId,
       status: "begonnen", promptHash: PROMPTS[a.position - 1], begonnenAm: now.toISOString() });
@@ -145,7 +140,7 @@ async function beanspruche(storage, a, runId, now, counter) {
 }
 function telemetrieErhalten(before, after, usage, claim) {
   if (usage.length !== 1 || !Array.isArray(claim.archivierteAufruftelemetrie)
-    || claim.archivierteAufruftelemetrie.length > MAX_CASES) return false;
+    || claim.archivierteAufruftelemetrie.length > 8) return false;
   return equal(after.llmUsage, [...usage, ...before.llmUsage].slice(0, USAGE_MAX))
     && before.llmUsage.slice(USAGE_MAX - 1).every(old =>
       claim.archivierteAufruftelemetrie.some(archiv => equal(old, archiv)));
@@ -252,4 +247,4 @@ if (require.main === module) ausfuehren().then(r => {
     automatischeWiederholung: false })); process.exitCode = 1;
 });
 module.exports = { paket, eingabe, konfiguration, grundlinie, zeit, beanspruche, telemetrieErhalten, mitTransportbeleg, ausfuehren,
-  KEY, PREFIX, BRANCH, MANIFEST, SCHEMA_HASH, PROMPTS, MAX_CASES, MAX_MS, RESERVE_MS, MAX_COST, sha };
+  KEY, PREFIX, BRANCH, MANIFEST, SCHEMA_HASH, PROMPTS, MAX_MS, RESERVE_MS, MAX_COST, sha };

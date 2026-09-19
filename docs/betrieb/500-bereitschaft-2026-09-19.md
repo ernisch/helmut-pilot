@@ -1,12 +1,13 @@
 # Bereitschaft nach der Reparaturkette
 
 Stand 19.09.2026 Tuerkei. **Status: blockiert. Noch nicht bereit.**
-Nachtrag19.09.: Reparaturen, notwendige Betriebsbuchungen und gepruefte Merges
-samt Deployment freigegeben; heute insgesamt hoechstens10 USD. Bestehender
-4 USD Motorriegel bleibt vorerst enger. Tarif belegt, erster Fachstart vor
-Modell und Quittung am vollen Telemetriering gesperrt. Ausfuehrerkorrektur
-wird geprueft. Der500er Test wird noch nicht gestartet.
-Aktueller [Ausfuehrungsstand](prosa-fachnachweis-2026-09-19.md#freigegebene-fortsetzung-und-nachgewiesener-speicherblocker).
+Nachtrag19.09.08:54 UTC: Reparaturen, Betriebsbuchungen und gepruefte Merges
+samt Deployment sind freigegeben; heute insgesamt hoechstens10 USD. Engerer
+4 USD Motorriegel unveraendert. Tarif und Telemetriering repariert. Beide
+isolierten Prosaserien nach je einem echten Aufruf fachlich gestoppt, neuer
+Folgenprompt zurueckgenommen. Kosten zusammen0,011244 USD konservativ.
+Die bereits gepruefte Kette wird integriert;500er Bereitschaft bleibt offen.
+Aktueller [Ausfuehrungsstand](prosa-fachnachweis-2026-09-19.md#gescheiterter-folgenauftrag-und-begrenzte-integrationsentscheidung).
 Nachfolgende Betriebs und Kettenaufnahmen bleiben historische Vorflugbelege.
 Die aktuelle Rollenreparatur steht im [Reparaturbeleg](akteursrollen-erhalten-2026-09-19.md).
 
@@ -189,3 +190,43 @@ Jede Zeile ist Nachfolger der vorherigen; PR419 basiert auf dem oben genannten M
 | 441 | `5b8879b7cb7f8ac6aec46aac01acc35c6ea49afa` |
 | 442 | `c78203bf1337a6ed08191990b886872aa28b5fdd` |
 | 443 | `00e1d7642ecbd11eee10e1a044e909be65feb03e` |
+
+
+## Konkrete Vorbereitung nach den beiden Fachstopps
+
+Zielmenge unveraendert vorbereitet:495 vorhandene synthetische Profile plus
+die fuenf historischen Bestandsprofile, genau500 eindeutige Kennungen.
+Sortierte private JSON Liste SHA256
+`dda70a02c9918d73a7ae45b7ab4febd6bae5a1df0a4d3fc65b9a260c62bcdfc6`.
+Vier weitere Profile bleiben ausgeschlossen. Dies ist kein Aktivierungsbeleg.
+Konten/Identitaeten bleiben bei einem spaeteren Test unveraendert.
+
+Frischer Quellenbestand08:52 UTC:29782 raw_documents, davon28903 ohne Auszug,
+kein gefuellter Auszug exakt gleich dem Titel. Letzte Neuanlage und letzter
+Abruf16.09.16:04 UTC, juengste Publikation16.09.15:55 UTC. Die letzten beiden
+regulaeren Crawls18.09.20:00 und19.09.04:00 UTC sind technisch erfolgreich mit
+processed_count0. Alle Profile inaktiv; daraus keine weitere Crawlursache
+behaupten. Ein Datenstand unter24 Stunden ist damit aktuell nicht belegt.
+Aeltere relevante Artikel bleiben erlaubt; Datenfrische und Artikelalter
+sind verschiedene Nachweise. Kein Ersatzcrawl oder Artikelkontext gestartet.
+
+Ein pauschaler Eingabefilter fuer fehlende Auszuege betraefe97 Prozent des
+vorhandenen Dokumentbestands. Das ist keine Aussage ueber den Anteil spaeterer
+500er Ausgaben, aber eine konkrete Reichweitengrenze vor einem solchen Umbau.
+Mehr Quellentext garantiert ebenfalls keine korrekte Prosabeziehung. Die
+vier fachlichen Klassen bleiben offen; kein loesender Wortfilter erfunden.
+
+Historische erfolgreiche Lageaufrufe15./16.09. kosteten konservativ im Mittel
+0,005541 beziehungsweise0,004993 USD, Maxima0,009677/0,008310 USD.500 mal der
+beobachtete Mittelwert waeren rund2,50 bis2,77 USD **nur fuer Lage**, ohne
+andere Verarbeitung oder Hintergrundkosten. Keine Kosten- oder Kapazitaets-
+garantie; enger4 USD Tagesriegel unveraendert. Vor Start Restkosten,
+seriellen Fortsetzungsplan und Endzeit konkret festlegen.
+
+Notwendiger Abschlussweg: genau die aktivierte Zielmenge bedingt auf inaktiv
+setzen und alle504 Profile erneut als inaktiv lesen, ohne Konten, Identitaeten,
+Profilinhalte oder Ergebnisse zu loeschen. Der alte495er Abschluss und der
+abgelaufene Timer erfuellen dies nicht. Solange Fachblocker, frischer Datenstand,
+bestaetigte Fortsetzungsplanung und dieser Endweg fehlen, keine Aktivierung.
+Die allgemeine Betreiberfreigabe wird nicht als fehlend behauptet; die Luecken
+sind technische beziehungsweise fachliche Nachweise.

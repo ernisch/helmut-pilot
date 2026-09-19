@@ -1,8 +1,8 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026: notwendige Reparaturen und gepruefte Merges samt Deployment freigegeben; heute maximal 10 USD. Engerer 4 USD Motorriegel unveraendert. PR419 bis445 offen;445 gegen main. Head0583307 CI35431115046:418/418,24/24 Schritte erfolgreich. Microsoft Listentarif0,25/2,00USD je Million Tokens belegt. Erster echter Fachfall fachlich gescheitert. Noch nicht500er bereit.**
+**19.09.2026: notwendige Reparaturen und gepruefte Merges samt Deployment freigegeben; heute maximal10 USD. Engerer4 USD Motorriegel unveraendert. Tarif0,25/2,00 USD je Million Tokens belegt. PR419 bis445 offen,445 gegen main. Beide echten Prosaserien nach Fall1 gestoppt. Nicht500er bereit.**
 
-Main/Production weiter2d1eb705. Ringblocker repariert. Actions35431831013 lieferte einen belegten Modellaufruf,0,005919 USD konservativ. Aus blossem moeglichem Entfall entstanden unbelegte Chancen zu Verwaltungskosten; beide Offline-Fachpfade uebernehmen sie. Serie nach Fall1 dauerhaft fachlich gestoppt, sieben Faelle nicht gestartet. SQL08:24 UTC:504/0, keine Konkurrenz, Tagesbuch0,119660 USD; geschuetzte Grundlinien identisch. Gezielt praezisierte Analysefelder und eigener Folgeauftrag in Pruefung: acht unveraenderte Faelle plus positiver Folgenbeleg, maximal neun Aufrufe/1,908 USD/30 Minuten. Keine semantische Garantie durch Prompt oder Validator. [Fachnachweis](betrieb/prosa-fachnachweis-2026-09-19.md).
+Main/Production weiter2d1eb705. Bewaehrter Integrationscode entspricht0583307: CI35431115046 mit418/418 und24/24 Schritten. Der neue Folgenprompt e1f2ba5 bestand lokal418/418, erbrachte aber keine Fachabnahme und wurde zurueckgenommen. Actions35431831013/35433020569 kosteten zusammen0,011244 USD konservativ. Beide Rohantworten erhalten; keine Wiederholung. SQL08:53 UTC:504/0, keine Konkurrenz oder offene Reserve, Tagesbuch0,124985 USD. Profile, Identitaeten, geschuetzter Authinhalt und main unveraendert. Allgemeine Prosabindung offen; keine erfundene historische Ursache. [Fachnachweis](betrieb/prosa-fachnachweis-2026-09-19.md).
 
 **Fremde Vorarbeit erhalten:** `codex/motor-reparatur-20260916` mit40 veraenderten und15 neuen Dateien bleibt unangetastet und unabgenommen. Die Reparaturkette uebernimmt daraus keine Cron, Versorgungs oder Auswerterarbeiten. [Erster Sprint](betrieb/quellen-zeitvertrag-2026-09-17.md).
 
@@ -150,14 +150,14 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-19.09.: Gezielten Folgenvertrag vollstaendig pruefen, dann separat gebundenen Folgeauftrag ausfuehren. Alte Fachablehnung und Kosten erhalten. Danach kumulative Reparaturkette integrieren und28 Drafts anhand der enthaltenen Arbeit abschliessen. Quellenalter und Zeitwahrheit spaeter fuer alle500 pruefen;24 Stunden Datenfrische ist keine Artikelaltersgrenze.
+19.09.: Gepruefte Reparaturkette integrieren, Production lesen und28 Drafts anhand der enthaltenen Arbeit abschliessen. Fehlgeschlagenen Folgenprompt nicht deployen. Prosagrenze und500er Betriebsplanung bleiben offen. Naechster Fachschritt ist ein abgegrenzter Beleg zur Informationsgrundlage, kein weiterer gleichlautender Prompt oder Wortfilter. Quellenalter und Zeitwahrheit fuer alle500 pruefen;24 Stunden Datenfrische ist keine Artikelaltersgrenze.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
 **Neue ausdrueckliche Betreiberfreigabe19.09.: notwendige Reparaturen und gepruefte Merges samt Deployment selbststaendig ausfuehren; heute insgesamt hoechstens10 USD. Die alte Sperre fuer notwendige Betriebsbuchungen ist aufgehoben. Auftrag endet bei Bereitschaft zum500er Test; dieser wird noch nicht gestartet.**
 
 1. Ein schreibender Ausfuehrer; fremde Vorarbeit erhalten. Konten, Identitaeten, Kostenhistorie und Kommunikationssperre schuetzen.
-2. Erste Serie nach einem kritischen Fachfehler geschlossen. Neuer Folgenauftrag: maximal neun einmalige Faelle,1,908 USD,30 Minuten. Erster kritischer Fehler stoppt auch diese Serie; keine unbekannten Aufrufe wiederholen.
+2. Beide Prosaserien dauerhaft nach je einem Aufruf geschlossen. Keine Fortsetzung oder Wiederholung. Vollstaendige Rohantworten, negative Fachurteile, Kosten und verdraengte Telemetrie erhalten. Weitere Versuche brauchen einen neuen sachlich begruendeten Auftrag innerhalb der vorhandenen Tagesfreigabe.
 3. mini bleibt Referenz; bestehender atomarer4 USD Tagesriegel bleibt vorerst unveraendert. Eine Erhoehung ist nur bei belegtem Bedarf innerhalb der10 USD Tagesfreigabe zulaessig. Keine Kosten oder offenen Reserven loeschen.
 4. Alle504 Profile bleiben bis zum spaeteren500er Start inaktiv. Artikelkontext bleibt AUS. Keine neue Funktion und kein unnoetiger Umbau.
 5. Mandantentrennung mit `assertTenant` und explizitem Mandatsfilter; bedingte gemeinsame Schreibvorgaenge und persistente Gegenpruefung. Nicht pruefbar bedeutet niemals bestanden.
