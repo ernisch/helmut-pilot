@@ -1,0 +1,66 @@
+name: "Null auf 500: gebundenes automatisches Ende"
+on:
+  workflow_dispatch:
+    inputs:
+      schritt:
+        description: "Eingaben pruefen oder Endlauf vor separat freigegebener Aktivierung bewaffnen"
+        type: choice
+        options: [eingabepruefung, bewaffnen]
+        default: eingabepruefung
+        required: true
+      production_commit:
+        description: "Bestaetigter Main Commit des Testmanifests"
+        type: string
+        required: true
+      testfenster_id:
+        description: "Neue UUID des Testmanifests"
+        type: string
+        required: true
+      manifest_hash:
+        description: "SHA256 des vollstaendigen privaten Manifests"
+        type: string
+        required: true
+      ende_am:
+        description: "Exaktes ISO UTC Ende aus Manifest, maximal vier Stunden ab Bewaffnung"
+        type: string
+        required: true
+      bestaetigung:
+        description: "GEBUNDENE_500_NUR_DEAKTIVIEREN; nur nach neuer Startfreigabe und installierter RPC"
+        type: string
+        required: false
+permissions:
+  contents: read
+concurrency:
+  group: helmut-null500-ende
+  cancel-in-progress: false
+jobs:
+  ende:
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' &&
+      github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 270
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Ausschliesslich gebundene Endsteuerung
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
+          HELMUT_TESTFENSTER_ID: ${{ inputs.testfenster_id }}
+          HELMUT_MANIFEST_HASH: ${{ inputs.manifest_hash }}
+          HELMUT_TESTFENSTER_ENDE: ${{ inputs.ende_am }}
+          HELMUT_TESTENDE_EXECUTE: "1"
+          HELMUT_TESTENDE_CONFIRM: ${{ inputs.bestaetigung }}
+          HELMUT_TESTENDE_SCHRITT: ${{ inputs.schritt }}
+        run: |
+          if [ "$HELMUT_TESTENDE_SCHRITT" = "bewaffnen" ]; then
+            node scripts/github-null500-ende.js --scharf
+          else
+            node scripts/github-null500-ende.js
+          fi
