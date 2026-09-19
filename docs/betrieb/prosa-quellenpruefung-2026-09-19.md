@@ -175,3 +175,56 @@ eines behaupteten Beschlusses geht verloren. Das ist ein deterministischer
 Speicherfehler, kein weiterer Modellversuch. Allgemeine freie Bedeutung bleibt
 auch nach dessen Reparatur offen. Parallel fachlich getrennt: sicheren
 0→500→0 Weg, expliziten Vollstaendigkeitsleser und Versorgung vorbereiten.
+
+## Neubewertung nach dem gescheiterten Quellenrichter
+
+19.09.2026, **teilweise abgeschlossen**. Kein weiterer Modellaufruf,
+kein neuer Promptversuch, kein Einsatz des verworfenen Richters. Die
+folgenden Grenzen wurden an den aktuellen Erzeugungs-, Speicher- und
+Lesepfaden geprueft. Sie sind keine behauptete universelle Faktenpruefung.
+
+Die Ursache ist eine fehlende unabhaengige Faktenbasis zwischen Rohquelle
+und fachlicher Interpretation. `assembleKnowledgeObject` uebernimmt
+freie Texte UND mehrere strukturierte Urteile aus derselben Modellantwort.
+`validateUnderstandingResult` prueft Schema, bestimmte Namensnennungen
+und Ebenenkonflikte. Ein akzeptiertes `risk_level`, `event_type`,
+`action_items_struct` oder eine Modellkonfidenz ist deshalb kein
+zusaetzlicher Quellenbeweis. Auch ein gespeicherter Matchingtreffer belegt
+zunaechst eine Zuordnung, nicht eine neue Rechtsfolge oder individuelle
+Handlungspflicht.
+
+| Frage des Reparaturauftrags | Befund und sichere Grenze |
+| --- | --- |
+| 1 Prosa aus belegten Strukturen | Ja fuer unveraenderten Profilinhalt, Quellenidentitaet, Publikationsdatum mit Herkunft, vorhandene Feldwerte und gemessenen Ergebniszustand. Modellgenerierte Risiko-, Chancen-, Aktions- und Klassifikationswerte duerfen sich nicht selbst beglaubigen. |
+| 2 Jede Behauptung an Beleg binden | Der bestehende Aussagenvertrag erfasst sichtbare Felder, Originalquelle, Profil und Ausgabehash. Exakte Referenzen sind notwendig. Ein zutreffender Teilstring beweist die daneben frei formulierte Behauptung nicht. |
+| 3 Generator auf konkrete Aussagen beschraenken | Ein echter neuer Ansatz waere ein Belegplan mit serverseitiger Formulierung und ohne freie behauptende Literale. Ein blosser neuer Prompt oder ein selbstgemeldetes Belegfeld reicht nicht. Vor Integration muessen erlaubte Bedeutungsoperationen und positive Nutzbarkeit feststehen. |
+| 4 Deterministische Nachpruefung | Identitaet, Feldexistenz, woertliche Nennung, Zeit-/Profilbindung, Vollstaendigkeit, Hashes und erlaubte Operationen sind pruefbar. Bedeutung, Kausalitaet, Rollenvertauschung und die Angemessenheit einer Empfehlung sind nicht allgemein durch Worttreffer bewiesen. Vorhandene Schranken bleiben erhalten. |
+| 5 Zusammensetzung aus Bausteinen | Wortgetreue, als solche erkennbare Quellenangaben plus echte Profilangaben sind moeglich. Das Etikett Risiko oder Handlung kann aber selbst Bedeutung hinzufuegen. Alle Analysefelder mit denselben Zitaten zu fuellen oder pauschal zu leeren ist kein bestandener Motorfix. |
+| 6 Welche Felder brauchen Interpretation | Quelle, Datum, Profilrollen und Betriebszustand brauchen sie nicht. Warum wichtig, Folgen, Risiko, Chance, individuelle Relevanz, Fristbedeutung und Handlung brauchen entweder passend typisierte Sachbelege oder ein gesondertes fachliches Urteil. Strukturierte Speicherung allein beseitigt diese Trennung nicht. |
+| 7 Fehlenden Beleg sichtbar machen | Leere optionale Felder, unknown und partial sind vorhandene ehrliche Zustaende. Pflichtfelder koennen eine konkrete Eingabegrenze beschreiben. Unbelegte Sicherheit wird damit nicht als bestanden gezaehlt; eine pauschale Neutralisierung besteht den positiven Gegenfall nicht. |
+| 8 Allgemeine Regeln statt Sonderfaelle | Eingabevertrag und Belegherkunft gelten fuer jede Quelle, jedes Profil und beide Fachpfade. Keine einzelne Zeitung, Person, Partei, Jahreszahl oder historische Testphrase wird zur Entscheidungsregel. |
+| 9 Besonders riskante Behauptungen | Folgen und fiskalische/politische Bedeutung brauchen eine tatsaechliche Wirkungsangabe, Rollen einen Rollenbeleg, Fristen ein Ereignis samt Zeitbezug, Vollzug einen Vollzugsbeleg. Mandatsrelevanz braucht Quelle UND tatsaechliches Profil. Risiken, Chancen und Empfehlungen brauchen ihre konkreten Voraussetzungen; Nennung, Ressortname oder Profilthema allein reichen nicht. |
+| 10 Positive Aussagen erhalten | Ausdruecklich genannte Finanzwirkung, korrekt zugeschriebene Rolle, belegte Frist mit Modalitaet, berichteter Vollzug und wirklich gelieferte Profilmitgliedschaft bleiben zulaessig. Vorschlag bleibt Vorschlag, Stellvertretung bleibt Stellvertretung, unbekannt bleibt unbekannt. |
+
+Betroffene Felder: Kernprosa, `display_summary`, `why_relevant`,
+`recommendation`, Kategorie, Risiko-/Chancenlisten, Stabsfelder sowie
+`communicationLine`, Aktionsbeschreibung und `dueHint`. Im Schwesterpfad
+sind es alle Lageabsaetze einschliesslich ihres behaupteten Mandatsbezugs.
+Die vorhandene Lagepruefung ist ebenfalls ein Modellurteil mit technischen
+Bindungen. Ihr gruenes Ergebnis ist keine unabhaengige allgemeine
+Semantikgarantie; sie wird weder entfernt noch als solche umgedeutet.
+
+Die engste tragfaehige weitere Entwicklungsrichtung ist ein ausdruecklicher
+Vertrag zwischen wirklich belegten Eingabefakten und den erlaubten
+Formulierungsoperationen. Dabei darf eine Modellantwort keine neue
+Faktenquelle werden. Ein solcher allgemeiner Motorfix ist in diesem
+Reparaturstand noch nicht nachgewiesen oder integriert. Reines Zitieren
+mit beliebigen Bedeutungslabels waere nur eine andere Form desselben Fehlers.
+Keine der obigen Moeglichkeiten wurde allein wegen ihrer Bezeichnung
+als bereits richtige Loesung ausgegeben.
+
+Vor jedem neuen Methodenversuch bleiben die vorab festgelegten Negativ-,
+Positiv- und Unsicherheitsfaelle, mehrere freie Felder sowie ein zweiter
+Fachpfad erforderlich. Ein spaeterer bezahlter Block braucht seinen eigenen
+Fall-/Aufruf-/Modell-/Kostenvertrag und frische Reservepruefung. Die
+geschlossenen bisherigen Versuche bleiben geschlossen.

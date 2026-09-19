@@ -604,3 +604,97 @@ der Endfrist nicht als Versorgung im Testfenster. Keine transaktionale
 Snapshotzusage fuer HTTP Gegenlesungen und keine Fachfreigabe durch die UUID.
 Rueckweg: gezielter Code Revert vor einem Test; nach Aktivierung zuerst den
 vorbereiteten gebundenen Endweg benutzen. Quittungen und Ergebnisse erhalten.
+
+## Production Abschluss PR460
+
+Der begrenzte Nachlaufbindungssprint ist **erfolgreich abgeschlossen**.
+Head ea5892706e1ef72b2155e92cef52f01bbb6c3f59,
+CI35466029808:427/427 in666s, Browser50/0, Kontoschutz15/0 samt500
+isolierten Registrierungen, PostgreSQL/PostgREST26/0, Z22 PASS48/FAIL0.
+Beide Pflichtjobs und alle25 Schritte erfolgreich, keine Pflichtstufe
+uebersprungen. Reviews und Kommentare vor Merge leer.
+
+Merge ce090c2a4ef0c6fbae74d8cc5ed376382d0cb1bd mit identischem geprueftem
+Baum a4ac8ecfe1a6c7b231a393012c67a400a780b970. Production
+dpl_84NBPWed2eUxGYdYVEqrKnUCqtoR READY, richtiger Commit und Hauptalias.
+Reiner Leser35466909269 am19.09.20:17:12 UTC HTTP200, null Modell- und
+Schreibaufrufe. Neue Codefaehigkeit textnachlaufTestfensterVersion1 belegt.
+V3, exklusive relationale Profile, Retention36, Kommunikations- und
+Kohortenquellensperre, Tagesdeckel2416/Reserve702/Vorrang200, atomare Sperre
+und Kostenregel2 mit4 USD unveraendert. Optionale Inhaltsjobs nicht angefordert.
+
+Native Vorher-/Nachherkontrolle20:15:18/20:17:33 UTC:504/0, vollstaendige
+Profil-, Identitaets-, Auth-/Sessions- und Mainhashes identisch. Keine
+Sperren, Leases, offenen Jobs, jungen offenen Prozesse, Testfensterquittungen
+oder offenen Kostenreserven.0,386081 USD gebucht. Endfunktion installiert,
+kein Timer bewaffnet, keine Profile aktiviert, kein500er Test gestartet.
+Die allgemeine Quellenbindung freier Bedeutung ist dadurch nicht repariert.
+
+## Kosten und Versorgungsplan: verbleibende Beleggrenzen
+
+Rein lesende Aufnahme19.09.20:02 UTC:0,386081 USD im Tagesbuch, keine
+offene Reserve, unveraenderter technischer4 USD Tagesriegel. Die allgemeine
+10 USD Betreiberfreigabe erhoeht diesen Riegel nicht. Alle504 Profile inaktiv,
+keine Testfensterquittung und keine offene Verarbeitung.
+
+Fuer500 erstmals im neuen Fenster erzeugte Lagen sieht der aktuelle Pfad
+bis zu1000 erfolgreiche Modelltransporte vor: je ein Entwurf und eine
+getrennte Pruefung. Ein gespeicherter, exakt gebundener Entwurf kann einen
+unterbrochenen zweiten Schritt fortsetzen; ein unbekannter Ausgang darf
+nicht erneut erzeugt werden. Ein alter fertiger Text ausserhalb des neuen
+Fensters ist kein neuer Versorgungsnachweis.
+
+Vier explizit phasengebundene Kostenbelege vom15.09.: zwei Entwuerfe zusammen
+0,008813 USD, zwei Pruefungen zusammen0,015882 USD. Rein rechnerisch ergibt
+das0,0123475 USD je Paar beziehungsweise6,173750 USD fuer500 Paare.
+Diese winzige historische Stichprobe ist weder ein Mindestpreis noch eine
+belastbare Obergrenze oder Zusage fuer neue Quellen. Ohne Phasenbindung
+duerfen die uebrigen Kostenzeilen nicht als gemessene Entwurf/Reviewpaare
+ausgegeben werden. Die jeweils bis0,212 USD Vollreserve ist ebenfalls
+kein gemessener Preis; sie wird nach bekannter Abrechnung wieder freigegeben.
+
+Daraus folgt: ein belegter Plan fuer500 vollstaendige Ergebnisse innerhalb
+des4 USD Riegels liegt weiterhin nicht vor. Keine Absenkung von Review,
+Quellenschutz, Outputqualitaet oder Reserve, um die Rechnung passend zu machen.
+Eine Budgetaenderung waere eine gesonderte konkrete Betreiberentscheidung;
+sie wurde weder beantragt noch vorgenommen und wuerde den Prosablocker
+fuer sich allein nicht beheben.
+
+Zeitgrenze des vorbereiteten automatischen Endwegs: hoechstens4 Stunden.
+Der direkte manuelle Textnachlauf arbeitet seriell mit240 Sekunden
+Handlerbudget und90 Sekunden Reserve vor einem neuen Modellschritt.
+Die Narrativslots06:10/06:22 sind bei ausgeschalteter Narrativqueue inert
+und duerfen nicht als zusaetzliche Versorgung eingerechnet werden.
+Actionsstart, Lesepruefungen, Quellenablehnungen, Fachurteile, Speicherung,
+Morgenpakete und Gegenlesung brauchen ebenfalls Zeit. Ein konkretes
+Startdatum und eine ausreichende Anzahl sicherer Fortsetzungen sind daher
+noch nicht festgelegt; kein erfundenes fertiges Vierstundenversprechen.
+
+Vor dem Start ist ein Berliner Tagesstand ohne passende Altpakete zu
+waehlen. Datenstand hoechstens24 Stunden, Artikel im geltenden14 Tage
+Relevanzfenster mit echtem Publikationsdatum und korrekter Ereigniszeit.
+Aeltere sachlich relevante Quellen duerfen enthalten sein, aber nicht als
+neue heutige Entwicklung ausgegeben werden. Neue Erzeugungszeit allein
+macht alte Quellen nicht frisch.
+
+Die private feste500er Auswahl samt vier Ausnahmen ist erhalten
+(Zielhash dda70a02c9918d73a7ae45b7ab4febd6bae5a1df0a4d3fc65b9a260c62bcdfc6).
+Erwartet sind fuer jedes Profil Mandatsbriefing, Morgenbriefing samt
+inhaltlich gebundener Quittung und Lage:1500 getrennte Ergebnisnachweise.
+Der integrierte Leser prueft alle500, Tages-/Zeitfenster, Profil- und
+Inhaltshashes, Eindeutigkeit, Nichtleere und Struktur. Fehlend, unlesbar,
+abgelehnt, deferred, ausserhalb der Frist oder widerspruechlich bleibt
+Nichtabschluss im Nenner500. Das ersetzt keine vollstaendige semantische
+Textabnahme. Eine begrenzte fachliche Sichtung muss ihren tatsaechlichen
+Umfang nennen; sie wird niemals zur Vollpruefung aller500 umbenannt.
+
+Stoppbedingungen bleiben: unerlaubte Kommunikation, andere aktive Auswahl,
+fremde Profil-/Konten-/Sessionsaenderung, konkurrierender Schreiber,
+unbekannter Schreib- oder Modellausgang, Kosten-/Reserve-/Zeitstopp,
+kritischer Fachfehler und nicht bestaetigte Speicherung. Danach keine
+weitere Facharbeit; genau die gebundenen500 auf0 zurueckfuehren. Bei
+unklarem Endausgang zuerst lesen, nicht blind wiederholen. SQL Rueckweg
+und installierter Endauftrag erhalten Ergebnisse und die vier Ausnahmen.
+Nachkontrolle: alle504 inaktiv, Konten/Sessions unveraendert, Kommunikation,
+Sperren, Leases, laufende Anfragen, Kosten und alle1500 Ergebnispositionen
+lesen. Inflight Arbeit und spaete Writes gesondert ausweisen.
