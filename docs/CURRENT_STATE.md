@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026: Textgrenzen PR453/454 integriert und Production geprueft.** Main `2c2c0032034240ab788e34cd680acb2d4e8573dc`, READY `dpl_2RQq3SS6EDZgp35dYmFHwcr3oKQg`, Leser35452874695 HTTP200. CI35451955085:423/423, alle24 Pflichtschritte. SQL15:47:25 UTC:504/0, geschuetzte Hashes unveraendert, keine Sperre/Lease/Reserve,0,262850 USD. Neuer0→500→0 Planer lokal7/7, echte Datenbankpruefung offen. Quellenlauf40/22 verbraucht,91/114 Altobjekte ohne wirksamen Auszug. PR452 fachlich gescheitert und ungemergt geschlossen. Allgemeine Prosa und Vollversorgung offen. [Textgrenzen](betrieb/prosa-textgrenzen-2026-09-19.md), [Testweg](betrieb/testfenster-null500-2026-09-19.md), [Quellen](betrieb/quellenkontext-ruhe-2026-09-19.md).
+**19.09.2026: PR455 integriert und Production geprueft.** Main `1feb22160259df887665d11a55b9ea9f5deb83c8`, READY `dpl_CHvrsksfy1pNo2gUNgtMEUsQMM53`, Leser35454254225 HTTP200. CI35453302966:424/424, echter PostgreSQL Testweg16/16, alle25 Pflichtschritte. SQL16:13:34 UTC:504/0, Schutzgrundlinien unveraendert, keine Sperre/Lease/Reserve,0,262850 USD. Planer nur vorbereitet, kein Production SQL ausgefuehrt. Quellenlauf40/22 verbraucht,91/114 Altobjekte ohne Auszug. PR452 fachlich gescheitert, geschlossen. Prosa, Vollversorgung und automatisches Ende offen. [Textgrenzen](betrieb/prosa-textgrenzen-2026-09-19.md), [Testweg](betrieb/testfenster-null500-2026-09-19.md), [Quellen](betrieb/quellenkontext-ruhe-2026-09-19.md).
 
 **Integration PR419 bis448 abgeschlossen, alle28 alten Drafts erledigt.** PR447 CI35435242485:419/419, Browser50, Kontoschutz15, Z22 48;24 Pflichtschritte. Laufzeitleser35436180373 belegt Speicher, Kommunikationssperre und4 USD Riegel. Drei Prosaserien nach je einem Aufruf fachlich gestoppt, zusammen0,019647 USD; Folgenprompt verworfen, Anwendung nicht auf `low` umgestellt. [Fachstopps](betrieb/prosa-denktiefe-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp). Heutige Freigabe10 USD, enger4 USD Riegel und Artikelkontext AUS bleiben. Kein neuer500er Test; Quellenfrische und vollstaendige Fachabnahme offen. [Integrationsbelege und Restpunkte](betrieb/500-bereitschaft-2026-09-19.md#abschluss-nach-dem-denkvergleich).
 
@@ -148,7 +148,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-19.09.: PR453/454 integriert.0→500→0 Planer lokal7/7; Gesamtlauf und echter PostgreSQL Nachweis offen. Danach expliziten Vollstaendigkeitsleser, Endtermin und Versorgung vorbereiten. Keine Wiederholung der drei Prosaserien, des Quellenpruefers oder des einmaligen Quellenlaufs. Allgemeine Prosa offen; kein500er Start. [Fachstopp](betrieb/prosa-quellenpruefung-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp).
+19.09.: PR453–455 integriert. Leser lokal an gespeicherte500er Auswahl gebunden,425/425 Suiten; CI/Integration offen. Danach Vollstaendigkeit, Endtermin und Versorgung. Keine Wiederholung der drei Prosaserien, des Quellenpruefers oder des Quellenlaufs. Allgemeine Prosa offen; kein500er Start. [Fachstopp](betrieb/prosa-quellenpruefung-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp).
 
 ## 12 · Verbindliche Betriebsgrenzen
 
