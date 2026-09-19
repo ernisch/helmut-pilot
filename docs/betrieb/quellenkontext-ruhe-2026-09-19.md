@@ -1,6 +1,8 @@
 # Quellenreparatur bei null aktiven Profilen
 
-Stand 19.09.2026. Status: **teilweise abgeschlossen**.
+Stand 19.09.2026. Gesamtstatus: **blockiert** an der ausdruecklichen
+Freigabe der Production Quelldatenkorrektur nach CLAUDE.md Abschnitt 5.
+Codeintegration und rein lesender Production Abschluss: **erfolgreich abgeschlossen**.
 Ausgang ist Main `b3a4fb560cddf482d18706801524630e39c7d1be` nach PR448.
 Kein neuer 500er Test, keine Profilaktivierung, kein bezahlter Modellaufruf.
 
@@ -133,7 +135,10 @@ nicht. Mit `PLAYWRIGHT_BROWSERS_PATH` auf dessen vorhandenes Verzeichnis
 anschliessend beide einzeln ueber denselben kanonischen Runner bestanden:
 `admin-nutzer-loeschen-test.js` und `passwort-setzen-login-fix-test.js`.
 Damit jede der 420 Suiten erfolgreich ausgefuehrt; kein behaupteter einzelner
-lokaler Gesamtlauf mit 420/420. PR CI steht noch aus. Keine Testbedingung
+lokaler Gesamtlauf mit 420/420. PR449 CI35440756347 danach vollstaendig
+erfolgreich: 420/420 Suiten in 794 Sekunden, 50 Browserpruefungen,
+15 Kontoschutzpruefungen samt 500 isolierten Registrierungen, Z22 PASS48/FAIL0,
+beide Pflichtjobs und alle 24 Schritte bestanden. Keine Testbedingung
 geaendert, kein Production Quellenlauf behauptet.
 
 Der regulaere Cron `understanding-rueckstand` um 11:30 UTC lief waehrend der
@@ -150,7 +155,7 @@ verglichen und stimmen mit der vorbereiteten Liste ueberein.
 | Strukturierte Belege | Tragen Akteure, Rollen, Ebene und Quellenidentitaet, beweisen keine neu behauptete fachliche Wirkung. Eine Woerterliste kann die freie Bedeutung nicht allgemein validieren. |
 | Promptvertrag | Vorhandene Verbote haben die gesicherten Fehler nicht verhindert; keine weitere gleiche Parameter oder Promptiteration. Anwendung bleibt unveraendert bei bisherigem Denkaufwand. |
 | Positive Gegenfaelle | Explizit belegte Leistungsart, Finanzierung, Folgen und Mandatszustaendigkeit muessen weiterhin nutzbar sein. Keine pauschale Leerregel fuer kurze Quellen. |
-| Quellenreichweite | Relevante Luecke bestaetigt; Reparaturbedienweg offline vorbereitet, Originalzugriff und Wirkung auf Fachtexte noch offen. |
+| Quellenreichweite | Relevante Luecke bestaetigt; Reparaturbedienweg integriert und technisch geprueft, Production Quelldatenlauf nicht freigegeben. Originalzugriff und Wirkung auf Fachtexte noch offen. |
 | Morgenversorgung | PR421 repariert Speicherung und Nachtrag vorhandener Lage; technische Integration bewiesen, Versorgung aller 500 noch offen. |
 | Lagekapazitaet | PR420 repariert aktive Auswahl, Rotation, Beginn und 500 Laufplaetze; serielles Zeitbudget und Vollversorgung noch offen. |
 | Quellenabruf/Google News | Artikelaufloesung und gebundener Kontext integriert; keine Zusage, alle heutigen Originalartikel erreichen zu koennen. Quellenfrische und Auszugreichweite im neuen Lauf pruefen. |
@@ -169,3 +174,38 @@ zusaetzliche unbelegte Bedeutung pruefen. Eine automatische Vollpruefung
 dieser Semantik ist aktuell nicht belegt. Stichproben bleiben Stichproben.
 Weder Kostenrahmen noch erwartete Laufzeit des neuen 500er Tests sind damit
 abgenommen. Der bestehende 4 USD Tagesriegel bleibt erhalten.
+
+## Production Abschluss nach PR449
+
+PR449 mit Head `77ba2688e0dd06ace9cf8688910d2e8d10913c98` nach vollstaendiger
+CI und frischem Konkurrenzabgleich gemergt. Keine anderen offenen PRs.
+Main `15cdd12816d25debd6ef5725cb22630d3706c7be`, unveraenderter gepruefter
+Baum `13d0dc474edc9d67f1bfec41c54e72e686a59706`.
+Production `dpl_FVGP8renL6euTStuWuW83vWGRnbc` am 19.09. um 11:58:40 UTC READY,
+Commit und Alias `helmut-pilot.vercel.app` unabhaengig bestaetigt.
+
+Anschliessend ausschliesslich lesender Workflow35441590955 auf genau diesem
+Main, nur Laufzeitoption aktiviert, keine Inhaltsprobe oder Facharbeit.
+11:59:45 UTC HTTP200, Commit identisch, Supabase/V3 und exklusiver relationaler
+Profilpfad wirksam, Retention36, Kommunikation und Kohortenquellen gesperrt.
+Atomare Sperre und Standardquellenschutz aktiv. Tagesdeckel2416,
+Understanding Reserve702, Realreserve200. Kostenregel2 aktiv bei4 USD,
+unbekannter Ausgang bleibt reserviert. Kein scharfer Pfad freigegeben.
+Dies belegt die Erreichbarkeit und Konfiguration der Anwendung, keine neue
+fachliche Textpruefung oder vollstaendige UI Abnahme.
+
+Native SQL Gegenprobe 12:00:11 UTC gegen Grundlinie 11:57:54 UTC:
+504 Profile,0 aktiv, genau500 Zielkennungen und4 ausgeschlossene unveraendert.
+Hashes aller Profile, Identitaeten, des kompletten Auth und Main Zustands
+sowie separat der geschuetzten Konten, Sessions und Passwortbelege identisch.
+Null aktive Pipelinesperren, Jobleases, unerledigte Jobs und junge unbeendete
+Prozesse. Tagesbuch0,258929 USD, null offene Kostenreserven, nicht eingefroren.
+Keine neue Profilaktivierung, kein Quellenkorrekturlauf, keine Modellaufrufe
+durch diesen Auftrag. Der regulaere11:30 Cron ist oben gesondert ausgewiesen.
+
+Naechste fachliche Phase bleibt bis zur ausdruecklichen Freigabe des oben
+vollstaendig begrenzten Quelldatenlaufs blockiert. Der eigene abschliessende
+Dokumentations PR aendert ausschliesslich diese Datei und CURRENT_STATE;
+sein Merge und Deployment werden gemaess CLAUDE.md Abschnitt9 in GitHub und
+Vercel belegt, ohne rekursiven Dokumentations PR. Fachlich besteht weiterhin
+keine Bereitschaft fuer den500er Teststart.
