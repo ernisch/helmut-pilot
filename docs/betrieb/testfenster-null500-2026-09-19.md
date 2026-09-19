@@ -1,9 +1,13 @@
 # Vorbereiteter Weg von null auf500 und wieder null
 
-19.09.2026. Status **teilweise abgeschlossen**. Branch
-`codex/testfenster-null500-20260919`. Kein SQL dieses Planers wurde in
-Production ausgefuehrt. Keine Aktivierung, kein Teststart und keine neue
-Production Tabelle, Funktion, Migration, Environmentvariable oder Cronzeit.
+19.09.2026. Gesamtstatus **teilweise abgeschlossen**. Der Planer aus
+`codex/testfenster-null500-20260919` ist integriert; sein Aktivierungs und
+End SQL wurde in Production nicht ausgefuehrt. Die spaeter vorbereitete
+Endfunktion ist inzwischen mit gesonderter Freigabe einmalig installiert,
+siehe [aktueller Installationsbeleg](#freigegebene-installation-am-1909-1800-utc).
+Keine Aktivierung, kein Timerstart, kein neuer500er Test, keine neue Tabelle,
+Environmentvariable oder Cronzeit. Fruehere Nichtinstallationsangaben unten
+sind zeitlich begrenzte historische Aufnahmen.
 
 ## Belegte Luecke und engster Eingriff
 
@@ -202,7 +206,7 @@ Main CI35456149568 ebenfalls vollstaendig erfolgreich:425/425 in603s, Kontoschut
 
 ## Automatischer Endweg und konkrete Migrationsgrenze
 
-19.09., `codex/testende-null500-20260919`, **teilweise abgeschlossen**.
+Historischer Stand19.09.17:41 UTC, `codex/testende-null500-20260919`: damals **blockiert** an der Production Installation. Diese Grenze wurde um18:00:45 UTC mit gesonderter Betreiberfreigabe erledigt. PR457 ist technisch abgenommen und integriert; der automatische Endweg wurde in Production nicht bewaffnet.
 Der alte Endlauf ist auf495 synthetische Profile begrenzt und laesst fuenf
 Bestandsprofile aktiv. Der neue manuelle Transaktionsplan oben kann die
 gebundenen500 bereits beenden. Fuer automatische Ausfuehrung kennt der
@@ -225,7 +229,7 @@ Profil wird durch Installation veraendert, kein Timer gestartet. Die
 passende `rollback_20260919170000_testfenster_null500_ende.sql` entfernt
 nur die Funktion. Quittungen bleiben erhalten, der native manuelle Endplan
 funktioniert unabhaengig davon. Rollback erst nach gesichertem Ende aller
-bewaffneten Endlaeufe. **Keine Migration in Production angewendet.**
+bewaffneten Endlaeufe. **Zum damaligen Vorbereitungsstand noch nicht angewendet; inzwischen installiert, nicht wiederholen.**
 
 Der neue manuelle Workflow `null500-testende.yml` hat keinen Cron und
 verlangt UUID, Hash des privaten vollstaendigen Manifests (mittels
@@ -251,7 +255,7 @@ Nullnachweis. Ein beendeter Lauf mit spaeter reaktiviertem Ziel wird
 abgewiesen. Konten, Sessions, Identitaeten, Profilinhalte, Main und alle
 Profile ausserhalb der500 werden innerhalb derselben Transaktion geprueft.
 
-Gezielte Offlineprobe zunaechst10/10. Kanonischer Gesamtlauf426/426 in640s, Exit0, ueber scripts/lokal.js mit vorhandenem Browsercache, vor dem unten beschriebenen abschliessenden Bewaffnungsschutz. Danach gezielt11/11; der finale Head muss die vollstaendige Pflicht CI bestehen. Migrationsorganisation41/41. Echter PostgreSQL und PostgREST Nachweis sowie CI und Integration noch offen; lokal steht kein PostgreSQL Client bereit.
+Gezielte Offlineprobe zunaechst10/10. Kanonischer Gesamtlauf426/426 in640s, Exit0, ueber scripts/lokal.js mit vorhandenem Browsercache, vor dem unten beschriebenen abschliessenden Bewaffnungsschutz. Danach gezielt11/11; der finale Head muss die vollstaendige Pflicht CI bestehen. Migrationsorganisation41/41. Echter PostgreSQL und PostgREST Nachweis sowie finale Pflicht CI inzwischen erfolgreich, siehe Abschluss unten; lokal steht kein PostgreSQL Client bereit.
 Keine neuen KI Modellaufrufe oder Production Buchungen. Die Installation
 ist nach `CLAUDE.md §5` und der Betreibergrenze eine gesondert freizugebende
 Production Schemaaenderung; geprueften Code zu mergen installiert sie nicht.
@@ -285,3 +289,165 @@ Korrigiert11/11 erfolgreich, einschliesslich positivem Warten nach
 bestaetigter Abwesenheit. Kein Schutz abgesenkt. Die Installation der RPC,
 der lebende Job und der unabhaengige manuelle Rueckweg bleiben gesonderte
 Vorbedingungen vor jeder spaeter ausdruecklich freigegebenen Aktivierung.
+
+
+## Integration, Production Nachkontrolle und erforderliche Freigabe
+
+PR457 Head `67ec54b591ba169660c787ddcb10498d1a5ec3b8`, Tree
+`31be2b3b48fe6216e3c27c1fb12497b0ac1e7c28`. CI35457881913 vollstaendig
+erfolgreich:426/426 in644s, Browser50/50, Kontoschutz15/15 samt500
+isolierten Registrierungen, atomarer Testweg und neue RPC26/26 gegen
+PostgreSQL17 und PostgREST12.2.3, Z22 PASS48/FAIL0. Alle25 Pflichtschritte.
+Der vorherige Lauf35457515157 wurde beim Headwechsel automatisch ersetzt;
+sein bereits erfolgreicher Datenbankschritt wurde nicht als Gesamt CI
+gewertet. Die neue CI prueft auch den abschliessenden Bewaffnungsschutz.
+
+Vor dem Merge endete der regulaere Production Rueckstandslauf
+`understanding-rueckstand-20260919173037-g3swa`. Die Telemetrie enthaelt20
+Modellbuchungen mit gpt-5-mini sowie getrennt18 Budgetvertagungen und zwei
+fachlich/strukturell abgewiesene Verstehensfaelle mit Modellkennzeichen none.
+Diese zusaetzlichen Telemetriezeilen sind keine weiteren Modellaufrufe und
+keine500er Versorgungsergebnisse. Tagesbuch danach0,386081 USD statt
+0,262850 USD, keine offene Reserve. Profile, Identitaeten, Main und
+Konten/Sessions blieben gleich. Der gesamte Authhash aenderte sich wegen
+der Betriebsbuchungen; er wurde nach Abschluss neu als Grundlinie gelesen.
+Kein zusaetzlicher Fachlauf durch diesen Reparatursprint gestartet.
+
+Merge `a0ba6f8444f39923d60b45b0e339a14726d94bd7`, Production READY
+`dpl_F8Bj3J8hvfk5xrv6kC7HMzDsp81Z` am19.09.17:37:53 UTC, Hauptalias und
+Commit korrekt. Leser35458848599 am17:41:19 UTC HTTP200 mit genau diesem
+Commit. V3, exklusiver relationaler Profilpfad, Retention36,
+Kommunikations- und Kohortenquellensperre, atomare Sperre sowie4 USD
+Kostenregel2 wirksam. Optionaler Inhaltsabruf bleibt mangels neuer
+Testfensterquittung aus. Main CI35458671797 ebenfalls vollstaendig
+erfolgreich:426/426 in802s, Browser50, Kontoschutz15 samt500 isolierten
+Registrierungen, Datenbank26 und Z22 PASS48/FAIL0; alle25 Pflichtschritte.
+
+Native SQL17:41:07 UTC gegen den ruhenden Vorflug17:35:10:504 Profile,
+0 aktiv, alle Profil-, Identitaets-, Auth-, Main- und Kontoschutzhashes
+gleich. Keine lebende Sperre, Lease, junge offene Prozessquittung oder
+Kostenreserve;22709 Jobs erledigt,386081 Mikro USD, nicht eingefroren.
+Die neue Funktionssignatur ist weiterhin nicht vorhanden; null neue
+Testfensterquittungen. Merge hat keine Migration ausgefuehrt. Rein lesende
+Quellenkontrolle17:43 bestaetigt weiter10710 alte Itemzeilen,114 aufloesbare
+Objekte,91 nur ohne summary;500 Profile betroffen, vier ausschliesslich,
+null unaufgeloeste Itemverweise. Kein neuer500er Fachnachweis.
+
+Die damals konkret benoetigte und inzwischen erteilte Freigabe betraf ausschliesslich die einmalige
+Installation von `supabase/migrations/20260919170000_testfenster_null500_ende.sql`
+auf dem bestehenden Production Projekt. Sie legt die gepruefte Endfunktion
+und deren enge Ausfuehrungsrechte an und aktualisiert den PostgREST
+Schemacache. Sie aktiviert kein Profil, startet keinen Endlauf, aendert
+keine Kosten- oder Environmentwerte und ruft kein Modell auf. Vor Anwendung
+Main, Funktionsabwesenheit, Rechte, Grundlinien und Ruhezustand frisch lesen;
+danach Funktionssignatur, SECURITY INVOKER, Rechte,504/0 und Schutzgrundlinien
+rein lesend bestaetigen. Kein scharfer Probeaufruf in Production.
+
+`CLAUDE.md §5` verlangt fuer Production Migrationen eine ausdrueckliche
+Freigabe; diese war um17:41 noch offen und wurde danach im uebernehmenden
+Thread separat erteilt. Die Freigabe des einmaligen Quellenlaufs ist
+verbraucht und war keine Freigabe fuer diese Schemaaenderung. Code Merge
+und Deployment waren bereits erlaubt und sind erledigt. Die damalige
+Installationssperre ist inzwischen aufgehoben und die Installation ausgefuehrt.
+Rollback Datei und unabhaengiger
+nativer SQL Endplan liegen bereit. Bewaffnung, Profilaktivierung und neuer
+500er Test bleiben auch nach einer Installationsfreigabe gesondert gesperrt.
+Prosa, Quellenreichweite, Vollversorgung, Frische und belastbare Laufzeit-
+und Kostenplanung bleiben nach der Installation weiter zu bearbeiten.
+
+Dieser abschliessende Folge PR dokumentiert ausschliesslich den wirklichen
+Nach Merge Stand gemaess CLAUDE §9. Er aendert weder Code noch Konfiguration
+oder Daten; sein eigener Merge wird ueber Git und Deployment Historie
+nachgewiesen, ohne rekursiven weiteren Dokumentations PR.
+
+## Freigegebene Installation am 19.09. 18:00 UTC
+
+Status der Installation **erfolgreich abgeschlossen**; gesamter500er Auftrag
+weiter **teilweise abgeschlossen**. Der Betreiber hat im uebernehmenden
+Thread die einmalige Installation ausdruecklich freigegeben. Genau ein
+`apply_migration` Aufruf war erfolgreich. Keine Wiederholung und kein
+scharfer Funktionsaufruf. Der bereits gepruefte SQL Inhalt aus Main
+`a0ba6f8444f39923d60b45b0e339a14726d94bd7` wurde unveraendert angewendet;
+lokaler Git Inhalt und GitHub Datei am exakten Commit waren bytegleich.
+Git Blob `a5618cd029e82066386e61114d68ef3863cf8d73`.
+
+Repository Datei: `supabase/migrations/20260919170000_testfenster_null500_ende.sql`.
+Persistierte Production Version: `20260919180045`, Name
+`testfenster_null500_ende`. Die vom Dienst vergebene Version unterscheidet
+sich vom Dateistempel. Das ist keine fehlende Migration und kein Grund fuer
+eine zweite Anwendung oder Umbenennung der versionierten Datei.
+
+Installation19.09.21:00:45 Tuerkei /20:00:45 Berlin /18:00:45 UTC.
+Rein lesender Vorflug18:00:23 und Nachkontrolle18:01:08 UTC:504 Profile,
+0 aktiv, keine Sperren, Leases, offenen Jobs, jungen offenen Prozesse,
+Testfensterquittungen oder Kostenreserven. Tagesbuch beide Male386081
+Mikro USD; Limit4000000. Vollstaendige Hashes vor und nach Installation:
+
+| Bestand | SHA256 vor und nach Installation identisch |
+| --- | --- |
+| Profile | `ea339008ddc23668d7234b6305a2346c116b474a40ff68dbd474d73005056e06` |
+| Identitaeten | `03e0b4e26272fbaa1d78aa199ad7e66b44e84d93b3d2d8ef02c62dcd0907f60e` |
+| Gesamter Authinhalt, einschliesslich Konten/Sessions | `4ded5801fac98616d682aee712eed6612ae5d4d2a3f5411342c1c299b93dbcfb` |
+| Main | `58d58420f47f7bb9b29be1ec47c32a7c3670363f5f5c2c5cf5ef701211c238ef` |
+
+Native Funktionspruefung: `public.helmut_testfenster_null500_ende(text,jsonb,text,text)`,
+Rumpf bytegleich zur Migration, plpgsql, SECURITY INVOKER,
+`search_path=pg_catalog`, `lock_timeout=3s`. Eigentuemer postgres;
+EXECUTE nur postgres und service_role, nicht anon oder authenticated.
+Vorherige READY Aufnahme bestaetigte Main und Hauptalias, der HTTP200
+Beleg stammt aus Leser35458848599. Kein neues Deployment durch Installation.
+Vollstaendiger privater Installationsbeleg:
+`Helmut_Endfunktion_Installation_20260919.md`.
+
+### Spaetere Aufnahme und Uebernahme der Dokumentation
+
+PR458 bewahrte zunaechst den Stand17:41. Sein Ausfuehrer fand die
+inzwischen installierte Funktion bei einer eigenen Lesung und stoppte den
+PR als Draft, da ihm diese separate Freigabe unbekannt war. Die Herkunft
+der Installation ist durch den obigen Auftrag und Nachweis geklaert.
+CI35459908315 ist erfolgreich; dieser technische Erfolg ersetzt die
+inhaltliche Korrektur der drei Markdown Dateien nicht. Die Vorarbeit aus
+Head `9954d718bfee8948f3cbbef87a9c33efa0a0b5d6` bleibt erhalten. Nach dem
+dokumentierten Stopp uebernimmt der Installationsausfuehrer PR458 in einer
+isolierten Arbeitskopie und fuehrt dessen bestehenden Branch
+`codex/testende-null500-20260919` weiter. So bleibt die vorhandene
+Previewsperre erhalten, ohne eine Konfiguration zu aendern. Keine weitere
+Arbeit in der fremden Arbeitskopie und keine erneute Migration.
+
+Die erneute native Lesung18:13:21 UTC bestaetigte504/0, dieselben Profil-,
+Identitaets- und Mainhashes, keine offene Arbeit oder Reserve und unveraendert
+0,386081 USD bei4 USD Limit. Der Authblob wurde jedoch um18:11:08 UTC
+geaendert; neuer Gesamthash
+`8056d8c61bcdee8f15bc74f2fed88d4560296c2d8eb4f157a156107b6d56000b`.
+PR458 dokumentiert die verlaengerte Gueltigkeit einer bestehenden Session.
+Diese spaetere Aenderung ist keine Wirkung der um18:01 bereits unveraendert
+abgenommenen Installation. Daraus folgt weder ein behaupteter Kontoschaden
+noch ein unveraenderter Sessionsnachweis ueber beide Zeitpunkte.
+
+Die gezielt gelesenen Vercel Laufzeitlogs belegen auf demselben Production
+Deployment GET `/` um18:11:04 und GET `/api/auth/session` um18:11:06 UTC,
+jeweils HTTP200. `server.js:handleAuthSession` ruft fuer eine gueltige
+Sitzung `accounts.extendSession` auf; diese vorhandene Funktion verlaengert
+um30 Tage, wenn sich das Ablaufdatum um mehr als eine Stunde verschiebt.
+Der protokollierte Appabruf und die Sessionverlaengerung passen zeitlich
+und technisch zusammen. Der Aufrufer ist durch diese Logzeilen nicht
+identifiziert. Kein Grund, die erfolgreiche Installation zu wiederholen
+oder die Sitzung zurueckzusetzen. Weitere Eingriffe werden gegen eine
+frisch gelesene Schutzgrundlinie geprueft; authentifizierte Appaufrufe sind
+wegen dieses normalen Verlaengerungspfads kein reiner Sessionslesebeleg.
+
+Die Installation umfasst keine Bewaffnung, Aktivierung, Provisionierung,
+Modellaufrufe, Cron oder Environment Aenderung und keinen500er Start.
+Prosaquellebindung, Quellenreichweite und Frische, alle drei Ergebnisarten
+fuer jedes der500 Profile, begrenzte Versorgungslaufzeit, Kostenplan und
+fachliche Abnahme bleiben offen. Der4 USD Kostenriegel bleibt unveraendert;
+die10 USD Betreibergrenze erlaubt dessen Aenderung nicht automatisch.
+
+Lokale Abnahme der Dokumentationskorrektur: kanonischer Gesamtlauf ueber
+`scripts/lokal.js` mit425/426 Suiten in637s, Exit1. Einziger Fehler war die
+durch den Nachtrag ueberschrittene Groessengrenze von CURRENT_STATE.
+Die neuen Statuszeilen wurden anschliessend gekuerzt, ohne Historie oder
+Grenzwerte zu entfernen; gezielte Groessenpruefung4/4 erfolgreich.
+Das ist kein behaupteter gruener lokaler Gesamtlauf. Der korrigierte Head
+muss vor Merge die vollstaendige Pflicht CI bestehen. Ausschliesslich drei
+Markdown Dateien, kein neuer Anwendungscode und keine zusaetzlichen Modellkosten.

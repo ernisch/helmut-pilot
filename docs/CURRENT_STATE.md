@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026: PR456 integriert und Production geprueft.** Main `577cfafd9c0d1eb4769faec473fd344980c9210a`, READY `dpl_DP7hgmcndST4D1oYuDGEZFPE44t9`, Leser35456323820 HTTP200. CI35455461295:425/425, PostgreSQL16/16, alle25 Pflichtschritte. SQL16:54:29 UTC:504/0, Schutzgrundlinien unveraendert, keine Sperre/Lease/Reserve,0,262850 USD. Ergebnisleser behalten dieselben500 auch nach Testende. Neuer Endlauf lokal vorbereitet; seine Production Migration nicht freigegeben. Quellenlauf40/22 verbraucht,91/114 Altobjekte ohne Auszug. Prosa und Vollversorgung offen. [Testweg](betrieb/testfenster-null500-2026-09-19.md), [Quellen](betrieb/quellenkontext-ruhe-2026-09-19.md).
+**19.09.2026: Endfunktion installiert; Gesamtauftrag teilweise abgeschlossen.** PR457/Main `a0ba6f8444f39923d60b45b0e339a14726d94bd7` READY, Leser35458848599 HTTP200. Freigegebene Installation18:00:45 UTC einmalig ausgefuehrt; Rumpf/Rechte und unveraenderte Schutzgrundlinien18:01 geprueft. SQL18:13:504/0, keine offene Arbeit/Reserve,0,386081 USD bei4 USD Limit. Spaetere Sessionverlaengerung getrennt dokumentiert. Kein Timer oder Teststart. [Installationsbeleg und Restpunkte](betrieb/testfenster-null500-2026-09-19.md#freigegebene-installation-am-1909-1800-utc).
 
 **Integration PR419 bis448 abgeschlossen, alle28 alten Drafts erledigt.** PR447 CI35435242485:419/419, Browser50, Kontoschutz15, Z22 48;24 Pflichtschritte. Laufzeitleser35436180373 belegt Speicher, Kommunikationssperre und4 USD Riegel. Drei Prosaserien nach je einem Aufruf fachlich gestoppt, zusammen0,019647 USD; Folgenprompt verworfen, Anwendung nicht auf `low` umgestellt. [Fachstopps](betrieb/prosa-denktiefe-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp). Heutige Freigabe10 USD, enger4 USD Riegel und Artikelkontext AUS bleiben. Kein neuer500er Test; Quellenfrische und vollstaendige Fachabnahme offen. [Integrationsbelege und Restpunkte](betrieb/500-bereitschaft-2026-09-19.md#abschluss-nach-dem-denkvergleich).
 
@@ -42,14 +42,16 @@ Vorbereitung eines erneut ausdruecklich freizugebenden Nachweises mit exakt 500 
 
 Historische PR- und Deploymentdetails bis09.09. stehen unverändert im [archivierten Status](archive/project_state/2026_09_14_CURRENT_STATE_vor_lesebelegabschluss.md). Der aktuelle Main- und Productionstand steht im Statuskopf.
 
+19.09.: Gestoppten Dokumentations PR458 nach geklaerter Installationsherkunft isoliert uebernommen; drei Dateien und Previewsperre erhalten. Branch `codex/testende-null500-20260919`; Abnahme im PR.
+
 ## 3 · Production-Zustand
 
-- **Datenbank:** Supabase **Pro/Micro (`t4g.micro`, 1 GB)**. PITR aus; keine Ressourcen oder Schemaaenderung. Aktuelle Grundlinie im Statuskopf.
+- **Datenbank:** Supabase **Pro/Micro (`t4g.micro`, 1 GB)**. PITR aus, Ressourcen unveraendert. Endfunktion installiert, siehe Migrationen und Statuskopf.
 - **Historischer Bestand 09.09., 08:37 UTC (neuer Abschluss oben):** **504/5/499**, fuenf reale aktiv, alle 495 synthetischen inaktiv. Testende Workflow `34327808319` erfolgreich: 495 bestaetigt deaktiviert, 0 Fehler. Keine aktive Sperre, Lease oder junge Prozessquittung beim Mergevorflug. **44 gespeicherte Lage Texte fuer den 500er Testtag, 456 fehlen.** [Einzelbefunde](betrieb/500-textpruefung-2026-09-09.json).
 - **Crawl-Aufbewahrung:** Wirksame Grenze **36** am 06.09. um 19:00 UTC erneut bestätigt. Frisch gelesener Blob Ring **20**; keine Wiederherstellung der verlorenen 16 Laufzeilen. Schutzcode aus #301 bleibt deployt (SR §37).
 - **Quellen:** 9 Pakete · 163 Abrufwege · 165 Zuordnungen; **146/163 Google-News** (B1, OP-15); 18 Landesmodul-Wege (BE/BB) gesperrt. Seeds `20260713`/`20260717` **nicht eingespielt**, Einspielung [BLOCKIERT](betrieb/quellen-seed-einspielung.md) (nur noch Betreiberfreigabe).
 - **Crons (Production, 13, UTC):** crawl 04:00/20:00 · pipeline 16:00 · morning-briefing 05:00 · understanding 05:30/21:30 · **rueckstand 11:30/17:30** · lage-briefing 05:45 · health 06:00 · lage-check 10:00 · 2 Narrativslots 06:10/06:22 (inert). **`18,48 * * * *` nicht in Production.** Dazu Actions-Watchdog (`briefing-watchdog.yml`, 05:30, oft 2–3 h verzögert).
-- **Migrationen:** 35 Einträge, letzte `20260829175749` (05.09. rein lesend bestätigt). **Z22 seit 29.08. mit Freigabe angewendet** (§14–22) — **nicht erneut anwenden**. Auf `main`, **nicht in Production angewendet**: `20260720`, F9 (`20260825101500`), `20260902121500`. Jede weitere Anwendung bleibt freigabepflichtig.
+- **Migrationen:** Z22 seit29.08. angewendet. Endfunktion aus `20260919170000_testfenster_null500_ende.sql` am19.09. freigegeben installiert, Registerversion `20260919180045`. **Nicht wiederholen oder umbenennen.** Weiter offen: `20260720`, F9 (`20260825101500`), `20260902121500`; weitere Anwendungen brauchen separate Freigabe.
 - **Historische Kosten 09.09.:** Rekonstruierter Altstand im [Nachlaufbeleg](betrieb/500-nachlauf-2026-09-09.md); heutige Buchung im Statuskopf, wirksamer4 USD Riegel unten.
 - **Zugang:** Azure und Foundry geschützt per Microsoft E Mail erreicht, keine Zugangsdaten offengelegt. Rein lesend: `gpt-5-mini` Global Standard **250.000/2.000.000 TPM**, Zuordnung 250.000 TPM, bekannte Grenze 250 RPM. Keine Azure Änderung. Production Leser **34058091793** bleibt gültig (§54).
 
@@ -62,7 +64,7 @@ Historische PR- und Deploymentdetails bis09.09. stehen unverändert im [archivie
 | `HELMUT_MATCHING_AUDIT=on` | seit 2026-07-28 |
 | `HELMUT_PROCESS_RUNS_RELATIONAL=on` | seit 2026-07-27 |
 | `HELMUT_ATOMIC_LOCK` | an — atomare, fail-closed Sperren |
-| LLM Tagesbudget | **Deckel 2416 / Understanding Reserve 702 / Vorrangreserve 200** bestaetigt. Zusaetzlich atomarer Geldriegel **4 USD je UTC Tag**. Kostenregel 2 seit 10.09., 12:25:36 Tuerkei / 11:25:36 Berlin / 09:25:36 UTC live bestaetigt. 0,431472 USD gebunden, darunter 0,212 USD fuer einen unbekannten Ausgang; volle Reserve statt globalem Stillstand. Keine Anbieterrechnung. |
+| LLM Tagesbudget | **Deckel 2416 / Understanding Reserve 702 / Vorrangreserve 200** bestaetigt. Zusaetzlich atomarer Geldriegel **4 USD je UTC Tag**. Kostenregel 2 seit 10.09., 12:25:36 Tuerkei / 11:25:36 Berlin / 09:25:36 UTC live bestaetigt. Historischer Beleg10.09.:0,431472 USD gebunden, darunter 0,212 USD fuer einen unbekannten Ausgang; volle Reserve statt globalem Stillstand. Keine Anbieterrechnung. |
 | `HELMUT_VERSTEHEN_CAS=on` | seit 2026-08-17; `HELMUT_VERSTEHEN_PARALLELITAET` nicht gesetzt ⇒ wirkt als 1 |
 | `HELMUT_SCALABLE_PIPELINE=on` | **seit 23.08. 16:47 UTC**, Modus `shadow`, Worker 4/25/25; Rückweg: Flag löschen + Redeploy (Betreiber) |
 | `HELMUT_CRON_GLOBALABRUF=on` | seit 2026-08-06 (Betreiber); Fortbestand ist Betreiberentscheidung |
@@ -148,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-19.09.: PR453–456 integriert. Atomaren automatischen Endweg samt Rollback isoliert pruefen; Production Installation braucht nach CLAUDE §5 eigene Freigabe. Danach Vollstaendigkeit, Versorgung und Fachabnahme. Keine Wiederholung der drei Prosaserien, des Quellenpruefers oder Quellenlaufs. Kein500er Start. [Fachstopp](betrieb/prosa-quellenpruefung-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp).
+19.09.: Installationskorrektur integrieren; Prosaquellebindung, Quellenreichweite, Vollversorgung, Laufzeit und Kostenplan weiterbearbeiten. Frische Schutzgrundlinie vor Eingriffen. Keine Aktivierung oder500er Start; [gescheiterte Methoden nicht wiederholen](betrieb/prosa-quellenpruefung-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp).
 
 ## 12 · Verbindliche Betriebsgrenzen
 
@@ -156,7 +158,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 1. Ein schreibender Ausfuehrer; fremde Vorarbeit erhalten. Konten, Identitaeten, Kostenhistorie und Kommunikationssperre schuetzen.
 2. Drei Prosaserien und der getrennte Quellenpruefer dauerhaft nach je einem Aufruf geschlossen. Keine Fortsetzung oder Wiederholung. Vollstaendige Rohantworten, negative Fachurteile, Kosten und verdraengte Telemetrie erhalten. Weitere Versuche brauchen einen neuen sachlich begruendeten Auftrag innerhalb der vorhandenen Tagesfreigabe.
-3. mini bleibt Referenz; bestehender atomarer4 USD Tagesriegel bleibt vorerst unveraendert. Eine Erhoehung ist nur bei belegtem Bedarf innerhalb der10 USD Tagesfreigabe zulaessig. Keine Kosten oder offenen Reserven loeschen.
+3. mini bleibt Referenz; der bestehende atomare4 USD Tagesriegel bleibt unveraendert. Die10 USD Betreibergrenze erteilt keine Freigabe zur Aenderung des engeren technischen Limits. Wenn eine Budget oder Environment Aenderung notwendig wird, konkrete gesonderte Freigabe einholen. Keine Kosten oder offenen Reserven loeschen.
 4. Alle504 Profile bleiben bis zum spaeteren500er Start inaktiv. Artikelkontext bleibt AUS. Keine neue Funktion und kein unnoetiger Umbau.
 5. Mandantentrennung mit `assertTenant` und explizitem Mandatsfilter; bedingte gemeinsame Schreibvorgaenge und persistente Gegenpruefung. Nicht pruefbar bedeutet niemals bestanden.
 
