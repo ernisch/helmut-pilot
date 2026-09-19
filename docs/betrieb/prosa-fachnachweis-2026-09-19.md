@@ -506,3 +506,14 @@ gebundene Antwort abgrenzen; eine pauschale Sperre aller titelbasierten Quellen
 ist keine kleine risikofreie Korrektur. Produktionsauswirkung vorher messen.
 Historische Requests fehlen weiterhin teilweise; neuer Befund beweist keine
 historische Entstehungsursache.
+
+
+## Integration nach den Fachstopps
+
+PR445 ist als `f4cb802fc3159e016ab6f68913def840041e53a6` gemergt und
+Production READY. Die nicht abgenommene neue Promptregel ist entfernt.
+CI35433323295 bestaetigt den Integrationskopf df9133b mit418/418 Suiten,
+50 Browser/Mobil,15 Kontoschutz,48 Z22 und24/24 Pflichtschritten.
+Beide negativen Modellbelege bleiben gueltig; technische Integration ist
+keine nachtraegliche Fachfreigabe. Vollstaendiger Deployment-, Laufzeit- und
+Draftabschluss im [Bereitschaftsbeleg](500-bereitschaft-2026-09-19.md#bestaetigter-integrationsabschluss).

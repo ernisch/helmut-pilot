@@ -1,13 +1,15 @@
 # Bereitschaft nach der Reparaturkette
 
 Stand 19.09.2026 Tuerkei. **Status: blockiert. Noch nicht bereit.**
-Nachtrag19.09.08:54 UTC: Reparaturen, Betriebsbuchungen und gepruefte Merges
-samt Deployment sind freigegeben; heute insgesamt hoechstens10 USD. Engerer
-4 USD Motorriegel unveraendert. Tarif und Telemetriering repariert. Beide
-isolierten Prosaserien nach je einem echten Aufruf fachlich gestoppt, neuer
-Folgenprompt zurueckgenommen. Kosten zusammen0,011244 USD konservativ.
-Die bereits gepruefte Kette wird integriert;500er Bereitschaft bleibt offen.
-Aktueller [Ausfuehrungsstand](prosa-fachnachweis-2026-09-19.md#gescheiterter-folgenauftrag-und-begrenzte-integrationsentscheidung).
+Nachtrag19.09.09:20 UTC: PR445 integriert und Production READY. Alle28
+bisherigen Drafts erledigt, kein weiterer offener PR vor diesem reinen
+Dokumentationsabschluss. Authentifizierter Laufzeitleser35434309651 erfolgreich.
+504 Profile weiterhin inaktiv, Tagesbuch0,124985 USD, keine offene Reserve.
+Beide Prosaserien negativ abgeschlossen; nicht abgenommener Folgenprompt
+zurueckgenommen. Fachqualitaet und500er Betriebsplanung bleiben offen.
+Die notwendige Betreiberfreigabe ist vorhanden; heute maximal10 USD,
+engerer4 USD Motorriegel unveraendert. Kein500er Start.
+Aktueller [Integrationsabschluss](#bestaetigter-integrationsabschluss).
 Nachfolgende Betriebs und Kettenaufnahmen bleiben historische Vorflugbelege.
 Die aktuelle Rollenreparatur steht im [Reparaturbeleg](akteursrollen-erhalten-2026-09-19.md).
 
@@ -226,7 +228,52 @@ seriellen Fortsetzungsplan und Endzeit konkret festlegen.
 Notwendiger Abschlussweg: genau die aktivierte Zielmenge bedingt auf inaktiv
 setzen und alle504 Profile erneut als inaktiv lesen, ohne Konten, Identitaeten,
 Profilinhalte oder Ergebnisse zu loeschen. Der alte495er Abschluss und der
-abgelaufene Timer erfuellen dies nicht. Solange Fachblocker, frischer Datenstand,
-bestaetigte Fortsetzungsplanung und dieser Endweg fehlen, keine Aktivierung.
+abgelaufene Timer erfuellen dies nicht. Solange Fachblocker, bestaetigte Fortsetzungsplanung und dieser Endweg
+fehlen, keine Aktivierung. Quellenfrische wird im neuen Test abgenommen;
+kein zusaetzliches pauschales Aktivierungsverbot wegen alter Quellen. Eine
+Aktivierung allein beweist ebenfalls keinen frischen Datenstand.
 Die allgemeine Betreiberfreigabe wird nicht als fehlend behauptet; die Luecken
 sind technische beziehungsweise fachliche Nachweise.
+
+
+## Bestaetigter Integrationsabschluss
+
+PR445 am19.09.09:17 UTC mit ausdruecklicher Betreiberfreigabe gemergt:
+`f4cb802fc3159e016ab6f68913def840041e53a6`, Baum
+`7a1107b7932aaa5c53a427890596fc7bf6a72797`, identisch zum geprueften PR Kopf
+`df9133b16858fe588873453825603fb4cb218aec`.
+[CI35433323295](https://github.com/ernisch/helmut-pilot/actions/runs/35433323295):
+418/418 Offline Suiten in785s,50 Browser/Mobil,15 Kontoschutz,48 Z22.
+Beide Pflichtjobs und alle24 Schritte erfolgreich, nichts uebersprungen.
+Der automatische Main-CI Lauf35434268903 lief bei der Aufnahme noch; kein
+manueller Wiederholungslauf. Der ueberholte e1f2ba5-Lauf35432854396 ist
+cancelled, kein behaupteter CI-Erfolg dieses verworfenen Promptkandidaten.
+
+Hauptalias `helmut-pilot.vercel.app` frisch auf Production READY
+`dpl_nie9eb8uSnvKe1xhtoaYqidQJucW` und exakt diesem Merge-Commit.
+[Reiner Laufzeitleser35434309651](https://github.com/ernisch/helmut-pilot/actions/runs/35434309651)
+bestaetigt09:18:10 UTC HTTP200, richtigen Commit, Supabase/V3, relationale und
+exklusive Profile, Retention36, gesperrte Kommunikation/Kohortenquellen,
+Deckel2416, Understandingreserve702, Vorrangreserve200, Relevanzfenster14 Tage,
+Kostenregel2 aktiv,4 USD Grenze, unbekannte Kosten bleiben reserviert.
+Die optionalen Inhalts- und500er Leser wurden bewusst nicht angefordert.
+
+Native SQL Nachkontrolle09:19: 504 Profile, alle inaktiv; null aktive Sperren,
+Leases oder junge laufende Verarbeitung. Tagesbuch124985 Mikro USD,
+keine offene Reserve. Profile, Identitaeten, geschuetzte Authfelder und
+main-Blob haben vor/nach Integration exakt dieselben SHA256 Grundlinien.
+Keine Profil-, Konto-, Identitaets-, Environment-, Azure- oder Schemaaenderung.
+Artikelkontext bleibt AUS, keine neue Fachausfuehrung durch den Merge.
+
+Draftbereinigung: PR419 wurde durch enthaltene Commitabstammung automatisch
+als gemergt geschlossen. Die unveraenderten Koepfe420–444 sind alle Vorfahren
+des echten main und wurden mit konkretem Integrationsverweis geschlossen.
+PR345 ohne eigenen Merge geschlossen; beide nuetzlichen historischen
+Dokumente erhalten, sein veralteter CURRENT_STATE nicht uebernommen.
+09:19 erneut null offene PRs. Keine Branchhistorie geloescht oder umgeschrieben.
+
+Dieser Nachtrag erfuellt CLAUDE.md §9. Er aendert ausschliesslich Dokumentation.
+Sein eigener Merge und Deploymentstatus werden in Git/Vercel belegt, ohne
+rekursiven Dokumentations-PR. Ergebnis getrennt: Code bereit und technisch
+geprueft; Production-Deployment/Laufzeit belegt; fachliche Gesamtwirkung nicht
+bewiesen;500er Nachweis nicht bestanden und kein neuer Test gestartet.
