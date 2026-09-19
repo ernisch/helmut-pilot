@@ -47,6 +47,12 @@ function abschnitt(titel) { console.log(`\n== ${titel} ==`); }
 // Testdouble treibt sie um seinen KOSTENANTEIL vor — dadurch laufen die echten
 // Budgetpruefungen beider Pfade gegen eine kontrollierte, reproduzierbare Zeit.
 const ECHTES_NOW = Date.now;
+// Der regulaere Abschluss unten ruft process.exit mit der Gesamtbilanz auf.
+// Ein offenes Promise ohne aktive Handles darf nicht still mit Exit0 enden.
+process.once("beforeExit", () => {
+  console.error("TESTFEHLER: globale Phasensimulation ohne Abschlussbilanz beendet");
+  process.exitCode = 1;
+});
 const BASIS_MS = Date.parse("2026-07-31T04:00:00.000Z");
 function makeUhr(startMs = BASIS_MS) {
   let t = startMs;
@@ -371,6 +377,16 @@ function baueWelt({ profile, uhr, dokumenteJeQuelle = 2, defekteQuellen = [], de
 
 // Laedt scheduler.js mit ersetzten Abhaengigkeiten — der PRODUKTIONSCODE bleibt unveraendert.
 function ladeScheduler(doubles) {
+  // Der neue Ausfuehrungswrapper bleibt echt; nur sein bestehender Fachadapter
+  // muss dieselbe isolierte Welt sehen wie die uebrigen Schedulerabhaengigkeiten.
+  const laufDatei = path.join(ROOT, "lib", "helmut", "artikelkontext-lauf.js");
+  const lauf = new Module(laufDatei, null);
+  lauf.filename = laufDatei;
+  lauf.paths = Module._nodeModulePaths(path.dirname(laufDatei));
+  const laufRequire = lauf.require.bind(lauf);
+  lauf.require = spec => spec === "./understanding" ? doubles[spec] : laufRequire(spec);
+  lauf._compile(fs.readFileSync(laufDatei, "utf8"), laufDatei);
+  doubles = { ...doubles, "./artikelkontext-lauf": lauf.exports };
   const datei = path.join(ROOT, "lib", "helmut", "scheduler.js");
   const src = fs.readFileSync(datei, "utf8");
   const m = new Module(datei, null);

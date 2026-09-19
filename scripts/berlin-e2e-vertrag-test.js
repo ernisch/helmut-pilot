@@ -33,7 +33,9 @@
 // WAS ERSETZT WIRD (einzige Testdoubles, klar begrenzt):
 //   1. Die LLM-Antwort (deps.requestUnderstanding): deterministische Fixture-Analysen je
 //      Cluster. Testdaten, KEIN Quellenbeleg — die Dokumente selbst stammen verbatim aus den
-//      Gold-Fixtures (test/fixtures/pardok/*, echte PARDOK-/parldok-Records).
+//      Gold-Fixtures (test/fixtures/pardok/*, echte PARDOK-/parldok-Records). Fuer die
+//      positive Ausschusszuordnung kommt in Abschnitt D ein klar synthetischer
+//      Testauszug hinzu. Ohne diesen Zusatz muss die Ausschussbehauptung scheitern.
 //   2. Der Storage-Unterbau: ein In-Memory-Store mit denselben Vertragsgrenzen wie
 //      Supabase/PostgREST (Mandantenfilter user_id=eq., aktuell=is.true, Tenant-Guard bei
 //      Schreibzugriffen, atomare publish-Semantik wie helmut_publish_matching_run — modelliert
@@ -125,6 +127,9 @@ LAUF.zweitprofil = PROFIL_B.id;
 // jeweiligen Clusters; die Ebenen-/Geografiesignale entstehen NICHT durch Behauptung,
 // sondern durch die Institutionsnennungen im Text — genau wie im echten Pfad
 // (classification.deriveDecisionLevel / geografienAusText).
+// Die gelieferten Titel/Auszuege nennen diese Ressorts nicht. Die Modellattrappen
+// duerfen deshalb keine Ministerienlisten aus vermuteter Zustaendigkeit erfinden.
+// Quellenfixtures, uebrige Analysefelder und alle bisherigen Abnahmen bleiben erhalten.
 const AI_FIXTURES = [
   {
     marker: "Waffengebührenordnung",
@@ -135,12 +140,12 @@ const AI_FIXTURES = [
       wer_ist_betroffen: "Waffenbesitzer und Schützenvereine in Berlin sowie die Berliner Innenverwaltung.",
       handlungsempfehlung: "Für die nächste Sitzung des Innenausschusses prüfen, ob die Gebührensätze kostendeckend und verhältnismäßig sind.",
       parteien: [], ausschuesse: ["Ausschuss für Inneres, Sicherheit und Ordnung"],
-      ministerien: ["Senatsverwaltung für Inneres"],
+      ministerien: [],
       risiken: ["Die Gebührenerhöhung kann als einseitige Belastung der Sportschützen kritisiert werden"],
       chancen: ["Sichtbare Positionierung bei der inneren Sicherheit durch eine kostendeckende, nachvollziehbare Gebührenstruktur"],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
       mentioned_committees: ["Ausschuss für Inneres, Sicherheit und Ordnung"],
-      mentioned_ministries: ["Senatsverwaltung für Inneres"],
+      mentioned_ministries: [],
       mentioned_locations: ["Berlin"], mentioned_organizations: [],
       tags: ["Waffenrecht", "Innere Sicherheit"],
       zeitdruck: "mittel", confidence_score: 82,
@@ -160,10 +165,10 @@ const AI_FIXTURES = [
       warum_wichtig: "Der Betrieb des Hauptstadtflughafens ist ein laufendes verkehrspolitisches Thema des Landes Berlin.",
       wer_ist_betroffen: "Reisende, die Flughafengesellschaft und die Berliner Verkehrsverwaltung.",
       handlungsempfehlung: "Antwort der Verwaltung abwarten; kein eigener Handlungsbedarf.",
-      parteien: [], ausschuesse: [], ministerien: ["Senatsverwaltung für Mobilität und Verkehr"],
+      parteien: [], ausschuesse: [], ministerien: [],
       risiken: [], chancen: [],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
-      mentioned_committees: [], mentioned_ministries: ["Senatsverwaltung für Mobilität und Verkehr"],
+      mentioned_committees: [], mentioned_ministries: [],
       mentioned_locations: ["Berlin"], mentioned_organizations: ["Flughafen Berlin Brandenburg GmbH"],
       tags: ["Verkehr", "Flughafen"],
       zeitdruck: "niedrig", confidence_score: 60,
@@ -183,10 +188,10 @@ const AI_FIXTURES = [
       warum_wichtig: "Die Kriminalitätsentwicklung ist ein zentrales Thema der inneren Sicherheit des Landes Brandenburg.",
       wer_ist_betroffen: "Die Brandenburger Polizei, das Innenministerium und die Bevölkerung Brandenburgs.",
       handlungsempfehlung: "Antwort der Landesregierung zur Kenntnis nehmen.",
-      parteien: [], ausschuesse: [], ministerien: ["Ministerium des Innern und für Kommunales des Landes Brandenburg"],
+      parteien: [], ausschuesse: [], ministerien: [],
       risiken: [], chancen: [],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
-      mentioned_committees: [], mentioned_ministries: ["Ministerium des Innern und für Kommunales des Landes Brandenburg"],
+      mentioned_committees: [], mentioned_ministries: [],
       mentioned_locations: ["Brandenburg"], mentioned_organizations: [],
       tags: ["Innere Sicherheit", "Kriminalität"],
       zeitdruck: "niedrig", confidence_score: 70,
@@ -206,10 +211,10 @@ const AI_FIXTURES = [
       warum_wichtig: "Das Waffengesetz des Bundes setzt den Rahmen, den die Länder im Vollzug anwenden.",
       wer_ist_betroffen: "Waffenbesitzer bundesweit, die Vollzugsbehörden der Länder.",
       handlungsempfehlung: "Beratungsverlauf im Bundestag verfolgen.",
-      parteien: [], ausschuesse: [], ministerien: ["Bundesministerium des Innern"],
+      parteien: [], ausschuesse: [], ministerien: [],
       risiken: [], chancen: [],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
-      mentioned_committees: [], mentioned_ministries: ["Bundesministerium des Innern"],
+      mentioned_committees: [], mentioned_ministries: [],
       mentioned_locations: [], mentioned_organizations: [],
       tags: ["Waffenrecht"],
       zeitdruck: "niedrig", confidence_score: 75,
@@ -346,8 +351,21 @@ function neuerStore() {
 
   // ═══ D · Understanding: echter Pfad, deterministische Analyse-Fixtures ═══
   abschnitt("D · Understanding (echte Orchestrierung, Fixture-Analysen)");
+  // Der Originalexport nennt keinen Ausschuss. Den Matching-Positivfall mit
+  // offen ausgewiesenem Testauszug pruefen. XML und Originalobjekt bleiben erhalten.
+  const originalRelevant = JSON.stringify(rohRelevant);
+  const ohneAusschussbeleg = await understanding.evaluateUnderstandingCase({ raw_documents: [rohRelevant] },
+    async () => structuredClone(AI_FIXTURES.find(f => f.marker === "Waffengebührenordnung").result));
+  check("D0 Ausschussbehauptung ohne Zusatz wird gegen die Originaleingabe abgewiesen",
+    !ohneAusschussbeleg.valid && ohneAusschussbeleg.errors.includes("quellenbeleg-ausschuesse")
+      && ohneAusschussbeleg.errors.includes("quellenbeleg-mentioned_committees"));
   const store = neuerStore();
-  const eingabe = [rohRelevant, rohIrrelevant, rohBB, bundRoh];
+  const eingabe = [{ ...rohRelevant,
+    summary: "Synthetischer Testauszug, kein Originalbeleg: Der Ausschuss für Inneres, Sicherheit und Ordnung des Abgeordnetenhauses von Berlin berät die Waffengebührenordnung."
+  }, rohIrrelevant, rohBB, bundRoh];
+  check("D0b Originalobjekt unveraendert; nur positive Testeingabe enthaelt den markierten Auszug",
+    JSON.stringify(rohRelevant) === originalRelevant && rohRelevant.summary === ""
+      && eingabe[0].summary.startsWith("Synthetischer Testauszug, kein Originalbeleg:"));
   const u1 = await understanding.runUnderstandingShadow(eingabe, store.api);
   check("D1 vier Cluster, vier verarbeitet, keine Zurueckstellung",
     u1.clusters === 4 && u1.processed === 4 && u1.deferred === 0, JSON.stringify(u1.counts));
@@ -358,6 +376,8 @@ function neuerStore() {
       && u1.telemetrie.gruppen && u1.telemetrie.gruppen.verarbeitet === 4);
 
   const kos = [...store.knowledgeObjects.values()];
+  check("D3b keine unbelegten Ressortlisten in gespeicherten Ergebnissen",
+    kos.length > 0 && kos.every(k => k.ministerien.length === 0 && k.mentioned_ministries.length === 0));
   const koRelevant = kos.find((k) => /Gebühren im Waffenrecht/i.test(k.headline || ""));
   const koIrrelevant = kos.find((k) => /BER/.test(k.headline || ""));
   const koBB = kos.find((k) => /Brandenburg/.test(k.headline || ""));

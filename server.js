@@ -75,7 +75,8 @@ const inviteMail = require("./lib/helmut/invite-mail");
 const resetTiming = require("./lib/helmut/reset-timing");
 const helmutFlags = require("./lib/helmut/flags");
 const { getRelevantParliamentaryItems } = require("./lib/helmut/dip");
-const { runPendingUnderstandingShadow, clusterRawDocuments, deriveVorgangId, diagnosePendingUnderstanding, pruefeGeparkteNeuBewertung } = require("./lib/helmut/understanding");
+const { clusterRawDocuments, deriveVorgangId, diagnosePendingUnderstanding, pruefeGeparkteNeuBewertung } = require("./lib/helmut/understanding");
+const { runPendingUnderstandingShadow } = require("./lib/helmut/artikelkontext-lauf");
 const { laufBilanz } = require("./lib/helmut/lauf-bilanz");
 const verstehenRueckstand = require("./lib/helmut/verstehen-rueckstand");
 const { generateOfficeOutput, isValidChannel } = require("./lib/helmut/office");
@@ -1036,14 +1037,25 @@ async function handleRequest(request, response) {
         // Erfolg, keine faelschlich zurueckgesetzte Fehlerserie.
         const buildTimeout = Boolean(briefing && briefing.reason === "build-timeout");
         const speicherfehler = Boolean(briefing && ["store-error", "v3-store-disabled"].includes(briefing.reason));
-        const laufErfolg = !buildTimeout && !speicherfehler;
+        const morgenversorgung = require("./lib/helmut/morgenversorgung");
+        const paket = !buildTimeout && !speicherfehler
+          ? await morgenversorgung.speicherePaket({ profile, userId: tenantId, briefing,
+            storage: storageModul, tag: berlinTag, now: new Date() })
+            .catch(() => ({ beleg: { tag: berlinTag, gespeichert: false, verifiziert: false,
+              vollstaendig: false, fehler: "morgenpaket-nicht-bestaetigt" } }))
+          : null;
+        const paketFehler = Boolean(paket && !paket.beleg.verifiziert);
+        const laufErfolg = !buildTimeout && !speicherfehler && !paketFehler;
+        // Bei einem bereits vollstaendigen Paket bleibt dessen gespeicherter
+        // Inhalt massgeblich, auch wenn der frische Bau inzwischen anders ist.
+        const ausgabe = paket?.briefing || briefing;
 
         // --- FRISCHEVERTRAG, Schritt 2: Wiederholung erkennen -----------------
         // Punkt 9: ein zweiter Lauf am selben Tag mit unveraendertem Inhalt erzeugt
         // KEIN zweites Briefing, KEINEN zweiten Push und KEINEN weiteren
         // Schreibvorgang. Das Narrativ dieses Tages liegt bereits im Tagescache
         // (bf-<mandat>-lage-<tag>) — es entsteht also auch kein weiterer KI-Aufruf.
-        const signatur = briefingLauf.inhaltsSignatur(briefing);
+        const signatur = briefingLauf.inhaltsSignatur(ausgabe);
         // Der Beleg wurde VOR dem Bau gelesen, und der Bau darf bis zu 60 s dauern. Ein
         // ueberlappender Lauf (Watchdog trifft auf den regulaeren Cron) haette in diesem
         // Fenster ebenfalls "kein Beleg" gesehen und ein zweites Mal gepusht. Deshalb
@@ -1056,16 +1068,18 @@ async function handleRequest(request, response) {
           : heutiger;
         const wiederholung = laufErfolg && briefingLauf.istWiederholung(belegVorPush.lauf, signatur);
 
-        const push = wiederholung
+        const push = !laufErfolg
+          ? { skipped: true, reason: "briefing-nicht-gespeichert" }
+          : wiederholung
           ? { skipped: true, reason: "wiederholung-gleicher-inhalt" }
-          : await withTimeout(sendBriefingReadyPush(briefing, profile), 30000, "cron-briefing-push")
+          : await withTimeout(sendBriefingReadyPush(ausgabe, profile), 30000, "cron-briefing-push")
             .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
         const pushTimeout = Boolean(push && push.ok === false && push.reason === "push-timeout");
 
         // --- FRISCHEVERTRAG, Schritt 3: Beleg schreiben und GEGENLESEN --------
         let quittung = { uebersprungen: true, grund: briefingFrische.vertragAktiv() ? "wiederholung" : "vertrag-aus" };
         if (briefingFrische.vertragAktiv() && !wiederholung) {
-          const state = (briefing && briefing.currentHelmutState) || {};
+          const state = (ausgabe && ausgabe.currentHelmutState) || {};
           const geschrieben = briefingLauf.quittung({
             tenantId,
             berlinTag,
@@ -1077,7 +1091,7 @@ async function handleRequest(request, response) {
             signatur,
             kennzahlen: (state.frische && state.frische.kennzahlen) || null,
             datenstand: (state.primaryItem && state.primaryItem.lastUpdated) || null,
-            grund: laufErfolg ? null : (briefing && briefing.reason) || "unbekannt"
+            grund: laufErfolg ? null : paketFehler ? "morgenpaket-nicht-bestaetigt" : (briefing && briefing.reason) || "unbekannt"
           });
           const ergebnis = await briefingLauf.schreibeQuittung(storageModul, geschrieben);
           quittung = { uebersprungen: false, ...ergebnis };
@@ -1089,7 +1103,8 @@ async function handleRequest(request, response) {
         }
 
         return {
-          available: Boolean(briefing && briefing.available),
+          available: Boolean(ausgabe && ausgabe.available),
+          paketBeleg: paket?.beleg || { tag: berlinTag, gespeichert: false, verifiziert: false, vollstaendig: false },
           pushSkipped: Boolean(push && push.skipped),
           pushReason: (push && push.reason) || null,
           // Bei gezogenem Not-Aus (`HELMUT_BRIEFING_FRISCHE=off`) gibt es bewusst KEINEN
@@ -1101,14 +1116,17 @@ async function handleRequest(request, response) {
             wiederholung,
             fensterStart: (fenster && fenster.start) || null,
             gespeichert: Boolean(quittung && quittung.gespeichert),
-            verifiziert: Boolean(quittung && quittung.verifiziert),
+            verifiziert: Boolean(wiederholung || (quittung && quittung.verifiziert)),
             fehler: (quittung && quittung.fehler) || null
           } } : {}),
-          ...(buildTimeout || pushTimeout || speicherfehler
-            ? { ok: false, bounded: true, reason: buildTimeout ? "build-timeout" : speicherfehler ? briefing.reason : "push-timeout" }
+          ...(buildTimeout || pushTimeout || speicherfehler || paketFehler
+            || (briefingFrische.vertragAktiv() && !wiederholung && !quittung.verifiziert)
+            ? { ok: false, bounded: true, reason: buildTimeout ? "build-timeout"
+              : speicherfehler ? briefing.reason : paketFehler ? "morgenpaket-nicht-bestaetigt"
+                : pushTimeout ? "push-timeout" : "frischebeleg-nicht-bestaetigt" }
             : {})
         };
-      }, { deadlineMs: 240000 });
+      }, { deadlineMs: 240000, gleichberechtigt: true, persistenzPflicht: true });
       // Abdeckung des Frischevertrags im heutigen Lauf: fuer wie viele Mandate ist ein
       // ERFOLGREICHES heutiges Briefing belegt? Ein uebersprungenes Mandat faellt hier
       // auf, statt still ohne aktuelles Briefing zu bleiben (kein falsches Gruen).
@@ -1142,18 +1160,22 @@ async function handleRequest(request, response) {
       // W-2: kanonische Zustaende (failed/success statt error/ok/empty; der
       // erfolgreiche Leerlauf bleibt success mit reason "keine-mandate") und
       // kein `.catch(() => {})` mehr — Telemetriefehler werden ausgewiesen.
+      const versorgung = require("./lib/helmut/morgenversorgung")
+        .bilanziere(summary, berlinTag, briefingFrische.vertragAktiv());
       const morningTelemetrie = await recordProcessRun({
         process: "briefing-morning", runId: helmutRunId("briefing-morning", t0), mode: "cron", location: helmutExecLocation(),
         startedAt: new Date(t0).toISOString(), finishedAt: new Date().toISOString(),
         durationMs: Date.now() - t0,
-        processed: (summary.results || []).filter((r) => r && r.available).length,
-        zielmenge: Number(summary.tenants) || 0,
-        reason: summary.tenants ? (summary.reason || null) : "keine-mandate",
-        status: (summary.ok === false || ((summary.results || []).length > 0 && (summary.results || []).every((r) => r && r.failed)))
-          ? "failed" : "success"
+        processed: versorgung.versorgt,
+        fehlgeschlagen: versorgung.fehlgeschlagen,
+        deferred: versorgung.fehlt,
+        zielmenge: versorgung.ziel,
+        reason: summary.reason || (!summary.tenants ? "keine-mandate"
+          : versorgung.status !== "success" ? "morgenversorgung-unvollstaendig" : null),
+        status: versorgung.status
       });
       console.log(`[cron/morning-briefing] ${Date.now() - t0}ms tenants=${summary.tenants} reason=${summary.reason || "ok"} frischebelege=${frischeAbdeckung.belegt}/${frischeAbdeckung.mandate}${morningTelemetrie.ok ? "" : " LAUFTELEMETRIE-NICHT-GESPEICHERT"}`);
-      return { ...summary, frischevertrag: frischeAbdeckung, lauftelemetrie: { gespeichert: morningTelemetrie.ok, vollstaendig: morningTelemetrie.vollstaendig, fehler: morningTelemetrie.fehler } };
+      return { ...summary, versorgung, frischevertrag: frischeAbdeckung, lauftelemetrie: { gespeichert: morningTelemetrie.ok, vollstaendig: morningTelemetrie.vollstaendig, fehler: morningTelemetrie.fehler } };
     });
   }
 
@@ -1818,62 +1840,38 @@ async function handleRequest(request, response) {
       if (scalablePipeline.narrativUeberWarteschlange()) {
         return narrativSlotLauf({ slot: "morgen", startMs: lageBriefingStartMs, runId: lageBriefingRunId });
       }
-      let profiles = await listProfiles().catch(() => []);
-      if (!Array.isArray(profiles)) profiles = [];
-      // VORRANG DER REALEN MANDATE (Sprint 02.09.). Diese Schleife arbeitet gegen
-      // ein hartes Zeitbudget von 240 s und in FESTER Listenreihenfolge — anders
-      // als der Morgenlauf hat sie keine Fairnessrotation. Bei 5 realen und 495
-      // synthetischen Profilen entscheidet damit allein die Listenposition, wer
-      // vor dem Zeitbudget noch drankommt. Reale Mandate werden deshalb stabil
-      // nach vorn gestellt; die Reihenfolge INNERHALB einer Klasse bleibt
-      // unveraendert. Bei homogener Profilmenge (heutiger Stand: 0 synthetische
-      // Zeilen) ist die Liste element-identisch zu vorher.
-      profiles = mandatsklasse.sortiereRealZuerst(profiles, (p) => (p && p.id) || null);
-      // KEIN Fallback auf ein Default-Mandat: ohne gespeicherte Profile ist der
-      // Vorwaerm-Lauf ein ehrlicher Leerlauf.
-      const results = [];
       const lageDiagnose = require("./lib/helmut/lage-laufdiagnose");
       const mandatsErgebnisse = [];
-      let skipped = 0;
-      // Hartes Zeitbudget wie im morning-briefing (240s < maxDuration 300s):
-      // der Cron antwortet IMMER; nicht erreichte Mandate holt der naechste
-      // (idempotente) Lauf nach.
-      const lageBriefingDeadline = lageBriefingStartMs + 240000;
-      for (const p of profiles) {
-        if (!p || !p.id) { skipped += 1; results.push({ userId: null, available: false, reason: "profil-ohne-id", vorgaenge: 0 }); continue; }
-        if (Date.now() > lageBriefingDeadline) { skipped += 1; results.push({ userId: p.id, available: false, reason: "zeitbudget", vorgaenge: 0 }); continue; }
-        // Mehrmandantenfaehigkeit Phase 8: deaktivierte Profile nehmen an der
-        // Verarbeitung NICHT teil (sie sollen kein Briefing erzeugen). VOLLSTAENDIGE
-        // Fehler-Isolation je Mandat: auch activeProfile/validateProfile stehen im
-        // try/catch — ein Storage-Fehler bei EINEM Profil bricht die Schleife nicht
-        // (Befund der Cron-Inventur: frueher war nur buildLageBriefing gefangen).
+      // Dieselbe aktive Zielmenge und persistente Fortsetzung wie beim Morgenlauf.
+      // Keine Bevorzugung einzelner Profilklassen; Ablehnungen bleiben Ablehnungen.
+      const summary = await runCronForTenants("lage-briefing", async (tenantId) => {
         try {
-          const profile = await activeProfile(p.id);
-          const val = validateProfile(profile);
-          if (val.disabled) {
-            skipped += 1;
-            results.push({ userId: profile.id, available: false, reason: "profil-deaktiviert", vorgaenge: 0 });
-            continue;
-          }
-          const res = await buildLageBriefing(profile, { politicianId: profile.id })
-            .catch((e) => ({ available: false, reason: "error", diagnose: lageDiagnose.sichereDiagnose(e?.diagnose) }));
+          const profile = await activeProfile(tenantId);
+          if (validateProfile(profile).disabled)
+            return { userId: tenantId, available: false, reason: "profil-deaktiviert", ok: false };
+          const res = await buildLageBriefing(profile, { politicianId: tenantId })
+            .catch(e => ({ available: false, reason: "error", diagnose: lageDiagnose.sichereDiagnose(e?.diagnose) }));
           const diagnose = lageDiagnose.sichereDiagnose(res.diagnose);
-          results.push({ userId: profile.id, available: res.available, fromCache: res.fromCache, reason: res.reason || null,
-            vorgaenge: (res.vorgaenge || []).length, ...(diagnose ? { diagnose } : {}) });
-          mandatsErgebnisse.push(lageDiagnose.mandatsErgebnis(p.id, res));
+          const ergebnis = lageDiagnose.mandatsErgebnis(tenantId, res);
+          mandatsErgebnisse.push(ergebnis);
+          return { userId: tenantId, available: ergebnis.lageGespeichert, fromCache: res.fromCache,
+            reason: res.reason || null, vorgaenge: (res.vorgaenge || []).length,
+            ...(diagnose ? { diagnose } : {}), ...(ergebnis.lageGespeichert ? {} : { ok: false }) };
         } catch (error) {
           const diagnose = lageDiagnose.sichereDiagnose(error?.diagnose);
           const res = { available: false, reason: "profil-fehler", ...(diagnose ? { diagnose } : {}) };
-          results.push({ userId: p.id, ...res, vorgaenge: 0 });
-          mandatsErgebnisse.push(lageDiagnose.mandatsErgebnis(p.id, res));
+          mandatsErgebnisse.push(lageDiagnose.mandatsErgebnis(tenantId, res));
+          return { userId: tenantId, ...res, vorgaenge: 0, ok: false };
         }
-      }
+      }, { deadlineMs: 240000, runId: lageBriefingRunId, gleichberechtigt: true, persistenzPflicht: true });
+      const results = summary.results || [];
+      const skipped = results.filter(r => r.skipped || r.reason === "profil-deaktiviert").length;
       // P0-1: echte Lage-Briefing-Vorwaerm-Laufzeit persistieren (Zaehler/Status, kein Text).
       // W-2: kein `.catch(() => {})` mehr — recordProcessRun wirft nicht, sondern
       // liefert ein Ergebnis; ein Telemetriefehler wird im Abschlussstatus ausgewiesen.
       const lageErfolg = results.filter(r => r.available === true).length;
       const lageFehler = results.filter(r => !r.available
-        && !["zeitbudget", "profil-deaktiviert", "profil-ohne-id", "no-current-sources", "no-vorgaenge"].includes(r.reason)).length;
+        && !["zeitbudget", "laeuft-bereits", "profil-deaktiviert", "profil-ohne-id", "no-current-sources", "no-vorgaenge"].includes(r.reason)).length;
       const lageTelemetrie = await recordProcessRun({
         process: "briefing-lage", runId: lageBriefingRunId, mode: "cron", location: helmutExecLocation(),
         startedAt: new Date(lageBriefingStartMs).toISOString(), finishedAt: new Date().toISOString(),
@@ -1882,12 +1880,15 @@ async function handleRequest(request, response) {
         // Nur tatsaechlich bearbeitete Profile: inaktive/zeitbedingt ausgelassene
         // Zeilen verdraengen keine der bis zu 500 Einzeldiagnosen im Speicher.
         mandatsErgebnisse,
-        zielmenge: profiles.length,
-        status: lageFehler || results.some(r => r.reason === "zeitbudget") ? "failed" : "success"
+        zielmenge: summary.tenants,
+        status: summary.ok === false || lageFehler ? "failed"
+          : lageErfolg < summary.tenants || summary.fairnessGestoert ? "partial" : "success"
       });
       return {
         prewarmed: lageErfolg, gestartet: results.length - skipped, uebersprungen: skipped,
-        vollstaendig: lageErfolg === results.length - results.filter(r => r.reason === "profil-deaktiviert").length,
+        vollstaendig: summary.ok !== false && !summary.fairnessGestoert && lageErfolg === summary.tenants,
+        zielmenge: summary.tenants, fairness: summary.fairness,
+        ...(summary.reason ? { reason: summary.reason } : {}),
         results,
         lauftelemetrie: { gespeichert: lageTelemetrie.ok, vollstaendig: lageTelemetrie.vollstaendig, fehler: lageTelemetrie.fehler }
       };
@@ -7838,8 +7839,9 @@ function sendMandateSelectionRequired(response, mandates = []) {
 // vermerkt (eigene helmut_store-Zeile, keine Migration) — daraus folgt die
 // nachrechenbare Obergrenze ceil(n/k). Nicht begonnene Mandate werden NICHT als
 // versucht vermerkt und bleiben deshalb im naechsten Lauf vorn.
-// `HELMUT_CRON_FAIRNESS=off` ist der Rueckweg auf das alte Verhalten ohne Codeaenderung.
-async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, runId = null, vorlauf = null } = {}) {
+// `HELMUT_CRON_FAIRNESS=off` ist der Rueckweg fuer bisherige Aufrufer.
+// Der Lagepfad verlangt persistenzPflicht und beginnt dann keine Facharbeit.
+async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, runId = null, vorlauf = null, gleichberechtigt = false, persistenzPflicht = false } = {}) {
   const startedMs = Date.now();
   // R-6: die Laufkennung kommt jetzt von AUSSEN, wenn der Aufrufer sie kennt. Nur so kann
   // ein aeusserer Timeout-Catch (Promise.race, der NIE zurueckkehrt) genau DIESEN Lauf
@@ -7879,7 +7881,7 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, run
 
   const fairnessAn = cronFairness.fairnessEnabled();
   const lauf = await cronFairness.runTenantsFairly({
-    cronName,
+    cronName, gleichberechtigt, persistenzPflicht,
     // Fairness aus -> exakt die alte alphabetische Reihenfolge (ids.sort()) und kein
     // Zustands-IO. Der Rueckweg ist damit eine Env-Variable, kein Deployment.
     reihenfolge: fairnessAn ? "fair" : "unveraendert",
@@ -8003,13 +8005,16 @@ async function runCronForTenants(cronName, perTenant, { deadlineMs = 240000, run
   // stoerte, wuerde einen erfolgreichen Crawl als Ausfall melden und den Watchdog
   // fehlalarmieren. Die Stoerung steht deshalb als EIGENES Feld daneben, zusaetzlich
   // zum Systemfehler und zur Fehlerzeile im Protokoll: der Lauf sieht nicht sauber aus.
+  // Bei Pflichtpersistenz ist die Verarbeitung jedoch gesperrt und ok muss false sein.
   return {
-    ok: true,
+    ok: !persistenzPflicht || (lauf.zustandGeladen && !lauf.zustandFehler),
+    ...(persistenzPflicht && (!lauf.zustandGeladen || lauf.zustandFehler)
+      ? { reason: "fortsetzung-nicht-bestaetigt" } : {}),
     tenants: tenantIds.length,
     durationMs: Date.now() - startedMs,
     results,
     budgetSkipped: budgetSkipped.length,
-    fairnessGestoert: Boolean(fairnessAn && (!fairness.zustandGeladen || fairness.zustandFehler)),
+    fairnessGestoert: Boolean((fairnessAn || persistenzPflicht) && (!fairness.zustandGeladen || fairness.zustandFehler)),
     // F-CAS: getrennt ausgewiesen, weil es eine ANDERE Aussage ist als ein gestoerter
     // Zustand — hier war der Zustand nutzbar, aber gemeldete und gespeicherte Wahrheit
     // fielen auseinander. Leeres Feld = beide stimmen ueberein.

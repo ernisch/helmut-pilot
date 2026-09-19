@@ -47,7 +47,9 @@
 // gemeinsames technisches Geruest in scripts/e2e-vertrag-geruest.js):
 //   1. Die LLM-Antwort: deterministische Fixture-Analysen je Cluster. Testdaten, KEIN
 //      Quellenbeleg — die Dokumente selbst stammen verbatim aus den Gold-Fixtures
-//      (test/fixtures/pardok/*, echte PARDOK-/parldok-Records).
+//      (test/fixtures/pardok/*, echte PARDOK-/parldok-Records). Fuer die positiven
+//      Ausschusszuordnungen kommen in Abschnitt D klar synthetische Testauszuege
+//      hinzu. Ohne diese Zusaetze muessen die Ausschussbehauptungen scheitern.
 //   2. Der Storage-Unterbau: In-Memory-Store mit denselben Vertragsgrenzen wie
 //      Supabase/PostgREST (Mandantenfilter, aktuell=is.true, Tenant-Guard, atomare
 //      publish-Semantik wie helmut_publish_matching_run).
@@ -148,12 +150,17 @@ LAUF.zweitprofil = PROFIL_B.id;
 // Ueberschneidung gilt nur noch als AUSSCHUSSMITGLIEDSCHAFT, wenn der institutionelle
 // Zustaendigkeitsraum passt (matching.ausschussBelegZulaessig).
 // Der Vertrag vermeidet den Fall nicht mehr, sondern BEWEIST ihn: der zusaetzliche echte
-// Berliner Gold-Record V-351616 ("Pyrotechnik an Silvester", Abschnitt F11-F14) nennt
-// ausdruecklich den REALEN Berliner Innenausschuss. Erwartung beim Brandenburger Profil:
+// Berliner Gold-Record V-351616 ("Pyrotechnik an Silvester", Abschnitt F11-F14) bekommt
+// fuer diesen Positivfall einen klar markierten synthetischen Auszug mit Nennung
+// des Berliner Innenausschusses. Der Originalexport enthaelt diese Nennung NICHT.
+// Erwartung beim Brandenburger Profil:
 // KEIN ausschuss-Beleg, KEINE Ausschussbegruendung, kein Ausschussgewicht — aber das
 // gemeinsame Fachgebiet bleibt als thema-Beleg sichtbar. Die Mutationsprobe M15 nimmt
 // genau diese Pruefung zurueck und muss den Vertrag rot machen.
 // Regeldetails + verbleibende Restunschaerfe: docs/matching-nachvollziehbarkeit.md §50.
+// Die gelieferten Titel/Auszuege nennen diese Ressorts nicht. Die Modellattrappen
+// duerfen deshalb keine Ministerienlisten aus vermuteter Zustaendigkeit erfinden.
+// Quellenfixtures, uebrige Analysefelder und alle bisherigen Abnahmen bleiben erhalten.
 const AI_FIXTURES = [
   {
     marker: "Straf- und Gewalttaten",
@@ -164,12 +171,12 @@ const AI_FIXTURES = [
       wer_ist_betroffen: "Die Brandenburger Polizei, das Innenministerium und die Bevölkerung Brandenburgs.",
       handlungsempfehlung: "Die Antwort der Landesregierung im Ausschuss für Inneres und Kommunales aufgreifen und eigene Schwerpunkte zur Kriminalitätsbekämpfung setzen.",
       parteien: [], ausschuesse: ["Ausschuss für Inneres und Kommunales"],
-      ministerien: ["Ministerium des Innern und für Kommunales des Landes Brandenburg"],
+      ministerien: [],
       risiken: ["Steigende Fallzahlen können als Beleg für Defizite der Landesregierung bei der inneren Sicherheit gelesen werden"],
       chancen: ["Profilierung bei der inneren Sicherheit durch eine eigene Initiative zur Kriminalitätsbekämpfung im Land Brandenburg"],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
       mentioned_committees: ["Ausschuss für Inneres und Kommunales"],
-      mentioned_ministries: ["Ministerium des Innern und für Kommunales des Landes Brandenburg"],
+      mentioned_ministries: [],
       mentioned_locations: ["Brandenburg"], mentioned_organizations: [],
       tags: ["Innere Sicherheit", "Kriminalität"],
       zeitdruck: "mittel", confidence_score: 82,
@@ -189,10 +196,10 @@ const AI_FIXTURES = [
       warum_wichtig: "Die Kommunalverfassung regelt die Arbeit der Brandenburger Städte und Gemeinden.",
       wer_ist_betroffen: "Kommunen, Gemeindevertretungen und Hauptverwaltungsbeamte in Brandenburg.",
       handlungsempfehlung: "Beratungsverlauf verfolgen; kein unmittelbarer eigener Handlungsbedarf.",
-      parteien: [], ausschuesse: [], ministerien: ["Ministerium des Innern und für Kommunales des Landes Brandenburg"],
+      parteien: [], ausschuesse: [], ministerien: [],
       risiken: [], chancen: [],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
-      mentioned_committees: [], mentioned_ministries: ["Ministerium des Innern und für Kommunales des Landes Brandenburg"],
+      mentioned_committees: [], mentioned_ministries: [],
       mentioned_locations: ["Brandenburg"], mentioned_organizations: [],
       tags: ["Kommunales"],
       zeitdruck: "niedrig", confidence_score: 62,
@@ -235,10 +242,10 @@ const AI_FIXTURES = [
       warum_wichtig: "Die Gebührenordnung betrifft alle waffenrechtlichen Erlaubnisse im Land Berlin.",
       wer_ist_betroffen: "Waffenbesitzer und Schützenvereine in Berlin sowie die Berliner Innenverwaltung.",
       handlungsempfehlung: "Kein eigener Handlungsbedarf; Zuständigkeit liegt beim Abgeordnetenhaus von Berlin.",
-      parteien: [], ausschuesse: [], ministerien: ["Senatsverwaltung für Inneres"],
+      parteien: [], ausschuesse: [], ministerien: [],
       risiken: [], chancen: [],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
-      mentioned_committees: [], mentioned_ministries: ["Senatsverwaltung für Inneres"],
+      mentioned_committees: [], mentioned_ministries: [],
       mentioned_locations: ["Berlin"], mentioned_organizations: [],
       tags: ["Waffenrecht", "Innere Sicherheit"],
       zeitdruck: "niedrig", confidence_score: 60,
@@ -251,7 +258,7 @@ const AI_FIXTURES = [
     }
   },
   {
-    // FREMDER LANDESFALL MIT ECHTER AUSSCHUSSNENNUNG (Regression zu Befund 27A-1).
+    // FREMDER LANDESFALL MIT SYNTHETISCHEM AUSSCHUSSBELEG (Regression zu Befund 27A-1).
     // Echter Berliner Gold-Record V-351616 (Muendliche Anfrage). Die Analyse nennt den
     // REALEN Innenausschuss des Abgeordnetenhauses von Berlin — genau die Konstellation,
     // die vor dem Fix beim Brandenburger Profil einen falschen Ausschussbeleg erzeugte.
@@ -263,11 +270,11 @@ const AI_FIXTURES = [
       wer_ist_betroffen: "Polizei, Feuerwehr und Rettungsdienste in Berlin.",
       handlungsempfehlung: "Kein eigener Handlungsbedarf; die Zuständigkeit liegt beim Abgeordnetenhaus von Berlin.",
       parteien: [], ausschuesse: ["Ausschuss für Inneres, Sicherheit und Ordnung"],
-      ministerien: ["Senatsverwaltung für Inneres"],
+      ministerien: [],
       risiken: [], chancen: [],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
       mentioned_committees: ["Ausschuss für Inneres, Sicherheit und Ordnung"],
-      mentioned_ministries: ["Senatsverwaltung für Inneres"],
+      mentioned_ministries: [],
       mentioned_locations: ["Berlin"], mentioned_organizations: [],
       tags: ["Innere Sicherheit"],
       zeitdruck: "niedrig", confidence_score: 64,
@@ -287,10 +294,10 @@ const AI_FIXTURES = [
       warum_wichtig: "Das Waffengesetz des Bundes setzt den Rahmen, den die Länder im Vollzug anwenden.",
       wer_ist_betroffen: "Waffenbesitzer bundesweit, die Vollzugsbehörden der Länder.",
       handlungsempfehlung: "Beratungsverlauf im Bundestag verfolgen.",
-      parteien: [], ausschuesse: [], ministerien: ["Bundesministerium des Innern"],
+      parteien: [], ausschuesse: [], ministerien: [],
       risiken: [], chancen: [],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
-      mentioned_committees: [], mentioned_ministries: ["Bundesministerium des Innern"],
+      mentioned_committees: [], mentioned_ministries: [],
       mentioned_locations: [], mentioned_organizations: [],
       tags: ["Waffenrecht"],
       zeitdruck: "niedrig", confidence_score: 75,
@@ -457,8 +464,8 @@ function neuerStore() {
 
   // Regel 0 (Punkt 24): externe Identitaet Herausgeber+Kennung+Typ.
   const identitaet = (d) => DG.externalIdentity({ ...d, externe_id: d.raw && d.raw.externe_id }) || `${d.source_id}|${d.content_hash}`;
-  const eingabe = [rohRelevant, rohKommunal, rohIrrelevant, rohBE, rohBEPyro, bundRoh];
-  const identitaeten = eingabe.map(identitaet);
+  const originalEingabe = [rohRelevant, rohKommunal, rohIrrelevant, rohBE, rohBEPyro, bundRoh];
+  const identitaeten = originalEingabe.map(identitaet);
   check("C7 Regel 0: sechs Eingabedokumente -> sechs unterscheidbare globale Identitaeten",
     new Set(identitaeten).size === 6, identitaeten.join(" · "));
   check("C8 Regel 0 idempotent: gleiche Eingabe -> gleiche Identitaet",
@@ -471,10 +478,28 @@ function neuerStore() {
   check("C10 Mehrdokument-Vorgang: zwei Dokumentidentitaeten, EIN Vorgangsbezug — Dokument und Vorgang nicht vermischt",
     identitaet(rohKommunal) !== identitaet(rohKommunalPlpr)
       && rohKommunal.raw.vorgangsnummer === rohKommunalPlpr.raw.vorgangsnummer);
-  LAUF.normalisiert = eingabe.length; LAUF.rohdokumente = eingabe.length;
+  LAUF.normalisiert = originalEingabe.length; LAUF.rohdokumente = originalEingabe.length;
 
   // ═══ D · Understanding: echter Pfad, deterministische Analyse-Fixtures ═══
   abschnitt("D · Understanding (echte Orchestrierung, Fixture-Analysen)");
+  const originalStand = JSON.stringify(originalEingabe);
+  for (const [doc, marker] of [[rohRelevant, "Straf- und Gewalttaten"], [rohBEPyro, "Pyrotechnik"]]) {
+    const ohneAusschussbeleg = await understanding.evaluateUnderstandingCase({ raw_documents: [doc] },
+      async () => structuredClone(AI_FIXTURES.find(f => f.marker === marker).result));
+    check(`D0 ${marker}: Ausschussbehauptung ohne Zusatz wird gegen Originaleingabe abgewiesen`,
+      !ohneAusschussbeleg.valid && ohneAusschussbeleg.errors.includes("quellenbeleg-ausschuesse")
+        && ohneAusschussbeleg.errors.includes("quellenbeleg-mentioned_committees"));
+  }
+  // Unabhaengig von den Antwortlisten formulierte, klar synthetische Testtexte.
+  // Die Originalexporte bleiben unveraendert. Kein historischer Quellenbeleg.
+  const eingabe = originalEingabe.map(doc => doc === rohRelevant ? { ...doc,
+    summary: "Synthetischer Testauszug, kein Originalbeleg: Der Ausschuss für Inneres und Kommunales des Landtags Brandenburg berät die Straf- und Gewalttaten im Land."
+  } : doc === rohBEPyro ? { ...doc,
+    summary: "Synthetischer Testauszug, kein Originalbeleg: Der Ausschuss für Inneres, Sicherheit und Ordnung des Abgeordnetenhauses von Berlin berät Pyrotechnik an Silvester."
+  } : doc);
+  check("D0b Originale unveraendert; nur positive Testeingaben enthalten die markierten Auszuege",
+    JSON.stringify(originalEingabe) === originalStand && rohRelevant.summary === "" && rohBEPyro.summary === ""
+      && eingabe.filter(d => d.summary.startsWith("Synthetischer Testauszug, kein Originalbeleg:")).length === 2);
   const store = neuerStore();
   const u1 = await understanding.runUnderstandingShadow(eingabe, store.api);
   check("D1 sechs Cluster, sechs verarbeitet, keine Zurueckstellung",
@@ -486,6 +511,8 @@ function neuerStore() {
       && u1.telemetrie.gruppen && u1.telemetrie.gruppen.verarbeitet === 6);
 
   const kos = [...store.knowledgeObjects.values()];
+  check("D3b keine unbelegten Ressortlisten in gespeicherten Ergebnissen",
+    kos.length > 0 && kos.every(k => k.ministerien.length === 0 && k.mentioned_ministries.length === 0));
   const koRelevant = kos.find((k) => /Straf- und Gewalttaten/i.test(k.headline || ""));
   const koKommunal = kos.find((k) => /Kommunalverfassung/i.test(k.headline || ""));
   const koIrrelevant = kos.find((k) => /Alterspräsident/i.test(k.headline || ""));

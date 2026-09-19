@@ -336,7 +336,7 @@ const FLAG_BE = { HELMUT_LANDESMODULE: "berlin" };
     // Die Signatur traegt seit R-6 eine optionale Laufkennung und seit dem Sprint 05.09.
     // einen optionalen, standardmaessig ABWESENDEN Vorlauf (mandantenneutrale Arbeit, die
     // sonst je Mandat erneut liefe) — das Zeitbudget selbst ist unveraendert.
-    /runCronForTenants\(cronName, perTenant, \{ deadlineMs = \d+(, runId = null)?(, vorlauf = null)? \}/.test(serverText)
+    /runCronForTenants\(cronName, perTenant, \{ deadlineMs = \d+(, runId = null)?(, vorlauf = null)?(, gleichberechtigt = false, persistenzPflicht = false)? \}/.test(serverText)
     && /cronFairness\.runTenantsFairly\(/.test(serverText)
     && /reason: "zeitbudget"/.test(fairnessText)
     // Die Schleife laeuft weiterhin ueber `planung.plan`, ein Mandat nach dem anderen.

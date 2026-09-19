@@ -153,10 +153,10 @@ async function main() {
     ordnung.order.join(" > "));
   check("C2 Es fällt keine Kennung weg",
     ordnung.order.length === 4 && new Set(ordnung.order).size === 4);
-  check("C3 Die Lage-Briefing-Schleife sortiert reale Profile nach vorn",
+  check("C3 Der direkte Lagepfad rotiert gleichberechtigt mit Pflichtpersistenz",
     (() => {
       const server = fs.readFileSync(path.join(ROOT, "server.js"), "utf8");
-      return /profiles = mandatsklasse\.sortiereRealZuerst\(profiles, \(p\) => \(p && p\.id\) \|\| null\);/.test(server);
+      return /runId: lageBriefingRunId, gleichberechtigt: true, persistenzPflicht: true/.test(server);
     })());
   check("C4 sortiereRealZuerst ist stabil innerhalb einer Klasse",
     (() => {

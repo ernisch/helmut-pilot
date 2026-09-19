@@ -941,7 +941,7 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
         [["    const fremd = registriert ? fremderHalter(zustand, cronName, tenantId, runId, now(), staleMs) : null;", "    const fremd = null;"]]],
       ["Ein Lauf ohne Kapazitaet meldet trotzdem eine Garantie", "kapazitaet",
         [["  const ohneFortschritt = planung.planbar > 0 && kapazitaet === 0;", "  const ohneFortschritt = false;"],
-          ["      fortschrittsgarantie: Number.isFinite(grenze) && kapazitaet > 0,", "      fortschrittsgarantie: true,"]]],
+          ["      fortschrittsgarantie: Number.isFinite(grenze) && kapazitaet > 0\n        && (!persistenzPflicht || (zustandGeladen && !zustandFehler)),", "      fortschrittsgarantie: true,"]]],
       ["Nicht begonnene Mandate werden trotzdem als versucht vermerkt", "zeitbudget",
         [["      results.push({ politicianId: tenantId, skipped: true, reason: \"zeitbudget\" });",
           "      await speichern(claimPatch({ cronName, tenantId, runId, nowMs: now(), vorher: entryOf(zustand, cronName, tenantId) }));\n      results.push({ politicianId: tenantId, skipped: true, reason: \"zeitbudget\" });"]]],
@@ -1327,7 +1327,7 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
     check("Ein gestoerter Fairnesszustand erzeugt einen eigenen systemError",
       /Fairnesszustand nicht nutzbar[\s\S]{0,120}keine Fairnessgarantie/.test(serverSrc));
     check("Er steht zusaetzlich als eigenes Feld in der Antwort",
-      /fairnessGestoert: Boolean\(fairnessAn && \(!fairness\.zustandGeladen \|\| fairness\.zustandFehler\)\)/.test(serverSrc));
+      /fairnessGestoert: Boolean\(\(fairnessAn \|\| persistenzPflicht\) && \(!fairness\.zustandGeladen \|\| fairness\.zustandFehler\)\)/.test(serverSrc));
     check("Ein Lauf ohne Fortschritt (k=0) steht ebenfalls in der Antwort",
       /ohneFortschritt: Boolean\(fairness\.ohneFortschritt\)/.test(serverSrc));
     check("Der Fall k=0 wird im systemError ausdruecklich benannt",
@@ -1418,14 +1418,14 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
     check("Zeitbudget der Crawl-/Pipeline-Crons unveraendert (270 000 ms)",
       (serverSrc.match(/deadlineMs: 270000/g) || []).length === 2);
     check("Zeitbudget der Briefing-/Lage-Crons unveraendert (240 000 ms)",
-      (serverSrc.match(/deadlineMs: 240000/g) || []).length === 2);
+      (serverSrc.match(/deadlineMs: 240000/g) || []).length === 3);
     check("Aeussere Zeitgrenzen unveraendert (280 000 ms)", (serverSrc.match(/280000/g) || []).length >= 3);
     // Der Vorlauf (Sprint 05.09.) ist ein ZUSAETZLICHER, standardmaessig ABWESENDER Parameter:
     // ohne ihn verhaelt sich runCronForTenants unveraendert. Beides wird geprueft.
     check("Standardbudget von runCronForTenants unveraendert (240 000 ms)",
-      /runCronForTenants\(cronName, perTenant, \{ deadlineMs = 240000, runId = null, vorlauf = null \}/.test(serverSrc));
+      /runCronForTenants\(cronName, perTenant, \{ deadlineMs = 240000, runId = null, vorlauf = null, gleichberechtigt = false, persistenzPflicht = false \}/.test(serverSrc));
     check("Vorlauf ist standardmaessig AUS (kein Verhalten ohne ausdruecklichen Vorlauf)",
-      /vorlauf = null \} = \{\}\) \{/.test(serverSrc)
+      /vorlauf = null, gleichberechtigt = false, persistenzPflicht = false \} = \{\}\) \{/.test(serverSrc)
       && /if \(typeof vorlauf === "function"\) \{/.test(serverSrc));
     check("Gesamtbudget des Crawls unveraendert (240 000 ms Default)",
       /HELMUT_CRAWL_GESAMTBUDGET_MS \|\| 240000/.test(lies("lib/helmut/scheduler.js")));
@@ -1922,14 +1922,14 @@ const SECHS = ["anna-a", "bela-b", "cem-c", "dora-d", "emil-e", "frida-f"];
         String((serverSrc.match(/280000/g) || []).length));
       check("Kein neues Zeitbudget: 270 000 / 240 000 ms bleiben unveraendert",
         (serverSrc.match(/deadlineMs: 270000/g) || []).length === 2
-        && (serverSrc.match(/deadlineMs: 240000/g) || []).length === 2);
+        && (serverSrc.match(/deadlineMs: 240000/g) || []).length === 3);
       // Die Schemaversion MUSS erhoeht sein, sonst loescht ein alter Codestand den Bereich.
-      check("Die Schemaversion ist auf 2 erhoeht (Schutz gegen aeltere Codestaende)",
-        F.FAIRNESS_VERSION === 2, String(F.FAIRNESS_VERSION));
+      check("Version 3 schuetzt die 500er Laufplanung vor aelteren Schreibern",
+        F.FAIRNESS_VERSION === 3, String(F.FAIRNESS_VERSION));
       check("Jeder Laufpatch traegt die Schemaversion",
-        F.laufStartPatch({ cronName: "c", laufId: "L", startAt: BASIS_MS, nowMs: BASIS_MS }).version === 2
-        && F.laufTimeoutPatch({ cronName: "c", laufId: "L", startAt: BASIS_MS, nowMs: BASIS_MS }).version === 2
-        && F.laufAbschlussPatch({ cronName: "c", laufId: "L", startAt: BASIS_MS, nowMs: BASIS_MS }).version === 2);
+        F.laufStartPatch({ cronName: "c", laufId: "L", startAt: BASIS_MS, nowMs: BASIS_MS }).version === F.FAIRNESS_VERSION
+        && F.laufTimeoutPatch({ cronName: "c", laufId: "L", startAt: BASIS_MS, nowMs: BASIS_MS }).version === F.FAIRNESS_VERSION
+        && F.laufAbschlussPatch({ cronName: "c", laufId: "L", startAt: BASIS_MS, nowMs: BASIS_MS }).version === F.FAIRNESS_VERSION);
     }
 
     // ── 21.13 · DSGVO: die Loeschung erfasst auch die Laufspur ──────────────────────────

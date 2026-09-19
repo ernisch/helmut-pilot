@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "synthetisch": true,
+  "ausgefuehrt": false,
+  "modellaufrufeMaximum": 8,
+  "kostenMaximumMikroUsd": 1696000,
+  "maximaleDauerMinuten": 20,
+  "reihenfolge": "wie aufgefuehrt, Stopp beim ersten nicht bestandenen Fall",
+  "faelle": [
+    {
+      "id": "sachgebiet-offen",
+      "klasse": "Sachgebiet",
+      "art": "negativ",
+      "title": "Ausgleichsbetrag koennte entfallen",
+      "summary": "",
+      "erwartet": ["Moeglicher Entfall, kein beschlossener Entfall.", "Art der Leistung bleibt offen; keine Steuer, Pflege oder Verkehrsleistung erfinden."]
+    },
+    {
+      "id": "sachgebiet-belegt",
+      "klasse": "Sachgebiet",
+      "art": "positiv",
+      "title": "Ausgleichsbetrag fuer Busfahrten steht zur Diskussion",
+      "summary": "Der kommunale Ausgleichsbetrag ist ein Zuschuss fuer Busfahrkarten. Der Stadtrat diskutiert einen Entwurf zur kuenftigen Finanzierung. Eine Entscheidung steht noch aus.",
+      "erwartet": ["Verkehrsbezogenen kommunalen Zuschuss konkret benennen.", "Entwurf und offene Entscheidung erhalten; keine Steuer oder Pflegeleistung daraus machen."]
+    },
+    {
+      "id": "vollzug-offen",
+      "klasse": "Vollzug",
+      "art": "negativ",
+      "title": "Buendnis fordert Verlaengerung des Busbetriebs",
+      "summary": "Das Buendnis Stadtwege fordert spaetere Busfahrten. Der Stadtrat prueft den Vorschlag. Er hat weder beschlossen noch umgesetzt, die Betriebszeiten zu verlaengern.",
+      "erwartet": ["Forderung und Pruefung konkret unterscheiden.", "Weder Beschluss, Verlaengerung, Umsetzung noch Ruecknahme als erfolgt darstellen."]
+    },
+    {
+      "id": "vollzug-belegt",
+      "klasse": "Vollzug",
+      "art": "positiv",
+      "title": "Stadtrat beschliesst verlaengerten Busbetrieb",
+      "summary": "Nach einer frueheren Pruefung hat der Stadtrat am 14. September 2026 die Verlaengerung beschlossen. Seit dem 16. September 2026 fahren die Busse tatsaechlich eine Stunde laenger.",
+      "erwartet": ["Beschluss und tatsaechlichen Betrieb konkret erhalten.", "Fruehere Pruefung ist kein Grund, den belegten Vollzug als blossen Plan auszugeben."]
+    },
+    {
+      "id": "zuschreibung-offen",
+      "klasse": "Zuschreibung",
+      "art": "negativ",
+      "title": "Roth kritisiert Bergs Vorschlag zum Busverkehr",
+      "summary": "",
+      "source_name": "Stadtblick Magazin",
+      "erwartet": ["Roth ist Kritiker und Berg Adressat, Richtung nicht vertauschen.", "Keine Vornamen, Gruppenzugehoerigkeit, gemeinsame Partei oder redaktionelle Position des Herausgebers erfinden.", "Herausgeber und unbekannte Urheberschaft des Beitrags nicht gleichsetzen."]
+    },
+    {
+      "id": "zuschreibung-belegt",
+      "klasse": "Zuschreibung",
+      "art": "positiv",
+      "title": "Gastbeitrag von Lena Roth kritisiert Busvorschlag",
+      "summary": "Die oeffentlich politisch auftretende Lena Roth aus der Gruppe Ufer schreibt in einem Gastbeitrag, dass sie den Vorschlag von Tom Berg aus der Gruppe Garten ablehnt. Das Stadtblick Magazin veroeffentlicht den Gastbeitrag. Es kennzeichnet ihn ausdruecklich nicht als Position seiner Redaktion.",
+      "source_name": "Stadtblick Magazin",
+      "erwartet": ["Lena Roths belegte Kritik an Tom Berg korrekt wiedergeben.", "Die beiden verschiedenen Gruppen erhalten, keinen innerparteilichen Konflikt behaupten.", "Gastautorin ist Traegerin der Position, Magazin nur Herausgeber."]
+    },
+    {
+      "id": "ereigniszeit-offen",
+      "klasse": "Ereigniszeit",
+      "art": "negativ",
+      "title": "Orchester kuendigt neue Auftritte an",
+      "summary": "Nach seiner abgeschlossenen Konzertreise im Jahr 2024 plant das Orchester zwei weitere Auftritte. Termine fuer die neuen Auftritte wurden noch nicht genannt.",
+      "erwartet": ["Abgeschlossene Reise 2024 und neue geplante Auftritte trennen.", "Neue Auftritte weder als bereits erfolgt noch als Teil der Reise 2024 darstellen.", "Keinen Termin aus Publikationszeit oder Vorwissen ergaenzen."]
+    },
+    {
+      "id": "ereigniszeit-belegt",
+      "klasse": "Ereigniszeit",
+      "art": "positiv",
+      "title": "Orchester kuendigt zwei Auftritte fuer 2028 an",
+      "summary": "Die Konzertreise 2024 ist abgeschlossen. Das Orchester kuendigt zwei neue Auftritte am 8. und 9. Mai 2028 an. Diese Termine betreffen die neuen Auftritte, nicht die alte Reise.",
+      "erwartet": ["Beide neuen Termine 8. und 9. Mai 2028 korrekt den angekuendigten Auftritten zuordnen.", "Abgeschlossenen Rueckblick 2024 getrennt halten; weder Ereignisjahr durch Publikationsjahr ersetzen noch angekuendigte Auftritte als abgeschlossen ausgeben."]
+    }
+  ],
+  "dokumentStandard": {
+    "source_name": "Synthetischer Fachbericht",
+    "source_type": "media",
+    "published_at": "2026-09-17T10:00:00Z",
+    "urlBasis": "https://example.org/helmut-prosa/",
+    "artikelkontext": null
+  }
+}

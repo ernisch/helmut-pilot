@@ -316,8 +316,12 @@ async function main() {
     check("10.1 Der skalierbare Pfad ruft im CODE KEIN eigenes Budget-Gate auf",
       !/canSpendLlm|canSpendLlmForTenant|reserveLlmCall/.test(src));
     check("10.2 Er importiert das KI-Modul gar nicht", !/require\(["']\.\/ai["']\)/.test(srcRoh));
+    const anschluss = fs.readFileSync(path.join(ROOT, "lib/helmut/artikelkontext-lauf.js"), "utf8");
     check("10.3 Verstehen laeuft ueber runUnderstandingShadow — dessen globaler Deckel gilt unveraendert",
-      /eagerUnderstanding: lazy\("\.\/understanding", "runUnderstandingShadow"\)/.test(srcRoh));
+      /eagerUnderstanding: lazy\("\.\/artikelkontext-lauf", "runUnderstandingShadow"\)/.test(srcRoh)
+      && /const U = require\("\.\/understanding"\)/.test(anschluss)
+      && /return U\.runUnderstandingShadow\(dokumente, mitArtikelkontext\(overrides\)\)/.test(anschluss)
+      && !/require\(["']\.\/ai["']\)|canSpendLlm|reserveLlmCall/.test(anschluss));
     const storage = fs.readFileSync(path.join(ROOT, "lib/helmut/storage.js"), "utf8");
     check("10.4 canSpendLlm ist unveraendert global (politicianId = null im Verstehenspfad)",
       /canSpend: \(\) => storage\.canSpendLlm\(null\), \/\/ GLOBAL: null, niemals pro Nutzer/

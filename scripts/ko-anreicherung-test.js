@@ -19,7 +19,7 @@ check("Gesundheitsausschuss -> Gesundheit", has(m.derivePolicyFields({ ausschues
 check("Ausschuss für Arbeit und Soziales -> Arbeit und Soziales", has(m.derivePolicyFields({ ausschuesse: ["Ausschuss für Arbeit und Soziales"] }), "Arbeit und Soziales"));
 check("Sozialausschuss -> Arbeit und Soziales (Synonym)", has(m.derivePolicyFields({ ausschuesse: ["Sozialausschuss"] }), "Arbeit und Soziales"));
 check("Finanzausschuss -> Finanzen", has(m.derivePolicyFields({ ausschuesse: ["Finanzausschuss"] }), "Finanzen"));
-check("mentioned_committees zählt auch", has(m.derivePolicyFields({ mentioned_committees: ["Verteidigungsausschuss"] }), "Verteidigung"));
+check("Blosse Ausschusserwaehnung begruendet kein Politikfeld", m.derivePolicyFields({ mentioned_committees: ["Verteidigungsausschuss"] }).length === 0);
 check("Dedup: Ausschuss + Synonym -> ein Feld", m.derivePolicyFields({ ausschuesse: ["Ausschuss für Arbeit und Soziales", "Sozialausschuss"] }).length === 1);
 check("Prozedur-Gremium 'Koalitionsausschuss' -> KEIN Politikfeld", m.derivePolicyFields({ ausschuesse: ["Koalitionsausschuss"] }).length === 0);
 check("'Bundesrat (Plenum)' -> KEIN Politikfeld", m.derivePolicyFields({ ausschuesse: ["Bundesrat (Plenum)"] }).length === 0);

@@ -23,9 +23,21 @@ function check(name, cond) {
 
 // ============================ DERIVER: Entscheidungsebene ============================
 console.log("== Deriver: Entscheidungsebene ==");
-check("Bundestagsausschuss -> bund/high", (() => { const d = c.deriveDecisionLevel({ ausschuesse: ["Arbeit und Soziales"] }); return d.level === "bund" && d.confidence === "high"; })());
-check("Landtag+Bundesland -> land", c.deriveDecisionLevel({ mentioned_organizations: ["Landtag Brandenburg"], mentioned_locations: ["Brandenburg"] }).level === "land");
-check("EU-Kommission -> eu", c.deriveDecisionLevel({ mentioned_organizations: ["Europäische Kommission"] }).level === "eu");
+check("Fachname allein ohne Ebene; ausdruecklicher Bundestagsvorgang weiterhin bund/high", (() => {
+  const ko = { ausschuesse: ["Arbeit und Soziales"] };
+  const d = c.deriveDecisionLevel({ ...ko, headline: "Bundestag beraet Gesetzentwurf" });
+  return c.deriveDecisionLevel(ko).level === "unknown" && d.level === "bund" && d.confidence === "high";
+})());
+check("Erwaehnter Landtag begruendet keine Ebene; belegte Handlung weiterhin land", (() => {
+  const ko = { mentioned_organizations: ["Landtag Brandenburg"], mentioned_locations: ["Brandenburg"] };
+  return c.deriveDecisionLevel(ko).level === "unknown"
+    && c.deriveDecisionLevel({ ...ko, headline: "Landtag Brandenburg beschliesst Schulgesetz" }).level === "land";
+})());
+check("Erwaehnte EU-Kommission begruendet keine Ebene; belegte Handlung weiterhin eu", (() => {
+  const ko = { mentioned_organizations: ["Europäische Kommission"] };
+  return c.deriveDecisionLevel(ko).level === "unknown"
+    && c.deriveDecisionLevel({ ...ko, headline: "Europäische Kommission veroeffentlicht Bericht" }).level === "eu";
+})());
 check("leeres KO -> unknown (NICHT automatisch bund)", (() => { const d = c.deriveDecisionLevel({}); return d.level === "unknown" && d.confidence === "unknown"; })());
 check("nur Bundesland-Ort ohne Institution -> unknown (kein Bund)", c.deriveDecisionLevel({ mentioned_locations: ["Bayern"] }).level === "unknown");
 // SPRINT 20 — ANGEPASST, weil die alte Erwartung den Defekt festschrieb.
@@ -43,7 +55,7 @@ check("unknown-KO erfasst Land-Bezug in related_levels + ERWAEHNTER Geografie", 
 check("blosse Ortsnennung wird NICHT zur betroffenen Geografie (Sprint 20)",
   c.classifyKnowledgeObject({ mentioned_locations: ["Bayern"] }).affected_geographies.length === 0);
 check("classification_confidence.level = unknown bei unknown-Ebene", c.classifyKnowledgeObject({ mentioned_locations: ["Bayern"] }).classification_confidence.level === "unknown");
-check("'eu' matcht NICHT als Substring in 'Deutschland'", c.deriveDecisionLevel({ mentioned_locations: ["Deutschland"], ausschuesse: ["Finanzen"] }).level === "bund");
+check("'eu' matcht NICHT als Substring in 'Deutschland'", c.deriveDecisionLevel({ headline: "Deutschland diskutiert Reform", mentioned_locations: ["Deutschland"], ausschuesse: ["Finanzen"] }).level === "unknown");
 check("related_levels leer bei reinem Bund-KO", (() => { const r = c.classifyKnowledgeObject({ ausschuesse: ["Finanzen"], mentioned_locations: ["Deutschland"] }); return r.related_levels.length === 0; })());
 check("Bundesland-Erwaehnung -> related_levels enthaelt land", (() => { const r = c.classifyKnowledgeObject({ ausschuesse: ["Finanzen"], mentioned_locations: ["Bayern"] }); return r.related_levels.includes("land"); })());
 
@@ -129,8 +141,8 @@ check("embedding NICHT in Lese-Whitelist (Perf)", !storage.V3_KNOWLEDGE_OBJECT_C
 // ============================ BACKFILL ============================
 console.log("== Backfill: Dry-Run / execute / Idempotenz ==");
 const fixtures = [
-  { id: "ko-1", understanding_status: "complete", ausschuesse: ["Gesundheit"], mentioned_locations: ["Deutschland"], was_ist_passiert: "Gesetzentwurf" },
-  { id: "ko-2", understanding_status: "complete", mentioned_organizations: ["Landtag Brandenburg"], mentioned_locations: ["Brandenburg"] },
+  { id: "ko-1", understanding_status: "complete", ausschuesse: ["Gesundheit"], mentioned_locations: ["Deutschland"], was_ist_passiert: "Der Bundestag beraet einen Gesetzentwurf." },
+  { id: "ko-2", understanding_status: "complete", mentioned_organizations: ["Landtag Brandenburg"], mentioned_locations: ["Brandenburg"], headline: "Landtag Brandenburg beschliesst Schulgesetz" },
   { id: "ko-3", understanding_status: "complete", decision_level: "bund" }, // schon klassifiziert -> Skip (idempotent)
   { id: "ko-4", understanding_status: "pending" } // nicht verstanden -> Skip
 ];

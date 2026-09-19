@@ -139,10 +139,10 @@ LAUF.zweitprofil = PROFIL_B.id;
 // spezifische Ankermengen; urheber/ressort sind nur beim Hauptfall gefuellt.
 const DIP_API_DOKUMENTE = [
   {
-    // Pflichtfall 1: klar relevanter Bundesvorgang mit echtem Ausschussbezug.
+    // Pflichtfall 1: synthetischer Bundesvorgang mit ausdruecklichem Ausschussbeleg.
     id: "9990001",
     drucksachetyp: "Gesetzentwurf",
-    titel: "Entwurf eines Gesetzes zur Staerkung der Tariftreue",
+    titel: "Entwurf eines Gesetzes zur Staerkung der Tariftreue im Ausschuss für Arbeit und Soziales",
     datum: "2026-07-28",
     fundstelle: { pdf_url: "https://bund.example/btd/21/9990001.pdf" },
     urheber: [{ titel: "Bundesregierung" }],
@@ -182,7 +182,7 @@ const MEDIEN_ITEMS = [
     // Pflichtfall 3: Landesvorgang mit aehnlich benanntem Ausschuss.
     id: "media-land-sozialbericht",
     title: "Landtag in Sachsen debattiert den Sozialbericht",
-    summary: "Der Landtag eroertert den Sozialbericht des Landes.",
+    summary: "Der Landtag eroertert den Sozialbericht des Landes. Der Ausschuss für Soziales, Gesundheit und Integration beraet den Bericht.",
     url: "https://medien.example/land/sozialbericht",
     sourceName: "Beispielmedien", sourceId: "medien-beispiel", sourceType: "media",
     linkType: "direct", confidence: "medium",
@@ -262,11 +262,11 @@ const AI_FIXTURES = [
       wer_ist_betroffen: "Beschaeftigte und Arbeitgeber bundesweit.",
       handlungsempfehlung: "Zahlen zur Tarifbindung in eigene Argumentation uebernehmen.",
       parteien: [], ausschuesse: [],
-      ministerien: ["Bundesministerium für Arbeit und Soziales"],
+      ministerien: [],
       risiken: [], chancen: ["Belastbare Zahlen fuer die eigene Position zur Tarifbindung"],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
       mentioned_committees: [],
-      mentioned_ministries: ["Bundesministerium für Arbeit und Soziales"],
+      mentioned_ministries: [],
       mentioned_locations: [], mentioned_organizations: [],
       tags: ["Tarifbindung"],
       zeitdruck: "mittel", confidence_score: 75,
@@ -287,11 +287,11 @@ const AI_FIXTURES = [
       wer_ist_betroffen: "Fischereibetriebe und Kuestenregionen.",
       handlungsempfehlung: "Keine Reaktion noetig.",
       parteien: [], ausschuesse: [],
-      ministerien: ["Bundesministerium für Ernährung und Landwirtschaft"],
+      ministerien: [],
       risiken: [], chancen: [],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
       mentioned_committees: [],
-      mentioned_ministries: ["Bundesministerium für Ernährung und Landwirtschaft"],
+      mentioned_ministries: [],
       mentioned_locations: [], mentioned_organizations: [],
       tags: ["Fischerei"],
       zeitdruck: "niedrig", confidence_score: 60,
@@ -396,11 +396,11 @@ const AI_FIXTURES = [
       wer_ist_betroffen: "Leistungsberechtigte der Grundsicherung.",
       handlungsempfehlung: "Zustaendigkeit klaeren, dann bewerten.",
       parteien: [], ausschuesse: [],
-      ministerien: ["Ministerium für Soziales"],
+      ministerien: ["Ministerium"],
       risiken: [], chancen: [],
       mentioned_people: [], mentioned_mps: [], mentioned_parties: [],
       mentioned_committees: [],
-      mentioned_ministries: ["Ministerium für Soziales"],
+      mentioned_ministries: ["Ministerium"],
       mentioned_locations: [], mentioned_organizations: [],
       tags: ["Grundsicherung"],
       zeitdruck: "niedrig", confidence_score: 58,
@@ -508,6 +508,10 @@ function neuerStore() {
   check("C7 thematischer Bundesvorgang: Ebene bund, KEIN Ausschuss",
     koThema.decision_level === "bund" && (koThema.ausschuesse || []).length === 0
       && (koThema.mentioned_committees || []).length === 0);
+  check("C7b Ministerienlisten nur mit Quellnennung: Hauptfall belegt, Fachnaehe allein leer",
+    koRelevant.ministerien.includes("Bundesministerium für Arbeit und Soziales")
+      && koThema.ministerien.length === 0 && koThema.mentioned_ministries.length === 0
+      && koIrrelevant.ministerien.length === 0 && koIrrelevant.mentioned_ministries.length === 0);
   check("C8 Landesvorgang: Ebene land (Landtag + Bundesland), aehnlich benannter Ausschuss gespeichert",
     koLand.decision_level === "land"
       && (koLand.ausschuesse || []).includes("Ausschuss für Soziales, Gesundheit und Integration"),
@@ -520,7 +524,8 @@ function neuerStore() {
     koOhneEbene.decision_level === "unknown", koOhneEbene.decision_level);
   check("C11 unvollstaendige Institutionsangabe bleibt ehrlich unknown (Ministerium ohne Ebene)",
     koUnvollstaendig.decision_level === "unknown"
-      && (koUnvollstaendig.ministerien || []).includes("Ministerium für Soziales"),
+      && (koUnvollstaendig.ministerien || []).includes("Ministerium")
+      && /Ministerium fuer Soziales/.test(koUnvollstaendig.was_ist_passiert),
     koUnvollstaendig.decision_level);
   check("C12 Thema entsteht deterministisch aus dem Ausschuss (derivePolicyFields, kein KI-Tag)",
     matching.derivePolicyFields(koLand).includes("Arbeit und Soziales")
