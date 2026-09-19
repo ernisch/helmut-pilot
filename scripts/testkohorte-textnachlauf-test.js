@@ -77,6 +77,7 @@ function fixture() {
           return kopie(id ? s.identitaeten.filter(p => p.id === id) : s.identitaeten);
         }
         if (table === "helmut_store") {
+          if ((u.searchParams.get("id") || "").includes("testfenster-null500-")) return h.fenster ? [kopie(h.fenster)] : [];
           if (u.searchParams.get("select").includes("pushEvents")) return [{ id: "main-auth", pushEvents: h.events, auditEvents: [] }];
           return [{ data: kopie(u.searchParams.get("id") === "eq.main-auth" ? s.auth : s.main) }];
         }
@@ -113,7 +114,90 @@ function fixture() {
   return h;
 }
 
+function bindeFenster(h) {
+  const N = require("../lib/helmut/testfenster-null500");
+  const ids = h.s.mandate.filter(m => m.aktiv).map(m => m.user_id).sort();
+  const ausserhalb = h.s.mandate.filter(m => !m.aktiv).map(m => m.user_id).sort();
+  const laufId = "00000000-0000-4000-8000-000000000459";
+  const manifest = N.pruefeManifest({ version: 1, laufId, ids, ausserhalb, zielHash: D.hash(ids),
+    productionCommit: SHA, vorflugAm: "2026-09-08T16:59:00.000Z", startBis: "2026-09-08T17:00:00.000Z",
+    endeAm: "2026-09-08T18:00:00.000Z", maxKostenMikroUsd: 4000000, bestaetigung: N.FREIGABE,
+    grundlinie: Object.fromEntries(["profile", "identitaeten", "auth", "main"].map(k => [k, "a".repeat(64)])) });
+  h.fenster = { id: N.PREFIX + laufId, data: { manifest, zustand: "aktiv", bestaetigtAktiv: 500,
+    aktiviertAm: "2026-09-08T16:59:15.000Z" } };
+  h.args.testfensterId = laufId;
+  return h;
+}
+
 (async () => {
+  await test("Beendetes Testfenster sperrt selbst500 weiterhin aktive Profile vor Modell und Schreibquittung", async () => {
+    const h = bindeFenster(fixture());
+    Object.assign(h.fenster.data, { zustand: "beendet", beendetAm: start, deaktiviert: 500 });
+    const r = await T.ausfuehren(h.args);
+    assert.equal(h.calls.length, 0, "Ein beendetes Testfenster darf keine Modellfreigabe liefern");
+    assert.equal(h.receipts.length, 0); assert.equal(r.ok, false);
+    assert.equal(r.grund, "nachlauf-testfenster-nicht-aktiv");
+  });
+  await test("Gueltiges Fenster versorgt dieselben500 synthetisch und bindet die Antwort an sein Manifest", async () => {
+    const h = bindeFenster(fixture()); h.rows = [];
+    const r = await T.ausfuehren(h.args);
+    assert.equal(r.ok, true, JSON.stringify(r)); assert.equal(r.gespeichert, 500);
+    assert.deepEqual([...h.calls].sort(), h.fenster.data.manifest.ids);
+    assert.deepEqual(r.testfenster, { id: h.args.testfensterId,
+      manifestHash: D.hash(h.fenster.data.manifest), zielHash: D.hash([...h.calls].sort()),
+      endeAm: h.fenster.data.manifest.endeAm });
+    assert.equal(r.funktionsnachweis500, false);
+  });
+  await test("Neue Quittung ist ohne UUID nicht umgehbar; Frist, Commit und exakte Auswahl sperren vor Schreiben", async () => {
+    for (const change of [h => delete h.args.testfensterId, h => h.args.testfensterId = "",
+      h => h.fenster = null, h => h.fenster.data.manifest.productionCommit = "f".repeat(40),
+      h => h.fenster.data.manifest.endeAm = start,
+      h => { const ziel = h.s.mandate.find(m => m.aktiv && !m.user_id.startsWith("test-kohorte-"));
+        const fremd = h.s.mandate.find(m => !m.aktiv); ziel.aktiv = false; fremd.aktiv = true; }]) {
+      const h = bindeFenster(fixture()); change(h);
+      const r = await T.ausfuehren(h.args);
+      assert.equal(r.ok, false); assert.match(r.grund, /^nachlauf-testfenster-/);
+      assert.equal(h.calls.length, 0); assert.equal(h.receipts.length, 0);
+      assert.equal(h.counter, 1); assert.equal(h.locks.length, 0);
+    }
+  });
+  await test("Testende zwischen Entwurf und Review oder Speicherung gibt keinen zweiten Modellschritt frei", async () => {
+    for (const phase of ["review", "save"]) {
+      const h = bindeFenster(fixture()); let nachEnde = 0;
+      h.args.deps.build = async (p, opts) => {
+        await opts.beforeGenerate(p.id); h.calls.push(p.id);
+        h.counter++; h.s.auth.llmUsage.push({ createdAt: start, model: "gpt-5-mini", estimatedCost: 0.001 });
+        Object.assign(h.fenster.data, { zustand: "beendet", beendetAm: start, deaktiviert: 500 });
+        if (phase === "review") await opts.beforeGenerate(p.id); else await opts.beforeSave(p.id);
+        nachEnde++; throw new Error("Unzulaessig nach Testende");
+      };
+      const r = await T.ausfuehren(h.args);
+      assert.equal(r.grund, "nachlauf-testfenster-nicht-aktiv"); assert.equal(r.ok, false);
+      assert.equal(h.calls.length, 1); assert.equal(nachEnde, 0);
+      assert.equal(r.freigegebeneModelle, 1); assert.equal(r.gespeichert, 0);
+      assert.equal(h.receipts.at(-1).status, "failed"); assert.equal(h.locks.length, 0);
+    }
+  });
+  await test("Fensterende und gelesene Fristverlaengerung stoppen auch ohne neue Endquittung", async () => {
+    for (const phase of ["zeit", "manifest"]) {
+      const h = bindeFenster(fixture()); let freigegeben = 0;
+      h.args.deps.build = async (p, opts) => {
+        if (phase === "zeit") h.clock = Date.parse(h.fenster.data.manifest.endeAm);
+        else h.fenster.data.manifest.endeAm = "2026-09-08T19:00:00.000Z";
+        await opts.beforeGenerate(p.id); freigegeben++; return { available: false };
+      };
+      const r = await T.ausfuehren(h.args);
+      assert.equal(r.ok, false); assert.equal(r.grund, phase === "zeit"
+        ? "nachlauf-testfenster-geschlossen" : "nachlauf-testfenster-veraendert");
+      assert.equal(freigegeben, 0); assert.equal(r.freigegebeneModelle, 0);
+    }
+  });
+  await test("Zu kurze Restfrist wird nicht mit dem vierminuetigen Handlerbudget verlaengert", async () => {
+    const h = bindeFenster(fixture()); h.fenster.data.manifest.endeAm = "2026-09-08T17:01:00.000Z";
+    const r = await T.ausfuehren(h.args);
+    assert.equal(h.calls.length, 0); assert.equal(r.gespeichert, 0);
+    assert(r.results.some(x => x.grund === "zeitbudget")); assert.equal(r.funktionsnachweis500, false);
+  });
   await test("Fehlende oder negative Briefingpruefung stoppt vor Generator, Ticket und Materialisierung", async () => {
     for (const pruefe of [undefined, async () => ({ bereit: false })]) {
       const h = fixture(), vorher = kopie(h.rows); let materialisiert = 0;

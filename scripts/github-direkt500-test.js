@@ -43,6 +43,8 @@ function kontext(vorgang = "provisionierung") {
         return antwort(id ? s.mandate.filter((r) => r.user_id === id) : s.mandate);
       }
       if (table === "profiles") return antwort(s.identitaeten);
+      if (table === "helmut_store" && (u.searchParams.get("id") || "").includes("testfenster-null500-"))
+        return antwort(h.fenster ? [h.fenster] : []);
       if (table === "helmut_store") return antwort([{ data: u.searchParams.get("id") === "eq.main-auth"
         ? { ...s.auth, llmUsage: h.usage, testKostenTage: h.kostenTage } : s.main }]);
       if (table === "pipeline_locks") return antwort(h.locks);
@@ -65,6 +67,21 @@ async function bereitZumFachzyklus() {
     assert.equal(r.ok, true, JSON.stringify(r));
   }
   return h;
+}
+
+function bindeTestfenster(h) {
+  const N = require("../lib/helmut/testfenster-null500"), s = h.w.snapshot();
+  const ids = s.mandate.filter(m => m.aktiv).map(m => m.user_id).sort();
+  const laufId = "00000000-0000-4000-8000-000000000459";
+  const manifest = N.pruefeManifest({ version: 1, laufId, ids,
+    ausserhalb: s.mandate.filter(m => !m.aktiv).map(m => m.user_id).sort(), zielHash: D.hash(ids),
+    productionCommit: SHA, vorflugAm: "2026-09-10T21:59:00.000Z", startBis: JETZT,
+    endeAm: "2026-09-10T23:00:00.000Z", maxKostenMikroUsd: 4000000, bestaetigung: N.FREIGABE,
+    grundlinie: Object.fromEntries(["profile", "identitaeten", "auth", "main"].map(k => [k, "a".repeat(64)])) });
+  h.fenster = { id: N.PREFIX + laufId, data: { manifest, zustand: "aktiv", bestaetigtAktiv: 500,
+    aktiviertAm: "2026-09-10T21:59:15.000Z" } };
+  h.config.textnachlaufVersion = 2; h.config.textnachlaufTestfensterVersion = 1;
+  return laufId;
 }
 
 async function echterQuittungsvertrag(h) {
@@ -441,6 +458,49 @@ async function main() {
     r = await G.ausfuehren({ ...args, env: { ...args.env, GITHUB_RUN_ATTEMPT: "2" } });
     assert.equal(r.grund, "textnachlauf-keine-wiederholung");
     assert(!h.anfragen.some(u => u.pathname === "/api/cron/lage-briefing"));
+  });
+  await test("Actions sperrt ein neues Testfenster ohne UUID oder neue Serverfaehigkeit bereits vor POST", async () => {
+    const h = await bereitZumFachzyklus(), id = bindeTestfenster(h);
+    const args = { ...h.args, vorgang: "textnachlauf", env: { ...h.args.env,
+      HELMUT_TESTKOHORTE_CONFIRM: D.WORTE.textnachlauf, GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1" } };
+    const fehlt = await G.ausfuehren(args);
+    assert.equal(fehlt.grund, "nachlauf-testfenster-id-fehlt");
+    h.config.textnachlaufTestfensterVersion = undefined;
+    const alt = await G.ausfuehren({ ...args, env: { ...args.env, HELMUT_TESTFENSTER_ID: id } });
+    assert.equal(alt.grund, "textnachlauf-testfenster-nicht-deployt");
+    assert(!h.anfragen.some(u => u.pathname === "/api/cron/lage-briefing"));
+  });
+  await test("Actions bindet UUID an genau einen POST und akzeptiert kein fehlendes oder fremdes Echo", async () => {
+    const h = await bereitZumFachzyklus(), id = bindeTestfenster(h), fetch = h.args.fetchFn;
+    const runId = "nachlauf500-123456789"; let calls = 0, echo = "korrekt";
+    const beleg = { id, manifestHash: D.hash(h.fenster.data.manifest),
+      zielHash: h.fenster.data.manifest.zielHash, endeAm: h.fenster.data.manifest.endeAm };
+    h.quittungen = [{ run_id: runId, status: "success", processed_count: 0, failed_count: 0,
+      started_at: JETZT, finished_at: JETZT }];
+    const args = { ...h.args, vorgang: "textnachlauf", env: { ...h.args.env,
+      HELMUT_TESTKOHORTE_CONFIRM: D.WORTE.textnachlauf, GITHUB_RUN_ID: "123456789", GITHUB_RUN_ATTEMPT: "1",
+      HELMUT_TESTFENSTER_ID: id }, fetchFn: async (url, init) => {
+      const u = new URL(url);
+      if (u.pathname === "/api/cron/lage-briefing") {
+        calls++; assert.equal(init.method, "POST"); assert.equal(init.headers["x-helmut-testfenster"], id);
+        return { status: 200, json: async () => ({ ok: true, schemaVersion: 1, runId,
+          modus: "manuell-fehlende-texte", ziel: 500, gespeichert: 0, funktionsnachweis500: false,
+          results: h.fenster.data.manifest.ids.map(userId => ({ userId, grund: "zeitbudget" })),
+          ...(echo === "fehlt" ? {} : { testfenster: { ...beleg,
+            ...(echo === "fremd" ? { manifestHash: "f".repeat(64) } : {}) } }) }) };
+      }
+      if (u.pathname.endsWith("/briefings")) return { status: 200, json: async () => [] };
+      return fetch(url, init);
+    } };
+    const gut = await G.ausfuehren(args);
+    assert.equal(gut.ok, true, JSON.stringify(gut)); assert.equal(calls, 1);
+    assert.equal(gut.funktionsnachweis500, false); assert.deepEqual(gut.testfenster, beleg);
+    for (echo of ["fehlt", "fremd"]) {
+      const vorher = calls, schlecht = await G.ausfuehren(args);
+      assert.equal(schlecht.grund, "textnachlauf-antwort-nicht-bestaetigt");
+      assert.equal(schlecht.zustandUnbekannt, true); assert.equal(schlecht.automatischeWiederholung, false);
+      assert.equal(calls, vorher + 1);
+    }
   });
   await test("Textnachlauf nutzt genau einen geschuetzten POST und prueft gespeicherte Wirkung", async () => {
     const h = await bereitZumFachzyklus(), fetch = h.args.fetchFn;

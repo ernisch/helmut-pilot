@@ -146,6 +146,8 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
 
     if (vorgang === "textnachlauf") {
       const T = require("../lib/helmut/testkohorte-textnachlauf");
+      const W = require("../lib/helmut/testnachweis-arbeitsfenster");
+      const testfensterId = env.HELMUT_TESTFENSTER_ID || undefined;
       const arbeitsbeginn = T.pruefeArbeitsbeginn(env.HELMUT_TEXTNACHLAUF_AB_POSITION || 1);
       D.fordere(arbeitsbeginn === 1 || config.textnachlaufArbeitsauswahlVersion === 1,
         "textnachlauf-arbeitsauswahl-nicht-deployt");
@@ -158,13 +160,18 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       T.pruefeKosten(bestand.auth, kosten.reservierungen, now().toISOString().slice(0, 10));
       D.fordere(/^[0-9]{5,20}$/.test(env.GITHUB_RUN_ID || "") && env.GITHUB_RUN_ATTEMPT === "1",
         "textnachlauf-keine-wiederholung");
+      D.fordere(testfensterId === undefined || config.textnachlaufTestfensterVersion === 1,
+        "textnachlauf-testfenster-nicht-deployt");
+      const fenster = await W.lese({ laufId: testfensterId, commit: env.GITHUB_SHA,
+        get: db, jetzt: now, profile: bestand.mandate });
       const hash = D.hash({ mandate: bestand.mandate, identitaeten: bestand.identitaeten, users: bestand.auth.users });
       const runId = "nachlauf500-" + env.GITHUB_RUN_ID;
       const kostenVorher = kosten;
       const day = require("../lib/helmut/briefing-frische").berlinTagKey(now());
-      const ids = bestand.mandate.filter(m => m.aktiv).map(m => m.user_id).sort();
+      const ids = fenster ? [...fenster.manifest.ids] : bestand.mandate.filter(m => m.aktiv).map(m => m.user_id).sort();
       const arbeitsIdsErlaubt = new Set(ids.slice(arbeitsbeginn - 1));
       const auswahlBestaetigt = b => (b?.arbeitsbeginn ?? 1) === arbeitsbeginn
+        && (!fenster || D.hash(b?.testfenster || null) === D.hash(W.beleg(fenster)))
         && Array.isArray(b?.results) && b.results.every(r => arbeitsIdsErlaubt.has(r?.userId)
           || (r?.gestartet === false && r?.gespeichert !== true && r?.lageVorhanden !== true
             && r?.grund === "ausserhalb-arbeitsauswahl"));
@@ -182,12 +189,14 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         return rows;
       }
       const texteVorher = await leseTexte();
+      await W.lese({ laufId: testfensterId, commit: env.GITHUB_SHA, get: db, jetzt: now, vorher: fenster });
       fachlaufAusgeloest = true;
       const res = await fetchFn("https://helmut-pilot.vercel.app/api/cron/lage-briefing?nachlauf=fehlende-500", {
         method: "POST", redirect: "error", signal: AbortSignal.timeout(295000),
         headers: { Authorization: `Bearer ${env.HELMUT_CRON_SECRET}`, Accept: "application/json",
           "x-helmut-production-commit": env.GITHUB_SHA, "x-helmut-lauf": runId,
           "x-helmut-bestaetigung": T.CONFIRM,
+          ...(fenster ? { "x-helmut-testfenster": testfensterId } : {}),
           ...(arbeitsbeginn > 1 ? { "x-helmut-arbeitsbeginn": String(arbeitsbeginn) } : {}) }
       });
       D.fordere(res.status === 200, "textnachlauf-http-fehler");
@@ -261,6 +270,8 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         && Date.parse(rows[0].finished_at) <= now().getTime(), "textnachlauf-quittung-abweichend");
       await pruefeBetrieb();
       const nach = await snapshot();
+      await W.lese({ laufId: testfensterId, commit: env.GITHUB_SHA,
+        get: db, jetzt: now, profile: nach.mandate, vorher: fenster });
       D.pruefeSnapshot(nach, snapshotModus);
       D.fordere(hash === D.hash({ mandate: nach.mandate, identitaeten: nach.identitaeten, users: nach.auth.users }),
         "textnachlauf-bestand-veraendert");

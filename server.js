@@ -211,6 +211,7 @@ async function handleRequest(request, response) {
       runId: request.headers["x-helmut-lauf"],
       confirmation: request.headers["x-helmut-bestaetigung"],
       arbeitsbeginn: request.headers["x-helmut-arbeitsbeginn"],
+      testfensterId: request.headers["x-helmut-testfenster"],
       config: () => testnachweisKonfiguration(),
       deps: {
         pruefeBriefing: (profile, userId) => require("./lib/helmut/briefing-aussagenbindung")
@@ -258,6 +259,7 @@ async function handleRequest(request, response) {
           .profilQuellenErlaubt({ id: "test-kohorte-a-001" }),
         textnachlaufVersion: 2,
         textnachlaufArbeitsauswahlVersion: 1,
+        textnachlaufTestfensterVersion: 1,
         test500PruefaufnahmeVersion: 1,
         testKosten: require("./lib/helmut/testkosten-budget").konfiguration(),
         quellenkontext: {
@@ -3101,6 +3103,7 @@ function testnachweisKonfiguration() {
     kohortenQuellenGesperrt: !require("./lib/helmut/scheduler").profilQuellenErlaubt({ id: "test-kohorte-a-001" }),
     atomicLock: storageModul.atomicLockEnabled(), narrativQueue: scalablePipeline.narrativUeberWarteschlange(),
     textnachlaufArbeitsauswahlVersion: 1,
+    textnachlaufTestfensterVersion: 1,
     modell: require("./lib/helmut/ai").understandingModelName(), azure: Boolean(process.env.AZURE_OPENAI_KEY),
     testKosten: require("./lib/helmut/testkosten-budget").konfiguration()
   };

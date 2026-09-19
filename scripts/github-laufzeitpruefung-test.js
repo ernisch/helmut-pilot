@@ -124,13 +124,19 @@ async function main() {
     check(ohneProduction.body.ok === false && ohneProduction.body.grund === "nachlauf-konfiguration-abweichend",
       "Echter Server prueft Laufzeit vor jedem Speicher oder Modellpfad");
     const textlauf = require("../lib/helmut/testkohorte-textnachlauf"), originalTextlauf = textlauf.ausfuehren;
-    let arbeitsbeginn, auswahlVersion;
+    let arbeitsbeginn, auswahlVersion, testfensterId, fensterVersion;
     textlauf.ausfuehren = async args => { arbeitsbeginn = args.arbeitsbeginn;
-      auswahlVersion = (await args.config()).textnachlaufArbeitsauswahlVersion; return { ok: true }; };
+      const config = await args.config(); auswahlVersion = config.textnachlaufArbeitsauswahlVersion;
+      fensterVersion = config.textnachlaufTestfensterVersion; testfensterId = args.testfensterId;
+      return { ok: true }; };
     try {
       const scoped = await request("POST", geheim, nachlauf, { "x-helmut-arbeitsbeginn": "27" });
       check(scoped.status === 200 && arbeitsbeginn === "27" && auswahlVersion === 1,
         "Echter HTTP Handler transportiert die Arbeitsauswahl und meldet dieselbe Faehigkeit");
+      const uuid = "00000000-0000-4000-8000-000000000459";
+      const gebunden = await request("POST", geheim, nachlauf, { "x-helmut-testfenster": uuid });
+      check(gebunden.status === 200 && testfensterId === uuid && fensterVersion === 1,
+        "Echter Handler transportiert die Testfensterbindung und meldet die deployte Faehigkeit");
     } finally { textlauf.ausfuehren = originalTextlauf; }
     const B = require("../lib/helmut/briefing-speicher");
     const profile = { id: "test-kohorte-a-001", committees: ["Bildung"], deputyCommittees: ["Haushaltsausschuss"] };

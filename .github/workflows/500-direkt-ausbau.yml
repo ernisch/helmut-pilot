@@ -27,6 +27,10 @@ on:
         description: "Nur Textnachlauf: erste Position der sortierten 500er Zielmenge (leer = 1)"
         type: string
         required: false
+      testfenster_id:
+        description: "Textnachlauf im neuen 0 auf500 Fenster: gespeicherte UUID zwingend angeben"
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -61,6 +65,7 @@ jobs:
           HELMUT_TESTKOHORTE_CONFIRM: ${{ inputs.bestaetigung }}
           HELMUT_QUELLENKONTEXT_BESTANDSPROFILE: ${{ inputs.bestandsprofile }}
           HELMUT_TEXTNACHLAUF_AB_POSITION: ${{ inputs.text_ab_position }}
+          HELMUT_TESTFENSTER_ID: ${{ inputs.testfenster_id }}
         run: |
           if [ "$HELMUT_DIREKT_SCHRITT" = "vorpruefung" ]; then
             node scripts/testkohorte-vorwaerts.js vorpruefung --ziel=500
