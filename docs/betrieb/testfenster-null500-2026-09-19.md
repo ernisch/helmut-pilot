@@ -108,3 +108,83 @@ und benoetigt die dafuer geltende Freigabe. Profile bleiben bis dahin null.
 Rueckweg fuer diesen reinen Vorbereitungscode: gezielter Code Revert.
 Vor einer spaeteren Aktivierung muss der gepruefte SQL Abschluss privat
 vorliegen; ein Code Revert ersetzt ihn nicht und loescht keine Quittung.
+
+## Integration und rein lesender Production Abschluss
+
+PR455 Head `8bb39e21955ed113399e505b5ec73b6d95259f4f`, CI35453302966
+vollstaendig erfolgreich:424/424 Suiten in791s, Browser50, Kontoschutz15
+samt500 isolierten Registrierungen, neuer PostgreSQL Testweg16/16 und
+Z22 PASS48/FAIL0. Alle25 Pflichtschritte erfolgreich, kein Skip. Damit ist
+der oben zunaechst offene echte Datenbanknachweis erbracht. Er umfasst
+auch unbekannte Kostenreserven, lebende Leases und den Schutz eines
+unerwartet fremd aktivierten Profils beim Ende.
+
+Merge `1feb22160259df887665d11a55b9ea9f5deb83c8`, Production READY
+`dpl_CHvrsksfy1pNo2gUNgtMEUsQMM53` mit korrektem Main Alias und Commit.
+Reiner Leser35454254225 erfolgreich, HTTP200 am19.09.16:13:29 UTC:
+exklusiver relationaler Profilpfad, V3, Kommunikations- und Quellensperre,
+Retention36, Tagesdeckel2416/Reserve702/Vorrang200, atomarer4 USD Riegel
+und Sperrenschutz unveraendert. Artikelkontext nicht aktiviert.
+
+Native SQL16:13:34 UTC bestaetigt504/0, unveraenderte Hashes aller Profile,
+Identitaeten, des gesamten Authblobs einschliesslich Sessions, Kontoschutz
+und Main. Keine lebende Sperre, Lease, junge offene Prozessquittung oder
+Kostenreserve; alle22709 Jobs erledigt, Tagesbuch262850 Mikro USD.
+Kein Aktivierungs- oder End SQL wurde in Production ausgefuehrt. Der
+Vorbereitungsteil ist technisch erfolgreich abgeschlossen; der gesamte
+Testweg bleibt bis zur automatischen Terminierung teilweise abgeschlossen.
+Main CI35454184052 ebenfalls erfolgreich:424/424 in784s, Testweg16/16,
+Z22 PASS48/FAIL0, beide Pflichtjobs. Vorherige Main CI35452802010 erfolgreich:
+423/423 und Z22 PASS48/FAIL0.
+
+## Ergebnisleser nach der Rueckkehr auf null
+
+19.09., Branch `codex/nachweis-ziel500-20260919`, **teilweise abgeschlossen**.
+Beide alten Ergebnisleser bildeten ihre Zielmenge aus495 synthetischen und
+den gerade aktiven Bestandsprofilen. Bei null aktiven Profilen fehlten damit
+die fuenf Bestandsprofile; eine fremde Aktivierung konnte den Nenner aendern.
+
+Die engste Reparatur verwendet die bereits vorhandene Testfensterquittung
+aus PR455. Der neue optionale Workflowparameter `testfenster_id` ist fuer
+beide Inhaltsleser Pflicht; der reine Production Statusleser bleibt ohne
+ihn nutzbar. Nur eine UUID wird uebergeben. Die500 Kennungen kommen privat
+aus der exakt adressierten gespeicherten Quittung, deren Manifest, Zielhash,
+Startbestaetigung, Zustand und Zeitbindung geprueft werden. Es gibt keine
+neue Tabelle, keine Quittungsanlage, keinen Schreibzugriff und keinen
+Aktivierungsaufruf. Fehlende Quittung bedeutet Abbruch, keinen Rueckfall
+auf den Aktivstatus. Die vier ausgeschlossenen Kennungen muessen ebenfalls
+im504er Bestand vorhanden sein.
+
+Vor und nach einer Lesung muss dieselbe Quittung stehen. Ihr Wechsel
+verhindert ein erfolgreiches Lesergebnis. Der private Archivleser behaelt
+auch seine doppelte Inhalts- und Bestandslesung sowie Verschluesselung.
+Oeffentlich erscheinen nur feste Gesamtzahlen, UUID und Zielhash; die
+vollstaendige Auswahl bleibt im verschluesselten Betreiberbeleg. Der
+gewuenschte Archivtag wird weiterhin separat gewaehlt. Eine passende
+Quittung allein bestaetigt weder den aktuellen Aktivzustand noch eine
+Versorgung innerhalb des neuen Testfensters. Der Nenner ist repariert;
+Morgenfrische, drei Ergebnisarten und die vollstaendige Fachpruefung sind
+gesonderte noch offene Abnahmekriterien. Beide Leser behaupten weiterhin
+keinen transaktionalen Snapshot und keinen500er Funktionsnachweis.
+
+Lokale gezielte Pruefung: Zielvertrag4/4, App Leser7/7, privater Leser7/7,
+Zugangsvertrag48/48. Belegte Gegenfaelle: gleiche500 bei aktiven und bei
+inaktiven Profilen; ausgeschlossenes fremd aktives Profil bleibt draussen;
+beschaedigte Auswahl, falsche Quittung und Zustandswechsel werden abgewiesen.
+Alle vorhandenen Mandanten-, Tages-, Hash-, Schluessel- und
+Klartextschutzpruefungen bleiben erhalten. Ein alter Zaehler erwartete
+synthetische Profile zuerst; die neue unveraenderlich sortierte Auswahl
+liefert zuerst die fuenf synthetischen Bestandsfixtures. Seine Erwartung
+wurde auf diese belegte Reihenfolge angepasst, keine Assertion entfernt.
+Kanonischer Gesamtlauf erfolgreich:425/425 Suiten in643s, Exit0. Der erste
+Lauf wurde wegen eines fehlenden lokalen Browserpfads abgebrochen; der
+vollstaendige zweite Lauf nutzt den bereits vorhandenen Browsercache.
+Kein Test oder Schutz wurde dafuer veraendert. CI und Integration stehen
+noch aus. Kein Production Inhaltslauf, weil noch keine neue
+Testfensterquittung angelegt werden darf.
+
+Risiko und Rueckweg: Nur explizite Betreiberleser sind betroffen. Alte
+manuelle Inhaltsaufrufe ohne UUID werden bewusst abgewiesen. Gezielt den
+Lesercode zuruecksetzen, falls noetig; Quittungen und Testauswahl nicht
+loeschen. Der bisherige abgelaufene aktive Eingabeprobevertrag bleibt
+unveraendert gesperrt und wird durch die UUID nicht neu freigegeben.

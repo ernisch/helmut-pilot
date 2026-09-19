@@ -22,6 +22,10 @@ on:
         description: "Kalendertag des gespeicherten Briefings, YYYY-MM-DD"
         type: string
         required: false
+      testfenster_id:
+        description: "Inhaltsleser: UUID der gespeicherten 0 auf 500 auf 0 Testfensterquittung"
+        type: string
+        required: false
       privater_inhaltsnachweis:
         description: "Begrenzte private Inhaltsprobe ausschliesslich verschluesselt lesen"
         type: boolean
@@ -118,6 +122,7 @@ jobs:
           HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
           HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
           HELMUT_NACHWEIS_TAG: ${{ inputs.briefing_tag }}
+          HELMUT_NACHWEIS_TESTFENSTER: ${{ inputs.testfenster_id }}
         run: node scripts/github-briefingnachweis-500.js
 
   privater_inhaltsnachweis:
@@ -141,6 +146,7 @@ jobs:
           HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
           HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
           HELMUT_NACHWEIS_TAG: ${{ inputs.briefing_tag }}
+          HELMUT_NACHWEIS_TESTFENSTER: ${{ inputs.testfenster_id }}
           HELMUT_PRUEFEINGABE_500: ${{ inputs.pruefeingabe_500 }}
           HELMUT_PRIVAT_AB_POSITION: ${{ inputs.nachweis_ab_position }}
           HELMUT_PRIVAT_ANZAHL: ${{ inputs.nachweis_anzahl }}

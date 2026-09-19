@@ -4,7 +4,7 @@
 // im Nutzinhalt; kein Modell, kein Datenbankschreibzugriff, kein Login.
 const { PROJECT_URL } = require("./github-fachzyklus-a");
 const { pruefe } = require("./github-laufzeitpruefung");
-const { KOHORTE_KENNUNGEN } = require("../lib/helmut/testkohorte-betrieb");
+const Z = require("../lib/helmut/testnachweis-ziel500");
 const S = require("../lib/helmut/storage");
 const B = require("../lib/helmut/briefing-speicher");
 const Q = require("../lib/helmut/lage-textqualitaet");
@@ -47,6 +47,7 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
     T.publicKey(env.HELMUT_NACHWEIS_PUBLIC_KEY); // Vor jedem Netzabruf.
     fordere(String(env.SUPABASE_URL || "").replace(/\/$/, "") === PROJECT_URL
       && env.SUPABASE_SERVICE_ROLE_KEY && env.HELMUT_CRON_SECRET);
+    Z.schluessel(env.HELMUT_NACHWEIS_TESTFENSTER);
     const eingabe500 = env.HELMUT_PRUEFEINGABE_500 === "true";
     fordere([undefined, "", "false", "true"].includes(env.HELMUT_PRUEFEINGABE_500));
     const start = now().getTime();
@@ -80,13 +81,11 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
       fordere(rows.every(r => r.length === 0));
     }
     await ruhe();
+    const leseFenster = () => Z.lese({ laufId: env.HELMUT_NACHWEIS_TESTFENSTER,
+      projectUrl: PROJECT_URL, key: env.SUPABASE_SERVICE_ROLE_KEY, fetchFn });
+    const fenster = await leseFenster();
     const targetQuery = "mandate_profiles?select=user_id,aktiv&order=user_id.asc&limit=505";
-    const all = await get(targetQuery, 505), cohort = new Set(KOHORTE_KENNUNGEN);
-    fordere(all.length === 504 && new Set(all.map(r => r.user_id)).size === 504
-      && all.every(r => typeof r.user_id === "string" && typeof r.aktiv === "boolean")
-      && KOHORTE_KENNUNGEN.every(id => all.some(r => r.user_id === id)));
-    const target = all.filter(r => cohort.has(r.user_id) || r.aktiv).map(r => r.user_id).sort();
-    fordere(target.length === 500 && target.filter(id => !cohort.has(id)).length === 5);
+    const all = await get(targetQuery, 505), target = Z.auswahl(all, fenster);
     if (eingabe500) {
       const exact = P.pruefeBestand(all.map(r => ({ id: r.user_id, profileActive: r.aktiv })));
       fordere(B.hash(exact) === B.hash(target));
@@ -140,12 +139,14 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
     // Leseproben und keine beobachtete aktive Arbeit sind die konkrete Grenze.
     for (const before of mandate) fordere((await leseMandat(before.userId)).snapshotHash === before.snapshotHash);
     fordere(B.hash(await get(targetQuery, 505)) === B.hash(all));
+    Z.gleich(fenster, await leseFenster());
     await ruhe();
     if (eingabe500) {
       pruefeFenster();
       fordere(B.hash(await pruefe({ env, fetchFn })) === B.hash(config));
     }
     const payload = { version: 1, ...(eingabe500 ? { art: "aktive-500-pruefaufnahme", fachlicheFreigabe: false } : {}), ...ctx, ziel: 500, zielHash: B.hash(target),
+      testfenster: env.HELMUT_NACHWEIS_TESTFENSTER, testfensterManifest: fenster.manifest,
       erhobenAm: now().toISOString(), transaktionalerSnapshot: false, mandate };
     const envelope = T.verschluesseln(payload, env.HELMUT_NACHWEIS_PUBLIC_KEY, ctx);
     return { ok: true, reinLesend: true, modellaufrufe: 0, schreibaufrufe: 0,
