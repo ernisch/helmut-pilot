@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026 Tuerkei: Reparaturkette ab PR419 weiterhin offen und ungemergt. Folgebranch auf PR443 schuetzt Akteursrollen und ausdrueckliche Unsicherheit. Vier Prosakategorien bleiben fachlich offen. Gipfelversuch abgeschlossen: genau1 Aufruf,0,006921USD, kein Retry. [Aktuelle Bereitschaft und Freigabegrenze](betrieb/500-bereitschaft-2026-09-19.md). Noch nicht bereit.**
+**19.09.2026 Tuerkei: PR419 bis444 offen und ungemergt. PR444 schuetzt Rollen, Unsicherheit und Sachgebietsableitung; CI417/417 erfolgreich. Vier Prosakategorien fachlich offen. Isolierter Nachweis freigegeben:8 Aufrufe/1,696USD/20min. Noch0 Aufrufe: aktueller Tarif offen, automatischer Azure Portalzugriff abgewiesen. [Auftrag und Ausfuehrer](betrieb/prosa-fachnachweis-2026-09-19.md). Noch nicht bereit fuer Integration oder500er Test.**
 
 Vorflug19.09.01:37 Tuerkei /00:37 Berlin /18.09.22:37UTC: Main `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`, Production `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY. 504 Profile,0 aktiv, keine lebende Sperre oder Lease, kein junger Fachlauf. PR419 bis443 linear. Keine laufende Action; nur zwei alte queued. Globale Work Sitzungen nicht abfragbar. Keine Production Aenderung.
 
@@ -150,14 +150,14 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-19.09. Tuerkei: PR443 bleibt Basis. Folgebranch `codex/akteursrollen-erhalten-20260919` repariert Rollenaufwertung, ueberschriebene Unsicherheit, Ausschussidentitaet und Sachgebietsableitung. Historische Prosaursachen bleiben Ergebnis B; keine Modellabnahme. [Reparatur, Kettenpruefung und offene Testbereitschaft](betrieb/akteursrollen-erhalten-2026-09-19.md). Kein Merge, Deployment, Artikelkontextstart oder bezahlter Test freigegeben.
+19.09. Tuerkei: Folgebranch `codex/prosa-fachnachweis-20260919` auf PR444 sichert den freigegebenen isolierten Achtfallnachweis. Ausfuehrer und Pflicht CI vorbereiten. Scharfer Start blockiert: aktuelle Preiszahlen fehlen, automatischer Portalzugriff abgewiesen. Bei Fehler sofort stoppen und allgemeine Ursache offline untersuchen. Kein Merge, Deployment oder500er Start.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
-**Betreiberauftrag18.09.: erneuter einmaliger Actionsstart nach Reparatur ausdruecklich freigegeben und ausgefuehrt. Genau1 Azure Aufruf; Einmalquittung und Kosten erhalten. Keine weitere Ausfuehrung freigegeben.**
+**Betreiberauftrag19.09.: isolierter Achtfallnachweis samt Einmalquittung, Kosten und Aufruftelemetrie eng freigegeben. Gipfelversuch bleibt abgeschlossen, genau1 Aufruf/0,006921USD, keine Wiederholung.**
 
 1. Erlaubt: rein lesende Production Pruefung, eigener Branch, auftragsbezogener Code, Dokumentation, lokale Offlinepruefungen, Commit, Push und PR. Keine weiteren Agenten oder parallelen schreibenden Ausfuehrer.
-2. Nicht freigegeben: Merge, Deployment, Migration, Production Datenaenderung, Profilaktivierung, Aenderung laufender Crons oder Automationen, Environment oder Azure Aenderung, weitere bezahlte Modelllaeufe, neuer Production Test.
+2. Nicht freigegeben: Merge, Deployment, Migration, Production Datenaenderung ausser engen Versuchs und Kostenbuchungen, Profilaktivierung, Aenderung laufender Crons oder Automationen, Environment oder Azure Aenderung, bezahlte Modelllaeufe ausserhalb der engen Achtfallfreigabe, neuer Production Test.
 3. mini bleibt technische Referenz. Harte 4 USD je UTC Tag inklusive voller offener Reserven bleiben bestehen. Kein weiterer Modellvergleich und keine bezahlten Richteraufrufe. Historische Kosten oder unbekannte Reserven nicht loeschen.
 4. Alle Profile duerfen fuer kuenftige Tests gleich behandelt werden. Aktuell bleiben alle 504 inaktiv. Konten, Identitaeten und Kommunikationssperre bleiben geschuetzt.
 5. Mandantentrennung mit `assertTenant` und explizitem Mandatsfilter; bedingte gemeinsame Schreibvorgaenge und persistente Gegenpruefung. Nicht pruefbar bedeutet niemals bestanden.

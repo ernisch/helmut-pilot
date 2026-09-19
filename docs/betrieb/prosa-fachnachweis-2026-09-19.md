@@ -1,6 +1,6 @@
 # Vorbereiteter isolierter Prosanachweis
 
-**Nicht ausgefuehrt. Status: blockiert an ausdruecklicher Kostenfreigabe.**
+**19.09.2026: eng begrenzt ausdruecklich freigegeben, noch nicht ausgefuehrt. Status: blockiert am aktuellen Tarifnachweis.**
 Basis ist der kumulative Stand des Rollen Folgebranches auf PR443. Die acht
 neutralen Eingaben und vorab festgelegten Erwartungen stehen in
 `prosa-fachnachweis-2026-09-19.json`. Sie sind ausschliesslich synthetisch.
@@ -79,3 +79,104 @@ Klaerung historischer Requests. Bei einem Fehler Ursache neu einordnen und
 den kleinsten allgemeinen Fix offline entwickeln. Bezahlte Wiederholung
 bleibt eine eigene Freigabe. Bei Erfolg folgen Artikelkontextentscheidung,
 sicherer Testfensterplan und kumulative Integrationsfreigabe separat.
+
+
+## Ausfuehrer fuer die Freigabe vom 19.09.
+
+Der Betreiber hat genau den vorbereiteten Auftrag freigegeben: hoechstens acht
+Aufrufe,1,696 USD,20 Minuten, einschliesslich Einmalquittung, Kosten und
+Aufruftelemetrie. Kein Retry; erster kritischer Fehler beendet den gesamten
+Auftrag. Alle504 Profile bleiben inaktiv. Merge, Deployment und500er Start
+bleiben verboten. Die Freigabe aendert weder Eingaben noch Abnahmekriterien.
+
+Basis PR444 `6a69beeea3dafa7c0f6cb7856023ef260d68d57e`, eigener Folgebranch
+`codex/prosa-fachnachweis-20260919`. Anwendungscode, Modellprompt, Schema und
+Tarife bleiben identisch. Der neue Ausfuehrer wird vor dem bezahlten Start
+lokal und durch die vollstaendige Pflicht CI geprueft.
+
+Jeder manuell gebundene Actionslauf fuehrt exakt eine neue Fallposition aus.
+Die Reihenfolge bleibt1 bis8. Vor dem naechsten Start muss die gesamte vorherige
+Antwort direkt gelesen und offline durch Erstverstehen und Update geprueft
+sein. Antwort und Bewertungsdatei werden gehasht; deren Kennungen binden die
+Fortsetzung. Es gibt keine automatische positive Bewertung und keinen
+bezahlten Richter. Ein zweiter Start derselben Position scheitert dauerhaft.
+
+Die neue CAS Quittung `main-auth.prosaFachnachweis20260919` setzt beim ersten
+bestaetigten Start ein gemeinsames20 Minuten Ende. Alle Folgestarts sind an
+Commit, Empfaenger, Manifest, Schema, Vorbewertung und dieses Ende gebunden.
+Mindestens180 Sekunden, die ganze maximale Jobdauer, muessen vor einem neuen Fall verbleiben. Maximal acht
+Vollreserven zu0,212 USD bilden den zusaetzlichen Gesamtdeckel. Das bestehende
+atomare Kostenbuch und der4 USD Tagesriegel bleiben unveraendert.
+
+Der bestehende manuelle Workflow `staff-backfill-one.yml` erhaelt einen eigenen
+Job nur fuer den neuen Branch und `PROSA_EINMAL:`. Der alte Backfilljob und der
+Gipfeljob werden bei diesem Auftrag uebersprungen. Kein automatischer
+Modellstart bei Push oder PR; keine Cronaenderung. GitHub besitzt bereits die
+benoetigten Secrets, lokale Codeprozesse besitzen sie nicht. Nur Commit,
+Fallposition, oeffentlicher Empfaengerschluessel und Bewertungsbindungen werden
+als Formularauftrag uebertragen. Alle Eingaben sind synthetisch und im
+bereits veroeffentlichten Manifest festgelegt; kein privater Quellenexport.
+
+Der echte unveraenderte `ai.requestStructuredJson` reserviert Geld, Aufruf und
+Anbieterplatz vor Azure. Ein isolierter Beobachter prueft die feste gesamte
+HTTP Nutzlast vor dem Senden, erlaubt nur einen Request und sichert die rohe
+Antwort vor Bereinigung und Parsing. Keine Zugangsdaten in den Belegen.
+Transport, geparste Antwort und Kosten werden getrennt mit RSA3072/AES256GCM
+verschluesselt ausgegeben. Der private Schluessel bleibt ausserhalb GitHub.
+Auch eine nicht parsebare Antwort bleibt als Transportbeleg erhalten.
+
+Vor und nach jedem Fall: authentifizierter Runtimeabgleich, Profile, Sperren,
+Leases und junge offene Prozesse. Geschuetzte Authfelder und alte Kostentickets
+muessen unveraendert bleiben. Neue Buchungen muessen eindeutig zu genau einem
+Aufruf und zum Tokenverbrauch passen. Unklarheit stoppt, volle Reserve bleibt.
+Die abschliessende Fachbewertung wird nur in der eigenen Quittung bedingt
+nachgetragen; kein Wissensobjekt oder Briefing wird importiert.
+
+Offline Schutzsuite:11/11 Gruppen einschliesslich echter KI Anbindung bis zur
+simulierten HTTPS Grenze, Geldreserve vor Transport, Rohantwort vor Parsing,
+negativen Abbruechen und acht verschiedenen einmaligen Positionen. Das ist
+kein Modellqualitaetsbeleg. Die Gesamtpruefung und reale Ausfuehrung werden
+anschliessend mit ihren tatsaechlichen Ergebnissen ergaenzt.
+
+## Tarifnachweis und automatische Zugriffssperre
+
+Die bestehende konservative Preisbasis vom09.09. bleibt0,50/4,00 USD je Million
+Eingabe und Ausgabetokens. Sie ist keine neue Anbieterrechnung. Die aktuelle
+[Microsoft Modellbeschreibung](https://learn.microsoft.com/en-us/azure/foundry/foundry-models/concepts/models-sold-directly-by-azure)
+bestaetigt400000 Kontext und272000 Eingabetokens fuer `gpt-5-mini`.
+Der aktuelle [oeffentliche Preisabruf](https://azure.microsoft.com/en-us/pricing/details/azure-openai/)
+zeigt fuer Global und Data Zone ausschliesslich Platzhalter, keine Zahlen.
+Gezielte oeffentliche Retailabfragen lieferten keine passenden Zeilen;
+dies ist kein Beleg fuer Nullkosten. Der Browser konnte die Preisseite nicht
+laden. Keine heutige numerische Tarifbestaetigung behaupten.
+
+Die automatische Freigabepruefung hat anschliessend bereits das Oeffnen von
+`https://portal.azure.com/` abgewiesen. Genannter Grund: moeglicher Zugriff auf
+private Konto, Abonnement, Abrechnungs oder Deploymentdaten sei nicht durch die
+Freigabe des isolierten Tests und oeffentlicher Preispruefung gedeckt.
+Keine Umgehung und kein zweiter Portalzugriff. Der Zugriff war ausschliesslich
+fuer die vorab verlangte Tarifpruefung vorgesehen; keine Azure Aenderung.
+
+Deshalb kein scharfer Actionsstart, kein Modellaufruf und keine Einmalquittung
+oder Kostenbuchung dieses Auftrags. Die lokale und GitHub Pruefung des
+Ausfuehrers wird unabhaengig abgeschlossen. Die bestehende enge Modellfreigabe
+bleibt erhalten; als naechster Schritt fehlt nur die ausdrueckliche Erlaubnis,
+im bestehenden Azure Konto den fuer `gpt-5-mini` geltenden Tarif rein lesend
+gegen die konservative Obergrenze zu pruefen. Keine Secretwerte auslesen,
+keine Konto oder Konfigurationsaenderung. Erst bei ausreichendem Beleg den
+bereits erlaubten isolierten Auftrag ausfuehren.
+
+## Technischer Abschluss vor dem scharfen Versuch
+
+Kanonischer lokaler Gesamtlauf:418/418 Suiten in613 Sekunden erfolgreich.
+Danach die Abschlussreserve auf die volle maximale Actionsjobdauer von180
+Sekunden gebunden; gezielte Schutzsuite erneut11/11, einschliesslich Stopp
+nach17 Minuten im gemeinsamen20 Minuten Fenster. Der Gesamtlauf wird nicht
+als identischer Lauf dieses letzten engeren Zeitriegels ausgegeben. Die
+vollstaendige CI am veroeffentlichten finalen Head folgt als verbindliches Gate.
+Statusgroesse4/4. Kein Anwendungscode, kein bestehender Schutztest und kein
+Tarif geaendert. Alle lokalen Pruefungen ueber `scripts/lokal.js`.
+
+Rueckweg vor Ausfuehrung: ungemergten Folgebranch verwerfen. Nach einem spaeter
+bestaetigten Start bleiben Quittung und Kosten dauerhaft erhalten; kein Reset,
+kein Rueckbuchen unbekannter Kosten und keine Wiederholung verbrauchter Faelle.
