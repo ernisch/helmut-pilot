@@ -8,7 +8,7 @@ on:
       schritt:
         description: "Ein Vorgang; keine automatische Folgeaktion"
         type: choice
-        options: [vorpruefung, provisionierung, aktivierung, reaktivierung, fachzyklus, textnachlauf, quellenkontext]
+        options: [vorpruefung, provisionierung, aktivierung, reaktivierung, fachzyklus, textnachlauf, quellenkontext, quellenkontext-ruhe]
         default: vorpruefung
         required: true
       production_commit:
@@ -17,6 +17,10 @@ on:
         required: true
       bestaetigung:
         description: "Exaktes Wort des gewaehlten Vorgangs; Vorpruefung braucht keines"
+        type: string
+        required: false
+      bestandsprofile:
+        description: "Nur Quellenkontext bei null Aktiven: JSON Array der fuenf ausdruecklich ausgewaehlten Bestandsprofile"
         type: string
         required: false
       text_ab_position:
@@ -55,6 +59,7 @@ jobs:
           HELMUT_DIREKT_SCHRITT: ${{ inputs.schritt }}
           HELMUT_TESTKOHORTE_EXECUTE: "1"
           HELMUT_TESTKOHORTE_CONFIRM: ${{ inputs.bestaetigung }}
+          HELMUT_QUELLENKONTEXT_BESTANDSPROFILE: ${{ inputs.bestandsprofile }}
           HELMUT_TEXTNACHLAUF_AB_POSITION: ${{ inputs.text_ab_position }}
         run: |
           if [ "$HELMUT_DIREKT_SCHRITT" = "vorpruefung" ]; then
