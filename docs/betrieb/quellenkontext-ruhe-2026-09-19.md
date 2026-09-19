@@ -547,3 +547,83 @@ Ein wortgleiches Quellenzitat beweist seine Herkunft, aber nicht die
 Folgerichtigkeit eines zusaetzlichen Urteils. Auch erzeugte strukturierte
 Risiko und Bedeutungsfelder sind ohne unabhaengigen Eingabebeleg keine
 neue Tatsachengrundlage fuer eine deterministische Umformulierung.
+
+## Kontextverlust bei globaler Dublettenverarbeitung
+
+19.09.2026, teilweise abgeschlossen. Eigener Branch
+`codex/testnachlauf-fenster-20260919`, Basis Main f854367.
+Keine konkurrierende Arbeit oder offenen PRs vor der Aenderung.
+
+Zwei oeffentliche RSS Abrufwege wurden einmal isoliert gelesen, ohne
+Production Zugang oder Modellaufruf: die beiden relational als healthy
+und always_on belegten Wege deutschlandfunk-politik und tagesschau-politik.
+Je Weg maximal16 Eintraege,15 Sekunden,1 MiB, keine Weiterleitung,
+kein Wiederholen und keine Artikelabrufe. Publikationsdatum muss wirklich
+im Eingang stehen und innerhalb48 Stunden liegen. Ein Datum aus einem
+Normalisiererfallback gilt nicht als Frischebeleg. Auszuege muessen ganze
+gelieferte Saetze enthalten. Grenzen gelten allgemein, nicht je Meldung.
+
+Erster Actionslauf35476120110: elf Offline Pruefgruppen erfolgreich;
+der echte Leser wurde versehentlich ebenfalls im Offline Schutz gestartet.
+Beide Netzversuche wurden lokal gesperrt, null externe Abrufe. Kein
+Publisherfehler und keine erfolgreiche Quellenaufnahme. Der zweite Lauf
+35476247012 am20.09.02:29 Tuerkei /01:29 Berlin /19.09.23:29 UTC startete
+nur den ausdruecklichen Quellenleser mit leerer Prozessumgebung. Alle
+Offline Tests behalten den vorgeschriebenen Schutz. Zwei GET Requests,
+32 gelesene Meldungen,31 akzeptiert, eine wegen unvollstaendigem Auszug
+abgelehnt. Null Production Writes, null Modelle, kein Import.
+Alle31 Titel und Auszuege vollstaendig gelesen. Native Gegenlesung der
+31 Kennungen: keine bereits vorhanden. Das ersetzt keinen globalen
+Abgleich gegen andere Kennungen und keine vollstaendige500er Versorgung.
+
+**Belegte Ursache:** scheduler minimiert Quellen korrekt, doch
+`dedup-global.buildDocument` baut das Dokument nur aus Identitaetsfeldern
+neu. summary, url und source_name fehlen danach bei allen31 Meldungen.
+Der Storage Spaltenfilter kann nicht retten, was vorher weggeworfen wurde.
+Der Warteschlangenpfad verwendet bereits die Minimierung direkt und hat
+diesen Verlust nicht. Production Aggregat:29782 Rohdokumente,28866 ohne
+summary;18278 mit content_fingerprint, davon17948 ohne summary. Dieses
+Aggregat beweist nicht die Ursache jedes einzelnen historischen Leerfelds.
+
+**Erwartung vor Aenderung:** Originalkontext der gewaehlten Primaerquelle
+erhalten, keine Mischung mit einer schwaecheren Fundstelle. Unbekannter
+Kontext und unbekannte Zeit bleiben unbekannt. Kein Volltext, Rohpayload
+oder Personenfeld neu speichern. Dokumentidentitaet, Ranking und
+Fundstellen bleiben gleich. Vorhandene Quellenbelege duerfen weder durch
+leere noch durch abweichende neue Feedtexte ueberschrieben werden.
+
+Kleinster gemeinsamer Anschluss: die bestehende Minimierung liefert
+summary, url, source_name, source_type, confidence, link_type, retrieved_at,
+document_type und wahlperiode; nur wirklich vorhandene Werte werden
+uebernommen. raw und cluster_id werden nicht neu gesetzt. Der globale
+Anlagepfad verwendet atomare Neuanlage mit ignore-duplicates, auch im
+Einzelrueckfall. Das schuetzt ID Konflikte ausserhalb des14 Tage Fensters
+und konkurrierende Anlagen. Als neu zaehlen nur vom Speicher zurueckgegebene
+Kennungen; bereits vorhandene oder unbestaetigte Zeilen zaehlen nicht.
+Fundstellen und der bestehende bedingte Zaehlerpfad bleiben erhalten.
+Historische Quellen werden nicht automatisch ergaenzt oder ersetzt.
+
+Lokaler Vergleich der echten31 Eingaben: vorher0 Auszuege, nachher31
+bytegleich erhalten; Dokumentidentitaeten und alle Fundstellen unveraendert.
+Privater vollstaendiger Nachweis Helmut_Quellenmotor_Replay_20260919.json,
+Eingabehash9abde02e10f37136bf1b094b0f4aa4665399893776521f46b980028dd8a8f36d.
+Zehn neue Offline Pruefgruppen erfolgreich, dazu alle sieben betroffenen
+Bestandssuiten. Der bestehende verpflichtende PostgreSQL Nachweis prueft
+zusaetzlich beide realen Speicherpfade und geschuetzte ID Konflikte.
+Kanonischer lokaler Gesamtlauf ueber scripts/lokal.js mit Exit0 beendet.
+Sein vollstaendiger Schlussbericht ist in der Dateiansicht nicht verfuegbar;
+daraus wird keine separat abgelesene Suitenanzahl behauptet. Eine wegen
+verzoegerter Dateiansicht gestartete isolierte Diagnoseausfuehrung wurde
+danach beendet und zaehlt nicht als zweiter Gesamtnachweis. Die echte
+CI Datenbankabnahme steht noch aus. Native SQL23:49 UTC weiterhin504/0,
+identische Schutzgrundlinien, keine offene Arbeit/Reserve,0,526234 USD.
+Auch der volle Abgleich der31 neuen Kennungen, Fingerabdruecke und
+kanonischen Adressen gegen Production ergab keine Bestandstreffer.
+
+Vor geplanter Integration: Wirkung ist Quellenkontext bei kuenftigen neuen
+Dokumenten; Risiko sind Dubletten und Feldueberschreibung, deshalb deren
+explizite Gegenpruefung. Rueckweg ist Revert der notwendigen Codeaenderung,
+kein Loeschen neu angelegter Quellen. Nach Merge Deployment, Alias,
+Main Commit und geschuetzte Production Grundlinie rein lesend kontrollieren.
+Kein neuer Quellenimport, keine Aktivierung, kein geaenderter Kostenriegel.
+Erhaltener Quellenkontext ist noch kein Beleg fuer freie Modellfolgerungen.

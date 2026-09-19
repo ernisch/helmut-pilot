@@ -42,7 +42,7 @@ Vorbereitung eines erneut ausdruecklich freizugebenden Nachweises mit exakt 500 
 
 Historische PR- und Deploymentdetails bis09.09. stehen unverändert im [archivierten Status](archive/project_state/2026_09_14_CURRENT_STATE_vor_lesebelegabschluss.md). Der aktuelle Main- und Productionstand steht im Statuskopf.
 
-19.09.: PR459/460/461 integriert, Pflicht CI erfolgreich. Quellenblock35474457060 abgeschlossen; Dokumentation auf eigenem Branch in Arbeit. Prosa noch nicht repariert. [Vertrag](betrieb/testfenster-null500-2026-09-19.md#nachlauf-an-das-neue-testfenster-binden).
+19.09.: PR459/460/461 integriert. Quellenblock abgeschlossen. Eigener Branch repariert Kontextverlust bei globaler Dublettenverarbeitung;31/31 Auszuege erhalten. Lokaler Gesamttest Exit0; PR folgt. Prosa weiter offen. [Beleg](betrieb/quellenkontext-ruhe-2026-09-19.md#kontextverlust-bei-globaler-dublettenverarbeitung).
 
 ## 3 · Production-Zustand
 
@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-19.09.: Zweiter Quellenblock freigegeben und ausgefuehrt. Keine weiteren unversuchten Kandidaten im ausgewaehlten Eingang;91 Profile ohne Auszug. Vorhandene Quellenauswahl pruefen. [Prosa](betrieb/prosa-quellenpruefung-2026-09-19.md#neubewertung-nach-dem-gescheiterten-quellenrichter),500er Versorgung/Zeit/Kosten weiter offen.
+19.09.: Kontextverlust reparieren und integrieren.31 frische isolierte Quellen sind noch nicht importiert; vorhandene Auswahl erklaert die Luecke nicht. [Prosa](betrieb/prosa-quellenpruefung-2026-09-19.md#neubewertung-nach-dem-gescheiterten-quellenrichter),500er Versorgung/Zeit/Kosten weiter offen.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
