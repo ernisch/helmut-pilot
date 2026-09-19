@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026: PR449 integriert, naechster Quelldatenlauf blockiert.** Main `15cdd12816d25debd6ef5725cb22630d3706c7be`, READY `dpl_FVGP8renL6euTStuWuW83vWGRnbc`, Hauptalias korrekt. CI35440756347:420/420, Browser50, Kontoschutz15, Z22 48;24/24 Schritte. Leser35441590955 und SQL12:00 UTC:504/0, Schutzgrundlinie identisch, Kommunikation gesperrt, keine offene Reserve/Sperre/Lease,0,258929 USD Tagesbuch bei4 USD Riegel. Maximal40 Quellen bei null aktiven Profilen technisch vorbereitet; Quelldatenkorrektur nach CLAUDE.md§5 noch nicht freigegeben oder ausgefuehrt.35 der95 Objekte ohne Auszug ohne direkten Medienpfad; Flag allein genuegt nicht. Prosa, neuer0→500→0-Weg, Vollversorgung und Fachabnahme offen. [Production Abschluss und Freigabegrenze](betrieb/quellenkontext-ruhe-2026-09-19.md).
+**19.09.2026: Einmaliger Quellenlauf ausgefuehrt; Satzgrenzenreparatur in Arbeit.** Main `a1268b0db0cbf44f28dc3d8ec6e23b239fb162ad`, READY `dpl_EF8wGwu8v6E17N6yUpB9VtCCx71X`; PR450 und Main CI gruen. Freigegebener Lauf35443741723:40 Versuche,22 Auszuege gespeichert,18 ohne Ergebnis,0 Modelle. SQL12:53 UTC:504/0, Schutzgrundlinie hashidentisch, keine Sperre/Lease/Reserve,0,258929 USD. Sichtung:15 ganze Auszuege,3 ganze Praefixe,4 Abbrueche. Kleiner Extraktor und Leserfix lokal geprueft; Integration offen. Altpakete weiterhin91/114 Objekte ohne Auszug,alle500 betroffen. Prosa,0→500→0,Vollversorgung und Fachabnahme offen. [Belege](betrieb/quellenkontext-ruhe-2026-09-19.md).
 
 **Integration PR419 bis448 abgeschlossen, alle28 alten Drafts erledigt.** PR447 CI35435242485:419/419, Browser50, Kontoschutz15, Z22 48;24 Pflichtschritte. Laufzeitleser35436180373 belegt Speicher, Kommunikationssperre und4 USD Riegel. Drei Prosaserien nach je einem Aufruf fachlich gestoppt, zusammen0,019647 USD; Folgenprompt verworfen, Anwendung nicht auf `low` umgestellt. [Fachstopps](betrieb/prosa-denktiefe-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp). Heutige Freigabe10 USD, enger4 USD Riegel und Artikelkontext AUS bleiben. Kein neuer500er Test; Quellenfrische und vollstaendige Fachabnahme offen. [Integrationsbelege und Restpunkte](betrieb/500-bereitschaft-2026-09-19.md#abschluss-nach-dem-denkvergleich).
 
@@ -148,7 +148,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-19.09.: PR449 und Production Leser abgeschlossen. Naechster Schritt braucht Freigabe nach CLAUDE.md§5: genau ein Quellenkorrekturlauf bei504/0, maximal40 Quellen/8 Minuten/null Modelle, mit expliziter500er Zielmenge. Danach Restluecke und Prosaursache pruefen. Keine vierte gleichartige Modellserie. Neuer0→500→0-Weg, Terminierung und vollstaendige Versorgung bleiben vorzubereiten;500er Start weiterhin verboten. [Konkreter Auftrag](betrieb/quellenkontext-ruhe-2026-09-19.md#konkreter-spaeterer-auftrag-und-freigabegrenze).
+19.09.: Einmaliger Quellenlauf abgeschlossen. Satzgrenzenfix pruefen und integrieren, danach allgemeine Prosaursache weiterbearbeiten. Keine weitere gleiche Modellserie oder Quellenlauf ohne neuen Auftrag.0→500→0 samt Terminierung und Vollversorgung vorbereiten;500er Start verboten. [Befund und Folgereparatur](betrieb/quellenkontext-ruhe-2026-09-19.md#belegte-satzgrenzenluecke-und-kleine-folgereparatur).
 
 ## 12 · Verbindliche Betriebsgrenzen
 

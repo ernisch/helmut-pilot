@@ -1254,7 +1254,7 @@ async function c6DedupDsgvoChecks() {
   // (c) DSGVO-Datenminimierung: KEIN Volltext/excerpt/imageUrl/author in raw_documents.
   const row = dedup.toRawDocumentRow({
     id: "x1", title: "Kabinett beschliesst Rentenpaket",
-    summary: "S".repeat(500), content: "GEHEIMER VOLLTEXT MIT PERSONENDATEN", excerpt: "langer excerpt",
+    summary: "Die Beratung des Vorschlags beginnt am Dienstag im zuständigen Ausschuss. " + "S".repeat(500), content: "GEHEIMER VOLLTEXT MIT PERSONENDATEN", excerpt: "langer excerpt",
     imageUrl: "https://img", author: "Max Mustermann", url: "https://taz.de/rente/?utm_source=news",
     sourceName: "taz", sourceId: "taz", sourceType: "media", confidence: "high", linkType: "direct",
     publishedAt: "2026-07-01T09:00:00Z"
@@ -1266,6 +1266,10 @@ async function c6DedupDsgvoChecks() {
     `keys=${JSON.stringify(rowKeys)}`);
   check("C6 DSGVO: summary ist gekuerzt (Datenminimierung, kein Volltext)",
     typeof row.summary === "string" && row.summary.length <= dedup.SUMMARY_MAX, `len=${row.summary.length}`);
+  check("C6 DSGVO: ganzer Originalsatz erhalten, kein Wortrest als Auszug",
+    row.summary === "Die Beratung des Vorschlags beginnt am Dienstag im zuständigen Ausschuss."
+      && dedup.toRawDocumentRow({ title: "Synthetischer Bericht", url: "https://example.org/abbruch",
+        summary: "S".repeat(500) }).summary === null);
   check("C6 DSGVO: Pflicht-Identitaet vorhanden (id=rd-<hash>, content_hash, canonical_url, title)",
     row.id.startsWith("rd-") && typeof row.content_hash === "string" && row.canonical_url === "https://taz.de/rente"
       && row.title === "Kabinett beschliesst Rentenpaket");

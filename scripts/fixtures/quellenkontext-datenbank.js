@@ -34,5 +34,16 @@ async function pruefe({ base, token }) {
   const preserved = (await request("?id=eq.rd-quelle-zwei"))[0];
   assert.equal(preserved.summary, null); assert.deepEqual(preserved.raw, stale.raw);
   console.log("PASS  konkurrierende Artikelidentitaet verhindert Quellenueberschreibung");
+
+  // Derselbe JSONB Pfad wie in allen Quellenlesern, gegen echtes PostgREST.
+  const fragment = after.summary + " Anschliessend soll";
+  await request("", "POST", { ...make("rd-quelle-satz"), summary: fragment, raw: after.raw });
+  const selected = await request("?id=eq.rd-quelle-satz&select=id,title,summary,quellenauszug_beleg:raw->helmutQuellenkontext");
+  assert.deepEqual(selected[0].quellenauszug_beleg, after.raw.helmutQuellenkontext);
+  const used = require("../../lib/helmut/quellen-auszug").geleseneQuelle(selected[0]);
+  assert.equal(used.summary, after.summary);
+  assert.equal(Object.hasOwn(used, "quellenauszug_beleg"), false);
+  assert.equal((await request("?id=eq.rd-quelle-satz"))[0].summary, fragment);
+  console.log("PASS  echte JSONB Herkunftsprojektion und Satzpruefung ohne Datenkorrektur");
 }
 module.exports = { bereiteVor, pruefe };

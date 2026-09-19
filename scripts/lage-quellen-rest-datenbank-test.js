@@ -61,7 +61,7 @@ async function main() {
     psql(`create table public.knowledge_objects(id text primary key);
       create table public.raw_documents(id text primary key, title text, url text,
         canonical_url text, published_at timestamptz, summary text, source_name text,
-        source_type text, document_type text, link_type text, confidence text);
+        source_type text, document_type text, link_type text, confidence text, raw jsonb);
       create table public.ko_document_links(
         knowledge_object_id text not null references public.knowledge_objects(id) on delete cascade,
         raw_document_id text not null references public.raw_documents(id) on delete cascade,
@@ -148,6 +148,19 @@ async function main() {
       reset(); for (let i = 0; i < 7; i++) seed("ko-sechs", `quelle-${i}`);
       const docs = (await meta(["ko-sechs"])).map(r => r.raw_documents).slice(0, 6).reverse();
       assert.deepEqual((await bound("ko-sechs", docs)).map(d => d.id), docs.map(d => d.id));
+    });
+    await test("Herkunftsprojektion prueft Satzende ohne die gespeicherte Quelle zu aendern", async () => {
+      reset(); seed("ko-satz", "satz");
+      const ganz = "Die Kommission hoert am Dienstag Fachleute zur Finanzierung kommunaler Beratungsstellen an.";
+      const original = ganz + " Anschliessend soll";
+      psql(`update public.raw_documents set summary=${sqlString(original)},
+        raw='{"helmutQuellenkontext":{"version":1,"status":"ergaenzt","herkunft":"artikel-metadaten"}}'::jsonb where id='satz';`);
+      const docs = (await meta(["ko-satz"])).map(r => r.raw_documents);
+      for (const rows of [await bound("ko-satz", docs), await storage.getSourcesForVorgang("satz")]) {
+        assert.equal(rows[0].summary, ganz);
+        assert.equal(Object.hasOwn(rows[0], "quellenauszug_beleg"), false);
+      }
+      assert.equal(psql("select summary from public.raw_documents where id='satz';"), original);
     });
     await test("Reservierte Zeichen im Dokumentfilter und Unicode im Wissensobjekt", async () => {
       reset(); const ko = "ko-ä,().&";
