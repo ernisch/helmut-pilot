@@ -180,3 +180,55 @@ Tarif geaendert. Alle lokalen Pruefungen ueber `scripts/lokal.js`.
 Rueckweg vor Ausfuehrung: ungemergten Folgebranch verwerfen. Nach einem spaeter
 bestaetigten Start bleiben Quittung und Kosten dauerhaft erhalten; kein Reset,
 kein Rueckbuchen unbekannter Kosten und keine Wiederholung verbrauchter Faelle.
+
+## Freigegebener Tarifzugriff und neuer Belegstand
+
+19.09.2026 um09:39 Tuerkei /08:39 Berlin /06:39 UTC: Der Betreiber hat die
+Fortsetzung einschliesslich des angefragten lesenden Azure Zugangs freigegeben.
+Die geschuetzte Microsoft Anmeldung war erfolgreich. Keine weitere Lesefreigabe
+fehlt. Die fruehere automatische Ablehnung bleibt als historischer Vorgang
+erhalten, ist aber nicht mehr der aktuelle Startblocker.
+
+Die automatische Sicherheitspruefung lehnte eine vollstaendige Ressourcenliste
+wegen ihres zu breiten Umfangs ab. Stattdessen nur gezielte Helmut Suche.
+Im bestehenden Projekt wurde `gpt-5-mini`, Version `2025-08-07`, Status Succeeded
+und Globaler Standard gelesen. Die Modellkarte bestaetigt400000 Kontext,
+272000 Eingabe und128000 Ausgabe. Keine Secretwerte geoeffnet, keine Azure
+Aenderung, kein Playgroundaufruf und keine neue Bereitstellung. Eine ungefuellte
+Tarifvorschau wurde geschlossen; kein Speichern oder Bereitstellen bestaetigt.
+
+Die Modellkarte nennt keine Zahlen, sondern verweist auf die oeffentliche
+Preisseite. Auch die separate Ansicht Nutzung und Preise herunterladen im
+bestehenden Konto blieb leer, nach einem Neuladen und genau einem zweiten
+Oeffnen ebenfalls. Kein Preisexport und keine weiteren Versuche derselben
+Methode. Oeffentliche Preisplatzhalter und fremde Resellerpreise ersetzen keinen
+aktuellen numerischen Tarifbeleg fuer das bestehende Deployment.
+
+Damit bleibt der Fachnachweis blockiert:0 von8 Aufrufen,0 USD neue Modellkosten,
+keine Einmalquittung, gemeinsames20 Minuten Fenster nicht begonnen. Benoetigt
+wird ein aktueller Microsoft Tarifbeleg mit Eingabe und Ausgabepreis je Million
+Tokens fuer das bestehende Global Standard Deployment. Ein direkt gelieferter
+Tarifausschnitt ohne Zugangsdaten genuegt, wenn Modell, Einheit, Waehrung und
+Stand erkennbar sind. Die bereits erteilte Modellfreigabe bleibt bestehen.
+
+Technischer Stand PR445: Head `5a6f8762ef20cdeffda6a934f9c5cf86c01c3f21`,
+CI35425611492 completed/success,418/418 Suiten, Browser50/50, Kontoschutz15/15,
+500 isolierte Registrierungen, Z22 48/48 und24/24 erfolgreiche Schritte.
+Abschluss09:19:23 Tuerkei /08:19:23 Berlin /06:19:23 UTC. Der temporaere CI
+Pruefcommit hat exakt denselben Tree wie dieser Head. Dieser Nachtrag aendert
+nur Dokumentation; die dadurch vorgeschriebene CI wird gesondert abgewartet.
+
+Frischer GitHub Abgleich: alle27 Reparatur PRs419 bis445 offen und Draft,
+jede Basis exakt der vorherige Head,419 basiert auf unveraendertem Main
+`2d1eb705e00ea5f5ff8f351997e429cc16d195c1`. PR345 ist eine weitere alte
+Dokumentation und gehoert nicht in einen pauschalen Gesamtmerge. Die lineare
+Kette beweist keine fachliche Abnahme. Erst den begrenzten Fachnachweis und
+die abschliessende kumulative Integration bewerten, dann das genaue Paket
+zur Integration vorlegen. Merge nach main deployt automatisch Production.
+Keine Mergefreigabe aus der Frage nach dessen Sinnhaftigkeit ableiten.
+
+Lesender Datenabgleich09:34:03 Tuerkei /08:34:03 Berlin /06:34:03 UTC:504 Profile,
+alle inaktiv; keine aktive Sperre, Lease oder junge offene Verarbeitung.
+Keine Prosaquittung und0 Prosaaufrufe. Bestehende Tageskosten0,113741 USD
+unveraendert. Keine laufende Action beim Vorflug; kein weiterer lokaler
+Schreiber sichtbar. Globale Work Sitzungen bleiben technisch nicht abfragbar.

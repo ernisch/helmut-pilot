@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026 Tuerkei: PR419 bis444 offen und ungemergt. PR444 schuetzt Rollen, Unsicherheit und Sachgebietsableitung; CI417/417 erfolgreich. Vier Prosakategorien fachlich offen. Isolierter Nachweis freigegeben:8 Aufrufe/1,696USD/20min. Noch0 Aufrufe: aktueller Tarif offen, automatischer Azure Portalzugriff abgewiesen. [Auftrag und Ausfuehrer](betrieb/prosa-fachnachweis-2026-09-19.md). Noch nicht bereit fuer Integration oder500er Test.**
+**19.09.2026 Tuerkei: PR419 bis445 offen, Draft und linear. PR445 Ausfuehrer technisch geprueft: CI35425611492 mit418/418,24/24 Schritten. Vier Prosakategorien fachlich offen. Nachweis freigegeben:8 Aufrufe/1,696USD/20min; noch0 Aufrufe. Lesender Azure Zugang nun freigegeben und erfolgreich, Global Standard bestaetigt. Aktueller numerischer Tarif weiter unbelegt. [Auftrag und Grenze](betrieb/prosa-fachnachweis-2026-09-19.md). Noch nicht bereit fuer Integration oder500er Test.**
 
 Vorflug19.09.01:37 Tuerkei /00:37 Berlin /18.09.22:37UTC: Main `2d1eb705e00ea5f5ff8f351997e429cc16d195c1`, Production `dpl_At93X1HMzB5fsAJ2wZQ8FuvW3Dfy` READY. 504 Profile,0 aktiv, keine lebende Sperre oder Lease, kein junger Fachlauf. PR419 bis443 linear. Keine laufende Action; nur zwei alte queued. Globale Work Sitzungen nicht abfragbar. Keine Production Aenderung.
 
@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-19.09. Tuerkei: Folgebranch `codex/prosa-fachnachweis-20260919` auf PR444 sichert den freigegebenen isolierten Achtfallnachweis. Ausfuehrer und Pflicht CI vorbereiten. Scharfer Start blockiert: aktuelle Preiszahlen fehlen, automatischer Portalzugriff abgewiesen. Bei Fehler sofort stoppen und allgemeine Ursache offline untersuchen. Kein Merge, Deployment oder500er Start.
+19.09. Tuerkei: PR445 auf PR444 sichert den freigegebenen Achtfallnachweis. Ausfuehrer technisch geprueft. Scharfer Start blockiert am numerischen Tarifbeleg; keine weitere Lesefreigabe fehlt. Azure Preisliste bleibt nach zwei begrenzten Ladeversuchen leer. Danach Fachnachweis und Integrationspruefung. PR345 separat, kein pauschaler Merge. Kein Deployment oder500er Start.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
