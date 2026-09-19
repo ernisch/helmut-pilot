@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026: Einmaliger Quellenlauf ausgefuehrt; Satzgrenzenreparatur in Arbeit.** Main `a1268b0db0cbf44f28dc3d8ec6e23b239fb162ad`, READY `dpl_EF8wGwu8v6E17N6yUpB9VtCCx71X`; PR450 und Main CI gruen. Freigegebener Lauf35443741723:40 Versuche,22 Auszuege gespeichert,18 ohne Ergebnis,0 Modelle. SQL12:53 UTC:504/0, Schutzgrundlinie hashidentisch, keine Sperre/Lease/Reserve,0,258929 USD. Sichtung:15 ganze Auszuege,3 ganze Praefixe,4 Abbrueche. Kleiner Extraktor und Leserfix lokal geprueft; Integration offen. Altpakete weiterhin91/114 Objekte ohne Auszug,alle500 betroffen. Prosa,0→500→0,Vollversorgung und Fachabnahme offen. [Belege](betrieb/quellenkontext-ruhe-2026-09-19.md).
+**19.09.2026: Quellenlauf und Satzgrenzenreparatur integriert; Prosa weiterhin offen.** Main `2d239abca16e54371e102ff69384f6c981f86ff1`, PR451 CI35446231275:421/421, Browser50, Kontoschutz15, Z22 48;24 Pflichtschritte. READY `dpl_36YBDeCMzWVrh8iwr2ij3jQiPabP`, Leser35447091556 HTTP200. SQL13:54 UTC:504/0, Schutzgrundlinie hashidentisch, keine Sperre/Lease/Reserve,0,258929 USD. Einmaliger Quellenlauf40 Versuche/22 Auszuege/0 Modelle abgeschlossen. Altpakete weiterhin91/114 Objekte ohne wirksamen Auszug,alle500 betroffen. Getrennten Prosaabgleich begrenzt vorbereiten;0→500→0,Vollversorgung und Fachabnahme offen. [Belege](betrieb/quellenkontext-ruhe-2026-09-19.md).
 
 **Integration PR419 bis448 abgeschlossen, alle28 alten Drafts erledigt.** PR447 CI35435242485:419/419, Browser50, Kontoschutz15, Z22 48;24 Pflichtschritte. Laufzeitleser35436180373 belegt Speicher, Kommunikationssperre und4 USD Riegel. Drei Prosaserien nach je einem Aufruf fachlich gestoppt, zusammen0,019647 USD; Folgenprompt verworfen, Anwendung nicht auf `low` umgestellt. [Fachstopps](betrieb/prosa-denktiefe-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp). Heutige Freigabe10 USD, enger4 USD Riegel und Artikelkontext AUS bleiben. Kein neuer500er Test; Quellenfrische und vollstaendige Fachabnahme offen. [Integrationsbelege und Restpunkte](betrieb/500-bereitschaft-2026-09-19.md#abschluss-nach-dem-denkvergleich).
 
@@ -148,7 +148,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-19.09.: Einmaliger Quellenlauf abgeschlossen. Satzgrenzenfix pruefen und integrieren, danach allgemeine Prosaursache weiterbearbeiten. Keine weitere gleiche Modellserie oder Quellenlauf ohne neuen Auftrag.0→500→0 samt Terminierung und Vollversorgung vorbereiten;500er Start verboten. [Befund und Folgereparatur](betrieb/quellenkontext-ruhe-2026-09-19.md#belegte-satzgrenzenluecke-und-kleine-folgereparatur).
+19.09.: Quellenlauf und Satzgrenzenfix abgeschlossen. Getrennten Quellenpruefer gegen bekannte falsche Prosa und positive Gegenfaelle pruefen: maximal2 Aufrufe/0,424 USD, erster kritischer Fehler stoppt. Keine weitere gleiche Generierungsserie oder Wiederholung des Quellenlaufs.0→500→0 und Vollversorgung vorbereiten;500er Start verboten. [Befund und Folgereparatur](betrieb/quellenkontext-ruhe-2026-09-19.md#belegte-satzgrenzenluecke-und-kleine-folgereparatur).
 
 ## 12 · Verbindliche Betriebsgrenzen
 

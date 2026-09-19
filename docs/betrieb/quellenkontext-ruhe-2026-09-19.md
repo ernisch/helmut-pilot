@@ -3,7 +3,7 @@
 Stand 19.09.2026. Gesamtstatus: **teilweise abgeschlossen**.
 Der einmalige Quellenkorrekturlauf ist freigegeben und ausgefuehrt.
 Nachkontrolle bestaetigt504/0 und unveraenderte Schutzgrundlinie.
-Eine belegte Satzgrenzenluecke im Auszugpfad wird anschliessend repariert;
+Die belegte Satzgrenzenluecke im Auszugpfad ist durch PR451 repariert;
 allgemeine Prosa und500er Bereitschaft sind weiterhin offen.
 Ausgang ist Main `b3a4fb560cddf482d18706801524630e39c7d1be` nach PR448.
 Kein neuer 500er Test, keine Profilaktivierung, kein bezahlter Modellaufruf.
@@ -301,3 +301,45 @@ Danach beide Suiten einzeln ueber den kanonischen Starter bestanden:
 `p1-security-check.js`339/339 und `punkt29-fehlervertrag-test.js`80/80.
 Damit alle421 Suiten erfolgreich ausgefuehrt; kein behaupteter einzelner
 Gesamtlauf am letzten Stand. CI, Merge und Production Wirkung noch offen.
+
+## Abschluss der Satzgrenzenreparatur nach Merge PR451
+
+Begrenzter Reparaturblock **erfolgreich abgeschlossen**, Gesamtauftrag
+weiter **teilweise abgeschlossen**. PR451 Head
+`6c09d5a195623725970dd06206b14705cc951a4a`; CI35446231275 vollstaendig
+bestanden:421/421 Suiten in782 Sekunden, Browser50/0, Kontoschutz15/0 samt
+500 isolierten Registrierungen und echtem JSONB Projektionsbeleg, Z22
+PASS48/FAIL0. Beide Pflichtjobs und alle24 Schritte erfolgreich.
+
+Nach erneutem Main/Branch/PR/Actions und Schutzabgleich autorisiert gemergt:
+Main `2d239abca16e54371e102ff69384f6c981f86ff1`, exakt gepruefter Baum
+`b0b449639332e5750ce39aafa31968aa1d33c372`.
+Production `dpl_36YBDeCMzWVrh8iwr2ij3jQiPabP` um13:52:31 UTC READY,
+Hauptalias und Commit korrekt. Reiner Leser35447091556 um13:53:44 UTC
+HTTP200, gleicher Main, Supabase/V3 und exklusiver Profilpfad bestaetigt.
+Kommunikation und Kohortenquellen gesperrt, atomare Sperre aktiv,
+Retention36, Tagesdeckel2416, Understanding Reserve702, Realreserve200.
+Kostenregel2 bei4 USD, unbekannter Ausgang bleibt reserviert. Kein scharfer
+Pfad oder Inhaltslauf freigegeben. Main CI35447030496 inzwischen ebenfalls
+erfolgreich; vollstaendige PR CI ist oben gesondert bewiesen.
+
+Native SQL13:54:01 UTC gegen Vorflug13:51:52:504/0, alle Profile,
+Identitaeten, gesamter Auth und Main Zustand sowie gesonderter Kontenschutz
+hashidentisch.22709 Jobs erledigt, null lebende Sperren/Leases, junge
+unbeendete Prozesse und offene Reserven. Tagesbuch0,258929 USD.
+
+Wirksamen Quellenvertrag am frisch gelesenen historischen Paketbestand
+nachgerechnet:37 gespeicherte nichtleere Auszuege,35 nach Satzpruefung
+verwendbar;29 bytegleich,6 ganze Praefixe,2 ohne ganzen Satz. Auf Objektebene
+bleiben91/114 ohne wirksamen Auszug,alle500 Profile mindestens einmal und4
+nur davon betroffen. Die verworfenen zwei Fragmente waren also nicht die
+einzigen Auszuege ihres Objekts. Keine Produktionszeile dafuer geaendert.
+Dies ist eine vollstaendige Pruefung dieser begrenzten Quellenmenge und der
+zugehoerigen Altpaketzuordnung, keine fachliche Textabnahme aller500 Profile.
+
+Naechste Phase: getrennte semantische Quellenpruefung an den drei erhaltenen
+Fehlantworten und positiven Gegenfaellen untersuchen. Vor bezahlter Arbeit
+Budget frisch lesen; maximal zwei Aufrufe und0,424 USD im Methodenblock,
+keine Wiederholung bei kritischem Fehlurteil, unvollstaendiger Antwort,
+unklarem Transport, Kosten oder Schutzbefund. Noch kein Appanschluss und
+kein neuer Modellaufruf. Kein neuer Quellenkorrekturlauf, keine Aktivierung.
