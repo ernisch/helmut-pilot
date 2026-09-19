@@ -1,8 +1,10 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026: Reparaturkette PR419–445 mit Freigabe integriert; alle28 ehemaligen Drafts erledigt. Main/Production f4cb802fc3159e016ab6f68913def840041e53a6, READY dpl_nie9eb8uSnvKe1xhtoaYqidQJucW. Technisch geprueft und ausgeliefert; fachliche500er Bereitschaft weiterhin offen.**
+**19.09.2026: Reparaturkette PR419–445 integriert, alle28 alten Drafts erledigt. Abschlussdokumentation PR446 gemergt: Main05feca37476e23d892ee45ef08d4706923486279. Fachliche500er Bereitschaft weiterhin offen.**
 
-Integrationskopf df9133b, CI35433323295:418/418 in785s, Browser50, Kontoschutz15, Z22 48, alle24 Schritte erfolgreich. Production Leser35434309651 um09:18 UTC bestaetigt Commit, Speicherpfad, Kommunikationssperre und4 USD Riegel. SQL09:19 UTC:504/0, keine Konkurrenz oder offene Reserve, Tagesbuch0,124985 USD; geschuetzte Datenhashes unveraendert. Tarif0,25/2,00 USD je Million Tokens belegt. Beide Prosaserien negativ gestoppt;0,011244 USD Versuchskosten. Nicht abgenommener Folgenprompt zurueckgenommen. Code bereit, technische Tests erfolgreich, Deployment/Laufzeit belegt; allgemeine Prosaqualitaet und500er Nachweis nicht bestanden. Heute weiter hoechstens10 USD freigegeben. [Abschluss](betrieb/500-bereitschaft-2026-09-19.md#bestaetigter-integrationsabschluss).
+Integrations-CI35433323295 und Dokumentations-CI35434499656 vollstaendig erfolgreich:418 Suiten, Browser50, Kontoschutz15, Z22 48, jeweils24 Schritte. Production Leser35434309651 bestaetigt vorherigen Anwendungskommit f4cb802, Speicher, Kommunikationssperre und4 USD Riegel. SQL09:31 UTC:504/0, keine Konkurrenz/offene Reserve, Tagesbuch0,124985 USD. Zwei negative Prosaserien dauerhaft geschlossen,0,011244 USD Kosten; Folgenprompt verworfen. Tarif0,25/2,00 USD je Million Tokens belegt. Code/Tests/Deployment belegen keinen500er Erfolg. [Integration](betrieb/500-bereitschaft-2026-09-19.md#bestaetigter-integrationsabschluss).
+
+**Naechster enger Beleg:** [Denkaufwandvergleich](betrieb/prosa-denktiefe-2026-09-19.md) mit unveraendertem Originalprompt und `low`, eigener Quittung, maximal9 Aufrufe/1,908 USD/30 Minuten. Vorbereitung, noch kein Start und keine Anwendungsaenderung. Heutige Betreiberfreigabe10 USD gilt; Motor-Tagesriegel bleibt4 USD. Quellenfrische gehoert in die spaetere500er Abnahme.
 
 **Fremde Vorarbeit erhalten:** `codex/motor-reparatur-20260916` mit40 veraenderten und15 neuen Dateien bleibt unangetastet und unabgenommen. Die Reparaturkette uebernimmt daraus keine Cron, Versorgungs oder Auswerterarbeiten. [Erster Sprint](betrieb/quellen-zeitvertrag-2026-09-17.md).
 
@@ -46,7 +48,7 @@ Historische PR- und Deploymentdetails bis09.09. stehen unverändert im [archivie
 
 ## 3 · Production-Zustand
 
-- **Datenbank:** Supabase **Pro/Micro (`t4g.micro`, 1 GB)**, gesund. Dashboard **08.09., 08:56 UTC: CPU 6 %, RAM 52 %, 11/60 Verbindungen**. SQL und volle Grundlinie nach dem Fachlauf unveraendert. PITR aus; keine Ressourcen oder Schemaaenderung.
+- **Datenbank:** Supabase **Pro/Micro (`t4g.micro`, 1 GB)**. PITR aus; keine Ressourcen oder Schemaaenderung. Aktuelle Grundlinie im Statuskopf.
 - **Historischer Bestand 09.09., 08:37 UTC (neuer Abschluss oben):** **504/5/499**, fuenf reale aktiv, alle 495 synthetischen inaktiv. Testende Workflow `34327808319` erfolgreich: 495 bestaetigt deaktiviert, 0 Fehler. Keine aktive Sperre, Lease oder junge Prozessquittung beim Mergevorflug. **44 gespeicherte Lage Texte fuer den 500er Testtag, 456 fehlen.** [Einzelbefunde](betrieb/500-textpruefung-2026-09-09.json).
 - **Crawl-Aufbewahrung:** Wirksame Grenze **36** am 06.09. um 19:00 UTC erneut bestätigt. Frisch gelesener Blob Ring **20**; keine Wiederherstellung der verlorenen 16 Laufzeilen. Schutzcode aus #301 bleibt deployt (SR §37).
 - **Quellen:** 9 Pakete · 163 Abrufwege · 165 Zuordnungen; **146/163 Google-News** (B1, OP-15); 18 Landesmodul-Wege (BE/BB) gesperrt. Seeds `20260713`/`20260717` **nicht eingespielt**, Einspielung [BLOCKIERT](betrieb/quellen-seed-einspielung.md) (nur noch Betreiberfreigabe).
