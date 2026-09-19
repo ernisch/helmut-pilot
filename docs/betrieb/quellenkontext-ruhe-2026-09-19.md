@@ -416,3 +416,62 @@ haben mindestens eine solche Luecke, vier ausschliesslich; null
 unaufgeloeste Itemverweise. Das bestaetigt den Fortbestand dieser Luecke,
 keinen neuen500er Test und keine neue Modellprognose. Die aktuelle
 Production und die inzwischen erfolgte Installation stehen im [Endwegabschluss](testfenster-null500-2026-09-19.md#freigegebene-installation-am-1909-1800-utc). Die dortige fruehere Installationsgrenze ist erledigt; Quellen und Fachabnahme bleiben offen.
+
+## Konkrete verbleibende Quelldatengrenze nach PR460
+
+Rein lesend19.09.20:02 bis20:06 UTC:29782 Rohdokumente,28881 ohne
+Auszug. Letzte Neuanlage16.09.16:04:07 UTC, juengste Publikation16.09.15:55:56.
+Die22 Originalauszuege aus dem einmaligen freigegebenen Korrekturlauf sind
+im Bestand erhalten. Keine neue Quelle und kein Inhalt wurden hier geschrieben.
+
+Gegen die privat festgelegte500er Auswahl nochmals alle letzten
+Mandatspakete gelesen:500 Pakete,10710 Items,114 referenzierte Objekte,
+91 ohne verknuepften Auszug. Alle500 Profile haben mindestens eine solche
+Luecke, vier ausschliesslich. Die vertiefte reine Lesung der Quellen dieser
+vier zeigt auch direkte Artikel ohne bisherigen Korrekturversuch. Daraus
+folgt eine konkret bearbeitbare Eingabeluecke; weder Erreichbarkeit noch
+ausreichende Aussagekraft eines neuen Auszugs werden vorweg behauptet.
+Altpakete sind kein neuer500er Prognose- oder Abnahmebeleg.
+
+Eine weitere gespeicherte Quellenergänzung waere eine Aenderung bestehender
+Production Rohdaten. Die dokumentierte Einzelgenehmigung deckte genau
+den bereits abgeschlossenen ersten40er Auftrag. Sie wird nicht durch
+Wiederholung desselben Aktionsworts verlaengert. CLAUDE.md §5 verlangt
+fuer diesen weiteren Datenkorrekturblock eine konkrete Freigabe;
+die Reparaturfreigabe fuer Code, Merge und rein lesende Kontrollen wird
+nicht als allgemeiner Rohdaten-Schreibauftrag ausgelegt.
+
+Der naechste begrenzte Datenblock ist technisch vorbereitet und reviewbar:
+einmal `500-direkt-ausbau.yml`, Schritt `quellenkontext-ruhe`, auf dem
+frisch READY bestaetigten Main. Dieselbe private feste Auswahl495 plus5,
+vier Ausnahmen und alle504 inaktiv. Exaktes Aktionswort:
+`TESTKOHORTE_500_QUELLENAUSZUEGE_BEI_NULL_AKTIVEN_BESTAETIGT`.
+Hoechstens40 weitere noch nicht versuchte Quellen, hoechstens40 Abrufe
+und40 bedingte Zeilenkorrekturen, maximal8 Minuten Arbeitsbudget.
+Null KI-Aufrufe und null zusaetzliche Modellkosten.
+
+Zulaessige Inhaltsfelder sind nur zuvor fehlende `raw_documents.summary`
+und der Herkunfts-/Versuchsbeleg `raw.helmutQuellenkontext`; bestehende
+Betriebssperre und Laufaufzeichnungen gehoeren zur Ausfuehrung.
+Nur Originalauszuege mit Artikelidentitaet, ganzen Saetzen, bestehender
+Laengen- und Quellenpruefung, Compare and Set und identischer Gegenlesung.
+Kein Wiederholen der18 fehlgeschlagenen oder unklaren alten Quellenversuche,
+kein Ueberschreiben vorhandener Auszuege, kein Leeren alter Belege.
+Ein neuer Fehlversuch bleibt als solcher erhalten und fuehrt nicht zu
+einer Schleife.
+
+Vor Start Main, READY, Laufzeitflags, Nullbestand, Konten/Sessions,
+Sperren/Leases/Prozesse, Kostenbuch und Cronabstand frisch lesen.
+Bei unbekanntem Schreibausgang sofort stoppen und nur die betroffene
+Zeile gegenlesen; kein erneuter PATCH. Nachher alle geschuetzten Grundlinien
+identisch nachweisen und neu gelieferte Auszuege sowie Restluecken zaehlen.
+Keine Profilaktivierung, Migration, Cron-/Environmentaenderung oder
+Artikelkontext-Flagaenderung. Kein Modellrichter und kein500er Start.
+Ein Coderevert loescht die Auszuege nicht; eine spaetere Datenruecknahme
+braucht den genauen Vorherbeleg und eine eigene bedingte Korrektur.
+
+Dies waere eine Eingabereparatur, keine Behauptung einer abgeschlossenen
+Prosareparatur. Auch danach muss der allgemeine Beleg-/Formulierungsvertrag
+die negativen und positiven Fachfaelle in mehreren Feldern und im
+Schwesterpfad bestehen. Quelle, fachliches Urteil und strukturelle
+Vollstaendigkeitspruefung bleiben getrennt.

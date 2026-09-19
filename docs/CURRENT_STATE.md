@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026: Gesamtauftrag teilweise abgeschlossen.** PR459/Main `09f62654d46633dcd3e6f52d2781a60046629e70` READY, Leser35464768351 HTTP200. SQL19:35:504/0, Schutzgrundlinien unveraendert, keine offene Arbeit/Reserve,0,386081 USD bei4 USD Limit. Endfunktion installiert; kein Timer oder Teststart. [Abschluss](betrieb/testfenster-null500-2026-09-19.md#production-abschluss-pr459).
+**19.09.2026: Gesamtauftrag teilweise abgeschlossen, noch nicht bereit.** PR460/Main `ce090c2a4ef0c6fbae74d8cc5ed376382d0cb1bd` READY, Leser35466909269 HTTP200. SQL20:17:504/0, Schutzgrundlinien identisch, keine offene Arbeit/Reserve,0,386081 USD bei4 USD Limit. Endfunktion installiert; kein Timer/Teststart. [Abschluss](betrieb/testfenster-null500-2026-09-19.md#production-abschluss-pr460).
 
 **Integration PR419 bis448 abgeschlossen, alle28 alten Drafts erledigt.** PR447 CI35435242485:419/419, Browser50, Kontoschutz15, Z22 48;24 Pflichtschritte. Laufzeitleser35436180373 belegt Speicher, Kommunikationssperre und4 USD Riegel. Drei Prosaserien nach je einem Aufruf fachlich gestoppt, zusammen0,019647 USD; Folgenprompt verworfen, Anwendung nicht auf `low` umgestellt. [Fachstopps](betrieb/prosa-denktiefe-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp). Heutige Freigabe10 USD, enger4 USD Riegel und Artikelkontext AUS bleiben. Kein neuer500er Test; Quellenfrische und vollstaendige Fachabnahme offen. [Integrationsbelege und Restpunkte](betrieb/500-bereitschaft-2026-09-19.md#abschluss-nach-dem-denkvergleich).
 
@@ -42,7 +42,7 @@ Vorbereitung eines erneut ausdruecklich freizugebenden Nachweises mit exakt 500 
 
 Historische PR- und Deploymentdetails bis09.09. stehen unverändert im [archivierten Status](archive/project_state/2026_09_14_CURRENT_STATE_vor_lesebelegabschluss.md). Der aktuelle Main- und Productionstand steht im Statuskopf.
 
-19.09.: PR459 integriert, PR- und Main CI erfolgreich. Branch `codex/testnachlauf-fenster-20260919`: Nachlauf an feste Auswahl und Endfrist gebunden, lokal427/427 in637s; finale CI offen. [Vertrag](betrieb/testfenster-null500-2026-09-19.md#nachlauf-an-das-neue-testfenster-binden).
+19.09.: PR459/460 integriert. PR460 CI427/427, alle25 Pflichtschritte. Nachlauf jetzt an feste Auswahl und Endfrist gebunden. Reiner Dokuabschluss folgt; Prosa noch nicht repariert. [Vertrag](betrieb/testfenster-null500-2026-09-19.md#nachlauf-an-das-neue-testfenster-binden).
 
 ## 3 · Production-Zustand
 
@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-19.09.: Nachlaufbindung, Prosa, Quellenfrische, Vollversorgung, Laufzeit und Kostenplan weiterbearbeiten. Keine Aktivierung oder500er Start; [gescheiterte Methoden nicht wiederholen](betrieb/prosa-quellenpruefung-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp).
+19.09.: [Prosa neu bewertet](betrieb/prosa-quellenpruefung-2026-09-19.md#neubewertung-nach-dem-gescheiterten-quellenrichter), weiter offen. [Naechster Quellenblock](betrieb/quellenkontext-ruhe-2026-09-19.md#konkrete-verbleibende-quelldatengrenze-nach-pr460) vorbereitet, gesonderte Datenfreigabe fehlt.500er Versorgung/Zeit/Kosten unbelegt.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
