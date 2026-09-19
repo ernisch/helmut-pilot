@@ -1,7 +1,8 @@
 # Vorbereiteter isolierter Prosanachweis
 
-**19.09.2026: Zwei getrennte Serien nach je einem echten Aufruf dauerhaft gestoppt. Keine Fachabnahme. Neuer Folgenprompt zurueckgenommen; Integration bewahrt den technisch geprueften Stand0583307 und alle Fehlbelege. Gesamte Versuchskosten0,011244 USD konservativ, Tagesbuch0,124985 USD. Keine weiteren Modellstarts, kein500er Start.**
-Aktuell gilt der Schlussabschnitt. Die vorherigen Auftraege und Tarifschritte
+**19.09.2026: Drei getrennte Serien nach je einem echten Aufruf dauerhaft fachlich gestoppt. Keine Fachabnahme. Folgenprompt zurueckgenommen; auch der isolierte Vergleich mit `low` bestand nicht. Keine Umstellung der Anwendung. Gesamte Versuchskosten0,019647 USD konservativ, Tagesbuch0,133388 USD. Kein500er Start.**
+Aktueller dritter Nachweis im [Denkvergleich](prosa-denktiefe-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp).
+Fuer die ersten beiden Serien gilt der Schlussabschnitt. Die vorherigen Auftraege und Tarifschritte
 stehen nachfolgend als unveraenderte Historie; ihre alten Freigabesperren
 sind durch die ausdrueckliche Betreiberfreigabe am19.09. ueberholt.
 Basis ist der kumulative Stand des Rollen Folgebranches auf PR443. Die acht
