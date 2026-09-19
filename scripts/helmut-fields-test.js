@@ -92,11 +92,12 @@ check("assemble: Prosafelder werden uebernommen + getrimmt",
   assembledFull.recommended_communication === "Kurzstatement.");
 check("assemble: action_items werden bereinigt (dedupe + leere raus)",
   JSON.stringify(assembledFull.action_items) === JSON.stringify(["Schritt 1", "Schritt 2"]));
-check("assemble: langes action_item wird gekappt (kein Volltext)",
+check("assemble: ueberlange Handlung erzeugt keinen Praefix, vollstaendige andere bleibt erhalten",
+  JSON.stringify(
   understanding.assembleKnowledgeObject({
     was_ist_passiert: "A", warum_wichtig: "B", wer_ist_betroffen: "C", handlungsempfehlung: "D",
-    action_items: ["y".repeat(500)]
-  }, cluster, "vg-test").action_items[0].length <= 200);
+    action_items: ["y".repeat(500), "Die angekuendigte Beratung beobachten."]
+  }, cluster, "vg-test").action_items) === JSON.stringify(["Die angekuendigte Beratung beobachten."]));
 
 // --- 3) Storage-Whitelist: gespeichert & gelesen ----------------------------
 check("Storage-Whitelist V3_KNOWLEDGE_OBJECT_COLUMNS traegt alle vier Felder",
