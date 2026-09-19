@@ -165,7 +165,7 @@ verglichen und stimmen mit der vorbereiteten Liste ueberein.
 | Deferred/Ablehnungen | Bleiben gesonderte Nichtabschluesse; weder erledigte Jobs noch Leertexte als bestandene Fachversorgung zaehlen. |
 | Mandat/Lage Vollstaendigkeit | Historisch 497/500 bzw. 5/500; kein heutiger Nenner und kein neuer Fachnachweis. |
 | Morgenfrische | Historisch 131/500 Morgenquittungen; neues Tagesfenster mit gespeicherten Paketen abzugleichen. |
-| Testende | Alter Timer abgelaufen. PR455: manueller atomarer0/500/0 Plan integriert,16 echte PostgreSQL Pruefungen. Automatischer Endweg vorbereitet, Abnahme und Production Migration noch offen; [Endweg](testfenster-null500-2026-09-19.md). |
+| Testende | Alter Timer abgelaufen. PR455: manueller atomarer0/500/0 Plan integriert,16 echte PostgreSQL Pruefungen. PR457: automatischer Endweg technisch integriert,26 echte Datenbankpruefungen. Production Installation braucht eigene Freigabe; [Endweg](testfenster-null500-2026-09-19.md). |
 
 Vor einem neuen Test alle 500 Kennungen im Nenner halten. Je Profil muessen
 Mandatspaket, Morgenbriefing und Lage fuer das vereinbarte Fenster vorhanden,
@@ -407,3 +407,12 @@ des Flags allein schliesst die beobachtete Luecke daher nicht. Die
 allgemeine Aktivierungsreife und Notwendigkeit einer Environmentaenderung
 sind weiter offen; es wurde keine solche Aenderung vorgenommen oder als
 bereits abgenommen dargestellt.
+
+
+Nach dem regulaeren17:30 Rueckstandslauf wurde diese historische Reichweite
+am19.09.17:43 UTC erneut rein lesend geprueft:500 Profile,10710 Itemzeilen,
+114 aufloesbare Objekte,91 ausschliesslich ohne summary. Alle500 Profile
+haben mindestens eine solche Luecke, vier ausschliesslich; null
+unaufgeloeste Itemverweise. Das bestaetigt den Fortbestand dieser Luecke,
+keinen neuen500er Test und keine neue Modellprognose. Die aktuelle
+Production und Freigabegrenze steht im [Endwegabschluss](testfenster-null500-2026-09-19.md#integration-production-nachkontrolle-und-erforderliche-freigabe).

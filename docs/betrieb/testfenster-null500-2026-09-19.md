@@ -202,7 +202,7 @@ Main CI35456149568 ebenfalls vollstaendig erfolgreich:425/425 in603s, Kontoschut
 
 ## Automatischer Endweg und konkrete Migrationsgrenze
 
-19.09., `codex/testende-null500-20260919`, **teilweise abgeschlossen**.
+19.09., `codex/testende-null500-20260919`, **blockiert** an der Production Installation. PR457 ist technisch abgenommen und integriert; der automatische Endweg wurde in Production nicht bewaffnet.
 Der alte Endlauf ist auf495 synthetische Profile begrenzt und laesst fuenf
 Bestandsprofile aktiv. Der neue manuelle Transaktionsplan oben kann die
 gebundenen500 bereits beenden. Fuer automatische Ausfuehrung kennt der
@@ -251,7 +251,7 @@ Nullnachweis. Ein beendeter Lauf mit spaeter reaktiviertem Ziel wird
 abgewiesen. Konten, Sessions, Identitaeten, Profilinhalte, Main und alle
 Profile ausserhalb der500 werden innerhalb derselben Transaktion geprueft.
 
-Gezielte Offlineprobe zunaechst10/10. Kanonischer Gesamtlauf426/426 in640s, Exit0, ueber scripts/lokal.js mit vorhandenem Browsercache, vor dem unten beschriebenen abschliessenden Bewaffnungsschutz. Danach gezielt11/11; der finale Head muss die vollstaendige Pflicht CI bestehen. Migrationsorganisation41/41. Echter PostgreSQL und PostgREST Nachweis sowie CI und Integration noch offen; lokal steht kein PostgreSQL Client bereit.
+Gezielte Offlineprobe zunaechst10/10. Kanonischer Gesamtlauf426/426 in640s, Exit0, ueber scripts/lokal.js mit vorhandenem Browsercache, vor dem unten beschriebenen abschliessenden Bewaffnungsschutz. Danach gezielt11/11; der finale Head muss die vollstaendige Pflicht CI bestehen. Migrationsorganisation41/41. Echter PostgreSQL und PostgREST Nachweis sowie finale Pflicht CI inzwischen erfolgreich, siehe Abschluss unten; lokal steht kein PostgreSQL Client bereit.
 Keine neuen KI Modellaufrufe oder Production Buchungen. Die Installation
 ist nach `CLAUDE.md §5` und der Betreibergrenze eine gesondert freizugebende
 Production Schemaaenderung; geprueften Code zu mergen installiert sie nicht.
@@ -285,3 +285,71 @@ Korrigiert11/11 erfolgreich, einschliesslich positivem Warten nach
 bestaetigter Abwesenheit. Kein Schutz abgesenkt. Die Installation der RPC,
 der lebende Job und der unabhaengige manuelle Rueckweg bleiben gesonderte
 Vorbedingungen vor jeder spaeter ausdruecklich freigegebenen Aktivierung.
+
+
+## Integration, Production Nachkontrolle und erforderliche Freigabe
+
+PR457 Head `67ec54b591ba169660c787ddcb10498d1a5ec3b8`, Tree
+`31be2b3b48fe6216e3c27c1fb12497b0ac1e7c28`. CI35457881913 vollstaendig
+erfolgreich:426/426 in644s, Browser50/50, Kontoschutz15/15 samt500
+isolierten Registrierungen, atomarer Testweg und neue RPC26/26 gegen
+PostgreSQL17 und PostgREST12.2.3, Z22 PASS48/FAIL0. Alle25 Pflichtschritte.
+Der vorherige Lauf35457515157 wurde beim Headwechsel automatisch ersetzt;
+sein bereits erfolgreicher Datenbankschritt wurde nicht als Gesamt CI
+gewertet. Die neue CI prueft auch den abschliessenden Bewaffnungsschutz.
+
+Vor dem Merge endete der regulaere Production Rueckstandslauf
+`understanding-rueckstand-20260919173037-g3swa`. Die Telemetrie enthaelt20
+Modellbuchungen mit gpt-5-mini sowie getrennt18 Budgetvertagungen und zwei
+fachlich/strukturell abgewiesene Verstehensfaelle mit Modellkennzeichen none.
+Diese zusaetzlichen Telemetriezeilen sind keine weiteren Modellaufrufe und
+keine500er Versorgungsergebnisse. Tagesbuch danach0,386081 USD statt
+0,262850 USD, keine offene Reserve. Profile, Identitaeten, Main und
+Konten/Sessions blieben gleich. Der gesamte Authhash aenderte sich wegen
+der Betriebsbuchungen; er wurde nach Abschluss neu als Grundlinie gelesen.
+Kein zusaetzlicher Fachlauf durch diesen Reparatursprint gestartet.
+
+Merge `a0ba6f8444f39923d60b45b0e339a14726d94bd7`, Production READY
+`dpl_F8Bj3J8hvfk5xrv6kC7HMzDsp81Z` am19.09.17:37:53 UTC, Hauptalias und
+Commit korrekt. Leser35458848599 am17:41:19 UTC HTTP200 mit genau diesem
+Commit. V3, exklusiver relationaler Profilpfad, Retention36,
+Kommunikations- und Kohortenquellensperre, atomare Sperre sowie4 USD
+Kostenregel2 wirksam. Optionaler Inhaltsabruf bleibt mangels neuer
+Testfensterquittung aus. Main CI35458671797 ebenfalls vollstaendig
+erfolgreich:426/426 in802s, Browser50, Kontoschutz15 samt500 isolierten
+Registrierungen, Datenbank26 und Z22 PASS48/FAIL0; alle25 Pflichtschritte.
+
+Native SQL17:41:07 UTC gegen den ruhenden Vorflug17:35:10:504 Profile,
+0 aktiv, alle Profil-, Identitaets-, Auth-, Main- und Kontoschutzhashes
+gleich. Keine lebende Sperre, Lease, junge offene Prozessquittung oder
+Kostenreserve;22709 Jobs erledigt,386081 Mikro USD, nicht eingefroren.
+Die neue Funktionssignatur ist weiterhin nicht vorhanden; null neue
+Testfensterquittungen. Merge hat keine Migration ausgefuehrt. Rein lesende
+Quellenkontrolle17:43 bestaetigt weiter10710 alte Itemzeilen,114 aufloesbare
+Objekte,91 nur ohne summary;500 Profile betroffen, vier ausschliesslich,
+null unaufgeloeste Itemverweise. Kein neuer500er Fachnachweis.
+
+Die jetzt konkret benoetigte Freigabe ist ausschliesslich die einmalige
+Installation von `supabase/migrations/20260919170000_testfenster_null500_ende.sql`
+auf dem bestehenden Production Projekt. Sie legt die gepruefte Endfunktion
+und deren enge Ausfuehrungsrechte an und aktualisiert den PostgREST
+Schemacache. Sie aktiviert kein Profil, startet keinen Endlauf, aendert
+keine Kosten- oder Environmentwerte und ruft kein Modell auf. Vor Anwendung
+Main, Funktionsabwesenheit, Rechte, Grundlinien und Ruhezustand frisch lesen;
+danach Funktionssignatur, SECURITY INVOKER, Rechte,504/0 und Schutzgrundlinien
+rein lesend bestaetigen. Kein scharfer Probeaufruf in Production.
+
+`CLAUDE.md §5` verlangt fuer Production Migrationen eine ausdrueckliche
+Freigabe; der aktuelle Auftrag nimmt diese Grenze ebenfalls aus. Die
+Freigabe des einmaligen Quellenlaufs ist verbraucht und umfasst diese
+Schemaaenderung nicht. Code Merge und Deployment waren bereits erlaubt und
+sind erledigt. Vor der Installation stoppen. Rollback Datei und unabhaengiger
+nativer SQL Endplan liegen bereit. Bewaffnung, Profilaktivierung und neuer
+500er Test bleiben auch nach einer Installationsfreigabe gesondert gesperrt.
+Prosa, Quellenreichweite, Vollversorgung, Frische und belastbare Laufzeit-
+und Kostenplanung bleiben nach der Installation weiter zu bearbeiten.
+
+Dieser abschliessende Folge PR dokumentiert ausschliesslich den wirklichen
+Nach Merge Stand gemaess CLAUDE §9. Er aendert weder Code noch Konfiguration
+oder Daten; sein eigener Merge wird ueber Git und Deployment Historie
+nachgewiesen, ohne rekursiven weiteren Dokumentations PR.
