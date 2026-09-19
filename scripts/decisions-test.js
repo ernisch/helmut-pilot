@@ -117,7 +117,9 @@ const koLongRisk = {
   was_ist_passiert: "x", parteien: ["SPD"], ausschuesse: ["Gesundheit"], risiken: ["R".repeat(500)]
 };
 const decLong = decisions.buildDecision("u-health", koLongRisk, { similarity: 0.5, matched_features: [{ type: "ausschuss", value: "Gesundheit" }] });
-check("Freitext risk/chance wird gekappt (Datenminimierung, <= 240)", decLong.risk != null && decLong.risk.length <= 240, `len=${decLong.risk && decLong.risk.length}`);
+check("Ueberlanges Risiko erzeugt keinen behauptenden Praefix", decLong.risk === null);
+check("Ganzes Risiko genau an der Datenminimierungsgrenze bleibt unveraendert",
+  decisions.buildDecision("u-health", { ...koLongRisk, risiken: ["R".repeat(239) + "."] }).risk === "R".repeat(239) + ".");
 check("Entscheidung trägt vorgang_id (Verkettung zum Vorgang)", decLong.vorgang_id === "vg-long");
 
 // --- 7) runDecisionShadow: Fail-safe + Happy-Path (injizierte Deps) ----------

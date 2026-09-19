@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026: Quellenfix451 integriert; getrennter Prosaabgleich gescheitert.** Main `2d239abca16e54371e102ff69384f6c981f86ff1`, READY `dpl_36YBDeCMzWVrh8iwr2ij3jQiPabP`, Leser35447091556 HTTP200; PR451 und Main CI erfolgreich. Einmaliger Quellenlauf40/22 abgeschlossen; weiterhin91/114 Altobjekte ohne wirksamen Auszug. PR452 ungemergt geschlossen: ein Aufruf,0,003921 USD, falsche Quellenurteile und21/22 Felder; dauerhaft gestoppt. SQL14:29 UTC:504/0, Kontenschutz unveraendert, keine Sperre/Lease/Reserve,0,262850 USD. Prosa,0→500→0 und Vollversorgung offen. [Quellen](betrieb/quellenkontext-ruhe-2026-09-19.md), [Fachstopp](betrieb/prosa-quellenpruefung-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp).
+**19.09.2026: Assembler Textgrenzen PR453 integriert und Production geprueft.** Main `bac15b61fa774f87281dd9be54ecd7f0a2f5ba24`, READY `dpl_FDd46nxic1tmcDGH9URTj7aGnarG`, Leser35451454876 HTTP200. CI35450471420:422/422, alle24 Pflichtschritte. SQL15:20:59 UTC:504/0, geschuetzte Hashes unveraendert, keine Sperre/Lease/Reserve,0,262850 USD. Folgefix der Leser lokal423/423, Integration offen. Quellenlauf40/22 verbraucht,91/114 Altobjekte ohne wirksamen Auszug. PR452 fachlich gescheitert und ungemergt geschlossen; ein Aufruf0,003921 USD. Allgemeine Prosa,0→500→0 und Vollversorgung offen. [Textgrenzen](betrieb/prosa-textgrenzen-2026-09-19.md), [Quellen](betrieb/quellenkontext-ruhe-2026-09-19.md), [Fachstopp](betrieb/prosa-quellenpruefung-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp).
 
 **Integration PR419 bis448 abgeschlossen, alle28 alten Drafts erledigt.** PR447 CI35435242485:419/419, Browser50, Kontoschutz15, Z22 48;24 Pflichtschritte. Laufzeitleser35436180373 belegt Speicher, Kommunikationssperre und4 USD Riegel. Drei Prosaserien nach je einem Aufruf fachlich gestoppt, zusammen0,019647 USD; Folgenprompt verworfen, Anwendung nicht auf `low` umgestellt. [Fachstopps](betrieb/prosa-denktiefe-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp). Heutige Freigabe10 USD, enger4 USD Riegel und Artikelkontext AUS bleiben. Kein neuer500er Test; Quellenfrische und vollstaendige Fachabnahme offen. [Integrationsbelege und Restpunkte](betrieb/500-bereitschaft-2026-09-19.md#abschluss-nach-dem-denkvergleich).
 
@@ -148,7 +148,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-19.09.: Assembler Textgrenzen lokal422/422 geprueft, Integration offen. Danach dieselbe belegte Kuerzungsklasse in Mandat/Risiko/Lage beheben. Keine Wiederholung der drei Generierungsserien, des gescheiterten Quellenpruefers oder des einmaligen Quellenlaufs. Danach0→500→0 und expliziten Vollstaendigkeitsleser vorbereiten; allgemeine Prosa bleibt offen. Kein500er Start. [Fachstopp und Folge](betrieb/prosa-quellenpruefung-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp).
+19.09.: PR453 integriert. Folgefix Mandat/Risiko/Lage lokal423/423; Integration offen. Keine Wiederholung der drei Generierungsserien, des gescheiterten Quellenpruefers oder des einmaligen Quellenlaufs. Danach0→500→0 und expliziten Vollstaendigkeitsleser vorbereiten; allgemeine Prosa bleibt offen. Kein500er Start. [Fachstopp und Folge](betrieb/prosa-quellenpruefung-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp).
 
 ## 12 · Verbindliche Betriebsgrenzen
 

@@ -47,11 +47,17 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
   });
   await pruefe("Quellenmenge und Eingabe bleiben auch bei langen Quellen begrenzt", () => {
     const kos = Array.from({ length: 12 }, (_, i) => ({ ...ko, vorgang_id: "vg-" + i }));
-    const docs = Object.fromEntries(kos.map(k => [k.vorgang_id, Array.from({ length: 20 }, (_, i) =>
+    const zuLang = Object.fromEntries(kos.map(k => [k.vorgang_id, Array.from({ length: 20 }, (_, i) =>
       ({ ...quelle, url: "https://example.org/" + i, title: "A".repeat(1000), summary: "B".repeat(5000) }))]));
+    assert.deepEqual(Q.baueEingabe(kos, zuLang, jetzt), []);
+    const docs = Object.fromEntries(kos.map(k => [k.vorgang_id, [...zuLang[k.vorgang_id],
+      ...Array.from({ length: 20 }, (_, i) => ({ ...quelle, url: "https://example.org/ganzer-beleg-" + i,
+        title: "A".repeat(600), summary: "B".repeat(1400) }))]]));
     const r = Q.baueEingabe(kos, docs, jetzt);
     assert(r.length > 0 && r.every(v => v.quellenbelege.length <= Q.MAX_BELEGE));
     assert(JSON.stringify(r).length <= Q.MAX_EINGABE_ZEICHEN);
+    assert(r.every(v => v.quellenbelege.every(d => d.titel === "A".repeat(600)
+      && d.auszug === "B".repeat(1400) && d.url.includes("ganzer-beleg-"))));
   });
   await pruefe("Quellenkorrektur invalidiert Cache ohne KO Aenderung", () => {
     const a = input([quelle]);
