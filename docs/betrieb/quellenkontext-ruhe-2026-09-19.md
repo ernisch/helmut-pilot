@@ -475,3 +475,75 @@ Prosareparatur. Auch danach muss der allgemeine Beleg-/Formulierungsvertrag
 die negativen und positiven Fachfaelle in mehreren Feldern und im
 Schwesterpfad bestehen. Quelle, fachliches Urteil und strukturelle
 Vollstaendigkeitspruefung bleiben getrennt.
+
+## Zweiter freigegebener Quellenblock am 19.09. um 22:50 UTC
+
+Der Betreiber gab den nach PR461 konkret beschriebenen zusaetzlichen Block
+mit Ja frei. Der begrenzte Datenkorrekturlauf ist **erfolgreich abgeschlossen**;
+die Eingabeversorgung und der gesamte500er Auftrag bleiben **teilweise abgeschlossen**.
+Ausgefuehrt auf Main f854367b3f3de49a0b43223735b14968b5227b2e,
+Production dpl_6e46gS6RrRrfUi5fpqniq9bDqexy READY. Main CI35468477635
+war bereits erfolgreich. Vorher keine offenen PRs oder laufenden Actions.
+
+Actions35474457060, Job105981180732:20.09.01:50:31 bis01:54:59 Tuerkei,
+20.09.00:50:31 bis00:54:59 Berlin,19.09.22:50:31 bis22:54:59 UTC.
+Ein Startklick meldete im Browser eine Zeitueberschreitung. Die direkte
+GitHub Gegenlesung bestaetigte genau diesen einen Lauf; kein zweiter Klick.
+Der Arbeitsauftrag war ausschliesslich quellenkontext bei null Aktiven.
+
+Alle500 Zielprofile geprueft,142 verschiedene ausgewaehlte Quellen.
+38 bisher unversuchte Quellen abgerufen und ihre Versuchsbelege bedingt
+persistiert:15 Auszuege ergaenzt,23 abgelehnt. Ablehnungen:8 Artikelziele,
+3 Titel,8 nicht bestaetigte Abrufe,4 ohne belastbaren Auszug.25 vorhandene
+Versuchsbelege uebersprungen; keine Wiederholung eines alten Versuchs.
+Die beiden ungenutzten Plaetze des40er Limits sind kein neuer Auftrag.
+Im aktuellen ausgewaehlten Eingang bleibt kein noch unversuchter Kandidat.
+
+Leere Auszuege dieses Eingangs63 vorher und48 nachher.327 Profile haben
+mindestens zwei Auszuege,91 weiterhin keinen. Diese Mengen beschreiben
+die aktuelle Auswahl nach dem regulaeren21:30 Verstehenlauf; eine Aenderung
+gegen eine Stunden aeltere Auswahl wird nicht allein diesem Datenblock
+zugerechnet. Keine neuen500 Ergebnisse erzeugt oder fachlich abgenommen.
+
+Native SQL vor22:50:03/nach22:55:20 UTC:504 Profile,0 aktiv; alle vier
+vollstaendigen Schutzgrundlinien identisch, einschliesslich Auth und Sessions.
+Keine Sperren, Leases, offenen Jobs, jungen offenen Prozesse, neuen
+Testfensterquittungen oder offenen Reserven. Tagesbuch0,526234 USD,
+Limit4 USD vor und nach identisch, null Modellaufrufe und Modellmehrkosten.
+Der Kostenanstieg seit dem frueheren Abschluss liegt vor diesem Lauf;
+der regulaere21:30 Verstehenlauf ist separat protokolliert.
+
+Alle15 neuen Auszuege vollstaendig gelesen und lokal durch Originalquellenleser,
+Satzpraefix und gespeicherten Inhaltshash gegengeprueft:15/15 bytegleich.
+Das ist ein Herkunfts und Textvollstaendigkeitsbeleg, keine Bestaetigung
+jeder journalistischen Tatsachenbehauptung oder einer erzeugten Interpretation.
+Privater Nachweis: Helmut_Quellenblock_35474457060_Nachweis.json.
+
+Kein weiterer Quellenabruf derselben Kandidaten. Der Verdacht, dass die
+Sechserauswahl vorhandene Auszuege vollstaendig verdraengt, erklaert die
+aktuelle Luecke nicht. Der gezielte Replay von151 Dokumenten zu vier
+auffaelligen Wissensobjekten bestaetigte zwar solche Auswahlfaelle. Alle
+vier Objekte haben aber pending Status und werden fuer die aktuelle Lage
+nicht verwendet. Im getrennt gelesenen abgeschlossenen Objektbestand
+hatten die drei Gruppen mit spaeteren Auszuegen bereits4,5 beziehungsweise6
+Auszuege unter den ersten sechs. Keine Aenderung dieser Auswahl auf Verdacht.
+Native Zeitstempel wurden fuer den Replay nur in die vom REST Leser
+gelieferte ISO Darstellung gebracht; daraus folgt kein Production Zeitfehler.
+
+Die regulaeren Abruflaeufe am18. und19.09. jeweils04:00/20:00 UTC hatten
+null Auftraege und null Verarbeitungen. Letzte Rohdatenanlage weiterhin
+16.09.16:04:07 UTC, juengste Publikation16.09.15:55:56 UTC. Alte Artikel
+werden durch ergaenzte Auszuege nicht zu neuen Nachrichten. Der bestehende
+globale Erfassungspfad verlangt seine uebergebenen Mandate; die normalen
+Auftraggeber liefern bei null aktiven Profilen keine neue Kohortenarbeit.
+Die Hilfswege fachzyklus und der alte Stufe A Ausfuehrer sind kein
+freigegebener Ersatz fuer einen frischen Eingang bei null aktiven Profilen.
+Ein neuer Quellenimport waere ein neuer Production Datenauftrag; der
+abgeschlossene38er Block gibt ihn nicht frei. Keine Aktivierung als Umweg.
+
+Allgemeine Prosa, Quellenfrische und der belegte Zeit und Kostenplan fuer500
+bleiben offen. Der separate Modellrichter aus PR452 bleibt verworfen.
+Ein wortgleiches Quellenzitat beweist seine Herkunft, aber nicht die
+Folgerichtigkeit eines zusaetzlichen Urteils. Auch erzeugte strukturierte
+Risiko und Bedeutungsfelder sind ohne unabhaengigen Eingabebeleg keine
+neue Tatsachengrundlage fuer eine deterministische Umformulierung.
