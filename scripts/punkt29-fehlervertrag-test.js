@@ -490,7 +490,10 @@ const langsam = (ms, fn) => async (...args) => {
     check("C10 unlesbarer Zeitstempel/uebergrosser Inhalt/kaputte Kodierung: Rohdokument-Vertrag bleibt deterministisch und gedeckelt",
       zeilen.length === 3
         && zeilen.every((r) => /^rd-[0-9a-f]{64}$/.test(r.id))
-        && zeilen[1].summary.length <= dedup.SUMMARY_MAX
+        && zeilen[1].summary === null // ohne ganze Aussage kein erfundener Auszug
+        && dedup.toRawDocumentRow(medienItem("p29-praefix", "Langer Bericht",
+          "Der Ausschuss wird den Vorschlag in seiner nächsten Sitzung beraten. " + "X".repeat(50000))).summary
+            === "Der Ausschuss wird den Vorschlag in seiner nächsten Sitzung beraten."
         && zeilen[0].published_at === "gestern frueh", // ehrlich durchgereicht, kein erfundenes Datum
       JSON.stringify(zeilen.map((r) => [r.id.slice(0, 8), (r.summary || "").length])));
     // Widerspruechliche Metadaten: KI behauptet 'bund', Institutionen sagen Landtag.

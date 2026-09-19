@@ -33,6 +33,34 @@ async function main() {
     for (const patch of [{ url: raw.url + "/anderes" }, { publishedAt: "2026-09-09T21:00:00Z" }, { title: "Anderes Thema mit fremden Aussagen" }])
       assert.equal(E.fromMirror(document, [{ ...raw, ...patch }]).ok, false);
   });
+  await test("Kurze Wortabbrueche und Ellipsen liefern keinen vermeintlichen ganzen Satz", () => {
+    const fragment = "Die regionale Kommission untersucht gemeinsam mit den Kommunen die Finanzier";
+    for (const value of [fragment, fragment + "...", fragment + "…", fragment + ","]) {
+      assert(value.length < E.MAX);
+      assert.equal(E.excerpt(value, title), null);
+      assert.equal(E.fromHtml(document, { body: html(value), finalUrl: raw.url }).ok, false);
+      assert.equal(E.fromMirror(document, [{ ...raw, content: value }]).ok, false);
+    }
+  });
+  await test("Ganze Originalsaetze bleiben vor kurzem Folgeabbruch erhalten", () => {
+    for (const tail of [" Anschliessend soll", " Ein Gespraech", " Mit Prof. Dr.", " Weitere Details folg..."]) {
+      assert((summary + tail).length < E.MAX);
+      assert.equal(E.excerpt(summary + tail, title), summary);
+    }
+    const value = "Dr. Beispiel erlaeutert der Kommission am 12. September die Finanzierung der kommunalen Beratungsangebote.";
+    assert.equal(E.excerpt(value, title), value);
+    assert.equal(E.excerpt(value + " Die Expertin Prof. Dr.", title), value);
+    const zitat = 'Der Ausschuss fragt: „Welche Mittel benoetigen die kommunalen Beratungsstellen?“';
+    assert.equal(E.excerpt(zitat, title), zitat);
+  });
+  await test("RSS Speichergrenze erzeugt keinen neuen Satz oder Wortabbruch", () => {
+    const lang = summary + " Die nachfolgende Beratung untersucht " + "weitere Einzelheiten ".repeat(20);
+    assert.equal(D.sourceExcerpt({ title, content: lang }), summary);
+    assert.equal(D.sourceExcerpt({ title, content: "Ein offener langer Satz " + "weitere Einzelheiten ".repeat(30) }), null);
+    const kurz = "Kommunale Beratungsangebote im Ueberblick";
+    assert.equal(D.sourceExcerpt({ title, content: kurz }), kurz);
+    assert.equal(D.toRawDocumentRow({ ...raw, content: lang }).summary, summary);
+  });
   await test("Bedingtes Schreiben erhaelt Altmetadaten und bindet Identitaet", () => {
     const before = { ...document, raw: { erhalten: { wert: 7 } }, content_hash: "hash", canonical_url: raw.url };
     const after = G.plannedAfter(before, { ok: true, summary, origin: "artikel-metadaten" }, { tag: "2026-09-10" });

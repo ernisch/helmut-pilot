@@ -1,8 +1,10 @@
 # Quellenreparatur bei null aktiven Profilen
 
-Stand 19.09.2026. Gesamtstatus: **blockiert** an der ausdruecklichen
-Freigabe der Production Quelldatenkorrektur nach CLAUDE.md Abschnitt 5.
-Codeintegration und rein lesender Production Abschluss: **erfolgreich abgeschlossen**.
+Stand 19.09.2026. Gesamtstatus: **teilweise abgeschlossen**.
+Der einmalige Quellenkorrekturlauf ist freigegeben und ausgefuehrt.
+Nachkontrolle bestaetigt504/0 und unveraenderte Schutzgrundlinie.
+Eine belegte Satzgrenzenluecke im Auszugpfad wird anschliessend repariert;
+allgemeine Prosa und500er Bereitschaft sind weiterhin offen.
 Ausgang ist Main `b3a4fb560cddf482d18706801524630e39c7d1be` nach PR448.
 Kein neuer 500er Test, keine Profilaktivierung, kein bezahlter Modellaufruf.
 
@@ -87,8 +89,9 @@ Der Vorgang kann weder den Profilwriter erreichen noch Fachjobs einreihen.
 
 ## Konkreter spaeterer Auftrag und Freigabegrenze
 
-Noch **nicht ausgefuehrt**. Erst nach Integration, READY Abgleich, frischer
-rein lesender Grundlinie und ausdruecklicher Freigabe der Quelldatenkorrektur:
+Historischer Vorabvertrag, inzwischen einmalig freigegeben und ausgefuehrt
+(Ergebnis unten). Integration, READY Abgleich und frische Grundlinie waren
+Voraussetzungen der ausdruecklich freigegebenen Quelldatenkorrektur:
 
 | Eigenschaft | Begrenzung |
 | --- | --- |
@@ -112,9 +115,9 @@ Bei falscher Zielmenge, Aktivierung, Konkurrenz, fehlender Kommunikation oder
 Kostenbindung, Zeitende oder fehlgeschlagener Ruecklesung keine weitere Arbeit.
 
 `CLAUDE.md` Abschnitt 5 verlangt fuer Production Datenkorrekturen eine
-ausdrueckliche Freigabe. Der aktuelle Auftrag erlaubt notwendige Code Merges
-und deren automatische Deployments, aktiviert aber weder diesen Datenlauf
-noch Profile, Feature Flags oder einen neuen 500er Test. Eine Environment
+ausdrueckliche Freigabe. Der Betreiber hat genau diesen einmaligen Lauf
+freigegeben. Daraus folgt keine Erlaubnis fuer einen zweiten Datenlauf,
+Profile, Feature Flags oder einen neuen500er Test. Eine Environment
 Aenderung ist fuer diesen vorhandenen Quellenweg nicht erforderlich.
 
 Rueckweg der Codeaenderung: gepruefter Revert PR auf den Baum vor dieser
@@ -155,7 +158,7 @@ verglichen und stimmen mit der vorbereiteten Liste ueberein.
 | Strukturierte Belege | Tragen Akteure, Rollen, Ebene und Quellenidentitaet, beweisen keine neu behauptete fachliche Wirkung. Eine Woerterliste kann die freie Bedeutung nicht allgemein validieren. |
 | Promptvertrag | Vorhandene Verbote haben die gesicherten Fehler nicht verhindert; keine weitere gleiche Parameter oder Promptiteration. Anwendung bleibt unveraendert bei bisherigem Denkaufwand. |
 | Positive Gegenfaelle | Explizit belegte Leistungsart, Finanzierung, Folgen und Mandatszustaendigkeit muessen weiterhin nutzbar sein. Keine pauschale Leerregel fuer kurze Quellen. |
-| Quellenreichweite | Relevante Luecke bestaetigt; Reparaturbedienweg integriert und technisch geprueft, Production Quelldatenlauf nicht freigegeben. Originalzugriff und Wirkung auf Fachtexte noch offen. |
+| Quellenreichweite | Einmaliger Production Lauf ausgefuehrt:22 Auszuege gespeichert,18 Versuche ohne Ergebnis. Restluecke und Satzgrenzenbefund unten; Wirkung auf neue Fachtexte offen. |
 | Morgenversorgung | PR421 repariert Speicherung und Nachtrag vorhandener Lage; technische Integration bewiesen, Versorgung aller 500 noch offen. |
 | Lagekapazitaet | PR420 repariert aktive Auswahl, Rotation, Beginn und 500 Laufplaetze; serielles Zeitbudget und Vollversorgung noch offen. |
 | Quellenabruf/Google News | Artikelaufloesung und gebundener Kontext integriert; keine Zusage, alle heutigen Originalartikel erreichen zu koennen. Quellenfrische und Auszugreichweite im neuen Lauf pruefen. |
@@ -203,9 +206,98 @@ Prozesse. Tagesbuch0,258929 USD, null offene Kostenreserven, nicht eingefroren.
 Keine neue Profilaktivierung, kein Quellenkorrekturlauf, keine Modellaufrufe
 durch diesen Auftrag. Der regulaere11:30 Cron ist oben gesondert ausgewiesen.
 
-Naechste fachliche Phase bleibt bis zur ausdruecklichen Freigabe des oben
+Damals blieb die naechste Phase bis zur ausdruecklichen Freigabe des oben
 vollstaendig begrenzten Quelldatenlaufs blockiert. Der eigene abschliessende
 Dokumentations PR aendert ausschliesslich diese Datei und CURRENT_STATE;
 sein Merge und Deployment werden gemaess CLAUDE.md Abschnitt9 in GitHub und
 Vercel belegt, ohne rekursiven Dokumentations PR. Fachlich besteht weiterhin
 keine Bereitschaft fuer den500er Teststart.
+
+## Freigegebener einmaliger Production Lauf
+
+PR450 integriert auf Main `a1268b0db0cbf44f28dc3d8ec6e23b239fb162ad`,
+READY `dpl_EF8wGwu8v6E17N6yUpB9VtCCx71X`, Hauptalias korrekt.
+PR CI35442241050 und Main CI35442873887 erfolgreich; letzter Leser35442915647
+HTTP200, identischer Main, Kommunikation gesperrt und4 USD Riegel wirksam.
+Vor neuem Schreiben keine offenen PRs oder laufenden relevanten Actions.
+
+Betreiberfreigabe: den beschriebenen einmaligen Quellenkorrekturlauf
+ausfuehren und danach autonom weiterarbeiten, ohne Profilaktivierung oder
+500er Teststart. [Actions35443741723](https://github.com/ernisch/helmut-pilot/actions/runs/35443741723)
+auf genau diesem Main erfolgreich. Vorgang12:45:00 bis12:49:07 UTC,
+entsprechend15:45 bis15:49 Tuerkei und14:45 bis14:49 Berlin.
+Zielhash `dda70a02c9918d73a7ae45b7ab4febd6bae5a1df0a4d3fc65b9a260c62bcdfc6`.
+
+40 Artikelabrufe,40 neue Versuchsbelege,22 bestaetigte Auszugwrites.
+18 ohne Auszug:6 Abrufe nicht bestaetigt,4 abweichende Titel,5 abweichende
+Artikelziele,3 ohne belastbaren Auszug. Keine alten Versuche wiederholt,
+kein unbekannter Schreibausgang, null Modellaufrufe und Modellmehrkosten.
+Native SQL12:53:09 UTC gegen12:43:31:504/0, alle Profile und Identitaeten,
+kompletter Auth und Main Zustand sowie Konten/Sessions/Passwortbelege
+hashidentisch.22709 Jobs erledigt, keine lebende Sperre/Lease oder junge
+unbeendete Verarbeitung. Tagesbuch0,258929 USD, null offene Reserven.
+
+Zwei unterschiedliche Reichweitenmengen nicht vermischen:
+
+| Menge | Beleg nach diesem Lauf |
+| --- | --- |
+| Aktueller begrenzter Lageeingang aller500 Zielprofile |137 unterschiedliche Quellen,79 vorher ohne gespeicherten Auszug,57 danach;6 bereits frueher versucht,33 noch unversucht.278 Profile mit mindestens2 gespeicherten Auszuegen,163 ohne Auszug. Das sind rohe Auszugzaehlungen vor der untenstehenden Satzpruefung. |
+| Letzte gespeicherte Mandatspakete |Weiter10710 Itemzeilen/114 aufloesbare Objekte;95 vorher und91 nachher nur mit Quellen ohne summary. Alle500 Profile weiterhin betroffen,4 ausschliesslich solche Objekte. Keine Neuberechnung oder neue Fachabnahme dieser Altpakete. |
+
+## Belegte Satzgrenzenluecke und kleine Folgereparatur
+
+Vollstaendige Sichtung aller22 neuen Auszuege:15 unveraendert verwendbare
+Satzfolgen,3 mit nutzbarem ganzen Praefix und abgebrochenem Anhang,4 ohne
+ganzen Satz. Ursache in `quellen-auszug.js`: Satzgrenzen wurden nur oberhalb
+von240 Zeichen gesucht. Kuerzere Publisher Metadaten konnten bereits mitten
+im Wort enden; Ellipsen oder `Prof. Dr.` zaehlten als vermeintliches Satzende.
+Diese Feststellung beurteilt die Textvollstaendigkeit, nicht die Wahrheit
+der vom Herausgeber berichteten Tatsachen.
+
+Kleine deterministische Korrektur statt neuer Modellmethode: vorhandene
+ganze Satzpraefixe auch unter240 Zeichen erhalten, Abbruchreste, Ellipsen
+und typische Abkuerzungen nicht als Satzende verwenden. Kein ergaenzter Satz,
+keine historische Quelle im Code und keine pauschale Loeschung aller Auszuege.
+Positive Gegenfaelle erhalten mehrere Saetze, Zitate, Fragen, Abkuerzungen
+innerhalb eines vollstaendigen Satzes und bisherigen unverkuerzten Kontext.
+
+Alle sechs bestehenden Quellenleser projizieren nur den kleinen vorhandenen
+Herkunftsbeleg und wenden denselben Vertrag auf ergaenzte Auszuege an.
+Das umfasst Erstverstehen, Rohfenster, Warteschlange, Pending/Aktualisierung,
+allgemeine und gezielt gebundene Lagequellen. Kurze andere RSS Kontexte
+bleiben unveraendert. Originalzeilen werden nicht korrigiert oder geloescht.
+Privater Replay aller22:15 bytegleich,3 ganze Praefixe,4 ohne Auszug;
+Titel/Links/Zeiten bleiben vorhanden. Understanding und Lage bekommen
+denselben wirksamen Kontext. Eine allgemeine semantische Prosapruefung
+ist damit ausdruecklich nicht ersetzt.
+
+Direkter Schwesterbefund: `dedup.sourceExcerpt` kappte RSS Texte ebenfalls
+bei240 Zeichen, ohne Satzgrenze. In den37 nichtleeren Quellen der obigen
+Altpaketmenge sind8 solche Abbrueche belegt. Deshalb im selben Reparaturblock
+auch die eigene Kuerzung auf ganze Saetze umstellen. Beim Lesen alter
+Auszuege an der bekannten240 Zeichengrenze nur ganze Praefixe verwenden.
+Kurze RSS Texte unterhalb dieser Grenze bleiben unveraendert, weil fehlende
+Interpunktion allein dort keinen Motorabbruch belegt. Privater Replay der37:
+29 bytegleich,6 ganze Praefixe,2 ohne Auszug; kein pauschales Leeren.
+
+Nutzen: bekannte Eingabeabbrueche ohne neue Modellkosten entfernen.
+Aufwand: vorhandener Extraktor und Projektionen, keine Architektur,
+Migration, Environment Aenderung oder Wiederholung des Quellenlaufs.
+Risiko: knappe Metadaten ohne erkennbaren Satzabschluss liefern weniger
+Kontext; ganze vorhandene Praefixe bleiben erhalten. Einfachere Alternative
+eines zweiten Datenwrites unnoetig, weil alle betroffenen Leser denselben
+Vertrag anwenden. Rueckweg ueber geprueften Code Revert, ohne Datenrollback.
+
+Gezielte Pruefung bisher:10 Extraktorgruppen,6 echte Storage Lesepfade mit
+lokalem HTTP Transport und beiden Promptbauern,11 Lagebindungsgruppen
+bestanden. Zusaetzlicher echter JSONB Projektionsbeleg im bestehenden
+PostgreSQL/PostgREST Pflichtlauf vorbereitet. Erster kanonischer Lauf fuer
+den Metadatenfix421/421 in623 Sekunden bestanden. Der erneute Lauf nach
+RSS Korrektur erreichte419/421 in620 Sekunden: zwei alte Schutzfixtures
+griffen bei einem Zeichenblock ohne ganzen Satz auf `null.length` zu.
+Ihre Datenminimierungspruefung bleibt mit einem echten ganzen Praefix
+erhalten; zusaetzlich wird fuer reine Zeichenbloecke exakt null verlangt.
+Danach beide Suiten einzeln ueber den kanonischen Starter bestanden:
+`p1-security-check.js`339/339 und `punkt29-fehlervertrag-test.js`80/80.
+Damit alle421 Suiten erfolgreich ausgefuehrt; kein behaupteter einzelner
+Gesamtlauf am letzten Stand. CI, Merge und Production Wirkung noch offen.
