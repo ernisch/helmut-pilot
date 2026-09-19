@@ -67,9 +67,10 @@ function casQuery(before) {
     }).join("&");
 }
 async function ausfuehren({ bestand, config, env, db, fetchFn, now, pruefeBetrieb, snapshot,
-  fortschritt = null, deps = {} }) {
+  fortschritt = null, deps = {}, bestandsauswahl = null }) {
+  const ruhend = bestandsauswahl !== null;
   const start=now(), end=start.getTime()+MAX_MS, tag=start.toISOString().slice(0,10);
-  const report={...D.plan("quellenkontext"),ok:false,ausgeloest:false,zustandUnbekannt:false,modellaufrufe:null,
+  const report={...D.plan(ruhend ? "quellenkontext-ruhe" : "quellenkontext"),ok:false,ausgeloest:false,zustandUnbekannt:false,modellaufrufe:null,
     gepruefteProfile:0,geplanteQuellen:0,artikelAbrufe:0,ergaenzt:0,nichtErgaenzbar:0,bereitsGeprueft:0};
   let locked=false, patchPending=false;
   const storage=deps.storage || require("../lib/helmut/storage");
@@ -92,9 +93,14 @@ async function ausfuehren({ bestand, config, env, db, fetchFn, now, pruefeBetrie
     const F=require("../lib/helmut/funktionstest-500");
     D.fordere(F.pruefeStartfenster({startUtc:start.toISOString(),dauerMinuten:10,
       crons:require("../vercel.json").crons,maxLaufzeitMs:480000}).startErlaubt,"quellenkontext-cronkonkurrenz");
-    const target=bestand.mandate.filter(p=>D.ALLE_KENNUNGEN.includes(p.user_id)||p.aktiv);
-    D.fordere(target.length===500 && target.filter(p=>p.aktiv).length===5,"quellenkontext-zielmenge-abweichend");
-    const profileHash=payloadHash(bestand), counterBefore=await read("llm_budget_counters?select=used&scope=eq.global&day=eq."+tag);
+    const ziel = ruhend ? require("../lib/helmut/quellenkontext-ruheziel").pruefe(bestand,bestandsauswahl) : null;
+    const target=bestand.mandate.filter(p=>ziel ? ziel.ids.includes(p.user_id) : D.ALLE_KENNUNGEN.includes(p.user_id)||p.aktiv);
+    D.fordere(target.length===500 && target.filter(p=>p.aktiv).length===(ruhend?0:5),"quellenkontext-zielmenge-abweichend");
+    if (ziel) report.zielHash=ziel.zielHash;
+    // Der ruhende Pfad schuetzt auch Sessions, Berechtigungen, Kosten und main.
+    // Kein Teil des Authzustands wird fuer einen Quellenabruf veraendert.
+    const schutzHash = ruhend ? s=>D.hash(s) : payloadHash;
+    const profileHash=schutzHash(bestand), counterBefore=await read("llm_budget_counters?select=used&scope=eq.global&day=eq."+tag);
     D.fordere(counterBefore.length===1,"quellenkontext-kostenzaehler-fehlt");
     const costBefore=pruefeQuellenKosten(bestand.auth,counterBefore[0].used,tag,config);
     const kostenbuchHash=D.hash(bestand.auth.testKostenTage?.[tag] || null);
@@ -103,6 +109,10 @@ async function ausfuehren({ bestand, config, env, db, fetchFn, now, pruefeBetrie
     const guard=async(reserve=120000)=>{
       D.fordere(now().getTime()+reserve<end && now().toISOString().slice(0,10)===tag,"quellenkontext-zeitbudget");
       await pruefeBetrieb(LOCK);
+      if (ruhend) {
+        const aktive=await read("mandate_profiles?select=user_id&aktiv=is.true&limit=1");
+        D.fordere(aktive.length===0,"quellenkontext-ruhe-profil-aktiviert");
+      }
       const own=await read("pipeline_locks?select=job_name&job_name=eq."+LOCK+"&expires_at=gt."+encodeURIComponent(now().toISOString()));
       D.fordere(own.length===1,"quellenkontext-sperre-verloren");
     };
@@ -214,7 +224,7 @@ async function ausfuehren({ bestand, config, env, db, fetchFn, now, pruefeBetrie
     report.leereQuellenNachher=plan.length-report.ergaenzt;
     report.nochNichtVersucht=plan.length-report.ergaenzt-report.nichtErgaenzbar-report.bereitsGeprueft;
     const after=await snapshot(),counterAfter=await db("llm_budget_counters?select=used&scope=eq.global&day=eq."+tag);
-    D.fordere(payloadHash(after)===profileHash,"quellenkontext-profilbestand-veraendert");
+    D.fordere(schutzHash(after)===profileHash,"quellenkontext-profilbestand-veraendert");
     D.fordere(counterAfter.length===1 && counterAfter[0].used===counterBefore[0].used
       && D.hash(pruefeQuellenKosten(after.auth,counterAfter[0].used,tag,config))===D.hash(costBefore)
       && D.hash(after.auth.testKostenTage?.[tag] || null)===kostenbuchHash,"quellenkontext-modellkosten-veraendert");

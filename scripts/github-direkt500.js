@@ -10,6 +10,8 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
   fetchFn = global.fetch, now = () => new Date(),
   schreibe = null, fortschritt = null } = {}) {
   const vorpruefung = vorgang === "vorpruefung";
+  const quellenRuhe = vorgang === "quellenkontext-ruhe";
+  const quellenReparatur = quellenRuhe || vorgang === "quellenkontext";
   const plan = vorpruefung ? { ziel: 500, vorgang, reinLesend: true } : D.plan(vorgang);
   if (!scharf && !vorpruefung) return { ...plan, modus: "trockenlauf", schreibversuche: 0, ok: false };
   let wiederherstellen = null;
@@ -104,10 +106,12 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
     await pruefeBetrieb();
     const bestand = await snapshot();
     const vollbestand = vorgang === "reaktivierung" || (bestand.mandate.length === 504
-      && ["vorpruefung", "fachzyklus", "textnachlauf", "quellenkontext"].includes(vorgang));
-    const snapshotModus = vollbestand ? "500-bestand" : "vorpruefung";
+      && ["vorpruefung", "fachzyklus", "textnachlauf", "quellenkontext", "quellenkontext-ruhe"].includes(vorgang));
+    const snapshotModus = quellenRuhe ? "500-ruhend" : vollbestand ? "500-bestand" : "vorpruefung";
     const zielAnzahl = vollbestand ? 495 : 475;
     const vor = D.pruefeSnapshot(bestand, snapshotModus);
+    const ruheziel = quellenRuhe ? require("../lib/helmut/quellenkontext-ruheziel")
+      .ausUmgebung(bestand, env.HELMUT_QUELLENKONTEXT_BESTANDSPROFILE) : null;
     // Der Betreiber verlangt den direkten Test ohne vorgelagerte A Abnahme.
     // Qualitaet wird am tatsaechlichen 500er Ergebnis bewertet, nie vorausgesetzt.
     let letzterTextlauf = null;
@@ -340,7 +344,7 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       HELMUT_LLM_RESERVE_UNDERSTANDING: String(config.understandingReserve),
       HELMUT_TESTLAUF_VORRANG_REAL: String(config.vorrangreserveReal),
       HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt",
-      ...(vorgang === "quellenkontext" ? { HELMUT_ATOMIC_LOCK: "1", HELMUT_ANBIETER_STEUERUNG: "on" } : {}) };
+      ...(quellenReparatur ? { HELMUT_ATOMIC_LOCK: "1", HELMUT_ANBIETER_STEUERUNG: "on" } : {}) };
     const laufEnv = { ...env, ...gebunden };
     VORFLUG.erzwingeSpeicherpfadOderWirf({ env: laufEnv, zweck: "Direkter Ausbau auf 500" });
     if (!schreibe) {
@@ -353,11 +357,12 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         }
       };
     }
-    if (vorgang === "quellenkontext") {
+    if (quellenReparatur) {
       D.fordere(env === process.env && !schreibe, "quellenkontext-braucht-echten-geprueften-adapter");
-      D.fordere(vor.aktiv === 5 && vor.aktive.length === 0, "quellenkontext-nur-bei-geschlossener-kohorte");
+      D.fordere(vor.aktiv === (quellenRuhe ? 0 : 5) && vor.aktive.length === 0, "quellenkontext-nur-bei-geschlossener-kohorte");
       return await require("./github-quellenkontext-500").ausfuehren({ bestand, config, env: laufEnv,
-        db, fetchFn, now, pruefeBetrieb, snapshot, fortschritt });
+        db, fetchFn, now, pruefeBetrieb, snapshot, fortschritt,
+        ...(quellenRuhe ? { bestandsauswahl: ruheziel.ids.filter(id => !D.ALLE_KENNUNGEN.includes(id)) } : {}) });
     }
     const writer = schreibe || (async ({ id, spec }) => {
       const P = require("../lib/helmut/provisioning");
