@@ -451,3 +451,76 @@ Grenzwerte zu entfernen; gezielte Groessenpruefung4/4 erfolgreich.
 Das ist kein behaupteter gruener lokaler Gesamtlauf. Der korrigierte Head
 muss vor Merge die vollstaendige Pflicht CI bestehen. Ausschliesslich drei
 Markdown Dateien, kein neuer Anwendungscode und keine zusaetzlichen Modellkosten.
+
+## Inhaltsbindung und drei Ergebnisarten
+
+19.09., Branch `codex/morgen-inhaltsbindung-20260919`, **teilweise abgeschlossen**.
+Basis ist PR458/Main `f9ab47b57b5e75a7c5252ceeb50ddc0d5581dae5`.
+Dessen finale CI35461755164 bestand426/426 in784s und alle25 Pflichtschritte.
+Production READY `dpl_Gfd9xxRUw4KnVMvCGrheMHUV9wTN`, Hauptalias und Commit
+korrekt; Leser35462701804 um18:55:10 UTC HTTP200. Native Nachkontrolle18:55:39
+gegen18:52:15:504/0, Profil-, Identitaets-, vollstaendiger Auth- und Mainhash
+gleich, keine offene Arbeit oder Reserve,0,386081 USD bei4 USD Limit.
+Die Installation ist abgeschlossen und wurde nicht wiederholt.
+
+Belegte Luecke: Die Morgenquittung signierte Kennungen und Zeitstempel,
+nicht den vollstaendigen Text. Gleiche Kennungen konnten einen anderen
+Text begleiten. Der bestehende500er Leser zaehlte historische App Pakete;
+weder Morgenquittung noch Erzeugung im neuen Testfenster waren abgedeckt.
+Er behauptete deshalb richtigerweise keinen500er Funktionsnachweis.
+
+Vor Aenderung festgelegter Vertrag: anderer Text bei gleichen Kennungen
+darf keine passende Morgenquittung ergeben. Identischer gespeicherter Text
+bleibt wiederholbar, auch wenn danach Lage ergaenzt wird. Fehlende, fremde,
+doppelte, alte oder nach Testende entstandene Belege zaehlen nicht als
+vollstaendig. Alle500 Ziele bleiben fuer jede der drei Ergebnisarten im
+Nenner. Eine Strukturpruefung ist kein fachliches Gesamturteil.
+
+Engster Eingriff: Die regulaere Morgenversorgung fuegt ihrer vorhandenen
+Quittung einen Hash des gesamten gespeicherten Briefings samt Mandat,
+Berliner Tag, Paketkennung und Profilhash hinzu. Ruecklesung und
+Wiederholung vergleichen diesen Beleg. Die alte Signatur bleibt erhalten.
+Ein Altbeleg ohne Inhaltsbindung bekommt beim regulaeren Lauf einen neuen
+Beleg; das allein erzeugt keinen zweiten Push. Kein neuer Speicherweg,
+keine Migration und kein Backfill. Die bereits freigegebene
+Kommunikationssperre bleibt wirksam.
+
+Der bestehende Betreiberleser prueft zusaetzlich die drei exakt adressierten
+Zeilen je Profil: Paket, Morgenquittung und Lage. Zwei GET Lesungen mit
+ausdruecklichem Mandatsfilter muessen gleich sein. App Ausgabe und Paket
+binden denselben Inhaltshash. Paket und Lage muessen dieselbe Lage tragen;
+die Quittung muss den gesamten Briefinginhalt tragen. Erzeugungszeiten
+muessen zwischen bestaetigter Aktivierung und gebundenem Ende liegen,
+bei fruehem Ende entsprechend davor. Zukunft und fehlende Zeit sind kein
+Beleg. Der Anzeigeersatzzeitpunkt aus `lage.finalize` wird nicht verwendet.
+
+Je Ergebnisart werden500 Soll, geprueft, vollstaendig, nicht bestaetigt und
+feste Fehlergruende ausgegeben. Einzelhashes und Texte bleiben privat.
+Historische Tagesabrufe bleiben moeglich, zaehlen aber ausserhalb des
+Testfensters nicht als neue Versorgung. Fehlende App Ausgabe ist fuer die
+neue Bilanz unpruefbar, keine erfundene Aussage ueber vorhandene Morgenzeilen.
+Die bisherigen strengeren Paket- und Lagepruefungen werden neu berechnet;
+gespeichertes Gruen allein reicht nicht. Keine transaktionale Snapshotzusage,
+keine500er Faktenfreigabe und kein Quellenfrischenachweis durch einen neuen
+Erzeugungszeitpunkt. Quellenalter und fachliche Prosa bleiben separat offen.
+
+Gezielt lokal: neun neue Gruppen, darunter synthetische500/1500, App Leser7/7,
+Morgenpaketvertrag19/19 einschliesslich Altbeleg/Pussschutz sowie bestehende
+Frischevertraege69/69,38/38 und68/68 erfolgreich. Kanonischer Gesamtlauf
+427/427 in632s, Exit0. Waehrenddessen wurde die neue Bilanz praezisiert:
+Ein unlesbarer Inhalt zaehlt nicht als geprueft. Die betroffenen neun und
+sieben Gruppen danach gezielt bestanden. Kein behaupteter einzelner Lauf
+eines unveraenderten letzten Heads; diesen muss die vollstaendige Pflicht CI
+pruefen. Alle Tests ueber `scripts/lokal.js`, keine Modellaufrufe.
+Kein Production Inhaltslauf, weil keine neue Testfensterquittung angelegt
+werden darf.
+
+Risiko: Pro Profil bis zu zwei zusaetzliche begrenzte Datenbanklesungen;
+das bestehende15 Minuten Gesamtbudget und17 Minuten Joblimit bleiben.
+Teilabdeckung bleibt sichtbar. Ein bereits vor dem Test erzeugtes Tagespaket
+wird nicht fuer einen neuen Zeitnachweis umgeschrieben. Der spaetere Testplan
+muss einen passenden frischen Tagesstand beruecksichtigen. Branchpreview
+gezielt gesperrt; Cron und Environment unveraendert. Rueckweg ist ein
+gepruefter Coderevert; additive Quittungsfelder bleiben lesbar, keine
+Produktionsdaten loeschen. Vor Merge volle CI, danach READY/Commit/Alias,
+App und Schutzgrundlinien ausschliesslich lesen.

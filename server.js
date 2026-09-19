@@ -1066,11 +1066,15 @@ async function handleRequest(request, response) {
         const belegVorPush = briefingFrische.vertragAktiv()
           ? (heutiger.lauf ? heutiger : await briefingLauf.ladeErfolg(storageModul, tenantId, berlinTag))
           : heutiger;
-        const wiederholung = laufErfolg && briefingLauf.istWiederholung(belegVorPush.lauf, signatur);
+        const wiederholung = laufErfolg && briefingLauf.istWiederholung(belegVorPush.lauf, signatur, paket?.ausgabeBeleg || null);
+        // Eine alte Quittung ohne Volltexthash braucht einen neuen Beleg,
+        // aber allein das Vertragsupgrade darf keinen zweiten Push erzeugen.
+        const pushWiederholung = wiederholung || (laufErfolg && !belegVorPush.lauf?.ausgabeBeleg
+          && briefingLauf.istWiederholung(belegVorPush.lauf, signatur));
 
         const push = !laufErfolg
           ? { skipped: true, reason: "briefing-nicht-gespeichert" }
-          : wiederholung
+          : pushWiederholung
           ? { skipped: true, reason: "wiederholung-gleicher-inhalt" }
           : await withTimeout(sendBriefingReadyPush(ausgabe, profile), 30000, "cron-briefing-push")
             .catch((error) => ({ ok: false, reason: "push-timeout", error: error && error.message }));
@@ -1089,6 +1093,7 @@ async function handleRequest(request, response) {
             fensterStart: fenster && fenster.start,
             vorherErfolgAt: (fenster && fenster.quelle === "letzter-lauf") ? fenster.letzterErfolgAt : null,
             signatur,
+            ausgabeBeleg: paket?.ausgabeBeleg || null,
             kennzahlen: (state.frische && state.frische.kennzahlen) || null,
             datenstand: (state.primaryItem && state.primaryItem.lastUpdated) || null,
             grund: laufErfolg ? null : paketFehler ? "morgenpaket-nicht-bestaetigt" : (briefing && briefing.reason) || "unbekannt"
@@ -3258,6 +3263,7 @@ async function latestBriefingPayload({ politicianId, profile, url, previewMode =
     return prepareBriefingResponse({ ...row.payload.briefing,
       lageBriefing: require("./lib/helmut/briefing-speicher").lageAusgabe(row.payload.lage),
       gespeicherterNachweis: { id: row.id, erzeugtAm: row.generated_at,
+        inhaltHash: row.payload.inhaltHash,
         profilbindung: require("./lib/helmut/briefing-speicher").profilBindungsstand(row),
         auswahl: aktuellTag ? "aktuell" : "historisch", profilHash: row.payload.profilHash,
         vorgaengerId: row.payload.profilkontextUebergang?.vorgaengerId || null,

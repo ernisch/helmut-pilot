@@ -5,6 +5,7 @@
 const { PROJECT_URL } = require("./github-fachzyklus-a");
 const { pruefe } = require("./github-laufzeitpruefung");
 const Z = require("../lib/helmut/testnachweis-ziel500");
+const E = require("../lib/helmut/testnachweis-ergebnisse");
 const { hash, fordere, DirektAbbruch } = require("../lib/helmut/testkohorte-direkt500");
 const APP = "https://helmut-pilot.vercel.app";
 
@@ -47,7 +48,10 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
         const gueltig = require("../lib/helmut/briefing-profilkontext").nachweisKennungGueltig(n, id, tag) && b?.available === true
           && Array.isArray(b.items) && b.items.length > 0 && b.currentHelmutState && b.currentRadarState
           && Array.isArray(b.lageBriefing?.paragraphs) && b.lageBriefing.paragraphs.length > 0;
+        const ergebnisArten = gueltig ? await E.lese({ userId: id, tag, fenster, app: b, projectUrl: PROJECT_URL,
+          key: env.SUPABASE_SERVICE_ROLE_KEY, fetchFn, jetzt: now() }) : E.offen("app-vertrag-nicht-pruefbar");
         results.push({ mandatHash, abrufbar: Boolean(gueltig), grund: gueltig ? "app-vertrag-gelesen" : "app-vertrag-unvollstaendig",
+          ergebnisArten,
           strukturellVollstaendig: Boolean(gueltig) && n.pruefung?.strukturellVollstaendig === true,
           qualitaetBestanden: Boolean(gueltig) && n.pruefung?.bestanden === true });
       } catch { results.push({ mandatHash, abrufbar: false, grund: "app-antwort-unlesbar" }); }
@@ -59,10 +63,11 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
       gelesen: results.length, abrufbar: results.filter(r => r.abrufbar).length,
       strukturellVollstaendig: results.filter(r => r.strukturellVollstaendig).length,
       qualitaetBestanden: results.filter(r => r.qualitaetBestanden).length,
+      ergebnisArten: E.bilanziere(results),
       vollstaendigeFaktenpruefung: false, funktionsnachweis500: false, results };
   } catch (e) {
     return { ok: false, reinLesend: true, grund: e instanceof DirektAbbruch ? e.grund : "nachweis-zugang-oder-lesefehler",
-      gelesen: results.length, funktionsnachweis500: false, results };
+      gelesen: results.length, ergebnisArten: E.bilanziere(results), funktionsnachweis500: false, results };
   }
 }
 function oeffentlicherBericht(r) {
@@ -73,6 +78,7 @@ function oeffentlicherBericht(r) {
     "strukturellVollstaendig", "qualitaetBestanden", "vollstaendigeFaktenpruefung",
     "funktionsnachweis500", "grund"];
   const out = Object.fromEntries(felder.filter(k => Object.hasOwn(r, k)).map(k => [k, r[k]]));
+  if (Object.hasOwn(r, "ergebnisArten")) out.ergebnisArten = E.bilanziere(r.results || []);
   const gruende = ["app-http-fehler", "briefing-nicht-gespeichert", "app-vertrag-gelesen",
     "app-vertrag-unvollstaendig", "app-antwort-unlesbar"];
   out.abrufGruende = {};

@@ -140,6 +140,17 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
     assert.equal(second.response.versorgung.versorgt, 1);
     assert.equal(saved.rows.get(`bf-${profile.id}-${B.SLOT}-${day}`).payload.briefing.currentHelmutState.primaryVorgangId, undefined);
   });
+  await test("Alte Quittung erhaelt den Inhaltsbeleg ohne zweiten Push", async () => {
+    const first = await run(), id = L.laufId(profile.id, day);
+    delete first.saved.rows.get(id).payload.ausgabeBeleg;
+    const second = await run([profile], { saved: first.saved, nowMs: startMs + 3600000, runId: "beleg-upgrade" });
+    const q = second.saved.rows.get(id).payload;
+    assert(require("../lib/helmut/briefing-ausgabebeleg").passt(q.ausgabeBeleg,
+      second.saved.rows.get(`bf-${profile.id}-${B.SLOT}-${day}`)));
+    assert.equal(second.saved.pushes.length, 1);
+    assert.equal(second.saved.writes.filter(s => s === L.SLOT_ERFOLG).length, 2);
+    assert.equal(second.response.results[0].frischeBeleg.verifiziert, true);
+  });
   for (const mode of ["writeError", "readError", "noReadback", "foreignReadback"]) {
     await test("Paketfehler ist weder Erfolgsquittung noch Zustellung: " + mode, async () => {
       const r = await run([profile], { [mode]: true });
