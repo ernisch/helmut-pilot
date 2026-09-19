@@ -1,13 +1,13 @@
 # Bereitschaft nach der Reparaturkette
 
 Stand 19.09.2026 Tuerkei. **Status: blockiert. Noch nicht bereit.**
-Nachtrag19.09.: PR444 und445 inzwischen vorhanden und technisch geprueft.
-Der Microsoft Listentarif ist numerisch belegt; der Fachnachweis ist weiterhin
-unausgefuehrt. Fruehere Achtfallfreigabe erhalten, notwendige Betriebsbuchungen
-stehen aber im Widerspruch zum aktuellen Production Schreibverbot.
-Aktueller [Tarif und Ausfuehrungsstand](prosa-fachnachweis-2026-09-19.md#numerischer-microsoft-tarifbeleg-und-fortsetzung-am-1909).
+Nachtrag19.09.: Reparaturen, notwendige Betriebsbuchungen und gepruefte Merges
+samt Deployment freigegeben; heute insgesamt hoechstens10 USD. Bestehender
+4 USD Motorriegel bleibt vorerst enger. Tarif belegt, erster Fachstart vor
+Modell und Quittung am vollen Telemetriering gesperrt. Ausfuehrerkorrektur
+wird geprueft. Der500er Test wird noch nicht gestartet.
+Aktueller [Ausfuehrungsstand](prosa-fachnachweis-2026-09-19.md#freigegebene-fortsetzung-und-nachgewiesener-speicherblocker).
 Nachfolgende Betriebs und Kettenaufnahmen bleiben historische Vorflugbelege.
-Dies ist eine Vorbereitung, keine Freigabe fuer Merge, Deployment oder Test.
 Die aktuelle Rollenreparatur steht im [Reparaturbeleg](akteursrollen-erhalten-2026-09-19.md).
 
 ## Aktuell bestaetigter Betrieb
@@ -87,6 +87,29 @@ offline vorbereitet, mit dem heutigen Bestand geprueft und separat freigegeben
 werden. Das ist eine benannte Production Planungsgrenze, kein neuer Cronauftrag.
 
 ## Integration und Rueckweg
+
+**Aktueller Integrationsauftrag19.09.:** Alle28 offenen Draft PRs geprueft.
+PR419 bis445 bilden die lineare Reparaturkette; alle27 exakten Koepfe sind
+Vorfahren des gemeinsamen Endstands. Fuer jeden Kopf beide Pflichtjobs und
+alle24 Schritte erfolgreich nachgelesen, keine alte CI neu gestartet.
+Keine offenen Reviewkommentare. PR445 richtet sich nun gegen main und soll
+die ganze Kette mit einem geprueften Merge uebernehmen. Noch nicht gemergt.
+
+PR345 ist ein alter, inzwischen konfliktbehafteter Dokumentationsstand.
+Seine zwei erhaltenswerten historischen Nachtraege werden hier uebernommen;
+sein ueberholter CURRENT_STATE Kopf wird nicht ueber den heutigen gelegt.
+Erst nach bestaetigter Integration wird PR345 als ersetzt geschlossen.
+Die anderen PRs werden nach nachgewiesener Commitabstammung abgeschlossen.
+
+Konkreter kompatibler Code Rueckweg bei notwendiger Ruecknahme des Gesamtpakets:
+PR420 Head `eb687a5c849cb0602a08035c2c4893c944a1d4ce` enthaelt bereits
+Fairnessversion3 und500 Laufplaetze und besitzt vollstaendig erfolgreiche CI.
+Ein Rueckweg erfolgt ueber geprueften Revert PR auf diesen kompatiblen Baum,
+ohne gespeicherte Version3 oder Kostenquittungen zu loeschen. Kein blindes
+Instant Rollback auf den bisherigen Version2 Code nach erster Version3 Ablage.
+Alle Profile bleiben waehrend dieser Integration inaktiv.
+
+Die nachfolgenden Integrationsformulierungen beschreiben die fruehere Planung.
 
 Abhaengigkeitsreihenfolge: **419, 420, 421, 422, 423, 424, 425, 426, 427,
 428, 429, 430, 431, 432, 433, 434, 435, 436, 437, 438, 439, 440, 441,

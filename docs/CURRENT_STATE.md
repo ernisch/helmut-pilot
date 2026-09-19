@@ -1,8 +1,8 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026 Tuerkei: PR419 bis445 offen, Draft, linear. PR445 Head0dac7e9 CI35427331451 gruen:418/418,24/24 Schritte. Microsoft Listentarif0,25/2,00USD je Million Tokens belegt, Reserve unveraendert. Vier Prosakategorien offen,0 Modellaufrufe. Achtfallfreigabe erhalten; notwendige Buchungen gegen aktuelles Production Schreibverbot klaeren. [Tarif, Freigabegrenze und naechster Schritt](betrieb/prosa-fachnachweis-2026-09-19.md#numerischer-microsoft-tarifbeleg-und-fortsetzung-am-1909). Noch nicht500er bereit.**
+**19.09.2026: Reparatur und gepruefte Merges samt Deployment ausdruecklich freigegeben; heute insgesamt hoechstens10 USD. Bestehender4 USD Motorriegel bleibt vorerst enger. PR419 bis445 offen, Draft, linear. PR445 Head49bb811 CI35428717467 gruen:418/418,24/24 Schritte. Microsoft Listentarif0,25/2,00USD je Million Tokens belegt. Vier Prosakategorien offen. Noch nicht500er bereit.**
 
-Lesender Abgleich19.09.10:07:36 Tuerkei /09:07:36 Berlin /07:07:36UTC:504/0, keine Sperren/Leases/jungen offenen Laeufe, keine Prosaquittung,0 Prosaaufrufe. Tagesbuch0,113741USD, keine offene Reserve. Main/Production unveraendert. Keine laufende Action, nur zwei alte queued. Dieser Folgeauftrag aendert nur Dokumentation; kein Modellstart.
+Main/Production weiter2d1eb705. Erster Fachstart35430388179 am19.09.07:50 UTC vor Quittung und Modell mit `PROSA_SPEICHERSTAND` abgebrochen. Protokollring5000 statt verlangter hoechstens4992 Eintraege. SQL08:04 UTC:504/0, keine Sperren/Leases/jungen Laeufe, keine Prosaquittung,0 Prosaaufrufe;0,113741 USD Tagesbuch. Ausfuehrer sichert nun bis acht verdraengbare Altbelege vor Modellstart dauerhaft und prueft die genaue Ringfortschreibung.13/13 Schutzgruppen;418 Suiten lokal geprueft (414 im Gesamtlauf, vier nach Bereitstellung fehlender Abhaengigkeiten). Neue Head-CI offen. [Fachnachweis](betrieb/prosa-fachnachweis-2026-09-19.md).
 
 **Fremde Vorarbeit erhalten:** `codex/motor-reparatur-20260916` mit40 veraenderten und15 neuen Dateien bleibt unangetastet und unabgenommen. Die Reparaturkette uebernimmt daraus keine Cron, Versorgungs oder Auswerterarbeiten. [Erster Sprint](betrieb/quellen-zeitvertrag-2026-09-17.md).
 
@@ -150,16 +150,16 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-19.09. Tuerkei: Tarifluecke geschlossen. Naechster Fachblock Sachgebiet, erste feste Position des vorbereiteten Achtfallnachweises. Historische Modellursache bleibt unbelegt; kein pauschaler Promptumbau. Vor echtem Start notwendige Buchungen gegen das aktuelle Production Schreibverbot klaeren. Danach frischer Vorflug, unveraenderter begrenzter Nachweis und Integrationspruefung. Quellenalter und Zeitwahrheit im spaeteren500er Test ausdruecklich pruefen;24 Stunden Datenfrische ist keine Artikelaltersgrenze. PR345 separat. Kein Deployment oder500er Start.
+19.09.: Ausfuehrerkorrektur vollstaendig pruefen, dann unveraenderten Achtfallnachweis neu beginnen. Der erste Start hat keinen Fall verbraucht und keinen Modellaufruf gesendet. Danach belegte Inhaltsfehler bearbeiten und kumulative Reparaturkette geprueft integrieren. PR345 separat auf erhaltenswerte historische Nachweise pruefen. Quellenalter und Zeitwahrheit im spaeteren500er Test ausdruecklich pruefen;24 Stunden Datenfrische ist keine Artikelaltersgrenze.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
-**Aktueller Auftrag19.09.: keine Production Datenaenderung. Fruehere Achtfallfreigabe erhalten; Buchungsumfang vor Start klaeren. Gipfelversuch abgeschlossen:1 Aufruf/0,006921USD, kein Retry.**
+**Neue ausdrueckliche Betreiberfreigabe19.09.: notwendige Reparaturen und gepruefte Merges samt Deployment selbststaendig ausfuehren; heute insgesamt hoechstens10 USD. Die alte Sperre fuer notwendige Betriebsbuchungen ist aufgehoben. Auftrag endet bei Bereitschaft zum500er Test; dieser wird noch nicht gestartet.**
 
-1. Erlaubt: rein lesende Production Pruefung, eigener Branch, auftragsbezogener Code, Dokumentation, lokale Offlinepruefungen, Commit, Push und PR. Keine weiteren Agenten oder parallelen schreibenden Ausfuehrer.
-2. Hier nicht erlaubt: Merge, Deployment, Migration, Production Datenaenderung, Profilaktivierung, Cron oder Automationsaenderung, Environment oder Azure Aenderung, neuer Production Test. Achtfallgrenze siehe Statuskopf.
-3. mini bleibt technische Referenz. Harte 4 USD je UTC Tag inklusive voller offener Reserven bleiben bestehen. Kein weiterer Modellvergleich und keine bezahlten Richteraufrufe. Historische Kosten oder unbekannte Reserven nicht loeschen.
-4. Alle Profile duerfen fuer kuenftige Tests gleich behandelt werden. Aktuell bleiben alle 504 inaktiv. Konten, Identitaeten und Kommunikationssperre bleiben geschuetzt.
+1. Ein schreibender Ausfuehrer; fremde Vorarbeit erhalten. Konten, Identitaeten, Kostenhistorie und Kommunikationssperre schuetzen.
+2. Fuer den vorbereiteten Nachweis bleiben acht einmalige Faelle,1,696 USD Vollreserve und20 Minuten erhalten. Erster kritischer Fehler stoppt diese Serie. Keine unbekannten Aufrufe wiederholen.
+3. mini bleibt Referenz; bestehender atomarer4 USD Tagesriegel bleibt vorerst unveraendert. Eine Erhoehung ist nur bei belegtem Bedarf innerhalb der10 USD Tagesfreigabe zulaessig. Keine Kosten oder offenen Reserven loeschen.
+4. Alle504 Profile bleiben bis zum spaeteren500er Start inaktiv. Artikelkontext bleibt AUS. Keine neue Funktion und kein unnoetiger Umbau.
 5. Mandantentrennung mit `assertTenant` und explizitem Mandatsfilter; bedingte gemeinsame Schreibvorgaenge und persistente Gegenpruefung. Nicht pruefbar bedeutet niemals bestanden.
 
 ## 13 · Detailnachweise und Archiv

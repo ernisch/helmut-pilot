@@ -26,6 +26,7 @@ const PROMPTS = [
 // Der ganze Actionsjob ist auf drei Minuten begrenzt. Eine neue Position
 // braucht mindestens dieses komplette Restfenster, einschliesslich Abschluss.
 const MAX_MS = 20 * 60000, RESERVE_MS = 180000, MAX_COST = 1696000;
+const USAGE_MAX = require("../lib/helmut/storage").LLM_USAGE_RING_MAX;
 const sha = x => C.createHash("sha256").update(x).digest("hex");
 function fordere(ok, code) { if (!ok) { const e = new Error(code); e.code = code; throw e; } }
 function paket() {
@@ -92,7 +93,7 @@ async function beanspruche(storage, a, runId, now, counter) {
   let expected;
   await storage.mutateAuthStore(auth => {
     for (const [key, max] of Object.entries({ sessions: 2000, auditEvents: 1000, systemErrors: 500,
-      dailyInputs: 2000, llmUsage: 4992, processRuns: 300 }))
+      dailyInputs: 2000, llmUsage: USAGE_MAX, processRuns: 300 }))
       fordere(Array.isArray(auth[key]) && auth[key].length <= max, "PROSA_SPEICHERSTAND");
     let r = auth[KEY];
     const day = now.toISOString().slice(0, 10);
@@ -112,7 +113,11 @@ async function beanspruche(storage, a, runId, now, counter) {
       fordere(!Object.hasOwn(auth, KEY) && bound + MAX_COST <= 4000000, "PROSA_START_GESPERRT");
       r = { version: 1, manifestHash: MANIFEST, schemaHash: SCHEMA_HASH, commit: a.commit,
         empfaenger: T.publicKey(a.publicKey).fingerprint, begonnenAm: now.toISOString(),
-        ende: new Date(now.getTime() + MAX_MS).toISOString(), tag: day, faelle: [] };
+        ende: new Date(now.getTime() + MAX_MS).toISOString(), tag: day, faelle: [],
+        // Der bestehende Ring bleibt begrenzt. Vor dem ersten Modellstart
+        // genau die hoechstens acht verdraengbaren Altbelege dauerhaft sichern.
+        archivierteAufruftelemetrie: structuredClone(auth.llmUsage.slice(Math.max(0, USAGE_MAX - 8))),
+        aufruftelemetrieGrundlageHash: sha(JSON.stringify(auth.llmUsage)) };
     } else {
       fordere(r?.version === 1 && r.manifestHash === MANIFEST && r.schemaHash === SCHEMA_HASH
         && r.commit === a.commit && r.empfaenger === T.publicKey(a.publicKey).fingerprint
@@ -132,6 +137,13 @@ async function beanspruche(storage, a, runId, now, counter) {
   });
   fordere(equal((await storage.readAuthStore())[KEY], expected), "PROSA_START_UNBESTAETIGT");
   return expected;
+}
+function telemetrieErhalten(before, after, usage, claim) {
+  if (usage.length !== 1 || !Array.isArray(claim.archivierteAufruftelemetrie)
+    || claim.archivierteAufruftelemetrie.length > 8) return false;
+  return equal(after.llmUsage, [...usage, ...before.llmUsage].slice(0, USAGE_MAX))
+    && before.llmUsage.slice(USAGE_MAX - 1).every(old =>
+      claim.archivierteAufruftelemetrie.some(archiv => equal(old, archiv)));
 }
 // Beobachtet den echten HTTPS Transport, ohne Budget, Payload oder Modellpfad zu ersetzen.
 // Die feste Nutzlast wird vor dem ersten Byte geprueft. Jeder zweite Request sperrt.
@@ -204,12 +216,15 @@ async function ausfuehren({ env = process.env, now = () => new Date(), fetchFn =
     && newCalls[0][1].status === "abgerechnet" && newCalls[0][1].reserved === 212000
     && newCalls[0][1].cost === K.tokenKosten(usage[0].promptTokens, usage[0].completionTokens)
     && counter.ok === true && counter.used === runtime.counter.used + 1;
-  const geschuetzt = equal(grundlinie(before), grundlinie(after))
+  const telemetrieGesichert = telemetrieErhalten(before, after, usage, claim);
+  const geschuetzt = telemetrieGesichert && equal(grundlinie(before), grundlinie(after))
     && Object.entries(oldCalls).every(([id, c]) => equal(c, after.testKostenTage[claim.tag].calls[id]));
   if (!kostenBestaetigt || !geschuetzt || !usage[0]?.success) errorCode ||= "PROSA_NACHKONTROLLE";
   try { zeit(claim, now()); await G.vorflug(env, storage, fetchFn, now()); }
   catch { errorCode ||= "PROSA_NACHKONTROLLE"; }
-  const beleg = { runId, position: a.position, kostenBestaetigt, geschuetzt, usage, newCalls, counter, errorCode,
+  const beleg = { runId, position: a.position, kostenBestaetigt, geschuetzt, telemetrieGesichert,
+    archivierteAufruftelemetrie: claim.archivierteAufruftelemetrie,
+    aufruftelemetrieGrundlageHash: claim.aufruftelemetrieGrundlageHash, usage, newCalls, counter, errorCode,
     fachlichBestanden: false, inProductionImportiert: false };
   send("prosa-kosten", beleg);
   let savedExpected;
@@ -231,5 +246,5 @@ if (require.main === module) ausfuehren().then(r => {
   console.error(JSON.stringify({ ok: false, grund: /^PROSA_[A-Z_]+$/.test(e?.code || "") ? e.code : "PROSA_UNBESTAETIGT",
     automatischeWiederholung: false })); process.exitCode = 1;
 });
-module.exports = { paket, eingabe, konfiguration, grundlinie, zeit, beanspruche, mitTransportbeleg, ausfuehren,
+module.exports = { paket, eingabe, konfiguration, grundlinie, zeit, beanspruche, telemetrieErhalten, mitTransportbeleg, ausfuehren,
   KEY, PREFIX, BRANCH, MANIFEST, SCHEMA_HASH, PROMPTS, MAX_MS, RESERVE_MS, MAX_COST, sha };

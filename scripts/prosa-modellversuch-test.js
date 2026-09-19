@@ -53,7 +53,7 @@ function harness(options = {}) {
       limit: 4000000, spent: 0, baseline: 0, baselineCalls: 0, manualCalls: 0, manualUntil: null, calls: {}, frozen: null };
     auth.testKostenTage[d].calls[`test-${calls}`] = { status: "abgerechnet", reserved: 212000, cost: 850,
       maxOutputTokens: 3000, manual: false, createdAt: now().toISOString() }; auth.testKostenTage[d].spent += 850;
-    auth.llmUsage.push({ runId: meta.runId, model, success: true, promptTokens: 100, completionTokens: 200 });
+    auth.llmUsage = [{ runId: meta.runId, model, success: true, promptTokens: 100, completionTokens: 200 }, ...auth.llmUsage].slice(0, 5000);
     if (options.foreignWrite) auth.users.push({ id: "verboten" });
     if (options.costUnknown) auth.testKostenTage[d].calls[`test-${calls}`] = { status: "ungeklaert", reserved: 212000 };
     return options.schemaBad ? {} : structuredClone(answer);
@@ -116,6 +116,29 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
     await A.rejects(h.run({ ...input, position: 2, previous: { responseHash: "f".repeat(64), reviewHash: "a".repeat(64) } }));
     A.equal(h.state().calls, 1);
   });
+  await test("Voller echter Nutzungsring behaelt alle Altbelege ueber acht neue Positionen", async () => {
+    const h = harness(), old = Array.from({ length: 5000 }, (_, i) => ({ runId: `alt-${i}`, createdAt: "2026-09-18T12:00:00Z", promptTokens: i }));
+    await h.storage.mutateAuthStore(a => { a.llmUsage = structuredClone(old); });
+    for (let position = 1; position <= 8; position++) {
+      const a = { ...input, position, previous: position === 1 ? null : {
+        responseHash: G.sha(JSON.stringify(answer)), reviewHash: G.sha(`Bewertung ${position - 1}`) } };
+      A.equal((await h.run(a, { env: { ...env(a), GITHUB_RUN_ID: String(12345678900 + position) } })).ok, true);
+      const auth = h.state().auth, archive = auth[G.KEY].archivierteAufruftelemetrie;
+      A.deepEqual(archive, old.slice(-8)); A.equal(auth.llmUsage.length, 5000);
+      A.deepEqual(auth.llmUsage.slice(position), old.slice(0, 5000 - position));
+      A.deepEqual([...auth.llmUsage.slice(position), ...archive.slice(8 - position)], old);
+    }
+    A.equal(h.state().calls, 8);
+  });
+  await test("Fehlende Archivzeile und fremde Telemetrieaenderung bestehen nicht", () => {
+    const old = Array.from({ length: 5000 }, (_, i) => ({ runId: `alt-${i}` })), usage = [{ runId: "neu" }];
+    const before = { llmUsage: old }, after = { llmUsage: [...usage, ...old].slice(0, 5000) };
+    A.equal(G.telemetrieErhalten(before, after, usage, { archivierteAufruftelemetrie: [] }), false);
+    const claim = { archivierteAufruftelemetrie: old.slice(-8) };
+    A.equal(G.telemetrieErhalten(before, after, usage, claim), true);
+    after.llmUsage[3] = { runId: "fremd" };
+    A.equal(G.telemetrieErhalten(before, after, usage, claim), false);
+  });
   await test("Modellfehler, Schemafehler, ungeklaerte Kosten und fremde Mutation stoppen", async () => {
     for (const opts of [{ modelError: true }, { schemaBad: true }, { costUnknown: true }, { foreignWrite: true }]) {
       const h = harness(opts); const r = await h.run(); A.equal(r.ok, false); A.equal(h.state().calls, 1);
@@ -153,7 +176,7 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
       S.anbieterReserviere = async a => { A.equal(a.schluessel, "azure|gpt-5-mini|ki"); trace.push("anbieter"); return { verfuegbar: true, erlaubt: true }; };
       S.anbieterMelde = async () => ({ verfuegbar: true });
       S.recordLlmUsage = async info => { const r = S.buildLlmUsageRecord(info);
-        await h.storage.mutateAuthStore(a => a.llmUsage.push(r)); trace.push("usage"); return { ...r, _ablage: { blob: true } }; };
+        await h.storage.mutateAuthStore(a => { a.llmUsage = [r, ...a.llmUsage].slice(0, 5000); }); trace.push("usage"); return { ...r, _ablage: { blob: true } }; };
       const raw = JSON.stringify({ status: "completed", usage: { input_tokens: 100, output_tokens: 200 },
         output: [{ content: [{ type: "output_text", text: JSON.stringify(answer) }] }], ungekappterBeleg: "original" });
       https.request = (url, opts, cb) => { A.deepEqual(trace, ["reserve", "anbieter"]); trace.push("http");

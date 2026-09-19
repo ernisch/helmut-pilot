@@ -1,6 +1,6 @@
 # Vorbereiteter isolierter Prosanachweis
 
-**19.09.2026: Microsoft Listentarif numerisch belegt, konservative Kostenreserve ausreichend. Noch nicht ausgefuehrt. Status: teilweise abgeschlossen; neuer Auftrag verlangt keine Production Datenaenderung. Die dafuer notwendigen Versuchs und Kostenbuchungen bleiben vor dem Start zu klaeren.**
+**19.09.2026: notwendige Reparaturen, Betriebsbuchungen und gepruefte Merges samt Deployment freigegeben, Tagesobergrenze10 USD. Bestehender4 USD Motorriegel und enger Achtfallrahmen bleiben vorerst erhalten. Erster Start vor Modell und Quittung sicher gesperrt; konkrete Ausfuehrerkorrektur in Pruefung. Kein500er Start.**
 Basis ist der kumulative Stand des Rollen Folgebranches auf PR443. Die acht
 neutralen Eingaben und vorab festgelegten Erwartungen stehen in
 `prosa-fachnachweis-2026-09-19.json`. Sie sind ausschliesslich synthetisch.
@@ -334,3 +334,46 @@ angehoben. Alle lokalen Pruefungen ueber `scripts/lokal.js`. Kein neuer PR
 und kein wiederholter lokaler Gesamtlauf identischen Anwendungscodes.
 Die automatisch vorgeschriebene CI fuer den neuen Dokumentationshead wird
 separat abgewartet und in der bestehenden PR Beschreibung dokumentiert.
+
+
+## Freigegebene Fortsetzung und nachgewiesener Speicherblocker
+
+Der Betreiber hat am19.09. die notwendigen Reparaturen, Kostenbuchungen und
+geprueften Merges samt automatischem Deployment ausdruecklich freigegeben.
+Heute insgesamt hoechstens10 USD. Diese Freigabe ersetzt die oben historischen
+Merge und Buchungssperren. Der bestehende4 USD Riegel bleibt vorerst enger;
+der vorbereitete Achtfallnachweis behaelt1,696 USD und20 Minuten.
+
+[Actions35430388179](https://github.com/ernisch/helmut-pilot/actions/runs/35430388179)
+auf geprueftem Head49bb811 endete07:50:17 UTC mit `PROSA_SPEICHERSTAND`.
+Keine Quittung und kein Modellstart. Native SQL Gegenlesung07:50:30 UTC:
+504 Profile inaktiv,0 aktive Sperren, Leases oder junge Prozesse,0 Prosaaufrufe,
+keine Prosaquittung und unveraenderte Tageskosten0,113741 USD.
+Gezielte Feldzaehlung belegt `llmUsage` mit5000 Eintraegen. Alle anderen
+geprueften Ringe liegen innerhalb ihrer Grenzen. Der Ausfuehrer verlangte
+hoechstens4992. Damit ist der Betriebsblocker belegt, kein Modellfehler.
+
+Kleinste Korrektur ausschliesslich im Ausfuehrer: Vor dem ersten Modellstart
+werden genau die hoechstens acht durch diese Serie verdraengbaren Altbelege
+in derselben atomaren Einmalquittung gesichert und persistiert gegengelesen.
+Die bestehende5000er Ringgroesse bleibt unveraendert. Nach jedem Aufruf muss
+der Ring exakt aus dem neuen Beleg und dem vorherigen Ring entstehen;
+jeder verdraengte Eintrag muss byteinhaltlich im Archiv erhalten sein.
+Archiv und Grundlinienhash werden im verschluesselten Kostenbeleg mitgegeben.
+Fehlendes Archiv, fremde Telemetrieaenderung, anderer geschuetzter Zustand
+oder ungeklaerte Kosten stoppen weiterhin. Keine historischen Kosten loeschen.
+
+13/13 gezielte Schutzgruppen bestanden, einschliesslich vollem5000er Ring
+ueber acht Positionen und negativer Archiv/Fremdmutation. Die Simulation
+nutzt nun dieselbe Voranstellung und Kappung wie der echte Speicherpfad.
+Der erste Actionsstart wird nicht erneut ausgefuehrt. Erst nach kompletter
+Pruefung des korrigierten Commits folgt ein neu gebundener Start; mangels
+Quittung und Modellaufruf ist noch keine Fallposition verbraucht.
+
+Lokale Gesamtpruefung:414/418 in613 Sekunden. Vier Suiten scheiterten an
+fehlenden Checkout-Abhaengigkeiten (Chromium, `ical.js`, AWS SQS SDK).
+Mit den unveraenderten, bereits vorhandenen Projektabhaengigkeiten und
+Chromium1194 wurden genau diese vier Suiten erfolgreich nachgeprueft.
+Damit alle418 Suiten geprueft; kein zweiter identischer Gesamtlauf.
+Keine Testaussage abgeschwaecht, keine Paketdatei geaendert.
+Neue GitHub CI am korrigierten Head steht noch aus.
