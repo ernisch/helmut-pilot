@@ -139,7 +139,8 @@ async function main() {
       create trigger test_fremdwrite before update on mandate_profiles for each row execute function test_fremdwrite();`);
     abweisen(m); psql("drop trigger test_fremdwrite on mandate_profiles; drop function test_fremdwrite();");
     ok("Postcondition rollt auch einen unerwarteten Seiteneffekt auf Identitaeten zurueck");
-    console.log(`${pass} PASS, 0 FAIL gegen echte lokale PostgreSQL; keine Production Verbindung.`);
+    await require("./testfenster-null500-ende-datenbank").pruefe({ psql, reset, grundlinie, state, lese, parallel, host, port, user, db, ok });
+    console.log(`${pass} PASS, 0 FAIL gegen echte lokale PostgreSQL und PostgREST; keine Production Verbindung.`);
   } finally { psql("drop database " + db + " with (force)", "postgres"); }
 }
 main().catch(e => { console.error(e.message); process.exitCode = 1; });

@@ -165,7 +165,7 @@ verglichen und stimmen mit der vorbereiteten Liste ueberein.
 | Deferred/Ablehnungen | Bleiben gesonderte Nichtabschluesse; weder erledigte Jobs noch Leertexte als bestandene Fachversorgung zaehlen. |
 | Mandat/Lage Vollstaendigkeit | Historisch 497/500 bzw. 5/500; kein heutiger Nenner und kein neuer Fachnachweis. |
 | Morgenfrische | Historisch 131/500 Morgenquittungen; neues Tagesfenster mit gespeicherten Paketen abzugleichen. |
-| Testende | Alter Timer abgelaufen; bisheriger Abschluss laesst fuenf aktiv. Neuer bestaetigter Weg 0 auf 500 auf 0 und zugehoerige Terminierung weiterhin offen. |
+| Testende | Alter Timer abgelaufen. PR455: manueller atomarer0/500/0 Plan integriert,16 echte PostgreSQL Pruefungen. Automatischer Endweg vorbereitet, Abnahme und Production Migration noch offen; [Endweg](testfenster-null500-2026-09-19.md). |
 
 Vor einem neuen Test alle 500 Kennungen im Nenner halten. Je Profil muessen
 Mandatspaket, Morgenbriefing und Lage fuer das vereinbarte Fenster vorhanden,
@@ -177,6 +177,30 @@ zusaetzliche unbelegte Bedeutung pruefen. Eine automatische Vollpruefung
 dieser Semantik ist aktuell nicht belegt. Stichproben bleiben Stichproben.
 Weder Kostenrahmen noch erwartete Laufzeit des neuen 500er Tests sind damit
 abgenommen. Der bestehende 4 USD Tagesriegel bleibt erhalten.
+
+Praezisierung19.09. vor dem naechsten Test: Der Nenner bleibt500 fuer jede
+der drei Ergebnisarten, also1500 getrennte Existenz- und Inhaltsnachweise.
+Jeder Nachweis bindet Profilkennung, Ergebnisart, gespeicherte Zeile,
+Inhaltshash, Erzeugungszeit und vereinbartes Testfenster. Genau eine
+akzeptierte Version je Profil und Ergebnisart; Quellenvarianten desselben
+Artikels werden nicht mehrfach gezaehlt. Derselbe belegte Artikel darf
+mehreren sachlich betroffenen Profilen dienen. Eine Morgenquittung allein
+beweist keinen Morgenbriefingtext: Tenant, Berliner Tag, Slot, Version,
+Erfolgsstatus und Zeit muessen zur gespeicherten Ausgabe passen. Ihre
+bisherige Signatur aus Kennungen und Aktualisierungszeiten ist kein Hash
+aller Texte. Dafuer fehlt noch der vollstaendige automatische Leser.
+
+Die Vollstaendigkeitsbilanz und die fachliche Textbilanz erhalten getrennte
+Ergebnisse. Fehlend, leer, deferred, fachlich abgelehnt oder unpruefbar
+bleibt im Nenner und wird nicht als bestanden gezaehlt. Ein positives
+Fachurteil braucht fuer saemtliche sichtbaren Aussagen den tatsaechlich
+verwendeten Quellenkontext; Akteure, Fristen, Ereigniszeiten, Vollzug,
+Mandatsbezug, Ebene und freie fachliche Bedeutung sind getrennt zu pruefen.
+Zulaessige Einordnung braucht einen benannten Beleg und darf eine daraus
+nicht folgende Bedeutung auch nicht als angebliche Relevanz hinzufuegen.
+Die bisherigen Strukturpruefungen und Teilstichproben leisten diesen
+vollstaendigen semantischen Nachweis nicht. Kein automatisches Gesamtgruen
+und keine Behauptung einer bereits ausgefuehrten1500er Textpruefung.
 
 ## Production Abschluss nach PR449
 
@@ -343,3 +367,43 @@ Budget frisch lesen; maximal zwei Aufrufe und0,424 USD im Methodenblock,
 keine Wiederholung bei kritischem Fehlurteil, unvollstaendiger Antwort,
 unklarem Transport, Kosten oder Schutzbefund. Noch kein Appanschluss und
 kein neuer Modellaufruf. Kein neuer Quellenkorrekturlauf, keine Aktivierung.
+
+
+## Rein lesende Vertiefung nach PR456
+
+19.09., ohne weiteren Quellenlauf, Modellaufruf oder Environmentaenderung.
+Die drei erhaltenen negativen Rohantworten wurden anhand ihrer jeweiligen
+Originaleingabe erneut gezielt verglichen. Nicht leere Pflichtfelder im
+Understanding Schema erklaeren den Fehler nicht hinreichend: Bereits eine
+negative Serie enthielt eine korrekte neutrale Angabe zu unbekannten
+Betroffenen und zugleich eine erfundene finanzielle Bedeutung in einem
+anderen Feld. Deshalb keine Schemaabsenkung und kein weiterer nur damit
+begruendeter Promptversuch. Der vorhandene Prompt verlangt Quellenbindung
+bereits; Schema-, Akteurs- und Ebenenpruefung pruefen keine allgemeine
+inhaltliche Folgerichtigkeit. Exakte Belegzitate koennen die Herkunft
+bestaetigen, allein aber nicht jede Bedeutung einer Paraphrase. Die
+integrierten Textgrenzen PR453/454 beseitigen Bedeutungsverlust durch
+Abschneiden; sie ersetzen diese weiterhin offene Fachabnahme nicht.
+
+Die erneute rein lesende Gruppierung um16:27 UTC bezieht sich weiterhin
+auf die114 Wissensobjekte der alten500 Pakete, nicht auf einen neuen Test.
+Bei den91 Objekten ohne Auszug verknuepfen71 direkte Medienquellen57
+verschiedene Objekte. Hinzu kommen unter anderem direkte Verbandsquellen
+15/12, Parteiquellen15/13 und Ausschussquellen8/8 (je Dokumente/Objekte).
+Die Objektmengen ueberlappen und duerfen nicht addiert werden. Damit haben
+34 der91 gar keine verknuepfte direkte Medienquelle; die bestehende
+Auswahl der zwoelf Promptquellen kann den erreichbaren Kontext weiter
+verkleinern. Keine dieser Zahlen ist eine Ausfallprognose fuer neue Texte.
+
+Der Originalartikeladapter waehlt ausschliesslich die erste direkte
+Medienquelle der bestehenden Promptauswahl und erlaubt pro Verstehenslauf
+hoechstens einen neuen Abruf. Einige als Verband/Partei gefuehrte direkte
+Links zeigen ebenfalls auf oeffentliche Presseartikel. Das belegt eine
+Reichweitengrenze des aktuellen Filters, nicht automatisch einen falschen
+Quellentyp. Die ausdrueckliche Ausschlusspruefung fuer andere Quellentypen
+wurde nicht entfernt. Auch Titelidentitaet, vollstaendiger Originalabsatz,
+CAS, Restzeit und Anbietergrenzen bleiben erforderlich. Ein Einschalten
+des Flags allein schliesst die beobachtete Luecke daher nicht. Die
+allgemeine Aktivierungsreife und Notwendigkeit einer Environmentaenderung
+sind weiter offen; es wurde keine solche Aenderung vorgenommen oder als
+bereits abgenommen dargestellt.

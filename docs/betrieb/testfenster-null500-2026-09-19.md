@@ -139,7 +139,7 @@ Z22 PASS48/FAIL0, beide Pflichtjobs. Vorherige Main CI35452802010 erfolgreich:
 
 ## Ergebnisleser nach der Rueckkehr auf null
 
-19.09., Branch `codex/nachweis-ziel500-20260919`, **teilweise abgeschlossen**.
+19.09., Branch `codex/nachweis-ziel500-20260919`, PR456 integriert. Der begrenzte Auswahlfehler ist **erfolgreich abgeschlossen**; Vollversorgung und Fachpruefung bleiben offen.
 Beide alten Ergebnisleser bildeten ihre Zielmenge aus495 synthetischen und
 den gerade aktiven Bestandsprofilen. Bei null aktiven Profilen fehlten damit
 die fuenf Bestandsprofile; eine fremde Aktivierung konnte den Nenner aendern.
@@ -179,12 +179,96 @@ wurde auf diese belegte Reihenfolge angepasst, keine Assertion entfernt.
 Kanonischer Gesamtlauf erfolgreich:425/425 Suiten in643s, Exit0. Der erste
 Lauf wurde wegen eines fehlenden lokalen Browserpfads abgebrochen; der
 vollstaendige zweite Lauf nutzt den bereits vorhandenen Browsercache.
-Kein Test oder Schutz wurde dafuer veraendert. CI und Integration stehen
-noch aus. Kein Production Inhaltslauf, weil noch keine neue
-Testfensterquittung angelegt werden darf.
+Kein Test oder Schutz wurde dafuer veraendert. CI35455461295 erfolgreich:425/425 in522s, Browser50, Kontoschutz15 samt500 Registrierungen, echter PostgreSQL Testweg16 und Z22 PASS48/FAIL0, alle25 Pflichtschritte. Kein Production Inhaltslauf, weil noch keine neue Testfensterquittung angelegt werden darf.
 
 Risiko und Rueckweg: Nur explizite Betreiberleser sind betroffen. Alte
 manuelle Inhaltsaufrufe ohne UUID werden bewusst abgewiesen. Gezielt den
 Lesercode zuruecksetzen, falls noetig; Quittungen und Testauswahl nicht
 loeschen. Der bisherige abgelaufene aktive Eingabeprobevertrag bleibt
 unveraendert gesperrt und wird durch die UUID nicht neu freigegeben.
+
+
+## Production Abschluss PR456
+
+Main `577cfafd9c0d1eb4769faec473fd344980c9210a`, READY
+`dpl_DP7hgmcndST4D1oYuDGEZFPE44t9` am19.09.16:49:25 UTC, korrekter
+Commit und Hauptalias. Leser35456323820 am16:52:43 UTC HTTP200, null
+Schreibaufrufe, Speicherschutz, Kontoschutz, Kommunikations- und
+Quellensperre sowie4 USD Riegel unveraendert. Native Nachkontrolle16:54:29
+UTC:504/0, Profile,505 Identitaeten, gesamter Authblob einschliesslich
+Sessions und Main unveraendert gegen16:48:39. Keine Sperre, Lease, junge
+Prozessquittung oder offene Reserve;22709 Jobs erledigt,0,262850 USD.
+Main CI35456149568 ebenfalls vollstaendig erfolgreich:425/425 in603s, Kontoschutz15 samt500 Registrierungen, PostgreSQL16, Z22 PASS48/FAIL0 und beide Pflichtjobs mit allen25 Schritten.
+
+## Automatischer Endweg und konkrete Migrationsgrenze
+
+19.09., `codex/testende-null500-20260919`, **teilweise abgeschlossen**.
+Der alte Endlauf ist auf495 synthetische Profile begrenzt und laesst fuenf
+Bestandsprofile aktiv. Der neue manuelle Transaktionsplan oben kann die
+gebundenen500 bereits beenden. Fuer automatische Ausfuehrung kennt der
+Actionszugang nur die vorhandene Supabase HTTP Schnittstelle.
+
+Abwaegung vor der Reparatur:500 einzelne bedingte Profilwrites benoetigten
+500 bestaetigte Netzschritte und koennten bei einem Ausfall einen Teilbestand
+hinterlassen. Nur ein manueller Endplan erfordert einen verfuegbaren
+Betreiber. Die vorbereitete enge RPC verwendet eine Datenbanktransaktion
+und dieselbe gespeicherte Auswahl; Aufwand eine Funktion samt Rollback,
+Endsteuerung und isoliertem Nachweis. Risiko ist die neue schreibende
+Datenbankschnittstelle. Deshalb nur service_role, SECURITY INVOKER,
+fester Suchpfad,3s Sperrfrist, keine dynamischen SQL Namen, volle Bindung
+an Quittung und Manifest sowie Ruecknahme aller Aenderungen bei unerwarteten
+Seiteneffekten. Kein neuer Datenbestand, kein allgemeiner Schreibendpunkt.
+
+Vorbereitete Migration: `20260919170000_testfenster_null500_ende.sql`.
+Sie installiert ausschliesslich `helmut_testfenster_null500_ende`; kein
+Profil wird durch Installation veraendert, kein Timer gestartet. Die
+passende `rollback_20260919170000_testfenster_null500_ende.sql` entfernt
+nur die Funktion. Quittungen bleiben erhalten, der native manuelle Endplan
+funktioniert unabhaengig davon. Rollback erst nach gesichertem Ende aller
+bewaffneten Endlaeufe. **Keine Migration in Production angewendet.**
+
+Der neue manuelle Workflow `null500-testende.yml` hat keinen Cron und
+verlangt UUID, Hash des privaten vollstaendigen Manifests (mittels
+`testkohorte-direkt500.hash`, stabil sortierte Objektschluessel), Main Commit,
+exaktes Ende und `GEBUNDENE_500_NUR_DEAKTIVIEREN`. Standard prueft nur
+Eingaben, ohne Netz. Bewaffnung ist erst mit spaeterer neuer Startfreigabe
+erlaubt; sie ist in diesem Auftrag nicht ausgefuehrt. Hoechstens vier
+Stunden Wartezeit,270 Minuten Joblimit, eigene Concurrency unabhaengig von
+Facharbeit. Vor Aktivierung muessen installierte RPC, sichtbares
+Bewaffnungssignal, lebender Job und unabhängiger SQL Rueckweg feststehen.
+Ohne Aktivierungsquittung endet der Job nach maximal fuenf Minuten.
+GitHub Ausfall oder Abbruch bleibt ein Grund fuer den manuellen Rueckweg;
+eine unverfuegbare Infrastruktur wird nicht als garantiert laufender Timer
+bezeichnet. Laufende Fachjobs werden durch Deaktivierung nicht abgebrochen.
+
+Bei gueltiger Quittung prueft die Steuerung die Kosten alle hoechstens60
+Sekunden. Fehlendes, unlesbares, eingefrorenes, ausgeschoepftes oder
+ungeklaertes Kostenbuch fuehrt zum gebundenen Notstopp. Sonst gilt die
+Manifestfrist. Genau ein RPC Schreibversuch; auch nach HTTP200 oder Timeout
+werden Quittung und504 Profile frisch gelesen. Kein automatischer Retry.
+Fremde aktive Profile bleiben erhalten und verhindern einen globalen
+Nullnachweis. Ein beendeter Lauf mit spaeter reaktiviertem Ziel wird
+abgewiesen. Konten, Sessions, Identitaeten, Profilinhalte, Main und alle
+Profile ausserhalb der500 werden innerhalb derselben Transaktion geprueft.
+
+Gezielte Offlineprobe10/10 erfolgreich. Kanonischer Gesamtlauf426/426 in640s, Exit0, ueber scripts/lokal.js mit vorhandenem Browsercache. Migrationsorganisation41/41. Echter PostgreSQL und PostgREST Nachweis sowie CI und Integration noch offen; lokal steht kein PostgreSQL Client bereit.
+Keine neuen KI Modellaufrufe oder Production Buchungen. Die Installation
+ist nach `CLAUDE.md §5` und der Betreibergrenze eine gesondert freizugebende
+Production Schemaaenderung; geprueften Code zu mergen installiert sie nicht.
+
+
+Rein lesender Installationsvorflug19.09.16:59:47 UTC: Production PostgreSQL
+17.6, neue Funktionssignatur noch nicht vorhanden, null neue
+Testfensterquittungen. service_role besitzt bereits SELECT und UPDATE auf
+allen drei benoetigten Tabellen und BYPASSRLS. Keine Erweiterung dieser
+Tabellenrechte oder neue Zugangsdaten erforderlich. Die auf270 Minuten
+begrenzte Jobdauer liegt unter dem aktuellen sechs Stunden Limit fuer
+GitHub Runner ([GitHub Actions Limits](https://docs.github.com/en/actions/reference/limits),
+am19.09. gelesen). Dies belegt keine garantierte Verfuegbarkeit des Runners.
+
+Der erste lokale Gesamtlauf wurde nach ausbleibender Ausgabe mit Exit130
+beendet und gilt nicht als Nachweis. Die Browserprobe besteht separat50/50;
+die unmittelbar naechste Suite nach der letzten Protokollzeile besteht
+isoliert ebenfalls. Eine Browserursache ist daher nicht belegt. Kein Test
+oder Timeout wurde geaendert. Der erneute kanonische Lauf wird mit sichtbarer
+Prozessausgabe protokolliert und ist inzwischen426/426 erfolgreich. Die laufende Konsole zeigte zwischenzeitlich weiteren Fortschritt, waehrend die separat gelesene Datei noch einen aelteren Stand zeigte. Eine Ursache im Anwendungscode ist nicht belegt.
