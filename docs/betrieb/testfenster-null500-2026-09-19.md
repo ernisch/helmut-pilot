@@ -524,3 +524,83 @@ gezielt gesperrt; Cron und Environment unveraendert. Rueckweg ist ein
 gepruefter Coderevert; additive Quittungsfelder bleiben lesbar, keine
 Produktionsdaten loeschen. Vor Merge volle CI, danach READY/Commit/Alias,
 App und Schutzgrundlinien ausschliesslich lesen.
+
+## Production Abschluss PR459
+
+Der begrenzte Inhaltsbindungs- und Ergebnislesersprint ist **erfolgreich
+abgeschlossen**. Head `b3420d3064ee03ef3e9312c14d7b05e3da86da5d`,
+CI35463970380:427/427 in642s, Browser50/0, Kontoschutz15/0 samt500
+isolierten Registrierungen, PostgreSQL/PostgREST26/0, Z22 PASS48/FAIL0.
+Beide Pflichtjobs und alle25 Schritte erfolgreich, kein Skip.
+
+Merge `09f62654d46633dcd3e6f52d2781a60046629e70`, Baum
+`88bb14149c31e4db30113861bb31868397e8def9` identisch zum geprueften Head.
+Production `dpl_C5HJYhVz34NdvTykLTA8SLWZfUWn` READY, korrekter Commit und
+Hauptalias. Reiner Leser35464768351 am19.09.19:34:48 UTC HTTP200,
+null Modell- oder Schreibaufrufe. V3, exklusiver Profilpfad, Retention36,
+Kommunikations- und Quellensperre, Tagesdeckel2416/Reserve702/Vorrang200,
+atomare Sperre und4 USD Kostenregel2 unveraendert.
+
+Native Nachkontrolle19:35:16 gegen Vorflug19:32:56 UTC:504/0, vollstaendige
+Profil-, Identitaets-, Auth-/Sessions- und Mainhashes identisch. Keine
+Sperre, Lease, offene Jobs, jungen offenen Prozesse, Kostenreserven oder
+Testfensterquittungen. Tagesbuch0,386081 USD. Endfunktion weiter installiert,
+kein Timer oder500er Start. Allgemeine Prosaquellebindung, Quellenfrische,
+Versorgung und belastbarer Zeit-/Kostenplan bleiben offen.
+
+## Nachlauf an das neue Testfenster binden
+
+19.09., Branch `codex/testnachlauf-fenster-20260919`, **teilweise abgeschlossen**.
+Belegte Vertragsluecke: Der manuelle Textnachlauf kennt bisher nur500 aktive
+Profile. Er liest weder die neue Testfensterquittung noch deren500 Kennungen
+und Endfrist. Das reicht fuer eine eindeutig gebundene Fortsetzung nicht.
+
+Vor Aenderung festgelegte Erwartungen: keine Modellfreigabe ohne gueltige
+aktive Quittung, passenden Production Commit und offene Endfrist. Die aktive
+Menge muss exakt den500 Manifestkennungen entsprechen, alle vier Ausnahmen
+bleiben inaktiv. Vor Entwurf, Review und Speicherung wird der aktuelle
+Fensterzustand erneut gelesen. Ein Ende verhindert weitere Aufrufe; ein
+unbekannter Ausgang berechtigt nicht zur Wiederholung. Gueltige Arbeit
+bleibt an die vorhandenen Fach-, Quellen-, Kosten-, Profil- und
+Kommunikationsschutzregeln gebunden. Keine Testausfuehrung in diesem Sprint.
+
+Negativer Ausgangsbeleg gegen Main09f6265: Eine lokal simulierte, gueltig
+beendete Quittung bei weiterhin500 aktiven Fixtureprofilen wurde ignoriert;
+478 simulierte Generierungen statt erwarteter null. Die neue Assertion
+schlug vor dem Fix fehl. Kein echter Modell- oder Production Aufruf.
+
+Engster Eingriff: Der bestehende Actionsauftrag nimmt eine Testfenster UUID
+an und transportiert sie im geschuetzten POST. Client und Server lesen die
+exakt adressierte Quittung, pruefen vorhandenen Manifestvertrag, Commit,
+Aktivzustand, Frist und die gesamte aktive Auswahl. Die Antwort bindet UUID,
+Manifesthash, Zielhash und Ende. Fehlt dieser Beleg oder ist er anders,
+bleibt der Ausgang unbestaetigt; kein automatischer Wiederholungsaufruf.
+Der Server wiederholt die Lesung mit seinem vorhandenen Voraufrufschutz
+vor Entwurf, Review und Speicherung. Sein vierminuetiges Arbeitsbudget
+wird durch die kuerzere Manifestfrist begrenzt;90 Sekunden Reserve bleiben.
+
+Der alte Modus bleibt nur zulaessig, wenn noch keinerlei neue0/500/0
+Quittung existiert. Sobald eine vorhanden ist, blockiert das Weglassen
+der UUID vor Facharbeit. Ein neuer Lauf ohne UUID ist also kein Rueckfall
+auf die aktive Menge. Alte geschlossene Quittungen werden nicht geloescht.
+Die neue Versionsangabe ist eine gelesene Codefaehigkeit, kein Featureflag
+und keine dauerhafte Environmentaenderung. Neue Branchpreview gesperrt.
+
+Gezielte lokale Abnahme ueber scripts/lokal.js:33/33 Textnachlaufgruppen,
+31/31 Actionsgruppen und69/69 Laufzeit-/HTTP Schutzpruefungen. Bestehende
+Assertions erhalten; nur synthetische Lesefakes um die neue Quittungsquery
+ergaenzt. Positiver Fall500 lokale Ergebnisse; Negativfaelle umfassen
+beendetes/abgelaufenes Fenster, falschen Commit, vertauschte Auswahl,
+fehlende Kennung, Fristverlaengerung, Ende vor Review/Speichern, fehlendes
+Antwortecho und zu kurze Restzeit. Kanonischer Gesamtlauf am19.09.19:57 UTC:
+427/427 Suiten in637s, Exitcode0, unveraenderter Code. Finale CI noch offen.
+
+Risiko sind zusaetzliche begrenzte Quittungs- und Profilzustandslesungen im
+manuellen Nachlauf. Keine neue Queue, kein Timer, keine Profilmutation und
+kein Modellwechsel. Eine bereits begonnene externe Anfrage ist dadurch
+nicht rueckrufbar; spaete Ergebnisse, Leases und Prozesse muessen nach dem
+Ende separat gelesen werden. Der Leser aus PR459 zaehlt Ergebnisse nach
+der Endfrist nicht als Versorgung im Testfenster. Keine transaktionale
+Snapshotzusage fuer HTTP Gegenlesungen und keine Fachfreigabe durch die UUID.
+Rueckweg: gezielter Code Revert vor einem Test; nach Aktivierung zuerst den
+vorbereiteten gebundenen Endweg benutzen. Quittungen und Ergebnisse erhalten.
