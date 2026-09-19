@@ -219,10 +219,13 @@ Mehr Quellentext garantiert ebenfalls keine korrekte Prosabeziehung. Die
 vier fachlichen Klassen bleiben offen; kein loesender Wortfilter erfunden.
 
 Historische erfolgreiche Lageaufrufe15./16.09. kosteten konservativ im Mittel
-0,005541 beziehungsweise0,004993 USD, Maxima0,009677/0,008310 USD.500 mal der
-beobachtete Mittelwert waeren rund2,50 bis2,77 USD **nur fuer Lage**, ohne
-andere Verarbeitung oder Hintergrundkosten. Keine Kosten- oder Kapazitaets-
-garantie; enger4 USD Tagesriegel unveraendert. Vor Start Restkosten,
+0,005541 beziehungsweise0,004993 USD, Maxima0,009677/0,008310 USD **je Aufruf**.
+Der aktuelle Lagepfad benoetigt normalerweise Entwurf und Pruefung: fuer500
+vollstaendig neue Lagen also1000 erfolgreiche Aufrufe. Eine rein illustrative
+Hochrechnung mit diesen alten Aufrufmitteln ergibt rund4,99 bis5,54 USD nur
+fuer Lage, ohne andere Verarbeitung oder Hintergrundkosten. Die alten Mittel
+sind kein Preisnachweis fuer heutige Entwurfs-/Pruefpaare und keine Kosten-
+oder Kapazitaetsgarantie. Enger4 USD Tagesriegel unveraendert. Vor Start Restkosten,
 seriellen Fortsetzungsplan und Endzeit konkret festlegen.
 
 Notwendiger Abschlussweg: genau die aktivierte Zielmenge bedingt auf inaktiv
