@@ -34,17 +34,19 @@ async function steuere({ a, deps }) {
   const start = deps.jetzt();
   let versuche = 0;
   try {
+    // Kein Bereitschaftssignal, solange nicht einmal der Zugriff auf genau
+    // diese Quittung bestaetigt ist. Abwesenheit vor Aktivierung ist erlaubt.
+    let q = await deps.leseQuittung();
+    if (q) binde(q, a);
     // Erst dieses Signal, der lebende Actionsjob und die installierte RPC bilden
     // die Vorbedingung fuer eine separat freizugebende manuelle Aktivierung.
     deps.melde({ zustand: "bewaffnet", laufId: a.laufId, manifestHash: a.manifestHash,
       endeAm: new Date(a.ende).toISOString(), aktivierungsrecht: false });
-    let q = null;
     while (!q) {
-      q = await deps.leseQuittung();
-      if (q) break;
       fordere(deps.jetzt() - start < 5 * 60000 && deps.jetzt() < a.ende,
         "null500-ende-keine-aktivierungsquittung");
       await deps.warte(10000);
+      q = await deps.leseQuittung();
     }
     binde(q, a);
     while (q.zustand === "aktiv") {

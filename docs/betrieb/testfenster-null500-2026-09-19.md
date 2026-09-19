@@ -251,7 +251,7 @@ Nullnachweis. Ein beendeter Lauf mit spaeter reaktiviertem Ziel wird
 abgewiesen. Konten, Sessions, Identitaeten, Profilinhalte, Main und alle
 Profile ausserhalb der500 werden innerhalb derselben Transaktion geprueft.
 
-Gezielte Offlineprobe10/10 erfolgreich. Kanonischer Gesamtlauf426/426 in640s, Exit0, ueber scripts/lokal.js mit vorhandenem Browsercache. Migrationsorganisation41/41. Echter PostgreSQL und PostgREST Nachweis sowie CI und Integration noch offen; lokal steht kein PostgreSQL Client bereit.
+Gezielte Offlineprobe zunaechst10/10. Kanonischer Gesamtlauf426/426 in640s, Exit0, ueber scripts/lokal.js mit vorhandenem Browsercache, vor dem unten beschriebenen abschliessenden Bewaffnungsschutz. Danach gezielt11/11; der finale Head muss die vollstaendige Pflicht CI bestehen. Migrationsorganisation41/41. Echter PostgreSQL und PostgREST Nachweis sowie CI und Integration noch offen; lokal steht kein PostgreSQL Client bereit.
 Keine neuen KI Modellaufrufe oder Production Buchungen. Die Installation
 ist nach `CLAUDE.md §5` und der Betreibergrenze eine gesondert freizugebende
 Production Schemaaenderung; geprueften Code zu mergen installiert sie nicht.
@@ -272,3 +272,16 @@ die unmittelbar naechste Suite nach der letzten Protokollzeile besteht
 isoliert ebenfalls. Eine Browserursache ist daher nicht belegt. Kein Test
 oder Timeout wurde geaendert. Der erneute kanonische Lauf wird mit sichtbarer
 Prozessausgabe protokolliert und ist inzwischen426/426 erfolgreich. Die laufende Konsole zeigte zwischenzeitlich weiteren Fortschritt, waehrend die separat gelesene Datei noch einen aelteren Stand zeigte. Eine Ursache im Anwendungscode ist nicht belegt.
+
+
+Abnahmebefund vor Merge von PR457: Der erste Entwurf meldete bewaffnet,
+bevor die erste Quittungslesung erfolgreich war. Bei falschem Zugang konnte
+damit ein irrefuehrendes Bereitschaftssignal entstehen. Der korrigierte
+Endlauf prueft zuerst den Zugriff und bei vorhandener Quittung die Bindung.
+Nur bestaetigte Abwesenheit oder eine gueltige Quittung erlauben das Signal.
+Negative Regression gegen a6aa0ef: neues Erwartungskriterium verweigert das
+zu fruehe Signal (1 statt0 Meldungen bei gescheiterter erster Lesung).
+Korrigiert11/11 erfolgreich, einschliesslich positivem Warten nach
+bestaetigter Abwesenheit. Kein Schutz abgesenkt. Die Installation der RPC,
+der lebende Job und der unabhaengige manuelle Rueckweg bleiben gesonderte
+Vorbedingungen vor jeder spaeter ausdruecklich freigegebenen Aktivierung.

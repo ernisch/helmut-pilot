@@ -51,8 +51,15 @@ async function main() {
   w = welt(); w.q = null; r = await run(w);
   A.equal(r.ok, false); A.equal(r.schreibversuche, 0); A.equal(w.now, Date.parse("2026-09-19T12:05:20.000Z"));
   ok("Ohne Aktivierungsquittung nach fuenf Minuten Ende ohne Schreibrecht");
+  w = welt(); w.deps.leseQuittung = async () => { throw Error("erster Zugriff fehlgeschlagen"); };
+  r = await run(w); A.equal(r.ok, false); A.equal(r.schreibversuche, 0); A.equal(w.meldungen.length, 0);
+  w = welt(); let gelesen = 0;
+  w.deps.leseQuittung = async () => ++gelesen === 1 ? null : structuredClone(w.q);
+  r = await run(w); A.equal(r.ok, true); A.equal(w.meldungen.length, 1); A.equal(w.calls.length, 1);
+  ok("Bewaffnung erst nach bestaetigter Lesung; bestaetigte Abwesenheit darf auf spaetere Aktivierung warten");
   w = welt(); w.q.manifest.productionCommit = "b".repeat(40); r = await run(w);
-  A.equal(r.ok, false); A.equal(r.schreibversuche, 0); ok("Fremdes Manifest wird vor jedem Write abgewiesen");
+  A.equal(r.ok, false); A.equal(r.schreibversuche, 0); A.equal(w.meldungen.length, 0);
+  ok("Fremdes Manifest wird vor Bewaffnung und jedem Write abgewiesen");
   w = welt(); w.q = F.zeile("beendet").data; w.profile.forEach(p => { p.aktiv = false; });
   r = await run(w); A.equal(r.ok, true); A.equal(r.schreibversuche, 0);
   ok("Bereits manuell bestaetigtes Ende bleibt rein lesend");
