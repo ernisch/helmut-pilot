@@ -94,3 +94,82 @@ verhindert einen falschen Erfolg mit veraenderter Bedeutung. Optionale
 Felder duerfen weiterhin fehlen, gueltige Textlaengen werden nicht enger.
 Rueckweg ist ein gezielter Code Revert; gespeicherte Profile, Konten,
 Sessions, Quellen und Kostenhistorie brauchen keinen Datenrollback.
+
+
+## Integration und Production Nachkontrolle PR453
+
+[PR453](https://github.com/ernisch/helmut-pilot/pull/453), Head
+`3a809cf4582c69e5016d520da5224be2712081f4`, vollstaendig abgenommen:
+[CI35450471420](https://github.com/ernisch/helmut-pilot/actions/runs/35450471420)
+422/422 Suiten in781s, Browser50/50, Kontoschutz15/15 mit500 isolierten
+Registrierungen, JSONB Projektion und Z22 PASS48/FAIL0. Beide Pflichtjobs,
+alle24 Schritte erfolgreich. Merge nach interner Pruefung von Notwendigkeit,
+enger Wirkung, Ablehnungsrisiko, Code Revert und lesender Nachkontrolle.
+
+Main `bac15b61fa774f87281dd9be54ecd7f0a2f5ba24`, identischer gepruefter Baum
+`12cf602384501d47c4d95f70de242d71ce3cc584`. Production READY
+`dpl_FDd46nxic1tmcDGH9URTj7aGnarG` um15:18:06 UTC, Hauptalias
+`helmut-pilot.vercel.app`, Production Ziel und Commit unabhaengig bestaetigt.
+[Leser35451454876](https://github.com/ernisch/helmut-pilot/actions/runs/35451454876)
+erfolgreich:15:19:46 UTC HTTP200, exakter Commit, exklusiver relationaler
+Profilpfad, Retention36, Kommunikations und Kohortenquellensperre, atomare
+Sperre, Deckel2416/Reserve702/Vorrang200 und Kostenregel2 mit4 USD und voller
+Reserve bei unbekanntem Ausgang. Keine Aktivierung und keine Modellaufrufe.
+
+Native SQL15:20:59 UTC gegen Vorflug15:17:21:504 Profile,0 aktiv. Profile,
+Identitaeten, kompletter Auth, Main und gesonderter Konten-/Sessionsschutz
+hashidentisch.22709 Jobs erledigt, keine lebende Sperre, Lease, junge
+unbeendete Verarbeitung oder offene Kostenreserve. Tagesbuch0,262850 USD.
+Main CI35451368325 laeuft noch; die vollstaendige PR CI und Production
+Nachkontrolle sind erfolgreich. Allgemeine semantische Prosaqualitaet ist
+weiterhin offen. Der eng abgegrenzte Assemblerfix ist **erfolgreich abgeschlossen**.
+
+## Folgepfade: Mandat, Risiko, Radar und Lage
+
+19.09.2026. Status **teilweise abgeschlossen**. Eigener Folgebranch
+`codex/prosa-lesegrenzen-20260919`, zunaechst auf dem bereits veroeffentlichten
+PR453 Head `3a809cf4582c69e5016d520da5224be2712081f4`; nach dessen Abnahme
+auf den identischen Main Baum `bac15b61fa774f87281dd9be54ecd7f0a2f5ba24`
+fortgesetzt. Anwendungscode wurde dadurch nicht veraendert.
+Kein fremder Schreiber gefunden. Dieselbe belegte Kuerzungsklasse, kein
+neuer Produktbereich und keine weitere Modellmethode.
+
+Die Leser von Mandatsummary, Risiko/Chance, Lage und Radar schnitten auch
+nach dem Assembler noch selbst Zeichen ab. Diese Stellen erzeugen jetzt
+keine neuen Satzpraefixe. Kurze ganze positive Texte bleiben identisch.
+Ersatztitel in Lage und Radar erhalten den ganzen vorhandenen ersten Satz,
+wie der bereits reparierte Mandatstitel. Uebrige gueltige Kartenfelder,
+Originalinhalte, Quellen und Entscheidungswerte bleiben erhalten.
+
+Der Lagekontext kuerzte zudem Titel600, Auszug1400 und Herausgeber160 blind.
+Ein ueberlanger Beleg wird jetzt als unteilbarer Beleg ausgelassen: insbesondere
+wird ein nichtleerer ueberlanger Auszug nicht entfernt und sein Titel allein
+als unbestrittener Beleg weitergereicht. Andere gueltige Belege bleiben
+verwendbar; wirklich fehlende Auszuege erlauben weiterhin den vorhandenen
+Titelvertrag. Institutionelle Metatexte bleiben nach der bisherigen Regel
+ausgenommen. Eingabemenge, Laengen und Quellengrenzen werden nicht erweitert.
+Originalzeilen bleiben unangetastet. Veraenderter effektiver Kontext erzeugt
+bereits ueber den vorhandenen Inhaltshash eine andere Cachebindung; unveraenderte
+gueltige Belege und ihre Hashes bleiben gleich.
+
+Neue Regression: vor Korrektur1/8 bestanden,7/8 gescheitert; danach8/8
+bestanden. Entscheidungen39/39, Quellenbeleg21/21, Lage141/141, Radar10/10
+Suiten und bisherige Titelsatzgrenzen unveraendert erfolgreich. Zwei alte
+Erwartungen wurden fachlich verschaerft: ueberlanges Risiko liefert keinen
+Praefix; ueberlange Quellen werden komplett abgewiesen. Ganze positive
+Grenzwerte bleiben zusaetzlich exakt getestet, ebenso begrenzte Mengen und
+Gesamtbudget mit gueltigen Belegen hinter ungueltigen Kandidaten.
+
+Erster Gesamtlauf lieferte nur einen unvollstaendigen umgeleiteten
+Dateibeleg ohne weitere sichtbare Bewegung und wurde kontrolliert mit Exit130
+beendet. Kein Gesamterfolg behauptet. Die naechste Suite Urteilsimport bestand
+gezielt14/14 und unter kanonischem Offline Guard in306ms. Eine Codeursache
+ist nicht belegt. Der erneute kanonische Gesamtlauf wurde direkt im Terminal
+mitgelesen und ist mit **423/423 Suiten in642s**, Exit0, erfolgreich beendet.
+PR Abnahme und Production Nachkontrolle des Folgefixes stehen aus.
+Risiko: einzelne ungueltige Kurzfelder oder Belege fehlen kuenftig sichtbar,
+statt eine andere Bedeutung zu behaupten. Rueckweg ist ein gezielter Code
+Revert, kein Datenrollback. Keine KI Kosten, Profilaktivierung oder neuer500er
+Test. Freie Bedeutungsergaenzung durch ein Modell ist damit weiterhin nicht
+allgemein verhindert. Danach folgen der sichere0→500→0 Weg und der explizite
+Vollstaendigkeitsleser.
