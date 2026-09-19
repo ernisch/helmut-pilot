@@ -1,8 +1,8 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026: notwendige Reparaturen und gepruefte Merges samt Deployment freigegeben; heute maximal10 USD. Engerer4 USD Motorriegel unveraendert. Tarif0,25/2,00 USD je Million Tokens belegt. PR419 bis445 offen,445 gegen main. Beide echten Prosaserien nach Fall1 gestoppt. Nicht500er bereit.**
+**19.09.2026: Reparaturkette PR419–445 mit Freigabe integriert; alle28 ehemaligen Drafts erledigt. Main/Production f4cb802fc3159e016ab6f68913def840041e53a6, READY dpl_nie9eb8uSnvKe1xhtoaYqidQJucW. Technisch geprueft und ausgeliefert; fachliche500er Bereitschaft weiterhin offen.**
 
-Main/Production weiter2d1eb705. Bewaehrter Integrationscode entspricht0583307: CI35431115046 mit418/418 und24/24 Schritten. Der neue Folgenprompt e1f2ba5 bestand lokal418/418, erbrachte aber keine Fachabnahme und wurde zurueckgenommen. Actions35431831013/35433020569 kosteten zusammen0,011244 USD konservativ. Beide Rohantworten erhalten; keine Wiederholung. SQL08:53 UTC:504/0, keine Konkurrenz oder offene Reserve, Tagesbuch0,124985 USD. Profile, Identitaeten, geschuetzter Authinhalt und main unveraendert. Allgemeine Prosabindung offen; keine erfundene historische Ursache. [Fachnachweis](betrieb/prosa-fachnachweis-2026-09-19.md).
+Integrationskopf df9133b, CI35433323295:418/418 in785s, Browser50, Kontoschutz15, Z22 48, alle24 Schritte erfolgreich. Production Leser35434309651 um09:18 UTC bestaetigt Commit, Speicherpfad, Kommunikationssperre und4 USD Riegel. SQL09:19 UTC:504/0, keine Konkurrenz oder offene Reserve, Tagesbuch0,124985 USD; geschuetzte Datenhashes unveraendert. Tarif0,25/2,00 USD je Million Tokens belegt. Beide Prosaserien negativ gestoppt;0,011244 USD Versuchskosten. Nicht abgenommener Folgenprompt zurueckgenommen. Code bereit, technische Tests erfolgreich, Deployment/Laufzeit belegt; allgemeine Prosaqualitaet und500er Nachweis nicht bestanden. Heute weiter hoechstens10 USD freigegeben. [Abschluss](betrieb/500-bereitschaft-2026-09-19.md#bestaetigter-integrationsabschluss).
 
 **Fremde Vorarbeit erhalten:** `codex/motor-reparatur-20260916` mit40 veraenderten und15 neuen Dateien bleibt unangetastet und unabgenommen. Die Reparaturkette uebernimmt daraus keine Cron, Versorgungs oder Auswerterarbeiten. [Erster Sprint](betrieb/quellen-zeitvertrag-2026-09-17.md).
 
@@ -34,7 +34,7 @@ Main/Production weiter2d1eb705. Bewaehrter Integrationscode entspricht0583307: C
 
 **Einzelversuch PR433:** Ausgefuehrt `50047dd04f768c6ad574dc431d62ec93f1466323`, CI35323101665 vollstaendig erfolgreich. Neuer Start ausdruecklich freigegeben; Actions35325406170 erfolgreich,1 Modellaufruf ohne Retry. Gipfel nicht mehr bevorstehend, aber gesamte Antwort fachlich nicht freigegeben. Native Nachkontrolle18.09.08:39:48UTC:504/0, Profile/main und geschuetzte Authfelder identisch, nur erlaubte Betriebsbuchungen. Tagesstand19 Aufrufe/0,123584USD. Einmalquittung erhalten. [Ergebnis und Grenzen](betrieb/gipfel-einzelversuch-2026-09-18.md#einmalige-ausfuehrung-des-korrigierten-ausfuehrers).
 
-**Historischer Testabschluss laut erhaltenem Bericht vom 16.09.:** Test beendet, 497 Mandatsbriefings, 131 Morgenquittungen, 5 Lage Texte, nur zwei Profile mit allen drei Ergebnissen. Kein vollstaendiger 500er Fachnachweis. Die dortige Datenbankaufnahme von 21:03:43 Tuerkei / 20:03:43 Berlin / 18:03:43 UTC nennt 504 Profile, 0 aktiv, 0 aktive Sperren und Leases, aber 829 wartende Jobs. Diese Zahlen wurden in diesem Sprint nicht neu gegen Production erhoben. Inaktive Profile stoppen globale Quellenarbeit nicht automatisch. Aktuelle Freigabe erlaubt keine Profil oder Jobmutation. [Status vor Uebernahme auf Main](archive/project_state/2026_09_17_vor_quellen_zeitvertrag.md) ist historisch.
+**Historischer Testabschluss laut erhaltenem Bericht vom 16.09.:** Test beendet, 497 Mandatsbriefings, 131 Morgenquittungen, 5 Lage Texte, nur zwei Profile mit allen drei Ergebnissen. Kein vollstaendiger 500er Fachnachweis. Die dortige Datenbankaufnahme von 21:03:43 Tuerkei / 20:03:43 Berlin / 18:03:43 UTC nennt 504 Profile, 0 aktiv, 0 aktive Sperren und Leases, aber 829 wartende Jobs. Inaktive Profile stoppen globale Quellenarbeit nicht automatisch. [Status vor Uebernahme auf Main](archive/project_state/2026_09_17_vor_quellen_zeitvertrag.md) ist historisch.
 
 ## 1 · Aktive Produktphase
 
@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-19.09.: Gepruefte Reparaturkette integrieren, Production lesen und28 Drafts anhand der enthaltenen Arbeit abschliessen. Fehlgeschlagenen Folgenprompt nicht deployen. Prosagrenze und500er Betriebsplanung bleiben offen. Naechster Fachschritt ist ein abgegrenzter Beleg zur Informationsgrundlage, kein weiterer gleichlautender Prompt oder Wortfilter. Quellenalter und Zeitwahrheit fuer alle500 pruefen;24 Stunden Datenfrische ist keine Artikelaltersgrenze.
+19.09.: Integration und Draftbereinigung erledigt. Naechster Fachschritt: Informationsgrundlage und abgeleitete Bedeutung mit gebundenem Request/Rohantwort abgrenzen, keine weitere gleichlautende Promptregel oder pauschaler Wortfilter. Beide geschlossenen Serien nicht fortsetzen. Fuer500er Start anschliessend begrenzte Fortsetzungen und sicheren Rueckweg vorbereiten. Quellenfrische und Zeitwahrheit gehoeren in die Abnahme aller500;24 Stunden Datenfrische ist keine Artikelaltersgrenze.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
