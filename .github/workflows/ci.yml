@@ -130,6 +130,15 @@ jobs:
           PGPASSWORD: "helmut"
         run: node scripts/lokal.js scripts/auth-store-cas-datenbank-test.js
 
+      - name: Null auf 500 auf Null gegen echte isolierte PostgreSQL
+        timeout-minutes: 2
+        env:
+          HELMUT_TEST_PG_HOST: "127.0.0.1"
+          HELMUT_TEST_PG_PORT: "5433"
+          HELMUT_TEST_PG_USER: "helmut"
+          PGPASSWORD: "helmut"
+        run: node scripts/lokal.js -- node scripts/testfenster-null500-datenbank.js
+
       - name: Offline-Testsuiten (ohne Netz/DB/LLM/Secrets)
         # Der Runner erzwingt Offline technisch: jede Suite läuft mit einem
         # --require-Netz-Guard (blockt http/https/fetch auf Nicht-Localhost)

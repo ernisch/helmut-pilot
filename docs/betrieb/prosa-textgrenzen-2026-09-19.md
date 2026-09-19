@@ -120,8 +120,8 @@ Native SQL15:20:59 UTC gegen Vorflug15:17:21:504 Profile,0 aktiv. Profile,
 Identitaeten, kompletter Auth, Main und gesonderter Konten-/Sessionsschutz
 hashidentisch.22709 Jobs erledigt, keine lebende Sperre, Lease, junge
 unbeendete Verarbeitung oder offene Kostenreserve. Tagesbuch0,262850 USD.
-Main CI35451368325 laeuft noch; die vollstaendige PR CI und Production
-Nachkontrolle sind erfolgreich. Allgemeine semantische Prosaqualitaet ist
+Main CI35451368325 ebenfalls erfolgreich:422/422 in793s und Z22 PASS48.
+Die vollstaendige PR CI und Production Nachkontrolle sind erfolgreich. Allgemeine semantische Prosaqualitaet ist
 weiterhin offen. Der eng abgegrenzte Assemblerfix ist **erfolgreich abgeschlossen**.
 
 ## Folgepfade: Mandat, Risiko, Radar und Lage
@@ -173,3 +173,33 @@ Revert, kein Datenrollback. Keine KI Kosten, Profilaktivierung oder neuer500er
 Test. Freie Bedeutungsergaenzung durch ein Modell ist damit weiterhin nicht
 allgemein verhindert. Danach folgen der sichere0→500→0 Weg und der explizite
 Vollstaendigkeitsleser.
+
+
+## Integration und Production Nachkontrolle PR454
+
+Der Folgefix ist **erfolgreich abgeschlossen**.
+[PR454](https://github.com/ernisch/helmut-pilot/pull/454), Head
+`97a11938cc82f448b9a84e9f4c4138ca1701ba54`,
+[CI35451955085](https://github.com/ernisch/helmut-pilot/actions/runs/35451955085):
+423/423 Suiten in783s, Browser50/50, Kontoschutz15/15 samt500 isolierten
+Registrierungen und Z22 PASS48/FAIL0. Alle24 Pflichtschritte erfolgreich.
+Notwendigkeit, enge Wirkung, Ablehnungsrisiko, Code Rueckweg und lesende
+Nachkontrolle vor dem freigegebenen Merge geprueft.
+
+Main `2c2c0032034240ab788e34cd680acb2d4e8573dc`, gepruefter Baum
+`c8284ec789239cf2f29507fd124ec12819ffba45`. Production READY
+`dpl_2RQq3SS6EDZgp35dYmFHwcr3oKQg` um15:45:39 UTC, richtiger Commit,
+Production Ziel und Hauptalias `helmut-pilot.vercel.app` bestaetigt.
+[Leser35452874695](https://github.com/ernisch/helmut-pilot/actions/runs/35452874695)
+erfolgreich:15:47:00 UTC HTTP200, exklusiver relationaler Profilpfad,
+Retention36, Kommunikations und Kohortenquellensperre, atomare Sperre,
+Quellenschutz, Deckel2416/Reserve702/Vorrang200 sowie Kostenregel2 mit4 USD
+und voller Reserve bei unbekanntem Ausgang. Keine Inhaltsprobe angefordert.
+
+Native SQL15:47:25 UTC gegen Vorflug15:44:55:504/0, alle Profil-, Identitaets-,
+Auth-, Main- und Kontoschutz-Hashes unveraendert.22709 Jobs erledigt,
+keine lebende Sperre, Lease, junge offene Verarbeitung oder Kostenreserve.
+Tagesbuch0,262850 USD. Main CI35452802010 laeuft noch. Kein neuer fachlicher
+500er Nachweis und keine allgemeine Loesung fuer freie Bedeutungsergaenzung.
+Der folgende reine Betreiberplaner wird gesondert im
+[Testwegbeleg](testfenster-null500-2026-09-19.md) gefuehrt.
