@@ -619,31 +619,53 @@ function verteilung(name, werte) {
       });
       const cookie = String((login.headers["set-cookie"] || [""])[0]).split(";")[0];
       postfach.length = 0;
-      const besitzer = await req(port, "POST", "/api/auth/request-reset", {
-        headers: { "x-forwarded-for": naechsteIp(), Cookie: cookie }, body: { email: BEKANNT }
-      });
-      const daten = parse(besitzer.body);
-      check("J Besitzer bekommt den ehrlichen Zustellstatus",
-        besitzer.status === 200 && daten.mail && daten.mail.sent === true, besitzer.body.slice(0, 160));
-      check("J Besitzer-Pfad sendet genau eine Nachricht", postfach.length === 1, `n=${postfach.length}`);
-      check("J Besitzer-Pfad antwortet ohne Gitterverzoegerung",
-        besitzer.dauerMs < FENSTER_MS, `${besitzer.dauerMs.toFixed(1)} ms`);
-      // Ohne Transport bekommt der Besitzer weiterhin den Kopierlink direkt.
-      delete process.env.HELMUT_MAIL_TRANSPORT;
-      const ohneTransport = await req(port, "POST", "/api/auth/request-reset", {
-        headers: { "x-forwarded-for": naechsteIp(), Cookie: cookie }, body: { email: BEKANNT }
-      });
-      process.env.HELMUT_MAIL_TRANSPORT = "mailpit";
-      const ohneDaten = parse(ohneTransport.body);
-      check("J ohne Transport: Besitzer bekommt den Link direkt (Kopierweg unveraendert)",
-        String(ohneDaten.resetUrl || "").includes("/passwort-setzen?token=")
-        && ohneDaten.mail && ohneDaten.mail.sent === false, ohneTransport.body.slice(0, 200));
-      // Ein FREMDER darf denselben Weg nicht bekommen.
-      const fremd = await req(port, "POST", "/api/auth/request-reset", {
-        headers: { "x-forwarded-for": naechsteIp(), Cookie: cookie }, body: { email: UNBEKANNT }
-      });
-      check("J eingeloggt, aber fremde Adresse -> generische Antwort ohne Link",
-        fremd.status === 200 && !/resetUrl/.test(fremd.body), fremd.body.slice(0, 160));
+      // Die gesamte HTTP Dauer enthaelt Speicherung und synchronen Versand.
+      // Auch ein korrekter Besitzerpfad darf deshalb laenger als das anonyme
+      // Zeitfenster brauchen. Den echten Gitteraufruf beobachten und unveraendert
+      // ausfuehren; die fremde Adresse ist die positive Gegenprobe.
+      const originaleFreigabe = resetTiming.warteBisFreigabe;
+      const originaleVerzoegerung = stubZustand.verzoegerungMs;
+      let gitterAufrufe = 0;
+      resetTiming.warteBisFreigabe = (...args) => {
+        gitterAufrufe += 1;
+        return originaleFreigabe(...args);
+      };
+      try {
+        stubZustand.verzoegerungMs = 180;
+        const besitzer = await req(port, "POST", "/api/auth/request-reset", {
+          headers: { "x-forwarded-for": naechsteIp(), Cookie: cookie }, body: { email: BEKANNT }
+        });
+        const daten = parse(besitzer.body);
+        check("J Besitzer bekommt den ehrlichen Zustellstatus",
+          besitzer.status === 200 && daten.mail && daten.mail.sent === true, besitzer.body.slice(0, 160));
+        check("J Besitzer-Pfad sendet genau eine Nachricht", postfach.length === 1, `n=${postfach.length}`);
+        check("J Besitzer-Pfad ruft keine Gitterverzoegerung auf",
+          gitterAufrufe === 0, `Aufrufe=${gitterAufrufe}`);
+        check("J langsamer synchroner Versand ist keine Gitterverzoegerung",
+          besitzer.dauerMs >= FENSTER_MS, `${besitzer.dauerMs.toFixed(1)} ms`);
+        stubZustand.verzoegerungMs = originaleVerzoegerung;
+        // Ohne Transport bekommt der Besitzer weiterhin den Kopierlink direkt.
+        delete process.env.HELMUT_MAIL_TRANSPORT;
+        const ohneTransport = await req(port, "POST", "/api/auth/request-reset", {
+          headers: { "x-forwarded-for": naechsteIp(), Cookie: cookie }, body: { email: BEKANNT }
+        });
+        process.env.HELMUT_MAIL_TRANSPORT = "mailpit";
+        const ohneDaten = parse(ohneTransport.body);
+        check("J ohne Transport: Besitzer bekommt den Link direkt (Kopierweg unveraendert)",
+          String(ohneDaten.resetUrl || "").includes("/passwort-setzen?token=")
+          && ohneDaten.mail && ohneDaten.mail.sent === false, ohneTransport.body.slice(0, 200));
+        check("J auch der Kopierweg ruft keine Gitterverzoegerung auf", gitterAufrufe === 0);
+        // Ein FREMDER darf denselben Weg nicht bekommen.
+        const fremd = await req(port, "POST", "/api/auth/request-reset", {
+          headers: { "x-forwarded-for": naechsteIp(), Cookie: cookie }, body: { email: UNBEKANNT }
+        });
+        check("J eingeloggt, aber fremde Adresse -> generische Antwort ohne Link",
+          fremd.status === 200 && !/resetUrl/.test(fremd.body), fremd.body.slice(0, 160));
+        check("J fremde Adresse durchlaeuft weiterhin das echte Zeitgitter", gitterAufrufe === 1);
+      } finally {
+        resetTiming.warteBisFreigabe = originaleFreigabe;
+        stubZustand.verzoegerungMs = originaleVerzoegerung;
+      }
     }
 
     // ── K · Keine Protokollzeile mit Empfaenger, Token oder Link ─────────────────────────

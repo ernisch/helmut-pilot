@@ -134,3 +134,25 @@ kein behaupteter gruener lokaler Gesamtlauf des finalen Heads.
 Der vorbereitete Quellenimport bekommt im bestehenden CI Datenbankgate
 einen getrennten isolierten Nachweis, siehe [Importvorbereitung](quellenkontext-ruhe-2026-09-19.md#vorbereitete-uebernahme-der31-gelesenen-quellen).
 Keine Ausfuehrungsfreigabe durch diesen Test.
+
+
+## Production Abschluss PR463
+
+20.09.2026: PR463 gemergt, Main a4a67831da809405561b8b61fbee62aa712c1a82,
+Deployment dpl_H7mgeHZhPRmsGy6tg4MNo9fTaEgr READY auf diesem Commit.
+Gepruefter PR Head37233238f3ccaa92d060f5ad5045ad8849ff6bec,
+CI35479888757 vollstaendig erfolgreich. Acht isolierte echte
+PostgreSQL Importgruppen bestanden;31er Production Import weder
+freigegeben noch ausgefuehrt. Der Hauptzweig Lauf35480668575 endete
+429/430 wegen einer fehlerhaften Gesamtzeitannahme im Besitzerreset;
+Z22 anschliessend uebersprungen. Klassifikation und Korrektur stehen
+im [Timingbeleg](reset-timing-nachweis-2026-09-20.md).
+
+Aktueller authentifizierter Laufzeitleser35482171245 vom20.09.
+04:44:40 Tuerkei /03:44:40 Berlin /01:44:40 UTC erfolgreich auf exakt
+a4a67831: HTTP200, Supabase/V3 und exklusive relationale Profile,
+Kommunikationssperre, Testfensterfaehigkeit und aktiver4 USD Riegel.
+Native Nachkontrolle01:45:57 UTC504/0, geschuetzte Vollinhalte seit
+Uebernahme unveraendert. Kein neuer Kostentag, kein eigener Modellaufruf,
+kein Import und kein500er Start. Quellenzeitkorrektur ist integriert;
+allgemeine Inhaltsqualitaet und500er Gesamtabnahme bleiben offen.
