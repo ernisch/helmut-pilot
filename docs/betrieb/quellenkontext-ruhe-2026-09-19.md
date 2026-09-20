@@ -627,3 +627,13 @@ kein Loeschen neu angelegter Quellen. Nach Merge Deployment, Alias,
 Main Commit und geschuetzte Production Grundlinie rein lesend kontrollieren.
 Kein neuer Quellenimport, keine Aktivierung, kein geaenderter Kostenriegel.
 Erhaltener Quellenkontext ist noch kein Beleg fuer freie Modellfolgerungen.
+
+Erste PR462 CI35477560079: neue Quellenpersistenz, atomarer Belegerhalt
+bei ID Konflikten und Schwesterpfad gegen echtes PostgreSQL erfolgreich;
+Kontoschutz samt500 isolierten Registrierungen und Browser ebenfalls
+erfolgreich. Gesamtlauf gescheitert: der nachfolgende bestehende500er
+Datenbanktest konstruierte kurz nach UTC Mitternacht ein ungueltiges
+Kostenfenster. Offline Gesamtsuite und Z22 wurden deshalb nicht erreicht.
+Der Fixturefehler und seine Reparatur stehen im kanonischen
+[Testfensterbeleg](testfenster-null500-2026-09-19.md#utc-grenze-der-datenbankfixture).
+Kein Merge auf Basis dieses unvollstaendigen Laufs.

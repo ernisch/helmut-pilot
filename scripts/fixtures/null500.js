@@ -31,4 +31,20 @@ function vertrag(zeit = new Date("2026-09-19T12:00:00.000Z")) {
     grundlinie: Object.fromEntries(["profile", "identitaeten", "auth", "main"].map(k => [k, "a".repeat(64)])),
     bestaetigung: N.FREIGABE };
 }
-module.exports = { snapshot, auswahl, vertrag, kostentag };
+// Reale DB Zeit bleibt unveraendert. Nur die synthetischen Testfenster
+// muessen innerhalb eines UTC Kostentags liegen, auch nahe Mitternacht.
+function liveVertrag(zeit = new Date()) {
+  const dayStart = Date.parse(zeit.toISOString().slice(0, 10) + "T00:00:00.000Z");
+  const dayEnd = dayStart + 86400000;
+  // Der positive Start braucht seinen echten Spielraum. In der letzten
+  // Minute wartet ausschliesslich die lokale Fixture auf den Tageswechsel.
+  if (dayEnd - +zeit <= 61000) return { warteMs: dayEnd - +zeit + 50 };
+  const v = vertrag(new Date(Math.max(dayStart, +zeit - 1000)));
+  v.endeAm = new Date(Math.min(Date.parse(v.endeAm), dayEnd - 1)).toISOString();
+  return { vertrag: v };
+}
+function abgelaufenerVertrag(zeit = new Date()) {
+  const dayStart = Date.parse(zeit.toISOString().slice(0, 10) + "T00:00:00.000Z");
+  return vertrag(new Date(dayStart - 12 * 3600000));
+}
+module.exports = { snapshot, auswahl, vertrag, kostentag, liveVertrag, abgelaufenerVertrag };
