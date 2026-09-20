@@ -155,3 +155,67 @@ Der reine Abschluss nach CLAUDE.md Paragraph9 aendert ausschliesslich
 Dokumentation. Lokale Codebasis dafuer erneut430/430 in788s bestanden.
 Sein eigener Merge und sein Deployment werden gemaess Paragraph9 aus der
 Git/Deployment Historie belegt; kein rekursiver Dokumentations PR.
+
+## Fortsetzung am20.09.: Zeitrechnung vor der Startentscheidung
+
+Uebernahme um10:52 Tuerkei /09:52 Berlin /07:52 UTC auf Main
+e9e45233ca7d30c9a59c49afade2f465536aaaf8. PR466 und die Main CI
+35485759560 sind abgeschlossen. Kein offener PR und keine laufende Action.
+SQL07:54:46 UTC bestaetigt504/0, keine lebende Sperre oder Lease, keinen
+offenen Job und keinen jungen offenen Prozess. Keine schreibende Uebernahme
+einer anderen Sitzung. Die bestehenden automatischen Verstehenslaeufe sind
+davon getrennt: heute05:30 bis05:34 UTC partial mit19 gespeicherten Ergebnissen.
+Kostenbuch07:55:46 UTC:0,141361 USD, keine offene Tagesreserve,4 USD unveraendert.
+Diese Kosten wurden nicht von der neuen Sitzung ausgeloest.
+
+Der Quellenbestand ist weiterhin29782 Dokumente, null belegte Publikationen
+der letzten48 Stunden; letzter Abruf16.09.16:04:07 UTC. Der heutige regulaere
+Crawl endete mit null Aufgaben. Alle Profile sind inaktiv; daraus wird weder
+ein neuer Crawlfehler noch eine Erlaubnis fuer Profilaktivierung abgeleitet.
+Das31er Paket bleibt ausserhalb der Datenbank. Ein Quellenimport allein
+belegt weiterhin weder500 passende Ergebnisse noch allgemeine Textqualitaet.
+
+Im bestehenden reinen Zeitplaner ist ein unabhaengiger Fehler reproduziert:
+500 Anfragen bei10 RPM, Parallelitaet10 und1000 ms Laufzeit werden korrekt
+als nicht in10 Minuten erreichbar bewertet, aber mit nur einer Minute
+Mindestdauer beschriftet. Die Scheibenrechnung ignoriert dieselbe Grenze.
+Negativer Bedarf wird zu null gekappt; Bruchteile werden abgerundet;
+unendliche Parallelitaet kann sogar passt=true erzeugen.
+
+Branch `codex/500-zeitplanung-20260920` verwendet beide Grenzen auch fuer
+Mindestdauer und Scheiben. Ungueltige Mengen, numerische Scheinwerte und
+unsichere Rechenergebnisse sind unbewertbar. Fehlender optionaler Bedarf
+bleibt vom expliziten Wert0 getrennt. Der Szenariobedarf, die gemessenen
+Altdaten und saemtliche Betriebsgrenzen bleiben unveraendert. Das Modell
+ist keine Messung eines heutigen500er Fachlaufs.
+
+Gezielte Kapazitaetssuite43/43 erfolgreich, darunter50 Minuten bei10 RPM,
+49 Minuten nicht ausreichend, langsamere Transporte als Gegenfall sowie
+negative, gebrochene und unendliche Mengen. Kanonischer lokaler Pflichtlauf
+428/430 in835s. Beide Browserpruefungen fanden zunaechst die vorhandene
+Headless Shell1194 nicht. Mit explizitem PLAYWRIGHT_BROWSERS_PATH danach
+beide urspruenglichen Suiten ueber denselben Runner erfolgreich. Damit jede
+der430 Suiten bestanden; kein behaupteter einzelner430/430 Lauf. Anwendung
+und Assertions dafuer nicht geaendert. PR CI und Integration noch offen.
+Nur die Vorschau dieses Branches ist abgeschaltet. Keine Modellanfrage oder
+Productiondatenaenderung.
+
+Rein lesende Nachsicht des heutigen automatischen Verstehenslaufs:
+19 als vollstaendig gespeicherte Objekte und26 Quellenverknuepfungen;
+kein verknuepfter Auszug ist befuellt. Die ausgewaehlten gespeicherten
+Textfelder zeigen weiter unbelegte Mengeneinheiten, Vermengung verschiedener
+Tarifvorgaenge und weitergehende Ereignislabels. Diese Aufnahme ist weder
+die Rekonstruktion damaliger Modellanfragen noch eine Vollabnahme aller
+Felder. Die privaten Einzelbelege sind in
+`Helmut_Textbefunde_Naturlauf_20260920.json` gesichert. Weder der technische
+Status complete noch erfolgreiche Kapazitaetstests belegen Sachrichtigkeit.
+
+Die Betreibergrenze vom20.09.01:37 UTC ist fuer den naechsten Schritt
+erneut abgeglichen: gepruefte Reparaturen samt Merge und automatischem
+Deployment sind erlaubt. Der31er Quellenimport bleibt ausdruecklich
+nicht freigegeben. Das allgemeine Weiterarbeiten hebt diese konkrete
+Ausnahme nicht auf. Importdateien, transaktionale Schutzpruefungen und
+Rueckweg sind bereits vorbereitet; vor Ausfuehrung sind eine ausdrueckliche
+Importfreigabe und ein frischer Identitaets und Zustandsabgleich erforderlich.
+Auch danach fehlen noch fachlich belegte Faktenversorgung sowie gemessene
+Zeit und Kosten; der Import allein schafft keine500er Startbereitschaft.

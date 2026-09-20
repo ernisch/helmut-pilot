@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/500-zeitplanung-20260920": false,
       "codex/quellen-publikationszeit-20260920": false,
       "codex/testnachlauf-fenster-20260919": false,
       "codex/b055-relative-fristen-20260914": false,

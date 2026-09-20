@@ -148,5 +148,52 @@ abschnitt("§7 Kein Production-Eingriff: das Modul ist pur");
     /Betreiberempfehlung/.test(src) && /freigabepflichtige Production-Änderung/.test(src));
 }
 
+abschnitt("§8 Zeitbedarf und Scheiben beachten dieselbe Minutengrenze");
+{
+  const eingabe = { fensterMinuten: 10, parallel: 10, laufzeitJeAufrufMs: 1000,
+    maxAnfragenJeMinute: 10, bedarfAufrufe: 500 };
+  const begrenzt = k.zyklusPasstInsFenster(eingabe);
+  check("§8.1 500 Aufrufe bei 10 RPM brauchen mindestens 50 Minuten, nicht eine",
+    begrenzt.bewertbar && !begrenzt.passt && begrenzt.moeglicheAufrufe === 100
+      && begrenzt.benoetigteMinuten === 50 && begrenzt.bindendeGrenze === "minutengrenze"
+      && begrenzt.meldung.includes("50 Minuten"));
+  check("§8.2 auch eine 280 Sekunden Scheibe ist durch 10 RPM begrenzt",
+    begrenzt.aufrufeJeScheibe === 46);
+  check("§8.3 im Modell reichen 50 Minuten, 49 reichen nicht",
+    k.zyklusPasstInsFenster({ ...eingabe, fensterMinuten: 50 }).passt === true
+      && k.zyklusPasstInsFenster({ ...eingabe, fensterMinuten: 49 }).passt === false);
+  const langsam = k.zyklusPasstInsFenster({ ...eingabe, parallel: 1, laufzeitJeAufrufMs: 60000 });
+  check("§8.4 langsamer Transport bleibt trotz hoher RPM bindend",
+    langsam.benoetigteMinuten === 500 && langsam.bindendeGrenze === "laufzeit"
+      && langsam.aufrufeJeScheibe === 4);
+  const ohneRpm = k.zyklusPasstInsFenster({ ...eingabe, maxAnfragenJeMinute: null });
+  check("§8.5 ohne optionale Minutengrenze bleibt die Laufzeitrechnung erhalten",
+    ohneRpm.bewertbar && ohneRpm.passt && ohneRpm.benoetigteMinuten === 1 && ohneRpm.ausRpm === null);
+}
+
+abschnitt("§9 Ungueltige Mengen duerfen keine Startbereitschaft vortaeuschen");
+{
+  const basis = { fensterMinuten: 10, parallel: 2, laufzeitJeAufrufMs: 1000, bedarfAufrufe: 500 };
+  const ungueltig = [-1, 1.9, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1, "500", true];
+  for (const feld of ["bedarfAufrufe", "parallel", "mandate", "maxAnfragenJeMinute"]) {
+    const werte = feld === "bedarfAufrufe" ? ungueltig : [...ungueltig, 0];
+    check(`§9 ${feld}: ungueltige Werte sind unbewertbar und niemals passend`,
+      werte.every(wert => { const r = k.zyklusPasstInsFenster({ ...basis, [feld]: wert });
+        return r.bewertbar === false && r.passt !== true; }));
+  }
+  const nullBedarf = k.zyklusPasstInsFenster({ ...basis, bedarfAufrufe: null });
+  check("§9 fehlender Bedarf verwendet weiter das benannte Szenario",
+    nullBedarf.bewertbar && nullBedarf.benoetigteAufrufe === 1812);
+  const explizitLeer = k.zyklusPasstInsFenster({ ...basis, bedarfAufrufe: 0 });
+  check("§9 ausdruecklich null Aufgaben bleiben von fehlendem Bedarf unterscheidbar",
+    explizitLeer.bewertbar && explizitLeer.passt && explizitLeer.benoetigteMinuten === 0);
+  check("§9 Rechenueberlauf und numerische Scheinwerte liefern kein Gruen",
+    [{ fensterMinuten: 1e300 }, { laufzeitJeAufrufMs: 1e-300 }, { fensterMinuten: "10" },
+      { laufzeitJeAufrufMs: true }].every(wert => {
+      const r = k.zyklusPasstInsFenster({ ...basis, ...wert });
+      return r.bewertbar === false && r.passt !== true;
+    }));
+}
+
 console.log(`\nERGEBNIS: ${pass} PASS / ${fail} FAIL`);
 process.exit(fail ? 1 : 0);
