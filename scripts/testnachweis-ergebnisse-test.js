@@ -128,6 +128,8 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
   });
   await test("Alle 500 nach Testende: 1500 Belege, voller Nenner, keine Textprobe als Faktenfreigabe", async () => {
     const gesehen = new Set(), sha = N.manifest.productionCommit;
+    let appFehler = null;
+    const dbGelesen = new Map();
     const profiles = [...N.manifest.ids, ...N.manifest.ausserhalb].map(user_id => ({ user_id, aktiv: false }));
     const env = { GITHUB_REPOSITORY: "ernisch/helmut-pilot", GITHUB_REF: "refs/heads/main", GITHUB_EVENT_NAME: "workflow_dispatch",
       GITHUB_SHA: sha, HELMUT_PRODUCTION_COMMIT: sha, HELMUT_NACHWEIS_TAG: tag, SUPABASE_URL: PROJECT_URL,
@@ -142,15 +144,21 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
       if (u.pathname === "/rest/v1/mandate_profiles") return response(profiles, "0-503/504");
       if (u.pathname === "/rest/v1/helmut_store") return response([N.zeile("beendet")], "0-0/1");
       if (u.pathname === "/api/cron/briefing-nachweis") {
-        const id = u.searchParams.get("mandat"); gesehen.add(id); return response(fixture(id).app);
+        const id = u.searchParams.get("mandat"); gesehen.add(id);
+        const app = fixture(id).app;
+        if (id === N.manifest.ids[0] && appFehler === "lage-fehlt") app.lageBriefing.paragraphs = [];
+        if (id === N.manifest.ids[0] && appFehler === "fremde-bindung")
+          app.gespeicherterNachweis.id = `bf-fremd-mandatsbriefing-${tag}`;
+        return response(app);
       }
       assert.equal(u.pathname, "/rest/v1/briefings");
       const id = u.searchParams.get("user_id").slice(3); assert(N.manifest.ids.includes(id));
+      dbGelesen.set(id, (dbGelesen.get(id) || 0) + 1);
       return response(fixture(id).rows, "0-2/3");
     };
     const r = await G.ausfuehren({ env, fetchFn, now: () => jetzt });
     assert.equal(r.ok, true); assert.equal(r.gelesen, 500); assert.deepEqual([...gesehen].sort(), N.manifest.ids);
-    for (const art of R.ARTEN) assert.deepEqual(r.ergebnisArten[art], { ziel: 500, geprueft: 500, vollstaendig: 500,
+    for (const art of R.ARTEN) assert.deepEqual(r.ergebnisArten[art], { ziel: 500, geprueft: 500, nichtGeprueft: 0, vollstaendig: 500,
       nichtBestaetigt: 0, gruende: { "struktur-und-fenster-bestaetigt": 500 } });
     assert.equal(r.funktionsnachweis500, false); assert.equal(r.vollstaendigeFaktenpruefung, false);
     const pub = JSON.stringify(G.oeffentlicherBericht(r));
@@ -164,6 +172,41 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
     r.results[0].ergebnisArten.lage.grund = "PRIVATER_GRUND";
     r.ergebnisArten.privat = "PRIVATER_TEXT";
     assert(!JSON.stringify(G.oeffentlicherBericht(r)).includes("PRIVAT"));
+
+    appFehler = "lage-fehlt"; gesehen.clear(); dbGelesen.clear();
+    const partial = await G.ausfuehren({ env, fetchFn, now: () => jetzt });
+    assert.equal(partial.abrufbar, 499, "Unvollstaendige App wird nicht gruen gezaehlt");
+    assert.equal(dbGelesen.get(N.manifest.ids[0]), 2, "Gebundene Ergebnisse trotzdem unabhaengig gegenlesen");
+    for (const art of R.ARTEN) assert.equal(partial.ergebnisArten[art].vollstaendig, 500);
+    assert.equal(partial.funktionsnachweis500, false);
+    assert.equal(partial.vollstaendigeFaktenpruefung, false);
+
+    appFehler = "fremde-bindung"; gesehen.clear(); dbGelesen.clear();
+    const fremd = await G.ausfuehren({ env, fetchFn, now: () => jetzt });
+    assert.equal(dbGelesen.has(N.manifest.ids[0]), false, "Fremde Kennung darf keinen Datenbankzugriff ausloesen");
+    for (const art of R.ARTEN) {
+      assert.equal(fremd.ergebnisArten[art].geprueft, 499);
+      assert.equal(fremd.ergebnisArten[art].nichtGeprueft, 1);
+      assert.equal(fremd.ergebnisArten[art].gruende["paketbindung-fehlt"], 1);
+    }
+
+    appFehler = null; gesehen.clear(); dbGelesen.clear();
+    const abbruch = await G.ausfuehren({ env, fetchFn,
+      now: () => gesehen.size >= 7 ? new Date(jetzt.getTime() + 16 * 60000) : jetzt });
+    assert.equal(abbruch.ok, false); assert.equal(abbruch.grund, "nachweis-zeitbudget");
+    assert.equal(abbruch.gelesen, 7); assert.equal(gesehen.size, 7);
+    for (const art of R.ARTEN) assert.deepEqual(abbruch.ergebnisArten[art], {
+      ziel: 500, geprueft: 7, nichtGeprueft: 493, vollstaendig: 7, nichtBestaetigt: 493,
+      gruende: { "struktur-und-fenster-bestaetigt": 7, "profil-nicht-gelesen": 493 }
+    });
+    const pubAbbruch = G.oeffentlicherBericht(abbruch);
+    assert.equal(Object.values(pubAbbruch.ergebnisArten).reduce((n, a) =>
+      n + Object.values(a.gruende).reduce((sum, count) => sum + count, 0), 0), 1500);
+    assert(!JSON.stringify(pubAbbruch).includes(N.manifest.ids[0]));
+    const leer = R.bilanziere([]);
+    for (const art of R.ARTEN) assert.equal(leer[art].gruende["profil-nicht-gelesen"], 500);
+    assert.equal(R.bilanziere([{ ergebnisArten: { lage: { geprueft: false, vollstaendig: true } } }]).lage.vollstaendig, 0,
+      "Ohne erfolgte Pruefung ist eine vollstaendige Ergebnisposition nicht bestaetigt");
   });
   console.log(`${passed}/${passed} Testgruppen: Inhaltsbindung, drei Ergebnisarten, Testfenster und fester500er Nenner.`);
 })().catch(e => { console.error(e); process.exitCode = 1; });
