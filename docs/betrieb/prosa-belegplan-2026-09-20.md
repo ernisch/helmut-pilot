@@ -1,7 +1,8 @@
 # Konkreter Entwicklungsvertrag fuer beleggebundene Prosa
 
-20.09.2026. **Vorbereitung, keine integrierte Methode und keine fachliche
-Freigabe.** Null Modellaufrufe, keine Productiondaten geschrieben. Dieser
+20.09.2026. **Offline Bindungsbaustein implementiert, keine integrierte
+Production Methode und keine fachliche Freigabe.** Null Modellaufrufe,
+keine Productiondaten geschrieben. Dieser
 Vertrag setzt den nach PR452 dokumentierten anderen Ansatz konkret fort.
 Er wiederholt weder den verworfenen Quellenrichter noch dessen Prompts.
 
@@ -108,6 +109,77 @@ die positiven und negativen Sachfaelle in beiden Pfaden tragen. Danach
 Kosten pro tatsaechlichem Entwurfs und Pruefpaar sowie vollstaendige
 Versorgung gegen den unveraenderten4 USD Riegel rechnen. Der heutige
 Entwurf bestaetigt weder diese Erreichbarkeit noch einen neuen500er Start.
+
+## Offline Bindungsbaustein fuer bereits gepruefte Fakten
+
+20.09.2026, Branch `codex/prosa-faktenbindung-20260920`, Basis Main
+`6bb5659afe7402ad408286438ef19bc1aa475d1b`. **Teilweise abgeschlossen.**
+`lib/helmut/prosa-faktenplan.js` setzt die bisher nur beschriebene Grenze
+zwischen getrennt geprueften Fakten und einem unzuverlaessigen Textplan um.
+Das Modul wird noch von keinem produktiven Fachpfad aufgerufen. Es ist weder
+eine automatische Faktengewinnung noch ein Ersatz fuer deren Integration.
+
+Eine Faktenzeile bindet die ganze Quelle, genaue Textstelle samt Kontext,
+Akteur, Handlung, Gegenstand, Aussagegrad, Verneinung, Zuschreibung,
+Bedingung, Ereigniszeit und gegebenenfalls das vollstaendige Profil.
+Unbekannte Sachfelder bleiben null. Ganze separat gepruefte Saetze sind
+nach Verwendungszweck getrennt; sie werden weder abgeschnitten noch aus
+Teilzitaten neu zusammengesetzt. Die gesamte Faktenzeile braucht eine
+separate inhaltsgebundene Fachfreigabe samt Pruefer und Nachweiskennung.
+
+Der Textplan darf ausschliesslich Faktenkennungen und freigegebene Zwecke
+auswaehlen. Der separat vorgegebene Feldvertrag verlangt alle vorgesehenen
+Felder und deren Vorgangsbezug. Freie Texte, Rollen oder Wahrheitswerte im
+Plan, fehlende Felder, falsche Zwecke und fremde Fakten scheitern. Die
+Rueckpruefung rekonstruiert die vollstaendige Ausgabe statt einen vom
+Absender selbst erneuerten Hash als Nachweis anzunehmen. Eigene Kopien
+verhindern nachtraegliche Mutation gebundener Eingaben.
+
+Wichtige Vertrauensgrenze: `trustedFreigaben` und `feldvertrag` sind
+Servereingaben aus einer getrennten Fachpruefung. Der Hash ist weder eine
+Signatur noch der Nachweis, dass ein Mensch oder unabhaengiger Adapter
+wirklich geprueft hat. Ein spaeterer Aufrufer muss Herkunft, Aktualitaet,
+Berechtigung und die vollstaendige Abdeckung seiner wirklichen sichtbaren
+Felder sicherstellen. Er darf diese Servereingaben nicht vom Generator
+oder einem ungeprueften Request uebernehmen. Nach Quellen oder
+Profilaenderung muss mit frisch gelesenen Eingaben neu gebunden werden.
+
+`scripts/prosa-faktenplan-test.js`: final51/51 isolierte Bindungsgruppen
+bestanden. Darunter sechs vorab formulierte synthetische Sachklassen mit
+positiven, negativen und fehlenden/widerspruechlichen Urteilen an je zwei
+Feldadressen, Manipulation nach eigener Hashneuberechnung und echte lokale
+Dateispeicherung mit Ruecklesung. **Diese36 adressbezogenen Bindungsfaelle
+sind NICHT die geplante36er Fachabnahme beider produktiven Pfade.** Es
+wurde weder `assembleKnowledgeObject` noch der produktive Lagegenerator
+durch diese neue Suite abgenommen. Jeder Rueckgabevertrag behaelt
+`vollstaendigeFaktenpruefung: false`.
+
+Offen bleiben die reale unabhaengige Faktenversorgung, vollstaendige
+Feldvertraege und Anschluss beider Fachpfade samt echter Speicherung und
+Ruecklesung, die geplante36er Fachabnahme, frische500er Versorgung und
+gemessene Zeit/Kosten. Keine Quellen im Bestand korrigiert, keine
+Produktionsurteile angelegt, keine Modellaufrufe und keine Aktivierung.
+Kanonischer lokaler Gesamtlauf431/436 in885s. Die fuenf Fehlschlaege
+betreffen die lokale Umgebung: zwei Browser finden die Headless Shell
+nicht; drei Konten/Transportpruefungen treffen bereits vorhandene
+Testkonten. Unveraendert in einem sauberen eigenen Testcheckout und mit
+dem vorhandenen Browserpfad bestehen danach admin-nutzer-loeschen75/75,
+passwort-setzen-login-fix39/39, mailpit-transport119/119,
+resend-transport201/201 und reset-timing-seitenkanal83/83.
+Damit wurde jede der436 Suiten erfolgreich geprueft, aber kein einzelner
+vollstaendig gruener436er Lauf behauptet. Bestandene Suiten werden nicht
+erneut lokal ausgefuehrt. PR CI und Integration stehen noch aus.
+Nur die Vorschau des eigenen Branches ist in vercel.json abgeschaltet;
+alle anderen Konfigurationswerte einschliesslich Crons bleiben identisch.
+
+Abschlussgegenprobe nach PR475: Ein unbesetzter JavaScript Arrayplatz wird
+von map uebersprungen. Auf dem ersten PR Kopf8c47a2c wird eine leere
+Einerauswahl nach JSON Speicherung faelschlich als gebunden bestaetigt.
+Der Fix verlangt zusaetzlich die vollstaendige Zahl tatsaechlich besuchter
+Felder. Die betroffene Bindungssuite besteht danach51/51, einschliesslich
+unbesetzter Plaetze und ihrer JSON Nullfassung. Nur diese betroffene Suite
+wurde erneut lokal ausgefuehrt. Die exakte neue PR CI muss den korrigierten
+Kopf pruefen; der vorherige laufende CI Stand ist keine Abschlussabnahme.
 
 
 ## Erster umgesetzter Eingabebaustein: DIP Dokumentangaben
