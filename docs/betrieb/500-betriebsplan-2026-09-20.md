@@ -275,3 +275,110 @@ Qualitaetsbedingung. Der500er Start benoetigt seine eigene spaetere Freigabe.
 Dieser Abschluss aendert nur die beiden Statusdokumente. Gemaess CLAUDE.md
 Paragraph9 werden sein eigener Merge und sein Deployment aus der Historie
 belegt; kein rekursiver Dokumentations PR.
+
+## Fortsetzung: Vorgangstrennung und Restaufwand
+
+20.09.2026, Uebernahme rein lesend auf Main8349d6f, zugehoeriges
+Productiondeployment dpl_7G72x3xun5JpiZhwGuL4jGUyMcQd READY. Keine offenen
+PRs oder laufenden Actions. SQL09:42 UTC:504 Profile,0 aktiv,0 junge offene
+Prozesse,29782 Rohquellen,0 Publikationen in den letzten48 Stunden.
+Letzter gespeicherter Abruf16.09.16:04:07 UTC. Inaktive Profile erzeugten
+im regulaeren Crawl keine Aufgaben; die globale Altquellenanalyse lief
+dennoch am20.09.05:30 UTC und speicherte19 Objekte.
+
+Der private Naturlaufbeleg `Helmut_Textbefunde_Naturlauf_20260920.json`
+nennt einen vermischten Industriekonflikt und eine fremde Tarifrunde.
+Mit den gespeicherten Quelltiteln laesst sich die technische Ursache lokal
+reproduzieren: Beschaeftigte gilt aufgrund seiner Laenge als spezifischer
+Anker und verbindet sich auch mit Hafenbeschaeftigten. Drei Dokumente
+werden zu einem Vorgang, obwohl die beiden Industriequellen zum einen
+Konflikt und die Seehafenquelle zum anderen gehoeren.
+
+Der kleine allgemeine Fix auf `codex/vorgang-beweispaar-20260920` ordnet
+die ausdruecklich aufgezaehlten Flexionsformen der Personengruppe als
+generisch ein. Ein generisches Teilwort eines Kompositums darf ausserdem
+in keiner Vergleichsrichtung spezifisches Gewicht erzeugen. Zuvor konnte
+beispielsweise die umgekehrte Richtung von Bundesstaat und Gesellschaft
+zu Bundesstaatsanwaltschaft und Gesellschaftsrecht zwei scheinbar
+spezifische Belege liefern. Spezifische Gesamtbegriffe und echte
+Folgemeldungen bleiben erhalten. Keine neue Entitaetserkennung oder
+universelle Bedeutungspruefung und keine an einen Herausgeber gebundene Regel.
+
+Die neue Regression prueft beide Vergleichsrichtungen, alle sechs
+Eingabereihenfolgen, den Anschluss an Bestandsvorgaenge, weitere
+synthetische Quellen und positive Fortsetzungen. Vor dem Fix2/7 Gruppen,
+danach7/7; alle8 betroffenen Vorgangssuiten bestanden. Kanonischer
+Gesamtlauf429/431 in832s. Nur die beiden Browserteile fanden im zuerst
+gesetzten Pfad die Headless Shell1194 nicht; beide unveraenderten
+Originalsuiten bestanden danach im isolierten lokalen Checkout mit dem
+vorhandenen Browserpfad. Damit jede der431 Suiten bestanden, kein
+behaupteter einzelner gruener Gesamtlauf. PR Pruefung noch offen. Nur die Vorschau des eigenen Branches
+wird ausgeschaltet. Kein neuer Quellenimport, keine Datenkorrektur,
+kein bezahlter Versuch und keine Aktivierung. Bereits falsch gespeicherte
+Vorgaenge sind dadurch nicht rueckwirkend aufgetrennt.
+
+Der verbleibende kritische Weg hat drei unabhaengige Bloecke:
+frische passende Quellen samt Kontext und Folgeverarbeitung;
+fachlich belastbare Texte in beiden Pfaden;
+gemessene vollstaendige Versorgung innerhalb Zeit und Kosten.
+Der31er Import schliesst nur einen Teil der ersten Eingangsvoraussetzung.
+Allgemeine Prosa ist weiterhin nicht implementiert beziehungsweise
+abgenommen. Die vorhandene Ergebnisbilanz und Endfunktion ersetzen diese
+Belege nicht. Eine belastbare Zusage auf einen Start innerhalb weniger
+Stunden laesst sich daraus nicht ableiten.
+
+Zusaetzliche reine Offline Nachsicht: die Quellmengen der19 gespeicherten
+Naturlaufobjekte wurden vor und nach dem kleinen Fix verglichen. Genau
+die bekannte Dreiergruppe teilt sich jetzt in2+1; die anderen18 Gruppen
+bleiben unveraendert. Das ist eine Gruppenpruefung, keine Textabnahme.
+Das31er Importpaket ist bytegleich an seinen bestehenden Payloadhash
+dde4bfb069029ca2640cfabedd924b724b72f6e706aead20f734316d557adb70 und SQL Hash
+35c57ca848ce323f7282778876f8c11de7736865d2f39145b6fb3f394dcacda9 gebunden.
+Alle31 Eintraege sind bei Nachsicht frisch; Ende des gemeinsamen48 Stunden
+Fensters bleibt21.09.08:40:31 UTC. Kein Import wurde ausgefuehrt.
+
+Dabei ist ein weiterer fachlicher Trennungsbefund sichtbar: vor UND nach
+diesem Fix ergibt das31er Paket10 Gruppen, darunter eine19er Gruppe mit
+Berliner Wahlen, KI, Zugang zum Weissen Haus, Russland Sanktionen,
+Grönland und Angriffen in Saudi Arabien. Die aktuelle Kernpruefung in
+`clusterRawDocuments` laesst Gruppen ohne gemeinsamen Kern passieren;
+das Groessenventil greift erst oberhalb60 Dokumenten. Der kleine
+Personengruppenfix beansprucht diesen unabhaengigen Kettenfehler nicht zu
+loesen. Vor einer neuen Inhaltsproduktion ist die allgemeine Aufteilung
+solcher Komponenten mit positiven Fortschreibungsfaellen zu reparieren.
+Ein31er Import allein darf daher weiterhin nicht als Startbereitschaft gelten.
+
+Aktuelle Kostenlesung09:46:57 UTC: Tagesgrenze4 USD, gebucht0,141361 USD,
+offene Tagesreserve0;0 lebende Sperren,0 Leases und0 offene Jobs. Aus37
+erhaltenen erfolgreichen historischen Lageaufrufen vom15./16.09. ergibt
+die heutige konservative Buchungsregel (0,5/4 USD je Million Eingabe/Ausgabe)
+im Mittel0,005200 USD pro Aufruf.1000 Aufrufe ergäben damit rund5,20 USD,
+noch vor Verstehen und letzter voller Reserve. Die Telemetrie nennt daneben
+eine kleinere alte Schaetzung von0,002600 USD; diese ist NICHT die heutige
+Geldriegelbuchung. Das sind historische Verbrauchswerte, keine Anbieterrechnung
+und keine Messung des neuen Tests. Budgetregel und Freigaben unveraendert.
+
+Rein lesender31er Identitaetsabgleich09:56:56 UTC:31 Eingaben,0 Kollisionen
+ueber Kennung, Fingerabdruck und beide kanonischen URL Felder; weiterhin
+0 aktive Profile. Kein Import. Die Frische endet vor der derzeit nur grob
+auf mehrere Arbeitstage schaetzbaren Gesamtreparatur. Vor dem echten Test
+muessen Quellen erneut frisch und fachlich geeignet bereitstehen.
+
+Abschlussreview vor Merge: Die neue Themenwurzel kann korrekte Altkennungen
+unter vg-beschaeftigte beziehungsweise der Umlautform aus der Suche nehmen.
+Im echten resolveVorgang Pfad reproduziert: direktes Sachurteil true,
+aber resolution neu. Die begrenzte Suchergaenzung fuegt hoechstens zwei
+aus den Eingabequellen abgeleitete Altpraefixe zur bestehenden Anfrage
+hinzu; kein weiterer Datenbankaufruf, keine neuen generischen Kennungen,
+keine Aenderung am sachlichen Belegvergleich. Korrekte alte Vorgänge
+werden gefunden, fachfremde trotz gefundenem Suchhinweis abgewiesen.
+Danach11/11 neue Gruppen,8/8 Vorgangs und12/12 Understanding Suiten
+bestanden. Der vorige Gesamtlauf gilt nicht als vollstaendiger Beleg
+dieser letzten Ergaenzung; der neue PR CI Lauf muss den exakten Kopf pruefen.
+
+Zwei lediglich im Speicher ausgefuehrte Varianten zur grossen Kettengruppe
+sind verworfen: weitere allgemeine Wortfilter hinterliessen eine gemischte
+12er Gruppe; eine paarweise direkte Aufteilung bei fehlendem Kern erzeugte
+neue falsche Paare. Beide sind weder Appcode noch positiver Nachweis und
+werden nicht als schneller Fix uebernommen. Die fachliche Ereigniszuordnung
+bleibt ein eigener groesserer Entwicklungsschritt.
