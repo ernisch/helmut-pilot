@@ -509,8 +509,9 @@ fachlicher Gesamtlauf allein fuer diese beiden Dokumentationsdateien.
 
 ## Vorbereiteter Quellenzerlegungsversuch nach PR478
 
-20.09.2026. **Teilweise abgeschlossen, kein bezahlter Start und keine
-Methodenabnahme.** Basis Main be4b237b6154248f30e175235ed81aa9893b01bf,
+20.09.2026. **Historische Vorbereitung vor der separaten Freigabe. Der spaetere
+bezahlte Versuch ist unten als abgebrochen dokumentiert, keine Methodenabnahme.**
+Basis Main be4b237b6154248f30e175235ed81aa9893b01bf,
 Arbeitsbranch `codex/quellenfakten-versuch-20260920`, Entwurf PR479.
 Fachlicher Vorbereitungskopf d5a3774db9f62f778758aae684fc6e773b78775e.
 Rein lesende Uebernahme
@@ -571,7 +572,7 @@ Diese Grenze muss vor einer spaeteren Produktintegration aufgeloest werden.
 
 ### Konkrete getrennte Freigabegrenze
 
-Der noch NICHT gestartete Auftrag waere:
+Der zu diesem Vorbereitungszeitpunkt noch NICHT gestartete Auftrag war:
 
 * Genau sechs moegliche Aufrufe, je drei Quellen einer Klasse; kein Retry.
 * Jeweils gpt-5-mini, reasoning minimal, bestehende3000 Ausgabetokens und
@@ -630,3 +631,129 @@ die ersten beiden Datenbankpflichtschritte sind bestanden; die441 Suiten
 laufen bei dieser Dokumentationspraezisierung noch. Bis zum kompletten
 CI Abschluss bleibt die technische Abnahme offen. Endstand und exakter
 abschliessender Dokumentationskopf werden im PR479 samt CI Historie belegt.
+
+## Ausgang des freigegebenen Quellenversuchs
+
+20.09.2026. **Gescheitert oder abgebrochen: vereinbarte Annotationsabnahme
+nicht bestanden, Serie nach dem ersten Block verbindlich gestoppt.** Die
+technische Isolation hat funktioniert. Das Gesamtziel bleibt teilweise
+abgeschlossen, die unabhaengige Eingangsabdeckung weiterhin offen.
+
+Die konkrete Freigabe durch das anschliessende Nutzerwort Ja galt dem oben
+beschriebenen einmaligen Auftrag. Sie wurde nicht auf weitere Tage, Wiederholungen,
+andere Nutzlasten oder den500er Test erweitert. Ausgefuehrter Kopf:
+`3ca35bd378bfcabacd69346e75646c1156429852`,
+[Actions35530374788](https://github.com/ernisch/helmut-pilot/actions/runs/35530374788),
+Job106129787133. Nur der neue Quellenversuchsjob lief; die anderen Einstiege
+dieses Workflows wurden uebersprungen. Die Quittung begann21:51:08 Tuerkei /
+20:51:08 Berlin /18:51:08 UTC und endete18:51:27 UTC im Zustand gestoppt mit
+FAKTEN_ANNOTATIONSABWEICHUNG. Kein zweiter Block, Retry oder Reset.
+
+### Vollstaendige Sichtung von Block1
+
+Drei synthetische Finanzquellen wurden in genau einem gpt-5-mini Aufruf
+bearbeitet. Alle drei vollstaendigen Originaltexte, Quellkennungen und
+ausgegebenen Wortspannen blieben quellengebunden. Der Vergleich mit den
+vorher fixierten Sollannotationen ergab12 Feldabweichungen. Das bedeutet
+ausdruecklich nicht12 falsche Tatsachen: sieben betreffen Artikel oder
+groessere Wortspannen, eine die mehrdeutige Hauptaussagenart, vier die
+unvollstaendige strukturierte Erfassung. Die Sollwerte bleiben unveraendert.
+
+| Quelle | Vollstaendiger Befund | Bedeutung fuer die Abnahme |
+| --- | --- | --- |
+| f01, beschlossener Buszuschuss | Beschluss und ganze Wirkung einschliesslich Fuer Berechtigte und20 Euro sind erhalten. akteur, handlung und gegenstand verwenden andere Originalspannen. adressat und bedingung sind null. | Keine erfundene Geldwirkung. Die Berechtigten fehlen aber als eigene Struktur und damit fuer eine getrennte spaetere Feldbindung. |
+| f02, unbestimmter Ausgleichsbetrag | art unbestimmt und modus offen bleiben richtig. Der Gegenstand enthaelt zusaetzlich den Artikel. handlung ist null statt koennte entfallen; der Originalbeleg enthaelt die Aussage weiterhin. | Keine Umdeutung zur Steuer oder Pflegeleistung. Der moegliche Wegfall fehlt in der strukturierten Handlung. |
+| f03, bestrittene Fahrpreissenkung | modus offen und wirkung null erhalten die Unsicherheit. art ereignis statt wirkung ist allein kein belastbares Falschurteil. Andere Akteurs und Handlungsspannen sind woertlich getragen. einschraenkung enthaelt das Bestreiten, aber nicht die ausstehende gemeinsame Klaerung. | Keine sichere Preissenkung behauptet. Die ganze vereinbarte einschraenkende Passage ist strukturiert nicht erhalten, obwohl sie im Originalbeleg steht. |
+
+Aus diesem einen Block folgt weder die generelle Unmoeglichkeit einer
+Quellenzerlegung noch eine erfolgreiche unabhaengige Faktenpruefung.
+Geprueft:3/18 Quellen. Nicht aufgerufen:15/18. Bestandene echte
+Produktpfadfaelle:0/36. Kein Ergebnis wurde in Faktenplan, Wissensobjekte,
+Mandatsbriefing, Lage oder Morgenquittung uebernommen. Weder andere richtige
+Spannen noch ein nachtraeglich gelockerter Vergleich duerfen diese
+geschlossene Serie nachtraeglich als bestanden oder fortsetzbar ausweisen.
+
+### Kosten, Schutz und Nachkontrolle
+
+Ein erfolgreicher Modelltransport,723 Eingabe und386 Ausgabetokens,
+1109 insgesamt, gemessene Aufrufdauer4679ms. Das verbindliche Kostenbuch
+hat die volle Reserve212000 Mikrodollar abgerechnet und1906 Mikrodollar
+gebucht:0,001906 USD. Der kleinere Telemetrieschaetzwert0,000953 USD ist
+nicht der hier geltende konservative Kostenbuchbetrag.
+
+Vorflug18:49:56 UTC: Tageskosten0,387853 USD, Aufrufzaehler63.
+Der Anstieg gegenueber dem frueheren Stand0,264700 stammt aus dem vorhandenen
+Rueckstandslauf understanding-rueckstand-20260920173037-r2jou:20 abgerechnete
+Aufrufe zwischen17:30:37 und17:34:06 UTC, zusammen0,123153 USD. Zeitlich
+passend zum unveraenderten17:30 Cron, kein manueller Start durch diese Arbeit.
+Seine spaetere Budgetablehnung betraf den eigenen Laufdeckel20, nicht4 USD.
+
+Rein lesende SQL Nachkontrolle21:56:56 Tuerkei /20:56:56 Berlin /
+18:56:56 UTC:504 Profile,0 aktiv;0 lebende Pipeline Sperren, Job und
+Verstehen Leases,0 unerledigte Jobs,0 junge offene Prozesse. Tag0,389759 USD,
+offene Reserve0, globaler Zaehler64. Der4 USD Riegel ist unveraendert.
+
+Vollstaendige Hashes vor und nach diesem Block:
+
+| Bestand und Berechnung | Unveraenderter SHA256 |
+| --- | --- |
+| mandate_profiles, jsonb_agg ganzer Zeilen nach user_id | ea339008ddc23668d7234b6305a2346c116b474a40ff68dbd474d73005056e06 |
+| profiles, jsonb_agg ganzer Zeilen nach id | 03e0b4e26272fbaa1d78aa199ad7e66b44e84d93b3d2d8ef02c62dcd0907f60e |
+| main, ganzes data JSONB | 58d58420f47f7bb9b29be1ec47c32a7c3670363f5f5c2c5cf5ef701211c238ef |
+| Geschuetztes main-auth data, nur vier freigegebene Schluessel ausgeschlossen | 328e986acc2ab04e1bf6cf5967bec3554a58863bfed7c718d96dbeacfe1cf84e |
+
+SQL jeweils encode(sha256(convert_to(JSONB::text,'UTF8')),'hex'). Beim
+geschuetzten Auth Hash ausschliesslich llmUsage, testKostenTage,
+_authStoreRevision und quellenfaktenEingang20260920 entfernt. Zusaetzlich
+bestaetigte der Laeufer unveraenderte alte Kostenbuchungen und vollstaendige
+Erhaltung der Aufruftelemetrie samt archivierten verdraengbaren Altzeilen.
+Der ganze Auth Hash ist erwartungsgemaess geaendert: vorher
+267d41fa0196f62e674afad8cc695f5cc4c1abb755d17ebef98c49eef6135291,
+nachher813761d84483632f95c4bfb5718b39feae62755798ae379a0c5a8f90e1799e9a.
+Kein Bericht ueber vier unveraenderte ganze Datenbestandswerte.
+
+Die freigegebenen relationalen Buchungen sind ebenfalls sichtbar:
+llm_budget_counters global63 auf64; ein neues Azure Minutenfenster18:51 UTC
+mit verbraucht1. azure|gpt-5-mini bleibt zu, fehler_folge0, erfolg_folge5
+auf6, aktualisiert18:51:23 UTC. Keine Anbietergrenze oder Konfiguration
+geaendert. Vollstaendige Transportantwort und Kostenbeleg wurden privat
+entschluesselt und gesichtet; keine privaten Schluessel im Repository.
+Antwort SHA256:8c4c8f1b42db84fd6978278ac0cd66fcba6e8670491ff4a3c53e3516b1caca1c.
+Transport SHA256:59e409b4618dd8d990acf076e7c096486a851f1f07696e50cba25ede12f7d168.
+
+### Verwendbarer Stand und naechste Grenze
+
+CI35526852330 auf dem exakt ausgefuehrten Kopf3ca35bd3 ist vollstaendig
+erfolgreich:441/441 Suiten in807s, Browser50/50, PostgreSQL23/0,
+Null50026/0, Z2248/0. Der vorherige lokale438/441 Lauf in984s bleibt
+teilweise fehlgeschlagen; keine nachtraegliche Umdeutung. Der fruehere
+CI35526424586 wurde durch die Dokumentationsaenderung abgebrochen.
+Die spaetere Dokumentationskorrektur aendert weder den ausgefuehrten
+Code noch Prompt, Sollannotationen, Manifest, Schema oder Freigabegrenzen.
+
+PR479 bleibt Entwurf, ohne Merge oder Deployment. Sichere Schutzbausteine
+und der negative Nachweis bleiben auf dem Branch erhalten; dieser Versuch
+wird nicht als Produktfortschritt integriert. Production Main bleibt
+be4b237b6154248f30e175235ed81aa9893b01bf, Deployment
+dpl_H133uvcugPyny1diBKuTe71Ro55V. Keine Profile aktiviert, keine Quellen
+importiert, kein500er Test gestartet. Rueckweg ist das Unterlassen weiterer
+Starts unter Erhaltung aller Kosten und Quittungen; kein Datenrollback.
+
+Die naechste sichere Arbeit ist ein vollstaendiger Eingangsvertrag fuer
+mehrteilige Aussagen samt wirklich getrennter Herkunft ihrer Fachfreigabe.
+Ein weiteres Modelllabel oder eine Hashhuelle loest diese Herkunft nicht.
+Ein dauerhafter manueller Redaktionsbetrieb waere eine noch nicht getroffene
+Produktentscheidung und wird nicht still vorausgesetzt. Fuer unveraendert
+automatischen Betrieb ist bisher keine vollstaendig unabhaengig gepruefte
+Versorgung aller sechs Klassen belegt. Die Tests des Versuchs belegen
+weder die Erreichbarkeit noch die Unmoeglichkeit dieses Gesamtziels.
+
+Vor weiteren bezahlten Production Methodenversuchen muss ein neuer konkreter
+Auftrag mit tatsaechlich anderem Pruefziel, festen Eingaben, Abnahme, Kosten,
+Datenwirkung und Rueckweg vorbereitet und gesondert freigegeben werden.
+Das Restkontingent der geschlossenen Serie ist keine Wiederholungsfreigabe.
+Fuer lokale Entwicklung fehlt keine pauschale Arbeitsfreigabe. Weiter offen:
+beide echten Pfade und alle UI Aliase,36 Fachfaelle mit Speicherung und
+Ruecklesung, frische Versorgung der ausgewaehlten500 einschliesslich Laender,
+belastbare Zeit und Kosten unter4 USD und die1500er Ergebnisbilanz.
+Keine Import oder500er Testfreigabe jetzt anfordern.

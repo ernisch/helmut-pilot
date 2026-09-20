@@ -1,25 +1,26 @@
 # CURRENT STATE — Helmut
 
-**20.09.2026: Quellenzerlegung als begrenzter Methodenversuch vorbereitet, nicht gestartet.**
-Branch `codex/quellenfakten-versuch-20260920` ab Main `be4b237b6154248f30e175235ed81aa9893b01bf`.
-18 synthetische Originalfaelle mit getrennten Sollannotationen, sechs moegliche
-Modellbloecke. Kandidaten werden nie automatisch zu fachlich freigegebenen Fakten.
-Keine Anwendungsaenderung oder36er Produktpfadabnahme. Ein neuer bezahlter Versuch
-mit maximal1,272 USD und eigener CAS Quittung braucht konkrete separate Freigabe;
-4 USD Tagesriegel unveraendert. Keine Aktivierung, kein Import oder Modellaufruf.
-[Verfahren, genaue Grenzen und vorbereiteter Auftrag](betrieb/prosa-belegplan-2026-09-20.md#vorbereiteter-quellenzerlegungsversuch-nach-pr478).
+**20.09.2026: Freigegebener Quellenversuch nach Block1 abgebrochen; Methode unabgenommen.**
+PR479 bleibt Entwurf auf `codex/quellenfakten-versuch-20260920`, kein Merge.
+Run35530374788 auf3ca35bd3: ein Modellaufruf, drei Quellen, danach verbindlicher
+Annotationsstopp. Ganze Originaltexte erhalten, strukturierte Abdeckung lueckenhaft;
+15 Quellen unversucht,0/36 Produktfaelle. Keine Fortsetzung oder Ruecksetzung.
+Nachkontrolle21:56 Tuerkei /20:56 Berlin /18:56 UTC:504/0, keine lebenden Sperren,
+Leases oder offenen Jobs. Geschuetzte Vollhashes gleich; Auth Vollhash geaendert.
+Aufruf0,001906 USD, Tag0,389759 USD, Reserve0, Riegel4 USD. Keine Aktivierung oder
+Import; Production Main und Deployment unveraendert. Naechster Schritt: vollstaendige
+unabhaengige Eingangsabdeckung klaeren, keine Wiederholung dieses geschlossenen Versuchs.
+[Vollstaendiger Ausgang und Freigabegrenze](betrieb/prosa-belegplan-2026-09-20.md#ausgang-des-freigegebenen-quellenversuchs).
 
 
 **20.09.2026: Begrenzter unabhaengiger DIP Fakteneingang integriert; Gesamtziel teilweise abgeschlossen.**
 PR477 fachlich integriert, PR478 dokumentiert den Abschluss. Main `be4b237b6154248f30e175235ed81aa9893b01bf`,
 Deployment `dpl_H133uvcugPyny1diBKuTe71Ro55V` READY mit Production Alias.
-Exakte PR477 CI35522560738:439/439 Suiten, Browser50/50, PostgreSQL23/0,
-Null50026/0, Z2248/0. PR478 CI35523456666 ebenfalls vollstaendig erfolgreich.
-Der lokale437/438 Lauf und die anschliessende isolierte Sicherheitssuite339/339
-bleiben getrennte Belege. Kein einzelner gruener lokaler Gesamtlauf behauptet.
+PR477 CI35522560738 und PR478 CI35523456666 vollstaendig erfolgreich.
+Lokaler437/438 Lauf und isolierte Sicherheitssuite339/339 bleiben getrennte Belege.
 Der Leser traegt Beschlusstenore, Ueberweisungen und engen Ausschussprofilbezug;
 kein produktiver Aufrufer, keine vollstaendige Feldabdeckung oder36er Fachabnahme.
-SQL17:05:50 UTC:504/0, keine lebenden Pipeline/Job Sperren, offenen Jobs oder
+Historische SQL17:05:50 UTC:504/0, keine lebenden Pipeline/Job Sperren, offenen Jobs oder
 jungen Prozesse; geschuetzte Datenhashes unveraendert, Kosten0,264700 USD bei4 USD.
 [Integration und Quellenbefunde](betrieb/prosa-belegplan-2026-09-20.md#integration-pr477).
 
