@@ -1,23 +1,23 @@
 # CURRENT STATE — Helmut
 
-**20.09.2026: Faktenbindung integriert; Gesamtziel teilweise abgeschlossen.**
-PR475 ist auf Main `de03ea482b69633db0749aff4e062c56d94b8869` integriert,
-Deployment `dpl_4yYN814oRBdoVbcAv4wYyft5htPm` READY. Exakte PR CI35515137143
-auf Kopf307a988:436/436 Suiten in801s, Browser50/50, PostgreSQL23/0+26/0+48/0;
-keine offenen Reviewpunkte. Die neue Bindungssuite besteht51/51, einschliesslich
-der korrigierten Luecke bei unbesetzten Arrayplaetzen. HTTP200 liefert Versionde03ea48.
-SQL14:20:06 UTC:504/0, keine lebenden Sperren/Leases, offenen Jobs oder jungen
-Prozesse; alle vier vollstaendigen Hashgrundlinien seit13:50:44 unveraendert.
-Tageskosten0,264700 USD, technischer Riegel4 USD, zuletzt offene Reserve0.
-Der Baustein hat keinen produktiven Aufrufer. Reale unabhaengige Faktenversorgung,
-Anschluss beider Fachpfade und echte36er Fachabnahme bleiben offen. Die36
-synthetischen Bindungsfaelle ersetzen diese Abnahme nicht. Quellenaufnahme13:48:35 UTC:
-0 Publikationen innerhalb48 Stunden,0 gespeicherte typisierte DIP Teilbaeume.
-Frische500er Vollversorgung sowie gemessene Zeit/Kosten weiterhin unbelegt.
-Kein Import, Modellaufruf, Produktionsdateneingriff oder Teststart durch diese Sitzung.
-[Integration und naechster Schritt](betrieb/prosa-belegplan-2026-09-20.md#integration-pr475).
-Dieser reine Dokumentationsabschluss folgt CLAUDE.md Paragraph9; sein eigener
-Merge und Deploymentstand werden ohne rekursiven Folge PR aus der Historie belegt.
+**20.09.2026: Unabhaengiger DIP Fakteneingang lokal entwickelt; Gesamtziel teilweise abgeschlossen.**
+Basis und unveraenderter Production Main `1f1ce7175df9ab2cd4a9b68e773a45834d45c2e3`,
+Deployment `dpl_FkcP1fMKNNBGQtbzEyzgywSeGYGZ` READY, Production Alias zugeordnet.
+Main CI35517133382 inzwischen vollstaendig erfolgreich. Eigener Branch
+`codex/dip-vorgangsfakten-20260920`: neuer amtlicher Leser fuer originale
+Beschlusstenore, Ueberweisungen und eng gebundener Ausschussprofilbezug;
+18 Eingangsgruppen,4 amtliche Gegenproben und8 Profil und Aufnahmegruppen bestanden.55 reale Septemberpositionen liefern lokal26 konkrete
+Angaben. Lokaler Gesamtlauf437/438 in858s; unveraenderte Sicherheitssuite
+besteht im sauberen Checkout339/339. Exakte PR Abnahme und Integration offen.
+Keine Modellantwort als Faktengrundlage, kein produktiver Aufrufer und keine
+36er Fachabnahme. Wirkung, allgemeiner Profilbezug, Aufgaben, freie Nachrichten
+und61 synthetische Landtagsprofile bleiben fachlich unversorgt.
+SQL15:55:58 UTC:504/0, keine lebenden Sperren/Leases oder jungen offenen Prozesse;
+alle22709 Bestandsjobs erledigt. Kosten16:07:58 UTC:0,264700 USD, Reserve0, Riegel4 USD.
+Kein Import, Modellaufruf, Datenbankeingriff oder neuer Teststart.
+[Beleg und Integrationsgrenze](betrieb/prosa-belegplan-2026-09-20.md#unabhaengiger-dip-fakteneingang).
+Faktenbindung PR475 und Dokumentationsabschluss PR476 sind integriert;
+[unveraenderter Vorbeleg](betrieb/prosa-belegplan-2026-09-20.md#integration-pr475).
 
 **20.09.2026: Quellenreparaturen erfolgreich integriert; Gesamtziel teilweise abgeschlossen.** PR471,472 und473 sind integriert. Letzter fachlicher Main Stand `c070661f18bc001e26443d331672601e62ff2018`, Deployment `dpl_C7ZH7FxjpmFpEetKkyBUYihyNbar` READY. Exakte PR473 CI35510294577:435/435 Suiten in800s, Browser50/50, PostgreSQL23/0+26/0+48/0; keine offenen Reviewpunkte. HTTP200 liefert Versionc070661f. SQL12:37:39 UTC:504/0, keine lebenden Sperren/Leases, offenen Jobs oder jungen offenen Prozesse; alle vier Hashgrundlinien seit12:35:27 unveraendert. Tageskosten0,264700 USD, Grenze4 USD, offene Reserve0. Ereignisketten sind fuer die belegten Faelle getrennt, amtliche Originalangaben erhalten, verschiedene DIP Kennungen gegen Titel und RSS Reihenfolge geschuetzt und Quellentitel nicht mehr sinnveraendernd abgeschnitten. Neue Gegenproben lokal jeweils einmal; keine Wiederholung bestandener lokaler Suiten. Allgemeine Faktenbindung, frische Vollversorgung und gemessene Zeit/Kosten bleiben offen. Keine neuen Modellaufrufe, Imports oder Aktivierungen durch diese Sitzung. [Integration](betrieb/500-betriebsplan-2026-09-20.md#integration-pr473) und [konkrete Restarbeit](betrieb/500-betriebsplan-2026-09-20.md#restarbeit-nach-den-quellenreparaturen). Dieser abschliessende reine Dokumentations PR folgt CLAUDE.md Paragraph9; sein eigener Merge und Deploymentstand werden nicht rekursiv nachdokumentiert.
 

@@ -5,6 +5,7 @@
   ],
   "git": {
     "deploymentEnabled": {
+      "codex/dip-vorgangsfakten-20260920": false,
       "codex/prosa-faktenbindung-20260920": false,
       "codex/dip-dokumentidentitaet-20260920": false,
       "codex/500-zeitplanung-20260920": false,
