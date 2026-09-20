@@ -1,9 +1,12 @@
 # Neuer 500er Nachweis: belegter Vorflug und verbleibende Grenzen
 
 20.09.2026, **blockiert; kein Startpaket freigegeben**. Aktueller belegter
-Productionstand ist Main86a5a012, Laufzeitleser35484985244. PR464 und465 sind mit430/430 und
-allen Pflichtstufen integriert und auf dpl_2RMU33hnpivqHJ4DFmTK4sVrFtUL READY. Die folgenden
-Zahlen sind keine erfolgreiche fachliche Abnahme eines neuen Tests.
+Productionstand nach PR467 ist Main2a8d63fd auf
+Deployment dpl_4jbgyNxcJoMs2XhvBbTzF87qJz2Q READY. Laufzeitleser35499889132
+bestaetigt diesen Stand um08:33:47 UTC. Die frueheren datierten Aufnahmen
+unten bleiben als Historie erhalten; massgeblich ist die letzte
+[Nachkontrolle](#integration-pr467-und-verbleibende-freigabegrenze).
+Keine erfolgreiche fachliche Abnahme eines neuen500er Tests.
 
 ## Ziel, Bestand und Quellen
 
@@ -219,3 +222,56 @@ Rueckweg sind bereits vorbereitet; vor Ausfuehrung sind eine ausdrueckliche
 Importfreigabe und ein frischer Identitaets und Zustandsabgleich erforderlich.
 Auch danach fehlen noch fachlich belegte Faktenversorgung sowie gemessene
 Zeit und Kosten; der Import allein schafft keine500er Startbereitschaft.
+
+
+## Integration PR467 und verbleibende Freigabegrenze
+
+PR467 mit Head337470590fda8e894a436d87f5a3217bab7a45be und Baum
+386ddf5cda60b4d399a40aae131c2802422462ec wurde nach vollstaendiger CI,
+leeren Reviewthreads, unveraendertem Main und ruhender Production gemergt.
+CI35499051266:430/430 Suiten in801s, Browser50/50, Z2248/0;
+Kontoschutz sowie Null500 gegen isolierte PostgreSQL erfolgreich.
+Kein Pflichtschritt fehlgeschlagen oder ausgelassen. Der zusaetzliche
+kanonische lokale Abschlusslauf besteht430/430 in800s mit richtigem
+Browserpfad. Keine Anwendungsaenderung nach diesen Pruefungen.
+
+Main2a8d63fdb27ac038b70da11ade4f79cf333fcc24 ist auf
+Deployment dpl_4jbgyNxcJoMs2XhvBbTzF87qJz2Q READY, Production/fra1;
+die drei bisherigen Aliase sind unveraendert. Laufzeitcheck35499889132,
+Job106049653642,20.09.08:33:47 UTC:HTTP200 und exakter Commit, Supabase/V3,
+relationale exklusive Profile, Kommunikation und Kohortenquellen gesperrt.
+Retention36, Tagesdeckel2416, Understanding Reserve702, Realreserve200,
+Textnachlauf2, Arbeitsauswahl/Testfenster/Pruefaufnahme1. Kostenregel2
+aktiv mit4 USD; unbekannte Ausgaenge bleiben reserviert. Ausschliesslich
+laufzeit_status=true und production_commit gesetzt; optionale Inhaltsleser
+wurden nicht ausgefuehrt. scharferPfadFreigegeben bleibt false.
+
+SQL08:34:27 UTC:504 Profile,0 aktiv, keine lebenden Sperren und Leases,
+keine offenen Jobs oder jungen offenen Prozesse. Vollstaendige Hashes fuer
+Mandatsprofile, Identitaeten, Auth samt Sessions und Main stimmen mit08:19
+und der Vorabkontrolle08:32 ueberein. Tageskostenbuch20.09.:0,141361 USD,
+keine offene Reserve, unveraenderter4 USD Riegel. Keine von dieser Sitzung
+ausgeloeste Modellanfrage und keine Productiondatenaenderung.
+
+Das31er Paket wurde zuletzt08:21 UTC lokal erneut geprueft:31 Rohzeilen,
+31 Fundstellen, alle mit Auszug;15 Deutschlandfunk Politik und16 Tagesschau
+Politik. Alle Publikationen und Abrufe liegen im48 Stunden Vertrag. Hashes
+und Frischeende21.09.08:40:31 UTC unveraendert. Es ist weiterhin NICHT
+importiert und NICHT freigegeben. Der vorbereitete Import selbst hat keine
+neuen Abrufe oder Modellaufrufe; bestehende automatische Verarbeitung kann
+die neuen Quellen spaeter aufnehmen. Vor einer Ausfuehrung erneut den
+frischen Zustand und alle Identitaeten gegenlesen. Bei unbekanntem
+Schreibausgang nur gegenlesen und nicht erneut schreiben.
+
+**Sprintzustand:** Zeitberechnungsreparatur erfolgreich integriert und
+nachkontrolliert; Gesamtziel vor dem500er Test weiterhin blockiert.
+Naechste konkrete Freigabegrenze ist der exakt vorbereitete31er Import.
+Die ausdrueckliche Betreibergrenze wird nicht aus allgemeinem Weiterarbeiten
+ueberschrieben. Auch nach dem Import bleiben unabhaengige Faktenversorgung,
+allgemeine Prosaqualitaet und gemessene Zeit/Kosten zu belegen. Kein weiterer
+gleichartiger Promptversuch, kein Quellenrichter und keine abgesenkte
+Qualitaetsbedingung. Der500er Start benoetigt seine eigene spaetere Freigabe.
+
+Dieser Abschluss aendert nur die beiden Statusdokumente. Gemaess CLAUDE.md
+Paragraph9 werden sein eigener Merge und sein Deployment aus der Historie
+belegt; kein rekursiver Dokumentations PR.
