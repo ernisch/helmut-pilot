@@ -18,7 +18,15 @@ function env(a = input) { return { GITHUB_REPOSITORY: "ernisch/helmut-pilot", GI
   AZURE_OPENAI_KEY: "synthetisch", AZURE_OPENAI_ENDPOINT: "https://synthetisch.openai.azure.com",
   HELMUT_CRON_SECRET: "synthetisch", CONFIRM_TEXT: encode(a) }; }
 const Eingang = require("./quellenrelationen-eingang");
-const answerAt = p => ({ quellen: Eingang.block(p).faelle.map(f => ({ id:f.id, knoten:structuredClone(f.referenz.knoten), relationen:structuredClone(f.referenz.relationen) })) });
+function ausgabe(f) {
+  const span=s=>{
+    const starts=[];let i=-1;while((i=f.quelle.text.indexOf(s.text,i+1))!==-1)starts.push(i);
+    return {text:s.text,vorkommen:starts.length===1?null:starts.indexOf(s.start)};
+  };
+  return {id:f.id,knoten:f.referenz.knoten.map(n=>({id:n.id,spanne:span(n.spanne)})),
+    relationen:f.referenz.relationen.map(r=>({...r,signale:r.signale.map(span)}))};
+}
+const answerAt=p=>({quellen:Eingang.block(p).faelle.map(ausgabe)});
 const answer = answerAt(1);
 function previousFor(position, overrides = {}) {
   const b = Eingang.block(position);

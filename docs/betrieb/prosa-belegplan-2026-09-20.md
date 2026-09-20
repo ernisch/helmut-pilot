@@ -1063,3 +1063,172 @@ gemessener Zeit/Kostenvertrag unter4 USD. Der Methodenauftrag erzeugte keine
 neuen500 Mandatsbriefings,500 Lageergebnisse oder500 Morgenquittungen;
 alle1500 Positionen des noch ungestarteten Nachweises bleiben ungeprueft.
 Keine Import oder500er Testfreigabe als naechsten Schritt anfordern.
+
+## Vorbereitung der getrennten Relationsmessung
+
+20.09.2026, Branch `codex/aussagenrelationen-20260920`, Basis
+`dc01d7c458e956e114330435f5685c12f15ec548`. **Teilweise abgeschlossen;
+kein weiterer bezahlter Start freigegeben oder ausgefuehrt.** Die beiden
+abgeschlossenen Versuche, ihre Quellen, Sollwerte, Prompts und Laeufer
+bleiben bytegleich. Der neue Entwurf ist keine Produktloesung und wird
+nicht zusammen mit PR479/480 nach main gemergt.
+
+### Konkreter Fortschritt und verbleibende Vertrauensgrenze
+
+`scripts/quellenrelationen.js` prueft gerichtete Beziehungen mit Typ,
+beiden Endpunkten und positionsgenauen Originalspannen. Identischer
+Wortlaut an einer anderen Position, vertauschte Endpunkte, fehlende oder
+zusaetzliche Beziehungen und geaenderte Quellen werden getrennt sichtbar.
+Lokale Kennungen und Reihenfolge sind bedeutungsfrei. Andere Wortspannen,
+etwa ein weggelassener Artikel, bleiben als ungeklaerte Abweichung zur
+festen Messvorschrift sichtbar und werden nicht automatisch als falsche
+Tatsache bezeichnet. Eine getrennte vollstaendige Sichtung kann sie als
+harmlos einordnen; das aendert den technischen Referenztreffer nicht.
+
+Die neue eigene Messvorschrift in
+`scripts/fixtures/quellenrelationen-korpus.json` bewahrt alle18 ganzen
+Originale des alten Korpus. Sie beschreibt67 getrennt begruendete
+Relationen: Ursache, Bedingung, Zuschreibung, Adressat, Negation,
+Modalitaet, Koreferenz, Ereigniszeit, Ereignisort, Publikationszeit,
+Unbestimmtheit, Kontext, Rolle und zeitliche Folge. Umfang je Block:
+9/10/12/16/7/13. Die alten39 Referenzaussagen werden weder ersetzt noch
+rueckwirkend neu bewertet.67 Beziehungen beweisen keine vollstaendige
+Erfassung saemtlicher atomarer Tatsachen. Beide Sichtweisen bleiben
+fuer einen spaeteren produktiven Eingang notwendig.
+
+Ein zweiter, von Kandidat und Sollgraph unabhaengiger Leser findet
+sprachliche Hinweise unmittelbar in beliebigen tatsaechlichen Quelltexten.
+Er meldet **Pruefbedarf**, keine automatisch verstandene Relation. Insbesondere
+kann dadurch in einem Zitat stehen; kein Treffer beweist nicht die
+Abwesenheit impliziter Beziehungen. Auch ein vollstaendiger Referenztreffer
+und null offene Signalstellen liefern niemals eine Fachfreigabe.
+
+Diese Gegenpruefung fand vor Einfrieren zwei Fehler der NEUEN Vorbereitung:
+Bei f11 war die Spanne keine zuerst dem Teilwort von keinen statt der
+spaeteren Verneinung der Handlungsfrist zugeordnet; bei f17 erkannte die
+erste Signalliste steht aus innerhalb von besteht aus. Korrekte
+Positionsbindung und Wortgrenzen sind jetzt gesondert testgesichert.
+Zudem bleiben die Zuschreibung an die Meldung in f11 und die Einschraenkung
+aus dieser Quelle in f17 ausdruecklich gebunden. Kein geschlossener
+bezahlter Versuch wurde durch diese Vorbereitung veraendert.
+
+Die neue Gegenprobe bestaetigt den alten Methodenfehler unveraendert:
+Alle sieben alten Referenzpositionen koennen getroffen sein, obwohl
+dadurch in den strukturierten Aussagen fehlt. Der neue Graphvergleich
+weist dann die fehlende Ursachenbeziehung aus. Die tatsaechliche alte
+Antwort wurde erneut aus dem gesicherten Rohbeleg gelesen: Betrag,
+Berechtigte, moegliches Entfallen, Unbestimmtheit, Bestreiten und offene
+Klaerung bleiben erhalten. Daraus keine neun neuen Tatsachenfehler und
+kein nachtraegliches Bestehen ableiten. Sie hatte keinen Graphvertrag.
+
+Der endliche manuell annotierte Testsatz ist **kein automatischer
+unabhaengiger Pruefer fuer neue Nachrichtentexte**. Die Signalliste ist
+auch kein solcher Pruefer. Kein produktiver Aufrufer, kein
+trustedFreigaben Lieferant und kein dauerhafter Redaktionsbetrieb.
+36 echte Produktfaelle, Landesversorgung, frische500er Versorgung,
+gemessene Gesamtkosten und alle1500 Ergebnispositionen bleiben offen.
+
+### Konkreter Vorschlag fuer einen neuen einmaligen Methodenauftrag
+
+**Noch nicht freigegeben.** Offene empirische Frage: Kann das bestehende
+Azure gpt5 mini ausdrueckliche Beziehungen samt ihren Geltungsbereichen
+in einem getrennten Graphformat erhalten, statt sie zwischen einzelnen
+Tupeln zu verlieren? Die Messung beantwortet nur diese begrenzte Frage.
+Auch ein positives Ergebnis waere keine Production Faktenfreigabe und
+wuerde den unabhaengigen Eingang fuer unbekannte Quellen nicht ersetzen.
+
+`scripts/quellenrelationen-eingang.js` erzeugt sechs feste Prompts mit
+je drei Originalquellen. Referenzen und Begruendungen werden nicht an
+das Modell gesendet. Eine einzige Quellkennung vermeidet die fruehere
+Fall/Quellkennungsmehrdeutigkeit. Die Ausgabe benennt woertliche Originalspannen; der Server bestimmt ihre
+Positionen. Bei mehrfach gleichem Text muss das Modell die Vorkommensnummer
+ab0 ausdruecklich waehlen; null ist nur bei genau einem Vorkommen erlaubt.
+Keine ungepruefte erste Fundstelle und keine Normalisierung von Originaltext.
+Zwei zusaetzliche Gegenproben pruefen das zweite keine sowie UTF16 nach Emoji.
+So vermischt die Messung keine vom Modell ausgerechneten Zeichenpositionen
+mit der offenen Bedeutungsfrage. Der Server berechnet den Quellenhash aus
+seiner tatsaechlichen Eingabe; ein Modellhash gilt nicht als Beweis.
+
+Der neue getrennte Laeufer `scripts/quellenrelationen-versuch.js` und
+sein eigener Branchjob im bestehenden Workflow sind vorbereitet:
+
+* Einmalig maximal sechs kontrollierte Einzelaufrufe, ein Block je Aufruf,
+  kein Retry und keine automatische Schleife.18 synthetische Originalquellen,
+  null ausgewaehlte oder aktivierte Mandatsprofile.
+* Bestehendes Azure gpt5 mini, reasoning minimal, maximal3000 Ausgabetokens.
+  Volle unveraenderte Reserve0,212 USD je Aufruf; maximal1,272 USD gesamte
+  Auftragsbindung. Der4 USD Riegel zaehlt alle anderen Tageskosten mit.
+  Keine neue Ressource, Anbietergrenze oder Budgetaenderung.
+* Genau ein30 Minuten Fenster. Der bei Freigabe und frischem Vorflug
+  ausgewaehlte aktuelle UTC Tag ist ein verpflichtendes Startfeld und
+  bleibt danach an die persistierte Quittung gebunden. Start vor23 UTC;
+  mindestens drei Minuten Restfenster vor jedem weiteren Aufruf.
+  Ein anderer Tag erlaubt keinen zweiten Start, Reset oder Restverbrauch.
+* Vor Start: exakten Codekopf und alle eingefrorenen Hashes, gruene Pflicht CI,
+  unveraenderten Production Main, Kommunikationssperre,504/0, ruhigen Betrieb,
+  Kostenbuch samt Reserven und ganze geschuetzte Datenhashes frisch lesen.
+* Nur neuer CAS Schluessel quellenrelationen20260920 sowie bestehende
+  llmUsage, testKostenTage, _authStoreRevision, globale Zaehler und
+  Anbieterbuchungen duerfen sich aendern. Beide alten Quittungen muessen
+  gestoppt sein und bleiben Teil der geschuetzten Grundlinie.
+  Keine Quellen, Produkttexte, Wissensobjekte, Profile, Konten oder Sessions.
+* Nach jedem Aufruf: ganze Antwort samt Transport sichern, Kosten und
+  Datenintegritaet gegenlesen; jede Referenz UND jede gelieferte Relation
+  am vollstaendigen Original einzeln begruendet beurteilen. Harmloser
+  Variantenbefund bleibt getrennt vom festen Vergleich. Quelle nochmals
+  auf im Sollsatz fehlende Beziehungen pruefen. Kein pauschales Hashurteil.
+* Abnahme: alle ausdruecklichen Beziehungen mit richtiger Richtung,
+  Modalitaet, Negation und Geltung erhalten, keine neue unbelegte Beziehung,
+  keine Leerung und keine identischen Ganzzitate als pauschaler Ersatz.
+  Bei unklarer oder abgelehnter Bedeutungsabdeckung, Schema/Transportfehler,
+  unbekannten Kosten, Schutzabweichung, Konkurrenz, Fenster oder Tagesende
+  sofort stoppen. Ein noch nicht gesichteter Block erlaubt keinen Folgestart.
+* Rohbelege privat verschluesselt sichern. Vorher/Nachher ganze Hashes von
+  mandate_profiles, profiles und main sowie Auth ohne genau die vier neuen
+  erlaubten Schluessel; alte Kosten und Telemetrie zusaetzlich auf Erhaltung
+  pruefen. Bis zu sechs verdraengbare Ringzeilen werden vorher archiviert.
+* Rueckweg: weitere Starts unterlassen und ausschliesslich die neue Quittung
+  bei erforderlicher getrennter Sichtung mit null Modellaufrufen terminal
+  abschliessen. Kosten und alle alten Belege erhalten; kein Datenrollback.
+  Auch nach dem sechsten Aufruf braucht es die getrennte Abschlussbewertung.
+
+Manifest SHA256:
+`9ccbc5079a27ae6a5ed02b1c1e349c9b06d2ae2ea0a84052035bd74259d85000`.
+Schema SHA256:
+`6e125cf881fbd91addcbbb0d4ad999235e7d7ec69a3d5c4078ec95653a8d0416`.
+Alle sechs Prompthashes stehen unveraenderlich im Laeufer. Nach dem ersten
+bezahlten Start keine Anpassung der Messvorschrift fuer gruenere Ergebnisse.
+
+### Pruefstand der Vorbereitung
+
+Gezielt ueber scripts/lokal.js:67/67 Relationsgruppen,12/12 Eingangsgruppen
+und18/18 Schutzgruppen bestanden. Darunter jede der67 Relationen einmal
+entfernt, vertauschte Richtungen, falsche Beziehungstypen, alle sechs
+Klassen, echte lokale JSON Speicherung/Ruecklesung, volle Telemetrie,
+beide geschlossenen Altquittungen, Tageswechsel und echter KI Budgetpfad
+mit isoliertem HTTPS Ersatz. Kein externer Modellaufruf durch diese Tests.
+Der kanonische Gesamtlauf auf Codebestand83ad2f482b17c31241a947caa524b9ec5e034201
+endete445/447 in839 Sekunden. Die zwei unveraenderten Browserpruefungen
+finden lokal die Headless Shell nicht. narrativ-stress-1000 bestand in150066ms.
+Codebaum33f29ea7f5906b39ce87f0bf55ff8dd7a0114761 war identisch zum
+entfernten Codekopf7bdd93c39dfec5948f1610c4cc4b83a223bd7b87.
+Danach wurde nur die neue Spannenuebertragung wie oben verbessert;
+betroffener Eingang12/12 und Schutz18/18 separat erneut bestanden.
+Kein gruener lokaler Gesamtlauf und keine Gesamtabnahme des spaeteren
+Kopfs daraus behauptet. Im sauberen isolierten Checkout wurde der vorhandene
+Browserpfad gezielt fuer genau diese zwei Suiten gesetzt: admin scheitert
+nun am Chromium Socket mit Operation not permitted; passwort endet mit
+Exit1 ohne erfolgreichen Browserabschluss. Keine weitere lokale Wiederholung.
+Die exakte finale CI und der zugehoerige Kopf werden am PR ausgewiesen;
+der lokale Teilerfolg wird dadurch nicht nachtraeglich umetikettiert.
+
+Startkontrolle21.09.00:12:19 Tuerkei /20.09.23:12:19 Berlin /21:12:19 UTC:
+504 Profile,0 aktiv,0 lebende Pipeline Sperren, Job und Verstehen Leases,
+0 unerledigte Jobs,0 junge offene Prozesse. Main weiterhinbe4b237b,
+Deploymentdpl_H133uvcugPyny1diBKuTe71Ro55V READY mit Production Alias,
+Regionfra1. Keine Production Wirkung durch diese Vorbereitung.
+
+Naechste Grenze ist ausschliesslich die konkrete neue bezahlte Messung,
+nicht eine pauschale Entwicklungsfreigabe. Keine Import oder500er
+Testfreigabe anfordern. Dieser Auftrag bleibt bis zu ausdruecklicher
+neuer Freigabe ungestartet. Sichere Folgeentwicklung ist weiterhin erlaubt.

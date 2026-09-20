@@ -1,8 +1,10 @@
 "use strict";
 const F=require("node:fs"),P=require("node:path"),R=require("./quellenrelationen");
 const KLASSEN=["finanzwirkung","vollzug","zuschreibung","zeit","profil","bedingung"];
-const span={type:"object",additionalProperties:false,required:["start","ende","text"],properties:{
-  start:{type:"integer"},ende:{type:"integer"},text:{type:"string"}}};
+// Das Modell muss keine Zeichenpositionen berechnen. Der Server loest exakte
+// Texte auf; bei Mehrfachvorkommen ist eine ausdrueckliche Auswahl erforderlich.
+const span={type:"object",additionalProperties:false,required:["text","vorkommen"],properties:{
+  text:{type:"string"},vorkommen:{type:["integer","null"]}}};
 const knoten={type:"object",additionalProperties:false,required:["id","spanne"],
   properties:{id:{type:"string"},spanne:span}};
 const relation={type:"object",additionalProperties:false,required:["typ","von","nach","signale"],
@@ -12,6 +14,15 @@ const quellgraph={type:"object",additionalProperties:false,required:["id","knote
 const SCHEMA={type:"object",additionalProperties:false,required:["quellen"],
   properties:{quellen:{type:"array",items:quellgraph}}};
 function fordere(ok,code){if(!ok){const e=new Error(code);e.code=code;throw e;}}
+function positioniere(text,s){
+  fordere(s&&Object.keys(s).sort().join() === "text,vorkommen"&&typeof s.text==="string"&&s.text.length>0
+    &&(s.vorkommen===null||Number.isSafeInteger(s.vorkommen)&&s.vorkommen>=0),"RELATIONEN_QUELLBINDUNG");
+  const stellen=[];let start=-1;
+  while((start=text.indexOf(s.text,start+1))!==-1)stellen.push(start);
+  fordere(s.vorkommen===null?stellen.length===1:s.vorkommen<stellen.length,"RELATIONEN_QUELLBINDUNG");
+  start=stellen[s.vorkommen??0];
+  return {start,ende:start+s.text.length,text:s.text};
+}
 function korpus(){
   const raw=F.readFileSync(P.join(__dirname,"fixtures/quellenrelationen-korpus.json"));const m=JSON.parse(raw);
   fordere(m.version===1&&m.synthetisch===true&&m.faelle.length===18,"RELATIONEN_KORPUS");
@@ -28,7 +39,7 @@ function block(position){
     "Erfasse ausdrueckliche Beziehungen zwischen Aussagen, Akteuren, Voraussetzungen, Negationen, Modalitaet und Terminen.",
     "Dies ist eine isolierte Methodenmessung, keine Wahrheitsfreigabe oder Handlungsempfehlung. Keine neuen Tatsachen ergaenzen.",
     "Pro Quelle genau ein Objekt mit id aus der Eingabe, knoten und relationen. Keine weitere Quellkennung erfinden.",
-    "Ein Knoten traegt eine lokal eindeutige id und eine genaue Originalspanne: start inklusiv, ende exklusiv, text wortgleich. Positionen zaehlen UTF16 Einheiten ab0.",
+    "Ein Knoten traegt eine lokal eindeutige id und eine genaue Originalspanne: text wortgleich und vorkommen. Bei genau einem Vorkommen ist vorkommen null; sonst die ausdruecklich gewaehlte Vorkommensnummer ab0. Keine Zeichenpositionen berechnen. Der Server ermittelt sie aus dem exakten Original.",
     "Ein Knoten kann eine ganze zusammenhaengende Teilaussage, einen Akteur, einen Termin oder ein ausdrueckliches Signal enthalten. Kontext erhalten, keine sinnveraendernden Teilzitate.",
     "Jede Relation traegt typ, von und nach als lokale Knotenkennungen sowie signale mit den belegenden Originalspannen. Keine frei formulierten Spannen oder Selbstverweise. Unbenutzte Knoten weglassen.",
     "Richtungen: ursache Ausloeser->Wirkung; bedingung Voraussetzung->bedingte Handlung; zuschreibung ausdruecklicher Sprecher->zugeschriebener Inhalt; adressat Aussage/Handlung->Betroffener.",
@@ -52,7 +63,18 @@ function pruefe(position,answer){
     const q=answer.quellen.find(q=>q?.id===f.id);
     fordere(q&&Object.keys(q).sort().join() === "id,knoten,relationen","RELATIONEN_QUELLBINDUNG");
     // Hash stammt vom tatsaechlich gesendeten Original, nicht vom Modell.
-    const graph={quelleId:f.id,quellenHash:R.sha(f.quelle.text),knoten:q.knoten,relationen:q.relationen};
+    fordere(Array.isArray(q.knoten)&&q.knoten.length<=128&&Array.isArray(q.relationen)&&q.relationen.length<=256,
+      "RELATIONEN_QUELLBINDUNG");
+    const graph={quelleId:f.id,quellenHash:R.sha(f.quelle.text),
+      knoten:q.knoten.map(n=>{
+        fordere(n&&Object.keys(n).sort().join() === "id,spanne","RELATIONEN_QUELLBINDUNG");
+        return {id:n.id,spanne:positioniere(f.quelle.text,n.spanne)};
+      }),
+      relationen:q.relationen.map(r=>{
+        fordere(r&&Object.keys(r).sort().join() === "nach,signale,typ,von"&&Array.isArray(r.signale)
+          &&r.signale.length<=8,"RELATIONEN_QUELLBINDUNG");
+        return {...r,signale:r.signale.map(s=>positioniere(f.quelle.text,s))};
+      })};
     const d=R.vergleiche(f.quelle,graph,f.referenz);
     fordere(!d.schemaFehler.length,"RELATIONEN_QUELLBINDUNG");
     diagnosen.push(d);bilanz.push({id:f.id,soll:f.referenz.relationen.length,geliefert:q.relationen.length,
@@ -61,4 +83,4 @@ function pruefe(position,answer){
   return {quellenGebunden:true,referenzgleich:diagnosen.every(d=>d.referenzgleich),diagnosen,bilanz,
     fachlichBestanden:false,unabhaengigFreigegeben:false,vollstaendigeFaktenpruefung:false,produktpfadeGeprueft:0};
 }
-module.exports={SCHEMA,KLASSEN,korpus,block,pruefe};
+module.exports={SCHEMA,KLASSEN,korpus,block,pruefe,positioniere};

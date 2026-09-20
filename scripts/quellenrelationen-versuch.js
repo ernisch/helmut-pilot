@@ -13,14 +13,14 @@ const SCHEMA = Eingang.SCHEMA;
 const KEY = "quellenrelationen20260920", PREFIX = "RELATIONEN_EINMAL:";
 const BRANCH = "codex/aussagenrelationen-20260920";
 const MANIFEST = "9ccbc5079a27ae6a5ed02b1c1e349c9b06d2ae2ea0a84052035bd74259d85000";
-const SCHEMA_HASH = "777ec859c2cf5b26942a1d4f71fc9f51d02d86d3559b93825a7ff2da3b469bb2";
+const SCHEMA_HASH = "6e125cf881fbd91addcbbb0d4ad999235e7d7ec69a3d5c4078ec95653a8d0416";
 const PROMPTS = [
-  "293de4bf6b273500737edcbc66ccf2a94c4db639ee03c9144d287966e94a86e3",
-  "64462493c89001045d2ae0f8febd64036a9636490577cac64ccd6fcfef5540ca",
-  "deab3485cab88f878e61ad8bb60014d1e461118d68bc4d2e0b31ff1377a8fe9c",
-  "44199a26f4ff3f40ea5a812ee4184d467c4cb7e4ac484493e3311ac11ead7407",
-  "ff9c336c5aba8c0d40cf941f401d4a1389140e96568fe541363c7428c9b33fa1",
-  "643953faef6a8218aeb5072dc92ca6472262fe0e9ebbb0eea842ebc3fbb79929"
+  "cf9e15b6d073d7f39f53557ad885ce3423b88eccc4fd0d6f62ec48c865c1c47d",
+  "0b93e92286e6f1ab7f8bb66fc9f80e8317581239fbdc4e10cfdb5a38aa53182c",
+  "3e328583ee9fada6e70fd3f6abcfefa8f98b079044ef600d272d88412d7b65c6",
+  "d21c0bfd9ddbc67fb6065e6c7970a91db04f4a3cd9488c56ebf5aa1a8602b7db",
+  "abbc532efb0a23b813eae44f0ead91e6c3a7f64cf2e02eb308781e8f84f265a1",
+  "edc968df843a40dd8e1a95998b9b49c213b895bd31e4151ec9929109d0a479ea"
 ];
 // Der ganze Actionsjob ist auf drei Minuten begrenzt. Eine neue Position
 // braucht mindestens dieses komplette Restfenster, einschliesslich Abschluss.

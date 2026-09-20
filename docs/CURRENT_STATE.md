@@ -1,19 +1,18 @@
 # CURRENT STATE — Helmut
 
-**20.09.2026: Neuer freigegebener Methodenauftrag nach einem Aufruf gestoppt.**
-PR480 Entwurf, Run35536097423 aufe2477783: ABDECKUNG_QUELLBINDUNG,
-0,004478 USD; keine Fortsetzung. Drei Originale und sieben Teilbehauptungen
-erhalten, Kennungen/Labels vertragswidrig; kausale Bindung unvollstaendig.
-CI35535327586:443/443 in646s, Browser50/50, DB23/0+26/0+48/0.
-Lokal441/443 in827s auf aelterem Baum, zwei Chromium Socket Fehler.
-Diagnose7/7;36er Abnahme offen. [Ausgang](betrieb/prosa-belegplan-2026-09-20.md#ausgang-des-neuen-aussagenabdeckungsauftrags).
-SQL20:41 UTC:504/0, Betrieb ruhig, Tag0,394237 USD, Reserve0, Zaehler65.
-Schutzbestand samt Altquittung unveraendert. Main/Deployment wie unten.
+**20.09.2026: Getrennte Relationsmessung vorbereitet, nicht gestartet.**
+Branch codex/aussagenrelationen-20260920, Basisdc01d7c.
+18 unveraenderte Originale,67 explizite Beziehungen; neue Gegenproben
+67/67, Eingang12/12, Schutz18/18. Lokal445/447 in839s, zwei Browserfehler.
+Keine automatische Fachfreigabe.36er Abnahme und500er Start offen.
+Maximal sechs neue Einzelaufrufe,30 Minuten,1,272 USD bei unveraendert4 USD
+sind konkret vorbereitet, aber NICHT freigegeben. [Vorschlag und Grenzen](betrieb/prosa-belegplan-2026-09-20.md#vorbereitung-der-getrennten-relationsmessung).
+SQL21:31 UTC:504/0; global-understanding aktiv. Keine eigene Productionwirkung.
 
-**Altversuch bleibt geschlossen:** PR479 Entwurf, Run35530374788 auf3ca35bd3
-nach einem Aufruf mit Annotationsabweichung gestoppt. Alte Sollwerte und
-Quittung unveraendert. CI35530927958 aufb8e058f4 inzwischen vollstaendig
-erfolgreich. [Negativer Fachbefund](betrieb/prosa-belegplan-2026-09-20.md#ausgang-des-freigegebenen-quellenversuchs).
+**Altversuche geschlossen:** PR479/480 bleiben Entwuerfe, keine Restfreigabe.
+Sollwerte und Quittungen unveraendert; beide Abschluss CIs erfolgreich.
+[Alter Versuch](betrieb/prosa-belegplan-2026-09-20.md#ausgang-des-freigegebenen-quellenversuchs),
+[juengerer Versuch](betrieb/prosa-belegplan-2026-09-20.md#ausgang-des-neuen-aussagenabdeckungsauftrags).
 
 **20.09.2026: Begrenzter unabhaengiger DIP Fakteneingang integriert; Gesamtziel teilweise abgeschlossen.**
 PR477 fachlich integriert, PR478 dokumentiert den Abschluss. Main `be4b237b6154248f30e175235ed81aa9893b01bf`,

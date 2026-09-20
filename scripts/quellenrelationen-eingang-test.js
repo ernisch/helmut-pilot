@@ -1,7 +1,15 @@
 "use strict";
 const A=require("node:assert/strict"),E=require("./quellenrelationen-eingang"),R=require("./quellenrelationen");
 const Alt=require("./aussagenabdeckung-eingang");
-const answer=p=>({quellen:E.block(p).faelle.map(f=>({id:f.id,knoten:structuredClone(f.referenz.knoten),relationen:structuredClone(f.referenz.relationen)}))});
+function ausgabe(f) {
+  const span=s=>{
+    const starts=[];let i=-1;while((i=f.quelle.text.indexOf(s.text,i+1))!==-1)starts.push(i);
+    return {text:s.text,vorkommen:starts.length===1?null:starts.indexOf(s.start)};
+  };
+  return {id:f.id,knoten:f.referenz.knoten.map(n=>({id:n.id,spanne:span(n.spanne)})),
+    relationen:f.referenz.relationen.map(r=>({...r,signale:r.signale.map(span)}))};
+}
+const answer=p=>({quellen:E.block(p).faelle.map(ausgabe)});
 let pass=0;function test(name,fn){fn();pass++;console.log("PASS "+name);}
 for(let p=1;p<=6;p++)test("Block"+p+" vollstaendig gemessen ohne Referenzen im Prompt",()=>{
   const b=E.block(p),r=E.pruefe(p,answer(p));
@@ -32,7 +40,7 @@ test("Fremde und doppelte Quellkennungen, fehlende Quellen und freie Labels stop
 });
 test("Ganze Zitate als alle Knoten koennen passende Beziehungen nicht ersetzen",()=>{
   const a=answer(1),b=E.block(1);
-  for(let i=0;i<3;i++)for(const n of a.quellen[i].knoten)n.spanne=R.fundstelle(b.faelle[i].quelle.text,b.faelle[i].quelle.text);
+  for(let i=0;i<3;i++)for(const n of a.quellen[i].knoten)n.spanne={text:b.faelle[i].quelle.text,vorkommen:null};
   const r=E.pruefe(1,a);A.equal(r.referenzgleich,false);A(r.diagnosen.every(d=>d.fehlend.length>0));
 });
 test("Quellenreihenfolge und frei gewaehlte Kennungen innerhalb einer Quelle sind irrelevant",()=>{
@@ -41,5 +49,20 @@ test("Quellenreihenfolge und frei gewaehlte Kennungen innerhalb einer Quelle sin
   const q=a.quellen[0],alt=q.knoten[0].id;q.knoten[0].id="unabhaengige-id";
   for(const r of q.relationen){if(r.von===alt)r.von="unabhaengige-id";if(r.nach===alt)r.nach="unabhaengige-id";}
   A.equal(E.pruefe(1,a).referenzgleich,true);
+});
+test("Eindeutige Originalspanne wird serverseitig auch nach Emoji korrekt positioniert",()=>{
+  const t="🚌 Der Preis könnte sinken.";
+  A.deepEqual(E.positioniere(t,{text:"könnte",vorkommen:null}),R.fundstelle(t,"könnte"));
+  A.throws(()=>E.positioniere(t,{text:"konnte",vorkommen:null}));
+  A.throws(()=>E.positioniere(t,{text:"könnte",vorkommen:null,start:0}));
+});
+test("Mehrdeutige Spannen erfordern explizite Auswahl und werden nicht automatisch repariert",()=>{
+  const t=E.block(4).faelle.find(f=>f.id==="f11").quelle.text;
+  A.throws(()=>E.positioniere(t,{text:"keine",vorkommen:null}));
+  A.equal(E.positioniere(t,{text:"keine",vorkommen:1}).start,t.indexOf("und keine")+4);
+  for(const vorkommen of [-1,2,1.5,"1"])A.throws(()=>E.positioniere(t,{text:"keine",vorkommen}));
+  const a=answer(4),q=a.quellen.find(q=>q.id==="f11");
+  const n=q.knoten.find(n=>n.spanne.text==="keine");n.spanne.vorkommen=0;
+  A.equal(E.pruefe(4,a).referenzgleich,false);
 });
 console.log(`${pass}/${pass} Eingangsgruppen bestanden; keine Fachfreigabe.`);
