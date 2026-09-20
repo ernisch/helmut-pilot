@@ -162,6 +162,14 @@ ungefaehre Titelsuche darf verschiedene bekannte DIP Kennungen nicht
 zusammenlegen. Der alte kanonische Bestandsabgleich bleibt erhalten.
 Acht neue Gruppen bestanden einmal lokal, einschliesslich Altbestand,
 gleicher Kennung mit anderer URL, RSS Fundstelle und manipulierten Angaben.
+Zwei danach neu reproduzierte Gegenfaelle betrafen eine zuerst gelieferte
+RSS Fundstelle: sie verband verschiedene Drucksachen ueber einen schwachen
+Titel und verdeckte die Kennung im gespeicherten Fingerabdruck. Bekannte
+DIP Kennungen werden jetzt vorab auch ihren gleichen kanonischen RSS
+Adressen zugeordnet; schwache Titel duerfen diese Gruppen nicht erweitern.
+Die zwei neuen Proben bestanden gezielt, darunter alle24 Reihenfolgen von
+zwei amtlichen Dokumenten und ihren zwei RSS Fundstellen. Die zehnteilige
+finale Identitaetssuite wird in der neuen exakten PR CI geprueft.
 
 Ausserdem schnitt der direkte Schreibweg einen415 Zeichen langen Titel
 vor der abschliessenden Verneinung ab; der globale Weg umging die Grenze

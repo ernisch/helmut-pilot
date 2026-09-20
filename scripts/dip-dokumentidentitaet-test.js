@@ -57,6 +57,22 @@ test("Eine fruehere RSS Fundstelle umgeht den spaeteren amtlichen Kennungsschutz
   const rss = { ...a,sourceId:"rss",dipQuellfelder:undefined };
   A.equal(G.planDedupWrites([rss,a,b]).persists.length,2);
 });
+test("Amtliche Kennungen schuetzen auch zwei fruehe RSS Fundstellen in allen Reihenfolgen", () => {
+  const rss = (d,sourceId) => ({...d,sourceId,dipQuellfelder:undefined});
+  const permutations = xs => xs.length ? xs.flatMap((v,i)=>permutations(xs.filter((_,j)=>i!==j)).map(p=>[v,...p])) : [[]];
+  for (const rows of permutations([rss(a,"rss-a"),rss(b,"rss-b"),a,b])) {
+    const p = G.planDedupWrites(rows);
+    A.equal(p.persists.length,2); A.equal(p.findings.length,4);
+    for (const d of [a,b]) A.equal(new Set(p.findings.filter(f=>f.original_url===d.url).map(f=>f.raw_document_id)).size,1);
+  }
+});
+test("Eine zuerst gelieferte RSS Fundstelle verdeckt die gespeicherte amtliche Identitaet nicht", () => {
+  const rss = {...a,sourceId:"rss",dipQuellfelder:undefined};
+  const first = G.planDedupWrites([rss,a]).persists[0];
+  const changed = dokument(990031,"Antrag",{fundstelle:{pdf_url:"https://dserver.bundestag.de/btd/21/099/2109931.pdf"}});
+  const plan = G.planDedupWrites([changed],[{id:"alt",content_fingerprint:first.content_fingerprint,canonical_target_url:first.canonical_url}]);
+  A.equal(plan.persists.length,0); A.equal(plan.findings[0].raw_document_id,"alt");
+});
 test("Ungebundene oder manipulierte Metadaten erhalten keine amtliche Sonderidentitaet", () => {
   const wrong = structuredClone(a); wrong.dipQuellfelder.dokumentId = "990099";
   const plain = { ...a }; delete plain.dipQuellfelder;

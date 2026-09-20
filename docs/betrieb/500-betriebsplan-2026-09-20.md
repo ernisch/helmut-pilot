@@ -565,7 +565,8 @@ Kostenursachenaufnahme12:04:49 UTC:43 automatische Aufrufe mit insgesamt
 Keine bezahlte Anfrage, kein Import und keine Aktivierung durch diese Sitzung.
 
 Die Anschlussreparatur auf `codex/dip-dokumentidentitaet-20260920` ist
-lokal fertig;8 neue Identitaetsgruppen und3 neue Titelgrenzgruppen bestanden.
+lokal fertig;8 erste Identitaetsgruppen,2 neue Reihenfolgegegenfaelle und3
+neue Titelgrenzgruppen bestanden jeweils einmal.
 Keine Wiederholung bereits bestandener lokaler Tests. Vollstaendige CI
 fuer den neuen Code und dessen Integration stehen aus. Der
 [Belegplan](prosa-belegplan-2026-09-20.md#dokumentidentitaet-und-ganze-titel)
