@@ -1,0 +1,2133 @@
+{
+  "version": 1,
+  "synthetisch": true,
+  "zweck": "Getrennte endliche Messvorschrift fuer Beziehungen; keine Produktfreigabe und keine Aenderung geschlossener Sollwerte.",
+  "altmanifestSha256": "f6eb266a778b0773b058ef7bc7ea64de8adc118a06b6f3b3aebc1b9608626501",
+  "faelle": [
+    {
+      "id": "f01",
+      "klasse": "finanzwirkung",
+      "quelle": {
+        "id": "f01",
+        "text": "Der Stadtrat beschließt einen Zuschuss von 20 Euro für Busfahrkarten. Für Berechtigte sinkt dadurch der Fahrpreis um 20 Euro."
+      },
+      "referenz": {
+        "quelleId": "f01",
+        "quellenHash": "bf48ed1f0647fbc30a25df89e02ddd4baf1ad2df3e2bbed3b93374b620a13d8f",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 0,
+              "ende": 68,
+              "text": "Der Stadtrat beschließt einen Zuschuss von 20 Euro für Busfahrkarten"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 70,
+              "ende": 124,
+              "text": "Für Berechtigte sinkt dadurch der Fahrpreis um 20 Euro"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 86,
+              "ende": 124,
+              "text": "sinkt dadurch der Fahrpreis um 20 Euro"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 74,
+              "ende": 85,
+              "text": "Berechtigte"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "ursache",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 92,
+                "ende": 99,
+                "text": "dadurch"
+              }
+            ]
+          },
+          {
+            "typ": "adressat",
+            "von": "n3",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 70,
+                "ende": 73,
+                "text": "Für"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Die Zuschussentscheidung wird im Original als Ausloeser der Preiswirkung verbunden; keine Zuschreibung an den Rat als Aussageurheber.",
+        "Die Preiswirkung gilt fuer Berechtigte, nicht pauschal fuer alle Fahrgaeste."
+      ]
+    },
+    {
+      "id": "f02",
+      "klasse": "finanzwirkung",
+      "quelle": {
+        "id": "f02",
+        "text": "Der Ausgleichsbetrag könnte entfallen. Worum es sich bei diesem Betrag handelt, bleibt offen."
+      },
+      "referenz": {
+        "quelleId": "f02",
+        "quellenHash": "ec3598f374a71f515b45fbae57a9b4369ba06ff538815d0351a7f34192364a51",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 21,
+              "ende": 27,
+              "text": "könnte"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 0,
+              "ende": 37,
+              "text": "Der Ausgleichsbetrag könnte entfallen"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 57,
+              "ende": 70,
+              "text": "diesem Betrag"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 4,
+              "ende": 20,
+              "text": "Ausgleichsbetrag"
+            }
+          },
+          {
+            "id": "n5",
+            "spanne": {
+              "start": 80,
+              "ende": 92,
+              "text": "bleibt offen"
+            }
+          },
+          {
+            "id": "n6",
+            "spanne": {
+              "start": 39,
+              "ende": 78,
+              "text": "Worum es sich bei diesem Betrag handelt"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "modalitaet",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 21,
+                "ende": 27,
+                "text": "könnte"
+              }
+            ]
+          },
+          {
+            "typ": "koreferenz",
+            "von": "n3",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 57,
+                "ende": 63,
+                "text": "diesem"
+              }
+            ]
+          },
+          {
+            "typ": "unbestimmt",
+            "von": "n5",
+            "nach": "n6",
+            "signale": [
+              {
+                "start": 87,
+                "ende": 92,
+                "text": "offen"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Das Entfallen ist moeglich, nicht beschlossen.",
+        "Die offene Einordnung betrifft denselben Betrag.",
+        "Der Gegenstand des Ausgleichs ist nicht als Steuer oder Leistung bestimmt."
+      ]
+    },
+    {
+      "id": "f03",
+      "klasse": "finanzwirkung",
+      "quelle": {
+        "id": "f03",
+        "text": "Die Stadt nennt einen Zuschuss von 20 Euro für Busfahrkarten; der Betreiber bestreitet eine Senkung des Fahrpreises. Eine gemeinsame Klärung steht aus."
+      },
+      "referenz": {
+        "quelleId": "f03",
+        "quellenHash": "51c10d914b8d8227e25eea95ff6605769b60be680bea49353ec9a906c75686cd",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 0,
+              "ende": 9,
+              "text": "Die Stadt"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 16,
+              "ende": 60,
+              "text": "einen Zuschuss von 20 Euro für Busfahrkarten"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 62,
+              "ende": 75,
+              "text": "der Betreiber"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 76,
+              "ende": 115,
+              "text": "bestreitet eine Senkung des Fahrpreises"
+            }
+          },
+          {
+            "id": "n5",
+            "spanne": {
+              "start": 76,
+              "ende": 86,
+              "text": "bestreitet"
+            }
+          },
+          {
+            "id": "n6",
+            "spanne": {
+              "start": 87,
+              "ende": 115,
+              "text": "eine Senkung des Fahrpreises"
+            }
+          },
+          {
+            "id": "n7",
+            "spanne": {
+              "start": 141,
+              "ende": 150,
+              "text": "steht aus"
+            }
+          },
+          {
+            "id": "n8",
+            "spanne": {
+              "start": 117,
+              "ende": 140,
+              "text": "Eine gemeinsame Klärung"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "zuschreibung",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 10,
+                "ende": 15,
+                "text": "nennt"
+              }
+            ]
+          },
+          {
+            "typ": "zuschreibung",
+            "von": "n3",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 76,
+                "ende": 86,
+                "text": "bestreitet"
+              }
+            ]
+          },
+          {
+            "typ": "negation",
+            "von": "n5",
+            "nach": "n6",
+            "signale": [
+              {
+                "start": 76,
+                "ende": 86,
+                "text": "bestreitet"
+              }
+            ]
+          },
+          {
+            "typ": "unbestimmt",
+            "von": "n7",
+            "nach": "n8",
+            "signale": [
+              {
+                "start": 141,
+                "ende": 150,
+                "text": "steht aus"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Die Nennung wird der Stadt zugeschrieben; sie ist keine gemeinsame Bestaetigung.",
+        "Das Bestreiten kommt vom Betreiber.",
+        "Bestreiten ist eine negative Haltung zu genau der Fahrpreissenkung, nicht zum Bestehen der Stadt.",
+        "Gemeinsame Klaerung ist ausstehend, nicht erreicht."
+      ]
+    },
+    {
+      "id": "f04",
+      "klasse": "vollzug",
+      "quelle": {
+        "id": "f04",
+        "text": "Das Ministerium hat die Verlängerung des Programms beschlossen. Die zuständige Stelle bestätigt: Seit dem 1. September 2026 wird das verlängerte Programm umgesetzt."
+      },
+      "referenz": {
+        "quelleId": "f04",
+        "quellenHash": "71c10c64770d9671ceed5be7aa7e3f33bf34a55675f1c6d3898a30d32037b1a8",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 64,
+              "ende": 85,
+              "text": "Die zuständige Stelle"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 97,
+              "ende": 163,
+              "text": "Seit dem 1. September 2026 wird das verlängerte Programm umgesetzt"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 97,
+              "ende": 123,
+              "text": "Seit dem 1. September 2026"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 124,
+              "ende": 163,
+              "text": "wird das verlängerte Programm umgesetzt"
+            }
+          },
+          {
+            "id": "n5",
+            "spanne": {
+              "start": 129,
+              "ende": 153,
+              "text": "das verlängerte Programm"
+            }
+          },
+          {
+            "id": "n6",
+            "spanne": {
+              "start": 37,
+              "ende": 50,
+              "text": "des Programms"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "zuschreibung",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 86,
+                "ende": 95,
+                "text": "bestätigt"
+              }
+            ]
+          },
+          {
+            "typ": "ereigniszeit",
+            "von": "n3",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 97,
+                "ende": 101,
+                "text": "Seit"
+              }
+            ]
+          },
+          {
+            "typ": "koreferenz",
+            "von": "n5",
+            "nach": "n6",
+            "signale": [
+              {
+                "start": 133,
+                "ende": 144,
+                "text": "verlängerte"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Bestaetigung der Umsetzung ist der Stelle zugeschrieben; Beschluss und Vollzug bleiben verschieden.",
+        "Das Datum gilt fuer die Umsetzung, nicht fuer den Ministeriumsbeschluss.",
+        "Das umgesetzte Programm ist das vorher genannte Programm; dies belegt keine weiteren Programme."
+      ]
+    },
+    {
+      "id": "f05",
+      "klasse": "vollzug",
+      "quelle": {
+        "id": "f05",
+        "text": "Das Ministerium prüft die Verlängerung des Programms. Eine Entscheidung ist noch nicht getroffen."
+      },
+      "referenz": {
+        "quelleId": "f05",
+        "quellenHash": "cbcaf4894b3448f918f98cc21f79d8cab57b74eead727975b51b239f97ce9598",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 16,
+              "ende": 21,
+              "text": "prüft"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 22,
+              "ende": 52,
+              "text": "die Verlängerung des Programms"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 76,
+              "ende": 86,
+              "text": "noch nicht"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 54,
+              "ende": 96,
+              "text": "Eine Entscheidung ist noch nicht getroffen"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "modalitaet",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 16,
+                "ende": 21,
+                "text": "prüft"
+              }
+            ]
+          },
+          {
+            "typ": "negation",
+            "von": "n3",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 76,
+                "ende": 80,
+                "text": "noch"
+              },
+              {
+                "start": 81,
+                "ende": 86,
+                "text": "nicht"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Die Verlaengerung steht zur Pruefung, keine Beschlussrelation.",
+        "Es fehlt eine Entscheidung, nicht die Pruefung."
+      ]
+    },
+    {
+      "id": "f06",
+      "klasse": "vollzug",
+      "quelle": {
+        "id": "f06",
+        "text": "Eine Meldung behauptet, das Programm sei verlängert. Das Ministerium bestätigt weder einen Beschluss noch die Umsetzung."
+      },
+      "referenz": {
+        "quelleId": "f06",
+        "quellenHash": "fd451d0172b396c3b2c37ccfc4ec893d5613f24531bd95c71688a4abbcc6ca61",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 0,
+              "ende": 12,
+              "text": "Eine Meldung"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 24,
+              "ende": 51,
+              "text": "das Programm sei verlängert"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 37,
+              "ende": 40,
+              "text": "sei"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 53,
+              "ende": 68,
+              "text": "Das Ministerium"
+            }
+          },
+          {
+            "id": "n5",
+            "spanne": {
+              "start": 69,
+              "ende": 119,
+              "text": "bestätigt weder einen Beschluss noch die Umsetzung"
+            }
+          },
+          {
+            "id": "n6",
+            "spanne": {
+              "start": 79,
+              "ende": 84,
+              "text": "weder"
+            }
+          },
+          {
+            "id": "n7",
+            "spanne": {
+              "start": 85,
+              "ende": 100,
+              "text": "einen Beschluss"
+            }
+          },
+          {
+            "id": "n8",
+            "spanne": {
+              "start": 101,
+              "ende": 105,
+              "text": "noch"
+            }
+          },
+          {
+            "id": "n9",
+            "spanne": {
+              "start": 106,
+              "ende": 119,
+              "text": "die Umsetzung"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "zuschreibung",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 13,
+                "ende": 22,
+                "text": "behauptet"
+              }
+            ]
+          },
+          {
+            "typ": "modalitaet",
+            "von": "n3",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 37,
+                "ende": 40,
+                "text": "sei"
+              }
+            ]
+          },
+          {
+            "typ": "zuschreibung",
+            "von": "n4",
+            "nach": "n5",
+            "signale": [
+              {
+                "start": 69,
+                "ende": 78,
+                "text": "bestätigt"
+              }
+            ]
+          },
+          {
+            "typ": "negation",
+            "von": "n6",
+            "nach": "n7",
+            "signale": [
+              {
+                "start": 79,
+                "ende": 84,
+                "text": "weder"
+              }
+            ]
+          },
+          {
+            "typ": "negation",
+            "von": "n8",
+            "nach": "n9",
+            "signale": [
+              {
+                "start": 101,
+                "ende": 105,
+                "text": "noch"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Die Verlaengerung ist eine zugeschriebene Behauptung.",
+        "Der Konjunktiv bleibt am behaupteten Inhalt.",
+        "Das Ministerium ist Urheber der Nichtbestaetigung und nicht der Meldung.",
+        "Der Beschluss wird nicht bestaetigt; daraus folgt nicht seine bewiesene Nichtexistenz.",
+        "Auch die Umsetzung wird nicht bestaetigt."
+      ]
+    },
+    {
+      "id": "f07",
+      "klasse": "zuschreibung",
+      "quelle": {
+        "id": "f07",
+        "text": "In einem Gastbeitrag kritisiert Verband A die Forderung des Verbands B. Die Redaktion macht sich diese Position nicht zu eigen."
+      },
+      "referenz": {
+        "quelleId": "f07",
+        "quellenHash": "3f06ddf281aeb4b7d447ea9b208de5201eacde243064ce0f14ccd57d541c81b6",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 32,
+              "ende": 41,
+              "text": "Verband A"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 21,
+              "ende": 70,
+              "text": "kritisiert Verband A die Forderung des Verbands B"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 56,
+              "ende": 70,
+              "text": "des Verbands B"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 0,
+              "ende": 20,
+              "text": "In einem Gastbeitrag"
+            }
+          },
+          {
+            "id": "n5",
+            "spanne": {
+              "start": 97,
+              "ende": 111,
+              "text": "diese Position"
+            }
+          },
+          {
+            "id": "n6",
+            "spanne": {
+              "start": 112,
+              "ende": 117,
+              "text": "nicht"
+            }
+          },
+          {
+            "id": "n7",
+            "spanne": {
+              "start": 72,
+              "ende": 126,
+              "text": "Die Redaktion macht sich diese Position nicht zu eigen"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "zuschreibung",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 21,
+                "ende": 31,
+                "text": "kritisiert"
+              }
+            ]
+          },
+          {
+            "typ": "adressat",
+            "von": "n2",
+            "nach": "n3",
+            "signale": [
+              {
+                "start": 56,
+                "ende": 70,
+                "text": "des Verbands B"
+              }
+            ]
+          },
+          {
+            "typ": "kontext",
+            "von": "n4",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 9,
+                "ende": 20,
+                "text": "Gastbeitrag"
+              }
+            ]
+          },
+          {
+            "typ": "koreferenz",
+            "von": "n5",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 97,
+                "ende": 102,
+                "text": "diese"
+              }
+            ]
+          },
+          {
+            "typ": "negation",
+            "von": "n6",
+            "nach": "n7",
+            "signale": [
+              {
+                "start": 112,
+                "ende": 117,
+                "text": "nicht"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Verband A ist der Kritiker; die Redaktion wird nicht zum Sprecher gemacht.",
+        "Die Kritik richtet sich gegen die Forderung von B.",
+        "Die Kritik ist ein Gastbeitrag und keine Redaktionsposition.",
+        "Die redaktionelle Distanzierung betrifft diese Kritikposition.",
+        "Die Redaktion uebernimmt die Position nicht."
+      ]
+    },
+    {
+      "id": "f08",
+      "klasse": "zuschreibung",
+      "quelle": {
+        "id": "f08",
+        "text": "Verband B kritisiert die Forderung des Verbands A. Verband A ist Adressat dieser Kritik, nicht ihr Urheber."
+      },
+      "referenz": {
+        "quelleId": "f08",
+        "quellenHash": "733c46e60778267caa2ba26527f33757942a3c3e8aa83a0857f818335faa4a07",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 0,
+              "ende": 9,
+              "text": "Verband B"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 10,
+              "ende": 49,
+              "text": "kritisiert die Forderung des Verbands A"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 51,
+              "ende": 60,
+              "text": "Verband A"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 74,
+              "ende": 87,
+              "text": "dieser Kritik"
+            }
+          },
+          {
+            "id": "n5",
+            "spanne": {
+              "start": 89,
+              "ende": 94,
+              "text": "nicht"
+            }
+          },
+          {
+            "id": "n6",
+            "spanne": {
+              "start": 95,
+              "ende": 106,
+              "text": "ihr Urheber"
+            }
+          },
+          {
+            "id": "n7",
+            "spanne": {
+              "start": 95,
+              "ende": 98,
+              "text": "ihr"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "zuschreibung",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 10,
+                "ende": 20,
+                "text": "kritisiert"
+              }
+            ]
+          },
+          {
+            "typ": "adressat",
+            "von": "n2",
+            "nach": "n3",
+            "signale": [
+              {
+                "start": 65,
+                "ende": 73,
+                "text": "Adressat"
+              }
+            ]
+          },
+          {
+            "typ": "koreferenz",
+            "von": "n4",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 74,
+                "ende": 80,
+                "text": "dieser"
+              }
+            ]
+          },
+          {
+            "typ": "negation",
+            "von": "n5",
+            "nach": "n6",
+            "signale": [
+              {
+                "start": 89,
+                "ende": 94,
+                "text": "nicht"
+              }
+            ]
+          },
+          {
+            "typ": "koreferenz",
+            "von": "n7",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 95,
+                "ende": 98,
+                "text": "ihr"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "B ist Kritiker, A ist Adressat.",
+        "Die ausdrueckliche Adressatenrolle gehoert A.",
+        "Der zweite Satz bezieht sich auf dieselbe Kritik.",
+        "A ist nicht der Urheber der Kritik.",
+        "Das Possessivum bezieht sich auf die Kritik, nicht auf die Forderung."
+      ]
+    },
+    {
+      "id": "f09",
+      "klasse": "zuschreibung",
+      "quelle": {
+        "id": "f09",
+        "text": "Der Bericht erwähnt Kritik an einer Forderung. Wer die Kritik äußert und an wen sie gerichtet ist, wird nicht genannt."
+      },
+      "referenz": {
+        "quelleId": "f09",
+        "quellenHash": "331675ffae7d1c133a830824bf627843166ab50dd3b94352c8a90f8bce51dea3",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 104,
+              "ende": 117,
+              "text": "nicht genannt"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 47,
+              "ende": 97,
+              "text": "Wer die Kritik äußert und an wen sie gerichtet ist"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 80,
+              "ende": 83,
+              "text": "sie"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 51,
+              "ende": 61,
+              "text": "die Kritik"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "unbestimmt",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 104,
+                "ende": 117,
+                "text": "nicht genannt"
+              }
+            ]
+          },
+          {
+            "typ": "koreferenz",
+            "von": "n3",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 80,
+                "ende": 83,
+                "text": "sie"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Sprecher und Adressat sind unbenannt, keine erfundenen Akteure.",
+        "Das Pronomen bezeichnet die Kritik und nicht die Forderung."
+      ]
+    },
+    {
+      "id": "f10",
+      "klasse": "zeit",
+      "quelle": {
+        "id": "f10",
+        "text": "Nach dem Konzert 2024 sind neue Auftritte am 3. Mai 2028 in Bonn und am 7. Mai 2028 in Kiel geplant."
+      },
+      "referenz": {
+        "quelleId": "f10",
+        "quellenHash": "b25fa99879c9e30e2c9812b0acd6d4226b7af4b580c6379a7da3a3da964f2385",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 17,
+              "ende": 21,
+              "text": "2024"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 5,
+              "ende": 21,
+              "text": "dem Konzert 2024"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 42,
+              "ende": 56,
+              "text": "am 3. Mai 2028"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 27,
+              "ende": 41,
+              "text": "neue Auftritte"
+            }
+          },
+          {
+            "id": "n5",
+            "spanne": {
+              "start": 57,
+              "ende": 64,
+              "text": "in Bonn"
+            }
+          },
+          {
+            "id": "n6",
+            "spanne": {
+              "start": 69,
+              "ende": 83,
+              "text": "am 7. Mai 2028"
+            }
+          },
+          {
+            "id": "n7",
+            "spanne": {
+              "start": 84,
+              "ende": 91,
+              "text": "in Kiel"
+            }
+          },
+          {
+            "id": "n8",
+            "spanne": {
+              "start": 92,
+              "ende": 99,
+              "text": "geplant"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "ereigniszeit",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 17,
+                "ende": 21,
+                "text": "2024"
+              }
+            ]
+          },
+          {
+            "typ": "ereigniszeit",
+            "von": "n3",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 42,
+                "ende": 56,
+                "text": "am 3. Mai 2028"
+              }
+            ]
+          },
+          {
+            "typ": "ereignisort",
+            "von": "n5",
+            "nach": "n3",
+            "signale": [
+              {
+                "start": 57,
+                "ende": 64,
+                "text": "in Bonn"
+              }
+            ]
+          },
+          {
+            "typ": "ereigniszeit",
+            "von": "n6",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 69,
+                "ende": 83,
+                "text": "am 7. Mai 2028"
+              }
+            ]
+          },
+          {
+            "typ": "ereignisort",
+            "von": "n7",
+            "nach": "n6",
+            "signale": [
+              {
+                "start": 84,
+                "ende": 91,
+                "text": "in Kiel"
+              }
+            ]
+          },
+          {
+            "typ": "modalitaet",
+            "von": "n8",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 92,
+                "ende": 99,
+                "text": "geplant"
+              }
+            ]
+          },
+          {
+            "typ": "zeitfolge",
+            "von": "n2",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 0,
+                "ende": 4,
+                "text": "Nach"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Das Konzert gehoert zum Rueckblick2024.",
+        "Der erste neue Auftritt gehoert zum3. Mai.",
+        "Bonn gehoert zum ersten Termin, nicht zum7. Mai.",
+        "Der zweite neue Auftritt gehoert zum7. Mai.",
+        "Kiel gehoert zum zweiten Termin.",
+        "Die neuen Auftritte sind geplant und noch kein Vollzug.",
+        "Die neuen Auftritte liegen nach dem Konzert; keine Kausalitaet."
+      ]
+    },
+    {
+      "id": "f11",
+      "klasse": "zeit",
+      "quelle": {
+        "id": "f11",
+        "text": "Die Meldung vom 20. September 2026 blickt auf das Konzert 2024 zurück. Sie nennt keinen neuen Auftritt und keine Handlungsfrist."
+      },
+      "referenz": {
+        "quelleId": "f11",
+        "quellenHash": "e0e672925cb1e64dd52f471e4566b9601bab3d9c24456c610d2fd4a1ee2a3b10",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 12,
+              "ende": 34,
+              "text": "vom 20. September 2026"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 0,
+              "ende": 11,
+              "text": "Die Meldung"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 58,
+              "ende": 62,
+              "text": "2024"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 46,
+              "ende": 62,
+              "text": "das Konzert 2024"
+            }
+          },
+          {
+            "id": "n5",
+            "spanne": {
+              "start": 35,
+              "ende": 41,
+              "text": "blickt"
+            }
+          },
+          {
+            "id": "n6",
+            "spanne": {
+              "start": 71,
+              "ende": 74,
+              "text": "Sie"
+            }
+          },
+          {
+            "id": "n7",
+            "spanne": {
+              "start": 81,
+              "ende": 87,
+              "text": "keinen"
+            }
+          },
+          {
+            "id": "n8",
+            "spanne": {
+              "start": 88,
+              "ende": 102,
+              "text": "neuen Auftritt"
+            }
+          },
+          {
+            "id": "n9",
+            "spanne": {
+              "start": 107,
+              "ende": 112,
+              "text": "keine"
+            }
+          },
+          {
+            "id": "n10",
+            "spanne": {
+              "start": 113,
+              "ende": 127,
+              "text": "Handlungsfrist"
+            }
+          },
+          {
+            "id": "n11",
+            "spanne": {
+              "start": 75,
+              "ende": 127,
+              "text": "nennt keinen neuen Auftritt und keine Handlungsfrist"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "publikationszeit",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 12,
+                "ende": 15,
+                "text": "vom"
+              }
+            ]
+          },
+          {
+            "typ": "ereigniszeit",
+            "von": "n3",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 58,
+                "ende": 62,
+                "text": "2024"
+              }
+            ]
+          },
+          {
+            "typ": "kontext",
+            "von": "n5",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 63,
+                "ende": 69,
+                "text": "zurück"
+              }
+            ]
+          },
+          {
+            "typ": "koreferenz",
+            "von": "n6",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 71,
+                "ende": 74,
+                "text": "Sie"
+              }
+            ]
+          },
+          {
+            "typ": "negation",
+            "von": "n7",
+            "nach": "n8",
+            "signale": [
+              {
+                "start": 81,
+                "ende": 87,
+                "text": "keinen"
+              }
+            ]
+          },
+          {
+            "typ": "negation",
+            "von": "n9",
+            "nach": "n10",
+            "signale": [
+              {
+                "start": 107,
+                "ende": 112,
+                "text": "keine"
+              }
+            ]
+          },
+          {
+            "typ": "zuschreibung",
+            "von": "n6",
+            "nach": "n11",
+            "signale": [
+              {
+                "start": 75,
+                "ende": 80,
+                "text": "nennt"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Meldungsdatum ist kein Auftrittsdatum.",
+        "Das Konzert bleibt im Jahr2024.",
+        "Die Meldung blickt auf ein vergangenes Konzert zurueck, nicht auf einen neuen Termin.",
+        "Sie verweist auf die Meldung und nicht auf das zuvor genannte Konzert.",
+        "Ein neuer Auftritt wird nicht genannt.",
+        "Eine Handlungsfrist wird nicht genannt.",
+        "Die Meldung nennt weder neuen Auftritt noch Handlungsfrist; die negative Aussage bleibt zugeschrieben."
+      ]
+    },
+    {
+      "id": "f12",
+      "klasse": "zeit",
+      "quelle": {
+        "id": "f12",
+        "text": "Ein neuer Auftritt ist geplant. Datum und Ort stehen noch nicht fest."
+      },
+      "referenz": {
+        "quelleId": "f12",
+        "quellenHash": "9f25c6f15482b75d5c002538ee51c732107c1989b91ac43648b59da71b5aad3c",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 23,
+              "ende": 30,
+              "text": "geplant"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 0,
+              "ende": 18,
+              "text": "Ein neuer Auftritt"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 46,
+              "ende": 68,
+              "text": "stehen noch nicht fest"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 32,
+              "ende": 45,
+              "text": "Datum und Ort"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "modalitaet",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 23,
+                "ende": 30,
+                "text": "geplant"
+              }
+            ]
+          },
+          {
+            "typ": "unbestimmt",
+            "von": "n3",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 46,
+                "ende": 68,
+                "text": "stehen noch nicht fest"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Der neue Auftritt ist eine Planung.",
+        "Datum und Ort sind unbekannt, nicht aus der Publikation ableitbar."
+      ]
+    },
+    {
+      "id": "f13",
+      "klasse": "profil",
+      "quelle": {
+        "id": "f13",
+        "text": "Das Mandatsregister führt Alex als stellvertretendes Mitglied des Verkehrsausschusses. Alex hat keinen Vorsitz."
+      },
+      "referenz": {
+        "quelleId": "f13",
+        "quellenHash": "816225567a31241b55a47dd3778d3fd3ca7caec681ccf33a572f6b9a269c95ff",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 0,
+              "ende": 19,
+              "text": "Das Mandatsregister"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 26,
+              "ende": 85,
+              "text": "Alex als stellvertretendes Mitglied des Verkehrsausschusses"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 26,
+              "ende": 30,
+              "text": "Alex"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 35,
+              "ende": 85,
+              "text": "stellvertretendes Mitglied des Verkehrsausschusses"
+            }
+          },
+          {
+            "id": "n5",
+            "spanne": {
+              "start": 96,
+              "ende": 102,
+              "text": "keinen"
+            }
+          },
+          {
+            "id": "n6",
+            "spanne": {
+              "start": 103,
+              "ende": 110,
+              "text": "Vorsitz"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "zuschreibung",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 20,
+                "ende": 25,
+                "text": "führt"
+              }
+            ]
+          },
+          {
+            "typ": "rolle",
+            "von": "n3",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 31,
+                "ende": 34,
+                "text": "als"
+              }
+            ]
+          },
+          {
+            "typ": "negation",
+            "von": "n5",
+            "nach": "n6",
+            "signale": [
+              {
+                "start": 96,
+                "ende": 102,
+                "text": "keinen"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Das Register nennt ausdruecklich die stellvertretende Mitgliedschaft.",
+        "Mitgliedschaft ist stellvertretend, kein Vorsitz.",
+        "Der Vorsitz ist ausdruecklich negiert."
+      ]
+    },
+    {
+      "id": "f14",
+      "klasse": "profil",
+      "quelle": {
+        "id": "f14",
+        "text": "Alex besucht als Gast eine Sitzung des Verkehrsausschusses. Eine Mitgliedschaft oder ein Vorsitz ist damit nicht belegt."
+      },
+      "referenz": {
+        "quelleId": "f14",
+        "quellenHash": "5d8b70a2447c14b82d0f7c836a0ebcdd05dfc38381918acf681e4a9b6df037fd",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 0,
+              "ende": 4,
+              "text": "Alex"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 17,
+              "ende": 21,
+              "text": "Gast"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 101,
+              "ende": 106,
+              "text": "damit"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 0,
+              "ende": 58,
+              "text": "Alex besucht als Gast eine Sitzung des Verkehrsausschusses"
+            }
+          },
+          {
+            "id": "n5",
+            "spanne": {
+              "start": 107,
+              "ende": 119,
+              "text": "nicht belegt"
+            }
+          },
+          {
+            "id": "n6",
+            "spanne": {
+              "start": 60,
+              "ende": 96,
+              "text": "Eine Mitgliedschaft oder ein Vorsitz"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "rolle",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 13,
+                "ende": 21,
+                "text": "als Gast"
+              }
+            ]
+          },
+          {
+            "typ": "koreferenz",
+            "von": "n3",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 101,
+                "ende": 106,
+                "text": "damit"
+              }
+            ]
+          },
+          {
+            "typ": "negation",
+            "von": "n5",
+            "nach": "n6",
+            "signale": [
+              {
+                "start": 107,
+                "ende": 112,
+                "text": "nicht"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Die belegte Rolle ist Gast, keine Ausschussmitgliedschaft.",
+        "Die fehlende Belegkraft bezieht sich auf den Gastbesuch.",
+        "Mitgliedschaft und Vorsitz sind nicht belegt; nicht automatisch widerlegt."
+      ]
+    },
+    {
+      "id": "f15",
+      "klasse": "profil",
+      "quelle": {
+        "id": "f15",
+        "text": "Alex wird beim Thema Verkehr genannt. Ausschussmitgliedschaft und Funktion sind nicht angegeben."
+      },
+      "referenz": {
+        "quelleId": "f15",
+        "quellenHash": "ea68080b3811c7bd0be3efa4923ebe3ced06f1e5f035774a869e1b487d71b028",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 80,
+              "ende": 95,
+              "text": "nicht angegeben"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 38,
+              "ende": 74,
+              "text": "Ausschussmitgliedschaft und Funktion"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "unbestimmt",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 80,
+                "ende": 95,
+                "text": "nicht angegeben"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Die Themennennung liefert keine Mitgliedschaft oder Funktion."
+      ]
+    },
+    {
+      "id": "f16",
+      "klasse": "bedingung",
+      "quelle": {
+        "id": "f16",
+        "text": "Nur wenn der Stadtrat den Zuschuss beschließt, können berechtigte Verkehrsunternehmen bis zum 30. November 2026 einen Antrag stellen. Eine Bewilligung ist damit nicht zugesagt."
+      },
+      "referenz": {
+        "quelleId": "f16",
+        "quellenHash": "b4b8a97db12cdb38d1ef9e5ad7dc0fa05d6e9b84857c1ff7b870f39225081185",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 9,
+              "ende": 45,
+              "text": "der Stadtrat den Zuschuss beschließt"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 47,
+              "ende": 132,
+              "text": "können berechtigte Verkehrsunternehmen bis zum 30. November 2026 einen Antrag stellen"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 47,
+              "ende": 53,
+              "text": "können"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 54,
+              "ende": 132,
+              "text": "berechtigte Verkehrsunternehmen bis zum 30. November 2026 einen Antrag stellen"
+            }
+          },
+          {
+            "id": "n5",
+            "spanne": {
+              "start": 86,
+              "ende": 111,
+              "text": "bis zum 30. November 2026"
+            }
+          },
+          {
+            "id": "n6",
+            "spanne": {
+              "start": 112,
+              "ende": 132,
+              "text": "einen Antrag stellen"
+            }
+          },
+          {
+            "id": "n7",
+            "spanne": {
+              "start": 54,
+              "ende": 85,
+              "text": "berechtigte Verkehrsunternehmen"
+            }
+          },
+          {
+            "id": "n8",
+            "spanne": {
+              "start": 155,
+              "ende": 160,
+              "text": "damit"
+            }
+          },
+          {
+            "id": "n9",
+            "spanne": {
+              "start": 161,
+              "ende": 175,
+              "text": "nicht zugesagt"
+            }
+          },
+          {
+            "id": "n10",
+            "spanne": {
+              "start": 134,
+              "ende": 150,
+              "text": "Eine Bewilligung"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "bedingung",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 0,
+                "ende": 8,
+                "text": "Nur wenn"
+              }
+            ]
+          },
+          {
+            "typ": "modalitaet",
+            "von": "n3",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 47,
+                "ende": 53,
+                "text": "können"
+              }
+            ]
+          },
+          {
+            "typ": "ereigniszeit",
+            "von": "n5",
+            "nach": "n6",
+            "signale": [
+              {
+                "start": 86,
+                "ende": 93,
+                "text": "bis zum"
+              }
+            ]
+          },
+          {
+            "typ": "adressat",
+            "von": "n6",
+            "nach": "n7",
+            "signale": [
+              {
+                "start": 54,
+                "ende": 85,
+                "text": "berechtigte Verkehrsunternehmen"
+              }
+            ]
+          },
+          {
+            "typ": "koreferenz",
+            "von": "n8",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 155,
+                "ende": 160,
+                "text": "damit"
+              }
+            ]
+          },
+          {
+            "typ": "negation",
+            "von": "n9",
+            "nach": "n10",
+            "signale": [
+              {
+                "start": 161,
+                "ende": 166,
+                "text": "nicht"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Die Antragsmoeglichkeit haengt vom Beschluss ab; dieser ist nicht als erfolgt behauptet.",
+        "Moeglichkeit ist keine persoenliche Pflicht.",
+        "Die Frist gilt fuer den Antrag, nicht fuer den Beschluss oder eine Bewilligung.",
+        "Berechtigte Unternehmen sind Antragsteller, keine Abgeordneten.",
+        "Aus der Antragsmoeglichkeit folgt keine Bewilligungszusage.",
+        "Bewilligung ist nicht zugesagt, keine Ablehnung behauptet."
+      ]
+    },
+    {
+      "id": "f17",
+      "klasse": "bedingung",
+      "quelle": {
+        "id": "f17",
+        "text": "Die Frist bis zum 30. November 2026 gilt ausschließlich für Verkehrsunternehmen. Für Abgeordnete besteht aus dieser Quelle keine Antragspflicht."
+      },
+      "referenz": {
+        "quelleId": "f17",
+        "quellenHash": "c661104eedd1ae14177a270dc2ed2b5847e55b06dd50609b3793fcd0d0d98942",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 10,
+              "ende": 35,
+              "text": "bis zum 30. November 2026"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 0,
+              "ende": 9,
+              "text": "Die Frist"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 0,
+              "ende": 35,
+              "text": "Die Frist bis zum 30. November 2026"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 60,
+              "ende": 79,
+              "text": "Verkehrsunternehmen"
+            }
+          },
+          {
+            "id": "n5",
+            "spanne": {
+              "start": 123,
+              "ende": 143,
+              "text": "keine Antragspflicht"
+            }
+          },
+          {
+            "id": "n6",
+            "spanne": {
+              "start": 85,
+              "ende": 96,
+              "text": "Abgeordnete"
+            }
+          },
+          {
+            "id": "n7",
+            "spanne": {
+              "start": 123,
+              "ende": 128,
+              "text": "keine"
+            }
+          },
+          {
+            "id": "n8",
+            "spanne": {
+              "start": 129,
+              "ende": 143,
+              "text": "Antragspflicht"
+            }
+          },
+          {
+            "id": "n9",
+            "spanne": {
+              "start": 105,
+              "ende": 122,
+              "text": "aus dieser Quelle"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "ereigniszeit",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 10,
+                "ende": 17,
+                "text": "bis zum"
+              }
+            ]
+          },
+          {
+            "typ": "adressat",
+            "von": "n3",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 41,
+                "ende": 55,
+                "text": "ausschließlich"
+              }
+            ]
+          },
+          {
+            "typ": "adressat",
+            "von": "n5",
+            "nach": "n6",
+            "signale": [
+              {
+                "start": 81,
+                "ende": 84,
+                "text": "Für"
+              }
+            ]
+          },
+          {
+            "typ": "negation",
+            "von": "n7",
+            "nach": "n8",
+            "signale": [
+              {
+                "start": 123,
+                "ende": 128,
+                "text": "keine"
+              }
+            ]
+          },
+          {
+            "typ": "kontext",
+            "von": "n9",
+            "nach": "n5",
+            "signale": [
+              {
+                "start": 109,
+                "ende": 115,
+                "text": "dieser"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Die Quelle nennt eine Frist, keine individuelle Leseraufgabe.",
+        "Der Adressatenkreis ist auf Unternehmen beschraenkt.",
+        "Die Aussage ueber fehlende Antragspflicht betrifft Abgeordnete.",
+        "Die Antragspflicht ist negiert.",
+        "Die verneinte Antragspflicht gilt fuer diese Quelle; keine universelle Aussage ueber alle Pflichten."
+      ]
+    },
+    {
+      "id": "f18",
+      "klasse": "bedingung",
+      "quelle": {
+        "id": "f18",
+        "text": "Verkehrsunternehmen könnten einen Antrag stellen. Voraussetzung, Frist und Bewilligung sind noch ungeklärt."
+      },
+      "referenz": {
+        "quelleId": "f18",
+        "quellenHash": "1878f62bf6800b09131ff917db0b7a05584be1f1318809780f89a702908aa1e7",
+        "knoten": [
+          {
+            "id": "n1",
+            "spanne": {
+              "start": 20,
+              "ende": 27,
+              "text": "könnten"
+            }
+          },
+          {
+            "id": "n2",
+            "spanne": {
+              "start": 0,
+              "ende": 48,
+              "text": "Verkehrsunternehmen könnten einen Antrag stellen"
+            }
+          },
+          {
+            "id": "n3",
+            "spanne": {
+              "start": 92,
+              "ende": 106,
+              "text": "noch ungeklärt"
+            }
+          },
+          {
+            "id": "n4",
+            "spanne": {
+              "start": 50,
+              "ende": 86,
+              "text": "Voraussetzung, Frist und Bewilligung"
+            }
+          }
+        ],
+        "relationen": [
+          {
+            "typ": "modalitaet",
+            "von": "n1",
+            "nach": "n2",
+            "signale": [
+              {
+                "start": 20,
+                "ende": 27,
+                "text": "könnten"
+              }
+            ]
+          },
+          {
+            "typ": "unbestimmt",
+            "von": "n3",
+            "nach": "n4",
+            "signale": [
+              {
+                "start": 92,
+                "ende": 96,
+                "text": "noch"
+              },
+              {
+                "start": 97,
+                "ende": 106,
+                "text": "ungeklärt"
+              }
+            ]
+          }
+        ]
+      },
+      "begruendungen": [
+        "Moegliche Antragstellung ist kein gesicherter Anspruch.",
+        "Alle drei fehlenden Grundlagen bleiben ungeklärt."
+      ]
+    }
+  ]
+}

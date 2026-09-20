@@ -66,7 +66,8 @@
       "codex/ereignisketten-20260920": false,
       "codex/dip-quellfelder-20260920": false,
       "codex/quellenfakten-versuch-20260920": false,
-      "codex/aussagenabdeckung-20260920": false
+      "codex/aussagenabdeckung-20260920": false,
+      "codex/aussagenrelationen-20260920": false
     }
   },
   "functions": {
