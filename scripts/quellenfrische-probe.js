@@ -8,6 +8,7 @@ const { parseRssItems, normalizeRawItem } = require("../lib/helmut/crawler");
 const D = require("../lib/helmut/dedup");
 const E = require("../lib/helmut/quellen-auszug");
 const Q = require("../lib/helmut/lage-quellenbeleg");
+const { publikationszeit } = require("../lib/helmut/quellen-publikationszeit");
 const MAX_BYTES = 1024 * 1024;
 const MAX_ITEMS = 16;
 const MAX_AGE_MS = 48 * 60 * 60 * 1000;
@@ -58,7 +59,7 @@ function bewerte(xml, source, now) {
   const rows = [], rejected = [];
   for (let index = 0; index < parsed.length; index++) {
     const item = parsed[index];
-    const published = Date.parse(item.publishedAt || "");
+    const published = Date.parse(publikationszeit(item.publishedAt) || "");
     let grund = !Number.isFinite(published) ? "publikationszeit-fehlt"
       : published > now.getTime() ? "publikationszeit-zukuenftig"
       : now.getTime() - published > MAX_AGE_MS ? "quelle-zu-alt" : null;

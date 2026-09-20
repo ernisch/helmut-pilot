@@ -1,6 +1,6 @@
 # Quellenzeitvertrag im Reparatursprint
 
-Stand 17.09.2026. Dieser begrenzte technische Teilsprint ist lokal erfolgreich geprueft. Der gesamte Reparatursprint bleibt teilweise abgeschlossen. Keine Production Wirkung, kein neuer Modellaufruf und kein erneuter 500er Nachweis.
+Aktueller Folgesprint20.09.2026: Einlesepfade erfinden teilweise Publikationsdaten; Ursache, Korrektur und Abnahme stehen im letzten Abschnitt. Die folgenden Abschnitte beschreiben den historischen Stand17.09.; damalige Freigabegrenzen sind keine neue Sperre des ausdruecklich autorisierten Mehrsprintauftrags.
 
 ## Umfang und Ausgangspunkt
 
@@ -53,3 +53,84 @@ Die alten Vorbereitungen fuer faire Fortsetzung, aktive Zielmenge, Versorgung un
 Naechster kleiner Sprint: erhaltene Versorgungsreparatur gegen Main auf aktive Zielmenge und faire Fortsetzung begrenzen und lokal abnehmen. Ein neuer 500er Test braucht danach eine eigene Freigabe mit Zielmenge, Zeitfenster, Kosten, Erfolgswerten und unabhaengig geprueftem Abschlussweg.
 
 Merge, Production Deployment, neue Crons, Profil oder Datenaenderungen und kostenpflichtige Modellaufrufe sind nicht freigegeben. Auch ein spaeterer produktiver Revert braucht eine Betreiberfreigabe. Lokaler Rueckweg ist die Ruecknahme dieses isolierten Branchdiffs.
+
+## Publikationszeit bereits beim Einlesen am 20.09.
+
+Basis nach integriertem PR462:91fdcbfa3d7735491764e3af4f49953812eb0bfe,
+Branch codex/quellen-publikationszeit-20260920. Teilweise abgeschlossen;
+lokale Pruefung unten, exakte Pflicht CI und Integration offen.
+
+Belegte neue Ursache: Der Leser aus PR419 konnte erfundene upstream
+Metadaten nicht erkennen. normalizeRawItem und der DIP Scheduler setzten
+bei fehlendem Datum die Systemzeit. HTML setzte sie immer. Atom updated
+und DIP aktualisiert wurden als Publikation behandelt. Freies Date.parse
+verschob den30. Februar in den Maerz und deutete selbst die Zeichenfolge12
+als historischen Zeitstempel. Diese Angaben gelangten als scheinbar
+gueltige Publikationsdaten in den Quellenvertrag.
+
+Vor Aenderung festgelegte Erwartungen: fehlende, ungueltige oder nur
+geaenderte Zeit bleibt unbekannt; belegte ISO und RSS Daten bleiben
+erhalten; Quelleninhalt und Abrufzeit bleiben nutzbar. RSS, HTML und DIP
+sowie Understanding und Lage muessen denselben Unterschied erhalten.
+
+Kleinste Korrektur: gemeinsame begrenzte Datumsnormalisierung mit dem
+bestehenden Kalenderpruefer. ISO und explizite RSS Datumskomponenten mit
+Jahr und Zeitzone werden gelesen; unbekannte Formen bekommen keinen
+Ersatz aus Uhr, URL oder Abruf. Kein vollstaendiger RFC5322 Parser.
+Atom braucht published oder pubDate, DIP datum. HTML verwendet ein
+ausdrueckliches article:published_time statt Systemzeit. Die getrennte
+Abrufzeit bleibt erhalten. Fehlende und ungueltige Publikation verwendet
+denselben stabilen undated Hashanteil. Kandidaten bekommen aus Abruf
+oder zukuenftiger Publikation keinen Frischebonus. Auch die isolierte
+Frischeprobe verwendet die Kalenderpruefung vor ihrer48 Stunden Grenze.
+
+Zehn neue Pruefgruppen erfolgreich: gueltige Kalenderdaten und Zeitzonen,
+unmoegliche/uneindeutige Angaben, globale Speicherabbildung, stabile
+Kennungen, Atom Aenderungszeit, HTML ueber echten lokalen HTTP Server,
+DIP in beiden Stellungen, Understanding und Lage, Kandidatenreihung und
+Frischeprobe. Die neue Testfixture wurde beim ersten Lauf an den
+tatsaechlichen persists Rueckgabevertrag und beim zweiten an den
+vollstaendigen leeren Lage Rueckgabewert korrigiert; keine bestehende
+Assertion oder Schwelle geaendert. Kein Modellversuch.
+Betroffene Bestandssuiten erfolgreich: Quellenzeitvertrag9,
+Quellenfrische11, Crawlerhaertung19, Pilotvertrag97, Quelldeduplikation13
+und Lagekapazitaet129.
+
+Privater Replay der vorhandenen31 Feedkandidaten: alle Publikationsdaten,
+gespeicherten Dokumentkennungen und Auszuege erhalten. Der erste
+Vergleich setzte faelschlich temporaere raw Kennungen mit gespeicherten
+rd Kennungen gleich; korrigiert am echten toRawDocumentRow Ausgang.
+Das Artefakt enthaelt normalisierte Eingaben, nicht das urspruengliche
+RSS XML. Deshalb kein behaupteter erneuter Originalfeedtest. Keine
+externen Abrufe, bezahlten Aufrufe oder Production Schreibvorgaenge.
+
+Production Wirkung nach Integration: kuenftige unbelegte Publikationszeit
+bleibt null. Damit kann die bestehende Lagefrischepruefung eine solche
+Quelle ehrlich ablehnen. Risiko: weniger als frisch angenommene Quellen
+und geaenderte Kennungen bei zuvor ungueltigen Datumsangaben. Atomare
+Dublettensicherung und URL Abgleich bleiben erhalten. Historische
+Quellen werden nicht pauschal korrigiert, da ihr wirklicher Zeitpunkt
+nicht aus der gespeicherten Angabe erschlossen werden kann. Quellentext
+bleibt bestehen; dies ist keine Loeschung oder neutrale Umschreibung
+aller Prosa und kein Nachweis freier semantischer Folgerungen.
+
+Rueckweg: gezielter Code Revert ohne Datenloeschung. Vor Merge exakte
+Pflicht CI und anschliessend READY/Main/Alias sowie geschuetzten
+Production Stand rein lesend pruefen. Preview nur fuer diesen Branch
+ausgeschaltet. Keine Cron, Environment, Budget, Profil oder
+Migrationsaenderung; kein neuer500er Test.
+
+Kanonischer lokaler Gesamtlauf429/430 Suiten in646 Sekunden, Exit1.
+Einziger Fehler: der historische Sprint9B Atom Positivfall verwendete nur
+updated als vermeintliche Publikation. Der positive Fall hat jetzt ein
+ausdrueckliches published und bleibt geeignet; ein zusaetzlicher Fall mit
+nur updated bleibt eingeschraenkt und behauptet keine Publikationsfrische.
+Keine vorhandene Assertion entfernt oder Schwelle gelockert. Auch der
+Sprint9B Leser benutzt jetzt die gemeinsame Kalenderpruefung; ein weiterer
+Gegenfall prueft den unmoeglichen Kalendertag. Alle47 betroffenen Assertions
+danach erfolgreich. Dies ist ein Gesamtlauf plus gezielte Nachpruefung,
+kein behaupteter gruener lokaler Gesamtlauf des finalen Heads.
+
+Der vorbereitete Quellenimport bekommt im bestehenden CI Datenbankgate
+einen getrennten isolierten Nachweis, siehe [Importvorbereitung](quellenkontext-ruhe-2026-09-19.md#vorbereitete-uebernahme-der31-gelesenen-quellen).
+Keine Ausfuehrungsfreigabe durch diesen Test.

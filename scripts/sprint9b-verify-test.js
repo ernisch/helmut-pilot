@@ -34,7 +34,7 @@ const htmlLanding = `<!doctype html><html><head><title>RSS-Feeds Übersicht</tit
 const pardokXml = `<?xml version="1.0" encoding="UTF-8"?><Export><Vorgang><Titel>Antrag A</Titel></Vorgang><Vorgang><Titel>Antrag B</Titel></Vorgang><Dokument><Titel>Drs 1</Titel></Dokument></Export>`;
 
 const atomRecent = `<?xml version="1.0"?><feed xmlns="http://www.w3.org/2005/Atom"><title>News</title>
-  <entry><title>Neu</title><link href="https://example.org/n"/><updated>2026-07-11T10:00:00Z</updated></entry></feed>`;
+  <entry><title>Neu</title><link href="https://example.org/n"/><published>2026-07-11T10:00:00Z</published><updated>2026-07-11T11:00:00Z</updated></entry></feed>`;
 
 // --- 1. Wege-Liste ---
 const wege = buildWege();
@@ -79,6 +79,9 @@ check("HTML statt Open-Data-XML -> ablehnen", vXmlHtml.urteil === "ablehnen");
 const gW = { method: "googlenews_search", covers: 1, critical: false };
 const vAtom = probeToVerdict(gW, { status: 200, contentType: "application/atom+xml", body: atomRecent }, NOW);
 check("aktueller Atom-Feed -> geeignet", vAtom.urteil === "geeignet");
+const vAtomUpdatedOnly = probeToVerdict(gW, { status: 200, contentType: "application/atom+xml",
+  body: atomRecent.replace(/<published>.*?<\/published>/, "") }, NOW);
+check("Atom nur geaendert -> keine uneingeschraenkte Publikationsfrische", vAtomUpdatedOnly.urteil === "geeignet mit Einschränkung");
 
 // --- 9. Bot-Sperre (403) -> mit Einschränkung, NICHT umgehen ---
 const v403 = probeToVerdict(rW, { status: 403, contentType: "text/html", body: "" }, NOW);
@@ -110,6 +113,7 @@ check("Redirect-Kette belegt (2)", vRedir.redirects === 2 && vRedir.belege.some(
 
 // --- 15. Hilfsfunktionen ---
 check("newestItemDate wählt jüngstes", newestItemDate([{ publishedAt: "2025-01-01" }, { publishedAt: "2026-07-10" }]) === Date.parse("2026-07-10"));
+check("newestItemDate erfindet keinen Kalendertag", newestItemDate([{ publishedAt: "2026-02-30" }]) === null);
 check("countXmlRecords zählt Vorgang", countXmlRecords(pardokXml).count === 2);
 check("looksHtml erkennt HTML", looksHtml(htmlLanding, "text/html") === true);
 check("looksHtml verneint XML", looksHtml(pardokXml, "application/xml") === false);
