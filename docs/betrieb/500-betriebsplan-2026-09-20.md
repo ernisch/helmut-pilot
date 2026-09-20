@@ -307,8 +307,12 @@ universelle Bedeutungspruefung und keine an einen Herausgeber gebundene Regel.
 Die neue Regression prueft beide Vergleichsrichtungen, alle sechs
 Eingabereihenfolgen, den Anschluss an Bestandsvorgaenge, weitere
 synthetische Quellen und positive Fortsetzungen. Vor dem Fix2/7 Gruppen,
-danach7/7; alle8 betroffenen Vorgangssuiten bestanden. Pflichtgesamtlauf
-und PR Pruefung stehen noch aus. Nur die Vorschau des eigenen Branches
+danach7/7; alle8 betroffenen Vorgangssuiten bestanden. Kanonischer
+Gesamtlauf429/431 in832s. Nur die beiden Browserteile fanden im zuerst
+gesetzten Pfad die Headless Shell1194 nicht; beide unveraenderten
+Originalsuiten bestanden danach im isolierten lokalen Checkout mit dem
+vorhandenen Browserpfad. Damit jede der431 Suiten bestanden, kein
+behaupteter einzelner gruener Gesamtlauf. PR Pruefung noch offen. Nur die Vorschau des eigenen Branches
 wird ausgeschaltet. Kein neuer Quellenimport, keine Datenkorrektur,
 kein bezahlter Versuch und keine Aktivierung. Bereits falsch gespeicherte
 Vorgaenge sind dadurch nicht rueckwirkend aufgetrennt.
@@ -353,3 +357,9 @@ noch vor Verstehen und letzter voller Reserve. Die Telemetrie nennt daneben
 eine kleinere alte Schaetzung von0,002600 USD; diese ist NICHT die heutige
 Geldriegelbuchung. Das sind historische Verbrauchswerte, keine Anbieterrechnung
 und keine Messung des neuen Tests. Budgetregel und Freigaben unveraendert.
+
+Rein lesender31er Identitaetsabgleich09:56:56 UTC:31 Eingaben,0 Kollisionen
+ueber Kennung, Fingerabdruck und beide kanonischen URL Felder; weiterhin
+0 aktive Profile. Kein Import. Die Frische endet vor der derzeit nur grob
+auf mehrere Arbeitstage schaetzbaren Gesamtreparatur. Vor dem echten Test
+muessen Quellen erneut frisch und fachlich geeignet bereitstehen.
