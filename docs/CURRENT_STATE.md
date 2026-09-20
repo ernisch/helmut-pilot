@@ -1,13 +1,14 @@
 # CURRENT STATE — Helmut
 
-**20.09.2026: Neuer begrenzter Methodenauftrag ausdruecklich freigegeben, in Vorbereitung.**
-Eigener Branch `codex/aussagenabdeckung-20260920`:18 synthetische Quellen,
-39 vorab getrennte Referenzaussagen; keine produktive Fachfreigabe. Neue
-Quittung, maximal6 Einzelaufrufe/1,272 USD/30 Minuten innerhalb4 USD Tagesriegel.
-Kein bezahlter Start.13/13 Eingangs und16/16 Schutzgruppen lokal bestanden;
-Gesamtabnahme offen. [Konkreter Vertrag und neue Freigabe](betrieb/prosa-belegplan-2026-09-20.md#neuer-freigegebener-auftrag-vollstaendige-aussagenabdeckung).
-SQL20:01 UTC:504/0, keine lebenden Sperren, Leases, offenen Jobs oder jungen
-Prozesse; Tag0,389759 USD, Reserve0. Main/Deployment unveraendert wie unten.
+**20.09.2026: Neuer freigegebener Methodenauftrag nach einem Aufruf gestoppt.**
+PR480 Entwurf, Run35536097423 aufe2477783: ABDECKUNG_QUELLBINDUNG,
+0,004478 USD; keine Fortsetzung. Drei Originale und sieben Teilbehauptungen
+erhalten, Kennungen/Labels vertragswidrig; kausale Bindung unvollstaendig.
+CI35535327586:443/443 in646s, Browser50/50, DB23/0+26/0+48/0.
+Lokal441/443 in827s auf aelterem Baum, zwei Chromium Socket Fehler.
+Diagnose7/7;36er Abnahme offen. [Ausgang](betrieb/prosa-belegplan-2026-09-20.md#ausgang-des-neuen-aussagenabdeckungsauftrags).
+SQL20:41 UTC:504/0, Betrieb ruhig, Tag0,394237 USD, Reserve0, Zaehler65.
+Schutzbestand samt Altquittung unveraendert. Main/Deployment wie unten.
 
 **Altversuch bleibt geschlossen:** PR479 Entwurf, Run35530374788 auf3ca35bd3
 nach einem Aufruf mit Annotationsabweichung gestoppt. Alte Sollwerte und

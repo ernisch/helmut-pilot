@@ -1,15 +1,18 @@
 # Neuer 500er Nachweis: belegter Vorflug und verbleibende Grenzen
 
-20.09.2026, **500er Start weiter blockiert**. Die Quellenreparaturen sind
-erfolgreich abgeschlossen, das Gesamtziel bleibt teilweise abgeschlossen.
-Aktueller belegter fachlicher Productionstand nach PR473 ist Mainc070661f auf
-Deployment dpl_C7ZH7FxjpmFpEetKkyBUYihyNbar READY. HTTP200 liefert denselben
-Commitstand; SQL12:37:39 UTC bestaetigt504/0 und unveraenderten Zustand
-gegenueber dem Vorbeleg12:35:27. Fruehere datierte Aufnahmen unten bleiben
-Historie; massgeblich sind die letzte [Integration](#integration-pr473) und
-[Restarbeit](#restarbeit-nach-den-quellenreparaturen).
-Erneute allgemeine Arbeits und Mergefreigabe liegt vor. Kein neuer500er
-Test gestartet und keine fachliche Gesamtabnahme behauptet.
+20.09.2026, **500er Start weiter blockiert**. Gesamtziel teilweise abgeschlossen.
+Production Main be4b237b6154248f30e175235ed81aa9893b01bf, Deployment
+dpl_H133uvcugPyny1diBKuTe71Ro55V READY mit Production Alias nach PR477/478.
+Der danach ausdruecklich freigegebene neue Methodenauftrag endete nach einem
+Aufruf am20.09.20:37:17 UTC mit ABDECKUNG_QUELLBINDUNG, Quittung gestoppt.
+Kein Merge oder Deployment daraus. [Kanonischer Ausgang und Freigabe](prosa-belegplan-2026-09-20.md#ausgang-des-neuen-aussagenabdeckungsauftrags).
+SQL20:41:01 UTC:504/0, keine lebenden Sperren/Leases, offenen Jobs oder
+jungen offenen Prozesse; Tageskosten0,394237 USD, offene Reserve0,
+globaler Zaehler65, Tagesriegel4 USD. Alte datierte Aufnahmen unten sind
+Historie. Die neue Freigabe ersetzte fuer genau diesen Auftrag aeltere
+Aussagen ueber fehlende Erlaubnis, aber erlaubt keinen weiteren bezahlten
+Auftrag. Sichere Entwicklungs und Mergearbeit bleibt freigegeben.
+Kein neuer500er Test und keine fachliche Gesamtabnahme.
 
 ## Ziel, Bestand und Quellen
 

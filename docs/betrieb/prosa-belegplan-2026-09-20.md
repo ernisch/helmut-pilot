@@ -761,7 +761,7 @@ Keine Import oder500er Testfreigabe jetzt anfordern.
 
 ## Neuer freigegebener Auftrag: vollstaendige Aussagenabdeckung
 
-20.09.2026. **Vorbereitung, noch kein bezahlter Start.** Der Betreiber hat
+20.09.2026. **Vor Start fixierter Vertrag; Ausgang siehe Folgeabschnitt.** Der Betreiber hat
 im aktuellen Uebernahmeauftrag genau EINEN neuen bezahlten Methodenauftrag
 ausdruecklich freigegeben. Fuer den folgenden konkretisierten Umfang ist
 keine erneute Startbestaetigung erforderlich. Die frueheren Aussagen ueber
@@ -909,3 +909,157 @@ und Gesamturteil, abgewiesener Fortsetzung und kostenfreier irreversibler
 Versuchsquittungsbeendigung. Die Eingangs13er Suite wurde nicht wiederholt.
 Das ist nur die Herkunft des endlichen Testurteils, kein beschlossener
 manueller Quellenbetrieb fuer reale500 Profile.
+
+## Ausgang des neuen Aussagenabdeckungsauftrags
+
+20.09.2026. Der neue ausdruecklich freigegebene Auftrag ist nach genau
+EINEM Modellaufruf verbindlich gestoppt. Actions35536097423,
+Job106145288687, ausgefuehrter Kopf e2477783fbf7fc2bf0a306fd9711ee634cb74430.
+CAS Beginn20:36:52.744 UTC, gespeicherter Abschluss20:37:17.201 UTC.
+Fensterende war21:06:52.744 UTC. Quittung aussagenabdeckung20260920:
+status gestoppt, errorCode ABDECKUNG_QUELLBINDUNG. Workflow failure;
+alle anderen Einstiege skipped. Kein Retry, kein zweiter Block, kein Reset.
+Die fuenf ungenutzten Positionen duerfen nicht unter neuer Kennung oder
+nach einer Promptkorrektur weiterverwendet werden. Kein Merge/Deployment.
+Altversuch, alte Sollwerte und alte Quittung bleiben unveraendert geschlossen.
+
+### Vollstaendige Sichtung, keine Gleichsetzung mit falschen Tatsachen
+
+Alle drei ganzen Originaltexte sind erhalten. Geliefert wurden2+2+3
+getrennte Aussagen, entsprechend den sieben Referenzpositionen dieses Blocks.
+Drei von18 Quellen verarbeitet,15 nicht aufgerufen; sieben von39
+Referenzpositionen betroffen,32 nicht aufgerufen. Keine bestandene
+Produktpfadpruefung der36 echten Fachfaelle. Sieben Eintraege beweisen
+keine siebenfach bestandene Bedeutung oder automatische Vollabdeckung.
+
+Der erste technische Fehler verdeckte weitere Unterschiede. Die neue,
+rein lokale Nachdiagnose erhaelt deshalb alle Befunde, OHNE die damalige
+Pruefung, Antwort, Referenz oder Quittung zu veraendern:
+
+* Alle drei Kennungen lauten q-f01 bis q-f03 statt f01 bis f03. Im Prompt
+  standen Fallkennung und Quellkennung nebeneinander. Das ist auch eine
+  vermeidbare Mehrdeutigkeit des Versuchsentwurfs, kein Tatsachenfehler.
+* Alle sieben Aussagegradwerte sind eigene Labels statt Originalspannen:
+  Beschluss, Folge (Wirkung), Moeglichkeit, Ungewissheit, Feststellung/Behauptung,
+  Bestreitung und nochmals Ungewissheit. Inhaltlich plausible Labels sind
+  dennoch nicht der freigegebene Spannenvertrag. Keine pauschale Behauptung
+  sieben falscher Tatsachen. Die zusaetzlichen drei fehlenden Sollkennungen
+  in der Diagnose sind die Kehrseite derselben Kennungsverwechslung.
+* Alle anderen nichtleeren Felder sind Originalspannen. Das allein prueft
+  weder ihren Bedeutungszusammenhang noch die Zuschreibung.
+
+f01: Beschlossener Buszuschuss,20 Euro, Fahrpreissenkung und Berechtigte
+sind erhalten. Die Preiswirkung steht teilweise in gegenstand und adressat;
+null in bedingung/wirkung bedeutet hier NICHT, dass Betrag oder Berechtigte
+voellig verloren seien. Kein Feld erhaelt aber die ausdrueckliche kausale
+Verbindung dadurch zum Zuschuss. Die Zuschreibung des ersten Kandidaten
+an den Stadtrat als Aussageurheber ist aus dessen beschriebener Handlung
+nicht unabhaengig belegt. Ganze Originale bleiben daneben erhalten.
+
+f02: Moegliches Entfallen UND Unbestimmtheit des Ausgleichsbetrags sind
+jetzt getrennt strukturiert. koennte entfallen bewahrt die Modalitaet im
+Praedikat, bleibt offen bewahrt die offene Sachbestimmung. Keine erfundene
+Steuer oder Pflegeleistung. Die eigenen Aussagegradlabels verletzen die
+Spannenregel, ohne damit allein eine falsche Finanzbehauptung zu beweisen.
+
+f03: Nennung durch die Stadt, Bestreiten durch den Betreiber UND ausstehende
+gemeinsame Klaerung bleiben nun getrennt erhalten. verneinung bleibt null,
+aber handlung bestreitet bewahrt die Negation am richtigen Gegenstand.
+Keine bestaetigte Preissenkung behauptet. Eigene Moduslabels bleiben
+vertragswidrig. Die separate Erfassung des zweiten Satzes ist ein Fortschritt
+gegenueber dem Altversuch, keine allgemeine Faktenfreigabe.
+
+Alle sieben Referenzen UND alle sieben Kandidaten wurden nach dem Stopp
+mit eigener Begruendung am vollstaendigen Original gesichtet. Diese Sichtung
+liegt privat; sie wird nicht nachtraeglich in die geschlossene Quittung
+hineingeschrieben. Der negative Vertragsausgang bleibt erhalten. Weder
+universelle Unmoeglichkeit noch eine funktionierende Gesamtmethode bewiesen.
+
+### Kosten und unabhängige Nachkontrolle
+
+Genau ein abgerechneter Aufruf:844 Eingabe,1014 Ausgabe,1858 Gesamttokens,
+11399 ms gemessene Aufrufdauer. Volle Reserve0,212 USD, danach verbindlich
+0,004478 USD abgerechnet. Telemetrieschaetzung0,002239 USD verwendet einen
+anderen Tarif und ist nicht der konservative Buchbetrag. Tageskosten
+0,389759 auf0,394237 USD, offene Reserve0, global64 auf65.4 USD unveraendert.
+Azure erhielt genau ein neues Minutenfenster20:36 mit Verbrauch1; bestehende
+Buchungen blieben erhalten. Schutzschalter weiter zu, Erfolgsfolge6 auf7.
+
+SQL Grundlinie20:36:10.886 UTC, Nachkontrolle20:37:57.584 UTC:
+
+| Bestand und Berechnung | Vorher und nachher |
+| --- | --- |
+| mandate_profiles, ganze Zeilen nach user_id | ea339008ddc23668d7234b6305a2346c116b474a40ff68dbd474d73005056e06 |
+| profiles, ganze Zeilen nach id | 03e0b4e26272fbaa1d78aa199ad7e66b44e84d93b3d2d8ef02c62dcd0907f60e |
+| main, ganzer data Bestand | 58d58420f47f7bb9b29be1ec47c32a7c3670363f5f5c2c5cf5ef701211c238ef |
+| main-auth, nur vier neu erlaubte Schluessel ausgenommen | 7fe5035b850eaf2a8c0bedf9a0a3373ab093087314daeeb4e3f6bbd1eb190a79 |
+| alte quellenfaktenEingang20260920 Quittung, ganz | 0224cf3074140eade2d3cc61091f9c3b8d5b2496562da2e693ffb6ac5a972ad6 |
+
+Berechnung wie oben per sha256 ueber JSONB::text. Ausgenommen ausschliesslich
+llmUsage, testKostenTage, _authStoreRevision, aussagenabdeckung20260920.
+Die alte Quittung bleibt im geschuetzten Auth Hash eingeschlossen. Ganze
+Auth Hashes erwartungsgemaess verschieden: vorher
+813761d84483632f95c4bfb5718b39feae62755798ae379a0c5a8f90e1799e9a,
+nachher898107d55db4b92a2e5db66fed3f16904ec4ccad2b14902cd14fb600857e16ae.
+Keine vier unveraenderten GANZEN Bestaende behaupten. Alte Kosten und alle
+Telemetriezeilen sind zusaetzlich durch den Laeufer auf Erhaltung geprueft;
+die maximal sechs verdraengbaren Ringzeilen liegen in der neuen Quittung.
+
+Erneute Betriebssicht20:41:01 UTC /22:41:01 Berlin /23:41:01 Tuerkei:
+504 Profile,0 aktiv, keine lebenden Pipeline/Job/Verstehen Sperren, offenen
+Jobs oder jungen offenen Prozesse. Production Main weiterhin
+be4b237b6154248f30e175235ed81aa9893b01bf, Deployment
+dpl_H133uvcugPyny1diBKuTe71Ro55V erneut READY mit Production Alias.
+Quellenaufnahme20:22:31 UTC:29782 Rohquellen,0 Publikationen innerhalb48
+Stunden, neueste Publikation16.09.15:55:56 UTC. Kein Import oder Aktivierung.
+
+### Belege und sichere Folgeentwicklung
+
+Privater Vollbeleg Helmut_Aussagenabdeckung_2026-09-20.md,
+Dateikennung libfile_ca99965a3e9081919b35bbbe32dd004a, SHA256
+82812870adc77d41e14cf1626392d67d870738ebc5a290b85be177755f75332b.
+Enthaelt Originalquellen, fixe Referenzen, Request/Response, Transport,
+Kosten, Einzelurteile und SQL Vergleich. Kein Schluessel oder privater
+Rohbeleg im oeffentlichen Repository.
+
+Vor dem bezahlten Start war CI35535327586 auf dem EXAKTEN Kopfe2477783
+vollstaendig erfolgreich:443/443 Suiten in646s, Browser50/50,
+PostgreSQL23/0, Null50026/0, Z2248/0. Der lokale kanonische Gesamtlauf
+endete441/443 in827s auf588bbce, dessen Baum mit97489291 identisch ist.
+admin-nutzer-loeschen und passwort-setzen-login-fix scheiterten am lokalen
+Chromium Socket; narrativ-stress-1000 bestand in144692ms. Kein gruener
+lokaler Gesamtlauf, keine Umdeutung zum Gesamtnachweis des spaeteren Kopfs.
+Die danach geaenderte Schutzsuite bestand separat16/16; Eingang13/13.
+
+Nach dem Stopp wurde scripts/aussagenabdeckung-diagnose.js mit7/7 neuen
+Gegenproben ergaenzt. Alle Fehler werden trotz fruehem Kennungsfehler
+sichtbar; wortgleiche Texte dienen ausschliesslich der Diagnosezuordnung,
+niemals der automatischen Kennungsreparatur oder Bedeutungserlaubnis.
+Keine Aenderung an Laeufer, Prompt, Schema, Korpus oder Referenzen. Diese
+sichere Arbeit setzt den Gesamtauftrag fort, nicht das bezahlte Experiment.
+
+Konkrete weitere Offline Gegenprobe: Der EINGEFRORENE Referenzsatz erlaubt
+bei f01 die Wirkungsspanne um20 Euro, waehrend handlung nur sinkt lautet.
+Diese zulässige Kombination trifft alle Referenzen und verliert dennoch
+die explizite Beziehung dadurch zwischen Beschluss und Preissenkung in
+den strukturierten Aussagen. Auch der neue Referenzsatz prueft damit die
+Beziehungen nicht vollstaendig. Die neue Gegenprobe haelt genau dieses
+Ergebnis fest; sie verbessert nicht rueckwirkend den alten Sollsatz und
+behauptet keine automatische Erkennung beliebiger Bedeutungsverluste.
+
+Die naechste methodische Arbeit muss eine unabhaengige Pruefung der
+Beziehungen zwischen Teilbehauptungen tragen: Ausloeser/Wirkung,
+Aussageurheber versus Handelnder, Negation und Voraussetzung. Ein nur
+bereinigter Kennungsprompt oder eine automatische Labelnormalisierung
+waere dafuer kein ausreichender Pruefgegenstand. Die vorhandenen Antworten
+reichen zur weiteren Offlineanalyse dieser Luecken aus; dafuer ist kein
+weiterer bezahlter Aufruf erforderlich. Eine neue empirische Modellmessung
+braucht dagegen einen neuen konkreten Auftrag; dieser ist geschlossen.
+
+Weiter offen: unabhaengiger Eingang fuer reale Quellen, beide echten
+Produktpfade mit allen UI Feldern,36 Fachfaelle mit Speicherung/Ruecklesung,
+frische Versorgung der festgelegten500 einschliesslich beider Laender,
+gemessener Zeit/Kostenvertrag unter4 USD. Der Methodenauftrag erzeugte keine
+neuen500 Mandatsbriefings,500 Lageergebnisse oder500 Morgenquittungen;
+alle1500 Positionen des noch ungestarteten Nachweises bleiben ungeprueft.
+Keine Import oder500er Testfreigabe als naechsten Schritt anfordern.
