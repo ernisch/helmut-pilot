@@ -85,6 +85,17 @@ Drei sauber getrennte Ebenen (Details:
 - **Paket** (`packages`) — wofür gebündelt wird; Profile bekommen Pakete über den
   Resolver, nicht einzelne Quellen.
 
+**DIP Dokumentangaben (20.09.2026).** Der bestehende Drucksachenadapter
+bewahrt Originaltitel, expliziten Dokumenttyp, oeffentliche Urheber und
+Ressortlabels getrennt in `raw.helmutDipQuellfelder`. Der begrenzte Vertrag
+`dip-quellfelder.js` bindet diese Felder an Titel, URL, Publikation und Typ;
+Leser projizieren nur diesen Teilbaum. Beide Fachpfade und die getrennte
+Briefingpruefeingabe erhalten dieselben Dokumentangaben. Fehlendes bleibt
+unbekannt; ein Fallbacktyp ist kein amtlich gelieferter Typ. Der Hash belegt
+Datenkonsistenz, weder eine Signatur des Herausgebers noch Inhaltswahrheit.
+Keine neue Tabelle, kein Bestandsbackfill und kein Ersatz fuer die offene
+allgemeine Faktenpruefung.
+
 **Landesmodule** (Berlin, Brandenburg) sind im Crawl-Plan gesperrt, bis ihr Land in
 `HELMUT_LANDESMODULE` ausdrücklich genannt ist — **je Land getrennt**, Default leer,
 fail-closed (kein Sammel-Schlüsselwort). Zusätzlich gilt: ein Abrufweg mit

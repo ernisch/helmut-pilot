@@ -108,3 +108,44 @@ die positiven und negativen Sachfaelle in beiden Pfaden tragen. Danach
 Kosten pro tatsaechlichem Entwurfs und Pruefpaar sowie vollstaendige
 Versorgung gegen den unveraenderten4 USD Riegel rechnen. Der heutige
 Entwurf bestaetigt weder diese Erreichbarkeit noch einen neuen500er Start.
+
+
+## Erster umgesetzter Eingabebaustein: DIP Dokumentangaben
+
+20.09.2026, Branch `codex/dip-quellfelder-20260920`, Integration noch offen.
+Dies ist die Reparatur eines Quellenverlusts, nicht die fertige neue
+Prosamethode. Der vorhandene Adapter liest Dokumenttyp, Urheber und Ressort,
+aber der allgemeine Weg machte daraus untypisierten Auszug beziehungsweise
+verlor den Typ im Modelleingang. Der bereinigte Titel verlor ausserdem den
+Originalvorspann bei Antworten auf Anfragen.
+
+Der neue begrenzte Vertrag bewahrt diese bereits gelieferten Felder getrennt,
+mit Originaltitel und inhaltsgebundener Zuordnung zur Quelle. Kein PDF Text,
+kein kompletter Rohpayload und keine ergaenzten Rollen. Ein Antrag bleibt
+als Dokumenttyp Antrag; daraus wird weder Annahme noch Vollzug abgeleitet.
+Publikationsmetadaten erzeugen keinen Ereignistermin. Die zwei Schreibwege
+und sechs echten Speicherleser erhalten den Teilbaum; Understanding, Lage
+und separate Briefingpruefeingabe erhalten dieselben Angaben. Quellen und
+Pruefhashes aendern sich bei geaenderten Angaben. Die kostenvermeidende
+bestehende Idempotenz nach Dokumentkennungen bleibt erhalten: kein neuer
+teurer Analyseauftrag allein durch diese Reparatur.
+
+Die erste Fassung mit15 neuen Offlinegruppen prueft den wirklichen Adapter, beide Speicherwege
+und alle sechs Leser mit lokalem HTTP Speicher. Sie bestand. Ein danach
+hinzugefuegter gezielter Gegenfall verweigert ein abweichendes kanonisches
+Quellenziel. Der Abgleich mit der amtlichen OpenAPI Beschreibung
+(20.09.2026, https://search.dip.bundestag.de/api/v1/openapi.yaml)
+belegt ausserdem die getrennten Felder einbringer/rolle beim
+koerperschaftlichen Urheber und federfuehrend beim Ressort. Diese bleiben
+jetzt einschliesslich false/unknown erhalten. Die neue gezielte Rollenprobe
+besteht ebenfalls; die finale Suite umfasst16 Gruppen.
+Der vorherige432er Gesamtlauf wurde gemaess Nutzerauftrag
+nicht wiederholt; CI des neuen Codes steht aus.
+
+Grenzen: Konsistenzhash ist keine Authentizitaetssignatur oder Faktenpruefung.
+227 bestehende DIP Rohdokumente tragen keine gespeicherten getrennten Urheber
+oder Ressortfelder; diese werden nicht aus dem Alttext rekonstruiert. Ihre
+juengste Publikation ist21.08.2026, also keine frische500er Versorgung.
+Die36 fachlichen Prosa Gegenfaelle bleiben geplante Abnahme, nicht bestanden.
+Fuer Nachrichtentexte fehlt weiter eine unabhaengig gepruefte Faktenbasis
+mit Handlung, Aussagegrad, Bedingung, Wirkung und individuellem Profilbezug.
