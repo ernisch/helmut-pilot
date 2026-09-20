@@ -62,5 +62,38 @@ test("spezifische Komposita und identische Gruppen mit Fachbezug bleiben nutzbar
     doc("h2", "Tarifrunde Seehäfen: Hafenbeschäftigte stimmen über Angebot ab")
   ).gleich, true);
 });
-console.log(`${count - failed}/${count} Gruppen erfolgreich`);
-process.exitCode = failed ? 1 : 0;
+async function resolverGegenprobe() {
+  const { resolveVorgang } = require("../lib/helmut/understanding");
+  for (const word of ["Beschäftigte", "Beschaeftigte"]) {
+    const alt = doc("alt", `${word} beraten bei Siemens Energy`);
+    const row = { id: "ko-alt", vorgang_id: `vg-${word.toLowerCase()}-20260909-alt`,
+      headline: alt.title, updated_at: alt.published_at };
+    let queries = 0;
+    const deps = {
+      findVorgangCandidates: async prefixes => {
+        queries += 1;
+        assert.ok(prefixes.length <= 5, "hoechstens drei Sachpraefixe und zwei Altformen");
+        return prefixes.some(p => row.vorgang_id.startsWith(p)) ? [row] : [];
+      },
+      listVorgangDocuments: async () => [alt]
+    };
+    const neu = { documents: [doc("neu", `${word} beraten bei Siemens Energy erneut`)] };
+    const gut = await resolveVorgang(neu, deps);
+    test(`echter Suchpfad findet korrekten Altbestand mit ${word}`, () => {
+      assert.equal(gut.resolution, "bestand");
+      assert.equal(gut.vorgangId, row.vorgang_id);
+      assert.equal(queries, 1, "keine weitere Datenbankanfrage");
+      assert.equal(V.deriveVorgangId(neu).startsWith(`vg-${word.toLowerCase()}`), false);
+    });
+    // Der Suchhinweis darf ein falsches Sachurteil nicht ueberstimmen.
+    const fremd = await resolveVorgang({ documents: [doc("fremd", `${word} in Stadtbibliotheken: Eröffnung verschoben`)] }, deps);
+    test(`gefundener Altbestand bleibt fuer fremden Vorgang mit ${word} gesperrt`, () => {
+      assert.equal(fremd.resolution, "neu");
+      assert.equal(fremd.existing, null);
+    });
+  }
+}
+resolverGegenprobe().catch(e => { failed += 1; console.error(e); }).finally(() => {
+  console.log(`${count - failed}/${count} Gruppen erfolgreich`);
+  process.exitCode = failed ? 1 : 0;
+});

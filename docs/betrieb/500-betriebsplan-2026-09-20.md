@@ -363,3 +363,22 @@ ueber Kennung, Fingerabdruck und beide kanonischen URL Felder; weiterhin
 0 aktive Profile. Kein Import. Die Frische endet vor der derzeit nur grob
 auf mehrere Arbeitstage schaetzbaren Gesamtreparatur. Vor dem echten Test
 muessen Quellen erneut frisch und fachlich geeignet bereitstehen.
+
+Abschlussreview vor Merge: Die neue Themenwurzel kann korrekte Altkennungen
+unter vg-beschaeftigte beziehungsweise der Umlautform aus der Suche nehmen.
+Im echten resolveVorgang Pfad reproduziert: direktes Sachurteil true,
+aber resolution neu. Die begrenzte Suchergaenzung fuegt hoechstens zwei
+aus den Eingabequellen abgeleitete Altpraefixe zur bestehenden Anfrage
+hinzu; kein weiterer Datenbankaufruf, keine neuen generischen Kennungen,
+keine Aenderung am sachlichen Belegvergleich. Korrekte alte Vorgänge
+werden gefunden, fachfremde trotz gefundenem Suchhinweis abgewiesen.
+Danach11/11 neue Gruppen,8/8 Vorgangs und12/12 Understanding Suiten
+bestanden. Der vorige Gesamtlauf gilt nicht als vollstaendiger Beleg
+dieser letzten Ergaenzung; der neue PR CI Lauf muss den exakten Kopf pruefen.
+
+Zwei lediglich im Speicher ausgefuehrte Varianten zur grossen Kettengruppe
+sind verworfen: weitere allgemeine Wortfilter hinterliessen eine gemischte
+12er Gruppe; eine paarweise direkte Aufteilung bei fehlendem Kern erzeugte
+neue falsche Paare. Beide sind weder Appcode noch positiver Nachweis und
+werden nicht als schneller Fix uebernommen. Die fachliche Ereigniszuordnung
+bleibt ein eigener groesserer Entwicklungsschritt.
