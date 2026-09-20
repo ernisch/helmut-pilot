@@ -175,5 +175,12 @@ test("Keine technische Bindung behauptet eine bestandene fachliche Vollpruefung"
   A.equal(x.pruefe(p, out).vollstaendigeFaktenpruefung, false);
   A.equal(x.pruefe(p, null).vollstaendigeFaktenpruefung, false);
 });
+test("Unbesetzte Arrayplaetze sind trotz passender Laenge keine Feldabdeckung", () => {
+  const b = basis(), x = P.binde(b), p = plan(b, x);
+  const leer = { ...p, felder: new Array(p.felder.length) };
+  A.throws(() => x.formuliere(leer), /plan-unvollstaendig/);
+  A.equal(x.pruefe(leer, {}).gebunden, false);
+  A.throws(() => x.formuliere(JSON.parse(JSON.stringify(leer))), /planfeld-abweichend/);
+});
 
 console.log(`${passed}/${passed} Prosa Faktenbindungsgruppen bestanden; produktive 36er Fachabnahme weiter offen.`);

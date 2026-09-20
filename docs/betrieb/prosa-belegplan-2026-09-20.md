@@ -144,7 +144,7 @@ Felder sicherstellen. Er darf diese Servereingaben nicht vom Generator
 oder einem ungeprueften Request uebernehmen. Nach Quellen oder
 Profilaenderung muss mit frisch gelesenen Eingaben neu gebunden werden.
 
-`scripts/prosa-faktenplan-test.js`: 50/50 neue isolierte Bindungsgruppen
+`scripts/prosa-faktenplan-test.js`: final51/51 isolierte Bindungsgruppen
 bestanden. Darunter sechs vorab formulierte synthetische Sachklassen mit
 positiven, negativen und fehlenden/widerspruechlichen Urteilen an je zwei
 Feldadressen, Manipulation nach eigener Hashneuberechnung und echte lokale
@@ -171,6 +171,15 @@ vollstaendig gruener436er Lauf behauptet. Bestandene Suiten werden nicht
 erneut lokal ausgefuehrt. PR CI und Integration stehen noch aus.
 Nur die Vorschau des eigenen Branches ist in vercel.json abgeschaltet;
 alle anderen Konfigurationswerte einschliesslich Crons bleiben identisch.
+
+Abschlussgegenprobe nach PR475: Ein unbesetzter JavaScript Arrayplatz wird
+von map uebersprungen. Auf dem ersten PR Kopf8c47a2c wird eine leere
+Einerauswahl nach JSON Speicherung faelschlich als gebunden bestaetigt.
+Der Fix verlangt zusaetzlich die vollstaendige Zahl tatsaechlich besuchter
+Felder. Die betroffene Bindungssuite besteht danach51/51, einschliesslich
+unbesetzter Plaetze und ihrer JSON Nullfassung. Nur diese betroffene Suite
+wurde erneut lokal ausgefuehrt. Die exakte neue PR CI muss den korrigierten
+Kopf pruefen; der vorherige laufende CI Stand ist keine Abschlussabnahme.
 
 
 ## Erster umgesetzter Eingabebaustein: DIP Dokumentangaben

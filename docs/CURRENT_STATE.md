@@ -3,13 +3,15 @@
 **20.09.2026: Faktenbindung offline vorbereitet; Gesamtziel teilweise abgeschlossen.**
 Branch `codex/prosa-faktenbindung-20260920` auf Main `6bb5659afe7402ad408286438ef19bc1aa475d1b`
 enthaelt einen isolierten Bindungsbaustein fuer separat gepruefte Fakten.
-50/50 neue Bindungsgruppen bestanden, darunter Manipulationen und lokale
+51/51 neue Bindungsgruppen bestanden, darunter Manipulationen und lokale
 Speicherung/Ruecklesung. Kein produktiver Aufrufer, keine automatische
 Faktengewinnung und keine bestandene36er Fachabnahme. Die getrennte Herkunft
 der Faktenfreigaben und die Anbindung beider Fachpfade bleiben offen.
 Der vorgeschriebene lokale Gesamtlauf endet431/436 in885s; die fuenf
 Umgebungsfehler bestehen danach unveraendert isoliert. Damit jede Suite
-bestanden, kein einzelner436/436 Lauf behauptet. PR CI und Integration
+bestanden, kein einzelner436/436 Lauf behauptet. Eine danach reproduzierte
+Luecke bei unbesetzten Arrayplaetzen ist korrigiert und die betroffene Suite
+erneut51/51 geprueft. Exakte neue PR475 CI und Integration
 stehen aus. Production Main6bb5659a und
 Deployment dpl_6EyvNb1JSdgANyTtTcZDAHKCwM4q READY rein lesend bestaetigt.
 SQL13:33:03 UTC:504/0, keine lebenden Sperren/Leases, offenen Jobs oder
