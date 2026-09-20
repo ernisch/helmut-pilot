@@ -1,0 +1,384 @@
+{
+  "version": 1,
+  "synthetisch": true,
+  "faelle": [
+    {
+      "id": "f01",
+      "klasse": "finanzwirkung",
+      "quelle": {
+        "id": "q-f01",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Der Stadtrat beschließt einen Zuschuss von 20 Euro für Busfahrkarten. Für Berechtigte sinkt dadurch der Fahrpreis um 20 Euro."
+      },
+      "soll": {
+        "art": "wirkung",
+        "modus": "beschlossen",
+        "akteur": "Stadtrat",
+        "handlung": "beschließt",
+        "gegenstand": "Zuschuss von 20 Euro für Busfahrkarten",
+        "adressat": "Berechtigte",
+        "bedingung": "Für Berechtigte",
+        "zeit": null,
+        "wirkung": "Für Berechtigte sinkt dadurch der Fahrpreis um 20 Euro.",
+        "einschraenkung": null
+      }
+    },
+    {
+      "id": "f02",
+      "klasse": "finanzwirkung",
+      "quelle": {
+        "id": "q-f02",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Der Ausgleichsbetrag könnte entfallen. Worum es sich bei diesem Betrag handelt, bleibt offen."
+      },
+      "soll": {
+        "art": "unbestimmt",
+        "modus": "offen",
+        "akteur": null,
+        "handlung": "könnte entfallen",
+        "gegenstand": "Ausgleichsbetrag",
+        "adressat": null,
+        "bedingung": null,
+        "zeit": null,
+        "wirkung": null,
+        "einschraenkung": "Worum es sich bei diesem Betrag handelt, bleibt offen."
+      }
+    },
+    {
+      "id": "f03",
+      "klasse": "finanzwirkung",
+      "quelle": {
+        "id": "q-f03",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Die Stadt nennt einen Zuschuss von 20 Euro für Busfahrkarten; der Betreiber bestreitet eine Senkung des Fahrpreises. Eine gemeinsame Klärung steht aus."
+      },
+      "soll": {
+        "art": "wirkung",
+        "modus": "offen",
+        "akteur": "Stadt",
+        "handlung": "nennt",
+        "gegenstand": "Zuschuss von 20 Euro für Busfahrkarten",
+        "adressat": null,
+        "bedingung": null,
+        "zeit": null,
+        "wirkung": null,
+        "einschraenkung": "der Betreiber bestreitet eine Senkung des Fahrpreises. Eine gemeinsame Klärung steht aus."
+      }
+    },
+    {
+      "id": "f04",
+      "klasse": "vollzug",
+      "quelle": {
+        "id": "q-f04",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Das Ministerium hat die Verlängerung des Programms beschlossen. Die zuständige Stelle bestätigt: Seit dem 1. September 2026 wird das verlängerte Programm umgesetzt."
+      },
+      "soll": {
+        "art": "ereignis",
+        "modus": "vollzogen",
+        "akteur": "zuständige Stelle",
+        "handlung": "wird das verlängerte Programm umgesetzt",
+        "gegenstand": "Programm",
+        "adressat": null,
+        "bedingung": null,
+        "zeit": "Seit dem 1. September 2026",
+        "wirkung": null,
+        "einschraenkung": null
+      }
+    },
+    {
+      "id": "f05",
+      "klasse": "vollzug",
+      "quelle": {
+        "id": "q-f05",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Das Ministerium prüft die Verlängerung des Programms. Eine Entscheidung ist noch nicht getroffen."
+      },
+      "soll": {
+        "art": "ereignis",
+        "modus": "pruefung",
+        "akteur": "Ministerium",
+        "handlung": "prüft",
+        "gegenstand": "Verlängerung des Programms",
+        "adressat": null,
+        "bedingung": null,
+        "zeit": null,
+        "wirkung": null,
+        "einschraenkung": "Eine Entscheidung ist noch nicht getroffen."
+      }
+    },
+    {
+      "id": "f06",
+      "klasse": "vollzug",
+      "quelle": {
+        "id": "q-f06",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Eine Meldung behauptet, das Programm sei verlängert. Das Ministerium bestätigt weder einen Beschluss noch die Umsetzung."
+      },
+      "soll": {
+        "art": "ereignis",
+        "modus": "offen",
+        "akteur": "Meldung",
+        "handlung": "behauptet",
+        "gegenstand": "Programm",
+        "adressat": null,
+        "bedingung": null,
+        "zeit": null,
+        "wirkung": null,
+        "einschraenkung": "Das Ministerium bestätigt weder einen Beschluss noch die Umsetzung."
+      }
+    },
+    {
+      "id": "f07",
+      "klasse": "zuschreibung",
+      "quelle": {
+        "id": "q-f07",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "In einem Gastbeitrag kritisiert Verband A die Forderung des Verbands B. Die Redaktion macht sich diese Position nicht zu eigen."
+      },
+      "soll": {
+        "art": "aussage",
+        "modus": "behauptet",
+        "akteur": "Verband A",
+        "handlung": "kritisiert",
+        "gegenstand": "Forderung des Verbands B",
+        "adressat": "Verbands B",
+        "bedingung": null,
+        "zeit": null,
+        "wirkung": null,
+        "einschraenkung": "Die Redaktion macht sich diese Position nicht zu eigen."
+      }
+    },
+    {
+      "id": "f08",
+      "klasse": "zuschreibung",
+      "quelle": {
+        "id": "q-f08",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Verband B kritisiert die Forderung des Verbands A. Verband A ist Adressat dieser Kritik, nicht ihr Urheber."
+      },
+      "soll": {
+        "art": "aussage",
+        "modus": "behauptet",
+        "akteur": "Verband B",
+        "handlung": "kritisiert",
+        "gegenstand": "Forderung des Verbands A",
+        "adressat": "Verbands A",
+        "bedingung": null,
+        "zeit": null,
+        "wirkung": null,
+        "einschraenkung": "Verband A ist Adressat dieser Kritik, nicht ihr Urheber."
+      }
+    },
+    {
+      "id": "f09",
+      "klasse": "zuschreibung",
+      "quelle": {
+        "id": "q-f09",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Der Bericht erwähnt Kritik an einer Forderung. Wer die Kritik äußert und an wen sie gerichtet ist, wird nicht genannt."
+      },
+      "soll": {
+        "art": "aussage",
+        "modus": "offen",
+        "akteur": null,
+        "handlung": "Kritik",
+        "gegenstand": "Forderung",
+        "adressat": null,
+        "bedingung": null,
+        "zeit": null,
+        "wirkung": null,
+        "einschraenkung": "Wer die Kritik äußert und an wen sie gerichtet ist, wird nicht genannt."
+      }
+    },
+    {
+      "id": "f10",
+      "klasse": "zeit",
+      "quelle": {
+        "id": "q-f10",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Nach dem Konzert 2024 sind neue Auftritte am 3. Mai 2028 in Bonn und am 7. Mai 2028 in Kiel geplant."
+      },
+      "soll": {
+        "art": "zeit",
+        "modus": "geplant",
+        "akteur": null,
+        "handlung": "geplant",
+        "gegenstand": "Auftritte",
+        "adressat": null,
+        "bedingung": null,
+        "zeit": "am 3. Mai 2028 in Bonn und am 7. Mai 2028 in Kiel",
+        "wirkung": null,
+        "einschraenkung": null
+      }
+    },
+    {
+      "id": "f11",
+      "klasse": "zeit",
+      "quelle": {
+        "id": "q-f11",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Die Meldung vom 20. September 2026 blickt auf das Konzert 2024 zurück. Sie nennt keinen neuen Auftritt und keine Handlungsfrist."
+      },
+      "soll": {
+        "art": "zeit",
+        "modus": "offen",
+        "akteur": null,
+        "handlung": "blickt",
+        "gegenstand": "Konzert 2024",
+        "adressat": null,
+        "bedingung": null,
+        "zeit": "2024",
+        "wirkung": null,
+        "einschraenkung": "Sie nennt keinen neuen Auftritt und keine Handlungsfrist."
+      }
+    },
+    {
+      "id": "f12",
+      "klasse": "zeit",
+      "quelle": {
+        "id": "q-f12",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Ein neuer Auftritt ist geplant. Datum und Ort stehen noch nicht fest."
+      },
+      "soll": {
+        "art": "zeit",
+        "modus": "geplant",
+        "akteur": null,
+        "handlung": "geplant",
+        "gegenstand": "Auftritt",
+        "adressat": null,
+        "bedingung": null,
+        "zeit": null,
+        "wirkung": null,
+        "einschraenkung": "Datum und Ort stehen noch nicht fest."
+      }
+    },
+    {
+      "id": "f13",
+      "klasse": "profil",
+      "quelle": {
+        "id": "q-f13",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Das Mandatsregister führt Alex als stellvertretendes Mitglied des Verkehrsausschusses. Alex hat keinen Vorsitz."
+      },
+      "soll": {
+        "art": "profil",
+        "modus": "behauptet",
+        "akteur": "Alex",
+        "handlung": "stellvertretendes Mitglied",
+        "gegenstand": "Verkehrsausschusses",
+        "adressat": null,
+        "bedingung": null,
+        "zeit": null,
+        "wirkung": null,
+        "einschraenkung": "Alex hat keinen Vorsitz."
+      }
+    },
+    {
+      "id": "f14",
+      "klasse": "profil",
+      "quelle": {
+        "id": "q-f14",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Alex besucht als Gast eine Sitzung des Verkehrsausschusses. Eine Mitgliedschaft oder ein Vorsitz ist damit nicht belegt."
+      },
+      "soll": {
+        "art": "profil",
+        "modus": "behauptet",
+        "akteur": "Alex",
+        "handlung": "besucht als Gast",
+        "gegenstand": "Sitzung des Verkehrsausschusses",
+        "adressat": null,
+        "bedingung": null,
+        "zeit": null,
+        "wirkung": null,
+        "einschraenkung": "Eine Mitgliedschaft oder ein Vorsitz ist damit nicht belegt."
+      }
+    },
+    {
+      "id": "f15",
+      "klasse": "profil",
+      "quelle": {
+        "id": "q-f15",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Alex wird beim Thema Verkehr genannt. Ausschussmitgliedschaft und Funktion sind nicht angegeben."
+      },
+      "soll": {
+        "art": "profil",
+        "modus": "offen",
+        "akteur": "Alex",
+        "handlung": "wird beim Thema Verkehr genannt",
+        "gegenstand": "Verkehr",
+        "adressat": null,
+        "bedingung": null,
+        "zeit": null,
+        "wirkung": null,
+        "einschraenkung": "Ausschussmitgliedschaft und Funktion sind nicht angegeben."
+      }
+    },
+    {
+      "id": "f16",
+      "klasse": "bedingung",
+      "quelle": {
+        "id": "q-f16",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Nur wenn der Stadtrat den Zuschuss beschließt, können berechtigte Verkehrsunternehmen bis zum 30. November 2026 einen Antrag stellen. Eine Bewilligung ist damit nicht zugesagt."
+      },
+      "soll": {
+        "art": "option",
+        "modus": "bedingt",
+        "akteur": "berechtigte Verkehrsunternehmen",
+        "handlung": "einen Antrag stellen",
+        "gegenstand": "Zuschuss",
+        "adressat": null,
+        "bedingung": "Nur wenn der Stadtrat den Zuschuss beschließt",
+        "zeit": "bis zum 30. November 2026",
+        "wirkung": null,
+        "einschraenkung": "Eine Bewilligung ist damit nicht zugesagt."
+      }
+    },
+    {
+      "id": "f17",
+      "klasse": "bedingung",
+      "quelle": {
+        "id": "q-f17",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Die Frist bis zum 30. November 2026 gilt ausschließlich für Verkehrsunternehmen. Für Abgeordnete besteht aus dieser Quelle keine Antragspflicht."
+      },
+      "soll": {
+        "art": "option",
+        "modus": "bedingt",
+        "akteur": "Verkehrsunternehmen",
+        "handlung": null,
+        "gegenstand": null,
+        "adressat": null,
+        "bedingung": "ausschließlich für Verkehrsunternehmen",
+        "zeit": "bis zum 30. November 2026",
+        "wirkung": null,
+        "einschraenkung": "Für Abgeordnete besteht aus dieser Quelle keine Antragspflicht."
+      }
+    },
+    {
+      "id": "f18",
+      "klasse": "bedingung",
+      "quelle": {
+        "id": "q-f18",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Verkehrsunternehmen könnten einen Antrag stellen. Voraussetzung, Frist und Bewilligung sind noch ungeklärt."
+      },
+      "soll": {
+        "art": "option",
+        "modus": "offen",
+        "akteur": "Verkehrsunternehmen",
+        "handlung": "einen Antrag stellen",
+        "gegenstand": null,
+        "adressat": null,
+        "bedingung": null,
+        "zeit": null,
+        "wirkung": null,
+        "einschraenkung": "Voraussetzung, Frist und Bewilligung sind noch ungeklärt."
+      }
+    }
+  ]
+}

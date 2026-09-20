@@ -506,3 +506,115 @@ Dieser abschliessende PR aendert nur Dokumentation gemaess CLAUDE.md
 Paragraph9. Sein eigener Merge und Deployment werden aus der Historie
 belegt, kein rekursiver Dokumentations PR und kein erneuter manueller
 fachlicher Gesamtlauf allein fuer diese beiden Dokumentationsdateien.
+
+## Vorbereiteter Quellenzerlegungsversuch nach PR478
+
+20.09.2026. **Teilweise abgeschlossen, kein bezahlter Start und keine
+Methodenabnahme.** Basis Main be4b237b6154248f30e175235ed81aa9893b01bf,
+Arbeitsbranch `codex/quellenfakten-versuch-20260920`. Rein lesende Uebernahme
+17:05:50 UTC:504/0,0 lebende Pipeline Sperren und Job Leases,0 unerledigte
+Jobs,0 junge offene Prozesse.29782 Rohquellen,916 mit Auszug,0 mit DIP
+Quellfeldern,0 Publikationen innerhalb48 Stunden. Juengste Publikation
+16.09.15:55:56 UTC. Die beiden Profilhashes und beide Storehashes sind gleich
+der oben festgehaltenen Grundlinie. Kosten0,264700 USD, Riegel4 USD.
+Deployment dpl_H133uvcugPyny1diBKuTe71Ro55V READY mit Productionalias und
+be4b237b. Main CI35524341257 bei Uebernahme noch in Arbeit.
+Die anschliessende GitHub Nachsicht bestaetigte completed/success.
+
+Die erneut gelesene amtliche OpenAPI beschreibt am Vorgang zusaetzlich
+sachgebiet, beratungsstand, initiative und inkrafttreten samt erlaeuterung.
+Diese Felder tragen weitere begrenzte Aussagen. Inkrafttreten belegt keinen
+tatsaechlichen Vollzug; das Dokumentdatum bleibt die Datierung des letzten
+Dokuments. Finanzwirkung, Bedingungen, individuelle Empfehlungen und freie
+Nachrichten lassen sich damit nicht vollstaendig typisiert versorgen.
+Deshalb kein weiterer Teiladapter als vermeintliche Gesamtloesung.
+
+### Andere Reihenfolge, weiterhin unbewiesene Methode
+
+Der verworfene Quellenrichter bewertete schon formulierte Modelltexte.
+Der vorbereitete Versuch erhaelt ausschliesslich synthetische Originaltexte,
+keine Produktantwort, Sollwerte oder redaktionellen Freigaben. Er zerlegt die
+Hauptaussage je Quelle in belegte Wortstellen und vorgeschlagene Rollen und
+Modalitaet. Der vollstaendige Originaltext muss unveraendert erhalten bleiben.
+Keine freie Produktformulierung, keine Verbindung mit Productionprofilen,
+keine Aufnahme in den Faktenplan und keine Erzeugung von trustedFreigaben.
+Die bestehenden geschlossenen Versuche bleiben unveraendert geschlossen.
+
+**Vertrauensgrenze:** Auch hier interpretiert ein Modell. Wortgleiche Spannen
+beweisen ihre Zuordnung nicht. Ein akzeptiertes Moduslabel ist keine
+unabhaengige Wahrheit. Alle Ergebnisse bleiben ungepruefte Kandidaten und
+brauchen getrennte vollstaendige Originalsichtung. Dieser Versuch prueft nur,
+ob eine nachvollziehbare Vorarbeit fuer den fehlenden Quellenpruefpfad
+moeglich ist. Er liefert selbst noch keinen automatischen unabhaengigen
+Faktenpruefer. Dauerhafter manueller Redaktionsbetrieb ist nicht beschlossen.
+Eine solche Produktentscheidung darf nicht still durch diesen Versuch
+eingefuehrt werden.
+
+`scripts/fixtures/quellenfakten-korpus.json` fixiert18 synthetische Texte und
+separat geschriebene Sollannotationen: je drei fuer Finanzwirkung, Vollzug,
+Zuschreibung, Ereigniszeit, Profilrolle und bedingte Option. Die Profilfaelle
+beschreiben ein synthetisches Register; daraus darf spaeter niemals ein
+Request oder Modellprofil als autorisierte Mandatsaufloesung werden.
+Der Zeitgegenfall erhaelt beide2028er Auftritte getrennt vom Konzert2024.
+Der positive Vollzugsfall nennt ausdruecklichen Beschluss und Umsetzung.
+Alle Bedingungen und Verneinungen bleiben im ganzen Quelltext erhalten.
+
+Der exakte Annotationsvergleich ist ein endlicher Referenztest, kein
+universeller semantischer Richter. Eine andere richtige Wortspanne kann
+abweichen; dann stoppt die Serie zur Sichtung statt ein falsches Sachurteil
+zu behaupten. Sollannotationen werden nach einem Ergebnis nicht angepasst,
+um einen gescheiterten Lauf nachtraeglich gruen zu machen. Ein einzelnes
+Tupel erfasst zudem nicht alle Nebenbehauptungen einer mehrteiligen Quelle.
+Diese Grenze muss vor einer spaeteren Produktintegration aufgeloest werden.
+
+### Konkrete getrennte Freigabegrenze
+
+Der noch NICHT gestartete Auftrag waere:
+
+* Genau sechs moegliche Aufrufe, je drei Quellen einer Klasse; kein Retry.
+* Jeweils gpt-5-mini, reasoning minimal, bestehende3000 Ausgabetokens und
+  unveraenderte volle Reserve0,212 USD. Hoechstens1,272 USD insgesamt.
+* Ein einziges30 Minuten Fenster am20.09.2026, sechs manuelle Blockstarts;
+  pro Actionsjob maximal3 Minuten. Jeder Folgeblock verlangt den gespeicherten
+  Antwortbezug und eine getrennte komplette Fachsichtung des vorigen Blocks.
+* Start nur bei exakt gebundenem Branch und Commit, Runversuch1, passendem
+  Production Main, gesperrter Kommunikation und unveraenderten Kostenregeln.
+  Kein aktives Profil, lebende Pipeline/Verstehen/Job Lease, offener Job oder
+  junger offener Prozess. Vor jedem Block und nach Abschluss erneut lesen.
+* Neue CAS Quittung quellenfaktenEingang20260920 im bestehenden Auth Store;
+  ausschliesslich diese Quittung, Kosten und Aufruftelemetrie duerfen sich
+  aendern. Bis zu sechs verdraengbare alte Telemetriezeilen werden erhalten.
+  Keine Konten, Sessions, Profile, Quellen, Wissensobjekte oder Apptexte schreiben.
+* Vollstaendige Auftraege, Rohantworten und Kostenbelege privat verschluesseln.
+  Keine Geheimnisse oder politischen Rohtexte in Klartextlogs.
+* Sofortstopp bei Annotationsabweichung, Schemafehler, falscher Quellbindung,
+  unklaren Kosten, ungepruefter Fortsetzung oder Schutzabweichung.
+  Ein unbekannter Ausgang bleibt gesperrt; keine Quittung zuruecksetzen.
+
+Die1,272 USD sind eine konservative Höchstbindung, keine Kostenschaetzung.
+Zusammen mit der gemessenen Tagesbuchung waeren1,536700 USD gebunden;
+konkurrierender neuer Verbrauch kann den Start weiterhin sperren. Der4 USD
+Riegel wird weder erhoeht noch umgangen. Die Tagesbindung verfaellt bei
+Datumswechsel; keine eigenmaechtige Umschreibung auf einen anderen Tag.
+Der Workflow ist nur ein vorbereiteter manueller Einstieg und bleibt ohne
+explizite Freigabe unbenutzt. Die Branchvorschau ist ausgeschaltet.
+
+**Abnahme bleibt getrennt:** lokale Schutztests belegen technische Isolation,
+der spaetere18er Versuch hoechstens diese Quellenzerlegung.0 von36 echten
+Produktpfadfaellen wurden hier geprueft. Auch bei18 richtigen Ergebnissen
+bleiben vollstaendige Faktenerfassung, unabhaengige Fachfreigabe fuer echte
+Quellen, Feldabdeckung beider Pfade, Speicherung/Ruecklesung, Landesversorgung,
+500er Frische und gemessene Kosten/Laufzeit offen. Kein Antrag auf500er Start.
+
+### Technische Pruefung der Vorbereitung
+
+Kanonischer lokaler Lauf ausschliesslich ueber scripts/lokal.js:
+438/441 Suiten in984s. Drei unveraenderte Suiten scheiterten:
+admin-nutzer-loeschen-test.js und passwort-setzen-login-fix-test.js am lokalen
+Chromium Start (socket Operation not permitted); narrativ-stress-1000-test.js
+am unveraenderten180 Sekunden Limit. Kein gruener lokaler Gesamtlauf.
+Die neue Korpussuite und der neue Versuchslaeufer bestanden darin beide;
+die zuvor einzeln gemessenen Gruppenstaende10/10 und13/13 sind technische
+Schutzpruefungen, keine gemessenen Modellantworten und keine36er Fachabnahme.
+Die GitHub Pflichtpruefung des exakten PR Kopfs steht vor Veroeffentlichung
+noch aus. Bis zu deren Abschluss bleibt auch die technische Abnahme offen.
