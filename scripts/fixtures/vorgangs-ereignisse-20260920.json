@@ -1,0 +1,253 @@
+{
+  "hinweis": "Am 20.09.2026 gesicherte oeffentliche Titel und Kurzfassungen aus dem vorbereiteten 31er Quellenpaket. Keine Behauptung ueber die Wahrheit der Meldungen. Kennungen und Quellenkennungen synthetisch; nur fuer den Ereigniszuordnungsnachweis. Die Themenlabels sind vorab fachlich festgelegt und niemals Eingang der Anwendungslogik.",
+  "documents": [
+    {
+      "title": "Den Haag - Gewaltsame Zusammenstöße bei rechtsextremer Demonstration in den Niederlanden",
+      "summary": "In den Niederlanden hat es zwischen rechtsextremen Demonstranten und der Polizei gewaltsame Zusammenstöße gegeben.",
+      "published_at": "2026-09-19T22:52:10.000Z",
+      "id": "meldung-00",
+      "source_id": "belegquelle-0",
+      "expectedTopic": "denhaag"
+    },
+    {
+      "title": "Abstimmung - In Berlin und Mecklenburg-Vorpommern werden neue Parlamente gewählt",
+      "summary": "In Mecklenburg-Vorpommern wird heute ein neuer Landtag gewählt und in Berlin eine neues Abgeordnetenhaus. In beiden Bundesländern werden knappe Entscheidungen erwartet.",
+      "published_at": "2026-09-19T22:52:10.000Z",
+      "id": "meldung-01",
+      "source_id": "belegquelle-1",
+      "expectedTopic": "wahlen-de"
+    },
+    {
+      "title": "Wahlen - Merz berät mit CDU-Spitze über Ergebnisse",
+      "summary": "Die Ergebnisse der Wahlen in Mecklenburg-Vorpommern und Berlin haben auch bundespolitische Bedeutung.",
+      "published_at": "2026-09-19T22:52:10.000Z",
+      "id": "meldung-02",
+      "source_id": "belegquelle-0",
+      "expectedTopic": "wahlen-de"
+    },
+    {
+      "title": "Saudi-Arabien - Huthi-Miliz meldet Angriffe auf saudiarabische Hauptstadt Riad und Ölanlagen am Roten Meer",
+      "summary": "Die Huthi-Miliz im Jemen hat nach eigenen Angaben Ziele in der saudi-arabischen Hauptstadt Riad angegriffen sowie Ölanlagen am Roten Meer.",
+      "published_at": "2026-09-19T22:52:10.000Z",
+      "id": "meldung-03",
+      "source_id": "belegquelle-1",
+      "expectedTopic": "saudi"
+    },
+    {
+      "title": "Entlastungspaket - Opposition und Sozialverbände kritisieren Tankrabatt - Bovenschulte (SPD) bemängelt Kostenverteilung",
+      "summary": "Die Pläne der Bundesregierung zur Entlastung der Bürger bei den Kraftstoffpreisen stoßen bei Sozialverbänden und der Opposition auf Kritik.",
+      "published_at": "2026-09-19T22:52:10.000Z",
+      "id": "meldung-04",
+      "source_id": "belegquelle-0",
+      "expectedTopic": "kraftstoff"
+    },
+    {
+      "title": "Fragen und Anworten - Tankrabatt und Preisdeckel - Was die Bundesregierung gegen die hohen Spritpreise plant",
+      "summary": "Bund und Länder haben sich auf ein Entlastungspaket gegen die hohen Kraftstoffpreise verständigt. Geplant ist ein neuer Tankrabatt und die Einführung eines Spritpreisdeckels. Die wichtigsten Fragen und Antworten.",
+      "published_at": "2026-09-19T22:52:10.000Z",
+      "id": "meldung-05",
+      "source_id": "belegquelle-1",
+      "expectedTopic": "kraftstoff"
+    },
+    {
+      "title": "Verteidigung - General Breuer wird Vorsitzender des NATO-Militärausschusses",
+      "summary": "Deutschlands ranghöchster Soldat wird neuer Vorsitzender des NATO-Militärausschusses.",
+      "published_at": "2026-09-19T22:52:10.000Z",
+      "id": "meldung-06",
+      "source_id": "belegquelle-0",
+      "expectedTopic": "breuer"
+    },
+    {
+      "title": "Iran-Krieg - Iran nennt USA Bedingungen für Kriegsende",
+      "summary": "Der Iran hat den USA über Vermittler Bedingungen für ein Ende des Krieges genannt.",
+      "published_at": "2026-09-19T22:52:10.000Z",
+      "id": "meldung-07",
+      "source_id": "belegquelle-1",
+      "expectedTopic": "iran-bedingungen"
+    },
+    {
+      "title": "Russland - Parlamentswahl geht zu Ende",
+      "summary": "In Russland geht heute die dreitägige Parlamentswahl zu Ende.",
+      "published_at": "2026-09-19T22:52:10.000Z",
+      "id": "meldung-08",
+      "source_id": "belegquelle-0",
+      "expectedTopic": "wahl-russland"
+    },
+    {
+      "title": "Nach langem Streit - Einigung mit Dänemark und Grönland: USA wollen Militärpräsenz ausweiten",
+      "summary": "Die USA wollen ihre Militärpräsenz auf Grönland ausweiten. Wie US-Präsident Trump mitteilte, gibt es darüber eine Einigung mit Dänemark und der Arktisinsel. Seinen Angaben zufolge wird die Souveränität Grönlands nicht beeinträchtigt.",
+      "published_at": "2026-09-19T22:52:10.000Z",
+      "id": "meldung-09",
+      "source_id": "belegquelle-1",
+      "expectedTopic": "groenland"
+    },
+    {
+      "title": "USA - Journalisten Zugang zum Weißen Haus verweigert",
+      "summary": "Journalisten der US-Sender CNN und MS NOW sowie des Online-Portals Politico ist der Zugang zum Weißen Haus in Washington verweigert worden.",
+      "published_at": "2026-09-19T22:52:10.000Z",
+      "id": "meldung-10",
+      "source_id": "belegquelle-0",
+      "expectedTopic": "pressezugang"
+    },
+    {
+      "title": "Studie - WG-Zimmer in Millionenstädten deutlich teurer - München bleibt Spitzenreiter",
+      "summary": "In den vier deutschen Millionenstädten sind die Mieten für Zimmer in kleineren Wohngemeinschaften deutlich teurer geworden. Das zeigt eine aktuelle Auswertung des Moses-Mendelssohn-Instituts.",
+      "published_at": "2026-09-19T22:52:10.000Z",
+      "id": "meldung-11",
+      "source_id": "belegquelle-1",
+      "expectedTopic": "mieten"
+    },
+    {
+      "title": "Ukraine-Krieg - USA verhängen neue Sanktionen gegen Russland - Selenskyj dankt Trump",
+      "summary": "US-Präsident Trump hat das Gesetz über die neuen Sanktionen der Vereinigten Staaten gegen Russland unterzeichnet. Zuvor hatten bereits der Senat und das Repräsentantenhaus mit einer parteiübergreifenden Mehrheit für das Paket gestimmt.",
+      "published_at": "2026-09-19T22:52:10.000Z",
+      "id": "meldung-12",
+      "source_id": "belegquelle-0",
+      "expectedTopic": "russland-sanktionen"
+    },
+    {
+      "title": "Künstliche Intelligenz - Auch Googles KI-Software Gemini drang bei Tests in echte Unternehmen ein",
+      "summary": "Auch die KI-Software von Google - Gemini - hat sich bei Tests eigenständig in Unternehmen gehackt. Das machte Google nun auf Nachfrage des \"Wall Street Journal\" bekannt.",
+      "published_at": "2026-09-19T22:52:10.000Z",
+      "id": "meldung-13",
+      "source_id": "belegquelle-1",
+      "expectedTopic": "gemini"
+    },
+    {
+      "title": "Folge von US-Sanktionen - Innenministerium im Iran nennt Teuerung besorgniserregend - offenbar Engpässe bei Nahrungsmitteln und Medikamenten",
+      "summary": "Das iranische Innenministerium hat die stark steigenden Preise im Land als besorgniserregend bezeichnet.",
+      "published_at": "2026-09-19T22:52:10.000Z",
+      "id": "meldung-14",
+      "source_id": "belegquelle-0",
+      "expectedTopic": "iran-preise"
+    },
+    {
+      "title": "Unzufriedenheit mit Senat erreicht neuen Höchststand",
+      "summary": "Vor der Wahl zum Berliner Abgeordnetenhaus ist laut Infratest Dimap nur noch jeder Fünfte mit der Arbeit des Senats zufrieden. Damit ist die Landesregierung in Berlin so unbeliebt wie zuletzt keine andere in Deutschland vor einer Wahl.",
+      "published_at": "2026-09-19T23:11:09.000Z",
+      "id": "meldung-15",
+      "source_id": "belegquelle-1",
+      "expectedTopic": "wahlen-de"
+    },
+    {
+      "title": "Huthi-Miliz reklamiert Angriffe in Saudi-Arabien für sich",
+      "summary": "Die Huthi-Miliz im Jemen hat die jüngsten Angriffe auf Ziele in Saudi-Arabien für sich reklamiert. Zuvor hatten Anwohner in Riad von Explosionen und einer Rauchsäule nahe dem internationalen Flughafen berichtet.",
+      "published_at": "2026-09-19T23:10:56.000Z",
+      "id": "meldung-16",
+      "source_id": "belegquelle-0",
+      "expectedTopic": "saudi"
+    },
+    {
+      "title": "Saudi-Arabien: Explosionen nahe dem Flughafen Riad",
+      "summary": "In der saudi-arabischen Hauptstadt Riad ist nach Luftalarm in der Nähe des Flughafens schwarzer Rauch aufgestiegen. Zuletzt hatte sich der Konflikt zwischen Saudi-Arabien und der von Iran unterstützten Huthi-Miliz wieder zugespitzt.",
+      "published_at": "2026-09-19T18:32:06.000Z",
+      "id": "meldung-17",
+      "source_id": "belegquelle-1",
+      "expectedTopic": "saudi"
+    },
+    {
+      "title": "Duma-Wahl: Warum Snegowskij keine Chance gegen Tolstoj hat",
+      "summary": "Seine Jabloko-Partei ist von der Duma-Wahl ausgeschlossen. Aber als Direktkandidat darf Artjom Snegowskij in Moskau antreten. Hat er eine Chance? Sein Gegenkandidat ist der Vizepräsident der Duma, Pjotr Tolstoj.",
+      "published_at": "2026-09-19T18:03:33.000Z",
+      "id": "meldung-18",
+      "source_id": "belegquelle-0",
+      "expectedTopic": "wahl-russland"
+    },
+    {
+      "title": "Generalinspekteur Breuer wird Vorsitzender des NATO-Militärausschusses",
+      "summary": "Es ist einer der einflussreichsten Posten bei der NATO - und künftig hat ihn ein Deutscher inne: Generalinspekteur Breuer ist zum neuen Vorsitzenden des NATO-Militärausschusses gewählt worden.",
+      "published_at": "2026-09-19T17:58:34.000Z",
+      "id": "meldung-19",
+      "source_id": "belegquelle-1",
+      "expectedTopic": "breuer"
+    },
+    {
+      "title": "Weißes Haus verweigert Journalisten von CNN, MS NOW und Politico Zugang",
+      "summary": "US-Präsident Trump hatte angekündigt, CNN, MS NOW und Politico aus dem Weißen Haus zu verbannen. Und tatsächlich: Die Reporter wurden heute abgewiesen, ihre Presseausweise deaktiviert.",
+      "published_at": "2026-09-19T15:53:33.000Z",
+      "id": "meldung-20",
+      "source_id": "belegquelle-0",
+      "expectedTopic": "pressezugang"
+    },
+    {
+      "title": "Krankenkassen sollen doch über Beitragsanhebung informieren müssen",
+      "summary": "Gesundheitsminister Linnemann will das Aus der Informationspflicht für gesetzliche Krankenkassen über Beitragserhöhungen wieder rückgängig machen. Vor allem Verbraucherschützer hatten die Abschaffung der Pflicht scharf kritisiert.",
+      "published_at": "2026-09-19T15:46:45.000Z",
+      "id": "meldung-21",
+      "source_id": "belegquelle-1",
+      "expectedTopic": "krankenkassen"
+    },
+    {
+      "title": "USA: Trump setzt neues Sanktionspaket gegen Russland in Kraft",
+      "summary": "Einreiseverbote, Strafzölle und eingefrorene Vermögen: US-Präsident Trump hat verschärfte Sanktionen gegen Russland mit seiner Unterschrift in Kraft gesetzt. Eine scharfe Reaktion aus Russland folgte prompt.",
+      "published_at": "2026-09-19T14:52:46.000Z",
+      "id": "meldung-22",
+      "source_id": "belegquelle-0",
+      "expectedTopic": "russland-sanktionen"
+    },
+    {
+      "title": "Auch Googles KI hackte Unternehmen",
+      "summary": "Wiederholt haben KI-Systeme bei Tests unerwartet auf fremde Systeme zugegriffen. Nun wurden solche Vorfälle auch bei Googles Gemini bekannt. In der Debatte um KI-Sicherheit lässt Kalifornien mögliche strengere Sicherheitsvorgaben prüfen.",
+      "published_at": "2026-09-19T13:09:00.000Z",
+      "id": "meldung-23",
+      "source_id": "belegquelle-1",
+      "expectedTopic": "gemini"
+    },
+    {
+      "title": "Wie geht China mit den Gefahren durch Künstliche Intelligenz um?",
+      "summary": "Debatten um die Eindämmung der Gefahren durch Künstliche Intelligenz enden in den USA meist mit dem Hinweis, dass China dann einen gefährlichen Vorsprung erlange. Doch wo steht Peking in der Debatte? Von Jörg Endriss.",
+      "published_at": "2026-09-19T13:08:46.000Z",
+      "id": "meldung-24",
+      "source_id": "belegquelle-0",
+      "expectedTopic": "ki-china"
+    },
+    {
+      "title": "Wie sich Lokaljournalismus weiterentwickelt",
+      "summary": "Klicks, neue Kanäle, Künstliche Intelligenz: Der Lokaljournalismus befindet sich im Wandel. Wie Zeitungen mit den Herausforderungen umgehen, zeigt eine Redaktion des Böblinger Boten. Wie kann sie sich behaupten? Von Laura Bisch.",
+      "published_at": "2026-09-19T12:20:39.000Z",
+      "id": "meldung-25",
+      "source_id": "belegquelle-1",
+      "expectedTopic": "lokaljournalismus"
+    },
+    {
+      "title": "Was ist über das mögliche Grönland-Abkommen bekannt?",
+      "summary": "Im Streit um US-Ansprüche auf Grönland scheint sich eine Einigung zwischen den USA, Dänemark und Grönland abzuzeichnen - in Form eines gemeinsamen Abkommens. Was darüber bekannt ist - und worin die Brisanz im Streit um die Insel liegt.",
+      "published_at": "2026-09-19T11:02:09.000Z",
+      "id": "meldung-26",
+      "source_id": "belegquelle-0",
+      "expectedTopic": "groenland"
+    },
+    {
+      "title": "Abgeordnetenhauswahl: So lief der Wahlkampf in Berlin",
+      "summary": "Last-Minute-Spitzenkandidatenwechsel, Terroranschlag, Korruptions-Ermittlungen: Berlin hat einen außergewöhnlichen Wahlkampf erlebt. Nicht zuletzt deshalb ist das Rennen um Platz eins so eng wie nie.",
+      "published_at": "2026-09-19T09:17:23.000Z",
+      "id": "meldung-27",
+      "source_id": "belegquelle-1",
+      "expectedTopic": "wahlen-de"
+    },
+    {
+      "title": "++ Liveblog zu den Wahlen in MV und Berlin: Parteien haben Wahlkampf beendet ++",
+      "summary": "Vor dem Wahlen in Mecklenburg-Vorpommern und Berlin haben die Parteien heute ihren Wahlkampf beendet. Bundeskanzler Merz erhält vor dem Wahlsonntag weitere Rückendeckung aus seiner eigenen Partei.",
+      "published_at": "2026-09-19T20:24:16.000Z",
+      "id": "meldung-28",
+      "source_id": "belegquelle-0",
+      "expectedTopic": "wahlen-de"
+    },
+    {
+      "title": "Vier Kinofilme und eine neue Serie über die Beatles",
+      "summary": "Vier Kinofilme, eine BBC/ZDF-Serie über ihre Hamburger Jahre, neue Bücher, Shows und ein Podcast im NDR: Die Geschichte der Beatles lässt die Menschen nicht los. Von O. Bandixen.",
+      "published_at": "2026-09-19T08:40:31.000Z",
+      "id": "meldung-29",
+      "source_id": "belegquelle-1",
+      "expectedTopic": "beatles"
+    },
+    {
+      "title": "Viel Kritik und ein wenig Lob für Spritpreis-Entlastungspaket",
+      "summary": "Mit Tankrabatt und Spritpreisdeckel will die Bundesregierung gegen hohe Kraftstoffpreise vorgehen. Die Maßnahmen stoßen größtenteils auf Kritik - sie seien zu wenig zielgenau. Doch es gibt auch Zustimmung.",
+      "published_at": "2026-09-19T12:39:46.000Z",
+      "id": "meldung-30",
+      "source_id": "belegquelle-0",
+      "expectedTopic": "kraftstoff"
+    }
+  ]
+}
