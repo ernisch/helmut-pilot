@@ -60,7 +60,8 @@
       "codex/reset-timing-nachweis-20260920": false,
       "codex/ergebnisbilanz-20260920": false,
       "codex/vorgang-beweispaar-20260920": false,
-      "codex/ereignisketten-20260920": false
+      "codex/ereignisketten-20260920": false,
+      "codex/dip-quellfelder-20260920": false
     }
   },
   "functions": {

@@ -1,12 +1,13 @@
 # Neuer 500er Nachweis: belegter Vorflug und verbleibende Grenzen
 
-20.09.2026, **blockiert; kein Startpaket freigegeben**. Aktueller belegter
-Productionstand nach PR467 ist Main2a8d63fd auf
-Deployment dpl_4jbgyNxcJoMs2XhvBbTzF87qJz2Q READY. Laufzeitleser35499889132
-bestaetigt diesen Stand um08:33:47 UTC. Die frueheren datierten Aufnahmen
-unten bleiben als Historie erhalten; massgeblich ist die letzte
-[Nachkontrolle](#integration-pr467-und-verbleibende-freigabegrenze).
-Keine erfolgreiche fachliche Abnahme eines neuen500er Tests.
+20.09.2026, **500er Start weiter blockiert**. Aktueller belegter
+Productionstand nach PR471 ist Main0fc60f8f auf
+Deployment dpl_8wuLtgxFr9KtbbdPoD34YiqNH5d8 READY. HTTP200 liefert denselben
+Commitstand; SQL11:48:54 UTC bestaetigt504/0 und unveraenderten Zustand
+gegenueber dem Vorbeleg11:47:28. Fruehere datierte Aufnahmen unten bleiben
+Historie; massgeblich ist die letzte [Integration](#integration-pr471).
+Erneute allgemeine Arbeits und Mergefreigabe liegt vor. Kein neuer500er
+Test gestartet und keine fachliche Gesamtabnahme behauptet.
 
 ## Ziel, Bestand und Quellen
 
@@ -511,3 +512,32 @@ Nachrichtenkonstellation richtig verstanden wird. Die allgemeine Fakten
 und Prosaabsicherung bleibt ein unabhaengiger naechster Arbeitsschritt.
 Die31 Quellen sind weiterhin nicht importiert. Dieser Stand setzt keine
 Profile aktiv und fuehrt keine Modellanfrage aus.
+
+
+## Integration PR471
+
+Der Ereigniskettenfix ist erfolgreich integriert. PR471 hatte den exakten
+Kopf5b92dc3e2920c49e18de8e9651615e39f55c6b0d und Baum
+4c9f58c22ceaba39ee68566f25ecf9f1bea64578. CI35508192944 besteht432/432
+in656s, Browser50/50 und echte isolierte Datenbankgruppen23/0,26/0,48/0.
+Keine offenen Reviews. Der schon laufende lokale Gesamtlauf bestand432/432
+in837s; danach keine Wiederholung bestandener Pruefungen.
+
+Main0fc60f8f1b7cbcf68bfa31dfd4856ff472bdc47f ist auf
+Deployment dpl_8wuLtgxFr9KtbbdPoD34YiqNH5d8 READY, Production/fra1,
+bisherige drei Aliase unveraendert. HTTP200 liefert Version0fc60f8f.
+SQL11:47:28 vor und11:48:54 UTC nach Integration sind abgesehen vom
+Messzeitpunkt vollstaendig gleich:504/0,29782 Rohdokumente, davon0 innerhalb
+48 Stunden, keine lebenden Sperren, Leases, offenen Jobs oder jungen offenen
+Prozesse. Alle vier vollstaendigen Profil/Identitaets/Auth/Main Hashes gleich.
+Kosten0,264700 USD bei4 USD Grenze, offene Tagesreserve0. Der Kostenstand
+liegt ueber dem frueheren Tageswert0,141361; diese Sitzung hat keinen
+Modellaufruf ausgeloest. Keine Behauptung, der Auth Hash sei seit Tagesbeginn
+gleich geblieben.
+
+Die sourcefixnahe Nacharbeit folgt auf `codex/dip-quellfelder-20260920`:
+Originaltitel, Dokumenttyp, koerperschaftlicher Urheber und Ressort samt
+expliziten Rollenflags bleiben getrennt erhalten. Kein Quellenimport und
+keine erfundene Reparatur des Altbestands. Der genaue Umfang und die
+weiter offene allgemeine Prosaabsicherung stehen im bestehenden
+[Belegplan](prosa-belegplan-2026-09-20.md#erster-umgesetzter-eingabebaustein-dip-dokumentangaben).
