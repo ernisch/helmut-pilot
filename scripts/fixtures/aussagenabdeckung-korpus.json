@@ -1,0 +1,1929 @@
+{
+  "version": 1,
+  "synthetisch": true,
+  "herkunft": "Vor dem Aufruf separat formulierte endliche Referenz; keine produktive Fachfreigabe. Alte Sollannotationen unveraendert.",
+  "faelle": [
+    {
+      "id": "f01",
+      "klasse": "finanzwirkung",
+      "quelle": {
+        "id": "q-f01",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Der Stadtrat beschließt einen Zuschuss von 20 Euro für Busfahrkarten. Für Berechtigte sinkt dadurch der Fahrpreis um 20 Euro."
+      },
+      "referenz": [
+        {
+          "nachweis": "Der Rat beschliesst den genannten Buszuschuss; kein allgemeiner Steuertatbestand.",
+          "akteur": [
+            "Stadtrat",
+            "Der Stadtrat"
+          ],
+          "handlung": [
+            "beschließt"
+          ],
+          "gegenstand": [
+            "Zuschuss von 20 Euro für Busfahrkarten",
+            "einen Zuschuss von 20 Euro für Busfahrkarten"
+          ],
+          "aussagegrad": [
+            "beschließt"
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Die ausdrueckliche Preissenkung gilt fuer Berechtigte und betraegt zwanzig Euro.",
+          "akteur": [
+            null,
+            "Berechtigte"
+          ],
+          "handlung": [
+            "sinkt",
+            "sinkt dadurch"
+          ],
+          "gegenstand": [
+            "Fahrpreis",
+            "der Fahrpreis"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            "Berechtigte"
+          ],
+          "bedingung": [
+            "Für Berechtigte"
+          ],
+          "wirkung": [
+            "sinkt dadurch der Fahrpreis um 20 Euro",
+            "Für Berechtigte sinkt dadurch der Fahrpreis um 20 Euro.",
+            "um 20 Euro"
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f02",
+      "klasse": "finanzwirkung",
+      "quelle": {
+        "id": "q-f02",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Der Ausgleichsbetrag könnte entfallen. Worum es sich bei diesem Betrag handelt, bleibt offen."
+      },
+      "referenz": [
+        {
+          "nachweis": "Das moegliche Entfallen wird erhalten; der Betrag bleibt sachlich unbestimmt.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            "entfallen",
+            "könnte entfallen"
+          ],
+          "gegenstand": [
+            "Ausgleichsbetrag",
+            "Der Ausgleichsbetrag"
+          ],
+          "aussagegrad": [
+            "könnte"
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Die fehlende Bestimmung des Betrags ist eine eigene ausdrueckliche Aussage.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            "bleibt offen"
+          ],
+          "gegenstand": [
+            "Worum es sich bei diesem Betrag handelt"
+          ],
+          "aussagegrad": [
+            "offen",
+            "bleibt offen"
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f03",
+      "klasse": "finanzwirkung",
+      "quelle": {
+        "id": "q-f03",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Die Stadt nennt einen Zuschuss von 20 Euro für Busfahrkarten; der Betreiber bestreitet eine Senkung des Fahrpreises. Eine gemeinsame Klärung steht aus."
+      },
+      "referenz": [
+        {
+          "nachweis": "Die Stadt nennt den Buszuschuss; keine gesicherte gemeinsame Wirkung.",
+          "akteur": [
+            "Stadt",
+            "Die Stadt"
+          ],
+          "handlung": [
+            "nennt"
+          ],
+          "gegenstand": [
+            "Zuschuss von 20 Euro für Busfahrkarten",
+            "einen Zuschuss von 20 Euro für Busfahrkarten"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            "Stadt",
+            "Die Stadt"
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Der Betreiber bestreitet die Preissenkung. Bestreiten muss an dieser Aussage stehen.",
+          "akteur": [
+            "Betreiber",
+            "der Betreiber"
+          ],
+          "handlung": [
+            "bestreitet"
+          ],
+          "gegenstand": [
+            "Senkung des Fahrpreises",
+            "eine Senkung des Fahrpreises"
+          ],
+          "aussagegrad": [
+            "bestreitet"
+          ],
+          "zuschreibung": [
+            "Betreiber",
+            "der Betreiber"
+          ],
+          "verneinung": [
+            "bestreitet"
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Die gemeinsame Klaerung steht noch aus und darf nicht entfallen.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            "steht aus"
+          ],
+          "gegenstand": [
+            "gemeinsame Klärung",
+            "Eine gemeinsame Klärung"
+          ],
+          "aussagegrad": [
+            "steht aus"
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f04",
+      "klasse": "vollzug",
+      "quelle": {
+        "id": "q-f04",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Das Ministerium hat die Verlängerung des Programms beschlossen. Die zuständige Stelle bestätigt: Seit dem 1. September 2026 wird das verlängerte Programm umgesetzt."
+      },
+      "referenz": [
+        {
+          "nachweis": "Beschluss des Ministeriums bleibt vom spaeteren Vollzug getrennt.",
+          "akteur": [
+            "Ministerium",
+            "Das Ministerium"
+          ],
+          "handlung": [
+            "beschlossen",
+            "hat die Verlängerung des Programms beschlossen"
+          ],
+          "gegenstand": [
+            "Verlängerung des Programms",
+            "die Verlängerung des Programms"
+          ],
+          "aussagegrad": [
+            "beschlossen"
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Die Stelle bestaetigt den Vollzug seit einem konkreten Datum; sie wird nicht zum Vollzugsakteur.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            "umgesetzt",
+            "wird das verlängerte Programm umgesetzt"
+          ],
+          "gegenstand": [
+            "verlängerte Programm",
+            "das verlängerte Programm",
+            "Programm"
+          ],
+          "aussagegrad": [
+            "bestätigt"
+          ],
+          "zuschreibung": [
+            "zuständige Stelle",
+            "Die zuständige Stelle"
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            "Seit dem 1. September 2026"
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f05",
+      "klasse": "vollzug",
+      "quelle": {
+        "id": "q-f05",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Das Ministerium prüft die Verlängerung des Programms. Eine Entscheidung ist noch nicht getroffen."
+      },
+      "referenz": [
+        {
+          "nachweis": "Die Pruefung ist ausdruecklich kein Beschluss zur Verlaengerung.",
+          "akteur": [
+            "Ministerium",
+            "Das Ministerium"
+          ],
+          "handlung": [
+            "prüft"
+          ],
+          "gegenstand": [
+            "Verlängerung des Programms",
+            "die Verlängerung des Programms"
+          ],
+          "aussagegrad": [
+            "prüft"
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Die noch nicht getroffene Entscheidung bleibt als eigene Aussage erhalten.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            "getroffen",
+            "ist noch nicht getroffen"
+          ],
+          "gegenstand": [
+            "Entscheidung",
+            "Eine Entscheidung"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            "noch nicht"
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f06",
+      "klasse": "vollzug",
+      "quelle": {
+        "id": "q-f06",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Eine Meldung behauptet, das Programm sei verlängert. Das Ministerium bestätigt weder einen Beschluss noch die Umsetzung."
+      },
+      "referenz": [
+        {
+          "nachweis": "Die Verlaengerung wird nur von einer Meldung behauptet.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            "verlängert",
+            "sei verlängert"
+          ],
+          "gegenstand": [
+            "Programm",
+            "das Programm"
+          ],
+          "aussagegrad": [
+            "behauptet",
+            "sei"
+          ],
+          "zuschreibung": [
+            "Meldung",
+            "Eine Meldung"
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Das Ministerium bestaetigt weder Beschluss noch Umsetzung. Nichtbestaetigung ist keine bewiesene Nichtumsetzung.",
+          "akteur": [
+            "Ministerium",
+            "Das Ministerium"
+          ],
+          "handlung": [
+            "bestätigt"
+          ],
+          "gegenstand": [
+            "einen Beschluss noch die Umsetzung",
+            "Beschluss noch die Umsetzung"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            "Ministerium",
+            "Das Ministerium"
+          ],
+          "verneinung": [
+            "weder"
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f07",
+      "klasse": "zuschreibung",
+      "quelle": {
+        "id": "q-f07",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "In einem Gastbeitrag kritisiert Verband A die Forderung des Verbands B. Die Redaktion macht sich diese Position nicht zu eigen."
+      },
+      "referenz": [
+        {
+          "nachweis": "Im Gastbeitrag ist A Kritiker und B Adressat. Der Herausgeber wird nicht zur Partei.",
+          "akteur": [
+            "Verband A"
+          ],
+          "handlung": [
+            "kritisiert"
+          ],
+          "gegenstand": [
+            "Forderung des Verbands B",
+            "die Forderung des Verbands B"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            "Verband A"
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            "Verbands B",
+            "des Verbands B"
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            "In einem Gastbeitrag",
+            "Gastbeitrag"
+          ]
+        },
+        {
+          "nachweis": "Die Redaktion macht sich die Position ausdruecklich nicht zu eigen.",
+          "akteur": [
+            "Redaktion",
+            "Die Redaktion"
+          ],
+          "handlung": [
+            "macht sich diese Position nicht zu eigen",
+            "zu eigen"
+          ],
+          "gegenstand": [
+            "diese Position"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            "nicht"
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f08",
+      "klasse": "zuschreibung",
+      "quelle": {
+        "id": "q-f08",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Verband B kritisiert die Forderung des Verbands A. Verband A ist Adressat dieser Kritik, nicht ihr Urheber."
+      },
+      "referenz": [
+        {
+          "nachweis": "B kritisiert A; keine Umkehrung der Richtung.",
+          "akteur": [
+            "Verband B"
+          ],
+          "handlung": [
+            "kritisiert"
+          ],
+          "gegenstand": [
+            "Forderung des Verbands A",
+            "die Forderung des Verbands A"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            "Verband B"
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            "Verbands A",
+            "des Verbands A"
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "A wird ausdruecklich als Adressat der Kritik bezeichnet.",
+          "akteur": [
+            "Verband A"
+          ],
+          "handlung": [
+            "ist"
+          ],
+          "gegenstand": [
+            "Adressat dieser Kritik"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "A ist ausdruecklich nicht Urheber dieser Kritik.",
+          "akteur": [
+            "Verband A"
+          ],
+          "handlung": [
+            "ist",
+            null
+          ],
+          "gegenstand": [
+            "ihr Urheber"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            "nicht"
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f09",
+      "klasse": "zuschreibung",
+      "quelle": {
+        "id": "q-f09",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Der Bericht erwähnt Kritik an einer Forderung. Wer die Kritik äußert und an wen sie gerichtet ist, wird nicht genannt."
+      },
+      "referenz": [
+        {
+          "nachweis": "Ein Bericht erwaehnt Kritik, ohne den Kritiker zu identifizieren.",
+          "akteur": [
+            "Bericht",
+            "Der Bericht"
+          ],
+          "handlung": [
+            "erwähnt"
+          ],
+          "gegenstand": [
+            "Kritik an einer Forderung"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            "Bericht",
+            "Der Bericht"
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Urheber und Adressat sind beide nicht genannt; kein Ersatz durch Bericht als Kritiker.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            "genannt",
+            "wird nicht genannt"
+          ],
+          "gegenstand": [
+            "Wer die Kritik äußert und an wen sie gerichtet ist"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            "nicht"
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f10",
+      "klasse": "zeit",
+      "quelle": {
+        "id": "q-f10",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Nach dem Konzert 2024 sind neue Auftritte am 3. Mai 2028 in Bonn und am 7. Mai 2028 in Kiel geplant."
+      },
+      "referenz": [
+        {
+          "nachweis": "Das Konzert aus 2024 bleibt ein getrennter zeitlicher Hintergrund.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            null
+          ],
+          "gegenstand": [
+            "Konzert"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            "2024"
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Der neue Auftritt in Bonn ist geplant, nicht vollzogen, und hat sein eigenes Datum.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            null
+          ],
+          "gegenstand": [
+            "Auftritte",
+            "neue Auftritte"
+          ],
+          "aussagegrad": [
+            "geplant"
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            "3. Mai 2028",
+            "am 3. Mai 2028"
+          ],
+          "ort": [
+            "Bonn"
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            "Nach dem Konzert 2024"
+          ]
+        },
+        {
+          "nachweis": "Der neue Auftritt in Kiel bleibt mit seinem abweichenden Datum getrennt.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            null
+          ],
+          "gegenstand": [
+            "Auftritte",
+            "neue Auftritte"
+          ],
+          "aussagegrad": [
+            "geplant"
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            "7. Mai 2028",
+            "am 7. Mai 2028"
+          ],
+          "ort": [
+            "Kiel"
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            "Nach dem Konzert 2024"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f11",
+      "klasse": "zeit",
+      "quelle": {
+        "id": "q-f11",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Die Meldung vom 20. September 2026 blickt auf das Konzert 2024 zurück. Sie nennt keinen neuen Auftritt und keine Handlungsfrist."
+      },
+      "referenz": [
+        {
+          "nachweis": "Der Rueckblick bezieht sich auf das Konzert 2024. Das Meldungsdatum ist keine Ereigniszeit.",
+          "akteur": [
+            "Meldung",
+            "Die Meldung"
+          ],
+          "handlung": [
+            "blickt",
+            "blickt auf das Konzert 2024 zurück"
+          ],
+          "gegenstand": [
+            "Konzert",
+            "Konzert 2024",
+            "das Konzert 2024"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            "2024"
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            "20. September 2026",
+            "vom 20. September 2026"
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Die Quelle nennt weder neuen Auftritt noch Handlungsfrist.",
+          "akteur": [
+            "Sie",
+            "Meldung",
+            "Die Meldung"
+          ],
+          "handlung": [
+            "nennt"
+          ],
+          "gegenstand": [
+            "neuen Auftritt und keine Handlungsfrist"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            "keinen",
+            "keinen neuen Auftritt und keine Handlungsfrist"
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f12",
+      "klasse": "zeit",
+      "quelle": {
+        "id": "q-f12",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Ein neuer Auftritt ist geplant. Datum und Ort stehen noch nicht fest."
+      },
+      "referenz": [
+        {
+          "nachweis": "Ein neuer Auftritt ist geplant, seine Zeit und sein Ort bleiben unbekannt.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            "geplant",
+            "ist geplant",
+            null
+          ],
+          "gegenstand": [
+            "Auftritt",
+            "Ein neuer Auftritt",
+            "neuer Auftritt"
+          ],
+          "aussagegrad": [
+            "geplant"
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Datum und Ort stehen ausdruecklich noch nicht fest.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            "stehen noch nicht fest",
+            "fest"
+          ],
+          "gegenstand": [
+            "Datum und Ort"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            "noch nicht"
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f13",
+      "klasse": "profil",
+      "quelle": {
+        "id": "q-f13",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Das Mandatsregister führt Alex als stellvertretendes Mitglied des Verkehrsausschusses. Alex hat keinen Vorsitz."
+      },
+      "referenz": [
+        {
+          "nachweis": "Das Register schreibt Alex die stellvertretende Mitgliedschaft zu; kein echtes autorisiertes Nutzerprofil.",
+          "akteur": [
+            "Alex"
+          ],
+          "handlung": [
+            "stellvertretendes Mitglied",
+            "führt"
+          ],
+          "gegenstand": [
+            "Verkehrsausschusses",
+            "des Verkehrsausschusses"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            "Mandatsregister",
+            "Das Mandatsregister"
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Alex besitzt ausdruecklich keinen Vorsitz.",
+          "akteur": [
+            "Alex"
+          ],
+          "handlung": [
+            "hat"
+          ],
+          "gegenstand": [
+            "Vorsitz"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            "keinen"
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f14",
+      "klasse": "profil",
+      "quelle": {
+        "id": "q-f14",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Alex besucht als Gast eine Sitzung des Verkehrsausschusses. Eine Mitgliedschaft oder ein Vorsitz ist damit nicht belegt."
+      },
+      "referenz": [
+        {
+          "nachweis": "Der Gastbesuch von Alex ist belegt, keine Mitgliedschaft.",
+          "akteur": [
+            "Alex"
+          ],
+          "handlung": [
+            "besucht als Gast",
+            "besucht"
+          ],
+          "gegenstand": [
+            "Sitzung des Verkehrsausschusses",
+            "eine Sitzung des Verkehrsausschusses"
+          ],
+          "aussagegrad": [
+            null,
+            "als Gast"
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Der Besuch belegt weder Mitgliedschaft noch Vorsitz.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            "belegt",
+            "ist damit nicht belegt"
+          ],
+          "gegenstand": [
+            "Mitgliedschaft oder ein Vorsitz",
+            "Eine Mitgliedschaft oder ein Vorsitz"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            "nicht"
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f15",
+      "klasse": "profil",
+      "quelle": {
+        "id": "q-f15",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Alex wird beim Thema Verkehr genannt. Ausschussmitgliedschaft und Funktion sind nicht angegeben."
+      },
+      "referenz": [
+        {
+          "nachweis": "Die Nennung beim Thema Verkehr traegt keine Zustandsaussage zur Rolle.",
+          "akteur": [
+            "Alex"
+          ],
+          "handlung": [
+            "wird beim Thema Verkehr genannt",
+            "genannt"
+          ],
+          "gegenstand": [
+            "Verkehr"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Ausschussmitgliedschaft und Funktion fehlen ausdruecklich.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            "angegeben",
+            "sind nicht angegeben"
+          ],
+          "gegenstand": [
+            "Ausschussmitgliedschaft und Funktion"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            "nicht"
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f16",
+      "klasse": "bedingung",
+      "quelle": {
+        "id": "q-f16",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Nur wenn der Stadtrat den Zuschuss beschließt, können berechtigte Verkehrsunternehmen bis zum 30. November 2026 einen Antrag stellen. Eine Bewilligung ist damit nicht zugesagt."
+      },
+      "referenz": [
+        {
+          "nachweis": "Nur bei dem noch bedingten Ratsbeschluss besteht fuer berechtigte Unternehmen eine Antragsmoeglichkeit bis zur eigenen Frist.",
+          "akteur": [
+            "berechtigte Verkehrsunternehmen"
+          ],
+          "handlung": [
+            "einen Antrag stellen",
+            "Antrag stellen"
+          ],
+          "gegenstand": [
+            "Antrag",
+            "einen Antrag"
+          ],
+          "aussagegrad": [
+            "können"
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null,
+            "berechtigte Verkehrsunternehmen"
+          ],
+          "bedingung": [
+            "Nur wenn der Stadtrat den Zuschuss beschließt"
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            "bis zum 30. November 2026",
+            "30. November 2026"
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Die Antragsmoeglichkeit bedeutet ausdruecklich keine zugesagte Bewilligung.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            "zugesagt",
+            "ist damit nicht zugesagt"
+          ],
+          "gegenstand": [
+            "Bewilligung",
+            "Eine Bewilligung"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            "nicht"
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f17",
+      "klasse": "bedingung",
+      "quelle": {
+        "id": "q-f17",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Die Frist bis zum 30. November 2026 gilt ausschließlich für Verkehrsunternehmen. Für Abgeordnete besteht aus dieser Quelle keine Antragspflicht."
+      },
+      "referenz": [
+        {
+          "nachweis": "Die Frist gilt ausschliesslich fuer Verkehrsunternehmen; keine eigene Pflicht des Lesers.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            "gilt"
+          ],
+          "gegenstand": [
+            "Frist",
+            "Die Frist"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            "Verkehrsunternehmen"
+          ],
+          "bedingung": [
+            "ausschließlich für Verkehrsunternehmen",
+            "ausschließlich"
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            "bis zum 30. November 2026",
+            "30. November 2026"
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Die Quelle erzeugt ausdruecklich keine Antragspflicht fuer Abgeordnete.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            "besteht"
+          ],
+          "gegenstand": [
+            "Antragspflicht"
+          ],
+          "aussagegrad": [
+            null
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            "keine"
+          ],
+          "adressat": [
+            "Abgeordnete"
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f18",
+      "klasse": "bedingung",
+      "quelle": {
+        "id": "q-f18",
+        "titel": "Synthetischer Originalbeleg",
+        "text": "Verkehrsunternehmen könnten einen Antrag stellen. Voraussetzung, Frist und Bewilligung sind noch ungeklärt."
+      },
+      "referenz": [
+        {
+          "nachweis": "Die Antragstellung ist nur moeglich; keine Zusage, Frist oder Voraussetzung ergaenzen.",
+          "akteur": [
+            "Verkehrsunternehmen"
+          ],
+          "handlung": [
+            "einen Antrag stellen",
+            "Antrag stellen"
+          ],
+          "gegenstand": [
+            "Antrag",
+            "einen Antrag"
+          ],
+          "aussagegrad": [
+            "könnten"
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        },
+        {
+          "nachweis": "Voraussetzung, Frist und Bewilligung bleiben allesamt ungeklart.",
+          "akteur": [
+            null
+          ],
+          "handlung": [
+            "sind noch ungeklärt",
+            "ungeklärt"
+          ],
+          "gegenstand": [
+            "Voraussetzung, Frist und Bewilligung"
+          ],
+          "aussagegrad": [
+            "noch ungeklärt",
+            "ungeklärt"
+          ],
+          "zuschreibung": [
+            null
+          ],
+          "verneinung": [
+            null
+          ],
+          "adressat": [
+            null
+          ],
+          "bedingung": [
+            null
+          ],
+          "wirkung": [
+            null
+          ],
+          "zeit": [
+            null
+          ],
+          "ort": [
+            null
+          ],
+          "publikationszeit": [
+            null
+          ],
+          "kontext": [
+            null
+          ]
+        }
+      ]
+    }
+  ]
+}

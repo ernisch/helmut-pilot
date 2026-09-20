@@ -757,3 +757,132 @@ beide echten Pfade und alle UI Aliase,36 Fachfaelle mit Speicherung und
 Ruecklesung, frische Versorgung der ausgewaehlten500 einschliesslich Laender,
 belastbare Zeit und Kosten unter4 USD und die1500er Ergebnisbilanz.
 Keine Import oder500er Testfreigabe jetzt anfordern.
+
+
+## Neuer freigegebener Auftrag: vollstaendige Aussagenabdeckung
+
+20.09.2026. **Vorbereitung, noch kein bezahlter Start.** Der Betreiber hat
+im aktuellen Uebernahmeauftrag genau EINEN neuen bezahlten Methodenauftrag
+ausdruecklich freigegeben. Fuer den folgenden konkretisierten Umfang ist
+keine erneute Startbestaetigung erforderlich. Die frueheren Aussagen ueber
+fehlende Freigabe gelten fuer den abgeschlossenen Altversuch und weitere
+Auftraege ausserhalb dieses Umfangs; sie sperren diesen neuen Auftrag nicht.
+Der alte Versuch und seine Referenzen bleiben unveraendert geschlossen.
+
+### Pruefgegenstand und unabhaengige Herkunft
+
+Der bisherige Eingang verlangte eine Hauptaussage pro Quelle. Der neue
+Vergleich prueft mehrere ausdrueckliche Teilbehauptungen je Quelle und
+bindet Akteur, Handlung, Gegenstand, Aussagegrad, Zuschreibung, Verneinung,
+Adressat, Voraussetzung, Wirkung, Ereigniszeit, Ort, getrennte Publikationszeit und Kontext an die jeweilige
+Aussage. Die18 unveraenderten synthetischen Quellen erhalten39 separat VOR
+dem bezahlten Aufruf formulierte Referenzaussagen. Die alten Sollannotationen
+werden weder veraendert noch nachbewertet. Die neue Referenz ist eine neue
+Messvorschrift, keine nachtraegliche Gruenfaerbung des alten Laufs.
+
+Die unabhaengige Grundlage dieses endlichen Tests ist der vorab versionierte
+Referenzsatz, NICHT das getestete Modell, dessen Label oder dessen eigener
+Hash. Er geht nicht in den Modellprompt ein. Jede Referenz enthaelt eine
+separate fachliche Erlaeuterung und vorab ausgeschriebene zulaessige Spannen.
+Artikelvarianten koennen dadurch bestehen; Bedingung, Verneinung, Rolle und
+Termine duerfen nicht durch allgemeine Textnormalisierung verloren gehen.
+Eindeutige Zuordnung eins zu eins verhindert, dass dieselbe Aussage mehrere
+Referenzen scheinbar abdeckt. Reihenfolge ist unerheblich. Fehlende Angaben,
+fehlende Aussagen, Zusatzbehauptungen und noch ungeklaerte Abweichungen
+bleiben getrennt sichtbar. Eine Abweichung ist NICHT automatisch eine
+falsche Tatsache; auch eine andere richtige Zerlegung kann abweichen.
+
+Offene Frage pro geplantem Einzelaufruf, jeweils positiv/negativ/ungewiss:
+
+1. Finanzwirkung: bleiben Beschluss, berechtigte Wirkung, moegliches Entfallen,
+   Bestreiten und ausstehende Klaerung einzeln erhalten? Alter Beleg liefert
+   gerade keine vollstaendige strukturelle Abdeckung.
+2. Vollzug: bleiben Beschluss, bestaetigte Umsetzung, Pruefung und explizite
+   Nichtbestaetigung getrennt? Im alten Versuch nicht aufgerufen.
+3. Zuschreibung: bleiben Kritiker, Adressat und fremde Redaktionsposition
+   samt negierten Rollen erhalten? Im alten Versuch nicht aufgerufen.
+4. Zeit: bleiben Konzert2024 und zwei Auftritte2028 mit jeweils eigenem Ort
+   und Datum getrennt, ohne Publikationsdatum als Ereigniszeit? Unversucht.
+5. Profil: bleiben Stellvertretung, fehlender Vorsitz, Gaststatus und fehlende
+   Registerangaben erhalten? Kein produktiver Mandatsbeweis. Unversucht.
+6. Bedingung: bleiben Antragsmoeglichkeit, Voraussetzung, fremde Frist und
+   nicht zugesagte Bewilligung gemeinsam gebunden? Unversucht.
+
+Auch ein39/39 Referenztreffer beweist weder universelle Semantik noch einen
+unabhaengigen automatischen Pruefer fuer freie reale Quellen. Der Versuch
+liefert KEINE trustedFreigaben und importiert keine Kandidaten. Ein weiterer
+Extraktionsprompt ist fuer sich keine Loesung des Produktproblems. Der hier
+implementierte Referenzvergleich misst konkret die dokumentierte Luecke;
+sein manuell vorformulierter Testsatz ist KEIN beschlossener Redaktionsbetrieb.
+Beide echten Produktpfade und ihre36 Fachfaelle bleiben separat offen.
+
+### Unveraenderlicher Umfang vor dem ersten bezahlten Aufruf
+
+Branch `codex/aussagenabdeckung-20260920`, Ausgangskopf b8e058f4 aus PR479;
+neuer eigener Entwurf, Altbranch und Altquittung unangetastet. Production
+muss beim Lauf weiterhin exakt be4b237b6154248f30e175235ed81aa9893b01bf sein.
+Der auszufuehrende neue Commit wird nach technischer Abnahme im Startinput
+fest gebunden. Keine Aenderung von Eingaben, Prompt oder Referenzen innerhalb
+des bezahlten Fensters.
+
+* Modell/Bereitstellung: bestehendes Azure gpt-5-mini, reasoning minimal,
+  maximal3000 Ausgabetokens, unveraenderte volle Reserve0,212 USD pro Aufruf.
+* Hoechstens sechs Aufrufe, kein Retry, maximal1,272 USD gesamte Bindung;
+  der technische4 USD Riegel zaehlt saemtlichen anderen Tagesverbrauch mit.
+* Ein30 Minuten Fenster am aktuellen vorab geprueften UTC Tag20.09.2026.
+  Nach Beginn fest gespeichert; jeder neue Start benoetigt mindestens drei
+  Minuten Restzeit. Keine Fortsetzung oder neue Kennung nach Tageswechsel.
+* Einzelne kontrollierte Starts. Vor jedem weiteren Start komplette Antwort,
+  alle39 anteiligen Sollpositionen, Quellbindung, Kosten und geschuetzte
+  Daten vergleichen; konkrete Fachsichtung an Antwort und Reviewhash binden.
+* Abnahme eines Blocks: alle gelieferten Quellen exakt gebunden, saemtliche
+  zugehoerigen Referenzaussagen genau einmal getroffen, keine ungeprueften
+  Zusatzbehauptungen. Zusaetzlich volle fachliche Sichtung gegen Original,
+  unabhaengig von diesem technischen Gleichheitsvergleich. Nutzbare positive
+  Inhalte erforderlich; Leerung und identische Zitate bestehen nicht.
+* Sofortstopp der bezahlten Serie bei Referenzabweichung, fehlender Abdeckung,
+  Schema/Quellfehler, unklarem Transport/Kosten, Schutzabweichung, Konkurrenz,
+  abweichender Laufzeitkonfiguration, Fensterschluss oder UTC Wechsel.
+  Negative Messung bleibt negativ; sichere Offlineentwicklung geht weiter.
+* Ein neuer CAS Schluessel aussagenabdeckung20260920 im bestehenden Auth
+  Store. Erlaubt sind nur diese neue Quittung, llmUsage, testKostenTage,
+  _authStoreRevision sowie notwendige bestehende globale und Anbieterbuchungen.
+  quellenfaktenEingang20260920 bleibt Teil des vollstaendig geschuetzten
+  Auth Bestands und muss bereits gestoppt sein. Keine Konten, Sessions,
+  Profile, Quellen, Wissensobjekte oder produktiven Ergebnisse schreiben.
+* Vor und nach jedem Aufruf ganze Hashes von mandate_profiles, profiles
+  und main lesen. Auth Hash ausschliesslich um die VIER neuen erlaubten
+  Schluessel bereinigen; alten Versuchsbeleg darin behalten. Alte Kosten
+  und alle Telemetriezeilen einschliesslich verdraengbarer Ringzeilen erhalten.
+* Vollstaendige Eingaben, Referenzen, Modellantwort, Transport und Kosten
+  privat verschluesselt aufbewahren. Keine privaten Schluessel oder Rohbelege
+  ins oeffentliche Repository. Rueckweg: weitere Starts unterlassen, alle
+  Kosten und Quittungen erhalten; kein Reset und kein Datenrollback.
+
+Manifest SHA256:f6eb266a778b0773b058ef7bc7ea64de8adc118a06b6f3b3aebc1b9608626501.
+Schema SHA256:663f2807e999c5da7bafd54034fafa35f3a45dd333c8225d6f88b269198b6aeb.
+Sechs Prompthashes sind fest im neuen Laeufer hinterlegt und vor jedem Start
+gegen den berechneten Text geprueft. Die bytegleichen Altdateien behalten
+ihre bisherigen Hashes. Keine neue Bereitstellung oder Ressource.
+
+### Uebernahme und technische Vorpruefung
+
+20.09.2026,23:01:22 Tuerkei /22:01:22 Berlin /20:01:22 UTC:504/0,
+keine lebenden Sperren oder Leases, offenen Jobs oder jungen offenen Prozesse.
+Kostenlesung20:02:12 UTC:0,389759 USD, offene Reserve0, Altquittung gestoppt.
+Mit der maximalen neuen Bindung waeren1,661759 USD gebunden; das ist KEIN
+Startbeleg fuer einen spaeteren Zeitpunkt. Vor bezahltem Start frisch lesen.
+Production Deployment dpl_H133uvcugPyny1diBKuTe71Ro55V erneut READY und mit
+Production Alias; Main unveraendert. PR479 bleibt Entwurf. CI35530927958 des
+Dokumentationskopfs b8e058f4 inzwischen in beiden Pflichtjobs erfolgreich.
+Keine laufende Action; zwei alte wartende Offline CI vom06.08. betreffen
+andere Branches, keine konkurrierenden Production Schreiber. Keine AGENTS.md
+im Checkout oder den uebergeordneten Verzeichnissen gefunden.
+
+Erste neue lokale Suiten ausschliesslich ueber scripts/lokal.js:
+13/13 Eingangsgruppen und14/14 Ausfuehrungsschutzgruppen bestanden.
+Darunter der echte KI Requestpfad mit ersetzt transportierter Offlineantwort,
+volle Reserve vor HTTP, einmaliger Transport, alter Belegschutz, UTC und
+Fenstergrenze, sechs Positionen, konkurrierender Claim, fremde Auth Mutation,
+Telemetrieerhaltung und Kostenhistorie. Kein realer Modellaufruf daraus.
+Kanonischer Gesamtlauf und exakte neue CI vor Ausfuehrung noch offen.

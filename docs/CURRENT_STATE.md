@@ -1,17 +1,18 @@
 # CURRENT STATE — Helmut
 
-**20.09.2026: Freigegebener Quellenversuch nach Block1 abgebrochen; Methode unabgenommen.**
-PR479 bleibt Entwurf auf `codex/quellenfakten-versuch-20260920`, kein Merge.
-Run35530374788 auf3ca35bd3: ein Modellaufruf, drei Quellen, danach verbindlicher
-Annotationsstopp. Ganze Originaltexte erhalten, strukturierte Abdeckung lueckenhaft;
-15 Quellen unversucht,0/36 Produktfaelle. Keine Fortsetzung oder Ruecksetzung.
-Nachkontrolle21:56 Tuerkei /20:56 Berlin /18:56 UTC:504/0, keine lebenden Sperren,
-Leases oder offenen Jobs. Geschuetzte Vollhashes gleich; Auth Vollhash geaendert.
-Aufruf0,001906 USD, Tag0,389759 USD, Reserve0, Riegel4 USD. Keine Aktivierung oder
-Import; Production Main und Deployment unveraendert. Naechster Schritt: vollstaendige
-unabhaengige Eingangsabdeckung klaeren, keine Wiederholung dieses geschlossenen Versuchs.
-[Vollstaendiger Ausgang und Freigabegrenze](betrieb/prosa-belegplan-2026-09-20.md#ausgang-des-freigegebenen-quellenversuchs).
+**20.09.2026: Neuer begrenzter Methodenauftrag ausdruecklich freigegeben, in Vorbereitung.**
+Eigener Branch `codex/aussagenabdeckung-20260920`:18 synthetische Quellen,
+39 vorab getrennte Referenzaussagen; keine produktive Fachfreigabe. Neue
+Quittung, maximal6 Einzelaufrufe/1,272 USD/30 Minuten innerhalb4 USD Tagesriegel.
+Noch kein bezahlter Start.13/13 Eingangs und14/14 Schutzgruppen lokal bestanden;
+Gesamtabnahme offen. [Konkreter Vertrag und neue Freigabe](betrieb/prosa-belegplan-2026-09-20.md#neuer-freigegebener-auftrag-vollstaendige-aussagenabdeckung).
+SQL20:01 UTC:504/0, keine lebenden Sperren, Leases, offenen Jobs oder jungen
+Prozesse; Tag0,389759 USD, Reserve0. Main/Deployment unveraendert wie unten.
 
+**Altversuch bleibt geschlossen:** PR479 Entwurf, Run35530374788 auf3ca35bd3
+nach einem Aufruf mit Annotationsabweichung gestoppt. Alte Sollwerte und
+Quittung unveraendert. CI35530927958 aufb8e058f4 inzwischen vollstaendig
+erfolgreich. [Negativer Fachbefund](betrieb/prosa-belegplan-2026-09-20.md#ausgang-des-freigegebenen-quellenversuchs).
 
 **20.09.2026: Begrenzter unabhaengiger DIP Fakteneingang integriert; Gesamtziel teilweise abgeschlossen.**
 PR477 fachlich integriert, PR478 dokumentiert den Abschluss. Main `be4b237b6154248f30e175235ed81aa9893b01bf`,
