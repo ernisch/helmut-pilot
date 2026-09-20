@@ -709,8 +709,10 @@ vollstaendiger Import, Wiederholungsverweigerung, Payloadmanipulation,
 aktive Profile/laufende Arbeit, veraltete/kuenftige Zeiten, Fehler mitten
 im zweiten Stapel, persistierter falscher Text und fremde Profilwirkung.
 Alle bisherigen Datenbankpruefungen bleiben erhalten; kein stiller Skip.
-Dieser echte Nachweis steht vor PR CI noch aus. Lokal nur Syntax und
-Vorlagenidentitaet geprueft. PostgreSQL ist hier nicht installiert;
+Diese acht Gruppen sind inzwischen in PR463 CI35479888757 und im
+Kontenschritt der Main CI35480668575 erfolgreich belegt, insgesamt23/0
+Konten und Quellen. Der rote Main Gesamtlauf ist im [Timingbeleg](reset-timing-nachweis-2026-09-20.md)
+getrennt klassifiziert. Lokal waren nur Syntax und Vorlagenidentitaet geprueft. PostgreSQL ist hier nicht installiert;
 Paketbereitstellung scheiterte an lokalen Rechten beziehungsweise DNS,
 ohne Aenderung von Zugriffsrechten oder Production Umgebung.
 
