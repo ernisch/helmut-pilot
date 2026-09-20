@@ -511,7 +511,9 @@ fachlicher Gesamtlauf allein fuer diese beiden Dokumentationsdateien.
 
 20.09.2026. **Teilweise abgeschlossen, kein bezahlter Start und keine
 Methodenabnahme.** Basis Main be4b237b6154248f30e175235ed81aa9893b01bf,
-Arbeitsbranch `codex/quellenfakten-versuch-20260920`. Rein lesende Uebernahme
+Arbeitsbranch `codex/quellenfakten-versuch-20260920`, Entwurf PR479.
+Fachlicher Vorbereitungskopf d5a3774db9f62f778758aae684fc6e773b78775e.
+Rein lesende Uebernahme
 17:05:50 UTC:504/0,0 lebende Pipeline Sperren und Job Leases,0 unerledigte
 Jobs,0 junge offene Prozesse.29782 Rohquellen,916 mit Auszug,0 mit DIP
 Quellfeldern,0 Publikationen innerhalb48 Stunden. Juengste Publikation
@@ -582,9 +584,16 @@ Der noch NICHT gestartete Auftrag waere:
   Kein aktives Profil, lebende Pipeline/Verstehen/Job Lease, offener Job oder
   junger offener Prozess. Vor jedem Block und nach Abschluss erneut lesen.
 * Neue CAS Quittung quellenfaktenEingang20260920 im bestehenden Auth Store;
-  ausschliesslich diese Quittung, Kosten und Aufruftelemetrie duerfen sich
-  aendern. Bis zu sechs verdraengbare alte Telemetriezeilen werden erhalten.
+  dort duerfen nur diese Quittung, Kostenbuch und Aufruftelemetrie samt
+  Storeversion wechseln. Bis zu sechs verdraengbare alte Telemetriezeilen
+  werden erhalten. Der unveraenderte Modellpfad bucht ausserdem global in
+  llm_budget_counters sowie fuer Azure in helmut_anbieter_fenster und
+  helmut_anbieter_schutzschalter. Diese Betriebswirkungen gehoeren zur
+  angefragten Freigabe; keine neue Anbietergrenze oder Azurekonfiguration.
   Keine Konten, Sessions, Profile, Quellen, Wissensobjekte oder Apptexte schreiben.
+  Vor und nach jedem Block die geschuetzten Vollhashes, den Tageszaehler und
+  den Anbieterzustand getrennt lesen. Ausserhalb dieser ausdruecklich benannten
+  Buchungen keine neue Datenwirkung erlauben. Abweichung sperrt die Fortsetzung.
 * Vollstaendige Auftraege, Rohantworten und Kostenbelege privat verschluesseln.
   Keine Geheimnisse oder politischen Rohtexte in Klartextlogs.
 * Sofortstopp bei Annotationsabweichung, Schemafehler, falscher Quellbindung,
@@ -616,5 +625,8 @@ am unveraenderten180 Sekunden Limit. Kein gruener lokaler Gesamtlauf.
 Die neue Korpussuite und der neue Versuchslaeufer bestanden darin beide;
 die zuvor einzeln gemessenen Gruppenstaende10/10 und13/13 sind technische
 Schutzpruefungen, keine gemessenen Modellantworten und keine36er Fachabnahme.
-Die GitHub Pflichtpruefung des exakten PR Kopfs steht vor Veroeffentlichung
-noch aus. Bis zu deren Abschluss bleibt auch die technische Abnahme offen.
+GitHub CI35526424586 prueft den Vorbereitungskopf d5a3774d. Browser50/50 und
+die ersten beiden Datenbankpflichtschritte sind bestanden; die441 Suiten
+laufen bei dieser Dokumentationspraezisierung noch. Bis zum kompletten
+CI Abschluss bleibt die technische Abnahme offen. Endstand und exakter
+abschliessender Dokumentationskopf werden im PR479 samt CI Historie belegt.
