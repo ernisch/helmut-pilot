@@ -23,6 +23,7 @@ const http = require("http");
 const https = require("https");
 const fs = require("fs");
 const { parseRssItems } = require("../lib/helmut/crawler");
+const { publikationszeit } = require("../lib/helmut/quellen-publikationszeit");
 const { buildLandesmodulSeed } = require("../lib/helmut/quellenarchitektur/seeds/landesmodule-quellen");
 const { BUNDESWEG_REPARATUREN } = require("../lib/helmut/quellenarchitektur/seeds/bundeswege-reparaturen");
 
@@ -150,7 +151,7 @@ function looksHtml(body, contentType) {
 function newestItemDate(items) {
   let newest = null;
   for (const it of items) {
-    const t = Date.parse(it.publishedAt || "");
+    const t = Date.parse(publikationszeit(it.publishedAt) || "");
     if (!Number.isNaN(t) && (newest === null || t > newest)) newest = t;
   }
   return newest;

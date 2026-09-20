@@ -637,3 +637,86 @@ Kostenfenster. Offline Gesamtsuite und Z22 wurden deshalb nicht erreicht.
 Der Fixturefehler und seine Reparatur stehen im kanonischen
 [Testfensterbeleg](testfenster-null500-2026-09-19.md#utc-grenze-der-datenbankfixture).
 Kein Merge auf Basis dieses unvollstaendigen Laufs.
+
+## Abnahme und Production nach PR462
+
+20.09.: finaler Head ff996878a9fd7d7e53ced4f0b5eae3ca5364ef24,
+CI35477906334 vollstaendig erfolgreich:429/429 Offline Suiten,
+Browser50/0, PostgreSQL Konten und Quellen15/0, echter Null auf500
+auf Null Nachweis26/0, Z22 48/0. Alle Pflichtschritte erfolgreich.
+Die drei neuen realen Datenbankgruppen bestaetigen Kontextpersistenz,
+atomaren Belegerhalt bei ID Konflikt und den Schwesterpfad.
+
+Freigegeben gemergt:91fdcbfa3d7735491764e3af4f49953812eb0bfe.
+Production dpl_FJfHtxyJBwrEHp7d7ar6363K9ezr READY mit diesem Commit
+und unveraenderten drei Aliasnamen. Native Kontrolle03:28:28 Tuerkei /
+02:28:28 Berlin /00:28:28 UTC:504 Profile,0 aktiv, keine Sperren,
+Leases, offenen Jobs, jungen Prozesse oder Testfensterquittungen.
+Profile, Identitaeten, main-auth samt Konten und Sessions sowie main
+haben exakt dieselben SHA256 Werte wie vor dem Merge.
+Fuer20.09. noch kein Kostentageseintrag, keine offene Reserve;
+der unveraenderte Authhash erhaelt auch den19.09. mit0,526234 USD.
+
+Rein lesender Lauf35478888277, Job105992927452 erfolgreich:
+App erreichbar, Status HTTP200 am richtigen Commit; Supabase/V3,
+relationale exklusive Profile, Kommunikationssperre und Sperre
+synthetischer Personenquellen bestaetigt. Retention36, Aufrufdeckel2416,
+Understanding Reserve702, Realreserve200, sourceSafetyStandard und
+atomicLock aktiv. Kostenvertrag Version2 aktiv, Limit4 USD,
+unbekannter Ausgang bleibt reserviert. Keine Aktivierung, kein Import,
+kein neuer Modellaufruf oder500er Test. Der UTC Datumswechsel erweitert
+die Betreiberfreigabe nicht. Gesamter500er Auftrag weiterhin offen.
+
+## Vorbereitete Uebernahme der31 gelesenen Quellen
+
+20.09.2026, **teilweise abgeschlossen**. Die31 Quellen aus dem privaten
+RSS Nachweis35476247012 sind weiterhin nicht in Production. Seit der
+Korrektur liest der Motor Kontext und gueltige Publikationszeit getrennt;
+historische fehlende Quellen werden dadurch nicht nachtraeglich ergaenzt.
+Eine begrenzte Uebernahme ist als eigener Production Dateneingriff
+vorbereitet und braucht nach CLAUDE.md §5 konkrete Freigabe. Die Freigabe
+des abgeschlossenen38er Auszugsblocks umfasst diese Neuanlage nicht.
+
+Privater Entwurf: Helmut_31_Quellenimport_Entwurf.json und
+Helmut_31_Quellenimport_Vorbereitung.sql. Genau31 neue Rohdokumente und31
+Fundstellen, ausschliesslich die bereits gelesenen Inhalte. Kein neuer
+HTTP oder Modellaufruf, keine Profilanlage oder Aktivierung, kein Auftrag,
+kein500er Test. Die31 Meldungen beweisen keine500er Mandatsversorgung.
+Sie koennen spaeter von regulaerer globaler Verarbeitung gelesen werden;
+ein solcher Fachlauf wird mit der direkten SQL Uebernahme nicht gestartet.
+
+Die SQL Transaktion hat15 Sekunden Anweisungsgrenze und2 Sekunden
+Sperrwartezeit. Sie verlangt504/0, keine laufenden Sperren/Leases/Jobs oder
+jungen Prozesse, genau31 plus31 Payloadobjekte, Publikation und Abruf
+hoechstens48 Stunden alt und nicht zukuenftig sowie keinen Treffer nach
+Kennung, Fingerabdruck oder kanonischer URL. Nur INSERT, kein UPSERT.
+Beide Stapel werden exakt rueckgelesen, Typnormalisierung eingeschlossen.
+Profile, Identitaeten, Auth samt Konten/Sessions und Main werden innerhalb
+derselben Transaktion verglichen. Jede Abweichung rollt alles zurueck.
+Nach unklarem Ausgang zuerst alle gebundenen Kennungen lesen, kein Retry.
+
+Payload SHA256 dde4bfb069029ca2640cfabedd924b724b72f6e706aead20f734316d557adb70.
+SQL SHA25635c57ca848ce323f7282778876f8c11de7736865d2f39145b6fb3f394dcacda9.
+Die Repository Testvorlage ist mit dem privaten SQL bytegleich, wenn nur
+__PAYLOAD__ und __SHA256__ durch diese gesicherten Werte ersetzt werden.
+Keine echten Quelleninhalte im Testcode.
+
+Native Schemapruefung: Spalten, Typen, Defaults und Schluessel beider
+Quellentabellen frisch gelesen. Fuer den echten Transaktionsnachweis
+verwendet die bestehende PostgreSQL CI eine eigene kurzlebige Datenbank
+mit504 synthetischen inaktiven Profilen. Acht neue Pruefgruppen:
+vollstaendiger Import, Wiederholungsverweigerung, Payloadmanipulation,
+aktive Profile/laufende Arbeit, veraltete/kuenftige Zeiten, Fehler mitten
+im zweiten Stapel, persistierter falscher Text und fremde Profilwirkung.
+Alle bisherigen Datenbankpruefungen bleiben erhalten; kein stiller Skip.
+Dieser echte Nachweis steht vor PR CI noch aus. Lokal nur Syntax und
+Vorlagenidentitaet geprueft. PostgreSQL ist hier nicht installiert;
+Paketbereitstellung scheiterte an lokalen Rechten beziehungsweise DNS,
+ohne Aenderung von Zugriffsrechten oder Production Umgebung.
+
+Vor spaeterer Ausfuehrung: diese CI abnehmen, den aktuellen READY Commit
+und frischen Schutzstand bestaetigen, alle31 Identitaeten nochmals gegen
+Production lesen und das48 Stunden Fenster pruefen. Wenn inzwischen
+Bestandstreffer oder alte Quellen vorliegen, kein still geaenderter Import.
+Nach einer freigegebenen Uebernahme31/31 Ruecklesung und unveraenderte
+Schutzgrundlinien nachweisen. Kein automatisches Loeschen als Rueckweg.

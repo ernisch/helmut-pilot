@@ -162,7 +162,8 @@ async function main() {
     await require("./fixtures/direkt500-datenbank").pruefeDirektausbau({ psql, base, token });
     await require("./fixtures/testkosten-datenbank").pruefeKosten({ psql, base, token });
     await require("./fixtures/quellenkontext-datenbank").pruefe({ base, token });
-    console.log(`PostgreSQL ${version}: 15 PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
+    const importPruefungen = require("./fixtures/quellenimport-datenbank").pruefe({ psql });
+    console.log(`PostgreSQL ${version}: ${15 + importPruefungen} PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
   } finally {
     if (api && api.pid && api.exitCode == null) {
       const ended = once(api, "exit").catch(() => {});

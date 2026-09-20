@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026: Gesamtauftrag teilweise abgeschlossen, noch nicht bereit.** PR461/Main `f854367b3f3de49a0b43223735b14968b5227b2e` READY, Main CI erfolgreich. Zweiter freigegebener Quellenblock:38 Abrufe,15 Auszuege,0 KI. SQL22:55 UTC:504/0, Schutzgrundlinien identisch, keine offene Arbeit/Reserve,0,526234 USD bei4 USD Limit. [Beleg](betrieb/quellenkontext-ruhe-2026-09-19.md#zweiter-freigegebener-quellenblock-am-1909-um-2250-utc).
+**20.09.2026: Gesamtauftrag teilweise abgeschlossen, noch nicht bereit.** PR462/Main `91fdcbfa3d7735491764e3af4f49953812eb0bfe` READY. CI429/429; SQL00:28 UTC:504/0, Schutzgrundlinien identisch, keine offene Arbeit/Reserve. Laufzeitleser35478888277 bestaetigt4 USD Riegel. Kein Tageseintrag20.09.;19.09.:0,526234 USD. [Integration](betrieb/quellenkontext-ruhe-2026-09-19.md#abnahme-und-production-nach-pr462).
 
 **Integration PR419 bis448 abgeschlossen, alle28 alten Drafts erledigt.** PR447 CI35435242485:419/419, Browser50, Kontoschutz15, Z22 48;24 Pflichtschritte. Laufzeitleser35436180373 belegt Speicher, Kommunikationssperre und4 USD Riegel. Drei Prosaserien nach je einem Aufruf fachlich gestoppt, zusammen0,019647 USD; Folgenprompt verworfen, Anwendung nicht auf `low` umgestellt. [Fachstopps](betrieb/prosa-denktiefe-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp). Heutige Freigabe10 USD, enger4 USD Riegel und Artikelkontext AUS bleiben. Kein neuer500er Test; Quellenfrische und vollstaendige Fachabnahme offen. [Integrationsbelege und Restpunkte](betrieb/500-bereitschaft-2026-09-19.md#abschluss-nach-dem-denkvergleich).
 
@@ -42,7 +42,7 @@ Vorbereitung eines erneut ausdruecklich freizugebenden Nachweises mit exakt 500 
 
 Historische PR- und Deploymentdetails bis09.09. stehen unverändert im [archivierten Status](archive/project_state/2026_09_14_CURRENT_STATE_vor_lesebelegabschluss.md). Der aktuelle Main- und Productionstand steht im Statuskopf.
 
-19.09.: PR459/460/461 integriert. Quellenblock abgeschlossen. Eigener Branch repariert Kontextverlust bei globaler Dublettenverarbeitung;31/31 Auszuege erhalten. Lokaler Gesamttest Exit0; PR folgt. Prosa weiter offen. [Beleg](betrieb/quellenkontext-ruhe-2026-09-19.md#kontextverlust-bei-globaler-dublettenverarbeitung).
+20.09.: PR462 integriert. Folgesprint repariert Publikationszeit; lokal429/430 plus betroffene47/47. Neuer isolierter Quellenimportnachweis in CI offen, kein Import freigegeben. [Beleg](betrieb/quellen-zeitvertrag-2026-09-17.md#publikationszeit-bereits-beim-einlesen-am-2009).
 
 ## 3 · Production-Zustand
 
@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-19.09.: Kontextverlust reparieren und integrieren.31 frische isolierte Quellen sind noch nicht importiert; vorhandene Auswahl erklaert die Luecke nicht. [Prosa](betrieb/prosa-quellenpruefung-2026-09-19.md#neubewertung-nach-dem-gescheiterten-quellenrichter),500er Versorgung/Zeit/Kosten weiter offen.
+20.09.: Publikationszeit beim Einlesen reparieren; fehlende Daten bleiben unbekannt.31 isolierte Quellen nicht importiert. [Prosa](betrieb/prosa-quellenpruefung-2026-09-19.md#neubewertung-nach-dem-gescheiterten-quellenrichter),500er Versorgung/Zeit/Kosten weiter offen. Keine neue Kostenfreigabe durch Datumswechsel.
 
 ## 12 · Verbindliche Betriebsgrenzen
 
