@@ -168,7 +168,8 @@ passwort-setzen-login-fix39/39, mailpit-transport119/119,
 resend-transport201/201 und reset-timing-seitenkanal83/83.
 Damit wurde jede der436 Suiten erfolgreich geprueft, aber kein einzelner
 vollstaendig gruener436er Lauf behauptet. Bestandene Suiten werden nicht
-erneut lokal ausgefuehrt. PR CI und Integration stehen noch aus.
+erneut lokal ausgefuehrt. Der nachfolgende vollstaendig gruene CI Nachweis
+und die Integration sind unten belegt.
 Nur die Vorschau des eigenen Branches ist in vercel.json abgeschaltet;
 alle anderen Konfigurationswerte einschliesslich Crons bleiben identisch.
 
@@ -178,8 +179,61 @@ Einerauswahl nach JSON Speicherung faelschlich als gebunden bestaetigt.
 Der Fix verlangt zusaetzlich die vollstaendige Zahl tatsaechlich besuchter
 Felder. Die betroffene Bindungssuite besteht danach51/51, einschliesslich
 unbesetzter Plaetze und ihrer JSON Nullfassung. Nur diese betroffene Suite
-wurde erneut lokal ausgefuehrt. Die exakte neue PR CI muss den korrigierten
-Kopf pruefen; der vorherige laufende CI Stand ist keine Abschlussabnahme.
+wurde erneut lokal ausgefuehrt. Die exakte neue PR CI prueft den korrigierten
+Kopf erfolgreich; der vorherige abgeloeste CI Stand ist keine Abschlussabnahme.
+
+
+## Integration PR475
+
+PR475 am20.09.2026 gemergt. Fachlicher Main
+`de03ea482b69633db0749aff4e062c56d94b8869`, Deployment
+`dpl_4yYN814oRBdoVbcAv4wYyft5htPm` READY und Production Alias zugeordnet.
+HTTP200 liefert Versionde03ea48. Keine Kommentare, Reviews oder offenen
+Reviewthreads vor dem Merge. Exakte CI35515137143 auf dem letzten PR Kopf
+`307a988d46654a54df22c3a814acbaec200c17b3`:436/436 Suiten in801s,
+Browser50/50, PostgreSQL23/0, Null50026/0 und Z2248/0; alle Pflichtstufen
+abgeschlossen. Der automatische Main Lauf ist beim Abschluss noch in Arbeit;
+der vollstaendige fachliche Nachweis stammt aus dieser exakten PR CI.
+
+Rein lesende SQL Nachkontrolle14:20:06 UTC:504 Profile,0 aktiv,0 lebende
+Sperren,0 lebende Verstehen und Job Leases,0 unerledigte Jobs,0 junge offene
+Prozesse. Tageskosten0,264700 USD; vorherige Kostenlesung bestaetigt4 USD
+Grenze und0 offene Reserve. Die vier vollstaendigen Hashgrundlinien von
+13:50:44 UTC sind um14:20:08 UTC identisch:
+
+| Datenmenge | SHA256 |
+| --- | --- |
+| mandate_profiles | ea339008ddc23668d7234b6305a2346c116b474a40ff68dbd474d73005056e06 |
+| profiles | 03e0b4e26272fbaa1d78aa199ad7e66b44e84d93b3d2d8ef02c62dcd0907f60e |
+| main-auth | 9c28308d05c4619ac1801b007e2c28bae4c848a49acbe1c761d2fd2eab3f48a7 |
+| main | 58d58420f47f7bb9b29be1ec47c32a7c3670363f5f5c2c5cf5ef701211c238ef |
+
+Die technische Bindung ist abgeschlossen, das Gesamtziel bleibt teilweise
+abgeschlossen. Naechster fachlicher Schritt ist ein wirklich unabhaengiger
+Fakteneingang mit positivem Nutzwert und vollstaendigen Vertraegen fuer die
+beiden echten Fachpfade. Weitere Hashhuellen ersetzen diesen Schritt nicht.
+Die36 echten Fachfaelle bleiben offen. Keine Wiederholung von PR452.
+
+Quellenaufnahme13:48:35 UTC:29782 gespeicherte Quellen,0 Publikationen der
+letzten48 Stunden und0 Rohquellen mit helmutDipQuellfelder. Der reparierte
+Adapter allein fuellt historische Daten nicht auf. Damit ist frische500er
+Versorgung weiterhin nicht belegt; der31er Import bleibt nicht freigegeben.
+Zeit und Kosten muessen fuer die tatsaechliche Methode und alle500 Profile
+neu belastbar bestimmt werden. Alle1500 Sollpositionen bleiben vollstaendig
+zu bilanzieren. Qualitaetswaechter, Crons, Environment und4 USD Grenze sind
+unveraendert. Keine Aktivierung und kein neuer Teststart.
+
+Ein moeglicher begrenzter naechster Quellenvertrag wurde nur lesend in der
+[amtlichen DIP OpenAPI Beschreibung](https://search.dip.bundestag.de/api/v1/openapi.yaml)
+geprueft. Schema SHA256:
+`95b2e852649cff71021de2497628c3158070ecbfc9dbd15651ae485b7379c6ff`.
+Vorgangsposition bietet Beschlussfassung mit Beschlusstenor sowie Ueberweisung
+mit Ausschuss und Federfuehrung. Dokumenttyp allein belegt keinen Beschluss.
+Das Datum bezeichnet das zugehoerige Dokument und keine automatische Frist.
+aktivitaet_anzeige zeigt hoechstens vier Eintraege; aktivitaet_anzahl kann
+groesser sein. Der heutige Drucksachenadapter liest diese Vorgangspositionen
+nicht. Das ist eine untersuchte Anschlussmoeglichkeit, kein implementierter
+Faktenlieferant oder Nachweis fuer Wirkung und individuelle Handlung.
 
 
 ## Erster umgesetzter Eingabebaustein: DIP Dokumentangaben
