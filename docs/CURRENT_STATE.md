@@ -4,7 +4,7 @@
 Eigener Branch `codex/aussagenabdeckung-20260920`:18 synthetische Quellen,
 39 vorab getrennte Referenzaussagen; keine produktive Fachfreigabe. Neue
 Quittung, maximal6 Einzelaufrufe/1,272 USD/30 Minuten innerhalb4 USD Tagesriegel.
-Noch kein bezahlter Start.13/13 Eingangs und14/14 Schutzgruppen lokal bestanden;
+Kein bezahlter Start.13/13 Eingangs und16/16 Schutzgruppen lokal bestanden;
 Gesamtabnahme offen. [Konkreter Vertrag und neue Freigabe](betrieb/prosa-belegplan-2026-09-20.md#neuer-freigegebener-auftrag-vollstaendige-aussagenabdeckung).
 SQL20:01 UTC:504/0, keine lebenden Sperren, Leases, offenen Jobs oder jungen
 Prozesse; Tag0,389759 USD, Reserve0. Main/Deployment unveraendert wie unten.

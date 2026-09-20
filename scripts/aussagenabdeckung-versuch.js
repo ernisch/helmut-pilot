@@ -40,12 +40,14 @@ function eingabe(text) {
   const encoded = text.slice(PREFIX.length), bytes = Buffer.from(encoded, "base64");
   fordere(bytes.toString("base64") === encoded, "ABDECKUNG_EINGABE");
   const a = JSON.parse(Z.gunzipSync(bytes, { maxOutputLength: 6000 }));
-  fordere(a && Object.keys(a).sort().join(",") === "commit,position,previous,publicKey"
+  fordere(a && Object.keys(a).sort().join(",") === "aktion,commit,position,previous,publicKey"
+    && ["start", "abschluss"].includes(a.aktion)
     && /^[a-f0-9]{40}$/.test(a.commit) && Number.isInteger(a.position) && a.position >= 1 && a.position <= 6,
   "ABDECKUNG_BINDUNG");
-  fordere(a.position === 1 ? a.previous === null : a.previous
-    && Object.keys(a.previous).sort().join(",") === "responseHash,reviewHash"
-    && [a.previous.responseHash, a.previous.reviewHash].every(x => /^[a-f0-9]{64}$/.test(x)), "ABDECKUNG_VORPRUEFUNG");
+  fordere(a.position === 1 && a.aktion === "start" ? a.previous === null : a.previous
+    && Object.keys(a.previous).sort().join(",") === "responseHash,review"
+    && /^[a-f0-9]{64}$/.test(a.previous.responseHash) && a.previous.review,
+  "ABDECKUNG_VORPRUEFUNG");
   T.publicKey(a.publicKey); return a;
 }
 function konfiguration(a, env, now) {
@@ -79,6 +81,38 @@ function zeit(record, now, reserve = 0) {
     && Date.parse(record.ende) - Date.parse(record.begonnenAm) === MAX_MS
     && now.toISOString().slice(0, 10) === record.tag && now.getTime() + reserve <= Date.parse(record.ende),
   "ABDECKUNG_ZEITENDE");
+}
+// Vollstaendige getrennte Sichtung ist eine Betreiberhandlung dieses endlichen
+// Versuchs, kein automatischer Quellenrichter und keine Produktfreigabe.
+function pruefeReview(fall, previous) {
+  const r = previous?.review, k = (v, names) => v && typeof v === "object" && !Array.isArray(v)
+    && equal(Object.keys(v).sort(), [...names].sort());
+  const text = s => typeof s === "string" && s.trim().length >= 20 && s.length <= 700;
+  fordere(fall.antwortHash === previous?.responseHash
+    && k(r, ["pruefer", "alleOriginaleGelesen", "urteil", "quellen", "fazit"])
+    && r.pruefer === "codex-getrennte-quellensichtung" && r.alleOriginaleGelesen === true
+    && ["getragen", "abgelehnt", "unklar"].includes(r.urteil) && text(r.fazit)
+    && Array.isArray(r.quellen) && Array.isArray(fall.umfang) && r.quellen.length === fall.umfang.length
+    && new Set(r.quellen.map(q => q?.id)).size === r.quellen.length, "ABDECKUNG_REVIEW");
+  const urteile = [];
+  for (const q of fall.umfang) {
+    const v = r.quellen.find(v => v?.id === q.id);
+    fordere(k(v, ["id", "referenzen", "kandidaten"]), "ABDECKUNG_REVIEW");
+    for (const [name, count] of [["referenzen", q.soll], ["kandidaten", q.geliefert]]) {
+      const rows = v[name];
+      fordere(Array.isArray(rows) && rows.length === count && new Set(rows.map(x => x?.nummer)).size === count,
+        "ABDECKUNG_REVIEW");
+      for (const row of rows) {
+        fordere(k(row, ["nummer", "urteil", "begruendung"]) && Number.isInteger(row.nummer)
+          && row.nummer >= 1 && row.nummer <= count && text(row.begruendung)
+          && ["getragen", "abgelehnt", "unklar"].includes(row.urteil), "ABDECKUNG_REVIEW");
+        urteile.push(row.urteil);
+      }
+    }
+  }
+  fordere(urteile.length > 0 && (r.urteil === "getragen") === urteile.every(u => u === "getragen"),
+    "ABDECKUNG_REVIEW");
+  return { ...structuredClone(r), bestanden: r.urteil === "getragen", reviewHash: sha(JSON.stringify(r)) };
 }
 async function vorflug(env, storage, fetchFn, now) {
   const response = await fetchFn(require("./github-laufzeitpruefung").STATUS_URL, {
@@ -162,7 +196,7 @@ async function beanspruche(storage, a, runId, now, counter) {
       const p = r.faelle.at(-1);
       fordere(p.status === "antwort-und-kosten-bestaetigt" && p.antwortHash === a.previous.responseHash,
         "ABDECKUNG_VORPRUEFUNG");
-      p.fachpruefung = { bestanden: true, reviewHash: a.previous.reviewHash, bestaetigtAm: now.toISOString() };
+      p.fachpruefung = { ...pruefeReview(p, a.previous), bestaetigtAm: now.toISOString() };
       fordere(r.faelle.every(f => f.fachpruefung?.bestanden && f.kosten <= 212000), "ABDECKUNG_VORPRUEFUNG");
     }
     zeit(r, now, RESERVE_MS);
@@ -243,6 +277,20 @@ async function ausfuehren({ env = process.env, now = () => new Date(), fetchFn =
   observe = mitTransportbeleg, emit = r => console.log(JSON.stringify(r)) } = {}) {
   const a = eingabe(env.CONFIRM_TEXT), f = paket()[a.position - 1];
   konfiguration(a, env, now());
+  if (a.aktion === "abschluss") {
+    let expected;
+    await storage.mutateAuthStore(auth => {
+      const r = auth[KEY], p = r?.faelle?.at(-1);
+      fordere(r?.commit === a.commit && r.empfaenger === T.publicKey(a.publicKey).fingerprint
+        && r.status === "wartet-auf-fachpruefung" && r.faelle.length === a.position
+        && p.status === "antwort-und-kosten-bestaetigt", "ABDECKUNG_ABSCHLUSS");
+      p.fachpruefung = { ...pruefeReview(p, a.previous), bestaetigtAm: now().toISOString() };
+      r.status = p.fachpruefung.bestanden && a.position === 6 ? "geschlossen" : "gestoppt";
+      r.abgeschlossenAm = now().toISOString(); expected = structuredClone(r);
+    });
+    fordere(equal((await storage.readAuthStore())[KEY], expected), "ABDECKUNG_ABSCHLUSS_UNBESTAETIGT");
+    return { ok: true, abschluss: true, status: expected.status, modellaufrufe: 0, fachlichBestanden: false };
+  }
   const runtime = await vorflug(env, storage, fetchFn, now());
   const before = await storage.readAuthStore(), runId = `aussagenabdeckung-einmal-${env.GITHUB_RUN_ID}`;
   const claim = await beanspruche(storage, a, runId, now(), runtime.counter);
@@ -258,7 +306,8 @@ async function ausfuehren({ env = process.env, now = () => new Date(), fetchFn =
       emit: value => { transport = value; send("aussagenabdeckung-transport", { position: a.position, runId, ...value }); } });
     fordere(result.count === 1 && transport?.rawResponse && transport.statusCode === 200, "ABDECKUNG_TRANSPORTBELEG");
     pruefung = Eingang.pruefe(a.position, result.answer);
-    fordere(pruefung.referenzgleich, "ABDECKUNG_REFERENZABWEICHUNG");
+    // Unbekannte Wortvarianten sind keine automatische semantische Ablehnung.
+    // Vor jedem weiteren Aufruf wird die GANZE Ausgabe unabhaengig gesichtet.
   } catch (e) { errorCode = /^[A-Z_]{3,60}$/.test(e?.code || "") ? e.code : "ABDECKUNG_AUSGANG_OFFEN"; }
   send("aussagenabdeckung-antwort", { runId, position: a.position, fall: f, schemaHash: SCHEMA_HASH,
     answer: result?.answer ?? null, pruefung, errorCode, runtime, fachlichBestanden: false });
@@ -288,7 +337,8 @@ async function ausfuehren({ env = process.env, now = () => new Date(), fetchFn =
     Object.assign(r.faelle.at(-1), { status: errorCode ? "gestoppt" : "antwort-und-kosten-bestaetigt",
       beendetAm: now().toISOString(), antwortHash: result?.answer ? sha(JSON.stringify(result.answer)) : null,
       transportHash: transport?.responseHash || null, kosten: kostenBestaetigt ? newCalls[0][1].cost : null,
-      kostenBestaetigt, errorCode });
+      kostenBestaetigt, errorCode, umfang: pruefung?.bilanz || null,
+      referenzgleich: pruefung?.referenzgleich ?? null });
     r.status = errorCode ? "gestoppt" : "wartet-auf-fachpruefung"; savedExpected = structuredClone(r);
   });
   fordere(equal((await storage.readAuthStore())[KEY], savedExpected), "ABDECKUNG_ABSCHLUSS_UNBESTAETIGT");
@@ -300,5 +350,5 @@ if (require.main === module) ausfuehren().then(r => {
   console.error(JSON.stringify({ ok: false, grund: /^ABDECKUNG_[A-Z_]+$/.test(e?.code || "") ? e.code : "ABDECKUNG_UNBESTAETIGT",
     automatischeWiederholung: false })); process.exitCode = 1;
 });
-module.exports = { paket, eingabe, konfiguration, grundlinie, zeit, beanspruche, telemetrieErhalten, mitTransportbeleg, ausfuehren,
+module.exports = { paket, eingabe, konfiguration, grundlinie, zeit, beanspruche, pruefeReview, telemetrieErhalten, mitTransportbeleg, ausfuehren,
   kostenHistorieErhalten, KEY, PREFIX, BRANCH, MANIFEST, SCHEMA_HASH, PROMPTS, MAX_MS, RESERVE_MS, MAX_COST, sha };

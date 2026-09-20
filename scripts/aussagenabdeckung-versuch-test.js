@@ -6,7 +6,7 @@ const pair = C.generateKeyPairSync("rsa", { modulusLength: 3072 });
 const publicKey = pair.publicKey.export({ format: "der", type: "spki" }).toString("base64");
 const privateKey = pair.privateKey.export({ format: "pem", type: "pkcs8" });
 const now = () => new Date("2026-09-20T12:00:00Z");
-const input = { commit: "a".repeat(40), position: 1, previous: null, publicKey };
+const input = { aktion: "start", commit: "a".repeat(40), position: 1, previous: null, publicKey };
 const encode = a => G.PREFIX + Z.gzipSync(JSON.stringify(a)).toString("base64");
 function env(a = input) { return { GITHUB_REPOSITORY: "ernisch/helmut-pilot", GITHUB_REF: `refs/heads/${G.BRANCH}`,
   GITHUB_EVENT_NAME: "workflow_dispatch", GITHUB_RUN_ATTEMPT: "1", GITHUB_SHA: input.commit, GITHUB_RUN_ID: "12345678901",
@@ -20,6 +20,14 @@ function env(a = input) { return { GITHUB_REPOSITORY: "ernisch/helmut-pilot", GI
 const Eingang = require("./aussagenabdeckung-eingang");
 const answerAt = p => ({ quellen: Eingang.block(p).faelle.map(f => ({ id: f.id, beleg: f.quelle.text, aussagen: f.referenz.map(r => Object.fromEntries(Eingang.FELDER.map(k => [k, r[k][0]]))) })) });
 const answer = answerAt(1);
+function previousFor(position, overrides = {}) {
+  const b = Eingang.block(position);
+  return { responseHash: G.sha(JSON.stringify(answerAt(position))), review: {
+    pruefer: "codex-getrennte-quellensichtung", alleOriginaleGelesen: true, urteil: "getragen",
+    quellen: b.faelle.map(f => ({ id: f.id, ...Object.fromEntries(["referenzen", "kandidaten"].map(k => [k,
+      f.referenz.map((r, i) => ({ nummer: i + 1, urteil: "getragen", begruendung: r.nachweis }))])) })),
+    fazit: "Synthetische Offlinepruefung gegen separat formulierte Originalreferenzen.", ...overrides } };
+}
 function harness(options = {}) {
   let auth = { quellenfaktenEingang20260920: { status: "gestoppt", alterBeleg: "unveraendert" }, users: [{ id: "geschuetzt" }], sessions: [], auditEvents: [], systemErrors: [], dailyInputs: [], llmUsage: [], processRuns: [] };
   let calls = 0, writes = 0, used = 0, queue = Promise.resolve(); const emits = [];
@@ -103,7 +111,7 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
   await test("Sechs verschiedene Positionen einmalig und nur nach gebundener Vorbewertung", async () => {
     const h = harness(); await h.run();
     for (let position = 2; position <= 6; position++) {
-      const previous = { responseHash: G.sha(JSON.stringify(answerAt(position - 1))), reviewHash: G.sha(`Bewertung ${position - 1}`) };
+      const previous = previousFor(position - 1);
       A.equal((await h.run({ ...input, position, previous }, { env: { ...env({ ...input, position, previous }),
         GITHUB_RUN_ID: String(12345678900 + position) } })).ok, true);
     }
@@ -121,8 +129,7 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
     const h = harness(), old = Array.from({ length: 5000 }, (_, i) => ({ runId: `alt-${i}`, createdAt: "2026-09-18T12:00:00Z", promptTokens: i }));
     await h.storage.mutateAuthStore(a => { a.llmUsage = structuredClone(old); });
     for (let position = 1; position <= 6; position++) {
-      const a = { ...input, position, previous: position === 1 ? null : {
-        responseHash: G.sha(JSON.stringify(answerAt(position - 1))), reviewHash: G.sha(`Bewertung ${position - 1}`) } };
+      const a = { ...input, position, previous: position === 1 ? null : previousFor(position - 1) };
       A.equal((await h.run(a, { env: { ...env(a), GITHUB_RUN_ID: String(12345678900 + position) } })).ok, true);
       const auth = h.state().auth, archive = auth[G.KEY].archivierteAufruftelemetrie;
       A.deepEqual(archive, old.slice(-6)); A.equal(auth.llmUsage.length, 5000);
@@ -141,15 +148,15 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
     A.equal(G.telemetrieErhalten(before, after, usage, claim), false);
   });
   await test("Modellfehler, Schemafehler, ungeklaerte Kosten und fremde Mutation stoppen", async () => {
-    for (const opts of [{ referenceBad: true }, { modelError: true }, { schemaBad: true }, { costUnknown: true }, { foreignWrite: true }, { oldCostMutation: true }, { baselineMutation: true }]) {
+    for (const opts of [{ modelError: true }, { schemaBad: true }, { costUnknown: true }, { foreignWrite: true }, { oldCostMutation: true }, { baselineMutation: true }]) {
       const h = harness(opts); const r = await h.run(); A.equal(r.ok, false); A.equal(h.state().calls, 1);
       A.equal(h.state().auth[G.KEY].status, "gestoppt");
-      await A.rejects(h.run({ ...input, position: 2, previous: { responseHash: G.sha(JSON.stringify(answer)), reviewHash: "c".repeat(64) } }));
+      await A.rejects(h.run({ ...input, position: 2, previous: previousFor(1) }));
       A.equal(h.state().calls, 1);
     }
   });
   await test("30 Minuten Gesamtzeit, Abschlussreserve und UTC Tag verhindern spaete Fortsetzung", async () => {
-    const h = harness(); await h.run(); const previous = { responseHash: G.sha(JSON.stringify(answer)), reviewHash: "c".repeat(64) };
+    const h = harness(); await h.run(); const previous = previousFor(1);
     for (const d of ["2026-09-20T12:27:01Z", "2026-09-20T12:28:01Z", "2026-09-20T12:30:01Z", "2026-09-21T00:00:00Z"])
       await A.rejects(h.run({ ...input, position: 2, previous }, { now: () => new Date(d) }));
     A.equal(h.state().calls, 1);
@@ -214,6 +221,37 @@ async function test(name, fn) { await fn(); pass++; console.log("PASS " + name);
     await A.rejects(other.run()); A.equal(other.state().calls, 0);
     const a = harness(); await a.storage.mutateAuthStore(s => { s.quellenfaktenEingang20260920.alterBeleg = "anderer"; });
     A.notDeepEqual(G.grundlinie(a.state().auth), G.grundlinie(h.state().auth));
+  });
+  await test("Unbekannte Referenzvariante ist kein Falschurteil; vollstaendige Sichtung bleibt erforderlich", async () => {
+    const h = harness({ referenceBad: true }); const r = await h.run();
+    A.equal(r.ok, true); A.equal(h.state().auth[G.KEY].faelle[0].referenzgleich, false);
+    const record = h.state().auth[G.KEY].faelle[0];
+    const missing = previousFor(1); missing.responseHash = record.antwortHash;
+    A.throws(() => G.pruefeReview(record, missing));
+    const complete = previousFor(1); complete.responseHash = record.antwortHash;
+    complete.review.quellen[0].kandidaten.pop();
+    complete.review.quellen[0].referenzen[1].urteil = "abgelehnt";
+    complete.review.quellen[0].referenzen[1].begruendung = "Die zweite Originalaussage fehlt im synthetischen Kandidaten vollstaendig.";
+    complete.review.urteil = "abgelehnt";
+    A.equal(G.pruefeReview(record, complete).bestanden, false);
+    await A.rejects(h.run({ ...input, position: 2, previous: complete }));
+    A.equal(h.state().calls, 1);
+    const closed = await h.run({ ...input, aktion: "abschluss", previous: complete });
+    A.equal(closed.status, "gestoppt"); A.equal(closed.modellaufrufe, 0);
+    A.equal(h.state().calls, 1); await A.rejects(h.run());
+    await A.rejects(h.run({ ...input, aktion: "abschluss", previous: complete }));
+  });
+  await test("Review verlangt alle Referenzen UND alle Kandidaten mit Einzelgrund, kein blosses Hashlabel", async () => {
+    const h = harness(); await h.run(); const record = h.state().auth[G.KEY].faelle[0];
+    for (const mutate of [r => { r.review.quellen[0].referenzen.pop(); },
+      r => { r.review.quellen[0].kandidaten.pop(); }, r => { r.review.quellen[0].referenzen[0].begruendung = "OK"; },
+      r => { r.review.alleOriginaleGelesen = false; }, r => { r.responseHash = "f".repeat(64); },
+      r => { r.review.pruefer = "getestetes-modell"; },
+      r => { r.review.quellen[0].referenzen[0].urteil = "unklar"; }]) {
+      const review = previousFor(1); mutate(review); A.throws(() => G.pruefeReview(record, review));
+    }
+    const ok = G.pruefeReview(record, previousFor(1)); A(ok.bestanden);
+    A.equal(ok.reviewHash, G.sha(JSON.stringify(previousFor(1).review)));
   });
   console.log(`${pass}/${pass} Aussagenabdeckung Schutzgruppen bestanden.`);
 })().catch(e => { console.error(e); process.exitCode = 1; });

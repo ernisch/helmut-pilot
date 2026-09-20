@@ -833,17 +833,27 @@ des bezahlten Fensters.
   Nach Beginn fest gespeichert; jeder neue Start benoetigt mindestens drei
   Minuten Restzeit. Keine Fortsetzung oder neue Kennung nach Tageswechsel.
 * Einzelne kontrollierte Starts. Vor jedem weiteren Start komplette Antwort,
-  alle39 anteiligen Sollpositionen, Quellbindung, Kosten und geschuetzte
-  Daten vergleichen; konkrete Fachsichtung an Antwort und Reviewhash binden.
-* Abnahme eines Blocks: alle gelieferten Quellen exakt gebunden, saemtliche
-  zugehoerigen Referenzaussagen genau einmal getroffen, keine ungeprueften
-  Zusatzbehauptungen. Zusaetzlich volle fachliche Sichtung gegen Original,
-  unabhaengig von diesem technischen Gleichheitsvergleich. Nutzbare positive
-  Inhalte erforderlich; Leerung und identische Zitate bestehen nicht.
-* Sofortstopp der bezahlten Serie bei Referenzabweichung, fehlender Abdeckung,
+  alle zum Block gehoerenden Sollpositionen UND alle gelieferten Kandidaten,
+  Quellbindung, Kosten und geschuetzte Daten vergleichen. Die eigene
+  Quellensichtung wird mit Einzelurteil und Begruendung je Referenz und je
+  Kandidat, Prueferkennung, Antwortbezug und berechnetem Reviewhash gespeichert.
+* Abnahme eines Blocks: alle gelieferten Quellen exakt gebunden und jede
+  ausdrueckliche Originalaussage fachlich vollstaendig erhalten. Der exakte
+  Referenzstand wird getrennt ausgewiesen und niemals nachtraeglich angepasst.
+  Eine noch nicht gelistete harmlose Wortvariante darf nur nach dokumentierter
+  voller Originalsichtung als bedeutungserhaltend beurteilt werden; der
+  technische Referenztreffer bleibt dann trotzdem falsch. Jede Referenz UND
+  jeder Kandidat braucht ein begruendetes eigenes Urteil. Ein Hash oder
+  pauschales bestanden allein erlaubt keine Fortsetzung. Positive Inhalte
+  erforderlich; Leerung und identische Zitate bestehen nicht.
+* Sofortstopp der bezahlten Serie bei fachlich fehlender oder unklarer Abdeckung,
   Schema/Quellfehler, unklarem Transport/Kosten, Schutzabweichung, Konkurrenz,
   abweichender Laufzeitkonfiguration, Fensterschluss oder UTC Wechsel.
-  Negative Messung bleibt negativ; sichere Offlineentwicklung geht weiter.
+  Ein Referenzunterschied wartet zwingend auf komplette getrennte Sichtung.
+  Bei abgelehnt/unklar schliesst eine eigene kontrollierte Abschlussaktion
+  nur die neue Quittung, mit NULL Modellaufrufen. Nach Position6 ist diese
+  letzte Sichtung ebenfalls erforderlich. Kein Reset. Negative Messung bleibt
+  negativ; sichere Offlineentwicklung geht weiter.
 * Ein neuer CAS Schluessel aussagenabdeckung20260920 im bestehenden Auth
   Store. Erlaubt sind nur diese neue Quittung, llmUsage, testKostenTage,
   _authStoreRevision sowie notwendige bestehende globale und Anbieterbuchungen.
@@ -886,3 +896,16 @@ volle Reserve vor HTTP, einmaliger Transport, alter Belegschutz, UTC und
 Fenstergrenze, sechs Positionen, konkurrierender Claim, fremde Auth Mutation,
 Telemetrieerhaltung und Kostenhistorie. Kein realer Modellaufruf daraus.
 Kanonischer Gesamtlauf und exakte neue CI vor Ausfuehrung noch offen.
+
+Vor dem ersten bezahlten Aufruf nachgeschaerft: Der urspruengliche neue
+Entwurf auf97489291 stoppte bereits bei jedem unbekannten Referenzwort.
+Das haette erneut eine harmlose Zerlegungsvariante mit Bedeutungsverlust
+verwechseln koennen. Der vorbereitete Folgekopf trennt deshalb festes
+Messergebnis und komplette operatorseitige Fachsichtung. Keine Modellantwort
+ist bisher bekannt; keine Referenz, Quelle oder Prompt wurde dafuer geaendert.
+Die betroffene Schutzsuite besteht16/16, einschliesslich unabhaengiger
+Einzelbegruendungen, fehlender Reviewpositionen, Widerspruch zwischen Einzel
+und Gesamturteil, abgewiesener Fortsetzung und kostenfreier irreversibler
+Versuchsquittungsbeendigung. Die Eingangs13er Suite wurde nicht wiederholt.
+Das ist nur die Herkunft des endlichen Testurteils, kein beschlossener
+manueller Quellenbetrieb fuer reale500 Profile.
