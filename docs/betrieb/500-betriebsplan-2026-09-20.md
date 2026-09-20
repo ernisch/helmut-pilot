@@ -450,3 +450,64 @@ Kanonischer lokaler Abschlusslauf mit dem vorhandenen Headless Browser:
 431/431 Suiten in828s erfolgreich. Seitdem keine Anwendungsaenderung;
 die korrigierten Statusdokumente sind gesondert auf Groessenvertrag und
 Diffsauberkeit geprueft.
+
+
+## Fortsetzung: allgemeine Ereignistrennung
+
+Erneuter autonomer Auftrag am20.09.: alle notwendigen Reparaturen ausfuehren,
+geprueft integrieren und bis zur Startbereitschaft weiterarbeiten. Arbeits
+und Mergefreigabe sind erneut ausdruecklich erteilt. Ziel bleibt vor dem
+neuen500er Start; der bestehende4 USD Tagesriegel bleibt unveraendert.
+Uebernahme auf Main6f1d7d204f3b4d88e76d414a45de863b24533f83, keine offenen PRs.
+Die neue Arbeit liegt auf `codex/ereignisketten-20260920`.
+
+Die reale19er Fehlgruppe wird durch mehrere Ursachen getragen: Hintergrund
+statt Titelgegenstand; Hilfsverben und Verweise als Sachbelege; Amt plus Name
+als zwei scheinbar unabhängige Anker; eine fehlende Kernmenge als bestandene
+Gruppenpruefung. Der vorige Personengruppenfix beanspruchte diese Fehler
+nicht zu loesen.
+
+Der neue Entwurf trennt die Identitaetsanker von Quelltext, Promptauswahl und
+bestehenden Suchwurzeln. Aufgezaehlte allgemeine Woerter und geschlossene
+Amtsformen tragen kein Identitaetsgewicht. Ein gemeinsamer spezifischer
+Titelbeleg ist erforderlich; eine gemeinsame Ereignisfamilie wie Wahl kann
+mit mindestens zwei unabhaengigen Sachfamilien aus dem Kontext tragen.
+Damit bleiben etwa CDU Reaktion und Wahlberichte zusammen, ohne beliebige
+Hintergrundsaetze als gemeinsame Hauptmeldung auszugeben.
+
+Kernlose Komponenten werden anhand zwischengespeicherter direkter Kanten
+aufgeteilt. Jede entstehende Teilgruppe verlangt alle paarweisen Belege;
+staerkere Belege zuerst, stabile Kennungen fuer Gleichstaende. Jede Kante
+muss in beiden Vergleichsrichtungen bestehen. Keine wiederholte volle
+Textanalyse innerhalb der Zerlegung. Dokumente werden weder verworfen noch
+verdoppelt. Der bisherige Groessenriegel bleibt bestehen.
+
+Der Bestandsvergleich verwendet dieselben Identitaetsanker und verlangt
+fuer JEDES neue Dokument einen passenden Titelbezug. Ein richtiger
+Begleiter darf keine fremde Hintergrundmeldung einschleusen. Neue oder
+alte Suchkennungen werden durch diese Belegfilter nicht umgeschrieben.
+
+Die oeffentlichen Titel und Kurzfassungen des31er Pakets sind mit
+synthetischen Kennungen als Regression gesichert. Die fachlichen Themen
+wurden vorab festgelegt und vor jedem Anwendungsaufruf aus den Eingaben
+entfernt. Die17 Gegenproben umfassen die Gesamtaufteilung, acht positive
+Fortsetzungsgruppen,20 reproduzierbare Permutationen, getrennt vorgegebene
+Bestandsgruppen, Hintergrundsaetze, Aemter und Beschlussakte sowie eine
+kernlose Kette und einen eingeschleusten Begleittext. Die erste16er Fassung
+besteht auf dem vorigen Main11/16 und auf dem neuen Entwurf16/16; danach
+kam ein eigener Amts/Beschlussgegenfall mit positivem Zwilling hinzu.
+Die aktuellen neun Vorgangssuiten und zwoelf Understanding Suiten bestehen.
+Der600er bestehende Leistungstest liegt weiter deutlich unter15 Sekunden.
+Der bereits laufende lokale Gesamtlauf besteht432/432 Suiten in837s.
+Auf ausdruecklichen Nutzerwunsch werden bestandene Pruefungen nicht
+wiederholt. PR Pflichtpruefung und Integration stehen noch aus.
+Der private19er Naturlauf mit26 Quellentiteln behaelt seine Gruppierung
+unveraendert; das ist keine neue fachliche Abnahme seiner Prosa.
+
+Wichtige Grenze: diese Regeln sind ein konservativer lexikalischer
+Identitaetsnachweis, kein universeller Bedeutungsbeweis. Ein endlicher
+Wortvorrat oder ein gemeinsamer Titel garantiert nicht, dass jede denkbare
+Nachrichtenkonstellation richtig verstanden wird. Die allgemeine Fakten
+und Prosaabsicherung bleibt ein unabhaengiger naechster Arbeitsschritt.
+Die31 Quellen sind weiterhin nicht importiert. Dieser Stand setzt keine
+Profile aktiv und fuehrt keine Modellanfrage aus.
