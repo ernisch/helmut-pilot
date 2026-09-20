@@ -307,3 +307,102 @@ Ausgaben. Dies ist weiterhin keine allgemeine Fakten oder Prosaabnahme.
 CI35510294577 besteht435/435 Suiten in800s, Browser50/50 und alle
 PostgreSQL Pflichtstufen. Die Productionintegration ist abgeschlossen;
 [Beleg und verbleibende Grenze](500-betriebsplan-2026-09-20.md#integration-pr473).
+
+
+## Unabhaengiger DIP Fakteneingang
+
+20.09.2026, Branch `codex/dip-vorgangsfakten-20260920`, Basis Main
+`1f1ce7175df9ab2cd4a9b68e773a45834d45c2e3`. **Teilweise abgeschlossen.**
+Die vorher noch offene Main CI35517133382 ist inzwischen in beiden Jobs
+vollstaendig erfolgreich. Keine offenen PRs oder laufenden Actions bei
+Uebernahme. SQL15:55:58 UTC:504 Profile,0 aktiv, keine lebenden Pipeline,
+Verstehen oder Job Sperren und keine jungen offenen Prozesse. Alle22709
+Bestandsjobs haben den Status erledigt. Kostenlesung16:07:58 UTC:
+0,264700 USD,0 offene Reserve, unveraenderte4 USD Grenze.
+
+`lib/helmut/dip-vorgangsfakten.js` besitzt jetzt einen eigenen begrenzten
+amtlichen Leser. Er liest hoechstens12 ausdrueckliche Positionskennungen
+vom festen DIP Endpunkt, je Antwort hoechstens128000 Bytes und12 Sekunden.
+Authentifizierung nur per Header aus `process.env.DIP_API_KEY`, keine
+Weiterleitung, kein Modell, keine Datenbankschreibung oder automatische
+Aufnahme in den Crawler. Es gibt noch keinen produktiven Aufrufer.
+Ein geliefertes Modellobjekt oder ein vom Modell gesetztes Urteil ist kein
+Eingang dieser Funktion. Die begrenzten Fachfreigaben entstehen erst aus
+der vom Leser selbst abgerufenen typisierten Antwort und festen Satzformen.
+
+Der fachliche Nutzwert ist eng, aber konkret: originale Beschlusstenore
+bleiben samt Vorlagennummer, Abstimmungsangaben, Grundlage und Protokollseite
+erhalten. Ueberweisungen nennen den konkreten Ausschuss, getrennte
+Federfuehrung und eine gelieferte Ueberweisungsart. Fortsetzung und Nachtrag
+bleiben sichtbar. Ein Beschlussempfehlungstitel erzeugt keinen Beschluss;
+fehlende Vorlagennummer wird genannt, niemals aus dem Vorgangstitel geraten.
+Mehrere Vorlagen bleiben getrennt beziehungsweise als gelieferte ganze
+Nummernangabe erhalten. Neue unbekannte Sachfelder werden abgelehnt, damit
+kein spaeter hinzugekommener Vorbehalt still verloren geht.
+
+Die Quelle ist ausdruecklich eine normalisierte strukturierte API Aufnahme,
+kein vorgetaeuschter PDF Auszug. Sie behaelt amtlichen Endpunkt, Dokumentlink,
+Dokumentdatum, Originaltitel und Kontext. Datum wird nicht zur Frist oder
+zum behaupteten Ereignisdatum. Aktivitaeten werden weder als vollstaendige
+Personenliste noch als Rollenbeweis verwendet. Die Sachangaben tragen Zweck ereignis. Optional darf ein vom autorisierten
+Aufrufer geliefertes Profil einen engen zusaetzlichen Zweck profil tragen:
+explizite Bundestagsebene, exakt derselbe volle Ausschussname und eine
+eindeutige normale oder stellvertretende Mitgliedschaft. Die Aussage nennt
+ausdruecklich die Profilangabe und die amtliche Ueberweisung. Keine
+Themenaehnlichkeit, keine Gleichsetzung mit einem Landtagsausschuss, kein
+Vorsitz und keine persoenliche Pflicht. Das Profil und die vollstaendige Positionsauswahl werden vor dem ersten
+asynchronen Abruf kopiert; sein vollstaendiger Hash bindet den individuellen
+Satz. Widerspruechliche Ebene oder Mitgliedschaft ergibt keinen Profilbeleg.
+Wirkung, Kausalitaet, allgemeiner Profilbezug, individuelle Handlung,
+Frist und Vollzug bleiben unbelegt. `vollstaendigeFaktenpruefung` bleibt false.
+Der vorhandene Planbaustein kann diese konkreten Saetze binden; seine Hashes
+belegen weiterhin keine darueber hinausgehende Bedeutung.
+
+Rein lesende amtliche Quellenaufnahme am20.09.: eine erste Seite mit100
+Positionen war nur ein Ausschnitt aus5924 Treffern und wird nicht als
+Vollbestand ausgegeben. Der ausdruecklich auf September2026 und
+Plenarprotokolle der Wahlperiode21 begrenzte Abruf lieferte55 von55
+Treffern:13 Positionen mit Beschlussfassung,6 mit Ueberweisungen. Die
+anschliessende lokale Verarbeitung aller55 aufgenommenen Datensaetze durch
+den echten Leser mit ausschliesslich ersetztem HTTP Transport liefert26
+konkrete Angaben,0 technische Ablehnungen. Das ist keine Profilversorgung
+und keine Frischegarantie zum spaeteren Teststart. Vier oeffentliche,
+personenfreie Eingaben sind minimiert in
+`scripts/fixtures/dip-vorgangsfakten-amtlich.json` reproduzierbar gesichert.
+Sie liefern11 Angaben: Haushaltsbegleitgesetz, Umweltstrafrecht,
+Notfallversorgung und abgelehnte Verkehrsvorlage. Die amtlichen Kennungen
+sind Belegfixtures, keine Anwendungsregeln oder erlaubte Profilsonderfaelle.
+
+18 isolierte Eingangsgruppen,4 amtliche Gegenproben und8 gezielte Profil und Aufnahmegruppen
+bestanden. Nach dem Profilanschluss wurden nur die beiden betroffenen
+Eingangssuiten erneut gezielt geprueft, nicht der schon laufende Gesamtlauf. Darunter Bedingungen und Ablehnung, mehrere Vorlagen, false bei
+Federfuehrung, fremde Kennung und Quelle, Datumskonflikt, Transportgrenzen,
+fehlende Sachgrundlage, Geheimnisschutz sowie Formulierung durch den echten
+Planbaustein mit Dateispeicherung und Ruecklesung. Der kanonische lokale
+Gesamtlauf endet437/438 in858s. Einzig p1-security-check meldet drei401
+Antworten im lokalen Accountbestand. Derselbe unveraenderte Test besteht
+anschliessend im sauberen eigenen Checkout339/339. An der Sicherheitssuite
+oder Anwendungsanmeldung wurde nichts geaendert. Die neue Profil und
+Aufnahmesuite wurde nach Start dieses Gesamtlaufs ergaenzt und separat8/8
+geprueft; beide betroffenen Eingangssuiten bestehen erneut18/18 und4/4.
+Es wird weder ein einzelner gruener438er Lauf noch ein lokaler Gesamtlauf
+aller inzwischen439 Suiten auf dem finalen Kopf behauptet. Die exakte PR CI
+bleibt das abschliessende Gesamtgate. Keine Behauptung, die geplanten36
+produktiven Fachfaelle seien bestanden.
+
+**Integrationsgrenze:** Der neue Eingang kann allein weder den vollstaendigen
+Briefingvertrag noch zwei eigenstaendige mandatsbezogene Lageabsaetze tragen.
+Die sechs geplanten positiven Sachklassen verlangen unter anderem belegte
+Finanzwirkung, weitergehenden individuellen Profilbezug, Vollzug und bedingte Handlungen;
+diese werden im begrenzten DIP Schema nicht geliefert. Deshalb wurden keine
+freien Analysefelder durch identische Zitate ersetzt, keine positiven
+Altinhalte pauschal geleert und keine automatische Gesamtfreigabe erzeugt.
+Die anschliessende Integration muss die vorhandenen Feld und Qualitaetsvertraege
+erhalten. Fuer die61 synthetischen Landtagsprofile und freie Nachrichtentexte
+ist weiterhin ein anderer unabhaengiger Fakteneingang erforderlich.
+
+Kein Productionimport, keine Profilaktivierung, keine Modellkosten,
+keine Migration und keine Aenderung des4 USD Riegels. Nur die Vorschau des
+eigenen Arbeitsbranches ist abgeschaltet. Erst nach der vollstaendigen
+fachlichen Eingangsabdeckung sind beide echten Produktpfade einschliesslich
+Speicherung und Ruecklesung sowie deren36 Fachfaelle abnahmefaehig.

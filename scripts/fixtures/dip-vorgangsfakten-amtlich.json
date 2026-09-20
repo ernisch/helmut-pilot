@@ -1,0 +1,195 @@
+{
+  "herkunft": "https://search.dip.bundestag.de/api/v1/vorgangsposition",
+  "aufnahmeTag": "2026-09-20",
+  "schemaSha256": "95b2e852649cff71021de2497628c3158070ecbfc9dbd15651ae485b7379c6ff",
+  "umfang": "Vier oeffentliche amtliche Vorgangsschritte, Auswahl ohne Personenaktivitaeten; keine 500er Versorgung.",
+  "documents": [
+    {
+      "id": "699175",
+      "typ": "Vorgangsposition",
+      "vorgang_id": "338366",
+      "zuordnung": "BT",
+      "titel": "Haushaltsbegleitgesetz 2027",
+      "vorgangsposition": "1. Beratung",
+      "datum": "2026-09-08",
+      "dokumentart": "Plenarprotokoll",
+      "fortsetzung": false,
+      "nachtrag": false,
+      "fundstelle": {
+        "id": "5808",
+        "dokumentnummer": "21/91",
+        "datum": "2026-09-08",
+        "verteildatum": "2026-09-09",
+        "xml_url": "https://dserver.bundestag.de/btp/21/21091.xml",
+        "dokumentart": "Plenarprotokoll",
+        "herausgeber": "BT",
+        "urheber": [],
+        "pdf_url": "https://dserver.bundestag.de/btp/21/21091.pdf#P.11253",
+        "anfangsseite": 11253,
+        "endseite": 11279,
+        "anfangsquadrant": "A",
+        "endquadrant": "D"
+      },
+      "beschlussfassung": [
+        {
+          "beschlusstenor": "Überweisung",
+          "dokumentnummer": "21/7860",
+          "seite": "11279D"
+        }
+      ],
+      "ueberweisung": [
+        {
+          "ausschuss": "Haushaltsausschuss",
+          "ausschuss_kuerzel": "HaushA",
+          "federfuehrung": true
+        },
+        {
+          "ausschuss": "Ausschuss für Bildung, Familie, Senioren, Frauen und Jugend",
+          "ausschuss_kuerzel": "AfBFSFJ",
+          "federfuehrung": false
+        },
+        {
+          "ausschuss": "Ausschuss für Wohnen, Stadtentwicklung, Bauwesen und Kommunen",
+          "ausschuss_kuerzel": "BauA",
+          "federfuehrung": false
+        },
+        {
+          "ausschuss": "Finanzausschuss",
+          "ausschuss_kuerzel": "FinanzA",
+          "federfuehrung": false
+        },
+        {
+          "ausschuss": "Verteidigungsausschuss",
+          "ausschuss_kuerzel": "VgA",
+          "federfuehrung": false
+        }
+      ],
+      "mitberaten": [
+        {
+          "vorgangsposition": "1. Beratung (Einzelpläne)",
+          "vorgangstyp": "Gesetzgebung",
+          "titel": "Gesetz über die Feststellung des Bundeshaushaltsplans für das Haushaltsjahr 2027 (Haushaltsgesetz 2027 - HG 2027)",
+          "id": "338317"
+        }
+      ]
+    },
+    {
+      "id": "699366",
+      "typ": "Vorgangsposition",
+      "vorgang_id": "334609",
+      "zuordnung": "BT",
+      "titel": "Fertigstellung der Autobahn 20 vor der Bahn-Neubaustrecke Hamburg-Hannover priorisieren",
+      "vorgangsposition": "Beratung",
+      "datum": "2026-09-10",
+      "dokumentart": "Plenarprotokoll",
+      "fortsetzung": false,
+      "nachtrag": false,
+      "fundstelle": {
+        "id": "5810",
+        "dokumentnummer": "21/93",
+        "datum": "2026-09-10",
+        "verteildatum": "2026-09-11",
+        "xml_url": "https://dserver.bundestag.de/btp/21/21093.xml",
+        "dokumentart": "Plenarprotokoll",
+        "herausgeber": "BT",
+        "urheber": [],
+        "pdf_url": "https://dserver.bundestag.de/btp/21/21093.pdf#P.11523",
+        "anfangsseite": 11523,
+        "endseite": 11523,
+        "anfangsquadrant": "C",
+        "endquadrant": "D"
+      },
+      "beschlussfassung": [
+        {
+          "beschlusstenor": "Abgelehnt",
+          "dokumentnummer": "21/5764",
+          "seite": "11523D"
+        }
+      ]
+    },
+    {
+      "id": "699347",
+      "typ": "Vorgangsposition",
+      "vorgang_id": "334473",
+      "zuordnung": "BT",
+      "titel": "Gesetz zur Änderung des Strafrechts - Umsetzung der Richtlinie (EU) 2024/1203 über den strafrechtlichen Schutz der Umwelt sowie zur Änderung der Zustellungspauschalen und Gebühren im Gesetz über Ordnungswidrigkeiten und in den Justizkostengesetzen",
+      "vorgangsposition": "Änderung der Ausschussüberweisung",
+      "datum": "2026-09-10",
+      "dokumentart": "Plenarprotokoll",
+      "fortsetzung": false,
+      "nachtrag": false,
+      "fundstelle": {
+        "id": "5810",
+        "dokumentnummer": "21/93",
+        "datum": "2026-09-10",
+        "verteildatum": "2026-09-11",
+        "xml_url": "https://dserver.bundestag.de/btp/21/21093.xml",
+        "dokumentart": "Plenarprotokoll",
+        "herausgeber": "BT",
+        "urheber": [],
+        "pdf_url": "https://dserver.bundestag.de/btp/21/21093.pdf#P.11481",
+        "anfangsseite": 11481,
+        "endseite": 11481,
+        "anfangsquadrant": "D",
+        "endquadrant": "D"
+      },
+      "beschlussfassung": [
+        {
+          "beschlusstenor": "Überweisung",
+          "dokumentnummer": "21/6133, 21/6668",
+          "seite": "11481D"
+        }
+      ],
+      "ueberweisung": [
+        {
+          "ueberweisungsart": "nachträgliche Überweisung",
+          "ausschuss": "Ausschuss für Umwelt, Klimaschutz, Naturschutz und nukleare Sicherheit",
+          "ausschuss_kuerzel": "AfU",
+          "federfuehrung": false
+        }
+      ]
+    },
+    {
+      "id": "699348",
+      "typ": "Vorgangsposition",
+      "vorgang_id": "334560",
+      "zuordnung": "BT",
+      "titel": "Gesetz zur Reform der Notfallversorgung",
+      "vorgangsposition": "Änderung der Ausschussüberweisung",
+      "datum": "2026-09-10",
+      "dokumentart": "Plenarprotokoll",
+      "fortsetzung": false,
+      "nachtrag": false,
+      "fundstelle": {
+        "id": "5810",
+        "dokumentnummer": "21/93",
+        "datum": "2026-09-10",
+        "verteildatum": "2026-09-11",
+        "xml_url": "https://dserver.bundestag.de/btp/21/21093.xml",
+        "dokumentart": "Plenarprotokoll",
+        "herausgeber": "BT",
+        "urheber": [],
+        "pdf_url": "https://dserver.bundestag.de/btp/21/21093.pdf#P.11481",
+        "anfangsseite": 11481,
+        "endseite": 11481,
+        "anfangsquadrant": "D",
+        "endquadrant": "D"
+      },
+      "beschlussfassung": [
+        {
+          "beschlusstenor": "Überweisung",
+          "dokumentnummer": "21/6808",
+          "seite": "11481D"
+        }
+      ],
+      "ueberweisung": [
+        {
+          "ueberweisungsart": "nachträgliche Überweisung",
+          "ausschuss": "Innenausschuss",
+          "ausschuss_kuerzel": "InnenA",
+          "federfuehrung": false
+        }
+      ]
+    }
+  ]
+}
