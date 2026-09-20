@@ -698,3 +698,25 @@ und installierter Endauftrag erhalten Ergebnisse und die vier Ausnahmen.
 Nachkontrolle: alle504 inaktiv, Konten/Sessions unveraendert, Kommunikation,
 Sperren, Leases, laufende Anfragen, Kosten und alle1500 Ergebnispositionen
 lesen. Inflight Arbeit und spaete Writes gesondert ausweisen.
+
+## UTC Grenze der Datenbankfixture
+
+20.09.2026, teilweise abgeschlossen. PR462 CI35477560079 scheiterte
+um03:01:40 Tuerkei /02:01:40 Berlin /00:01:40 UTC nach erfolgreichen
+Kontoschutz und Quellenpruefungen an null500-kostenfenster-ungueltig.
+Die abgelaufene Fixture setzte vorflugAm auf jetzt minus zwei Minuten,
+startBis auf minus eine Minute, beliess endeAm aber in der Zukunft.
+Kurz nach Mitternacht lag der Vorflug damit am Vortag. Der bestehende
+Kostenriegel verwarf korrekt das Manifest, bevor SQL den beabsichtigten
+Fristfehler pruefen konnte. Kein Production Fehler und kein Kostenwechsel.
+
+Nur die Testdaten korrigiert: abgelaufenes Fenster vollstaendig am
+Vortag; die SQL Ablehnung muss jetzt ausdruecklich
+null500-startfenster-abgelaufen nennen. Gueltige Live Fixtures verwenden
+einen gemeinsamen UTC Kostentag und begrenzen ihr Ende auf dessen Ende.
+In der letzten Minute wartet nur die isolierte Fixture auf den neuen Tag,
+in einzelnen Abschnitten hoechstens60 Sekunden. Kein Uhrzeitpatch in SQL.
+Alle bisherigen Assertions und Production Grenzen bleiben erhalten.
+Acht lokale Gruppen erfolgreich, darunter Mitternacht, der beobachtete
+Fehlerzeitpunkt, Tagesende und unveraenderte Ablehnung echter Tageswechsel.
+Vollstaendige CI mit echtem PostgreSQL am neuen Head erforderlich.

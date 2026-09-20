@@ -475,3 +475,165 @@ Prosareparatur. Auch danach muss der allgemeine Beleg-/Formulierungsvertrag
 die negativen und positiven Fachfaelle in mehreren Feldern und im
 Schwesterpfad bestehen. Quelle, fachliches Urteil und strukturelle
 Vollstaendigkeitspruefung bleiben getrennt.
+
+## Zweiter freigegebener Quellenblock am 19.09. um 22:50 UTC
+
+Der Betreiber gab den nach PR461 konkret beschriebenen zusaetzlichen Block
+mit Ja frei. Der begrenzte Datenkorrekturlauf ist **erfolgreich abgeschlossen**;
+die Eingabeversorgung und der gesamte500er Auftrag bleiben **teilweise abgeschlossen**.
+Ausgefuehrt auf Main f854367b3f3de49a0b43223735b14968b5227b2e,
+Production dpl_6e46gS6RrRrfUi5fpqniq9bDqexy READY. Main CI35468477635
+war bereits erfolgreich. Vorher keine offenen PRs oder laufenden Actions.
+
+Actions35474457060, Job105981180732:20.09.01:50:31 bis01:54:59 Tuerkei,
+20.09.00:50:31 bis00:54:59 Berlin,19.09.22:50:31 bis22:54:59 UTC.
+Ein Startklick meldete im Browser eine Zeitueberschreitung. Die direkte
+GitHub Gegenlesung bestaetigte genau diesen einen Lauf; kein zweiter Klick.
+Der Arbeitsauftrag war ausschliesslich quellenkontext bei null Aktiven.
+
+Alle500 Zielprofile geprueft,142 verschiedene ausgewaehlte Quellen.
+38 bisher unversuchte Quellen abgerufen und ihre Versuchsbelege bedingt
+persistiert:15 Auszuege ergaenzt,23 abgelehnt. Ablehnungen:8 Artikelziele,
+3 Titel,8 nicht bestaetigte Abrufe,4 ohne belastbaren Auszug.25 vorhandene
+Versuchsbelege uebersprungen; keine Wiederholung eines alten Versuchs.
+Die beiden ungenutzten Plaetze des40er Limits sind kein neuer Auftrag.
+Im aktuellen ausgewaehlten Eingang bleibt kein noch unversuchter Kandidat.
+
+Leere Auszuege dieses Eingangs63 vorher und48 nachher.327 Profile haben
+mindestens zwei Auszuege,91 weiterhin keinen. Diese Mengen beschreiben
+die aktuelle Auswahl nach dem regulaeren21:30 Verstehenlauf; eine Aenderung
+gegen eine Stunden aeltere Auswahl wird nicht allein diesem Datenblock
+zugerechnet. Keine neuen500 Ergebnisse erzeugt oder fachlich abgenommen.
+
+Native SQL vor22:50:03/nach22:55:20 UTC:504 Profile,0 aktiv; alle vier
+vollstaendigen Schutzgrundlinien identisch, einschliesslich Auth und Sessions.
+Keine Sperren, Leases, offenen Jobs, jungen offenen Prozesse, neuen
+Testfensterquittungen oder offenen Reserven. Tagesbuch0,526234 USD,
+Limit4 USD vor und nach identisch, null Modellaufrufe und Modellmehrkosten.
+Der Kostenanstieg seit dem frueheren Abschluss liegt vor diesem Lauf;
+der regulaere21:30 Verstehenlauf ist separat protokolliert.
+
+Alle15 neuen Auszuege vollstaendig gelesen und lokal durch Originalquellenleser,
+Satzpraefix und gespeicherten Inhaltshash gegengeprueft:15/15 bytegleich.
+Das ist ein Herkunfts und Textvollstaendigkeitsbeleg, keine Bestaetigung
+jeder journalistischen Tatsachenbehauptung oder einer erzeugten Interpretation.
+Privater Nachweis: Helmut_Quellenblock_35474457060_Nachweis.json.
+
+Kein weiterer Quellenabruf derselben Kandidaten. Der Verdacht, dass die
+Sechserauswahl vorhandene Auszuege vollstaendig verdraengt, erklaert die
+aktuelle Luecke nicht. Der gezielte Replay von151 Dokumenten zu vier
+auffaelligen Wissensobjekten bestaetigte zwar solche Auswahlfaelle. Alle
+vier Objekte haben aber pending Status und werden fuer die aktuelle Lage
+nicht verwendet. Im getrennt gelesenen abgeschlossenen Objektbestand
+hatten die drei Gruppen mit spaeteren Auszuegen bereits4,5 beziehungsweise6
+Auszuege unter den ersten sechs. Keine Aenderung dieser Auswahl auf Verdacht.
+Native Zeitstempel wurden fuer den Replay nur in die vom REST Leser
+gelieferte ISO Darstellung gebracht; daraus folgt kein Production Zeitfehler.
+
+Die regulaeren Abruflaeufe am18. und19.09. jeweils04:00/20:00 UTC hatten
+null Auftraege und null Verarbeitungen. Letzte Rohdatenanlage weiterhin
+16.09.16:04:07 UTC, juengste Publikation16.09.15:55:56 UTC. Alte Artikel
+werden durch ergaenzte Auszuege nicht zu neuen Nachrichten. Der bestehende
+globale Erfassungspfad verlangt seine uebergebenen Mandate; die normalen
+Auftraggeber liefern bei null aktiven Profilen keine neue Kohortenarbeit.
+Die Hilfswege fachzyklus und der alte Stufe A Ausfuehrer sind kein
+freigegebener Ersatz fuer einen frischen Eingang bei null aktiven Profilen.
+Ein neuer Quellenimport waere ein neuer Production Datenauftrag; der
+abgeschlossene38er Block gibt ihn nicht frei. Keine Aktivierung als Umweg.
+
+Allgemeine Prosa, Quellenfrische und der belegte Zeit und Kostenplan fuer500
+bleiben offen. Der separate Modellrichter aus PR452 bleibt verworfen.
+Ein wortgleiches Quellenzitat beweist seine Herkunft, aber nicht die
+Folgerichtigkeit eines zusaetzlichen Urteils. Auch erzeugte strukturierte
+Risiko und Bedeutungsfelder sind ohne unabhaengigen Eingabebeleg keine
+neue Tatsachengrundlage fuer eine deterministische Umformulierung.
+
+## Kontextverlust bei globaler Dublettenverarbeitung
+
+19.09.2026, teilweise abgeschlossen. Eigener Branch
+`codex/testnachlauf-fenster-20260919`, Basis Main f854367.
+Keine konkurrierende Arbeit oder offenen PRs vor der Aenderung.
+
+Zwei oeffentliche RSS Abrufwege wurden einmal isoliert gelesen, ohne
+Production Zugang oder Modellaufruf: die beiden relational als healthy
+und always_on belegten Wege deutschlandfunk-politik und tagesschau-politik.
+Je Weg maximal16 Eintraege,15 Sekunden,1 MiB, keine Weiterleitung,
+kein Wiederholen und keine Artikelabrufe. Publikationsdatum muss wirklich
+im Eingang stehen und innerhalb48 Stunden liegen. Ein Datum aus einem
+Normalisiererfallback gilt nicht als Frischebeleg. Auszuege muessen ganze
+gelieferte Saetze enthalten. Grenzen gelten allgemein, nicht je Meldung.
+
+Erster Actionslauf35476120110: elf Offline Pruefgruppen erfolgreich;
+der echte Leser wurde versehentlich ebenfalls im Offline Schutz gestartet.
+Beide Netzversuche wurden lokal gesperrt, null externe Abrufe. Kein
+Publisherfehler und keine erfolgreiche Quellenaufnahme. Der zweite Lauf
+35476247012 am20.09.02:29 Tuerkei /01:29 Berlin /19.09.23:29 UTC startete
+nur den ausdruecklichen Quellenleser mit leerer Prozessumgebung. Alle
+Offline Tests behalten den vorgeschriebenen Schutz. Zwei GET Requests,
+32 gelesene Meldungen,31 akzeptiert, eine wegen unvollstaendigem Auszug
+abgelehnt. Null Production Writes, null Modelle, kein Import.
+Alle31 Titel und Auszuege vollstaendig gelesen. Native Gegenlesung der
+31 Kennungen: keine bereits vorhanden. Das ersetzt keinen globalen
+Abgleich gegen andere Kennungen und keine vollstaendige500er Versorgung.
+
+**Belegte Ursache:** scheduler minimiert Quellen korrekt, doch
+`dedup-global.buildDocument` baut das Dokument nur aus Identitaetsfeldern
+neu. summary, url und source_name fehlen danach bei allen31 Meldungen.
+Der Storage Spaltenfilter kann nicht retten, was vorher weggeworfen wurde.
+Der Warteschlangenpfad verwendet bereits die Minimierung direkt und hat
+diesen Verlust nicht. Production Aggregat:29782 Rohdokumente,28866 ohne
+summary;18278 mit content_fingerprint, davon17948 ohne summary. Dieses
+Aggregat beweist nicht die Ursache jedes einzelnen historischen Leerfelds.
+
+**Erwartung vor Aenderung:** Originalkontext der gewaehlten Primaerquelle
+erhalten, keine Mischung mit einer schwaecheren Fundstelle. Unbekannter
+Kontext und unbekannte Zeit bleiben unbekannt. Kein Volltext, Rohpayload
+oder Personenfeld neu speichern. Dokumentidentitaet, Ranking und
+Fundstellen bleiben gleich. Vorhandene Quellenbelege duerfen weder durch
+leere noch durch abweichende neue Feedtexte ueberschrieben werden.
+
+Kleinster gemeinsamer Anschluss: die bestehende Minimierung liefert
+summary, url, source_name, source_type, confidence, link_type, retrieved_at,
+document_type und wahlperiode; nur wirklich vorhandene Werte werden
+uebernommen. raw und cluster_id werden nicht neu gesetzt. Der globale
+Anlagepfad verwendet atomare Neuanlage mit ignore-duplicates, auch im
+Einzelrueckfall. Das schuetzt ID Konflikte ausserhalb des14 Tage Fensters
+und konkurrierende Anlagen. Als neu zaehlen nur vom Speicher zurueckgegebene
+Kennungen; bereits vorhandene oder unbestaetigte Zeilen zaehlen nicht.
+Fundstellen und der bestehende bedingte Zaehlerpfad bleiben erhalten.
+Historische Quellen werden nicht automatisch ergaenzt oder ersetzt.
+
+Lokaler Vergleich der echten31 Eingaben: vorher0 Auszuege, nachher31
+bytegleich erhalten; Dokumentidentitaeten und alle Fundstellen unveraendert.
+Privater vollstaendiger Nachweis Helmut_Quellenmotor_Replay_20260919.json,
+Eingabehash9abde02e10f37136bf1b094b0f4aa4665399893776521f46b980028dd8a8f36d.
+Zehn neue Offline Pruefgruppen erfolgreich, dazu alle sieben betroffenen
+Bestandssuiten. Der bestehende verpflichtende PostgreSQL Nachweis prueft
+zusaetzlich beide realen Speicherpfade und geschuetzte ID Konflikte.
+Kanonischer lokaler Gesamtlauf ueber scripts/lokal.js mit Exit0 beendet.
+Sein vollstaendiger Schlussbericht ist in der Dateiansicht nicht verfuegbar;
+daraus wird keine separat abgelesene Suitenanzahl behauptet. Eine wegen
+verzoegerter Dateiansicht gestartete isolierte Diagnoseausfuehrung wurde
+danach beendet und zaehlt nicht als zweiter Gesamtnachweis. Die echte
+CI Datenbankabnahme steht noch aus. Native SQL23:49 UTC weiterhin504/0,
+identische Schutzgrundlinien, keine offene Arbeit/Reserve,0,526234 USD.
+Auch der volle Abgleich der31 neuen Kennungen, Fingerabdruecke und
+kanonischen Adressen gegen Production ergab keine Bestandstreffer.
+
+Vor geplanter Integration: Wirkung ist Quellenkontext bei kuenftigen neuen
+Dokumenten; Risiko sind Dubletten und Feldueberschreibung, deshalb deren
+explizite Gegenpruefung. Rueckweg ist Revert der notwendigen Codeaenderung,
+kein Loeschen neu angelegter Quellen. Nach Merge Deployment, Alias,
+Main Commit und geschuetzte Production Grundlinie rein lesend kontrollieren.
+Kein neuer Quellenimport, keine Aktivierung, kein geaenderter Kostenriegel.
+Erhaltener Quellenkontext ist noch kein Beleg fuer freie Modellfolgerungen.
+
+Erste PR462 CI35477560079: neue Quellenpersistenz, atomarer Belegerhalt
+bei ID Konflikten und Schwesterpfad gegen echtes PostgreSQL erfolgreich;
+Kontoschutz samt500 isolierten Registrierungen und Browser ebenfalls
+erfolgreich. Gesamtlauf gescheitert: der nachfolgende bestehende500er
+Datenbanktest konstruierte kurz nach UTC Mitternacht ein ungueltiges
+Kostenfenster. Offline Gesamtsuite und Z22 wurden deshalb nicht erreicht.
+Der Fixturefehler und seine Reparatur stehen im kanonischen
+[Testfensterbeleg](testfenster-null500-2026-09-19.md#utc-grenze-der-datenbankfixture).
+Kein Merge auf Basis dieses unvollstaendigen Laufs.

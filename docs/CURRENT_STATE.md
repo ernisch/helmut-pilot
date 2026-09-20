@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**19.09.2026: Gesamtauftrag teilweise abgeschlossen, noch nicht bereit.** PR460/Main `ce090c2a4ef0c6fbae74d8cc5ed376382d0cb1bd` READY, Leser35466909269 HTTP200. SQL20:17:504/0, Schutzgrundlinien identisch, keine offene Arbeit/Reserve,0,386081 USD bei4 USD Limit. Endfunktion installiert; kein Timer/Teststart. [Abschluss](betrieb/testfenster-null500-2026-09-19.md#production-abschluss-pr460).
+**19.09.2026: Gesamtauftrag teilweise abgeschlossen, noch nicht bereit.** PR461/Main `f854367b3f3de49a0b43223735b14968b5227b2e` READY, Main CI erfolgreich. Zweiter freigegebener Quellenblock:38 Abrufe,15 Auszuege,0 KI. SQL22:55 UTC:504/0, Schutzgrundlinien identisch, keine offene Arbeit/Reserve,0,526234 USD bei4 USD Limit. [Beleg](betrieb/quellenkontext-ruhe-2026-09-19.md#zweiter-freigegebener-quellenblock-am-1909-um-2250-utc).
 
 **Integration PR419 bis448 abgeschlossen, alle28 alten Drafts erledigt.** PR447 CI35435242485:419/419, Browser50, Kontoschutz15, Z22 48;24 Pflichtschritte. Laufzeitleser35436180373 belegt Speicher, Kommunikationssperre und4 USD Riegel. Drei Prosaserien nach je einem Aufruf fachlich gestoppt, zusammen0,019647 USD; Folgenprompt verworfen, Anwendung nicht auf `low` umgestellt. [Fachstopps](betrieb/prosa-denktiefe-2026-09-19.md#ergebnis-und-dauerhafter-fachstopp). Heutige Freigabe10 USD, enger4 USD Riegel und Artikelkontext AUS bleiben. Kein neuer500er Test; Quellenfrische und vollstaendige Fachabnahme offen. [Integrationsbelege und Restpunkte](betrieb/500-bereitschaft-2026-09-19.md#abschluss-nach-dem-denkvergleich).
 
@@ -42,7 +42,7 @@ Vorbereitung eines erneut ausdruecklich freizugebenden Nachweises mit exakt 500 
 
 Historische PR- und Deploymentdetails bis09.09. stehen unverändert im [archivierten Status](archive/project_state/2026_09_14_CURRENT_STATE_vor_lesebelegabschluss.md). Der aktuelle Main- und Productionstand steht im Statuskopf.
 
-19.09.: PR459/460 integriert. PR460 CI427/427, alle25 Pflichtschritte. Nachlauf jetzt an feste Auswahl und Endfrist gebunden. Reiner Dokuabschluss folgt; Prosa noch nicht repariert. [Vertrag](betrieb/testfenster-null500-2026-09-19.md#nachlauf-an-das-neue-testfenster-binden).
+19.09.: PR459/460/461 integriert. Quellenblock abgeschlossen. Eigener Branch repariert Kontextverlust bei globaler Dublettenverarbeitung;31/31 Auszuege erhalten. Lokaler Gesamttest Exit0; PR folgt. Prosa weiter offen. [Beleg](betrieb/quellenkontext-ruhe-2026-09-19.md#kontextverlust-bei-globaler-dublettenverarbeitung).
 
 ## 3 · Production-Zustand
 
@@ -150,7 +150,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-19.09.: [Prosa neu bewertet](betrieb/prosa-quellenpruefung-2026-09-19.md#neubewertung-nach-dem-gescheiterten-quellenrichter), weiter offen. [Naechster Quellenblock](betrieb/quellenkontext-ruhe-2026-09-19.md#konkrete-verbleibende-quelldatengrenze-nach-pr460) vorbereitet, gesonderte Datenfreigabe fehlt.500er Versorgung/Zeit/Kosten unbelegt.
+19.09.: Kontextverlust reparieren und integrieren.31 frische isolierte Quellen sind noch nicht importiert; vorhandene Auswahl erklaert die Luecke nicht. [Prosa](betrieb/prosa-quellenpruefung-2026-09-19.md#neubewertung-nach-dem-gescheiterten-quellenrichter),500er Versorgung/Zeit/Kosten weiter offen.
 
 ## 12 · Verbindliche Betriebsgrenzen
 

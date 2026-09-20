@@ -61,4 +61,23 @@ test("Reiner Lesetext und getrennte Aktivierungs-/Endtransaktion ohne impliziten
   }
   A.throws(() => N.baueSql(m, "schreiben"));
 });
+test("DB Fixture prueft Ablauf statt versehentlichem UTC Kostenwechsel", () => {
+  for (const text of ["2026-09-20T00:00:00.000Z", "2026-09-20T00:01:40.000Z", "2026-09-20T23:59:59.999Z"]) {
+    const zeit = new Date(text), v = F.abgelaufenerVertrag(zeit);
+    const m = N.pruefeManifest({ ...make(), ...v });
+    A.ok(Date.parse(m.startBis) < +zeit); A.ok(Date.parse(m.endeAm) < +zeit);
+    A.equal(m.vorflugAm.slice(0, 10), m.endeAm.slice(0, 10));
+  }
+  for (const text of ["2026-09-20T00:00:00.000Z", "2026-09-20T00:01:40.000Z", "2026-09-20T23:58:00.000Z"]) {
+    const zeit = new Date(text), v = F.liveVertrag(zeit).vertrag;
+    const m = N.pruefeManifest({ ...make(), ...v });
+    A.ok(Date.parse(m.vorflugAm) <= +zeit); A.ok(Date.parse(m.startBis) > +zeit);
+    A.equal(m.vorflugAm.slice(0, 10), text.slice(0, 10));
+    A.equal(m.endeAm.slice(0, 10), text.slice(0, 10));
+  }
+  const warten = F.liveVertrag(new Date("2026-09-20T23:59:59.000Z"));
+  A.equal(warten.vertrag, undefined); A.equal(warten.warteMs, 1050);
+  // Die Production Ablehnung eines echten Tageswechsels bleibt verbindlich.
+  A.throws(() => N.pruefeManifest({ ...make(), endeAm: "2026-09-20T01:00:00.000Z" }), /null500-kostenfenster-ungueltig/);
+});
 console.log(`${pass} PASS, 0 FAIL. PostgreSQL Transaktionsnachweis ist ein eigener Pflichtlauf.`);

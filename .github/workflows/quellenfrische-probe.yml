@@ -1,0 +1,47 @@
+name: Zwei bekannte Quellen isoliert lesen
+
+# Einmaliger vorbereitender Abruf auf dem Reparaturbranch. Keine Production
+# Secrets und kein Anwendungsimport. Spaetere Dokumentationscommits starten
+# ihn nicht nochmals. Kein Zeitplan und kein allgemeiner Quellenscan.
+on:
+  push:
+    branches: [codex/testnachlauf-fenster-20260919]
+    paths:
+      - scripts/quellenfrische-probe.js
+      - .github/workflows/quellenfrische-probe.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quellenfrische-probe
+  cancel-in-progress: false
+
+jobs:
+  lesen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Isolationsvertrag offline pruefen
+        run: node scripts/lokal.js -- node scripts/quellenfrische-probe-test.js
+      - name: Zwei bestaetigte Katalogfeeds einmal lesen
+        env:
+          HELMUT_QUELLENFRISCHE_IDS: '["deutschlandfunk-politik","tagesschau-politik"]'
+        # Der echte oeffentliche Leser ist kein Offline Test. env -i entfernt
+        # alle Zugangsdaten und NODE_OPTIONS; nur diese drei Werte erreichen
+        # ihn. Die Teststufe oben bleibt unter dem unveraenderten Schutzstarter.
+        run: env -i PATH="$PATH" HELMUT_STORAGE_BACKEND=local HELMUT_QUELLENFRISCHE_IDS="$HELMUT_QUELLENFRISCHE_IDS" node scripts/quellenfrische-probe.js --out quellenfrische-probe.json
+      - name: Begrenzten Beleg sichern
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quellenfrische-probe
+          path: quellenfrische-probe.json
+          if-no-files-found: error
+          retention-days: 7

@@ -21,7 +21,7 @@ async function pruefe({ psql, reset, grundlinie, state, lese, parallel, host, po
   const sql = (m, grund = "notstopp", confirm = CONFIRM) => `select public.helmut_testfenster_null500_ende(
     ${lit(m.laufId)},${lit(JSON.stringify(m))}::jsonb,${lit(grund)},${lit(confirm)});`;
   const ruf = (m, grund) => JSON.parse(psql(sql(m, grund)));
-  let m = reset();
+  let m = await reset();
   A.throws(() => ruf(m)); A.equal(state(m), "nicht-aktiviert");
   psql(N.baueSql(m, "aktivierung"));
   const vorher = grundlinie();
@@ -43,7 +43,7 @@ async function pruefe({ psql, reset, grundlinie, state, lese, parallel, host, po
   psql("update mandate_profiles set aktiv=true where user_id='bestand-0'");
   A.throws(() => ruf(m)); A.equal(lese(m).zielaktiv, 1);
   ok("Reaktivierung nach quittiertem Ende wird nicht still erneut deaktiviert");
-  m = reset(); psql(N.baueSql(m, "aktivierung"));
+  m = await reset(); psql(N.baueSql(m, "aktivierung"));
   psql(`create function test_endfehler() returns trigger language plpgsql as $$ begin
     if new.user_id='test-kohorte-c-200' then raise exception 'fixture-endfehler'; end if; return new; end $$;
     create trigger test_endfehler before update on mandate_profiles for each row execute function test_endfehler();`);
@@ -60,14 +60,14 @@ async function pruefe({ psql, reset, grundlinie, state, lese, parallel, host, po
   const codes = await Promise.all([parallel(sql(m)), parallel(sql(m))]);
   A.deepEqual(codes, [0, 0]); A.equal(state(m), "0-bestaetigt"); A.equal(lese(m).quittung.deaktiviert, 500);
   ok("Zwei echte konkurrierende Endaufrufe schreiben den Abschluss genau einmal");
-  m = reset(); psql(N.baueSql(m, "aktivierung"));
+  m = await reset(); psql(N.baueSql(m, "aktivierung"));
   psql("delete from helmut_store where id='main-auth'; insert into pipeline_locks values(now()+interval '1 hour'); update mandate_profiles set aktiv=false where user_id='bestand-0'; update mandate_profiles set aktiv=true where user_id='bestand-8';");
   const other = psql("select to_jsonb(p) from mandate_profiles p where user_id='bestand-8'");
   const partial = ruf(m); A.equal(partial.deaktiviert, 499); A.equal(partial.ausserhalbAktiv, 1);
   A.equal(other, psql("select to_jsonb(p) from mandate_profiles p where user_id='bestand-8'"));
   A.equal(state(m), "unklar"); A.equal(lese(m).zielaktiv, 0);
   ok("Ende trotz fehlendem Budget, lebender Sperre und Teildeaktivierung; fremdes Profil unveraendert");
-  m = reset(); psql(N.baueSql(m, "aktivierung"));
+  m = await reset(); psql(N.baueSql(m, "aktivierung"));
   const falsch = { ...m, zielHash: "0".repeat(64) };
   psql(`update helmut_store set data=jsonb_set(data,'{manifest}',${lit(JSON.stringify(falsch))}::jsonb) where id=${lit(N.PREFIX + m.laufId)};`);
   const vorHash = grundlinie(); A.throws(() => ruf(falsch)); A.deepEqual(grundlinie(), vorHash);
@@ -75,7 +75,7 @@ async function pruefe({ psql, reset, grundlinie, state, lese, parallel, host, po
 
   let api;
   try {
-    m = reset(); psql(N.baueSql(m, "aktivierung"));
+    m = await reset(); psql(N.baueSql(m, "aktivierung"));
     const listener = net.createServer(); listener.listen(0, "127.0.0.1"); await once(listener, "listening");
     const apiPort = listener.address().port; await new Promise(r => listener.close(r));
     api = spawn(process.env.HELMUT_TEST_POSTGREST_BIN || "/tmp/postgrest", [], { env: { ...process.env,

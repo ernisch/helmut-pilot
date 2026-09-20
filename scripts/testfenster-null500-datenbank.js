@@ -36,16 +36,21 @@ function grundlinie() {
     'main',${hash("(select data from helmut_store where id='main')")});`));
 }
 const s = F.snapshot();
-function reset() {
+async function reset() {
+  let zeitfenster = F.liveVertrag();
+  while (!zeitfenster.vertrag) {
+    await new Promise(resolve => setTimeout(resolve, Math.min(zeitfenster.warteMs, 60000)));
+    zeitfenster = F.liveVertrag();
+  }
+  const v = zeitfenster.vertrag;
   psql("truncate mandate_profiles, profiles, helmut_store, pipeline_locks, helmut_jobs, process_runs;");
-  const today = new Date().toISOString().slice(0, 10);
+  const today = v.vorflugAm.slice(0, 10);
   const auth = { ...s.auth, sessions: [{ id: "offline-session", tokenHash: "offline-hash" }],
     testKostenTage: { [today]: F.kostentag(today) } };
   s.auth.testKostenTage = auth.testKostenTage;
   psql(`insert into profiles select x->>'id',x from jsonb_array_elements(${lit(JSON.stringify(s.identitaeten))}::jsonb) x;
     insert into mandate_profiles select x->>'user_id',false,null,now(),x from jsonb_array_elements(${lit(JSON.stringify(s.mandate))}::jsonb) x;
     insert into helmut_store(id,data) values ('main',${lit(JSON.stringify(s.main))}::jsonb),('main-auth',${lit(JSON.stringify(auth))}::jsonb);`);
-  const v = F.vertrag(new Date(Date.now() - 1000));
   v.grundlinie = grundlinie();
   return N.plane(s, F.auswahl, v);
 }
@@ -54,8 +59,8 @@ function lese(m) {
   return JSON.parse(psql("select row_to_json(r) from (" + query + ") r;"));
 }
 function state(m) { return N.bewerteLesung(m, lese(m)).zustand; }
-function abweisen(m, sql = N.baueSql(m, "aktivierung")) {
-  const vorher = grundlinie(); A.throws(() => psql(sql));
+function abweisen(m, sql = N.baueSql(m, "aktivierung"), erwarteterFehler) {
+  const vorher = grundlinie(); A.throws(() => psql(sql), erwarteterFehler);
   A.deepEqual(grundlinie(), vorher); A.equal(state(m), "nicht-aktiviert");
 }
 async function main() {
@@ -71,7 +76,7 @@ async function main() {
       create table pipeline_locks(expires_at timestamptz);
       create table helmut_jobs(status text, lease_expires_at timestamptz);
       create table process_runs(started_at timestamptz,finished_at timestamptz);`);
-    let m = reset(), before = grundlinie();
+    let m = await reset(), before = grundlinie();
     psql(N.baueSql(m, "aktivierung")); A.equal(state(m), "500-bestaetigt");
     A.equal(lese(m).ausserhalbaktiv, 0);
     for (const k of ["identitaeten", "auth", "main"]) A.equal(grundlinie()[k], before[k]);
@@ -86,36 +91,39 @@ async function main() {
     A.throws(() => psql(N.baueSql(m, "aktivierung"))); A.equal(state(m), "0-bestaetigt");
     ok("Echter Rueckweg0, wiederholtes Ende ohne Write und keine Wiederverwendung nach Abschluss");
 
-    m = reset();
+    m = await reset();
     psql(`create function test_abbruch() returns trigger language plpgsql as $$ begin
       if new.user_id='test-kohorte-c-200' then raise exception 'fixture-mitten-im-stapel'; end if; return new; end $$;
       create trigger test_abbruch before update on mandate_profiles for each row execute function test_abbruch();`);
     abweisen(m); psql("drop trigger test_abbruch on mandate_profiles; drop function test_abbruch();");
     ok("Fehler mitten im echten500er Update rollt alle Profile und Quittung zurueck");
 
-    m = reset(); psql("update helmut_store set data=data||'{\"fremd\":true}'::jsonb where id='main-auth'");
+    m = await reset(); psql("update helmut_store set data=data||'{\"fremd\":true}'::jsonb where id='main-auth'");
     abweisen(m); ok("Frisch abweichender Authstand verweigert jede Aktivierung");
-    m = reset(); psql("insert into pipeline_locks values(now()+interval '1 minute')");
+    m = await reset(); psql("insert into pipeline_locks values(now()+interval '1 minute')");
     abweisen(m); ok("Lebende Sperre verhindert den Start");
-    m = reset(); psql("insert into helmut_jobs values('wartend',null)");
+    m = await reset(); psql("insert into helmut_jobs values('wartend',null)");
     abweisen(m); ok("Wartender Auftrag verhindert den Start auch ohne Lease");
-    m = reset(); psql("insert into process_runs values(now(),null)");
+    m = await reset(); psql("insert into process_runs values(now(),null)");
     abweisen(m); ok("Junge unvollstaendige Prozessquittung verhindert den Start");
-    m = reset(); psql("insert into helmut_jobs values('erledigt',now()+interval '1 minute')");
+    m = await reset(); psql("insert into helmut_jobs values('erledigt',now()+interval '1 minute')");
     abweisen(m); ok("Lebende Lease verhindert Start unabhaengig vom Jobstatus");
     for (const kostenPatch of [{ spent: 4000000 }, { frozen: "ungeklaert" },
       { calls: { offen: { status: "ungeklaert", reserved: 212000 } } }]) {
-      m = reset();
+      m = await reset();
       const day = m.vorflugAm.slice(0, 10);
       psql(`update helmut_store set data=jsonb_set(data,array['testKostenTage',${lit(day)}],
         (data->'testKostenTage'->${lit(day)})||${lit(JSON.stringify(kostenPatch))}::jsonb) where id='main-auth';`);
       m.grundlinie = grundlinie(); abweisen(m);
     }
     ok("Ausgeschoepftes Budget, Kostensperre und unbekannte Reserve verhindern Start bei passender Grundlinie");
-    m = reset(); m.vorflugAm = new Date(Date.now()-120000).toISOString(); m.startBis = new Date(Date.now()-60000).toISOString();
-    abweisen(m); ok("Abgelaufenes fuenfminuetiges Startfenster verweigert spaetes Ausfuehren");
+    m = await reset();
+    const abgelaufen = F.abgelaufenerVertrag();
+    for (const field of ["vorflugAm", "startBis", "endeAm"]) m[field] = abgelaufen[field];
+    abweisen(m, N.baueSql(m, "aktivierung"), /null500-startfenster-abgelaufen/);
+    ok("Abgelaufenes fuenfminuetiges Startfenster verweigert spaetes Ausfuehren");
 
-    m = reset();
+    m = await reset();
     const concurrent = await Promise.all([parallel(N.baueSql(m, "aktivierung")), parallel(N.baueSql(m, "aktivierung"))]);
     A.equal(concurrent.filter(c => c === 0).length, 1); A.equal(state(m), "500-bestaetigt");
     A.equal(psql("select count(*) from helmut_store where id like 'testfenster-null500-%'"), "1");
@@ -127,13 +135,13 @@ async function main() {
     psql(N.baueSql(m, "ende")); A.equal(state(m), "0-bestaetigt");
     ok("Ende funktioniert bei Teildeaktivierung, fehlendem Kostenbuch und laufender Arbeit");
 
-    m = reset(); psql(N.baueSql(m, "aktivierung"));
+    m = await reset(); psql(N.baueSql(m, "aktivierung"));
     psql("update mandate_profiles set aktiv=true where user_id='bestand-8'");
     psql(N.baueSql(m, "ende"));
     A.equal(lese(m).zielaktiv, 0); A.equal(lese(m).ausserhalbaktiv, 1); A.equal(state(m), "unklar");
     ok("Unerwartete fremde Aktivierung wird nicht angefasst und nicht als globaler Nullzustand ausgegeben");
 
-    m = reset();
+    m = await reset();
     psql(`create function test_fremdwrite() returns trigger language plpgsql as $$ begin
       update profiles set inhalt=inhalt||'{"fremd":true}'::jsonb where id='bestand-8'; return new; end $$;
       create trigger test_fremdwrite before update on mandate_profiles for each row execute function test_fremdwrite();`);
