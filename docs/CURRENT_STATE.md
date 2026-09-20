@@ -1,16 +1,19 @@
 # CURRENT STATE — Helmut
 
-**20.09.2026: Getrennte Relationsmessung vorbereitet, nicht gestartet.**
-Branch codex/aussagenrelationen-20260920, Basisdc01d7c.
-18 unveraenderte Originale,67 explizite Beziehungen; neue Gegenproben
-67/67, Eingang12/12, Schutz18/18. Lokal445/447 in839s, zwei Browserfehler.
-Keine automatische Fachfreigabe.36er Abnahme und500er Start offen.
-Maximal sechs neue Einzelaufrufe,30 Minuten,1,272 USD bei unveraendert4 USD
-sind konkret vorbereitet, aber NICHT freigegeben. [Vorschlag und Grenzen](betrieb/prosa-belegplan-2026-09-20.md#vorbereitung-der-getrennten-relationsmessung).
-SQL21:31 UTC:504/0; global-understanding aktiv. Keine eigene Productionwirkung.
+**20.09.2026: Relationsversuch nach einem Aufruf gestoppt.**
+PR481 Entwurf, codex/aussagenrelationen-20260920, kein Merge.
+Actions35541552261 auf17d1d89: Kosten0,008838 USD, Quittung gestoppt.
+3 Originale,9 Referenzen,17 Kandidaten vollstaendig gesichtet.
+Kausalitaet erhalten; falsche Typen, unklare Zuschreibung, fehlende
+Koreferenz. Technischer Stopp: zwei unverbundene Knoten.
+Keine Restfreigabe oder Referenzkorrektur.
+Diagnose9/9; Ausfuehrungskopf CI447/447, Browser50/50, DB gruen.
+SQL22:24:52 UTC:504/0, ruhig, Schutz unveraendert,
+Tageskosten0,555072 USD bei4 USD, offene Reserve0.36er und500er offen.
+[Abschluss](betrieb/prosa-belegplan-2026-09-20.md#ausgang-des-freigegebenen-relationsauftrags).
 
 **Altversuche geschlossen:** PR479/480 bleiben Entwuerfe, keine Restfreigabe.
-Sollwerte und Quittungen unveraendert; beide Abschluss CIs erfolgreich.
+Sollwerte und Quittungen unveraendert; Abschluss CIs erfolgreich.
 [Alter Versuch](betrieb/prosa-belegplan-2026-09-20.md#ausgang-des-freigegebenen-quellenversuchs),
 [juengerer Versuch](betrieb/prosa-belegplan-2026-09-20.md#ausgang-des-neuen-aussagenabdeckungsauftrags).
 

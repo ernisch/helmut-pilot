@@ -1232,3 +1232,131 @@ Naechste Grenze ist ausschliesslich die konkrete neue bezahlte Messung,
 nicht eine pauschale Entwicklungsfreigabe. Keine Import oder500er
 Testfreigabe anfordern. Dieser Auftrag bleibt bis zu ausdruecklicher
 neuer Freigabe ungestartet. Sichere Folgeentwicklung ist weiterhin erlaubt.
+
+
+## Ausgang des freigegebenen Relationsauftrags
+
+20.09.2026. Die ausdrueckliche neue Freigabe des Betreibers galt genau
+fuer den oben beschriebenen Einzelauftrag. Dieser ist nach EINEM
+Modellaufruf geschlossen; die fuenf ungenutzten Positionen sind keine
+Restfreigabe. Kein Retry, neuer Prompt, Reset oder Start am Folgetag.
+Sichere Offlineentwicklung bleibt erlaubt. Kein Merge, Deployment,
+Quellenimport oder500er Start; PR481 bleibt offener Entwurf.
+
+### Ausfuehrung und unveraenderlicher Messstand
+
+Actions35541552261, Job106160026886, Codekopf
+17d1d892a6affd4cb870fed3f3d9424a389e8cc5, Baum
+96e54cdf82fdc57ebed3c2d2fb28089cab0d498c. Vorher exakte
+CI35539781636 vollstaendig erfolgreich:447/447 in810 Sekunden,
+Browser50/50, PostgreSQL23/0, Null50026/0 und Z2248/0 ohne Ueberspringen.
+Manifest, Schema und alle sechs Prompthashes vor Start frisch bestaetigt.
+Production Mainbe4b237b6154248f30e175235ed81aa9893b01bf und
+Deploymentdpl_H133uvcugPyny1diBKuTe71Ro55V READY unveraendert.
+Keine konkurrierende laufende Action; beide alten Quittungen gestoppt.
+
+CAS Beginn21.09.01:23:59.957 Tuerkei /00:23:59.957 Berlin /
+20.09.22:23:59.957 UTC. Einmaliges Fensterende22:53:59.957 UTC.
+Gespeicherter Abschluss22:24:29.610 UTC, Actions failure folgerichtig.
+Quittung quellenrelationen20260920 ist gestoppt mit
+RELATIONEN_QUELLBINDUNG. Alle anderen Workfloweinstiege skipped.
+Kein weiterer Start. Drei von18 Quellen, neun von67 Referenzrelationen
+und17 gelieferte Kandidaten wurden vollstaendig gesichtet.15 Quellen
+und58 Referenzrelationen nicht aufgerufen; keine der36 echten Produktfaelle.
+
+### Vollstaendige technische und fachliche Nachsicht
+
+Alle23 Knotenspannen und18 Signalspannen sind wortgleiche Originalspannen.
+Alle drei Quellkennungen stimmen. Technischer Abbruchgrund sind zwei
+unbenutzte Knoten k3 und k5 in f03. Es handelt sich nicht um erfundene
+Zitate. Die beiden frueheren Kennungs und Labelprobleme traten hier nicht auf.
+Der unveraenderte Pruefer brach vor einer vollstaendigen Gesamtbilanz ab.
+
+Die neue reine Offline Nachdiagnose sammelt alle Strukturfehler getrennt
+pro Quelle, ohne Knoten zu entfernen oder Antworten zu reparieren. Fuer
+einen ungueltigen Graphen bleibt der Referenzvergleich ausdruecklich null,
+nicht null fehlende Beziehungen. Sie erteilt niemals eine Bedeutungsfreigabe.
+Neun Gegenproben bestehen, einschliesslich Weiterdiagnose nach fruehem
+Fehler, unveraenderter Eingabe, falschem Typ trotz Originalspannen,
+ungeklaerter harmloser Satzgrenze und fremden Endpunkten. Nachsichtsdateien
+haben keinen produktiven Aufrufer. Laeufer, Prompts, Schema und alle
+Referenzen des bezahlten Auftrags bleiben bytegleich eingefroren.
+
+f01: Die Ursache Zuschuss ist jetzt explizit mit der Preiswirkung fuer
+Berechtigte verbunden. Betrag und Beschluss bleiben im Graphtext erhalten.
+Diese Verbesserung ist echt; laengere Spannen und Satzpunkte sind fuer
+sich keine Tatsachenfehler. Zugleich wird dadurch als ereigniszeit zwischen
+Beschlusssatz und Wirkung kodiert, obwohl kein Datum oder Zeitraum genannt
+wird. Zwei zuschreibung Relationen verwenden einen Handlungssatz als
+Aussageurheber. Eine rolle Relation zeigt auf ein Ereignis statt eine
+Rolle. Die zwei Referenzbeziehungen sind inhaltlich erhalten, aber die
+zusaetzlichen Beziehungen verhindern eine Abnahme des Graphen.
+
+f02: Moegliches Entfallen und offene Art des Ausgleichsbetrags bleiben
+strukturiert erhalten. Keine erfundene Steuer oder Leistung. Der Bezug
+von diesem Betrag zum Ausgleichsbetrag fehlt als koreferenz. Eine
+kontext Relation innerhalb des zweiten Satzes ersetzt ihn nicht.
+Der Betrag wird zusaetzlich falsch als Traeger einer rolle behandelt.
+
+f03: Stadt, Betreiber, Bestreiten und ausstehende Klaerung bleiben im
+Text vorhanden. Die negation von bestreitet zur Fahrpreissenkung stimmt
+als einzelne Relation exakt mit der Referenz ueberein. Der gesamte Graph
+ist trotzdem strukturell ungueltig. Die Zuschreibungen beginnen bei
+ganzen Saetzen statt beim Sprecher; im Betreiberfall zeigt das Ziel auf
+die positive Senkung statt den zugeschriebenen negierten Inhalt.
+Die ausstehende Klaerung ist als umgekehrter kontext statt unbestimmt
+verbunden und deshalb typisiert unklar. Ein Semikolon wird als Beleg
+dafuer verwendet, dass die Zuschussnennung an den Betreiber gerichtet sei.
+Diese adressat Beziehung folgt nicht aus dem Original. rolle wird zweimal
+als Ersatz fuer einen Akteursbezug verwendet. Keine gemeinsame bestaetigte
+Preissenkung im Original; die falschen Graphkanten duerfen keine erzeugen.
+
+Alle neun Referenzen UND alle17 Kandidaten haben ein eigenes Urteil mit
+Begruendung im privaten Gesamtbeleg. Eine technische Abweichung wird nicht
+pauschal als falsche Tatsache gezaehlt. Insbesondere sind Originaltext,
+Strukturvertrag und Bedeutung verschiedene Pruefungen. Die Nachsicht
+veraendert weder die geschlossene Production Quittung noch den Messstand.
+
+### Kosten und Datenintegritaet
+
+Ein abgerechneter Aufruf,964 Eingabe und2089 Ausgabetokens,3053 gesamt,
+14796ms gemessene Modellpfaddauer. Verbindliche Kosten0,008838 USD aus
+voller Reserve0,212 USD. Die Telemetrieschaetzung0,004419 USD ist wegen
+kleinerer Tarifbasis nicht der Buchbetrag. Globale Tageszaehlung90 auf91.
+Tagesbuch0,546234 auf0,555072 USD; unveraenderter4 USD Riegel,
+offene Reserve nach Abschluss0. Volle Kostenhistorie erhalten.
+
+SQL Grundlinie22:23:24.487 UTC und Nachkontrolle22:24:52.265 UTC:
+504 Profile,0 aktiv, keine lebenden Pipeline Sperren, Job oder Verstehen
+Leases, unerledigten Jobs oder jungen offenen Prozesse. Ganze Hashes
+von mandate_profiles, profiles und main unveraendert. Geschuetzter Auth
+Bestand unveraendert; nur llmUsage, testKostenTage, _authStoreRevision und
+quellenrelationen20260920 ausgenommen. Beide alten Quittungen sind darin
+enthalten und separat hashgleich. Der ganze Auth Hash aenderte sich
+ordnungsgemaess. Alte Kosten und Telemetrie zusaetzlich auf Erhaltung
+geprueft, sechs moeglicherweise verdraengte Ringzeilen archiviert.
+
+Der private Gesamtbeleg Helmut_Relationsversuch_2026-09-20.md enthaelt
+ganze Originale, feste Referenzen, tatsaechlichen Request und Response,
+Transport, Kosten, Einzelurteile und SQL Vorher/Nachher. Kein privater
+Schluessel und keine Rohantwort im oeffentlichen Repository.
+
+### Naechste sachliche Grenze
+
+Ein blosses Entfernen der zwei unbenutzten Knoten oder ein korrigierter
+Formatprompt loest die falschen Beziehungstypen nicht. Originalspannen
+beweisen Wortherkunft, keine korrekte Relation. Auch ein strukturell
+vollstaendiger Graph ist keine unabhaengige Tatsachenversorgung.
+Die naechste Methode muss Beziehungstyp, Sprecher, Richtung und Geltung
+aus dem Original unabhaengig begruenden und vollstaendige Abdeckung
+belegen; insbesondere keine frei erfundenen Kanten aus Satznaehe ableiten.
+Bedeutungserhaltende Varianten muessen von diesen Fehlern getrennt bleiben.
+
+Keine Wiederholung nur zur Verbesserung des Messwerts. Neue bezahlte
+Messung erst mit neuer begruendeter Frage, vorab eingefrorener Methode,
+voller Kostenbindung und konkreter Freigabe. Alle bisherigen Quittungen
+bleiben geschlossen. Der Gesamtauftrag ist teilweise abgeschlossen;
+allgemeine unabhängige Faktenpruefung, echte36er Fachabnahme,
+frische500er Versorgung und gemessene Gesamtlaufzeit/Kosten bleiben offen.
+Die CI des reinen Nachsichtskopfs wird separat am PR belegt; keine
+Abnahme aus der CI des ausgefuehrten alten Kopfs ableiten.
