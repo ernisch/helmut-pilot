@@ -406,3 +406,103 @@ keine Migration und keine Aenderung des4 USD Riegels. Nur die Vorschau des
 eigenen Arbeitsbranches ist abgeschaltet. Erst nach der vollstaendigen
 fachlichen Eingangsabdeckung sind beide echten Produktpfade einschliesslich
 Speicherung und Ruecklesung sowie deren36 Fachfaelle abnahmefaehig.
+
+
+## Integration PR477
+
+20.09.2026,19:38 Tuerkei /18:38 Berlin /16:38 UTC. Der begrenzte
+Fakteneingang ist erfolgreich integriert, der autonome Gesamtauftrag bleibt
+**teilweise abgeschlossen**. PR477 ist geschlossen und gemergt auf
+`7067b42f2940377dc20c66a18cdf1250d8f71de4`. Deployment
+`dpl_CeUk5VzmqrYXf4aMyjGhrhX7MdwX` READY, Production Alias zugeordnet;
+HTTP200 liefert Version7067b42f. Kein produktiver Aufrufer des neuen Lesers.
+
+Exakte PR CI35522560738 auf `c41178cf28125d5d060714fc0ed60df4646ee6a6`:
+439/439 Suiten in655s, Browser50/50, PostgreSQL23/0, Null50026/0 und Z2248/0.
+Alle Pflichtstufen erfolgreich, keine Kommentare, Reviews oder offenen
+Reviewthreads vor dem Merge. Automatischer Main Lauf35523295094 beim
+Schreiben noch in Arbeit; nicht als bestanden behauptet. Der oben belegte
+lokale Lauf437/438 und die anschliessende isolierte Sicherheitssuite339/339
+bleiben getrennte Nachweise, kein nachtraeglich umetikettierter Gesamtlauf.
+
+Rein lesende SQL Nachkontrolle16:38:22 UTC:504 Profile,0 aktiv,0 lebende
+Sperren und Leases,0 unerledigte Jobs,0 junge offene Prozesse. Tageskosten
+0,264700 USD,0 offene Reserve,4 USD Grenze unveraendert. Alle vier
+vollstaendigen Datenhashes sind identisch zur Tabelle unter Integration
+PR475 und damit seit13:50:44 UTC unveraendert. Berechnung: SHA256 ueber
+UTF8 des JSONB Textes; vollstaendige Profilzeilen sortiert nach user_id
+beziehungsweise id, bei main-auth und main ueber die vollstaendige data
+Spalte. Eine anfaengliche Kontrollabfrage mit anderer Sortierung und ganzen
+Storezeilen ist nicht mit dieser Grundlinie vergleichbar und kein Beleg
+fuer eine Bestandsaenderung. Kein Quellenimport, Modellaufruf, Aktivierung
+oder neuer Teststart durch diese Sitzung.
+
+### Aktuelle Reichweite des Fakteneingangs
+
+Der begrenzte amtliche Abruf fuer Wahlperiode21 mit Dokumentdatum ab18.09.2026
+liefert9 von9 Vorgangspositionen, alle Drucksachen,0 Beschlussangaben und0
+Ueberweisungen. Kennungen699707,699710,699721,699725,699732,699733,699736,
+699737,699687. SHA256 der unveraenderten oeffentlichen Antwort:
+`b09260ca60b14af3656514ef5f2cc6e137cc5ceeb1af1a0a89e7279fbfd508b7`.
+Dokumentdatum ist weiterhin kein exakter Publikationszeitpunkt und kein
+48 Stunden Frischebeleg. Die55 Septemberpositionen mit26 Angaben ersetzen
+keine frische Versorgung zum Start.
+
+Rein lesende relationale Mengenpruefung16:32:15 UTC, **alle504 Profile,
+nicht die500er Zielauswahl**:442 Bundestagsprofile,62 Landtagsprofile.
+251 Bundestagsprofile haben in ausschuesse einen exakten vollen Namen aus
+den neun Ausschussnamen der Septemberueberweisungen; Landtagsprofile0.
+Das ist nur ein moeglicher normaler Ausschussbezug, keine Ausfuehrung des
+Profilpruefers und weder Frische, zwei eigenstaendige Inhalte noch
+vollstaendige fachliche Versorgung. Stellvertretungen wurden in dieser
+SQL Mengenaufnahme nicht bilanziert. Die bestehende Auswahl der fuenf
+Bestandsprofile wurde nicht veraendert oder neu erfunden.
+
+### Landesportale nur lesend untersucht
+
+Die amtlichen Einstiege [Thueringer Rechercheportal](https://suche.thueringer-landtag.de/)
+und [Landtag Mecklenburg Vorpommern](https://www.landtag-mv.de/) fuehren zu
+oeffentlichen Parlamentsdatenbanken. Beide waren im Browser erreichbar.
+Keine Anmeldung, kein Konto, keine Nachricht und kein Productionimport.
+
+Thueringen zeigt bei Drucksache8/4333 im Vorgang8/4111Dr die Anfrage vom
+17.08.2026 und ihre Beantwortung vom10.09.2026 getrennt. Der Status
+beantwortete Anfrage beweist keine zugesagte Finanzhilfe. Der gepruefte
+Ausschnitt stammt aus der auf100 Dokumente begrenzten Neuzugangsliste,
+sortiert nach Nummer, nicht aus einer vollstaendigen Frischebilanz.
+[Gepruefte Ergebnisadresse](https://parldok.thltcloud.de/parldok/neu/10_1_8___8.%20Wahlperiode%20(ab%2026.09.2024)).
+
+Mecklenburg Vorpommern zeigt Beschlussprotokoll8/138 zur Sitzung vom03.07.2026.
+Der erste darin angezeigte Vorgang8/Pl138c ist zurueckgezogen; im Ablauf
+steht die Ruecknahme des Ausspracheantrags. Ein Beschlussprotokoll als
+Dokumentart beweist somit auch hier nicht die Annahme des einzelnen
+Vorgangs. Der Ausschnitt bietet47 Vorgangsseiten, nicht eine ganze Liste
+auf der ersten Seite. [Amtlicher Einstieg](https://www.dokumentation.landtag-mv.de/).
+Keine Behauptung, alle Landesquellen oder API Moeglichkeiten seien geprueft.
+Noch kein implementierter Landesfaktenlieferant.
+
+### Naechster eigenstaendiger Methodenblock
+
+Fuer die vollstaendige Produktintegration fehlen weiterhin Belege fuer die
+positiven Sachklassen des unveraenderten36er Vertrags. Der neue Leser darf
+nicht zur Freigabe beliebiger Nachrichtenauslegung erweitert werden.
+Zuerst den unabhaengigen Eingang fuer diese noch fehlenden Aussagen und
+die61 synthetischen Landesprofile konkret tragen, dann beide echten Pfade
+mit allen sichtbaren Feldern, Speicherung und Ruecklesung pruefen.
+Anschliessend heutige Vollversorgung, Zeit und Kosten fuer500 nachweisen;
+alle1500 Sollpositionen bleiben vollstaendig zu bilanzieren.
+
+Kein Absenken von Reserven, keine ausgelassene Qualitaetsstufe, kein neues
+Tagesbudget. Historische1000 Lageaufrufe und deren Kostenbeispiele aus dem
+Betriebsplan beweisen weiterhin weder Erreichbarkeit noch Unmoeglichkeit
+des noch nicht fertigen Verfahrens unter4 USD. Der31er Import ist nicht
+freigegeben und allein kein ausreichender naechster Versorgungsschritt.
+Fuer sichere Entwicklung und deren gepruefte Integration fehlt keine
+pauschale Arbeitsfreigabe. Die naechste Production Datenwirkung benoetigt
+einen konkret vorbereiteten Import und eigene Freigabe; Aktivierung und
+500er Test bleiben gesondert gesperrt.
+
+Dieser abschliessende PR aendert nur Dokumentation gemaess CLAUDE.md
+Paragraph9. Sein eigener Merge und Deployment werden aus der Historie
+belegt, kein rekursiver Dokumentations PR und kein erneuter manueller
+fachlicher Gesamtlauf allein fuer diese beiden Dokumentationsdateien.
