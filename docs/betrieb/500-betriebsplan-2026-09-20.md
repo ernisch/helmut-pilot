@@ -1,8 +1,8 @@
 # Neuer 500er Nachweis: belegter Vorflug und verbleibende Grenzen
 
 20.09.2026, **blockiert; kein Startpaket freigegeben**. Aktueller belegter
-Productionstand ist Main4b142253, Laufzeitleser35483969822. PR464 ist mit430/430 und
-allen Pflichtstufen integriert und auf dpl_2Ec1qJufMWD626irWwMRTrEpGEwZ READY. Die folgenden
+Productionstand ist Main86a5a012, Laufzeitleser35484985244. PR464 und465 sind mit430/430 und
+allen Pflichtstufen integriert und auf dpl_2RMU33hnpivqHJ4DFmTK4sVrFtUL READY. Die folgenden
 Zahlen sind keine erfolgreiche fachliche Abnahme eines neuen Tests.
 
 ## Ziel, Bestand und Quellen
@@ -44,7 +44,7 @@ Fingerabdruck und kanonische URL. Frischeende21.09.08:40:31 UTC /
 
 ## Vollstaendige Bilanz der1500 Positionen
 
-Eigener Branch `codex/ergebnisbilanz-20260920`, noch nicht integriert.
+PR465 vom eigenen Branch `codex/ergebnisbilanz-20260920` vollstaendig geprueft und integriert.
 Der Leser trennt die Appdarstellung von den gespeicherten Ergebnisarten.
 Eine unvollstaendige App mit gueltiger mandatsbezogener Paketbindung darf
 weiterhin die exakt drei adressierten Datenbankzeilen zweimal gegenlesen.
@@ -62,7 +62,8 @@ bei unveraendert gebundenem Speicher, Verweigerung einer fremden Kennung,
 Abbruch nach7 Profilen mit493 ungeprueften Positionen je Art, insgesamt1500
 begruendete Positionen sowie unveraenderte Privatheit der oeffentlichen
 Zusammenfassung. Allgemeine Faktenpruefung und500er Funktionsnachweis bleiben
-ausdruecklich false. Kanonischer lokaler Gesamtlauf430/430 in806s. Vollstaendige PR CI noch offen.
+ausdruecklich false. Kanonischer lokaler Gesamtlauf430/430 in806s;
+vollstaendige PR CI35484108915 mit430/430 in655s und allen Pflichtstufen erfolgreich.
 
 ## Konkreter Zeit und Kostenvertrag vor einer Startentscheidung
 
@@ -114,10 +115,43 @@ Der [bestehende Befund](prosa-quellenpruefung-2026-09-19.md#neubewertung-nach-de
 grenzt einen moeglichen serverseitigen Belegplan bereits ein; eine neue
 Faktenbasis muss unabhaengig von der zu pruefenden Modellantwort sein.
 
-Die sichere Fortsetzung besteht aus Integration der nachgewiesenen Leserreparatur,
-aktueller Production Nachkontrolle und dem [konkreten Belegplan](prosa-belegplan-2026-09-20.md) fuer alle
-betroffenen sichtbaren Felder und beide Fachpfade. Jede spaetere neue bezahlte
+Leserreparatur und aktuelle Production Nachkontrolle sind abgeschlossen.
+Der [konkrete Belegplan](prosa-belegplan-2026-09-20.md) umfasst alle
+betroffenen sichtbaren Felder und beide Fachpfade, ist aber noch nicht implementiert.
+Seine36 geplanten Fachfaelle wurden nicht als bereits bestandene Tests ausgegeben. Jede spaetere neue bezahlte
 Methode braucht einen abgegrenzten Fall-, Aufruf-, Modell- und Kostenvertrag.
 Der31er Production Import braucht ausdrueckliche neue Freigabe. Weder diese
 Freigabe noch die technische Leserreparatur erteilt eine Profilaktivierung
 oder einen500er Teststart. **Das Gesamtziel ist noch nicht erreicht.**
+
+## Integration PR465
+
+PR465 mit Head f84bc8cd231beab9406f3a4a95dc16dcafd55743 und Git Baum
+56610212e9bf84510954940826a04a41916cf6e5 wurde nach vollstaendiger CI und
+leerer Reviewthreadliste gemergt. CI35484108915:430/430 in655s,
+Browser50/50, PostgreSQL Konten/Quellen23/0, Null50026/0, Z2248/0;
+kein Pflichtschritt fehlgeschlagen oder ausgelassen.
+
+Main86a5a012509a5608cbfddc0a49b400cda01d9cfd ist auf
+dpl_2RMU33hnpivqHJ4DFmTK4sVrFtUL READY, Production/fra1. Aliase
+helmut-pilot.vercel.app, helmut-pilot-nohut.vercel.app und
+helmut-pilot-git-main-nohut.vercel.app unveraendert. Rein lesender
+Workflow35484985244, Job106009597119,20.09.02:49:40 UTC:
+HTTP200, exakter Productioncommit, Supabase/V3, relationale exklusive
+Profile, Kommunikation und Kohortenquellen gesperrt. Retention36,
+Tagesdeckel2416, Understanding Reserve702, Realreserve200; Kostenregel2
+aktiv,4 USD, unbekannte Ausgaenge bleiben reserviert. Textnachlauf2,
+Arbeitsauswahl/Testfenster/Pruefaufnahme1. Nur laufzeit_status=true und
+production_commit gesetzt; alle optionalen Inhaltsleser ausgelassen.
+Das belegt technische Testfensterfaehigkeit, keine scharfe Freigabe.
+
+SQL02:49:09 UTC:504/0, null lebende Sperren, Leases, offene Jobs, junge
+offene Prozesse, Testquittungen und offene Tagesreserven. Alle vier
+vollstaendigen Hashgrundlinien fuer Profile, Identitaeten, Auth samt Sessions
+und Main seit Uebernahme gleich. Kein Kostentag20.09.,19.09. unveraendert
+0,526234 USD. Kein Modellaufruf, Quellenimport oder Teststart ausgefuehrt.
+
+Der reine Abschluss nach CLAUDE.md Paragraph9 aendert ausschliesslich
+Dokumentation. Lokale Codebasis dafuer erneut430/430 in788s bestanden.
+Sein eigener Merge und sein Deployment werden gemaess Paragraph9 aus der
+Git/Deployment Historie belegt; kein rekursiver Dokumentations PR.

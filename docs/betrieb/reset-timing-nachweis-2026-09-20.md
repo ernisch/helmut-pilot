@@ -93,10 +93,17 @@ dpl_2Ec1qJufMWD626irWwMRTrEpGEwZ READY, Production/fra1. Alle drei
 bisherigen Aliase erhalten. Neuer rein lesender Lauf35483969822,
 Job106006766917: HTTP200 am exakten Main, alle bisherigen Schutzflags,
 Kostenregel2/4 USD und Testfensterversionen bestaetigt. Optionale Inhaltsleser
-ausgelassen. Die automatisch gestartete Main CI35483865265 laeuft noch.
+ausgelassen. Die automatisch gestartete Main CI35483865265 ist inzwischen
+vollstaendig erfolgreich. Der urspruengliche rote Mainbefund ist geschlossen.
 
 SQL20.09.02:25:59 UTC:504/0, null lebende Sperren/Leases, offene Jobs,
 junge offene Prozesse und Testfensterquittungen. Alle vier vollstaendigen
 Schutzgrundlinien gegen die Uebernahme identisch, einschliesslich Auth und
 Sessions. Noch kein Kostentag20.09.; kein Modellaufruf oder Quellenimport.
 Gesamtziel500 bleibt durch Fachqualitaet, Versorgung und Zeit/Kosten blockiert.
+
+Der nachfolgende PR465 ist ebenfalls vollstaendig geprueft und integriert;
+aktueller Commit, Deployment und Laufzeitleser stehen im
+[PR465 Abschluss](500-betriebsplan-2026-09-20.md#integration-pr465).
+Die vor dem Merge beschriebenen ausstehenden Schritte oben sind historische
+Arbeitsaufnahmen und keine weiterhin offenen Timingabnahmen.
