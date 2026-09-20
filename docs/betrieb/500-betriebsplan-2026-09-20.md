@@ -382,3 +382,71 @@ sind verworfen: weitere allgemeine Wortfilter hinterliessen eine gemischte
 neue falsche Paare. Beide sind weder Appcode noch positiver Nachweis und
 werden nicht als schneller Fix uebernommen. Die fachliche Ereigniszuordnung
 bleibt ein eigener groesserer Entwicklungsschritt.
+
+
+## Integration PR469 und Startblocker
+
+PR469 mit Head8704da94d2fbe86575592428bf626cf701934146 und Baum
+b7b9f894f944100689525df6ac5928b04cfea042 ist nach vollstaendiger CI,
+leerer Reviewliste und unveraendertem Main integriert. CI35504535446:
+431/431 Suiten in800s, Browser50/50, Kontoschutz23/0, Null50026/0,
+Z2248/0 gegen isolierte PostgreSQL und PostgREST. Kein Pflichtschritt
+fehlgeschlagen oder ausgelassen. Die Datenbankpruefungen sind kein
+Production Funktionsnachweis und der alte lokale Gesamtlauf wird nicht
+als Gesamtbeleg der spaeteren Suchergaenzung umgedeutet.
+
+Mainb6b9f44f3fd93b82da3b22b97f46f27f3c636ad8 ist auf
+Deployment dpl_H4Rh1DniSo1yzFQ9gEebgL81RCwJ READY, Production/fra1.
+Alle drei bisherigen Aliase sind unveraendert. Der rein lesende Abruf
+der oeffentlichen Startseite liefert HTTP200 und Assetversion b6b9f44f.
+Das belegt Veroeffentlichung und Erreichbarkeit; kein bezahlter Inhaltslauf
+oder gesonderter authentifizierter Laufzeitworkflow wurde ausgeloest.
+
+SQL10:33:39 UTC:504 Profile,0 aktiv,0 lebende Sperren,0 Leases,
+0 offene Jobs mit status ungleich erledigt,0 unvollendete Prozesse der
+letzten24 Stunden.29782 Rohquellen,0 Publikationen der letzten48 Stunden.
+Vollstaendige Hashes fuer Mandatsprofile, Identitaeten, Auth samt Sessions
+und Main stimmen mit10:24:00 und der Vorabkontrolle10:32:07 UTC ueberein.
+Tageskosten0,141361 USD,4 USD Grenze,0 offene Tagesreserve unveraendert.
+Kein Quellenimport, keine Profilaktivierung, keine Datenkorrektur und
+kein von dieser Sitzung ausgeloester Modellaufruf.
+
+Die Startarbeit ist weiterhin konkret:
+
+1. Allgemeine Ereignisgruppen trennen, insbesondere die belegte gemischte
+   19er Gruppe, ohne richtige Folgemeldungen zu verlieren. Die beiden oben
+   dokumentierten Schnellvarianten sind verworfen.
+2. Eine unabhaengige Faktenbasis und beleggebundene Texte fuer beide
+   Fachpfade implementieren und fachlich abnehmen. Der bestehende
+   Prosaentwicklungsvertrag und seine36 Faelle sind weiter ein Plan.
+3. Zum wirklichen Start frische, passende Quellen samt Kontext fuer alle
+   500 Zielprofile bereitstellen. Das31er Paket ist weder freigegeben noch
+   importiert und verlaesst am21.09.08:40:31 UTC sein gemeinsames Frischefenster.
+4. Vollstaendige Versorgung, Dauer und Kosten am tatsaechlichen Verfahren
+   belegen. Die historische Hochrechnung von rund5,20 USD allein fuer1000
+   Lageaufrufe passt nicht in den unveraenderten4 USD Tagesriegel. Kein
+   Hochsetzen oder Abschwaechen der Reserve als stiller Ausweg.
+5. Erst nach erfuellten Voraussetzungen eine gesonderte Startfreigabe fuer
+   den500er Lauf einholen; vorhandene Bilanz und Endfunktion weiter nutzen.
+
+Grobe Planung fuer die Startbereitschaft:3 bis7 Arbeitstage, keine
+belastbare Terminzusage. Die Unsicherheit liegt vor allem in Ereignislogik
+und unabhaengiger Faktenversorgung; ein anderer notwendiger Ansatz kann
+laenger dauern. Fuer den eigentlichen Testlauf gibt es noch keine gemessene
+Dauer. Der31er Import allein ist nicht mehr als alleinige Freigabegrenze
+oder als unmittelbare Startbereitschaft darzustellen.
+
+**Sprintzustand: Teilweise abgeschlossen.** Der konkrete Teilfix ist
+integriert und technisch nachkontrolliert. Das Gesamtziel ist nicht erreicht,
+der500er Start bleibt blockiert. Weitere sichere Offlineentwicklung ist
+erlaubt; Import, neue bezahlte Versuche, Budgetaenderung und Testaktivierung
+sind davon getrennte Freigabegrenzen.
+
+Dieser Abschluss aendert ausschliesslich die beiden Statusdokumente.
+Sein eigener Merge und sein Deployment werden gemaess CLAUDE.md Paragraph9
+aus Git und Deployment Historie belegt; kein rekursiver Dokumentations PR.
+
+Kanonischer lokaler Abschlusslauf mit dem vorhandenen Headless Browser:
+431/431 Suiten in828s erfolgreich. Seitdem keine Anwendungsaenderung;
+die korrigierten Statusdokumente sind gesondert auf Groessenvertrag und
+Diffsauberkeit geprueft.
