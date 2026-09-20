@@ -1,11 +1,13 @@
 # Neuer 500er Nachweis: belegter Vorflug und verbleibende Grenzen
 
-20.09.2026, **500er Start weiter blockiert**. Aktueller belegter
-Productionstand nach PR472 ist Main0e8066e7 auf
-Deployment dpl_3WK9prWCnhdKoa6fFdjkpZ1WJtKs READY. HTTP200 liefert denselben
-Commitstand; SQL12:12:40 UTC bestaetigt504/0 und unveraenderten Zustand
-gegenueber dem Vorbeleg12:07:53. Fruehere datierte Aufnahmen unten bleiben
-Historie; massgeblich ist die letzte [Integration](#integration-pr472).
+20.09.2026, **500er Start weiter blockiert**. Die Quellenreparaturen sind
+erfolgreich abgeschlossen, das Gesamtziel bleibt teilweise abgeschlossen.
+Aktueller belegter fachlicher Productionstand nach PR473 ist Mainc070661f auf
+Deployment dpl_C7ZH7FxjpmFpEetKkyBUYihyNbar READY. HTTP200 liefert denselben
+Commitstand; SQL12:37:39 UTC bestaetigt504/0 und unveraenderten Zustand
+gegenueber dem Vorbeleg12:35:27. Fruehere datierte Aufnahmen unten bleiben
+Historie; massgeblich sind die letzte [Integration](#integration-pr473) und
+[Restarbeit](#restarbeit-nach-den-quellenreparaturen).
 Erneute allgemeine Arbeits und Mergefreigabe liegt vor. Kein neuer500er
 Test gestartet und keine fachliche Gesamtabnahme behauptet.
 
@@ -572,3 +574,80 @@ fuer den neuen Code und dessen Integration stehen aus. Der
 [Belegplan](prosa-belegplan-2026-09-20.md#dokumentidentitaet-und-ganze-titel)
 enthaelt Ursachen, Umfang und Grenzen. Allgemeine unabhaengige Faktenbasis,
 frische500er Vollversorgung und gemessene Zeit/Kosten bleiben offen.
+
+
+
+## Integration PR473
+
+Die amtliche Dokumentidentitaet und ganze Quellentitel sind erfolgreich
+integriert. Exakter letzter PR Kopf e908246cff16955a230ed6e3bfd97ef49ad0fec9,
+Baum7945d1a30be58c1a0c87bc28806a68a4dd2695a7. CI35510294577 besteht435/435
+Suiten in800s, Browser50/50, PostgreSQL23/0,26/0,48/0; alle Pflichtstufen
+erfolgreich und keine offenen Reviews. Die neuen zehn Identitaetsgruppen
+und drei Titelgrenzgruppen sind darin enthalten. Die erste CI Fassung wurde
+durch den zusaetzlichen belegten RSS Reihenfolgefix ersetzt, nicht als
+bestandene finale Pruefung ausgegeben. Bereits erfolgreiche lokale Suiten
+wurden auf Nutzerwunsch nicht wiederholt.
+
+Mainc070661f18bc001e26443d331672601e62ff2018 ist auf
+dpl_C7ZH7FxjpmFpEetKkyBUYihyNbar READY, Production/fra1, alle drei
+bisherigen Aliase erhalten. RootHTTP200 liefert Versionc070661f.
+SQL12:35:27 vor und12:37:39 UTC nach Merge sind abgesehen vom Zeitpunkt
+gleich:504/0,29782 Rohdokumente,0 frisch innerhalb48 Stunden, keine lebenden
+Sperren/Leases, offenen Jobs oder jungen offenen Prozesse. Alle vier
+vollstaendigen Profil/Identitaets/Auth/Main Hashgrundlinien unveraendert.
+Tageskosten0,264700 USD, Grenze4 USD, offene Reserve0. Keine Profil oder
+Datenaenderung, kein Quellenimport und kein Modellaufruf durch diese Sitzung.
+
+Der nachfolgende reine Dokumentationsabschluss aktualisiert nur diesen
+Betriebsplan, den Prosa Belegplan und CURRENT_STATE gemaess CLAUDE.md
+Paragraph9. Eigener Merge und Deployment werden aus der Historie belegt;
+kein rekursiver Dokumentations PR. Der fachliche Code bleibt unveraendert.
+
+
+## Restarbeit nach den Quellenreparaturen
+
+Die abgeschlossenen Quelleneingriffe ersetzen die unabhaengige Faktenbasis
+nicht. Fuer beide Fachpfade fehlen vorab gepruefte Aussagen samt Akteur,
+Modalitaet, Verneinung, Bedingung und konkretem Profilbezug. Erst daran kann
+der vorgesehene Serverplan seine Formulierungen binden. Ein weiteres freies
+Modellurteil oder ein Hash bestaetigt diese Bedeutung nicht. Die36 vorab
+geplanten Fachfaelle sind weiterhin nicht bestanden und nicht als Ersatz
+fuer eine tatsaechliche Quellenversorgung zu verwenden.
+
+Fuer die Zeitfrage wurde am20.09. zusaetzlich nur die vorhandene Telemetrie
+vom15./16.09. aggregiert, ohne neue Aufrufe:37 erfolgreiche Lageaufrufe,
+37 vorhandene Dauern, Mittel7129,41 ms, p9513795,6 ms.1000 Aufrufe mit dem
+historischen Mittel entspraechen seriell118,82 Minuten reiner Modellzeit.
+Das ist kein gemessener500er Gesamtlauf: Abruf, Quellenverstehen, Speicherung,
+fachliche Ablehnung, Fortsetzungen und vollstaendige Ruecklesung fehlen in
+dieser Hochrechnung. Der p95 einzelner alter Aufrufe ist kein p95 des neuen
+Gesamtlaufs. Eine neue Laufzeitgarantie waere daraus nicht ableitbar.
+
+Bei der letzten Tagesbuchung0,264700 USD und letzter voller Reserve0,212 USD
+duerften die ersten999 Aufrufe zusammen hoechstens3,523300 USD kosten,
+also im Mittel etwa0,00352683 USD. Das laesst alle anderen Kosten und
+zusaetzliche gleichzeitige Reserven noch unberuecksichtigt. Das historische
+Mittel0,005200 USD liegt darueber. Bei gleich hohen Einzelkosten entspraeche
+die benoetigte Tagesgrenze einschliesslich letzter Reserve und bereits
+gebuchtem Tag mindestens5,671500 USD, noch ohne Quellenverstehen oder
+Fehlversuche. Dies ist ein Rechenbeispiel, keine neue Kostenfreigabe und
+kein gemessener Bedarf des noch fehlenden neuen Verfahrens. Der4 USD Riegel
+bleibt unveraendert; keine Qualitaetsstufe oder Reserve wird abgesenkt.
+
+Der verbleibende Pfad zum500er Start ist damit konkret:
+
+1. Unabhaengige Sachbelege fuer die tatsaechlichen Eingaben beschaffen und
+   die beleggebundene Formulierung in beiden Fachpfaden implementieren.
+2. Die festgelegten positiven, negativen und ungewissen Fachfaelle bestehen,
+   einschliesslich echter Speicherung und Ruecklesung der sichtbaren Felder.
+3. Zum tatsaechlichen Start frische passende Quellen fuer alle500 Zielprofile
+   nachweisen; das31er Paket ersetzt diese Vollversorgung nicht.
+4. Das dann vorhandene Verfahren samt vollstaendiger Verarbeitung innerhalb
+   des gueltigen Tages und Kostenvertrags messen. Erst danach Startvorflug.
+
+Fuer die offenen methodischen und fachlichen Schritte bleiben3 bis7
+Arbeitstage eine grobe Planungsannahme, keine belastbare Zusage. Bei einem
+weiteren Methodenwechsel kann es laenger dauern. Es fehlen keine weiteren
+pauschalen Arbeits oder Mergefreigaben; aktuelle Grenzen sind fachliche
+Tragfaehigkeit, reale Versorgung und der unveraenderte Kostenvertrag.

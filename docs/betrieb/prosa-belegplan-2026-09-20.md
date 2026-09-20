@@ -153,7 +153,7 @@ mit Handlung, Aussagegrad, Bedingung, Wirkung und individuellem Profilbezug.
 
 ### Dokumentidentitaet und ganze Titel
 
-Die Anschlussreparatur auf `codex/dip-dokumentidentitaet-20260920` schliesst
+Die als PR473 integrierte Anschlussreparatur schliesst
 zwei weitere konkret reproduzierte Quellenverluste. Zwei synthetische DIP
 Drucksachen mit verschiedenen Kennungen, URLs und Typen, aber gleichem
 Titel/Urheber, wurden bisher als ein Dokument gespeichert. Eine gueltig
@@ -169,7 +169,7 @@ DIP Kennungen werden jetzt vorab auch ihren gleichen kanonischen RSS
 Adressen zugeordnet; schwache Titel duerfen diese Gruppen nicht erweitern.
 Die zwei neuen Proben bestanden gezielt, darunter alle24 Reihenfolgen von
 zwei amtlichen Dokumenten und ihren zwei RSS Fundstellen. Die zehnteilige
-finale Identitaetssuite wird in der neuen exakten PR CI geprueft.
+finale Identitaetssuite besteht in CI35510294577 des letzten PR Kopfes.
 
 Ausserdem schnitt der direkte Schreibweg einen415 Zeichen langen Titel
 vor der abschliessenden Verneinung ab; der globale Weg umging die Grenze
@@ -178,5 +178,6 @@ und behalten den getrennten Kontext. Drei neue Gruppen bestehen einmal
 lokal, einschliesslich spaeter Verneinung/Bedingung und positiver Grenze.
 Keine historischen Titel rekonstruiert, keine pauschale Loeschung positiver
 Ausgaben. Dies ist weiterhin keine allgemeine Fakten oder Prosaabnahme.
-PR Pflichtpruefung und Productionintegration dieser Anschlussreparatur
-stehen bei Erstellung dieses Status noch aus.
+CI35510294577 besteht435/435 Suiten in800s, Browser50/50 und alle
+PostgreSQL Pflichtstufen. Die Productionintegration ist abgeschlossen;
+[Beleg und verbleibende Grenze](500-betriebsplan-2026-09-20.md#integration-pr473).
