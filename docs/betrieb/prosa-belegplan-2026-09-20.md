@@ -112,7 +112,7 @@ Entwurf bestaetigt weder diese Erreichbarkeit noch einen neuen500er Start.
 
 ## Erster umgesetzter Eingabebaustein: DIP Dokumentangaben
 
-20.09.2026, Branch `codex/dip-quellfelder-20260920`, Integration noch offen.
+20.09.2026, PR472 integriert; [Productionbeleg](500-betriebsplan-2026-09-20.md#integration-pr472).
 Dies ist die Reparatur eines Quellenverlusts, nicht die fertige neue
 Prosamethode. Der vorhandene Adapter liest Dokumenttyp, Urheber und Ressort,
 aber der allgemeine Weg machte daraus untypisierten Auszug beziehungsweise
@@ -139,8 +139,9 @@ belegt ausserdem die getrennten Felder einbringer/rolle beim
 koerperschaftlichen Urheber und federfuehrend beim Ressort. Diese bleiben
 jetzt einschliesslich false/unknown erhalten. Die neue gezielte Rollenprobe
 besteht ebenfalls; die finale Suite umfasst16 Gruppen.
-Der vorherige432er Gesamtlauf wurde gemaess Nutzerauftrag
-nicht wiederholt; CI des neuen Codes steht aus.
+Der vorherige432er lokale Gesamtlauf wurde gemaess Nutzerauftrag
+nicht wiederholt. CI35508978114 des exakten neuen PR Kopfes besteht433/433
+Suiten in795s, Browser50/50 und alle isolierten PostgreSQL Pflichtgruppen.
 
 Grenzen: Konsistenzhash ist keine Authentizitaetssignatur oder Faktenpruefung.
 227 bestehende DIP Rohdokumente tragen keine gespeicherten getrennten Urheber
@@ -149,3 +150,25 @@ juengste Publikation ist21.08.2026, also keine frische500er Versorgung.
 Die36 fachlichen Prosa Gegenfaelle bleiben geplante Abnahme, nicht bestanden.
 Fuer Nachrichtentexte fehlt weiter eine unabhaengig gepruefte Faktenbasis
 mit Handlung, Aussagegrad, Bedingung, Wirkung und individuellem Profilbezug.
+
+### Dokumentidentitaet und ganze Titel
+
+Die Anschlussreparatur auf `codex/dip-dokumentidentitaet-20260920` schliesst
+zwei weitere konkret reproduzierte Quellenverluste. Zwei synthetische DIP
+Drucksachen mit verschiedenen Kennungen, URLs und Typen, aber gleichem
+Titel/Urheber, wurden bisher als ein Dokument gespeichert. Eine gueltig
+gebundene API Kennung ersetzt jetzt den blossen Textfingerabdruck; die
+ungefaehre Titelsuche darf verschiedene bekannte DIP Kennungen nicht
+zusammenlegen. Der alte kanonische Bestandsabgleich bleibt erhalten.
+Acht neue Gruppen bestanden einmal lokal, einschliesslich Altbestand,
+gleicher Kennung mit anderer URL, RSS Fundstelle und manipulierten Angaben.
+
+Ausserdem schnitt der direkte Schreibweg einen415 Zeichen langen Titel
+vor der abschliessenden Verneinung ab; der globale Weg umging die Grenze
+ganz. Beide speichern jetzt nur ganze Titel bis300 Zeichen, sonst null,
+und behalten den getrennten Kontext. Drei neue Gruppen bestehen einmal
+lokal, einschliesslich spaeter Verneinung/Bedingung und positiver Grenze.
+Keine historischen Titel rekonstruiert, keine pauschale Loeschung positiver
+Ausgaben. Dies ist weiterhin keine allgemeine Fakten oder Prosaabnahme.
+PR Pflichtpruefung und Productionintegration dieser Anschlussreparatur
+stehen bei Erstellung dieses Status noch aus.

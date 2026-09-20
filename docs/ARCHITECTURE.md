@@ -96,6 +96,15 @@ Datenkonsistenz, weder eine Signatur des Herausgebers noch Inhaltswahrheit.
 Keine neue Tabelle, kein Bestandsbackfill und kein Ersatz fuer die offene
 allgemeine Faktenpruefung.
 
+Bei gueltig gebundenen DIP Angaben benutzt die globale Deduplizierung die
+API Dokumentkennung als Fingerabdruck. Gleicher Titel und gleicher Urheber
+duerfen verschiedene Drucksachen nicht zusammenlegen. Der kanonische
+Adressabgleich zum alten Bestand bleibt erhalten; keine Umschreibung alter
+Kennungen. Beide Schreibwege speichern einen Quellentitel nur vollstaendig
+innerhalb der bisherigen300 Zeichen Grenze. Ein laengerer Titel bleibt
+unbekannt, damit eine spaete Verneinung oder Bedingung nicht verlorengeht.
+Der getrennte vorhandene Kontext bleibt erhalten.
+
 **Landesmodule** (Berlin, Brandenburg) sind im Crawl-Plan gesperrt, bis ihr Land in
 `HELMUT_LANDESMODULE` ausdrücklich genannt ist — **je Land getrennt**, Default leer,
 fail-closed (kein Sammel-Schlüsselwort). Zusätzlich gilt: ein Abrufweg mit

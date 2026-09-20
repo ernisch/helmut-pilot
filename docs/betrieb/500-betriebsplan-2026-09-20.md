@@ -1,11 +1,11 @@
 # Neuer 500er Nachweis: belegter Vorflug und verbleibende Grenzen
 
 20.09.2026, **500er Start weiter blockiert**. Aktueller belegter
-Productionstand nach PR471 ist Main0fc60f8f auf
-Deployment dpl_8wuLtgxFr9KtbbdPoD34YiqNH5d8 READY. HTTP200 liefert denselben
-Commitstand; SQL11:48:54 UTC bestaetigt504/0 und unveraenderten Zustand
-gegenueber dem Vorbeleg11:47:28. Fruehere datierte Aufnahmen unten bleiben
-Historie; massgeblich ist die letzte [Integration](#integration-pr471).
+Productionstand nach PR472 ist Main0e8066e7 auf
+Deployment dpl_3WK9prWCnhdKoa6fFdjkpZ1WJtKs READY. HTTP200 liefert denselben
+Commitstand; SQL12:12:40 UTC bestaetigt504/0 und unveraenderten Zustand
+gegenueber dem Vorbeleg12:07:53. Fruehere datierte Aufnahmen unten bleiben
+Historie; massgeblich ist die letzte [Integration](#integration-pr472).
 Erneute allgemeine Arbeits und Mergefreigabe liegt vor. Kein neuer500er
 Test gestartet und keine fachliche Gesamtabnahme behauptet.
 
@@ -541,3 +541,33 @@ expliziten Rollenflags bleiben getrennt erhalten. Kein Quellenimport und
 keine erfundene Reparatur des Altbestands. Der genaue Umfang und die
 weiter offene allgemeine Prosaabsicherung stehen im bestehenden
 [Belegplan](prosa-belegplan-2026-09-20.md#erster-umgesetzter-eingabebaustein-dip-dokumentangaben).
+
+
+## Integration PR472
+
+Die DIP Quellenfeldreparatur ist erfolgreich integriert. Exakter PR Kopf
+042fdaa85e1a2f9d3354e8b9b52577ef9853a338, Baum
+f593375f02b3296bf9b5319bb0c684849f40ae14. CI35508978114 besteht433/433
+Suiten in795s, Browser50/50 und PostgreSQL23/0,26/0,48/0; keine offenen
+Reviews. Der bereits bestandene lokale432er Gesamtlauf wurde nicht erneut
+ausgefuehrt. Die16 neuen Quellfeldgruppen sind Teil der bestandenen PR CI.
+
+Main0e8066e7ea8795294313900e225789775295e90f ist auf
+dpl_3WK9prWCnhdKoa6fFdjkpZ1WJtKs READY, Production/fra1; alle drei
+bisherigen Aliase erhalten. RootHTTP200 mit Version0e8066e7.
+SQL12:07:53 vor und12:12:40 UTC nach Merge stimmen abgesehen vom Zeitpunkt
+vollstaendig ueberein:504/0,29782 Rohdokumente,0 frisch innerhalb48 Stunden,
+keine lebenden Sperren/Leases, offenen Jobs oder jungen offenen Prozesse.
+Alle vier Profil/Identitaets/Auth/Main Hashgrundlinien unveraendert.
+Kosten0,264700 USD, Grenze4 USD, offene Tagesreserve0. Rein lesende
+Kostenursachenaufnahme12:04:49 UTC:43 automatische Aufrufe mit insgesamt
+0,264700 USD, null manuelle Aufrufe; letzter Aufruf11:33:16 UTC.
+Keine bezahlte Anfrage, kein Import und keine Aktivierung durch diese Sitzung.
+
+Die Anschlussreparatur auf `codex/dip-dokumentidentitaet-20260920` ist
+lokal fertig;8 neue Identitaetsgruppen und3 neue Titelgrenzgruppen bestanden.
+Keine Wiederholung bereits bestandener lokaler Tests. Vollstaendige CI
+fuer den neuen Code und dessen Integration stehen aus. Der
+[Belegplan](prosa-belegplan-2026-09-20.md#dokumentidentitaet-und-ganze-titel)
+enthaelt Ursachen, Umfang und Grenzen. Allgemeine unabhaengige Faktenbasis,
+frische500er Vollversorgung und gemessene Zeit/Kosten bleiben offen.
