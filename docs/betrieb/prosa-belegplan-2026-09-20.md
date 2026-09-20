@@ -159,8 +159,18 @@ Feldvertraege und Anschluss beider Fachpfade samt echter Speicherung und
 Ruecklesung, die geplante36er Fachabnahme, frische500er Versorgung und
 gemessene Zeit/Kosten. Keine Quellen im Bestand korrigiert, keine
 Produktionsurteile angelegt, keine Modellaufrufe und keine Aktivierung.
-Der kanonische lokale Gesamtlauf fuer den neuen Code ist bei diesem
-Zwischenstand noch nicht abgeschlossen; PR CI und Integration stehen aus.
+Kanonischer lokaler Gesamtlauf431/436 in885s. Die fuenf Fehlschlaege
+betreffen die lokale Umgebung: zwei Browser finden die Headless Shell
+nicht; drei Konten/Transportpruefungen treffen bereits vorhandene
+Testkonten. Unveraendert in einem sauberen eigenen Testcheckout und mit
+dem vorhandenen Browserpfad bestehen danach admin-nutzer-loeschen75/75,
+passwort-setzen-login-fix39/39, mailpit-transport119/119,
+resend-transport201/201 und reset-timing-seitenkanal83/83.
+Damit wurde jede der436 Suiten erfolgreich geprueft, aber kein einzelner
+vollstaendig gruener436er Lauf behauptet. Bestandene Suiten werden nicht
+erneut lokal ausgefuehrt. PR CI und Integration stehen noch aus.
+Nur die Vorschau des eigenen Branches ist in vercel.json abgeschaltet;
+alle anderen Konfigurationswerte einschliesslich Crons bleiben identisch.
 
 
 ## Erster umgesetzter Eingabebaustein: DIP Dokumentangaben

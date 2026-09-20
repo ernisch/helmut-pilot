@@ -7,8 +7,10 @@ enthaelt einen isolierten Bindungsbaustein fuer separat gepruefte Fakten.
 Speicherung/Ruecklesung. Kein produktiver Aufrufer, keine automatische
 Faktengewinnung und keine bestandene36er Fachabnahme. Die getrennte Herkunft
 der Faktenfreigaben und die Anbindung beider Fachpfade bleiben offen.
-Der vorgeschriebene lokale Gesamtlauf fuer diesen neuen Code laeuft;
-PR CI und Integration stehen aus. Production Main6bb5659a und
+Der vorgeschriebene lokale Gesamtlauf endet431/436 in885s; die fuenf
+Umgebungsfehler bestehen danach unveraendert isoliert. Damit jede Suite
+bestanden, kein einzelner436/436 Lauf behauptet. PR CI und Integration
+stehen aus. Production Main6bb5659a und
 Deployment dpl_6EyvNb1JSdgANyTtTcZDAHKCwM4q READY rein lesend bestaetigt.
 SQL13:33:03 UTC:504/0, keine lebenden Sperren/Leases, offenen Jobs oder
 jungen offenen Prozesse. Quellenaufnahme13:26:45 UTC:0 Publikationen
