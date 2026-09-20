@@ -1,6 +1,8 @@
 # CURRENT STATE — Helmut
 
-**20.09.2026: Gesamtauftrag teilweise abgeschlossen, noch nicht bereit.** PR463/Main `a4a67831da809405561b8b61fbee62aa712c1a82` READY. Laufzeitleser35482171245 bestaetigt HTTP200, Schutzflags und4 USD Riegel. SQL01:45:57 UTC:504/0, Schutzgrundlinien seit Uebernahme identisch. Kein Kostentag20.09. angelegt. Main CI429/430: instabile Besitzerzeitmessung klassifiziert, gezielte Korrektur83/83; Lokaler Gesamtlauf423/430; die sieben betroffenen Suiten nach Umgebungsklaerung und Dokumentationskuerzung jeweils erfolgreich nachgeprueft. Neue vollstaendige PR CI noch offen. [Timingbefund](betrieb/reset-timing-nachweis-2026-09-20.md), [PR463 Abschluss](betrieb/quellen-zeitvertrag-2026-09-17.md#production-abschluss-pr463).
+**20.09.2026: Gesamtauftrag teilweise abgeschlossen, noch nicht bereit.** PR464 gemergt, Main `4b1422532bfe6b03aa08ba19b7b5ebb69bab2a75` READY. PR CI35483196714:430/430, Browser50/50, PostgreSQL Konten/Quellen23/0, Null50026/0, Z2248/0. Laufzeitleser35483969822 bestaetigt HTTP200, Schutzflags und4 USD. SQL02:25:59 UTC:504/0, keine lebende Sperre/Lease, offene Arbeit oder Testquittung; alle Schutzgrundlinien seit Uebernahme identisch. Kein Kostentag20.09. angelegt. Main CI35483865265 laeuft. [Timingabschluss](betrieb/reset-timing-nachweis-2026-09-20.md#integration-pr464), [PR463 Abschluss](betrieb/quellen-zeitvertrag-2026-09-17.md#production-abschluss-pr463).
+
+**Naechster kleiner Sprint:** PR464 abgeschlossen. Ergebnisleser auf `codex/ergebnisbilanz-20260920` zaehlt ungepruefte Positionen bei Abbruch vollstaendig und trennt Appdarstellung von gebundenen Speicherbelegen;9+7 gezielte Gruppen und430/430 Suiten in806s erfolgreich, PR noch nicht angelegt. Rein lesend01:59:20 UTC:500 Zielprofile mit verknuepften Quellen,0 mit Publikation der letzten48 Stunden.31er Paket unveraendert frisch und nicht im Bestand, weiterhin nicht freigegeben. [Betriebsplan,1500er Bilanz und Kosten](betrieb/500-betriebsplan-2026-09-20.md).
 
 **Integrierte Reparaturen:** PR419 bis463 erhalten belegte Quellenzeit, Kontext, Rollen, Ereignisse und ganze Texte. PR420 verwendet Zustandsversion3 mit500 Laufplaetzen; diese Version beim Rueckweg erhalten. PR421 bindet Morgenquittungen an gespeicherte Pakete. Die allgemeine freie Prosa bleibt nach den geschlossenen Fachversuchen offen; PR452 ist dauerhaft verworfen. Die damalige10 USD Freigabe galt dem19.09. und erhoeht den4 USD Riegel nicht.
 
@@ -16,7 +18,7 @@ Vorbereitung eines erneut ausdruecklich freizugebenden Nachweises mit exakt 500 
 
 Historische PR- und Deploymentdetails bis09.09. stehen unverändert im [archivierten Status](archive/project_state/2026_09_14_CURRENT_STATE_vor_lesebelegabschluss.md). Der aktuelle Main- und Productionstand steht im Statuskopf.
 
-20.09.: PR462 und PR463 integriert. Publikationszeit bleibt ohne Beleg unbekannt. PR463 CI35479888757 vollstaendig erfolgreich; Main CI35480668575 hat einen instabilen Timingtest. Korrektur auf `codex/reset-timing-nachweis-20260920`, PR noch nicht angelegt. Acht isolierte Importgruppen bestanden,31er Production Import weiterhin nicht freigegeben. [Beleg](betrieb/quellen-zeitvertrag-2026-09-17.md#production-abschluss-pr463).
+20.09.: PR462 und PR463 integriert. Publikationszeit bleibt ohne Beleg unbekannt. PR463 CI35479888757 vollstaendig erfolgreich; der rote Main Timingtest ist durch PR464 mit vollstaendiger neuer CI korrigiert und integriert. Acht isolierte Importgruppen bestanden,31er Production Import weiterhin nicht freigegeben. [Beleg](betrieb/quellen-zeitvertrag-2026-09-17.md#production-abschluss-pr463).
 
 ## 3 · Production-Zustand
 
@@ -124,7 +126,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-20.09.: Timingkorrektur vollstaendig pruefen und integrieren. Publikationszeit repariert, aktueller Laufzeitleser erfolgreich.31 isolierte Quellen nicht importiert. [Prosa](betrieb/prosa-quellenpruefung-2026-09-19.md#neubewertung-nach-dem-gescheiterten-quellenrichter),500er Versorgung/Zeit/Kosten weiter offen. Keine neue Kostenfreigabe durch Datumswechsel.
+20.09.: Timingkorrektur PR464 integriert und Production belegt. Als Naechstes die lokal erfolgreiche Ergebnisbilanz vollstaendig per CI pruefen und integrieren.31 isolierte Quellen nicht importiert. [Prosa](betrieb/prosa-quellenpruefung-2026-09-19.md#neubewertung-nach-dem-gescheiterten-quellenrichter),500er Versorgung/Zeit/Kosten weiter offen. Keine neue Kostenfreigabe durch Datumswechsel.
 
 ## 12 · Verbindliche Betriebsgrenzen
 

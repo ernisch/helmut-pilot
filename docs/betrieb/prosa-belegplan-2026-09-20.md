@@ -1,0 +1,110 @@
+# Konkreter Entwicklungsvertrag fuer beleggebundene Prosa
+
+20.09.2026. **Vorbereitung, keine integrierte Methode und keine fachliche
+Freigabe.** Null Modellaufrufe, keine Productiondaten geschrieben. Dieser
+Vertrag setzt den nach PR452 dokumentierten anderen Ansatz konkret fort.
+Er wiederholt weder den verworfenen Quellenrichter noch dessen Prompts.
+
+## Die fehlende Eingangsvoraussetzung
+
+Heute entstehen freie Texte, Klassifikation und mehrere strukturierte
+Urteile in derselben Understandingantwort. `assembleKnowledgeObject`
+uebernimmt diese Werte; `briefing-aussagenbindung` kann die Vollstaendigkeit
+eines getrennten Urteils und seine Textstellenbindung pruefen, aber nicht
+selbst die Bedeutung bestaetigen. `lage-textqualitaet` hat denselben
+Unterschied zwischen technischen Bindungen und fachlichem Urteil.
+
+Der neue Belegplan darf deshalb nur auf einer **unabhaengig geprueften
+Faktenmenge** formulieren. Ein Generator darf Faktenkennungen auswaehlen und
+zulassige Operationen angeben. Er darf keine neuen behauptenden Literale,
+Rollen, Folgen, Fristen oder Bedeutungslabels in den Plan schreiben.
+
+Eine Faktenzeile muss mindestens Quellkennung und Quellenhash, genaue
+Textstelle samt Kontext, Akteur, Handlung, Gegenstand, Aussagegrad,
+Verneinung, Zuschreibung, Bedingung und getrennte Ereigniszeit tragen.
+Unbekannte Felder bleiben unknown. Hinzu kommen Herkunft der Interpretation
+und ihre Freigabe. Ein vom erzeugenden Modell selbst gesetztes true ist
+keine Freigabe. Bei Quellenaenderung ist der alte Sachbeleg ungueltig.
+
+Fakten koennen aus eindeutig typisierten Originaldaten eines spezifischen
+Quellenadapters oder aus einer vollstaendigen gesonderten Quellenpruefung
+kommen. Fuer freien Nachrichtentext existiert dieser Adapter heute nicht.
+Eine automatische universelle Extraktion mit blossen Wortlisten waere
+derselbe unbelegte Interpretationsschritt an einer anderen Stelle.
+
+## Zulaessige Formulierungsoperationen
+
+| Operation | Voraussetzung | Erhaltene Bedeutung |
+| --- | --- | --- |
+| Ereignis darstellen | Freigegebenes Tupel aus Akteur, Handlung, Gegenstand und Aussagegrad | Vorschlag, Pruefung, Beschluss und Vollzug bleiben verschieden; keine Rollenvertauschung |
+| Zugeschriebene Aussage darstellen | Sprecher, Adressat und Aussage sind gemeinsam belegt | Herausgeber wird nicht zum Sprecher; Kritikrichtung und Vorbehalt bleiben erhalten |
+| Zeit einordnen | Ereignisbezug und Zeithorizont sind belegt | Publikation und Abruf ersetzen weder Ereignistermin noch Frist; unknown bleibt unknown |
+| Wirkung nennen | Wirkung, Betroffener und Voraussetzungen sind in derselben Faktenmenge getragen | Keine finanzielle oder politische Folge allein aus einem Themenlabel |
+| Profilbezug begruenden | Echtes Profilfeld und separat gepruefte Beziehung zur konkreten Quelle | Nennung einer Partei oder eines Ressorts allein erzeugt keine persoenliche Pflicht |
+| Bedingte Handlungsoption darstellen | Akteur, Voraussetzung, Handlung und gegebenenfalls deren eigene Frist sind belegt | Keine automatische Aufgabenverteilung, Prioritaet oder politische Linie des Lesers |
+| Betriebszustand beschreiben | Aktuell gemessene Zaehler und Auswahl | Kein politisches Sachurteil aus technischen Metadaten |
+
+Der Server waehlt vorab fachlich gepruefte Satzformen. Er darf keine
+Teilsaetze abschneiden, Negationen entfernen oder zwei unabhaengige Fakten
+kausal verbinden. Quelle, Faktenzeile, Operation und fertiger Text werden
+inhaltsgebunden. Ein bloesser Teilstring in einer Quelle reicht nicht.
+
+## Vollstaendige Feldabdeckung
+
+| Sichtbare Felder | Erforderliche Fakten oder ehrliche Grenze |
+| --- | --- |
+| headline, display_title, was_ist_passiert, display_summary | Ereignis oder zugeschriebene Aussage; jede enthaltene Teilbehauptung muss erhalten bleiben |
+| warum_wichtig, why_relevant | Belegte Bedeutung beziehungsweise expliziter Profilbezug; keine gleiche Quelle als pauschaler Ersatztext |
+| wer_ist_betroffen, Akteurslisten, Kategorie | Getragene Akteursrolle beziehungsweise typisiertes Sachgebiet; Herausgebername ist kein Sachgebiet |
+| risiken, chancen, risk_of_no_action, opportunity_summary | Konkrete Wirkung und Voraussetzung; zugehoerige Stufen benoetigen eigenen Massstab |
+| handlungsempfehlung, recommendation, action_items | Bedingte Option fuer einen belegten Akteur; Pflichtfeld ohne Grundlage benennt diese Grenze |
+| communicationLine und Kommunikationsfelder | Belegte sachliche Linie samt Adressat und Voraussetzung; keine angenommene Leserposition |
+| action_items_struct einschliesslich description und dueHint | Handlung, Akteur, Voraussetzung; Frist muss genau dazu gehoeren |
+| Lageabsaetze | Mindestens zwei eigenstaendige, konkrete und mandatsbezogene Sachverhalte; alle Teilbehauptungen quellengebunden |
+| Ausgabezusammenfassungen und UI Aliase | Dieselben bereits freigegebenen Inhalte oder gemessener Betriebszustand; kein zweiter freier Formulierungsweg |
+
+Sind fuer ein optionales Feld keine tragfaehigen Fakten vorhanden, bleibt
+es ehrlich leer. Fehlen notwendige Sachinhalte, ist das Ergebnis partial
+oder abgelehnt. Das zaehlt nicht als gelieferte500er Versorgung. Alle Felder
+mit identischen Zitaten zu fuellen oder positive Inhalte pauschal zu loeschen
+ist ausdruecklich kein bestandener Ansatz.
+
+## Vorab festgelegte Gegenfaelle fuer beide Fachpfade
+
+Synthetische Beispiele; keine Behauptungen ueber reale Ereignisse.
+Jede Zeile wird als Negativfall, als positiver Gegenfall und mit fehlender
+beziehungsweise widerspruechlicher Grundlage geprueft. Das sind mindestens
+18 Fachfaelle, jeweils im globalen Briefing und im Lagepfad, also36
+Pfadfaelle. Dazu kommen fremde Kennung, geaenderter Quellenhash, fehlende
+Teilbehauptung, neue freie Felder und Speicherung samt Ruecklesung.
+
+| Klasse | Negativfall muss scheitern | Positiver Inhalt muss nutzbar bleiben |
+| --- | --- | --- |
+| Sachgebiet und Finanzwirkung | Unbestimmter Ausgleichsbetrag wird zur Steuer oder Pflegeleistung | Ausdruecklich genannter Zuschuss fuer Busfahrkarten samt getragener Finanzwirkung |
+| Vollzug und Modalitaet | Pruefung eines Vorschlags wird zur beschlossenen Verlaengerung | Ausdruecklicher Beschluss und spaeter bestaetigter Betrieb werden konkret wiedergegeben |
+| Rolle und Zuschreibung | Kritiker und Adressat vertauscht; Gastbeitrag als Redaktionsposition | Belegter Sprecher, Adressat, Gruppen und Herausgeber bleiben unterscheidbar |
+| Zeit und Frist | Konzert2024 wird zur neuen Reise2028; Publikation erzeugt Handlungsfrist | Beide expliziten kuenftigen Termine bleiben den neuen Auftritten zugeordnet |
+| Profil und Zustaendigkeit | Stellvertretung wird zum Vorsitz; Fachthema zur individuellen Pflicht | Gelieferte Mitgliedschaft und konkret gepruefter Fachbezug bleiben erhalten |
+| Bedingte Wirkung und Empfehlung | Moegliche Folge wird sicher; fremde Frist wird persoenlicher Auftrag | Belegte Voraussetzung, Wirkung und eigene Frist bleiben zusammen und bedingt |
+
+Die Tests muessen aus dem wirklichen Eingabevertrag formulieren und alle
+sichtbaren Ausgabefelder vollstaendig erfassen. Vorher bekannte Fehlantworten
+bleiben negative Referenzen; positive Beispiele werden nicht angepasst, um
+einen Ansatz nachtraeglich bestehen zu lassen. Ein bestandener endlicher
+Testsatz ist noch keine universelle Semantikgarantie.
+
+## Anschluss an Versorgung, Laufzeit und Kosten
+
+Vor einer Implementierung mit Productionwirkung fehlt die belastbare
+Faktenversorgung fuer die tatsaechlichen Quellen aller500 Profile. Die
+31 vorbereiteten Rohquellen sind noch keine solchen Fakten und kein
+Produktionsimportrecht. Ein neues globales Teilen mandatsbezogener Texte
+wuerde zudem die heutige Mandantentrennung beruehren und ist kein erlaubter
+Trick, um1000 Modellaufrufe billiger zu rechnen.
+
+Dieser Vertrag setzt kein neues Modell und keinen bezahlten Versuch fest.
+Zuerst muss ein offline implementierbarer kleiner Quellenvertrag mindestens
+die positiven und negativen Sachfaelle in beiden Pfaden tragen. Danach
+Kosten pro tatsaechlichem Entwurfs und Pruefpaar sowie vollstaendige
+Versorgung gegen den unveraenderten4 USD Riegel rechnen. Der heutige
+Entwurf bestaetigt weder diese Erreichbarkeit noch einen neuen500er Start.

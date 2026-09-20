@@ -1,5 +1,7 @@
 # Bereitschaft nach der Reparaturkette
 
+**Aktueller Nachweis20.09.:** [Betriebsplan und verbleibende Grenzen](500-betriebsplan-2026-09-20.md). Noch nicht bereit;504/0, kein neuer Test. Alle nachfolgenden datierten Aufnahmen, Freigaben und Planformulierungen gehoeren zum historischen19.09. und sind kein aktueller Productionstand.
+
 Stand 19.09.2026 Tuerkei. **Status: blockiert. Noch nicht bereit.**
 Nachtrag19.09.10:00 UTC: PR445 bis447 integriert und Production READY.
 Alle28 alten Drafts erledigt, kein offener PR vor diesem Dokumentationsabschluss.

@@ -1,6 +1,6 @@
 # Besitzerzeitmessung und aktueller Laufzeitnachweis
 
-20.09.2026, **teilweise abgeschlossen**. Basis Main
+20.09.2026, **abgeschlossen fuer den Timingfehler und PR463 Nachweis**. Basis Main
 `a4a67831da809405561b8b61fbee62aa712c1a82`, eigener Branch
 `codex/reset-timing-nachweis-20260920`. Kein Anwendungscode geaendert.
 
@@ -50,7 +50,7 @@ Fachpruefung ab; der Zustand wurde separat erhalten und die Gegenprobe
 sauber neu ausgefuehrt. Kein Productionfehler und kein gruen gezaehlter Lauf.
 Kanonischer lokaler Gesamtlauf:423/430 in800s. Zwei Browserteile konnten mangels installiertem Chromium nicht starten; vier Kontosuiten trafen auf einen erhaltenen synthetischen lokalen Nutzer, darunter der Timingtest vor AbschnittD. Die Statusdatei lag208 Zeichen ueber der unveraenderten Grenze. Historie wurde bytegleich archiviert, der aktuelle Status verkuerzt; alle sieben betroffenen Originalsuiten anschliessend jeweils erfolgreich im kanonischen Einzelrunner nachgeprueft. Chromium1194 aus dem vorhandenen lokalen Testbestand verwendet. Synthetische lokale Vorzustaende separat erhalten, vor den isolierten Laeufen leer begonnen. Ein erster Sammelnachlauf blieb bei Mailpit rot; eine rein protokollierende Gegenprobe und der anschliessende unveraenderte Originaltest bestanden119/119. Der Zwischenfehler wird nicht als neuer Produktfehler oder gruener Lauf ausgegeben; seine einzelne HTTP Ursache wurde nicht aufgezeichnet. Neue vollstaendige PR CI steht noch aus.
 
-## Aktuelle Production Belege
+## Vor dem Merge gelesene Production Belege
 
 Deployment dpl_H7mgeHZhPRmsGy6tg4MNo9fTaEgr READY, Production/fra1,
 Main a4a67831, alle drei bisherigen Aliase erhalten. Rein lesender
@@ -77,3 +77,26 @@ gepruefter Revert PR ohne Datenruecknahme, bei Productionwirkung separat
 freizugeben. Nach Merge READY, Commit/Alias und Ruhezustand rein lesend
 kontrollieren. Allgemeine Prosa,500er Versorgung,1500 Ergebnispositionen
 und belastbare Zeit/Kostenplanung bleiben offen.
+
+
+## Integration PR464
+
+PR464 mit unveraendertem Head036928252df8aa3fe88c9da892f79fae7c542844
+vollstaendig geprueft und gemergt. CI35483196714:430/430 in686s,
+Browser50/50, PostgreSQL Konten und Quellen23/0, Null50026/0 und Z2248/0.
+Alle Pflichtschritte erfolgreich; keine offenen Reviewthreads. Der ueber
+die GitHub Verbindung uebertragene Git Baum ist bytegleich zum lokalen
+Commit:ba6b68ee54665ae8a04cbe39591b0b9a585cefc1. Nur Commitmetadaten weichen ab.
+
+Main4b1422532bfe6b03aa08ba19b7b5ebb69bab2a75 ist auf
+dpl_2Ec1qJufMWD626irWwMRTrEpGEwZ READY, Production/fra1. Alle drei
+bisherigen Aliase erhalten. Neuer rein lesender Lauf35483969822,
+Job106006766917: HTTP200 am exakten Main, alle bisherigen Schutzflags,
+Kostenregel2/4 USD und Testfensterversionen bestaetigt. Optionale Inhaltsleser
+ausgelassen. Die automatisch gestartete Main CI35483865265 laeuft noch.
+
+SQL20.09.02:25:59 UTC:504/0, null lebende Sperren/Leases, offene Jobs,
+junge offene Prozesse und Testfensterquittungen. Alle vier vollstaendigen
+Schutzgrundlinien gegen die Uebernahme identisch, einschliesslich Auth und
+Sessions. Noch kein Kostentag20.09.; kein Modellaufruf oder Quellenimport.
+Gesamtziel500 bleibt durch Fachqualitaet, Versorgung und Zeit/Kosten blockiert.

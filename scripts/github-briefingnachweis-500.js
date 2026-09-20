@@ -48,8 +48,12 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
         const gueltig = require("../lib/helmut/briefing-profilkontext").nachweisKennungGueltig(n, id, tag) && b?.available === true
           && Array.isArray(b.items) && b.items.length > 0 && b.currentHelmutState && b.currentRadarState
           && Array.isArray(b.lageBriefing?.paragraphs) && b.lageBriefing.paragraphs.length > 0;
-        const ergebnisArten = gueltig ? await E.lese({ userId: id, tag, fenster, app: b, projectUrl: PROJECT_URL,
-          key: env.SUPABASE_SERVICE_ROLE_KEY, fetchFn, jetzt: now() }) : E.offen("app-vertrag-nicht-pruefbar");
+        // Appdarstellung und gespeicherte Ergebnisarten getrennt pruefen.
+        // Eine fehlende sichtbare Lage darf die gebundenen Speicherbelege
+        // nicht unsichtbar machen. E.lese verweigert weiterhin ohne gueltige
+        // mandatsbezogene Paketkennung schon vor dem ersten Datenbankzugriff.
+        const ergebnisArten = await E.lese({ userId: id, tag, fenster, app: b, projectUrl: PROJECT_URL,
+          key: env.SUPABASE_SERVICE_ROLE_KEY, fetchFn, jetzt: now() });
         results.push({ mandatHash, abrufbar: Boolean(gueltig), grund: gueltig ? "app-vertrag-gelesen" : "app-vertrag-unvollstaendig",
           ergebnisArten,
           strukturellVollstaendig: Boolean(gueltig) && n.pruefung?.strukturellVollstaendig === true,
