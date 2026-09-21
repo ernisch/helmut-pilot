@@ -1110,3 +1110,69 @@ offen. Letztes vollstaendiges Entwurfs und Pruefpaar0,012146 USD;500 solche
 Paare waeren6,073 USD ohne Quellenverstehen oder letzte Reserve. Das ist eine
 Hochrechnung aus einem Einzelfall, keine gemessene500er Summe oder Freigabe
 einer Budgeterhoehung. Kein neuer500er Start.
+
+
+## Referenzfehler und zehn ungesendete Faelle
+
+PR490, Head58ef5fb4f663088fbba98fe985ba307e0bdcdb7d, ist ohne Merge
+abgeschlossen. Exakte Pflicht CI35585920277:444/444 in818s, Browser,
+Vorschau und isolierte Datenbanknachweise erfolgreich. Einmaliger
+Run35587502308, Job106294149420:ein Aufruf gpt-5-mini, HTTP200,
+vollstaendige Antwort,1226 Eingabe und1744 Ausgabetoken,17309ms,
+7589 Mikro USD. Ticketd2e78380-1eee-4d27-84c6-390e84817bbf abgerechnet.
+Transport, Antwort, Kosten und geschlossene Quittung prosaRestfaelle20260921
+sind privat dauerhaft gesichert. Kein zweiter Aufruf.
+
+Offline Auswertung der unveraenderten Antwort ergibt praemissenpruefung-beleg.
+Die Gesamturteile zu f0ad85d232a15 und f28d940d3efec entsprechen zwar den
+vorab eingefrorenen Sollurteilen. Zwei Vorschlagszeilen nennen aber die
+Fallkennung selbst als Belegreferenz. Kandidatensaetze sind keine Quellen.
+Der unveraenderte Serververtrag lehnt die ganze Antwort korrekt ab.
+Dies sind deshalb keine zwei formal bestandenen Faelle oder Fachabnahme.
+Die synthetische Originalantwort bleibt als technischer negativer Beleg
+in scripts/fixtures/praemissen-belegantwort.json erhalten.
+
+SQL10:13:56.317761 UTC:504 Profile,0 aktiv, keine lebenden Sperren,
+Job oder Verstehensleases, offenen Jobs oder jungen offenen Prozesse.
+Profile c32b7d4f76b4ad70ace0cac91c3e94c3, Konten
+3c5b0b5a6314f31c395b8758b166c5c3, Main5ee6c52fa40a96a92bfa854a126fe42a,
+geschuetztes Auth63e124cda95355984f5776f46c09f6a4: unveraendert gegen
+Vorflug10:12:27 UTC. Ausgenommen waren nur prosaRestfaelle20260921,
+llmUsage,testKostenTage,_authStoreRevision. Main und READY Deployment
+bleiben dcf024e24fa19c397bc57874fb4c123919052a0a und
+dpl_9qmwbkvHw3SEykYYXZUvSGm8uVQj. Tagesbuchung0,160909 USD,
+alte unbekannte Reserve0,212 USD, Gesamtbindung0,372909 USD von4 USD.
+
+Der naechste begrenzte Methodenauftrag behebt ausschliesslich diesen
+belegten Referenzfehler: prosa-praemissenreferenzen.js erzeugt je Fall ein
+Anbieterschema mit exakt gekoppelter Quellenkennung und vollstaendigem
+Originaltext. Fremde Kennungen, Kandidaten als Beleg und abgeschnittene
+Zitate sind ausgeschlossen. Das ist keine semantische Beweisfuehrung.
+Reine Vorschlagseinordnung braucht keinen erfundenen Beleg; darin enthaltene
+Sachannahmen bleiben eigenstaendig belegpflichtig oder offen. Der bisherige
+Serververtrag, alle Sollurteile und beide alten Pakethashes bleiben gleich.
+
+scripts/prosa-referenzen-versuch.js verwendet ausschliesslich die zehn
+noch nie gesendeten Faelle. Die ersten sechs und die beiden Faelle aus
+Run35587502308 bleiben ueber Kennung und Eingabehash ausgeschlossen.
+Beide alten Quittungen muessen exakt zu den bekannten Laeufen, Commits,
+Paketen und ersten Gruppen passen. Beide Kostentickets bleiben unveraendert.
+Kostenregel2 erlaubt diese andere Arbeit bei voller Deckung; keine Erstattung
+oder erneute Sendung des unbekannten Auftrags. Maximal fuenf Zweiergruppen,
+fuenf Aufrufe,3000 Ausgabetoken je Aufruf, reasoning low, kein Retry oder
+Modellwechsel. Neue volle Reserve1,060 USD, gesamte Deckung1,432909 USD.
+Nur dieses isolierte Workflowjob setzt HELMUT_KI_TIMEOUT_MS=30000; der
+bereits bestehende zusaetzliche Transportdeckel bleibt30s, Gesamtlauf5min.
+Die gemessenen17,309s fuer zwei Faelle begruenden diesen begrenzten Puffer.
+Keine globale Laufzeit oder Production Konfiguration wird geaendert.
+
+Neuer Branch codex/prosa-referenzen-20260921, Schluessel
+prosaReferenzen20260921, Prefix REFERENZEN_EINMAL. Exakter Code,
+Production Commit, Paket und privater Empfaenger werden vor Start gebunden.
+Erster technischer oder fachlicher Fehler beendet den Auftrag; Antwort und
+Kosten sind vorher dauerhaft verschluesselt und rueckgelesen. Gezielt9/9
+Referenzgruppen und18/18 Ausfuehrergruppen bestanden, einschliesslich
+unveraenderter Ablehnung der echten Antwort und Schutz aller acht Altfaelle.
+Keine lokalen Volltests wiederholt. Automatische Pflicht CI bleibt Pflicht.
+Noch kein bezahlter Referenzlauf. Auch zehn richtige Ergebnisse waeren keine
+18er Methodenabnahme,36er Produktabnahme oder500er Vollversorgung.

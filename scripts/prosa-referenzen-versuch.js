@@ -1,0 +1,222 @@
+"use strict";
+
+// Einmaliger fest gebundener Pruefvergleich innerhalb der Betreiberfreigabe.
+// Nur manuell auf diesem Branch; alle Rohantworten bleiben privat erhalten.
+const C = require("node:crypto"), Z = require("node:zlib");
+const { vorflug, transport } = require("./prosa-einordnung-versuch");
+const { isDeepStrictEqual: equal } = require("node:util");
+const P = require("../lib/helmut/prosa-praemissenpruefung");
+const Alt = require("./prosa-praemissen-versuch");
+const ALT_PAKET = "8f3b9b53f720fb76cfac6ad545928fbcad5e384bc31b183ffe8a1e892e429d74";
+const Rest = require("./prosa-restfaelle-versuch"), R = require("../lib/helmut/prosa-praemissenreferenzen");
+const REST_PAKET = "d634a32fd9225ecb26fb7df8fb72681a40932f97402426d43b5c4e70a121e4f1";
+const REST_TICKET = "d2e78380-1eee-4d27-84c6-390e84817bbf";
+const ALT_TICKET = "2ec7ab92-7d20-45db-94b9-9004f32f55d9";
+const K = require("../lib/helmut/testkosten-budget");
+const T = require("./privater-nachweis-transport");
+const { hash } = require("../lib/helmut/briefing-speicher");
+const KEY = "prosaReferenzen20260921", PREFIX = "REFERENZEN_EINMAL:";
+const BRANCH = "codex/prosa-referenzen-20260921", TAG = "2026-09-21";
+const MAX_COST = 1060000, MAX_MS = 300000, RING = 5000;
+const sha = x => C.createHash("sha256").update(x).digest("hex");
+function fordere(ok, code) { if (!ok) { const e = new Error(code); e.code = code; throw e; } }
+function paket() {
+  const alt = Rest.paket();
+  fordere(alt.paketHash === REST_PAKET, "EINORDNUNG_ALTPAKET");
+  const rest = alt.gruppen.slice(1).flat(), ausgeschlossen = [...alt.ausgeschlossen, ...alt.gruppen[0]];
+  fordere(rest.length === 10 && ausgeschlossen.length === 8
+    && rest.every(r => !ausgeschlossen.some(a => a.eingabe.id === r.eingabe.id
+      || hash(a.eingabe) === hash(r.eingabe))), "EINORDNUNG_WIEDERHOLUNG");
+  const gruppen = Array.from({ length: 5 }, (_, i) => rest.slice(i * 2, i * 2 + 2));
+  const vertraege = gruppen.map(g => P.binde(g.map(r => r.eingabe)));
+  const schemata = vertraege.map(v => R.schema(v)), prompts = vertraege.map(v => R.prompt(v));
+  return { gruppen, ausgeschlossen, altPaketHash: REST_PAKET, schemata, prompts,
+    paketHash: hash({ gruppen, schemata, prompts, auswertung: auswertung.toString(),
+      ausgeschlossen, altPaketHash: REST_PAKET, scope: "10-ungesendete-Faelle-8-bereits-gesendete-Faelle-gesperrt" }) };
+}
+function auswertung(rows, pruefung) {
+  fordere(rows.length === pruefung.urteile.length, "EINORDNUNG_SOLLUMFANG");
+  return rows.map(r => {
+    const ist = pruefung.urteile.find(x => x.id === r.eingabe.id)?.urteil;
+    return { id: r.eingabe.id, klasse: r.klasse, art: r.art, erwartet: r.erwartet,
+      erhalten: ist, bestanden: ist === r.erwartet,
+      falschPositiv: ist === "tragfaehig" && r.erwartet !== "tragfaehig",
+      falschNegativ: ist !== "tragfaehig" && r.erwartet === "tragfaehig" };
+  });
+}
+function eingabe(text) {
+  fordere(typeof text === "string" && text.startsWith(PREFIX) && text.length < 6000, "EINORDNUNG_EINGABE");
+  const encoded = text.slice(PREFIX.length), bytes = Buffer.from(encoded, "base64");
+  fordere(bytes.toString("base64") === encoded, "EINORDNUNG_EINGABE");
+  const a = JSON.parse(Z.gunzipSync(bytes, { maxOutputLength: 6000 }));
+  fordere(a && Object.keys(a).sort().join(",") === "commit,paketHash,productionCommit,publicKey"
+    && [a.commit, a.productionCommit].every(s => /^[a-f0-9]{40}$/.test(s))
+    && a.paketHash === paket().paketHash, "EINORDNUNG_BINDUNG");
+  T.publicKey(a.publicKey); return a;
+}
+function konfiguration(a, env, now) {
+  fordere(env.GITHUB_REPOSITORY === "ernisch/helmut-pilot" && env.GITHUB_REF === `refs/heads/${BRANCH}`
+    && env.GITHUB_EVENT_NAME === "workflow_dispatch" && env.GITHUB_RUN_ATTEMPT === "1"
+    && env.GITHUB_SHA === a.commit && /^\d{5,20}$/.test(env.GITHUB_RUN_ID || ""), "EINORDNUNG_AUSFUEHRUNG");
+  fordere(now.toISOString().slice(0, 10) === TAG
+    && now.getTime() + MAX_MS < Date.parse(TAG + "T23:59:59Z"), "EINORDNUNG_TAG");
+  const expected = { HELMUT_STORAGE_BACKEND: "supabase", HELMUT_SUPABASE_STORE_ID: "main",
+    HELMUT_SUPABASE_AUTH_STORE_ID: "main-auth", VERCEL_ENV: "production",
+    HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt", HELMUT_MAX_LLM_CALLS_PER_DAY: "2416",
+    HELMUT_LLM_RESERVE_UNDERSTANDING: "702", HELMUT_TESTLAUF_VORRANG_REAL: "200",
+    HELMUT_ANBIETER_STEUERUNG: "on", HELMUT_ANBIETER_AZURE_MINUTE: "20",
+    HELMUT_ANBIETER_AZURE_TAG: "0", AZURE_OPENAI_DEPLOYMENT: "gpt-5-mini", HELMUT_KI_TIMEOUT_MS: "30000" };
+  fordere(Object.entries(expected).every(([k, v]) => env[k] === v)
+    && env.SUPABASE_URL === "https://ddckuvvpcytqbyfmbvie.supabase.co"
+    && env.SUPABASE_SERVICE_ROLE_KEY && env.AZURE_OPENAI_KEY && env.HELMUT_CRON_SECRET,
+  "EINORDNUNG_KONFIGURATION");
+  fordere(["OPENAI_API_KEY", "HELMUT_ARTIKELKONTEXT", "HELMUT_LLM_USAGE_RELATIONAL", "HELMUT_TENANT_LLM_CAP",
+    "NODE_OPTIONS", "NODE_TLS_REJECT_UNAUTHORIZED", "NODE_EXTRA_CA_CERTS"]
+    .every(k => !env[k]), "EINORDNUNG_FREMDE_KONFIGURATION");
+  fordere(require("../lib/helmut/azure-endpunkt").pruefeEndpunkt(env.AZURE_OPENAI_ENDPOINT).gueltig,
+    "EINORDNUNG_AZURE_ZIEL");
+}
+function grundlinie(auth) {
+  const x = structuredClone(auth);
+  for (const k of [KEY, "llmUsage", "testKostenTage", "_authStoreRevision"]) delete x[k];
+  return x;
+}
+function kostenbeleg(before, after, meta, counterBefore, counterAfter) {
+  const day = TAG, alt = K.pruefeTag(before.testKostenTage?.[day], day);
+  const neu = K.pruefeTag(after.testKostenTage?.[day], day);
+  const calls = Object.entries(neu.calls).filter(([id]) => !Object.hasOwn(alt.calls, id));
+  const usage = after.llmUsage.filter(u => u.runId === meta.runId).filter(u =>
+    !before.llmUsage.some(x => x.id === u.id));
+  fordere(calls.length === 1 && usage.length === 1, "EINORDNUNG_KOSTENBELEG");
+  const [id, c] = calls[0], u = usage[0];
+  fordere(c.status === "abgerechnet" && c.reserved === 212000 && c.maxOutputTokens === 3000
+    && c.bezug?.runId === meta.runId && c.bezug.phase === meta.phase
+    && c.bezug.mandatHash === sha(JSON.stringify(meta.mandat))
+    && c.cost === K.tokenKosten(u.promptTokens, u.completionTokens)
+    && u.success === true && u.model === "gpt-5-mini" && u.politicianId === meta.mandat
+    && u.callType === "prosaReferenzen" && counterAfter.used === counterBefore.used + 1,
+  "EINORDNUNG_KOSTENBELEG");
+  const ohne = t => { const x = structuredClone(t); delete x.calls; delete x.spent; delete x.manualCalls; return x; };
+  fordere(equal(ohne(alt), ohne(neu)) && neu.spent === alt.spent + c.cost
+    && neu.manualCalls === alt.manualCalls + 1
+    && Object.entries(alt.calls).every(([k, v]) => equal(v, neu.calls[k]))
+    && Object.keys(before.testKostenTage).length === Object.keys(after.testKostenTage).length
+    && Object.keys(before.testKostenTage).filter(d => d !== day).every(d => equal(before.testKostenTage[d], after.testKostenTage[d]))
+    && equal(grundlinie(before), grundlinie(after))
+    && equal(after.llmUsage, [u, ...before.llmUsage].slice(0, RING)), "EINORDNUNG_HISTORIE");
+  return { id, call: c, usage: u, kosten: c.cost };
+}
+
+async function ausfuehren({ env = process.env, now = () => new Date(), fetchFn = global.fetch,
+  storage = require("../lib/helmut/storage"), ai = require("../lib/helmut/ai"), observe = transport,
+  emit = value => console.log(JSON.stringify(value)) } = {}) {
+  const a = eingabe(env.CONFIRM_TEXT), p = paket(); konfiguration(a, env, now());
+  const runId = `nachlauf500-${env.GITHUB_RUN_ID}`;
+  const ctx = { runId: env.GITHUB_RUN_ID, commit: a.commit, tag: TAG, abPosition: 1, anzahl: 1 };
+  const startCounter = await vorflug(a, env, storage, fetchFn, now());
+  const start = now(), deadline = start.getTime() + MAX_MS;
+  let expected;
+  await storage.mutateAuthStore(auth => {
+    fordere(!Object.hasOwn(auth, KEY), "EINORDNUNG_BEREITS_BEGONNEN");
+    fordere(auth.prosaProfilvertrag20260921?.status === "gestoppt"
+      && auth.prosaProfilvertrag20260921.runId === "nachlauf500-35575743755"
+      && auth.prosaEinordnung20260921?.status === "gestoppt", "EINORDNUNG_VORVERSUCH_OFFEN");
+    const alt = auth.prosaPraemissen20260921, ersteGruppe = Alt.paket().gruppen[0];
+    fordere(alt?.status === "gestoppt" && alt.runId === "nachlauf500-35584480605"
+      && alt.commit === "94ec4884b7508c1169904aaed3b322c8d5af02b4" && alt.paketHash === ALT_PAKET
+      && alt.fehler === "EINORDNUNG_MODELLAUSGANG" && alt.phasen?.length === 1
+      && alt.phasen[0].gruppe === 1 && alt.phasen[0].mandat === "synthetisch-praemissen-1"
+      && alt.phasen[0].basisHash === P.binde(ersteGruppe.map(r => r.eingabe)).eingabeHash,
+    "EINORDNUNG_VORVERSUCH_OFFEN");
+    const vorher = auth.prosaRestfaelle20260921, restGruppe = Rest.paket().gruppen[0];
+    fordere(vorher?.status === "gestoppt" && vorher.runId === "nachlauf500-35587502308"
+      && vorher.commit === "58ef5fb4f663088fbba98fe985ba307e0bdcdb7d" && vorher.paketHash === REST_PAKET
+      && vorher.phasen?.length === 1 && vorher.phasen[0].gruppe === 1
+      && vorher.phasen[0].status === "antwort-und-kosten-bestaetigt" && vorher.phasen[0].kosten === 7589
+      && vorher.phasen[0].basisHash === P.binde(restGruppe.map(r => r.eingabe)).eingabeHash,
+    "EINORDNUNG_VORVERSUCH_OFFEN");
+    for (const [k, max] of Object.entries({ sessions: 2000, auditEvents: 1000, systemErrors: 500,
+      dailyInputs: 2000, llmUsage: RING, processRuns: 300 }))
+      fordere(Array.isArray(auth[k]) && auth[k].length <= max, "EINORDNUNG_SPEICHERSTAND");
+    const t = K.pruefeTag(auth.testKostenTage?.[TAG], TAG); K.kontrolliere(auth, TAG, 1, startCounter.used);
+    // Kostenregel2 erlaubt ANDERE Arbeit bei voll gedecktem Altfehler.
+    // Nur dieses bereits gelesene alte Ticket ist als offene Reserve zulaessig.
+    const offen = Object.entries(t.calls).filter(([, c]) => ["reserviert", "ungeklaert"].includes(c.status));
+    const vorherKosten = t.calls[REST_TICKET];
+    fordere(vorherKosten?.status === "abgerechnet" && vorherKosten.cost === 7589
+      && vorherKosten.bezug?.runId === "nachlauf500-35587502308" && vorherKosten.bezug.phase === "pruefung"
+      && vorherKosten.bezug.mandatHash === sha(JSON.stringify("synthetisch-restfaelle-1")),
+    "EINORDNUNG_KOSTEN_GESPERRT");
+    const c = t.calls[ALT_TICKET];
+    fordere(t.frozen === null && offen.length === 1 && offen[0][0] === ALT_TICKET
+      && c.status === "ungeklaert" && c.reserved === 212000 && c.maxOutputTokens === 3000
+      && c.manual === true && c.bezug?.runId === "nachlauf500-35584480605"
+      && c.bezug.phase === "pruefung" && c.bezug.mandatHash === sha(JSON.stringify("synthetisch-praemissen-1"))
+      && K.belegt(t) + MAX_COST <= 4000000, "EINORDNUNG_KOSTEN_GESPERRT");
+    expected = { version: 1, runId, commit: a.commit, productionCommit: a.productionCommit,
+      paketHash: p.paketHash, empfaenger: T.publicKey(a.publicKey).fingerprint,
+      status: "begonnen", begonnenAm: start.toISOString(), ende: new Date(deadline).toISOString(),
+      archivierteAufruftelemetrie: structuredClone(auth.llmUsage.slice(Math.max(0, RING - 5))),
+      phasen: [], fachlichBestanden: false, inProductionImportiert: false };
+    auth[KEY] = structuredClone(expected);
+  });
+  fordere(equal((await storage.readAuthStore())[KEY], expected), "EINORDNUNG_START_UNBESTAETIGT");
+  async function schreibe(change) {
+    let next;
+    await storage.mutateAuthStore(auth => { fordere(equal(auth[KEY], expected), "EINORDNUNG_SCHREIBKONFLIKT");
+      next = structuredClone(expected); change(next); auth[KEY] = structuredClone(next); });
+    fordere(equal((await storage.readAuthStore())[KEY], next), "EINORDNUNG_ABLAGE_UNBESTAETIGT"); expected = next;
+  }
+  let fehler = null;
+  const result = { urteile: [], sollFaelle: 10, ausgeschlosseneFaelle: 8, restvergleichBestanden: false, methodenvergleichBestanden: false,
+    produktabnahme: false, bedeutungUnabhaengigBewiesen: false };
+  try {
+    fordere(ai.understandingModelName() === "gpt-5-mini", "EINORDNUNG_MODELL");
+    for (let i = 0; i < p.gruppen.length; i++) {
+      konfiguration(a, env, now());
+      fordere(now().getTime() + 60000 < deadline && expected.phasen.length === i
+        && expected.phasen.every(x => x.status === "antwort-und-kosten-bestaetigt"), "EINORDNUNG_PHASE");
+      const counter = await vorflug(a, env, storage, fetchFn, now());
+      const vertrag = P.binde(p.gruppen[i].map(r => r.eingabe));
+      const meta = { runId, phase: "pruefung", gruppe: i + 1, mandat: "synthetisch-referenzen-" + (i + 1),
+        basisHash: vertrag.eingabeHash };
+      await schreibe(r => { r.phasen.push({ ...meta, status: "begonnen" }); });
+      const before = await storage.readAuthStore();
+      const prompt = p.prompts[i], schema = p.schemata[i];
+      const observed = await observe(() => ai.requestStructuredJson(prompt, schema, {
+        callType: "prosaReferenzen", politicianId: meta.mandat, runId, testKostenPhase: meta.phase
+      }, "gpt-5-mini", { strict: true, reasoningEffort: "low" }), { prompt, schema, env, deadline, now });
+      const transportEnvelope = T.verschluesseln(observed, a.publicKey, ctx);
+      emit({ typ: "einordnung-transport", phase: meta.phase, envelope: transportEnvelope });
+      await schreibe(x => Object.assign(x.phasen.at(-1), { transport: transportEnvelope,
+        transportHash: observed.record.responseHash }));
+      fordere(!observed.failed && observed.record.requests === 1 && observed.record.complete
+        && observed.record.statusCode === 200, "EINORDNUNG_MODELLAUSGANG");
+      const after = await storage.readAuthStore();
+      const afterCounter = await vorflug(a, env, storage, fetchFn, now());
+      const costs = kostenbeleg(before, after, meta, counter, afterCounter);
+      const antwort = structuredClone(observed.answer), answerHash = hash(antwort);
+      const answerEnvelope = T.verschluesseln({ ...meta, antwort, costs }, a.publicKey, ctx);
+      emit({ typ: "einordnung-antwort", phase: meta.phase, envelope: answerEnvelope });
+      await schreibe(x => Object.assign(x.phasen.at(-1), { status: "antwort-und-kosten-bestaetigt",
+        antwortHash: answerHash, antwort: answerEnvelope, kosten: costs.kosten }));
+      // Erst nach dauerhafter Antwort und Kostenquittung gegen die getrennten,
+      // vorab eingefrorenen Sollurteile pruefen. Ein Fehler beendet den Vergleich.
+      result.urteile.push(...auswertung(p.gruppen[i], vertrag.pruefe(antwort)));
+      fordere(result.urteile.every(x => x.bestanden), "EINORDNUNG_FACHLICH_ABGELEHNT");
+    }
+    fordere(expected.phasen.length === 5 && result.urteile.length === 10
+      && expected.phasen.reduce((sum, x) => sum + x.kosten, 0) <= MAX_COST
+      && now().getTime() < deadline, "EINORDNUNG_ABSCHLUSS");
+    await vorflug(a, env, storage, fetchFn, now());
+    result.restvergleichBestanden = true;
+  } catch (e) { fehler = /^EINORDNUNG_[A-Z_]+$/.test(e?.code || "") ? e.code : "EINORDNUNG_FACHLICH_ODER_TECHNISCH_ABGELEHNT"; }
+  const envelope = T.verschluesseln({ result, fehler, fachlichBestanden: false, inProductionImportiert: false }, a.publicKey, ctx);
+  emit({ typ: "einordnung-abschluss", envelope });
+  await schreibe(x => { x.status = "gestoppt"; x.beendetAm = now().toISOString(); x.fehler = fehler; x.ergebnis = envelope; });
+  return { ok: !fehler, status: "gestoppt", phasenBegonnen: expected.phasen.length, fachlichBestanden: false, inProductionImportiert: false };
+}
+if (require.main === module) ausfuehren().then(r => { console.log(JSON.stringify(r)); if (!r.ok) process.exitCode = 1; })
+  .catch(() => { console.error(JSON.stringify({ ok: false, grund: "EINORDNUNG_UNBESTAETIGT", automatischeWiederholung: false })); process.exitCode = 1; });
+module.exports = { paket, auswertung, eingabe, konfiguration, vorflug, grundlinie, kostenbeleg, transport, ausfuehren,
+  KEY, PREFIX, BRANCH, TAG, MAX_COST, MAX_MS, ALT_TICKET, REST_TICKET };

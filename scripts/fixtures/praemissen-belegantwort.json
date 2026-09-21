@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "eingabeHash": "dd4d03687f4e22946aa83c1d7a5f8659b92b93aacd08d9f2726c447c0f65c6a4",
+  "faelle": [
+    {
+      "id": "f0ad85d232a15",
+      "praemissen": [
+        {
+          "satz": 0,
+          "behauptung": "Es gibt eine Forderung des Verbands B zur Verwaltungsreform.",
+          "art": "sachangabe",
+          "befund": "getragen",
+          "belege": [
+            {
+              "referenz": "f0ad85d232a15q",
+              "zitat": "In einem Gastbeitrag kritisiert Verband A die Forderung des Verbands B zur Verwaltungsreform."
+            }
+          ]
+        },
+        {
+          "satz": 0,
+          "behauptung": "Verband A kritisiert diese Forderung in einem Gastbeitrag.",
+          "art": "sachangabe",
+          "befund": "getragen",
+          "belege": [
+            {
+              "referenz": "f0ad85d232a15q",
+              "zitat": "In einem Gastbeitrag kritisiert Verband A die Forderung des Verbands B zur Verwaltungsreform."
+            }
+          ]
+        },
+        {
+          "satz": 0,
+          "behauptung": "Die Redaktion macht sich die Position von Verband A nicht zu eigen.",
+          "art": "sachangabe",
+          "befund": "getragen",
+          "belege": [
+            {
+              "referenz": "f0ad85d232a15q",
+              "zitat": "Die Redaktion macht sich diese Position nicht zu eigen."
+            }
+          ]
+        },
+        {
+          "satz": 0,
+          "behauptung": "Der Adressat hat einen fachlichen Bezug zu öffentlicher Verwaltung (als Grundlage, die Forderung und Kritik getrennt zu prüfen).",
+          "art": "fachbezug",
+          "befund": "getragen",
+          "belege": [
+            {
+              "referenz": "f0ad85d232a15p",
+              "zitat": "Stellvertretende Mitgliedschaft: Verkehrsausschuss. Schwerpunkt: Öffentliche Verwaltung."
+            }
+          ]
+        },
+        {
+          "satz": 0,
+          "behauptung": "Der Satz ist ein Vorschlag (Du könntest ...), also keine Tatsachenbehauptung über bereits erfolgte Handlung.",
+          "art": "vorschlag",
+          "befund": "keineTatsachenbehauptung",
+          "belege": [
+            {
+              "referenz": "f0ad85d232a15",
+              "zitat": "Du könntest die Forderung von Verband B und die Kritik von Verband A getrennt bewerten, bevor du Stellung beziehst."
+            }
+          ]
+        }
+      ],
+      "urteil": "tragfaehig",
+      "begruendung": "Alle sachlichen Voraussetzungen (Existenz der Forderung, die Kritik durch Verband A, Redaktionshinweis) sind durch die Quelle belegt; Profil belegt fachlichen Schwerpunkt. Der Satz selbst ist ein Vorschlag (keineTatsachenbehauptung). Somit sind keine ungetragenen Voraussetzungen vorhanden."
+    },
+    {
+      "id": "f28d940d3efec",
+      "praemissen": [
+        {
+          "satz": 0,
+          "behauptung": "Der Stadtrat hat eine neue Steuer auf Busfahrkarten eingeführt.",
+          "art": "sachangabe",
+          "befund": "widersprochen",
+          "belege": [
+            {
+              "referenz": "f28d940d3efecq",
+              "zitat": "Der Stadtrat beschließt ausschließlich einen Zuschuss von 20 Euro für Busfahrkarten. Eine neue Steuer wird ausdrücklich nicht eingeführt."
+            }
+          ]
+        },
+        {
+          "satz": 0,
+          "behauptung": "Der Stadtrat beschloss einen Zuschuss von 20 Euro für Busfahrkarten (statt einer Steuer).",
+          "art": "sachangabe",
+          "befund": "getragen",
+          "belege": [
+            {
+              "referenz": "f28d940d3efecq",
+              "zitat": "Der Stadtrat beschließt ausschließlich einen Zuschuss von 20 Euro für Busfahrkarten."
+            }
+          ]
+        },
+        {
+          "satz": 0,
+          "behauptung": "Der Satz ist ein Vorschlag (Du könntest ...), also keine Tatsachenbehauptung über bereits erfolgte Handlung; er setzt aber stillschweigend voraus, dass eine neue Steuer existiert oder geplant sei.",
+          "art": "vorschlag",
+          "befund": "offen",
+          "belege": [
+            {
+              "referenz": "f28d940d3efec",
+              "zitat": "Du könntest die neue Steuer auf Busfahrkarten kritisieren."
+            }
+          ]
+        },
+        {
+          "satz": 0,
+          "behauptung": "Der Adressat hat einen fachlichen Bezug zum Verkehrsthema (als Grundlage, Kritik zu üben).",
+          "art": "fachbezug",
+          "befund": "getragen",
+          "belege": [
+            {
+              "referenz": "f28d940d3efecp",
+              "zitat": "Stellvertretende Mitgliedschaft: Verkehrsausschuss. Schwerpunkt: Öffentliche Verwaltung."
+            }
+          ]
+        }
+      ],
+      "urteil": "widersprochen",
+      "begruendung": "Die entscheidende Voraussetzung (es gebe eine \"neue Steuer\" auf Busfahrkarten) wird in der Quelle ausdrücklich verneint; stattdessen wurde nur ein Zuschuss beschlossen. Daher widerspricht die Nachricht der Quelle."
+    }
+  ]
+}
