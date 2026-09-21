@@ -1,25 +1,28 @@
 # CURRENT STATE — Helmut
 
-**21.09.2026: Profilvertrag integriert; Inhaltspruefung und500er Start offen.**
-Main `dcf024e24fa19c397bc57874fb4c123919052a0a` nach PR487 unveraendert.
-Production `dpl_9qmwbkvHw3SEykYYXZUvSGm8uVQj` READY, Alias passend;
-Main CI35578150136 abgeschlossen erfolgreich. PR486 Profilbindung integriert.
-Versuche35573253937/35575743755 geschlossen, Antworten privat gesichert.
-Profilpaare funktionieren; Review bestaetigte unbelegte Sach und Rollenpraemissen.
-SQL21.09.09:01:10 UTC:504/0, keine Sperren, Leases, offenen Jobs oder jungen
-Prozesse; Tagesbuchung0,153320 USD bei4 USD, offene Reserve0.
-Dauerhafte Betreiberfreigabe fuer Auftragsschritte innerhalb des bestehenden
-4 USD Tagesbudgets; keine erneute Kostenfrage in diesem Rahmen.
-Vorbereitet: getrennte Praemissenpruefung mit18 vorab festgelegten Sollfaellen.
-Je6 positive, negative und unklare Faelle; zwei alte Fehlurteile unveraendert.
-Sollurteile bleiben ausserhalb der Anbieterpayload. Zitatbindung beweist keine
-Bedeutung. Max3 mini Aufrufe, volle Reserve0,636 USD,5 Minuten, kein Retry;
-erste fehlerhafte Gruppe stoppt. Neue Quittung schuetzt beide alten Versuche.
-Noch kein bezahlter Methodenvergleich; keine Produktanbindung oder Abnahme.
-Gezielt18/18 Vertrags und14/14 Ausfuehrergruppen gruen, keine lokale Gesamtsuite.
-36er Produktabnahme,500er Vollversorgung sowie Zeit und Kosten bleiben offen.
-Keine Aktivierung, Migration, Imports oder Produkttexte. PR479 bis482 Forschung.
-[Belegplan und neuer Vergleich](betrieb/prosa-belegplan-2026-09-20.md#praemissenvergleich-mit-getrennten-sollurteilen).
+**21.09.2026: Praemissenvergleich technisch gestoppt; ungesendete Restfaelle vorbereitet.**
+Main `dcf024e24fa19c397bc57874fb4c123919052a0a`, Production
+`dpl_9qmwbkvHw3SEykYYXZUvSGm8uVQj` READY, Main CI35578150136 gruen.
+PR488 ohne Merge geschlossen; CI35582868841:443/443 in815s, alle Stufen gruen.
+Versuch35584480605:1 Sendeversuch, ETIMEDOUT nach20328ms, kein HTTP Status
+oder Antworttext.0/18 bewertet. Quittung geschlossen, privat gesichert.
+Sechs moeglicherweise gesendete Faelle bleiben gesperrt, kein Retry.
+Kosten unbekannt:0,212 USD voll reserviert. Tagesbuchung0,153320 USD,
+insgesamt0,365320 USD gebunden bei4 USD; keine Erstattung oder Nullbuchung.
+SQL09:40:40 UTC:504/0, keine lebenden Sperren, Leases, offenen Jobs oder jungen
+Prozesse; vier Schutzvergleichswerte gegen09:37:13 identisch.
+Kostenregel2 erlaubt ANDERE Arbeit unter voller Deckung der Altreserve.
+PR489 deshalb vor Merge ersetzt: offene Reserve ist kein globaler Budgetstopp.
+Vorbereitet: nur12 zuvor ungesendete Faelle, sechs Zweiergruppen, maximal
+6 mini Aufrufe und1,272 USD neue Vollreserve; gesamte Deckung1,637320 USD.
+Unveraenderte Sollurteile und Pruefmethode, Ausschluss der sechs Altfaelle
+inhaltlich gebunden. Erste Abweichung stoppt; unveraendertes20s HTTP Limit.
+Gezielt17/17 neue Ausfuehrergruppen; keine Wiederholung der alten Tests.
+Noch kein Restvergleich. Auch12/12 waeren keine18er oder36er Fachabnahme.
+Produktbelege, frische500er Vollversorgung, Zeit und Kosten bleiben offen.
+Keine Aktivierung, Migration, Imports oder Produkttexte. Betreiberfreigabe
+innerhalb4 USD bleibt gueltig; keine neue Kostenfrage.
+[Belege und sichere Fortsetzung](betrieb/prosa-belegplan-2026-09-20.md#nur-ungesendete-restfaelle-nach-dem-timeout).
 
 **20.09.2026: Quellenreparaturen erfolgreich integriert; Gesamtziel teilweise abgeschlossen.** PR471,472 und473 sind integriert. Letzter fachlicher Main Stand `c070661f18bc001e26443d331672601e62ff2018`, Deployment `dpl_C7ZH7FxjpmFpEetKkyBUYihyNbar` READY. Exakte PR473 CI35510294577:435/435 Suiten in800s, Browser50/50, PostgreSQL23/0+26/0+48/0; keine offenen Reviewpunkte. HTTP200 liefert Versionc070661f. SQL12:37:39 UTC:504/0, keine lebenden Sperren/Leases, offenen Jobs oder jungen offenen Prozesse; alle vier Hashgrundlinien seit12:35:27 unveraendert. Tageskosten0,264700 USD, Grenze4 USD, offene Reserve0. Ereignisketten sind fuer die belegten Faelle getrennt, amtliche Originalangaben erhalten, verschiedene DIP Kennungen gegen Titel und RSS Reihenfolge geschuetzt und Quellentitel nicht mehr sinnveraendernd abgeschnitten. Neue Gegenproben lokal jeweils einmal; keine Wiederholung bestandener lokaler Suiten. Allgemeine Faktenbindung, frische Vollversorgung und gemessene Zeit/Kosten bleiben offen. Keine neuen Modellaufrufe, Imports oder Aktivierungen durch diese Sitzung. [Integration](betrieb/500-betriebsplan-2026-09-20.md#integration-pr473) und [konkrete Restarbeit](betrieb/500-betriebsplan-2026-09-20.md#restarbeit-nach-den-quellenreparaturen). Dieser abschliessende reine Dokumentations PR folgt CLAUDE.md Paragraph9; sein eigener Merge und Deploymentstand werden nicht rekursiv nachdokumentiert.
 

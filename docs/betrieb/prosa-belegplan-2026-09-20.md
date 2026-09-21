@@ -1034,3 +1034,79 @@ innerhalb des4 USD Tagesbudgets umfasst diesen Vergleich. Vor Start sind die
 exakte Pflicht CI, frischer Production und Budgetstand sowie dauerhaft privat
 gesicherter Entschluesselungsschluessel erforderlich. Lokal werden nur die
 neuen Vertrags und Ausfuehrerpruefungen sowie der Dokumentationsvertrag geprueft.
+
+
+## Nur ungesendete Restfaelle nach dem Timeout
+
+21.09.2026. PR488 bleibt ohne Merge geschlossen. Exakte Pflicht
+CI35582868841 auf94ec4884b7508c1169904aaed3b322c8d5af02b4 erfolgreich:
+443/443 in815s, Browser, Vorschau19/19, Datenbank23/0,26/0,48/0.
+Der einmalige Run35584480605, Job106284528156, begann09:39:20.829 UTC
+und endete09:39:57.969 UTC nach einem Sendeversuch. Zentrale KI Schnittstelle:
+request-error:ETIMEDOUT nach20328ms, kein HTTP Statuscode und keine
+Antwortbytes. Der zentrale20s Timeout blieb unveraendert; der zusaetzliche
+30s Transportdeckel war nicht die ausgeloeste Grenze. Ob der Anbieter den
+Auftrag bearbeitete, ist unbekannt. Keine Modell oder Netzursache behaupten.
+0/18 Faelle bewertet, kein semantisches Urteil ueber die Methode.
+
+Transportquittung, Paket, Workflowlog und Abschluss sind dauerhaft privat
+gesichert und entschluesselt. Quittung prosaPraemissen20260921 geschlossen,
+EINORDNUNG_MODELLAUSGANG. Ticket2ec7ab92-7d20-45db-94b9-9004f32f55d9
+ungeklaert, volle212000 Mikro USD gebunden. Token und Istkosten unbekannt.
+Tagesbuchung0,153320 USD, offene Reserve0,212 USD, insgesamt0,365320 USD.
+Keine Rueckerstattung und keine0 USD oder0,212 USD Istkosten behaupten.
+
+Rein lesende Nachkontrolle09:40:40 UTC:504/0, keine lebenden Sperren, Leases,
+offenen Jobs oder jungen Prozesse. Alle vier MD5 Werte gegen09:37:13 gleich:
+Profilec32b7d4f76b4ad70ace0cac91c3e94c3,
+Konten3c5b0b5a6314f31c395b8758b166c5c3,
+Main5ee6c52fa40a96a92bfa854a126fe42a,
+geschuetzter Auth Inhaltec7f806afe374b85b138733ba1602afc.
+Nur prosaPraemissen20260921,llmUsage,testKostenTage,_authStoreRevision waren
+ausgenommen. Beide aelteren Quittungen sind unveraendert geschuetzt.
+Main dcf024e24fa19c397bc57874fb4c123919052a0a und READY Deployment
+dpl_9qmwbkvHw3SEykYYXZUvSGm8uVQj bleiben unveraendert.
+
+Der vorlaeufige reine Dokumentations PR489 wird vor Merge ersetzt. Er
+verallgemeinerte die zusaetzliche Sperre des isolierten Ausfuehrers faelschlich
+zum globalen Budgetstopp. Die bereits geltende Kostenregel2 erlaubt hingegen
+andere Arbeit, wenn abgerechnet + reserviert + ungeklaert + neue volle Reserve
+hoechstens4 USD sind. Der verlorene Auftrag bleibt gesperrt; ein Commitwechsel
+oder eine neue Kennung darf ihn nicht als unbehandelt ausgeben. Die bestehende
+Betreiberfreigabe reicht aus; kein neuer pauschaler Freigabebedarf.
+
+Der getrennte Ausfuehrer scripts/prosa-restfaelle-versuch.js verwendet deshalb
+ausschliesslich die ZWOELF Faelle aus den urspruenglichen Gruppen2 und3,
+die nach dem ersten Fehler nie gesendet wurden. Die sechs Faelle der Gruppe1
+sind sowohl ueber ihre Kennungen als auch Eingabehashes ausgeschlossen.
+Die alte Quittung muss genau eine begonnene erste Gruppe mit dem bekannten
+Eingabehash, Lauf, Commit und Paket ausweisen. Ein anderer Altstand sperrt.
+Altpaket8f3b9b53f720fb76cfac6ad545928fbcad5e384bc31b183ffe8a1e892e429d74
+bleibt unveraendert. Kein Sollurteil, Beispiel oder Pruefprompt wird inhaltlich
+an ein Ergebnis angepasst; auch die beiden bekannten falschen Positivurteile
+sind weiterhin enthalten. Nur die Gruppengroesse sinkt von sechs auf zwei.
+
+Maximal sechs Aufrufe, sechs Zweiergruppen, neue volle Reserve1,272 USD,
+zusammen mit Tagesbuchung und alter Reserve1,637320 USD von4 USD gedeckt.
+Die bestehende Kostenregel und der zentrale20s Timeout werden nicht geaendert.
+Maximal5 Minuten; erste technische oder fachliche Abweichung stoppt.
+Ausschliesslich das exakt bekannte, volle und unveraenderte alte Ticket darf
+als offene Reserve bestehen; jede andere offene Buchung sperrt vor Start.
+Alle alten Quittungen und Tickets bleiben waehrend neuer Arbeit geschuetzt.
+Neuer Branch codex/prosa-restfaelle-20260921, SchluesselprosaRestfaelle20260921,
+Prefix RESTFAELLE_EINMAL, exakter Code/Production/Paket/Empfaengervertrag.
+
+Gezielt17/17 neue Ausfuehrergruppen gruen: unter anderem Ausschluss aller
+sechs alten Faelle auch bei neuem Commit, erhaltene alte Vollreserve und
+Quittung, exakte Budgetgrenze, fremde Reserve, abweichender Altstand,
+Antwortsicherung, Kosten, Abbruch und Wiederholungsverbot. Alte gruene lokale
+Vertrags und Ausfuehrertests werden nicht wiederholt; Pflicht CI automatisch.
+Noch kein bezahlter Restvergleich. Selbst12/12 koennen wegen der sechs
+unbekannten Ergebnisse keine18er Methodenabnahme und keine36er Produktabnahme
+begruenden. Keine Produktanbindung, Profilaktivierung, Migration oder Imports.
+
+Danach bleiben Produktbelege, frische500er Vollversorgung und Kostenplanung
+offen. Letztes vollstaendiges Entwurfs und Pruefpaar0,012146 USD;500 solche
+Paare waeren6,073 USD ohne Quellenverstehen oder letzte Reserve. Das ist eine
+Hochrechnung aus einem Einzelfall, keine gemessene500er Summe oder Freigabe
+einer Budgeterhoehung. Kein neuer500er Start.
