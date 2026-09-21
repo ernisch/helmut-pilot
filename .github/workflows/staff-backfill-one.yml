@@ -283,11 +283,11 @@ jobs:
     # Ein einziger Modellaufruf ueber exakt acht eingefrorene Sollfaelle.
     if: >-
       github.repository == 'ernisch/helmut-pilot' &&
-      github.ref == 'refs/heads/codex/prosa-modellvergleich-kostenfix-20260921' &&
+      github.ref == 'refs/heads/codex/prosa-modellvergleich-timeoutfix-20260921' &&
       github.event_name == 'workflow_dispatch' && github.run_attempt == 1 &&
       startsWith(inputs.confirm_text, 'MODELLVERGLEICH8_EINMAL:')
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     concurrency:
       group: helmut-500-kontrollierte-facharbeit
       cancel-in-progress: false
@@ -308,6 +308,9 @@ jobs:
           AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
           AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
           AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT || secrets.AZURE_OPENAI_DEPLOYMENT }}
+          # Nur job-lokal: erhoeht den KI-HTTP-Timeout fuer genau diesen einen
+          # isolierten 8-Fall-Aufruf. Keine Produktions-Environment-Aenderung.
+          HELMUT_KI_TIMEOUT_MS: "120000"
           HELMUT_STORAGE_BACKEND: "supabase"
           HELMUT_SUPABASE_STORE_ID: "main"
           HELMUT_SUPABASE_AUTH_STORE_ID: "main-auth"
