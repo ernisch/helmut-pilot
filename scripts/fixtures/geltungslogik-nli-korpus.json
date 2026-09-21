@@ -1,0 +1,444 @@
+{
+  "version": 1,
+  "synthetisch": true,
+  "zweck": "Einmalige lokale NLI Messung, keine Quellenfreigabe, keine Produktintegration. Alte Referenzen bleiben unveraendert.",
+  "modell": "MoritzLaurer/mDeBERTa-v3-base-mnli-xnli",
+  "revision": "8adb042d524ecd5c26d3e3ba0e3fbcf7e2d0864c",
+  "format": "onnx/model_quantized.onnx",
+  "modellSha256": "27c39e884c14b03cf46cfc5485971b6db70ff330220d93dfe729c63fde43af0e",
+  "schwelle": 0.9,
+  "faelle": [
+    {
+      "id": "f01-1",
+      "klasse": "finanzwirkung",
+      "quelle": "Der Stadtrat beschließt einen Zuschuss von 20 Euro für Busfahrkarten. Für Berechtigte sinkt dadurch der Fahrpreis um 20 Euro.",
+      "behauptung": "Durch den beschlossenen Zuschuss sinkt der Fahrpreis für Berechtigte um 20 Euro.",
+      "sollGetragen": true,
+      "begruendung": "Berechtigte und Betrag samt Ursache ausdrücklich genannt."
+    },
+    {
+      "id": "f01-2",
+      "klasse": "finanzwirkung",
+      "quelle": "Der Stadtrat beschließt einen Zuschuss von 20 Euro für Busfahrkarten. Für Berechtigte sinkt dadurch der Fahrpreis um 20 Euro.",
+      "behauptung": "Der Fahrpreis sinkt für alle Fahrgäste um 20 Euro.",
+      "sollGetragen": false,
+      "begruendung": "Die Wirkung ist auf Berechtigte beschränkt."
+    },
+    {
+      "id": "f01-3",
+      "klasse": "finanzwirkung",
+      "quelle": "Der Stadtrat beschließt einen Zuschuss von 20 Euro für Busfahrkarten. Für Berechtigte sinkt dadurch der Fahrpreis um 20 Euro.",
+      "behauptung": "Der Stadtrat beschließt eine Steuer von 20 Euro.",
+      "sollGetragen": false,
+      "begruendung": "Ein Zuschuss ist genannt, keine Steuer."
+    },
+    {
+      "id": "f02-1",
+      "klasse": "finanzwirkung",
+      "quelle": "Der Ausgleichsbetrag könnte entfallen. Worum es sich bei diesem Betrag handelt, bleibt offen.",
+      "behauptung": "Der Ausgleichsbetrag könnte entfallen, seine Art bleibt offen.",
+      "sollGetragen": true,
+      "begruendung": "Möglichkeit und offene Art ausdrücklich genannt."
+    },
+    {
+      "id": "f02-2",
+      "klasse": "finanzwirkung",
+      "quelle": "Der Ausgleichsbetrag könnte entfallen. Worum es sich bei diesem Betrag handelt, bleibt offen.",
+      "behauptung": "Der Ausgleichsbetrag ist abgeschafft.",
+      "sollGetragen": false,
+      "begruendung": "Möglichkeit ist kein Vollzug."
+    },
+    {
+      "id": "f02-3",
+      "klasse": "finanzwirkung",
+      "quelle": "Der Ausgleichsbetrag könnte entfallen. Worum es sich bei diesem Betrag handelt, bleibt offen.",
+      "behauptung": "Bei dem Ausgleichsbetrag handelt es sich um eine Steuer.",
+      "sollGetragen": false,
+      "begruendung": "Die Art bleibt offen."
+    },
+    {
+      "id": "f03-1",
+      "klasse": "finanzwirkung",
+      "quelle": "Die Stadt nennt einen Zuschuss von 20 Euro für Busfahrkarten; der Betreiber bestreitet eine Senkung des Fahrpreises. Eine gemeinsame Klärung steht aus.",
+      "behauptung": "Der Betreiber bestreitet eine Senkung des Fahrpreises.",
+      "sollGetragen": true,
+      "begruendung": "Bestreiten ist dem Betreiber zugeschrieben."
+    },
+    {
+      "id": "f03-2",
+      "klasse": "finanzwirkung",
+      "quelle": "Die Stadt nennt einen Zuschuss von 20 Euro für Busfahrkarten; der Betreiber bestreitet eine Senkung des Fahrpreises. Eine gemeinsame Klärung steht aus.",
+      "behauptung": "Der Betreiber bestätigt die Fahrpreissenkung.",
+      "sollGetragen": false,
+      "begruendung": "Bestreiten wird in Bestätigung umgekehrt."
+    },
+    {
+      "id": "f03-3",
+      "klasse": "finanzwirkung",
+      "quelle": "Die Stadt nennt einen Zuschuss von 20 Euro für Busfahrkarten; der Betreiber bestreitet eine Senkung des Fahrpreises. Eine gemeinsame Klärung steht aus.",
+      "behauptung": "Die gemeinsame Klärung ist abgeschlossen.",
+      "sollGetragen": false,
+      "begruendung": "Klärung steht aus."
+    },
+    {
+      "id": "f04-1",
+      "klasse": "vollzug",
+      "quelle": "Das Ministerium hat die Verlängerung des Programms beschlossen. Die zuständige Stelle bestätigt: Seit dem 1. September 2026 wird das verlängerte Programm umgesetzt.",
+      "behauptung": "Die zuständige Stelle bestätigt die Umsetzung des verlängerten Programms seit dem 1. September 2026.",
+      "sollGetragen": true,
+      "begruendung": "Sprecher, Umsetzung und deren Beginn ausdrücklich genannt."
+    },
+    {
+      "id": "f04-2",
+      "klasse": "vollzug",
+      "quelle": "Das Ministerium hat die Verlängerung des Programms beschlossen. Die zuständige Stelle bestätigt: Seit dem 1. September 2026 wird das verlängerte Programm umgesetzt.",
+      "behauptung": "Das Ministerium hat noch keinen Beschluss zur Verlängerung gefasst.",
+      "sollGetragen": false,
+      "begruendung": "Der Beschluss wird im Original genannt."
+    },
+    {
+      "id": "f04-3",
+      "klasse": "vollzug",
+      "quelle": "Das Ministerium hat die Verlängerung des Programms beschlossen. Die zuständige Stelle bestätigt: Seit dem 1. September 2026 wird das verlängerte Programm umgesetzt.",
+      "behauptung": "Der Verlängerungsbeschluss wurde am 1. September 2026 gefasst.",
+      "sollGetragen": false,
+      "begruendung": "Umsetzungsbeginn ist kein Beschlussdatum."
+    },
+    {
+      "id": "f05-1",
+      "klasse": "vollzug",
+      "quelle": "Das Ministerium prüft die Verlängerung des Programms. Eine Entscheidung ist noch nicht getroffen.",
+      "behauptung": "Das Ministerium prüft die Verlängerung; eine Entscheidung fehlt noch.",
+      "sollGetragen": true,
+      "begruendung": "Prüfung und fehlende Entscheidung ausdrücklich genannt."
+    },
+    {
+      "id": "f05-2",
+      "klasse": "vollzug",
+      "quelle": "Das Ministerium prüft die Verlängerung des Programms. Eine Entscheidung ist noch nicht getroffen.",
+      "behauptung": "Die Verlängerung des Programms ist beschlossen.",
+      "sollGetragen": false,
+      "begruendung": "Prüfung ist kein Beschluss."
+    },
+    {
+      "id": "f05-3",
+      "klasse": "vollzug",
+      "quelle": "Das Ministerium prüft die Verlängerung des Programms. Eine Entscheidung ist noch nicht getroffen.",
+      "behauptung": "Das verlängerte Programm wird bereits umgesetzt.",
+      "sollGetragen": false,
+      "begruendung": "Keine Umsetzung belegt."
+    },
+    {
+      "id": "f06-1",
+      "klasse": "vollzug",
+      "quelle": "Eine Meldung behauptet, das Programm sei verlängert. Das Ministerium bestätigt weder einen Beschluss noch die Umsetzung.",
+      "behauptung": "Eine Meldung behauptet, das Programm sei verlängert; das Ministerium bestätigt die Umsetzung nicht.",
+      "sollGetragen": true,
+      "begruendung": "Behauptung und Nichtbestätigung bleiben getrennt."
+    },
+    {
+      "id": "f06-2",
+      "klasse": "vollzug",
+      "quelle": "Eine Meldung behauptet, das Programm sei verlängert. Das Ministerium bestätigt weder einen Beschluss noch die Umsetzung.",
+      "behauptung": "Das Programm wird nicht umgesetzt.",
+      "sollGetragen": false,
+      "begruendung": "Nichtbestätigung widerlegt den Vollzug nicht."
+    },
+    {
+      "id": "f06-3",
+      "klasse": "vollzug",
+      "quelle": "Eine Meldung behauptet, das Programm sei verlängert. Das Ministerium bestätigt weder einen Beschluss noch die Umsetzung.",
+      "behauptung": "Das Ministerium bestätigt den Verlängerungsbeschluss.",
+      "sollGetragen": false,
+      "begruendung": "Der Beschluss wird gerade nicht bestätigt."
+    },
+    {
+      "id": "f07-1",
+      "klasse": "zuschreibung",
+      "quelle": "In einem Gastbeitrag kritisiert Verband A die Forderung des Verbands B. Die Redaktion macht sich diese Position nicht zu eigen.",
+      "behauptung": "Verband A kritisiert in einem Gastbeitrag die Forderung des Verbands B.",
+      "sollGetragen": true,
+      "begruendung": "Sprecher, Publikationsform und Kritikgegenstand ausdrücklich genannt."
+    },
+    {
+      "id": "f07-2",
+      "klasse": "zuschreibung",
+      "quelle": "In einem Gastbeitrag kritisiert Verband A die Forderung des Verbands B. Die Redaktion macht sich diese Position nicht zu eigen.",
+      "behauptung": "Die Redaktion übernimmt die Kritik von Verband A.",
+      "sollGetragen": false,
+      "begruendung": "Die Redaktion distanziert sich."
+    },
+    {
+      "id": "f07-3",
+      "klasse": "zuschreibung",
+      "quelle": "In einem Gastbeitrag kritisiert Verband A die Forderung des Verbands B. Die Redaktion macht sich diese Position nicht zu eigen.",
+      "behauptung": "Verband A richtet seine Mitteilung ausdrücklich an Verband B.",
+      "sollGetragen": false,
+      "begruendung": "Kritik an der Forderung belegt keine ausdrücklich an B gerichtete Mitteilung."
+    },
+    {
+      "id": "f08-1",
+      "klasse": "zuschreibung",
+      "quelle": "Verband B kritisiert die Forderung des Verbands A. Verband A ist Adressat dieser Kritik, nicht ihr Urheber.",
+      "behauptung": "Verband B äußert die Kritik und Verband A ist ihr Adressat.",
+      "sollGetragen": true,
+      "begruendung": "Beide Rollen ausdrücklich genannt."
+    },
+    {
+      "id": "f08-2",
+      "klasse": "zuschreibung",
+      "quelle": "Verband B kritisiert die Forderung des Verbands A. Verband A ist Adressat dieser Kritik, nicht ihr Urheber.",
+      "behauptung": "Verband A äußert die Kritik an Verband B.",
+      "sollGetragen": false,
+      "begruendung": "Urheber und Adressat vertauscht."
+    },
+    {
+      "id": "f08-3",
+      "klasse": "zuschreibung",
+      "quelle": "Verband B kritisiert die Forderung des Verbands A. Verband A ist Adressat dieser Kritik, nicht ihr Urheber.",
+      "behauptung": "Verband B ist Adressat dieser Kritik.",
+      "sollGetragen": false,
+      "begruendung": "Der ausdrücklich genannte Adressat ist A."
+    },
+    {
+      "id": "f09-1",
+      "klasse": "zuschreibung",
+      "quelle": "Der Bericht erwähnt Kritik an einer Forderung. Wer die Kritik äußert und an wen sie gerichtet ist, wird nicht genannt.",
+      "behauptung": "Urheber und Adressat der erwähnten Kritik werden nicht genannt.",
+      "sollGetragen": true,
+      "begruendung": "Beide Rollen ausdrücklich unbekannt."
+    },
+    {
+      "id": "f09-2",
+      "klasse": "zuschreibung",
+      "quelle": "Der Bericht erwähnt Kritik an einer Forderung. Wer die Kritik äußert und an wen sie gerichtet ist, wird nicht genannt.",
+      "behauptung": "Verband A ist Urheber der Kritik.",
+      "sollGetragen": false,
+      "begruendung": "Kein Urheber genannt."
+    },
+    {
+      "id": "f09-3",
+      "klasse": "zuschreibung",
+      "quelle": "Der Bericht erwähnt Kritik an einer Forderung. Wer die Kritik äußert und an wen sie gerichtet ist, wird nicht genannt.",
+      "behauptung": "Die Kritik richtet sich an ein Ministerium.",
+      "sollGetragen": false,
+      "begruendung": "Kein Adressat genannt."
+    },
+    {
+      "id": "f10-1",
+      "klasse": "zeit",
+      "quelle": "Nach dem Konzert 2024 sind neue Auftritte am 3. Mai 2028 in Bonn und am 7. Mai 2028 in Kiel geplant.",
+      "behauptung": "Neue Auftritte sind am 3. Mai 2028 in Bonn und am 7. Mai 2028 in Kiel geplant.",
+      "sollGetragen": true,
+      "begruendung": "Beide neuen Termine und Orte ausdrücklich genannt."
+    },
+    {
+      "id": "f10-2",
+      "klasse": "zeit",
+      "quelle": "Nach dem Konzert 2024 sind neue Auftritte am 3. Mai 2028 in Bonn und am 7. Mai 2028 in Kiel geplant.",
+      "behauptung": "Der neue Auftritt in Bonn ist für 2024 geplant.",
+      "sollGetragen": false,
+      "begruendung": "Rückblick mit neuer Planung vermischt."
+    },
+    {
+      "id": "f10-3",
+      "klasse": "zeit",
+      "quelle": "Nach dem Konzert 2024 sind neue Auftritte am 3. Mai 2028 in Bonn und am 7. Mai 2028 in Kiel geplant.",
+      "behauptung": "Der Auftritt in Kiel ist am 3. Mai 2028 geplant.",
+      "sollGetragen": false,
+      "begruendung": "Orte und Termine vertauscht."
+    },
+    {
+      "id": "f11-1",
+      "klasse": "zeit",
+      "quelle": "Die Meldung vom 20. September 2026 blickt auf das Konzert 2024 zurück. Sie nennt keinen neuen Auftritt und keine Handlungsfrist.",
+      "behauptung": "Die Meldung blickt auf das Konzert von 2024 zurück und nennt keine Handlungsfrist.",
+      "sollGetragen": true,
+      "begruendung": "Rückblick und fehlende Frist ausdrücklich genannt."
+    },
+    {
+      "id": "f11-2",
+      "klasse": "zeit",
+      "quelle": "Die Meldung vom 20. September 2026 blickt auf das Konzert 2024 zurück. Sie nennt keinen neuen Auftritt und keine Handlungsfrist.",
+      "behauptung": "Die Handlungsfrist endet am 20. September 2026.",
+      "sollGetragen": false,
+      "begruendung": "Publikationsdatum ist keine Handlungsfrist."
+    },
+    {
+      "id": "f11-3",
+      "klasse": "zeit",
+      "quelle": "Die Meldung vom 20. September 2026 blickt auf das Konzert 2024 zurück. Sie nennt keinen neuen Auftritt und keine Handlungsfrist.",
+      "behauptung": "Ein neuer Auftritt ist für 2028 angekündigt.",
+      "sollGetragen": false,
+      "begruendung": "Kein neuer Auftritt genannt."
+    },
+    {
+      "id": "f12-1",
+      "klasse": "zeit",
+      "quelle": "Ein neuer Auftritt ist geplant. Datum und Ort stehen noch nicht fest.",
+      "behauptung": "Ein neuer Auftritt ist geplant, Datum und Ort stehen noch nicht fest.",
+      "sollGetragen": true,
+      "begruendung": "Planung und Unbestimmtheit ausdrücklich genannt."
+    },
+    {
+      "id": "f12-2",
+      "klasse": "zeit",
+      "quelle": "Ein neuer Auftritt ist geplant. Datum und Ort stehen noch nicht fest.",
+      "behauptung": "Der Auftritt findet am 3. Mai 2028 in Bonn statt.",
+      "sollGetragen": false,
+      "begruendung": "Datum und Ort unbekannt."
+    },
+    {
+      "id": "f12-3",
+      "klasse": "zeit",
+      "quelle": "Ein neuer Auftritt ist geplant. Datum und Ort stehen noch nicht fest.",
+      "behauptung": "Der neue Auftritt wurde abgesagt.",
+      "sollGetragen": false,
+      "begruendung": "Planung ist keine Absage."
+    },
+    {
+      "id": "f13-1",
+      "klasse": "profil",
+      "quelle": "Das Mandatsregister führt Alex als stellvertretendes Mitglied des Verkehrsausschusses. Alex hat keinen Vorsitz.",
+      "behauptung": "Das Register führt Alex als stellvertretendes Mitglied des Verkehrsausschusses.",
+      "sollGetragen": true,
+      "begruendung": "Registerangabe nennt stellvertretende Mitgliedschaft."
+    },
+    {
+      "id": "f13-2",
+      "klasse": "profil",
+      "quelle": "Das Mandatsregister führt Alex als stellvertretendes Mitglied des Verkehrsausschusses. Alex hat keinen Vorsitz.",
+      "behauptung": "Alex hat den Vorsitz des Verkehrsausschusses.",
+      "sollGetragen": false,
+      "begruendung": "Vorsitz ausdrücklich verneint."
+    },
+    {
+      "id": "f13-3",
+      "klasse": "profil",
+      "quelle": "Das Mandatsregister führt Alex als stellvertretendes Mitglied des Verkehrsausschusses. Alex hat keinen Vorsitz.",
+      "behauptung": "Das Register führt Alex als ordentliches Mitglied des Verkehrsausschusses.",
+      "sollGetragen": false,
+      "begruendung": "Stellvertretung ist keine ordentliche Mitgliedschaft."
+    },
+    {
+      "id": "f14-1",
+      "klasse": "profil",
+      "quelle": "Alex besucht als Gast eine Sitzung des Verkehrsausschusses. Eine Mitgliedschaft oder ein Vorsitz ist damit nicht belegt.",
+      "behauptung": "Alex besucht die Ausschusssitzung als Gast.",
+      "sollGetragen": true,
+      "begruendung": "Gastrolle ausdrücklich genannt."
+    },
+    {
+      "id": "f14-2",
+      "klasse": "profil",
+      "quelle": "Alex besucht als Gast eine Sitzung des Verkehrsausschusses. Eine Mitgliedschaft oder ein Vorsitz ist damit nicht belegt.",
+      "behauptung": "Der Gastbesuch belegt Alex als Ausschussmitglied.",
+      "sollGetragen": false,
+      "begruendung": "Gastbesuch ist kein Mitgliedschaftsnachweis."
+    },
+    {
+      "id": "f14-3",
+      "klasse": "profil",
+      "quelle": "Alex besucht als Gast eine Sitzung des Verkehrsausschusses. Eine Mitgliedschaft oder ein Vorsitz ist damit nicht belegt.",
+      "behauptung": "Alex ist kein Mitglied des Verkehrsausschusses.",
+      "sollGetragen": false,
+      "begruendung": "Nicht belegt bedeutet nicht widerlegt."
+    },
+    {
+      "id": "f15-1",
+      "klasse": "profil",
+      "quelle": "Alex wird beim Thema Verkehr genannt. Ausschussmitgliedschaft und Funktion sind nicht angegeben.",
+      "behauptung": "Alex wird beim Thema Verkehr genannt, seine Ausschussfunktion ist nicht angegeben.",
+      "sollGetragen": true,
+      "begruendung": "Themennennung und fehlende Rollenangabe ausdrücklich genannt."
+    },
+    {
+      "id": "f15-2",
+      "klasse": "profil",
+      "quelle": "Alex wird beim Thema Verkehr genannt. Ausschussmitgliedschaft und Funktion sind nicht angegeben.",
+      "behauptung": "Alex ist Mitglied des Verkehrsausschusses.",
+      "sollGetragen": false,
+      "begruendung": "Themennennung belegt keine Mitgliedschaft."
+    },
+    {
+      "id": "f15-3",
+      "klasse": "profil",
+      "quelle": "Alex wird beim Thema Verkehr genannt. Ausschussmitgliedschaft und Funktion sind nicht angegeben.",
+      "behauptung": "Alex gehört keinem Ausschuss an.",
+      "sollGetragen": false,
+      "begruendung": "Fehlende Angabe widerlegt Mitgliedschaften nicht."
+    },
+    {
+      "id": "f16-1",
+      "klasse": "bedingung",
+      "quelle": "Nur wenn der Stadtrat den Zuschuss beschließt, können berechtigte Verkehrsunternehmen bis zum 30. November 2026 einen Antrag stellen. Eine Bewilligung ist damit nicht zugesagt.",
+      "behauptung": "Eine Bewilligung ist durch die bedingte Antragsmöglichkeit nicht zugesagt.",
+      "sollGetragen": true,
+      "begruendung": "Fehlende Bewilligungszusage ausdrücklich genannt."
+    },
+    {
+      "id": "f16-2",
+      "klasse": "bedingung",
+      "quelle": "Nur wenn der Stadtrat den Zuschuss beschließt, können berechtigte Verkehrsunternehmen bis zum 30. November 2026 einen Antrag stellen. Eine Bewilligung ist damit nicht zugesagt.",
+      "behauptung": "Der Beschluss allein garantiert die Möglichkeit zur Antragstellung.",
+      "sollGetragen": false,
+      "begruendung": "Nur wenn nennt eine notwendige, keine allein ausreichende Bedingung."
+    },
+    {
+      "id": "f16-3",
+      "klasse": "bedingung",
+      "quelle": "Nur wenn der Stadtrat den Zuschuss beschließt, können berechtigte Verkehrsunternehmen bis zum 30. November 2026 einen Antrag stellen. Eine Bewilligung ist damit nicht zugesagt.",
+      "behauptung": "Der Antrag ist bereits bewilligt.",
+      "sollGetragen": false,
+      "begruendung": "Keine Bewilligung zugesagt oder erfolgt genannt."
+    },
+    {
+      "id": "f17-1",
+      "klasse": "bedingung",
+      "quelle": "Die Frist bis zum 30. November 2026 gilt ausschließlich für Verkehrsunternehmen. Für Abgeordnete besteht aus dieser Quelle keine Antragspflicht.",
+      "behauptung": "Die genannte Frist gilt ausschließlich für Verkehrsunternehmen.",
+      "sollGetragen": true,
+      "begruendung": "Geltung auf Unternehmen beschränkt."
+    },
+    {
+      "id": "f17-2",
+      "klasse": "bedingung",
+      "quelle": "Die Frist bis zum 30. November 2026 gilt ausschließlich für Verkehrsunternehmen. Für Abgeordnete besteht aus dieser Quelle keine Antragspflicht.",
+      "behauptung": "Abgeordnete müssen bis zum 30. November 2026 einen Antrag stellen.",
+      "sollGetragen": false,
+      "begruendung": "Fremde Frist wird zur individuellen Pflicht."
+    },
+    {
+      "id": "f17-3",
+      "klasse": "bedingung",
+      "quelle": "Die Frist bis zum 30. November 2026 gilt ausschließlich für Verkehrsunternehmen. Für Abgeordnete besteht aus dieser Quelle keine Antragspflicht.",
+      "behauptung": "Abgeordnete haben grundsätzlich niemals eine Antragspflicht.",
+      "sollGetragen": false,
+      "begruendung": "Die Negation gilt nur aus dieser Quelle, nicht universell."
+    },
+    {
+      "id": "f18-1",
+      "klasse": "bedingung",
+      "quelle": "Verkehrsunternehmen könnten einen Antrag stellen. Voraussetzung, Frist und Bewilligung sind noch ungeklärt.",
+      "behauptung": "Verkehrsunternehmen könnten einen Antrag stellen, Frist und Bewilligung sind noch ungeklärt.",
+      "sollGetragen": true,
+      "begruendung": "Möglichkeit und offene Grundlagen ausdrücklich genannt."
+    },
+    {
+      "id": "f18-2",
+      "klasse": "bedingung",
+      "quelle": "Verkehrsunternehmen könnten einen Antrag stellen. Voraussetzung, Frist und Bewilligung sind noch ungeklärt.",
+      "behauptung": "Verkehrsunternehmen erhalten eine Bewilligung.",
+      "sollGetragen": false,
+      "begruendung": "Ungeklärte Bewilligung ist keine Zusage."
+    },
+    {
+      "id": "f18-3",
+      "klasse": "bedingung",
+      "quelle": "Verkehrsunternehmen könnten einen Antrag stellen. Voraussetzung, Frist und Bewilligung sind noch ungeklärt.",
+      "behauptung": "Die Antragsfrist endet am 30. November 2026.",
+      "sollGetragen": false,
+      "begruendung": "Keine Frist bekannt."
+    }
+  ]
+}

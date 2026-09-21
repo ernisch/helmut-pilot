@@ -1,24 +1,25 @@
 # CURRENT STATE — Helmut
 
-**20.09.2026: Begrenzter unabhaengiger DIP Fakteneingang integriert; Gesamtziel teilweise abgeschlossen.**
-PR477 auf Main `7067b42f2940377dc20c66a18cdf1250d8f71de4`, Deployment
-`dpl_CeUk5VzmqrYXf4aMyjGhrhX7MdwX` READY mit Production Alias; HTTP200 liefert7067b42f.
-Exakter PR Kopf `c41178cf28125d5d060714fc0ed60df4646ee6a6`, CI35522560738:
-439/439 Suiten in655s, Browser50/50, PostgreSQL23/0, Null50026/0, Z2248/0.
-Keine Kommentare oder offenen Reviewpunkte. Automatischer Main Lauf35523295094
-beim Schreiben noch in Arbeit. Lokaler Gesamtlauf bleibt437/438 in858s;
-unveraenderte Sicherheitssuite im sauberen Checkout339/339. Neue Gruppen18/4/8 bestanden.
-Der amtliche Leser traegt Beschlusstenore, Ueberweisungen und engen Ausschussprofilbezug.
-Kein produktiver Aufrufer, keine vollstaendige Feldabdeckung oder36er Fachabnahme.
-Wirkung, individuelle Handlung, freie Nachrichten und Landesversorgung bleiben offen.
-SQL16:38:22 UTC:504/0, keine lebenden Sperren/Leases, offenen Jobs oder jungen Prozesse;
-alle vier vollstaendigen Datenhashes seit13:50:44 unveraendert. Kosten0,264700 USD,
-Reserve0, Riegel4 USD. Kein Import, Modellaufruf, Datenbankeingriff oder Teststart.
-Neun DIP Positionen mit Dokumentdatum ab18.09. enthalten keine Beschluesse/Ueberweisungen;
-keine Frische oder500er Vollversorgung daraus ableiten. Landesportale nur lesend untersucht.
-[Integration, genaue Quellenbefunde und naechste Arbeit](betrieb/prosa-belegplan-2026-09-20.md#integration-pr477).
-Dieser reine Dokumentationsabschluss erfuellt CLAUDE.md Paragraph9; eigener Merge und
-Deployment werden aus der Historie belegt, kein rekursiver Folge PR.
+**21.09.2026: Geltungslogik offline vorbereitet; Gesamtziel teilweise abgeschlossen.**
+Branch `codex/geltungslogik-20260921`, direkt auf Main `be4b237b6154248f30e175235ed81aa9893b01bf`.
+Lokal438/440 in877s; zwei Browserumgebungsfehler. Neue Logik24/24.
+Die neuen Gruppen pruefen Schlussfolgerungen aus bereits formalisierten Praemissen,
+mit Gegenbeispielen fuer falschen Sprecher, Negationsbereich und Bedingungsrichtung.
+Kein Originaltextparser, keine trustedFreigaben und keine Produktintegration.
+Allgemeiner unabhaengiger Fakteneingang,36 Produktfaelle und500er Start bleiben offen.
+Lokaler NLI Versuch54/54:3 falsch getragen,5 von18 positiven verloren; als Faktenfreigabe verworfen.
+Keine KI API Kosten, kein Import, Merge oder Production Schreibzugriff durch diesen Sprint.
+PR479/480/481 bleiben Entwuerfe mit geschlossenen Auftraegen ohne Restfreigabe.
+SQL21.09.05:12:40 UTC:504/0, keine lebenden Sperren, Leases, offenen Jobs oder jungen Prozesse.
+Alle drei Quittungen gestoppt; heutiges Kostenbuch fehlt, keine Nullrechnung behauptet.
+[Methodenstand und Grenzen](betrieb/prosa-belegplan-2026-09-20.md#getrennte-offline-gegenpruefung-von-geltungsbereichen).
+
+**20.09.2026: Begrenzter unabhaengiger DIP Fakteneingang integriert.**
+PR477 fachlich integriert, PR478 dokumentiert. Main `be4b237b6154248f30e175235ed81aa9893b01bf`;
+letztes belegtes Deployment `dpl_H133uvcugPyny1diBKuTe71Ro55V` READY laut Uebergabe.
+Beschlusstenore, Ueberweisungen und enger Ausschussprofilbezug, kein produktiver Aufrufer.
+Keine vollstaendige Feldabdeckung oder36er Fachabnahme.
+[Integration und historische Pruefstaende](betrieb/prosa-belegplan-2026-09-20.md#integration-pr477).
 
 **20.09.2026: Quellenreparaturen erfolgreich integriert; Gesamtziel teilweise abgeschlossen.** PR471,472 und473 sind integriert. Letzter fachlicher Main Stand `c070661f18bc001e26443d331672601e62ff2018`, Deployment `dpl_C7ZH7FxjpmFpEetKkyBUYihyNbar` READY. Exakte PR473 CI35510294577:435/435 Suiten in800s, Browser50/50, PostgreSQL23/0+26/0+48/0; keine offenen Reviewpunkte. HTTP200 liefert Versionc070661f. SQL12:37:39 UTC:504/0, keine lebenden Sperren/Leases, offenen Jobs oder jungen offenen Prozesse; alle vier Hashgrundlinien seit12:35:27 unveraendert. Tageskosten0,264700 USD, Grenze4 USD, offene Reserve0. Ereignisketten sind fuer die belegten Faelle getrennt, amtliche Originalangaben erhalten, verschiedene DIP Kennungen gegen Titel und RSS Reihenfolge geschuetzt und Quellentitel nicht mehr sinnveraendernd abgeschnitten. Neue Gegenproben lokal jeweils einmal; keine Wiederholung bestandener lokaler Suiten. Allgemeine Faktenbindung, frische Vollversorgung und gemessene Zeit/Kosten bleiben offen. Keine neuen Modellaufrufe, Imports oder Aktivierungen durch diese Sitzung. [Integration](betrieb/500-betriebsplan-2026-09-20.md#integration-pr473) und [konkrete Restarbeit](betrieb/500-betriebsplan-2026-09-20.md#restarbeit-nach-den-quellenreparaturen). Dieser abschliessende reine Dokumentations PR folgt CLAUDE.md Paragraph9; sein eigener Merge und Deploymentstand werden nicht rekursiv nachdokumentiert.
 
