@@ -283,7 +283,7 @@ jobs:
     # Ein einziger Modellaufruf ueber exakt acht eingefrorene Sollfaelle.
     if: >-
       github.repository == 'ernisch/helmut-pilot' &&
-      github.ref == 'refs/heads/codex/prosa-modellvergleich-8faelle-20260921' &&
+      github.ref == 'refs/heads/codex/prosa-modellvergleich-kostenfix-20260921' &&
       github.event_name == 'workflow_dispatch' && github.run_attempt == 1 &&
       startsWith(inputs.confirm_text, 'MODELLVERGLEICH8_EINMAL:')
     runs-on: ubuntu-latest
