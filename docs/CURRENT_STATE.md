@@ -1,6 +1,7 @@
 # CURRENT STATE — Helmut
 
 **21.09.2026: Geltungslogik offline vorbereitet; Gesamtziel teilweise abgeschlossen.**
+Entwurf PR482, Codekopf `130894a1a5720e9e2312801c6e90ea6fdf6fee8a`.
 Branch `codex/geltungslogik-20260921`, direkt auf Main `be4b237b6154248f30e175235ed81aa9893b01bf`.
 Lokal438/440 in877s; zwei Browserumgebungsfehler. Neue Logik24/24.
 Die neuen Gruppen pruefen Schlussfolgerungen aus bereits formalisierten Praemissen,
