@@ -110,9 +110,8 @@ function entwurf(klasse, art) {
 
 // Sollurteil je Fallart (getrennt vom Modellpayload).
 function erwartet(art) {
-  if (art === "negativ") return "nicht-akzeptiert";
   if (art === "positiv") return "akzeptiert";
-  return "ehrlich-offen";
+  return "nicht-akzeptiert";
 }
 
 // 18 Fachfaelle x zwei Bereiche = 36 Pfadfaelle.
