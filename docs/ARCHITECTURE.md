@@ -72,6 +72,18 @@ liefert 503 ohne Cookieänderung; die Oberfläche zeigt eine Störung und gibt k
 unbekannte Identität frei. Der Sessionabruf wird einschließlich Antwortinhalt nach sechs Sekunden
 abgebrochen. Aktueller Übernahmestand und Grenzen: `CURRENT_STATE.md`, Sicherheitsrahmen §51.
 
+**Getrennte Prosa, interne Vorschau (21.09.2026).**
+`prosa-einordnung.js` bindet unveraenderte freigegebene Faktensaetze und
+separat gepruefte, sichtbar fehlbare Einordnung. `prosa-einordnung-ai.js`
+ist der vorbereitete zweistufige Adapter durch den vorhandenen Kostenriegel,
+ohne automatischen Aufrufer. `prosa-vorschau.js` liefert nur einen
+prozesslokalen Zugang fuer die internen Optionen von `buildV3Briefing` und
+`buildLageBriefing`; kein HTTP Parameter oder Flag aktiviert ihn. Beide
+Client Ansichten rendern denselben getrennten Vertrag. Der regulaere
+Briefingspeicher lehnt Vorschauen ab. Bestehende Generatoren, Nachlauf und
+Qualitaetstore bleiben erhalten; kein regulaerer Produktnachweis.
+[Vertrag und Grenzen](betrieb/prosa-belegplan-2026-09-20.md#freigegebene-trennung-von-tatsachen-und-einordnung).
+
 ## 3 · Quellenarchitektur
 
 Drei sauber getrennte Ebenen (Details:

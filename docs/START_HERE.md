@@ -4,7 +4,7 @@
 Historie. Für den aktuellen Stand → [`CURRENT_STATE.md`](CURRENT_STATE.md), für die
 Systemkarte → [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
-**Letzte Aktualisierung:** 2026-08-22 (§5.2 Belegpflicht präzisiert: Element-Garantie statt Aussagen-Garantie)
+**Letzte Aktualisierung:** 2026-09-21 (Entwicklungsvertrag: belegte Tatsachen und gekennzeichnete KI Einordnung)
 
 ---
 
@@ -71,6 +71,11 @@ Neue Funktionen sind nachrangig, solange die P0-Punkte offen sind.
    garantiert** ist die Beleg-Bindung: dass jede einzelne Aussage eines Elements
    einer bestimmten Quelle oder Textstelle zugeordnet ist. Lieber „keine
    belastbare Lage" als eine erfundene.
+   **Freigegebener Entwicklungsvertrag seit21.09.2026:** Belegte Tatsachen und
+   weitergehende KI Einordnung werden sichtbar getrennt. Die Einordnung braucht
+   eine zusätzliche Prüfung und bleibt als fehlbar gekennzeichnet. Das Label
+   erlaubt keine erfundenen Tatsachen, Rollen, Fristen oder Pflichten. Der
+   aktuelle Umsetzungsstand steht in `CURRENT_STATE.md`.
 3. **Ehrlichkeit über Zustände.** Leere Zustände, Störungen und Rückstände werden
    benannt, nicht kaschiert. Kein falsches Grün.
 4. **Mandantenneutralität.** Kein Mandant ist im Code bevorzugt, hartkodiert oder
