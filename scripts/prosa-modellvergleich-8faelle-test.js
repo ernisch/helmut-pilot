@@ -80,7 +80,9 @@ test("Sollurteile und Begruendungen sind vom Modellpayload getrennt", () => {
 
 test("Ausfuehrer ist auf genau einen Aufruf und 0,212 USD gedeckelt", () => {
   A.equal(V.MAX_COST, 212000);
-  A.equal(V.BRANCH, "codex/prosa-modellvergleich-kostenfix-20260921");
+  A.equal(V.BRANCH, "codex/prosa-modellvergleich-timeoutfix-20260921");
+  A.equal(V.KEY, "prosaModellvergleich2_20260921");
+  A.equal(V.KI_TIMEOUT_MS, 120000);
   const p = V.paket();
   A.equal(p.faelle.length, 8);
   A.equal(V.paket().paketHash, p.paketHash, "paketHash ist nicht stabil (eingefroren)");
@@ -99,53 +101,70 @@ test("Auswertung verlangt exakt 8 von 8; ein falscher Fall macht nicht bestanden
   A.equal(b2.every(x => x.bestanden), false);
 });
 
-// ── Kosten-Vorflug: nur der belegte Altbestand darf offen bleiben ────────────
+// ── Kosten-Vorflug: nur die zwei belegten Altbestaende duerfen offen bleiben ──
 const K = require("../lib/helmut/testkosten-budget");
 
 function tagesEintrag(calls, over = {}) {
   return { version: 1, day: V.TAG, tarif: "azure-gpt5-mini-obergrenze-20260909", limit: 4000000,
-    spent: 410517, baseline: 410517, baselineCalls: 5, manualCalls: 1, manualUntil: null, frozen: null,
+    spent: 410517, baseline: 410517, baselineCalls: 5, manualCalls: 2, manualUntil: null, frozen: null,
     calls, ...over };
 }
-function altTicket(over = {}) {
+function ticket(runId, hash, over = {}) {
   return { status: "ungeklaert", reserved: 212000, maxOutputTokens: 3000, manual: true,
     createdAt: "2026-09-21T09:39:00.000Z",
-    bezug: { version: 1, runId: V.ALT_BEZUG_RUN, mandatHash: V.ALT_MANDAT_HASH, phase: "pruefung" },
-    ...over };
+    bezug: { version: 1, runId, mandatHash: hash, phase: "pruefung" }, ...over };
 }
+const altTicket = (over = {}) => ticket(V.ALT_BEZUG_RUN, V.ALT_MANDAT_HASH, over);
+const neuTicket = (over = {}) => ticket(V.NEU_BEZUG_RUN, V.NEU_MANDAT_HASH, over);
+const beide = (overAlt = {}, overNeu = {}) => ({ [V.ALT_TICKET]: altTicket(overAlt), [V.NEU_TICKET]: neuTicket(overNeu) });
 const sperrt = t => { try { V.pruefeOffeneReserven(t); return false; } catch (e) { return e.code === "EINORDNUNG_KOSTEN_GESPERRT"; } };
 
-test("Production-aehnlicher Zustand mit exakt dem bekannten Alt-Ticket wird akzeptiert", () => {
-  const t = tagesEintrag({ [V.ALT_TICKET]: altTicket() });
+test("Production-aehnlicher Zustand mit exakt den zwei belegten Tickets wird akzeptiert", () => {
+  const t = tagesEintrag(beide());
   A.doesNotThrow(() => V.pruefeOffeneReserven(t));
   A.equal(K.belegt(t) + V.MAX_COST <= 4000000, true);
 });
 
-test("dasselbe Ticket mit falscher ID wird abgelehnt", () => {
-  A.equal(sperrt(tagesEintrag({ "fremde-id": altTicket() })), true);
+test("drittes unbekanntes Ticket wird abgelehnt", () => {
+  A.equal(sperrt(tagesEintrag({ ...beide(), "drittes": altTicket() })), true);
 });
 
-test("dasselbe Ticket mit anderem Run wird abgelehnt", () => {
-  const t = tagesEintrag({ [V.ALT_TICKET]: altTicket({ bezug: { version: 1, runId: "nachlauf500-99999999999",
-    mandatHash: V.ALT_MANDAT_HASH, phase: "pruefung" } }) });
-  A.equal(sperrt(t), true);
+test("Ticket mit falscher Kennung wird abgelehnt", () => {
+  A.equal(sperrt(tagesEintrag({ [V.ALT_TICKET]: altTicket(), "fremde-id": neuTicket() })), true);
 });
 
-test("dasselbe Ticket mit anderer Reserve wird abgelehnt", () => {
-  A.equal(sperrt(tagesEintrag({ [V.ALT_TICKET]: altTicket({ reserved: 100000 }) })), true);
+test("Ticket mit falschem Run wird abgelehnt", () => {
+  A.equal(sperrt(tagesEintrag(beide({}, { bezug: { version: 1, runId: "nachlauf500-99999999999",
+    mandatHash: V.NEU_MANDAT_HASH, phase: "pruefung" } }))), true);
 });
 
-test("zweites ungeklaertes Ticket wird abgelehnt", () => {
-  A.equal(sperrt(tagesEintrag({ [V.ALT_TICKET]: altTicket(), "zweites": altTicket() })), true);
+test("Ticket mit falschem MandatHash wird abgelehnt", () => {
+  A.equal(sperrt(tagesEintrag(beide({}, { bezug: { version: 1, runId: V.NEU_BEZUG_RUN,
+    mandatHash: "0".repeat(64), phase: "pruefung" } }))), true);
 });
 
-test("ein reserviertes Ticket wird abgelehnt (auch neben dem Alt-Ticket)", () => {
-  A.equal(sperrt(tagesEintrag({ "neu-reserviert": altTicket({ status: "reserviert" }) })), true);
-  A.equal(sperrt(tagesEintrag({ [V.ALT_TICKET]: altTicket(), "neu-reserviert": altTicket({ status: "reserviert" }) })), true);
+test("Ticket mit anderer Reserve wird abgelehnt", () => {
+  A.equal(sperrt(tagesEintrag(beide({}, { reserved: 100000 }))), true);
+});
+
+test("Ticket mit falscher Phase oder maxOutputTokens wird abgelehnt", () => {
+  A.equal(sperrt(tagesEintrag(beide({}, { bezug: { version: 1, runId: V.NEU_BEZUG_RUN,
+    mandatHash: V.NEU_MANDAT_HASH, phase: "entwurf" } }))), true);
+  A.equal(sperrt(tagesEintrag(beide({}, { maxOutputTokens: 2000 }))), true);
+});
+
+test("ein reserviertes Ticket wird abgelehnt", () => {
+  A.equal(sperrt(tagesEintrag({ "neu-reserviert": neuTicket({ status: "reserviert" }) })), true);
+  A.equal(sperrt(tagesEintrag({ ...beide(), "neu-reserviert": neuTicket({ status: "reserviert" }) })), true);
+});
+
+test("fehlt eines der zwei belegten Tickets, wird abgelehnt (fail closed)", () => {
+  A.equal(sperrt(tagesEintrag({ [V.ALT_TICKET]: altTicket() })), true);
+  A.equal(sperrt(tagesEintrag({ [V.NEU_TICKET]: neuTicket() })), true);
 });
 
 test("zu wenig verbleibendes Tagesbudget wird abgelehnt", () => {
-  const t = tagesEintrag({ [V.ALT_TICKET]: altTicket() }, { spent: 3999900, baseline: 3999900 });
+  const t = tagesEintrag(beide(), { spent: 3800000, baseline: 3800000 });
   A.equal(K.belegt(t) + V.MAX_COST > 4000000, true);
   A.equal(sperrt(t), true);
 });
@@ -153,6 +172,30 @@ test("zu wenig verbleibendes Tagesbudget wird abgelehnt", () => {
 test("Tagesriegel bleibt 4000000 und neue Reserve maximal 212000", () => {
   A.equal(K.LIMIT_MICRO_USD, 4000000);
   A.equal(V.MAX_COST, 212000);
+});
+
+test("Timeout ist exakt gebunden: nur 120000 wird akzeptiert", () => {
+  A.equal(V.KI_TIMEOUT_MS, 120000);
+  const commit = "d94b0bfd06657748307b236ee253974ba57be279";
+  const a = { commit, productionCommit: "bf760360ea68d4ef620a8a8f8c1b42eaa5ea182d", paketHash: "x", publicKey: "x" };
+  const base = { GITHUB_REPOSITORY: "ernisch/helmut-pilot",
+    GITHUB_REF: `refs/heads/${V.BRANCH}`, GITHUB_EVENT_NAME: "workflow_dispatch", GITHUB_RUN_ATTEMPT: "1",
+    GITHUB_SHA: commit, GITHUB_RUN_ID: "35640378598",
+    SUPABASE_URL: "https://ddckuvvpcytqbyfmbvie.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "d",
+    HELMUT_CRON_SECRET: "d", AZURE_OPENAI_KEY: "d", AZURE_OPENAI_ENDPOINT: "https://x.openai.azure.com",
+    AZURE_OPENAI_DEPLOYMENT: "gpt-5-mini", HELMUT_STORAGE_BACKEND: "supabase", HELMUT_SUPABASE_STORE_ID: "main",
+    HELMUT_SUPABASE_AUTH_STORE_ID: "main-auth", VERCEL_ENV: "production", HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt",
+    HELMUT_MAX_LLM_CALLS_PER_DAY: "2416", HELMUT_LLM_RESERVE_UNDERSTANDING: "702", HELMUT_TESTLAUF_VORRANG_REAL: "200",
+    HELMUT_ANBIETER_STEUERUNG: "on", HELMUT_ANBIETER_AZURE_MINUTE: "20", HELMUT_ANBIETER_AZURE_TAG: "0",
+    HELMUT_KI_TIMEOUT_MS: "120000" };
+  // Deterministischer Zeitpunkt am Auftragstag (TAG-Fenster bleibt erfuellt).
+  const now = new Date("2026-09-21T18:00:00Z");
+  A.doesNotThrow(() => V.konfiguration(a, base, now));
+  for (const falsch of ["60000", "30000", "90000", "120001", "", undefined]) {
+    let code = null;
+    try { V.konfiguration(a, { ...base, HELMUT_KI_TIMEOUT_MS: falsch }, now); } catch (e) { code = e.code; }
+    A.equal(code, "EINORDNUNG_KONFIGURATION", `Timeout ${JSON.stringify(falsch)} nicht abgewiesen`);
+  }
 });
 
 test("fruehe Fehlerausgabe nennt nur den sicheren EINORDNUNG-Code, keine sensitiven Daten", () => {

@@ -121,6 +121,12 @@ function kostenbeleg(before, after, meta, counterBefore, counterAfter) {
 // braucht die echten Rohbytes. requestStructuredJson allein liefert diese nicht.
 async function transport(call, { prompt, schema, env, deadline, now = () => new Date() }, https = H) {
   const original = https.request;
+  // Transportdeckel: mindestens 30 s, sonst KI-Timeout + 10 s Puffer. Der
+  // Default (20 s) laesst ihn unveraendert bei 30 s; ein fuer einen laengeren
+  // isolierten Auftrag erhoehter KI-Timeout hebt ihn automatisch mit an.
+  const kiRoh = Number(env && env.HELMUT_KI_TIMEOUT_MS);
+  const kiTimeout = Number.isFinite(kiRoh) && kiRoh >= 1000 ? Math.floor(kiRoh) : 20000;
+  const deckelMs = Math.max(30000, kiTimeout + 10000);
   const expected = { model: "gpt-5-mini", input: prompt, max_output_tokens: 3000,
     reasoning: { effort: "low" }, text: { format: { type: "json_schema", name: "knowledge_object", schema, strict: true } } };
   const urlExpected = require("../lib/helmut/azure-endpunkt").baueResponsesUrl(env.AZURE_OPENAI_ENDPOINT);
@@ -128,7 +134,7 @@ async function transport(call, { prompt, schema, env, deadline, now = () => new 
   const chunks = []; let size = 0, timer, active;
   https.request = function(url, options, cb) {
     fordere(++record.requests === 1 && String(url) === String(urlExpected) && options.method === "POST"
-      && now().getTime() + 30000 < deadline, "EINORDNUNG_TRANSPORT");
+      && now().getTime() + deckelMs < deadline, "EINORDNUNG_TRANSPORT");
     const req = active = original.call(https, url, options, res => {
       record.statusCode = res.statusCode;
       res.on("data", chunk => { size += Buffer.byteLength(chunk); if (size <= 8 * 1024 * 1024) chunks.push(Buffer.from(chunk));
@@ -141,7 +147,7 @@ async function transport(call, { prompt, schema, env, deadline, now = () => new 
       written = true; record.requestRaw = body; return write(body, ...args);
     };
     req.end = function(...args) { fordere(written && !args.some(x => typeof x === "string" || Buffer.isBuffer(x)), "EINORDNUNG_NUTZLAST"); return end(...args); };
-    timer = setTimeout(() => req.destroy(new Error("EINORDNUNG_TRANSPORTZEIT")), 30000);
+    timer = setTimeout(() => req.destroy(new Error("EINORDNUNG_TRANSPORTZEIT")), deckelMs);
     req.on("close", () => clearTimeout(timer)); return req;
   };
   let answer = null, failed = false;

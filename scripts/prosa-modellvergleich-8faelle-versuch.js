@@ -13,33 +13,46 @@ const F = require("./fixtures/prosa-modellvergleich-8faelle");
 const K = require("../lib/helmut/testkosten-budget");
 const T = require("./privater-nachweis-transport");
 const { hash } = require("../lib/helmut/briefing-speicher");
-const KEY = "prosaModellvergleich20260921", PREFIX = "MODELLVERGLEICH8_EINMAL:";
-const BRANCH = "codex/prosa-modellvergleich-kostenfix-20260921", TAG = "2026-09-21";
+const KEY = "prosaModellvergleich2_20260921", PREFIX = "MODELLVERGLEICH8_EINMAL:";
+const BRANCH = "codex/prosa-modellvergleich-timeoutfix-20260921", TAG = "2026-09-21";
 // Volle konservative Reserve fuer genau EINEN Aufruf (212000 Mikro-USD = 0,212 USD),
 // deutlich unter dem unveraenderten 4-USD-Tagesriegel. Keine Budgeterhoehung.
 const MAX_COST = 212000, MAX_MS = 300000, RING = 5000;
+// Laufzeitdeckel dieses isolierten Auftrags. Acht Faelle in EINEM Aufruf brauchen
+// deutlich laenger als der Standard (20 s); der Wert wird als einziger zugelassen.
+const KI_TIMEOUT_MS = 120000;
 const sha = x => C.createHash("sha256").update(x).digest("hex");
 function fordere(ok, code) { if (!ok) { const e = new Error(code); e.code = code; throw e; } }
 
-// Der EINE belegte Altbestand: das ungeklaerte Kostenticket aus dem abgebrochenen
-// Timeout-Lauf 35584480605 des Praemissen-Vergleichs. Es bindet 0,212 USD als
-// unbekannt und darf laut Kostenregel 2 erhalten bleiben (nicht entfernt, nicht
-// umgebucht, nicht als abgerechnet markiert). Nur EXAKT dieses eine Ticket wird
-// zugelassen; jede Abweichung und jedes weitere reservierte oder ungeklaerte
-// Ticket sperrt weiterhin fail closed. Keine allgemeine Lockerung.
+// Genau ZWEI belegte Altbestaende: die beiden abgebrochenen, voll reservierten
+// (ungeklaerten) Kostentickets aus den Runs 35584480605 (Praemissen-Vergleich)
+// und 35640378598 (achter Modellvergleich). Beide binden je 0,212 USD unbekannt
+// und bleiben laut Kostenregel 2 erhalten (nicht entfernt, nicht umgebucht,
+// nicht als abgerechnet markiert). Nur EXAKT diese zwei Tickets werden zugelassen;
+// jede Abweichung, jedes dritte unbekannte und jedes reservierte Ticket sperrt
+// weiterhin fail closed. Keine allgemeine Lockerung.
 const ALT_TICKET = "2ec7ab92-7d20-45db-94b9-9004f32f55d9";
 const ALT_BEZUG_RUN = "nachlauf500-35584480605";
 const ALT_MANDAT_HASH = sha(JSON.stringify("synthetisch-praemissen-1"));
+const NEU_TICKET = "ff3b56df-fa36-4db5-add3-f8def5caefc2";
+const NEU_BEZUG_RUN = "nachlauf500-35640378598";
+const NEU_MANDAT_HASH = sha(JSON.stringify("synthetisch-modellvergleich-8"));
 
-// Genau EIN offenes Ticket darf bestehen bleiben, und nur der belegte Altbestand.
-// Kein reserviertes Ticket, kein zweites ungeklaertes Ticket, keine Abweichung.
+function belegterAltbestand(c) {
+  return Boolean(c) && c.status === "ungeklaert" && c.reserved === 212000
+    && c.maxOutputTokens === 3000 && c.manual === true;
+}
+// Es duerfen genau die zwei belegten ungeklaerten Tickets bestehen bleiben.
+// Kein reserviertes Ticket, kein drittes, keine Abweichung in Kennung oder Bezug.
 function pruefeOffeneReserven(t) {
   const offen = Object.entries(t.calls).filter(([, c]) => ["reserviert", "ungeklaert"].includes(c.status));
-  const alt = t.calls[ALT_TICKET];
-  fordere(t.frozen === null && offen.length === 1 && offen[0][0] === ALT_TICKET
-    && alt.status === "ungeklaert" && alt.reserved === 212000 && alt.maxOutputTokens === 3000
-    && alt.manual === true && alt.bezug?.runId === ALT_BEZUG_RUN && alt.bezug.phase === "pruefung"
+  const bekannt = new Set([ALT_TICKET, NEU_TICKET]);
+  const alt = t.calls[ALT_TICKET], neu = t.calls[NEU_TICKET];
+  fordere(t.frozen === null && offen.length === 2 && offen.every(([id]) => bekannt.has(id))
+    && belegterAltbestand(alt) && alt.bezug?.runId === ALT_BEZUG_RUN && alt.bezug.phase === "pruefung"
     && alt.bezug.mandatHash === ALT_MANDAT_HASH
+    && belegterAltbestand(neu) && neu.bezug?.runId === NEU_BEZUG_RUN && neu.bezug.phase === "pruefung"
+    && neu.bezug.mandatHash === NEU_MANDAT_HASH
     && K.belegt(t) + MAX_COST <= 4000000, "EINORDNUNG_KOSTEN_GESPERRT");
 }
 
@@ -93,13 +106,15 @@ function konfiguration(a, env, now) {
     HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt", HELMUT_MAX_LLM_CALLS_PER_DAY: "2416",
     HELMUT_LLM_RESERVE_UNDERSTANDING: "702", HELMUT_TESTLAUF_VORRANG_REAL: "200",
     HELMUT_ANBIETER_STEUERUNG: "on", HELMUT_ANBIETER_AZURE_MINUTE: "20",
-    HELMUT_ANBIETER_AZURE_TAG: "0", AZURE_OPENAI_DEPLOYMENT: "gpt-5-mini" };
+    HELMUT_ANBIETER_AZURE_TAG: "0", AZURE_OPENAI_DEPLOYMENT: "gpt-5-mini",
+    // Nur exakt dieser Laufzeitdeckel ist zugelassen; jeder andere Wert sperrt.
+    HELMUT_KI_TIMEOUT_MS: String(KI_TIMEOUT_MS) };
   fordere(Object.entries(expected).every(([k, v]) => env[k] === v)
     && env.SUPABASE_URL === "https://ddckuvvpcytqbyfmbvie.supabase.co"
     && env.SUPABASE_SERVICE_ROLE_KEY && env.AZURE_OPENAI_KEY && env.HELMUT_CRON_SECRET,
   "EINORDNUNG_KONFIGURATION");
   fordere(["OPENAI_API_KEY", "HELMUT_ARTIKELKONTEXT", "HELMUT_LLM_USAGE_RELATIONAL", "HELMUT_TENANT_LLM_CAP",
-    "NODE_OPTIONS", "NODE_TLS_REJECT_UNAUTHORIZED", "NODE_EXTRA_CA_CERTS", "HELMUT_KI_TIMEOUT_MS"]
+    "NODE_OPTIONS", "NODE_TLS_REJECT_UNAUTHORIZED", "NODE_EXTRA_CA_CERTS"]
     .every(k => !env[k]), "EINORDNUNG_FREMDE_KONFIGURATION");
   fordere(require("../lib/helmut/azure-endpunkt").pruefeEndpunkt(env.AZURE_OPENAI_ENDPOINT).gueltig,
     "EINORDNUNG_AZURE_ZIEL");
@@ -152,8 +167,8 @@ async function ausfuehren({ env = process.env, now = () => new Date(), fetchFn =
       dailyInputs: 2000, llmUsage: RING, processRuns: 300 }))
       fordere(Array.isArray(auth[k]) && auth[k].length <= max, "EINORDNUNG_SPEICHERSTAND");
     const t = K.pruefeTag(auth.testKostenTage?.[TAG], TAG);
-    // genau EIN bekannter Altbestand darf als unbekannte Reserve bestehen.
-    K.kontrolliere(auth, TAG, 1, startCounter.used);
+    // genau ZWEI belegte Altbestaende duerfen als unbekannte Reserve bestehen.
+    K.kontrolliere(auth, TAG, 2, startCounter.used);
     pruefeOffeneReserven(t);
     expected = { version: 1, runId, commit: a.commit, productionCommit: a.productionCommit,
       paketHash: p.paketHash, empfaenger: T.publicKey(a.publicKey).fingerprint,
@@ -219,5 +234,5 @@ async function ausfuehren({ env = process.env, now = () => new Date(), fetchFn =
 if (require.main === module) ausfuehren().then(r => { console.log(JSON.stringify(r)); if (!r.ok) process.exitCode = 1; })
   .catch(e => { console.error(JSON.stringify(frueheFehlerausgabe(e))); process.exitCode = 1; });
 module.exports = { paket, auswertung, eingabe, konfiguration, vorflug, grundlinie, kostenbeleg, transport, ausfuehren,
-  pruefeOffeneReserven, frueheFehlerausgabe, KEY, PREFIX, BRANCH, TAG, MAX_COST, MAX_MS, ALT_TICKET, ALT_BEZUG_RUN,
-  ALT_MANDAT_HASH };
+  pruefeOffeneReserven, frueheFehlerausgabe, KEY, PREFIX, BRANCH, TAG, MAX_COST, MAX_MS, KI_TIMEOUT_MS,
+  ALT_TICKET, ALT_BEZUG_RUN, ALT_MANDAT_HASH, NEU_TICKET, NEU_BEZUG_RUN, NEU_MANDAT_HASH };
