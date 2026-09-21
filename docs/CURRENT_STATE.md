@@ -1,27 +1,23 @@
 # CURRENT STATE — Helmut
 
-**21.09.2026: Getrennte Prosa als interne Vorschau entwickelt; teilweise abgeschlossen.**
-Betreiber hat die Trennung belegter Tatsachen und zusaetzlich gepruefter, fehlbarer KI
-Einordnung mit Ja freigegeben. Keine neue Kostenfreigabe und kein500er Start.
-Eigener Branch `codex/prosa-trennung-20260921` direkt auf Main
-`be4b237b6154248f30e175235ed81aa9893b01bf`; EntwurfPR483, kein Merge.
-Gepruefter Codekopf `11105012b0fb95065cc1693272b390ab2b2a1938`.
-Faktenwortlaut bleibt serverseitig gebunden. Jedes freie Feld braucht ein separates Urteil.
-Beide echten App Einstiege und Ansichten haben eine interne, mandatsgebundene Vorschau.
-Keine Route oder Automatik aktiviert sie; sie darf keinen Tagesnachweis speichern.
-Neue Vertragsgruppen50/50 bestanden, inklusive falschem positivem Sprachurteil.
-Vorschau19/19 inklusive Chromium320/390/1280px in hell/dunkel bestanden.
-Lokal441/441 in915s, Browser50/50. CI35567548921:440/441; Vorschau braucht Playwright.
-Korrektur: Vorschau19/19 nun Pflicht im Browserjob; erneute exakte CI offen.
-Kein echter Modellversuch oder regulaerer36er Produktnachweis.
-Ein falsches positives Sprachurteil bleibt moeglich und wird nicht als Faktenbeweis ausgegeben.
-Allgemeine Faktenversorgung, regulaere Speicherintegration und500er Vollversorgung offen.
-PR479/480/481/482 bleiben Forschungsentwuerfe; geschlossene Versuche ohne Restfreigabe.
-PR482: formale Logik24 Gruppen; NLI54 Paare mit3 falschen Freigaben und5 verlorenen Positiven.
-DIP Fakteneingang PR477/478 integriert, weiterhin begrenzt und ohne produktiven Aufrufer.
-SQL21.09.06:04:44 UTC:504/0, keine lebenden Sperren/Leases/offenen Jobs/jungen Prozesse.
-Alle alten Quittungen gestoppt. Tagesbuch0,137576 USD bei4 USD; kein Modellaufruf durch diesen Sprint.
-[Vertrag, Grenzen und Fortsetzung](betrieb/prosa-belegplan-2026-09-20.md#freigegebene-trennung-von-tatsachen-und-einordnung).
+**21.09.2026: Interne Prosa Vorschau integriert; Gesamtziel teilweise abgeschlossen.**
+PR483 auf Main `73ff420b0b7029ffaaafe3a8964e15f0895f378e`, Deployment
+`dpl_2KjNcnwsRA7YbefiJbZskg4wjQBQ` READY, fra1, Production Alias zugeordnet.
+HTTP200 liefert client/styles Version73ff420b. Exakte CI35568960050 auf0822754:
+440/440 in822s, Browser50/50, Vorschau19/19, isolierte Datenbanknachweise erfolgreich.
+Keine offenen Reviewpunkte. Der erste CI Fehler durch fehlendes Playwright ist korrigiert.
+Faktenwortlaut bleibt gebunden; jedes freie Feld braucht ein separates Urteil.
+Beide App Ansichten haben eine interne Vorschau ohne automatischen Aufrufer oder Tagesnachweis.
+Ein falsches positives Sprachurteil bleibt moeglich; keine volle Fakten oder Produktabnahme.
+Neuer Versuchsausfuehrer mit16/16 lokalen Gruppen vorbereitet, kein bezahlter Start.
+Neuer lokaler Gesamtlauf440/441 in979s; einziger Fehler:180s Zeitlimit im1000er Stresstest.
+Derselbe unveraenderte Test besteht in der PR483 CI in128s; isolierte Nachpruefung laeuft.
+Keine regulaere36er Produktabnahme, allgemeine Faktenversorgung oder500er Vollversorgung belegt.
+PR479 bis482 bleiben Forschungsentwuerfe; alle alten Versuche ohne Restfreigabe geschlossen.
+DIP Fakteneingang PR477/478 integriert, begrenzt und ohne produktiven Aufrufer.
+SQL21.09.06:50:59 UTC nach Merge:504/0, keine Sperren/Leases/offenen Jobs/jungen Prozesse.
+SQL06:37:10 UTC: Tagesbuch0,137576 USD bei4 USD, neuer Versuch fehlt, alte gestoppt.
+[Vertrag und Integration](betrieb/prosa-belegplan-2026-09-20.md#integration-der-internen-vorschau).
 
 **20.09.2026: Quellenreparaturen erfolgreich integriert; Gesamtziel teilweise abgeschlossen.** PR471,472 und473 sind integriert. Letzter fachlicher Main Stand `c070661f18bc001e26443d331672601e62ff2018`, Deployment `dpl_C7ZH7FxjpmFpEetKkyBUYihyNbar` READY. Exakte PR473 CI35510294577:435/435 Suiten in800s, Browser50/50, PostgreSQL23/0+26/0+48/0; keine offenen Reviewpunkte. HTTP200 liefert Versionc070661f. SQL12:37:39 UTC:504/0, keine lebenden Sperren/Leases, offenen Jobs oder jungen offenen Prozesse; alle vier Hashgrundlinien seit12:35:27 unveraendert. Tageskosten0,264700 USD, Grenze4 USD, offene Reserve0. Ereignisketten sind fuer die belegten Faelle getrennt, amtliche Originalangaben erhalten, verschiedene DIP Kennungen gegen Titel und RSS Reihenfolge geschuetzt und Quellentitel nicht mehr sinnveraendernd abgeschnitten. Neue Gegenproben lokal jeweils einmal; keine Wiederholung bestandener lokaler Suiten. Allgemeine Faktenbindung, frische Vollversorgung und gemessene Zeit/Kosten bleiben offen. Keine neuen Modellaufrufe, Imports oder Aktivierungen durch diese Sitzung. [Integration](betrieb/500-betriebsplan-2026-09-20.md#integration-pr473) und [konkrete Restarbeit](betrieb/500-betriebsplan-2026-09-20.md#restarbeit-nach-den-quellenreparaturen). Dieser abschliessende reine Dokumentations PR folgt CLAUDE.md Paragraph9; sein eigener Merge und Deploymentstand werden nicht rekursiv nachdokumentiert.
 
@@ -153,7 +149,17 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-20.09.: PR471,472 und473 sind integriert und Production belegt. Die noch fehlende unabhaengige Faktenversorgung fuer beide Fachpfade und deren serverseitig gebundene Formulierung sind die naechste fachliche Arbeit. Die36 geplanten Sachfaelle bleiben offen; Quellmetadaten sind dafuer kein Ersatz. Die erneute allgemeine Arbeits und Mergefreigabe liegt vor; keine erneute Rueckfrage zwischen Reparaturen. Der31er Import bleibt wegen fehlender fachlicher Folgeverarbeitung ungenutzt, nicht als ersatzweiser500er Start. Sein Frischeende ist21.09.08:40:31 UTC; vor einem spaeteren Test neue Frische und vollstaendige Versorgung belegen. Allgemeine [Prosa](betrieb/prosa-belegplan-2026-09-20.md), vollstaendige500er Versorgung und tragfaehige Zeit/Kosten bleiben offen. Der4 USD Riegel bleibt erhalten. Keine Aktivierung und kein Teststart; Fortsetzung im vorhandenen Thread moeglich.
+21.09.: Trennung belegter Tatsachen und fehlbarer KI Einordnung ist als Entwicklung freigegeben.
+PR483 ist integriert und Production nachgeprueft; naechster Schritt ist der begrenzte Funktionsversuch.
+Vorbereiteter einmaliger Funktionsversuch auf `codex/prosa-einordnung-versuch-20260921`:
+hoechstens2 mini Aufrufe, volle Reserve0,424 USD innerhalb4 USD, kein automatischer Start.
+Neue Kosten samt begrenzter privater Versuchsquittung brauchen gesonderte Freigabe;
+der konkrete Auftrag steht im [Prosabeleg](betrieb/prosa-belegplan-2026-09-20.md#vorbereiteter-einmaliger-funktionsversuch-der-getrennten-einordnung).
+Ein positiver Einzelfall ersetzt weder allgemeine Faktenversorgung noch36er Fachabnahme.
+Regulaere Speicherintegration, frische Versorgung fuer500 und alle1500 Ergebnispositionen bleiben offen.
+Der31er Import ist nicht freigegeben; seine alte Frische endet21.09.08:40:31 UTC.
+Die allgemeine sichere Arbeits und Mergefreigabe gilt weiter, keine Rueckfrage zwischen Reparaturen.
+Alle504 Profile bleiben inaktiv. Kein500er Start. Fortsetzung im vorhandenen Thread moeglich.
 
 ## 12 · Verbindliche Betriebsgrenzen
 

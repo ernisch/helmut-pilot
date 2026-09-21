@@ -662,3 +662,96 @@ ausgefuehrt; im Offline Runner ist sie wie der Browser Smoke ausgeschlossen.
 Kein Skip und keine abgesenkte Assertion. Lokal erneut19/19 bestanden.
 Die erneute Pflicht CI muss am korrigierten Kopf vollstaendig bestehen,
 einschliesslich des zuvor uebersprungenen Z22 Datenbanknachweises.
+
+## Vorbereiteter einmaliger Funktionsversuch der getrennten Einordnung
+
+Noch nicht gestartet und noch nicht kostenfreigegeben. Eigener Branch
+`codex/prosa-einordnung-versuch-20260921`. Neuer Ausfuehrer
+`scripts/prosa-einordnung-versuch.js`, keine Fortsetzung alter Versuche.
+Der vorhandene manuelle Workflow staff-backfill-one hat dafuer einen getrennten
+Job: fester Branch, erster Actions Versuch, bestehende Exklusivgruppe,
+maximal5 Minuten. Ein Merge startet ihn nicht.
+
+Konkreter Auftrag zur spaeteren Freigabe: genau ein synthetischer Lage Entwurf
+und danach hoechstens ein getrenntes Review durch gpt-5-mini. Insgesamt
+hoechstens2 Modellaufrufe, maximale volle Kostenreserve0,424 USD innerhalb
+des unveraenderten4 USD Tagesriegels. Kein Retry, kein Modellwechsel, kein
+weiterer Fall. Der Auftrag ist auf den21.09.2026 begrenzt. Die Freigabe
+umfasst nur diese Modellkosten sowie die zugehoerigen Kosten, Telemetrie
+und Versuchsquittungen im vorhandenen privaten Auth Speicher. Kein Import,
+keine Profilanlage oder Aktivierung, keine Produkttexte oder Migration.
+
+Das feste Eingabepaket verwendet die redaktionelle Zeitklasse aus
+scripts/fixtures/prosa-einordnung.js: Umsetzung ab1. September2027 geplant,
+Beschlusstermin unbekannt. Zweiter Sachverhalt ist die Beratung eines
+Berichts zur Barrierefreiheit oeffentlicher Gebaeude. Profil und Quellen
+sind ausschliesslich synthetisch, Quellenadressen reservierte Beispieldomains.
+Der Profilname ist Kostenmetadatum; der aktuelle Budgetpfad schreibt damit
+keinen Profil oder Mandatsspeicher. Ein aktivierter Mandatskostendeckel wird
+vorher gesperrt. Es wird keine echte Quellenversorgung vorgetaeuscht.
+
+Paketbindung `369da887da2993e1135d90819e7d1092ed1e06e45505ffe3a0dea4afd4993cf9`.
+Der Bestaetigungsauftrag bindet zusaetzlich den exakten Ausfuehrungscommit,
+den frisch verifizierten Productioncommit und den privaten Empfaenger.
+Die zweite Eingabe entsteht ausschliesslich aus dem unveraenderten
+serverseitigen Faktenvertrag und dem ersten gespeicherten Entwurf.
+
+Vor jedem Aufruf: aktueller Laufzeitnachweis,504 inaktive Profile, keine
+lebenden Sperren oder Leases, offenen Jobs oder jungen Prozesse. Erster
+Start schreibt eine einmalige CAS Quittung und bestaetigt sie durch
+Ruecklesung. Auch bei Prozessabbruch verhindert sie einen zweiten Start.
+Die beiden verdraengbaren Altbelege des Telemetrierings werden vorher
+gesichert. Jede Phase braucht eine gespeicherte Anbieterrohantwort und
+passende Kostenabrechnung, bevor die naechste beginnen darf. Der Ausfuehrer
+beobachtet den echten HTTPS Transport; auch unlesbares JSON und Teilantworten
+werden verschluesselt erhalten. Der normale Modelladapter allein koennte
+diese Rohdaten nicht sichern. Fremde gemeinsame Aenderungen werden nicht
+ueberschrieben. Ein unbekannter Ausgang bleibt gesperrt und reserviert.
+
+Auswertung nach ausdruecklicher Startfreigabe: beide Tatsachenteile wortgleich,
+keine Umdeutung von Umsetzungsdatum in Beschlusstermin, keine erfundene
+Zustaendigkeit oder persoenliche Pflicht, zwei unterschiedliche Sachverhalte
+und konkrete hilfreiche Optionen. Alle sichtbaren freien Felder direkt gegen
+die vollstaendige Quelle lesen, auch Kommunikation. Jede falsche oder
+unbrauchbare Aussage bleibt ein negativer Befund. Kein Nachbessern der
+Antwort, kein weiterer bezahlter Versuch aus Restbudget.
+
+Ein positiver Ausgang waere nur ein enger Funktionsbeleg dieses Beispiels.
+Er misst weder die Falschfreigaberate noch die sechs Fehlerklassen, ersetzt
+keinen allgemeinen Fakteneingang und keine36er Produktabnahme. Der gespeicherte
+Abschluss behauptet immer fachlichBestanden=false und inProductionImportiert=false.
+Die direkte Fachbewertung wird anschliessend hier dokumentiert.
+
+Lokale gezielte Vorbereitung:16/16 Gruppen bestanden, einschliesslich echter
+Adapterphasen mit injiziertem Modell, Transportbeobachtung, unlesbarer Antwort,
+persistierter Gegenlesung, Schreibkonflikt, falscher Kostenbindung, Zeitablauf
+und Ringarchiv. Alle Aufrufe ueber scripts/lokal.js, kein echter Modellaufruf.
+
+## Integration der internen Vorschau
+
+PR483 ist nach der korrigierten Pflicht CI35568960050 integriert. Exakter
+gepruefter Kopf08227548cad9cc9fd8ef34a10b20e2e516c5d5b2:440/440 Suiten
+in822s; Browser Smoke50/50 und Vorschau19/19 im verpflichtenden Chromium
+Job erfolgreich. Alle isolierten PostgreSQL Nachweise sind erfolgreich.
+Keine offenen Reviewthreads oder Reviews. Die bestehende allgemeine sichere
+Mergefreigabe traegt die Integration der inaktiven Entwicklung; sie ist
+keine empirische Prosaabnahme und keine Freigabe fuer Modellkosten.
+
+Main73ff420b0b7029ffaaafe3a8964e15f0895f378e, Deployment
+dpl_2KjNcnwsRA7YbefiJbZskg4wjQBQ READY in fra1, Production Alias zugeordnet.
+Reiner HTTP Abruf liefert200 und client/styles Version73ff420b.
+SQL21.09.09:50:59 Tuerkei /08:50:59 Berlin /06:50:59 UTC:504 Profile,
+0 aktiv,0 lebende Sperren,0 Job und Verstehensleases,0 offene Jobs,
+0 junge offene Prozesse. Kostenlesung06:37:10 UTC:0,137576 USD bei4 USD,
+alle alten Versuchsquittungen gestoppt, neue Versuchsquittung nicht vorhanden.
+Keine neue Modellnutzung, keine Aktivierung, kein Import oder Datenreparatur.
+Diese Aufnahme ist keine vollstaendige erneute Hashinventur.
+
+Die Versuchsvorbereitung bleibt getrennt auf ihrem Entwicklungsbranch.
+Neuer kanonischer lokaler Lauf:440/441 in979s; einziges Problem ist das
+180s Zeitlimit im unveraenderten narrativ-stress-1000-test.js. Dieser Test
+bestand in der vorherigen lokalen Sitzung in175s und in der exakten
+PR483 CI in128s. Nur dieser fehlgeschlagene Test wird isoliert nachgeprueft;
+der fehlgeschlagene Gesamtlauf wird nicht nachtraeglich als gruen bezeichnet.
+Die abschliessende kleine Korrektur zum Schliessen eines abgebrochenen
+HTTPS Requests besteht gezielt16/16; kein produktiver Modellpfad aktiviert.
