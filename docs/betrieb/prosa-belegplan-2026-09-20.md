@@ -986,3 +986,51 @@ Dieser abschliessende reine Dokumentations PR veraendert keinen Code,
 Workflow und keine Daten. Er erfuellt die Nachintegration nach CLAUDE.md
 Paragraph9; sein eigener Merge und Deploymentstand werden aus der Historie
 belegt und loesen keinen rekursiven Dokumentations PR aus.
+
+
+## Praemissenvergleich mit getrennten Sollurteilen
+
+Stand21.09.2026 vor dem bezahlten Vergleich. Die rein lesende Uebernahme
+bestaetigt Main dcf024e24fa19c397bc57874fb4c123919052a0a, READY Deployment
+dpl_9qmwbkvHw3SEykYYXZUvSGm8uVQj und erfolgreiche Main CI35578150136.
+SQL09:01:10 UTC:504 Profile,0 aktiv, keine lebenden Sperren, Leases, offenen
+Jobs oder jungen Prozesse,0,153320 USD Tagesbuchung, keine offene Reserve.
+
+Naechster notwendiger Nachweis ist die Inhaltspruefung. PR484 wird nicht
+wiederholt. Ein weiterer gut klingender Entwurf koennte ihre falschen
+Positivurteile nicht widerlegen. Der neue isolierte Pruefer zerlegt stattdessen
+jeden Satz in ausdrueckliche und stillschweigende Voraussetzungen und verlangt
+Originalzitate aus demselben Fall. Fehlende Information, Widerspruch, belegte
+Tatsache und reiner Vorschlag werden getrennt. Der Server kontrolliert Bindung,
+Satzabdeckung und widerspruchsfreie eigene Urteile. Er beweist weder Bedeutung
+noch vollstaendige Zerlegung. Auch dieser Modellpruefer bleibt fehlbar.
+
+Vorab festgelegter Vergleich:18 redaktionelle Sollfaelle in sechs Klassen
+Finanzen, Vollzug, Zuschreibung, Zeit, Profil und Bedingung, jeweils positiv,
+negativ und unklar. Jede der drei Gruppen enthaelt zwei Faelle jeder Art.
+Zwei zuvor falsch bestaetigte Aussagen samt Quellen bleiben unveraendert.
+Fuer den Anbieter sind Kennungen und Eingaben sichtbar, keine Sollurteile,
+Fallklassen oder Begruendungen. Die getrennten Sollurteile, Prompts, Schema
+und Auswertung sind Bestandteil des eingefrorenen Pakethashes. Die Faelle
+sind ein gezielter Methodenvergleich, keine repraesentative Validierung,
+keine36er Fachabnahme und kein Beweis allgemeiner Fehlerfreiheit.
+
+Einmaliger Ausfuehrer scripts/prosa-praemissen-versuch.js auf dem festen Branch
+codex/prosa-praemissenpruefung-20260921, ausschliesslich manuell und an exakten
+Code, Productionstand, Paket und privaten Empfaenger gebunden. Hoechstens drei
+gpt5mini Aufrufe mit low,3000 Ausgabetoken je Aufruf, voller gemeinsamer
+Reserve0,636 USD und maximal5 Minuten. Tagesriegel bleibt4 USD. Jede Rohantwort
+wird vor der fachlichen Auswertung verschluesselt gesichert und rueckgelesen;
+Kostenbeleg je Gruppe bindet denselben Lauf, die vorhandene Phase pruefung und
+ein eigenes synthetisches Mandat. Erste technische oder fachliche Abweichung
+stoppt ohne Retry oder Modellwechsel. Jede Gruppe verlangt sechs exakte
+Sollurteile; falsch positive und falsch negative Antworten werden getrennt
+bilanziert. Ein positives18er Ergebnis erlaubt noch keine Produktanbindung.
+
+Neue Quittung prosaPraemissen20260921; beide alten Quittungen muessen geschlossen
+und unveraendert bleiben. Kein Profilimport, keine Aktivierung, Migration oder
+Produkttextspeicherung. Die bestehende Betreiberfreigabe fuer alle Schritte
+innerhalb des4 USD Tagesbudgets umfasst diesen Vergleich. Vor Start sind die
+exakte Pflicht CI, frischer Production und Budgetstand sowie dauerhaft privat
+gesicherter Entschluesselungsschluessel erforderlich. Lokal werden nur die
+neuen Vertrags und Ausfuehrerpruefungen sowie der Dokumentationsvertrag geprueft.
