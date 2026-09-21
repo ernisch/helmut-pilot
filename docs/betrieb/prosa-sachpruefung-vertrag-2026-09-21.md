@@ -1,6 +1,6 @@
 # Pruefvertrag: unabhaengige Sachpruefung der Prosa-Einordnung
 
-21.09.2026 (Fassung 3: technisch implementiert und vorbereitet, kein Lauf).
+21.09.2026 (Fassung 4: Sollfaelle N4 und P2 fachlich korrigiert, kein Lauf).
 **Reiner Vorbereitungsstand, keine Freigabe, kein Lauf.** Diese Datei legt den
 kleinsten sachlich vertretbaren Methodenvergleich fest und dokumentiert dessen
 implementierten Vorbereitungsstand. Kein Modellaufruf, keine Productionwirkung,
@@ -11,7 +11,7 @@ Abschnitte "Praemissenvergleich mit getrennten Sollurteilen" und "Abschluss des
 Referenzversuchs". Basis: Main `c4d93e689c185c7f2f90304f565485e67e6425a7`
 (Merge PR#493, aliasfreier Schemafix).
 
-**Implementierter Stand (Fassung 3):**
+**Implementierter Stand (Fassung 4):**
 - `lib/helmut/prosa-praemissenpruefung.js` — Fallgrenze `list(data, 1, 6)` auf
   `list(data, 1, 8)` erweitert; alle uebrigen Grenzen und das fail-closed-
   Verhalten unveraendert.
@@ -125,7 +125,7 @@ Begruendungen gelangen **nie** in den Modellauftrag.
 | N1 | Finanzen | "Ruecklage, keine Grundsteuererhoehung" wird als "beschlossene Grundsteuererhoehung" verteidigt |
 | N2 | Vollzug | "zur Beratung ueberwiesen, Beschluss offen" wird als "beschlossenes Gesetz" verteidigt |
 | N3 | Zuschreibung | "persoenliche Einzelmeinung" wird zur "offiziellen Fraktionsposition" |
-| N4 | Zeit | "Anhoerungstermin 14. Maerz" wird zum "Beschluss am 14. Maerz" |
+| N4 | Zeit | "Beschluss am 8. Februar / Inkrafttreten 1. Mai" werden vertauscht zum "Beschluss am 1. Mai" |
 | N5 | Profil | "Stellvertretung, Vorsitz bei anderer Person" wird zu "Vorsitzende + Entscheidungspflicht" |
 | N6 | Bedingung | "nur wenn Antrag fristgerecht, keine Zusage" wird zu "wer einreicht, dem ist sicher bewilligt" |
 
@@ -134,7 +134,7 @@ Begruendungen gelangen **nie** in den Modellauftrag.
 | # | Klasse | Belegte Tragfaehigkeit (vollstaendig aus den eingefrorenen Belegen) |
 | --- | --- | --- |
 | P1 | Profilbezug | "Mitglied im Ausschuss fuer Arbeit und Soziales" + "Ausschuss beraet ueber Grundsicherung" tragen den fachlichen Bezug; Vorbereitung ist reine Moeglichkeit ohne neue Tatsache/Befugnis |
-| P2 | Beschluss und Frist | "Beschluss am 3. Mai 2027" + "Inkrafttreten 1. Juli 2027" sind ausdruecklich genannt; Begruessen ist freiwillige Bewertung ohne neue Tatsache |
+| P2 | Beschluss und Frist | "Beschluss am 3. Mai 2027" + "Inkrafttreten 1. Juli 2027" sind ausdruecklich genannt; Begruessen ist freiwillige Bewertung ohne neue Tatsache oder Leserposition |
 
 Die zwei positiven Faelle sind fachlich eindeutig: Jede nichtleere Voraussetzung
 ist auf eine ganze Originalstelle zurueckgefuehrt, es bleibt keine Praemisse

@@ -35,11 +35,11 @@ const faelle = [
     mandatsbezug: "Fraktion",
     einordnung: "Du koenntest die offizielle Fraktionsposition zur Reform vertreten." },
   { klasse: "zeit", art: "negativ", erwartet: "widersprochen",
-    begruendung: "Der Anhoerungstermin wird als Beschlusstermin umgedeutet.",
-    quelle: "Die Anhoerung ist fuer den 14. Maerz 2027 terminiert. Ein Termin fuer die Beschlussfassung ist nicht genannt.",
-    profil: "Mitglied im Ausschuss.",
+    begruendung: "Der belegte Beschlusstermin (8. Februar 2027) wird mit dem Inkrafttretensdatum (1. Mai 2027) vertauscht.",
+    quelle: "Das Landeskabinett beschliesst am 8. Februar 2027 die neue Foerderrichtlinie. Die Richtlinie tritt am 1. Mai 2027 in Kraft.",
+    profil: "Mitglied im Landtag.",
     mandatsbezug: "Terminplanung",
-    einordnung: "Du koenntest dich auf den Beschluss am 14. Maerz 2027 vorbereiten." },
+    einordnung: "Du koenntest dich auf den Beschluss am 1. Mai 2027 vorbereiten." },
   { klasse: "profil", art: "negativ", erwartet: "widersprochen",
     begruendung: "Eine Stellvertretung wird zum Vorsitz und eine unbelegte Entscheidungspflicht hinzuerfunden.",
     quelle: "Im Haushaltsausschuss fuehrt eine andere Person den Vorsitz. Das Mandat ist ausschliesslich stellvertretendes Mitglied.",
@@ -61,11 +61,11 @@ const faelle = [
     mandatsbezug: "Ausschuss fuer Arbeit und Soziales",
     einordnung: "Du koenntest dich als Mitglied des Ausschusses fuer Arbeit und Soziales auf die Beratung zur Grundsicherung vorbereiten." },
   { klasse: "beschlussfrist", art: "positiv", erwartet: "tragfaehig",
-    begruendung: "Beschluss und eigene, zum Beschluss gehoerende Frist sind ausdruecklich genannt; das Begruessen ist eine freiwillige Bewertung ohne neue Tatsache.",
+    begruendung: "Beschluss und eigene, zum Beschluss gehoerende Frist sind ausdruecklich genannt; das Begruessen ist eine freiwillige Bewertung ohne neue Tatsache oder angenommene Leserposition.",
     quelle: "Der Stadtrat beschliesst am 3. Mai 2027 die Erhoehung des Zuschusses fuer den Nahverkehr. Die Erhoehung tritt am 1. Juli 2027 in Kraft.",
     profil: "Mitglied im Stadtrat.",
     mandatsbezug: "Nahverkehr",
-    einordnung: "Du koenntest die beschlossene Zuschusserhoehung ab dem 1. Juli 2027 in deinem Wahlkreis begruessen." }
+    einordnung: "Du koenntest die beschlossene Zuschusserhoehung ab dem 1. Juli 2027 begruessen." }
 ];
 
 function corpus() {
