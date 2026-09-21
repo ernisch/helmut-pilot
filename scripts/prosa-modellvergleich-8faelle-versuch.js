@@ -13,8 +13,8 @@ const F = require("./fixtures/prosa-modellvergleich-8faelle");
 const K = require("../lib/helmut/testkosten-budget");
 const T = require("./privater-nachweis-transport");
 const { hash } = require("../lib/helmut/briefing-speicher");
-const KEY = "prosaModellvergleich3_20260921", PREFIX = "MODELLVERGLEICH8_EINMAL:";
-const BRANCH = "codex/prosa-modellvergleich-outputreserve-20260921", TAG = "2026-09-21";
+const KEY = "prosaModellvergleich4_20260921", PREFIX = "MODELLVERGLEICH8_EINMAL:";
+const BRANCH = "codex/prosa-modellvergleich-satzfix-20260921", TAG = "2026-09-21";
 // Ausgabegrenze dieses isolierten Auftrags: acht Faelle in EINEM Aufruf werden
 // mit 8000 Ausgabetokens reserviert. Volle konservative Reserve =
 // tokenKosten(MAX_INPUT_TOKENS=400000, 8000) = 232000 Mikro-USD (0,232 USD),
