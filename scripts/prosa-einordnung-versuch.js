@@ -119,7 +119,7 @@ function kostenbeleg(before, after, meta, counterBefore, counterAfter) {
 
 // Auch ein unlesbares JSON, ein Anbieterfehler oder ein abgebrochener Transport
 // braucht die echten Rohbytes. requestStructuredJson allein liefert diese nicht.
-async function transport(call, { prompt, schema, env, deadline, now = () => new Date() }, https = H) {
+async function transport(call, { prompt, schema, env, deadline, maxOutputTokens = 3000, now = () => new Date() }, https = H) {
   const original = https.request;
   // Transportdeckel: mindestens 30 s, sonst KI-Timeout + 10 s Puffer. Der
   // Default (20 s) laesst ihn unveraendert bei 30 s; ein fuer einen laengeren
@@ -127,7 +127,9 @@ async function transport(call, { prompt, schema, env, deadline, now = () => new 
   const kiRoh = Number(env && env.HELMUT_KI_TIMEOUT_MS);
   const kiTimeout = Number.isFinite(kiRoh) && kiRoh >= 1000 ? Math.floor(kiRoh) : 20000;
   const deckelMs = Math.max(30000, kiTimeout + 10000);
-  const expected = { model: "gpt-5-mini", input: prompt, max_output_tokens: 3000,
+  // maxOutputTokens bleibt standardmaessig 3000 (Aufrufer prosa-einordnung
+  // unveraendert); der isolierte 8-Fall-Vergleich reicht ausdruecklich 8000 durch.
+  const expected = { model: "gpt-5-mini", input: prompt, max_output_tokens: maxOutputTokens,
     reasoning: { effort: "low" }, text: { format: { type: "json_schema", name: "knowledge_object", schema, strict: true } } };
   const urlExpected = require("../lib/helmut/azure-endpunkt").baueResponsesUrl(env.AZURE_OPENAI_ENDPOINT);
   const record = { request: expected, statusCode: null, rawResponse: "", complete: false, requests: 0 };

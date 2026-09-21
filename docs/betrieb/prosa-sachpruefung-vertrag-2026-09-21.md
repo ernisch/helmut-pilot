@@ -1,6 +1,6 @@
 # Pruefvertrag: unabhaengige Sachpruefung der Prosa-Einordnung
 
-21.09.2026 (Fassung 4: Sollfaelle N4 und P2 fachlich korrigiert, kein Lauf).
+21.09.2026 (Fassung 5: Ausgabereserve fuer den isolierten Lauf auf 8000 Tokens / 0,232 USD erhoeht, kein Lauf).
 **Reiner Vorbereitungsstand, keine Freigabe, kein Lauf.** Diese Datei legt den
 kleinsten sachlich vertretbaren Methodenvergleich fest und dokumentiert dessen
 implementierten Vorbereitungsstand. Kein Modellaufruf, keine Productionwirkung,
@@ -11,14 +11,14 @@ Abschnitte "Praemissenvergleich mit getrennten Sollurteilen" und "Abschluss des
 Referenzversuchs". Basis: Main `c4d93e689c185c7f2f90304f565485e67e6425a7`
 (Merge PR#493, aliasfreier Schemafix).
 
-**Implementierter Stand (Fassung 4):**
+**Implementierter Stand (Fassung 5):**
 - `lib/helmut/prosa-praemissenpruefung.js` — Fallgrenze `list(data, 1, 6)` auf
   `list(data, 1, 8)` erweitert; alle uebrigen Grenzen und das fail-closed-
   Verhalten unveraendert.
 - `scripts/fixtures/prosa-modellvergleich-8faelle.js` — die acht neuen,
   unabhaengigen Sollfaelle (getrennt vom Modellpayload).
 - `scripts/prosa-modellvergleich-8faelle-versuch.js` — der einmalige Ausfuehrer
-  (ein Aufruf, 0,212 USD Deckel, 8-von-8-Auswertung, kein Retry).
+  (ein Aufruf, `max_output_tokens 8000`, 0,232 USD Deckel, 8-von-8-Auswertung, kein Retry).
 - `scripts/prosa-modellvergleich-8faelle-test.js` — gezielte Offline-Abnahme.
 - `.github/workflows/staff-backfill-one.yml` — neuer manueller Job
   `prosa-modellvergleich-8faelle` (nur `workflow_dispatch`, kein Cron).
@@ -197,14 +197,18 @@ keine Bedeutung (`bedeutungUnabhaengigBewiesen: false` bleibt).
 ## 8 · Modell
 
 `gpt-5-mini` (Azure Global Standard), `reasoning effort low`,
-`max_output_tokens 3000`, strukturierte JSON-Ausgabe `strict` — identisch mit dem
-zuletzt belegten Referenzversuch (prosa-belegplan L1187–1189) und der
-Ausfuehrerkonfiguration `prosa-einordnung-versuch.js` L124–125
-(`model: "gpt-5-mini"`, `max_output_tokens: 3000`, `reasoning: { effort: "low" }`,
+`max_output_tokens 8000`, strukturierte JSON-Ausgabe `strict` — Modell, Reasoning
+und Schemavorgabe identisch mit dem zuletzt belegten Referenzversuch
+(prosa-belegplan L1187–1189). Einzig die Ausgabegrenze wurde fuer diesen
+isolierten Lauf von 3000 auf 8000 angehoben (Fassung 5): acht Faelle in EINEM
+Aufruf brauchen mehr Ausgaberaum als der Standardpfad von `prosa-einordnung-versuch.js`
+(`model: "gpt-5-mini"`, `reasoning: { effort: "low" }`,
 `text.format.type: "json_schema"`, `strict: true`). Kein Modellwechsel.
 
-**Keine stille Abweichung.** Der bestehende belegte Vertrag wird unveraendert
-uebernommen; es gibt keine abweichende Modell-, Reasoning- oder Schemavorgabe.
+**Keine stille Abweichung.** Modell, Reasoning und Schema werden unveraendert
+uebernommen. Die **einzige** Abweichung ist die ausdruecklich dokumentierte
+Ausgabegrenze 3000 → 8000 (Fassung 5) samt ihrer konservativen Volldecke; sie ist
+nicht still, sondern in §8, §10 und der Zusammenfassung belegt.
 
 ## 9 · Exakte maximale Zahl kostenpflichtiger Modellaufrufe
 
@@ -229,22 +233,22 @@ abgelehnt; alle uebrigen Grenzen (Kontext je Fall 1–6, Praemissen 1–12, Bele
 
 **Kostenarten strikt getrennt:**
 
-- **KI-Kosten (absoluter Deckel):** **0,212000 USD** (212.000 Mikro-USD). Das ist
-  die harte volle Reserve fuer genau einen Aufruf, gemaess dem unveraenderten
-  konservativen Reservierungspfad `lib/helmut/testkosten-budget.js`:
-  `tokenKosten(MAX_INPUT_TOKENS=400000, MAX_OUTPUT_TOKENS=3000)
-  = ceil(400000/2 + 3000*4) = ceil(200000 + 12000) = 212000` Mikro-USD.
-  Die Reserve deckt das **gesamte Modellkontextlimit** ab (kein Tokenraten), wie
-  im Belegplan mehrfach belegt (`c.reserved === 212000`). Die tatsaechlichen
-  Ist-Kosten liegen erfahrungsgemaess deutlich darunter (Referenzlauf 7.589
-  Mikro-USD bei 1.226/1.744 Token, prosa-belegplan L1119–1122); massgeblich als
-  Obergrenze ist aber die konservative Volldecke von 0,212 USD.
+- **KI-Kosten (absoluter Deckel):** **0,232000 USD** (232.000 Mikro-USD). Das ist
+  die harte volle Reserve fuer genau einen Aufruf, gemaess dem konservativen
+  Reservierungspfad `lib/helmut/testkosten-budget.js`:
+  `tokenKosten(MAX_INPUT_TOKENS=400000, MAX_OUTPUT_TOKENS=8000)
+  = ceil(400000/2 + 8000*4) = ceil(200000 + 32000) = 232000` Mikro-USD.
+  Die Reserve deckt das **gesamte Modellkontextlimit** ab (kein Tokenraten). Die
+  tatsaechlichen Ist-Kosten liegen erfahrungsgemaess deutlich darunter
+  (Referenzlauf 7.589 Mikro-USD bei 1.226/1.744 Token, prosa-belegplan
+  L1119–1122); massgeblich als Obergrenze ist aber die konservative Volldecke von
+  0,232 USD.
 - **Infrastruktur-/Abokosten:** nicht Teil dieses Vertrags; Azure- und
   Supabase-Grundgebuehren sind getrennt und werden hier weder erhoeht noch
   angesetzt. Es entsteht **keine** neue Infrastruktur- oder Abokostenposition
   durch diesen Lauf.
 
-0,212 USD liegt **deutlich unter** dem unveraenderten 4-USD-Tagesriegel.
+0,232 USD liegt **deutlich unter** dem unveraenderten 4-USD-Tagesriegel.
 
 Der exakte Deckel wird beim Freigeben an den tatsaechlichen Tokenkostensatz aus
 `lib/helmut/testkosten-budget` gebunden und als harte Obergrenze in den
@@ -269,7 +273,7 @@ folgenden Bedingungen (analog der bereits belegten Ausfuehrerkonfiguration):
 3. Wiederverwendung alter Kennungen oder Eingaben (ein bereits behandelter
    Referenz-/Praemissen-/Restfaellen-Stand oder Eingabehash taucht wieder auf).
 4. Mehr als ein Modellaufruf (Transportzaehler `requests !== 1`).
-5. Ueberschreitung des absoluten Kostendeckels (0,212000 USD bzw. der gebundene
+5. Ueberschreitung des absoluten Kostendeckels (0,232000 USD bzw. der gebundene
    Tokenkostenwert).
 6. Falscher Vorflugzustand: nicht exakt 504 Profile, eines aktiv, lebende
    Sperre/Lease/junger Prozess, Kommunikations- oder Kohortenquelle nicht
@@ -310,7 +314,7 @@ Kein privater Schluessel, kein Rohlog, keine Rohantwort liegt im Repository
 ## 14 · Zu schuetzende private Daten / Schluesselbindungen
 
 - Eigener, einmaliger privater Empfaengerschluessel und
-  `Bestaetigungspraefix EINMAL:`, exklusiv fuer diesen einen Lauf.
+  `Bestaetigungspraefix MODELLVERGLEICH8_EINMAL:`, exklusiv fuer diesen einen Lauf.
 - Alle alten Quittungen (`prosaPraemissen20260921`, `prosaRestfaelle20260921`,
   `prosaReferenzen20260921`) bleiben geschlossen und unveraendert geschuetzt.
 - Kostenhistorie, Telemetrie und `llmUsage`-Ring bleiben erhalten; keine alte
@@ -383,8 +387,8 @@ ein Prompttuning derselben Faelle.
 | Neu / keine Wiederholung | Ja: neue Technikbasis (PR#493), neue 8 Sollfaelle, neuer Zweck |
 | Sollfaelle | 8 (6 negative `widersprochen` + 2 positive Kontrolle `tragfaehig`) |
 | Max. Modellaufrufe | 1 |
-| Modell | gpt-5-mini, reasoning low, 3000 out, JSON strict (unveraendert) |
-| Max. KI-Kosten absolut | 0,212000 USD (volle Reserve, 1 Aufruf); Infrastruktur/Abos getrennt |
+| Modell | gpt-5-mini, reasoning low, 8000 out, JSON strict (nur Ausgabegrenze erhoeht) |
+| Max. KI-Kosten absolut | 0,232000 USD (volle Reserve, 1 Aufruf); Infrastruktur/Abos getrennt |
 | Tagesgrenze | 4 USD unveraendert |
 | Erfolg | 8/8 korrekt (6×`widersprochen` + 2×`tragfaehig`), sauber gebunden, keine Serverablehnung, Quittung vollstaendig |
 | Stopp | Hash-/Paketabweichung, alte Kennung, >1 Aufruf, Kostendeckel, Vorflug, Serverablehnung, Quittung/Belegbindung fehlerhaft, 1 falsches Urteil, technischer Fehler |
