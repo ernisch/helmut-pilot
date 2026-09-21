@@ -1,24 +1,27 @@
 # CURRENT STATE — Helmut
 
-**20.09.2026: Begrenzter unabhaengiger DIP Fakteneingang integriert; Gesamtziel teilweise abgeschlossen.**
-PR477 auf Main `7067b42f2940377dc20c66a18cdf1250d8f71de4`, Deployment
-`dpl_CeUk5VzmqrYXf4aMyjGhrhX7MdwX` READY mit Production Alias; HTTP200 liefert7067b42f.
-Exakter PR Kopf `c41178cf28125d5d060714fc0ed60df4646ee6a6`, CI35522560738:
-439/439 Suiten in655s, Browser50/50, PostgreSQL23/0, Null50026/0, Z2248/0.
-Keine Kommentare oder offenen Reviewpunkte. Automatischer Main Lauf35523295094
-beim Schreiben noch in Arbeit. Lokaler Gesamtlauf bleibt437/438 in858s;
-unveraenderte Sicherheitssuite im sauberen Checkout339/339. Neue Gruppen18/4/8 bestanden.
-Der amtliche Leser traegt Beschlusstenore, Ueberweisungen und engen Ausschussprofilbezug.
-Kein produktiver Aufrufer, keine vollstaendige Feldabdeckung oder36er Fachabnahme.
-Wirkung, individuelle Handlung, freie Nachrichten und Landesversorgung bleiben offen.
-SQL16:38:22 UTC:504/0, keine lebenden Sperren/Leases, offenen Jobs oder jungen Prozesse;
-alle vier vollstaendigen Datenhashes seit13:50:44 unveraendert. Kosten0,264700 USD,
-Reserve0, Riegel4 USD. Kein Import, Modellaufruf, Datenbankeingriff oder Teststart.
-Neun DIP Positionen mit Dokumentdatum ab18.09. enthalten keine Beschluesse/Ueberweisungen;
-keine Frische oder500er Vollversorgung daraus ableiten. Landesportale nur lesend untersucht.
-[Integration, genaue Quellenbefunde und naechste Arbeit](betrieb/prosa-belegplan-2026-09-20.md#integration-pr477).
-Dieser reine Dokumentationsabschluss erfuellt CLAUDE.md Paragraph9; eigener Merge und
-Deployment werden aus der Historie belegt, kein rekursiver Folge PR.
+**21.09.2026: Getrennte Prosa als interne Vorschau entwickelt; teilweise abgeschlossen.**
+Betreiber hat die Trennung belegter Tatsachen und zusaetzlich gepruefter, fehlbarer KI
+Einordnung mit Ja freigegeben. Keine neue Kostenfreigabe und kein500er Start.
+Eigener Branch `codex/prosa-trennung-20260921` direkt auf Main
+`be4b237b6154248f30e175235ed81aa9893b01bf`; EntwurfPR483, kein Merge.
+Gepruefter Codekopf `11105012b0fb95065cc1693272b390ab2b2a1938`.
+Faktenwortlaut bleibt serverseitig gebunden. Jedes freie Feld braucht ein separates Urteil.
+Beide echten App Einstiege und Ansichten haben eine interne, mandatsgebundene Vorschau.
+Keine Route oder Automatik aktiviert sie; sie darf keinen Tagesnachweis speichern.
+Neue Vertragsgruppen50/50 bestanden, inklusive falschem positivem Sprachurteil.
+Vorschau19/19 inklusive Chromium320/390/1280px in hell/dunkel bestanden.
+Lokal441/441 in915s, Browser50/50. CI35567548921:440/441; Vorschau braucht Playwright.
+Korrektur: Vorschau19/19 nun Pflicht im Browserjob; erneute exakte CI offen.
+Kein echter Modellversuch oder regulaerer36er Produktnachweis.
+Ein falsches positives Sprachurteil bleibt moeglich und wird nicht als Faktenbeweis ausgegeben.
+Allgemeine Faktenversorgung, regulaere Speicherintegration und500er Vollversorgung offen.
+PR479/480/481/482 bleiben Forschungsentwuerfe; geschlossene Versuche ohne Restfreigabe.
+PR482: formale Logik24 Gruppen; NLI54 Paare mit3 falschen Freigaben und5 verlorenen Positiven.
+DIP Fakteneingang PR477/478 integriert, weiterhin begrenzt und ohne produktiven Aufrufer.
+SQL21.09.06:04:44 UTC:504/0, keine lebenden Sperren/Leases/offenen Jobs/jungen Prozesse.
+Alle alten Quittungen gestoppt. Tagesbuch0,137576 USD bei4 USD; kein Modellaufruf durch diesen Sprint.
+[Vertrag, Grenzen und Fortsetzung](betrieb/prosa-belegplan-2026-09-20.md#freigegebene-trennung-von-tatsachen-und-einordnung).
 
 **20.09.2026: Quellenreparaturen erfolgreich integriert; Gesamtziel teilweise abgeschlossen.** PR471,472 und473 sind integriert. Letzter fachlicher Main Stand `c070661f18bc001e26443d331672601e62ff2018`, Deployment `dpl_C7ZH7FxjpmFpEetKkyBUYihyNbar` READY. Exakte PR473 CI35510294577:435/435 Suiten in800s, Browser50/50, PostgreSQL23/0+26/0+48/0; keine offenen Reviewpunkte. HTTP200 liefert Versionc070661f. SQL12:37:39 UTC:504/0, keine lebenden Sperren/Leases, offenen Jobs oder jungen offenen Prozesse; alle vier Hashgrundlinien seit12:35:27 unveraendert. Tageskosten0,264700 USD, Grenze4 USD, offene Reserve0. Ereignisketten sind fuer die belegten Faelle getrennt, amtliche Originalangaben erhalten, verschiedene DIP Kennungen gegen Titel und RSS Reihenfolge geschuetzt und Quellentitel nicht mehr sinnveraendernd abgeschnitten. Neue Gegenproben lokal jeweils einmal; keine Wiederholung bestandener lokaler Suiten. Allgemeine Faktenbindung, frische Vollversorgung und gemessene Zeit/Kosten bleiben offen. Keine neuen Modellaufrufe, Imports oder Aktivierungen durch diese Sitzung. [Integration](betrieb/500-betriebsplan-2026-09-20.md#integration-pr473) und [konkrete Restarbeit](betrieb/500-betriebsplan-2026-09-20.md#restarbeit-nach-den-quellenreparaturen). Dieser abschliessende reine Dokumentations PR folgt CLAUDE.md Paragraph9; sein eigener Merge und Deploymentstand werden nicht rekursiv nachdokumentiert.
 
@@ -159,7 +162,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 1. Ein schreibender Ausfuehrer; fremde Vorarbeit erhalten. Konten, Identitaeten, Kostenhistorie und Kommunikationssperre schuetzen.
 2. Drei Prosaserien und der getrennte Quellenpruefer dauerhaft nach je einem Aufruf geschlossen. Keine Fortsetzung oder Wiederholung. Vollstaendige Rohantworten, negative Fachurteile, Kosten und verdraengte Telemetrie erhalten. Weitere Versuche brauchen einen neuen sachlich begruendeten Auftrag innerhalb der vorhandenen Tagesfreigabe.
 3. mini bleibt Referenz; der bestehende atomare4 USD Tagesriegel bleibt unveraendert. Die10 USD Betreibergrenze erteilt keine Freigabe zur Aenderung des engeren technischen Limits. Wenn eine Budget oder Environment Aenderung notwendig wird, konkrete gesonderte Freigabe einholen. Keine Kosten oder offenen Reserven loeschen.
-4. Alle504 Profile bleiben bis zum spaeteren500er Start inaktiv. Artikelkontext bleibt AUS. Keine neue Funktion und kein unnoetiger Umbau.
+4. Alle504 Profile bleiben bis zum spaeteren500er Start inaktiv. Artikelkontext bleibt AUS. Nur der am21.09. freigegebene Prosaansatz, kein weiterer Funktionsausbau.
 5. Mandantentrennung mit `assertTenant` und explizitem Mandatsfilter; bedingte gemeinsame Schreibvorgaenge und persistente Gegenpruefung. Nicht pruefbar bedeutet niemals bestanden.
 
 ## 13 · Detailnachweise und Archiv

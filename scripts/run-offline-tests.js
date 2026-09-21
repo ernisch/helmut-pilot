@@ -127,6 +127,7 @@ const DENYLIST = new Set([
   // fail-closed ist. Im Offline-Job liefe er nur als stiller SKIP mit — das
   // täuschte eine Abdeckung vor, die der andere Job wirklich erbringt.
   "browser-smoke-test.js",
+  "prosa-vorschau-test.js", // verpflichtend im selben Browserjob, kein stiller Skip
   // Gleiche Begruendung, gleiche Loesung (Korrektur 2026-08-28): Der Z22-Datenbanknachweis
   // braucht eine ECHTE PostgreSQL. Ohne `HELMUT_TEST_PG_HOST` endete er mit Exit 0 — und der
   // Runner kennt nur `exit === 0` => PASS. Er meldete also GRUEN fuer einen Nachweis, den

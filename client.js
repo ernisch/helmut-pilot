@@ -5002,8 +5002,32 @@ function renderLageEmpty(greeting, dateLabel, emptyState, data) {
     </section>`;
 }
 
+// Ein gemeinsamer Leser fuer beide Vorschauen. Alle Texte werden escaped;
+// keine zweite Formulierung. Der separate Textexport behaelt die Kennzeichnung.
+function renderProsaEinordnung(data) {
+  if (!data || data.version !== 1 || !Array.isArray(data.bloecke) || !data.bloecke.length)
+    return `<p class="empty-state">Die Vorschau ist nicht verfügbar.</p>`;
+  const blocks = data.bloecke.map(b => {
+    let url = "";
+    try { const u = new URL(b.quelle.url); if (u.protocol === "https:" && !u.username && !u.password) url = u.href; } catch (_) {}
+    return `<article class="prosa-block">
+      <section aria-label="Belegte Quellenangaben"><h2>Belegte Quellenangaben</h2>
+        ${b.tatsachen.saetze.map(s => `<p>${escapeHtml(s.text)}</p>`).join("")}
+        ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">Quelle öffnen</a>` : ""}
+      </section>
+      <section class="prosa-einordnung" aria-label="KI Einordnung">
+        <h2>KI Einordnung</h2><p class="prosa-hinweis">Zusätzlich geprüft, kann Fehler enthalten.</p>
+        ${b.einordnung.felder.map(f => `<h3>${escapeHtml(f.label)}</h3><p>${escapeHtml(f.text)}</p>`).join("")}
+      </section>
+    </article>`;
+  }).join("");
+  return `<section class="prosa-vorschau"><h1>${data.bereich === "lage" ? "Lage" : "Briefing"}</h1>
+    <p class="prosa-hinweis">Entwurf zur Prüfung. Die fachliche Abnahme steht aus.</p>${blocks}</section>`;
+}
+
 function renderLageView() {
   const data = lageData();
+  if (data?.prosaVorschau === true) return renderProsaEinordnung(data.prosaEinordnung);
   const firstName = (profile && profile.fullName ? profile.fullName : "").split(" ")[0];
   const greeting = (typeof timeGreeting === "function" ? timeGreeting(firstName) : (firstName ? `Guten Morgen, ${firstName}.` : "Guten Morgen."));
   const dateLabel = lageDateLabel();
@@ -6364,6 +6388,7 @@ function helmutButtonConfig(state, actionId) {
 }
 
 function renderHelmutView() {
+  if (briefing?.prosaVorschau === true) return renderProsaEinordnung(briefing.prosaEinordnung);
   // Refresh-/Abschluss-Zustand hat Vorrang und ist UNABHÄNGIG von helmutThinking
   // (der Intro-Denkanimation). So bleibt der Refresh-Screen beim Tabwechsel erhalten:
   // kommt der Nutzer während einer laufenden Aktualisierung zurück, sieht er wieder

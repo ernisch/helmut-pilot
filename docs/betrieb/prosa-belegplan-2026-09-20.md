@@ -506,3 +506,159 @@ Dieser abschliessende PR aendert nur Dokumentation gemaess CLAUDE.md
 Paragraph9. Sein eigener Merge und Deployment werden aus der Historie
 belegt, kein rekursiver Dokumentations PR und kein erneuter manueller
 fachlicher Gesamtlauf allein fuer diese beiden Dokumentationsdateien.
+
+
+## Freigegebene Trennung von Tatsachen und Einordnung
+
+Betreiberentscheidung21.09.2026: Das ausdrueckliche Ja im Anschluss an
+PR482 erlaubt die Entwicklung des getrennten Ansatzes. Die damalige Aussage
+im Forschungsentwurf, diese Produktentscheidung stehe aus, ist damit ueberholt.
+Freigabeumfang: strikt belegte Tatsachen, davon sichtbar getrennte, zusaetzlich
+gepruefte und weiterhin fehlbare KI Einordnung. Kein neuer bezahlter Versuch,
+Import, Aktivierungsauftrag oder500er Start. Die bisherigen gescheiterten
+Versuche bleiben geschlossen. [PR482](https://github.com/ernisch/helmut-pilot/pull/482)
+enthaelt die unveraenderten Forschungsbefunde; dessen NLI Kandidat wird nicht
+als Faktenfreigabe uebernommen.
+
+### Implementierter Entwicklungsstand
+
+Eigener Branch `codex/prosa-trennung-20260921`, direkt von Main
+`be4b237b6154248f30e175235ed81aa9893b01bf`. Keine Forschungsimplementierung
+oder Versuchsdaten aus PR479 bis482 uebernommen.
+
+`prosa-einordnung.js` bindet den bestehenden unabhaengigen Faktenplan.
+Ein serverseitiger Plan legt den freigegebenen Wortlaut fest. Der Generator
+darf nur Faktenkennungen auswaehlen, keine Tatsachensaetze schreiben oder
+Freigaben mitliefern. Ereignis, Zuschreibung, Zeit, Wirkung und Profil bleiben
+an ihre vorher gepruefte Formulierung gebunden. Option und Kommunikation
+werden nicht allein durch Umetikettieren zu Tatsachen. Maximal12 Fakten,
+64.000 Eingabezeichen, vier Bloecke und600 Zeichen je freiem Feld; keine
+Kuerzung. Ein Block bleibt an genau einen Vorgang und ein Quelldokument
+gebunden. Eine Lage benoetigt mindestens zwei unterschiedliche Sachverhalte.
+
+Freie Felder sind Relevanz, Risiko, Chance, Option und Kommunikation.
+Relevanz und Option sind Pflicht; andere Felder duerfen ausdruecklich fehlen.
+Jedes vorhandene Feld braucht ein eigenes Urteil: getragene Voraussetzungen,
+keine neue Tatsachenbehauptung, korrekte Rollen/Modalitaet, konkreter
+Mandatsbezug und Nutzen. Unklar, widersprochen, ein fehlendes Urteil oder
+ein negatives Teilkriterium sperren die ganze Ausgabe. Alle Blockpaare
+brauchen ein Urteil ueber eigenstaendige Sachinformation. Kennungen allein
+reichen nicht. Quellen, gesamtes Profil, Datum, Bereich und ganzer Entwurf
+sind an genau dieses Urteil gebunden. Ein alter Hash darf nicht fuer eine
+geaenderte Empfehlung oder ein anderes Mandat benutzt werden.
+
+Der bekannte Sachdetailschutz bleibt zusaetzlich bestehen. Eine neue
+Gegenprobe zeigte, dass er eine neue Zahl999 nicht allgemein zurueckhaelt.
+Darum kontrolliert der neue Vertrag zusaetzlich alle Ziffernangaben gegen die
+ausgewaehlten Faktensaetze. Keine Umrechnung oder neue Zahleninterpretation.
+Das ist ein enger technischer Schutz, kein semantischer Zahlenbeweis:
+gleiche Zahlen koennen noch immer falschen Empfaengern oder Zeitrollen
+zugeordnet werden. Ausgeschriebene Zahlen und sonstige Bedeutungsfehler
+bleiben ebenfalls Gegenstand der separaten Fachpruefung.
+
+`prosa-einordnung-ai.js` bereitet zwei getrennte Aufrufe vor: Entwurf und
+Pruefung. Beide gehen durch die bestehende `ai.requestStructuredJson`
+Schnittstelle mit mini, strengem Schema, bestehendem Budgetriegel und
+maximal3000 Ausgabetoken. Kein Retry und kein Budgetbypass. Vor JEDEM
+Aufruf muss der spaetere Ausfuehrer den Vorflug erneut pruefen; nach JEDEM
+Ergebnis muss er den unveraenderten Rohbeleg bestaetigt speichern. Die Speicherquittung muss gespeicherten Zustand, Auftrag, Phase, Mandat,
+Faktenbasis und Antwortinhalt exakt bestaetigen; blosses Promise Ende oder
+false reichen nicht. Erst danach wird validiert oder die zweite Phase
+betreten. Fehler beim Beleg,
+Vorflug oder Anbieter stoppen. Der Adapter allein ist weder eine
+dauerhafte Versuchssperre noch eine Production Ausfuehrungsfreigabe.
+Er hat keinen automatischen oder oeffentlichen Aufrufer.
+
+`prosa-vorschau.js` erstellt einen nicht serialisierbaren Prozesszugang.
+Nur dieser Zugang oeffnet die internen Optionen in `buildV3Briefing` und
+`buildLageBriefing`. Profil, Mandat, Tag und Bereich muessen exakt stimmen;
+ein Request JSON kann den Zugang nicht ersetzen. Die Vorschau liest und
+schreibt keine Produktdaten und ruft keine KI auf. Der regulaere
+Briefingspeicher lehnt sie ausdruecklich ab. Damit kann sie weder einen
+Tagesnachweis ersetzen noch eine500er Vollstaendigkeit vortaeuschen.
+
+Beide tatsaechlichen Client Ansichten besitzen einen gemeinsamen Leser
+fuer diese Vorschau. Belegte Quellenangaben und KI Einordnung stehen in
+getrennten Abschnitten. Die Einordnung traegt pro Block den sichtbaren
+Hinweis „Zusaetzlich geprueft, kann Fehler enthalten“. Alte UI Aliase werden
+in dieser Vorschau nicht zusaetzlich gerendert. Texte werden escaped;
+Quellenlinks erlauben ausschliesslich HTTPS ohne eingebettete Zugangsdaten.
+Der gesamte Textexport behaelt die Kennzeichnung auch beim
+Formulierungsvorschlag. Eine manuelle Auswahl nur einzelner Woerter oder
+Saetze durch den Menschen ist kein kontrollierter Export.
+
+### Nachweise und ausdrueckliche Grenzen
+
+Neue lokale Vertragspruefung50/50:36 redaktionelle Faelle aus sechs Klassen
+mal positiv/negativ/unklar mal Briefing/Lage. Dazu Grenzen fuer fehlende
+Felder, Manipulation, Quelle/Profil, neue Zahlen, Paarvergleich,
+Speicherung/Ruecklesung und getrennte Aufrufreihenfolge. Diese Tests
+verwenden vorgegebene Fachurteile. Sie messen NICHT, ob ein Sprachmodell
+diese Urteile selbst richtig findet. Auch ein absichtlich falsches
+positives Sprachurteil wird als Methodengrenze festgehalten: Der falsche
+Einordnungstext kann dann bestehen, aber niemals als bestandene
+Faktenvollpruefung oder Produktabnahme. Der Tatsachenwortlaut bleibt dabei
+unveraendert. Ein positives Urteil ist keine unabhaengige Beglaubigung.
+
+Echte interne Servereinstiege und Client Ansichten lokal geprueft,
+noch keine regulaere Generation/Speicherung oder Production Abnahme.
+Vorschau19/19, darin zwoelf Chromium Kombinationen aus zwei Ansichten,
+drei Breiten320/390/1280 und hell/dunkel. Keine seitliche Ueberbreite,
+Kennzeichnung und Quellenlinks sichtbar, keine Browserfehler. Der lokale
+Browserfehler des vorigen Sprints war umgebungsbedingt: passendes bereits
+vorhandenes Chromium gefunden; gezielte Altpruefung75/75 bestanden.
+Keine neue Installation und keine Aenderung fremder Arbeitsstaende.
+
+Der begrenzte DIP Fakteneingang kann weiterhin nur seine dokumentierten
+amtlichen Felder liefern. Die neue Trennung schafft keine allgemeine
+unabhaengige Faktenversorgung fuer freie Nachrichten. Rohzitat, eigener
+Modellhash und positives Eigenurteil werden nicht nachtraeglich zu einer
+inhaltlichen Freigabe erklaert. Die Profilrelevanz und der Nutzen der
+synthetischen Beispiele sind keine fachliche Abnahme realer Mandate.
+
+Offen bleiben die echte Modellleistung, alle36 regulaeren Produktfaelle
+mit wirklichem Speicherpfad und Ruecklesung, die vollstaendige Feld und
+Aliasabdeckung ausserhalb der Vorschau, frische Versorgung aller500
+Profile,1500 Ergebnispositionen sowie gemessene Zeit und Kosten. Die
+bestehenden Nachlauf und Qualitaetstore sind unveraendert. Die Vorschau
+erfuellt diese Tore bewusst noch nicht.
+
+Naechster fachlicher Schritt: ein vorab begrenzter neuer Modellversuch am
+getrennten Vertrag, mit festgelegter Faktenbasis, eingefrorenen Prompts,
+eigener einmaliger Quittung, Rohantworten und unabhaengigen Sollurteilen.
+Danach erst regulaere Speicherung und Generation anschliessen. Kein
+kleiner Ersatz fuer den500er Test und kein Wiederverwenden alter Freigaben.
+Ohne gesonderte Kostenfreigabe wird kein solcher Versuch ausgefuehrt.
+
+Kanonischer Gesamtlauf ueber `scripts/lokal.js`:441/441 Suiten in915s.
+Beide neuen Suiten laufen darin erfolgreich; die Antwortquittungskorrektur
+war vor ihrem Start enthalten. Gesonderter Browser Smoke50/50. Alle lokalen
+Pruefungen nutzen den vorhandenen passenden Chromiumstand. Neue fachliche
+Vertragsgruppen50/50 und Vorschaugruppen19/19, Dokumentationsgroesse4/4.
+Die mobile Vorschau wurde zusaetzlich als Bild gelesen: beide Abschnitte,
+Hinweise und Quellen ohne abgeschnittenen Text sichtbar. git diff --check
+besteht. Kein eigener Modellaufruf und keine behauptete Modellqualitaet.
+[Entwurf PR483](https://github.com/ernisch/helmut-pilot/pull/483) sichert
+Codekopf `11105012b0fb95065cc1693272b390ab2b2a1938`, Baum
+`cb337d7bc908cd71cfb530fa07d67bb133c59970`. Lokaler und entfernter
+Codebaum identisch. Der nachfolgende reine Dokumentationsabschluss ergaenzt
+nur diesen PR Verweis. Pflicht CI am letzten Kopf separat nachsehen;
+kein Merge oder Deployment behauptet.
+
+
+Reine Production Nachsicht21.09.2026 um09:04:44 Tuerkei /08:04:44 Berlin /
+06:04:44 UTC:504 Profile,0 aktiv,0 lebende Sperren,0 lebende Job und
+Verstehensleases,0 unerledigte Jobs,0 junge offene Prozesse. Zweite SELECT
+Abfrage06:04:48 UTC: alle drei alten Versuchsquittungen gestoppt; heutiges
+Kostenbuch0,137576 USD, Grenze4 USD. Die Buchungen sind keine neue
+Modellfreigabe. Kein eigener API Aufruf, Import oder Production Schreibzugriff.
+Keine vollstaendige erneute Hashinventur behauptet.
+
+Fortsetzung21.09.: Pflicht CI35567548921 auf33b5337 scheitert mit440/441
+Suiten ausschliesslich an fehlendem Playwright in prosa-vorschau-test.js.
+Der gesonderte Browser Smoke ist erfolgreich. Die Vorschau wird deshalb
+verpflichtend im vorhandenen Browserjob nach dessen gepinnter Installation
+ausgefuehrt; im Offline Runner ist sie wie der Browser Smoke ausgeschlossen.
+Kein Skip und keine abgesenkte Assertion. Lokal erneut19/19 bestanden.
+Die erneute Pflicht CI muss am korrigierten Kopf vollstaendig bestehen,
+einschliesslich des zuvor uebersprungenen Z22 Datenbanknachweises.

@@ -3340,6 +3340,11 @@ async function loadMentionSourcesInto(profile, understood, sourcesByVorgang) {
 
 const AUSSAGEN_DATEN = Symbol("gepruefte-korrekturauswahl");
 async function buildV3Briefing(profile, politicianId, opts = {}) {
+  // Nur eine interne, bereits gepruefte Vorschau. Keine HTTP Option aktiviert sie.
+  if (opts.prosaVorschau) return require("./lib/helmut/prosa-vorschau").lese(opts.prosaVorschau, {
+    profile, userId: politicianId, bereich: "briefing",
+    tag: require("./lib/helmut/briefing-frische").berlinTagKey(opts.now ? new Date(opts.now) : new Date())
+  });
   const briefingContract = require("./lib/helmut/briefingContract");
   const decisionsEngine = require("./lib/helmut/decisions");
   const briefingLanguage = require("./lib/helmut/briefingLanguage");
