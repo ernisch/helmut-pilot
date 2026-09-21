@@ -31,9 +31,17 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); count++
   await test("Inaktiv ohne Schreibwirkung; falsches Modell oder Limit vor Reservierung gesperrt", async () => {
     const h = fixture();
     assert.equal(await B.reserviere(ARGS, { ...h.deps, env: {} }), null);
-    for (const args of [{ ...ARGS, model: "unbekannt" }, { ...ARGS, maxOutputTokens: 3001 }])
+    for (const args of [{ ...ARGS, model: "unbekannt" }, { ...ARGS, maxOutputTokens: 8001 }])
       await assert.rejects(B.reserviere(args, h.deps), { code: "LLM_BUDGET_EXHAUSTED", kiNichtGesendet: true });
     assert.equal(h.read()[B.KEY], undefined);
+  });
+  await test("Ausgabegrenze: 8000 Tokens erlaubt (232000 Reserve), 8001 vor jeder Reservierung gesperrt", async () => {
+    const h = fixture();
+    const ticket = await B.reserviere({ ...ARGS, maxOutputTokens: 8000 }, h.deps);
+    assert.equal(ticket.reserved, 232000); assert.equal(ticket.maxOutputTokens, 8000);
+    assert.equal(B.belegt(h.day()), 232000);
+    await assert.rejects(B.reserviere({ ...ARGS, maxOutputTokens: 8001 }, h.deps),
+      { code: "LLM_BUDGET_EXHAUSTED", kiNichtGesendet: true });
   });
   await test("40 parallele Reservierungen halten gemeinsam hoechstens 4 USD; bestaetigte Abrechnung gibt nur den Rest frei", async () => {
     const h = fixture();

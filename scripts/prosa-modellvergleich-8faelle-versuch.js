@@ -13,11 +13,13 @@ const F = require("./fixtures/prosa-modellvergleich-8faelle");
 const K = require("../lib/helmut/testkosten-budget");
 const T = require("./privater-nachweis-transport");
 const { hash } = require("../lib/helmut/briefing-speicher");
-const KEY = "prosaModellvergleich2_20260921", PREFIX = "MODELLVERGLEICH8_EINMAL:";
-const BRANCH = "codex/prosa-modellvergleich-timeoutfix-20260921", TAG = "2026-09-21";
-// Volle konservative Reserve fuer genau EINEN Aufruf (212000 Mikro-USD = 0,212 USD),
+const KEY = "prosaModellvergleich3_20260921", PREFIX = "MODELLVERGLEICH8_EINMAL:";
+const BRANCH = "codex/prosa-modellvergleich-outputreserve-20260921", TAG = "2026-09-21";
+// Ausgabegrenze dieses isolierten Auftrags: acht Faelle in EINEM Aufruf werden
+// mit 8000 Ausgabetokens reserviert. Volle konservative Reserve =
+// tokenKosten(MAX_INPUT_TOKENS=400000, 8000) = 232000 Mikro-USD (0,232 USD),
 // deutlich unter dem unveraenderten 4-USD-Tagesriegel. Keine Budgeterhoehung.
-const MAX_COST = 212000, MAX_MS = 300000, RING = 5000;
+const MAX_OUTPUT_TOKENS = 8000, MAX_COST = 232000, MAX_MS = 300000, RING = 5000;
 // Laufzeitdeckel dieses isolierten Auftrags. Acht Faelle in EINEM Aufruf brauchen
 // deutlich laenger als der Standard (20 s); der Wert wird als einziger zugelassen.
 const KI_TIMEOUT_MS = 120000;
@@ -134,7 +136,7 @@ function kostenbeleg(before, after, meta, counterBefore, counterAfter) {
     !before.llmUsage.some(x => x.id === u.id));
   fordere(calls.length === 1 && usage.length === 1, "EINORDNUNG_KOSTENBELEG");
   const [id, c] = calls[0], u = usage[0];
-  fordere(c.status === "abgerechnet" && c.reserved === 212000 && c.maxOutputTokens === 3000
+  fordere(c.status === "abgerechnet" && c.reserved === MAX_COST && c.maxOutputTokens === MAX_OUTPUT_TOKENS
     && c.bezug?.runId === meta.runId && c.bezug.phase === meta.phase
     && c.bezug.mandatHash === sha(JSON.stringify(meta.mandat))
     && c.cost === K.tokenKosten(u.promptTokens, u.completionTokens)
@@ -199,7 +201,8 @@ async function ausfuehren({ env = process.env, now = () => new Date(), fetchFn =
     const before = await storage.readAuthStore();
     const observed = await observe(() => ai.requestStructuredJson(p.prompt, p.schema, {
       callType: "prosaModellvergleich", politicianId: meta.mandat, runId, testKostenPhase: meta.phase
-    }, "gpt-5-mini", { strict: true, reasoningEffort: "low" }), { prompt: p.prompt, schema: p.schema, env, deadline, now });
+    }, "gpt-5-mini", { strict: true, reasoningEffort: "low", maxOutputTokens: MAX_OUTPUT_TOKENS }),
+      { prompt: p.prompt, schema: p.schema, env, deadline, maxOutputTokens: MAX_OUTPUT_TOKENS, now });
     const transportEnvelope = T.verschluesseln(observed, a.publicKey, ctx);
     emit({ typ: "einordnung-transport", phase: meta.phase, envelope: transportEnvelope });
     await schreibe(x => Object.assign(x.phasen.at(-1), { transport: transportEnvelope,
@@ -234,5 +237,5 @@ async function ausfuehren({ env = process.env, now = () => new Date(), fetchFn =
 if (require.main === module) ausfuehren().then(r => { console.log(JSON.stringify(r)); if (!r.ok) process.exitCode = 1; })
   .catch(e => { console.error(JSON.stringify(frueheFehlerausgabe(e))); process.exitCode = 1; });
 module.exports = { paket, auswertung, eingabe, konfiguration, vorflug, grundlinie, kostenbeleg, transport, ausfuehren,
-  pruefeOffeneReserven, frueheFehlerausgabe, KEY, PREFIX, BRANCH, TAG, MAX_COST, MAX_MS, KI_TIMEOUT_MS,
+  pruefeOffeneReserven, frueheFehlerausgabe, KEY, PREFIX, BRANCH, TAG, MAX_COST, MAX_OUTPUT_TOKENS, MAX_MS, KI_TIMEOUT_MS,
   ALT_TICKET, ALT_BEZUG_RUN, ALT_MANDAT_HASH, NEU_TICKET, NEU_BEZUG_RUN, NEU_MANDAT_HASH };

@@ -78,10 +78,11 @@ test("Sollurteile und Begruendungen sind vom Modellpayload getrennt", () => {
   }
 });
 
-test("Ausfuehrer ist auf genau einen Aufruf und 0,212 USD gedeckelt", () => {
-  A.equal(V.MAX_COST, 212000);
-  A.equal(V.BRANCH, "codex/prosa-modellvergleich-timeoutfix-20260921");
-  A.equal(V.KEY, "prosaModellvergleich2_20260921");
+test("Ausfuehrer ist auf genau einen Aufruf und 0,232 USD gedeckelt", () => {
+  A.equal(V.MAX_COST, 232000);
+  A.equal(V.MAX_OUTPUT_TOKENS, 8000);
+  A.equal(V.BRANCH, "codex/prosa-modellvergleich-outputreserve-20260921");
+  A.equal(V.KEY, "prosaModellvergleich3_20260921");
   A.equal(V.KI_TIMEOUT_MS, 120000);
   const p = V.paket();
   A.equal(p.faelle.length, 8);
@@ -169,9 +170,28 @@ test("zu wenig verbleibendes Tagesbudget wird abgelehnt", () => {
   A.equal(sperrt(t), true);
 });
 
-test("Tagesriegel bleibt 4000000 und neue Reserve maximal 212000", () => {
+test("Tagesriegel bleibt 4000000 und neue Reserve maximal 232000", () => {
   A.equal(K.LIMIT_MICRO_USD, 4000000);
-  A.equal(V.MAX_COST, 212000);
+  A.equal(V.MAX_COST, 232000);
+});
+
+test("Neue Ausgabereserve ist exakt 8000 Tokens = 232000 Mikro-USD", () => {
+  A.equal(V.MAX_OUTPUT_TOKENS, 8000);
+  A.equal(K.tokenKosten(400000, V.MAX_OUTPUT_TOKENS), 232000);
+  A.equal(V.MAX_COST, K.tokenKosten(400000, V.MAX_OUTPUT_TOKENS));
+});
+
+test("Buch akzeptiert 8000/232000 und lehnt abweichende Ausgabegrenzen ab", () => {
+  const neuerAufruf = { status: "abgerechnet", reserved: V.MAX_COST, maxOutputTokens: V.MAX_OUTPUT_TOKENS,
+    manual: true, createdAt: "2026-09-21T09:39:00.000Z", cost: 0,
+    bezug: { version: 1, runId: "nachlauf500-11111111111", mandatHash: "a".repeat(64), phase: "pruefung" } };
+  const buch = over => tagesEintrag({ ...beide(), "neuer-aufruf": { ...neuerAufruf, ...over } }, { manualCalls: 3 });
+  A.doesNotThrow(() => K.pruefeTag(buch(), V.TAG));
+  for (const falsch of [{ reserved: 212000 }, { maxOutputTokens: 3000 },
+    { reserved: 240000 }, { maxOutputTokens: 20000 }]) {
+    A.throws(() => K.pruefeTag(buch(falsch), V.TAG), /test-usd-buch-unlesbar/,
+      `Abweichung ${JSON.stringify(falsch)} nicht abgewiesen`);
+  }
 });
 
 test("Timeout ist exakt gebunden: nur 120000 wird akzeptiert", () => {
