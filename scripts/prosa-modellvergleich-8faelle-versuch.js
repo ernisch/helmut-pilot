@@ -14,12 +14,41 @@ const K = require("../lib/helmut/testkosten-budget");
 const T = require("./privater-nachweis-transport");
 const { hash } = require("../lib/helmut/briefing-speicher");
 const KEY = "prosaModellvergleich20260921", PREFIX = "MODELLVERGLEICH8_EINMAL:";
-const BRANCH = "codex/prosa-modellvergleich-8faelle-20260921", TAG = "2026-09-21";
+const BRANCH = "codex/prosa-modellvergleich-kostenfix-20260921", TAG = "2026-09-21";
 // Volle konservative Reserve fuer genau EINEN Aufruf (212000 Mikro-USD = 0,212 USD),
 // deutlich unter dem unveraenderten 4-USD-Tagesriegel. Keine Budgeterhoehung.
 const MAX_COST = 212000, MAX_MS = 300000, RING = 5000;
 const sha = x => C.createHash("sha256").update(x).digest("hex");
 function fordere(ok, code) { if (!ok) { const e = new Error(code); e.code = code; throw e; } }
+
+// Der EINE belegte Altbestand: das ungeklaerte Kostenticket aus dem abgebrochenen
+// Timeout-Lauf 35584480605 des Praemissen-Vergleichs. Es bindet 0,212 USD als
+// unbekannt und darf laut Kostenregel 2 erhalten bleiben (nicht entfernt, nicht
+// umgebucht, nicht als abgerechnet markiert). Nur EXAKT dieses eine Ticket wird
+// zugelassen; jede Abweichung und jedes weitere reservierte oder ungeklaerte
+// Ticket sperrt weiterhin fail closed. Keine allgemeine Lockerung.
+const ALT_TICKET = "2ec7ab92-7d20-45db-94b9-9004f32f55d9";
+const ALT_BEZUG_RUN = "nachlauf500-35584480605";
+const ALT_MANDAT_HASH = sha(JSON.stringify("synthetisch-praemissen-1"));
+
+// Genau EIN offenes Ticket darf bestehen bleiben, und nur der belegte Altbestand.
+// Kein reserviertes Ticket, kein zweites ungeklaertes Ticket, keine Abweichung.
+function pruefeOffeneReserven(t) {
+  const offen = Object.entries(t.calls).filter(([, c]) => ["reserviert", "ungeklaert"].includes(c.status));
+  const alt = t.calls[ALT_TICKET];
+  fordere(t.frozen === null && offen.length === 1 && offen[0][0] === ALT_TICKET
+    && alt.status === "ungeklaert" && alt.reserved === 212000 && alt.maxOutputTokens === 3000
+    && alt.manual === true && alt.bezug?.runId === ALT_BEZUG_RUN && alt.bezug.phase === "pruefung"
+    && alt.bezug.mandatHash === ALT_MANDAT_HASH
+    && K.belegt(t) + MAX_COST <= 4000000, "EINORDNUNG_KOSTEN_GESPERRT");
+}
+
+// Fruehe Fehler (vor der inneren Behandlung) erhalten einen sicheren, knappen
+// Fehlercode, aber niemals eine Fehlermeldung, einen Stack oder Inhalte.
+function frueheFehlerausgabe(e) {
+  const detail = /^EINORDNUNG_[A-Z_]+$/.test(e?.code || "") ? { detail: e.code } : {};
+  return { ok: false, grund: "EINORDNUNG_UNBESTAETIGT", ...detail, automatischeWiederholung: false };
+}
 
 function paket() {
   const faelle = F.corpus();
@@ -122,9 +151,10 @@ async function ausfuehren({ env = process.env, now = () => new Date(), fetchFn =
     for (const [k, max] of Object.entries({ sessions: 2000, auditEvents: 1000, systemErrors: 500,
       dailyInputs: 2000, llmUsage: RING, processRuns: 300 }))
       fordere(Array.isArray(auth[k]) && auth[k].length <= max, "EINORDNUNG_SPEICHERSTAND");
-    const t = K.pruefeTag(auth.testKostenTage?.[TAG], TAG); K.kontrolliere(auth, TAG, 0, startCounter.used);
-    fordere(t.frozen === null && !Object.values(t.calls).some(c => ["reserviert", "ungeklaert"].includes(c.status))
-      && K.belegt(t) + MAX_COST <= 4000000, "EINORDNUNG_KOSTEN_GESPERRT");
+    const t = K.pruefeTag(auth.testKostenTage?.[TAG], TAG);
+    // genau EIN bekannter Altbestand darf als unbekannte Reserve bestehen.
+    K.kontrolliere(auth, TAG, 1, startCounter.used);
+    pruefeOffeneReserven(t);
     expected = { version: 1, runId, commit: a.commit, productionCommit: a.productionCommit,
       paketHash: p.paketHash, empfaenger: T.publicKey(a.publicKey).fingerprint,
       status: "begonnen", begonnenAm: start.toISOString(), ende: new Date(deadline).toISOString(),
@@ -187,6 +217,7 @@ async function ausfuehren({ env = process.env, now = () => new Date(), fetchFn =
 }
 
 if (require.main === module) ausfuehren().then(r => { console.log(JSON.stringify(r)); if (!r.ok) process.exitCode = 1; })
-  .catch(() => { console.error(JSON.stringify({ ok: false, grund: "EINORDNUNG_UNBESTAETIGT", automatischeWiederholung: false })); process.exitCode = 1; });
+  .catch(e => { console.error(JSON.stringify(frueheFehlerausgabe(e))); process.exitCode = 1; });
 module.exports = { paket, auswertung, eingabe, konfiguration, vorflug, grundlinie, kostenbeleg, transport, ausfuehren,
-  KEY, PREFIX, BRANCH, TAG, MAX_COST, MAX_MS };
+  pruefeOffeneReserven, frueheFehlerausgabe, KEY, PREFIX, BRANCH, TAG, MAX_COST, MAX_MS, ALT_TICKET, ALT_BEZUG_RUN,
+  ALT_MANDAT_HASH };
