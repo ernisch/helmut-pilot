@@ -1,20 +1,18 @@
 # Pruefvertrag: unabhaengige Sachpruefung der Prosa-Einordnung
 
-21.09.2026 (Fassung 6: Satztrennung bei deutschen Ordinaldaten im Motor korrigiert; dadurch sind eingabeHash, vertragHash und paketHash neu).
-**Kein neuer Lauf durch diese Fassung.** Diese Datei legt den kleinsten sachlich
-vertretbaren Methodenvergleich fest und dokumentiert dessen implementierten
-Vorbereitungsstand. Der zuvor vorbereitete Lauf wurde am 21.09. ausgefuehrt und
-vom Serververtrag strukturell abgelehnt; der Ausgang steht in
-[CURRENT_STATE](../../CURRENT_STATE.md), die Ursache behebt Fassung 6 unten.
-Kein weiterer Modellaufruf, keine Productionwirkung, keine Profilaktivierung,
-keine Migration, keine Cron- oder Environmentaenderung.
+21.09.2026 (Fassung 7: Acht-Fall-Lauf ausgefuehrt und **bestanden**; Methode abgenommen, kein Produkt- oder 500er-Nachweis).
+**Lauf am 21.09. ausgefuehrt und bestanden.** Der zuletzt vorbereitete Lauf wurde
+mit genau einem Aufruf gefahren und erfuellte §16 (8 von 8). Der Vorlauf war am
+inzwischen behobenen Ordinaldatum-Satzfehler gescheitert (Fassung 6). Keine
+Productionwirkung, keine Profilaktivierung, keine Migration, keine Cron- oder
+Environmentaenderung.
 
 Vorlage/Quelle: [prosa-belegplan-2026-09-20.md](prosa-belegplan-2026-09-20.md),
 Abschnitte "Praemissenvergleich mit getrennten Sollurteilen" und "Abschluss des
 Referenzversuchs". Basis: Main `c4d93e689c185c7f2f90304f565485e67e6425a7`
 (Merge PR#493, aliasfreier Schemafix).
 
-**Implementierter Stand (Fassung 6):**
+**Implementierter Stand (Fassung 7):**
 - `lib/helmut/prosa-praemissenpruefung.js` — Fallgrenze `list(data, 1, 6)` auf
   `list(data, 1, 8)` erweitert; **Satzgrenzen-Helfer `saetzeVon`** ergaenzt (siehe
   Fassung 6 unten); alle uebrigen Grenzen und das fail-closed-Verhalten unveraendert.
@@ -50,6 +48,25 @@ Referenzversuchs". Basis: Main `c4d93e689c185c7f2f90304f565485e67e6425a7`
 - Ein neuer `CONFIRM_TEXT` ist erst nach feststehendem Commit zu erzeugen und
   bindet dann `commit`, `productionCommit`, den neuen `paketHash` und den
   oeffentlichen Schluessel. Kein kostenpflichtiger Lauf durch diese Fassung.
+
+**Fassung 7 — Lauf ausgefuehrt und bestanden (Methode abgenommen):**
+- Lauf `35651115787` auf `codex/prosa-modellvergleich-satzfix-20260921`, Commit
+  `ee7b5ecb0d731c49883292af303d4af619420d9a`, Paket `73a88aec…`. **Genau ein**
+  Modellaufruf (`requests=1`, HTTP 200, `complete=true`), `gpt-5-mini`,
+  `max_output_tokens 8000`, reasoning low, strict JSON.
+- Ist-Kosten **12763 Mikro-USD (0,012763 USD)** bei 4397/2641 Token in 23755 ms;
+  Kostenticket `abgerechnet` (`reserved 232000`). Deutlich unter dem Deckel
+  0,232 USD und dem 4-USD-Tagesriegel. Die zwei bekannten `ungeklaert`-Alttickets
+  blieben bytegleich gebunden; kein Retry, kein zweiter Aufruf.
+- Ergebnis: **8 von 8** Sollurteilen korrekt (6x `widersprochen`, 2x `tragfaehig`),
+  0 falsch positiv, 0 falsch negativ, `methodenvergleichBestanden=true`. Damit
+  ist §16 erfuellt; §17 ist **nicht** eingetreten.
+- **Ausdruecklich kein Produkt- und kein 500er-Nachweis:** `produktabnahme=false`,
+  `bedeutungUnabhaengigBewiesen=false`, `inProductionImportiert=false`. Der
+  Vergleich belegt ausschliesslich die Pruefmethode. Naechster fachlicher Schritt
+  ist der 36er-Vertrag (eigene Datei), vor weiteren bezahlten Aufrufen.
+- Rohantwort, Transportbeleg, Kostenbeleg und Quittung sind privat gesichert und
+  liegen **nicht** im Repository.
 
 ---
 
