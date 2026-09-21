@@ -7,6 +7,8 @@ const P = require("../lib/helmut/prosa-einordnung");
 const AI = require("../lib/helmut/prosa-einordnung-ai");
 const F = require("./fixtures/prosa-einordnung");
 const { hash } = require("../lib/helmut/briefing-speicher");
+const quittung = x => ({ gespeichert: true, runId: x.runId, phase: x.phase, mandat: x.mandat,
+  basisHash: x.basisHash, antwortHash: hash(x.antwort) });
 let passed = 0;
 async function test(name, fn) { await fn(); passed++; console.log("PASS " + name); }
 const setup = (bereich = "briefing", klasse = 0) => {
@@ -148,12 +150,12 @@ const setup = (bereich = "briefing", klasse = 0) => {
     } };
     const out = await AI.erzeuge({ ...b, bereich: "briefing", runId: "nachlauf500-20260921999",
       beforeCall: async x => { events.push("gate:" + x.phase); },
-      onResponse: async x => { events.push("save:" + x.phase); x.antwort.bloecke = []; } }, { ai });
+      onResponse: async x => { events.push("save:" + x.phase); const r = quittung(x); x.antwort.bloecke = []; return r; } }, { ai });
     A.deepEqual(events, ["gate:entwurf", "call:entwurf", "save:entwurf", "gate:pruefung", "call:pruefung", "save:pruefung"]);
     A.equal(p.pruefe(e, u, out.ausgabe).gebunden, true);
   });
   await test("Keine zweite Kostenphase bei fehlendem Beleg, ungueltigem Entwurf oder Stop", async () => {
-    for (const mode of ["invalid", "receipt", "gate", "provider"]) {
+    for (const mode of ["invalid", "receipt", "unconfirmed", "wrong_hash", "wrong_phase", "gate", "provider"]) {
       const { b, e, u } = setup(); let calls = 0;
       const ai = { understandingModelName: () => "gpt-5-mini", requestStructuredJson: async () => {
         calls++; if (mode === "provider") throw new Error("Providerfehler");
@@ -161,7 +163,14 @@ const setup = (bereich = "briefing", klasse = 0) => {
       } };
       await A.rejects(AI.erzeuge({ ...b, bereich: "briefing", runId: "nachlauf500-20260921999",
         beforeCall: async x => { if (mode === "gate" && x.phase === "pruefung") throw new Error("Stop"); },
-        onResponse: async () => { if (mode === "receipt") throw new Error("Nicht gespeichert"); } }, { ai }));
+        onResponse: async x => {
+          if (mode === "receipt") throw new Error("Nicht gespeichert");
+          const r = quittung(x);
+          if (mode === "unconfirmed") r.gespeichert = false;
+          if (mode === "wrong_hash") r.antwortHash = "fremd";
+          if (mode === "wrong_phase") r.phase = "pruefung";
+          return r;
+        } }, { ai }));
       A.equal(calls, 1);
     }
   });

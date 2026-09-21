@@ -561,8 +561,10 @@ Pruefung. Beide gehen durch die bestehende `ai.requestStructuredJson`
 Schnittstelle mit mini, strengem Schema, bestehendem Budgetriegel und
 maximal3000 Ausgabetoken. Kein Retry und kein Budgetbypass. Vor JEDEM
 Aufruf muss der spaetere Ausfuehrer den Vorflug erneut pruefen; nach JEDEM
-Ergebnis muss er den unveraenderten Rohbeleg bestaetigt speichern. Erst
-danach wird validiert oder die zweite Phase betreten. Fehler beim Beleg,
+Ergebnis muss er den unveraenderten Rohbeleg bestaetigt speichern. Die Speicherquittung muss gespeicherten Zustand, Auftrag, Phase, Mandat,
+Faktenbasis und Antwortinhalt exakt bestaetigen; blosses Promise Ende oder
+false reichen nicht. Erst danach wird validiert oder die zweite Phase
+betreten. Fehler beim Beleg,
 Vorflug oder Anbieter stoppen. Der Adapter allein ist weder eine
 dauerhafte Versuchssperre noch eine Production Ausfuehrungsfreigabe.
 Er hat keinen automatischen oder oeffentlichen Aufrufer.
@@ -587,7 +589,7 @@ Saetze durch den Menschen ist kein kontrollierter Export.
 
 ### Nachweise und ausdrueckliche Grenzen
 
-Neue lokale Vertragspruefung:36 redaktionelle Faelle aus sechs Klassen
+Neue lokale Vertragspruefung50/50:36 redaktionelle Faelle aus sechs Klassen
 mal positiv/negativ/unklar mal Briefing/Lage. Dazu Grenzen fuer fehlende
 Felder, Manipulation, Quelle/Profil, neue Zahlen, Paarvergleich,
 Speicherung/Ruecklesung und getrennte Aufrufreihenfolge. Diese Tests
@@ -628,5 +630,21 @@ Danach erst regulaere Speicherung und Generation anschliessen. Kein
 kleiner Ersatz fuer den500er Test und kein Wiederverwenden alter Freigaben.
 Ohne gesonderte Kostenfreigabe wird kein solcher Versuch ausgefuehrt.
 
-Gesamttest, Browser Smoke, genauer PR/Commitstand und CI werden nach den
-laufenden Pflichtpruefungen ergaenzt. Kein Merge oder Deployment behauptet.
+Kanonischer Gesamtlauf ueber `scripts/lokal.js`:441/441 Suiten in915s.
+Beide neuen Suiten laufen darin erfolgreich; die Antwortquittungskorrektur
+war vor ihrem Start enthalten. Gesonderter Browser Smoke50/50. Alle lokalen
+Pruefungen nutzen den vorhandenen passenden Chromiumstand. Neue fachliche
+Vertragsgruppen50/50 und Vorschaugruppen19/19, Dokumentationsgroesse4/4.
+Die mobile Vorschau wurde zusaetzlich als Bild gelesen: beide Abschnitte,
+Hinweise und Quellen ohne abgeschnittenen Text sichtbar. git diff --check
+besteht. Kein eigener Modellaufruf und keine behauptete Modellqualitaet.
+PR und exakte CI Nachsicht folgen; kein Merge oder Deployment behauptet.
+
+
+Reine Production Nachsicht21.09.2026 um09:04:44 Tuerkei /08:04:44 Berlin /
+06:04:44 UTC:504 Profile,0 aktiv,0 lebende Sperren,0 lebende Job und
+Verstehensleases,0 unerledigte Jobs,0 junge offene Prozesse. Zweite SELECT
+Abfrage06:04:48 UTC: alle drei alten Versuchsquittungen gestoppt; heutiges
+Kostenbuch0,137576 USD, Grenze4 USD. Die Buchungen sind keine neue
+Modellfreigabe. Kein eigener API Aufruf, Import oder Production Schreibzugriff.
+Keine vollstaendige erneute Hashinventur behauptet.

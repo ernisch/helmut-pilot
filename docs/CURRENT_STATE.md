@@ -4,20 +4,21 @@
 Betreiber hat die Trennung belegter Tatsachen und zusaetzlich gepruefter, fehlbarer KI
 Einordnung mit Ja freigegeben. Keine neue Kostenfreigabe und kein500er Start.
 Eigener Branch `codex/prosa-trennung-20260921` direkt auf Main
-`be4b237b6154248f30e175235ed81aa9893b01bf`; PR und Pflichtpruefungen noch offen.
+`be4b237b6154248f30e175235ed81aa9893b01bf`; PR in Vorbereitung, kein Merge.
 Faktenwortlaut bleibt serverseitig gebunden. Jedes freie Feld braucht ein separates Urteil.
 Beide echten App Einstiege und Ansichten haben eine interne, mandatsgebundene Vorschau.
 Keine Route oder Automatik aktiviert sie; sie darf keinen Tagesnachweis speichern.
-Neue Vertragsgruppen50/50 vorgesehen; vor letzter Grenzfallergänzung49/49 belegt.
+Neue Vertragsgruppen50/50 bestanden, inklusive falschem positivem Sprachurteil.
 Vorschau19/19 inklusive Chromium320/390/1280px in hell/dunkel bestanden.
-Gesamtlauf laeuft. Kein echter Modellversuch oder regulaerer36er Produktnachweis.
+Lokal441/441 Suiten in915s, Browser Smoke50/50. Pflicht CI noch offen.
+Kein echter Modellversuch oder regulaerer36er Produktnachweis.
 Ein falsches positives Sprachurteil bleibt moeglich und wird nicht als Faktenbeweis ausgegeben.
 Allgemeine Faktenversorgung, regulaere Speicherintegration und500er Vollversorgung offen.
 PR479/480/481/482 bleiben Forschungsentwuerfe; geschlossene Versuche ohne Restfreigabe.
 PR482: formale Logik24 Gruppen; NLI54 Paare mit3 falschen Freigaben und5 verlorenen Positiven.
 DIP Fakteneingang PR477/478 integriert, weiterhin begrenzt und ohne produktiven Aufrufer.
-Letzter hier bekannter SQL Stand21.09.05:12 UTC:504/0, keine lebenden Sperren/Leases/offenen Jobs.
-Keine Production Aenderung oder API Kosten durch diesen Sprint; kein neuer Nullkostenbeleg.
+SQL21.09.06:04:44 UTC:504/0, keine lebenden Sperren/Leases/offenen Jobs/jungen Prozesse.
+Alle alten Quittungen gestoppt. Tagesbuch0,137576 USD bei4 USD; kein Modellaufruf durch diesen Sprint.
 [Vertrag, Grenzen und Fortsetzung](betrieb/prosa-belegplan-2026-09-20.md#freigegebene-trennung-von-tatsachen-und-einordnung).
 
 **20.09.2026: Quellenreparaturen erfolgreich integriert; Gesamtziel teilweise abgeschlossen.** PR471,472 und473 sind integriert. Letzter fachlicher Main Stand `c070661f18bc001e26443d331672601e62ff2018`, Deployment `dpl_C7ZH7FxjpmFpEetKkyBUYihyNbar` READY. Exakte PR473 CI35510294577:435/435 Suiten in800s, Browser50/50, PostgreSQL23/0+26/0+48/0; keine offenen Reviewpunkte. HTTP200 liefert Versionc070661f. SQL12:37:39 UTC:504/0, keine lebenden Sperren/Leases, offenen Jobs oder jungen offenen Prozesse; alle vier Hashgrundlinien seit12:35:27 unveraendert. Tageskosten0,264700 USD, Grenze4 USD, offene Reserve0. Ereignisketten sind fuer die belegten Faelle getrennt, amtliche Originalangaben erhalten, verschiedene DIP Kennungen gegen Titel und RSS Reihenfolge geschuetzt und Quellentitel nicht mehr sinnveraendernd abgeschnitten. Neue Gegenproben lokal jeweils einmal; keine Wiederholung bestandener lokaler Suiten. Allgemeine Faktenbindung, frische Vollversorgung und gemessene Zeit/Kosten bleiben offen. Keine neuen Modellaufrufe, Imports oder Aktivierungen durch diese Sitzung. [Integration](betrieb/500-betriebsplan-2026-09-20.md#integration-pr473) und [konkrete Restarbeit](betrieb/500-betriebsplan-2026-09-20.md#restarbeit-nach-den-quellenreparaturen). Dieser abschliessende reine Dokumentations PR folgt CLAUDE.md Paragraph9; sein eigener Merge und Deploymentstand werden nicht rekursiv nachdokumentiert.
@@ -159,7 +160,7 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 1. Ein schreibender Ausfuehrer; fremde Vorarbeit erhalten. Konten, Identitaeten, Kostenhistorie und Kommunikationssperre schuetzen.
 2. Drei Prosaserien und der getrennte Quellenpruefer dauerhaft nach je einem Aufruf geschlossen. Keine Fortsetzung oder Wiederholung. Vollstaendige Rohantworten, negative Fachurteile, Kosten und verdraengte Telemetrie erhalten. Weitere Versuche brauchen einen neuen sachlich begruendeten Auftrag innerhalb der vorhandenen Tagesfreigabe.
 3. mini bleibt Referenz; der bestehende atomare4 USD Tagesriegel bleibt unveraendert. Die10 USD Betreibergrenze erteilt keine Freigabe zur Aenderung des engeren technischen Limits. Wenn eine Budget oder Environment Aenderung notwendig wird, konkrete gesonderte Freigabe einholen. Keine Kosten oder offenen Reserven loeschen.
-4. Alle504 Profile bleiben bis zum spaeteren500er Start inaktiv. Artikelkontext bleibt AUS. Keine neue Funktion und kein unnoetiger Umbau.
+4. Alle504 Profile bleiben bis zum spaeteren500er Start inaktiv. Artikelkontext bleibt AUS. Nur der am21.09. freigegebene Prosaansatz, kein weiterer Funktionsausbau.
 5. Mandantentrennung mit `assertTenant` und explizitem Mandatsfilter; bedingte gemeinsame Schreibvorgaenge und persistente Gegenpruefung. Nicht pruefbar bedeutet niemals bestanden.
 
 ## 13 · Detailnachweise und Archiv
