@@ -59,6 +59,13 @@ Felder sowie Speicherung samt Ruecklesung.
 - Der Pfad wird **unveraendert** ueber `lib/helmut/prosa-einordnung.js`
   (`binde({basis, faktenPlan, bereich})`) gefahren; `bereich` ist genau
   `briefing` oder `lage`. Kein zweiter Formulierungsweg.
+- Je Pfadfall ist der **Sollentwurf eingefroren** und liegt in der Fixture
+  (`scripts/fixtures/prosa-36er.js`). Er ist **Eingabe des Pruefschritts**, nicht
+  Modellausgabe. Belegter Grund: der deterministische Vertrag akzeptiert alle 36
+  Sollentwuerfe; ein modellgenerierter Entwurf wuerde die falsche Aussage eines
+  Negativfalls gar nicht erst enthalten. Eingefrorener Entwurf plus modell-
+  gestuetzte Pruefung ist deshalb die einzige Fassung, die die Negativfaelle
+  tatsaechlich prueft.
 - Paket- und Eingabehashes werden **vor** dem Lauf berechnet und eingefroren;
   eine Abweichung stoppt (§8.6).
 
@@ -71,6 +78,11 @@ Felder sowie Speicherung samt Ruecklesung.
 | Fehlende/widerspruechliche Grundlage | Ehrliche Grenze: betroffenes Feld `null` oder Ablehnung; **kein** falsches "plausibel". "Nicht genannt" bleibt unbekannt, "nicht bestaetigt" wird nicht als "widerlegt" ausgegeben. |
 | Strukturfall | Deterministisch **fail closed** abgelehnt (fremde Kennung, geaenderter Quellenhash, fehlende Teilbehauptung, neues freies Feld). |
 | Speicherung/Ruecklesung | Ausgabe bleibt nach Speicherung und Ruecklesung byte-/hashgleich gueltig (`pruefe`); kein stiller Verlust, kein stilles Auseinanderlaufen. |
+
+**Ausfuehrbarer Sollvergleich je Pfadfall:** `positiv` → `akzeptiert`;
+`negativ` und `unklar` → `nicht-akzeptiert` (die Pruefung darf das betroffene
+Feld **nicht** als `plausibel` bestaetigen). Genau diese Zuordnung ist das
+Sollurteil; sie liegt getrennt vom Modellpayload.
 
 ## 6 · Qualitaets- und Vollstaendigkeitskriterien
 
@@ -88,14 +100,16 @@ Felder sowie Speicherung samt Ruecklesung.
 
 - Kein neues Modell: `gpt-5-mini`, reasoning low, gebundene Prompts
   (`entwurfsPrompt`, `pruefPrompt`) und Schema wie im unveraenderten Vertrag.
-- Je Pfadfall **ein Entwurfs- und ein Pruefaufruf** = hoechstens **2** Aufrufe;
-  fuer 36 Pfadfaelle hoechstens **72 Aufrufe**. **Kein Retry**, kein zweiter
-  Aufruf, keine Wiederholung.
+- Je Pfadfall wird genau **ein Pruefaufruf** gefahren (der Sollentwurf ist
+  eingefroren, §4); fuer 36 Pfadfaelle hoechstens **36 Aufrufe**. Die formale
+  Obergrenze aus der Erstfassung (Entwurfs- plus Pruefaufruf) bleibt **72**;
+  erreicht werden hoechstens 36. **Kein Retry**, kein zweiter Aufruf, keine
+  Wiederholung.
 - Volle Reservierung je Aufruf gemaess `lib/helmut/testkosten-budget.js`
   (Kontextlimit, kein Tokenraten); unbekannte Ausgaenge bleiben voll reserviert.
 - **Absolute Obergrenze bleibt der unveraenderte 4-USD-Tagesriegel.** Gemessene
   Ist-Kosten der beiden letzten Einzelaufrufe: **0,012763** und **0,012989 USD**;
-  daraus ergibt sich fuer 72 Aufrufe eine **Groessenordnung unter 1 USD**. Die
+  daraus ergibt sich fuer 36 Aufrufe eine **Groessenordnung unter 1 USD**. Die
   belastbare Aufrufzahl und Prognose wird aus dem echten Pfadcode erhoben und vor
   der Freigabe fixiert (§10.2). **Keine Budgeterhoehung.**
 - Der Lauf bleibt auf **einen** UTC-Tag begrenzt (TAG-Fenster) und endet
