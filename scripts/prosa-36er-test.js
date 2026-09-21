@@ -39,6 +39,7 @@ test("die drei Fallarten sind korrekt verdrahtet (Aussage im Sollentwurf)", () =
   }
   A.equal(F.erwartet("negativ"), "nicht-akzeptiert");
   A.equal(F.erwartet("positiv"), "akzeptiert");
+  A.equal(F.erwartet("unklar"), "nicht-akzeptiert");
 });
 
 test("Sollurteile und Begruendungen liegen nicht im Modellpayload", () => {
