@@ -29,7 +29,7 @@ concurrency:
 jobs:
   one:
     # Der freigegebene isolierte Fachversuch liest/schreibt kein Backfill-KO.
-    if: ${{ !startsWith(inputs.confirm_text, 'GIPFEL_EINMAL:') && !startsWith(inputs.confirm_text, 'PROSA_EINMAL:') && !startsWith(inputs.confirm_text, 'PROSA_DENKEN:') && !startsWith(inputs.confirm_text, 'PROFILVERTRAG_EINMAL:') }}
+    if: ${{ !startsWith(inputs.confirm_text, 'GIPFEL_EINMAL:') && !startsWith(inputs.confirm_text, 'PROSA_EINMAL:') && !startsWith(inputs.confirm_text, 'PROSA_DENKEN:') && !startsWith(inputs.confirm_text, 'PROFILVERTRAG_EINMAL:') && !startsWith(inputs.confirm_text, 'MODELLVERGLEICH8_EINMAL:') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -277,3 +277,46 @@ jobs:
           HELMUT_ANBIETER_AZURE_MINUTE: "20"
           HELMUT_ANBIETER_AZURE_TAG: "0"
         run: node scripts/prosa-einordnung-versuch.js
+
+  prosa-modellvergleich-8faelle:
+    # Vorbereitung. Nur der gesondert freigegebene einmalige Betreiberauftrag.
+    # Ein einziger Modellaufruf ueber exakt acht eingefrorene Sollfaelle.
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' &&
+      github.ref == 'refs/heads/codex/prosa-modellvergleich-8faelle-20260921' &&
+      github.event_name == 'workflow_dispatch' && github.run_attempt == 1 &&
+      startsWith(inputs.confirm_text, 'MODELLVERGLEICH8_EINMAL:')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: helmut-500-kontrollierte-facharbeit
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - run: npm ci
+      - name: Ein einmaliger 8-Fall-Modell-Sollfall-Vergleich
+        env:
+          CONFIRM_TEXT: ${{ inputs.confirm_text }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
+          AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT || secrets.AZURE_OPENAI_DEPLOYMENT }}
+          HELMUT_STORAGE_BACKEND: "supabase"
+          HELMUT_SUPABASE_STORE_ID: "main"
+          HELMUT_SUPABASE_AUTH_STORE_ID: "main-auth"
+          VERCEL_ENV: "production"
+          HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt"
+          HELMUT_MAX_LLM_CALLS_PER_DAY: "2416"
+          HELMUT_LLM_RESERVE_UNDERSTANDING: "702"
+          HELMUT_TESTLAUF_VORRANG_REAL: "200"
+          HELMUT_ANBIETER_STEUERUNG: "on"
+          HELMUT_ANBIETER_AZURE_MINUTE: "20"
+          HELMUT_ANBIETER_AZURE_TAG: "0"
+        run: node scripts/prosa-modellvergleich-8faelle-versuch.js
