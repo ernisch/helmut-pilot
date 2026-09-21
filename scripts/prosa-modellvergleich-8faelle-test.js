@@ -38,6 +38,51 @@ test("acht Faelle werden akzeptiert und gebunden", () => {
   A.equal(v.eingabeHash.length, 64);
 });
 
+test("Satzgrenzen: Ordinaldatum bleibt ein Satz, echte Satzenden bleiben getrennt", () => {
+  const S = P.saetzeVon;
+  const eins = "Du koenntest dich auf den Beschluss am 1. Mai 2027 vorbereiten.";
+  A.deepEqual(S(eins).map(x => x.text), [eins]);
+  for (const datum of ["Erst am 3. Oktober 2026 wird beraten.",
+    "Am 14. Maerz 2027 folgt der Beschluss.",
+    "Am 1. Mai 2027 und am 3. Oktober 2026 ist nichts terminiert."])
+    A.equal(S(datum).length, 1, `Ordinaldatum faelschlich getrennt: ${datum}`);
+  const zwei = "Der Ausschuss tagt am Montag. Die Abgeordnete ist Mitglied.";
+  A.equal(S(zwei).length, 2);
+  A.deepEqual(S(zwei).map(x => x.index), [0, 1]);
+  for (const text of ["Die Sitzung beginnt um 9. Der Antrag liegt vor.",
+    "Das Ergebnis war 42. Die Fraktion reagiert.",
+    "Der Beschluss fiel am 3. Mai. Dann begann die Umsetzung."])
+    A.equal(S(text).length, 2, `echtes Satzende nicht getrennt: ${text}`);
+  // Keine Normalisierung: die Segmente zusammengesetzt sind genau der Originaltext.
+  A.equal(S(zwei).map(x => x.text).join(" "), zwei);
+});
+
+test("Jeder der acht Faelle ist nach der Korrektur genau ein Satz (N4 und P2 eingeschlossen)", () => {
+  const v = P.binde(F.eingaben()), soll = F.corpus();
+  A.equal(v.eingabe().faelle.length, 8);
+  for (const [i, f] of v.eingabe().faelle.entries()) {
+    A.equal(f.id, soll[i].eingabe.id);
+    A.deepEqual(f.saetze.map(x => x.index), [0], `${soll[i].klasse} ist nicht genau ein Satz`);
+  }
+});
+
+test("Deckungsregel bleibt streng: ein nicht gedeckter Satz wird abgelehnt", () => {
+  const v = P.binde([{ id: "zwei-saetze",
+    quellen: [{ id: "zwei-saetze-q", text: "Der Ausschuss tagt am Montag." }],
+    profil: [{ id: "zwei-saetze-p", text: "Mitglied im Ausschuss." }],
+    mandatsbezug: "Ausschuss",
+    einordnung: "Der Ausschuss tagt am Montag. Die Abgeordnete ist Mitglied." }]);
+  const antwort = { version: 1, eingabeHash: v.eingabeHash, faelle: [{ id: "zwei-saetze",
+    praemissen: [{ satz: 0, behauptung: "Der Ausschuss tagt am Montag.", art: "sachangabe",
+      befund: "getragen", belege: [{ referenz: "zwei-saetze-q", zitat: "Der Ausschuss tagt am Montag." }] }],
+    urteil: "tragfaehig", begruendung: "Satz eins ist belegt." }] };
+  A.throws(() => v.pruefe(antwort), /praemissenpruefung-satz-fehlt/);
+  antwort.faelle[0].praemissen.push({ satz: 1, behauptung: "Die Abgeordnete ist Mitglied.",
+    art: "befugnis", befund: "getragen",
+    belege: [{ referenz: "zwei-saetze-p", zitat: "Mitglied im Ausschuss." }] });
+  A.equal(v.pruefe(antwort).urteile[0].urteil, "tragfaehig");
+});
+
 test("neun Faelle werden weiterhin abgelehnt (fail closed)", () => {
   const neun = F.eingaben().concat([{ id: "extra-fall",
     quellen: [{ id: "extra-fall-q", text: "Zusaetzlicher Fall." }],

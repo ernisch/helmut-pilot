@@ -1,20 +1,23 @@
 # Pruefvertrag: unabhaengige Sachpruefung der Prosa-Einordnung
 
-21.09.2026 (Fassung 5: Ausgabereserve fuer den isolierten Lauf auf 8000 Tokens / 0,232 USD erhoeht, kein Lauf).
-**Reiner Vorbereitungsstand, keine Freigabe, kein Lauf.** Diese Datei legt den
-kleinsten sachlich vertretbaren Methodenvergleich fest und dokumentiert dessen
-implementierten Vorbereitungsstand. Kein Modellaufruf, keine Productionwirkung,
-keine Profilaktivierung, keine Migration, keine Cron- oder Environmentaenderung.
+21.09.2026 (Fassung 6: Satztrennung bei deutschen Ordinaldaten im Motor korrigiert; dadurch sind eingabeHash, vertragHash und paketHash neu).
+**Kein neuer Lauf durch diese Fassung.** Diese Datei legt den kleinsten sachlich
+vertretbaren Methodenvergleich fest und dokumentiert dessen implementierten
+Vorbereitungsstand. Der zuvor vorbereitete Lauf wurde am 21.09. ausgefuehrt und
+vom Serververtrag strukturell abgelehnt; der Ausgang steht in
+[CURRENT_STATE](../../CURRENT_STATE.md), die Ursache behebt Fassung 6 unten.
+Kein weiterer Modellaufruf, keine Productionwirkung, keine Profilaktivierung,
+keine Migration, keine Cron- oder Environmentaenderung.
 
 Vorlage/Quelle: [prosa-belegplan-2026-09-20.md](prosa-belegplan-2026-09-20.md),
 Abschnitte "Praemissenvergleich mit getrennten Sollurteilen" und "Abschluss des
 Referenzversuchs". Basis: Main `c4d93e689c185c7f2f90304f565485e67e6425a7`
 (Merge PR#493, aliasfreier Schemafix).
 
-**Implementierter Stand (Fassung 5):**
+**Implementierter Stand (Fassung 6):**
 - `lib/helmut/prosa-praemissenpruefung.js` — Fallgrenze `list(data, 1, 6)` auf
-  `list(data, 1, 8)` erweitert; alle uebrigen Grenzen und das fail-closed-
-  Verhalten unveraendert.
+  `list(data, 1, 8)` erweitert; **Satzgrenzen-Helfer `saetzeVon`** ergaenzt (siehe
+  Fassung 6 unten); alle uebrigen Grenzen und das fail-closed-Verhalten unveraendert.
 - `scripts/fixtures/prosa-modellvergleich-8faelle.js` — die acht neuen,
   unabhaengigen Sollfaelle (getrennt vom Modellpayload).
 - `scripts/prosa-modellvergleich-8faelle-versuch.js` — der einmalige Ausfuehrer
@@ -22,6 +25,31 @@ Referenzversuchs". Basis: Main `c4d93e689c185c7f2f90304f565485e67e6425a7`
 - `scripts/prosa-modellvergleich-8faelle-test.js` — gezielte Offline-Abnahme.
 - `.github/workflows/staff-backfill-one.yml` — neuer manueller Job
   `prosa-modellvergleich-8faelle` (nur `workflow_dispatch`, kein Cron).
+
+**Fassung 6 — Korrektur der Satztrennung (Ordinaldaten):**
+- Belegter Harness-Defekt aus dem ausgefuehrten Lauf (Run `35643571975`, Status in
+  CURRENT_STATE): `Intl.Segmenter("de")` zerlegte ein Ordinaldatum
+  ("... am 1. Mai 2027 ...") in zwei Scheinsaetze; die unveraenderte
+  Deckungsregel `covered.size === f.saetze.length` war dadurch nicht erfuellbar
+  (`praemissenpruefung-satz-fehlt`). Die acht Modellurteile selbst entsprachen den
+  Sollurteilen.
+- Korrektur in `saetzeVon`: Eine von `Intl.Segmenter` gesetzte Grenze wird
+  verworfen, wenn ihr eine ein- oder zweistellige Tageszahl mit Punkt vorausgeht
+  **und** der naechste Abschnitt mit einem deutschen Monatsnamen beginnt. Das
+  trifft genau den Ordinaltag und erhaelt normale Satzenden, Zahlenenden ohne
+  Monatsfolge (`... um 9. ...`, `... war 42. ...`) und Abkuerzungen. Nur die
+  Grenzen werden bestimmt; die Segmente werden unveraendert zusammengesetzt,
+  der Text bleibt also unangetastet (keine Normalisierung, keine Aenderung von
+  Belegzitaten). Keine Schutzregel wurde abgesenkt; die Deckungsregel bleibt
+  streng.
+- **Neue gebundene Werte** (alle acht Sollfaelle sind jetzt genau ein Satz):
+  - `eingabeHash` = `vertragHash` = `7f24364b7bd2e62c228887686d15b2d18e86c60c3193ebcae9216c2dde93f187`
+  - `paketHash` = `73a88aecfcd918bffe498a53d433541dc71dd9d0e8edd2eb472dcc7694c29ff2`
+  - vorher: `eingabeHash`/`vertragHash` `eaa4b69a20dff407ab79ca54e930dc559c937eb3b2563f980954a3f761c00973`,
+    `paketHash` `401c90210cb0cde9e1f3d209d24e04e9603e6a82404b9066d09655640bc8e747`
+- Ein neuer `CONFIRM_TEXT` ist erst nach feststehendem Commit zu erzeugen und
+  bindet dann `commit`, `productionCommit`, den neuen `paketHash` und den
+  oeffentlichen Schluessel. Kein kostenpflichtiger Lauf durch diese Fassung.
 
 ---
 
