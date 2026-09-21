@@ -100,6 +100,73 @@ const setup = (bereich = "briefing", klasse = 0) => {
     e.bloecke[0].mandatsbezug.wert = "Testthema1";
     A.throws(() => p.vorbereite(e), /mandatsbezug/);
   });
+  await test("Anbieterschema sperrt die beobachteten falschen Profilpaare vor der Ausgabe", async () => {
+    const { b, p, e, u } = setup("lage", 3);
+    let sent;
+    await AI.erzeuge({ ...b, bereich: "lage", runId: "nachlauf500-20260921999",
+      beforeCall: async () => {}, onResponse: async x => quittung(x) }, { ai: {
+      understandingModelName: () => "gpt-5-mini",
+      requestStructuredJson: async (prompt, schema, meta) => {
+        if (meta.testKostenPhase === "entwurf") {
+          sent = schema;
+          A(prompt.includes('"mandatsbezuege"'));
+          A(prompt.includes('"feld":"schwerpunkt","wert":"Öffentliche Verwaltung"'));
+        }
+        return meta.testKostenPhase === "entwurf" ? e : u;
+      }
+    } });
+    const accepts = pair => sent.properties.bloecke.items.properties.mandatsbezug.anyOf.some(x =>
+      x.properties.feld.enum.includes(pair.feld) && x.properties.wert.enum.includes(pair.wert));
+    A.equal(accepts({ feld: "Ausschuss", wert: "Verkehrsausschuss" }), false);
+    A.equal(accepts({ feld: "Thema", wert: "Barrierefreiheit öffentlicher Gebäude" }), false);
+    A.equal(accepts({ feld: "schwerpunkt", wert: "Barrierefreiheit öffentlicher Gebäude" }), false);
+    A.equal(accepts({ feld: "schwerpunkt", wert: "Verkehrsausschuss" }), false);
+    A.equal(accepts({ feld: "ausschuss", wert: "Verkehrsausschuss" }), true);
+    A.equal(accepts({ feld: "schwerpunkt", wert: "Öffentliche Verwaltung" }), true);
+    A.deepEqual(sent, AI.entwurfSchema(p));
+  });
+  await test("Profiloptionen entstehen generisch aus den bisherigen Aliasfeldern, ohne Platzhalter oder Profilmutation", () => {
+    const L = require("../lib/helmut/lage-textqualitaet");
+    const profile = { id: "anderes-mandat", ausschuesse: [" Gesundheit ", "Testausschuss7"],
+      stellvertretende_ausschuesse: ["Finanzen"], fachpolitische_schwerpunkte: ["Pflege"],
+      reportingTopics: ["Rente"], wahlkreis: "Bonn", bundesland: "Nordrhein-Westfalen",
+      regierungsrolle: "Opposition", partei: "Beispielpartei", fraktion: "Beispielfraktion" };
+    const before = structuredClone(profile);
+    A.deepEqual(L.mandatsbezugAuswahl(profile), [
+      { feld: "ausschuss", wert: "Gesundheit" }, { feld: "ausschuss", wert: "Finanzen" },
+      { feld: "schwerpunkt", wert: "Pflege" }, { feld: "schwerpunkt", wert: "Rente" },
+      { feld: "wahlkreis", wert: "Bonn" }, { feld: "bundesland", wert: "Nordrhein-Westfalen" },
+      { feld: "regierungsrolle", wert: "Opposition" }, { feld: "partei", wert: "Beispielpartei" },
+      { feld: "partei", wert: "Beispielfraktion" }
+    ]);
+    A.deepEqual(profile, before);
+    A.equal(L.mandatsbezugGueltig({ feld: "Ausschuss", wert: "Finanzen" }, profile), false);
+    A.equal(L.mandatsbezugGueltig({ feld: "ausschuss", wert: " finanzen " }, profile), true);
+  });
+  await test("Leeres oder rein technisches Profil stoppt vor jedem Kosten- und Speicherhook", async () => {
+    for (const profile of [{ id: "leer" }, { id: "technisch", focusTopics: ["Testthema1"] }]) {
+      const b = F.basis(3); b.basis.profile = profile;
+      b.faktenPlan.basisHash = require("../lib/helmut/prosa-faktenplan").binde(b.basis).basisHash;
+      let calls = 0, hooks = 0;
+      await A.rejects(AI.erzeuge({ ...b, bereich: "lage", runId: "nachlauf500-20260921999",
+        beforeCall: async () => { hooks++; }, onResponse: async () => { hooks++; } }, { ai: {
+        understandingModelName: () => "gpt-5-mini", requestStructuredJson: async () => { calls++; }
+      } }), /profil-auswahl-fehlt/);
+      A.equal(calls, 0); A.equal(hooks, 0);
+    }
+  });
+  await test("Ungültige Originalbezüge werden nie normalisiert oder nachträglich repariert", async () => {
+    for (const pair of [{ feld: "Ausschuss", wert: "Verkehrsausschuss" },
+      { feld: "Thema", wert: "Barrierefreiheit öffentlicher Gebäude" }]) {
+      const { b, e } = setup("lage", 3); e.bloecke[0].mandatsbezug = pair;
+      const original = structuredClone(e); let calls = 0, saved = 0;
+      await A.rejects(AI.erzeuge({ ...b, bereich: "lage", runId: "nachlauf500-20260921999",
+        beforeCall: async () => {}, onResponse: async x => { saved++; return quittung(x); } }, { ai: {
+        understandingModelName: () => "gpt-5-mini", requestStructuredJson: async () => { calls++; return e; }
+      } }), /mandatsbezug/);
+      A.equal(calls, 1); A.equal(saved, 1); A.deepEqual(e, original);
+    }
+  });
   await test("Bekannte neue Zahlen bleiben auch vor einem positiven Review gesperrt", () => {
     const { p, e } = setup(); e.bloecke[0].einordnung.option = "Du könntest die zugesagten 999 Euro anfordern.";
     A.throws(() => p.vorbereite(e), /sachdetail-unbelegt/);
