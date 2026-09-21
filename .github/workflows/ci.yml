@@ -239,3 +239,8 @@ jobs:
           # Gleicher Grund wie oben: der Quellenmodus wird ausdrücklich als "off" erklärt.
           HELMUT_SOURCE_MODE: "off"
         run: node scripts/lokal.js -- node scripts/browser-smoke-test.js
+      - name: Getrennte Prosa in beiden App Ansichten (Chromium, hell und dunkel)
+        env:
+          HELMUT_REQUIRE_BROWSER: "1"
+          HELMUT_SOURCE_MODE: "off"
+        run: node scripts/lokal.js -- node scripts/prosa-vorschau-test.js

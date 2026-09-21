@@ -11,7 +11,8 @@ Beide echten App Einstiege und Ansichten haben eine interne, mandatsgebundene Vo
 Keine Route oder Automatik aktiviert sie; sie darf keinen Tagesnachweis speichern.
 Neue Vertragsgruppen50/50 bestanden, inklusive falschem positivem Sprachurteil.
 Vorschau19/19 inklusive Chromium320/390/1280px in hell/dunkel bestanden.
-Lokal441/441 Suiten in915s, Browser Smoke50/50. Pflicht CI noch offen.
+Lokal441/441 in915s, Browser50/50. CI35567548921:440/441; Vorschau braucht Playwright.
+Korrektur: Vorschau19/19 nun Pflicht im Browserjob; erneute exakte CI offen.
 Kein echter Modellversuch oder regulaerer36er Produktnachweis.
 Ein falsches positives Sprachurteil bleibt moeglich und wird nicht als Faktenbeweis ausgegeben.
 Allgemeine Faktenversorgung, regulaere Speicherintegration und500er Vollversorgung offen.

@@ -653,3 +653,12 @@ Abfrage06:04:48 UTC: alle drei alten Versuchsquittungen gestoppt; heutiges
 Kostenbuch0,137576 USD, Grenze4 USD. Die Buchungen sind keine neue
 Modellfreigabe. Kein eigener API Aufruf, Import oder Production Schreibzugriff.
 Keine vollstaendige erneute Hashinventur behauptet.
+
+Fortsetzung21.09.: Pflicht CI35567548921 auf33b5337 scheitert mit440/441
+Suiten ausschliesslich an fehlendem Playwright in prosa-vorschau-test.js.
+Der gesonderte Browser Smoke ist erfolgreich. Die Vorschau wird deshalb
+verpflichtend im vorhandenen Browserjob nach dessen gepinnter Installation
+ausgefuehrt; im Offline Runner ist sie wie der Browser Smoke ausgeschlossen.
+Kein Skip und keine abgesenkte Assertion. Lokal erneut19/19 bestanden.
+Die erneute Pflicht CI muss am korrigierten Kopf vollstaendig bestehen,
+einschliesslich des zuvor uebersprungenen Z22 Datenbanknachweises.
