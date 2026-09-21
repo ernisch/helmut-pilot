@@ -72,4 +72,13 @@ test("Ausgabeschemata sind voneinander und vom historischen Schema unabhaengig",
   edited.properties.faelle.items.anyOf[0].properties.id.enum[0] = "fremd";
   A.deepEqual(R.schema(v), before); A.equal(P.SCHEMA.properties.version.enum, undefined);
 });
+test("Fallbindung darf freie Behauptungen und Begruendungen nicht auf Kennungen beschraenken", () => {
+  const s = R.schema(v);
+  for (const f of s.properties.faelle.items.anyOf) {
+    A.deepEqual(f.properties.begruendung, { type: "string" });
+    A.deepEqual(f.properties.praemissen.items.properties.behauptung, { type: "string" });
+    A.notStrictEqual(f.properties.id, f.properties.begruendung);
+    A.notStrictEqual(f.properties.id, f.properties.praemissen.items.properties.behauptung);
+  }
+});
 console.log(`${count}/${count} Referenzgruppen bestanden; keine semantische Modellabnahme.`);

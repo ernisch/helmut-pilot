@@ -1176,3 +1176,94 @@ unveraenderter Ablehnung der echten Antwort und Schutz aller acht Altfaelle.
 Keine lokalen Volltests wiederholt. Automatische Pflicht CI bleibt Pflicht.
 Noch kein bezahlter Referenzlauf. Auch zehn richtige Ergebnisse waeren keine
 18er Methodenabnahme,36er Produktabnahme oder500er Vollversorgung.
+
+
+## Abschluss des Referenzversuchs
+
+21.09.2026. PR491 wurde nach vollstaendiger Pflicht CI auf genau
+1862353014bda02724286c429cfcf95fdccf8699 einmal ausgefuehrt.
+CI35589017145:446/446 Offline Suiten in823s, Browser50/50,
+Vorschau19/19, Datenbank23/0,26/0,48/0. Kein lokaler Volltest wiederholt.
+Run35590616673, Job106303920850, Versuch1:10:47:42.385 bis10:48:22.131 UTC.
+Ein gpt-5-mini Aufruf,HTTP200, vollstaendige Antwort,1881 Eingabe und1216
+Ausgabetoken,11487ms,5805 Mikro USD. Ticket82d72cdd-5768-4324-847c-2f6c4905d697
+abgerechnet. Quittung prosaReferenzen20260921 geschlossen mit
+EINORDNUNG_FACHLICH_ABGELEHNT. Kein zweiter Aufruf oder Retry.
+Originalpaket c04df64c47424cf90821927d0c3de256a11d2ddb902957e9adef4ffd2e8e8fd9,
+Auftrag, Antwort, Workflowlog und Kosten sind dauerhaft privat gesichert und
+vollstaendig entschluesselt. spaetere Codekorrektur veraendert diesen Beleg nicht.
+
+Zwei von zehn Faellen wurden bewertet; acht wurden nie gesendet. Zusammen
+mit den acht bereits ausgeschlossenen Altfaellen sind jetzt zehn Faelle
+bereits gesendet oder moeglicherweise gesendet. Kein Commitwechsel darf
+sie wieder als unbehandelt ausgeben. Die Laufbilanz lautet:
+
+| Fall | Vorab Soll | Modell | Direkter Befund |
+| --- | --- | --- | --- |
+| f334cc29245e7, Profil/Befugnis unklar | offen | offen | Gesamtlabel stimmt. Expertenanhoerung und Minderheitenvorschlag werden nicht mehr freigezeichnet. Freie Begruendung jedoch unbrauchbar; kein bestandener Fachbeleg. |
+| f3e87b3a6ddb5, Entscheidungsstand unklar | offen | widersprochen | Die Quelle nennt keinen Entscheidungsstand. Das belegt weder Beschluss noch Nichtbeschluss; Widerspruch ist nicht belegt. |
+
+Die Referenzen und ganzen Zitate gehoeren technisch zu den gelieferten
+Originalstellen. Die vollstaendige Sichtung fand zusaetzlich einen eigenen
+Schemafehler: P.SCHEMA verwendet denselben Stringbaustein an mehreren
+Adressen. structuredClone erhaelt solche Objektaliase. Das anschliessende
+Setzen von id.enum beschraenkte deshalb auch behauptung und begruendung
+auf die Fallkennung. Genau diese Kennungen stehen in der echten Antwort.
+Das ist ein Implementierungsfehler und darf nicht als frei erzeugte schlechte
+Modellbegruendung dargestellt werden. Die Bedeutung des Teilurteils
+fachbezug=getragen ist ohne Sachformulierung ebenfalls nicht nachvollziehbar.
+
+Gezielte Regression reproduziert den Fehler am ausgefuehrten Code. Die
+Korrektur ersetzt nur die gebundenen Schemafelder mit eigenen Objekten,
+statt den gemeinsam verwendeten Knoten zu veraendern. Danach10/10
+Referenzgruppen und18/18 betroffene Ausfuehrergruppen erfolgreich. Die
+alten Pakete und Sollurteile bleiben unveraendert; das korrigierte neue
+Schema ist KEIN nachtraeglicher Ersatz fuer das wirklich gesendete Paket.
+Keine erneute Sendung oder fachliche Freigabe. Die446er CI oben gilt dem
+AUSGEFUEHRTEN Kopf, nicht automatisch der nachtraeglichen Korrektur.
+Der Forschungszweig bleibt ohne Produktintegration geschlossen; die
+gezielte Korrektur wird dort fuer eine spaetere getrennte Arbeit gesichert.
+
+Rein lesend10:49:33.029024 UTC:504 Profile,0 aktiv, keine lebenden Sperren,
+Job oder Verstehensleases, offenen Jobs oder jungen offenen Prozesse.
+Vier Schutzwerte gegen Vorflug10:46:32.490773 UTC unveraendert:
+Profilec32b7d4f76b4ad70ace0cac91c3e94c3,
+Konten3c5b0b5a6314f31c395b8758b166c5c3,
+Main5ee6c52fa40a96a92bfa854a126fe42a,
+geschuetzter Auth Inhaltf75f076272c55c81d6f0c9b9af860a16.
+Ausgenommen waren nur prosaReferenzen20260921,llmUsage,testKostenTage und
+_authStoreRevision. Alle aelteren Quittungen und Kostentickets sind erhalten.
+Tagesbuchung0,166714 USD plus unbekannte0,212 USD:0,378714 USD gebunden
+von4 USD. Die drei heutigen Methodenauftraege nach PR487 verursachten
+zwei bekannte Buchungen zusammen0,013394 USD und eine weiter unbekannte
+Buchung mit voller0,212 USD Reserve. Kein Anbieterbetrag fuer den Timeout
+behauptet. Kostenregel2 erlaubt weiterhin andere voll gedeckte Arbeit.
+
+Quellen SELECT10:32:45.357747 UTC:29782 Dokumente,0 Publikationen der
+letzten48 Stunden,0 zukuenftige Publikationen,1 unbekannte Publikationszeit,
+juengste Publikation16.09.2026 15:55:56 UTC und0 Rohzeilen mit
+helmutDipQuellfelder. Das31er Vorbereitungspaket ist seit21.09.08:40:31 UTC
+ausserhalb seines vorgesehenen Frischefensters. Kein Import vorgenommen.
+Diese Bestandsaufnahme ist keine erneute500er Fachpruefung. Aeltere relevante
+Quellen bleiben nach dem bestehenden14 Tage Vertrag bewertbar; keine neue
+pauschale Altersgrenze wird eingefuehrt.
+
+Zwischenziel: drei begrenzte Methodenauftraege geschlossen, ihre technischen
+und fachlichen Ergebnisse vollstaendig getrennt, Schutz und Kosten belegt.
+Weder18er Methodenvergleich noch36er Fachabnahme bestanden. Der verbleibende
+Sachblocker ist eine nachvollziehbare unabhaengige Pruefung von Voraussetzungen,
+Rollen, Quellenluecken und konkretem Profilbezug. Der letzte Versuch liefert
+wegen des Schemafehlers keine saubere Abnahme der beabsichtigten Methode;
+die frueher belegten falschen Positivurteile sind nicht allgemein widerlegt.
+Ein weiteres gleichartiges Prompttuning oder neue Kennungen fuer dieselben
+Faelle ersetzen diesen Beleg nicht. Vor einem neuen bezahlten Auftrag muss
+ein inhaltlich begruendeter Methodenvergleich mit unabhaengigen Sollfaellen
+stehen; die vorhandene Betreiberfreigabe innerhalb4 USD reicht weiterhin.
+Danach echte36 Produktfaelle samt Speicherung/Ruecklesung, frische Quellen
+fuer alle500 Profile,1500 Ergebnispositionen und belastbare Zeit/Kosten.
+Keine Profilaktivierung, Migration, Produkttexte oder500er Test in dieser Arbeit.
+
+Der abschliessende Dokumentations PR uebernimmt ausschliesslich Status und
+Belege nach Main, keinen Forschungs oder Ausfuehrercode. Er folgt CLAUDE.md
+Paragraph9; eigener Merge und Deployment werden aus der Historie belegt,
+kein rekursiver Dokumentations PR und keine lokale Komplettpruefung.
