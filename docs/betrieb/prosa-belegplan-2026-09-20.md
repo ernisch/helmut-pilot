@@ -986,3 +986,290 @@ Dieser abschliessende reine Dokumentations PR veraendert keinen Code,
 Workflow und keine Daten. Er erfuellt die Nachintegration nach CLAUDE.md
 Paragraph9; sein eigener Merge und Deploymentstand werden aus der Historie
 belegt und loesen keinen rekursiven Dokumentations PR aus.
+
+
+## Praemissenvergleich mit getrennten Sollurteilen
+
+Stand21.09.2026 vor dem bezahlten Vergleich. Die rein lesende Uebernahme
+bestaetigt Main dcf024e24fa19c397bc57874fb4c123919052a0a, READY Deployment
+dpl_9qmwbkvHw3SEykYYXZUvSGm8uVQj und erfolgreiche Main CI35578150136.
+SQL09:01:10 UTC:504 Profile,0 aktiv, keine lebenden Sperren, Leases, offenen
+Jobs oder jungen Prozesse,0,153320 USD Tagesbuchung, keine offene Reserve.
+
+Naechster notwendiger Nachweis ist die Inhaltspruefung. PR484 wird nicht
+wiederholt. Ein weiterer gut klingender Entwurf koennte ihre falschen
+Positivurteile nicht widerlegen. Der neue isolierte Pruefer zerlegt stattdessen
+jeden Satz in ausdrueckliche und stillschweigende Voraussetzungen und verlangt
+Originalzitate aus demselben Fall. Fehlende Information, Widerspruch, belegte
+Tatsache und reiner Vorschlag werden getrennt. Der Server kontrolliert Bindung,
+Satzabdeckung und widerspruchsfreie eigene Urteile. Er beweist weder Bedeutung
+noch vollstaendige Zerlegung. Auch dieser Modellpruefer bleibt fehlbar.
+
+Vorab festgelegter Vergleich:18 redaktionelle Sollfaelle in sechs Klassen
+Finanzen, Vollzug, Zuschreibung, Zeit, Profil und Bedingung, jeweils positiv,
+negativ und unklar. Jede der drei Gruppen enthaelt zwei Faelle jeder Art.
+Zwei zuvor falsch bestaetigte Aussagen samt Quellen bleiben unveraendert.
+Fuer den Anbieter sind Kennungen und Eingaben sichtbar, keine Sollurteile,
+Fallklassen oder Begruendungen. Die getrennten Sollurteile, Prompts, Schema
+und Auswertung sind Bestandteil des eingefrorenen Pakethashes. Die Faelle
+sind ein gezielter Methodenvergleich, keine repraesentative Validierung,
+keine36er Fachabnahme und kein Beweis allgemeiner Fehlerfreiheit.
+
+Einmaliger Ausfuehrer scripts/prosa-praemissen-versuch.js auf dem festen Branch
+codex/prosa-praemissenpruefung-20260921, ausschliesslich manuell und an exakten
+Code, Productionstand, Paket und privaten Empfaenger gebunden. Hoechstens drei
+gpt5mini Aufrufe mit low,3000 Ausgabetoken je Aufruf, voller gemeinsamer
+Reserve0,636 USD und maximal5 Minuten. Tagesriegel bleibt4 USD. Jede Rohantwort
+wird vor der fachlichen Auswertung verschluesselt gesichert und rueckgelesen;
+Kostenbeleg je Gruppe bindet denselben Lauf, die vorhandene Phase pruefung und
+ein eigenes synthetisches Mandat. Erste technische oder fachliche Abweichung
+stoppt ohne Retry oder Modellwechsel. Jede Gruppe verlangt sechs exakte
+Sollurteile; falsch positive und falsch negative Antworten werden getrennt
+bilanziert. Ein positives18er Ergebnis erlaubt noch keine Produktanbindung.
+
+Neue Quittung prosaPraemissen20260921; beide alten Quittungen muessen geschlossen
+und unveraendert bleiben. Kein Profilimport, keine Aktivierung, Migration oder
+Produkttextspeicherung. Die bestehende Betreiberfreigabe fuer alle Schritte
+innerhalb des4 USD Tagesbudgets umfasst diesen Vergleich. Vor Start sind die
+exakte Pflicht CI, frischer Production und Budgetstand sowie dauerhaft privat
+gesicherter Entschluesselungsschluessel erforderlich. Lokal werden nur die
+neuen Vertrags und Ausfuehrerpruefungen sowie der Dokumentationsvertrag geprueft.
+
+
+## Nur ungesendete Restfaelle nach dem Timeout
+
+21.09.2026. PR488 bleibt ohne Merge geschlossen. Exakte Pflicht
+CI35582868841 auf94ec4884b7508c1169904aaed3b322c8d5af02b4 erfolgreich:
+443/443 in815s, Browser, Vorschau19/19, Datenbank23/0,26/0,48/0.
+Der einmalige Run35584480605, Job106284528156, begann09:39:20.829 UTC
+und endete09:39:57.969 UTC nach einem Sendeversuch. Zentrale KI Schnittstelle:
+request-error:ETIMEDOUT nach20328ms, kein HTTP Statuscode und keine
+Antwortbytes. Der zentrale20s Timeout blieb unveraendert; der zusaetzliche
+30s Transportdeckel war nicht die ausgeloeste Grenze. Ob der Anbieter den
+Auftrag bearbeitete, ist unbekannt. Keine Modell oder Netzursache behaupten.
+0/18 Faelle bewertet, kein semantisches Urteil ueber die Methode.
+
+Transportquittung, Paket, Workflowlog und Abschluss sind dauerhaft privat
+gesichert und entschluesselt. Quittung prosaPraemissen20260921 geschlossen,
+EINORDNUNG_MODELLAUSGANG. Ticket2ec7ab92-7d20-45db-94b9-9004f32f55d9
+ungeklaert, volle212000 Mikro USD gebunden. Token und Istkosten unbekannt.
+Tagesbuchung0,153320 USD, offene Reserve0,212 USD, insgesamt0,365320 USD.
+Keine Rueckerstattung und keine0 USD oder0,212 USD Istkosten behaupten.
+
+Rein lesende Nachkontrolle09:40:40 UTC:504/0, keine lebenden Sperren, Leases,
+offenen Jobs oder jungen Prozesse. Alle vier MD5 Werte gegen09:37:13 gleich:
+Profilec32b7d4f76b4ad70ace0cac91c3e94c3,
+Konten3c5b0b5a6314f31c395b8758b166c5c3,
+Main5ee6c52fa40a96a92bfa854a126fe42a,
+geschuetzter Auth Inhaltec7f806afe374b85b138733ba1602afc.
+Nur prosaPraemissen20260921,llmUsage,testKostenTage,_authStoreRevision waren
+ausgenommen. Beide aelteren Quittungen sind unveraendert geschuetzt.
+Main dcf024e24fa19c397bc57874fb4c123919052a0a und READY Deployment
+dpl_9qmwbkvHw3SEykYYXZUvSGm8uVQj bleiben unveraendert.
+
+Der vorlaeufige reine Dokumentations PR489 wird vor Merge ersetzt. Er
+verallgemeinerte die zusaetzliche Sperre des isolierten Ausfuehrers faelschlich
+zum globalen Budgetstopp. Die bereits geltende Kostenregel2 erlaubt hingegen
+andere Arbeit, wenn abgerechnet + reserviert + ungeklaert + neue volle Reserve
+hoechstens4 USD sind. Der verlorene Auftrag bleibt gesperrt; ein Commitwechsel
+oder eine neue Kennung darf ihn nicht als unbehandelt ausgeben. Die bestehende
+Betreiberfreigabe reicht aus; kein neuer pauschaler Freigabebedarf.
+
+Der getrennte Ausfuehrer scripts/prosa-restfaelle-versuch.js verwendet deshalb
+ausschliesslich die ZWOELF Faelle aus den urspruenglichen Gruppen2 und3,
+die nach dem ersten Fehler nie gesendet wurden. Die sechs Faelle der Gruppe1
+sind sowohl ueber ihre Kennungen als auch Eingabehashes ausgeschlossen.
+Die alte Quittung muss genau eine begonnene erste Gruppe mit dem bekannten
+Eingabehash, Lauf, Commit und Paket ausweisen. Ein anderer Altstand sperrt.
+Altpaket8f3b9b53f720fb76cfac6ad545928fbcad5e384bc31b183ffe8a1e892e429d74
+bleibt unveraendert. Kein Sollurteil, Beispiel oder Pruefprompt wird inhaltlich
+an ein Ergebnis angepasst; auch die beiden bekannten falschen Positivurteile
+sind weiterhin enthalten. Nur die Gruppengroesse sinkt von sechs auf zwei.
+
+Maximal sechs Aufrufe, sechs Zweiergruppen, neue volle Reserve1,272 USD,
+zusammen mit Tagesbuchung und alter Reserve1,637320 USD von4 USD gedeckt.
+Die bestehende Kostenregel und der zentrale20s Timeout werden nicht geaendert.
+Maximal5 Minuten; erste technische oder fachliche Abweichung stoppt.
+Ausschliesslich das exakt bekannte, volle und unveraenderte alte Ticket darf
+als offene Reserve bestehen; jede andere offene Buchung sperrt vor Start.
+Alle alten Quittungen und Tickets bleiben waehrend neuer Arbeit geschuetzt.
+Neuer Branch codex/prosa-restfaelle-20260921, SchluesselprosaRestfaelle20260921,
+Prefix RESTFAELLE_EINMAL, exakter Code/Production/Paket/Empfaengervertrag.
+
+Gezielt17/17 neue Ausfuehrergruppen gruen: unter anderem Ausschluss aller
+sechs alten Faelle auch bei neuem Commit, erhaltene alte Vollreserve und
+Quittung, exakte Budgetgrenze, fremde Reserve, abweichender Altstand,
+Antwortsicherung, Kosten, Abbruch und Wiederholungsverbot. Alte gruene lokale
+Vertrags und Ausfuehrertests werden nicht wiederholt; Pflicht CI automatisch.
+Noch kein bezahlter Restvergleich. Selbst12/12 koennen wegen der sechs
+unbekannten Ergebnisse keine18er Methodenabnahme und keine36er Produktabnahme
+begruenden. Keine Produktanbindung, Profilaktivierung, Migration oder Imports.
+
+Danach bleiben Produktbelege, frische500er Vollversorgung und Kostenplanung
+offen. Letztes vollstaendiges Entwurfs und Pruefpaar0,012146 USD;500 solche
+Paare waeren6,073 USD ohne Quellenverstehen oder letzte Reserve. Das ist eine
+Hochrechnung aus einem Einzelfall, keine gemessene500er Summe oder Freigabe
+einer Budgeterhoehung. Kein neuer500er Start.
+
+
+## Referenzfehler und zehn ungesendete Faelle
+
+PR490, Head58ef5fb4f663088fbba98fe985ba307e0bdcdb7d, ist ohne Merge
+abgeschlossen. Exakte Pflicht CI35585920277:444/444 in818s, Browser,
+Vorschau und isolierte Datenbanknachweise erfolgreich. Einmaliger
+Run35587502308, Job106294149420:ein Aufruf gpt-5-mini, HTTP200,
+vollstaendige Antwort,1226 Eingabe und1744 Ausgabetoken,17309ms,
+7589 Mikro USD. Ticketd2e78380-1eee-4d27-84c6-390e84817bbf abgerechnet.
+Transport, Antwort, Kosten und geschlossene Quittung prosaRestfaelle20260921
+sind privat dauerhaft gesichert. Kein zweiter Aufruf.
+
+Offline Auswertung der unveraenderten Antwort ergibt praemissenpruefung-beleg.
+Die Gesamturteile zu f0ad85d232a15 und f28d940d3efec entsprechen zwar den
+vorab eingefrorenen Sollurteilen. Zwei Vorschlagszeilen nennen aber die
+Fallkennung selbst als Belegreferenz. Kandidatensaetze sind keine Quellen.
+Der unveraenderte Serververtrag lehnt die ganze Antwort korrekt ab.
+Dies sind deshalb keine zwei formal bestandenen Faelle oder Fachabnahme.
+Die synthetische Originalantwort bleibt als technischer negativer Beleg
+in scripts/fixtures/praemissen-belegantwort.json erhalten.
+
+SQL10:13:56.317761 UTC:504 Profile,0 aktiv, keine lebenden Sperren,
+Job oder Verstehensleases, offenen Jobs oder jungen offenen Prozesse.
+Profile c32b7d4f76b4ad70ace0cac91c3e94c3, Konten
+3c5b0b5a6314f31c395b8758b166c5c3, Main5ee6c52fa40a96a92bfa854a126fe42a,
+geschuetztes Auth63e124cda95355984f5776f46c09f6a4: unveraendert gegen
+Vorflug10:12:27 UTC. Ausgenommen waren nur prosaRestfaelle20260921,
+llmUsage,testKostenTage,_authStoreRevision. Main und READY Deployment
+bleiben dcf024e24fa19c397bc57874fb4c123919052a0a und
+dpl_9qmwbkvHw3SEykYYXZUvSGm8uVQj. Tagesbuchung0,160909 USD,
+alte unbekannte Reserve0,212 USD, Gesamtbindung0,372909 USD von4 USD.
+
+Der naechste begrenzte Methodenauftrag behebt ausschliesslich diesen
+belegten Referenzfehler: prosa-praemissenreferenzen.js erzeugt je Fall ein
+Anbieterschema mit exakt gekoppelter Quellenkennung und vollstaendigem
+Originaltext. Fremde Kennungen, Kandidaten als Beleg und abgeschnittene
+Zitate sind ausgeschlossen. Das ist keine semantische Beweisfuehrung.
+Reine Vorschlagseinordnung braucht keinen erfundenen Beleg; darin enthaltene
+Sachannahmen bleiben eigenstaendig belegpflichtig oder offen. Der bisherige
+Serververtrag, alle Sollurteile und beide alten Pakethashes bleiben gleich.
+
+scripts/prosa-referenzen-versuch.js verwendet ausschliesslich die zehn
+noch nie gesendeten Faelle. Die ersten sechs und die beiden Faelle aus
+Run35587502308 bleiben ueber Kennung und Eingabehash ausgeschlossen.
+Beide alten Quittungen muessen exakt zu den bekannten Laeufen, Commits,
+Paketen und ersten Gruppen passen. Beide Kostentickets bleiben unveraendert.
+Kostenregel2 erlaubt diese andere Arbeit bei voller Deckung; keine Erstattung
+oder erneute Sendung des unbekannten Auftrags. Maximal fuenf Zweiergruppen,
+fuenf Aufrufe,3000 Ausgabetoken je Aufruf, reasoning low, kein Retry oder
+Modellwechsel. Neue volle Reserve1,060 USD, gesamte Deckung1,432909 USD.
+Nur dieses isolierte Workflowjob setzt HELMUT_KI_TIMEOUT_MS=30000; der
+bereits bestehende zusaetzliche Transportdeckel bleibt30s, Gesamtlauf5min.
+Die gemessenen17,309s fuer zwei Faelle begruenden diesen begrenzten Puffer.
+Keine globale Laufzeit oder Production Konfiguration wird geaendert.
+
+Neuer Branch codex/prosa-referenzen-20260921, Schluessel
+prosaReferenzen20260921, Prefix REFERENZEN_EINMAL. Exakter Code,
+Production Commit, Paket und privater Empfaenger werden vor Start gebunden.
+Erster technischer oder fachlicher Fehler beendet den Auftrag; Antwort und
+Kosten sind vorher dauerhaft verschluesselt und rueckgelesen. Gezielt9/9
+Referenzgruppen und18/18 Ausfuehrergruppen bestanden, einschliesslich
+unveraenderter Ablehnung der echten Antwort und Schutz aller acht Altfaelle.
+Keine lokalen Volltests wiederholt. Automatische Pflicht CI bleibt Pflicht.
+Noch kein bezahlter Referenzlauf. Auch zehn richtige Ergebnisse waeren keine
+18er Methodenabnahme,36er Produktabnahme oder500er Vollversorgung.
+
+
+## Abschluss des Referenzversuchs
+
+21.09.2026. PR491 wurde nach vollstaendiger Pflicht CI auf genau
+1862353014bda02724286c429cfcf95fdccf8699 einmal ausgefuehrt.
+CI35589017145:446/446 Offline Suiten in823s, Browser50/50,
+Vorschau19/19, Datenbank23/0,26/0,48/0. Kein lokaler Volltest wiederholt.
+Run35590616673, Job106303920850, Versuch1:10:47:42.385 bis10:48:22.131 UTC.
+Ein gpt-5-mini Aufruf,HTTP200, vollstaendige Antwort,1881 Eingabe und1216
+Ausgabetoken,11487ms,5805 Mikro USD. Ticket82d72cdd-5768-4324-847c-2f6c4905d697
+abgerechnet. Quittung prosaReferenzen20260921 geschlossen mit
+EINORDNUNG_FACHLICH_ABGELEHNT. Kein zweiter Aufruf oder Retry.
+Originalpaket c04df64c47424cf90821927d0c3de256a11d2ddb902957e9adef4ffd2e8e8fd9,
+Auftrag, Antwort, Workflowlog und Kosten sind dauerhaft privat gesichert und
+vollstaendig entschluesselt. spaetere Codekorrektur veraendert diesen Beleg nicht.
+
+Zwei von zehn Faellen wurden bewertet; acht wurden nie gesendet. Zusammen
+mit den acht bereits ausgeschlossenen Altfaellen sind jetzt zehn Faelle
+bereits gesendet oder moeglicherweise gesendet. Kein Commitwechsel darf
+sie wieder als unbehandelt ausgeben. Die Laufbilanz lautet:
+
+| Fall | Vorab Soll | Modell | Direkter Befund |
+| --- | --- | --- | --- |
+| f334cc29245e7, Profil/Befugnis unklar | offen | offen | Gesamtlabel stimmt. Expertenanhoerung und Minderheitenvorschlag werden nicht mehr freigezeichnet. Freie Begruendung jedoch unbrauchbar; kein bestandener Fachbeleg. |
+| f3e87b3a6ddb5, Entscheidungsstand unklar | offen | widersprochen | Die Quelle nennt keinen Entscheidungsstand. Das belegt weder Beschluss noch Nichtbeschluss; Widerspruch ist nicht belegt. |
+
+Die Referenzen und ganzen Zitate gehoeren technisch zu den gelieferten
+Originalstellen. Die vollstaendige Sichtung fand zusaetzlich einen eigenen
+Schemafehler: P.SCHEMA verwendet denselben Stringbaustein an mehreren
+Adressen. structuredClone erhaelt solche Objektaliase. Das anschliessende
+Setzen von id.enum beschraenkte deshalb auch behauptung und begruendung
+auf die Fallkennung. Genau diese Kennungen stehen in der echten Antwort.
+Das ist ein Implementierungsfehler und darf nicht als frei erzeugte schlechte
+Modellbegruendung dargestellt werden. Die Bedeutung des Teilurteils
+fachbezug=getragen ist ohne Sachformulierung ebenfalls nicht nachvollziehbar.
+
+Gezielte Regression reproduziert den Fehler am ausgefuehrten Code. Die
+Korrektur ersetzt nur die gebundenen Schemafelder mit eigenen Objekten,
+statt den gemeinsam verwendeten Knoten zu veraendern. Danach10/10
+Referenzgruppen und18/18 betroffene Ausfuehrergruppen erfolgreich. Die
+alten Pakete und Sollurteile bleiben unveraendert; das korrigierte neue
+Schema ist KEIN nachtraeglicher Ersatz fuer das wirklich gesendete Paket.
+Keine erneute Sendung oder fachliche Freigabe. Die446er CI oben gilt dem
+AUSGEFUEHRTEN Kopf, nicht automatisch der nachtraeglichen Korrektur.
+Der Forschungszweig bleibt ohne Produktintegration geschlossen; die
+gezielte Korrektur wird dort fuer eine spaetere getrennte Arbeit gesichert.
+
+Rein lesend10:49:33.029024 UTC:504 Profile,0 aktiv, keine lebenden Sperren,
+Job oder Verstehensleases, offenen Jobs oder jungen offenen Prozesse.
+Vier Schutzwerte gegen Vorflug10:46:32.490773 UTC unveraendert:
+Profilec32b7d4f76b4ad70ace0cac91c3e94c3,
+Konten3c5b0b5a6314f31c395b8758b166c5c3,
+Main5ee6c52fa40a96a92bfa854a126fe42a,
+geschuetzter Auth Inhaltf75f076272c55c81d6f0c9b9af860a16.
+Ausgenommen waren nur prosaReferenzen20260921,llmUsage,testKostenTage und
+_authStoreRevision. Alle aelteren Quittungen und Kostentickets sind erhalten.
+Tagesbuchung0,166714 USD plus unbekannte0,212 USD:0,378714 USD gebunden
+von4 USD. Die drei heutigen Methodenauftraege nach PR487 verursachten
+zwei bekannte Buchungen zusammen0,013394 USD und eine weiter unbekannte
+Buchung mit voller0,212 USD Reserve. Kein Anbieterbetrag fuer den Timeout
+behauptet. Kostenregel2 erlaubt weiterhin andere voll gedeckte Arbeit.
+
+Quellen SELECT10:32:45.357747 UTC:29782 Dokumente,0 Publikationen der
+letzten48 Stunden,0 zukuenftige Publikationen,1 unbekannte Publikationszeit,
+juengste Publikation16.09.2026 15:55:56 UTC und0 Rohzeilen mit
+helmutDipQuellfelder. Das31er Vorbereitungspaket ist seit21.09.08:40:31 UTC
+ausserhalb seines vorgesehenen Frischefensters. Kein Import vorgenommen.
+Diese Bestandsaufnahme ist keine erneute500er Fachpruefung. Aeltere relevante
+Quellen bleiben nach dem bestehenden14 Tage Vertrag bewertbar; keine neue
+pauschale Altersgrenze wird eingefuehrt.
+
+Zwischenziel: drei begrenzte Methodenauftraege geschlossen, ihre technischen
+und fachlichen Ergebnisse vollstaendig getrennt, Schutz und Kosten belegt.
+Weder18er Methodenvergleich noch36er Fachabnahme bestanden. Der verbleibende
+Sachblocker ist eine nachvollziehbare unabhaengige Pruefung von Voraussetzungen,
+Rollen, Quellenluecken und konkretem Profilbezug. Der letzte Versuch liefert
+wegen des Schemafehlers keine saubere Abnahme der beabsichtigten Methode;
+die frueher belegten falschen Positivurteile sind nicht allgemein widerlegt.
+Ein weiteres gleichartiges Prompttuning oder neue Kennungen fuer dieselben
+Faelle ersetzen diesen Beleg nicht. Vor einem neuen bezahlten Auftrag muss
+ein inhaltlich begruendeter Methodenvergleich mit unabhaengigen Sollfaellen
+stehen; die vorhandene Betreiberfreigabe innerhalb4 USD reicht weiterhin.
+Danach echte36 Produktfaelle samt Speicherung/Ruecklesung, frische Quellen
+fuer alle500 Profile,1500 Ergebnispositionen und belastbare Zeit/Kosten.
+Keine Profilaktivierung, Migration, Produkttexte oder500er Test in dieser Arbeit.
+
+Der abschliessende Dokumentations PR uebernimmt ausschliesslich Status und
+Belege nach Main, keinen Forschungs oder Ausfuehrercode. Er folgt CLAUDE.md
+Paragraph9; eigener Merge und Deployment werden aus der Historie belegt,
+kein rekursiver Dokumentations PR und keine lokale Komplettpruefung.
+
+Korrigierter Archivkopf im geschlossenen PR491:
+`de80912e65ea5f02083a55a82fecf80b96409a7f`. Nur gezielt10/10 und18/18
+geprueft; keine erneute Modellabnahme, keine behauptete Pflicht CI auf diesem
+Archivkopf und keine Integration dieses Codes. Der reine Dokumentationszweig
+startet direkt von Maindcf024e2; er uebernimmt nur diese beiden Markdowndateien.
