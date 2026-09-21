@@ -1,29 +1,12 @@
 # CURRENT STATE — Helmut
 
-**21.09.2026: Begrenzte Prosaauftraege geschlossen; fachlicher Startblocker bleibt.**
-Main `dcf024e24fa19c397bc57874fb4c123919052a0a`, Production
-`dpl_9qmwbkvHw3SEykYYXZUvSGm8uVQj` READY; Main CI35578150136 gruen.
-PR488/490 ohne Merge geschlossen; letzter Versuch PR491, Run35590616673,
-auf1862353014bda02724286c429cfcf95fdccf8699 ebenfalls gestoppt.
-Exakte CI35589017145:446/446 in823s, Browser50/50, Vorschau19/19,
-Datenbank23/0,26/0,48/0. Ein mini Aufruf,1881/1216 Token,11487ms,
-0,005805 USD. Zwei von zehn Faellen bewertet:ein Sollurteil passend,
-ein unbekannter Entscheidungsstand falsch als widersprochen eingeordnet.
-Eigener Schemafehler verengte freie Begruendungsfelder. Gezielt reproduziert und korrigiert,10/10 und18/18;
-keine neue Modellabnahme. Keine Produktintegration oder Wiederholung.
-Zehn gesendete/moeglicherweise gesendete Faelle gesperrt,acht ungesendet.
-Rohantworten, Auftraege, Kosten und Quittungen privat gesichert.
-Tagesbuchung0,166714 USD plus alte unbekannte Reserve0,212 USD:
-0,378714 USD gebunden bei4 USD. Kostenregel2 erlaubt andere gedeckte Arbeit.
-SQL10:49:33 UTC:504/0, keine lebenden Sperren, Leases, offenen Jobs oder jungen
-Prozesse; alle vier Schutzvergleichswerte gegen10:46:32 identisch.
-Quellen10:32 UTC:29782 Dokumente,0 Publikationen der letzten48 Stunden,
-0 strukturierte DIP Fakten. Altes31er Paket ausserhalb seines Frischefensters.
-Naechster Blocker: nachvollziehbare unabhaengige Sachpruefung; danach36 echte
-Produktfaelle, frische500er Versorgung,1500 Positionen und Zeit/Kosten.
-Kein weiterer gleichartiger Promptversuch als Ersatz. Keine Aktivierung,
-Migration, Imports oder Produkttexte. Betreiberfreigabe innerhalb4 USD gilt.
-[Abschluss und Restarbeit](betrieb/prosa-belegplan-2026-09-20.md#abschluss-des-referenzversuchs).
+**21.09.2026: 8 Fall Sachpruefung ausgefuehrt, nicht abgenommen.**
+Main `66a066a9cfe5a2b85ff43529bd7a53f19a70613f` (Merge PR499); Vercel Production fuer genau diesen Commit READY. PR493/496/497/498/499 integriert; PR495 offen und unangetastet.
+Einmaliger Lauf35643571975 auf `codex/prosa-modellvergleich-outputreserve-20260921`, Commit aede97302a3e0710d1b0cf9be6a1a718b96b975d: genau ein Aufruf, gpt 5 mini,8000 Ausgabetokens,4410/2696 Token,24333ms, Ist Kosten0,012989 USD, Ticket `abgerechnet`; die zwei alten unbekannten Reserven blieben bytegleich gebunden. Kein Retry, kein zweiter Aufruf.
+Acht Modellurteile passen zu den Sollurteilen (6x widersprochen,2x tragfaehig); der Serververtrag lehnte dennoch strukturell ab: `praemissenpruefung-satz-fehlt`. Ursache belegt: `Intl.Segmenter` zerlegt die Einordnung von Sollfall N4 am Ordinaldatum "1. Mai 2027" in zwei Scheinsaetze; das Modell lieferte korrekt nur Satz0. Servergeprueft wurden nur die Faelle1-4.
+Methode bleibt **nicht abgenommen**. Kein Sollurteil falsch, kein Promptfehler, keine Schutzregel abgesenkt, kein Import, keine Aktivierung, keine Migration. Rohantwort, Auftrag, Kosten und Quittung privat gesichert.
+Naechste Betreiberentscheidung: Vertragskorrektur der Satztrennung (aendert eingabeHash, paketHash und CONFIRM TEXT; neue Freigabe und ein neuer bezahlter Aufruf noetig) oder Reformulierung des Sollfalls; kein Prompttuning. Danach36 echte Produktfaelle, frische500er Versorgung,1500 Positionen und Zeit/Kosten. 4 USD Riegel unveraendert.
+[Beleg](betrieb/prosa-belegplan-2026-09-20.md#abschluss-des-referenzversuchs).
 
 **20.09.2026: Quellenreparaturen erfolgreich integriert; Gesamtziel teilweise abgeschlossen.** PR471,472 und473 sind integriert. Letzter fachlicher Main Stand `c070661f18bc001e26443d331672601e62ff2018`, Deployment `dpl_C7ZH7FxjpmFpEetKkyBUYihyNbar` READY. Exakte PR473 CI35510294577:435/435 Suiten in800s, Browser50/50, PostgreSQL23/0+26/0+48/0; keine offenen Reviewpunkte. HTTP200 liefert Versionc070661f. SQL12:37:39 UTC:504/0, keine lebenden Sperren/Leases, offenen Jobs oder jungen offenen Prozesse; alle vier Hashgrundlinien seit12:35:27 unveraendert. Tageskosten0,264700 USD, Grenze4 USD, offene Reserve0. Ereignisketten sind fuer die belegten Faelle getrennt, amtliche Originalangaben erhalten, verschiedene DIP Kennungen gegen Titel und RSS Reihenfolge geschuetzt und Quellentitel nicht mehr sinnveraendernd abgeschnitten. Neue Gegenproben lokal jeweils einmal; keine Wiederholung bestandener lokaler Suiten. Allgemeine Faktenbindung, frische Vollversorgung und gemessene Zeit/Kosten bleiben offen. Keine neuen Modellaufrufe, Imports oder Aktivierungen durch diese Sitzung. [Integration](betrieb/500-betriebsplan-2026-09-20.md#integration-pr473) und [konkrete Restarbeit](betrieb/500-betriebsplan-2026-09-20.md#restarbeit-nach-den-quellenreparaturen). Dieser abschliessende reine Dokumentations PR folgt CLAUDE.md Paragraph9; sein eigener Merge und Deploymentstand werden nicht rekursiv nachdokumentiert.
 
