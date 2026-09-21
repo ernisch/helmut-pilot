@@ -986,3 +986,92 @@ Dieser abschliessende reine Dokumentations PR veraendert keinen Code,
 Workflow und keine Daten. Er erfuellt die Nachintegration nach CLAUDE.md
 Paragraph9; sein eigener Merge und Deploymentstand werden aus der Historie
 belegt und loesen keinen rekursiven Dokumentations PR aus.
+
+
+## Praemissenvergleich PR488: technischer Abbruch
+
+21.09.2026. Gesamtziel teilweise abgeschlossen. Der naechste echte
+Produktblocker aus PR486 war die semantische Pruefung unbelegter Sach und
+Rollenpraemissen. PR484 erneut auszufuehren war dafuer nicht erforderlich.
+[PR488](https://github.com/ernisch/helmut-pilot/pull/488) hat deshalb einen
+isolierten Pruefer mit getrennten Sollurteilen vorbereitet. Kein regulaerer
+Produktpfad wurde geaendert. Der PR ist ohne Merge geschlossen und bleibt
+Forschung; es gibt kein fachliches Ergebnis ueber diese Methode.
+
+Vorab eingefroren:18 redaktionelle Faelle in sechs Klassen, je6 positive,
+negative und unklare Faelle. Zwei bekannte falsche Positivurteile aus
+Run35575743755 samt Quellen blieben unveraendert. Der neue Pruefer verlangt
+ausdrueckliche und stillschweigende Voraussetzungen mit Originalzitaten je
+Satz. Zitatbindung beweist keine Bedeutung. Sollurteile, Klassen und ihre
+Begruendungen werden nicht an das Modell gesendet. Paket
+`8f3b9b53f720fb76cfac6ad545928fbcad5e384bc31b183ffe8a1e892e429d74`,
+Head `94ec4884b7508c1169904aaed3b322c8d5af02b4`.
+
+Gezielte lokale Pruefungen:18/18 Vertragsgruppen,14/14 Ausfuehrergruppen,
+4/4 Dokumentationsvertrag. Keine lokale Gesamtsuite, Browser oder Datenbank
+wiederholt. Pflicht [CI35582868841](https://github.com/ernisch/helmut-pilot/actions/runs/35582868841)
+auf exakt diesem Kopf erfolgreich:443/443 Suiten in815s, Browser und
+Vorschau19/19, isolierte Datenbankgruppen23/0,26/0,48/0.
+
+Die bereits erteilte Betreiberfreigabe innerhalb des4 USD Tagesbudgets
+umfasste den einmaligen Vergleich. Der Entschluesselungsschluessel und das
+Paket waren vor Start dauerhaft privat gesichert. Geplant waren maximal
+3 gpt5mini Aufrufe mit low und3000 Ausgabetoken, volle gemeinsame Reserve
+0,636 USD, maximal5 Minuten, erste fehlerhafte Gruppe beendet den Lauf.
+Kein Retry, Modellwechsel, Import, Aktivierung, Migration oder Produkttext.
+
+[Run35584480605](https://github.com/ernisch/helmut-pilot/actions/runs/35584480605),
+Job106284528156, Versuch1: Quittungsbeginn09:39:20.829 UTC, Abschluss
+09:39:57.969 UTC. Genau ein HTTP Sendeversuch; die zentrale KI Schnittstelle
+meldete `request-error:ETIMEDOUT` nach20328ms. Es gab keinen HTTP Statuscode
+und keine Antwortbytes. Der zentrale Timeout ist standardmaessig20 Sekunden;
+der zusaetzliche Transportdeckel von30 Sekunden war nicht die ausgeloeste
+Grenze. Ob der Anbieter den Auftrag annahm, bearbeitete oder abrechnete,
+ist daraus nicht ersichtlich. Keine Behauptung ueber die Netz oder
+Modellursache und keine nachtraegliche Annahme einer kostenlosen Ablehnung.
+
+Die verschluesselte Transportquittung wurde gespeichert und zurueckgelesen;
+privat sind Workflowlog, entschluesselte Transportdaten, Paket und Abschluss
+erhalten. Quittung prosaPraemissen20260921 ist gestoppt,
+EINORDNUNG_MODELLAUSGANG.0 von18 Faellen bewertet, keine Folgegruppe und kein
+Wiederholungsaufruf. Das ist weder ein positives noch ein negatives
+semantisches Ergebnis. Sollurteile bleiben unveraendert.
+
+Kostenquittung `2ec7ab92-7d20-45db-94b9-9004f32f55d9` ist ungeklärt,
+volle Einzelreserve212000 Mikro USD bleibt gebunden. Token und Istkosten
+sind unbekannt. Tagesbuchung0,153320 USD unveraendert, offene Reserve
+0,212 USD, insgesamt0,365320 USD gebunden bei4 USD. Nicht als0 USD Kosten
+oder0,212 USD Istkosten ausweisen. Beide vorherigen Versuche bleiben
+abgeschlossen und unveraendert. Der vorbereitete Ausfuehrer sperrt weitere
+Starts bei offenen Reserven; keine Freigabe oder Umgehung daraus ableiten.
+
+Production Main dcf024e24fa19c397bc57874fb4c123919052a0a und READY Deployment
+dpl_9qmwbkvHw3SEykYYXZUvSGm8uVQj unveraendert; Main CI35578150136 gruen.
+SQL21.09.12:40:40 Tuerkei /11:40:40 Berlin /09:40:40 UTC:504 Profile,0 aktiv,
+keine lebenden Sperren, Job oder Verstehensleases, offenen Jobs oder jungen
+Prozesse. Vier volle MD5 Vergleichswerte gegen09:37:13 identisch:
+Profilec32b7d4f76b4ad70ace0cac91c3e94c3,
+Konten3c5b0b5a6314f31c395b8758b166c5c3,
+Main5ee6c52fa40a96a92bfa854a126fe42a,
+geschuetzter Auth Inhalt ec7f806afe374b85b138733ba1602afc.
+Ausgenommen sind ausschliesslich die neue Quittung, llmUsage,
+testKostenTage und _authStoreRevision; beide alten Quittungen sind hier
+mitgeschuetzt. Diese Grenze unterscheidet sich deshalb vom PR486 Vergleich.
+
+Naechster Schritt ist die Klaerung des Anbieterausgangs und Kostenbelegs
+fuer den einmaligen Sendeversuch. Die vorhandenen GitHub und Datenbankbelege
+enthalten weder Antwort noch Anbieterkennung; ein passender Anbieterbeleg
+ist derzeit nicht verfuegbar. Eine laengere Wartezeit oder unveraenderte
+Wiederholung ist kein Ersatz. Es fehlt keine neue pauschale Freigabe.
+
+Danach bleibt der methodische Nachweis gegen die eingefrorenen Sollfaelle
+offen, weiterhin gefolgt von der36er Abnahme beider Fachpfade und frischer
+Vollversorgung aller500 Profile. Auch die Kostenplanung ist offen: das
+zuletzt vollstaendig belegte Entwurfs und Pruefpaar kostete0,012146 USD;
+500 solche Paare waeren6,073 USD, noch ohne Quellenverstehen und letzte
+Reserve. Dies ist eine Hochrechnung aus einem Einzelfall, keine gemessene
+500er Summe oder erlaubte Budgeterhoehung. Kein neuer500er Start.
+
+Dieser reine Dokumentationsabschluss aendert keinen Code, Workflow oder
+Produktdaten. Sein eigener Merge und Deploymentstand werden aus der
+Historie belegt; kein rekursiver weiterer Abschluss PR.
