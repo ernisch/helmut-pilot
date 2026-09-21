@@ -888,3 +888,101 @@ alle nichtleeren Felder und das Sachverhaltspaar muessen separat bestehen.
 Auch ein positiver Einzelfall ersetzt keine36er Fachabnahme oder500er
 Vollversorgung. Gesamtziel teilweise abgeschlossen; weitere Modellleistung
 ohne neue konkrete Kostenfreigabe blockiert. Regulare Speicherung bleibt aus.
+
+
+## Integration PR486 und inhaltlicher Blocker
+
+21.09.2026. Der Betreiber erteilte waehrend der Arbeit dauerhaft jede
+auftragsbezogene Freigabe, solange das Tagesbudget nicht ueberschritten
+wird. Diese neue Weisung ersetzt die vorherige einzelne Kostenfreigabegrenze.
+Der bestehende4 USD Tagesriegel bleibt unveraendert. Innerhalb dieses
+Rahmens wird keine erneute Freigabe verlangt; notwendige Fachbelege bleiben
+verbindlich. Keine Berechtigung, einen negativen Befund als bestanden umzudeuten.
+
+Der Folgeversuch war vor Start vollstaendig an39367e8440aaccd41ffe7b273f59f44b62854aa5,
+Production740209d2 und das oben angegebene Paket gebunden. Frischer privater
+Empfaengerschluessel und Vorabkontrolle waren dauerhaft gesichert. Pflicht
+CI35574359228 auf exakt diesem Kopf:441/441 Suiten in810s, Browser erfolgreich,
+Prosa Vorschau19/19, saemtliche isolierten Datenbankstufen erfolgreich.
+Keine bereits gruene lokale Komplettpruefung wiederholt.
+
+[Run35575743755](https://github.com/ernisch/helmut-pilot/actions/runs/35575743755),
+Job106257130548, Versuch1:08:01:41 bis08:02:45 UTC. Genau2 gpt 5 mini Aufrufe.
+Entwurf1148 Eingabe und923 Ausgabetokens,9958ms,4266 Mikro USD;
+Review1736 Eingabe und1753 Ausgabetokens,12623ms,7880 Mikro USD.
+Zusammen0,012146 USD gebucht, beide vollen Reserven abgewickelt.
+Mit dem Vorversuch sind es in dieser Sitzung3 Aufrufe und0,015744 USD.
+Die kleinere Legacy Telemetrieschaetzung ist nicht der konservative
+Kostenbeleg und keine Anbieterrechnung. Vollstaendige transportierte Bytes,
+Modellauftrag, strukturierte Antworten, Quittungen und Kosten sind privat
+entschluesselt und dauerhaft gesichert. Keine Production Produkttexte.
+
+Die Anbieterschemaannahme und Profilpaarbindung sind jetzt praktisch belegt:
+Block0 waehlt schwerpunkt/Oeffentliche Verwaltung, Block1 ausschuss/Verkehrsausschuss.
+Der Server erreicht erstmals den getrennten Review. Dieser bewertet acht
+nichtleere Felder positiv und Kommunikation in Block1 als unklar; ein Feld
+ist null. Der Server stoppt mit prosa-einordnung-pruefung-abgelehnt.
+Die unveraenderte lokale Wiedergabe bestaetigt diesen genauen Fehler. Kein
+zweiter Start, keine nachtraegliche Antwortkorrektur, kein Entfernen des
+abgelehnten Feldes, kein Uebernehmen eines positiven Teilurteils als Abnahme.
+
+Vollstaendige direkte Sichtung aller zehn Felder gegen dieselben zwei
+unveraenderten Quellen und das vollstaendige Profil:
+
+| Block/Feld | Direkter Befund zum Entwurf und zum Modellreview |
+| --- | --- |
+| Umsetzung/Relevanz | Verwaltungsressourcen und Haushalt sind in der knappen Quelle nicht konkretisiert. Nicht genannter Beschlusstermin wird als Fehlen ausgelegt. Positiver Review traegt diese Praemisse nicht. |
+| Umsetzung/Risiko | Ein im Text nicht genannter Termin belegt keinen in Wirklichkeit fehlenden Termin und damit keine daraus abgeleitete Verzoegerungsursache. Review verwechselt beides. |
+| Umsetzung/Chance | Quelle nennt eine geplante Umsetzung. Review spricht von bekanntem Umsetzungsbeginn und bestaetigt die verstaerkte Zeitgewissheit. |
+| Umsetzung/Option | Befugnis von Fraktion oder Fachbereich zu schriftlicher Anfrage und Berichtsantrag fehlt im Profil und in der Quelle. Review behauptet dennoch keine erfundene Zustaendigkeit. |
+| Umsetzung/Kommunikation | Null, deshalb kein Sprachurteil erforderlich; kein Ersatztext. |
+| Barrierefreiheit/Relevanz | Allgemeiner parlamentarischer Bezug, aber kein fachlicher Bezug zum Verkehrsausschuss belegt. Die blosse Existenz des Profilpaares heilt dies nicht. |
+| Barrierefreiheit/Risiko | Die Quelle nennt nur eine Beratung. Inhalt und Empfehlungen des Berichts sind unbekannt; der daraus abgeleitete Ausfall von Massnahmen ist nicht belegt. Review akzeptiert die Zusatzpraemisse. |
+| Barrierefreiheit/Chance | Politische Moeglichkeit, aber konkrete Barrieren oder Initiativen fehlen; allgemeine Plausibilitaet belegt die gewaehlte Ausschusszustaendigkeit nicht. |
+| Barrierefreiheit/Option | Expertenanhoerung, Minderheitenvorschlag und Verabschiedung von Handlungsempfehlungen unterstellen ungelieferte Verfahrensbefugnisse. Review erklaert sie ohne Beleg zu Ausschussbefugnissen. |
+| Barrierefreiheit/Kommunikation | Ein interner Informationsvorschlag ist nicht allein deshalb eine neue Tatsache, weil er nicht in der Quelle steht. Die verlangten Kernaussagen des Berichts fehlen allerdings. Die Reviewbegruendung trennt Vorschlag und fehlende Inhaltsbasis nicht sauber. |
+
+Das positive Paarurteil unterscheidet die beiden synthetischen Sachverhalte
+plausibel; es hebt die negativen Einzelbefunde nicht auf. Die widerspruechlichen
+Fachurteile betreffen genau die geforderte Pruefung von Praemissen, Rollen,
+Modalitaet und konkretem Profilbezug. Die Kennzeichnung als fehlbare KI
+Einordnung macht unbelegte Befugnisse nicht fachlich zulaessig. Ein erneuter
+unveraenderter Versuch waere kein sinnvoller Beleg. Keine Produktanbindung
+oder36er Fachabnahme aus diesen Ergebnissen ableiten.
+
+[PR486](https://github.com/ernisch/helmut-pilot/pull/486) wurde nach gruener
+Pflicht CI und ohne offene Reviews oder Reviewkommentare im Rahmen der neuen
+Betreiberfreigabe integriert. Main671a73a662f636471e6af7a48fe364283dee485a,
+Deploymentdpl_FzBPWtJfoSJKFVj7GWnZdPUMWhZ3 READY. Productionalias zeigt auf
+diesen Stand; HTTP200 liefert Version671a73a6. Die technische Profilbindung
+ist sicher weiterverwendbar. Sie aktiviert keinen automatischen Modellpfad.
+Der einmalige Ausfuehrer bleibt geschlossen; Merge startet keinen Versuch.
+
+SQL21.09.11:08:43 Tuerkei /10:08:43 Berlin /08:08:43 UTC nach Deployment:
+504 Profile,0 aktiv, keine lebenden Sperren, Job oder Verstehensleases,
+offenen Jobs oder jungen offenen Prozesse. Tagesbuchung0,153320 USD bei4 USD,
+offene Reserve0. Alle vier vollstaendigen MD5 Vergleichswerte gegen07:58:03
+identisch: Profilec32b7d4f76b4ad70ace0cac91c3e94c3,
+Identitaeten3c5b0b5a6314f31c395b8758b166c5c3,
+Main5ee6c52fa40a96a92bfa854a126fe42a,
+geschuetzter Auth Inhaltc87b0f8f076bed3af6ece149b9b46686.
+Hier ist die alte Versuchsquittung mitgeschuetzt; nur neue Quittung,
+llmUsage, testKostenTage und _authStoreRevision sind ausgenommen.
+Darum ist dieser Auth Vergleich nicht mit der vorherigen Grenze zu vermischen.
+
+Zwischenziel erreicht: technische Profilbindung implementiert, gezielt und
+beim Anbieter belegt, integriert und nachkontrolliert. Gesamtziel teilweise
+abgeschlossen; naechster echter Blocker ist die unabhaengige Tragfaehigkeit
+der Sach und Rollenpraemissen und die unzuverlaessige semantische Pruefung.
+Naechste fachliche Arbeit muss diese konkreten falschen Positivurteile mit
+einem nachvollziehbaren Nachweisverfahren adressieren, ehe weitere Prosa
+in regulaere Speicherung gelangt. Bloss laengere Prompts, mehr identische
+Versuche, ein positives Eigenurteil oder historische Forschungsentwuerfe
+ersetzen diesen Beleg nicht. Danach bleiben der unveraenderte36er Vertrag,
+frische Quellen fuer alle500 Profile,1500 Ergebnispositionen und gemessene
+Zeit/Kosten notwendig. Das Budget ist derzeit kein Blocker.
+
+Dieser abschliessende reine Dokumentations PR veraendert keinen Code,
+Workflow und keine Daten. Er erfuellt die Nachintegration nach CLAUDE.md
+Paragraph9; sein eigener Merge und Deploymentstand werden aus der Historie
+belegt und loesen keinen rekursiven Dokumentations PR aus.
