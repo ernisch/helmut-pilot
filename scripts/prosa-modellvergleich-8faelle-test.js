@@ -126,12 +126,24 @@ test("Sollurteile und Begruendungen sind vom Modellpayload getrennt", () => {
 test("Ausfuehrer ist auf genau einen Aufruf und 0,232 USD gedeckelt", () => {
   A.equal(V.MAX_COST, 232000);
   A.equal(V.MAX_OUTPUT_TOKENS, 8000);
-  A.equal(V.BRANCH, "codex/prosa-modellvergleich-outputreserve-20260921");
-  A.equal(V.KEY, "prosaModellvergleich3_20260921");
+  A.equal(V.BRANCH, "codex/prosa-modellvergleich-satzfix-20260921");
+  A.equal(V.KEY, "prosaModellvergleich4_20260921");
   A.equal(V.KI_TIMEOUT_MS, 120000);
   const p = V.paket();
   A.equal(p.faelle.length, 8);
   A.equal(V.paket().paketHash, p.paketHash, "paketHash ist nicht stabil (eingefroren)");
+});
+
+test("Workflow-Job ist an den neuen Branch gebunden und nur manuell startbar", () => {
+  const yaml = require("node:fs").readFileSync(
+    require("node:path").join(__dirname, "../.github/workflows/staff-backfill-one.yml"), "utf8");
+  const own = yaml.slice(yaml.indexOf("  prosa-modellvergleich-8faelle:"));
+  A.equal(own.includes("refs/heads/" + V.BRANCH), true, "Job nicht an den neuen Branch gebunden");
+  A.equal(own.includes("github.event_name == 'workflow_dispatch'"), true);
+  A.equal(own.includes("startsWith(inputs.confirm_text, 'MODELLVERGLEICH8_EINMAL:')"), true);
+  A.equal(own.includes('HELMUT_KI_TIMEOUT_MS: "120000"'), true, "Timeout nicht job-lokal gebunden");
+  A.equal(yaml.includes("!startsWith(inputs.confirm_text, 'MODELLVERGLEICH8_EINMAL:')"), true);
+  A.equal(/\n\s*schedule:/.test(yaml), false, "Workflow darf keinen Zeitplan haben");
 });
 
 test("Auswertung verlangt exakt 8 von 8; ein falscher Fall macht nicht bestanden", () => {
@@ -169,6 +181,15 @@ test("Production-aehnlicher Zustand mit exakt den zwei belegten Tickets wird akz
   const t = tagesEintrag(beide());
   A.doesNotThrow(() => V.pruefeOffeneReserven(t));
   A.equal(K.belegt(t) + V.MAX_COST <= 4000000, true);
+});
+
+test("der abgerechnete Aufruf aus Run 35643571975 blockiert nicht als unbekannt", () => {
+  const abgerechnet = ticket("nachlauf500-35643571975", V.NEU_MANDAT_HASH,
+    { status: "abgerechnet", reserved: V.MAX_COST, maxOutputTokens: V.MAX_OUTPUT_TOKENS, cost: 12989 });
+  const t = tagesEintrag({ ...beide(), "lauf-35643571975": abgerechnet },
+    { spent: 410517 + 12989, manualCalls: 3 });
+  A.doesNotThrow(() => V.pruefeOffeneReserven(t));
+  A.equal(Object.values(t.calls).filter(c => ["reserviert", "ungeklaert"].includes(c.status)).length, 2);
 });
 
 test("drittes unbekanntes Ticket wird abgelehnt", () => {
