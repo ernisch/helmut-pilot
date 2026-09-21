@@ -638,7 +638,12 @@ Vertragsgruppen50/50 und Vorschaugruppen19/19, Dokumentationsgroesse4/4.
 Die mobile Vorschau wurde zusaetzlich als Bild gelesen: beide Abschnitte,
 Hinweise und Quellen ohne abgeschnittenen Text sichtbar. git diff --check
 besteht. Kein eigener Modellaufruf und keine behauptete Modellqualitaet.
-PR und exakte CI Nachsicht folgen; kein Merge oder Deployment behauptet.
+[Entwurf PR483](https://github.com/ernisch/helmut-pilot/pull/483) sichert
+Codekopf `11105012b0fb95065cc1693272b390ab2b2a1938`, Baum
+`cb337d7bc908cd71cfb530fa07d67bb133c59970`. Lokaler und entfernter
+Codebaum identisch. Der nachfolgende reine Dokumentationsabschluss ergaenzt
+nur diesen PR Verweis. Pflicht CI am letzten Kopf separat nachsehen;
+kein Merge oder Deployment behauptet.
 
 
 Reine Production Nachsicht21.09.2026 um09:04:44 Tuerkei /08:04:44 Berlin /

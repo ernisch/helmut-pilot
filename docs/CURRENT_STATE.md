@@ -4,7 +4,8 @@
 Betreiber hat die Trennung belegter Tatsachen und zusaetzlich gepruefter, fehlbarer KI
 Einordnung mit Ja freigegeben. Keine neue Kostenfreigabe und kein500er Start.
 Eigener Branch `codex/prosa-trennung-20260921` direkt auf Main
-`be4b237b6154248f30e175235ed81aa9893b01bf`; PR in Vorbereitung, kein Merge.
+`be4b237b6154248f30e175235ed81aa9893b01bf`; EntwurfPR483, kein Merge.
+Gepruefter Codekopf `11105012b0fb95065cc1693272b390ab2b2a1938`.
 Faktenwortlaut bleibt serverseitig gebunden. Jedes freie Feld braucht ein separates Urteil.
 Beide echten App Einstiege und Ansichten haben eine interne, mandatsgebundene Vorschau.
 Keine Route oder Automatik aktiviert sie; sie darf keinen Tagesnachweis speichern.
