@@ -1,23 +1,24 @@
 # CURRENT STATE — Helmut
 
-**21.09.2026: Interne Prosa Vorschau integriert; Gesamtziel teilweise abgeschlossen.**
-PR483 auf Main `73ff420b0b7029ffaaafe3a8964e15f0895f378e`, Deployment
-`dpl_2KjNcnwsRA7YbefiJbZskg4wjQBQ` READY, fra1, Production Alias zugeordnet.
-HTTP200 liefert client/styles Version73ff420b. Exakte CI35568960050 auf0822754:
-440/440 in822s, Browser50/50, Vorschau19/19, isolierte Datenbanknachweise erfolgreich.
-Keine offenen Reviewpunkte. Der erste CI Fehler durch fehlendes Playwright ist korrigiert.
-Faktenwortlaut bleibt gebunden; jedes freie Feld braucht ein separates Urteil.
-Beide App Ansichten haben eine interne Vorschau ohne automatischen Aufrufer oder Tagesnachweis.
-Ein falsches positives Sprachurteil bleibt moeglich; keine volle Fakten oder Produktabnahme.
-EntwurfPR484 aufea3b09a: Versuchsausfuehrer16/16 lokal, kein bezahlter Start.
-Neuer lokaler Gesamtlauf440/441 in979s; einziger Fehler:180s Zeitlimit im1000er Stresstest.
-Derselbe Test besteht in PR483 CI in128s und isoliert lokal danach in161s.
-Keine regulaere36er Produktabnahme, allgemeine Faktenversorgung oder500er Vollversorgung belegt.
-PR479 bis482 bleiben Forschungsentwuerfe; alle alten Versuche ohne Restfreigabe geschlossen.
-DIP Fakteneingang PR477/478 integriert, begrenzt und ohne produktiven Aufrufer.
-SQL21.09.06:50:59 UTC nach Merge:504/0, keine Sperren/Leases/offenen Jobs/jungen Prozesse.
-SQL06:37:10 UTC: Tagesbuch0,137576 USD bei4 USD, neuer Versuch fehlt, alte gestoppt.
-[Vertrag und Integration](betrieb/prosa-belegplan-2026-09-20.md#integration-der-internen-vorschau).
+**21.09.2026: Einmaliger Prosa Versuch gescheitert; Profilvertrag gezielt repariert, noch nicht integriert.**
+Production bleibt Main `740209d21addd13b302aa94bd5de8798899735cf`, Deployment
+`dpl_FXKnDc6SMUZaQZ6BAYpwSu2Aixe8` READY, HTTP200 mit Version740209d2.
+PR483/485 integriert; auch Main CI35571939595 ist vollstaendig erfolgreich.
+Freigegebener Versuch PR484 aufea3b09a: Run35573253937, Job106249276735,
+21.09.07:30:22 bis07:30:47 UTC. Genau1 mini Aufruf,0,003598 USD gebucht.
+HTTP200 und Rohantwort dauerhaft gesichert; vor Review mit mandatsbezug abgelehnt.
+Zwei falsche Profilpaare im Entwurf, offline unveraendert reproduziert.
+Alle10 freien Felder gesichtet; auch unbelegte Befugnisse und Modalitaet offen.
+Quittung gestoppt; kein Retry, keine Restfreigabe und kein Produkttext.
+SQL07:32:20 UTC:504/0, keine Sperren/Leases/offenen Jobs/jungen Prozesse;
+Profile, Identitaeten, Main und geschuetzter Auth Inhalt gegen07:27:41 identisch.
+Tageskosten0,141174 USD bei4 USD; keine offenen Tagesreserven.
+Branch `codex/prosa-profilvertrag-20260921` bindet Schema und Serverpruefer
+an vorhandene Feld/Wertpaare. Gezielt54/54,10/10,12/12 und Ausfuehrer17/17.
+Neuer begrenzter Folgeversuch nur vorbereitet, braucht eigene Kostenfreigabe.
+Keine36er Produktabnahme, allgemeine Faktenversorgung oder500er Vollversorgung.
+PR479 bis482 bleiben Forschung; PR484 bleibt geschlossener Versuchsbeleg.
+[Diagnose und Reparatur](betrieb/prosa-belegplan-2026-09-20.md#abschluss-des-freigegebenen-versuchs-und-profilvertrag).
 
 **20.09.2026: Quellenreparaturen erfolgreich integriert; Gesamtziel teilweise abgeschlossen.** PR471,472 und473 sind integriert. Letzter fachlicher Main Stand `c070661f18bc001e26443d331672601e62ff2018`, Deployment `dpl_C7ZH7FxjpmFpEetKkyBUYihyNbar` READY. Exakte PR473 CI35510294577:435/435 Suiten in800s, Browser50/50, PostgreSQL23/0+26/0+48/0; keine offenen Reviewpunkte. HTTP200 liefert Versionc070661f. SQL12:37:39 UTC:504/0, keine lebenden Sperren/Leases, offenen Jobs oder jungen offenen Prozesse; alle vier Hashgrundlinien seit12:35:27 unveraendert. Tageskosten0,264700 USD, Grenze4 USD, offene Reserve0. Ereignisketten sind fuer die belegten Faelle getrennt, amtliche Originalangaben erhalten, verschiedene DIP Kennungen gegen Titel und RSS Reihenfolge geschuetzt und Quellentitel nicht mehr sinnveraendernd abgeschnitten. Neue Gegenproben lokal jeweils einmal; keine Wiederholung bestandener lokaler Suiten. Allgemeine Faktenbindung, frische Vollversorgung und gemessene Zeit/Kosten bleiben offen. Keine neuen Modellaufrufe, Imports oder Aktivierungen durch diese Sitzung. [Integration](betrieb/500-betriebsplan-2026-09-20.md#integration-pr473) und [konkrete Restarbeit](betrieb/500-betriebsplan-2026-09-20.md#restarbeit-nach-den-quellenreparaturen). Dieser abschliessende reine Dokumentations PR folgt CLAUDE.md Paragraph9; sein eigener Merge und Deploymentstand werden nicht rekursiv nachdokumentiert.
 
@@ -149,17 +150,18 @@ K2/K3 und OP-25 abgeschlossen (OP-25 laut Betreiberfeststellung 24.08.). Nach ei
 
 ## 11 · Nächster Schritt
 
-21.09.: Trennung belegter Tatsachen und fehlbarer KI Einordnung ist als Entwicklung freigegeben.
-PR483 ist integriert und Production nachgeprueft; naechster Schritt ist der begrenzte Funktionsversuch.
-Vorbereiteter einmaliger Funktionsversuch auf `codex/prosa-einordnung-versuch-20260921`:
-hoechstens2 mini Aufrufe, volle Reserve0,424 USD innerhalb4 USD, kein automatischer Start.
-Neue Kosten samt begrenzter privater Versuchsquittung brauchen gesonderte Freigabe;
-der konkrete Auftrag steht im [Prosabeleg](betrieb/prosa-belegplan-2026-09-20.md#vorbereiteter-einmaliger-funktionsversuch-der-getrennten-einordnung).
-Ein positiver Einzelfall ersetzt weder allgemeine Faktenversorgung noch36er Fachabnahme.
-Regulaere Speicherintegration, frische Versorgung fuer500 und alle1500 Ergebnispositionen bleiben offen.
-Der31er Import ist nicht freigegeben; seine alte Frische endet21.09.08:40:31 UTC.
-Die allgemeine sichere Arbeits und Mergefreigabe gilt weiter, keine Rueckfrage zwischen Reparaturen.
-Alle504 Profile bleiben inaktiv. Kein500er Start. Fortsetzung im vorhandenen Thread moeglich.
+21.09.: Versuch PR484 nach einem Aufruf geschlossen und vollstaendig ausgewertet.
+Sichere Reparatur auf `codex/prosa-profilvertrag-20260921`: ausschliesslich
+vorhandene Profilpaare im Modellvertrag. Pflicht CI vor Integration pruefen.
+Vorbereiteter neuer Auftrag mit Paketf663fd74, eigener einmaliger Quittung:
+hoechstens2 mini Aufrufe,5 Minuten, maximal0,424 USD innerhalb4 USD, nur21.09.
+Keine Startfreigabe und keine Wiederverwendung des alten Auftrags.
+Der [kanonische Beleg](betrieb/prosa-belegplan-2026-09-20.md#abschluss-des-freigegebenen-versuchs-und-profilvertrag)
+enthaelt Kostenumfang, Sollwerte, Stoppbedingungen und den negativen Vorbefund.
+Auch ein positiver Einzelfall ersetzt weder Faktenversorgung noch36er Fachabnahme.
+Regulaere Speicherung, frische Versorgung fuer500 und1500 Ergebnispositionen bleiben offen.
+Alle504 Profile bleiben inaktiv; kein Import, keine Migration und kein500er Start.
+Die bestehende sichere Arbeitsfreigabe gilt; kein weiterer bezahlter Lauf ohne neue Freigabe.
 
 ## 12 · Verbindliche Betriebsgrenzen
 

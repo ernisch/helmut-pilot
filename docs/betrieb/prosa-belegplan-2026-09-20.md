@@ -771,3 +771,120 @@ Er aendert weder Code noch Konfiguration oder Daten. Sein eigener Merge und
 Deploymentstand werden aus der Git und Deploymenthistorie belegt; kein
 rekursiver Folge PR. Der naechste echte Schritt braucht nur die konkret
 begrenzte neue Kostenfreigabe, keine erneute allgemeine Arbeitsfreigabe.
+
+## Abschluss des freigegebenen Versuchs und Profilvertrag
+
+21.09.2026. Betreiber hat den oben begrenzten Auftrag im aktuellen Thread
+ausdruecklich mit Ja freigegeben. Vor Start waren PR484 und die zusaetzliche
+Main CI35571939595 vollstaendig erfolgreich. Main740209d2 und Deployment
+dpl_FXKnDc6SMUZaQZ6BAYpwSu2Aixe8 READY blieben unveraendert. Genau ein manueller
+[Run35573253937](https://github.com/ernisch/helmut-pilot/actions/runs/35573253937),
+Job106249276735, erster Versuch, Codeea3b09a40795a9beb876c73160b62f4bcc52acba.
+Start10:30:22 Tuerkei /09:30:22 Berlin /07:30:22 UTC; Abschluss10:30:47 /
+09:30:47 /07:30:47. Gesamter Workflow43 Sekunden. Keine Wiederholung.
+
+Der Anbieter lieferte genau eine vollstaendige HTTP200 Antwort:979 Eingabe,
+777 Ausgabetoken, davon320 Denktoken; gemessene Modellphase7779ms.
+Gebuchte Kosten0,003598 USD, volle Reserve0,212 USD korrekt abgerechnet.
+Tagesbuch stieg von0,137576 auf0,141174 USD; unveraendertes Limit4 USD und
+keine offene Tagesreserve. Das alte Telemetriefeld estimatedCost nennt
+0,001799 USD nach seiner anderen Preisbasis. Massgeblich fuer diesen
+Kostenvertrag ist die bestaetigte konservative Buchung, keine Anbieterrechnung.
+Keine zweite Modellphase, kein gespeicherter Produkttext, keine Aktivierung.
+
+Anbieterrohantwort und verarbeiteter Entwurf sind privat verschluesselt in
+der einmaligen Quittung prosaEinordnung20260921 erhalten; Status gestoppt.
+Zusaetzlich liegt der vollstaendige private Versuchsbeleg mit Schluessel,
+Rohlog, Paket und entschluesselten Antworten beim Betreiber. Kein privater
+Schluessel oder Rohlog liegt im Repository.
+Rohantwort SHA256:5168d3c131660f79455be221ab75b7295d29bcbf7c2b7dcbf1a3a621918ee7e2.
+Verarbeitete Antwort:9c9306a8514bbca9aae49f09bda329cefa0081d461cbd87520d99c95571051ac.
+Ausgabe fachlichBestanden=false und inProductionImportiert=false.
+
+Unveraenderte Offline Gegenlesung mit dem ausgefuehrten Vertrag reproduziert
+prosa-einordnung-mandatsbezug. Erster Block waehlt Feld Ausschuss statt des
+verbindlichen ausschuss. Zweiter Block waehlt Feld Thema mit einem
+Quellenthema, das gar nicht im Profil steht. Der gelieferte Schwerpunkt
+lautet Oeffentliche Verwaltung. Prompt und Schema hatten bisher nur freie
+Zeichenketten statt der tatsaechlichen erlaubten Feld/Wertpaare verlangt.
+Das ist ein behebbarer Eingabevertragsfehler; der Server hat korrekt abgelehnt.
+Die Originalantwort wurde weder korrigiert noch erneut an ein Modell gesendet.
+
+Vollstaendige direkte Sichtung aller zehn freien Felder gegen beide ganzen
+synthetischen Quellen, keine Stichprobe und kein bestandener Modellreview:
+
+| Block/Feld | Direkter Befund |
+| --- | --- |
+| Umsetzung/Relevanz | Zeitbezug plausibel, aber kein konkreter fachlicher Bezug zum gewaehlten Verkehrsausschuss belegt. |
+| Umsetzung/Risiko | Verzoegerung und erhoehter Abstimmungsbedarf werden aus fehlender Terminangabe abgeleitet; diese Kausalitaet liefert die Quelle nicht. |
+| Umsetzung/Chance | Verlangen von Auskunfts oder Berichtspflichten setzt unbelegte Ausschussbefugnisse voraus. |
+| Umsetzung/Option | Nachfrage zum Termin waere moeglich; Meilensteine einfordern und Berichterstattung beantragen sind im gelieferten Profil und Vorgang nicht getragen. |
+| Umsetzung/Kommunikation | Feste Nennung des Umsetzungsstarts erhaelt das geplante Vorhaben nicht eindeutig als Planung. Nicht genannter Beschlusstermin wird als noch offen dargestellt. |
+| Barrierefreiheit/Relevanz | Allgemeiner parlamentarischer Nutzen, gewaehltes Profilthema jedoch nicht vorhanden. |
+| Barrierefreiheit/Risiko | Erwartungen und fehlende operative Vorgaben sind neue, nicht belegte Voraussetzungen. |
+| Barrierefreiheit/Chance | Allgemeine politische Moeglichkeit; konkrete Nachbesserungen der Verwaltungspraxis nicht aus dem kurzen Bericht ableitbar. |
+| Barrierefreiheit/Option | Konkretisierung der Empfehlungen unterstellt Empfehlungen, die in der Quelle nicht vorkommen. Verfahrensoptionen bleiben unbelegt. |
+| Barrierefreiheit/Kommunikation | Politischer Wille des Mandats ist nicht geliefert; Kommunikationslinie deshalb nicht freigegeben. |
+
+Die ausgewaehlten Faktenkennungen adressieren zwei getrennte synthetische
+Sachverhalte. Da der Entwurf vor dem zweiten Modellaufruf scheiterte, gibt es
+weder ein echtes Paarurteil noch eine fertige formulierte Ausgabe. Keine
+universelle Aussage ueber die Modellqualitaet aus diesem einen Fall.
+
+SQL21.09.10:32:20 Tuerkei /09:32:20 Berlin /07:32:20 UTC:504 Profile,0 aktiv,
+keine lebenden Sperren, Job oder Verstehensleases, offenen Jobs oder jungen
+offenen Prozesse. Vier neue vollstaendige MD5 Vergleichswerte gegen07:27:41
+sind identisch: Mandatsprofilec32b7d4f76b4ad70ace0cac91c3e94c3,
+Identitaeten3c5b0b5a6314f31c395b8758b166c5c3,
+Main5ee6c52fa40a96a92bfa854a126fe42a,
+geschuetzter Auth Inhaltde3ff695e71e3d2d36c784acd5c45d0b.
+Letzterer laesst nur die erlaubte Versuchsquittung, llmUsage, testKostenTage
+und _authStoreRevision aus. Sortierung der vollstaendigen Profilzeilen nach
+user_id beziehungsweise id; Hash ueber JSONB Text. Diese neue Vergleichsbasis
+wird nicht mit den aelteren SHA256 Grundlinien verwechselt.
+
+Gezielte Reparatur auf codex/prosa-profilvertrag-20260921, Basis740209d2:
+Der bestehende Profilpruefer und die neue Auswahlliste teilen dieselbe
+Feldzuordnung. Prompt, dynamisches Anbieterschema und Serverpruefung binden
+nur echte Feld/Wertpaare. Quellenthemen werden nicht zu Profilfeldern;
+Stellvertretungen bleiben getrennt im Profilkontext. Leere oder rein
+technische Profile stoppen vor jedem Kostenhook. Die Umsetzung gilt
+generisch fuer die bestehenden Aliasfelder, nicht nur fuer diesen Fall.
+Verschachtelte anyOf Alternativen entsprechen dem dokumentierten
+[Azure Schemasubset](https://learn.microsoft.com/en-us/azure/foundry/openai/how-to/structured-outputs#json-schema-support-and-limitations).
+Ihre Annahme im echten Modellaufruf ist noch nicht belegt. Die zusaetzliche
+Profilpaarbindung aendert den neuen Vorschauhash; alte private Antworten
+bleiben unter ihrem alten Code und Vertrag lesbar, keine Bestandsmigration.
+
+Gezielt54/54 Prosa Vertragsgruppen,10/10 Stellvertretungsgruppen,12/12
+Platzhalterbindungen, neuer Ausfuehrer17/17 erfolgreich. Ein anfangs falsch
+benannter Testpfad existierte nicht; danach nur die tatsaechlich betroffenen
+Suiten ausgefuehrt. Kein lokaler Gesamtlauf und keine Browserwiederholung.
+Alle Ausfuehrungen ueber scripts/lokal.js. Die Pflicht CI prueft separat den
+endgueltigen PR Kopf. Keine abgeschwaechten fachlichen Kriterien.
+
+Vorbereiteter Folgeauftrag, NICHT gestartet und NICHT kostenfreigegeben:
+gleicher unveraenderter synthetischer Quellenfall, neuer Profilvertrag,
+Paketf663fd741fa6be03c15660e0de18b0fa522116b0c92f28ef240bdc9728557f6f.
+Eigener Schluessel prosaProfilvertrag20260921 und Bestaetigungspraefix
+PROFILVERTRAG_EINMAL. Die alte Quittung muss geschlossen sein und bleibt
+geschuetzt. Fester Branch codex/prosa-profilvertrag-20260921, erster
+manueller Actions Versuch, nur21.09.2026. Hoechstens ein mini Entwurf und
+ein getrenntes mini Review, maximal2 Aufrufe,5 Minuten und volle
+Reserve0,424 USD innerhalb des unveraenderten4 USD Tagesriegels.
+Neue Freigabe muss diese Kosten samt privaten Rohantworten, Telemetrie und
+Quittungen umfassen; ungenutztes Budget des Vorversuchs ist keine Erlaubnis.
+Vor jeder Phase exakter Code und Productionstand,504/0 und keine Konkurrenz.
+Bei ungueltigem Entwurf, negativer Pruefung, fehlender Antwort oder
+Kostenquittung, Schreibkonflikt oder Zeitablauf sofortiger Stop ohne Retry.
+Kein Modellwechsel, Import, Produkttext, Profilanlage, Aktivierung oder Migration.
+Alle Profile bleiben danach inaktiv. Rueckweg: ungestartet lassen; nach
+Start bleibt jede Quittung dauerhaft erhalten und gegen Wiederholung gesperrt.
+
+Sollwerte: zwei unveraenderte Tatsachenteile, gueltige und fachlich passende
+Profilbeziehungen, vollstaendig hilfreiche Einordnung ohne erfundene
+Befugnisse, Empfehlungen, Leserpositionen oder verbindliche Umsetzungszeit;
+alle nichtleeren Felder und das Sachverhaltspaar muessen separat bestehen.
+Auch ein positiver Einzelfall ersetzt keine36er Fachabnahme oder500er
+Vollversorgung. Gesamtziel teilweise abgeschlossen; weitere Modellleistung
+ohne neue konkrete Kostenfreigabe blockiert. Regulare Speicherung bleibt aus.
