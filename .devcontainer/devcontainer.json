@@ -1,0 +1,6 @@
+{
+  "name": "Helmut Pilot (Universal)",
+  "image": "mcr.microsoft.com/devcontainers/universal:2",
+  "postCreateCommand": "bash /workspaces/helmut-pilot/.devcontainer/setup.sh",
+  "postStartCommand": "bash /workspaces/helmut-pilot/scripts/helmut-mobile-autostart.sh"
+}
