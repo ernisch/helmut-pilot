@@ -174,18 +174,25 @@ async function ausfuehren({ bestand, bestandsauswahl, env = process.env, now = (
       : storage.acquirePipelineLock(LOCK, MAX_MS + 120000));
     D.fordere(locked === true, "quellenvorlauf-bereits-aktiv");
 
-    const guard = async reserve => {
+    const guard = async (reserve, voll = false) => {
       D.fordere(now().getTime() + reserve < ende, "quellenvorlauf-zeitbudget");
       D.fordere(now().toISOString().slice(0, 10) === start.toISOString().slice(0, 10),
         "quellenvorlauf-tageswechsel");
-      await pruefeBetrieb(LOCK);
-      const s = await snapshot();
-      D.pruefeSnapshot(s, "500-ruhend");
-      D.fordere(R.pruefe(s, bestandsauswahl).zielHash === plan.ziel.zielHash,
-        "quellenvorlauf-zielmenge-veraendert");
-      return s;
+      if (typeof deps.pruefeNullAktive === "function") {
+        D.fordere(await deps.pruefeNullAktive() === true, "quellenvorlauf-profil-aktiviert");
+      } else {
+        const kurz = await snapshot();
+        D.pruefeSnapshot(kurz, "500-ruhend");
+      }
+      if (voll) {
+        await pruefeBetrieb(LOCK);
+        const s = await snapshot();
+        D.pruefeSnapshot(s, "500-ruhend");
+        D.fordere(R.pruefe(s, bestandsauswahl).zielHash === plan.ziel.zielHash,
+          "quellenvorlauf-zielmenge-veraendert");
+      }
     };
-    await guard(120000);
+    await guard(120000, true);
 
     const base = SP.workerDeps({
       env,
@@ -206,7 +213,7 @@ async function ausfuehren({ bestand, bestandsauswahl, env = process.env, now = (
     await mapBounded(plan.jobs, PARALLEL, async (job, index) => {
       if (stop) return null;
       try {
-        await guard(90000);
+        await guard(90000, index % 10 === 0);
         const auftrag = {
           ...job,
           id: "quellenvorlauf-" + runId + "-" + String(index + 1).padStart(3, "0"),
