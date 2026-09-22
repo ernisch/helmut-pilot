@@ -41,6 +41,7 @@
 
 const A = require("node:assert/strict");
 const fs = require("node:fs");
+const os = require("node:os");
 const path = require("node:path");
 const crypto = require("node:crypto");
 
@@ -49,8 +50,11 @@ const V = require(path.join(ROOT, "lib/helmut/verstehen-einmalig"));
 const D = require(path.join(ROOT, "lib/helmut/testkohorte-direkt500"));
 const vertragModul = require(path.join(ROOT, "lib/helmut/verstehen-vertrag"));
 const rueckstand = require(path.join(ROOT, "lib/helmut/verstehen-rueckstand"));
+const CLIRUNNER = require(path.join(ROOT, "scripts/verstehen-einmalig-169"));
 const { contentHash, canonicalizeUrl } = require(path.join(ROOT, "lib/helmut/dedup"));
 const { clusterRawDocuments } = require(path.join(ROOT, "lib/helmut/vorgang-identity"));
+
+const BELEG = path.join(ROOT, "belege", "verstehen-169-ids.json");
 
 let bestanden = 0;
 const fehlgeschlagen = [];
@@ -211,6 +215,97 @@ function testbindung(dokumente, extra = {}) {
 }
 
 const idsVon = (docs) => docs.map((d) => d.id);
+
+function tempBeleg(inhalt) {
+  const datei = path.join(os.tmpdir(),
+    "verstehen-169-probe-" + process.pid + "-" + Date.now() + "-" + crypto.randomBytes(4).toString("hex") + ".json");
+  fs.writeFileSync(datei, typeof inhalt === "string" ? inhalt : JSON.stringify(inhalt));
+  return datei;
+}
+
+// ── §0b Der echte Production-Beleg ──────────────────────────────────────────────────────
+// Der Beleg ist die BINDUNG. Er wird hier unabhaengig nachgerechnet (nicht nur gelesen).
+async function abschnittEchterBeleg() {
+  abschnitt("§0b  Der echte Production-Beleg belege/verstehen-169-ids.json");
+  const roh = JSON.parse(fs.readFileSync(BELEG, "utf8"));
+
+  pruefe("Der Beleg traegt exakt 169 eindeutige, wohlgeformte Kennungen", () => {
+    A.equal(Array.isArray(roh.ids), true);
+    A.equal(roh.ids.length, 169);
+    A.equal(new Set(roh.ids).size, 169);
+    A.ok(roh.ids.every((i) => /^rd-[0-9a-f]{64}$/.test(i)), "Kennungsform rd-<64 hex>");
+  });
+
+  pruefe("Der Hash des echten Belegs ist exakt der gebundene", () => {
+    A.equal(V.idsHash(roh.ids), V.PINNED.idHash);
+    A.equal(roh.idHash, V.PINNED.idHash);
+    A.equal(roh.productionCommit, V.PINNED.commit);
+    A.equal(Number(roh.documentCount), V.PINNED.dokumente);
+  });
+
+  pruefe("Die mitgelieferte unabhaengige Production-Pruefung belegt dasselbe", () => {
+    const v = roh.productionReadOnlyVerification;
+    A.ok(v, "Pruefbeleg vorhanden");
+    A.equal(Number(v.createdCount), 169);
+    A.equal(Number(v.retrievedCount), 169);
+    A.equal(Number(v.createdOnly), 0);
+    A.equal(Number(v.retrievedOnly), 0);
+    A.equal(v.createdHash, V.PINNED.idHash);
+    A.equal(v.retrievedHash, V.PINNED.idHash);
+  });
+
+  pruefe("Der Bedienweg akzeptiert den echten Beleg", () => {
+    const g = CLIRUNNER.listeLaden(BELEG);
+    A.equal(g.ok, true, g.grund);
+    A.equal(g.ids.length, 169);
+  });
+
+  await pruefeAsync("Der Runner akzeptiert den echten Beleg (S2 und S3 greifen nicht)", async () => {
+    const w = weltBauen({ dokumente: [] });
+    const p = await V.pruefeUndPlane({ ids: roh.ids, deps: w.deps, commit: V.PINNED.commit });
+    A.notEqual(p.grund, "verstehen-commit-abweichend");
+    A.notEqual(p.grund, "verstehen-ids-anzahl-abweichend");
+    A.notEqual(p.grund, "verstehen-ids-hash-abweichend");
+    // Ohne Production-Zugriff endet die Planung erst am Dokumentleser.
+    A.equal(p.grund, "verstehen-dokumentanzahl-abweichend");
+    A.equal(w.welt.aufrufe.length, 0, "kein Modellaufruf");
+  });
+
+  pruefe("Ein falscher Hash im Beleg bleibt fail closed", () => {
+    const datei = tempBeleg({ ...roh, idHash: "0000" });
+    try { A.equal(CLIRUNNER.listeLaden(datei).grund, "verstehen-liste-hash-abweichend"); }
+    finally { fs.unlinkSync(datei); }
+  });
+
+  pruefe("Ein veraenderter Pruefbeleg bleibt fail closed", () => {
+    const datei = tempBeleg({
+      ...roh,
+      productionReadOnlyVerification: { ...roh.productionReadOnlyVerification, retrievedOnly: 1 }
+    });
+    try { A.equal(CLIRUNNER.listeLaden(datei).grund, "verstehen-liste-pruefbeleg-abweichend"); }
+    finally { fs.unlinkSync(datei); }
+  });
+
+  pruefe("168 und 170 Kennungen bleiben im Beleg fail closed", () => {
+    const faelle = [168, 170];
+    for (const n of faelle) {
+      const ids = n === 168 ? roh.ids.slice(0, 168) : [...roh.ids, "rd-" + "0".repeat(64)];
+      const datei = tempBeleg({ ...roh, documentCount: n, ids });
+      try { A.equal(CLIRUNNER.listeLaden(datei).grund, "verstehen-liste-anzahl-abweichend"); }
+      finally { fs.unlinkSync(datei); }
+    }
+  });
+
+  await pruefeAsync("168 und 170 Kennungen bleiben im Kern fail closed", async () => {
+    for (const n of [168, 170]) {
+      const ids = n === 168 ? roh.ids.slice(0, 168) : [...roh.ids, "rd-" + "0".repeat(64)];
+      const w = weltBauen({ dokumente: [] });
+      const p = await V.pruefeUndPlane({ ids, deps: w.deps, commit: V.PINNED.commit });
+      A.equal(p.ok, false);
+      A.equal(p.grund, "verstehen-ids-anzahl-abweichend");
+    }
+  });
+}
 
 // ── §0 Die festgeschriebenen Auftragswerte, woertlich ──────────────────────────────────────
 async function abschnittAuftragswerte() {
@@ -741,6 +836,7 @@ async function abschnittTagesriegel() {
 
 (async () => {
   await abschnittAuftragswerte();
+  await abschnittEchterBeleg();
   await abschnittKennungsbindung();
   await abschnittPlanGates();
   await abschnittMergedUndCas();

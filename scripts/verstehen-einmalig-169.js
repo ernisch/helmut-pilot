@@ -41,6 +41,12 @@ function flagAn(wert) {
 
 // Die gebundene Kennungsliste. Ein fehlender, leerer oder unlesbarer Beleg ist KEIN leeres
 // Ergebnis, sondern ein Abbruchgrund.
+//
+// ZWEI ZULAESSIGE FELDNAMEN, EINE PRUEFUNG: der gelieferte Production-Beleg
+// (`belege/verstehen-169-ids.json`) traegt `productionCommit`/`documentCount` und zusaetzlich
+// den Block `productionReadOnlyVerification`; die kuerzere Form traegt `commit`/`anzahl`.
+// Beide werden gleich streng geprueft — die Anpassung betrifft nur das Einlesen der Eingabe,
+// nicht die Fachlogik.
 function listeLaden(pfad) {
   const datei = String(pfad || LISTE_STANDARD);
   if (!fs.existsSync(datei)) {
@@ -53,9 +59,29 @@ function listeLaden(pfad) {
     return { ok: false, grund: "verstehen-ids-liste-unbrauchbar", pfad: datei };
   }
   // Der Beleg muss den gebundenen Auftrag selbst tragen — sonst ist es eine fremde Liste.
-  if (roh.commit !== V.PINNED.commit) return { ok: false, grund: "verstehen-liste-commit-abweichend", pfad: datei };
-  if (Number(roh.anzahl) !== V.PINNED.dokumente) return { ok: false, grund: "verstehen-liste-anzahl-abweichend", pfad: datei };
-  if (roh.idHash !== V.PINNED.idHash) return { ok: false, grund: "verstehen-liste-hash-abweichend", pfad: datei };
+  const commit = roh.commit == null ? roh.productionCommit : roh.commit;
+  const anzahl = roh.anzahl == null ? roh.documentCount : roh.anzahl;
+  if (String(commit == null ? "" : commit) !== V.PINNED.commit) {
+    return { ok: false, grund: "verstehen-liste-commit-abweichend", pfad: datei };
+  }
+  if (Number(anzahl) !== V.PINNED.dokumente || roh.ids.length !== V.PINNED.dokumente) {
+    return { ok: false, grund: "verstehen-liste-anzahl-abweichend", pfad: datei };
+  }
+  if (roh.idHash !== V.PINNED.idHash) {
+    return { ok: false, grund: "verstehen-liste-hash-abweichend", pfad: datei };
+  }
+  // Traegt der Beleg die unabhaengige Production-Pruefung, muss SIE dasselbe belegen:
+  // erzeugte und abgerufene Menge identisch, keine Einzelseite, beide Hashes exakt.
+  const beleg = roh.productionReadOnlyVerification;
+  if (beleg) {
+    const hashes = [beleg.createdHash, beleg.retrievedHash].filter((x) => x != null);
+    const zahlenPassen = Number(beleg.createdCount) === V.PINNED.dokumente
+      && Number(beleg.retrievedCount) === V.PINNED.dokumente
+      && Number(beleg.createdOnly) === 0 && Number(beleg.retrievedOnly) === 0;
+    if (!hashes.length || hashes.some((h) => h !== V.PINNED.idHash) || !zahlenPassen) {
+      return { ok: false, grund: "verstehen-liste-pruefbeleg-abweichend", pfad: datei };
+    }
+  }
   return { ok: true, ids: roh.ids, pfad: datei };
 }
 
@@ -163,8 +189,8 @@ async function main() {
       ok: false, reinLesend: !scharf, ausgeloest: false, grund: liste.grund, pfad: liste.pfad,
       quittungsschluessel: V.QUITTUNG,
       hinweis: "Die gebundene Kennungsliste wird rein lesend aus Production belegt und im "
-        + "Repository festgehalten (docs/betrieb/verstehen-einmalig-169-20260922.md). "
-        + "Ohne sie startet weder Planung noch Lauf."
+        + "Repository festgehalten (belege/verstehen-169-ids.json; Verfahren in "
+        + "docs/betrieb/verstehen-einmalig-169-20260922.md). Ohne sie startet weder Planung noch Lauf."
     }, 1);
   }
   // Ohne erreichbaren V3-Speicher ist die Bindung nicht pruefbar — und eine ungeprueft

@@ -29,7 +29,7 @@ Nicht enthalten und ausdrücklich nicht Teil dieses Schritts:
 | `lib/helmut/verstehen-einmalig.js` | Kern: Schutzvertrag, Klassifikation, Laufgrenzen, Einmalquittung, Lauf |
 | `scripts/verstehen-einmalig-169.js` | Bedienweg: Kennungsliste, Produktionsdeps, Quittungsadapter, Plan-/Laufmodus |
 | `scripts/verstehen-einmalig-test.js` | Gezielte Tests (40 Prüfungen, offline, ohne echten Modellaufruf) |
-| `belege/verstehen-169-ids.json` | **Noch anzulegender Beleg**: die gebundene Kennungsliste (§3) |
+| `belege/verstehen-169-ids.json` | **Vorhanden**: die gebundene Kennungsliste samt unabhängiger Production-Prüfung (§3) |
 
 ## 3 · Die 169er-Bindung und der verifizierte Hash
 
@@ -54,12 +54,30 @@ Werte:
 Der Hash ist genau das Verfahren aus dem Auftrag: **Kennungen alphabetisch sortieren, mit `"\n"`
 verbinden, SHA256.** `V.idsHash()` setzt es wörtlich um und wird dagegen geprüft.
 
-**Offener Punkt, der den Lauf blockiert:** Die Liste ist im Repository **nicht** vorhanden und
-konnte in dieser Sitzung **nicht** aus Production belegt werden — die Sitzung hatte **keinen
-Production-Zugriff** (`SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` nicht gesetzt). Eine Kennung
-wurde **nicht erfunden** (Belegpflicht, CLAUDE.md §4.3). Ohne die Liste startet der Runner
-fail closed: `verstehen-liste-fehlt`. Der Beleg ist rein lesend anzulegen und muss den obigen
-Hash exakt treffen; der Runner prüft das und lehnt jede Abweichung ab.
+**Belegter Stand (2026-09-22):** Die Kennungsliste liegt als
+[`belege/verstehen-169-ids.json`](../../belege/verstehen-169-ids.json) im Repository
+(SHA256 der Datei `237c482a9dd4d6e4ce1ad4ec313571ecfb0a756888a939059f80becbd1a7fa86`) und wurde
+unabhängig **rein lesend in Production** geprüft:
+
+| Prüfung | Wert |
+|---|---|
+| Dokumente am UTC-Tag 2026-09-22 über `created_at` | 169 |
+| Dokumente am UTC-Tag 2026-09-22 über `retrieved_at` | 169 |
+| erzeugte und abgerufene Menge identisch | ja (`created_only 0`, `retrieved_only 0`) |
+| eindeutige Kennungen | 169 |
+| eindeutige `content_hash`-Werte | 169 |
+| Hash der erzeugten Menge | `5f387840…a2ed9` |
+| Hash der abgerufenen Menge | `5f387840…a2ed9` |
+
+Die Datei trägt diese Prüfung selbst (`productionReadOnlyVerification`) und wird zusätzlich
+gegen die fest eingeschriebenen Werte geprüft: Anzahl, Commit, Hash und — wenn der Prüfblock
+vorhanden ist — auch dessen Zählwerte und beide Hashes. Eine Abweichung stoppt fail closed
+(`verstehen-liste-pruefbeleg-abweichend`); ein fehlender, leerer oder unlesbarer Beleg
+stoppt mit `verstehen-ids-liste-fehlt` bzw. `verstehen-ids-liste-unbrauchbar`.
+
+**Der Runner wurde nicht ausgeführt.** In der vorbereitenden Sitzung war kein Production-Zugriff
+vorhanden; ein Planlauf endet deshalb ehrlich an `verstehen-speicher-nicht-verfuegbar`. Es wurde
+zu keinem Zeitpunkt eine Kennung erfunden (Belegpflicht, CLAUDE.md §4.3).
 
 ## 4 · Der Schutzvertrag (fail closed, vor dem ersten möglichen Modellaufruf)
 
@@ -205,11 +223,14 @@ Der Commit wird **nicht** aus dem laufenden Prozess geraten, sondern ausdrückli
 
 ## 13 · Gezielte Tests
 
-`node scripts/lokal.js -- node scripts/verstehen-einmalig-test.js` — **40 von 40 grün**,
+`node scripts/lokal.js -- node scripts/verstehen-einmalig-test.js` — **49 von 49 grün**,
 offline, ausschließlich mit Attrappen für Datenbank, Netz und Modell. Abgedeckt sind alle
-zwanzig Pflichtprüfungen des Auftrags (§1–§20) plus die Vertragsfälle S1/S6/S9/S10
-(Commit, Größenverteilung, Lesefehler, Kennungsabbildung) und die Auftragswerte selbst.
-Der Prüflauf erzeugt **keinen** echten Modellaufruf und **keinen** Production-Schreibzugriff.
+zwanzig Pflichtprüfungen des Auftrags (§1–§20), die Vertragsfälle S1/S6/S9/S10
+(Commit, Größenverteilung, Lesefehler, Kennungsabbildung), die Auftragswerte selbst — und die
+**echte 169er-Bindung**: 169 eindeutige Kennungen, exakter Hash, der Beleg wird vom Bedienweg
+und vom Kern akzeptiert, ein falscher Hash, ein veränderter Prüfbeleg sowie 168 und 170
+Kennungen bleiben fail closed. Der Prüflauf erzeugt **keinen** echten Modellaufruf und
+**keinen** Production-Schreibzugriff.
 
 > **Anmerkung zur Prüfbindung:** Die festgeschriebenen Zahlen (169/122/113) lassen sich mit
 > synthetischen Dokumenten nicht reproduzieren. Die Mechanik wird deshalb mit einer
@@ -227,6 +248,6 @@ Der Prüflauf erzeugt **keinen** echten Modellaufruf und **keinen** Production-S
 - kein Merge, kein Deployment
 - **keine** bestandene 169er-Fachabnahme und **kein** 500er-Nachweis
 
-Der nächste Schritt ist eine Betreiberentscheidung: die 169er Kennungsliste rein lesend aus
-Production belegen, den Planlauf bestätigen — und erst danach über einen scharfen Lauf
-entscheiden.
+Der nächste Schritt ist eine Betreiberentscheidung: den Planlauf gegen die **belegte** Liste
+bestätigen (rein lesend, ohne Modellaufruf) — und erst danach gesondert über einen scharfen Lauf
+entscheiden. Der Beleg selbst ist vollständig; es fehlt keine Kennung mehr.
