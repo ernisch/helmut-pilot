@@ -87,9 +87,17 @@ Werte mit aus: `modellaufrufeKandidaten`, `clusterArten` und `clusterDiagnose`. 
 Cluster trägt ausschließlich `vorgangId`, `art`, `kandidat`, `resolution`, `begruendung` — keine
 Titel, keine Auszüge, keine Modelltexte.
 
+Für Cluster der Klasse `neu` trägt sie zusätzlich `spuren`: die von `resolveVorgang` **bereits
+berechneten** Prüfspuren je Kandidat, reduziert auf `vorgangId`, `gleich`, `grund` (leer, wenn
+kein Kandidat geprüft wurde). Bewusst **nicht** übernommen werden die übrigen Felder der Rohspur
+(Kernanker, Wortformen, geprüfte Dokumentkennungen, Überdeckung) — sie sind aus Titeln abgeleitet
+und gehören nicht in eine Meldung. `resolveVorgang`, `sameVorgang`, `candidatePrefixes` und
+`neueErkenntnisse` sind **unverändert**; es wird ausschließlich der vorhandene Rückgabewert
+weitergegeben und projiziert.
+
 Das ist **ausschließlich Meldung**: `ok`, `schutzvertrag` und `ausgeloest` bleiben falsch, es
 wird kein Cluster verarbeitet, kein Modell aufgerufen und keine Quittung beansprucht. Die
-113er-Grenze und die gesamte Klassifikation sind unverändert.
+113er-Grenze, 0,80 USD, 35 Minuten und der 4-USD-Tagesriegel sind unverändert.
 
 ## 4 · Der Schutzvertrag (fail closed, vor dem ersten möglichen Modellaufruf)
 
@@ -235,15 +243,17 @@ Der Commit wird **nicht** aus dem laufenden Prozess geraten, sondern ausdrückli
 
 ## 13 · Gezielte Tests
 
-`node scripts/lokal.js -- node scripts/verstehen-einmalig-test.js` — **56 von 56 grün**,
+`node scripts/lokal.js -- node scripts/verstehen-einmalig-test.js` — **65 von 65 grün**,
 offline, ausschließlich mit Attrappen für Datenbank, Netz und Modell. Abgedeckt sind alle
 zwanzig Pflichtprüfungen des Auftrags (§1–§20), die Vertragsfälle S1/S6/S9/S10
 (Commit, Größenverteilung, Lesefehler, Kennungsabbildung), die Auftragswerte selbst, die
 **echte 169er-Bindung** (169 eindeutige Kennungen, exakter Hash, Beleg wird von Bedienweg und
 Kern akzeptiert; falscher Hash, veränderter Prüfbeleg sowie 168 und 170 Kennungen bleiben fail
-closed) und die **Abbruchdiagnose** (§21: Ausgang unverändert, Werte exakt, nur die fünf
-erlaubten Felder, 0 Aufrufe/Quittungen/Writes, 113 unverändert, Erfolgspfad unberührt).
-Der Prüflauf erzeugt **keinen** echten Modellaufruf und **keinen** Production-Schreibzugriff.
+closed), die **Abbruchdiagnose** (§21) und die **Resolver-Spuren** (§22: nur durchgereicht, nur
+`vorgangId`/`gleich`/`grund`, nur bei `neu`, leere Spur möglich, Ablehnungsgründe sichtbar,
+Schlüssel-Whitelist gegen jede Beigabe, 0 Aufrufe/Quittungen/Writes, 113 unverändert,
+Erfolgspfad unberührt). Der Prüflauf erzeugt **keinen** echten Modellaufruf und **keinen**
+Production-Schreibzugriff.
 
 > **Anmerkung zur Prüfbindung:** Die festgeschriebenen Zahlen (169/122/113) lassen sich mit
 > synthetischen Dokumenten nicht reproduzieren. Die Mechanik wird deshalb mit einer

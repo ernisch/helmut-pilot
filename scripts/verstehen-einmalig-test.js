@@ -51,7 +51,8 @@ const D = require(path.join(ROOT, "lib/helmut/testkohorte-direkt500"));
 const vertragModul = require(path.join(ROOT, "lib/helmut/verstehen-vertrag"));
 const rueckstand = require(path.join(ROOT, "lib/helmut/verstehen-rueckstand"));
 const CLIRUNNER = require(path.join(ROOT, "scripts/verstehen-einmalig-169"));
-const { contentHash, canonicalizeUrl } = require(path.join(ROOT, "lib/helmut/dedup"));
+const understanding = require(path.join(ROOT, "lib/helmut/understanding"));
+const { contentHash, canonicalizeUrl, dedupeRawDocuments, toRawDocumentRow } = require(path.join(ROOT, "lib/helmut/dedup"));
 const { clusterRawDocuments } = require(path.join(ROOT, "lib/helmut/vorgang-identity"));
 
 const BELEG = path.join(ROOT, "belege", "verstehen-169-ids.json");
@@ -874,20 +875,26 @@ async function abschnittAbbruchdiagnose() {
     for (const art of Object.keys(lauf.clusterArten)) A.ok(ERLAUBT.has(art), "unbekannte Kategorie: " + art);
   });
 
-  await pruefeAsync("§21.4 die Clusterdiagnose traegt nur die fuenf erlaubten Felder", async () => {
+  await pruefeAsync("§21.4 die Clusterdiagnose traegt nur die erlaubten Felder", async () => {
     A.equal(Array.isArray(lauf.clusterDiagnose), true);
     A.equal(lauf.clusterDiagnose.length, 3);
     for (const e of lauf.clusterDiagnose) {
-      A.deepEqual(Object.keys(e).sort(), ["art", "begruendung", "kandidat", "resolution", "vorgangId"]);
+      // `spuren` traegt ausschliesslich die Klasse `neu` (siehe §22).
+      const erwartet = e.art === "neu"
+        ? ["art", "begruendung", "kandidat", "resolution", "spuren", "vorgangId"]
+        : ["art", "begruendung", "kandidat", "resolution", "vorgangId"];
+      A.deepEqual(Object.keys(e).sort(), erwartet);
       A.equal(typeof e.kandidat, "boolean");
       A.equal(typeof e.art, "string");
       A.ok(e.vorgangId === null || typeof e.vorgangId === "string");
       A.ok(e.resolution === null || typeof e.resolution === "string");
       A.ok(e.begruendung === null || typeof e.begruendung === "string");
     }
-    // Kein Inhalt: die Diagnose darf keine Titel/Auszuege/Modelltexte tragen.
-    const rohtext = JSON.stringify(lauf.clusterDiagnose);
-    A.ok(!rohtext.includes("Zitterpappel") && !rohtext.includes("Kupferschmiede"), "keine Titel");
+    // Strukturbeweis gegen jede inhaltliche Beigabe (Titel, Kerne, Dokumentlisten).
+    const erlaubtSchluessel = new Set(["vorgangId", "art", "kandidat", "resolution",
+      "begruendung", "spuren", "gleich", "grund"]);
+    const gefunden = [...sammleSchluessel(lauf.clusterDiagnose)];
+    A.deepEqual(gefunden.filter((k) => !erlaubtSchluessel.has(k)), []);
   });
 
   await pruefeAsync("§21.5/6/7 der Abbruch erzeugt keinen Aufruf, keine Quittung, keinen Write", async () => {
@@ -930,6 +937,161 @@ async function abschnittAbbruchdiagnose() {
   });
 }
 
+// ── §22 Resolver-Spuren in der Abbruchdiagnose ──────────────────────────────────────────
+// Nur durchgereicht, nur drei Felder, nur bei `neu` — und der Ausgang bleibt unveraendert.
+function sammleSchluessel(wert, out = new Set()) {
+  if (Array.isArray(wert)) { for (const x of wert) sammleSchluessel(x, out); }
+  else if (wert && typeof wert === "object") {
+    for (const [k, v] of Object.entries(wert)) { out.add(k); sammleSchluessel(v, out); }
+  }
+  return out;
+}
+
+async function abschnittResolverSpuren() {
+  abschnitt("§22  Resolver-Spuren: nur durchgereicht, nur drei Felder, nur bei `neu`");
+
+  // (a) Welt ohne jeden Kandidaten -> leere Spuren.
+  const ohne = WOERTER.slice(0, 3).map((w, i) => rohesDokument("spur-o" + i, w));
+  const wOhne = weltBauen({ dokumente: ohne });
+  const laufOhne = await V.fuehreAus({
+    ids: idsVon(ohne), deps: wOhne.deps, execute: true, commit: "test-commit",
+    erwartet: testbindung(ohne, { maxModellaufrufe: 2 }), preisJeAufrufUsd: 0.01,
+    runId: "spur-ohne", now: () => new Date()
+  });
+
+  // (b) Welt mit einem vorhandenen Vorgang, den `sameVorgang` ABLEHNT.
+  const altDocs = [rohesDokument("spur-a1", "Haselnussstrauch"), rohesDokument("spur-a2", "Haselnussstrauch")];
+  const docs = [rohesDokument("spur-c0", "Zitterpappel")];
+  const ko = {
+    id: "ko-spur", vorgang_id: "vg-haselnussstrauch-20260901-dddd", status: "complete",
+    understanding_status: "complete", updated_at: "2026-09-22T07:00:00Z"
+  };
+  const wMit = weltBauen({ dokumente: docs, kos: [ko], links: { "ko-spur": altDocs }, kandidatenFrei: true });
+  const laufMit = await V.fuehreAus({
+    ids: idsVon(docs), deps: wMit.deps, execute: true, commit: "test-commit",
+    erwartet: testbindung(docs, { maxModellaufrufe: 0 }), preisJeAufrufUsd: 0.01,
+    runId: "spur-mit", now: () => new Date()
+  });
+
+  await pruefeAsync("§22.1 Kandidaten ueber dem Deckel stoppen weiterhin fail closed", async () => {
+    for (const [name, lauf] of [["ohne", laufOhne], ["mit", laufMit]]) {
+      A.equal(lauf.ok, false, name);
+      A.equal(lauf.grund, "verstehen-kandidaten-ueber-deckel", name);
+      A.equal(lauf.schutzvertrag, false, name);
+      A.equal(lauf.ausgeloest, false, name);
+    }
+    A.equal(laufOhne.modellaufrufeKandidaten, 3);
+    A.equal(laufMit.modellaufrufeKandidaten, 1);
+  });
+
+  await pruefeAsync("§22.2 spuren werden aus bereits vorhandenen resolveVorgang-Ergebnissen durchgereicht", async () => {
+    // Differentialbeweis: der ROHE Rueckgabewert traegt mehr als drei Felder,
+    // die Diagnose traegt genau drei. Es wird also nur projiziert, nichts neu berechnet.
+    const clusters = clusterRawDocuments(
+      dedupeRawDocuments(docs.map(toRawDocumentRow).filter((r) => r && r.id)));
+    A.equal(clusters.length, 1, "die Probe bildet genau einen Cluster");
+    const roh = await understanding.resolveVorgang(clusters[0], wMit.deps, {});
+    A.ok(Array.isArray(roh.spuren) && roh.spuren.length >= 1, "resolveVorgang liefert eine Spur");
+    A.ok(Object.keys(roh.spuren[0]).length > 3, "die rohe Spur traegt mehr als drei Felder");
+    A.equal(roh.spuren[0].vorgangId, ko.vorgang_id);
+    A.equal(roh.spuren[0].gleich, false);
+    const diag = laufMit.clusterDiagnose[0];
+    A.equal(diag.art, "neu");
+    A.deepEqual(diag.spuren, [{
+      vorgangId: ko.vorgang_id, gleich: false, grund: roh.spuren[0].grund
+    }]);
+  });
+
+  await pruefeAsync("§22.3 spuren enthalten ausschliesslich vorgangId, gleich, grund", async () => {
+    const spuren = laufMit.clusterDiagnose[0].spuren;
+    A.equal(spuren.length, 1);
+    A.deepEqual(Object.keys(spuren[0]).sort(), ["gleich", "grund", "vorgangId"]);
+    A.equal(typeof spuren[0].gleich, "boolean");
+    A.ok(spuren[0].grund === null || typeof spuren[0].grund === "string");
+    A.ok(spuren[0].vorgangId === null || typeof spuren[0].vorgangId === "string");
+  });
+
+  await pruefeAsync("§22.4 keine Titel, Auszuege, Modell- oder Dokumentinhalte in der Ausgabe", async () => {
+    // Strukturbeweis: die Diagnose enthaelt KEINEN Schluessel ausserhalb der Erlaubnisliste.
+    const erlaubt = new Set(["vorgangId", "art", "kandidat", "resolution", "begruendung", "spuren", "gleich", "grund"]);
+    const gefunden = [...sammleSchluessel(laufMit.clusterDiagnose)];
+    const verboten = gefunden.filter((k) => !erlaubt.has(k));
+    A.deepEqual(verboten, [], "unerlaubte Schluessel: " + verboten.join(", "));
+    // Insbesondere die aus Titeln abgeleiteten Felder der Rohspur duerfen NICHT vorkommen.
+    for (const feld of ["kernNeu", "kernBestand", "ueberdeckung", "vergleicheneDokumente",
+      "familienBeleg", "formen", "dokumente", "neueDokumente", "bestandsDokumente"]) {
+      A.ok(!gefunden.includes(feld), "Titelfeld in der Diagnose: " + feld);
+    }
+  });
+
+  await pruefeAsync("§22.5 ein neu Cluster ohne Resolver-Treffer liefert spuren: []", async () => {
+    const diag = laufOhne.clusterDiagnose;
+    A.equal(diag.length, 3);
+    for (const e of diag) {
+      A.equal(e.art, "neu");
+      A.deepEqual(e.spuren, []);
+    }
+  });
+
+  await pruefeAsync("§22.6 ein neu Cluster mit abgelehnten Kandidaten zeigt die Ablehnungsgruende", async () => {
+    const e = laufMit.clusterDiagnose[0];
+    A.equal(e.spuren.length, 1);
+    A.equal(e.spuren[0].gleich, false, "die Spur ist eine Ablehnung");
+    A.ok(typeof e.spuren[0].grund === "string" && e.spuren[0].grund.length > 0, "Grundklasse vorhanden");
+    A.equal(e.spuren[0].vorgangId, ko.vorgang_id, "der abgelehnte Kandidat ist benannt");
+  });
+
+  await pruefeAsync("§22.7/8/9/10 der Abbruch erzeugt keinen Aufruf, keine Quittung, keinen Write", async () => {
+    for (const [name, w] of [["ohne", wOhne], ["mit", wMit]]) {
+      A.equal(w.welt.aufrufe.length, 0, name + ": 0 Modellaufrufe");
+      A.equal(w.welt.schritt.length, 0, name + ": kein Quittungsschritt");
+      A.equal(w.welt.claimRunCalls, 0, name + ": keine Quittung beansprucht");
+      A.equal(w.welt.gespeichert.length, 0, name + ": kein KO-Write");
+      A.equal(w.welt.geparkt.length, 0, name + ": kein Failed-Write");
+      A.equal(w.welt.fencingWerte.length, 0, name + ": kein Fencing-Write");
+    }
+    A.equal(laufMit.modellaufrufe, 0);
+    A.equal(laufMit.quittung, null);
+    A.equal(laufMit.quellenabrufe, 0);
+    A.equal(laufMit.profilwrites, 0);
+    A.equal(laufMit.kommunikation, 0);
+  });
+
+  await pruefeAsync("§22.11 die 113er Grenze ist unveraendert", async () => {
+    A.equal(V.PINNED.maxModellaufrufe, 113);
+    A.equal(V.PINNED.maxUsd, 0.8);
+    A.equal(V.PINNED.maxMs, 2100000);
+    A.ok(V.PINNED.maxUsd < 4);
+  });
+
+  await pruefeAsync("§22.12 nur `neu` traegt spuren, der Erfolgspfad bleibt unveraendert", async () => {
+    // (c) Abbruch mit NICHT-`neu`-Klassen: dort darf es kein `spuren`-Feld geben.
+    const M = baueMergedWelt();
+    const laufM = await V.fuehreAus({
+      ids: idsVon(M.docs), deps: M.deps, execute: true, commit: "test-commit",
+      erwartet: testbindung(M.docs, { maxModellaufrufe: 0 }), preisJeAufrufUsd: 0.01,
+      runId: "spur-merged", now: () => new Date()
+    });
+    A.equal(laufM.grund, "verstehen-kandidaten-ueber-deckel");
+    A.equal(laufM.clusterDiagnose.length, 2);
+    for (const e of laufM.clusterDiagnose) {
+      A.notEqual(e.art, "neu");
+      A.equal(Object.hasOwn(e, "spuren"), false, "kein spuren-Feld bei art " + e.art);
+    }
+    // Erfolgspfad: keine Diagnose, keine Spuren, unveraenderte Felder.
+    const wOk = weltBauen({ dokumente: docs });
+    const ok = await V.fuehreAus({
+      ids: idsVon(docs), deps: wOk.deps, execute: false, commit: "test-commit",
+      erwartet: testbindung(docs), runId: "spur-ok", now: () => new Date()
+    });
+    A.equal(ok.ok, true);
+    A.equal(Object.hasOwn(ok, "clusterDiagnose"), false);
+    A.ok(!JSON.stringify(ok).includes("spuren"), "Erfolgspfad traegt keine Spuren");
+    A.equal(ok.modellaufrufeKandidaten, 1);
+    A.deepEqual(ok.clusterArten, { neu: 1 });
+  });
+}
+
 (async () => {
   await abschnittAuftragswerte();
   await abschnittEchterBeleg();
@@ -943,6 +1105,7 @@ async function abschnittAbbruchdiagnose() {
   await abschnittNebenwirkungen();
   await abschnittTagesriegel();
   await abschnittAbbruchdiagnose();
+  await abschnittResolverSpuren();
 
   console.log("\n== ERGEBNIS ==");
   console.log("bestanden: " + bestanden);
