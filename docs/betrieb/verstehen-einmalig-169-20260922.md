@@ -99,6 +99,51 @@ Das ist **ausschließlich Meldung**: `ok`, `schutzvertrag` und `ausgeloest` blei
 wird kein Cluster verarbeitet, kein Modell aufgerufen und keine Quittung beansprucht. Die
 113er-Grenze, 0,80 USD, 35 Minuten und der 4-USD-Tagesriegel sind unverändert.
 
+## 3b · Resolver-Korrektur im Motor (2026-09-22)
+
+**Anlass (belegt durch den Planlauf):** mehrere Cluster wurden als `neu` klassifiziert, obwohl ein
+Knowledge Object mit **exakt derselben** `deriveVorgangId`-Kennung bereits existierte — unter
+anderem `vg-unterschriften-20210212-f1fc37` (bestehend, `pending`),
+`vg-studierendenwerk-20260306-1739d7`, `vg-zeitarbeit-20230320-04da1b` (beide `complete`),
+`vg-profitieren-20251017-03ed5b`, `vg-sommerpause-20260824-fd5644`,
+`vg-warburger-20200515-4b0e00`-Reihe (alle `pending`). Die Diagnose zeigte bei diesen Clustern
+acht **andere** Kandidaten — der exakte Bestand wurde gar nicht geprüft.
+
+**Ursache (am Code belegt):** `storage.listKnowledgeObjectsByVorgangPrefix` liefert EIN globales
+Fenster von `MAX_VORGANG_KANDIDATEN = 8` Zeilen, `order=updated_at.desc`, über **alle** Präfixe
+**gemeinsam**. Ein thematisch verwandter, frisch aktualisierter Vorgang kann damit einen exakt
+passenden älteren Vorgang aus dem Fenster drängen. Folge: `resolveVorgang` findet keinen Beleg,
+`belegt.has(vorschlag)` ist falsch und der Cluster endet als `neu` — mit einer `vorgangId`, die
+**bereits vergeben ist**. Der folgende Schreibpfad hätte auf dieselbe Kennung geschrieben.
+
+**Die generische Reparatur** (in `resolveVorgang`, `lib/helmut/understanding.js`):
+
+1. Der exakte Kandidat `vorgang_id === deriveVorgangId(cluster)` wird über den **bestehenden**
+   Leser `deps.getExisting` immer gelesen (derselbe Weg, der vorher nur die Rückfallebene war).
+2. Er wird dem Kandidatensatz **vorangestellt**; der Kandidatensatz wird über `vorgang_id`
+   **dedupliziert** und bleibt **hart auf 8 begrenzt**.
+3. Die Sortierung stellt ihn **voran** — nur die ersten `MAX_KANDIDATEN_MIT_BELEG = 5` Kandidaten
+   werden mit Dokumentbeleg geprüft, der exakte darf nicht am Belegbudget scheitern.
+4. Jeder Kandidat durchläuft **unverändertes** `sameVorgang`. Die Kennung ist und bleibt ein
+   Vorschlag: sie verschafft nur einen Platz im Fenster, sie ersetzt **keine** fachliche Prüfung.
+
+**Warum das keine zweite Fachlogik ist:** es wird kein neuer Vergleich, keine neue Ähnlichkeit und
+keine neue Schwelle eingeführt. `sameVorgang`, `candidatePrefixes` und `neueErkenntnisse` sind
+byte-unverändert; das Fenster wird nicht vergrößert. Die Reparatur stellt ausschließlich die
+**Vollständigkeit des Eingangs** der bestehenden Prüfung her.
+
+**Bewusster, benannter Preis:** liegt der exakte Kandidat außerhalb des Fensters, verdrängt er
+nun den **ältesten** der acht Präfix-Kandidaten. Das Fenster bleibt bei 8 Kandidaten und 5
+Beleglesungen — keine unbegrenzte Suche.
+
+**Residualrisiko:** `deps.getExisting` liefert bei einem Lesefehler `null` (unverändertes
+Bestandsverhalten). Dann greift exakt das Verhalten vor der Reparatur — nie schlechter, aber
+ohne den exakten Kandidaten.
+
+**Nicht behauptet:** dass der Übergang `74 → 75 neu` (und damit 113 → 114) ausschließlich durch
+diesen Fehler entstand. Belegt ist der Fehler als solcher; der Nachweis, **welcher** der `neu`
+Cluster der frühere `bestand-ohne-beleg`-Fall war, steht noch aus (§3a liefert dafür die Spuren).
+
 ## 4 · Der Schutzvertrag (fail closed, vor dem ersten möglichen Modellaufruf)
 
 | Nr. | Prüfung | Abbruchgrund |
@@ -249,11 +294,27 @@ zwanzig Pflichtprüfungen des Auftrags (§1–§20), die Vertragsfälle S1/S6/S9
 (Commit, Größenverteilung, Lesefehler, Kennungsabbildung), die Auftragswerte selbst, die
 **echte 169er-Bindung** (169 eindeutige Kennungen, exakter Hash, Beleg wird von Bedienweg und
 Kern akzeptiert; falscher Hash, veränderter Prüfbeleg sowie 168 und 170 Kennungen bleiben fail
-closed), die **Abbruchdiagnose** (§21) und die **Resolver-Spuren** (§22: nur durchgereicht, nur
-`vorgangId`/`gleich`/`grund`, nur bei `neu`, leere Spur möglich, Ablehnungsgründe sichtbar,
-Schlüssel-Whitelist gegen jede Beigabe, 0 Aufrufe/Quittungen/Writes, 113 unverändert,
-Erfolgspfad unberührt). Der Prüflauf erzeugt **keinen** echten Modellaufruf und **keinen**
-Production-Schreibzugriff.
+closed), die **Abbruchdiagnose** (§21) und die **Resolver-Spuren** (§22). Der Prüflauf erzeugt
+**keinen** echten Modellaufruf und **keinen** Production-Schreibzugriff.
+
+`node scripts/lokal.js -- node scripts/vorgangs-resolver-exakt-test.js` — **12 von 12 Assertions
+grün** für die Resolver-Korrektur (§3b): der exakte Kandidat wird auch bei acht neueren
+Präfix-Kandidaten geprüft und **bleibt durch `sameVorgang` geprüft** (ein fachlich falscher
+exakter Kandidat wird weiterhin abgelehnt und blockiert dann seine Kennung statt überschrieben zu
+werden); ohne exakten Kandidaten ist das Verhalten unverändert (acht Kandidaten, gleiche
+Reihenfolge); keine Dopplung; Fenster hart auf 8; `pending` wird als `pending-erst` erkannt;
+`complete` läuft durch die bestehende `neueErkenntnisse`-Logik; 0 Modellaufrufe, 0
+Schreibzugriffe, Belegbudget ≤ 5.
+
+Zusätzlich grün: die betroffenen **Bestandssuiten** des Resolver-Bereichs —
+`vorgangs-resolver` 54/54, `vorgangsidentitaet` 67/67, `vorgangs-beweisfamilien` 108/108,
+`vorgangs-uebernahme-analyse` 35/35, `herausgeber-identitaet` 109/109,
+`vorgangsbildung-verlust`, `vorgangskontext`, `verstehen-cas-vertrag`,
+`verstehen-wiederaufnahme` 47/47, `verstehen-rueckstand` 69/69, `verstehen-drain-bilanz` 47/47,
+`verstehen-restzeit` 52/52, `ereignisbindung-heute` 8/8, `lage` 141/141,
+`understanding-konkurrenz`, `understanding-priorisierung` 9/9,
+`understanding-ebenen-konsistenz` 8/8, `understanding-aussagen-fristen` 6/6,
+`understanding-mandatsneutral` 5/5, `cron-globalphase`, `globalphase-buendelung`.
 
 > **Anmerkung zur Prüfbindung:** Die festgeschriebenen Zahlen (169/122/113) lassen sich mit
 > synthetischen Dokumenten nicht reproduzieren. Die Mechanik wird deshalb mit einer
