@@ -8,7 +8,7 @@ on:
       schritt:
         description: "Ein Vorgang; keine automatische Folgeaktion"
         type: choice
-        options: [vorpruefung, provisionierung, aktivierung, reaktivierung, fachzyklus, textnachlauf, quellenkontext, quellenkontext-ruhe]
+        options: [vorpruefung, provisionierung, aktivierung, reaktivierung, fachzyklus, textnachlauf, quellenkontext, quellenkontext-ruhe, quellenvorlauf-plan, quellenvorlauf]
         default: vorpruefung
         required: true
       production_commit:
@@ -20,7 +20,7 @@ on:
         type: string
         required: false
       bestandsprofile:
-        description: "Nur Quellenkontext bei null Aktiven: JSON Array der fuenf ausdruecklich ausgewaehlten Bestandsprofile"
+        description: "Quellenwege bei null Aktiven: JSON Array der fuenf ausdruecklich ausgewaehlten Bestandsprofile"
         type: string
         required: false
       text_ab_position:
@@ -69,6 +69,8 @@ jobs:
         run: |
           if [ "$HELMUT_DIREKT_SCHRITT" = "vorpruefung" ]; then
             node scripts/testkohorte-vorwaerts.js vorpruefung --ziel=500
+          elif [ "$HELMUT_DIREKT_SCHRITT" = "quellenvorlauf-plan" ]; then
+            node scripts/testkohorte-vorwaerts.js quellenvorlauf --ziel=500
           else
             node scripts/testkohorte-vorwaerts.js "$HELMUT_DIREKT_SCHRITT" --ziel=500 --scharf
           fi
