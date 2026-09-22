@@ -8,7 +8,7 @@ on:
       schritt:
         description: "Ein Vorgang; keine automatische Folgeaktion"
         type: choice
-        options: [vorpruefung, provisionierung, aktivierung, reaktivierung, fachzyklus, textnachlauf, quellenkontext, quellenkontext-ruhe, quellenvorlauf-plan, quellenvorlauf]
+        options: [vorpruefung, provisionierung, aktivierung, reaktivierung, fachzyklus, textnachlauf, quellenkontext, quellenkontext-ruhe, quellenvorlauf-plan, quellenvorlauf, quellenvorlauf-fortsetzung]
         default: vorpruefung
         required: true
       production_commit:
@@ -67,13 +67,18 @@ jobs:
           HELMUT_TEXTNACHLAUF_AB_POSITION: ${{ inputs.text_ab_position }}
           HELMUT_TESTFENSTER_ID: ${{ inputs.testfenster_id }}
         run: |
-          # HELMUT_SOURCE_MODE=on ausschliesslich fuer die beiden Quellen-Vorlauf-Zweige
+          # HELMUT_SOURCE_MODE=on ausschliesslich fuer die Quellen-Vorlauf-Zweige
           # (kein workflow-/step-weites env, andere direkte Schritte unveraendert).
+          # Die Fortsetzung nutzt denselben CLI-Vorgang `quellenvorlauf`; nur die
+          # job-lokale Variable HELMUT_QUELLENVORLAUF_FORTSETZUNG=1 unterscheidet sie.
           if [ "$HELMUT_DIREKT_SCHRITT" = "vorpruefung" ]; then
             node scripts/testkohorte-vorwaerts.js vorpruefung --ziel=500
           elif [ "$HELMUT_DIREKT_SCHRITT" = "quellenvorlauf-plan" ]; then
             HELMUT_SOURCE_MODE=on node scripts/testkohorte-vorwaerts.js quellenvorlauf --ziel=500
-          elif [ "$HELMUT_DIREKT_SCHRITT" = "quellenvorlauf" ]; then
+          elif [ "$HELMUT_DIREKT_SCHRITT" = "quellenvorlauf" ] || [ "$HELMUT_DIREKT_SCHRITT" = "quellenvorlauf-fortsetzung" ]; then
+            if [ "$HELMUT_DIREKT_SCHRITT" = "quellenvorlauf-fortsetzung" ]; then
+              export HELMUT_QUELLENVORLAUF_FORTSETZUNG=1
+            fi
             HELMUT_SOURCE_MODE=on node scripts/testkohorte-vorwaerts.js quellenvorlauf --ziel=500 --scharf
           else
             node scripts/testkohorte-vorwaerts.js "$HELMUT_DIREKT_SCHRITT" --ziel=500 --scharf
