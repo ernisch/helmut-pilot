@@ -14,7 +14,7 @@ const F = require("./fixtures/prosa-36er");
 const K = require("../lib/helmut/testkosten-budget");
 const T = require("./privater-nachweis-transport");
 const { hash } = require("../lib/helmut/briefing-speicher");
-const KEY = "prosa36er20260922", PREFIX = "PROSA36_EINMAL:";
+const KEY = "prosa36er20260922b", PREFIX = "PROSA36_EINMAL:";
 const BRANCH = "codex/prosa-36er-lauf-20260922", TAG = "2026-09-22";
 // Ein Pruefaufruf je Pfadfall; volle Reserve tokenKosten(400000, 3000) = 212000.
 const MAX_CALLS = 36, MAX_OUTPUT_TOKENS = 3000, MAX_COST = 212000;
