@@ -3,6 +3,8 @@ const A = require("node:assert/strict");
 const G = require("./github-quellenvorlauf-500");
 const D = require("../lib/helmut/testkohorte-direkt500");
 const { bestand, auswahl } = require("./fixtures/quellenkontext-ruhe");
+const Adapter = require("./github-direkt500");
+const { env: direktEnv, JETZT, SHA } = require("./fixtures/direkt500");
 
 let passed = 0;
 async function test(name, fn) { await fn(); passed++; console.log("PASS " + name); }
@@ -200,6 +202,64 @@ function runtime(overrides = {}) {
     A.equal(r.ok, false);
     A.equal(h.handlerCalls, 0);
     A.equal(h.locked, false);
+  });
+
+  await test("500er Adapter trennt read only Plan und scharfen Quellen Vorlauf", async () => {
+    const s = bestand();
+    const config = {
+      ok: true, schemaVersion: 1, reinLesend: true, production: true, commit: SHA,
+      storageSupabase: true, v3Bereit: true, profileRelational: true, profileExclusive: true,
+      retentionGueltig: true, retention: 36, kommunikationGesperrt: true,
+      kohortenQuellenGesperrt: true, tagesdeckel: 2416, understandingReserve: 702, vorrangreserveReal: 200,
+      testKosten: { version: 2, aktiv: true, limitUsd: 4, maxManualCalls: null,
+        maxWindowMs: null, unbekanntBleibtReserviert: true }
+    };
+    const vars = { ...direktEnv("quellenvorlauf"), GITHUB_RUN_ATTEMPT: "1", GITHUB_RUN_ID: "12345678901",
+      HELMUT_SOURCE_MODE: "on", HELMUT_QUELLENKONTEXT_BESTANDSPROFILE: JSON.stringify(auswahl) };
+    const vorher = Object.fromEntries(Object.keys(vars).map(k => [k, process.env[k]]));
+    const original = G.ausfuehren;
+    let calls = 0;
+    const antwort = body => ({ status: 200, json: async () => kopie(body) });
+    const fetchFn = async (url, init) => {
+      A.equal(init.method, "GET");
+      const u = new URL(url), table = u.pathname.split("/").pop();
+      if (table === "testnachweis-status") return antwort(config);
+      if (table === "mandate_profiles") return antwort(s.mandate);
+      if (table === "profiles") return antwort(s.identitaeten);
+      if (table === "helmut_store") return antwort([{ data: u.searchParams.get("id") === "eq.main-auth" ? s.auth : s.main }]);
+      if (table === "llm_budget_counters") return antwort([{ used: 0 }]);
+      if (["pipeline_locks", "helmut_jobs", "helmut_job_outbox"].includes(table)) return antwort([]);
+      throw new Error("Unerwarteter Adapterzugriff: " + table);
+    };
+    try {
+      Object.assign(process.env, vars);
+      delete process.env.HELMUT_TESTKOHORTE_CONFIRM;
+      G.ausfuehren = async args => {
+        calls++;
+        A.deepEqual(args.bestandsauswahl, auswahl);
+        A.equal(args.bestand.mandate.filter(m => m.aktiv).length, 0);
+        A.equal(args.env.HELMUT_TESTLAUF_KOMMUNIKATION, "gesperrt");
+        return { ok: true, reinLesend: !args.execute, execute: args.execute };
+      };
+      const plan = await Adapter.ausfuehren({ vorgang: "quellenvorlauf", scharf: false,
+        env: process.env, fetchFn, now: () => new Date(JETZT) });
+      A.equal(plan.ok, true); A.equal(plan.reinLesend, true); A.equal(calls, 1);
+
+      const blockiert = await Adapter.ausfuehren({ vorgang: "quellenvorlauf", scharf: true,
+        env: process.env, fetchFn, now: () => new Date(JETZT) });
+      A.equal(blockiert.ok, false); A.equal(blockiert.grund, "direktfreigabe-fehlt"); A.equal(calls, 1);
+
+      process.env.HELMUT_TESTKOHORTE_CONFIRM = D.WORTE.quellenvorlauf;
+      const scharf = await Adapter.ausfuehren({ vorgang: "quellenvorlauf", scharf: true,
+        env: process.env, fetchFn, now: () => new Date(JETZT) });
+      A.equal(scharf.ok, true); A.equal(scharf.execute, true); A.equal(calls, 2);
+    } finally {
+      G.ausfuehren = original;
+      for (const [k, v] of Object.entries(vorher)) {
+        if (v === undefined) delete process.env[k]; else process.env[k] = v;
+      }
+      for (const k of Object.keys(vars)) if (!(k in vorher)) delete process.env[k];
+    }
   });
 
   await test("Wiederholungsversuch und aktivierte Kohortenquellen starten keinen Abruf", async () => {
