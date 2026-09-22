@@ -191,7 +191,7 @@ async function main() {
         || rest.some((a) => !["--ziel=500", "--scharf"].includes(a))
         || rest.filter((a) => a === "--scharf").length > 1
         || (werkzeug === "vorpruefung" && rest.includes("--scharf"))) {
-      abbruch("Direktziel: nur provisionierung|aktivierung|reaktivierung|vorpruefung|fachzyklus|textnachlauf|quellenkontext|quellenkontext-ruhe --ziel=500, optional --scharf. "
+      abbruch("Direktziel: nur provisionierung|aktivierung|reaktivierung|vorpruefung|fachzyklus|textnachlauf|quellenkontext|quellenkontext-ruhe|quellenvorlauf --ziel=500, optional --scharf. "
         + "Keine Stufe, Teilmenge oder gesetzte Uhr erlaubt; die Vorpruefung bleibt rein lesend.");
     }
     const r = await require("./github-direkt500").ausfuehren({ vorgang: werkzeug,
