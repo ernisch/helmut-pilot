@@ -75,9 +75,21 @@ vorhanden ist — auch dessen Zählwerte und beide Hashes. Eine Abweichung stopp
 (`verstehen-liste-pruefbeleg-abweichend`); ein fehlender, leerer oder unlesbarer Beleg
 stoppt mit `verstehen-ids-liste-fehlt` bzw. `verstehen-ids-liste-unbrauchbar`.
 
-**Der Runner wurde nicht ausgeführt.** In der vorbereitenden Sitzung war kein Production-Zugriff
-vorhanden; ein Planlauf endet deshalb ehrlich an `verstehen-speicher-nicht-verfuegbar`. Es wurde
-zu keinem Zeitpunkt eine Kennung erfunden (Belegpflicht, CLAUDE.md §4.3).
+**Der Runner wurde nicht scharf ausgeführt.** Der **rein lesende Planlauf** lief in der Codespace-Shell
+des Betreibers und endete **fail closed** an `verstehen-kandidaten-ueber-deckel`: 169 Dokumente,
+169er Kennungsmenge, ID-Hash exakt, 122 Cluster, Größen exakt
+`110×1 · 5×2 · 2×3 · 1×4 · 2×8 · 1×11 · 1×12`, danach Stopp vor jeder Wirkung.
+
+## 3a · Abbruchdiagnose (nur meldend, ab 2026-09-22)
+
+Bricht der Schutzvertrag ab, gibt `fuehreAus` die von `pruefeUndPlane` **bereits berechneten**
+Werte mit aus: `modellaufrufeKandidaten`, `clusterArten` und `clusterDiagnose`. Die Diagnose je
+Cluster trägt ausschließlich `vorgangId`, `art`, `kandidat`, `resolution`, `begruendung` — keine
+Titel, keine Auszüge, keine Modelltexte.
+
+Das ist **ausschließlich Meldung**: `ok`, `schutzvertrag` und `ausgeloest` bleiben falsch, es
+wird kein Cluster verarbeitet, kein Modell aufgerufen und keine Quittung beansprucht. Die
+113er-Grenze und die gesamte Klassifikation sind unverändert.
 
 ## 4 · Der Schutzvertrag (fail closed, vor dem ersten möglichen Modellaufruf)
 
@@ -223,14 +235,15 @@ Der Commit wird **nicht** aus dem laufenden Prozess geraten, sondern ausdrückli
 
 ## 13 · Gezielte Tests
 
-`node scripts/lokal.js -- node scripts/verstehen-einmalig-test.js` — **49 von 49 grün**,
+`node scripts/lokal.js -- node scripts/verstehen-einmalig-test.js` — **56 von 56 grün**,
 offline, ausschließlich mit Attrappen für Datenbank, Netz und Modell. Abgedeckt sind alle
 zwanzig Pflichtprüfungen des Auftrags (§1–§20), die Vertragsfälle S1/S6/S9/S10
-(Commit, Größenverteilung, Lesefehler, Kennungsabbildung), die Auftragswerte selbst — und die
-**echte 169er-Bindung**: 169 eindeutige Kennungen, exakter Hash, der Beleg wird vom Bedienweg
-und vom Kern akzeptiert, ein falscher Hash, ein veränderter Prüfbeleg sowie 168 und 170
-Kennungen bleiben fail closed. Der Prüflauf erzeugt **keinen** echten Modellaufruf und
-**keinen** Production-Schreibzugriff.
+(Commit, Größenverteilung, Lesefehler, Kennungsabbildung), die Auftragswerte selbst, die
+**echte 169er-Bindung** (169 eindeutige Kennungen, exakter Hash, Beleg wird von Bedienweg und
+Kern akzeptiert; falscher Hash, veränderter Prüfbeleg sowie 168 und 170 Kennungen bleiben fail
+closed) und die **Abbruchdiagnose** (§21: Ausgang unverändert, Werte exakt, nur die fünf
+erlaubten Felder, 0 Aufrufe/Quittungen/Writes, 113 unverändert, Erfolgspfad unberührt).
+Der Prüflauf erzeugt **keinen** echten Modellaufruf und **keinen** Production-Schreibzugriff.
 
 > **Anmerkung zur Prüfbindung:** Die festgeschriebenen Zahlen (169/122/113) lassen sich mit
 > synthetischen Dokumenten nicht reproduzieren. Die Mechanik wird deshalb mit einer

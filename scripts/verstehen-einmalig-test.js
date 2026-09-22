@@ -834,6 +834,102 @@ async function abschnittTagesriegel() {
   });
 }
 
+// ── §21 Abbruchdiagnose (nur meldend) ────────────────────────────────────────────────────
+// Die Diagnose darf AUSSCHLIESSLICH melden. Sie darf den Ausgang nie verbessern.
+async function abschnittAbbruchdiagnose() {
+  abschnitt("§21  Abbruchdiagnose: bereits berechnete Werte sichtbar, Ausgang unveraendert");
+  const docs = WOERTER.slice(0, 3).map((w, i) => rohesDokument("diag-" + i, w));
+  const w = weltBauen({ dokumente: docs });
+  // 3 Kandidaten, Deckel 2 -> der Schutzvertrag bricht ab. Der Deckel selbst bleibt
+  // unveraendert; die Diagnose benutzt nur die PRUEFBINDUNG fuer diese Mechanik.
+  const bindung = testbindung(docs, { maxModellaufrufe: 2 });
+  const lauf = await V.fuehreAus({
+    ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit", erwartet: bindung,
+    preisJeAufrufUsd: 0.01, runId: "diag", now: () => new Date()
+  });
+
+  await pruefeAsync("§21.1 bei Kandidaten ueber dem Deckel bleibt der Lauf fail closed", async () => {
+    A.equal(lauf.ok, false);
+    A.equal(lauf.grund, "verstehen-kandidaten-ueber-deckel");
+    A.equal(lauf.schutzvertrag, false, "Schutzvertrag bleibt nicht bestanden");
+    A.equal(lauf.ausgeloest, false, "kein Lauf ausgeloest");
+    A.equal(lauf.reinLesend, false);
+  });
+
+  await pruefeAsync("§21.2 modellaufrufeKandidaten traegt die exakt berechnete Zahl", async () => {
+    const geprueft = await V.pruefeUndPlane({ ids: idsVon(docs), deps: w.deps, commit: "test-commit", erwartet: bindung });
+    A.equal(geprueft.ok, false);
+    A.equal(geprueft.kandidaten, 3);
+    A.equal(lauf.modellaufrufeKandidaten, geprueft.kandidaten);
+    A.equal(lauf.modellaufrufeKandidaten, 3);
+  });
+
+  await pruefeAsync("§21.3 Artenzaehlung entspricht exakt den vorhandenen Einteilungen", async () => {
+    const geprueft = await V.pruefeUndPlane({ ids: idsVon(docs), deps: w.deps, commit: "test-commit", erwartet: bindung });
+    const erwartet = geprueft.einteilungen.reduce((m, e) => { m[e.art] = (m[e.art] || 0) + 1; return m; }, {});
+    A.deepEqual(lauf.clusterArten, erwartet);
+    A.equal(Object.values(lauf.clusterArten).reduce((n, x) => n + x, 0), geprueft.einteilungen.length);
+    // Nur echte Kategorien — keine erfundene Klasse.
+    const ERLAUBT = new Set(["neu", "update", "pending-erst", "duplikat", "merged", "terminal", "failed", "leer"]);
+    for (const art of Object.keys(lauf.clusterArten)) A.ok(ERLAUBT.has(art), "unbekannte Kategorie: " + art);
+  });
+
+  await pruefeAsync("§21.4 die Clusterdiagnose traegt nur die fuenf erlaubten Felder", async () => {
+    A.equal(Array.isArray(lauf.clusterDiagnose), true);
+    A.equal(lauf.clusterDiagnose.length, 3);
+    for (const e of lauf.clusterDiagnose) {
+      A.deepEqual(Object.keys(e).sort(), ["art", "begruendung", "kandidat", "resolution", "vorgangId"]);
+      A.equal(typeof e.kandidat, "boolean");
+      A.equal(typeof e.art, "string");
+      A.ok(e.vorgangId === null || typeof e.vorgangId === "string");
+      A.ok(e.resolution === null || typeof e.resolution === "string");
+      A.ok(e.begruendung === null || typeof e.begruendung === "string");
+    }
+    // Kein Inhalt: die Diagnose darf keine Titel/Auszuege/Modelltexte tragen.
+    const rohtext = JSON.stringify(lauf.clusterDiagnose);
+    A.ok(!rohtext.includes("Zitterpappel") && !rohtext.includes("Kupferschmiede"), "keine Titel");
+  });
+
+  await pruefeAsync("§21.5/6/7 der Abbruch erzeugt keinen Aufruf, keine Quittung, keinen Write", async () => {
+    A.equal(lauf.modellaufrufe, 0);
+    A.equal(w.welt.aufrufe.length, 0, "0 Modellaufrufe");
+    A.equal(w.welt.schritt.length, 0, "kein Quittungsschritt, kein CAS, kein Schloss");
+    A.equal(w.welt.claimRunCalls, 0, "keine Quittung beansprucht");
+    A.equal(w.welt.abgeschlossen, null, "keine Quittung abgeschlossen");
+    A.equal(w.welt.gespeichert.length, 0, "kein Knowledge-Object-Write");
+    A.equal(w.welt.geparkt.length, 0, "kein Failed-Write");
+    A.equal(w.welt.fencingWerte.length, 0, "kein Fencing-Write");
+    A.equal(lauf.quittung, null);
+    A.equal(lauf.quellenabrufe, 0);
+    A.equal(lauf.profilwrites, 0);
+    A.equal(lauf.kommunikation, 0);
+  });
+
+  await pruefeAsync("§21.8 die 113er Grenze ist unveraendert", async () => {
+    A.equal(V.PINNED.maxModellaufrufe, 113);
+    A.equal(bindung.maxModellaufrufe, 2, "nur die Pruefbindung wurde gesenkt, nie erhoeht");
+    A.ok(V.PINNED.maxModellaufrufe <= 113);
+  });
+
+  await pruefeAsync("§21.9 der erfolgreiche Pfad bleibt unveraendert", async () => {
+    const w2 = weltBauen({ dokumente: docs });
+    const ok = await V.fuehreAus({
+      ids: idsVon(docs), deps: w2.deps, execute: false, commit: "test-commit",
+      erwartet: testbindung(docs), runId: "ok", now: () => new Date()
+    });
+    A.equal(ok.ok, true);
+    A.equal(ok.schutzvertrag, true);
+    A.equal(ok.reinLesend, true);
+    A.equal(ok.modellaufrufeKandidaten, 3);
+    A.deepEqual(ok.planUebersicht.arten, { neu: 3 });
+    A.deepEqual(ok.clusterArten, { neu: 3 });
+    // Die Diagnosefelder gibt es ausschliesslich im Abbruchpfad.
+    A.equal(Object.hasOwn(ok, "clusterDiagnose"), false);
+    A.equal(ok.modellaufrufe, 0);
+    A.equal(w2.welt.aufrufe.length, 0);
+  });
+}
+
 (async () => {
   await abschnittAuftragswerte();
   await abschnittEchterBeleg();
@@ -846,6 +942,7 @@ async function abschnittTagesriegel() {
   await abschnittFremd();
   await abschnittNebenwirkungen();
   await abschnittTagesriegel();
+  await abschnittAbbruchdiagnose();
 
   console.log("\n== ERGEBNIS ==");
   console.log("bestanden: " + bestanden);
