@@ -112,14 +112,17 @@ function runtime(overrides = {}) {
 
   await test("Mehr als 200 eindeutige Abrufe werden vor externer Arbeit abgelehnt", async () => {
     const fake = {
-      kompiliereQuellenbedarf: async ({ profile }) => ({
-        auftraege: Array.from({ length: 201 }, (_, i) => ({
-          jobType: "source_fetch", idempotencyKey: "k" + i, freshnessWindow: "2026-09-22T00Z",
-          tenantId: null, payload: { quelle: shared("s" + i) }
-        })),
-        fehlerhafteProfile: [],
-        statistik: { profile: profile.length, profilePlaene: profile.length }
-      })
+      kompiliereQuellenbedarf: async ({ profile, quellenFuerProfil }) => {
+        for (const p of profile) await quellenFuerProfil(p);
+        return {
+          auftraege: Array.from({ length: 201 }, (_, i) => ({
+            jobType: "source_fetch", idempotencyKey: "k" + i, freshnessWindow: "2026-09-22T00Z",
+            tenantId: null, payload: { quelle: shared("s" + i) }
+          })),
+          fehlerhafteProfile: [],
+          statistik: { profile: profile.length, profilePlaene: profile.length }
+        };
+      }
     };
     await A.rejects(G.bauePlan({ bestand: bestand(), bestandsauswahl: auswahl, env: env(),
       now: () => new Date(ZEIT), deps: basisDeps({ sourceDemand: fake }) }),
