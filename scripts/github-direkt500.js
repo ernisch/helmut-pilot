@@ -379,7 +379,13 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       return await require("./github-quellenvorlauf-500").ausfuehren({
         bestand, env: laufEnv, now, pruefeBetrieb, snapshot, fortschritt,
         bestandsauswahl: ruheziel.ids.filter(id => !D.ALLE_KENNUNGEN.includes(id)),
-        execute: scharf
+        execute: scharf,
+        deps: {
+          pruefeNullAktive: async () => {
+            const rows = await db("mandate_profiles?select=user_id&aktiv=is.true&limit=1");
+            return rows.length === 0;
+          }
+        }
       });
     }
     if (quellenReparatur) {
