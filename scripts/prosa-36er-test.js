@@ -42,6 +42,20 @@ test("die drei Fallarten sind korrekt verdrahtet (Aussage im Sollentwurf)", () =
   A.equal(F.erwartet("unklar"), "nicht-akzeptiert");
 });
 
+test("Relevanz ist konkret, fallbezogen und nicht mehr als Leerformel formuliert", () => {
+  for (const f of F.pfadfaelle()) {
+    const c = F.faelle.find(x => x.klasse === f.klasse);
+    const r0 = f.entwurf.bloecke[0].einordnung.relevanz;
+    const r1 = f.entwurf.bloecke[1].einordnung.relevanz;
+    A.equal(r0, c.relevanz, f.id + " Relevanz nicht an Sachklasse gebunden");
+    for (const r of [r0, r1]) {
+      A.equal(typeof r, "string");
+      A(r.length >= 100, f.id + " Relevanz zu kurz");
+      A.equal(/könnte .*hilfreich|könnte .*Ansatzpunkt/i.test(r), false, f.id + " alte Leerformel");
+    }
+  }
+});
+
 test("Sollurteile und Begruendungen liegen nicht im Modellpayload", () => {
   for (const f of F.pfadfaelle()) {
     A.equal(Object.hasOwn(f.entwurf, "erwartet"), false);
@@ -79,3 +93,4 @@ test("beide Bereiche sind fuer denselben Entwurf gueltig (2 Bloecke)", () => {
 });
 
 console.log(`${count}/${count} 36er-Fixture-Tests bestanden; keine Modellabnahme, keine Productionwirkung.`);
+console.log("36er-Paket-Hash " + F.paket().paketHash);
