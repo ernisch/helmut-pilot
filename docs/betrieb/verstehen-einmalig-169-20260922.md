@@ -167,9 +167,47 @@ vergebener Kennung auslösen.
    Budget, Modellaufruf und Write; die Planung (`klassifiziereCluster`/`pruefeUndPlane`) bricht
    mit `verstehen-bestandslesefehler` ab (`ok: false`).
 
-**Abgrenzung:** ein Lesefehler bei der Kandidatensuche (`listKnowledgeObjectsByVorgangPrefix`)
-liefert weiterhin `[]` (catch im Speicher) — das ist ein **verwandter, aber getrennter** Befund
-desselben Typs und bewusst **nicht** in dieser minimalen Reparatur enthalten (eigener Folgeschritt).
+**Abgrenzung (damals):** ein Lesefehler bei der Kandidatensuche
+(`listKnowledgeObjectsByVorgangPrefix`) lieferte weiterhin `[]` (catch im Speicher) — ein
+**verwandter, aber getrennter** Befund desselben Typs und bewusst **nicht** in dieser minimalen
+Reparatur enthalten (eigener Folgeschritt). Dieser Folgeschritt ist inzwischen geschlossen: §3d.
+
+## 3d · Letzte Lesefehler-Pfade im Resolver fail closed (2026-09-22)
+
+**Anlass (belegt):** unabhängige Prüfung bestätigte zwei verbleibende Lesefehler-Pfade im
+Resolver, die wie in §3c („Abgrenzung") noch offen waren:
+
+1. **Exakter Leser** `deps.getExisting` → `storage.getKnowledgeObjectByVorgang` gab bei einem
+   Lesefehler `null` zurück (fachlich = „Vorgang existiert nicht").
+2. **Präfix-Kandidatensuche** `deps.findVorgangCandidates` →
+   `storage.listKnowledgeObjectsByVorgangPrefix` gab bei einem Lesefehler `[]` zurück
+   (fachlich = „keine Kandidaten").
+
+Beides konnte einen Cluster als `neu` klassifizieren (Modellaufruf + Write auf möglicherweise
+vergebener Kennung).
+
+**Die Reparatur (keine Änderung an `sameVorgang`/`candidatePrefixes`/`deriveVorgangId`/
+`neueErkenntnisse`/`MAX_VORGANG_KANDIDATEN`/`MAX_KANDIDATEN_MIT_BELEG`/Sortierung):**
+
+1. `storage.listKnowledgeObjectsByVorgangPrefix` wirft bei Lesefehler einen typisierten
+   `StorageReadError` (`quelle: knowledge_objects`) statt `[]`; erfolgreich gelesenes `[]` bleibt.
+2. `storage.getKnowledgeObjectByVorgang` wirft bei `throwOnError: true` einen typisierten
+   `StorageReadError` statt des rohen Fehlers — `getExistingStreng` wird damit typisiert und
+   wiederverwendet.
+3. `resolveVorgang` fährt den exakten Leser über `deps.getExistingStreng` (Fallback
+   `deps.getExisting` für Alt-Deps) und bricht bei beiden Fehlerarten fail closed ab
+   (`resolution: "bestand-lesefehler"`, unterscheidbare `begruendung` `exakt-lesefehler` bzw.
+   `kandidaten-lesefehler`, sichtbarer `lesefehler`-Grund). Die Kennung verschafft dem exakten
+   Kandidaten weiterhin **nur** einen Platz im Fenster; `sameVorgang` bleibt die fachliche
+   Entscheidung.
+4. Motor (`understandOneCluster`) liefert `skipped-bestandslesefehler` vor Reservierung, Budget,
+   Modell und Write; die Planung (`klassifiziereCluster`/`pruefeUndPlane`) bricht mit
+   `verstehen-bestandslesefehler` ab. Die `begruendung` wird durchgereicht (unterscheidbar),
+   `status`/`reason` bleiben `skipped-bestandslesefehler`/`bestandslesefehler` (ERGEBNISGRUPPE
+   „erneut" unverändert).
+
+**Erfolgreiche Leerfälle bleiben unverändert:** erfolgreich gelesener, nicht existierender
+Vorgang → `null`; erfolgreich gelesene leere Präfixliste → `[]`.
 
 ## 4 · Der Schutzvertrag (fail closed, vor dem ersten möglichen Modellaufruf)
 
@@ -344,6 +382,14 @@ Zusätzlich grün: die betroffenen **Bestandssuiten** des Resolver-Bereichs —
 `understanding-mandatsneutral` 5/5, `cron-globalphase`, `globalphase-buendelung`,
 `vorgangs-resolver-exakt` 12/12, `werkzeug-lesefehler` 43/43 und die neue Suite
 `vorgangs-bestand-lesefehler` 11/11 (§3c).
+
+Für §3d zusätzlich grün: die neue Suite `vorgangs-resolver-lesefehler-2` **17/17** — exakter
+Leser (Treffer/Leer/Lesefehler, auch über Legacy-`getExisting`), Präfix-Suche
+(Kandidaten/Leer/Lesefehler), unterscheidbare Fehlergründe (`exakt-lesefehler`/
+`kandidaten-lesefehler`), Motor- und Planungs-Stopp vor Modell/Write, kein künstlicher `neu`,
+sowie der Storage-Vertrag (beide Leser werfen typisierten `StorageReadError`, erfolgreiches
+`null`/`[]` unverändert). Der `vorgangs-resolver-exakt-test` prüft §4b jetzt auf den
+fail-closed-Abbruch (statt des früheren „läuft als `neu` weiter"). 0 Modellaufrufe, 0 Writes.
 
 > **Anmerkung zur Prüfbindung:** Die festgeschriebenen Zahlen (169/122/113) lassen sich mit
 > synthetischen Dokumenten nicht reproduzieren. Die Mechanik wird deshalb mit einer

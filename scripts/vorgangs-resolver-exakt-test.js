@@ -278,13 +278,16 @@ function achtNeuere(praefix = "vg-fenster") {
     }
   });
 
-  // ── Zusatz: Fehler beim exakten Lesen darf den Lauf nicht verbiegen ──────────────────────
-  await pruefe("§4b ein Lesefehler beim exakten Kandidaten ändert die Kandidatenmenge nicht", async () => {
+  // ── Zusatz: Fehler beim exakten Lesen muss fail closed stoppen ─────────────────────────
+  await pruefe("§4b ein Lesefehler beim exakten Kandidaten stoppt fail closed statt als neu", async () => {
     const c = clusterAus([rohesDokument("fehler-0", "Sanddornbeere")]);
     const z = speicher({ kandidaten: achtNeuere(), exaktFehler: "netzfehler" });
     const a = await resolveVorgang(c, z.deps, {});
-    A.equal(a.spuren.length, 8, "die acht Praefix-Kandidaten bleiben");
-    A.equal(a.resolution, "neu");
+    A.equal(a.resolution, "bestand-lesefehler");
+    A.equal(a.begruendung, "exakt-lesefehler");
+    A.ok(typeof a.lesefehler === "string" && a.lesefehler.length > 0, "Fehlerklasse sichtbar");
+    A.equal(z.modellaufrufe, 0, "kein Modellaufruf");
+    A.equal(z.schreibversuche, 0, "kein Schreibzugriff");
   });
 
   console.log("\n== ERGEBNIS ==");
