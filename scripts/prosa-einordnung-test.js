@@ -78,6 +78,13 @@ const setup = (bereich = "briefing", klasse = 0) => {
     u.pruefungen = u.pruefungen.filter(r => r.feld !== "kommunikation");
     A.throws(() => p.formuliere(e, u), /pruefung-unvollstaendig/);
   });
+  await test("Review-Prompt prueft die Produktrolle der Handlungsoption ausdruecklich", () => {
+    const { p, e } = setup();
+    const prompt = P.pruefPrompt(p.vorbereite(e));
+    A(prompt.includes("option eine konkrete moegliche Handlung oder einen naechsten Pruefschritt"));
+    A(prompt.includes("KEINE Handlungsoption"));
+    A(prompt.includes("feld=option nuetzlich=false"));
+  });
   await test("Jedes getrennte Sachkriterium bleibt zwingend", () => {
     for (const key of P.URTEILFELDER) {
       const { p, e, u } = setup(); u.pruefungen[0][key] = false;

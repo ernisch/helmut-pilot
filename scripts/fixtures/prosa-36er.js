@@ -25,36 +25,42 @@ const faelle = [
   { klasse: "sachgebiet-finanzwirkung",
     quelle: "Der Stadtrat beschliesst einen Zuschuss von 20 Euro fuer Busfahrkarten. Berechtigte erhalten ihn beim Kauf.",
     tatsache: "Der Stadtrat beschliesst einen Zuschuss von 20 Euro fuer Busfahrkarten.",
+    relevanz: "Für deinen Schwerpunkt Oeffentliche Verwaltung ist konkret relevant, dass der Stadtrat einen 20-Euro-Zuschuss für Busfahrkarten beschliesst; daran lässt sich die politische Wirkung der Förderung auf den Nahverkehr bewerten.",
     positiv: "Du koenntest die Wirkung des Zuschusses auf den Nahverkehr politisch pruefen.",
     negativ: "Die neue Steuer belastet Busfahrkarten zusätzlich.",
     unklar: "Ueber die Gegenfinanzierung des Zuschusses ist nichts gesagt; dazu laesst sich nichts belegen." },
   { klasse: "vollzug-modalitaet",
     quelle: "Das Ministerium prueft die Verlaengerung des Programms. Eine Entscheidung ist noch nicht getroffen.",
     tatsache: "Das Ministerium prueft die Verlaengerung; eine Entscheidung steht noch aus.",
+    relevanz: "Für deinen Schwerpunkt Oeffentliche Verwaltung ist konkret relevant, dass nur die Verlängerung geprüft wird und noch keine Entscheidung getroffen ist; politische Bewertung und Kommunikation müssen diesen offenen Entscheidungsstand berücksichtigen.",
     positiv: "Du koenntest nach dem Stand der Prüfung fragen und dabei die offene Entscheidung benennen.",
     negativ: "Du koenntest die beschlossene Verlängerung begrüßen.",
     unklar: "Ob eine Entscheidung faellt, ist nicht gesagt; ein Beschluss laesst sich nicht behaupten." },
   { klasse: "rolle-zuschreibung",
     quelle: "In einem Gastbeitrag kritisiert Verband A die Forderung des Verbands B. Die Redaktion macht sich diese Position nicht zu eigen.",
     tatsache: "Verband A kritisiert in einem Gastbeitrag die Forderung von Verband B.",
+    relevanz: "Für deinen Schwerpunkt Oeffentliche Verwaltung ist konkret relevant, dass Verband A die Forderung von Verband B kritisiert und die Redaktion diese Position nicht übernimmt; eine politische Bewertung muss die Rollen getrennt halten.",
     positiv: "Du koenntest die Forderung und die Kritik getrennt bewerten, bevor du Stellung beziehst.",
     negativ: "Du koenntest die Kritik der Redaktion an Verband A aufgreifen.",
     unklar: "Wie die Redaktion selbst zu der Forderung steht, ist nicht genannt." },
   { klasse: "zeit-frist",
     quelle: "Das Ministerium plant die Umsetzung ab 1. September 2027. Ein Termin fuer den Beschluss ist nicht genannt.",
     tatsache: "Die Umsetzung ist ab 1. September 2027 geplant; ein Beschlusstermin ist nicht genannt.",
+    relevanz: "Für deinen Schwerpunkt Oeffentliche Verwaltung ist konkret relevant, dass die Umsetzung ab 1. September 2027 geplant ist, aber kein Beschlusstermin genannt wird; Vorbereitung und Kommunikation müssen diese beiden Zeitpunkte auseinanderhalten.",
     positiv: "Du koenntest nach dem noch offenen Beschlusstermin fragen.",
     negativ: "Du koenntest dich auf den Beschluss am 1. September 2027 vorbereiten.",
     unklar: "Ein Beschlusstermin ist nicht genannt; eine Vorbereitung darauf waere unbelegt." },
   { klasse: "profil-zustaendigkeit",
     quelle: "Der Verkehrsausschuss beraet ueber die Finanzierung des Nahverkehrs. Ein Auftrag an einzelne Abgeordnete ist nicht genannt.",
     tatsache: "Der Verkehrsausschuss beraet ueber die Finanzierung des Nahverkehrs.",
+    relevanz: "Für deinen Schwerpunkt Oeffentliche Verwaltung ist konkret relevant, dass der Verkehrsausschuss die Finanzierung des Nahverkehrs berät; das gibt einen sachlichen Anlass zur Vorbereitung auf die Beratung.",
     positiv: "Du koenntest dich im Rahmen deiner stellvertretenden Ausschussmitgliedschaft auf die Beratung vorbereiten.",
     negativ: "Als Vorsitzender musst du die Finanzierung beschließen.",
     unklar: "Ein Auftrag an einzelne Abgeordnete ist nicht genannt." },
   { klasse: "bedingte-wirkung",
     quelle: "Nur wenn der Stadtrat den Zuschuss beschliesst, kann eine Foerderung moeglich werden. Weitere Voraussetzungen sind nicht genannt. Eine Bewilligung ist nicht zugesagt.",
     tatsache: "Der Beschluss ist eine notwendige Voraussetzung; weitere Voraussetzungen und eine Bewilligung bleiben offen.",
+    relevanz: "Für deinen Schwerpunkt Oeffentliche Verwaltung ist konkret relevant, dass ein Stadtratsbeschluss nur eine notwendige Voraussetzung für eine mögliche Förderung ist; weitere Voraussetzungen und eine Bewilligung bleiben offen.",
     positiv: "Du koenntest die weiteren Voraussetzungen klaeren lassen und die offene Bewilligung ausdrücklich benennen.",
     negativ: "Du koenntest bei einem Beschluss mit der sicheren Bewilligung rechnen.",
     unklar: "Ob weitere Voraussetzungen erfuellt sind, ist nicht genannt; eine Bewilligung ist nicht zugesagt." }
@@ -99,10 +105,10 @@ function entwurf(klasse, art) {
   const aussage = { negativ: c.negativ, positiv: c.positiv, unklar: c.unklar }[art];
   return { bloecke: [
     { faktIds: ["f-0"], mandatsbezug: { feld: "schwerpunkt", wert: "Oeffentliche Verwaltung" }, einordnung: {
-      relevanz: "Für deinen Schwerpunkt Oeffentliche Verwaltung könnte die politische Bewertung des Vorgangs hilfreich sein.",
+      relevanz: c.relevanz,
       risiko: null, chance: null, option: aussage, kommunikation: null } },
     { faktIds: ["f-1"], mandatsbezug: { feld: "schwerpunkt", wert: "Oeffentliche Verwaltung" }, einordnung: {
-      relevanz: "Barrierefreiheit öffentlicher Gebäude könnte für deinen Schwerpunkt Oeffentliche Verwaltung ein Ansatzpunkt sein.",
+      relevanz: "Für deinen Schwerpunkt Oeffentliche Verwaltung ist konkret relevant, dass das Parlament Barrierefreiheit öffentlicher Gebäude berät; das gibt einen sachlichen Anlass, Umsetzungsfragen für die weitere Beratung zu strukturieren.",
       risiko: null, chance: null,
       option: "Du könntest konkrete offene Fragen zur Barrierefreiheit für die Beratung sammeln.", kommunikation: null } }
   ] };
@@ -136,7 +142,7 @@ function paket() {
     [f.id, P.binde({ basis: f.basis, faktenPlan: f.faktenPlan, bereich: f.bereich }).basisHash]));
   return { faelle: faelleListe, basisHashes,
     paketHash: hash({ faelle: faelleListe.map(f => ({ id: f.id, klassen: f.klasse, art: f.art,
-      bereich: f.bereich, erwartet: f.erwartet, basis: f.basis, faktenPlan: f.faktenPlan })),
+      bereich: f.bereich, erwartet: f.erwartet, basis: f.basis, faktenPlan: f.faktenPlan, entwurf: f.entwurf })),
       scope: "36-Pfadfaelle-18-Fachfaelle-zwei-Bereiche-ein-Lauf-kein-Retry" }) };
 }
 

@@ -7,6 +7,13 @@
 const A = require("node:assert/strict");
 const P = require("../lib/helmut/prosa-einordnung");
 const F = require("./fixtures/prosa-36er");
+const { hash } = require("../lib/helmut/briefing-speicher");
+
+function paketHashAus(faelle) {
+  return hash({ faelle: faelle.map(f => ({ id: f.id, klassen: f.klasse, art: f.art,
+    bereich: f.bereich, erwartet: f.erwartet, basis: f.basis, faktenPlan: f.faktenPlan, entwurf: f.entwurf })),
+    scope: "36-Pfadfaelle-18-Fachfaelle-zwei-Bereiche-ein-Lauf-kein-Retry" });
+}
 
 let count = 0;
 function test(name, fn) { fn(); count++; console.log("PASS " + name); }
@@ -42,6 +49,20 @@ test("die drei Fallarten sind korrekt verdrahtet (Aussage im Sollentwurf)", () =
   A.equal(F.erwartet("unklar"), "nicht-akzeptiert");
 });
 
+test("Relevanz ist konkret, fallbezogen und nicht mehr als Leerformel formuliert", () => {
+  for (const f of F.pfadfaelle()) {
+    const c = F.faelle.find(x => x.klasse === f.klasse);
+    const r0 = f.entwurf.bloecke[0].einordnung.relevanz;
+    const r1 = f.entwurf.bloecke[1].einordnung.relevanz;
+    A.equal(r0, c.relevanz, f.id + " Relevanz nicht an Sachklasse gebunden");
+    for (const r of [r0, r1]) {
+      A.equal(typeof r, "string");
+      A(r.length >= 100, f.id + " Relevanz zu kurz");
+      A.equal(/könnte .*hilfreich|könnte .*Ansatzpunkt/i.test(r), false, f.id + " alte Leerformel");
+    }
+  }
+});
+
 test("Sollurteile und Begruendungen liegen nicht im Modellpayload", () => {
   for (const f of F.pfadfaelle()) {
     A.equal(Object.hasOwn(f.entwurf, "erwartet"), false);
@@ -62,9 +83,13 @@ test("kein Entwurf erfindet Zahlen gegenueber den gelieferten Fakten", () => {
   }
 });
 
-test("das Paket ist stabil und umfasst alle 36 Pfadfaelle", () => {
+test("das Paket ist stabil, umfasst alle 36 Pfadfaelle und bindet den Entwurf", () => {
   const p1 = F.paket(), p2 = F.paket();
   A.equal(p1.paketHash, p2.paketHash, "paketHash nicht stabil (nicht eingefroren)");
+  A.equal(p1.paketHash, paketHashAus(p1.faelle), "paketHash bindet den Entwurf nicht");
+  const veraendert = structuredClone(p1.faelle);
+  veraendert[0].entwurf.bloecke[0].einordnung.relevanz += " Veraendert.";
+  A.notEqual(paketHashAus(veraendert), p1.paketHash, "Entwurfsaenderung veraendert paketHash nicht");
   A.equal(p1.paketHash.length, 64);
   A.equal(Object.keys(p1.basisHashes).length, 36);
   A.equal(p1.faelle.length, 36);
@@ -79,3 +104,4 @@ test("beide Bereiche sind fuer denselben Entwurf gueltig (2 Bloecke)", () => {
 });
 
 console.log(`${count}/${count} 36er-Fixture-Tests bestanden; keine Modellabnahme, keine Productionwirkung.`);
+console.log("36er-Paket-Hash " + F.paket().paketHash);
