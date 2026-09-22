@@ -539,7 +539,7 @@ async function main() {
       /letzter_grund=eq\.erneut-freigegeben[\s\S]{0,600}?order=updated_at\.desc/.test(sSrc));
     const uSrc = fs.readFileSync(path.join(ROOT, "lib/helmut/understanding.js"), "utf8");
     check("§12e.2 der Bestand wird erst hinter Sperre und Zeit-Gates geholt",
-      uSrc.indexOf("const lock = await deps.acquireLock();") < uSrc.indexOf("deps.getExistingStreng"));
+      uSrc.indexOf("const lock = await deps.acquireLock();") < uSrc.indexOf("await deps.getExistingStreng(eintrag.vorgang_id)"));
     check("§12e.3 der Wiederaufnahmepfad ist hart an den CAS-Vertrag gebunden",
       /const vertragAktiv = typeof deps\.verstehenVertrag === "function"/.test(uSrc)
       && /&& vertragAktiv && vorlaufZeitReicht/.test(uSrc));
