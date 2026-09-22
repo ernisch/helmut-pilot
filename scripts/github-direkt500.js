@@ -10,10 +10,13 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
   fetchFn = global.fetch, now = () => new Date(),
   schreibe = null, fortschritt = null } = {}) {
   const vorpruefung = vorgang === "vorpruefung";
+  const quellenVorlauf = vorgang === "quellenvorlauf";
   const quellenRuhe = vorgang === "quellenkontext-ruhe";
-  const quellenReparatur = quellenRuhe || vorgang === "quellenkontext";
+  const ruhenderQuellenweg = quellenRuhe || quellenVorlauf;
+  const quellenReparatur = ruhenderQuellenweg || vorgang === "quellenkontext";
   const plan = vorpruefung ? { ziel: 500, vorgang, reinLesend: true } : D.plan(vorgang);
-  if (!scharf && !vorpruefung) return { ...plan, modus: "trockenlauf", schreibversuche: 0, ok: false };
+  if (!scharf && !vorpruefung && !quellenVorlauf)
+    return { ...plan, modus: "trockenlauf", schreibversuche: 0, ok: false };
   let wiederherstellen = null;
   let fachlaufAusgeloest = false;
   let serverBefund = null;
@@ -26,7 +29,7 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       && /^[a-f0-9]{40}$/.test(env.GITHUB_SHA || ""), "production-commit-nicht-bestaetigt");
     D.fordere(String(env.SUPABASE_URL || "").replace(/\/$/, "") === PROJECT_URL
       && env.SUPABASE_SERVICE_ROLE_KEY && env.HELMUT_CRON_SECRET, "production-zugang-fehlt");
-    if (!vorpruefung) {
+    if (!vorpruefung && scharf) {
       D.fordere(env.HELMUT_TESTKOHORTE_EXECUTE === "1"
         && env.HELMUT_TESTKOHORTE_CONFIRM === D.WORTE[vorgang], "direktfreigabe-fehlt");
       D.pruefeZeit(now());
@@ -70,7 +73,8 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       const iso = encodeURIComponent(jetzt.toISOString());
       const [locks, leases, verwaist, counters, auth, outbox] = await Promise.all([
         db("pipeline_locks?select=job_name&expires_at=gt." + iso
-          + (eigeneSperre === "500-quellenkontext" ? "&job_name=neq.500-quellenkontext" : "") + "&limit=1"),
+          + (["500-quellenkontext", "500-quellenvorlauf"].includes(eigeneSperre)
+            ? "&job_name=neq." + eigeneSperre : "") + "&limit=1"),
         db("helmut_jobs?select=id&lease_expires_at=gt." + iso + "&limit=1"),
         db("helmut_jobs?select=id&status=eq.laeuft&or=(lease_expires_at.is.null,lease_expires_at.lt."
           + iso + ")&limit=1"),
@@ -106,11 +110,11 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
     await pruefeBetrieb();
     const bestand = await snapshot();
     const vollbestand = vorgang === "reaktivierung" || (bestand.mandate.length === 504
-      && ["vorpruefung", "fachzyklus", "textnachlauf", "quellenkontext", "quellenkontext-ruhe"].includes(vorgang));
-    const snapshotModus = quellenRuhe ? "500-ruhend" : vollbestand ? "500-bestand" : "vorpruefung";
+      && ["vorpruefung", "fachzyklus", "textnachlauf", "quellenkontext", "quellenkontext-ruhe", "quellenvorlauf"].includes(vorgang));
+    const snapshotModus = ruhenderQuellenweg ? "500-ruhend" : vollbestand ? "500-bestand" : "vorpruefung";
     const zielAnzahl = vollbestand ? 495 : 475;
     const vor = D.pruefeSnapshot(bestand, snapshotModus);
-    const ruheziel = quellenRuhe ? require("../lib/helmut/quellenkontext-ruheziel")
+    const ruheziel = ruhenderQuellenweg ? require("../lib/helmut/quellenkontext-ruheziel")
       .ausUmgebung(bestand, env.HELMUT_QUELLENKONTEXT_BESTANDSPROFILE) : null;
     // Der Betreiber verlangt den direkten Test ohne vorgelagerte A Abnahme.
     // Qualitaet wird am tatsaechlichen 500er Ergebnis bewertet, nie vorausgesetzt.
@@ -367,6 +371,16 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
           if (v === undefined) delete process.env[k]; else process.env[k] = v;
         }
       };
+    }
+    if (quellenVorlauf) {
+      D.fordere(env === process.env && !schreibe, "quellenvorlauf-braucht-echten-geprueften-adapter");
+      D.fordere(vor.gesamt === 504 && vor.aktiv === 0 && vor.aktive.length === 0,
+        "quellenvorlauf-braucht-null-aktive-profile");
+      return await require("./github-quellenvorlauf-500").ausfuehren({
+        bestand, env: laufEnv, now, pruefeBetrieb, snapshot, fortschritt,
+        bestandsauswahl: ruheziel.ids.filter(id => !D.ALLE_KENNUNGEN.includes(id)),
+        execute: scharf
+      });
     }
     if (quellenReparatur) {
       D.fordere(env === process.env && !schreibe, "quellenkontext-braucht-echten-geprueften-adapter");
