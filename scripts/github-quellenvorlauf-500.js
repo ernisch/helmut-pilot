@@ -45,6 +45,8 @@ async function mapBounded(items, parallel, fn) {
 async function bauePlan({ bestand, bestandsauswahl, env = process.env, now = () => new Date(), deps = {} } = {}) {
   D.pruefeSnapshot(bestand, "500-ruhend");
   const ziel = R.pruefe(bestand, bestandsauswahl);
+  D.fordere(String(env.HELMUT_SOURCE_MODE || "").trim().toLowerCase() === "on",
+    "quellenvorlauf-source-mode-nicht-bestaetigt");
   D.fordere(!kohortenquellenAktiv(env), "quellenvorlauf-synthetische-eigenquellen-aktiv");
 
   const storage = deps.storage || require("../lib/helmut/storage");
