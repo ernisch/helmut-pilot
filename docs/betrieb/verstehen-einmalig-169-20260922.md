@@ -144,6 +144,33 @@ ohne den exakten Kandidaten.
 diesen Fehler entstand. Belegt ist der Fehler als solcher; der Nachweis, **welcher** der `neu`
 Cluster der frühere `bestand-ohne-beleg`-Fall war, steht noch aus (§3a liefert dafür die Spuren).
 
+## 3c · Bestandslesefehler fail closed (2026-09-22)
+
+**Anlass (belegt):** während des erfolgreichen Planlaufs erschien
+`[v3Store] listKoDocuments fehlgeschlagen: fetch failed` — der Plan lief trotzdem mit `ok: true`
+weiter. Ursache: `storage.listKoDocuments` fing den Lesefehler und lieferte `[]`; damit war ein
+echter Bestandslesefehler **fachlich nicht von einer gültigen leeren Liste unterscheidbar**.
+`resolveVorgang` und `sameVorgang` entschieden dadurch auf unvollständiger Grundlage — ein
+Vorgang konnte als `neu` gelten und später Modellaufruf + Write auf möglicherweise bereits
+vergebener Kennung auslösen.
+
+**Die Reparatur (drei Punkte, keine Änderung an `sameVorgang`/`candidatePrefixes`/
+`deriveVorgangId`/`neueErkenntnisse`):**
+
+1. `storage.listKoDocuments` wirft bei einem Lesefehler einen typisierten `StorageReadError`
+   (`quelle: ko_document_links`) statt `[]` — wie die Geschwister-Leser `listKoDocumentLinks`
+   und `listRawDocuments`. Eine erfolgreich gelesene, tatsächlich leere Liste bleibt `[]`.
+2. `resolveVorgang` bricht bei einem Bestandslesefehler fail closed ab
+   (`resolution: "bestand-lesefehler"`, sichtbarer `lesefehler`-Grund) — es wird **kein** Urteil
+   auf leerer Grundlage getroffen, insbesondere **kein** `neu`-Übergang.
+3. Der Motor (`understandOneCluster`) liefert `skipped-bestandslesefehler` **vor** Reservierung,
+   Budget, Modellaufruf und Write; die Planung (`klassifiziereCluster`/`pruefeUndPlane`) bricht
+   mit `verstehen-bestandslesefehler` ab (`ok: false`).
+
+**Abgrenzung:** ein Lesefehler bei der Kandidatensuche (`listKnowledgeObjectsByVorgangPrefix`)
+liefert weiterhin `[]` (catch im Speicher) — das ist ein **verwandter, aber getrennter** Befund
+desselben Typs und bewusst **nicht** in dieser minimalen Reparatur enthalten (eigener Folgeschritt).
+
 ## 4 · Der Schutzvertrag (fail closed, vor dem ersten möglichen Modellaufruf)
 
 | Nr. | Prüfung | Abbruchgrund |
@@ -314,7 +341,9 @@ Zusätzlich grün: die betroffenen **Bestandssuiten** des Resolver-Bereichs —
 `verstehen-restzeit` 52/52, `ereignisbindung-heute` 8/8, `lage` 141/141,
 `understanding-konkurrenz`, `understanding-priorisierung` 9/9,
 `understanding-ebenen-konsistenz` 8/8, `understanding-aussagen-fristen` 6/6,
-`understanding-mandatsneutral` 5/5, `cron-globalphase`, `globalphase-buendelung`.
+`understanding-mandatsneutral` 5/5, `cron-globalphase`, `globalphase-buendelung`,
+`vorgangs-resolver-exakt` 12/12, `werkzeug-lesefehler` 43/43 und die neue Suite
+`vorgangs-bestand-lesefehler` 11/11 (§3c).
 
 > **Anmerkung zur Prüfbindung:** Die festgeschriebenen Zahlen (169/122/113) lassen sich mit
 > synthetischen Dokumenten nicht reproduzieren. Die Mechanik wird deshalb mit einer
