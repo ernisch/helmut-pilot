@@ -142,7 +142,7 @@ function paket() {
     [f.id, P.binde({ basis: f.basis, faktenPlan: f.faktenPlan, bereich: f.bereich }).basisHash]));
   return { faelle: faelleListe, basisHashes,
     paketHash: hash({ faelle: faelleListe.map(f => ({ id: f.id, klassen: f.klasse, art: f.art,
-      bereich: f.bereich, erwartet: f.erwartet, basis: f.basis, faktenPlan: f.faktenPlan })),
+      bereich: f.bereich, erwartet: f.erwartet, basis: f.basis, faktenPlan: f.faktenPlan, entwurf: f.entwurf })),
       scope: "36-Pfadfaelle-18-Fachfaelle-zwei-Bereiche-ein-Lauf-kein-Retry" }) };
 }
 
