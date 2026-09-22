@@ -1,5 +1,6 @@
 "use strict";
 const A = require("node:assert/strict");
+const fs = require("node:fs");
 const G = require("./github-quellenvorlauf-500");
 const D = require("../lib/helmut/testkohorte-direkt500");
 const { bestand, auswahl } = require("./fixtures/quellenkontext-ruhe");
@@ -234,6 +235,14 @@ function runtime(overrides = {}) {
     A.equal(r.ok, false);
     A.equal(h.handlerCalls, 0);
     A.equal(h.locked, false);
+  });
+
+  await test("Workflow trennt Quellen Plan und scharfen Lauf sichtbar", () => {
+    const yml = fs.readFileSync(".github/workflows/500-direkt-ausbau.yml", "utf8");
+    A(yml.includes("quellenvorlauf-plan, quellenvorlauf"));
+    A(yml.includes('= "quellenvorlauf-plan"'));
+    A(yml.includes("testkohorte-vorwaerts.js quellenvorlauf --ziel=500"));
+    A(yml.includes('testkohorte-vorwaerts.js "$HELMUT_DIREKT_SCHRITT" --ziel=500 --scharf'));
   });
 
   await test("500er Adapter trennt read only Plan und scharfen Quellen Vorlauf", async () => {
