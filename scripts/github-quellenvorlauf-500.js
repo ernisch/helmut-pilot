@@ -13,8 +13,8 @@ const SD = require("../lib/helmut/source-demand");
 const SP = require("../lib/helmut/scalable-pipeline");
 
 const LOCK = "500-quellenvorlauf";
-const MAX_SOURCE_FETCH = 200;
-const MAX_MS = 20 * 60 * 1000;
+const MAX_SOURCE_FETCH = D.QUELLENVORLAUF_MAX_SOURCE_FETCH;
+const MAX_MS = D.QUELLENVORLAUF_MAX_MS;
 const PARALLEL = 1;
 
 function kohortenquellenAktiv(env = process.env) {
