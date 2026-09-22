@@ -376,7 +376,44 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       D.fordere(env === process.env && !schreibe, "quellenvorlauf-braucht-echten-geprueften-adapter");
       D.fordere(vor.gesamt === 504 && vor.aktiv === 0 && vor.aktive.length === 0,
         "quellenvorlauf-braucht-null-aktive-profile");
-      return await require("./github-quellenvorlauf-500").ausfuehren({
+      const QV = require("./github-quellenvorlauf-500");
+      const receiptUrl = PROJECT_URL + "/rest/v1/helmut_store";
+      const receiptHeaders = {
+        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Prefer: "return=representation"
+      };
+      const claimRun = async data => {
+        const alt = await db("helmut_store?select=id&id=eq." + encodeURIComponent(QV.RUN_KEY) + "&limit=2");
+        D.fordere(alt.length <= 1, "quellenvorlauf-quittung-nicht-eindeutig");
+        if (alt.length) return false;
+        const res = await fetchFn(receiptUrl, {
+          method: "POST", redirect: "error", signal: AbortSignal.timeout(20000),
+          headers: receiptHeaders, body: JSON.stringify({ id: QV.RUN_KEY, data })
+        });
+        D.fordere([200, 201].includes(res.status), "quellenvorlauf-quittung-schreiben-fehlgeschlagen");
+        const rows = await res.json();
+        D.fordere(Array.isArray(rows) && rows.length === 1 && rows[0].id === QV.RUN_KEY,
+          "quellenvorlauf-quittung-schreiben-unbekannt");
+        return true;
+      };
+      const finishRun = async data => {
+        const alt = await db("helmut_store?select=id,data&id=eq." + encodeURIComponent(QV.RUN_KEY) + "&limit=2");
+        D.fordere(alt.length === 1 && alt[0].data?.runId === data.runId
+          && alt[0].data?.planHash === data.planHash, "quellenvorlauf-quittung-abweichend");
+        const res = await fetchFn(receiptUrl + "?id=eq." + encodeURIComponent(QV.RUN_KEY), {
+          method: "PATCH", redirect: "error", signal: AbortSignal.timeout(20000),
+          headers: receiptHeaders, body: JSON.stringify({ data })
+        });
+        D.fordere(res.status === 200, "quellenvorlauf-quittung-abschluss-fehlgeschlagen");
+        const rows = await res.json();
+        D.fordere(Array.isArray(rows) && rows.length === 1 && rows[0].id === QV.RUN_KEY,
+          "quellenvorlauf-quittung-abschluss-unbekannt");
+        return true;
+      };
+      return await QV.ausfuehren({
         bestand, env: laufEnv, now, pruefeBetrieb, snapshot, fortschritt,
         bestandsauswahl: ruheziel.ids.filter(id => !D.ALLE_KENNUNGEN.includes(id)),
         execute: scharf,
@@ -384,7 +421,8 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
           pruefeNullAktive: async () => {
             const rows = await db("mandate_profiles?select=user_id&aktiv=is.true&limit=1");
             return rows.length === 0;
-          }
+          },
+          claimRun, finishRun
         }
       });
     }
