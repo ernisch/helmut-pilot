@@ -32,8 +32,13 @@ function basisDeps(overrides = {}) {
 }
 function runtime(overrides = {}) {
   const s = bestand();
-  let lock = false, handlerCalls = 0, snapshotCalls = 0;
+  let lock = false, handlerCalls = 0, snapshotCalls = 0, claimed = false, receipt = null;
   const deps = basisDeps({
+    claimRun: async data => {
+      if (claimed) return false;
+      claimed = true; receipt = kopie(data); return true;
+    },
+    finishRun: async data => { receipt = kopie(data); return true; },
     handleSourceFetch: async (job, d) => {
       handlerCalls++;
       await d.enqueue({ jobType: "document_understanding", tenantId: null,
@@ -51,7 +56,9 @@ function runtime(overrides = {}) {
     pruefeBetrieb: overrides.pruefeBetrieb || (async () => {}),
     get handlerCalls() { return handlerCalls; },
     get snapshotCalls() { return snapshotCalls; },
-    get locked() { return lock; }
+    get locked() { return lock; },
+    get claimed() { return claimed; },
+    get receipt() { return receipt; }
   };
   return h;
 }
@@ -153,6 +160,31 @@ function runtime(overrides = {}) {
     A.equal(h.handlerCalls, 1);
     A.equal(h.locked, false);
     A.equal(D.hash(h.s), before);
+  });
+
+  await test("Derselbe Einmalschluessel blockiert einen zweiten manuellen Dispatch vor dem Abruf", async () => {
+    const h = runtime();
+    const args = { bestand: h.s, bestandsauswahl: auswahl, env: env(),
+      now: h.now, snapshot: h.snapshot, pruefeBetrieb: h.pruefeBetrieb,
+      execute: true, deps: h.deps };
+    const first = await G.ausfuehren(args);
+    A.equal(first.ok, true);
+    const calls = h.handlerCalls;
+    const second = await G.ausfuehren(args);
+    A.equal(second.ok, false);
+    A.equal(second.grund, "quellenvorlauf-bereits-verwendet");
+    A.equal(h.handlerCalls, calls);
+  });
+
+  await test("Unklarer Abschlussbeleg bleibt unbekannt und darf nicht als Erfolg gelten", async () => {
+    const h = runtime({ deps: { finishRun: async () => false } });
+    const r = await G.ausfuehren({ bestand: h.s, bestandsauswahl: auswahl, env: env(),
+      now: h.now, snapshot: h.snapshot, pruefeBetrieb: h.pruefeBetrieb,
+      execute: true, deps: h.deps });
+    A.equal(r.ok, false);
+    A.equal(r.zustandUnbekannt, true);
+    A.equal(r.quittung, null);
+    A.equal(h.handlerCalls, 1);
   });
 
   await test("Externer Abruffehler wird einmal bilanziert und nie wiederholt", async () => {
