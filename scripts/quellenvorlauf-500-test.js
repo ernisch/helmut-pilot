@@ -245,6 +245,31 @@ function runtime(overrides = {}) {
     A(yml.includes('testkohorte-vorwaerts.js "$HELMUT_DIREKT_SCHRITT" --ziel=500 --scharf'));
   });
 
+  // Der direkte Quellen Vorlauf braucht HELMUT_SOURCE_MODE=on. Der Wert darf
+  // ausschliesslich in den beiden quellenvorlauf-Zweigen gesetzt werden, damit
+  // kein anderer direkter 500er Schritt und kein workflow-/step-weites env ihn erhaelt.
+  await test("Quellen-Vorlauf erhaelt HELMUT_SOURCE_MODE=on nur in seinen zwei Zweigen", () => {
+    const quelle = fs.readFileSync(".github/workflows/500-direkt-ausbau.yml", "utf8");
+    const zeilen = quelle.split("\n").map(z => z.trim())
+      .filter(z => z.includes("node scripts/testkohorte-vorwaerts.js"));
+    // 1 Planmodus: HELMUT_SOURCE_MODE=on, quellenvorlauf, ohne --scharf
+    const plan = zeilen.filter(z => z.includes("quellenvorlauf --ziel=500") && !z.includes("--scharf"));
+    A.equal(plan.length, 1, "genau ein Planzweig fuer quellenvorlauf erwartet");
+    A(plan[0].includes("HELMUT_SOURCE_MODE=on"), "Planzweig setzt HELMUT_SOURCE_MODE=on nicht");
+    // 5 Planmodus bleibt ohne --scharf (oben bereits durch die Filterung erzwungen)
+    // 2 scharfer Vorlauf: HELMUT_SOURCE_MODE=on, mit --scharf
+    const scharf = zeilen.filter(z => z.includes("quellenvorlauf --ziel=500 --scharf"));
+    A.equal(scharf.length, 1, "genau ein scharfer Zweig fuer quellenvorlauf erwartet");
+    A(scharf[0].includes("HELMUT_SOURCE_MODE=on"), "Scharfer Zweig setzt HELMUT_SOURCE_MODE=on nicht");
+    // 3 andere direkte Schritte erhalten den Wert nicht
+    A(zeilen.some(z => z.includes("vorpruefung --ziel=500") && !z.includes("HELMUT_SOURCE_MODE")),
+      "Vorpruefung darf HELMUT_SOURCE_MODE nicht erhalten");
+    const generisch = zeilen.filter(z => z.includes('"$HELMUT_DIREKT_SCHRITT" --ziel=500 --scharf'));
+    A.equal(generisch.length, 1, "genau ein generischer Zweig erwartet");
+    A(!generisch[0].includes("HELMUT_SOURCE_MODE"), "andere Schritte duerfen HELMUT_SOURCE_MODE nicht erhalten");
+    A(!/^\s*HELMUT_SOURCE_MODE:/m.test(quelle), "HELMUT_SOURCE_MODE darf kein workflow-/step-weiter env-Eintrag sein");
+  });
+
   // Die Allowlist der Direktziele darf nicht von den tatsaechlich geplanten
   // Vorgaengen abdriften: der Workflow ruft die CLI auf, und ein fehlender
   // Eintrag liess den Vorlauf in Production fail closed abbrechen.
