@@ -15,7 +15,7 @@ const SP = require("../lib/helmut/scalable-pipeline");
 const LOCK = "500-quellenvorlauf";
 const MAX_SOURCE_FETCH = 200;
 const MAX_MS = 20 * 60 * 1000;
-const PARALLEL = 4;
+const PARALLEL = 1;
 
 function kohortenquellenAktiv(env = process.env) {
   return String(env.HELMUT_TESTKOHORTE_QUELLEN || "").trim().toLowerCase() === "aktiv";
