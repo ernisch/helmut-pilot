@@ -1,0 +1,108 @@
+# Helmut — EINMALIGER scharfer Verstehenslauf fuer genau 169 gebundene Rohdokumente.
+# =============================================================================================
+# Dieser Workflow ist NUR der sichere manuelle Ausfuehrungsweg des bereits fertig geprueften
+# Runners. Er enthaelt KEINE zweite Fachlogik: Bindung (169/122), Kandidaten (113), Quittung,
+# globale Sperre, CAS/Fencing, Budget, 0,80-USD-Laufdeckel, 35-min-Zeitdeckel und
+# Lesefehler-fail-closed bleiben vollstaendig im Runner (`scripts/verstehen-einmalig-169.js`
+# + `lib/helmut/verstehen-einmalig.js`). Kanonischer Beleg:
+# docs/betrieb/verstehen-einmalig-169-20260922.md.
+#
+# SCHARF HEISST SCHARF: Der Lauf startet NUR manuell auf main mit dem EXAKTEN
+# Bestaetigungswort, genau einmal (run_attempt 1), innerhalb der bestehenden globalen
+# Concurrency-Gruppe der kontrollierten Production-KI-Arbeit. Kein Schedule, kein Push,
+# kein PR, keine automatische Wiederholung.
+#
+# NICHT ueber scripts/lokal.js starten: der lokale Starter entfernt Production-Zugangsdaten
+# und schaltet den Speicher auf lokal — der scharfe Lauf braucht die echten Zugangsdaten.
+
+name: Verstehen 169 · Einmaliger scharfer Lauf
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_text:
+        description: >-
+          Exaktes Bestaetigungswort des 169er Auftrags
+          (EINMALIGER_VERSTEHENSLAUF_169_RUHDOKUMENTE_BESTAETIGT)
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  laeufer:
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' &&
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'workflow_dispatch' &&
+      github.run_attempt == 1 &&
+      inputs.confirm_text == 'EINMALIGER_VERSTEHENSLAUF_169_RUHDOKUMENTE_BESTAETIGT'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    concurrency:
+      group: helmut-500-kontrollierte-facharbeit
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Abhaengigkeiten (keine Runtime-Deps; defensiv, kein Lockfile)
+        run: npm install --no-audit --no-fund
+      - name: Preflight — fail closed vor dem Start (keine Secret-Werte)
+        env:
+          CONFIRM_TEXT: ${{ inputs.confirm_text }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT || secrets.AZURE_OPENAI_DEPLOYMENT }}
+        run: |
+          set -euo pipefail
+          fail() { echo "PREFLIGHT-STOP: $1"; exit 1; }
+          [ "${CONFIRM_TEXT}" = "EINMALIGER_VERSTEHENSLAUF_169_RUHDOKUMENTE_BESTAETIGT" ] \
+            || fail "confirm_text weicht vom Bestaetigungswort ab"
+          [ "${GITHUB_REPOSITORY}" = "ernisch/helmut-pilot" ] || fail "falsches Repository"
+          [ "${GITHUB_REF}" = "refs/heads/main" ] || fail "nicht auf main"
+          [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] || fail "falsches Event"
+          [ "${GITHUB_RUN_ATTEMPT}" = "1" ] || fail "run_attempt ungleich 1"
+          [ -n "${SUPABASE_URL:-}" ] || fail "SUPABASE_URL fehlt"
+          [ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ] || fail "SUPABASE_SERVICE_ROLE_KEY fehlt"
+          [ -n "${AZURE_OPENAI_KEY:-}" ] || fail "AZURE_OPENAI_KEY fehlt"
+          [ -n "${AZURE_OPENAI_ENDPOINT:-}" ] || fail "AZURE_OPENAI_ENDPOINT fehlt"
+          [ -n "${AZURE_OPENAI_DEPLOYMENT:-}" ] || fail "AZURE_OPENAI_DEPLOYMENT fehlt"
+          echo "PREFLIGHT ok (keine Secret-Werte ausgegeben)"
+      - name: Einmaliger scharfer 169er Verstehenslauf (bestehender Runner, direkt)
+        env:
+          CONFIRM_TEXT: ${{ inputs.confirm_text }}
+          # 169er-Runner-Auftrag (fest eingeschrieben, unveraenderte Grenzen):
+          HELMUT_VERSTEHEN_169_COMMIT: "ea84f26ccc380e22961335926e2d4e585cee2308"
+          HELMUT_VERSTEHEN_169_LISTE: "belege/verstehen-169-ids.json"
+          HELMUT_VERSTEHEN_169_PREIS_USD: "0.00526125"
+          HELMUT_VERSTEHEN_169_SCHARF: "1"
+          HELMUT_VERSTEHEN_169_BESTAETIGT: ${{ inputs.confirm_text }}
+          # Production-Zugang (ausschliesslich GitHub Secrets — Werte werden nie geloggt):
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT || secrets.AZURE_OPENAI_DEPLOYMENT }}
+          # Nicht geheime Laufwerte (nur fuer diesen Workflow-Prozess):
+          HELMUT_V3_STORE: "1"
+          HELMUT_STORAGE_BACKEND: "supabase"
+          HELMUT_SUPABASE_STORE_ID: "main"
+          HELMUT_SUPABASE_AUTH_STORE_ID: "main-auth"
+          VERCEL_ENV: "production"
+          HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt"
+          HELMUT_MAX_LLM_CALLS_PER_DAY: "2416"
+          HELMUT_LLM_RESERVE_UNDERSTANDING: "702"
+          HELMUT_TESTLAUF_VORRANG_REAL: "200"
+          HELMUT_ANBIETER_STEUERUNG: "on"
+          HELMUT_ANBIETER_AZURE_MINUTE: "20"
+          HELMUT_ANBIETER_AZURE_TAG: "0"
+          HELMUT_LLM_BUDGET_FAIL_CLOSED: "1"
+          HELMUT_VERSTEHEN_CAS: "on"
+          HELMUT_UNDERSTANDING_LOCK: "on"
+        run: node scripts/verstehen-einmalig-169.js

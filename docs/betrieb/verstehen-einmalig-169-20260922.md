@@ -410,3 +410,21 @@ fail-closed-Abbruch (statt des früheren „läuft als `neu` weiter"). 0 Modella
 Der nächste Schritt ist eine Betreiberentscheidung: den Planlauf gegen die **belegte** Liste
 bestätigen (rein lesend, ohne Modellaufruf) — und erst danach gesondert über einen scharfen Lauf
 entscheiden. Der Beleg selbst ist vollständig; es fehlt keine Kennung mehr.
+
+## 15 · Manueller GitHub-Actions-Ausführungsweg (vorbereitet, 2026-09-23)
+
+Für den scharfen Lauf existiert ein eigener **manueller** Workflow
+`.github/workflows/verstehen-169-einmalig.yml` — **vorbereitet, NICHT ausgeführt** (kein
+Dispatch, kein Lauf, keine Production-Wirkung). Er ist ausschließlich per `workflow_dispatch`
+auf `main` startbar, verlangt das **exakte** Bestätigungswort, läuft nur bei `run_attempt = 1`,
+hat `contents: read`, keine persistierten Git-Credentials, die bestehende globale
+Concurrency-Gruppe `helmut-500-kontrollierte-facharbeit` (`cancel-in-progress: false`) und ein
+Job-Timeout von **40 Minuten** (der Runner kontrolliert seine 35 Minuten selbst). Er startet
+direkt `node scripts/verstehen-einmalig-169.js` (**nicht** über `scripts/lokal.js`) mit den
+GitHub-Secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `AZURE_OPENAI_KEY`,
+`AZURE_OPENAI_ENDPOINT` und dem bestehenden Azure-Deployment-Muster; Werte werden nie geloggt.
+Unmittelbar vor dem Start läuft ein fail-closed-Preflight (Bestätigungswort, Repository, main,
+Event, run_attempt, nicht-leere Secrets und Deployment). Alle Fachgrenzen bleiben im Runner —
+der Workflow baut keine zweite Fachlogik. Statische Vertragsprüfung:
+`scripts/verstehen-169-workflow-test.js`. **Ein scharfer Lauf bleibt gesperrt und braucht die
+ausdrückliche Betreiberfreigabe; der Workflow-Dispatch ist selbst Teil der Freigabe.**
