@@ -138,7 +138,10 @@ function weltBauen({ dokumente = [], kos = [], links = {}, kandidatenFrei = fals
     aufrufe: [], schritt: [], fencing: 0, fencingWerte: [], gespeichert: [], geparkt: [],
     canSpend: 0, kandidatensuchen: 0, bestandslesungen: 0, besitzer: 0, gesperrt: false,
     ausgang: "ok", modellstartErlaubt: true, claimRunCalls: 0, quittiert: false, abgeschlossen: null,
-    quellenabrufe: 0, profilwrites: 0, kommunikation: 0
+    quellenabrufe: 0, profilwrites: 0, kommunikation: 0,
+    // Kostenwahrheit (Attrappe der BESTEHENDEN testkosten-Wahrheit): die volle Reservierung je
+    // Aufruf und der echte Laufkostenstand — der Deckel prueft echte Summen, keinen Durchschnitt.
+    reservierungUsd: 0.212, laufkostenUsd: 0, echteKosten: 0, kostenLesefehler: false, kostenlesungen: 0
   };
   welt.speicher = baueSpeicher(welt);
   const deps = {
@@ -171,6 +174,9 @@ function weltBauen({ dokumente = [], kos = [], links = {}, kandidatenFrei = fals
       welt.schritt.push("requestUnderstanding");
       if (welt.ausgang === "unbekannt") throw new Error("ECONNRESET (Test)");
       if (welt.ausgang === "unbrauchbar") return null;
+      // Echte Abrechnung NACH der Antwort: die echten Tokenkosten dieses Aufrufs ersetzen
+      // die volle Reservierung in der Laufbilanz.
+      welt.laufkostenUsd += welt.echteKosten;
       return ANALYSE;
     },
     save: async (ko) => { welt.gespeichert.push(ko); return { saved: true }; },
@@ -199,7 +205,13 @@ function weltBauen({ dokumente = [], kos = [], links = {}, kandidatenFrei = fals
       if (welt.quittiert) return false;
       welt.quittiert = true; return true;
     },
-    finishRun: async (d) => { welt.abgeschlossen = d; return true; }
+    finishRun: async (d) => { welt.abgeschlossen = d; return true; },
+    reservierungHoeheUsd: () => welt.reservierungUsd,
+    laufKostenUsd: async () => {
+      welt.kostenlesungen += 1;
+      if (welt.kostenLesefehler) throw new Error("kostenleser-testfehler");
+      return welt.laufkostenUsd;
+    }
   };
   return { welt, deps };
 }
@@ -475,7 +487,7 @@ async function abschnittMergedUndCas() {
   await pruefeAsync("§7/§19 im echten Lauf: merged kostet 0, update genau 1 Aufruf", async () => {
     const lauf = await V.fuehreAus({
       ids: idsVon(M.docs), deps: M.deps, execute: true, commit: "test-commit", erwartet: M.bindung,
-      preisJeAufrufUsd: 0.01, runId: "merged-lauf", now: () => new Date()
+      runId: "merged-lauf", now: () => new Date()
     });
     A.equal(lauf.ok, true);
     A.equal(lauf.modellaufrufe, 1);
@@ -516,7 +528,7 @@ async function abschnittMergedUndCas() {
     w.welt.modellstartErlaubt = false;
     const lauf = await V.fuehreAus({
       ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit",
-      erwartet: testbindung(docs), preisJeAufrufUsd: 0.01, runId: "fence", now: () => new Date()
+      erwartet: testbindung(docs), runId: "fence", now: () => new Date()
     });
     A.equal(lauf.modellaufrufe, 0);
     A.equal(w.welt.aufrufe.length, 0);
@@ -543,7 +555,7 @@ async function abschnittLaufdeckel() {
     A.equal(p.plan.kandidaten, 3);
     const lauf = await V.fuehreAus({
       ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit", erwartet: bindung,
-      preisJeAufrufUsd: 0.01, runId: "deckel", now: () => new Date()
+      runId: "deckel", now: () => new Date()
     });
     A.equal(lauf.abbruchGrund, "verstehen-aufrufdeckel-erreicht");
     A.equal(lauf.modellaufrufe, 1);
@@ -564,28 +576,89 @@ async function abschnittLaufdeckel() {
     A.ok(V.PINNED.maxModellaufrufe <= 113);
   });
 
-  await pruefeAsync("§9 der Kostendeckel greift (0,01 USD bei 0,01 USD je Aufruf)", async () => {
+  await pruefeAsync("§9 der Kostendeckel greift (echte Laufkosten + volle Reservierung, KEIN Durchschnittspreis)", async () => {
+    // 3 Kandidaten, maxUsd 0,01, volle Reservierung 0,006 je Aufruf, echte Kosten 0,004 je
+    // Aufruf. Ein Durchschnittspreis waere hier voellig egal — massgeblich ist der echte Stand:
+    // Aufruf 1: 0,000 + 0,006 <= 0,010 (laeuft, Bilanz -> 0,004)
+    // Aufruf 2: 0,004 + 0,006 <= 0,010 (laeuft, Bilanz -> 0,008)
+    // Aufruf 3: 0,008 + 0,006 = 0,014 > 0,010 -> STOPP VOR dem Provider-Aufruf.
     const docs = WOERTER.slice(0, 3).map((w, i) => rohesDokument("kosten-" + i, w));
     const w = weltBauen({ dokumente: docs });
+    w.welt.reservierungUsd = 0.006;
+    w.welt.echteKosten = 0.004;
     const lauf = await V.fuehreAus({
       ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit",
-      erwartet: testbindung(docs, { maxUsd: 0.01 }), preisJeAufrufUsd: 0.01,
-      runId: "kosten", now: () => new Date()
+      erwartet: testbindung(docs, { maxUsd: 0.01 }), runId: "kosten", now: () => new Date()
     });
     A.equal(lauf.abbruchGrund, "verstehen-kostendeckel-erreicht");
-    A.equal(lauf.modellaufrufe, 1);
+    A.equal(lauf.modellaufrufe, 2, "der dritte Aufruf wuerde die Grenze ueberschreiten");
+    A.equal(w.welt.aufrufe.length, 2, "kein Provider-Aufruf ueber der Grenze");
+    A.equal(lauf.automatischeWiederholung, false);
+    A.equal(lauf.quittungStatus, "gestoppt", "Quittung terminal");
+    A.equal(lauf.laufkostenUsd, 0.008, "der letzte echte Kostenstand bleibt sichtbar");
   });
 
-  await pruefeAsync("§9 ohne bestaetigten Preis startet kein bezahlter Lauf", async () => {
-    const docs = [rohesDokument("preis-0", WOERTER[0])];
+  await pruefeAsync("§9 Kosten genau unter der Grenze laufen weiter (Grenzfall)", async () => {
+    // 0,004 + 0,006 = 0,010 <= maxUsd 0,010: der zweite Aufruf darf noch laufen.
+    const docs = WOERTER.slice(0, 2).map((w, i) => rohesDokument("kostenrand-" + i, w));
     const w = weltBauen({ dokumente: docs });
+    w.welt.reservierungUsd = 0.006;
+    w.welt.echteKosten = 0.004;
     const lauf = await V.fuehreAus({
       ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit",
-      erwartet: testbindung(docs), preisJeAufrufUsd: null, runId: "preis", now: () => new Date()
+      erwartet: testbindung(docs, { maxUsd: 0.01 }), runId: "kostenrand", now: () => new Date()
+    });
+    A.equal(lauf.abbruchGrund, null);
+    A.equal(lauf.modellaufrufe, 2);
+    A.equal(lauf.quittungStatus, "abgeschlossen");
+  });
+
+  await pruefeAsync("§9 echte Einzelkosten stoppen, obwohl der Durchschnitt weitergemacht haette", async () => {
+    // 8 Kandidaten, maxUsd 0,10, volle Reservierung 0,05 je Aufruf, ECHTE Kosten 0,013 je
+    // Aufruf (reale Schwankung bis ~0,013 USD). Durchschnittsrechnung: 8 × 0,00526125 ≈ 0,042
+    // < 0,10 — der alte Deckel haette alle 8 laufen lassen. Der echte Stand stoppt dagegen:
+    // 0,039 + 0,05 = 0,089 <= 0,10 (4. Aufruf laeuft, Bilanz -> 0,052)
+    // 0,052 + 0,05 = 0,102 > 0,10  -> STOPP VOR dem 5. Provider-Aufruf.
+    const docs = WOERTER.slice(0, 8).map((w, i) => rohesDokument("echtkosten-" + i, w));
+    const w = weltBauen({ dokumente: docs });
+    w.welt.reservierungUsd = 0.05;
+    w.welt.echteKosten = 0.013;
+    const lauf = await V.fuehreAus({
+      ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit",
+      erwartet: testbindung(docs, { maxUsd: 0.1 }), runId: "echtkosten", now: () => new Date()
+    });
+    A.equal(lauf.abbruchGrund, "verstehen-kostendeckel-erreicht");
+    A.equal(lauf.modellaufrufe, 4, "echte Kosten stoppen vor dem ueberschreitenden Aufruf");
+    A.equal(w.welt.aufrufe.length, 4);
+    A.equal(lauf.automatischeWiederholung, false);
+    A.equal(lauf.quittungStatus, "gestoppt");
+  });
+
+  await pruefeAsync("§9 ohne Kostenwahrheit startet kein bezahlter Lauf", async () => {
+    const docs = [rohesDokument("preis-0", WOERTER[0])];
+    const w = weltBauen({ dokumente: docs });
+    delete w.deps.reservierungHoeheUsd;
+    const lauf = await V.fuehreAus({
+      ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit",
+      erwartet: testbindung(docs), runId: "preis", now: () => new Date()
     });
     A.equal(lauf.ok, false);
-    A.equal(lauf.grund, "verstehen-preis-fehlt");
+    A.equal(lauf.grund, "verstehen-kostenwahrheit-fehlt");
     A.equal(w.welt.aufrufe.length, 0);
+  });
+
+  await pruefeAsync("§9 ein unlesbarer Kostenstand stoppt fail closed VOR dem Aufruf", async () => {
+    const docs = [rohesDokument("kostenleser-0", WOERTER[0])];
+    const w = weltBauen({ dokumente: docs });
+    w.welt.kostenLesefehler = true;
+    const lauf = await V.fuehreAus({
+      ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit",
+      erwartet: testbindung(docs), runId: "kostenleser", now: () => new Date()
+    });
+    A.equal(lauf.abbruchGrund, "verstehen-kostenleser-fehler");
+    A.equal(w.welt.aufrufe.length, 0);
+    A.equal(lauf.automatischeWiederholung, false);
+    A.equal(lauf.quittungStatus, "gestoppt");
   });
 
   await pruefeAsync("§14 das 35-Minuten-Zeitlimit stoppt sicher (bestehende Restzeitwache)", async () => {
@@ -593,8 +666,7 @@ async function abschnittLaufdeckel() {
     const w = weltBauen({ dokumente: docs });
     const lauf = await V.fuehreAus({
       ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit",
-      erwartet: testbindung(docs, { maxMs: 1 }), preisJeAufrufUsd: 0.01,
-      runId: "zeit", now: () => new Date()
+      erwartet: testbindung(docs, { maxMs: 1 }), runId: "zeit", now: () => new Date()
     });
     A.equal(lauf.abbruchGrund, "verstehen-zeitdeckel-erreicht");
     A.equal(lauf.modellaufrufe, 0);
@@ -622,7 +694,7 @@ async function abschnittUnbekannt() {
   await pruefeAsync("§11 ein unbekannter Ausgang beendet den GESAMTEN Runner", async () => {
     lauf = await V.fuehreAus({
       ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit", erwartet: bindung,
-      preisJeAufrufUsd: 0.01, runId: "unbekannt", now: () => new Date()
+      runId: "unbekannt", now: () => new Date()
     });
     A.equal(lauf.ok, false);
     A.equal(lauf.abbruchGrund, "verstehen-ausgang-unbekannt");
@@ -654,7 +726,7 @@ async function abschnittQuittung() {
   const bindung = testbindung(docs);
   const lauf = (runId, now = () => new Date()) => V.fuehreAus({
     ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit", erwartet: bindung,
-    preisJeAufrufUsd: 0.01, runId, now
+    runId, now
   });
   let erst = null;
 
@@ -689,16 +761,14 @@ async function abschnittQuittung() {
     const w2 = weltBauen({ dokumente: d2 });
     const r = await V.fuehreAus({
       ids: idsVon(d2), deps: w2.deps, execute: true, commit: "test-commit",
-      erwartet: testbindung(d2, { maxMs: 1 }), preisJeAufrufUsd: 0.01,
-      runId: "q3", now: () => new Date()
+      erwartet: testbindung(d2, { maxMs: 1 }), runId: "q3", now: () => new Date()
     });
     A.equal(r.quittungStatus, "gestoppt");
     A.equal(w2.welt.abgeschlossen.status, "gestoppt");
     A.equal(w2.welt.abgeschlossen.automatischeWiederholung, false);
     const nochmal = await V.fuehreAus({
       ids: idsVon(d2), deps: w2.deps, execute: true, commit: "test-commit",
-      erwartet: testbindung(d2, { maxMs: 1 }), preisJeAufrufUsd: 0.01,
-      runId: "q4", now: () => new Date()
+      erwartet: testbindung(d2, { maxMs: 1 }), runId: "q4", now: () => new Date()
     });
     A.equal(nochmal.grund, "verstehen-bereits-verwendet");
     A.equal(w2.welt.aufrufe.length, 0);
@@ -825,7 +895,7 @@ async function abschnittTagesriegel() {
     const w = weltBauen({ dokumente: docs });
     const lauf = await V.fuehreAus({
       ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit",
-      erwartet: testbindung(docs), preisJeAufrufUsd: 0.01, runId: "gate", now: () => new Date()
+      erwartet: testbindung(docs), runId: "gate", now: () => new Date()
     });
     A.equal(lauf.modellaufrufe, 1);
     A.ok(w.welt.canSpend >= 1, "deps.canSpend (bestehendes Gate) wurde befragt");
@@ -846,7 +916,7 @@ async function abschnittAbbruchdiagnose() {
   const bindung = testbindung(docs, { maxModellaufrufe: 2 });
   const lauf = await V.fuehreAus({
     ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit", erwartet: bindung,
-    preisJeAufrufUsd: 0.01, runId: "diag", now: () => new Date()
+    runId: "diag", now: () => new Date()
   });
 
   await pruefeAsync("§21.1 bei Kandidaten ueber dem Deckel bleibt der Lauf fail closed", async () => {
@@ -955,8 +1025,7 @@ async function abschnittResolverSpuren() {
   const wOhne = weltBauen({ dokumente: ohne });
   const laufOhne = await V.fuehreAus({
     ids: idsVon(ohne), deps: wOhne.deps, execute: true, commit: "test-commit",
-    erwartet: testbindung(ohne, { maxModellaufrufe: 2 }), preisJeAufrufUsd: 0.01,
-    runId: "spur-ohne", now: () => new Date()
+    erwartet: testbindung(ohne, { maxModellaufrufe: 2 }), runId: "spur-ohne", now: () => new Date()
   });
 
   // (b) Welt mit einem vorhandenen Vorgang, den `sameVorgang` ABLEHNT.
@@ -969,8 +1038,7 @@ async function abschnittResolverSpuren() {
   const wMit = weltBauen({ dokumente: docs, kos: [ko], links: { "ko-spur": altDocs }, kandidatenFrei: true });
   const laufMit = await V.fuehreAus({
     ids: idsVon(docs), deps: wMit.deps, execute: true, commit: "test-commit",
-    erwartet: testbindung(docs, { maxModellaufrufe: 0 }), preisJeAufrufUsd: 0.01,
-    runId: "spur-mit", now: () => new Date()
+    erwartet: testbindung(docs, { maxModellaufrufe: 0 }), runId: "spur-mit", now: () => new Date()
   });
 
   await pruefeAsync("§22.1 Kandidaten ueber dem Deckel stoppen weiterhin fail closed", async () => {
@@ -1069,8 +1137,7 @@ async function abschnittResolverSpuren() {
     const M = baueMergedWelt();
     const laufM = await V.fuehreAus({
       ids: idsVon(M.docs), deps: M.deps, execute: true, commit: "test-commit",
-      erwartet: testbindung(M.docs, { maxModellaufrufe: 0 }), preisJeAufrufUsd: 0.01,
-      runId: "spur-merged", now: () => new Date()
+      erwartet: testbindung(M.docs, { maxModellaufrufe: 0 }), runId: "spur-merged", now: () => new Date()
     });
     A.equal(laufM.grund, "verstehen-kandidaten-ueber-deckel");
     A.equal(laufM.clusterDiagnose.length, 2);

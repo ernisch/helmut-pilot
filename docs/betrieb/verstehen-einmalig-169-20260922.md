@@ -328,10 +328,23 @@ ein abgebrochener oder unbekannter Ausgang wird damit nicht still wiederholbar.
 | Globaler Tagesriegel | **4 USD/UTC-Tag unverändert** | nicht berührt |
 | Tagesdeckel/Reserven | **unverändert** | nicht berührt |
 
-Der Kostenrahmen ist mit den belegten Produktionswerten konsistent (gemessen: 0,189405 USD für
-36 Aufrufe ≈ 0,00526 USD je Aufruf; 113 × 0,00526 ≈ 0,59 USD < 0,80 USD). **Ohne bestätigten
-Preis je Aufruf** (`HELMUT_VERSTEHEN_169_PREIS_USD`) startet kein bezahlter Lauf
-(`verstehen-preis-fehlt`) — „fehlt der Preis, fehlt die Zahl".
+**Drei Größen werden ausdrücklich unterschieden:**
+
+1. **Gemessener Durchschnittspreis** `0,189405 USD / 36 Aufrufe ≈ 0,00526 USD je Aufruf`
+   (belegte Messgröße der 36er-Fachabnahme). Er ist eine **Prognosegröße, KEINE harte
+   Kostenobergrenze** — reale Einzelaufrufe schwanken bis ~0,013 USD.
+2. **Harte Laufkostenobergrenze 0,80 USD** (technisch erzwungen, seit 2026-09-23): Der Lauf
+   nutzt die **bestehende** atomare Kostenwahrheit (`lib/helmut/testkosten-budget.js`): vor
+   jedem Aufruf wird die volle Reservierung gebucht (0,212 USD bei der
+   Understanding-Ausgabegrenze 3000), nach der Anbieterantwort werden die **echten
+   Tokenkosten** abgerechnet, ungeklärte Ausgänge bleiben voll reserviert. Jede Buchung
+   trägt die Laufkennung `verstehen169-…` (`bezug.runId`). Vor jedem Cluster prüft der
+   Runner: **echte Laufkosten + volle Reservierung des nächsten Aufrufs ≤ 0,80 USD** —
+   sonst Stopp `verstehen-kostendeckel-erreicht` **vor** dem Provider-Aufruf. Ohne
+   Kostenwahrheit startet nichts (`verstehen-kostenwahrheit-fehlt`); ein unlesbarer
+   Kostenstand stoppt fail closed (`verstehen-kostenleser-fehler`).
+3. **Globaler 4-USD-Tagesriegel** (atomar, unverändert) — er bleibt zusätzlich und unabhängig
+   wirksam und ersetzt den Laufdeckel nicht.
 
 ## 12 · Bedienung
 
@@ -339,14 +352,18 @@ Preis je Aufruf** (`HELMUT_VERSTEHEN_169_PREIS_USD`) startet kein bezahlter Lauf
 # Rein lesende Planung (Bindung, Dedup, Cluster, Kandidaten) — kein Modellaufruf:
 node scripts/lokal.js -- node scripts/verstehen-einmalig-169.js
 
-# Scharfer Lauf (eigene Freigabe erforderlich, bestätigendes Wort):
+# Scharfer Lauf (eigene Freigabe erforderlich, bestaetigendes Wort):
 HELMUT_VERSTEHEN_169_COMMIT=<commit> \
 HELMUT_VERSTEHEN_169_LISTE=belege/verstehen-169-ids.json \
-HELMUT_VERSTEHEN_169_PREIS_USD=<preis> \
 HELMUT_VERSTEHEN_169_SCHARF=1 \
 HELMUT_VERSTEHEN_169_BESTAETIGT=EINMALIGER_VERSTEHENSLAUF_169_RUHDOKUMENTE_BESTAETIGT \
-  node scripts/lokal.js -- node scripts/verstehen-einmalig-169.js
+  node scripts/verstehen-einmalig-169.js
 ```
+
+Kein Durchschnittspreis-Parameter mehr: der 0,80-USD-Laufdeckel liest die echten Laufkosten
+aus der bestehenden atomaren Kostenablage (§11). Voraussetzung ist die aktive Reservierung
+(`VERCEL_ENV=production`, `HELMUT_TESTLAUF_KOMMUNIKATION=gesperrt`) — sonst stoppt der Lauf
+fail closed.
 
 Der Commit wird **nicht** aus dem laufenden Prozess geraten, sondern ausdrücklich übergeben
 (`verstehen-commit-fehlt` sonst): eine selbst erratene Bindung wäre keine Bindung.
@@ -423,6 +440,9 @@ Job-Timeout von **40 Minuten** (der Runner kontrolliert seine 35 Minuten selbst)
 direkt `node scripts/verstehen-einmalig-169.js` (**nicht** über `scripts/lokal.js`) mit den
 GitHub-Secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `AZURE_OPENAI_KEY`,
 `AZURE_OPENAI_ENDPOINT` und dem bestehenden Azure-Deployment-Muster; Werte werden nie geloggt.
+Der harte 0,80-USD-Laufdeckel nutzt die bestehende atomare Kostenwahrheit (volle Reservierung
+je Aufruf + echte Abrechnung, Laufkennung `verstehen169-…`) — ein Durchschnittspreis wird
+**nicht** verwendet (§11).
 Unmittelbar vor dem Start läuft ein fail-closed-Preflight (Bestätigungswort, Repository, main,
 Event, run_attempt, nicht-leere Secrets und Deployment). Alle Fachgrenzen bleiben im Runner —
 der Workflow baut keine zweite Fachlogik. Statische Vertragsprüfung:

@@ -86,11 +86,11 @@ check("keine Resolver-Nachbildung", !/deriveVorgangId|clusterRawDocuments|sameVo
 // 9 · Auftragswerte des Runners — unveraenderte Grenzen, nur die fuenf erlaubten Env-Keys.
 check("Commit ea84f26c im Workflow", YML.includes('HELMUT_VERSTEHEN_169_COMMIT: "ea84f26ccc380e22961335926e2d4e585cee2308"'));
 check("gebundene Liste im Workflow", YML.includes('HELMUT_VERSTEHEN_169_LISTE: "belege/verstehen-169-ids.json"'));
-check("belegter Preis 0.00526125 im Workflow", YML.includes('HELMUT_VERSTEHEN_169_PREIS_USD: "0.00526125"'));
+check("kein Durchschnittspreis als harte Obergrenze im Workflow", !YML.includes("HELMUT_VERSTEHEN_169_PREIS_USD"));
 check("SCHARF-Flag auf 1", YML.includes('HELMUT_VERSTEHEN_169_SCHARF: "1"'));
 check("Bestaetigungswort kommt aus dem Input", YML.includes("HELMUT_VERSTEHEN_169_BESTAETIGT: ${{ inputs.confirm_text }}"));
 {
-  const erlaubt = new Set(["COMMIT", "LISTE", "PREIS_USD", "SCHARF", "BESTAETIGT"]);
+  const erlaubt = new Set(["COMMIT", "LISTE", "SCHARF", "BESTAETIGT"]);
   const alle = [...YML.matchAll(/HELMUT_VERSTEHEN_169_([A-Z0-9_]+)/g)].map((m) => m[1]);
   const fremde = alle.filter((k) => !erlaubt.has(k));
   check("keine fremden 169er-Env-Keys", fremde.length === 0 && alle.length > 0);

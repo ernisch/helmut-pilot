@@ -80,7 +80,6 @@ jobs:
           # 169er-Runner-Auftrag (fest eingeschrieben, unveraenderte Grenzen):
           HELMUT_VERSTEHEN_169_COMMIT: "ea84f26ccc380e22961335926e2d4e585cee2308"
           HELMUT_VERSTEHEN_169_LISTE: "belege/verstehen-169-ids.json"
-          HELMUT_VERSTEHEN_169_PREIS_USD: "0.00526125"
           HELMUT_VERSTEHEN_169_SCHARF: "1"
           HELMUT_VERSTEHEN_169_BESTAETIGT: ${{ inputs.confirm_text }}
           # Production-Zugang (ausschliesslich GitHub Secrets — Werte werden nie geloggt):
