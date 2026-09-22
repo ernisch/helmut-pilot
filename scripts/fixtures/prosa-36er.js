@@ -25,7 +25,7 @@ const faelle = [
   { klasse: "sachgebiet-finanzwirkung",
     quelle: "Der Stadtrat beschliesst einen Zuschuss von 20 Euro fuer Busfahrkarten. Berechtigte erhalten ihn beim Kauf.",
     tatsache: "Der Stadtrat beschliesst einen Zuschuss von 20 Euro fuer Busfahrkarten.",
-    relevanz: "Für deinen Schwerpunkt Oeffentliche Verwaltung ist konkret relevant, dass der Stadtrat einen 20-Euro-Zuschuss für Busfahrkarten beschlossen hat; daran lässt sich die politische Wirkung der Förderung auf den Nahverkehr bewerten.",
+    relevanz: "Für deinen Schwerpunkt Oeffentliche Verwaltung ist konkret relevant, dass der Stadtrat einen 20-Euro-Zuschuss für Busfahrkarten beschliesst; daran lässt sich die politische Wirkung der Förderung auf den Nahverkehr bewerten.",
     positiv: "Du koenntest die Wirkung des Zuschusses auf den Nahverkehr politisch pruefen.",
     negativ: "Die neue Steuer belastet Busfahrkarten zusätzlich.",
     unklar: "Ueber die Gegenfinanzierung des Zuschusses ist nichts gesagt; dazu laesst sich nichts belegen." },
