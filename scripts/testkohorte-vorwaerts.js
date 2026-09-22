@@ -186,7 +186,7 @@ async function main() {
   // eine Handliste duerfen die 475er Zielmenge oder ihre Freigabe veraendern.
   if (argv.some((a) => a.startsWith("--ziel"))) {
     const rest = argv.slice(1);
-    if (![...WERKZEUGE, "vorpruefung", "reaktivierung", "fachzyklus", "textnachlauf", "quellenkontext", "quellenkontext-ruhe"].includes(werkzeug)
+    if (![...WERKZEUGE, "vorpruefung", "reaktivierung", "fachzyklus", "textnachlauf", "quellenkontext", "quellenkontext-ruhe", "quellenvorlauf"].includes(werkzeug)
         || rest.filter((a) => a === "--ziel=500").length !== 1
         || rest.some((a) => !["--ziel=500", "--scharf"].includes(a))
         || rest.filter((a) => a === "--scharf").length > 1
