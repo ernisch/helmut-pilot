@@ -13,6 +13,7 @@ const SD = require("../lib/helmut/source-demand");
 const SP = require("../lib/helmut/scalable-pipeline");
 
 const LOCK = "500-quellenvorlauf";
+const RUN_KEY = "quellenvorlauf500-20260922-a";
 const MAX_SOURCE_FETCH = D.QUELLENVORLAUF_MAX_SOURCE_FETCH;
 const MAX_MS = D.QUELLENVORLAUF_MAX_MS;
 const PARALLEL = 1;
@@ -164,7 +165,7 @@ async function ausfuehren({ bestand, bestandsauswahl, env = process.env, now = (
   const storage = deps.storage || require("../lib/helmut/storage");
   const handler = deps.handleSourceFetch || SP.HANDLER.source_fetch;
   const protectionBefore = D.hash(await snapshot());
-  let locked = false;
+  let locked = false, claimed = false, quittiert = false;
   const verstehen = new Map();
   const ergebnisse = [];
   const runId = String(env.GITHUB_RUN_ID);
@@ -195,6 +196,16 @@ async function ausfuehren({ bestand, bestandsauswahl, env = process.env, now = (
       }
     };
     await guard(120000, true);
+    D.fordere(typeof deps.claimRun === "function" && typeof deps.finishRun === "function",
+      "quellenvorlauf-quittungsadapter-fehlt");
+    claimed = await deps.claimRun({
+      version: 1, key: RUN_KEY, runId, commit: env.GITHUB_SHA || null,
+      zielHash: plan.ziel.zielHash, planHash: plan.planHash,
+      status: "laeuft", gestartetAm: start.toISOString(),
+      sourceFetchGeplant: plan.jobs.length, maxSourceFetch: MAX_SOURCE_FETCH,
+      modellaufrufe: 0
+    });
+    D.fordere(claimed === true, "quellenvorlauf-bereits-verwendet");
 
     const base = SP.workerDeps({
       env,
@@ -260,6 +271,22 @@ async function ausfuehren({ bestand, bestandsauswahl, env = process.env, now = (
     report.ergebnisse = ergebnisse.filter(Boolean);
     report.ok = !stop && report.sourceFetchVersucht === plan.jobs.length
       && report.sourceFetchFehlgeschlagen === 0;
+    quittiert = await deps.finishRun({
+      version: 1, key: RUN_KEY, runId, commit: env.GITHUB_SHA || null,
+      zielHash: plan.ziel.zielHash, planHash: plan.planHash,
+      status: report.ok ? "abgeschlossen" : "teilweise",
+      beendetAm: now().toISOString(),
+      sourceFetchGeplant: plan.jobs.length,
+      sourceFetchVersucht: report.sourceFetchVersucht,
+      sourceFetchBestaetigt: report.sourceFetchBestaetigt,
+      sourceFetchFehlgeschlagen: report.sourceFetchFehlgeschlagen,
+      neueRohdokumente: report.neueRohdokumente,
+      understandingAuftraegeVorbereitet: report.understandingAuftraegeVorbereitet,
+      understandingDokumente: report.understandingDokumente,
+      understandingEingereiht: 0, modellaufrufe: 0
+    });
+    D.fordere(quittiert === true, "quellenvorlauf-quittung-unbekannt");
+    report.quittung = RUN_KEY;
 
     if (locked) {
       await (deps.releaseLock ? deps.releaseLock(LOCK) : storage.releasePipelineLock(LOCK));
@@ -273,6 +300,24 @@ async function ausfuehren({ bestand, bestandsauswahl, env = process.env, now = (
       "quellenvorlauf-zielmenge-veraendert");
     return report;
   } catch (e) {
+    if (claimed && !quittiert && typeof deps.finishRun === "function") {
+      try {
+        quittiert = await deps.finishRun({
+          version: 1, key: RUN_KEY, runId, commit: env.GITHUB_SHA || null,
+          zielHash: plan.ziel.zielHash, planHash: plan.planHash,
+          status: "gestoppt", beendetAm: now().toISOString(),
+          grund: e instanceof D.DirektAbbruch ? e.grund : String(e?.message || "quellenvorlauf-fehler").slice(0, 160),
+          sourceFetchGeplant: plan.jobs.length,
+          sourceFetchVersucht: ergebnisse.filter(Boolean).length,
+          sourceFetchBestaetigt: ergebnisse.filter(x => x?.ok).length,
+          sourceFetchFehlgeschlagen: ergebnisse.filter(x => x && !x.ok).length,
+          neueRohdokumente: ergebnisse.reduce((n, x) => n + Number(x?.neueRohdokumente || 0), 0),
+          understandingAuftraegeVorbereitet: verstehen.size,
+          understandingDokumente: [...verstehen.values()].reduce((n, x) => n + x.payload.dokumentIds.length, 0),
+          understandingEingereiht: 0, modellaufrufe: 0
+        }) === true;
+      } catch (_) { quittiert = false; }
+    }
     return {
       ...report,
       ok: false,
@@ -287,7 +332,9 @@ async function ausfuehren({ bestand, bestandsauswahl, env = process.env, now = (
       understandingEingereiht: 0,
       ergebnisse: ergebnisse.filter(Boolean),
       grund: e instanceof D.DirektAbbruch ? e.grund : String(e?.message || "quellenvorlauf-fehler").slice(0, 200),
-      automatischeWiederholung: false
+      automatischeWiederholung: false,
+      quittung: quittiert ? RUN_KEY : null,
+      zustandUnbekannt: claimed && !quittiert
     };
   } finally {
     if (locked) {
@@ -296,4 +343,4 @@ async function ausfuehren({ bestand, bestandsauswahl, env = process.env, now = (
   }
 }
 
-module.exports = { bauePlan, ausfuehren, LOCK, MAX_SOURCE_FETCH, MAX_MS, PARALLEL };
+module.exports = { bauePlan, ausfuehren, LOCK, RUN_KEY, MAX_SOURCE_FETCH, MAX_MS, PARALLEL };
