@@ -270,6 +270,212 @@ function runtime(overrides = {}) {
     A(!/^\s*HELMUT_SOURCE_MODE:/m.test(quelle), "HELMUT_SOURCE_MODE darf kein workflow-/step-weiter env-Eintrag sein");
   });
 
+  // ── EINMALIGE FORTSETZUNG des teilweise fehlgeschlagenen Laufs (Run 35725341566) ──────────
+  // Der Fortsetzungsmodus darf ausschliesslich die 38 damals fehlgeschlagenen Auftraege erneut
+  // abrufen. Alle Pruefgruppen laufen OHNE Netz, ohne Modell und ohne Production — sie belegen
+  // nur den fail-closed Vertrag. Die eingefrorene Restmenge stammt rein lesend aus dem Run-Log.
+  const restJob = (idempotencyKey, tenantId = null) => ({ jobType: "source_fetch", tenantId,
+    idempotencyKey, freshnessWindow: "2026-09-22T08Z", payload: { quelle: { id: "q-" + idempotencyKey } } });
+  const restJobs = () => G.FORTSETZUNG.restKeys.map(k => restJob(k));
+  const fortsetzungsPlan = jobs => ({ ziel: { zielHash: G.FORTSETZUNG.zielHash },
+    planHash: G.FORTSETZUNG.planHash, jobs });
+  async function fortsetzungsRuntime(overrides = {}) {
+    const h = runtime(overrides);
+    const real = await G.bauePlan({ bestand: h.s, bestandsauswahl: auswahl, env: env(), now: h.now, deps: h.deps });
+    const plan = { ...real, jobs: restJobs(), sourceFetch: 38, geteilt: 38, persoenlich: 0 };
+    return { h, plan, deps: { ...h.deps, bauePlan: async () => plan } };
+  }
+
+  await test("Fortsetzung friert exakt die 38 fehlgeschlagenen Auftraege ein", () => {
+    A.equal(G.FORTSETZUNG.restAnzahl, 38);
+    A.equal(G.FORTSETZUNG.restKeys.length, 38);
+    A.equal(new Set(G.FORTSETZUNG.restKeys).size, 38, "Restmenge enthaelt Doppel");
+    A.equal(D.hash([...G.FORTSETZUNG.restKeys].sort()), G.FORTSETZUNG.restHash,
+      "RestHash passt nicht zur eingefrorenen Liste");
+    A.equal(G.FORTSETZUNG.restKeys.filter(k => G.FORTSETZUNG.erfolgreichKeys.includes(k)).length, 0,
+      "ein erfolgreicher Auftrag darf nicht in der Restmenge stehen");
+    // Die Fortsetzung nutzt einen EIGENEN Schluessel; die verbrauchte Quittung bleibt unberuehrt.
+    A.equal(G.FORTSETZUNG.key, "quellenvorlauf500-20260922-b");
+    A.notEqual(G.FORTSETZUNG.key, G.RUN_KEY);
+    A.equal(G.FORTSETZUNG.originalRunId, "35725341566");
+  });
+
+  await test("Fortsetzung laest nur die Restmenge zu und bindet sich an zielHash/planHash", () => {
+    const alle = [...restJobs(), ...G.FORTSETZUNG.erfolgreichKeys.map(k => restJob(k))];
+    const rest = G.pruefeFortsetzung(fortsetzungsPlan(alle));
+    A.equal(rest.length, 38);
+    A(rest.every(j => !G.FORTSETZUNG.erfolgreichKeys.includes(j.idempotencyKey)));
+    // Abweichender Plan: STOPP vor jedem Abruf, kein stiller Wechsel auf einen neuen Plan.
+    A.throws(() => G.pruefeFortsetzung({ ziel: { zielHash: "0".repeat(64) },
+      planHash: G.FORTSETZUNG.planHash, jobs: restJobs() }),
+      e => e.grund === "quellenvorlauf-fortsetzung-zielhash-abweichend");
+    A.throws(() => G.pruefeFortsetzung({ ziel: { zielHash: G.FORTSETZUNG.zielHash },
+      planHash: "0".repeat(64), jobs: restJobs() }),
+      e => e.grund === "quellenvorlauf-fortsetzung-planhash-abweichend");
+    // Fehlt auch nur einer der 38, ist die Restmenge nicht mehr die freigegebene.
+    A.throws(() => G.pruefeFortsetzung(fortsetzungsPlan(restJobs().slice(1))),
+      e => e.grund === "quellenvorlauf-fortsetzung-restmenge-abweichend");
+  });
+
+  await test("Kein bereits erfolgreicher Auftrag und kein fremder Auftrag wird abgerufen", () => {
+    for (const k of G.FORTSETZUNG.erfolgreichKeys) {
+      A.throws(() => G.pruefeRestauftrag(restJob(k)),
+        e => e.grund === "quellenvorlauf-fortsetzung-erfolg-erneut", k);
+    }
+    A.throws(() => G.pruefeRestauftrag(restJob("source_fetch|geteilt|deadbeefdeadbeefdeadbeefdeadbeef|2026-09-22T08Z")),
+      e => e.grund === "quellenvorlauf-fortsetzung-fremder-auftrag");
+  });
+
+  await test("Strukturierte Anbietervertagung wird honoriert, aber genau einmal begrenzt", async () => {
+    const jetzt = () => new Date(ZEIT);
+    const ende = jetzt().getTime() + 20 * 60 * 1000;
+    let rufe = 0; const gewartet = [];
+    const erst = async () => { rufe++;
+      if (rufe === 1) { const e = new Error("anbietergrenze: minutengrenze");
+        e.anbieterVertagung = { bereich: "google|news|quellenabruf", wartenMs: 1200, grund: "minutengrenze" }; throw e; }
+      return { ok: true }; };
+    const r = await G.versuchMitVertagung(erst, { aktiv: true, jetzt, ende, schlafe: async ms => { gewartet.push(ms); } });
+    A.equal(r.ok, true);
+    A.equal(r.zusatzversuch, true);
+    A.equal(rufe, 2, "genau ein Zusatzversuch");
+    A.deepEqual(gewartet, [1200], "es wird die STRUKTURIERTE wartenMs abgewartet");
+  });
+
+  await test("Zweite Vertagung desselben Auftrags endet als Fehler ohne weitere Wiederholung", async () => {
+    const jetzt = () => new Date(ZEIT);
+    const ende = jetzt().getTime() + 20 * 60 * 1000;
+    let rufe = 0, gewartet = 0;
+    const erst = async () => { rufe++; const e = new Error("anbietergrenze: minutengrenze");
+      e.anbieterVertagung = { wartenMs: 1000, grund: "minutengrenze" }; throw e; };
+    const r = await G.versuchMitVertagung(erst, { aktiv: true, jetzt, ende, schlafe: async () => { gewartet++; } });
+    A.equal(r.ok, false);
+    A.equal(r.zusatzversuch, true);
+    A.equal(r.vertagung, true);
+    A.equal(rufe, 2, "keine Warteschleife");
+    A.equal(gewartet, 1, "nur ein Warten");
+  });
+
+  await test("Zeitbudget verhindert Warten, wenn die sichere Restzeit danach fehlt", async () => {
+    const jetzt = () => new Date(ZEIT);
+    const ende = jetzt().getTime() + 60 * 1000;      // nur 60 s Restzeit
+    let rufe = 0, gewartet = 0;
+    const erst = async () => { rufe++; const e = new Error("anbietergrenze: minutengrenze");
+      e.anbieterVertagung = { wartenMs: 30000, grund: "minutengrenze" }; throw e; };
+    const r = await G.versuchMitVertagung(erst, { aktiv: true, jetzt, ende, schlafe: async () => { gewartet++; } });
+    A.equal(r.ok, false);
+    A.equal(r.vertagung, true);
+    A.equal(rufe, 1, "kein Zusatzversuch ohne Zeitreserve");
+    A.equal(gewartet, 0, "kein Warten ohne Zeitreserve");
+  });
+
+  await test("Ausserhalb der Fortsetzung bleibt der Abruffehler unveraendert (kein Zusatzversuch)", async () => {
+    let rufe = 0, gewartet = 0;
+    const erst = async () => { rufe++; const e = new Error("echter Abruffehler");
+      e.anbieterVertagung = { wartenMs: 1000, grund: "minutengrenze" }; throw e; };
+    const r = await G.versuchMitVertagung(erst, { aktiv: false, jetzt: () => new Date(ZEIT),
+      ende: Date.now() + 3600000, schlafe: async () => { gewartet++; } });
+    A.equal(r.ok, false);
+    A.equal(r.vertagung, false);
+    A.equal(rufe, 1);
+    A.equal(gewartet, 0);
+    A.equal(r.fehler.message, "echter Abruffehler");
+  });
+
+  await test("Fortsetzung bindet den eigenen Quittungsschluessel, bleibt rein lesend im Planmodus", async () => {
+    const { h, deps } = await fortsetzungsRuntime();
+    const r = await G.ausfuehren({ bestand: h.s, bestandsauswahl: auswahl, env: env(),
+      now: h.now, snapshot: h.snapshot, pruefeBetrieb: h.pruefeBetrieb, execute: false,
+      fortsetzung: true, deps });
+    A.equal(r.reinLesend, true);
+    A.equal(r.fortsetzung, true);
+    A.equal(r.quittungsschluessel, G.FORTSETZUNG.key);
+    A.equal(r.sourceFetchGeplant, 38);
+    A.equal(h.handlerCalls, 0);
+    A.equal(h.claimed, false);
+    // Auch ueber die Umgebungsvariable (Workflowzweig) wird der Fortsetzungsmodus gewaehlt.
+    const zweite = await fortsetzungsRuntime();
+    const r2 = await G.ausfuehren({ bestand: zweite.h.s, bestandsauswahl: auswahl,
+      env: { ...env(), HELMUT_QUELLENVORLAUF_FORTSETZUNG: "1" }, now: zweite.h.now,
+      snapshot: zweite.h.snapshot, pruefeBetrieb: zweite.h.pruefeBetrieb, execute: false, deps: zweite.deps });
+    A.equal(r2.fortsetzung, true);
+    A.equal(r2.quittungsschluessel, G.FORTSETZUNG.key);
+    A.equal(zweite.h.handlerCalls, 0);
+  });
+
+  await test("Fortsetzung stoppt vor jedem Abruf, sobald ein fremder Auftrag im Plan steht", async () => {
+    const { h, plan, deps } = await fortsetzungsRuntime();
+    const fremd = restJob("source_fetch|geteilt|deadbeefdeadbeefdeadbeefdeadbeef|2026-09-22T08Z");
+    const r = await G.ausfuehren({ bestand: h.s, bestandsauswahl: auswahl, env: env(),
+      now: h.now, snapshot: h.snapshot, pruefeBetrieb: h.pruefeBetrieb, execute: true,
+      fortsetzung: true, deps: { ...deps, bauePlan: async () => ({ ...plan, jobs: [fremd, ...restJobs()] }) } });
+    A.equal(r.ok, false);
+    A.equal(r.grund, "quellenvorlauf-fortsetzung-fremder-auftrag");
+    A.equal(h.handlerCalls, 0, "kein Abruf vor dem Stopp");
+  });
+
+  await test("Fortsetzung fuehrt die 38 Restauftraege aus, ohne Modell- oder Understanding-Einreihung", async () => {
+    const { h, deps } = await fortsetzungsRuntime();
+    const r = await G.ausfuehren({ bestand: h.s, bestandsauswahl: auswahl, env: env(),
+      now: h.now, snapshot: h.snapshot, pruefeBetrieb: h.pruefeBetrieb, execute: true,
+      fortsetzung: true, deps });
+    A.equal(r.ok, true, JSON.stringify(r));
+    A.equal(r.sourceFetchGeplant, 38);
+    A.equal(r.sourceFetchVersucht, 38);
+    A.equal(r.sourceFetchBestaetigt, 38);
+    A.equal(r.sourceFetchFehlgeschlagen, 0);
+    A.equal(r.modellaufrufe, 0);
+    A.equal(r.understandingEingereiht, 0);
+    A.equal(r.understandingAuftraegeVorbereitet, 38);
+    A.equal(h.handlerCalls, 38);
+    A.equal(r.quittung, G.FORTSETZUNG.key);
+    // Start- UND Abschlussquittung tragen Schluessel und Zusatzbindung.
+    A.equal(h.receipt.key, G.FORTSETZUNG.key);
+    A.equal(h.receipt.originalRunId, G.FORTSETZUNG.originalRunId);
+    A.equal(h.receipt.restAnzahl, 38);
+    A.equal(h.receipt.restHash, G.FORTSETZUNG.restHash);
+    A.equal(h.locked, false);
+  });
+
+  await test("Bereits verwendete Fortsetzungsquittung blockiert den zweiten Lauf vor dem Abruf", async () => {
+    const { h, deps } = await fortsetzungsRuntime({ deps: { claimRun: async () => false } });
+    const r = await G.ausfuehren({ bestand: h.s, bestandsauswahl: auswahl, env: env(),
+      now: h.now, snapshot: h.snapshot, pruefeBetrieb: h.pruefeBetrieb, execute: true,
+      fortsetzung: true, deps });
+    A.equal(r.ok, false);
+    A.equal(r.grund, "quellenvorlauf-bereits-verwendet");
+    A.equal(h.handlerCalls, 0);
+  });
+
+  await test("Der normale Planpfad bleibt unveraendert (keine Fortsetzung, kein Restfenster)", async () => {
+    const h = runtime();
+    const p = await G.bauePlan({ bestand: h.s, bestandsauswahl: auswahl, env: env(), now: h.now, deps: h.deps });
+    A.equal(p.fortsetzung, undefined);
+    A.equal(p.sourceFetch, p.jobs.length);
+    A.equal(p.jobs.length, 1);
+  });
+
+  await test("Fortsetzung veraendert keine Anbietergrenze und keinen anderen Workflow-Schritt", () => {
+    // Die Google-Minutengrenze bleibt unveraendert bei 30 (keine Erhoehung, keine Umgehung).
+    const ASt = require("../lib/helmut/anbieter-steuerung");
+    A.deepEqual(ASt.grenzenFuer("google", {}), { minute: 30, tag: 0 });
+    // Der Fortsetzungszweig nutzt denselben CLI-Vorgang `quellenvorlauf` (kein neues Direktziel).
+    const yml = fs.readFileSync(".github/workflows/500-direkt-ausbau.yml", "utf8");
+    A(yml.includes("quellenvorlauf-fortsetzung"), "Fortsetzungsmodus fehlt im Workflow");
+    const z = yml.split("\n").map(s => s.trim());
+    const i = z.findIndex(s => s === "export HELMUT_QUELLENVORLAUF_FORTSETZUNG=1");
+    A(i > 0, "Fortsetzungsvariable wird nicht gesetzt");
+    A(z[i - 1].includes('"$HELMUT_DIREKT_SCHRITT" = "quellenvorlauf-fortsetzung"'),
+      "Fortsetzungsvariable darf nur im Fortsetzungszweig gesetzt werden: " + z[i - 1]);
+    A(!/^\s*HELMUT_QUELLENVORLAUF_FORTSETZUNG:/m.test(yml), "kein workflow-/step-weites env");
+    // Der geteilte Worker-Handler bleibt unveraendert: er wirft weiterhin den schlichten Fehler,
+    // damit das Verhalten des regulaeren Workers (und aller anderen Aufrufer) identisch bleibt.
+    const pipeline = fs.readFileSync("lib/helmut/scalable-pipeline.js", "utf8");
+    A(pipeline.includes('throw new Error(ergebnis.error || "abruf-fehlgeschlagen")'),
+      "der geteilte source_fetch-Handler wurde veraendert");
+    A(!pipeline.includes("anbieterVertagung = ergebnis.anbieterVertagung"),
+      "der geteilte Handler darf die Vertagung nicht selbst anhaengen");
+  });
+
   // Die Allowlist der Direktziele darf nicht von den tatsaechlich geplanten
   // Vorgaengen abdriften: der Workflow ruft die CLI auf, und ein fehlender
   // Eintrag liess den Vorlauf in Production fail closed abbrechen.

@@ -386,30 +386,36 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         Prefer: "return=representation"
       };
       const claimRun = async data => {
-        const alt = await db("helmut_store?select=id&id=eq." + encodeURIComponent(QV.RUN_KEY) + "&limit=2");
+        // Der Schluessel kommt aus den Daten (Fortsetzung nutzt einen EIGENEN Schluessel);
+        // ohne Angabe bleibt es exakt der bisherige RUN_KEY.
+        const key = data.key || QV.RUN_KEY;
+        const alt = await db("helmut_store?select=id&id=eq." + encodeURIComponent(key) + "&limit=2");
         D.fordere(alt.length <= 1, "quellenvorlauf-quittung-nicht-eindeutig");
         if (alt.length) return false;
         const res = await fetchFn(receiptUrl, {
           method: "POST", redirect: "error", signal: AbortSignal.timeout(20000),
-          headers: receiptHeaders, body: JSON.stringify({ id: QV.RUN_KEY, data })
+          headers: receiptHeaders, body: JSON.stringify({ id: key, data })
         });
         D.fordere([200, 201].includes(res.status), "quellenvorlauf-quittung-schreiben-fehlgeschlagen");
         const rows = await res.json();
-        D.fordere(Array.isArray(rows) && rows.length === 1 && rows[0].id === QV.RUN_KEY,
+        D.fordere(Array.isArray(rows) && rows.length === 1 && rows[0].id === key,
           "quellenvorlauf-quittung-schreiben-unbekannt");
         return true;
       };
       const finishRun = async data => {
-        const alt = await db("helmut_store?select=id,data&id=eq." + encodeURIComponent(QV.RUN_KEY) + "&limit=2");
+        const key = data.key || QV.RUN_KEY;
+        const alt = await db("helmut_store?select=id,data&id=eq." + encodeURIComponent(key) + "&limit=2");
         D.fordere(alt.length === 1 && alt[0].data?.runId === data.runId
-          && alt[0].data?.planHash === data.planHash, "quellenvorlauf-quittung-abweichend");
-        const res = await fetchFn(receiptUrl + "?id=eq." + encodeURIComponent(QV.RUN_KEY), {
+          && alt[0].data?.planHash === data.planHash
+          && (data.originalRunId ? alt[0].data?.originalRunId === data.originalRunId : true),
+        "quellenvorlauf-quittung-abweichend");
+        const res = await fetchFn(receiptUrl + "?id=eq." + encodeURIComponent(key), {
           method: "PATCH", redirect: "error", signal: AbortSignal.timeout(20000),
           headers: receiptHeaders, body: JSON.stringify({ data })
         });
         D.fordere(res.status === 200, "quellenvorlauf-quittung-abschluss-fehlgeschlagen");
         const rows = await res.json();
-        D.fordere(Array.isArray(rows) && rows.length === 1 && rows[0].id === QV.RUN_KEY,
+        D.fordere(Array.isArray(rows) && rows.length === 1 && rows[0].id === key,
           "quellenvorlauf-quittung-abschluss-unbekannt");
         return true;
       };
