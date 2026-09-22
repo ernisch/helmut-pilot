@@ -245,6 +245,19 @@ function runtime(overrides = {}) {
     A(yml.includes('testkohorte-vorwaerts.js "$HELMUT_DIREKT_SCHRITT" --ziel=500 --scharf'));
   });
 
+  // Die Allowlist der Direktziele darf nicht von den tatsaechlich geplanten
+  // Vorgaengen abdriften: der Workflow ruft die CLI auf, und ein fehlender
+  // Eintrag liess den Vorlauf in Production fail closed abbrechen.
+  await test("CLI akzeptiert jeden geplanten Vorgang als Direktziel (kein Direktziel-Abbruch)", () => {
+    const { spawnSync } = require("node:child_process");
+    for (const w of ["vorpruefung", ...Object.keys(D.WORTE)]) {
+      const r = spawnSync(process.execPath, ["scripts/testkohorte-vorwaerts.js", w, "--ziel=500"],
+        { encoding: "utf8", env: { ...process.env, HELMUT_SOURCE_MODE: "off" } });
+      A(!String(r.stderr || "").includes("Direktziel"),
+        `CLI-Allowlist lehnt ${w} ab: ${String(r.stderr).slice(0, 120)}`);
+    }
+  });
+
   await test("500er Adapter trennt read only Plan und scharfen Quellen Vorlauf", async () => {
     const s = bestand();
     const config = {
