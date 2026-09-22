@@ -476,6 +476,122 @@ function runtime(overrides = {}) {
       "der geteilte Handler darf die Vertagung nicht selbst anhaengen");
   });
 
+  // ── SCHUTZVERTRAG DES QUELLEN-VORLAUFS (enge Projektion) ───────────────────────────────────
+  // Der Vertrag schuetzt Identitaet, Zugriff und Fachinhalt. Reine Auth-Laufzeitmetadaten
+  // duerfen sich waehrend eines Laufes legitim aendern (belegter Anlass: Run 35732896378).
+  const projektionsHash = s => D.hash(D.quellenvorlaufSchutzprojektion(s));
+  const mutiert = f => { const s = kopie(bestand()); f(s); return s; };
+
+  await test("Schutzprojektion ignoriert reine Auth-Laufzeitdaten und laesst den Bestand unberuehrt", () => {
+    const basis = bestand();
+    A.equal(projektionsHash(kopie(basis)), projektionsHash(basis), "unveraenderter Bestand");
+    const gruen = [
+      ["_authStoreRevision", s => { s.auth._authStoreRevision = "11111111-1111-4111-8111-111111111111"; }],
+      ["Session", s => { s.auth.sessions = [{ id: "s1", userId: "konto-bestand-0" }]; }],
+      ["passwordTokens", s => { s.auth.passwordTokens = [{ id: "pt1" }]; }],
+      ["lastSeenAt", s => { s.auth.users[0].lastSeenAt = "2026-09-22T13:33:52.000Z"; }],
+      ["lastLoginAt", s => { s.auth.users[0].lastLoginAt = "2026-09-22T13:33:52.000Z"; }],
+      ["loginCount/openCount", s => { s.auth.users[0].loginCount = 9; s.auth.users[0].openCount = 4; }],
+      ["updatedAt (Konto)", s => { s.auth.users[0].updatedAt = "2026-09-22T13:33:52.000Z"; }],
+      ["llmUsage", s => { s.auth.llmUsage = [{ id: "u1" }]; }],
+      ["systemErrors/auditEvents", s => { s.auth.systemErrors = [{ id: "e1" }]; s.auth.auditEvents = [{ id: "a1" }]; }],
+      ["pipelineLocks/processRuns/dailyInputs", s => { s.auth.pipelineLocks = { x: 1 }; s.auth.processRuns = [{ id: "pr1" }]; s.auth.dailyInputs = [{ id: "d1" }]; }],
+      ["adminRecoveryLastRun/understandingRetries/updateRetries", s => { s.auth.adminRecoveryLastRun = { status: "running" }; s.auth.understandingRetries = { v1: 2 }; s.auth.updateRetries = { v2: 1 }; }],
+      ["monitoringWebhookDelivery/sourceModeShadowLastRun/testKostenTage", s => { s.auth.monitoringWebhookDelivery = { at: "x" }; s.auth.sourceModeShadowLastRun = { at: "x" }; s.auth.testKostenTage = { "2026-09-22": { version: 2 } }; }],
+      ["main.rawItems (kein Schutzgut des Vertrags)", s => { s.main.rawItems = [{ id: "rd-neu" }]; }],
+      ["mandate.updated_at (technisches Laufzeitfeld)", s => { s.mandate[0].updated_at = "2026-09-22T13:33:52.000Z"; }]
+    ];
+    for (const [name, f] of gruen) A.equal(projektionsHash(mutiert(f)), projektionsHash(basis), name);
+  });
+
+  await test("Schutzprojektion erkennt weiterhin Identitaet, Zugriff und Fachinhalt", () => {
+    const basis = bestand();
+    const rot = [
+      ["users[].active", s => { s.auth.users[0].active = !s.auth.users[0].active; }],
+      ["users[].role", s => { s.auth.users[0].role = "admin"; }],
+      ["users[].status", s => { s.auth.users[0].status = "gesperrt"; }],
+      ["users[].email", s => { s.auth.users[0].email = "fremd@example.invalid"; }],
+      ["users[].politicianId", s => { s.auth.users[0].politicianId = "anderes-mandat"; }],
+      ["users[].name", s => { s.auth.users[0].name = "Anderer Name"; }],
+      ["passwordHash", s => { s.auth.users[0].passwordHash = "00ff"; }],
+      ["passwordSalt", s => { s.auth.users[0].passwordSalt = "00ff"; }],
+      ["assignments", s => { s.auth.assignments = [{ id: "as1", userId: "konto-bestand-0", politicianId: "bestand-0", createdAt: "x" }]; }],
+      ["mandate Fachinhalt", s => { s.mandate[0].partei = "SPD"; }],
+      ["mandate aktiv", s => { s.mandate[0].aktiv = true; }],
+      ["mandate geloescht_at", s => { s.mandate[0].geloescht_at = "2026-09-22T13:33:52.000Z"; }],
+      ["Kohortenmandat Fachinhalt", s => { const m = s.mandate.find(x => x.user_id === D.ALLE_KENNUNGEN[0]); m.partei = "SPD"; }],
+      ["profiles Identitaet", s => { s.identitaeten[0].name = "Neu"; }],
+      ["profiles email", s => { s.identitaeten[0].email = "neu@example.invalid"; }],
+      ["main.crawlRuns", s => { s.main.crawlRuns = [{ id: "neu" }]; }]
+    ];
+    for (const [name, f] of rot) A.notEqual(projektionsHash(mutiert(f)), projektionsHash(basis), name);
+  });
+
+  await test("Die 504/0-Invariante bleibt vorgeschaltet fail closed (auch bei aktiv-Aenderung)", () => {
+    const aktiviert = kopie(bestand());
+    aktiviert.mandate[0].aktiv = true;
+    A.throws(() => D.pruefeSnapshot(aktiviert, "500-ruhend"),
+      e => e instanceof D.DirektAbbruch && typeof e.grund === "string" && e.grund.length > 0);
+    // Der unveraenderte Bestand besteht dieselbe Pruefung weiterhin.
+    D.pruefeSnapshot(bestand(), "500-ruhend");
+  });
+
+  await test("Quellen-Vorlauf bleibt gruen bei fremder Auth-Aktivitaet, rot bei Zugriffsänderung", async () => {
+    // (a) Waehrend des Laufs aendern sich NUR volatile Auth-Felder -> kein Abbruch.
+    const a = await fortsetzungsRuntime();
+    let n = 0;
+    const snapshotVolatil = async () => {
+      n += 1;
+      const s = kopie(a.h.s);
+      if (n > 1) {
+        s.auth._authStoreRevision = "11111111-1111-4111-8111-111111111111";
+        s.auth.sessions = [{ id: "s1", userId: "konto-bestand-0" }];
+        s.auth.users[0].lastSeenAt = "2026-09-22T13:33:52.000Z";
+        s.auth.users[0].openCount = 4;
+        s.auth.llmUsage = [{ id: "u1" }];
+        s.main.rawItems = [{ id: "rd-neu" }];
+      }
+      return s;
+    };
+    const r = await G.ausfuehren({ bestand: a.h.s, bestandsauswahl: auswahl, env: env(), now: a.h.now,
+      snapshot: snapshotVolatil, pruefeBetrieb: a.h.pruefeBetrieb, execute: true,
+      fortsetzung: true, deps: a.deps });
+    A.equal(r.ok, true, JSON.stringify(r));
+    A.equal(r.sourceFetchBestaetigt, 38);
+    A.equal(r.modellaufrufe, 0);
+    A.equal(r.understandingEingereiht, 0);
+
+    // (b) Aendert sich ein Zugriffsrecht eines GESCHUETZTEN Kontos -> Abbruch wie bisher.
+    //     `pruefeSnapshot` laesst diese Aenderung bewusst durch (nicht Teil des Kohorteninhalts);
+    //     genau dafuer greift die Schutzprojektion.
+    const b = await fortsetzungsRuntime();
+    let m = 0;
+    const snapshotRolle = async () => {
+      m += 1;
+      const s = kopie(b.h.s);
+      if (m > 1) s.auth.users[0].role = "admin";
+      return s;
+    };
+    const r2 = await G.ausfuehren({ bestand: b.h.s, bestandsauswahl: auswahl, env: env(), now: b.h.now,
+      snapshot: snapshotRolle, pruefeBetrieb: b.h.pruefeBetrieb, execute: true,
+      fortsetzung: true, deps: b.deps });
+    A.equal(r2.ok, false);
+    A.equal(r2.grund, "quellenvorlauf-schutzbestand-veraendert");
+  });
+
+  await test("Quellen-Vorlauf bleibt modellfrei, einreihungsfrei und ohne automatische Wiederholung", () => {
+    const q = fs.readFileSync("scripts/github-quellenvorlauf-500.js", "utf8");
+    A(/modellaufrufe: 0/.test(q));
+    A(/understandingEingereiht: 0/.test(q));
+    A(/automatischeWiederholung: false/.test(q));
+    // Harte Grenzen unveraendert, und kein neuer Quellenabruf durch diesen Sprint.
+    A.equal(G.MAX_MS, 20 * 60 * 1000);
+    A.equal(G.MAX_SOURCE_FETCH, 200);
+    A.equal(G.FORTSETZUNG.restAnzahl, 38);
+    // `pruefeSnapshot` (allgemeiner Vertrag) bleibt unveraendert vorgeschaltet.
+    A(/D\.pruefeSnapshot\(after, "500-ruhend"\)/.test(q));
+  });
+
   // Die Allowlist der Direktziele darf nicht von den tatsaechlich geplanten
   // Vorgaengen abdriften: der Workflow ruft die CLI auf, und ein fehlender
   // Eintrag liess den Vorlauf in Production fail closed abbrechen.

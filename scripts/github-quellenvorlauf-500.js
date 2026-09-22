@@ -302,7 +302,13 @@ async function ausfuehren({ bestand, bestandsauswahl, env = process.env, now = (
 
   const storage = deps.storage || require("../lib/helmut/storage");
   const handler = deps.handleSourceFetch || SP.HANDLER.source_fetch;
-  const protectionBefore = D.hash(await snapshot());
+  // ENGE Schutzprojektion (lib/helmut/testkohorte-direkt500.js): schuetzt Identitaet, Zugriff
+  // und Fachinhalt. Reine Auth-Laufzeitmetadaten (Sessions, Nutzungszeitstempel, Revision,
+  // Kosten-/Fehlertelemetrie) duerfen sich waehrend des Laufs legitim aendern und loesen hier
+  // KEINEN Abbruch mehr aus. `D.pruefeSnapshot(after, "500-ruhend")` bleibt unveraendert
+  // vorgeschaltet; Zielmenge, Kohorteninhalt und 504/0 bleiben damit fail closed.
+  const schutzProjektion = s => D.hash(D.quellenvorlaufSchutzprojektion(s));
+  const protectionBefore = schutzProjektion(await snapshot());
   let locked = false, claimed = false, quittiert = false;
   const verstehen = new Map();
   const ergebnisse = [];
@@ -472,7 +478,7 @@ async function ausfuehren({ bestand, bestandsauswahl, env = process.env, now = (
     await pruefeBetrieb();
     const after = await snapshot();
     D.pruefeSnapshot(after, "500-ruhend");
-    D.fordere(D.hash(after) === protectionBefore, "quellenvorlauf-schutzbestand-veraendert");
+    D.fordere(schutzProjektion(after) === protectionBefore, "quellenvorlauf-schutzbestand-veraendert");
     D.fordere(R.pruefe(after, bestandsauswahl).zielHash === plan.ziel.zielHash,
       "quellenvorlauf-zielmenge-veraendert");
     return report;
