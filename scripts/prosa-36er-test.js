@@ -7,6 +7,13 @@
 const A = require("node:assert/strict");
 const P = require("../lib/helmut/prosa-einordnung");
 const F = require("./fixtures/prosa-36er");
+const { hash } = require("../lib/helmut/briefing-speicher");
+
+function paketHashAus(faelle) {
+  return hash({ faelle: faelle.map(f => ({ id: f.id, klassen: f.klasse, art: f.art,
+    bereich: f.bereich, erwartet: f.erwartet, basis: f.basis, faktenPlan: f.faktenPlan, entwurf: f.entwurf })),
+    scope: "36-Pfadfaelle-18-Fachfaelle-zwei-Bereiche-ein-Lauf-kein-Retry" });
+}
 
 let count = 0;
 function test(name, fn) { fn(); count++; console.log("PASS " + name); }
@@ -76,9 +83,13 @@ test("kein Entwurf erfindet Zahlen gegenueber den gelieferten Fakten", () => {
   }
 });
 
-test("das Paket ist stabil und umfasst alle 36 Pfadfaelle", () => {
+test("das Paket ist stabil, umfasst alle 36 Pfadfaelle und bindet den Entwurf", () => {
   const p1 = F.paket(), p2 = F.paket();
   A.equal(p1.paketHash, p2.paketHash, "paketHash nicht stabil (nicht eingefroren)");
+  A.equal(p1.paketHash, paketHashAus(p1.faelle), "paketHash bindet den Entwurf nicht");
+  const veraendert = structuredClone(p1.faelle);
+  veraendert[0].entwurf.bloecke[0].einordnung.relevanz += " Veraendert.";
+  A.notEqual(paketHashAus(veraendert), p1.paketHash, "Entwurfsaenderung veraendert paketHash nicht");
   A.equal(p1.paketHash.length, 64);
   A.equal(Object.keys(p1.basisHashes).length, 36);
   A.equal(p1.faelle.length, 36);
