@@ -4,12 +4,12 @@
 
 ## 1 · Aktueller Stand
 
-* **Repository `main`:** `fee78569842306d99977006147baac425b49fe41`, Merge von PR519. Der einmalige 169er Understanding Runner, die gebundene Kennungsliste, die Resolver Korrekturen und die fail closed Bestandslesefehlerbehandlung sind damit auf `main`.
-* **Production Vercel:** Deployment `dpl_2fuzLCbXapGVX6j881sGdbtKsD96` ist READY und zeigt auf exakt diesen Main Commit. Region und Aliaslogik bleiben unveraendert.
+* **Repository `main`:** `972cbab1c2bfbfb913b45e2e684a060c16e0ad5a`, Merge von PR520. Der manuelle GitHub-Actions-Ausfuehrungsweg fuer den einmaligen 169er Runner und der harte 0,80-USD-Laufdeckel auf Basis der bestehenden atomaren Kostenwahrheit sind damit auf `main`. Der einmalige 169er Understanding Runner, die gebundene Kennungsliste, die Resolver Korrekturen und die fail closed Bestandslesefehlerbehandlung stammen aus PR519.
+* **Scharfer 169er Lauf ausgefuehrt — fehlgeschlagen, fail closed.** Workflow-Run `35829992528`, `run_attempt = 1`, `failure`, 07:06–07:09 UTC am 23.09.2026. Genau **ein** Modellaufruf, dann Stopp `verstehen-ausgang-unbekannt` am ersten Cluster (`skipped-invalid`, Fehlerklasse `validierung-fehlgeschlagen`). Einmalquittung `verstehen169-20260922-a` terminal `unbekannt` — kein zweiter Lauf desselben Auftrags, kein automatischer Retry. Finale Laufkosten `0,005997 USD`; globaler Tagesstand danach `0,116068 USD` von 4 USD. **Kein 500er Nachweis, keine Profilaktivierung (weiterhin 0 aktiv).** [Beleg](betrieb/verstehen-einmalig-169-20260922.md) §16.
+* **Diagnose- und Ergebniswahrheit repariert (dieser Sprint).** Der gescheiterte Bericht meldete `reason=dokumente:kernueberdeckung` (Resolver-Begruendung der Bestandszuordnung, NICHT die Ursache) und `dokumente=0`, obwohl das neue Dokument tatsaechlich an `ko-vg-abschaffung-20260911-7420f6` verknuepft wurde. Der Motor traegt bei `skipped-invalid` jetzt die Fehlerklasse (`reason`) und die echte Clustergroesse (`documents`); der Runner uebernimmt hoechstens fuenf **sichere** Fehlercodes als `validierungsfehler` (auch in die Einmalquittung, ohne neue Tabelle). Der historische konkrete Validierungsfehler ist **nicht rekonstruierbar** (weder Skip-Log noch CAS tragen die Codes). Kein Retry, kein neuer Lauf, keine Quittungsaenderung.
 * **Profile:** letzter fachlich belegter Zustand nach dem abgeschlossenen Quellen und Understanding Vorlauf: **504 Profile, 0 aktiv**. Alle Profile bleiben inaktiv bis zu einer getrennten ausdruecklichen Startfreigabe.
 * **Ruhender Betrieb:** im letzten Production Nachweis zu diesem Stand keine unerledigten Jobs, keine lebenden Job Leases und keine lebenden Understanding Leases. Dieser reine Dokumentationssprint fuehrt keine neue Datenbankinventur aus.
 * **Kosten:** atomarer technischer Tagesriegel bleibt **4 USD je UTC Tag**. Alte 10 USD Betreiberfreigaben erhoehen diesen technischen Riegel nicht. Keine neue Kostenfreigabe durch diese Dokumentationsaenderung.
-* **Offener PR520:** `codex/verstehen-169-actions-20260923`, Head `02c03e9cd1d53ec0705dcdaead95b94af6d6423b`. Er bereitet den manuellen GitHub Actions Ausfuehrungsweg fuer den bereits geprueften einmaligen 169er Runner vor und schliesst den Kostenblocker: der harte 0,80-USD-Laufdeckel nutzt jetzt die bestehende atomare Kostenwahrheit (volle Reservierung je Aufruf plus echte Abrechnung, Laufkennung `verstehen169-…`) statt eines Durchschnittspreises. Grenzen unveraendert (169/122, 113, 0,80 USD, 35 min, 4-USD-Riegel). **Kein Dispatch, kein scharfer Lauf, keine Modellaufrufe und keine Production Writes.** Ein Start braucht weiterhin eine getrennte Betreiberfreigabe. [Beleg](betrieb/verstehen-einmalig-169-20260922.md).
 
 ## 2 · Stand auf dem Weg zum 500er Production Nachweis
 
@@ -21,11 +21,11 @@
 
 3. **Quellen Vorlauf fuer 500 fachlich abgeschlossen.** Zwei scharfe Quellenlaeufe erzeugten zusammen **169 neue Rohdokumente**. Der erste Lauf versuchte 43 deduplizierte Abrufe, davon 5 erfolgreich und 38 wegen Anbieter Minutengrenze fehlgeschlagen. Der kontrollierte Fortsetzungslauf erledigte die 38 Restabrufe vollstaendig und erzeugte weitere 137 Rohdokumente. **Kein weiterer Quellenabruf ist fuer diesen Vorlauf erforderlich.** Der zu breite Schutz Hash wurde danach durch PR517 korrigiert. [Beleg](betrieb/500-betriebsplan-2026-09-20.md).
 
-4. **Einmaliger Understanding Lauf vorbereitet.** Gebunden sind exakt **169 Rohdokumente**, `idHash 5f387840…a2ed9`, **122 Cluster**, hoechstens **113 Kandidaten**, maximal **0,80 USD**, maximal **35 Minuten**, Aufruftyp `understanding-rueckstand`, technischer Tagesriegel unveraendert 4 USD. Der rein lesende Planlauf ergab zunaechst 114 Kandidaten und stoppte korrekt fail closed an `verstehen-kandidaten-ueber-deckel`. Die Ursache war ein Resolver Fenster, das exakte Bestandstreffer verdraengen konnte. PR519 korrigiert dies generisch im Motor und schaerft alle betroffenen Bestandslesefehler auf fail closed. **Ein scharfer 169er Lauf wurde noch nicht ausgefuehrt.** [Beleg](betrieb/verstehen-einmalig-169-20260922.md).
+4. **Einmaliger Understanding Lauf vorbereitet und genau einmal ausgefuehrt.** Gebunden sind exakt **169 Rohdokumente**, `idHash 5f387840…a2ed9`, **122 Cluster**, hoechstens **113 Kandidaten**, maximal **0,80 USD**, maximal **35 Minuten**, Aufruftyp `understanding-rueckstand`, technischer Tagesriegel unveraendert 4 USD. Der rein lesende Planlauf ergab zunaechst 114 Kandidaten und stoppte korrekt fail closed an `verstehen-kandidaten-ueber-deckel`; PR519 korrigierte das Resolver Fenster generisch. Der scharfe Lauf (Run `35829992528`, 23.09.2026) stoppte nach **einem** Modellaufruf fail closed mit `verstehen-ausgang-unbekannt`; die Diagnose- und Ergebniswahrheit dieses Laufs ist in diesem Sprint repariert und testgesichert (siehe §1 und [Beleg](betrieb/verstehen-einmalig-169-20260922.md) §16). **Kein Retry, kein zweiter Lauf.**
 
 ### Noch offen fuer den 500er Nachweis
 
-1. Den einmaligen 169er Understanding Lauf ueber den sicheren Ausfuehrungsweg ausfuehren und vollstaendig auswerten. PR520 ist dafuer nur Vorbereitung und noch offen.
+1. Den einmaligen 169er Understanding Lauf auswerten und ueber das weitere Vorgehen entscheiden. Er wurde **genau einmal** ausgefuehrt (Run `35829992528`) und stoppte nach einem Modellaufruf fail closed (`verstehen-ausgang-unbekannt`, Quittung terminal `unbekannt`). Ein erneuter Lauf ist eine **getrennte Betreiberentscheidung** — er ist ausdruecklich kein automatischer Folgeschritt dieses Sprints.
 
 2. Danach fuer **exakt 500 aktive Testprofile** frische Vollversorgung belegen. Aktivierung allein ist kein Funktionsnachweis.
 
@@ -53,11 +53,12 @@ Vollstaendige historische Betriebswerte zu Crons, Flags, Migrationen, Quellenpak
 ## 4 · Aktuelle offene Blocker
 
 1. **500er Gesamtabnahme fehlt.** Das ist der zentrale technische Production Nachweis.
-2. **169er Understanding Lauf noch nicht scharf ausgefuehrt.** Der fachliche Runner ist auf main, der manuelle sichere Actions Weg und der harte 0,80-USD-Kostendeckel liegen in PR520.
-3. **Frische Vollversorgung und 1500er Bilanz fehlen.**
-4. **Gesamtzeit, Gesamtkosten, automatisches Testende und Rueckweg muessen im neuen 500er Fenster gemeinsam belegt werden.**
-5. **Allgemeine Faktenbindung und Quellenqualitaet bleiben ausserhalb der bereits bestandenen 36er Prosa Abnahme weiter zu beobachten.** Qualitaetswaechter duerfen nicht abgesenkt werden.
-6. **Verkaufsblocker ausserhalb des 500er Nachweises bleiben bestehen:** insbesondere OP01 bis OP04, Rechts und Datenschutzfragen, Monitoring Zweitkanal, Branch Protection und weitere Punkte der kanonischen [Datenmotor Restliste](datenmotor-restliste.md). Sie werden erst nach dem Production Nachweis wieder zur Hauptprioritaet, sofern sie den Nachweis nicht direkt blockieren.
+2. **Diagnosewahrheits-Reparatur des gescheiterten 169er Laufs liegt als PR zur Review.** Der Motor traegt bei `skipped-invalid` die Fehlerklasse und die echte Dokumentzahl, der Runner meldet die sicheren Validierungsfehlercodes begrenzt (`validierungsfehler`, max. 5, auch in der Einmalquittung). Offline testgesichert (`verstehen-einmalig-test` 84/84). Merge braucht Betreiberfreigabe.
+3. **Der unbekannte CAS-Zustand des Vorgangs `vg-abschaffung-20260911-7420f6` bleibt unveraendert** (`zustand=unbekannt`, `ki_aufrufe=1`, `letzter_grund=validierung-fehlgeschlagen`) — keine Aufloesung, keine Quittungsaenderung ohne Freigabe.
+4. **Frische Vollversorgung und 1500er Bilanz fehlen.**
+5. **Gesamtzeit, Gesamtkosten, automatisches Testende und Rueckweg muessen im neuen 500er Fenster gemeinsam belegt werden.**
+6. **Allgemeine Faktenbindung und Quellenqualitaet bleiben ausserhalb der bereits bestandenen 36er Prosa Abnahme weiter zu beobachten.** Qualitaetswaechter duerfen nicht abgesenkt werden.
+7. **Verkaufsblocker ausserhalb des 500er Nachweises bleiben bestehen:** insbesondere OP01 bis OP04, Rechts und Datenschutzfragen, Monitoring Zweitkanal, Branch Protection und weitere Punkte der kanonischen [Datenmotor Restliste](datenmotor-restliste.md). Sie werden erst nach dem Production Nachweis wieder zur Hauptprioritaet, sofern sie den Nachweis nicht direkt blockieren.
 
 ## 5 · Nicht wiederholen
 
@@ -71,9 +72,9 @@ Vollstaendige historische Betriebswerte zu Crons, Flags, Migrationen, Quellenpak
 
 ## 6 · Naechster Schritt
 
-**Unmittelbar:** PR520 rein lesend pruefen. Wenn er fachlich und technisch unveraendert zur beschriebenen Vorbereitung passt, braucht sein Merge eine ausdrueckliche Betreiberfreigabe. Merge und automatisches Production Deployment sind eine gemeinsame kritische Wirkung.
+**Unmittelbar:** Die Diagnosewahrheits-Reparatur dieses Sprints reviewen (Motor `understanding.js`, Runner `verstehen-einmalig.js`, neue Pruefungen §23 in `verstehen-einmalig-test.js`). Merge nach `main` braucht eine ausdrueckliche Betreiberfreigabe — Merge und automatisches Production Deployment sind eine gemeinsame kritische Wirkung.
 
-**Danach getrennt:** Production Wirkung von PR520 rein lesend bestaetigen. Erst anschliessend kann der einmalige 169er Understanding Lauf mit eigener ausdruecklicher Startfreigabe ausgefuehrt werden. Ein Merge von PR520 ist **keine** Freigabe fuer den Dispatch.
+**Danach getrennt:** Betreiberentscheidung ueber den gescheiterten 169er Lauf. Der Lauf wurde genau einmal ausgefuehrt und bleibt terminal (`unbekannt`). Jeder weitere scharfe Lauf — ob ueberhaupt, mit welcher neuen Quittungskennung und nach welcher Aufloesung des unbekannten CAS-Zustands — ist eine eigene Freigabe. **Kein Retry, kein Dispatch, keine Quittungs- oder Budgetaenderung ohne Freigabe.**
 
 Nach erfolgreicher Vollauswertung des 169er Laufs wird neu entschieden, ob noch ein technischer oder qualitativer Blocker vor dem exakt 500er Testfenster besteht. Bereits erfolgreich belegte Pruefungen werden nicht ohne sachlichen Grund wiederholt.
 

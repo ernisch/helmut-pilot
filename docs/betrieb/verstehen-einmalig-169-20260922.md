@@ -377,14 +377,20 @@ Der Commit wird **nicht** aus dem laufenden Prozess geraten, sondern ausdrückli
 
 ## 13 · Gezielte Tests
 
-`node scripts/lokal.js -- node scripts/verstehen-einmalig-test.js` — **65 von 65 grün**,
+`node scripts/lokal.js -- node scripts/verstehen-einmalig-test.js` — **84 von 84 grün** (bis 2026-09-23: 65/65; +19 Prüfungen §23 Diagnosewahrheit),
 offline, ausschließlich mit Attrappen für Datenbank, Netz und Modell. Abgedeckt sind alle
 zwanzig Pflichtprüfungen des Auftrags (§1–§20), die Vertragsfälle S1/S6/S9/S10
 (Commit, Größenverteilung, Lesefehler, Kennungsabbildung), die Auftragswerte selbst, die
 **echte 169er-Bindung** (169 eindeutige Kennungen, exakter Hash, Beleg wird von Bedienweg und
 Kern akzeptiert; falscher Hash, veränderter Prüfbeleg sowie 168 und 170 Kennungen bleiben fail
-closed), die **Abbruchdiagnose** (§21) und die **Resolver-Spuren** (§22). Der Prüflauf erzeugt
-**keinen** echten Modellaufruf und **keinen** Production-Schreibzugriff.
+closed), die **Abbruchdiagnose** (§21), die **Resolver-Spuren** (§22) und die
+**Diagnosewahrheit des gescheiterten scharfen Laufs** (§23): sichere Validierungsfehlercodes
+bleiben erhalten (maximal fünf, nur feste Wortmarken), `documents` entspricht exakt der
+Clustergröße, Prompt und Modellantwort gelangen nicht in Bericht oder Quittung, die
+Verknüpfung an einen pending/failed-Vorgang wird nicht als Erfolg gezählt,
+`verstehen-ausgang-unbekannt` bleibt fail closed ohne Retry, Kostenlogik und Grenzen
+(0,80 USD, 4 USD, 113, 35 min) unverändert. Der Prüflauf erzeugt **keinen** echten
+Modellaufruf und **keinen** Production-Schreibzugriff.
 
 `node scripts/lokal.js -- node scripts/vorgangs-resolver-exakt-test.js` — **12 von 12 Assertions
 grün** für die Resolver-Korrektur (§3b): der exakte Kandidat wird auch bei acht neueren
@@ -438,9 +444,8 @@ entscheiden. Der Beleg selbst ist vollständig; es fehlt keine Kennung mehr.
 ## 15 · Manueller GitHub-Actions-Ausführungsweg (vorbereitet, 2026-09-23)
 
 Für den scharfen Lauf existiert ein eigener **manueller** Workflow
-`.github/workflows/verstehen-169-einmalig.yml` — **vorbereitet, NICHT ausgeführt** (kein
-Dispatch, kein Lauf, keine Production-Wirkung). Er ist ausschließlich per `workflow_dispatch`
-auf `main` startbar, verlangt das **exakte** Bestätigungswort, läuft nur bei `run_attempt = 1`,
+`.github/workflows/verstehen-169-einmalig.yml` — per `workflow_dispatch` auf `main` startbar,
+verlangt das **exakte** Bestätigungswort, läuft nur bei `run_attempt = 1`,
 hat `contents: read`, keine persistierten Git-Credentials, die bestehende globale
 Concurrency-Gruppe `helmut-500-kontrollierte-facharbeit` (`cancel-in-progress: false`) und ein
 Job-Timeout von **40 Minuten** (der Runner kontrolliert seine 35 Minuten selbst). Er startet
@@ -453,5 +458,70 @@ je Aufruf + echte Abrechnung, Laufkennung `verstehen169-…`) — ein Durchschni
 Unmittelbar vor dem Start läuft ein fail-closed-Preflight (Bestätigungswort, Repository, main,
 Event, run_attempt, nicht-leere Secrets und Deployment). Alle Fachgrenzen bleiben im Runner —
 der Workflow baut keine zweite Fachlogik. Statische Vertragsprüfung:
-`scripts/verstehen-169-workflow-test.js`. **Ein scharfer Lauf bleibt gesperrt und braucht die
-ausdrückliche Betreiberfreigabe; der Workflow-Dispatch ist selbst Teil der Freigabe.**
+`scripts/verstehen-169-workflow-test.js`.
+
+> **Status 2026-09-23: ausgeführt — §16 dokumentiert den scharfen Lauf und seine
+> Auswertung. Der Weg selbst bleibt für eine künftige Betreiberentscheidung unverändert;
+> ein weiterer Dispatch ist KEIN Folgeschritt dieses Sprints und braucht eine eigene Freigabe.**
+
+## 16 · Der scharfe 169er Lauf und die Diagnosewahrheit (2026-09-23)
+
+Der scharfe Lauf wurde **genau einmal** ausgeführt: Workflow-Run `35829992528`,
+`run_attempt = 1`, `failure`, 23.09.2026 07:06–07:09 UTC. Er stoppte nach **einem**
+Modellaufruf fail closed mit `verstehen-ausgang-unbekannt`; die Einmalquittung wurde terminal
+`unbekannt` geschlossen (ein zweiter Lauf desselben Auftrags stoppt mit
+`verstehen-bereits-verwendet`). Finale Laufkosten `0,005997 USD`; globaler Tageskostenstand
+danach `0,116068 USD` von 4 USD. Kein 500er Nachweis, keine Profilaktivierung, kein Retry.
+
+**Die Fehlerklasse ist `validierung-fehlgeschlagen` — nicht `dokumente:kernueberdeckung`.**
+Der Abschlussbericht nannte `reason = dokumente:kernueberdeckung`. Das war die
+**Resolver-Begründung** dafür, dass das neue Dokument (`rd-f9a5ff81…`, Berliner Morgenpost,
+„Ökonom für Abschaffung der Rente mit 63 – Linke fordert das Gegenteil", 2026-08-03,
+`retrieved_at` 2026-09-22) dem bestehenden pending-Vorgang `vg-abschaffung-20260911-7420f6`
+zugeordnet wurde — **nicht** die Ursache der ungültigen Modellantwort. Der Modellpfad endete
+in `validateUnderstandingResult` mit `validierung-fehlgeschlagen`. Production-belegt am
+CAS-Vertrag: `zustand=unbekannt`, `versuche=1`, `ki_aufrufe=1`,
+`letzter_grund=validierung-fehlgeschlagen`; KO: `status=pending`,
+`understanding_status=failed`.
+
+**Verknüpft ist nicht verstanden.** Das Dokument wurde während des Laufs tatsächlich an
+`ko-vg-abschaffung-20260911-7420f6` verknüpft. Der Bericht meldete `dokumente = 0` —
+Ergebniswahrheitslücke: der Erstverstehen-`skipped-invalid`-Pfad verknüpft die
+Cluster-Dokumente (über `markFailed`), trug aber keine Dokumentzahl zurück. Der Vorgang
+blieb unverstanden; eine Verknüpfung ist kein fachlicher Erfolg.
+
+**Historischer konkreter Validierungsfehler nicht rekonstruierbar.** Welche der sicheren
+Fehlercodes den Ausschlag gaben (`quellenbeleg-*`, `decision_level-antwortkonflikt`),
+wurde **nicht** persistiert: das Skip-Log trägt nur `callType=skipped-understanding-invalid`,
+der CAS-Vertrag nur die Klasse `validierung-fehlgeschlagen`, und der Runner verwarf die
+motorseitig bereits begrenzten `errors` beim Erstellen seines Abschlussberichts. Es wurde
+keine Modellantwort rekonstruiert, kein Prompt ausgelesen und kein Modell neu aufgerufen.
+
+**Reparatur (Diagnose-/Ergebniswahrheit; kein Retry, kein neuer Lauf):**
+
+- `understandOneCluster` trägt im Erstverstehen-`skipped-invalid`-Pfad jetzt `reason`
+  (`ki-antwort-nicht-verwertbar` bzw. `validierung-fehlgeschlagen` — die Fehlerklasse des
+  Modellpfads, identisch mit `letzter_grund` im CAS) und `documents: clusterDocs.length`.
+  `skipped-error` erhält dieselbe Dokumentzahl (gleicher Zählfehler: `markFailed` verknüpft).
+- Der 169er Runner übernimmt bei `skipped-invalid` höchstens **fünf** sichere Fehlercodes
+  aus `r.errors` in das neue Feld `validierungsfehler` — ausschließlich feste Wortmarken
+  (`ki-antwort-nicht-verwertbar`, `decision_level-antwortkonflikt`, `quellenbeleg-<feld>`).
+  Frei formulierte Schema-Meldungen (können Rohwerte der Antwort enthalten), Prompt und
+  Antwort bleiben außen.
+- Die Einmalquittung trägt dieselben Codes (dedupliziert, maximal fünf) — auch bei einem
+  Stopp mit `verstehen-ausgang-unbekannt` bleibt der Abschlussbeleg nachvollziehbar. Keine
+  neue Tabelle, keine zweite Diagnoseablage.
+- Ein Link an einen failed/pending-Vorgang bleibt `skipped-invalid` (Motor-Gruppe
+  `fehlgeschlagen`) und wird **nie** als `saved`/`merged` gezählt.
+- Tests: `scripts/verstehen-einmalig-test.js` §23 (19 neue Prüfungen, insgesamt 84/84 grün,
+  offline, 0 Modellaufrufe, 0 Writes). Grenzen unverändert: 113 Aufrufe, 0,80 USD, 35 min,
+  4-USD-Tagesriegel, Quittungsschlüssel `verstehen169-20260922-a`.
+
+**Ausdrücklich kein Retry.** Der Lauf wird nicht wiederholt, der unbekannte CAS-Zustand
+nicht verändert, die Quittung nicht zurückgesetzt. Ob ein erneuter scharfer Lauf stattfindet
+— und mit welcher Kennung — ist eine getrennte Betreiberentscheidung.
+
+> §14 („kein Production-Lauf …") ist durch diesen Abschnitt überholt: der dort
+> beschriebene Vorbereitungsstand galt vor dem scharfen Lauf. §15 („vorbereitet, NICHT
+> ausgeführt") ist ebenfalls überholt — der Workflow wurde für Run `35829992528` genau
+> einmal ausgeführt.

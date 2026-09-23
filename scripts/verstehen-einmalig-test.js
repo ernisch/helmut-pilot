@@ -1231,6 +1231,184 @@ async function abschnittResolverSpuren() {
   });
 }
 
+// ── §23 Diagnosewahrheit: skipped-invalid — sichere Fehlercodes und echte Dokumentzahl ──
+// 169er-Production-Befund (Run 35829992528): der erste Cluster endete als `skipped-invalid`
+// mit CAS `zustand=unbekannt`, `letzter_grund=validierung-fehlgeschlagen`. Der Runner meldete
+// `dokumente=0` und `reason=dokumente:kernueberdeckung` (die Resolver-BEGRUENDUNG der
+// Bestandszuordnung, nicht die Ursache) und verwarf die motorseitig begrenzten `errors`.
+// Die Wahrheit: das Dokument wurde VERKNUEPFT, aber NICHT verstanden.
+function baueInvalidWelt({ bestand = false, unbelegte = ["parteien", "ausschuesse", "ministerien"], extraAntwort = {} } = {}) {
+  const docs = [rohesDokument("inv-0", WOERTER[0]), rohesDokument("inv-1", WOERTER[0])];
+  const kos = [];
+  const links = {};
+  if (bestand) {
+    // 169er-Konstellation: ein vorhandener PENDING-Vorgang, dem der Resolver den neuen
+    // Cluster zuordnet (gleiche Beweisfamilie) — die Resolver-Begruendung (`spur.begruendung`)
+    // ist gesetzt, darf aber NICHT als Modellfehlerursache gemeldet werden.
+    kos.push({ id: "ko-pend", vorgang_id: "vg-zitterpappel-20260901-cccc", status: "pending",
+      understanding_status: "pending", updated_at: "2026-09-22T07:00:00Z" });
+    links["ko-pend"] = [rohesDokument("alt-p1", WOERTER[0]), rohesDokument("alt-p2", WOERTER[0])];
+  }
+  const w = weltBauen({ dokumente: docs, kos, links });
+  w.deps.requestUnderstanding = async (prompt) => {
+    w.welt.aufrufe.push(prompt);
+    w.welt.schritt.push("requestUnderstanding");
+    w.welt.laufkostenUsd += w.welt.echteKosten;
+    const antwort = { ...ANALYSE, ...extraAntwort };
+    for (const f of unbelegte) antwort[f] = ["NichtBelegt_" + f];
+    return antwort;
+  };
+  return { ...w, docs, bindung: testbindung(docs) };
+}
+
+async function abschnittInvalidDiagnose() {
+  abschnitt("§23  Diagnosewahrheit: skipped-invalid traegt sichere Fehlercodes und die echte Dokumentzahl");
+
+  // ── 1/2/5 am MOTOR direkt (ohne CAS-Vertrag, ohne Runner) ──
+  const I = baueInvalidWelt();
+  const motorDeps = { ...I.deps };
+  delete motorDeps.verstehenVertrag; // kein CAS: reiner Motorpfad, kein marke()
+  let r = null;
+  await pruefeAsync("§23.1 validateUnderstandingResult liefert mehrere sichere Fehlercodes", async () => {
+    const cluster = clusterRawDocuments(I.docs.map((d) => ({ ...d })))[0];
+    A.equal(cluster.documents.length, 2, "Testcluster mit genau zwei Dokumenten");
+    r = await understanding.understandOneCluster(cluster, motorDeps, {});
+    A.equal(r.status, "skipped-invalid");
+    A.equal(r.reason, "validierung-fehlgeschlagen");
+    A.ok(Array.isArray(r.errors) && r.errors.length >= 3, "mehrere Fehlercodes bleiben erhalten");
+    A.ok(r.errors.includes("quellenbeleg-parteien"));
+    A.ok(r.errors.includes("quellenbeleg-ausschuesse"));
+    A.ok(r.errors.includes("quellenbeleg-ministerien"));
+    A.ok(r.errors.every((e) => typeof e === "string"));
+  });
+  await pruefeAsync("§23.5 Erstverstehen-Invalid traegt documents = Clustergroesse (Motor)", async () => {
+    A.equal(r.documents, 2);
+    // markFailed hat geparkt UND verknuepft — der Link ist belegt, der Status bleibt failed.
+    A.equal(I.welt.geparkt.length, 1);
+    A.equal((I.welt.links["ko-" + r.vorgangId] || []).length, 2);
+  });
+
+  // ── 2/3/4/5/6/7/8 am RUNNER (169er-Konstellation mit Bestandsvorgang) ──
+  const B = baueInvalidWelt({ bestand: true });
+  let lauf = null;
+  await pruefeAsync("§23.2/§23.7 der Runner stoppt bei skipped-invalid + unbekannt fail closed", async () => {
+    lauf = await V.fuehreAus({
+      ids: idsVon(B.docs), deps: B.deps, execute: true, commit: "test-commit", erwartet: B.bindung,
+      runId: "invalid-169", now: () => new Date()
+    });
+    A.equal(lauf.ok, false);
+    A.equal(lauf.abbruchGrund, "verstehen-ausgang-unbekannt");
+    A.equal(lauf.quittungStatus, "unbekannt");
+    A.equal(lauf.ergebnisse.length, 1);
+    const e = lauf.ergebnisse[0];
+    A.equal(e.status, "skipped-invalid");
+    A.equal(e.ausgang, "unbekannt");
+    // reason = Fehlerklasse des MODELLPFADS — nicht die Resolver-Begruendung
+    // (dokumente:kernueberdeckung o.ae.).
+    A.equal(e.reason, "validierung-fehlgeschlagen");
+  });
+
+  await pruefeAsync("§23.3 der Bericht uebernimmt die sicheren Fehlercodes (begrenzt)", async () => {
+    const e = lauf.ergebnisse[0];
+    A.ok(Array.isArray(e.validierungsfehler) && e.validierungsfehler.length >= 3);
+    A.ok(e.validierungsfehler.every((c) =>
+      /^(ki-antwort-nicht-verwertbar|decision_level-antwortkonflikt|quellenbeleg-[a-z_]+)$/.test(c)));
+    A.ok(e.validierungsfehler.includes("quellenbeleg-parteien"));
+  });
+
+  await pruefeAsync("§23.3b hoechstens fuenf Codes; unsichere Meldungen bleiben aussen", async () => {
+    const C = baueInvalidWelt({
+      unbelegte: ["ministerien", "mentioned_ministries", "parteien", "mentioned_parties",
+        "mentioned_people", "mentioned_mps", "ausschuesse", "mentioned_committees"]
+    });
+    const laufC = await V.fuehreAus({
+      ids: idsVon(C.docs), deps: C.deps, execute: true, commit: "test-commit", erwartet: C.bindung,
+      runId: "invalid-cap", now: () => new Date()
+    });
+    A.equal(laufC.ergebnisse[0].validierungsfehler.length, 5, "maximal fuenf Codes");
+    // Ein Schema-Fehlertext (frei formuliert) wird NICHT uebernommen — nur feste Wortmarken.
+    const D = baueInvalidWelt({ unbelegte: ["parteien"], extraAntwort: { was_ist_passiert: "" } });
+    const laufD = await V.fuehreAus({
+      ids: idsVon(D.docs), deps: D.deps, execute: true, commit: "test-commit", erwartet: D.bindung,
+      runId: "invalid-schema", now: () => new Date()
+    });
+    A.deepEqual(laufD.ergebnisse[0].validierungsfehler, ["quellenbeleg-parteien"]);
+    A.ok(!JSON.stringify(laufD).includes("leer/zu kurz"));
+    A.ok(!JSON.stringify(D.welt.abgeschlossen).includes("leer/zu kurz"));
+  });
+
+  await pruefeAsync("§23.4 kein Prompt und keine Modellantwort im Bericht oder in der Quittung", async () => {
+    const bericht = JSON.stringify(lauf);
+    const quittung = JSON.stringify(B.welt.abgeschlossen);
+    for (const marke of ["NichtBelegt_parteien", "NichtBelegt_ausschuesse", "NichtBelegt_ministerien"]) {
+      A.ok(!bericht.includes(marke), "Modellantwort-Wert im Bericht: " + marke);
+      A.ok(!quittung.includes(marke), "Modellantwort-Wert in der Quittung: " + marke);
+    }
+    A.ok(!bericht.includes('"quelle_id"'), "Prompt-Inhalt im Bericht");
+    A.ok(!quittung.includes('"quelle_id"'), "Prompt-Inhalt in der Quittung");
+    // Strukturbeweis der Ergebniszeile: nur die erlaubten Felder.
+    const erlaubt = new Set(["vorgangId", "status", "ausgang", "dokumente", "reason", "validierungsfehler"]);
+    const gefunden = [...sammleSchluessel(lauf.ergebnisse[0])];
+    A.deepEqual(gefunden.filter((k) => !erlaubt.has(k)), []);
+  });
+
+  await pruefeAsync("§23.5 der Runner meldet documents = Clustergroesse", async () => {
+    A.equal(lauf.ergebnisse[0].dokumente, 2);
+    const link = B.welt.links["ko-" + lauf.ergebnisse[0].vorgangId];
+    A.ok(Array.isArray(link) && link.length === 2, "Verknuepfung ist nachweisbar geschrieben");
+  });
+
+  await pruefeAsync("§23.6 Verknuepfung an pending/failed wird NICHT als Erfolg gezaehlt", async () => {
+    A.equal(lauf.bilanz.arten["skipped-invalid"], 1);
+    A.equal(lauf.bilanz.arten.saved, undefined, "kein saved");
+    A.equal(lauf.bilanz.arten.merged, undefined, "kein merged");
+    A.equal(understanding.ERGEBNISGRUPPEN["skipped-invalid"], "fehlgeschlagen");
+    A.equal(B.welt.gespeichert.length, 0, "kein Knowledge-Object-Write");
+    A.equal(B.welt.geparkt.length, 1, "markFailed lief und hat geparkt");
+  });
+
+  await pruefeAsync("§23.7/§23.8 unbekannter Ausgang bleibt fail closed, kein Retry", async () => {
+    A.equal(lauf.ok, false);
+    A.equal(lauf.automatischeWiederholung, false);
+    A.equal(B.welt.aufrufe.length, 1, "genau ein Modellaufruf");
+    A.equal(B.welt.abgeschlossen.automatischeWiederholung, false);
+    A.equal(B.welt.abgeschlossen.status, "unbekannt");
+    A.ok(B.welt.schritt.includes("ausgangUnbekannt"));
+    A.ok(!B.welt.schritt.includes("freigabe"), "kein automatischer Rueckweg");
+    // Die Einmalquittung traegt die sicheren Codes als Abschlussbeleg.
+    A.ok(Array.isArray(B.welt.abgeschlossen.validierungsfehler)
+      && B.welt.abgeschlossen.validierungsfehler.length >= 3);
+  });
+
+  await pruefeAsync("§23.9 die Kostenwahrheit bleibt unveraendert im Pfad", async () => {
+    A.ok(B.welt.kostenlesungen >= 1, "der Lauf hat die bestehende Kostenwahrheit befragt");
+    A.equal(lauf.laufkostenUsd, 0, "Attrappen-Abrechnung unveraendert");
+  });
+
+  pruefe("§23.10 die Auftragswerte 0,80 USD / 4 USD / 113 / 35 min bleiben unveraendert", () => {
+    A.equal(V.PINNED.maxUsd, 0.8);
+    A.ok(V.PINNED.maxUsd < 4);
+    A.equal(V.PINNED.maxModellaufrufe, 113);
+    A.equal(V.PINNED.maxMs, 35 * 60 * 1000);
+    A.equal(V.QUITTUNG, "verstehen169-20260922-a");
+  });
+
+  await pruefeAsync("§23.11 der Planmodus bleibt ohne Modellaufruf und ohne Write", async () => {
+    const P = baueInvalidWelt({ bestand: true });
+    const plan = await V.fuehreAus({
+      ids: idsVon(P.docs), deps: P.deps, execute: false, commit: "test-commit", erwartet: P.bindung,
+      runId: "invalid-plan", now: () => new Date()
+    });
+    A.equal(plan.reinLesend, true);
+    A.equal(plan.modellaufrufe, 0);
+    A.equal(P.welt.aufrufe.length, 0);
+    A.equal(P.welt.schritt.length, 0, "kein CAS, keine Quittung, kein Schloss im Planmodus");
+    A.equal(P.welt.gespeichert.length, 0);
+    A.equal(P.welt.geparkt.length, 0);
+    A.equal(P.welt.claimRunCalls, 0);
+  });
+}
+
 (async () => {
   await abschnittAuftragswerte();
   await abschnittEchterBeleg();
@@ -1246,6 +1424,7 @@ async function abschnittResolverSpuren() {
   await abschnittTagesriegel();
   await abschnittAbbruchdiagnose();
   await abschnittResolverSpuren();
+  await abschnittInvalidDiagnose();
 
   console.log("\n== ERGEBNIS ==");
   console.log("bestanden: " + bestanden);
