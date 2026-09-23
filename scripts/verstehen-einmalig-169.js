@@ -187,6 +187,18 @@ async function main() {
       bestaetigungswort: BESTAETIGUNG, quittungsschluessel: V.QUITTUNG
     }, 1);
   }
+  // Die Kennung eines NEUEN Versuchs wird ausdruecklich uebergeben (HELMUT_VERSTEHEN_169_QUITTUNG)
+  // und streng geprueft — ohne sie gilt der alte Schlüssel (alter Auftrag, blockiert). Dieselbe
+  // Kennung wie der alte Auftrag oder ein Fremdformat stoppen fail closed, VOR jedem Zugriff.
+  const quittung = V.quittungsschluesselVon(env.HELMUT_VERSTEHEN_169_QUITTUNG);
+  if (!quittung.ok) {
+    return raus({
+      ok: false, reinLesend: !scharf, ausgeloest: false, grund: quittung.grund,
+      quittungsschluessel: V.QUITTUNG,
+      hinweis: "Ein neuer Versuch braucht eine eigene, vom Betreiber vergebene Quittungskennung "
+        + "(Format verstehen169-<JJJJMMTT>-<suffix>, niemals die alte verstehen169-20260922-a)."
+    }, 1);
+  }
   if (!commit) {
     return raus({
       ok: false, reinLesend: !scharf, ausgeloest: false, grund: "verstehen-commit-fehlt",
@@ -217,7 +229,7 @@ async function main() {
   const deps = baueDeps(env, runId, { mitQuittung: scharf });
   const bericht = await V.fuehreAus({
     ids: liste.ids, deps, execute: scharf, commit, env,
-    runId,
+    runId, quittungsschluessel: quittung.schluessel,
     fortschritt: scharf
       ? (s) => console.error(`[verstehen-169] ${s.fertig}/${s.gesamt} Cluster, ${s.aufrufe} Modellaufrufe`)
       : null

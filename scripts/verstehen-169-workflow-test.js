@@ -34,6 +34,10 @@ check("kein schedule-Trigger", !/^\s*schedule:/m.test(YML));
 check("kein workflow_run-Trigger", !/^\s*workflow_run:/m.test(YML));
 check("kein repository_dispatch-Trigger", !/^\s*repository_dispatch:/m.test(YML));
 check("confirm_text ist Pflichtinput", /inputs:[\s\S]*?confirm_text:[\s\S]*?required: true/.test(YML));
+check("quittungsschluessel ist optionales Input (kein Zwang fuer den alten Auftrag)",
+  /inputs:[\s\S]*?quittungsschluessel:[\s\S]*?required: false/.test(YML));
+check("quittungsschluessel-Input nennt die alte Kennung als verbotenen Wert",
+  YML.includes("verstehen169-20260922-a"));
 
 // 2 · Exaktes Bestaetigungswort — kein Prefix, kein Alternativwort.
 check("Job bindet exaktes Bestaetigungswort", YML.includes(`inputs.confirm_text == '${WORT}'`));
@@ -89,12 +93,19 @@ check("gebundene Liste im Workflow", YML.includes('HELMUT_VERSTEHEN_169_LISTE: "
 check("kein Durchschnittspreis als harte Obergrenze im Workflow", !YML.includes("HELMUT_VERSTEHEN_169_PREIS_USD"));
 check("SCHARF-Flag auf 1", YML.includes('HELMUT_VERSTEHEN_169_SCHARF: "1"'));
 check("Bestaetigungswort kommt aus dem Input", YML.includes("HELMUT_VERSTEHEN_169_BESTAETIGT: ${{ inputs.confirm_text }}"));
+check("Quittungskennung kommt ausschliesslich aus dem Input",
+  YML.includes("HELMUT_VERSTEHEN_169_QUITTUNG: ${{ inputs.quittungsschluessel }}"));
 {
-  const erlaubt = new Set(["COMMIT", "LISTE", "SCHARF", "BESTAETIGT"]);
+  const erlaubt = new Set(["COMMIT", "LISTE", "SCHARF", "BESTAETIGT", "QUITTUNG"]);
   const alle = [...YML.matchAll(/HELMUT_VERSTEHEN_169_([A-Z0-9_]+)/g)].map((m) => m[1]);
   const fremde = alle.filter((k) => !erlaubt.has(k));
   check("keine fremden 169er-Env-Keys", fremde.length === 0 && alle.length > 0);
 }
+// Der Preflight erlaubt den neuen Schluessel NUR im engen Muster und niemals die alte Kennung.
+check("Preflight prueft das Kennungsmuster verstehen169-JJJJMMTT-suffix",
+  YML.includes("grep -Eq '^verstehen169-[0-9]{8}-[a-z0-9][a-z0-9-]*[a-z0-9]$'"));
+check("Preflight verbietet die alte Kennung",
+  YML.includes('[ "${QUITTUNGSSCHLUESSEL}" != "verstehen169-20260922-a" ]'));
 check("113 unveraendert (PINNED)", V.PINNED.maxModellaufrufe === 113);
 check("0,80 USD unveraendert (PINNED)", V.PINNED.maxUsd === 0.8);
 check("35 Minuten unveraendert (PINNED)", V.PINNED.maxMs === 35 * 60 * 1000);
