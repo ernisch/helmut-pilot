@@ -12,6 +12,13 @@
 # Concurrency-Gruppe der kontrollierten Production-KI-Arbeit. Kein Schedule, kein Push,
 # kein PR, keine automatische Wiederholung.
 #
+# ZWEI GETRENNTE COMMITS (nie vermischen):
+#   * HELMUT_VERSTEHEN_169_COMMIT ist der DOKUMENT-SNAPSHOT-Commit (der Datensatz, aus dem die
+#     169 Kennungen / der Hash / die 122 Cluster stammen) — fest eingeschrieben, unveraendert.
+#   * inputs.runtime_commit ist der Git-Commit des TATSAECHLICH auszufuehrenden Codes. Er wird
+#     hier ausgecheckt UND gegen den echten Checkout geprueft (git rev-parse HEAD).
+#     Abweichung = sofortiger Abbruch VOR jedem Schreibzugriff und jedem Modellaufruf.
+#
 # NICHT ueber scripts/lokal.js starten: der lokale Starter entfernt Production-Zugangsdaten
 # und schaltet den Speicher auf lokal — der scharfe Lauf braucht die echten Zugangsdaten.
 
@@ -32,6 +39,12 @@ on:
           verstehen169-20260922-a). Leer = alter Auftrag (bleibt blockiert).
         required: false
         default: ""
+      runtime_commit:
+        description: >-
+          Der Git-Commit des TATSAECHLICH auszufuehrenden Codes (voller 40-stelliger SHA).
+          WICHTIG: das ist NICHT der Dokument-Snapshot-Commit ea84f26c... Der Workflow checkt
+          genau diesen Commit aus und prueft ihn gegen den echten Checkout (git rev-parse HEAD).
+        required: true
 
 permissions:
   contents: read
@@ -52,6 +65,9 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
+          # GENAU der freigegebene Runtime-Commit. Nicht der Workflow-Stand ist der Lauf —
+          # der freigegebene Runtime-Commit ist der Lauf.
+          ref: ${{ inputs.runtime_commit }}
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
@@ -62,6 +78,7 @@ jobs:
         env:
           CONFIRM_TEXT: ${{ inputs.confirm_text }}
           QUITTUNGSSCHLUESSEL: ${{ inputs.quittungsschluessel }}
+          RUNTIME_COMMIT: ${{ inputs.runtime_commit }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
@@ -76,6 +93,12 @@ jobs:
           [ "${GITHUB_REF}" = "refs/heads/main" ] || fail "nicht auf main"
           [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] || fail "falsches Event"
           [ "${GITHUB_RUN_ATTEMPT}" = "1" ] || fail "run_attempt ungleich 1"
+          [ -n "${RUNTIME_COMMIT:-}" ] || fail "runtime_commit fehlt"
+          echo "${RUNTIME_COMMIT}" | grep -Eq '^[0-9a-f]{40}$' \
+            || fail "runtime_commit ist kein voller Git-SHA"
+          ECHTER_COMMIT="$(git rev-parse HEAD)"
+          [ "${ECHTER_COMMIT}" = "${RUNTIME_COMMIT}" ] \
+            || fail "Checkout weicht vom angeforderten runtime_commit ab"
           if [ -n "${QUITTUNGSSCHLUESSEL:-}" ]; then
             echo "${QUITTUNGSSCHLUESSEL}" | grep -Eq '^verstehen169-[0-9]{8}-[a-z0-9]([a-z0-9-]*[a-z0-9])?$' \
               || fail "quittungsschluessel weicht vom Muster verstehen169-JJJJMMTT-suffix ab"
@@ -92,7 +115,11 @@ jobs:
         env:
           CONFIRM_TEXT: ${{ inputs.confirm_text }}
           # 169er-Runner-Auftrag (fest eingeschrieben, unveraenderte Grenzen):
+          # Dokument-Snapshot-Commit (der DATENSATZ: 169 Kennungen, Hash, 122 Cluster).
           HELMUT_VERSTEHEN_169_COMMIT: "ea84f26ccc380e22961335926e2d4e585cee2308"
+          # Runtime-Commit (der TATSAECHLICH ausgeführte Code) — kommt AUSSCHLIESSLICH aus dem
+          # freigegebenen Input und wird im Runner erneut gegen den echten Checkout geprueft.
+          HELMUT_VERSTEHEN_169_RUNTIME_COMMIT: ${{ inputs.runtime_commit }}
           HELMUT_VERSTEHEN_169_LISTE: "belege/verstehen-169-ids.json"
           HELMUT_VERSTEHEN_169_SCHARF: "1"
           HELMUT_VERSTEHEN_169_BESTAETIGT: ${{ inputs.confirm_text }}
