@@ -157,7 +157,56 @@ check("der Bedienweg prueft den Runtime-Commit gegen den echten Checkout (reine 
     BEDIENWEG.pruefeRuntimeCommit("0".repeat(40), null, true).grund === "verstehen-runtime-commit-nicht-pruefbar");
 }
 
-// 10 · 4-USD-Tagesriegel unveraendert, Workflow setzt keinen eigenen Riegelwert.
+// 9b · Runtime-Commit an den DISPATCH gebunden (scharfer Lauf) — dieselbe dreiseitige Bindung
+// wie im Plan-Workflow. Ohne sie koennte JEDER gueltige 40-stellige SHA — auch ein aelterer oder
+// fremder Repository-Commit — ausgecheckt und mit den Production-Zugangsdaten (Supabase/Azure)
+// ausgefuehrt werden.
+check("Scharf: Job-if bindet runtime_commit an den main-Dispatch-SHA",
+  YML.includes("inputs.runtime_commit == github.sha"));
+check("Scharf: Bestaetigungswort bleibt im Job-if gebunden",
+  YML.includes("inputs.confirm_text == 'EINMALIGER_VERSTEHENSLAUF_169_RUHDOKUMENTE_BESTAETIGT'"));
+check("Scharf: Dispatch-SHA stammt aus dem echten Workflow-Kontext",
+  YML.includes("DISPATCH_SHA: ${{ github.sha }}"));
+check("Scharf: Preflight prueft runtime_commit gegen den Dispatch-SHA",
+  YML.includes('[ "${RUNTIME_COMMIT}" = "${DISPATCH_SHA}" ]'));
+check("Scharf: fehlender Dispatch-SHA bricht ab",
+  YML.includes('[ -n "${DISPATCH_SHA:-}" ] || fail "Dispatch-SHA fehlt"'));
+check("Scharf: Checkout-Vergleich bleibt bestehen",
+  YML.includes('[ "${ECHTER_COMMIT}" = "${RUNTIME_COMMIT}" ]'));
+check("Scharf: dreiseitige Bindung vollstaendig (angefordert = Dispatch = Checkout)", (() => {
+  const dispatcher = YML.includes("inputs.runtime_commit == github.sha");
+  const preflight = YML.includes('[ "${RUNTIME_COMMIT}" = "${DISPATCH_SHA}" ]');
+  const checkout = YML.includes('[ "${ECHTER_COMMIT}" = "${RUNTIME_COMMIT}" ]');
+  return dispatcher && preflight && checkout;
+})());
+check("Scharf: die Dispatch-Bindung ist VOR dem scharfen Runner geprueft", (() => {
+  const bindung = YML.indexOf('[ "${RUNTIME_COMMIT}" = "${DISPATCH_SHA}" ]');
+  const schritt = YML.indexOf("- name: Einmaliger scharfer 169er Verstehenslauf");
+  const aufruf = YML.lastIndexOf("node scripts/verstehen-einmalig-169.js");
+  return bindung > 0 && schritt > bindung && aufruf > schritt;
+})());
+check("Scharf: die Dispatch-Bindung steht VOR der Secret-Pruefung/Nutzung", (() => {
+  const bindung = YML.indexOf('[ "${RUNTIME_COMMIT}" = "${DISPATCH_SHA}" ]');
+  const supabase = YML.indexOf('[ -n "${SUPABASE_URL:-}" ] || fail "SUPABASE_URL fehlt"');
+  const azure = YML.indexOf('[ -n "${AZURE_OPENAI_KEY:-}" ] || fail "AZURE_OPENAI_KEY fehlt"');
+  return bindung > 0 && supabase > bindung && azure > bindung;
+})());
+check("Scharf: ein beliebiger gueltiger SHA reicht nicht (Zulassung = Dispatch-Vergleich)", (() => {
+  // Die reine Formatpruefung bleibt, ist aber NICHT die Zulassung.
+  const format = YML.includes("grep -Eq '^[0-9a-f]{40}$'");
+  const zugelassen = YML.includes('[ "${RUNTIME_COMMIT}" = "${DISPATCH_SHA}" ]');
+  return format && zugelassen;
+})());
+check("Scharf: Quittungslogik unveraendert (Input, Muster, Alt-Kennungs-Verbot)",
+  YML.includes("HELMUT_VERSTEHEN_169_QUITTUNG: ${{ inputs.quittungsschluessel }}")
+  && YML.includes("grep -Eq '^verstehen169-[0-9]{8}-[a-z0-9]([a-z0-9-]*[a-z0-9])?$'")
+  && YML.includes('[ "${QUITTUNGSSCHLUESSEL}" != "verstehen169-20260922-a" ]'));
+check("Scharf: Secrets unveraendert (Supabase + Azure wie bisher)",
+  YML.includes("secrets.SUPABASE_URL") && YML.includes("secrets.SUPABASE_SERVICE_ROLE_KEY")
+  && YML.includes("secrets.AZURE_OPENAI_KEY") && YML.includes("secrets.AZURE_OPENAI_ENDPOINT"));
+check("Scharf: Concurrency-Gruppe unveraendert",
+  YML.includes("group: helmut-500-kontrollierte-facharbeit")
+  && YML.includes("cancel-in-progress: false"));
 check("4-USD-Riegel unveraendert (LIMIT_MICRO_USD = 4000000)", /LIMIT_MICRO_USD\s*=\s*4000000/.test(BUDGET));
 check("Workflow setzt keinen eigenen USD-Riegel", !/4000000|LIMIT_MICRO_USD|USD_RIEGEL|USD_LIMIT/.test(YML));
 
@@ -305,5 +354,14 @@ check("Scharf und Plan sind getrennt (SCHARF nur im scharfen Workflow gesetzt)",
   return YML.includes('HELMUT_VERSTEHEN_169_SCHARF: "1"')
     && !planZuw.includes("HELMUT_VERSTEHEN_169_SCHARF");
 })());
+
+// 12d · Der Plan-Workflow bleibt unveraendert sicher (dieselbe dreiseitige Bindung).
+check("Plan bleibt unveraendert sicher (dreiseitige Dispatch-Bindung)",
+  PLAN.includes("inputs.runtime_commit == github.sha")
+  && PLAN.includes('[ "${RUNTIME_COMMIT}" = "${DISPATCH_SHA}" ]')
+  && PLAN.includes('[ "${ECHTER_COMMIT}" = "${RUNTIME_COMMIT}" ]'));
+check("Plan bleibt ohne Scharf-Variable und ohne Modell-Secrets",
+  !/^\s*HELMUT_VERSTEHEN_169_SCHARF\s*:/m.test(PLAN)
+  && !/secrets\.(AZURE_[A-Z_]+|OPENAI[A-Z_]*)/.test(PLAN));
 
 console.log(`verstehen-169-workflow-test: ${passed} von ${passed} Pruefungen gruen.`);

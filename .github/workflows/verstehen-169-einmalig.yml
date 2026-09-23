@@ -15,9 +15,15 @@
 # ZWEI GETRENNTE COMMITS (nie vermischen):
 #   * HELMUT_VERSTEHEN_169_COMMIT ist der DOKUMENT-SNAPSHOT-Commit (der Datensatz, aus dem die
 #     169 Kennungen / der Hash / die 122 Cluster stammen) — fest eingeschrieben, unveraendert.
-#   * inputs.runtime_commit ist der Git-Commit des TATSAECHLICH auszufuehrenden Codes. Er wird
-#     hier ausgecheckt UND gegen den echten Checkout geprueft (git rev-parse HEAD).
-#     Abweichung = sofortiger Abbruch VOR jedem Schreibzugriff und jedem Modellaufruf.
+#   * inputs.runtime_commit ist der Git-Commit des TATSAECHLICH auszufuehrenden Codes.
+#
+# RUNTIME-COMMIT IST AN DEN DISPATCH GEBUNDEN (fail closed, drei Seiten muessen gleich sein):
+#   angefordertes `runtime_commit` == `github.sha` des auf `main` gestarteten Dispatches
+#                              == tatsaechlich ausgecheckter Commit (`git rev-parse HEAD`).
+# Der Job laeuft bei Abweichung gar nicht erst an (Job-`if`), und der Preflight bricht zusaetzlich
+# hart ab — BEVOR die Production-Zugangsdaten benutzt werden und bevor der Runner startet.
+# Damit kann KEIN beliebiger, aelterer oder fremder Repository-Commit mit den Production-
+# Zugangsdaten (Supabase/Azure) ausgefuehrt werden — nur der main-Commit dieses Dispatches.
 #
 # NICHT ueber scripts/lokal.js starten: der lokale Starter entfernt Production-Zugangsdaten
 # und schaltet den Speicher auf lokal — der scharfe Lauf braucht die echten Zugangsdaten.
@@ -42,8 +48,11 @@ on:
       runtime_commit:
         description: >-
           Der Git-Commit des TATSAECHLICH auszufuehrenden Codes (voller 40-stelliger SHA).
-          WICHTIG: das ist NICHT der Dokument-Snapshot-Commit ea84f26c... Der Workflow checkt
-          genau diesen Commit aus und prueft ihn gegen den echten Checkout (git rev-parse HEAD).
+          ER MUSS exakt der main-Commit sein, auf dem dieser Dispatch gestartet wird
+          (github.sha) — jeder andere, auch ein aelterer oder fremder gueltiger Commit, wird vor
+          dem Runner-Aufruf abgelehnt. WICHTIG: das ist NICHT der Dokument-Snapshot-Commit
+          ea84f26c... Der Workflow checkt genau diesen Commit aus und prueft ihn zusaetzlich
+          gegen den echten Checkout (git rev-parse HEAD).
         required: true
 
 permissions:
@@ -51,12 +60,16 @@ permissions:
 
 jobs:
   laeufer:
+    # Klarer Name: ein uebersprungener Job (falscher runtime_commit) ist damit im Run sichtbar
+    # als "Scharfer Lauf — nur der main-Commit dieses Dispatches" statt als raetselhaftes Skip.
+    name: Scharfer Lauf — nur der main-Commit dieses Dispatches
     if: >-
       github.repository == 'ernisch/helmut-pilot' &&
       github.ref == 'refs/heads/main' &&
       github.event_name == 'workflow_dispatch' &&
       github.run_attempt == 1 &&
-      inputs.confirm_text == 'EINMALIGER_VERSTEHENSLAUF_169_RUHDOKUMENTE_BESTAETIGT'
+      inputs.confirm_text == 'EINMALIGER_VERSTEHENSLAUF_169_RUHDOKUMENTE_BESTAETIGT' &&
+      inputs.runtime_commit == github.sha
     runs-on: ubuntu-latest
     timeout-minutes: 40
     concurrency:
@@ -79,6 +92,8 @@ jobs:
           CONFIRM_TEXT: ${{ inputs.confirm_text }}
           QUITTUNGSSCHLUESSEL: ${{ inputs.quittungsschluessel }}
           RUNTIME_COMMIT: ${{ inputs.runtime_commit }}
+          # Der SHA des auf main gestarteten Dispatches — die zweite Seite der Bindung.
+          DISPATCH_SHA: ${{ github.sha }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
@@ -96,6 +111,13 @@ jobs:
           [ -n "${RUNTIME_COMMIT:-}" ] || fail "runtime_commit fehlt"
           echo "${RUNTIME_COMMIT}" | grep -Eq '^[0-9a-f]{40}$' \
             || fail "runtime_commit ist kein voller Git-SHA"
+          # BINDUNG 1/2: der angeforderte Commit ist der main-Commit dieses Dispatches. Nur so kann
+          # KEIN beliebiger aelterer oder fremder Repository-Commit die Production-Zugangsdaten
+          # (Supabase/Azure) bekommen.
+          [ -n "${DISPATCH_SHA:-}" ] || fail "Dispatch-SHA fehlt"
+          [ "${RUNTIME_COMMIT}" = "${DISPATCH_SHA}" ] \
+            || fail "runtime_commit entspricht nicht dem main-Commit dieses Dispatches"
+          # BINDUNG 2/2: der echte Checkout ist genau dieser Commit.
           ECHTER_COMMIT="$(git rev-parse HEAD)"
           [ "${ECHTER_COMMIT}" = "${RUNTIME_COMMIT}" ] \
             || fail "Checkout weicht vom angeforderten runtime_commit ab"
@@ -118,7 +140,8 @@ jobs:
           # Dokument-Snapshot-Commit (der DATENSATZ: 169 Kennungen, Hash, 122 Cluster).
           HELMUT_VERSTEHEN_169_COMMIT: "ea84f26ccc380e22961335926e2d4e585cee2308"
           # Runtime-Commit (der TATSAECHLICH ausgeführte Code) — kommt AUSSCHLIESSLICH aus dem
-          # freigegebenen Input und wird im Runner erneut gegen den echten Checkout geprueft.
+          # freigegebenen Input, ist im Preflight an den Dispatch-SHA gebunden und wird im Runner
+          # erneut gegen den echten Checkout geprueft.
           HELMUT_VERSTEHEN_169_RUNTIME_COMMIT: ${{ inputs.runtime_commit }}
           HELMUT_VERSTEHEN_169_LISTE: "belege/verstehen-169-ids.json"
           HELMUT_VERSTEHEN_169_SCHARF: "1"
