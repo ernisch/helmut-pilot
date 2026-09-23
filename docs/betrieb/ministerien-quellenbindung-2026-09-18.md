@@ -79,6 +79,31 @@ Goldsetauswerter `evaluateUnderstandingCase` prueft unveraendert streng und meld
 Ministeriumsliste weiterhin als ungueltig — er speichert nichts und bleibt der Qualitaetswaechter,
 der einen Modellfehler sichtbar macht.
 
+## Nachtrag 23.09.2026 (zweiter Teil) — Herausgeber ist kein Quellentext, und bekannte Typwidersprueche entfallen
+
+Zwei weitere belegte Ursachen, dieselbe Codezone (`lib/helmut/understanding.js`,
+`lib/helmut/akteurslisten-quellenbindung.js`):
+
+1. **Herausgeber-Suffix als Quellenbeleg.** Der bestaetigte Herausgebersuffix eines Titels
+   (z. B. `… - bundesregierung.de`) ging zoertlich in den Modellprompt ein und wurde damit ein
+   scheinbarer Akteursbeleg. Der Modellprompt traegt jetzt nur noch den Titelrumpf aus der
+   bereits Production-erprobten kanonischen Logik `herausgeber.titelRumpf()`; `herausgeber`, `url`
+   und der Datensatz selbst bleiben unveraendert. Kein pauschales Abschneiden am letzten
+   Bindestrich, keine zweite Regex. Die kanonische `quellenZeitvertrag.understandingQuelle()` und
+   damit der Artikelkontext-Quellenhash bleiben unveraendert (der Hash basiert weiterhin auf dem
+   vollen Dokument).
+2. **Bekannter Typwiderspruch im falschen Akteursfeld.** `mentioned_ministries =
+   ["Bundesregierung"]` wurde gespeichert, obwohl die zentrale Entitaetsschicht `Bundesregierung`
+   als `government` kennt. `ohneFalschTypisierteAkteure` entfernt in ALLEN acht quellengebundenen
+   Akteurslisten woertlich BELEGTE, aber eindeutig falsch typisierte Werte (Zielfeldtypen:
+   `ministry`, `party`/`parliamentary_group`, `committee`, `person`). Nur bekannte Typwidersprueche
+   entfallen; unbekannte (entity_id = null) belegte Werte bleiben, ebenso korrekt typisierte. Keine
+   Alias-, Kuerzel-, Ressort- oder Fuzzy-Erweiterung.
+
+**Unveraendert streng:** Schema, `decision_level-antwortkonflikt`, CAS/Fencing, Locks, Budget,
+Quittung, Quellenhash und alle Laufdeckel; der Goldsetauswerter prueft unveraendert streng. Der
+Vertrag ist testgesichert durch `scripts/understanding-akteursbeleg-test.js`.
+
 **Grenzen.** Es wird nichts rueckwirkend geaendert (bestehende Objekte bleiben wie sie sind),
 keine Modellantwort, kein Prompt und kein Rohtext zusaetzlich gespeichert, kein zweiter
 Modellaufruf, kein Netz und keine Production-Wirkung. Belegte Nennungen bleiben ein Nennungsbeleg
