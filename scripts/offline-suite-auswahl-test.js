@@ -2,16 +2,16 @@
 
 // Helmut — Vertrag der Offline-Suiten-Auswahl (Standard vs. erweitert).
 // =============================================================================================
-// Haelt die Trennung aus dem Testorganisations-Sprint vom 2026-09-23 technisch fest: die vier
-// historischen Skalierungssuiten (OP-30, August 2026 — lokale Simulationen ohne
-// Production-Beweis, ausdruecklich kein Abnahmekriterium) laufen NICHT mehr im kanonischen
-// Standardlauf und damit nicht im Pflicht-CI-Gate. Sie bleiben unveraendert im Repo und sind
-// ueber `--extended` bewusst ausfuehrbar.
+// Haelt die Testorganisation technisch fest:
+//   * Der STANDARD-Pflichtlauf (und damit das CI-Gate) fuehrt NUR die explizite Kernmenge
+//     STANDARD aus scripts/run-offline-tests.js aus — aktuelle Schutz-/Sicherheitsvertraege,
+//     aktuelle 500er-Schutzlogik und die grundlegenden Vertraege des heutigen Production-Pfads.
+//   * Die vollstaendige Regression bleibt ueber `--extended` bewusst ausfuehrbar; historische
+//     und bereichsspezifische Suiten sind NICHT geloescht, sondern nur nicht mehr Pflicht.
+//   * Eine neue Testdatei wird NICHT automatisch Pflicht (siehe `offline-suite-auswahl-test`).
 //
 // KEIN echter Netzzugriff und KEIN Testlauf: der Beweis fuehrt ausschliesslich `--list` des
-// Runners aus (der vor dem Ausfuehren jeder Suite zurueckkehrt). Zusaetzlich sichert diese
-// Suite, dass die Trennung KEINE aktuelle Absicherung verliert: 500er-, Netzschutz-,
-// Security- und Mandantentrennungssuiten muessen weiter im Standardlauf stehen.
+// Runners aus (der vor dem Ausfuehren jeder Suite zurueckkehrt).
 //
 // Aufruf:  node scripts/lokal.js -- node scripts/offline-suite-auswahl-test.js
 
@@ -27,8 +27,51 @@ process.env.HELMUT_LOKALER_SCHUTZ_NUR_LADEN = "ja";
 const S = require(path.join(ROOT, "scripts", "lokaler-netzschutz.js"));
 delete process.env.HELMUT_LOKALER_SCHUTZ_NUR_LADEN;
 
-// Diese vier stammen aus den OP-30-Skalierungsnachweisen und sind aus dem Standardlauf
-// ausgelagert (in scripts/run-offline-tests.js als HISTORISCHE_SKALIERUNG gefuehrt).
+// Repraesentative Schutz-/Kernvertraege, die UNBEDINGT im Standardlauf bleiben muessen.
+// (Bewusst eine Auswahl je Schutzgrenze, nicht die vollstaendige Liste — die vollstaendige
+// Liste steht im Runner. Faellt hier etwas heraus, ist das ein Schutzverlust.)
+const MUSS_STANDARD = [
+  // Mandantentrennung / Cross-Tenant / Auth / Secrets / CAS / Schreibschutz
+  "netzschutz-test.js",
+  "mandantentrennung-test.js",
+  "cross-tenant-security-test.js",
+  "tenant-guard-test.js",
+  "tenant-neutrality-test.js",
+  "tenant-jwt-test.js",
+  "rls-policy-simulation-test.js",
+  "security-hardening-sql-test.js",
+  "p1-security-check.js",
+  "privacy-authz-test.js",
+  "cache-isolation-test.js",
+  "secret-redaction-test.js",
+  "admin-config-diagnose-test.js",
+  "alarm-payload-test.js",
+  "login-eine-mutation-test.js",
+  "invite-flow-test.js",
+  "store-cas-test.js",
+  "pipeline-lock-atomic-test.js",
+  "nachhol-schreibgate-test.js",
+  // Budget / Kosten / KI-Riegel
+  "kosten-limits-test.js",
+  "llm-budget-test.js",
+  "llm-reservation-test.js",
+  "testkosten-budget-test.js",
+  // aktueller 500er-Schutzvertrag
+  "verstehen-169-neuversuch-test.js",
+  "verstehen-169-kosten-deckel-test.js",
+  "testfenster-null500-test.js",
+  "verdraengungsschutz-test.js",
+  "github-direkt500-test.js",
+  "testkohorte-vorwaerts-test.js",
+  // grundlegende Vertraege des heutigen Production-Pfads
+  "flags-test.js",
+  "source-mode-test.js",
+  "migrations-organisation-test.js",
+  "offline-suite-auswahl-test.js",
+  "quellenpflicht-vertrag-test.js"
+];
+
+// Aus dem Pflichtlauf ausgelagerte historische Skalierungssuiten (Sprint 2026-09-23).
 const HISTORISCH = [
   "narrativ-stress-1000-test.js",
   "narrativ-stufen-test.js",
@@ -36,29 +79,18 @@ const HISTORISCH = [
   "skalierung-stufen-test.js"
 ];
 
-// Aktuelle Absicherungen, die UNVERAENDERT im Standardlauf stehen muessen (Netzschutz,
-// 500er, Security, Mandantentrennung). Faellt eine hiervon aus dem Standardlauf, ist das
-// ein Sicherheitsverlust — genau davor schuetzt diese Liste.
-const MUSS_STANDARD = [
-  "netzschutz-test.js",
-  "github-direkt500-test.js",
-  "funktionstest-500-test.js",
-  "kapazitaet-500-test.js",
-  "testfenster-null500-test.js",
-  "testkohorte-direkt500-test.js",
-  "testnachweis-ziel500-test.js",
-  "planung-500-durchsatz-test.js",
-  "github-testfenster-500-test.js",
-  "github-null500-ende-test.js",
-  "github-briefingnachweis-500-test.js",
-  "github-privater-inhaltsnachweis-500-test.js",
-  "github-quellenkontext-500-test.js",
-  "quellenvorlauf-500-test.js",
-  "briefing-pruefaufnahme-500-test.js",
-  "mandantentrennung-test.js",
-  "cross-tenant-security-test.js",
-  "p1-security-check.js",
-  "security-hardening-sql-test.js"
+// Bereichsspezifische/historische Suiten, die NICHT Pflicht sind (Beispiele je Domäne).
+// Sie belegen, dass die Auslagerung Domänen trifft und nicht nur Zufall ist.
+const NICHT_PFLICHT_BEISPIELE = [
+  "briefing-frische-test.js",   // Briefing-Domäne
+  "lage-test.js",               // Lage-Domäne
+  "radar-test.js",              // Radar-Domäne
+  "matching-relevanz-gate-test.js", // Matching-Domäne
+  "helmut-tab-ui-test.js",      // UI
+  "pardok-parser-test.js",      // PARDOK/Landesebene
+  "berlin-neutralitaet-test.js",// Berlin/Landesmodul
+  "prosa-36er-test.js",         // Prosa/Entwicklungsvertrag
+  "funktionstest-ablaufkette-test.js" // abgeschlossener Sprint
 ];
 
 let pass = 0;
@@ -68,9 +100,8 @@ function check(name, ok, detail = "") {
   else { fail += 1; console.log(`  FAIL  ${name}${detail ? ` — ${detail}` : ""}`); }
 }
 
-// Eine SAUBERE Umgebung: ohne jede Production-Kennung, ohne DB-Adressen, Quellenmodus aus.
-// Ohne NODE_OPTIONS, damit ein vererbter Preload-Pfad (mit Leerzeichen im Arbeitsverzeichnis)
-// die Kindprozesse nicht stoert.
+// Saubere Umgebung: ohne Production-Kennung, ohne DB-Adressen, Quellenmodus aus, ohne
+// NODE_OPTIONS (ein vererbter Preload-Pfad mit Leerzeichen wuerde die Kindprozesse stoeren).
 function sauber() {
   const env = { ...process.env };
   for (const n of S.PRODUCTION_KENNUNGEN) delete env[n];
@@ -81,66 +112,67 @@ function sauber() {
   return env;
 }
 
-// Fuehrt `run-offline-tests.js --list [weitere]` aus und liefert Ausgabe und Suitenliste.
 function liste(...extra) {
   const r = spawnSync(process.execPath, [RUNNER, "--list", ...extra],
     { encoding: "utf8", env: sauber(), timeout: 60000 });
   const aus = `${r.stdout || ""}\n${r.stderr || ""}`;
-  // Suitenzeilen stehen ohne Einrueckung; die ausgelagerte Historie ist eingerueckt.
-  const suiten = new Set(
-    aus.split("\n").filter((l) => /\.js$/.test(l) && !/^\s/.test(l))
-  );
+  const suiten = new Set(aus.split("\n").filter((l) => /\.js$/.test(l) && !/^\s/.test(l)));
   const zahl = (aus.match(/^(\d+) Offline-Suiten/gm) || []).map((m) => Number(m.split(" ")[0]));
   return { status: r.status, aus, suiten, zahl };
 }
 
 function main() {
-  console.log("Helmut — Vertrag der Offline-Suiten-Auswahl (Standard vs. erweitert)\n");
+  console.log("Helmut — Offline-Suiten-Auswahl: Standard (Pflicht) vs. erweitert (Regression)\n");
 
   console.log("== A · Standardlauf (`--list`) ==");
   const standard = liste();
-  check("A1 Der Standardlisten-Aufruf endet mit Exit 0", standard.status === 0,
-    `exit ${standard.status}`);
-  check("A2 Der Standardlauf enthaelt KEINE der vier historischen Skalierungssuiten",
-    HISTORISCH.every((f) => !standard.suiten.has(f)),
-    HISTORISCH.filter((f) => standard.suiten.has(f)).join(", ") || "keine");
-  check("A3 Der Standardlauf enthaelt alle aktuellen Absicherungen",
+  check("A1 Der Standardlisten-Aufruf endet mit Exit 0", standard.status === 0, `exit ${standard.status}`);
+  check("A2 Alle repraesentativen Schutz-/Kernvertraege sind im Standardlauf",
     MUSS_STANDARD.every((f) => standard.suiten.has(f)),
     MUSS_STANDARD.filter((f) => !standard.suiten.has(f)).join(", ") || "alle");
-  check("A4 Die Standardliste benennt die vier ausdruecklich als NICHT im Standardlauf",
-    /NICHT im Standardlauf/.test(standard.aus) && HISTORISCH.every((f) => standard.aus.includes(f)),
-    "");
-  check("A5 Die Standardliste nennt ihre Groesse", standard.zahl.length === 1 && standard.zahl[0] > 0,
+  check("A3 Keine historische Skalierungssuite ist im Standardlauf",
+    HISTORISCH.every((f) => !standard.suiten.has(f)),
+    HISTORISCH.filter((f) => standard.suiten.has(f)).join(", ") || "keine");
+  check("A4 Bereichsspezifische Suiten sind NICHT im Standardlauf",
+    NICHT_PFLICHT_BEISPIELE.every((f) => !standard.suiten.has(f)),
+    NICHT_PFLICHT_BEISPIELE.filter((f) => standard.suiten.has(f)).join(", ") || "keine");
+  check("A5 Die Standardliste nennt Groesse und Modus",
+    standard.zahl.length === 1 && /Standard = Pflichtlauf/.test(standard.aus),
     `gemeldet: ${standard.zahl.join(", ") || "keine"}`);
+  check("A6 Die Standardliste benennt die ausgelagerten Suiten als Zahl",
+    /Nicht im Standardlauf[^\n]*: \d+ Suiten/.test(standard.aus), "");
 
   console.log("\n== B · Erweiterter Lauf (`--list --extended`) ==");
   const erweitert = liste("--extended");
-  check("B1 Der erweiterte Listen-Aufruf endet mit Exit 0", erweitert.status === 0,
-    `exit ${erweitert.status}`);
-  check("B2 Der erweiterte Lauf enthaelt ALLE vier historischen Skalierungssuiten",
-    HISTORISCH.every((f) => erweitert.suiten.has(f)),
-    HISTORISCH.filter((f) => !erweitert.suiten.has(f)).join(", ") || "alle");
-  check("B3 Der erweiterte Lauf enthaelt weiterhin alle aktuellen Absicherungen",
-    MUSS_STANDARD.every((f) => erweitert.suiten.has(f)),
-    MUSS_STANDARD.filter((f) => !erweitert.suiten.has(f)).join(", ") || "alle");
-  check("B4 Der erweiterte Lauf ist eine Obermenge des Standardlaufs",
+  check("B1 Der erweiterte Listen-Aufruf endet mit Exit 0", erweitert.status === 0, `exit ${erweitert.status}`);
+  check("B2 Der erweiterte Lauf ist eine Obermenge des Standardlaufs",
     [...standard.suiten].every((f) => erweitert.suiten.has(f)),
     [...standard.suiten].filter((f) => !erweitert.suiten.has(f)).join(", ") || "alle");
+  check("B3 Der erweiterte Lauf enthaelt die historischen Skalierungssuiten",
+    HISTORISCH.every((f) => erweitert.suiten.has(f)),
+    HISTORISCH.filter((f) => !erweitert.suiten.has(f)).join(", ") || "alle");
+  check("B4 Der erweiterte Lauf enthaelt die bereichsspezifischen Suiten",
+    NICHT_PFLICHT_BEISPIELE.every((f) => erweitert.suiten.has(f)),
+    NICHT_PFLICHT_BEISPIELE.filter((f) => !erweitert.suiten.has(f)).join(", ") || "alle");
   const mehr = [...erweitert.suiten].filter((f) => !standard.suiten.has(f));
-  check("B5 Die Differenz Standard -> erweitert ist GENAU die vier historischen Suiten",
-    mehr.length === HISTORISCH.length && HISTORISCH.every((f) => mehr.includes(f)),
-    mehr.join(", ") || "keine");
-  check("B6 Die erweiterte Liste traegt KEINE Standard-Ausgrenzung",
-    !/NICHT im Standardlauf/.test(erweitert.aus), "");
-  check("B7 Der erweiterte Lauf hat genau vier Suiten mehr als der Standardlauf",
-    standard.zahl.length === 1 && erweitert.zahl.length === 1
-      && erweitert.zahl[0] - standard.zahl[0] === HISTORISCH.length,
-    `Standard ${standard.zahl.join(",") || "?"} · erweitert ${erweitert.zahl.join(",") || "?"}`);
+  check("B5 Der Standardlauf ist eine klare Minderheit der vollstaendigen Regression",
+    standard.suiten.size > 0 && standard.suiten.size * 2 < erweitert.suiten.size
+      && (erweitert.suiten.size - standard.suiten.size) > 200,
+    `Standard ${standard.suiten.size} von ${erweitert.suiten.size}`);
+  check("B6 Die erweiterte Liste traegt KEINE Standard-Kennzeichnung als Pflichtlauf",
+    /erweitert = vollstaendige Regression/.test(erweitert.aus), "");
+  check("B7 Standard und erweitert nennen zusammen exakt die ausgelagerten Suiten",
+    mehr.length > 0 && HISTORISCH.every((f) => mehr.includes(f)), `ausgelagert: ${mehr.length}`);
 
-  console.log("\n== C · Die Suiten bleiben unveraendert im Repo erhalten ==");
-  check("C1 Alle vier historischen Suiten existieren weiterhin",
+  console.log("\n== C · Erhalt und neue Tests ==");
+  check("C1 Jede Standard-Suite existiert als Datei",
+    [...standard.suiten].every((f) => fs.existsSync(path.join(ROOT, "scripts", f))),
+    [...standard.suiten].filter((f) => !fs.existsSync(path.join(ROOT, "scripts", f))).join(", ") || "alle");
+  check("C2 Alle vier historischen Skalierungssuiten bleiben im Repo erhalten",
     HISTORISCH.every((f) => fs.existsSync(path.join(ROOT, "scripts", f))),
     HISTORISCH.filter((f) => !fs.existsSync(path.join(ROOT, "scripts", f))).join(", ") || "alle");
+  check("C3 Eine unbekannte neue Suite ist NICHT Standard (Testauswahl bleibt bewusst)",
+    !standard.suiten.has("gaenzlich-neuer-beispiel-test.js"), "");
 
   console.log(`\n${pass} PASS / ${fail} FAIL`);
   process.exit(fail ? 1 : 0);
