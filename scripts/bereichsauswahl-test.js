@@ -131,16 +131,47 @@ function main() {
     dSammlung.length < ALLE.length && dSammlung.every((f) => ALLE.includes(f)),
     `${dSammlung.length} < ${ALLE.length}`);
 
-  // ── E · Sammeldateien (server.js/client.js) ──────────────────────────────────
+  // ── E · Sammeldateien (je Datei eigene Zuordnung) ────────────────────────────
   console.log("\n== E · Sammeldateien ==");
-  const eServer = waehle(["server.js"]);
   const alleBereiche = Object.keys(A.BEREICHE).sort();
-  check("E1 server.js loest NICHT die gesamte Regression aus",
-    !eServer.konservativ && eServer.suiten.length < ALLE.length, `${eServer.suiten.length} < ${ALLE.length}`);
-  check("E2 server.js nutzt den kleinen konservativen Sammelsatz",
-    A.SAMMEL_BEREICHE.every((b) => eServer.bereiche.includes(b))
-      && eServer.bereiche.length < alleBereiche.length,
-    JSON.stringify(eServer.bereiche));
+  const client = waehle(["client.js"]);
+  check("E1 client.js loest NICHT die gesamte Regression aus",
+    !client.konservativ && client.suiten.length < ALLE.length, `${client.suiten.length} < ${ALLE.length}`);
+  check("E2 client.js aktiviert den Bereich radar (belegte Radar-Darstellung)",
+    client.bereiche.includes("radar"), JSON.stringify(client.bereiche));
+  check("E3 client.js waehlt mindestens einen Radar-Test (radar-ui-test.js)",
+    client.suiten.includes("radar-ui-test.js"), "");
+  check("E4 client.js enthaelt weiterhin die uebrigen Client-Bereiche",
+    ["ui", "briefing", "lage", "admin", "profil", "auth"].every((b) => client.bereiche.includes(b)),
+    JSON.stringify(client.bereiche));
+  const server = waehle(["server.js"]);
+  const serverErwartet = ["admin", "auth", "briefing", "lage", "quellen", "verstehen",
+    "warteschlange-pipeline", "radar", "profil", "b055", "500-nachweis"];
+  check("E5 server.js erhaelt alle belegten Server-Bereiche",
+    serverErwartet.every((b) => server.bereiche.includes(b)) && !server.konservativ,
+    JSON.stringify(server.bereiche));
+  const api = waehle(["api/index.js"]);
+  check("E6 api/index.js (require '../server') ergibt dieselben Bereiche wie server.js",
+    JSON.stringify(api.bereiche) === JSON.stringify(server.bereiche), JSON.stringify(api.bereiche));
+  const lam = waehle(["lambda/index.js"]);
+  check("E7 lambda/ ergibt nur warteschlange-pipeline",
+    JSON.stringify(lam.bereiche) === JSON.stringify(["warteschlange-pipeline"]), JSON.stringify(lam.bereiche));
+  const css = waehle(["styles.css"]);
+  check("E8 styles.css loest nur ui aus",
+    JSON.stringify(css.bereiche) === JSON.stringify(["ui"]), JSON.stringify(css.bereiche));
+  const html = waehle(["index.html"]);
+  check("E9 index.html loest nur ui aus",
+    JSON.stringify(html.bereiche) === JSON.stringify(["ui"]), JSON.stringify(html.bereiche));
+  const sw = waehle(["sw.js"]);
+  check("E10 sw.js loest nur ui aus",
+    JSON.stringify(sw.bereiche) === JSON.stringify(["ui"]), JSON.stringify(sw.bereiche));
+  check("E11 Keine Sammeldatei loest die vollstaendige Regression aus",
+    [client, server, api, lam, css, html, sw].every((r) => r.suiten.length < ALLE.length && !r.konservativ)
+      && client.bereiche.length < alleBereiche.length,
+    "");
+  check("E12 Sammeldateien doppeln keine Standard-Suiten",
+    [client, server].every((r) => r.suiten.every((f) => !STANDARD.has(f))),
+    "");
 
   // ── F · Determinismus ────────────────────────────────────────────────────────
   console.log("\n== F · Determinismus ==");

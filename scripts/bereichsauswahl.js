@@ -37,18 +37,36 @@ const KERN = [
 ];
 
 // ── SAMMELDATEIEN: große Dateien, die viele Fachdomänen bedienen. Sie dürfen NICHT die
-// gesamte Regression auslösen, sondern nur den kleinen konservativen Satz SAMMEL_BEREICHE. ──
-const SAMMELDATEIEN = [
-  /(^|\/)server\.js$/i,
-  /(^|\/)client\.js$/i,
-  /(^|\/)sw\.js$/i,
-  /(^|\/)api\/index\.js$/i,
-  /(^|\/)lambda\//i,
-  /(^|\/)styles\.css$/i,
-  /(^|\/)index\.html$/i
-];
-const SAMMEL_BEREICHE = [
-  "briefing", "lage", "quellen", "admin", "profil", "auth", "ui", "warteschlange-pipeline"
+// gesamte Regression auslösen, sondern nur die für SIE belegten Fachbereiche. Die Zuordnung
+// ist deshalb EXPLIZIT PRO DATEI (nicht eine gemeinsame Liste) und am aktuellen Code belegt
+// (client.js-Views, server.js-Routen, api/index.js -> server, lambda -> Warteschlange,
+// sw.js/styles.css/index.html -> UI). ──
+const SAMMEL_DATEI_BEREICHE = [
+  // client.js: die echten App-Ansichten (renderView-Dispatch: renderRadarView, renderLageView,
+  // renderHelmutView/renderBriefingView, renderAdminView, renderProfileSettingsView,
+  // renderOnboarding/Mandatswahl, renderLogin/renderPilotAccess).
+  { muster: [/(^|\/)client\.js$/i],
+    bereiche: ["ui", "briefing", "lage", "radar", "admin", "profil", "auth"] },
+  // server.js: die HTTP-Oberflaeche des Produkts. Belegte Routen je Bereich: /api/admin/*,
+  // /api/auth/* + /api/pilot/*, /api/briefing/* + /api/cron/morning-briefing,
+  // /api/lage/* + /api/cron/lage-*, /api/crawl/run + /api/cron/crawl,
+  // /api/cron/understanding*, /api/cron/pipeline + /api/pipeline/* + /api/ops/jobqueue,
+  // /api/radar/archive, /api/profile/* + /api/daily-inputs, /api/cron/b055-einzelabschluss,
+  // /api/cron/testnachweis-status.
+  { muster: [/(^|\/)server\.js$/i],
+    bereiche: ["admin", "auth", "briefing", "lage", "quellen", "verstehen",
+      "warteschlange-pipeline", "radar", "profil", "b055", "500-nachweis"] },
+  // api/index.js: `module.exports = require("../server")` -> identisch zu server.js.
+  { muster: [/(^|\/)api\/index\.js$/i],
+    bereiche: ["admin", "auth", "briefing", "lage", "quellen", "verstehen",
+      "warteschlange-pipeline", "radar", "profil", "b055", "500-nachweis"] },
+  // lambda/index.js + lambda/relay.js: SQS-Auftragsverbraucher und Outbox-Relay.
+  { muster: [/(^|\/)lambda\//i], bereiche: ["warteschlange-pipeline"] },
+  // Service Worker: PWA/Offline-Ansicht.
+  { muster: [/(^|\/)sw\.js$/i], bereiche: ["ui"] },
+  // Stylesheet und App-Shell: reine UI.
+  { muster: [/(^|\/)styles\.css$/i], bereiche: ["ui"] },
+  { muster: [/(^|\/)index\.html$/i], bereiche: ["ui"] }
 ];
 
 // ── Die Bereiche. `quelle` = Auslöser (geänderte Quelldatei), `suiten` = zugehörige Tests. ──
@@ -193,7 +211,8 @@ function analysiere(dateien) {
     const datei = String(roh || "").trim();
     if (!datei) continue;
     if (passt(datei, KERN)) { querschnitt = true; continue; }
-    if (passt(datei, SAMMELDATEIEN)) { for (const b of SAMMEL_BEREICHE) bereiche.add(b); continue; }
+    const sammel = SAMMEL_DATEI_BEREICHE.find((s) => passt(datei, s.muster));
+    if (sammel) { for (const b of sammel.bereiche) bereiche.add(b); continue; }
     let getroffen = false;
     for (const [name, def] of Object.entries(BEREICHE)) {
       if (passt(datei, def.quelle)) { bereiche.add(name); getroffen = true; }
@@ -256,6 +275,6 @@ if (require.main === module) {
 }
 
 module.exports = {
-  BEREICHE, KERN, SAMMELDATEIEN, SAMMEL_BEREICHE, NICHT_RELEVANT, RELEVANT,
+  BEREICHE, KERN, SAMMEL_DATEI_BEREICHE, NICHT_RELEVANT, RELEVANT,
   istRelevant, analysiere, suitenFuerBereiche, bereichsSuiten
 };
