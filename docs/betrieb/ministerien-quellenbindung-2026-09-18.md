@@ -120,3 +120,46 @@ Zusaetzlich gruen: `verstehen-einmalig-test` 91/91, `parteien-quellenbindung` 16
 `akteursrollen-erhalten` 16/16, `understanding-einzelvorgang` 45/45, `pilot-e2e-vertrag` 97/97,
 `berlin-e2e-vertrag` 79/79, `brandenburg-e2e-vertrag` 102/102, `verstehen-169-neuversuch` 19/19,
 `verstehen-169-kosten-deckel` 29/29.
+
+## Nachtrag 24.09.2026 — Erwaehnungslisten blockieren die Antwort nicht mehr
+
+**Anlass (Production-Befund, Run 35934515630).** Der zweite scharfe 169er Verstehenslauf verarbeitete
+10 von 122 Clustern und stoppte dann am Cluster `vg-reformen-20260908-c646df`: `status = skipped-invalid`,
+`reason = validierung-fehlgeschlagen`, `validierungsfehler = ["quellenbeleg-mentioned_people"]`. Der Motor
+setzte `ausgang = unbekannt`; der 169er Runner beendet darauf absichtlich den **gesamten** Lauf
+(`verstehen-ausgang-unbekannt`). **Welcher konkrete Personenwert das ausloeste, ist NICHT belegt** — die
+rohe Modellantwort wird bewusst nicht gespeichert; daraus wird hier nichts abgeleitet.
+
+**Aenderung (deterministisch, quellenbelegt).** Die bereits belegte Reduktion der beiden Ministeriumslisten
+ist auf **alle Erwaehnungslisten** verallgemeinert. Reduzierbar sind jetzt
+`ministerien`, `mentioned_ministries`, `mentioned_parties`, `mentioned_people`, `mentioned_mps`,
+`mentioned_committees` (`REDUZIERBARE_FELDER` in `lib/helmut/akteurslisten-quellenbindung.js`, aufgerufen in
+den beiden Speicherpfaden `understandOneCluster` und `understandUpdate`). Ein **unbelegter String** entfaellt,
+woertlich belegte Werte bleiben **unveraendert** erhalten, ohne Beleg bleibt die Liste leer. Der Beleg ist
+**derselbe** wie zuvor (gleiche Quellen, gleiche Wortgrenzen, gleiche NFC/Klein/Leerraum-Normalisierung,
+dieselbe eng begrenzte Partei-Artikelvariante): keine Aliase, keine Kuerzel, keine Ressortableitung, keine
+Metadaten, kein Fuzzy, kein Vorwissen. Ein Feldwert, der kein Array ist, bleibt unangetastet und sperrt
+weiterhin (fail closed).
+
+**Warum das keine Aufweichung ist.** Entfernt wird ausschliesslich, was ohnehin nie gespeichert werden
+durfte; es wird nichts hinzugefuegt und nichts Unbelegtes erhalten. Danach laeuft **dieselbe** strenge
+Pruefung erneut; eine weiterhin ungueltige Antwort wird weiterhin abgelehnt.
+
+**Unveraendert streng:** die Beteiligungslisten `parteien` und `ausschuesse` (dort behauptet der Wert eine
+eigene Rolle, nicht nur eine Nennung — ein unbelegter Wert sperrt die Antwort weiterhin vollstaendig),
+alle uebrigen Antwortfelder, das Schema, der `decision_level-antwortkonflikt`, CAS/Fencing, Quittung,
+Budget, Locks, Quellenhash und alle Laufdeckel. Der Goldsetauswerter `evaluateUnderstandingCase` prueft
+unveraendert streng.
+
+**Grenzen.** Es wird nichts rueckwirkend geaendert (bestehende Objekte bleiben wie sie sind), keine
+Modellantwort, kein Prompt und kein Rohtext zusaetzlich gespeichert, kein zweiter Modellaufruf, kein Netz
+und **keine Production-Wirkung**. Ob ein 169er Lauf mit dieser Aenderung vollstaendig durchlaeuft, ist
+damit **nicht** belegt.
+
+**Gezielte Pruefungen (offline, 0 Modellaufrufe, 0 Production-Writes).**
+`understanding-akteursbeleg-test.js` **20/20** (neu C1–C6: der Production-Fehler `mentioned_people` sperrt
+nicht mehr; belegte Personen bleiben; alle Erwaehnungslisten reduzierbar, Beteiligungslisten nicht; wirklich
+unbelegte Beteiligung sperrt weiter; nicht sicher reduzierbare Angaben bleiben ungueltig; Schemafehler
+bleibt fail closed), `ministerien-quellenbindung-test.js` **21/21**, `parteien-quellenbindung-test.js`
+**17/17**, `ausschuesse-quellenbindung-test.js` **10/10**, `verstehen-einmalig-test.js` gruen,
+`verstehen-169-*` unveraendert.

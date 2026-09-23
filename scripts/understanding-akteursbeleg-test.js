@@ -184,6 +184,63 @@ async function main() {
     assert.deepEqual(s.p.gespeichert[0].mentioned_people, []);
   });
 
+  // ── C · Erwaehnungslisten-Reduktion (Production-Befund 2026-09-24) ───────────────────────────
+  // Run 35934515630, Vorgang vg-reformen-20260908-c646df: der Fehlercode
+  // `quellenbeleg-mentioned_people` sperrte eine ansonsten brauchbare Antwort und beendete damit
+  // den gesamten 169er Lauf (ausgang `unbekannt`). Ein einzelner unbelegter ERWAEHNUNGSWERT darf
+  // die Antwort nicht mehr sperren; belegte Werte bleiben, die Beteiligungslisten bleiben streng.
+  await test("C1 Production-Fehler mentioned_people sperrt die Antwort nicht mehr", async () => {
+    const s = stand({ ...ANALYSE, mentioned_people: ["Nicht Belegt"] });
+    const r = await U.understandOneCluster(cluster(), s.deps, { vorgangId, existing: null, vertrag: s.vertrag });
+    assert.equal(r.status, "saved", JSON.stringify(r));
+    assert.equal(s.p.aufrufe, 1);
+    assert.deepEqual(s.p.gespeichert[0].mentioned_people, []);
+    assert.equal(s.p.unbekannt, 0); assert.equal(s.p.failed, 0);
+  });
+
+  await test("C2 Belegte Personen bleiben, unbelegte entfallen", async () => {
+    const s = stand({ ...ANALYSE, mentioned_people: ["Max Mustermann", "Nicht Belegt"] });
+    const r = await U.understandOneCluster(cluster("Max Mustermann fordert mehr Busverkehr."),
+      s.deps, { vorgangId, existing: null, vertrag: s.vertrag });
+    assert.equal(r.status, "saved", JSON.stringify(r));
+    assert.deepEqual(s.p.gespeichert[0].mentioned_people, ["Max Mustermann"]);
+  });
+
+  await test("C3 Reduzierbar sind alle Erwaehnungslisten, nicht die Beteiligungslisten", () => {
+    const p = U.buildUnderstandingPrompt({ documents: [doc("Verein diskutiert Busangebot", "Ein Verein diskutiert das Busangebot.")] });
+    for (const feld of ["mentioned_ministries", "mentioned_parties", "mentioned_people",
+      "mentioned_mps", "mentioned_committees"]) {
+      assert.deepEqual(IB.ohneUnbelegteAkteurswerte({ [feld]: ["Unbelegt"] }, p)[feld], [], feld);
+    }
+    for (const feld of ["parteien", "ausschuesse"]) {
+      assert.deepEqual(IB.ohneUnbelegteAkteurswerte({ [feld]: ["Unbelegt"] }, p)[feld], ["Unbelegt"], feld);
+    }
+  });
+
+  await test("C4 Wirklich unbelegte Beteiligung sperrt weiterhin (fail closed)", async () => {
+    for (const feld of ["parteien", "ausschuesse"]) {
+      const s = stand({ ...ANALYSE, [feld]: ["Unbelegte Rolle"] });
+      const r = await U.understandOneCluster(cluster(), s.deps, { vorgangId, existing: null, vertrag: s.vertrag });
+      assert.equal(r.status, "skipped-invalid", `${feld}: ${JSON.stringify(r)}`);
+      assert(r.errors.includes(`quellenbeleg-${feld}`), JSON.stringify(r.errors));
+      assert.equal(s.p.gespeichert.length, 0);
+    }
+  });
+
+  await test("C5 Nicht sicher reduzierbare Angaben bleiben unangetastet und ungueltig", () => {
+    const p = U.buildUnderstandingPrompt({ documents: [doc("Verein diskutiert Busangebot", "Ein Verein diskutiert das Busangebot.")] });
+    assert.equal(IB.ohneUnbelegteAkteurswerte({ mentioned_people: "kein-array" }, p).mentioned_people, "kein-array");
+    assert.equal(IB.pruefeAkteurslistenQuellenbindung({ mentioned_people: "kein-array" }, p).valid, false);
+    assert.equal(IB.pruefeAkteurslistenQuellenbindung({ mentioned_people: [17] }, p).valid, false);
+  });
+
+  await test("C6 Schemafehler bleiben auch mit reduzierter Erwaehnung fail closed", async () => {
+    const s = stand({ ...ANALYSE, was_ist_passiert: "", mentioned_people: ["Nicht Belegt"] });
+    const r = await U.understandOneCluster(cluster(), s.deps, { vorgangId, existing: null, vertrag: s.vertrag });
+    assert.equal(r.status, "skipped-invalid", JSON.stringify(r));
+    assert.equal(s.p.gespeichert.length, 0);
+  });
+
   console.log(`\n${pass}/${pass} Gruppen erfolgreich`);
 }
 main().catch((error) => { console.error(error); process.exitCode = 1; });

@@ -61,12 +61,23 @@ async function auswertung(c, antwort) {
 let pass = 0;
 async function test(name, fn) { await fn(); pass++; console.log("PASS " + name); }
 async function main() {
-  await test("Unbelegter Ausschuss sperrt beide Listen vor Speicherung in Erstverstehen und Update", async () => {
-    for (const feld of FELDER) for (const modus of ["erst", "update"]) {
-      const s = stand({ ...ANALYSE, [feld]: [NAME] });
-      verworfen(await run(modus, fixture(), s), s, feld);
+  await test("Unbelegter Beteiligungsausschuss sperrt die Liste vor Speicherung in Erstverstehen und Update", async () => {
+    for (const modus of ["erst", "update"]) {
+      const s = stand({ ...ANALYSE, ausschuesse: [NAME] });
+      verworfen(await run(modus, fixture(), s), s, "ausschuesse");
       assert.equal(s.p.failed, modus === "erst" ? 1 : 0);
       assert.equal(s.p.updates, modus === "update" ? 1 : 0);
+    }
+  });
+  await test("Unbelegter Erwaehnungsausschuss sperrt die Antwort nicht mehr (deterministische Reduktion)", async () => {
+    // Erwaehnungslisten sind reine Nennungen (Production-Befund 2026-09-24): ein unbelegter
+    // Wert entfaellt, die uebrige Antwort bleibt; die Beteiligungsliste `ausschuesse` bleibt streng.
+    for (const modus of ["erst", "update"]) {
+      const s = stand({ ...ANALYSE, mentioned_committees: [NAME] });
+      const r = await run(modus, fixture(), s);
+      assert.equal(r.status, modus === "erst" ? "saved" : "updated", JSON.stringify(r));
+      assert.deepEqual(s.p.gespeichert[0].mentioned_committees, []);
+      assert.equal(s.p.aufrufe, 1); assert.equal(s.p.unbekannt, 0);
     }
   });
   await test("Gelieferte Bezeichnungen aus Titel und Auszug bleiben in beiden Pfaden erhalten", async () => {
@@ -130,13 +141,11 @@ async function main() {
       for (const feld of FELDER) assert.deepEqual(s.p.gespeichert[0][feld], [NAME]);
     }
   });
-  await test("Auch ohne CAS wird eine unbelegte Liste nicht gespeichert", async () => {
-    for (const feld of FELDER) {
-      const s = stand({ ...ANALYSE, [feld]: [NAME] });
-      const r = await run("erst", fixture(), s, { vertrag: null });
-      assert.equal(r.status, "skipped-invalid"); assert(r.errors.includes(`quellenbeleg-${feld}`));
-      assert.equal(s.p.failed, 1); assert.equal(s.p.aufrufe, 1); assert.equal(s.p.gespeichert.length, 0);
-    }
+  await test("Auch ohne CAS wird eine unbelegte Beteiligungsliste nicht gespeichert", async () => {
+    const s = stand({ ...ANALYSE, ausschuesse: [NAME] });
+    const r = await run("erst", fixture(), s, { vertrag: null });
+    assert.equal(r.status, "skipped-invalid"); assert(r.errors.includes("quellenbeleg-ausschuesse"));
+    assert.equal(s.p.failed, 1); assert.equal(s.p.aufrufe, 1); assert.equal(s.p.gespeichert.length, 0);
   });
   console.log(`${pass}/${pass} Gruppen erfolgreich`);
 }

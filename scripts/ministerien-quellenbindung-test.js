@@ -4,7 +4,7 @@ const assert = require("node:assert/strict");
 const U = require("../lib/helmut/understanding");
 const A = require("../lib/helmut/artikelkontext");
 const { pruefeAkteurslistenQuellenbindung: pruefe,
-  ohneUnbelegteMinisterien: reduziert } = require("../lib/helmut/akteurslisten-quellenbindung");
+  ohneUnbelegteAkteurswerte: reduziert } = require("../lib/helmut/akteurslisten-quellenbindung");
 const ANALYSE = {
   headline: "Konferenz diskutiert Bahnverkehr", was_ist_passiert: "Die Konferenz endete.",
   warum_wichtig: "Bahnverkehr", wer_ist_betroffen: "Reisende", parteien: [], ausschuesse: [],
@@ -139,15 +139,36 @@ async function main() {
     assert.equal(reduziert({ ministerien: "BMG" }, p).ministerien, "BMG");
     assert.equal(pruefe({ ministerien: "BMG" }, p).valid, false);
   });
-  await test("Parteien, Personen und Ausschuesse bleiben unveraendert streng (kein Freibrief)", async () => {
-    for (const feld of ["parteien", "mentioned_parties", "mentioned_people", "mentioned_mps",
-      "ausschuesse", "mentioned_committees"]) {
+  await test("Beteiligungslisten parteien/ausschuesse bleiben fuer unbelegte Werte streng (kein Freibrief)", async () => {
+    for (const feld of ["parteien", "ausschuesse"]) {
       const s = stand({ ...ANALYSE, [feld]: ["Voellig Unbelegt"] });
       const r = await first(fixture(), s);
       assert.equal(r.status, "skipped-invalid", `${feld} muss weiter sperren`);
       assert(r.errors.includes(`quellenbeleg-${feld}`), JSON.stringify(r.errors));
       assert.equal(s.p.gespeichert.length, 0); assert.equal(s.p.aufrufe, 1);
     }
+  });
+  await test("Erwaehnungslisten werden deterministisch reduziert und sperren die Antwort nicht mehr", async () => {
+    // Production-Befund 2026-09-24 (Run 35934515630): ein einzelner unbelegter
+    // mentioned_people-Wert zerstörte eine ansonsten brauchbare Antwort. Die Erwähnungslisten
+    // `mentioned_*` sind reine Nennungen; ein unbelegter Wert entfällt, die Antwort bleibt.
+    for (const feld of ["mentioned_ministries", "mentioned_parties", "mentioned_people",
+      "mentioned_mps", "mentioned_committees"]) {
+      const s = stand({ ...ANALYSE, [feld]: ["Voellig Unbelegt"] });
+      const r = await first(fixture(), s);
+      assert.equal(r.status, "saved", `${feld}: ${JSON.stringify(r)}`);
+      assert.deepEqual(s.p.gespeichert[0][feld], [], `${feld}: unbelegter Wert wird nicht gespeichert`);
+      assert.equal(s.p.aufrufe, 1, `${feld}: weiterhin genau ein Modellaufruf`);
+      assert.equal(s.p.unbekannt, 0); assert.equal(s.p.failed, 0);
+    }
+  });
+  await test("Gemischte Erwaehnungsliste: nur der woertlich belegte Wert bleibt", async () => {
+    const s = stand({ ...ANALYSE, mentioned_people: ["Max Mustermann", "Nicht Belegt"],
+      mentioned_parties: ["Die Linke", "Nicht Belegt"] });
+    const r = await first(fixture("Max Mustermann fordert mehr Busverkehr; Die Linke unterstuetzt das."), s);
+    assert.equal(r.status, "saved", JSON.stringify(r));
+    assert.deepEqual(s.p.gespeichert[0].mentioned_people, ["Max Mustermann"]);
+    assert.deepEqual(s.p.gespeichert[0].mentioned_parties, ["Die Linke"]);
   });
   await test("Schemafehler und decision_level-Konflikt bleiben fail closed", async () => {
     // Pflichtfeld leer: auch mit weggefiltertem Ministerium wird nichts gespeichert.
