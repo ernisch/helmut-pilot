@@ -198,6 +198,15 @@ function analysiere(dateien) {
     for (const [name, def] of Object.entries(BEREICHE)) {
       if (passt(datei, def.quelle)) { bereiche.add(name); getroffen = true; }
     }
+    // Geaenderte TESTdateien gehoeren ueber ihren Namen zu ihrem Bereich (z. B.
+    // briefing-…-test.js -> Bereich briefing), damit eine Testaenderung nicht die
+    // konservative Sammelmenge ausloest. Ein Test ohne Bereichstreffer bleibt unbekannt.
+    if (!getroffen && /(-test\.js|gesamttest\.js)$/i.test(datei)) {
+      const basis = datei.split("/").pop();
+      for (const [name, def] of Object.entries(BEREICHE)) {
+        if (passt(basis, def.suiten)) { bereiche.add(name); getroffen = true; }
+      }
+    }
     if (getroffen) continue;
     if (istRelevant(datei)) unbekannt.push(datei);
   }

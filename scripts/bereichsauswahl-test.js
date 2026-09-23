@@ -90,6 +90,9 @@ function main() {
   check("B5 Radar-Aenderung waehlt den Bereich radar",
     bRadar.bereiche.includes("radar") && bRadar.suiten.every((f) => /^radar/.test(f)),
     `${bRadar.suiten.length} Suiten`);
+  const bTestdatei = waehle(["scripts/lage-visible-vorgaenge-test.js"]);
+  check("B6 Eine geaenderte Fach-Testdatei gehoert ueber ihren Namen zu ihrem Bereich",
+    bTestdatei.bereiche.includes("lage") && !bTestdatei.konservativ, JSON.stringify(bTestdatei.bereiche));
 
   // ── C · Mehrere Bereiche = Vereinigung, keine Doppel ─────────────────────────
   console.log("\n== C · Mehrere Bereiche und Doppelvermeidung ==");
@@ -114,6 +117,9 @@ function main() {
   check("D2 Eine unbekannte relevante Datei wird NICHT still ignoriert",
     dUnbekannt.konservativ && dUnbekannt.unbekannt.includes("lib/helmut/voellig-neu-erfunden.js") && dUnbekannt.suiten.length > 0,
     `konservativ, ${dUnbekannt.suiten.length} Suiten`);
+  const dTestUnbekannt = waehle(["scripts/bereichsauswahl-test.js"]);
+  check("D2b Ein Test OHNE Bereichstreffer wird konservativ behandelt (fail closed)",
+    dTestUnbekannt.konservativ && dTestUnbekannt.unbekannt.includes("scripts/bereichsauswahl-test.js"), "");
   const dKern = waehle(["lib/helmut/storage.js"]);
   check("D3 Eine geteilte Kerndatei fuehrt zur konservativen Sammelmenge",
     dKern.konservativ && dKern.suiten.length > 0, `${dKern.suiten.length} Suiten`);
