@@ -5983,12 +5983,14 @@ function handleAuthLogin(request, response, url) {
       response.end(JSON.stringify({ error: "E-Mail oder Passwort ist nicht korrekt." }, null, 2));
       return null;
     }
-    const { token, ttlSeconds } = await accounts.createSession(user.id, {
+    // Ein erfolgreicher Login ist EINE einzige atomare Kontospeicher-Mutation
+    // (Session + Login-Statistik + Audit) statt drei getrennter CAS-Zyklen —
+    // sonst haengt der Login am grossen Auth-Blob (siehe accounts.loginUser).
+    const { token, ttlSeconds } = await accounts.loginUser(user.id, {
       ip: auth.clientIp(request),
-      userAgent: request.headers["user-agent"] || ""
+      userAgent: request.headers["user-agent"] || "",
+      email: user.email
     });
-    await accounts.markLogin(user.id);
-    await accounts.recordAudit({ action: "auth.login", userId: user.id, actorEmail: user.email, ip: auth.clientIp(request) });
     response.writeHead(200, jsonHeaders({ "Set-Cookie": auth.sessionCookieHeader(token, ttlSeconds) }));
     response.end(JSON.stringify({ ok: true, user: publicUser(user) }, null, 2));
     return null;
