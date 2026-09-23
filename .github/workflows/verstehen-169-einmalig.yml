@@ -77,7 +77,7 @@ jobs:
           [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] || fail "falsches Event"
           [ "${GITHUB_RUN_ATTEMPT}" = "1" ] || fail "run_attempt ungleich 1"
           if [ -n "${QUITTUNGSSCHLUESSEL:-}" ]; then
-            echo "${QUITTUNGSSCHLUESSEL}" | grep -Eq '^verstehen169-[0-9]{8}-[a-z0-9][a-z0-9-]*[a-z0-9]$' \
+            echo "${QUITTUNGSSCHLUESSEL}" | grep -Eq '^verstehen169-[0-9]{8}-[a-z0-9]([a-z0-9-]*[a-z0-9])?$' \
               || fail "quittungsschluessel weicht vom Muster verstehen169-JJJJMMTT-suffix ab"
             [ "${QUITTUNGSSCHLUESSEL}" != "verstehen169-20260922-a" ] \
               || fail "quittungsschluessel ist die alte Kennung — ein neuer Versuch braucht eine eigene"

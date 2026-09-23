@@ -242,13 +242,15 @@ async function main() {
   // ═══════════════════════════════════════════════════════════════════════════════════════
   abschnitt("§1  Die Kennung eines neuen Versuchs wird ausdruecklich uebergeben und streng geprueft");
   {
-    pruefe("ohne Kennung gilt der ALTE Schluessel (alter Auftrag, unveraendert)",
-      () => { const q = V.quittungsschluesselVon(""); A.equal(q.ok, true); A.equal(q.schluessel, V.QUITTUNG); A.equal(q.standard, true); });
+    pruefe("ohne Kennung ist der ALTE Auftrag — Standard liefert KEINEN konkreten Schluessel",
+      () => { const q = V.quittungsschluesselVon(""); A.equal(q.ok, true); A.equal(q.schluessel, null); A.equal(q.standard, true); });
     pruefe("die ALTE Kennung ist fail closed — kein neuer Vertrag mit derselben Quittung",
       () => { const q = V.quittungsschluesselVon("verstehen169-20260922-a"); A.equal(q.ok, false); A.equal(q.grund, "verstehen-quittung-identisch"); });
     pruefe("Fremdformat ist fail closed",
       () => { const q = V.quittungsschluesselVon("fremd-123"); A.equal(q.ok, false); A.equal(q.grund, "verstehen-quittung-ungueltig"); });
-    pruefe("eine gueltige neue Kennung wird angenommen und ist eindeutig getrennt",
+    pruefe("eine EINSTELLIGE neue Kennung wird angenommen (wie die alte Form verstehen169-20260922-a)",
+      () => { const q = V.quittungsschluesselVon("verstehen169-20260923-b"); A.equal(q.ok, true); A.equal(q.schluessel, "verstehen169-20260923-b"); A.equal(q.standard, false); A.notEqual(q.schluessel, V.QUITTUNG); });
+    pruefe("eine mehrstellige gueltige neue Kennung wird angenommen und ist eindeutig getrennt",
       () => { const q = V.quittungsschluesselVon(NEUER_SCHLUESSEL); A.equal(q.ok, true); A.equal(q.schluessel, NEUER_SCHLUESSEL); A.equal(q.standard, false); A.notEqual(q.schluessel, V.QUITTUNG); });
   }
   await pruefeAsync("der Runner stoppt fail closed VOR jedem Zugriff bei identischer Kennung", async () => {
@@ -268,18 +270,22 @@ async function main() {
 
   // ═══════════════════════════════════════════════════════════════════════════════════════
   abschnitt("§2  Alte Quittung blockiert den alten Auftrag weiterhin — der neue Auftrag ist getrennt");
-  await pruefeAsync("zweiter Lauf mit altem Schluessel stoppt mit verstehen-bereits-verwendet, 0 Aufrufe", async () => {
+  await pruefeAsync("leer (Standard) laeuft ueber den ALTEN Auftrag und stoppt beim zweiten Mal verstehen-bereits-verwendet, 0 Aufrufe", async () => {
     const docs = [DOK_GESUND_ROW];
     const w = weltBauen({ dokumente: docs });
     const bindung = testbindung(docs);
+    // Der Bedienweg reicht bei leerem HELMUT_VERSTEHEN_169_QUITTUNG `quittung.schluessel`
+    // (= null nach quittungsschluesselVon) durch — genau diesen Wert simuliert dieser Aufruf.
     const erst = await V.fuehreAus({
       ids: docs.map((d) => d.id), deps: w.deps, execute: true, commit: "test-commit",
-      erwartet: bindung, runId: "alt-1", now: () => new Date()
+      erwartet: bindung, runId: "alt-1", now: () => new Date(), quittungsschluessel: null
     });
     A.equal(erst.ok, true, JSON.stringify(erst));
+    A.equal(erst.quittung, V.QUITTUNG, "leer nutzt die ALTE Quittung");
+    A.notEqual(erst.grund, "verstehen-quittung-identisch", "kein verstehen-quittung-identisch bei leer");
     const zweit = await V.fuehreAus({
       ids: docs.map((d) => d.id), deps: w.deps, execute: true, commit: "test-commit",
-      erwartet: bindung, runId: "alt-2", now: () => new Date()
+      erwartet: bindung, runId: "alt-2", now: () => new Date(), quittungsschluessel: null
     });
     A.equal(zweit.ok, false);
     A.equal(zweit.grund, "verstehen-bereits-verwendet");

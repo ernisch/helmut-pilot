@@ -101,9 +101,10 @@ check("Quittungskennung kommt ausschliesslich aus dem Input",
   const fremde = alle.filter((k) => !erlaubt.has(k));
   check("keine fremden 169er-Env-Keys", fremde.length === 0 && alle.length > 0);
 }
-// Der Preflight erlaubt den neuen Schluessel NUR im engen Muster und niemals die alte Kennung.
+// Der Preflight erlaubt den neuen Schluessel NUR im engen Muster (einstelliger Suffix genuegt)
+// und niemals die alte Kennung.
 check("Preflight prueft das Kennungsmuster verstehen169-JJJJMMTT-suffix",
-  YML.includes("grep -Eq '^verstehen169-[0-9]{8}-[a-z0-9][a-z0-9-]*[a-z0-9]$'"));
+  YML.includes("grep -Eq '^verstehen169-[0-9]{8}-[a-z0-9]([a-z0-9-]*[a-z0-9])?$'"));
 check("Preflight verbietet die alte Kennung",
   YML.includes('[ "${QUITTUNGSSCHLUESSEL}" != "verstehen169-20260922-a" ]'));
 check("113 unveraendert (PINNED)", V.PINNED.maxModellaufrufe === 113);
