@@ -1,12 +1,16 @@
 "use strict";
 
-// Helmut — Statischer Vertrag fuer .github/workflows/verstehen-169-einmalig.yml
+// Helmut — Statischer Vertrag fuer die ZWEI GETRENNTEN 169er-Ausfuehrungswege
 // =============================================================================================
+//   * `.github/workflows/verstehen-169-einmalig.yml` — der SCHARFE Lauf (SCHARF=1, mit
+//     Bestaetigungswort und Quittungskennung); Abschnitte 1–11 unten.
+//   * `.github/workflows/verstehen-169-plan.yml` — der REIN LESENDE Planlauf; Abschnitt 12 unten.
 // Reine Workflow-Infrastrukturpruefung, OFFLINE, keine Production-Wirkung. Sie beweist NUR die
-// Vertragspunkte des manuellen Ausfuehrungswegs (Trigger, Bestaetigungswort, Bindung, Rechte,
-// Concurrency, Secret-Referenzen, direkter Runner-Aufruf, unveraenderte Grenzen). Die
-// Fachgrenzen selbst prueft der Runner (scripts/verstehen-einmalig-test.js, bereits gruen);
-// sie werden hier NICHT nachgebaut. Kein Netz, keine Datenbank, kein Modell.
+// Vertragspunkte beider manueller Ausfuehrungswege (Trigger, Bestaetigungswort, Bindung, Rechte,
+// Concurrency, Secret-Referenzen, Trennung von Plan und Scharf, direkter Runner-Aufruf,
+// unveraenderte Grenzen). Die Fachgrenzen selbst prueft der Runner
+// (scripts/verstehen-einmalig-test.js, bereits gruen); sie werden hier NICHT nachgebaut.
+// Kein Netz, keine Datenbank, kein Modell.
 
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
@@ -177,5 +181,96 @@ for (const wert of [
 ]) {
   check(`Laufwert gesetzt: ${wert}`, YML.includes(wert));
 }
+
+// ── 12 · Der GETRENNTE rein lesende PLAN-Workflow ──────────────────────────────────────────
+// Zwei strikt getrennte Bedienwege, bewusst OHNE gemeinsame Umschaltung. Dieser Abschnitt beweist
+// statisch, dass der Planlauf den BESTEHENDEN Runner ohne SCHARF aufruft, Production nur lesend
+// anspricht und technisch keinen scharfen Lauf ausloesen kann (die Scharf-Variablen werden gar
+// nicht gesetzt; der Laufschritt bricht zusaetzlich ab, falls sie doch gesetzt waeren).
+const PLAN = fs.readFileSync(path.join(ROOT, ".github/workflows/verstehen-169-plan.yml"), "utf8");
+
+check("Plan-Workflow existiert und ist nicht leer", PLAN.trim().length > 0);
+check("Plan: nur workflow_dispatch", /^\s*workflow_dispatch:/m.test(PLAN));
+check("Plan: kein push-Trigger", !/^\s*push:/m.test(PLAN));
+check("Plan: kein pull_request-Trigger", !/^\s*pull_request(_target)?:/m.test(PLAN));
+check("Plan: kein schedule-Trigger", !/^\s*schedule:/m.test(PLAN));
+check("Plan: kein workflow_run-Trigger", !/^\s*workflow_run:/m.test(PLAN));
+check("Plan: kein repository_dispatch-Trigger", !/^\s*repository_dispatch:/m.test(PLAN));
+check("Plan: Repository gebunden", PLAN.includes("github.repository == 'ernisch/helmut-pilot'"));
+check("Plan: Branch main gebunden", PLAN.includes("github.ref == 'refs/heads/main'"));
+check("Plan: Event workflow_dispatch gebunden", PLAN.includes("github.event_name == 'workflow_dispatch'"));
+check("Plan: run_attempt 1 gebunden", PLAN.includes("github.run_attempt == 1"));
+check("Plan: Preflight prueft GITHUB_REF main", PLAN.includes('[ "${GITHUB_REF}" = "refs/heads/main" ]'));
+check("Plan: Preflight prueft GITHUB_RUN_ATTEMPT 1", PLAN.includes('[ "${GITHUB_RUN_ATTEMPT}" = "1" ]'));
+check("Plan: contents read", /permissions:[\s\S]*?contents: read/.test(PLAN));
+check("Plan: checkout auf Repository-SHA gepinnt", PLAN.includes("actions/checkout@11d5960a326750d5838078e36cf38b85af677262"));
+check("Plan: setup-node auf Repository-SHA gepinnt", PLAN.includes("actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"));
+check("Plan: keine persistierten Git-Credentials", PLAN.includes("persist-credentials: false"));
+check("Plan: Concurrency-Gruppe helmut-500-kontrollierte-facharbeit", PLAN.includes("group: helmut-500-kontrollierte-facharbeit"));
+check("Plan: cancel-in-progress: false", PLAN.includes("cancel-in-progress: false"));
+check("Plan: Job-Timeout gesetzt", /^\s*timeout-minutes:\s*\d+\s*$/m.test(PLAN));
+check("Plan: runtime_commit ist Pflichtinput", /inputs:[\s\S]*?runtime_commit:[\s\S]*?required: true/.test(PLAN));
+check("Plan: Checkout bindet GENAU den runtime_commit", PLAN.includes("ref: ${{ inputs.runtime_commit }}"));
+check("Plan: Preflight prueft den vollen Git-SHA", PLAN.includes("grep -Eq '^[0-9a-f]{40}$'"));
+check("Plan: Preflight vergleicht den echten Checkout", PLAN.includes("git rev-parse HEAD"));
+check("Plan: Preflight bricht bei Abweichung ab", PLAN.includes('[ "${ECHTER_COMMIT}" = "${RUNTIME_COMMIT}" ]'));
+check("Plan: Dokument-Snapshot-Commit unveraendert",
+  PLAN.includes('HELMUT_VERSTEHEN_169_COMMIT: "ea84f26ccc380e22961335926e2d4e585cee2308"'));
+check("Plan: gebundene Liste unveraendert",
+  PLAN.includes('HELMUT_VERSTEHEN_169_LISTE: "belege/verstehen-169-ids.json"'));
+check("Plan: Runtime-Commit kommt ausschliesslich aus dem Input",
+  PLAN.includes("HELMUT_VERSTEHEN_169_RUNTIME_COMMIT: ${{ inputs.runtime_commit }}"));
+check("Plan: Production-Lesezugang ueber die bestehenden Supabase-Secrets",
+  PLAN.includes("SUPABASE_URL: ${{ secrets.SUPABASE_URL }}")
+  && PLAN.includes("SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}"));
+check("Plan: Production-Speicher korrekt gesetzt",
+  PLAN.includes('HELMUT_V3_STORE: "1"') && PLAN.includes('HELMUT_STORAGE_BACKEND: "supabase"')
+  && PLAN.includes('HELMUT_SUPABASE_STORE_ID: "main"'));
+check("Plan: ruft den BESTEHENDEN Runner direkt", PLAN.includes("node scripts/verstehen-einmalig-169.js"));
+check("Plan: kein scripts/lokal.js als Startweg", !/^\s*run:.*scripts\/lokal\.js/m.test(PLAN));
+check("Plan: keine Inline-Fachlogik (kein require/node -e)",
+  !PLAN.includes("require(") && !PLAN.includes("node -e"));
+check("Plan: keine Resolution-/Cluster-Nachbildung",
+  !/deriveVorgangId|clusterRawDocuments|sameVorgang/.test(PLAN));
+
+// 12a · Die Trennung ist STRUKTURELL, nicht nur kommentiert: der Planlauf setzt KEINE
+// Scharf-Variable, KEIN Bestaetigungswort, KEINE Quittung und KEINE Modellzugangsdaten.
+{
+  const zuweisungen = PLAN.split("\n")
+    .map((z) => (z.match(/^\s*([A-Za-z0-9_-]+)\s*:/) || [])[1])
+    .filter(Boolean);
+  const verboten = zuweisungen.filter((k) =>
+    /^HELMUT_VERSTEHEN_169_(SCHARF|BESTAETIGT|QUITTUNG)$/.test(k));
+  check("Plan: setzt keine Scharf-/Bestaetigungs-/Quittungsvariable", verboten.length === 0);
+  const keys169 = zuweisungen.filter((k) => k.startsWith("HELMUT_VERSTEHEN_169_"));
+  check("Plan: setzt genau die drei erlaubten 169er-Keys (Snapshot, Runtime, Liste)",
+    keys169.length === 3
+    && ["HELMUT_VERSTEHEN_169_COMMIT", "HELMUT_VERSTEHEN_169_RUNTIME_COMMIT",
+      "HELMUT_VERSTEHEN_169_LISTE"].every((k) => keys169.includes(k)));
+}
+check("Plan: keine Azure-/Modell-Secrets",
+  !/secrets\.(AZURE_[A-Z_]+|OPENAI[A-Z_]*)/.test(PLAN)
+  && !/AZURE_OPENAI_DEPLOYMENT|vars\.AZURE_OPENAI/.test(PLAN));
+check("Plan: keine Quittungskennung", !/verstehen169-\d{8}-[a-z0-9-]+/.test(PLAN));
+check("Plan: keine Profil-/Lock-/CAS-/Budget-/Env-Schreibfreigaben",
+  !/HELMUT_ANBIETER|HELMUT_LLM_|HELMUT_MAX_LLM_CALLS_PER_DAY|HELMUT_TESTLAUF|HELMUT_VERSTEHEN_CAS|HELMUT_UNDERSTANDING_LOCK|VERCEL_ENV|HELMUT_SUPABASE_AUTH_STORE_ID/.test(PLAN));
+check("Plan: harte Sperre gegen SCHARF im Laufschritt",
+  PLAN.includes('echo "STOPP: HELMUT_VERSTEHEN_169_SCHARF ist in diesem Workflow nicht zulaessig."'));
+check("Plan: keine mode-Umschaltung als Eingabe", !/^\s*mode:\s*$/m.test(PLAN));
+check("Plan: keine Secret-Werte werden geloggt",
+  PLAN.split("\n").filter((z) => z.includes("echo") && (z.includes("secrets.") || z.includes("${{"))).length === 0);
+check("Plan: kein Prefix-Match (startsWith)", !PLAN.includes("startsWith"));
+check("Plan: keine 169er-Fachwerte dupliziert (Bound bleibt im Runner)",
+  !/maxModellaufrufe|0\.8\s*USD|maxUsd|idHash|5f3878409cc9dbe742a3c9b465e54fff53b3e7622065f90c04915eb01ac2aed9/.test(PLAN));
+
+// 12b · Beide Wege bleiben getrennt: der scharfe Workflow behaelt seine Scharf-Variable.
+// Geprueft werden ECHTE Zuweisungen — Kommentare duerfen den fremden Wert erklaeren.
+check("Scharf und Plan sind getrennt (SCHARF nur im scharfen Workflow gesetzt)", (() => {
+  const planZuw = PLAN.split("\n")
+    .map((z) => (z.match(/^\s*([A-Za-z0-9_-]+)\s*:/) || [])[1])
+    .filter(Boolean);
+  return YML.includes('HELMUT_VERSTEHEN_169_SCHARF: "1"')
+    && !planZuw.includes("HELMUT_VERSTEHEN_169_SCHARF");
+})());
 
 console.log(`verstehen-169-workflow-test: ${passed} von ${passed} Pruefungen gruen.`);

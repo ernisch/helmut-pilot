@@ -1,0 +1,122 @@
+# Helmut — REIN LESENDER Production-PLANLAUF fuer den einmaligen 169er Verstehenslauf.
+# =============================================================================================
+# Dieser Workflow ist NUR der Bedienweg des BEREITS VORHANDENEN, unveraenderten Planmodus von
+# `scripts/verstehen-einmalig-169.js`. Er enthaelt KEINE zweite Fachlogik: Bindungspruefung
+# (169/122), Production-Dedup, Production-Clusterung und Kandidatenzaehlung liegen vollstaendig
+# im Runner. Ohne `HELMUT_VERSTEHEN_169_SCHARF` liefert der Runner genau und ausschliesslich:
+#   * Bindungspruefung (Snapshot-Commit, 169 Kennungen, ID-Hash, 122 Cluster, Groessenverteilung)
+#   * Production-Dedup und Production-Clusterung
+#   * Kandidatenzaehlung
+#   * KEIN Modellaufruf, KEIN Quellenabruf, KEIN Profilwrite, KEINE Kommunikation
+#   * KEINE Quittung (der Quittungsadapter wird ohne SCHARF gar nicht verdrahtet)
+#   * KEIN Schreibzugriff: Supabase wird ausschliesslich LESEND benutzt
+# Kanonischer Beleg: docs/betrieb/verstehen-einmalig-169-20260922.md.
+#
+# WARUM ES DIESEN WORKFLOW GIBT (belegte Bedienluecke):
+# Der Planmodus braucht ECHTEN Production-Lesezugriff auf Supabase. Der dokumentierte lokale
+# Starter `scripts/lokal.js` entfernt die Production-Kennungen bewusst und stellt den Speicher
+# auf lokal — der Plan endet dort strukturell mit `verstehen-speicher-nicht-verfuegbar`. Der
+# scharfe Workflow `.github/workflows/verstehen-169-einmalig.yml` darf dafuer NICHT verwendet
+# oder aufgeweicht werden: er setzt fest `HELMUT_VERSTEHEN_169_SCHARF: "1"`.
+#
+# ZWEI STRIKT GETRENNTE BEDIENWEGE — KEINE GEMEINSAME UMSCHALTUNG:
+#   * hier: rein lesender Planlauf (ohne SCHARF, ohne Bestaetigungswort, ohne Quittung)
+#   * dort: scharfer Lauf (verstehen-169-einmalig.yml, mit SCHARF/Bestaetigungswort/Quittung)
+# Es gibt bewusst KEINE Eingabe `mode=plan|scharf`. Dieser Workflow kann einen scharfen Lauf
+# technisch nicht ausloesen: er setzt die Scharf-Variablen gar nicht — und der Schritt bricht
+# zusaetzlich ab, falls sie ihm doch einmal gesetzt werden sollten.
+#
+# NICHT ueber scripts/lokal.js starten (der lokale Starter entfernt die Production-Zugangsdaten).
+# Read-Only-Aufruf ausserhalb von GitHub Actions (z. B. in einer Sitzung mit Production-Zugang):
+#   node scripts/verstehen-einmalig-169.js
+#
+# Kein Schedule, kein Push-Trigger, keine automatische Wiederholung. Zeitlimit bewusst grosszuegig:
+# der Plan macht keine Modellaufrufe, sondern liest Production (169 Dokumente + Bestand).
+
+name: Verstehen 169 · Rein lesender Planlauf
+
+on:
+  workflow_dispatch:
+    inputs:
+      runtime_commit:
+        description: >-
+          Der Git-Commit des TATSAECHLICH auszufuehrenden Codes (voller 40-stelliger SHA) —
+          in der Regel der aktuell freigegebene Production-main-Commit. WICHTIG: das ist NICHT
+          der Dokument-Snapshot-Commit ea84f26c... Der Workflow checkt genau diesen Commit aus
+          und prueft ihn gegen den echten Checkout (git rev-parse HEAD).
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' &&
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'workflow_dispatch' &&
+      github.run_attempt == 1
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: helmut-500-kontrollierte-facharbeit
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          # GENAU der freigegebene Runtime-Commit — nicht der Workflow-Stand.
+          ref: ${{ inputs.runtime_commit }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - name: Abhaengigkeiten (keine Runtime-Deps; defensiv, kein Lockfile)
+        run: npm install --no-audit --no-fund
+      - name: Preflight — fail closed vor dem Start (keine Secret-Werte)
+        env:
+          RUNTIME_COMMIT: ${{ inputs.runtime_commit }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          set -euo pipefail
+          fail() { echo "PREFLIGHT-STOP: $1"; exit 1; }
+          [ "${GITHUB_REPOSITORY}" = "ernisch/helmut-pilot" ] || fail "falsches Repository"
+          [ "${GITHUB_REF}" = "refs/heads/main" ] || fail "nicht auf main"
+          [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] || fail "falsches Event"
+          [ "${GITHUB_RUN_ATTEMPT}" = "1" ] || fail "run_attempt ungleich 1"
+          [ -n "${RUNTIME_COMMIT:-}" ] || fail "runtime_commit fehlt"
+          echo "${RUNTIME_COMMIT}" | grep -Eq '^[0-9a-f]{40}$' \
+            || fail "runtime_commit ist kein voller Git-SHA"
+          ECHTER_COMMIT="$(git rev-parse HEAD)"
+          [ "${ECHTER_COMMIT}" = "${RUNTIME_COMMIT}" ] \
+            || fail "Checkout weicht vom angeforderten runtime_commit ab"
+          [ -n "${SUPABASE_URL:-}" ] || fail "SUPABASE_URL fehlt"
+          [ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ] || fail "SUPABASE_SERVICE_ROLE_KEY fehlt"
+          echo "PREFLIGHT ok (keine Secret-Werte ausgegeben)"
+      - name: Rein lesender 169er Planlauf (bestehender Runner, ohne SCHARF)
+        env:
+          # Runtime-Commit (der TATSAECHLICH ausgeführte Code) — kommt ausschliesslich aus dem
+          # freigegebenen Input und wird im Runner erneut gegen den echten Checkout geprueft.
+          HELMUT_VERSTEHEN_169_RUNTIME_COMMIT: ${{ inputs.runtime_commit }}
+          # Dokument-Snapshot-Commit (der DATENSATZ: 169 Kennungen, Hash, 122 Cluster) —
+          # fest eingeschrieben und unveraendert.
+          HELMUT_VERSTEHEN_169_COMMIT: "ea84f26ccc380e22961335926e2d4e585cee2308"
+          HELMUT_VERSTEHEN_169_LISTE: "belege/verstehen-169-ids.json"
+          # Production-Zugang, AUSSCHLIESSLICH LESEND (GitHub Secrets — Werte werden nie geloggt).
+          # Bewusst NICHT gesetzt: HELMUT_VERSTEHEN_169_SCHARF, HELMUT_VERSTEHEN_169_BESTAETIGT,
+          # eine Quittungskennung sowie ALLE Azure-/Modell-Zugangsdaten. Ohne SCHARF ruft der
+          # Runner kein Modell — ein Modellschluessel waere hier ohne Nutzen und ohne Not.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Production-Speicher (nur lesend; keine Schreibfreigaben, keine Profil-/Cron-Variablen):
+          HELMUT_V3_STORE: "1"
+          HELMUT_STORAGE_BACKEND: "supabase"
+          HELMUT_SUPABASE_STORE_ID: "main"
+        run: |
+          set -euo pipefail
+          # Harte Sperre gegen einen scharfen Lauf: dieser Bedienweg ist NUR der Planlauf.
+          if [ -n "${HELMUT_VERSTEHEN_169_SCHARF:-}" ]; then
+            echo "STOPP: HELMUT_VERSTEHEN_169_SCHARF ist in diesem Workflow nicht zulaessig."
+            exit 1
+          fi
+          node scripts/verstehen-einmalig-169.js
