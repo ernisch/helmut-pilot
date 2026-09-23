@@ -358,7 +358,11 @@ ein abgebrochener oder unbekannter Ausgang wird damit nicht still wiederholbar.
 
 ```sh
 # Rein lesende Planung (Bindung, Dedup, Cluster, Kandidaten) — kein Modellaufruf:
-node scripts/lokal.js -- node scripts/verstehen-einmalig-169.js
+#   KANONISCH/PRODUCTION: der getrennte manuelle Workflow
+#     `.github/workflows/verstehen-169-plan.yml` (siehe §19)
+#   Nur LOKAL, ohne Production-Bezug: node scripts/lokal.js -- node scripts/verstehen-einmalig-169.js
+#     Der lokale Starter entfernt die Production-Kennungen bewusst — der Plan endet dort
+#     strukturell mit `verstehen-speicher-nicht-verfuegbar`. Genau diese Bedienluecke schliesst §19.
 
 # Scharfer Lauf (eigene Freigabe erforderlich, bestaetigendes Wort):
 HELMUT_VERSTEHEN_169_COMMIT=<dokument-snapshot-commit> \
@@ -618,8 +622,51 @@ unverändert (169/122/113 · 0,80 USD · 35 min · 4 USD Tagesriegel · CAS, Fen
 Clustering, Resolver, Validatoren).
 
 **Belege.** `scripts/verstehen-einmalig-test.js` §24 (7 Prüfungen, 91/91 grün, offline) und
-`scripts/verstehen-169-workflow-test.js` (85/85): `ref`-Bindung, SHA-Muster, `rev-parse`-Abgleich,
+`scripts/verstehen-169-workflow-test.js` (137/137): `ref`-Bindung, SHA-Muster, `rev-parse`-Abgleich,
 Abbruchpfad, getrennte Env-Werte, kein hart kodierter Runtime-Commit. Die Preflight-Shell wurde
 zusätzlich funktional gegen ein eigener Test-Repository geprüft: richtiger Commit ⇒ `PREFLIGHT ok`;
 falscher, verkürzter oder fehlender Runtime-Commit ⇒ Abbruch mit exit 1. **0 Modellaufrufe,
 0 Production-Writes, 0 USD.** Ein neuer 169er Lauf wurde **nicht** gestartet.
+
+## 19 · Zwei strikt getrennte Bedienwege: Plan (rein lesend) und Scharf (2026-09-23)
+
+**Der Befund.** Der Planmodus des Runners (`scripts/verstehen-einmalig-169.js` ohne
+`HELMUT_VERSTEHEN_169_SCHARF`) braucht echten Production-Lesezugriff auf Supabase. Der
+dokumentierte lokale Starter `scripts/lokal.js` entfernt diese Kennungen bewusst und stellt den
+Speicher auf lokal — der Plan endet dort strukturell mit `verstehen-speicher-nicht-verfuegbar`
+(2026-09-23 belegt, ohne Production-Kontakt). Der scharfe Workflow
+(`.github/workflows/verstehen-169-einmalig.yml`) darf dafür **nicht** verwendet oder aufgeweicht
+werden: er setzt fest `HELMUT_VERSTEHEN_169_SCHARF: "1"`.
+
+**Der getrennte Planweg.** `.github/workflows/verstehen-169-plan.yml` ist ein eigener, manueller
+Workflow und ruft **denselben** Runner **ohne** SCHARF auf — keine zweite Fachlogik. Er ist
+ausschließlich `workflow_dispatch` auf `main`, `run_attempt = 1`, `contents: read`, nutzt dieselbe
+globale Concurrency-Gruppe (`helmut-500-kontrollierte-facharbeit`, `cancel-in-progress: false`)
+und verlangt den vollen `runtime_commit` als Pflicht-Input. Dieser Wert ist **fail closed an den
+Dispatch gebunden**: `runtime_commit` muss exakt `github.sha` des auf `main` gestarteten
+Workflow-Dispatches sein (Job-`if` **und** Preflight-Abgleich), genau dieser Commit wird
+ausgecheckt und zusaetzlich ueber `git rev-parse HEAD` gegen den echten Checkout geprueft.
+Ein aelterer, fremder oder sonstiger gueltiger Repository-Commit wird **vor** dem Runner-Aufruf
+abgelehnt — er kann die Production-Lesekennungen nicht bekommen. Dokument-Snapshot-Commit
+(`ea84f26ccc380e22961335926e2d4e585cee2308`) und Liste (`belege/verstehen-169-ids.json`) bleiben
+fest eingeschrieben; die Production-Lesekennungen kommen aus den bestehenden GitHub-Secrets
+(`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`), Speicher `HELMUT_V3_STORE=1`,
+`HELMUT_STORAGE_BACKEND=supabase`, `HELMUT_SUPABASE_STORE_ID=main`.
+
+**Warum der Planweg technisch nicht scharf laufen kann.** Er setzt die Scharf-Variablen **gar
+nicht**: kein `HELMUT_VERSTEHEN_169_SCHARF`, kein `HELMUT_VERSTEHEN_169_BESTAETIGT`, keine
+Quittungskennung und **keine** Azure-/Modell-Zugangsdaten. Der Laufschritt bricht zusätzlich hart
+ab, falls `HELMUT_VERSTEHEN_169_SCHARF` doch gesetzt wäre. Eine gemeinsame Umschaltung
+(`mode=plan|scharf`) gibt es bewusst **nicht** — zwei getrennte Bedienwege bleiben Absicht. Der
+scharfe Workflow bleibt unverändert.
+
+**Was der Plan liefert.** Bindungsprüfung, Production-Dedup, Production-Clusterung und
+Kandidatenzählung: 0 Modellaufrufe, 0 Quellenabrufe, 0 Profilwrites, 0 Kommunikation, keine
+Quittung, 0 USD. Er ist **kein** Funktionsnachweis — Planung belegt keine Funktion.
+
+**Belege.** `scripts/verstehen-169-workflow-test.js` (**137/137**, offline, 0 Modellaufrufe,
+0 Writes) prüft beide Workflows statisch: Trigger, `main`-/`run_attempt`-Bindung, Rechte,
+Concurrency, `runtime_commit`-Pflicht samt `rev-parse`-Abgleich, feste Snapshot-/Listenwerte,
+Supabase-Lesezugang über Secrets, direkter Runner-Aufruf, kein `scripts/lokal.js`, keine
+Scharf-/Bestätigungs-/Quittungsvariable, keine Modell-Secrets, keine Profil-/Lock-/CAS-/Budget-
+Variablen, kein Schedule und kein Push-Trigger. **Kein Workflow wurde ausgeführt.**
