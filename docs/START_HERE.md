@@ -4,7 +4,7 @@
 Historie. Für den aktuellen Stand → [`CURRENT_STATE.md`](CURRENT_STATE.md), für die
 Systemkarte → [`ARCHITECTURE.md`](ARCHITECTURE.md).
 
-**Letzte Aktualisierung:** 2026-09-21 (Entwicklungsvertrag: belegte Tatsachen und gekennzeichnete KI Einordnung)
+**Letzte Aktualisierung:** 2026-09-23 (aktuelle Priorität: 500er Production-Nachweis; laufender Betriebszustand nur in `CURRENT_STATE.md`)
 
 ---
 
@@ -26,14 +26,18 @@ Helmut beantwortet morgens und im Tagesverlauf:
 Kernsatz: *Helmut reduziert die politische Morgenlage auf Entscheidungen,
 Kommunikation und Aufgaben.*
 
-## 2 · Aktuelles Produktziel
+## 2 · Aktuelles Projektziel
 
-**Verkaufsbereitschaft für den ersten zahlenden Zweitmandanten.** Der Einzelpilot
-läuft stabil in Production. Was fehlt, ist nicht Funktionsumfang, sondern
-Betriebs-, Rechts- und Sicherheitsreife — geführt als **P0-Verkaufsblocker**
-(OP-01…OP-04) in [`datenmotor-restliste.md`](datenmotor-restliste.md).
+**Oberstes Projektziel ist der belastbare Production-Nachweis mit exakt 500
+gleichzeitig aktiven Profilen.** Die Stufen und den aktuellen Stand führt ausschließlich
+[`CURRENT_STATE.md`](CURRENT_STATE.md).
 
-Neue Funktionen sind nachrangig, solange die P0-Punkte offen sind.
+Danach ist die **Verkaufsbereitschaft für den ersten zahlenden Zweitmandanten** das
+Produktziel. Was dort fehlt, ist nicht Funktionsumfang, sondern Betriebs-, Rechts- und
+Sicherheitsreife — geführt als **P0-Verkaufsblocker** (OP-01…OP-04) in
+[`datenmotor-restliste.md`](datenmotor-restliste.md).
+
+Neue Funktionen sind nachrangig, solange der 500er-Nachweis und die P0-Punkte offen sind.
 
 ## 3 · Zielgruppe und Pilotlogik
 
@@ -43,10 +47,11 @@ Neue Funktionen sind nachrangig, solange die P0-Punkte offen sind.
   Seine Identität wird in Code und Doku bewusst **nicht** geführt — siehe §5,
   Prinzip „Mandantenneutralität". Historische Altdokumente und Testfixtures
   enthalten noch den Klarnamen; das ist Alt-Bestand, keine aktive Logik.
-- **Betriebsmodus heute:** kontrollierter Mehrmandantenbetrieb mit mehreren aktiven
-  Mandatsprofilen. Die aktuelle Anzahl und der Nachweisstand stehen ausschließlich in
-  [`CURRENT_STATE.md`](CURRENT_STATE.md). Vor dem ersten zahlenden Zweitmandanten bleibt
-  das Freigabepaket **OP-03** verbindlich; deaktivierte Demo-Profile bleiben OP-04.
+- **Betriebsmodus:** kontrollierter Mehrmandantenbetrieb. **Die aktuelle Anzahl aktiver
+  Profile und der Nachweisstand stehen ausschließlich in
+  [`CURRENT_STATE.md`](CURRENT_STATE.md)** und werden hier bewusst nicht als Zustand
+  geführt. Vor dem ersten zahlenden Zweitmandanten bleibt das Freigabepaket **OP-03**
+  verbindlich; deaktivierte Demo-Profile bleiben OP-04.
 
 ## 4 · Produktbereiche
 

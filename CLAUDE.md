@@ -1,10 +1,25 @@
-# CLAUDE.md — Arbeitsanweisung für Claude Code
+# CLAUDE.md — dauerhafte technische Repository-Regeln
 
-Diese Datei ist die **Einstiegsschicht**, kein Handbuch. Sie gibt Orientierung in unter
-zwei Minuten und verweist danach auf die kanonischen Dokumente. Sie wird **nur**
-geändert, wenn eine neue dauerhaft verbindliche Projektregel entsteht.
+Diese Datei enthält **ausschließlich dauerhafte technische Repository-Regeln**
+(Sicherheit, Datenhaltung, Migrationen, CI). Sie wird **nur** geändert, wenn eine neue
+dauerhaft verbindliche technische Projektregel entsteht.
 
-**Stand:** 2026-08-31 (§9 geschärft: ein autorisierter Merge oder ein Production-Deployment erzeugt eine eigene Nach-Merge-Dokumentationspflicht; ein vor dem Merge geschriebener Status genügt nicht)
+**Zuständigkeit der vier zentralen Dateien (verbindlich, keine Überlappung):**
+
+- **`AGENTS.md` ist die eindeutige Agent-Regeldatei.** Dort stehen Arbeitsweise,
+  Freigaben, Production-Schutz, Testumfang, Agent-Verhalten und die Pflichtlektüre samt
+  Reihenfolge. Bei Überschneidung oder Widerspruch gilt `AGENTS.md`.
+- **Diese Datei (`CLAUDE.md`)** führt die dauerhaften **technischen**
+  Repository-Regeln.
+- [`docs/START_HERE.md`](docs/START_HERE.md) ist die **stabile Produktorientierung**
+  (Produkt, Zielgruppe, Prinzipien).
+- [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) ist der **aktuelle operative Stand**
+  und die **einzige** Quelle für laufende Betriebszustände (aktive Profile, offene
+  Migrationen, Blocker).
+
+**Stand:** 2026-09-23 (Zuständigkeiten geschärft: `AGENTS.md` führt Agent-Regeln,
+`CLAUDE.md` technische Regeln, `CURRENT_STATE.md` den Betriebszustand; §1, §2, §5 und §6
+auf diese Zuständigkeit bereinigt)
 
 ---
 
@@ -14,17 +29,21 @@ Helmut ist ein **politischer KI-Stabschef** für Mandatsträger — kein
 Medienmonitoring-Tool, kein News-Reader, kein Dashboard. Helmut reduziert die
 politische Morgenlage auf **Entscheidungen, Kommunikation und Aufgaben**.
 
-**Aktuelles Produktziel:** Verkaufsbereitschaft für den ersten zahlenden
-Zweitmandanten. Die Blocker sind Betriebs-, Rechts- und Sicherheitsreife
-(P0: OP-01…OP-04), nicht Funktionsumfang.
+**Aktuelles oberstes Projektziel:** der belastbare **Production-Nachweis mit exakt 500
+gleichzeitig aktiven Profilen** (Stufen und Stand ausschließlich in
+[`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md)). Danach bleibt die **Verkaufsbereitschaft
+für den ersten zahlenden Zweitmandanten** das Produktziel; ihre Blocker sind Betriebs-,
+Rechts- und Sicherheitsreife (P0: OP-01…OP-04), nicht Funktionsumfang.
 
 ## 2 · Pflichtlektüre bei jedem neuen Thread
 
-Genau diese drei Dateien, in dieser Reihenfolge — sonst nichts:
+Die Pflichtlektüre und ihre Reihenfolge sind **verbindlich in [`AGENTS.md`](AGENTS.md)
+definiert** und werden hier nicht abweichend wiederholt. Sie umfasst:
 
 1. `CLAUDE.md` (diese Datei)
 2. [`docs/START_HERE.md`](docs/START_HERE.md) — Produkt, Zielgruppe, Prinzipien
 3. [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) — aktueller Stand, Blocker, offene PRs
+4. die für den betroffenen Bereich jeweils geltenden `AGENTS.md`
 
 Daraus ergibt sich der nächste Schritt. **Erst danach** aufgabenabhängig weiterlesen.
 
@@ -107,10 +126,11 @@ festgestellt wurde.
 ## 5 · Ohne ausdrückliche Freigabe verboten
 
 - Merge nach `main` (Merge = **Production-Deployment**) und jedes Deployment
-- Anwenden einer Migration auf Production (aktuell offen: nur noch `20260720`;
-  `20260727` ist am 2026-07-27 freigegeben und angewendet, `20260721` war
-  bereits seit 2026-07-16 angewendet — die frühere Angabe war falsch, in
-  Production gegengeprüft)
+- Anwenden einer Migration auf Production. **Welche Migrationen offen sind, führt
+  ausschließlich [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md)**; die Liste wird hier
+  bewusst nicht dupliziert, damit sie nicht auseinanderläuft. Jede Anwendung bleibt
+  freigabepflichtig. (Historisch in Production gegengeprüft: `20260721` war entgegen
+  einer früheren Angabe bereits seit 2026-07-16 angewendet, `20260727` seit 2026-07-27.)
 - Jede Änderung an Production-Daten (auch Löschen von Demo-Mandaten)
 - Setzen, Ändern oder Rotieren von Secrets und Vercel-Env-Variablen
 - Scharfschalten von Feature-Flags (`helmut-flags.json` oder Vercel-Env)
@@ -136,9 +156,13 @@ reversibel und eindeutig sinnvoll ist.
   Sicherheitsentscheidung unterbrechen. Veraltete/ungeeignete Arbeit darf
   verworfen werden, dann aber kurz in `docs/CURRENT_STATE.md` dokumentieren.
 - **Nie direkt auf `main`.** Feature-Branch, dann PR. `main` deployt automatisch.
-- **Tests vor jedem PR:** `node scripts/lokal.js -- node scripts/run-offline-tests.js`
-  (kanonischer Lauf, sammelt alle `scripts/*-test.js` ein, erzwingt Offline technisch).
-  Bei UI-Änderungen zusätzlich `node scripts/lokal.js -- node scripts/browser-smoke-test.js`.
+- **Testumfang:** richtet sich nach [`AGENTS.md`](AGENTS.md) — gezielte, zweckgebundene
+  Tests des betroffenen Bereichs; **keine** vollständige Suite und **keine** Browser-Suite
+  aus Vorsicht. Wenn ein Offline-Lauf nötig ist, ist der kanonische Befehl
+  `node scripts/lokal.js -- node scripts/run-offline-tests.js` (sammelt alle
+  `scripts/*-test.js` ein, erzwingt Offline technisch); bei UI-Änderungen gezielt
+  `node scripts/lokal.js -- node scripts/browser-smoke-test.js`. Die Pflicht-CI läuft
+  zusätzlich (siehe CI-Gate unten).
 - **Jeder Testlauf geht über `scripts/lokal.js`, auch der einzelne.** Liegen
   Production-Kennungen in der Umgebung (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
   `VERCEL_TOKEN` — in Cloud-Sitzungen der Normalfall), kann ein **Handlauf einer einzelnen
