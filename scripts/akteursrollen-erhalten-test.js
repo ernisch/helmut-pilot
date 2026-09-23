@@ -173,9 +173,11 @@ async function main() {
       was_ist_passiert: "Das Bundeskabinett hat einen Kabinettsbeschluss gefasst." });
     assert.equal(positiv.decision_level, "bund"); assert.equal(positiv.event_type, "kabinettsbeschluss");
   });
-  await test("Erwaehnte Regionalinstitution bleibt auch ohne optionale Geografieliste nur erwaehnt", async () => {
-    for (const feld of ["mentioned_committees", "mentioned_ministries", "mentioned_organizations"]) {
-      const antwort = { ...BASIS, [feld]: ["Berliner Senat"] };
+  await test("Erwaehnte Regionalinstitution bleibt nur erwaehnt; ein bekannter falscher Akteurstyp entfaellt", async () => {
+    // mentioned_organizations ist NICHT typgebunden -> die Regionalinstitution bleibt als
+    // Erwaehnung erhalten und traegt nur die Erwaehnungs-Geografie (keine Betroffenheit).
+    {
+      const antwort = { ...BASIS, mentioned_organizations: ["Berliner Senat"] };
       for (const modus of ["erst", "update"]) {
         const r = await lauf(modus, antwort, quelle("Berliner Senat", false));
         assert.deepEqual(r.affected_geographies, []);
@@ -183,6 +185,17 @@ async function main() {
       }
       const patch = buildClassificationPatch(antwort, { embed: () => [] });
       assert.deepEqual(patch.affected_geographies, []);
+    }
+    // mentioned_committees/mentioned_ministries sind typgebunden. "Berliner Senat" ist der
+    // zentralen Entitaetsschicht als `government` bekannt -> im Ausschuss-/Ministeriumsfeld ein
+    // eindeutiger Typwiderspruch, der deterministisch entfernt wird (Befund 2026-09-23).
+    for (const feld of ["mentioned_committees", "mentioned_ministries"]) {
+      for (const modus of ["erst", "update"]) {
+        const r = await lauf(modus, { ...BASIS, [feld]: ["Berliner Senat"] }, quelle("Berliner Senat", false));
+        assert.deepEqual(r.affected_geographies, []);
+        assert.deepEqual(r[feld], [], `${feld}: falsch typisierter Wert bleibt entfernt`);
+        assert(!r.related_entities.some(e => e.name === "Berliner Senat"));
+      }
     }
     const positiv = C.classifyKnowledgeObject({ ministerien: ["Berliner Senat"] });
     assert(positiv.affected_geographies.some(g => g.name === "Berlin"));
