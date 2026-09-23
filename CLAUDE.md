@@ -179,13 +179,21 @@ reversibel und eindeutig sinnvoll ist.
   Behauptungen), Risiko, Rollback, und was bewusst **nicht** enthalten ist.
 - **Nicht selbst mergen, nicht selbst deployen.** Merge-Empfehlung aussprechen,
   Entscheidung liegt beim Betreiber.
-- Neue Tests gehören als `scripts/<name>-test.js` ins Repo — laufen aber **nicht**
-  automatisch im Pflichtlauf. Der Standardlauf/CI-Gate (`scripts/run-offline-tests.js`)
-  führt ausschließlich die explizite Kernmenge `STANDARD` aus. Wer einen neuen Test im
-  Pflichtlauf braucht, trägt ihn dort **bewusst** ein (mit dem geschützten Vertrag als
-  Begründung); sonst läuft er nur im erweiterten Lauf (`--extended`). Das hält den
-  Pflichtlauf klein und verhindert das stille Anwachsen auf hunderte Suiten
-  (Testorganisation 2026-09-23). Bereiche gezielt: `--extended --only <substring>`.
+- **Drei Testebenen (Testorganisation 2026-09-23):**
+  - **Standard (immer):** Der CI-Pflichtlauf führt ausschließlich die explizite Kernmenge
+    `STANDARD` in `scripts/run-offline-tests.js` aus.
+  - **Bereich (automatisch):** Je nach tatsächlich geänderten Dateien laufen zusätzlich die
+    Fach-Regressionstests der betroffenen Bereiche. Kanonische Zuordnung:
+    `scripts/bereichsauswahl.js` (ausgewertet im CI-Schritt „Bereichs-Regression“ und über
+    `--aendert`/`--bereich`). Ein Test gehört über seinen **Dateinamen** zu einem Bereich
+    (z. B. `briefing-…-test.js` → Bereich `briefing`). Eine fachlich relevante, nicht
+    zuordenbare Datei wird **nicht** still übersprungen, sondern erzwingt die konservative
+    Sammelmenge.
+  - **Extended (bewusst):** die vollständige Regression über `--extended` bzw.
+    `npm run test:offline:extended`.
+  Eine neue Testdatei ist **nicht** automatisch Standard; wer sie im Pflichtlauf braucht,
+  trägt sie bewusst in `STANDARD` ein. Bereiche gezielt: `--bereich <name>` oder
+  `--extended --only <substring>`; Übersicht der Bereiche: `--bereiche`.
 
 ## 7 · Token- und Kostenregeln
 

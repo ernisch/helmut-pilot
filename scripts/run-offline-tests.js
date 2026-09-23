@@ -11,17 +11,23 @@
 // Aufruf:  node scripts/run-offline-tests.js [--list] [--only <substring>] [--extended]
 // Exit-Code 0 nur, wenn jede Suite mit Exit-Code 0 endet.
 //
-// STANDARD vs. ERWEITERT (Sprint 2026-09-23, Testorganisation):
+// STANDARD vs. BEREICH vs. ERWEITERT (Sprint 2026-09-23, Testorganisation):
 //   Standard  = der kanonische Pflichtlauf und das CI-Gate. Er fuehrt AUSSCHLIESSLICH die
 //               explizite Kernmenge STANDARD aus (aktuelle Schutz-/Sicherheitsvertraege,
 //               aktuelle 500er-Schutzlogik und die grundlegenden Vertraege des heutigen
 //               Production-Pfads).
+//   Bereich   = zusaetzlich die fachliche Regression der im PR tatsaechlich geaenderten
+//               Bereiche. Auswahl ueber `--aendert "<datei1 datei2 ..."` (oder `--bereich
+//               <name,...>`) anhand der kanonischen Zuordnung in scripts/bereichsauswahl.js.
+//               `--nur-bereich` fuehrt NUR die Bereichs-Suiten aus (ohne Standard, fuer einen
+//               eigenen CI-Schritt). Fuer eine Aenderung gilt: Vereinigung aller betroffenen
+//               Bereiche, ohne Doppellaeufe mit dem Standard.
 //   Erweitert = die VOLLSTAENDIGE Offline-Regression (alle sammelbaren Suiten). Aufruf
 //               ueber `--extended` bzw. `npm run test:offline:extended`. Laeuft NICHT
 //               automatisch im PR.
 // Eine neue Testdatei wird NICHT automatisch zum Pflichtlauf: sie muss bewusst in STANDARD
-// eingetragen werden, sonst laeuft sie nur im erweiterten Lauf. Das verhindert, dass der
-// Pflichtlauf ueber die Zeit wieder auf hunderte Suiten anwaechst. Bereichsspezifisch
+// eingetragen werden, sonst laeuft sie nur im erweiterten Lauf. Fuer die Bereichsauswahl
+// entscheidet der DATEINAME (siehe scripts/bereichsauswahl.js). Bereichsspezifisch
 // ausfuehren: `--extended --only <substring>` (z. B. `--extended --only briefing`).
 //
 // NETZ-GUARD (Audit-Folgebranch 2026-07): collectSuites() sammelt JEDE künftige
@@ -288,14 +294,38 @@ function standardSuites() {
   return collectSuites().filter((f) => STANDARD.has(f));
 }
 
+// Liest den Wert nach einem Schalter bis zum naechsten Schalter (auch mehrere Argumente).
+function wertNach(args, flag) {
+  const i = args.indexOf(flag);
+  if (i < 0) return null;
+  const teile = [];
+  for (let j = i + 1; j < args.length; j++) {
+    if (String(args[j]).startsWith("--")) break;
+    teile.push(args[j]);
+  }
+  return teile.join(" ");
+}
+
 function main() {
   const args = process.argv.slice(2);
   const listOnly = args.includes("--list");
   const extended = args.includes("--extended");
+  const nurBereich = args.includes("--nur-bereich");
   const onlyIdx = args.indexOf("--only");
   const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
 
   const alle = collectSuites();
+  const AUSWAHL = require("./bereichsauswahl.js");
+
+  // Uebersicht der Bereiche (Kontrolle/Doku): Name und zusaetzliche Suiten ohne Standard.
+  if (args.includes("--bereiche")) {
+    for (const name of Object.keys(AUSWAHL.BEREICHE).sort()) {
+      const suiten = AUSWAHL.suitenFuerBereiche(alle, [name]).filter((f) => !STANDARD.has(f));
+      console.log(`${name.padEnd(24)} ${String(suiten.length).padStart(3)} zusaetzliche Suiten`);
+    }
+    return 0;
+  }
+
   // Sicherheitsnetz: ein Standard-Name, den collectSuites() nicht kennt (Tippfehler oder
   // umbenannte/entfernte Datei), wuerde den Pflichtlauf sonst STILL verkleinern. Das muss
   // laut scheitern, nicht leise durchrutschen.
@@ -306,13 +336,53 @@ function main() {
     return 1;
   }
 
-  let suites = extended ? alle : standardSuites();
+  // Modus: Standard (Default), erweitert (alles) oder Bereich (automatische Fachregression).
+  let auswahlInfo = null;
+  let suites;
+  if (extended) {
+    suites = alle.slice();
+  } else {
+    const aendert = wertNach(args, "--aendert");
+    const bereichArg = wertNach(args, "--bereich");
+    const basis = nurBereich ? [] : standardSuites();
+    let bereichsSuiten = [];
+    if (aendert != null) {
+      const dateien = String(aendert).split(/[\s,]+/).filter(Boolean);
+      auswahlInfo = AUSWAHL.bereichsSuiten(dateien, alle, STANDARD);
+      bereichsSuiten = auswahlInfo.suiten;
+    } else if (bereichArg != null) {
+      const namen = String(bereichArg).split(/[\s,]+/).filter(Boolean);
+      const unbekannt = namen.filter((n) => !AUSWAHL.BEREICHE[n]);
+      if (unbekannt.length) {
+        console.error(`[run-offline-tests] Unbekannte Bereiche: ${unbekannt.join(", ")}`);
+        console.error(`  Verfuegbar: ${Object.keys(AUSWAHL.BEREICHE).sort().join(", ")}`);
+        return 1;
+      }
+      const ziele = [...namen].sort();
+      bereichsSuiten = AUSWAHL.suitenFuerBereiche(alle, ziele).filter((f) => !STANDARD.has(f));
+      auswahlInfo = { bereiche: ziele, zielBereiche: ziele, konservativ: false, unbekannt: [], querschnitt: false, suiten: bereichsSuiten };
+    }
+    // Vereinigung: Standard + Bereich, ohne Doppelaeufe.
+    suites = [...new Set([...basis, ...bereichsSuiten])].sort();
+  }
   if (only) suites = suites.filter((f) => f.includes(only));
+
+  if (auswahlInfo && !listOnly) {
+    console.log(`Bereichsauswahl: ${auswahlInfo.zielBereiche.join(", ") || "keine"}`);
+    if (auswahlInfo.querschnitt) console.log("  Zentrale/geteilte Kerndatei geaendert -> konservative Sammelmenge (alle Bereiche).");
+    if (auswahlInfo.unbekannt.length) console.log(`  FAIL CLOSED: ${auswahlInfo.unbekannt.length} relevante Datei(en) ohne Bereichszuordnung -> konservative Sammelmenge: ${auswahlInfo.unbekannt.join(", ")}`);
+    if (!auswahlInfo.zielBereiche.length) console.log("  Keine fachlich relevanten Aenderungen (z. B. nur Dokumentation) -> keine zusaetzlichen Bereichstests.");
+    console.log(`  Bereichs-Suiten (ohne Standard-Doppellaeufe): ${auswahlInfo.suiten.length}`);
+  }
+
+  const modus = extended
+    ? "erweitert = vollstaendige Regression"
+    : ((auswahlInfo || nurBereich) ? "Bereich = automatische Fachregression" : "Standard = Pflichtlauf");
 
   if (listOnly) {
     suites.forEach((f) => console.log(f));
-    console.log(`\n${suites.length} Offline-Suiten (${extended ? "erweitert = vollstaendige Regression" : "Standard = Pflichtlauf"})`);
-    if (!extended) {
+    console.log(`\n${suites.length} Offline-Suiten (${modus})`);
+    if (!extended && !auswahlInfo) {
       const rest = alle.filter((f) => !STANDARD.has(f));
       console.log(`Nicht im Standardlauf (nur mit --extended bzw. \`npm run test:offline:extended\`): ${rest.length} Suiten`);
     }
@@ -371,8 +441,7 @@ function main() {
   }
 
   const secs = Math.round((Date.now() - started) / 1000);
-  console.log(`\n${suites.length - failed.length}/${suites.length} Suiten grün in ${secs}s`
-    + (extended ? " (erweitert = vollstaendige Regression)" : " (Standard = Pflichtlauf)"));
+  console.log(`\n${suites.length - failed.length}/${suites.length} Suiten grün in ${secs}s (${modus})`);
   if (netAttempts.length) {
     console.log(`${NET_GUARD_MARKER} Suiten mit blockierten Nicht-Localhost-Verbindungen: ${netAttempts.join(", ")}`);
   }
@@ -396,3 +465,7 @@ if (require.main === module) {
   // Als --require-Preload in einem Testprozess geladen -> Offline-Zwang aktiv.
   installNetGuard();
 }
+
+// Fuer den Auswahl-Vertragstest (scripts/bereichsauswahl-test.js): die Kernmenge und die
+// Sammlung lesbar machen, ohne den Runner als Prozess zu starten.
+module.exports = { STANDARD, collectSuites, standardSuites };

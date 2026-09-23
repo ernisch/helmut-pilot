@@ -60,6 +60,11 @@ jobs:
           --health-retries 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Volle Historie: der Bereichs-Regressionsschritt vergleicht den PR-Kopf mit dem
+          # Basis-Commit (github.event.pull_request.base.sha). Ohne fetch-depth: 0 fehlt der
+          # Basis-Commit im flachen Checkout.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -155,6 +160,26 @@ jobs:
         env:
           HELMUT_SOURCE_MODE: "off"
         run: node scripts/lokal.js -- node scripts/run-offline-tests.js
+
+      - name: Bereichs-Regression (nur geänderte Fachbereiche)
+        # Deterministische Bereichsauswahl (scripts/bereichsauswahl.js): laeuft NUR die
+        # fachlichen Regressionstests der im PR tatsaechlich geaenderten Bereiche — nie die
+        # vollstaendige Extended-Suite. Reine Doku-Aenderungen laufen leer durch. Fail closed:
+        # eine relevante, nicht zuordenbare Datei erzwingt die konservative Sammelmenge und
+        # wird sichtbar gemeldet. Dieselbe kanonische Zuordnung benutzt auch der Runner.
+        env:
+          HELMUT_SOURCE_MODE: "off"
+        run: |
+          set -e
+          BASE="${{ github.event.pull_request.base.sha }}"
+          if [ -z "$BASE" ]; then
+            echo "Kein pull_request-Basis-Commit (Ereignis ohne PR) — Bereichsauswahl uebersprungen."
+            exit 0
+          fi
+          echo "Geaenderte Dateien seit $BASE:"
+          CHANGED="$(git diff --name-only "$BASE" "${{ github.sha }}")"
+          printf '%s\n' "$CHANGED"
+          node scripts/lokal.js -- node scripts/run-offline-tests.js --aendert "$CHANGED" --nur-bereich
 
       - name: Z22-Datenbanknachweis §1–§11 gegen echte PostgreSQL + echtes PostgREST (fail-closed)
         # WARUM EIN EIGENER SCHRITT: Der Nachweis braucht eine echte PostgreSQL. In
