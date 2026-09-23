@@ -214,6 +214,39 @@ check("Plan: Checkout bindet GENAU den runtime_commit", PLAN.includes("ref: ${{ 
 check("Plan: Preflight prueft den vollen Git-SHA", PLAN.includes("grep -Eq '^[0-9a-f]{40}$'"));
 check("Plan: Preflight vergleicht den echten Checkout", PLAN.includes("git rev-parse HEAD"));
 check("Plan: Preflight bricht bei Abweichung ab", PLAN.includes('[ "${ECHTER_COMMIT}" = "${RUNTIME_COMMIT}" ]'));
+
+// 12c · Bindung an den DISPATCH: nur der main-Commit, auf dem der Workflow gestartet wurde.
+// Ohne diese Bindung koennte JEDER syntaktisch gueltige 40-stellige SHA — auch ein aelterer oder
+// fremder Repository-Commit — ausgecheckt und mit den Production-Lesekennungen ausgefuehrt werden.
+check("Plan: Job-if bindet runtime_commit an den main-Dispatch-SHA",
+  PLAN.includes("inputs.runtime_commit == github.sha"));
+check("Plan: Dispatch-SHA stammt aus dem echten Workflow-Kontext",
+  PLAN.includes("DISPATCH_SHA: ${{ github.sha }}"));
+check("Plan: Preflight prueft runtime_commit gegen den Dispatch-SHA",
+  PLAN.includes('[ "${RUNTIME_COMMIT}" = "${DISPATCH_SHA}" ]'));
+check("Plan: fehlender Dispatch-SHA bricht ab",
+  PLAN.includes('[ -n "${DISPATCH_SHA:-}" ] || fail "Dispatch-SHA fehlt"'));
+check("Plan: dreiseitige Bindung vollstaendig (angefordert = Dispatch = Checkout)", (() => {
+  const dispatcher = PLAN.includes("inputs.runtime_commit == github.sha");
+  const preflight = PLAN.includes('[ "${RUNTIME_COMMIT}" = "${DISPATCH_SHA}" ]');
+  const checkout = PLAN.includes('[ "${ECHTER_COMMIT}" = "${RUNTIME_COMMIT}" ]');
+  return dispatcher && preflight && checkout;
+})());
+check("Plan: die Dispatch-Bindung ist VOR dem Runner-Aufruf geprueft", (() => {
+  // Eindeutige Anker: der Abgleich im Preflight, danach der Laufschritt, darin der Aufruf.
+  // (Der Kopfkommentar nennt den Runner ebenfalls — deshalb NICHT indexOf auf den Aufruf.)
+  const bindung = PLAN.indexOf('[ "${RUNTIME_COMMIT}" = "${DISPATCH_SHA}" ]');
+  const schritt = PLAN.indexOf("- name: Rein lesender 169er Planlauf");
+  const aufruf = PLAN.lastIndexOf("node scripts/verstehen-einmalig-169.js");
+  return bindung > 0 && schritt > bindung && aufruf > schritt;
+})());
+check("Plan: kein beliebiger SHA als alleinige Zulassung (Formatpruefung genuegt nicht)", (() => {
+  // Die reine Formatpruefung bleibt, ist aber NICHT die Zulassung: die Zulassung ist der
+  // Dispatch-Vergleich. Beide muessen vorhanden sein.
+  const format = PLAN.includes("grep -Eq '^[0-9a-f]{40}$'");
+  const zugelassen = PLAN.includes('[ "${RUNTIME_COMMIT}" = "${DISPATCH_SHA}" ]');
+  return format && zugelassen;
+})());
 check("Plan: Dokument-Snapshot-Commit unveraendert",
   PLAN.includes('HELMUT_VERSTEHEN_169_COMMIT: "ea84f26ccc380e22961335926e2d4e585cee2308"'));
 check("Plan: gebundene Liste unveraendert",

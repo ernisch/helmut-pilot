@@ -622,7 +622,7 @@ unverändert (169/122/113 · 0,80 USD · 35 min · 4 USD Tagesriegel · CAS, Fen
 Clustering, Resolver, Validatoren).
 
 **Belege.** `scripts/verstehen-einmalig-test.js` §24 (7 Prüfungen, 91/91 grün, offline) und
-`scripts/verstehen-169-workflow-test.js` (130/130): `ref`-Bindung, SHA-Muster, `rev-parse`-Abgleich,
+`scripts/verstehen-169-workflow-test.js` (137/137): `ref`-Bindung, SHA-Muster, `rev-parse`-Abgleich,
 Abbruchpfad, getrennte Env-Werte, kein hart kodierter Runtime-Commit. Die Preflight-Shell wurde
 zusätzlich funktional gegen ein eigener Test-Repository geprüft: richtiger Commit ⇒ `PREFLIGHT ok`;
 falscher, verkürzter oder fehlender Runtime-Commit ⇒ Abbruch mit exit 1. **0 Modellaufrufe,
@@ -642,8 +642,12 @@ werden: er setzt fest `HELMUT_VERSTEHEN_169_SCHARF: "1"`.
 Workflow und ruft **denselben** Runner **ohne** SCHARF auf — keine zweite Fachlogik. Er ist
 ausschließlich `workflow_dispatch` auf `main`, `run_attempt = 1`, `contents: read`, nutzt dieselbe
 globale Concurrency-Gruppe (`helmut-500-kontrollierte-facharbeit`, `cancel-in-progress: false`)
-und verlangt den vollen `runtime_commit` als Pflicht-Input; genau dieser Commit wird ausgecheckt
-und über `git rev-parse HEAD` gegen den echten Checkout geprüft. Dokument-Snapshot-Commit
+und verlangt den vollen `runtime_commit` als Pflicht-Input. Dieser Wert ist **fail closed an den
+Dispatch gebunden**: `runtime_commit` muss exakt `github.sha` des auf `main` gestarteten
+Workflow-Dispatches sein (Job-`if` **und** Preflight-Abgleich), genau dieser Commit wird
+ausgecheckt und zusaetzlich ueber `git rev-parse HEAD` gegen den echten Checkout geprueft.
+Ein aelterer, fremder oder sonstiger gueltiger Repository-Commit wird **vor** dem Runner-Aufruf
+abgelehnt — er kann die Production-Lesekennungen nicht bekommen. Dokument-Snapshot-Commit
 (`ea84f26ccc380e22961335926e2d4e585cee2308`) und Liste (`belege/verstehen-169-ids.json`) bleiben
 fest eingeschrieben; die Production-Lesekennungen kommen aus den bestehenden GitHub-Secrets
 (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`), Speicher `HELMUT_V3_STORE=1`,
@@ -660,7 +664,7 @@ scharfe Workflow bleibt unverändert.
 Kandidatenzählung: 0 Modellaufrufe, 0 Quellenabrufe, 0 Profilwrites, 0 Kommunikation, keine
 Quittung, 0 USD. Er ist **kein** Funktionsnachweis — Planung belegt keine Funktion.
 
-**Belege.** `scripts/verstehen-169-workflow-test.js` (**130/130**, offline, 0 Modellaufrufe,
+**Belege.** `scripts/verstehen-169-workflow-test.js` (**137/137**, offline, 0 Modellaufrufe,
 0 Writes) prüft beide Workflows statisch: Trigger, `main`-/`run_attempt`-Bindung, Rechte,
 Concurrency, `runtime_commit`-Pflicht samt `rev-parse`-Abgleich, feste Snapshot-/Listenwerte,
 Supabase-Lesezugang über Secrets, direkter Runner-Aufruf, kein `scripts/lokal.js`, keine
