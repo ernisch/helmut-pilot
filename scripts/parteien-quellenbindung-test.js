@@ -138,20 +138,29 @@ async function main() {
       assert.equal(s.p.failed, 1); assert.equal(s.p.aufrufe, 1); assert.equal(s.p.gespeichert.length, 0);
     }
   });
-  await test("Artikelvariante derselben Partei belegt (nur belegte Bezeichnungen, beide Listen)", async () => {
+  await test("Artikelvariante derselben Partei belegt (nur die belegte Bezeichnung 'Linke', beide Listen)", async () => {
     const faelle = [
       ["Die Linke fordert mehr Busverkehr.", "Linke"],
       ["Die Linke fordert mehr Busverkehr.", "Die Linke"],
       ["Linke fordert mehr Busverkehr.", "Die Linke"],
-      ["LINKE fordert mehr Busverkehr.", "die linke"],
-      ["Die Gruenen fordern mehr Busverkehr.", "Gruenen"],
-      ["Gruenen fordern mehr Busverkehr.", "Die Gruenen"]
+      ["LINKE fordert mehr Busverkehr.", "die linke"]
     ];
     for (const [text, name] of faelle) {
       for (const feld of FELDER) {
         assert.equal((await auswertung(fixture(text), { ...ANALYSE, [feld]: [name] })).valid, true,
           `${text} | ${name} | ${feld}`);
       }
+    }
+  });
+  await test("Der Vertrag deckt ausschliesslich 'Die Linke'/'Linke' ab — 'Die Grünen' NICHT", async () => {
+    // Quelle nennt nur „Grünen“; das Modell liefert die Artikelform — vom Vertrag NICHT gedeckt
+    // (normalisiere() faltet keine Umlaute, es gibt bewusst keinen 'gruenen'/'grünen'-Eintrag).
+    for (const feld of FELDER) {
+      assert.equal((await auswertung(fixture("Grünen fordern mehr Busverkehr."), { ...ANALYSE, [feld]: ["Die Grünen"] })).valid, false);
+    }
+    // Abgrenzung: die reine Wortlautform bleibt unveraendert belegbar (strikte Regel, unberuehrt).
+    for (const feld of FELDER) {
+      assert.equal((await auswertung(fixture("Grünen fordern mehr Busverkehr."), { ...ANALYSE, [feld]: ["Grünen"] })).valid, true);
     }
   });
   await test("Ohne Parteiennennung bleibt jede Partei abgelehnt (auch mit Artikel)", async () => {
@@ -164,7 +173,7 @@ async function main() {
     ];
     for (const text of texteOhnePartei) {
       for (const feld of FELDER) {
-        for (const name of ["Die Linke", "Linke", "Die Gruenen"]) {
+        for (const name of ["Die Linke", "Linke"]) {
           assert.equal((await auswertung(fixture(text), { ...ANALYSE, [feld]: [name] })).valid, false,
             `${text} | ${name} | ${feld}`);
         }
