@@ -1275,10 +1275,14 @@ async function abschnittInvalidDiagnose() {
     r = await understanding.understandOneCluster(cluster, motorDeps, {});
     A.equal(r.status, "skipped-invalid");
     A.equal(r.reason, "validierung-fehlgeschlagen");
-    A.ok(Array.isArray(r.errors) && r.errors.length >= 3, "mehrere Fehlercodes bleiben erhalten");
+    A.ok(Array.isArray(r.errors) && r.errors.length >= 2, "mehrere Fehlercodes bleiben erhalten");
     A.ok(r.errors.includes("quellenbeleg-parteien"));
     A.ok(r.errors.includes("quellenbeleg-ausschuesse"));
-    A.ok(r.errors.includes("quellenbeleg-ministerien"));
+    // NEU (Production-Befund 2026-09-23): die beiden OPTIONALEN Ministeriumslisten sperren die
+    // Antwort nicht mehr — unbelegte Werte werden deterministisch entfernt (der strenge Beleg
+    // bleibt unveraendert). Ohne Beleg entsteht damit KEIN Fehlercode mehr.
+    A.ok(!r.errors.includes("quellenbeleg-ministerien"));
+    A.ok(!r.errors.includes("quellenbeleg-mentioned_ministries"));
     A.ok(r.errors.every((e) => typeof e === "string"));
   });
   await pruefeAsync("§23.5 Erstverstehen-Invalid traegt documents = Clustergroesse (Motor)", async () => {
@@ -1310,7 +1314,7 @@ async function abschnittInvalidDiagnose() {
 
   await pruefeAsync("§23.3 der Bericht uebernimmt die sicheren Fehlercodes (begrenzt)", async () => {
     const e = lauf.ergebnisse[0];
-    A.ok(Array.isArray(e.validierungsfehler) && e.validierungsfehler.length >= 3);
+    A.ok(Array.isArray(e.validierungsfehler) && e.validierungsfehler.length >= 2);
     A.ok(e.validierungsfehler.every((c) =>
       /^(ki-antwort-nicht-verwertbar|decision_level-antwortkonflikt|quellenbeleg-[a-z_]+)$/.test(c)));
     A.ok(e.validierungsfehler.includes("quellenbeleg-parteien"));
@@ -1377,7 +1381,7 @@ async function abschnittInvalidDiagnose() {
     A.ok(!B.welt.schritt.includes("freigabe"), "kein automatischer Rueckweg");
     // Die Einmalquittung traegt die sicheren Codes als Abschlussbeleg.
     A.ok(Array.isArray(B.welt.abgeschlossen.validierungsfehler)
-      && B.welt.abgeschlossen.validierungsfehler.length >= 3);
+      && B.welt.abgeschlossen.validierungsfehler.length >= 2);
   });
 
   await pruefeAsync("§23.9 die Kostenwahrheit bleibt unveraendert im Pfad", async () => {

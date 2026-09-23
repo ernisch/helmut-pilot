@@ -24,6 +24,10 @@ Ein gemeinsamer deterministischer Validator prueft die rohe Modellantwort gegen 
 
 Erstverstehen einschliesslich Pending Pfad und Aktualisierung benutzen die Pruefung vor Speicherung des vollstaendigen Wissensobjekts. Ein unbelegter Listenwert verwirft die gesamte neue Antwort mit `skipped-invalid` und konstantem Fehlercode. Er wird nicht still herausredigiert, waehrend die davon abhaengige Empfehlung erhalten bliebe. Beim Update bleiben bestehende Inhalte unangetastet. Die vorhandene Fehler, Vormerkungs und CAS Logik wird weiterverwendet; nach begonnenem Aufruf keine neue automatische Freigabe und kein unmittelbarer Retry. Der Goldsetauswerter verwendet dieselbe Pruefung und darf eine solche Antwort nicht positiv melden.
 
+> **Ueberholt fuer die zwei Ministeriumslisten (23.09.2026):** siehe [Nachtrag](#nachtrag-23092026--optionale-ministeriumslisten-blockieren-die-antwort-nicht-mehr).
+> Alle uebrigen Akteurslisten (Parteien, Personen, Ausschuesse) sowie Schema und decision_level
+> gelten unveraendert wie hier beschrieben.
+
 ## Pruefungen
 
 Neue synthetische Suite `scripts/ministerien-quellenbindung-test.js`:12/12 Gruppen erfolgreich. Sie prueft fehlende und echte Nennungen, neue frei gewaehlte Ressortnamen, Unicode und Leerraum, Metadaten und Promptbeispiele, Teilwort und Regexgrenzen, fehlende Quellen, Typfehler, Auswahlgrenzen, Eingabemutation, Erstverstehen und Update samt CAS Ausgang, Erhalt des Bestands, den normalen und den expliziten Artikelkontext sowie den Auswerter. Kein echter Netz oder Modellaufruf.
@@ -45,3 +49,49 @@ Die bewusst konservative woertliche Bindung kann auch sachlich richtige Abkuerzu
 Naechster enger Block nach diesem Codeabschluss: den weiterhin belegten Widerspruch zwischen globaler Analyse ohne Mandatsprofil und gefordertem persoenlichen Mandatsbezug anhand desselben erhaltenen Fachurteils eingrenzen. Keine automatische Ausweitung dieses Sprints. Reale Modellwirkung und Production Wirkung bleiben getrennte spaetere Freigabeentscheidungen.
 
 Veroeffentlichung als Draft PR auf den offenen PR433 Branch. Automatische Deployments des eigenen Folgebranches sind in vercel.json ausgeschaltet; Crons und sonstige Konfiguration unveraendert. Kein Merge, Deployment, Migration, Profilwechsel, Datenbankzugriff, Azure Wechsel, Umgebungswechsel, bezahlter Aufruf oder Teststart. Rueckweg vor Merge: nur den neuen ungemergten Folgebranch verwerfen. Einmalquittung und Kostenbelege des Gipfelversuchs bleiben zwingend erhalten. Ein Merge nach main wuerde Production deployen und ist nicht freigegeben.
+
+## Nachtrag 23.09.2026 — optionale Ministeriumslisten blockieren die Antwort nicht mehr
+
+**Anlass (Betreiberbeleg, Production 23.09.2026).** Der Vorgang `vg-reform-20260429-1065a7`
+(BAföG, 10 gebundene Dokumente) endete im sicheren Einzelversuch `POST
+/api/admin/recovery/run-one-understanding` nach genau einem Modellaufruf mit `status =
+skipped-invalid`, `reason = validierung-fehlgeschlagen` und den Fehlercodes
+`quellenbeleg-ministerien` und `quellenbeleg-mentioned_ministries`. CAS danach `unbekannt`. Die
+uebrige Antwort war fachlich brauchbar. **Welche konkreten Ministeriumsbezeichnungen das Modell
+lieferte, ist NICHT belegt** — die rohe Modellantwort wird bewusst nicht gespeichert; daraus wird
+hier nichts abgeleitet.
+
+**Aenderung (deterministisch, quellenbelegt).** `ministerien` und `mentioned_ministries` sind reine
+ERWAEHNUNGEN und keine Pflichtaussage. Vor dem Speichern werden in diesen beiden Listen nur die
+woertlich belegten Werte behalten (`ohneUnbelegteMinisterien` in
+`lib/helmut/akteurslisten-quellenbindung.js`, aufgerufen in den beiden Speicherpfaden
+`understandOneCluster` und `understandUpdate`). Unbelegte Werte entfallen, ohne Beleg bleibt die
+Liste leer; woertlich belegte Bezeichnungen bleiben **unveraendert** erhalten. Der Beleg selbst ist
+**derselbe** wie zuvor (gleiche Quellen, gleiche Wortgrenzen, gleiche NFC/Klein/Leerraum-
+Normalisierung): keine Aliase, keine Kuerzel, keine Ressortableitung, keine Metadaten, kein Fuzzy,
+kein Vorwissen. Ein Feldwert, der kein Array ist, bleibt unangetastet und sperrt weiterhin (fail
+closed).
+
+**Unveraendert streng:** Parteien, Personen und Ausschuesse (ein unbelegter Wert verwirft die
+Antwort weiterhin vollstaendig), alle Schemafehler und der `decision_level-antwortkonflikt`,
+CAS/Fencing, Quittung, Budget, Locks sowie alle Laufdeckel. **Bewusst NICHT geaendert:** der
+Goldsetauswerter `evaluateUnderstandingCase` prueft unveraendert streng und meldet eine unbelegte
+Ministeriumsliste weiterhin als ungueltig — er speichert nichts und bleibt der Qualitaetswaechter,
+der einen Modellfehler sichtbar macht.
+
+**Grenzen.** Es wird nichts rueckwirkend geaendert (bestehende Objekte bleiben wie sie sind),
+keine Modellantwort, kein Prompt und kein Rohtext zusaetzlich gespeichert, kein zweiter
+Modellaufruf, kein Netz und keine Production-Wirkung. Belegte Nennungen bleiben ein Nennungsbeleg
+und keine Aussage ueber Beteiligung oder Zustaendigkeit.
+
+**Gezielte Pruefungen (offline, 0 Modellaufrufe, 0 Production-Writes).**
+`scripts/ministerien-quellenbindung-test.js` **19/19** (neu: unbelegtes Ministerium sperrt die
+Antwort nicht mehr und wird nicht gespeichert; gemischte Liste behaelt nur den belegten Wert;
+belegter Wert unveraendert; keine Alias-/Kuerzel-/Ressort-/Fuzzy-Erweiterung; Reduktion mutiert die
+Antwort nicht; Parteien/Personen/Ausschuesse weiter streng; Schemafehler und Ebenenkonflikt
+weiter gesperrt; Aktualisierung ueberschreibt den Bestand nicht; Goldsetauswerter unveraendert).
+Zusaetzlich gruen: `verstehen-einmalig-test` 91/91, `parteien-quellenbindung` 16/16,
+`ausschuesse-quellenbindung` 9/9, `understanding-ebenen-konsistenz` 8/8,
+`akteursrollen-erhalten` 16/16, `understanding-einzelvorgang` 45/45, `pilot-e2e-vertrag` 97/97,
+`berlin-e2e-vertrag` 79/79, `brandenburg-e2e-vertrag` 102/102, `verstehen-169-neuversuch` 19/19,
+`verstehen-169-kosten-deckel` 29/29.

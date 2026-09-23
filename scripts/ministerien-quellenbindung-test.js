@@ -3,7 +3,8 @@
 const assert = require("node:assert/strict");
 const U = require("../lib/helmut/understanding");
 const A = require("../lib/helmut/artikelkontext");
-const { pruefeAkteurslistenQuellenbindung: pruefe } = require("../lib/helmut/akteurslisten-quellenbindung");
+const { pruefeAkteurslistenQuellenbindung: pruefe,
+  ohneUnbelegteMinisterien: reduziert } = require("../lib/helmut/akteurslisten-quellenbindung");
 const ANALYSE = {
   headline: "Konferenz diskutiert Bahnverkehr", was_ist_passiert: "Die Konferenz endete.",
   warum_wichtig: "Bahnverkehr", wer_ist_betroffen: "Reisende", parteien: [], ausschuesse: [],
@@ -81,17 +82,104 @@ async function main() {
     const omitted = c.documents.findIndex(d => !selected.includes(d.id)); assert(omitted >= 0);
     assert.equal(pruefe({ ministerien: [`Ministerium Test${omitted}`] }, p).valid, false);
   });
-  await test("Erstverstehen sperrt gesamte Antwort vor Speichern, kein Retry", async () => {
+  await test("Erstverstehen speichert ohne unbelegtes Ministerium — die Antwort bleibt bestehen", async () => {
     for (const field of ["ministerien", "mentioned_ministries"]) {
-      const s = stand({ ...ANALYSE, [field]: ["BMWK"] });
+      const s = stand({ ...ANALYSE, [field]: ["NichtBelegtesMinisterium"] });
       const r = await first(fixture(), s);
-      assert.equal(r.status, "skipped-invalid"); assert(r.errors.includes(`quellenbeleg-${field}`));
-      assert.equal(s.p.aufrufe, 1); assert.equal(s.p.gespeichert.length, 0);
-      assert.equal(s.p.unbekannt, 1); assert.equal(s.p.frei, 0);
+      assert.equal(r.status, "saved", JSON.stringify(r));
+      assert.equal(s.p.aufrufe, 1, "weiterhin genau ein Modellaufruf");
+      assert.equal(s.p.gespeichert.length, 1);
+      assert.deepEqual(s.p.gespeichert[0][field], [], "unbelegter Wert wird nicht gespeichert");
+      // Die uebrigen Pflichtinhalte bleiben vollstaendig erhalten.
+      assert.equal(s.p.gespeichert[0].headline, ANALYSE.headline);
+      assert.equal(s.p.gespeichert[0].was_ist_passiert, ANALYSE.was_ist_passiert);
+      assert.deepEqual(s.p.gespeichert[0].risiken, []);
+      assert.equal(s.p.unbekannt, 0); assert.equal(s.p.failed, 0);
     }
   });
-  await test("Aktualisierung erhaelt Bestand und bestehende Sperre", async () => {
-    const c = fixture(), s = stand({ ...ANALYSE, ministerien: ["BMWK"] });
+  await test("Gemischte Liste: nur der woertlich belegte Wert wird gespeichert", async () => {
+    const s = stand({ ...ANALYSE, ministerien: ["BMG", "Auswaertiges Amt"],
+      mentioned_ministries: ["Ministerium fuer Zukunftsfragen", "NichtBelegtesMinisterium"] });
+    const r = await first(fixture("BMG und das Ministerium fuer Zukunftsfragen legen einen Bericht vor."), s);
+    assert.equal(r.status, "saved", JSON.stringify(r));
+    assert.deepEqual(s.p.gespeichert[0].ministerien, ["BMG"]);
+    assert.deepEqual(s.p.gespeichert[0].mentioned_ministries, ["Ministerium fuer Zukunftsfragen"]);
+  });
+  await test("Woertlich belegtes Ministerium bleibt unveraendert erhalten", async () => {
+    for (const name of ["BMG", "Ministerium fuer Zukunftsfragen"]) {
+      const s = stand({ ...ANALYSE, ministerien: [name], mentioned_ministries: [name] });
+      const r = await first(fixture(`${name} stellt einen Bericht vor.`), s);
+      assert.equal(r.status, "saved", JSON.stringify(r));
+      assert.deepEqual(s.p.gespeichert[0].ministerien, [name]);
+      assert.deepEqual(s.p.gespeichert[0].mentioned_ministries, [name]);
+    }
+  });
+  await test("Keine Alias-, Kuerzel-, Ressort- oder Fuzzy-Erweiterung bei der Speicherung", async () => {
+    const faelle = [
+      { quelle: "Bundesministerium fuer Gesundheit berichtet.", wert: "BMG" },        // Kuerzel
+      { quelle: "BMG berichtet.", wert: "Bundesministerium fuer Gesundheit" },        // ausschreiben
+      { quelle: "Das Verkehrsministerium prueft.", wert: "Ministerium fuer Verkehr" }, // Ressort
+      { quelle: "Ministerium fuer Mondverkehr prueft.", wert: "Ministerium fuer Mondverkeh" }, // Teilwort
+      { quelle: "BMGruppen berichten.", wert: "BMG" }                                 // Teilworttreffer
+    ];
+    for (const f of faelle) for (const feld of ["ministerien", "mentioned_ministries"]) {
+      const s = stand({ ...ANALYSE, [feld]: [f.wert] });
+      const r = await first(fixture(f.quelle), s);
+      assert.equal(r.status, "saved", JSON.stringify({ fall: f, feld, status: r.status }));
+      assert.deepEqual(s.p.gespeichert[0][feld], [], `${feld}: ${f.wert}`);
+    }
+  });
+  await test("Die Reduktion entfernt nur unbelegte Strings und mutiert die Antwort nicht", () => {
+    const analyse = { ministerien: ["BMG", "NichtBelegt"], mentioned_ministries: [], parteien: [] };
+    const vorher = structuredClone(analyse), p = prompt("BMG berichtet.");
+    assert.deepEqual(reduziert(analyse, p),
+      { ministerien: ["BMG"], mentioned_ministries: [], parteien: [] });
+    assert.deepEqual(analyse, vorher, "die Modellantwort wird nicht mutiert");
+    // Kein Array bleibt unangetastet: der strenge Validator meldet es unveraendert.
+    assert.equal(reduziert({ ministerien: "BMG" }, p).ministerien, "BMG");
+    assert.equal(pruefe({ ministerien: "BMG" }, p).valid, false);
+  });
+  await test("Parteien, Personen und Ausschuesse bleiben unveraendert streng (kein Freibrief)", async () => {
+    for (const feld of ["parteien", "mentioned_parties", "mentioned_people", "mentioned_mps",
+      "ausschuesse", "mentioned_committees"]) {
+      const s = stand({ ...ANALYSE, [feld]: ["Voellig Unbelegt"] });
+      const r = await first(fixture(), s);
+      assert.equal(r.status, "skipped-invalid", `${feld} muss weiter sperren`);
+      assert(r.errors.includes(`quellenbeleg-${feld}`), JSON.stringify(r.errors));
+      assert.equal(s.p.gespeichert.length, 0); assert.equal(s.p.aufrufe, 1);
+    }
+  });
+  await test("Schemafehler und decision_level-Konflikt bleiben fail closed", async () => {
+    // Pflichtfeld leer: auch mit weggefiltertem Ministerium wird nichts gespeichert.
+    const bad = stand({ ...ANALYSE, was_ist_passiert: "", ministerien: ["NichtBelegtesMinisterium"] });
+    assert.equal((await first(fixture(), bad)).status, "skipped-invalid");
+    assert.equal(bad.p.gespeichert.length, 0);
+    // Bestand 'land' + Antwort 'bund' bleibt gesperrt (gleiche Sperre wie ohne Ministerien).
+    const konflikt = stand({ ...ANALYSE, decision_level: "bund", mentioned_ministries: ["NichtBelegtesMinisterium"] });
+    // Der Bestand haengt an einer ANDEREN Dokumentverknuepfung: sonst greift der kostenfreie
+    // Bestandskurzschluss (`merged`) und der Ebenenkonflikt wird gar nicht erst geprueft.
+    konflikt.deps.listVorgangDocuments = async () => [{ id: "rd-alt", title: "Altbestand",
+      summary: "Altbestand", url: "https://example.org/alt", published_at: "2026-09-01T00:00:00Z" }];
+    const rK = await first(fixture(), konflikt, { existing: { id: "ko-" + vorgangId, ko_version: 4,
+      decision_level: "land", political_level: "land",
+      classification_confidence: { level: "high", level_quelle: "ki", level_ermittelt_am: "2026-09-20T08:00:00Z" } } });
+    assert.equal(rK.status, "skipped-invalid", JSON.stringify(rK));
+    assert(rK.errors.includes("decision_level-antwortkonflikt"), JSON.stringify(rK.errors));
+    assert.equal(konflikt.p.gespeichert.length, 0);
+  });
+  await test("Aktualisierung: unbelegtes Ministerium ueberschreibt den Bestand nicht und wird nicht gespeichert", async () => {
+    const c = fixture(), s = stand({ ...ANALYSE, ministerien: ["NichtBelegtesMinisterium"] });
+    const existing = { id: "ko-" + vorgangId, ko_version: 4, headline: "Erhaltener Bestand" };
+    const r = await U.understandUpdate(c, s.deps, { vorgangId, existing, neueDocs: c.documents,
+      neueAnker: [], spur: {}, alleDocs: c.documents, vertrag: s.vertrag });
+    assert.equal(r.status, "updated", JSON.stringify(r));
+    assert.equal(s.p.gespeichert.length, 1);
+    assert.deepEqual(s.p.gespeichert[0].ministerien, []);
+    assert.equal(s.p.gespeichert[0].ko_version, 5);
+    assert.equal(s.p.aufrufe, 1); assert.equal(s.p.unbekannt, 0);
+  });
+  await test("Aktualisierung: unbelegte Partei haelt Bestand und Sperre unveraendert", async () => {
+    const c = fixture(), s = stand({ ...ANALYSE, parteien: ["Unbelegte Partei"] });
     const existing = { id: "ko-" + vorgangId, ko_version: 4, headline: "Erhaltener Bestand" };
     const vorher = structuredClone(existing);
     const r = await U.understandUpdate(c, s.deps, { vorgangId, existing, neueDocs: c.documents,
@@ -101,9 +189,17 @@ async function main() {
     assert.equal(s.p.aufrufe, 1); assert.equal(s.p.unbekannt, 1); assert.equal(s.p.frei, 0);
   });
   await test("Quelle wird gegen abgesendete Eingabe statt nachtraeglicher Mutation geprueft", async () => {
-    const c = fixture(), s = stand({ ...ANALYSE, ministerien: ["BMWK"] }, () => { c.documents[0].summary = "BMWK berichtet."; });
+    const c = fixture(), s = stand({ ...ANALYSE, parteien: ["Unbelegte Partei"] }, () => { c.documents[0].summary = "Unbelegte Partei berichtet."; });
     assert.equal((await first(c, s)).status, "skipped-invalid");
     assert.equal(s.p.gespeichert.length, 0);
+  });
+  await test("Ohne CAS bleibt eine unbelegte Partei sichtbar; belegtes Ministerium speichert", async () => {
+    const bad = stand({ ...ANALYSE, parteien: ["Unbelegte Partei"] });
+    assert.equal((await first(fixture(), bad, { vertrag: null })).status, "skipped-invalid");
+    assert.equal(bad.p.failed, 1); assert.equal(bad.p.gespeichert.length, 0);
+    const good = stand({ ...ANALYSE, ministerien: ["BMG"] });
+    assert.equal((await first(fixture("BMG legt Bericht vor."), good)).status, "saved");
+    assert.equal(good.p.gespeichert.length, 1);
   });
   await test("Explizit gebundener Artikelabsatz darf Nennung belegen", async () => {
     for (const modus of ["erst", "update"]) {
@@ -118,14 +214,6 @@ async function main() {
       assert.equal(r.status, modus === "erst" ? "saved" : "updated");
       assert.deepEqual(s.p.gespeichert[0].ministerien, ["Verkehrsministerium"]);
     }
-  });
-  await test("Ohne CAS bleibt invalid sichtbar; belegter normaler Fall speichert", async () => {
-    const bad = stand({ ...ANALYSE, ministerien: ["BMG"] });
-    assert.equal((await first(fixture(), bad, { vertrag: null })).status, "skipped-invalid");
-    assert.equal(bad.p.failed, 1); assert.equal(bad.p.gespeichert.length, 0);
-    const good = stand({ ...ANALYSE, ministerien: ["BMG"] });
-    assert.equal((await first(fixture("BMG legt Bericht vor."), good)).status, "saved");
-    assert.equal(good.p.gespeichert.length, 1);
   });
   await test("Goldsetauswertung darf unbelegte Antwort ebenfalls nicht als gueltig melden", async () => {
     const c = fixture();

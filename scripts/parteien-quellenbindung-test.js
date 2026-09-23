@@ -207,6 +207,10 @@ async function main() {
     const text = "Die Linke fordert mehr Busverkehr.";
     const rA = await auswertung(fixture(text), { ...ANALYSE, ausschuesse: ["Verkehrsausschuss"], mentioned_committees: ["Verkehrsausschuss"] });
     assert.equal(rA.valid, false); assert(rA.errors.includes("quellenbeleg-ausschuesse"));
+    // Der GOLDSET-AUSWERTER prueft unveraendert streng (Qualitaetswaechter, er speichert nichts).
+    // Nur im SPEICHERPFAD werden die beiden optionalen Ministeriumslisten auf den woertlich
+    // belegten Teil reduziert — siehe docs/betrieb/ministerien-quellenbindung-2026-09-18.md,
+    // Nachtrag 23.09.2026.
     const rM = await auswertung(fixture(text), { ...ANALYSE, ministerien: ["Verkehrsministerium"], mentioned_ministries: ["Verkehrsministerium"] });
     assert.equal(rM.valid, false); assert(rM.errors.includes("quellenbeleg-ministerien"));
     const rP = await auswertung(fixture(text), { ...ANALYSE, mentioned_people: ["Max Mustermann"], mentioned_mps: ["Max Mustermann"] });
