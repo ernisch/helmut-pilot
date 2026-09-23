@@ -25,6 +25,13 @@ on:
           Exaktes Bestaetigungswort des 169er Auftrags
           (EINMALIGER_VERSTEHENSLAUF_169_RUHDOKUMENTE_BESTAETIGT)
         required: true
+      quittungsschluessel:
+        description: >-
+          NUR fuer einen NEUEN 169er Versuch: eigene, vom Betreiber vergebene
+          Quittungskennung (Format verstehen169-JJJJMMTT-suffix, niemals die alte
+          verstehen169-20260922-a). Leer = alter Auftrag (bleibt blockiert).
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -54,6 +61,7 @@ jobs:
       - name: Preflight — fail closed vor dem Start (keine Secret-Werte)
         env:
           CONFIRM_TEXT: ${{ inputs.confirm_text }}
+          QUITTUNGSSCHLUESSEL: ${{ inputs.quittungsschluessel }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
@@ -68,6 +76,12 @@ jobs:
           [ "${GITHUB_REF}" = "refs/heads/main" ] || fail "nicht auf main"
           [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] || fail "falsches Event"
           [ "${GITHUB_RUN_ATTEMPT}" = "1" ] || fail "run_attempt ungleich 1"
+          if [ -n "${QUITTUNGSSCHLUESSEL:-}" ]; then
+            echo "${QUITTUNGSSCHLUESSEL}" | grep -Eq '^verstehen169-[0-9]{8}-[a-z0-9]([a-z0-9-]*[a-z0-9])?$' \
+              || fail "quittungsschluessel weicht vom Muster verstehen169-JJJJMMTT-suffix ab"
+            [ "${QUITTUNGSSCHLUESSEL}" != "verstehen169-20260922-a" ] \
+              || fail "quittungsschluessel ist die alte Kennung — ein neuer Versuch braucht eine eigene"
+          fi
           [ -n "${SUPABASE_URL:-}" ] || fail "SUPABASE_URL fehlt"
           [ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ] || fail "SUPABASE_SERVICE_ROLE_KEY fehlt"
           [ -n "${AZURE_OPENAI_KEY:-}" ] || fail "AZURE_OPENAI_KEY fehlt"
@@ -82,6 +96,8 @@ jobs:
           HELMUT_VERSTEHEN_169_LISTE: "belege/verstehen-169-ids.json"
           HELMUT_VERSTEHEN_169_SCHARF: "1"
           HELMUT_VERSTEHEN_169_BESTAETIGT: ${{ inputs.confirm_text }}
+          # Nur fuer einen NEUEN Versuch: eigene Kennung (leer = alter Auftrag, blockiert).
+          HELMUT_VERSTEHEN_169_QUITTUNG: ${{ inputs.quittungsschluessel }}
           # Production-Zugang (ausschliesslich GitHub Secrets — Werte werden nie geloggt):
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

@@ -525,3 +525,50 @@ nicht verändert, die Quittung nicht zurückgesetzt. Ob ein erneuter scharfer La
 > beschriebene Vorbereitungsstand galt vor dem scharfen Lauf. §15 („vorbereitet, NICHT
 > ausgeführt") ist ebenfalls überholt — der Workflow wurde für Run `35829992528` genau
 > einmal ausgeführt.
+
+## 17 · Der kleinste sichere Weg zu einem NEUEN Versuch (2026-09-23)
+
+**Der erste Lauf ist terminal unbekannt; der alte Auftrag ist nicht wiederverwendbar.**
+Die Einmalquittung `verstehen169-20260922-a` bleibt unveraendert (`unbekannt`) — sie wird
+nicht zurückgesetzt, nicht gelöscht, nicht überschrieben. Ein zweiter Lauf desselben
+gebundenen Auftrags stoppt weiterhin mit `verstehen-bereits-verwendet` vor jedem
+Modellaufruf (testgesichert: `verstehen-169-neuversuch-test.js` §2).
+
+**Ein neuer Versuch braucht einen eigenständigen, belegbaren Vertrag:**
+
+1. **Neue Quittungskennung, ausdrücklich übergeben und streng geprüft.** Der
+   Quittungsschlüssel ist jetzt ein expliziter Parameter (`HELMUT_VERSTEHEN_169_QUITTUNG`
+   bzw. Workflow-Input `quittungsschluessel`). Ohne Kennung gilt unveraendert die alte —
+   der alte Auftrag bleibt blockiert. Eine gültige neue Kennung trägt das Muster
+   `verstehen169-<JJJJMMTT>-<suffix>`; die alte Kennung selbst und Fremdformate stoppen
+   fail closed (`verstehen-quittung-identisch` / `verstehen-quittung-ungueltig`), VOR jedem
+   Zugriff. Die Kennung vergibt der Betreiber — der Code erfindet keine.
+2. **Alle übrigen Grenzen bleiben identisch:** 169 Dokumentbindung, derselbe Kennungshash,
+   dieselben 122 Cluster, höchstens 113 Modellaufrufe, 0,80 USD Laufdeckel, 35 Minuten
+   Zeitdeckel, 4 USD Tagesriegel, Aufruftyp `understanding-rueckstand`. Keine
+   Budgeterhoehung, keine automatische Wiederholung, keine Profilwirkung.
+3. **Der Problemvorgang `vg-abschaffung-20260911-7420f6` bleibt unveraendert gesperrt.**
+   Ohne Betreibereingriff meldet der neue Lauf ihn ehrlich als `skipped-failed` (kein
+   Modellaufruf, kein Abbruch, sichtbar in Bilanz und Ergebnissen) und verarbeitet die
+   übrigen Cluster normal — die Kandidatenzahl sinkt auf höchstens 112, was der
+   Schutzvertrag ausdrücklich erlaubt („weniger ist erlaubt"). Kein stilles
+   Ueberspringen, keine Behandlung als erledigt.
+4. **Erneutes Verstehen NUR über den kanonischen Wiederaufnahmeweg.** Die einzige
+   Freigabe ist `helmut_verstehen_ausgang_aufloesen('vg-abschaffung-20260911-7420f6',
+   'erneut')` (CAS `unbekannt` → `offen` + `erneut-freigegeben`; KEIN manueller
+   Zustandswechsel, KEIN Zaehler-Reset). Der reguläre Wiederaufnahmepfad
+   (`runPendingUnderstandingShadow` über `listWiederaufnahmen`,
+   `wiederaufnahmeFreigabe`) versteht den Vorgang danach mit einem einzigen
+   Modellaufruf, voller CAS-Reservierung, Budget-Gate und unveraenderten Deckeln.
+   Wird der Vorgang vor dem 169er Lauf verstanden, endet sein Cluster dort kostenfrei
+   als Duplikat — beide Reihenfolgen sind doppelkostenfrei.
+
+**Keine Quittungs- oder CAS-Manipulation.** Kein Reset, kein Löschen, kein manuelles
+Setzen von `offen`/`frei`. Die alte Quittung und der gescheiterte Run bleiben vollständig
+auditierbar erhalten; die neue Kennung erzeugt eine eigene, getrennte Quittungszeile.
+
+**Belege dieses Abschnitts:** `scripts/verstehen-169-neuversuch-test.js` (18/18, offline,
+0 Modellaufrufe, 0 Writes) und die erweiterte statische Workflow-Pruefung
+`scripts/verstehen-169-workflow-test.js` (70/70). Die Mechanik des Wiederaufnahmepfads
+bleibt durch `verstehen-wiederaufnahme-test` (47/47) und `verstehen-cas-vertrag-test`
+(107/107) belegt.
