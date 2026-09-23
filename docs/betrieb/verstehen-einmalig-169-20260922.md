@@ -310,7 +310,7 @@ Quellen-Vorlaufs, keine neue Tabelle, keine Migration. Die Quittung trägt:
 
 `version · quittungsschluessel · commit · dokumente · idHash · cluster · maxModellaufrufe ·
 maxUsd · maxMs · runId · gestartetAm · status · beendetAm · modellaufrufe ·
-modellaufrufeKandidaten · laufMaxModellaufrufe · bilanz · automatischeWiederholung`
+modellaufrufeKandidaten · laufMaxModellaufrufe · laufkostenUsd · bilanz · automatischeWiederholung`
 
 Sie wird **immer** terminal abgeschlossen — auch bei Abbruch oder unbekanntem Ausgang
 (`abgeschlossen` / `gestoppt` / `unbekannt`). Ein zweiter Lauf desselben gebundenen Auftrags
@@ -328,10 +328,30 @@ ein abgebrochener oder unbekannter Ausgang wird damit nicht still wiederholbar.
 | Globaler Tagesriegel | **4 USD/UTC-Tag unverändert** | nicht berührt |
 | Tagesdeckel/Reserven | **unverändert** | nicht berührt |
 
-Der Kostenrahmen ist mit den belegten Produktionswerten konsistent (gemessen: 0,189405 USD für
-36 Aufrufe ≈ 0,00526 USD je Aufruf; 113 × 0,00526 ≈ 0,59 USD < 0,80 USD). **Ohne bestätigten
-Preis je Aufruf** (`HELMUT_VERSTEHEN_169_PREIS_USD`) startet kein bezahlter Lauf
-(`verstehen-preis-fehlt`) — „fehlt der Preis, fehlt die Zahl".
+**Drei Größen werden ausdrücklich unterschieden:**
+
+1. **Gemessener Durchschnittspreis** `0,189405 USD / 36 Aufrufe ≈ 0,00526 USD je Aufruf`
+   (belegte Messgröße der 36er-Fachabnahme). Er ist eine **Prognosegröße, KEINE harte
+   Kostenobergrenze** — reale Einzelaufrufe schwanken bis ~0,013 USD.
+2. **Harte Laufkostenobergrenze 0,80 USD** (technisch erzwungen, seit 2026-09-23): Der Lauf
+   nutzt die **bestehende** atomare Kostenwahrheit (`lib/helmut/testkosten-budget.js`): vor
+   vor jedem Aufruf wird die volle Reservierung gebucht (0,212 USD bei der
+   Understanding-Ausgabegrenze 3000), nach der Anbieterantwort werden die **echten
+   Tokenkosten** abgerechnet, ungeklärte Ausgänge bleiben voll reserviert. Jede Buchung
+   trägt die Laufkennung `verstehen169-…` (`bezug.runId`). Vor jedem Cluster prüft der
+   Runner: **echte Laufkosten + volle Reservierung des nächsten Aufrufs ≤ 0,80 USD** —
+   sonst Stopp `verstehen-kostendeckel-erreicht` **vor** dem Provider-Aufruf. Ohne
+   Kostenwahrheit startet nichts (`verstehen-kostenwahrheit-fehlt`); ein unlesbarer
+   Kostenstand stoppt fail closed (`verstehen-kostenleser-fehler`). **Nach** dem letzten
+   Aufruf wird der endgültig gebundene Stand noch einmal rein lesend geladen: der
+   Abschlussbericht (`laufkostenUsd`) und die Einmalquittung tragen exakt diesen Endstand —
+   nicht den Stand vor dem letzten Cluster. Ein danach unlesbarer Stand
+   (`verstehen-kostenleser-fehler`) oder ein wider Erwarten überschrittener 0,80-USD-Rahmen
+   (`verstehen-kosten-invariante-verletzt`) werden **nicht** als erfolgreich gemeldet; die
+   Quittung schließt sichtbar `gestoppt`, ohne weiteren Aufruf und ohne automatische
+   Wiederholung.
+3. **Globaler 4-USD-Tagesriegel** (atomar, unverändert) — er bleibt zusätzlich und unabhängig
+   wirksam und ersetzt den Laufdeckel nicht.
 
 ## 12 · Bedienung
 
@@ -339,14 +359,18 @@ Preis je Aufruf** (`HELMUT_VERSTEHEN_169_PREIS_USD`) startet kein bezahlter Lauf
 # Rein lesende Planung (Bindung, Dedup, Cluster, Kandidaten) — kein Modellaufruf:
 node scripts/lokal.js -- node scripts/verstehen-einmalig-169.js
 
-# Scharfer Lauf (eigene Freigabe erforderlich, bestätigendes Wort):
+# Scharfer Lauf (eigene Freigabe erforderlich, bestaetigendes Wort):
 HELMUT_VERSTEHEN_169_COMMIT=<commit> \
 HELMUT_VERSTEHEN_169_LISTE=belege/verstehen-169-ids.json \
-HELMUT_VERSTEHEN_169_PREIS_USD=<preis> \
 HELMUT_VERSTEHEN_169_SCHARF=1 \
 HELMUT_VERSTEHEN_169_BESTAETIGT=EINMALIGER_VERSTEHENSLAUF_169_RUHDOKUMENTE_BESTAETIGT \
-  node scripts/lokal.js -- node scripts/verstehen-einmalig-169.js
+  node scripts/verstehen-einmalig-169.js
 ```
+
+Kein Durchschnittspreis-Parameter mehr: der 0,80-USD-Laufdeckel liest die echten Laufkosten
+aus der bestehenden atomaren Kostenablage (§11). Voraussetzung ist die aktive Reservierung
+(`VERCEL_ENV=production`, `HELMUT_TESTLAUF_KOMMUNIKATION=gesperrt`) — sonst stoppt der Lauf
+fail closed.
 
 Der Commit wird **nicht** aus dem laufenden Prozess geraten, sondern ausdrücklich übergeben
 (`verstehen-commit-fehlt` sonst): eine selbst erratene Bindung wäre keine Bindung.
@@ -410,3 +434,24 @@ fail-closed-Abbruch (statt des früheren „läuft als `neu` weiter"). 0 Modella
 Der nächste Schritt ist eine Betreiberentscheidung: den Planlauf gegen die **belegte** Liste
 bestätigen (rein lesend, ohne Modellaufruf) — und erst danach gesondert über einen scharfen Lauf
 entscheiden. Der Beleg selbst ist vollständig; es fehlt keine Kennung mehr.
+
+## 15 · Manueller GitHub-Actions-Ausführungsweg (vorbereitet, 2026-09-23)
+
+Für den scharfen Lauf existiert ein eigener **manueller** Workflow
+`.github/workflows/verstehen-169-einmalig.yml` — **vorbereitet, NICHT ausgeführt** (kein
+Dispatch, kein Lauf, keine Production-Wirkung). Er ist ausschließlich per `workflow_dispatch`
+auf `main` startbar, verlangt das **exakte** Bestätigungswort, läuft nur bei `run_attempt = 1`,
+hat `contents: read`, keine persistierten Git-Credentials, die bestehende globale
+Concurrency-Gruppe `helmut-500-kontrollierte-facharbeit` (`cancel-in-progress: false`) und ein
+Job-Timeout von **40 Minuten** (der Runner kontrolliert seine 35 Minuten selbst). Er startet
+direkt `node scripts/verstehen-einmalig-169.js` (**nicht** über `scripts/lokal.js`) mit den
+GitHub-Secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `AZURE_OPENAI_KEY`,
+`AZURE_OPENAI_ENDPOINT` und dem bestehenden Azure-Deployment-Muster; Werte werden nie geloggt.
+Der harte 0,80-USD-Laufdeckel nutzt die bestehende atomare Kostenwahrheit (volle Reservierung
+je Aufruf + echte Abrechnung, Laufkennung `verstehen169-…`) — ein Durchschnittspreis wird
+**nicht** verwendet (§11).
+Unmittelbar vor dem Start läuft ein fail-closed-Preflight (Bestätigungswort, Repository, main,
+Event, run_attempt, nicht-leere Secrets und Deployment). Alle Fachgrenzen bleiben im Runner —
+der Workflow baut keine zweite Fachlogik. Statische Vertragsprüfung:
+`scripts/verstehen-169-workflow-test.js`. **Ein scharfer Lauf bleibt gesperrt und braucht die
+ausdrückliche Betreiberfreigabe; der Workflow-Dispatch ist selbst Teil der Freigabe.**

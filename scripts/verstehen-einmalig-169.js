@@ -13,13 +13,18 @@
 // Bindungsprüfung, Produktions-Dedup, Produktions-Clusterung, Kandidatenzählung. Kein
 // Modellaufruf, kein Schreibzugriff, keine Quittung.
 //
-// UMGEBUNG (Secrets ausschließlich aus `process.env`, nie aus einer Datei — CLAUDE.md §4.9):
+// UMGEBUNG (Secrets ausschliesslich aus `process.env`, nie aus einer Datei — CLAUDE.md §4.9):
 //   HELMUT_VERSTEHEN_169_LISTE        Pflicht: Pfad zur gebundenen Kennungsliste (JSON)
 //   HELMUT_VERSTEHEN_169_COMMIT       Pflicht: der gebundene Production Commit (S1)
-//   HELMUT_VERSTEHEN_169_PREIS_USD    Pflicht im scharfen Lauf: bestätigter Preis je Aufruf
 //   HELMUT_VERSTEHEN_169_SCHARF       "1" schaltet den scharfen Lauf frei
 //   HELMUT_VERSTEHEN_169_BESTAETIGT   Pflichtwort des scharfen Laufs (siehe BESTAETIGUNG)
-//   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY   für Dokumentleser und Einmalquittung
+//   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY   fuer Dokumentleser und Einmalquittung
+//   AZURE_OPENAI_KEY / AZURE_OPENAI_ENDPOINT / AZURE_OPENAI_DEPLOYMENT  fuer das Modell
+//
+// Der 0,80-USD-Laufdeckel braucht KEINEN Durchschnittspreis je Aufruf: er nutzt die BESTEHENDE
+// atomare Kostenwahrheit (testkosten-budget.js) — volle Reservierung je Aufruf plus echte
+// Abrechnung nach der Anbieterantwort. Dafuer traegt jeder Aufruf dieses Laufs die manuelle
+// Laufkennung `verstehen169-<runId>` und ist in der Kostenablage einzeln zuordenbar.
 //
 // DIE KENNUNGSLISTE IST DIE BINDUNG. Ohne sie und ohne exakt passenden Hash (S3) startet
 // nichts. Sie wird rein lesend aus Production belegt und danach im Repository festgehalten;
@@ -148,10 +153,16 @@ function quittungsAdapter(env = process.env) {
 function baueDeps(env = process.env, runId = null, { mitQuittung = false, deps = {} } = {}) {
   const storage = require("../lib/helmut/storage");
   const understanding = require("../lib/helmut/understanding");
+  const testkosten = require("../lib/helmut/testkosten-budget");
   return {
     ...understanding.defaultDeps({ runId, callType: V.CALLTYPE }),
     ladeDokumente: (ids) => storage.getRawDocumentsByIds(ids),
     leseTageszaehler: () => storage.leseLlmTageszaehler(),
+    // Die BESTEHENDE Kostenwahrheit fuer den harten 0,80-USD-Laufdeckel: die volle
+    // Reservierung je Aufruf (dieselbe Formel wie die Buchung, Understanding-Ausgabegrenze
+    // 3000) und der rein lesende Stand der diesem Lauf zuordenbaren Kosten.
+    reservierungHoeheUsd: () => testkosten.reservierungHoeheUsd(),
+    laufKostenUsd: (rn) => testkosten.laufGebundenUsd(rn, { env }),
     ...(mitQuittung ? quittungsAdapter(env) : {}),
     ...deps
   };
@@ -161,8 +172,9 @@ async function main() {
   const env = process.env;
   const scharf = flagAn(env.HELMUT_VERSTEHEN_169_SCHARF);
   const commit = env.HELMUT_VERSTEHEN_169_COMMIT || null;
-  const preis = Number(env.HELMUT_VERSTEHEN_169_PREIS_USD);
-  const runId = env.GITHUB_RUN_ID || `verstehen169-${Date.now()}`;
+  // Manuelle Laufkennung: macht JEDE Buchung dieses Laufs in der bestehenden Kostenablage
+  // zuordenbar (testkosten-budget bezug.runId) — Voraussetzung des harten 0,80-USD-Deckels.
+  const runId = "verstehen169-" + (env.GITHUB_RUN_ID || Date.now());
   const raus = (bericht, code) => {
     console.log(JSON.stringify(bericht, null, 2));
     return code;
@@ -201,20 +213,10 @@ async function main() {
       grund: "verstehen-speicher-nicht-verfuegbar", quittungsschluessel: V.QUITTUNG
     }, 1);
   }
-  if (scharf && !(Number.isFinite(preis) && preis > 0)) {
-    return raus({
-      ok: false, reinLesend: false, ausgeloest: false,
-      grund: "verstehen-preis-fehlt",
-      hinweis: "HELMUT_VERSTEHEN_169_PREIS_USD (bestaetigter Preis je Aufruf) fehlt — "
-        + "ohne Preis ist der 0,80-USD-Laufdeckel nicht erzwingbar.",
-      quittungsschluessel: V.QUITTUNG
-    }, 1);
-  }
 
   const deps = baueDeps(env, runId, { mitQuittung: scharf });
   const bericht = await V.fuehreAus({
     ids: liste.ids, deps, execute: scharf, commit, env,
-    preisJeAufrufUsd: Number.isFinite(preis) ? preis : null,
     runId,
     fortschritt: scharf
       ? (s) => console.error(`[verstehen-169] ${s.fertig}/${s.gesamt} Cluster, ${s.aufrufe} Modellaufrufe`)

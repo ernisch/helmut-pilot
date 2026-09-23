@@ -9,7 +9,7 @@
 * **Profile:** letzter fachlich belegter Zustand nach dem abgeschlossenen Quellen und Understanding Vorlauf: **504 Profile, 0 aktiv**. Alle Profile bleiben inaktiv bis zu einer getrennten ausdruecklichen Startfreigabe.
 * **Ruhender Betrieb:** im letzten Production Nachweis zu diesem Stand keine unerledigten Jobs, keine lebenden Job Leases und keine lebenden Understanding Leases. Dieser reine Dokumentationssprint fuehrt keine neue Datenbankinventur aus.
 * **Kosten:** atomarer technischer Tagesriegel bleibt **4 USD je UTC Tag**. Alte 10 USD Betreiberfreigaben erhoehen diesen technischen Riegel nicht. Keine neue Kostenfreigabe durch diese Dokumentationsaenderung.
-* **Offener PR520:** `codex/verstehen-169-actions-20260923`, Head `0243150e1645c5e46543b44939cf20f9b309ba69`. Er bereitet nur den manuellen GitHub Actions Ausfuehrungsweg fuer den bereits geprueften einmaligen 169er Runner vor. **Kein Dispatch, kein scharfer Lauf, keine Modellaufrufe und keine Production Writes.** Ein Start braucht weiterhin eine getrennte Betreiberfreigabe. [Beleg](betrieb/verstehen-einmalig-169-20260922.md).
+* **Offener PR520:** `codex/verstehen-169-actions-20260923`, Head `02c03e9cd1d53ec0705dcdaead95b94af6d6423b`. Er bereitet den manuellen GitHub Actions Ausfuehrungsweg fuer den bereits geprueften einmaligen 169er Runner vor und schliesst den Kostenblocker: der harte 0,80-USD-Laufdeckel nutzt jetzt die bestehende atomare Kostenwahrheit (volle Reservierung je Aufruf plus echte Abrechnung, Laufkennung `verstehen169-…`) statt eines Durchschnittspreises. Grenzen unveraendert (169/122, 113, 0,80 USD, 35 min, 4-USD-Riegel). **Kein Dispatch, kein scharfer Lauf, keine Modellaufrufe und keine Production Writes.** Ein Start braucht weiterhin eine getrennte Betreiberfreigabe. [Beleg](betrieb/verstehen-einmalig-169-20260922.md).
 
 ## 2 · Stand auf dem Weg zum 500er Production Nachweis
 
@@ -53,7 +53,7 @@ Vollstaendige historische Betriebswerte zu Crons, Flags, Migrationen, Quellenpak
 ## 4 · Aktuelle offene Blocker
 
 1. **500er Gesamtabnahme fehlt.** Das ist der zentrale technische Production Nachweis.
-2. **169er Understanding Lauf noch nicht scharf ausgefuehrt.** Der fachliche Runner ist auf main, der manuelle sichere Actions Weg liegt in PR520.
+2. **169er Understanding Lauf noch nicht scharf ausgefuehrt.** Der fachliche Runner ist auf main, der manuelle sichere Actions Weg und der harte 0,80-USD-Kostendeckel liegen in PR520.
 3. **Frische Vollversorgung und 1500er Bilanz fehlen.**
 4. **Gesamtzeit, Gesamtkosten, automatisches Testende und Rueckweg muessen im neuen 500er Fenster gemeinsam belegt werden.**
 5. **Allgemeine Faktenbindung und Quellenqualitaet bleiben ausserhalb der bereits bestandenen 36er Prosa Abnahme weiter zu beobachten.** Qualitaetswaechter duerfen nicht abgesenkt werden.
