@@ -605,8 +605,13 @@ belastbaren Production-Nachweis war das zu wenig.
 
 1. Der Betreiber übergibt `runtime_commit` als **vollen** Git-SHA; der Workflow checkt mit
    `ref: ${{ inputs.runtime_commit }}` **genau diesen** Commit aus.
-2. Der Preflight prüft den Wert auf das Muster `^[0-9a-f]{40}$` und vergleicht ihn mit dem
-   echten Checkout: `git rev-parse HEAD`. Abweichung ⇒ sofortiger Abbruch.
+2. **Dreiseitige Bindung an den Dispatch** (seit 2026-09-23, scharf wie Plan): der Job läuft nur
+   bei `inputs.runtime_commit == github.sha`; der Preflight prüft zusätzlich hart
+   `RUNTIME_COMMIT == DISPATCH_SHA` (`DISPATCH_SHA: ${{ github.sha }}`) und danach
+   `git rev-parse HEAD == RUNTIME_COMMIT`. Jede Abweichung ⇒ sofortiger Abbruch **vor** der
+   Nutzung der Production-Zugangsdaten und vor dem Runner. Damit gilt nur:
+   angefordert = Dispatch = Checkout — ein beliebiger, älterer oder fremder Repository-Commit wird
+   fail closed abgelehnt (auch die reine 40-Hex-Formatprüfung ist **keine** Zulassung).
 3. Der Runner prüft **dieselbe** Regel erneut (`pruefeRuntimeCommit`) und bricht fail closed ab
    bei `verstehen-runtime-commit-fehlt` (scharfer Lauf ohne Runtime-Commit),
    `verstehen-runtime-commit-ungueltig` (kein voller SHA),
@@ -622,7 +627,7 @@ unverändert (169/122/113 · 0,80 USD · 35 min · 4 USD Tagesriegel · CAS, Fen
 Clustering, Resolver, Validatoren).
 
 **Belege.** `scripts/verstehen-einmalig-test.js` §24 (7 Prüfungen, 91/91 grün, offline) und
-`scripts/verstehen-169-workflow-test.js` (137/137): `ref`-Bindung, SHA-Muster, `rev-parse`-Abgleich,
+`scripts/verstehen-169-workflow-test.js` (152/152): `ref`-Bindung, SHA-Muster, `rev-parse`-Abgleich,
 Abbruchpfad, getrennte Env-Werte, kein hart kodierter Runtime-Commit. Die Preflight-Shell wurde
 zusätzlich funktional gegen ein eigener Test-Repository geprüft: richtiger Commit ⇒ `PREFLIGHT ok`;
 falscher, verkürzter oder fehlender Runtime-Commit ⇒ Abbruch mit exit 1. **0 Modellaufrufe,
@@ -657,16 +662,19 @@ fest eingeschrieben; die Production-Lesekennungen kommen aus den bestehenden Git
 nicht**: kein `HELMUT_VERSTEHEN_169_SCHARF`, kein `HELMUT_VERSTEHEN_169_BESTAETIGT`, keine
 Quittungskennung und **keine** Azure-/Modell-Zugangsdaten. Der Laufschritt bricht zusätzlich hart
 ab, falls `HELMUT_VERSTEHEN_169_SCHARF` doch gesetzt wäre. Eine gemeinsame Umschaltung
-(`mode=plan|scharf`) gibt es bewusst **nicht** — zwei getrennte Bedienwege bleiben Absicht. Der
-scharfe Workflow bleibt unverändert.
+(`mode=plan|scharf`) gibt es bewusst **nicht** — zwei getrennte Bedienwege bleiben Absicht. Beide
+Wege tragen dieselbe dreiseitige Dispatch-Bindung (siehe §18); kein Weg kann einen fremden Commit
+mit Production-Zugangsdaten ausführen.
 
 **Was der Plan liefert.** Bindungsprüfung, Production-Dedup, Production-Clusterung und
 Kandidatenzählung: 0 Modellaufrufe, 0 Quellenabrufe, 0 Profilwrites, 0 Kommunikation, keine
 Quittung, 0 USD. Er ist **kein** Funktionsnachweis — Planung belegt keine Funktion.
 
-**Belege.** `scripts/verstehen-169-workflow-test.js` (**137/137**, offline, 0 Modellaufrufe,
+**Belege.** `scripts/verstehen-169-workflow-test.js` (**152/152**, offline, 0 Modellaufrufe,
 0 Writes) prüft beide Workflows statisch: Trigger, `main`-/`run_attempt`-Bindung, Rechte,
-Concurrency, `runtime_commit`-Pflicht samt `rev-parse`-Abgleich, feste Snapshot-/Listenwerte,
+Concurrency, `runtime_commit`-Pflicht samt `rev-parse`-Abgleich, **dreiseitige Dispatch-Bindung
+(Job-`if` auf `github.sha`, `DISPATCH_SHA`-Abgleich, Reihenfolge vor Secrets und vor dem Runner)**, feste
+Snapshot-/Listenwerte,
 Supabase-Lesezugang über Secrets, direkter Runner-Aufruf, kein `scripts/lokal.js`, keine
 Scharf-/Bestätigungs-/Quittungsvariable, keine Modell-Secrets, keine Profil-/Lock-/CAS-/Budget-
 Variablen, kein Schedule und kein Push-Trigger. **Kein Workflow wurde ausgeführt.**
