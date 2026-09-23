@@ -6252,21 +6252,34 @@ async function handleAuthSession(response, authUser, token) {
   }, null, 2));
 }
 
-async function allKnownPoliticianIds() {
-  const profiles = await listProfiles();
-  const users = await accounts.listUsers();
-  const ids = new Set(profiles.map((profile) => profile.id));
-  users.forEach((user) => {
-    if (user.role === "abgeordneter" && user.politicianId) ids.add(user.politicianId);
-  });
-  // Kein bevorzugtes/konfiguriertes Mandat: die erreichbaren Mandate sind genau die
-  // gespeicherten Profile bzw. zugewiesenen Mandate (oben) — nichts wird ergaenzt.
-  return Array.from(ids);
-}
-
 // Mandate, die ein Nutzer auswaehlen darf (fuer den Profil-Switcher im Frontend).
+// Admin (allowed === "all"): genau EIN Bulk-Read des Profilbestands statt eines
+// seriellen N+1-Pfads (ein getProfile pro Mandat). Bei ~500 Profilen waren das
+// ~500 einzelne Datenbank-Roundtrips im Session-Endpunkt — laenger als das
+// 6-s-Fenster des Clients, die App blieb nach dem Login haengen. Der Bestand ist
+// unveraendert: gespeicherte Profile plus abgeordneten-Zuweisungen ohne Profil.
+// In die Antwort gelangen weiterhin ausschliesslich { id, name }.
 async function listAllowedProfiles(user, allowed) {
-  const ids = allowed === "all" ? await allKnownPoliticianIds() : (Array.isArray(allowed) ? allowed : []);
+  if (allowed === "all") {
+    const [fullProfiles, users] = await Promise.all([listFullProfiles(), accounts.listUsers()]);
+    const result = [];
+    const seen = new Set();
+    for (const profile of fullProfiles) {
+      if (!profile || !profile.id || seen.has(profile.id)) continue;
+      seen.add(profile.id);
+      result.push({ id: profile.id, name: profile.fullName || readableNameFromId(profile.id) });
+    }
+    // Abgeordnete mit zugewiesenem Mandat, aber (noch) ohne gespeichertes Profil:
+    // derselbe Bestand wie zuvor ueber allKnownPoliticianIds.
+    for (const entry of users) {
+      if (entry.role === "abgeordneter" && entry.politicianId && !seen.has(entry.politicianId)) {
+        seen.add(entry.politicianId);
+        result.push({ id: entry.politicianId, name: readableNameFromId(entry.politicianId) });
+      }
+    }
+    return result;
+  }
+  const ids = Array.isArray(allowed) ? allowed : [];
   const result = [];
   for (const id of ids) {
     const profile = await getProfile(id);
