@@ -141,7 +141,10 @@ function weltBauen({ dokumente = [], kos = [], links = {}, kandidatenFrei = fals
     quellenabrufe: 0, profilwrites: 0, kommunikation: 0,
     // Kostenwahrheit (Attrappe der BESTEHENDEN testkosten-Wahrheit): die volle Reservierung je
     // Aufruf und der echte Laufkostenstand — der Deckel prueft echte Summen, keinen Durchschnitt.
-    reservierungUsd: 0.212, laufkostenUsd: 0, echteKosten: 0, kostenLesefehler: false, kostenlesungen: 0
+    reservierungUsd: 0.212, laufkostenUsd: 0, echteKosten: 0, kostenLesefehler: false, kostenlesungen: 0,
+    // Ab der (n+1)-ten Lesung wirft der Kostenleser (Default Infinity: nie) — damit laesst sich
+    // ein Fehler NUR beim finalen Nachlesen nach bereits getaetigten Aufrufen erzeugen.
+    kostenLesefehlerNach: Infinity
   };
   welt.speicher = baueSpeicher(welt);
   const deps = {
@@ -210,6 +213,7 @@ function weltBauen({ dokumente = [], kos = [], links = {}, kandidatenFrei = fals
     laufKostenUsd: async () => {
       welt.kostenlesungen += 1;
       if (welt.kostenLesefehler) throw new Error("kostenleser-testfehler");
+      if (welt.kostenlesungen > welt.kostenLesefehlerNach) throw new Error("kostenleser-final-testfehler");
       return welt.laufkostenUsd;
     }
   };
@@ -679,6 +683,74 @@ async function abschnittLaufdeckel() {
     const quelltext = quelle("lib/helmut/verstehen-einmalig.js");
     A.ok(quelltext.includes("deadlineMs, retriesCtx"), "understandOneCluster erhaelt deadlineMs");
     A.ok(quelltext.includes("restzeit.restzeitEntscheidung"));
+  });
+}
+
+// ── Finaler Kostenendstand (Abschlussbeleg) ────────────────────────────────────────────────
+async function abschnittFinalerKostenstand() {
+  abschnitt("Finaler Kostenendstand — Bericht und Quittung tragen den final gelesenen Wert");
+
+  await pruefeAsync("ein erfolgreicher Lauf mit genau einem Aufruf meldet exakt dessen echte Endkosten", async () => {
+    const docs = [rohesDokument("final-0", WOERTER[0])];
+    const w = weltBauen({ dokumente: docs });
+    w.welt.echteKosten = 0.01;
+    const lauf = await V.fuehreAus({
+      ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit",
+      erwartet: testbindung(docs), runId: "final-0", now: () => new Date()
+    });
+    A.equal(lauf.ok, true);
+    A.equal(lauf.abbruchGrund, null);
+    A.equal(lauf.modellaufrufe, 1);
+    A.equal(lauf.laufkostenUsd, 0.01, "echter Endstand, nicht 0 (Stand vor dem Aufruf)");
+    A.equal(lauf.quittungStatus, "abgeschlossen");
+    A.equal(w.welt.abgeschlossen.laufkostenUsd, 0.01, "Quittung traegt denselben Wert");
+  });
+
+  await pruefeAsync("mehrere Aufrufe melden die Summe inklusive des letzten Aufrufs", async () => {
+    const docs = WOERTER.slice(0, 3).map((w, i) => rohesDokument("finalsum-" + i, w));
+    const w = weltBauen({ dokumente: docs });
+    w.welt.echteKosten = 0.01;
+    const lauf = await V.fuehreAus({
+      ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit",
+      erwartet: testbindung(docs), runId: "finalsum", now: () => new Date()
+    });
+    A.equal(lauf.modellaufrufe, 3);
+    A.equal(lauf.laufkostenUsd, 0.03, "Summe inkl. letztem Aufruf — nicht 0,02 (Stand vor letztem Cluster)");
+    A.equal(w.welt.abgeschlossen.laufkostenUsd, 0.03);
+    A.equal(lauf.quittungStatus, "abgeschlossen");
+  });
+
+  await pruefeAsync("Fehler beim finalen Kostenlesen: kein weiterer Aufruf, nicht erfolgreich, terminal gestoppt", async () => {
+    const docs = WOERTER.slice(0, 2).map((w, i) => rohesDokument("finalfehler-" + i, w));
+    const w = weltBauen({ dokumente: docs });
+    w.welt.echteKosten = 0.01;
+    w.welt.kostenLesefehlerNach = 2; // Lesung 1+2 (Pre-Call) ok, Lesung 3 (final) wirft
+    const lauf = await V.fuehreAus({
+      ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit",
+      erwartet: testbindung(docs), runId: "finalfehler", now: () => new Date()
+    });
+    A.equal(lauf.ok, false);
+    A.equal(lauf.abbruchGrund, "verstehen-kostenleser-fehler");
+    A.equal(lauf.modellaufrufe, 2, "beide Aufrufe liefen; danach kein weiterer Provider-Aufruf");
+    A.equal(w.welt.aufrufe.length, 2);
+    A.equal(lauf.automatischeWiederholung, false);
+    A.equal(lauf.quittungStatus, "gestoppt");
+  });
+
+  await pruefeAsync("finaler Kostenstand ueber 0,80 USD wird nicht als erfolgreich gemeldet", async () => {
+    const docs = WOERTER.slice(0, 2).map((w, i) => rohesDokument("invariante-" + i, w));
+    const w = weltBauen({ dokumente: docs });
+    w.welt.reservierungUsd = 0.01;
+    w.welt.echteKosten = 0.5;
+    const lauf = await V.fuehreAus({
+      ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit",
+      erwartet: testbindung(docs, { maxUsd: 0.8 }), runId: "invariante", now: () => new Date()
+    });
+    A.equal(lauf.ok, false);
+    A.equal(lauf.abbruchGrund, "verstehen-kosten-invariante-verletzt");
+    A.equal(lauf.laufkostenUsd, 1.0, "der ueberschrittene Endstand bleibt sichtbar");
+    A.equal(lauf.automatischeWiederholung, false);
+    A.equal(lauf.quittungStatus, "gestoppt");
   });
 }
 
@@ -1166,6 +1238,7 @@ async function abschnittResolverSpuren() {
   await abschnittPlanGates();
   await abschnittMergedUndCas();
   await abschnittLaufdeckel();
+  await abschnittFinalerKostenstand();
   await abschnittUnbekannt();
   await abschnittQuittung();
   await abschnittFremd();

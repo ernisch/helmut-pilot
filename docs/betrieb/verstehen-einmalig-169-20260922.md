@@ -310,7 +310,7 @@ Quellen-Vorlaufs, keine neue Tabelle, keine Migration. Die Quittung trägt:
 
 `version · quittungsschluessel · commit · dokumente · idHash · cluster · maxModellaufrufe ·
 maxUsd · maxMs · runId · gestartetAm · status · beendetAm · modellaufrufe ·
-modellaufrufeKandidaten · laufMaxModellaufrufe · bilanz · automatischeWiederholung`
+modellaufrufeKandidaten · laufMaxModellaufrufe · laufkostenUsd · bilanz · automatischeWiederholung`
 
 Sie wird **immer** terminal abgeschlossen — auch bei Abbruch oder unbekanntem Ausgang
 (`abgeschlossen` / `gestoppt` / `unbekannt`). Ein zweiter Lauf desselben gebundenen Auftrags
@@ -335,14 +335,21 @@ ein abgebrochener oder unbekannter Ausgang wird damit nicht still wiederholbar.
    Kostenobergrenze** — reale Einzelaufrufe schwanken bis ~0,013 USD.
 2. **Harte Laufkostenobergrenze 0,80 USD** (technisch erzwungen, seit 2026-09-23): Der Lauf
    nutzt die **bestehende** atomare Kostenwahrheit (`lib/helmut/testkosten-budget.js`): vor
-   jedem Aufruf wird die volle Reservierung gebucht (0,212 USD bei der
+   vor jedem Aufruf wird die volle Reservierung gebucht (0,212 USD bei der
    Understanding-Ausgabegrenze 3000), nach der Anbieterantwort werden die **echten
    Tokenkosten** abgerechnet, ungeklärte Ausgänge bleiben voll reserviert. Jede Buchung
    trägt die Laufkennung `verstehen169-…` (`bezug.runId`). Vor jedem Cluster prüft der
    Runner: **echte Laufkosten + volle Reservierung des nächsten Aufrufs ≤ 0,80 USD** —
    sonst Stopp `verstehen-kostendeckel-erreicht` **vor** dem Provider-Aufruf. Ohne
    Kostenwahrheit startet nichts (`verstehen-kostenwahrheit-fehlt`); ein unlesbarer
-   Kostenstand stoppt fail closed (`verstehen-kostenleser-fehler`).
+   Kostenstand stoppt fail closed (`verstehen-kostenleser-fehler`). **Nach** dem letzten
+   Aufruf wird der endgültig gebundene Stand noch einmal rein lesend geladen: der
+   Abschlussbericht (`laufkostenUsd`) und die Einmalquittung tragen exakt diesen Endstand —
+   nicht den Stand vor dem letzten Cluster. Ein danach unlesbarer Stand
+   (`verstehen-kostenleser-fehler`) oder ein wider Erwarten überschrittener 0,80-USD-Rahmen
+   (`verstehen-kosten-invariante-verletzt`) werden **nicht** als erfolgreich gemeldet; die
+   Quittung schließt sichtbar `gestoppt`, ohne weiteren Aufruf und ohne automatische
+   Wiederholung.
 3. **Globaler 4-USD-Tagesriegel** (atomar, unverändert) — er bleibt zusätzlich und unabhängig
    wirksam und ersetzt den Laufdeckel nicht.
 
