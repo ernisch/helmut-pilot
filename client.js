@@ -1063,11 +1063,17 @@ function renderLogin(message = "") {
     const fd = new FormData(form);
     const email = String(fd.get("email") || "").trim();
     const password = String(fd.get("password") || "");
+    // Begrenzter Timeout als Zusatzschutz: Ein Backend-Problem (der Kontospeicher
+    // deckelt jeden Schreibversuch selbst auf 30 s) darf nie als endloser Haenger
+    // erscheinen. 45 s = Backend-Frist + Puffer.
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 45000);
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password }),
+        signal: controller.signal
       });
       if (!res.ok) {
         let msg = "E-Mail oder Passwort ist nicht korrekt.";
@@ -1080,7 +1086,11 @@ function renderLogin(message = "") {
       }
       window.location.reload();
     } catch {
-      if (error) error.textContent = "Anmeldung fehlgeschlagen. Bitte erneut versuchen.";
+      if (error) error.textContent = controller.signal.aborted
+        ? "Der Server antwortet gerade nicht. Bitte später erneut versuchen."
+        : "Anmeldung fehlgeschlagen. Bitte erneut versuchen.";
+    } finally {
+      window.clearTimeout(timeoutId);
     }
   });
 }
