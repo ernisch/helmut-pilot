@@ -1409,6 +1409,104 @@ async function abschnittInvalidDiagnose() {
   });
 }
 
+// ── §24 Runtime-Commit: der TATSAECHLICH ausgeführte Code-Stand ─────────────────────────────
+// ZWEI GETRENNTE DINGE: `commit` ist der DOKUMENT-SNAPSHOT (der Datensatz — 169 Kennungen,
+// Hash, 122 Cluster); `runtimeCommit` ist der Git-Commit des Codes, der den Lauf tatsaechlich
+// ausfuehrt. Der Kern prueft nur die FORM und fuehrt den Wert in Bericht und Quittung; er
+// erfindet NIE einen Lauf-Commit. Dass der Wert dem ECHTEN Checkout entspricht, stellt der
+// Bedienweg her — offline pruefbar ueber `CLIRUNNER.pruefeRuntimeCommit` (§24.7).
+async function abschnittRuntimeCommit() {
+  abschnitt("§24  Runtime-Commit ist vom Dokument-Snapshot-Commit getrennt und streng geprueft");
+  const ECHT = "0f1e2d3c4b5a69788796a5b4c3d2e1f001122334";
+
+  pruefe("§24.1 ohne Runtime-Commit wird KEIN Wert erfunden", () => {
+    A.deepEqual(V.runtimeCommitVon(undefined), { ok: true, commit: null });
+    A.deepEqual(V.runtimeCommitVon(null), { ok: true, commit: null });
+    A.deepEqual(V.runtimeCommitVon(""), { ok: true, commit: null });
+    A.deepEqual(V.runtimeCommitVon("   "), { ok: true, commit: null });
+  });
+  pruefe("§24.2 nur ein voller Git-SHA (40 Zeichen, klein, hex) wird angenommen", () => {
+    A.deepEqual(V.runtimeCommitVon(ECHT), { ok: true, commit: ECHT });
+    A.equal(V.runtimeCommitVon(ECHT.toUpperCase()).ok, false, "Grossbuchstaben sind kein Git-SHA");
+    A.equal(V.runtimeCommitVon("abc").ok, false);
+    A.equal(V.runtimeCommitVon(ECHT.slice(0, 39)).ok, false, "verkuerzter SHA bleibt verboten");
+    A.equal(V.runtimeCommitVon(ECHT + "0").ok, false);
+    A.equal(V.runtimeCommitVon("z".repeat(40)).ok, false, "Nicht-Hex bleibt verboten");
+    A.equal(V.runtimeCommitVon(ECHT).grund, undefined);
+    A.equal(V.runtimeCommitVon("abc").grund, "verstehen-runtime-commit-ungueltig");
+  });
+
+  const docs = WOERTER.slice(0, 2).map((w, i) => rohesDokument("rt-" + i, w));
+  const bindung = testbindung(docs);
+
+  await pruefeAsync("§24.3 ein unbrauchbarer Runtime-Commit stoppt fail closed VOR jedem Zugriff", async () => {
+    const w = weltBauen({ dokumente: docs });
+    const lauf = await V.fuehreAus({
+      ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit", erwartet: bindung,
+      runId: "rt-ungueltig", now: () => new Date(), runtimeCommit: "nicht-hex"
+    });
+    A.equal(lauf.ok, false);
+    A.equal(lauf.grund, "verstehen-runtime-commit-ungueltig");
+    A.equal(lauf.ausgeloest, false);
+    A.equal(lauf.schutzvertrag, false, "der Schutzvertrag wird NICHT einmal geprueft");
+    A.equal(lauf.snapshotCommit, "test-commit", "der Snapshot-Commit bleibt benannt");
+    A.equal(lauf.runtimeCommit, null);
+    A.equal(lauf.modellaufrufe, 0);
+    A.equal(w.welt.aufrufe.length, 0, "0 Modellaufrufe");
+    A.equal(w.welt.schritt.length, 0, "kein Schloss, kein CAS, keine Quittung");
+    A.equal(w.welt.claimRunCalls, 0);
+  });
+
+  await pruefeAsync("§24.4 der Runtime-Commit steht in Bericht UND Quittung — getrennt vom Snapshot", async () => {
+    const w = weltBauen({ dokumente: docs });
+    const lauf = await V.fuehreAus({
+      ids: idsVon(docs), deps: w.deps, execute: true, commit: "test-commit", erwartet: bindung,
+      runId: "rt-gueltig", now: () => new Date(), runtimeCommit: ECHT
+    });
+    A.equal(lauf.ok, true, JSON.stringify(lauf));
+    A.equal(lauf.runtimeCommit, ECHT, "Bericht traegt den ausgeführten Code-Stand");
+    A.equal(lauf.commit, "test-commit", "der Bericht nennt weiter den Dokument-Snapshot");
+    A.notEqual(lauf.runtimeCommit, lauf.commit, "Runtime- und Snapshot-Commit sind nicht dasselbe Feld");
+    A.ok(w.welt.abgeschlossen, "die Quittung wurde abgeschlossen");
+    A.equal(w.welt.abgeschlossen.runtimeCommit, ECHT, "die Quittung fuehrt den Runtime-Commit");
+    A.equal(w.welt.abgeschlossen.commit, "test-commit", "die Quittung fuehrt den Snapshot separat");
+  });
+
+  await pruefeAsync("§24.5 der Planmodus bleibt ohne Modellaufruf und ohne Write (auch mit Runtime-Commit)", async () => {
+    const P = weltBauen({ dokumente: docs });
+    const plan = await V.fuehreAus({
+      ids: idsVon(docs), deps: P.deps, execute: false, commit: "test-commit", erwartet: bindung,
+      runId: "rt-plan", now: () => new Date(), runtimeCommit: ECHT
+    });
+    A.equal(plan.reinLesend, true);
+    A.equal(plan.runtimeCommit, ECHT);
+    A.equal(plan.modellaufrufe, 0);
+    A.equal(P.welt.aufrufe.length, 0);
+    A.equal(P.welt.schritt.length, 0, "kein CAS, keine Quittung, kein Schloss");
+    A.equal(P.welt.claimRunCalls, 0);
+  });
+
+  pruefe("§24.6 der Dokument-Snapshot-Commit bleibt woertlich unveraendert", () => {
+    A.equal(V.PINNED.commit, "ea84f26ccc380e22961335926e2d4e585cee2308");
+    A.equal(V.PINNED.dokumente, 169);
+    A.equal(V.PINNED.idHash, "5f3878409cc9dbe742a3c9b465e54fff53b3e7622065f90c04915eb01ac2aed9");
+    A.equal(V.PINNED.cluster, 122);
+  });
+
+  pruefe("§24.7 der Bedienweg prueft den echten Checkout — ohne Runtime-Commit ist der scharfe Lauf verboten", () => {
+    const echt = CLIRUNNER.echterCommit();
+    A.ok(echt === null || /^[0-9a-f]{40}$/.test(echt), "lesbarer Checkout liefert einen vollen SHA");
+    A.equal(CLIRUNNER.pruefeRuntimeCommit("", echt, true).grund, "verstehen-runtime-commit-fehlt");
+    A.equal(CLIRUNNER.pruefeRuntimeCommit("", echt, false).ok, true, "in der Planung bleibt er optional");
+    A.equal(CLIRUNNER.pruefeRuntimeCommit(ECHT, ECHT, true).ok, true, "exakte Uebereinstimmung ist erlaubt");
+    A.equal(CLIRUNNER.pruefeRuntimeCommit(ECHT, "0".repeat(40), true).grund,
+      "verstehen-runtime-commit-abweichend", "Abweichung stoppt");
+    A.equal(CLIRUNNER.pruefeRuntimeCommit(ECHT, null, true).grund,
+      "verstehen-runtime-commit-nicht-pruefbar", "ein unlesbarer Checkout ist fail closed");
+    A.equal(CLIRUNNER.pruefeRuntimeCommit("abc", ECHT, true).grund, "verstehen-runtime-commit-ungueltig");
+  });
+}
+
 (async () => {
   await abschnittAuftragswerte();
   await abschnittEchterBeleg();
@@ -1425,6 +1523,7 @@ async function abschnittInvalidDiagnose() {
   await abschnittAbbruchdiagnose();
   await abschnittResolverSpuren();
   await abschnittInvalidDiagnose();
+  await abschnittRuntimeCommit();
 
   console.log("\n== ERGEBNIS ==");
   console.log("bestanden: " + bestanden);

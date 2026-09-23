@@ -15,7 +15,11 @@
 //
 // UMGEBUNG (Secrets ausschliesslich aus `process.env`, nie aus einer Datei — CLAUDE.md §4.9):
 //   HELMUT_VERSTEHEN_169_LISTE        Pflicht: Pfad zur gebundenen Kennungsliste (JSON)
-//   HELMUT_VERSTEHEN_169_COMMIT       Pflicht: der gebundene Production Commit (S1)
+//   HELMUT_VERSTEHEN_169_COMMIT       Pflicht: der DOKUMENT-SNAPSHOT-Commit (S1, der Datensatz)
+//   HELMUT_VERSTEHEN_169_RUNTIME_COMMIT  Pflicht im scharfen Lauf: der Git-Commit des hier
+//                                     TATSAECHLICH ausgeführten Codes (voller 40-stelliger SHA).
+//                                     Er wird gegen den echten Checkout geprüft (`git rev-parse
+//                                     HEAD`) — NICHT der Snapshot-Commit. Abweichung = fail closed.
 //   HELMUT_VERSTEHEN_169_SCHARF       "1" schaltet den scharfen Lauf frei
 //   HELMUT_VERSTEHEN_169_BESTAETIGT   Pflichtwort des scharfen Laufs (siehe BESTAETIGUNG)
 //   SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY   fuer Dokumentleser und Einmalquittung
@@ -42,6 +46,41 @@ const LISTE_STANDARD = path.join(__dirname, "..", "belege", "verstehen-169-ids.j
 function flagAn(wert) {
   const roh = String(wert == null ? "" : wert).trim().toLowerCase();
   return roh === "1" || roh === "true" || roh === "on" || roh === "yes" || roh === "an";
+}
+
+// ── RUNTIME-COMMIT (der TATSAECHLICH ausgeführte Code-Stand) ────────────────────────────────
+// Der WIRKLICH ausgeführte Git-Commit: rein lesend über `git rev-parse HEAD` im aktuellen
+// Arbeitsverzeichnis — kein Netz, keine Production-Wirkung. Unlesbar oder kein Repository
+// ⇒ `null` (fail closed), damit eine unprüfbare Bindung niemals als gültig durchgeht.
+function echterCommit() {
+  try {
+    const { execFileSync } = require("child_process");
+    const aus = execFileSync("git", ["rev-parse", "HEAD"],
+      { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    return /^[0-9a-f]{40}$/.test(aus) ? aus : null;
+  } catch (_) { return null; }
+}
+
+// Prüft den übergebenen Runtime-Commit GEGEN den echten Checkout. Rein rechnend und damit
+// offline prüfbar: der echte Commit wird dem Aufrufer übergeben, nicht selbst ermittelt.
+//   * kein Runtime-Commit übergeben  ⇒ im scharfen Lauf Pflicht (`…-fehlt`), in der Planung ok
+//   * kein voller Git-SHA            ⇒ `verstehen-runtime-commit-ungueltig`
+//   * echter Checkout nicht lesbar   ⇒ `verstehen-runtime-commit-nicht-pruefbar`
+//   * Abweichung                     ⇒ `verstehen-runtime-commit-abweichend`
+function pruefeRuntimeCommit(runtimeRoh, echter, scharf) {
+  const c = V.runtimeCommitVon(runtimeRoh);
+  if (!c.ok) return { ok: false, grund: c.grund, commit: null };
+  if (c.commit === null) {
+    return scharf
+      ? { ok: false, grund: "verstehen-runtime-commit-fehlt", commit: null }
+      : { ok: true, commit: null };
+  }
+  const ist = String(echter == null ? "" : echter).trim();
+  if (!ist) return { ok: false, grund: "verstehen-runtime-commit-nicht-pruefbar", commit: c.commit };
+  if (ist !== c.commit) {
+    return { ok: false, grund: "verstehen-runtime-commit-abweichend", commit: c.commit, gelesen: ist };
+  }
+  return { ok: true, commit: c.commit };
 }
 
 // Die gebundene Kennungsliste. Ein fehlender, leerer oder unlesbarer Beleg ist KEIN leeres
@@ -187,6 +226,22 @@ async function main() {
       bestaetigungswort: BESTAETIGUNG, quittungsschluessel: V.QUITTUNG
     }, 1);
   }
+  // ── RUNTIME-COMMIT — der TATSAECHLICH ausgeführte Code-Stand ────────────────────────────
+  // NICHT der Dokument-Snapshot (HELMUT_VERSTEHEN_169_COMMIT), sondern der Git-Commit des hier
+  // laufenden Codes. Muss dem ECHTEN Checkout entsprechen (`git rev-parse HEAD`) — sonst koennte
+  // nach einem Merge neuer Code laufen, waehrend der Bericht den alten Snapshot-Commit nennt.
+  const runtime = pruefeRuntimeCommit(env.HELMUT_VERSTEHEN_169_RUNTIME_COMMIT, echterCommit(), scharf);
+  if (!runtime.ok) {
+    return raus({
+      ok: false, reinLesend: !scharf, ausgeloest: false, grund: runtime.grund,
+      snapshotCommit: V.PINNED.commit, runtimeCommit: runtime.commit || null,
+      ...(runtime.gelesen ? { gelesen: runtime.gelesen } : {}),
+      quittungsschluessel: V.QUITTUNG,
+      hinweis: "Der Runtime-Commit ist der Git-Commit des TATSAECHLICH ausgeführten Codes und wird "
+        + "gegen den echten Checkout geprueft (HELMUT_VERSTEHEN_169_RUNTIME_COMMIT, voller SHA). "
+        + "Im scharfen Lauf ist er Pflicht; der Dokument-Snapshot-Commit bleibt davon getrennt."
+    }, 1);
+  }
   // Die Kennung eines NEUEN Versuchs wird ausdruecklich uebergeben (HELMUT_VERSTEHEN_169_QUITTUNG)
   // und streng geprueft — ohne sie gilt der alte Schlüssel (alter Auftrag, blockiert). Dieselbe
   // Kennung wie der alte Auftrag oder ein Fremdformat stoppen fail closed, VOR jedem Zugriff.
@@ -203,8 +258,9 @@ async function main() {
     return raus({
       ok: false, reinLesend: !scharf, ausgeloest: false, grund: "verstehen-commit-fehlt",
       erwartet: V.PINNED.commit, quittungsschluessel: V.QUITTUNG,
-      hinweis: "Der gebundene Production Commit kommt aus HELMUT_VERSTEHEN_169_COMMIT und wird "
-        + "nicht aus dem laufenden Prozess erraten — sonst waere die Bindung eine Formsache."
+      hinweis: "Der gebundene Dokument-Snapshot-Commit kommt aus HELMUT_VERSTEHEN_169_COMMIT und "
+        + "wird nicht aus dem laufenden Prozess erraten. Der TATSAECHLICH ausgeführte Code-Stand ist "
+        + "davon getrennt (HELMUT_VERSTEHEN_169_RUNTIME_COMMIT)."
     }, 1);
   }
   const liste = listeLaden(env.HELMUT_VERSTEHEN_169_LISTE || LISTE_STANDARD);
@@ -228,7 +284,7 @@ async function main() {
 
   const deps = baueDeps(env, runId, { mitQuittung: scharf });
   const bericht = await V.fuehreAus({
-    ids: liste.ids, deps, execute: scharf, commit, env,
+    ids: liste.ids, deps, execute: scharf, commit, env, runtimeCommit: runtime.commit,
     runId, quittungsschluessel: quittung.schluessel,
     fortschritt: scharf
       ? (s) => console.error(`[verstehen-169] ${s.fertig}/${s.gesamt} Cluster, ${s.aufrufe} Modellaufrufe`)
@@ -250,4 +306,4 @@ if (require.main === module) {
     });
 }
 
-module.exports = { BESTAETIGUNG, LISTE_STANDARD, flagAn, listeLaden, quittungsAdapter, baueDeps, main };
+module.exports = { BESTAETIGUNG, LISTE_STANDARD, flagAn, echterCommit, pruefeRuntimeCommit, listeLaden, quittungsAdapter, baueDeps, main };

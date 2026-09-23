@@ -38,6 +38,10 @@ check("quittungsschluessel ist optionales Input (kein Zwang fuer den alten Auftr
   /inputs:[\s\S]*?quittungsschluessel:[\s\S]*?required: false/.test(YML));
 check("quittungsschluessel-Input nennt die alte Kennung als verbotenen Wert",
   YML.includes("verstehen169-20260922-a"));
+check("runtime_commit ist Pflichtinput (der Lauf braucht einen freigegebenen Code-Stand)",
+  /inputs:[\s\S]*?runtime_commit:[\s\S]*?required: true/.test(YML));
+check("runtime_commit-Input grenzt sich ausdruecklich vom Snapshot-Commit ab",
+  /runtime_commit:[\s\S]*?NICHT der Dokument-Snapshot-Commit/.test(YML));
 
 // 2 · Exaktes Bestaetigungswort — kein Prefix, kein Alternativwort.
 check("Job bindet exaktes Bestaetigungswort", YML.includes(`inputs.confirm_text == '${WORT}'`));
@@ -59,6 +63,8 @@ check("checkout auf Repository-SHA gepinnt", YML.includes("actions/checkout@11d5
 check("setup-node auf Repository-SHA gepinnt", YML.includes("actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020"));
 check("keine persistierten Git-Credentials", YML.includes("persist-credentials: false"));
 check("Node 22 (Repository-Stand)", YML.includes('node-version: "22"'));
+check("Checkout bindet GENAU den freigegebenen runtime_commit",
+  YML.includes("ref: ${{ inputs.runtime_commit }}"));
 
 // 5 · Concurrency — bestehende globale Gruppe der kontrollierten Production-KI-Arbeit.
 check("Concurrency-Gruppe helmut-500-kontrollierte-facharbeit", YML.includes("group: helmut-500-kontrollierte-facharbeit"));
@@ -87,8 +93,8 @@ check("keine Inline-Fachlogik (kein require)", !YML.includes("require("));
 check("keine Inline-Fachlogik (kein node -e)", !YML.includes("node -e"));
 check("keine Resolver-Nachbildung", !/deriveVorgangId|clusterRawDocuments|sameVorgang/.test(YML));
 
-// 9 · Auftragswerte des Runners — unveraenderte Grenzen, nur die fuenf erlaubten Env-Keys.
-check("Commit ea84f26c im Workflow", YML.includes('HELMUT_VERSTEHEN_169_COMMIT: "ea84f26ccc380e22961335926e2d4e585cee2308"'));
+// 9 · Auftragswerte des Runners — unveraenderte Grenzen, nur die sechs erlaubten Env-Keys.
+check("Dokument-Snapshot-Commit ea84f26c im Workflow (unveraendert)", YML.includes('HELMUT_VERSTEHEN_169_COMMIT: "ea84f26ccc380e22961335926e2d4e585cee2308"'));
 check("gebundene Liste im Workflow", YML.includes('HELMUT_VERSTEHEN_169_LISTE: "belege/verstehen-169-ids.json"'));
 check("kein Durchschnittspreis als harte Obergrenze im Workflow", !YML.includes("HELMUT_VERSTEHEN_169_PREIS_USD"));
 check("SCHARF-Flag auf 1", YML.includes('HELMUT_VERSTEHEN_169_SCHARF: "1"'));
@@ -96,7 +102,7 @@ check("Bestaetigungswort kommt aus dem Input", YML.includes("HELMUT_VERSTEHEN_16
 check("Quittungskennung kommt ausschliesslich aus dem Input",
   YML.includes("HELMUT_VERSTEHEN_169_QUITTUNG: ${{ inputs.quittungsschluessel }}"));
 {
-  const erlaubt = new Set(["COMMIT", "LISTE", "SCHARF", "BESTAETIGT", "QUITTUNG"]);
+  const erlaubt = new Set(["COMMIT", "RUNTIME_COMMIT", "LISTE", "SCHARF", "BESTAETIGT", "QUITTUNG"]);
   const alle = [...YML.matchAll(/HELMUT_VERSTEHEN_169_([A-Z0-9_]+)/g)].map((m) => m[1]);
   const fremde = alle.filter((k) => !erlaubt.has(k));
   check("keine fremden 169er-Env-Keys", fremde.length === 0 && alle.length > 0);
@@ -116,6 +122,36 @@ check("169/122/Hash unveraendert (PINNED)",
 check("Quittungsschluessel unveraendert", V.PINNED && V.QUITTUNG === "verstehen169-20260922-a");
 check("Gebundene Liste traegt exakt denselben Commit und Hash",
   IDS.productionCommit === V.PINNED.commit && IDS.idHash === V.PINNED.idHash && IDS.documentCount === 169);
+
+// 9a · Runtime-Commit-Bindung — der Lauf prueft den ECHTEN Checkout, nicht nur einen String.
+check("Preflight prueft den Runtime-Commit als vollen Git-SHA",
+  YML.includes("grep -Eq '^[0-9a-f]{40}$'"));
+check("Preflight vergleicht den echten Checkout mit dem Runtime-Commit",
+  YML.includes("git rev-parse HEAD"));
+check("Preflight bricht bei Abweichung ab",
+  YML.includes('[ "${ECHTER_COMMIT}" = "${RUNTIME_COMMIT}" ]'));
+check("Runtime-Commit des Runners kommt ausschliesslich aus dem Input",
+  YML.includes("HELMUT_VERSTEHEN_169_RUNTIME_COMMIT: ${{ inputs.runtime_commit }}"));
+check("der Runtime-Commit wird NICHT im Workflow hart kodiert",
+  !/HELMUT_VERSTEHEN_169_RUNTIME_COMMIT: "[0-9a-f]{40}"/.test(YML));
+check("Snapshot-Commit und Runtime-Commit sind zwei getrennte Env-Werte",
+  YML.includes('HELMUT_VERSTEHEN_169_COMMIT: "ea84f26ccc380e22961335926e2d4e585cee2308"')
+  && YML.includes("HELMUT_VERSTEHEN_169_RUNTIME_COMMIT: ${{ inputs.runtime_commit }}"));
+check("der Kern erfindet keinen Runtime-Commit (keine hart kodierte 40-Hex-Bindung)",
+  !/runtimeCommit\s*=\s*"[0-9a-f]{40}"/.test(fs.readFileSync(path.join(ROOT, "lib/helmut/verstehen-einmalig.js"), "utf8")));
+check("der Bedienweg prueft den Runtime-Commit gegen den echten Checkout (reine Funktion)",
+  typeof BEDIENWEG.pruefeRuntimeCommit === "function" && typeof BEDIENWEG.echterCommit === "function");
+{
+  const echt = BEDIENWEG.echterCommit();
+  check("der Bedienweg kann den echten Checkout-Commit lesen",
+    echt === null || /^[0-9a-f]{40}$/.test(echt));
+  check("ohne Runtime-Commit bricht der scharfe Lauf fail closed ab",
+    BEDIENWEG.pruefeRuntimeCommit("", echt, true).grund === "verstehen-runtime-commit-fehlt");
+  check("ein falscher Runtime-Commit bricht fail closed ab",
+    BEDIENWEG.pruefeRuntimeCommit("0".repeat(40), echt, true).grund === "verstehen-runtime-commit-abweichend");
+  check("ein unlesbarer Checkout ist nicht pruefbar (fail closed)",
+    BEDIENWEG.pruefeRuntimeCommit("0".repeat(40), null, true).grund === "verstehen-runtime-commit-nicht-pruefbar");
+}
 
 // 10 · 4-USD-Tagesriegel unveraendert, Workflow setzt keinen eigenen Riegelwert.
 check("4-USD-Riegel unveraendert (LIMIT_MICRO_USD = 4000000)", /LIMIT_MICRO_USD\s*=\s*4000000/.test(BUDGET));

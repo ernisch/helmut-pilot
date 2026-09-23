@@ -40,7 +40,7 @@ Werte:
 
 | Wert | Fest eingeschrieben |
 |---|---|
-| Production Commit | `ea84f26ccc380e22961335926e2d4e585cee2308` |
+| Dokument-Snapshot-Commit (der Datensatz) | `ea84f26ccc380e22961335926e2d4e585cee2308` |
 | Dokumentanzahl | `169` |
 | Dokument-ID-Hash | `5f3878409cc9dbe742a3c9b465e54fff53b3e7622065f90c04915eb01ac2aed9` |
 | Clusterzahl | `122` |
@@ -308,7 +308,8 @@ Vor dem ersten möglichen Modellaufruf wird eine Zeile in der **bestehenden** `h
 per CAS beansprucht (`verstehen169-20260922-a`) — dieselbe Bauart wie die Quittung des
 Quellen-Vorlaufs, keine neue Tabelle, keine Migration. Die Quittung trägt:
 
-`version · quittungsschluessel · commit · dokumente · idHash · cluster · maxModellaufrufe ·
+`version · quittungsschluessel · commit` (Dokument-Snapshot) `· runtimeCommit` (der tatsächlich
+ausgeführte Code-Stand, §18) `· dokumente · idHash · cluster · maxModellaufrufe ·
 maxUsd · maxMs · runId · gestartetAm · status · beendetAm · modellaufrufe ·
 modellaufrufeKandidaten · laufMaxModellaufrufe · laufkostenUsd · bilanz · automatischeWiederholung`
 
@@ -360,7 +361,8 @@ ein abgebrochener oder unbekannter Ausgang wird damit nicht still wiederholbar.
 node scripts/lokal.js -- node scripts/verstehen-einmalig-169.js
 
 # Scharfer Lauf (eigene Freigabe erforderlich, bestaetigendes Wort):
-HELMUT_VERSTEHEN_169_COMMIT=<commit> \
+HELMUT_VERSTEHEN_169_COMMIT=<dokument-snapshot-commit> \
+HELMUT_VERSTEHEN_169_RUNTIME_COMMIT=<git-commit-des-ausgefuehrten-codes> \
 HELMUT_VERSTEHEN_169_LISTE=belege/verstehen-169-ids.json \
 HELMUT_VERSTEHEN_169_SCHARF=1 \
 HELMUT_VERSTEHEN_169_BESTAETIGT=EINMALIGER_VERSTEHENSLAUF_169_RUHDOKUMENTE_BESTAETIGT \
@@ -372,12 +374,14 @@ aus der bestehenden atomaren Kostenablage (§11). Voraussetzung ist die aktive R
 (`VERCEL_ENV=production`, `HELMUT_TESTLAUF_KOMMUNIKATION=gesperrt`) — sonst stoppt der Lauf
 fail closed.
 
-Der Commit wird **nicht** aus dem laufenden Prozess geraten, sondern ausdrücklich übergeben
-(`verstehen-commit-fehlt` sonst): eine selbst erratene Bindung wäre keine Bindung.
+Der Dokument-Snapshot-Commit wird **nicht** aus dem laufenden Prozess geraten, sondern ausdrücklich
+übergeben (`verstehen-commit-fehlt` sonst): eine selbst erratene Bindung wäre keine Bindung.
+Davon getrennt ist der **Runtime-Commit** — der Git-Commit des tatsächlich ausgeführten Codes
+(§18). Im scharfen Lauf ist er Pflicht.
 
 ## 13 · Gezielte Tests
 
-`node scripts/lokal.js -- node scripts/verstehen-einmalig-test.js` — **84 von 84 grün** (bis 2026-09-23: 65/65; +19 Prüfungen §23 Diagnosewahrheit),
+`node scripts/lokal.js -- node scripts/verstehen-einmalig-test.js` — **91 von 91 grün** (bis 2026-09-23: 84/84 mit §23 Diagnosewahrheit, +7 Prüfungen §24 Runtime-Commit),
 offline, ausschließlich mit Attrappen für Datenbank, Netz und Modell. Abgedeckt sind alle
 zwanzig Pflichtprüfungen des Auftrags (§1–§20), die Vertragsfälle S1/S6/S9/S10
 (Commit, Größenverteilung, Lesefehler, Kennungsabbildung), die Auftragswerte selbst, die
@@ -452,11 +456,15 @@ Job-Timeout von **40 Minuten** (der Runner kontrolliert seine 35 Minuten selbst)
 direkt `node scripts/verstehen-einmalig-169.js` (**nicht** über `scripts/lokal.js`) mit den
 GitHub-Secrets `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `AZURE_OPENAI_KEY`,
 `AZURE_OPENAI_ENDPOINT` und dem bestehenden Azure-Deployment-Muster; Werte werden nie geloggt.
+Zwei Pflicht-Parameter beschreiben zwei **getrennte** Bindungen: `runtime_commit` (der Git-Commit
+des tatsächlich auszuführenden Codes — der Workflow checkt genau ihn aus, §18) und — für einen
+neuen Versuch — `quittungsschluessel` (leer = alter Auftrag, blockiert).
 Der harte 0,80-USD-Laufdeckel nutzt die bestehende atomare Kostenwahrheit (volle Reservierung
 je Aufruf + echte Abrechnung, Laufkennung `verstehen169-…`) — ein Durchschnittspreis wird
 **nicht** verwendet (§11).
 Unmittelbar vor dem Start läuft ein fail-closed-Preflight (Bestätigungswort, Repository, main,
-Event, run_attempt, nicht-leere Secrets und Deployment). Alle Fachgrenzen bleiben im Runner —
+Event, run_attempt, **vollständiger Runtime-Commit + Abgleich mit dem echten Checkout über
+`git rev-parse HEAD`**, nicht-leere Secrets und Deployment). Alle Fachgrenzen bleiben im Runner —
 der Workflow baut keine zweite Fachlogik. Statische Vertragsprüfung:
 `scripts/verstehen-169-workflow-test.js`.
 
@@ -569,6 +577,49 @@ auditierbar erhalten; die neue Kennung erzeugt eine eigene, getrennte Quittungsz
 
 **Belege dieses Abschnitts:** `scripts/verstehen-169-neuversuch-test.js` (18/18, offline,
 0 Modellaufrufe, 0 Writes) und die erweiterte statische Workflow-Pruefung
-`scripts/verstehen-169-workflow-test.js` (70/70). Die Mechanik des Wiederaufnahmepfads
+`scripts/verstehen-169-workflow-test.js` (85/85). Die Mechanik des Wiederaufnahmepfads
 bleibt durch `verstehen-wiederaufnahme-test` (47/47) und `verstehen-cas-vertrag-test`
 (107/107) belegt.
+
+## 18 · Runtime-Commit: der tatsächlich ausgeführte Code-Stand (2026-09-23)
+
+**Der Befund.** Der Workflow checkte mit `actions/checkout` **ohne `ref`** den jeweiligen
+Workflow-Stand aus, während `HELMUT_VERSTEHEN_169_COMMIT` fest auf `ea84f26c…` stand. Der Kern
+verglich nur den übergebenen **String** mit `PINNED.commit` (S1) — der **echt ausgecheckte und
+ausgeführte** Git-Commit wurde **nicht** geprüft. Nach heutigen Fixes konnte damit aktueller Code
+laufen, während der Bericht weiter den alten Commit als angeblich gebunden auswies. Für einen
+belastbaren Production-Nachweis war das zu wenig.
+
+**Zwei getrennte Commits — nie vermischen.**
+
+| Begriff | Was er beschreibt | Wo er gebunden ist |
+|---|---|---|
+| Dokument-Snapshot-Commit `ea84f26c…` | den **Datensatz** (169 Kennungen, Hash, 122 Cluster) | `PINNED.commit` / `HELMUT_VERSTEHEN_169_COMMIT` (fest eingeschrieben, unverändert) |
+| Runtime-Commit | den **ausgeführten Code** | Workflow-Input `runtime_commit` / `HELMUT_VERSTEHEN_169_RUNTIME_COMMIT` (Laufparameter) |
+
+**Der Vertrag (fail closed, vor jedem Write und Modellaufruf).**
+
+1. Der Betreiber übergibt `runtime_commit` als **vollen** Git-SHA; der Workflow checkt mit
+   `ref: ${{ inputs.runtime_commit }}` **genau diesen** Commit aus.
+2. Der Preflight prüft den Wert auf das Muster `^[0-9a-f]{40}$` und vergleicht ihn mit dem
+   echten Checkout: `git rev-parse HEAD`. Abweichung ⇒ sofortiger Abbruch.
+3. Der Runner prüft **dieselbe** Regel erneut (`pruefeRuntimeCommit`) und bricht fail closed ab
+   bei `verstehen-runtime-commit-fehlt` (scharfer Lauf ohne Runtime-Commit),
+   `verstehen-runtime-commit-ungueltig` (kein voller SHA),
+   `verstehen-runtime-commit-nicht-pruefbar` (Checkout nicht lesbar) oder
+   `verstehen-runtime-commit-abweichend` (Abweichung). Ein unlesbarer Checkout gilt nie als gültig.
+4. Der Kern (`lib/helmut/verstehen-einmalig.js`) erfindet **keinen** Lauf-Commit: er prüft nur die
+   Form, führt den Wert in Bericht **und** Quittung (`runtimeCommit`) und lässt `commit`
+   unverändert den Dokument-Snapshot bezeichnen. Keine selbstreferenzielle Konstante im Code.
+
+Der Runtime-Commit ist ein **Laufparameter**, keine fest eingeschriebene Zahl: nach einem Merge
+wird der dann ausdrücklich freigegebene `main`-Commit übergeben. Alle Fachgrenzen bleiben
+unverändert (169/122/113 · 0,80 USD · 35 min · 4 USD Tagesriegel · CAS, Fencing, Locks, Budget,
+Clustering, Resolver, Validatoren).
+
+**Belege.** `scripts/verstehen-einmalig-test.js` §24 (7 Prüfungen, 91/91 grün, offline) und
+`scripts/verstehen-169-workflow-test.js` (85/85): `ref`-Bindung, SHA-Muster, `rev-parse`-Abgleich,
+Abbruchpfad, getrennte Env-Werte, kein hart kodierter Runtime-Commit. Die Preflight-Shell wurde
+zusätzlich funktional gegen ein eigener Test-Repository geprüft: richtiger Commit ⇒ `PREFLIGHT ok`;
+falscher, verkürzter oder fehlender Runtime-Commit ⇒ Abbruch mit exit 1. **0 Modellaufrufe,
+0 Production-Writes, 0 USD.** Ein neuer 169er Lauf wurde **nicht** gestartet.
