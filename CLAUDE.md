@@ -159,8 +159,9 @@ reversibel und eindeutig sinnvoll ist.
 - **Testumfang:** richtet sich nach [`AGENTS.md`](AGENTS.md) — gezielte, zweckgebundene
   Tests des betroffenen Bereichs; **keine** vollständige Suite und **keine** Browser-Suite
   aus Vorsicht. Wenn ein Offline-Lauf nötig ist, ist der kanonische Befehl
-  `node scripts/lokal.js -- node scripts/run-offline-tests.js` (sammelt alle
-  `scripts/*-test.js` ein, erzwingt Offline technisch); bei UI-Änderungen gezielt
+  `node scripts/lokal.js -- node scripts/run-offline-tests.js` (führt die explizite
+  Standardkernmenge aus, erzwingt Offline technisch); die vollständige Regression läuft
+  bewusst über `--extended` bzw. `npm run test:offline:extended`; bei UI-Änderungen gezielt
   `node scripts/lokal.js -- node scripts/browser-smoke-test.js`. Die Pflicht-CI läuft
   zusätzlich (siehe CI-Gate unten).
 - **Jeder Testlauf geht über `scripts/lokal.js`, auch der einzelne.** Liegen
@@ -178,8 +179,13 @@ reversibel und eindeutig sinnvoll ist.
   Behauptungen), Risiko, Rollback, und was bewusst **nicht** enthalten ist.
 - **Nicht selbst mergen, nicht selbst deployen.** Merge-Empfehlung aussprechen,
   Entscheidung liegt beim Betreiber.
-- Neue Tests gehören als `scripts/<name>-test.js` ins Repo — der Runner findet sie
-  automatisch.
+- Neue Tests gehören als `scripts/<name>-test.js` ins Repo — laufen aber **nicht**
+  automatisch im Pflichtlauf. Der Standardlauf/CI-Gate (`scripts/run-offline-tests.js`)
+  führt ausschließlich die explizite Kernmenge `STANDARD` aus. Wer einen neuen Test im
+  Pflichtlauf braucht, trägt ihn dort **bewusst** ein (mit dem geschützten Vertrag als
+  Begründung); sonst läuft er nur im erweiterten Lauf (`--extended`). Das hält den
+  Pflichtlauf klein und verhindert das stille Anwachsen auf hunderte Suiten
+  (Testorganisation 2026-09-23). Bereiche gezielt: `--extended --only <substring>`.
 
 ## 7 · Token- und Kostenregeln
 
