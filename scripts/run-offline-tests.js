@@ -8,8 +8,14 @@
 // Dieser Runner ist die eine kanonische Antwort auf "läuft die Offline-Suite?"
 // und wird vom CI-Gate (.github/workflows/ci.yml) bei jedem PR ausgeführt.
 //
-// Aufruf:  node scripts/run-offline-tests.js [--list] [--only <substring>]
+// Aufruf:  node scripts/run-offline-tests.js [--list] [--only <substring>] [--extended]
 // Exit-Code 0 nur, wenn jede Suite mit Exit-Code 0 endet.
+//
+// STANDARD vs. ERWEITERT (Sprint 2026-09-23): Der Standardlauf ist kanonisch und
+// identisch mit dem CI-Gate — er fuehrt die Suiten aus HISTORISCHE_SKALIERUNG NICHT
+// aus (siehe dort). `--extended` nimmt sie wieder auf; die Suiten bleiben unveraendert
+// im Repo und keine aktuelle Absicherung haengt an ihnen. `--list` zeigt die
+// Standardliste und benennt die ausgelagerten Suiten ausdruecklich.
 //
 // NETZ-GUARD (Audit-Folgebranch 2026-07): collectSuites() sammelt JEDE künftige
 // *-test.js automatisch ein — der Schutz vor Netz-/Production-Zugriff bestand
@@ -146,6 +152,25 @@ const DENYLIST = new Set([
   "run-offline-tests.js"
 ]);
 
+// ── Historische Skalierungssuiten (NICHT im Standardlauf und damit nicht im CI-Gate) ──
+// Diese vier Suiten stammen aus den OP-30-Skalierungsnachweisen (August 2026). Es sind
+// LOKALE SIMULATIONEN ohne Production-Beweis; narrativ-stress-1000-test.js bezeichnet den
+// 1000er-Lauf selbst ausdruecklich als "KEIN Abnahmekriterium". Sie sichern KEINEN
+// aktuellen Vertrag ab — weder den 500er-Nachweis noch Netzschutz, Security oder
+// Mandantentrennung — und sind mit zusammen ~290 s die laengsten Suiten des Standardlaufs.
+// Sie bleiben unveraendert im Repo und sind bewusst weiter ausfuehrbar:
+//   node scripts/run-offline-tests.js --extended      bzw.
+//   npm run test:offline:extended
+// Keine Suite wird allein wegen ihrer Laufzeit entfernt — nur diese vier, und nur aus dem
+// normalen Pflichtlauf.
+const HISTORISCHE_SKALIERUNG = new Set([
+  "narrativ-stress-1000-test.js",
+  "narrativ-stufen-test.js",
+  "skalierung-simulation-test.js",
+  "skalierung-stufen-test.js"
+]);
+
+// Alle Suiten, die der Runner kennt (Standard + historische Skalierung).
 function collectSuites() {
   return fs
     .readdirSync(path.join(ROOT, "scripts"))
@@ -157,18 +182,30 @@ function collectSuites() {
     .sort();
 }
 
+// Der kanonische Standardlauf (identisch mit dem CI-Gate): collectSuites() OHNE die
+// historischen Skalierungssuiten.
+function standardSuites() {
+  return collectSuites().filter((f) => !HISTORISCHE_SKALIERUNG.has(f));
+}
+
 function main() {
   const args = process.argv.slice(2);
   const listOnly = args.includes("--list");
+  const extended = args.includes("--extended");
   const onlyIdx = args.indexOf("--only");
   const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
 
-  let suites = collectSuites();
+  const historisch = collectSuites().filter((f) => HISTORISCHE_SKALIERUNG.has(f));
+  let suites = extended ? collectSuites() : standardSuites();
   if (only) suites = suites.filter((f) => f.includes(only));
 
   if (listOnly) {
     suites.forEach((f) => console.log(f));
-    console.log(`\n${suites.length} Offline-Suiten`);
+    console.log(`\n${suites.length} Offline-Suiten (${extended ? "erweitert inkl. historischer Skalierung" : "Standard"})`);
+    if (!extended) {
+      console.log("\nNICHT im Standardlauf — historische Skalierung, nur mit --extended bzw. `npm run test:offline:extended`:");
+      historisch.forEach((f) => console.log(`  ${f}`));
+    }
     return 0;
   }
 
@@ -224,7 +261,8 @@ function main() {
   }
 
   const secs = Math.round((Date.now() - started) / 1000);
-  console.log(`\n${suites.length - failed.length}/${suites.length} Suiten grün in ${secs}s`);
+  console.log(`\n${suites.length - failed.length}/${suites.length} Suiten grün in ${secs}s`
+    + (extended ? " (erweitert inkl. historischer Skalierung)" : ""));
   if (netAttempts.length) {
     console.log(`${NET_GUARD_MARKER} Suiten mit blockierten Nicht-Localhost-Verbindungen: ${netAttempts.join(", ")}`);
   }

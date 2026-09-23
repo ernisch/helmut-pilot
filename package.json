@@ -4,6 +4,7 @@
     "test:tenant-neutral": "node scripts/tenant-neutrality-test.js",
     "smoke": "node scripts/smoke-test.js",
     "test:offline": "node scripts/run-offline-tests.js",
+    "test:offline:extended": "node scripts/lokal.js -- node scripts/run-offline-tests.js --extended",
     "test:lage-visible": "node scripts/lage-visible-vorgaenge-test.js",
     "test:event-binding": "node scripts/event-binding-test.js",
     "test:buero-ehrlichkeit": "node scripts/buero-ehrlichkeit-test.js",
