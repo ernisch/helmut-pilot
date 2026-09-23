@@ -75,8 +75,9 @@ const inviteMail = require("./lib/helmut/invite-mail");
 const resetTiming = require("./lib/helmut/reset-timing");
 const helmutFlags = require("./lib/helmut/flags");
 const { getRelevantParliamentaryItems } = require("./lib/helmut/dip");
-const { clusterRawDocuments, deriveVorgangId, diagnosePendingUnderstanding, pruefeGeparkteNeuBewertung } = require("./lib/helmut/understanding");
+const { clusterRawDocuments, deriveVorgangId, diagnosePendingUnderstanding, pruefeGeparkteNeuBewertung, defaultDeps } = require("./lib/helmut/understanding");
 const { runPendingUnderstandingShadow } = require("./lib/helmut/artikelkontext-lauf");
+const { verstehenEinzelvorgang } = require("./lib/helmut/verstehen-einzelvorgang");
 const { laufBilanz } = require("./lib/helmut/lauf-bilanz");
 const verstehenRueckstand = require("./lib/helmut/verstehen-rueckstand");
 const { generateOfficeOutput, isValidChannel } = require("./lib/helmut/office");
@@ -2895,6 +2896,32 @@ async function handleRequest(request, response) {
         completeVorher: vorher.complete, completeNachher: nachher.complete,
         zusammenfassung: counts
       };
+    });
+  }
+
+  // AKTION 5: GENAU EIN ausdruecklich freigegebener Vorgang (Einzelvorgang-Weg).
+  // KEIN allgemeiner Pending-Lauf: der Weg betrachtet ausschliesslich die uebergebene
+  // Kennung (siehe lib/helmut/verstehen-einzelvorgang.js) und ruft NICHT
+  // runPendingUnderstandingShadow auf. Ohne ausdrueckliche Wiederaufnahmefreigabe
+  // (zustand=offen + letzter_grund=erneut-freigegeben) endet er vor jedem Modellaufruf.
+  // Admin-Rolle + CSRF genau wie die uebrigen Recovery-Aktionen (POST ueber handleJson).
+  if (url.pathname === "/api/admin/recovery/run-one-understanding" && request.method === "POST") {
+    if (!requireRoleOr403(response, authUser, "admin")) return undefined;
+    return handleJson(request, response, async (body) => {
+      const startTs = Date.now();
+      const runId = helmutRunId("admin-einzelvorgang", startTs);
+      const ergebnis = await verstehenEinzelvorgang({
+        vorgangId: body && body.vorgangId,
+        deps: defaultDeps({ runId }),
+        // Restzeitwache wie AKTION 3: unter dem Client-Timeout.
+        deadlineMs: startTs + 240000
+      });
+      // Log ohne Rohtext/Secrets: nur Ausgangsklasse, Status und Aufrufzahl.
+      console.log(`[admin/recovery/run-one-understanding] runId=${runId} ${JSON.stringify({
+        ok: ergebnis.ok === true, grund: ergebnis.grund || null, status: ergebnis.status || null,
+        modellaufrufe: dsNum(ergebnis.modellaufrufe)
+      })}`);
+      return ergebnis;
     });
   }
 
