@@ -4,6 +4,7 @@ const assert = require("node:assert/strict");
 const U = require("../lib/helmut/understanding");
 const A = require("../lib/helmut/artikelkontext");
 const M = require("../lib/helmut/matching");
+const QB = require("../lib/helmut/akteurslisten-quellenbindung");
 const ANALYSE = {
   headline: "Kommunen diskutieren Busverkehr", was_ist_passiert: "Kommunen diskutieren den Busverkehr.",
   warum_wichtig: "Busverkehr", wer_ist_betroffen: "Reisende", parteien: [], mentioned_parties: [],
@@ -136,6 +137,85 @@ async function main() {
       assert.equal(r.status, "skipped-invalid"); assert(r.errors.includes(`quellenbeleg-${feld}`));
       assert.equal(s.p.failed, 1); assert.equal(s.p.aufrufe, 1); assert.equal(s.p.gespeichert.length, 0);
     }
+  });
+  await test("Artikelvariante derselben Partei belegt (nur die belegte Bezeichnung 'Linke', beide Listen)", async () => {
+    const faelle = [
+      ["Die Linke fordert mehr Busverkehr.", "Linke"],
+      ["Die Linke fordert mehr Busverkehr.", "Die Linke"],
+      ["Linke fordert mehr Busverkehr.", "Die Linke"],
+      ["LINKE fordert mehr Busverkehr.", "die linke"]
+    ];
+    for (const [text, name] of faelle) {
+      for (const feld of FELDER) {
+        assert.equal((await auswertung(fixture(text), { ...ANALYSE, [feld]: [name] })).valid, true,
+          `${text} | ${name} | ${feld}`);
+      }
+    }
+  });
+  await test("Der Vertrag deckt ausschliesslich 'Die Linke'/'Linke' ab — 'Die Grünen' NICHT", async () => {
+    // Quelle nennt nur „Grünen“; das Modell liefert die Artikelform — vom Vertrag NICHT gedeckt
+    // (normalisiere() faltet keine Umlaute, es gibt bewusst keinen 'gruenen'/'grünen'-Eintrag).
+    for (const feld of FELDER) {
+      assert.equal((await auswertung(fixture("Grünen fordern mehr Busverkehr."), { ...ANALYSE, [feld]: ["Die Grünen"] })).valid, false);
+    }
+    // Abgrenzung: die reine Wortlautform bleibt unveraendert belegbar (strikte Regel, unberuehrt).
+    for (const feld of FELDER) {
+      assert.equal((await auswertung(fixture("Grünen fordern mehr Busverkehr."), { ...ANALYSE, [feld]: ["Grünen"] })).valid, true);
+    }
+  });
+  await test("Ohne Parteiennennung bleibt jede Partei abgelehnt (auch mit Artikel)", async () => {
+    const texteOhnePartei = [
+      "Kommunen diskutieren den Busverkehr.",
+      "Der Minister und eine Abgeordnete beraten.",
+      "SPD und CDU streiten ueber den Busverkehr.",
+      "Linksabbieger blockieren die Kreuzung.",
+      "Die Linken-nahe Stiftung aeussert sich."
+    ];
+    for (const text of texteOhnePartei) {
+      for (const feld of FELDER) {
+        for (const name of ["Die Linke", "Linke"]) {
+          assert.equal((await auswertung(fixture(text), { ...ANALYSE, [feld]: [name] })).valid, false,
+            `${text} | ${name} | ${feld}`);
+        }
+      }
+    }
+  });
+  await test("Nur belegte Artikelvarianten: Fraktionsnamen, Synonyme und Flexionen bleiben abgelehnt", async () => {
+    const abgelehnt = [
+      ["Die Linke fordert mehr Busverkehr.", "Linksfraktion"],
+      ["Die Linke fordert mehr Busverkehr.", "Linken"],
+      ["Die Linke fordert mehr Busverkehr.", "Sozialdemokraten"],
+      ["Die Linke fordert mehr Busverkehr.", "Die Linke Partei"],
+      ["Die Linke fordert mehr Busverkehr.", "Union"],
+      ["Die Linke fordert mehr Busverkehr.", "Sahra Wagenknecht"]
+    ];
+    for (const [text, name] of abgelehnt) {
+      for (const feld of FELDER) {
+        assert.equal((await auswertung(fixture(text), { ...ANALYSE, [feld]: [name] })).valid, false,
+          `${text} | ${name} | ${feld}`);
+      }
+    }
+  });
+  await test("Die Artikelregel gilt nur fuer belegte Parteien, nicht fuer beliebige 'Die X'-Werte", async () => {
+    const text = "Kommunen diskutieren den Busverkehr.";
+    for (const feld of FELDER) {
+      // "Die Kommunen" traegt artikel-los das Quellwort "Kommunen" — darf trotzdem NICHT belegt sein.
+      assert.equal((await auswertung(fixture(text), { ...ANALYSE, [feld]: ["Die Kommunen"] })).valid, false);
+    }
+  });
+  await test("Andere Akteurslisten bleiben unveraendert streng (kein Artikel-Freibrief)", async () => {
+    const text = "Die Linke fordert mehr Busverkehr.";
+    const rA = await auswertung(fixture(text), { ...ANALYSE, ausschuesse: ["Verkehrsausschuss"], mentioned_committees: ["Verkehrsausschuss"] });
+    assert.equal(rA.valid, false); assert(rA.errors.includes("quellenbeleg-ausschuesse"));
+    const rM = await auswertung(fixture(text), { ...ANALYSE, ministerien: ["Verkehrsministerium"], mentioned_ministries: ["Verkehrsministerium"] });
+    assert.equal(rM.valid, false); assert(rM.errors.includes("quellenbeleg-ministerien"));
+    const rP = await auswertung(fixture(text), { ...ANALYSE, mentioned_people: ["Max Mustermann"], mentioned_mps: ["Max Mustermann"] });
+    assert.equal(rP.valid, false); assert(rP.errors.includes("quellenbeleg-mentioned_people"));
+  });
+  await test("Der Validator gibt ausschliesslich valid und errors zurueck (keine Rohinhalte)", async () => {
+    const r = QB.pruefeAkteurslistenQuellenbindung({ parteien: ["Die Linke"] }, "kein quellentext");
+    assert.deepEqual(Object.keys(r).sort(), ["errors", "valid"]);
+    assert.equal(r.valid, false); assert.deepEqual(r.errors, ["quellenbeleg-parteien"]);
   });
   console.log(`${pass}/${pass} Gruppen erfolgreich`);
 }
