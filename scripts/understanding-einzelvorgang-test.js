@@ -70,9 +70,12 @@ function baueSpeicher() {
 }
 
 function baueWelt(welt = {}) {
-  const p = { aufrufe: 0, listWiederaufnahmen: 0, listPending: 0, bestand: 0, dokumente: 0, lock: 0, unlock: 0 };
+  const p = { aufrufe: 0, listWiederaufnahmen: 0, listPending: 0, bestand: 0, dokumente: 0, lock: 0, unlock: 0, enabled: 0, aiEnabled: 0 };
   const speicher = baueSpeicher();
   const deps = {
+    // Dieselben vorgeschalteten Schutzschalter wie der regulaere Weg.
+    enabled: () => { p.enabled += 1; if (welt.enabledWirft) throw new Error("lesefehler"); return welt.storeAus ? false : true; },
+    aiEnabled: () => { p.aiEnabled += 1; if (welt.aiWirft) throw new Error("lesefehler"); return welt.kiAus ? false : true; },
     listWiederaufnahmen: async () => {
       p.listWiederaufnahmen += 1;
       if (welt.listeNichtLesbar) return { verfuegbar: false, grund: "supabase-timeout", vorgaenge: [] };
@@ -224,6 +227,27 @@ async function main() {
     // Die sichere Fehlercode-Liste bleibt deckungsgleich mit der 169er-Diagnose (PR #522).
     const einmalig = fs.readFileSync(path.join(ROOT, "lib/helmut/verstehen-einmalig.js"), "utf8");
     check("Fehlercode-Liste identisch zur 169er-Diagnose", einmalig.includes(E.SICHERE_VALIDIERUNGSFEHLER.source));
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════
+  abschnitt("§11  Vorgeschaltete Schutzschalter wie der regulaere Weg (enabled/aiEnabled)");
+  {
+    const { r, p } = await lauf({ storeAus: true });
+    check("V3-Store aus -> ehrliche Absage v3-store-disabled", r.ok === false && r.grund === "v3-store-disabled", JSON.stringify(r));
+    check("Store aus: 0 Aufrufe und 0 weitere Fachzugriffe",
+      p.aufrufe === 0 && p.listWiederaufnahmen === 0 && p.bestand === 0 && p.dokumente === 0 && p.lock === 0, JSON.stringify(p));
+    check("Store aus: Freigabe nicht verbraucht (keine Reservierung, keine Zustandsantwort)",
+      r.modellaufrufe === 0 && r.wiederaufnahmeFreigabe === undefined);
+    const { r: r2, p: p2 } = await lauf({ kiAus: true });
+    check("KI aus -> ehrliche Absage ai-disabled", r2.ok === false && r2.grund === "ai-disabled", JSON.stringify(r2));
+    check("KI aus: 0 Aufrufe und 0 weitere Fachzugriffe",
+      p2.aufrufe === 0 && p2.listWiederaufnahmen === 0 && p2.bestand === 0 && p2.lock === 0, JSON.stringify(p2));
+    check("KI aus: Freigabe nicht verbraucht", r2.modellaufrufe === 0 && r2.wiederaufnahmeFreigabe === undefined);
+    const { r: r3, p: p3 } = await lauf({ enabledWirft: true });
+    check("Fehler beim Lesen von enabled -> fail closed, 0 Aufrufe", r3.grund === "v3-store-nicht-pruefbar" && p3.aufrufe === 0);
+    const { r: r4, p: p4 } = await lauf({ aiWirft: true });
+    check("Fehler beim Lesen von aiEnabled -> fail closed, 0 Aufrufe", r4.grund === "ai-nicht-pruefbar" && p4.aufrufe === 0);
+    check("Schalter werden VOR der Freigabe geprueft (Store aus liest die Liste nicht)", p.listWiederaufnahmen === 0 && p.enabled === 1);
   }
 
   console.log(`\nunderstanding-einzelvorgang-test: ${pass} von ${pass + fail} Pruefungen gruen.`);
