@@ -159,8 +159,9 @@ reversibel und eindeutig sinnvoll ist.
 - **Testumfang:** richtet sich nach [`AGENTS.md`](AGENTS.md) — gezielte, zweckgebundene
   Tests des betroffenen Bereichs; **keine** vollständige Suite und **keine** Browser-Suite
   aus Vorsicht. Wenn ein Offline-Lauf nötig ist, ist der kanonische Befehl
-  `node scripts/lokal.js -- node scripts/run-offline-tests.js` (sammelt alle
-  `scripts/*-test.js` ein, erzwingt Offline technisch); bei UI-Änderungen gezielt
+  `node scripts/lokal.js -- node scripts/run-offline-tests.js` (führt die explizite
+  Standardkernmenge aus, erzwingt Offline technisch); die vollständige Regression läuft
+  bewusst über `--extended` bzw. `npm run test:offline:extended`; bei UI-Änderungen gezielt
   `node scripts/lokal.js -- node scripts/browser-smoke-test.js`. Die Pflicht-CI läuft
   zusätzlich (siehe CI-Gate unten).
 - **Jeder Testlauf geht über `scripts/lokal.js`, auch der einzelne.** Liegen
@@ -178,8 +179,21 @@ reversibel und eindeutig sinnvoll ist.
   Behauptungen), Risiko, Rollback, und was bewusst **nicht** enthalten ist.
 - **Nicht selbst mergen, nicht selbst deployen.** Merge-Empfehlung aussprechen,
   Entscheidung liegt beim Betreiber.
-- Neue Tests gehören als `scripts/<name>-test.js` ins Repo — der Runner findet sie
-  automatisch.
+- **Drei Testebenen (Testorganisation 2026-09-23):**
+  - **Standard (immer):** Der CI-Pflichtlauf führt ausschließlich die explizite Kernmenge
+    `STANDARD` in `scripts/run-offline-tests.js` aus.
+  - **Bereich (automatisch):** Je nach tatsächlich geänderten Dateien laufen zusätzlich die
+    Fach-Regressionstests der betroffenen Bereiche. Kanonische Zuordnung:
+    `scripts/bereichsauswahl.js` (ausgewertet im CI-Schritt „Bereichs-Regression“ und über
+    `--aendert`/`--bereich`). Ein Test gehört über seinen **Dateinamen** zu einem Bereich
+    (z. B. `briefing-…-test.js` → Bereich `briefing`). Eine fachlich relevante, nicht
+    zuordenbare Datei wird **nicht** still übersprungen, sondern erzwingt die konservative
+    Sammelmenge.
+  - **Extended (bewusst):** die vollständige Regression über `--extended` bzw.
+    `npm run test:offline:extended`.
+  Eine neue Testdatei ist **nicht** automatisch Standard; wer sie im Pflichtlauf braucht,
+  trägt sie bewusst in `STANDARD` ein. Bereiche gezielt: `--bereich <name>` oder
+  `--extended --only <substring>`; Übersicht der Bereiche: `--bereiche`.
 
 ## 7 · Token- und Kostenregeln
 

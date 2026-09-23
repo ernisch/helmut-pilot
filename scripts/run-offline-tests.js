@@ -11,11 +11,24 @@
 // Aufruf:  node scripts/run-offline-tests.js [--list] [--only <substring>] [--extended]
 // Exit-Code 0 nur, wenn jede Suite mit Exit-Code 0 endet.
 //
-// STANDARD vs. ERWEITERT (Sprint 2026-09-23): Der Standardlauf ist kanonisch und
-// identisch mit dem CI-Gate — er fuehrt die Suiten aus HISTORISCHE_SKALIERUNG NICHT
-// aus (siehe dort). `--extended` nimmt sie wieder auf; die Suiten bleiben unveraendert
-// im Repo und keine aktuelle Absicherung haengt an ihnen. `--list` zeigt die
-// Standardliste und benennt die ausgelagerten Suiten ausdruecklich.
+// STANDARD vs. BEREICH vs. ERWEITERT (Sprint 2026-09-23, Testorganisation):
+//   Standard  = der kanonische Pflichtlauf und das CI-Gate. Er fuehrt AUSSCHLIESSLICH die
+//               explizite Kernmenge STANDARD aus (aktuelle Schutz-/Sicherheitsvertraege,
+//               aktuelle 500er-Schutzlogik und die grundlegenden Vertraege des heutigen
+//               Production-Pfads).
+//   Bereich   = zusaetzlich die fachliche Regression der im PR tatsaechlich geaenderten
+//               Bereiche. Auswahl ueber `--aendert "<datei1 datei2 ..."` (oder `--bereich
+//               <name,...>`) anhand der kanonischen Zuordnung in scripts/bereichsauswahl.js.
+//               `--nur-bereich` fuehrt NUR die Bereichs-Suiten aus (ohne Standard, fuer einen
+//               eigenen CI-Schritt). Fuer eine Aenderung gilt: Vereinigung aller betroffenen
+//               Bereiche, ohne Doppellaeufe mit dem Standard.
+//   Erweitert = die VOLLSTAENDIGE Offline-Regression (alle sammelbaren Suiten). Aufruf
+//               ueber `--extended` bzw. `npm run test:offline:extended`. Laeuft NICHT
+//               automatisch im PR.
+// Eine neue Testdatei wird NICHT automatisch zum Pflichtlauf: sie muss bewusst in STANDARD
+// eingetragen werden, sonst laeuft sie nur im erweiterten Lauf. Fuer die Bereichsauswahl
+// entscheidet der DATEINAME (siehe scripts/bereichsauswahl.js). Bereichsspezifisch
+// ausfuehren: `--extended --only <substring>` (z. B. `--extended --only briefing`).
 //
 // NETZ-GUARD (Audit-Folgebranch 2026-07): collectSuites() sammelt JEDE künftige
 // *-test.js automatisch ein — der Schutz vor Netz-/Production-Zugriff bestand
@@ -152,25 +165,118 @@ const DENYLIST = new Set([
   "run-offline-tests.js"
 ]);
 
-// ── Historische Skalierungssuiten (NICHT im Standardlauf und damit nicht im CI-Gate) ──
-// Diese vier Suiten stammen aus den OP-30-Skalierungsnachweisen (August 2026). Es sind
-// LOKALE SIMULATIONEN ohne Production-Beweis; narrativ-stress-1000-test.js bezeichnet den
-// 1000er-Lauf selbst ausdruecklich als "KEIN Abnahmekriterium". Sie sichern KEINEN
-// aktuellen Vertrag ab — weder den 500er-Nachweis noch Netzschutz, Security oder
-// Mandantentrennung — und sind mit zusammen ~290 s die laengsten Suiten des Standardlaufs.
-// Sie bleiben unveraendert im Repo und sind bewusst weiter ausfuehrbar:
-//   node scripts/run-offline-tests.js --extended      bzw.
-//   npm run test:offline:extended
-// Keine Suite wird allein wegen ihrer Laufzeit entfernt — nur diese vier, und nur aus dem
-// normalen Pflichtlauf.
-const HISTORISCHE_SKALIERUNG = new Set([
-  "narrativ-stress-1000-test.js",
-  "narrativ-stufen-test.js",
-  "skalierung-simulation-test.js",
-  "skalierung-stufen-test.js"
+// ── STANDARD: die explizite Kernmenge des Pflichtlaufs ──────────────────────────────
+// NUR diese Suiten laufen bei jedem PR (CI-Gate). Aufnahmekriterium ist ein AKTUELLER
+// Vertrag, nicht die Laufzeit: Schutz/Sicherheit, aktuelle 500er-Schutzlogik und die
+// grundlegenden Vertraege des heutigen Production-Pfads. Abgeschlossene Sprints,
+// bereichsspezifische Regressionen (Briefing/Lage/Quellen/Radar/Profil/Matching/Scoring/
+// UI/Cron/Landesmodule/PARDOK/…), Simulationen und historische Nachweise gehoeren NICHT
+// hierher — sie bleiben unveraendert im Repo und laufen ueber `--extended`.
+// Jede Zeile nennt den geschuetzten Vertrag. Aenderungen an dieser Liste sind die einzige
+// Stelle, an der ueber den Pflichtumfang entschieden wird.
+const STANDARD = new Set([
+  // — Schutz, Sicherheit, Mandantentrennung, Secrets, Auth, CAS/Schreibschutz —
+  "netzschutz-test.js",                     // lokaler Netz-/Production-Schutz (fail closed)
+  "mandantentrennung-test.js",              // Mandantentrennung (user_id-Filter)
+  "cross-tenant-security-test.js",          // Cross-Tenant-Angriffe
+  "tenant-guard-test.js",                   // assertTenant/assertTenantRows
+  "tenant-neutrality-test.js",              // keine Person bevorzugt/hartkodiert
+  "tenant-jwt-test.js",                     // Mandanten-JWT
+  "rls-policy-simulation-test.js",          // RLS-Policies
+  "security-hardening-sql-test.js",         // SQL-Haertung (GRANT/Policy)
+  "p1-security-check.js",                   // P1-Sicherheitsgate (Server/Frontend-Vertrag)
+  "privacy-authz-test.js",                  // Zugriffsberechtigung auf personenbezogene Daten
+  "privacy-vollstaendigkeit-test.js",       // Datenschutz-Vollstaendigkeit
+  "cache-isolation-test.js",                // Cache-Isolation je Mandant
+  "secret-redaction-test.js",               // keine Secrets in Ausgaben
+  "env-inventar-test.js",                   // Umgebungsvariablen vollstaendig/dokumentiert
+  "speicherpfad-schutz-test.js",            // Schutz des gemeinsamen Speicherpfads
+  "azure-endpunkt-guard-test.js",           // Azure-Endpunkt Pruefung vor Budget/Senden
+  "supabase-response-timeout-test.js",      // Antwort-Timeout der DB-Engstelle
+  "befund-27a2-schreibschutz-test.js",      // Messwerkzeug kann strukturell nicht schreiben
+  "nachhol-schreibgate-test.js",            // Production-Schreibgate der Nachholskripte
+  "store-cas-test.js",                      // CAS im gemeinsamen Store
+  "store-read-integrity-test.js",           // Leseintegritaet des Stores
+  "auth-store-cas-test.js",                 // CAS des Auth-Stores
+  "pipeline-lock-atomic-test.js",           // atomarer Pipeline-Lock
+  "profile-auth-decoupling-test.js",        // Profil/Auth entkoppelt
+  "reset-timing-seitenkanal-test.js",       // kein Seitenkanal beim Passwort-Reset
+  "saas-foundation-test.js",                // keine Personen-Fallbacks, Tenant-Kontext blockt
+  "jobqueue-sicherheit-test.js",            // Sicherheit/Mandantentrennung der Warteschlange
+  "admin-config-diagnose-test.js",          // Admin-Authz + keine Secrets in der Diagnose
+  "alarm-payload-test.js",                  // Alarmkanal ohne Inhalte/Secrets
+  "login-eine-mutation-test.js",            // genau eine CAS-Mutation je Login
+  "invite-flow-test.js",                    // Einmal-Token, keine Enumeration, kein PII
+  "jwt-endpoint-diagnose-test.js",          // JWT-Diagnose gibt kein Secret heraus
+  "privater-nachweis-transport-test.js",    // Transport privater Inhalte geschuetzt
+  "understanding-recovery-test.js",         // Recovery-Pfad verweigert ohne klare Umgebung
+  // — Budget, Kosten, KI-Riegel —
+  "kosten-limits-test.js",                  // Kostenlimits/Deckel
+  "budgetvertrag-test.js",                  // Budgetvertrag
+  "llm-budget-test.js",                     // KI-Tagesdeckel
+  "llm-reservation-test.js",                // atomare Reservierung
+  "llm-budget-fairness-test.js",            // fairer/atomarer Budgetverbrauch
+  "tenant-llm-cap-test.js",                 // Mandanten-Deckel (bleibt fuer 500 aus)
+  "profile-budget-constraint-test.js",      // ungueltiges Budget kein Serverfehler/Datenverlust
+  "testkosten-budget-test.js",              // atomare Testkosten-Wahrheit
+  "verstehen-restzeit-test.js",             // Restzeitwache vor bezahltem Modellaufruf
+  // — aktueller 500er-Schutzvertrag —
+  "verstehen-169-neuversuch-test.js",       // 169er Neuversuchsvertrag (PR524, Production)
+  "verstehen-169-kosten-deckel-test.js",    // harter 0,80-USD-Laufdeckel
+  "verstehen-169-workflow-test.js",         // manueller 169er Ausfuehrungsweg
+  "verstehen-cas-vertrag-test.js",          // CAS-/Quittungsvertrag des Verstehens
+  "verstehen-einmalig-test.js",             // Fachgrenzen des einmaligen Laufs
+  "verstehen-rueckstand-test.js",           // Rueckstandslogik
+  "verstehen-wiederaufnahme-test.js",       // Wiederaufnahmepfad
+  "testfenster-null500-test.js",            // 500er-Fenster: Planung/Verweigerung, rein lesend
+  "verdraengungsschutz-test.js",            // die fuenf realen Profile werden nicht verdraengt
+  "funktionstest-500-test.js",              // Sicherheitsrahmen des 500er-Funktionstests
+  "kapazitaet-500-test.js",                 // 500er Kapazitaets-/Aufrufdeckel
+  "planung-500-durchsatz-test.js",          // 500er Planer/Aufrufvolumen
+  "quellenvorlauf-500-test.js",             // Grenzen des 500er Quellen-Vorlaufs
+  "test-kohorte-500-test.js",               // Kohortentrennung, neutrale Kennungen
+  "testkohorte-direkt500-test.js",          // Direktvertrag/Kohortentrennung A/B/C
+  "testkohorte-vorwaerts-test.js",          // Vorwaertsweg nur unter allen Riegeln scharf
+  "testkohorte-vorwaerts-cli-test.js",      // CLI-Vorschau folgenlos
+  "testkohorte-testende-test.js",           // automatisches Testende/Rueckweg
+  "testkohorte-betrieb-test.js",            // Betriebsriegel der Kohorte
+  "testkohorte-stufen-test.js",             // Stufenreihenfolge A/B/C
+  "testkohorte-provisionierung-fehler-test.js",
+  "testkohorte-provisionierung-inaktiv-test.js",
+  "testnachweis-ziel500-test.js",           // 500er Nachweisvollstaendigkeit
+  "testnachweis-ergebnisse-test.js",        // Ergebniswahrheit des 500er Nachweises
+  "briefing-pruefaufnahme-500-test.js",     // Pruefaufnahme des 500er Briefingnachweises
+  "github-direkt500-test.js",               // 500er Direkt-Runner (No-Write/Quellensperre)
+  "github-null500-ende-test.js",            // 500er Rueckweg auf null
+  "github-testfenster-500-test.js",         // 500er Testfenster-Runner
+  "github-briefingnachweis-500-test.js",    // 500er Briefingnachweis-Runner
+  "github-privater-inhaltsnachweis-500-test.js",
+  "github-quellenkontext-500-test.js",
+  // — grundlegende Vertraege des heutigen Production-Pfads —
+  "flags-test.js",                          // Feature-Flags Default AUS
+  "source-mode-test.js",                    // Quellenwahrheit relational
+  "migrations-organisation-test.js",        // Migration/Rollback-Namensregel
+  "current-state-groesse-test.js",          // CURRENT_STATE-Groessengrenze
+  "offline-suite-auswahl-test.js",          // dieser Standard-/Extended-Vertrag
+  "quellenpflicht-vertrag-test.js",         // Belegpflicht (jedes Element traegt Quelle)
+  "quellenpflicht-faelle-test.js",          // Belegpflicht-Faelle
+  "ki-antwortvertrag-test.js",              // zentrale KI-HTTP-Engstelle
+  "contract-snapshot-test.js",              // Server->Frontend-Vertrag /api/app/start
+  "jobqueue-vertrag-test.js",               // Warteschlangenvertrag
+  "jobdispatch-vertrag-test.js",            // Job-Dispatch-Vertrag
+  "scalable-pipeline-flag-test.js",         // Flag-Grenzen der skalierbaren Pipeline
+  "warteschlangenwache-vertrag-test.js",    // Warteschlangenwache/Zustandsklassen
+  "warteschlange-parallelitaet-test.js",    // Parallelitaet der Warteschlange
+  "understanding-gate-test.js",             // politische Vorpruefung vor dem Verstehen
+  "understanding-gate-arm-test.js",         // Gate-Riegel
+  "understanding-gate-integration-test.js", // Gate ist im Pfad verdrahtet
+  "dedup-findings-test.js",                 // Dedup-Kennungswahrheit
+  "source-dedupe-test.js"                   // Quellen-Deduplizierung
 ]);
 
-// Alle Suiten, die der Runner kennt (Standard + historische Skalierung).
+// Alle Suiten, die der Runner sammelt (Standard + alles Weitere). Die Sammlung ist die
+// VOLLSTAENDIGE Offline-Regression und der erweiterte Lauf; der Standardlauf ist die
+// Teilmenge STANDARD (siehe oben).
 function collectSuites() {
   return fs
     .readdirSync(path.join(ROOT, "scripts"))
@@ -182,29 +288,103 @@ function collectSuites() {
     .sort();
 }
 
-// Der kanonische Standardlauf (identisch mit dem CI-Gate): collectSuites() OHNE die
-// historischen Skalierungssuiten.
+// Der kanonische Standardlauf (identisch mit dem CI-Gate): NUR die explizite Kernmenge.
+// Eine neue Testdatei ist damit NICHT automatisch Pflicht — siehe Kopfkommentar.
 function standardSuites() {
-  return collectSuites().filter((f) => !HISTORISCHE_SKALIERUNG.has(f));
+  return collectSuites().filter((f) => STANDARD.has(f));
+}
+
+// Liest den Wert nach einem Schalter bis zum naechsten Schalter (auch mehrere Argumente).
+function wertNach(args, flag) {
+  const i = args.indexOf(flag);
+  if (i < 0) return null;
+  const teile = [];
+  for (let j = i + 1; j < args.length; j++) {
+    if (String(args[j]).startsWith("--")) break;
+    teile.push(args[j]);
+  }
+  return teile.join(" ");
 }
 
 function main() {
   const args = process.argv.slice(2);
   const listOnly = args.includes("--list");
   const extended = args.includes("--extended");
+  const nurBereich = args.includes("--nur-bereich");
   const onlyIdx = args.indexOf("--only");
   const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
 
-  const historisch = collectSuites().filter((f) => HISTORISCHE_SKALIERUNG.has(f));
-  let suites = extended ? collectSuites() : standardSuites();
+  const alle = collectSuites();
+  const AUSWAHL = require("./bereichsauswahl.js");
+
+  // Uebersicht der Bereiche (Kontrolle/Doku): Name und zusaetzliche Suiten ohne Standard.
+  if (args.includes("--bereiche")) {
+    for (const name of Object.keys(AUSWAHL.BEREICHE).sort()) {
+      const suiten = AUSWAHL.suitenFuerBereiche(alle, [name]).filter((f) => !STANDARD.has(f));
+      console.log(`${name.padEnd(24)} ${String(suiten.length).padStart(3)} zusaetzliche Suiten`);
+    }
+    return 0;
+  }
+
+  // Sicherheitsnetz: ein Standard-Name, den collectSuites() nicht kennt (Tippfehler oder
+  // umbenannte/entfernte Datei), wuerde den Pflichtlauf sonst STILL verkleinern. Das muss
+  // laut scheitern, nicht leise durchrutschen.
+  const fehlend = [...STANDARD].filter((f) => !alle.includes(f));
+  if (fehlend.length) {
+    console.error(`[run-offline-tests] STANDARD nennt ${fehlend.length} Suite(n), die nicht gesammelt werden: ${fehlend.join(", ")}`);
+    console.error("  > Bitte Tippfehler/Umbenennung in STANDARD korrigieren — sonst laeuft der Pflichtlauf unvollstaendig.");
+    return 1;
+  }
+
+  // Modus: Standard (Default), erweitert (alles) oder Bereich (automatische Fachregression).
+  let auswahlInfo = null;
+  let suites;
+  if (extended) {
+    suites = alle.slice();
+  } else {
+    const aendert = wertNach(args, "--aendert");
+    const bereichArg = wertNach(args, "--bereich");
+    const basis = nurBereich ? [] : standardSuites();
+    let bereichsSuiten = [];
+    if (aendert != null) {
+      const dateien = String(aendert).split(/[\s,]+/).filter(Boolean);
+      auswahlInfo = AUSWAHL.bereichsSuiten(dateien, alle, STANDARD);
+      bereichsSuiten = auswahlInfo.suiten;
+    } else if (bereichArg != null) {
+      const namen = String(bereichArg).split(/[\s,]+/).filter(Boolean);
+      const unbekannt = namen.filter((n) => !AUSWAHL.BEREICHE[n]);
+      if (unbekannt.length) {
+        console.error(`[run-offline-tests] Unbekannte Bereiche: ${unbekannt.join(", ")}`);
+        console.error(`  Verfuegbar: ${Object.keys(AUSWAHL.BEREICHE).sort().join(", ")}`);
+        return 1;
+      }
+      const ziele = [...namen].sort();
+      bereichsSuiten = AUSWAHL.suitenFuerBereiche(alle, ziele).filter((f) => !STANDARD.has(f));
+      auswahlInfo = { bereiche: ziele, zielBereiche: ziele, konservativ: false, unbekannt: [], querschnitt: false, suiten: bereichsSuiten };
+    }
+    // Vereinigung: Standard + Bereich, ohne Doppelaeufe.
+    suites = [...new Set([...basis, ...bereichsSuiten])].sort();
+  }
   if (only) suites = suites.filter((f) => f.includes(only));
+
+  if (auswahlInfo && !listOnly) {
+    console.log(`Bereichsauswahl: ${auswahlInfo.zielBereiche.join(", ") || "keine"}`);
+    if (auswahlInfo.querschnitt) console.log("  Zentrale/geteilte Kerndatei geaendert -> konservative Sammelmenge (alle Bereiche).");
+    if (auswahlInfo.unbekannt.length) console.log(`  FAIL CLOSED: ${auswahlInfo.unbekannt.length} relevante Datei(en) ohne Bereichszuordnung -> konservative Sammelmenge: ${auswahlInfo.unbekannt.join(", ")}`);
+    if (!auswahlInfo.zielBereiche.length) console.log("  Keine fachlich relevanten Aenderungen (z. B. nur Dokumentation) -> keine zusaetzlichen Bereichstests.");
+    console.log(`  Bereichs-Suiten (ohne Standard-Doppellaeufe): ${auswahlInfo.suiten.length}`);
+  }
+
+  const modus = extended
+    ? "erweitert = vollstaendige Regression"
+    : ((auswahlInfo || nurBereich) ? "Bereich = automatische Fachregression" : "Standard = Pflichtlauf");
 
   if (listOnly) {
     suites.forEach((f) => console.log(f));
-    console.log(`\n${suites.length} Offline-Suiten (${extended ? "erweitert inkl. historischer Skalierung" : "Standard"})`);
-    if (!extended) {
-      console.log("\nNICHT im Standardlauf — historische Skalierung, nur mit --extended bzw. `npm run test:offline:extended`:");
-      historisch.forEach((f) => console.log(`  ${f}`));
+    console.log(`\n${suites.length} Offline-Suiten (${modus})`);
+    if (!extended && !auswahlInfo) {
+      const rest = alle.filter((f) => !STANDARD.has(f));
+      console.log(`Nicht im Standardlauf (nur mit --extended bzw. \`npm run test:offline:extended\`): ${rest.length} Suiten`);
     }
     return 0;
   }
@@ -261,8 +441,7 @@ function main() {
   }
 
   const secs = Math.round((Date.now() - started) / 1000);
-  console.log(`\n${suites.length - failed.length}/${suites.length} Suiten grün in ${secs}s`
-    + (extended ? " (erweitert inkl. historischer Skalierung)" : ""));
+  console.log(`\n${suites.length - failed.length}/${suites.length} Suiten grün in ${secs}s (${modus})`);
   if (netAttempts.length) {
     console.log(`${NET_GUARD_MARKER} Suiten mit blockierten Nicht-Localhost-Verbindungen: ${netAttempts.join(", ")}`);
   }
@@ -286,3 +465,7 @@ if (require.main === module) {
   // Als --require-Preload in einem Testprozess geladen -> Offline-Zwang aktiv.
   installNetGuard();
 }
+
+// Fuer den Auswahl-Vertragstest (scripts/bereichsauswahl-test.js): die Kernmenge und die
+// Sammlung lesbar machen, ohne den Runner als Prozess zu starten.
+module.exports = { STANDARD, collectSuites, standardSuites };
