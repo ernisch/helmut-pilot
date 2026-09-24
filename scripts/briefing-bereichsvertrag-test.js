@@ -138,4 +138,15 @@ test("Rollenhinweise brauchen gebundene Ausgabeurteile, Handlung bleibt Quellen-
   assert.equal(e.aussagen.find(a => a.pfad.endsWith("mentions/0/evidence")).art, "ausgabe");
   assert.equal(Q.pruefe(e, null).bereit, false);
 });
+test("Hoch priorisierte heutige Frist wird nicht von bloßer Artikelfrische verdrängt", () => {
+  const a = { ...ko(), deadline:"2026-09-24" }, b = ko("b");
+  const args = input([a,b], { "vg-a":[doc("frist", "2026-09-20", { summary:"Die Abgabefrist endet am 24.09.2026." })],
+    "vg-b":[doc("aktuell", "2026-09-24")] });
+  args.decisions[0].score = 95;
+  const state = C.toBriefingContractV3(args).currentHelmutState;
+  assert.equal(state.primaryVorgangId, "vg-a");
+  assert.equal(state.tagesAnlass.art, "heutige-frist");
+  const debug = C.buildPrimarySelectionDebug({ ...args, decisionsAfter:args.decisions, state });
+  assert.equal(debug.selectedPrimary.vorgang_id, state.primaryVorgangId);
+});
 console.log(`${count}/${count} Bereichsvertragsfälle bestanden; offline, ohne Modellaufruf.`);

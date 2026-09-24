@@ -119,7 +119,7 @@ Bis diese Prüfung positiv belegt ist, bleibt die Gesamtanforderung offen.
 
 ## Repräsentative Abnahme
 
-`scripts/briefing-bereichsvertrag-test.js` prüft 18 synthetische Fallgruppen durch
+`scripts/briefing-bereichsvertrag-test.js` prüft 19 synthetische Fallgruppen durch
 reale Adapter. Kein Fixtureurteil ist ein Production-Fachurteil.
 
 | Fall | Erwartung |
@@ -134,7 +134,7 @@ reale Adapter. Kein Fixtureurteil ist ein Production-Fachurteil.
 | Verschiedene Berichte an mehreren Tagen | Begrenzte Beobachtung, keine Trendbehauptung |
 | Zeitgleiche Quellen oder Trackingvarianten | Kein Wachstum |
 | Alte Resonanz oder fremdes Mandat | Kein persönliches Signal |
-| Künftige/heutige Frist | Radar-Beobachtung/heutiger Briefinganlass |
+| Künftige/heutige Frist | Radar-Beobachtung/heutiger Briefinganlass; priorisierte heutige Frist nicht durch bloße Artikelfrische verdrängen |
 | Abgesagte/erfundene Frist oder bloßes Datum | Kein Fristbeleg |
 | Sinngleiche alternative Lage-Einordnungen | Keine davon wird als Briefinggrund/Radartext übernommen |
 | Fehlendes/negatives/veraltetes Fachurteil | Keine fachliche Freigabe |
