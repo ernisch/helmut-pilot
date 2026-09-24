@@ -234,6 +234,10 @@ function check(name, cond, detail = "") {
         check(`${label}: Briefing wiederholt den Hauptvorgang nicht in weiteren Vorgaengen`,
           !(await page.locator(".hstand-rel-title").allTextContents()).includes(primaryTitle));
 
+        // Der optionale Installationshinweis liegt auf Mobil ueber der Dock.
+        // Wie ein Nutzer schliessen, nicht den echten Klickschutz umgehen.
+        const installClose = page.locator("#helmutInstallClose");
+        if (await installClose.isVisible()) await installClose.click();
         await page.locator((isMobile ? ".mobile-dock" : ".nav-list") + ' [data-view="briefing"]').click();
         const lageText = await page.locator(".lage2-card").first().innerText();
         check(`${label}: Lage Karte zeigt Fakten und keine Briefing Handlungsanweisung`,
