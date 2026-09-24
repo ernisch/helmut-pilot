@@ -715,3 +715,60 @@ Tagesriegel (4 USD, atomar) blieb unveraendert wirksam.
 
 **Belege.** Abschlussbericht (JSON) des Runners im Workflow-Log von Run `35964405263`.
 **Kein Retry, kein zweiter Dispatch, kein Rerun, keine Quittungs-/CAS-/Budgetaenderung.**
+
+## 21 · Lokaler Clusterfehler beendet den Lauf nicht mehr (2026-09-24)
+
+**Der Befund.** Alle drei scharfen Laeufe scheiterten an derselben strukturellen Fragilitaet: der
+Runner behandelte JEDEN `ausgang === "unbekannt"` als globalen Abbruch. Ein EINZELNER Cluster mit
+`skipped-invalid` beendete damit den gesamten gebundenen Auftrag — im dritten Lauf blieben so 86
+von 122 Clustern und 115 von 169 Dokumenten ungeprueft.
+
+**Zwei Klassen, eine Grenze.** Der Runner unterscheidet jetzt:
+
+| Klasse | Ausloeser | Wirkung |
+|---|---|---|
+| A — LOKALER CLUSTERFEHLER | `status === "skipped-invalid"` (fachlich ungueltige Modellantwort DIESES Clusters, z. B. `quellenbeleg-parteien`) | Vorgang terminal `unbekannt` gesperrt (CAS/Fencing, keine Verknuepfung, KEIN Retry); uebrige unabhaengige Cluster laufen weiter; Gesamtstatus bleibt rot |
+| B — GLOBALER VERTRAGS-/INFRASTRUKTURFEHLER | `cluster-error` (unerwarteter Motorwurf), `skipped-error`, `skipped-store`, `skipped-veraltet` sowie alle Bindungs-, Lock-, Quittungs-, Kosten- und Zeitfehler | unveraendert sofortiger Gesamtabbruch vor dem naechsten Cluster |
+
+**`cluster-error` ist ausdruecklich Klasse B.** Ein unerwartetes Werfen des Motors ist kein
+lokaler Fachfehler — die Ursache ist nicht sicher klassifizierbar (Code-, Speicher-,
+Infrastruktur- oder Vertragsfehler). Der betroffene Cluster wird mit seiner bekannten
+Clustergroesse als `cluster-error` bilanziert, dann bricht der Lauf mit dem eindeutigen Grund
+`verstehen-cluster-error` global ab: kein Folgecluster, `vollstaendigVerarbeitet = false`,
+`fachlichBestanden`/`ok` = false, Quittung terminal `gestoppt`. **Der globale Abbruch hat beim
+Quittungsstatus Vorrang:** kam zuvor bereits ein lokales `skipped-invalid` (unknown) vor, bleibt der
+Quittungsstatus trotzdem `gestoppt` und traegt den Grund `verstehen-cluster-error` — das lokale
+unknown verschleiert den schwereren globalen Befund nicht. Ein `cluster-error` kann **nie**
+zu einem fachlichen Gruen fuehren. Die rohe Fehlermeldung wird bewusst NICHT persistiert (sie
+kann Hostnamen enthalten); das CAS setzt den nach dem Modellstart geworfenen Vorgang ueber den
+bestehenden Weg auf `unbekannt` (At-most-once, kein Retry).
+
+**Vollstaendig abgearbeitet ist NICHT fachlich bestanden.** Ein Klassen-A-Lauf kann alle Cluster
+abarbeiten; `bilanz.unbekannt > 0` haelt den Lauf trotzdem rot: `quittungStatus = "unbekannt"`,
+`fachlichBestanden`/`ok` = false, `abbruchGrund = null`. Ein Lauf gilt nur dann als fachlich
+bestanden, wenn KEIN `unbekannt` uebrig bleibt.
+
+**Unveraendert streng bleibt:** die Beteiligungslisten `parteien`/`ausschuesse` (unbelegter Wert
+sperrt weiter und wird NICHT still entfernt), das Schema, der `decision_level-Konflikt`, der
+Goldsetauswerter, der Quellenbeleg sowie CAS, Fencing, Locks, Quittung, Aufruf-/Kosten-/Zeitdeckel
+und die 169er-Bindung. Der Production-CAS-Zustand von `vg-gemeinsame-20260921-dcd0f5`
+(`unbekannt`) wird NICHT veraendert.
+
+**Kein Retry und keine Doppelkosten.** Der lokale Fehlercluster wird genau einmal modellseitig
+bearbeitet (CAS-At-most-once) und nie erneut; die volle Reservierung des Aufrufs bleibt gebucht.
+Ist die Quittung verbraucht, startet derselbe Auftrag nicht neu (`verstehen-bereits-verwendet`,
+0 Modellaufrufe).
+
+**Belege.** `scripts/verstehen-einmalig-test.js` §25 (**106/106** gruen, offline, 0 Modellaufrufe,
+0 Production-Writes): genau ein unknown-Cluster bei `quellenbeleg-parteien`; kein zweiter
+modellseitiger Aufruf; die uebrigen Cluster laufen weiter; mehrere lokale unknown bleiben exakt
+gezaehlt; der unknown-Cluster wird NICHT zu `saved`/`merged`/`duplicate`; frueher erfolgreiche
+Cluster werden nicht zurueckgerollt; Aufruf- und USD-Deckel bleiben hart; ein globaler
+Transportfehler stoppt weiter fail closed; **ein unerwarteter Motorwurf im zweiten von vier
+Clustern stoppt global (`verstehen-cluster-error`) und kann NIE `ok`/`fachlichBestanden` = true
+werden**; **§25.31: ein lokales `skipped-invalid` VOR einem `cluster-error` laesst den globalen
+Abbruch gewinnen (Quittung `gestoppt`, Grund `verstehen-cluster-error`)**; die Quittung wird
+genau einmal beansprucht.
+Zusaetzlich gruen: `verstehen-169-neuversuch-test` (19/19), `verstehen-169-kosten-deckel-test`
+(29/29), `verstehen-169-workflow-test` (152/152), `verstehen-cas-vertrag-test` (107/107).
+**Kein Merge, kein neuer Lauf; die Wirkung ist NICHT Production-belegt.**
