@@ -51,14 +51,13 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
     const eingabe500 = env.HELMUT_PRUEFEINGABE_500 === "true";
     fordere([undefined, "", "false", "true"].includes(env.HELMUT_PRUEFEINGABE_500));
     const start = now().getTime();
-    const pruefeFenster = () => fordere(!eingabe500 || (anzahl <= 3
-      && now().getTime() >= Date.parse(P.BEGINN) && now().getTime() < Date.parse(P.ENDE)
+    fordere(!eingabe500 || (anzahl <= 3
       && ctx.tag === require("../lib/helmut/briefing-frische").berlinTagKey(now())));
-    pruefeFenster();
     const config = await pruefe({ env, fetchFn });
     fordere(config.ok && config.profileRelational && config.profileExclusive && config.v3Bereit
       && config.kommunikationGesperrt && config.kohortenQuellenGesperrt);
     if (eingabe500) fordere(config.test500PruefaufnahmeVersion === 1
+      && config.test500PruefaufnahmeFensterVersion === 1
       && config.testKosten?.version === 2 && config.testKosten.aktiv === true
       && config.testKosten.limitUsd === 4 && config.quellenkontext?.atomicLock === true);
     async function get(path, limit) {
@@ -84,11 +83,15 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
     const leseFenster = () => Z.lese({ laufId: env.HELMUT_NACHWEIS_TESTFENSTER,
       projectUrl: PROJECT_URL, key: env.SUPABASE_SERVICE_ROLE_KEY, fetchFn });
     const fenster = await leseFenster();
+    const pruefeFenster = () => {
+      if (eingabe500) P.aktiveFensterGrenzen(fenster, { laufId: env.HELMUT_NACHWEIS_TESTFENSTER,
+        commit: ctx.commit, tag: ctx.tag, now: now() });
+    };
+    pruefeFenster();
     const targetQuery = "mandate_profiles?select=user_id,aktiv&order=user_id.asc&limit=505";
     const all = await get(targetQuery, 505), target = Z.auswahl(all, fenster);
     if (eingabe500) {
-      const exact = P.pruefeBestand(all.map(r => ({ id: r.user_id, profileActive: r.aktiv })));
-      fordere(B.hash(exact) === B.hash(target));
+      fordere(B.hash(all.filter(r => r.aktiv).map(r => r.user_id).sort()) === B.hash(target));
     }
     const ids = target.slice(abPosition - 1, abPosition - 1 + anzahl);
     async function leseEingabe(id) {
@@ -97,7 +100,8 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
       const r = await fetchFn("https://helmut-pilot.vercel.app/api/cron/briefing-nachweis?modus=eingabe-500&mandat="
         + encodeURIComponent(id) + "&tag=" + ctx.tag, { method: "GET", redirect: "error",
         signal: AbortSignal.timeout(60000), headers: { Authorization: `Bearer ${env.HELMUT_CRON_SECRET}`,
-          Accept: "application/json", "x-helmut-production-commit": ctx.commit } });
+          Accept: "application/json", "x-helmut-production-commit": ctx.commit,
+          "x-helmut-testfenster": env.HELMUT_NACHWEIS_TESTFENSTER } });
       fordere(r.status === 200);
       const x = await r.json();
       fordere(x?.version === 1 && x.art === "production-briefing-eingabe-500"
@@ -105,7 +109,8 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
         && x.result?.eingabe?.mandat === id && x.result.eingabe.tag === ctx.tag
         && /^[a-f0-9]{64}$/.test(x.result.eingabe.eingabeHash || "")
         && x.reinLesend === true && x.modellaufrufe === 0 && x.schreibaufrufe === 0
-        && x.ziel === 500 && x.zielHash === P.ZIELHASH && x.testende === P.ENDE
+        && x.ziel === 500 && x.zielHash === fenster.manifest.zielHash && x.testende === fenster.manifest.endeAm
+        && x.testfenster === env.HELMUT_NACHWEIS_TESTFENSTER
         && x.transaktionalerSnapshot === false && x.fachlicheFreigabe === false
         && x.funktionsnachweis500 === false
         && Date.parse(x.erfasstAm) >= start && Date.parse(x.erfasstAm) <= now().getTime());

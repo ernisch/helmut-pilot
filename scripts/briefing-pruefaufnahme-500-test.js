@@ -50,5 +50,59 @@ function fixture() {
     x => { let n = 0; x.args.now = () => ++n > 5 ? new Date(P.ENDE) : zeit; }]) {
     const x = fixture(); mutate(x); await A.rejects(P.erfasse(x.args));
   }
-  console.log("5/5 aktive Aufnahmegruppen: feste Zielidentitaet, Zeit/Commit/Kostenkonfiguration, Konkurrenz, Drift und keine Fachfreigabe.");
+  function neuesFenster() {
+    const x = fixture(), N = require("./fixtures/nachweis-null500");
+    const row = JSON.parse(JSON.stringify(N.zeile()).replaceAll("2026-09-19", "2026-09-24"));
+    const q = row.data, m = q.manifest;
+    m.ids = x.profiles.filter(p => p.profileActive).map(p => p.id).sort();
+    m.ausserhalb = x.profiles.filter(p => !p.profileActive).map(p => p.id).sort();
+    m.zielHash = D.hash(m.ids);
+    let builds = 0, fensterReads = 0;
+    x.args.testfensterId = m.laufId; x.args.tag = "2026-09-24";
+    x.args.now = () => new Date("2026-09-24T12:01:00Z");
+    const config = x.args.config;
+    x.args.config = () => ({ ...config(), test500PruefaufnahmeFensterVersion: 1 });
+    x.args.get = async path => {
+      if (path.startsWith("helmut_store?")) { fensterReads++; return [structuredClone(row)]; }
+      return [];
+    };
+    x.args.build = async (p, id, opts) => {
+      builds++; A.equal(id, userId); A.equal(opts.aussagenEingabe, true);
+      return { eingabe: { mandat: id, tag: x.args.tag, eingabeHash: "f".repeat(64) },
+        korrekturBasis: { kos: [] }, briefing: { items: [] } };
+    };
+    return { ...x, row, counts: () => ({ builds, fensterReads }) };
+  }
+  const n = neuesFenster(), neu = await P.erfasse(n.args);
+  A.equal(neu.testfenster, n.row.data.manifest.laufId);
+  A.equal(neu.zielHash, n.row.data.manifest.zielHash); A.equal(neu.testende, n.row.data.manifest.endeAm);
+  A.equal(neu.modellaufrufe, 0); A.equal(neu.schreibaufrufe, 0); A.equal(neu.fachlicheFreigabe, false);
+  A.equal(n.counts().builds, 2); A(n.counts().fensterReads >= 3);
+  for (const mutate of [
+    x => x.args.testfensterId = "",
+    x => x.args.get = async () => [],
+    x => x.row.data.zustand = "beendet",
+    x => x.row.data.manifest.productionCommit = "b".repeat(40),
+    x => x.args.now = () => new Date(x.row.data.manifest.endeAm),
+    x => x.args.now = () => new Date(x.row.data.manifest.vorflugAm),
+    x => x.args.tag = "2026-09-23",
+    x => x.profiles[0].profileActive = false,
+    x => { x.profiles.find(p => !p.profileActive).profileActive = true; },
+    x => { const c = x.args.config; x.args.config = () => ({ ...c(), test500PruefaufnahmeFensterVersion: 0 }); }
+  ]) {
+    const x = neuesFenster(); mutate(x); await A.rejects(P.erfasse(x.args)); A.equal(x.counts().builds, 0);
+  }
+  for (const change of ["endzeit", "beendet"]) {
+    const x = neuesFenster(), get = x.args.get;
+    x.args.get = async path => {
+      const rows = await get(path);
+      if (path.startsWith("helmut_store?") && x.counts().fensterReads > 2) {
+        if (change === "endzeit") rows[0].data.manifest.endeAm = "2026-09-24T13:30:00.000Z";
+        else rows[0].data.zustand = "beendet";
+      }
+      return rows;
+    };
+    await A.rejects(P.erfasse(x.args));
+  }
+  console.log("8/8 Aufnahmegruppen: alter Auftrag gesperrt; neues aktives Fenster an Zeit, Commit, Zielmenge, Version und wiederholte Quittung gebunden; null Writes/Modelle.");
 })().catch(e => { console.error(e); process.exitCode = 1; });
