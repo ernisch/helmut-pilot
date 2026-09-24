@@ -1530,8 +1530,10 @@ async function abschnittRuntimeCommit() {
 //     (CAS `unbekannt`, keine Verknuepfung, kein Retry) — die uebrigen unabhaengigen Cluster
 //     werden weiterverarbeitet und vollstaendig bilanziert. Der Gesamtstatus bleibt rot
 //     (`bilanz.unbekannt > 0` ⇒ Quittung `unbekannt`, `ok = false`, `fachlichBestanden = false`).
-//   * KLASSE B `skipped-error`/`skipped-store`/`skipped-veraltet`: globaler Vertrags-/
-//     Infrastrukturfehler ⇒ unveraendert sofortiger Gesamtabbruch.
+//   * KLASSE B `cluster-error` (unerwarteter Motorwurf)/`skipped-error`/`skipped-store`/
+//     `skipped-veraltet`: globaler Vertrags-/Infrastrukturfehler ⇒ unveraendert sofortiger
+//     Gesamtabbruch. Ein Wurf ist NIE ein lokaler Fachfehler (nicht sicher klassifizierbar) und
+//     darf NIE zu `ok = true`/`fachlichBestanden = true` fuehren.
 // Der konkrete Production-Cluster `vg-gemeinsame-20260921-dcd0f5` wird ueber die BELEGTE
 // Fehlerklasse (`quellenbeleg-parteien` aus einem unbelegten `parteien`-Wert) abgedeckt — es wird
 // KEINE nicht gespeicherte Rohantwort erfunden.
@@ -1571,6 +1573,24 @@ function baueTransportWelt({ anzahl = 4, fehlerIndex = 1 } = {}) {
     if (index === fehlerIndex) throw new Error("ECONNRESET (Test)");
     w.welt.laufkostenUsd += w.welt.echteKosten;
     return ANALYSE;
+  };
+  return { ...w, docs, bindung: testbindung(docs) };
+}
+
+// Baut eine Welt mit `anzahl` unabhaengigen Clustern; beim `fehlerIndex`-ten SPEICHERWEG wirft der
+// Motor ungefangen (Code-/Speicher-/Infrastrukturfehler) → `cluster-error` (KLASSE B). Der Wurf
+// geschieht NACH dem Modellaufruf, damit die Zahl der Modellversuche exakt pruefbar bleibt.
+function baueWurfWelt({ anzahl = 4, fehlerIndex = 1 } = {}) {
+  const docs = [];
+  for (let i = 0; i < anzahl; i += 1) docs.push(rohesDokument("wf-" + i, WOERTER[i]));
+  const w = weltBauen({ dokumente: docs });
+  const original = w.welt.speicher.verstehenSpeichere.bind(w.welt.speicher);
+  let speicherNr = 0;
+  w.welt.speicher.verstehenSpeichere = async (args) => {
+    const index = speicherNr;
+    speicherNr += 1;
+    if (index === fehlerIndex) throw new Error("Speicherweg unerwartet (Test)");
+    return original(args);
   };
   return { ...w, docs, bindung: testbindung(docs) };
 }
@@ -1715,6 +1735,52 @@ async function abschnittLokalerClusterfehler() {
     A.equal(T.welt.aufrufe.length, 2, "der dritte Cluster wird NICHT mehr aufgerufen");
     A.equal(laufT.vollstaendigVerarbeitet, false);
     A.equal(laufT.lokaleUnbekannte, 0, "Transportfehler ist kein lokaler Clusterfehler");
+  });
+
+  // ── §25.29/§25.30: unerwarteter Motorwurf = KLASSE B (global fail closed) ──
+  const W = baueWurfWelt({ anzahl: 4, fehlerIndex: 1 });
+  await pruefeAsync("§25.29 Motor wirft im zweiten von vier Clustern — global fail closed, kein falsches Gruen", async () => {
+    const laufW = await V.fuehreAus({
+      ids: idsVon(W.docs), deps: W.deps, execute: true, commit: "test-commit",
+      erwartet: W.bindung, runId: "klasse-b-wurf", now: () => new Date()
+    });
+    A.equal(laufW.ergebnisse.length, 2, "nur zwei Cluster wurden betreten");
+    A.equal(laufW.ergebnisse[0].status, "saved", "der erste Cluster ist erfolgreich");
+    A.equal(laufW.ergebnisse[1].status, "cluster-error", "der zweite Cluster ist sichtbar cluster-error");
+    A.equal(laufW.ergebnisse[1].ausgang, null, "ein Wurf traegt keinen unbekannt-Ausgang");
+    A.equal(laufW.ergebnisse[1].dokumente, 1, "die bekannte Clustergroesse wird bilanziert");
+    A.equal(laufW.bilanz.arten["cluster-error"], 1);
+    A.equal(W.welt.aufrufe.length, 2, "genau zwei Modellversuche bis zum Fehler");
+    A.equal(laufW.modellaufrufe, 2);
+    A.equal(laufW.abbruchGrund, "verstehen-cluster-error");
+    A.equal(laufW.vollstaendigVerarbeitet, false);
+    A.equal(laufW.fachlichBestanden, false);
+    A.equal(laufW.ok, false);
+    A.equal(laufW.lokaleUnbekannte, 0);
+    A.equal(laufW.automatischeWiederholung, false);
+    A.equal(W.welt.abgeschlossen.status, "gestoppt", "Quittung terminal NICHT erfolgreich");
+    A.equal(W.welt.abgeschlossen.fachlichBestanden, false);
+    A.equal(W.welt.abgeschlossen.abbruchGrund, "verstehen-cluster-error");
+    // Das CAS bleibt unveraendert sicher: der bezahlte Aufruf ohne Ergebnis wird als unbekannt
+    // gesperrt (At-most-once), der Runner bricht dennoch global ab.
+    A.ok(W.welt.schritt.includes("ausgangUnbekannt"));
+    A.ok(!W.welt.schritt.includes("freigabe"), "kein automatischer Rueckweg");
+  });
+
+  await pruefeAsync("§25.30 ein cluster-error endet NIE mit ok/fachlichBestanden=true (auch als erster Cluster)", async () => {
+    const W1 = baueWurfWelt({ anzahl: 2, fehlerIndex: 0 });
+    const lauf1 = await V.fuehreAus({
+      ids: idsVon(W1.docs), deps: W1.deps, execute: true, commit: "test-commit",
+      erwartet: W1.bindung, runId: "klasse-b-wurf-2", now: () => new Date()
+    });
+    A.equal(lauf1.ergebnisse.length, 1, "kein Folgecluster nach dem Wurf");
+    A.equal(lauf1.ergebnisse[0].status, "cluster-error");
+    A.equal(lauf1.ergebnisse[0].dokumente, 1);
+    A.equal(W1.welt.aufrufe.length, 1, "kein Retry nach dem Wurf");
+    A.equal(lauf1.ok, false);
+    A.equal(lauf1.fachlichBestanden, false);
+    A.equal(lauf1.vollstaendigVerarbeitet, false);
+    A.equal(lauf1.abbruchGrund, "verstehen-cluster-error");
   });
 }
 

@@ -728,7 +728,17 @@ von 122 Clustern und 115 von 169 Dokumenten ungeprueft.
 | Klasse | Ausloeser | Wirkung |
 |---|---|---|
 | A — LOKALER CLUSTERFEHLER | `status === "skipped-invalid"` (fachlich ungueltige Modellantwort DIESES Clusters, z. B. `quellenbeleg-parteien`) | Vorgang terminal `unbekannt` gesperrt (CAS/Fencing, keine Verknuepfung, KEIN Retry); uebrige unabhaengige Cluster laufen weiter; Gesamtstatus bleibt rot |
-| B — GLOBALER VERTRAGS-/INFRASTRUKTURFEHLER | `skipped-error`, `skipped-store`, `skipped-veraltet` sowie alle Bindungs-, Lock-, Quittungs-, Kosten- und Zeitfehler | unveraendert sofortiger Gesamtabbruch vor dem naechsten Cluster |
+| B — GLOBALER VERTRAGS-/INFRASTRUKTURFEHLER | `cluster-error` (unerwarteter Motorwurf), `skipped-error`, `skipped-store`, `skipped-veraltet` sowie alle Bindungs-, Lock-, Quittungs-, Kosten- und Zeitfehler | unveraendert sofortiger Gesamtabbruch vor dem naechsten Cluster |
+
+**`cluster-error` ist ausdruecklich Klasse B.** Ein unerwartetes Werfen des Motors ist kein
+lokaler Fachfehler — die Ursache ist nicht sicher klassifizierbar (Code-, Speicher-,
+Infrastruktur- oder Vertragsfehler). Der betroffene Cluster wird mit seiner bekannten
+Clustergroesse als `cluster-error` bilanziert, dann bricht der Lauf mit dem eindeutigen Grund
+`verstehen-cluster-error` global ab: kein Folgecluster, `vollstaendigVerarbeitet = false`,
+`fachlichBestanden`/`ok` = false, Quittung terminal `gestoppt`. Ein `cluster-error` kann **nie**
+zu einem fachlichen Gruen fuehren. Die rohe Fehlermeldung wird bewusst NICHT persistiert (sie
+kann Hostnamen enthalten); das CAS setzt den nach dem Modellstart geworfenen Vorgang ueber den
+bestehenden Weg auf `unbekannt` (At-most-once, kein Retry).
 
 **Vollstaendig abgearbeitet ist NICHT fachlich bestanden.** Ein Klassen-A-Lauf kann alle Cluster
 abarbeiten; `bilanz.unbekannt > 0` haelt den Lauf trotzdem rot: `quittungStatus = "unbekannt"`,
@@ -746,12 +756,14 @@ bearbeitet (CAS-At-most-once) und nie erneut; die volle Reservierung des Aufrufs
 Ist die Quittung verbraucht, startet derselbe Auftrag nicht neu (`verstehen-bereits-verwendet`,
 0 Modellaufrufe).
 
-**Belege.** `scripts/verstehen-einmalig-test.js` §25 (**103/103** gruen, offline, 0 Modellaufrufe,
+**Belege.** `scripts/verstehen-einmalig-test.js` §25 (**105/105** gruen, offline, 0 Modellaufrufe,
 0 Production-Writes): genau ein unknown-Cluster bei `quellenbeleg-parteien`; kein zweiter
 modellseitiger Aufruf; die uebrigen Cluster laufen weiter; mehrere lokale unknown bleiben exakt
 gezaehlt; der unknown-Cluster wird NICHT zu `saved`/`merged`/`duplicate`; frueher erfolgreiche
 Cluster werden nicht zurueckgerollt; Aufruf- und USD-Deckel bleiben hart; ein globaler
-Transportfehler stoppt weiter fail closed; die Quittung wird genau einmal beansprucht.
+Transportfehler stoppt weiter fail closed; **ein unerwarteter Motorwurf im zweiten von vier
+Clustern stoppt global (`verstehen-cluster-error`) und kann NIE `ok`/`fachlichBestanden` = true
+werden**; die Quittung wird genau einmal beansprucht.
 Zusaetzlich gruen: `verstehen-169-neuversuch-test` (19/19), `verstehen-169-kosten-deckel-test`
 (29/29), `verstehen-169-workflow-test` (152/152), `verstehen-cas-vertrag-test` (107/107).
 **Kein Merge, kein neuer Lauf; die Wirkung ist NICHT Production-belegt.**
