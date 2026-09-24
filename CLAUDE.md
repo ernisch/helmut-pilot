@@ -17,8 +17,8 @@ dauerhaft verbindliche technische Projektregel entsteht.
   und die **einzige** Quelle für laufende Betriebszustände (aktive Profile, offene
   Migrationen, Blocker).
 
-**Stand:** 2026-09-24 (ausdrückliche Sprint-Merge-Dauerfreigabe in `AGENTS.md`;
-Verweise in §5/§6 angepasst, technische Schutzregeln unverändert)
+**Stand:** 2026-09-24 (kompakter Sprintstart und konkretes Merge-GO je PR nach
+neuester Nutzeranweisung; AGENTS.md führt den Arbeitsmodus)
 
 ---
 
@@ -36,13 +36,15 @@ Rechts- und Sicherheitsreife (P0: OP-01…OP-04), nicht Funktionsumfang.
 
 ## 2 · Pflichtlektüre bei jedem neuen Thread
 
-Die Pflichtlektüre und ihre Reihenfolge sind **verbindlich in [`AGENTS.md`](AGENTS.md)
-definiert** und werden hier nicht abweichend wiederholt. Sie umfasst:
+Der Sprintstart ist verbindlich in [`AGENTS.md`](AGENTS.md) definiert:
 
-1. `CLAUDE.md` (diese Datei)
-2. [`docs/START_HERE.md`](docs/START_HERE.md) — Produkt, Zielgruppe, Prinzipien
-3. [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md) — aktueller Stand, Blocker, offene PRs
-4. die für den betroffenen Bereich jeweils geltenden `AGENTS.md`
+1. geltende `AGENTS.md`
+2. [`docs/START_HERE.md`](docs/START_HERE.md)
+3. [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md)
+4. nur die für den konkreten Sprint benötigten Dateien
+
+Diese Datei nur vollständig lesen, wenn eine enthaltene Regel relevant ist oder
+`AGENTS.md` es ausdrücklich verlangt. Keine pauschale Vollhistorie lesen.
 
 Daraus ergibt sich der nächste Schritt. **Erst danach** aufgabenabhängig weiterlesen.
 
@@ -124,8 +126,8 @@ festgestellt wurde.
 
 ## 5 · Ohne ausdrückliche Freigabe verboten
 
-- Merge nach `main` (Merge = **Production-Deployment**) und jedes Deployment außerhalb
-  der ausdrücklichen Sprint-Merge-Dauerfreigabe in `AGENTS.md`
+- Merge nach `main` (Merge = **Production-Deployment**) ohne konkretes GO für genau
+  diesen PR sowie jedes andere Deployment ohne passende ausdrückliche Freigabe
 - Anwenden einer Migration auf Production. **Welche Migrationen offen sind, führt
   ausschließlich [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md)**; die Liste wird hier
   bewusst nicht dupliziert, damit sie nicht auseinanderläuft. Jede Anwendung bleibt
@@ -177,9 +179,9 @@ reversibel und eindeutig sinnvoll ist.
   Workflows und Vercel-Checks nie als Required Check setzen.
 - **PR-Beschreibung:** was geändert wurde, echte Testergebnisse (Zahlen, keine
   Behauptungen), Risiko, Rollback, und was bewusst **nicht** enthalten ist.
-- **Sprint-Merges autonom nach `AGENTS.md`.** Die dort dokumentierte ausdrückliche
-  Dauerfreigabe umfasst den Merge und das reguläre automatische Deployment.
-  CI, Nachkontrolle und getrennte Freigaben für andere Production-Aktionen bleiben Pflicht.
+- **Merge nur mit konkretem GO für genau diesen PR nach `AGENTS.md`.** Die frühere
+  Dauerfreigabe ist widerrufen. Grüne CI allein ist keine Merge-Freigabe.
+  Nach einem autorisierten Merge selbstständig nachprüfen und im Auftrag weiterarbeiten.
 - **Drei Testebenen (Testorganisation 2026-09-23):**
   - **Standard (immer):** Der CI-Pflichtlauf führt ausschließlich die explizite Kernmenge
     `STANDARD` in `scripts/run-offline-tests.js` aus.

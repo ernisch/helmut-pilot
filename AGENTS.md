@@ -30,20 +30,21 @@ Keine kosmetischen Änderungen ohne sachlichen Nutzen.
 
 Keine eigenmächtige Erweiterung des Arbeitsumfangs.
 
-## Pflichtlektüre vor jeder neuen Aufgabe
+## Sprintstart: kurz und rein lesend
 
-Bevor du irgendeinen Auftrag beantwortest oder ausführst, beginne rein lesend und lies die folgende Pflichtlektüre vollständig. Das gilt auch für Prüfungen, Planungen, Analysen und scheinbar kleine Aufgaben. Erst danach darfst du den Auftrag beantworten oder weitere Schritte ausführen.
+Vor jedem Sprint nur den aktuellen, benötigten Stand lesen:
 
-Lies vollständig und in dieser Reihenfolge:
-
-1. `CLAUDE.md`
+1. die geltenden `AGENTS.md`
 2. `docs/START_HERE.md`
 3. `docs/CURRENT_STATE.md`
-4. alle für den betroffenen Bereich geltenden `AGENTS.md`
+4. nur die für den konkreten Sprint benötigten Dateien
 
-Danach nur die Dateien lesen, die für die konkrete Aufgabe notwendig sind.
+`CLAUDE.md` nur vollständig lesen, wenn eine enthaltene Regel für den Sprint
+relevant ist oder eine geltende `AGENTS.md` es ausdrücklich verlangt. Dieser
+Abschnitt verlangt keine pauschale vollständige Lektüre von `CLAUDE.md`.
 
-Der aktuelle Production Stand darf niemals aus Erinnerung angenommen werden.
+Keine Vollhistorie lesen, wenn CURRENT_STATE und aktuelle Production-Belege den
+Stand eindeutig zeigen. Production niemals aus Erinnerung annehmen.
 
 ## Wahrheitsquellen
 
@@ -105,46 +106,36 @@ Push
 
 Pull Request
 
-Ein Push oder Pull Request allein erteilt keine zusätzliche Production-Freigabe.
-Für Sprint-Merges gilt die folgende ausdrückliche Dauerfreigabe des Nutzers vom 24.09.2026.
+Push und Pull Request sind erlaubt. Ein Merge benötigt immer ein konkretes GO
+für genau diesen PR. Die frühere Merge-Dauerfreigabe ist durch die neuere
+Nutzeranweisung vom 24.09.2026 widerrufen, auch für künftige Tasks.
 
-## Autonome Sprint-Abwicklung und Merge-Dauerfreigabe
+## Selbstständige Sprint-Abwicklung
 
-Innerhalb des vom Nutzer beauftragten Sprints oder klar definierten Problems arbeitet
-Codex selbstständig bis zum belegten Abschluss. Das umfasst Implementierung, gezielte
-Prüfungen, Fehlerkorrekturen, Commit, Push, Pull Request, Merge nach `main`, das dadurch
-ausgelöste reguläre Production-Deployment, rein lesende Nachkontrolle und Abschlussdokumentation.
-Für diese Sprint-Merges nicht erneut um Erlaubnis fragen. Die Freigabe gilt bis zum
-Widerruf auch in neuen Tasks; sie autorisiert keine eigenmächtige Erweiterung des Auftrags.
+Bei einem klaren Auftrag selbstständig analysieren, den kleinsten sicheren Fix
+umsetzen, gezielt prüfen, committen, pushen, einen PR erstellen und Pflicht-CI prüfen.
+Bis zum nächsten echten Freigabepunkt weiterarbeiten. Zusammenhängende Fehler
+selbst beheben; unabhängige neue Probleme für später dokumentieren, den Sprint
+nicht erweitern. Keine neuen Funktionen vor dem 500er Nachweis, außer sie beseitigen
+einen echten Blocker.
 
-Vor jedem Merge müssen alle Bedingungen erfüllt sein:
+Vor einem freigegebenen Merge Diff, aktuellen PR-Kopf, main und parallele Arbeit
+prüfen. Beide Pflichtprüfungen `Syntax + Offline-Suiten` und
+`Browser-/Mobile-Smoke (Chromium)` müssen für den aktuellen PR-Kopf erfolgreich
+sein. Merge an diesen Commit binden; keine Admin-Umgehung, kein Force-Push und
+keine Abschwächung von Schutzregeln für grüne Tests.
 
-- Nur Änderungen des beauftragten Sprints; eigener Branch und nachvollziehbarer PR.
-- Diff geprüft, keine bekannten kritischen Fehler oder ungeklärten Review-Blocker.
-- Beide Pflichtprüfungen `Syntax + Offline-Suiten` und
-  `Browser-/Mobile-Smoke (Chromium)` erfolgreich für den aktuellen PR-Kopf.
-- Aktuelles `main`, PR-Kopf und parallele Arbeit frisch geprüft; kein Konflikt.
-  Bei geändertem Basisstand erforderliche Integration prüfen, nicht alte CI als neuen Beleg verwenden.
-- Merge an den geprüften Commit binden; keine Admin-Umgehung, kein Force-Push,
-  keine Abschwächung von Tests oder Schutzregeln, um einen Merge zu erzwingen.
-- Wirkung, Risiko, rein lesende Nachkontrolle und Rückweg kurz benennen.
+Nach einem konkret freigegebenen Merge Deployment/Commit, relevante Fehlerprotokolle
+und betroffenen Zustand rein lesend prüfen, Pflicht-CI bis zum Ergebnis verfolgen
+und den belegten Stand dokumentieren. Danach innerhalb des Auftrags bis zum
+nächsten Freigabepunkt weiterarbeiten.
 
-Nach dem Merge selbstständig Deployment/Commit, relevante Fehlerprotokolle und
-betroffenen Zustand prüfen, Pflicht-CI bis zum Ergebnis verfolgen und den belegten
-Stand dokumentieren. Danach innerhalb desselben Auftrags weiterarbeiten; ein Merge
-allein ist kein Sprintabschluss. Behebbare Fehler innerhalb dieser Freigabe selbst
-korrigieren. Bei erreichtem Sprintziel oder echtem Blocker mit Belegen abschließen.
+## CI warten
 
-Die Dauerfreigabe umfasst **keine** Migrationen, Production-Daten-/CAS-/Profiländerungen,
-Cron-/Environment-/Azure-/Budgetänderungen, kostenpflichtige Production-Modellläufe,
-externe Nachrichten oder neue kostenpflichtige Ressourcen. Auch ein Merge darf
-solche separat freigabepflichtigen Aktionen nicht indirekt auslösen, solange deren
-konkrete Freigabe fehlt. Ein bereits ausdrücklich freigegebener Umfang muss nicht
-nochmals bestätigt werden.
-
-Bestehende technische Berechtigungen und automatische Genehmigungsprüfungen bleiben
-wirksam. Diese Projektregel ersetzt sie nicht; keine globalen Sandbox- oder
-Sicherheitseinstellungen zur Umgehung einer Sperre ändern.
+Bei laufender GitHub-CI einmal den Status prüfen, dann in sinnvollen Abständen.
+Nicht alle paar Sekunden pollen und keine Befehlsflut für unveränderte Zustände.
+Pflicht-CI nicht zusätzlich lokal duplizieren; bereits belegte Tests nicht ohne
+konkreten Grund wiederholen.
 
 ## Tests
 
@@ -182,7 +173,7 @@ Keine Endlosschleifen.
 
 ## Production Schutz
 
-Production Änderungen benötigen eine ausdrückliche Freigabe für die konkrete Aktion und den konkreten Umfang. Für Sprint-Merges samt regulärem Deployment ist diese durch die obige Dauerfreigabe erteilt; für die übrigen Aktionen bleibt sie gesondert erforderlich.
+Production Änderungen benötigen ein ausdrückliches GO für die konkrete Aktion und den konkreten Umfang. Merge braucht immer ein konkretes GO für genau diesen PR; Push und PR sind keine Merge-Freigabe.
 
 Dies betrifft insbesondere:
 
@@ -216,7 +207,7 @@ externe Nachrichten
 
 kostenpflichtige Ressourcen
 
-Außerhalb der ausdrücklich erteilten Merge-Dauerfreigabe gilt eine Freigabe nur für ihre konkrete Aktion und ihren Umfang, nicht automatisch für eine spätere Aktion.
+Eine Freigabe gilt nur für ihre konkrete Aktion und ihren Umfang, nicht automatisch für eine spätere Aktion.
 
 Provisionierung ist keine Aktivierungsfreigabe.
 
@@ -240,7 +231,8 @@ Wie wird anschließend rein lesend kontrolliert?
 
 Was ist der Rückweg?
 
-Danach nur im freigegebenen Umfang handeln.
+Dann stoppen, sofern das ausdrückliche GO für genau diese Aktion noch fehlt.
+Nur im konkret freigegebenen Umfang handeln.
 
 ## Kostenpflichtige Tests
 
@@ -269,6 +261,10 @@ Keine stillen Budgeterhöhungen.
 Das zentrale Projektziel ist der belastbare Nachweis mit exakt 500 gleichzeitig aktiven Profilen.
 
 Aktivierung allein ist kein Funktionsnachweis.
+
+Für exakt 500 aktive Testprofile müssen 500 Mandatsbriefings, 500 Morgenbriefings
+und 500 Lage-Ergebnisse vollständig bilanziert werden: 1500 erwartete Ergebnisse.
+Fehlend, leer, doppelt, unbrauchbar und technisch fehlerhaft getrennt ausweisen.
 
 Der gültige Testplan bestimmt die notwendigen Stufen.
 
@@ -338,23 +334,7 @@ oder
 
 Gescheitert
 
-### Kernbefund
-
-Was wurde tatsächlich festgestellt oder geändert?
-
-### Belege
-
-Branch
-
-Commit
-
-Pull Request
-
-relevante Tests
-
-relevanter Production Beleg
-
-Nur vorhandene Belege nennen.
+Belege knapp beim jeweiligen Befund verlinken; nur vorhandene Belege nennen.
 
 ### Was funktioniert?
 
@@ -368,7 +348,7 @@ Kurze Antwort.
 
 Genau der nächste sinnvolle Schritt.
 
-### Was muss freigegeben werden?
+### Was muss ich freigeben?
 
 Nur Aktionen nennen, die tatsächlich eine Freigabe benötigen.
 
@@ -376,9 +356,21 @@ Wenn nichts benötigt wird:
 
 Keine Freigabe erforderlich.
 
+### Hier weiter oder neuer Thread?
+
+Kurze Empfehlung.
+
+### Empfohlene Denkstufe?
+
+Mittel für einfache rein lesende Prüfungen. High für normale Implementierung und
+Fehlerbehebung. Max nur bei kritischer Production-Sicherheit oder schwerem,
+unklarem Fehler.
+
 ## Kommunikationsstil
 
-Kurz und konkret schreiben.
+Kurz und konkret schreiben. Keine routinemäßigen Zwischenberichte zu jedem
+Teilschritt oder unverändert laufender CI; Blocker und echte Freigabepunkte benennen.
+Keine langen Wiederholungen des Projektstands.
 
 Der Nutzer ist kein Entwickler.
 
@@ -401,3 +393,9 @@ Wenn etwas nicht geprüft wurde, ausdrücklich sagen, dass es nicht geprüft wur
 Sicherheit und belegbare Wahrheit haben Vorrang vor Geschwindigkeit.
 
 Innerhalb dieser Grenze ist Geschwindigkeit zum 500er Production Nachweis wichtiger als Perfektion, neue Funktionen oder unnötige technische Aufräumarbeiten.
+
+## Reihenfolge bis zum 500er Nachweis
+
+Nach den vier offenen Understanding-Fällen folgt der kleine Pflichtsprint
+Lage / Radar / Briefing Trennung. Danach der 500er Production-Nachweis zunächst
+mit GPT 5 mini. Keine Nebenprojekte.

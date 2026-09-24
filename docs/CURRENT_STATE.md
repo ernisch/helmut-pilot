@@ -54,7 +54,7 @@ Der historische Abschlusslauf vom 15. und 16.09. hat den Gesamtnachweis **nicht*
 
 * **Nur ein schreibender Ausfuehrer** im selben Production oder Testbereich. Fremde Arbeit erhalten. Bei unklarer Parallelitaet nicht schreiben.
 * **Alle 504 Profile bleiben inaktiv**, bis eine konkret benannte Aktivierung fuer exakt 500 Testprofile ausdruecklich freigegeben wird.
-* Sprint-Merges samt regulaerem automatischem Deployment sind seit 24.09.2026 nach `AGENTS.md` dauerhaft freigegeben. Andere Deployments/Umschaltungen, Migrationen, Production Daten-/Profil-/CAS-Aenderungen, Cron-/Environment-/Azure-/Budgetaenderungen, externe oder kostenpflichtige Modelllaeufe und externe Nachrichten brauchen weiterhin passende konkrete Freigaben.
+* **Neueste Nutzerregel vom 24.09.2026:** Merge braucht ein konkretes GO fuer genau diesen PR; die zwischenzeitliche Dauerfreigabe aus PR #544 ist widerrufen. Push und PR bleiben erlaubt. Migrationen, Production Daten-/Profil-/CAS-Aenderungen, Cron-/Environment-/Azure-/Budgetaenderungen, externe oder kostenpflichtige Modelllaeufe und externe Nachrichten bleiben konkret freigabepflichtig.
 * `HELMUT_SOURCE_MODE=on`, `HELMUT_VERSTEHEN_CAS=on`, `HELMUT_SCALABLE_PIPELINE=on` im Modus `shadow`. `HELMUT_TENANT_LLM_CAP` bleibt aus und darf fuer den 500er Test nicht eingeschaltet werden. Kommunikations und Testkohortenriegel bleiben wirksam.
 * Relationaler Profilpfad und Exklusivmodus sind Production belegt. Vor einem neuen 500er Fenster Daten und Ausfuehrungskontext frisch abgleichen.
 * Die Endfunktion fuer das Testfenster ist installiert. Offene Migrationen `20260720`, `20260825101500` und `20260902121500` bleiben unangewendet und brauchen jeweils separate Freigabe.
@@ -91,7 +91,7 @@ Vollstaendige historische Betriebswerte zu Crons, Flags, Migrationen, Quellenpak
 
 Der begrenzte Bedienweg erlaubt nur eine ausdrueckliche Teilmenge der vier bekannten Kennungen, maximal einen Modellversuch je Fall, insgesamt hoechstens vier, 0,30 USD und 20 Minuten. Neue feste Einmalquittung `verstehen4-20260924-a`; keine Wiederholung des 169er Laufs. Die neue Migration `20260924140548_verstehen_vier_start.sql` ist **nur vorbereitet, nicht angewendet**. Sie verbindet CAS-Freigabe und Startmarke atomar, damit kein Cron den freigegebenen Vorgang uebernehmen kann. [Plan, Fallentscheidungen, Schutzvertrag und Rueckweg](betrieb/verstehen-vier-nacharbeit-20260924.md).
 
-Sprint-Merges laufen autonom nach `AGENTS.md`. Migration, scharfer Dispatch und CAS-/Profil-/Budgetaenderungen brauchen weiterhin das jeweilige konkrete GO. Vor einem Modelllauf: Quellenentscheid (insbesondere moeglicher Ereignismix beim Arbeitsplaetze-Fall; alte Dachmeldung nicht blind wiederholen), frischer rein lesender Plan und Freigabe fuer konkrete Auswahl, Hash und Runtime. Erfolgreiche Teilmengen schliessen ausgeschlossene Faelle nicht ab.
+Jeder weitere Merge braucht nach `AGENTS.md` ein konkretes GO fuer genau den PR. Migration, scharfer Dispatch und CAS-/Profil-/Budgetaenderungen brauchen weiterhin das jeweilige konkrete GO. Vor einem Modelllauf: Quellenentscheid (insbesondere moeglicher Ereignismix beim Arbeitsplaetze-Fall; alte Dachmeldung nicht blind wiederholen), frischer rein lesender Plan und Freigabe fuer konkrete Auswahl, Hash und Runtime. Erfolgreiche Teilmengen schliessen ausgeschlossene Faelle nicht ab.
 
 Nach fachlichem Abschluss der vier Faelle folgt vor dem 500er Nachweis der Pflichtsprint **Lage / Radar / Briefing Trennung**. Die spaetere 500er Aktivierung und Vollversorgung brauchen eigene Freigaben.
 
