@@ -149,4 +149,13 @@ test("Hoch priorisierte heutige Frist wird nicht von bloßer Artikelfrische verd
   const debug = C.buildPrimarySelectionDebug({ ...args, decisionsAfter:args.decisions, state });
   assert.equal(debug.selectedPrimary.vorgang_id, state.primaryVorgangId);
 });
+test("Production-Zeitstempel und Berliner Tagesgrenze tragen denselben Fristvertrag", () => {
+  const ds = [doc("frist", "2026-09-20", { summary:"Die Einreichungsfrist endet am 24.09.2026." })];
+  for (const deadline of ["2026-09-24T00:00:00+00:00", "2026-09-23T22:30:00Z"]) {
+    assert.equal(B.tagesAnlass(ds, now, null, { deadline }).art, "heutige-frist");
+  }
+  for (const deadline of ["2026-09-24T00:00:00", "2026-02-30", "2026-09-24T99:00:00Z"]) {
+    assert.equal(B.tagesAnlass(ds, now, null, { deadline }), null);
+  }
+});
 console.log(`${count}/${count} Bereichsvertragsfälle bestanden; offline, ohne Modellaufruf.`);

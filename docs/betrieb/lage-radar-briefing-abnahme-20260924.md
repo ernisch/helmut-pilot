@@ -11,7 +11,8 @@ Rein lesend belegte Production: Commit
 `bf95ebd810a69ec224a07d034f95543b5957a396`, Vercel
 `dpl_GH7QGAfDCyiufvyfu7Gc5pSGB9Co`, READY, Production-Alias
 `helmut-pilot.vercel.app`. Die folgende Ist-Analyse bezieht sich auf diesen Code.
-Die Reparatur liegt separat auf `codex/lage-radar-briefing-vertrag-20260924`.
+Die Reparatur liegt separat auf `codex/lage-radar-briefing-vertrag-20260924`,
+[PR #553](https://github.com/ernisch/helmut-pilot/pull/553).
 Kein Deployment, Profilwrite, Modelllauf oder 500er Start in diesem Auftrag.
 Keine aktuelle Vollprüfung der gespeicherten Texte aller Profile durchgeführt.
 
@@ -21,6 +22,32 @@ Quellen-/Fristprüfung sowie Aussagen-, Gesamturteil- und Speicherverträge.
 `radar.js` enthält daneben ältere Archiv-/Adminlogik; sie ist nicht der aktive
 Radar-Reiter. API-Aliase wie `items` und `homeSections` sind keine zusätzlichen
 sichtbaren Reiter und bleiben als interne Vertrags-/Prüfdaten erhalten.
+
+## Zusätzlicher aktueller Production-Beleg: Tagesversorgung
+
+Nur SELECT-Aggregate gegen Production `ddckuvvpcytqbyfmbvie`, keine Profiltexte
+oder personenbezogenen Ausgaben gelesen, keine Writes:
+
+| Lesung am 24.09.2026 UTC | Ergebnis |
+| --- | --- |
+| 18:20:17, verstandene KOs (`complete`, nicht `pending`) | 4.822 |
+| Dazu über `ko_document_links` verknüpfte Rohquellen | 9.205 |
+| Jüngste nichtzukünftige Veröffentlichung | 22.09.2026, 12:29:07 UTC |
+| Quellen/Vorgänge seit Standardfensterbeginn 23.09., 14:00 UTC | **0 / 0** |
+| 18:21:07, heutige bzw. zukünftige KO-Fristfelder (Berliner Tag) | **0 / 0** |
+| 18:21:51, Morgenlage-Quittungen innerhalb drei Tagen | **0** |
+| Jüngste Morgenlage-Quittung | 16.09.2026, 05:04:07 UTC |
+
+Das Standardfenster wurde aus `briefing-frische.frischeFenster` berechnet. Ein
+jüngerer erfolgreicher Lauf könnte es verändern; die Quittungslesung liefert
+keinen solchen Kandidaten im Standardrückblick. Diese Aggregate sind kein
+500er Inhalts-/Profilnachweis und keine Prüfung abweichender Environmentwerte.
+Sie belegen aber einen konkreten Vorbereitungsbedarf: Der aktuelle Bestand
+liefert für den Standardvertrag keinen neuen Tagesanlass. Vor einem neuen
+Testfenster muss die Tagesversorgung innerhalb eines konkret geplanten und
+freigegebenen Umfangs hergestellt sein. Alte Quellen dürfen nicht umdatiert oder
+nur neu verstanden werden. Die frühere abgeschlossene 169er Vorlaufstufe wird
+hierdurch nicht rückwirkend verworfen oder automatisch wiederholt.
 
 ## Antworten zum bisherigen Production-Verhalten
 
@@ -119,7 +146,7 @@ Bis diese Prüfung positiv belegt ist, bleibt die Gesamtanforderung offen.
 
 ## Repräsentative Abnahme
 
-`scripts/briefing-bereichsvertrag-test.js` prüft 19 synthetische Fallgruppen durch
+`scripts/briefing-bereichsvertrag-test.js` prüft 20 synthetische Fallgruppen durch
 reale Adapter. Kein Fixtureurteil ist ein Production-Fachurteil.
 
 | Fall | Erwartung |
