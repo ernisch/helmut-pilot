@@ -61,6 +61,31 @@ async function main() {
     A.equal(w.stats.calls + w.stats.writes + w.stats.claims, 0);
     A.ok(!JSON.stringify(V.uebersicht(p)).includes("example.org"));
   });
+  await test("Profilinventur schuetzt auch das 505. Konto ohne Mandat", async () => {
+    const mandate = Array.from({ length: 504 }, (_, i) => ({ user_id: String(i), aktiv: false }));
+    const profile = Array.from({ length: 505 }, (_, i) => ({ id: String(i), name: "vorher" }));
+    const requests = [];
+    const d = adapter({ request: async (p, options) => {
+      A.equal(options, undefined); // ausschliesslich GET, keine Writes
+      requests.push(p);
+      const u = new URL(p, "https://example.invalid");
+      const rows = u.pathname.endsWith("/mandate_profiles") ? mandate : profile;
+      return clone(rows.slice(0, Number(u.searchParams.get("limit"))));
+    } });
+    const vorher = await d.profile();
+    A.equal(vorher.anzahl, 504); A.equal(vorher.aktiv, 0);
+    A.equal(vorher.hash, V.hash({ mandate, profile }));
+    profile[504].name = "nachher";
+    A.notEqual((await d.profile()).hash, vorher.hash);
+    A.ok(requests.some(p => p.includes("profiles?select=*&order=id.asc&limit=506")));
+  });
+  await test("Abgeschnittene und gewachsene Profilbestaende bleiben gesperrt", async () => {
+    for (const [mandate, profile] of [[503, 505], [505, 505], [504, 504], [504, 506], [500, 500]]) {
+      const d = adapter({ request: async p => Array.from({ length:
+        p.includes("/mandate_profiles?") ? mandate : profile }, (_, i) => ({ id: String(i), aktiv: false })) });
+      await A.rejects(d.profile(), /vier-profile-abweichend/);
+    }
+  });
   await test("Vier Erfolge, genau vier Calls und belegter Abschluss", async () => {
     const w = welt(), r = await w.lauf();
     A.equal(r.ok, true); A.equal(r.modellaufrufe, 4); A.equal(w.stats.calls, 4);

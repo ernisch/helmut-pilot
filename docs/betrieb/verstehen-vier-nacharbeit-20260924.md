@@ -26,6 +26,14 @@ Funktionskoerper exakt mit der freigegebenen Datei verglichen. `SECURITY INVOKER
 
 Rueckweg bleibt `rollback_20260924140548_verstehen_vier_start.sql`: nur den neuen RPC entfernen, erst wenn kein Viererauftrag laeuft. Nicht ausgefuehrt. Naechster Freigabepunkt bleibt der konkrete Fall-/Modellauftrag nach Quellenentscheid und rein lesendem Plan.
 
+## Rein lesender Plan: Profilinventur korrigiert
+
+[Planlauf 36026653262](https://github.com/ernisch/helmut-pilot/actions/runs/36026653262) auf main `cb5a9d5fa6471143e1661d50b9b7e46943606ed1` stoppte vor allen Writes mit `vier-profile-abweichend`. Production hat **504 Mandatsprofile, aber 505 Kontoprofile**: 504 Konten mit Mandat, eines ohne Mandat. Der Adapter hatte faelschlich weniger als 505 Konten vorausgesetzt.
+
+Kleinster Fix: exakt 505 Kontoprofile verlangen und bis zu 506 lesen, um Mehrbestand zu erkennen. Exakt 504 inaktive Mandatsprofile bleiben Pflicht. Alle 505 Kontoprofile bleiben vollstaendig im Schutz-Hash, auch das Konto ohne Mandat; kein Profil wird entfernt oder ausgeblendet. Gezielt testgesichert: realer 504/505-Bestand, Aenderung am 505. Konto aendert den Hash, kleinere/abgeschnittene und groessere Bestaende stoppen weiterhin.
+
+Fachlicher Vorschlag nach erneuter Bestandspruefung: nur Demo-Anreise (`vg-gemeinsame-20260921-dcd0f5`) und Koçak (`vg-linkenpolitiker-20260921-37cdeb`) fuer einen begrenzten neuen Versuch planen. Arbeitsplaetze wegen moeglichem Ereignismix und die Dachmeldung ohne URL bleiben zurueckgestellt und gesperrt. Das ist keine CAS- oder Modellfreigabe; auch nach zwei erfolgreichen Faellen bleiben zwei offen. Ein neuer rein lesender Plan am korrigierten main ist vor einem scharfen Auftrag erforderlich.
+
 ## Ausgangsbelege
 
 Rein lesend am 24.09.2026 bestaetigt:
