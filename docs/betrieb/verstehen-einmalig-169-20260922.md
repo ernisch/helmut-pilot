@@ -986,16 +986,21 @@ Geliefert wurde die Beseitigung der **Unsichtbarkeit** (wertfreie, rohwertfreie 
 
 ### Die Reparatur (kleinste sichere Loesung, generisch)
 
-* **`parteien` wird deterministisch reduziert — nur bei nachgewiesener Unabhaengigkeit**
-  (`ohneUnbelegteAkteurswerte`): derselbe Beleg wie im strengen Validator, aber ein unbelegter
-  String entfaellt **nur dann**, wenn er in **keinem anderen Feld** der Antwort vorkommt (Prosa,
-  Empfehlung, Risiko/Chance, Listen, strukturierte Kommunikations-/Handlungselemente). Sonst bleibt
-  `parteien` unveraendert und die Antwort wird wie bisher abgewiesen (`quellenbeleg-parteien`,
-  `skipped-invalid`, nichts gespeichert) — **keine** abhaengige Prosa wird entfernt oder
-  umgeschrieben. Damit bleibt der historische Grund der Sonderstrenge („keine stille
-  Listenbereinigung bei erhaltener abhaengiger Empfehlung“) wirksam und wird geprueft statt
-  umgangen. Die Beteiligungsliste `ausschuesse` bleibt **vollstaendig streng**; der strenge
-  Validator und der GOLDSET-Auswerter pruefen unveraendert jeden Rohwert.
+* **`parteien` wird NICHT reduziert — die Rettung wurde geprueft und VERWORFEN** (Reviewblocker,
+  PR #542): ein unbelegter struktureller `parteien`-Wert sperrt die **gesamte** Antwort weiterhin
+  fail closed (`quellenbeleg-parteien`, `skipped-invalid`, nichts gespeichert). Ein erster Versuch
+  reduzierte den Listeneintrag nur, wenn der Name in **keinem anderen Feld** vorkam — das wurde
+  **verworfen**, weil ein blosser Namensvergleich **keine** semantische Unabhaengigkeit belegt: eine
+  umschreibende Prosa kann semantisch von genau der entfernten unbelegten Parteibeteiligung
+  abhaengen, **ohne den Namen zu tragen** (`parteien = ["Fantasiepartei"]` +
+  `warum_wichtig = "Die Regierungspartei blockiert das Vorhaben."`). Eine belastbare
+  quellengebundene Belegstruktur je KO-Prosa-Aussage existiert **nicht**
+  ([`../START_HERE.md`](../START_HERE.md) §5, [`../quellenpflicht-nachweis-2026-08-22.md`](../quellenpflicht-nachweis-2026-08-22.md) §2).
+  Deshalb gilt der historische Vertrag „keine stille Listenbereinigung bei erhaltener abhaengiger
+  Empfehlung“ unveraendert. `mentioned_parties` und die beiden Ministeriumslisten werden weiter
+  reduziert; `mentioned_parties` wird **nie** zu `parteien` befoerdert. Die Beteiligungsliste
+  `ausschuesse` bleibt **vollstaendig streng**; der strenge Validator und der GOLDSET-Auswerter
+  pruefen unveraendert jeden Rohwert.
 * **Wertfreie Schema-Diagnose** (`sichereSchemaFehler` in `understanding-schema.js`): die
   Schema-/DSGVO-Meldungen werden zusaetzlich als feste, **wertfreie** Codes gefuehrt
   (`schema-leer:<feld>`, `schema-enum:<feld>`, `schema-typ:<feld>`, `dsgvo-pii-feld`,
@@ -1014,7 +1019,8 @@ Geliefert wurde die Beseitigung der **Unsichtbarkeit** (wertfreie, rohwertfreie 
 **Belege.** `node scripts/lokal.js -- node scripts/run-offline-tests.js --aendert "<geaenderte
 Dateien>"` (STANDARD + automatische Bereichs-Regression, offline, 0 Modellaufrufe, 0
 Production-Writes) sowie die Pflicht-CI des PR. Zusaetzlich gezielt:
-`parteien-quellenbindung-test` **29/29** (die zehn Pflichtfaelle in **beiden** Pfaden),
+`parteien-quellenbindung-test` **31/31** (die Pflichtfaelle in **beiden** Pfaden, inkl. vier
+umschreibender Prosa-Varianten **ohne** Parteinamen ⇒ **nicht gespeichert**),
 `understanding-schema-diagnose-test` **51/51** (Vermessung des Schema-/DSGVO-Bereichs),
 `personen-quellenbindung-test` 10/10 (war auf `main` **bereits rot** — Altbestand aus PR #537,
 nie in der CI gelaufen; ueber einen temporaeren Worktree auf `origin/main` belegt),

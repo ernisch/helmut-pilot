@@ -1292,14 +1292,13 @@ async function abschnittInvalidDiagnose() {
     A.ok(!r.errors.includes("quellenbeleg-mentioned_ministries"));
     A.ok(r.errors.every((e) => typeof e === "string"));
   });
-  await pruefeAsync("§23.1b unbelegte STRINGS in den reduzierbaren Listen (parteien/ministerien) sperren nicht mehr", async () => {
-    const R = baueInvalidWelt({ unbelegte: ["parteien", "ministerien", "mentioned_ministries"] });
+  await pruefeAsync("§23.1b unbelegte STRINGS in den reduzierbaren Listen (ministerien/mentioned_*) sperren nicht mehr", async () => {
+    const R = baueInvalidWelt({ unbelegte: ["ministerien", "mentioned_ministries"] });
     const rd = { ...R.deps };
     delete rd.verstehenVertrag;
     const cluster = clusterRawDocuments(R.docs.map((d) => ({ ...d })))[0];
     const rr = await understanding.understandOneCluster(cluster, rd, {});
     A.equal(rr.status, "saved", JSON.stringify(rr));
-    A.equal(R.welt.gespeichert[0].parteien.length, 0, "unbelegter Parteiwert wird nicht gespeichert");
     A.equal(R.welt.gespeichert[0].ministerien.length, 0);
   });
   await pruefeAsync("§23.5 Erstverstehen-Invalid traegt documents = Clustergroesse (Motor)", async () => {
@@ -1340,10 +1339,12 @@ async function abschnittInvalidDiagnose() {
     A.ok(Array.isArray(e.validierungsfehler) && e.validierungsfehler.length >= 1);
     A.ok(e.validierungsfehler.every((c) =>
       /^(ki-antwort-nicht-verwertbar|decision_level-antwortkonflikt|quellenbeleg-[a-z_]+|(schema|dsgvo)-[a-z-]+(:[a-z0-9_.]+)?)$/.test(c)));
-    // `ausschuesse` bleibt streng; der unbelegte `parteien`-Wert wird dagegen entfernt (Reduktion)
-    // und erzeugt deshalb KEINEN Fehlercode mehr.
+    // `parteien` UND `ausschuesse` bleiben STRENG: ein unbelegter struktureller Wert liefert
+    // weiterhin seinen festen Code (keine stille Listenbereinigung). Eine `parteien`-Reduktion
+    // wurde geprueft und verworfen (semantische Abhaengigkeit der Prosa ist per Namensvergleich
+    // nicht ausschliessbar).
     A.ok(e.validierungsfehler.includes("quellenbeleg-ausschuesse"));
-    A.ok(!e.validierungsfehler.includes("quellenbeleg-parteien"));
+    A.ok(e.validierungsfehler.includes("quellenbeleg-parteien"));
   });
 
   await pruefeAsync("§23.3b hoechstens fuenf Codes; unsichere Meldungen bleiben aussen", async () => {
@@ -1362,7 +1363,7 @@ async function abschnittInvalidDiagnose() {
     // Ein frei formulierter Schema-Fehlertext wird NICHT uebernommen — aber sein WERTFREIER Code
     // (nur der Feldpfad) schon: seit dem Production-Befund 2026-09-24 bleibt eine rein
     // schemabedingte Ablehnung damit nicht mehr anonym (`validierungsfehler = []`).
-    const D = baueInvalidWelt({ unbelegte: ["parteien"], extraAntwort: { was_ist_passiert: "" } });
+    const D = baueInvalidWelt({ unbelegte: [], extraAntwort: { was_ist_passiert: "" } });
     const laufD = await V.fuehreAus({
       ids: idsVon(D.docs), deps: D.deps, execute: true, commit: "test-commit", erwartet: D.bindung,
       runId: "invalid-schema", now: () => new Date()
@@ -1373,8 +1374,6 @@ async function abschnittInvalidDiagnose() {
     A.deepEqual(laufD.ergebnisse[0].validierungsfehler, ["schema-leer:was_ist_passiert"]);
     A.ok(!JSON.stringify(laufD).includes("leer/zu kurz"), "kein Rohmeldungstext im Bericht");
     A.ok(!JSON.stringify(D.welt.abgeschlossen).includes("leer/zu kurz"));
-    // Der unbelegte `parteien`-String sperrt nicht mehr (Reduktion) — kein `quellenbeleg-parteien`.
-    A.ok(!laufD.ergebnisse[0].validierungsfehler.includes("quellenbeleg-parteien"));
   });
 
   await pruefeAsync("§23.4 kein Prompt und keine Modellantwort im Bericht oder in der Quittung", async () => {
@@ -1561,8 +1560,8 @@ async function abschnittRuntimeCommit() {
 //     Gesamtabbruch. Ein Wurf ist NIE ein lokaler Fachfehler (nicht sicher klassifizierbar) und
 //     darf NIE zu `ok = true`/`fachlichBestanden = true` fuehren.
 // Der lokale Clusterfehler wird ueber die WEITERHIN STRENGE Beteiligungsliste `ausschuesse`
-// erzeugt (nach der `parteien`-Reduktion vom 2026-09-24 sperrt ein unbelegter Parteiwert nicht
-// mehr) — es wird KEINE nicht gespeicherte Rohantwort erfunden.
+// erzeugt (wie `parteien` — eine `parteien`-Reduktion wurde geprueft und verworfen) — es wird
+// KEINE nicht gespeicherte Rohantwort erfunden.
 
 // Baut eine Welt mit `anzahl` unabhaengigen Clustern; die Aufrufe an den Positionen
 // `invalidIndizes` liefern eine fachlich ungueltige Antwort (unbelegte Beteiligungsliste

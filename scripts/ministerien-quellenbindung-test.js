@@ -146,11 +146,12 @@ async function main() {
     assert(r.errors.includes("quellenbeleg-ausschuesse"), JSON.stringify(r.errors));
     assert.equal(s.p.gespeichert.length, 0); assert.equal(s.p.aufrufe, 1);
   });
-  await test("Die Beteiligungsliste `parteien` wird seit dem 169er-Befund 2026-09-24 ebenfalls reduziert", async () => {
+  await test("Die Beteiligungsliste `parteien` bleibt ebenfalls streng (kein Freibrief)", async () => {
     const s = stand({ ...ANALYSE, parteien: ["Voellig Unbelegt"] });
     const r = await first(fixture(), s);
-    assert.equal(r.status, "saved", JSON.stringify(r));
-    assert.deepEqual(s.p.gespeichert[0].parteien, [], "unbelegter Parteiwert wird nicht gespeichert");
+    assert.equal(r.status, "skipped-invalid", JSON.stringify(r));
+    assert(r.errors.includes("quellenbeleg-parteien"), JSON.stringify(r.errors));
+    assert.equal(s.p.gespeichert.length, 0); assert.equal(s.p.aufrufe, 1);
   });
   await test("Erwaehnungslisten werden deterministisch reduziert und sperren die Antwort nicht mehr", async () => {
     // Production-Befund 2026-09-24 (Run 35934515630): ein einzelner unbelegter
@@ -203,22 +204,24 @@ async function main() {
     assert.equal(s.p.gespeichert[0].ko_version, 5);
     assert.equal(s.p.aufrufe, 1); assert.equal(s.p.unbekannt, 0);
   });
-  await test("Aktualisierung: unbelegte Partei wird entfernt und nicht gespeichert", async () => {
+  await test("Aktualisierung: unbelegte Partei sperrt die Antwort; der Bestand bleibt unangetastet", async () => {
     const c = fixture(), s = stand({ ...ANALYSE, parteien: ["Unbelegte Partei"] });
     const existing = { id: "ko-" + vorgangId, ko_version: 4, headline: "Erhaltener Bestand" };
     const vorher = structuredClone(existing);
     const r = await U.understandUpdate(c, s.deps, { vorgangId, existing, neueDocs: c.documents,
       neueAnker: [], spur: {}, alleDocs: c.documents, vertrag: s.vertrag });
-    assert.equal(r.status, "updated", JSON.stringify(r));
+    assert.equal(r.status, "skipped-invalid", JSON.stringify(r));
+    assert(r.errors.includes("quellenbeleg-parteien"), JSON.stringify(r.errors));
     assert.deepEqual(existing, vorher, "der Bestand wird nicht mutiert");
-    assert.equal(s.p.gespeichert.length, 1);
-    assert.deepEqual(s.p.gespeichert[0].parteien, [], "unbelegter Parteiwert wird nicht gespeichert");
-    assert.equal(s.p.aufrufe, 1); assert.equal(s.p.unbekannt, 0);
+    assert.equal(s.p.gespeichert.length, 0, "unbelegter Parteiwert wird nicht gespeichert");
+    assert.equal(s.p.aufrufe, 1);
   });
   await test("Quelle wird gegen abgesendete Eingabe statt nachtraeglicher Mutation geprueft", async () => {
     const c = fixture(), s = stand({ ...ANALYSE, parteien: ["Unbelegte Partei"] }, () => { c.documents[0].summary = "Unbelegte Partei berichtet."; });
-    assert.equal((await first(c, s)).status, "saved");
-    assert.deepEqual(s.p.gespeichert[0].parteien, [], "die nachtraegliche Mutation belegt nichts");
+    const r = await first(c, s);
+    assert.equal(r.status, "skipped-invalid", JSON.stringify(r));
+    assert(r.errors.includes("quellenbeleg-parteien"), JSON.stringify(r.errors));
+    assert.equal(s.p.gespeichert.length, 0, "die nachtraegliche Mutation belegt nichts");
   });
   await test("Ohne CAS bleibt eine unbelegte Ausschussliste sichtbar; belegtes Ministerium speichert", async () => {
     const bad = stand({ ...ANALYSE, ausschuesse: ["Unbelegter Ausschuss"] });
