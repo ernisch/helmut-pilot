@@ -144,6 +144,15 @@ jobs:
           PGPASSWORD: "helmut"
         run: node scripts/lokal.js -- node scripts/testfenster-null500-datenbank.js
 
+      - name: Vierer-Nacharbeit gegen isolierte PostgreSQL (Atomarik und kein Retry)
+        timeout-minutes: 3
+        env:
+          HELMUT_TEST_PG_HOST: "127.0.0.1"
+          HELMUT_TEST_PG_PORT: "5433"
+          HELMUT_TEST_PG_USER: "helmut"
+          PGPASSWORD: "helmut"
+        run: node scripts/lokal.js -- node scripts/verstehen-vier-datenbank.js
+
       - name: Offline-Testsuiten (ohne Netz/DB/LLM/Secrets)
         # Der Runner erzwingt Offline technisch: jede Suite läuft mit einem
         # --require-Netz-Guard (blockt http/https/fetch auf Nicht-Localhost)
