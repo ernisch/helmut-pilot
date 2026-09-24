@@ -72,6 +72,8 @@ const test = async (name, fn) => { await fn(); console.log("PASS " + name); coun
   });
   await test("Positive Einzelstellen ersetzen weder Gesamturteil noch Rangfolge oder Vollstaendigkeit", async () => {
     for (const change of [u => { delete u.gesamtpruefung; },
+      u => { delete u.gesamtpruefung.kriterien.bereichstrennung; },
+      u => { u.gesamtpruefung.version = 1; },
       ...F.KRITERIEN.map(k => u => { u.gesamtpruefung.kriterien[k].bestanden = false; }),
       u => { u.gesamtpruefung.umfang.auswahl.reverse(); },
       u => { u.gesamtpruefung.umfang.hauptvorgang = "vg-b"; },

@@ -69,15 +69,10 @@ test("Briefing, Empfehlung und Detailstand teilen Zaehler und ehrlichen Zeitbele
   const b = make(docs), s = b.currentHelmutState;
   A.equal(b.items[0].sourceCount, 1);
   A.equal(b.personalizedRecommendations[0].source_count, 1);
-  A.equal(s.primaryItem.sourceCount, 1);
-  A.equal(s.sourcesSummary.sourceCount, 1);
-  A.deepEqual(s.sourceIds, ["rd-fr-a", "rd-fr-b"]);
-  A.equal(s.primaryItem.meldungAt, null);
-  A.equal(s.primaryItem.lastUpdated, null);
-  A.equal(s.datenstandVonHeute, false);
+  A.equal(s.primaryItem, null, "Widersprüchliche Datierung trägt keinen Tagesanlass");
   A.equal(b.items[0].summary, ko.display_summary);
   A.equal(b.items[0].finalScore, 70);
-  const other = { ...docs[0], id: "rd-fr-c", url: url("dritter", "87654321"), published_at: "2026-09-16T08:00:00Z" };
+  const other = { ...docs[0], id: "rd-fr-c", url: url("dritter", "87654321"), published_at: "2026-09-17T07:00:00Z" };
   const withOther = make([...docs, other]);
   A.equal(withOther.items[0].sourceCount, 2);
   A.equal(withOther.currentHelmutState.primaryItem.meldungAt, other.published_at);

@@ -49,7 +49,7 @@ function decisionFor(id, vg, score = 88) {
 }
 function stateFor(ko) {
   return contract.buildCurrentHelmutState({
-    profile, decisions: [decisionFor(ko.id, ko.vorgang_id)], kosById: { [ko.id]: ko }, sourcesByVorgang: {}, now: NOW
+    profile, decisions: [decisionFor(ko.id, ko.vorgang_id)], kosById: { [ko.id]: ko }, sourcesByVorgang: { [ko.vorgang_id]: [{ id: "rd-" + ko.id, url: ko.best_source_url, published_at: ko.created_at }] }, now: NOW
   });
 }
 // Kopf-Frische liest currentHelmutState + items/situational; generatedAt=now (V3-Realität).
@@ -74,14 +74,14 @@ check("FRISCH: Kopf zeigt 'Aktuell'", decorate(briefingWith(freshState)).status 
 
 // === 2) VERALTET: gestriger Datenstand -> Karte stale, Kopf NIE "Aktuell" =====
 const staleState = stateFor(fullKo("ko-s", "vg-s", "2026-06-20T07:00:00Z"));
-check("Vorbedingung: alter Stand -> currentHelmutState.status 'stale' + staleState",
-  staleState.status === "stale" && staleState.staleState === true, staleState.status);
+check("Vorbedingung: alter Stand ohne Tagesanlass -> empty",
+  staleState.status === "empty" && staleState.primaryItem === null, staleState.status);
 {
   const dec = decorate(briefingWith(staleState));
-  check("VERALTET: Kopf zeigt 'Veraltet' (NICHT 'Aktuell')", dec.status === "Veraltet", dec.status);
+  check("KEIN TAGESANLASS: Kopf zeigt keine neue Entscheidung", dec.status === "Keine neue Entscheidung", dec.status);
   check("VERALTET: Nicht-Widerspruch — Kopf UND Karte sind beide nicht 'Aktuell'",
     dec.status !== "Aktuell" && CARD_LABEL[staleState.status] !== "Aktuell");
-  check("VERALTET: freshness.isStale = true (konsistent)", dec.freshness && dec.freshness.isStale === true);
+  check("LEER: kein als veraltet getarntes Tagesbriefing", dec.freshness && dec.freshness.isStale === false);
 }
 
 // === 3) FEHLGESCHLAGENER NACHTLAUF (understanding failed) -> nie "Aktuell" ====

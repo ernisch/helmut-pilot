@@ -23,7 +23,7 @@ const script = new vm.Script(source.slice(ws, we) + "\n(async () => {\n" + sourc
 const clone = value => structuredClone(value);
 const clean = value => JSON.parse(JSON.stringify(value));
 const profile = { id: "local-a", committees: ["Bildung"] };
-const briefing = { available: true, items: [{ title: "Kita Beratung" }], currentHelmutState: {}, currentRadarState: {} };
+const briefing = { available: true, items: [{ title: "Kita Beratung" }], currentHelmutState: { tagesAnlass: { art: "neue-quelle", documentIds: ["rd-fixture"], text: "Synthetischer Tagesanlass nur für den Speichertest." },}, currentRadarState: {} };
 function lage(id) {
   const quellen = [{ vorgang_id: "vg-test", quellenbelege: [
     { quelle_id: "q-test", titel: "Das Kabinett beraet ueber Kita Standards.", auszug: "", url: "https://example.org/kita" },
@@ -132,7 +132,7 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
   await test("Quittung und Push folgen dem gespeicherten Inhalt bei eingefrorenem vollstaendigem Paket", async () => {
     const saved = state(), l = lage(profile.id); saved.rows.set(l.id, l);
     const first = await run([profile], { saved });
-    const different = { ...briefing, currentHelmutState: { primaryVorgangId: "vg-new" } };
+    const different = { ...briefing, currentHelmutState: { tagesAnlass: { art: "neue-quelle", documentIds: ["rd-fixture"], text: "Synthetischer Tagesanlass nur für den Speichertest." }, primaryVorgangId: "vg-new" } };
     assert.notEqual(L.inhaltsSignatur(briefing), L.inhaltsSignatur(different));
     const second = await run([profile], { saved, briefing: different, nowMs: startMs + 3600000, runId: "second" });
     assert.equal(second.response.frischevertrag.wiederholungen, 1);
@@ -183,7 +183,7 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
     assert.equal(r.response.fairness.erfolgreich.length, 0);
   });
   await test("Leeres Briefing bleibt ein gespeicherter Leerstand ohne Vollversorgung", async () => {
-    const r = await run([profile], { briefing: { available: false, items: [], currentHelmutState: {}, currentRadarState: {} } });
+    const r = await run([profile], { briefing: { available: false, items: [], currentHelmutState: { tagesAnlass: { art: "neue-quelle", documentIds: ["rd-fixture"], text: "Synthetischer Tagesanlass nur für den Speichertest." },}, currentRadarState: {} } });
     assert.equal(r.response.versorgung.paketeGespeichert, 1);
     assert.equal(r.response.versorgung.vollstaendigePakete, 0);
     assert.equal(r.saved.telemetry[0].status, "partial");

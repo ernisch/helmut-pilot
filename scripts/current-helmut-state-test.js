@@ -48,7 +48,7 @@ const sources = {
   ],
   // Quellenpflicht-Sprint 2026-08-22: ein Domain-Root ("https://y.de") ist keine
   // oeffnende Artikelquelle mehr — die Fixture-Quelle traegt eine echte Artikel-URL.
-  "vg-2": [{ id: "rd-c", url: "https://y.de/politik/foerdermittel-2", source_name: "Y", published_at: "2026-07-06T09:00:00Z" }]
+  "vg-2": [{ id: "rd-c", url: "https://y.de/politik/foerdermittel-2", source_name: "Y", published_at: "2026-07-07T06:00:00Z" }]
 };
 
 const decisions = [
@@ -73,7 +73,7 @@ check("tenantId/profileId aus Kontext (nicht erfunden)", state.tenantId === "t-1
 check("headline aus display_title des Primaervorgangs", state.headline === "Bundesregierung legt Pflegereform vor");
 check("recommendation aus KO (recommendation/handlungsempfehlung)", state.recommendation === "Heute nicht zuspitzen.");
 check("urgency aus zeitdruck", state.urgency === "hoch");
-check("whyItMatters aus why_relevant", state.whyItMatters === "Betrifft deinen Ausschuss Gesundheit.");
+check("Briefing begründet den Tagesanlass statt Lage-Einordnung zu kopieren", state.tagesAnlass.art === "neue-quelle" && state.whyItMatters !== koPrimary.why_relevant);
 check("contextChips aus KO-Strukturdaten (ausschuesse/policy_field/parteien/tags), gekappt",
   Array.isArray(state.contextChips) && state.contextChips.length <= 4 &&
   state.contextChips[0] === "Gesundheit");
@@ -167,11 +167,11 @@ check("Duennes KO: kein Crash, strukturierte Defaults (unknown/leer)",
   stateThin.recommendedCommunication.communicationLine === "" && stateThin.actionItems.length === 0);
 // Duennes KO traegt echten V3-Kern (warum_wichtig) -> "partial", NICHT "empty":
 // der vorhandene Vorschlag bleibt sichtbar (status "fresh"), Stabschef-Felder ehrlich leer.
-check("Duennes KO mit V3-Kern -> qualityStatus partial (nicht empty, ehrlich)", stateThin.qualityStatus === "partial");
-check("Duennes KO mit V3-Kern -> status fresh + primaryItem vorhanden (kein Leerzustand)",
-  stateThin.status === "fresh" && Boolean(stateThin.primaryItem) && stateThin.primaryItem.id === "vg-3");
-check("Duennes KO: sourceCount aus source_document_count, sourceIds leer (keine geladenen Quellen)",
-  stateThin.sourcesSummary.sourceCount === 1 && stateThin.sourceIds.length === 0);
+check("Duennes KO ohne datiertes Dokument -> qualityStatus empty", stateThin.qualityStatus === "empty");
+check("Duennes KO ohne datiertes Dokument -> kein Tagesbriefing",
+  stateThin.status === "empty" && stateThin.primaryItem === null);
+check("Duennes KO: kein scheinbarer Tagesbeleg aus source_document_count",
+  stateThin.sourcesSummary.sourceCount === 0 && stateThin.sourceIds.length === 0);
 
 // --- 9) Determinismus -------------------------------------------------------
 const stateB = contract.buildCurrentHelmutState({ profile, decisions, kosById, sourcesByVorgang: sources, now: NOW });
@@ -229,53 +229,57 @@ const koFresh = mkFullKo("ko-vg-neu", "vg-neu-11", "2026-07-11T06:00:00Z", "Fris
 const decFlag = { knowledge_object_id: "ko-vg-destabilisiert", vorgang_id: "vg-destabilisiert", score: 90, decision: "Sofort reagieren", priority_type: "risk", risk: "r", chance: "", matched_features: [] };
 const decFresh = { knowledge_object_id: "ko-vg-neu", vorgang_id: "vg-neu-11", score: 60, decision: "Sofort reagieren", priority_type: "risk", risk: "r", chance: "", matched_features: [] };
 
+// Datierte synthetische Quelldokumente sind jetzt Pflicht, ein KO-Schreibdatum reicht nicht.
+const fixtureQuellen = ks => Object.fromEntries(ks.map(k => [k.vorgang_id,
+  [{ id: "rd-" + k.id, url: k.best_source_url, published_at: k.updated_at }]]));
+const freshSources = fixtureQuellen([koFlagship, koFresh]);
 // D1: stale Top (Score 90) + frischer relevanter (Score 60) -> frischer wird Primary.
 const stFreshWins = contract.buildCurrentHelmutState({
   profile, decisions: [decFlag, decFresh], kosById: { "ko-vg-destabilisiert": koFlagship, "ko-vg-neu": koFresh },
-  sourcesByVorgang: {}, now: NOW11
+  sourcesByVorgang: freshSources, now: NOW11
 });
 check("D1: stale High-Score-Top wird von frischem relevantem Vorgang als Primary verdraengt",
   stFreshWins.primaryVorgangId === "vg-neu-11", stFreshWins.primaryVorgangId);
 check("D1: Status wird fresh (frischer Primary vom heutigen Tag)", stFreshWins.status === "fresh");
 check("D1: recommendation kommt aus dem NEUEN Primary (echte V3-Daten)", stFreshWins.headline === "Frischer relevanter Vorgang");
 // D4: verdraengter alter Top erscheint VORNE in weiteren Vorgaengen (nicht verloren, kein Duplikat).
-check("D4: verdraengter Flagship erscheint in weiteren relevanten Vorgaengen (zuerst)",
-  stFreshWins.relatedVorgangIds[0] === "vg-destabilisiert" && stFreshWins.items.some((i) => i.id === "vg-destabilisiert"));
+check("D4: alter Flagship ohne Tagesanlass bleibt außerhalb des Briefings",
+  !stFreshWins.relatedVorgangIds.includes("vg-destabilisiert"));
 check("D4: Primary nicht in weiteren Vorgaengen dupliziert",
   !stFreshWins.items.some((i) => i.id === stFreshWins.primaryVorgangId));
 
 // D2: frischer Top -> unveraendert (kein Eingriff).
 const stFreshTop = contract.buildCurrentHelmutState({
-  profile, decisions: [decFresh], kosById: { "ko-vg-neu": koFresh }, sourcesByVorgang: {}, now: NOW11
+  profile, decisions: [decFresh], kosById: { "ko-vg-neu": koFresh }, sourcesByVorgang: freshSources, now: NOW11
 });
 check("D2: frischer Top-Vorgang bleibt unveraendert Primary + status fresh",
   stFreshTop.primaryVorgangId === "vg-neu-11" && stFreshTop.status === "fresh");
 
 // D3: stale Top + KEIN frischer relevanter Ersatz -> alter Top bleibt, status stale.
 const stNoFresh = contract.buildCurrentHelmutState({
-  profile, decisions: [decFlag], kosById: { "ko-vg-destabilisiert": koFlagship }, sourcesByVorgang: {}, now: NOW11
+  profile, decisions: [decFlag], kosById: { "ko-vg-destabilisiert": koFlagship }, sourcesByVorgang: freshSources, now: NOW11
 });
-check("D3: stale Top ohne frischen Ersatz bleibt Primary + status stale (ehrlich Nicht aktuell)",
-  stNoFresh.primaryVorgangId === "vg-destabilisiert" && stNoFresh.status === "stale");
+check("D3: stale Top ohne frischen Ersatz ergibt kein Tagesbriefing",
+  stNoFresh.primaryVorgangId === null && stNoFresh.status === "empty");
 
 // D3b: frischer Kandidat, aber NICHT relevant genug (Ignorieren) -> kein Ersatz.
 const decFreshIgnore = { ...decFresh, decision: "Ignorieren" };
 const stFreshIgnored = contract.buildCurrentHelmutState({
   profile, decisions: [decFlag, decFreshIgnore], kosById: { "ko-vg-destabilisiert": koFlagship, "ko-vg-neu": koFresh },
-  sourcesByVorgang: {}, now: NOW11
+  sourcesByVorgang: freshSources, now: NOW11
 });
-check("D3b: frischer aber ignorierter Kandidat verdraengt den stale Top NICHT",
-  stFreshIgnored.primaryVorgangId === "vg-destabilisiert" && stFreshIgnored.status === "stale");
+check("D3b: frischer aber ignorierter Kandidat begruendet kein Tagesbriefing",
+  stFreshIgnored.primaryVorgangId === null && stFreshIgnored.status === "empty");
 
 // D3c: frischer Kandidat, aber UNVOLLSTAENDIG (pending -> quality empty) -> kein Ersatz.
 const koFreshPending = { ...koFresh, id: "ko-vg-pend", vorgang_id: "vg-pend-11", status: "pending", understanding_status: "pending" };
 const decFreshPending = { knowledge_object_id: "ko-vg-pend", vorgang_id: "vg-pend-11", score: 60, decision: "Sofort reagieren", priority_type: "risk", risk: "", chance: "", matched_features: [] };
 const stFreshPending = contract.buildCurrentHelmutState({
   profile, decisions: [decFlag, decFreshPending], kosById: { "ko-vg-destabilisiert": koFlagship, "ko-vg-pend": koFreshPending },
-  sourcesByVorgang: {}, now: NOW11
+  sourcesByVorgang: freshSources, now: NOW11
 });
-check("D3c: frischer aber unvollstaendiger (pending) Kandidat verdraengt den stale Top NICHT",
-  stFreshPending.primaryVorgangId === "vg-destabilisiert");
+check("D3c: frischer aber unvollstaendiger (pending) Kandidat begruendet kein Tagesbriefing",
+  stFreshPending.primaryVorgangId === null);
 
 // Unit-Tests der Hilfsfunktion selectFreshAwarePrimary (deterministisch, erklaerbar).
 const candFlag = { d: decFlag, ko: koFlagship, docs: [], quality: contract.deriveHelmutQualityStatus(koFlagship, NOW11) };
@@ -326,6 +330,7 @@ for (let i = 1; i <= 6; i++) uFiller.push(koMatch(`ko-zfill-${i}`, `vg-fill-${i}
 const uUnderstood = [uFlag, uFresh, ...uFiller];
 const uKosById = {}; for (const k of uUnderstood) uKosById[k.id] = k;
 
+const uSources = fixtureQuellen(uUnderstood);
 // 14a: Beleg, dass der ECHTE Read-Pfad-Cut (decideForUser, kleine Kappung) einen frischen
 // relevanten Vorgang tatsaechlich abschneiden kann (Kern der Ursache).
 const realCut = decisionsEngine.decideForUser(profFresh, uUnderstood, { userId: "u-f", limit: 5 });
@@ -337,19 +342,19 @@ check("14a: echter Read-Pfad-Cut (limit 5) schneidet den frischen relevanten Vor
 // die Auswahl reproduzierbar unabhaengig vom Embedding-Tiebreak.
 const flagDec = { knowledge_object_id: "ko-flag", vorgang_id: "vg-destabilisiert", score: 90, decision: "Sofort reagieren", priority_type: "risk", risk: "r", chance: "", matched_features: [{ type: "ausschuss", value: "Gesundheit" }] };
 const cutDecisions = [flagDec]; // frischer Vorgang fehlt (vom Cut abgeschnitten)
-const stCut = contract.buildCurrentHelmutState({ profile: profFresh, decisions: cutDecisions, kosById: uKosById, sourcesByVorgang: {}, now: NOW11 });
-check("14b: OHNE Augmentierung bleibt der stale Flagship Primary (Bug-Zustand)",
-  stCut.primaryVorgangId === "vg-destabilisiert" && stCut.status === "stale");
+const stCut = contract.buildCurrentHelmutState({ profile: profFresh, decisions: cutDecisions, kosById: uKosById, sourcesByVorgang: uSources, now: NOW11 });
+check("14b: OHNE Augmentierung fehlt ein belegter Tageskandidat",
+  stCut.primaryVorgangId === null && stCut.status === "empty");
 
 // Mit Augmentierung: der frische relevante Vorgang wird nachgereicht -> wird Primary.
 const augmented = contract.augmentFreshCandidates(uUnderstood, cutDecisions, decideFor, NOW11);
 check("14c (#5): augmentFreshCandidates reicht den frischen Vorgang aus der VOLLEN Liste nach",
   augmented.some((d) => d.knowledge_object_id === "ko-fresh") && augmented.length === cutDecisions.length + 1);
-const stAug = contract.buildCurrentHelmutState({ profile: profFresh, decisions: augmented, kosById: uKosById, sourcesByVorgang: {}, now: NOW11 });
+const stAug = contract.buildCurrentHelmutState({ profile: profFresh, decisions: augmented, kosById: uKosById, sourcesByVorgang: uSources, now: NOW11 });
 check("14c (#5): frischer relevanter Vorgang wird Primary + status fresh (Auswahl aus voller Liste)",
   stAug.primaryVorgangId === "vg-fresh-11" && stAug.status === "fresh");
-check("14c (#6): verdraengter stale Flagship erscheint VORNE in weiteren Vorgaengen",
-  stAug.relatedVorgangIds[0] === "vg-destabilisiert");
+check("14c (#6): alter Flagship bleibt ohne Tagesanlass aus weiteren Vorgaengen",
+  !stAug.relatedVorgangIds.includes("vg-destabilisiert"));
 
 // #4: status "neu" wird NICHT versehentlich ausgeschlossen (der frische KO traegt status:"neu").
 check("14d (#4): frischer Vorgang mit status 'neu' wird nachgereicht und als Primary gewaehlt",
@@ -364,14 +369,15 @@ check("14e (#7): augmentFreshCandidates erzeugt keine Duplikate",
 // nachgereicht, aber NICHT Primary (Relevanz-Schranke in selectFreshAwarePrimary bleibt).
 const uFreshIrrelevant = koMatch("ko-fresh-irr", "vg-fresh-irr", "2026-07-11T06:00:00Z", "Fremdes Thema",
   { tags: ["Verkehr"], policy_field: ["Mobilitaet"] });
+Object.assign(uSources, fixtureQuellen([uFreshIrrelevant]));
 const understood2 = [uFlag, uFreshIrrelevant];
 const kos2 = { "ko-flag": uFlag, "ko-fresh-irr": uFreshIrrelevant };
 const aug2 = contract.augmentFreshCandidates(understood2, cutDecisions, decideFor, NOW11);
 check("14f: irrelevanter frischer Vorgang wird zwar nachgereicht (Kandidat), aber ...",
   aug2.some((d) => d.knowledge_object_id === "ko-fresh-irr"));
-const stAug2 = contract.buildCurrentHelmutState({ profile: profFresh, decisions: aug2, kosById: kos2, sourcesByVorgang: {}, now: NOW11 });
-check("14f (#9): ... wird NICHT Primary — stale Flagship bleibt, status stale (kein irrelevanter Primary)",
-  stAug2.primaryVorgangId === "vg-destabilisiert" && stAug2.status === "stale");
+const stAug2 = contract.buildCurrentHelmutState({ profile: profFresh, decisions: aug2, kosById: kos2, sourcesByVorgang: uSources, now: NOW11 });
+check("14f (#9): ... wird NICHT Primary — kein Tagesbriefing statt irrelevantem Primary",
+  stAug2.primaryVorgangId === null && stAug2.status === "empty");
 
 // Robustheit: keine Augmentierung, wenn keine Frische bestimmbar / nichts fehlt.
 check("14g: augmentFreshCandidates gibt decisions unveraendert zurueck bei ungueltigem now",
@@ -388,17 +394,17 @@ check("14g: augmentFreshCandidates loest keinen Doppel-Append aus, wenn frischer
 // frischen Vorgaengen passiert ist. KEINE Secrets/Texte/Kosten/PII.
 const dbgBefore = [flagDec];                                   // stale Top, frischer abgeschnitten
 const dbgAfter = contract.augmentFreshCandidates(uUnderstood, dbgBefore, decideFor, NOW11); // + frischer
-const dbgState = contract.buildCurrentHelmutState({ profile: profFresh, decisions: dbgAfter, kosById: uKosById, sourcesByVorgang: {}, now: NOW11 });
+const dbgState = contract.buildCurrentHelmutState({ profile: profFresh, decisions: dbgAfter, kosById: uKosById, sourcesByVorgang: uSources, now: NOW11 });
 const dbg = contract.buildPrimarySelectionDebug({
   knowledgeObjectsLoaded: uUnderstood.length, understood: uUnderstood,
-  decisionsBefore: dbgBefore, decisionsAfter: dbgAfter, kosById: uKosById, sourcesByVorgang: {}, now: NOW11, state: dbgState
+  decisionsBefore: dbgBefore, decisionsAfter: dbgAfter, kosById: uKosById, sourcesByVorgang: uSources, now: NOW11, state: dbgState
 });
 check("15a: debug.selectedPrimary = gewaehlter frischer Vorgang (matcht State)",
   dbg.selectedPrimary && dbg.selectedPrimary.vorgang_id === "vg-fresh-11" && dbg.selectedPrimary.vorgang_id === dbgState.primaryVorgangId);
-check("15a: debug.selectedPrimary.selectedBecause erklaert die Verdraengung",
-  /verdraengt/i.test(dbg.selectedPrimary.selectedBecause));
-check("15b: debug.previousTopCandidate = verdraengter stale Flagship",
-  dbg.previousTopCandidate && dbg.previousTopCandidate.vorgang_id === "vg-destabilisiert" && dbg.previousTopCandidate.freshness === "stale");
+check("15a: debug.selectedPrimary.selectedBecause erklaert den Tagesanlass",
+  /Tagesanlass/i.test(dbg.selectedPrimary.selectedBecause));
+check("15b: debug.previousTopCandidate ohne Tagesanlass leer",
+  dbg.previousTopCandidate === null);
 check("15c: candidateStats zaehlt vor/nach Augment korrekt (frischer kam durch Augment rein)",
   dbg.candidateStats.decisionCountBeforeAugment === 1 && dbg.candidateStats.decisionCountAfterAugment === 2 &&
   dbg.candidateStats.freshUnderstoodCount === 1 && dbg.candidateStats.freshDecisionCountBeforeAugment === 0 &&
@@ -414,17 +420,17 @@ check("15e: currentHelmutStateStatus + generatedAt gespiegelt", dbg.currentHelmu
 
 // Rejection-Fall (Ignorieren): reasonIfRejected erklaert korrekt, kein erzwungener Primary.
 const dbgAfterIrr = contract.augmentFreshCandidates([uFlag, uFreshIrrelevant], dbgBefore, decideFor, NOW11);
-const dbgStateIrr = contract.buildCurrentHelmutState({ profile: profFresh, decisions: dbgAfterIrr, kosById: { "ko-flag": uFlag, "ko-fresh-irr": uFreshIrrelevant }, sourcesByVorgang: {}, now: NOW11 });
+const dbgStateIrr = contract.buildCurrentHelmutState({ profile: profFresh, decisions: dbgAfterIrr, kosById: { "ko-flag": uFlag, "ko-fresh-irr": uFreshIrrelevant }, sourcesByVorgang: uSources, now: NOW11 });
 const dbgIrr = contract.buildPrimarySelectionDebug({
   knowledgeObjectsLoaded: 2, understood: [uFlag, uFreshIrrelevant],
-  decisionsBefore: dbgBefore, decisionsAfter: dbgAfterIrr, kosById: { "ko-flag": uFlag, "ko-fresh-irr": uFreshIrrelevant }, sourcesByVorgang: {}, now: NOW11, state: dbgStateIrr
+  decisionsBefore: dbgBefore, decisionsAfter: dbgAfterIrr, kosById: { "ko-flag": uFlag, "ko-fresh-irr": uFreshIrrelevant }, sourcesByVorgang: uSources, now: NOW11, state: dbgStateIrr
 });
 const fcIrr = dbgIrr.freshCandidates.find((x) => x.vorgang_id === "vg-fresh-irr");
-check("15f: rejection reason 'Ignorieren' korrekt, eligible false, Primary bleibt stale Top",
+check("15f: rejection reason 'Ignorieren' korrekt, eligible false, Primary bleibt leer",
   fcIrr && fcIrr.eligibleForFreshPrimary === false && /Ignorieren/i.test(fcIrr.reasonIfRejected) &&
-  dbgIrr.selectedPrimary.vorgang_id === "vg-destabilisiert" && dbgIrr.currentHelmutStateStatus === "stale");
-check("15f: selectedBecause erklaert den ehrlichen Stale-Verbleib (Header 'Letzter Stand')",
-  /kein frischer relevanter/i.test(dbgIrr.selectedPrimary.selectedBecause));
+  dbgIrr.selectedPrimary === null && dbgIrr.currentHelmutStateStatus === "empty");
+check("15f: kein scheinbarer Auswahlgrund ohne Tageskandidat",
+  dbgIrr.selectedPrimary === null);
 
 // Sicherheit: KEINE Kosten-/Token-/Secret-/Dokumenttext-Felder in der Debug-Ausgabe.
 const serDbg = JSON.stringify(dbg) + JSON.stringify(dbgIrr);
@@ -454,25 +460,12 @@ check("D5-7: keine hartkodierte Partei/Personen-Logik durch die Auswahl",
   const docs = { "vg-alt": [{ id: "rd-alt", url: "https://example.invalid/alt", published_at: oldKo.created_at }],
     "vg-neu": [{ id: "rd-neu", url: "https://example.invalid/neu", published_at: newKo.created_at }] };
   const alone = contract.buildCurrentHelmutState({ profile, decisions: [oldDec], kosById: kos, sourcesByVorgang: docs, now });
-  check("Quellenalter: heutige Neuberechnung macht Meldung von2021 nicht aktuell", alone.status === "stale" && alone.staleState);
-  check("Quellenalter: beide echte Zeitstempel bleiben erhalten", alone.primaryItem.meldungAt === oldKo.created_at
-    && alone.primaryItem.lastUpdated === oldKo.updated_at && alone.datenstandTag === "2021-09-27");
-  // Originaler Clientheader samt Originalformatter, kein nachgebautes Datum.
-  const fs = require("node:fs"), vm = require("node:vm");
-  const client = fs.readFileSync(require("node:path").join(__dirname, "../client.js"), "utf8");
-  const take = (begin, end) => client.slice(client.indexOf(begin), client.indexOf(end, client.indexOf(begin)));
-  const ctx = vm.createContext({ Date, Intl, escapeHtml: x => String(x),
-    renderRefreshButton: () => "", renderHstandFrische: () => "", HELMUT_ICON_CLOCK: "", HELMUT_ICON_EYE: "" });
-  vm.runInContext(take("const HSTAND_STATUS_LABEL =", "// qualityStatus ist ehrlich")
-    + take("function hstandWhen(", "function hstandContextChips(")
-    + take("function renderHstandHeader(", "// Wichtigster Bereich: Mein Vorschlag"), ctx);
-  const header = ctx.renderHstandHeader(alone);
-  check("Quellenalter: echter Clientheader zeigt Publikationsdatum samt Jahr statt Neuberechnung", /27\./.test(header)
-    && header.includes("2021") && !header.includes("2026"));
+  check("Quellenalter: Neuberechnung einer Meldung von2021 erzeugt kein Tagesbriefing", alone.status === "empty" && alone.primaryItem === null);
+  check("Quellenalter: Quellen und KO bleiben unverändert", docs["vg-alt"][0].published_at === oldKo.created_at && oldKo.updated_at === "2026-09-10T11:32:50Z");
   const args = { profile, decisions: [oldDec, newDec], kosById: kos, sourcesByVorgang: docs, now };
   const selected = contract.buildCurrentHelmutState(args);
   check("Quellenalter: aktuelle Meldung verdraengt heute nachanalysierten Altvorgang", selected.primaryVorgangId === "vg-neu"
-    && selected.items.some(x => x.id === "vg-alt") && selected.status === "fresh");
+    && !selected.items.some(x => x.id === "vg-alt") && selected.status === "fresh");
   const debug = contract.buildPrimarySelectionDebug({ ...args, understood: [oldKo, newKo],
     decisionsBefore: args.decisions, decisionsAfter: args.decisions, state: selected });
   check("Quellenalter: Diagnose fuehrt Neuberechnung nicht als frische Meldung", !debug.freshCandidates.some(x => x.vorgang_id === "vg-alt"));
@@ -510,8 +503,8 @@ check("D5-7: keine hartkodierte Partei/Personen-Logik durch die Auswahl",
   vm.runInContext(render, ctx);
   const html = ctx.renderHstandStateCard(low.currentHelmutState, "empty");
   check("Tatsaechlicher Client zeigt bei Ignorieren keine pauschale Entwarnung",
-    html.includes("Kein priorisierter Hauptvorgang")
-    && html.includes("keine Gesamtbewertung des Handlungsbedarfs") && !html.includes("Heute kein Handlungsbedarf"));
+    html.includes("Kein belegter Tagesanlass für ein Briefing")
+    && html.includes("keine Entwarnung") && !html.includes("Heute kein Handlungsbedarf"));
   const binding = require("../lib/helmut/briefing-aussagenbindung").texte(low);
   check("Beide sichtbaren Leerzustandstexte sind exakt ausgabebezogen pruefpflichtig",
     ["headline", "detail"].every(key => binding.some(a => a.pfad === "/currentHelmutState/emptyState/" + key

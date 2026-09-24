@@ -49,9 +49,9 @@ function aligned(b, vg) {
 const older = make('a-alt', '2026-09-09T10:00:00Z');
 const recent = make('z-neuer', '2026-09-11T10:00:00Z');
 let b = build([older, recent]);
-aligned(b, 'vg-z-neuer');
-eq(b.status, 'Veraltet');
-eq(b.currentHelmutState.datenstandTag, '2026-09-11');
+eq(b.currentHelmutState.primaryVorgangId, null);
+eq(b.status, 'Keine aktuellen Vorgänge');
+eq(b.currentHelmutState.datenstandTag, undefined);
 eq(b.items.map(i => i.finalScore), [42, 42]);
 // Kein Quellenbonus oder Scoreboost: heutiger relevanter Vorgang wird durch
 // die bestehende Frischeauswahl vor den älteren hoch bewerteten gesetzt.
@@ -60,14 +60,14 @@ const fresh = make('z-heute', '2026-09-12T08:00:00Z', 42);
 b = build([high, fresh]); aligned(b, 'vg-z-heute');
 eq(b.status, 'Aktuell');
 eq(b.items.map(i => i.finalScore), [42, 90]);
-eq(b.currentHelmutState.relatedVorgangIds.includes('vg-a-hoch'), true);
+eq(b.currentHelmutState.relatedVorgangIds.includes('vg-a-hoch'), false);
 const input = A.baueEingabe({ briefing: b, profile, userId: profile.id, day: '2026-09-12',
   kos: [high.ko, fresh.ko], sourcesByVorgang: { [high.ko.vorgang_id]: high.docs, [fresh.ko.vorgang_id]: fresh.docs } });
 eq(input.aussagen.find(a => a.pfad === '/helmutAssessment/recommendation').vorgangId, 'vg-z-heute');
 eq(input.aussagen.find(a => a.pfad === '/themeOfDay/title').vorgangId, 'vg-z-heute');
 // Ein heutiger irrelevanter Vorgang verdrängt den bisherigen Hauptvorgang nicht.
 const ignored = make('z-ignoriert', '2026-09-12T08:00:00Z', 20);
-b = build([high, ignored]); aligned(b, 'vg-a-hoch'); eq(b.status, 'Veraltet');
+b = build([high, ignored]); eq(b.currentHelmutState.primaryVorgangId, null); eq(b.status, 'Keine aktuellen Vorgänge');
 // Ohne öffnende Quelle keine hervorgehobene Empfehlung aus ungeprüften Karten.
 const noSource = make('ohne-quelle', '2026-09-12T08:00:00Z'); noSource.docs = [];
 b = build([noSource]); eq(b.themeOfDay, null); eq(b.helmutAssessment.recommendation, '');
@@ -77,12 +77,12 @@ eq(b.helmutAssessment.assessment, 'Kein belegter Hauptvorgang verfügbar.');
 b = build([noSource, fresh]); aligned(b, 'vg-z-heute');
 // Erzeugungszeit ist kein Ersatz für einen unbekannten Datenstand.
 const undated = make('ohne-datum', null);
-b = build([undated]); eq(b.status, 'Datenstand unbekannt');
-eq(b.currentHelmutState.status, 'stale'); eq(b.currentHelmutState.datenstandTag, null);
+b = build([undated]); eq(b.status, 'Keine aktuellen Vorgänge');
+eq(b.currentHelmutState.status, 'empty'); eq(b.currentHelmutState.datenstandTag, undefined);
 eq(b.generatedAt, now.toISOString());
 // Ungültige Datumswerte werden ebenfalls nicht positiv ausgegeben.
 const invalid = make('kaputtes-datum', 'kein-datum');
-b = build([invalid]); eq(b.status, 'Datenstand unbekannt'); eq(b.currentHelmutState.status, 'stale');
+b = build([invalid]); eq(b.status, 'Keine aktuellen Vorgänge'); eq(b.currentHelmutState.status, 'empty');
 // Bereits vorhandenes Briefingfenster bleibt wirksam: Vorabend seit letztem
 // Briefing darf frisch sein und behält sein tatsächliches Datum.
 const evening = make('vorabend', '2026-09-11T20:00:00Z');

@@ -17,7 +17,7 @@ const docs = ["Beratung eines Haushaltsentwurfs", "Beratung eines Pflegeentwurfs
   url: `https://example.invalid/dokument/${i + 1}`, published_at: day + "T05:00:00Z" }));
 const sourcesByVorgang = Object.fromEntries(kos.map((k, i) => [k.vorgang_id, [docs[i]]]));
 const briefing = { available: true, items: kos.map((k, i) => ({ vorgangId: k.vorgang_id, summary: docs[i].summary })),
-  currentHelmutState: {}, currentRadarState: {} };
+  currentHelmutState: { tagesAnlass: require("../../lib/helmut/briefing-bereichsvertrag").tagesAnlass(docs, now) }, currentRadarState: {} };
 function fixture(profileOverride = profile) {
   const profile = profileOverride;
   const result = { briefing: clone(briefing), eingabe: A.baueEingabe({ briefing, profile,
@@ -26,8 +26,9 @@ function fixture(profileOverride = profile) {
   const urteil = { version: A.VERSION, eingabeHash: e.eingabeHash, ursprungHash: e.eingabeHash,
     ausgelasseneVorgaenge: [], aussagen: e.aussagen.map(a => ({ ...a, sachlichGetragen: true,
       kontextGetragen: true, mandatsbezugGetragen: true, begruendung: "Erfundenes technisches Vertragsurteil.",
-      belege: [{ vorgangId: a.vorgangId, documentId: sourcesByVorgang[a.vorgangId][0].id,
-        feld: "auszug", text: sourcesByVorgang[a.vorgangId][0].summary }] })) };
+      ...(a.art === "ausgabe" ? { ausgabeBeleg:e.darstellungsHash } : {
+        belege: [{ vorgangId: a.vorgangId, documentId: sourcesByVorgang[a.vorgangId][0].id,
+          feld: "auszug", text: sourcesByVorgang[a.vorgangId][0].summary }] }) })) };
   urteil.gesamtpruefung = require("./briefing-fachurteil")(result, urteil);
   const fachbasis = L.baue(result, urteil), fach = L.pruefe(fachbasis, profile, profile.id, now);
   const quellen = Q.baueEingabe(fach.ranked, fach.sources, now);

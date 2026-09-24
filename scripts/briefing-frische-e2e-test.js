@@ -66,6 +66,7 @@ const KOS = [
   ko("aelter", "2026-07-10T09:00:00Z", "Anhoerung im Ausschuss"),
   ko("hintergrund", "2026-05-02T09:00:00Z", "Gesetz im Bundesrat")
 ];
+const SOURCES = Object.fromEntries(KOS.map(k => [k.vorgang_id, [{ id: "rd-" + k.id, url: k.best_source_url, published_at: k.created_at }]]));
 const KOS_BY_ID = Object.fromEntries(KOS.map((k) => [k.id, k]));
 const DECISIONS = [
   entscheidung("heute", 82), entscheidung("vorabend", 74),
@@ -77,7 +78,7 @@ const FENSTER = f.frischeFenster({ jetzt: JETZT }); // Vorabend-Standard: 14.07.
 function baueBriefing({ fenster = FENSTER } = {}) {
   return contract.toBriefingContractV3({
     profile: { id: MANDAT, name: "Testmandat", committee: "Ausschuss für Arbeit und Soziales", focusTopics: ["Arbeit"] },
-    decisions: DECISIONS, kosById: KOS_BY_ID, sourcesByVorgang: {}, now: JETZT,
+    decisions: DECISIONS, kosById: KOS_BY_ID, sourcesByVorgang: SOURCES, now: JETZT,
     briefingType: "morning", knowledgeObjects: KOS, frischeFenster: fenster
   });
 }
@@ -92,8 +93,8 @@ const alleItems = [state.primaryItem, ...(state.items || [])];
 const klasseVon = (id) => (alleItems.find((i) => i && i.id === `vg-${id}`) || {}).frischeKlasse;
 check("1b Heutiger Vorgang ist 'neu'", klasseVon("heute") === f.KLASSE_NEU, String(klasseVon("heute")));
 check("1c Spaeter Vorabend ist 'neu' (Punkt 3)", klasseVon("vorabend") === f.KLASSE_NEU, String(klasseVon("vorabend")));
-check("1d Fuenf Tage alter Vorgang ist 'weiterhin relevant' (Punkt 4)", klasseVon("aelter") === f.KLASSE_WEITERHIN, String(klasseVon("aelter")));
-check("1e Sehr alter Vorgang ist 'Hintergrund' (Punkt 4)", klasseVon("hintergrund") === f.KLASSE_HINTERGRUND, String(klasseVon("hintergrund")));
+check("1d Fuenf Tage alter Vorgang ohne Tagesanlass entfällt im Briefing", klasseVon("aelter") === undefined, String(klasseVon("aelter")));
+check("1e Sehr alter Hintergrund ohne Tagesanlass entfällt im Briefing", klasseVon("hintergrund") === undefined, String(klasseVon("hintergrund")));
 check("1f Kein Datum wurde veraendert",
   alleItems.find((i) => i.id === "vg-vorabend").lastUpdated === "2026-07-14T20:40:00Z");
 check("1g Vorabendmeldung traegt ihr echtes Datum als Label",
@@ -110,12 +111,12 @@ check("1i Ohne Fenster keine Frischeklassen (Altverhalten)",
 // ohne Fenster (reiner Kalendertag) waere er es. Gegenprobe mit Primary=Vorabend.
 const nurVorabend = contract.toBriefingContractV3({
   profile: { id: MANDAT }, decisions: [entscheidung("vorabend", 90)],
-  kosById: { vorabend: KOS_BY_ID.vorabend }, sourcesByVorgang: {}, now: JETZT,
+  kosById: { vorabend: KOS_BY_ID.vorabend }, sourcesByVorgang: SOURCES, now: JETZT,
   briefingType: "morning", knowledgeObjects: [KOS_BY_ID.vorabend], frischeFenster: FENSTER
 });
 const nurVorabendOhne = contract.toBriefingContractV3({
   profile: { id: MANDAT }, decisions: [entscheidung("vorabend", 90)],
-  kosById: { vorabend: KOS_BY_ID.vorabend }, sourcesByVorgang: {}, now: JETZT,
+  kosById: { vorabend: KOS_BY_ID.vorabend }, sourcesByVorgang: SOURCES, now: JETZT,
   briefingType: "morning", knowledgeObjects: [KOS_BY_ID.vorabend]
 });
 check("1j Mit Fenster: Vorabendmeldung ist im Morgenbriefing frisch",
@@ -251,11 +252,11 @@ check("2k Kompakte Antwort traegt denselben Vertrag",
   const htmlOk = api.render();
   check("4b Aktueller Stand: kein Warnhinweis im Kopf", !htmlOk.includes("Briefing noch nicht aktuell"));
   check("4c Gruppe 'Neu seit dem letzten Briefing' wird gezeigt", htmlOk.includes("Neu seit dem letzten Briefing"));
-  check("4d Aeltere Vorgaenge stehen getrennt darunter",
-    htmlOk.includes("Weiterhin relevant") && htmlOk.includes("Hintergrund"));
+  check("4d Alte Vorgaenge ohne Tagesanlass bilden keine zweite Briefingliste",
+    !htmlOk.includes("Hintergrund"));
   check("4e Vorabendmeldung traegt ihr echtes Datum ('Gestern')", /Gestern, \d{2}:\d{2}/.test(htmlOk));
   check("4f Gruppen sind maschinenlesbar ausgezeichnet",
-    htmlOk.includes('data-frische-klasse="neu"') && htmlOk.includes('data-frische-klasse="hintergrund"'));
+    htmlOk.includes('data-frische-klasse="neu"') && !htmlOk.includes('data-frische-klasse="hintergrund"'));
 
   api.setBriefing(server.__prepareBriefingResponse(baueBriefing(), { frischeKontext: kontext({ lauf: null }) }));
   const htmlOffen = api.render();

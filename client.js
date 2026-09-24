@@ -9491,7 +9491,7 @@ function renderRadarInner(state) {
         ${renderRadarAboutYou(state)}
         ${renderRadarEnvironment(state)}
         ${renderRadarDynamics(state)}
-        ${renderRadarArticles(state)}
+        ${state.articles?.length ? renderRadarArticles(state) : ""}
       `;
   return `${renderRadarHeader(state)}${body}`;
 }
@@ -9530,7 +9530,7 @@ function renderRadarHeader(state) {
           ${radarIcon("refresh")}
         </button>
       </div>
-      <p class="radar2-lede">Was bewegt sich rund um dich?</p>
+      <p class="radar2-lede">Was zeichnet sich ab, was solltest du beobachten?</p>
       ${failNote}
       <div class="radar2-status radar2-status--${fresh ? "fresh" : "stale"}">
         <span class="radar2-status-dot" aria-hidden="true"></span>
@@ -9635,6 +9635,7 @@ function renderRadarEnvRow(e) {
     <div class="radar2-row-body">
       <h3 class="radar2-row-title">${escapeHtml(e.title || "Vorgang")}</h3>
       <div class="radar2-row-meta">${rel}<span class="radar2-row-sub">${escapeHtml(e.sourceName || "Quelle")}${time ? " · " + escapeHtml(time) : ""}</span></div>
+      ${e.beobachtungsBeleg && e.evidence ? `<p class="radar2-card-sub radar2-card-sub--block">${escapeHtml(e.evidence)}</p>` : ""}
       ${radarAdditionalContext(e)}
     </div>
     ${href ? `<span class="radar2-chevron" aria-hidden="true">${radarIcon("chevron")}</span>` : ""}
@@ -9791,7 +9792,7 @@ function renderRadarEmpty(state) {
     : disruption ? disruption.sub
     : (previewMode
       ? "In der Vorschau liegen keine personalisierten Radar-Daten vor."
-      : "Sobald neue Quellen zu dir, deiner Partei, deinem Wahlkreis oder deinen Ausschüssen vorliegen, erscheinen sie hier.");
+      : "Hier erscheinen neue persönliche Erwähnungen und belegte Veränderungen der Berichterstattung. Ein bloßer Themenbezug reicht nicht; der Sachstand steht in der Lage.");
   const summaryState = es && es.headline
     ? { summary: { line1: es.headline, line2: "" } }
     : disruption ? { summary: { line1: disruption.title, line2: "" } }

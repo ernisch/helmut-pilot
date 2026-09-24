@@ -753,6 +753,14 @@ bereit ⇒ keine Outbox-Vergabe, kein Versuch, kein Weckruf. Details und Grenzen
 | Büro | `office.js`, `templates/office/` | Büro-View |
 | Profil | `profile-validation.js`, `config.js` | Profil-View, `renderOnboarding()` |
 
+Der Bereichsvertrag vom 24.09.2026 ergänzt `briefing-bereichsvertrag.js` als
+geteilten rein lesenden Adapterfilter: Briefing braucht einen belegten
+Tagesanlass; Radar einen Beobachtungsbeleg. Lage bleibt Sachstandsweg.
+Die aktive Briefingansicht rendert `currentHelmutState` (`renderHelmutStandView`),
+Radar rendert `currentRadarState.anzeige`. Interne Rohzuordnungen sind kein
+zweiter sichtbarer Feed. Kein neuer Speicher, Prompt oder Modellaufruf.
+Semantische Qualität bleibt separat zu prüfen; [Vertrag und Ausrollstatus](betrieb/lage-radar-briefing-abnahme-20260924.md).
+
 ## 9 · Admin-Bereich
 
 View `"admin"` in `client.js` (`renderAdminView()` ab ~Z. 2580), erreichbar nur im

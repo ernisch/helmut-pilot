@@ -141,7 +141,8 @@ async function main() {
     const B = require("../lib/helmut/briefing-speicher");
     const profile = { id: "test-kohorte-a-001", committees: ["Bildung"], deputyCommittees: ["Haushaltsausschuss"] };
     const getProfileVorher = storage.getProfile, getBriefingVorher = storage.getRenderedBriefingV3;
-    const briefing = { available: true, items: [{ title: "Beratung ueber Schulbau" }], currentHelmutState: {}, currentRadarState: {} };
+    const briefing = { available: true, items: [{ title: "Beratung ueber Schulbau" }], currentHelmutState: { tagesAnlass: { art: "neue-quelle", documentIds: ["rd-fixture"],
+      text: "Synthetischer Tagesanlass nur für den Laufzeit-Vertragstest." } }, currentRadarState: {} };
     const lage = { paragraphs: [{ text: "Die Quelle berichtet ueber Schulbau.", vorgang_ids: ["vg-schule"], quellen_ids: ["q-schule"] }],
       quellen: [{ vorgang_id: "vg-schule", quellenbelege: [{ quelle_id: "q-schule", quelle: "Testquelle", titel: "Schulbau", url: "https://example.org/schule" }] }],
       qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } };

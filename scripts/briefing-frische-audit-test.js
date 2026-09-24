@@ -217,21 +217,18 @@ function zeilenSpeicher() {
   const altBackfill = baue(
     { ...basisKo, id: "alt", vorgang_id: "vg-alt", display_title: "Seit Wochen laufender Vorgang",
       created_at: "2026-05-02T09:00:00Z", updated_at: "2026-07-15T03:00:00Z" },
-    [{ id: "d1", published_at: "2026-05-02T08:00:00Z" }]
+    [{ id: "d1", url: "https://beispiel.de/politik/d1", published_at: "2026-05-02T08:00:00Z" }]
   );
-  check("F2a Backfill macht einen 10 Wochen alten Vorgang NICHT zu 'neu'",
-    altBackfill.primaryItem.frischeKlasse === f.KLASSE_HINTERGRUND, String(altBackfill.primaryItem.frischeKlasse));
-  check("F2b Der alte Vorgang traegt sein ECHTES Datum, nicht 'Heute'",
-    /^02\.05\.2026/.test(altBackfill.primaryItem.zeitLabel || ""), String(altBackfill.primaryItem.zeitLabel));
-  check("F2c `lastUpdated` bleibt unveraendert (rein additive Korrektur)",
-    altBackfill.primaryItem.lastUpdated === "2026-07-15T03:00:00Z", String(altBackfill.primaryItem.lastUpdated));
+  check("F2a Backfill macht einen alten Vorgang nicht zum Tagesbriefing", altBackfill.primaryItem === null);
+  check("F2b Ohne neuen Beleg kein heutiger Sachstand", altBackfill.status === "empty");
+  check("F2c Kein Tagesanlass aus lastUpdated", !altBackfill.tagesAnlass);
 
   // (b) Derselbe alte Vorgang, aber mit einem HEUTE belegten neuen Dokument:
   //     das ist eine echte neue Entwicklung und MUSS 'neu' sein (keine Uebersteuerung).
   const altMitNeuemDoc = baue(
     { ...basisKo, id: "alt2", vorgang_id: "vg-alt2", display_title: "Alter Vorgang, neue Entwicklung",
       created_at: "2026-05-02T09:00:00Z", updated_at: "2026-07-15T03:00:00Z" },
-    [{ id: "d1", published_at: "2026-05-02T08:00:00Z" }, { id: "d2", published_at: "2026-07-15T03:05:00Z" }]
+    [{ id: "d1", url: "https://beispiel.de/politik/d1", published_at: "2026-05-02T08:00:00Z" }, { id: "d2", url: "https://beispiel.de/politik/d2", published_at: "2026-07-15T03:05:00Z" }]
   );
   check("F2d Echte neue Entwicklung an altem Vorgang bleibt 'neu'",
     altMitNeuemDoc.primaryItem.frischeKlasse === f.KLASSE_NEU, String(altMitNeuemDoc.primaryItem.frischeKlasse));
@@ -242,7 +239,7 @@ function zeilenSpeicher() {
   const vorabend = baue(
     { ...basisKo, id: "va", vorgang_id: "vg-va", display_title: "Spaeter Vorabend",
       created_at: "2026-07-14T20:40:00Z", updated_at: "2026-07-14T20:40:00Z" },
-    [{ id: "d3", published_at: "2026-07-14T20:40:00Z" }]
+    [{ id: "d3", url: "https://beispiel.de/politik/d3", published_at: "2026-07-14T20:40:00Z" }]
   );
   check("F2f Meldung vom spaeten Vorabend ist 'neu'", vorabend.primaryItem.frischeKlasse === f.KLASSE_NEU);
   check("F2g ... behaelt aber das Datum von gestern", /^Gestern, /.test(vorabend.primaryItem.zeitLabel || ""));
@@ -250,7 +247,7 @@ function zeilenSpeicher() {
   // (d) Ohne jeden belegten Zeitpunkt: niemals 'neu'.
   const ohneDatum = baue({ ...basisKo, id: "od", vorgang_id: "vg-od", display_title: "Ohne Datum" }, []);
   check("F2h Vorgang ohne belegten Zeitpunkt wird nie zu 'neu'",
-    ohneDatum.primaryItem.frischeKlasse === f.KLASSE_UNDATIERT, String(ohneDatum.primaryItem.frischeKlasse));
+    ohneDatum.primaryItem === null, ohneDatum.status);
 
   // =============================================================================
   // F3 — Ein Vorgang von gestern steht nie unter der Ueberschrift des heutigen Slots
@@ -261,7 +258,7 @@ function zeilenSpeicher() {
     decisions: [{ knowledge_object_id: "g", score: 90, decision: "Sofort reagieren" }],
     kosById: { g: { ...basisKo, id: "g", vorgang_id: "vg-g", display_title: "Gestern frueh",
       created_at: "2026-07-14T05:00:00Z", updated_at: "2026-07-14T05:00:00Z" } },
-    sourcesByVorgang: { "vg-g": [{ id: "d4", published_at: "2026-07-14T05:00:00Z" }] },
+    sourcesByVorgang: { "vg-g": [{ id: "d4", url: "https://beispiel.de/politik/d4", published_at: "2026-07-14T05:00:00Z" }] },
     now: JETZT, briefingType: "morning",
     knowledgeObjects: [{ ...basisKo, id: "g", vorgang_id: "vg-g", created_at: "2026-07-14T05:00:00Z", updated_at: "2026-07-14T05:00:00Z" }],
     frischeFenster: fensterGestern
@@ -291,7 +288,7 @@ function zeilenSpeicher() {
     profile: { id: MANDAT }, decisions: [{ knowledge_object_id: "h", score: 90, decision: "Sofort reagieren" }],
     kosById: { h: { ...basisKo, id: "h", vorgang_id: "vg-h", display_title: "Heute frueh",
       created_at: "2026-07-15T03:10:00Z", updated_at: "2026-07-15T03:10:00Z" } },
-    sourcesByVorgang: { "vg-h": [{ id: "d5", published_at: "2026-07-15T03:10:00Z" }] },
+    sourcesByVorgang: { "vg-h": [{ id: "d5", url: "https://beispiel.de/politik/d5", published_at: "2026-07-15T03:10:00Z" }] },
     now: JETZT, briefingType: "morning", frischeFenster: FENSTER
   });
   api.setBriefing(server.__prepareBriefingResponse(heutigesBriefing, {

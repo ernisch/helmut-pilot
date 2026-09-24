@@ -121,8 +121,10 @@ async function rankWith(mode, { relevanzordnung = "on" } = {}) {
   ];
   const helmProfile = { id: "u1", fullName: "Test MdB", party: "SPD" };
 
-  const helmOff = withFlag(undefined, () => briefingContract.buildCurrentHelmutState({ profile: helmProfile, decisions, kosById, sourcesByVorgang: {}, now: NOW }));
-  const helmOn = withFlag("on", () => briefingContract.buildCurrentHelmutState({ profile: helmProfile, decisions, kosById, sourcesByVorgang: {}, now: NOW }));
+  const helmSources = Object.fromEntries(Object.values(kosById).map(k => [k.vorgang_id,
+    [{ id:"rd-" + k.id, url:k.best_source_url, published_at:iso(1 * H) }]]));
+  const helmOff = withFlag(undefined, () => briefingContract.buildCurrentHelmutState({ profile: helmProfile, decisions, kosById, sourcesByVorgang: helmSources, now: NOW }));
+  const helmOn = withFlag("on", () => briefingContract.buildCurrentHelmutState({ profile: helmProfile, decisions, kosById, sourcesByVorgang: helmSources, now: NOW }));
   check("Helmut Flag AUS: Alt-Tiebreak waehlt 'aaa' als Primary", helmOff.primaryVorgangId === "aaa");
   check("Helmut Flag AN: handlungsfaehigster Vorgang 'zzz' wird Primary", helmOn.primaryVorgangId === "zzz");
 

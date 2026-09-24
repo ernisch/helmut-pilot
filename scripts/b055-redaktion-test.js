@@ -22,7 +22,9 @@ async function fixture() {
   lage.payload.paragraphs = oldCheck.paragraphs; lage.payload.qualitaet = oldCheck.qualitaet;
   const draft = E.baue({ userId: C.MANDAT, runId, phase: "entwurf", antwort: raw,
     quellen: lage.payload.quellen, profile, now: h.now }); h.rows.set(draft.id, draft);
-  const b = { ...h.result.briefing, currentRadarState: { items: [] } };
+  const b = { ...h.result.briefing, currentHelmutState: { ...h.result.briefing.currentHelmutState,
+    tagesAnlass: { art: "neue-quelle", documentIds: ["rd-fixture"],
+      text: "Synthetischer Tagesanlass nur für den Redaktions-Speichertest." } }, currentRadarState: { items: [] } };
   const payload = { version: 1, mandat: C.MANDAT, tag: day, profilHash: B.profilHash(profile), profilHashVersion: 2,
     briefing: b, lage: clone(lage.payload), inhaltHash: B.hash({ briefing: b, lage: lage.payload }),
     pruefung: B.pruefeInhalt(b, lage.payload), erzeugtAm: stamp };

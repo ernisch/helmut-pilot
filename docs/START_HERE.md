@@ -57,12 +57,15 @@ Neue Funktionen sind nachrangig, solange der 500er-Nachweis und die P0-Punkte of
 
 | Bereich | Was er leistet |
 |---|---|
-| **Heute / Briefing** | Morgenlage: die wichtigste Entscheidung des Tages, belegt mit Direktlinks |
-| **Lage** | Tageslage über den Tag hinweg, Vorgänge und Einordnung |
-| **Radar** | namentliche Erwähnungen, Ausschuss-/Partei-/Wahlkreis-Bezug |
+| **Heute / Briefing** | Tagespriorität und nächster Schritt mit belegtem Tagesanlass; kein zweiter Lagebericht |
+| **Lage** | Mandatsrelevanter Sachstand, Einordnung, Unsicherheit und Quellen |
+| **Radar** | Belegte Vorzeichen, kommende Fristen und neue Resonanz; kein allgemeiner Themenfeed |
 | **Büro** | kopierbare Arbeitsaufträge zur Delegation ans Büro |
 | **Profil** | Mandatsprofil, Ausschüsse, Themen, Termine — steuert die Personalisierung |
 | **Admin** | Betreibersicht: Nutzer, Quellen, Kosten, Datenstand, Betriebsmetadaten |
+
+Der verbindliche [Bereichsvertrag](betrieb/lage-radar-briefing-abnahme-20260924.md)
+trennt Produktziel, bisherigen Production-Stand und noch auszurollende Absicherung.
 
 ## 5 · Verbindliche Produktprinzipien
 
