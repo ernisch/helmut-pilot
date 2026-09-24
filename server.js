@@ -596,11 +596,11 @@ async function handleRequest(request, response) {
           vorgaenge: []
         };
       }
-      // Narrativ asynchron nachziehen (fire-and-forget), damit der Cache für den
-      // nächsten Aufruf warm ist. Blockiert den App-Start NICHT.
-      if (briefing.lageBriefing && briefing.lageBriefing.pendingNarrative) {
-        buildLageBriefing(profile, { politicianId }).catch((e) => console.error("Lage-Narrativ (async) fehlgeschlagen", e && e.message));
-      }
+      // Ein Appabruf darf keinen unbeaufsichtigten bezahlten Lage-Lauf starten.
+      // Karten und vorhandener Text bleiben lesbar; fehlender Text wird nur im
+      // regulaeren Cron oder ausdruecklich gestarteten Fachlauf erzeugt. Ein
+      // fire-and-forget nach HTTP-Ende kann in Production die Kostenabrechnung
+      // verlieren und beim naechsten Oeffnen erneut Modelle starten.
       // P1-8 (Teil): tasks + notes sind unabhängig — parallel statt seriell laden.
       // Block 5 (Lage-Frische): zusätzlich die ECHTE Ausgabe-Frische mitladen.
       // getLatestCompleteKnowledgeObjectAt = created_at des jüngsten verstandenen
@@ -3589,24 +3589,25 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
   return ausgabe(briefing, sourcesByVorgang);
 }
 
-// Quellen aller Vorgänge PARALLEL laden (nicht seriell) — ein hängender Call darf
-// nicht alle nachfolgenden blockieren. Fallback auf best_source_url erledigt der Adapter.
+// Auch normale Appabrufe koennen 50 und durch frische Kandidaten mehr
+// Quellenpakete brauchen. Dieselbe begrenzte Parallelitaet wie in der
+// Fachaufnahme verhindert einen ungebremsten Abrufschwall je Mandat.
+// Der bestehende Quellen-/Fallbackvertrag des Adapters bleibt unveraendert.
 async function loadSourcesByVorgang(kos) {
-  const entries = await Promise.all((kos || []).map(async (ko) => {
-    let docs = [];
-    try { docs = await getSourcesForVorgang(ko.vorgang_id); } catch (_) { docs = []; }
-    return [ko.vorgang_id, docs || []];
-  }));
-  return Object.fromEntries(entries);
+  const sources = {};
+  for (let i = 0; i < (kos || []).length; i += 8) {
+    const entries = await Promise.all(kos.slice(i, i + 8).map(async (ko) => {
+      let docs = [];
+      try { docs = await getSourcesForVorgang(ko.vorgang_id); } catch (_) { docs = []; }
+      return [ko.vorgang_id, docs || []];
+    }));
+    Object.assign(sources, Object.fromEntries(entries));
+  }
+  return sources;
 }
 
 async function loadPruefSourcesByVorgang(kos) {
-  const sources = {};
-  // Der interne Vollumfang soll die Datenbank nicht mit bis zu500 gleichzeitigen
-  // Abrufen belasten. Bestehender Leservertrag, maximal acht Abrufe zugleich.
-  for (let i = 0; i < kos.length; i += 8)
-    Object.assign(sources, await loadSourcesByVorgang(kos.slice(i, i + 8)));
-  return sources;
+  return loadSourcesByVorgang(kos);
 }
 
 function compactBriefingPayload(briefing) {
