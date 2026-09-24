@@ -940,23 +940,69 @@ aufloesbar: `validateUnderstandingResult` fuehrt Quellenbeleg-Codes, den
 `decision_level-antwortkonflikt` und die Schema-/DSGVO-Meldungen zusammen; der Bedienweg
 uebernimmt nur die **festen** Codes. Ist die Liste leer, gab **ausschliesslich** eine
 Schema-/DSGVO-Meldung den Ausschlag (ihr Text kann Rohwerte tragen und bleibt deshalb aussen).
-**Welches Feld es war, ist nicht rekonstruierbar**; die Klasse ist belegt.
+**Welches Feld es war, ist aus den vorhandenen Belegen nicht rekonstruierbar** und wird nicht
+erfunden. Deshalb wurde statt eines geratenen Feldfixes der **ganze generische Fehlerbereich**
+vermesssen und abgesichert (`scripts/understanding-schema-diagnose-test.js`, **51 Pruefungen**):
+
+**(1) Welche Schema-/DSGVO-Fehler koennen nach der heutigen Sanitisierung real entstehen?**
+Gemessen gegen die echte Assemblierung — genau **zwei** Klassen:
+
+* eine **Pflichtprosa bleibt leer** (`was_ist_passiert`, `warum_wichtig`, `wer_ist_betroffen`,
+  `handlungsempfehlung`): das Feld fehlte bzw. war leer **oder** war laenger als 800 Zeichen und
+  wurde deshalb bewusst **nicht** gekuerzt;
+* ein **DSGVO-Treffer in der Prosa** (E-Mail-Muster). In Erwaeehnungslisten entfernt der
+  bestehende Sanitizer solche Eintraege schon vorher (2.6); in der Prosa bleibt die Pruefung
+  bewusst **laut** (2.7).
+
+Alle uebrigen denkbaren Fehler sind **strukturell unerreichbar**, weil die Sanitisierung jede
+angreifbare Form vorher neutralisiert: falsche Typen, ungueltige Enums, zu lange optionale Texte,
+Nicht-Arrays, kaputte Eintraege und verschachtelte Strukturen erzeugen **keinen** Schema-Fehler
+(1.x). Ein verbotenes PII-Feld kann nicht entstehen, weil die Schluessel aus unserem eigenen
+Assembler stammen (2.4); der Zweig „Erwaehnungseintrag zu lang“ ist durch die 120-Zeichen-Grenze
+unerreichbar (2.5). Jede Meldung wird gegen eine feste Klassenliste geprueft (2.y) — eine neue,
+unbekannte Meldung waere ein Befund, kein Rauschen.
+
+**(2) Welche davon sind deterministisch korrigierbar, ohne etwas zu erfinden oder zu verkuerzen?**
+**Keine** — belegt in Abschnitt 3 derselben Suite:
+
+* es wird **nichts erfunden**: eine fehlende Pflichtprosa bleibt leer und wird weder mit
+  Ersatztext gefuellt (3.1) noch aus anderen Feldern abgeleitet (3.2);
+* es wird **nichts verkuerzt**: ein 801-Zeichen-Kerntext erscheint nicht als kuerzere
+  Tatsachenbehauptung (3.3), der Grenzwert 800 bleibt unveraendert erhalten (3.4), 801 wird
+  abgewiesen (3.5). Das ist der **bereits abgenommene** Vertrag aus
+  [`prosa-textgrenzen-2026-09-19.md`](prosa-textgrenzen-2026-09-19.md) (PR453/PR454): dort beginnt
+  ein 440-Zeichen-Gegenfall mit einem behaupteten Beschluss und nimmt ihn am Ende ausdruecklich
+  zurueck — nach einer Kuerzung war die Einschraenkung verloren. „Das kleinste sichere Verhalten
+  ist, niemals einen zu langen Text in eine kuerzere Tatsachenbehauptung umzuwandeln.“
+* die DSGVO-Klasse still zu bereinigen (statt abzulehnen) wuerde den **Sicherheitsalarm**
+  abschalten und die Modellaussage veraendern; sie bleibt laut und fail closed.
+
+**(3) Was bleibt fail closed?** Genau diese zwei realen Klassen. Fuer sie ist fail closed die
+**einzige** Loesung, die „keine erfundene Aussage“ und „keine Informationsverfaelschung“
+gleichzeitig einhaelt. **Kriterium 8 ist damit bewusst korrekt fail closed erfuellt und nicht
+durch eine Verhaltensaenderung im Code loesbar** — jede Alternative waere Raten oder Vertragsbruch.
+Geliefert wurde die Beseitigung der **Unsichtbarkeit** (wertfreie, rohwertfreie Codes; Abschnitte
+4/5 der Suite) plus der belegte Nachweis, dass der Fehlerbereich vollstaendig vermessen ist.
 
 ### Die Reparatur (kleinste sichere Loesung, generisch)
 
-* **`parteien` wird deterministisch reduziert** — derselbe Beleg, dieselbe Reduktion wie bei den
-  Erwaeehnungslisten seit PR #537 (`ohneUnbelegteAkteurswerte`): ein unbelegter String
-  **entfaellt**, belegte Werte bleiben unveraendert, die uebrige Antwort bleibt erhalten. Der
-  Wert wird **nirgends** gespeichert (weder `parteien` noch `mentioned_parties`) ⇒ es wird
-  **keine unbelegte strukturelle Parteibeteiligung** gespeichert. Die Beteiligungsliste
-  `ausschuesse` bleibt **vollstaendig streng**; der strenge Validator und der GOLDSET-Auswerter
-  pruefen unveraendert jeden Rohwert.
+* **`parteien` wird deterministisch reduziert — nur bei nachgewiesener Unabhaengigkeit**
+  (`ohneUnbelegteAkteurswerte`): derselbe Beleg wie im strengen Validator, aber ein unbelegter
+  String entfaellt **nur dann**, wenn er in **keinem anderen Feld** der Antwort vorkommt (Prosa,
+  Empfehlung, Risiko/Chance, Listen, strukturierte Kommunikations-/Handlungselemente). Sonst bleibt
+  `parteien` unveraendert und die Antwort wird wie bisher abgewiesen (`quellenbeleg-parteien`,
+  `skipped-invalid`, nichts gespeichert) — **keine** abhaengige Prosa wird entfernt oder
+  umgeschrieben. Damit bleibt der historische Grund der Sonderstrenge („keine stille
+  Listenbereinigung bei erhaltener abhaengiger Empfehlung“) wirksam und wird geprueft statt
+  umgangen. Die Beteiligungsliste `ausschuesse` bleibt **vollstaendig streng**; der strenge
+  Validator und der GOLDSET-Auswerter pruefen unveraendert jeden Rohwert.
 * **Wertfreie Schema-Diagnose** (`sichereSchemaFehler` in `understanding-schema.js`): die
   Schema-/DSGVO-Meldungen werden zusaetzlich als feste, **wertfreie** Codes gefuehrt
-  (`schema-leer:<feld>`, `schema-enum:<feld>`, `schema-typ:<feld>`, `dsgvo-pii-feld`, …) —
-  uebernommen wird ausschliesslich der **Fuehrende Feldpfad aus unserem eigenen Schema**,
-  niemals ein Modellwert. Der Bericht fuehrt nur diese Fassung (`sichereFehler`); `errors` bleibt
-  fuer den Auswerter unveraendert vollstaendig.
+  (`schema-leer:<feld>`, `schema-enum:<feld>`, `schema-typ:<feld>`, `dsgvo-pii-feld`,
+  `dsgvo-eintrag-zu-lang:<feld>`, …) — uebernommen wird ausschliesslich der **Fuehrende Feldpfad
+  aus unserem eigenen Schema** (auch der Feldname im DSGVO-Fall stammt aus unserer festen
+  Erwaeehnungsliste), niemals ein Modellwert. Der Bericht fuehrt nur diese Fassung
+  (`sichereFehler`); `errors` bleibt fuer den Auswerter unveraendert vollstaendig.
 * **Unveraendert:** 113er-Kandidatendeckel, 0,80 USD, 35 min, 4-USD-Tagesriegel, Quittungslogik,
   CAS/Fencing/Locks, At-most-once, Klassen A/B, Schema, `decision_level-antwortkonflikt`.
 * **Zusatz (gleiche Ursache, ausserhalb der Fachlogik):** `scripts/lokal.js` und
@@ -966,10 +1012,13 @@ Schema-/DSGVO-Meldung den Ausschlag (ihr Text kann Rohwerte tragen und bleibt de
   10.1–10.3).
 
 **Belege.** `node scripts/lokal.js -- node scripts/run-offline-tests.js --aendert "<geaenderte
-Dateien>"` — **367/367 Suiten gruen** (STANDARD + automatische Bereichs-Regression, offline, 0
-Modellaufrufe, 0 Production-Writes). Zusaetzlich: `parteien-quellenbindung-test` 18/18,
+Dateien>"` (STANDARD + automatische Bereichs-Regression, offline, 0 Modellaufrufe, 0
+Production-Writes) sowie die Pflicht-CI des PR. Zusaetzlich gezielt:
+`parteien-quellenbindung-test` **29/29** (die zehn Pflichtfaelle in **beiden** Pfaden),
+`understanding-schema-diagnose-test` **51/51** (Vermessung des Schema-/DSGVO-Bereichs),
 `personen-quellenbindung-test` 10/10 (war auf `main` **bereits rot** — Altbestand aus PR #537,
 nie in der CI gelaufen; ueber einen temporaeren Worktree auf `origin/main` belegt),
 `ministerien-quellenbindung-test` 22/22, `ausschuesse-quellenbindung-test` 10/10,
+`understanding-akteursbeleg-test` 21/21, `understanding-ebenen-konsistenz-test` 8/8,
 `understanding-einzelvorgang-test` 49/49 (neu: wertfreier Schema-Code),
-`verstehen-einmalig-test` 117/117.
+`verstehen-169-neuversuch-test` 19/19, `verstehen-einmalig-test` 117/117.

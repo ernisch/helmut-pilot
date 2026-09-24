@@ -48,9 +48,27 @@ async function run(modus, c, s, extra = {}) {
   assert.deepEqual(existing, vorher, "Vorhandenes Objekt darf nicht mutiert werden");
   return result;
 }
-function auswertung(c, antwort) {
+async function auswertung(c, antwort) {
   return U.evaluateUnderstandingCase({ name: "neutraler-parteienbeleg", raw_documents: c.documents },
     async () => structuredClone(antwort));
+}
+// Fuehrt denselben Fall in BEIDEN Pfaden aus (Erstverstehen und Aktualisierung).
+async function jeModus(c, antwort, pruefer) {
+  for (const modus of ["erst", "update"]) {
+    const s = stand(structuredClone(antwort));
+    pruefer(await run(modus, c, s), s, modus);
+  }
+}
+// Fail closed: die Antwort wird abgewiesen und NICHTS gespeichert.
+function gesperrt(r, s) {
+  assert.equal(r.status, "skipped-invalid", JSON.stringify(r));
+  assert(r.errors.includes("quellenbeleg-parteien"), JSON.stringify(r.errors));
+  assert.equal(s.p.gespeichert.length, 0, "es wird nichts gespeichert");
+}
+// Gerettet: die uebrige Antwort wird gespeichert, `parteien` gemaess Erwartung.
+function gerettet(r, s, modus, erwarteteParteien = []) {
+  assert.equal(r.status, modus === "erst" ? "saved" : "updated", JSON.stringify(r));
+  assert.deepEqual(s.p.gespeichert[0].parteien, erwarteteParteien);
 }
 let pass = 0;
 async function test(name, fn) { await fn(); pass++; console.log("PASS " + name); }
@@ -251,6 +269,87 @@ async function main() {
     const r = QB.pruefeAkteurslistenQuellenbindung({ parteien: ["Die Linke"] }, "kein quellentext");
     assert.deepEqual(Object.keys(r).sort(), ["errors", "valid"]);
     assert.equal(r.valid, false); assert.deepEqual(r.errors, ["quellenbeleg-parteien"]);
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // Abhaengigkeitspruefung der Beteiligungsliste `parteien` (Reviewblocker 2)
+  // ═══════════════════════════════════════════════════════════════════════════════════════════
+  // Der historische Grund fuer die Sonderstrenge (docs/betrieb/parteien-quellenbindung-2026-09-18.md)
+  // war ausdruecklich das Risiko einer „stillen Listenbereinigung bei gleichzeitig erhaltener
+  // abhaengiger Empfehlung“. Deshalb gilt: `parteien` wird NUR reduziert, wenn der unbelegte Wert
+  // in KEINEM anderen gespeicherten Feld vorkommt. Sonst bleibt die Antwort fail closed — und es
+  // wird KEINE abhaengige Prosa entfernt oder umgeschrieben.
+  await test("A1 (1/10/10) Unabhaengig: unbelegte Partei nur in `parteien` => gespeichert, Liste leer", async () => {
+    await jeModus(fixture(), { ...ANALYSE, parteien: [PARTEI] }, (r, s, modus) => {
+      gerettet(r, s, modus, []);
+      assert.equal(s.p.unbekannt, 0);
+      assert.equal(s.p.aufrufe, 1);
+      // Die uebrige Antwort bleibt vollstaendig erhalten — nichts wurde entfernt.
+      assert.equal(s.p.gespeichert[0].was_ist_passiert, ANALYSE.was_ist_passiert);
+      assert.equal(s.p.gespeichert[0].handlungsempfehlung, ANALYSE.handlungsempfehlung);
+    });
+  });
+  await test("A2 (2) Unbelegte Partei auch in `warum_wichtig` => fail closed", async () => {
+    await jeModus(fixture(), { ...ANALYSE, parteien: [PARTEI], warum_wichtig: `${PARTEI} fordert mehr Busverkehr.` }, gesperrt);
+  });
+  await test("A3 (3) Unbelegte Partei auch in `handlungsempfehlung` => fail closed", async () => {
+    await jeModus(fixture(), { ...ANALYSE, parteien: [PARTEI], handlungsempfehlung: `${PARTEI} soll sich aeussern.` }, gesperrt);
+  });
+  await test("A4 (4) Unbelegte Partei auch in `recommendation` => fail closed", async () => {
+    await jeModus(fixture(), { ...ANALYSE, parteien: [PARTEI], recommendation: `Mit ${PARTEI} sprechen.` }, gesperrt);
+  });
+  await test("A5 (5) Unbelegte Partei in Risiko oder Chance => fail closed", async () => {
+    await jeModus(fixture(), { ...ANALYSE, parteien: [PARTEI], risiken: [`${PARTEI} blockiert den Beschluss.`] }, gesperrt);
+    await jeModus(fixture(), { ...ANALYSE, parteien: [PARTEI], chancen: [`${PARTEI} profiliert sich.`] }, gesperrt);
+  });
+  await test("A6 (5) Unbelegte Partei in strukturierten Kommunikations-/Handlungselementen => fail closed", async () => {
+    await jeModus(fixture(), { ...ANALYSE, parteien: [PARTEI],
+      recommended_communication_struct: { communicationLine: `${PARTEI} sollte reagieren.`,
+        recommendedChannel: "press", recommendedFormat: "statement", suggestedOutputs: [] } }, gesperrt);
+    await jeModus(fixture(), { ...ANALYSE, parteien: [PARTEI],
+      risk_of_no_action: `Ohne Reaktion bleibt ${PARTEI} bestimmend.` }, gesperrt);
+  });
+  await test("A7 (6) Gemischte Liste: unabhaengig => nur der belegte Wert bleibt", async () => {
+    const c = fixture(`${PARTEI} fordert mehr Busverkehr.`);
+    await jeModus(c, { ...ANALYSE, parteien: [PARTEI, "Andere Zukunftspartei"] },
+      (r, s, modus) => gerettet(r, s, modus, [PARTEI]));
+  });
+  await test("A8 (6) Gemischte Liste: abhaengig => fail closed", async () => {
+    const c = fixture(`${PARTEI} fordert mehr Busverkehr.`);
+    await jeModus(c, { ...ANALYSE, parteien: [PARTEI, "Andere Zukunftspartei"],
+      chancen: ["Andere Zukunftspartei profiliert sich."] }, gesperrt);
+  });
+  await test("A9 (7) Tatsaechlich belegte strukturelle Partei bleibt unveraendert erhalten", async () => {
+    const c = fixture(`${PARTEI} fordert mehr Busverkehr.`);
+    await jeModus(c, { ...ANALYSE, parteien: [PARTEI], mentioned_parties: [PARTEI] },
+      (r, s, modus) => {
+        gerettet(r, s, modus, [PARTEI]);
+        assert.deepEqual(s.p.gespeichert[0].mentioned_parties, [PARTEI]);
+      });
+  });
+  await test("A10 (8) Bloß erwaehnte Partei wird nie zur strukturellen Beteiligung befördert", async () => {
+    const c = fixture(`${PARTEI} fordert mehr Busverkehr.`);
+    await jeModus(c, { ...ANALYSE, parteien: [], mentioned_parties: [PARTEI] }, (r, s, modus) => {
+      gerettet(r, s, modus, []);
+      assert.deepEqual(s.p.gespeichert[0].mentioned_parties, [PARTEI], "die Erwaehnung bleibt Erwaehnung");
+    });
+    // Die Reduktion fuegt NIE etwas in `parteien` ein.
+    const out = QB.ohneUnbelegteAkteurswerte({ parteien: [], mentioned_parties: [PARTEI] },
+      U.buildUnderstandingPrompt(c));
+    assert.deepEqual(out.parteien, []);
+  });
+  await test("A11 Die Abhaengigkeitspruefung ist reine Logik und laesst `parteien` bei Abhaengigkeit unveraendert", () => {
+    const p = U.buildUnderstandingPrompt(fixture());
+    const unabhaengig = QB.ohneUnbelegteAkteurswerte({ parteien: [PARTEI], warum_wichtig: "Busverkehr" }, p);
+    assert.deepEqual(unabhaengig.parteien, []);
+    const abhaengig = QB.ohneUnbelegteAkteurswerte({ parteien: [PARTEI], warum_wichtig: `${PARTEI} fordert mehr.` }, p);
+    assert.deepEqual(abhaengig.parteien, [PARTEI], "bei Abhaengigkeit bleibt der Wert stehen (fail closed)");
+    // Auch in einer Liste und in einer verschachtelten Struktur wird die Abhaengigkeit erkannt.
+    assert.deepEqual(QB.ohneUnbelegteAkteurswerte({ parteien: [PARTEI], risiken: [`${PARTEI} blockiert.`] }, p).parteien, [PARTEI]);
+    assert.deepEqual(QB.ohneUnbelegteAkteurswerte({ parteien: [PARTEI],
+      recommended_communication_struct: { communicationLine: `${PARTEI} reagiert.` } }, p).parteien, [PARTEI]);
+    assert.equal(QB.parteienAbhaengig({ parteien: [PARTEI], chancen: [`${PARTEI} profiliert.`] }, [PARTEI]), true);
+    assert.equal(QB.parteienAbhaengig({ parteien: [PARTEI] }, [PARTEI]), false);
   });
   console.log(`${pass}/${pass} Gruppen erfolgreich`);
 }

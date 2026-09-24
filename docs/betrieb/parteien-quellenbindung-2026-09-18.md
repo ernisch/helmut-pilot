@@ -172,7 +172,7 @@ rein lesend bestimmen. Keine automatische Ausweitung auf neue Akteurskataloge,
 Scoringregeln oder Freitextfilter. Fachliche Gesamtwirkung, Merge und ein spaeterer
 Production Nachweis bleiben getrennte offene Schritte mit eigener Freigabe.
 
-## Nachtrag 24.09.2026 — unbelegte Beteiligungsparteien blockieren die Antwort nicht mehr
+## Nachtrag 24.09.2026 — unbelegte Beteiligungsparteien: Reduktion NUR bei nachgewiesener Unabhaengigkeit
 
 **Anlass (Production-Befund, Run 35987448290).** Der fuenfte scharfe 169er Verstehenslauf hat
 alle 122 Cluster verarbeitet, endet aber fachlich nicht bestanden: **drei** der vier lokalen
@@ -182,20 +182,29 @@ streng gebliebene `parteien`-Zweig die **gesamte**, sonst brauchbare Antwort. **
 Parteiwert das ausloeste, ist NICHT belegt** — die rohe Modellantwort wird bewusst nicht
 gespeichert; daraus wird hier nichts abgeleitet.
 
-**Entscheidung.** `parteien` wird ab jetzt — wie die Erwaeehnungslisten seit dem Nachtrag zum
-24.09. in `ministerien-quellenbindung-2026-09-18.md` — **deterministisch auf den woertlich
-belegten Teil reduziert** (`ohneUnbelegteAkteurswerte`): ein unbelegter String entfaellt, belegte
-Werte bleiben unveraendert erhalten, ohne Beleg bleibt die Liste leer. Damit gilt fuer `parteien`
-woertlich dasselbe wie fuer jede andere Akteursliste: **ein unbelegter Wert wird NIE gespeichert**
-(weder in `parteien` noch in `mentioned_parties`); es entsteht **keine unbelegte strukturelle
-Parteibeteiligung**.
+**Die Begruendung der Sonderstrenge bleibt wirksam — sie wird jetzt geprueft statt umgangen.**
+Der Grund fuer die Sonderstrenge war ausdruecklich „keine stille Listenbereinigung bei
+gleichzeitig erhaltener abhaengiger Empfehlung“ (oben, Abschnitt „Kleine allgemeine Reparatur“):
+Eine Antwort kann Aussagen enthalten, die auf genau der unbelegten Parteibeteiligung beruhen.
+Deshalb wird `parteien` **nicht** mehr pauschal reduziert, sondern **nur unter einer Bedingung**:
 
-**Was das fuer die frueherere Begruendung bedeutet.** Der urspruengliche Grund fuer die
-Sonderstrenge — „keine stille Listenbereinigung bei gleichzeitig erhaltener abhaengiger
-Empfehlung“ — bleibt sachlich richtig, wiegt aber den Totalverlust der gesamten Analyse nicht
-auf: ohne Reduktion geht der GANZE Vorgang verloren, mit Reduktion nur der unbelegte Wert. Die
-Reduktion ist **deterministisch, eng begrenzt und dokumentiert** — keine Aliase, keine Kuerzel,
-keine Ressortableitung, kein Fuzzy, keine Metadaten, kein Vorwissen.
+* Kommt der unbelegte Parteiwert in **keinem anderen gespeicherten Feld** vor (Prosa,
+  Empfehlung, Risiko/Chance, strukturierte Kommunikations- und Handlungselemente, alle Listen),
+  ist die Antwort nachweislich **unabhaengig** — dann entfaellt der Wert und die uebrige Antwort
+  bleibt erhalten.
+* Kommt er in **irgendeinem** anderen Feld vor, bleibt `parteien` **unveraendert** und der strenge
+  Validator weist die Antwort wie bisher ab (`quellenbeleg-parteien`, `skipped-invalid`, nichts
+  wird gespeichert). Es wird **keine** abhaengige Prosa entfernt oder umgeschrieben — das waere
+  Informationsverlust bzw. -verfaelschung.
+
+Der Vergleich benutzt **exakt denselben Beleg** wie der strenge Validator (`istWertBelegt`:
+Normalisierung, Wortgrenzen, die dokumentierte Partei-Artikelvariante) — kein Fuzzy, keine
+Synonyme, keine Ableitung, keine Metadaten. Damit wird fuer `parteien` **nie** eine unbelegte
+strukturelle Beteiligung gespeichert, und es wird auch keine davon abhaengige Aussage gespeichert,
+**sofern sie den Namen traegt**. Ehrliche Grenze: eine umschreibende Prosa **ohne** den Namen ist
+deterministisch nicht erkennbar — sie ist aber kein Merkmal dieser Aenderung; Prosa wird im
+bestehenden Vertrag grundsaetzlich nicht auf Akteursbeteiligung geprueft, und es wird nichts
+ergaenzt.
 
 **Unveraendert streng.**
 
@@ -206,16 +215,19 @@ keine Ressortableitung, kein Fuzzy, keine Metadaten, kein Vorwissen.
   **nicht** beruehrt — sie pruefen weiterhin jeden Rohwert.
 * `ohneFalschTypisierteAkteure` entfernt weiterhin woertlich belegte, aber eindeutig falsch
   typisierte Werte in **allen** Listen.
+* Das 800-Zeichen-Verhalten der Pflichtprosa bleibt unveraendert fail closed
+  (`prosa-textgrenzen-2026-09-19.md`, PR453/PR454).
 
 **Belege (offline, 0 Modellaufrufe, 0 Production-Writes).** `scripts/parteien-quellenbindung-test.js`
-**18/18**: unbelegte Partei ⇒ `saved` mit leerer `parteien`-Liste (Erstverstehen und Update),
-gemischte Liste ⇒ nur der woertlich belegte Wert bleibt, belegte Nennung ⇒ unveraendert erhalten
-und weiterhin Parteitreffer, GOLDSET ⇒ unveraendert streng, Reduktion ohne CAS ⇒ reine Logik.
-`understanding-akteursbeleg-test.js` **21/21** (C3/C4: Reduktion fuer die Erwaeehnungslisten und
-`parteien`, weiterhin Sperre fuer `ausschuesse`). `understanding-ebenen-konsistenz-test.js`,
-`understanding-einzelvorgang-test.js`, `verstehen-einmalig-test.js`, `verstehen-169-neuversuch-test.js`
-benutzen fuer den fail-closed-Nachweis jetzt die weiterhin strenge Liste `ausschuesse`.
-Kanonischer Beleg: [169er Understanding Lauf](verstehen-einmalig-169-20260922.md) §24/§25.
+**29/29**, darunter die zehn Pflichtfaelle in **beiden** Pfaden (Erstverstehen und Aktualisierung):
+unbelegte Partei nur in `parteien` ⇒ gespeichert mit leerer Liste; dieselbe Partei **zusaetzlich**
+in `warum_wichtig`, `handlungsempfehlung`, `recommendation`, Risiko/Chance sowie in strukturierten
+Kommunikations-/Handlungselementen ⇒ **fail closed**, nichts gespeichert; gemischte Liste ⇒
+unabhaengig nur der belegte Wert, abhaengig fail closed; belegte strukturelle Partei ⇒ unveraendert
+erhalten; blosse Erwaehnung ⇒ wird **nie** zur strukturellen Beteiligung befoerdert; Abhaengigkeit in
+Listen und verschachtelten Strukturen wird erkannt. `understanding-akteursbeleg-test.js` **21/21**
+(C3/C4); der strenge GOLDSET-Auswerter bleibt unveraendert streng. Kanonischer Beleg:
+[169er Understanding Lauf](verstehen-einmalig-169-20260922.md) §25.
 
 **Nicht enthalten.** Kein Merge, kein Deployment, kein neuer Lauf, keine Quittung, keine
 CAS-Aenderung, keine Production-Daten. Der Stand ist **Code bereit, nicht Production-belegt**.
