@@ -171,3 +171,51 @@ Nach Abschluss dieses Blocks zuerst den naechsten erhaltenen500er Inhaltsbefund
 rein lesend bestimmen. Keine automatische Ausweitung auf neue Akteurskataloge,
 Scoringregeln oder Freitextfilter. Fachliche Gesamtwirkung, Merge und ein spaeterer
 Production Nachweis bleiben getrennte offene Schritte mit eigener Freigabe.
+
+## Nachtrag 24.09.2026 — unbelegte Beteiligungsparteien blockieren die Antwort nicht mehr
+
+**Anlass (Production-Befund, Run 35987448290).** Der fuenfte scharfe 169er Verstehenslauf hat
+alle 122 Cluster verarbeitet, endet aber fachlich nicht bestanden: **drei** der vier lokalen
+`unknown` tragen `quellenbeleg-parteien` (`vg-gemeinsame-20260921-dcd0f5`,
+`vg-arbeitsplätze-20260715-6cc672`, `vg-linkenpolitiker-20260921-37cdeb`). Jedes Mal verwarf der
+streng gebliebene `parteien`-Zweig die **gesamte**, sonst brauchbare Antwort. **Welcher konkrete
+Parteiwert das ausloeste, ist NICHT belegt** — die rohe Modellantwort wird bewusst nicht
+gespeichert; daraus wird hier nichts abgeleitet.
+
+**Entscheidung.** `parteien` wird ab jetzt — wie die Erwaeehnungslisten seit dem Nachtrag zum
+24.09. in `ministerien-quellenbindung-2026-09-18.md` — **deterministisch auf den woertlich
+belegten Teil reduziert** (`ohneUnbelegteAkteurswerte`): ein unbelegter String entfaellt, belegte
+Werte bleiben unveraendert erhalten, ohne Beleg bleibt die Liste leer. Damit gilt fuer `parteien`
+woertlich dasselbe wie fuer jede andere Akteursliste: **ein unbelegter Wert wird NIE gespeichert**
+(weder in `parteien` noch in `mentioned_parties`); es entsteht **keine unbelegte strukturelle
+Parteibeteiligung**.
+
+**Was das fuer die frueherere Begruendung bedeutet.** Der urspruengliche Grund fuer die
+Sonderstrenge — „keine stille Listenbereinigung bei gleichzeitig erhaltener abhaengiger
+Empfehlung“ — bleibt sachlich richtig, wiegt aber den Totalverlust der gesamten Analyse nicht
+auf: ohne Reduktion geht der GANZE Vorgang verloren, mit Reduktion nur der unbelegte Wert. Die
+Reduktion ist **deterministisch, eng begrenzt und dokumentiert** — keine Aliase, keine Kuerzel,
+keine Ressortableitung, kein Fuzzy, keine Metadaten, kein Vorwissen.
+
+**Unveraendert streng.**
+
+* `ausschuesse` bleibt **vollstaendig streng**: ein unbelegter Wert sperrt die Antwort weiterhin
+  (`quellenbeleg-ausschuesse`). Fuer diese Liste ist kein Production-Fehler belegt.
+* Der strenge `pruefeAkteurslistenQuellenbindung`, der GOLDSET-Auswerter, das Schema, der
+  `decision_level-antwortkonflikt`, CAS/Fencing/Locks, Budget und der Quellenbeleg selbst sind
+  **nicht** beruehrt — sie pruefen weiterhin jeden Rohwert.
+* `ohneFalschTypisierteAkteure` entfernt weiterhin woertlich belegte, aber eindeutig falsch
+  typisierte Werte in **allen** Listen.
+
+**Belege (offline, 0 Modellaufrufe, 0 Production-Writes).** `scripts/parteien-quellenbindung-test.js`
+**18/18**: unbelegte Partei ⇒ `saved` mit leerer `parteien`-Liste (Erstverstehen und Update),
+gemischte Liste ⇒ nur der woertlich belegte Wert bleibt, belegte Nennung ⇒ unveraendert erhalten
+und weiterhin Parteitreffer, GOLDSET ⇒ unveraendert streng, Reduktion ohne CAS ⇒ reine Logik.
+`understanding-akteursbeleg-test.js` **21/21** (C3/C4: Reduktion fuer die Erwaeehnungslisten und
+`parteien`, weiterhin Sperre fuer `ausschuesse`). `understanding-ebenen-konsistenz-test.js`,
+`understanding-einzelvorgang-test.js`, `verstehen-einmalig-test.js`, `verstehen-169-neuversuch-test.js`
+benutzen fuer den fail-closed-Nachweis jetzt die weiterhin strenge Liste `ausschuesse`.
+Kanonischer Beleg: [169er Understanding Lauf](verstehen-einmalig-169-20260922.md) §24/§25.
+
+**Nicht enthalten.** Kein Merge, kein Deployment, kein neuer Lauf, keine Quittung, keine
+CAS-Aenderung, keine Production-Daten. Der Stand ist **Code bereit, nicht Production-belegt**.

@@ -877,3 +877,99 @@ Aufruf; `failed` ohne Freigabe ⇒ kein Kandidat und `skipped-failed`; `failed` 
 Kandidat und genau ein Aufruf; **eine Freigabe greift nicht auf einen zweiten `failed`-Vorgang
 ueber**; unlesbare Vormerkung und unlesbare Wiederaufnahmeliste stoppen fail closed; die
 Auftragsgrenzen 169/122/113/0,80 USD/35 min bleiben woertlich unveraendert.
+
+## 24 · Fuenfter (freigegebener) scharfer 169er Lauf: alle 122 Cluster verarbeitet, vier lokale unknown (2026-09-24)
+
+Der Betreiber gab genau EINEN neuen scharfen Lauf frei (Quittung `verstehen169-20260924-c`,
+Runtime-Commit `2d412d0418f5d6170f2c34ff69dbd846c4e0c703` = Merge von PR #541). Er wurde **genau
+einmal** ausgefuehrt: Workflow-Run `35987448290`, `run_attempt = 1`, `failure`,
+24.09.2026 10:28:42–10:54:17 UTC (Runner-Bericht 10:54:15 UTC, ca. 25 min).
+
+**Bindung und Schutzvertrag hielten.** 169 Dokumente, `idHash 5f387840…a2ed9`, 122 Cluster,
+Groessenverteilung 110/5/2/1/2/1/1, `maxModellaufrufe 113`, `maxUsd 0,8`, **81 Modellkandidaten**
+⇒ `schutzvertrag = true`, `ausgeloest = true`. **Damit wirkte die Reparatur aus PR #541
+belegbar:** der vierte Lauf war noch mit 114 Kandidaten im Schutzvertrag gescheitert; die
+gemeinsame Entscheidung von Plan und Motor (`duplikatBrauchtAufruf`) und die verdrahtete
+Betreiberfreigabe ergaben **80 + 1 = 81** Kandidaten (der eine ist die ausdrueckliche
+`erneut`-Freigabe fuer `vg-gemeinsame-20260921-dcd0f5`).
+
+**Ergebnis: vollstaendig verarbeitet, fachlich NICHT bestanden.** Alle **122 Cluster** wurden
+abgearbeitet (erstmals), `abbruchGrund = null`, `vollstaendigVerarbeitet = true`,
+`fachlichBestanden = false`. Bilanz: `saved 63`, `updated 14`, `duplicate 34`, `merged 7`,
+`skipped-invalid 4` (`unbekannt 4`). **81 Modellaufrufe** (genau die Kandidatenzahl; die vier
+unknown haben je einen Aufruf bezahlt), `quellenabrufe 0`, `profilwrites 0`, `kommunikation 0`,
+Laufkosten **0,522795 USD** von 0,80 USD, `automatischeWiederholung: false`. Die Quittung
+`verstehen169-20260924-c` ist terminal **`unbekannt`** und damit **verbraucht**.
+
+**Die vier lokalen unknown** (alle `ausgang = unbekannt`, Klasse A aus §21 — **kein** globaler
+Abbruch):
+
+| Vorgang | reason | validierungsfehler | CAS danach (Betreiberbeleg) |
+|---|---|---|---|
+| `vg-gemeinsame-20260921-dcd0f5` | `validierung-fehlgeschlagen` | `["quellenbeleg-parteien"]` | `unbekannt`, versuche 2, ki_aufrufe 2, fencing 2, ergebnis_fencing null |
+| `vg-arbeitsplätze-20260715-6cc672` | `aktualisierung-ungueltig` | `["quellenbeleg-parteien"]` | `unbekannt`, versuche 2, ki_aufrufe 2, fencing 2, ergebnis_fencing 1 |
+| `vg-linkenpolitiker-20260921-37cdeb` | `validierung-fehlgeschlagen` | `["quellenbeleg-parteien"]` | `unbekannt`, versuche 1, ki_aufrufe 1, fencing 1, ergebnis_fencing null |
+| `vg-verzögerung-20230613-95c80f` | `validierung-fehlgeschlagen` | `[]` | `unbekannt`, versuche 1, ki_aufrufe 1, fencing 1, ergebnis_fencing null |
+
+Status, `reason`, `validierungsfehler` und Dokumentzahl stehen im Laufbericht (Log des Runs);
+die CAS-Werte der vier Vorgaenge sind **Betreiberbelege**. **Keine Profilwirkung, keine
+Kommunikation, kein Retry.** Die vier Vorgaenge bleiben terminal `unbekannt` und wurden in
+diesem Sprint **nicht** erneut freigegeben.
+
+## 25 · Die vier lokalen Fehler und ihre generische Reparatur (2026-09-24, PR #542)
+
+**Status: Code bereit und gezielt testgesichert — NICHT Production-belegt.** Es wurde **kein**
+neuer Lauf gestartet, **kein** Dispatch, **keine** Quittung beansprucht, **keine** CAS-Aenderung,
+**keine** Profil-/Environment-/Cron-Aenderung, **kein** Merge.
+
+### Ursache 1 — `parteien` war als Beteiligungsliste unbedingt streng
+
+Der Validator prueft **nur den Nennungsbeleg**: jeder Wert in `parteien` muss woertlich im
+tatsaechlich abgesendeten Prompt (Titel, Auszug, expliziter Artikelkontext) vorkommen. Die drei
+betroffenen Antworten trugen mindestens einen `parteien`-Wert, der dort nicht woertlich stand
+(Alias, amtliche Langform, Kuerzel oder Flexion). **Welcher konkrete Wert das war, ist NICHT
+belegt** — die rohe Modellantwort wird bewusst nicht gespeichert; daraus wird hier nichts
+abgeleitet. Belegt ist die Klasse: `quellenbeleg-parteien` ist genau die Wortmarke fuer „kein
+woertlicher Nennungsbeleg“. Ein einzelner solcher Wert verwarf die **gesamte**, sonst brauchbare
+Antwort.
+
+### Ursache 2 — eine rein schemabedingte Ablehnung blieb anonym
+
+`vg-verzögerung-20230613-95c80f` trug `validierungsfehler = []`. Das ist deterministisch
+aufloesbar: `validateUnderstandingResult` fuehrt Quellenbeleg-Codes, den
+`decision_level-antwortkonflikt` und die Schema-/DSGVO-Meldungen zusammen; der Bedienweg
+uebernimmt nur die **festen** Codes. Ist die Liste leer, gab **ausschliesslich** eine
+Schema-/DSGVO-Meldung den Ausschlag (ihr Text kann Rohwerte tragen und bleibt deshalb aussen).
+**Welches Feld es war, ist nicht rekonstruierbar**; die Klasse ist belegt.
+
+### Die Reparatur (kleinste sichere Loesung, generisch)
+
+* **`parteien` wird deterministisch reduziert** — derselbe Beleg, dieselbe Reduktion wie bei den
+  Erwaeehnungslisten seit PR #537 (`ohneUnbelegteAkteurswerte`): ein unbelegter String
+  **entfaellt**, belegte Werte bleiben unveraendert, die uebrige Antwort bleibt erhalten. Der
+  Wert wird **nirgends** gespeichert (weder `parteien` noch `mentioned_parties`) ⇒ es wird
+  **keine unbelegte strukturelle Parteibeteiligung** gespeichert. Die Beteiligungsliste
+  `ausschuesse` bleibt **vollstaendig streng**; der strenge Validator und der GOLDSET-Auswerter
+  pruefen unveraendert jeden Rohwert.
+* **Wertfreie Schema-Diagnose** (`sichereSchemaFehler` in `understanding-schema.js`): die
+  Schema-/DSGVO-Meldungen werden zusaetzlich als feste, **wertfreie** Codes gefuehrt
+  (`schema-leer:<feld>`, `schema-enum:<feld>`, `schema-typ:<feld>`, `dsgvo-pii-feld`, …) —
+  uebernommen wird ausschliesslich der **Fuehrende Feldpfad aus unserem eigenen Schema**,
+  niemals ein Modellwert. Der Bericht fuehrt nur diese Fassung (`sichereFehler`); `errors` bleibt
+  fuer den Auswerter unveraendert vollstaendig.
+* **Unveraendert:** 113er-Kandidatendeckel, 0,80 USD, 35 min, 4-USD-Tagesriegel, Quittungslogik,
+  CAS/Fencing/Locks, At-most-once, Klassen A/B, Schema, `decision_level-antwortkonflikt`.
+* **Zusatz (gleiche Ursache, ausserhalb der Fachlogik):** `scripts/lokal.js` und
+  `scripts/lokaler-netzschutz.js` zitieren den Preload-Pfad in `NODE_OPTIONS`. In einem
+  Projektpfad mit Leerzeichen zerlegte Node die Option sonst am Leerzeichen: der lokale Starter
+  brach ab und der **Kindprozess-Schutz fiel still aus** (belegt durch `netzschutz-test.js`
+  10.1–10.3).
+
+**Belege.** `node scripts/lokal.js -- node scripts/run-offline-tests.js --aendert "<geaenderte
+Dateien>"` — **367/367 Suiten gruen** (STANDARD + automatische Bereichs-Regression, offline, 0
+Modellaufrufe, 0 Production-Writes). Zusaetzlich: `parteien-quellenbindung-test` 18/18,
+`personen-quellenbindung-test` 10/10 (war auf `main` **bereits rot** — Altbestand aus PR #537,
+nie in der CI gelaufen; ueber einen temporaeren Worktree auf `origin/main` belegt),
+`ministerien-quellenbindung-test` 22/22, `ausschuesse-quellenbindung-test` 10/10,
+`understanding-einzelvorgang-test` 49/49 (neu: wertfreier Schema-Code),
+`verstehen-einmalig-test` 117/117.
