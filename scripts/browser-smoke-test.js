@@ -205,7 +205,7 @@ function check(name, cond, detail = "") {
           id: state.primaryItem.id, vorgangId: state.primaryItem.id,
           title: state.primaryItem.title, displayTitle: state.primaryItem.displayTitle,
           displaySummary: "Die belegten Fakten gehoeren in die Lage.",
-          whyRelevant: state.whyItMatters, recommendation: state.recommendation,
+          whyRelevant: "Der Entwurf betrifft das Arbeitsgebiet des Mandats.", recommendation: state.recommendation,
           sources: [{ name: "Testquelle", url: state.primaryItem.sourceUrl }]
         }] };
         await page.evaluate((fixtureData) => {
@@ -218,8 +218,8 @@ function check(name, cond, detail = "") {
           proposals: document.querySelectorAll(".hstand-proposal").length,
           why: document.querySelectorAll(".hstand-why").length
         }));
-        check(`${label}: Briefing zeigt Empfehlung, aber keine doppelte Einordnung`,
-          displayed.proposals === 1 && displayed.why === 0, JSON.stringify(displayed));
+        check(`${label}: Briefing zeigt Empfehlung und eigenen Tagesanlass`,
+          displayed.proposals === 1 && displayed.why === 1, JSON.stringify(displayed));
         await page.locator(".hstand [data-vorgang]").first().click();
         await page.waitForSelector(".vsheet-title", { timeout: 5000 });
         const sheetText = await page.locator(".vsheet-lede").innerText();
@@ -230,6 +230,9 @@ function check(name, cond, detail = "") {
         await page.getByRole("button", { name: "Empfehlung im Briefing öffnen", exact: true }).click();
         check(`${label}: Rueckverweis schliesst Lage Detail und zeigt Briefing`,
           await page.locator(".vsheet-title").count() === 0 && await page.locator(".hstand-proposal").count() === 1);
+        check(`${label}: Briefing begründet die Tagespriorität statt den Sachstand zu kopieren`,
+          (await page.locator(".hstand-why").innerText()).includes("heutigen Arbeitstag")
+            && !(await page.locator(".hstand-why").innerText()).includes("Arbeitsgebiet des Mandats"));
         const primaryTitle = state.primaryItem.displayTitle || state.primaryItem.title;
         check(`${label}: Briefing wiederholt den Hauptvorgang nicht in weiteren Vorgaengen`,
           !(await page.locator(".hstand-rel-title").allTextContents()).includes(primaryTitle));
@@ -252,6 +255,8 @@ function check(name, cond, detail = "") {
         check(`${label}: Radar kopiert weder Vorschlag noch Lage Langtext`,
           !radarText.includes("Heute nicht öffentlich zuspitzen")
             && !radarText.includes("Die belegten Fakten gehoeren in die Lage."));
+        check(`${label}: Radar hat einen Beobachtungsgrund und keine zweite Artikelliste`,
+          radarText.includes("persönlicher Erwähnung") && !radarText.includes("Alle relevanten Artikel"));
 
         // Der Verweis darf keine fachliche Luecke verstecken: abweichende
         // Begruendung bleibt sichtbar; ohne passenden Lagevorgang kein Blindlink.

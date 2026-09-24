@@ -76,7 +76,7 @@ const kos = [
   { id: "ko-4", vorgang_id: "vg-4", status: "pending", understanding_status: "pending" }
 ];
 const sourcesByVorgang = {
-  "vg-1": [{ url: "https://bmg.bund.de/pflege", source_name: "BMG", link_type: "direct", published_at: "2026-07-05" }],
+  "vg-1": [{ url: "https://bmg.bund.de/pflege", source_name: "BMG", link_type: "direct", published_at: "2026-07-06T07:00:00Z" }],
   "vg-2": [{ url: "https://example.org/klima", source_name: "Beispiel", link_type: "direct" }]
 };
 const profile = { id: "u-health", fullName: "Test Abgeordnete", firstName: "Test", party: "SPD", committee: "Gesundheit", focusTopics: ["Pflege"] };
@@ -122,8 +122,9 @@ check("Wo BEIDES vorhanden (relevance_score + decision): Client-Schwelle stimmt 
 // --- 5) Item-Konsistenz: finalScore <-> decision + priority-Label -----------
 check("Item.decision == decisionFromScore(finalScore)",
   briefing.items.every((it) => clientDecisionFromScore(it.finalScore) === it.decision));
-check("Höchster Score steht auf Position 1 (Sortierung absteigend)",
-  briefing.items.every((it, i, arr) => i === 0 || arr[i - 1].finalScore >= it.finalScore));
+check("Belegter Tagesschwerpunkt steht vorne; Rest bleibt nach Score sortiert",
+  briefing.items[0].vorgangId === briefing.currentHelmutState.primaryVorgangId
+    && briefing.items.slice(1).every((it, i, arr) => i === 0 || arr[i - 1].finalScore >= it.finalScore));
 
 // --- 6) homeSections + Metriken ---------------------------------------------
 const HS = briefing.homeSections;

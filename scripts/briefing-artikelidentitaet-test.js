@@ -88,9 +88,7 @@ test("Briefing und Detailstand zaehlen Artikel, alle Rohbeleg IDs bleiben erhalt
   const b = make(docs);
   A.equal(b.items[0].sourceCount, 1);
   A.equal(b.personalizedRecommendations[0].source_count, 1);
-  A.equal(b.currentHelmutState.primaryItem.sourceCount, 1);
-  A.equal(b.currentHelmutState.sourcesSummary.sourceCount, 1);
-  A.deepEqual(b.currentHelmutState.sourceIds, ["rd-a", "rd-b"]);
+  A.equal(b.currentHelmutState.primaryItem, null, "Widersprüchliche Datierung trägt keinen Tagesanlass");
   A.equal(b.items[0].primarySource.publishedAt, null);
   A.equal(b.items[0].primarySource.variants.length, 2);
   A.equal(b.items[0].summary, ko.display_summary);
@@ -100,25 +98,18 @@ test("Briefing und Detailstand zaehlen Artikel, alle Rohbeleg IDs bleiben erhalt
 test("Widerspruch wird weder durch Analysezeit noch Ersterfassung zu heutiger Frische", () => {
   for (const extra of [{}, { frischeFenster: { start: "2026-09-16T05:00:00Z", end: "2026-09-17T08:00:00Z" } }]) {
     const s = make(docs, extra).currentHelmutState;
-    A.equal(s.primaryItem.meldungAt, null);
-    A.equal(s.primaryItem.lastUpdated, null);
-    A.equal(s.datenstandVonHeute, false);
-    A.equal(s.datenstandTag, null);
-    A.notEqual(s.status, "fresh");
-    if (extra.frischeFenster) {
-      A.equal(s.primaryItem.frischeKlasse, "undatiert");
-      A.equal(s.frische.kennzahlen.undatiert, 1);
-    }
+    A.equal(s.primaryItem, null);
+    A.equal(s.status, "empty");
   }
 });
 
 test("Ein anderer widerspruchsfreier Artikel kann den Meldungszeitpunkt belegen", () => {
-  const other = { ...docs[0], id: "rd-c", url: "https://example.org/bericht", published_at: "2026-09-16T06:00:00Z" };
+  const other = { ...docs[0], id: "rd-c", url: "https://example.org/bericht", published_at: "2026-09-17T06:00:00Z" };
   const b = make([...docs, other]);
   A.equal(b.items[0].sourceCount, 2);
   A.equal(b.currentHelmutState.primaryItem.sourceCount, 2);
   A.equal(b.currentHelmutState.primaryItem.meldungAt, other.published_at);
-  A.equal(b.currentHelmutState.datenstandVonHeute, false);
+  A.equal(b.currentHelmutState.datenstandVonHeute, true);
 });
 
 test("Eingabereihenfolge waehlt keine der widerspruechlichen Zeiten aus", () => {
@@ -135,8 +126,8 @@ test("Auch gleiche Links erhalten verschiedene Rohbeleg IDs und alle Zeitbelege"
   A.equal(source.publishedAt, null);
   A.equal(source.publishedAtConflict, true);
   const missing = make(docs.map(d => ({ ...d, published_at: null }))).currentHelmutState;
-  A.equal(missing.primaryItem.meldungAt, null);
-  A.equal(missing.datenstandVonHeute, false);
+  A.equal(missing.primaryItem, null);
+  A.equal(missing.status, "empty");
 });
 
 test("Konfliktquelle verdraengt keinen anderen Schwerpunkt als angeblich frischer Kandidat", () => {

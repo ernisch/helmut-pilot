@@ -186,7 +186,7 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     const storage = { assertTenant: S.assertTenant, getRenderedBriefingV3: async (_id, slot) => slot === B.SLOT ? clone(row) : null,
       insertRenderedBriefingV3: async e => { row = clone(e); return { saved: true }; } };
     const args = { profile, userId: profile.id, now, storage,
-      build: async () => { builds++; return { available: true, engine: "v3", items: [{ title: "Kita-Beratung" }], currentHelmutState: {}, currentRadarState: {} }; } };
+      build: async () => { builds++; return { available: true, engine: "v3", items: [{ title: "Kita-Beratung" }], currentHelmutState: { tagesAnlass: { art: "neue-quelle", documentIds: ["rd-fixture"], text: "Synthetischer Tagesanlass nur für den Speichertest." },}, currentRadarState: {} }; } };
     const r = await B.materialisiere(args); assert.equal(r.gespeichert, true); assert.equal(r.qualitaetBestanden, false);
     assert(row.payload.briefing.items.length); assert(row.payload.pruefung.fehler.includes("lage-text-fehlt"));
     await B.materialisiere(args); assert.equal(builds, 1, "Vorhandener gleicher Stand erzeugt keine pauschale Neuberechnung");
@@ -196,7 +196,7 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
   await test("Wortgleiche lange Texte zwischen Radar und Briefing sind keine vollstaendige Qualitaetsabnahme", () => {
     const text = "Das Kabinett beraet nach Angaben der Quelle den vorgelegten Entwurf fuer bundesweite Standards in Kindertagesstaetten.";
     const r = B.pruefeInhalt({ available: true, items: [{ title: "Kita-Beratung" }],
-      currentHelmutState: { summary: text }, currentRadarState: { summary: text } },
+      currentHelmutState: { tagesAnlass: { art: "neue-quelle", documentIds: ["rd-fixture"], text: "Synthetischer Tagesanlass nur für den Speichertest." }, summary: text }, currentRadarState: { summary: text } },
       { paragraphs, qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } });
     assert.equal(r.strukturellVollstaendig, false);
     assert(r.fehler.includes("wiederholung-zwischen-ansichten"));
@@ -206,7 +206,7 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
     const text = "Die Quelle berichtet ueber den vorgelegten Vorschlag zur Finanzierung kommunaler Beratungsstellen in den Gemeinden.";
     const shown = { dynamics: [] };
     const b = { available: true, items: [{ title: "Beratung" }],
-      currentHelmutState: { summary: text },
+      currentHelmutState: { tagesAnlass: { art: "neue-quelle", documentIds: ["rd-fixture"], text: "Synthetischer Tagesanlass nur für den Speichertest." }, summary: text },
       currentRadarState: { dynamics: [{ title: text }], anzeige: shown } };
     const lage = { paragraphs, qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } }, before = clone(b);
     // Den echten Clientselektor ausfuehren; nur die HTML-Unterrenderer sind Doubles.
@@ -239,7 +239,7 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
   await test("Derselbe gebundene Artikeltitel in beiden Ansichten ist ein erlaubter Alias", () => {
     const title = "Der Ausschuss beraet den vorgelegten Entwurf zur Finanzierung kommunaler Beratungsstellen in den Gemeinden";
     const b = { available: true, items: [{ title: "Beratung" }],
-      currentHelmutState: { primaryItem: { id: "vg-fixture", sourceIds: ["rd-fixture"], title } },
+      currentHelmutState: { tagesAnlass: { art: "neue-quelle", documentIds: ["rd-fixture"], text: "Synthetischer Tagesanlass nur für den Speichertest." }, primaryItem: { id: "vg-fixture", sourceIds: ["rd-fixture"], title } },
       currentRadarState: { articles: [{ vorgangId: "vg-fixture", documentId: "rd-fixture", title }] } };
     const lage = { paragraphs, qualitaet: { version: require("../lib/helmut/lage-textqualitaet").VERSION } };
     assert.equal(B.pruefeInhalt(b, lage).strukturellVollstaendig, true);
@@ -260,7 +260,7 @@ const review = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id:
       ergaenzeUnvollstaendigesBriefing: async (before, entry) => {
         assert.deepEqual(entry.payload.vorherigerStand, before); replacements++; row = clone(entry); return { saved: true };
       } };
-    const briefing = { available: true, items: [{ title: "Kita-Beratung" }], currentHelmutState: {}, currentRadarState: {} };
+    const briefing = { available: true, items: [{ title: "Kita-Beratung" }], currentHelmutState: { tagesAnlass: { art: "neue-quelle", documentIds: ["rd-fixture"], text: "Synthetischer Tagesanlass nur für den Speichertest." },}, currentRadarState: {} };
     await B.materialisiere({ profile, userId: profile.id, now, storage, briefing });
     const before = clone(row);
     lage = { payload: { paragraphs: Q.pruefe(paragraphs, docs, review).paragraphs,

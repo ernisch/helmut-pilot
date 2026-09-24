@@ -3566,6 +3566,7 @@ async function buildV3Briefing(profile, politicianId, opts = {}) {
           kosById,
           sourcesByVorgang,
           now,
+          frischeFenster,
           state: briefing.currentHelmutState
         })
       };
