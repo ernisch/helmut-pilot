@@ -28,6 +28,9 @@
 //  §18  exakt 0 Kommunikation
 //  §19  das bestehende CAS wird verwendet
 //  §20  das bestehende Fencing wird verwendet
+//  §26  die Kandidatenzahl spiegelt den Motor (Duplikat nur mit Vormerkung/Freigabe als
+//       Kandidat) und die ausdrueckliche Betreiberfreigabe erreicht genau EINEN Vorgang
+//       (2026-09-24, PR #541)
 //
 // WARUM ATTRAPPEN: ein scharfer Pfad, der nur mit einer Attrappe getestet wurde, ist nicht
 // bewiesen (CURRENT_STATE §10). Deshalb ersetzen die Attrappen hier AUSSCHLIESSLICH Datenbank,
@@ -55,7 +58,7 @@ const rueckstand = require(path.join(ROOT, "lib/helmut/verstehen-rueckstand"));
 const CLIRUNNER = require(path.join(ROOT, "scripts/verstehen-einmalig-169"));
 const understanding = require(path.join(ROOT, "lib/helmut/understanding"));
 const { contentHash, canonicalizeUrl, dedupeRawDocuments, toRawDocumentRow } = require(path.join(ROOT, "lib/helmut/dedup"));
-const { clusterRawDocuments } = require(path.join(ROOT, "lib/helmut/vorgang-identity"));
+const { clusterRawDocuments, deriveVorgangId } = require(path.join(ROOT, "lib/helmut/vorgang-identity"));
 
 const BELEG = path.join(ROOT, "belege", "verstehen-169-ids.json");
 
@@ -1844,6 +1847,222 @@ async function abschnittLokalerClusterfehler() {
   });
 }
 
+// ── §26 Kandidatenzahl = Motorwahrheit; Betreiberfreigabe trifft genau EINEN Vorgang ───────
+// Production-Befund 2026-09-24 (Run `35978125747`): der Plan zaehlte JEDES vollstaendige Duplikat
+// pauschal als Kandidaten („vormerkung-moeglich"). Der echte Motor ruft das Modell aber NUR bei
+// offener Update-Vormerkung oder ausdruecklicher Betreiberfreigabe (`erneut`) — sonst endet der
+// Vorgang OHNE Aufruf als `duplicate`. Diese Ueberzaehlung hob die Kandidatenzahl auf 114 ueber
+// den harten Deckel 113 und stoppte den vierten Lauf VOR dem ersten Modellaufruf (0 USD,
+// Quittung `verstehen169-20260924-c` frei). §26 belegt: Plan und Motor benutzen DIESELBE Wahrheit
+// (`duplikatBrauchtAufruf`), die ausdrueckliche Freigabe erreicht GENAU EINEN Vorgang, und ein
+// unlesbarer Bestand stoppt fail closed, statt die Kandidatenzahl still zu verkleinern.
+
+// Baut eine Welt aus vollstaendig BEKANNTEN Vorgaengen: je Cluster ein KO, dem GENAU die
+// Cluster-Dokumente verknuepft sind (kein neues Dokument). Der Motor landet damit im
+// Duplikat-Zweig, der Plan in `art = duplikat`.
+function baueBekanntWelt({ anzahl = 1, status = "complete", understandingStatus = "complete",
+  vormerkungIndizes = [], vormerkungDeckel = 1, vormerkungUnlesbar = false,
+  freigabeIndizes = [], wiederaufnahmeUnlesbar = false } = {}) {
+  const docs = [];
+  const kos = [];
+  const links = {};
+  const vorgangsIds = [];
+  for (let i = 0; i < anzahl; i += 1) {
+    const d = rohesDokument("bk-" + i, WOERTER[i]);
+    const alt = rohesDokument("alt-bk-" + i, WOERTER[i]);
+    docs.push(d);
+    // ZWEI verknuepfte Dokumente (Beweisfamilie): das Cluster-Dokument SELBST und ein zweites
+    // mit demselben Token. `neueDocs` ist damit leer (echtes Duplikat), `sameVorgang` belegt die
+    // Zusammengehoerigkeit — und die Kennung traegt genau das Praefix des Clusters.
+    const vorgangId = deriveVorgangId({ documents: [d, alt], anchors: [] });
+    const ko = { id: "ko-bk-" + i, vorgang_id: vorgangId, status, understanding_status: understandingStatus,
+      updated_at: "2026-09-22T07:00:00Z" };
+    kos.push(ko);
+    links[ko.id] = [d, alt];
+    vorgangsIds.push(vorgangId);
+  }
+  const w = weltBauen({ dokumente: docs, kos, links });
+  w.deps.listWiederaufnahmen = async () => (wiederaufnahmeUnlesbar
+    ? { verfuegbar: false, grund: "transport-testfehler", vorgaenge: [] }
+    : { verfuegbar: true, vorgaenge: freigabeIndizes.map((i) => vorgangsIds[i]) });
+  const vormerkungen = {};
+  for (const i of vormerkungIndizes) vormerkungen[vorgangsIds[i]] = vormerkungDeckel;
+  w.welt.speicher.verstehenVormerkungLese = async (ids) => {
+    if (vormerkungUnlesbar) return { verfuegbar: false, eintraege: null };
+    const eintraege = {};
+    for (const id of ids || []) {
+      if (Object.prototype.hasOwnProperty.call(vormerkungen, id)) eintraege[id] = vormerkungen[id];
+    }
+    return { verfuegbar: true, eintraege };
+  };
+  return { ...w, docs, kos, links, vorgangsIds, bindung: testbindung(docs) };
+}
+
+// Spiegelt EXAKT den Weg von `fuehreAus`: erst die Betreiberfreigaben lesen, dann planen.
+// Bewusst NICHT `pruefeUndPlane` direkt mit leerem Set — sonst wuerde der Test an der
+// Freigabeverdrahtung vorbeipruefen.
+async function planeMitFreigaben(W) {
+  const fr = await understanding.leseWiederaufnahmeFreigaben(W.deps);
+  A.equal(fr.ok, true);
+  return V.pruefeUndPlane({
+    ids: idsVon(W.docs), deps: W.deps, commit: "test-commit",
+    opts: { freigaben: fr.freigaben }, erwartet: W.bindung
+  });
+}
+
+async function abschnittKandidatenWahrheit() {
+  abschnitt("§26  Kandidatenzahl = Motorwahrheit · Betreiberfreigabe trifft genau einen Vorgang");
+
+  await pruefeAsync("§26.1 vollstaendiges Duplikat OHNE Vormerkung: kein Kandidat, Motor duplicate, 0 Aufrufe", async () => {
+    const D1 = baueBekanntWelt({ anzahl: 1 });
+    const p = await V.pruefeUndPlane({ ids: idsVon(D1.docs), deps: D1.deps, commit: "test-commit", erwartet: D1.bindung });
+    A.equal(p.ok, true);
+    A.equal(p.plan.arten.duplikat, 1);
+    A.equal(p.plan.einteilungen[0].kandidat, false);
+    A.equal(p.plan.einteilungen[0].begruendung, "duplikat");
+    A.equal(p.plan.kandidaten, 0, "ein echtes Duplikat ist KEIN Modellkandidat");
+    const lauf = await V.fuehreAus({
+      ids: idsVon(D1.docs), deps: D1.deps, execute: true, commit: "test-commit",
+      erwartet: D1.bindung, runId: "kand-dup", now: () => new Date()
+    });
+    A.equal(lauf.ok, true, "der Lauf ist fachlich bestanden — kein blosser Nicht-Kandidat");
+    A.equal(lauf.modellaufrufe, 0);
+    A.equal(D1.welt.aufrufe.length, 0, "kein Modellaufruf fuer ein echtes Duplikat");
+    A.equal(lauf.bilanz.arten.duplicate, 1);
+    A.equal(lauf.quittungStatus, "abgeschlossen");
+  });
+
+  await pruefeAsync("§26.2 vollstaendiges Duplikat MIT Vormerkung: Kandidat, Motor nimmt begrenzt wieder auf", async () => {
+    const D2 = baueBekanntWelt({ anzahl: 1, vormerkungIndizes: [0] });
+    const p = await V.pruefeUndPlane({ ids: idsVon(D2.docs), deps: D2.deps, commit: "test-commit", erwartet: D2.bindung });
+    A.equal(p.plan.arten.duplikat, 1);
+    A.equal(p.plan.einteilungen[0].kandidat, true);
+    A.equal(p.plan.einteilungen[0].begruendung, "vormerkung");
+    A.equal(p.plan.kandidaten, 1);
+    const lauf = await V.fuehreAus({
+      ids: idsVon(D2.docs), deps: D2.deps, execute: true, commit: "test-commit",
+      erwartet: D2.bindung, runId: "kand-vorm", now: () => new Date()
+    });
+    A.equal(lauf.modellaufrufe, 1, "genau der eine geplante Aufruf");
+    A.equal(D2.welt.aufrufe.length, 1);
+    A.equal(lauf.bilanz.arten.updated, 1);
+  });
+
+  await pruefeAsync("§26.2b der Wiederaufnahmedeckel erschoepft: plan- UND motorseitig kein Aufruf", async () => {
+    const D2b = baueBekanntWelt({ anzahl: 1, vormerkungIndizes: [0], vormerkungDeckel: 99 });
+    const p = await V.pruefeUndPlane({ ids: idsVon(D2b.docs), deps: D2b.deps, commit: "test-commit", erwartet: D2b.bindung });
+    A.equal(p.plan.einteilungen[0].kandidat, false);
+    A.equal(p.plan.einteilungen[0].begruendung, "wiederaufnahme-erschoepft");
+    A.equal(p.plan.kandidaten, 0);
+    const lauf = await V.fuehreAus({
+      ids: idsVon(D2b.docs), deps: D2b.deps, execute: true, commit: "test-commit",
+      erwartet: D2b.bindung, runId: "kand-ersch", now: () => new Date()
+    });
+    A.equal(lauf.modellaufrufe, 0, "derselbe erschoepfte Deckel gilt im Motor");
+    A.equal(D2b.welt.aufrufe.length, 0);
+    A.equal(lauf.bilanz.arten["skipped-update-final"], 1);
+  });
+
+  await pruefeAsync("§26.3 vollstaendiges Duplikat MIT Betreiberfreigabe: Kandidat, Freigabe erreicht den Motor", async () => {
+    const D3 = baueBekanntWelt({ anzahl: 1, freigabeIndizes: [0] });
+    const p = await planeMitFreigaben(D3);
+    A.equal(p.plan.einteilungen[0].kandidat, true);
+    A.equal(p.plan.einteilungen[0].begruendung, "freigabe");
+    A.equal(p.plan.kandidaten, 1);
+    const lauf = await V.fuehreAus({
+      ids: idsVon(D3.docs), deps: D3.deps, execute: true, commit: "test-commit",
+      erwartet: D3.bindung, runId: "kand-frei", now: () => new Date()
+    });
+    A.equal(lauf.modellaufrufe, 1, "die ausdrueckliche Freigabe ist im Motor wirksam");
+    A.equal(D3.welt.aufrufe.length, 1);
+    A.equal(lauf.bilanz.arten.updated, 1);
+  });
+
+  await pruefeAsync("§26.4 failed OHNE Betreiberfreigabe: kein Kandidat, Motor skipped-failed, 0 Aufrufe", async () => {
+    const F1 = baueBekanntWelt({ anzahl: 1, status: "pending", understandingStatus: "failed" });
+    const p = await V.pruefeUndPlane({ ids: idsVon(F1.docs), deps: F1.deps, commit: "test-commit", erwartet: F1.bindung });
+    A.equal(p.plan.arten.failed, 1);
+    A.equal(p.plan.einteilungen[0].kandidat, false);
+    A.equal(p.plan.einteilungen[0].begruendung, "failed-ohne-freigabe");
+    A.equal(p.plan.kandidaten, 0);
+    const lauf = await V.fuehreAus({
+      ids: idsVon(F1.docs), deps: F1.deps, execute: true, commit: "test-commit",
+      erwartet: F1.bindung, runId: "kand-failed", now: () => new Date()
+    });
+    A.equal(lauf.modellaufrufe, 0);
+    A.equal(F1.welt.aufrufe.length, 0);
+    A.equal(lauf.bilanz.arten["skipped-failed"], 1);
+    A.equal(lauf.ok, true, "kein Fehlschlag — der Vorgang ist nur geparkt");
+  });
+
+  await pruefeAsync("§26.5 failed MIT Betreiberfreigabe: Kandidat, Motor erhaelt die Freigabe fuer genau diesen Vorgang", async () => {
+    const F2 = baueBekanntWelt({ anzahl: 1, status: "pending", understandingStatus: "failed", freigabeIndizes: [0] });
+    const p = await planeMitFreigaben(F2);
+    A.equal(p.plan.arten.failed, 1);
+    A.equal(p.plan.einteilungen[0].kandidat, true);
+    A.equal(p.plan.einteilungen[0].begruendung, "betreiberfreigabe");
+    A.equal(p.plan.kandidaten, 1);
+    const lauf = await V.fuehreAus({
+      ids: idsVon(F2.docs), deps: F2.deps, execute: true, commit: "test-commit",
+      erwartet: F2.bindung, runId: "kand-failed-frei", now: () => new Date()
+    });
+    A.equal(lauf.modellaufrufe, 1, "nur der ausdruecklich freigegebene Vorgang wird aufgerufen");
+    A.equal(F2.welt.aufrufe.length, 1);
+    A.notEqual(lauf.ergebnisse[0].status, "skipped-failed");
+    A.equal(lauf.ok, true);
+  });
+
+  await pruefeAsync("§26.6 eine Freigabe greift NICHT auf andere failed Vorgaenge ueber", async () => {
+    const F3 = baueBekanntWelt({ anzahl: 2, status: "pending", understandingStatus: "failed", freigabeIndizes: [0] });
+    const p = await planeMitFreigaben(F3);
+    A.equal(p.plan.arten.failed, 2);
+    A.equal(p.plan.kandidaten, 1, "genau EIN Kandidat trotz zweier failed-Vorgaenge");
+    const lauf = await V.fuehreAus({
+      ids: idsVon(F3.docs), deps: F3.deps, execute: true, commit: "test-commit",
+      erwartet: F3.bindung, runId: "kand-failed-2", now: () => new Date()
+    });
+    A.equal(lauf.modellaufrufe, 1, "der zweite failed-Vorgang bleibt unaufgerufen");
+    A.equal(F3.welt.aufrufe.length, 1);
+    A.equal(lauf.bilanz.arten["skipped-failed"], 1);
+    A.equal(lauf.bilanz.arten.saved, 1);
+  });
+
+  await pruefeAsync("§26.7a unlesbare Vormerkung stoppt den Plan fail closed (kein Aufruf, kein Write)", async () => {
+    const L1 = baueBekanntWelt({ anzahl: 1, vormerkungUnlesbar: true });
+    const lauf = await V.fuehreAus({
+      ids: idsVon(L1.docs), deps: L1.deps, execute: true, commit: "test-commit",
+      erwartet: L1.bindung, runId: "kand-lese-1", now: () => new Date()
+    });
+    A.equal(lauf.ok, false);
+    A.equal(lauf.grund, "verstehen-bestandslesefehler");
+    A.equal(lauf.modellaufrufe, 0);
+    A.equal(L1.welt.aufrufe.length, 0);
+    A.equal(L1.welt.gespeichert.length, 0);
+    A.equal(lauf.schutzvertrag, false);
+  });
+
+  await pruefeAsync("§26.7b unlesbare Wiederaufnahmeliste stoppt den Lauf fail closed (kein Aufruf)", async () => {
+    const L2 = baueBekanntWelt({ anzahl: 1, wiederaufnahmeUnlesbar: true });
+    const lauf = await V.fuehreAus({
+      ids: idsVon(L2.docs), deps: L2.deps, execute: true, commit: "test-commit",
+      erwartet: L2.bindung, runId: "kand-lese-2", now: () => new Date()
+    });
+    A.equal(lauf.ok, false);
+    A.equal(lauf.grund, "verstehen-wiederaufnahmen-nicht-lesbar");
+    A.equal(lauf.modellaufrufe, 0);
+    A.equal(L2.welt.aufrufe.length, 0);
+    A.equal(L2.welt.claimed === undefined ? 0 : L2.welt.claimRunCalls, 0, "keine Quittung beansprucht");
+  });
+
+  await pruefeAsync("§26.8 die Auftragsgrenzen bleiben unveraendert (113 / 0,80 USD / 35 min)", async () => {
+    A.equal(V.PINNED.dokumente, 169);
+    A.equal(V.PINNED.cluster, 122);
+    A.equal(V.PINNED.maxModellaufrufe, 113, "der Deckel bleibt 113");
+    A.equal(V.PINNED.maxUsd, 0.8, "der USD-Deckel bleibt 0,80");
+    A.equal(V.PINNED.maxMs, 35 * 60 * 1000, "die Laufzeit bleibt 35 Minuten");
+  });
+}
+
 (async () => {
   await abschnittAuftragswerte();
   await abschnittEchterBeleg();
@@ -1862,6 +2081,7 @@ async function abschnittLokalerClusterfehler() {
   await abschnittInvalidDiagnose();
   await abschnittRuntimeCommit();
   await abschnittLokalerClusterfehler();
+  await abschnittKandidatenWahrheit();
 
   console.log("\n== ERGEBNIS ==");
   console.log("bestanden: " + bestanden);

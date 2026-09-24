@@ -28,7 +28,7 @@ Nicht enthalten und ausdrücklich nicht Teil dieses Schritts:
 |---|---|
 | `lib/helmut/verstehen-einmalig.js` | Kern: Schutzvertrag, Klassifikation, Laufgrenzen, Einmalquittung, Lauf |
 | `scripts/verstehen-einmalig-169.js` | Bedienweg: Kennungsliste, Produktionsdeps, Quittungsadapter, Plan-/Laufmodus |
-| `scripts/verstehen-einmalig-test.js` | Gezielte Tests (40 Prüfungen, offline, ohne echten Modellaufruf) |
+| `scripts/verstehen-einmalig-test.js` | Gezielte Tests (116 Prüfungen, offline, ohne echten Modellaufruf) |
 | `belege/verstehen-169-ids.json` | **Vorhanden**: die gebundene Kennungsliste samt unabhängiger Production-Prüfung (§3) |
 
 ## 3 · Die 169er-Bindung und der verifizierte Hash
@@ -253,9 +253,13 @@ Zwei unabhängige Riegel mit derselben Zahl:
    Ein Cluster kostet höchstens einen Aufruf (CAS-At-most-once), also gilt für den gesamten Lauf
    Aufrufe ≤ 113 — unabhängig davon, ob der Plan die Zahl exakt getroffen hat.
 
-Die Klassifikation zählt den Fall „bereits verstanden, alle Dokumente bekannt" **konservativ als
-Kandidat** (der Motor kann dort wegen einer offenen Update-Vormerkung begrenzt wieder aufnehmen).
-Damit ist der Plan eine **Obergrenze**: kleiner werden darf die spätere Zahl, nie größer.
+Die Klassifikation zählt den Fall „bereits verstanden, alle Dokumente bekannt“ **exakt wie der
+Motor**: ein vollständiges Duplikat ist nur dann Kandidat, wenn der Motor dort tatsächlich aufruft
+— bei offener Update-Vormerkung oder ausdrücklicher Betreiberfreigabe (`erneut`). Beide Seiten
+benutzen dieselbe Funktion (`duplikatBrauchtAufruf`), es gibt keine zweite Regel. Damit bildet der
+Plan die echte Aufrufentscheidung ab. Ändert sich der Vormerkungszustand zwischen Plan und Lauf,
+kann die tatsächliche Aufrufzahl abweichen — begrenzt bleibt sie durch den harten Laufdeckel
+(113) und den Kostendeckel. Siehe §23 (Korrektur 2026-09-24).
 
 Zusätzlich unabhängig wirksam: **Kostendeckel** (0,80 USD, geprüft vor jedem Cluster; ohne
 bestätigten Preis startet gar nichts) und **Zeitdeckel** (35 min absolute Deadline über die
@@ -772,3 +776,104 @@ genau einmal beansprucht.
 Zusaetzlich gruen: `verstehen-169-neuversuch-test` (19/19), `verstehen-169-kosten-deckel-test`
 (29/29), `verstehen-169-workflow-test` (152/152), `verstehen-cas-vertrag-test` (107/107).
 **Kein Merge, kein neuer Lauf; die Wirkung ist NICHT Production-belegt.**
+
+## 22 · Vierter (freigegebener) scharfer 169er Lauf: fail closed im Schutzvertrag (2026-09-24)
+
+Der Betreiber gab genau EINEN neuen scharfen Lauf frei (Quittung `verstehen169-20260924-c`,
+Runtime-Commit `f5dc612ee3e5ce5917d9a4d08bc4a2aec0c92ee7`). Er wurde **genau einmal** ausgefuehrt:
+Workflow-Run `35978125747`, `run_attempt = 1`, `failure`, 24.09.2026 08:55:40–08:57:02 UTC
+(1 min 22 s).
+
+**Abbruch im Schutzvertrag, VOR jedem Modellaufruf.** Die Bindung hielt (169 Dokumente,
+`idHash 5f387840…a2ed9`, 122 Cluster, Groessenverteilung exakt 110/5/2/1/2/1/1), aber der Deckel
+`maxModellaufrufe 113` wurde ueberschritten: **114 Modellkandidaten** ⇒
+`grund = verstehen-kandidaten-ueber-deckel`, `schutzvertrag = false`, `ausgeloest = false`.
+
+**Wirkung: keine.** `modellaufrufe 0`, `quellenabrufe 0`, `profilwrites 0`, `kommunikation 0`
+⇒ **0 USD**; `quittung = null` ⇒ die Quittung `verstehen169-20260924-c` wurde **nicht beansprucht**;
+kein Lock, kein CAS-Zugriff, keine Zustandsaenderung an `vg-gemeinsame-20260921-dcd0f5`.
+
+**Clusterarten des Plans:** duplikat 34, neu 44, failed 1, update 13, pending-erst 23, merged 7
+(Summe 122); Kandidaten 114, davon 8 nicht-Kandidaten (7× `merged`, 1× `failed` =
+`vg-gemeinsame-20260921-dcd0f5`). Die vollstaendige Cluster-Diagnose liegt im Workflow-Log.
+
+**Ausdruecklich:** Der eine freigegebene Lauf ist damit verbraucht. **Kein zweiter Dispatch,
+kein Retry, keine neue Quittung, keine CAS-Aenderung.** Mit derselben Bindung startet ein weiterer
+Versuch erneut am 113-Deckel — das ist eine Betreiberentscheidung, kein automatischer Schritt.
+
+## 23 · Zwei belegte Ursachen der 114er-Ueberzaehlung und die Reparatur (2026-09-24, PR #541)
+
+**Status dieser Aenderung: Code bereit und gezielt testgesichert — NICHT Production-belegt.** Es
+wurde **kein** neuer Lauf gestartet, **kein** Dispatch, **keine** Quittung beansprucht, **keine**
+CAS-Aenderung, **keine** Profileaenderung, **kein** Merge.
+
+### Ursache 1 — der Plan zaehlte jedes vollstaendige Duplikat pauschal als Kandidat
+
+Der Plan (`klassifiziereCluster`) setzte fuer einen Cluster, dessen Dokumente alle schon bekannt
+sind, unbedingt `kandidat = true` („vormerkung-moeglich"). Der echte Motor ruft das Modell in
+diesem Fall aber **nur** bei einer offenen Update-Vormerkung oder einer ausdruecklichen
+Betreiberfreigabe (`erneut`); sonst endet der Vorgang OHNE Aufruf als `duplicate`.
+
+**Direkt belegt am dritten Lauf.** Der dritte scharfe Lauf (Run `35964405263`, §20) verbrauchte
+seine 24 Modellaufrufe ausschliesslich fuer `saved`/`updated`; die **10** `duplicate`- und **2**
+`merged`-Ergebnisse dieses Laufs entstanden **ohne** jeden Modellaufruf.
+
+**Die Rechnung des Betreibers ist als Aenderung der Kandidatenzahl bestaetigt.**
+Plan des dritten Laufs (Run `35963641921`): duplikat 10 + neu 57 + pending-erst 27 + update 19 =
+**113** Kandidaten (merged 9 zaehlte nicht). Plan des vierten Laufs (Run `35978125747`):
+duplikat 34 + neu 44 + pending-erst 23 + update 13 = **114** Kandidaten (merged 7 und failed 1
+zaehlten nicht). Die Nicht-Kandidaten gingen also von 9 auf 8 (−1) und die Kandidaten von 113 auf
+114 (+1): zwei zuvor `merged` gefuehrte Cluster wurden jetzt `duplikat` (jeweils **+1**), und
+`vg-gemeinsame-20260921-dcd0f5` wurde nach seinem Modellfehler `failed` (**−1**). Der Betreiber hat
+fuer die beiden namentlich genannten `merged`-Faelle (`vg-berlin-20260914-093115`,
+`vg-dauerbrenner-20260827-57e561`) in Production geprueft, dass `public.helmut_verstehen_vormerkungen`
+fuer sie **keine** Zeile enthaelt — sie waren also faelschlich als Duplikat-Kandidaten gezaehlt.
+
+**Was daraus folgt:** Die Kandidatenzahl des vierten Plans wurde um 34 Duplikate aufgeblaeht,
+obwohl nur Duplikate mit belegter Vormerkung (oder Freigabe) einen Aufruf kosten. Fuer die 32
+uebrigen Duplikate liegt **kein** Production-Beleg zum Vormerkungszustand vor; eine exakte
+Vorhersage der Kandidatenzahl nach der Reparatur ist damit **nicht** moeglich. Belegbar ist:
+80 Kandidaten aus `neu 44 + pending-erst 23 + update 13` plus die Duplikate mit Vormerkung plus
+— nach der zweiten Korrektur — genau der ausdruecklich freigegebene `vg-gemeinsame-20260921-dcd0f5`.
+Fuer die zwei geprueften Duplikate **sinkt** die Zahl, der Stand kann mit den vorhandenen Belegen
+nicht ueber 113 liegen.
+
+### Ursache 2 — die Betreiberfreigabe war im 169er Runner nicht verdrahtet
+
+`vg-gemeinsame-20260921-dcd0f5` wurde ueber den kanonischen CAS-Weg ausdruecklich erneut
+freigegeben (Betreiberbeleg: `zustand = offen`, `letzter_grund = erneut-freigegeben`). Der
+regulaere Production-Motor unterstuetzt diesen Weg (`runPendingUnderstandingShadow` liest die
+Wiederaufnahmeliste und reicht `wiederaufnahmeFreigabe` durch), der 169er Runner tat es nicht:
+er klassifizierte den Vorgang als `failed`/`kandidat = false` und uebergab dem Motor **kein**
+`wiederaufnahmeFreigabe: true` — der bezahlte Wiederaufnahmeweg blieb damit unerreichbar.
+
+### Die Reparatur (kleinste sichere Loesung, generisch)
+
+* **Eine geteilte Entscheidung fuer Plan UND Motor.** Aus `understanding.js` sind jetzt
+  `duplikatBrauchtAufruf(deps, retriesCtx, vorgangId, vertrag, freigabe)` und
+  `leseWiederaufnahmeFreigaben(deps, vertragAktiv)` herausgezogen. Der Duplikat-Zweig des Motors
+  (`understandOneCluster`) und die Plan-Klassifikation benutzen **dieselbe** Funktion — es gibt
+  keine zweite Kopie der Regel. Ein vollstaendiges Duplikat ist nur dann Kandidat, wenn die
+  Vormerkung offen (und nicht erschoepft) ist oder eine ausdrueckliche Freigabe vorliegt.
+* **Die Freigabeliste wird EINMAL gelesen** (`leseWiederaufnahmeFreigaben`, derselbe Aufruf wie im
+  bestehenden Pfad). Plan und Lauf verwenden dasselbe Set. Der Lauf reicht die Freigabe **exakt**
+  fuer die Kennung des jeweiligen Clusters an den Motor weiter (`freigaben.has(vorgangId)`), keine
+  automatische Wiederaufnahme anderer `failed`/`duplikat`-Vorgaenge.
+* **Fail closed bei Lesefehlern.** Ist eine Vormerkung nicht sicher lesbar, bricht der **Plan** ab
+  (`verstehen-bestandslesefehler`) statt die Kandidatenzahl still zu verkleinern; ist die
+  Wiederaufnahmeliste wegen eines echten Transportfehlers nicht lesbar, startet der Lauf nicht
+  (`verstehen-wiederaufnahmen-nicht-lesbar`). „Nicht konfiguriert" bleibt ein Umgebungszustand
+  (leeres Set, kein Befund). Der Motor bleibt in demselben Fall wie bisher fail-**safe** `duplicate`
+  (kein Aufruf).
+* **Unveraendert:** harter Deckel **113**, Laufkostendeckel **0,80 USD**, Laufzeit **35 min**,
+  Tagesriegel **4 USD**, Quittungslogik, CAS/Fencing/Locks, At-most-once (kein Retry, kein zweiter
+  Modellaufruf desselben Vorgangs), Klassen A/B aus §21.
+
+**Belege.** `scripts/verstehen-einmalig-test.js` §26 (**116/116** gruen insgesamt, offline, 0
+Modellaufrufe, 0 Production-Writes): Duplikat ohne Vormerkung ⇒ kein Kandidat, Motor `duplicate`,
+0 Aufrufe; Duplikat mit Vormerkung ⇒ Kandidat und genau ein Aufruf; erschoepfter Wiederaufnahme-
+deckel ⇒ plan- und motorseitig kein Aufruf; ausdrueckliche Freigabe ⇒ Kandidat und genau ein
+Aufruf; `failed` ohne Freigabe ⇒ kein Kandidat und `skipped-failed`; `failed` mit Freigabe ⇒
+Kandidat und genau ein Aufruf; **eine Freigabe greift nicht auf einen zweiten `failed`-Vorgang
+ueber**; unlesbare Vormerkung und unlesbare Wiederaufnahmeliste stoppen fail closed; die
+Auftragsgrenzen 169/122/113/0,80 USD/35 min bleiben woertlich unveraendert.
