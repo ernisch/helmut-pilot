@@ -772,3 +772,27 @@ genau einmal beansprucht.
 Zusaetzlich gruen: `verstehen-169-neuversuch-test` (19/19), `verstehen-169-kosten-deckel-test`
 (29/29), `verstehen-169-workflow-test` (152/152), `verstehen-cas-vertrag-test` (107/107).
 **Kein Merge, kein neuer Lauf; die Wirkung ist NICHT Production-belegt.**
+
+## 22 · Vierter (freigegebener) scharfer 169er Lauf: fail closed im Schutzvertrag (2026-09-24)
+
+Der Betreiber gab genau EINEN neuen scharfen Lauf frei (Quittung `verstehen169-20260924-c`,
+Runtime-Commit `f5dc612ee3e5ce5917d9a4d08bc4a2aec0c92ee7`). Er wurde **genau einmal** ausgefuehrt:
+Workflow-Run `35978125747`, `run_attempt = 1`, `failure`, 24.09.2026 08:55:40–08:57:02 UTC
+(1 min 22 s).
+
+**Abbruch im Schutzvertrag, VOR jedem Modellaufruf.** Die Bindung hielt (169 Dokumente,
+`idHash 5f387840…a2ed9`, 122 Cluster, Groessenverteilung exakt 110/5/2/1/2/1/1), aber der Deckel
+`maxModellaufrufe 113` wurde ueberschritten: **114 Modellkandidaten** ⇒
+`grund = verstehen-kandidaten-ueber-deckel`, `schutzvertrag = false`, `ausgeloest = false`.
+
+**Wirkung: keine.** `modellaufrufe 0`, `quellenabrufe 0`, `profilwrites 0`, `kommunikation 0`
+⇒ **0 USD**; `quittung = null` ⇒ die Quittung `verstehen169-20260924-c` wurde **nicht beansprucht**;
+kein Lock, kein CAS-Zugriff, keine Zustandsaenderung an `vg-gemeinsame-20260921-dcd0f5`.
+
+**Clusterarten des Plans:** duplikat 34, neu 44, failed 1, update 13, pending-erst 23, merged 7
+(Summe 122); Kandidaten 114, davon 8 nicht-Kandidaten (7× `merged`, 1× `failed` =
+`vg-gemeinsame-20260921-dcd0f5`). Die vollstaendige Cluster-Diagnose liegt im Workflow-Log.
+
+**Ausdruecklich:** Der eine freigegebene Lauf ist damit verbraucht. **Kein zweiter Dispatch,
+kein Retry, keine neue Quittung, keine CAS-Aenderung.** Mit derselben Bindung startet ein weiterer
+Versuch erneut am 113-Deckel — das ist eine Betreiberentscheidung, kein automatischer Schritt.
