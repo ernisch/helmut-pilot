@@ -195,6 +195,10 @@ function check(name, cond, detail = "") {
         const contract = require("../lib/helmut/briefingContract");
         const review = require("../lib/helmut/reviewFixture");
         const at = new Date("2026-07-15T10:00:00Z"), fixture = review.buildReviewFixture(at);
+        // Derselbe belegte Vorgang darf in mehreren Bereichen vorkommen,
+        // aber jeweils mit einem anderen Zweck. Radar muss den persoenlichen
+        // Bezug zeigen, ohne die Handlungsanweisung als zweiten Feed zu kopieren.
+        fixture.kosById["ko-review-1"].mentioned_people = [fixture.profile.fullName];
         const data = contract.toBriefingContractV3({ ...fixture, now: at });
         const state = data.currentHelmutState;
         data.lageBriefing = { available: true, vorgaenge: [{
@@ -226,7 +230,39 @@ function check(name, cond, detail = "") {
         await page.getByRole("button", { name: "Empfehlung im Briefing öffnen", exact: true }).click();
         check(`${label}: Rueckverweis schliesst Lage Detail und zeigt Briefing`,
           await page.locator(".vsheet-title").count() === 0 && await page.locator(".hstand-proposal").count() === 1);
-        check(`${label}: keine JS Fehler beim Wechsel zwischen Einordnung und Empfehlung`, pageErrors.length === 0, pageErrors.slice(0, 2).join(" | "));
+        const primaryTitle = state.primaryItem.displayTitle || state.primaryItem.title;
+        check(`${label}: Briefing wiederholt den Hauptvorgang nicht in weiteren Vorgaengen`,
+          !(await page.locator(".hstand-rel-title").allTextContents()).includes(primaryTitle));
+
+        await page.locator('[data-view="briefing"]').first().click();
+        const lageText = await page.locator(".lage2-card").first().innerText();
+        check(`${label}: Lage Karte zeigt Fakten und keine Briefing Handlungsanweisung`,
+          lageText.includes("Die belegten Fakten") && !lageText.includes("Heute nicht öffentlich zuspitzen"));
+        await page.locator('[data-view="radar"]').first().click();
+        await page.locator('[data-radar-segment="committees"]').click();
+        const radarText = await page.locator("#radar2-root").innerText();
+        const radarLinks = await page.locator('#radar2-root a[href]').evaluateAll(nodes => nodes.map(n => n.href));
+        check(`${label}: Radar zeigt belegte Erwaehnung mit Quelle genau einmal trotz Ausschussbezug`,
+          await page.locator(".radar2-card--mention").count() === 1
+            && radarLinks.filter(url => url === state.primaryItem.sourceUrl).length === 1, JSON.stringify(radarLinks));
+        check(`${label}: Radar kopiert weder Vorschlag noch Lage Langtext`,
+          !radarText.includes("Heute nicht öffentlich zuspitzen")
+            && !radarText.includes("Die belegten Fakten gehoeren in die Lage."));
+
+        // Der Verweis darf keine fachliche Luecke verstecken: abweichende
+        // Begruendung bleibt sichtbar; ohne passenden Lagevorgang kein Blindlink.
+        await page.evaluate(() => {
+          briefing.currentHelmutState.whyItMatters = "Zusaetzlicher Entscheidungsgrund nur im Briefing.";
+          currentView = "helmut"; render();
+        });
+        check(`${label}: Eigenstaendige Entscheidungsbegruendung bleibt im Briefing erhalten`,
+          (await page.locator(".hstand-why").innerText()).includes("Zusaetzlicher Entscheidungsgrund"));
+        await page.evaluate(() => {
+          briefing.lageBriefing.vorgaenge = []; render();
+        });
+        check(`${label}: Ohne passenden Lagevorgang kein leerer Querverweis und kein Verlust der Begruendung`,
+          await page.locator("[data-lage-verweis]").count() === 0 && await page.locator(".hstand-why").count() === 1);
+        check(`${label}: keine JS Fehler beim Wechsel zwischen allen drei Fachbereichen`, pageErrors.length === 0, pageErrors.slice(0, 2).join(" | "));
       }
 
       if (isMobile) {
