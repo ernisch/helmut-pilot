@@ -171,3 +171,69 @@ Nach Abschluss dieses Blocks zuerst den naechsten erhaltenen500er Inhaltsbefund
 rein lesend bestimmen. Keine automatische Ausweitung auf neue Akteurskataloge,
 Scoringregeln oder Freitextfilter. Fachliche Gesamtwirkung, Merge und ein spaeterer
 Production Nachweis bleiben getrennte offene Schritte mit eigener Freigabe.
+
+## Nachtrag 24.09.2026 — unbelegte Beteiligungsparteien: Reduktion GEPRUEFT und VERWORFEN, `parteien` bleibt strikt
+
+**Anlass (Production-Befund, Run 35987448290).** Der fuenfte scharfe 169er Verstehenslauf hat
+alle 122 Cluster verarbeitet, endet aber fachlich nicht bestanden: **drei** der vier lokalen
+`unknown` tragen `quellenbeleg-parteien` (`vg-gemeinsame-20260921-dcd0f5`,
+`vg-arbeitsplätze-20260715-6cc672`, `vg-linkenpolitiker-20260921-37cdeb`). Jedes Mal verwarf der
+streng gebliebene `parteien`-Zweig die **gesamte**, sonst brauchbare Antwort. **Welcher konkrete
+Parteiwert das ausloeste, ist NICHT belegt** — die rohe Modellantwort wird bewusst nicht
+gespeichert; daraus wird hier nichts abgeleitet.
+
+**Zwischenstand (PR #542, Commit `39e64c0e`) und Verwerfung.** Ein erster Versuch reduzierte den
+unbelegten `parteien`-Listeneintrag, wenn der Name in **keinem anderen Feld** vorkam. Dieser Versuch
+wurde im Review **verworfen**: Ein blosser **Namensvergleich** belegt **keine** semantische
+Unabhaengigkeit. Eine umschreibende Prosa kann semantisch von genau der entfernten unbelegten
+Parteibeteiligung abhaengen, **ohne den Namen zu tragen** — Beispiel:
+
+```
+Quellen ohne Partei
+parteien      = ["Fantasiepartei"]
+warum_wichtig = "Die Regierungspartei blockiert das Vorhaben."
+```
+
+Der Namensvergleich findet `Fantasiepartei` in `warum_wichtig` **nicht** und haette die restliche,
+semantisch abhaengige Aussage gespeichert. Das ist genau die „stille Listenbereinigung bei
+gleichzeitig erhaltener abhaengiger Empfehlung“, die die Sonderstrenge verhindern soll. Eine
+Wortlisten-Heuristik („Regierungspartei“, „Opposition“, „Koalition“, „Fraktion“, „politische Kraft“)
+waere ebenfalls **kein** Beweis und wurde **nicht** gebaut.
+
+**Warum keine Rettung moeglich ist.** Eine belastbare, quellengebundene **Belegstruktur je Aussage**
+fuer die KO-Prosa-Felder (`warum_wichtig`, `handlungsempfehlung`, `recommendation`, `risiken`,
+`chancen`, strukturierte Kommunikations-/Handlungselemente, ...) existiert **nicht**: eine
+Beleg-Bindung je Aussage ist laut [`../START_HERE.md`](../START_HERE.md) §5 und
+[`../quellenpflicht-nachweis-2026-08-22.md`](../quellenpflicht-nachweis-2026-08-22.md) §2
+ausdruecklich **noch nicht garantiert**; Per-Absatz-Belege gibt es nur im Lage-Pfad. Ohne diese
+Struktur ist die Unabhaengigkeit nicht deterministisch entscheidbar — also bleibt es bei
+**fail closed**.
+
+**Festgelegtes Verhalten (final).** Ein unbelegter struktureller `parteien`-Wert ⇒ **gesamte Antwort
+fail closed** (`quellenbeleg-parteien`, `skipped-invalid`, nichts wird gespeichert). Es gibt **keine**
+Rettung und **keine** Reduktion von `parteien`. Das ist ausdruecklich akzeptabel: lieber drei
+einzelne Vorgaenge spaeter kontrolliert erneut ausfuehren als potenziell unbelegte politische Prosa
+speichern. `mentioned_parties` und die beiden Ministeriumslisten werden **unveraendert** weiter
+reduziert (belegte Werte bleiben, unbelegte entfallen); `mentioned_parties` wird **nie** zu
+`parteien` befoerdert.
+
+**Unveraendert streng.** `parteien` und `ausschuesse` sperren unbelegte Werte; der strenge
+`pruefeAkteurslistenQuellenbindung`, der GOLDSET-Auswerter, das Schema, der
+`decision_level-antwortkonflikt`, CAS/Fencing/Locks, Budget und der Quellenbeleg selbst bleiben
+unberuehrt; `ohneFalschTypisierteAkteure` entfernt weiterhin woertlich belegte, aber eindeutig falsch
+typisierte Werte in allen Listen; das 800-Zeichen-Verhalten der Pflichtprosa bleibt fail closed
+(`prosa-textgrenzen-2026-09-19.md`, PR453/PR454).
+
+**Belege (offline, 0 Modellaufrufe, 0 Production-Writes).** `scripts/parteien-quellenbindung-test.js`
+**31/31**, darunter die Pflicht-Gegenprobe in **beiden** Pfaden (Erstverstehen und Aktualisierung):
+unbelegte Partei nur in `parteien` ⇒ fail closed; dieselbe Partei **zusaetzlich** in `warum_wichtig`,
+`handlungsempfehlung`, `recommendation`, Risiko/Chance, strukturierten Kommunikations-/Handlungselementen
+⇒ fail closed; vier umschreibende Prosa-Varianten **ohne** Parteinamen ⇒ **nicht gespeichert**; gemischte
+Liste ⇒ fail closed; rein belegte strukturelle Partei ⇒ unveraendert erhalten; blosse Erwaehnung ⇒ nie
+befoerdert; `ohneUnbelegteAkteurswerte` reduziert `parteien` nie.
+`understanding-akteursbeleg-test.js` **21/21**, `ministerien-quellenbindung-test.js` **22/22**,
+`verstehen-einmalig-test.js` **117/117**; der strenge GOLDSET-Auswerter bleibt unveraendert streng.
+Kanonischer Beleg: [169er Understanding Lauf](verstehen-einmalig-169-20260922.md) §25.
+
+**Nicht enthalten.** Kein Merge, kein Deployment, kein neuer Lauf, keine Quittung, keine
+CAS-Aenderung, keine Production-Daten. Der Stand ist **Code bereit, nicht Production-belegt**.

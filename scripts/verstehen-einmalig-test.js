@@ -1270,7 +1270,7 @@ async function abschnittInvalidDiagnose() {
   abschnitt("§23  Diagnosewahrheit: skipped-invalid traegt sichere Fehlercodes und die echte Dokumentzahl");
 
   // ── 1/2/5 am MOTOR direkt (ohne CAS-Vertrag, ohne Runner) ──
-  const I = baueInvalidWelt();
+  const I = baueInvalidWelt({ unbelegte: ["ausschuesse"], extraAntwort: { parteien: "kein-array" } });
   const motorDeps = { ...I.deps };
   delete motorDeps.verstehenVertrag; // kein CAS: reiner Motorpfad, kein marke()
   let r = null;
@@ -1281,14 +1281,25 @@ async function abschnittInvalidDiagnose() {
     A.equal(r.status, "skipped-invalid");
     A.equal(r.reason, "validierung-fehlgeschlagen");
     A.ok(Array.isArray(r.errors) && r.errors.length >= 2, "mehrere Fehlercodes bleiben erhalten");
-    A.ok(r.errors.includes("quellenbeleg-parteien"));
+    // Die STRENGE Beteiligungsliste `ausschuesse` liefert weiterhin ihren festen Code; ein
+    // NICHT-Array bleibt grundsaetzlich fail closed (nicht reduzierbar).
     A.ok(r.errors.includes("quellenbeleg-ausschuesse"));
+    A.ok(r.errors.includes("quellenbeleg-parteien"), "Nicht-Array bleibt fail closed");
     // NEU (Production-Befund 2026-09-23): die beiden OPTIONALEN Ministeriumslisten sperren die
     // Antwort nicht mehr — unbelegte Werte werden deterministisch entfernt (der strenge Beleg
     // bleibt unveraendert). Ohne Beleg entsteht damit KEIN Fehlercode mehr.
     A.ok(!r.errors.includes("quellenbeleg-ministerien"));
     A.ok(!r.errors.includes("quellenbeleg-mentioned_ministries"));
     A.ok(r.errors.every((e) => typeof e === "string"));
+  });
+  await pruefeAsync("§23.1b unbelegte STRINGS in den reduzierbaren Listen (ministerien/mentioned_*) sperren nicht mehr", async () => {
+    const R = baueInvalidWelt({ unbelegte: ["ministerien", "mentioned_ministries"] });
+    const rd = { ...R.deps };
+    delete rd.verstehenVertrag;
+    const cluster = clusterRawDocuments(R.docs.map((d) => ({ ...d })))[0];
+    const rr = await understanding.understandOneCluster(cluster, rd, {});
+    A.equal(rr.status, "saved", JSON.stringify(rr));
+    A.equal(R.welt.gespeichert[0].ministerien.length, 0);
   });
   await pruefeAsync("§23.5 Erstverstehen-Invalid traegt documents = Clustergroesse (Motor)", async () => {
     A.equal(r.documents, 2);
@@ -1325,9 +1336,14 @@ async function abschnittInvalidDiagnose() {
 
   await pruefeAsync("§23.3 der Bericht uebernimmt die sicheren Fehlercodes (begrenzt)", async () => {
     const e = lauf.ergebnisse[0];
-    A.ok(Array.isArray(e.validierungsfehler) && e.validierungsfehler.length >= 2);
+    A.ok(Array.isArray(e.validierungsfehler) && e.validierungsfehler.length >= 1);
     A.ok(e.validierungsfehler.every((c) =>
-      /^(ki-antwort-nicht-verwertbar|decision_level-antwortkonflikt|quellenbeleg-[a-z_]+)$/.test(c)));
+      /^(ki-antwort-nicht-verwertbar|decision_level-antwortkonflikt|quellenbeleg-[a-z_]+|(schema|dsgvo)-[a-z-]+(:[a-z0-9_.]+)?)$/.test(c)));
+    // `parteien` UND `ausschuesse` bleiben STRENG: ein unbelegter struktureller Wert liefert
+    // weiterhin seinen festen Code (keine stille Listenbereinigung). Eine `parteien`-Reduktion
+    // wurde geprueft und verworfen (semantische Abhaengigkeit der Prosa ist per Namensvergleich
+    // nicht ausschliessbar).
+    A.ok(e.validierungsfehler.includes("quellenbeleg-ausschuesse"));
     A.ok(e.validierungsfehler.includes("quellenbeleg-parteien"));
   });
 
@@ -1344,14 +1360,19 @@ async function abschnittInvalidDiagnose() {
       runId: "invalid-cap", now: () => new Date()
     });
     A.equal(laufC.ergebnisse[0].validierungsfehler.length, 5, "maximal fuenf Codes");
-    // Ein Schema-Fehlertext (frei formuliert) wird NICHT uebernommen — nur feste Wortmarken.
-    const D = baueInvalidWelt({ unbelegte: ["parteien"], extraAntwort: { was_ist_passiert: "" } });
+    // Ein frei formulierter Schema-Fehlertext wird NICHT uebernommen — aber sein WERTFREIER Code
+    // (nur der Feldpfad) schon: seit dem Production-Befund 2026-09-24 bleibt eine rein
+    // schemabedingte Ablehnung damit nicht mehr anonym (`validierungsfehler = []`).
+    const D = baueInvalidWelt({ unbelegte: [], extraAntwort: { was_ist_passiert: "" } });
     const laufD = await V.fuehreAus({
       ids: idsVon(D.docs), deps: D.deps, execute: true, commit: "test-commit", erwartet: D.bindung,
       runId: "invalid-schema", now: () => new Date()
     });
-    A.deepEqual(laufD.ergebnisse[0].validierungsfehler, ["quellenbeleg-parteien"]);
-    A.ok(!JSON.stringify(laufD).includes("leer/zu kurz"));
+    // Ein SCHEMA-Fehler wird jetzt als WERTFREIER Code uebernommen (Feldpfad, kein Rohwert):
+    // vorher blieb `validierungsfehler` hier leer und die Ursache unsichtbar (Production-Befund
+    // 2026-09-24, Run 35987448290, vg-verzoegerung-20230613-95c80f).
+    A.deepEqual(laufD.ergebnisse[0].validierungsfehler, ["schema-leer:was_ist_passiert"]);
+    A.ok(!JSON.stringify(laufD).includes("leer/zu kurz"), "kein Rohmeldungstext im Bericht");
     A.ok(!JSON.stringify(D.welt.abgeschlossen).includes("leer/zu kurz"));
   });
 
@@ -1394,8 +1415,8 @@ async function abschnittInvalidDiagnose() {
     A.ok(B.welt.schritt.includes("ausgangUnbekannt"));
     A.ok(!B.welt.schritt.includes("freigabe"), "kein automatischer Rueckweg");
     // Die Einmalquittung traegt die sicheren Codes als Abschlussbeleg.
-    A.ok(Array.isArray(B.welt.abgeschlossen.validierungsfehler)
-      && B.welt.abgeschlossen.validierungsfehler.length >= 2);
+    const fi = B.welt.abgeschlossen.validierungsfehler;
+    A.ok(Array.isArray(fi) && fi.length >= 1);
   });
 
   await pruefeAsync("§23.9 die Kostenwahrheit bleibt unveraendert im Pfad", async () => {
@@ -1527,8 +1548,9 @@ async function abschnittRuntimeCommit() {
 
 // ── §25 Lokaler Clusterfehler (Klasse A) vs. globaler Vertragsfehler (Klasse B) ─────────────
 // Production-Befund 2026-09-24 (Run 35964405263): EIN Cluster mit `skipped-invalid`
-// (`quellenbeleg-parteien`) beendete den GESAMTEN Lauf — 36 von 122 Clustern blieben ungeprueft,
-// 115 von 169 Dokumenten unerklaert. Die Korrektur trennt zwei Klassen:
+// (`quellenbeleg-parteien` aus einem unbelegten `parteien`-Wert) beendete den GESAMTEN Lauf — 36
+// von 122 Clustern blieben ungeprueft, 115 von 169 Dokumenten unerklaert. Die Korrektur trennt zwei
+// Klassen:
 //   * KLASSE A `skipped-invalid`: lokaler Fachfehler DIESES Clusters. Er bleibt terminal gesperrt
 //     (CAS `unbekannt`, keine Verknuepfung, kein Retry) — die uebrigen unabhaengigen Cluster
 //     werden weiterverarbeitet und vollstaendig bilanziert. Der Gesamtstatus bleibt rot
@@ -1537,13 +1559,14 @@ async function abschnittRuntimeCommit() {
 //     `skipped-veraltet`: globaler Vertrags-/Infrastrukturfehler ⇒ unveraendert sofortiger
 //     Gesamtabbruch. Ein Wurf ist NIE ein lokaler Fachfehler (nicht sicher klassifizierbar) und
 //     darf NIE zu `ok = true`/`fachlichBestanden = true` fuehren.
-// Der konkrete Production-Cluster `vg-gemeinsame-20260921-dcd0f5` wird ueber die BELEGTE
-// Fehlerklasse (`quellenbeleg-parteien` aus einem unbelegten `parteien`-Wert) abgedeckt — es wird
+// Der lokale Clusterfehler wird ueber die WEITERHIN STRENGE Beteiligungsliste `ausschuesse`
+// erzeugt (wie `parteien` — eine `parteien`-Reduktion wurde geprueft und verworfen) — es wird
 // KEINE nicht gespeicherte Rohantwort erfunden.
 
 // Baut eine Welt mit `anzahl` unabhaengigen Clustern; die Aufrufe an den Positionen
-// `invalidIndizes` liefern eine fachlich ungueltige Antwort (`parteien` unbelegt), alle anderen
-// eine gueltige. So entstehen mehrere LOKALE Clusterfehler in EINEM Lauf.
+// `invalidIndizes` liefern eine fachlich ungueltige Antwort (unbelegte Beteiligungsliste
+// `ausschuesse` — weiterhin streng), alle anderen eine gueltige. So entstehen mehrere LOKALE
+// Clusterfehler in EINEM Lauf.
 function baueKlassenWelt({ anzahl = 4, invalidIndizes = [0] } = {}) {
   const docs = [];
   for (let i = 0; i < anzahl; i += 1) docs.push(rohesDokument("kl-" + i, WOERTER[i]));
@@ -1555,7 +1578,7 @@ function baueKlassenWelt({ anzahl = 4, invalidIndizes = [0] } = {}) {
     const index = aufrufNr;
     aufrufNr += 1;
     w.welt.laufkostenUsd += w.welt.echteKosten;
-    if (invalidIndizes.includes(index)) return { ...ANALYSE, parteien: ["NichtBelegt_parteien"] };
+    if (invalidIndizes.includes(index)) return { ...ANALYSE, ausschuesse: ["NichtBelegt_ausschuesse"] };
     return ANALYSE;
   };
   return { ...w, docs, bindung: testbindung(docs) };
@@ -1598,7 +1621,7 @@ function baueWurfWelt({ anzahl = 4, fehlerIndex = 1 } = {}) {
   return { ...w, docs, bindung: testbindung(docs) };
 }
 
-// Kombiniert einen LOKALEN Fehler (unbelegter `parteien`-Wert im Aufruf `invalidIndizes`) mit
+// Kombiniert einen LOKALEN Fehler (unbelegter `ausschuesse`-Wert im Aufruf `invalidIndizes`) mit
 // einem spaeteren GLOBALEN Motorwurf (Speicherweg wirft beim `wurfSpeicherIndex`-ten Save).
 function baueGemischteWelt({ anzahl = 4, invalidIndizes = [0], wurfSpeicherIndex = 0 } = {}) {
   const docs = [];
@@ -1611,7 +1634,7 @@ function baueGemischteWelt({ anzahl = 4, invalidIndizes = [0], wurfSpeicherIndex
     const index = aufrufNr;
     aufrufNr += 1;
     w.welt.laufkostenUsd += w.welt.echteKosten;
-    if (invalidIndizes.includes(index)) return { ...ANALYSE, parteien: ["NichtBelegt_parteien"] };
+    if (invalidIndizes.includes(index)) return { ...ANALYSE, ausschuesse: ["NichtBelegt_ausschuesse"] };
     return ANALYSE;
   };
   const original = w.welt.speicher.verstehenSpeichere.bind(w.welt.speicher);
@@ -1650,14 +1673,14 @@ async function abschnittLokalerClusterfehler() {
     A.equal(K.docs.length, 4);
   });
 
-  await pruefeAsync("§25.1 der Production-Fehler erzeugt GENAU EINEN unknown-Cluster (quellenbeleg-parteien)", async () => {
+  await pruefeAsync("§25.1 der Production-Fehler erzeugt GENAU EINEN unknown-Cluster (strenge Beteiligungsliste)", async () => {
     A.equal(lauf.bilanz.unbekannt, 1, "genau ein unbekannter Ausgang");
     A.equal(lauf.lokaleUnbekannte, 1);
     const unbekannt = lauf.ergebnisse.filter((e) => e.ausgang === "unbekannt");
     A.equal(unbekannt.length, 1);
     A.equal(unbekannt[0].status, "skipped-invalid");
-    A.ok(unbekannt[0].validierungsfehler.includes("quellenbeleg-parteien"),
-      "die belegte Production-Fehlerklasse — ohne erfundene Rohantwort");
+    A.ok(unbekannt[0].validierungsfehler.includes("quellenbeleg-ausschuesse"),
+      "die weiterhin strenge Beteiligungsliste — ohne erfundene Rohantwort");
   });
 
   await pruefeAsync("§25.3/§25.25 die uebrigen Cluster laufen weiter, der unknown-Cluster wird NICHT zu Erfolg", async () => {

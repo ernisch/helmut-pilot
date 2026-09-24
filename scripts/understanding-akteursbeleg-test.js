@@ -140,6 +140,13 @@ async function main() {
   });
 
   // ── B · Speicherpfad (Erstverstehen / Update) ───────────────────────────────────────────────
+  await test("B6b Eine unbelegte Beteiligungsliste `ausschuesse` bleibt streng (kein Freibrief)", async () => {
+    const s = stand({ ...ANALYSE, ausschuesse: ["Unbelegter Ausschuss"] });
+    const r = await U.understandOneCluster(cluster(), s.deps, { vorgangId, existing: null, vertrag: s.vertrag });
+    assert.equal(r.status, "skipped-invalid", JSON.stringify(r));
+    assert(r.errors.includes("quellenbeleg-ausschuesse"), JSON.stringify(r.errors));
+    assert.equal(s.p.gespeichert.length, 0);
+  });
   await test("B5 Erstverstehen speichert trotz falsch typisiertem Ministerium — der Wert entfaellt", async () => {
     const s = stand({ ...ANALYSE, mentioned_ministries: ["Bundesregierung"] });
     const r = await U.understandOneCluster(cluster(), s.deps, { vorgangId, existing: null, vertrag: s.vertrag });
@@ -156,12 +163,24 @@ async function main() {
     assert.deepEqual(s.p.gespeichert[0].ministerien, ["BMAS"]);
   });
 
-  await test("B7 Die strenge Quellenbindung bleibt: eine unbelegte Partei sperrt weiterhin", async () => {
+  await test("B7 Eine unbelegte Partei sperrt die Antwort (fail closed); eine belegte bleibt", async () => {
+    // 2026-09-24 (169er Production-Befund Run 35987448290): eine Reduktion von `parteien` wurde
+    // geprueft und VERWORFEN — eine umschreibende Prosa kann semantisch von der entfernten
+    // unbelegten Parteibeteiligung abhaengen, ohne den Namen zu nennen; dafuer gibt es keine
+    // belastbare Belegstruktur je Aussage (`akteurslisten-quellenbindung.js`). `parteien` bleibt
+    // daher streng: ein unbelegter Wert sperrt die ganze Antwort.
     const s = stand({ ...ANALYSE, parteien: ["Unbelegte Partei"] });
     const r = await U.understandOneCluster(cluster(), s.deps, { vorgangId, existing: null, vertrag: s.vertrag });
-    assert.equal(r.status, "skipped-invalid");
+    assert.equal(r.status, "skipped-invalid", JSON.stringify(r));
     assert(r.errors.includes("quellenbeleg-parteien"), JSON.stringify(r.errors));
     assert.equal(s.p.gespeichert.length, 0);
+    // Gegenprobe: die woertlich belegte Bezeichnung bleibt unveraendert erhalten.
+    const s2 = stand({ ...ANALYSE, parteien: ["Unbelegte Partei"] });
+    const r2 = await U.understandOneCluster(
+      cluster("Die Unbelegte Partei berät über die Reform."), s2.deps,
+      { vorgangId, existing: null, vertrag: s2.vertrag });
+    assert.equal(r2.status, "saved", JSON.stringify(r2));
+    assert.deepEqual(s2.p.gespeichert[0].parteien, ["Unbelegte Partei"]);
   });
 
   await test("B8 Goldset bleibt streng: ein unbelegter Wert ist dort weiterhin ungueltig", async () => {
@@ -184,11 +203,12 @@ async function main() {
     assert.deepEqual(s.p.gespeichert[0].mentioned_people, []);
   });
 
-  // ── C · Erwaehnungslisten-Reduktion (Production-Befund 2026-09-24) ───────────────────────────
+  // ── C · Erwaehnungslisten-Reduktion und strenge Beteiligungslisten (169er 2026-09-24) ────────
   // Run 35934515630, Vorgang vg-reformen-20260908-c646df: der Fehlercode
   // `quellenbeleg-mentioned_people` sperrte eine ansonsten brauchbare Antwort und beendete damit
   // den gesamten 169er Lauf (ausgang `unbekannt`). Ein einzelner unbelegter ERWAEHNUNGSWERT darf
-  // die Antwort nicht mehr sperren; belegte Werte bleiben, die Beteiligungslisten bleiben streng.
+  // die Antwort nicht mehr sperren; belegte Werte bleiben. Die BETEILIGUNGSLISTEN `parteien` und
+  // `ausschuesse` bleiben dagegen STRENG (eine `parteien`-Reduktion wurde geprueft und verworfen).
   await test("C1 Production-Fehler mentioned_people sperrt die Antwort nicht mehr", async () => {
     const s = stand({ ...ANALYSE, mentioned_people: ["Nicht Belegt"] });
     const r = await U.understandOneCluster(cluster(), s.deps, { vorgangId, existing: null, vertrag: s.vertrag });
@@ -206,7 +226,7 @@ async function main() {
     assert.deepEqual(s.p.gespeichert[0].mentioned_people, ["Max Mustermann"]);
   });
 
-  await test("C3 Reduzierbar sind alle Erwaehnungslisten, nicht die Beteiligungslisten", () => {
+  await test("C3 Reduzierbar sind die Erwaehnungslisten; `parteien` und `ausschuesse` bleiben streng", () => {
     const p = U.buildUnderstandingPrompt({ documents: [doc("Verein diskutiert Busangebot", "Ein Verein diskutiert das Busangebot.")] });
     for (const feld of ["mentioned_ministries", "mentioned_parties", "mentioned_people",
       "mentioned_mps", "mentioned_committees"]) {
@@ -217,14 +237,17 @@ async function main() {
     }
   });
 
-  await test("C4 Wirklich unbelegte Beteiligung sperrt weiterhin (fail closed)", async () => {
-    for (const feld of ["parteien", "ausschuesse"]) {
-      const s = stand({ ...ANALYSE, [feld]: ["Unbelegte Rolle"] });
-      const r = await U.understandOneCluster(cluster(), s.deps, { vorgangId, existing: null, vertrag: s.vertrag });
-      assert.equal(r.status, "skipped-invalid", `${feld}: ${JSON.stringify(r)}`);
-      assert(r.errors.includes(`quellenbeleg-${feld}`), JSON.stringify(r.errors));
-      assert.equal(s.p.gespeichert.length, 0);
-    }
+  await test("C4 Wirklich unbelegte `ausschuesse` UND `parteien` sperren weiterhin (fail closed)", async () => {
+    const sA = stand({ ...ANALYSE, ausschuesse: ["Unbelegte Rolle"] });
+    const rA = await U.understandOneCluster(cluster(), sA.deps, { vorgangId, existing: null, vertrag: sA.vertrag });
+    assert.equal(rA.status, "skipped-invalid", JSON.stringify(rA));
+    assert(rA.errors.includes("quellenbeleg-ausschuesse"), JSON.stringify(rA.errors));
+    assert.equal(sA.p.gespeichert.length, 0);
+    const sP = stand({ ...ANALYSE, parteien: ["Unbelegte Rolle"] });
+    const rP = await U.understandOneCluster(cluster(), sP.deps, { vorgangId, existing: null, vertrag: sP.vertrag });
+    assert.equal(rP.status, "skipped-invalid", JSON.stringify(rP));
+    assert(rP.errors.includes("quellenbeleg-parteien"), JSON.stringify(rP.errors));
+    assert.equal(sP.p.gespeichert.length, 0);
   });
 
   await test("C5 Nicht sicher reduzierbare Angaben bleiben unangetastet und ungueltig", () => {

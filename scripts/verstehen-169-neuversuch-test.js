@@ -445,7 +445,7 @@ async function main() {
       // nachgestellt): beweist, dass die neuen Diagnosefelder den Fehler sichtbar machen.
       requestUnderstanding: async () => {
         p.kiAufrufe += 1;
-        return { ...ANALYSE, parteien: ["NichtBelegt_parteien"], ausschuesse: ["NichtBelegt_ausschuesse"] };
+        return { ...ANALYSE, ausschuesse: ["NichtBelegt_ausschuesse"] };
       },
       verstehenVertrag: () => vertragModul.baueVertrag({ deps: { erzwingeAktiv: true, speicher } })
     };
@@ -454,7 +454,7 @@ async function main() {
     A.equal(r.status, "skipped-invalid", JSON.stringify(r));
     A.equal(r.reason, "validierung-fehlgeschlagen", "PR#522: Fehlerklasse des Modellpfads");
     A.equal(r.documents, 2, "PR#522: echte Clustergroesse");
-    A.ok(Array.isArray(r.errors) && r.errors.includes("quellenbeleg-parteien"), "PR#522: sichere Codes sichtbar");
+    A.ok(Array.isArray(r.errors) && r.errors.includes("quellenbeleg-ausschuesse"), "PR#522: sichere Codes sichtbar");
     A.equal(r.ausgang, "unbekannt", "nach Modellstart ohne belegtes Ergebnis: ehrlich unbekannt");
     const zeile = speicher.zeilen.get(VORGANG);
     A.equal(zeile.zustand, "unbekannt");
