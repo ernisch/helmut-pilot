@@ -105,7 +105,46 @@ Push
 
 Pull Request
 
-Ein Push oder Pull Request bedeutet niemals automatisch Freigabe für Merge oder Production.
+Ein Push oder Pull Request allein erteilt keine zusätzliche Production-Freigabe.
+Für Sprint-Merges gilt die folgende ausdrückliche Dauerfreigabe des Nutzers vom 24.09.2026.
+
+## Autonome Sprint-Abwicklung und Merge-Dauerfreigabe
+
+Innerhalb des vom Nutzer beauftragten Sprints oder klar definierten Problems arbeitet
+Codex selbstständig bis zum belegten Abschluss. Das umfasst Implementierung, gezielte
+Prüfungen, Fehlerkorrekturen, Commit, Push, Pull Request, Merge nach `main`, das dadurch
+ausgelöste reguläre Production-Deployment, rein lesende Nachkontrolle und Abschlussdokumentation.
+Für diese Sprint-Merges nicht erneut um Erlaubnis fragen. Die Freigabe gilt bis zum
+Widerruf auch in neuen Tasks; sie autorisiert keine eigenmächtige Erweiterung des Auftrags.
+
+Vor jedem Merge müssen alle Bedingungen erfüllt sein:
+
+- Nur Änderungen des beauftragten Sprints; eigener Branch und nachvollziehbarer PR.
+- Diff geprüft, keine bekannten kritischen Fehler oder ungeklärten Review-Blocker.
+- Beide Pflichtprüfungen `Syntax + Offline-Suiten` und
+  `Browser-/Mobile-Smoke (Chromium)` erfolgreich für den aktuellen PR-Kopf.
+- Aktuelles `main`, PR-Kopf und parallele Arbeit frisch geprüft; kein Konflikt.
+  Bei geändertem Basisstand erforderliche Integration prüfen, nicht alte CI als neuen Beleg verwenden.
+- Merge an den geprüften Commit binden; keine Admin-Umgehung, kein Force-Push,
+  keine Abschwächung von Tests oder Schutzregeln, um einen Merge zu erzwingen.
+- Wirkung, Risiko, rein lesende Nachkontrolle und Rückweg kurz benennen.
+
+Nach dem Merge selbstständig Deployment/Commit, relevante Fehlerprotokolle und
+betroffenen Zustand prüfen, Pflicht-CI bis zum Ergebnis verfolgen und den belegten
+Stand dokumentieren. Danach innerhalb desselben Auftrags weiterarbeiten; ein Merge
+allein ist kein Sprintabschluss. Behebbare Fehler innerhalb dieser Freigabe selbst
+korrigieren. Bei erreichtem Sprintziel oder echtem Blocker mit Belegen abschließen.
+
+Die Dauerfreigabe umfasst **keine** Migrationen, Production-Daten-/CAS-/Profiländerungen,
+Cron-/Environment-/Azure-/Budgetänderungen, kostenpflichtige Production-Modellläufe,
+externe Nachrichten oder neue kostenpflichtige Ressourcen. Auch ein Merge darf
+solche separat freigabepflichtigen Aktionen nicht indirekt auslösen, solange deren
+konkrete Freigabe fehlt. Ein bereits ausdrücklich freigegebener Umfang muss nicht
+nochmals bestätigt werden.
+
+Bestehende technische Berechtigungen und automatische Genehmigungsprüfungen bleiben
+wirksam. Diese Projektregel ersetzt sie nicht; keine globalen Sandbox- oder
+Sicherheitseinstellungen zur Umgehung einer Sperre ändern.
 
 ## Tests
 
@@ -143,7 +182,7 @@ Keine Endlosschleifen.
 
 ## Production Schutz
 
-Production Änderungen benötigen eine ausdrückliche Freigabe für die konkrete Aktion und den konkreten Umfang.
+Production Änderungen benötigen eine ausdrückliche Freigabe für die konkrete Aktion und den konkreten Umfang. Für Sprint-Merges samt regulärem Deployment ist diese durch die obige Dauerfreigabe erteilt; für die übrigen Aktionen bleibt sie gesondert erforderlich.
 
 Dies betrifft insbesondere:
 
@@ -177,7 +216,7 @@ externe Nachrichten
 
 kostenpflichtige Ressourcen
 
-Eine Freigabe für eine Aktion gilt niemals automatisch für eine spätere Aktion.
+Außerhalb der ausdrücklich erteilten Merge-Dauerfreigabe gilt eine Freigabe nur für ihre konkrete Aktion und ihren Umfang, nicht automatisch für eine spätere Aktion.
 
 Provisionierung ist keine Aktivierungsfreigabe.
 
