@@ -30,7 +30,8 @@ function fixture(userId = "local-versorgung") {
   const lage = { ...checked, quellen, quellenVersion: E.VERSION, quellenHash: E.hashEingabe(quellen),
     koSetHash: "a".repeat(32), generatedAt: zeit };
   const briefing = { available: true, items: [{ title: "PRIVATER_BRIEFINGTEXT" }],
-    currentHelmutState: {}, currentRadarState: {} };
+    currentHelmutState: { tagesAnlass: { art: "neue-quelle", documentIds: ["rd-fixture"],
+      text: "Synthetischer Tagesanlass nur für den Ergebnisvertragstest." } }, currentRadarState: {} };
   const payload = { version: B.VERSION, mandat: userId, tag, profilHash: B.profilHash(profile),
     profilHashVersion: 2, briefing, lage, inhaltHash: B.hash({ briefing, lage }),
     pruefung: B.pruefeInhalt(briefing, lage), erzeugtAm: zeit };
@@ -50,6 +51,15 @@ async function test(name, fn) { await fn(); passed++; console.log("PASS " + name
   await test("Drei gebundene Ergebnisse im Fenster, ohne fachliches Gesamturteil", () => {
     const f = fixture(), r = R.pruefe(f); alle(r, true);
     assert.equal(r.morgenbriefing.inhaltHash, B.hash(f.rows[0].payload.briefing));
+  });
+  await test("Gespeichertes Strukturgrün ohne Tagesanlass trägt keinen neuen Nachweis", () => {
+    const f = fixture(), p = f.rows[0].payload;
+    delete p.briefing.currentHelmutState.tagesAnlass;
+    p.inhaltHash = B.hash({ briefing:p.briefing, lage:p.lage });
+    f.app.gespeicherterNachweis.inhaltHash = p.inhaltHash;
+    assert.equal(p.pruefung.strukturellVollstaendig, true, "Alte gespeicherte Bewertung bleibt stehen");
+    assert.equal(R.pruefe(f).mandatsbriefing.vollstaendig, false);
+    assert.equal(R.pruefe(f).mandatsbriefing.grund, "ergebnis-strukturell-unvollstaendig");
   });
   await test("Andere Texte bei gleichen Kennungen und Zeiten sind keine gleiche Morgenversorgung", () => {
     const f = fixture(), p = f.rows[0].payload, signatur = L.inhaltsSignatur(p.briefing);
