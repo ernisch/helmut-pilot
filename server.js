@@ -596,11 +596,11 @@ async function handleRequest(request, response) {
           vorgaenge: []
         };
       }
-      // Narrativ asynchron nachziehen (fire-and-forget), damit der Cache für den
-      // nächsten Aufruf warm ist. Blockiert den App-Start NICHT.
-      if (briefing.lageBriefing && briefing.lageBriefing.pendingNarrative) {
-        buildLageBriefing(profile, { politicianId }).catch((e) => console.error("Lage-Narrativ (async) fehlgeschlagen", e && e.message));
-      }
+      // Ein Appabruf darf keinen unbeaufsichtigten bezahlten Lage-Lauf starten.
+      // Karten und vorhandener Text bleiben lesbar; fehlender Text wird nur im
+      // regulaeren Cron oder ausdruecklich gestarteten Fachlauf erzeugt. Ein
+      // fire-and-forget nach HTTP-Ende kann in Production die Kostenabrechnung
+      // verlieren und beim naechsten Oeffnen erneut Modelle starten.
       // P1-8 (Teil): tasks + notes sind unabhängig — parallel statt seriell laden.
       // Block 5 (Lage-Frische): zusätzlich die ECHTE Ausgabe-Frische mitladen.
       // getLatestCompleteKnowledgeObjectAt = created_at des jüngsten verstandenen
