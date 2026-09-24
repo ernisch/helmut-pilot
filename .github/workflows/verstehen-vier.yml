@@ -1,0 +1,113 @@
+name: Verstehen vier · kontrollierte Nacharbeit
+
+on:
+  workflow_dispatch:
+    inputs:
+      modus:
+        type: choice
+        options: [plan, ausfuehren]
+        default: plan
+        required: true
+      vorgaenge:
+        description: "Explizite komma-getrennte Teilmenge der vier Kennungen; keine automatische Auswahl"
+        required: true
+      runtime_commit:
+        description: "Voller main-Commit dieses Dispatches"
+        required: true
+      plan_hash:
+        description: "Nur scharf: SHA256 des zuvor geprueften Plans"
+        required: false
+      bestaetigung:
+        description: "Nur scharf: VIER_UNKNOWN_EINMALIG_BESTAETIGT"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' &&
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'workflow_dispatch' &&
+      github.run_attempt == 1 &&
+      inputs.runtime_commit == github.sha &&
+      inputs.modus == 'plan'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.runtime_commit }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - run: npm ci --ignore-scripts
+      - name: Rein lesender Plan ohne Modellzugang
+        env:
+          VORGAENGE: ${{ inputs.vorgaenge }}
+          RUNTIME_COMMIT: ${{ inputs.runtime_commit }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          HELMUT_V3_STORE: "1"
+          HELMUT_STORAGE_BACKEND: "supabase"
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$RUNTIME_COMMIT"
+          node scripts/verstehen-vier.js --ids "$VORGAENGE"
+
+  ausfuehren:
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' &&
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'workflow_dispatch' &&
+      github.run_attempt == 1 &&
+      inputs.runtime_commit == github.sha &&
+      inputs.modus == 'ausfuehren' &&
+      inputs.bestaetigung == 'VIER_UNKNOWN_EINMALIG_BESTAETIGT'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    concurrency:
+      group: helmut-500-kontrollierte-facharbeit
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.runtime_commit }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - run: npm ci --ignore-scripts
+      - name: Einmalig nur die ausdruecklich freigegebenen Vorgaenge
+        env:
+          VORGAENGE: ${{ inputs.vorgaenge }}
+          PLAN_HASH: ${{ inputs.plan_hash }}
+          RUNTIME_COMMIT: ${{ inputs.runtime_commit }}
+          BESTAETIGUNG: ${{ inputs.bestaetigung }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT || secrets.AZURE_OPENAI_DEPLOYMENT }}
+          HELMUT_V3_STORE: "1"
+          HELMUT_STORAGE_BACKEND: "supabase"
+          HELMUT_SUPABASE_STORE_ID: "main"
+          HELMUT_SUPABASE_AUTH_STORE_ID: "main-auth"
+          VERCEL_ENV: "production"
+          HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt"
+          HELMUT_MAX_LLM_CALLS_PER_DAY: "2416"
+          HELMUT_LLM_RESERVE_UNDERSTANDING: "702"
+          HELMUT_TESTLAUF_VORRANG_REAL: "200"
+          HELMUT_ANBIETER_STEUERUNG: "on"
+          HELMUT_ANBIETER_AZURE_MINUTE: "20"
+          HELMUT_ANBIETER_AZURE_TAG: "0"
+          HELMUT_LLM_BUDGET_FAIL_CLOSED: "1"
+          HELMUT_VERSTEHEN_CAS: "on"
+          HELMUT_UNDERSTANDING_LOCK: "on"
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$RUNTIME_COMMIT"
+          node scripts/verstehen-vier.js --execute --ids "$VORGAENGE" \
+            --plan-hash "$PLAN_HASH" --runtime-commit "$RUNTIME_COMMIT" --confirm "$BESTAETIGUNG"
