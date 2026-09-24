@@ -1,9 +1,26 @@
 # Kontrollierte Nacharbeit der vier unbekannten Vorgaenge
 
 Stand: 24.09.2026. [PR #543](https://github.com/ernisch/helmut-pilot/pull/543) aus Branch `codex/verstehen-vier-nacharbeit-20260924` ist nach Nutzerfreigabe gemergt (14:34:22 UTC), Commit `1c70b4c162953280806ee2d74525894de1fed8f8`.
-**Vierer-Migration nach ausdruecklichem GO am 24.09.2026 angewendet und rein lesend verifiziert; kein scharfer Dispatch, keine CAS-Freigabe und kein Production-Modellaufruf.**
+**Migration verifiziert; Zweierauftrag ausgefuehrt und nach einem fachlichen Fehler regelkonform gestoppt. Vollstaendige Vierer-Bilanz siehe direkt unten.**
 
 Production-Nachkontrolle: Vercel `dpl_AUw8inmYwx9iM6EjsSyNCGKHix2J` READY, fra1, Production-Alias und derselbe Commit. Keine Runtime-Fehler im Fenster 14:34:22–14:35:20 UTC. Datenbank um 14:35:27 UTC: 504 Profile, 0 aktiv, keine unerledigten Jobs oder lebenden Understanding-Leases; alle vier CAS-Zustaende und KI-Zaehler unveraendert, neuer RPC nicht vorhanden, neue Quittung nicht angelegt. Kein fachlicher Erfolg der vier Faelle durch den Merge behauptet.
+
+## Abschlussbilanz des freigegebenen Zweierauftrags
+
+Der Nutzer gab Plan `36027917040` fuer Demo-Anreise und Koçak ausdruecklich frei, mit maximal einem Versuch je Fall, zusammen 0,30 USD, 20 Minuten und Stopp beim ersten Fehler. [Ausfuehrung 36029408684](https://github.com/ernisch/helmut-pilot/actions/runs/36029408684) lief genau einmal auf `44f37828342f3178cf7ee8836776d288d7878334`; Runtime, Dispatch und Checkout stimmen ueberein. Plan-Hash `48f8f7379680625e75a1f63b0e942088cfb56a5a60a71f23c527d758042bb1ec`.
+
+Production-Quittung `verstehen4-20260924-a` terminal **gestoppt**, Beginn 24.09.2026 16:44:22.115 UTC, Ende 16:44:59.931 UTC, `vier-ergebnis-nicht-bestaetigt`. Ein Modellversuch, **0,005804 USD** konservativ gebuchte Laufkosten; Kostenbuch-Ticket `abgerechnet`, keine offene Reserve dieses Versuchs. Keine Profilwrites, Quellenabrufe oder Kommunikation. Die Stoppregel verhinderte den zweiten Fall; die Quittung bleibt verbraucht. Kein neuer Dispatch und kein Retry.
+
+| Fall | Endstatus | Vollstaendiger Beleg / Entscheidung |
+|---|---|---|
+| Demo-Anreise | fachlich fehlgeschlagen, gesperrt | Ein neuer Versuch: `skipped-invalid`, `quellenbeleg-parteien`. CAS unbekannt, fencing/KI/Versuche 3/3/3, kein Ergebnis-fencing, KO failed. Validator bleibt streng; kein weiterer blinder Versuch. |
+| Koçak | nicht begonnen, offen und gesperrt | Wegen vereinbartem Stopp nach dem ersten Fehler 0 neue Aufrufe. CAS unveraendert 1/1/1, kein Ergebnis-fencing, KO failed. Kein Erfolg behauptet; neuer Versuch waere ein gesonderter Auftrag ausserhalb der verbrauchten Quittung. |
+| Arbeitsplaetze | zurueckgestellt, gesperrt | Moeglicher Ereignismix der drei gespeicherten Dokumente. CAS unveraendert 2/2/2, nur historisches KO mit Ergebnis-fencing 1; kein erfolgreicher aktueller Nachweis. Keine sachlich neue Grundlage fuer einen Modellversuch. |
+| Dachmeldung | zurueckgestellt, gesperrt | Quelle vom 13.06.2023 ohne URL und Auszug. CAS unveraendert 1/1/1, KO failed. Keine sachlich neue Grundlage fuer einen Modellversuch. |
+
+Nachkontrolle 16:47:20 UTC: 504 Mandatsprofile, 0 aktiv; MD5 aller Mandatsprofilzeilen `c32b7d4f76b4ad70ace0cac91c3e94c3` und aller 505 Kontoprofile `3c5b0b5a6314f31c395b8758b166c5c3` unveraendert. Alle vier CAS-Zeilen ohne Besitzer/Lease, keine offenen Jobs oder lebenden Pipeline-Locks. Tageskostenbuch bei der anschliessenden Lesung: 0,889031 USD verbraucht, Grenze 4 USD; das ist der Projekt-Tagesstand, nicht nur dieser Lauf. Aeltere ungeklaerte Reserven werden nicht freigegeben.
+
+**Vierer-Bilanz abgeschlossen, fachlich nicht bestanden:** 1 fehlgeschlagen, 1 nicht begonnen, 2 begruendet zurueckgestellt; 0 neue erfolgreiche Ergebnisse. Diese Bilanz ist weder ein bestandener 169er Fachnachweis noch ein 500er Nachweis. Der Nutzer hat danach die Bereichstrennung und notwendige Startreparaturen bis unmittelbar vor dem 500er Start autonom beauftragt. Die untenstehenden Abschnitte dokumentieren Vorbereitung und damalige Freigabeschritte.
 
 ## Freigegebene Production-Migration am 24.09.2026
 
