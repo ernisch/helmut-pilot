@@ -1321,10 +1321,13 @@ async function abschnittInvalidDiagnose() {
   });
 
   await pruefeAsync("§23.3b hoechstens fuenf Codes; unsichere Meldungen bleiben aussen", async () => {
-    const C = baueInvalidWelt({
-      unbelegte: ["ministerien", "mentioned_ministries", "parteien", "mentioned_parties",
-        "mentioned_people", "mentioned_mps", "ausschuesse", "mentioned_committees"]
-    });
+    // NON-ARRAY-Werte sind NICHT reduzierbar (fail closed): die Erwaeehnungslisten-Reduktion
+    // greift nur bei unbelegten STRINGS. Nicht-Arrays laufen unveraendert durch den strengen
+    // Validator und erzeugen je Feld einen `quellenbeleg-<feld>`-Code — damit bleibt der
+    // Fuenfer-Deckel des Berichts weiterhin erzwingbar.
+    const C = baueInvalidWelt({ unbelegte: [], extraAntwort: Object.fromEntries(
+      ["ministerien", "mentioned_ministries", "parteien", "mentioned_parties",
+        "mentioned_people", "mentioned_mps", "ausschuesse", "mentioned_committees"].map((f) => [f, "kein-array"])) });
     const laufC = await V.fuehreAus({
       ids: idsVon(C.docs), deps: C.deps, execute: true, commit: "test-commit", erwartet: C.bindung,
       runId: "invalid-cap", now: () => new Date()

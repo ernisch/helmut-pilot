@@ -61,12 +61,23 @@ async function auswertung(c, antwort) {
 let pass = 0;
 async function test(name, fn) { await fn(); pass++; console.log("PASS " + name); }
 async function main() {
-  await test("Unbelegte Partei in jeder Liste sperrt Erstverstehen und Update vor dem Speichern", async () => {
-    for (const feld of FELDER) for (const modus of ["erst", "update"]) {
-      const s = stand({ ...ANALYSE, [feld]: [PARTEI] });
-      verworfen(await run(modus, fixture(), s), s, feld);
+  await test("Unbelegte Beteiligungspartei sperrt Erstverstehen und Update vor dem Speichern", async () => {
+    for (const modus of ["erst", "update"]) {
+      const s = stand({ ...ANALYSE, parteien: [PARTEI] });
+      verworfen(await run(modus, fixture(), s), s, "parteien");
       assert.equal(s.p.failed, modus === "erst" ? 1 : 0);
       assert.equal(s.p.updates, modus === "update" ? 1 : 0);
+    }
+  });
+  await test("Unbelegte Erwaehnungspartei sperrt die Antwort nicht mehr (deterministische Reduktion)", async () => {
+    // Erwaehnungslisten sind reine Nennungen (Production-Befund 2026-09-24): ein unbelegter
+    // Wert entfaellt, die uebrige Antwort bleibt; die Beteiligungsliste `parteien` bleibt streng.
+    for (const modus of ["erst", "update"]) {
+      const s = stand({ ...ANALYSE, mentioned_parties: [PARTEI] });
+      const r = await run(modus, fixture(), s);
+      assert.equal(r.status, modus === "erst" ? "saved" : "updated", JSON.stringify(r));
+      assert.deepEqual(s.p.gespeichert[0].mentioned_parties, []);
+      assert.equal(s.p.aufrufe, 1); assert.equal(s.p.unbekannt, 0);
     }
   });
   await test("Ausdrueckliche Nennung aus Titel oder Auszug bleibt in beiden Pfaden erhalten", async () => {
@@ -130,13 +141,11 @@ async function main() {
       for (const feld of FELDER) assert.deepEqual(s.p.gespeichert[0][feld], [PARTEI]);
     }
   });
-  await test("Ohne CAS bleibt der Fehler sichtbar und wird nicht gespeichert", async () => {
-    for (const feld of FELDER) {
-      const s = stand({ ...ANALYSE, [feld]: [PARTEI] });
-      const r = await run("erst", fixture(), s, { vertrag: null });
-      assert.equal(r.status, "skipped-invalid"); assert(r.errors.includes(`quellenbeleg-${feld}`));
-      assert.equal(s.p.failed, 1); assert.equal(s.p.aufrufe, 1); assert.equal(s.p.gespeichert.length, 0);
-    }
+  await test("Ohne CAS bleibt der Fehler einer unbelegten Beteiligungspartei sichtbar", async () => {
+    const s = stand({ ...ANALYSE, parteien: [PARTEI] });
+    const r = await run("erst", fixture(), s, { vertrag: null });
+    assert.equal(r.status, "skipped-invalid"); assert(r.errors.includes("quellenbeleg-parteien"));
+    assert.equal(s.p.failed, 1); assert.equal(s.p.aufrufe, 1); assert.equal(s.p.gespeichert.length, 0);
   });
   await test("Artikelvariante derselben Partei belegt (nur die belegte Bezeichnung 'Linke', beide Listen)", async () => {
     const faelle = [
@@ -208,9 +217,9 @@ async function main() {
     const rA = await auswertung(fixture(text), { ...ANALYSE, ausschuesse: ["Verkehrsausschuss"], mentioned_committees: ["Verkehrsausschuss"] });
     assert.equal(rA.valid, false); assert(rA.errors.includes("quellenbeleg-ausschuesse"));
     // Der GOLDSET-AUSWERTER prueft unveraendert streng (Qualitaetswaechter, er speichert nichts).
-    // Nur im SPEICHERPFAD werden die beiden optionalen Ministeriumslisten auf den woertlich
-    // belegten Teil reduziert — siehe docs/betrieb/ministerien-quellenbindung-2026-09-18.md,
-    // Nachtrag 23.09.2026.
+    // Nur im SPEICHERPFAD werden die reduzierbaren Akteurslisten (Erwaehnungslisten `mentioned_*`
+    // und die beiden Ministeriumslisten) auf den woertlich belegten Teil reduziert — siehe
+    // docs/betrieb/ministerien-quellenbindung-2026-09-18.md, Nachtrag 23.09. und 24.09.2026.
     const rM = await auswertung(fixture(text), { ...ANALYSE, ministerien: ["Verkehrsministerium"], mentioned_ministries: ["Verkehrsministerium"] });
     assert.equal(rM.valid, false); assert(rM.errors.includes("quellenbeleg-ministerien"));
     const rP = await auswertung(fixture(text), { ...ANALYSE, mentioned_people: ["Max Mustermann"], mentioned_mps: ["Max Mustermann"] });
