@@ -678,3 +678,40 @@ Snapshot-/Listenwerte,
 Supabase-Lesezugang über Secrets, direkter Runner-Aufruf, kein `scripts/lokal.js`, keine
 Scharf-/Bestätigungs-/Quittungsvariable, keine Modell-Secrets, keine Profil-/Lock-/CAS-/Budget-
 Variablen, kein Schedule und kein Push-Trigger. **Kein Workflow wurde ausgeführt.**
+
+## 20 · Dritter scharfer 169er Lauf: Ergebnis und Bilanz (2026-09-24)
+
+Der dritte scharfe Lauf wurde **genau einmal** ausgefuehrt: Workflow-Run `35964405263`,
+`run_attempt = 1`, `failure`, 24.09.2026 06:25–06:33 UTC (~8 min). Runtime-Commit
+`b35e34a208fe7972385e2ed7bfe5d72f15f2dc65` (Dispatch = `github.sha` = Checkout),
+Dokument-Snapshot `ea84f26ccc380e22961335926e2d4e585cee2308`. Quittungskennung
+`verstehen169-20260924-b` (neu vom Betreiber vergeben) — der Runner beansprucht sie und
+schliesst sie terminal: `quittungStatus = unbekannt`.
+
+**Bindung und Schutzvertrag gehalten.** Gebunden 169 Dokumente, `idHash 5f387840…a2ed9`,
+122 Cluster, 113 Modellkandidaten (exakt am Deckel, ≤ 113), Schutzvertrag `true`;
+`quellenabrufe 0`, `profilwrites 0`, `kommunikation 0`, `automatischeWiederholung false`.
+Jederzeit innerhalb der Grenzen: 24 von 113 Modellaufrufen, 0,15696 von 0,80 USD,
+deutlich unter 35 Minuten.
+
+**Abbruch.** Nach **36 von 122 Clustern** (54 von 169 Dokumenten) stoppte der Lauf mit
+`verstehen-ausgang-unbekannt` am Cluster `vg-gemeinsame-20260921-dcd0f5`
+(`status skipped-invalid`, `reason validierung-fehlgeschlagen`,
+`validierungsfehler = ["quellenbeleg-parteien"]`). Ursache: ein einzelner **unbelegter Wert
+in der Beteiligungsliste `parteien`** — der strenge Validator verwarf die gesamte Antwort, der
+Motor setzte `ausgang=unbekannt`, der Runner beendet darauf den gesamten Lauf. Das ist **genau
+der vorab benannte Fall** (die Felder `parteien`/`ausschuesse` bleiben bewusst streng); es wurde
+**nichts** automatisch repariert oder weich gefiltert.
+
+**Bilanz der verarbeiteten 36 Cluster:** duplicate 10 (17 Dokumente), saved 17 (17),
+merged 2 (12), updated 6 (7), skipped-invalid 1 (1). Die **uebrigen 86 Cluster / 115 Dokumente
+wurden nicht verarbeitet** — kein 169er Nachweis, keine Profilwirkung.
+
+**Nicht verfuegbar aus diesem Lauf.** Prompt-/Completion-/Gesamttoken gibt der Runner-Bericht
+nicht aus; der globale UTC-Tageskostenstand war aus dieser Sitzung nicht lesbar (lokal keine
+Production-Zugangsdaten). Beide Werte wurden **nicht geprueft** und werden **nicht behauptet**.
+Der bekannte vorherige UTC-Tagesstand vom 23.09. lag bei 0,116068 USD von 4 USD; der technische
+Tagesriegel (4 USD, atomar) blieb unveraendert wirksam.
+
+**Belege.** Abschlussbericht (JSON) des Runners im Workflow-Log von Run `35964405263`.
+**Kein Retry, kein zweiter Dispatch, kein Rerun, keine Quittungs-/CAS-/Budgetaenderung.**
