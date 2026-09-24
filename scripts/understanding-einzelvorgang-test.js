@@ -16,6 +16,7 @@
 //   §7  Lock verweigert                           -> 0 Modellaufrufe
 //   §8  Budget verweigert                         -> 0 Modellaufrufe
 //   §9  Validator lehnt ab                        -> sichere Fehlercodes, keine Rohantwort
+//       (ausgeloest ueber die weiterhin STRENGE Beteiligungsliste `ausschuesse`)
 //   §10 Admin-Schutz (Rolle + CSRF) und KEIN breiter Pending-Lauf im Weg
 //
 // Die Attrappen ersetzen ausschliesslich Datenbank und Modell. Der Verstehensmotor
@@ -100,7 +101,12 @@ function baueWelt(welt = {}) {
     canSpend: async () => ({ allowed: welt.budgetVerweigert ? false : true, reason: welt.budgetVerweigert ? "daily-llm-budget-reached" : null }),
     requestUnderstanding: async () => {
       p.aufrufe += 1;
-      return welt.antwort === "invalid" ? { ...ANALYSE, parteien: ["NichtBelegt_parteien"] } : { ...ANALYSE };
+      if (welt.antwort === "invalid") return { ...ANALYSE, ausschuesse: ["NichtBelegt_ausschuesse"] };
+      // Reine SCHEMA-Ablehnung (Production-Befund 2026-09-24, Run 35987448290): das Pflichtfeld
+      // `was_ist_passiert` bleibt leer. Vorher blieb `validierungsfehler` hier LEER — die Ursache
+      // war unsichtbar. Jetzt traegt der Bericht einen wertfreien Feldpfad-Code.
+      if (welt.antwort === "schema") return { ...ANALYSE, was_ist_passiert: "" };
+      return { ...ANALYSE };
     },
     save: async () => ({ saved: true }),
     saveSources: async () => {},
@@ -204,10 +210,21 @@ async function main() {
   {
     const { r, p } = await lauf({ antwort: "invalid" });
     check("Zustand skipped-invalid mit Fehlerklasse", r.ok === true && r.status === "skipped-invalid" && r.reason === "validierung-fehlgeschlagen", JSON.stringify(r));
-    check("sicherer Fehlercode sichtbar", Array.isArray(r.validierungsfehler) && r.validierungsfehler.includes("quellenbeleg-parteien"), JSON.stringify(r.validierungsfehler));
+    check("sicherer Fehlercode sichtbar", Array.isArray(r.validierungsfehler) && r.validierungsfehler.includes("quellenbeleg-ausschuesse"), JSON.stringify(r.validierungsfehler));
     check("hoechstens fuenf Codes", r.validierungsfehler.length <= 5);
     check("kein Rohwert der Modellantwort in der Antwort", !JSON.stringify(r).includes("NichtBelegt"));
     check("genau EIN Aufruf (der bezahlte Aufruf fand statt)", p.aufrufe === 1 && r.modellaufrufe === 1);
+    // Reine Schema-Ablehnung liefert einen BRAUCHBAREN, wertfreien Fehlercode (Feldpfad), aber
+    // garantiert keinen Rohmeldungs-/Antworttext (Diagnosewiederherstellung 2026-09-24).
+    const { r: rS, p: pS } = await lauf({ antwort: "schema" });
+    check("reine Schema-Ablehnung bleibt skipped-invalid mit Fehlerklasse",
+      rS.status === "skipped-invalid" && rS.reason === "validierung-fehlgeschlagen", JSON.stringify(rS));
+    check("wertfreier Schema-Code sichtbar (nur Feldpfad, kein Rohwert)",
+      Array.isArray(rS.validierungsfehler) && rS.validierungsfehler.includes("schema-leer:was_ist_passiert"),
+      JSON.stringify(rS.validierungsfehler));
+    check("kein Rohmeldungstext und kein Rohwert in der Antwort",
+      !JSON.stringify(rS).includes("leer/zu kurz") && !JSON.stringify(rS).includes("was_ist_passiert:"));
+    check("genau EIN Aufruf auch im Schema-Fall", pS.aufrufe === 1);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════════════════

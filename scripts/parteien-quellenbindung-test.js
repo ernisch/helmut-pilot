@@ -48,30 +48,41 @@ async function run(modus, c, s, extra = {}) {
   assert.deepEqual(existing, vorher, "Vorhandenes Objekt darf nicht mutiert werden");
   return result;
 }
-function verworfen(r, s, feld) {
-  assert.equal(r.status, "skipped-invalid");
-  assert(r.errors.includes(`quellenbeleg-${feld}`), JSON.stringify(r.errors));
-  assert.equal(s.p.aufrufe, 1); assert.equal(s.p.gespeichert.length, 0);
-  assert.equal(s.p.unbekannt, 1); assert.equal(s.p.frei, 0);
-}
-async function auswertung(c, antwort) {
+function auswertung(c, antwort) {
   return U.evaluateUnderstandingCase({ name: "neutraler-parteienbeleg", raw_documents: c.documents },
     async () => structuredClone(antwort));
 }
 let pass = 0;
 async function test(name, fn) { await fn(); pass++; console.log("PASS " + name); }
 async function main() {
-  await test("Unbelegte Beteiligungspartei sperrt Erstverstehen und Update vor dem Speichern", async () => {
+  await test("Unbelegte Beteiligungspartei wird entfernt und NICHT gespeichert (Erstverstehen und Update)", async () => {
+    // Production-Befund 2026-09-24 (Run 35987448290): DREI lokale `quellenbeleg-parteien`-Fehler
+    // sperrten die gesamte, sonst brauchbare Antwort. `parteien` wird jetzt — wie die
+    // Erwaeehnungslisten — deterministisch auf den woertlich belegten Teil reduziert: der
+    // unbelegte Wert entfaellt vollstaendig (in `parteien` UND `mentioned_parties`), die uebrige
+    // Antwort bleibt erhalten. KEINE unbelegte strukturelle Beteiligung wird gespeichert.
     for (const modus of ["erst", "update"]) {
       const s = stand({ ...ANALYSE, parteien: [PARTEI] });
-      verworfen(await run(modus, fixture(), s), s, "parteien");
-      assert.equal(s.p.failed, modus === "erst" ? 1 : 0);
-      assert.equal(s.p.updates, modus === "update" ? 1 : 0);
+      const r = await run(modus, fixture(), s);
+      assert.equal(r.status, modus === "erst" ? "saved" : "updated", JSON.stringify(r));
+      assert.equal(s.p.aufrufe, 1);
+      assert.equal(s.p.unbekannt, 0);
+      assert.equal(s.p.failed, 0);
+      assert.deepEqual(s.p.gespeichert[0].parteien, [], "unbelegte strukturelle Zuordnung darf nicht gespeichert werden");
+      assert.deepEqual(s.p.gespeichert[0].mentioned_parties, []);
+    }
+  });
+  await test("Gemischte Liste: der belegte Wert bleibt, der unbelegte entfaellt", async () => {
+    for (const modus of ["erst", "update"]) {
+      const c = fixture(); c.documents[0].summary = `${PARTEI} fordert mehr Busverkehr.`;
+      const s = stand({ ...ANALYSE, parteien: [PARTEI, "Andere Zukunftspartei"] });
+      assert.equal((await run(modus, c, s)).status, modus === "erst" ? "saved" : "updated");
+      assert.deepEqual(s.p.gespeichert[0].parteien, [PARTEI], "nur der woertlich belegte Wert bleibt");
     }
   });
   await test("Unbelegte Erwaehnungspartei sperrt die Antwort nicht mehr (deterministische Reduktion)", async () => {
     // Erwaehnungslisten sind reine Nennungen (Production-Befund 2026-09-24): ein unbelegter
-    // Wert entfaellt, die uebrige Antwort bleibt; die Beteiligungsliste `parteien` bleibt streng.
+    // Wert entfaellt, die uebrige Antwort bleibt.
     for (const modus of ["erst", "update"]) {
       const s = stand({ ...ANALYSE, mentioned_parties: [PARTEI] });
       const r = await run(modus, fixture(), s);
@@ -92,13 +103,19 @@ async function main() {
       assert(match.matched_features.some(f => f.type === "partei" && f.value === PARTEI));
     }
   });
-  await test("Leere Listen bleiben gueltig; ein einziger unbelegter Zusatz sperrt die Antwort", async () => {
+  await test("Leere Listen bleiben gueltig; ein unbelegter Zusatz wird im Auswerter abgelehnt und im Speicherpfad entfernt", async () => {
     assert.equal((await auswertung(fixture(), ANALYSE)).valid, true);
+    // GOLDSET-AUSWERTER (Qualitaetswaechter, speichert nichts): unveraendert streng.
     for (const feld of FELDER) {
       const r = await auswertung(fixture(`${PARTEI} fordert mehr Busverkehr.`),
         { ...ANALYSE, [feld]: [PARTEI, "Andere Zukunftspartei"] });
       assert.equal(r.valid, false); assert(r.errors.includes(`quellenbeleg-${feld}`));
     }
+    // SPEICHERPFAD: derselbe unbelegte Zusatz entfaellt, die uebrige Antwort bleibt.
+    const s = stand({ ...ANALYSE, parteien: [PARTEI, "Andere Zukunftspartei"] });
+    const c = fixture(`${PARTEI} fordert mehr Busverkehr.`);
+    assert.equal((await run("erst", c, s)).status, "saved");
+    assert.deepEqual(s.p.gespeichert[0].parteien, [PARTEI]);
   });
   await test("Metadaten, URL, Promptbeispiele und andere Antwortfelder ersetzen keinen Beleg", async () => {
     const c = fixture(); Object.assign(c.documents[0], { source_name: "SPD", url: "https://example.org/SPD",
@@ -124,11 +141,13 @@ async function main() {
     const omitted = c.documents.findIndex(d => !selected.includes(d.id)); assert(omitted >= 0);
     for (const feld of FELDER) assert.equal((await auswertung(c, { ...ANALYSE, [feld]: [`Partei Test${omitted}`] })).valid, false);
   });
-  await test("Nachtraeglich veraenderte Eingabe liefert keinen rueckwirkenden Beleg", async () => {
+  await test("Nachtraeglich veraenderte Eingabe liefert keinen rueckwirkenden Beleg (Wert entfaellt)", async () => {
     for (const modus of ["erst", "update"]) {
-      const c = fixture(), s = stand({ ...ANALYSE, parteien: [PARTEI] },
+      const c = fixture(), s = stand({ ...ANALYSE, parteien: [PARTEI], mentioned_parties: [PARTEI] },
         () => { c.documents[0].summary = `${PARTEI} fordert mehr Busverkehr.`; });
-      verworfen(await run(modus, c, s), s, "parteien");
+      assert.equal((await run(modus, c, s)).status, modus === "erst" ? "saved" : "updated");
+      assert.deepEqual(s.p.gespeichert[0].parteien, [], "die nachtraegliche Mutation belegt nichts");
+      assert.deepEqual(s.p.gespeichert[0].mentioned_parties, []);
     }
   });
   await test("Explizit gebundener Artikelabsatz darf eine Partei belegen", async () => {
@@ -141,11 +160,14 @@ async function main() {
       for (const feld of FELDER) assert.deepEqual(s.p.gespeichert[0][feld], [PARTEI]);
     }
   });
-  await test("Ohne CAS bleibt der Fehler einer unbelegten Beteiligungspartei sichtbar", async () => {
-    const s = stand({ ...ANALYSE, parteien: [PARTEI] });
-    const r = await run("erst", fixture(), s, { vertrag: null });
-    assert.equal(r.status, "skipped-invalid"); assert(r.errors.includes("quellenbeleg-parteien"));
-    assert.equal(s.p.failed, 1); assert.equal(s.p.aufrufe, 1); assert.equal(s.p.gespeichert.length, 0);
+  await test("Die Reduktion ist reine Logik (kein CAS noetig) — der unbelegte Wert entfaellt, der belegte bleibt", async () => {
+    const prompt = U.buildUnderstandingPrompt(fixture(`${PARTEI} fordert mehr Busverkehr.`));
+    const out = QB.ohneUnbelegteAkteurswerte({ parteien: [PARTEI, "Andere Zukunftspartei"], mentioned_parties: ["Andere Zukunftspartei"] }, prompt);
+    assert.deepEqual(out.parteien, [PARTEI], "nur der woertlich belegte Wert bleibt");
+    assert.deepEqual(out.mentioned_parties, [], "der unbelegte Wert entfaellt auch aus der Erwaehnungsliste");
+    // Der strenge Validator bleibt daneben unveraendert streng (derselbe Beleg, keine Aufweichung).
+    assert.equal(QB.pruefeAkteurslistenQuellenbindung({ parteien: [PARTEI, "Andere Zukunftspartei"] }, prompt).valid, false);
+    assert.equal(QB.pruefeAkteurslistenQuellenbindung({ parteien: [PARTEI] }, prompt).valid, true);
   });
   await test("Artikelvariante derselben Partei belegt (nur die belegte Bezeichnung 'Linke', beide Listen)", async () => {
     const faelle = [

@@ -46,25 +46,23 @@ async function run(modus, c, s, extra = {}) {
   assert.deepEqual(existing, vorher, "Vorhandenes Objekt darf nicht mutiert werden");
   return result;
 }
-function verworfen(r, s, feld) {
-  assert.equal(r.status, "skipped-invalid");
-  assert(r.errors.includes(`quellenbeleg-${feld}`), JSON.stringify(r.errors));
-  assert.equal(s.p.aufrufe, 1); assert.equal(s.p.gespeichert.length, 0);
-  assert.equal(s.p.unbekannt, 1); assert.equal(s.p.frei, 0);
-}
-async function auswertung(c, antwort) {
+function auswertung(c, antwort) {
   return U.evaluateUnderstandingCase({ name: "neutraler-personenbeleg", raw_documents: c.documents },
     async () => structuredClone(antwort));
 }
 let pass = 0;
 async function test(name, fn) { await fn(); pass++; console.log("PASS " + name); }
 async function main() {
-  await test("Erfundener Vorname in jeder Personenliste sperrt Erstverstehen und Update vor dem Speichern", async () => {
+  await test("Erfundener Vorname in jeder Personenliste wird entfernt (reduziert) und NICHT gespeichert", async () => {
+    // Production-Befund 2026-09-24 (Run 35934515630): die Erwaeehnungslisten sperren die Antwort
+    // seit PR #537 nicht mehr — ein unbelegter Wert entfaellt, die uebrige Antwort bleibt.
     for (const feld of FELDER) for (const modus of ["erst", "update"]) {
       const s = stand({ ...ANALYSE, [feld]: [PERSON] });
-      verworfen(await run(modus, fixture("Ratsmitglied Sommer diskutiert Busverkehr."), s), s, feld);
-      assert.equal(s.p.failed, modus === "erst" ? 1 : 0);
-      assert.equal(s.p.updates, modus === "update" ? 1 : 0);
+      const r = await run(modus, fixture("Ratsmitglied Sommer diskutiert Busverkehr."), s);
+      assert.equal(r.status, modus === "erst" ? "saved" : "updated", JSON.stringify(r));
+      assert.equal(s.p.aufrufe, 1); assert.equal(s.p.unbekannt, 0);
+      assert.equal(s.p.failed, 0);
+      assert.deepEqual(s.p.gespeichert[0][feld], [], `${feld}: unbelegter Name wird nicht gespeichert`);
     }
   });
   await test("Ausdrueckliche Nennung aus Titel oder Auszug bleibt in beiden Pfaden erhalten", async () => {
@@ -120,11 +118,12 @@ async function main() {
     const omitted = c.documents.findIndex(d => !selected.includes(d.id)); assert(omitted >= 0);
     for (const feld of FELDER) assert.equal((await auswertung(c, { ...ANALYSE, [feld]: [`Mara Test${omitted}`] })).valid, false);
   });
-  await test("Nachtraeglich veraenderte Eingabe liefert keinen rueckwirkenden Beleg", async () => {
+  await test("Nachtraeglich veraenderte Eingabe liefert keinen rueckwirkenden Beleg (Wert entfaellt)", async () => {
     for (const modus of ["erst", "update"]) {
       const c = fixture(), s = stand({ ...ANALYSE, mentioned_people: [PERSON] },
         () => { c.documents[0].summary = `${PERSON} fordert mehr Busverkehr.`; });
-      verworfen(await run(modus, c, s), s, "mentioned_people");
+      assert.equal((await run(modus, c, s)).status, modus === "erst" ? "saved" : "updated");
+      assert.deepEqual(s.p.gespeichert[0].mentioned_people, [], "die nachtraegliche Mutation belegt nichts");
     }
   });
   await test("Explizit gebundener Artikelabsatz darf einen Namen belegen", async () => {
@@ -137,12 +136,14 @@ async function main() {
       for (const feld of FELDER) assert.deepEqual(s.p.gespeichert[0][feld], [PERSON]);
     }
   });
-  await test("Ohne CAS bleibt der Fehler sichtbar und wird nicht gespeichert", async () => {
+  await test("Der strenge Validator prueft den Rohwert weiterhin (Auswerter), der Speicherpfad reduziert", async () => {
     for (const feld of FELDER) {
+      const c = fixture("Ratsmitglied Sommer diskutiert Busverkehr.");
+      assert.equal((await auswertung(c, { ...ANALYSE, [feld]: [PERSON] })).valid, false);
       const s = stand({ ...ANALYSE, [feld]: [PERSON] });
-      const r = await run("erst", fixture(), s, { vertrag: null });
-      assert.equal(r.status, "skipped-invalid"); assert(r.errors.includes(`quellenbeleg-${feld}`));
-      assert.equal(s.p.failed, 1); assert.equal(s.p.aufrufe, 1); assert.equal(s.p.gespeichert.length, 0);
+      const r = await run("erst", c, s);
+      assert.equal(r.status, "saved");
+      assert.deepEqual(s.p.gespeichert[0][feld], []);
     }
   });
   console.log(`${pass}/${pass} Gruppen erfolgreich`);

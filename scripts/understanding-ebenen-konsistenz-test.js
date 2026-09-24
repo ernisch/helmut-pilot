@@ -132,8 +132,8 @@ async function main() {
   await test("Passende Ebene umgeht weder Quellenbindung noch Pflichtfelder", async () => {
     for (const modus of ["erst", "update"]) {
       const b = modus === "erst" ? null : bestand("bund");
-      const a = { ...antwort("bund"), parteien: ["Unbelegte Testpartei"] };
-      abgewiesen(await lauf(modus, a, b), modus, true, "quellenbeleg-parteien");
+      const a = { ...antwort("bund"), ausschuesse: ["Unbelegter Testausschuss"] };
+      abgewiesen(await lauf(modus, a, b), modus, true, "quellenbeleg-ausschuesse");
       const s = await lauf(modus, { ...antwort("bund"), warum_wichtig: "" }, b);
       assert.equal(s.r.status, "skipped-invalid"); assert.equal(s.p.writes.length, 0);
     }

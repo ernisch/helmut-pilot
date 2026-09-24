@@ -59,7 +59,13 @@ function baueUmgebung(basis) {
   delete env.HELMUT_V3_STORE;
   // Preload fuer den Kindprozess UND alle seine Kinder.
   const vorhandene = String(env.NODE_OPTIONS || "");
-  if (!vorhandene.includes(SCHUTZ)) env.NODE_OPTIONS = (vorhandene + ` --require ${SCHUTZ}`).trim();
+  if (!vorhandene.includes(SCHUTZ)) {
+    // Ein Projektpfad mit Leerzeichen muss in NODE_OPTIONS in Anfuehrungszeichen stehen — sonst
+    // zerlegt Node die Option am Leerzeichen und der Preload scheitert mit MODULE_NOT_FOUND
+    // (belegt 2026-09-24 an einem Projektpfad mit Leerzeichen). Der geladene Schutz ist derselbe.
+    const preload = SCHUTZ.includes(" ") ? `"${SCHUTZ}"` : SCHUTZ;
+    env.NODE_OPTIONS = (vorhandene + ` --require ${preload}`).trim();
+  }
   env.HELMUT_LOKALER_SCHUTZ_NUR_LADEN = "";
   delete env.HELMUT_LOKALER_SCHUTZ_NUR_LADEN;
   return env;

@@ -266,9 +266,12 @@ function installiereLaufzeitsperre() {
 
 // ── Vererbung an Unterprozesse ───────────────────────────────────────────────────────────
 // Ein Schutz, der beim ersten `spawn` endet, ist keiner. Jeder Kindprozess erbt den Preload.
+// Der Pfad muss in NODE_OPTIONS in Anfuehrungszeichen stehen: sonst zerlegt Node die Option am
+// Leerzeichen und der Enkelprozess laedt den Schutz NICHT (belegt 2026-09-24 an einem
+// Projektpfad mit Leerzeichen — der Nachweis `netzschutz-test.js` 10.1-10.3 deckt genau das ab).
 function vererbeAnUnterprozesse() {
   const vorhandene = String(process.env.NODE_OPTIONS || "");
-  const preload = `--require ${__filename}`;
+  const preload = `--require ${__filename.includes(" ") ? `"${__filename}"` : __filename}`;
   if (!vorhandene.includes(__filename)) {
     process.env.NODE_OPTIONS = (vorhandene + " " + preload).trim();
   }
