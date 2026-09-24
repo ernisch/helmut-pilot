@@ -118,8 +118,8 @@ const koRelated = {
   best_source_url: "https://beispiel.de/politik/foerdermittel-2", best_link_type: "direct"
 };
 const sources = {
-  "vg-1": [{ id: "rd-a", published_at: "2026-07-07T07:45:00Z" }, { id: "rd-b", published_at: "2026-07-06T10:00:00Z" }],
-  "vg-2": [{ id: "rd-c", published_at: "2026-07-06T09:00:00Z" }]
+  "vg-1": [{ id: "rd-a", url: koPrimary.best_source_url, published_at: "2026-07-07T07:45:00Z" }, { id: "rd-b", url: "https://beispiel.de/politik/weiterer-beleg", published_at: "2026-07-06T10:00:00Z" }],
+  "vg-2": [{ id: "rd-c", url: koRelated.best_source_url, published_at: "2026-07-07T07:00:00Z" }]
 };
 const decisions = [
   { knowledge_object_id: "ko-vg-1", vorgang_id: "vg-1", score: 88, decision: "Sofort reagieren", priority_type: "risk", risk: "Uneinheitliche Aussagen", chance: "Profilierung", matched_features: [] },
@@ -129,9 +129,11 @@ const kosById = { "ko-vg-1": koPrimary, "ko-vg-2": koRelated };
 
 const fullState = contract.buildCurrentHelmutState({ profile, decisions, kosById, sourcesByVorgang: sources, now: NOW });
 const emptyState = contract.buildCurrentHelmutState({ profile, decisions: [], kosById: {}, sourcesByVorgang: {}, now: NOW });
+const staleSources = { "vg-1": [{ id:"rd-alt-frist", url:koPrimary.best_source_url,
+  published_at:"2026-01-01T00:00:00Z", summary:"Die Abgabefrist endet am 07.07.2026." }] };
 const staleState = contract.buildCurrentHelmutState({
-  profile, kosById: { "ko-vg-1": { ...koPrimary, updated_at: "2026-01-01T00:00:00Z" } },
-  decisions: [decisions[0]], sourcesByVorgang: sources, now: NOW
+  profile, kosById: { "ko-vg-1": { ...koPrimary, updated_at: "2026-01-01T00:00:00Z", deadline:"2026-07-07T00:00:00Z" } },
+  decisions: [decisions[0]], sourcesByVorgang: staleSources, now: NOW
 });
 
 function briefingWith(state) {
@@ -183,8 +185,8 @@ check("Feinschliff: Mobil-Kurzlabel 'Stand' vorhanden (neben 'Letzte Aktualisier
   html.includes("hstand-mk-short") && html.includes(">Stand<") && html.includes(">Letzte Aktualisierung<"));
 check("Voll: Mein Vorschlag zeigt die recommendation",
   html.includes("Mein Vorschlag") && html.includes("Intern abstimmen"));
-check("Voll: Warum-ist-das-wichtig sichtbar",
-  html.includes("Warum ist das wichtig") && html.includes("Die Debatte gewinnt an Dynamik"));
+check("Voll: Tagesanlass sichtbar, Lage-Einordnung nicht kopiert",
+  html.includes("Warum ist das wichtig") && html.includes("heutigen Arbeitstag") && !html.includes("Die Debatte gewinnt an Dynamik"));
 check("Voll: Risiko bei Nichtreaktion + Risikostufe 'Hoch'",
   html.includes("Risiko bei Nichtreaktion") && /hstand-risk[\s\S]*?Hoch/.test(html));
 check("Voll: Chance + Chancenstufe 'Hoch'",
@@ -239,8 +241,8 @@ check("Kopf: frischer Stand zeigt den Slot-Namen (Mittagsbriefing)",
   freshMidday.status === "fresh" && htmlFreshMidday.includes("Mittagsbriefing") && !htmlFreshMidday.includes("Letzter Stand"));
 
 const staleMidday = contract.buildCurrentHelmutState({
-  profile, kosById: { "ko-vg-1": { ...koPrimary, updated_at: "2026-01-01T00:00:00Z" } },
-  decisions: [decisions[0]], sourcesByVorgang: sources, now: NOW, briefingType: "midday"
+  profile, kosById: { "ko-vg-1": { ...koPrimary, updated_at: "2026-01-01T00:00:00Z", deadline:"2026-07-07T00:00:00Z" } },
+  decisions: [decisions[0]], sourcesByVorgang: staleSources, now: NOW, briefingType: "midday"
 });
 api.setBriefing(briefingWith(staleMidday));
 const htmlStaleMidday = api.render();
@@ -268,7 +270,7 @@ const koOld = {
 const oldState = contract.buildCurrentHelmutState({
   profile, kosById: { "ko-old-1": koOld },
   decisions: [{ knowledge_object_id: "ko-old-1", vorgang_id: "vg-old-1", score: 72, decision: "Sofort reagieren", priority_type: "risk", risk: "", chance: "", matched_features: [] }],
-  sourcesByVorgang: {}, now: NOW
+  sourcesByVorgang: { "vg-old-1": [{ id:"rd-old", url:koOld.best_source_url, published_at:NOW.toISOString() }] }, now: NOW
 });
 check("Prod-Repro: aelteres KO (nur V3-Kern) -> qualityStatus partial, status fresh (nicht empty)",
   oldState.qualityStatus === "partial" && oldState.status === "fresh" && Boolean(oldState.primaryItem));
@@ -351,7 +353,7 @@ check("Review: alle Abnahme-Felder befüllt",
 api.setBriefing(fxBriefing);
 const fxHtml = api.render();
 check("Review: rendert den vollen Stand (kein Leerzustand)",
-  /class="hstand"/.test(fxHtml) && !/hstand--state/.test(fxHtml) && fxHtml.includes("Für dein Mandat"));
+  /class="hstand"/.test(fxHtml) && !/hstand--state/.test(fxHtml) && fxHtml.includes("heutigen Arbeitstag"));
 check("Review: KEINE Kostenwerte im gerenderten Review-Stand",
   !/cost|estimat|token|pipelineStep|€\s?\d|\$\d/i.test(fxHtml));
 check("Review: keine hartkodierte Partei / keine Personen-Logik im Fixture",
