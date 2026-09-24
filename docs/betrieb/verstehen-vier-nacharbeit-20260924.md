@@ -1,9 +1,30 @@
 # Kontrollierte Nacharbeit der vier unbekannten Vorgaenge
 
 Stand: 24.09.2026. [PR #543](https://github.com/ernisch/helmut-pilot/pull/543) aus Branch `codex/verstehen-vier-nacharbeit-20260924` ist nach Nutzerfreigabe gemergt (14:34:22 UTC), Commit `1c70b4c162953280806ee2d74525894de1fed8f8`.
-**Migration nicht angewendet; kein Dispatch, keine CAS-Freigabe und kein Production-Modellaufruf.**
+**Vierer-Migration nach ausdruecklichem GO am 24.09.2026 angewendet und rein lesend verifiziert; kein scharfer Dispatch, keine CAS-Freigabe und kein Production-Modellaufruf.**
 
 Production-Nachkontrolle: Vercel `dpl_AUw8inmYwx9iM6EjsSyNCGKHix2J` READY, fra1, Production-Alias und derselbe Commit. Keine Runtime-Fehler im Fenster 14:34:22–14:35:20 UTC. Datenbank um 14:35:27 UTC: 504 Profile, 0 aktiv, keine unerledigten Jobs oder lebenden Understanding-Leases; alle vier CAS-Zustaende und KI-Zaehler unveraendert, neuer RPC nicht vorhanden, neue Quittung nicht angelegt. Kein fachlicher Erfolg der vier Faelle durch den Merge behauptet.
+
+## Freigegebene Production-Migration am 24.09.2026
+
+Betreiber-GO: „GO fuer die Vierer-Migration. Du darfst alles mergen fuer diesen sprint!“ Ausschliesslich die gepruefte Datei `20260924140548_verstehen_vier_start.sql` aus main `528192da6890e8f545daae5c79d25a42fbda0578` wurde ueber Supabase `apply_migration` angewendet (`success: true`). Production-Projekt `ddckuvvpcytqbyfmbvie`, registrierte Version `20260924161115`, Name `verstehen_vier_start`. Die Tool-Version bildet den Anwendungszeitpunkt ab; keine anderen offenen Migrationen angewendet. Die SQL-Datei bleibt als exakt angewendeter Inhalt unveraendert; ihr Kopfkommentar beschreibt den Vorbereitungsstand.
+
+Rein lesende Vorher-/Nachher-Aufnahmen: **16:10:59 / 16:11:46 UTC**.
+
+| Pruefung | Vorher | Nachher |
+|---|---|---|
+| Neue Funktion vorhanden | nein | ja |
+| Mandatsprofile / aktiv | 504 / 0 | 504 / 0 |
+| MD5 aller Mandatsprofilzeilen | `c32b7d4f76b4ad70ace0cac91c3e94c3` | identisch |
+| MD5 aller profiles-Zeilen | `3c5b0b5a6314f31c395b8758b166c5c3` | identisch |
+| MD5 der vier vollstaendigen CAS-Zeilen | `7032b78f1f58f7230b1d1840515f7bd5` | identisch |
+| Vier Faelle unbekannt, Besitzer/Lease null | 4 | 4 |
+| Unerledigte Jobs / lebende Leases / Locks | 0 / 0 / 0 | 0 / 0 / 0 |
+| Neue Vierer-Quittung | fehlt | fehlt |
+
+Funktionskoerper exakt mit der freigegebenen Datei verglichen. `SECURITY INVOKER`, `search_path=public, pg_temp`; Ausfuehrungsrecht fuer `service_role`, kein Ausfuehrungsrecht fuer `PUBLIC`, `anon` oder `authenticated`. Kein Probeaufruf des RPC; keine Modell-, CAS- oder Profilwirkung. Das bestaetigt die Installation, nicht den fachlichen Erfolg der vier Faelle.
+
+Rueckweg bleibt `rollback_20260924140548_verstehen_vier_start.sql`: nur den neuen RPC entfernen, erst wenn kein Viererauftrag laeuft. Nicht ausgefuehrt. Naechster Freigabepunkt bleibt der konkrete Fall-/Modellauftrag nach Quellenentscheid und rein lesendem Plan.
 
 ## Ausgangsbelege
 
@@ -55,7 +76,7 @@ Nach jedem Vorgang prueft der Runner CAS-Zustand, fencing/Ergebnis-fencing, voll
 ## Freigabefolge und Rueckweg
 
 1. **Erledigt:** PR #543 nach gruener Pflicht-CI im freigegebenen Umfang gemergt und Production-Deployment rein lesend bestaetigt. Die spaetere Nutzeranweisung vom 24.09.2026 widerruft die zwischenzeitliche Dauerfreigabe: Kuenftige Merges brauchen wieder ein konkretes GO fuer genau den PR. Migration und Modellauftrag bleiben getrennt freigabepflichtig.
-2. **Nur die neue Migration gesondert freigeben**; keine anderen offenen Migrationen mit anwenden. Nachkontrolle: Funktionsdefinition, Rechte und unveraenderte vier CAS-Zeilen/Profile. Rueckweg: `rollback_20260924140548_verstehen_vier_start.sql` entfernt ausschliesslich den neuen RPC; erst ausfuehren, wenn kein Lauf aktiv ist. Keine Quittungen, CAS-Zaehler oder Kosten zuruecksetzen.
+2. **Erledigt:** Nur die neue Migration ausdruecklich freigegeben, angewendet und wie oben verifiziert; keine anderen offenen Migrationen angewendet. Nachkontrolle: Funktionsdefinition, Rechte und unveraenderte vier CAS-Zeilen/Profile. Rueckweg: `rollback_20260924140548_verstehen_vier_start.sql` entfernt ausschliesslich den neuen RPC; erst ausfuehren, wenn kein Lauf aktiv ist. Keine Quittungen, CAS-Zaehler oder Kosten zuruecksetzen.
 3. Quellenentscheid und explizite Fallauswahl festhalten. Rein lesenden Workflow `verstehen-vier.yml`, Modus `plan`, mit vollem aktuellem main-Commit und Kennungen ausfuehren; dieser Job hat keine Modellzugangsdaten. Alternativ CLI ohne `--execute`: `node scripts/verstehen-vier.js --ids '<ausgewaehlte Kennungen, komma-getrennt>'`. Plan erzeugt keine Quittung und ruft keinen RPC auf.
 4. Erst nach neuem ausdruecklichem GO fuer **Kennungen + Plan-Hash + Runtime-Commit + maximal einen Versuch je Fall + 0,30 USD + 20 Minuten** scharf ausfuehren. Workflow: Modus `ausfuehren`, Bestaetigung `VIER_UNKNOWN_EINMALIG_BESTAETIGT`. Das GO umfasst die gebundene CAS-Freigabe und Modellversuche, keine Profil-/Budgetaenderung.
 5. Rein lesend Bilanz aller ausgewaehlten und ausgeschlossenen Faelle, Quittung, Kostenbuch und Sperren kontrollieren. Rueckweg bei Problemen: keine weitere Ausfuehrung; unklare Ergebnisse gesperrt lassen und gesondert entscheiden. Bereits gespeicherte fachliche Ergebnisse werden nicht automatisch geloescht.
