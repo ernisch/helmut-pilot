@@ -181,6 +181,7 @@ async function handleRequest(request, response) {
       if (url.searchParams.get("modus") === "eingabe-500")
         return sendJson(response, await require("./lib/helmut/briefing-pruefaufnahme-500").erfasse({
           userId, tag: day, expectedCommit: request.headers["x-helmut-production-commit"],
+          testfensterId: request.headers["x-helmut-testfenster"],
           commit: process.env.VERCEL_GIT_COMMIT_SHA, production: process.env.VERCEL_ENV === "production",
           config: testnachweisKonfiguration, storage, build: buildV3Briefing }));
       if (url.searchParams.get("modus") === "eingabe")
@@ -262,6 +263,7 @@ async function handleRequest(request, response) {
         textnachlaufArbeitsauswahlVersion: 1,
         textnachlaufTestfensterVersion: 1,
         test500PruefaufnahmeVersion: 1,
+        test500PruefaufnahmeFensterVersion: 1,
         testKosten: require("./lib/helmut/testkosten-budget").konfiguration(),
         quellenkontext: {
           version: 1, scoring: require("./lib/helmut/scoring").scoringMode(),
@@ -3131,6 +3133,7 @@ function testnachweisKonfiguration() {
     atomicLock: storageModul.atomicLockEnabled(), narrativQueue: scalablePipeline.narrativUeberWarteschlange(),
     textnachlaufArbeitsauswahlVersion: 1,
     textnachlaufTestfensterVersion: 1,
+    test500PruefaufnahmeFensterVersion: 1,
     modell: require("./lib/helmut/ai").understandingModelName(), azure: Boolean(process.env.AZURE_OPENAI_KEY),
     testKosten: require("./lib/helmut/testkosten-budget").konfiguration()
   };
