@@ -234,11 +234,11 @@ function check(name, cond, detail = "") {
         check(`${label}: Briefing wiederholt den Hauptvorgang nicht in weiteren Vorgaengen`,
           !(await page.locator(".hstand-rel-title").allTextContents()).includes(primaryTitle));
 
-        await page.locator('[data-view="briefing"]').first().click();
+        await page.locator((isMobile ? ".mobile-dock" : ".nav-list") + ' [data-view="briefing"]').click();
         const lageText = await page.locator(".lage2-card").first().innerText();
         check(`${label}: Lage Karte zeigt Fakten und keine Briefing Handlungsanweisung`,
           lageText.includes("Die belegten Fakten") && !lageText.includes("Heute nicht öffentlich zuspitzen"));
-        await page.locator('[data-view="radar"]').first().click();
+        await page.locator((isMobile ? ".mobile-dock" : ".nav-list") + ' [data-view="radar"]').click();
         await page.locator('[data-radar-segment="committees"]').click();
         const radarText = await page.locator("#radar2-root").innerText();
         const radarLinks = await page.locator('#radar2-root a[href]').evaluateAll(nodes => nodes.map(n => n.href));
