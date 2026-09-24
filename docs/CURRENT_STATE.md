@@ -87,7 +87,7 @@ Vollstaendige historische Betriebswerte zu Crons, Flags, Migrationen, Quellenpak
 
 ## 6 · Naechster Schritt
 
-**Naechster Schritt: Quellenentscheid und rein lesender Plan fuer eine konkrete Fallauswahl; Migration erledigt.**
+**Naechster Schritt: rein lesender Plan fuer Demo-Anreise und Koçak; Migration erledigt.** Plan `36026653262` stoppte schreibfrei: 505 Kontoprofile statt angenommener <505. Inventur auf exakt 504 Mandats-/505 Kontoprofile korrigiert; alle Zeilen bleiben hashgeschuetzt. [Beleg](betrieb/verstehen-vier-nacharbeit-20260924.md).
 
 Der begrenzte Bedienweg erlaubt nur eine ausdrueckliche Teilmenge der vier bekannten Kennungen, maximal einen Modellversuch je Fall, insgesamt hoechstens vier, 0,30 USD und 20 Minuten. Neue feste Einmalquittung `verstehen4-20260924-a`; keine Wiederholung des 169er Laufs. Die neue Migration `20260924140548_verstehen_vier_start.sql` ist **angewendet und rein lesend verifiziert**. Sie verbindet CAS-Freigabe und Startmarke atomar, damit kein Cron den freigegebenen Vorgang uebernehmen kann. [Plan, Fallentscheidungen, Schutzvertrag und Rueckweg](betrieb/verstehen-vier-nacharbeit-20260924.md).
 
