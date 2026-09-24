@@ -17,9 +17,8 @@ dauerhaft verbindliche technische Projektregel entsteht.
   und die **einzige** Quelle für laufende Betriebszustände (aktive Profile, offene
   Migrationen, Blocker).
 
-**Stand:** 2026-09-23 (Zuständigkeiten geschärft: `AGENTS.md` führt Agent-Regeln,
-`CLAUDE.md` technische Regeln, `CURRENT_STATE.md` den Betriebszustand; §1, §2, §5 und §6
-auf diese Zuständigkeit bereinigt)
+**Stand:** 2026-09-24 (ausdrückliche Sprint-Merge-Dauerfreigabe in `AGENTS.md`;
+Verweise in §5/§6 angepasst, technische Schutzregeln unverändert)
 
 ---
 
@@ -125,7 +124,8 @@ festgestellt wurde.
 
 ## 5 · Ohne ausdrückliche Freigabe verboten
 
-- Merge nach `main` (Merge = **Production-Deployment**) und jedes Deployment
+- Merge nach `main` (Merge = **Production-Deployment**) und jedes Deployment außerhalb
+  der ausdrücklichen Sprint-Merge-Dauerfreigabe in `AGENTS.md`
 - Anwenden einer Migration auf Production. **Welche Migrationen offen sind, führt
   ausschließlich [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md)**; die Liste wird hier
   bewusst nicht dupliziert, damit sie nicht auseinanderläuft. Jede Anwendung bleibt
@@ -177,8 +177,9 @@ reversibel und eindeutig sinnvoll ist.
   Workflows und Vercel-Checks nie als Required Check setzen.
 - **PR-Beschreibung:** was geändert wurde, echte Testergebnisse (Zahlen, keine
   Behauptungen), Risiko, Rollback, und was bewusst **nicht** enthalten ist.
-- **Nicht selbst mergen, nicht selbst deployen.** Merge-Empfehlung aussprechen,
-  Entscheidung liegt beim Betreiber.
+- **Sprint-Merges autonom nach `AGENTS.md`.** Die dort dokumentierte ausdrückliche
+  Dauerfreigabe umfasst den Merge und das reguläre automatische Deployment.
+  CI, Nachkontrolle und getrennte Freigaben für andere Production-Aktionen bleiben Pflicht.
 - **Drei Testebenen (Testorganisation 2026-09-23):**
   - **Standard (immer):** Der CI-Pflichtlauf führt ausschließlich die explizite Kernmenge
     `STANDARD` in `scripts/run-offline-tests.js` aus.

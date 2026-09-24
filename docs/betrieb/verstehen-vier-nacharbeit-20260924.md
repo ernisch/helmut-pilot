@@ -1,7 +1,9 @@
 # Kontrollierte Nacharbeit der vier unbekannten Vorgaenge
 
-Stand: 24.09.2026. Vorbereitung im Branch `codex/verstehen-vier-nacharbeit-20260924`.
-**Kein Merge, keine angewendete Migration, kein Dispatch, keine CAS-Freigabe und kein Production-Modellaufruf durch diesen Sprint.**
+Stand: 24.09.2026. [PR #543](https://github.com/ernisch/helmut-pilot/pull/543) aus Branch `codex/verstehen-vier-nacharbeit-20260924` ist nach Nutzerfreigabe gemergt (14:34:22 UTC), Commit `1c70b4c162953280806ee2d74525894de1fed8f8`.
+**Migration nicht angewendet; kein Dispatch, keine CAS-Freigabe und kein Production-Modellaufruf.**
+
+Production-Nachkontrolle: Vercel `dpl_AUw8inmYwx9iM6EjsSyNCGKHix2J` READY, fra1, Production-Alias und derselbe Commit. Keine Runtime-Fehler im Fenster 14:34:22–14:35:20 UTC. Datenbank um 14:35:27 UTC: 504 Profile, 0 aktiv, keine unerledigten Jobs oder lebenden Understanding-Leases; alle vier CAS-Zustaende und KI-Zaehler unveraendert, neuer RPC nicht vorhanden, neue Quittung nicht angelegt. Kein fachlicher Erfolg der vier Faelle durch den Merge behauptet.
 
 ## Ausgangsbelege
 
@@ -52,7 +54,7 @@ Nach jedem Vorgang prueft der Runner CAS-Zustand, fencing/Ergebnis-fencing, voll
 
 ## Freigabefolge und Rueckweg
 
-1. Diesen Entwicklungs-PR mit gruener Pflicht-CI pruefen und **Merge gesondert freigeben**. Merge loest den bestehenden Production-Deploy aus, keinen Modelllauf. Danach Deployment und Commit rein lesend bestaetigen.
+1. **Erledigt:** PR #543 nach gruener Pflicht-CI im freigegebenen Umfang gemergt und Production-Deployment rein lesend bestaetigt. Kuenftige Sprint-Merges folgen der am 24.09.2026 ausdruecklich bestaetigten Dauerfreigabe in `AGENTS.md`; Migration und Modellauftrag bleiben getrennt freigabepflichtig.
 2. **Nur die neue Migration gesondert freigeben**; keine anderen offenen Migrationen mit anwenden. Nachkontrolle: Funktionsdefinition, Rechte und unveraenderte vier CAS-Zeilen/Profile. Rueckweg: `rollback_20260924140548_verstehen_vier_start.sql` entfernt ausschliesslich den neuen RPC; erst ausfuehren, wenn kein Lauf aktiv ist. Keine Quittungen, CAS-Zaehler oder Kosten zuruecksetzen.
 3. Quellenentscheid und explizite Fallauswahl festhalten. Rein lesenden Workflow `verstehen-vier.yml`, Modus `plan`, mit vollem aktuellem main-Commit und Kennungen ausfuehren; dieser Job hat keine Modellzugangsdaten. Alternativ CLI ohne `--execute`: `node scripts/verstehen-vier.js --ids '<ausgewaehlte Kennungen, komma-getrennt>'`. Plan erzeugt keine Quittung und ruft keinen RPC auf.
 4. Erst nach neuem ausdruecklichem GO fuer **Kennungen + Plan-Hash + Runtime-Commit + maximal einen Versuch je Fall + 0,30 USD + 20 Minuten** scharf ausfuehren. Workflow: Modus `ausfuehren`, Bestaetigung `VIER_UNKNOWN_EINMALIG_BESTAETIGT`. Das GO umfasst die gebundene CAS-Freigabe und Modellversuche, keine Profil-/Budgetaenderung.
@@ -64,6 +66,6 @@ Nach jedem Vorgang prueft der Runner CAS-Zustand, fencing/Ergebnis-fencing, voll
 
 Gezielt lokal ueber `scripts/lokal.js`: Vierer-Runner 30/30 Gruppen einschliesslich echtem Motor fuer Erstverstehen, Update, Parteienfehler, Budgetstopp, verlorene Startantwort und Providerfehler; Budgetvertrag 12/12; Migrationsorganisation 44/44. Keine Production-Verbindung oder kostenpflichtigen Modellaufrufe.
 
-Ein neuer Pflicht-CI-Schritt prueft die SQL-Funktion gegen isoliertes PostgreSQL 17: Vorwaerts/Rollback, Rechte, Transaktionsrollback, 20 konkurrierende Starter, Ausschluss doppelter und Cron-Starts, abgelaufene/fremde Quittung, veraenderten CAS-Stand und bereits gespeicherte Ergebnisse. Lokal fehlt PostgreSQL; der echte Datenbanknachweis muss in der PR-CI erfolgreich sein.
+Ein neuer Pflicht-CI-Schritt prueft die SQL-Funktion gegen isoliertes PostgreSQL 17: Vorwaerts/Rollback, Rechte, Transaktionsrollback, 20 konkurrierende Starter, Ausschluss doppelter und Cron-Starts, abgelaufene/fremde Quittung, veraenderten CAS-Stand und bereits gespeicherte Ergebnisse. Lokal fehlt PostgreSQL; der echte Datenbanknachweis war in [PR-CI 36011641381](https://github.com/ernisch/helmut-pilot/actions/runs/36011641381) erfolgreich. Beide Pflichtjobs, Standardlauf und Bereichsregression SUCCESS auf Commit `21351654bd63218fa745501a5674b7a515db047d`. [Post-Merge-CI 36013754698](https://github.com/ernisch/helmut-pilot/actions/runs/36013754698) ebenfalls vollstaendig SUCCESS auf Merge-Commit `1c70b4c162953280806ee2d74525894de1fed8f8`.
 
 Nach Abschluss der vier Faelle folgt der kleine Pflichtsprint **Lage / Radar / Briefing Trennung**, danach erst die getrennt freizugebende 500er Vollversorgung mit 1500 bilanzierten Ergebnispositionen.
