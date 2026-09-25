@@ -239,5 +239,16 @@ die allgemeine Fakten-/Nutzwertabnahme bleibt offen. Ein Quellenhinweis ist
 kein vollstaendiges Lage-Ergebnis fuer den500er Nachweis. Historische
 gespeicherte Gesamtpakete und separat qualitaetsgepruefte Lageabsaetze werden
 nicht umgeschrieben. Keine neue Aufnahme, Quellenabrufe, Modelle oder Writes.
-Status: lokal bereit auf `codex/lage-titelbeleg-20260925`; Pflicht-CI, konkretes
-Merge-GO und Production-Nachkontrolle offen. Rueckweg: Code-Revert.
+Status: PR583 wird im Roadmap-Auftrag vom26.09. weitergefuehrt; Merge und
+regulaeres Deployment sind freigegeben. Finaler Kopf braucht gruene Pflicht-CI
+und anschliessende Production-Nachkontrolle. Rueckweg: Code-Revert.
+
+Nachpruefung26.09.: Cookie-/JavaScript-/Zugriffs-/Logintexte konnten den
+Auszugsnachweis faelschlich erfuellen. Die vorhandene Stoertextregel des
+Auszugslesers gilt jetzt auch fuer Karten; kurze echte RSS-Kontexte bleiben
+erhalten. Historische Karten und die tatsaechlich angezeigte Artikeladresse
+behalten ihren bisherigen Vertrag. Ein vorhandener Auszug ist weiterhin
+keine Faktenfreigabe. Der Drei-Profil-Test scheiterte zuvor91/94 an drei
+synthetischen Quellen ohne Auszug. Mit passenden synthetischen Auszuegen
+besteht er94/94; Ranking und Mandantentrennung unveraendert. Titelbeleg9/9,
+Auszugsleser10/10. Keine Productionwrites oder Modelle durch die Korrektur.

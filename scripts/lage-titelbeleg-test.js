@@ -41,6 +41,22 @@ async function test(name, fn) { await fn(); n++; console.log("PASS " + name); }
       A.equal(c.displaySummary, hinweis); A(!JSON.stringify(c).includes("ERFUNDEN"));
     }
   });
+  await test("Cookie-, Zugriffs- und Login-Stoertexte schalten keine freie KO-Prosa frei", () => {
+    for (const summary of [
+      "Bitte akzeptieren Sie unsere Cookies, um diesen Artikel vollständig zu lesen.",
+      "Zugriff verweigert – Sie haben keine Berechtigung für diese Seite.",
+      "Access denied. Please enable cookies and JavaScript to continue.",
+      "Jetzt anmelden oder Abonnieren Sie, um den vollständigen Artikel zu lesen. Datenschutzeinstellungen beachten."]) {
+      const c = lage.koToVorgangCard(ko, [{ ...doc, summary }], now);
+      A.equal(c.displaySummary, hinweis); A(!JSON.stringify(c).includes("ERFUNDEN"));
+    }
+  });
+  await test("Kurzer, echter RSS-Kontext bleibt ein gueltiger Artikelauszug", () => {
+    const short = "Der Ausschuss berät am Dienstag die Finanzierung.";
+    A(short.length < 60); // Bewusst kein excerpt()-Laengenkriterium im Kartenpfad.
+    const c = lage.koToVorgangCard(ko, [{ ...doc, summary: short }], now);
+    A.equal(c.displaySummary, ko.display_summary); A.equal(c.displayTitle, ko.display_title);
+  });
   await test("Auszug ohne oeffnenden Artikel darf fehlende Belege nicht heilen", () => {
     for (const url of ["https://example.org/", "http://example.org/text", "https://name:pass@example.org/text"]) {
       const c = lage.koToVorgangCard(ko, [doc, { ...doc, title: "FREMD", summary: "Fremder Kontext.", url }], now);
