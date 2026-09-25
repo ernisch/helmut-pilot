@@ -1,0 +1,115 @@
+# Roadmap bis zum 500er Production Nachweis
+
+Stand: 25.09.2026
+
+Diese Datei ist die verbindliche Reihenfolge bis zum 500er Production Nachweis.
+Sie dient Codex als kurze Arbeitsroadmap. Aktueller Production Stand und Belege
+stehen weiterhin in `docs/CURRENT_STATE.md`.
+
+## 1 · Eingefrorenes Produktziel
+
+Bis zum 500er Nachweis wird die Grundstruktur nicht erneut umgebaut, außer ein
+belegter schwerer Produktfehler erzwingt es.
+
+### Briefing
+
+Nutzerfrage: **Was braucht heute meine Aufmerksamkeit?**
+
+Briefing zeigt wenige Tagesprioritäten, einen kurzen belegten Anlass und den
+nächsten Arbeitsschritt. Es erklärt den politischen Sachstand nicht noch einmal,
+sondern verweist auf den zugehörigen Vorgang in Lage oder auf den passenden
+Beobachtungshinweis.
+
+### Lage
+
+Nutzerfrage: **Was muss ich verstehen?**
+
+Lage ist der einzige Ort für die ausführliche politische Erklärung:
+Sachstand, Mandatsbezug, Einordnung, Unsicherheit und Quellen.
+
+### Radar
+
+Nutzerfrage: **Was sollte ich im Blick behalten?**
+
+Radar bleibt ein eigener Bereich, aber kein zweiter Newsfeed.
+
+Radar hat genau zwei Funktionen:
+
+1. **Über dich**  
+   Artikel und Meldungen, die die betreffende Person tatsächlich erwähnen.
+   Titel, Medium, Datum und Link stehen im Vordergrund. Keine zweite
+   Sachstandserklärung.
+
+2. **Beobachten**  
+   Konkrete belegte Beobachtungshinweise aus Fraktion, Partei, Wahlkreis und
+   Ausschüssen sowie bevorstehende Fristen, Termine, Anhörungen oder angekündigte
+   nächste Schritte. Partei und Fraktion bleiben fachlich getrennte Signale.
+
+Ein bloßer Themenbezug, ein hoher Score oder ein weiterer Artikel zum gleichen
+Sachstand reicht nicht für einen Radar Eintrag.
+
+## 2 · Verbindliche Regel gegen Überschneidungen
+
+Jede Kernaussage hat genau einen Hauptort.
+
+Derselbe politische Vorgang darf in mehreren Bereichen verbunden sein, aber nur
+mit unterschiedlicher Funktion:
+
+1. Lage erklärt den Sachstand.
+2. Radar zeigt einen neuen Beobachtungsgrund oder eine persönliche Erwähnung.
+3. Briefing priorisiert die heutige Arbeit.
+
+Eine bloße Umformulierung derselben Kernaussage in einem anderen Bereich ist
+nicht zulässig.
+
+Andere Bereiche verweisen auf den Hauptort, statt denselben Inhalt erneut zu
+erzählen.
+
+## 3 · Nächste Arbeiten vor dem 500er Start
+
+1. Die gemeinsame semantische Trennung der tatsächlich sichtbaren Texte aus
+   Briefing, Lage und Radar technisch absichern und mit echten Helmut Ausgaben
+   belegen. Nicht nur wortgleiche, sondern auch sinngleiche Wiederholungen
+   erkennen. Wichtige unterschiedliche Aussagen dürfen dabei nicht entfernt
+   werden.
+
+2. Für Radar die Artikelbindung von **Über dich** sauber belegen: Der tatsächlich
+   angezeigte beziehungsweise verlinkte Artikel muss die Person nachweislich
+   betreffen. Umfeldsignale müssen ihrem echten Ursprung Fraktion, Partei,
+   Wahlkreis oder Ausschuss korrekt zugeordnet sein.
+
+3. Die bestehende Struktur auf Desktop und Mobil gezielt prüfen. Keine größere
+   Neugestaltung vor dem 500er Nachweis.
+
+4. Frische Production Versorgung für das Testfenster herstellen und belegen.
+   Keine alten Quellen umdatieren und keinen abgeschlossenen Vorlauf ohne
+   sachlichen Grund wiederholen.
+
+5. Kostenstarttor schließen: vor dem 500er Start keine ungeklärten
+   Kostenreservierungen und technischer Tagesriegel weiterhin 4 USD je UTC Tag.
+
+6. Finalen rein lesenden 500er Startplan erstellen und belegen: exakt 500
+   Zielprofile, fünf geschützte reale Profile korrekt gebunden, 0 aktive Profile
+   vor Aktivierung, richtiger Production Commit, keine störenden Jobs oder
+   Sperren, Endwächter und Rückweg auf 0 aktive Profile bereit.
+
+7. Danach stoppen. Exakt 500 Profile aktivieren und den eigentlichen 500er
+   Production Nachweis erst nach neuem ausdrücklichem Betreiber GO starten.
+
+## 4 · Nicht vor dem 500er Nachweis
+
+1. Büro beziehungsweise Arbeit grundsätzlich neu gestalten.
+2. Größere UI Neugestaltung.
+3. README oder allgemeines Repository Aufräumen ohne unmittelbaren Nachweisnutzen.
+4. Neue Anbieter oder Modelle wie Voyage oder Cohere integrieren, solange die
+   vorhandene Technik die semantische Trennung ausreichend belegen kann.
+5. Die vier abgeschlossenen Understanding Problemfälle ohne sachlich neue
+   Grundlage erneut versuchen.
+
+## 5 · Entscheidungsregel
+
+Wenn Codex gefragt wird, was als Nächstes ansteht, gilt diese Reihenfolge
+zusammen mit dem aktuellen Production Stand aus `docs/CURRENT_STATE.md`.
+
+Abgeschlossene Schritte werden nicht wiederholt. Neue unabhängige Themen werden
+bis nach dem 500er Nachweis zurückgestellt.
