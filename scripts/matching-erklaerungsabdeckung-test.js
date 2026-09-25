@@ -520,8 +520,9 @@ const ersteAnfrage = (r) => (Array.isArray(r.ladeProtokoll[0]) ? r.ladeProtokoll
   // ANDEREN, spaeteren Entscheidung: die Zulaessigkeitsregel fuer Ausschussbelege
   // (Befund 27A-2) rechnet bei gleicher Eingabe anders, dort ist die Anhebung
   // die fachlich richtige Aussage (scripts/matching-rezeptversion-v2-test.js).
-  check("G1 dieser Fix erzwingt keinen Generationswechsel — die Rezeptversion ist die des 27A-2-Stands",
-    contract.LEGACY_RECIPE_VERSION === "legacy_relevance_v2", contract.LEGACY_RECIPE_VERSION);
+  // Die spaetere Ausschussnamenskorrektur25.09. hebt separat auf v3 an.
+  check("G1 Erklaerungsabdeckung bleibt vom aktuellen Ausschussrezept getrennt",
+    contract.LEGACY_RECIPE_VERSION === "legacy_relevance_v3", contract.LEGACY_RECIPE_VERSION);
   check("G2 Engineversion unveraendert",
     contract.LEGACY_ENGINE_VERSION === "legacy-shadow-1", contract.LEGACY_ENGINE_VERSION);
   check("G3 Vektorversion unveraendert",

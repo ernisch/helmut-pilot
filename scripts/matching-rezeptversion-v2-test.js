@@ -44,7 +44,7 @@ const j = (v) => JSON.stringify(v);
 
 // Der ECHTE, ab jetzt produktive Wert — einmal festgehalten, damit die
 // Simulation des Altstands ihn zuverlaessig wiederherstellt.
-const V2 = contract.LEGACY_RECIPE_VERSION;
+const V2 = "legacy_relevance_v2"; // Historischen v1->v2-Vertrag weiter pruefen.
 const V1 = "legacy_relevance_v1";
 
 // ── Fixtures (kuenstlich, keine echte Person, kein echtes Mandat) ────────────
@@ -144,8 +144,8 @@ const zeilen = (store, userId) =>
   // ═══ A · Der Vertragswert selbst (kleinstmoegliche Anhebung) ═══
   abschnitt("A · Rezeptversion: angehoben, sauber benannt, minimal");
 
-  check("A1 die produktive Rezeptversion ist legacy_relevance_v2",
-    contract.LEGACY_RECIPE_VERSION === "legacy_relevance_v2", contract.LEGACY_RECIPE_VERSION);
+  check("A1 die produktive Rezeptversion ist legacy_relevance_v3; v2 bleibt historisch pruefbar",
+    contract.LEGACY_RECIPE_VERSION === "legacy_relevance_v3", contract.LEGACY_RECIPE_VERSION);
   check("A2 der Name bleibt in der Legacy-Familie und ist vom semantischen Rezept unterscheidbar",
     /^legacy_relevance_v\d+$/.test(contract.LEGACY_RECIPE_VERSION)
       && contract.LEGACY_RECIPE_VERSION !== require("../lib/helmut/embedding-contract").RECIPE_VERSION);
@@ -353,7 +353,7 @@ const zeilen = (store, userId) =>
     !/require\(["']\.\/ai["']\)/.test(require("fs").readFileSync(
       require("path").join(__dirname, "..", "lib", "helmut", "matching.js"), "utf8")));
   check("G3 die Vertragskonstante ist nach allen Laeufen unveraendert wiederhergestellt",
-    contract.LEGACY_RECIPE_VERSION === "legacy_relevance_v2", contract.LEGACY_RECIPE_VERSION);
+    contract.LEGACY_RECIPE_VERSION === "legacy_relevance_v3", contract.LEGACY_RECIPE_VERSION);
 
   console.log(`\n${stand.passed} bestanden, ${stand.failed} fehlgeschlagen`);
   process.exit(stand.failed ? 1 : 0);

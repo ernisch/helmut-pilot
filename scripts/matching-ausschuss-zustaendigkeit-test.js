@@ -221,8 +221,8 @@ if (process.env.HELMUT_GOLDEN_PRINT) {
 abschnitt("0 · Bundestagsprojektion: Altstand rekonstruiert + neues Verhalten verankert");
 const goldenRegelfreiV1 = hash(projektionMitRezept(GOLDEN_BUND_PROFILE_REGELFREI, REZEPT_V1));
 const goldenMitRegelV1 = hash(projektionMitRezept(GOLDEN_BUND_PROFILE, REZEPT_V1));
-const goldenRegelfrei = hash(goldenProjektion(GOLDEN_BUND_PROFILE_REGELFREI));
-const goldenMitRegel = hash(goldenProjektion(GOLDEN_BUND_PROFILE));
+const goldenRegelfrei = hash(projektionMitRezept(GOLDEN_BUND_PROFILE_REGELFREI, REZEPT_V2));
+const goldenMitRegel = hash(projektionMitRezept(GOLDEN_BUND_PROFILE, REZEPT_V2));
 check("0a (Pflicht 24) regelfreie Projektion ist unter v1 byte-identisch zum Stand d9006c1 — ausser der Regel hat sich nichts bewegt",
   goldenRegelfreiV1 === GOLDEN_BUND_HASH,
   `erwartet ${GOLDEN_BUND_HASH}, gemessen ${goldenRegelfreiV1} — es hat sich etwas AUSSERHALB der Zustaendigkeitsregel geaendert, das ist FREIGABEPFLICHTIG`);
