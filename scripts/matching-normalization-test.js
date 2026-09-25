@@ -74,5 +74,27 @@ check("Keine Fehl-Zuordnung: SPD-Profil erhält am Linke-KO keinen partei-Treffe
 const emptyRanked = m.matchProfileToKnowledgeObjects({ id: "leer" }, KOS, { limit: 3 });
 check("Leeres Profil: keine matched_features (korrekt, kein erfundener Treffer)", emptyRanked.every((r) => (r.matched_features || []).length === 0));
 
+// Harte Mitgliedschaft ist keine sprachliche Aehnlichkeit. Der alte
+// Vektorschluessel faltet Menschenrechte auf Recht; das darf weder ein
+// Ausschussmerkmal noch dessen34 Entscheidungspunkte erzeugen.
+const recht = "Ausschuss für Recht und Verbraucherschutz";
+const menschenrechte = "Ausschuss für Menschenrechte und humanitäre Hilfe";
+const decisions = require("../lib/helmut/decisions");
+check("Vektorkompatibilitaet bleibt erhalten", m.slugCommittee(recht) === m.slugCommittee(menschenrechte));
+for (const [a, b, erwartet] of [[recht, menschenrechte, false], [menschenrechte, recht, false],
+  [recht, "Recht", true], [menschenrechte, "Menschenrechte", true],
+  ["Arbeit und Soziales", "Ausschuss für Arbeit und Soziales", true]]) {
+  const profile = { id: "synthetisches-mandat", parliamentType: "Bundestag", committees: [a] };
+  const ko = { id: "ko-synthetisch", vorgang_id: "vg-synthetisch", status: "neu",
+    decision_level: "bund", ausschuesse: [b], confidence_score: 60 };
+  const match = m.matchProfileToKnowledgeObjects(profile, [ko])[0];
+  check(`Harter Beleg ${a}/${b}: ${erwartet}`, match.matched_features.some(f => f.type === "ausschuss") === erwartet);
+  if (!erwartet) {
+    const row = decisions.decideForUser(profile, [ko])[0];
+    check("Falsche Mitgliedschaft erzeugt keine Beobachten-Prioritaet", row.decision === "Ignorieren" && row.score < 40);
+    check("Fachliche Aehnlichkeit bleibt berechenbar", Number.isFinite(match.similarity));
+  }
+}
+
 console.log(`\n${passed}/${passed + failed} Matching-Normalisierungs-Assertions erfolgreich.`);
 if (failed > 0) { console.error(`FEHLGESCHLAGEN: ${failed}`); process.exit(1); }
