@@ -109,13 +109,17 @@ erzählen.
 5. Kostenstarttor schließen: vor dem 500er Start keine ungeklärten
    Kostenreservierungen und technischer Tagesriegel weiterhin 4 USD je UTC Tag.
 
-6. Finalen rein lesenden 500er Startplan erstellen und belegen: exakt 500
-   Zielprofile, fünf geschützte reale Profile korrekt gebunden, 0 aktive Profile
-   vor Aktivierung, richtiger Production Commit, keine störenden Jobs oder
-   Sperren, Endwächter und Rückweg auf 0 aktive Profile bereit.
+6. Profilbestand auf exakt 500 Zielprofile bereinigen und finalen rein lesenden
+   Startplan belegen. Alle 500 werden funktional gleich behandelt. Die fünf realen
+   Bestandsprofile bleiben nur technisch vor versehentlichem Löschen geschützt.
+   Zusätzliche Nichtzielprofile zuerst eindeutig identifizieren und nur dann
+   entfernen. Danach: 0 aktive Profile vor Aktivierung, richtiger Production
+   Commit, keine störenden Jobs oder Sperren, Endwächter und Rückweg auf 0 aktive
+   Profile bereit.
 
-7. Danach stoppen. Exakt 500 Profile aktivieren und den eigentlichen 500er
-   Production Nachweis erst nach neuem ausdrücklichem Betreiber GO starten.
+7. Danach stoppen. Exakt diese 500 gleich behandelten Zielprofile aktivieren und
+   den eigentlichen 500er Production Nachweis erst nach neuem ausdrücklichem
+   Betreiber GO starten.
 
 ## 4 · Nicht vor dem 500er Nachweis
 
