@@ -134,3 +134,56 @@ Kein transaktionaler Snapshot, kein gespeichertes Gesamtpaket, keine neue
 semantische/Fakten-/Browserabnahme und kein500er Nachweis. Naechster fachlicher
 Schritt ist die Inhaltsabnahme der jetzt direkt aus Production gelesenen
 Bereiche. Keine weiteren Modelle, Datenwrites oder Profilaktivierungen erfolgt.
+
+
+## Inhaltsabnahme und Quellenmix-Korrektur nach der Einmalaufnahme
+
+Alle783 Briefing-,15109 Lage- und802 Radarzeichen der Aufnahme36175850274
+vollstaendig gelesen:12 Karten inklusive12 Detailansichten und alle Radarsegmente.
+Alle3 Bereichspaare mit neuen exakten Textbelegen an den Aufnahmehash gebunden.
+Bereichstrennung bestanden, fachliche Gesamtabnahme **nicht bestanden**.
+Ein Titel/Verweis ist keine zweite Sacherklaerung. Fehlender konkreter
+Arbeitsschritt im Briefing und0 gespeicherte Lageabsaetze bleiben offen.
+Die12 einzelnen Inhaltsbefunde liegen vollstaendig im privaten Beleg, nicht
+als oeffentliche Profilauswahl. SHA256 des privaten Fachurteils:
+`1e752f7579f5d7962d1c620aaddf311f6d0b5a5671b3097dd508fefe208fa42d`.
+Paarurteilhash `e8cca83c37cd704ad9fd024d3c693ea17c7197b70398913001c784c2a3f8b1ab`.
+
+**Belegter Codefehler:** Lage umging die vorhandene Ereignisbindung der Quellen.
+Zwei sichtbare Karten enthielten unabhaengige Ereignisse; der bestehende
+`briefing-quellenqualitaet.themenrein`-Pruefer lehnte beide schon ab.
+Lage wendet genau diese unveraenderte Regel jetzt vor Karten, Texteingabe,
+Cachebindung und Zaehler an. Keine neue Schwelle, kein Modell, keine Datenkorrektur.
+Eine abgelehnte Karte bleibt im Speicher erhalten. Wenn alle Kandidaten
+abgelehnt werden, erscheint der bestehende ehrliche Leerzustand. Kein
+automatisches Auffuellen oder Ausweiten der Quellensuche; Versorgung bleibt
+separat zu pruefen. Ein bestandener Quellenmixfilter ist keine Faktenabnahme.
+
+**Nachweis:** Echter lokaler Lagepfad auf exakt der aufgenommenen12er Auswahl
+vorher12/nachher10, genau die2 Ereignismischungen gesperrt; alle10 restlichen
+Karten strukturell unveraendert. Profile, KOs und Quellen unveraendert,
+0 Modelle/Locks/Writes. Kein frischer globaler Auswahl-/Productionbeleg.
+
+**Gezielte Tests:** neue Quellenmixsuite6/6 (Anzeige, Generator, Cache,
+Leerzustand, Zaehler, Jahreskonflikt); cacheOnly9/9; Quellenfenster10/10;
+Quellenbindung40:11/11; Lage141/141; Briefing-Lagebindung7/7.
+Die neue Regression scheiterte vor der Korrektur am ausgegebenen Quellenmix.
+Die bestehende40er-Lesetestfixture hatte einen nun korrekt abgewiesenen
+Jahreskonflikt2024/heute: die historischen Testquellen liegen jetzt30Tage
+zurueck, weiterhin ausserhalb des14-Tage-Fensters. Alle Lese-, Manipulations-
+und Mengengrenzen bleiben unveraendert geprueft; Jahreskonflikt separat negativ.
+Keine Pruefung oder Produktionsschutzregel abgeschwaecht.
+
+**Weitere Befunde, durch diese Korrektur nicht geschlossen:** Einzelne leere
+Quellenauszuege tragen weitergehende Sach- und Rechtsaussagen nicht. Allgemeine
+Folgenabschätzungen sind kein belegter individueller Mandatsnutzen.
+Die parlamentarische Ueberweisung und Federfuehrung des priorisierten Antrags
+wurden im ersten Absatz der [Bundestags-Originalseite](https://www.bundestag.de/dokumente/textarchiv/2026/kw39-de-solidarprinzip-1211318)
+rein lesend bestaetigt; im gespeicherten Auszug fehlt dieser Teil. Kein
+Nachimport. Die persoenliche Radar-Namensbindung am gespeicherten Artikel ist
+vorhanden; das Webwerkzeug konnte die Mediathekadresse nicht erneut lesen.
+Keine vollstaendige externe Artikelabnahme behauptet.
+
+Status: Code und lokaler Nachweis bereit; Merge und Production-Nachkontrolle
+offen. Naechster Schritt: Pflicht-CI am PR-Kopf, danach konkretes Merge-GO.
+Die einmalige RSA-Freigabe ist verbraucht; kein zweiter Aufnahme-Dispatch.

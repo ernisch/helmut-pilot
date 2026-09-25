@@ -19,8 +19,10 @@ const now = new Date(), fresh = new Date(now - 3600000).toISOString();
 const ko = { id: "ko-vg-forty", vorgang_id: "vg-forty", status: "neu", understanding_status: "complete",
   headline: "Beratung zur Pflege", was_ist_passiert: "Beratung zur Pflege", best_source_url: "https://example.org/pflege", updated_at: fresh };
 const profile = { id: "synthetisch-vierzig" };
+// Historische Quellen ausserhalb des 14-Tage-Fensters, aber desselben
+// Sachverhalts. Mehrere Bezugsjahre waeren ein Quellenmix (separat getestet).
 function doc(n, current = false) { return { id: "d-" + n, title: "Beratung zur Pflege " + n,
-  url: "https://example.org/pflege/" + n, published_at: current ? fresh : "2024-01-01T00:00:00Z",
+  url: "https://example.org/pflege/" + n, published_at: current ? fresh : new Date(now - 30 * 86400000).toISOString(),
   summary: "Die Beratung zur Pflege ist vorgesehen.", source_name: "Testquelle" }; }
 function setup(docs) { rows = docs.map(d => ({ knowledge_object_id: ko.id, raw_document_id: d.id, raw_documents: d })); requests = []; corrupt = null; lastInput = null; }
 async function transport(endpoint) {
