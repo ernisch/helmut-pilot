@@ -99,17 +99,14 @@ erzählen.
    betreffen. Umfeldsignale müssen ihrem echten Ursprung Fraktion, Partei,
    Wahlkreis oder Ausschuss korrekt zugeordnet sein.
 
-3. Die bestehende Struktur auf Desktop und Mobil gezielt prüfen. Keine größere
-   Neugestaltung vor dem 500er Nachweis.
-
-4. Frische Production Versorgung für das Testfenster herstellen und belegen.
+3. Frische Production Versorgung für das Testfenster herstellen und belegen.
    Keine alten Quellen umdatieren und keinen abgeschlossenen Vorlauf ohne
    sachlichen Grund wiederholen.
 
-5. Kostenstarttor schließen: vor dem 500er Start keine ungeklärten
+4. Kostenstarttor schließen: vor dem 500er Start keine ungeklärten
    Kostenreservierungen und technischer Tagesriegel weiterhin 4 USD je UTC Tag.
 
-6. Profilbestand auf exakt 500 Zielprofile bereinigen und finalen rein lesenden
+5. Profilbestand auf exakt 500 Zielprofile bereinigen und finalen rein lesenden
    Startplan belegen. Alle 500 werden funktional gleich behandelt. Die fünf realen
    Bestandsprofile bleiben nur technisch vor versehentlichem Löschen geschützt.
    Zusätzliche Nichtzielprofile zuerst eindeutig identifizieren und nur dann
@@ -117,14 +114,17 @@ erzählen.
    Commit, keine störenden Jobs oder Sperren, Endwächter und Rückweg auf 0 aktive
    Profile bereit.
 
-7. Danach stoppen. Exakt diese 500 gleich behandelten Zielprofile aktivieren und
+6. Danach stoppen. Exakt diese 500 gleich behandelten Zielprofile aktivieren und
    den eigentlichen 500er Production Nachweis erst nach neuem ausdrücklichem
    Betreiber GO starten.
 
 ## 4 · Nicht vor dem 500er Nachweis
 
 1. Büro beziehungsweise Arbeit grundsätzlich neu gestalten.
-2. Größere UI Neugestaltung.
+2. Das neue mit Claude Design erarbeitete Desktop und Mobile UI integrieren oder
+   die bestehende Oberfläche grundsätzlich neu gestalten. Das folgt erst nach dem
+   erfolgreichen 500er Production Nachweis. Vorher nur technisch notwendige
+   Smoke Prüfungen für tatsächlich geänderte Bereiche.
 3. README oder allgemeines Repository Aufräumen ohne unmittelbaren Nachweisnutzen.
 4. Neue Anbieter oder Modelle wie Voyage oder Cohere integrieren, solange die
    vorhandene Technik die semantische Trennung ausreichend belegen kann.
