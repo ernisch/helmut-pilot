@@ -106,12 +106,15 @@ Keine Aktivierung, kein zeitgebundener Startplan und kein500er Funktionsnachweis
 **Naechste offene Fachphase: frische Vollversorgung und Bereichsabnahme.**
 [Amtlicher Artikelkontext](betrieb/bundestag-artikelversorgung-20260925.md) integriert:
 lokal7/11 ganze Leitabsaetze; vier benannte Ablehnungen.63 Pruefgruppen bestanden.
-[Siebener-Auftrag](betrieb/verstehen-bund7-20260925.md):7/7 Import exakt,
-500/0 und Kosten0,304227USD unveraendert. Zeitformat repariert; Plan36141732741
-bestanden. Lauf36141840797 stoppt vor Modell1 am Kostenleser, Quittung a
-verbraucht,0 Quellen verknuepft. Kostenadapter korrigiert und echter Geldpfad
-lokal geprueft. Neuer gebundener Auftrag b erst nach gruener Integration/Plan;
-verlangt belegten wirkungsfreien Vorgaenger. Grenzen7/0,30USD/10min unveraendert.
+[Siebener-Auftrag](betrieb/verstehen-bund7-20260925.md):7/7 Import exakt.
+PR574 ausgerollt (a4a1c0b5), Plan36144074961 bestanden. Auftrag b36146635649
+stoppte14:19:41UTC nach1 Modell/0,007794USD:1 gespeichert,1 Artikelkontext-
+Abbruch,5 unbearbeitet. Quittungen a/b verbraucht. Neue CO2-Quelle bereits
+falsch am Regierungs-Sammelvorgang verknuepft; Korrektur offen. Reproduziert:
+Akteur allein trug Identitaet, fremde Altquellen sperrten Artikelzeitpruefung.
+Codekorrektur im eigenen Branch, noch nicht ausgerollt; kein neuer Modellauftrag.
+Lesung14:21UTC:500/0, alle Profilhashes unveraendert,0 Jobs/Locks/Leases,
+0 offene Kosten, Tagesstand0,312021USD von4USD.
 30 korrigierte Quellen an27 complete-Vorgaengen; frische Zuordnung weiter0/500
 Score>=40. Drei alte Fehler gesperrt. B055-Aufnahme36129043227:59 Items,
 Briefing leer; kein positiver sichtbarer Drei-Bereiche-Nachweis.
