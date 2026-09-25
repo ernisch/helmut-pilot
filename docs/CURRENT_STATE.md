@@ -4,7 +4,7 @@
 
 ## 1 · Aktueller Stand
 
-* **Aktueller Roadmap-Stand25.09.: siehe §6.** Production512776e5 READY,504/0. 30er Lauf technisch abgeschlossen, fachlich nicht bestanden. Kein500er Start.
+* **Aktueller Roadmap-Stand25.09.: siehe §6.** Production09a949fa READY,504/0. 30er Quellenkorrekturen verifiziert; frische Vollversorgung fuer500 nicht bestanden. Kein500er Start.
 
 * **Production-Belege dieses Sprints:** PR #549 (Trennung von Lage/Radar/Briefing) gemergt als `00ed4c27b7703849d57ca9f357dcf15a40f5f311`, Vercel `dpl_6iDLuovtgpFL7DSZX1M2djMYugdQ` READY, PR-CI `36031516394` SUCCESS. Auftragsbezogene Reparaturen: [PR #550](https://github.com/ernisch/helmut-pilot/pull/550) (Appstart ohne Hintergrundmodelle, begrenzte Quellenabrufe) und [PR #551](https://github.com/ernisch/helmut-pilot/pull/551) (500er Fachleser an neue Testfenster gebunden); ihre finalen Merge-/Ausrollbelege stehen direkt im jeweiligen PR. Vierer-Migration angewendet; Zweierlauf `36029408684` nach einem Parteienfehler gestoppt: 1 Aufruf, 0,005804 USD, Koçak nicht begonnen. [Vierer-Bilanz](betrieb/verstehen-vier-nacharbeit-20260924.md). **Noch keine belastbare 500er Startbereitschaft**, siehe [Starttor](betrieb/500-starttor-20260924.md).
 * **Fuenfter (freigegebener) scharfer 169er Lauf — erstmals ALLE 122 Cluster verarbeitet, fachlich nicht bestanden.** Workflow-Run `35987448290`, `run_attempt = 1`, `failure`, 24.09.2026 10:28:42–10:54:17 UTC, Runtime-Commit = Dispatch = Checkout `2d412d0418f5d6170f2c34ff69dbd846c4e0c703`, Dokument-Snapshot `ea84f26c…`. Die Bindung hielt; der Schutzvertrag passierte mit **81 Modellkandidaten** (≤ 113) — **PR #541 wirkte belegbar** (der vierte Lauf war noch mit 114 Kandidaten gescheitert). `abbruchGrund = null`, `vollstaendigVerarbeitet = true`, `fachlichBestanden = false`; Bilanz `saved 63`, `updated 14`, `duplicate 34`, `merged 7`, `skipped-invalid 4` (`unbekannt 4`); **81 Modellaufrufe**, `quellenabrufe 0`, `profilwrites 0`, `kommunikation 0`; Laufkosten **0,522795 USD** von 0,80 USD; Quittung `verstehen169-20260924-c` terminal **`unbekannt`** (verbraucht). **Vier lokale `unknown`** (Klasse A, kein globaler Abbruch): `vg-gemeinsame-20260921-dcd0f5`, `vg-linkenpolitiker-20260921-37cdeb` und `vg-arbeitsplätze-20260715-6cc672` (Aktualisierung) mit `quellenbeleg-parteien`, sowie `vg-verzögerung-20230613-95c80f` mit `validierung-fehlgeschlagen` und leerer Fehlerliste. CAS danach je `zustand=unbekannt` (Betreiberbeleg). **In diesem 169er Lauf keine erneute Freigabe; die spaetere isolierte Nacharbeit steht oben.** [Beleg](betrieb/verstehen-einmalig-169-20260922.md) §24.
@@ -89,26 +89,26 @@ Vollstaendige historische Betriebswerte zu Crons, Flags, Migrationen, Quellenpak
 
 ## 6 · Naechster Schritt
 
-**Roadmap25.09., fachlich offen.** #559–565 gruen gemergt. Production READY
-`512776e5` (dpl_4Q89dHGhYSr7abHw4Vxgeahq7jW6), CI36125338415 gruen.
-[30er Lauf](betrieb/verstehen-frische30-20260925.md) technisch fertig:
-30 Dokumente verknuepft,26 Aufrufe,0,172350USD; fachlich nicht bestanden.
-[Acht Quellenkorrekturen](betrieb/frische30-acht-korrekturen-20260925.md)
-nach konkretem GO ausgefuehrt, SELECT10:54:55UTC:8/8 zeilenweise exakt.
-Zusaetzlicher [Texttypfehler](betrieb/verstehen-texttypen-20260925.md) gesperrt;
-insgesamt22 complete/4 failed-final, keine fachliche Gesamtabnahme.
-SELECT10:55UTC:504/0, Profil-/Identitaeten-/Mainhash unveraendert,
+**Roadmap25.09., fachlich offen.** #559–566 gruen gemergt. Production READY
+`09a949fa` (dpl_7TJ4a5KQxMS6nZ2c4eNpQywT9eqf), CI36126672687 gruen.
+[30er Lauf](betrieb/verstehen-frische30-20260925.md):26 Aufrufe,0,172350USD;
+fachlich nicht bestanden, Einmalquittung verbraucht.
+[Acht Korrekturen](betrieb/frische30-acht-korrekturen-20260925.md) verifiziert.
+[Restkorrektur und500er Zuordnung](betrieb/frische30-rest-nachweis-20260925.md)
+nach separatem GO ausgefuehrt, SELECT11:13:55UTC:8/8 Zeilen exakt,
+7 Links umgebunden,19 erhalten; drei alte Fehler bleiben gesperrt.
+Alle30 Quellen an27 complete-Vorgaengen, keine fachliche Gesamtabnahme.
+SELECT11:13:59UTC:504/0, Profil-/Identitaeten-/Mainhash unveraendert,
 0 Jobs/Locks/Leases, Tageskosten0,207358USD/0 offen bei4USD.
-Ereignisreparatur ausgerollt; Texttyp-Fix#566 noch in CI.
-Bedeutungsnachweis/frische Vollversorgung und Gesamtkosten/-zeit fuer500 offen.
+Lokale Zuordnung aller500 Zielprofile mit diesen27 Vorgängen:0/500 Score>=40,
+Hoechstwert37;464 ohne harten Treffer. Kein Live-Briefing/500er Funktionsnachweis.
+Bedeutungsnachweis, frische Vollversorgung und Gesamtkosten/-zeit weiter offen.
 [Exakt500-Code](betrieb/testfenster-exakt500-20260925.md) ausgerollt;
 Migration20260925100000 und Bereinigung nicht angewendet/freigegeben.
 
-Dauerhaftes Betreiber-GO fuer auftragsbezogene PRs nach gruener Pflicht-CI und
-regulaere Deployments. Geschuetzte Production-Daten-/Profilaktionen bleiben
-separat freigabepflichtig. **Aktivierung und500er Start erst nach neuem GO.**
-Verbindlich: AGENTS.md und ROADMAP_BIS_500.md. Keine Wiederholung abgeschlossener
-36er Prosa-Abnahme oder alter Problemversuche ohne sachlich neue Grundlage.
+Dauerhaftes PR-/Deployment-GO nach gruener Pflicht-CI; separate Daten-/Profil-GOs
+bleiben erforderlich. **Aktivierung/500er Start erst nach neuem GO.**
+AGENTS.md/ROADMAP_BIS_500.md gelten; abgeschlossene36er Abnahme nicht wiederholen.
 Die zwei historischen Kostenreservierungen bleiben unveraendert auf ihrem
 urspruenglichen Tag; heutige Kostenpruefung bestanden. [Starttor](betrieb/500-starttor-20260924.md).
 
