@@ -4,7 +4,7 @@ const C = require('node:crypto'), Z = require('node:zlib'), A = require('node:as
 const { publicKey } = require('../privater-nachweis-transport');
 const MAX = 32 * 1024 * 1024;
 function context(c) {
-  A(['b055-eingabeaufnahme-v1', 'b055-einzelabschluss-v1'].includes(c?.purpose));
+  A(['b055-eingabeaufnahme-v1', 'b055-einzelabschluss-v1', 'cem-eingabeaufnahme-v1'].includes(c?.purpose));
   A.match(c.runId, /^\d{5,20}$/);
   A.match(c.workflowCommit, /^[a-f0-9]{40}$/);
   A.match(c.productionCommit, /^[a-f0-9]{40}$/);

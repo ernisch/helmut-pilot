@@ -3,7 +3,6 @@ const A = require("node:assert/strict");
 const R = require("./github-laufzeitpruefung");
 const T = require("./b055-aufnahme/transport");
 const { publicKey } = require("./privater-nachweis-transport");
-const MANDAT = "test-kohorte-b-055";
 
 async function erfasse({ env = process.env, fetchFn = global.fetch, now = () => new Date() } = {}) {
   A.equal(env.GITHUB_REPOSITORY, "ernisch/helmut-pilot");
@@ -13,9 +12,12 @@ async function erfasse({ env = process.env, fetchFn = global.fetch, now = () => 
   A.match(env.HELMUT_PRODUCTION_COMMIT || "", /^[a-f0-9]{40}$/);
   A.equal(env.HELMUT_PRODUCTION_COMMIT, env.GITHUB_SHA);
   const modus = env.HELMUT_NACHWEIS_MODUS || "eingabe";
+  const MANDAT = env.HELMUT_NACHWEIS_MANDAT || "test-kohorte-b-055";
+  A(["test-kohorte-b-055", "cem-ince"].includes(MANDAT));
   A(["eingabe", "ausgabe"].includes(modus));
+  A(MANDAT !== "cem-ince" || modus === "eingabe");
   publicKey(env.HELMUT_NACHWEIS_PUBLIC_KEY);
-  const context = T.context({ purpose: "b055-eingabeaufnahme-v1", runId: env.GITHUB_RUN_ID,
+  const context = T.context({ purpose: MANDAT === "cem-ince" ? "cem-eingabeaufnahme-v1" : "b055-eingabeaufnahme-v1", runId: env.GITHUB_RUN_ID,
     workflowCommit: env.GITHUB_SHA, productionCommit: env.HELMUT_PRODUCTION_COMMIT });
   const runtime = async () => {
     const r = await R.pruefe({ env, fetchFn });
