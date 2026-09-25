@@ -1,0 +1,63 @@
+name: Verstehen 30 neue Quellen · begrenzter Auftrag
+on:
+  workflow_dispatch:
+    inputs:
+      runtime_commit:
+        description: Voller aktueller main-Commit
+        required: true
+      confirm_text:
+        description: Leer = nur lesen; Ausfuehrung ausschliesslich mit DIE_30_NEUEN_QUELLEN_EINMAL_VERSTEHEN
+        required: false
+        default: ""
+permissions:
+  contents: read
+jobs:
+  auftrag:
+    if: >-
+      github.repository == 'ernisch/helmut-pilot' && github.ref == 'refs/heads/main' &&
+      github.event_name == 'workflow_dispatch' && github.run_attempt == 1 &&
+      inputs.runtime_commit == github.sha &&
+      (inputs.confirm_text == '' || inputs.confirm_text == 'DIE_30_NEUEN_QUELLEN_EINMAL_VERSTEHEN')
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    concurrency:
+      group: helmut-500-kontrollierte-facharbeit
+      cancel-in-progress: false
+    env:
+      HELMUT_FRISCHE30_RUNTIME_COMMIT: ${{ inputs.runtime_commit }}
+      HELMUT_V3_STORE: "1"
+      HELMUT_STORAGE_BACKEND: supabase
+      HELMUT_SUPABASE_STORE_ID: main
+      HELMUT_SUPABASE_AUTH_STORE_ID: main-auth
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      VERCEL_ENV: production
+      HELMUT_TESTLAUF_KOMMUNIKATION: gesperrt
+      HELMUT_MAX_LLM_CALLS_PER_DAY: "2416"
+      HELMUT_LLM_RESERVE_UNDERSTANDING: "702"
+      HELMUT_TESTLAUF_VORRANG_REAL: "200"
+      HELMUT_ANBIETER_STEUERUNG: "on"
+      HELMUT_ANBIETER_AZURE_MINUTE: "20"
+      HELMUT_ANBIETER_AZURE_TAG: "0"
+      HELMUT_LLM_BUDGET_FAIL_CLOSED: "1"
+      HELMUT_VERSTEHEN_CAS: "on"
+      HELMUT_UNDERSTANDING_LOCK: "on"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.runtime_commit }}
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: "22"
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Nur lesen, ohne Modellzugang
+        if: inputs.confirm_text == ''
+        run: node scripts/verstehen-frische30.js --plan
+      - name: Eigener freigegebener Einmalauftrag
+        if: inputs.confirm_text == 'DIE_30_NEUEN_QUELLEN_EINMAL_VERSTEHEN'
+        env:
+          AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT || secrets.AZURE_OPENAI_DEPLOYMENT }}
+        run: node scripts/verstehen-frische30.js --execute DIE_30_NEUEN_QUELLEN_EINMAL_VERSTEHEN
