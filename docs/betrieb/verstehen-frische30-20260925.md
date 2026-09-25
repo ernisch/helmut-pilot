@@ -1,8 +1,8 @@
 # Neuer30er Verstehensauftrag — vorbereitet25.09.2026
 
-**Noch nicht ausgefuehrt.** Das konkrete Quellenimport-GO umfasst keinen Modellstart.
-Dieser getrennte Auftrag braucht vor Ausfuehrung eine konkrete Freigabe seiner
-Production-Schreibwirkung. PR-Merge/Deployment nach gruener CI sind bereits freigegeben.
+**Noch nicht ausgefuehrt.** Betreiber-GO fuer genau diesen begrenzten30er
+Verstehenslauf erteilt25.09.2026, bedingt auf gruene Pflicht-CI, Production-Rollout
+und erfolgreichen Nurlese-Startplan. Merge/Deployment sind dauerhaft freigegeben.
 
 ## Gegenstand und Grenzen
 
@@ -26,7 +26,8 @@ Maximal26 Modellaufrufe,0,80USD gebunden inklusive offener Reservierungen,
 Ein bestehender fertiger Vorgang darf durch neue belegte Fakten fortgeschrieben
 werden; Altfehler erhalten keine Wiederaufnahmefreigabe. Verarbeitet wird durch
 `understandOneCluster` samt bestehendem CAS/Fencing, globalem Schloss und
-atomarer Kostenreservierung. Feste neue Einmalquittung `verstehen30-20260925-a`.
+atomarer Kostenreservierung. Globale Sperre16 Minuten bei15 Minuten Laufzeit;
+SQL- und Blob-Sperren werden vorher/nachher gelesen. Feste neue Einmalquittung `verstehen30-20260925-a`.
 
 ## Bedienweg, Stopp und Nachkontrolle
 

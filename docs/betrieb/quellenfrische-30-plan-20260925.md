@@ -1,9 +1,10 @@
 # Begrenzter Frischeimport — Vorbereitung 25.09.2026
 
-**Nicht ausgefuehrt. Production-Daten-GO fehlt.** Der globale Betreiberauftrag
+**Nach konkretem Betreiber-GO einmalig ausgefuehrt und vollstaendig rueckgelesen.** Der globale Betreiberauftrag
 vom25.09. erlaubt alle auftragsbezogenen PR-Merges nach gruener Pflicht-CI samt
 regulaeren Deployments. Dafuer nicht erneut fragen. Diese Freigabe ersetzt
-kein GO fuer den nachstehenden konkreten Datenimport oder den500er Start.
+kein GO fuer weitere Datenimporte oder den500er Start. Fuer genau diesen Import
+wurde danach das gesonderte konkrete GO erteilt.
 
 ## Ziel und konkrete Wirkung
 
@@ -63,8 +64,21 @@ Zeitstempel, Aufnahmezeit und SQL-Begrenzer. Der bestehende echte PostgreSQL-CI-
 Nachweis prueft die neue30er Vorlage zusaetzlich zum unveraenderten31er Vertrag:
 Atomarik, Wiederholungsverbot, Quellenfrische, Ruecklesung, Schutzdaten und
 Rueckweg einschliesslich spaeterer Verknuepfung/Inhaltsaenderung. Ergebnis
-dieser neuen Datenbankpruefung steht bis zum gruenen CI-Lauf aus.
+dieser neuen Datenbankpruefung: CI36118978418,34/34 Datenbankpruefungen gruen.
 
 Nach GO: frische Vorlesung, genau eine Ausfuehrung des gehashten Imports,
 gebundene Nachlesung30/30 und unveraenderte504/0-Profilgrundlinie. Danach den
 separat begrenzten Understanding-Schritt planen; hier kein impliziter Modellstart.
+
+## Production-Beleg25.09.2026
+
+PR562 gruen gemergt09:43:36UTC, Production READY auf
+`1b664ecc07d1a4c477d6a811846e58acb41fd22d`, Deployment
+`dpl_EtMcKT7JbowD2cefJbrMpPLZ8uNr`. Vorlesung09:43:53:504/0 aktiv,
+keine Jobs/Sperren/laufenden Prozesse. SQL genau einmal ausgefuehrt.
+Vollstaendige Nachlesung09:44:41UTC:30/30 Dokumente,30/30 Fundstellen,
+0 abweichende Nutzfelder.0 KO-Verknuepfungen: fachlich noch nicht verstanden.
+Unveraenderte MD5-Baselines aller Mandate `c32b7d4f76b4ad70ace0cac91c3e94c3`,
+Identitaeten `3c5b0b5a6314f31c395b8758b166c5c3`,
+Auth `0d2a3ef26b65f1a25d8246355e11c7e2`, Main `5ee6c52fa40a96a92bfa854a126fe42a`.
+Keine Modellaufrufe, weiterhin0 aktive Profile.

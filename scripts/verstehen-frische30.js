@@ -51,6 +51,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
   fordere(storage.v3StoreReady(), "speicher-nicht-verfuegbar");
   const read = leser(env), profilHash = await ruhe(read);
   const auth = await storage.readAuthStore();
+  fordere(!Object.values(auth.pipelineLocks || {}).some(l => l?.expiresAt > Date.now()), "blob-parallelbetrieb");
   const day = new Date().toISOString().slice(0, 10), kosten = budget.kontrolliere(auth, day);
   fordere(kosten.offeneReservierungen === 0 && kosten.gebundenUsd < 4
     && auth.testKostenTage?.[day]?.frozen === null, "kosten-nicht-frei");
@@ -67,6 +68,8 @@ async function main(args = process.argv.slice(2), env = process.env) {
   const deps = Bedienung.baueDeps(env, runId, { mitQuittung: execute });
   // Kein alter Fehler darf eine implizite Freigabe aus einer anderen Liste erben.
   deps.listWiederaufnahmen = async () => [];
+  // Die Standardsperre haelt nur10 Minuten; dieser Auftrag kann15 Minuten laufen.
+  deps.acquireLock = () => storage.acquireGlobalUnderstandingLock(F.FRISCHE30.maxMs + 60000);
   const timer = execute ? setTimeout(() => { console.error("frische30-harte-laufzeit; nur nachlesen, kein Retry"); process.exit(1); }, F.FRISCHE30.maxMs) : null;
   try {
     const out = await V.fuehreAus({ ids: liste.ids, deps, execute, erwartet: F.FRISCHE30,
@@ -74,6 +77,8 @@ async function main(args = process.argv.slice(2), env = process.env) {
     // Einmalquittung verhindert zweiten Lauf; Nachlesung muss diese deshalb explizit ausnehmen.
     const nachRead = (table, query) => table === "helmut_store" ? Promise.resolve([]) : read(table, query);
     const nachHash = await ruhe(nachRead);
+    const nachAuth = await storage.readAuthStore();
+    fordere(!(nachAuth.pipelineLocks?.["global-understanding"]?.expiresAt > Date.now()), "sperre-nicht-frei");
     out.profileUnveraendert = profilHash === nachHash;
     out.vollstaendigVerstanden = execute && out.ergebnisse?.length === F.FRISCHE30.cluster
       && out.ergebnisse.every(r => ["saved", "updated", "merged", "duplicate"].includes(r.status));
