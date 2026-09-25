@@ -58,6 +58,34 @@ function nurBekannteKlassen(errors) {
 async function main() {
   console.log("Helmut — Vertrag der Schema-/DSGVO-Diagnose (offline)");
 
+  abschnitt("0 · Falsche Texttypen werden keine scheinbar gueltigen Inhalte");
+  {
+    const k = ko({ mentioned_locations: [{ name: "Europa" }, 42, true, ["Berlin"], null, "EU"],
+      display_summary: { text: "Nicht als Text geliefert" }, why_relevant: 123,
+      recommended_communication: ["Unbestaetigte Kommunikation"] });
+    check("0.1 Ortsliste enthaelt nur den gelieferten Text EU",
+      JSON.stringify(k.mentioned_locations) === JSON.stringify(["EU"]));
+    check("0.2 keine erfundene Objektgeografie in der Klassifikation",
+      k.mentioned_geographies.length === 1 && k.mentioned_geographies[0].name === "EU");
+    check("0.3 ungueltige optionale Texte bleiben leer",
+      k.display_summary === "" && k.why_relevant === "" && k.recommended_communication === "");
+    for (const value of [{ text: "Kein Text" }, ["Ein Satz"], 12345, true]) {
+      check("0.4 Pflichtprosa mit falschem Typ wird abgelehnt",
+        S.validateKnowledgeObject(ko({ was_ist_passiert: value })).valid === false);
+    }
+    const a = ko({ action_items_struct: [
+      { title: "Nicht freigeben", description: { bedingung: "nur nach Beschluss" } },
+      { title: "Nicht freigeben", dueHint: ["erst morgen"] },
+      { title: "Quellen lesen", description: "Vor einer Entscheidung die Quelle lesen.", dueHint: "" }
+    ] });
+    check("0.5 Handlung mit unlesbarer Voraussetzung wird vollstaendig verworfen",
+      a.action_items_struct.length === 1 && a.action_items_struct[0].title === "Quellen lesen"
+      && a.action_items_struct[0].description === "Vor einer Entscheidung die Quelle lesen.");
+    check("0.6 gueltige Texte einschliesslich Verneinung bleiben vollstaendig erhalten",
+      ko({ was_ist_passiert: "Der Rat hat den Antrag nicht beschlossen." }).was_ist_passiert
+        === "Der Rat hat den Antrag nicht beschlossen.");
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════════════════════
   abschnitt("1 · Die Sanitisierung macht jeden ANGREIFBAREN Wert schema-gueltig");
   // Werte, die das Modell plausibel falsch liefern kann: falsche Typen, falsche Enums, zu lange
