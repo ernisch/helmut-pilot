@@ -80,3 +80,16 @@ vollstaendige Kollisionspruefung einschliesslich Artikeladressen/Fingerprints,
 Rueckweg und das konkrete Production-Daten-GO. Understanding und anschliessende
 vollstaendige Ausgabenpruefung muessen danach innerhalb des4-USD-Riegels und
 eines vorher begrenzten Laufs geplant werden.
+
+### Ergaenzung Quellenregister und Pflicht-CI
+
+Die Normalisierungsregression verwendet nun echte registrierte Artikelhosts statt
+unbelegter example.org-Parteiquellen. Fehlende Bundesparteidomains FDP, AfD, BSW
+und CSU wurden anhand ihrer offiziellen Impressen ergaenzt (25.09.2026):
+[FDP](https://www.fdp.de/seite/impressum),
+[AfD](https://www.afd.de/impressum/),
+[BSW](https://bsw-vg.de/impressum/),
+[CSU](https://www.csu.de/partei/parteiarbeit/arbeitsgemeinschaften/fu-bayern/verbaende/kv/freyung-grafenau/impressum/).
+Die CDU/CSU-Bundestagsfraktion wird auch fuer die zentrale Profilbezeichnung
+Union erkannt; die Parteiquellen bleiben getrennte Absender. UI-Pruefungen
+erwarten die neue gemeinsame Segmentbeschriftung mit getrennten Signalsorten.
