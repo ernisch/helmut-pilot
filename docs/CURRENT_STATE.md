@@ -1,6 +1,6 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung: 24.09.2026.** Diese Datei ist das kompakte Cockpit fuer den aktuellen, entscheidungsrelevanten Zustand. Die vollstaendige vorherige Fassung mit allen historischen Details, Flags, Migrationen, Cron Angaben, alten Sprintstaenden und Belegen bleibt wortgleich erhalten unter [archive/project_state/2026_09_23_CURRENT_STATE_vor_komprimierung.md](archive/project_state/2026_09_23_CURRENT_STATE_vor_komprimierung.md). Aeltere historische Statusfassungen bleiben zusaetzlich im bestehenden [Archiv](archive/README.md).
+**Letzte Aktualisierung: 25.09.2026.** Diese Datei ist das kompakte Cockpit fuer den aktuellen, entscheidungsrelevanten Zustand. Die vollstaendige vorherige Fassung mit allen historischen Details, Flags, Migrationen, Cron Angaben, alten Sprintstaenden und Belegen bleibt wortgleich erhalten unter [archive/project_state/2026_09_23_CURRENT_STATE_vor_komprimierung.md](archive/project_state/2026_09_23_CURRENT_STATE_vor_komprimierung.md). Aeltere historische Statusfassungen bleiben zusaetzlich im bestehenden [Archiv](archive/README.md).
 
 ## 1 · Aktueller Stand
 
@@ -89,11 +89,10 @@ Vollstaendige historische Betriebswerte zu Crons, Flags, Migrationen, Quellenpak
 
 ## 6 · Naechster Schritt
 
-**Lage/Radar/Briefing: Auswahlregeln mit PR #553 ausgerollt; gemeinsame semantische Production-Abnahme offen.** Die frueheren 62 Browserpruefungen belegten nur Anzeige und Navigation. Vierer-Block vollstaendig bilanziert, fachlich nicht bestanden; kein weiterer Retry. [Abnahmevertrag](betrieb/lage-radar-briefing-abnahme-20260924.md). Naechster Schritt: die offenen Starttore aus dem [500er Startbericht](betrieb/500-starttor-20260924.md) schliessen, ohne den Nachweis anzustossen.
-
+**Roadmap gestartet, Schritt 1 teilweise vorbereitet (25.09.2026).** Branch `codex/roadmap-semantische-trennung-20260925`: gemeinsame lokale Aufnahme der echten drei Renderer samt Detailansichten und exakt gebundenes externes Bedeutungsurteil. 10/10 Offline-Fallgruppen. Historischer Production-Testfall abgelehnt: Lage/Radar leer, kein aktueller Vollversorgungsbeleg. Kein automatischer Paraphrasendetektor und keine positive Fachabnahme. Production-SELECT 08:50:40 UTC: **504 Profile/0 aktiv**. Naechstes Tor: aktuelle gemeinsame Ausgaben und separat gepruefte Bedeutungsurteile. [Bedienweg, Grenzen und Beleg](betrieb/lage-radar-briefing-abnahme-20260924.md#roadmap-schritt-1--gemeinsame-renderaufnahme-25092026).
 Arbeitsmodus ab 25.09.2026: Gestartete Sprints laufen autonom bis zur Abnahme. Branches, Code, gezielte Tests, Doku, PRs, gruene Merges, regulaere Vercel Deployments und auftragsbezogene Korrekturen brauchen keine Zwischenfreigabe. Modelltests bleiben klar begrenzt unter 4 USD je UTC Tag. Geschuetzte Production Aktionen bleiben separat freigabepflichtig. Arbeitsplaetze/Dachmeldung nur mit sachlich neuer Grundlage anfassen. **500 Profile aktivieren oder den 500er Nachweis beginnen erst nach neuem ausdruecklichem GO.** Regeln: AGENTS.md und ROADMAP_BIS_500.md.
 
-Rein lesend am24.09.,17:10 UTC: 0 aktive Profile, alle504 Mandats-/505 Kontoprofile unveraendert. Konservativ0,889031 USD verbraucht plus0,422000 USD offene Reserven =1,311031 USD gebunden bei4 USD Grenze. Zwei alte automatische Kostentickets bleiben offen; der Null-auf500-Startplan verlangt0 offene Reservierungen. Keine spekulative Freigabe. Aktuelle500 profilgebundene Fachurteile und belastbare Gesamtkosten/-zeit des Verfahrens sind nicht belegt. Die erfolgreiche36er Prosa-Abnahme wird nicht wiederholt.
+Weitere Starttore bleiben offen: zwei historische Kostenreservierungen, aktuelle profilgebundene Fachurteile fuer alle500 und belastbare Gesamtkosten/-zeit. Die erfolgreiche36er Prosa-Abnahme nicht wiederholen. [Details](betrieb/500-starttor-20260924.md).
 
 ## 7 · Kanonische Belege
 

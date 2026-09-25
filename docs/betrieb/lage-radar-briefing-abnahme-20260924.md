@@ -221,3 +221,74 @@ Fehlen eines zweiten Radar-Artikelfeeds. Endgültige Pflicht-CI siehe zugehörig
 **Status:** Ursache der deterministischen Doppelpfade im Code begrenzt und
 gezielt testbar; vollständige semantische Production-Abnahme noch offen.
 Der 500er Nachweis wird in diesem Auftrag nicht gestartet.
+
+
+## Roadmap Schritt 1 — gemeinsame Renderaufnahme (25.09.2026)
+
+**Teilweise vorbereitet**, Branch `codex/roadmap-semantische-trennung-20260925`.
+Die Roadmap ist nicht abgeschlossen. Neues rein lokales Pruefwerkzeug:
+`lib/helmut/briefing-bereichspruefung.js` und
+`scripts/briefing-bereichspruefung.js`. Keine Runtime-Route, keine Datenbankwrites,
+keine Modellstarts, keine Textunterdrueckung, keine neue Plattform.
+
+Die bisherigen Gesamturteile binden den spaeter erzeugten Lagetext nicht.
+Der neue Bedienweg nimmt ein ausdruecklich gelesenes gespeichertes Paket und
+rendert alle drei Ansichten mit dem echten `client.js`, einschliesslich
+Lage-Details und aufgeklappter Radarsegmente. Paket, Profilhash, Tag,
+Renderer-Commit, vollstaendiger HTML-Hash und Text sind gemeinsam gebunden.
+Netz und Timer bleiben im lokalen Renderer gesperrt. CSS-/Browserabnahme und
+ein frischer Live-Snapshot sind damit ausdruecklich nicht behauptet.
+
+Ein separates semantisches Urteil muss alle drei Bereichspaare beurteilen,
+seine Begruendung und exakte Belegstellen liefern. `wiederholung`, `unklar`,
+`leer`, fehlende Paare, geaenderte Daten und falsche Zitate verhindern ein
+positives Ergebnis. Echte Leerzustaende koennen auch durch ein positives Urteil
+nicht freigezeichnet werden. Texte werden niemals automatisch entfernt.
+**Der Vertrag ist kein automatischer Paraphrasendetektor:** Schema und Zitate
+bestaetigen nur die Bindung. Das Bedeutungsurteil muss tatsaechlich separat
+vorgenommen werden; es bleibt fehlbar. Es ist noch nicht in den scharfen
+500er Ablauf eingebaut. Kein Bestandsschutz fuer alte positive Urteile.
+
+### Historischer Production-Testfall, kein heutiger Versorgungsbeleg
+
+Am25.09. rein lesend geladen: `bf-test-kohorte-a-004-mandatsbriefing-2026-09-16`,
+erzeugt16.09.,20:03:59.913 UTC. Synthetisches Profil, keine Profilwrites.
+Renderer-Commit `631f24cedd538e87584044c66e7e9bf05546356f` (aktuelles main),
+keine Behauptung, dieser Commit habe das alte Paket erzeugt.
+
+- Paketdatenhash: `2e07fa3da83cb7319fc568ac4c26e9a35f3184ce510668f56601a2e217295771`.
+- Gemeinsamer Eingabehash: `f549d94f6db1b1fee5d66583b589aa97bb57c919cf72c1f452f2478d712b3b46`.
+- Separates redaktionelles Urteil: `80d26c07348380390f535abfb8abea03f7b6a90286e6e2a0a7191b66dd3a2f07`.
+- Ergebnis: alle drei Paarvergleiche **leer / nicht bestanden**. Das Briefing
+  enthaelt Fachtext. Lage meldet „Heute liegen noch keine quellengestuetzten
+  Vorgaenge vor“, Radar keine zugeordneten Signale. Die drei gespeicherten
+  Lageabsaetze ergeben in diesem historischen Lesepfad keine sichtbaren Karten.
+  Das ist ein Befund dieses Pakets, kein unbelegter Fehler aller heutigen Profile.
+- 0 Modellaufrufe, 0 Production-Writes. Privates Rohpaket und Aufnahme liegen
+  ausschliesslich lokal unter `/private/tmp/helmut-roadmap-paket.json` und
+  `/private/tmp/helmut-bereich-final-aufnahme.json`; nicht ins Repository kopieren.
+- Aktuelle separate Production-Zaehlung 25.09.,08:50:40 UTC:504 Mandate,0 aktiv.
+  Juengstes gespeichertes Mandatsbriefing17.09., Lage16.09., Morgenquittung16.09.
+  Keine heutige Vollversorgung aus diesen historischen Paketen ableitbar.
+
+Gezielte Offline-Pruefung ueber `scripts/lokal.js`:
+`briefing-bereichspruefung-test.js` **10/10 Fallgruppen**. Dazu gehoeren
+sinngleiche redaktionelle Negativfaelle, sachlich verschiedene Aussagen,
+spaeter geaenderte Lage, Profil-/Commit-/Quellenbindung, unvollstaendige Urteile,
+Leerzustand trotz positiver Prueferantwort sowie echte Renderer/Detailtexte.
+Die Sollurteile sind synthetisch vorgegeben, keine bestandene Modellabnahme.
+
+Bedienung (nur lokale Dateien, Ausgabepfade muessen neu sein):
+
+```sh
+node scripts/lokal.js -- node scripts/briefing-bereichspruefung.js   PAKET_JSON RENDERER_COMMIT AUFNAHME_JSON BERICHT_JSON [URTEIL_JSON]
+```
+
+Ohne Urteil entsteht eine gebundene Pruefeingabe mit Pruefanweisung, niemals
+fachliches Gruen. Mit Urteil wird exakt diese Eingabe erneut gebildet und
+validiert. Ein negatives Urteil setzt Exitcode1. Die lokalen Dateien enthalten
+interne Ausgaben und sind nicht fuer oeffentliche CI-Artefakte bestimmt.
+
+**Offen:** frische gemeinsame Ausgaben, positiver separater Bedeutungsnachweis,
+Einbindung in die vollstaendige500er Abnahme, Radar-Artikelbindung, Versorgung,
+Kosten- und Profilstarttor. Keine Aktivierung oder scharfer Nachweis gestartet.
