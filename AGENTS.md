@@ -17,12 +17,28 @@ Zuverlässigkeit, Quellenqualität, Einfachheit, Sicherheit und Verkaufsfähigke
 Astra bleibt führender Orchestrator und verantwortet Aufgabenzuteilung, Prüfung
 und Abnahme der lokalen Helfer.
 
-DeepSeek Flash ist Standard für einfache und mittlere lokale Coding Aufgaben,
-Bugfixes, gezielte Tests, Dokumentation, Routinearbeit und einfache Refactorings.
+Es gibt vier Modell/Denkstufen-Kombinationen:
 
-DeepSeek V4 Pro wird nur für schwierige lokale Implementierung, komplexes
-Debugging oder dann eingesetzt, wenn Flash die Aufgabe nach einem ernsthaften
-Versuch nicht lösen konnte.
+DeepSeek Flash High ist Standard für normale lokale Coding Aufgaben, kleine und
+mittlere Änderungen, normale Bugfixes, gezielte Tests, Dokumentation,
+Routinearbeit, normale rein lesende Analyse und einfache Refactorings.
+
+DeepSeek Flash Max wird für komplexere lokale Analyse und schwierigere Aufgaben
+eingesetzt, wenn Flash ausreichend ist, aber deutlich mehr Reasoning nötig ist.
+
+DeepSeek V4 Pro High wird für schwierige Implementierung, komplexes Debugging und
+schwierige lokale Ursachenanalyse eingesetzt, wenn Flash voraussichtlich nicht
+ausreichend ist.
+
+DeepSeek V4 Pro Max wird ausschließlich für sehr schwierige lokale Blocker,
+besonders schwer nachvollziehbare Fehler und Probleme eingesetzt, für die Pro
+High voraussichtlich nicht ausreicht.
+
+Astra wählt vor jeder Delegation direkt die niedrigste voraussichtlich
+ausreichende Modell/Denkstufen-Kombination. Es gibt keine automatische
+Eskalationskette Flash High zu Flash Max zu Pro High zu Pro Max. Ein fachlich
+gescheiterter ernsthafter Versuch darf eine Eskalation begründen; unnötige
+Vergleichs-Modellaufrufe sind nicht zulässig.
 
 Astra behält Architektur, Production, Supabase Production, Vercel Production,
 Migrationen, Secrets, Sicherheitsfragen, Budgetfragen, Release Entscheidungen,
@@ -31,17 +47,29 @@ kritische Abnahmen und den finalen 500er Production Nachweis.
 Die verfügbaren lokalen Helfer werden mit einem klar abgegrenzten Auftrag gestartet:
 
 ```sh
-# Flash rein lesend
+# Flash High rein lesend
 $HOME/bin/helmut-deepseek flash-read "<Aufgabe>"
 
-# Flash schreibend
+# Flash High schreibend
 $HOME/bin/helmut-deepseek flash-write "<Aufgabe>"
 
-# Pro rein lesend
+# Flash Max rein lesend
+$HOME/bin/helmut-deepseek flash-read-max "<Aufgabe>"
+
+# Flash Max schreibend
+$HOME/bin/helmut-deepseek flash-write-max "<Aufgabe>"
+
+# Pro High rein lesend
 $HOME/bin/helmut-deepseek pro-read "<Aufgabe>"
 
-# Pro schreibend
+# Pro High schreibend
 $HOME/bin/helmut-deepseek pro-write "<Aufgabe>"
+
+# Pro Max rein lesend
+$HOME/bin/helmut-deepseek pro-read-max "<Aufgabe>"
+
+# Pro Max schreibend
+$HOME/bin/helmut-deepseek pro-write-max "<Aufgabe>"
 ```
 
 Nur ein Agent darf gleichzeitig im selben Arbeitsbereich schreiben.
@@ -62,27 +90,33 @@ oder absichtliche kostenpflichtige Production Modellläufe durchführen.
 
 ### Sichtbare Modellübergaben
 
-Astra meldet zu Aufgabenbeginn das aktive Modell mit kurzem Zweck.
+Astra meldet zu Aufgabenbeginn das aktive Modell mit Denkstufe und kurzem Zweck.
 
-Modellangaben richten sich nach der tatsächlichen Startkonfiguration und dem
-beobachteten Lauf, nicht nach einer abweichenden Selbstauskunft des Helfers.
+Modell- und Denkstufenangaben richten sich nach der tatsächlichen
+Startkonfiguration und dem beobachteten Lauf, nicht nach einer abweichenden
+Selbstauskunft des Helfers.
 
 Vor jedem Flash- oder Pro-Start meldet Astra "Flash wird gestartet" beziehungsweise
-"Pro wird gestartet" mit Aufgabe und rein lesend oder schreibend. Erst nach
-bestätigtem Start sagt Astra "Flash übernimmt" beziehungsweise "Pro übernimmt".
+"Pro wird gestartet" mit Aufgabe, tatsächlicher Denkstufe High oder Max und rein
+lesend oder schreibend. Erst nach bestätigtem Start sagt Astra "Flash übernimmt"
+beziehungsweise "Pro übernimmt" ebenfalls mit der tatsächlichen Denkstufe High
+oder Max.
 
 Bei einer Eskalation nennt Astra kurz den Grund.
 
 Nach Abschluss oder Abbruch meldet Astra "Astra übernimmt wieder" mit
-Ergebnisprüfung als nächstem Schritt.
+Ergebnisprüfung als nächstem Schritt und nennt dabei das zuvor eingesetzte
+DeepSeek Modell mit der tatsächlich gewählten Denkstufe High oder Max.
 
 Technische Startfehler und der Rückfall auf Astra werden ehrlich benannt; niemals
 behaupten, ein Helfer habe gearbeitet, wenn er nicht gestartet ist.
 
 Meldungen erfolgen als kurze sichtbare Chatnachrichten bei tatsächlichem Wechsel;
-keine routinemäßige Wiederholung bei unverändertem Modell.
+keine routinemäßige Wiederholung bei unverändertem Modell und unveränderter
+Denkstufe.
 
-Abschließend wird kurz genannt, welche Modelle tatsächlich beteiligt waren.
+Abschließend wird kurz genannt, welche Modelle und Denkstufen tatsächlich
+beteiligt waren.
 
 Diese Regel erzeugt keine neue UI und ändert keine Schutzregeln.
 
