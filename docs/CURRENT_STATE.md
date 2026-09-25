@@ -4,7 +4,7 @@
 
 ## 1 · Aktueller Stand
 
-* **Aktueller Roadmap-Stand25.09.: siehe §6.** Production02a19297 READY,500/0. 30er Quellenkorrekturen verifiziert; frische Vollversorgung fuer500 nicht bestanden. Kein500er Start.
+* **Aktueller Roadmap-Stand25.09.: siehe §6.** Production25f656bc READY,500/0. 30er Quellenkorrekturen verifiziert; frische Vollversorgung fuer500 nicht bestanden. Kein500er Start.
 
 * **Production-Belege dieses Sprints:** PR #549 (Trennung von Lage/Radar/Briefing) gemergt als `00ed4c27b7703849d57ca9f357dcf15a40f5f311`, Vercel `dpl_6iDLuovtgpFL7DSZX1M2djMYugdQ` READY, PR-CI `36031516394` SUCCESS. Auftragsbezogene Reparaturen: [PR #550](https://github.com/ernisch/helmut-pilot/pull/550) (Appstart ohne Hintergrundmodelle, begrenzte Quellenabrufe) und [PR #551](https://github.com/ernisch/helmut-pilot/pull/551) (500er Fachleser an neue Testfenster gebunden); ihre finalen Merge-/Ausrollbelege stehen direkt im jeweiligen PR. Vierer-Migration angewendet; Zweierlauf `36029408684` nach einem Parteienfehler gestoppt: 1 Aufruf, 0,005804 USD, Koçak nicht begonnen. [Vierer-Bilanz](betrieb/verstehen-vier-nacharbeit-20260924.md). **Noch keine belastbare 500er Startbereitschaft**, siehe [Starttor](betrieb/500-starttor-20260924.md).
 * **Fuenfter (freigegebener) scharfer 169er Lauf — erstmals ALLE 122 Cluster verarbeitet, fachlich nicht bestanden.** Workflow-Run `35987448290`, `run_attempt = 1`, `failure`, 24.09.2026 10:28:42–10:54:17 UTC, Runtime-Commit = Dispatch = Checkout `2d412d0418f5d6170f2c34ff69dbd846c4e0c703`, Dokument-Snapshot `ea84f26c…`. Die Bindung hielt; der Schutzvertrag passierte mit **81 Modellkandidaten** (≤ 113) — **PR #541 wirkte belegbar** (der vierte Lauf war noch mit 114 Kandidaten gescheitert). `abbruchGrund = null`, `vollstaendigVerarbeitet = true`, `fachlichBestanden = false`; Bilanz `saved 63`, `updated 14`, `duplicate 34`, `merged 7`, `skipped-invalid 4` (`unbekannt 4`); **81 Modellaufrufe**, `quellenabrufe 0`, `profilwrites 0`, `kommunikation 0`; Laufkosten **0,522795 USD** von 0,80 USD; Quittung `verstehen169-20260924-c` terminal **`unbekannt`** (verbraucht). **Vier lokale `unknown`** (Klasse A, kein globaler Abbruch): `vg-gemeinsame-20260921-dcd0f5`, `vg-linkenpolitiker-20260921-37cdeb` und `vg-arbeitsplätze-20260715-6cc672` (Aktualisierung) mit `quellenbeleg-parteien`, sowie `vg-verzögerung-20230613-95c80f` mit `validierung-fehlgeschlagen` und leerer Fehlerliste. CAS danach je `zustand=unbekannt` (Betreiberbeleg). **In diesem 169er Lauf keine erneute Freigabe; die spaetere isolierte Nacharbeit steht oben.** [Beleg](betrieb/verstehen-einmalig-169-20260922.md) §24.
@@ -88,7 +88,7 @@ Vollstaendige historische Betriebswerte zu Crons, Flags, Migrationen, Quellenpak
 ## 6 · Naechster Schritt
 
 **Roadmap25.09. fortgesetzt; umfassendes Betreiber-GO samt Entscheidungsdelegation.**
-Tagesriegel4USD und Profilschutz bestehen. Production02a19297 READY, PR573 gruen.
+Tagesriegel4USD und Profilschutz bestehen. Production25f656bc READY, PR575 gruen.
 [Profilreife](betrieb/500-profilreife-20260925.json):500/500 zulaessig,0 fehlende
 Pflichtpakete nach61er Bundestagsumstellung und Entfernung zweier Rollenplatzhalter.
 [Endfunktion fuer exakt500](betrieb/testfenster-exakt500-20260925.md) installiert
@@ -98,8 +98,7 @@ und funktions-/rechtegenau nachgelesen, Migration20260925115437.
 atomar abgeschlossen. Genau500/0,501 Identitaeten,498 Konten. Vier Nichtzielprofile
 samt642 Zeilen gesichert entfernt. Alle17 uebrigen Tabellenbestaende unveraendert;
 Kosten-/Auditgeschichte erhalten.10/10 isolierte Pruefgruppen samt Rueckweg.
-Zwei vorherige Versuche vor Writes gestoppt (15s Grossdatenhash,UUID-Typ);
-Grundlinien jeweils unveraendert bestaetigt. Version2-Bestandsvertrag bestanden.
+Version2-Bestandsvertrag bestanden; Vorversuche und Nachlesung im Beleg.
 SELECT12:42:01UTC:0 Jobs/Locks/Leases,0 offene Kosten,0,304227USD verbraucht.
 Keine Aktivierung, kein zeitgebundener Startplan und kein500er Funktionsnachweis.
 
@@ -107,14 +106,16 @@ Keine Aktivierung, kein zeitgebundener Startplan und kein500er Funktionsnachweis
 [Amtlicher Artikelkontext](betrieb/bundestag-artikelversorgung-20260925.md) integriert:
 lokal7/11 ganze Leitabsaetze; vier benannte Ablehnungen.63 Pruefgruppen bestanden.
 [Siebener-Auftrag](betrieb/verstehen-bund7-20260925.md):7/7 Import exakt.
-PR574 ausgerollt (a4a1c0b5), Plan36144074961 bestanden. Auftrag b36146635649
-stoppte14:19:41UTC nach1 Modell/0,007794USD:1 gespeichert,1 Artikelkontext-
-Abbruch,5 unbearbeitet. Quittungen a/b verbraucht. Neue CO2-Quelle bereits
-falsch am Regierungs-Sammelvorgang verknuepft; Korrektur offen. Reproduziert:
-Akteur allein trug Identitaet, fremde Altquellen sperrten Artikelzeitpruefung.
-Codekorrektur im eigenen Branch, noch nicht ausgerollt; kein neuer Modellauftrag.
-Lesung14:21UTC:500/0, alle Profilhashes unveraendert,0 Jobs/Locks/Leases,
-0 offene Kosten, Tagesstand0,312021USD von4USD.
+Auftrag b36146635649 stoppte14:19:41UTC nach1 Modell/0,007794USD:
+1 gespeichert,1 Artikelkontext-Abbruch,5 unbearbeitet. Quittungen a/b verbraucht.
+PR575 nach Pflicht-CI36152588328 gemergt,25f656bc READY15:23:28UTC.
+Regierungsakteur traegt keine Identitaet allein; Artikelzeitpruefung nur am Beleg.
+Fehlbindung15:24:10UTC korrigiert: CO2-Quelle geloest, Vormerkung entfernt,
+gemischter Altvorgang gesperrt;16 alte Quellen und CAS unveraendert.
+[Redaktion der sieben Quellen](betrieb/bund7-redaktion-20260925.md) vorbereitet:
+5 neue Vorgänge,2 Fortschreibungen,1 Dublette sperren; keine Modelle/Profilwrites.
+Noch nicht ausgefuehrt. Lesung15:24:39UTC:500/0, Profilhashes unveraendert,
+0 Jobs/Locks/Leases/offene Kosten, Tagesstand0,312021USD von4USD.
 30 korrigierte Quellen an27 complete-Vorgaengen; frische Zuordnung weiter0/500
 Score>=40. Drei alte Fehler gesperrt. B055-Aufnahme36129043227:59 Items,
 Briefing leer; kein positiver sichtbarer Drei-Bereiche-Nachweis.
