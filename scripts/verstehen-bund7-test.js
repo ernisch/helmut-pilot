@@ -96,6 +96,10 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     const neu = F.pruefeSpeicherbindung([pg], beleg);
     assert.equal(neu.text, beleg.text); assert.equal(neu.quellenHash, A.quellenstandHash(pg));
     assert.deepEqual(A.pruefeArtikelkontext([pg], neu), neu);
+    const alt = { id: "rd-alt", title: "Alte Meldung", published_at: null, retrieved_at: null };
+    assert.deepEqual(F.pruefeSpeicherbindung([alt, pg], beleg), neu);
+    assert.equal(alt.published_at, null);
+    assert.throws(() => F.pruefeSpeicherbindung([alt], beleg));
     assert.equal(beleg.quellenHash, A.quellenstandHash(doc));
     for (const change of [{ published_at: "2026-09-25T11:00:00.001Z" },
       { retrieved_at: "2026-09-25T12:44:58.165001Z" }, { published_at: "2026-09-25" },

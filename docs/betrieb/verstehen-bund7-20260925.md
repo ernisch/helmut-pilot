@@ -131,3 +131,50 @@ ist die belegte Adapterreparatur; keine automatische Wiederholung. Grenzen
 unveraendert7 Modelle/0,30USD inklusive Reservierung/10min und4USD pro UTC-Tag.
 Gezielt bestanden:10 Auftragsgruppen mit echtem Reservierungs-/Abrechnungsadapter,
 12 bestehende Kostengruppen und29 Einmallauf-Kostenpruefungen.
+
+## Auftrag b und Zuordnungsbefund
+
+PR574 Headabac683f, Pflicht-CI36142368850 SUCCESS; Merge
+`a4a1c0b50ae0711c7b0f164180530d2da6ae59fc`13:53:58UTC. Production
+`dpl_ByRve8k6HYXwRGnS3oD6UBGdoso2` READY13:54:17UTC. Plan36144074961
+bestand13:55:49UTC inklusive echtem Kostenleser und wirkungsfreiem Vorgaenger.
+
+Scharfer Auftrag [36146635649](https://github.com/ernisch/helmut-pilot/actions/runs/36146635649)
+14:19:05–14:19:41UTC:1 Modell,0,007794USD,1 gespeichert,
+1 `skipped-artikelkontext`,5 nicht begonnen. Abbruch
+`verstehen-bund7-einzelergebnis-nicht-bestaetigt`, Quittung b terminal gestoppt.
+Kein Retry und keine neue Auftragskennung in dieser Reparatur.
+
+Gespeichert: `vg-achtzehnjaehrige` (tatsaechliche Kennung mit Umlaut:
+`vg-achtzehnjährige-20260925-d20924`), Fruehstartrente. Fachabnahme offen.
+Die CO2-Quelle `rd-a1cd259ac1fb2d3a00e7e181a7ddcab55c6858d4e32875db2860f4e02791be32`
+wurde schon vor der Update-Modellpruefung an `vg-bundesregierung-20260915-43922a`
+verknuepft. Der Text dieses Altvorgangs wurde nicht aktualisiert. Er mischt
+Sicherheits-, Pflege-, Energie- und IT-Vorhaben. Quellenkorrektur und Sperrung
+sind getrennt vorzubereiten; die Codeaenderung bereinigt keine Bestandsdaten.
+
+Reproduktion mit den gelesenen Originalzeilen: Allein `bundesregierung` trug
+Beweisgewicht2 und den einzigen Bestandskern. Die Reparatur behandelt den
+Regierungsakteur als generisch. Konkrete Sachanker sind weiter erforderlich;
+alte Regierungskennungen bleiben Suchkandidaten, keine Identitaetsbelege.
+Zweiter Fehler: Der Artikeladapter normalisierte auch fremde Altquellen mit
+fehlendem Abrufzeitpunkt. Er prueft jetzt nur die eindeutig an den Beleg
+gebundene Quelle. Doppelte Kennungen und echte Quellenaenderungen bleiben gesperrt.
+
+Nachlesung14:21:27UTC:500 Profile/0 aktiv, Profil-MD5
+`823590ce0d6f9971fe6fd9b028f811cf`, Identitaets-MD5
+`831c8bd8ef299931cc39a33e2d166a5e`, Main-MD5
+`48b15038d852547c6df44d61bdd06d67`;0 Jobs/Locks/Leases/offene Kosten.
+Tageskosten0,312021USD, Limit4USD. Noch kein500er Funktionsnachweis.
+
+## Vollstaendige lokale Eingabevorpruefung vor Auftrag b
+
+Production-Snapshot13:40:01UTC:500 zuletzt aktualisierte Vorgaenge,936 Quellen.
+Mit Code02a19297 alle500 unveraenderten Profile lokal und ohne Netz/Modelle
+vollstaendig aufgebaut:51–77 Items je Profil,373–686 Pruefaussagen
+(242641 insgesamt). Sichtbares Briefing bei500/500 leer; tatsaechliche Radar-
+Anzeige ebenfalls500/500 leer. Der aeussere Radarstatus `fresh` allein ist
+kein Inhaltsbeleg. Keine fertigen Lage-Texte und keine1500er Ergebnisabnahme.
+Die private Eingabe und der Bericht liegen unter
+`/private/tmp/helmut-500-versorgung-vor-bund7.json` und
+`/private/tmp/helmut-500-versorgung-lokal-ergebnis.json`.

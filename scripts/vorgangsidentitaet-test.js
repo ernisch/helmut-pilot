@@ -321,6 +321,28 @@ check("10 · 'neueste zuerst' verliert nachweislich den Ereigniskern",
 check("10 · eine reine Wiederveroeffentlichung verdraengt kein neues Faktum",
   !auswahl.some((doc) => doc.id === "e13") || !auswahl.some((doc) => doc.id === "e16") || auswahl.some((doc) => doc.id === "e06"));
 
+// Production 25.09.: ein gemeinsamer Regierungsakteur verband CO2-Preis,
+// Pflege und IT. Identischer Akteur ist keine Identitaet des Sachvorhabens.
+{
+  const alte = [
+    d("reg1", "Bundesregierung plant Pflegebudget", "2026-09-22T10:00:00Z"),
+    d("reg2", "Bundesregierung beschafft Verwaltungssoftware", "2026-09-22T11:00:00Z"),
+    d("reg3", "Bundesregierung ändert Sicherheitsgesetze", "2026-09-22T12:00:00Z")
+  ];
+  const preis = d("reg4", "CO2-Preis bleibt stabil", "2026-09-25T10:00:00Z", "amtlich",
+    "Bundesregierung legt Brennstoffemissionshandelsgesetz vor.");
+  check("11 · Regierungsakteur allein zieht neues Sachvorhaben nicht in Sammelvorgang",
+    V.sameVorgang({ documents: [preis] }, { documents: alte }).gleich === false);
+  check("11 · Regierungsakteur allein verbindet auch keinen neuen Cluster",
+    clusterAnzahl([alte[0], alte[1]]) === 2);
+  const fort = d("reg5", "CO2-Preis: Brennstoffemissionshandelsgesetz beraten",
+    "2026-09-25T12:00:00Z", "amtlich", "Bundesregierung erläutert Brennstoffemissionshandelsgesetz.");
+  check("11 · Dasselbe konkrete Regierungsvorhaben bleibt fortschreibbar",
+    V.sameVorgang({ documents: [fort] }, { documents: [preis] }).gleich === true);
+  check("11 · Alte Regierungskennungen bleiben als Kandidaten auffindbar",
+    V.candidatePrefixes({ documents: [fort] }, 3, { personengruppenAltbestand: true }).includes("vg-bundesregierung"));
+}
+
 console.log(`\n${n - fail}/${n} Assertions erfolgreich.`);
 if (fail) console.log(`\nFEHLGESCHLAGEN: ${fail}`);
 process.exit(fail === 0 ? 0 : 1);
