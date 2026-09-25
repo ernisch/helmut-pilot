@@ -228,9 +228,11 @@ SHA256 des Kartenbelegcodes:
 
 Gezielt offline: Titelbeleg7/7 Gruppen (inklusive echtem Renderer und
 cacheOnly/countOnly); Lage141/141; Quellenmix6/6; cacheOnly9/9;
-Briefing-Lagebindung7/7. Neue Regression vor dem Fix rot. Der bestehende
+Briefing-Lagebindung7/7; Matching-Erklaerung68/68. Neue Regression vor dem Fix rot. Der bestehende
 Mapping-Positivtest bekommt einen Originalauszug; ohne Quellen erwartet
-er jetzt ausdruecklich fehlende Belege statt freier Altprosa.
+er jetzt ausdruecklich fehlende Belege statt freier Altprosa. Der Matching-
+Positivtest hat ebenfalls einen Artikelauszug; ein gespeichertes Matching
+allein heilt die fehlende Quellenbasis ausdruecklich nicht.
 
 Grenzen: Ein vorhandener Auszug bestaetigt noch keine einzelne KO-Aussage;
 die allgemeine Fakten-/Nutzwertabnahme bleibt offen. Ein Quellenhinweis ist
