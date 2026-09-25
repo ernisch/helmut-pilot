@@ -188,6 +188,7 @@ async function main() {
         const read = await request("GET", geheim, inputPath, { "x-helmut-production-commit": sha });
         check(read.status === 200 && captured.expectedCommit === sha && captured.commit === sha
           && captured.production === true && typeof captured.build === "function"
+          && captured.leseLage === require("../lib/helmut/lage").buildLageBriefing
           && captured.storage === storage && captured.userId === profile.id,
           "Echter HTTP Handler bindet frische Aufnahme an Commit, Mandat und echten Builder");
         check((await request("POST", geheim, inputPath)).status === 400

@@ -72,3 +72,35 @@ als Cem-Nachweis entschluesselt werden. Keine Klartexte im Actions-Protokoll.
 Gezielt6/6 Leser- und9/9 Transportgruppen bestanden.
 Das erlaubt eine tatsaechliche Production-Eingabeaufnahme, ersetzt jedoch
 weder gespeicherte Lage-Prosa noch die getrennte semantische Fachabnahme.
+
+## Production-Aufnahme des Personenhinweises
+
+PR577, Head2ae957c90f21c2c2abdabe6ebf88d5ade68a71e5, beide Pflichtjobs
+in CI36159254715 gruen; Merge d97e3dfc82740637c390f18e35df23a2ecfdeca3.
+Vercel dpl_LkW3vzi1ZzbmnYsTxnmxNRSy1soQ READY25.09.16:23:55.468UTC.
+Manueller Leselauf [36160592624](https://github.com/ernisch/helmut-pilot/actions/runs/36160592624)
+erfolgreich; echter HTTP200-Mitschnitt16:25:02.068UTC vom selben Commit.
+Antwort-SHA256:dc8eae6c82c7b5c3841b6758b4fe521f0849ae6de912c237d74c7f0126ba4a4c.
+Die Anzeige enthaelt exakt einen Personenhinweis mit Originaltitel,
+Video7657592 und oben gebundener Dokumentkennung. Zusammenfassung leer;
+keine Redeinhalte erfunden. Profil inaktiv und unveraendert,0 Modelle.
+Private vollstaendige Aufnahme:/private/tmp/helmut-cem-productionaufnahme-20260925.json.
+
+Die68 internen Briefing-Eintraege sind keine68 sichtbaren Tagesprioritaeten.
+Alte ignorierte Karten im Vertrag beweisen keinen Fehler der aktuellen
+Lage-Ansicht; diese hat eine eigene Auswahl. Keine Zeitregel deswegen aendern.
+Die Aufnahme enthaelt noch keine Lage-Ansicht und kein gespeichertes
+Gesamtpaket, also noch keinen positiven Drei-Bereiche-Nachweis.
+
+## Ergaenzung fuer die sichtbare Bereichsabnahme
+
+Der konkrete Cem-Leser nimmt zusaetzlich die echte Lage-Auswahl aus
+buildLageBriefing mit cacheOnly:true auf, wie im App-Start. Fehlende Prosa
+bleibt fehlend; kein Generator, Writer oder Lock wird angefordert.
+Die Lage steht getrennt vom unveraenderten Aussagenvertrag unter
+lageAnsicht. Demoausgaben werden abgelehnt, Lesefehler nicht verschwiegen;
+Profil und Kalendertag werden erst nach beiden Leseschritten nachgeprueft.
+Das Ergebnis bleibt nichttransaktional, ohne fachliche Freigabe und ohne
+Behauptung eines gespeicherten Gesamtpakets. B055 unveraendert.
+Gezielte Nachweise:9/9 Aufnahmegruppen,69/69 HTTP-Routenpruefungen,
+9/9 Cache-only-Assertions. Production-Aufnahme dieses Zusatzes steht aus.

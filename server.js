@@ -188,7 +188,7 @@ async function handleRequest(request, response) {
         return sendJson(response, await require("./lib/helmut/briefing-pruefaufnahme").erfasse({
           userId, tag: day, expectedCommit: request.headers["x-helmut-production-commit"],
           commit: process.env.VERCEL_GIT_COMMIT_SHA, production: process.env.VERCEL_ENV === "production",
-          storage, build: buildV3Briefing }));
+          storage, build: buildV3Briefing, leseLage: buildLageBriefing }));
       const profile = await storage.getProfile(userId);
       if (!profile || profile.id !== userId) throw new Error("nachweis-profil-fehlt");
       const nachweisUrl = new URL("http://localhost/api/briefing/latest");
