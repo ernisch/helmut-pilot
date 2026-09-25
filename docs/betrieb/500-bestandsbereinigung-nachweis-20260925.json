@@ -1,0 +1,128 @@
+{
+  "productionCommit": "38d2906254810552afeafbf52387dd3bfacce9ad",
+  "sqlLabGroups": 10,
+  "ausfuehrung": [
+    {
+      "zeit": "2026-09-25 12:41:57.535865+00",
+      "status": "abgeschlossen",
+      "ausgefuehrt_am": "2026-09-25T12:41:36.198366+00:00",
+      "entfernte_zeilen": "642",
+      "schutzvergleich": [
+        {
+          "zeilen": 3397,
+          "tabelle": "briefings",
+          "unveraendert": true
+        },
+        {
+          "zeilen": 0,
+          "tabelle": "communication_drafts",
+          "unveraendert": true
+        },
+        {
+          "zeilen": 0,
+          "tabelle": "daily_tasks",
+          "unveraendert": true
+        },
+        {
+          "zeilen": 117631,
+          "tabelle": "decisions",
+          "unveraendert": true
+        },
+        {
+          "zeilen": 0,
+          "tabelle": "interactions",
+          "unveraendert": true
+        },
+        {
+          "zeilen": 500,
+          "tabelle": "mandate_profiles",
+          "unveraendert": true
+        },
+        {
+          "zeilen": 12310,
+          "tabelle": "matching_results",
+          "unveraendert": true
+        },
+        {
+          "zeilen": 1893,
+          "tabelle": "matching_runs",
+          "unveraendert": true
+        },
+        {
+          "zeilen": 0,
+          "tabelle": "matching_weights",
+          "unveraendert": true
+        },
+        {
+          "zeilen": 0,
+          "tabelle": "office_outputs",
+          "unveraendert": true
+        },
+        {
+          "zeilen": 0,
+          "tabelle": "personalized_recommendations",
+          "unveraendert": true
+        },
+        {
+          "zeilen": 0,
+          "tabelle": "political_items",
+          "unveraendert": true
+        },
+        {
+          "zeilen": 0,
+          "tabelle": "priority_changes",
+          "unveraendert": true
+        },
+        {
+          "zeilen": 500,
+          "tabelle": "profile_embeddings",
+          "unveraendert": true
+        },
+        {
+          "zeilen": 501,
+          "tabelle": "profiles",
+          "unveraendert": true
+        },
+        {
+          "zeilen": 0,
+          "tabelle": "topic_memory",
+          "unveraendert": true
+        },
+        {
+          "zeilen": 0,
+          "tabelle": "user_notes",
+          "unveraendert": true
+        }
+      ],
+      "profile": 500,
+      "aktiv": 0,
+      "identitaeten": 501,
+      "eigene_ablagen": 0,
+      "konten": 498,
+      "alte_konten": 0,
+      "kosten_audit_rest_unveraendert": true,
+      "main_rest_unveraendert": true,
+      "main_exakt": true,
+      "fairness_exakt": true
+    }
+  ],
+  "ruhe": [
+    {
+      "zeit": "2026-09-25 12:42:01.773178+00",
+      "profile": 500,
+      "aktiv": 0,
+      "profilhash": "823590ce0d6f9971fe6fd9b028f811cf",
+      "identitaetshash": "831c8bd8ef299931cc39a33e2d166a5e",
+      "mainhash": "48b15038d852547c6df44d61bdd06d67",
+      "locks": 0,
+      "leases": 0,
+      "jobs": 0,
+      "kostentag": {
+        "limit": 4000000,
+        "spent": 304227,
+        "frozen": null
+      },
+      "offene_kosten": 0
+    }
+  ]
+}

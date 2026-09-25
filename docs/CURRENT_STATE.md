@@ -4,14 +4,14 @@
 
 ## 1 · Aktueller Stand
 
-* **Aktueller Roadmap-Stand25.09.: siehe §6.** Production59fe1895 READY,504/0. 30er Quellenkorrekturen verifiziert; frische Vollversorgung fuer500 nicht bestanden. Kein500er Start.
+* **Aktueller Roadmap-Stand25.09.: siehe §6.** Production38d29062 READY,500/0. 30er Quellenkorrekturen verifiziert; frische Vollversorgung fuer500 nicht bestanden. Kein500er Start.
 
 * **Production-Belege dieses Sprints:** PR #549 (Trennung von Lage/Radar/Briefing) gemergt als `00ed4c27b7703849d57ca9f357dcf15a40f5f311`, Vercel `dpl_6iDLuovtgpFL7DSZX1M2djMYugdQ` READY, PR-CI `36031516394` SUCCESS. Auftragsbezogene Reparaturen: [PR #550](https://github.com/ernisch/helmut-pilot/pull/550) (Appstart ohne Hintergrundmodelle, begrenzte Quellenabrufe) und [PR #551](https://github.com/ernisch/helmut-pilot/pull/551) (500er Fachleser an neue Testfenster gebunden); ihre finalen Merge-/Ausrollbelege stehen direkt im jeweiligen PR. Vierer-Migration angewendet; Zweierlauf `36029408684` nach einem Parteienfehler gestoppt: 1 Aufruf, 0,005804 USD, Koçak nicht begonnen. [Vierer-Bilanz](betrieb/verstehen-vier-nacharbeit-20260924.md). **Noch keine belastbare 500er Startbereitschaft**, siehe [Starttor](betrieb/500-starttor-20260924.md).
 * **Fuenfter (freigegebener) scharfer 169er Lauf — erstmals ALLE 122 Cluster verarbeitet, fachlich nicht bestanden.** Workflow-Run `35987448290`, `run_attempt = 1`, `failure`, 24.09.2026 10:28:42–10:54:17 UTC, Runtime-Commit = Dispatch = Checkout `2d412d0418f5d6170f2c34ff69dbd846c4e0c703`, Dokument-Snapshot `ea84f26c…`. Die Bindung hielt; der Schutzvertrag passierte mit **81 Modellkandidaten** (≤ 113) — **PR #541 wirkte belegbar** (der vierte Lauf war noch mit 114 Kandidaten gescheitert). `abbruchGrund = null`, `vollstaendigVerarbeitet = true`, `fachlichBestanden = false`; Bilanz `saved 63`, `updated 14`, `duplicate 34`, `merged 7`, `skipped-invalid 4` (`unbekannt 4`); **81 Modellaufrufe**, `quellenabrufe 0`, `profilwrites 0`, `kommunikation 0`; Laufkosten **0,522795 USD** von 0,80 USD; Quittung `verstehen169-20260924-c` terminal **`unbekannt`** (verbraucht). **Vier lokale `unknown`** (Klasse A, kein globaler Abbruch): `vg-gemeinsame-20260921-dcd0f5`, `vg-linkenpolitiker-20260921-37cdeb` und `vg-arbeitsplätze-20260715-6cc672` (Aktualisierung) mit `quellenbeleg-parteien`, sowie `vg-verzögerung-20230613-95c80f` mit `validierung-fehlgeschlagen` und leerer Fehlerliste. CAS danach je `zustand=unbekannt` (Betreiberbeleg). **In diesem 169er Lauf keine erneute Freigabe; die spaetere isolierte Nacharbeit steht oben.** [Beleg](betrieb/verstehen-einmalig-169-20260922.md) §24.
 * **PR #542 ist gemergt und ausgerollt; kein neuer fachlicher Erfolg der vier Faelle belegt.** (a) Ein unbelegter struktureller `parteien`-Wert sperrt die **gesamte** Antwort weiterhin fail closed (`quellenbeleg-parteien`, nichts wird gespeichert); eine Reduktion von `parteien` wurde geprueft und **verworfen**, weil eine umschreibende Prosa semantisch von der entfernten unbelegten Parteibeteiligung abhaengen kann, **ohne** den Namen zu nennen, und dafuer keine belastbare Belegstruktur je Aussage existiert. `mentioned_parties` und die Ministeriumslisten werden unveraendert weiter reduziert; `mentioned_parties` wird **nie** zu `parteien` befoerdert. `ausschuesse`, der strenge Validator und der GOLDSET-Auswerter bleiben unveraendert streng. (b) Rein schemabedingte Ablehnungen liefern jetzt einen **wertfreien** Fehlercode (`schema-<art>:<feld>`, `dsgvo-<art>`); der Schema-/DSGVO-Bereich ist zusaetzlich vollstaendig vermessen — real entstehen nur zwei Klassen (Pflichtprosa leer, DSGVO), und fuer beide ist **fail closed bewusst korrekt** (weder Erfinden noch Kuerzen zulaessig). Grenzen unveraendert (113 / 0,80 USD / 35 min / 4 USD Tagesriegel). Gezielt getestet: `parteien-quellenbindung-test` 31/31, `understanding-akteursbeleg-test` 21/21, `ministerien-quellenbindung-test` 22/22, `verstehen-einmalig-test` 117/117, `understanding-schema-diagnose-test` 51/51. [Beleg](betrieb/verstehen-einmalig-169-20260922.md) §25.
 * **Diagnose- und Ergebniswahrheit repariert und gemergt (PR522).** Der Motor traegt bei `skipped-invalid` jetzt die Fehlerklasse (`reason`) und die echte Clustergroesse (`documents`); der Runner uebernimmt hoechstens fuenf **sichere** Fehlercodes als `validierungsfehler` (auch in die Einmalquittung). Der historische konkrete Validierungsfehler bleibt **nicht rekonstruierbar**. Kein Retry, keine Quittungsaenderung.
 * **Sicherer 169er Neuversuchsvertrag auf Production main (PR524 gemergt).** Die Quittungskennung ist jetzt ein ausdruecklicher, streng gepruefter Parameter (`HELMUT_VERSTEHEN_169_QUITTUNG` bzw. Workflow-Input `quittungsschluessel`): ohne Kennung gilt weiterhin der alte Auftrag — die alte Quittung `verstehen169-20260922-a` bleibt **verbraucht und unveraendert**, die ausdrueckliche Wiederverwendung der alten Kennung und Fremdformate stoppen fail closed, ein einstelliger Suffix ist zulaessig. Alle Grenzen unveraendert (169/122/113/0,80 USD/35 min/4 USD), keine automatische Wiederholung. **Zwischenzeitlich wurden `verstehen169-20260924-a` und `verstehen169-20260924-b` vergeben und verbraucht.** Der damalige Problemvorgang `vg-abschaffung-20260911-7420f6` ist NICHT mehr gesperrt: Production-Beleg `zustand=fertig`, `versuche=4`, `ki_aufrufe=4`, `fencing=4`, `ergebnis_fencing=4`, `besitzer/lease = null`, `letzter_grund = null`, Knowledge Object vorhanden — **nicht erneut freigeben** (§4.3). Test `verstehen-169-neuversuch-test.js` (19/19, offline, 0 Modellaufrufe, 0 Writes). **Der PR524-Sprint selbst startete keinen Lauf; die spaeteren scharfen Laeufe stehen oben (§1).** [Beleg](betrieb/verstehen-einmalig-169-20260922.md) §17.
-* **Profile:** belegt **504 Mandatsprofile, 0 aktiv**. Ziel: exakt **500 funktional gleich behandelte Zielprofile**. Fuenf reale bleiben nur technisch geschuetzt; vier zusaetzliche Nichtzielprofile vor dem Start eindeutig identifizieren und erst danach entfernen.
+* **Profile25.09.12:42UTC:** exakt500 Mandatsprofile/0 aktiv,501 Identitaeten; vier Nichtzielprofile gesichert entfernt. Alle500 aktivierungsreif; noch kein Funktionsnachweis. Belege siehe §6.
 * **Vierer-Migration Production-verifiziert:** `20260924140548_verstehen_vier_start.sql` angewendet, Supabase-Version `20260924161115`. Nachkontrolle 24.09.2026, 16:11:46 UTC: Funktionskoerper exakt, SECURITY INVOKER, service_role darf ausfuehren, PUBLIC/anon/authenticated nicht. 504 Profile, 0 aktiv; Fingerabdruecke aller Profilzeilen und der vier CAS-Zeilen vor/nachher identisch; keine Jobs, Leases, Locks oder neue Vierer-Quittung. Kein Modellaufruf. [Beleg](betrieb/verstehen-vier-nacharbeit-20260924.md).
 * **Kosten:** atomarer technischer Tagesriegel bleibt **4 USD je UTC Tag**. Alte 10 USD Betreiberfreigaben erhoehen diesen technischen Riegel nicht. Keine neue Kostenfreigabe durch diesen Sprint.
 * **Offline-Pflichtlauf auf eine explizite Kernmenge reduziert (Testorganisation, kein Produktcode).** Der kanonische Standardlauf `node scripts/lokal.js -- node scripts/run-offline-tests.js` und das Pflicht-CI-Gate fuehren nur noch die **explizite Standardmenge** aus **93** Suiten aus (zuvor 453) — aktuelle Schutz-/Sicherheitsvertraege, aktuelle 500er-Schutzlogik und die grundlegenden Vertraege des heutigen Production-Pfads. Die vollstaendige Regression bleibt ueber `node scripts/run-offline-tests.js --extended` bzw. `npm run test:offline:extended` bewusst ausfuehrbar (**457** Suiten, davon **364** nicht mehr Pflicht). Keine Suite wurde geloescht oder fachlich geaendert. Eine neue Testdatei wird **nicht** mehr automatisch Pflicht: sie muss bewusst in `STANDARD` eingetragen werden (dauerhafte Regel neu in `CLAUDE.md` §6). Vertrag testgesichert durch `scripts/offline-suite-auswahl-test.js`. Kanonische Begruendung: Kopfkommentar `scripts/run-offline-tests.js`.
@@ -54,7 +54,7 @@ Der historische Abschlusslauf vom 15. und 16.09. hat den Gesamtnachweis **nicht*
 ## 3 · Verbindliche Production Grenzen
 
 * **Nur ein schreibender Ausfuehrer** im selben Production oder Testbereich. Fremde Arbeit erhalten. Bei unklarer Parallelitaet nicht schreiben.
-* **Alle 504 Profile bleiben inaktiv**, bis eine konkret benannte Aktivierung fuer exakt 500 Testprofile ausdruecklich freigegeben wird.
+* **Alle500 Zielprofile bleiben inaktiv**, bis fachliche Versorgung, Kosten-/Zeitplan, Endwaechter und frischer Startplan fuer den autorisierten Nachweis belegt sind.
 * **Standardregel ausserhalb des aktuellen Auftrags (§6):** Merge braucht ein konkretes GO fuer genau diesen PR; die zwischenzeitliche Dauerfreigabe aus PR #544 ist widerrufen. Push und PR bleiben erlaubt. Migrationen, Production Daten-/Profil-/CAS-Aenderungen, Cron-/Environment-/Azure-/Budgetaenderungen, externe oder kostenpflichtige Modelllaeufe und externe Nachrichten bleiben konkret freigabepflichtig.
 * `HELMUT_SOURCE_MODE=on`, `HELMUT_VERSTEHEN_CAS=on`, `HELMUT_SCALABLE_PIPELINE=on` im Modus `shadow`. `HELMUT_TENANT_LLM_CAP` bleibt aus und darf fuer den 500er Test nicht eingeschaltet werden. Kommunikations und Testkohortenriegel bleiben wirksam.
 * Relationaler Profilpfad und Exklusivmodus sind Production belegt. Vor einem neuen 500er Fenster Daten und Ausfuehrungskontext frisch abgleichen.
@@ -88,33 +88,32 @@ Vollstaendige historische Betriebswerte zu Crons, Flags, Migrationen, Quellenpak
 
 ## 6 · Naechster Schritt
 
-**Roadmap25.09. fortgesetzt; umfassendes Betreiber-GO einschliesslich
-Entscheidungsdelegation erteilt.** Tagesriegel4USD und Profilschutz bestehen.
-Production59fe1895 READY, PR568 nach Pflicht-CI36130747305 SUCCESS gemergt.
-[61er Profilumstellung](betrieb/500-bundestagskohorte-20260925.md) ausgefuehrt
-und11:53:56UTC vollstaendig verifiziert:61/61 Zeilen exakt,443 andere und505
-Identitaeten unveraendert;495 synthetische Bundestagsprofile,504/0.
-[Profilreife](betrieb/500-profilreife-20260925.json):500/500 zulaessig nach
-Entfernung zweier Rollenplatzhalter aus einem realen Themenfeld;503 andere gleich.
+**Roadmap25.09. fortgesetzt; umfassendes Betreiber-GO samt Entscheidungsdelegation.**
+Tagesriegel4USD und Profilschutz bestehen. Production38d29062 READY.
+[Profilreife](betrieb/500-profilreife-20260925.json):500/500 zulaessig,0 fehlende
+Pflichtpakete nach61er Bundestagsumstellung und Entfernung zweier Rollenplatzhalter.
+[Endfunktion fuer exakt500](betrieb/testfenster-exakt500-20260925.md) installiert
+und funktions-/rechtegenau nachgelesen, Migration20260925115437.
 
-[Endfunktion fuer exakt500](betrieb/testfenster-exakt500-20260925.md) installiert:
-Migration20260925115437;11:54:54UTC Funktionskoerper/Rechte exakt.
-SELECT11:55UTC:504/0; Migration ohne Datenwirkung,
-0 Jobs/Locks/Leases,0 offene Kosten; Tagesstand0,304227USD.
-Noch keine Bereinigung, Aktivierung oder500er Ausfuehrung.
+[Bestandsbereinigung](betrieb/500-bestandsbereinigung-20260925.md)12:41:36UTC
+atomar abgeschlossen. Genau500/0,501 Identitaeten,498 Konten. Vier Nichtzielprofile
+samt642 Zeilen gesichert entfernt. Alle17 uebrigen Tabellenbestaende unveraendert;
+Kosten-/Auditgeschichte erhalten.10/10 isolierte Pruefgruppen samt Rueckweg.
+Zwei vorherige Versuche vor Writes gestoppt (15s Grossdatenhash,UUID-Typ);
+Grundlinien jeweils unveraendert bestaetigt. Version2-Bestandsvertrag bestanden.
+SELECT12:42:01UTC:0 Jobs/Locks/Leases,0 offene Kosten,0,304227USD verbraucht.
+Keine Aktivierung, kein zeitgebundener Startplan und kein500er Funktionsnachweis.
 
-[Quellenkorrekturen](betrieb/frische30-rest-nachweis-20260925.md) verifiziert:
-30 Quellen an27 complete-Vorgaengen, drei alte Fehler gesperrt; keine fachliche
-Gesamtabnahme. Lokale Zuordnung mit27 frischen Vorgaengen:0/500 Score>=40.
-Production-Eingabeaufnahme36129043227:59 Items, gesperrte Altfehler fehlen,
+**Naechste offene Fachphase: frische Vollversorgung und Bereichsabnahme.**
+30 korrigierte Quellen an27 complete-Vorgaengen; frische Zuordnung weiter0/500
+Score>=40. Drei alte Fehler gesperrt. B055-Aufnahme36129043227:59 Items,
 Briefing leer; kein positiver sichtbarer Drei-Bereiche-Nachweis.
-Bereichsabnahme, frische Vollversorgung und Kosten/-zeit offen.
-
-Naechster Schritt: vier Nichtzielprofile atomar gesichert bereinigen und
-frische fachliche Versorgung schliessen; Endwaechter und abschliessenden Startplan
-vor Aktivierung belegen. Vor jedem Production-Schritt begrenzter Plan,
-Grundlinie, Ruhestand, Rueckweg und Nachlesung. Abnahmekriterien unveraendert.
-36er Abnahme und verbrauchte Laeufe nicht wiederholen.
+Ergaenzende reine14-Tage-Ausschussprojektion:97 Vorgaenge versorgen439/500
+ueber Score40;61 ohne Treffer in drei Ausschusspaaren. Das ist weder frische
+Vollversorgung noch fachliche Textabnahme. Keine Schwellenabsenkung.
+Versorgung, sichtbare Fachabnahme, Kosten/-zeit, lebender Endwaechter und finaler
+Startplan bleiben vor Aktivierung notwendig.36er Abnahme und verbrauchte
+Verstehenslaeufe nicht wiederholen.
 
 ## 7 · Kanonische Belege
 
