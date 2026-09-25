@@ -42,6 +42,7 @@ jobs:
       HELMUT_LLM_BUDGET_FAIL_CLOSED: "1"
       HELMUT_VERSTEHEN_CAS: "on"
       HELMUT_UNDERSTANDING_LOCK: "on"
+      HELMUT_ATOMIC_LOCK: "on"
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:

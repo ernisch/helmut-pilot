@@ -58,7 +58,8 @@ async function main(args = process.argv.slice(2), env = process.env) {
   if (execute) {
     const ai = require("../lib/helmut/ai");
     fordere(ai.isAiEnabled() && ai.aiProviderName() === "azure" && ai.understandingModelName() === "gpt-5-mini"
-      && budget.aktiv(env) && env.HELMUT_VERSTEHEN_CAS === "on" && env.HELMUT_UNDERSTANDING_LOCK === "on", "umgebung-abweichend");
+      && budget.aktiv(env) && env.HELMUT_VERSTEHEN_CAS === "on" && env.HELMUT_UNDERSTANDING_LOCK === "on"
+      && env.HELMUT_ATOMIC_LOCK === "on", "umgebung-abweichend");
   }
   const liste = JSON.parse(fs.readFileSync(path.join(__dirname, "../belege/verstehen-frische30-ids.json"), "utf8"));
   fordere(liste.idHash === F.FRISCHE30.idHash && V.idsHash(liste.ids) === F.FRISCHE30.idHash, "ids-abweichend");
