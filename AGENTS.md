@@ -165,6 +165,19 @@ gilt dieser Start zugleich als Merge Freigabe für alle Pull Requests, die aussc
 zu diesem Sprint gehören. Voraussetzung: aktueller PR Kopf geprüft, Pflicht CI grün,
 main und Parallelität geprüft und keine Schutzregel abgeschwächt.
 
+Diese Merge Freigabe gilt dauerhaft für klar beauftragte Sprints und Aufgaben.
+Astra führt die zugehörigen Pull Requests nach erfolgreicher eigener Prüfung und
+grüner Pflicht CI selbstständig bis einschließlich Merge, regulärem Deployment
+und rein lesender Nachkontrolle weiter. Ein zusätzliches GO je PR ist nicht nötig.
+Ältere allgemeine Forderungen nach einem separaten Merge GO oder ein früherer
+Widerruf der Dauerfreigabe in anderen Dokumenten sind damit überholt; für die
+Merge Freigabe gilt diese `AGENTS.md`.
+
+Eine spätere ausdrückliche Einschränkung des Nutzers für einen konkreten Auftrag
+oder PR hat Vorrang. Die Dauerfreigabe erweitert keinen Auftrag auf fremde oder
+unabhängige PRs. Die unten genannten geschützten Production Aktionen und ihre
+Freigabegrenzen bleiben unverändert; grüne Tests ersetzen diese Freigaben nicht.
+
 Codex arbeitet innerhalb dieses Sprints autonom weiter, bis Ziel und Abnahmekriterien
 erfüllt sind oder eine unten ausdrücklich geschützte Aktion erreicht wird.
 
