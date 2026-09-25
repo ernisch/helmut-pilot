@@ -409,7 +409,9 @@ const PROFIL_BUND_SOZIALES = Object.freeze({
 });
 // Landesvorgang mit Landesausschuss (der gemessene 27A-2-Fall). `zeitdruck` und
 // `source_document_count` sind bewusst so gesetzt, dass die Entscheidung dieselben
-// Zahlen ergibt wie der real gemessene Production-Fall (Score 49 -> 15, §51.7).
+// Eingaben erhaelt wie der historische Production-Fall (Score 49 -> 15, §51.7).
+// Seit dem Zeitdruckfix ist der freie Text kein positives Schema-Signal mehr:
+// heute 41 -> 7; der fremde Ausschuss traegt weiterhin exakt34 Punkte.
 const KO_LAND_GESUNDHEIT = ko("land-gesundheit", {
   headline: "Kliniken im Land melden Millionendefizite",
   decision_level: "land", affected_geographies: [geo("Rheinland-Pfalz", "geo-land-rheinland-pfalz")],
@@ -852,7 +854,7 @@ check("I4 (Pflicht 11) die sichtbare Erklaerung fuehrt keinen Ausschussbeleg (un
     return e === null || (!e.belege.some((b) => b.art === "ausschuss") && !/Ausschuss/.test(e.satz));
   })(),
   JSON.stringify(erklaerung.erklaerungAusErgebnis({ signale: signaleBundFremd, matched_features: featsBundFremd })));
-check("I5 (Pflicht 12/13) kein Entscheidungsgewicht: Score 49 -> 15 (Delta genau 34), Stufe wechselt — wie im Realfall gemessen",
+check("I5 (Pflicht 12/13) kein fremdes Entscheidungsgewicht: aktuell41 -> 7, Delta34 und Stufenwechsel",
   (() => {
     const regelfrei = m.matchedFeatures(
       { ...m.profileFeatures(PROFIL_BUND_GESUNDHEIT), zustaendigkeit: null },
@@ -861,11 +863,14 @@ check("I5 (Pflicht 12/13) kein Entscheidungsgewicht: Score 49 -> 15 (Delta genau
     const mit = decisions.scoreKnowledgeObject(KO_LAND_GESUNDHEIT, { similarity: SIM_LAND_GESUNDHEIT, matched_features: regelfrei });
     const ohne = decisions.scoreKnowledgeObject(KO_LAND_GESUNDHEIT, { similarity: SIM_LAND_GESUNDHEIT, matched_features: featsBundFremd });
     return regelfrei.some((f) => f.type === "ausschuss")
-      && mit === 49 && ohne === 15 && mit - ohne === 34
+      && mit === 41 && ohne === 7 && mit - ohne === 34
       && decisions.decisionFromScore(mit) === "Beobachten"
       && decisions.decisionFromScore(ohne) === "Ignorieren";
   })(),
   JSON.stringify([decisions.scoreKnowledgeObject(KO_LAND_GESUNDHEIT, { similarity: SIM_LAND_GESUNDHEIT, matched_features: featsBundFremd })]));
+check("I5b positive Schema-Dringlichkeit bleibt getrennt vom ausgeschlossenen Ausschuss gewichtet",
+  decisions.scoreKnowledgeObject({ ...KO_LAND_GESUNDHEIT, zeitdruck: "hoch" },
+    { similarity: SIM_LAND_GESUNDHEIT, matched_features: featsBundFremd }) === 15);
 check("I6 (Pflicht 14) M8 (aktiv) laesst die Zeile nicht mehr durch — allein der fremde Ausschuss trug sie",
   (() => {
     const g = relevanz.wendeRelevanzGateAn([{ id: "i6", matched_features: featsBundFremd }], { aktiv: true });
