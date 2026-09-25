@@ -130,9 +130,10 @@ SQL17:19:07UTC:500/0 und Schutzhashes gleich,0 Jobs/Locks/Leases/offene
 Kosten,0,312021USD von4USD. Keine Vollversorgung oder500er Abnahme.
 Drei Bereiche lokal vollstaendig verglichen, Rollen getrennt;12 Lagekarten,
 0 gespeicherte Lageabsaetze. Keine direkte Production-Antwort-/Faktenabnahme.
-Die automatische Freigabepruefung blockiert die neue verschluesselte
-Profilaufnahme im oeffentlichen GitHub-Protokoll; konkrete Rueckfrage offen.
-Radar-Datumskorrektur nach lokal belegter Scheinuhrzeit vorbereitet.
+Explizit freigegebene RSA-Aufnahme36175850274 am25.09.18:49:31UTC erfolgreich,
+Commitc6a55e36 READY: lokal entschluesselt und hashgeprueft, alle3 Bereiche
+vorhanden;12 Lagekarten/0 Absaetze. Cem inaktiv,0 Modelle, reiner GET-Pfad.
+Kein gespeichertes Gesamtpaket oder Fachurteil. [Beleg](betrieb/roadmap-nachpruefung-20260925.md#freigegebene-einmalaufnahme-am-25092026).
 Versorgung, sichtbare Fachabnahme, Kosten/-zeit, lebender Endwaechter und finaler
 Startplan bleiben vor Aktivierung notwendig.36er Abnahme und verbrauchte
 Verstehenslaeufe nicht wiederholen.

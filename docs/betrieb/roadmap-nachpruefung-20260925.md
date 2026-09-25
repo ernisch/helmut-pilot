@@ -95,3 +95,42 @@ Der ganze Radar zeigt Titel und Original-Link weiterhin und behauptet keine
 PRs werden aus GitHub/Vercel gelesen; kein rekursiver Dokumentations-PR.
 Die oben gebundene lokale semantische Aufnahme bleibt der Stand VOR diesem
 Rendererfix und wird nicht nachtraeglich mit neuen Texten ueberschrieben.
+
+
+## Freigegebene Einmalaufnahme am 25.09.2026
+
+Der Betreiber erteilte nach der konkreten Rueckfrage ausdruecklich sein JA
+zur einmaligen RSA-verschluesselten Aufnahme von Profil und drei Bereichen
+im oeffentlichen Actionsprotokoll. Die bisherige Freigabesituation oben ist
+historisch; die Uebertragung wurde genau einmal gestartet.
+
+[Run36175850274](https://github.com/ernisch/helmut-pilot/actions/runs/36175850274),
+Job108206143797, run_attempt1, SUCCESS. Commit
+`c6a55e36d2117014664eb6a0dd9946d26e9dcb01`; vorab Vercel Production
+`dpl_9qDFJpb6vZwk25u5y594Uzee6VNr` READY am Hauptalias bestaetigt.
+Aufnahmezeit25.09.2026 18:49:31.829UTC. Kein erneuter Dispatch.
+
+Neuer RSA3072-Schluessel nur lokal, privater Schluessel mit Dateirecht0600
+in Verzeichnis0700 ausserhalb des Repositorys. Nur oeffentlicher Schluessel
+uebertragen. AES256GCM-Inhalt mit RSA-OAEP-SHA256 verpackt. Umschlag gegen
+Laufkennung, Workflowcommit, Productioncommit und Empfaenger authentifiziert;
+Originalantwort und Payload lokal identisch. SHA256 der Originalantwort:
+`e14a52c88e4d8d2baa126f7b83b04965f1ac186dac978b4f07c27e217fcaa049`.
+Runtimekonfiguration vorher/nachher gleich; Profil vor/nach dem Builder
+hashgleich und inaktiv. Aufnahme meldet0 Modellaufrufe. Ausgefuehrter Pfad
+verwendet ausschliesslich GET; Lage cacheOnly vor Modell/Lock-Pfad.
+Keine Production-Datenmutation durch diesen Auftrag. Keine allgemeine neue
+Datenbankinventur oder Aussage ueber parallele regulaere Crons.
+
+Alle3 Bereichsdaten vorhanden. Mit unveraendertem Renderer desselben Commits
+lokal netzlos dargestellt, einschliesslich Details und erweiterter Radarsegmente:
+783 Briefing-,15109 Lage-,802 Radarzeichen.12 Lagekarten,0 gespeicherte
+Lageabsaetze. Der private Beleg liegt ausserhalb des Repositorys im lokalen
+Aufgabenverzeichnis `rsa-aufnahme` (Aufgabe01a0d9e4-7ba4-77d1-abbc-2a123c35f734).
+Keine privaten Texte oder Schluessel in diesem Dokument.
+
+Die Aufnahme und Transportkontrolle sind erfolgreich abgeschlossen.
+Kein transaktionaler Snapshot, kein gespeichertes Gesamtpaket, keine neue
+semantische/Fakten-/Browserabnahme und kein500er Nachweis. Naechster fachlicher
+Schritt ist die Inhaltsabnahme der jetzt direkt aus Production gelesenen
+Bereiche. Keine weiteren Modelle, Datenwrites oder Profilaktivierungen erfolgt.
