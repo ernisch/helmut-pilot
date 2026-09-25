@@ -8,7 +8,7 @@ Helmut ist ein politischer KI Stabschef.
 
 Oberste technische Priorität ist der belastbare Production Nachweis mit exakt 500 gleichzeitig aktiven Profilen.
 
-Fünf reale Profile sind jederzeit besonders zu schützen. Alle übrigen Testprofile sind synthetisch.
+Für Produktlogik und 500er Test werden exakt 500 Zielprofile funktional gleich behandelt. Fünf davon sind reale Bestandsprofile und bleiben technisch besonders vor versehentlichem Löschen oder Beschädigen geschützt; diese Schutzmarkierung darf keine andere Produktlogik, Priorisierung oder Ergebnisbehandlung erzeugen.
 
 Zuverlässigkeit, Quellenqualität, Einfachheit, Sicherheit und Verkaufsfähigkeit haben Vorrang vor neuen Funktionen.
 
@@ -307,7 +307,7 @@ Unbrauchbare Ergebnisse müssen vollständig ausgewiesen werden.
 
 Stichproben niemals als vollständige Prüfung darstellen.
 
-Die fünf realen Profile dürfen durch synthetische Tests nicht beschädigt werden.
+Die fünf realen Zielprofile dürfen durch Testbetrieb nicht beschädigt werden, werden fachlich und funktional aber wie alle anderen Zielprofile behandelt.
 
 ## Dokumentation
 
