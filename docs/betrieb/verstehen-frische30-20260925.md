@@ -1,8 +1,8 @@
-# Neuer30er Verstehensauftrag — vorbereitet25.09.2026
+# 30er Verstehensauftrag — ausgefuehrt25.09.2026
 
-**Noch nicht ausgefuehrt.** Betreiber-GO fuer genau diesen begrenzten30er
-Verstehenslauf erteilt25.09.2026, bedingt auf gruene Pflicht-CI, Production-Rollout
-und erfolgreichen Nurlese-Startplan. Merge/Deployment sind dauerhaft freigegeben.
+**Technisch abgeschlossen, fachlich nicht bestanden.** Betreiber-GO fuer genau
+diesen begrenzten Lauf war erteilt; CI, Rollout und Nurleseplan waren vor dem
+Start erfolgreich. Die Einmalquittung ist verbraucht; kein automatischer Retry.
 
 ## Gegenstand und Grenzen
 
@@ -53,4 +53,81 @@ Quittung oder unbelegtes Aufloesen einer Kostenreserve.
 
 Lokal6/6 Bedien-/Bindungs-/Ruhe-Fallgruppen,117/117 bestehende Motorpruefungen,
 29/29 Kosten-/Lesefehlerpruefungen. Reale30er Inhaltsbindung und6 negative
-Inhalts-/Altersfaelle bestanden. Pflicht-CI und Production-Planlauf noch offen.
+Inhalts-/Altersfaelle bestanden. Pflicht-CI36121292187 erfolgreich; Production75e039d4 READY
+(dpl_HRGwCeZkqR5Ke6L16sATC7eHUEwF). Nurleseplan36122379403 erfolgreich.
+
+## Production-Abschluss und Qualitaetsbefund
+
+Scharfer Workflow [36122523412](https://github.com/ernisch/helmut-pilot/actions/runs/36122523412),
+25.09.2026 10:10:47–10:18:14UTC, erster Versuch am gebundenen Commit75e039d4:
+26 Modellaufrufe,24 gespeichert+2 aktualisiert,0 technisch unbekannt,
+0,172350USD,0 offene Reservierungen. SELECT10:21:45: alle30 Dokumente
+verknuepft,26 KOs technisch complete. Das ist **keine semantische Abnahme**.
+SELECT10:22:23:504 Mandate/0 aktiv, Profilhashc32b7d4f76b4ad70ace0cac91c3e94c3,
+Identitaetenhash3c5b0b5a6314f31c395b8758b166c5c3 und Mainhash
+5ee6c52fa40a96a92bfa854a126fe42a unveraendert;0 Jobs/Locks. Keine lebenden
+CAS-Leases bei Nachlesung. Tageskosten0,207358USD,0 offen, Limit4USD.
+
+Alle26 Felderpaare was_ist_passiert/warum_wichtig wurden mit den verknuepften
+Titeln und RSS-Auszügen gelesen; keine Vollabnahme aller KO-Felder oder Vollartikel.
+Drei eindeutige Fehler:
+
+* vg-bundestag-20260925-e16c1c vermischt Fruehstartrente und Tankrabatt.
+  Reproduziert: Bundestag+Bundesregierung tragen allein die Zuordnung.
+* vg-präsident-20260914-46cb50 nimmt den neuen Trump-Xi-Besuch in einen
+  gemischten Altvorgang auf. Reproduziert: Trump/Trumps ist nur eine schwache
+  Beweisfamilie, wurde bei kleinem Bestandskern trotzdem akzeptiert.
+* vg-schulstreik-20260915-3ea9d5 macht aus 'Heute wollen Schueler …'
+  stattgefundenen Protest; alte und neue Meldung werden zeitlich vermengt.
+
+Die ausdruecklich freigegebene Fehler-Sperrung wurde nur fuer diese drei KOs
+transaktional ausgefuehrt: status=pending, understanding_status=failed-final.
+SELECT10:27:15 bestaetigt alle3. Kein Text/Quellenlink wurde geaendert,
+keine Quittung/CAS-Freigabe, kein weiterer Modellaufruf. Privater Vorherbeleg
+`/private/tmp/helmut-frische30-sperrung-vorher.json`, exaktes SQL
+`/private/tmp/helmut-frische30-sperren.sql`; alle drei Zeilenhashes vor dem
+Schreiben geprueft,15s SQL-/2s Lock-Grenze,504/0 und Betriebsruhe verlangt.
+Inhaltshashes nachher: Bundestag6ea050f77f0313ce9dd6537a24483b3d,
+Praesident213257b08ad493b576dd58d6421548e8,
+Schulstreikeaa9f2f50512c7334e4237c7fdec807b.
+Rueckweg nur nach fachlicher Korrektur und gebundenem Datenplan; die alten
+fehlerhaften Texte nicht wieder aktivieren.
+
+Weitere offene Pruefpunkte: Ereignisphase MPK-Vorsitz, unbelegte Ursache der
+Bundespolizeigesetz-Wiederholung und 'staatlich entwickelt' bei Singapurs KI.
+Diese sind nicht als bestanden bewertet. 23 verbleibende complete-Zustaende
+sind ebenfalls kein positiver Qualitaetsnachweis.
+
+## Reparatur auf Branch codex/verstehen-ereignisbindung-20260925
+
+Institution allein ersetzt keinen gemeinsamen Titel-Sachanker. Bei nur einer
+schwachen Kernfamilie muss jedes neue Dokument die regulaere Ereignispruefung
+gegen einen Originalbeleg bestehen. Echte Tankrabatt-/Staatsbesuch- und
+Rentenpaket-Fortschreibungen bleiben erhalten. Der vorhandene Quellenzeit-Prompt bleibt unveraendert; seine Regeln allein
+haben den Zeitfehler nicht verhindert. Kein neuer Modellbeweis.
+Gezielt4/4 neue Fallgruppen, Identitaet67/67, Resolver54/54, Beweisfamilien108/108,
+Quellenzeit9/9. Keine Absenkung alter Schutztests. Pflicht-CI vor Merge erforderlich.
+
+Reine Production-Eingabeaufnahme [36123683077](https://github.com/ernisch/helmut-pilot/actions/runs/36123683077)
+am Commitf80334d7 erfolgreich10:23:21:0 Modelle, HTTP200, inaktives B-055.
+56 interne Items,407 Aussagen,941 Quellenverweise; alle acht homeSections leer.
+Dies ist eine Eingabeaufnahme, kein positiver sichtbarer Drei-Bereiche-Nachweis.
+Der fehlerhafte Schulstreik war vor seiner Sperrung noch in internen Items.
+
+### Ergaenzung nach breiterer Felderpruefung10:32UTC
+
+Acht weitere eindeutige Fehler wurden innerhalb desselben freigegebenen
+Fehler-Sperrumfangs terminal geparkt; alle acht SELECT10:32:09 bestaetigt.
+Damit11 gesperrt,15 noch complete; dies ist keine Abnahme der15.
+Die konkreten Fehler und der bereits separat freigegebene Korrekturplan stehen
+unter [Acht Quellenkorrekturen](frische30-acht-korrekturen-20260925.md).
+Private Vorherzeilen und Sperr-SQL: `/private/tmp/helmut-frische30-weitere-sperrung-vorher.json`
+und `/private/tmp/helmut-frische30-weitere-sperren.sql`.
+
+Erste CI36124183620: Ereignisregressionen gruen, zwei historische Prosa-Prompt-
+Bindungen korrekt rot. Ursache war der Zusatz im Understanding-Prompt (zunaechst ueber die geteilten
+Quellenzeitregeln). Auch dessen direkte Einfuegung aendert die eingefrorenen
+Prompts. Zusatz verworfen: die bestehende ausdrueckliche Regel gegen
+Ankuendigung-als-Vollzug bleibt unveraendert, eine weitere Promptwiederholung
+waere kein Qualitaetsbeweis. Beide Originalbindungen danach lesend identisch.
+Keine Aenderung alter Hashes und keine Wiederaufnahme der alten Versuche.
