@@ -12,6 +12,57 @@ Für Produktlogik und 500er Test werden exakt 500 Zielprofile funktional gleich 
 
 Zuverlässigkeit, Quellenqualität, Einfachheit, Sicherheit und Verkaufsfähigkeit haben Vorrang vor neuen Funktionen.
 
+## Modellrouting für lokale Agent-Arbeit
+
+Astra bleibt führender Orchestrator und verantwortet Aufgabenzuteilung, Prüfung
+und Abnahme der lokalen Helfer.
+
+DeepSeek Flash ist Standard für einfache und mittlere lokale Coding Aufgaben,
+Bugfixes, gezielte Tests, Dokumentation, Routinearbeit und einfache Refactorings.
+
+DeepSeek V4 Pro wird nur für schwierige lokale Implementierung, komplexes
+Debugging oder dann eingesetzt, wenn Flash die Aufgabe nach einem ernsthaften
+Versuch nicht lösen konnte.
+
+Astra behält Architektur, Production, Supabase Production, Vercel Production,
+Migrationen, Secrets, Sicherheitsfragen, Budgetfragen, Release Entscheidungen,
+kritische Abnahmen und den finalen 500er Production Nachweis.
+
+Die verfügbaren lokalen Helfer werden mit einem klar abgegrenzten Auftrag gestartet:
+
+```sh
+# Flash rein lesend
+$HOME/bin/helmut-deepseek flash-read "<Aufgabe>"
+
+# Flash schreibend
+$HOME/bin/helmut-deepseek flash-write "<Aufgabe>"
+
+# Pro rein lesend
+$HOME/bin/helmut-deepseek pro-read "<Aufgabe>"
+
+# Pro schreibend
+$HOME/bin/helmut-deepseek pro-write "<Aufgabe>"
+```
+
+Nur ein Agent darf gleichzeitig im selben Arbeitsbereich schreiben.
+Während DeepSeek schreibt, schreibt Astra dort nicht.
+
+Nach jeder DeepSeek Änderung übernimmt Astra wieder und prüft selbst
+`git status`, `git diff`, das Ergebnis und nur die fachlich notwendigen gezielten
+Tests. Bei reinen Regel- oder Dokumentationsänderungen keine unnötigen fachlichen
+Test Suiten starten.
+
+Scheitert ein DeepSeek Start technisch mit `Operation not permitted` oder einem
+vergleichbaren lokalen Startfehler, genau einmal erneut versuchen. Scheitert auch
+der zweite Start, übernimmt Astra selbst oder meldet den Blocker.
+
+DeepSeek darf niemals Production Aktionen, Production Datenänderungen,
+Migrationen, Umgebungsvariablenänderungen, Commit, Push, Merge, PR Erstellung
+oder absichtliche kostenpflichtige Production Modellläufe durchführen.
+
+Dieser Routingvertrag ergänzt die bestehenden Regeln. Er ersetzt oder schwächt
+keine Schutzregel und erteilt keine zusätzliche Freigabe für geschützte Aktionen.
+
 ## Grundregel
 
 Arbeite immer auf dem kürzesten sicheren Weg zum aktuellen Ziel.
@@ -113,6 +164,19 @@ Wenn der Nutzer einen klar abgegrenzten Sprint oder eine konkrete Aufgabe starte
 gilt dieser Start zugleich als Merge Freigabe für alle Pull Requests, die ausschließlich
 zu diesem Sprint gehören. Voraussetzung: aktueller PR Kopf geprüft, Pflicht CI grün,
 main und Parallelität geprüft und keine Schutzregel abgeschwächt.
+
+Diese Merge Freigabe gilt dauerhaft für klar beauftragte Sprints und Aufgaben.
+Astra führt die zugehörigen Pull Requests nach erfolgreicher eigener Prüfung und
+grüner Pflicht CI selbstständig bis einschließlich Merge, regulärem Deployment
+und rein lesender Nachkontrolle weiter. Ein zusätzliches GO je PR ist nicht nötig.
+Ältere allgemeine Forderungen nach einem separaten Merge GO oder ein früherer
+Widerruf der Dauerfreigabe in anderen Dokumenten sind damit überholt; für die
+Merge Freigabe gilt diese `AGENTS.md`.
+
+Eine spätere ausdrückliche Einschränkung des Nutzers für einen konkreten Auftrag
+oder PR hat Vorrang. Die Dauerfreigabe erweitert keinen Auftrag auf fremde oder
+unabhängige PRs. Die unten genannten geschützten Production Aktionen und ihre
+Freigabegrenzen bleiben unverändert; grüne Tests ersetzen diese Freigaben nicht.
 
 Codex arbeitet innerhalb dieses Sprints autonom weiter, bis Ziel und Abnahmekriterien
 erfüllt sind oder eine unten ausdrücklich geschützte Aktion erreicht wird.
