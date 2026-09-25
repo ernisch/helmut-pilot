@@ -292,3 +292,33 @@ interne Ausgaben und sind nicht fuer oeffentliche CI-Artefakte bestimmt.
 **Offen:** frische gemeinsame Ausgaben, positiver separater Bedeutungsnachweis,
 Einbindung in die vollstaendige500er Abnahme, Radar-Artikelbindung, Versorgung,
 Kosten- und Profilstarttor. Keine Aktivierung oder scharfer Nachweis gestartet.
+
+
+## Roadmap Schritt 2 — persönliche Artikelbindung (25.09.2026)
+
+Code bereit auf `codex/radar-artikelbindung-20260925`. Reproduzierter Fehler:
+Die KO-weite Personennennung bestimmte die Aufnahme in „Über dich“, während
+`pickPrimarySource` unabhängig davon einen neueren oder direkteren anderen
+Artikel auswählte. Dieser Artikel musste die Person selbst nicht nennen.
+
+Die sichtbare Anzeige verlangt jetzt den vollständigen Profilnamen in Titelrumpf
+oder Originalauszug **desselben** gültig datierten Artikels. Herausgebersuffix,
+KO-Felder, Teilnamen und ein Name über zwei getrennte Felder reichen nicht.
+Artikelbindung geschieht vor Deckel und Entdopplung, damit unbelegte Kandidaten
+keine echten Nennungen verdrängen. Titel, Medium, Datum und Adresse werden aus
+allerhöchstens einem belegten Artikel übernommen; kein KO-Titel/URL-Fallback.
+Nach der Auswahl wird die tatsächliche Artikelidentität nochmals entdoppelt.
+Die Rohzuordnungen bleiben Diagnose, werden nicht als sichtbare Treffer gezählt.
+
+Gezielt offline: `radar-artikelbindung-test.js`10/10 Fallgruppen,
+`radar-state-test.js`115/115, vorhandener Bereichsvertrag20/20 vor der zusätzlichen
+Absicherung von Anzeigeplätzen. Pflicht-CI prüft den endgültigen Kopf.
+Kein Modell, keine Profil- oder Datenänderung. Risiko: spärliche Originalauszüge
+können echte, aber hier nicht belegbare Erwähnungen auslassen; ein konservativer
+Leerzustand bleibt zulässig. Kein Nachweis über den vollständigen Originalartikel,
+wenn lediglich Titel/Auszug gespeichert sind.
+
+**Noch offen in Schritt2:** Partei-/Fraktionszuordnung und weitere Umfeldsignale
+am tatsächlichen Ursprung belegen; Production-Nachkontrolle nach Deployment.
+Die bestehende Partei-Normalisierung behandelt Fraktionsnamen bisher als
+Parteibegriff. Das ist keine bestandene getrennte Fraktionsabnahme.
