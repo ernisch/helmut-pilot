@@ -33,13 +33,13 @@ Vollstaendige Texte, Feldwerte, Vorherzustand und Originalbelege:
 `/private/tmp/helmut-bund7-redaktion-plan.json`.
 Eingabe-SHA256 `d00021f980b6fca689c86318234be29ae695d5e7b8cdcf669930c75a7132fc15`.
 Ausfuehrung `/private/tmp/helmut-bund7-redaktion-korrektur.sql`,
-SHA256 `9c6fddb5b772595c0d9dfbf144a44dccf15e5d33b3b7c07933213e54feae8bdd`.
+SHA256 `72cb471fa91f6d41be632a429884d3bf983341653bb88f16a7ec74c455af83d4`.
 Rueckweg `/private/tmp/helmut-bund7-redaktion-rueckweg.sql`,
 SHA256 `07547d4345ecd01f2a7efbb2665f1979d45aaab87969a1bbe2c7f7892f64b09b`.
 
 ## Ausfuehrung und Schutz
 
-Stand: vorbereitet, noch nicht ausgefuehrt. Betreiber-GO fuer notwendigen
+Stand: ausgefuehrt und vollstaendig nachgelesen. Betreiber-GO fuer notwendigen
 Roadmap-Umfang liegt vor. Ausfuehrung nach gruener Pflicht-CI und regulärem
 Production-Rollout des dokumentierten Plans. Eine Transaktion,15s je Anweisung,
 2s Locks; jede Vor-/Nachbedingungsabweichung rollt alles zurueck.
@@ -60,7 +60,7 @@ Keine automatische Wiederholung oder Reaktivierung ungesicherter Texte.
 
 ## Nachweise und Grenzen
 
-12/12 Gruppen bestanden. Gezielte isolierte PGlite-Pruefung mit echten Tabellenspalten und gesicherten
+13/13 Gruppen bestanden. Gezielte isolierte PGlite-Pruefung mit echten Tabellenspalten, echtem Fencing-Trigger und gesicherten
 Quelldaten; nur Profilhashes durch500 synthetische Laborzeilen ersetzt.
 Erfolgsfall, Wiederholungssperre, Rueckweg, aktives Profil, Quellendrift,
 Bestandsdrift, Fremdlink, belegte CAS-Kennung, laufender Prozess und ein
@@ -83,3 +83,26 @@ U+00AD; Originaltexte, Hashes, echte Bindestriche und fachliche Schwellen bleibe
 Gezielte Regression: echte drei Quellentexte, Quellenfilter, unveraenderte
 Originale, harte Wortgrenzen und Jahreskonflikt. Vor dem Datenplan muss diese
 Reparatur ebenfalls gruen ausgerollt sein. Kein Qualitaetsriegel wird abgesenkt.
+
+PR #576 ist nach beiden gruenen Pflichtjobs am Commit
+`5ec8ff8bc6bab2f0a15931bf0aa967677aea21d7` gemergt. Production-Alias READY
+am Mergecommit `6e7faef6541e94f6d7497b64f2a38655fdda388c`, Deployment
+`dpl_AVnKhnvpgZ4Q27UzeCH6aAbK69GD`.
+
+Der erste Datenversuch wurde atomar vom bestehenden Fencing-Trigger abgewiesen:
+Schon die unnoetige Nennung des unveraenderten `verstehen_fencing` im UPDATE
+ist gesperrt. Rein lesend15:55:41UTC: keine Quittung, alle3 alten Vollhashes
+gleich, keine5 neuen KOs. Korrigierte SQL laesst dieses Feld vollstaendig aus;
+Trigger, CAS und alle Nutztexte bleiben unveraendert. Die13. Laborgruppe
+reproduziert den alten Fehler mit dem aus Production gelesenen Trigger und
+belegt atomare Ruecknahme. Derselbe Trigger schuetzt alle13 Gruppen.
+
+## Production-Ergebnis
+
+Korrigierte Transaktion25.09.15:56:31.178254UTC abgeschlossen. SELECT
+15:56:52.272482UTC bestaetigt Quittung/Eingabehash, alle8 KO-Vollhashes,
+7 complete-Vorgaenge,10 feldgleiche Links und7 unveraenderte Rohquellen.
+Dublette pending/failed-final,0 Links. Kein dritter Versuch; Auftrag verbraucht.
+Schutzbestand15:57:32UTC:500/0, Profil-/Identitaets-/main-Hashes unveraendert,
+0 Jobs/Locks/Leases/offene Kosten, Tagesstand0,312021USD von4USD.
+Das belegt die Datenkorrektur; noch keinen500er Funktionsnachweis.

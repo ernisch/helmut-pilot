@@ -1,7 +1,15 @@
-name: "B055: Production Briefing nur lesen"
+name: "B055/Cem: Production Briefing nur lesen"
 on:
   workflow_dispatch:
     inputs:
+      mandat:
+        description: "Inaktives Profil fuer den begrenzten Lesebeleg (Cem nur Eingabe)"
+        required: true
+        default: "test-kohorte-b-055"
+        type: choice
+        options:
+          - test-kohorte-b-055
+          - cem-ince
       modus:
         description: "Eingabe lesen oder gespeicherte tatsaechliche Appausgabe nachweisen"
         required: true
@@ -35,8 +43,9 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: "22"
-      - name: Eine inaktive synthetische Briefingeingabe verschluesselt erfassen
+      - name: Eine inaktive Briefingeingabe verschluesselt erfassen
         env:
+          HELMUT_NACHWEIS_MANDAT: ${{ inputs.mandat }}
           HELMUT_CRON_SECRET: ${{ secrets.HELMUT_CRON_SECRET }}
           HELMUT_PRODUCTION_COMMIT: ${{ inputs.production_commit }}
           HELMUT_NACHWEIS_PUBLIC_KEY: ${{ inputs.public_key }}

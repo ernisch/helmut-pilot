@@ -33,6 +33,24 @@ const fetchFn = async (url, opts) => {
   const plain = T.decrypt(r.envelope, pair.privateKey.export({ format: "pem", type: "pkcs8" }),
     { purpose: "b055-eingabeaufnahme-v1", runId: env.GITHUB_RUN_ID, workflowCommit: commit, productionCommit: commit });
   A.deepEqual(plain.payload, payload); A.equal(plain.response.rawBody, JSON.stringify(payload));
+  const cemPayload = structuredClone(payload);
+  cemPayload.profile.id = "cem-ince"; cemPayload.result.eingabe.mandat = "cem-ince";
+  const cemFetch = async (url, opts) => {
+    A.equal(opts.method, "GET"); A.equal(opts.redirect, "error");
+    A.equal(opts.headers.Authorization, `Bearer ${env.HELMUT_CRON_SECRET}`);
+    if (url.endsWith("/testnachweis-status")) return { status: 200, json: async () => runtime };
+    A.equal(url, "https://helmut-pilot.vercel.app/api/cron/briefing-nachweis?mandat=cem-ince&tag=2026-09-15&modus=eingabe");
+    A.equal(opts.headers["x-helmut-production-commit"], commit);
+    return { status: 200, text: async () => JSON.stringify(cemPayload) };
+  };
+  const cem = await P.erfasse({ env: { ...env, HELMUT_NACHWEIS_MANDAT: "cem-ince" }, fetchFn: cemFetch, now: () => date });
+  const cemContext = { purpose: "cem-eingabeaufnahme-v1", runId: env.GITHUB_RUN_ID, workflowCommit: commit, productionCommit: commit };
+  const keyPem = pair.privateKey.export({ format: "pem", type: "pkcs8" });
+  A.equal(T.decrypt(cem.envelope, keyPem, cemContext).payload.profile.id, "cem-ince");
+  A(!JSON.stringify(cem).includes("Privater synthetischer Text"));
+  A.throws(() => T.decrypt(cem.envelope, keyPem, { ...cemContext, purpose: "b055-eingabeaufnahme-v1" }));
+  cemPayload.profile.id = "test-kohorte-b-055";
+  await A.rejects(P.erfasse({ env: { ...env, HELMUT_NACHWEIS_MANDAT: "cem-ince" }, fetchFn: cemFetch, now: () => date }));
   const app = { available: true, items: [{ title: "Gespeicherte Karte" }], currentHelmutState: {}, currentRadarState: {},
     lageBriefing: { paragraphs: [{ text: "Tatsaechliche gespeicherte Appausgabe" }] },
     gespeicherterNachweis: { id: "bf-test-kohorte-b-055-mandatsbriefing-2026-09-15",
@@ -58,12 +76,13 @@ const fetchFn = async (url, opts) => {
   app.available = false;
   await A.rejects(P.erfasse({ env: { ...env, HELMUT_NACHWEIS_MODUS: "ausgabe" }, fetchFn: outputFetch, now: () => date }));
   for (const changes of [{ GITHUB_REF: "refs/heads/fremd" }, { GITHUB_RUN_ATTEMPT: "2" },
-    { HELMUT_PRODUCTION_COMMIT: "b".repeat(40) }, { HELMUT_NACHWEIS_PUBLIC_KEY: "ungueltig" }, { HELMUT_NACHWEIS_MODUS: "schreiben" }]) {
+    { HELMUT_PRODUCTION_COMMIT: "b".repeat(40) }, { HELMUT_NACHWEIS_PUBLIC_KEY: "ungueltig" }, { HELMUT_NACHWEIS_MODUS: "schreiben" },
+    { HELMUT_NACHWEIS_MANDAT: "annika-klose" }, { HELMUT_NACHWEIS_MANDAT: "cem-ince", HELMUT_NACHWEIS_MODUS: "ausgabe" }]) {
     calls = []; await A.rejects(P.erfasse({ env: { ...env, ...changes }, fetchFn, now: () => date })); A.equal(calls.length, 0);
   }
   payload.profile.profileActive = true;
   await A.rejects(P.erfasse({ env, fetchFn, now: () => date })); payload.profile.profileActive = false;
   runtime.testKosten.aktiv = false;
   await A.rejects(P.erfasse({ env, fetchFn, now: () => date }));
-  console.log("7/7 Transportgruppen: reine GETs, exakter Productionkontext, verschluesselte Eingabe und Appausgabe, falscher Mandant und fehlende Ausgabe abgewiesen.");
+  console.log("9/9 Transportgruppen: reine GETs, exakter Productionkontext, verschluesselte Eingabe und Appausgabe, Cem nur lesend mit eigener Umschlagbindung, falscher Mandant und fehlende Ausgabe abgewiesen.");
 })().catch(e => { console.error(e); process.exitCode = 1; });
