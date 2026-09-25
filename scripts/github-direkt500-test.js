@@ -69,11 +69,20 @@ async function bereitZumFachzyklus() {
   return h;
 }
 
-function bindeTestfenster(h) {
+function bindeTestfenster(h, version = 1) {
+  if (version === 2) {
+    const original = h.w.snapshot;
+    h.w.snapshot = () => {
+      const s = original(); s.mandate = s.mandate.filter(m => m.aktiv);
+      s.identitaeten = s.identitaeten.filter(p => s.mandate.some(m => m.user_id === p.id) || p.id === "admin-fixture");
+      s.auth.users = s.auth.users.filter(u => u.active || u.politicianId.startsWith("test-kohorte-"));
+      return s;
+    };
+  }
   const N = require("../lib/helmut/testfenster-null500"), s = h.w.snapshot();
   const ids = s.mandate.filter(m => m.aktiv).map(m => m.user_id).sort();
   const laufId = "00000000-0000-4000-8000-000000000459";
-  const manifest = N.pruefeManifest({ version: 1, laufId, ids,
+  const manifest = N.pruefeManifest({ version, laufId, ids,
     ausserhalb: s.mandate.filter(m => !m.aktiv).map(m => m.user_id).sort(), zielHash: D.hash(ids),
     productionCommit: SHA, vorflugAm: "2026-09-10T21:59:00.000Z", startBis: JETZT,
     endeAm: "2026-09-10T23:00:00.000Z", maxKostenMikroUsd: 4000000, bestaetigung: N.FREIGABE,
@@ -129,6 +138,18 @@ async function echterQuittungsvertrag(h) {
 }
 
 async function main() {
+  await test("Bereinigter Fachzyklus braucht gebundene Version2 und ausreichend Restzeit", async () => {
+    for (const fehler of [null, "ohne-id", "beendet", "zu-kurz"]) {
+      const h = await bereitZumFachzyklus();
+      const id = bindeTestfenster(h, 2); h.args.env.HELMUT_TESTFENSTER_ID = id;
+      if (fehler === "ohne-id") delete h.args.env.HELMUT_TESTFENSTER_ID;
+      if (fehler === "beendet") Object.assign(h.fenster.data, { zustand: "beendet", beendetAm: JETZT, deaktiviert: 500 });
+      if (fehler === "zu-kurz") h.fenster.data.manifest.endeAm = "2026-09-10T22:01:00.000Z";
+      const r = await G.ausfuehren(h.args);
+      assert.equal(r.ok, fehler === null, JSON.stringify(r));
+      assert.equal(h.anfragen.filter(u => u.pathname === "/api/cron/pipeline").length, fehler ? 0 : 1);
+    }
+  });
   await test("Trockenlauf greift weder auf Belege noch auf Netz oder Writer zu", async () => {
     const r = await G.ausfuehren({ vorgang: "aktivierung", env: {},
       fetchFn: () => { throw new Error("Kein Netz"); }, ladeBeleg: () => { throw new Error("Kein Dateilesen"); } });

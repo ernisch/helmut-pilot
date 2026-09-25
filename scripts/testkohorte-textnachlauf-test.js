@@ -114,12 +114,17 @@ function fixture() {
   return h;
 }
 
-function bindeFenster(h) {
+function bindeFenster(h, version = 1) {
+  if (version === 2) {
+    h.s.mandate = h.s.mandate.filter(m => m.aktiv);
+    h.s.identitaeten = h.s.identitaeten.filter(p => h.s.mandate.some(m => m.user_id === p.id) || p.id === "admin-fixture");
+    h.s.auth.users = h.s.auth.users.filter(u => u.active || u.politicianId.startsWith("test-kohorte-"));
+  }
   const N = require("../lib/helmut/testfenster-null500");
   const ids = h.s.mandate.filter(m => m.aktiv).map(m => m.user_id).sort();
   const ausserhalb = h.s.mandate.filter(m => !m.aktiv).map(m => m.user_id).sort();
   const laufId = "00000000-0000-4000-8000-000000000459";
-  const manifest = N.pruefeManifest({ version: 1, laufId, ids, ausserhalb, zielHash: D.hash(ids),
+  const manifest = N.pruefeManifest({ version, laufId, ids, ausserhalb, zielHash: D.hash(ids),
     productionCommit: SHA, vorflugAm: "2026-09-08T16:59:00.000Z", startBis: "2026-09-08T17:00:00.000Z",
     endeAm: "2026-09-08T18:00:00.000Z", maxKostenMikroUsd: 4000000, bestaetigung: N.FREIGABE,
     grundlinie: Object.fromEntries(["profile", "identitaeten", "auth", "main"].map(k => [k, "a".repeat(64)])) });
@@ -130,6 +135,14 @@ function bindeFenster(h) {
 }
 
 (async () => {
+  await test("Bereinigte500 werden nur mit aktiver Version2 vollstaendig bedient", async () => {
+    const h = bindeFenster(fixture(), 2); h.rows = [];
+    const r = await T.ausfuehren(h.args);
+    assert.equal(r.ok, true, JSON.stringify(r)); assert.equal(r.gespeichert, 500);
+    assert.deepEqual([...h.calls].sort(), h.fenster.data.manifest.ids);
+    const kaputt = bindeFenster(fixture(), 2); delete kaputt.args.testfensterId;
+    assert.equal((await T.ausfuehren(kaputt.args)).ok, false); assert.equal(kaputt.calls.length, 0);
+  });
   await test("Beendetes Testfenster sperrt selbst500 weiterhin aktive Profile vor Modell und Schreibquittung", async () => {
     const h = bindeFenster(fixture());
     Object.assign(h.fenster.data, { zustand: "beendet", beendetAm: start, deaktiviert: 500 });

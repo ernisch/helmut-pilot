@@ -23,6 +23,10 @@ passende vollständige Grundlinien, ruhende Arbeit, ein höchstens fünf Minuten
 altes Startfenster und freie Kosten innerhalb des unveränderten 4-USD-Tageslimits.
 Eine zusätzliche Profilzeile verhindert den Version-2-Start. Der Ergebnisleser
 behält unabhängig vom Aktivzustand alle 500 als Nenner.
+Auch Textnachlauf und direkter Fachzyklus akzeptieren den bereinigten Bestand
+nur über eine gültige aktive Version-2-Quittung. Fehlende Kennung, beendetes
+Fenster oder unzureichende Restzeit sperren den Fachaufruf; die bloße Zahl 500
+genügt nicht. Frühere Betriebsformen bleiben unverändert gebunden.
 
 Die vorbereitete Migration
 `20260925100000_testfenster_null500_bereinigt.sql` ersetzt ausschließlich
@@ -41,7 +45,14 @@ Gezielte lokale Prüfung: 9 Planergruppen, 4 Ergebnislesergruppen,
 erfolgreich. Der bestehende Pflicht-CI-Datenbanklauf wurde um tatsächliche
 Version-2-Start-/Endtransaktionen, zusätzliche Profilzeilen, die Endfunktion
 über PostgreSQL/PostgREST und den abgesicherten Rollback erweitert.
-Dieser Datenbanknachweis und die finale Pflicht-CI stehen noch aus.
+Im ersten CI-Lauf 36121395357 bestanden Version-2-Aktivierung, manueller
+Rückweg und Ablehnung eines zusätzlichen Profils. Die neue Endfunktion
+scheiterte an einer fehlenden Klammer um den CASE-Ausdruck ihrer Versionsprüfung.
+Der Ausdruck ist korrigiert; vollständiger RPC-Nachweis und finale Pflicht-CI
+stehen weiterhin aus. Der erweiterte Textnachlauf bestand lokal 34/34 Gruppen,
+einschließlich vollständiger 500er Fixtureauswahl und Sperre ohne Fensterkennung.
+Der Actionsadapter bestand 32/32 Gruppen, einschließlich Version-2-Fachlauf
+und Ablehnung fehlender Kennung, beendeten Fensters und zu kurzer Restzeit.
 
 Die vier Nichtzielprofile sind lediglich identifiziert. Ihr vollständiger
 Löschplan samt abhängigen Datensätzen, Sicherung und gesondertem Daten-GO

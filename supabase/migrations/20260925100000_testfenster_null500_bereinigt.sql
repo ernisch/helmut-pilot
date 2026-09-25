@@ -37,7 +37,7 @@ begin
     or jsonb_typeof(p_manifest->'ids') is distinct from 'array'
     or jsonb_typeof(p_manifest->'ausserhalb') is distinct from 'array'
     or jsonb_array_length(p_manifest->'ids') <> 500
-    or jsonb_array_length(p_manifest->'ausserhalb') <> case when p_manifest->>'version'='2' then 0 else 4 end then
+    or jsonb_array_length(p_manifest->'ausserhalb') <> (case when p_manifest->>'version'='2' then 0 else 4 end) then
     raise exception 'null500-ende-quittung-nicht-gebunden';
   end if;
   ids := array(select jsonb_array_elements_text(p_manifest->'ids'));
