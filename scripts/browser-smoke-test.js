@@ -199,6 +199,10 @@ function check(name, cond, detail = "") {
         // aber jeweils mit einem anderen Zweck. Radar muss den persoenlichen
         // Bezug zeigen, ohne die Handlungsanweisung als zweiten Feed zu kopieren.
         fixture.kosById["ko-review-1"].mentioned_people = [fixture.profile.fullName];
+        // Eine KO-Markierung allein belegt keine persoenliche Artikelnennung.
+        // Auch der tatsaechlich verlinkte Fixture-Artikel traegt den vollen Namen.
+        fixture.sourcesByVorgang["vg-review-1"][0].summary =
+          `${fixture.profile.fullName} erlaeutert den vorgelegten Arbeitszeitentwurf.`;
         const data = contract.toBriefingContractV3({ ...fixture, now: at });
         const state = data.currentHelmutState;
         data.lageBriefing = { available: true, vorgaenge: [{
