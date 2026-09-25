@@ -103,8 +103,8 @@ sind ebenfalls kein positiver Qualitaetsnachweis.
 Institution allein ersetzt keinen gemeinsamen Titel-Sachanker. Bei nur einer
 schwachen Kernfamilie muss jedes neue Dokument die regulaere Ereignispruefung
 gegen einen Originalbeleg bestehen. Echte Tankrabatt-/Staatsbesuch- und
-Rentenpaket-Fortschreibungen bleiben erhalten. Quellenzeit-Prompt fuer
-Ankuendigung/Vollzug verallgemeinert; das ist noch kein neuer Modellbeweis.
+Rentenpaket-Fortschreibungen bleiben erhalten. Der vorhandene Quellenzeit-Prompt bleibt unveraendert; seine Regeln allein
+haben den Zeitfehler nicht verhindert. Kein neuer Modellbeweis.
 Gezielt4/4 neue Fallgruppen, Identitaet67/67, Resolver54/54, Beweisfamilien108/108,
 Quellenzeit9/9. Keine Absenkung alter Schutztests. Pflicht-CI vor Merge erforderlich.
 
@@ -113,3 +113,21 @@ am Commitf80334d7 erfolgreich10:23:21:0 Modelle, HTTP200, inaktives B-055.
 56 interne Items,407 Aussagen,941 Quellenverweise; alle acht homeSections leer.
 Dies ist eine Eingabeaufnahme, kein positiver sichtbarer Drei-Bereiche-Nachweis.
 Der fehlerhafte Schulstreik war vor seiner Sperrung noch in internen Items.
+
+### Ergaenzung nach breiterer Felderpruefung10:32UTC
+
+Acht weitere eindeutige Fehler wurden innerhalb desselben freigegebenen
+Fehler-Sperrumfangs terminal geparkt; alle acht SELECT10:32:09 bestaetigt.
+Damit11 gesperrt,15 noch complete; dies ist keine Abnahme der15.
+Die konkreten Fehler und der bereits separat freigegebene Korrekturplan stehen
+unter [Acht Quellenkorrekturen](frische30-acht-korrekturen-20260925.md).
+Private Vorherzeilen und Sperr-SQL: `/private/tmp/helmut-frische30-weitere-sperrung-vorher.json`
+und `/private/tmp/helmut-frische30-weitere-sperren.sql`.
+
+Erste CI36124183620: Ereignisregressionen gruen, zwei historische Prosa-Prompt-
+Bindungen korrekt rot. Ursache war der Zusatz im Understanding-Prompt (zunaechst ueber die geteilten
+Quellenzeitregeln). Auch dessen direkte Einfuegung aendert die eingefrorenen
+Prompts. Zusatz verworfen: die bestehende ausdrueckliche Regel gegen
+Ankuendigung-als-Vollzug bleibt unveraendert, eine weitere Promptwiederholung
+waere kein Qualitaetsbeweis. Beide Originalbindungen danach lesend identisch.
+Keine Aenderung alter Hashes und keine Wiederaufnahme der alten Versuche.

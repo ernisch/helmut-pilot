@@ -93,8 +93,9 @@ Vollstaendige historische Betriebswerte zu Crons, Flags, Migrationen, Quellenpak
 `f80334d7` (dpl_FdftwZtRy2bH6S9WsYg2w1oKaDBt). Dauerhaftes PR-GO nach gruener CI.
 [30er Lauf](betrieb/verstehen-frische30-20260925.md)36122523412 technisch fertig:
 30 Dokumente verknuepft,26 Aufrufe,0,172350USD. Fachlich nicht bestanden:
-Ereignismix Bundestag/Praesident sowie falscher Zeitstand Schulstreik; alle3
-unter freigegebener Fehler-Sperrung terminal geparkt, keine Wiederholung.
+11 Fehlerfaelle terminal gesperrt, keine Wiederholung.
+[Acht Quellenkorrekturen](betrieb/frische30-acht-korrekturen-20260925.md)
+konkret freigegeben; Ausfuehrung nach gruener CI/Rollout#565 noch offen.
 SELECT10:22–10:27UTC:504/0, Profil-/Identitaeten-/Mainhash unveraendert,
 0 Jobs/Locks/Leases, Tageskosten0,207358USD/0 offen bei4USD.
 Ereignisbindung wird repariert; Bedeutungsnachweis/frische Vollversorgung offen.
