@@ -66,6 +66,20 @@ check("Ausschuss-Treffer wiegt mehr als reiner Themen-Treffer",
   > decisions.scoreKnowledgeObject(koGesundheit, { similarity: 0, matched_features: [{ type: "thema", value: "X" }] }));
 
 // --- 3) priorityType: gültiger Enum-Wert, Richtung aus Risiko/Chance ---------
+const nurAusschuss = { similarity: 0, matched_features: [{ type: "ausschuss", value: "Gesundheit" }] };
+for (const zeitdruck of [undefined, "", "keiner", " KEINER ", "unknown", "unbekannt", "niedrig?"]) {
+  const row = decisions.buildDecision("u-health", { id: "ko-zeitdruck", zeitdruck }, nurAusschuss);
+  check(`Kein belegter Zeitdruck (${String(zeitdruck)}) hebt34 nicht ueber40`, row.score === 34 && row.decision === "Ignorieren");
+}
+for (const zeitdruck of ["hoch", "mittel", "niedrig", " HOCH "]) {
+  const row = decisions.buildDecision("u-health", { id: "ko-zeitdruck", zeitdruck }, nurAusschuss);
+  check(`Positive Zeitdruckstufe (${zeitdruck}) behaelt8 Punkte`, row.score === 42 && row.decision === "Beobachten");
+}
+check("Gesonderte Deadline behaelt ihren Bonus trotz zeitdruck=keiner",
+  decisions.scoreKnowledgeObject({ zeitdruck: "keiner", deadline: "2026-09-30" }, nurAusschuss) === 42);
+check("Deadline und Zeitdruck zaehlen weiterhin nur einmal",
+  decisions.scoreKnowledgeObject({ zeitdruck: "hoch", deadline: "2026-09-30" }, nurAusschuss) === 42);
+
 check("priorityTypeFor(<40) === 'ignore'", decisions.priorityTypeFor(30, koGesundheit) === "ignore");
 check("Risiko-KO -> priority_type 'risk'", decisions.priorityTypeFor(75, koGesundheit) === "risk");
 check("Chance-KO -> priority_type 'chance'", decisions.priorityTypeFor(75, koUmweltChance) === "chance");
