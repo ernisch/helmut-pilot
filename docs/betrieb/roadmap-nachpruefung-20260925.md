@@ -190,6 +190,52 @@ Nachimport. Die persoenliche Radar-Namensbindung am gespeicherten Artikel ist
 vorhanden; das Webwerkzeug konnte die Mediathekadresse nicht erneut lesen.
 Keine vollstaendige externe Artikelabnahme behauptet.
 
-Status: Code und lokaler Nachweis bereit; Merge und Production-Nachkontrolle
-offen. Naechster Schritt: Pflicht-CI am PR-Kopf, danach konkretes Merge-GO.
+Ausrollbeleg25.09.: [PR582](https://github.com/ernisch/helmut-pilot/pull/582)
+nach ausdruecklichem GO gemergt, Commit`bdd05dac1b7300acd65b0c31785a60b4a5ca7088`.
+Pflicht-CI36177908974 am Kopf74630fb4 gruen. Vercel
+`dpl_ERVZ7GRne3jFXtnnmPnaQDdypEAB` seit19:23:17UTC READY am Hauptalias;
+Code/Tests identisch zum geprueften PR-Kopf. Bis19:23:48UTC keine gemeldeten
+Laufzeitfehler/Warnungen; Statuszugriff ohne Secret korrekt403. Kein neuer
+Live-Inhalts- oder500er Nachweis. Production am Folgesprintstart erneut READY.
 Die einmalige RSA-Freigabe ist verbraucht; kein zweiter Aufnahme-Dispatch.
+
+
+## Lagekarten ohne Artikelauszug (25.09.2026)
+
+Naechster Befund derselben privaten Aufnahme: Freie KO-Zusammenfassungen
+und Einordnungen erschienen trotz fehlender Artikelauszuege. Ein blosser
+Titel/Link trug weitergehende Sach- und Rechtsaussagen nicht.
+
+`lage-kartenbeleg` begrenzt den regulaeren Karten-/Detailpfad in diesem Fall
+auf den unveraenderten Originaltitel, Quellen und einen sichtbaren Hinweis
+auf den fehlenden Auszug. Freie Titel, Zusammenfassung, Einordnung, Rollen,
+Empfehlung und persoenlicher Bezug werden nicht als Ersatzbeleg verwendet.
+Auch leere HTML-Texte, bekannte institutionelle Metatexte und exakt kopierte
+Titel (mit/ohne Herausgebersuffix) liefern keinen Artikelauszug. Nur ein
+Auszug an einer oeffnenden Artikeladresse kann den bisherigen Vertrag erhalten.
+Keine neue semantische Heuristik oder behauptete automatische Faktenpruefung.
+
+Lokale Gegenprobe mit der aufgenommenen12er Auswahl auf Basisbdd05dac:
+Die2 bereits gesperrten Ereignismischungen bleiben gesperrt. Von den10
+verbleibenden Karten werden6 auf Quellenhinweise begrenzt,4 bleiben strukturell
+unveraendert. Originaltitel, Links, Dokumente, Chronologie und Zeitmetadaten
+bleiben erhalten; KO-/Profil-/Quelldaten unveraendert. Die vorher unbelegte
+Problemprosa fehlt auch im echten Renderer inklusive Details. Die bestehende
+Sortierung stellt vollstaendige Karten vor die jetzt eingeschraenkten Hinweise.
+Privater Nachweis `lage-titelbeleg-final-replay.json` im Aufgabenverzeichnis;
+SHA256 des Kartenbelegcodes:
+`0a40209b880b7631ea8e512035ce30e1eed9091640bb9228580f81082b3ae753`.
+
+Gezielt offline: Titelbeleg7/7 Gruppen (inklusive echtem Renderer und
+cacheOnly/countOnly); Lage141/141; Quellenmix6/6; cacheOnly9/9;
+Briefing-Lagebindung7/7. Neue Regression vor dem Fix rot. Der bestehende
+Mapping-Positivtest bekommt einen Originalauszug; ohne Quellen erwartet
+er jetzt ausdruecklich fehlende Belege statt freier Altprosa.
+
+Grenzen: Ein vorhandener Auszug bestaetigt noch keine einzelne KO-Aussage;
+die allgemeine Fakten-/Nutzwertabnahme bleibt offen. Ein Quellenhinweis ist
+kein vollstaendiges Lage-Ergebnis fuer den500er Nachweis. Historische
+gespeicherte Gesamtpakete und separat qualitaetsgepruefte Lageabsaetze werden
+nicht umgeschrieben. Keine neue Aufnahme, Quellenabrufe, Modelle oder Writes.
+Status: lokal bereit auf `codex/lage-titelbeleg-20260925`; Pflicht-CI, konkretes
+Merge-GO und Production-Nachkontrolle offen. Rueckweg: Code-Revert.
