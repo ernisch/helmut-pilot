@@ -102,7 +102,8 @@ SELECT11:13:59UTC:504/0, Profil-/Identitaeten-/Mainhash unveraendert,
 0 Jobs/Locks/Leases, Tageskosten0,207358USD/0 offen bei4USD.
 Lokale Zuordnung aller500 Zielprofile mit diesen27 Vorgängen:0/500 Score>=40,
 Hoechstwert37;464 ohne harten Treffer. Kein Live-Briefing/500er Funktionsnachweis.
-Bedeutungsnachweis, frische Vollversorgung und Gesamtkosten/-zeit weiter offen.
+61 Landtagsprofile ohne Pflicht-Landespaket (Production11:18UTC); Zielabgrenzung angefragt.
+Bereichsabnahme, frische Vollversorgung und Gesamtkosten/-zeit offen.
 [Exakt500-Code](betrieb/testfenster-exakt500-20260925.md) ausgerollt;
 Migration20260925100000 und Bereinigung nicht angewendet/freigegeben.
 

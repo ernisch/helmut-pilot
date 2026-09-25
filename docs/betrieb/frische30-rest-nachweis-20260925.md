@@ -75,10 +75,26 @@ Die Lesung aller frischen complete-KOs im Standardfenster24.09.14:00UTC bis
 
 495 Testprofile fuehren Testparteien, Testthemen und Testwahlkreise.
 434 haben echte Bundestagsausschuesse;61 Landtagsprofile fuehren Testausschuesse.
-Diese61 haben daher keinen realen Identitaetsanker in diesen Dimensionen.
+Diese61 haben in diesen vier Dimensionen keinen realen Identitaetsanker;
+ihr Bundesland ist dagegen real und kann weiterhin einen regionalen Bezug liefern.
 Die historische Generatorregel verlangt diese synthetischen Werte ausdruecklich;
 sie werden nicht still umgeschrieben. Weder Quellen erfinden noch Schwellen
 absenken, um den500er Nachweis scheinbar zu bestehen.
+
+## Zusaetzlicher harter Startblocker:61 fehlende Landespakete
+
+Production SELECT11:18:51UTC: keine source_packages fuer Mecklenburg-Vorpommern
+oder Thueringen. Der unveraenderte Resolver resolveProfilePackages meldet fuer
+alle500 gelesenen Zielprofile genau61 requiredMissing:31 fuer Mecklenburg-Vorpommern,
+30 fuer Thueringen. Das ist unabhaengig vom niedrigen Score ein konkreter
+Pflichtversorgungsblocker; der Code erlaubt kein Wegdefinieren der Landespakete.
+Private vollstaendige Bilanz: /private/tmp/helmut-500-pflichtpakete-20260925.json.
+Andere Paketstatus oder Abrufgesundheit werden hier nicht pauschal abgenommen.
+
+Der Betreiber wurde zur Zielabgrenzung gefragt:500 Bundestagsprofile als
+aktuelles Produktziel (konkreten Umstellungsplan fuer61 synthetische Profile
+vorbereiten), oder gemischte Kohorte samt Aufbau beider Landesmodule.
+Keine Production-Profilumstellung ist dadurch freigegeben oder erfolgt.
 
 ## Weiter offen
 
