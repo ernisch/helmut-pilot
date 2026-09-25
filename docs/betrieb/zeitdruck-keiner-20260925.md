@@ -25,3 +25,11 @@ Prioritaeten sind moeglich und werden vollstaendig ausgewiesen; keine
 Schwellenabsenkung, um die alte Zahl wiederherzustellen. Rueckweg: gepruefter
 Code-Revert. Der Fehler ist lokal reproduziert; Production-Rollout und
 vollstaendige500er Nachkontrolle stehen noch aus.
+
+Die erweiterte CI36163583009 deckte einen historischen Zahlenvertrag auf:
+Der Landesvorgang mit freiem Zeitdrucktext "Haushaltsberatung laeuft"
+erhielt frueher8 Bonuspunkte. Sein unveraenderter Originalfall bleibt im
+Test erhalten; aktuelle Erwartung41 ->7 statt historisch49 ->15.
+Der entfernte fremde Ausschuss bleibt exakt34 Punkte wert, mit demselben
+Stufenwechsel. Ein zusaetzlicher positiver Schemafall "hoch" bestaetigt
+den weiterhin wirksamen Bonus. Keine fachliche Schutzpruefung entfernt.
