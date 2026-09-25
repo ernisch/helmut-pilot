@@ -1,6 +1,6 @@
 # Sieben amtliche Quellen: begrenzter Anschlussauftrag
 
-25.09.2026, vorbereitet und lokal geprueft. Noch nicht importiert/ausgefuehrt.
+25.09.2026: Import verifiziert, Verarbeitung noch nicht gestartet.
 Das umfassende Betreiber-GO samt Entscheidungsdelegation liegt vor. Ausfuehrung
 erst nach gruener Pflicht-CI, Production-Rollout und frischer Vorlesung.
 
@@ -75,3 +75,28 @@ Gruppen laufen ohne private Quelle in CI. Noch kein500er Funktionsnachweis.
 PR571, Head5d3687a6, Pflicht-CI36138272757 SUCCESS. Merge13:07:59UTC
 `520cdfa5ba68a518b8da83ff5816782ccf10b37a`, Deployment
 `dpl_3BUovxrZsNb3yofiUL2fo1xxpgEr` READY13:08:20UTC.
+
+## Import und Speicherformat-Korrektur
+
+PR572 Head d32c3e1e, Pflicht-CI36139320410 SUCCESS. Merge
+`ee4e9fa1b91ab1564a722b85e0147187ee7c6b89`13:18:38UTC, Production
+`dpl_4h7Fyti2RcW76EHupWwcHrdj27ax` READY13:18:58UTC.
+Import13:19:18.923761UTC; Nachlesung13:19:28UTC:7 Dokumente/7 Fundstellen,
+alle Nutzfelder und alle gespeicherten Belege exakt.500/0 und saemtliche
+Profil-/Identitaets-/Main-Fingerabdruecke unveraendert, Kosten0,304227USD.
+Import ist verbraucht und darf nicht wiederholt werden.
+
+Nurleseplan36140248162 stoppte13:20:36UTC vor Auftrag und Modellzugang.
+Rein lesend13:22:55UTC bestaetigt: keine Verstehensquittung, Tageskosten
+unveraendert. Ursache lokal mit allen sieben Production-Zeilen reproduziert:
+PostgreSQL schreibt dieselben Zeitpunkte als `+00:00` statt `Z`; der alte
+Artikelhash bindet auch diese Darstellung. Die Importinhalte sind identisch.
+
+Korrektur ausschliesslich im Siebener-Vertrag: Beleg zuerst gegen dieselben
+kanonischen UTC-Zeitpunkte vollstaendig pruefen; erst danach gegen die konkrete
+Speicherzeile binden. Historische Vertraege, Originalbeleg und Daten unveraendert.
+Echte Zeitverschiebung, Submillisekundenabweichung, Datum ohne Zeit, Text-,
+Quellen- oder Zielaenderung bleiben gesperrt.8 gezielte Gruppen einschliesslich
+aller7 echten Production-Zeilen und10 bisherige Artikelgruppen bestanden.
+Noch kein kostenpflichtiger Lauf; erneuter Nurleseplan erst nach gruener CI
+und Ausrollung dieser Reparatur.

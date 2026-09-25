@@ -42,10 +42,43 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     const q = await V.fuehreAus({ ids: [], deps: {}, erwartet: F.BUND7, quittungsschluessel: "verstehen30-20260925-a" });
     assert.equal(q.grund, "verstehen-bund7-quittung-abweichend");
   });
+  await test("Gleiche UTC-Zeitpunkte bleiben nach PostgreSQL-Lesung gebunden; echte Aenderungen nicht", () => {
+    const A = require("../lib/helmut/artikelkontext");
+    const doc = { id: "rd-zeitprobe", title: "Amtlicher Quellenbeleg zur Zeitbindung",
+      summary: "Unveraenderte Quellenaussage", source_name: "Deutscher Bundestag", source_id: "bundestag",
+      url: "https://www.bundestag.de/dokumente/textarchiv/2026/kw39-zeitprobe-1234567",
+      published_at: "2026-09-25T11:00:00.000Z", retrieved_at: "2026-09-25T12:44:58.165Z" };
+    const beleg = { version: 2, dokumentId: doc.id, quellenHash: A.quellenstandHash(doc),
+      artikelUrl: doc.url, artikelTitel: doc.title, herkunft: "strukturierter-originalartikel",
+      gelesenAm: "2026-09-25T12:45:00.000Z", absatzPosition: 1, text: "Der unveraenderte Originalabsatz wird an die konkrete Quellenzeile gebunden.",
+      gewinnung: { verfahren: "bundestag-artikel-leitabsatz-v1", positionsbasis: "html-article-p",
+        antwortHash: "a".repeat(64), artikelTextHash: "b".repeat(64), artikelTextPosition: 0,
+        titelTreffer: 0, kandidatZahl: 1, artikelAbsatzZahl: 1 } };
+    const pg = { ...doc, published_at: "2026-09-25T11:00:00+00:00", retrieved_at: "2026-09-25T12:44:58.165000+00:00" };
+    assert.throws(() => A.pruefeArtikelkontext([pg], beleg), /quellenstand-abweichend/);
+    const neu = F.pruefeSpeicherbindung([pg], beleg);
+    assert.equal(neu.text, beleg.text); assert.equal(neu.quellenHash, A.quellenstandHash(pg));
+    assert.deepEqual(A.pruefeArtikelkontext([pg], neu), neu);
+    assert.equal(beleg.quellenHash, A.quellenstandHash(doc));
+    for (const change of [{ published_at: "2026-09-25T11:00:00.001Z" },
+      { retrieved_at: "2026-09-25T12:44:58.165001Z" }, { published_at: "2026-09-25" },
+      { title: "Andere Aussage" }, { summary: "Anderer Inhalt" }, { source_name: "Anderer Absender" },
+      { url: "https://www.bundestag.de/dokumente/textarchiv/2026/anderer-1234567" }])
+      assert.throws(() => F.pruefeSpeicherbindung([{ ...pg, ...change }], beleg));
+    assert.throws(() => F.pruefeSpeicherbindung([pg, pg], beleg));
+  });
   // Optionaler lokaler Belegtest: echte, bereits gelesene Texte bleiben ausserhalb
   // des Repositories. Keine Netz-/Speicherfunktion; Runner entfernt Zugangsdaten.
   if (process.argv[2]) {
     const payload = JSON.parse(require("node:fs").readFileSync(process.argv[2], "utf8"));
+    if (process.argv[3]) await test("Alle sieben realen Production-Zeilen bestehen mit unveraenderten Importbelegen", async () => {
+      const actual = JSON.parse(require("node:fs").readFileSync(process.argv[3], "utf8"));
+      const fn = F.ausGesichertenBelegen(actual.docs, payload.belege);
+      for (const doc of actual.docs) {
+        const r = await fn([doc]); assert.equal(r.ok, true);
+        assert.deepEqual(require("../lib/helmut/artikelkontext").pruefeArtikelkontext([doc], r.beleg), r.beleg);
+      }
+    });
     await test("Alle sieben echten Eingaben und Belege erreichen unveraendert ihren Einzelcluster", async () => {
       const fn = F.ausGesichertenBelegen(payload.rows, payload.belege);
       assert.equal(F.istVersorgung(fn), true);
