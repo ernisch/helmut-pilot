@@ -4,7 +4,7 @@
 
 ## 1 · Aktueller Stand
 
-* **Aktueller Roadmap-Stand25.09.: siehe §6.** Productionee4e9fa1 READY,500/0. 30er Quellenkorrekturen verifiziert; frische Vollversorgung fuer500 nicht bestanden. Kein500er Start.
+* **Aktueller Roadmap-Stand25.09.: siehe §6.** Production02a19297 READY,500/0. 30er Quellenkorrekturen verifiziert; frische Vollversorgung fuer500 nicht bestanden. Kein500er Start.
 
 * **Production-Belege dieses Sprints:** PR #549 (Trennung von Lage/Radar/Briefing) gemergt als `00ed4c27b7703849d57ca9f357dcf15a40f5f311`, Vercel `dpl_6iDLuovtgpFL7DSZX1M2djMYugdQ` READY, PR-CI `36031516394` SUCCESS. Auftragsbezogene Reparaturen: [PR #550](https://github.com/ernisch/helmut-pilot/pull/550) (Appstart ohne Hintergrundmodelle, begrenzte Quellenabrufe) und [PR #551](https://github.com/ernisch/helmut-pilot/pull/551) (500er Fachleser an neue Testfenster gebunden); ihre finalen Merge-/Ausrollbelege stehen direkt im jeweiligen PR. Vierer-Migration angewendet; Zweierlauf `36029408684` nach einem Parteienfehler gestoppt: 1 Aufruf, 0,005804 USD, Koçak nicht begonnen. [Vierer-Bilanz](betrieb/verstehen-vier-nacharbeit-20260924.md). **Noch keine belastbare 500er Startbereitschaft**, siehe [Starttor](betrieb/500-starttor-20260924.md).
 * **Fuenfter (freigegebener) scharfer 169er Lauf — erstmals ALLE 122 Cluster verarbeitet, fachlich nicht bestanden.** Workflow-Run `35987448290`, `run_attempt = 1`, `failure`, 24.09.2026 10:28:42–10:54:17 UTC, Runtime-Commit = Dispatch = Checkout `2d412d0418f5d6170f2c34ff69dbd846c4e0c703`, Dokument-Snapshot `ea84f26c…`. Die Bindung hielt; der Schutzvertrag passierte mit **81 Modellkandidaten** (≤ 113) — **PR #541 wirkte belegbar** (der vierte Lauf war noch mit 114 Kandidaten gescheitert). `abbruchGrund = null`, `vollstaendigVerarbeitet = true`, `fachlichBestanden = false`; Bilanz `saved 63`, `updated 14`, `duplicate 34`, `merged 7`, `skipped-invalid 4` (`unbekannt 4`); **81 Modellaufrufe**, `quellenabrufe 0`, `profilwrites 0`, `kommunikation 0`; Laufkosten **0,522795 USD** von 0,80 USD; Quittung `verstehen169-20260924-c` terminal **`unbekannt`** (verbraucht). **Vier lokale `unknown`** (Klasse A, kein globaler Abbruch): `vg-gemeinsame-20260921-dcd0f5`, `vg-linkenpolitiker-20260921-37cdeb` und `vg-arbeitsplätze-20260715-6cc672` (Aktualisierung) mit `quellenbeleg-parteien`, sowie `vg-verzögerung-20230613-95c80f` mit `validierung-fehlgeschlagen` und leerer Fehlerliste. CAS danach je `zustand=unbekannt` (Betreiberbeleg). **In diesem 169er Lauf keine erneute Freigabe; die spaetere isolierte Nacharbeit steht oben.** [Beleg](betrieb/verstehen-einmalig-169-20260922.md) §24.
@@ -88,7 +88,7 @@ Vollstaendige historische Betriebswerte zu Crons, Flags, Migrationen, Quellenpak
 ## 6 · Naechster Schritt
 
 **Roadmap25.09. fortgesetzt; umfassendes Betreiber-GO samt Entscheidungsdelegation.**
-Tagesriegel4USD und Profilschutz bestehen. Productionee4e9fa1 READY, PR572 gruen.
+Tagesriegel4USD und Profilschutz bestehen. Production02a19297 READY, PR573 gruen.
 [Profilreife](betrieb/500-profilreife-20260925.json):500/500 zulaessig,0 fehlende
 Pflichtpakete nach61er Bundestagsumstellung und Entfernung zweier Rollenplatzhalter.
 [Endfunktion fuer exakt500](betrieb/testfenster-exakt500-20260925.md) installiert
@@ -106,11 +106,12 @@ Keine Aktivierung, kein zeitgebundener Startplan und kein500er Funktionsnachweis
 **Naechste offene Fachphase: frische Vollversorgung und Bereichsabnahme.**
 [Amtlicher Artikelkontext](betrieb/bundestag-artikelversorgung-20260925.md) integriert:
 lokal7/11 ganze Leitabsaetze; vier benannte Ablehnungen.63 Pruefgruppen bestanden.
-[Siebener-Auftrag](betrieb/verstehen-bund7-20260925.md):7/7 Import13:19UTC
-exakt verifiziert,500/0 und Kosten0,304227USD unveraendert. Nurleseplan36140248162
-stoppt an PostgreSQL-Zeitformatbindung,0 Modelle/keine Auftragsquittung.
-Gezielte Reparatur lokal an allen7 Production-Zeilen bestanden;8+10 Pruefgruppen.
-Nach gruener Integration erneut nur planen, dann begrenzter Lauf7/0,30USD/10min.
+[Siebener-Auftrag](betrieb/verstehen-bund7-20260925.md):7/7 Import exakt,
+500/0 und Kosten0,304227USD unveraendert. Zeitformat repariert; Plan36141732741
+bestanden. Lauf36141840797 stoppt vor Modell1 am Kostenleser, Quittung a
+verbraucht,0 Quellen verknuepft. Kostenadapter korrigiert und echter Geldpfad
+lokal geprueft. Neuer gebundener Auftrag b erst nach gruener Integration/Plan;
+verlangt belegten wirkungsfreien Vorgaenger. Grenzen7/0,30USD/10min unveraendert.
 30 korrigierte Quellen an27 complete-Vorgaengen; frische Zuordnung weiter0/500
 Score>=40. Drei alte Fehler gesperrt. B055-Aufnahme36129043227:59 Items,
 Briefing leer; kein positiver sichtbarer Drei-Bereiche-Nachweis.

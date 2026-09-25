@@ -19,6 +19,17 @@ function pruefeRuntime(env, gitCommit) {
     && env.GITHUB_RUN_ATTEMPT === "1" && env.GITHUB_SHA === commit, "dispatch-abweichend");
   return commit;
 }
+function pruefeVorgaenger(rows, kosten, links) {
+  const q = rows?.length === 1 && rows[0].data;
+  fordere(q && q.quittungsschluessel === F.VORGAENGER && q.runId === F.VORGAENGER_RUN
+    && q.runtimeCommit === "02a19297e3b1656542b7d9e3dfdf35646238c0e9"
+    && q.status === "gestoppt" && q.abbruchGrund === "verstehen-kostenleser-fehler"
+    && q.idHash === F.BUND7.idHash && q.dokumente === 7 && q.cluster === 7
+    && q.modellaufrufe === 0 && q.bilanz?.verarbeitet === 0 && q.bilanz?.unbekannt === 0
+    && Number.isFinite(Date.parse(q.beendetAm)) && kosten === 0
+    && Array.isArray(links) && links.length === 0, "vorgaenger-nicht-wirkungsfrei");
+  return true;
+}
 function leser(env = process.env) {
   return async (table, query) => {
     fordere(env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY, "zugang-fehlt");
@@ -72,6 +83,16 @@ async function main(args = process.argv.slice(2), env = process.env) {
   fordere(/^[0-9]{5,20}$/.test(env.GITHUB_RUN_ID || ""), "laufkennung-abweichend");
   fordere(new Date(Date.now() + F.BUND7.maxMs).toISOString().slice(0, 10) === day, "tageswechsel");
   const runId = "verstehen-bund7-" + env.GITHUB_RUN_ID;
+  // Den echten Kostenleser schon im Nurleseplan ausfuehren, vor jeder Quittung.
+  const [vorgaenger, alteKosten, neueKosten, links] = await Promise.all([
+    read("helmut_store", "select=data&id=eq." + F.VORGAENGER + "&limit=2"),
+    budget.laufGebundenUsd(F.VORGAENGER_RUN, { env }), budget.laufGebundenUsd(runId, { env }),
+    read("ko_document_links", "select=raw_document_id&raw_document_id=in.(" + ids.join(",") + ")&limit=1")
+  ]);
+  pruefeVorgaenger(vorgaenger, alteKosten, links);
+  const reserve = budget.reservierungHoeheUsd();
+  fordere(neueKosten === 0 && reserve <= F.BUND7.maxUsd
+    && kosten.gebundenUsd + reserve <= 4, "kostenplan-nicht-frei");
   const deps = Bedienung.baueDeps(env, runId, { mitQuittung: execute });
   // Kein alter Fehler darf eine implizite Freigabe aus einer anderen Liste erben.
   deps.listWiederaufnahmen = async () => [];
@@ -94,10 +115,12 @@ async function main(args = process.argv.slice(2), env = process.env) {
     out.importplanCommit = F.BUND7.commit;
     delete out.snapshotCommit;
     out.funktionsnachweis500 = false;
+    out.kostenleserVorabBestaetigt = true;
+    out.wirkungsfreierVorgaenger = F.VORGAENGER;
     console.log(JSON.stringify(out, null, 2)); return out.ok ? 0 : 1;
   } finally { if (timer) clearTimeout(timer); }
 }
 if (require.main === module) main().then(code => { process.exitCode = code; }).catch(e => {
   console.log(JSON.stringify({ ok: false, grund: /^bund7-[a-z-]+$/.test(e.message || "") ? e.message : "bund7-technischer-fehler", automatischeWiederholung: false })); process.exitCode = 1;
 });
-module.exports = { argumente, pruefeRuntime, ruhe, main, BESTAETIGUNG };
+module.exports = { argumente, pruefeRuntime, pruefeVorgaenger, ruhe, main, BESTAETIGUNG };
