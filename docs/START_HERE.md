@@ -65,7 +65,7 @@ Neue Funktionen sind nachrangig, solange der 500er-Nachweis und die P0-Punkte of
 | **Admin** | Betreibersicht: Nutzer, Quellen, Kosten, Datenstand, Betriebsmetadaten |
 
 Der verbindliche [Bereichsvertrag](betrieb/lage-radar-briefing-abnahme-20260924.md)
-trennt Produktziel, bisherigen Production-Stand und noch auszurollende Absicherung.
+trennt Produktziel, ausgerollte Absicherung und noch offene fachliche Abnahme.
 
 ## 5 · Verbindliche Produktprinzipien
 

@@ -7,13 +7,14 @@ ersetzt ihre weitergehende Aussage, die Rollen seien bereits hinreichend umgeset
 
 ## Geprüfter Stand und Reichweite
 
-Rein lesend belegte Production: Commit
+Ausgangsstand der rein lesenden Ist-Analyse: Commit
 `bf95ebd810a69ec224a07d034f95543b5957a396`, Vercel
 `dpl_GH7QGAfDCyiufvyfu7Gc5pSGB9Co`, READY, Production-Alias
 `helmut-pilot.vercel.app`. Die folgende Ist-Analyse bezieht sich auf diesen Code.
-Die Reparatur liegt separat auf `codex/lage-radar-briefing-vertrag-20260924`,
-[PR #553](https://github.com/ernisch/helmut-pilot/pull/553).
-Kein Deployment, Profilwrite, Modelllauf oder 500er Start in diesem Auftrag.
+Die Reparatur aus `codex/lage-radar-briefing-vertrag-20260924`,
+[PR #553](https://github.com/ernisch/helmut-pilot/pull/553), wurde nach dem
+ausdrücklichen Nutzer-GO am 24.09.2026 um 19:06:06 UTC gemergt und regulär
+ausgerollt. Keine Profilwrites, Modellläufe oder 500er Starts in diesem Auftrag.
 Keine aktuelle Vollprüfung der gespeicherten Texte aller Profile durchgeführt.
 
 Geprüft: `server.js` (`buildV3Briefing`), `lib/helmut/decisions.js`,
@@ -22,6 +23,34 @@ Quellen-/Fristprüfung sowie Aussagen-, Gesamturteil- und Speicherverträge.
 `radar.js` enthält daneben ältere Archiv-/Adminlogik; sie ist nicht der aktive
 Radar-Reiter. API-Aliase wie `items` und `homeSections` sind keine zusätzlichen
 sichtbaren Reiter und bleiben als interne Vertrags-/Prüfdaten erhalten.
+
+## Ausrollbeleg nach dem Merge
+
+- Geprüfter PR-Kopf: `34b49a1daef1999b227cd2fbc48bb4d03f8dd5e9`.
+  Beide Pflichtprüfungen erfolgreich: [PR-CI 36042760006](https://github.com/ernisch/helmut-pilot/actions/runs/36042760006).
+- Merge/Production-Commit: `b8f279923b311c31b0c71b70e485b83bc71b32c0`.
+  Deployment `dpl_4TrSkmbbmBeKAE1jtK1neKxiMVLQ`, Production **READY**,
+  Alias `helmut-pilot.vercel.app`, bereit am 24.09.2026 um 19:06:28 UTC.
+- Öffentliche HTML-/Asset-Lesung: `client.js` und `styles.css` mit Version
+  `b8f27992`; ausgeliefertes `client.js` byteidentisch zum geprüften Code.
+  Der neue Radar-Vertragstext ist enthalten. Kein schreibender App-Aufruf.
+- Vercel-Fehlerprüfung 19:06:29–19:06:52 UTC: keine gemeldeten Laufzeitfehler;
+  auch der auf dieses Deployment begrenzte Error-/Fatal-Filter blieb leer.
+  Dieses kurze Beobachtungsfenster ist kein Last- oder Inhaltsnachweis.
+- Production-SELECT 19:07:23 UTC: weiterhin 4.822 verstandene Vorgänge,
+  **0** im Standard-Briefingfenster, **0** heutige/künftige Fristfelder.
+  SELECT 19:07:38 UTC: **504 Mandatsprofile, 0 aktiv**. Kein vollständiger
+  Profilfingerabdruck- oder Inhaltsvergleich durch diese Zählungen.
+- Pflicht-CI auf genau diesem Merge-Commit ebenfalls **SUCCESS**:
+  [Main-CI 36045833241](https://github.com/ernisch/helmut-pilot/actions/runs/36045833241),
+  Browser-/Mobile-Smoke und Syntax-/Offline-/isolierte Datenbankprüfungen;
+  abgeschlossen am 24.09.2026 um 19:12:57 UTC.
+
+Die technischen Auswahlregeln sind damit ausgerollt. Fachliche Vollversorgung
+und die gemeinsame semantische Prüfung aller drei tatsächlichen Ausgaben sind
+weiter offen. Der 500er Nachweis wurde nicht gestartet. Rückweg bei einem
+Produktfehler: vorheriges READY-Deployment `dpl_GH7QGAfDCyiufvyfu7Gc5pSGB9Co`
+und kontrollierter Revert des Merge-Commits, jeweils mit konkreter Freigabe.
 
 ## Zusätzlicher aktueller Production-Beleg: Tagesversorgung
 
@@ -104,7 +133,7 @@ Gesetzentwurf, Radar nennt eine belegte kommende Einreichungsfrist, Briefing
 priorisiert am Fristtag die Abgabe. Drei umformulierte Meldungen über den Entwurf
 sind dagegen unzulässig.
 
-## Reparatur im Branch
+## Ausgerollte Reparatur
 
 `lib/helmut/briefing-bereichsvertrag.js` ist ein gemeinsamer deterministischer
 Filter im regulären Briefing-/Radaradapter, ohne Modell, Netz oder Datenwrite:
@@ -174,7 +203,8 @@ Fehlen eines zweiten Radar-Artikelfeeds. Endgültige Pflicht-CI siehe zugehörig
 ## Abnahmekriterien vor dem 500er Start
 
 1. Genau dieser reparierte Commit muss nach konkretem Merge-GO READY ausgerollt
-   und anschließend rein lesend verifiziert sein. Branch-/CI-Erfolg reicht nicht.
+   und anschließend rein lesend verifiziert sein. **Erfüllt für PR #553**, siehe
+   Ausrollbeleg oben. Branch-/CI-Erfolg allein hätte nicht gereicht.
 2. Gemeinsame Sicht auf Lage, Radar und Briefing je Profil/Tag/Version sichern;
    Quellen, Profil, sichtbare Auswahl und vollständige Texte exakt zuordnen.
 3. Jeden wiederkehrenden Vorgang/Kernaussage vergleichen: Sachstand, Beobachtung
