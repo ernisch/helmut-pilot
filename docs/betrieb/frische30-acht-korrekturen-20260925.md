@@ -1,7 +1,7 @@
 # Acht Quellenkorrekturen — konkreter Freigabeplan25.09.2026
 
-**Konkret freigegeben, noch nicht ausgefuehrt.** Betreiberantwort25.09.:
-„GO fuer diese acht Korrekturen“. CI/RolloutPR565 bleiben Vorbedingungen. Der einmalige30er Modelllauf bleibt verbraucht.
+**Ausgefuehrt und vollstaendig nachgelesen.** Betreiberantwort25.09.:
+„GO fuer diese acht Korrekturen“. CI/RolloutPR565 vor Ausfuehrung bestaetigt. Der einmalige30er Modelllauf bleibt verbraucht.
 Aus dem Auftrag sind inzwischen11 Ergebnisse terminal gesperrt: drei um10:27,
 acht weitere SELECT-bestaetigt10:32:09UTC. Texte und Quellen blieben erhalten.
 Die bereits freigegebene Fehler-Sperrung umfasst keine neue Veroeffentlichung.
@@ -50,3 +50,30 @@ und benoetigen getrennte Ereignisaufteilung. Keine Migration oder Profilbereinig
 **Erteiltes GO:** einmalige Anwendung genau dieser acht redaktionellen
 Production-Korrekturen inklusive bedingtem Wieder-Sperren bei Nachkontrollfehler.
 Erst nach gruener Pflicht-CI und ausgerollter EreignisreparaturPR565.
+
+
+## Ausfuehrungsbeleg25.09.2026
+
+PR565 nach CI36125338415 (beide Pflichtjobs erfolgreich) gemergt als
+512776e5d9b516f9434e299a4959edaa207a3fc1. Production
+`dpl_4Q89dHGhYSr7abHw4Vxgeahq7jW6` READY, Alias auf exakt diesem Commit.
+Error-/Fatal-Lesung10:53:07–10:53:31UTC leer; nur kurzes Beobachtungsfenster.
+
+Alle8 alten Zeilen10:53:14 unveraendert; alle8 Quellen lokal feldweise exakt.
+Die automatische Freigabepruefung lehnte unnoetiges Zuruecksenden der kompletten
+Quell-/Vorherdaten ab. Sicherere Ausfuehrung: nur freigegebene Aenderungswerte,
+Kennungen und volle Zeilenhashes senden; Vorhervergleich innerhalb der
+Transaktion aus den gesperrten Datenbankzeilen. Gleicher Korrekturumfang und
+vollstaendige Nachbedingungen, keine neue Datenfreigabe noetig.
+Tatsaechliches SQL: `/private/tmp/helmut-frische30-acht-korrekturen-minimal.sql`.
+
+SELECT10:54:55UTC:8/8 neu/complete; ALLE Felder ausser technischem updated_at
+exakt gleich zum freigegebenen Vorher-plus-Patch, keine Abweichung.
+Privater Nachbeleg: `/private/tmp/helmut-frische30-acht-korrekturen-nachher.json`.
+SELECT10:55:11:504 Profile/0 aktiv, alle Profil-/Identitaeten-/Mainhashes
+unveraendert,0 Jobs/Locks/Leases. Tageskosten weiterhin0,207358USD,0 offen,
+Limit4USD. Kein weiterer Modellaufruf.
+SELECT10:55:16:30/30 Quelldokumente verknuepft,22 complete/4 failed-final.
+Neben den drei urspruenglichen Ereignisfaellen bleibt ein separat entdeckter
+[Texttypfehler](verstehen-texttypen-20260925.md) gesperrt. Keine Gesamtfreigabe
+aller Inhalte und kein500er Funktionsnachweis.
