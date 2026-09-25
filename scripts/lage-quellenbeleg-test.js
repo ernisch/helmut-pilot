@@ -120,11 +120,15 @@ const input = (docs, date = jetzt) => Q.baueEingabe([ko], { "vg-test": docs }, d
     });
     await pruefe("Absatzlinks stammen bei Erzeugung und Cache exakt aus der Modelleingabe", async () => {
       const frisch = new Date(Date.now() - 3600000).toISOString();
-      docs = [{ ...quelle, url: "https://example.org/historisch", published_at: "2023-01-10T05:50:22Z" },
+      // Hintergrund ausserhalb des 14-Tage-Fensters, ohne verschiedene
+      // Ereignisjahre zu mischen: Hier wird die Absatzbindung geprueft.
+      const hintergrund = new Date(Date.now() - 30 * 86400000).toISOString();
+      docs = [{ ...quelle, url: "https://example.org/historisch", published_at: hintergrund },
         ...Array.from({ length: 7 }, (_, i) => ({ ...quelle, url: `https://example.org/aktuell-${i}`,
           published_at: frisch }))];
-      cached = null; lock = true;
+      cached = null; lock = true; modelInput = null;
       const neu = await lage.buildLageBriefing({ id: "test-quellenbeleg" });
+      assert.equal(neu.available, true, JSON.stringify(neu));
       assert.equal(modelInput[0].quellenbelege.length, 6);
       const erwartet = [modelInput[0].quellenbelege[0].url];
       assert.deepEqual(neu.paragraphs[0].sources.map(q => q.url), erwartet);

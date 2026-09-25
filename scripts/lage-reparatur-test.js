@@ -48,8 +48,12 @@ const copy = structuredClone;
     status: "neu", headline: "Beleg", was_ist_passiert: "Quellenbericht", updated_at: before.generated_at,
     best_source_url: "https://example.org/haushalt" }];
   storage.listMatchingResults = async () => [{ knowledge_object_id: "ko-beleg" }];
-  storage.getSourcesForVorgang = async () => payload().quellen[0].quellenbelege.map(q => ({
-    title: q.titel, url: q.url, source_name: "Testquelle", published_at: before.generated_at }));
+  // Der echte Reparaturpfad braucht zwei Belege desselben Ereignisses.
+  // Die allgemeine Hash-/Historienfixture oben enthaelt zwei getrennte Themen.
+  storage.getSourcesForVorgang = async () => [
+    { title: "Bundestag beraet den Haushalt", url: "https://example.org/haushalt" },
+    { title: "Bundestag diskutiert den Haushalt", url: "https://example.org/haushalt-beratung" }
+  ].map(q => ({ ...q, source_name: "Testquelle", published_at: before.generated_at }));
   storage.listAktuelleLageQuellen = require("./fixtures/lage-quellenmetadaten")(() => storage.listKnowledgeObjects(),
     vg => storage.getSourcesForVorgang(vg));
   storage.getRenderedBriefingV3 = async () => copy(row);

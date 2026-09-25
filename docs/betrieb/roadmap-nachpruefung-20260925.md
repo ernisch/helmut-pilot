@@ -166,13 +166,19 @@ Karten strukturell unveraendert. Profile, KOs und Quellen unveraendert,
 
 **Gezielte Tests:** neue Quellenmixsuite6/6 (Anzeige, Generator, Cache,
 Leerzustand, Zaehler, Jahreskonflikt); cacheOnly9/9; Quellenfenster10/10;
-Quellenbindung40:11/11; Lage141/141; Briefing-Lagebindung7/7.
+Quellenbindung40:11/11; Lage141/141; Briefing-Lagebindung7/7;
+Quellenbeleg21/21 und Reparatur8/8.
 Die neue Regression scheiterte vor der Korrektur am ausgegebenen Quellenmix.
 Die bestehende40er-Lesetestfixture hatte einen nun korrekt abgewiesenen
 Jahreskonflikt2024/heute: die historischen Testquellen liegen jetzt30Tage
 zurueck, weiterhin ausserhalb des14-Tage-Fensters. Alle Lese-, Manipulations-
 und Mengengrenzen bleiben unveraendert geprueft; Jahreskonflikt separat negativ.
 Keine Pruefung oder Produktionsschutzregel abgeschwaecht.
+Die erste CI erkannte zwei weitere unpassende Testdaten: Der Absatzlinktest
+mischte2023/heute; sein Hintergrund liegt nun ebenfalls30Tage zurueck.
+Die echte Reparaturpruefung verwendet jetzt zwei Haushaltsberichte desselben
+Ereignisses statt Haushalt und Rentenreform. Beide gezielt erneut bestanden;
+die allgemeine Hash-/Historienfixture und alle Reparaturbedingungen bleiben.
 
 **Weitere Befunde, durch diese Korrektur nicht geschlossen:** Einzelne leere
 Quellenauszuege tragen weitergehende Sach- und Rechtsaussagen nicht. Allgemeine
