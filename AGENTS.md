@@ -60,6 +60,32 @@ DeepSeek darf niemals Production Aktionen, Production Datenänderungen,
 Migrationen, Umgebungsvariablenänderungen, Commit, Push, Merge, PR Erstellung
 oder absichtliche kostenpflichtige Production Modellläufe durchführen.
 
+### Sichtbare Modellübergaben
+
+Astra meldet zu Aufgabenbeginn das aktive Modell mit kurzem Zweck.
+
+Modellangaben richten sich nach der tatsächlichen Startkonfiguration und dem
+beobachteten Lauf, nicht nach einer abweichenden Selbstauskunft des Helfers.
+
+Vor jedem Flash- oder Pro-Start meldet Astra "Flash wird gestartet" beziehungsweise
+"Pro wird gestartet" mit Aufgabe und rein lesend oder schreibend. Erst nach
+bestätigtem Start sagt Astra "Flash übernimmt" beziehungsweise "Pro übernimmt".
+
+Bei einer Eskalation nennt Astra kurz den Grund.
+
+Nach Abschluss oder Abbruch meldet Astra "Astra übernimmt wieder" mit
+Ergebnisprüfung als nächstem Schritt.
+
+Technische Startfehler und der Rückfall auf Astra werden ehrlich benannt; niemals
+behaupten, ein Helfer habe gearbeitet, wenn er nicht gestartet ist.
+
+Meldungen erfolgen als kurze sichtbare Chatnachrichten bei tatsächlichem Wechsel;
+keine routinemäßige Wiederholung bei unverändertem Modell.
+
+Abschließend wird kurz genannt, welche Modelle tatsächlich beteiligt waren.
+
+Diese Regel erzeugt keine neue UI und ändert keine Schutzregeln.
+
 Dieser Routingvertrag ergänzt die bestehenden Regeln. Er ersetzt oder schwächt
 keine Schutzregel und erteilt keine zusätzliche Freigabe für geschützte Aktionen.
 
