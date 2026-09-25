@@ -109,9 +109,15 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
     }
     await pruefeBetrieb();
     const bestand = await snapshot();
-    const vollbestand = vorgang === "reaktivierung" || (bestand.mandate.length === 504
+    // Ein bereinigter Fachlauf braucht seine ausdruecklich gebundene Version2;
+    // eine passende Zeilenzahl allein erteilt kein neues Arbeitsrecht.
+    const bereinigtesFenster = bestand.mandate.length === 500 && ["fachzyklus", "textnachlauf"].includes(vorgang)
+      ? await require("../lib/helmut/testnachweis-arbeitsfenster").lese({
+        laufId: env.HELMUT_TESTFENSTER_ID, commit: env.GITHUB_SHA, get: db, jetzt: now, profile: bestand.mandate }) : null;
+    const bereinigt = bereinigtesFenster?.manifest.version === 2;
+    const vollbestand = bereinigt || vorgang === "reaktivierung" || (bestand.mandate.length === 504
       && ["vorpruefung", "fachzyklus", "textnachlauf", "quellenkontext", "quellenkontext-ruhe", "quellenvorlauf"].includes(vorgang));
-    const snapshotModus = ruhenderQuellenweg ? "500-ruhend" : vollbestand ? "500-bestand" : "vorpruefung";
+    const snapshotModus = bereinigt ? "500-bereinigt-bestand" : ruhenderQuellenweg ? "500-ruhend" : vollbestand ? "500-bestand" : "vorpruefung";
     const zielAnzahl = vollbestand ? 495 : 475;
     const vor = D.pruefeSnapshot(bestand, snapshotModus);
     const ruheziel = ruhenderQuellenweg ? require("../lib/helmut/quellenkontext-ruheziel")
@@ -159,7 +165,7 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
         && config.testKosten.aktiv === true && config.testKosten.limitUsd === 4
         && config.testKosten.maxManualCalls === null && config.testKosten.maxWindowMs === null
         && config.testKosten.unbekanntBleibtReserviert === true, "textnachlauf-nicht-deployt");
-      D.fordere(vor.gesamt === 504 && vor.aktiv === 500 && vor.aktive.length === zielAnzahl,
+      D.fordere(vor.gesamt === (bereinigt ? 500 : 504) && vor.aktiv === 500 && vor.aktive.length === zielAnzahl,
         "textnachlauf-braucht-500-aktive-profile");
       T.pruefeKosten(bestand.auth, kosten.reservierungen, now().toISOString().slice(0, 10));
       D.fordere(/^[0-9]{5,20}$/.test(env.GITHUB_RUN_ID || "") && env.GITHUB_RUN_ATTEMPT === "1",
@@ -298,7 +304,7 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
     }
 
     if (vorgang === "fachzyklus") {
-      D.fordere(vor.gesamt === 504 && vor.aktiv === 500 && vor.aktive.length === zielAnzahl,
+      D.fordere(vor.gesamt === (bereinigt ? 500 : 504) && vor.aktiv === 500 && vor.aktive.length === zielAnzahl,
         "fachzyklus-braucht-500-aktive-profile");
       // Eine Runde muss vollstaendig in dasselbe Kostenfenster passen.
       const start = now();
@@ -306,6 +312,11 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       D.pruefeZeit(ende);
       D.fordere(start.toISOString().slice(0, 10) === ende.toISOString().slice(0, 10),
         "fachzyklus-wuerde-utc-tag-wechseln");
+      if (bereinigt) {
+        D.fordere(ende.getTime() < Date.parse(bereinigtesFenster.manifest.endeAm), "fachzyklus-testfenster-zu-kurz");
+        await require("../lib/helmut/testnachweis-arbeitsfenster").lese({ laufId: env.HELMUT_TESTFENSTER_ID,
+          commit: env.GITHUB_SHA, get: db, jetzt: now, vorher: bereinigtesFenster });
+      }
       const profilHash = D.hash({ mandate: bestand.mandate, identitaeten: bestand.identitaeten,
         users: bestand.auth.users });
       const kostenVorher = kosten;
