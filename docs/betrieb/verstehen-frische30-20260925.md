@@ -139,7 +139,8 @@ PR565 gruen in CI36125338415, Merge512776e5 und Production
 `dpl_4Q89dHGhYSr7abHw4Vxgeahq7jW6` READY. Unter dem separaten konkreten
 Daten-GO wurden acht Ergebnisse redaktionell korrigiert: SELECT10:54:55UTC
 bestaetigt ALLE Felder exakt gegen den freigegebenen Plan. [Vollbeleg](frische30-acht-korrekturen-20260925.md).
-Ein weiterer [Texttypfehler](verstehen-texttypen-20260925.md) bleibt gesperrt.
-Aktuell22 complete/4 failed-final (10:55:16),30 Quellen weiterhin verknuepft.
+Zum damaligen Stand10:55:16:22 complete/4 failed-final. Die spaetere getrennte
+[Restkorrektur](frische30-rest-nachweis-20260925.md) ist verifiziert:30 Quellen
+an27 complete-Vorgaengen, drei alte Fehlvorgaenge bleiben gesperrt.
 Der einmalige Modelllauf bleibt verbraucht:26 Aufrufe,0,172350USD.
 Keine weiteren Kosten/Profilaktionen. Fachliche Gesamtabnahme weiterhin offen.

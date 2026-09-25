@@ -28,7 +28,11 @@ und den vollstaendig unveraenderten Inhalt ausser Status/updated_at.
 Backup: `/private/tmp/helmut-frische30-texttyp-vorher.json`.
 Keine Quellen-, Profil-, Kosten- oder Modellaktion. Keine automatische Wiederholung.
 Dieses zwoelfte gesperrte Ergebnis ist NICHT Teil der acht freigegebenen
-redaktionellen Korrekturen. Eine Wiederfreigabe ist noch offen.
+redaktionellen Korrekturen. Die spaetere separate Wiederfreigabe ist im [Restnachweis](frische30-rest-nachweis-20260925.md) belegt.
 
-Productionrollout der Typkorrektur und neue fachliche Gesamtabnahme stehen
-noch aus. Weder technische Speicherung noch diese Korrektur ist ein500er Nachweis.
+PR566 am geprueften Kopf a7da6f554783fa649c26b86e58a426b2509d833f:
+Pflicht-CI36126672687 erfolgreich, Merge09a949fab9c9dc7b2be461c22e97fbb02af219ea.
+Production dpl_7TJ4a5KQxMS6nZ2c4eNpQywT9eqf READY seit11:05:12UTC;
+Alias am selben Commit, keine error/fatal-Logs bis11:06:01UTC (kurzes Fenster).
+Die Typkorrektur ist damit ausgerollt. Fachliche Gesamtabnahme weiterhin offen.
+Weder technische Speicherung noch diese Korrektur ist ein500er Nachweis.
