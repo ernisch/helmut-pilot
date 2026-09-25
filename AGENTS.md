@@ -12,6 +12,57 @@ Für Produktlogik und 500er Test werden exakt 500 Zielprofile funktional gleich 
 
 Zuverlässigkeit, Quellenqualität, Einfachheit, Sicherheit und Verkaufsfähigkeit haben Vorrang vor neuen Funktionen.
 
+## Modellrouting für lokale Agent-Arbeit
+
+Astra bleibt führender Orchestrator und verantwortet Aufgabenzuteilung, Prüfung
+und Abnahme der lokalen Helfer.
+
+DeepSeek Flash ist Standard für einfache und mittlere lokale Coding Aufgaben,
+Bugfixes, gezielte Tests, Dokumentation, Routinearbeit und einfache Refactorings.
+
+DeepSeek V4 Pro wird nur für schwierige lokale Implementierung, komplexes
+Debugging oder dann eingesetzt, wenn Flash die Aufgabe nach einem ernsthaften
+Versuch nicht lösen konnte.
+
+Astra behält Architektur, Production, Supabase Production, Vercel Production,
+Migrationen, Secrets, Sicherheitsfragen, Budgetfragen, Release Entscheidungen,
+kritische Abnahmen und den finalen 500er Production Nachweis.
+
+Die verfügbaren lokalen Helfer werden mit einem klar abgegrenzten Auftrag gestartet:
+
+```sh
+# Flash rein lesend
+$HOME/bin/helmut-deepseek flash-read "<Aufgabe>"
+
+# Flash schreibend
+$HOME/bin/helmut-deepseek flash-write "<Aufgabe>"
+
+# Pro rein lesend
+$HOME/bin/helmut-deepseek pro-read "<Aufgabe>"
+
+# Pro schreibend
+$HOME/bin/helmut-deepseek pro-write "<Aufgabe>"
+```
+
+Nur ein Agent darf gleichzeitig im selben Arbeitsbereich schreiben.
+Während DeepSeek schreibt, schreibt Astra dort nicht.
+
+Nach jeder DeepSeek Änderung übernimmt Astra wieder und prüft selbst
+`git status`, `git diff`, das Ergebnis und nur die fachlich notwendigen gezielten
+Tests. Bei reinen Regel- oder Dokumentationsänderungen keine unnötigen fachlichen
+Test Suiten starten.
+
+Scheitert ein DeepSeek Start technisch mit `Operation not permitted` oder einem
+vergleichbaren lokalen Startfehler, genau einmal erneut versuchen. Scheitert auch
+der zweite Start, übernimmt Astra selbst oder meldet den Blocker.
+
+DeepSeek darf niemals Production Aktionen, Production Datenänderungen,
+Migrationen, Umgebungsvariablenänderungen, Commit, Push, Merge, PR Erstellung
+oder absichtliche kostenpflichtige Production Modellläufe durchführen.
+
+Dieser Routingvertrag ergänzt die bestehenden Regeln. Er ersetzt oder schwächt
+keine Schutzregel und erteilt keine zusätzliche Freigabe für geschützte Aktionen.
+
 ## Grundregel
 
 Arbeite immer auf dem kürzesten sicheren Weg zum aktuellen Ziel.
