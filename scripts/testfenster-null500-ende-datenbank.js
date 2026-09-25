@@ -18,6 +18,7 @@ async function pruefe({ psql, reset, grundlinie, state, lese, parallel, host, po
     grant usage on schema public to service_role;
     grant select,insert,update,delete on all tables in schema public to service_role;`);
   psql(fs.readFileSync(MIG, "utf8"));
+  psql(fs.readFileSync("supabase/migrations/20260925100000_testfenster_null500_bereinigt.sql", "utf8"));
   const sql = (m, grund = "notstopp", confirm = CONFIRM) => `select public.helmut_testfenster_null500_ende(
     ${lit(m.laufId)},${lit(JSON.stringify(m))}::jsonb,${lit(grund)},${lit(confirm)});`;
   const ruf = (m, grund) => JSON.parse(psql(sql(m, grund)));
@@ -73,9 +74,20 @@ async function pruefe({ psql, reset, grundlinie, state, lese, parallel, host, po
   const vorHash = grundlinie(); A.throws(() => ruf(falsch)); A.deepEqual(grundlinie(), vorHash);
   ok("Selbst uebereinstimmender manipulierter Quittungsinhalt braucht den korrekten500er Zielhash");
 
+  m = await reset(2); psql(N.baueSql(m, "aktivierung"));
+  const vorV2 = grundlinie();
+  A.throws(() => psql(fs.readFileSync("supabase/migrations/rollback_20260925100000_testfenster_null500_bereinigt.sql", "utf8")),
+    /null500-rollback-aktiver-bereinigter-lauf/);
+  A.deepEqual(grundlinie(), vorV2); A.equal(state(m), "500-bestaetigt");
+  const v2 = JSON.parse(psql("set role service_role;" + sql(m)));
+  A.equal(v2.deaktiviert, 500); A.equal(v2.gesamt, 500); A.equal(state(m), "0-bestaetigt");
+  for (const k of ["auth", "main", "identitaeten"]) A.equal(grundlinie()[k], vorV2[k]);
+  A.equal(ruf(m).deaktiviert, 0);
+  ok("Version2 Endfunktion stoppt exakt500; Rollback waehrend aktivem Version2 Lauf gesperrt");
+
   let api;
   try {
-    m = await reset(); psql(N.baueSql(m, "aktivierung"));
+    m = await reset(2); psql(N.baueSql(m, "aktivierung"));
     const listener = net.createServer(); listener.listen(0, "127.0.0.1"); await once(listener, "listening");
     const apiPort = listener.address().port; await new Promise(r => listener.close(r));
     api = spawn(process.env.HELMUT_TEST_POSTGREST_BIN || "/tmp/postgrest", [], { env: { ...process.env,
@@ -96,8 +108,14 @@ async function pruefe({ psql, reset, grundlinie, state, lese, parallel, host, po
       body: JSON.stringify({ p_lauf_id: m.laufId, p_manifest: m, p_grund: "notstopp", p_bestaetigung: CONFIRM }) });
     A.equal(response.status, 200); A.equal((await response.json()).deaktiviert, 500);
     A.equal(state(m), "0-bestaetigt");
-    ok("Echter PostgREST Aufruf bindet JSON Manifest und beendet alle500 atomar");
+    ok("Echter PostgREST Aufruf bindet Version2 Manifest und beendet alle500 atomar");
   } finally { if (api && api.exitCode === null) { api.kill("SIGTERM"); await once(api, "exit"); } }
+  psql(fs.readFileSync("supabase/migrations/rollback_20260925100000_testfenster_null500_bereinigt.sql", "utf8"));
+  A.throws(() => ruf(m), /null500-ende-quittung-nicht-gebunden/);
+  psql(N.baueSql(m, "ende")); A.equal(state(m), "0-bestaetigt");
+  m = await reset(); psql(N.baueSql(m, "aktivierung"));
+  A.equal(ruf(m).deaktiviert, 500); A.equal(state(m), "0-bestaetigt");
+  ok("Neuer Rollback stellt Version1 wieder her; gebundener manueller Version2 Rueckweg bleibt erhalten");
   psql(fs.readFileSync("supabase/migrations/rollback_20260919170000_testfenster_null500_ende.sql", "utf8"));
   A.equal(psql("select to_regprocedure('public.helmut_testfenster_null500_ende(text,jsonb,text,text)') is null"), "t");
   A.equal(state(m), "0-bestaetigt"); psql(N.baueSql(m, "ende"));

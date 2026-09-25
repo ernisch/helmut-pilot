@@ -35,14 +35,14 @@ function grundlinie() {
     'auth',${hash("(select data from helmut_store where id='main-auth')")},
     'main',${hash("(select data from helmut_store where id='main')")});`));
 }
-const s = F.snapshot();
-async function reset() {
+async function reset(version = 1) {
+  const s = version === 2 ? F.snapshotBereinigt() : F.snapshot();
   let zeitfenster = F.liveVertrag();
   while (!zeitfenster.vertrag) {
     await new Promise(resolve => setTimeout(resolve, Math.min(zeitfenster.warteMs, 60000)));
     zeitfenster = F.liveVertrag();
   }
-  const v = zeitfenster.vertrag;
+  const v = { ...zeitfenster.vertrag, version };
   psql("truncate mandate_profiles, profiles, helmut_store, pipeline_locks, helmut_jobs, process_runs;");
   const today = v.vorflugAm.slice(0, 10);
   const auth = { ...s.auth, sessions: [{ id: "offline-session", tokenHash: "offline-hash" }],
@@ -147,6 +147,18 @@ async function main() {
       create trigger test_fremdwrite before update on mandate_profiles for each row execute function test_fremdwrite();`);
     abweisen(m); psql("drop trigger test_fremdwrite on mandate_profiles; drop function test_fremdwrite();");
     ok("Postcondition rollt auch einen unerwarteten Seiteneffekt auf Identitaeten zurueck");
+    m = await reset(2); before = grundlinie();
+    psql(N.baueSql(m, "aktivierung")); A.equal(state(m), "500-bestaetigt");
+    A.equal(lese(m).gesamt, 500); A.deepEqual(lese(m).ausserhalbkennungen, []);
+    psql(N.baueSql(m, "ende")); A.equal(state(m), "0-bestaetigt");
+    for (const k of ["identitaeten", "auth", "main"]) A.equal(grundlinie()[k], before[k]);
+    ok("Bereinigte Version2 startet bei exakt500 und endet atomar bei0 ohne weitere Profile");
+    m = await reset(2);
+    psql("insert into profiles values('fremd','{}'); insert into mandate_profiles values('fremd',false,null,now(),'{}');");
+    m.grundlinie = grundlinie(); before = grundlinie();
+    A.throws(() => psql(N.baueSql(m, "aktivierung")), /null500-bestand-nicht-ruhend/);
+    A.deepEqual(grundlinie(), before); A.equal(lese(m).aktiv, 0);
+    ok("Version2 verweigert jedes zusaetzliche Profil auch bei frisch passender Grundlinie");
     await require("./testfenster-null500-ende-datenbank").pruefe({ psql, reset, grundlinie, state, lese, parallel, host, port, user, db, ok });
     console.log(`${pass} PASS, 0 FAIL gegen echte lokale PostgreSQL und PostgREST; keine Production Verbindung.`);
   } finally { psql("drop database " + db + " with (force)", "postgres"); }

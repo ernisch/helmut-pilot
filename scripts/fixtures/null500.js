@@ -23,6 +23,14 @@ function kostentag(day) {
     spent: 1000, baseline: 1000, baselineCalls: 0, manualCalls: 0, manualUntil: null,
     frozen: null, calls: {} };
 }
+function snapshotBereinigt() {
+  const s = snapshot(), entfernt = new Set(["bestand-5", "bestand-6", "bestand-7", "bestand-8"]);
+  s.mandate = s.mandate.filter(p => !entfernt.has(p.user_id));
+  s.identitaeten = s.identitaeten.filter(p => !entfernt.has(p.id));
+  // Drei verbleibende aktive Bestandskonten; die synthetischen Konten bleiben inaktiv.
+  s.auth.users = s.auth.users.filter(u => u.active || u.politicianId.startsWith("test-kohorte-"));
+  return s;
+}
 const auswahl = Array.from({ length: 5 }, (_, i) => "bestand-" + i);
 function vertrag(zeit = new Date("2026-09-19T12:00:00.000Z")) {
   return { laufId: "00000000-0000-4000-8000-000000000001", productionCommit: "a".repeat(40),
@@ -47,4 +55,4 @@ function abgelaufenerVertrag(zeit = new Date()) {
   const dayStart = Date.parse(zeit.toISOString().slice(0, 10) + "T00:00:00.000Z");
   return vertrag(new Date(dayStart - 12 * 3600000));
 }
-module.exports = { snapshot, auswahl, vertrag, kostentag, liveVertrag, abgelaufenerVertrag };
+module.exports = { snapshot, snapshotBereinigt, auswahl, vertrag, kostentag, liveVertrag, abgelaufenerVertrag };

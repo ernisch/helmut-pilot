@@ -80,4 +80,28 @@ test("DB Fixture prueft Ablauf statt versehentlichem UTC Kostenwechsel", () => {
   // Die Production Ablehnung eines echten Tageswechsels bleibt verbindlich.
   A.throws(() => N.pruefeManifest({ ...make(), endeAm: "2026-09-20T01:00:00.000Z" }), /null500-kostenfenster-ungueltig/);
 });
+test("Version2 bindet exakt500 Bestand; alte und neue Form sind nicht austauschbar", () => {
+  const s = F.snapshotBereinigt(), v = { ...F.vertrag(), version: 2 }, vor = structuredClone(s);
+  const m = N.plane(s, F.auswahl, v);
+  A.deepEqual(s, vor); A.deepEqual(m.ausserhalb, []); A.equal(m.version, 2);
+  A.throws(() => N.plane(F.snapshot(), F.auswahl, v));
+  A.throws(() => N.plane(s, F.auswahl, F.vertrag()));
+  A.throws(() => N.pruefeManifest({ ...m, version: 1 }));
+  A.throws(() => N.pruefeManifest({ ...make(), version: 2 }));
+  A.throws(() => N.plane(s, F.auswahl, { ...v, version: 3 }));
+  const r = { gesamt: 500, aktiv: 500, zielvorhanden: 500, zielaktiv: 500,
+    ausserhalbaktiv: 0, ausserhalbkennungen: [], quittung: { manifest: m, zustand: "aktiv" } };
+  A.equal(N.bewerteLesung(m, r).zustand, "500-bestaetigt");
+  A.equal(N.bewerteLesung(m, { ...r, gesamt: 504 }).zustand, "unklar");
+  A.equal(N.bewerteLesung(m, { ...r, ausserhalbkennungen: null }).zustand, "unklar");
+  const Z = require("../lib/helmut/testnachweis-ziel500");
+  A.equal(Z.auswahl(s.mandate, r.quittung).length, 500);
+  A.throws(() => Z.auswahl(F.snapshot().mandate, r.quittung));
+  for (const defekt of ["real", "synthetisch", "konto"]) {
+    const kaputt = structuredClone(s);
+    if (defekt === "konto") kaputt.auth.users.find(u => u.politicianId.startsWith("test-kohorte-")).active = true;
+    else kaputt.mandate = kaputt.mandate.filter(p => p.user_id !== (defekt === "real" ? F.auswahl[0] : "test-kohorte-c-400"));
+    A.throws(() => N.plane(kaputt, F.auswahl, v));
+  }
+});
 console.log(`${pass} PASS, 0 FAIL. PostgreSQL Transaktionsnachweis ist ein eigener Pflichtlauf.`);
