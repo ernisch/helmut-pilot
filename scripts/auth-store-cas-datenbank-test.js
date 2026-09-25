@@ -7,6 +7,7 @@ const assert = require("node:assert/strict");
 const crypto = require("node:crypto");
 const net = require("node:net");
 const path = require("node:path");
+const fs = require("node:fs");
 const { execFileSync, spawn } = require("node:child_process");
 const { once } = require("node:events");
 
@@ -162,7 +163,10 @@ async function main() {
     await require("./fixtures/direkt500-datenbank").pruefeDirektausbau({ psql, base, token });
     await require("./fixtures/testkosten-datenbank").pruefeKosten({ psql, base, token });
     await require("./fixtures/quellenkontext-datenbank").pruefe({ base, token });
-    const importPruefungen = require("./fixtures/quellenimport-datenbank").pruefe({ psql });
+    const importPruefungen = require("./fixtures/quellenimport-datenbank").pruefe({ psql })
+      + require("./fixtures/quellenimport-datenbank").pruefe({ psql, anzahl: 30,
+        sqlTemplate: fs.readFileSync(path.join(__dirname, "fixtures/quellenfrische-30-vorbereitung.sql"), "utf8"),
+        rueckweg: require("./quellenfrische-30-plan").baueRueckweg });
     console.log(`PostgreSQL ${version}: ${15 + importPruefungen} PASS, 0 FAIL. Kein Production Funktionsnachweis.`);
   } finally {
     if (api && api.pid && api.exitCode == null) {
