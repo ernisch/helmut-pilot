@@ -27,8 +27,8 @@ const iso = (msAgo) => new Date(NOW - msAgo).toISOString();
 const KOBASE = { status: "neu", understanding_status: "complete" };
 
 // Quelle in DB-Schreibweise (snake_case, wie raw_documents). partySource = Partei-/Fraktionsquelle.
-function src(type, { link = "direct", ageH = 24 } = {}) {
-  return { id: `rd-${type}-${ageH}`, url: `https://example.org/${type}-${ageH}`, canonical_url: null,
+function src(type, { link = "direct", ageH = 24, domain = type === "party" ? "die-linke.de" : type === "faction" ? "linksfraktion.de" : "example.org" } = {}) {
+  return { id: `rd-${type}-${ageH}`, url: `https://${domain}/presse/${type}-${ageH}`, canonical_url: null,
     source_type: type, source_name: `Quelle ${type}`, link_type: link, published_at: iso(ageH * 3600e3) };
 }
 
@@ -93,17 +93,18 @@ check("2e B1: Fraktion 'Linksfraktion' (ohne Partei-Feld) + ko ['Die Linke'] -> 
 // 3) Gilt fuer ALLE Parteien/Fraktionen (keine Sonderregel) — je Partei ein Akteur-Fall
 // =============================================================================
 const parties = [
-  { name: "SPD", profile: "SPD", ko: "SPD" },
-  { name: "CDU", profile: "CDU", ko: "CDU" },
-  { name: "Union (CDU/CSU)", profile: "CDU/CSU", ko: "CDU/CSU" },
-  { name: "Grüne (Schreibvariante)", profile: "Bündnis 90/Die Grünen", ko: "Grüne" },
-  { name: "AfD", profile: "AfD", ko: "AfD" },
-  { name: "FDP (Freie Demokraten)", profile: "FDP", ko: "Freie Demokraten" },
-  { name: "BSW", profile: "BSW", ko: "Bündnis Sahra Wagenknecht" }
+  { name: "SPD", profile: "SPD", ko: "SPD", domain: "spd.de" },
+  { name: "CSU", profile: "CSU", ko: "CSU", domain: "csu.de" },
+  { name: "CDU", profile: "CDU", ko: "CDU", domain: "cdu.de" },
+  { name: "Union (CDU/CSU)", profile: "CDU/CSU", ko: "CDU/CSU", domain: "cducsu.de" },
+  { name: "Grüne (Schreibvariante)", profile: "Bündnis 90/Die Grünen", ko: "Grüne", domain: "gruene.de" },
+  { name: "AfD", profile: "AfD", ko: "AfD", domain: "afd.de" },
+  { name: "FDP (Freie Demokraten)", profile: "FDP", ko: "Freie Demokraten", domain: "fdp.de" },
+  { name: "BSW", profile: "BSW", ko: "Bündnis Sahra Wagenknecht", domain: "bsw-vg.de" }
 ];
 for (const p of parties) {
   check(`3 ${p.name}: Profil-Partei + KO-Partei-Akteur (Parteiquelle) -> Partei-Reiter`,
-    runParty({ profileFields: { party: p.profile }, parteien: [p.ko], sources: [src("party")] }).granted);
+    runParty({ profileFields: { party: p.profile }, parteien: [p.ko], sources: [src("party", { domain: p.domain })] }).granted);
 }
 // Gegenprobe: fremde Partei am selben KO bekommt KEINEN Partei-Treffer (keine Verwechslung).
 check("3b Fremdpartei: SPD-Profil am reinen Linke-Akteur-KO -> KEIN Partei-Reiter",
@@ -123,7 +124,7 @@ check("4b Titel-Akteur mit Umlaut: 'Die Grünen fordern …' + Medienquelle -> e
 {
   // Primaerquelle = Medien (direct, juengste); zusaetzlich aeltere Fraktionsquelle.
   const r = runParty({ profileFields: { party: "SPD" }, parteien: ["SPD"], title: "Bericht ohne Parteinamen",
-    sources: [src("media", { ageH: 2 }), src("faction", { ageH: 200 })] });
+    sources: [src("media", { ageH: 2 }), src("faction", { ageH: 200, domain: "spdfraktion.de" })] });
   check("5 B2: nicht-primaere Fraktionsquelle belegt den Akteur (alle Quellen geprueft)", r.granted);
 }
 {

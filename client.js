@@ -9961,7 +9961,7 @@ function radarIcon(name) {
 }
 
 const RADAR_SEGMENTS = [
-  { key: "party", label: "Partei", empty: "Keine neuen relevanten Parteisignale.", more: "Alle Parteisignale anzeigen" },
+  { key: "party", label: "Partei / Fraktion", empty: "Keine neuen belegten Partei- oder Fraktionssignale.", more: "Alle Partei- und Fraktionssignale anzeigen" },
   { key: "constituency", label: "Wahlkreis", empty: "Keine neuen relevanten Entwicklungen aus deinem Wahlkreis.", more: "Alle Wahlkreis-Signale anzeigen" },
   { key: "committees", label: "Ausschüsse", empty: "Keine neuen relevanten Ausschussentwicklungen.", more: "Alle Ausschuss-Signale anzeigen" }
 ];

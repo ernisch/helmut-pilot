@@ -469,7 +469,8 @@ check("Keine technischen Quellen-Enums im sourceCategory-Label (nur Klartext/'')
     // Partei in parteien + Partei als Akteur im Titel -> belegt.
     radarState.radarRelationBeleg("party", "Die Linke", { parteien: ["Die Linke"], display_title: "Die Linke beschließt neue Linie" }, terms) === true &&
     // Partei in parteien + Partei-/Fraktionsquelle -> belegt (auch ohne Partei im Titel).
-    radarState.radarRelationBeleg("party", "Die Linke", { parteien: ["Die Linke"] }, terms, { sourceType: "faction" }) === true &&
+    radarState.radarRelationBeleg("party", "Die Linke", { parteien: ["Die Linke"] }, terms,
+      { url: "https://www.linksfraktion.de/presse/eine-meldung", sourceType: "faction" }) === true &&
     // Partei NUR beilaeufig erwaehnt (mentioned_parties), nicht in parteien -> NICHT belegt (FALL B).
     radarState.radarRelationBeleg("party", "Die Linke", { parteien: [], mentioned_parties: ["Die Linke"] }, terms) === false &&
     // FALL C: Partei in parteien, aber Medienartikel ohne Parteihandlung (Partei nicht im Titel,

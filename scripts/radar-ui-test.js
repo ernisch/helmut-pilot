@@ -150,7 +150,7 @@ api.setSegment("party"); api.setEnvExpanded(false);
 const envHtml = api.render();
 const envShown = [1,2,3,4,5].filter((i) => envHtml.includes(`Parteisignal-${i}`));
 check("Umfeld zeigt standardmäßig max. 3 Einträge pro Segment", envShown.length === 3, `sichtbar=${envShown.join(",")}`);
-check("Umfeld zeigt segmentspezifischen 'Alle Parteisignale anzeigen (5)'", /Alle Parteisignale anzeigen \(5\)/.test(envHtml));
+check("Umfeld zeigt segmentspezifischen 'Alle Partei- und Fraktionssignale anzeigen (5)'", /Alle Partei- und Fraktionssignale anzeigen \(5\)/.test(envHtml));
 api.setEnvExpanded(true);
 const envHtmlAll = api.render();
 check("Umfeld aufgeklappt: alle 5 Einträge sichtbar (echte erweiterte Liste)",
@@ -166,7 +166,7 @@ api.setBriefing({ engine: "v3", currentRadarState: emptyPartyState });
 api.setSegment("party");
 const emptyPartyHtml = api.render();
 check("Leeres Partei-Segment -> ehrlicher Leerzustand statt kaputt/leer",
-  /Keine neuen relevanten Parteisignale/.test(emptyPartyHtml) && emptyPartyHtml.includes("Dein Umfeld"));
+  /Keine neuen belegten Partei- oder Fraktionssignale/.test(emptyPartyHtml) && emptyPartyHtml.includes("Dein Umfeld"));
 
 // 11) Stoerungswahrheit im Radar-Leerzustand (Audit-Folgebranch): store-error/
 //     keine-vorgaenge duerfen NICHT wie ein ruhiger Tag aussehen; "keine-treffer"
