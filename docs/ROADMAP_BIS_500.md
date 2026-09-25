@@ -6,6 +6,27 @@ Diese Datei ist die verbindliche Reihenfolge bis zum 500er Production Nachweis.
 Sie dient Codex als kurze Arbeitsroadmap. Aktueller Production Stand und Belege
 stehen weiterhin in `docs/CURRENT_STATE.md`.
 
+## Arbeitsmodus
+
+Wenn der Nutzer einen Roadmap Schritt als Sprint startet, arbeitet Codex diesen
+Sprint vollautonom bis zu den definierten Abnahmekriterien ab.
+
+Dazu gehören Analyse, auftragsbezogener Code und Dokumentation, gezielte Tests,
+Fehlerkorrekturen, Commit, Push, Pull Request, Merge nach grüner Pflicht CI,
+reguläres Vercel Production Deployment und rein lesende Nachkontrolle.
+
+Auftragsbezogene Fehler werden selbstständig behoben und erneut geprüft. Codex
+stoppt nicht nur deshalb, weil ein weiterer Korrektur PR nötig wird.
+
+Geschützte Production Aktionen bleiben ausgenommen. Insbesondere Migrationen,
+Production Daten oder Profiländerungen, Cron, Environment oder Azure Änderungen,
+Budgetänderungen, externe Nachrichten sowie Aktivierung der 500 Profile und Start
+des 500er Nachweises brauchen weiterhin das dafür ausdrücklich erforderliche GO.
+
+Notwendige Modelltests dürfen innerhalb des Sprintziels autonom laufen, solange
+der technische Tagesriegel von 4 USD je UTC Tag eingehalten wird und der jeweilige
+Test vorher klar begrenzt ist.
+
 ## 1 · Eingefrorenes Produktziel
 
 Bis zum 500er Nachweis wird die Grundstruktur nicht erneut umgebaut, außer ein
