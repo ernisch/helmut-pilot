@@ -34,7 +34,7 @@ let n = 0; const ok = (name, f) => Promise.resolve().then(f).then(() => { n++; c
  });
  await ok("Profilruhe und vorhandene Einmalquittung sind harte Sperren", async () => {
   const state={mandate_profiles:Array.from({length:504},(_,i)=>({user_id:String(i),aktiv:false,geloescht_at:null})),profiles:Array.from({length:505},(_,i)=>({id:String(i)})),helmut_jobs:[],pipeline_locks:[],process_runs:[],helmut_verstehen_reservierungen:[],helmut_store:[]};
-  const read=async t=>state[t];assert.match(await C.ruhe(read),/^[a-f0-9]{64}$/);
+  const read=async (t,q)=>{if(t==="process_runs")assert.equal(new URLSearchParams(q).get("select"),"run_id");return state[t];};assert.match(await C.ruhe(read),/^[a-f0-9]{64}$/);
   for(const t of ["helmut_jobs","pipeline_locks","process_runs","helmut_verstehen_reservierungen","helmut_store"]){state[t]=[{}];await assert.rejects(()=>C.ruhe(read));state[t]=[];}
   state.mandate_profiles[0].aktiv=true;await assert.rejects(()=>C.ruhe(read));
  });

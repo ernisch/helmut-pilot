@@ -35,7 +35,7 @@ async function ruhe(read, jetzt = new Date().toISOString()) {
     read("profiles", "select=*&order=id.asc&limit=506"),
     read("helmut_jobs", "select=id&or=(status.neq.erledigt,lease_expires_at.gt." + encodeURIComponent(jetzt) + ")&limit=1"),
     read("pipeline_locks", "select=job_name&expires_at=gt." + encodeURIComponent(jetzt) + "&limit=1"),
-    read("process_runs", "select=id&finished_at=is.null&started_at=gt." + encodeURIComponent(new Date(Date.parse(jetzt) - 30 * 60000).toISOString()) + "&limit=1"),
+    read("process_runs", "select=run_id&finished_at=is.null&started_at=gt." + encodeURIComponent(new Date(Date.parse(jetzt) - 30 * 60000).toISOString()) + "&limit=1"),
     read("helmut_verstehen_reservierungen", "select=vorgang_id&lease_bis=gt." + encodeURIComponent(jetzt) + "&limit=1"),
     read("helmut_store", "select=id&id=eq." + F.QUITTUNG + "&limit=1")
   ]);
