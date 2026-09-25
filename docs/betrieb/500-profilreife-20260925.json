@@ -1,0 +1,17 @@
+{
+  "gesamt": 500,
+  "zulaessig": 500,
+  "pflichtpaketFehlt": 0,
+  "pruefung": "Regulaere pruefeNeuaktivierung und resolveProfilePackages, keine Sonderausnahme",
+  "korrektur": [
+    {
+      "zeit": "2026-09-25 12:24:00.397511+00",
+      "status": "abgeschlossen",
+      "ausgefuehrt_am": "2026-09-25T12:23:38.740631+00:00",
+      "zeile_exakt": true,
+      "andere503_exakt": true,
+      "berichterstatter_themen": []
+    }
+  ],
+  "sqlLabGroups": 4
+}

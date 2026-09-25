@@ -67,3 +67,17 @@ Production dpl_FdftwZtRy2bH6S9WsYg2w1oKaDBt READY. Fehler-/Fatal-Logs
 10:22–10:23UTC leer (nur dieses kurze Fenster geprueft). SELECT10:22:23
 weiter504/0 und unveraenderte Profilhashes. Migration weiterhin NICHT angewendet;
 keine Bereinigung, Aktivierung oder500er Ausfuehrung.
+
+## Migration ausgefuehrt25.09.
+
+Unter der umfassenden Betreiberfreigabe installiert: Supabase-Version20260925115437,
+Datei20260925100000_testfenster_null500_bereinigt.sql. Vorab war der Rueckweg-
+Funktionskoerper exakt mit der installierten alten Funktion identisch;0 aktive
+Fenster. Anwendung mit15s Anweisungsgrenze und3s Sperrgrenze, zusaetzlichem
+Grundlinienvergleich der alten Funktion und0 aktiven Profilen.
+Nachlesung11:54:54UTC: neuer Funktionskoerper exakt, SECURITY INVOKER,
+service_role darf ausfuehren, anon/authenticated nicht. [Funktionsbeleg](testfenster-exakt500-migration-20260925.json).
+SELECT11:55:06UTC:504/0, alle Profil-/Identitaeten-/Mainhashes seit unmittelbar
+vor Installation unveraendert;0 Jobs/Locks/Leases,0 offene Kosten,0,304227USD.
+Keine Ausfuehrung der Endfunktion gegen Profile, keine Aktivierung durch Installation.
+Bereinigung, lebender Endwaechter und finaler Startplan bleiben offen.

@@ -1,0 +1,16 @@
+[
+  {
+    "zeit": "2026-09-25 11:54:54.914088+00",
+    "prosecdef": false,
+    "proconfig": [
+      "search_path=pg_catalog",
+      "lock_timeout=3s"
+    ],
+    "bodyhash": "718894f20c48c8ee55d60894db5a21e1",
+    "service_role": true,
+    "anon": false,
+    "authenticated": false,
+    "migration_version": "20260925115437",
+    "funktionskoerper_exakt": true
+  }
+]
