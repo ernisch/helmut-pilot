@@ -107,9 +107,15 @@ Push
 
 Pull Request
 
-Push und Pull Request sind erlaubt. Ein Merge benötigt immer ein konkretes GO
-für genau diesen PR. Die frühere Merge-Dauerfreigabe ist durch die neuere
-Nutzeranweisung vom 24.09.2026 widerrufen, auch für künftige Tasks.
+Push und Pull Request sind erlaubt.
+
+Wenn der Nutzer einen klar abgegrenzten Sprint oder eine konkrete Aufgabe startet,
+gilt dieser Start zugleich als Merge Freigabe für alle Pull Requests, die ausschließlich
+zu diesem Sprint gehören. Voraussetzung: aktueller PR Kopf geprüft, Pflicht CI grün,
+main und Parallelität geprüft und keine Schutzregel abgeschwächt.
+
+Codex arbeitet innerhalb dieses Sprints autonom weiter, bis Ziel und Abnahmekriterien
+erfüllt sind oder eine unten ausdrücklich geschützte Aktion erreicht wird.
 
 ## Selbstständige Sprint-Abwicklung
 
@@ -120,16 +126,20 @@ selbst beheben; unabhängige neue Probleme für später dokumentieren, den Sprin
 nicht erweitern. Keine neuen Funktionen vor dem 500er Nachweis, außer sie beseitigen
 einen echten Blocker.
 
-Vor einem freigegebenen Merge Diff, aktuellen PR-Kopf, main und parallele Arbeit
-prüfen. Beide Pflichtprüfungen `Syntax + Offline-Suiten` und
-`Browser-/Mobile-Smoke (Chromium)` müssen für den aktuellen PR-Kopf erfolgreich
-sein. Merge an diesen Commit binden; keine Admin-Umgehung, kein Force-Push und
+Vor jedem autonomen Merge Diff, aktuellen PR Kopf, main und parallele Arbeit prüfen.
+Beide Pflichtprüfungen `Syntax + Offline-Suiten` und
+`Browser-/Mobile-Smoke (Chromium)` müssen für den aktuellen PR Kopf erfolgreich
+sein. Merge an diesen Commit binden; keine Admin Umgehung, kein Force Push und
 keine Abschwächung von Schutzregeln für grüne Tests.
 
-Nach einem konkret freigegebenen Merge Deployment/Commit, relevante Fehlerprotokolle
-und betroffenen Zustand rein lesend prüfen, Pflicht-CI bis zum Ergebnis verfolgen
-und den belegten Stand dokumentieren. Danach innerhalb des Auftrags bis zum
-nächsten Freigabepunkt weiterarbeiten.
+Nach jedem Merge Deployment und Commit, relevante Fehlerprotokolle und den
+betroffenen Zustand rein lesend prüfen. Wenn ein auftragsbezogener Fehler gefunden
+wird, ihn selbstständig im selben Sprint beheben, gezielt prüfen, neuen PR erstellen,
+bei grüner Pflicht CI erneut mergen und weiterarbeiten. Keine Rückfrage nur wegen
+eines normalen auftragsbezogenen Fehlers.
+
+Der Sprint endet erst, wenn die Abnahmekriterien erfüllt sind, ein echter
+Schutzfreigabepunkt erreicht ist oder ein nicht sicher lösbarer Blocker belegt ist.
 
 ## CI warten
 
@@ -174,13 +184,15 @@ Keine Endlosschleifen.
 
 ## Production Schutz
 
-Production Änderungen benötigen ein ausdrückliches GO für die konkrete Aktion und den konkreten Umfang. Merge braucht immer ein konkretes GO für genau diesen PR; Push und PR sind keine Merge-Freigabe.
+Der Start eines klar benannten Sprints autorisiert die zugehörigen grünen Merges
+und die dadurch regulär ausgelösten Vercel Production Deployments innerhalb dieses
+Sprintumfangs.
+
+Diese Freigabe umfasst jedoch nicht automatisch die folgenden besonders geschützten
+Production Aktionen. Sie benötigen weiterhin ein ausdrückliches GO für die konkrete
+Aktion, Umgebung und den konkreten Umfang:
 
 Dies betrifft insbesondere:
-
-Merge mit Production Wirkung
-
-Production Deployment
 
 Migrationen
 
@@ -208,7 +220,9 @@ externe Nachrichten
 
 kostenpflichtige Ressourcen
 
-Eine Freigabe gilt nur für ihre konkrete Aktion und ihren Umfang, nicht automatisch für eine spätere Aktion.
+Die Sprintfreigabe gilt nur für Änderungen, Tests, Merges und reguläre Deployments
+innerhalb des benannten Sprintziels. Eine Erweiterung auf ein neues Problemfeld oder
+eine der geschützten Aktionen ist davon nicht umfasst.
 
 Provisionierung ist keine Aktivierungsfreigabe.
 
@@ -237,7 +251,11 @@ Nur im konkret freigegebenen Umfang handeln.
 
 ## Kostenpflichtige Tests
 
-Vor einem kostenpflichtigen Test müssen feststehen:
+Innerhalb eines gestarteten Sprints darf Codex notwendige Modelltests autonom
+ausführen, wenn sie innerhalb des vom Betreiber gesetzten technischen Tagesriegels
+von 4 USD je UTC Tag bleiben und unmittelbar dem Sprintziel dienen.
+
+Vor jedem solchen kostenpflichtigen Test müssen dennoch feststehen:
 
 Anzahl der Profile
 
@@ -256,6 +274,10 @@ Umgang mit Testprofilen danach
 Keine unbegrenzten Wiederholungen.
 
 Keine stillen Budgeterhöhungen.
+
+Fehlschlägt ein notwendiger Test, Ursache bewerten, den auftragsbezogenen Fehler
+selbstständig beheben und nur mit sachlichem Grund erneut testen. Der 4 USD Riegel
+darf dabei nie erhöht oder umgangen werden.
 
 ## 500er Production Nachweis
 
