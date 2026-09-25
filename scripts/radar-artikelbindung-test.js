@@ -33,6 +33,10 @@ test("Name im Originalauszug reicht, die verlinkte Artikelüberschrift bleibt er
   const d = doc("auszug", "Beratung im Ausschuss", { summary: "Alex Beispiel erläutert den Antrag im Ausschuss." });
   const m = anzeige([d]).mentions[0]; A.equal(m.title, d.title); A.equal(m.documentId, d.id);
 });
+test("Belegte Artikelnennung bleibt auch ohne KO-Namensextraktion sichtbar", () => {
+  const d = doc("ohne-ko-name", "Alex Beispiel spricht im Ausschuss");
+  A.equal(anzeige([d], { mentioned_people: [], mentioned_mps: [] }).mentions[0].documentId, d.id);
+});
 test("Teilnamen, Feldübergänge und bestätigter Herausgebersuffix zählen nicht", () => {
   for (const d of [doc("teil", "Beispiel spricht im Ausschuss"),
     doc("felder", "Eine Frage an Alex", { summary: "Beispiel für eine Debatte." }),

@@ -310,7 +310,7 @@ allerhöchstens einem belegten Artikel übernommen; kein KO-Titel/URL-Fallback.
 Nach der Auswahl wird die tatsächliche Artikelidentität nochmals entdoppelt.
 Die Rohzuordnungen bleiben Diagnose, werden nicht als sichtbare Treffer gezählt.
 
-Gezielt offline: `radar-artikelbindung-test.js`10/10 Fallgruppen,
+Gezielt offline: `radar-artikelbindung-test.js`11/11 Fallgruppen,
 `radar-state-test.js`115/115, vorhandener Bereichsvertrag20/20 vor der zusätzlichen
 Absicherung von Anzeigeplätzen. Pflicht-CI prüft den endgültigen Kopf.
 Kein Modell, keine Profil- oder Datenänderung. Risiko: spärliche Originalauszüge
@@ -322,3 +322,7 @@ wenn lediglich Titel/Auszug gespeichert sind.
 am tatsächlichen Ursprung belegen; Production-Nachkontrolle nach Deployment.
 Die bestehende Partei-Normalisierung behandelt Fraktionsnamen bisher als
 Parteibegriff. Das ist keine bestandene getrennte Fraktionsabnahme.
+
+Auch wenn die KO-Extraktion den Namen ausgelassen hat, bleibt eine belegte
+Nennung im Originalartikel sichtbar. Der leere Rohzustand darf diese Anzeige
+nicht verwerfen. Die Browserfixture traegt denselben Artikelbeleg.
