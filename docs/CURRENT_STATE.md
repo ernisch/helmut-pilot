@@ -4,7 +4,7 @@
 
 ## 1 · Aktueller Stand
 
-* **Aktueller Roadmap-Stand25.09.: siehe §6.** Productiond97e3dfc READY,500/0. 30er Quellenkorrekturen verifiziert; frische Vollversorgung fuer500 nicht bestanden. Kein500er Start.
+* **Aktueller Roadmap-Stand25.09.: siehe §6.** Productiond71f06f1 READY,500/0. 30er Quellenkorrekturen verifiziert; frische Vollversorgung fuer500 nicht bestanden. Kein500er Start.
 
 * **Production-Belege dieses Sprints:** PR #549 (Trennung von Lage/Radar/Briefing) gemergt als `00ed4c27b7703849d57ca9f357dcf15a40f5f311`, Vercel `dpl_6iDLuovtgpFL7DSZX1M2djMYugdQ` READY, PR-CI `36031516394` SUCCESS. Auftragsbezogene Reparaturen: [PR #550](https://github.com/ernisch/helmut-pilot/pull/550) (Appstart ohne Hintergrundmodelle, begrenzte Quellenabrufe) und [PR #551](https://github.com/ernisch/helmut-pilot/pull/551) (500er Fachleser an neue Testfenster gebunden); ihre finalen Merge-/Ausrollbelege stehen direkt im jeweiligen PR. Vierer-Migration angewendet; Zweierlauf `36029408684` nach einem Parteienfehler gestoppt: 1 Aufruf, 0,005804 USD, Koçak nicht begonnen. [Vierer-Bilanz](betrieb/verstehen-vier-nacharbeit-20260924.md). **Noch keine belastbare 500er Startbereitschaft**, siehe [Starttor](betrieb/500-starttor-20260924.md).
 * **Fuenfter (freigegebener) scharfer 169er Lauf — erstmals ALLE 122 Cluster verarbeitet, fachlich nicht bestanden.** Workflow-Run `35987448290`, `run_attempt = 1`, `failure`, 24.09.2026 10:28:42–10:54:17 UTC, Runtime-Commit = Dispatch = Checkout `2d412d0418f5d6170f2c34ff69dbd846c4e0c703`, Dokument-Snapshot `ea84f26c…`. Die Bindung hielt; der Schutzvertrag passierte mit **81 Modellkandidaten** (≤ 113) — **PR #541 wirkte belegbar** (der vierte Lauf war noch mit 114 Kandidaten gescheitert). `abbruchGrund = null`, `vollstaendigVerarbeitet = true`, `fachlichBestanden = false`; Bilanz `saved 63`, `updated 14`, `duplicate 34`, `merged 7`, `skipped-invalid 4` (`unbekannt 4`); **81 Modellaufrufe**, `quellenabrufe 0`, `profilwrites 0`, `kommunikation 0`; Laufkosten **0,522795 USD** von 0,80 USD; Quittung `verstehen169-20260924-c` terminal **`unbekannt`** (verbraucht). **Vier lokale `unknown`** (Klasse A, kein globaler Abbruch): `vg-gemeinsame-20260921-dcd0f5`, `vg-linkenpolitiker-20260921-37cdeb` und `vg-arbeitsplätze-20260715-6cc672` (Aktualisierung) mit `quellenbeleg-parteien`, sowie `vg-verzögerung-20230613-95c80f` mit `validierung-fehlgeschlagen` und leerer Fehlerliste. CAS danach je `zustand=unbekannt` (Betreiberbeleg). **In diesem 169er Lauf keine erneute Freigabe; die spaetere isolierte Nacharbeit steht oben.** [Beleg](betrieb/verstehen-einmalig-169-20260922.md) §24.
@@ -90,7 +90,7 @@ Vollstaendige historische Betriebswerte zu Crons, Flags, Migrationen, Quellenpak
 ## 6 · Naechster Schritt
 
 **Roadmap25.09. fortgesetzt; umfassendes Betreiber-GO samt Entscheidungsdelegation.**
-Tagesriegel4USD und Profilschutz bestehen. Productiond97e3dfc READY, PR577 gruen.
+Tagesriegel4USD und Profilschutz bestehen. Productiond71f06f1 READY, PR580 gruen.
 [Profilreife](betrieb/500-profilreife-20260925.json):500/500 zulaessig,0 fehlende
 Pflichtpakete nach61er Bundestagsumstellung und Entfernung zweier Rollenplatzhalter.
 [Endfunktion fuer exakt500](betrieb/testfenster-exakt500-20260925.md) installiert
@@ -110,30 +110,33 @@ PR575 nach Pflicht-CI36152588328 gemergt,25f656bc READY15:23:28UTC.
 Regierungsakteur traegt keine Identitaet allein; Artikelzeitpruefung nur am Beleg.
 Fehlbindung15:24:10UTC korrigiert: CO2-Quelle geloest, Vormerkung entfernt,
 gemischter Altvorgang gesperrt;16 alte Quellen und CAS unveraendert.
-[Redaktion der sieben Quellen](betrieb/bund7-redaktion-20260925.md)15:56:31UTC
-abgeschlossen:5 neue Vorgaenge,2 Fortschreibungen,1 Dublette gesperrt.
-Alle8 KO-Hashes,10 Links und7 unveraenderte Rohquellen nachgelesen.
-Erster Versuch atomar am Fencing-Trigger gestoppt; unveraendertes Schutzfeld
-im korrigierten UPDATE ausgelassen.13/13 Laborgruppen mit echtem Trigger.
+[Sieben Quellen redaktionell korrigiert](betrieb/bund7-redaktion-20260925.md)
+15:56:31UTC:5 neue Vorgaenge,2 Fortschreibungen,1 Dublette gesperrt;
+8 KO-Hashes,10 Links und7 Rohquellen nachgelesen;13/13 Trigger-Laborgruppen.
 [Persoenlicher Radar-Beleg](betrieb/radar-cem-redenquelle-20260925.md)15:57:03UTC:
 Cems amtlicher Mediathektitel,1 Quelle/Fundstelle/KO/Link, alle4 Nachhashes gleich.
 Keine erfundene Redeauswertung;10/10 Gruppen mit echtem Trigger.
 SELECT15:57:32UTC:500/0, Schutzhashes unveraendert,0 Jobs/Locks/Leases/offene
 Kosten, Tagesstand0,312021USD von4USD. Beide Datenauftraege verbraucht.
-Vollstaendige lokale500-Profil-Lesepruefung aus Snapshot15:57:39UTC beendet:
-128 frische Tagesanlaesse,21 veraltete,351 leere. Alle500 einzeln erfasst;
-keine Behauptung einer Vollversorgung.468 verschiedene konkrete Modellprompts,
-keine belegte Wiederverwendung allein aus32 Profilkontextgruppen.
+Die vorherige lokale500-Lesung ist im [Nachpruefbericht](betrieb/roadmap-nachpruefung-20260925.md)
+eingeordnet; keine bewiesene Kostenersparnis allein aus Profilkontextgruppen.
 [Drei neue amtliche Quellen](betrieb/nachmittag3-quellen-20260925.md)16:21:58UTC
 importiert; alle12 Datenhashes nachgelesen,500/0 und0,312021USD unveraendert.
 Production-Aufnahme36160592624 um16:25:02UTC belegt Cems echten Personenhinweis
 mit Originaltitel und Mediatheklink. Noch ohne Lage-Ansicht/Gesamtpaket.
-Lokale500-Lesepruefung nach diesen drei Quellen, Snapshot16:30:56UTC:
-190 technisch frisch,21 veraltet,289 leer; Radar-Anzeige1 frisch/499 leer.
-Nachpruefung entdeckte41 falsche Ausschussbelege: Rechtsausschuss wird mit
-Menschenrechtsausschuss gleichgesetzt. Diese41 sind kein Fachnachweis;
-Reparatur im getrennten Branch in Arbeit. Noch kein positiver sichtbarer
-Drei-Bereiche-Nachweis. Keine Schwellenabsenkung und keine Aktivierung.
+[Vollstaendige Nachpruefung](betrieb/roadmap-nachpruefung-20260925.md):
+PR578/579/580 nach gruener Pflicht-CI gemergt und READY.41 falsche
+Ausschussbelege beseitigt; "keiner" erzeugt keine Dringlichkeitspunkte mehr.
+Lokale500-Lesung derselben Datenbasis16:30:56UTC mit beiden Korrekturen:
+61 frische Tagesprioritaeten,439 leer; Radar-Anzeige1 frisch/499 leer.
+Alle Kennungen bilanziert, keine Quellen-/Profil-/Schwellenanpassung.
+SQL17:19:07UTC:500/0 und Schutzhashes gleich,0 Jobs/Locks/Leases/offene
+Kosten,0,312021USD von4USD. Keine Vollversorgung oder500er Abnahme.
+Drei Bereiche lokal vollstaendig verglichen, Rollen getrennt;12 Lagekarten,
+0 gespeicherte Lageabsaetze. Keine direkte Production-Antwort-/Faktenabnahme.
+Die automatische Freigabepruefung blockiert die neue verschluesselte
+Profilaufnahme im oeffentlichen GitHub-Protokoll; konkrete Rueckfrage offen.
+Radar-Datumskorrektur nach lokal belegter Scheinuhrzeit vorbereitet.
 Versorgung, sichtbare Fachabnahme, Kosten/-zeit, lebender Endwaechter und finaler
 Startplan bleiben vor Aktivierung notwendig.36er Abnahme und verbrauchte
 Verstehenslaeufe nicht wiederholen.

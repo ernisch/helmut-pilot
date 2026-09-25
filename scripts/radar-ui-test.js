@@ -11,7 +11,7 @@ const path = require("path");
 const vm = require("vm");
 const root = path.join(__dirname, "..");
 
-function loadClient() {
+function loadClient(now) {
   let code = fs.readFileSync(path.join(root, "client.js"), "utf8");
   code = code.replace(/^\s*loadBriefing\(\)[\s\S]*$/m, "");
   code += `\n;globalThis.__radarTest = {
@@ -22,6 +22,8 @@ function loadClient() {
     setSegment: (v) => { radarSegment = v; },
     setEnvExpanded: (v) => { radarEnvExpanded = v; },
     setRefreshFailed: (v) => { radarRefreshFailedAt = v; },
+    sourceDate: (v) => radarTime(v),
+    updatedLabel: (v) => radarUpdatedLabel(v),
     esc: (s) => escapeHtml(s)
   };`;
   const noop = () => {};
@@ -42,7 +44,10 @@ function loadClient() {
     cookie: "", visibilityState: "visible", hidden: false
   };
   const sandbox = {
-    console, Intl, Date, Math, JSON, Number, String, Boolean, Array, Object, RegExp, Set, Map, Promise,
+    console, Intl, Date: now ? class extends Date {
+      constructor(...args) { super(...(args.length ? args : [now])); }
+      static now() { return Date.parse(now); }
+    } : Date, Math, JSON, Number, String, Boolean, Array, Object, RegExp, Set, Map, Promise,
     parseInt, parseFloat, isNaN, isFinite, encodeURIComponent, decodeURIComponent, URL, URLSearchParams,
     setTimeout: () => 0, clearTimeout: noop, setInterval: () => 0, clearInterval: noop,
     requestAnimationFrame: () => 0, cancelAnimationFrame: noop, queueMicrotask: (f) => Promise.resolve().then(f),
@@ -101,6 +106,28 @@ api.setBriefing({ engine: "v3", currentRadarState: state });
 // 1) Radar rendert (nicht Leerzustand).
 const html = api.render();
 check("Radar rendert den Stand (.radar2, nicht leer)", html.includes("radar2") && html.includes("Radar"));
+
+// Eine datumsgenaue Quelle darf nicht durchUTC-Normalisierung zu einer
+// behaupteten Veroeffentlichung um02:00 werden. Echter Renderer, kein Regex-Patch.
+const dateApi = loadClient("2026-09-25T12:00:00Z");
+const dateLabel = dateApi.sourceDate("2026-09-25T00:00:00Z");
+check("Radar nennt den vollstaendigen Kalendertag statt einer erfundenen Uhrzeit",
+  /25.*Sept.*2026/.test(dateLabel) && !/\d{2}:\d{2}/.test(dateLabel), dateLabel);
+check("Auch Quellen mit Uhrzeit bleiben im datumsgenauen Radarvertrag",
+  dateApi.sourceDate("2026-09-25T10:57:00Z") === dateLabel);
+check("Radardatum folgt dem Berliner Kalendertag",
+  dateApi.sourceDate("2026-09-24T23:00:00Z") === dateLabel);
+check("Historische Quellen behalten ihr Jahr", /2025/.test(dateApi.sourceDate("2025-09-25T00:00:00Z")));
+check("Fehlende oder ungueltige Quelldaten bleiben leer",
+  [null, "", "kein-datum"].every(v => dateApi.sourceDate(v) === "" && dateApi.updatedLabel(v) === ""));
+dateApi.setBriefing({ engine: "v3", currentRadarState: { ...state,
+  lastUpdated: "2026-09-25T00:00:00Z", articles: [], dynamics: [],
+  environment: { party: [], constituency: [], committees: [] },
+  mentions: [{ ...state.mentions[0], publishedAt: "2026-09-25T00:00:00Z" }] } });
+const dateHtml = dateApi.render();
+check("Ganzer Radar zeigt Datum und heutigem Quellenstand ohne02:00",
+  dateHtml.includes(dateLabel) && dateHtml.includes("Aktualisiert heute")
+    && !dateHtml.includes("02:00") && dateHtml.includes("https://t.de/m1"));
 
 // 2) Über dich zeigt die echte Erwähnung.
 check("Über dich zeigt die übergebene Erwähnung", html.includes("Mustermann fordert Reform"));

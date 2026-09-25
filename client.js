@@ -9867,12 +9867,10 @@ function radarOpenableItems(list) {
 }
 
 function radarUpdatedLabel(iso) {
+  if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  const time = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(d);
-  if (radarIsToday(d)) return `heute, ${time}`;
-  const day = new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "long" }).format(d);
-  return `${day}, ${time}`;
+  return radarIsToday(d) ? "heute" : radarTime(iso);
 }
 
 function radarTime(iso) {
@@ -9881,9 +9879,10 @@ function radarTime(iso) {
   if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  return radarIsToday(d)
-    ? new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", hour: "2-digit", minute: "2-digit" }).format(d)
-    : new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "short" }).format(d);
+  // Der Quellenvertrag belegt nicht fuer jeden Zeitstempel die Uhrzeit:
+  // datumsgenaue Quellen koennen mit00:00UTC gespeichert sein. Im Radar ist
+  // daher der Kalendertag die gemeinsame sichere Anzeige, inklusive Jahr.
+  return new Intl.DateTimeFormat("de-DE", { timeZone: "Europe/Berlin", day: "numeric", month: "short", year: "numeric" }).format(d);
 }
 
 function radarIsToday(d) {
