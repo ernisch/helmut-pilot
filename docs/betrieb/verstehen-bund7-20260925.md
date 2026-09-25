@@ -178,3 +178,23 @@ kein Inhaltsbeleg. Keine fertigen Lage-Texte und keine1500er Ergebnisabnahme.
 Die private Eingabe und der Bericht liegen unter
 `/private/tmp/helmut-500-versorgung-vor-bund7.json` und
 `/private/tmp/helmut-500-versorgung-lokal-ergebnis.json`.
+
+## Reparatur und Fehlbindung in Production verifiziert
+
+[PR575](https://github.com/ernisch/helmut-pilot/pull/575), Head
+`f0ef95bf291578c795398703e1e5b7dddffa42ad`, Pflicht-CI36152588328 SUCCESS
+(Browser und Syntax/Offline). Merge25f656bc1688ec81dde7309792584df520153059
+15:23:09UTC; Deployment dpl_A6nTCDsCm5tj4gpUD9WkhAJHPWCC READY15:23:28.727UTC.
+
+Einmalige Quittung `bund7-fehlbindung-korrektur-20260925-a` abgeschlossen
+15:24:10.648812UTC. Nachlesung15:24:29.847139UTC: genau die CO2-Fehlbindung
+und die unbenutzte Vormerkung entfernt; Altvorgang pending/failed-final,
+16 urspruengliche Quellen erhalten. Rohquelle, CAS und Modellgeschichte
+unveraendert. KO-Nachhash `1a6b1f297d96d594b68b9dec7f444409` bestaetigt.
+10/10 isolierte Datenbankgruppen vor Ausfuehrung bestanden. Keine Wiederholung.
+SQL-SHA256 `1ba34a410ebcab2780ee50fb1743f4aa3c80987ff7d6a7a5591c1414e7294f02`.
+Quittung enthaelt Vollsicherung; bedingter Rueckweg wuerde die Quelle wieder
+anbinden, den gemischten Vorgang aber weiter sperren. Rueckweg nicht ausgefuehrt.
+Profil-/Identitaets-/Main-Hashes unveraendert,500/0 und0 offene Kosten nachgelesen
+15:24:39UTC. Tagesstand0,312021USD. Keine neue Modellquittung und kein500er Start.
+Naechster begrenzter Schritt: [redaktioneller Siebenerplan](bund7-redaktion-20260925.md).
