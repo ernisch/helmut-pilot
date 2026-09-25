@@ -1,6 +1,6 @@
 # Sieben amtliche Quellen: begrenzter Anschlussauftrag
 
-25.09.2026: Import verifiziert, Verarbeitung noch nicht gestartet.
+25.09.2026: Import verifiziert, erster scharfer Auftrag vor jedem Modell gestoppt.
 Das umfassende Betreiber-GO samt Entscheidungsdelegation liegt vor. Ausfuehrung
 erst nach gruener Pflicht-CI, Production-Rollout und frischer Vorlesung.
 
@@ -53,7 +53,8 @@ Fremde Lieferfunktionen und alte169er/30er Quittungen entriegeln diesen Auftrag 
 - Maximal0,30USD inklusive offener Reservierungen; voller naechster Aufruf
   muss vorab passen. Technischer Tagesriegel unveraendert4USD.
 -0 Profilwrites und0 Aktivierungen; alle500 bleiben inaktiv.
-- Einmalquittung `verstehen-bund7-20260925-a`, kein automatischer Retry.
+- Erste Einmalquittung `verstehen-bund7-20260925-a` verbraucht; neuer begrenzter
+  Auftrag `verstehen-bund7-20260925-b` nur nach den unten genannten Vorbedingungen.
 - Sofortiger Stopp beim ersten nicht bestaetigten Einzelresultat.
 - Erfolg erst bei7/7 bestaetigten fachlichen Ergebnissen und unveraenderten
   Profilen. Ein technisch gespeichertes Ergebnis ist noch keine Prosaabnahme.
@@ -100,3 +101,33 @@ Quellen- oder Zielaenderung bleiben gesperrt.8 gezielte Gruppen einschliesslich
 aller7 echten Production-Zeilen und10 bisherige Artikelgruppen bestanden.
 Noch kein kostenpflichtiger Lauf; erneuter Nurleseplan erst nach gruener CI
 und Ausrollung dieser Reparatur.
+
+## Kostenleser-Abbruch und neuer begrenzter Auftrag
+
+PR573 Head1aff25b1, Pflicht-CI36140809080 SUCCESS; Merge
+`02a19297e3b1656542b7d9e3dfdf35646238c0e9`13:33:00UTC. Production
+`dpl_AXMyuzQci7vpC4Uq3t4JazbCh7RB` READY13:33:17UTC. Neuer Nurleseplan
+36141732741 erfolgreich13:34:08UTC:7 Quellen/7 Cluster/7 Kandidaten,
+6 neu/1 Aktualisierung,0 Modelle, Profile unveraendert.
+
+Scharfer Auftrag36141840797 stoppte13:35:15.929UTC mit
+`verstehen-kostenleser-fehler`:0 Modelle,0 verarbeitete Quellen,0 Profilwrites.
+Production-Lesung13:36:05UTC bestaetigt die terminale Quittung a,0 Verknuepfungen
+der sieben Quellen,0 Locks und unveraenderte Tageskosten0,304227USD.
+Ursache: Der zentrale Kostenvertrag akzeptierte die neue Kennungsform
+`verstehen-bund7-<Run-ID>` noch nicht. Das wird im zentralen bestehenden Adapter
+ergänzt; Tarif, Reservierungshoehe und4USD-Riegel bleiben unveraendert.
+
+Neuer Auftrag b erst nach gruener CI/Production-Rollout und neuer reiner
+Vorpruefung. Er verlangt exakt die historische Quittung a samt Run36141840797,
+Runtime02a19297, Kostenleser-Abbruch,0 Modellen/Verarbeitung und0 gebundenen
+Kosten; jede bestehende Quellenverknuepfung sperrt. Der echte Kostenleser fuer
+den neuen Lauf wird jetzt schon vor jeder Auftragsquittung und auch im
+Nurleseplan ausgefuehrt. Keine alte Quittung wird geaendert oder wiederverwendet.
+Beide Quittungen sperren die Importentfernung. Import wird nicht wiederholt.
+
+Betreiber-GO und Entscheidungsdelegation liegen vor. Sachlich neue Grundlage
+ist die belegte Adapterreparatur; keine automatische Wiederholung. Grenzen
+unveraendert7 Modelle/0,30USD inklusive Reservierung/10min und4USD pro UTC-Tag.
+Gezielt bestanden:10 Auftragsgruppen mit echtem Reservierungs-/Abrechnungsadapter,
+12 bestehende Kostengruppen und29 Einmallauf-Kostenpruefungen.

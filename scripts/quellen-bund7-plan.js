@@ -26,7 +26,7 @@ end $import$;`);
   let rollback = require("./quellenfrische-30-plan").baueRueckweg(payload)
     .replace(/<>30\b/g, "<>7").replace("frische30", "bund7")
     .replace("public.ko_document_links in share row exclusive mode;", "public.ko_document_links, public.helmut_store in share row exclusive mode;")
-    .replace("begin\n if exists", `begin\n if exists(select 1 from public.helmut_store where id='${F.QUITTUNG}')
+    .replace("begin\n if exists", `begin\n if exists(select 1 from public.helmut_store where id in('${F.VORGAENGER}','${F.QUITTUNG}'))
   or not exists(select 1 from public.helmut_store where id='${F.EINGABE}'
     and data-'status'-'payloadHash'-'angelegtAm'-'feedUrl'=e and data->>'status'='importiert') then
    raise exception 'bund7-rueckweg-belegstand'; end if;

@@ -20,6 +20,43 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     for (const change of [{ GITHUB_RUN_ATTEMPT: "2" }, { GITHUB_SHA: "b".repeat(40) }, { GITHUB_REF: "refs/heads/feature" },
       { GITHUB_EVENT_NAME: "schedule" }, { HELMUT_BUND7_RUNTIME_COMMIT: "" }]) assert.throws(() => B.pruefeRuntime({ ...env, ...change }, commit));
   });
+  await test("Neuer Auftrag verlangt den exakt belegten wirkungsfreien Kostenleser-Abbruch", () => {
+    const data = { quittungsschluessel: F.VORGAENGER, runId: F.VORGAENGER_RUN,
+      runtimeCommit: "02a19297e3b1656542b7d9e3dfdf35646238c0e9", status: "gestoppt",
+      abbruchGrund: "verstehen-kostenleser-fehler", idHash: F.BUND7.idHash,
+      dokumente: 7, cluster: 7, modellaufrufe: 0, bilanz: { verarbeitet: 0, unbekannt: 0 },
+      beendetAm: "2026-09-25T13:35:15.929Z" };
+    assert.equal(B.pruefeVorgaenger([{ data }], 0, []), true);
+    for (const change of [{ status: "fertig" }, { runId: "fremd" }, { modellaufrufe: 1 },
+      { bilanz: { verarbeitet: 1, unbekannt: 0 } }, { abbruchGrund: "fachfehler" },
+      { idHash: "a".repeat(64) }, { beendetAm: null }])
+      assert.throws(() => B.pruefeVorgaenger([{ data: { ...data, ...change } }], 0, []));
+    assert.throws(() => B.pruefeVorgaenger([], 0, []));
+    assert.throws(() => B.pruefeVorgaenger([{ data }], 0.001, []));
+    assert.throws(() => B.pruefeVorgaenger([{ data }], 0, [{}]));
+  });
+  await test("Echter Kostenadapter bindet Siebener-Reserve und Abrechnung an genau einen Lauf", async () => {
+    const K = require("../lib/helmut/testkosten-budget");
+    let auth = { llmUsage: [] }, seq = 0;
+    const env = { VERCEL_ENV: "production", HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt", AZURE_OPENAI_KEY: "offline" };
+    const storage = { readAuthStore: async () => structuredClone(auth),
+      leseLlmTageszaehler: async () => ({ ok: true, used: 0 }),
+      mutateAuthStore: async fn => { const next = structuredClone(auth); const result = await fn(next); auth = next; return result; } };
+    const deps = { env, storage, now: () => new Date("2026-09-25T13:40:00.000Z"), id: () => "offline-" + ++seq };
+    const runId = "verstehen-bund7-123456789";
+    assert.equal(await K.laufGebundenUsd(runId, deps), 0);
+    const t = await K.reserviere({ model: "gpt-5-mini", maxOutputTokens: 3000, runId }, deps);
+    assert.equal(await K.laufGebundenUsd(runId, deps), 0.212);
+    assert.equal(auth.testKostenTage["2026-09-25"].calls[t.id].bezug.runId, runId);
+    await K.abschliessen(t, { model: "gpt-5-mini", promptTokens: 100, completionTokens: 20, _ablage: { blob: true } }, deps);
+    assert.equal(await K.laufGebundenUsd(runId, deps), 0.00013);
+    assert.equal(await K.laufGebundenUsd(F.VORGAENGER_RUN, deps), 0);
+    assert.equal(K.LIMIT_MICRO_USD, 4000000);
+    for (const id of ["verstehen-bund7-12", "verstehen-bund7-fremd", "verstehen-bund8-123456789"])
+      await assert.rejects(K.laufGebundenUsd(id, deps));
+    storage.readAuthStore = async () => { throw Error("offline-ausfall"); };
+    await assert.rejects(K.laufGebundenUsd(runId, deps));
+  });
   const base = { mandate_profiles: Array.from({ length: 500 }, (_, i) => ({ user_id: "test-" + i, aktiv: false, geloescht_at: null })),
     profiles: Array.from({ length: 501 }, (_, i) => ({ id: "test-" + i })), helmut_jobs: [], pipeline_locks: [],
     process_runs: [], helmut_verstehen_reservierungen: [], helmut_store: [] };
