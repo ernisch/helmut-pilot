@@ -72,3 +72,14 @@ Die reine Profilzuordnungsprojektion der7 Entwuerfe erreicht149/500 mit
 Score>=40. Sie ist keine Production-Vollversorgung und kein sichtbarer
 Drei-Bereiche-Nachweis. Aktivierung bleibt aus, bis die weiteren Starttore
 vollstaendig belegt sind.
+
+## Ergaenzung: belegter Anzeige-Blocker vor Ausfuehrung
+
+Der komplette Lesepfad verwarf die Tankrabatt-Fortschreibung trotz sachlich
+passender Quellen. Ursache: U+00AD im amtlichen Titel „Tank\u00adrabatt“ wurde
+als Wortgrenze behandelt. Gegenprobe mit allein entferntem Drucktrennzeichen
+ergibt einen gemeinsamen Cluster. `anchorTokens` ignoriert jetzt ausschliesslich
+U+00AD; Originaltexte, Hashes, echte Bindestriche und fachliche Schwellen bleiben.
+Gezielte Regression: echte drei Quellentexte, Quellenfilter, unveraenderte
+Originale, harte Wortgrenzen und Jahreskonflikt. Vor dem Datenplan muss diese
+Reparatur ebenfalls gruen ausgerollt sein. Kein Qualitaetsriegel wird abgesenkt.

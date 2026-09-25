@@ -343,6 +343,29 @@ check("10 · eine reine Wiederveroeffentlichung verdraengt kein neues Faktum",
     V.candidatePrefixes({ documents: [fort] }, 3, { personengruppenAltbestand: true }).includes("vg-bundesregierung"));
 }
 
+// Production 25.09.: amtlicher Beschluss und Ankuendigungen desselben Tages.
+{
+  const quellen = [
+    d("tank1", "Entlastung im Bundestag: So schnell soll der Tankrabatt kommen", "2026-09-25T08:52:04Z", "tagesschau",
+      "Mit einem neuen Tankrabatt will die Bundesregierung die Spritpreise möglichst schnell senken. Heute sollen der Bundestag und Bundesrat darüber entscheiden. Wie hoch der Rabatt ausfällt und was noch geplant ist."),
+    d("tank2", "Entlastungsmaßnahme - Bundestag und Bundesrat stimmen über Tankrabatt ab", "2026-09-25T08:57:58Z", "dlf",
+      "Bundestag und Bundesrat stimmen heute über den erneuten Tankrabatt ab."),
+    d("tank3", "Bundestag beschließt Tank\u00adrabatt und ändert das Versicherungsrecht", "2026-09-25T09:25:00Z", "bundestag",
+      "Der Bundestag hat am Freitag, 25. September 2026, nach halbstündiger Aussprache den Tankrabatt für den Zeitraum vom 1. Oktober bis 31. Dezember 2026 beschlossen. Damit sinkt die Energiesteuer auf Benzin und Diesel um 14,04 Cent pro Liter.")
+  ];
+  const vorher = JSON.stringify(quellen);
+  check("12 · Drucktrennung trennt amtlichen Tankrabatt nicht von seinen Ankuendigungen", clusterAnzahl(quellen) === 1);
+  check("12 · Quellenfilter laesst diese belegte Fortschreibung durch",
+    require("../lib/helmut/briefing-quellenqualitaet").quellengebunden({headline:"Bundestag beschließt Tankrabatt"},
+      quellen.map((q,i)=>({...q,url:`https://example.org/artikel/${i}`}))));
+  check("12 · Originaltexte bleiben unveraendert", JSON.stringify(quellen) === vorher);
+  check("12 · Harte Wortgrenzen werden nicht zusammengezogen",
+    !V.anchorTokens("Tank-rabatt Tank rabatt").includes("tankrabatt"));
+  check("12 · Unsichtbare Trennung ueberwindet keinen Jahreskonflikt",
+    zusammen(d("alt", "Tank\u00adrabatt 2022", "2026-09-25T08:00:00Z"),
+      d("neu", "Tankrabatt 2026", "2026-09-25T09:00:00Z")).gleich === false);
+}
+
 console.log(`\n${n - fail}/${n} Assertions erfolgreich.`);
 if (fail) console.log(`\nFEHLGESCHLAGEN: ${fail}`);
 process.exit(fail === 0 ? 0 : 1);
