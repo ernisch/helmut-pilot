@@ -113,13 +113,9 @@ gemischter Altvorgang gesperrt;16 alte Quellen und CAS unveraendert.
 [Sieben Quellen redaktionell korrigiert](betrieb/bund7-redaktion-20260925.md)
 15:56:31UTC:5 neue Vorgaenge,2 Fortschreibungen,1 Dublette gesperrt;
 8 KO-Hashes,10 Links und7 Rohquellen nachgelesen;13/13 Trigger-Laborgruppen.
-[Persoenlicher Radar-Beleg](betrieb/radar-cem-redenquelle-20260925.md)15:57:03UTC:
-Cems amtlicher Mediathektitel,1 Quelle/Fundstelle/KO/Link, alle4 Nachhashes gleich.
-Keine erfundene Redeauswertung;10/10 Gruppen mit echtem Trigger.
-SELECT15:57:32UTC:500/0, Schutzhashes unveraendert,0 Jobs/Locks/Leases/offene
-Kosten, Tagesstand0,312021USD von4USD. Beide Datenauftraege verbraucht.
-Die vorherige lokale500-Lesung ist im [Nachpruefbericht](betrieb/roadmap-nachpruefung-20260925.md)
-eingeordnet; keine bewiesene Kostenersparnis allein aus Profilkontextgruppen.
+[Persoenlicher Radar-Beleg](betrieb/radar-cem-redenquelle-20260925.md):
+Import15:57:03UTC, vier Datenhashes bestaetigt, kein Modell. Private
+Vollbilanzen stehen im [Nachpruefbericht](betrieb/roadmap-nachpruefung-20260925.md).
 [Drei neue amtliche Quellen](betrieb/nachmittag3-quellen-20260925.md)16:21:58UTC
 importiert; alle12 Datenhashes nachgelesen,500/0 und0,312021USD unveraendert.
 Production-Aufnahme36160592624 um16:25:02UTC belegt Cems echten Personenhinweis
