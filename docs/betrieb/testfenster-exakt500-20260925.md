@@ -58,3 +58,12 @@ Die vier Nichtzielprofile sind lediglich identifiziert. Ihr vollständiger
 Löschplan samt abhängigen Datensätzen, Sicherung und gesondertem Daten-GO
 bleibt ein eigener Schritt. Dieser Code bereinigt den Bestand nicht und
 erteilt keine Freigabe für den 500er Production-Nachweis.
+
+## Ausrollbeleg25.09.
+
+PR564 Kopf21bb9b7a: Pflicht-CI36122150403 vollstaendig SUCCESS.
+Gruen gemergt als f80334d78001e568887f24a114811608789714bb;
+Production dpl_FdftwZtRy2bH6S9WsYg2w1oKaDBt READY. Fehler-/Fatal-Logs
+10:22–10:23UTC leer (nur dieses kurze Fenster geprueft). SELECT10:22:23
+weiter504/0 und unveraenderte Profilhashes. Migration weiterhin NICHT angewendet;
+keine Bereinigung, Aktivierung oder500er Ausfuehrung.
