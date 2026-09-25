@@ -8,13 +8,14 @@ const path = require("node:path");
 const template = fs.readFileSync(path.join(__dirname, "quellenimport-vorbereitung.sql"), "utf8");
 const hash = value => crypto.createHash("sha256").update(value).digest("hex");
 
-function pruefe({ psql }) {
+function pruefe({ psql, anzahl = 31, sqlTemplate = template, rueckweg = null }) {
+  assert.ok([30, 31].includes(anzahl));
   const db = `helmut_test_quellenimport_${crypto.randomBytes(6).toString("hex")}`;
   const q = sql => psql(sql, db);
   let passed = 0;
   function test(name, fn) { fn(); passed++; console.log("PASS  " + name); }
   const now = new Date(Date.now() - 1000).toISOString();
-  const rows = Array.from({ length: 31 }, (_, i) => ({
+  const rows = Array.from({ length: anzahl }, (_, i) => ({
     id: `fixture-31-${i}`, canonical_url: `https://example.org/quelle/${i}`,
     canonical_target_url: `https://example.org/quelle/${i}`, url: `https://example.org/quelle/${i}`,
     title: `Synthetischer Bericht ${i}`, summary: "Der Rat beraet einen Antrag. Eine Entscheidung steht noch aus.",
@@ -27,7 +28,7 @@ function pruefe({ psql }) {
   function sql(value = input) {
     const payload = JSON.stringify(value);
     assert(!payload.includes("$eingabe$"));
-    return template.replace("__PAYLOAD__", payload).replace("__SHA256__", hash(payload));
+    return sqlTemplate.replace("__PAYLOAD__", payload).replace("__SHA256__", hash(payload));
   }
   function rejected(statement, reason) {
     assert.throws(() => q(statement), error => String(error.stderr).includes(reason), reason);
@@ -50,6 +51,7 @@ function pruefe({ psql }) {
         source_id text not null, retrieval_path_id text, original_url text not null default '',
         link_type text, found_at timestamptz, created_at timestamptz not null default now(),
         primary key(raw_document_id,source_id,original_url));
+      create table ko_document_links(raw_document_id text references raw_documents(id));
       create table mandate_profiles(user_id text primary key,aktiv boolean not null);
       insert into mandate_profiles select 'fixture-profil-'||i,false from generate_series(1,504) i;
       create table profiles(id text primary key);
@@ -60,13 +62,30 @@ function pruefe({ psql }) {
       create table helmut_jobs(status text,lease_expires_at timestamptz);
       create table process_runs(finished_at timestamptz,started_at timestamptz);`);
     const before = protectedHash();
-    test("31 Quellen und Fundstellen werden atomar mit exakter Ruecklesung angelegt", () => {
-      q(sql()); assert.equal(counts(), "31|31"); assert.equal(protectedHash(), before);
+    test(`${anzahl} Quellen und Fundstellen werden atomar mit exakter Ruecklesung angelegt`, () => {
+      q(sql()); assert.equal(counts(), `${anzahl}|${anzahl}`); assert.equal(protectedHash(), before);
     });
     test("Wiederholung und damit unbekannter vorheriger Ausgang erlauben keine zweite Anlage", () => {
-      rejected(sql(), "quellenimport-bestandstreffer"); assert.equal(counts(), "31|31");
+      rejected(sql(), "quellenimport-bestandstreffer"); assert.equal(counts(), `${anzahl}|${anzahl}`);
     });
-    q("truncate document_findings,raw_documents");
+    if (rueckweg) {
+      const back = rueckweg(JSON.stringify(input));
+      test("30er Rueckweg verweigert nachtraegliche fachliche Verknuepfung", () => {
+        q("insert into ko_document_links values('fixture-31-0')");
+        rejected(back, "frische30-rueckweg-nicht-frei");
+        assert.equal(counts(), "30|30"); q("delete from ko_document_links");
+      });
+      test("30er Rueckweg verweigert veraenderten Dokumentinhalt", () => {
+        q("update raw_documents set cluster_id='spaetere-verarbeitung' where id='fixture-31-0'");
+        rejected(back, "frische30-rueckweg-dokument-veraendert");
+        assert.equal(counts(), "30|30"); q("update raw_documents set cluster_id=null");
+      });
+      test("30er Rueckweg entfernt nur die unveraenderte Neuanlage samt Fundstellen", () => {
+        q(back); assert.equal(counts(), "0|0"); assert.equal(protectedHash(), before);
+        rejected(back, "frische30-rueckweg-nicht-frei"); q(sql());
+      });
+    }
+    q("truncate ko_document_links,document_findings,raw_documents");
     test("Andere Eingabe mit altem Hash wird vor jedem Schreiben abgewiesen", () => {
       rejected(sql().replace("Synthetischer Bericht 0", "Veraenderter Bericht"), "quellenimport-eingabehash");
       assert.equal(counts(), "0|0");
