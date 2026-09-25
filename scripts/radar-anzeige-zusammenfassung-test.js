@@ -28,7 +28,9 @@ assert.match(state.summary.line2, /ein neues Signal/);
 assert.equal(JSON.stringify(args), before, "Zusammenfassung verändert keine Auswahl oder Quelldaten");
 
 const mentioned = { ...kos[0], mentioned_mps: [profile.fullName] };
-const mentionArgs = { ...args, knowledgeObjects: [mentioned], kosById: { k0: mentioned }, decisions: [] };
+const mentionArgs = { ...args, knowledgeObjects: [mentioned], kosById: { k0: mentioned }, decisions: [],
+  sourcesByVorgang: { ...sourcesByVorgang, v0: [{ ...sourcesByVorgang.v0[0],
+    summary: "Alex Muster spricht zu dem internationalen Bericht." }] } };
 const own = R.buildCurrentRadarState(mentionArgs);
 assert.equal(own.anzeige.mentions.length, 1);
 assert.match(own.anzeige.summary.line1, /eine direkte Erwähnung/);

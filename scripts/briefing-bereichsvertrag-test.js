@@ -50,7 +50,9 @@ test("Identischer Vorgang und identischer Artikel erscheinen im Briefing nur ein
 });
 test("Radar braucht zeitlichen Beleg; bloße Zähler und Umfelddimensionen reichen nicht", () => {
   const k = { ...ko(), mentioned_people: [] };
-  const r = R.buildCurrentRadarState(input([k], { "vg-a": [doc("a", "2026-09-24")] }));
+  const r = R.buildCurrentRadarState(input([k], { "vg-a": [doc("a", "2026-09-24", {
+    title: "Ein Vorschlag zum Verkehr", summary: "Ein neuer Verkehrsvorschlag liegt vor."
+  })] }));
   assert.equal(r.anzeige.status, "empty");
   assert.equal(r.anzeige.articles.length, 0);
 });
