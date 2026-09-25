@@ -128,11 +128,11 @@ Lokale500-Lesung derselben Datenbasis16:30:56UTC mit beiden Korrekturen:
 Alle Kennungen bilanziert, keine Quellen-/Profil-/Schwellenanpassung.
 SQL17:19:07UTC:500/0 und Schutzhashes gleich,0 Jobs/Locks/Leases/offene
 Kosten,0,312021USD von4USD. Keine Vollversorgung oder500er Abnahme.
-Drei Bereiche lokal vollstaendig verglichen, Rollen getrennt;12 Lagekarten,
-0 gespeicherte Lageabsaetze. Keine direkte Production-Antwort-/Faktenabnahme.
-Die automatische Freigabepruefung blockiert die neue verschluesselte
-Profilaufnahme im oeffentlichen GitHub-Protokoll; konkrete Rueckfrage offen.
-Radar-Datumskorrektur nach lokal belegter Scheinuhrzeit vorbereitet.
+RSA-Aufnahme36175850274:25.09.18:49UTC aufc6a55e36, entschluesselt/geprueft.
+Alle3 Bereiche vollstaendig gelesen, Paartrennung bestanden; Gesamturteil negativ.
+12 Lagekarten/0 Absaetze;2 Ereignismischungen. Lage nutzt den vorhandenen
+Quellenmixfilter nun lokal:12->10 Karten, Rest unveraendert. Gezielte Tests bestanden; Einzelergebnisse im Beleg. Code bereit, kein Merge/Productionnachweis.
+Faktenbindung/Nutzen weiter offen. [Beleg](betrieb/roadmap-nachpruefung-20260925.md#inhaltsabnahme-und-quellenmix-korrektur-nach-der-einmalaufnahme).
 Versorgung, sichtbare Fachabnahme, Kosten/-zeit, lebender Endwaechter und finaler
 Startplan bleiben vor Aktivierung notwendig.36er Abnahme und verbrauchte
 Verstehenslaeufe nicht wiederholen.

@@ -95,3 +95,101 @@ Der ganze Radar zeigt Titel und Original-Link weiterhin und behauptet keine
 PRs werden aus GitHub/Vercel gelesen; kein rekursiver Dokumentations-PR.
 Die oben gebundene lokale semantische Aufnahme bleibt der Stand VOR diesem
 Rendererfix und wird nicht nachtraeglich mit neuen Texten ueberschrieben.
+
+
+## Freigegebene Einmalaufnahme am 25.09.2026
+
+Der Betreiber erteilte nach der konkreten Rueckfrage ausdruecklich sein JA
+zur einmaligen RSA-verschluesselten Aufnahme von Profil und drei Bereichen
+im oeffentlichen Actionsprotokoll. Die bisherige Freigabesituation oben ist
+historisch; die Uebertragung wurde genau einmal gestartet.
+
+[Run36175850274](https://github.com/ernisch/helmut-pilot/actions/runs/36175850274),
+Job108206143797, run_attempt1, SUCCESS. Commit
+`c6a55e36d2117014664eb6a0dd9946d26e9dcb01`; vorab Vercel Production
+`dpl_9qDFJpb6vZwk25u5y594Uzee6VNr` READY am Hauptalias bestaetigt.
+Aufnahmezeit25.09.2026 18:49:31.829UTC. Kein erneuter Dispatch.
+
+Neuer RSA3072-Schluessel nur lokal, privater Schluessel mit Dateirecht0600
+in Verzeichnis0700 ausserhalb des Repositorys. Nur oeffentlicher Schluessel
+uebertragen. AES256GCM-Inhalt mit RSA-OAEP-SHA256 verpackt. Umschlag gegen
+Laufkennung, Workflowcommit, Productioncommit und Empfaenger authentifiziert;
+Originalantwort und Payload lokal identisch. SHA256 der Originalantwort:
+`e14a52c88e4d8d2baa126f7b83b04965f1ac186dac978b4f07c27e217fcaa049`.
+Runtimekonfiguration vorher/nachher gleich; Profil vor/nach dem Builder
+hashgleich und inaktiv. Aufnahme meldet0 Modellaufrufe. Ausgefuehrter Pfad
+verwendet ausschliesslich GET; Lage cacheOnly vor Modell/Lock-Pfad.
+Keine Production-Datenmutation durch diesen Auftrag. Keine allgemeine neue
+Datenbankinventur oder Aussage ueber parallele regulaere Crons.
+
+Alle3 Bereichsdaten vorhanden. Mit unveraendertem Renderer desselben Commits
+lokal netzlos dargestellt, einschliesslich Details und erweiterter Radarsegmente:
+783 Briefing-,15109 Lage-,802 Radarzeichen.12 Lagekarten,0 gespeicherte
+Lageabsaetze. Der private Beleg liegt ausserhalb des Repositorys im lokalen
+Aufgabenverzeichnis `rsa-aufnahme` (Aufgabe01a0d9e4-7ba4-77d1-abbc-2a123c35f734).
+Keine privaten Texte oder Schluessel in diesem Dokument.
+
+Die Aufnahme und Transportkontrolle sind erfolgreich abgeschlossen.
+Kein transaktionaler Snapshot, kein gespeichertes Gesamtpaket, keine neue
+semantische/Fakten-/Browserabnahme und kein500er Nachweis. Naechster fachlicher
+Schritt ist die Inhaltsabnahme der jetzt direkt aus Production gelesenen
+Bereiche. Keine weiteren Modelle, Datenwrites oder Profilaktivierungen erfolgt.
+
+
+## Inhaltsabnahme und Quellenmix-Korrektur nach der Einmalaufnahme
+
+Alle783 Briefing-,15109 Lage- und802 Radarzeichen der Aufnahme36175850274
+vollstaendig gelesen:12 Karten inklusive12 Detailansichten und alle Radarsegmente.
+Alle3 Bereichspaare mit neuen exakten Textbelegen an den Aufnahmehash gebunden.
+Bereichstrennung bestanden, fachliche Gesamtabnahme **nicht bestanden**.
+Ein Titel/Verweis ist keine zweite Sacherklaerung. Fehlender konkreter
+Arbeitsschritt im Briefing und0 gespeicherte Lageabsaetze bleiben offen.
+Die12 einzelnen Inhaltsbefunde liegen vollstaendig im privaten Beleg, nicht
+als oeffentliche Profilauswahl. SHA256 des privaten Fachurteils:
+`1e752f7579f5d7962d1c620aaddf311f6d0b5a5671b3097dd508fefe208fa42d`.
+Paarurteilhash `e8cca83c37cd704ad9fd024d3c693ea17c7197b70398913001c784c2a3f8b1ab`.
+
+**Belegter Codefehler:** Lage umging die vorhandene Ereignisbindung der Quellen.
+Zwei sichtbare Karten enthielten unabhaengige Ereignisse; der bestehende
+`briefing-quellenqualitaet.themenrein`-Pruefer lehnte beide schon ab.
+Lage wendet genau diese unveraenderte Regel jetzt vor Karten, Texteingabe,
+Cachebindung und Zaehler an. Keine neue Schwelle, kein Modell, keine Datenkorrektur.
+Eine abgelehnte Karte bleibt im Speicher erhalten. Wenn alle Kandidaten
+abgelehnt werden, erscheint der bestehende ehrliche Leerzustand. Kein
+automatisches Auffuellen oder Ausweiten der Quellensuche; Versorgung bleibt
+separat zu pruefen. Ein bestandener Quellenmixfilter ist keine Faktenabnahme.
+
+**Nachweis:** Echter lokaler Lagepfad auf exakt der aufgenommenen12er Auswahl
+vorher12/nachher10, genau die2 Ereignismischungen gesperrt; alle10 restlichen
+Karten strukturell unveraendert. Profile, KOs und Quellen unveraendert,
+0 Modelle/Locks/Writes. Kein frischer globaler Auswahl-/Productionbeleg.
+
+**Gezielte Tests:** neue Quellenmixsuite6/6 (Anzeige, Generator, Cache,
+Leerzustand, Zaehler, Jahreskonflikt); cacheOnly9/9; Quellenfenster10/10;
+Quellenbindung40:11/11; Lage141/141; Briefing-Lagebindung7/7;
+Quellenbeleg21/21 und Reparatur8/8.
+Die neue Regression scheiterte vor der Korrektur am ausgegebenen Quellenmix.
+Die bestehende40er-Lesetestfixture hatte einen nun korrekt abgewiesenen
+Jahreskonflikt2024/heute: die historischen Testquellen liegen jetzt30Tage
+zurueck, weiterhin ausserhalb des14-Tage-Fensters. Alle Lese-, Manipulations-
+und Mengengrenzen bleiben unveraendert geprueft; Jahreskonflikt separat negativ.
+Keine Pruefung oder Produktionsschutzregel abgeschwaecht.
+Die erste CI erkannte zwei weitere unpassende Testdaten: Der Absatzlinktest
+mischte2023/heute; sein Hintergrund liegt nun ebenfalls30Tage zurueck.
+Die echte Reparaturpruefung verwendet jetzt zwei Haushaltsberichte desselben
+Ereignisses statt Haushalt und Rentenreform. Beide gezielt erneut bestanden;
+die allgemeine Hash-/Historienfixture und alle Reparaturbedingungen bleiben.
+
+**Weitere Befunde, durch diese Korrektur nicht geschlossen:** Einzelne leere
+Quellenauszuege tragen weitergehende Sach- und Rechtsaussagen nicht. Allgemeine
+Folgenabschätzungen sind kein belegter individueller Mandatsnutzen.
+Die parlamentarische Ueberweisung und Federfuehrung des priorisierten Antrags
+wurden im ersten Absatz der [Bundestags-Originalseite](https://www.bundestag.de/dokumente/textarchiv/2026/kw39-de-solidarprinzip-1211318)
+rein lesend bestaetigt; im gespeicherten Auszug fehlt dieser Teil. Kein
+Nachimport. Die persoenliche Radar-Namensbindung am gespeicherten Artikel ist
+vorhanden; das Webwerkzeug konnte die Mediathekadresse nicht erneut lesen.
+Keine vollstaendige externe Artikelabnahme behauptet.
+
+Status: Code und lokaler Nachweis bereit; Merge und Production-Nachkontrolle
+offen. Naechster Schritt: Pflicht-CI am PR-Kopf, danach konkretes Merge-GO.
+Die einmalige RSA-Freigabe ist verbraucht; kein zweiter Aufnahme-Dispatch.
