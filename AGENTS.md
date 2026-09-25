@@ -37,7 +37,8 @@ Vor jedem Sprint nur den aktuellen, benötigten Stand lesen:
 1. die geltenden `AGENTS.md`
 2. `docs/START_HERE.md`
 3. `docs/CURRENT_STATE.md`
-4. nur die für den konkreten Sprint benötigten Dateien
+4. `docs/ROADMAP_BIS_500.md`
+5. nur die für den konkreten Sprint benötigten Dateien
 
 `CLAUDE.md` nur vollständig lesen, wenn eine enthaltene Regel für den Sprint
 relevant ist oder eine geltende `AGENTS.md` es ausdrücklich verlangt. Dieser
@@ -396,6 +397,7 @@ Innerhalb dieser Grenze ist Geschwindigkeit zum 500er Production Nachweis wichti
 
 ## Reihenfolge bis zum 500er Nachweis
 
-Nach den vier offenen Understanding-Fällen folgt der kleine Pflichtsprint
-Lage / Radar / Briefing Trennung. Danach der 500er Production-Nachweis zunächst
-mit GPT 5 mini. Keine Nebenprojekte.
+Die verbindliche Arbeitsreihenfolge steht in `docs/ROADMAP_BIS_500.md`.
+Codex nutzt sie zusammen mit dem aktuellen Production Stand aus
+`docs/CURRENT_STATE.md`. Abgeschlossene Schritte nicht wiederholen und keine
+Nebenprojekte vor dem 500er Production Nachweis beginnen.
