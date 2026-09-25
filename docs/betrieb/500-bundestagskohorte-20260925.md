@@ -46,7 +46,7 @@ Rueckweg nur bei exaktem Nachherzustand und0 aktiven Profilen; alte beiden
 Inhaltsfelder und Zeitstempel aus gesicherter Vorherzeile wiederherstellen.
 Kein Loeschen, keine Quellenwirkung, keine Modellaufrufe durch diese Korrektur.
 
-**Noch nicht ausgefuehrt.** Der Code-/Datenplan allein ist keine Aktivierung
+**Production-verifiziert25.09.11:53:56UTC.** Die Profilumstellung ist keine Aktivierung
 und kein Funktionsnachweis. Frische Versorgung, sichtbare Bereichsabnahme,
 Gesamtkosten/-zeit, Bereinigung auf exakt500 und gesicherter Testabschluss
 bleiben notwendig. Testparteien und Testthemen werden nicht nachtraeglich an
@@ -61,3 +61,36 @@ Commit3b0c9a10,16 Modellaufrufe,13 gespeichert/3 skipped-invalid,
 Dieser bestehende Cron wurde nicht neu ausgeloest. Keine aktive Arbeit bei
 Vorabkontrolle. Die Quellen-/Qualitaetsbilanz muss neue Ergebnisse gesondert
 beruecksichtigen; alte27er Lesungen sind keine aktuelle Gesamtbestandsabnahme.
+
+## Production-Nachweis
+
+PR568 Kopf df4974a67fb2116b1946aed48cd947aacdf06480, beide Pflichtchecks in
+Run36130747305 SUCCESS. Merge59fe1895e7fac3b03e2286665e30675ee2d34005,
+Deployment dpl_BESsSchgryVjxegEMJFBoFBZDojL READY. Keine error/fatal-Logs
+im geprueften Fenster11:49:40–11:54:16UTC.
+
+SQL nach lokaler isolierter Datenbankpruefung9/9 Gruppen einmal ausgefuehrt:
+11:53:46UTC, Quittung kohorte-bundestag-20260925-a abgeschlossen.
+Die erste Laborpruefung fand eine falsch geklammerte JSONB-Nachbedingung;
+nach Korrektur bestanden Vollvergleich, Abbruch-/Atomarikfaelle und Rueckweg.
+Keine gescheiterte Production-Ausfuehrung.
+Nachlesung:61/61 volle Zielzeilen exakt;443 andere Mandatsprofile einschliesslich
+der fuenf realen und505 Identitaeten unveraendert.495 synthetische Bundestagsprofile,
+weiter504 Gesamtprofile/0 aktiv. Kosten0,304227USD/0 offen unveraendert.
+Maschinenlesbarer Beleg: [Nachweis](500-bundestagskohorte-nachweis-20260925.json).
+
+## Vollstaendige Aktivierungsreife
+
+Lesung aller500 echten Zielzeilen ergab499 zulaessige Profile und0 fehlende
+Pflichtpakete. Annika Klose trug im Berichterstatter-Themenfeld ausschliesslich
+die generischen Formularrollen „Sprecher/in der Fraktion“ und „Obmann/Obfrau im
+Ausschuss“. Diese sind keine Themen und keine belegten konkreten Amtsangaben.
+Genau diese beiden Platzhalter wurden12:23:38UTC entfernt; keine Rolle ergaenzt,
+kein Ausschuss, Schwerpunkt, Name, Budget oder Aktivzustand veraendert.
+
+Einmalquittung profilthemen-korrektur-20260925-a sichert die volle Vorher-/Nachherzeile.
+15s Anweisungsgrenze/2s Sperrgrenze, ruhender Bestand, bedingter exakter Rueckweg.
+Vier isolierte SQL-Pruefgruppen bestanden. SELECT12:24:00UTC:ganze Zielzeile
+exakt, alle503 anderen unveraendert. Alle500 Zielprofile bestehen danach die
+regulaere Aktivierungsreife,0 fehlende Pflichtpakete. [Beleg](500-profilreife-20260925.json).
+Dies belegt Profileignung; Quellenversorgung und500er Funktionsnachweis fehlen.
