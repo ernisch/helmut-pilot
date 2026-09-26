@@ -254,7 +254,10 @@ async function main() {
       /GETEILTE Arbeit/.test(w.wirkung)
         && /mandatsgebundene Arbeit ALLER Profile/.test(w.wirkung));
     check("E4 Sie warnt ausdruecklich vor einem Wert oberhalb des Deckels",
-      typeof w.warnung === "string" && /KLEINER/.test(w.warnung) && /100/.test(w.warnung));
+      typeof w.warnung === "string" && /KLEINER/.test(w.warnung)
+        && /HELMUT_MAX_LLM_CALLS_PER_DAY/.test(w.warnung)
+        && /HELMUT_LLM_RESERVE_UNDERSTANDING/.test(w.warnung)
+        && /keine Freigabe fuer Budgetaenderungen/.test(w.warnung));
 
     // BEFUND 2: ohne Untergrenze ergab ein Vorrangwert >= Deckel fuer JEDEN
     // Verstehensaufruf effectiveMax = 0 — der Datenmotor auch der fuenf REALEN
