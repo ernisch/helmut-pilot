@@ -207,8 +207,8 @@ check("Scharf: Secrets unveraendert (Supabase + Azure wie bisher)",
 check("Scharf: Concurrency-Gruppe unveraendert",
   YML.includes("group: helmut-500-kontrollierte-facharbeit")
   && YML.includes("cancel-in-progress: false"));
-check("4-USD-Riegel unveraendert (LIMIT_MICRO_USD = 4000000)", /LIMIT_MICRO_USD\s*=\s*4000000/.test(BUDGET));
-check("Workflow setzt keinen eigenen USD-Riegel", !/4000000|LIMIT_MICRO_USD|USD_RIEGEL|USD_LIMIT/.test(YML));
+check("6-USD-Riegel gemaess Freigabe (LIMIT_MICRO_USD = 6000000)", /const LIMIT_MICRO_USD\s*=\s*6000000/.test(BUDGET));
+check("Workflow setzt keinen eigenen USD-Riegel", !/4000000|6000000|LIMIT_MICRO_USD|USD_RIEGEL|USD_LIMIT/.test(YML));
 
 // 11 · Verpflichtende fail-closed-Laufwerte des Auftrags.
 for (const wert of [

@@ -106,3 +106,10 @@ Die6USD-Anpassung besteht lokal19 Budgetgruppen,77 Laufzeitprüfungen,
 33 Vorstartgruppen und8 Aufnahmegruppen. Die administrative Umstellung wurde
 mit7 lokalen SQL-Prüfgruppen einschließlich vollständigem Rückrollen bei
 Abweichungen geprüft. Keine dieser Prüfungen erzeugt Anbieteraufrufe.
+
+Kostenbindung vor der6USD-Umstellung19:11UTC: vollständige zwei Tagesbücher
+und51 lokale Helfersitzungen konservativ4,163178USD einschließlich0,212USD
+ungeklärter Production-Reserve. Für den nach acht Minuten beendeten Flash-High-
+Lauf zusätzlich0,35USD gebunden, bis ein Anbieterabgleich vorliegt: zusammen
+4,513178USD. Externe Bindung daher3259354 Mikro-USD; keine Freigabe dieser
+Zusatzreserve allein aus einer späteren lokalen Token-Schätzung.
