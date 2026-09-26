@@ -122,6 +122,21 @@ function fixture() {
       {profileUnveraendert:false},{lesebeweis:null}])
       assert.throws(()=>T.pruefeEinzelquellenVorgaenger({...vorher,...aenderung}),/altquittung/);
   });
+  await test("Mandatsauswahl bindet nur den neuen belegten Vorlauf und eine eigene Quittung",()=>{
+    const neu=T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"mandatsauswahl",
+      HELMUT_VORSTART_PROFIL:T.MANDATSAUSWAHL.profilHash},commit,start);
+    assert.equal(neu.quittung,T.MANDATSAUSWAHL.quittung);assert.notEqual(neu.quittung,T.EINZELQUELLE.quittung);
+    assert.equal(neu.artikelstand,true);assert.equal(neu.reparatur,false);
+    const vorher={status:"gestoppt",ok:false,runId:"nachlauf500-36244835548",idHash:T.ARTIKELSTAND.profilHash,
+      runtimeCommit:"13a152e8bb880a97435cbc0a8b130248980c69a7",grund:"ai-text-source-support",gespeichert:false,
+      freigegebeneAufrufe:2,offeneKosten:0,profileUnveraendert:true,lesebeweis:{absatzHash:T.ARTIKELSTAND.absatzHash}};
+    T.pruefeEinzelquellenVorgaenger(vorher,neu.quittung);
+    assert.throws(()=>T.pruefeEinzelquellenVorgaenger(vorher),/altquittung/);
+    assert.throws(()=>T.pruefeEinzelquellenVorgaenger(vorher,"fremd"),/altquittung/);
+    for(const aenderung of [{status:"laeuft"},{runId:"nachlauf500-36243162049"},{offeneKosten:1},
+      {runtimeCommit:"d826ad1ef3f64cb578821a5e0b60e98105a9f5ee"},{gespeichert:true}])
+      assert.throws(()=>T.pruefeEinzelquellenVorgaenger({...vorher,...aenderung},neu.quittung),/altquittung/);
+  });
   const alt = {id:"bf-test",generated_at:"2026-09-26T01:00:00Z",payload:{qualitaet:false,text:"Unbelegter Tagesbezug"}};
   await test("Datumsbindung hat eine dritte feste Quittung bei gleicher Schutzbindung",()=>{
     const neu = T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"datumsbindung",

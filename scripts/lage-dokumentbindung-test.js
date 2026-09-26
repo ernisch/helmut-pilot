@@ -93,4 +93,62 @@ const korrektReview = structuredClone(mischReview);
 korrektReview.pruefungen[0].vollstaendig_belegt = true;
 korrektReview.pruefungen[0].pruefbegruendung = "Der Auszug belegt allein die Fortsetzung der Verhandlungen.";
 assert.equal(Q.pruefe(korrekt, fallQuellen, korrektReview, fallProfil).ok, true);
-console.log("11/11 Dokumentbindungsgruppen: Quelle, Vorgang, Mandatsfeld, Rollenpruefung und Dokumenttrennung.");
+
+// Gruppen 11-12: Zwei tatsaechlich vorhandene Ausschuesse bleiben ohne
+// kuenstlichen ersten Schwerpunkt gleichwertig. Echter Promptwiderspruch vom
+// 26.09.: der Generator erklaerte den ersten Ausschuss automatisch zum
+// "Schwerpunkt des Mandats", obwohl das Profil Auswaertigen UND
+// Haushaltsausschuss traegt. Alle Mandatsfelder bleiben unveraendert im Kontext.
+const zweiProfil = { committees: ["Auswärtiger Ausschuss", "Haushaltsausschuss"] };
+const zweiPrompt = ai.buildLageBriefingPrompt(fallQuellen, zweiProfil, { briefingDatum: "2026-09-26" });
+assert(!/Schwerpunkt des Mandats/.test(zweiPrompt), "kein erfundener erster Schwerpunkt im Generatorprompt");
+assert.match(zweiPrompt, /Reihenfolge je Absatz: zuerst genau EIN Quelldokument/);
+assert.match(zweiPrompt, /kein Ausschuss und kein Schwerpunkt ist automatisch der erste/);
+const zweiKontext = JSON.parse(zweiPrompt.split("\n")
+  .find(l => l.startsWith("Fachlicher Mandatskontext: ")).slice("Fachlicher Mandatskontext: ".length));
+assert.deepEqual(zweiKontext.ausschuesse, zweiProfil.committees, "beide Ausschuesse bleiben unveraendert im Kontext");
+assert.equal(Q.mandatsbezugGueltig({ feld: "ausschuss", wert: zweiProfil.committees[1] }, zweiProfil), true,
+  "der zweite Ausschuss ist kein geringerer Bezug als der erste");
+assert.deepEqual(Object.keys(ai.LAGE_BRIEFING_SCHEMA.properties.paragraphs.items.properties),
+  ["vorgang_ids", "quelle_id", "mandatsbezug", "text"], "Absatzfelder in Auswahl-vor-Text-Reihenfolge");
+assert.deepEqual(ai.LAGE_BRIEFING_SCHEMA.properties.paragraphs.items.required,
+  ["vorgang_ids", "quelle_id", "mandatsbezug", "text"], "Pflichtfelder unveraendert, nur Reihenfolge");
+const beispielAbsatz = JSON.parse(zweiPrompt.split("\n").find(l => l.startsWith('{ "paragraphs":'))).paragraphs[0];
+assert.deepEqual(Object.keys(beispielAbsatz), ["vorgang_ids", "quelle_id", "mandatsbezug", "text"],
+  "JSON-Promptbeispiel in derselben Reihenfolge");
+
+// Gruppe 13: Der belegte falsche Mandatsbezug vom 26.09. (Kraftstoffpreis-Absatz
+// am Auswaertigen Ausschuss) bleibt vom unveraenderten strengen Review abgelehnt.
+// Die Struktur allein akzeptiert ihn, weil der Wert ein echtes Profilfeld ist.
+// Das vorgegebene Review ist ein Offline-Vertragsbeleg, keine Wirkgarantie.
+const kraftstoffQuellen = [{ vorgang_id: "vg-kraftstoffpreise", quellenbelege: [
+  { quelle_id: "q-dlf-kraftstoff", url: "https://example.org/kraftstoffpreise", quelle: "Deutschlandfunk Politik",
+    titel: "Hohe Kraftstoffpreise - SPD-Fraktionsvize Zorn verteidigt vom Bundeskabinett beschlossenen Tankrabatt",
+    auszug: "SPD-Fraktionsvize Zorn hat die vom Bundeskabinett beschlossene Senkung der Energiesteuer auf Benzin und Diesel verteidigt." },
+  { quelle_id: "q-bt-haushalt", url: "https://example.org/haushaltsausschuss", quelle: "Deutscher Bundestag",
+    titel: "Haushaltsausschuss berät über die Finanzierung der Entlastungen",
+    auszug: "Der Haushaltsausschuss hat die Finanzierbarkeit der beschlossenen Entlastungen beraten." }
+] }];
+const kraftstoffAbsaetze = [
+  { text: "SPD-Fraktionsvize Zorn hat die vom Bundeskabinett beschlossene Senkung der Energiesteuer auf Benzin und Diesel verteidigt, berichtet Deutschlandfunk Politik.",
+    vorgang_ids: ["vg-kraftstoffpreise"], quelle_id: "q-dlf-kraftstoff",
+    mandatsbezug: { feld: "ausschuss", wert: zweiProfil.committees[0] } },
+  { text: "Der Haushaltsausschuss hat die Finanzierbarkeit der beschlossenen Entlastungen beraten, berichtet der Deutsche Bundestag.",
+    vorgang_ids: ["vg-kraftstoffpreise"], quelle_id: "q-bt-haushalt",
+    mandatsbezug: { feld: "ausschuss", wert: zweiProfil.committees[1] } }
+];
+const kraftstoffReview = { pruefungen: [
+  { absatz: 0, quelle_id: "q-dlf-kraftstoff", belegfeld: "auszug", themenrein: true, profilbezug: false,
+    textart: "konkreter_sachverhalt", vollstaendig_belegt: true,
+    pruefbegruendung: "Der Auszug belegt den Tankrabatt, nicht den Auswaertigen Ausschuss." },
+  { absatz: 1, quelle_id: "q-bt-haushalt", belegfeld: "auszug", themenrein: true, profilbezug: true,
+    textart: "konkreter_sachverhalt", vollstaendig_belegt: true,
+    pruefbegruendung: "Der Auszug belegt die Beratung im Haushaltsausschuss." }
+], vergleiche: [{ erster_absatz: 0, zweiter_absatz: 1, eigenstaendige_sachverhalte: true,
+  pruefbegruendung: "Tankrabatt-Verteidigung und Haushaltsberatung sind verschiedene Sachverhalte." }] };
+assert.equal(ai.assembleLageParagraphs({ paragraphs: kraftstoffAbsaetze }, kraftstoffQuellen, zweiProfil).length, 2,
+  "die Struktur allein entscheidet den fachlichen Bezug nicht");
+const kraftstoff = Q.pruefe(kraftstoffAbsaetze, kraftstoffQuellen, kraftstoffReview, zweiProfil);
+assert.equal(kraftstoff.ok, false);
+assert(kraftstoff.diagnose.fehler.includes("profilbezug-fehlt"));
+console.log("13/13 Dokumentbindungsgruppen: Quelle, Vorgang, Mandatsfeld, Rollenpruefung, Dokumenttrennung und Mandatsauswahl ohne ersten Schwerpunkt.");

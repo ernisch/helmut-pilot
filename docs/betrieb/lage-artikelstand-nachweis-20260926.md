@@ -133,3 +133,44 @@ Wirkung/Risiko/Nachkontrolle/Rückweg wie oben: möglicher neuer Tagessatz samt
 privaten Entwurf-/Reviewbelegen und Kostenbuchung; bei Ablehnung kein Erfolg,
 kein automatischer Retry und keine Löschung der alten Belege. Vor Ausführung
 Kosten erneut lesen und Nurleseplan prüfen. Der Anschluss ist noch nicht ausgeführt.
+
+## Einzelquellen-Nachweis und Mandatsauswahl
+
+[PR613](https://github.com/ernisch/helmut-pilot/pull/613), Kopf `f2580fb7`,
+beide Pflichtprüfungen im [CI-Lauf36243563920](https://github.com/ernisch/helmut-pilot/actions/runs/36243563920)
+grün; Merge `13a152e8bb880a97435cbc0a8b130248980c69a7`, Production
+`dpl_FSdZwf7QQHmRYPXCEw39ioHbvTNs` READY13:18:28UTC, keine error/fatal-Logs
+im gelesenen Zeitraum bis13:19:11UTC. [Nurleseplan36244761052](https://github.com/ernisch/helmut-pilot/actions/runs/36244761052)
+bestanden. [Einmalauftrag36244835548](https://github.com/ernisch/helmut-pilot/actions/runs/36244835548)
+13:20:40–13:21:26UTC erneut **fachlich gescheitert**;2 Aufrufe,0,008331USD,
+kein Tagessatz, terminale Quittung `lage-einzelquelle-20260926-a` verbraucht.
+Nachlesung13:22:52UTC:500/0, Profil-/Identitätshashes gleich,0 Jobs/Sperren/
+Leases/offene Kosten, Tagesbuch0,310850USD, Riegel4USD.
+
+Der unabhängig vollständig gelesene Entwurf mischt jetzt keine Dokumente.
+Beide Sachverhalte sind laut Review belegt und verschieden. Absatz1 über
+Kraftstoffpreise ist aber dem Auswärtigen Ausschuss zugeordnet; das Review
+lehnt den fachlichen Bezug korrekt ab. Die neue Ursache ist keine weitere
+Quellenmischung. Im Generator wird der erste Profil-Ausschuss ohne Grundlage
+zum Schwerpunkt erklärt. Zudem steht im Ausgabeschema der Text vor der Auswahl
+von Quelle und Mandatsbezug. Die Korrektur entfernt die künstliche Priorisierung
+und ordnet Auswahl vor Text. Feldmenge, Enums, Qualitätsprüfung und Kosten bleiben
+unverändert.13 Dokumentbindungsgruppen und26 Vorstartgruppen lokal bestanden;
+noch kein Wirkungsnachweis des geänderten Prompts.
+
+Dafür ist genau ein neuer Auftrag `mandatsauswahl` mit eigener Quittung
+`lage-mandatsauswahl-20260926-a` vorbereitet. Er bindet den unmittelbar vorherigen
+terminalen Lauf36244835548/13a152e8, dasselbe unveränderte Profil, den identischen
+amtlichen Artikelstand und erneut maximal2 Aufrufe/240 Sekunden/0,50USD.
+Wirkung, Risiko, Nachlesung und Rückweg entsprechen den obigen Einmalaufträgen;
+alle500 bleiben inaktiv. Kein Replay verbrauchter Aufträge. Vorher frische
+Kostenprüfung und Nurleseplan am neuen geprüften main/READY. Noch nicht ausgeführt.
+
+Unabhängige lokale Diagnose der Versorgungslücke: beim vorhandenen Pflegefall
+`vg-hauptstadtstudios-20260925-0e55d7` liegt die echte Quelle im Briefingfenster.
+Für ein Gesundheitsprofil fehlen passende strukturierte Merkmale; der Vorgang
+wird vor der Entscheidung verworfen und erreicht auch ohne diesen Filter keine
+Tagespriorität. Kein Ausschuss ist in der Quelle als Akteur belegt. Eine bloße
+Schwellensenkung oder erfundene Ausschusszuordnung ist keine Lösung. Matching,
+Quellendaten und Profile wurden nicht geändert. Dieser Einzelbefund ist keine
+vollständige Ursachenanalyse aller373 fehlenden Tagesprioritäten.
