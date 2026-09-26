@@ -472,3 +472,27 @@ Fehlerprotokoll bis16:04:09UTC ohne Treffer.16:04:17UTC500/0, Profil-/Identität
 hashes gleich,0 offene Kosten/Jobs/Locks/Leases. Nurleseplan36254153879 bestanden.
 Konservativ3,384415USD kumulativ, einschließlich vollem0,25USD-Rahmen unter4USD.
 Isolierter Vergleich36254207276 gestartet; Ergebnis noch offen.
+
+## Transportfehler im Diagnoseauftrag belegt
+
+Run36254207276 endete16:06:07UTC gestoppt:1 Aufruf/0,005823USD, keine offenen
+Kosten, Profilbestand und Tagessatz unverändert. Beide positiven Mandatsfälle
+akzeptiert; private Heizkosten fälschlich akzeptiert, Energiesteuer fachlich
+abgelehnt, aber zusätzlich fälschlich als Themenvermischung bewertet.
+Kein Vierfallerfolg und keine Veröffentlichung.
+
+Wichtig: Die Quittung nennt den angeforderten Wert`medium`; tatsächlich hat
+`ai.js` am Runtime61d4772f jeden Wert außer`low` als`minimal` gesendet.
+Der Lauf belegt daher KEINEN Vergleich mit mittlerem Denkaufwand. Die Korrektur
+erhält nun ausdrücklich`minimal/low/medium`, alle übrigen Werte fallen wie
+bisher auf`minimal` zurück. Normale Generator-/Reviewaufrufe bleiben`low`.
+Der echte lokale HTTPS-Mock bestätigt10 Transportaussagen; dieselbe
+Serialisierung wird im gesperrten Offline-Umfeld direkt an`https.request` geprüft.
+
+Neuer einmaliger Auftrag`lage-pruefaufwand-20260926-b`, weiterhin1 Aufruf,
+0,25USD/240s/3000 Ausgabetokens, unveränderte Preise/Reserve/4USD-Riegel.
+Er verlangt zusätzlich exakt die unveränderte verbrauchte Quittung a samt
+Antwort-Hash. Identische vier Quellen, Absätze und vorab definierte Sollurteile;
+keine alten Aufträge wiederverwenden. Vor Ausführung neuer Nurleseplan und
+frischer kumulativer Kostenstand. Gleiche Nachkontrolle/Rückweg wie oben.
+10 Vertragsgruppen und32 bestehende Vorstartgruppen grün. Production offen.
