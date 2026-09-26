@@ -73,3 +73,28 @@ Beide nur lokal geprueft. Noch kein Import und kein Verstehenslauf ausgefuehrt.
 Die neue Suite wird durch die bestehende Verstehen-Bereichsauswahl automatisch
 zugeordnet. Keine Erweiterung der allgemeinen Standardmenge. Die additive
 Laufkennung wurde eigenstaendig geprueft; beide6USD-Grenzen unveraendert.
+
+## Productionbilanz26.09.,23:22UTC
+
+PR636, Merge`ccc5c8233d0c0e26064d7a161a78c99998f2abe8`, Deployment
+`dpl_83tRjE49xza7GAs2YKMrFGGHuJn7` READY22:54:10UTC. Import22:54UTC:
+5/5 Rohdokumente und5/5 Belege exakt; Plan36277806792 bestanden.
+Lauf[36277841330](https://github.com/ernisch/helmut-pilot/actions/runs/36277841330)
+stoppt sicher nach3 Aufrufen/0,022823USD: ein gespeicherter Hormus-Vorgang,
+ein aktualisierter Berliner Sondierungsvorgang, ein unbestaetigter Wadephul-
+Ausgang (Ebenenkonflikt), zwei nicht begonnen. Quittung verbraucht, kein Retry.
+
+Fachpruefung: Berlin-Prosa mit Originalbeleg vereinbar. Hormus-Prosa vermischt
+Angebot und Gegenleistung: der Originalartikel bietet Oeffnung UND Wiederaufnahme
+der Atomgespraeche an; die Prosa nennt Gespraeche missverstaendlich als
+Gegenleistung. Deshalb keine fachliche Abnahme.26.09.,23:22:13UTC unabhaengig
+bestaetigt: `understanding_status=failed`, Archiv
+`quarantaene-hormus-gegenleistung-20260926-a`, Vollarchiv-PostgreSQL-SHA256
+`8182db3956d9433219a07d00601c0ec92681a99ccedc7835e318e571364078f1`.
+Uebrige KO-Felder, CAS und Quellenlinks unveraendert. Keine automatische
+Wiederaufnahme und keine manuelle Umschreibung als Modellnachweis.
+
+Wadephul-Fehlbindung separat [gesichert und entfernt](wadephul-ereignisbindung-20260926.md).
+Der [eigene Rest3-Auftrag](verstehen-frische3-rest-20260926.md) umfasst nur die
+noch offenen drei Quellen. Er wiederholt weder den Fuenferlauf noch den alten
+unknown-Vorgang. Alle500 Profile bleiben inaktiv; kein500er Funktionsnachweis.

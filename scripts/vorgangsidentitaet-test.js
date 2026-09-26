@@ -366,6 +366,114 @@ check("10 · eine reine Wiederveroeffentlichung verdraengt kein neues Faktum",
       d("neu", "Tankrabatt 2026", "2026-09-25T09:00:00Z")).gleich === false);
 }
 
+// =========================================================================
+// 13 · Amt + Personenname sind EIN Beweisanker, nicht zwei
+// =========================================================================
+// Production 26.09.2026 (gesicherter Fall): die neue DLF-Meldung zur
+// KI-Verantwortung in der UNO-Vollversammlung wurde ueber
+// "Bundesaußenminister" + "Wadephul" an den zehn Tage alten Vorgang zur
+// Bewerbung um den UNO-Menschenrechtsrat gehaengt — gemeinsamer Redner, zwei
+// sachlich verschiedene Ereignisse. Titel, Kurzfassungen und Zeiten unten sind
+// die oeffentlichen Originalangaben der beiden Quellen; "vg-bundesaußenminister-
+// 20260916-ddcd4d" ist die Kennung des gespeicherten Vorgangs.
+{
+  const menschenrechtsrat = d("rd-wadephul-menschenrechtsrat",
+    "Deutsche Bewerbung - Wadephul bekräftigt Ambitionen auf Sitz im UNO-Menschenrechtsrat",
+    "2026-09-16T03:37:04Z", "deutschlandfunk-politik",
+    "Bundesaußenminister Wadephul hat in Genf für einen Sitz Deutschlands im UNO-Menschenrechtsrat geworben.");
+  const kiVerantwortung = d("rd-wadephul-ki",
+    "UNO-Vollversammlung - Bundesaußenminister Wadephul fordert mehr gemeinsame Verantwortung für KI",
+    "2026-09-26T21:50:24Z", "deutschlandfunk-politik",
+    "Bundesaußenminister Wadephul hat die Vereinten Nationen aufgefordert, mehr Verantwortung für eine sichere und positive Entwicklung Künstlicher Intelligenz zu übernehmen.");
+
+  check("13 · Amtsbezeichnungen werden ueber den Kopf der Zusammensetzung erkannt",
+    V.istAmtsbezeichnung("bundesaußenminister") && V.istAmtsbezeichnung("finanzministerin")
+    && V.istAmtsbezeichnung("verkehrsminister") && V.istAmtsbezeichnung("landesvorsitzende")
+    && V.istAmtsbezeichnung("vizekanzler") && V.istAmtsbezeichnung("präsident"));
+  check("13 · die Wahl in ein Amt und das Ministerium bleiben Sachbegriffe",
+    V.istAmtsbezeichnung("bundespraesidentenwahl") === false
+    && V.istAmtsbezeichnung("kanzlerwahl") === false
+    && V.istAmtsbezeichnung("verkehrsministerium") === false);
+  check("13 · derselbe Redner wird in beiden Originaltexten als Amtstraeger gelesen",
+    V.rednerAttributionen(`${V.titelRumpf(menschenrechtsrat)} ${menschenrechtsrat.summary}`)
+      .get("bundesaußenminister") instanceof Set
+    && V.gemeinsameRednernamen(menschenrechtsrat, kiVerantwortung,
+      V.docAnchors(menschenrechtsrat), V.docAnchors(kiVerantwortung)).has("wadephul"));
+  // Steht das Amt nicht in der Ankermenge (Grundform "Praesident"/"Bundeskanzler"
+  // ist dort bereits ausgeschlossen), bleibt der gemeinsame Name ein Beleg.
+  const ohneAmtsanker1 = d("og1", "Praesident Sommer verkuendet Gebuehrenreform", "2026-09-19T12:00:00Z");
+  const ohneAmtsanker2 = d("og2", "Praesident Sommer erlaeutert Gebuehrenreform", "2026-09-19T12:00:00Z");
+  check("13 · steht das Amt nicht in der Ankermenge, bleibt der Name unangetastet",
+    V.rednerAttributionen("Präsident Selenskyj dementiert die Waffenruhe").has("präsident")
+    && zusammen(ohneAmtsanker1, ohneAmtsanker2).gleich === true
+    && zusammen(ohneAmtsanker1, ohneAmtsanker2).overlap.treffer.includes("sommer"));
+
+  const hin = zusammen(menschenrechtsrat, kiVerantwortung);
+  // Nur die synthetische Gegenprobe verschiebt das Datum; Production bleibt
+  // unveraendert. Zeitliche Naehe darf den gleichen Sachfehler nicht zulassen.
+  const zeitnah = { ...menschenrechtsrat, published_at: "2026-09-26T20:00:00Z" };
+  check("13 · derselbe Redner verbindet fremde Themen auch zeitnah nicht",
+    !zusammen(zeitnah, kiVerantwortung).gleich
+    && !zusammen(kiVerantwortung, zeitnah).gleich
+    && clusterAnzahl([zeitnah, kiVerantwortung]) === 2
+    && clusterAnzahl([kiVerantwortung, zeitnah]) === 2
+    && !V.sameVorgang({ documents: [kiVerantwortung] }, { documents: [zeitnah] }).gleich
+    && !V.sameVorgang({ documents: [zeitnah] }, { documents: [kiVerantwortung] }).gleich);
+  const zurueck = zusammen(kiVerantwortung, menschenrechtsrat);
+  check("13 · Amt und Personenname verbinden die beiden Ereignisse nicht (beide Richtungen)",
+    hin.gleich === false && zurueck.gleich === false, `${hin.grund}/${zurueck.grund}`);
+  check("13 · getrennt wird ueber die Beweislast, nicht ueber einen neuen Sonderfall",
+    hin.grund === "zu-wenig-beweisgewicht"
+    && hin.overlap.gewichtSpezifisch < V.FERN_MIN_BEWEISGEWICHT
+    && hin.overlap.treffer.includes("bundesaußenminister")
+    && !hin.overlap.treffer.includes("wadephul"));
+  check("13 · auch der Erstcluster bleibt in beiden Ankunftsrichtungen getrennt",
+    clusterAnzahl([menschenrechtsrat, kiVerantwortung]) === 2
+    && clusterAnzahl([kiVerantwortung, menschenrechtsrat]) === 2);
+  check("13 · der gespeicherte Vorgang nimmt die neue Quelle in keiner Richtung an",
+    V.sameVorgang({ documents: [kiVerantwortung] }, {
+      vorgangId: "vg-bundesaußenminister-20260916-ddcd4d", documents: [menschenrechtsrat]
+    }).gleich === false
+    && V.sameVorgang({ documents: [menschenrechtsrat] }, {
+      vorgangId: "vg-bundesaußenminister-20260926-c4a5a3", documents: [kiVerantwortung]
+    }).gleich === false);
+  check("13 · Kennung und Suchpraefixe bleiben unveraendert auffindbar",
+    V.deriveVorgangId({ documents: [kiVerantwortung] }).startsWith("vg-bundesaußenminister-20260926-")
+    && V.candidatePrefixes({ documents: [kiVerantwortung] }).includes("vg-bundesaußenminister")
+    && V.candidatePrefixes({ documents: [menschenrechtsrat] }).includes("vg-bundesaußenminister"));
+
+  // POSITIVE GEGENFAELLE — dieselbe Sache mit demselben Akteur bleibt gebunden.
+  const fortschreibung = d("rd-menschenrechtsrat-fortsetzung",
+    "Deutschland bewirbt sich um einen Sitz im UNO-Menschenrechtsrat",
+    "2026-09-26T10:00:00Z", "zweite-redaktion",
+    "Die Bewerbung Deutschlands um einen Sitz im UNO-Menschenrechtsrat läuft weiter; Bundesaußenminister Wadephul wirbt in Genf um Unterstützung.");
+  const zweiteMeldung = d("rd-ki-zweite",
+    "UNO-Vollversammlung - Wadephul: KI wartet nicht auf unsere Institutionen",
+    "2026-09-27T06:00:00Z", "zweite-redaktion",
+    "Bundesaußenminister Wadephul hat an die Vereinten Nationen appelliert, mehr Verantwortung für die Entwicklung Künstlicher Intelligenz zu übernehmen.");
+  check("13 · dieselbe Sache mit demselben Amtstraeger bleibt auch nach zehn Tagen verbunden",
+    zusammen(menschenrechtsrat, fortschreibung).gleich === true
+    && zusammen(menschenrechtsrat, fortschreibung).overlap.gewichtSpezifisch >= V.FERN_MIN_BEWEISGEWICHT
+    && V.sameVorgang({ documents: [fortschreibung] },
+      { vorgangId: "vg-bundesaußenminister-20260916-ddcd4d", documents: [menschenrechtsrat] }).gleich === true,
+    JSON.stringify(zusammen(menschenrechtsrat, fortschreibung).grund));
+  check("13 · die zweite Meldung zum KI-Ereignis bleibt im selben Vorgang",
+    zusammen(kiVerantwortung, zweiteMeldung).gleich === true
+    && clusterAnzahl([kiVerantwortung, zweiteMeldung]) === 1
+    && V.sameVorgang({ documents: [zweiteMeldung] }, { vorgangId: "vg-x", documents: [kiVerantwortung] }).gleich === true);
+
+  // GEGENPROBE (Production-Resolver): das Amt als GEGENSTAND des Vorgangs bleibt
+  // ein Sachanker, auch wenn der amtierende Minister daneben genannt wird.
+  const amtAlt = d("vg-amt-1", "Bundesverkehrsminister Schnieder verliert voraussichtlich sein Amt", "2026-07-26T06:50:00Z", "q1");
+  const amtZweit = d("vg-amt-2", "Merz baut Regierung um: Zukunft von Verkehrsminister Schnieder offen", "2026-07-26T11:27:00Z", "q2");
+  const amtNeu = d("vg-amt-3", "Kabinettsumbildung: Bilger soll neuer Verkehrsminister werden", "2026-07-27T02:38:00Z", "q3");
+  check("13 · das Amt als Gegenstand bleibt unveraendert ein gemeinsamer Sachanker",
+    zusammen(amtAlt, amtZweit).gleich === true && clusterAnzahl([amtAlt, amtZweit]) === 1);
+  check("13 · die Fortschreibung der Kabinettsumbildung bleibt am Bestand",
+    V.sameVorgang({ documents: [amtNeu] },
+      { vorgangId: "vg-verkehrsminister", documents: [amtAlt, amtZweit] }).gleich === true);
+}
+
 console.log(`\n${n - fail}/${n} Assertions erfolgreich.`);
 if (fail) console.log(`\nFEHLGESCHLAGEN: ${fail}`);
 process.exit(fail === 0 ? 0 : 1);
