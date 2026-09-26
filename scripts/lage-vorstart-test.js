@@ -70,6 +70,33 @@ function fixture() {
       else d.gueltig=()=>false;
       const r=await T.einmallauf(cfg,d);assert.equal(r.ok,false);assert.equal(state.finished.status,"gestoppt");}
   });
+  await test("Timeout mit ungeklärter Vollreserve schliesst terminal und gibt keine Kosten frei",async()=>{
+    const {d,state,trace}=fixture();let kostenLese=0;
+    d.kosten=async()=>({startklar:++kostenLese<4,offeneReservierungen:kostenLese<4?0:1,limitUsd:4,gebundenUsd:0.214976});
+    d.build=async(p,o)=>{for(let i=0;i<2;i++){await o.beforeGenerate(p.id);trace.push("modell");}
+      state.cost=0.214976;return {available:false,reason:"ai-provider-unavailable"};};
+    await assert.rejects(T.einmallauf(cfg,d),/nachkosten/);
+    assert.equal(state.finished.status,"gestoppt");assert.equal(state.finished.ok,false);
+    assert.equal(state.finished.ergebnisGrund,"ai-provider-unavailable");
+    assert.equal(state.finished.offeneKosten,1);assert.equal(state.finished.laufkostenUsd,0.214976);
+    assert.equal(trace.filter(x=>x==="modell").length,2);assert.equal(trace.at(-1),"finish");
+    assert.equal(state.cost,0.214976);assert.equal(state.cache,null);
+  });
+  await test("Fehler in Entsperren und Nachlesung hinterlassen keinen laufenden Erfolgsauftrag",async()=>{
+    for(const art of ["release","lesen","profil","kosten"]){
+      const {d,state}=fixture(),build=d.build;
+      d.build=async(p,o)=>{const r=await build(p,o);
+        if(art==="release")d.release=async()=>{throw new Error("interner Fehler mit vertraulichem Inhalt");};
+        if(art==="lesen")d.kosten=async()=>{throw new Error("interner Lesefehler");};
+        if(art==="profil")d.ruhe=async()=>"abweichend";
+        if(art==="kosten")d.laufkosten=async()=>NaN;
+        return r;};
+      await assert.rejects(T.einmallauf(cfg,d));assert.equal(state.finished.status,"gestoppt");
+      assert.equal(state.finished.ok,false);assert.equal(state.finished.grund,"nachkontrolle-fehlgeschlagen");
+      assert(!JSON.stringify(state.finished).includes("interner"));
+      if(art==="lesen"||art==="profil")assert.equal(state.finished.profileUnveraendert,false);
+    }
+  });
   await test("Zeitauftrag hat feste eigene Quittung, Profil- und Alttextbindung",()=>{
     const neu = T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"zeitbezug",
       HELMUT_VORSTART_PROFIL:T.ZEITBEZUG.profilHash},commit,start);

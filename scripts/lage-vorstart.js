@@ -83,14 +83,25 @@ async function einmallauf(cfg, d) {
     out = { ok:Boolean(ok),grund:ok ? null : (result?.reason || "kein-gueltiger-tagessatz"),
       abschnitte:result?.paragraphs?.length || 0,gespeichert:ok,inhaltHash:saved?.payload ? hash(saved.payload) : null };
   } finally {
-    await d.release();
-    const [nach,kosten,laufkosten] = await Promise.all([d.ruhe(),d.kosten(),d.laufkosten()]);
-    fordere(nach === grundlinie,"profilbestand");
-    fordere(kosten.offeneReservierungen === 0 && laufkosten <= MAX_USD,"nachkosten");
-    out = { ...out,freigegebeneAufrufe:calls,laufkostenUsd:laufkosten,profileUnveraendert:true,
+    // Auch ein Timeout mit offener Vollreserve muss den Einmalauftrag terminal
+    // schliessen. Eine misslungene Nachkontrolle ist kein erfolgreicher Lauf.
+    let nach = null, kosten = null, laufkosten = null, abschlussFehler = null;
+    try { await d.release(); } catch (error) { abschlussFehler = error; }
+    try {
+      [nach,kosten,laufkosten] = await Promise.all([d.ruhe(),d.kosten(),d.laufkosten()]);
+      fordere(nach === grundlinie,"profilbestand");
+      fordere(kosten.offeneReservierungen === 0 && Number.isFinite(laufkosten)
+        && laufkosten >= 0 && laufkosten <= MAX_USD,"nachkosten");
+    } catch (error) { abschlussFehler = abschlussFehler || error; }
+    if (abschlussFehler) out = { ...out,ok:false,grund:"nachkontrolle-fehlgeschlagen",
+      ergebnisGrund:out.grund,abschlussGrund:/^lage-vorstart-[a-z-]+$/.test(abschlussFehler.message || "")
+        ? abschlussFehler.message : "technischer-fehler" };
+    out = { ...out,freigegebeneAufrufe:calls,laufkostenUsd:laufkosten,
+      profileUnveraendert:nach === grundlinie,offeneKosten:kosten?.offeneReservierungen ?? null,
       funktionsnachweis500:false,automatischeWiederholung:false };
     if (claimed) await d.finish({ ...receipt,...out,status:out.ok ? "abgeschlossen" : "gestoppt",
       beendetAm:new Date(d.now()).toISOString() });
+    if (abschlussFehler) throw abschlussFehler;
   }
   return out;
 }

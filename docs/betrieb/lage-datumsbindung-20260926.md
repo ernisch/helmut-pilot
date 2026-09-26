@@ -104,3 +104,59 @@ Mit ausdruecklichem Vorabendfenster ab25.09.,14:00UTC sind die3 Prioritaeten
 Aufruf ohne Fenster. Keine Behauptung einer neuen Production-API-Aufnahme oder
 aktueller fertiger Morgenbriefings.0 Modellaufrufe/Production-Writes; kein500er
 Funktionsnachweis und keine komplette semantische Abnahme dieser500 Ausgaben.
+
+## Medium-Nachweis: Timeout und geschlossene Auftragsquittung
+
+[PR600](https://github.com/ernisch/helmut-pilot/pull/600) wurde nach gruener
+Pflicht-CI36228209613 am26.09.,08:05:51UTC gemergt (`c17a591ba64420e09658d6224af5d2845352352e`).
+Vercel `dpl_DdsPQ87PVq8PX2TkrETYSB428NAo` READY, Runtime-Lesung36228770799:
+HTTP200, exakter Commit und unveraenderte Schutzflags. Plan36228769121:
+11 Vorgangskarten, ein Profil, zwei Aufrufe/0,50USD/vier Minuten.
+
+[Einmallauf36228851735](https://github.com/ernisch/helmut-pilot/actions/runs/36228851735)
+begann08:08:01.648UTC und endete technisch erfolglos08:09:06UTC. Entwurf
+erzeugt und privat erhalten; kein Reviewbeleg und kein neuer auslieferbarer Text.
+Der zweite Aufruf lief mit `medium` in den vorhandenen20-Sekunden-Timeout:
+Telemetrie `request-error:ETIMEDOUT`, Dauer20488ms, Tokens und Kosten unbekannt.
+Kein Nachweis eines richtigen oder falschen semantischen Urteils dieses Reviews.
+Der hoehere Denkaufwand ist damit nicht betrieblich bestaetigt; die Korrektur
+setzt nur diesen Versuch auf den vorherigen Aufwand `low` zurueck. Keine
+Verlaengerung von Timeout/Locks und keine weitere Auftragskennung oder Wiederholung.
+Die Datumsbindung und alle negativen Qualitaetsgates bleiben erhalten.
+
+Nachlesung08:10:32UTC:500 Profile/0 aktiv, beide Profilhashes unveraendert,
+0 Jobs/Sperren/Leases. Vollstaendige alte Lage-Zeile unveraendert
+(Hash `68c3bb8274a3c9b5ee947fe990cd9f9f9f5036bb4d7401359b56aa709e2fa34d`).
+Gebuchte Tageskosten0,153824USD; dazu eine ungeklärte volle Reserve0,212USD:
+konservativ gebunden0,365824USD. Dieser Versuch:0,002976USD gebucht plus0,212USD
+offen. Gesamter autonomer Auftrag:0,148099USD gebucht plus0,212USD offen,
+also0,360099USD gebunden. Das ist keine Aussage ueber die tatsaechliche
+Providerrechnung. Weitere Modellnachweise bleiben bei offener Reserve gesperrt.
+
+Die harte Kosten-Nachpruefung warf vor `finish` und liess deshalb die bereits
+beendete Quittung faelschlich auf `laeuft`. Gezielter Fix: auch Fehler beim
+Entsperren, Nachlesen, Profilvergleich oder Kostenabschluss schreiben nach
+erfolgreichem Claim eine terminale Fehlerquittung und bleiben nach aussen Fehler.
+Unbekannte Kosten werden weder freigegeben noch zu null erklaert; bei nicht
+gelesenem Zustand wird keine bestaetigte Profilgleichheit behauptet. Ein
+fehlgeschlagenes Abschlussschreiben kann weiterhin nur als Fehler gelten.
+Gezielte Abnahme:17 Vorstartgruppen sowie25 Transport-/Kostenpruefungen bestanden.
+
+Am08:15:49UTC wurde ausschliesslich die vorhandene Production-Quittung
+`lage-mandatspruefung-20260926-a` nach Betreiberauftrag auf `gestoppt` geschlossen.
+Optimistische Bindung an den kompletten Altstand
+`65abc1c99d983836d5a4cd14b822b180124e82ae5d97f6a8973cc7e98fed6e4c`,
+beendeter Workflow, keine aktiven Profile/Jobs/Sperren und dieselbe offene
+212000-Mikro-USD-Reserve waren Voraussetzung. Alte Quittung privat gesichert;
+08:16UTC unabhaengig zurueckgelesen: `gestoppt`, Reserve weiterhin `ungeklaert`,
+0 aktive Profile. Kein Kostenbuchwrite und kein erneutes Freigeben des Auftrags.
+
+Offen bleiben der Providerbeleg fuer den Timeout, der vollstaendige fachliche
+Lage-Nachweis, frische Vollversorgung sowie der belastbare500er Kosten-/Zeitplan.
+Helmut hat fuer den Timeout weder Tokenverbrauch noch Antwortkennung gespeichert;
+aus dem vorhandenen Telemetrieeintrag laesst sich kein exakter Kostenabschluss
+herleiten. Nicht durch pauschale Kostenfreigabe oder eine neue Quittung umgehen.
+Ein lesender Providerabgleich war hier nicht erreichbar: keine Azure-CLI oder
+Azure-Werkzeuge vorhanden; der Browserzugang scheiterte bereits beim lokalen
+Kernelstart (`sandbox-exec`, unbound variable `TIOCSTI`), auch beim einmaligen
+zweiten Versuch. Keine Browserinhalte gelesen, kein Umgehen der Umgebungssperre.
