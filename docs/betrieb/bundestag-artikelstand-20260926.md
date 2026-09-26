@@ -33,6 +33,16 @@ Neue Quellenkennung `rd-f757f0b844a673c91894dee250fe77946d35b7032aea0ce69f94c69b
 Tag 25.09.2026, Veröffentlichung und unbekannter Abrufzeitpunkt bleiben NULL.
 Das ist eine lokale Integration, kein neuer Abruf oder Production-Nachweis.
 
+Die anschließende vollständige Quellenansicht deckte einen weiteren Blocker
+auf: Der lange konkrete Gesetzesname verlor durch die Genitivendung `es` sein
+starkes Beleggewicht. Die drei sachlich zusammengehörigen Quellen bildeten zwei
+Cluster und wurden vom sichtbaren Lesepfad abgewiesen. Ausschließlich lange,
+spezifische Namen auf `gesetz` behalten jetzt bei `s`/`es` das Gewicht derselben
+Identität. Keine allgemeine Stammwortlogik oder Absenkung einer Schwelle.
+Mit den tatsächlichen drei Quellen: ein Cluster, Quellenprüfung bestanden.
+Synthetische Gegenproben erhalten Jahres-/Datums-/Thementrennung, entfernte
+Nachrichtenzyklen und die Zählung als genau eine Belegfamilie.
+
 ## Abgegrenzte anschließende Production-Vorarbeit
 
 Der [Betreiberauftrag](autonom-bis-500-starttor-20260926.md) autorisiert diesen
