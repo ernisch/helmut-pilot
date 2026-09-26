@@ -9,9 +9,9 @@ on:
         description: Gebundener Fingerabdruck genau eines vorhandenen Profils
         required: true
       auftrag:
-        description: Einmalauftrag; mandatspruefung prueft das Quellenreview mit mittlerem Denkaufwand
+        description: Einmalauftrag; mandatspruefung prueft das Quellenreview, artikelstand verlangt den belegten Bundestagsartikelstand
         type: choice
-        options: [erstpruefung, zeitbezug, datumsbindung, mandatspruefung]
+        options: [erstpruefung, zeitbezug, datumsbindung, mandatspruefung, artikelstand]
         default: erstpruefung
       confirm_text:
         description: Leer = nur lesen; Ausfuehrung ausschliesslich mit EIN_PROFIL_LAGE_MAX_ZWEI_AUFRUFE

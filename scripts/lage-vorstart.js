@@ -13,14 +13,29 @@ const DATUMSBINDUNG = Object.freeze({ ...ZEITBEZUG, auftrag:"datumsbindung", qui
 // Ein begrenzter Nachweis mit mittlerem Pruefaufwand nach fachlich falschem
 // Profilurteil bei korrekter Eingabe. Kein neues Modell, keine weitere Runde.
 const MANDATSPRUEFUNG = Object.freeze({ ...ZEITBEZUG, auftrag:"mandatspruefung", quittung:"lage-mandatspruefung-20260926-a" });
+// Neue Grundlage nach belegtem amtlichen Quellenfix: genau ein Bundestags-
+// Artikelstand muss vor der Vorschau und vor JEDEM bezahlten Aufruf erneut
+// nachgewiesen sein. Das ist KEIN Reparaturauftrag: der vorhandene Tagessatz muss
+// fehlen, alte Quittungen bleiben unberuehrt. Kein eigener Parser; Inhalt und
+// Zeitvertrag kommen ausschliesslich aus den bestehenden Lesern.
+const ARTIKELSTAND = Object.freeze({ auftrag:"artikelstand", quittung:"lage-artikelstand-20260926-a",
+  profilHash:"5fed1a61b4ba022a9722181f6c3fd06be5b3b4917cf3d3d3d1ff70f048364a4c",
+  vorgangId:"vg-bundespolizeigesetz-20260925-c1afab",
+  quelleId:"rd-f757f0b844a673c91894dee250fe77946d35b7032aea0ce69f94c69bd5033d83",
+  standHash:"f757f0b844a673c91894dee250fe77946d35b7032aea0ce69f94c69bd5033d83",
+  absatzHash:"a094a6458c67347fa2817dd3dbf7a9fa2ba5eec3ea149c86619a09408aa4d060",
+  publikationstag:"2026-09-25", absatzZeichen:602 });
 const MAX_MS = 240000, MAX_USD = 0.50;
 const fordere = (ok, grund) => { if (!ok) throw new Error("lage-vorstart-" + grund); };
 const bindung = p => hash({ id:p.id, profilHash:profilHash(p) });
+const url = value => require("../lib/helmut/dedup").canonicalizeUrl(value);
 function konfiguration(env, commit, jetzt = Date.now()) {
   const auftrag = env.HELMUT_VORSTART_AUFTRAG || "erstpruefung";
   const reparatur = [ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG].find(x => x.auftrag === auftrag);
-  fordere(auftrag === "erstpruefung" || reparatur,"auftrag");
+  const artikelstand = auftrag === ARTIKELSTAND.auftrag;
+  fordere(auftrag === "erstpruefung" || Boolean(reparatur) || artikelstand,"auftrag");
   fordere(!reparatur || env.HELMUT_VORSTART_PROFIL === reparatur.profilHash,"reparaturbindung");
+  fordere(!artikelstand || env.HELMUT_VORSTART_PROFIL === ARTIKELSTAND.profilHash,"artikelstandbindung");
   fordere(/^[a-f0-9]{40}$/.test(commit || "") && env.HELMUT_VORSTART_COMMIT === commit
     && env.GITHUB_SHA === commit && env.GITHUB_ACTIONS === "true"
     && env.GITHUB_REPOSITORY === "ernisch/helmut-pilot" && env.GITHUB_REF === "refs/heads/main"
@@ -30,9 +45,51 @@ function konfiguration(env, commit, jetzt = Date.now()) {
   fordere(new Date(jetzt).toISOString().slice(0,10) === TAG
     && new Date(jetzt + MAX_MS).toISOString().slice(0,10) === TAG, "tag");
   return { commit, profilHash:env.HELMUT_VORSTART_PROFIL, runId:"nachlauf500-" + env.GITHUB_RUN_ID,
-    reparatur:Boolean(reparatur),
+    reparatur:Boolean(reparatur), artikelstand,
     altHash:reparatur?.altHash || null,
-    quittung:reparatur?.quittung || QUITTUNG };
+    quittung:artikelstand ? ARTIKELSTAND.quittung : (reparatur?.quittung || QUITTUNG) };
+}
+// Inhaltlicher Nachweis der neuen Grundlage. Fuer den Inhalt gilt ausschliesslich der
+// bestehende Stand-Leser; der Zeitvertrag und die tatsaechliche Texteingabe entstehen
+// ueber den bestehenden Lage-Quellenbeleg, niemals ueber einen parallelen Parser.
+function pruefeGrundlage(quelle, erwartet = ARTIKELSTAND, jetzt = Date.now()) {
+  const artikelstand = require("../lib/helmut/bundestag-artikelstand");
+  let stand = null;
+  try { stand = artikelstand.leseArtikelstand(quelle); } catch { stand = null; }
+  fordere(stand && stand.standHash === erwartet.standHash
+    && stand.publikationstag === erwartet.publikationstag
+    && stand.absatzHash === erwartet.absatzHash,"artikelstand-stand");
+  fordere(typeof quelle.summary === "string" && quelle.summary.length === erwartet.absatzZeichen
+    && crypto.createHash("sha256").update(quelle.summary).digest("hex") === stand.absatzHash,"artikelstand-absatz");
+  const belegModul = require("../lib/helmut/lage-quellenbeleg");
+  let eingabe = null;
+  try {
+    eingabe = belegModul.baueEingabe([{ vorgang_id:erwartet.vorgangId }],
+      { [erwartet.vorgangId]:[quelle] }, new Date(jetzt));
+  } catch { eingabe = null; }
+  fordere(eingabe?.length === 1 && eingabe[0].vorgang_id === erwartet.vorgangId
+    && eingabe[0].quellenbelege?.length === 1,"artikelstand-eingabe");
+  const beleg = eingabe[0].quellenbelege[0];
+  fordere(beleg.titel === stand.titel && beleg.veroeffentlichtAm === erwartet.publikationstag
+    && beleg.auszug === quelle.summary && url(beleg.url) === stand.url,"artikelstand-eingabe");
+  return Object.freeze({ vorgangId:erwartet.vorgangId, quelleId:erwartet.quelleId,
+    standHash:stand.standHash, absatzHash:stand.absatzHash, publikationstag:stand.publikationstag,
+    absatzZeichen:quelle.summary.length, artikelUrl:stand.url, artikelTitel:stand.titel,
+    lageQuelleId:beleg.quelle_id, lageEingabeHash:belegModul.hashEingabe(eingabe) });
+}
+// Genau die gebundene Kennung am richtigen Vorgang; fehlt sie, ist das fail closed.
+function artikelstandGrundlage(quellen, erwartet = ARTIKELSTAND, jetzt = Date.now()) {
+  const treffer = (Array.isArray(quellen) ? quellen : []).filter(q => q && q.id === erwartet.quelleId);
+  fordere(treffer.length === 1,"artikelstand-quelle");
+  return pruefeGrundlage(treffer[0], erwartet, jetzt);
+}
+// Die Grundlage muss im ECHTEN Vorschauergebnis als Karte des richtigen Vorgangs liegen.
+function pruefeKarte(vorschau, basis) {
+  const karten = Array.isArray(vorschau?.vorgaenge) ? vorschau.vorgaenge : [];
+  const karte = karten.find(k => k && (k.vorgangId || k.id) === basis?.vorgangId);
+  fordere(karte && basis?.artikelUrl && Array.isArray(karte.sources)
+    && karte.sources.some(s => s && s.title === basis.artikelTitel && url(s.url) === basis.artikelUrl),
+    "artikelstand-karte");
 }
 function pruefeAufruf({ calls, start, jetzt, kosten, laufkosten, reserve, bestand, grundlinie }) {
   fordere(Number.isInteger(calls) && calls >= 0 && calls < 2, "aufrufgrenze");
@@ -53,23 +110,30 @@ async function einmallauf(cfg, d) {
   if (cfg.reparatur) fordere(vorher?.payload && hash(vorher.payload) === cfg.altHash
     && !d.gueltig(vorher.payload),"reparatur-altstand");
   else fordere(!vorher, "bestehender-tagessatz");
+  let basis = cfg.artikelstand ? await d.artikelstand() : null;
   const vorschau = await d.vorschau(profile);
   fordere(vorschau?.available === true && vorschau.pendingNarrative === true
     && vorschau.vorgaenge?.length >= 2,"quellen-vorpruefung");
+  if (cfg.artikelstand) pruefeKarte(vorschau, basis);
   let calls = 0;
   const pruefe = async () => {
     const [kosten,laufkosten,bestand] = await Promise.all([d.kosten(),d.laufkosten(),d.bestand()]);
     pruefeAufruf({ calls,start,jetzt:d.now(),kosten,laufkosten,reserve:d.reserve,bestand,grundlinie });
+    // Vor JEDEM bezahlten Aufruf erneut: fehlende oder abweichende Grundlage stoppt
+    // ohne jeden Modellaufruf.
+    if (cfg.artikelstand) basis = await d.artikelstand();
     if (cfg.reparatur) fordere(hash(await d.cache(profile.id)) === vorherHash,"reparatur-konkurrenz");
   };
   await pruefe();
   if (!d.execute) return { ok:true, plan:true, profile:1, maxAufrufe:2,maxUsd:MAX_USD,maxMs:MAX_MS,
-    vorgangskarten:vorschau.vorgaenge.length,profilHash:cfg.profilHash };
+    vorgangskarten:vorschau.vorgaenge.length,profilHash:cfg.profilHash,
+    ...(cfg.artikelstand ? { lesebeweis:basis } : {}) };
   const lock = await d.acquire();
   fordere(lock?.granted === true && lock.active === true, "sperre");
   let claimed = false;
   const receipt = { quittungsschluessel:cfg.quittung,runId:cfg.runId,idHash:cfg.profilHash,
-    runtimeCommit:cfg.commit,gestartetAm:new Date(start).toISOString(),maxUsd:MAX_USD,maxMs:MAX_MS,maxAufrufe:2 };
+    runtimeCommit:cfg.commit,gestartetAm:new Date(start).toISOString(),maxUsd:MAX_USD,maxMs:MAX_MS,maxAufrufe:2,
+    ...(cfg.artikelstand ? { lesebeweis:basis } : {}) };
   let out = { ok:false,grund:"technischer-fehler" };
   try {
     fordere(await d.claim({ ...receipt,status:"laeuft" }), "verbraucht"); claimed = true;
@@ -96,7 +160,7 @@ async function einmallauf(cfg, d) {
     if (abschlussFehler) out = { ...out,ok:false,grund:"nachkontrolle-fehlgeschlagen",
       ergebnisGrund:out.grund,abschlussGrund:/^lage-vorstart-[a-z-]+$/.test(abschlussFehler.message || "")
         ? abschlussFehler.message : "technischer-fehler" };
-    out = { ...out,freigegebeneAufrufe:calls,laufkostenUsd:laufkosten,
+    out = { ...out,...(cfg.artikelstand ? { lesebeweis:basis } : {}),freigegebeneAufrufe:calls,laufkostenUsd:laufkosten,
       profileUnveraendert:nach === grundlinie,offeneKosten:kosten?.offeneReservierungen ?? null,
       funktionsnachweis500:false,automatischeWiederholung:false };
     if (claimed) await d.finish({ ...receipt,...out,status:out.ok ? "abgeschlossen" : "gestoppt",
@@ -170,6 +234,8 @@ async function main(args = process.argv.slice(2), env = process.env) {
       acquire:() => S.acquireGlobalUnderstandingLock(MAX_MS+60000),release:() => S.releaseGlobalUnderstandingLock(),
       claim:d => q.claimRun(d),finish:d => q.finishRun(d),build:require("../lib/helmut/lage").buildLageBriefing,
       vorschau:p => require("../lib/helmut/lage").buildLageBriefing(p,{cacheOnly:true}),
+      artikelstand:async () => artikelstandGrundlage(await S.getSourcesForVorgang(ARTIKELSTAND.vorgangId),
+        ARTIKELSTAND,Date.now()),
       gueltig:require("../lib/helmut/lage-quellenbeleg").gespeicherterTextGueltig });
     console.log(JSON.stringify(result,null,2));return result.ok ? 0 : 1;
   } finally { if (timer) clearTimeout(timer); }
@@ -177,4 +243,5 @@ async function main(args = process.argv.slice(2), env = process.env) {
 if (require.main === module) main().then(c => { process.exitCode=c; }).catch(e => {
   console.log(JSON.stringify({ok:false,grund:/^lage-vorstart-[a-z-]+$/.test(e.message || "") ? e.message : "lage-vorstart-technischer-fehler",automatischeWiederholung:false}));process.exitCode=1;
 });
-module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main,ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG};
+module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main,ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG,
+  ARTIKELSTAND,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};
