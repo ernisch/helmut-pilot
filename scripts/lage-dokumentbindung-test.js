@@ -112,12 +112,18 @@ assert.deepEqual(zweiKontext.ausschuesse, zweiProfil.committees, "beide Ausschue
 assert.equal(Q.mandatsbezugGueltig({ feld: "ausschuss", wert: zweiProfil.committees[1] }, zweiProfil), true,
   "der zweite Ausschuss ist kein geringerer Bezug als der erste");
 assert.deepEqual(Object.keys(ai.LAGE_BRIEFING_SCHEMA.properties.paragraphs.items.properties),
-  ["vorgang_ids", "quelle_id", "mandatsbezug", "text"], "Absatzfelder in Auswahl-vor-Text-Reihenfolge");
+  ["vorgang_ids", "quelle_id", "auswahlbegruendung", "mandatsbezug", "text"],
+  "Absatzfelder in Quelle-vor-Auswahlbegruendung-vor-Mandatsbezug-vor-Text-Reihenfolge");
 assert.deepEqual(ai.LAGE_BRIEFING_SCHEMA.properties.paragraphs.items.required,
-  ["vorgang_ids", "quelle_id", "mandatsbezug", "text"], "Pflichtfelder unveraendert, nur Reihenfolge");
+  ["vorgang_ids", "quelle_id", "auswahlbegruendung", "mandatsbezug", "text"],
+  "auswahlbegruendung ist vor mandatsbezug Pflichtfeld");
 const beispielAbsatz = JSON.parse(zweiPrompt.split("\n").find(l => l.startsWith('{ "paragraphs":'))).paragraphs[0];
-assert.deepEqual(Object.keys(beispielAbsatz), ["vorgang_ids", "quelle_id", "mandatsbezug", "text"],
+assert.deepEqual(Object.keys(beispielAbsatz), ["vorgang_ids", "quelle_id", "auswahlbegruendung", "mandatsbezug", "text"],
   "JSON-Promptbeispiel in derselben Reihenfolge");
+assert.match(zweiPrompt, /Private Auswahlnotiz/i,
+  "auswahlbegruendung ist im Prompt als private Auswahlnotiz erklaert");
+assert.match(zweiPrompt, /auswahlbegruendung ist eine private Auswahlnotiz und KEIN Quellenbeleg/,
+  "Der Prompt verbietet die Auswahlbegruendung im sichtbaren Text");
 
 // Gruppe 13: Der belegte falsche Mandatsbezug vom 26.09. (Kraftstoffpreis-Absatz
 // am Auswaertigen Ausschuss) bleibt vom unveraenderten strengen Review abgelehnt.

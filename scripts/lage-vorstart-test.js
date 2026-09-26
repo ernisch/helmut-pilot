@@ -344,5 +344,23 @@ function fixture() {
     assert.equal(echt.state.finished.quittungsschluessel,T.GENERATORNACHWEIS.quittung);
     assert.equal(echt.state.finished.lesebeweis.standHash,quelle.content_hash);
   });
+  await test("Auswahlbegruendung bindet eigenen Erstauftrag und exakt den gescheiterten Generator",()=>{
+    const neu=T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"auswahlbegruendung",
+      HELMUT_VORSTART_PROFIL:T.ARTIKELSTAND.profilHash},commit,start);
+    assert.equal(neu.quittung,T.AUSWAHLBEGRUENDUNG.quittung);
+    assert.notEqual(neu.quittung,T.GENERATORNACHWEIS.quittung);
+    assert.equal(neu.artikelstand,true);assert.equal(neu.generatornachweis,true);
+    assert.equal(neu.reparatur,false);assert.equal(neu.mandatsurteil,false);
+    const alt={status:"gestoppt",ok:false,quittungsschluessel:T.GENERATORNACHWEIS.quittung,
+      runId:"nachlauf500-36250788961",runtimeCommit:"1d24245e2556d395bb73dd6d61aa9495a04c27f1",
+      idHash:T.ARTIKELSTAND.profilHash,grund:"ai-text-source-support",gespeichert:false,
+      freigegebeneAufrufe:2,offeneKosten:0,profileUnveraendert:true,
+      lesebeweis:{absatzHash:T.ARTIKELSTAND.absatzHash}};
+    T.pruefeAuswahlVorgaenger(alt);
+    for(const change of [{status:"laeuft"},{ok:true},{quittungsschluessel:T.AUSWAHLBEGRUENDUNG.quittung},
+      {runId:"fremd"},{runtimeCommit:"fremd"},{idHash:"fremd"},{grund:"anderer"},{gespeichert:true},
+      {freigegebeneAufrufe:1},{offeneKosten:1},{profileUnveraendert:false},{lesebeweis:null}])
+      assert.throws(()=>T.pruefeAuswahlVorgaenger({...alt,...change}),/auswahl-vorgaenger/);
+  });
   console.log(count+" Gruppen erfolgreich");
 })().catch(e=>{console.error(e);process.exitCode=1;});
