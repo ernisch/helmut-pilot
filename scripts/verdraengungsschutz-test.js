@@ -1,18 +1,9 @@
 "use strict";
 
-// Offline-Vertragstest des VERDRÄNGUNGSSCHUTZES der fünf realen Mandate.
-//
-// Die Frage, die dieser Test beantwortet: können 495 synthetische Profile den
-// fünf realen Mandaten etwas wegnehmen — beim KI-Budget, in der Warteschlange,
-// bei der Laufzeit oder in der Priorisierung?
-//
-// Vier Ebenen, jede einzeln belegt:
-//   A · KI-BUDGET       storage.reserveLlmCall + Vorrangreserve
-//   B · WARTESCHLANGE   source-demand.mandatsPrioritaet (Anspruchsordnung)
-//   C · LAUFZEIT        cron-fairness.planTenantOrder + Lage-Briefing-Schleife
-//   D · INERTHEIT       ohne synthetische Zeilen ändert sich NICHTS
-//
-// Reine Rechenprüfung: kein Netz, keine Datenbank, kein Modellaufruf.
+// Vertrag fuer Gleichbehandlung bei Budget, Anspruchsordnung, Laufzeit und
+// Einreihung. Er ersetzt die alte Bevorzugung der fuenf realen Profile gemaess
+// AGENTS. Kommunikationsschutz, fehlende Kennungen und Deckel bleiben streng.
+// Kein Netz, keine Datenbank und kein Modellaufruf.
 
 const fs = require("fs");
 const path = require("path");
@@ -48,7 +39,7 @@ function mitUmgebung(werte, fn) {
 }
 
 async function main() {
-  console.log("Helmut — Vertragstest des Verdrängungsschutzes der realen Mandate\n");
+  console.log("Helmut — Vertragstest des Gleichbehandlung und der Budgetgrenzen\n");
   const storage = require("../lib/helmut/storage");
 
   // ── A · KI-Budget ─────────────────────────────────────────────────────────
@@ -75,7 +66,7 @@ async function main() {
 
   // Deckel 1000, Verstehens-Reserve 100, Vorrangreserve 200.
   //   reales Mandat (mandatsgebunden):  darf bis 1000 − 100 = 900
-  //   synthetisches Mandat:             darf bis 1000 − 100 − 200 = 700
+  //   synthetisches Mandat:             darf ebenfalls bis 1000 − 100 = 900
   //   geteilte Arbeit (understanding):  darf bis 1000 − 200 = 800
   const B = { deckel: 1000, reserve: 100, vorrang: 200 };
 
@@ -86,20 +77,25 @@ async function main() {
 
   const realBei700 = await reserviere({ ...B, stand: 700, callType: "lageBriefing", politicianId: REAL });
   const synthBei700 = await reserviere({ ...B, stand: 700, callType: "lageBriefing", politicianId: SYNTH });
-  check("A2 Ab Stand 700 ist das SYNTHETISCHE Profil gesperrt, das reale nicht",
-    realBei700.allowed === true && synthBei700.allowed === false,
+  check("A2 Ab Stand 700 ist das synthetische Profil ebenso zugelassen wie das reale",
+    realBei700.allowed === true && synthBei700.allowed === true,
     `real=${realBei700.allowed}, synthetisch=${synthBei700.allowed}`);
-  check("A3 Der Ablehnungsgrund benennt die Vorrangreserve",
-    synthBei700.reason === "daily-llm-budget-reserved-for-real-mandates",
-    String(synthBei700.reason));
-  check("A4 Die wirksame Reserve steht im Ergebnis",
-    synthBei700.vorrangreserveReal === 200 && realBei700.vorrangreserveReal === 0);
+  check("A3 beide Profile erhalten dasselbe wirksame Maximum",
+    synthBei700.limit === 1000 && realBei700.limit === 1000
+      && synthBei700.used === 701 && realBei700.used === 701);
+  check("A4 kein Klassenabzug fuer gueltige Mandatskennungen",
+    synthBei700.vorrangreserveReal === 0 && realBei700.vorrangreserveReal === 0);
 
   const realBei899 = await reserviere({ ...B, stand: 899, callType: "lageBriefing", politicianId: REAL });
   const realBei900 = await reserviere({ ...B, stand: 900, callType: "lageBriefing", politicianId: REAL });
   check("A5 Das reale Mandat sieht unverändert die Verstehens-Reserve als Grenze (900)",
     realBei899.allowed === true && realBei900.allowed === false
       && realBei900.reason === "daily-llm-budget-reserved-for-understanding");
+
+  const synthBei899 = await reserviere({...B,stand:899,callType:"lageBriefing",politicianId:SYNTH});
+  const synthBei900 = await reserviere({...B,stand:900,callType:"lageBriefing",politicianId:SYNTH});
+  check("A5b synthetische Profile treffen exakt dieselbe unveraenderte Grenze",
+    synthBei899.allowed===true && synthBei900.allowed===false && synthBei900.reason===realBei900.reason);
 
   const geteiltBei799 = await reserviere({ ...B, stand: 799, callType: "understanding", politicianId: null });
   const geteiltBei800 = await reserviere({ ...B, stand: 800, callType: "understanding", politicianId: null });
@@ -128,8 +124,8 @@ async function main() {
 
   // ── B · Warteschlange ─────────────────────────────────────────────────────
   console.log("\nB · Warteschlange: die Anspruchsordnung stellt reale Mandate davor");
-  check("B1 Ein synthetischer mandatsgebundener Auftrag bekommt +1 auf die Priorität",
-    sd.mandatsPrioritaet(200, SYNTH) === 201 && sd.mandatsPrioritaet(200, REAL) === 200);
+  check("B1 Gleiche Arbeit hat fuer alle Profile die gleiche Prioritaet",
+    sd.mandatsPrioritaet(200, SYNTH) === 200 && sd.mandatsPrioritaet(200, REAL) === 200);
   check("B2 Die Warteschlange zieht nach priority ASC — kleiner ist früher",
     (() => {
       const migration = fs.readFileSync(
@@ -138,8 +134,8 @@ async function main() {
     })(), "Beleg, dass +1 tatsaechlich hinten bedeutet");
   check("B3 GETEILTE Aufträge (ohne Mandatsbezug) bleiben unberührt",
     sd.mandatsPrioritaet(100, null) === 100 && sd.mandatsPrioritaet(80, "") === 80);
-  check("B4 Der Aufschlag gilt für BEIDE mandatsgebundenen Auftragsarten",
-    sd.mandatsPrioritaet(60, SYNTH) === 61 && sd.mandatsPrioritaet(300, SYNTH) === 301);
+  check("B4 Die Gleichbehandlung gilt fuer beide Auftragsarten",
+    sd.mandatsPrioritaet(60, SYNTH) === 60 && sd.mandatsPrioritaet(300, SYNTH) === 300);
   check("B5 Keine Koerzierung: ein nicht-numerischer Wert bleibt unverändert",
     sd.mandatsPrioritaet(null, SYNTH) === null && sd.mandatsPrioritaet("hoch", SYNTH) === "hoch");
 
@@ -147,10 +143,9 @@ async function main() {
   console.log("\nC · Laufzeit: wer bei hartem Zeitbudget zuerst drankommt");
   const gemischt = [SYNTH, REAL, "test-kohorte-a-001", "zweites-reales-mandat"];
   const ordnung = fairness.planTenantOrder({ cronName: "morning-briefing", tenantIds: gemischt, nowMs: 1000 });
-  check("C1 cron-fairness stellt reale Mandate vor synthetische",
-    ordnung.order.slice(0, 2).every((id) => !M.istSynthetischeKennung(id))
-      && ordnung.order.slice(2).every((id) => M.istSynthetischeKennung(id)),
-    ordnung.order.join(" > "));
+  check("C1 Cron verwendet fuer alle Profile die gleiche Fairnessordnung",
+    JSON.stringify(ordnung.order)===JSON.stringify(fairness.planTenantOrder({
+      cronName:"morning-briefing",tenantIds:gemischt,nowMs:1000,gleichberechtigt:true}).order));
   check("C2 Es fällt keine Kennung weg",
     ordnung.order.length === 4 && new Set(ordnung.order).size === 4);
   check("C3 Der direkte Lagepfad rotiert gleichberechtigt mit Pflichtpersistenz",
@@ -175,12 +170,10 @@ async function main() {
   // ── C2 · Der abgeschnittene Planungslauf ──────────────────────────────────
   console.log("\nC2 · Wer überlebt einen abgeschnittenen Planungslauf?");
   const pipelineQuelle = fs.readFileSync(path.join(ROOT, "lib/helmut/scalable-pipeline.js"), "utf8");
-  check("C2a Die Einreihereihenfolge trennt real / geteilt / synthetisch",
-    /const alle = \[\.\.\.realeArbeit, \.\.\.geteilteArbeit, \.\.\.synthetischeArbeit\];/.test(pipelineQuelle),
-    "die mandatsgebundene Arbeit stand geschlossen am ENDE — sie fiele bei einem "
-    + "abgeschnittenen Lauf als Erstes weg");
-  check("C2b Die Zuordnung folgt derselben kanonischen Klassifizierung",
-    /mandatsklasse\.istSynthetischeKennung\(tenant\)/.test(pipelineQuelle));
+  check("C2a die Einreihung behandelt alle Profile als eine Gruppe",
+    /const alle = \[\.\.\.profilArbeit, \.\.\.geteilteArbeit\];/.test(pipelineQuelle));
+  check("C2b es gibt keine Klassenpriorisierung bei der Einreihung",
+    !/mandatsklasse\.istSynthetischeKennung\(tenant\)/.test(pipelineQuelle));
   check("C2c Der relationale Crawlplan wird je Lauf EINMAL gebaut, nicht je Profil",
     (() => {
       const schedulerQuelle = fs.readFileSync(path.join(ROOT, "lib/helmut/scheduler.js"), "utf8");
@@ -202,6 +195,29 @@ async function main() {
         schedulerQuelle.indexOf("// ── KEINE EIGENEN AUSSENABRUFE"));
       return !/Date\.now\(\)/.test(block) && !/setTimeout/.test(block) && !/ttl/i.test(block);
     })());
+
+  for (const order of [[SYNTH,REAL],[REAL,SYNTH]]) {
+    const gesehen=[];let uhr=0;
+    const r=await require("../lib/helmut/scalable-pipeline").planeArbeit({
+      jetztMs:Date.parse("2026-09-26T08:00:00Z"),planungsDeadlineMs:1,
+      env:{HELMUT_SCALABLE_PIPELINE:"on",HELMUT_MAX_LLM_CALLS_PER_DAY:"1000"},
+      deps:{listFullProfiles:async()=>order.map(id=>({id,profileActive:true})),
+        profilPruefung:{isDisabled:()=>false},quellenFuerProfil:async()=>[],now:()=>uhr,
+        sourceDemand:{kompiliereQuellenbedarf:async()=>({auftraege:[{id:"global",tenantId:null}],statistik:{},fehlerhafteProfile:[]}),
+          planeMandatsarbeit:()=>({auftraege:order.map(id=>({id,tenantId:id})),fenster:{}})},
+        enqueue:async job=>{gesehen.push(job.tenantId);uhr++;return {neu:true};}}
+    });
+    check("C2f abgeschnittene Einreihung respektiert die gemeinsame Reihenfolge: "+order[0],
+      gesehen.length===1 && gesehen[0]===order[0] && r.zeitbudgetErschoepft===true && r.ausstehend===2);
+  }
+  {
+    const nowMs=Date.parse("2026-09-26T08:00:00Z");
+    const state={version:1,crons:{"morning-briefing":{
+      [REAL]:{status:"erfolgreich",letzterVersuchAt:new Date(nowMs-1000).toISOString(),versuche:1},
+      [SYNTH]:{status:"erfolgreich",letzterVersuchAt:new Date(nowMs-86400000).toISOString(),versuche:1}}}};
+    check("C2g laenger wartendes synthetisches Profil steht auch ohne Sonderoption vorn",
+      fairness.planTenantOrder({cronName:"morning-briefing",tenantIds:[REAL,SYNTH],state,nowMs}).order[0]===SYNTH);
+  }
 
   // ── D · Inertheit ─────────────────────────────────────────────────────────
   console.log("\nD · Inertheit im heutigen Production-Zustand (0 synthetische Zeilen)");
@@ -236,7 +252,7 @@ async function main() {
     const w = A.vorbereitung().vorrangreserve;
     check("E3 Die BETREIBERAUSGABE beschreibt es richtig",
       /GETEILTE Arbeit/.test(w.wirkung)
-        && /AUSGENOMMEN ist allein die mandatsgebundene Arbeit REALER Mandate/.test(w.wirkung));
+        && /mandatsgebundene Arbeit ALLER Profile/.test(w.wirkung));
     check("E4 Sie warnt ausdruecklich vor einem Wert oberhalb des Deckels",
       typeof w.warnung === "string" && /KLEINER/.test(w.warnung) && /100/.test(w.warnung));
 
@@ -284,8 +300,8 @@ async function main() {
     const nie = [...bedient.entries()].filter(([, n]) => n === 0);
     check("F1 Ueber 30 Tage bei Deckel 990 verhungert KEIN Mandat", nie.length === 0,
       nie.length ? `nie bedient: ${nie.slice(0, 5).map(([id]) => id).join(", ")}` : "0 unbedient");
-    check("F2 Die realen Mandate werden an JEDEM Tag bedient",
-      real.every((id) => bedient.get(id) === 30));
+    check("F2 die Bedienhaeufigkeit unterscheidet sich fuer alle500 hoechstens um1",
+      Math.max(...bedient.values())-Math.min(...bedient.values())<=1);
   }
 
   console.log(`\n${pass} PASS, ${fail} FAIL`);
