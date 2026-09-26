@@ -110,5 +110,34 @@ test("ein passender Begleiter darf keinen fremden Text in den Bestand einschleus
   assert.equal(V.sameVorgang({ documents:[b] }, { documents:[a] }).gleich, true);
   assert.equal(V.sameVorgang({ documents:[b,c] }, { documents:[a] }).gleich, false);
 });
+test("starker Gremienanker umgeht den direkten Ereignisvergleich nicht", () => {
+  const alt = [dokument("rat-a", "Nationaler Sicherheitsrat warnt vor hybriden Angriffen Russlands"),
+    dokument("rat-b", "Nationaler Sicherheitsrat beschliesst Massnahmen gegen hybride Angriffe Russlands")];
+  const neu = { ...dokument("rat-neu", "UNO-Sicherheitsrat verurteilt Angriffe der Huthi-Miliz auf Saudi-Arabien"),
+    published_at: "2026-09-25T12:00:00Z" };
+  assert.equal(gruppen(alt).length, 1);
+  assert.equal(V.sameVorgang({ documents:[neu] }, { documents:alt }).gleich, false);
+  const fortsetzung = { ...alt[1], id:"rat-folge", published_at:neu.published_at };
+  assert.equal(V.sameVorgang({ documents:[fortsetzung] }, { documents:alt }).gleich, true);
+});
+test("ein vermischter Altbestand nimmt auch passende neue Begleiter nicht auf", () => {
+  const sport = dokument("sport", "Basketballerinnen gewinnen das Halbfinale");
+  const bahn = dokument("bahn", "Sabotage bei Zugentgleisung in der Normandie");
+  const papst = dokument("papst", "Papst haelt Andacht in Paris");
+  for (const neu of [papst, {...sport,id:"sport-folge"}]) {
+    const alt = [sport,bahn];
+    assert.equal(gruppen(alt).length, 2);
+    const r = V.sameVorgang({documents:[neu]}, {documents:alt});
+    assert.equal(r.gleich, false); assert.equal(r.grund, "bestand-mehrere-ereignisse");
+    assert.equal(V.sameVorgang({documents:[neu]}, {documents:alt.reverse()}).gleich, false);
+  }
+  assert.equal(V.sameVorgang({documents:[{...sport,id:"sport-folge"}]}, {documents:[sport]}).gleich, true);
+});
+test("gemeinsame Ortsnamen aus verschiedenen Altquellen ersetzen keine Fortsetzung", () => {
+  const alt = [dokument("sport", "Basketballerinnen unterliegen Frankreich", "Olympiazweiter aus Paris gewinnt das Halbfinale."),
+    dokument("bahn", "Frankreich: Sabotage bei Zugentgleisung in der Normandie", "Regionalzug in Nordwestfrankreich entgleist.")];
+  const neu = { ...dokument("papst", "Frankreich-Besuch: Papst haelt Andacht in Paris"), published_at:"2026-09-25T12:00:00Z" };
+  assert.equal(V.sameVorgang({documents:[neu]}, {documents:alt}).gleich, false);
+});
 console.log(`${count-failed}/${count} Gruppen erfolgreich`);
 process.exitCode = failed ? 1 : 0;

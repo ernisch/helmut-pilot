@@ -21,8 +21,10 @@ test("Fruehstartrente und Tankrabatt bleiben getrennt; beide Tankrabattquellen b
 });
 test("Trump-Xi-Besuch erbt nicht den thematisch gemischten Praesidentenbestand", () => {
   const r=V.sameVorgang({documents:neu},{documents:alt});
-  A.equal(r.gleich,false); A.equal(r.grund,"schwacher-kern-ohne-ereignisbeleg");
-  A.equal(r.spur.ueberdeckung.spezifischeFamilien,1);
+  // Der gemischte Bestand wird jetzt vor dem Kernvergleich erkannt.
+  // Die fachliche Ablehnung bleibt bestehen; kein Abschwaechen des Urteils.
+  A.equal(r.gleich,false); A.equal(r.grund,"bestand-mehrere-ereignisse");
+  A.ok(V.clusterRawDocuments(alt).length>1);
   A.equal(V.clusterRawDocuments(neu).length,1);
 });
 test("Folgemeldung zum selben Staatsbesuch bleibt am belegten Besuch", () => {
