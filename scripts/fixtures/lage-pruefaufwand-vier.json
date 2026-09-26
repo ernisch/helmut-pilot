@@ -1,0 +1,98 @@
+[
+  {
+    "id": "polizei-finanzbericht-haushalt",
+    "paragraph": {
+      "text": "Der Bundestag nahm in dritter Beratung den Gesetzentwurf zur Modernisierung des Bundespolizeigesetzes in der vom Innenausschuss geänderten Fassung an; dem Dokument zufolge liegt dazu ein Bericht des Haushaltsausschusses nach Paragraf 96 der Geschäftsordnung zur Finanzierbarkeit vor, und dem Bericht zufolge erhält die Bundespolizei erweiterte Befugnisse, so der Deutscher Bundestag.",
+      "quelle_id": "q-7a17daf60deb5b5a03a7",
+      "vorgang_ids": [
+        "vg-bundespolizeigesetz-20260925-c1afab"
+      ],
+      "mandatsbezug": {
+        "feld": "ausschuss",
+        "wert": "Haushaltsausschuss"
+      }
+    },
+    "erwartet": true,
+    "quellenHash": "447cf4518cc4dbf77206e73625e0b731c88ac1fc35c62d91c3ec453467b05fbf",
+    "quelle": {
+      "url": "https://bundestag.de/dokumente/textarchiv/2026/kw39-de-bundespolizeigesetz-1211314",
+      "titel": "Modernisierung des Bundespolizeigesetzes in dritter Beratung beschlossen",
+      "auszug": "Zu Beginn der Plenarsitzung am Freitag, 25. September 2026, hat der Bundestag ohne Aussprache in dritter Beratung den Gesetzentwurf der Bundesregierung zur Modernisierung des Bundespolizeigesetzes (21/3051) in der vom Innenausschuss geänderten Fassung (21/6990) angenommen. In namentlicher Abstimmung stimmten 322 Abgeordnete für den Gesetzentwurf, 134 votierten dagegen. Es gab 118 Enthaltungen. Mit dem Gesetz erhält die Bundespolizei erweiterte Befugnisse. Dazu liegt auch ein Bericht des Haushaltsausschusses nach Paragraf 96 der Geschäftsordnung des Bundestages zur Finanzierbarkeit vor (21/7001).",
+      "quelle": "Deutscher Bundestag",
+      "quelle_id": "q-7a17daf60deb5b5a03a7",
+      "veroeffentlichtAm": "2026-09-25"
+    }
+  },
+  {
+    "id": "sanktionen-tagesschau-auswaertiges",
+    "paragraph": {
+      "text": "Die Tagesschau berichtet, dass EU-Staaten über die Verlängerung von Sanktionen gegen Russland im Streit stehen, weil einige Staaten zwei milliardenschwere Oligarchen von der Liste streichen wollen, was zu Diskussionen führt.",
+      "quelle_id": "q-6a45466027e8f081a336",
+      "vorgang_ids": [
+        "vg-sanktionen-20260922-ac7ebb"
+      ],
+      "mandatsbezug": {
+        "feld": "ausschuss",
+        "wert": "Auswärtiger Ausschuss"
+      }
+    },
+    "erwartet": true,
+    "quellenHash": "adaa38d6dc1963e0412b1a6f244f4189e8ddb0aa87533191afbb48ed10ae197a",
+    "quelle": {
+      "url": "https://tagesschau.de/ausland/europa/eu-sanktionen-russland-210.html",
+      "titel": "EU-Staaten streiten über Russland-Sanktionen",
+      "auszug": "In der kommenden Nacht laufen EU-Sanktionen gegen Russland aus. Eigentlich sollen sie verlängert werden. Doch einige Staaten wollen zwei milliardenschwere Oligarchen von der Liste streichen. Das sorgt für Diskussionen.",
+      "quelle": "Tagesschau Politik",
+      "quelle_id": "q-6a45466027e8f081a336",
+      "veroeffentlichtAm": "2026-09-22T07:00:14.000Z"
+    }
+  },
+  {
+    "id": "private-heizkosten-haushalt",
+    "paragraph": {
+      "text": "Eine Prognose weist aus, dass die Heizkosten für deutsche Haushalte 2026 weiter ansteigen und dass es Unterschiede zwischen einzelnen Heizarten gibt, da nicht alle Brennstoffe teurer werden (Tagesschau Politik).",
+      "quelle_id": "q-0ac55b58d13908da5120",
+      "vorgang_ids": [
+        "vg-unterschiede-20260922-862754"
+      ],
+      "mandatsbezug": {
+        "feld": "ausschuss",
+        "wert": "Haushaltsausschuss"
+      }
+    },
+    "erwartet": false,
+    "quellenHash": "7b3aa68949dbcafa6e33bc871e5b15dbd82c600df1fda5fd0ce6b1581b07631b",
+    "quelle": {
+      "url": "https://tagesschau.de/wirtschaft/verbraucher/prognose-heizkosten-2026-100.html",
+      "titel": "Heizkosten steigen 2026 laut Prognose an",
+      "auszug": "Die Heizkosten für deutsche Haushalte steigen laut einer Prognose auch in diesem Jahr weiter an. Dabei gibt es Unterschiede zwischen den einzelnen Heizarten, denn nicht alle Brennstoffe werden teurer.",
+      "quelle": "Tagesschau Politik",
+      "quelle_id": "q-0ac55b58d13908da5120",
+      "veroeffentlichtAm": "2026-09-22T08:06:34.000Z"
+    }
+  },
+  {
+    "id": "energiesteuer-auswaertiges",
+    "paragraph": {
+      "text": "SPD-Fraktionsvize Zorn hat die vom Bundeskabinett beschlossene Senkung der Energiesteuer auf Benzin und Diesel verteidigt (Deutschlandfunk Politik).",
+      "quelle_id": "q-a3f89d9bb5ce9d4dba6d",
+      "vorgang_ids": [
+        "vg-kraftstoffpreise-20260915-abd3db"
+      ],
+      "mandatsbezug": {
+        "feld": "ausschuss",
+        "wert": "Auswärtiger Ausschuss"
+      }
+    },
+    "erwartet": false,
+    "quellenHash": "b6be25a1113920696fcb4efceb53f360a2f1c86867f6f9e4e7adbda638f43df8",
+    "quelle": {
+      "url": "https://deutschlandfunk.de/spd-fraktionsvize-zorn-verteidigt-vom-bundeskabinett-beschlossenen-tankrabatt-102.html",
+      "titel": "Hohe Kraftstoffpreise - SPD-Fraktionsvize Zorn verteidigt vom Bundeskabinett beschlossenen Tankrabatt",
+      "auszug": "SPD-Fraktionsvize Zorn hat die vom Bundeskabinett beschlossene Senkung der Energiesteuer auf Benzin und Diesel verteidigt.",
+      "quelle": "Deutschlandfunk Politik",
+      "quelle_id": "q-a3f89d9bb5ce9d4dba6d",
+      "veroeffentlichtAm": "2026-09-22T11:44:16.000Z"
+    }
+  }
+]

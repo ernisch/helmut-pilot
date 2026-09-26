@@ -226,6 +226,7 @@ const STANDARD = new Set([
   "verstehen-169-workflow-test.js",         // manueller 169er Ausfuehrungsweg
   "verstehen-cas-vertrag-test.js",          // CAS-/Quittungsvertrag des Verstehens
   "verstehen-rest15-test.js",              // unbegonnene Restmenge, keine Wiederaufnahme
+  "lage-pruefaufwand-test.js",              // isolierter Medium-Vergleich mit echten Fehlabsätzen
   "lage-vorstart-test.js",                 // einmaliger Lagecheck mit festen Kosten-/Zeitgrenzen
   "lage-tagesbezug-test.js",               // relative Quellentage nicht ins neue Briefing verschieben
   "lage-datumsbindung-test.js",            // kein Ereignisdatum aus Publikationsmetadaten

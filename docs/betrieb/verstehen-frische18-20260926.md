@@ -100,3 +100,19 @@ Neuer Importhash `a3ee38f866ccbbfe2fa251c3905cedd56fc2befd2ef84763b4ca6092fe7dd8
 neuer Rückweghash `34e43b5e29283ffc9135137d16bb97c1e4886de2613dc48318363e960dac5c0f`.
 Erst nach Integration und frischer Nachlesung genau ein begründeter zweiter
 Importversuch; kein Modelllauf und keine verbrauchte Quittung wiederholt.
+
+## Korrigierter Import ausgeführt, Verstehenslauf gestartet
+
+PR620/`9cd29a4adea8d866983f5eb7e88d3bea382e6b6b`, Pflicht-CI36251966059 grün,
+Vercel`dpl_4PqJBFQLJHFwNpTMdWbv1Stycj4Q` READY15:41:12UTC, keine Fehlerlogs bis
+15:42:02UTC. Zweiter Import mit neuem Hash erfolgreich. Vollständige Nachlesung
+15:43:15UTC:18 Dokumente,18 Fundstellen,18 Originalbelege,0 Verknüpfungen.
+Alle18 Production-Zeilen bestehen mit den unveränderten Eingabebelegen den
+bestehenden Vertrag.15:43:37UTC500/0, Profil-/Identitätshashes gleich,
+Authhash seit letztem Lageabschluss gleich,0 Jobs/Locks/Leases/offene Kosten.
+
+Nurleseplan36252947342 bestanden:18 Einzelcluster/17 Modellkandidaten
+(15 neu,1 Aktualisierung,1 erster Pending-Versuch,1 Zusammenführung).
+Konservativer Gesamtstand3,209111USD, mit vollem0,65USD-Rahmen unter4USD.
+Eigener Lauf36253026941 gestartet;15:48UTC6/18 Quellen verknüpft, Quittung läuft.
+Das ist noch kein Abschluss und keine vollständige fachliche Abnahme.
