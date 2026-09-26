@@ -31,7 +31,7 @@ async function worker() {
       await B.reserviere({ model: "gpt-5-mini", maxOutputTokens: 3000, runId: "nachlauf500-123456789" }, deps);
       allowed++;
     } catch (e) {
-      assert(["test-usd-grenze-erreicht", "test-usd-ausgang-unklar"].includes(e.reason), e.reason);
+      assert(["test-usd-grenze-erreicht", "test-usd-ausgang-unklar", "test-usd-auftragsgrenze-erreicht"].includes(e.reason), e.reason);
       blocked++;
     }
   }
@@ -94,6 +94,17 @@ async function pruefeKosten({ psql, base, token }) {
   assert.equal(Object.values(t.calls).filter(c => c.status === "ungeklaert").length, 1);
   assert.deepEqual(auth.users, [{ id: "bestand" }]);
   console.log("PASS  Fuenf Neustarts nutzen nur belegbar freien Rest, ungeklaerte Reserve bleibt unangetastet");
+  // Eigener isolierter Testbestand. Reale Produktionshistorie wird nie ersetzt.
+  psql(`update public.helmut_store set data = '{"users":[{"id":"bestand"}],"llmUsage":[],
+    "testKostenAuftrag":{"version":1,"id":"datenbank-test","abTag":"2026-09-09","limit":4000000,"externGebunden":3575000}}'::jsonb
+    where id='test-auth-kosten';`);
+  const auftrag = await five();
+  assert.equal(auftrag.reduce((n, r) => n + r.allowed, 0), 2);
+  auth = read();
+  assert.equal(B.auftragsStand(auth, "2026-09-09").gebundenMicroUsd, 3999000);
+  assert.equal(auth[B.KEY]["2026-09-09"].limit, 4000000);
+  assert.deepEqual(auth.users, [{ id: "bestand" }]);
+  console.log("PASS  Auftragsgrenze im selben echten CAS: fuenf Prozesse buchen zusammen nur zwei Reserven");
 }
 module.exports = { pruefeKosten };
 if (require.main === module) worker().catch(() => { console.error("FAIL Kosten Datenbank Worker"); process.exitCode = 1; });
