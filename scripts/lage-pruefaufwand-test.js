@@ -16,7 +16,7 @@ function setup(){
   const trace=[],s={cost:0,cache:null,receipt:null};
   const cfg={quittung:M.QUITTUNG,pruefaufwand:true,profilHash:T.bindung(profile),commit:"a".repeat(40),runId:"nachlauf500-12345678901"};
   const d={execute:true,now:()=>start,ruhe:async()=>"gleich",bestand:async()=>"gleich",profile:async()=>profile,
-    cache:async()=>s.cache,reviewPaket:async()=>input,artikelstand:async()=>({}),reserve:.212,
+    cache:async()=>s.cache,reviewPaket:async()=>input,artikelstand:async()=>({}),reserve:.224,
     kosten:async()=>({startklar:true,offeneReservierungen:0,limitUsd:4,gebundenUsd:s.cost}),laufkosten:async()=>s.cost,
     acquire:async()=>{trace.push("lock");return {granted:true,active:true};},release:async()=>trace.push("release"),
     claim:async()=>{trace.push("claim");return true;},finish:async r=>{trace.push("finish");s.receipt=structuredClone(r);},
@@ -103,10 +103,10 @@ function setup(){
       {offeneKosten:1},{profileUnveraendert:false},{lesebeweis:null}])
       A.throws(()=>T.pruefePruefaufwandVorgaenger({...alt,...change}),/pruefaufwand-vorgaenger/);
   });
-  await test("Transportnachweis b verlangt exakt den verbrauchten Lauf a und erhält dessen Antwort",async()=>{
+  await test("Anschluss erhält die vollständige Bindung des verbrauchten Laufs a",async()=>{
     const alt=require("./fixtures/lage-pruefaufwand-transport-vorgaenger.json");
     T.pruefePruefaufwandTransportVorgaenger(alt);
-    A.equal(M.QUITTUNG,"lage-pruefaufwand-20260926-b");
+    A.equal(M.QUITTUNG,"lage-pruefaufwand-20260926-c");
     A.equal(T.PRUEFAUFWAND.quittung,M.QUITTUNG);
     for(const change of [{status:"laeuft"},{ok:true},{quittungsschluessel:M.QUITTUNG},{runId:"fremd"},
       {runtimeCommit:"fremd"},{idHash:"fremd"},{grund:"anderer"},{gespeicherterLageText:true},
@@ -131,6 +131,36 @@ function setup(){
       const r=await M.einmallauf(cfg,d);A.equal(r.ok,false);
       A.equal(r.profileUnveraendert,art==="kosten"?true:null);
       A.equal(r.offeneKosten,art==="kosten"?null:0);A.equal(r.laufkostenUsd,0);
+    }
+  });
+  await test("Anschluss c verlangt unveränderte Timeoutquittung und belegten Kostenabschluss",async()=>{
+    const alt=require("./fixtures/lage-pruefaufwand-timeout-vorgaenger.json");
+    const ticketId="2c43a041-7e52-496b-8759-546184e13a83";
+    const receipt={id:"llm-1790440319637-9moa0o",runId:alt.runId,success:false,
+      error:"request-error:ETIMEDOUT",model:"gpt-5-mini",promptTokens:4069,completionTokens:3000,totalTokens:7069,
+      reconciliation:{sourceSha256:"4c4837dfe4ab33df5248a4875d0715727212c04bb4e2a994992bf304ce184fad",
+        statusSha256:"15b3b7ff4c8de99172adc623e6aebd39c48692a6f381f9bafd8be8a22afcc1f8",responseRecovered:false}};
+    const auth={llmUsage:[receipt],testKostenTage:{"2026-09-26":{calls:{[ticketId]:{
+      status:"abgerechnet",cost:14035,reserved:212000,bezug:{runId:alt.runId,phase:"pruefung"}}}}}};
+    T.pruefePruefaufwandTimeoutVorgaenger(alt,auth);
+    for(const change of [{status:"laeuft"},{profileUnveraendert:true},{offeneKosten:0},{fachbeleg:{}},{quittungsschluessel:M.QUITTUNG}])
+      A.throws(()=>T.pruefePruefaufwandTimeoutVorgaenger({...alt,...change},auth),/timeout-vorgaenger/);
+    for(const mutation of [a=>a.llmUsage.push(receipt),a=>a.llmUsage.splice(0),
+      a=>a.llmUsage[0].success=true,a=>a.llmUsage[0].completionTokens=2999,
+      a=>a.llmUsage[0].reconciliation.sourceSha256="fremd",
+      a=>a.llmUsage[0].reconciliation.responseRecovered=true,
+      a=>a.testKostenTage["2026-09-26"].calls[ticketId].status="ungeklaert",
+      a=>a.testKostenTage["2026-09-26"].calls[ticketId].cost=0]){
+      const a=structuredClone(auth);mutation(a);
+      A.throws(()=>T.pruefePruefaufwandTimeoutVorgaenger(alt,a),/timeout-vorgaenger/);
+    }
+    const K=require("../lib/helmut/testkosten-budget");
+    A.equal(K.reservierungHoeheUsd(T.reviewOptionen({pruefaufwand:true}).maxOutputTokens),.224);
+    A.deepEqual(T.reviewOptionen({}),{strict:true,reasoningEffort:"low",maxOutputTokens:3000});
+    for(const quittung of ["lage-pruefaufwand-20260926-a","lage-pruefaufwand-20260926-b"]){
+      const {d,cfg,trace}=setup();cfg.quittung=quittung;
+      // Prüft den echten Startpfad, nicht nur die neue Kennung als Konstante.
+      await A.rejects(M.einmallauf(cfg,d),/sollfall-auftrag/);A.deepEqual(trace,[]);
     }
   });
   await test("120s Antwort plus60s Abschluss bleiben innerhalb des240s-Auftrags",async()=>{

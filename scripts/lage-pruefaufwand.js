@@ -8,7 +8,7 @@ const Q = require("../lib/helmut/lage-textqualitaet");
 const T = require("./lage-vorstart");
 const K = require("../lib/helmut/testkosten-budget");
 const FAELLE = require("./fixtures/lage-pruefaufwand-vier.json");
-const QUITTUNG = "lage-pruefaufwand-20260926-b", MAX_USD = 0.25, MAX_MS = 240000;
+const QUITTUNG = T.PRUEFAUFWAND.quittung, MAX_USD = 0.25, MAX_MS = 240000;
 const fordere = (ok, grund) => { if (!ok) throw new Error("lage-vorstart-" + grund); };
 
 function paket(profile, vorgaenge) {
@@ -81,6 +81,7 @@ async function einmallauf(cfg, d) {
   };
   await pruefe();
   const limits = { profile: 1, sollFaelle: 4, reasoningEffort: "medium", maxAufrufe: 1, maxUsd: MAX_USD, maxMs: MAX_MS,
+    maxOutputTokens:T.PRUEFAUFWAND.maxOutputTokens,
     paketHash: input.paketHash, gespeicherterLageText: false, funktionsnachweis500: false, automatischeWiederholung: false };
   if (!d.execute) return { ok: true, plan: true, ...limits };
   const lock = await d.acquire();
