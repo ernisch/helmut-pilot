@@ -65,8 +65,8 @@ async function vorflug(a, env, storage, fetchFn, now) {
   fordere(r.ok === true && r.reinLesend === true && r.schemaVersion === 1 && r.production === true
     && r.commit === a.productionCommit && r.storageSupabase === true && r.kommunikationGesperrt === true
     && r.kohortenQuellenGesperrt === true && r.tagesdeckel === 2416 && r.understandingReserve === 702
-    && r.vorrangreserveReal === 200 && r.testKosten?.version === 2 && r.testKosten.aktiv === true
-    && r.testKosten.limitUsd === 4, "EINORDNUNG_LAUFZEIT");
+    && r.vorrangreserveReal === 200 && K.tagespolitikGueltig(r.testKosten)
+    && r.testKosten.aktiv === true, "EINORDNUNG_LAUFZEIT");
   const zeit = encodeURIComponent(now.toISOString());
   const paths = ["mandate_profiles?select=user_id,aktiv&limit=505",
     `pipeline_locks?select=job_name&expires_at=gt.${zeit}&limit=1`,

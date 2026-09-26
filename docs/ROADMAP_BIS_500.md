@@ -24,7 +24,7 @@ Budgetänderungen, externe Nachrichten sowie Aktivierung der 500 Profile und Sta
 des 500er Nachweises brauchen weiterhin das dafür ausdrücklich erforderliche GO.
 
 Notwendige Modelltests dürfen innerhalb des Sprintziels autonom laufen, solange
-der technische Tagesriegel von 4 USD je UTC Tag eingehalten wird und der jeweilige
+der technische Tagesriegel von 6 USD je UTC Tag eingehalten wird und der jeweilige
 Test vorher klar begrenzt ist.
 
 ## 1 · Eingefrorenes Produktziel
@@ -104,7 +104,7 @@ erzählen.
    sachlichen Grund wiederholen.
 
 4. Kostenstarttor schließen: vor dem 500er Start keine ungeklärten
-   Kostenreservierungen und technischer Tagesriegel weiterhin 4 USD je UTC Tag.
+   Kostenreservierungen und technischer Tagesriegel gemäß Betreiberfreigabe vom26.09. 6 USD je UTC Tag.
 
 5. Profilbestand auf exakt 500 Zielprofile bereinigen und finalen rein lesenden
    Startplan belegen. Alle 500 werden funktional gleich behandelt. Die fünf realen

@@ -10,6 +10,7 @@ const B = require("../lib/helmut/briefing-speicher");
 const Q = require("../lib/helmut/lage-textqualitaet");
 const T = require("./privater-nachweis-transport");
 const P = require("../lib/helmut/briefing-pruefaufnahme-500");
+const K = require("../lib/helmut/testkosten-budget");
 function fordere(ok) { if (!ok) throw new Error("privater-inhaltsnachweis-nicht-bestaetigt"); }
 
 function pruefeBelegzeilen(rows, profile, day) {
@@ -58,8 +59,8 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch, now = () 
       && config.kommunikationGesperrt && config.kohortenQuellenGesperrt);
     if (eingabe500) fordere(config.test500PruefaufnahmeVersion === 1
       && config.test500PruefaufnahmeFensterVersion === 1
-      && config.testKosten?.version === 2 && config.testKosten.aktiv === true
-      && config.testKosten.limitUsd === 4 && config.quellenkontext?.atomicLock === true);
+      && K.tagespolitikGueltig(config.testKosten) && config.testKosten.aktiv === true
+      && config.quellenkontext?.atomicLock === true);
     async function get(path, limit) {
       fordere(now().getTime() - start < 240000);
       const r = await fetchFn(PROJECT_URL + "/rest/v1/" + path, { method: "GET", redirect: "error",

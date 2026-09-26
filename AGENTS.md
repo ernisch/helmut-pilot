@@ -387,7 +387,7 @@ Azure Änderungen
 Budgetänderungen
 
 kostenpflichtige Production Modellaufrufe außerhalb des unten ausdrücklich
-vorab freigegebenen kumulativen 4-USD-Rahmens oder außerhalb eines gestarteten
+vorab freigegebenen Tages- und Auftragskostenrahmens oder außerhalb eines gestarteten
 Sprintziels
 
 externe Nachrichten
@@ -410,8 +410,16 @@ Die ausdrueckliche Freigabe zur autonomen Roadmap-Arbeit einschliesslich des
 konkret angefragten16er Production-Imports und begrenzter Modelltests ist in
 [docs/betrieb/autonom-bis-500-starttor-20260926.md](docs/betrieb/autonom-bis-500-starttor-20260926.md)
 festgehalten. Bis unmittelbar vor Aktivierung und500er Test autonom fortfahren;
-Kosten unter4USD, technische Tagesgrenze unveraendert. Dieser aktuelle Auftrag
+Kumulative Auftragskosten bis zu6USD, technische Tagesgrenze6USD ausdrücklich freigegeben. Dieser aktuelle Auftrag
 geht aelteren allgemeinen Rueckfrageforderungen innerhalb seines Umfangs vor.
+
+Am26.09.2026 hat der Betreiber abschliessend beide Grenzen ausdruecklich
+auf **bis zu6USD** erhoeht: "Ändere den Tagesriegel auf 6 usd" und
+"Gesamte Grenze auch 6 USD. BITTE ÄNDERN". Damit gelten6USD je UTC-Tag und
+6USD insgesamt fuer diesen autonomen Auftrag. Die zwischenzeitliche5USD-
+Gesamtfreigabe ist ersetzt. Bereits verbrauchte und offen reservierte Kosten
+zaehlen weiter; ein Tageswechsel setzt die Gesamtgrenze nicht zurueck.
+Profilschutz und das neue GO vor Aktivierung/500er Test bleiben erhalten.
 
 Der Betreiber hat diesen Auftrag am26.09.2026 ausdruecklich dauerhaft
 bekraeftigt: vollautonom weiterarbeiten, auch nach jedem Merge; nicht erneut auf
@@ -426,7 +434,7 @@ Starttor, auch dafuer notwendige bislang einzeln freizugebende Production-
 Vorarbeiten. Konkreten Umfang, Wirkung, Risiko, Kosten, Nachkontrolle und Rueckweg
 vorher selbst festlegen und dokumentieren; innerhalb dieses Auftrags nicht
 nochmals fragen. Technische Schutzpruefungen, Quellenwahrheit, Profilschutz,
-unveraenderter4-USD-Tagesriegel und unter4USD kumulative Auftragskosten gelten
+ausdruecklich freigegebener6-USD-Tagesriegel und bis zu6USD kumulative Auftragskosten gelten
 weiter. Keine unbekannten Ergebnisse als Erfolg deklarieren, keine verbrauchten
 Auftraege wiederverwenden und keine Schutzmechanismen umgehen.
 
@@ -461,15 +469,15 @@ Nur im konkret freigegebenen Umfang handeln.
 ## Kostenpflichtige Modell- und API-Aufrufe
 
 Innerhalb eines gestarteten, klar begrenzten Helmut-Sprints sind notwendige
-variable Modell- und API-Kosten bis insgesamt **unter 4 USD je UTC Tag** vorab
+variable Modell- und API-Kosten bis insgesamt **6 USD je UTC Tag** vorab
 freigegeben. Alle Anbieter und alle auftragsbezogenen kostenpflichtigen Aufrufe
 zählen gemeinsam gegen dieselbe Tagesgrenze. Solange der nächste Aufruf die
-kumulative Tagesgrenze sicher unter 4 USD hält, ist keine erneute Kostenfreigabe
+kumulative Tagesgrenze sicher bei höchstens 6 USD hält, ist keine erneute Kostenfreigabe
 erforderlich.
 
-Vor einem Aufruf, der die kumulative Tagesgrenze erreichen oder überschreiten
+Vor einem Aufruf, der die kumulative Tagesgrenze überschreiten
 könnte, stoppen und eine ausdrückliche Freigabe einholen. Der technische
-Tagesriegel von 4 USD bleibt unverändert und darf nicht still erhöht oder umgangen
+Tagesriegel von 6 USD ist ausdrücklich freigegeben und darf nicht still erhöht oder umgangen
 werden.
 
 Nicht von dieser Dauerfreigabe umfasst sind Abonnements, Plan-Upgrades,

@@ -5,6 +5,7 @@
 const { hash } = require("../lib/helmut/briefing-speicher");
 const Q = require("../lib/helmut/lage-textqualitaet");
 const T = require("./lage-vorstart");
+const K = require("../lib/helmut/testkosten-budget");
 const FAELLE = require("./fixtures/lage-mandatsurteil-vier.json");
 const QUITTUNG = "lage-mandatsurteil-20260926-a", MAX_USD = 0.25, MAX_MS = 240000;
 const fordere = (ok, grund) => { if (!ok) throw new Error("lage-vorstart-" + grund); };
@@ -100,7 +101,7 @@ async function einmallauf(cfg, d) {
     try {
       [nach, kosten, laufkosten] = await Promise.all([d.ruhe(), d.kosten(), d.laufkosten()]);
       fordere(nach === grundlinie && hash(await d.cache(profile.id)) === cacheHash
-        && kosten.offeneReservierungen === 0 && kosten.limitUsd === 4
+        && kosten.offeneReservierungen === 0 && K.tageslimitGueltig(kosten.limitUsd)
         && Number.isFinite(laufkosten) && laufkosten >= 0 && laufkosten <= MAX_USD
         && (!out.ok || (calls === 1 && laufkosten > 0)) && d.now() - start < MAX_MS, "sollfall-nachkontrolle");
     } catch (_) { out = { ...out, ok: false, grund: "sollfall-nachkontrolle" }; }

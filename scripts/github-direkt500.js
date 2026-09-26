@@ -6,6 +6,7 @@ const D = require("../lib/helmut/testkohorte-direkt500");
 const { pruefe: leseKonfiguration } = require("./github-laufzeitpruefung");
 const { kostenBefund, PROJECT_URL } = require("./github-fachzyklus-a");
 const VORFLUG = require("../lib/helmut/speicherpfad-vorflug");
+const K = require("../lib/helmut/testkosten-budget");
 async function ausfuehren({ vorgang, scharf = false, env = process.env,
   fetchFn = global.fetch, now = () => new Date(),
   schreibe = null, fortschritt = null } = {}) {
@@ -87,10 +88,10 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       kosten = kostenBefund(auth, counters.length ? counters[0].used : 0, jetzt.toISOString().slice(0, 10));
       D.fordere(kosten.aufrufbelege <= kosten.reservierungen,
         "kosten-nachweis-unvollstaendig");
-      if (auth.testKostenTage?.[jetzt.toISOString().slice(0, 10)] && config.testKosten?.version === 2
-        && config.testKosten.aktiv === true && config.testKosten.limitUsd === 4
+      if (auth.testKostenTage?.[jetzt.toISOString().slice(0, 10)] && K.tagespolitikGueltig(config.testKosten)
+        && config.testKosten.aktiv === true
         && config.testKosten.unbekanntBleibtReserviert === true) {
-        try { Object.assign(kosten, require("../lib/helmut/testkosten-budget")
+        try { Object.assign(kosten, K
           // Auch eine ganz fehlende Nutzungszeile braucht eine volle Reserve.
           // Die Ticketdeckung muss den groesseren atomaren Zaehler abdecken.
           .kontrolliere(auth, jetzt.toISOString().slice(0, 10),
@@ -161,8 +162,8 @@ async function ausfuehren({ vorgang, scharf = false, env = process.env,
       const arbeitsbeginn = T.pruefeArbeitsbeginn(env.HELMUT_TEXTNACHLAUF_AB_POSITION || 1);
       D.fordere(arbeitsbeginn === 1 || config.textnachlaufArbeitsauswahlVersion === 1,
         "textnachlauf-arbeitsauswahl-nicht-deployt");
-      D.fordere(config.textnachlaufVersion === 2 && config.testKosten?.version === 2
-        && config.testKosten.aktiv === true && config.testKosten.limitUsd === 4
+      D.fordere(config.textnachlaufVersion === 2 && K.tagespolitikGueltig(config.testKosten)
+        && config.testKosten.aktiv === true
         && config.testKosten.maxManualCalls === null && config.testKosten.maxWindowMs === null
         && config.testKosten.unbekanntBleibtReserviert === true, "textnachlauf-nicht-deployt");
       D.fordere(vor.gesamt === (bereinigt ? 500 : 504) && vor.aktiv === 500 && vor.aktive.length === zielAnzahl,

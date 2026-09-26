@@ -2,6 +2,7 @@
 // Ein manueller, einmaliger Vorstartcheck. Keine Aktivierung, kein500er Lauf.
 const crypto = require("node:crypto");
 const { hash, profilHash } = require("../lib/helmut/briefing-speicher");
+const K = require("../lib/helmut/testkosten-budget");
 const QUITTUNG = "lage-vorstart-20260926-a", TAG = "2026-09-26";
 // Genau ein neuer Nachweis nach PR594; der erste Auftrag bleibt verbraucht.
 const ZEITBEZUG = Object.freeze({ auftrag:"zeitbezug", quittung:"lage-zeitbezug-20260926-a",
@@ -220,10 +221,11 @@ function pruefeAufruf({ calls, start, jetzt, kosten, laufkosten, reserve, bestan
   fordere(jetzt >= start && jetzt - start < MAX_MS - 60000
     && new Date(jetzt).toISOString().slice(0,10) === TAG, "restzeit");
   fordere(kosten?.startklar === true && kosten.offeneReservierungen === 0
-    && kosten.limitUsd === 4 && Number.isFinite(kosten.gebundenUsd)
+    && K.tageslimitGueltig(kosten.limitUsd) && Number.isFinite(kosten.gebundenUsd)
     && kosten.gebundenUsd >= 0 && Number.isFinite(reserve) && reserve > 0
     && Number.isFinite(laufkosten) && laufkosten >= 0
-    && laufkosten + reserve <= MAX_USD && kosten.gebundenUsd + reserve < 4, "kosten");
+    && laufkosten + reserve <= MAX_USD && (kosten.limitUsd === 4 ? kosten.gebundenUsd + reserve < 4
+      : kosten.gebundenUsd + reserve <= kosten.limitUsd), "kosten");
   fordere(typeof grundlinie === "string" && bestand === grundlinie, "profilbestand");
 }
 async function einmallauf(cfg, d) {

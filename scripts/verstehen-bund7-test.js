@@ -51,7 +51,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     await K.abschliessen(t, { model: "gpt-5-mini", promptTokens: 100, completionTokens: 20, _ablage: { blob: true } }, deps);
     assert.equal(await K.laufGebundenUsd(runId, deps), 0.00013);
     assert.equal(await K.laufGebundenUsd(F.VORGAENGER_RUN, deps), 0);
-    assert.equal(K.LIMIT_MICRO_USD, 4000000);
+    assert.equal(K.LIMIT_MICRO_USD, 6000000);
     for (const id of ["verstehen-bund7-12", "verstehen-bund7-fremd", "verstehen-bund8-123456789"])
       await assert.rejects(K.laufGebundenUsd(id, deps));
     storage.readAuthStore = async () => { throw Error("offline-ausfall"); };
