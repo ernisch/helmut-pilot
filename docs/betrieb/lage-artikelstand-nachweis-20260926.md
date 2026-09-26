@@ -89,3 +89,47 @@ Die konservative Gesamtschätzung um12:31UTC lag bei2,292027USD einschließlich
 lokaler Helfer am25./26.09.; der anschließend gestartete lokale Helfer kommt
 noch hinzu. Keine Anbieterrechnung. Vor scharfer Ausführung erneut abgleichen.
 Der neue Modellauftrag ist hier vorbereitet, noch nicht ausgeführt.
+
+## Ausführung und belegte Anschlusskorrektur
+
+[PR612](https://github.com/ernisch/helmut-pilot/pull/612) ist nach beiden grünen
+Pflichtprüfungen am Kopf `b92964af` im [CI-Lauf36242515698](https://github.com/ernisch/helmut-pilot/actions/runs/36242515698)
+als `d826ad1ef3f64cb578821a5e0b60e98105a9f5ee` gemergt. Production
+`dpl_3muRBsTxF6wTfU8i7Z1afqNjjANL` READY12:48:17UTC; im gelesenen Zeitraum bis
+12:48:49UTC keine error/fatal-Logs. Der [Nurleseplan36243104455](https://github.com/ernisch/helmut-pilot/actions/runs/36243104455)
+bestätigte elf Vorgänge und exakt den602-Zeichen-Artikelstand.
+
+[Scharfer Einmalauftrag36243162049](https://github.com/ernisch/helmut-pilot/actions/runs/36243162049)
+12:50:06–12:50:53UTC: **fachlich gescheitert**, `ai-text-source-support`,
+zwei Aufrufe,0,009026USD, kein auslieferbarer Tagessatz. Die Quittung
+`lage-artikelstand-20260926-a` ist terminal gestoppt und verbraucht.
+Unabhängige Datenbank-Nachlesung12:51:35UTC:500/0, Mandats-/Identitätshashes
+unverändert,0 Jobs/Sperren/Leases/offene Kosten. Tagesbuch0,302519USD,
+Tagesriegel4USD. Beide Tickets abgerechnet: Entwurf0,003369USD,
+Prüfung0,005657USD. Keine Kostenfreigabe durch Schätzung.
+
+Vollständiger Entwurf und Review wurden unabhängig gelesen: Absatz0 mischt
+die DLF-Meldung zur Fortsetzung von EU-Sanktionsverhandlungen mit
+Tagesschau-Details zu zwei Oligarchen, nennt aber nur die DLF-Quellenkennung.
+Die Prüfung lehnt dies korrekt ab. Absatz1 aus dem amtlichen Bundestagsabsatz
+wird vollständig akzeptiert; auch die Verschiedenheit der beiden Sachverhalte
+ist bestätigt. Dies ist ein positiver Teilbefund, kein bestandener Gesamttext.
+
+Der Generator erhielt bisher mehrere Dokumente pro Vorgangszeile und am Ende
+eine widersprüchliche Mehrzahlregel für Vorgangskennungen. Die Anschlusskorrektur
+führt jedes Dokument separat und untersagt ausdrücklich auch die Ergänzung aus
+sachgleichen Nachbardokumenten. Alle Quellenfelder bleiben vollständig erhalten;
+Schema, Review, Modelle und Kosten-/Qualitätsgrenzen sind unverändert.
+Gezielte Offline-Abnahme:11 Dokumentbindungsgruppen und25 Vorstartgruppen grün.
+Die Regression bildet den tatsächlichen Mischfehler ab; vorgegebene Prüfantworten
+sind kein neuer Modellnachweis.
+
+Ein sachlich begründeter neuer Nachweis `einzelquelle` bekommt die eigene Quittung
+`lage-einzelquelle-20260926-a`. Er verlangt zusätzlich genau den oben belegten,
+terminalen Vorlauf ohne offene Kosten. Dasselbe unveränderte Profil, derselbe
+amtliche Artikelstand und dieselben Grenzen: höchstens2 Aufrufe,240 Sekunden,
+0,50USD; fehlender Tagessatz, alle500 inaktiv, neues geprüftes main/READY.
+Wirkung/Risiko/Nachkontrolle/Rückweg wie oben: möglicher neuer Tagessatz samt
+privaten Entwurf-/Reviewbelegen und Kostenbuchung; bei Ablehnung kein Erfolg,
+kein automatischer Retry und keine Löschung der alten Belege. Vor Ausführung
+Kosten erneut lesen und Nurleseplan prüfen. Der Anschluss ist noch nicht ausgeführt.

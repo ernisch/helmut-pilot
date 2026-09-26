@@ -25,6 +25,10 @@ const ARTIKELSTAND = Object.freeze({ auftrag:"artikelstand", quittung:"lage-arti
   standHash:"f757f0b844a673c91894dee250fe77946d35b7032aea0ce69f94c69bd5033d83",
   absatzHash:"a094a6458c67347fa2817dd3dbf7a9fa2ba5eec3ea149c86619a09408aa4d060",
   publikationstag:"2026-09-25", absatzZeichen:602 });
+// Eigener Nachweis nach Korrektur der belegten Vermischung zweier Medienquellen.
+// Die gescheiterte Artikelstand-Quittung wird nur gelesen und nie wiederverwendet.
+const EINZELQUELLE = Object.freeze({ ...ARTIKELSTAND, auftrag:"einzelquelle",
+  quittung:"lage-einzelquelle-20260926-a" });
 const MAX_MS = 240000, MAX_USD = 0.50;
 const fordere = (ok, grund) => { if (!ok) throw new Error("lage-vorstart-" + grund); };
 const bindung = p => hash({ id:p.id, profilHash:profilHash(p) });
@@ -32,7 +36,8 @@ const url = value => require("../lib/helmut/dedup").canonicalizeUrl(value);
 function konfiguration(env, commit, jetzt = Date.now()) {
   const auftrag = env.HELMUT_VORSTART_AUFTRAG || "erstpruefung";
   const reparatur = [ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG].find(x => x.auftrag === auftrag);
-  const artikelstand = auftrag === ARTIKELSTAND.auftrag;
+  const artikelauftrag = [ARTIKELSTAND,EINZELQUELLE].find(x => x.auftrag === auftrag);
+  const artikelstand = Boolean(artikelauftrag);
   fordere(auftrag === "erstpruefung" || Boolean(reparatur) || artikelstand,"auftrag");
   fordere(!reparatur || env.HELMUT_VORSTART_PROFIL === reparatur.profilHash,"reparaturbindung");
   fordere(!artikelstand || env.HELMUT_VORSTART_PROFIL === ARTIKELSTAND.profilHash,"artikelstandbindung");
@@ -47,7 +52,16 @@ function konfiguration(env, commit, jetzt = Date.now()) {
   return { commit, profilHash:env.HELMUT_VORSTART_PROFIL, runId:"nachlauf500-" + env.GITHUB_RUN_ID,
     reparatur:Boolean(reparatur), artikelstand,
     altHash:reparatur?.altHash || null,
-    quittung:artikelstand ? ARTIKELSTAND.quittung : (reparatur?.quittung || QUITTUNG) };
+    quittung:artikelstand ? artikelauftrag.quittung : (reparatur?.quittung || QUITTUNG) };
+}
+function pruefeEinzelquellenVorgaenger(alt) {
+  fordere(alt?.status === "gestoppt" && alt.ok === false
+    && alt.runId === "nachlauf500-36243162049" && alt.idHash === ARTIKELSTAND.profilHash
+    && alt.runtimeCommit === "d826ad1ef3f64cb578821a5e0b60e98105a9f5ee"
+    && alt.grund === "ai-text-source-support" && alt.gespeichert === false
+    && alt.freigegebeneAufrufe === 2 && alt.offeneKosten === 0
+    && alt.profileUnveraendert === true && alt.lesebeweis?.absatzHash === ARTIKELSTAND.absatzHash,
+    "altquittung");
 }
 // Inhaltlicher Nachweis der neuen Grundlage. Fuer den Inhalt gilt ausschliesslich der
 // bestehende Stand-Leser; der Zeitvertrag und die tatsaechliche Texteingabe entstehen
@@ -221,6 +235,10 @@ async function main(args = process.argv.slice(2), env = process.env) {
       && alt[0].data.runId === "nachlauf500-36227833079"
       && alt[0].data.idHash === cfg.profilHash && alt[0].data.grund === "ai-text-source-support","altquittung");
   }
+  if (cfg.quittung === EINZELQUELLE.quittung) {
+    const alt = await read("helmut_store","select=data&id=eq."+ARTIKELSTAND.quittung+"&limit=1");
+    fordere(alt.length === 1,"altquittung");pruefeEinzelquellenVorgaenger(alt[0].data);
+  }
   fordere(!(await read("helmut_store","select=id&id=eq."+cfg.quittung+"&limit=1")).length,"verbraucht");
   fordere(await K.laufGebundenUsd(cfg.runId,{env}) === 0,"laufkosten-vorhanden");
   const q = execute ? B.quittungsAdapter(env) : null;
@@ -244,4 +262,4 @@ if (require.main === module) main().then(c => { process.exitCode=c; }).catch(e =
   console.log(JSON.stringify({ok:false,grund:/^lage-vorstart-[a-z-]+$/.test(e.message || "") ? e.message : "lage-vorstart-technischer-fehler",automatischeWiederholung:false}));process.exitCode=1;
 });
 module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main,ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG,
-  ARTIKELSTAND,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};
+  ARTIKELSTAND,EINZELQUELLE,pruefeEinzelquellenVorgaenger,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};
