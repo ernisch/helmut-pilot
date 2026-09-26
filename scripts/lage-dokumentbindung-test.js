@@ -251,6 +251,11 @@ assert.match(redaktion, /Entwicklungs- oder Fischereiprojekt ist nicht allein de
 assert(!/Eritrea/i.test(redaktion), "kein Laender-Muster im Reviewerprompt");
 
 const aussenProfil = { committees: ["Auswärtiger Ausschuss"] };
+const textartRegel = Q.SCHEMA.properties.pruefungen.items.properties.textart.description;
+assert(redaktion.includes(textartRegel), "Schema und Prompt verwenden dieselbe Textartdefinition");
+assert.match(textartRegel, /blosse Nennung eines Themas oder Projekts/);
+assert.match(textartRegel, /einzelner vollstaendig belegter Satz/);
+assert.match(textartRegel, /Quellenzuschreibung macht ein blosses Thema nicht konkret/);
 const eritreaQuellen = [{ vorgang_id: "vg-fischerei-eritrea", quellenbelege: [{
   quelle_id: "q-bt-eritrea", url: "https://example.org/fischerei-eritrea", quelle: "Deutscher Bundestag",
   titel: "Projekt zum Fischerei-Managament in Eritrea - Deutscher Bundestag"
