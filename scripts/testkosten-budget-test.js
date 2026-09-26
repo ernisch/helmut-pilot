@@ -30,25 +30,43 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); count++
 (async () => {
   const auftrag = externGebunden => ({ version: 1, id: "offline-auftrag", abTag: DAY,
     limit: 4000000, externGebunden });
-  await test("Version2 erlaubt exakt5USD, keinen Mikro-Dollar mehr und unveraendert hoechstens4USD am Tag", async () => {
+  await test("Tagespolitik akzeptiert nur die bekannten Paare2/4 und3/6, freie Werte bleiben gesperrt", async () => {
+    assert.equal(B.tagespolitikGueltig({ version: 2, limitUsd: 4 }), true);
+    assert.equal(B.tagespolitikGueltig({ version: 3, limitUsd: 6 }), true);
+    for (const bad of [{ version: 2, limitUsd: 6 }, { version: 3, limitUsd: 4 }, { version: 3, limitUsd: 5 },
+      { version: 1, limitUsd: 4 }, { version: 2, limitUsd: 5 }, { limitUsd: 6 }, { version: 3 }, null, {}])
+      assert.equal(B.tagespolitikGueltig(bad), false, JSON.stringify(bad));
+    assert.equal(B.tageslimitGueltig(4), true); assert.equal(B.tageslimitGueltig(6), true);
+    for (const bad of [5, 0, null, undefined, "6"]) assert.equal(B.tageslimitGueltig(bad), false, String(bad));
+  });
+  await test("Version2 erlaubt exakt6USD, keinen Mikro-Dollar mehr und hoechstens6USD am Tag", async () => {
     const h = fixture();
-    await h.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = { ...auftrag(4788000), version: 2, limit: 5000000 }; });
+    await h.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = { ...auftrag(5788000), version: 2, limit: 6000000 }; });
     await B.reserviere(ARGS, h.deps);
-    assert.equal(B.auftragsStand(h.read(), DAY).gebundenMicroUsd, 5000000);
-    assert.equal(h.day().limit, 4000000);
+    assert.equal(B.auftragsStand(h.read(), DAY).gebundenMicroUsd, 6000000);
+    assert.equal(h.day().limit, 6000000);
     const before = h.read();
     await assert.rejects(B.reserviere(ARGS, h.deps), { reason: "test-usd-auftragsgrenze-erreicht" });
     assert.deepEqual(h.read(), before);
     const f = fixture();
-    await f.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = { ...auftrag(0), version: 2, limit: 5000000 }; });
+    await f.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = { ...auftrag(0), version: 2, limit: 6000000 }; });
     const results = await Promise.allSettled(Array.from({length: 40}, () => B.reserviere(ARGS, f.deps)));
-    assert.equal(results.filter(r => r.status === "fulfilled").length, 18);
-    assert.equal(B.belegt(f.day()), 3816000);
-    for (const patch of [{ externGebunden: 4788001 }, { version: 1 }, { limit: 5000001 }, { limit: 4000000 }]) {
+    assert.equal(results.filter(r => r.status === "fulfilled").length, 28);
+    assert.equal(B.belegt(f.day()), 5936000);
+    for (const patch of [{ externGebunden: 5788001 }, { version: 1 }, { limit: 6000001 }, { limit: 4000000 }]) {
       const g = fixture();
-      await g.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = { ...auftrag(4788000), version: 2, limit: 5000000, ...patch }; });
+      await g.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = { ...auftrag(5788000), version: 2, limit: 6000000, ...patch }; });
       await assert.rejects(B.reserviere(ARGS, g.deps), { code: "LLM_BUDGET_EXHAUSTED", kiNichtGesendet: true });
     }
+  });
+  await test("Altes Tagesbuch bleibt bei4USD; falsche Buchpaare bleiben gesperrt", async () => {
+    const h=fixture(); await B.reserviere(ARGS,h.deps);
+    await h.storage.mutateAuthStore(s=>{s[B.KEY][DAY].version=1;s[B.KEY][DAY].limit=4000000;});
+    const result=await Promise.allSettled(Array.from({length:40},()=>B.reserviere(ARGS,h.deps)));
+    assert.equal(result.filter(r=>r.status==="fulfilled").length,17);
+    assert.equal(B.belegt(h.day()),3816000);
+    for(const patch of [{version:1,limit:6000000},{version:2,limit:4000000},{version:2,limit:5000000}])
+      assert.throws(()=>B.pruefeTag({...h.day(),...patch},DAY));
   });
   await test("Auftragsgrenze bindet parallele Crons und manuelle Aufrufe gemeinsam", async () => {
     const h = fixture();
@@ -59,7 +77,7 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); count++
     for (const r of result.filter(r => r.status === "rejected"))
       assert.equal(r.reason.reason, "test-usd-auftragsgrenze-erreicht");
     assert.equal(B.auftragsStand(h.read(), DAY).gebundenMicroUsd, 3999000);
-    assert.equal(h.day().limit, 4000000); assert.deepEqual(h.read().users, [{ id: "bestehend" }]);
+    assert.equal(h.day().limit, 6000000); assert.deepEqual(h.read().users, [{ id: "bestehend" }]);
   });
   await test("Auftrag bleibt ueber Mitternacht gebunden, inklusive ungeklaerter Reserve", async () => {
     const h = fixture();
@@ -111,11 +129,11 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); count++
     await assert.rejects(B.reserviere({ ...ARGS, maxOutputTokens: 8001 }, h.deps),
       { code: "LLM_BUDGET_EXHAUSTED", kiNichtGesendet: true });
   });
-  await test("40 parallele Reservierungen halten gemeinsam hoechstens 4 USD; bestaetigte Abrechnung gibt nur den Rest frei", async () => {
+  await test("40 parallele Reservierungen halten gemeinsam hoechstens 6 USD; bestaetigte Abrechnung gibt nur den Rest frei", async () => {
     const h = fixture();
     const r = await Promise.allSettled(Array.from({ length: 40 }, () => B.reserviere(ARGS, h.deps)));
     const ok = r.filter(x => x.status === "fulfilled");
-    assert.equal(ok.length, 18); assert.equal(B.belegt(h.day()), 3816000);
+    assert.equal(ok.length, 28); assert.equal(B.belegt(h.day()), 5936000);
     await B.abschliessen(ok[0].value, RECEIPT, h.deps);
     await B.abschliessen(ok[0].value, RECEIPT, h.deps);
     assert.equal(h.day().spent, 130, "Abrechnung ist idempotent");
@@ -147,8 +165,8 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); count++
       await B.nichtGesendet(ticket, { kiNichtGesendet: true }, h.deps);
       assert.equal(B.belegt(h.day()), 212000, "Ungeklaerte Aufrufe werden nicht nachtraeglich kostenlos");
       const more = await Promise.allSettled(Array.from({ length: 40 }, () => B.reserviere(ARGS, h.deps)));
-      assert.equal(more.filter(r => r.status === "fulfilled").length, 17);
-      assert.equal(B.belegt(h.day()), 3816000);
+      assert.equal(more.filter(r => r.status === "fulfilled").length, 27);
+      assert.equal(B.belegt(h.day()), 5936000);
       await assert.rejects(B.reserviere(ARGS, h.deps), { reason: "test-usd-grenze-erreicht" });
     }
   });

@@ -3,6 +3,7 @@
 
 // Nur nach unabhaengigem READY Beleg des erwarteten Production Commits starten.
 // Die neue Route liegt VOR jedem Account-/Speicher-Vorlauf und liest nur Konfiguration.
+const K = require("../lib/helmut/testkosten-budget");
 const STATUS_URL = "https://helmut-pilot.vercel.app/api/cron/testnachweis-status";
 const BOOLEAN_FELDER = Object.freeze([
   "storageSupabase", "v3Bereit", "profileRelational", "profileExclusive",
@@ -50,11 +51,12 @@ async function pruefe({ env = process.env, fetchFn = global.fetch } = {}) {
         && typeof body.quellenkontext.sourceSafetyStandard === "boolean"
         ? { quellenkontext: Object.fromEntries(["version", "scoring", "relevanzordnung", "koScan", "lageMax", "relevanzTage", "sourceSafetyStandard", "atomicLock"]
           .map(k => [k, body.quellenkontext[k]])) } : {}),
-      ...(body.testKosten?.version === 2 && typeof body.testKosten.aktiv === "boolean"
-        && body.testKosten.limitUsd === 4 && body.testKosten.maxManualCalls === null
+      ...(K.tagespolitikGueltig(body.testKosten) && typeof body.testKosten.aktiv === "boolean"
+        && body.testKosten.maxManualCalls === null
         && body.testKosten.maxWindowMs === null && body.testKosten.unbekanntBleibtReserviert === true
-        ? { testKosten: { version: 2, aktiv: body.testKosten.aktiv, limitUsd: 4,
+        ? { testKosten: { version: body.testKosten.version, aktiv: body.testKosten.aktiv, limitUsd: body.testKosten.limitUsd,
           maxManualCalls: null, maxWindowMs: null, unbekanntBleibtReserviert: true } } : {}),
+      // Alte Runtime ohne Angebotsvergleich bleibt separat lesbar; ihr Tagesbuch ist 4 USD.
       ...(body.testKosten?.version === 1 && typeof body.testKosten.aktiv === "boolean"
         && body.testKosten.limitUsd === 4 && body.testKosten.maxManualCalls === 1000
         ? { testKosten: { version: 1, aktiv: body.testKosten.aktiv, limitUsd: 4, maxManualCalls: 1000 } } : {}),

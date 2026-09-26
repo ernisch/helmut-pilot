@@ -75,26 +75,34 @@ unveränderte Kostenbücher und Profilhashes,500 inaktive Profile und keine
 Jobs/Locks/Leases. Die erneut gelesene Kostenprojektion sperrt in der lokalen
 Probe Cron und manuellen Aufruf vor Buchung und Transport. Kein bezahlter Test.
 
-Der Betreiber hat anschließend ausdrücklich **bis zu5USD insgesamt** freigegeben
-und Fortsetzung verlangt; siehe [Betreiberauftrag](autonom-bis-500-starttor-20260926.md).
-Die technische Anpassung führt dafür Auftragsversion2 mit exakt5000000 Mikro-USD
-und inklusiver Grenze ein. Version1 bleibt strikt unter4000000; die Tagesbücher
-bleiben ausschließlich bei4000000. Die Freigabe gilt nicht für Aktivierung oder
-den500er Test, Abonnements oder neue dauerhafte Ressourcen.
+Der Betreiber hat anschließend ausdrücklich **6USD als Tagesriegel und6USD
+als Gesamtgrenze** freigegeben und Fortsetzung verlangt; siehe
+[Betreiberauftrag](autonom-bis-500-starttor-20260926.md).
+Die technische Anpassung führt Tagesbuchversion2 mit6000000 Mikro-USD,
+Laufzeitpolitikversion3 und Auftragsversion2 mit ebenfalls6000000 Mikro-USD ein.
+Die Grenze ist inklusiv. Alte Tagesbücher Version1 behalten4000000; alte
+Auftragsversion1 bleibt strikt unter4000000. Einzelauftragsdeckel, verbrauchte
+Quittungen, Profilschutz und das gesonderte GO vor Aktivierung/500er Test bleiben.
 
 Begrenzte Production-Änderung nach grüner Pflicht-CI und passendem Deployment:
-Unter Zeilensperre ausschließlich Version und Limit des vorhandenen Auftrags auf
-2/5000000 setzen und die Kontoschreibversion erneuern. Auftrag, Starttag, gesamte
-Kostenhistorie, externe Kostenbindung und offene Reserven unverändert erhalten.
-Vorher den exakt erwarteten Version1-Eintrag und ruhenden Profilbestand prüfen;
-nachher alle übrigen Kontendaten auf Gleichheit und die Profilhashes nachlesen.
-Wirkung: neue Reservierungen können den belegbar gedeckten Rest bis5USD verwenden.
-Risiko: reguläre Hintergrundläufe verbrauchen ebenfalls diesen Rest; daher bleiben
-sie im selben atomaren Gesamtwächter. Rückweg ist der dokumentierte Version1-
-Eintrag, der bei der aktuellen Bindung weitere Aufrufe wieder sperrt; bereits
-entstandene oder reservierte Kosten werden dabei niemals entfernt.
+Unter Zeilensperre ausschließlich Version/Limit des vorhandenen Auftrags und
+heutigen Tagesbuchs auf2/6000000 setzen, externe Helferkosten nach neuem Beleg
+nachführen und die Kontoschreibversion erneuern. Auftrag, Starttag, sämtliche
+Tickets, verbrauchte Beträge, offene Reserven und frühere Tagesbücher bleiben
+vollständig erhalten. Vorher exakt erwartete alte Werte und ruhenden Bestand
+prüfen; nachher alle übrigen Kontendaten und die Profilhashes vergleichen.
+Wirkung: neue Reservierungen dürfen belegbar gedeckten Rest bis6USD verwenden,
+auch reguläre Hintergrundläufe im selben atomaren Gesamtwächter.
+Rückweg: ursprüngliche Version1-Limits wiederherstellen, sofern die gebundenen
+Beträge dies noch erlauben; andernfalls explizit gesperrt halten. Niemals zur
+Rückkehr unter eine Grenze verbrauchte oder reservierte Kosten entfernen.
 
 Lokale Helferkosten bleiben vor jedem weiteren bezahlten Schritt neu zu bilanzieren
 und in der externen Bindung nachzuführen. Die einmalige Erhöhung ist weder ein
 Budgetreset noch eine Freigabe verbrauchter Aufträge. Der getrennte Vorstartvertrag
 mit null ungeklärten Reserven bleibt erhalten.
+
+Die6USD-Anpassung besteht lokal19 Budgetgruppen,77 Laufzeitprüfungen,
+33 Vorstartgruppen und8 Aufnahmegruppen. Die administrative Umstellung wurde
+mit7 lokalen SQL-Prüfgruppen einschließlich vollständigem Rückrollen bei
+Abweichungen geprüft. Keine dieser Prüfungen erzeugt Anbieteraufrufe.

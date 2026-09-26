@@ -28,16 +28,18 @@ regulaere Deployments und weitere unmittelbar notwendige Vorarbeiten sind autono
 fortzusetzen. Vor jeder kritischen Aktion Umfang, Wirkung, Grenzen, Nachkontrolle
 und Rueckweg festhalten; vorhandene Freigaben nicht erneut abfragen.
 
-Am26.09.2026 hat der Betreiber die Kostenfreigabe anschließend geändert:
+Am26.09.2026 hat der Betreiber die Kostenfreigabe abschließend geändert:
 
-> Ändere es im Vertrag dass du bis zu 5 USD ausgegeben darfst. Mach weiter.
+> Ändere den Tagesriegel auf 6 usd
 
-Damit sind kumulative Auftragskosten **bis zu5USD insgesamt** ausdrücklich
-freigegeben. Dies ersetzt die frühere Gesamtgrenze unter4USD, setzt aber
-weder verbrauchte Beträge noch offene Reserven zurück. Alle auftragsbezogenen
-Anbieter-, API- und lokalen Helferkosten zählen gemeinsam. Ein Tageswechsel
-setzt diese Auftragsgrenze nicht zurück. Der technische4-USD-Riegel je UTC-Tag
-bleibt unverändert; die neue Gesamtfreigabe erhöht oder umgeht ihn nicht.
+> Gesamte Grenze auch 6 USD. BITTE ÄNDERN
+
+Damit sind **bis zu6USD je UTC-Tag und bis zu6USD insgesamt** für diesen
+Auftrag ausdrücklich freigegeben. Die frühere4USD-Grenze und zwischenzeitliche
+5USD-Gesamtfreigabe sind ersetzt. Bereits verbrauchte Beträge und offene Reserven
+werden nicht zurückgesetzt. Alle auftragsbezogenen Anbieter-, API- und lokalen
+Helferkosten zählen gemeinsam. Ein Tageswechsel setzt die Gesamtgrenze nicht
+zurück. Die technischen Sicherungen müssen diese beiden6USD-Grenzen durchsetzen.
 Vor jedem Modelllauf Kostenstand lesen und einen endlichen Einzelauftrag mit
 Abbruchbedingungen festlegen. Historische unbekannte Kosten oder verbrauchte
 Quittungen niemals als frei erklaeren oder still wiederverwenden.

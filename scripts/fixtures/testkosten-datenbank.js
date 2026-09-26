@@ -73,24 +73,24 @@ async function pruefeKosten({ psql, base, token }) {
     return runs.map(r => r.value);
   }
   const results = await five();
-  assert.equal(results.reduce((n, r) => n + r.allowed, 0), 18);
+  assert.equal(results.reduce((n, r) => n + r.allowed, 0), 28);
   const read = () => JSON.parse(psql("select data from public.helmut_store where id='test-auth-kosten'"));
   let auth = read(), t = B.pruefeTag(auth[B.KEY]["2026-09-09"], "2026-09-09");
-  assert.equal(B.belegt(t), 3816000); assert.equal(t.manualCalls, 18);
+  assert.equal(B.belegt(t), 5936000); assert.equal(t.manualCalls, 28);
   assert.deepEqual(auth.users, [{ id: "bestand" }]);
-  console.log("PASS  Fuenf getrennte Prozesse: 18 von 40 Geldreservierungen, gemeinsam 3,816 USD unter 4 USD");
+  console.log("PASS  Fuenf getrennte Prozesse: 28 von 40 Geldreservierungen, gemeinsam 5,936 USD unter 6 USD");
   await start({ base, token, mode: "freeze" });
   const restarted = await five();
   assert.equal(restarted.reduce((n, r) => n + r.allowed, 0), 0);
   auth = read(); t = B.pruefeTag(auth[B.KEY]["2026-09-09"], "2026-09-09");
-  assert.equal(B.belegt(t), 3816000); assert.equal(t.manualCalls, 18); assert.equal(t.frozen, null);
+  assert.equal(B.belegt(t), 5936000); assert.equal(t.manualCalls, 28); assert.equal(t.frozen, null);
   assert.equal(Object.values(t.calls).filter(c => c.status === "ungeklaert").length, 1);
   console.log("PASS  Unklarer Ausgang bleibt nach fuenf Prozessneustarts voll reserviert, Geldgrenze unveraendert");
   await start({ base, token, mode: "settle" });
   const continued = await five();
   assert.equal(continued.reduce((n, r) => n + r.allowed, 0), 1);
   auth = read(); t = B.pruefeTag(auth[B.KEY]["2026-09-09"], "2026-09-09");
-  assert.equal(B.belegt(t), 3816130); assert.equal(t.manualCalls, 19);
+  assert.equal(B.belegt(t), 5936130); assert.equal(t.manualCalls, 29);
   assert.equal(Object.values(t.calls).filter(c => c.status === "ungeklaert").length, 1);
   assert.deepEqual(auth.users, [{ id: "bestand" }]);
   console.log("PASS  Fuenf Neustarts nutzen nur belegbar freien Rest, ungeklaerte Reserve bleibt unangetastet");
@@ -102,19 +102,19 @@ async function pruefeKosten({ psql, base, token }) {
   assert.equal(auftrag.reduce((n, r) => n + r.allowed, 0), 2);
   auth = read();
   assert.equal(B.auftragsStand(auth, "2026-09-09").gebundenMicroUsd, 3999000);
-  assert.equal(auth[B.KEY]["2026-09-09"].limit, 4000000);
+  assert.equal(auth[B.KEY]["2026-09-09"].limit, 6000000);
   assert.deepEqual(auth.users, [{ id: "bestand" }]);
   console.log("PASS  Auftragsgrenze im selben echten CAS: fuenf Prozesse buchen zusammen nur zwei Reserven");
   psql(`update public.helmut_store set data=jsonb_set(data,'{testKostenAuftrag}',
-    '{"version":2,"id":"datenbank-test","abTag":"2026-09-09","limit":5000000,"externGebunden":4152000}')
+    '{"version":2,"id":"datenbank-test","abTag":"2026-09-09","limit":6000000,"externGebunden":5152000}')
     where id='test-auth-kosten';`);
   const erhoeht = await five();
   assert.equal(erhoeht.reduce((n, r) => n + r.allowed, 0), 2);
   auth = read();
-  assert.equal(B.auftragsStand(auth, "2026-09-09").gebundenMicroUsd, 5000000);
+  assert.equal(B.auftragsStand(auth, "2026-09-09").gebundenMicroUsd, 6000000);
   assert.equal(Object.keys(auth[B.KEY]["2026-09-09"].calls).length, 4);
-  assert.equal(auth[B.KEY]["2026-09-09"].limit, 4000000);
-  console.log("PASS  Explizite5USD-Freigabe: bestehende Reserven erhalten, Grenze inklusiv und atomar");
+  assert.equal(auth[B.KEY]["2026-09-09"].limit, 6000000);
+  console.log("PASS  Explizite6USD-Freigabe: bestehende Reserven erhalten, Grenze inklusiv und atomar");
 }
 module.exports = { pruefeKosten };
 if (require.main === module) worker().catch(() => { console.error("FAIL Kosten Datenbank Worker"); process.exitCode = 1; });
