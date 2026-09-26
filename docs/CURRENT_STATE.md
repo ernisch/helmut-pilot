@@ -1,10 +1,10 @@
 # CURRENT STATE — Helmut
 
-**Letzte Aktualisierung: 25.09.2026.** Diese Datei ist das kompakte Cockpit fuer den aktuellen, entscheidungsrelevanten Zustand. Die vollstaendige vorherige Fassung mit allen historischen Details, Flags, Migrationen, Cron Angaben, alten Sprintstaenden und Belegen bleibt wortgleich erhalten unter [archive/project_state/2026_09_23_CURRENT_STATE_vor_komprimierung.md](archive/project_state/2026_09_23_CURRENT_STATE_vor_komprimierung.md). Aeltere historische Statusfassungen bleiben zusaetzlich im bestehenden [Archiv](archive/README.md).
+**Letzte Aktualisierung: 26.09.2026.** Diese Datei ist das kompakte Cockpit fuer den aktuellen, entscheidungsrelevanten Zustand. Die vollstaendige vorherige Fassung mit allen historischen Details, Flags, Migrationen, Cron Angaben, alten Sprintstaenden und Belegen bleibt wortgleich erhalten unter [archive/project_state/2026_09_23_CURRENT_STATE_vor_komprimierung.md](archive/project_state/2026_09_23_CURRENT_STATE_vor_komprimierung.md). Aeltere historische Statusfassungen bleiben zusaetzlich im bestehenden [Archiv](archive/README.md).
 
 ## 1 · Aktueller Stand
 
-* **Aktueller Roadmap-Stand25.09.: siehe §6.** Productionbdd05dac READY; letzter Profilbeleg500/0. 30er Quellenkorrekturen verifiziert; frische Vollversorgung fuer500 nicht bestanden. Kein500er Start.
+* **Aktueller Roadmap-Stand26.09.: siehe §6.** [PR583](https://github.com/ernisch/helmut-pilot/pull/583) ist nach gruener Pflicht-CI gemergt (`32bb15d3`). Frische Vollversorgung und fachlicher500er Nachweis bleiben offen. Interne Ausroll- und Betriebsnachweise werden separat lokal gehalten; die unten datierten historischen Belege sind keine frische Startfreigabe.
 
 * **Production-Belege dieses Sprints:** PR #549 (Trennung von Lage/Radar/Briefing) gemergt als `00ed4c27b7703849d57ca9f357dcf15a40f5f311`, Vercel `dpl_6iDLuovtgpFL7DSZX1M2djMYugdQ` READY, PR-CI `36031516394` SUCCESS. Auftragsbezogene Reparaturen: [PR #550](https://github.com/ernisch/helmut-pilot/pull/550) (Appstart ohne Hintergrundmodelle, begrenzte Quellenabrufe) und [PR #551](https://github.com/ernisch/helmut-pilot/pull/551) (500er Fachleser an neue Testfenster gebunden); ihre finalen Merge-/Ausrollbelege stehen direkt im jeweiligen PR. Vierer-Migration angewendet; Zweierlauf `36029408684` nach einem Parteienfehler gestoppt: 1 Aufruf, 0,005804 USD, Koçak nicht begonnen. [Vierer-Bilanz](betrieb/verstehen-vier-nacharbeit-20260924.md). **Noch keine belastbare 500er Startbereitschaft**, siehe [Starttor](betrieb/500-starttor-20260924.md).
 * **Fuenfter (freigegebener) scharfer 169er Lauf — erstmals ALLE 122 Cluster verarbeitet, fachlich nicht bestanden.** Workflow-Run `35987448290`, `run_attempt = 1`, `failure`, 24.09.2026 10:28:42–10:54:17 UTC, Runtime-Commit = Dispatch = Checkout `2d412d0418f5d6170f2c34ff69dbd846c4e0c703`, Dokument-Snapshot `ea84f26c…`. Die Bindung hielt; der Schutzvertrag passierte mit **81 Modellkandidaten** (≤ 113) — **PR #541 wirkte belegbar** (der vierte Lauf war noch mit 114 Kandidaten gescheitert). `abbruchGrund = null`, `vollstaendigVerarbeitet = true`, `fachlichBestanden = false`; Bilanz `saved 63`, `updated 14`, `duplicate 34`, `merged 7`, `skipped-invalid 4` (`unbekannt 4`); **81 Modellaufrufe**, `quellenabrufe 0`, `profilwrites 0`, `kommunikation 0`; Laufkosten **0,522795 USD** von 0,80 USD; Quittung `verstehen169-20260924-c` terminal **`unbekannt`** (verbraucht). **Vier lokale `unknown`** (Klasse A, kein globaler Abbruch): `vg-gemeinsame-20260921-dcd0f5`, `vg-linkenpolitiker-20260921-37cdeb` und `vg-arbeitsplätze-20260715-6cc672` (Aktualisierung) mit `quellenbeleg-parteien`, sowie `vg-verzögerung-20230613-95c80f` mit `validierung-fehlgeschlagen` und leerer Fehlerliste. CAS danach je `zustand=unbekannt` (Betreiberbeleg). **In diesem 169er Lauf keine erneute Freigabe; die spaetere isolierte Nacharbeit steht oben.** [Beleg](betrieb/verstehen-einmalig-169-20260922.md) §24.
@@ -131,8 +131,17 @@ Kosten,0,312021USD von4USD. Keine Vollversorgung oder500er Abnahme.
 RSA-Aufnahme36175850274 (25.09.18:49UTC,c6a55e36): Paartrennung bestanden,
 Gesamturteil negativ;12 Karten/0 Absaetze. PR582 sperrt2 Ereignismischungen;
 bdd05dac seit19:23:17UTC READY, keine neue Inhaltsaufnahme.
-Titelbelegschutz lokal:6 von10 Karten nur Originaltitel/Quellenhinweis,4 unveraendert.
-Gezielte Tests bestanden; Code bereit, Merge offen. Faktenbindung/Nutzen offen. [Beleg](betrieb/roadmap-nachpruefung-20260925.md#inhaltsabnahme-und-quellenmix-korrektur-nach-der-einmalaufnahme).
+Titelbelegschutz:6 von10 Karten im lokalen Replay nur Originaltitel/Quellenhinweis,4 unveraendert.
+[PR583](https://github.com/ernisch/helmut-pilot/pull/583) gemergt als32bb15d3;
+[Pflicht-CI am finalen Kopf167ce420](https://github.com/ernisch/helmut-pilot/actions/runs/36202719319) gruen.
+Cookie-/Zugriffstexte gelten ebenfalls nicht als Auszug. Faktenbindung/Nutzen offen. [Beleg](betrieb/roadmap-nachpruefung-20260925.md#inhaltsabnahme-und-quellenmix-korrektur-nach-der-einmalaufnahme).
+Quellenkontext-Korrektur26.09.: Deutschlandfunk-Nachrichten ohne Article-JSON-LD
+werden ueber kanonische Adresse, sichtbaren Artikelkopf und exakten Publikationszeitpunkt
+gebunden. Nur der erste vollstaendige Absatz, keine spaetere Ersatzwahl. Lokal13/15
+bereits gelesene oeffentliche Originale akzeptiert; zwei bewusst abgewiesen
+(Mehrfachabsatz mit Zeilenumbruch, zu kurzer erster Absatz). Vier weitere Tagesschau-
+Originale liefern bereits mit dem bestehenden Leser Kontext; zwei bleiben mehrdeutig.
+Das belegt die lokale Kontextgewinnung, weder Import noch Verstehen oder500er Versorgung.
 Versorgung, sichtbare Fachabnahme, Kosten/-zeit, lebender Endwaechter und finaler
 Startplan bleiben vor Aktivierung notwendig.36er Abnahme und verbrauchte
 Verstehenslaeufe nicht wiederholen.
