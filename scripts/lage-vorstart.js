@@ -49,6 +49,10 @@ const PRUEFAUFWAND = Object.freeze({ ...ARTIKELSTAND, auftrag:"pruefaufwand",
   quittung:"lage-pruefaufwand-20260926-c", maxOutputTokens:6000 });
 const GENERATORPRUEFAUFWAND = Object.freeze({ ...ARTIKELSTAND, auftrag:"generatorpruefaufwand",
   quittung:"lage-generatorpruefaufwand-20260926-a" });
+const FACHKORREKTUR = Object.freeze({ ...ARTIKELSTAND, auftrag:"fachkorrektur",
+  quittung:"lage-fachkorrektur-20260926-a" });
+const GENERATORFACHKORREKTUR = Object.freeze({ ...ARTIKELSTAND, auftrag:"generatorfachkorrektur",
+  quittung:"lage-generatorfachkorrektur-20260926-a" });
 // Einzige zulaessige Vorgaengerquittung: der erfolgreich abgeschlossene Vierfall-Nachweis
 // dieses Laufs und Commits. Sie wird ausschliesslich gelesen und nie umgeschrieben.
 const GENERATOR_VORG = Object.freeze({ runId:"nachlauf500-36249646222",
@@ -65,7 +69,7 @@ const url = value => require("../lib/helmut/dedup").canonicalizeUrl(value);
 function konfiguration(env, commit, jetzt = Date.now()) {
   const auftrag = env.HELMUT_VORSTART_AUFTRAG || "erstpruefung";
   const reparatur = [ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG].find(x => x.auftrag === auftrag);
-  const artikelauftrag = [ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,GENERATORNACHWEIS,AUSWAHLBEGRUENDUNG,PRUEFAUFWAND,GENERATORPRUEFAUFWAND].find(x => x.auftrag === auftrag);
+  const artikelauftrag = [ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,GENERATORNACHWEIS,AUSWAHLBEGRUENDUNG,PRUEFAUFWAND,GENERATORPRUEFAUFWAND,FACHKORREKTUR,GENERATORFACHKORREKTUR].find(x => x.auftrag === auftrag);
   const artikelstand = Boolean(artikelauftrag);
   fordere(auftrag === "erstpruefung" || Boolean(reparatur) || artikelstand,"auftrag");
   fordere(!reparatur || env.HELMUT_VORSTART_PROFIL === reparatur.profilHash,"reparaturbindung");
@@ -81,7 +85,9 @@ function konfiguration(env, commit, jetzt = Date.now()) {
   return { commit, profilHash:env.HELMUT_VORSTART_PROFIL, runId:"nachlauf500-" + env.GITHUB_RUN_ID,
     reparatur:Boolean(reparatur), artikelstand, mandatsurteil:auftrag === MANDATSURTEIL.auftrag,
     pruefaufwand:auftrag === PRUEFAUFWAND.auftrag,
-    generatorpruefaufwand:auftrag === GENERATORPRUEFAUFWAND.auftrag,
+    generatorpruefaufwand:[GENERATORPRUEFAUFWAND.auftrag,GENERATORFACHKORREKTUR.auftrag].includes(auftrag),
+    fachkorrektur:auftrag === FACHKORREKTUR.auftrag,
+    generatorfachkorrektur:auftrag === GENERATORFACHKORREKTUR.auftrag,
     generatornachweis:[GENERATORNACHWEIS.auftrag,AUSWAHLBEGRUENDUNG.auftrag].includes(auftrag),
     altHash:reparatur?.altHash || null,
     quittung:artikelstand ? artikelauftrag.quittung : (reparatur?.quittung || QUITTUNG) };
@@ -183,7 +189,7 @@ function pruefePruefaufwandTimeoutVorgaenger(alt, auth) {
     && b.responseRecovered === false, "pruefaufwand-timeout-vorgaenger");
 }
 function reviewOptionen(cfg) {
-  const medium = cfg.pruefaufwand || cfg.generatorpruefaufwand;
+  const medium = cfg.pruefaufwand || cfg.fachkorrektur || cfg.generatorpruefaufwand;
   return { strict:true, reasoningEffort:medium ? "medium" : "low",
     maxOutputTokens:medium ? PRUEFAUFWAND.maxOutputTokens : 3000 };
 }
@@ -192,6 +198,27 @@ function pruefeGeneratorPruefaufwandVorgaenger(alt) {
   // sechs Paarurteile, Antwort, Kostenabschluss und unveraenderte Profile.
   fordere(hash(alt) === "6597689365c5bbc8608d57b763ea68e283adccb1a6a8bd8e2d591d1271bb3fce",
     "generatorpruefaufwand-vorgaenger");
+}
+function pruefeFachkorrekturVorgaenger(alt, archiv) {
+  fordere(hash(alt) === "9410bbaa864129ea4cd0718b95e5fd40b9f117fad33b16a8ec5f1308d4129d9f"
+    && hash(archiv) === "d0cf0b61f2c0db72e29bed5da66c7fe03dec1e61cdf9f470033b30ac09d3bac9",
+    "fachkorrektur-vorgaenger");
+}
+function pruefeGeneratorFachkorrekturVorgaenger(alt, input, profile, commit) {
+  const M = require("./lage-pruefaufwand"), faelle = require("./fixtures/lage-fachkorrektur-zwei.json");
+  fordere(alt?.quittungsschluessel === FACHKORREKTUR.quittung && alt.status === "abgeschlossen"
+    && alt.ok === true && alt.runtimeCommit === commit && /^nachlauf500-\d{5,20}$/.test(alt.runId)
+    && alt.idHash === ARTIKELSTAND.profilHash && alt.profileUnveraendert === true
+    && alt.offeneKosten === 0 && alt.freigegebeneAufrufe === 1 && alt.maxAufrufe === 1
+    && alt.maxUsd === .25 && alt.laufkostenUsd > 0 && alt.laufkostenUsd <= .25
+    && alt.sollFaelle === 2 && alt.reasoningEffort === "medium" && alt.maxOutputTokens === 6000
+    && alt.maxMs === MAX_MS && alt.gespeicherterLageText === false
+    && alt.fachbeleg?.eingabe?.paketHash === input.paketHash
+    && hash(alt.fachbeleg.eingabe) === hash(input)
+    && alt.fachbeleg.antwortHash === hash(alt.fachbeleg.antwort), "generatorfachkorrektur-vorgaenger");
+  const result = M.auswertung(input,alt.fachbeleg.antwort,profile,faelle);
+  fordere(result.ok && hash(result.bilanz) === hash(alt.bilanz) && alt.paarvergleich === true,
+    "generatorfachkorrektur-urteil");
 }
 function pruefePruefaufwandVorgaenger(alt) {
   fordere(alt?.status === "gestoppt" && alt.ok === false
@@ -405,17 +432,30 @@ async function main(args = process.argv.slice(2), env = process.env) {
     fordere(timeout.length === 1,"pruefaufwand-timeout-vorgaenger");
     pruefePruefaufwandTimeoutVorgaenger(timeout[0].data,await S.readAuthStore());
   }
-  if (cfg.generatorpruefaufwand) {
+  if (cfg.generatorpruefaufwand && !cfg.generatorfachkorrektur) {
     const alt = await read("helmut_store","select=data&id=eq."+PRUEFAUFWAND.quittung+"&limit=1");
     fordere(alt.length === 1,"generatorpruefaufwand-vorgaenger");
     pruefeGeneratorPruefaufwandVorgaenger(alt[0].data);
+  }
+  if (cfg.fachkorrektur || cfg.generatorfachkorrektur) {
+    const alt = await read("helmut_store","select=data&id=eq."+GENERATORPRUEFAUFWAND.quittung+"&limit=1");
+    const archiv = await read("helmut_store","select=data&id=eq.lage-fachquarantaene-20260926-a&limit=1");
+    fordere(alt.length === 1 && archiv.length === 1,"fachkorrektur-vorgaenger");
+    pruefeFachkorrekturVorgaenger(alt[0].data,archiv[0].data);
+    if (cfg.generatorfachkorrektur) {
+      const urteil = await read("helmut_store","select=data&id=eq."+FACHKORREKTUR.quittung+"&limit=1");
+      const p = profiles.find(p => bindung(p) === cfg.profilHash);
+      fordere(p && urteil.length === 1,"generatorfachkorrektur-vorgaenger");
+      const input = await require("./lage-pruefaufwand").ladePaket(p,S,new Date(),require("./fixtures/lage-fachkorrektur-zwei.json"));
+      pruefeGeneratorFachkorrekturVorgaenger(urteil[0].data,input,p,cfg.commit);
+    }
   }
   fordere(!(await read("helmut_store","select=id&id=eq."+cfg.quittung+"&limit=1")).length,"verbraucht");
   fordere(await K.laufGebundenUsd(cfg.runId,{env}) === 0,"laufkosten-vorhanden");
   const q = execute ? B.quittungsAdapter(env) : null;
   const timer = execute ? setTimeout(() => { console.error("lage-vorstart-harte-laufzeit; kein Retry");process.exit(1); },MAX_MS) : null;
   try {
-    const M = cfg.pruefaufwand ? require("./lage-pruefaufwand")
+    const M = (cfg.pruefaufwand || cfg.fachkorrektur) ? require("./lage-pruefaufwand")
       : cfg.mandatsurteil ? require("./lage-mandatsurteil") : null;
     const lauf = M ? M.einmallauf : einmallauf;
     const result = await lauf(cfg,{ execute,now:Date.now,ruhe,bestand,
@@ -435,7 +475,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
       vorschau:p => require("../lib/helmut/lage").buildLageBriefing(p,{cacheOnly:true}),
       artikelstand:async () => artikelstandGrundlage(await S.getSourcesForVorgang(ARTIKELSTAND.vorgangId),
         ARTIKELSTAND,Date.now()),
-      reviewPaket:p => M.ladePaket(p,S),
+      reviewPaket:p => M.ladePaket(p,S,new Date(),cfg.fachkorrektur ? require("./fixtures/lage-fachkorrektur-zwei.json") : undefined),
       reviewQuittung:async () => {
         const rows = await read("helmut_store","select=data&id=eq."+cfg.quittung+"&limit=2");
         fordere(rows.length === 1,"sollfall-quittung-nicht-bestaetigt");return rows[0].data;
@@ -452,6 +492,7 @@ if (require.main === module) main().then(c => { process.exitCode=c; }).catch(e =
   console.log(JSON.stringify({ok:false,grund:/^lage-vorstart-[a-z-]+$/.test(e.message || "") ? e.message : "lage-vorstart-technischer-fehler",automatischeWiederholung:false}));process.exitCode=1;
 });
 module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main,ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG,
+  FACHKORREKTUR,GENERATORFACHKORREKTUR,pruefeFachkorrekturVorgaenger,pruefeGeneratorFachkorrekturVorgaenger,
   GENERATORPRUEFAUFWAND,pruefeGeneratorPruefaufwandVorgaenger,
   ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,GENERATORNACHWEIS,AUSWAHLBEGRUENDUNG,PRUEFAUFWAND,GENERATOR_VORG,
   pruefeEinzelquellenVorgaenger,pruefeGeneratorVorgaenger,pruefeAuswahlVorgaenger,pruefePruefaufwandVorgaenger,pruefePruefaufwandTransportVorgaenger,pruefePruefaufwandTimeoutVorgaenger,reviewOptionen,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};
