@@ -9,9 +9,9 @@ on:
         description: Gebundener Fingerabdruck genau eines vorhandenen Profils
         required: true
       auftrag:
-        description: Einmalauftrag; datumsbindung prueft den reparierten Generator und die Datums-Vorpruefung
+        description: Einmalauftrag; mandatspruefung prueft das Quellenreview mit mittlerem Denkaufwand
         type: choice
-        options: [erstpruefung, zeitbezug, datumsbindung]
+        options: [erstpruefung, zeitbezug, datumsbindung, mandatspruefung]
         default: erstpruefung
       confirm_text:
         description: Leer = nur lesen; Ausfuehrung ausschliesslich mit EIN_PROFIL_LAGE_MAX_ZWEI_AUFRUFE
