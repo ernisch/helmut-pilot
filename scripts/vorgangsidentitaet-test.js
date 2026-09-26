@@ -474,6 +474,36 @@ check("10 · eine reine Wiederveroeffentlichung verdraengt kein neues Faktum",
       { vorgangId: "vg-verkehrsminister", documents: [amtAlt, amtZweit] }).gleich === true);
 }
 
+// 14 · Namenspartikeln duerfen denselben Redner nicht als Sachbeleg retten.
+{
+  const rede = d("rede-leyen", "Rede zur Lage der Europäischen Union - Von der Leyen tritt im Europaparlament auf",
+    "2026-09-16T03:37:04Z", "deutschlandfunk-politik",
+    "EU-Kommissionspräsidentin von der Leyen hält am Vormittag im Europaparlament in Straßburg eine Rede zur Lage der Europäischen Union.");
+  const hilfe = d("hilfe-leyen", "Afrika, Ukraine, Nahost - EU-Kommissionspräsidentin von der Leyen kündigt 710 Millionen Euro Hilfsgelder für Vertriebene und Krisengebiete an",
+    "2026-09-26T21:50:24Z", "deutschlandfunk-politik",
+    "Die EU will rund 710 Millionen Euro für Vertriebene in Subsahara-Afrika sowie von Krisen betroffene Menschen weltweit bereitstellen.");
+  for (const alt of [rede, { ...rede, published_at: hilfe.published_at }]) {
+    check("14 · EU-Rede und Hilfsankuendigung bleiben fern wie zeitnah getrennt",
+      !zusammen(alt, hilfe).gleich && !zusammen(hilfe, alt).gleich
+      && clusterAnzahl([alt, hilfe]) === 2 && clusterAnzahl([hilfe, alt]) === 2
+      && !V.sameVorgang({ documents: [hilfe] }, { documents: [alt] }).gleich
+      && !V.sameVorgang({ documents: [alt] }, { documents: [hilfe] }).gleich);
+  }
+  check("14 · Namenspartikeln werden allgemein erkannt",
+    V.rednerAttributionen("Finanzministerin de Vries").get("finanzministerin").has("vries")
+    && V.rednerAttributionen("Verkehrsminister van den Bergen").get("verkehrsminister").has("bergen"));
+  check("14 · Satzgrenzen und Verben nach Partikeln ergeben keinen Namen",
+    V.rednerAttributionen("Finanzministerin von. Kritik").size === 0
+    && V.rednerAttributionen("Finanzministerin von der Leyen").get("finanzministerin").has("leyen")
+    && V.rednerAttributionen("Finanzministerin von der regierung").size === 0);
+  const folge = d("hilfe-folge", "Von der Leyen kündigt Hilfsgelder für Vertriebene an",
+    "2026-09-27T01:00:00Z", "zweite-redaktion",
+    "EU-Kommissionspräsidentin von der Leyen kündigt 710 Millionen Euro Hilfsgelder für Vertriebene und Krisengebiete an.");
+  check("14 · echte Fortschreibung der Hilfsankuendigung bleibt gebunden",
+    zusammen(hilfe, folge).gleich && zusammen(folge, hilfe).gleich
+    && clusterAnzahl([hilfe, folge]) === 1);
+}
+
 console.log(`\n${n - fail}/${n} Assertions erfolgreich.`);
 if (fail) console.log(`\nFEHLGESCHLAGEN: ${fail}`);
 process.exit(fail === 0 ? 0 : 1);

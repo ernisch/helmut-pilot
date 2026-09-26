@@ -218,6 +218,17 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
       }, erwartet: F.FRISCHE3_REST });
       assert.equal(r.ok, false); assert.equal(r.grund, "verstehen-frische3-rest-gesperrter-vorgang");
       assert.equal(calls, 1);
+      alt.vorgang_id = "vg-anderer-bestand";
+      alt.id = "ko-vg-anderer-bestand";
+      const anderer = await V.pruefeUndPlane({ ids: docs3.map(d => d.id), commit: F.FRISCHE3_REST.commit, deps: {
+        ladeDokumente: async () => docs3,
+        artikelkontextVersorgung: F.ausGesichertenBelegen(payload.rows, payload.belege),
+        getExisting: async () => null, getExistingStreng: async () => null,
+        findVorgangCandidates: async () => [alt], listVorgangDocuments: async () => [],
+        listWiederaufnahmen: async () => [], verstehenVertrag: () => ({})
+      }, erwartet: F.FRISCHE3_REST });
+      assert.equal(anderer.ok, false);
+      assert.equal(anderer.grund, "verstehen-frische3-rest-unerwartete-bestandsbindung");
     });
     await test("Gebundener Rest3-Lauf: einmalig, Kostenreserve, erster Fachfehler stoppt", async () => {
       const docs3 = F.IDS.map(id => payload.rows.find(d => d.id === id));
