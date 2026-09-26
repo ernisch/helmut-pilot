@@ -150,5 +150,90 @@ function fixture() {
     await assert.rejects(T.einmallauf(reparatur,d),/reparatur-konkurrenz/);
     assert.equal(trace.filter(x=>x==="modell").length,1);assert.equal(state.finished.status,"gestoppt");
   });
+  // --- Neue Grundlage: belegter Bundestags-Artikelstand (kein Reparaturauftrag) ---
+  // Produktionspfad bleibt fest; hier nur eine synthetische Bindung als eingespielter
+  // erwarteter Vertrag, damit der echte Leserweg ohne Production-Daten pruefbar ist.
+  const crypto = require("node:crypto");
+  const standModul = require("../lib/helmut/bundestag-artikelstand");
+  const artikelText = "Der Bundestag hat am 25. September 2026 den Entwurf eines Gesetzes zur Aenderung des "
+    + "Bundespolizeigesetzes in geaenderter Fassung beschlossen und an den Innenausschuss zurueckgewiesen.";
+  const artikelUrl = "https://bundestag.de/dokumente/textarchiv/2026/kw39-bundespolizeigesetz-1087654";
+  const artikelTitel = "Bundestag beschliesst Aenderung des Bundespolizeigesetzes";
+  function artikelQuelle(text = artikelText) {
+    const absatzHash = crypto.createHash("sha256").update(text).digest("hex");
+    const standHash = standModul.standHashFuer({ url:artikelUrl, titel:artikelTitel,
+      publikationstag:"2026-09-25", absatzHash });
+    return { id:"rd-" + standHash, content_hash:standHash, published_at:null, url:artikelUrl,
+      canonical_url:artikelUrl, title:artikelTitel, source_name:"Deutscher Bundestag", summary:text,
+      bundestag_artikelstand:{ version:1, herkunft:"bundestag-textarchiv-leitabsatz", url:artikelUrl,
+        titel:artikelTitel, publikationstag:"2026-09-25", absatzHash, standHash } };
+  }
+  // Drift = dieselbe Quellenkennung, aber der belegte Absatz weicht ab -> fail closed.
+  const quelle = artikelQuelle(), drift = { ...quelle, summary:artikelText + " Nachtrag." };
+  const absatzHash = crypto.createHash("sha256").update(artikelText).digest("hex");
+  const erwartet = { ...T.ARTIKELSTAND, profilHash:T.bindung(profile), quelleId:quelle.id,
+    vorgangId:"vg-test-artikelstand", standHash:quelle.content_hash, absatzHash,
+    absatzZeichen:artikelText.length };
+  const artikelCfg = { ...cfg, artikelstand:true, profilHash:T.bindung(profile), quittung:T.ARTIKELSTAND.quittung };
+  function artikelFixture() {
+    const { d, trace, state } = fixture();
+    d.artikelstand = async () => T.artikelstandGrundlage([quelle], erwartet, start);
+    d.vorschau = async () => ({ available:true, pendingNarrative:true, vorgaenge:[
+      { vorgangId:erwartet.vorgangId, sources:[{ name:"Deutscher Bundestag", title:artikelTitel, url:artikelUrl }] },
+      { vorgangId:"vg-zweit" }] });
+    return { d, trace, state };
+  }
+  await test("Artikelstand hat eigene Quittung, feste Profilbindung und keine Reparatur",()=>{
+    const neu = T.konfiguration({ ...env, HELMUT_VORSTART_AUFTRAG:"artikelstand",
+      HELMUT_VORSTART_PROFIL:T.ARTIKELSTAND.profilHash }, commit, start);
+    assert.equal(neu.quittung,T.ARTIKELSTAND.quittung);assert.equal(neu.artikelstand,true);
+    assert.equal(neu.reparatur,false);assert.equal(neu.altHash,null);
+    assert(![cfg.quittung,T.ZEITBEZUG.quittung,T.DATUMSBINDUNG.quittung,T.MANDATSPRUEFUNG.quittung]
+      .includes(neu.quittung));
+    assert.throws(()=>T.konfiguration({ ...env, HELMUT_VORSTART_AUFTRAG:"artikelstand" },commit,start),/artikelstandbindung/);
+  });
+  await test("Lagevorschau muss die Grundlage als Karte des richtigen Vorgangs zeigen",async()=>{
+    const { d, trace } = artikelFixture();
+    d.vorschau = async () => ({ available:true, pendingNarrative:true, vorgaenge:[
+      { vorgangId:"vg-fremd", sources:[{ title:artikelTitel, url:artikelUrl }] }, { vorgangId:erwartet.vorgangId }] });
+    await assert.rejects(T.einmallauf(artikelCfg,d),/artikelstand-karte/);assert.deepEqual(trace,[]);
+    const nah = artikelFixture();
+    nah.d.vorschau = async () => ({ available:true, pendingNarrative:true, vorgaenge:[
+      { vorgangId:erwartet.vorgangId, sources:[{ title:artikelTitel, url:"https://example.org/andere" }] }, {}] });
+    await assert.rejects(T.einmallauf(artikelCfg,nah.d),/artikelstand-karte/);assert.deepEqual(nah.trace,[]);
+  });
+  await test("Artikelstandplan liest nur und schreibt oder ruft nie",async()=>{
+    const { d, trace } = artikelFixture();d.execute=false;
+    const r = await T.einmallauf(artikelCfg,d);
+    assert.equal(r.ok,true);assert.equal(r.lesebeweis.standHash,quelle.content_hash);
+    assert.equal(r.lesebeweis.absatzZeichen,artikelText.length);assert.deepEqual(trace,[]);
+  });
+  await test("Artikelstand verlangt den fehlenden Tagessatz und laesst Altes unberuehrt",async()=>{
+    const { d, trace } = artikelFixture();d.cache=async()=>({ payload:{ qualitaet:true } });
+    await assert.rejects(T.einmallauf(artikelCfg,d),/bestehender-tagessatz/);assert.deepEqual(trace,[]);
+  });
+  await test("Artikelstanddrift stoppt vor dem ersten und vor dem zweiten bezahlten Aufruf",async()=>{
+    for (const [stoppAb, erwarteteAufrufe] of [[3,0],[4,1]]) {
+      const { d, trace, state } = artikelFixture();let grundlagen = 0;
+      d.artikelstand = async () => { grundlagen += 1;
+        return T.artikelstandGrundlage([grundlagen >= stoppAb ? drift : quelle],erwartet,start); };
+      await assert.rejects(T.einmallauf(artikelCfg,d),/artikelstand-stand/);
+      assert.equal(trace.filter(x=>x==="modell").length,erwarteteAufrufe);
+      assert.equal(state.finished.status,"gestoppt");
+    }
+  });
+  await test("Artikelstand laeuft einmalig erfolgreich mit Lesebeweis in der Quittung",async()=>{
+    const { d, state, trace } = artikelFixture();
+    const r = await T.einmallauf(artikelCfg,d);
+    assert.equal(r.ok,true);assert.equal(r.freigegebeneAufrufe,2);
+    assert.deepEqual(trace,["lock","claim","modell","modell","release","finish"]);
+    assert.equal(state.finished.status,"abgeschlossen");
+    assert.equal(state.finished.quittungsschluessel,T.ARTIKELSTAND.quittung);
+    assert.equal(state.finished.idHash,T.bindung(profile));
+    assert.equal(state.finished.lesebeweis.standHash,quelle.content_hash);
+    assert.equal(state.finished.lesebeweis.publikationstag,"2026-09-25");
+    assert.equal(state.finished.lesebeweis.absatzZeichen,artikelText.length);
+    assert.equal(state.finished.funktionsnachweis500,false);
+  });
   console.log(count+" Gruppen erfolgreich");
 })().catch(e=>{console.error(e);process.exitCode=1;});
