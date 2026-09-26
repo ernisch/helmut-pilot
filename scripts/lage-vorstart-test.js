@@ -88,6 +88,14 @@ function fixture() {
     assert.throws(()=>T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"datumsbindung"},commit,start),/reparaturbindung/);
   });
   const reparatur = {...cfg,reparatur:true,altHash:hash(alt.payload),quittung:T.ZEITBEZUG.quittung};
+  await test("Mandatspruefung behaelt dieselben Schutzgrenzen und eine eigene verbrauchbare Quittung",()=>{
+    const neu = T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"mandatspruefung",
+      HELMUT_VORSTART_PROFIL:T.MANDATSPRUEFUNG.profilHash},commit,start);
+    assert.equal(neu.quittung,T.MANDATSPRUEFUNG.quittung);
+    assert(![cfg.quittung,T.ZEITBEZUG.quittung,T.DATUMSBINDUNG.quittung].includes(neu.quittung));
+    assert.equal(neu.altHash,T.ZEITBEZUG.altHash);assert.equal(neu.reparatur,true);
+    assert.throws(()=>T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"mandatspruefung"},commit,start),/reparaturbindung/);
+  });
   await test("Reparatur verlangt genau den fachlich ungueltigen Altstand",async()=>{
     for(const variante of [null,{...alt,payload:{fremd:true}},alt]){
       const {d,state,trace}=fixture();state.cache=variante;
