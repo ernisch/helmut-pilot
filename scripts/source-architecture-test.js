@@ -216,7 +216,8 @@ check("P1-5: reparierte Pflichtquellen (Bundestag/Bundesregierung) needs_review,
 check("P1-5: die 6 reparierten Bundeswege tragen ihre verifizierte Ersatz-URL", (() => {
   const byId = new Map(M.retrievalPaths.map((p) => [p.legacy_source_id, p]));
   return byId.get("bundestag").url === "https://www.bundestag.de/static/appdata/includes/rss/hib.rss"
-    && byId.get("bundesregierung").url === "https://news.google.com/rss/search?q=site:bundesregierung.de&hl=de&gl=DE&ceid=DE:de"
+    && byId.get("bundesregierung").url === "https://www.bundesregierung.de/service/rss/breg-de/1151242/feed.xml"
+    && byId.get("bundesregierung").method === "rss"
     && byId.get("die-linke").url === "https://news.google.com/rss/search?q=site:die-linke.de&hl=de&gl=DE&ceid=DE:de"
     && byId.get("linksfraktion").url === "https://www.dielinkebt.de/presse/pressemitteilungen/feed.rss"
     && byId.get("ausschuss-arbeit-soziales").url === "https://news.google.com/rss/search?q=site:bundestag.de%20%22Ausschuss%20f%C3%BCr%20Arbeit%20und%20Soziales%22&hl=de&gl=DE&ceid=DE:de"
