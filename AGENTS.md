@@ -14,10 +14,15 @@ Zuverlässigkeit, Quellenqualität, Einfachheit, Sicherheit und Verkaufsfähigke
 
 ## Modellrouting für lokale Agent-Arbeit
 
-Astra bleibt führender Orchestrator und verantwortet Aufgabenzuteilung, Prüfung
-und Abnahme der lokalen Helfer.
+GPT-5.6 Sol High ist der führende Standard-Orchestrator und verantwortet
+Aufgabenzuteilung, Zerlegung, Prüfung und Abnahme der lokalen Helfer.
 
-Es gibt vier Modell/Denkstufen-Kombinationen:
+Astra High ist kein Standard-Orchestrator mehr, sondern eine manuelle
+Eskalationsstufe für seltene kritische Grenzfälle. Normale Repository-Arbeit,
+Routine-Debugging, GitHub- und Vercel-Nurleseprüfungen, PR-Prüfung und klar
+begrenzte lokale Umsetzung rechtfertigen für sich allein keinen Astra-Einsatz.
+
+Es gibt vier DeepSeek Modell/Denkstufen-Kombinationen:
 
 DeepSeek Flash High ist Standard für normale lokale Coding Aufgaben, kleine und
 mittlere Änderungen, normale Bugfixes, gezielte Tests, Dokumentation,
@@ -35,34 +40,45 @@ lokale Blocker, besonders schwer nachvollziehbare lokale Fehler und Probleme
 eingesetzt, für die Pro High voraussichtlich nicht ausreicht.
 
 Unklare, bereichsübergreifende, architekturrelevante oder Production-nahe
-Gesamtprobleme werden zuerst von Astra analysiert und in sichere Teilaufgaben
+Gesamtprobleme werden zuerst von Sol High analysiert und in sichere Teilaufgaben
 zerlegt. Dass das Gesamtproblem mehrere Helmut-Bereiche berührt, ist allein kein
-Grund, die gesamte Umsetzung bei Astra zu behalten.
+Grund, die gesamte Umsetzung bei Sol zu behalten oder zu Astra zu eskalieren.
 
 Sobald eine Teilaufgabe klar abgegrenzt, lokal umsetzbar, mit eindeutigen
 Abnahmekriterien beschreibbar und ohne eigene kritische Production-Entscheidung
-ausführbar ist, delegiert Astra diese Teilaufgabe an die niedrigste ausreichend
+ausführbar ist, delegiert Sol diese Teilaufgabe an die niedrigste ausreichend
 starke DeepSeek-Kombination.
 
-Astra behält die bereichsübergreifende Ursachenanalyse, Architektur- und
-Production-Entscheidungen, Sicherheitsfragen, Integrationsprüfung und finale
-Abnahme. Astra setzt eine lokale Teilaufgabe selbst nur um, wenn sie nicht sicher
-abtrennbar ist, eine Delegation das Risiko wesentlich erhöhen würde oder die
-Teilaufgabe selbst zu den geschützten kritischen Bereichen gehört.
+Sol behält die Gesamtsteuerung, bereichsübergreifende Ursachenanalyse,
+Integrationsprüfung, normale Architekturabwägungen, normale Release-Steuerung,
+rein lesende Production-Prüfungen und finale Prüfung der DeepSeek-Ergebnisse.
+Sol setzt eine lokale Teilaufgabe selbst nur um, wenn sie nicht sicher abtrennbar
+ist, eine Delegation das Risiko wesentlich erhöhen würde oder die Aufgabe so klein
+ist, dass die Delegation mehr Aufwand als Nutzen erzeugt.
 
-Ziel des Routings ist nicht, möglichst viel Arbeit bei Astra zu halten, sondern
-Astra für Führung, schwierige Gesamtzusammenhänge und Prüfung zu nutzen und klar
-abgegrenzte lokale Umsetzung bevorzugt an DeepSeek zu delegieren.
+Astra High wird nur empfohlen, wenn Sol einen echten kritischen Grenzfall belegt:
+eine sehr unklare systemweite Ursache, eine besonders schwierige und
+folgenreiche Architekturentscheidung, einen schwer nachvollziehbaren
+Production-Sicherheitsfehler, eine kritische Sicherheits- oder
+Migrationsentscheidung, eine schwierige Entscheidung unmittelbar vor
+Production-Wirkung oder eine außergewöhnlich schwierige finale 500er Abnahme.
+Routine-Production-Nähe allein ist kein Astra-Grund.
 
-Astra wählt vor jeder Delegation direkt die niedrigste voraussichtlich
+Es gibt in diesem Routing keinen automatischen Astra-Helfer. Hält Sol Astra High
+für notwendig, stoppt Sol vor der kritischen Entscheidung, meldet sichtbar
+"Astra High erforderlich" und nennt knapp den konkreten Grund. Der Nutzer stellt
+das Modell dann manuell auf Astra High um. Sol darf niemals behaupten, Astra sei
+automatisch gestartet worden.
+
+Ziel des Routings ist, Sol für Führung, Gesamtzusammenhang und Prüfung zu nutzen,
+klar abgegrenzte lokale Umsetzung bevorzugt an DeepSeek zu delegieren und Astra
+nur als seltene Qualitätsreserve für echte Grenzfälle einzusetzen.
+
+Sol wählt vor jeder DeepSeek-Delegation direkt die niedrigste voraussichtlich
 ausreichende Modell/Denkstufen-Kombination. Es gibt keine automatische
 Eskalationskette Flash High zu Flash Max zu Pro High zu Pro Max. Ein fachlich
 gescheiterter ernsthafter Versuch darf eine Eskalation begründen; unnötige
 Vergleichs-Modellaufrufe sind nicht zulässig.
-
-Astra behält Architektur, Production, Supabase Production, Vercel Production,
-Migrationen, Secrets, Sicherheitsfragen, Budgetfragen, Release Entscheidungen,
-kritische Abnahmen und den finalen 500er Production Nachweis.
 
 Die verfügbaren lokalen Helfer werden mit einem klar abgegrenzten Auftrag gestartet:
 
@@ -93,16 +109,17 @@ $HOME/bin/helmut-deepseek pro-write-max "<Aufgabe>"
 ```
 
 Nur ein Agent darf gleichzeitig im selben Arbeitsbereich schreiben.
-Während DeepSeek schreibt, schreibt Astra dort nicht.
+Während DeepSeek schreibt, schreibt der führende Orchestrator dort nicht.
 
-Nach jeder DeepSeek Änderung übernimmt Astra wieder und prüft selbst
+Nach jeder DeepSeek Änderung übernimmt standardmäßig Sol wieder und prüft selbst
 `git status`, `git diff`, das Ergebnis und nur die fachlich notwendigen gezielten
 Tests. Bei reinen Regel- oder Dokumentationsänderungen keine unnötigen fachlichen
 Test Suiten starten.
 
 Scheitert ein DeepSeek Start technisch mit `Operation not permitted` oder einem
 vergleichbaren lokalen Startfehler, genau einmal erneut versuchen. Scheitert auch
-der zweite Start, übernimmt Astra selbst oder meldet den Blocker.
+der zweite Start, übernimmt Sol selbst oder meldet den Blocker. Ein technischer
+DeepSeek-Startfehler ist für sich allein kein Grund für Astra.
 
 DeepSeek darf niemals Production Aktionen, Production Datenänderungen,
 Migrationen, Umgebungsvariablenänderungen, Commit, Push, Merge, PR Erstellung
@@ -110,26 +127,29 @@ oder absichtliche kostenpflichtige Production Modellläufe durchführen.
 
 ### Sichtbare Modellübergaben
 
-Astra meldet zu Aufgabenbeginn das aktive Modell mit Denkstufe und kurzem Zweck.
+Der führende Orchestrator meldet zu Aufgabenbeginn das aktive Modell mit
+Denkstufe und kurzem Zweck. Standard ist "Sol High".
 
 Modell- und Denkstufenangaben richten sich nach der tatsächlichen
 Startkonfiguration und dem beobachteten Lauf, nicht nach einer abweichenden
 Selbstauskunft des Helfers.
 
-Vor jedem Flash- oder Pro-Start meldet Astra "Flash wird gestartet" beziehungsweise
+Vor jedem Flash- oder Pro-Start meldet Sol "Flash wird gestartet" beziehungsweise
 "Pro wird gestartet" mit Aufgabe, tatsächlicher Denkstufe High oder Max und rein
-lesend oder schreibend. Erst nach bestätigtem Start sagt Astra "Flash übernimmt"
+lesend oder schreibend. Erst nach bestätigtem Start sagt Sol "Flash übernimmt"
 beziehungsweise "Pro übernimmt" ebenfalls mit der tatsächlichen Denkstufe High
 oder Max.
 
-Bei einer Eskalation nennt Astra kurz den Grund.
+Bei einer Eskalation zu Astra nennt Sol kurz den konkreten Grund und stoppt bis
+zum manuellen Modellwechsel.
 
-Nach Abschluss oder Abbruch meldet Astra "Astra übernimmt wieder" mit
-Ergebnisprüfung als nächstem Schritt und nennt dabei das zuvor eingesetzte
+Nach Abschluss oder Abbruch eines DeepSeek-Laufs meldet Sol "Sol übernimmt wieder"
+mit Ergebnisprüfung als nächstem Schritt und nennt dabei das zuvor eingesetzte
 DeepSeek Modell mit der tatsächlich gewählten Denkstufe High oder Max.
 
-Technische Startfehler und der Rückfall auf Astra werden ehrlich benannt; niemals
-behaupten, ein Helfer habe gearbeitet, wenn er nicht gestartet ist.
+Technische Startfehler und der Rückfall auf Sol werden ehrlich benannt; niemals
+behaupten, ein Helfer oder Astra habe gearbeitet, wenn das Modell nicht gestartet
+beziehungsweise manuell ausgewählt wurde.
 
 Meldungen erfolgen als kurze sichtbare Chatnachrichten bei tatsächlichem Wechsel;
 keine routinemäßige Wiederholung bei unverändertem Modell und unveränderter
@@ -246,7 +266,7 @@ zu diesem Sprint gehören. Voraussetzung: aktueller PR Kopf geprüft, Pflicht CI
 main und Parallelität geprüft und keine Schutzregel abgeschwächt.
 
 Diese Merge Freigabe gilt dauerhaft für klar beauftragte Sprints und Aufgaben.
-Astra führt die zugehörigen Pull Requests nach erfolgreicher eigener Prüfung und
+Der führende Orchestrator führt die zugehörigen Pull Requests nach erfolgreicher eigener Prüfung und
 grüner Pflicht CI selbstständig bis einschließlich Merge, regulärem Deployment
 und rein lesender Nachkontrolle weiter. Ein zusätzliches GO je PR ist nicht nötig.
 Ältere allgemeine Forderungen nach einem separaten Merge GO oder ein früherer
@@ -424,7 +444,7 @@ kostenpflichtige Infrastruktur, Budgeterhöhungen oder Kosten außerhalb des
 gestarteten Sprintziels.
 
 Für reine lokale Agentenarbeit innerhalb dieses Rahmens ist keine einzelne
-Kostenrückfrage pro Flash-, Pro- oder Astra-Aufruf nötig.
+Kostenrückfrage pro Flash-, Pro-, Sol- oder Astra-Aufruf nötig.
 
 Vor jedem kostenpflichtigen fachlichen Test oder begrenzten Production-Modelllauf
 müssen dennoch feststehen:
