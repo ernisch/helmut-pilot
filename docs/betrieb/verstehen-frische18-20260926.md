@@ -75,3 +75,28 @@ fremder Triggerwirkung, fehlender Belege und gesperrtem/verfälschtem Rückweg.
 Import-SQL `a56123182a4ae55f61888389f850de39f2dbdd374d83ecaf7e5b1f4c03128b6e`;
 Rückweg `b4b979c3cd18f0919997499588ac0783f94916879d366073bc4ce9c34a8f868a`.
 Beide nur lokal geprüft. Noch kein Import oder Verstehenslauf ausgeführt.
+
+## Production-Ausrollung und Importabbruch
+
+PR618/947b0839, Pflicht-CI36250985803 beide grün, Vercel
+`dpl_8RWQBXB7BgiaJDrhEa1BL1DWZQci` READY26.09.15:21:30UTC; Fehlerprotokoll bis
+15:21:54UTC ohne Treffer. Erster Import stoppte beim abschließenden Vollhash am
+unveränderten15s-Limit. Nachlesung15:22:52UTC:0 neue Dokumente,0 Fundstellen,
+0 Eingabe-/Laufquittungen.15:22:57UTC500/0, alle Profil-/Identitäts-/Authhashes
+unverändert,0 Jobs/Locks/Leases/offene Kosten. Die Transaktion ist zurückgerollt.
+
+Read-only EXPLAIN ANALYZE belegt die Ursache: Vollzeilen-Sortierung schreibt
+unter anderem rund61MB Rohdokumentdaten und14MB Fundstellen auf temporären
+Plattenspeicher; ein vollständiger Hashdurchgang braucht5801ms. Der Import
+braucht zwei Durchgänge. Die Korrektur hasht jede komplette Zeile genau einmal
+und sortiert anschließend die64-stelligen SHA256-Werte; alle Zeilen, Spalten,
+NULL-Werte und Duplikatanzahlen bleiben im Vollhash enthalten. Keine Stichprobe,
+keine Auslassung und keine Änderung am15s-Abbruch oder2s-Locklimit.
+
+Rein lesende Messung der neuen Grundlinie:3488ms.13 PostgreSQL-Laborgruppen
+nach der Änderung erneut bestanden, einschließlich fremder Triggerwirkung
+beim Import und Rückweg. Exakt dieselbe18er Eingabe bleibt gebunden.
+Neuer Importhash `a3ee38f866ccbbfe2fa251c3905cedd56fc2befd2ef84763b4ca6092fe7dd85d`,
+neuer Rückweghash `34e43b5e29283ffc9135137d16bb97c1e4886de2613dc48318363e960dac5c0f`.
+Erst nach Integration und frischer Nachlesung genau ein begründeter zweiter
+Importversuch; kein Modelllauf und keine verbrauchte Quittung wiederholt.

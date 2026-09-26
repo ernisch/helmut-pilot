@@ -12,7 +12,10 @@ function grundlinie(e) {
     const where = t === "helmut_store" ? `where id <> '${F.EINGABE}'`
       : t === "raw_documents" ? `where id not in (${ids})`
         : t === "document_findings" ? `where raw_document_id not in (${ids})` : "";
-    return `'${t}',(select encode(sha256(convert_to(coalesce(string_agg(to_jsonb(p)::text, E'\\n' order by to_jsonb(p)::text),''),'UTF8')),'hex') from public.${t} p ${where})`;
+    // Jede vollstaendige Zeile einmal hashen, dann nur feste 64-Zeichen-Werte
+    // sortieren. Einschliesslich Duplikatanzahl/NULL-Werten/aller Spalten;
+    // keine Stichprobe und keine Begrenzung des geschuetzten Bestands.
+    return `'${t}',(with zeilen as materialized (select encode(sha256(convert_to(to_jsonb(p)::text,'UTF8')),'hex') h from public.${t} p ${where}) select encode(sha256(convert_to(coalesce(string_agg(h, E'\\n' order by h),''),'UTF8')),'hex') from zeilen)`;
   }).join(",\n") + ")";
 }
 function plane(payload) {
