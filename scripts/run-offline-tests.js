@@ -225,7 +225,7 @@ const STANDARD = new Set([
   "verstehen-169-kosten-deckel-test.js",    // harter 0,80-USD-Laufdeckel
   "verstehen-169-workflow-test.js",         // manueller 169er Ausfuehrungsweg
   "verstehen-cas-vertrag-test.js",          // CAS-/Quittungsvertrag des Verstehens
-  "verstehen-frische17-test.js",            // neuer gebundener17er Auftrag und Kostenstart am UTC-Tageswechsel
+  "verstehen-frische16-test.js",            // neuer gebundener16er Auftrag und Kostenstart am UTC-Tageswechsel
   "verstehen-frische30-test.js",            // eigener gebundener30er Auftrag, keine alte Wiederaufnahme
   "verstehen-einmalig-test.js",             // Fachgrenzen des einmaligen Laufs
   "verstehen-rueckstand-test.js",           // Rueckstandslogik

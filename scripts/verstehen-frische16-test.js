@@ -1,8 +1,8 @@
 "use strict";
 const assert = require("node:assert/strict");
-const F = require("../lib/helmut/verstehen-frische17-vertrag");
+const F = require("../lib/helmut/verstehen-frische16-vertrag");
 const V = require("../lib/helmut/verstehen-einmalig");
-const B = require("./verstehen-frische17");
+const B = require("./verstehen-frische16");
 let count = 0;
 async function test(name, fn) { await fn(); count++; console.log("PASS " + name); }
 (async () => {
@@ -13,14 +13,14 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
       assert.throws(() => B.argumente(args));
   });
   await test("Runtime ist an ersten manuellen Main-Lauf und exakten Commit gebunden", () => {
-    const commit = "a".repeat(40), env = { HELMUT_FRISCHE17_RUNTIME_COMMIT: commit, GITHUB_ACTIONS: "true",
+    const commit = "a".repeat(40), env = { HELMUT_FRISCHE16_RUNTIME_COMMIT: commit, GITHUB_ACTIONS: "true",
       GITHUB_REPOSITORY: "ernisch/helmut-pilot", GITHUB_REF: "refs/heads/main", GITHUB_EVENT_NAME: "workflow_dispatch",
       GITHUB_RUN_ATTEMPT: "1", GITHUB_SHA: commit };
     assert.equal(B.pruefeRuntime(env, commit), commit);
     for (const change of [{ GITHUB_RUN_ATTEMPT: "2" }, { GITHUB_SHA: "b".repeat(40) }, { GITHUB_REF: "refs/heads/feature" },
-      { GITHUB_EVENT_NAME: "schedule" }, { HELMUT_FRISCHE17_RUNTIME_COMMIT: "" }]) assert.throws(() => B.pruefeRuntime({ ...env, ...change }, commit));
+      { GITHUB_EVENT_NAME: "schedule" }, { HELMUT_FRISCHE16_RUNTIME_COMMIT: "" }]) assert.throws(() => B.pruefeRuntime({ ...env, ...change }, commit));
   });
-  await test("Echter Kostenadapter bindet 17er-Reserve und Abrechnung an genau einen Lauf", async () => {
+  await test("Echter Kostenadapter bindet 16er-Reserve und Abrechnung an genau einen Lauf", async () => {
     const K = require("../lib/helmut/testkosten-budget");
     let auth = { llmUsage: [] }, seq = 0;
     const env = { VERCEL_ENV: "production", HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt", AZURE_OPENAI_KEY: "offline" };
@@ -28,7 +28,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
       leseLlmTageszaehler: async () => ({ ok: true, used: 0 }),
       mutateAuthStore: async fn => { const next = structuredClone(auth); const result = await fn(next); auth = next; return result; } };
     const deps = { env, storage, now: () => new Date("2026-09-25T13:40:00.000Z"), id: () => "offline-" + ++seq };
-    const runId = "verstehen17-123456789";
+    const runId = "verstehen16-123456789";
     assert.equal(await K.laufGebundenUsd(runId, deps), 0);
     const t = await K.reserviere({ model: "gpt-5-mini", maxOutputTokens: 3000, runId }, deps);
     assert.equal(await K.laufGebundenUsd(runId, deps), 0.212);
@@ -37,7 +37,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     assert.equal(await K.laufGebundenUsd(runId, deps), 0.00013);
     assert.equal(await K.laufGebundenUsd("verstehen-bund7-36141840797", deps), 0);
     assert.equal(K.LIMIT_MICRO_USD, 4000000);
-    for (const id of ["verstehen-frische17-12", "verstehen-frische17-fremd", "verstehen-bund8-123456789"])
+    for (const id of ["verstehen-frische16-12", "verstehen-frische16-fremd", "verstehen-bund8-123456789"])
       await assert.rejects(K.laufGebundenUsd(id, deps));
     storage.readAuthStore = async () => { throw Error("offline-ausfall"); };
     await assert.rejects(K.laufGebundenUsd(runId, deps));
@@ -64,7 +64,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
       mutateAuthStore: async fn => fn(persisted) };
     const deps = { storage, env: { VERCEL_ENV: "production", HELMUT_TESTLAUF_KOMMUNIKATION: "gesperrt", AZURE_OPENAI_KEY: "offline" },
       now: () => new Date(day + "T00:10:00Z"), id: () => "ticket" };
-    const ticket = await K.reserviere({ model: "gpt-5-mini", maxOutputTokens: 3000, runId: "verstehen17-123456789" }, deps);
+    const ticket = await K.reserviere({ model: "gpt-5-mini", maxOutputTokens: 3000, runId: "verstehen16-123456789" }, deps);
     assert.throws(() => K.pruefeStart(persisted, day, { ok: true, used: 0 }));
     await K.nichtGesendet(ticket, { kiNichtGesendet: true }, deps);
     assert.equal(K.pruefeStart(persisted, day, { ok: true, used: 0 }).startklar, true);
@@ -76,10 +76,10 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     assert.deepEqual(historic, snapshot);
   });
   await test("Workflow haelt Plan ohne Modellzugang und eindeutigen Erstlauf fest", () => {
-    const text = require("node:fs").readFileSync(require("node:path").join(__dirname, "../.github/workflows/verstehen-frische17.yml"), "utf8");
+    const text = require("node:fs").readFileSync(require("node:path").join(__dirname, "../.github/workflows/verstehen-frische16.yml"), "utf8");
     for (const rule of ["github.run_attempt == 1", "inputs.runtime_commit == github.sha", "contents: read",
       "cancel-in-progress: false", "timeout-minutes: 18", "persist-credentials: false",
-      "HELMUT_TESTLAUF_KOMMUNIKATION: gesperrt", "node scripts/verstehen-frische17.js --plan"])
+      "HELMUT_TESTLAUF_KOMMUNIKATION: gesperrt", "node scripts/verstehen-frische16.js --plan"])
       assert.ok(text.includes(rule), rule);
     const plan = text.slice(text.indexOf("      - name: Nur lesen"), text.indexOf("      - name: Eigener"));
     assert.ok(!plan.includes("AZURE_OPENAI"));
@@ -103,10 +103,10 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     assert.equal(F.pruefeInhalt([]), false);
     assert.throws(() => F.ausGesichertenBelegen([], []));
     assert.equal(F.istVersorgung(async () => ({ ok: true })), false);
-    const r = await V.pruefeUndPlane({ ids: [], deps: {}, commit: F.FRISCHE17.commit, erwartet: F.FRISCHE17 });
+    const r = await V.pruefeUndPlane({ ids: [], deps: {}, commit: F.FRISCHE16.commit, erwartet: F.FRISCHE16 });
     assert.equal(r.ok, false);
-    const q = await V.fuehreAus({ ids: [], deps: {}, erwartet: F.FRISCHE17, quittungsschluessel: "verstehen30-20260925-a" });
-    assert.equal(q.grund, "verstehen-frische17-quittung-abweichend");
+    const q = await V.fuehreAus({ ids: [], deps: {}, erwartet: F.FRISCHE16, quittungsschluessel: "verstehen30-20260925-a" });
+    assert.equal(q.grund, "verstehen-frische16-quittung-abweichend");
   });
   await test("Gleiche UTC-Zeitpunkte bleiben nach PostgreSQL-Lesung gebunden; echte Aenderungen nicht", () => {
     const A = require("../lib/helmut/artikelkontext");
@@ -141,7 +141,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
   // des Repositories. Keine Netz-/Speicherfunktion; Runner entfernt Zugangsdaten.
   if (process.argv[2]) {
     const payload = JSON.parse(require("node:fs").readFileSync(process.argv[2], "utf8"));
-    if (process.argv[3]) await test("Alle 17 realen Production-Zeilen bestehen mit unveraenderten Importbelegen", async () => {
+    if (process.argv[3]) await test("Alle 16 realen Production-Zeilen bestehen mit unveraenderten Importbelegen", async () => {
       const actual = JSON.parse(require("node:fs").readFileSync(process.argv[3], "utf8"));
       const fn = F.ausGesichertenBelegen(actual.docs, payload.belege);
       for (const doc of actual.docs) {
@@ -149,7 +149,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
         assert.deepEqual(require("../lib/helmut/artikelkontext").pruefeArtikelkontext([doc], r.beleg), r.beleg);
       }
     });
-    await test("Alle 17 echten Eingaben und Belege erreichen unveraendert ihren Einzelcluster", async () => {
+    await test("Alle 16 echten Eingaben und Belege erreichen unveraendert ihren Einzelcluster", async () => {
       const fn = F.ausGesichertenBelegen(payload.rows, payload.belege);
       assert.equal(F.istVersorgung(fn), true);
       for (const doc of payload.rows) { const r = await fn([doc]); assert.equal(r.ok, true); assert.equal(r.beleg.dokumentId, doc.id); }
@@ -165,7 +165,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
       assert.throws(() => F.ausGesichertenBelegen(payload.rows, payload.belege.slice(1)));
       assert.equal(F.pruefeInhalt(payload.rows, Date.now() + 49 * 3600000), false);
     });
-    await test("Gebundener 17er-Lauf: einmalig, Kostenreserve, erster Fachfehler stoppt", async () => {
+    await test("Gebundener 16er-Lauf: einmalig, Kostenreserve, erster Fachfehler stoppt", async () => {
       const U = require("../lib/helmut/understanding"), original = U.understandOneCluster;
       async function run({ failAt = 0, price = 0.003 } = {}) {
         let calls = 0, cost = 0, claimed = false, released = false, receipt;
@@ -185,8 +185,8 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
           return { status: calls === failAt ? "skipped-invalid" : "saved", documents: 1, vorgangId: "isoliert-" + calls,
             ...(calls === failAt ? { ausgang: "unbekannt" } : {}) };
         };
-        const options = { ids: payload.rows.map(d => d.id), deps, execute: true, commit: F.FRISCHE17.commit,
-          erwartet: F.FRISCHE17, quittungsschluessel: F.QUITTUNG, runId: "isoliert" };
+        const options = { ids: payload.rows.map(d => d.id), deps, execute: true, commit: F.FRISCHE16.commit,
+          erwartet: F.FRISCHE16, quittungsschluessel: F.QUITTUNG, runId: "isoliert" };
         const result = await V.fuehreAus(options);
         const callsBefore = calls;
         const repeated = await V.fuehreAus(options);
@@ -194,9 +194,9 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
         return { result, calls, receipt };
       }
       try {
-        const full = await run(); assert.equal(full.result.ok, true); assert.equal(full.calls, 17);
+        const full = await run(); assert.equal(full.result.ok, true); assert.equal(full.calls, 16);
         const failed = await run({ failAt: 2 }); assert.equal(failed.result.ok, false); assert.equal(failed.calls, 2);
-        assert.equal(failed.receipt.abbruchGrund, "verstehen-frische17-einzelergebnis-nicht-bestaetigt");
+        assert.equal(failed.receipt.abbruchGrund, "verstehen-frische16-einzelergebnis-nicht-bestaetigt");
         const expensive = await run({ price: 0.1 }); assert.equal(expensive.result.ok, false); assert.equal(expensive.calls, 6);
         assert.equal(expensive.receipt.abbruchGrund, "verstehen-kostendeckel-erreicht");
       } finally { U.understandOneCluster = original; }

@@ -2,17 +2,17 @@
 // Plan ist rein lesend. Ausfuehrung braucht eigene konkrete Freigabe; Import-GO reicht nicht.
 const crypto = require("node:crypto");
 const V = require("../lib/helmut/verstehen-einmalig");
-const F = require("../lib/helmut/verstehen-frische17-vertrag");
+const F = require("../lib/helmut/verstehen-frische16-vertrag");
 const Bedienung = require("./verstehen-einmalig-169");
-const BESTAETIGUNG = "DIE_17_GEBUNDENEN_QUELLEN_EINMAL_VERSTEHEN";
-const fordere = (v, g) => { if (!v) throw new Error("frische17-" + g); };
+const BESTAETIGUNG = "DIE_16_GEBUNDENEN_QUELLEN_EINMAL_VERSTEHEN";
+const fordere = (v, g) => { if (!v) throw new Error("frische16-" + g); };
 function argumente(args) {
   fordere(args.length === 1 && args[0] === "--plan" || args.length === 2
     && args[0] === "--execute" && args[1] === BESTAETIGUNG, "argumente-ungueltig");
   return args[0] === "--execute";
 }
 function pruefeRuntime(env, gitCommit) {
-  const commit = env.HELMUT_FRISCHE17_RUNTIME_COMMIT;
+  const commit = env.HELMUT_FRISCHE16_RUNTIME_COMMIT;
   fordere(/^[a-f0-9]{40}$/.test(commit || "") && commit === gitCommit, "runtime-abweichend");
   fordere(env.GITHUB_ACTIONS === "true" && env.GITHUB_REPOSITORY === "ernisch/helmut-pilot"
     && env.GITHUB_REF === "refs/heads/main" && env.GITHUB_EVENT_NAME === "workflow_dispatch"
@@ -65,13 +65,13 @@ async function main(args = process.argv.slice(2), env = process.env) {
   fordere(eingaben.length === 1 && eingaben[0].data?.status === "importiert", "eingabe-fehlt");
   const eingabe = eingaben[0].data;
   const ids = (eingabe.rows || []).map(d => d.id);
-  fordere(ids.length === 17 && V.idsHash(ids) === F.FRISCHE17.idHash, "ids-abweichend");
+  fordere(ids.length === 16 && V.idsHash(ids) === F.FRISCHE16.idHash, "ids-abweichend");
   const originale = await storage.getRawDocumentsByIds(ids);
   const versorgung = F.ausGesichertenBelegen(originale, eingabe.belege);
   const liste = { ids };
   fordere(/^[0-9]{5,20}$/.test(env.GITHUB_RUN_ID || ""), "laufkennung-abweichend");
-  fordere(new Date(Date.now() + F.FRISCHE17.maxMs).toISOString().slice(0, 10) === day, "tageswechsel");
-  const runId = "verstehen17-" + env.GITHUB_RUN_ID;
+  fordere(new Date(Date.now() + F.FRISCHE16.maxMs).toISOString().slice(0, 10) === day, "tageswechsel");
+  const runId = "verstehen16-" + env.GITHUB_RUN_ID;
   // Den echten Kostenleser schon im Nurleseplan ausfuehren, vor jeder Quittung.
   const [neueKosten, links] = await Promise.all([
     budget.laufGebundenUsd(runId, { env }),
@@ -79,28 +79,28 @@ async function main(args = process.argv.slice(2), env = process.env) {
   ]);
   fordere(links.length === 0, "bereits-verknuepft");
   const reserve = budget.reservierungHoeheUsd();
-  fordere(neueKosten === 0 && reserve <= F.FRISCHE17.maxUsd
+  fordere(neueKosten === 0 && reserve <= F.FRISCHE16.maxUsd
     && kosten.gebundenUsd + reserve <= 4, "kostenplan-nicht-frei");
   const deps = Bedienung.baueDeps(env, runId, { mitQuittung: execute });
   // Kein alter Fehler darf eine implizite Freigabe aus einer anderen Liste erben.
   deps.listWiederaufnahmen = async () => [];
   deps.artikelkontextVersorgung = versorgung;
   // Sperre deckt das volle Fuenfzehnminutenfenster plus Abschlussreserve ab.
-  deps.acquireLock = () => storage.acquireGlobalUnderstandingLock(F.FRISCHE17.maxMs + 60000);
-  const timer = execute ? setTimeout(() => { console.error("frische17-harte-laufzeit; nur nachlesen, kein Retry"); process.exit(1); }, F.FRISCHE17.maxMs) : null;
+  deps.acquireLock = () => storage.acquireGlobalUnderstandingLock(F.FRISCHE16.maxMs + 60000);
+  const timer = execute ? setTimeout(() => { console.error("frische16-harte-laufzeit; nur nachlesen, kein Retry"); process.exit(1); }, F.FRISCHE16.maxMs) : null;
   try {
-    const out = await V.fuehreAus({ ids: liste.ids, deps, execute, erwartet: F.FRISCHE17,
-      commit: F.FRISCHE17.commit, runtimeCommit, runId, quittungsschluessel: F.QUITTUNG, env });
+    const out = await V.fuehreAus({ ids: liste.ids, deps, execute, erwartet: F.FRISCHE16,
+      commit: F.FRISCHE16.commit, runtimeCommit, runId, quittungsschluessel: F.QUITTUNG, env });
     // Einmalquittung verhindert zweiten Lauf; Nachlesung muss diese deshalb explizit ausnehmen.
     const nachRead = (table, query) => table === "helmut_store" ? Promise.resolve([]) : read(table, query);
     const nachHash = await ruhe(nachRead);
     const nachAuth = await storage.readAuthStore();
     fordere(!(nachAuth.pipelineLocks?.["global-understanding"]?.expiresAt > Date.now()), "sperre-nicht-frei");
     out.profileUnveraendert = profilHash === nachHash;
-    out.vollstaendigVerstanden = execute && out.ergebnisse?.length === F.FRISCHE17.cluster
+    out.vollstaendigVerstanden = execute && out.ergebnisse?.length === F.FRISCHE16.cluster
       && out.ergebnisse.every(r => ["saved", "updated", "merged", "duplicate"].includes(r.status));
     out.ok = out.ok && out.profileUnveraendert && (!execute || out.vollstaendigVerstanden);
-    out.importplanCommit = F.FRISCHE17.commit;
+    out.importplanCommit = F.FRISCHE16.commit;
     delete out.snapshotCommit;
     out.funktionsnachweis500 = false;
     out.kostenleserVorabBestaetigt = true;
@@ -108,6 +108,6 @@ async function main(args = process.argv.slice(2), env = process.env) {
   } finally { if (timer) clearTimeout(timer); }
 }
 if (require.main === module) main().then(code => { process.exitCode = code; }).catch(e => {
-  console.log(JSON.stringify({ ok: false, grund: /^frische17-[a-z-]+$/.test(e.message || "") ? e.message : "frische17-technischer-fehler", automatischeWiederholung: false })); process.exitCode = 1;
+  console.log(JSON.stringify({ ok: false, grund: /^frische16-[a-z-]+$/.test(e.message || "") ? e.message : "frische16-technischer-fehler", automatischeWiederholung: false })); process.exitCode = 1;
 });
 module.exports = { argumente, pruefeRuntime, ruhe, main, BESTAETIGUNG };
