@@ -46,7 +46,7 @@ const GENERATORNACHWEIS = Object.freeze({ ...ARTIKELSTAND, auftrag:"generatornac
 const AUSWAHLBEGRUENDUNG = Object.freeze({ ...ARTIKELSTAND, auftrag:"auswahlbegruendung",
   quittung:"lage-auswahlbegruendung-20260926-a" });
 const PRUEFAUFWAND = Object.freeze({ ...ARTIKELSTAND, auftrag:"pruefaufwand",
-  quittung:"lage-pruefaufwand-20260926-b" });
+  quittung:"lage-pruefaufwand-20260926-c", maxOutputTokens:6000 });
 // Einzige zulaessige Vorgaengerquittung: der erfolgreich abgeschlossene Vierfall-Nachweis
 // dieses Laufs und Commits. Sie wird ausschliesslich gelesen und nie umgeschrieben.
 const GENERATOR_VORG = Object.freeze({ runId:"nachlauf500-36249646222",
@@ -162,6 +162,26 @@ function pruefePruefaufwandTransportVorgaenger(alt) {
     && alt.fachbeleg?.antwortHash === "46a84496a16fd552faabd0bd12ce96cf0878ce65c86eeea394aab37370d857d2"
     && hash(alt.fachbeleg?.antwort) === alt.fachbeleg?.antwortHash,
     "pruefaufwand-transport-vorgaenger");
+}
+function pruefePruefaufwandTimeoutVorgaenger(alt, auth) {
+  // Die alte Quittung bleibt wortgleich, auch ihre damals unvollstaendige
+  // Nachkontrolle. Nur der separat belegte Kostenabschluss erlaubt diesen Anschluss.
+  const ticket = auth?.testKostenTage?.[TAG]?.calls?.["2c43a041-7e52-496b-8759-546184e13a83"];
+  const receipts = (auth?.llmUsage || []).filter(r => r.id === "llm-1790440319637-9moa0o");
+  const r = receipts[0], b = r?.reconciliation;
+  fordere(hash(alt) === "f5d7b172ddd514ae943d95cf48e1ccfc6c35e788672c466d7a9a0ef0a3656696"
+    && ticket?.status === "abgerechnet" && ticket.cost === 14035 && ticket.reserved === 212000
+    && ticket.bezug?.runId === alt.runId && ticket.bezug?.phase === "pruefung"
+    && receipts.length === 1 && r.runId === alt.runId && r.success === false
+    && r.error === "request-error:ETIMEDOUT" && r.model === "gpt-5-mini"
+    && r.promptTokens === 4069 && r.completionTokens === 3000 && r.totalTokens === 7069
+    && b?.sourceSha256 === "4c4837dfe4ab33df5248a4875d0715727212c04bb4e2a994992bf304ce184fad"
+    && b.statusSha256 === "15b3b7ff4c8de99172adc623e6aebd39c48692a6f381f9bafd8be8a22afcc1f8"
+    && b.responseRecovered === false, "pruefaufwand-timeout-vorgaenger");
+}
+function reviewOptionen(cfg) {
+  return { strict:true, reasoningEffort:cfg.pruefaufwand ? "medium" : "low",
+    maxOutputTokens:cfg.pruefaufwand ? PRUEFAUFWAND.maxOutputTokens : 3000 };
 }
 function pruefePruefaufwandVorgaenger(alt) {
   fordere(alt?.status === "gestoppt" && alt.ok === false
@@ -368,6 +388,9 @@ async function main(args = process.argv.slice(2), env = process.env) {
     const transport = await read("helmut_store","select=data&id=eq.lage-pruefaufwand-20260926-a&limit=1");
     fordere(transport.length === 1,"pruefaufwand-transport-vorgaenger");
     pruefePruefaufwandTransportVorgaenger(transport[0].data);
+    const timeout = await read("helmut_store","select=data&id=eq.lage-pruefaufwand-20260926-b&limit=1");
+    fordere(timeout.length === 1,"pruefaufwand-timeout-vorgaenger");
+    pruefePruefaufwandTimeoutVorgaenger(timeout[0].data,await S.readAuthStore());
   }
   fordere(!(await read("helmut_store","select=id&id=eq."+cfg.quittung+"&limit=1")).length,"verbraucht");
   fordere(await K.laufGebundenUsd(cfg.runId,{env}) === 0,"laufkosten-vorhanden");
@@ -387,7 +410,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
         // Reine Bilanz, keine erneute Startfreigabe; offene Reserven bleiben sichtbar.
         return K.kontrolliere(auth,TAG,unbekannt,counter.used);
       },
-      laufkosten:() => K.laufGebundenUsd(cfg.runId,{env}),reserve:K.reservierungHoeheUsd(),
+      laufkosten:() => K.laufGebundenUsd(cfg.runId,{env}),reserve:K.reservierungHoeheUsd(reviewOptionen(cfg).maxOutputTokens),
       cache:id => S.getRenderedBriefingV3(id,"lage",require("../lib/helmut/briefing-frische").berlinTagKey(new Date()),{strict:true}),
       acquire:() => S.acquireGlobalUnderstandingLock(MAX_MS+60000),release:() => S.releaseGlobalUnderstandingLock(),
       claim:d => q.claimRun(d),finish:d => q.finishRun(d),build:require("../lib/helmut/lage").buildLageBriefing,
@@ -402,7 +425,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
       reviewModell:(input,p) => require("../lib/helmut/ai").requestStructuredJson(
         input.prompt,require("../lib/helmut/lage-textqualitaet").SCHEMA,
         {callType:"lageBriefing",politicianId:p.id,runId:cfg.runId,testKostenPhase:"pruefung"},
-        "gpt-5-mini",{strict:true,reasoningEffort:cfg.pruefaufwand ? "medium" : "low"}),
+        "gpt-5-mini",reviewOptionen(cfg)),
       gueltig:require("../lib/helmut/lage-quellenbeleg").gespeicherterTextGueltig });
     console.log(JSON.stringify(result,null,2));return result.ok ? 0 : 1;
   } finally { if (timer) clearTimeout(timer); }
@@ -412,4 +435,4 @@ if (require.main === module) main().then(c => { process.exitCode=c; }).catch(e =
 });
 module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main,ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG,
   ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,GENERATORNACHWEIS,AUSWAHLBEGRUENDUNG,PRUEFAUFWAND,GENERATOR_VORG,
-  pruefeEinzelquellenVorgaenger,pruefeGeneratorVorgaenger,pruefeAuswahlVorgaenger,pruefePruefaufwandVorgaenger,pruefePruefaufwandTransportVorgaenger,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};
+  pruefeEinzelquellenVorgaenger,pruefeGeneratorVorgaenger,pruefeAuswahlVorgaenger,pruefePruefaufwandVorgaenger,pruefePruefaufwandTransportVorgaenger,pruefePruefaufwandTimeoutVorgaenger,reviewOptionen,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};

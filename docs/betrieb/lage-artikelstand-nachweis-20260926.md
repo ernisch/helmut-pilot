@@ -535,3 +535,35 @@ Azure-Verwaltungsconnector oder Azure-CLI verfügbar; Browserzugriff scheiterte
 zweimal technisch beim Start. Für die Aufklärung wird ein echter, diesem
 Anbieteraufruf zuordenbarer Verbrauchsbeleg benötigt. Auch ein Tageswechsel
 setzt die kumulative Auftragsgrenze nicht zurück.500er Start bleibt gesperrt.
+
+## Neuer begrenzter Anschluss nach belegtem Kostenabschluss20:08UTC
+
+Der [Azure-Abgleich](azure-kostenabschluss-1632-20260926.md) schließt die offene
+Reserve des Laufs b mit echten4069/3000 Tokenwerten. Es gibt keine nachträglich
+verfügbare Modellantwort; der volle3000er Ausgaberahmen war verbraucht. Das
+beweist keine bestimmte fachliche Ablehnung und auch keinen erfolgreichen Vergleich.
+
+Neue Grundlage für genau einen Anschluss c: bereits reparierte120s-Wartezeit
+und ausschließlich im isolierten Diagnoseauftrag6000 statt3000 Ausgabetokens.
+Die volle atomare Reserve beträgt0,224USD; maximal1 Aufruf/0,25USD/240s,
+mit60s Abschlusszeit. Dieselben vier Absätze, Sollwerte und sechs Paarvergleiche,
+unveränderter strenger Fachvertrag. Normale Produktpfade behalten3000/low.
+Der Anschluss verlangt den vollständigen unveränderten Hash der verbrauchten
+Quittung b sowie ihren exakt abgeschlossenen Kostenbeleg samt Anbieterhashes.
+Neue Kennung `lage-pruefaufwand-20260926-c`; a/b bleiben unbenutzbar.
+
+Autorisierung: autonomer Betreiberauftrag für notwendige Vorarbeiten, kein500er
+Test. Genau ein vorhandenes inaktives Profil; keine Profil-/Quellenänderung,
+keine Veröffentlichung. Wirkung: private Diagnosequittung und Kostenbeleg.
+Risiko: erneute unvollständige Antwort, falsches Fachurteil oder Timeout.
+Erfolg verlangt4/4 richtige Einzelurteile,6/6 vollständige positive Paarurteile
+und unabhängige Nachlesung sämtlicher Begründungen. Bei Abweichung terminal
+stoppen, kein automatischer Retry. Nachkontrolle: Profilhashes, Quittung,
+Kosten, Sperren und unveränderter Textcache. Rückweg: eigene Sperre lösen,
+Belege erhalten, nichts fachlich Abgelehntes veröffentlichen. Vor Ausführung
+frischer main/READY, rein lesender Plan und vollständiger Kostenstand.
+
+Der geplante lokale Flash-High-Helfer wurde vor Prozessstart durch automatische
+Freigabeprüfung abgewiesen. Keine DeepSeek-Ausführung oder Übertragung; die
+vorher zusätzliche0,30USD-Reserve wurde danach zurückgenommen. Die alte
+0,35USD-Reserve bleibt unberührt. Umsetzung durch den führenden Codex-Agenten.

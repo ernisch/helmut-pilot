@@ -180,6 +180,9 @@ async function main() {
     await aufruf("low");     // Quellenreview, unverändert
     await aufruf("medium");  // isolierter Prüfaufwand-Vergleich (Ziel dieser Änderung)
     await aufruf("high");    // NICHT erlaubt -> fail-closed minimal
+    await ai.requestStructuredJson("Nur lokaler Anschluss-Transporttest.", SCHEMA,
+      { callType: "wiretest-anschluss", politicianId: null }, MODEL,
+      require("./lage-vorstart").reviewOptionen({pruefaufwand:true}));
   } finally {
     mock.schliessen();
   }
@@ -187,7 +190,7 @@ async function main() {
   const gesehen = mock.gesehen;
 
   // 0) Es wurde tatsächlich pro Fall ein Request bis zur Transportgrenze gebaut.
-  check("Vier echte Requests bis zur Transportgrenze", gesehen.length === 4,
+  check("Fuenf echte Requests bis zur Transportgrenze", gesehen.length === 5,
     `gesehen=${gesehen.length}`);
   check("Ziel-Pfad ist der Responses-Endpunkt der geprüften Azure-Basis",
     gesehen.every((g) => g.pfad === "/openai/v1/responses"),
@@ -206,6 +209,9 @@ async function main() {
       p ? `reasoning=${JSON.stringify(p.reasoning)}` : "kein Payload");
   }
 
+  check("Nur Anschluss c sendet6000 Tokens und medium",
+    gesehen[4]?.payload.max_output_tokens === 6000 && gesehen[4]?.payload.reasoning?.effort === "medium");
+
   // 2) Keine neue, permissive Denkstufe: reasoning trägt NUR `effort`.
   check("reasoning trägt ausschließlich `effort` (kein high/max-Zusatz)",
     gesehen.every((g) => Object.keys(g.payload.reasoning || {}).join(",") === "effort"),
@@ -216,7 +222,7 @@ async function main() {
     gesehen.every((g) => g.payload.text?.format?.strict === true),
     JSON.stringify(gesehen.map((g) => g.payload.text?.format?.strict)));
   check(`max_output_tokens bleibt unverändert ${MAX_OUTPUT_TOKENS}`,
-    gesehen.every((g) => g.payload.max_output_tokens === MAX_OUTPUT_TOKENS),
+    gesehen.slice(0,4).every((g) => g.payload.max_output_tokens === MAX_OUTPUT_TOKENS),
     JSON.stringify(gesehen.map((g) => g.payload.max_output_tokens)));
   check("Modell bleibt unverändert", gesehen.every((g) => g.payload.model === MODEL),
     JSON.stringify(gesehen.map((g) => g.payload.model)));
