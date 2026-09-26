@@ -281,5 +281,68 @@ function fixture() {
     assert.equal(state.finished.lesebeweis.absatzZeichen,artikelText.length);
     assert.equal(state.finished.funktionsnachweis500,false);
   });
+  // --- Neuer Generatornachweis: eigene Quittung, unveraenderter Artikelstand und genau ---
+  // --- eine Vorgaengerbindung an den neuen abgeschlossenen Vierfall-Nachweis (nur lesend). ---
+  const generatorCfg = { ...artikelCfg, quittung:T.GENERATORNACHWEIS.quittung, generatornachweis:true };
+  const vierfallPaare = () => [0,1,2,3].flatMap(a => [0,1,2,3].filter(b => b > a).map(b => ({
+    erster_absatz:a,zweiter_absatz:b,eigenstaendige_sachverhalte:true,
+    pruefbegruendung:"Getrennte konkrete Sachverhalte oder Prognosen." })));
+  const vierfall = () => ({
+    status:"abgeschlossen",ok:true,grund:null,quittungsschluessel:T.MANDATSURTEIL.quittung,
+    runId:"nachlauf500-36249646222",runtimeCommit:"700001011b971cb0d1eb3dd552905fd66601e4c6",
+    idHash:T.GENERATORNACHWEIS.profilHash,profile:1,sollFaelle:4,
+    bilanz:[{ id:"polizei-haushalt",erwartet:true,erhalten:true,bestanden:true },
+      { id:"sanktionen-auswaertiges",erwartet:true,erhalten:true,bestanden:true },
+      { id:"private-heizkosten-haushalt",erwartet:false,erhalten:false,bestanden:true },
+      { id:"energiesteuer-auswaertiges",erwartet:false,erhalten:false,bestanden:true }],
+    fachbeleg:{antwort:{vergleiche:vierfallPaare()}},
+    paarvergleich:true,paketHash:"5829cffed6370571424550153403b90f88cfe122ceb511d3a04d7bc8f8ba62bb",
+    freigegebeneAufrufe:1,offeneKosten:0,profileUnveraendert:true,gespeicherterLageText:false,
+    funktionsnachweis500:false,automatischeWiederholung:false });
+  await test("Generatornachweis hat eigene Quittung und unveraenderte Artikel-/Profilbindung",()=>{
+    const neu = T.konfiguration({ ...env, HELMUT_VORSTART_AUFTRAG:"generatornachweis",
+      HELMUT_VORSTART_PROFIL:T.GENERATORNACHWEIS.profilHash }, commit, start);
+    assert.equal(neu.quittung,T.GENERATORNACHWEIS.quittung);
+    assert.notEqual(neu.quittung,T.ARTIKELSTAND.quittung);
+    assert.notEqual(neu.quittung,T.MANDATSURTEIL.quittung);
+    assert.equal(neu.artikelstand,true);assert.equal(neu.reparatur,false);assert.equal(neu.altHash,null);
+    assert.equal(neu.generatornachweis,true);assert.equal(neu.mandatsurteil,false);
+    assert.equal(neu.profilHash,T.ARTIKELSTAND.profilHash);
+    assert.throws(()=>T.konfiguration({ ...env, HELMUT_VORSTART_AUFTRAG:"generatornachweis" },commit,start),/artikelstandbindung/);
+  });
+  await test("Generatornachweis bindet nur den neuen abgeschlossenen Vierfall-Nachweis",()=>{
+    T.pruefeGeneratorVorgaenger(vierfall());
+    assert.throws(()=>T.pruefeGeneratorVorgaenger(undefined),/generator-vorgaenger/);
+    for(const aenderung of [{status:"laeuft"},{ok:false},{grund:"gestoppt"},{runId:"fremd"},
+      {runtimeCommit:"fremd"},{idHash:"fremd"},{profile:2},{sollFaelle:5},
+      {quittungsschluessel:"lage-artikelstand-20260926-a"},{paketHash:"fremd"},
+      {freigegebeneAufrufe:2},{offeneKosten:1},{profileUnveraendert:false},
+      {gespeicherterLageText:true},{bilanz:vierfall().bilanz.slice(0,3)},
+      {bilanz:vierfall().bilanz.map((r,i)=>i===2?{ ...r,erhalten:true }:r)},
+      {bilanz:vierfall().bilanz.map((r,i)=>i===0?{ ...r,bestanden:false }:r)},
+      {paarvergleich:false,fachbeleg:null}])
+      assert.throws(()=>T.pruefeGeneratorVorgaenger({ ...vierfall(),...aenderung }),/generator-vorgaenger/);
+  });
+  await test("Generatornachweis verlangt Paarbelege und positives Sammelurteil",()=>{
+    const paare = [];
+    for(let a=0;a<4;a++)for(let b=a+1;b<4;b++)paare.push({ erster_absatz:a,zweiter_absatz:b,
+      eigenstaendige_sachverhalte:true,pruefbegruendung:"Getrennte konkrete Sachverhalte oder Prognosen." });
+    const beleg = { ...vierfall(), paarvergleich:false, fachbeleg:{ antwort:{ vergleiche:paare } } };
+    assert.throws(()=>T.pruefeGeneratorVorgaenger(beleg),/generator-vorgaenger/);
+    T.pruefeGeneratorVorgaenger({...beleg,paarvergleich:true});
+    assert.throws(()=>T.pruefeGeneratorVorgaenger({ ...beleg,paarvergleich:true,
+      fachbeleg:{ antwort:{ vergleiche:paare.slice(0,5) } } }),/generator-vorgaenger/);
+  });
+  await test("Generatornachweis ist planfaehig und der Einmallauf speichert mit Lesebeweis",async()=>{
+    const plan = artikelFixture();plan.d.execute=false;
+    const r = await T.einmallauf(generatorCfg,plan.d);
+    assert.equal(r.ok,true);assert.equal(r.maxAufrufe,2);assert.equal(r.maxUsd,0.50);assert.deepEqual(plan.trace,[]);
+    const echt = artikelFixture();
+    const s = await T.einmallauf(generatorCfg,echt.d);
+    assert.equal(s.ok,true);assert.equal(s.freigegebeneAufrufe,2);
+    assert.equal(echt.state.finished.status,"abgeschlossen");
+    assert.equal(echt.state.finished.quittungsschluessel,T.GENERATORNACHWEIS.quittung);
+    assert.equal(echt.state.finished.lesebeweis.standHash,quelle.content_hash);
+  });
   console.log(count+" Gruppen erfolgreich");
 })().catch(e=>{console.error(e);process.exitCode=1;});
