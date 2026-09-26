@@ -4,7 +4,6 @@
 // Echte Planerlogik, kontrollierte RPC-Latenz, kein Netz, keine Datenbank/KI.
 const assert = require("node:assert/strict");
 const SP = require("../lib/helmut/scalable-pipeline");
-const MK = require("../lib/helmut/mandatsklasse");
 const ENV = { HELMUT_SCALABLE_PIPELINE: "on", HELMUT_MAX_LLM_CALLS_PER_DAY: "2416" };
 const profile = Array.from({ length: 500 }, (_, i) => ({
   id: i < 5 ? `mandat-planung-${i}` : `test-kohorte-planung-${i}`
@@ -31,23 +30,21 @@ async function main() {
   // Ein Tick repraesentiert 70 ms Datenbankwartezeit fuer gleichzeitig gestartete
   // RPCs. Seriell brauchen 1.678 Auftraege 117,46 s, unabhaengig von CPU/Jitter.
   let jetzt = 0, aktiv = 0, maximum = 0, timer = null;
-  let realeFertig = 0, geteilteFertig = 0;
+  let mandateFertig = 0, begonnenInReihenfolge = 0;
+  const mandatsfolge = [...quellen, ...mandat].filter(a => a.tenantId);
   const wartet = [], gespeichert = new Map();
   const plan = await SP.planeArbeit({ env: ENV, planungsDeadlineMs: 60000,
     deps: deps((auftrag) => {
-      if (!auftrag.tenantId) assert.equal(realeFertig, 15, "reale Arbeit vor geteilter Arbeit abschliessen");
-      if (MK.istSynthetischeKennung(auftrag.tenantId)) {
-        assert.equal(realeFertig, 15);
-        assert.equal(geteilteFertig, 178, "geteilte Arbeit vor synthetischer Arbeit abschliessen");
-      }
+      if (!auftrag.tenantId) assert.equal(mandateFertig, 1500, "Arbeit aller Mandate vor geteilter Arbeit abschliessen");
+      else assert.equal(auftrag.idempotencyKey, mandatsfolge[begonnenInReihenfolge++].idempotencyKey,
+        "Eingangsrotation fuer alle Kennungsklassen erhalten");
       aktiv += 1; maximum = Math.max(maximum, aktiv);
       return new Promise((resolve) => {
         wartet.push(() => {
           aktiv -= 1;
           assert.equal(gespeichert.has(auftrag.idempotencyKey), false, "kein doppelter Aufruf");
           gespeichert.set(auftrag.idempotencyKey, auftrag);
-          if (!auftrag.tenantId) geteilteFertig += 1;
-          else if (!MK.istSynthetischeKennung(auftrag.tenantId)) realeFertig += 1;
+          if (auftrag.tenantId) mandateFertig += 1;
           resolve({ verfuegbar: true, neu: true });
         });
         if (timer === null) timer = setImmediate(() => {
@@ -67,7 +64,7 @@ async function main() {
     assert.equal(new Set([...gespeichert.values()].filter((j) => j.jobType === typ)
       .map((j) => j.tenantId)).size, 500, `alle 500 erhalten ${typ}`);
   }
-  console.log(`PASS  1.678 Auftraege fuer alle 500 innerhalb 60 s, maximal ${maximum} RPCs, Prioritaeten erhalten`);
+  console.log(`PASS  1.678 Auftraege fuer alle 500 innerhalb 60 s, maximal ${maximum} RPCs, gemeinsame Eingangsreihenfolge erhalten`);
 
   // Bereits gestartete RPCs werden auch beim Ablauf der Frist fertig beobachtet.
   jetzt = 0;

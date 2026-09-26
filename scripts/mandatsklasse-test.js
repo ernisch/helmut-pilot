@@ -123,36 +123,26 @@ function main() {
   const kohortenIds = kohorte.map((s) => s.id);
   const gemischt = [...kohortenIds, ...realeFuenf];
   const reihenfolge = fair.rotationsReihenfolge(gemischt, "2026-09-10", 50);
-  check("D1 alle fünf realen Mandate stehen VOR jeder synthetischen Kennung",
-    reihenfolge.slice(0, 5).every((id) => realeFuenf.includes(id)));
-  check("D2 die Reihenfolge enthält weiterhin ALLE 500 Kennungen (nichts fällt weg)",
+  check("D1 alle500 rotieren nach derselben unverzerrten Grundordnung",
+    JSON.stringify(reihenfolge) === JSON.stringify(altRotation(gemischt, "2026-09-10", 50)));
+  check("D2 alle500 Kennungen bleiben genau einmal enthalten",
     reihenfolge.length === 500 && new Set(reihenfolge).size === 500);
-  check("D3 die synthetische Kohorte rotiert weiterhin gegen sich selbst",
-    (() => {
-      const a = fair.rotationsReihenfolge(gemischt, "2026-09-10", 50).slice(5);
-      const b = fair.rotationsReihenfolge(gemischt, "2026-09-11", 50).slice(5);
-      return JSON.stringify(a) !== JSON.stringify(b);
-    })());
-  check("D4 die realen fünf stehen an JEDEM geprüften Tag vorn",
-    tage.every((t) => fair.rotationsReihenfolge(gemischt, t, 50).slice(0, 5).every((id) => realeFuenf.includes(id))));
-
-  // Der eigentliche Schaden, gemessen: heutiger Deckel 100, Standardanteil 0,5
-  // => 50 Plätze für 500 Mandate. Ohne Vorrang wären die realen Mandate an den
-  // meisten Tagen nicht dabei.
-  const plan = fair.tagesplan({ mandate: gemischt, deckel: 100, tag: "2026-09-10" });
-  check("D5 alle realen Mandate bekommen ihre notwendige Arbeit zugeteilt",
-    realeFuenf.every((m) => plan.zuteilung[m] && plan.zuteilung[m].notwendig >= 1));
-  check("D6 tagesplan weist die Klassenbilanz ehrlich aus",
-    plan.klassen && plan.klassen.real === 5 && plan.klassen.synthetisch === 495
-    && plan.klassen.realeVollstaendigBedient === true
-    && plan.klassen.synthetischeVollstaendigBedient === false);
-  check("D7 ohne Vorrang wäre mindestens ein reales Mandat leer ausgegangen (Gegenprobe)",
-    (() => {
-      const alt = altRotation(gemischt, "2026-09-10", 50);
-      const plaetze = 50;
-      const bedient = new Set(alt.slice(0, plaetze));
-      return realeFuenf.some((m) => !bedient.has(m));
-    })(), "Beleg, dass D5 kein Selbstläufer ist");
+  const bedient = new Map(gemischt.map(id => [id,0]));
+  for (let tag=1;tag<=10;tag++) {
+    const plan = fair.tagesplan({mandate:gemischt,deckel:100,tag:`2026-10-${String(tag).padStart(2,"0")}`});
+    for(const [id,z] of Object.entries(plan.zuteilung)) if(z.notwendig>0) bedient.set(id,bedient.get(id)+1);
+  }
+  check("D3 bei50 Tagesplaetzen werden in10 Tagen genau alle500 einmal bedient",
+    [...bedient.values()].every(n=>n===1));
+  check("D4 reale und synthetische Profile haben identische Bedienhaeufigkeit",
+    realeFuenf.every(id=>bedient.get(id)===1) && kohortenIds.every(id=>bedient.get(id)===1));
+  const plan = fair.tagesplan({mandate:gemischt,deckel:100,tag:"2026-09-10"});
+  check("D5 die Zuteilung bevorzugt keine Klasse gegen die gemeinsame Rotation",
+    reihenfolge.every((id,i)=>(plan.zuteilung[id]?.notwendig>0)===(i<50)));
+  check("D6 die Klassenbilanz ist weiterhin vollstaendig und ehrlich",
+    plan.klassen.real===5 && plan.klassen.synthetisch===495
+      && plan.klassen.realeVollstaendigBedient===realeFuenf.every(id=>plan.zuteilung[id]?.notwendig>0)
+      && plan.klassen.synthetischeVollstaendigBedient===kohortenIds.every(id=>plan.zuteilung[id]?.notwendig>0));
 
   // ── E · Vorrangreserve: Semantik und fail-closed ──────────────────────────
   console.log("\nE · Vorrangreserve der realen Mandate");
@@ -167,16 +157,16 @@ function main() {
     && M.vorrangreserveReal({ [M.VORRANG_REAL_ENV]: "-5" }).wert === 0);
   check("E4 der gemessene Mindestbedarf ist 170 und die Empfehlung liegt darüber",
     M.VORRANG_REAL_MESSBEDARF_P95 === 170 && M.VORRANG_REAL_EMPFEHLUNG > 170);
-  check("E5 die Reserve gilt für synthetische Kennungen",
-    M.vorrangGiltFuer({ kennung: "test-kohorte-a-001" }).gilt === true);
+  check("E5 synthetische mandatsgebundene Aufrufe haben denselben Zugang",
+    M.vorrangGiltFuer({ kennung: "test-kohorte-a-001" }).gilt === false);
   check("E6 sie gilt NICHT für reale Mandate",
     M.vorrangGiltFuer({ kennung: "mandat-a" }).gilt === false);
   check("E7 sie gilt AUCH für geteilte Arbeit — die hat ihre eigene Reserve",
     M.vorrangGiltFuer({ kennung: null, geteilt: true }).gilt === true
     && M.vorrangGiltFuer({ kennung: "mandat-a", geteilt: true }).gilt === true);
-  check("E7b die EINZIGE ausgenommene Klasse ist mandatsgebundene Arbeit eines REALEN Mandats",
+  check("E7b jede gueltige Mandatskennung ist vom Abzug ausgenommen",
     M.vorrangGiltFuer({ kennung: "mandat-a", geteilt: false }).gilt === false
-    && M.vorrangGiltFuer({ kennung: "mandat-a" }).grund === "reales-mandat");
+    && M.vorrangGiltFuer({ kennung: "mandat-a" }).grund === "mandatsgebundene-arbeit");
   check("E8 eine fehlende Kennung bekommt fail-closed die strengere Stellung",
     M.vorrangGiltFuer({ kennung: null }).gilt === true
     && M.vorrangGiltFuer({ kennung: null }).grund === "kennung-nicht-bestimmbar-fail-closed");
