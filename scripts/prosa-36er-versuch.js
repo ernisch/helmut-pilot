@@ -195,8 +195,9 @@ async function ausfuehren({ env = process.env, now = () => new Date(), fetchFn =
       const meta = { runId, phase: "pruefung", gruppe: i + 1, mandat: "synthetisch-36er", basisHash: vertrag.basisHash };
       const before = await storage.readAuthStore();
       const tagBuch = before.testKostenTage?.[TAG];
-      const gebunden = tagBuch === undefined ? 0 : K.belegt(tagBuch);
-      fordere(gebunden + MAX_COST <= K.LIMIT_MICRO_USD, "EINORDNUNG_KOSTENRIEGEL");
+      const buch = tagBuch === undefined ? null : K.pruefeTag(tagBuch, TAG);
+      const gebunden = buch === null ? 0 : K.belegt(buch);
+      fordere(gebunden + MAX_COST <= (buch === null ? K.LIMIT_MICRO_USD : buch.limit), "EINORDNUNG_KOSTENRIEGEL");
       await schreibe(x => { x.phasen.push({ id: f.id, art: f.art, bereich: f.bereich, status: "begonnen" }); });
       const prompt = P.pruefPrompt(pruefEingabe);
       const cctx = { ...ctx, abPosition: i + 1, anzahl: 1 };
