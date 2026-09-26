@@ -30,6 +30,7 @@ function setup(){
     A.deepEqual(M.FAELLE.map(f=>f.erwartet),[true,true,false,false]);
     A.equal(input.quellen.length,4);A(!input.prompt.includes('"erwartet"'));
     A.equal(M.auswertung(input,antwort(),profile).ok,true);
+    A.equal(M.auswertung(input,antwort(),profile).fachlichGeprueftePaare,6);
     const altered=structuredClone(sources);altered[0].quellenbelege[0].auszug+=" Geändert.";
     A.throws(()=>M.paket(profile,altered),/quellenbindung/);
     A.throws(()=>M.paket({...profile,committees:["Innenausschuss"]},sources),/quellenbindung/);
@@ -171,6 +172,10 @@ function setup(){
     A.equal(M.MAX_MS,240000);A.equal(M.MAX_USD,.25);
   });
   await test("Fachkorrektur bindet echte zwei Absätze und beide negativen Kriterien",async()=>{
+    A.equal(T.FACHKORREKTUR.quittung,"lage-fachkorrektur-20260926-b");
+    A.throws(()=>T.pruefeTextartVorgaenger({ok:true}),/textart-vorgaenger/);
+    const alt=setup();Object.assign(alt.cfg,{fachkorrektur:true,pruefaufwand:false,quittung:"lage-fachkorrektur-20260926-a"});
+    await A.rejects(M.einmallauf(alt.cfg,alt.d),/sollfall-auftrag/);A.deepEqual(alt.trace,[]);
     const f=require("./fixtures/lage-fachkorrektur-zwei.json");
     const quellen=f.map(x=>({vorgang_id:x.paragraph.vorgang_ids[0],quellenbelege:[x.quelle]}));
     const p=M.paket(profile,quellen,f);
@@ -181,6 +186,11 @@ function setup(){
       vollstaendig_belegt:true,themenrein:true,profilbezug:x.erwartet,textart:x.textart})),
       vergleiche:[{erster_absatz:0,zweiter_absatz:1,eigenstaendige_sachverhalte:true,pruefbegruendung:"Verschiedene Themen, keine Wiederholung."}]};
     A.equal(M.auswertung(p,a,profile,f).ok,true);
+    A.equal(M.auswertung(p,a,profile,f).fachlichGeprueftePaare,0);
+    const negativesPaar=structuredClone(a);negativesPaar.vergleiche[0].eigenstaendige_sachverhalte=false;
+    A.equal(M.auswertung(p,negativesPaar,profile,f).ok,true);
+    negativesPaar.vergleiche[0].eigenstaendige_sachverhalte=null;
+    A.equal(M.auswertung(p,negativesPaar,profile,f).ok,false);
     for(const change of [{profilbezug:true},{textart:"konkreter_sachverhalt"},{vollstaendig_belegt:false},{belegfeld:"auszug"},{mandatsbegruendung:""}]){
       const bad=structuredClone(a);Object.assign(bad.pruefungen[1],change);
       A.equal(M.auswertung(p,bad,profile,f).ok,false);

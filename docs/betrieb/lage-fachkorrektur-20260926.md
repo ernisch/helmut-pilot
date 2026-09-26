@@ -2,6 +2,48 @@
 
 Stand26.09.2026,21:15UTC. Roadmap3.1 bleibt offen.
 
+## Nachkontrolle21:32UTC
+
+PR631 ist als`2ac66e0b5bd41c9f283fcc47c9816affb23949b2` ausgerollt,
+`dpl_7WjP3VbsLsh8ovj8MkhCnBkdKynQ` READY21:28:03UTC.
+Pflicht-CI36272351391 am Kopf`aaa15092` vollständig grün; keine error/fatal-Logs
+im Nachfenster21:27:41–21:28:21UTC. Rein lesender Plan36273039331 bestanden.
+Der erste Dispatch36273101059 stoppte wegen eines falsch übertragenen Profilhashs
+vor Quittung und Modell; unabhängige Lesung bestätigt0 Quittungen/0 Kostentickets.
+Der korrigiert gebundene [Run36273181935](https://github.com/ernisch/helmut-pilot/actions/runs/36273181935)
+verbraucht Auftrag a: ein Aufruf,0,014680USD, keine offene Reserve.
+
+Vollständige Antwort unabhängig gelesen: Absatz1 zulässig; Absatz2 korrekt
+`profilbezug=false`, aber weiterhin fälschlich`konkreter_sachverhalt`.
+Das Paarurteil ist vollständig, aber bei einem Fülltext kein fachlicher Beleg für
+zwei brauchbare Sachverhalte. Gesamturteil bleibt negativ, Generator nicht gestartet.
+500/0 und beide Profilschutzhashes unverändert; keine Jobs/Locks/Leases.
+Gesamtbindung jetzt4,441938USD; Tages-/Gesamtgrenze weiterhin6USD.
+
+Die Schema-Beschreibung ließ noch jede „zugeschriebene Aussage“ als konkret gelten,
+während der Prompt bloße Themenberichte ausschloss. Die Korrektur verwendet eine
+identische, präzisierte Definition in Schema und Prompt: Die Existenz einer
+Meldung ist selbst keine fachliche Handlung; Quellenabdeckung ist getrennt von
+inhaltlicher Brauchbarkeit. Kein Länderfilter und keine Änderung der Sollwerte.
+
+Vor dem Folgeauftrag wird die Paarprüfung des isolierten Negativtests präzisiert:
+Das Paarurteil muss vollständig, eindeutig und begründet vorliegen. Weil ein Absatz
+vorab als Fülltext definiert ist, zählt es nicht als fachlicher Paarbeleg
+(`fachlichGeprueftePaare=0`); beide booleschen Paarantworten sind zulässig. Beide
+Ablehnungsmerkmale des schlechten Absatzes bleiben zwingend. Der ursprüngliche
+Vierfalltest prüft weiterhin alle6 fachlichen Paare; die Produktprüfung erzeugter
+Lageabsätze bleibt unverändert streng. Der negative Auftrag a wird nicht umgedeutet.
+
+Eigener Folgeauftrag`lage-fachkorrektur-20260926-b`: dieselben zwei echten Absätze,
+gleiche Quellen, Sollwerte und Grenzen (1 Aufruf/0,25USD/240s, medium/6000).
+Er verlangt zusätzlich den Vollhash der verbrauchten Quittung a
+`acf1d7b44af3a986111159409a58f4e627cc245ba892e1ddf27ec566e64fe29c`.
+Der noch unbenutzte Generatorauftrag darf erst nach bestandenem b und eigener
+Prüfung folgen; beide Aufträge müssen denselben Production-Commit verwenden.
+Keine Wiederverwendung oder Umschreibung von a. Neuer Gesamtzusatzrahmen0,75USD
+passt unter6USD; vor Ausführung frische Kosten-/Ruheprüfung. Lokale Schema-/Prompt-
+Bindung und15 Prüfaufwandgruppen bestanden, vollständige Quittung a geprüft.
+
 ## Befund und Sicherung
 
 [PR630](https://github.com/ernisch/helmut-pilot/pull/630), main
