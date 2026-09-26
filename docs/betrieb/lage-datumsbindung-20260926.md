@@ -156,3 +156,7 @@ Lage-Nachweis, frische Vollversorgung sowie der belastbare500er Kosten-/Zeitplan
 Helmut hat fuer den Timeout weder Tokenverbrauch noch Antwortkennung gespeichert;
 aus dem vorhandenen Telemetrieeintrag laesst sich kein exakter Kostenabschluss
 herleiten. Nicht durch pauschale Kostenfreigabe oder eine neue Quittung umgehen.
+Ein lesender Providerabgleich war hier nicht erreichbar: keine Azure-CLI oder
+Azure-Werkzeuge vorhanden; der Browserzugang scheiterte bereits beim lokalen
+Kernelstart (`sandbox-exec`, unbound variable `TIOCSTI`), auch beim einmaligen
+zweiten Versuch. Keine Browserinhalte gelesen, kein Umgehen der Umgebungssperre.
