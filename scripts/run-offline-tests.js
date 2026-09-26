@@ -228,6 +228,7 @@ const STANDARD = new Set([
   "verstehen-rest15-test.js",              // unbegonnene Restmenge, keine Wiederaufnahme
   "lage-vorstart-test.js",                 // einmaliger Lagecheck mit festen Kosten-/Zeitgrenzen
   "lage-tagesbezug-test.js",               // relative Quellentage nicht ins neue Briefing verschieben
+  "lage-datumsbindung-test.js",            // kein Ereignisdatum aus Publikationsmetadaten
   "verstehen-frische16-test.js",            // neuer gebundener16er Auftrag und Kostenstart am UTC-Tageswechsel
   "verstehen-frische30-test.js",            // eigener gebundener30er Auftrag, keine alte Wiederaufnahme
   "verstehen-einmalig-test.js",             // Fachgrenzen des einmaligen Laufs
