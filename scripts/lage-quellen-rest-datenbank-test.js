@@ -251,8 +251,8 @@ async function main() {
     assert.deepEqual(Object.keys(report.nachRpc), ["GET /ko_document_links"]);
     assert.equal(report.fehler, 0);
     console.log("REST_MESSUNG " + JSON.stringify(report));
-    console.log(`REST_GRUPPEN ${passed}/13 bestanden; Abschluss erst nach Bereinigung`);
-    assert.equal(passed, 13);
+    console.log(`REST_GRUPPEN ${passed}/15 bestanden; Abschluss erst nach Bereinigung`);
+    assert.equal(passed, 15);
   } finally {
     for (const name of changed) {
       if (original[name] === undefined) delete process.env[name]; else process.env[name] = original[name];
@@ -271,7 +271,7 @@ async function main() {
       console.log("BEREINIGUNG eigene synthetische Datenbank entfernt und nachgelesen");
     }
   }
-  console.log("REST_ERGEBNIS: erfolgreich, 13/13 Gruppen und Bereinigung bestaetigt");
+  console.log("REST_ERGEBNIS: erfolgreich, 15/15 Gruppen und Bereinigung bestaetigt");
 }
 
 main().catch(error => {

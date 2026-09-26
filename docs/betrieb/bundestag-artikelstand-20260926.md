@@ -177,5 +177,12 @@ Vorgang, Verknüpfungen, CAS, Profile und Kostenbuch bleiben unverändert.
 Neue eigene Quittung `redaktion-bundespolizeigesetz-lage-20260926-a`, keine
 Wiederverwendung alter Aufträge.16 SQL-Laborgruppen prüfen Atomarität,
 Vorbedingungen, fremde Nebenwirkungen und den exakt gebundenen Rückweg.
-Inputhash `5f87165b4028a778a432b9dc19f60ac1256efb8ce350eb77709c9abd8c86792f`.
+Inputhash `a150449703f949fe4accc6e5528e5f52dc08a6c5db3999a8074c315cfa7bf97f`.
 **An dieser Stelle vorbereitet, noch nicht als ausgeführt ausgewiesen.**
+
+Vorbedingung11:39UTC aktualisiert: Der reguläre Rückstandslauf11:30–11:33UTC
+aktualisierte19 Wissensobjekte bei0 neuen Rohquellen; Tagesbuch nun0,293493USD,
+0 offene Reserven. Die betroffene Quellenzeile, ihr Vorgang, CAS, Links und die
+alte Quittung sind vollständig unverändert. Alle500 Profile weiterhin inaktiv
+und hashgleich. Die neue Transaktion bindet den frisch nachgelesenen Auth-Hash
+und erhält auch diesen gesamten Bestand unverändert.
