@@ -30,9 +30,16 @@ DeepSeek V4 Pro High wird für schwierige Implementierung, komplexes Debugging u
 schwierige lokale Ursachenanalyse eingesetzt, wenn Flash voraussichtlich nicht
 ausreichend ist.
 
-DeepSeek V4 Pro Max wird ausschließlich für sehr schwierige lokale Blocker,
-besonders schwer nachvollziehbare Fehler und Probleme eingesetzt, für die Pro
-High voraussichtlich nicht ausreicht.
+DeepSeek V4 Pro Max wird ausschließlich für sehr schwierige klar abgegrenzte
+lokale Blocker, besonders schwer nachvollziehbare lokale Fehler und Probleme
+eingesetzt, für die Pro High voraussichtlich nicht ausreicht.
+
+Unklare, bereichsübergreifende, architekturrelevante oder Production-nahe Fehler
+bleiben bei Astra, auch wenn DeepSeek V4 Pro Max technisch verfügbar wäre.
+DeepSeek ist für klar abgegrenzte lokale Analyse und Umsetzung vorgesehen.
+Sobald Ursache, Wirkung oder notwendige Entscheidung mehrere Helmut-Bereiche,
+Architektur, Production-Sicherheit oder den 500er Nachweis gemeinsam betrifft,
+übernimmt Astra die Analyse und Fehlerbehebung selbst.
 
 Astra wählt vor jeder Delegation direkt die niedrigste voraussichtlich
 ausreichende Modell/Denkstufen-Kombination. Es gibt keine automatische
@@ -338,7 +345,9 @@ Azure Änderungen
 
 Budgetänderungen
 
-kostenpflichtige Production Modellaufrufe
+kostenpflichtige Production Modellaufrufe außerhalb des unten ausdrücklich
+vorab freigegebenen kumulativen 4-USD-Rahmens oder außerhalb eines gestarteten
+Sprintziels
 
 externe Nachrichten
 
@@ -382,13 +391,30 @@ Was ist der Rückweg?
 Dann stoppen, sofern das ausdrückliche GO für genau diese Aktion noch fehlt.
 Nur im konkret freigegebenen Umfang handeln.
 
-## Kostenpflichtige Tests
+## Kostenpflichtige Modell- und API-Aufrufe
 
-Innerhalb eines gestarteten Sprints darf Codex notwendige Modelltests autonom
-ausführen, wenn sie innerhalb des vom Betreiber gesetzten technischen Tagesriegels
-von 4 USD je UTC Tag bleiben und unmittelbar dem Sprintziel dienen.
+Innerhalb eines gestarteten, klar begrenzten Helmut-Sprints sind notwendige
+variable Modell- und API-Kosten bis insgesamt **unter 4 USD je UTC Tag** vorab
+freigegeben. Alle Anbieter und alle auftragsbezogenen kostenpflichtigen Aufrufe
+zählen gemeinsam gegen dieselbe Tagesgrenze. Solange der nächste Aufruf die
+kumulative Tagesgrenze sicher unter 4 USD hält, ist keine erneute Kostenfreigabe
+erforderlich.
 
-Vor jedem solchen kostenpflichtigen Test müssen dennoch feststehen:
+Vor einem Aufruf, der die kumulative Tagesgrenze erreichen oder überschreiten
+könnte, stoppen und eine ausdrückliche Freigabe einholen. Der technische
+Tagesriegel von 4 USD bleibt unverändert und darf nicht still erhöht oder umgangen
+werden.
+
+Nicht von dieser Dauerfreigabe umfasst sind Abonnements, Plan-Upgrades,
+dauerhaft laufende oder wiederkehrend kostenpflichtige Ressourcen, neue
+kostenpflichtige Infrastruktur, Budgeterhöhungen oder Kosten außerhalb des
+gestarteten Sprintziels.
+
+Für reine lokale Agentenarbeit innerhalb dieses Rahmens ist keine einzelne
+Kostenrückfrage pro Flash-, Pro- oder Astra-Aufruf nötig.
+
+Vor jedem kostenpflichtigen fachlichen Test oder begrenzten Production-Modelllauf
+müssen dennoch feststehen:
 
 Anzahl der Profile
 
@@ -406,11 +432,8 @@ Umgang mit Testprofilen danach
 
 Keine unbegrenzten Wiederholungen.
 
-Keine stillen Budgeterhöhungen.
-
 Fehlschlägt ein notwendiger Test, Ursache bewerten, den auftragsbezogenen Fehler
-selbstständig beheben und nur mit sachlichem Grund erneut testen. Der 4 USD Riegel
-darf dabei nie erhöht oder umgangen werden.
+selbstständig beheben und nur mit sachlichem Grund erneut testen.
 
 ## 500er Production Nachweis
 
