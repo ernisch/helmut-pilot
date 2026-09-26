@@ -1,5 +1,115 @@
 # Lage-Nachweis nach amtlicher Quellenkorrektur
 
+## Aktueller Anschluss: getrenntes Mandatsurteil
+
+[PR615](https://github.com/ernisch/helmut-pilot/pull/615), Kopf `1891a79f`,
+beide Pflichtprüfungen im [CI-Lauf36246387057](https://github.com/ernisch/helmut-pilot/actions/runs/36246387057)
+grün. Merge `642b2d0717ce2d6a4b19509792296e9d7af52295`, Production
+`dpl_F5GzRD8MJTnQGFLTKKqZtCPHByXK` READY14:01:06UTC; keine error/fatal-Logs
+im gelesenen Zeitraum bis14:01:26UTC. [Nurleseplan36247101531](https://github.com/ernisch/helmut-pilot/actions/runs/36247101531)
+bestanden. [Einmalauftrag36247202801](https://github.com/ernisch/helmut-pilot/actions/runs/36247202801)
+14:03:47–14:04:38UTC **fachlich gescheitert**:2 Aufrufe,0,010820USD,
+kein Lage-Tagessatz. `lage-zustaendigkeit-20260926-a` terminal gestoppt/verbraucht.
+
+Die drei Absätze sind quellenbelegt und voneinander verschieden. Der Generator
+ordnet jedoch private Heizkosten dem Haushaltsausschuss zu; dieses negative
+Profilurteil ist korrekt. Der ebenfalls enthaltene Sanktionsbericht ist an den
+Auswärtigen Ausschuss gebunden, wird aber erneut abgelehnt. Die gemeinsame
+Kurzbegründung erklärt nur die Quellenlage, nicht das negative Mandatsurteil.
+Keine automatische Neugenerierung: Auswahlfehler und Prüffehler werden getrennt.
+
+Production-Nachlesung14:06:04UTC:500 Mandatsprofile/0 aktiv; Mandats-/
+Identitätshashes unverändert (`4d1845ad…`/`f10056df…`),0 Jobs/Sperren/Leases/
+offene Kosten. Tagesbuch0,331507USD, technischer Tagesriegel4USD unverändert.
+
+Die Anschlusskorrektur verlangt eine eigene kurze `mandatsbegruendung` vor
+dem Wahrheitswert `profilbezug`. Fehlend, leer oder ohne den gewählten exakten
+Mandatswert bedeutet Ablehnung. Dies prüft die nachvollziehbare Zuordnung,
+nicht automatisch ihre Bedeutung. Fakten-, Akteurs- und Paarprüfung bleiben
+streng; bloße Wortgleichheit wie öffentlicher/private Haushalte genügt nicht.
+
+### Vorab festgelegter Vier-Fall-Nachweis
+
+Roadmap3.1. Ein vorhandenes unverändertes inaktives Profil, derselbe gebundene
+Profilhash wie oben. Vier feste Texte mit vier separat gehashten, live erneut
+gelesenen Quellen; keine neuen Nachrichtenbehauptungen. Die ersten drei Texte
+stammen unverändert aus dem letzten Entwurf; der vierte gibt den bereits
+gelesenen DLF-Auszug zur Energiesteuer wieder. Keine Quelle wird umdatiert.
+
+| Fall | Gewähltes Mandatsfeld | Erwarteter Profilbezug |
+|---|---|---|
+| Bundespolizeigesetz mit Bericht zur Finanzierbarkeit | Haushaltsausschuss | ja |
+| Fortsetzung der EU-Sanktionsverhandlungen | Auswärtiger Ausschuss | ja |
+| Prognose privater Heizkosten | Haushaltsausschuss | nein |
+| Verteidigung der Energiesteuersenkung auf Kraftstoffe | Auswärtiger Ausschuss | nein |
+
+Die unabhängige Sollgrundlage wurde26.09. gegen die aktuellen amtlichen
+Beschreibungen [Auswärtiger Ausschuss](https://www.bundestag.de/ausschuesse/a03_auswaertiges)
+und [Bundeshaushalt](https://www.bundestag.de/parlament/aufgaben/haushalt_neu)
+abgeglichen. Diese beschreiben außenpolitische Begleitung beziehungsweise
+staatliche Haushaltsberatung und -kontrolle. Die konkreten Zuordnungen der
+vier Quellenthemen sind daraus abgeleitete Fachurteile; keine Behauptung einer
+unbelegten Ausschusshandlung und keine zusätzliche Nachricht im Modellprompt.
+
+Alle vier Faktenprüfungen und alle sechs Vergleiche verschiedener Sachverhalte
+müssen ebenfalls bestehen. Ein negativer Sollfall zählt nur bei genau der
+erwarteten fachlichen Ablehnung; fehlende Belege/Begründungen oder Strukturfehler
+sind kein bestandener Negativtest. Die Sollwerte gelangen nicht ins Modell.
+Dieser Vierer-Vergleich ist weder eine vollständige Generatorabnahme noch eine
+500er Textabnahme. Die bereits bestandene36er Prüfung wird nicht wiederholt.
+
+Eigene Quittung `lage-mandatsurteil-20260926-a`, Workflow-Auswahl
+`mandatsurteil`; ausschließlich der belegte verbrauchte Vorgänger oben ist
+zulässig. Nach geprüftem Merge/Production READY zuerst Nurleseplan, dann
+höchstens **ein** `gpt-5-mini`-Quellenreview mit unverändertem `low`,3000
+Ausgabetokens,240 Sekunden und0,25USD. Volle bestehende Reserve0,212USD,
+4USD-Tagesriegel unverändert. Kostenstand14:17UTC konservativ2,841584USD für
+den gesamten Auftrag einschließlich aller erfassten lokalen Helfer25./26.09.;
+keine Anbieterrechnung. Vor Ausführung erneut abgleichen.
+
+Wirkung: private Prüfquittung mit Eingaben und Antwort, reguläre Modell- und
+Kostenbuchung. Kein neuer auslieferbarer Text, keine Profiländerung, keine
+Aktivierung. Risiko: falsches oder unvollständiges Modellurteil; jeder einzelne
+Fehler verhindert den Erfolg. Quellen-/Profil-/Commitabweichung, Parallelbetrieb,
+Zeit-/Kostenfehler oder verbrauchte Quittung stoppen. Nachkontrolle: vollständige
+Quittung unabhängig zurücklesen, alle vier Urteile fachlich prüfen, Profilhashes,
+Kosten und Sperren kontrollieren. Rückweg: Lauf terminal schließen, eigene
+Sperre lösen, keine fachlichen Produktdaten rückzuschreiben; Belege erhalten,
+kein Retry und keine Umdeutung unbekannter Kosten. Der Auftrag ist vorbereitet,
+noch nicht ausgeführt. Lokale Abnahme:9 neue Schutzprüfgruppen,27 bestehende
+Vorstartgruppen und Dokumentbindungsregression bestanden.
+
+### Unabhängige verbleibende Grenzen
+
+Die lesende Anschlussanalyse bestätigt am dokumentierten Pflegefall: ein
+frischer Artikel plus thematisch passender Profilausschuss ersetzt im bestehenden
+Briefingvertrag keine belegte Akteursbeteiligung. Kein Schwellen-, Flag-, Profil-
+oder Quellenzeit-Eingriff. Die127/373-Bilanz bleibt eine lokale Messung auf dem
+oben bezeichneten Snapshot, keine neue Liveabnahme aller Texte. Bei der frischen
+Quellenlesung13:31:50UTC waren alle16 Rohdokumente des Briefingfensters bereits
+vollständig verknüpft;0 unverstandene Restdokumente dieses Fensters. Das beweist
+nicht, dass außerhalb der gelesenen Quellen keine weiteren Nachrichten existieren.
+
+Die vier jüngsten Zweiaufruf-Vorläufe kosten0,009026/0,008331/0,009837/0,010820USD.
+Eine einfache Hochrechnung allein auf500 solche Paare ergibt4,1655–5,4100USD,
+ohne übrige Verarbeitung oder Reservespitze. Keine Prognose oder Kostenfreigabe;
+ein belastbarer Plan unter dem unveränderten4USD-Riegel fehlt weiterhin.
+32 verschiedene öffentliche Profilkontexte bedeuten nicht32 austauschbare
+Eingaben: die vollständige lokale Lageprojektion hatte404 geordnete beziehungsweise
+372 nach Quellreihenfolge kanonisierte Eingabemengen. Keine neue Cache-/Gruppenlogik,
+keine Wiederverwendung alter Ergebnisse als frische500er Ergebnisse.
+
+Zusätzliche Radarprüfung26.09.,14:25UTC: alle500 gespeicherten Builder-Ausgaben
+des12:29-Snapshots durch den unveränderten echten Renderer geführt;1 persönlicher
+und1 Umfeldhinweis,0 fehlende Titel/Links. Kein API-Mitschnitt, keine DOM-/CSS-
+Abnahme und keine neue Liveversorgung. Der persönliche Link wurde direkt
+[beim Bundestag](https://www.bundestag.de/mediathek/video?videoid=7657592) gelesen:
+Seitentitel, Hauptüberschrift und Video-ID gehören zur Rede der benannten Person.
+Der Umfeldlink führt inzwischen auf einen [aktualisierten DLF-Artikel](https://www.deutschlandfunk.de/unionsfraktionschef-frei-warnt-vor-zusammenarbeit-mit-der-linken-eralp-stellt-sich-gegen-antisemitis-100.html),
+der die ursprüngliche Einladung zu Sondierungen weiterhin enthält. Kein altes
+Quelldatum oder gespeicherter Titel wurde auf diesen neuen Stand umgeschrieben.
+Private Einzelbilanz und Originalseitenbeleg gesichert; keine Production-Writes.
+
 Roadmap3.1/3.3; der [autonome Betreiberauftrag](autonom-bis-500-starttor-20260926.md)
 gilt weiter. Keine Aktivierung und kein500er Test. Ein einzelner erfolgreicher
 Lage-Text ersetzt weder500 fachliche Abnahmen noch die1500er Ergebnisbilanz.

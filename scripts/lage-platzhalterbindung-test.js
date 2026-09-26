@@ -11,7 +11,8 @@ const paragraph = { text: sources[0].quellenbelege[0].titel, vorgang_ids: ["vg-a
   quelle_id: "q-ausweis", mandatsbezug: { feld: "schwerpunkt", wert: "Testthema 11" } };
 const review = { pruefungen: [{ absatz: 0, quelle_id: "q-ausweis", belegfeld: "titel",
   vollstaendig_belegt: true, themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt",
-  pruefbegruendung: "Der elektronische Ausweis betrifft den Innenausschuss." }], vergleiche: [] };
+  pruefbegruendung: "Der Titel belegt die Vorstellung des elektronischen Ausweises.",
+  mandatsbegruendung: "Der elektronische Ausweis betrifft die fachliche Aufgabe des Innenausschusses." }], vergleiche: [] };
 for (const [feld, wert] of [["schwerpunkt", "Testthema 11"], ["ausschuss", "Testausschuss 4"],
   ["wahlkreis", "Testwahlkreis 081"]]) {
   assert.equal(Q.mandatsbezugGueltig({ feld, wert }, profile), false,

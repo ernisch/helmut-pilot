@@ -24,7 +24,8 @@ const paragraphs = vorgaenge.map((v, i) => ({ text: v.quellenbelege[0].titel,
   mandatsbezug: { feld: "ausschuss", wert: profil.deputyCommittees[i] } }));
 const urteil = { pruefungen: paragraphs.map((p, absatz) => ({ absatz, quelle_id: p.quelle_id,
   belegfeld: "titel", pruefbegruendung: "Synthetischer Vertragsfall mit stellvertretender Zuständigkeit.",
-  vollstaendig_belegt: true, themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt" })),
+  vollstaendig_belegt: true, themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt",
+  mandatsbegruendung: `Der Synthetikbeleg betrifft die fachliche Aufgabe des ${p.mandatsbezug.wert}.` })),
   vergleiche: [{ erster_absatz: 0, zweiter_absatz: 1, eigenstaendige_sachverhalte: true,
     pruefbegruendung: "Haushaltsberatung und Wohnungsbauförderung sind verschiedene Handlungen." }] };
 

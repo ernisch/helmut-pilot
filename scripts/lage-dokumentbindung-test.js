@@ -14,9 +14,10 @@ const basis = [
   { text: "Der Bund fördert den kommunalen Wohnungsbau.", vorgang_ids: ["vg-mischgruppe"], quelle_id: "q-wohnen", mandatsbezug: bezug },
   { text: "Das Programm unterstützt Städte beim Wohnungsbau.", vorgang_ids: ["vg-mischgruppe"], quelle_id: "q-wohnen", mandatsbezug: bezug }
 ];
-const review = { pruefungen: basis.map((_, absatz) => ({ absatz, quelle_id: "q-wohnen", belegfeld: "titel",
-  pruefbegruendung: "Wohnungsbau ist dem angegebenen Ausschuss direkt zugeordnet.", vollstaendig_belegt: true,
-  themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt" })),
+const review = { pruefungen: basis.map((p, absatz) => ({ absatz, quelle_id: "q-wohnen", belegfeld: "titel",
+  pruefbegruendung: "Der Titel belegt den kommunalen Wohnungsbau.", vollstaendig_belegt: true,
+  themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt",
+  mandatsbegruendung: `Wohnungsbau betrifft die fachliche Aufgabe des ${p.mandatsbezug.wert}.` })),
   vergleiche: [{ erster_absatz: 0, zweiter_absatz: 1, eigenstaendige_sachverhalte: true,
     pruefbegruendung: "Ein Absatz nennt die Förderung, der andere die kommunale Unterstützung." }] };
 
@@ -81,7 +82,8 @@ const mischEntwurf = [
 const mischReview = { pruefungen: mischEntwurf.map((p, absatz) => ({
   absatz, quelle_id: p.quelle_id, belegfeld: "auszug", themenrein: true, profilbezug: true,
   textart: "konkreter_sachverhalt", vollstaendig_belegt: absatz === 1,
-  pruefbegruendung: absatz === 0 ? "Auszug belegt nur Fortsetzung; Oligarchen und Tagesschau fehlen." : "Auszug belegt Beschluss und Haushaltsbericht."
+  pruefbegruendung: absatz === 0 ? "Auszug belegt nur Fortsetzung; Oligarchen und Tagesschau fehlen." : "Auszug belegt Beschluss und Haushaltsbericht.",
+  mandatsbegruendung: `Der belegte Sachverhalt betrifft die fachliche Zustaendigkeit des ${p.mandatsbezug.wert}.`
 })), vergleiche: [{ erster_absatz: 0, zweiter_absatz: 1, eigenstaendige_sachverhalte: true,
   pruefbegruendung: "Sanktionen und Bundespolizeigesetz sind unterschiedliche Sachverhalte." }] };
 const misch = Q.pruefe(mischEntwurf, fallQuellen, mischReview, fallProfil);
@@ -140,10 +142,12 @@ const kraftstoffAbsaetze = [
 const kraftstoffReview = { pruefungen: [
   { absatz: 0, quelle_id: "q-dlf-kraftstoff", belegfeld: "auszug", themenrein: true, profilbezug: false,
     textart: "konkreter_sachverhalt", vollstaendig_belegt: true,
-    pruefbegruendung: "Der Auszug belegt den Tankrabatt, nicht den Auswaertigen Ausschuss." },
+    pruefbegruendung: "Der Auszug belegt den Tankrabatt, nicht die Zustaendigkeit des Auswaertigen Ausschusses.",
+    mandatsbegruendung: `Der Auszug belegt Kraftstoffpreise, nicht den fachlichen Bezug zum Feld '${zweiProfil.committees[0]}'.` },
   { absatz: 1, quelle_id: "q-bt-haushalt", belegfeld: "auszug", themenrein: true, profilbezug: true,
     textart: "konkreter_sachverhalt", vollstaendig_belegt: true,
-    pruefbegruendung: "Der Auszug belegt die Beratung im Haushaltsausschuss." }
+    pruefbegruendung: "Der Auszug belegt die Beratung im Haushaltsausschuss.",
+    mandatsbegruendung: `Die Finanzierbarkeit der Entlastungen betrifft die fachliche Aufgabe des Felds '${zweiProfil.committees[1]}'.` }
 ], vergleiche: [{ erster_absatz: 0, zweiter_absatz: 1, eigenstaendige_sachverhalte: true,
   pruefbegruendung: "Tankrabatt-Verteidigung und Haushaltsberatung sind verschiedene Sachverhalte." }] };
 assert.equal(ai.assembleLageParagraphs({ paragraphs: kraftstoffAbsaetze }, kraftstoffQuellen, zweiProfil).length, 2,
@@ -164,4 +168,57 @@ const rollenReview=structuredClone(korrektReview);
 rollenReview.pruefungen[0].vollstaendig_belegt=false;
 rollenReview.pruefungen[0].pruefbegruendung="Die Quelle nennt Verhandlungen in Brüssel, keinen Beschluss des Ausschusses.";
 assert.equal(Q.pruefe(unbelegteRolle,fallQuellen,rollenReview,fallProfil).ok,false);
-console.log("14/14 Dokumentbindungsgruppen: Einzelquelle, Mandatsauswahl, fachliche Zustaendigkeit und Akteursbeleg.");
+
+// Gruppen 14-16: Getrenntes Mandatsurteil. Das neue Pflichtfeld mandatsbegruendung
+// nennt das gewaehlte Mandatsfeld mit seinem EXAKTEN Wert und steht vor profilbezug.
+// Fehlend, leer oder fachfeldfremd wird fail closed abgelehnt; eine positive
+// Bewertung wird nicht hartkodiert. Die Quellen- und Paarregeln bleiben unveraendert.
+const reviewItem = Q.SCHEMA.properties.pruefungen.items;
+assert(reviewItem.required.includes("mandatsbegruendung"), "mandatsbegruendung ist Pflichtfeld");
+assert(reviewItem.required.indexOf("mandatsbegruendung") < reviewItem.required.indexOf("profilbezug"),
+  "mandatsbegruendung steht vor profilbezug");
+assert.equal(reviewItem.properties.mandatsbegruendung.type, "string");
+assert.match(reviewItem.properties.pruefbegruendung.description, /nur zur Beleglage/);
+assert.match(reviewItem.properties.mandatsbegruendung.description, /EXAKTEN Wert/);
+assert.match(redaktion, /fachliche Aufgabe der Institution mit dem in der Quelle belegten Sachthema/);
+assert.match(redaktion, /Namens- oder Wortgleichheit allein ist kein fachlicher Bezug/);
+assert.match(redaktion, /privaten Haushalten/);
+assert.match(redaktion, /mandatsbegruendung ist Pflicht/);
+assert.match(zweiPrompt, /Namens- oder Wortgleichheit allein ist kein fachlicher Bezug/);
+assert.match(zweiPrompt, /privaten Haushalten/);
+
+for (const begruendung of [undefined, "", "Der Beleg betrifft einen anderen Ausschuss."]) {
+  const ohneWert = structuredClone(korrektReview);
+  ohneWert.pruefungen[0].mandatsbegruendung = begruendung;
+  const out = Q.pruefe(korrekt, fallQuellen, ohneWert, fallProfil);
+  assert.equal(out.ok, false);
+  assert(out.diagnose.fehler.includes("mandatsbegruendung-fehlt"));
+}
+const fremdesFeld = structuredClone(korrektReview);
+fremdesFeld.pruefungen[0].mandatsbegruendung = "Der Sachverhalt betrifft den Haushaltsausschuss.";
+const fremdesFeldUrteil = Q.pruefe(korrekt, fallQuellen, fremdesFeld, fallProfil);
+assert.equal(fremdesFeldUrteil.ok, false);
+assert(fremdesFeldUrteil.diagnose.fehler.includes("mandatsbegruendung-fehlt"));
+
+// Ein negatives Profilurteil bleibt trotz vollstaendiger Begruendung abgelehnt.
+const negativesProfil = structuredClone(korrektReview);
+negativesProfil.pruefungen[0].profilbezug = false;
+const negativesProfilUrteil = Q.pruefe(korrekt, fallQuellen, negativesProfil, fallProfil);
+assert.equal(negativesProfilUrteil.ok, false);
+assert(negativesProfilUrteil.diagnose.fehler.includes("profilbezug-fehlt"));
+
+// Paarregel unveraendert: ohne vollstaendige Paarurteile keine Freigabe.
+const ohnePaar = structuredClone(korrektReview);
+ohnePaar.vergleiche = [];
+assert.equal(Q.pruefe(korrekt, fallQuellen, ohnePaar, fallProfil).grund, "ai-text-quality-incomplete");
+
+// Reine historische Fixtures ohne Profil bleiben ohne das neue Feld gueltig.
+const altParagraph = [{ text: "Der Bundestag beriet den Haushalt.", vorgang_ids: ["vg-alt"] }];
+const altQuellen = [{ vorgang_id: "vg-alt", quellenbelege: [{ quelle_id: "q-alt",
+  url: "https://example.org/alt", titel: "Der Bundestag beriet den Haushalt." }] }];
+const altReview = { pruefungen: [{ absatz: 0, quelle_id: "q-alt", belegfeld: "titel",
+  vollstaendig_belegt: true, themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt",
+  pruefbegruendung: "Der Titel belegt die Beratung." }], vergleiche: [] };
+assert.equal(Q.pruefe(altParagraph, altQuellen, altReview).ok, true,
+  "reiner Quellenfixture ohne Profil braucht keine mandatsbegruendung");
+console.log("Dokumentbindungsgruppen: Einzelquelle, Mandatsauswahl, fachliche Zustaendigkeit, Akteursbeleg und getrenntes Mandatsurteil.");
