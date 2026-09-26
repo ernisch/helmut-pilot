@@ -108,6 +108,14 @@ $HOME/bin/helmut-deepseek pro-read-max "<Aufgabe>"
 $HOME/bin/helmut-deepseek pro-write-max "<Aufgabe>"
 ```
 
+Jede DeepSeek Delegation muss aus dem aktuellen Roadmap Schritt in
+`docs/ROADMAP_BIS_500.md` und dem aktuellen Production Stand in
+`docs/CURRENT_STATE.md` abgeleitet sein. Sol nennt im DeepSeek Auftrag das konkrete
+Roadmap Ziel, die Abnahmekriterien und die Stop Grenze. DeepSeek darf keinen späteren
+Roadmap Schritt, kein Nebenprojekt und keine bereits abgeschlossene Prüfung
+eigenständig vorziehen oder wiederholen. Ändert sich der belegte Stand während der
+Arbeit, übernimmt Sol wieder und bestimmt den nächsten Roadmap Schritt neu.
+
 Nur ein Agent darf gleichzeitig im selben Arbeitsbereich schreiben.
 Während DeepSeek schreibt, schreibt der führende Orchestrator dort nicht.
 
