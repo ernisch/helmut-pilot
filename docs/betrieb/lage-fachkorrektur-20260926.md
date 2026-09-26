@@ -2,6 +2,45 @@
 
 Stand26.09.2026,21:15UTC. Roadmap3.1 bleibt offen.
 
+## Nachkontrolle22:26UTC: Generator schützt vor ungebundener Auswahlnotiz
+
+PR634/`654fd8ea72f31260ffce6a104e071b237dd61ebf` READY22:19:41UTC,
+Deployment`dpl_AJDviCLtiKVim9kUfvFH2o6rcyCX`; Pflicht-CI36275303165 am
+Kopf`dc535042` grün, Fehler-/Fatal-Nachfenster22:19:23–22:19:46UTC leer.
+Plan36275923045 bestanden. Vergleich c36275977472 fachlich bestanden,
+1 Aufruf/0,012077USD; vollständige Quittung
+`baceedfc8bd65fc0bf872f919d850afc846a707d0fc73c5c3da5cd74c40db7d2`.
+Generatorplan36276049605 bestanden. [Generator a36276129452](https://github.com/ernisch/helmut-pilot/actions/runs/36276129452)
+stoppte nach1 Aufruf/0,006704USD vor dem Review mit`ai-text-auswahlbegruendung`.
+Kein Lage-Tagessatz gespeichert, keine offene Reserve, Profile unverändert.
+Quittungsvollhash`77c24c27e3a2b182c2a078305130a351bd83c4aa3a675b08bf9e7b2e323e6308`;
+privater Entwurfspayload`88a72b90b79d94514fe156ed594c7fde3c4b389e6853ba7b9ac307bc3c4079f0`.
+
+Vollständiger Entwurf gelesen: statt des exakten Mandatswerts „Auswärtiger Ausschuss“
+stand in der Notiz „Auswärtigen Ausschusses“. Der unveränderte Server lehnte korrekt
+ab. Absatz2 übernahm außerdem Brüssel/fortgesetzte Verhandlungen aus einem anderen
+Dokument derselben Vorgangsgruppe; kein fachlicher Erfolg wird daraus erklärt.
+Kleinste Schema-/Prompt-Korrektur: unveränderter Mandatswert vor Doppelpunkt;
+Orte/Handlungen/Zahlen ausschließlich aus dem gewählten Dokument. Kein Grammatik-
+Toleranzfilter und keine Lockerung der Quellen- oder Mandatsprüfung.
+
+Eigener Generatorauftrag b (`lage-generatorfachkorrektur-20260926-b`), maximal
+2 Aufrufe/0,50USD/240s. Die alte Kennung a bleibt verbraucht. Der bestandene
+Vergleich c wird nicht noch einmal kostenpflichtig ausgeführt: dieser neue Auftrag
+bindet seinen vollständigen unveränderten Beleg UND die gescheiterte Generator-
+Quittung exakt. Der historische Vergleichscommit ist fest654fd8ea; heutige Eingabe,
+Quellen, Profil, Reviewprompt und Reviewschema müssen weiterhin vollständig
+hashgleich sein, alle gespeicherten Einzelurteile werden erneut strikt ausgewertet.
+Ein veränderter Tag, Beleg oder fachliches Review stoppt vor Kosten. Nur Generator-
+Schemahinweise ändern sich; der Reviewcode und seine Sollwerte bleiben gleich.
+Lokale Prüfung: Dokumentbindung,15 Prüfaufwand- und36 Vorstartgruppen; vollständige
+reale Vorgänger gegen aktuelle Eingabe bestanden, abweichender Prompt gesperrt.
+
+Gesamtbindung22:26UTC4,553551USD, keine offene Productionreserve,54 Helfersessions
+und0,35USD Altreserve enthalten. Beide6USD-Grenzen bleiben erhalten. Alle500 Profile
+inaktiv und beide Profilschutzhashes gleich. Regierungsabrufweg22:26:07UTC separat
+korrigiert und unabhängig nachgelesen; noch kein regulärer Crawl belegt.
+
 ## Nachkontrolle22:08UTC: Fachvergleich bestanden, Generatorplan gestoppt
 
 PR632/`757b1db50c578e114b90bd4de6213f46b9b7aab1` ist READY;

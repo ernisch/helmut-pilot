@@ -125,6 +125,13 @@ assert.match(zweiPrompt, /Private Auswahlnotiz/i,
 assert.match(zweiPrompt, /auswahlbegruendung ist eine private Auswahlnotiz und KEIN Quellenbeleg/,
   "Der Prompt verbietet die Auswahlbegruendung im sichtbaren Text");
 
+const notizRegel = ai.LAGE_BRIEFING_SCHEMA.properties.paragraphs.items.properties.auswahlbegruendung.description;
+assert(zweiPrompt.includes(notizRegel), "Schema und Prompt verlangen denselben unveraenderten Mandatswert");
+assert.match(notizRegel,/Doppelpunkt/);
+assert(zweiPrompt.includes(ai.LAGE_BRIEFING_SCHEMA.properties.paragraphs.items.properties.text.description));
+assert.equal(Q.mandatsbegruendungGebunden("Zustaendigkeit des Auswärtigen Ausschusses",{wert:"Auswärtiger Ausschuss"}),false);
+assert.equal(Q.mandatsbegruendungGebunden("Auswärtiger Ausschuss: konkreter aussenpolitischer Bezug",{wert:"Auswärtiger Ausschuss"}),true);
+
 // Gruppe 13: Der belegte falsche Mandatsbezug vom 26.09. (Kraftstoffpreis-Absatz
 // am Auswaertigen Ausschuss) bleibt vom unveraenderten strengen Review abgelehnt.
 // Die Struktur allein akzeptiert ihn, weil der Wert ein echtes Profilfeld ist.
