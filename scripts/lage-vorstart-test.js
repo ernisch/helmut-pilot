@@ -105,6 +105,23 @@ function fixture() {
     assert.throws(()=>T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"zeitbezug"},commit,start),/reparaturbindung/);
     assert.throws(()=>T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"erneut"},commit,start),/auftrag/);
   });
+  await test("Einzelquellenauftrag hat eigene Quittung und unveraenderte Artikel-/Profilbindung",()=>{
+    const neu=T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"einzelquelle",
+      HELMUT_VORSTART_PROFIL:T.EINZELQUELLE.profilHash},commit,start);
+    assert.equal(neu.quittung,T.EINZELQUELLE.quittung);assert.notEqual(neu.quittung,T.ARTIKELSTAND.quittung);
+    assert.equal(neu.artikelstand,true);assert.equal(neu.reparatur,false);
+    assert.throws(()=>T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"einzelquelle"},commit,start),/artikelstandbindung/);
+  });
+  await test("Einzelquellenauftrag verlangt genau den abgeschlossenen gescheiterten Vorlauf",()=>{
+    const vorher={status:"gestoppt",ok:false,runId:"nachlauf500-36243162049",idHash:T.ARTIKELSTAND.profilHash,
+      runtimeCommit:"d826ad1ef3f64cb578821a5e0b60e98105a9f5ee",grund:"ai-text-source-support",gespeichert:false,
+      freigegebeneAufrufe:2,offeneKosten:0,profileUnveraendert:true,lesebeweis:{absatzHash:T.ARTIKELSTAND.absatzHash}};
+    T.pruefeEinzelquellenVorgaenger(vorher);
+    for(const aenderung of [{status:"laeuft"},{ok:true},{runId:"fremd"},{idHash:"fremd"},{runtimeCommit:"fremd"},
+      {grund:"ai-provider-unavailable"},{gespeichert:true},{freigegebeneAufrufe:1},{offeneKosten:1},
+      {profileUnveraendert:false},{lesebeweis:null}])
+      assert.throws(()=>T.pruefeEinzelquellenVorgaenger({...vorher,...aenderung}),/altquittung/);
+  });
   const alt = {id:"bf-test",generated_at:"2026-09-26T01:00:00Z",payload:{qualitaet:false,text:"Unbelegter Tagesbezug"}};
   await test("Datumsbindung hat eine dritte feste Quittung bei gleicher Schutzbindung",()=>{
     const neu = T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"datumsbindung",
