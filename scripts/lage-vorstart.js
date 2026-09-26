@@ -378,6 +378,13 @@ async function main(args = process.argv.slice(2), env = process.env) {
     const result = await lauf(cfg,{ execute,now:Date.now,ruhe,bestand,
       profile:async () => { const found = profiles.filter(p => bindung(p) === cfg.profilHash);fordere(found.length === 1,"auswahl");return found[0]; },
       kosten:async () => K.pruefeStart(await S.readAuthStore(),TAG,await S.leseLlmTageszaehler(new Date().toISOString())),
+      kostenNachlauf:async () => {
+        const [auth,counter] = await Promise.all([S.readAuthStore(),S.leseLlmTageszaehler(new Date().toISOString())]);
+        fordere(counter?.ok === true && Number.isSafeInteger(counter.used) && counter.used >= 0,"kosten-nachlesung");
+        const unbekannt = Object.values(auth?.[K.KEY]?.[TAG]?.calls || {}).filter(c => c.status === "ungeklaert").length;
+        // Reine Bilanz, keine erneute Startfreigabe; offene Reserven bleiben sichtbar.
+        return K.kontrolliere(auth,TAG,unbekannt,counter.used);
+      },
       laufkosten:() => K.laufGebundenUsd(cfg.runId,{env}),reserve:K.reservierungHoeheUsd(),
       cache:id => S.getRenderedBriefingV3(id,"lage",require("../lib/helmut/briefing-frische").berlinTagKey(new Date()),{strict:true}),
       acquire:() => S.acquireGlobalUnderstandingLock(MAX_MS+60000),release:() => S.releaseGlobalUnderstandingLock(),

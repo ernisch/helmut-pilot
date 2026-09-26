@@ -496,3 +496,42 @@ Antwort-Hash. Identische vier Quellen, Absätze und vorab definierte Sollurteile
 keine alten Aufträge wiederverwenden. Vor Ausführung neuer Nurleseplan und
 frischer kumulativer Kostenstand. Gleiche Nachkontrolle/Rückweg wie oben.
 10 Vertragsgruppen und32 bestehende Vorstartgruppen grün. Production offen.
+
+## Korrekte Übertragung, danach20s-Timeout und offene Vollreserve
+
+PR623/`9abfc1db0755d63063f63645d13f8e8618eca6a8`, Pflicht-CI36254930886 grün,
+Vercel`dpl_HSDEtBLLwr9jiTKtsC62TzZy1EKz` READY16:29:02UTC; keine Fehlerlogs bis
+16:29:43UTC. Schutzlesung16:29:51UTC500/0,0 offene Kosten, Profilhashes gleich.
+Nurleseplan36255666452 bestanden. Gesamtstand3,552389USD, mit vollem0,25USD
+Einzelrahmen unter4USD. Neuer Lauf36255745418 einmalig gestartet.
+
+Run36255745418 endete16:32:08UTC ohne bestätigten Modellausgang. Der echte
+Kostenbeleg`llm-1790440319637-9moa0o` meldet16:31:59.637UTC
+`request-error:ETIMEDOUT`,20523ms, Tokenzahlen`unknown`. Keine Antwort und kein
+Fachurteil erhalten; gpt-5-mini/medium damit noch nicht fachlich abgenommen.
+Quittung b ist verbraucht. Ticket`2c43a041-7e52-496b-8759-546184e13a83` bleibt
+`ungeklaert`, voller Betrag0,212USD reserviert. Kein Freigeben oder Schätzen
+fehlender Anbieterabrechnung, keine Wiederholung und kein neuer Auftrag.
+
+Die bisherige Sammel-Nachkontrolle verwendete die Startprüfung auch nach dem
+Lauf. Diese verweigert bei offenen Kosten; `Promise.all` verlor dadurch auch
+erfolgreiche unabhängige Profil-/Laufkostenlesungen. Das ausgegebene
+`profileUnveraendert=false` war deshalb kein belegter Profilunterschied.
+Direkte Nachlesung16:33:07UTC bestätigt500/0, beide Profilhashes identisch,
+0 Jobs/Locks/Leases; Tageskosten0,483900USD plus offene0,212USD.
+
+Lokale Korrektur: reine Kostenbilanz nach dem Lauf, voneinander unabhängige
+Nachlesungen und`null` für tatsächlich unbekannten Profilstand. Startprüfung
+und terminaler Fehler bei jeder offenen Reserve bleiben unverändert streng.
+Nur der isolierte Prüfauftrag erhält120s HTTP-Wartezeit; vor jedem Aufruf müssen
+zusätzlich60s Abschlusszeit im unveränderten240s-Rahmen frei bleiben. Normale
+Aufträge behalten20s. Token-/Kostenlimits und verbrauchte Kennungen unverändert.
+13 gezielte Diagnosegruppen und32 Vorstartgruppen grün. Noch kein neuer Modelllauf.
+
+Konservativ kumulativ3,764389USD einschließlich vollständiger offener Reserve;
+höchstens0,235611USD bis4USD. Ein weiterer0,25USD-Auftrag wäre nicht gedeckt.
+Der Anbieterabschluss ist in den angebundenen Daten nicht vorhanden. Kein
+Azure-Verwaltungsconnector oder Azure-CLI verfügbar; Browserzugriff scheiterte
+zweimal technisch beim Start. Für die Aufklärung wird ein echter, diesem
+Anbieteraufruf zuordenbarer Verbrauchsbeleg benötigt. Auch ein Tageswechsel
+setzt die kumulative Auftragsgrenze nicht zurück.500er Start bleibt gesperrt.

@@ -71,6 +71,8 @@ async function einmallauf(cfg, d) {
     const [kosten, laufkosten, bestand, fresh] = await Promise.all([
       d.kosten(), d.laufkosten(), d.bestand(), d.reviewPaket(profile)]);
     T.pruefeAufruf({ calls, start, jetzt: d.now(), kosten, laufkosten, reserve: d.reserve, bestand, grundlinie });
+    //120s Antwortfenster plus60s fuer Abschluss/Nachkontrolle muessen bleiben.
+    fordere(d.now() - start < MAX_MS - 180000, "sollfall-restzeit");
     fordere(calls === 0 && laufkosten + d.reserve <= MAX_USD, "sollfall-kosten");
     fordere(fresh.paketHash === input.paketHash, "sollfall-eingabe-geaendert");
     fordere(hash(await d.cache(profile.id)) === cacheHash, "sollfall-tagessatz-geaendert");
@@ -99,14 +101,18 @@ async function einmallauf(cfg, d) {
     try { await d.release(); }
     catch (_) { out = { ...out, ok: false, grund: "sollfall-nachkontrolle" }; }
     try {
-      [nach, kosten, laufkosten] = await Promise.all([d.ruhe(), d.kosten(), d.laufkosten()]);
-      fordere(nach === grundlinie && hash(await d.cache(profile.id)) === cacheHash
+      const ergebnisse = await Promise.allSettled([d.ruhe(),
+        (d.kostenNachlauf || d.kosten)(), d.laufkosten(), d.cache(profile.id)]);
+      [nach, kosten, laufkosten] = ergebnisse.slice(0,3).map(r => r.status === "fulfilled" ? r.value : null);
+      fordere(ergebnisse.every(r => r.status === "fulfilled")
+        && nach === grundlinie && hash(ergebnisse[3].value) === cacheHash
         && kosten.offeneReservierungen === 0 && kosten.limitUsd === 4
         && Number.isFinite(laufkosten) && laufkosten >= 0 && laufkosten <= MAX_USD
         && (!out.ok || (calls === 1 && laufkosten > 0)) && d.now() - start < MAX_MS, "sollfall-nachkontrolle");
     } catch (_) { out = { ...out, ok: false, grund: "sollfall-nachkontrolle" }; }
     out = { ...out, ...limits, freigegebeneAufrufe: calls, laufkostenUsd: laufkosten,
-      profileUnveraendert: nach === grundlinie, offeneKosten: kosten?.offeneReservierungen ?? null };
+      profileUnveraendert: nach === null ? null : nach === grundlinie,
+      offeneKosten: kosten?.offeneReservierungen ?? null };
     if (claimed) {
       const saved = { ...receipt, ...out, status: out.ok ? "abgeschlossen" : "gestoppt",
         beendetAm: new Date(d.now()).toISOString(), fachbeleg: proof };
