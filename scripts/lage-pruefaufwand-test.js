@@ -103,5 +103,19 @@ function setup(){
       {offeneKosten:1},{profileUnveraendert:false},{lesebeweis:null}])
       A.throws(()=>T.pruefePruefaufwandVorgaenger({...alt,...change}),/pruefaufwand-vorgaenger/);
   });
+  await test("Transportnachweis b verlangt exakt den verbrauchten Lauf a und erhält dessen Antwort",async()=>{
+    const alt=require("./fixtures/lage-pruefaufwand-transport-vorgaenger.json");
+    T.pruefePruefaufwandTransportVorgaenger(alt);
+    A.equal(M.QUITTUNG,"lage-pruefaufwand-20260926-b");
+    A.equal(T.PRUEFAUFWAND.quittung,M.QUITTUNG);
+    for(const change of [{status:"laeuft"},{ok:true},{quittungsschluessel:M.QUITTUNG},{runId:"fremd"},
+      {runtimeCommit:"fremd"},{idHash:"fremd"},{grund:"anderer"},{gespeicherterLageText:true},
+      {freigegebeneAufrufe:0},{offeneKosten:1},{profileUnveraendert:false},{paketHash:"fremd"},
+      {fachbeleg:null}]) A.throws(()=>T.pruefePruefaufwandTransportVorgaenger({...alt,...change}),/transport-vorgaenger/);
+    const falsch=structuredClone(alt);falsch.fachbeleg.antwort.pruefungen[2].profilbezug=false;
+    A.throws(()=>T.pruefePruefaufwandTransportVorgaenger(falsch),/transport-vorgaenger/);
+    const {d,cfg,trace}=setup();cfg.quittung=alt.quittungsschluessel;
+    await A.rejects(M.einmallauf(cfg,d),/sollfall-auftrag/);A.deepEqual(trace,[]);
+  });
   console.log(`${n}/${n} Prüfaufwand-Prüfgruppen bestanden; keine Modelle oder Production-Schreibzugriffe.`);
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -43,7 +43,7 @@ const { execFileSync } = require("child_process");
 
 const ROOT = path.join(__dirname, "..");
 const MODEL = "gpt-5-mini";
-const MAX_OUTPUT_TOKENS = 2500;
+const MAX_OUTPUT_TOKENS = 3000;
 const SCHEMA = {
   type: "object",
   properties: { ok: { type: "boolean" } },

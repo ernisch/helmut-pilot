@@ -1,0 +1,103 @@
+{
+  "status": "gestoppt",
+  "ok": false,
+  "quittungsschluessel": "lage-pruefaufwand-20260926-a",
+  "runId": "nachlauf500-36254207276",
+  "runtimeCommit": "61d4772f4116dd04d07ab699cc60fa94daa9736a",
+  "idHash": "5fed1a61b4ba022a9722181f6c3fd06be5b3b4917cf3d3d3d1ff70f048364a4c",
+  "grund": "sollfall-fachlich-abgelehnt",
+  "freigegebeneAufrufe": 1,
+  "offeneKosten": 0,
+  "profileUnveraendert": true,
+  "gespeicherterLageText": false,
+  "paketHash": "f84d558e5317d383200445da2ebfe8182f3cd448efe8fa4c45d5784209a9c80e",
+  "fachbeleg": {
+    "antwort": {
+      "pruefungen": [
+        {
+          "absatz": 0,
+          "textart": "konkreter_sachverhalt",
+          "belegfeld": "auszug",
+          "quelle_id": "q-7a17daf60deb5b5a03a7",
+          "themenrein": true,
+          "profilbezug": true,
+          "pruefbegruendung": "Auszug benennt Annahme in dritter Beratung, Abstimmungsergebnisse, Bericht des Haushaltsausschusses und erweiterte Befugnisse für die Bundespolizei.",
+          "mandatsbegruendung": "ausschuss=Haushaltsausschuss; der Absatz bezieht sich auf den im Auszug genannten Bericht des Haushaltsausschusses zur Finanzierbarkeit.",
+          "vollstaendig_belegt": true
+        },
+        {
+          "absatz": 1,
+          "textart": "konkreter_sachverhalt",
+          "belegfeld": "auszug",
+          "quelle_id": "q-6a45466027e8f081a336",
+          "themenrein": true,
+          "profilbezug": true,
+          "pruefbegruendung": "Auszug berichtet, dass EU-Sanktionen auslaufen und einige Staaten zwei Oligarchen streichen wollen, was Diskussionen auslöst.",
+          "mandatsbegruendung": "ausschuss=Auswärtiger Ausschuss; Thema EU-Sanktionen gegen Russland fällt in den Auswärtigen Ausschuss zuständigen Bereich.",
+          "vollstaendig_belegt": true
+        },
+        {
+          "absatz": 2,
+          "textart": "konkreter_sachverhalt",
+          "belegfeld": "auszug",
+          "quelle_id": "q-0ac55b58d13908da5120",
+          "themenrein": true,
+          "profilbezug": true,
+          "pruefbegruendung": "Auszug nennt Prognose steigender Heizkosten 2026 und Unterschiede zwischen Heizarten, weil nicht alle Brennstoffe teurer werden.",
+          "mandatsbegruendung": "ausschuss=Haushaltsausschuss; Heizkosten und Haushaltsbelastung sind finanzpolitisch relevant für den Haushaltsausschuss.",
+          "vollstaendig_belegt": true
+        },
+        {
+          "absatz": 3,
+          "textart": "konkreter_sachverhalt",
+          "belegfeld": "auszug",
+          "quelle_id": "q-a3f89d9bb5ce9d4dba6d",
+          "themenrein": false,
+          "profilbezug": false,
+          "pruefbegruendung": "Auszug sagt, Zorn verteidigte die Senkung der Energiesteuer auf Benzin und Diesel, wie im Absatz formuliert.",
+          "mandatsbegruendung": "ausschuss=Auswärtiger Ausschuss; Energiethemen sind typischer für Wirtschafts-/Haushaltsausschuss, daher kein fachlicher Bezug zum Auswärtigen Ausschuss.",
+          "vollstaendig_belegt": true
+        }
+      ],
+      "vergleiche": [
+        {
+          "erster_absatz": 0,
+          "zweiter_absatz": 1,
+          "pruefbegruendung": "Erster Absatz behandelt Bundespolizeigesetz-Beschluss; zweiter bezieht sich auf EU-Sanktionen gegen Russland — unterschiedliche Sachverhalte.",
+          "eigenstaendige_sachverhalte": true
+        },
+        {
+          "erster_absatz": 0,
+          "zweiter_absatz": 2,
+          "pruefbegruendung": "Erster Absatz Gesetzgebung/Bundespolizei; dritter Absatz Heizkostenprognose — thematisch verschieden.",
+          "eigenstaendige_sachverhalte": true
+        },
+        {
+          "erster_absatz": 0,
+          "zweiter_absatz": 3,
+          "pruefbegruendung": "Erster Absatz Gesetzesbeschluss; vierter Absatz berichtet Verteidigung einer Steuerabsenkung — unterschiedliche Sachverhalte.",
+          "eigenstaendige_sachverhalte": true
+        },
+        {
+          "erster_absatz": 1,
+          "zweiter_absatz": 2,
+          "pruefbegruendung": "Zweiter Absatz EU-Sanktionen-Streit; dritter Absatz Heizkostenprognose — verschiedene Themen.",
+          "eigenstaendige_sachverhalte": true
+        },
+        {
+          "erster_absatz": 1,
+          "zweiter_absatz": 3,
+          "pruefbegruendung": "Zweiter Absatz EU-Sanktionen-Streit; vierter Absatz SPD-Statement zum Tankrabatt — unterschiedliche Sachverhalte.",
+          "eigenstaendige_sachverhalte": true
+        },
+        {
+          "erster_absatz": 2,
+          "zweiter_absatz": 3,
+          "pruefbegruendung": "Dritter Absatz Heizkostenprognose; vierter Absatz Parlaments-Statement zur Energiesteuer — keine neue gemeinsame Sachinformation.",
+          "eigenstaendige_sachverhalte": true
+        }
+      ]
+    },
+    "antwortHash": "46a84496a16fd552faabd0bd12ce96cf0878ce65c86eeea394aab37370d857d2"
+  }
+}
