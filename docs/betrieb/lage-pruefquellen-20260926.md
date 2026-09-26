@@ -20,9 +20,19 @@ Pruefeingabe sinkt von14934 auf11040 Zeichen. Beide Originaldokumente sind
 vollstaendig identisch. Dies ist keine Token-, Kosten- oder Qualitaetsmessung
 eines neuen Production-Aufrufs.
 
-Der begrenzte Zeitbezugsnachweis aus PR595 soll nach beiden geprueften Deployments
-auch den neuen Reviewpfad durchlaufen. Ein einzelner erfolgreicher Text beweist
-weder die Kosten aller500 Profile noch deren fachliche Vollversorgung.
+PR596 ist nach beiden gruenen Pflichtpruefungen aus CI36224000416 gemergt und
+als `9166236a` Production READY. Der begrenzte Zeitbezugsnachweis aus PR595
+durchlief den neuen Reviewpfad tatsaechlich. [Vollstaendige Abnahme](lage-zeitbezug-nachweis-20260926.md).
+Die Pruefeingabe sank von4429 auf3212 gebuchte Eingabetokens, die Ausgabe stieg
+von624 auf1064 Tokens. Der gesamte neue Versuch kostete0,008874USD statt
+0,007648USD im ersten Versuch. Weniger Eingabetokens sind belegt, eine Senkung
+der Gesamtkosten ist **nicht** belegt. Die beiden Versuche haben verschiedene
+Entwuerfe und Urteile; kein kontrollierter Modellvergleich.
+
+500 identische neue Paare entspraechen4,437USD schon ohne letzte volle Reserve,
+Quellenarbeit und weitere Fachpruefungen. Das ist nur eine Einzelfallhochrechnung,
+kein gemessener500er Bedarf. Der Kosten-/Zeitplan bleibt offen; keine kleinere
+Reserve, geringere Qualitaetsstufe oder Budgeterhoehung daraus ableiten.
 
 ## Versorgungsdiagnose
 
