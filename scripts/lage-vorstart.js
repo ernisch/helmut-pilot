@@ -31,6 +31,8 @@ const EINZELQUELLE = Object.freeze({ ...ARTIKELSTAND, auftrag:"einzelquelle",
   quittung:"lage-einzelquelle-20260926-a" });
 const MANDATSAUSWAHL = Object.freeze({ ...ARTIKELSTAND, auftrag:"mandatsauswahl",
   quittung:"lage-mandatsauswahl-20260926-a" });
+const ZUSTAENDIGKEIT = Object.freeze({ ...ARTIKELSTAND, auftrag:"zustaendigkeit",
+  quittung:"lage-zustaendigkeit-20260926-a" });
 const MAX_MS = 240000, MAX_USD = 0.50;
 const fordere = (ok, grund) => { if (!ok) throw new Error("lage-vorstart-" + grund); };
 const bindung = p => hash({ id:p.id, profilHash:profilHash(p) });
@@ -38,7 +40,7 @@ const url = value => require("../lib/helmut/dedup").canonicalizeUrl(value);
 function konfiguration(env, commit, jetzt = Date.now()) {
   const auftrag = env.HELMUT_VORSTART_AUFTRAG || "erstpruefung";
   const reparatur = [ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG].find(x => x.auftrag === auftrag);
-  const artikelauftrag = [ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL].find(x => x.auftrag === auftrag);
+  const artikelauftrag = [ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT].find(x => x.auftrag === auftrag);
   const artikelstand = Boolean(artikelauftrag);
   fordere(auftrag === "erstpruefung" || Boolean(reparatur) || artikelstand,"auftrag");
   fordere(!reparatur || env.HELMUT_VORSTART_PROFIL === reparatur.profilHash,"reparaturbindung");
@@ -59,7 +61,8 @@ function konfiguration(env, commit, jetzt = Date.now()) {
 function pruefeEinzelquellenVorgaenger(alt, auftrag = EINZELQUELLE.quittung) {
   const vorgaenger = {
     [EINZELQUELLE.quittung]:["nachlauf500-36243162049","d826ad1ef3f64cb578821a5e0b60e98105a9f5ee"],
-    [MANDATSAUSWAHL.quittung]:["nachlauf500-36244835548","13a152e8bb880a97435cbc0a8b130248980c69a7"]
+    [MANDATSAUSWAHL.quittung]:["nachlauf500-36244835548","13a152e8bb880a97435cbc0a8b130248980c69a7"],
+    [ZUSTAENDIGKEIT.quittung]:["nachlauf500-36246123158","7d398ee914f1b713e6beccb930789846f657dedd"]
   }[auftrag];
   fordere(vorgaenger,"altquittung");
   fordere(alt?.status === "gestoppt" && alt.ok === false
@@ -242,8 +245,9 @@ async function main(args = process.argv.slice(2), env = process.env) {
       && alt[0].data.runId === "nachlauf500-36227833079"
       && alt[0].data.idHash === cfg.profilHash && alt[0].data.grund === "ai-text-source-support","altquittung");
   }
-  if ([EINZELQUELLE.quittung,MANDATSAUSWAHL.quittung].includes(cfg.quittung)) {
-    const vorher = cfg.quittung === MANDATSAUSWAHL.quittung ? EINZELQUELLE : ARTIKELSTAND;
+  if ([EINZELQUELLE.quittung,MANDATSAUSWAHL.quittung,ZUSTAENDIGKEIT.quittung].includes(cfg.quittung)) {
+    const vorher = cfg.quittung === ZUSTAENDIGKEIT.quittung ? MANDATSAUSWAHL
+      : cfg.quittung === MANDATSAUSWAHL.quittung ? EINZELQUELLE : ARTIKELSTAND;
     const alt = await read("helmut_store","select=data&id=eq."+vorher.quittung+"&limit=1");
     fordere(alt.length === 1,"altquittung");pruefeEinzelquellenVorgaenger(alt[0].data,cfg.quittung);
   }
@@ -270,4 +274,4 @@ if (require.main === module) main().then(c => { process.exitCode=c; }).catch(e =
   console.log(JSON.stringify({ok:false,grund:/^lage-vorstart-[a-z-]+$/.test(e.message || "") ? e.message : "lage-vorstart-technischer-fehler",automatischeWiederholung:false}));process.exitCode=1;
 });
 module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main,ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG,
-  ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,pruefeEinzelquellenVorgaenger,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};
+  ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,pruefeEinzelquellenVorgaenger,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};

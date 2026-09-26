@@ -151,4 +151,17 @@ assert.equal(ai.assembleLageParagraphs({ paragraphs: kraftstoffAbsaetze }, kraft
 const kraftstoff = Q.pruefe(kraftstoffAbsaetze, kraftstoffQuellen, kraftstoffReview, zweiProfil);
 assert.equal(kraftstoff.ok, false);
 assert(kraftstoff.diagnose.fehler.includes("profilbezug-fehlt"));
-console.log("13/13 Dokumentbindungsgruppen: Quelle, Vorgang, Mandatsfeld, Rollenpruefung, Dokumenttrennung und Mandatsauswahl ohne ersten Schwerpunkt.");
+// Fachlicher Mandatsbezug ist keine Behauptung, dass der Ausschuss gehandelt hat.
+const redaktion=Q.prompt(korrekt,fallQuellen,fallProfil);
+assert.match(redaktion,/Ergaenze keine Nachrichtenfakten aus Vorwissen/);
+assert(!redaktion.includes("Nutze kein Vorwissen."));
+assert.match(redaktion,/muss der Ausschuss nicht im Artikel genannt sein/);
+assert.match(redaktion,/genau diese Akteursrolle in Titel oder Auszug belegt/);
+assert.equal(Q.pruefe(korrekt,fallQuellen,korrektReview,fallProfil).ok,true);
+const unbelegteRolle=structuredClone(korrekt);
+unbelegteRolle[0].text="Der Auswärtige Ausschuss hat die Sanktionen beschlossen.";
+const rollenReview=structuredClone(korrektReview);
+rollenReview.pruefungen[0].vollstaendig_belegt=false;
+rollenReview.pruefungen[0].pruefbegruendung="Die Quelle nennt Verhandlungen in Brüssel, keinen Beschluss des Ausschusses.";
+assert.equal(Q.pruefe(unbelegteRolle,fallQuellen,rollenReview,fallProfil).ok,false);
+console.log("14/14 Dokumentbindungsgruppen: Einzelquelle, Mandatsauswahl, fachliche Zustaendigkeit und Akteursbeleg.");

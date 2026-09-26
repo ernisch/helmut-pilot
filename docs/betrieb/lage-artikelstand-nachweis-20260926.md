@@ -174,3 +174,40 @@ Tagespriorität. Kein Ausschuss ist in der Quelle als Akteur belegt. Eine bloße
 Schwellensenkung oder erfundene Ausschusszuordnung ist keine Lösung. Matching,
 Quellendaten und Profile wurden nicht geändert. Dieser Einzelbefund ist keine
 vollständige Ursachenanalyse aller373 fehlenden Tagesprioritäten.
+
+## Mandatsauswahl-Nachweis und fachliche Zuständigkeit
+
+[PR614](https://github.com/ernisch/helmut-pilot/pull/614) nach beiden grünen
+Pflichtprüfungen am Kopf93804d5e im [Lauf36245292368](https://github.com/ernisch/helmut-pilot/actions/runs/36245292368)
+als `7d398ee914f1b713e6beccb930789846f657dedd` gemergt. Production
+`dpl_4GfisCLE2JGCf1ZRQyoBX9HC8gLv` READY13:40:33UTC; keine error/fatal-Logs
+bis13:40:50UTC. [Nurleseplan36245970734](https://github.com/ernisch/helmut-pilot/actions/runs/36245970734)
+bestanden. [Einmalauftrag36246123158](https://github.com/ernisch/helmut-pilot/actions/runs/36246123158)
+13:43:55–13:44:48UTC **gescheitert**:2 Aufrufe/0,009837USD, kein Tagessatz,
+Quittung `lage-mandatsauswahl-20260926-a` terminal gestoppt und verbraucht.
+Nachlesung13:47:21UTC:500/0, Profil-/Identitätshashes gleich,0 Jobs/Sperren/
+Leases/offene Kosten, Tagesbuch0,320687USD, Tagesriegel4USD.
+
+Entwurf und Review vollständig unabhängig gelesen: Der Entwurf wählt nun den
+amtlichen Bundespolizeigesetz-Absatz mit Haushaltsausschuss und den DLF-Bericht
+über EU-Sanktionen mit Auswärtigem Ausschuss. Beide Absätze sind laut Review
+vollständig belegt, themenrein und verschieden. Das Review lehnt den zweiten
+Profilbezug aber mit der fehlenden Nennung des Auswärtigen Ausschusses im
+Artikel ab. Dieser Absatz behauptet keine Handlung dieses Ausschusses.
+Fachliche Zuständigkeit und belegpflichtige Akteursrolle werden verwechselt.
+
+Der Prüfauftrag wird deshalb präzisiert: Keine Nachrichtenfakten aus Vorwissen
+ergänzen; den konkreten fachlichen Zusammenhang des gewählten vorhandenen
+Mandatsfeldes gegen das belegte Sachthema prüfen. Eine ausdrückliche
+Ausschussnennung ist für den Themenbezug nicht nötig. Behauptete Beratungen,
+Beschlüsse und sonstige Akteursrollen bleiben dagegen vollständig quellenpflichtig.
+Fachfremde Bindungen, Erfindungen und unklare Ergebnisse bleiben abgelehnt.
+Kein positives Ergebnis wird nachträglich eingesetzt oder hartkodiert.
+14 Dokumentbindungsgruppen und27 Vorstartgruppen lokal bestanden.
+
+Genau ein neuer Nachweis `zustaendigkeit`, Quittung
+`lage-zustaendigkeit-20260926-a`, ist an den terminalen Vorlauf36246123158/7d398ee9
+gebunden. Gleiches unverändertes Profil, identischer amtlicher Artikelstand,
+maximal2 Aufrufe/240 Sekunden/0,50USD. Wirkung/Risiko/Nachkontrolle/Rückweg wie
+oben; alle500 inaktiv, alte Belege erhalten. Frischer Kosten- und Nurleseplan
+am geprüften neuen main/READY vor Ausführung. Noch nicht ausgeführt.
