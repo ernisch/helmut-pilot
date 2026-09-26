@@ -3,10 +3,17 @@
 const crypto = require("node:crypto");
 const { hash, profilHash } = require("../lib/helmut/briefing-speicher");
 const QUITTUNG = "lage-vorstart-20260926-a", TAG = "2026-09-26";
+// Genau ein neuer Nachweis nach PR594; der erste Auftrag bleibt verbraucht.
+const ZEITBEZUG = Object.freeze({ auftrag:"zeitbezug", quittung:"lage-zeitbezug-20260926-a",
+  profilHash:"0178727cc56dc0c9b8a0d17a655bfe434b0aecab80b92debed92e74175a4b869",
+  altHash:"70352fdefb0f86b8bc56c52106bd35b379dab61b287b3be2478b396ae08b0ea6" });
 const MAX_MS = 240000, MAX_USD = 0.50;
 const fordere = (ok, grund) => { if (!ok) throw new Error("lage-vorstart-" + grund); };
 const bindung = p => hash({ id:p.id, profilHash:profilHash(p) });
 function konfiguration(env, commit, jetzt = Date.now()) {
+  const auftrag = env.HELMUT_VORSTART_AUFTRAG || "erstpruefung";
+  fordere(["erstpruefung",ZEITBEZUG.auftrag].includes(auftrag),"auftrag");
+  fordere(auftrag !== ZEITBEZUG.auftrag || env.HELMUT_VORSTART_PROFIL === ZEITBEZUG.profilHash,"reparaturbindung");
   fordere(/^[a-f0-9]{40}$/.test(commit || "") && env.HELMUT_VORSTART_COMMIT === commit
     && env.GITHUB_SHA === commit && env.GITHUB_ACTIONS === "true"
     && env.GITHUB_REPOSITORY === "ernisch/helmut-pilot" && env.GITHUB_REF === "refs/heads/main"
@@ -15,7 +22,10 @@ function konfiguration(env, commit, jetzt = Date.now()) {
     && /^[0-9]{5,20}$/.test(env.GITHUB_RUN_ID || ""), "bindung");
   fordere(new Date(jetzt).toISOString().slice(0,10) === TAG
     && new Date(jetzt + MAX_MS).toISOString().slice(0,10) === TAG, "tag");
-  return { commit, profilHash:env.HELMUT_VORSTART_PROFIL, runId:"nachlauf500-" + env.GITHUB_RUN_ID };
+  return { commit, profilHash:env.HELMUT_VORSTART_PROFIL, runId:"nachlauf500-" + env.GITHUB_RUN_ID,
+    reparatur:auftrag === ZEITBEZUG.auftrag,
+    altHash:auftrag === ZEITBEZUG.auftrag ? ZEITBEZUG.altHash : null,
+    quittung:auftrag === ZEITBEZUG.auftrag ? ZEITBEZUG.quittung : QUITTUNG };
 }
 function pruefeAufruf({ calls, start, jetzt, kosten, laufkosten, reserve, bestand, grundlinie }) {
   fordere(Number.isInteger(calls) && calls >= 0 && calls < 2, "aufrufgrenze");
@@ -31,7 +41,11 @@ function pruefeAufruf({ calls, start, jetzt, kosten, laufkosten, reserve, bestan
 async function einmallauf(cfg, d) {
   const start = d.now(), grundlinie = await d.ruhe(), profile = await d.profile();
   fordere(profile?.id && bindung(profile) === cfg.profilHash, "profil");
-  fordere(!await d.cache(profile.id), "bestehender-tagessatz");
+  const vorher = await d.cache(profile.id);
+  const vorherHash = hash(vorher || null);
+  if (cfg.reparatur) fordere(vorher?.payload && hash(vorher.payload) === cfg.altHash
+    && !d.gueltig(vorher.payload),"reparatur-altstand");
+  else fordere(!vorher, "bestehender-tagessatz");
   const vorschau = await d.vorschau(profile);
   fordere(vorschau?.available === true && vorschau.pendingNarrative === true
     && vorschau.vorgaenge?.length >= 2,"quellen-vorpruefung");
@@ -39,6 +53,7 @@ async function einmallauf(cfg, d) {
   const pruefe = async () => {
     const [kosten,laufkosten,bestand] = await Promise.all([d.kosten(),d.laufkosten(),d.bestand()]);
     pruefeAufruf({ calls,start,jetzt:d.now(),kosten,laufkosten,reserve:d.reserve,bestand,grundlinie });
+    if (cfg.reparatur) fordere(hash(await d.cache(profile.id)) === vorherHash,"reparatur-konkurrenz");
   };
   await pruefe();
   if (!d.execute) return { ok:true, plan:true, profile:1, maxAufrufe:2,maxUsd:MAX_USD,maxMs:MAX_MS,
@@ -46,17 +61,19 @@ async function einmallauf(cfg, d) {
   const lock = await d.acquire();
   fordere(lock?.granted === true && lock.active === true, "sperre");
   let claimed = false;
-  const receipt = { quittungsschluessel:QUITTUNG,runId:cfg.runId,idHash:cfg.profilHash,
+  const receipt = { quittungsschluessel:cfg.quittung,runId:cfg.runId,idHash:cfg.profilHash,
     runtimeCommit:cfg.commit,gestartetAm:new Date(start).toISOString(),maxUsd:MAX_USD,maxMs:MAX_MS,maxAufrufe:2 };
   let out = { ok:false,grund:"technischer-fehler" };
   try {
     fordere(await d.claim({ ...receipt,status:"laeuft" }), "verbraucht"); claimed = true;
-    const result = await d.build(profile,{ missingOnly:true,costRunId:cfg.runId,
+    const result = await d.build(profile,{ missingOnly:true,repairIncomplete:cfg.reparatur,costRunId:cfg.runId,
       beforeGenerate:async id => { fordere(id === profile.id,"fremdes-profil"); await pruefe(); calls++; } });
     const saved = await d.cache(profile.id);
     const ok = result?.available === true && result.fromCache === false && calls === 2
-      && d.gueltig(saved?.payload);
-    out = { ok,grund:ok ? null : (result?.reason || "kein-gueltiger-tagessatz"),
+      && d.gueltig(saved?.payload)
+      && (!cfg.reparatur || (saved?.payload?.vorherigerStand
+        && hash(saved.payload.vorherigerStand) === vorherHash));
+    out = { ok:Boolean(ok),grund:ok ? null : (result?.reason || "kein-gueltiger-tagessatz"),
       abschnitte:result?.paragraphs?.length || 0,gespeichert:ok,inhaltHash:saved?.payload ? hash(saved.payload) : null };
   } finally {
     await d.release();
@@ -104,7 +121,13 @@ async function main(args = process.argv.slice(2), env = process.env) {
     fordere(!j.length && !l.length && !c.length && !runs.length
       && !Object.values(a.pipelineLocks || {}).some(x => x?.expiresAt > Date.now()),"parallelbetrieb");return h;
   };
-  fordere(!(await read("helmut_store","select=id&id=eq."+QUITTUNG+"&limit=1")).length,"verbraucht");
+  if (cfg.reparatur) {
+    const alt = await read("helmut_store","select=data&id=eq."+QUITTUNG+"&limit=1");
+    fordere(alt.length === 1 && alt[0].data?.status === "abgeschlossen"
+      && alt[0].data.runId === "nachlauf500-36211228745"
+      && alt[0].data.idHash === cfg.profilHash && alt[0].data.inhaltHash === ZEITBEZUG.altHash,"altquittung");
+  }
+  fordere(!(await read("helmut_store","select=id&id=eq."+cfg.quittung+"&limit=1")).length,"verbraucht");
   fordere(await K.laufGebundenUsd(cfg.runId,{env}) === 0,"laufkosten-vorhanden");
   const q = execute ? B.quittungsAdapter(env) : null;
   const timer = execute ? setTimeout(() => { console.error("lage-vorstart-harte-laufzeit; kein Retry");process.exit(1); },MAX_MS) : null;
@@ -124,4 +147,4 @@ async function main(args = process.argv.slice(2), env = process.env) {
 if (require.main === module) main().then(c => { process.exitCode=c; }).catch(e => {
   console.log(JSON.stringify({ok:false,grund:/^lage-vorstart-[a-z-]+$/.test(e.message || "") ? e.message : "lage-vorstart-technischer-fehler",automatischeWiederholung:false}));process.exitCode=1;
 });
-module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main};
+module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main,ZEITBEZUG};
