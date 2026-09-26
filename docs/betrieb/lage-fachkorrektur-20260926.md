@@ -15,7 +15,8 @@ verbraucht Auftrag a: ein Aufruf,0,014680USD, keine offene Reserve.
 
 Vollständige Antwort unabhängig gelesen: Absatz1 zulässig; Absatz2 korrekt
 `profilbezug=false`, aber weiterhin fälschlich`konkreter_sachverhalt`.
-Der Paarvergleich ist richtig. Gesamturteil bleibt negativ, Generator nicht gestartet.
+Das Paarurteil ist vollständig, aber bei einem Fülltext kein fachlicher Beleg für
+zwei brauchbare Sachverhalte. Gesamturteil bleibt negativ, Generator nicht gestartet.
 500/0 und beide Profilschutzhashes unverändert; keine Jobs/Locks/Leases.
 Gesamtbindung jetzt4,441938USD; Tages-/Gesamtgrenze weiterhin6USD.
 
@@ -24,6 +25,14 @@ während der Prompt bloße Themenberichte ausschloss. Die Korrektur verwendet ei
 identische, präzisierte Definition in Schema und Prompt: Die Existenz einer
 Meldung ist selbst keine fachliche Handlung; Quellenabdeckung ist getrennt von
 inhaltlicher Brauchbarkeit. Kein Länderfilter und keine Änderung der Sollwerte.
+
+Vor dem Folgeauftrag wird die Paarprüfung des isolierten Negativtests präzisiert:
+Das Paarurteil muss vollständig, eindeutig und begründet vorliegen. Weil ein Absatz
+vorab als Fülltext definiert ist, zählt es nicht als fachlicher Paarbeleg
+(`fachlichGeprueftePaare=0`); beide booleschen Paarantworten sind zulässig. Beide
+Ablehnungsmerkmale des schlechten Absatzes bleiben zwingend. Der ursprüngliche
+Vierfalltest prüft weiterhin alle6 fachlichen Paare; die Produktprüfung erzeugter
+Lageabsätze bleibt unverändert streng. Der negative Auftrag a wird nicht umgedeutet.
 
 Eigener Folgeauftrag`lage-fachkorrektur-20260926-b`: dieselben zwei echten Absätze,
 gleiche Quellen, Sollwerte und Grenzen (1 Aufruf/0,25USD/240s, medium/6000).

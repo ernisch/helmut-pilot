@@ -54,15 +54,27 @@ function auswertung(p, answer, profile, faelle = FAELLE) {
     return { id: f.id, erwartet: f.erwartet, erhalten: r.profilbezug, bestanden: Boolean(korrekt) };
   });
   const paare = answer.vergleiche, keys = new Set();
+  let fachlichGeprueftePaare = 0;
   const paarvergleich = Array.isArray(paare) && paare.length === anzahl * (anzahl - 1) / 2 && paare.every(r => {
     const key = `${r?.erster_absatz}:${r?.zweiter_absatz}`;
     const ok = Number.isInteger(r?.erster_absatz) && Number.isInteger(r?.zweiter_absatz)
       && r.erster_absatz >= 0 && r.erster_absatz < r.zweiter_absatz && r.zweiter_absatz < anzahl
-      && !keys.has(key) && r.eigenstaendige_sachverhalte === true
+      && !keys.has(key) && typeof r.eigenstaendige_sachverhalte === "boolean"
       && typeof r.pruefbegruendung === "string" && r.pruefbegruendung.trim() && r.pruefbegruendung.length <= 800;
-    keys.add(key); return ok;
+    keys.add(key);
+    // Ein vorab als Fuelltext definierter Negativfall ist kein Paar zweier
+    // brauchbarer Sachverhalte. Sein Paarurteil muss vorhanden sein, wird aber
+    // nicht als fachlicher Paarbeleg ausgegeben. Die beiden Einzelurteile bleiben
+    // strikt; bei den vier konkreten Sollfaellen werden weiterhin alle6 Paare bewertet.
+    if (!ok) return false;
+    const konkret = i => (faelle[i].textart || "konkreter_sachverhalt") === "konkreter_sachverhalt";
+    if (konkret(r.erster_absatz) && konkret(r.zweiter_absatz)) {
+      fachlichGeprueftePaare++; return r.eigenstaendige_sachverhalte === true;
+    }
+    return true;
   });
-  return { ok: bilanz.every(r => r.bestanden) && Boolean(paarvergleich), bilanz, paarvergleich: Boolean(paarvergleich) };
+  return { ok: bilanz.every(r => r.bestanden) && Boolean(paarvergleich), bilanz,
+    paarvergleich: Boolean(paarvergleich), fachlichGeprueftePaare };
 }
 
 async function einmallauf(cfg, d) {

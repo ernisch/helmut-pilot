@@ -223,7 +223,8 @@ function pruefeGeneratorFachkorrekturVorgaenger(alt, input, profile, commit) {
     && hash(alt.fachbeleg.eingabe) === hash(input)
     && alt.fachbeleg.antwortHash === hash(alt.fachbeleg.antwort), "generatorfachkorrektur-vorgaenger");
   const result = M.auswertung(input,alt.fachbeleg.antwort,profile,faelle);
-  fordere(result.ok && hash(result.bilanz) === hash(alt.bilanz) && alt.paarvergleich === true,
+  fordere(result.ok && hash(result.bilanz) === hash(alt.bilanz) && alt.paarvergleich === true
+    && result.fachlichGeprueftePaare === 0 && alt.fachlichGeprueftePaare === 0,
     "generatorfachkorrektur-urteil");
 }
 function pruefePruefaufwandVorgaenger(alt) {
