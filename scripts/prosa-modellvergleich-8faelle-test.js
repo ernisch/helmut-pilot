@@ -236,8 +236,8 @@ test("zu wenig verbleibendes Tagesbudget wird abgelehnt", () => {
   A.equal(sperrt(t), true);
 });
 
-test("Tagesriegel bleibt 4000000 und neue Reserve maximal 232000", () => {
-  A.equal(K.LIMIT_MICRO_USD, 4000000);
+test("Tagesriegel ist 6000000 und neue Reserve maximal 232000", () => {
+  A.equal(K.LIMIT_MICRO_USD, 6000000);
   A.equal(V.MAX_COST, 232000);
 });
 

@@ -173,10 +173,12 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
   });
 
   await test("Kostensperre: kein Aufruf, wenn die volle Reserve nicht mehr passt", async () => {
-    const h = harness({ tagesBuch: () => ({ version: 1, day: TAG, tarif: RATE, limit: 4000000, spent: 3900000,
-      baseline: 3900000, baselineCalls: 10, manualCalls: 0, manualUntil: null, frozen: null, calls: {} }) });
-    const r = await V.ausfuehren(h.deps);
-    A.equal(r.ok, false); A.equal(r.aufrufe, 0); A.equal(h.calls, 0);
+    for(const [version,limit,spent] of [[1,4000000,3900000],[2,6000000,5900000]]) {
+      const h = harness({ tagesBuch: () => ({ version, day: TAG, tarif: RATE, limit, spent,
+        baseline: spent, baselineCalls: 10, manualCalls: 0, manualUntil: null, frozen: null, calls: {} }) });
+      const r = await V.ausfuehren(h.deps);
+      A.equal(r.ok, false); A.equal(r.aufrufe, 0); A.equal(h.calls, 0);
+    }
   });
 
   await test("Doppelte Pfadfaelle sind ausgeschlossen (36 eindeutige Kennungen)", () => {

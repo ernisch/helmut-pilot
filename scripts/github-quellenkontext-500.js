@@ -6,6 +6,7 @@ const D = require("../lib/helmut/testkohorte-direkt500");
 const Q = require("../lib/helmut/lage-quellenbeleg");
 const E = require("../lib/helmut/quellen-auszug");
 const { PROJECT_URL, kostenBefund } = require("./github-fachzyklus-a");
+const K = require("../lib/helmut/testkosten-budget");
 const LOCK = "500-quellenkontext", MAX_FETCH = 40, MAX_MS = 480000;
 const payloadHash = s => D.hash({ mandate:s.mandate, identitaeten:s.identitaeten, users:s.auth.users });
 
@@ -13,10 +14,10 @@ function pruefeQuellenKosten(auth, counter, tag, config) {
   const kosten = kostenBefund(auth, counter, tag);
   D.fordere(kosten.aufrufbelege <= kosten.reservierungen, "quellenkontext-kosten-unklar");
   if (auth.testKostenTage?.[tag]) {
-    D.fordere(config.testKosten?.version === 2 && config.testKosten.aktiv === true
-      && config.testKosten.limitUsd === 4 && config.testKosten.unbekanntBleibtReserviert === true,
+    D.fordere(K.tagespolitikGueltig(config.testKosten) && config.testKosten.aktiv === true
+      && config.testKosten.unbekanntBleibtReserviert === true,
     "quellenkontext-kostenregel-abweichend");
-    try { Object.assign(kosten, require("../lib/helmut/testkosten-budget")
+    try { Object.assign(kosten, K
       // Fehlende Nutzungszeilen sind unbekannte Kosten. Jede braucht eine
       // eigene volle Reserve; die Ticketdeckung gilt fuer den echten Zaehler.
       .kontrolliere(auth, tag, kosten.unbekannteKosten + kosten.reservierungsluecke,

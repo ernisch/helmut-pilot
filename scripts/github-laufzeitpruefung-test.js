@@ -42,6 +42,21 @@ async function main() {
     r = await pruefe({ env, fetchFn: async () => ({ status: 200, json: async () => ({ ...payload, ...changed }) }) });
     check(!r.ok && !JSON.stringify(r).includes(geheim), "falsche Antwort ohne Rohdaten abgewiesen");
   }
+  const laufzeitTest = { aktiv: true, maxManualCalls: null, maxWindowMs: null, unbekanntBleibtReserviert: true };
+  for (const [eingabe, erwartet] of [[{ version: 2, limitUsd: 4 }, { version: 2, limitUsd: 4 }],
+    [{ version: 3, limitUsd: 6 }, { version: 3, limitUsd: 6 }],
+    [{ version: 1, limitUsd: 4, maxManualCalls: 1000 }, { version: 1, limitUsd: 4 }]]) {
+    r = await pruefe({ env, fetchFn: async () => ({ status: 200,
+      json: async () => ({ ...payload, testKosten: { ...laufzeitTest, ...eingabe } }) }) });
+    check(r.ok && r.testKosten?.version === erwartet.version && r.testKosten.limitUsd === erwartet.limitUsd,
+      "bekanntes Testkostenpaar mit tatsaechlicher Version und Grenze uebernommen");
+  }
+  for (const bad of [{ version: 2, limitUsd: 6 }, { version: 3, limitUsd: 4 }, { version: 1, limitUsd: 6 },
+    { version: 3, limitUsd: 5 }, { version: 3 }]) {
+    r = await pruefe({ env, fetchFn: async () => ({ status: 200,
+      json: async () => ({ ...payload, testKosten: { ...laufzeitTest, ...bad } }) }) });
+    check(r.ok && !r.testKosten, "unbekanntes Versions-/Limitpaar wird nicht bestaetigt");
+  }
   for (const status of [401, 503]) {
     r = await pruefe({ env, fetchFn: async () => ({ status, json: async () => { throw Error(geheim); } }) });
     check(!r.ok && r.httpStatus === status && !JSON.stringify(r).includes(geheim), "HTTP Status ohne Antworttext");
@@ -84,7 +99,7 @@ async function main() {
     check(r.status === 200 && r.body.reinLesend === true && r.body.commit === sha, "echter Handler erreicht Status");
     const runtime = await pruefe({ env, fetchFn: async () => ({ status: r.status, json: async () => r.body }) });
     check(runtime.textnachlaufVersion === 2 && runtime.textnachlaufArbeitsauswahlVersion === 1 && runtime.testKosten?.aktiv === true
-      && runtime.testKosten.limitUsd === 4 && runtime.testKosten.version === 2 && runtime.testKosten.maxManualCalls === null
+      && runtime.testKosten.limitUsd === 6 && runtime.testKosten.version === 3 && runtime.testKosten.maxManualCalls === null
       && runtime.testKosten.maxWindowMs === null && runtime.testKosten.unbekanntBleibtReserviert === true,
     "echter Handler und CLI Leser bestaetigen denselben Dollar Schutzvertrag");
     check(runtime.quellenkontext?.version === 1 && runtime.quellenkontext.relevanzTage === 14

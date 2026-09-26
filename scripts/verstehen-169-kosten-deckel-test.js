@@ -118,8 +118,8 @@ console.log("\n== testkosten-budget: laufGebundenUsd (rein lesend) ==");
 
   // ── 3 · Unveraenderte Vertragswerte ──────────────────────────────────────────────────────
   console.log("\n== Unveraenderte Vertragswerte ==");
-  pruefe("globaler 4-USD-Tagesriegel unveraendert (LIMIT_MICRO_USD = 4000000)",
-    () => assert.equal(B.LIMIT_MICRO_USD, 4000000));
+  pruefe("globaler Tagesriegel gemaess Freigabe6USD (LIMIT_MICRO_USD = 6000000)",
+    () => assert.equal(B.LIMIT_MICRO_USD, 6000000));
   pruefe("tokenKosten-Formel unveraendert (100 ein, 20 aus = 130)",
     () => assert.equal(B.tokenKosten(100, 20), 130));
   pruefe("113 unveraendert (PINNED)", () => assert.equal(V.PINNED.maxModellaufrufe, 113));

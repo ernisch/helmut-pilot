@@ -6,6 +6,7 @@
 const { hash } = require("../lib/helmut/briefing-speicher");
 const Q = require("../lib/helmut/lage-textqualitaet");
 const T = require("./lage-vorstart");
+const K = require("../lib/helmut/testkosten-budget");
 const FAELLE = require("./fixtures/lage-pruefaufwand-vier.json");
 const QUITTUNG = "lage-pruefaufwand-20260926-b", MAX_USD = 0.25, MAX_MS = 240000;
 const fordere = (ok, grund) => { if (!ok) throw new Error("lage-vorstart-" + grund); };
@@ -106,7 +107,7 @@ async function einmallauf(cfg, d) {
       [nach, kosten, laufkosten] = ergebnisse.slice(0,3).map(r => r.status === "fulfilled" ? r.value : null);
       fordere(ergebnisse.every(r => r.status === "fulfilled")
         && nach === grundlinie && hash(ergebnisse[3].value) === cacheHash
-        && kosten.offeneReservierungen === 0 && kosten.limitUsd === 4
+        && kosten.offeneReservierungen === 0 && K.tageslimitGueltig(kosten.limitUsd)
         && Number.isFinite(laufkosten) && laufkosten >= 0 && laufkosten <= MAX_USD
         && (!out.ok || (calls === 1 && laufkosten > 0)) && d.now() - start < MAX_MS, "sollfall-nachkontrolle");
     } catch (_) { out = { ...out, ok: false, grund: "sollfall-nachkontrolle" }; }

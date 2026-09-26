@@ -36,6 +36,14 @@ function fixture() {
     const {d,trace,state}=fixture();const r=await T.einmallauf(cfg,d);assert.equal(r.ok,true);assert.equal(r.freigegebeneAufrufe,2);
     assert.equal(state.finished.status,"abgeschlossen");assert.deepEqual(trace,["lock","claim","modell","modell","release","finish"]);
   });
+  await test("6USD Tagesgrenze erlaubt gedeckte Aufrufe; Ueberschreitung bleibt gesperrt",async()=>{
+    for(const gebunden of [5.788,5.788001]){
+      const {d,trace}=fixture();
+      d.kosten=async()=>({startklar:true,offeneReservierungen:0,limitUsd:6,gebundenUsd:gebunden});
+      if(gebunden===5.788){const r=await T.einmallauf(cfg,d);assert.equal(r.ok,true);}
+      else {await assert.rejects(T.einmallauf(cfg,d),/kosten/);assert(!trace.includes("modell"));}
+    }
+  });
   await test("vorhandener Tagessatz und falsches Profil bleiben unangetastet",async()=>{
     for(const key of ["cache","profile"]){const {d,trace}=fixture();d[key]=async()=>key==="cache"?{payload:{}}:{...profile,id:"fremd"};
       await assert.rejects(T.einmallauf(cfg,d));assert.deepEqual(trace,[]);}

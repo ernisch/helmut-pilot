@@ -3,6 +3,7 @@ const A = require("node:assert/strict");
 const R = require("./github-laufzeitpruefung");
 const T = require("./b055-aufnahme/transport");
 const { publicKey } = require("./privater-nachweis-transport");
+const K = require("../lib/helmut/testkosten-budget");
 
 async function erfasse({ env = process.env, fetchFn = global.fetch, now = () => new Date() } = {}) {
   A.equal(env.GITHUB_REPOSITORY, "ernisch/helmut-pilot");
@@ -24,7 +25,7 @@ async function erfasse({ env = process.env, fetchFn = global.fetch, now = () => 
     A.equal(r.ok, true);
     for (const k of ["storageSupabase", "v3Bereit", "profileRelational", "profileExclusive",
       "kommunikationGesperrt", "kohortenQuellenGesperrt"]) A.equal(r[k], true);
-    A.equal(r.testKosten?.aktiv, true); A.equal(r.testKosten.limitUsd, 4);
+    A.equal(r.testKosten?.aktiv, true); A.equal(K.tagespolitikGueltig(r.testKosten), true);
     A.equal(r.quellenkontext?.atomicLock, true);
     return r;
   };

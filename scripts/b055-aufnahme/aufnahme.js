@@ -4,6 +4,7 @@ const A = require('node:assert/strict'), fs = require('node:fs'), path = require
 const cp = require('node:child_process'), os = require('node:os'), vm = require('node:vm');
 const P = require('./b055-aufnahme-pruefer'), Q = require('./b055-quellen-aufnahme');
 const T = require('./transport'), R = require('../github-laufzeitpruefung');
+const K = require('../../lib/helmut/testkosten-budget');
 const { publicKey } = require('../privater-nachweis-transport');
 const MANDAT = 'test-kohorte-b-055', ORIGIN = 'https://ddckuvvpcytqbyfmbvie.supabase.co';
 const BRANCH = 'refs/heads/codex/b055-relative-fristen-20260914';
@@ -17,7 +18,7 @@ function validateRuntime(r) {
   for(const k of ['storageSupabase','v3Bereit','profileRelational','profileExclusive','kommunikationGesperrt','kohortenQuellenGesperrt']) A.equal(r[k],true);
   A.equal(r.scharferPfadFreigegeben,false);
   A.deepEqual(r.quellenkontext,{version:1,scoring:'off',relevanzordnung:false,koScan:500,lageMax:12,relevanzTage:14,sourceSafetyStandard:true,atomicLock:true});
-  A(r.testKosten?.version === 2 && r.testKosten.aktiv === true && r.testKosten.limitUsd === 4);
+  A(K.tagespolitikGueltig(r.testKosten) && r.testKosten.aktiv === true);
 }
 // Der gepinnte Produktleser erzeugt auch die KO Anfrage selbst.
 async function getKoEndpoint(storageText) {

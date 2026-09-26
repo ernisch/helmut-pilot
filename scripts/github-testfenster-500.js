@@ -64,7 +64,7 @@ async function ausfuehren({ env = process.env, fetchFn = global.fetch,
     const config = await konfiguration({ env: { ...env, HELMUT_PRODUCTION_COMMIT: env.GITHUB_SHA }, fetchFn });
     fordere(config.ok && config.storageSupabase && config.v3Bereit && config.profileRelational
       && config.profileExclusive && config.retention === 36 && config.kommunikationGesperrt
-      && config.testKosten?.version === 2 && config.testKosten.aktiv, "timer-production-nicht-bestaetigt");
+      && K.tagespolitikGueltig(config.testKosten) && config.testKosten.aktiv, "timer-production-nicht-bestaetigt");
     async function db(tail) {
       const r = await fetchFn(PROJECT_URL + "/rest/v1/" + tail, { method: "GET", redirect: "error",
         signal: AbortSignal.timeout(20000), headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY,

@@ -481,7 +481,7 @@ function bindeFenster(h, version = 1) {
     const B = require("../lib/helmut/testkosten-budget"), day = start.slice(0, 10);
     const auth = { llmUsage: Array.from({ length: 254 }, (_, i) => ({ createdAt: start,
       model: "gpt-5-mini", estimatedCost: i ? 0.001 : null })), testKostenTage: { [day]: {
-      version: B.VERSION, day, tarif: B.konfiguration().tarif, limit: 4000000,
+      version: B.VERSION, day, tarif: B.konfiguration().tarif, limit: B.LIMIT_MICRO_USD,
       baseline: 0, spent: 253000, manualCalls: 0, manualUntil: null, frozen: null,
       calls: Object.fromEntries(Array.from({ length: 255 }, (_, i) => ["ticket-" + i,
         { status: i < 2 ? "ungeklaert" : "abgerechnet", reserved: 212000, maxOutputTokens: 3000,
@@ -590,6 +590,17 @@ function bindeFenster(h, version = 1) {
       const r = await T.ausfuehren(h.args);
       assert.equal(r.ok, false); assert.match(r.grund, /verae?ndert/);
     }
+  });
+  await test("Konfiguration akzeptiert die neue3/6-Politik und die alte2/4-Regel, sperrt aber unbekannte Paare", async () => {
+    const basis = () => ({ ...fixture().config, testKosten: { version: 3, aktiv: true, limitUsd: 6,
+      maxManualCalls: null, maxWindowMs: null, unbekanntBleibtReserviert: true } });
+    assert.doesNotThrow(() => T.pruefeConfig(basis(), SHA));
+    assert.doesNotThrow(() => T.pruefeConfig({ ...basis(), testKosten: { version: 2, aktiv: true, limitUsd: 4,
+      maxManualCalls: null, maxWindowMs: null, unbekanntBleibtReserviert: true } }, SHA));
+    for (const testKosten of [{ version: 2, aktiv: true, limitUsd: 6 }, { version: 3, aktiv: true, limitUsd: 4 },
+      { version: 2, aktiv: true, limitUsd: 5 }, { version: 3, aktiv: false, limitUsd: 6, maxManualCalls: null,
+        maxWindowMs: null, unbekanntBleibtReserviert: true }])
+      assert.throws(() => T.pruefeConfig({ ...basis(), testKosten }, SHA), /nachlauf-konfiguration-abweichend/);
   });
   console.log(`${passed}/${passed} Textnachlauf Testgruppen bestanden. Alle Modellantworten waren lokale Fixtures.`);
 })().catch(e => { console.error(e); process.exitCode = 1; });

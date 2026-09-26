@@ -103,7 +103,7 @@ async function vorflug(env, storage, fetchFn, now) {
     && r.production === true && r.commit === MAIN && r.storageSupabase === true
     && r.kommunikationGesperrt === true && r.kohortenQuellenGesperrt === true
     && r.tagesdeckel === 2416 && r.understandingReserve === 702 && r.vorrangreserveReal === 200
-    && r.testKosten?.version === 2 && r.testKosten.aktiv === true && r.testKosten.limitUsd === 4,
+    && K.tagespolitikGueltig(r.testKosten) && r.testKosten.aktiv === true,
   "PROSA_LAUFZEIT");
   const zeit = encodeURIComponent(now.toISOString());
   for (const path of ["mandate_profiles?select=user_id&aktiv=eq.true&limit=1",

@@ -235,7 +235,7 @@ async function main() {
     const h = await bereitZumFachzyklus();
     h.usage[0].estimatedCost = "unknown";
     h.kostenTage[JETZT.slice(0, 10)] = { version: B.VERSION, day: JETZT.slice(0, 10),
-      tarif: B.konfiguration().tarif, limit: 4000000, baseline: 0, manualCalls: 0, manualUntil: null,
+      tarif: B.konfiguration().tarif, limit: B.LIMIT_MICRO_USD, baseline: 0, manualCalls: 0, manualUntil: null,
       frozen: "test-usd-ausgang-unklar", spent: (h.counter - 1) * 1000,
       calls: Object.fromEntries(Array.from({ length: h.counter }, (_, i) => ["ticket-" + i,
         { status: i ? "abgerechnet" : "reserviert", reserved: 212000, maxOutputTokens: 3000,
@@ -261,7 +261,7 @@ async function main() {
       h.usage = Array.from({ length: 254 }, (_, i) => ({ createdAt: JETZT,
         model: "gpt-5-mini", estimatedCost: i ? 0.001 : null }));
       const t = h.kostenTage[day] = { version: B.VERSION, day, tarif: B.konfiguration().tarif,
-        limit: 4000000, baseline: 0, spent: 253000, manualCalls: 0, manualUntil: null, frozen: null,
+        limit: B.LIMIT_MICRO_USD, baseline: 0, spent: 253000, manualCalls: 0, manualUntil: null, frozen: null,
         calls: Object.fromEntries(Array.from({ length: 255 }, (_, i) => ["ticket-" + i,
           { status: i < 2 ? "reserviert" : "abgerechnet", reserved: 212000,
             maxOutputTokens: 3000, manual: false, createdAt: JETZT, ...(i < 2 ? {} : { cost: 1000 }) }])) };

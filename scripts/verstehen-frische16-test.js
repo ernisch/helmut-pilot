@@ -36,7 +36,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     await K.abschliessen(t, { model: "gpt-5-mini", promptTokens: 100, completionTokens: 20, _ablage: { blob: true } }, deps);
     assert.equal(await K.laufGebundenUsd(runId, deps), 0.00013);
     assert.equal(await K.laufGebundenUsd("verstehen-bund7-36141840797", deps), 0);
-    assert.equal(K.LIMIT_MICRO_USD, 4000000);
+    assert.equal(K.LIMIT_MICRO_USD, 6000000);
     for (const id of ["verstehen-frische16-12", "verstehen-frische16-fremd", "verstehen-bund8-123456789"])
       await assert.rejects(K.laufGebundenUsd(id, deps));
     storage.readAuthStore = async () => { throw Error("offline-ausfall"); };
@@ -47,7 +47,7 @@ async function test(name, fn) { await fn(); count++; console.log("PASS " + name)
     const auth = { llmUsage: [], testKostenTage: {} }, before = structuredClone(auth);
     assert.deepEqual(K.pruefeStart(auth, day, { ok: true, used: 0 }), {
       startklar: true, tagesbuchVorhanden: false, atomarerUsdRiegel: true,
-      limitUsd: 4, gebundenUsd: 0, offeneReserveUsd: 0, offeneReservierungen: 0, anbieterrechnung: false });
+      limitUsd: 6, gebundenUsd: 0, offeneReserveUsd: 0, offeneReservierungen: 0, anbieterrechnung: false });
     assert.deepEqual(auth, before);
     for (const counter of [null, { ok: false, used: 0 }, { ok: true, used: 1 }, { ok: true, used: -1 }])
       assert.throws(() => K.pruefeStart(auth, day, counter));
