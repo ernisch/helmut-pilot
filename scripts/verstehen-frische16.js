@@ -100,7 +100,7 @@ async function main(args = process.argv.slice(2), env = process.env) {
     out.vollstaendigVerstanden = execute && out.ergebnisse?.length === F.FRISCHE16.cluster
       && out.ergebnisse.every(r => ["saved", "updated", "merged", "duplicate"].includes(r.status));
     out.ok = out.ok && out.profileUnveraendert && (!execute || out.vollstaendigVerstanden);
-    out.importplanCommit = F.FRISCHE16.commit;
+    out.quellenkontextCommit = F.FRISCHE16.commit;
     delete out.snapshotCommit;
     out.funktionsnachweis500 = false;
     out.kostenleserVorabBestaetigt = true;
