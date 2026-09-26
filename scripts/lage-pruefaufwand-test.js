@@ -167,8 +167,43 @@ function setup(){
     const {d,cfg,trace}=setup();let n=0;d.now=()=>++n===1?start:start+60000;
     await A.rejects(M.einmallauf(cfg,d),/sollfall-restzeit/);A(!trace.includes("modell"));
     const workflow=require("fs").readFileSync(require("path").join(__dirname,"../.github/workflows/lage-vorstart.yml"),"utf8");
-    A(workflow.includes("(inputs.auftrag == 'pruefaufwand' || inputs.auftrag == 'generatorpruefaufwand') && '120000' || '20000'"));
+    A(workflow.includes("(inputs.auftrag == 'pruefaufwand' || inputs.auftrag == 'generatorpruefaufwand' || inputs.auftrag == 'fachkorrektur' || inputs.auftrag == 'generatorfachkorrektur') && '120000' || '20000'"));
     A.equal(M.MAX_MS,240000);A.equal(M.MAX_USD,.25);
+  });
+  await test("Fachkorrektur bindet echte zwei Absätze und beide negativen Kriterien",async()=>{
+    const f=require("./fixtures/lage-fachkorrektur-zwei.json");
+    const quellen=f.map(x=>({vorgang_id:x.paragraph.vorgang_ids[0],quellenbelege:[x.quelle]}));
+    const p=M.paket(profile,quellen,f);
+    A(!p.prompt.includes('"erwartet"'));A.equal(p.paragraphs.length,2);
+    const a={pruefungen:f.map((x,absatz)=>({absatz,quelle_id:x.paragraph.quelle_id,
+      belegfeld:absatz?"titel":"auszug",pruefbegruendung:absatz?"Der Titel benennt nur ein Thema.":"Belegte Annahme und Finanzbericht.",
+      mandatsbegruendung:x.paragraph.mandatsbezug.wert+": "+(absatz?"Ort allein belegt keine Zustaendigkeit.":"Finanzierbarkeit ist Haushaltsaufgabe."),
+      vollstaendig_belegt:true,themenrein:true,profilbezug:x.erwartet,textart:x.textart})),
+      vergleiche:[{erster_absatz:0,zweiter_absatz:1,eigenstaendige_sachverhalte:true,pruefbegruendung:"Verschiedene Themen, keine Wiederholung."}]};
+    A.equal(M.auswertung(p,a,profile,f).ok,true);
+    for(const change of [{profilbezug:true},{textart:"konkreter_sachverhalt"},{vollstaendig_belegt:false},{belegfeld:"auszug"},{mandatsbegruendung:""}]){
+      const bad=structuredClone(a);Object.assign(bad.pruefungen[1],change);
+      A.equal(M.auswertung(p,bad,profile,f).ok,false);
+    }
+    const {d,cfg,s,trace}=setup();Object.assign(cfg,{quittung:T.FACHKORREKTUR.quittung,pruefaufwand:false,fachkorrektur:true});
+    d.reviewPaket=async()=>p;d.reviewModell=async()=>{trace.push("modell");s.cost=.01;return a;};
+    const result=await M.einmallauf(cfg,d);A.equal(result.ok,true);A.equal(result.sollFaelle,2);
+    A.equal(trace.filter(x=>x==="modell").length,1);A.equal(s.cache,null);
+    const receipt=s.receipt;receipt.idHash=T.ARTIKELSTAND.profilHash;
+    T.pruefeGeneratorFachkorrekturVorgaenger(receipt,p,profile,cfg.commit);
+    for(const change of [{ok:false},{runtimeCommit:"b".repeat(40)},{offeneKosten:1},{maxUsd:1},{sollFaelle:4},{laufkostenUsd:0},{quittungsschluessel:T.PRUEFAUFWAND.quittung}])
+      A.throws(()=>T.pruefeGeneratorFachkorrekturVorgaenger({...receipt,...change},p,profile,cfg.commit),/vorgaenger/);
+    const bad=structuredClone(receipt);bad.fachbeleg.antwort.pruefungen[1].profilbezug=true;
+    bad.fachbeleg.antwortHash=hash(bad.fachbeleg.antwort);
+    A.throws(()=>T.pruefeGeneratorFachkorrekturVorgaenger(bad,p,profile,cfg.commit),/urteil/);
+    const env={HELMUT_VORSTART_AUFTRAG:"fachkorrektur",HELMUT_VORSTART_PROFIL:T.ARTIKELSTAND.profilHash,
+      HELMUT_VORSTART_COMMIT:cfg.commit,GITHUB_SHA:cfg.commit,GITHUB_ACTIONS:"true",GITHUB_REPOSITORY:"ernisch/helmut-pilot",
+      GITHUB_REF:"refs/heads/main",GITHUB_EVENT_NAME:"workflow_dispatch",GITHUB_RUN_ATTEMPT:"1",GITHUB_RUN_ID:"12345678901"};
+    const c=T.konfiguration(env,cfg.commit,start);A.equal(c.quittung,T.FACHKORREKTUR.quittung);
+    A.equal(T.reviewOptionen(c).reasoningEffort,"medium");
+    const g=T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"generatorfachkorrektur"},cfg.commit,start);
+    A.equal(g.generatorfachkorrektur,true);A.equal(g.generatorpruefaufwand,true);A.equal(g.quittung,T.GENERATORFACHKORREKTUR.quittung);
+    A.throws(()=>T.pruefeFachkorrekturVorgaenger({},{}),/vorgaenger/);
   });
   console.log(`${n}/${n} Prüfaufwand-Prüfgruppen bestanden; keine Modelle oder Production-Schreibzugriffe.`);
 })().catch(e=>{console.error(e);process.exitCode=1;});

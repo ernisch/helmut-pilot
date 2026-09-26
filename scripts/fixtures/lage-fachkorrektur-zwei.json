@@ -1,0 +1,52 @@
+[
+  {
+    "id": "polizei-finanzbericht-haushalt",
+    "paragraph": {
+      "text": "Der Bundestag hat in dritter Beratung den Entwurf zur Modernisierung des Bundespolizeigesetzes angenommen; das Parlament stimmte namentlich mit 322 Ja, 134 Nein und 118 Enthaltungen, das Gesetz erweitert die Befugnisse der Bundespolizei, und es liegt ein Bericht des Haushaltsausschusses zur Finanzierbarkeit vor, so der Deutscher Bundestag.",
+      "quelle_id": "q-7a17daf60deb5b5a03a7",
+      "vorgang_ids": [
+        "vg-bundespolizeigesetz-20260925-c1afab"
+      ],
+      "mandatsbezug": {
+        "feld": "ausschuss",
+        "wert": "Haushaltsausschuss"
+      }
+    },
+    "erwartet": true,
+    "textart": "konkreter_sachverhalt",
+    "quellenHash": "447cf4518cc4dbf77206e73625e0b731c88ac1fc35c62d91c3ec453467b05fbf",
+    "quelle": {
+      "url": "https://bundestag.de/dokumente/textarchiv/2026/kw39-de-bundespolizeigesetz-1211314",
+      "titel": "Modernisierung des Bundespolizeigesetzes in dritter Beratung beschlossen",
+      "auszug": "Zu Beginn der Plenarsitzung am Freitag, 25. September 2026, hat der Bundestag ohne Aussprache in dritter Beratung den Gesetzentwurf der Bundesregierung zur Modernisierung des Bundespolizeigesetzes (21/3051) in der vom Innenausschuss geänderten Fassung (21/6990) angenommen. In namentlicher Abstimmung stimmten 322 Abgeordnete für den Gesetzentwurf, 134 votierten dagegen. Es gab 118 Enthaltungen. Mit dem Gesetz erhält die Bundespolizei erweiterte Befugnisse. Dazu liegt auch ein Bericht des Haushaltsausschusses nach Paragraf 96 der Geschäftsordnung des Bundestages zur Finanzierbarkeit vor (21/7001).",
+      "quelle": "Deutscher Bundestag",
+      "quelle_id": "q-7a17daf60deb5b5a03a7",
+      "veroeffentlichtAm": "2026-09-25"
+    }
+  },
+  {
+    "id": "fischerei-thema-ohne-aussenbezug",
+    "paragraph": {
+      "text": "Die Meldung des Deutschen Bundestages berichtet über ein Projekt zum Fischerei-Management in Eritrea.",
+      "quelle_id": "q-c1c7732bc2a4c26b998a",
+      "vorgang_ids": [
+        "vg-managament-20260916-3962fc"
+      ],
+      "mandatsbezug": {
+        "feld": "ausschuss",
+        "wert": "Auswärtiger Ausschuss"
+      }
+    },
+    "erwartet": false,
+    "textart": "fuelltext",
+    "quellenHash": "dd9d1a8876a573d388d7f0513225c1c607f9a14e2ad6345c3499a6967c706681",
+    "quelle": {
+      "url": "https://bundestag.de/presse/hib/kurzmeldungen-1215482",
+      "titel": "Projekt zum Fischerei-Managament in Eritrea - Deutscher Bundestag",
+      "auszug": "",
+      "quelle": "",
+      "quelle_id": "q-c1c7732bc2a4c26b998a",
+      "veroeffentlichtAm": "2026-09-16T08:26:54.000Z"
+    }
+  }
+]

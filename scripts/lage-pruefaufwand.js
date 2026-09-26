@@ -11,10 +11,10 @@ const FAELLE = require("./fixtures/lage-pruefaufwand-vier.json");
 const QUITTUNG = T.PRUEFAUFWAND.quittung, MAX_USD = 0.25, MAX_MS = 240000;
 const fordere = (ok, grund) => { if (!ok) throw new Error("lage-vorstart-" + grund); };
 
-function paket(profile, vorgaenge) {
-  const paragraphs = FAELLE.map(f => structuredClone(f.paragraph));
+function paket(profile, vorgaenge, faelle = FAELLE) {
+  const paragraphs = faelle.map(f => structuredClone(f.paragraph));
   const quellen = Q.pruefQuellen(paragraphs, vorgaenge);
-  for (const f of FAELLE) {
+  for (const f of faelle) {
     const q = quellen.flatMap(v => v.quellenbelege).find(q => q.quelle_id === f.paragraph.quelle_id);
     fordere(q && hash(q) === f.quellenHash && Q.mandatsbezugGueltig(f.paragraph.mandatsbezug, profile), "sollfall-quellenbindung");
   }
@@ -22,21 +22,22 @@ function paket(profile, vorgaenge) {
   const prompt = Q.prompt(paragraphs, quellen, profile);
   // Erwartungen reisen ausschließlich im privaten Beleg, niemals im Modellprompt.
   return { paragraphs, quellen, prompt, paketHash: hash({ paragraphs, quellen,
-    profil: Q.modellProfilKontext(profile), prompt, schema: Q.SCHEMA, soll: FAELLE.map(f => f.erwartet) }) };
+    profil: Q.modellProfilKontext(profile), prompt, schema: Q.SCHEMA, soll: faelle.map(f => ({ profilbezug:f.erwartet, textart:f.textart || "konkreter_sachverhalt" })) }) };
 }
 
-async function ladePaket(profile, storage, now = new Date()) {
-  const ids = FAELLE.map(f => f.paragraph.vorgang_ids[0]);
+async function ladePaket(profile, storage, now = new Date(), faelle = FAELLE) {
+  const ids = faelle.map(f => f.paragraph.vorgang_ids[0]);
   const docs = Object.fromEntries(await Promise.all(ids.map(async id => [id, await storage.getSourcesForVorgang(id)])));
   return paket(profile, require("../lib/helmut/lage-quellenbeleg").baueEingabe(
-    ids.map(vorgang_id => ({ vorgang_id })), docs, now));
+    ids.map(vorgang_id => ({ vorgang_id })), docs, now), faelle);
 }
 
-function auswertung(p, answer, profile) {
+function auswertung(p, answer, profile, faelle = FAELLE) {
+  const anzahl = faelle.length;
   const rows = answer?.pruefungen;
-  fordere(Array.isArray(rows) && rows.length === 4 && new Set(rows.map(r => r?.absatz)).size === 4
-    && rows.every(r => Number.isInteger(r?.absatz) && r.absatz >= 0 && r.absatz < 4), "sollfall-urteile");
-  const bilanz = FAELLE.map((f, i) => {
+  fordere(Array.isArray(rows) && rows.length === anzahl && new Set(rows.map(r => r?.absatz)).size === anzahl
+    && rows.every(r => Number.isInteger(r?.absatz) && r.absatz >= 0 && r.absatz < anzahl), "sollfall-urteile");
+  const bilanz = faelle.map((f, i) => {
     const r = rows.find(r => r.absatz === i);
     const quelle = p.quellen.flatMap(v => v.quellenbelege).find(q => q.quelle_id === r.quelle_id);
     const belegfeldGueltig = ["titel", "auszug"].includes(r.belegfeld)
@@ -44,16 +45,19 @@ function auswertung(p, answer, profile) {
     const check = Q.pruefe([p.paragraphs[i]], p.quellen,
       { pruefungen: [{ ...r, absatz: 0 }], vergleiche: [] }, profile);
     // Ein negativer Sollfall darf nicht wegen fehlender Quelle/Struktur zufällig
-    // bestehen: ausschließlich der fachlich falsche Profilbezug ist erwartet.
-    const korrekt = belegfeldGueltig && r.profilbezug === f.erwartet && (f.erwartet ? check.ok
-      : !check.ok && check.diagnose?.fehler?.length === 1 && check.diagnose.fehler[0] === "profilbezug-fehlt");
+    // bestehen: nur die vorab definierten fachlichen Ablehnungsgründe zählen.
+    const textart = f.textart || "konkreter_sachverhalt";
+    const fehler = [...(f.erwartet ? [] : ["profilbezug-fehlt"]),
+      ...(textart === "konkreter_sachverhalt" ? [] : ["fuelltext-oder-wiederholung"])];
+    const korrekt = belegfeldGueltig && r.profilbezug === f.erwartet && r.textart === textart
+      && (fehler.length ? !check.ok && hash(check.diagnose?.fehler) === hash(fehler) : check.ok);
     return { id: f.id, erwartet: f.erwartet, erhalten: r.profilbezug, bestanden: Boolean(korrekt) };
   });
   const paare = answer.vergleiche, keys = new Set();
-  const paarvergleich = Array.isArray(paare) && paare.length === 6 && paare.every(r => {
+  const paarvergleich = Array.isArray(paare) && paare.length === anzahl * (anzahl - 1) / 2 && paare.every(r => {
     const key = `${r?.erster_absatz}:${r?.zweiter_absatz}`;
     const ok = Number.isInteger(r?.erster_absatz) && Number.isInteger(r?.zweiter_absatz)
-      && r.erster_absatz >= 0 && r.erster_absatz < r.zweiter_absatz && r.zweiter_absatz < 4
+      && r.erster_absatz >= 0 && r.erster_absatz < r.zweiter_absatz && r.zweiter_absatz < anzahl
       && !keys.has(key) && r.eigenstaendige_sachverhalte === true
       && typeof r.pruefbegruendung === "string" && r.pruefbegruendung.trim() && r.pruefbegruendung.length <= 800;
     keys.add(key); return ok;
@@ -62,7 +66,10 @@ function auswertung(p, answer, profile) {
 }
 
 async function einmallauf(cfg, d) {
-  fordere(cfg.quittung === QUITTUNG && cfg.pruefaufwand === true, "sollfall-auftrag");
+  const fach = cfg.fachkorrektur === true;
+  const faelle = fach ? require("./fixtures/lage-fachkorrektur-zwei.json") : FAELLE;
+  const quittung = fach ? T.FACHKORREKTUR.quittung : QUITTUNG;
+  fordere(cfg.quittung === quittung && (fach ? cfg.pruefaufwand !== true : cfg.pruefaufwand === true), "sollfall-auftrag");
   const start = d.now(), grundlinie = await d.ruhe(), profile = await d.profile();
   fordere(profile?.id && T.bindung(profile) === cfg.profilHash, "profil");
   const cacheHash = hash(await d.cache(profile.id));
@@ -80,20 +87,20 @@ async function einmallauf(cfg, d) {
     await d.artikelstand();
   };
   await pruefe();
-  const limits = { profile: 1, sollFaelle: 4, reasoningEffort: "medium", maxAufrufe: 1, maxUsd: MAX_USD, maxMs: MAX_MS,
+  const limits = { profile: 1, sollFaelle: faelle.length, reasoningEffort: "medium", maxAufrufe: 1, maxUsd: MAX_USD, maxMs: MAX_MS,
     maxOutputTokens:T.PRUEFAUFWAND.maxOutputTokens,
     paketHash: input.paketHash, gespeicherterLageText: false, funktionsnachweis500: false, automatischeWiederholung: false };
   if (!d.execute) return { ok: true, plan: true, ...limits };
   const lock = await d.acquire();
   fordere(lock?.granted === true && lock.active === true, "sperre");
-  const receipt = { ...limits, quittungsschluessel: QUITTUNG, runId: cfg.runId, idHash: cfg.profilHash,
+  const receipt = { ...limits, quittungsschluessel: quittung, runId: cfg.runId, idHash: cfg.profilHash,
     runtimeCommit: cfg.commit, gestartetAm: new Date(start).toISOString() };
   try {
     fordere(await d.claim({ ...receipt, status: "laeuft" }), "verbraucht"); claimed = true;
     await pruefe(); calls++;
     const answer = await d.reviewModell(input, profile);
     proof = { eingabe: input, antwort: answer, antwortHash: hash(answer) };
-    const result = auswertung(input, answer, profile);
+    const result = auswertung(input, answer, profile, faelle);
     out = { ...result, grund: result.ok ? null : "sollfall-fachlich-abgelehnt" };
   } catch (error) {
     out = { ok: false, grund: /^lage-vorstart-[a-z-]+$/.test(error?.message || "")

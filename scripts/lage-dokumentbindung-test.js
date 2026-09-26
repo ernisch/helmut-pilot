@@ -227,4 +227,68 @@ const altReview = { pruefungen: [{ absatz: 0, quelle_id: "q-alt", belegfeld: "ti
   pruefbegruendung: "Der Titel belegt die Beratung." }], vergleiche: [] };
 assert.equal(Q.pruefe(altParagraph, altQuellen, altReview).ok, true,
   "reiner Quellenfixture ohne Profil braucht keine mandatsbegruendung");
-console.log("Dokumentbindungsgruppen: Einzelquelle, Mandatsauswahl, fachliche Zustaendigkeit, Akteursbeleg und getrenntes Mandatsurteil.");
+
+// Gruppen 17-19: Blosser Themenbericht ohne konkrete Aussage ist Fuelltext,
+// auch wenn nur eine Ueberschrift vorliegt. Eine echte Ueberschrift mit
+// konkretem Beschluss bleibt nutzbar. Auslaendischer Ort allein begruendet
+// keinen Bezug zum Auswaertigen Ausschuss; kein Laender-Muster, kein
+// pauschales Titelverbot. Der gegebene Eritrea-Negativfall wird ausdruecklich
+// erfasst und von einem separaten fehlenden Profilbezug unterschieden.
+assert.match(generator, /Ueberschrift selbst eine konkrete Handlung, einen Vorschlag, eine Entwicklung oder eine zugeschriebene Sachbehauptung/);
+assert.match(generator, /Ueberschrift mit konkreter Aussage bleibt nutzbar/);
+assert(!/Fehlt ein Auszug, liegt NUR eine Ueberschrift vor: als Bericht der genannten Quelle kennzeichnen/.test(generator),
+  "der widerspruechliche Titelhinweis im Generatorprompt ist beseitigt");
+assert.match(generator, /auslaendischer Ort oder Auslandsbezug allein begruendet keinen fachlichen Bezug zum Auswaertigen Ausschuss/);
+assert.match(generator, /Entwicklungs- oder Fischereiprojekt ist nicht allein deshalb aussenpolitisch/);
+assert(!/Eritrea/i.test(generator), "kein Laender-Muster im Generatorprompt");
+assert.match(redaktion, /Ueberschrift selbst eine konkrete Handlung, einen Vorschlag, eine Entwicklung oder eine zugeschriebene Sachbehauptung/);
+assert.match(redaktion, /auch bei einer einzelnen Ueberschrift/);
+assert.match(redaktion, /Ueberschrift mit konkreter Aussage bleibt/);
+assert(!/Bei einer blossen Ueberschrift darf der Absatz ausschliesslich deren Aussage als Bericht der Quelle wiedergeben/.test(redaktion),
+  "der widerspruechliche Titelhinweis im Reviewerprompt ist beseitigt");
+assert.match(redaktion, /auslaendischer Ort oder Auslandsbezug allein begruendet keinen Bezug zum Auswaertigen Ausschuss/);
+assert.match(redaktion, /Entwicklungs- oder Fischereiprojekt ist nicht allein deshalb aussenpolitisch/);
+assert(!/Eritrea/i.test(redaktion), "kein Laender-Muster im Reviewerprompt");
+
+const aussenProfil = { committees: ["Auswärtiger Ausschuss"] };
+const eritreaQuellen = [{ vorgang_id: "vg-fischerei-eritrea", quellenbelege: [{
+  quelle_id: "q-bt-eritrea", url: "https://example.org/fischerei-eritrea", quelle: "Deutscher Bundestag",
+  titel: "Projekt zum Fischerei-Managament in Eritrea - Deutscher Bundestag"
+}] }];
+const eritreaAbsatz = { text: "Der Deutsche Bundestag berichtet ueber ein Projekt zum Fischerei-Management in Eritrea.",
+  vorgang_ids: ["vg-fischerei-eritrea"], quelle_id: "q-bt-eritrea",
+  mandatsbezug: { feld: "ausschuss", wert: aussenProfil.committees[0] } };
+const eritreaReview = { pruefungen: [{ absatz: 0, quelle_id: "q-bt-eritrea", belegfeld: "titel",
+  vollstaendig_belegt: true, themenrein: true, profilbezug: true, textart: "fuelltext",
+  pruefbegruendung: "Der Titel benennt nur ein Thema, keine konkrete Handlung.",
+  mandatsbegruendung: `Die Nennung Eritreas belegt keinen fachlichen Bezug zum ${aussenProfil.committees[0]}.` }],
+  vergleiche: [] };
+const eritreaFuelltext = Q.pruefe([eritreaAbsatz], eritreaQuellen, eritreaReview, aussenProfil);
+assert.equal(eritreaFuelltext.ok, false);
+assert.deepEqual(eritreaFuelltext.diagnose, { absatz: 0, fehler: ["fuelltext-oder-wiederholung"] },
+  "der Eritrea-Themenbericht wird als Fuelltext abgelehnt");
+
+const eritreaProfilReview = structuredClone(eritreaReview);
+eritreaProfilReview.pruefungen[0].textart = "konkreter_sachverhalt";
+eritreaProfilReview.pruefungen[0].profilbezug = false;
+const eritreaOhneProfil = Q.pruefe([eritreaAbsatz], eritreaQuellen, eritreaProfilReview, aussenProfil);
+assert.equal(eritreaOhneProfil.ok, false);
+assert.deepEqual(eritreaOhneProfil.diagnose, { absatz: 0, fehler: ["profilbezug-fehlt"] },
+  "fehlender Profilbezug wird getrennt vom Fuelltext abgelehnt");
+
+const euSanktionQuellen = [{ vorgang_id: "vg-eu-sanktion", quellenbelege: [{
+  quelle_id: "q-eu-sanktion", url: "https://example.org/eu-sanktion", quelle: "Deutscher Bundestag",
+  titel: "EU beschliesst Sanktionen gegen russische Oligarchen"
+}] }];
+const euSanktionAbsatz = { text: "Die EU beschliesst Sanktionen gegen russische Oligarchen, berichtet der Deutsche Bundestag.",
+  vorgang_ids: ["vg-eu-sanktion"], quelle_id: "q-eu-sanktion",
+  mandatsbezug: { feld: "ausschuss", wert: aussenProfil.committees[0] } };
+const euSanktionReview = { pruefungen: [{ absatz: 0, quelle_id: "q-eu-sanktion", belegfeld: "titel",
+  vollstaendig_belegt: true, themenrein: true, profilbezug: true, textart: "konkreter_sachverhalt",
+  pruefbegruendung: "Der Titel nennt den konkreten EU-Sanktionsbeschluss.",
+  mandatsbegruendung: `Der Sanktionsbeschluss betrifft die fachliche Aufgabe des ${aussenProfil.committees[0]}.` }],
+  vergleiche: [] };
+assert.equal(Q.pruefe([euSanktionAbsatz], euSanktionQuellen, euSanktionReview, aussenProfil).ok, true,
+  "eine echte Ueberschrift mit konkretem EU-Sanktionsbeschluss bleibt zulaessig");
+
+console.log("Dokumentbindungsgruppen: Einzelquelle, Mandatsauswahl, fachliche Zustaendigkeit, Akteursbeleg, getrenntes Mandatsurteil sowie Titel- und Fülltextgrenze.");
