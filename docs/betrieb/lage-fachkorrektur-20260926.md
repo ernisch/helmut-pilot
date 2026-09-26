@@ -2,6 +2,50 @@
 
 Stand26.09.2026,21:15UTC. Roadmap3.1 bleibt offen.
 
+## Nachkontrolle22:45UTC: begrenzter Generatornachweis bestanden
+
+[PR635](https://github.com/ernisch/helmut-pilot/pull/635) wurde am geprüften Kopf
+`b9b15ac740d07b36beacbca5f9a3c3cd278a6766` nach beiden grünen Pflichtprüfungen
+36276450202 gemergt. Production`695b991d6eb597df218af75534e58a41dabd4298`,
+Deployment`dpl_7Tp9FWnwb2MuZM2WuYCZTaKDF9r9` READY22:41:52.673UTC mit main-Alias;
+Fehler-/Fatal-Nachfenster22:41:35–22:42:03UTC leer.
+
+Nurleseplan36277138803 bestanden. Der eigene [Generatorauftrag b](https://github.com/ernisch/helmut-pilot/actions/runs/36277184216)
+endete22:44:19UTC erfolgreich:2 Aufrufe,0,015687USD,2 gespeicherte Absätze,
+keine offene Kostenreserve. Vergleich c wurde nicht erneut bezahlt; sein
+vollständiger historischer Beleg und der Fehlversuch a sind unveränderlich
+gebunden, heutige Prüfeingabe und Sollurteile erneut streng kontrolliert.
+
+Eigene Vollprüfung von Entwurf, Prüfantwort und gespeicherten Texten:
+- Annahme des Bundespolizeigesetzes, Abstimmung322/134/118 und Finanzbericht
+  stammen vollständig aus genau dem gewählten Bundestagsartikel; der explizite
+  Haushaltsausschuss-Bericht trägt den Mandatsbezug.
+- Fortgesetzte Sanktionsverhandlungen in Brüssel stammen vollständig aus genau
+  dem gewählten DLF-Artikel; kein Übertrag in die benachbarte Tagesschauquelle.
+  Der außenpolitische Gegenstand trägt den Auswärtigen Ausschuss.
+- Die beiden Absätze beschreiben unterschiedliche Sachverhalte. Der frühere
+  bloße Fischerei-Themenhinweis wurde nicht übernommen. Private Auswahlnotizen
+  bleiben außerhalb der gespeicherten sichtbaren Absätze.
+
+Quittungsvollhash`d5ab4734a95ac99acad4972f971b11ada7b68f428d5c34a5b455aba0e52fcb21`;
+gespeicherter Inhalt`2d72c60fb1c3ca26c4404f9c5017cc61c0034607488669fb3b768652e4a3e0f1`.
+Volltexte bleiben privat. Die Quellendaten25.09./22.09. bleiben unverändert;
+dieser fachliche Generatorbeleg ist keine frische Tagesversorgung, kein
+Drei-Ansichten-Paket und kein500er Funktionsnachweis. Generierung low/3000,
+Prüfung medium/6000 ausschließlich in diesem isolierten Nachweis; kein Beleg
+für500 normale Produktprüfungen mit low/3000.
+
+Production22:45:20UTC:500 Mandate/0 aktiv,501 Identitäten, beide Schutzhashes
+unverändert;0 Jobs/Locks/Leases/Prozesse/offene Kosten.55 lokale Helfersessions
+konservativ bilanziert. Neuer Flash-High-Lauf geschätzt0,190510472USD;
+externe Bindung3,608438USD einschließlich0,35USD Altreserve nach atomarer
+Vollhash-Fortschreibung und unabhängiger Nachlesung. Production25.09.0,433563USD,
+26.09.0,717747USD, zusammen4,759748USD. Beide6USD-Grenzen unverändert.
+
+Nächster notwendiger Schritt: die bereits originalgeprüften fünf neuen DLF-
+Quellen nach PR636/Nachkontrolle begrenzt importieren/verarbeiten und die
+aktuelle Versorgung vollständig neu bilanzieren. Keine Profilaktivierung.
+
 ## Nachkontrolle22:26UTC: Generator schützt vor ungebundener Auswahlnotiz
 
 PR634/`654fd8ea72f31260ffce6a104e071b237dd61ebf` READY22:19:41UTC,

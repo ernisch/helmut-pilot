@@ -76,6 +76,32 @@ test("Amt und Person verbinden weder Gebuehrenreform noch Krankenhausbau", () =>
   assert.equal(V.docsShareEvent(a,c).gleich, true);
   assert.equal(V.sameVorgang({ documents:[a] }, { documents:[c] }).gleich, true);
 });
+test("Amtstraeger-Attribution traegt kein Ereignis ueber den Nachrichtenzyklus hinaus", () => {
+  // Production 26.09.2026: gemeinsamer Redner ("Bundesaussenminister Wadephul"),
+  // zwei sachlich verschiedene Ereignisse. Der Identitaetsvertrag sagt: "Amt +
+  // Personenname sind keine zwei Sachbelege" — die gemeinsame Nennung zaehlt
+  // deshalb EINMAL und traegt die hoehere Beweislast ausserhalb des Zyklus nicht.
+  const rede = { ...dokument("rede", "UNO-Vollversammlung - Bundesaussenminister Sommer fordert mehr Verantwortung fuer KI",
+    "Bundesaussenminister Sommer hat in New York mehr Verantwortung fuer die Entwicklung Kuenstlicher Intelligenz verlangt."),
+    published_at: "2026-09-16T06:00:00Z" };
+  const fremd = { ...dokument("fremd", "Deutsche Bewerbung - Sommer bekraeftigt Ambitionen auf Sitz im Menschenrechtsrat",
+    "Bundesaussenminister Sommer hat in Genf fuer einen Sitz im Menschenrechtsrat geworben."),
+    published_at: "2026-09-26T21:50:00Z" };
+  assert.equal(V.docsShareEvent(rede, fremd).gleich, false);
+  assert.equal(V.docsShareEvent(fremd, rede).gleich, false);
+  assert.equal(V.docsShareEvent(rede, fremd).grund, "zu-wenig-beweisgewicht");
+  assert.equal(V.sameVorgang({ documents:[fremd] }, { documents:[rede] }).gleich, false);
+  assert.equal(V.sameVorgang({ documents:[rede] }, { documents:[fremd] }).gleich, false);
+  assert.equal(gruppen([rede, fremd]).length, 2);
+  // Gegenprobe: dieselbe Sache bleibt gebunden, auch mit derselben Amtstraeger-
+  // Nennung — der gemeinsame Sachanker traegt.
+  const folge = { ...dokument("folge", "Sitz im Menschenrechtsrat: Deutschland wirbt um Unterstuetzung",
+    "Bundesaussenminister Sommer hat in Genf um Unterstuetzung fuer die Bewerbung geworben."),
+    published_at: "2026-09-26T22:30:00Z" };
+  assert.equal(V.docsShareEvent(fremd, folge).gleich, true);
+  assert.equal(V.docsShareEvent(folge, fremd).gleich, true);
+  assert.equal(V.sameVorgang({ documents:[folge] }, { documents:[fremd] }).gleich, true);
+});
 test("eine kernlose Kette ist kein gemeinsames Ereignis, kein Dokument geht verloren", () => {
   const woerter = ["Abwasserreinigung", "Kuestenbahnhof", "Solarnetzplanung", "Hafenlogistik", "Dorfmedizinplanung", "Wasserstoffanlage", "Grenztarifordnung"];
   const input = woerter.slice(1).map((w,i) => dokument(`kette-${i}`, `${woerter[i]} ${w}`));
