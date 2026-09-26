@@ -88,3 +88,101 @@ Nachkontrolle: sämtliche erlaubten Änderungen und unveränderten Schutzwerte
 frisch lesen, Artikelbeleg nach DB-Roundtrip validieren, tatsächliche Versorgung
 aller 500 Profile neu berechnen. Eine verbesserte Einzelquelle ist noch keine
 500er Vollversorgung oder Abnahme sichtbarer Ausgaben.
+
+## Production ausgeführt und nachgelesen
+
+[PR609](https://github.com/ernisch/helmut-pilot/pull/609), Kopf
+`e5baf29d9e691a4412e861df0757a600d1279ae5`: beide Pflichtprüfungen im
+[Lauf36237312190](https://github.com/ernisch/helmut-pilot/actions/runs/36237312190)
+erfolgreich. Merge26.09.,11:08:59UTC:
+`ae5cf4aef7594382ee98a4b3e35ffcf2f88e8f1c`. Vercel
+`dpl_EV8Rwmt4wXQFyLL6NEbVS7uv4rZ4` Production READY11:09:18UTC, exakter Commit.
+Keine error/fatal-Protokolle im gelesenen Zeitraum11:09:18–11:11:52UTC.
+
+Die oben begrenzte Polizeigesetz-Transaktion ist ausgeführt. Unabhängige
+Nachlesung11:10:50UTC: Quittung `ausgefuehrt`, genau drei gebundene Quellen;
+602-Zeichen-Beleg nach Datenbank-Roundtrip gültig und sichtbarer Quellenfilter
+bestanden. Alle drei alten Quellen, CAS, vollständige Profil-/Identitäts-/Auth-
+Hashes unverändert.500 Profile/0 aktiv,0 Jobs/Leases/Sperren/offene Reserven.
+Die lokale Relevanzauswertung aller500 unveränderten Profile mit frisch
+gelesenen16 Vorgängen ergibt85 mit Score≥40 statt3 vorher;415 darunter.
+Das ist noch keine Abnahme der tatsächlich sichtbaren500 Ausgaben.
+
+## Tankrabatt: vorhandene Quellen zusammengeführt
+
+Anschließend wurden ausschließlich die beiden gleichartigen Vorgänge
+`vg-entlastung-20260925-e75e6f` und `vg-preissenkung-20260925-4728de` korrigiert.
+Alle vier bestehenden Quellen sind unverändert am ersten Vorgang gebunden;
+der zweite bleibt als stillgelegte Dublette erhalten. Der schon zuvor geparkte
+Mischvorgang sowie sämtliche CAS bleiben unverändert. Redaktionelle Herkunft
+und Versionswechsel sind ausdrücklich gespeichert, kein behaupteter Modelllauf.
+
+Finanzausschussbeleg: vollständiger426-Zeichen-Absatz im
+[amtlichen Beschlussbericht](https://www.bundestag.de/dokumente/textarchiv/2026/kw39-de-versicherung-aufsicht-1216898),
+Position8 innerhalb des konkreten Artikels einschließlich leerer HTML-Absätze,
+SHA256 `72799a47cd1e576afc1803b9134e87c125608044fd093e35ba86806747b84b95`.
+Keine erfundene Handlungsfrist oder Behauptung einer tatsächlichen Weitergabe
+des Steuervorteils an den Tankstellen.
+
+Vorher festgelegter privater Aktionsplan samt vollständiger Sicherung und
+bedingtem Rückweg: `tankrabatt-aktionsplan.md`, `tankrabatt-eingabe.json`,
+`tankrabatt-ausfuehren.sql`, `tankrabatt-rueckweg.sql` im selben Artefaktordner.
+14 lokale SQL-Prüfgruppen bestanden. Einmalige Quittung
+`redaktion-tankrabatt-20260926-a`, Eingabehash
+`6c50575fa68b33df8c3ef4b1d5ddbe76f9dec71c6bd30f4fe949c3f6b7442a56`.
+
+Unabhängige Production-Nachlesung11:11:38UTC: erwartete beide Objektfassungen,
+vier Links am kanonischen Vorgang, kein Link an der erhaltenen Dublette, alle
+Quellen und CAS identisch; vollständiger Artikelbeleg und sichtbarer Quellenfilter
+bestanden. Profile und Auth unverändert,500/0, keine offene Arbeit oder Reserve.
+Helmut-Tagesbuch weiterhin0,164443USD, technischer Riegel4USD. Beide
+Datenkorrekturen zusammen:0 Modellaufrufe,0 Profiländerungen,0 Aktivierungen.
+
+Erneute lokale Relevanzauswertung der frisch gelesenen16 Vorgänge:
+**127/500 mit Score≥40,373 darunter.** Weder Vollversorgung noch sichtbare
+Bereichsabnahme oder500er Funktionsnachweis daraus ableiten. Nächster Schritt:
+tatsächlichen Builder-/Quellenpfad mit aktuellem Datenstand für alle500 prüfen
+und die verbleibenden Fachlücken gezielt bearbeiten.
+## Anschluss: vollständiger Absatz im Lage-Quellenvertrag
+
+Nach den beiden Quellenkorrekturen wurde die Versorgung mit dem tatsächlichen
+Briefing-Bauer lokal vollständig geprüft: 500 Profile, 500 aktuelle
+Wissensobjekte und 911 zugehörige Quellen aus fünf rein lesenden Production-Seiten
+vom26.09.,11:13:45 bis11:14:11UTC. Abschluss11:18:24UTC: **127 mit Tagespriorität,
+373 ohne**, ein Profil mit persönlichem Radar-Hinweis, keines mit
+Beobachtungshinweis. Es gibt damit noch kein Profil mit drei fachlich gefüllten
+Bereichen. Das ist eine vollständige lokale Auswertung dieser Datenbasis,
+keine neue API-Aufnahme, keine Textabnahme und kein500er Production-Nachweis.
+Private Einzelbelege: `builder500-ergebnis.json` und `builder500-ausgaben.json`.
+
+Dabei belegter Anschlussfehler: Der amtliche Leitabsatz blieb bisher nur im
+separaten Artikelbeleg; die neue Rohquelle hatte `summary=null`. Außerdem
+verwarf Lage den bewusst uhrzeitlosen Publikationstag. Die Korrektur erhält
+ausschließlich bei validierten Bundestags-Artikelständen den ganzen Absatz
+bis zur bereits erlaubten1200-Zeichen-Grenze, exakt an seinen Hash gebunden.
+Lage akzeptiert einen Tag nur, wenn dessen ganzer Berliner Kalendertag im
+bestehenden Zeitfenster liegt. Unterschiedliche Artikelstände derselben Adresse
+bleiben getrennte Belege. Die gemeinsame Leseobergrenze bleibt unverändert;
+verlorene Stand-Metadaten oder Absätze beim Folgelesen führen zum Fehler.
+
+Gezielte lokale Prüfungen:33 Artikelstand-Gruppen und13 Lagefenster-Gruppen
+bestanden. Der zusätzliche REST-Nachweis nutzt eine isolierte PostgreSQL17
+und PostgREST12.2.3 in der Pflicht-CI; sein Ergebnis steht am jeweiligen PR-Kopf.
+Keine Production-Daten in den synthetischen Tests.
+
+Vorbereitete einzelne Production-Korrektur nach Ausrollung: nur die bisher
+leere `summary` der neuen amtlichen Polizeigesetz-Quelle mit dem bereits
+belegten602-Zeichen-Absatz ergänzen. Quellenkennung, Tag, frühere URL-Fassung,
+Vorgang, Verknüpfungen, CAS, Profile und Kostenbuch bleiben unverändert.
+Neue eigene Quittung `redaktion-bundespolizeigesetz-lage-20260926-a`, keine
+Wiederverwendung alter Aufträge.16 SQL-Laborgruppen prüfen Atomarität,
+Vorbedingungen, fremde Nebenwirkungen und den exakt gebundenen Rückweg.
+Inputhash `a150449703f949fe4accc6e5528e5f52dc08a6c5db3999a8074c315cfa7bf97f`.
+**An dieser Stelle vorbereitet, noch nicht als ausgeführt ausgewiesen.**
+
+Vorbedingung11:39UTC aktualisiert: Der reguläre Rückstandslauf11:30–11:33UTC
+aktualisierte19 Wissensobjekte bei0 neuen Rohquellen; Tagesbuch nun0,293493USD,
+0 offene Reserven. Die betroffene Quellenzeile, ihr Vorgang, CAS, Links und die
+alte Quittung sind vollständig unverändert. Alle500 Profile weiterhin inaktiv
+und hashgleich. Die neue Transaktion bindet den frisch nachgelesenen Auth-Hash
+und erhält auch diesen gesamten Bestand unverändert.
