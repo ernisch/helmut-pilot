@@ -8,9 +8,13 @@ const doc = { id: "rd-synthetisch", title: "Neue Regeln zur Foerderung beraten",
   url: "https://www.bundestag.de/dokumente/textarchiv/2026/kw39-regeln-1234567",
   published_at: "2026-09-25T10:00:00.000Z", source_name: "Deutscher Bundestag" };
 const lead = "Der Bundestag hat den Entwurf heute beraten. Zur weiteren Beratung wurde er dem Ausschuss fuer Arbeit und Soziales ueberwiesen.";
+// Synthetischer langer Absatz; der echte 602-Zeichen-Fall wird separat am
+// gesicherten Original-HTML geprueft, ohne den Nachrichtentext zu publizieren.
+const longLead = lead.repeat(5) + " Der Innenausschuss legt einen Bericht vor. Ein weiterer Bericht des Haushaltsausschusses bleibt ebenfalls Teil dieses Absatzes.";
 const block = (title = doc.title, body = `<p>${lead}</p>`) => `<article class="bt-artikel"><div><h1>${title}</h1></div><div class="bt-artikel__article"><div>${body}</div></div><aside><article><p>Fremde Rednertexte und Vorgangsdetails.</p></article></aside></article>`;
-function response(body = block()) { return { finalUrl: doc.url, gelesenAm: "2026-09-25T12:00:00.000Z",
-  body: `<html><head><meta property="og:type" content="article"><meta name="date" content="25.09.2026"><meta property="og:url" content="${doc.url}"><meta property="og:title" content="Deutscher Bundestag - ${doc.title}"></head><body>${body}</body></html>` }; }
+function responseFuer(d, body = block(d.title)) { return { finalUrl: d.url, gelesenAm: "2026-09-25T12:00:00.000Z",
+  body: `<html><head><meta property="og:type" content="article"><meta name="date" content="25.09.2026"><meta property="og:url" content="${d.url}"><meta property="og:title" content="Deutscher Bundestag - ${d.title}"></head><body>${body}</body></html>` }; }
+function response(body = block()) { return responseFuer(doc, body); }
 let count = 0;
 function test(name, fn) { fn(); console.log("PASS " + name); count++; }
 const get = (r = response(), d = doc) => G.gewinneArtikelkontext(d, r);
@@ -54,9 +58,32 @@ test("Versteckte Artikel, Vorfahren und Haupttexte ergeben keine nutzbare Meldun
     block(doc.title, `<p hidden>${lead}</p>`), block(doc.title, `<p><span aria-hidden="true">${lead}</span></p>`)]) reject(response(body));
 });
 test("Kurze Hinweise, leere oder zu lange erste Absaetze werden nie uebersprungen", () => {
-  for (const first of ["Abgesetzt.", "", "x".repeat(601)]) reject(response(block(doc.title, `<p>${first}</p><p>${lead}</p>`)));
+  for (const first of ["Abgesetzt.", "", "x".repeat(1201)]) reject(response(block(doc.title, `<p>${first}</p><p>${lead}</p>`)));
   assert.equal(get(response(block(doc.title, `<p>${"x".repeat(600)}</p>`))).beleg.text.length, 600);
   reject(response(block(doc.title, `<p>${doc.summary}</p><p>${lead}</p>`)));
+});
+test("Langer amtlicher Leitabsatz bleibt vollstaendig und behaelt beide Ausschussbelege", () => {
+  assert(longLead.length > 600 && longLead.length <= 1200);
+  const r = get(response(block(doc.title, `<p>${longLead}</p>`)));
+  assert.equal(r.ok, true); assert.equal(r.beleg.text, longLead);
+  assert(r.beleg.text.includes("Innenausschuss"));
+  assert(r.beleg.text.includes("Haushaltsausschusses"));
+  assert(U.buildUnderstandingPrompt({ documents: [doc] }, { artikelkontextVersuch: r.beleg }).includes(longLead));
+});
+test("1200 Zeichen gelten nur fuer den amtlichen Bundestags-Leitabsatz", () => {
+  assert.equal(get(response(block(doc.title, `<p>${"x".repeat(1200)}</p><p>${lead}</p>`))).beleg.text.length, 1200);
+  reject(response(block(doc.title, `<p>${"x".repeat(1201)}</p><p>${lead}</p>`)));
+  const b = get().beleg;
+  assert.equal(A.pruefeArtikelkontext([doc], { ...b, text: "x".repeat(601) }).text.length, 601);
+  assert.throws(() => A.pruefeArtikelkontext([doc], { ...b, text: "x".repeat(1201) }), /artikelkontext-absatz-ungueltig/);
+  assert.throws(() => A.pruefeArtikelkontext([doc], { ...b, text: "x".repeat(601),
+    gewinnung: { ...b.gewinnung, verfahren: "artikel-absatz-titel-v1", titelTreffer: 2 } }),
+  /artikelkontext-absatz-ungueltig/);
+  assert.throws(() => A.pruefeArtikelkontext([doc], {
+    version: 1, herkunft: "manueller-originalvergleich", dokumentId: doc.id,
+    quellenHash: A.quellenstandHash(doc), artikelUrl: doc.url, artikelTitel: doc.title,
+    gelesenAm: "2026-09-25T12:00:00.000Z", absatzPosition: 1, text: "x".repeat(601)
+  }), /artikelkontext-absatz-ungueltig/);
 });
 test("Inline Woerter bleiben zusammen, nur exakter Bedienhinweis entfaellt", () => {
   const html = `<p>Der Bundestag hat neue <strong>Regeln</strong> beraten. Die Vorlage (<a><span class="a-link__label">21/123</span><span class="a-link__label --hidden">(Dokument, öffnet ein neues Fenster)</span></a>) wird weiter behandelt.</p>`;
