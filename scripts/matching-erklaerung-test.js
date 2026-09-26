@@ -245,12 +245,19 @@ const deps = { ready: () => true, request: fakeRequest };
   check("C4 Reihenfolge entspricht exakt der gespeicherten Reihenfolge",
     ranked.map((k) => k.id).join(",") === "ko-1,ko-3");
 
-  const karte = lage.koToVorgangCard(ranked[0], []);
+  // Der positive Kartenpfad braucht neben dem gespeicherten Matching einen
+  // Artikelauszug. Quellenlose KOs duerfen keine persoenliche Bedeutung zeigen.
+  const karte = lage.koToVorgangCard(ranked[0], [{
+    title: "Beratung zum Verkehr", summary: "Der Ausschuss berät die Verkehrsvorlage.",
+    url: "https://example.org/verkehr"
+  }]);
   check("C5 koToVorgangCard reicht relevanz als { satz, belege } durch",
     karte.relevanz && karte.relevanz.satz && Array.isArray(karte.relevanz.belege));
   check("C6 Karte enthaelt keine technischen Auditfelder",
     ["run_id", "similarity", "rank", "fingerabdruck", "eingabe_hash"].every(
       (v) => JSON.stringify(karte).toLowerCase().indexOf(v) < 0));
+  check("C6b Matching allein heilt keinen fehlenden Quellenauszug",
+    lage.koToVorgangCard(ranked[0], []).relevanz === null);
   const karteOhne = lage.koToVorgangCard(ranked[1], []);
   check("C7 Karte ohne Erklaerung liefert relevanz=null (Alt-Pfad unveraendert)",
     karteOhne.relevanz === null);

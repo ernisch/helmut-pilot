@@ -140,7 +140,7 @@ async function run() {
       mentioned_parties: ["CDU"]
     };
     const docs = [
-      { id: "rd-a", title: "Drucksache 20/1234", url: "https://dip.bundestag.de/x.pdf", source_name: "Bundestag", source_type: "bundestag", document_type: "Drucksache", published_at: "2025-06-12T08:30:00Z" },
+      { id: "rd-a", title: "Drucksache 20/1234", summary: "Das BMAS hat den Referentenentwurf zur Tarifbindung bei öffentlichen Aufträgen vorgelegt.", url: "https://dip.bundestag.de/x.pdf", source_name: "Bundestag", source_type: "bundestag", document_type: "Drucksache", published_at: "2025-06-12T08:30:00Z" },
       { id: "rd-b", title: "Bericht", url: "https://tagesschau.de/y", source_name: "Tagesschau", source_type: "media", published_at: "2025-06-12T09:15:00Z" }
     ];
     const card = lage.koToVorgangCard(ko, docs);
@@ -180,12 +180,12 @@ async function run() {
       was_ist_passiert: "X ist passiert.", warum_wichtig: "Y ist wichtig.", handlungsempfehlung: "Z."
     };
     const card = lage.koToVorgangCard(ko, []);
-    ok("kein display_title -> displayTitle leer (Client faellt auf vollstaendigen Titel zurueck)", card.displayTitle === "");
-    ok("kein display_summary -> displaySummary leer", card.displaySummary === "");
+    ok("ohne Quelldokument kein erfundener Titelfallback", card.displayTitle === "Quellenhinweis");
+    ok("fehlender Quellentext wird ehrlich benannt", card.displaySummary === "Keine nutzbaren Quellentexte für eine Zusammenfassung.");
     ok("kein why_relevant -> whyRelevant leer", card.whyRelevant === "");
     ok("kein recommendation -> recommendation leer", card.recommendation === "");
-    ok("kein display_category -> displayCategory leer", card.displayCategory === "");
-    ok("bestehende Felder bleiben trotzdem gefuellt", card.title === "Altes Thema" && card.empfehlung === "Z.");
+    ok("ohne Quelle keine erfundene Fachkategorie", card.displayCategory === "Quellenhinweis");
+    ok("unbelegte Altprosa wird nicht als Ersatz gezeigt", card.title === "Quellenhinweis" && card.empfehlung === "");
     // Ohne Betroffene-Rohfelder: leere Arrays (nie undefined) -> Client blendet
     // die Betroffene-Sektion sauber aus, statt zu crashen.
     ok("keine Betroffene-Felder -> leere Arrays", Array.isArray(card.parteien) && card.parteien.length === 0 && Array.isArray(card.mentionedPeople) && card.mentionedPeople.length === 0);

@@ -182,16 +182,22 @@ const KOS = [
 // Beispiel-Pfade, keine echten Artikel).
 const DOCS_BY_VG = {
   "vg-arbeit": [
-    { url: "https://www.bmas.de/beispiel-tariftreue", source_name: "BMAS", source_type: "ministry", published_at: "2026-07-13T07:00:00Z", title: "Bundestariftreuegesetz" },
-    { url: "https://www.tagesschau.de/beispiel-tariftreue", source_name: "tagesschau", source_type: "media", published_at: "2026-07-13T06:30:00Z", title: "Tariftreuegesetz" }
+    { url: "https://www.bmas.de/beispiel-tariftreue", source_name: "BMAS", source_type: "ministry", published_at: "2026-07-13T07:00:00Z", title: "Bundestariftreuegesetz",
+      summary: "Der Bundestag berät das Bundestariftreuegesetz und die Stärkung der Tarifbindung in erster Lesung." },
+    { url: "https://www.tagesschau.de/beispiel-tariftreue", source_name: "tagesschau", source_type: "media", published_at: "2026-07-13T06:30:00Z", title: "Tariftreuegesetz",
+      summary: "Die Tarifbindung soll gestärkt und das Mindestlohnverfahren vereinfacht werden." }
   ],
   "vg-gesundheit": [
-    { url: "https://www.bundestag.de/beispiel-gesundheit", source_name: "Deutscher Bundestag", source_type: "bundestag", published_at: "2026-07-13T07:15:00Z", title: "Gesundheitsausschuss" },
-    { url: "https://www.zeit.de/beispiel-pflegeversicherung", source_name: "Zeit", source_type: "media", published_at: "2026-07-13T05:40:00Z", title: "Reform der Pflegeversicherung" }
+    { url: "https://www.bundestag.de/beispiel-gesundheit", source_name: "Deutscher Bundestag", source_type: "bundestag", published_at: "2026-07-13T07:15:00Z", title: "Gesundheitsausschuss",
+      summary: "Der Gesundheitsausschuss berät die Reform der Pflegeversicherung und ihre Finanzierung." },
+    { url: "https://www.zeit.de/beispiel-pflegeversicherung", source_name: "Zeit", source_type: "media", published_at: "2026-07-13T05:40:00Z", title: "Reform der Pflegeversicherung",
+      summary: "Die Pflegeversicherung steht vor einer umfassenden Reform ihrer Finanzierung." }
   ],
   "vg-digitales": [
-    { url: "https://www.bundestag.de/beispiel-digitales", source_name: "Deutscher Bundestag", source_type: "bundestag", published_at: "2026-07-13T07:20:00Z", title: "Digitalausschuss" },
-    { url: "https://www.spiegel.de/beispiel-plattformbesteuerung", source_name: "Spiegel", source_type: "media", published_at: "2026-07-13T05:10:00Z", title: "Besteuerung von Digitalplattformen" }
+    { url: "https://www.bundestag.de/beispiel-digitales", source_name: "Deutscher Bundestag", source_type: "bundestag", published_at: "2026-07-13T07:20:00Z", title: "Digitalausschuss",
+      summary: "Der Digitalausschuss berät die Besteuerung großer Digitalplattformen und Fragen der digitalen Gleichstellung." },
+    { url: "https://www.spiegel.de/beispiel-plattformbesteuerung", source_name: "Spiegel", source_type: "media", published_at: "2026-07-13T05:10:00Z", title: "Besteuerung von Digitalplattformen",
+      summary: "Große Digitalkonzerne sollen künftig stärker zur Steuer herangezogen werden." }
   ]
 };
 
