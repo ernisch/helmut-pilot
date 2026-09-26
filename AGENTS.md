@@ -34,12 +34,25 @@ DeepSeek V4 Pro Max wird ausschließlich für sehr schwierige klar abgegrenzte
 lokale Blocker, besonders schwer nachvollziehbare lokale Fehler und Probleme
 eingesetzt, für die Pro High voraussichtlich nicht ausreicht.
 
-Unklare, bereichsübergreifende, architekturrelevante oder Production-nahe Fehler
-bleiben bei Astra, auch wenn DeepSeek V4 Pro Max technisch verfügbar wäre.
-DeepSeek ist für klar abgegrenzte lokale Analyse und Umsetzung vorgesehen.
-Sobald Ursache, Wirkung oder notwendige Entscheidung mehrere Helmut-Bereiche,
-Architektur, Production-Sicherheit oder den 500er Nachweis gemeinsam betrifft,
-übernimmt Astra die Analyse und Fehlerbehebung selbst.
+Unklare, bereichsübergreifende, architekturrelevante oder Production-nahe
+Gesamtprobleme werden zuerst von Astra analysiert und in sichere Teilaufgaben
+zerlegt. Dass das Gesamtproblem mehrere Helmut-Bereiche berührt, ist allein kein
+Grund, die gesamte Umsetzung bei Astra zu behalten.
+
+Sobald eine Teilaufgabe klar abgegrenzt, lokal umsetzbar, mit eindeutigen
+Abnahmekriterien beschreibbar und ohne eigene kritische Production-Entscheidung
+ausführbar ist, delegiert Astra diese Teilaufgabe an die niedrigste ausreichend
+starke DeepSeek-Kombination.
+
+Astra behält die bereichsübergreifende Ursachenanalyse, Architektur- und
+Production-Entscheidungen, Sicherheitsfragen, Integrationsprüfung und finale
+Abnahme. Astra setzt eine lokale Teilaufgabe selbst nur um, wenn sie nicht sicher
+abtrennbar ist, eine Delegation das Risiko wesentlich erhöhen würde oder die
+Teilaufgabe selbst zu den geschützten kritischen Bereichen gehört.
+
+Ziel des Routings ist nicht, möglichst viel Arbeit bei Astra zu halten, sondern
+Astra für Führung, schwierige Gesamtzusammenhänge und Prüfung zu nutzen und klar
+abgegrenzte lokale Umsetzung bevorzugt an DeepSeek zu delegieren.
 
 Astra wählt vor jeder Delegation direkt die niedrigste voraussichtlich
 ausreichende Modell/Denkstufen-Kombination. Es gibt keine automatische
