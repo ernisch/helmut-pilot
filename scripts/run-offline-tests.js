@@ -230,6 +230,7 @@ const STANDARD = new Set([
   "lage-tagesbezug-test.js",               // relative Quellentage nicht ins neue Briefing verschieben
   "lage-datumsbindung-test.js",            // kein Ereignisdatum aus Publikationsmetadaten
   "verstehen-frische16-test.js",            // neuer gebundener16er Auftrag und Kostenstart am UTC-Tageswechsel
+  "verstehen-frische18-test.js",            // neuer gebundener18er Auftrag, 0,65-USD-Grenze und eigene Quittung
   "verstehen-frische30-test.js",            // eigener gebundener30er Auftrag, keine alte Wiederaufnahme
   "verstehen-einmalig-test.js",             // Fachgrenzen des einmaligen Laufs
   "verstehen-rueckstand-test.js",           // Rueckstandslogik

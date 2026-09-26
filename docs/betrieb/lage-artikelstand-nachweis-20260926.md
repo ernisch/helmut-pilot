@@ -1,6 +1,30 @@
 # Lage-Nachweis nach amtlicher Quellenkorrektur
 
-## Aktueller Anschluss: Generatornachweis nach bestandener Mandatsprüfung
+## Aktueller Befund: Generator wählt erneut ein falsches Mandatsfeld
+
+[PR617](https://github.com/ernisch/helmut-pilot/pull/617) am Kopf `9de68750`
+in [CI36249983255](https://github.com/ernisch/helmut-pilot/actions/runs/36249983255)
+beide Pflichtprüfungen grün, Merge `1d24245e2556d395bb73dd6d61aa9495a04c27f1`.
+Production `dpl_2r5GHEXg4pTof3v38VbMcavrEkE4` READY15:04:39UTC,
+keine error/fatal-Logs bis15:05:01UTC. [Plan36250698909](https://github.com/ernisch/helmut-pilot/actions/runs/36250698909)
+bestanden. [Generatorlauf36250788961](https://github.com/ernisch/helmut-pilot/actions/runs/36250788961)
+15:06:52–15:07:44UTC fachlich gescheitert:2 Aufrufe/0,009631USD, kein Tagessatz.
+Quittung `lage-generatornachweis-20260926-a` terminal gestoppt/verbraucht.
+
+Der Generator liefert zwei verschiedene belegte Aussagen derselben amtlichen
+Quelle, bindet aber die Gesetzesannahme an den Auswärtigen Ausschuss. Das
+getrennt begründete Review lehnt diese falsche Zuordnung korrekt ab und
+akzeptiert den zweiten Absatz zum Finanzierungsbericht/Haushaltsausschuss.
+Beide Quellenurteile und der Paarvergleich sind positiv. Damit bleibt die
+Generatorauswahl fehlerhaft; keine weitere blinde Wiederholung dieses Auftrags.
+Die bestandene Vierfall-Reviewprüfung wird nicht wiederholt.
+
+Nachkontrolle15:08:21UTC:500 Profile/0 aktiv, Mandats-/Identitätshashes unverändert,
+0 Jobs/Sperren/Leases/offene Kosten, Tagesbuch0,350731USD. Unabhängige notwendige
+[frische18-Quellenvorbereitung](verstehen-frische18-20260926.md) läuft lokal;
+noch kein Import. Kein500er Start, Vollversorgung/Bereichsabnahme/Kostenplan offen.
+
+## Vorheriger Anschluss: Generatornachweis nach bestandener Mandatsprüfung
 
 [PR616](https://github.com/ernisch/helmut-pilot/pull/616) mit beiden grünen
 Pflichtprüfungen am Kopf `f71522c4` ([CI36248745257](https://github.com/ernisch/helmut-pilot/actions/runs/36248745257))
