@@ -5,6 +5,18 @@ Quellenimport und Verstehenslauf erneut angewiesen:
 
 > ich gehe jetzt schlafen. du hast jede freigabe. auch die kostenfreigabe hast du solange sie unter 4 USD bleibt. merk dir das oder trag das ein sodass du vollautonom durcharbeiten kannst. bitte arbeite vollautonom durch bis unmittelbar vor dem 500er test
 
+Der Betreiber hat danach ausdruecklich ergaenzt:
+
+> weiter. arbeite vollautonom weiter und stoppe nicht. selbst nach dem merge immer weiterarbeiten, nicht fragen. und wenn das eingetragen werden muss in agents md dann mach das bitte weil ich dir das nicht immer sagen will. du hast jede freigabe bis vor dem 500er test. trag das dann ein in die agents md
+
+Die dauerhafte Fortsetzungsregel steht im Abschnitt "Aktueller Betreiberauftrag"
+der `AGENTS.md`: nach jedem Merge und dessen Nachkontrolle unmittelbar die naechste
+notwendige Roadmap-Vorarbeit aufnehmen. Innerhalb dieses Umfangs sind auch
+notwendige Production-Vorarbeiten freigegeben; ihre konkreten Grenzen, Belege und
+Rueckwege werden vor Ausfuehrung festgelegt. Ein einzelner erledigter Sprint ist
+kein Endpunkt. Kosten- und Sicherheitsgrenzen sowie das Aktivierungs-/Testverbot
+unten bleiben bestehen.
+
 ## Umfang und Grenze
 
 Dieser Auftrag gilt fuer die noch offenen Vorarbeiten aus `docs/ROADMAP_BIS_500.md`.

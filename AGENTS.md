@@ -405,6 +405,32 @@ festgehalten. Bis unmittelbar vor Aktivierung und500er Test autonom fortfahren;
 Kosten unter4USD, technische Tagesgrenze unveraendert. Dieser aktuelle Auftrag
 geht aelteren allgemeinen Rueckfrageforderungen innerhalb seines Umfangs vor.
 
+Der Betreiber hat diesen Auftrag am26.09.2026 ausdruecklich dauerhaft
+bekraeftigt: vollautonom weiterarbeiten, auch nach jedem Merge; nicht erneut auf
+ein "weiter" oder eine Freigabe warten. Ein abgeschlossener PR, ein Deployment,
+ein einzelner Sprint oder ein Zwischenbericht beendet diesen Gesamtauftrag nicht.
+Nach der Nachkontrolle unmittelbar den naechsten offenen notwendigen Schritt der
+Roadmap waehlen, abgrenzen und ausfuehren. Diese Fortsetzung gilt ueber einzelne
+Antworten und Kontextwechsel hinweg, bis der Betreiber sie einschraenkt.
+
+Die Freigabe umfasst alle unmittelbar erforderlichen Vorarbeiten bis zum500er
+Starttor, auch dafuer notwendige bislang einzeln freizugebende Production-
+Vorarbeiten. Konkreten Umfang, Wirkung, Risiko, Kosten, Nachkontrolle und Rueckweg
+vorher selbst festlegen und dokumentieren; innerhalb dieses Auftrags nicht
+nochmals fragen. Technische Schutzpruefungen, Quellenwahrheit, Profilschutz,
+unveraenderter4-USD-Tagesriegel und unter4USD kumulative Auftragskosten gelten
+weiter. Keine unbekannten Ergebnisse als Erfolg deklarieren, keine verbrauchten
+Auftraege wiederverwenden und keine Schutzmechanismen umgehen.
+
+Anhalten erst unmittelbar vor Aktivierung und Start des500er Tests, bei einem
+belegten ohne Betreiberhandlung nicht sicher loesbaren Blocker oder vor einer
+Ueberschreitung des freigegebenen Kostenrahmens. Ein behebbarer Code-, Import-
+oder Prueffehler ist kein solcher Endpunkt: analysieren, korrigieren und
+weiterarbeiten. Bei einem blockierten Teilpfad unabhaengige notwendige
+Vorarbeiten fortsetzen. Keine Nebenprojekte oder externen Nachrichten aus dieser
+Freigabe ableiten; keine neuen Abonnements oder dauerhaften kostenpflichtigen
+Ressourcen. Aktivierung und500er Test benoetigen weiterhin ein neues GO.
+
 ## Kritische Aktionen
 
 Vor jeder kritischen Aktion kurz feststellen:
