@@ -225,6 +225,7 @@ const STANDARD = new Set([
   "verstehen-169-kosten-deckel-test.js",    // harter 0,80-USD-Laufdeckel
   "verstehen-169-workflow-test.js",         // manueller 169er Ausfuehrungsweg
   "verstehen-cas-vertrag-test.js",          // CAS-/Quittungsvertrag des Verstehens
+  "vorgangs-belegfenster-test.js",          // auch Kandidat6–8 anhand seiner tatsächlichen Quellen prüfen
   "verstehen-rest15-test.js",              // unbegonnene Restmenge, keine Wiederaufnahme
   "lage-pruefaufwand-test.js",              // isolierter Medium-Vergleich mit echten Fehlabsätzen
   "lage-vorstart-test.js",                 // einmaliger Lagecheck mit festen Kosten-/Zeitgrenzen

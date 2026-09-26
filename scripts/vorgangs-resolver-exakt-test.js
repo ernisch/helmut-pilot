@@ -274,7 +274,7 @@ function achtNeuere(praefix = "vg-fenster") {
       A.equal(z.schreibversuche, 0, name + ": kein Schreibzugriff");
       A.equal(z.kandidatensuchen, 1, name + ": genau eine Kandidatensuche");
       A.equal(z.exaktLesungen, 1, name + ": genau ein exakter Lesevorgang");
-      A.ok(z.dokumentlesungen <= 5, name + ": Belegbudget begrenzt (" + z.dokumentlesungen + ")");
+      A.ok(z.dokumentlesungen <= 8, name + ": Belegbudget auf das Kandidatenfenster begrenzt (" + z.dokumentlesungen + ")");
     }
   });
 
