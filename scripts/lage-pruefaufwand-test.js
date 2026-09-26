@@ -174,6 +174,8 @@ function setup(){
   await test("Fachkorrektur bindet echte zwei Absätze und beide negativen Kriterien",async()=>{
     A.equal(T.FACHKORREKTUR.quittung,"lage-fachkorrektur-20260926-c");
     A.throws(()=>T.pruefeTageswechselVorgaenger({ok:true}),/tageswechsel-vorgaenger/);
+    A.equal(T.GENERATORFACHKORREKTUR.quittung,"lage-generatorfachkorrektur-20260926-b");
+    A.throws(()=>T.pruefeAuswahlnotizVorgaenger({ok:true},{ok:false},{},profile),/auswahlnotiz-vorgaenger/);
     A.throws(()=>T.pruefeTextartVorgaenger({ok:true}),/textart-vorgaenger/);
     const alt=setup();Object.assign(alt.cfg,{fachkorrektur:true,pruefaufwand:false,quittung:"lage-fachkorrektur-20260926-b"});
     await A.rejects(M.einmallauf(alt.cfg,alt.d),/sollfall-auftrag/);A.deepEqual(alt.trace,[]);

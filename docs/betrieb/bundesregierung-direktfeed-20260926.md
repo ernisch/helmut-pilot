@@ -65,3 +65,22 @@ privat`/private/tmp/helmut-cem-original-20260926.html`.
 Keine gesprochene Rede transkribiert und keine Aussage über deren Inhalt.
 Das schließt nur diese konkrete persönliche Artikelbindung, keine frische
 Drei-Bereiche-Abnahme oder vollständige500er Radarprüfung.
+
+## Production-Nachlesung22:26UTC
+
+PR633/693e52bf ist READY; Pflicht-CI36274085340 am Kopf85671088 grün.
+Runtime-Leser36274989103 bestätigt aktiven6USD-Kostenriegel/Kommunikationssperre.
+Nach terminalem Lage-Lauf36276129452 wurde die gebundene SQL-Transaktion erneut
+mit Rollback geprüft und22:26:07UTC angewendet. Nachlesung22:26:44UTC: genau
+der geplante Weg hat neue URL/Methode`rss`/Status`needs_review`; alle übrigen
+Zeilenfelder unverändert. Audit`quellenweg-bundesregierung-20260926-a` vorhanden,
+`crawlerfolg=false`, `last_success_at=null`. Kein Import-/Crawlerfolg behauptet.
+500/0, beide Profilschutzhashes gleich, keine Jobs/Locks/Leases/offenen Kosten.
+
+Nach Berliner Tageswechsel27.09. beginnt das heutige Fenster26.09.14:00UTC.
+Erneute öffentliche Probe22:09UTC:0 heutige Kandidaten aus Regierungs- und
+Bundestagsfeed (innerhalb48h weiterhin7+9). Die historischen vier Regierungs-
+Meldungen nicht als heutige Versorgung werten. Deutschlandfunk liefert neuere
+Originalmeldungen; fünf getrennt gesicherte Originalartikel bestehen den
+bestehenden Quellenvertrag, Publikationszeit vollständig gegengeprüft, keine
+Production-Kollision nach Kennung/URL. Noch kein Import oder Modellaufruf.
