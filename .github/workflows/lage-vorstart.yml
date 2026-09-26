@@ -11,7 +11,7 @@ on:
       auftrag:
         description: Einmalauftrag; mandatspruefung prueft das Quellenreview, artikelstand verlangt den belegten Bundestagsartikelstand, generatornachweis den Vierfall-Nachweis
         type: choice
-        options: [erstpruefung, zeitbezug, datumsbindung, mandatspruefung, artikelstand, einzelquelle, mandatsauswahl, zustaendigkeit, mandatsurteil, generatornachweis, auswahlbegruendung]
+        options: [erstpruefung, zeitbezug, datumsbindung, mandatspruefung, artikelstand, einzelquelle, mandatsauswahl, zustaendigkeit, mandatsurteil, generatornachweis, auswahlbegruendung, pruefaufwand]
         default: erstpruefung
       confirm_text:
         description: Leer = nur lesen; Ausfuehrung ausschliesslich mit EIN_PROFIL_LAGE_MAX_ZWEI_AUFRUFE

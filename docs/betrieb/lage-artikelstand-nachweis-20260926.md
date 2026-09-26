@@ -427,3 +427,41 @@ Erfolg gespeichert werden. Nachkontrolle: vollständiger Text samt Belegen,
 Quittung, Kosten, Sperren und Profilhashes. Profil bleibt inaktiv. Bei ungültigem
 Ergebnis gibt es keinen Tagessatz zum Zurücksetzen; private Belege bleiben erhalten.
 Kein500er Nachweis. Lokal29 Transport-/Kostenfälle und32 Vorstartgruppen grün.
+
+## Neuer Befund: Generatorbindung richtig, Review falsch negativ
+
+PR619/`c4cd05f3ff94776ee4dd5be5810b54192795a00d`, Pflicht-CI36251865384 grün,
+Vercel`dpl_2FyQdfW27TUw9zEfEswPQGHzyUR6` READY15:36:30UTC. Fehlerprotokoll bis
+15:36:48UTC ohne Treffer. Nurleseplan36252553381 bestanden. Einmallauf36252632130
+15:38:36–15:39:25UTC fachlich gestoppt,2 Aufrufe/0,011129USD, kein Tagessatz.
+Quittung`lage-auswahlbegruendung-20260926-a` verbraucht.15:40:32UTC500/0,
+Profil-/Identitätshashes gleich,0 offene Kosten/Jobs/Locks/Leases.
+
+Beide Generatorabsätze verwenden diesmal passende Mandatsfelder: amtlicher
+Finanzbericht zum Bundespolizeigesetz → Haushaltsausschuss; Tagesschau-Bericht
+über EU-Russlandsanktionen → Auswärtiger Ausschuss. Beide Quellen-/Faktenurteile
+und der Paarvergleich sind positiv. Der Reviewer lehnt aber den zweiten Bezug
+mit der fehlenden ausdrücklichen Ausschussnennung ab. Das widerspricht der
+bereits geltenden Trennung zwischen fachlichem Bezug und behaupteter
+Akteursrolle. Der frühere Vierfall-Erfolg belegt keine allgemeine Zuverlässigkeit.
+
+## Isolierter Vergleich des Prüfaufwands
+
+Eigener Auftrag`lage-pruefaufwand-20260926-a`, ausschließlich nach exakt obiger
+verbrauchter Quittung. Vier vorab festgelegte Sollfälle: die beiden echten neuen
+Absätze ohne private Generatorbegründung sowie die bisherigen Negativfälle
+private Heizkosten→Haushaltsausschuss und Energiesteuer→Auswärtiger Ausschuss.
+Erwartungtrue,true,false,false bleibt außerhalb des Modellprompts. Vollständige
+Quellenhashbindung,4 Einzelurteile und6 Paarurteile; ein falsches, fehlendes oder
+bloß technisch negatives Ergebnis gilt nicht als bestanden.
+
+Nur dieser Diagnoseauftrag verwendet gpt-5-mini mit Reasoning`medium` statt`low`.
+Produktgenerator und normaler Reviewer ändern sich dadurch nicht. Derselbe
+strenge Prompt, dasselbe Schema, maximal3000 Ausgabetokens,1 Aufruf/0,25USD/240s,
+4USD-Tagesriegel und Reserve unverändert. Genau ein vorhandenes inaktives Profil,
+keine Aktivierung, keine Veröffentlichung, keine Wiederholung. Ein Mehrverbrauch
+oder unvollständiger Modellausgang bleibt Fehler. Kosten vor Ausführung frisch
+gegen den kumulativen Auftragsrahmen prüfen. Nachlesen: vollständige private
+Quittung, alle4 fachlichen Urteile/6 Paare, Kosten, Sperren und unveränderte
+Profile sowie unveränderter Textcache. Kein gespeicherter Text zum Zurücksetzen;
+Belege bleiben erhalten.9 lokale Schutzprüfgruppen bestanden; Production offen.
