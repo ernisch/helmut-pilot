@@ -1,6 +1,61 @@
 # Lage-Nachweis nach amtlicher Quellenkorrektur
 
-## Aktueller Anschluss: getrenntes Mandatsurteil
+## Aktueller Anschluss: Generatornachweis nach bestandener Mandatsprüfung
+
+[PR616](https://github.com/ernisch/helmut-pilot/pull/616) mit beiden grünen
+Pflichtprüfungen am Kopf `f71522c4` ([CI36248745257](https://github.com/ernisch/helmut-pilot/actions/runs/36248745257))
+gemergt als `700001011b971cb0d1eb3dd552905fd66601e4c6`. Production
+`dpl_EnnLWkT8EZPVHpZfDMiQGhAtEoXn` READY14:42:19UTC; keine error/fatal-Logs
+bis14:43:23UTC. Erster Nurleseplan36249474978 stoppte ohne Modellaufruf am
+versehentlich verkürzt übertragenen Profilhash; kein Produktfehler.
+[Korrigierter Plan36249554612](https://github.com/ernisch/helmut-pilot/actions/runs/36249554612)
+bestanden. [Vierfall-Lauf36249646222](https://github.com/ernisch/helmut-pilot/actions/runs/36249646222)
+14:46:45–14:47:21UTC **fachlich bestanden**:2 positive und2 negative
+Mandatszuordnungen korrekt;4 Quellenprüfungen und6 Paarvergleiche bestanden.
+Genau1 Aufruf,0,009593USD; kein auslieferbarer Lage-Text. Die vollständig
+zurückgelesenen Begründungen wurden unabhängig fachlich geprüft. Eigene
+Quittung `lage-mandatsurteil-20260926-a` abgeschlossen und verbraucht;
+Paket `5829cffed6370571424550153403b90f88cfe122ceb511d3a04d7bc8f8ba62bb`.
+
+Nachlesung14:48:01UTC:500 Profile/0 aktiv, vollständige Mandats-/Identitätshashes
+unverändert,0 Jobs/Sperren/Leases/offene Kosten. Tagesbuch0,341100USD.
+Dies beweist die vier festen Reviewfälle, noch nicht die richtige Auswahl
+und Generierung eines neuen Textes oder die vollständige Bereichstrennung.
+
+Dafür Roadmap3.1-Anschluss `generatornachweis`, eigene neue Quittung
+`lage-generatornachweis-20260926-a`: genau dasselbe unveränderte inaktive
+Profil und derselbe amtliche Artikelstand, normaler bestehender Generator,
+Quellenreview, Speicherung und unabhängige Nachlesung. Strenge Bindung an
+den obigen erfolgreichen Vorgänger einschließlich4/4 Einzelbilanz,
+positivem Paar-Sammelurteil UND allen6 vollständigen Paarbelegen.
+Maximal2 Aufrufe/0,50USD/240Sekunden; gpt-5-mini, low und volle Reserve
+unverändert. Vorher neuer main/READY, Nullkosten-Planlauf und Kostenabgleich.
+Kostenstand14:51UTC konservativ2,978816USD einschließlich aller erfassten
+lokalen Helfer25./26.09.; keine Anbieterrechnung. Auch mit vollem0,50USD-Limit
+unter4USD. Keine Wiederholung der bestandenen Vierfallprüfung.
+
+Wirkung: genau ein fehlender Lage-Tagessatz und private Prüf-/Kostenbelege;
+keine Aktivierung oder Profiländerung. Risiko: erneute falsche Themenauswahl,
+Modellablehnung oder technische Teilwirkung. Erfolg verlangt beide Aufrufe,
+fachlich gültigen gespeicherten Text und unabhängige vollständige Quellen-/
+Mandatsnachprüfung. Profil-/Artikelabweichung, Konkurrenz, unbekannte Kosten,
+Zeitgrenze oder vorhandener Tagessatz stoppen. Nachkontrolle: ganze Quittung,
+Entwurf/Review/Tagessatz, Profilhashes, Kosten und Sperren lesen. Rückweg:
+eigene Sperre lösen, Auftrag terminal schließen, keinen fachlich abgelehnten
+Text freigeben; bei ungültigem gespeichertem Ergebnis gesonderte begrenzte
+Korrektur mit gesichertem Altstand. Kein Retry verbrauchter Quittungen.
+31 gezielte Vorstartprüfgruppen bestanden. Noch nicht ausgeführt.
+
+Zusätzliche Nurlesediagnose14:49UTC über sämtliche500 gespeicherten
+Builder-Ausgaben des12:29-Snapshots:16 Vorgänge mit echtem Tagesanlass;
+bei allen373 Profilen ohne Priorität sind diese entweder nicht in der
+Kandidatenliste oder als Ignorieren bewertet (je vorhandener Entscheidung
+4–38 Punkte, kein Fall oberhalb der unveränderten40er Grenze). Die127
+Prioritäten entfallen auf82 Bundespolizeigesetz,42 Tankrabatt und3 Berliner
+Sondierungen. Das ist eine vollständige Verteilung dieses lokalen Snapshots,
+keine vollständige fachliche Ursachenabnahme oder neue Liveversorgung.
+
+## Vorheriger Anschluss: getrenntes Mandatsurteil
 
 [PR615](https://github.com/ernisch/helmut-pilot/pull/615), Kopf `1891a79f`,
 beide Pflichtprüfungen im [CI-Lauf36246387057](https://github.com/ernisch/helmut-pilot/actions/runs/36246387057)

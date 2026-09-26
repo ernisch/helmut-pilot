@@ -35,6 +35,20 @@ const ZUSTAENDIGKEIT = Object.freeze({ ...ARTIKELSTAND, auftrag:"zustaendigkeit"
   quittung:"lage-zustaendigkeit-20260926-a" });
 const MANDATSURTEIL = Object.freeze({ ...ARTIKELSTAND, auftrag:"mandatsurteil",
   quittung:"lage-mandatsurteil-20260926-a" });
+// Eigener Generatornachweis nach dem fachlich bestandenen Vierfall-Nachweis. Artikelstand,
+// Profil und Quelle bleiben unveraendert; es laeuft der normale Einmallauf (2 Aufrufe,
+// 0,50 USD, 240 s) mit Generierung, Review und Speichern/Ruecklesen.
+const GENERATORNACHWEIS = Object.freeze({ ...ARTIKELSTAND, auftrag:"generatornachweis",
+  quittung:"lage-generatornachweis-20260926-a" });
+// Einzige zulaessige Vorgaengerquittung: der erfolgreich abgeschlossene Vierfall-Nachweis
+// dieses Laufs und Commits. Sie wird ausschliesslich gelesen und nie umgeschrieben.
+const GENERATOR_VORG = Object.freeze({ runId:"nachlauf500-36249646222",
+  commit:"700001011b971cb0d1eb3dd552905fd66601e4c6",
+  paketHash:"5829cffed6370571424550153403b90f88cfe122ceb511d3a04d7bc8f8ba62bb",
+  faelle:Object.freeze([Object.freeze({ id:"polizei-haushalt",erwartet:true }),
+    Object.freeze({ id:"sanktionen-auswaertiges",erwartet:true }),
+    Object.freeze({ id:"private-heizkosten-haushalt",erwartet:false }),
+    Object.freeze({ id:"energiesteuer-auswaertiges",erwartet:false })]) });
 const MAX_MS = 240000, MAX_USD = 0.50;
 const fordere = (ok, grund) => { if (!ok) throw new Error("lage-vorstart-" + grund); };
 const bindung = p => hash({ id:p.id, profilHash:profilHash(p) });
@@ -42,7 +56,7 @@ const url = value => require("../lib/helmut/dedup").canonicalizeUrl(value);
 function konfiguration(env, commit, jetzt = Date.now()) {
   const auftrag = env.HELMUT_VORSTART_AUFTRAG || "erstpruefung";
   const reparatur = [ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG].find(x => x.auftrag === auftrag);
-  const artikelauftrag = [ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL].find(x => x.auftrag === auftrag);
+  const artikelauftrag = [ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,GENERATORNACHWEIS].find(x => x.auftrag === auftrag);
   const artikelstand = Boolean(artikelauftrag);
   fordere(auftrag === "erstpruefung" || Boolean(reparatur) || artikelstand,"auftrag");
   fordere(!reparatur || env.HELMUT_VORSTART_PROFIL === reparatur.profilHash,"reparaturbindung");
@@ -57,6 +71,7 @@ function konfiguration(env, commit, jetzt = Date.now()) {
     && new Date(jetzt + MAX_MS).toISOString().slice(0,10) === TAG, "tag");
   return { commit, profilHash:env.HELMUT_VORSTART_PROFIL, runId:"nachlauf500-" + env.GITHUB_RUN_ID,
     reparatur:Boolean(reparatur), artikelstand, mandatsurteil:auftrag === MANDATSURTEIL.auftrag,
+    generatornachweis:auftrag === GENERATORNACHWEIS.auftrag,
     altHash:reparatur?.altHash || null,
     quittung:artikelstand ? artikelauftrag.quittung : (reparatur?.quittung || QUITTUNG) };
 }
@@ -75,6 +90,42 @@ function pruefeEinzelquellenVorgaenger(alt, auftrag = EINZELQUELLE.quittung) {
     && alt.freigegebeneAufrufe === 2 && alt.offeneKosten === 0
     && alt.profileUnveraendert === true && alt.lesebeweis?.absatzHash === ARTIKELSTAND.absatzHash,
     "altquittung");
+}
+// Der private Fachbeleg muss die sechs unabhaengigen Paarurteile korrekt enthalten. Geprueft
+// wird exakt dieselbe Mindeststruktur wie im Vierfall-Nachweis, hier nur lesend.
+function generatorPaareKorrekt(paare) {
+  const keys = new Set();
+  return Array.isArray(paare) && paare.length === 6 && paare.every(r => {
+    const key = `${r?.erster_absatz}:${r?.zweiter_absatz}`;
+    const ok = Number.isInteger(r?.erster_absatz) && Number.isInteger(r?.zweiter_absatz)
+      && r.erster_absatz >= 0 && r.erster_absatz < r.zweiter_absatz && r.zweiter_absatz < 4
+      && !keys.has(key) && r.eigenstaendige_sachverhalte === true
+      && typeof r.pruefbegruendung === "string" && r.pruefbegruendung.trim()
+      && r.pruefbegruendung.length <= 800;
+    keys.add(key); return ok;
+  });
+}
+// Eigene strenge Vorgaengerpruefung: NUR die erfolgreich abgeschlossene Vierfallquittung
+// obigen Laufs/Commits wird akzeptiert. Verlangt vier Fall-IDs mit erwartet = erhalten
+// (true,true,false,false) und bestanden, sechs belegte Paarurteile und paarvergleich true
+// samt gebundenem Pakethash, genau einen freigegebenen Aufruf, keine offenen Kosten,
+// unveraenderten Profilbestand und keinen gespeicherten Lage-Text.
+function pruefeGeneratorVorgaenger(alt) {
+  const bilanz = Array.isArray(alt?.bilanz) ? alt.bilanz : [];
+  const faelleKorrekt = bilanz.length === GENERATOR_VORG.faelle.length
+    && GENERATOR_VORG.faelle.every(soll => {
+      const treffer = bilanz.filter(r => r?.id === soll.id);
+      return treffer.length === 1 && treffer[0].erwartet === soll.erwartet
+        && treffer[0].erhalten === soll.erwartet && treffer[0].bestanden === true; });
+  const paarBeleg = alt?.paarvergleich === true
+    && generatorPaareKorrekt(alt?.fachbeleg?.antwort?.vergleiche);
+  fordere(alt?.status === "abgeschlossen" && alt?.ok === true && alt?.grund === null
+    && alt?.quittungsschluessel === MANDATSURTEIL.quittung && alt?.runId === GENERATOR_VORG.runId
+    && alt?.runtimeCommit === GENERATOR_VORG.commit && alt?.idHash === ARTIKELSTAND.profilHash
+    && alt?.profile === 1 && alt?.sollFaelle === 4 && faelleKorrekt && paarBeleg
+    && alt?.paketHash === GENERATOR_VORG.paketHash && alt?.freigegebeneAufrufe === 1
+    && alt?.offeneKosten === 0 && alt?.profileUnveraendert === true
+    && alt?.gespeicherterLageText === false, "generator-vorgaenger");
 }
 // Inhaltlicher Nachweis der neuen Grundlage. Fuer den Inhalt gilt ausschliesslich der
 // bestehende Stand-Leser; der Zeitvertrag und die tatsaechliche Texteingabe entstehen
@@ -255,6 +306,10 @@ async function main(args = process.argv.slice(2), env = process.env) {
     const alt = await read("helmut_store","select=data&id=eq."+vorher.quittung+"&limit=1");
     fordere(alt.length === 1,"altquittung");pruefeEinzelquellenVorgaenger(alt[0].data,cfg.quittung);
   }
+  if (cfg.quittung === GENERATORNACHWEIS.quittung) {
+    const alt = await read("helmut_store","select=data&id=eq."+MANDATSURTEIL.quittung+"&limit=1");
+    fordere(alt.length === 1,"generator-vorgaenger");pruefeGeneratorVorgaenger(alt[0].data);
+  }
   fordere(!(await read("helmut_store","select=id&id=eq."+cfg.quittung+"&limit=1")).length,"verbraucht");
   fordere(await K.laufGebundenUsd(cfg.runId,{env}) === 0,"laufkosten-vorhanden");
   const q = execute ? B.quittungsAdapter(env) : null;
@@ -289,4 +344,5 @@ if (require.main === module) main().then(c => { process.exitCode=c; }).catch(e =
   console.log(JSON.stringify({ok:false,grund:/^lage-vorstart-[a-z-]+$/.test(e.message || "") ? e.message : "lage-vorstart-technischer-fehler",automatischeWiederholung:false}));process.exitCode=1;
 });
 module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main,ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG,
-  ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,pruefeEinzelquellenVorgaenger,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};
+  ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,GENERATORNACHWEIS,GENERATOR_VORG,
+  pruefeEinzelquellenVorgaenger,pruefeGeneratorVorgaenger,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};
