@@ -47,6 +47,8 @@ const AUSWAHLBEGRUENDUNG = Object.freeze({ ...ARTIKELSTAND, auftrag:"auswahlbegr
   quittung:"lage-auswahlbegruendung-20260926-a" });
 const PRUEFAUFWAND = Object.freeze({ ...ARTIKELSTAND, auftrag:"pruefaufwand",
   quittung:"lage-pruefaufwand-20260926-c", maxOutputTokens:6000 });
+const GENERATORPRUEFAUFWAND = Object.freeze({ ...ARTIKELSTAND, auftrag:"generatorpruefaufwand",
+  quittung:"lage-generatorpruefaufwand-20260926-a" });
 // Einzige zulaessige Vorgaengerquittung: der erfolgreich abgeschlossene Vierfall-Nachweis
 // dieses Laufs und Commits. Sie wird ausschliesslich gelesen und nie umgeschrieben.
 const GENERATOR_VORG = Object.freeze({ runId:"nachlauf500-36249646222",
@@ -63,7 +65,7 @@ const url = value => require("../lib/helmut/dedup").canonicalizeUrl(value);
 function konfiguration(env, commit, jetzt = Date.now()) {
   const auftrag = env.HELMUT_VORSTART_AUFTRAG || "erstpruefung";
   const reparatur = [ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG].find(x => x.auftrag === auftrag);
-  const artikelauftrag = [ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,GENERATORNACHWEIS,AUSWAHLBEGRUENDUNG,PRUEFAUFWAND].find(x => x.auftrag === auftrag);
+  const artikelauftrag = [ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,GENERATORNACHWEIS,AUSWAHLBEGRUENDUNG,PRUEFAUFWAND,GENERATORPRUEFAUFWAND].find(x => x.auftrag === auftrag);
   const artikelstand = Boolean(artikelauftrag);
   fordere(auftrag === "erstpruefung" || Boolean(reparatur) || artikelstand,"auftrag");
   fordere(!reparatur || env.HELMUT_VORSTART_PROFIL === reparatur.profilHash,"reparaturbindung");
@@ -79,6 +81,7 @@ function konfiguration(env, commit, jetzt = Date.now()) {
   return { commit, profilHash:env.HELMUT_VORSTART_PROFIL, runId:"nachlauf500-" + env.GITHUB_RUN_ID,
     reparatur:Boolean(reparatur), artikelstand, mandatsurteil:auftrag === MANDATSURTEIL.auftrag,
     pruefaufwand:auftrag === PRUEFAUFWAND.auftrag,
+    generatorpruefaufwand:auftrag === GENERATORPRUEFAUFWAND.auftrag,
     generatornachweis:[GENERATORNACHWEIS.auftrag,AUSWAHLBEGRUENDUNG.auftrag].includes(auftrag),
     altHash:reparatur?.altHash || null,
     quittung:artikelstand ? artikelauftrag.quittung : (reparatur?.quittung || QUITTUNG) };
@@ -180,8 +183,15 @@ function pruefePruefaufwandTimeoutVorgaenger(alt, auth) {
     && b.responseRecovered === false, "pruefaufwand-timeout-vorgaenger");
 }
 function reviewOptionen(cfg) {
-  return { strict:true, reasoningEffort:cfg.pruefaufwand ? "medium" : "low",
-    maxOutputTokens:cfg.pruefaufwand ? PRUEFAUFWAND.maxOutputTokens : 3000 };
+  const medium = cfg.pruefaufwand || cfg.generatorpruefaufwand;
+  return { strict:true, reasoningEffort:medium ? "medium" : "low",
+    maxOutputTokens:medium ? PRUEFAUFWAND.maxOutputTokens : 3000 };
+}
+function pruefeGeneratorPruefaufwandVorgaenger(alt) {
+  // Vollstaendiger, unabhaengig nachgelesener Production-Beleg: vier Sollfaelle,
+  // sechs Paarurteile, Antwort, Kostenabschluss und unveraenderte Profile.
+  fordere(hash(alt) === "6597689365c5bbc8608d57b763ea68e283adccb1a6a8bd8e2d591d1271bb3fce",
+    "generatorpruefaufwand-vorgaenger");
 }
 function pruefePruefaufwandVorgaenger(alt) {
   fordere(alt?.status === "gestoppt" && alt.ok === false
@@ -269,6 +279,8 @@ async function einmallauf(cfg, d) {
     // ohne jeden Modellaufruf.
     if (cfg.artikelstand) basis = await d.artikelstand();
     if (cfg.reparatur) fordere(hash(await d.cache(profile.id)) === vorherHash,"reparatur-konkurrenz");
+    //120s Transport plus60s fuer Kostenquittung, Speicher und Nachkontrolle.
+    if (cfg.generatorpruefaufwand) fordere(d.now() - start < MAX_MS - 180000,"review-restzeit");
   };
   await pruefe();
   if (!d.execute) return { ok:true, plan:true, profile:1, maxAufrufe:2,maxUsd:MAX_USD,maxMs:MAX_MS,
@@ -284,6 +296,7 @@ async function einmallauf(cfg, d) {
   try {
     fordere(await d.claim({ ...receipt,status:"laeuft" }), "verbraucht"); claimed = true;
     const result = await d.build(profile,{ missingOnly:true,repairIncomplete:cfg.reparatur,costRunId:cfg.runId,
+      pruefaufwandNachweis:cfg.generatorpruefaufwand === true,
       beforeGenerate:async id => { fordere(id === profile.id,"fremdes-profil"); await pruefe(); calls++; } });
     const saved = await d.cache(profile.id);
     const ok = result?.available === true && result.fromCache === false && calls === 2
@@ -392,6 +405,11 @@ async function main(args = process.argv.slice(2), env = process.env) {
     fordere(timeout.length === 1,"pruefaufwand-timeout-vorgaenger");
     pruefePruefaufwandTimeoutVorgaenger(timeout[0].data,await S.readAuthStore());
   }
+  if (cfg.generatorpruefaufwand) {
+    const alt = await read("helmut_store","select=data&id=eq."+PRUEFAUFWAND.quittung+"&limit=1");
+    fordere(alt.length === 1,"generatorpruefaufwand-vorgaenger");
+    pruefeGeneratorPruefaufwandVorgaenger(alt[0].data);
+  }
   fordere(!(await read("helmut_store","select=id&id=eq."+cfg.quittung+"&limit=1")).length,"verbraucht");
   fordere(await K.laufGebundenUsd(cfg.runId,{env}) === 0,"laufkosten-vorhanden");
   const q = execute ? B.quittungsAdapter(env) : null;
@@ -434,5 +452,6 @@ if (require.main === module) main().then(c => { process.exitCode=c; }).catch(e =
   console.log(JSON.stringify({ok:false,grund:/^lage-vorstart-[a-z-]+$/.test(e.message || "") ? e.message : "lage-vorstart-technischer-fehler",automatischeWiederholung:false}));process.exitCode=1;
 });
 module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main,ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG,
+  GENERATORPRUEFAUFWAND,pruefeGeneratorPruefaufwandVorgaenger,
   ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,GENERATORNACHWEIS,AUSWAHLBEGRUENDUNG,PRUEFAUFWAND,GENERATOR_VORG,
   pruefeEinzelquellenVorgaenger,pruefeGeneratorVorgaenger,pruefeAuswahlVorgaenger,pruefePruefaufwandVorgaenger,pruefePruefaufwandTransportVorgaenger,pruefePruefaufwandTimeoutVorgaenger,reviewOptionen,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};

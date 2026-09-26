@@ -1,6 +1,61 @@
 # Lage-Nachweis nach amtlicher Quellenkorrektur
 
-## Aktueller Befund: Generator wählt erneut ein falsches Mandatsfeld
+## Aktueller Befund20:34UTC: isolierter Medium-Vergleich bestanden
+
+[PR629](https://github.com/ernisch/helmut-pilot/pull/629), beide Pflichtprüfungen
+am Kopf0b4cea25 in [CI36269113716](https://github.com/ernisch/helmut-pilot/actions/runs/36269113716)
+bestanden; Merge7a43e182b924e1d5922508acc1bb9dff3fe6cdfd.
+Production dpl_CgewYM2W6ag6Dg3cFXt1TxnxAYn2 READY20:31:02UTC,
+keine error/fatal-Logs bis20:31:07UTC. Nurleseplan36269814726 bestanden.
+[Einmallauf36269867208](https://github.com/ernisch/helmut-pilot/actions/runs/36269867208)
+20:32:36–20:33:17UTC: **4/4 Sollfälle und6/6 Paarvergleiche bestanden**.
+Die vollständigen Begründungen wurden unabhängig nachgelesen. Öffentliche
+Haushaltsfolgen und außenpolitische Sanktionen richtig zugeordnet; private
+Heizkosten und Energiesteuer mit falschem Ausschuss richtig abgelehnt.
+
+Genau1 Aufruf gpt-5-mini/medium,4069 Eingabe-/3622 Ausgabetokens,25578ms.
+Konservativ abgerechnete Kosten0,016523USD. Die3000er Ausgabegrenze des
+Vorgängers hätte diese vollständige Antwort nicht umfasst. Quittung c abgeschlossen,
+verbraucht, kein gespeicherter Lage-Text. Vollhash
+`6597689365c5bbc8608d57b763ea68e283adccb1a6a8bd8e2d591d1271bb3fce`,
+Antwort-Hash `a1f47215bef3092df85535742e7d13134de34b46eb2b08d1c65c8e4abdb0d3ea`.
+Privater vollständiger Beleg lokal `/private/tmp/helmut-lage-c-quittung.json`.
+
+Unabhängige SQL-Nachlesung20:34:30UTC:500 Profile/0 aktiv, beide vollständigen
+Profilhashes unverändert,0 Jobs/Sperren/Leases/offene Kosten. Tagesbuch0,638819USD,
+Vortag0,433563USD, externe Bindung einschließlich alter Helferreserve3,259354USD:
+**4,331736USD kumulativ**,1,668264USD frei bis zur6USD-Grenze.
+Dies ist ein Prüfvergleich, keine Abnahme eines neu erzeugten Lage-Textes.
+
+## Begrenzter Anschluss: neuer Lage-Text mit nachgewiesenem Prüfaufwand
+
+Roadmap3.1 verlangt echte sichtbare Texte. Genau ein neuer Auftrag
+`generatorpruefaufwand`, Kennung `lage-generatorpruefaufwand-20260926-a`,
+verlangt den vollständigen unveränderten Hash des bestandenen Vergleichs c.
+Derselbe gebundene inaktive Profilstand und Bundestagsartikelstand. Keine
+Wiederverwendung verbrauchter Aufträge und kein Eingriff in vorhandene Tagessätze.
+
+Umfang/Wirkung: höchstens2 Modellaufrufe,0,50USD,240s; genau ein neuer Lage-
+Tagessatz nach regulärer Generierung, strenger Quellen-/Mandats-/Paarprüfung und
+Speichern/Rücklesen. Generator unverändert low/3000; ausschließlich der gebundene
+Nachweis prüft medium/6000. Normaler Produktpfad unverändert. Vor jedem Aufruf
+müssen120s Transport plus60s Kosten-/Speicherabschluss frei bleiben. Atomare
+Reserve konservativ0,224USD je Aufruf; Tages- und Gesamtgrenze je6USD.
+Voller Auftragsrahmen ergäbe4,831736USD, vorbehaltlich frischer Kostenlesung.
+
+Risiken: Generator wählt erneut falsch, Review lehnt ab, Antwort/Abschluss
+scheitert. Erfolg nur mit zwei belegten Aufrufen, vollständig geprüftem und
+zurückgelesenem Lage-Text, unveränderten Profilen und0 offenen Kosten. Bei Fehler
+terminal stoppen, kein Retry. Vor Ausführung Pflicht-CI, main/READY, frische
+Kosten-/Schutzlesung und Nurleseplan. Anschließend vollständige private Texte,
+Quellenurteile, Paarurteile, Kosten und Profilhashes unabhängig nachlesen.
+Rückweg: eigene Sperre lösen, Belege erhalten; kein abgelehntes Ergebnis speichern.
+Ein später fehlerhaft bewerteter gespeicherter Text wäre gezielt mit Sicherung
+zu sperren, nicht durch ungeprüftes Überschreiben zu ersetzen. Keine Aktivierung,
+kein500er Test und keine externe Nachricht. Autorisiert als notwendige Vorarbeit
+im bestehenden autonomen Betreiberauftrag.
+
+## Vorheriger Befund15:07UTC: Generator wählt erneut ein falsches Mandatsfeld
 
 [PR617](https://github.com/ernisch/helmut-pilot/pull/617) am Kopf `9de68750`
 in [CI36249983255](https://github.com/ernisch/helmut-pilot/actions/runs/36249983255)

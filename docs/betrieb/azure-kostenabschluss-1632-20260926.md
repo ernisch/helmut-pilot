@@ -51,3 +51,9 @@ Konservative Gesamtbindung4,315213USD, Rest1,684787USD bis6USD.
 Die zusätzliche0,35USD-Reserve des früher abgebrochenen lokalen Helfers bleibt
 vollständig in der externen Bindung enthalten. Tagesverbrauch0,622296USD.
 Die fachliche Lage-Prüfung, Themenversorgung und500er Startbereitschaft bleiben offen.
+
+[PR628](https://github.com/ernisch/helmut-pilot/pull/628), Kopf`ded60d15`, nach
+beiden grünen [Pflichtprüfungen](https://github.com/ernisch/helmut-pilot/actions/runs/36269116954)
+gemergt als`2397f707`. Deployment`dpl_4h2VYUmNbMRyQGxd85HYCmiDZXHL` READY.
+Unabhängige Nachlesung20:28:22UTC bestätigt500/0, beide Profilhashes gleich und
+keine offene Reserve. Fehler-/Fatal-Protokolle20:27:45–20:28:23UTC ohne Treffer.

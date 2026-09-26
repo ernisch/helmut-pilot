@@ -26,7 +26,7 @@ const urteil = { version: Q.VERSION, eingabeHash: eingabe.eingabeHash, ursprungH
       feld: "auszug", text: sourcesByVorgang[a.vorgangId][0].summary }] })) };
 const result = { briefing, eingabe, korrekturBasis: { kos, sourcesByVorgang } };
 urteil.gesamtpruefung = require("./fixtures/briefing-fachurteil")(result, urteil);
-let count = 0, cache = null, writes = 0, calls = 0, gates = 0, lastInput = null;
+let count = 0, cache = null, writes = 0, calls = 0, gates = 0, lastInput = null, lastMeta = null;
 const test = async (name, fn) => { await fn(); console.log("PASS " + name); count++; };
 const basis = () => B.baue(result, urteil);
 const options = () => ({ politicianId: profile.id, missingOnly: true, repairIncomplete: true,
@@ -44,7 +44,7 @@ S.canSpendLlmForTenant = async () => ({ allowed: true });
 S.insertRenderedBriefingV3 = async entry => { cache = structuredClone(entry); writes++; return { saved: true }; };
 S.saveRenderedBriefingV3 = async () => { throw new Error("Unerlaubtes Ueberschreiben"); };
 ai.generateLageBriefing = async (input, p, opts) => {
-  calls++; lastInput = structuredClone(input);
+  calls++; lastInput = structuredClone(input); lastMeta = opts;
   A.equal(p.id, profile.id); await opts.beforeReview();
   return { paragraphs: input.map(v => ({ text: v.quellenbelege[0].titel,
     vorgang_ids: [v.vorgang_id], quellen_ids: [v.quellenbelege[0].quelle_id],
@@ -118,6 +118,19 @@ ai.generateLageBriefing = async (input, p, opts) => {
       aussagenEingabeHash: eingabe.eingabeHash });
     A.equal(r.gespeichert, true); A.equal(r.qualitaetBestanden, false);
     A.equal(materialisiert.payload.lage.briefingEingabeHash, eingabe.eingabeHash);
+  });
+  await test("Isolierter Pruefaufwand erreicht den echten Lagepfad nur mit Kostenbindung und Aufrufschutz", async () => {
+    reset();
+    const opts = {...options(),pruefaufwandNachweis:true,costRunId:"nachlauf500-1234567"};
+    for(const change of [{missingOnly:false},{beforeGenerate:null},{costRunId:"fremd"}]) {
+      await A.rejects(L.buildLageBriefing(profile,{...opts,...change}));
+      A.equal(calls+writes+gates,0);
+    }
+    A.equal((await L.buildLageBriefing(profile,opts)).available,true);
+    A.equal(lastMeta.pruefaufwandNachweis,true);A.equal(lastMeta.runId,opts.costRunId);
+    A.equal(gates,2);A.equal(writes,1);
+    reset();await L.buildLageBriefing(profile,options());
+    A.equal(lastMeta.pruefaufwandNachweis,false);
   });
   console.log(`${count}/${count} Lagebindungsgruppen bestanden`);
 })().catch(e => { console.error(e); process.exitCode = 1; });

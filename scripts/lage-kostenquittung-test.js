@@ -32,7 +32,7 @@ let checks = 0;
 
 async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   status = "completed", http = 200, receipt = beleg, rejectReceipt = false, budget = true,
-  expected = null, fortsetzen = false, reviewResult = review, azure = false } = {}) {
+  expected = null, fortsetzen = false, reviewResult = review, azure = false, pruefaufwandNachweis = false } = {}) {
   let requests = 0, reservations = 0, logs = [], release;
   const bodies = [];
   const gate = new Promise(resolve => { release = resolve; });
@@ -74,6 +74,8 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
     process.env.AZURE_OPENAI_ENDPOINT = "https://nur-lokale-attrappe.openai.azure.com";
   }
   const result = ai.generateLageBriefing(vorgaenge, { committees: ["Arbeit und Soziales"] }, { politicianId: "test-kohorte-b-023",
+    pruefaufwandNachweis, runId: pruefaufwandNachweis ? "nachlauf500-1234567" : undefined,
+    beforeReview: pruefaufwandNachweis ? async () => { assert.equal(requests,1); } : undefined,
     gespeicherterEntwurf: fortsetzen ? { paragraphs } : undefined,
     onDraft: async value => { assert.equal(logs.length,fortsetzen ? 0 : 1); assert.equal(requests,fortsetzen ? 0 : 1); drafts.push(value); },
     onReview: async value => { assert.equal(logs.length,fortsetzen ? 1 : 2); assert.equal(requests,fortsetzen ? 1 : 2); reviews.push(value); } })
@@ -126,8 +128,8 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
         "Generator-Schema: Quelle, Auswahlbegruendung, Mandatsbezug, Text");
     }
     const reviewBody = bodies[fortsetzen ? 0 : 1];
-    assert.equal(reviewBody.reasoning?.effort, "low", "Nach dem unbelegten Medium-Lauf bleibt der vorige Review-Aufwand erhalten");
-    assert.equal(reviewBody.max_output_tokens, 3000, "Reasoning und sichtbare Antwort teilen dieselbe unveraenderte Obergrenze");
+    assert.equal(reviewBody.reasoning?.effort, pruefaufwandNachweis ? "medium" : "low", "Nur der gebundene Nachweis nutzt medium");
+    assert.equal(reviewBody.max_output_tokens, pruefaufwandNachweis ? 6000 : 3000, "Produktstandard bleibt3000, Nachweis hat feste6000");
     assert.equal(reviewBody.text.format.strict, true, "Der Quellenpruefer muss alle Pflichtfelder liefern");
     const schema = reviewBody.text.format.schema;
     assert.deepEqual([...schema.required].sort(), ["pruefungen", "vergleiche"], "Derselbe Review-Aufruf verlangt alle Absatzvergleiche");
@@ -207,6 +209,12 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   await fall({ budget: false, expected: "budget" });
   await fall({ fortsetzen: true });
   await fall({ azure: true });
+  await fall({ azure: true, pruefaufwandNachweis: true });
+  for (const meta of [{pruefaufwandNachweis:true},
+    {pruefaufwandNachweis:true,runId:"nachlauf500-1234567"},
+    {pruefaufwandNachweis:true,runId:"fremd",beforeReview:async()=>{}}]) {
+    await assert.rejects(ai.generateLageBriefing(vorgaenge,{},meta),/nachlauf-optionen-widerspruechlich/);
+  }
   await fall({ fortsetzen: true, budget: false, expected: "budget" });
   await fall({ fortsetzen: true, reviewResult: {pruefungen:review.pruefungen.map(r=>({...r,profilbezug:false}))},
     expected: "ai-text-source-support" });
