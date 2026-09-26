@@ -116,3 +116,30 @@ Nurleseplan36252947342 bestanden:18 Einzelcluster/17 Modellkandidaten
 Konservativer Gesamtstand3,209111USD, mit vollem0,65USD-Rahmen unter4USD.
 Eigener Lauf36253026941 gestartet;15:48UTC6/18 Quellen verknüpft, Quittung läuft.
 Das ist noch kein Abschluss und keine vollständige fachliche Abnahme.
+
+## Terminaler Lauf und belegte falsche Verknüpfung
+
+Run36253026941 endete15:51:31UTC gestoppt:17/18 bearbeitet,16 Modellaufrufe,
+0,116217USD. Technische Bilanz14 gespeichert,1 aktualisiert,1 zusammengeführt,
+1 Parteienvalidierung fehlgeschlagen und1 unbegonnen. Die Quittung ist verbraucht;
+keine Wiederaufnahme. Die Zusammenführung ist fachlich falsch: Connection-
+Friedenspreis26.09.2026 wurde dem Pflege-Vorgang08.05.2024 zugeordnet.
+Damit sind nur15 neue/aktualisierte Positionen technisch gültig gespeichert;
+keine vollständige fachliche18er Abnahme.
+
+Die vollständige Nachlesung belegt zwei ursprüngliche Pflegequellen aus2024.
+Der Vorgang lag auf Platz8 der Kandidatensuche. Der Resolver betrachtete8,
+lud aber nur für5 deren Quellen und prüfte die übrigen anhand der Überschrift.
+Die lokale Korrektur bindet beide Grenzen an8; alle vorhandenen Zeit-/Ereignis-
+und Lesefehlerregeln bleiben bestehen. Maximal3 zusätzliche Quellenlesungen,
+keine zusätzlichen Modellaufrufe. Drei neue Grenzfälle bestanden (fremder alter
+Vorgang, wirklich gleiches Ereignis, Lesefehler), ebenso12+11+17 bestehende
+gezielte Resolverfälle. Noch keine Production-Korrektur der Verknüpfung.
+
+Nach Ausrollung genau die falsche Verknüpfung atomar entfernen. Risiko: falsche
+Zeile oder Nebenwirkung; deshalb exakte Kennungen/Zeitstempel, Vollzeilenanker,
+ruhender500/0-Bestand und unveränderte Fremddaten vor/nach der Transaktion.
+Rohartikel, ursprünglicher Vorgang samt beiden Originalquellen und verbrauchte
+Laufbelege bleiben erhalten. Private Vorherabbilder sichern den Rückweg;
+keine automatische Wiederherstellung einer fachlich falschen Zuordnung.
+Kein Modellaufruf, keine Profilwirkung. SQL und Laborbeleg vor Ausführung prüfen.
