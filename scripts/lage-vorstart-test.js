@@ -79,6 +79,14 @@ function fixture() {
     assert.throws(()=>T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"erneut"},commit,start),/auftrag/);
   });
   const alt = {id:"bf-test",generated_at:"2026-09-26T01:00:00Z",payload:{qualitaet:false,text:"Unbelegter Tagesbezug"}};
+  await test("Datumsbindung hat eine dritte feste Quittung bei gleicher Schutzbindung",()=>{
+    const neu = T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"datumsbindung",
+      HELMUT_VORSTART_PROFIL:T.DATUMSBINDUNG.profilHash},commit,start);
+    assert.equal(neu.quittung,T.DATUMSBINDUNG.quittung);
+    assert.notEqual(neu.quittung,T.ZEITBEZUG.quittung);assert.notEqual(neu.quittung,cfg.quittung);
+    assert.equal(neu.altHash,T.ZEITBEZUG.altHash);assert.equal(neu.reparatur,true);
+    assert.throws(()=>T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"datumsbindung"},commit,start),/reparaturbindung/);
+  });
   const reparatur = {...cfg,reparatur:true,altHash:hash(alt.payload),quittung:T.ZEITBEZUG.quittung};
   await test("Reparatur verlangt genau den fachlich ungueltigen Altstand",async()=>{
     for(const variante of [null,{...alt,payload:{fremd:true}},alt]){

@@ -116,6 +116,10 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
     assert.deepEqual(item.properties.belegfeld.enum, ["titel", "auszug"]);
   }
   if (expected === "ai-text-visible-id") assert.equal(drafts.length,1,"Auch fachlich verworfener Entwurf bleibt privat pruefbar");
+  if (expected === "ai-text-source-support" && !fortsetzen) {
+    assert.equal(drafts.length, 1, "Verworfener Entwurf bleibt erhalten");
+    assert.equal(reviews.length, 0, "Unbelegtes Datum wird vor dem kostenpflichtigen Review abgewiesen");
+  }
   if (expected === "ai-cost-receipt-missing") assert.equal(drafts.length,0,"Kein Entwurfsbeleg ohne bestaetigte Kostenquittung");
   checks++;
 }
@@ -126,6 +130,11 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   process.env.OPENAI_API_KEY = "offline-dummy";
   anbieter.steuerungAktiv = () => false;
   await fall();
+  for (const text of ["Die Quelle berichtet am 25. September 2026 ueber einen Entwurf.",
+    "Die Quelle berichtet heute ueber einen Entwurf."]) {
+    await fall({ output: JSON.stringify({ paragraphs: [{ ...paragraphs[0], text }, paragraphs[1]] }),
+      expected: "ai-text-source-support" });
+  }
   await fall({ receipt: null, expected: "ai-cost-receipt-missing" });
   await fall({ receipt: { _ablage: { blob: false, relational: true } }, expected: "ai-cost-receipt-missing" });
   await fall({ rejectReceipt: true, expected: "ai-cost-receipt-missing" });

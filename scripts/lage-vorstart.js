@@ -7,13 +7,17 @@ const QUITTUNG = "lage-vorstart-20260926-a", TAG = "2026-09-26";
 const ZEITBEZUG = Object.freeze({ auftrag:"zeitbezug", quittung:"lage-zeitbezug-20260926-a",
   profilHash:"0178727cc56dc0c9b8a0d17a655bfe434b0aecab80b92debed92e74175a4b869",
   altHash:"70352fdefb0f86b8bc56c52106bd35b379dab61b287b3be2478b396ae08b0ea6" });
+// Neue Grundlage: belegter Promptwiderspruch beseitigt, Datumsbindung vor dem
+// zweiten Modellaufruf. Beide vorherigen Quittungen bleiben verbraucht.
+const DATUMSBINDUNG = Object.freeze({ ...ZEITBEZUG, auftrag:"datumsbindung", quittung:"lage-datumsbindung-20260926-a" });
 const MAX_MS = 240000, MAX_USD = 0.50;
 const fordere = (ok, grund) => { if (!ok) throw new Error("lage-vorstart-" + grund); };
 const bindung = p => hash({ id:p.id, profilHash:profilHash(p) });
 function konfiguration(env, commit, jetzt = Date.now()) {
   const auftrag = env.HELMUT_VORSTART_AUFTRAG || "erstpruefung";
-  fordere(["erstpruefung",ZEITBEZUG.auftrag].includes(auftrag),"auftrag");
-  fordere(auftrag !== ZEITBEZUG.auftrag || env.HELMUT_VORSTART_PROFIL === ZEITBEZUG.profilHash,"reparaturbindung");
+  const reparatur = [ZEITBEZUG,DATUMSBINDUNG].find(x => x.auftrag === auftrag);
+  fordere(auftrag === "erstpruefung" || reparatur,"auftrag");
+  fordere(!reparatur || env.HELMUT_VORSTART_PROFIL === reparatur.profilHash,"reparaturbindung");
   fordere(/^[a-f0-9]{40}$/.test(commit || "") && env.HELMUT_VORSTART_COMMIT === commit
     && env.GITHUB_SHA === commit && env.GITHUB_ACTIONS === "true"
     && env.GITHUB_REPOSITORY === "ernisch/helmut-pilot" && env.GITHUB_REF === "refs/heads/main"
@@ -23,9 +27,9 @@ function konfiguration(env, commit, jetzt = Date.now()) {
   fordere(new Date(jetzt).toISOString().slice(0,10) === TAG
     && new Date(jetzt + MAX_MS).toISOString().slice(0,10) === TAG, "tag");
   return { commit, profilHash:env.HELMUT_VORSTART_PROFIL, runId:"nachlauf500-" + env.GITHUB_RUN_ID,
-    reparatur:auftrag === ZEITBEZUG.auftrag,
-    altHash:auftrag === ZEITBEZUG.auftrag ? ZEITBEZUG.altHash : null,
-    quittung:auftrag === ZEITBEZUG.auftrag ? ZEITBEZUG.quittung : QUITTUNG };
+    reparatur:Boolean(reparatur),
+    altHash:reparatur?.altHash || null,
+    quittung:reparatur?.quittung || QUITTUNG };
 }
 function pruefeAufruf({ calls, start, jetzt, kosten, laufkosten, reserve, bestand, grundlinie }) {
   fordere(Number.isInteger(calls) && calls >= 0 && calls < 2, "aufrufgrenze");
@@ -127,6 +131,12 @@ async function main(args = process.argv.slice(2), env = process.env) {
       && alt[0].data.runId === "nachlauf500-36211228745"
       && alt[0].data.idHash === cfg.profilHash && alt[0].data.inhaltHash === ZEITBEZUG.altHash,"altquittung");
   }
+  if (cfg.quittung === DATUMSBINDUNG.quittung) {
+    const alt = await read("helmut_store","select=data&id=eq."+ZEITBEZUG.quittung+"&limit=1");
+    fordere(alt.length === 1 && alt[0].data?.status === "gestoppt"
+      && alt[0].data.runId === "nachlauf500-36224558578"
+      && alt[0].data.idHash === cfg.profilHash && alt[0].data.grund === "ai-text-source-support","altquittung");
+  }
   fordere(!(await read("helmut_store","select=id&id=eq."+cfg.quittung+"&limit=1")).length,"verbraucht");
   fordere(await K.laufGebundenUsd(cfg.runId,{env}) === 0,"laufkosten-vorhanden");
   const q = execute ? B.quittungsAdapter(env) : null;
@@ -147,4 +157,4 @@ async function main(args = process.argv.slice(2), env = process.env) {
 if (require.main === module) main().then(c => { process.exitCode=c; }).catch(e => {
   console.log(JSON.stringify({ok:false,grund:/^lage-vorstart-[a-z-]+$/.test(e.message || "") ? e.message : "lage-vorstart-technischer-fehler",automatischeWiederholung:false}));process.exitCode=1;
 });
-module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main,ZEITBEZUG};
+module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main,ZEITBEZUG,DATUMSBINDUNG};
