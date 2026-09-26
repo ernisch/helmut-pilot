@@ -2,6 +2,50 @@
 
 Stand26.09.2026,21:15UTC. Roadmap3.1 bleibt offen.
 
+## Nachkontrolle22:08UTC: Fachvergleich bestanden, Generatorplan gestoppt
+
+PR632/`757b1db50c578e114b90bd4de6213f46b9b7aab1` ist READY;
+Deployment`dpl_3PaiHUcJw32txntmWKaH83bwFK69`, Pflicht-CI36274031627 am
+Kopf`7a219477` vollständig grün. Fehler-/Fatal-Nachfenster21:57:38–21:58:14UTC leer.
+Plan36274711893 bestanden. [Vergleich b](https://github.com/ernisch/helmut-pilot/actions/runs/36274768206)
+ist fachlich bestanden: konkreter Absatz akzeptiert, schlechter Absatz sowohl
+`profilbezug=false` als auch`textart=fuelltext`. Vollständige Antwort unabhängig
+nachgelesen,1 Aufruf/0,011909USD, keine offene Reserve. Kein gespeicherter Lage-Text.
+Vollständiger Quittungshash:
+`4ebb535072d679b10483c3046f0bdff90a5ffd37309823bdeb5cfbe8407a0699`.
+
+Der [Generator-Nurleseplan](https://github.com/ernisch/helmut-pilot/actions/runs/36274853821)
+stoppte vor Quittung und Modell; unabhängig0 Quittungen/0 Kostentickets.
+Ursache: `profiles.find` wurde vor dem Laden des Bestands aufgerufen. Kleinster
+Fix lädt den unverändert streng geprüften500/501-Bestand vor der Profilauswahl.
+Ein echter `main()`-Adaptertest belegt Reihenfolge und Ablehnung falschen Bestands.
+
+Zusätzlich wechselte zwischen Beginn von b (21:59:33UTC) und Generatorplan
+(22:00:56UTC) der Berliner Kalendertag. Der Prompt bindet das echte Briefingdatum;
+der heutige PaketHash darf daher nicht dem gestrigen gleichgesetzt werden.
+Eigener Folgeauftrag c (`lage-fachkorrektur-20260926-c`, UTC-Auftragstag weiterhin26.09.)
+verlangt die vollständige unveränderte b-Quittung und bindet den neuen Commit und
+aktuellen Berliner Tag. Keine Uhrkorrektur, keine Quellen-Umdatierung, kein Retry
+verbrauchter Aufträge. Sollwerte bleiben strikt. Vergleich1/0,25USD/240s,
+bedingter noch unbenutzter Generator2/0,50USD/240s am selben neuen Commit.
+Der erneute Vergleich ist wegen neuer Commit-/Tagesbindung erforderlich;
+der bereits bestandene historische Fachbeleg b wird nicht nachträglich entwertet.
+
+Flash High änderte nur Initialisierung und Adaptertest; eigener Review und
+Integration des neuen Auftrags anschließend.36 Vorstartgruppen und15
+Prüfaufwandgruppen bestanden, echte b-Quittung vollständig gebunden.
+54 lokale Sessions konservativ bilanziert; letzter Helferansatz0,080922084USD.
+Externe Bindung3,417928USD, Production25.09.0,433563USD und26.09.0,683279USD:
+Gesamt4,534770USD, alte0,35USD-Reserve enthalten, beide Grenzen unverändert6USD.
+Fortschreibung atomar nach Rollbackprobe und Vollhashbindung; keine Profiländerung.
+
+PR633/`693e52bfad13c98fc036d90e971796cca497d43c` ist ebenfalls READY,
+Deployment`dpl_HyCriFL8x1VEJirqMFc69S1fj5HK`, beide Pflichtprüfungen36274085340
+am Kopf`85671088` bestanden. Runtime-Leser36274989103 bestätigt22:03:16UTC
+Kostenriegel aktiv/6USD und Kommunikation gesperrt. Quellen-Datenbankweg noch
+nicht umgestellt; kein Import- oder Crawl-Erfolg behauptet. Historische vier
+Feedkandidaten gehören zum Fenster26.09.; Berliner Tageswechsel nicht ignorieren.
+
 ## Nachkontrolle21:32UTC
 
 PR631 ist als`2ac66e0b5bd41c9f283fcc47c9816affb23949b2` ausgerollt,

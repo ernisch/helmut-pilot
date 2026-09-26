@@ -172,9 +172,10 @@ function setup(){
     A.equal(M.MAX_MS,240000);A.equal(M.MAX_USD,.25);
   });
   await test("Fachkorrektur bindet echte zwei Absätze und beide negativen Kriterien",async()=>{
-    A.equal(T.FACHKORREKTUR.quittung,"lage-fachkorrektur-20260926-b");
+    A.equal(T.FACHKORREKTUR.quittung,"lage-fachkorrektur-20260926-c");
+    A.throws(()=>T.pruefeTageswechselVorgaenger({ok:true}),/tageswechsel-vorgaenger/);
     A.throws(()=>T.pruefeTextartVorgaenger({ok:true}),/textart-vorgaenger/);
-    const alt=setup();Object.assign(alt.cfg,{fachkorrektur:true,pruefaufwand:false,quittung:"lage-fachkorrektur-20260926-a"});
+    const alt=setup();Object.assign(alt.cfg,{fachkorrektur:true,pruefaufwand:false,quittung:"lage-fachkorrektur-20260926-b"});
     await A.rejects(M.einmallauf(alt.cfg,alt.d),/sollfall-auftrag/);A.deepEqual(alt.trace,[]);
     const f=require("./fixtures/lage-fachkorrektur-zwei.json");
     const quellen=f.map(x=>({vorgang_id:x.paragraph.vorgang_ids[0],quellenbelege:[x.quelle]}));

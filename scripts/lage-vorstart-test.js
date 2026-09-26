@@ -396,5 +396,60 @@ function fixture() {
         assert.equal(state.finished.status,"gestoppt");assert.equal(state.cache,null);}
     }
   });
+  // --- main-Adapterpfad: der Generator-Fachkorrekturzweig muss den echten Profilbestand ---
+  // --- laden, bevor ein Profil ausgewaehlt wird (vorher: TypeError aus undefined). ---
+  const S = require("../lib/helmut/storage"), BUDGET = require("../lib/helmut/testkosten-budget");
+  const echtCommit = require("./verstehen-einmalig-169").echterCommit();
+  function mainEnv() {
+    return { SUPABASE_URL:"https://beispiel.invalid", SUPABASE_SERVICE_ROLE_KEY:"dienstschluessel",
+      HELMUT_VORSTART_AUFTRAG:"generatorfachkorrektur", HELMUT_VORSTART_PROFIL:T.GENERATORFACHKORREKTUR.profilHash,
+      HELMUT_VORSTART_COMMIT:echtCommit, GITHUB_SHA:echtCommit, GITHUB_ACTIONS:"true",
+      GITHUB_REPOSITORY:"ernisch/helmut-pilot", GITHUB_REF:"refs/heads/main", GITHUB_EVENT_NAME:"workflow_dispatch",
+      GITHUB_RUN_ATTEMPT:"1", GITHUB_RUN_ID:"1234567", HELMUT_UNDERSTANDING_LOCK:"on",
+      HELMUT_ATOMIC_LOCK:"on", HELMUT_TESTLAUF_KOMMUNIKATION:"gesperrt" };
+  }
+  function restAntwort(rows) { return { status:200, json:async () => rows }; }
+  function restQuelle(mandate, profileRows) {
+    const aufrufe = [];
+    global.fetch = async adresse => { const u = String(adresse); aufrufe.push(u);
+      if (u.includes("mandate_profiles")) return restAntwort(mandate);
+      if (/\/rest\/v1\/profiles\?/.test(u)) return restAntwort(profileRows);
+      return restAntwort([]); };
+    return aufrufe;
+  }
+  // Der einmalige Vorstart ist an seinen festen Auftragstag gebunden; fuer den Test wird
+  // die Uhr deshalb ausschliesslich auf genau diesen Tag gestellt.
+  function mitAuftragstag(fn) {
+    const EchtDate = global.Date;
+    class ProbeDate extends EchtDate {
+      constructor(...args) { super(...(args.length ? args : [start])); }
+      static now() { return start; }
+    }
+    global.Date = ProbeDate;
+    return Promise.resolve().then(fn).finally(() => { global.Date = EchtDate; });
+  }
+  await test("Generatorfachkorrektur laedt den echten Profilbestand vor der Profilauswahl",async()=>{
+    const speicherVorher = { ...S }, budgetVorher = BUDGET.aktiv, fetchVorher = global.fetch;
+    S.v3StoreReady = () => true; S.profileDbModeEnabled = () => true; S.profileDbExclusiveEnabled = () => true;
+    BUDGET.aktiv = () => true;
+    try {
+      // (1) Der Adapterpfad prueft den Bestand tatsaechlich: ein unvollstaendiger Bestand
+      //     stoppt fail closed, noch bevor irgendeine Quittung gelesen wird.
+      const erste = restQuelle([], []);
+      await mitAuftragstag(() => assert.rejects(T.main(["--plan"],mainEnv()),/lage-vorstart-bestand/));
+      assert(erste.some(u => u.includes("mandate_profiles")));
+      assert(!erste.some(u => u.includes("helmut_store")));
+      // (2) Mit vollstaendigem Bestand laeuft der Zweig bis zur fachlichen Vorgaengerpruefung
+      //     weiter: der Abbruchgrund ist fachlich, nicht der generische Technikfehler.
+      const mandate = Array.from({ length:500 }, (_,i) => ({ user_id:"mandat-"+i, aktiv:false, geloescht_at:null }));
+      const profileRows = Array.from({ length:501 }, (_,i) => ({ id:i < 500 ? "mandat-"+i : "konto-"+i }));
+      const zweite = restQuelle(mandate,profileRows);
+      await mitAuftragstag(() => assert.rejects(T.main(["--plan"],mainEnv()),
+        e => /^lage-vorstart-fachkorrektur-vorgaenger$/.test(e?.message || "")));
+      const bestandslesung = zweite.findIndex(u => u.includes("mandate_profiles"));
+      const quittungslesung = zweite.findIndex(u => u.includes("helmut_store"));
+      assert(bestandslesung >= 0 && quittungslesung > bestandslesung);
+    } finally { global.fetch = fetchVorher; BUDGET.aktiv = budgetVorher; Object.assign(S,speicherVorher); }
+  });
   console.log(count+" Gruppen erfolgreich");
 })().catch(e=>{console.error(e);process.exitCode=1;});

@@ -50,7 +50,7 @@ const PRUEFAUFWAND = Object.freeze({ ...ARTIKELSTAND, auftrag:"pruefaufwand",
 const GENERATORPRUEFAUFWAND = Object.freeze({ ...ARTIKELSTAND, auftrag:"generatorpruefaufwand",
   quittung:"lage-generatorpruefaufwand-20260926-a" });
 const FACHKORREKTUR = Object.freeze({ ...ARTIKELSTAND, auftrag:"fachkorrektur",
-  quittung:"lage-fachkorrektur-20260926-b" });
+  quittung:"lage-fachkorrektur-20260926-c" });
 const GENERATORFACHKORREKTUR = Object.freeze({ ...ARTIKELSTAND, auftrag:"generatorfachkorrektur",
   quittung:"lage-generatorfachkorrektur-20260926-a" });
 // Einzige zulaessige Vorgaengerquittung: der erfolgreich abgeschlossene Vierfall-Nachweis
@@ -209,6 +209,12 @@ function pruefeTextartVorgaenger(alt) {
   // desselben Vertrags: b setzt die belegte Schema-/Prompt-Korrektur voraus.
   fordere(hash(alt) === "acf1d7b44af3a986111159409a58f4e627cc245ba892e1ddf27ec566e64fe29c",
     "textart-vorgaenger");
+}
+function pruefeTageswechselVorgaenger(alt) {
+  // b bleibt der bestandene historische Fachbeleg. c bindet den neuen Commit
+  // und die echte aktuelle Berliner Tagesangabe, ohne einen alten Auftrag zu oeffnen.
+  fordere(hash(alt) === "4ebb535072d679b10483c3046f0bdff90a5ffd37309823bdeb5cfbe8407a0699",
+    "tageswechsel-vorgaenger");
 }
 function pruefeGeneratorFachkorrekturVorgaenger(alt, input, profile, commit) {
   const M = require("./lage-pruefaufwand"), faelle = require("./fixtures/lage-fachkorrektur-zwei.json");
@@ -445,6 +451,11 @@ async function main(args = process.argv.slice(2), env = process.env) {
     pruefeGeneratorPruefaufwandVorgaenger(alt[0].data);
   }
   if (cfg.fachkorrektur || cfg.generatorfachkorrektur) {
+    // Der Generator-Fachkorrekturnachweis waehlt sein Profil aus dem ECHTEN Bestand.
+    // Deshalb wird der Bestand hier geladen, bevor diese Vorpruefungen laufen; die
+    // Schutzpruefungen in bestand() (500/501, alle inaktiv, nichts geloescht) bleiben
+    // unveraendert wirksam.
+    if (cfg.generatorfachkorrektur) await bestand();
     const alt = await read("helmut_store","select=data&id=eq."+GENERATORPRUEFAUFWAND.quittung+"&limit=1");
     const archiv = await read("helmut_store","select=data&id=eq.lage-fachquarantaene-20260926-a&limit=1");
     fordere(alt.length === 1 && archiv.length === 1,"fachkorrektur-vorgaenger");
@@ -452,6 +463,9 @@ async function main(args = process.argv.slice(2), env = process.env) {
     const textart = await read("helmut_store","select=data&id=eq.lage-fachkorrektur-20260926-a&limit=1");
     fordere(textart.length === 1,"textart-vorgaenger");
     pruefeTextartVorgaenger(textart[0].data);
+    const tageswechsel = await read("helmut_store","select=data&id=eq.lage-fachkorrektur-20260926-b&limit=1");
+    fordere(tageswechsel.length === 1,"tageswechsel-vorgaenger");
+    pruefeTageswechselVorgaenger(tageswechsel[0].data);
     if (cfg.generatorfachkorrektur) {
       const urteil = await read("helmut_store","select=data&id=eq."+FACHKORREKTUR.quittung+"&limit=1");
       const p = profiles.find(p => bindung(p) === cfg.profilHash);
@@ -502,7 +516,7 @@ if (require.main === module) main().then(c => { process.exitCode=c; }).catch(e =
   console.log(JSON.stringify({ok:false,grund:/^lage-vorstart-[a-z-]+$/.test(e.message || "") ? e.message : "lage-vorstart-technischer-fehler",automatischeWiederholung:false}));process.exitCode=1;
 });
 module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main,ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG,
-  FACHKORREKTUR,GENERATORFACHKORREKTUR,pruefeFachkorrekturVorgaenger,pruefeGeneratorFachkorrekturVorgaenger,pruefeTextartVorgaenger,
+  FACHKORREKTUR,GENERATORFACHKORREKTUR,pruefeFachkorrekturVorgaenger,pruefeGeneratorFachkorrekturVorgaenger,pruefeTextartVorgaenger,pruefeTageswechselVorgaenger,
   GENERATORPRUEFAUFWAND,pruefeGeneratorPruefaufwandVorgaenger,
   ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,GENERATORNACHWEIS,AUSWAHLBEGRUENDUNG,PRUEFAUFWAND,GENERATOR_VORG,
   pruefeEinzelquellenVorgaenger,pruefeGeneratorVorgaenger,pruefeAuswahlVorgaenger,pruefePruefaufwandVorgaenger,pruefePruefaufwandTransportVorgaenger,pruefePruefaufwandTimeoutVorgaenger,reviewOptionen,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};
