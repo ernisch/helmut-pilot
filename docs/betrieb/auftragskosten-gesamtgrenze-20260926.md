@@ -113,3 +113,37 @@ ungeklärter Production-Reserve. Für den nach acht Minuten beendeten Flash-High
 Lauf zusätzlich0,35USD gebunden, bis ein Anbieterabgleich vorliegt: zusammen
 4,513178USD. Externe Bindung daher3259354 Mikro-USD; keine Freigabe dieser
 Zusatzreserve allein aus einer späteren lokalen Token-Schätzung.
+
+## Verifizierte6USD-Umstellung19:46UTC
+
+[PR626](https://github.com/ernisch/helmut-pilot/pull/626) nach beiden grünen
+[Pflichtprüfungen](https://github.com/ernisch/helmut-pilot/actions/runs/36266360577)
+am geprüften Kopf105b6172 gemergt. Production-Commit
+`60b19ebd657ddfc3f8c190570d54e56b07573cce`, Deployment
+`dpl_ALELobwKQKyfmz6czwhMC7A3wjTT` READY.
+
+Begrenzte atomare Umstellung erfolgreich: heutiges Tagesbuch Version2/6000000
+und Auftragsversion2/6000000, externe Bindung3259354 Mikro-USD. Nachlesung
+19:46:16UTC:500 Profile/0 aktiv, unveränderte vollständige Profilhashes,0 Jobs,
+Locks und Leases. Tagessumme608261 Mikro-USD und offene Azure-Reserve212000
+unverändert. Gesamte konservative Bindung4,513178USD; Rest bis6USD1,486822USD.
+Die SQL-Nachbedingung prüfte sämtliche übrigen Auth-Daten und früheren
+Kostenbücher auf Gleichheit. Eigene Nachprüfung der erneut gelesenen beiden
+Tagesbücher bestätigt die unveränderten Tickets und verbrauchten Beträge.
+
+Neue Auth-Revision`8cc2aacc-d6ce-4ced-9474-e06a473798d9`.
+Auth-SHA256`2db780219071c0d14e4d742c977209ba63fd5e03fd4833bcb4606bd16e625771`.
+Im lokalen Nachspiel der tatsächlichen Kostenprojektion wird eine gedeckte
+Reserve akzeptiert; der manuelle Start bleibt wegen der ungeklärten Azure-
+Reserve gesperrt. Kein Production-Modellaufruf, keine Aktivierung, kein500er Test.
+Deployment-Fehlerprotokolle19:44:55–19:46:19UTC ohne passenden Fehler/Fatal-Eintrag.
+
+Zusätzlich korrigiert: Der historische36er-Vorprüfer verwendet die validierte
+Grenze seines jeweiligen Tagesbuchs statt der neuen globalen Konstante. Alte
+4USD-Bücher bleiben damit auch vor dem Transport beschränkt;12/12 lokale
+Prüfgruppen bestanden. Aktuelle Konstantentests folgen6USD, historische
+Buchfixtures und Einzelauftragsdeckel bleiben erhalten.
+
+Für die weitere Roadmap ist die Budgeterhöhung abgeschlossen. Der vorhandene
+Anbieterbeleg für den abgebrochenen Azure-Aufruf bleibt erforderlich; die
+verbrauchte Quittung wird nicht wiederholt oder als kostenlos behandelt.
