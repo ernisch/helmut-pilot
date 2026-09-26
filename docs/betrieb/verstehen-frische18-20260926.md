@@ -143,3 +143,24 @@ Rohartikel, ursprünglicher Vorgang samt beiden Originalquellen und verbrauchte
 Laufbelege bleiben erhalten. Private Vorherabbilder sichern den Rückweg;
 keine automatische Wiederherstellung einer fachlich falschen Zuordnung.
 Kein Modellaufruf, keine Profilwirkung. SQL und Laborbeleg vor Ausführung prüfen.
+
+## Einzelne falsche Verknüpfung Production-korrigiert
+
+PR622/`b12038be879bb028013ff13dee882e2ab50201b9`, Pflicht-CI36254769531 beide
+grün, Vercel`dpl_9hGrkxwe9Y4EvNM4khznFQtDVjXX` READY16:24:52UTC; keine
+Fehlerlogs bis16:25:39UTC. Neun SQL-Laborgruppen einschließlich Fremdtrigger,
+veränderten Ankern, aktiven Profilen, offenen Kosten und exaktem Rückweg grün.
+
+Exakt die Connection-Friedenspreis-Verknüpfung zum Pflege-Vorgang entfernt.
+Nachlesung16:26:36UTC: beide ursprünglichen Pflegequellen vorhanden, neuer
+Rohartikel vorhanden und unverknüpft; kompletter Vorgang und Rohartikel
+hashidentisch. Vollständige Grundlinie aller elf geschützten Tabellen vor/nachher
+gleich (nur die ausdrücklich entfernte Verknüpfung ausgenommen).500/0,
+keine Modellkosten, keine Quittung zurückgesetzt. Private vollständige
+Vorher-/Nachherbelege und Rückweg erhalten; kein automatisches Wiederherstellen
+einer fachlich falschen Zuordnung.
+
+SQL-SHA256`1692aac4d497c402a8fba302ce37a6df1b3e6e67c5247a442ba2605f8c81c730`.
+Die erfolgreiche atomare Korrektur darf nicht wiederholt werden. Parteienfehler
+bleibt gesperrt; Friedenspreis und unbegonnener Trump-Artikel sind noch nicht als
+eigene gültige Vorgänge verarbeitet. Kein vollständiger18er Fachnachweis.

@@ -36,6 +36,9 @@ jobs:
       HELMUT_VORSTART_PROFIL: ${{ inputs.profil_hash }}
       HELMUT_VORSTART_AUFTRAG: ${{ inputs.auftrag }}
       HELMUT_VORSTART_FREIGABE: ${{ inputs.confirm_text }}
+      # Nur der isolierte Medium-Vergleich braucht mehr als den20s-Standard.
+      #240s-Gesamtgrenze, Token-/Kostenlimit und verbrauchte Quittungen bleiben.
+      HELMUT_KI_TIMEOUT_MS: ${{ inputs.auftrag == 'pruefaufwand' && '120000' || '20000' }}
       HELMUT_PROFILE_DB_MODE: "on"
       HELMUT_PROFILE_DB_EXCLUSIVE: "on"
       HELMUT_SCORING_MODE: "off"

@@ -117,5 +117,28 @@ function setup(){
     const {d,cfg,trace}=setup();cfg.quittung=alt.quittungsschluessel;
     await A.rejects(M.einmallauf(cfg,d),/sollfall-auftrag/);A.deepEqual(trace,[]);
   });
+  await test("Offene Kosten verdecken erfolgreiche Profil-/Reserve-Nachlesung nicht",async()=>{
+    const {d,cfg,s}=setup();
+    d.reviewModell=async()=>{s.cost=.212;d.kosten=async()=>{throw Error("Start gesperrt");};throw Error("timeout");};
+    d.kostenNachlauf=async()=>({offeneReservierungen:1,limitUsd:4});
+    const r=await M.einmallauf(cfg,d);A.equal(r.ok,false);A.equal(r.profileUnveraendert,true);
+    A.equal(r.offeneKosten,1);A.equal(r.laufkostenUsd,.212);A.equal(s.receipt.status,"gestoppt");
+  });
+  await test("Einzelne unlesbare Nachkontrolle ist unbekannt, übrige Ergebnisse bleiben",async()=>{
+    for(const art of ["kosten","profile"]){const {d,cfg}=setup();
+      d.reviewModell=async()=>{if(art==="kosten")d.kosten=async()=>{throw Error("offline");};
+        else d.ruhe=async()=>{throw Error("offline");};return antwort();};
+      const r=await M.einmallauf(cfg,d);A.equal(r.ok,false);
+      A.equal(r.profileUnveraendert,art==="kosten"?true:null);
+      A.equal(r.offeneKosten,art==="kosten"?null:0);A.equal(r.laufkostenUsd,0);
+    }
+  });
+  await test("120s Antwort plus60s Abschluss bleiben innerhalb des240s-Auftrags",async()=>{
+    const {d,cfg,trace}=setup();let n=0;d.now=()=>++n===1?start:start+60000;
+    await A.rejects(M.einmallauf(cfg,d),/sollfall-restzeit/);A(!trace.includes("modell"));
+    const workflow=require("fs").readFileSync(require("path").join(__dirname,"../.github/workflows/lage-vorstart.yml"),"utf8");
+    A(workflow.includes("inputs.auftrag == 'pruefaufwand' && '120000' || '20000'"));
+    A.equal(M.MAX_MS,240000);A.equal(M.MAX_USD,.25);
+  });
   console.log(`${n}/${n} Prüfaufwand-Prüfgruppen bestanden; keine Modelle oder Production-Schreibzugriffe.`);
 })().catch(e=>{console.error(e);process.exitCode=1;});
