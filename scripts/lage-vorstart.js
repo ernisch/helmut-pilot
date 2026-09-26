@@ -52,7 +52,7 @@ const GENERATORPRUEFAUFWAND = Object.freeze({ ...ARTIKELSTAND, auftrag:"generato
 const FACHKORREKTUR = Object.freeze({ ...ARTIKELSTAND, auftrag:"fachkorrektur",
   quittung:"lage-fachkorrektur-20260926-c" });
 const GENERATORFACHKORREKTUR = Object.freeze({ ...ARTIKELSTAND, auftrag:"generatorfachkorrektur",
-  quittung:"lage-generatorfachkorrektur-20260926-a" });
+  quittung:"lage-generatorfachkorrektur-20260926-b" });
 // Einzige zulaessige Vorgaengerquittung: der erfolgreich abgeschlossene Vierfall-Nachweis
 // dieses Laufs und Commits. Sie wird ausschliesslich gelesen und nie umgeschrieben.
 const GENERATOR_VORG = Object.freeze({ runId:"nachlauf500-36249646222",
@@ -232,6 +232,17 @@ function pruefeGeneratorFachkorrekturVorgaenger(alt, input, profile, commit) {
   fordere(result.ok && hash(result.bilanz) === hash(alt.bilanz) && alt.paarvergleich === true
     && result.fachlichGeprueftePaare === 0 && alt.fachlichGeprueftePaare === 0,
     "generatorfachkorrektur-urteil");
+}
+function pruefeAuswahlnotizVorgaenger(vergleich, generator, input, profile) {
+  // Eigener Generatorauftrag nach reinem Schemahinweis-Fix. Der bereits
+  // bestandene Vergleich c bleibt historisch unveraendert: voller Beleg gebunden,
+  // heutige Quellen/Profil/Prompt/Schema identisch, alle Urteile erneut ausgewertet.
+  // Kein erneuter Modellvergleich und keine Wiederverwendung verbrauchter Auftraege.
+  fordere(hash(vergleich) === "baceedfc8bd65fc0bf872f919d850afc846a707d0fc73c5c3da5cd74c40db7d2"
+    && hash(generator) === "77c24c27e3a2b182c2a078305130a351bd83c4aa3a675b08bf9e7b2e323e6308",
+    "auswahlnotiz-vorgaenger");
+  pruefeGeneratorFachkorrekturVorgaenger(vergleich,input,profile,
+    "654fd8ea72f31260ffce6a104e071b237dd61ebf");
 }
 function pruefePruefaufwandVorgaenger(alt) {
   fordere(alt?.status === "gestoppt" && alt.ok === false
@@ -471,7 +482,9 @@ async function main(args = process.argv.slice(2), env = process.env) {
       const p = profiles.find(p => bindung(p) === cfg.profilHash);
       fordere(p && urteil.length === 1,"generatorfachkorrektur-vorgaenger");
       const input = await require("./lage-pruefaufwand").ladePaket(p,S,new Date(),require("./fixtures/lage-fachkorrektur-zwei.json"));
-      pruefeGeneratorFachkorrekturVorgaenger(urteil[0].data,input,p,cfg.commit);
+      const generator = await read("helmut_store","select=data&id=eq.lage-generatorfachkorrektur-20260926-a&limit=1");
+      fordere(generator.length === 1,"auswahlnotiz-vorgaenger");
+      pruefeAuswahlnotizVorgaenger(urteil[0].data,generator[0].data,input,p);
     }
   }
   fordere(!(await read("helmut_store","select=id&id=eq."+cfg.quittung+"&limit=1")).length,"verbraucht");
@@ -516,7 +529,7 @@ if (require.main === module) main().then(c => { process.exitCode=c; }).catch(e =
   console.log(JSON.stringify({ok:false,grund:/^lage-vorstart-[a-z-]+$/.test(e.message || "") ? e.message : "lage-vorstart-technischer-fehler",automatischeWiederholung:false}));process.exitCode=1;
 });
 module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main,ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG,
-  FACHKORREKTUR,GENERATORFACHKORREKTUR,pruefeFachkorrekturVorgaenger,pruefeGeneratorFachkorrekturVorgaenger,pruefeTextartVorgaenger,pruefeTageswechselVorgaenger,
+  FACHKORREKTUR,GENERATORFACHKORREKTUR,pruefeFachkorrekturVorgaenger,pruefeGeneratorFachkorrekturVorgaenger,pruefeTextartVorgaenger,pruefeTageswechselVorgaenger,pruefeAuswahlnotizVorgaenger,
   GENERATORPRUEFAUFWAND,pruefeGeneratorPruefaufwandVorgaenger,
   ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,GENERATORNACHWEIS,AUSWAHLBEGRUENDUNG,PRUEFAUFWAND,GENERATOR_VORG,
   pruefeEinzelquellenVorgaenger,pruefeGeneratorVorgaenger,pruefeAuswahlVorgaenger,pruefePruefaufwandVorgaenger,pruefePruefaufwandTransportVorgaenger,pruefePruefaufwandTimeoutVorgaenger,reviewOptionen,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};
