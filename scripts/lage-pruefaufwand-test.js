@@ -167,7 +167,7 @@ function setup(){
     const {d,cfg,trace}=setup();let n=0;d.now=()=>++n===1?start:start+60000;
     await A.rejects(M.einmallauf(cfg,d),/sollfall-restzeit/);A(!trace.includes("modell"));
     const workflow=require("fs").readFileSync(require("path").join(__dirname,"../.github/workflows/lage-vorstart.yml"),"utf8");
-    A(workflow.includes("inputs.auftrag == 'pruefaufwand' && '120000' || '20000'"));
+    A(workflow.includes("(inputs.auftrag == 'pruefaufwand' || inputs.auftrag == 'generatorpruefaufwand') && '120000' || '20000'"));
     A.equal(M.MAX_MS,240000);A.equal(M.MAX_USD,.25);
   });
   console.log(`${n}/${n} Prüfaufwand-Prüfgruppen bestanden; keine Modelle oder Production-Schreibzugriffe.`);
