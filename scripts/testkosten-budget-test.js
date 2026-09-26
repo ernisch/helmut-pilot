@@ -28,6 +28,54 @@ function fixture() {
 let count = 0;
 async function test(name, fn) { await fn(); console.log("PASS " + name); count++; }
 (async () => {
+  const auftrag = externGebunden => ({ version: 1, id: "offline-auftrag", abTag: DAY,
+    limit: 4000000, externGebunden });
+  await test("Auftragsgrenze bindet parallele Crons und manuelle Aufrufe gemeinsam", async () => {
+    const h = fixture();
+    await h.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = auftrag(3575000); });
+    const result = await Promise.allSettled(Array.from({ length: 12 }, (_, i) =>
+      B.reserviere({ ...ARGS, runId: i % 2 ? "understanding-cron" : ARGS.runId }, h.deps)));
+    assert.equal(result.filter(r => r.status === "fulfilled").length, 2);
+    for (const r of result.filter(r => r.status === "rejected"))
+      assert.equal(r.reason.reason, "test-usd-auftragsgrenze-erreicht");
+    assert.equal(B.auftragsStand(h.read(), DAY).gebundenMicroUsd, 3999000);
+    assert.equal(h.day().limit, 4000000); assert.deepEqual(h.read().users, [{ id: "bestehend" }]);
+  });
+  await test("Auftrag bleibt ueber Mitternacht gebunden, inklusive ungeklaerter Reserve", async () => {
+    const h = fixture();
+    await h.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = auftrag(3575000); });
+    const ticket = await B.reserviere(ARGS, h.deps);
+    await assert.rejects(B.abschliessen(ticket, null, h.deps));
+    const alt = h.day(); h.advance(86400000);
+    await B.reserviere(ARGS, h.deps);
+    const before = h.read();
+    await assert.rejects(B.reserviere(ARGS, h.deps), { reason: "test-usd-auftragsgrenze-erreicht", kiNichtGesendet: true });
+    assert.deepEqual(h.read(), before); assert.deepEqual(h.day(), alt);
+    assert.equal(B.auftragsStand(h.read(), "2026-09-10").gebundenMicroUsd, 3999000);
+  });
+  await test("Strikt unter4: Erreichen, Ueberschreiten und unlesbare Auftraege sperren ohne Buchung", async () => {
+    for (const value of [auftrag(3788000), auftrag(4000001), null, {},
+      { ...auftrag(0), externGebunden: -1 }, { ...auftrag(0), limit: 5000000 },
+      { ...auftrag(0), abTag: "2026-02-30" }, { ...auftrag(0), abTag: "2026-09-10" },
+      { ...auftrag(0), abTag: "2026-09-07" }, { ...auftrag(0), unbekannt: true }]) {
+      const h = fixture(); await h.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = value; });
+      const before = h.read();
+      await assert.rejects(B.reserviere(ARGS, h.deps), { code: "LLM_BUDGET_EXHAUSTED", kiNichtGesendet: true });
+      assert.deepEqual(h.read(), before);
+    }
+  });
+  await test("Auftrags-Startpruefung liest neue Tage ohne Mutation und verharmlost Ueberbindung nicht", async () => {
+    const h = fixture(); await h.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = auftrag(0); });
+    const before = h.read();
+    assert.equal(B.pruefeStart(before, DAY, { ok: true, used: 0 }).startklar, true);
+    assert.deepEqual(h.read(), before);
+    const ticket = await B.reserviere(ARGS, h.deps); await B.abschliessen(ticket, RECEIPT, h.deps);
+    await h.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY].externGebunden = 4000000; });
+    assert.equal(B.auftragsStand(h.read(), DAY).gebundenMicroUsd, 4000130);
+    assert.throws(() => B.pruefeStart(h.read(), DAY, { ok: true, used: 1 }),
+      { reason: "test-usd-auftragsgrenze-erreicht" });
+    assert.equal(h.day().spent, 130);
+  });
   await test("Inaktiv ohne Schreibwirkung; falsches Modell oder Limit vor Reservierung gesperrt", async () => {
     const h = fixture();
     assert.equal(await B.reserviere(ARGS, { ...h.deps, env: {} }), null);
@@ -205,6 +253,11 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); count++
       await ai.requestStructuredJson("offline", {}, { runId: ARGS.runId,
         politicianId: "mandat-offline", testKostenPhase: "pruefung" });
       assert.equal(requests, 4);
+      await h.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = { ...auftrag(4000000), abTag: today }; });
+      for (const meta of [{ callType: "understanding-rueckstand" }, { runId: ARGS.runId, budgetExempt: true }])
+        await assert.rejects(ai.requestStructuredJson("gesperrt", {}, meta),
+          { reason: "test-usd-auftragsgrenze-erreicht", kiNichtGesendet: true });
+      assert.equal(requests, 4, "Auch Cron und Admin-Bypass erreichen keinen HTTP-Transport");
     } finally {
       https.request = old.request; storage.mutateAuthStore = old.mutate;
       storage.leseLlmTageszaehler = old.counter; storage.reserveLlmCall = old.reserve;
