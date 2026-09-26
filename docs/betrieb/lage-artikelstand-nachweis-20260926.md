@@ -43,6 +43,14 @@ gelesenen DLF-Auszug zur Energiesteuer wieder. Keine Quelle wird umdatiert.
 | Prognose privater Heizkosten | Haushaltsausschuss | nein |
 | Verteidigung der Energiesteuersenkung auf Kraftstoffe | Auswärtiger Ausschuss | nein |
 
+Die unabhängige Sollgrundlage wurde26.09. gegen die aktuellen amtlichen
+Beschreibungen [Auswärtiger Ausschuss](https://www.bundestag.de/ausschuesse/a03_auswaertiges)
+und [Bundeshaushalt](https://www.bundestag.de/parlament/aufgaben/haushalt_neu)
+abgeglichen. Diese beschreiben außenpolitische Begleitung beziehungsweise
+staatliche Haushaltsberatung und -kontrolle. Die konkreten Zuordnungen der
+vier Quellenthemen sind daraus abgeleitete Fachurteile; keine Behauptung einer
+unbelegten Ausschusshandlung und keine zusätzliche Nachricht im Modellprompt.
+
 Alle vier Faktenprüfungen und alle sechs Vergleiche verschiedener Sachverhalte
 müssen ebenfalls bestehen. Ein negativer Sollfall zählt nur bei genau der
 erwarteten fachlichen Ablehnung; fehlende Belege/Begründungen oder Strukturfehler
@@ -90,6 +98,17 @@ ein belastbarer Plan unter dem unveränderten4USD-Riegel fehlt weiterhin.
 Eingaben: die vollständige lokale Lageprojektion hatte404 geordnete beziehungsweise
 372 nach Quellreihenfolge kanonisierte Eingabemengen. Keine neue Cache-/Gruppenlogik,
 keine Wiederverwendung alter Ergebnisse als frische500er Ergebnisse.
+
+Zusätzliche Radarprüfung26.09.,14:25UTC: alle500 gespeicherten Builder-Ausgaben
+des12:29-Snapshots durch den unveränderten echten Renderer geführt;1 persönlicher
+und1 Umfeldhinweis,0 fehlende Titel/Links. Kein API-Mitschnitt, keine DOM-/CSS-
+Abnahme und keine neue Liveversorgung. Der persönliche Link wurde direkt
+[beim Bundestag](https://www.bundestag.de/mediathek/video?videoid=7657592) gelesen:
+Seitentitel, Hauptüberschrift und Video-ID gehören zur Rede der benannten Person.
+Der Umfeldlink führt inzwischen auf einen [aktualisierten DLF-Artikel](https://www.deutschlandfunk.de/unionsfraktionschef-frei-warnt-vor-zusammenarbeit-mit-der-linken-eralp-stellt-sich-gegen-antisemitis-100.html),
+der die ursprüngliche Einladung zu Sondierungen weiterhin enthält. Kein altes
+Quelldatum oder gespeicherter Titel wurde auf diesen neuen Stand umgeschrieben.
+Private Einzelbilanz und Originalseitenbeleg gesichert; keine Production-Writes.
 
 Roadmap3.1/3.3; der [autonome Betreiberauftrag](autonom-bis-500-starttor-20260926.md)
 gilt weiter. Keine Aktivierung und kein500er Test. Ein einzelner erfolgreicher
