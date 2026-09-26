@@ -11,6 +11,9 @@ const A = require("../lib/helmut/artikelkontext");
 const D = require("../lib/helmut/dedup");
 const G = require("../lib/helmut/quellenarchitektur/dedup-global");
 const Q = require("../lib/helmut/quellen-zeitvertrag");
+const LQ = require("../lib/helmut/lage-quellenbeleg");
+const F = require("../lib/helmut/briefing-frische");
+const AUS = require("../lib/helmut/quellen-auszug");
 const U = require("../lib/helmut/understanding");
 const storage = require("../lib/helmut/storage");
 
@@ -20,9 +23,16 @@ const TAG = "2026-09-25";
 const TITEL = "Synthetischer Ausschussbericht zur Beispielreform beschlossen";
 const ARTIKEL_URL = "https://www.bundestag.de/dokumente/textarchiv/2026/kw39-synthetische-beispielreform-1234567";
 const KANONISCH = D.canonicalizeUrl(ARTIKEL_URL);
-const ABSATZ = "Zu Beginn der synthetischen Sitzung hat der Beispielausschuss den Entwurf fuer eine "
-  + "Beispielreform ohne Aussprache angenommen. In namentlicher Abstimmung stimmten 300 Abgeordnete zu, "
-  + "100 stimmten dagegen. Es gab 50 Enthaltungen.";
+// Bewusst laenger als die alte generische 600-Zeichen-Grenze und innerhalb der
+// amtlichen 1200-Zeichen-Grenze: nur so ist belegbar, dass der validierte
+// Leitabsatz vollstaendig gebunden und niemals per Satzpraefix gekuerzt wird.
+const ABSATZ = "Zu Beginn der synthetischen Sitzung hat der Beispielausschuss den Entwurf fuer eine Beispielreform "
+  + "ohne Aussprache angenommen. In namentlicher Abstimmung stimmten 300 Abgeordnete zu, 100 stimmten dagegen. "
+  + "Es gab 50 Enthaltungen. Der Beschluss empfiehlt dem Plenum, die Vorlage in der kommenden Sitzungswoche in "
+  + "zweiter Lesung zu beraten und die vorgesehenen Mittel fuer die Jahre 2027 bis 2029 in der vereinbarten "
+  + "Hoehe einzusetzen. Die Berichterstatterinnen und Berichterstatter sollen die Stellungnahmen der beteiligten "
+  + "Verbaende in die Beschlussempfehlung aufnehmen und dem Ausschuss vor der Sitzungswoche schriftlich berichten. "
+  + "Eine weitere Pruefung durch ein unabhaengiges Gutachten ist nicht vorgesehen.";
 const ALTER_TITEL = "Frueherer synthetischer Bericht derselben Adresse";
 const ALTER_TAG = "2026-09-14T11:20:09.000Z";
 let bestanden = 0;
@@ -76,6 +86,9 @@ test("Erstellung bindet die neue Kennung an URL, exakten Titel, Tag und Absatzha
   assert.equal(ROW.canonical_url, KANONISCH);
   assert.equal(ROW.title, TITEL);
   assert.equal(ROW.published_at, null);
+  // Der validierte Leitabsatz selbst steht unveraendert als summary der Rohzeile.
+  assert.equal(ROW.summary, ABSATZ);
+  assert.equal(ROW.summary.length, ABSATZ.length);
   assert.deepEqual(Object.keys(ROW.raw), ["sourcePriority", "originalUrl", "helmutBundestagArtikelstand"]);
   assert.deepEqual(ROW.raw.helmutBundestagArtikelstand, STAND);
   assert.equal(B.leseArtikelstand(ROW).standHash, STAND.standHash);
@@ -240,6 +253,131 @@ test("Zeitvertrag und Prompt kennen nur den validierten Tag, keine Uhrzeit", () 
   assert.equal(B.leseArtikelstand(normal), null);
 });
 
+test("Der ganze Leitabsatz ueber 600 Zeichen wird nie gekuerzt oder praefixiert", () => {
+  assert(ABSATZ.length > 600 && ABSATZ.length <= require("../lib/helmut/artikelkontext").MAX_ZEICHEN_BUNDESTAG_LEITABSATZ);
+  assert.equal(ROW.summary, ABSATZ);
+  assert.equal(sha(ROW.summary), STAND.absatzHash);
+  assert.deepEqual(D.toRawDocumentRow(ROW), ROW);
+  assert.equal(D.dedupeRawDocuments([ROW, kopie(ROW)])[0].summary, ABSATZ);
+  assert.equal(G.mergeIntoDocuments([ROW])[0].summary, ABSATZ);
+  assert.equal(Q.understandingQuelle(ROW).auszug, ABSATZ);
+  assert.equal(AUS.geleseneQuelle({ ...kopie(ROW), quellenauszug_beleg: null }).summary, ABSATZ);
+  // Die generische Snippetgrenze fuer gewoehnliche Quellen bleibt unveraendert.
+  const lang = "Synthetischer Satz zur Finanzierung des Beispielbades. ".repeat(30);
+  const normalRow = D.toRawDocumentRow({ title: "Synthetischer Bericht zum Beispielbad",
+    url: "https://beispiel.test/beispielbad", summary: lang, publishedAt: "2026-09-24T06:00:00Z" });
+  assert(normalRow.summary.length <= D.SUMMARY_MAX);
+  assert(normalRow.summary.length < lang.length);
+});
+
+test("Eine manipulierte oder gekuerzte Stand-summary wird laut abgewiesen", () => {
+  const faelle = [["gekuerzt", ABSATZ.slice(0, 600)],
+    ["veraendert", ABSATZ.replace("50 Enthaltungen", "49 Enthaltungen")],
+    ["Leerzeichen angehaengt", ABSATZ + " "],
+    ["zu lang", "x".repeat(require("../lib/helmut/artikelkontext").MAX_ZEICHEN_BUNDESTAG_LEITABSATZ + 1)],
+    ["kein Text", 42]];
+  for (const [name, summary] of faelle) {
+    const falsch = { ...kopie(ROW), summary };
+    for (const lesen of [B.leseArtikelstand, D.contentHash, D.toRawDocumentRow, Q.understandingQuelle,
+      doc => AUS.geleseneQuelle({ ...doc, quellenauszug_beleg: null })]) {
+      wirft(() => lesen(falsch), /bundestag-artikelstand-/);
+    }
+    wirft(() => G.planDedupWrites([falsch], []), /bundestag-artikelstand-/, name);
+  }
+  // Gegenprobe: die Erzeugung selbst bindet den vollstaendigen Absatz unveraendert.
+  const neu = B.erzeugeArtikelstand(kopie(DOK), kopie(BELEG));
+  assert.equal(neu.ok, true);
+  assert.equal(neu.row.summary, ABSATZ);
+  assert.equal(neu.row.summary.length, ABSATZ.length);
+});
+
+test("Legacy-Stand ohne summary bleibt lesbar und erfindet keinen Absatz", () => {
+  const ohneFeld = kopie(ROW); delete ohneFeld.summary;
+  for (const wert of [{ ...kopie(ROW), summary: null }, ohneFeld]) {
+    assert.equal(B.leseArtikelstand(wert).standHash, STAND.standHash);
+    assert.equal(D.contentHash(wert), STAND.standHash);
+    assert.equal(D.toRawDocumentRow(wert).summary, null);
+    assert.equal(Q.understandingQuelle(wert).auszug, "");
+    assert.equal(AUS.geleseneQuelle({ ...wert, quellenauszug_beleg: null }).summary ?? null, null);
+  }
+  const eingabe = LQ.baueEingabe([{ id: "ko-legacy", vorgang_id: "vg-legacy" }],
+    { "vg-legacy": [{ ...kopie(ROW), summary: null }] }, new Date("2026-09-26T12:00:00Z"));
+  assert.equal(eingabe.length, 1);
+  assert.equal(eingabe[0].quellenbelege[0].auszug, "");
+  assert.equal(eingabe[0].quellenbelege[0].veroeffentlichtAm, TAG);
+});
+
+test("Lagefenster: nur der ganze Berliner Publikationstag zaehlt, DST-fest", () => {
+  const koFenster = { id: "ko-fenster", vorgang_id: "vg-fenster" };
+  const standFuerTag = (tag) => {
+    const doc = dokument({ published_at: tag });
+    const erzeugt = B.erzeugeArtikelstand(doc, beleg(doc));
+    assert.equal(erzeugt.ok, true, tag);
+    return erzeugt.row;
+  };
+  const akzeptiert = (tag, jetzt) => LQ.baueEingabe([koFenster], { "vg-fenster": [standFuerTag(tag)] }, jetzt).length === 1;
+  const fruehjahr = new Date("2026-03-31T12:00:00Z"); // Fenster 17.03.2026 12:00Z bis 31.03.2026 12:00Z
+  assert.equal(akzeptiert("2026-03-18", fruehjahr), true);  // innerer Rand: ganzer Tag im Fenster
+  assert.equal(akzeptiert("2026-03-29", fruehjahr), true);  // DST-Tag (23 Stunden) vollstaendig im Fenster
+  assert.equal(akzeptiert("2026-03-17", fruehjahr), false); // angebrochener Randtag -> verwerfen
+  assert.equal(akzeptiert("2026-03-16", fruehjahr), false); // ausserhalb
+  assert.equal(akzeptiert("2026-03-31", fruehjahr), false); // heute noch nicht beendet
+  assert.equal(akzeptiert("2026-04-01", fruehjahr), false); // kuenftig
+  const herbst = new Date("2026-10-26T12:00:00Z");    // Fenster 12.10.2026 12:00Z bis 26.10.2026 12:00Z
+  assert.equal(akzeptiert("2026-10-13", herbst), true);
+  assert.equal(akzeptiert("2026-10-25", herbst), true);     // DST-Ende (25 Stunden) vollstaendig im Fenster
+  assert.equal(akzeptiert("2026-10-12", herbst), false);
+  const lageBeleg = LQ.baueEingabe([koFenster], { "vg-fenster": [standFuerTag("2026-03-29")] }, fruehjahr)[0].quellenbelege[0];
+  assert.equal(lageBeleg.veroeffentlichtAm, "2026-03-29");
+  assert.equal(lageBeleg.auszug, ABSATZ);
+  assert.equal(JSON.stringify(lageBeleg).includes("T00:00"), false);
+  // Direkter Randbeweis ueber die bestehenden Berliner Datumshelfer: an beiden
+  // DST-Tagen ist der Kalendertag 23 bzw. 25 Stunden lang, kein 24-Stunden-Fenster.
+  assert.equal(F.berlinTagVollImFenster("2026-03-29", Date.parse("2026-03-28T23:00:00Z"), Date.parse("2026-03-29T22:00:00Z")), true);
+  assert.equal(F.berlinTagVollImFenster("2026-03-29", Date.parse("2026-03-28T23:00:01Z"), Date.parse("2026-03-29T22:00:00Z")), false);
+  assert.equal(F.berlinTagVollImFenster("2026-03-29", Date.parse("2026-03-28T23:00:00Z"), Date.parse("2026-03-29T21:59:59Z")), false);
+  assert.equal(F.berlinTagVollImFenster("2026-10-25", Date.parse("2026-10-24T22:00:00Z"), Date.parse("2026-10-25T23:00:00Z")), true);
+  assert.equal(F.berlinTagVollImFenster("2026-10-25", Date.parse("2026-10-24T22:00:00Z"), Date.parse("2026-10-25T22:59:59Z")), false);
+  assert.equal(F.berlinTagVollImFenster("2026-02-30", 0, Number.MAX_SAFE_INTEGER), false);
+  assert.equal(F.berlinTagVollImFenster("2026-03-29", NaN, Date.now()), false);
+});
+
+test("Gewoehnliche Quellen behalten unveraendert ihren Zeitstempelvertrag", () => {
+  const jetzt = new Date("2026-03-31T12:00:00Z");
+  const normal = { title: "Synthetische Meldung zum Beispielbad", url: "https://beispiel.test/beispielbad",
+    source_name: "Synthetische Quelle", summary: "Der Stadtrat beriet ueber die Finanzierung des Beispielbades.",
+    published_at: "2026-03-31T11:59:59Z" };
+  const lageBeleg = LQ.baueEingabe([{ id: "ko-normal", vorgang_id: "vg-normal" }], { "vg-normal": [normal] }, jetzt)[0].quellenbelege[0];
+  assert.equal(lageBeleg.veroeffentlichtAm, "2026-03-31T11:59:59.000Z");
+  assert.equal(lageBeleg.auszug, normal.summary);
+  assert.deepEqual(LQ.baueEingabe([{ id: "ko-normal", vorgang_id: "vg-normal" }],
+    { "vg-normal": [{ ...normal, published_at: "2026-03-31T12:00:01Z" }] }, jetzt), []);
+});
+
+test("Verschiedene Staende an derselben URL bleiben getrennte Belege", () => {
+  const absatzZwei = ABSATZ.replace("50 Enthaltungen", "49 Enthaltungen");
+  const zweiter = B.erzeugeArtikelstand(DOK, beleg(DOK, { text: absatzZwei, textHash: sha(absatzZwei) }));
+  const andererTitel = "Aktualisierte synthetische Fassung derselben Adresse";
+  const docZwei = dokument({ title: andererTitel });
+  const dritter = B.erzeugeArtikelstand(docZwei, beleg(docZwei));
+  for (const stand of [zweiter, dritter]) assert.equal(stand.ok, true);
+  const eingabe = LQ.baueEingabe([{ id: "ko-getrennt", vorgang_id: "vg-getrennt" }],
+    { "vg-getrennt": [ROW, zweiter.row, dritter.row, ALT] }, new Date("2026-09-26T12:00:00Z"));
+  assert.equal(eingabe.length, 1);
+  const belege = eingabe[0].quellenbelege;
+  assert.equal(belege.length, 4);
+  assert.equal(new Set(belege.map(b => b.quelle_id)).size, 4);
+  // Gleiche Adresse und gleicher Titel, aber anderer Absatz: eigener Beleg und eigene Kennung.
+  const grundfassung = belege.find(b => b.auszug === ABSATZ && b.veroeffentlichtAm === TAG);
+  const andereFassung = belege.find(b => b.auszug === absatzZwei && b.veroeffentlichtAm === TAG);
+  assert(grundfassung && andereFassung);
+  assert.notEqual(grundfassung.quelle_id, andereFassung.quelle_id);
+  // Die alte URL-Quelle bleibt ein eigener Beleg mit ihrem echten Zeitstempel.
+  const alt = belege.find(b => b.veroeffentlichtAm === "2026-09-14T11:20:09.000Z");
+  assert(alt && alt.auszug === "");
+  assert.equal(G.mergeIntoDocuments([ROW, zweiter.row, dritter.row, ALT]).length, 4);
+});
+
 test("Gleicher Stand faellt zusammen; verschiedene Staende und Altquelle nicht", () => {
   const zweiterFund = { ...kopie(ROW), sourceId: "zweiter-abrufweg", linkType: "direct" };
   const zusammen = G.mergeIntoDocuments([ROW, zweiterFund]);
@@ -355,7 +493,24 @@ async function speicherUndLeser() {
     if (methode === "GET" && url.pathname === "/rest/v1/ko_document_links") {
       geseheneSelects.push(select);
       const spalten = select.replace(/^.*raw_documents(?:!inner)?\(/u, "").replace(/\)$/u, "").split(",");
-      return antwort([...gespeichert.values()].map(row => ({ knowledge_object_id: "ko-synthetisch",
+      const koFilter = url.searchParams.get("knowledge_object_id") || "";
+      const docFilter = url.searchParams.get("raw_document_id") || "";
+      const koIds = koFilter.startsWith("in.") ? JSON.parse("[" + koFilter.slice(4, -1) + "]") : null;
+      const docIds = docFilter.startsWith("in.") ? JSON.parse("[" + docFilter.slice(4, -1) + "]") : null;
+      const passt = (row) => {
+        if (koIds && !koIds.includes("ko-synthetisch")) return false;
+        if (docIds && !docIds.includes(row.id)) return false;
+        for (const filter of url.searchParams.getAll("raw_documents.published_at")) {
+          if (filter === "is.null") { if (row.published_at != null) return false; continue; }
+          if (row.published_at == null) return false;
+          const grenze = Date.parse(filter.slice(4));
+          if (filter.startsWith("gte.") ? Date.parse(row.published_at) < grenze : Date.parse(row.published_at) > grenze) return false;
+        }
+        if (url.searchParams.get("raw_documents.raw->helmutBundestagArtikelstand") === "not.is.null"
+          && !row.raw?.helmutBundestagArtikelstand) return false;
+        return true;
+      };
+      return antwort([...gespeichert.values()].filter(passt).map(row => ({ knowledge_object_id: "ko-synthetisch",
         raw_document_id: row.id, raw_documents: Object.fromEntries(spalten.map(spalte => {
           if (spalte === "bundestag_artikelstand:raw->helmutBundestagArtikelstand") {
             return ["bundestag_artikelstand", row.raw?.helmutBundestagArtikelstand || null];
@@ -411,6 +566,7 @@ async function speicherUndLeser() {
       assert.equal(gelesen.length, 1, name);
       const quelle = gelesen[0];
       assert.equal(Object.hasOwn(quelle, "raw"), false, name);
+      assert.equal(quelle.summary, ABSATZ, name);
       assert.deepEqual(quelle.bundestag_artikelstand, STAND, name);
       assert.equal(D.toRawDocumentRow(quelle).id, ROW.id, name);
       assert.deepEqual(D.toRawDocumentRow(quelle).raw.helmutBundestagArtikelstand, STAND, name);
@@ -418,8 +574,47 @@ async function speicherUndLeser() {
       assert.equal(Q.understandingQuelle(quelle).veroeffentlichtAm, TAG, name);
       bestanden += 1; console.log("OK " + name + ": Stand-Metadaten und gebundener Artikelbeleg bleiben erhalten");
     }
+    // Reale Leserprojektion bis zur Lageeingabe: derselbe Stand erreicht den
+    // Lage-Quellenvertrag mit seinem ganzen Absatz und seinem tagesgenauen Tag.
+    const lageJetzt = new Date("2026-09-26T12:00:00Z");
+    const koLage = { id: "ko-synthetisch", vorgang_id: "vg-synthetisch" };
+    const metadata = await storage.listAktuelleLageQuellen([koLage.id], lageJetzt);
+    assert.equal(metadata.length, 1);
+    assert.equal(metadata[0].raw_documents.published_at, null);
+    assert.equal(metadata[0].raw_documents.summary, ABSATZ);
+    const lageEingabe = LQ.baueEingabe([koLage], { [koLage.vorgang_id]: metadata.map(r => r.raw_documents) }, lageJetzt);
+    assert.equal(lageEingabe.length, 1);
+    assert.equal(lageEingabe[0].quellenbelege[0].auszug, ABSATZ);
+    assert.equal(lageEingabe[0].quellenbelege[0].veroeffentlichtAm, TAG);
+    const gebunden = await storage.getSourcesForVorgang(koLage.vorgang_id,
+      { lageKoId: koLage.id, lageQuellen: metadata.map(r => r.raw_documents) });
+    assert.equal(gebunden.length, 1);
+    assert.equal(gebunden[0].summary, ABSATZ);
+    const gebundeneEingabe = LQ.baueEingabe([koLage], { [koLage.vorgang_id]: gebunden }, lageJetzt);
+    assert.equal(gebundeneEingabe[0].quellenbelege[0].auszug, ABSATZ);
+    assert.equal(gebundeneEingabe[0].quellenbelege[0].veroeffentlichtAm, TAG);
+    assert.equal(gebundeneEingabe[0].quellenbelege[0].quelle_id, lageEingabe[0].quellenbelege[0].quelle_id);
+    bestanden += 1; console.log("OK Reale Leserprojektion traegt Tag und vollen Absatz bis in die Lageeingabe");
+    // Zwischen Metadatenwahl und Folgelesen darf weder der Stand noch sein
+    // bekannter Absatz still verschwinden. Die minimale Legacy-Projektion
+    // ohne summary bleibt dagegen zulaessig.
+    const vorherQuelle = kopie(gespeichert.get(ROW.id));
+    for (const aenderung of [{ raw: {} }, { summary: null }, { summary: "" }, { summary: ABSATZ + " Fremder Zusatz." }]) {
+      gespeichert.set(ROW.id, { ...kopie(vorherQuelle), ...aenderung });
+      await assert.rejects(() => storage.getSourcesForVorgang(koLage.vorgang_id,
+        { lageKoId: koLage.id, lageQuellen: metadata.map(r => r.raw_documents) }),
+      e => e.name === "StorageReadError" && e.quelle === "lage-quellenbindung");
+    }
+    gespeichert.set(ROW.id, vorherQuelle);
+    const minimal = metadata.map(r => { const { summary, ...d } = r.raw_documents; return d; });
+    assert.equal((await storage.getSourcesForVorgang(koLage.vorgang_id,
+      { lageKoId: koLage.id, lageQuellen: minimal }))[0].summary, ABSATZ);
+    bestanden += 1; console.log("OK Stand- oder Absatzverlust beim Folgelesen wird laut verweigert");
     assert.equal(geseheneSelects.length >= 6, true);
-    const ohneAlias = geseheneSelects.filter(sel => sel !== "id,finding_count" && !sel.includes("bundestag_artikelstand:raw->helmutBundestagArtikelstand"));
+    // Der gewoehnliche Zeitstempelpfad des Lagefensters bleibt bewusst ohne Stand-Alias.
+    const ohneAlias = geseheneSelects.filter(sel => sel !== "id,finding_count"
+      && sel !== "knowledge_object_id,raw_documents!inner(id,title,url,canonical_url,published_at)"
+      && !sel.includes("bundestag_artikelstand:raw->helmutBundestagArtikelstand"));
     assert.deepEqual(ohneAlias, []);
     bestanden += 1; console.log("OK Alle relevanten Leser fragen die Aliasprojektion raw->helmutBundestagArtikelstand ab");
   } finally {

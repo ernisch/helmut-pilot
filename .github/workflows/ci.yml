@@ -135,6 +135,16 @@ jobs:
           PGPASSWORD: "helmut"
         run: node scripts/lokal.js scripts/auth-store-cas-datenbank-test.js
 
+      - name: Lage-Quellenvertrag gegen isolierte PostgreSQL und PostgREST
+        timeout-minutes: 2
+        env:
+          HELMUT_TEST_PG_HOST: "127.0.0.1"
+          HELMUT_TEST_PG_PORT: "5433"
+          HELMUT_TEST_PG_USER: "helmut"
+          HELMUT_TEST_POSTGREST_BIN: "/tmp/postgrest"
+          PGPASSWORD: "helmut"
+        run: node scripts/lokal.js -- node scripts/lage-quellen-rest-datenbank-test.js
+
       - name: Null auf 500 auf Null gegen echte isolierte PostgreSQL
         timeout-minutes: 2
         env:

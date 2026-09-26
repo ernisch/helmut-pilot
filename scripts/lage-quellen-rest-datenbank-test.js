@@ -61,7 +61,8 @@ async function main() {
     psql(`create table public.knowledge_objects(id text primary key);
       create table public.raw_documents(id text primary key, title text, url text,
         canonical_url text, published_at timestamptz, summary text, source_name text,
-        source_type text, document_type text, link_type text, confidence text, raw jsonb);
+        source_type text, source_id text, retrieved_at timestamptz,
+        document_type text, link_type text, confidence text, raw jsonb);
       create table public.ko_document_links(
         knowledge_object_id text not null references public.knowledge_objects(id) on delete cascade,
         raw_document_id text not null references public.raw_documents(id) on delete cascade,
@@ -118,6 +119,38 @@ async function main() {
     const bound = (ko, docs) => storage.getSourcesForVorgang("synthetischer-vorgang",
       { lageKoId: ko, lageQuellen: docs });
     const readError = { name: "StorageReadError", quelle: "lage-quellenbindung" };
+
+    await test("Tagesgenauer Artikelstand mit vollem Absatz durch echten REST- und Lagepfad", async () => {
+      const B = require("../lib/helmut/bundestag-artikelstand");
+      const text = "Der synthetische Ausschuss beriet den fiktiven Entwurf und beschloss die weitere Beratung. ".repeat(8).trim();
+      assert(text.length > 600 && text.length < 1200);
+      const stand = { version: 1, herkunft: B.HERKUNFT,
+        url: "https://bundestag.de/dokumente/textarchiv/2026/kw37-de-synthetisch-1234567",
+        titel: "Synthetischer Ausschussbeschluss", publikationstag: "2026-09-12",
+        absatzHash: crypto.createHash("sha256").update(text).digest("hex") };
+      stand.standHash = B.standHashFuer(stand);
+      const id = "rd-" + stand.standHash;
+      psql(`insert into knowledge_objects values ('ko-stand');
+        insert into raw_documents(id,title,url,canonical_url,published_at,summary,raw)
+        values (${sqlString(id)},${sqlString(stand.titel)},${sqlString(stand.url)},${sqlString(stand.url)},null,
+          ${sqlString(text)},${sqlString(JSON.stringify({helmutBundestagArtikelstand:stand}))}::jsonb);
+        insert into ko_document_links values ('ko-stand',${sqlString(id)});`);
+      seed("ko-stand", "undatiert-ohne-stand", null);
+      const docs = (await meta(["ko-stand"])).map(r => r.raw_documents);
+      assert.equal(docs.length, 1); assert.equal(docs[0].id, id);
+      const loaded = await bound("ko-stand", docs);
+      const input = require("../lib/helmut/lage-quellenbeleg").baueEingabe(
+        [{vorgang_id:"vg-stand"}], {"vg-stand":loaded}, now);
+      assert.equal(input[0].quellenbelege[0].veroeffentlichtAm, stand.publikationstag);
+      assert.equal(input[0].quellenbelege[0].auszug, text);
+      assert.equal(loaded[0].published_at, null);
+      psql(`update raw_documents set raw='{}'::jsonb where id=${sqlString(id)};`);
+      await assert.rejects(bound("ko-stand", docs), readError);
+      psql(`update raw_documents set raw=${sqlString(JSON.stringify({helmutBundestagArtikelstand:stand}))}::jsonb,
+        summary=null where id=${sqlString(id)};`);
+      await assert.rejects(bound("ko-stand", docs), readError);
+      reset();
+    });
 
     await test("Zeitfenster beidseitig, FK Embedding, keine Auszuege im Metadatenleser", async () => {
       seed("ko-zeit", "start", "2026-08-30T09:00:00Z");
@@ -179,7 +212,7 @@ async function main() {
       const before = gateway.messung.anfragen;
       const rows = await meta(["ko-seiten"]);
       assert.equal(rows.length, 1001); assert.equal(new Set(rows.map(r => r.raw_documents.id)).size, 1001);
-      assert.equal(gateway.messung.anfragen - before, 2);
+      assert.equal(gateway.messung.anfragen - before, 3);
     });
     await test("101 Wissensobjekte werden in zwei Stapeln gelesen", async () => {
       reset();
@@ -190,7 +223,7 @@ async function main() {
       const ids = Array.from({ length: 101 }, (_, i) => `ko-stapel-${i + 1}`);
       const before = gateway.messung.anfragen;
       assert.equal((await meta(ids)).length, 101);
-      assert.equal(gateway.messung.anfragen - before, 2);
+      assert.equal(gateway.messung.anfragen - before, 4);
     });
     for (const field of ["title", "url", "canonical_url", "published_at"]) {
       await test(`Geaendertes ${field} wird beim echten Folgelesen verweigert`, async () => {

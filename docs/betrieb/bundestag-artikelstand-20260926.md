@@ -143,3 +143,39 @@ Erneute lokale Relevanzauswertung der frisch gelesenen16 Vorgänge:
 Bereichsabnahme oder500er Funktionsnachweis daraus ableiten. Nächster Schritt:
 tatsächlichen Builder-/Quellenpfad mit aktuellem Datenstand für alle500 prüfen
 und die verbleibenden Fachlücken gezielt bearbeiten.
+## Anschluss: vollständiger Absatz im Lage-Quellenvertrag
+
+Nach den beiden Quellenkorrekturen wurde die Versorgung mit dem tatsächlichen
+Briefing-Bauer lokal vollständig geprüft: 500 Profile, 500 aktuelle
+Wissensobjekte und 911 zugehörige Quellen aus fünf rein lesenden Production-Seiten
+vom26.09.,11:13:45 bis11:14:11UTC. Abschluss11:18:24UTC: **127 mit Tagespriorität,
+373 ohne**, ein Profil mit persönlichem Radar-Hinweis, keines mit
+Beobachtungshinweis. Es gibt damit noch kein Profil mit drei fachlich gefüllten
+Bereichen. Das ist eine vollständige lokale Auswertung dieser Datenbasis,
+keine neue API-Aufnahme, keine Textabnahme und kein500er Production-Nachweis.
+Private Einzelbelege: `builder500-ergebnis.json` und `builder500-ausgaben.json`.
+
+Dabei belegter Anschlussfehler: Der amtliche Leitabsatz blieb bisher nur im
+separaten Artikelbeleg; die neue Rohquelle hatte `summary=null`. Außerdem
+verwarf Lage den bewusst uhrzeitlosen Publikationstag. Die Korrektur erhält
+ausschließlich bei validierten Bundestags-Artikelständen den ganzen Absatz
+bis zur bereits erlaubten1200-Zeichen-Grenze, exakt an seinen Hash gebunden.
+Lage akzeptiert einen Tag nur, wenn dessen ganzer Berliner Kalendertag im
+bestehenden Zeitfenster liegt. Unterschiedliche Artikelstände derselben Adresse
+bleiben getrennte Belege. Die gemeinsame Leseobergrenze bleibt unverändert;
+verlorene Stand-Metadaten oder Absätze beim Folgelesen führen zum Fehler.
+
+Gezielte lokale Prüfungen:33 Artikelstand-Gruppen und13 Lagefenster-Gruppen
+bestanden. Der zusätzliche REST-Nachweis nutzt eine isolierte PostgreSQL17
+und PostgREST12.2.3 in der Pflicht-CI; sein Ergebnis steht am jeweiligen PR-Kopf.
+Keine Production-Daten in den synthetischen Tests.
+
+Vorbereitete einzelne Production-Korrektur nach Ausrollung: nur die bisher
+leere `summary` der neuen amtlichen Polizeigesetz-Quelle mit dem bereits
+belegten602-Zeichen-Absatz ergänzen. Quellenkennung, Tag, frühere URL-Fassung,
+Vorgang, Verknüpfungen, CAS, Profile und Kostenbuch bleiben unverändert.
+Neue eigene Quittung `redaktion-bundespolizeigesetz-lage-20260926-a`, keine
+Wiederverwendung alter Aufträge.16 SQL-Laborgruppen prüfen Atomarität,
+Vorbedingungen, fremde Nebenwirkungen und den exakt gebundenen Rückweg.
+Inputhash `5f87165b4028a778a432b9dc19f60ac1256efb8ce350eb77709c9abd8c86792f`.
+**An dieser Stelle vorbereitet, noch nicht als ausgeführt ausgewiesen.**
