@@ -88,3 +88,58 @@ Nachkontrolle: sämtliche erlaubten Änderungen und unveränderten Schutzwerte
 frisch lesen, Artikelbeleg nach DB-Roundtrip validieren, tatsächliche Versorgung
 aller 500 Profile neu berechnen. Eine verbesserte Einzelquelle ist noch keine
 500er Vollversorgung oder Abnahme sichtbarer Ausgaben.
+
+## Production ausgeführt und nachgelesen
+
+[PR609](https://github.com/ernisch/helmut-pilot/pull/609), Kopf
+`e5baf29d9e691a4412e861df0757a600d1279ae5`: beide Pflichtprüfungen im
+[Lauf36237312190](https://github.com/ernisch/helmut-pilot/actions/runs/36237312190)
+erfolgreich. Merge26.09.,11:08:59UTC:
+`ae5cf4aef7594382ee98a4b3e35ffcf2f88e8f1c`. Vercel
+`dpl_EV8Rwmt4wXQFyLL6NEbVS7uv4rZ4` Production READY11:09:18UTC, exakter Commit.
+Keine error/fatal-Protokolle im gelesenen Zeitraum11:09:18–11:11:52UTC.
+
+Die oben begrenzte Polizeigesetz-Transaktion ist ausgeführt. Unabhängige
+Nachlesung11:10:50UTC: Quittung `ausgefuehrt`, genau drei gebundene Quellen;
+602-Zeichen-Beleg nach Datenbank-Roundtrip gültig und sichtbarer Quellenfilter
+bestanden. Alle drei alten Quellen, CAS, vollständige Profil-/Identitäts-/Auth-
+Hashes unverändert.500 Profile/0 aktiv,0 Jobs/Leases/Sperren/offene Reserven.
+Die lokale Relevanzauswertung aller500 unveränderten Profile mit frisch
+gelesenen16 Vorgängen ergibt85 mit Score≥40 statt3 vorher;415 darunter.
+Das ist noch keine Abnahme der tatsächlich sichtbaren500 Ausgaben.
+
+## Tankrabatt: vorhandene Quellen zusammengeführt
+
+Anschließend wurden ausschließlich die beiden gleichartigen Vorgänge
+`vg-entlastung-20260925-e75e6f` und `vg-preissenkung-20260925-4728de` korrigiert.
+Alle vier bestehenden Quellen sind unverändert am ersten Vorgang gebunden;
+der zweite bleibt als stillgelegte Dublette erhalten. Der schon zuvor geparkte
+Mischvorgang sowie sämtliche CAS bleiben unverändert. Redaktionelle Herkunft
+und Versionswechsel sind ausdrücklich gespeichert, kein behaupteter Modelllauf.
+
+Finanzausschussbeleg: vollständiger426-Zeichen-Absatz im
+[amtlichen Beschlussbericht](https://www.bundestag.de/dokumente/textarchiv/2026/kw39-de-versicherung-aufsicht-1216898),
+Position8 innerhalb des konkreten Artikels einschließlich leerer HTML-Absätze,
+SHA256 `72799a47cd1e576afc1803b9134e87c125608044fd093e35ba86806747b84b95`.
+Keine erfundene Handlungsfrist oder Behauptung einer tatsächlichen Weitergabe
+des Steuervorteils an den Tankstellen.
+
+Vorher festgelegter privater Aktionsplan samt vollständiger Sicherung und
+bedingtem Rückweg: `tankrabatt-aktionsplan.md`, `tankrabatt-eingabe.json`,
+`tankrabatt-ausfuehren.sql`, `tankrabatt-rueckweg.sql` im selben Artefaktordner.
+14 lokale SQL-Prüfgruppen bestanden. Einmalige Quittung
+`redaktion-tankrabatt-20260926-a`, Eingabehash
+`6c50575fa68b33df8c3ef4b1d5ddbe76f9dec71c6bd30f4fe949c3f6b7442a56`.
+
+Unabhängige Production-Nachlesung11:11:38UTC: erwartete beide Objektfassungen,
+vier Links am kanonischen Vorgang, kein Link an der erhaltenen Dublette, alle
+Quellen und CAS identisch; vollständiger Artikelbeleg und sichtbarer Quellenfilter
+bestanden. Profile und Auth unverändert,500/0, keine offene Arbeit oder Reserve.
+Helmut-Tagesbuch weiterhin0,164443USD, technischer Riegel4USD. Beide
+Datenkorrekturen zusammen:0 Modellaufrufe,0 Profiländerungen,0 Aktivierungen.
+
+Erneute lokale Relevanzauswertung der frisch gelesenen16 Vorgänge:
+**127/500 mit Score≥40,373 darunter.** Weder Vollversorgung noch sichtbare
+Bereichsabnahme oder500er Funktionsnachweis daraus ableiten. Nächster Schritt:
+tatsächlichen Builder-/Quellenpfad mit aktuellem Datenstand für alle500 prüfen
+und die verbleibenden Fachlücken gezielt bearbeiten.
