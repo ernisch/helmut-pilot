@@ -30,6 +30,26 @@ async function test(name, fn) { await fn(); console.log("PASS " + name); count++
 (async () => {
   const auftrag = externGebunden => ({ version: 1, id: "offline-auftrag", abTag: DAY,
     limit: 4000000, externGebunden });
+  await test("Version2 erlaubt exakt5USD, keinen Mikro-Dollar mehr und unveraendert hoechstens4USD am Tag", async () => {
+    const h = fixture();
+    await h.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = { ...auftrag(4788000), version: 2, limit: 5000000 }; });
+    await B.reserviere(ARGS, h.deps);
+    assert.equal(B.auftragsStand(h.read(), DAY).gebundenMicroUsd, 5000000);
+    assert.equal(h.day().limit, 4000000);
+    const before = h.read();
+    await assert.rejects(B.reserviere(ARGS, h.deps), { reason: "test-usd-auftragsgrenze-erreicht" });
+    assert.deepEqual(h.read(), before);
+    const f = fixture();
+    await f.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = { ...auftrag(0), version: 2, limit: 5000000 }; });
+    const results = await Promise.allSettled(Array.from({length: 40}, () => B.reserviere(ARGS, f.deps)));
+    assert.equal(results.filter(r => r.status === "fulfilled").length, 18);
+    assert.equal(B.belegt(f.day()), 3816000);
+    for (const patch of [{ externGebunden: 4788001 }, { version: 1 }, { limit: 5000001 }, { limit: 4000000 }]) {
+      const g = fixture();
+      await g.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = { ...auftrag(4788000), version: 2, limit: 5000000, ...patch }; });
+      await assert.rejects(B.reserviere(ARGS, g.deps), { code: "LLM_BUDGET_EXHAUSTED", kiNichtGesendet: true });
+    }
+  });
   await test("Auftragsgrenze bindet parallele Crons und manuelle Aufrufe gemeinsam", async () => {
     const h = fixture();
     await h.storage.mutateAuthStore(s => { s[B.AUFTRAG_KEY] = auftrag(3575000); });

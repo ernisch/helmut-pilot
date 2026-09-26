@@ -387,7 +387,7 @@ Azure Änderungen
 Budgetänderungen
 
 kostenpflichtige Production Modellaufrufe außerhalb des unten ausdrücklich
-vorab freigegebenen kumulativen 4-USD-Rahmens oder außerhalb eines gestarteten
+vorab freigegebenen Tages- und Auftragskostenrahmens oder außerhalb eines gestarteten
 Sprintziels
 
 externe Nachrichten
@@ -410,8 +410,15 @@ Die ausdrueckliche Freigabe zur autonomen Roadmap-Arbeit einschliesslich des
 konkret angefragten16er Production-Imports und begrenzter Modelltests ist in
 [docs/betrieb/autonom-bis-500-starttor-20260926.md](docs/betrieb/autonom-bis-500-starttor-20260926.md)
 festgehalten. Bis unmittelbar vor Aktivierung und500er Test autonom fortfahren;
-Kosten unter4USD, technische Tagesgrenze unveraendert. Dieser aktuelle Auftrag
+Kumulative Auftragskosten bis zu5USD, technische Tagesgrenze4USD unveraendert. Dieser aktuelle Auftrag
 geht aelteren allgemeinen Rueckfrageforderungen innerhalb seines Umfangs vor.
+
+Am26.09.2026 hat der Betreiber die kumulative Auftragsfreigabe ausdruecklich
+auf **bis zu5USD insgesamt** erhoeht: "Ändere es im Vertrag dass du bis zu 5 USD
+ausgegeben darfst. Mach weiter." Das erhoeht ausschliesslich die Gesamtgrenze
+dieses Auftrags. Bereits verbrauchte und offen reservierte Kosten zaehlen weiter;
+ein Tageswechsel setzt die Gesamtgrenze nicht zurueck. Der technische
+4-USD-Tagesriegel, Profilschutz und das neue GO vor Aktivierung/500er Test bleiben.
 
 Der Betreiber hat diesen Auftrag am26.09.2026 ausdruecklich dauerhaft
 bekraeftigt: vollautonom weiterarbeiten, auch nach jedem Merge; nicht erneut auf
@@ -426,7 +433,7 @@ Starttor, auch dafuer notwendige bislang einzeln freizugebende Production-
 Vorarbeiten. Konkreten Umfang, Wirkung, Risiko, Kosten, Nachkontrolle und Rueckweg
 vorher selbst festlegen und dokumentieren; innerhalb dieses Auftrags nicht
 nochmals fragen. Technische Schutzpruefungen, Quellenwahrheit, Profilschutz,
-unveraenderter4-USD-Tagesriegel und unter4USD kumulative Auftragskosten gelten
+unveraenderter4-USD-Tagesriegel und bis zu5USD kumulative Auftragskosten gelten
 weiter. Keine unbekannten Ergebnisse als Erfolg deklarieren, keine verbrauchten
 Auftraege wiederverwenden und keine Schutzmechanismen umgehen.
 

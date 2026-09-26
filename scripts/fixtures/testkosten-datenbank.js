@@ -105,6 +105,16 @@ async function pruefeKosten({ psql, base, token }) {
   assert.equal(auth[B.KEY]["2026-09-09"].limit, 4000000);
   assert.deepEqual(auth.users, [{ id: "bestand" }]);
   console.log("PASS  Auftragsgrenze im selben echten CAS: fuenf Prozesse buchen zusammen nur zwei Reserven");
+  psql(`update public.helmut_store set data=jsonb_set(data,'{testKostenAuftrag}',
+    '{"version":2,"id":"datenbank-test","abTag":"2026-09-09","limit":5000000,"externGebunden":4152000}')
+    where id='test-auth-kosten';`);
+  const erhoeht = await five();
+  assert.equal(erhoeht.reduce((n, r) => n + r.allowed, 0), 2);
+  auth = read();
+  assert.equal(B.auftragsStand(auth, "2026-09-09").gebundenMicroUsd, 5000000);
+  assert.equal(Object.keys(auth[B.KEY]["2026-09-09"].calls).length, 4);
+  assert.equal(auth[B.KEY]["2026-09-09"].limit, 4000000);
+  console.log("PASS  Explizite5USD-Freigabe: bestehende Reserven erhalten, Grenze inklusiv und atomar");
 }
 module.exports = { pruefeKosten };
 if (require.main === module) worker().catch(() => { console.error("FAIL Kosten Datenbank Worker"); process.exitCode = 1; });
