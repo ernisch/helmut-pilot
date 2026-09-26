@@ -354,6 +354,15 @@ Aktivierung ist keine Testfreigabe.
 
 Testfreigabe ist keine Freigabe für eine weitere Teststufe.
 
+## Aktueller Betreiberauftrag26.09.2026
+
+Die ausdrueckliche Freigabe zur autonomen Roadmap-Arbeit einschliesslich des
+konkret angefragten16er Production-Imports und begrenzter Modelltests ist in
+[docs/betrieb/autonom-bis-500-starttor-20260926.md](docs/betrieb/autonom-bis-500-starttor-20260926.md)
+festgehalten. Bis unmittelbar vor Aktivierung und500er Test autonom fortfahren;
+Kosten unter4USD, technische Tagesgrenze unveraendert. Dieser aktuelle Auftrag
+geht aelteren allgemeinen Rueckfrageforderungen innerhalb seines Umfangs vor.
+
 ## Kritische Aktionen
 
 Vor jeder kritischen Aktion kurz feststellen:
