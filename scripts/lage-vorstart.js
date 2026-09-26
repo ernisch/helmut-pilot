@@ -45,7 +45,7 @@ const GENERATORNACHWEIS = Object.freeze({ ...ARTIKELSTAND, auftrag:"generatornac
 const AUSWAHLBEGRUENDUNG = Object.freeze({ ...ARTIKELSTAND, auftrag:"auswahlbegruendung",
   quittung:"lage-auswahlbegruendung-20260926-a" });
 const PRUEFAUFWAND = Object.freeze({ ...ARTIKELSTAND, auftrag:"pruefaufwand",
-  quittung:"lage-pruefaufwand-20260926-a" });
+  quittung:"lage-pruefaufwand-20260926-b" });
 // Einzige zulaessige Vorgaengerquittung: der erfolgreich abgeschlossene Vierfall-Nachweis
 // dieses Laufs und Commits. Sie wird ausschliesslich gelesen und nie umgeschrieben.
 const GENERATOR_VORG = Object.freeze({ runId:"nachlauf500-36249646222",
@@ -145,6 +145,22 @@ function pruefeAuswahlVorgaenger(alt) {
     && alt.profileUnveraendert === true
     && alt.lesebeweis?.absatzHash === ARTIKELSTAND.absatzHash,
     "auswahl-vorgaenger");
+}
+function pruefePruefaufwandTransportVorgaenger(alt) {
+  // Lauf a wurde vom alten Transport tatsaechlich auf minimal zurueckgesetzt.
+  // Seine Quittung bleibt unveraendert verbraucht; b verlangt genau diesen Beleg.
+  fordere(alt?.status === "gestoppt" && alt.ok === false
+    && alt.quittungsschluessel === "lage-pruefaufwand-20260926-a"
+    && alt.runId === "nachlauf500-36254207276"
+    && alt.runtimeCommit === "61d4772f4116dd04d07ab699cc60fa94daa9736a"
+    && alt.idHash === ARTIKELSTAND.profilHash
+    && alt.grund === "sollfall-fachlich-abgelehnt"
+    && alt.freigegebeneAufrufe === 1 && alt.offeneKosten === 0
+    && alt.profileUnveraendert === true && alt.gespeicherterLageText === false
+    && alt.paketHash === "f84d558e5317d383200445da2ebfe8182f3cd448efe8fa4c45d5784209a9c80e"
+    && alt.fachbeleg?.antwortHash === "46a84496a16fd552faabd0bd12ce96cf0878ce65c86eeea394aab37370d857d2"
+    && hash(alt.fachbeleg?.antwort) === alt.fachbeleg?.antwortHash,
+    "pruefaufwand-transport-vorgaenger");
 }
 function pruefePruefaufwandVorgaenger(alt) {
   fordere(alt?.status === "gestoppt" && alt.ok === false
@@ -347,6 +363,9 @@ async function main(args = process.argv.slice(2), env = process.env) {
   if (cfg.pruefaufwand) {
     const alt = await read("helmut_store","select=data&id=eq."+AUSWAHLBEGRUENDUNG.quittung+"&limit=1");
     fordere(alt.length === 1,"pruefaufwand-vorgaenger");pruefePruefaufwandVorgaenger(alt[0].data);
+    const transport = await read("helmut_store","select=data&id=eq.lage-pruefaufwand-20260926-a&limit=1");
+    fordere(transport.length === 1,"pruefaufwand-transport-vorgaenger");
+    pruefePruefaufwandTransportVorgaenger(transport[0].data);
   }
   fordere(!(await read("helmut_store","select=id&id=eq."+cfg.quittung+"&limit=1")).length,"verbraucht");
   fordere(await K.laufGebundenUsd(cfg.runId,{env}) === 0,"laufkosten-vorhanden");
@@ -384,4 +403,4 @@ if (require.main === module) main().then(c => { process.exitCode=c; }).catch(e =
 });
 module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main,ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG,
   ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,GENERATORNACHWEIS,AUSWAHLBEGRUENDUNG,PRUEFAUFWAND,GENERATOR_VORG,
-  pruefeEinzelquellenVorgaenger,pruefeGeneratorVorgaenger,pruefeAuswahlVorgaenger,pruefePruefaufwandVorgaenger,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};
+  pruefeEinzelquellenVorgaenger,pruefeGeneratorVorgaenger,pruefeAuswahlVorgaenger,pruefePruefaufwandVorgaenger,pruefePruefaufwandTransportVorgaenger,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};

@@ -228,6 +228,7 @@ const STANDARD = new Set([
   "vorgangs-belegfenster-test.js",          // auch Kandidat6–8 anhand seiner tatsächlichen Quellen prüfen
   "verstehen-rest15-test.js",              // unbegonnene Restmenge, keine Wiederaufnahme
   "lage-pruefaufwand-test.js",              // isolierter Medium-Vergleich mit echten Fehlabsätzen
+  "lage-pruefaufwand-transport-test.js",     // tatsaechlich serialisierte Denkstufe minimal/low/medium
   "lage-vorstart-test.js",                 // einmaliger Lagecheck mit festen Kosten-/Zeitgrenzen
   "lage-tagesbezug-test.js",               // relative Quellentage nicht ins neue Briefing verschieben
   "lage-datumsbindung-test.js",            // kein Ereignisdatum aus Publikationsmetadaten

@@ -7,7 +7,7 @@ const { hash } = require("../lib/helmut/briefing-speicher");
 const Q = require("../lib/helmut/lage-textqualitaet");
 const T = require("./lage-vorstart");
 const FAELLE = require("./fixtures/lage-pruefaufwand-vier.json");
-const QUITTUNG = "lage-pruefaufwand-20260926-a", MAX_USD = 0.25, MAX_MS = 240000;
+const QUITTUNG = "lage-pruefaufwand-20260926-b", MAX_USD = 0.25, MAX_MS = 240000;
 const fordere = (ok, grund) => { if (!ok) throw new Error("lage-vorstart-" + grund); };
 
 function paket(profile, vorgaenge) {
