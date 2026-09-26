@@ -370,5 +370,31 @@ function fixture() {
       {freigegebeneAufrufe:1},{offeneKosten:1},{profileUnveraendert:false},{lesebeweis:null}])
       assert.throws(()=>T.pruefeAuswahlVorgaenger({...alt,...change}),/auswahl-vorgaenger/);
   });
+  await test("Generator-Pruefaufwand bindet neuen Einmalauftrag und vollen Vorgaenger",()=>{
+    const neu=T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"generatorpruefaufwand",
+      HELMUT_VORSTART_PROFIL:T.ARTIKELSTAND.profilHash},commit,start);
+    assert.equal(neu.quittung,T.GENERATORPRUEFAUFWAND.quittung);
+    assert.equal(neu.generatorpruefaufwand,true);assert.equal(neu.pruefaufwand,false);
+    assert.equal(neu.reparatur,false);assert.equal(neu.artikelstand,true);
+    assert.deepEqual(T.reviewOptionen(neu),{strict:true,reasoningEffort:"medium",maxOutputTokens:6000});
+    assert.throws(()=>T.pruefeGeneratorPruefaufwandVorgaenger({ok:true}),/generatorpruefaufwand-vorgaenger/);
+  });
+  await test("Medium-Nachweis erreicht Speicherpfad;120s Transport und60s Abschluss bleiben frei",async()=>{
+    for(const delay of [59999,60000]){
+      const {d,state,trace}=fixture();
+      d.build=async(p,o)=>{
+        assert.equal(o.pruefaufwandNachweis,true);
+        await o.beforeGenerate(p.id);trace.push("modell");
+        d.now=()=>start+delay;
+        await o.beforeGenerate(p.id);trace.push("modell");
+        state.cache={payload:{qualitaet:true}};
+        return {available:true,fromCache:false,paragraphs:[{},{}]};
+      };
+      const lauf=T.einmallauf({...cfg,generatorpruefaufwand:true},d);
+      if(delay===59999){assert.equal((await lauf).ok,true);assert.equal(trace.filter(x=>x==="modell").length,2);}
+      else {await assert.rejects(lauf,/review-restzeit/);assert.equal(trace.filter(x=>x==="modell").length,1);
+        assert.equal(state.finished.status,"gestoppt");assert.equal(state.cache,null);}
+    }
+  });
   console.log(count+" Gruppen erfolgreich");
 })().catch(e=>{console.error(e);process.exitCode=1;});
