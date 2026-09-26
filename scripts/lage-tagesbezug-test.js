@@ -19,7 +19,8 @@ const quellen=[{vorgang_id:"vg-aktion",quellenbelege:[{...gestern,quelle_id:"q-a
 const paragraphs=[{text:quellen[0].quellenbelege[0].auszug,vorgang_ids:["vg-aktion"],quelle_id:"q-aktion",
  mandatsbezug:{feld:"schwerpunkt",wert:"Sozialstaat"}}];
 const review={pruefungen:[{absatz:0,quelle_id:"q-aktion",belegfeld:"auszug",vollstaendig_belegt:true,
- themenrein:true,profilbezug:true,textart:"konkreter_sachverhalt",pruefbegruendung:"Die Quelle berichtet den Aktionstag."}],vergleiche:[]};
+ themenrein:true,profilbezug:true,textart:"konkreter_sachverhalt",pruefbegruendung:"Die Quelle berichtet den Aktionstag.",
+ mandatsbegruendung:"Der Aktionstag betrifft die fachliche Aufgabe des Schwerpunkts Sozialstaat."}],vergleiche:[]};
 const result=Q.pruefe(paragraphs,quellen,review,{focusTopics:["Sozialstaat"]});
 A.equal(result.ok,false);A.equal(result.grund,"ai-text-source-support");
 A.deepEqual(result.diagnose.fehler,["aussage-unbelegt"]);

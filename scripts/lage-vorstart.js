@@ -33,6 +33,8 @@ const MANDATSAUSWAHL = Object.freeze({ ...ARTIKELSTAND, auftrag:"mandatsauswahl"
   quittung:"lage-mandatsauswahl-20260926-a" });
 const ZUSTAENDIGKEIT = Object.freeze({ ...ARTIKELSTAND, auftrag:"zustaendigkeit",
   quittung:"lage-zustaendigkeit-20260926-a" });
+const MANDATSURTEIL = Object.freeze({ ...ARTIKELSTAND, auftrag:"mandatsurteil",
+  quittung:"lage-mandatsurteil-20260926-a" });
 const MAX_MS = 240000, MAX_USD = 0.50;
 const fordere = (ok, grund) => { if (!ok) throw new Error("lage-vorstart-" + grund); };
 const bindung = p => hash({ id:p.id, profilHash:profilHash(p) });
@@ -40,7 +42,7 @@ const url = value => require("../lib/helmut/dedup").canonicalizeUrl(value);
 function konfiguration(env, commit, jetzt = Date.now()) {
   const auftrag = env.HELMUT_VORSTART_AUFTRAG || "erstpruefung";
   const reparatur = [ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG].find(x => x.auftrag === auftrag);
-  const artikelauftrag = [ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT].find(x => x.auftrag === auftrag);
+  const artikelauftrag = [ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL].find(x => x.auftrag === auftrag);
   const artikelstand = Boolean(artikelauftrag);
   fordere(auftrag === "erstpruefung" || Boolean(reparatur) || artikelstand,"auftrag");
   fordere(!reparatur || env.HELMUT_VORSTART_PROFIL === reparatur.profilHash,"reparaturbindung");
@@ -54,7 +56,7 @@ function konfiguration(env, commit, jetzt = Date.now()) {
   fordere(new Date(jetzt).toISOString().slice(0,10) === TAG
     && new Date(jetzt + MAX_MS).toISOString().slice(0,10) === TAG, "tag");
   return { commit, profilHash:env.HELMUT_VORSTART_PROFIL, runId:"nachlauf500-" + env.GITHUB_RUN_ID,
-    reparatur:Boolean(reparatur), artikelstand,
+    reparatur:Boolean(reparatur), artikelstand, mandatsurteil:auftrag === MANDATSURTEIL.auftrag,
     altHash:reparatur?.altHash || null,
     quittung:artikelstand ? artikelauftrag.quittung : (reparatur?.quittung || QUITTUNG) };
 }
@@ -62,7 +64,8 @@ function pruefeEinzelquellenVorgaenger(alt, auftrag = EINZELQUELLE.quittung) {
   const vorgaenger = {
     [EINZELQUELLE.quittung]:["nachlauf500-36243162049","d826ad1ef3f64cb578821a5e0b60e98105a9f5ee"],
     [MANDATSAUSWAHL.quittung]:["nachlauf500-36244835548","13a152e8bb880a97435cbc0a8b130248980c69a7"],
-    [ZUSTAENDIGKEIT.quittung]:["nachlauf500-36246123158","7d398ee914f1b713e6beccb930789846f657dedd"]
+    [ZUSTAENDIGKEIT.quittung]:["nachlauf500-36246123158","7d398ee914f1b713e6beccb930789846f657dedd"],
+    [MANDATSURTEIL.quittung]:["nachlauf500-36247202801","642b2d0717ce2d6a4b19509792296e9d7af52295"]
   }[auftrag];
   fordere(vorgaenger,"altquittung");
   fordere(alt?.status === "gestoppt" && alt.ok === false
@@ -245,8 +248,9 @@ async function main(args = process.argv.slice(2), env = process.env) {
       && alt[0].data.runId === "nachlauf500-36227833079"
       && alt[0].data.idHash === cfg.profilHash && alt[0].data.grund === "ai-text-source-support","altquittung");
   }
-  if ([EINZELQUELLE.quittung,MANDATSAUSWAHL.quittung,ZUSTAENDIGKEIT.quittung].includes(cfg.quittung)) {
-    const vorher = cfg.quittung === ZUSTAENDIGKEIT.quittung ? MANDATSAUSWAHL
+  if ([EINZELQUELLE.quittung,MANDATSAUSWAHL.quittung,ZUSTAENDIGKEIT.quittung,MANDATSURTEIL.quittung].includes(cfg.quittung)) {
+    const vorher = cfg.quittung === MANDATSURTEIL.quittung ? ZUSTAENDIGKEIT
+      : cfg.quittung === ZUSTAENDIGKEIT.quittung ? MANDATSAUSWAHL
       : cfg.quittung === MANDATSAUSWAHL.quittung ? EINZELQUELLE : ARTIKELSTAND;
     const alt = await read("helmut_store","select=data&id=eq."+vorher.quittung+"&limit=1");
     fordere(alt.length === 1,"altquittung");pruefeEinzelquellenVorgaenger(alt[0].data,cfg.quittung);
@@ -256,7 +260,9 @@ async function main(args = process.argv.slice(2), env = process.env) {
   const q = execute ? B.quittungsAdapter(env) : null;
   const timer = execute ? setTimeout(() => { console.error("lage-vorstart-harte-laufzeit; kein Retry");process.exit(1); },MAX_MS) : null;
   try {
-    const result = await einmallauf(cfg,{ execute,now:Date.now,ruhe,bestand,
+    const M = cfg.mandatsurteil ? require("./lage-mandatsurteil") : null;
+    const lauf = M ? M.einmallauf : einmallauf;
+    const result = await lauf(cfg,{ execute,now:Date.now,ruhe,bestand,
       profile:async () => { const found = profiles.filter(p => bindung(p) === cfg.profilHash);fordere(found.length === 1,"auswahl");return found[0]; },
       kosten:async () => K.pruefeStart(await S.readAuthStore(),TAG,await S.leseLlmTageszaehler(new Date().toISOString())),
       laufkosten:() => K.laufGebundenUsd(cfg.runId,{env}),reserve:K.reservierungHoeheUsd(),
@@ -266,6 +272,15 @@ async function main(args = process.argv.slice(2), env = process.env) {
       vorschau:p => require("../lib/helmut/lage").buildLageBriefing(p,{cacheOnly:true}),
       artikelstand:async () => artikelstandGrundlage(await S.getSourcesForVorgang(ARTIKELSTAND.vorgangId),
         ARTIKELSTAND,Date.now()),
+      reviewPaket:p => M.ladePaket(p,S),
+      reviewQuittung:async () => {
+        const rows = await read("helmut_store","select=data&id=eq."+cfg.quittung+"&limit=2");
+        fordere(rows.length === 1,"sollfall-quittung-nicht-bestaetigt");return rows[0].data;
+      },
+      reviewModell:(input,p) => require("../lib/helmut/ai").requestStructuredJson(
+        input.prompt,require("../lib/helmut/lage-textqualitaet").SCHEMA,
+        {callType:"lageBriefing",politicianId:p.id,runId:cfg.runId,testKostenPhase:"pruefung"},
+        "gpt-5-mini",{strict:true,reasoningEffort:"low"}),
       gueltig:require("../lib/helmut/lage-quellenbeleg").gespeicherterTextGueltig });
     console.log(JSON.stringify(result,null,2));return result.ok ? 0 : 1;
   } finally { if (timer) clearTimeout(timer); }
@@ -274,4 +289,4 @@ if (require.main === module) main().then(c => { process.exitCode=c; }).catch(e =
   console.log(JSON.stringify({ok:false,grund:/^lage-vorstart-[a-z-]+$/.test(e.message || "") ? e.message : "lage-vorstart-technischer-fehler",automatischeWiederholung:false}));process.exitCode=1;
 });
 module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main,ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG,
-  ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,pruefeEinzelquellenVorgaenger,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};
+  ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,pruefeEinzelquellenVorgaenger,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};

@@ -15,7 +15,9 @@ async function fixture() {
     mandatsbezug: { feld: "ausschuss", wert: field } })) };
   h.review = { pruefungen: raw.paragraphs.map((p, i) => ({ absatz: i, quelle_id: p.quelle_id,
     textart: "konkreter_sachverhalt", belegfeld: "titel", vollstaendig_belegt: true,
-    themenrein: true, profilbezug: true, pruefbegruendung: "Synthetische Offlinepruefung des Speichervertrags." })),
+    themenrein: true, profilbezug: true,
+    pruefbegruendung: "Synthetische Beleglage des Speichervertrags.",
+    mandatsbegruendung: `Der belegte Sachverhalt betrifft die fachliche Aufgabe des ${field}.` })),
     vergleiche: [{ erster_absatz: 0, zweiter_absatz: 1, eigenstaendige_sachverhalte: true,
       pruefbegruendung: "Zwei getrennte synthetische Sachverhalte." }] };
   const oldCheck = Q.pruefe(raw.paragraphs, lage.payload.quellen, h.review, profile); A(oldCheck.ok);
