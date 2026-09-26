@@ -400,3 +400,30 @@ gebunden. Gleiches unverändertes Profil, identischer amtlicher Artikelstand,
 maximal2 Aufrufe/240 Sekunden/0,50USD. Wirkung/Risiko/Nachkontrolle/Rückweg wie
 oben; alle500 inaktiv, alte Belege erhalten. Frischer Kosten- und Nurleseplan
 am geprüften neuen main/READY vor Ausführung. Noch nicht ausgeführt.
+
+## Begrenzter Nachweis nach begründeter Generatorauswahl
+
+Der Generator verwendete bisher `strict:false` und Reasoning `minimal`; der
+unabhängige Reviewer bereits `strict:true`/`low`. Die neue Codegrundlage stellt
+gezielt den Generator auf `strict:true`/`low`. Vor Mandatswert und Absatz steht
+eine private kurze Auswahlbegründung. Nichtleer, maximal800 Zeichen und exakter
+Mandatswert werden vor dem zweiten Aufruf geprüft. Das belegt noch keine
+fachliche Richtigkeit: die unabhängige Prüfung sieht diese Begründung nicht und
+bleibt zuständig. Öffentlich gespeicherte Absätze enthalten sie nicht.
+
+Nur das gesendete Azure-Generatorschema entfernt nicht unterstützte Array-
+Längenschlüssel; serverseitig bleiben2–4 Absätze Pflicht. Modell,3000 Ausgabetokens,
+Kostenpreise/Reserve, Quellenbindung und Profilbehandlung bleiben unverändert.
+
+Eigener einmaliger Auftrag `lage-auswahlbegruendung-20260926-a`: genau dasselbe
+inaktive Profil, maximal2 Aufrufe/0,50USD/240s, technischer Tagesriegel4USD.
+Voraussetzung sind sowohl der bestandene Vierfallnachweis als auch exakt die
+verbrauchte gescheiterte Generatorquittung36250788961/1d24245e. Beide werden nur
+gelesen. Zuerst Nurleseplan; vor Bezahlung kumulative Kosten frisch prüfen.
+Erfolg verlangt vollständige unabhängige Quellen-/Mandats-/Paarprüfung,
+Speicherung und Nachlesung. Bei Fehler stoppen, keine automatische Wiederholung.
+Risiko bleibt ein falscher oder unvollständiger Modelltext; dieser darf nicht als
+Erfolg gespeichert werden. Nachkontrolle: vollständiger Text samt Belegen,
+Quittung, Kosten, Sperren und Profilhashes. Profil bleibt inaktiv. Bei ungültigem
+Ergebnis gibt es keinen Tagessatz zum Zurücksetzen; private Belege bleiben erhalten.
+Kein500er Nachweis. Lokal29 Transport-/Kostenfälle und32 Vorstartgruppen grün.

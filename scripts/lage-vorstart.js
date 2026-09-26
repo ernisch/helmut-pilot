@@ -40,6 +40,10 @@ const MANDATSURTEIL = Object.freeze({ ...ARTIKELSTAND, auftrag:"mandatsurteil",
 // 0,50 USD, 240 s) mit Generierung, Review und Speichern/Ruecklesen.
 const GENERATORNACHWEIS = Object.freeze({ ...ARTIKELSTAND, auftrag:"generatornachweis",
   quittung:"lage-generatornachweis-20260926-a" });
+// Neue Grundlage: strict/low-Generator mit privater Auswahlbegruendung.
+// Die gescheiterte Generatorquittung bleibt verbraucht und wird nur gelesen.
+const AUSWAHLBEGRUENDUNG = Object.freeze({ ...ARTIKELSTAND, auftrag:"auswahlbegruendung",
+  quittung:"lage-auswahlbegruendung-20260926-a" });
 // Einzige zulaessige Vorgaengerquittung: der erfolgreich abgeschlossene Vierfall-Nachweis
 // dieses Laufs und Commits. Sie wird ausschliesslich gelesen und nie umgeschrieben.
 const GENERATOR_VORG = Object.freeze({ runId:"nachlauf500-36249646222",
@@ -56,7 +60,7 @@ const url = value => require("../lib/helmut/dedup").canonicalizeUrl(value);
 function konfiguration(env, commit, jetzt = Date.now()) {
   const auftrag = env.HELMUT_VORSTART_AUFTRAG || "erstpruefung";
   const reparatur = [ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG].find(x => x.auftrag === auftrag);
-  const artikelauftrag = [ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,GENERATORNACHWEIS].find(x => x.auftrag === auftrag);
+  const artikelauftrag = [ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,GENERATORNACHWEIS,AUSWAHLBEGRUENDUNG].find(x => x.auftrag === auftrag);
   const artikelstand = Boolean(artikelauftrag);
   fordere(auftrag === "erstpruefung" || Boolean(reparatur) || artikelstand,"auftrag");
   fordere(!reparatur || env.HELMUT_VORSTART_PROFIL === reparatur.profilHash,"reparaturbindung");
@@ -71,7 +75,7 @@ function konfiguration(env, commit, jetzt = Date.now()) {
     && new Date(jetzt + MAX_MS).toISOString().slice(0,10) === TAG, "tag");
   return { commit, profilHash:env.HELMUT_VORSTART_PROFIL, runId:"nachlauf500-" + env.GITHUB_RUN_ID,
     reparatur:Boolean(reparatur), artikelstand, mandatsurteil:auftrag === MANDATSURTEIL.auftrag,
-    generatornachweis:auftrag === GENERATORNACHWEIS.auftrag,
+    generatornachweis:[GENERATORNACHWEIS.auftrag,AUSWAHLBEGRUENDUNG.auftrag].includes(auftrag),
     altHash:reparatur?.altHash || null,
     quittung:artikelstand ? artikelauftrag.quittung : (reparatur?.quittung || QUITTUNG) };
 }
@@ -126,6 +130,18 @@ function pruefeGeneratorVorgaenger(alt) {
     && alt?.paketHash === GENERATOR_VORG.paketHash && alt?.freigegebeneAufrufe === 1
     && alt?.offeneKosten === 0 && alt?.profileUnveraendert === true
     && alt?.gespeicherterLageText === false, "generator-vorgaenger");
+}
+function pruefeAuswahlVorgaenger(alt) {
+  fordere(alt?.status === "gestoppt" && alt.ok === false
+    && alt.quittungsschluessel === GENERATORNACHWEIS.quittung
+    && alt.runId === "nachlauf500-36250788961"
+    && alt.runtimeCommit === "1d24245e2556d395bb73dd6d61aa9495a04c27f1"
+    && alt.idHash === ARTIKELSTAND.profilHash
+    && alt.grund === "ai-text-source-support" && alt.gespeichert === false
+    && alt.freigegebeneAufrufe === 2 && alt.offeneKosten === 0
+    && alt.profileUnveraendert === true
+    && alt.lesebeweis?.absatzHash === ARTIKELSTAND.absatzHash,
+    "auswahl-vorgaenger");
 }
 // Inhaltlicher Nachweis der neuen Grundlage. Fuer den Inhalt gilt ausschliesslich der
 // bestehende Stand-Leser; der Zeitvertrag und die tatsaechliche Texteingabe entstehen
@@ -306,9 +322,13 @@ async function main(args = process.argv.slice(2), env = process.env) {
     const alt = await read("helmut_store","select=data&id=eq."+vorher.quittung+"&limit=1");
     fordere(alt.length === 1,"altquittung");pruefeEinzelquellenVorgaenger(alt[0].data,cfg.quittung);
   }
-  if (cfg.quittung === GENERATORNACHWEIS.quittung) {
+  if ([GENERATORNACHWEIS.quittung,AUSWAHLBEGRUENDUNG.quittung].includes(cfg.quittung)) {
     const alt = await read("helmut_store","select=data&id=eq."+MANDATSURTEIL.quittung+"&limit=1");
     fordere(alt.length === 1,"generator-vorgaenger");pruefeGeneratorVorgaenger(alt[0].data);
+  }
+  if (cfg.quittung === AUSWAHLBEGRUENDUNG.quittung) {
+    const alt = await read("helmut_store","select=data&id=eq."+GENERATORNACHWEIS.quittung+"&limit=1");
+    fordere(alt.length === 1,"auswahl-vorgaenger");pruefeAuswahlVorgaenger(alt[0].data);
   }
   fordere(!(await read("helmut_store","select=id&id=eq."+cfg.quittung+"&limit=1")).length,"verbraucht");
   fordere(await K.laufGebundenUsd(cfg.runId,{env}) === 0,"laufkosten-vorhanden");
@@ -344,5 +364,5 @@ if (require.main === module) main().then(c => { process.exitCode=c; }).catch(e =
   console.log(JSON.stringify({ok:false,grund:/^lage-vorstart-[a-z-]+$/.test(e.message || "") ? e.message : "lage-vorstart-technischer-fehler",automatischeWiederholung:false}));process.exitCode=1;
 });
 module.exports = {konfiguration,pruefeAufruf,einmallauf,bindung,main,ZEITBEZUG,DATUMSBINDUNG,MANDATSPRUEFUNG,
-  ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,GENERATORNACHWEIS,GENERATOR_VORG,
-  pruefeEinzelquellenVorgaenger,pruefeGeneratorVorgaenger,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};
+  ARTIKELSTAND,EINZELQUELLE,MANDATSAUSWAHL,ZUSTAENDIGKEIT,MANDATSURTEIL,GENERATORNACHWEIS,AUSWAHLBEGRUENDUNG,GENERATOR_VORG,
+  pruefeEinzelquellenVorgaenger,pruefeGeneratorVorgaenger,pruefeAuswahlVorgaenger,pruefeGrundlage,artikelstandGrundlage,pruefeKarte};

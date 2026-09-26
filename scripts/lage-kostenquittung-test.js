@@ -12,11 +12,12 @@ const original = { request: https.request, reserve: storage.reserveLlmCall,
   record: storage.recordLlmUsage, aktiv: anbieter.steuerungAktiv };
 const env = { ...process.env };
 const tick = () => new Promise(resolve => setImmediate(resolve));
+const AUSWAHL = "PRIVAT_AUSWAHLNOTIZ institutionelle Passung zum Ausschuss Arbeit und Soziales.";
 const paragraphs = [
   { text: "Die Quelle berichtet ueber einen Entwurf.", vorgang_ids: ["vg-test"], quelle_id: "q-test",
-    mandatsbezug: { feld: "ausschuss", wert: "Arbeit und Soziales" } },
+    auswahlbegruendung: AUSWAHL, mandatsbezug: { feld: "ausschuss", wert: "Arbeit und Soziales" } },
   { text: "Ein Termin ist noch nicht benannt.", vorgang_ids: ["vg-test"], quelle_id: "q-test",
-    mandatsbezug: { feld: "ausschuss", wert: "Arbeit und Soziales" } }
+    auswahlbegruendung: AUSWAHL, mandatsbezug: { feld: "ausschuss", wert: "Arbeit und Soziales" } }
 ];
 const vorgaenge = [{ vorgang_id: "vg-test", quellenbelege: [{ quelle_id: "q-test", url: "https://example.org/entwurf",
   titel: "Die Quelle berichtet ueber einen Entwurf. Ein Termin ist noch nicht benannt.", quelle: "Test" }] }];
@@ -31,7 +32,7 @@ let checks = 0;
 
 async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   status = "completed", http = 200, receipt = beleg, rejectReceipt = false, budget = true,
-  expected = null, fortsetzen = false, reviewResult = review } = {}) {
+  expected = null, fortsetzen = false, reviewResult = review, azure = false } = {}) {
   let requests = 0, reservations = 0, logs = [], release;
   const bodies = [];
   const gate = new Promise(resolve => { release = resolve; });
@@ -68,6 +69,10 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   };
   let settled = false;
   const drafts = [], reviews = [];
+  if (azure) {
+    process.env.AZURE_OPENAI_KEY = "NUR_LOKALE_AZURE_KEY_ATTRAPPE_123456";
+    process.env.AZURE_OPENAI_ENDPOINT = "https://nur-lokale-attrappe.openai.azure.com";
+  }
   const result = ai.generateLageBriefing(vorgaenge, { committees: ["Arbeit und Soziales"] }, { politicianId: "test-kohorte-b-023",
     gespeicherterEntwurf: fortsetzen ? { paragraphs } : undefined,
     onDraft: async value => { assert.equal(logs.length,fortsetzen ? 0 : 1); assert.equal(requests,fortsetzen ? 0 : 1); drafts.push(value); },
@@ -80,6 +85,7 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   assert.equal(logs.length, 1, "Genau ein Nutzungsbeleg trotz mehrfacher Transportereignisse");
   release();
   const r = await result;
+  if (azure) { delete process.env.AZURE_OPENAI_KEY; delete process.env.AZURE_OPENAI_ENDPOINT; }
   if (expected === "budget") assert.equal(r.error?.code, "LLM_BUDGET_EXHAUSTED");
   else if (expected) {
     assert.equal(r.error?.code, "LAGE_AI_FAILURE");
@@ -96,14 +102,32 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   }
   if (!expected) {
     assert.equal(drafts.length,1); assert.equal(reviews.length,1); assert.deepEqual(reviews[0],review);
-    if (!fortsetzen) assert.equal(bodies[0].text.format.strict, false, "Andere Schemavertraege bleiben unveraendert");
+    // Die private Auswahlbegruendung darf weder in den bezahlten Reviewprompt
+    // noch in das oeffentliche/speicherbare Ergebnis gelangen.
+    assert(!JSON.stringify(reviews[0]).includes(AUSWAHL), "Reviewinhalt kennt die private Auswahlbegruendung nicht");
+    assert(!JSON.stringify(r.value.paragraphs).includes(AUSWAHL), "Oeffentliche Lageabsaetze tragen die Auswahlbegruendung nicht");
+    assert(!JSON.stringify(bodies).includes(AUSWAHL), "Kein gesendetes Modellpaket traegt die private Auswahlbegruendung");
+    if (!fortsetzen) {
+      assert.equal(bodies[0].text.format.strict, true, "Der Generator erzwingt jetzt ebenfalls die Pflichtfelder");
+      assert.equal(bodies[0].reasoning?.effort, "low", "Der Generator waehlt jetzt ebenfalls low");
+      assert.equal(bodies[0].max_output_tokens, 3000);
+      const generatorParagraphs = bodies[0].text.format.schema.properties.paragraphs;
+      if (azure) {
+        assert.equal(generatorParagraphs.minItems, undefined, "Azure Strict sendet kein minItems");
+        assert.equal(generatorParagraphs.maxItems, undefined, "Azure Strict sendet kein maxItems");
+        assert(!/\"(?:minItems|maxItems)\"\s*:/.test(JSON.stringify(bodies[0].text.format.schema)),
+          "Azure Strict Generator-Schema traegt keine nichtunterstuetzten Array-Grenzen");
+      } else {
+        assert.equal(generatorParagraphs.minItems, 2, "OpenAI behaelt die 2-bis-4-Grenze im Schema");
+        assert.equal(generatorParagraphs.maxItems, 4, "OpenAI behaelt die 2-bis-4-Grenze im Schema");
+      }
+      assert.deepEqual(Object.keys(bodies[0].text.format.schema.properties.paragraphs.items.properties),
+        ["vorgang_ids", "quelle_id", "auswahlbegruendung", "mandatsbezug", "text"],
+        "Generator-Schema: Quelle, Auswahlbegruendung, Mandatsbezug, Text");
+    }
     const reviewBody = bodies[fortsetzen ? 0 : 1];
     assert.equal(reviewBody.reasoning?.effort, "low", "Nach dem unbelegten Medium-Lauf bleibt der vorige Review-Aufwand erhalten");
     assert.equal(reviewBody.max_output_tokens, 3000, "Reasoning und sichtbare Antwort teilen dieselbe unveraenderte Obergrenze");
-    if (!fortsetzen) {
-      assert.equal(bodies[0].reasoning?.effort, "minimal", "Nur das Review aendert seinen Aufwand");
-      assert.equal(bodies[0].max_output_tokens, 3000);
-    }
     assert.equal(reviewBody.text.format.strict, true, "Der Quellenpruefer muss alle Pflichtfelder liefern");
     const schema = reviewBody.text.format.schema;
     assert.deepEqual([...schema.required].sort(), ["pruefungen", "vergleiche"], "Derselbe Review-Aufruf verlangt alle Absatzvergleiche");
@@ -121,6 +145,10 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   if (expected === "ai-text-source-support" && !fortsetzen) {
     assert.equal(drafts.length, 1, "Verworfener Entwurf bleibt erhalten");
     assert.equal(reviews.length, 0, "Unbelegtes Datum wird vor dem kostenpflichtigen Review abgewiesen");
+  }
+  if (expected === "ai-text-auswahlbegruendung") {
+    assert.equal(drafts.length, 1, "Privater Rohentwurf bleibt erhalten");
+    assert.equal(reviews.length, 0, "Fehlende oder falsche Auswahlbegruendung stoppt vor dem kostenpflichtigen Review");
   }
   if (expected === "ai-cost-receipt-missing") assert.equal(drafts.length,0,"Kein Entwurfsbeleg ohne bestaetigte Kostenquittung");
   checks++;
@@ -165,12 +193,24 @@ async function fall({ mode = "success", output = JSON.stringify({ paragraphs }),
   await fall({ output: JSON.stringify({ paragraphs: [
     { ...paragraphs[0], text: "   " }, paragraphs[1]
   ] }), expected: "ai-text-empty-or-type" });
+  // Auswahlbegruendung serverseitig: nichtleer, exakter gewaehlter Mandatswert,
+  // maximal 800 Zeichen; bei Fehler kein bezahlter Review.
+  await fall({ output: JSON.stringify({ paragraphs: [
+    { ...paragraphs[0], auswahlbegruendung: undefined }, paragraphs[1]
+  ] }), expected: "ai-text-auswahlbegruendung" });
+  await fall({ output: JSON.stringify({ paragraphs: [
+    { ...paragraphs[0], auswahlbegruendung: "Betrifft institutionell den Haushaltsausschuss." }, paragraphs[1]
+  ] }), expected: "ai-text-auswahlbegruendung" });
+  await fall({ output: JSON.stringify({ paragraphs: [
+    { ...paragraphs[0], auswahlbegruendung: (AUSWAHL + " ").repeat(20) }, paragraphs[1]
+  ] }), expected: "ai-text-auswahlbegruendung" });
   await fall({ budget: false, expected: "budget" });
   await fall({ fortsetzen: true });
+  await fall({ azure: true });
   await fall({ fortsetzen: true, budget: false, expected: "budget" });
   await fall({ fortsetzen: true, reviewResult: {pruefungen:review.pruefungen.map(r=>({...r,profilbezug:false}))},
     expected: "ai-text-source-support" });
-  console.log(`${checks} PASS: Quittierung, Fehlerklassen, kein Retry, Absatzvertrag`);
+  console.log(`${checks} PASS: Quittierung, Fehlerklassen, kein Retry, Absatzvertrag, privater Auswahlnachweis`);
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => {
   https.request = original.request;
   storage.reserveLlmCall = original.reserve;
