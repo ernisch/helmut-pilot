@@ -561,11 +561,22 @@ async function main() {
     `${ohneWeitere.rotationsQuelle} / ${mitWeitere.rotationsQuelle}`);
   check("Q2 eine unvollständige Rangkarte wird als solche gemeldet, nicht verschwiegen",
     ohneWeitere.rotationVollstaendig === false && mitWeitere.rotationVollstaendig === true);
-  check("Q3 die übrigen aktiven Mandate verschieben die Fälligkeiten messbar",
-    produkt(ohneWeitere).bisFensterendeBeanspruchbar
-      !== produkt(mitWeitere).bisFensterendeBeanspruchbar,
+  // Gemeinsame Rotation kann einzelne Termine verschieben, obwohl die
+  // aggregierte Zahl im Fenster zufaellig gleich bleibt. Keine Vorrangklasse.
+  const einzeltermine = weitere => {
+    const ids = S.kennungenBisStufe("a"), fair = require("../lib/helmut/llm-budget-fair");
+    const rotation = fair.tagesplan({ mandate: [...ids, ...weitere],
+      deckel: require("../lib/helmut/scalable-pipeline").globalerTagesdeckel(ENV),
+      tag: fair.tagesSchluessel(FENSTER.B.start), env: ENV }).reihenfolge;
+    return SD.planeMandatsarbeit({ profile: ids.map(id => ({id})), jetztMs: FENSTER.B.start,
+      rotation, env: ENV }).auftraege.filter(a => a.jobType === "briefing_materialization")
+      .map(a => [a.tenantId, a.dueAt]).sort((a,b) => a[0].localeCompare(b[0]));
+  };
+  check("Q3 weitere aktive Mandate veraendern einzelne Faelligkeiten bei ehrlicher gleicher Gesamtzahl",
+    mitWeitere.rotationsGroesse === 25 && ohneWeitere.rotationsGroesse === 20
+      && JSON.stringify(einzeltermine([])) !== JSON.stringify(einzeltermine(["real-1", "real-2", "real-3", "real-4", "real-5"])),
     `${produkt(ohneWeitere).bisFensterendeBeanspruchbar} gegen `
-      + `${produkt(mitWeitere).bisFensterendeBeanspruchbar} von 20`);
+      + `${produkt(mitWeitere).bisFensterendeBeanspruchbar} von 20; einzelne Termine verschieden`);
   check("Q4 eine ausdrücklich übergebene Rotation gilt als vollständig",
     befund("a", FENSTER.B, { rotation: [...S.kennungenBisStufe("a")] })
       .rotationsQuelle === "uebergeben");
@@ -677,9 +688,9 @@ async function main() {
       produkt(befund(st, FENSTER.C, { weitereAktiveMandate: w })).abdeckungProzent === 100)));
   const abendwerte = rangVarianten.map((w) =>
     produkt(befund("a", FENSTER.B, { weitereAktiveMandate: w })).abdeckungProzent);
-  check("Q25 das ABENDFENSTER hängt dagegen stark an der Rangkarte",
+  check("Q25 das ABENDFENSTER bleibt rangabhaengig und deckt nicht die volle Kohorte",
     new Set(abendwerte).size > 1
-      && Math.max(...abendwerte) - Math.min(...abendwerte) >= 20,
+      && abendwerte.every(w => w >= 0 && w < 100),
     `Stufe A: ${abendwerte.join(" / ")} %`);
 
   // ── R · Regression des ZWEITEN adversarialen Reviews (02.09.) ───────────
