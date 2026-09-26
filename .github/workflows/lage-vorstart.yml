@@ -8,6 +8,11 @@ on:
       profil_hash:
         description: Gebundener Fingerabdruck genau eines vorhandenen Profils
         required: true
+      auftrag:
+        description: Erstpruefung oder einmaliger Zeitbezugsnachweis nach PR594
+        type: choice
+        options: [erstpruefung, zeitbezug]
+        default: erstpruefung
       confirm_text:
         description: Leer = nur lesen; Ausfuehrung ausschliesslich mit EIN_PROFIL_LAGE_MAX_ZWEI_AUFRUFE
         required: false
@@ -29,6 +34,7 @@ jobs:
     env:
       HELMUT_VORSTART_COMMIT: ${{ inputs.runtime_commit }}
       HELMUT_VORSTART_PROFIL: ${{ inputs.profil_hash }}
+      HELMUT_VORSTART_AUFTRAG: ${{ inputs.auftrag }}
       HELMUT_VORSTART_FREIGABE: ${{ inputs.confirm_text }}
       HELMUT_PROFILE_DB_MODE: "on"
       HELMUT_PROFILE_DB_EXCLUSIVE: "on"

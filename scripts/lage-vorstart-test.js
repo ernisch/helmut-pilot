@@ -1,5 +1,6 @@
 "use strict";
 const assert = require("node:assert/strict"), T = require("./lage-vorstart");
+const { hash } = require("../lib/helmut/briefing-speicher");
 const profile = {id:"synthetisches-mandat",fullName:"Testperson",partei:"Testpartei",ausschuesse:["Testausschuss"]};
 const start = Date.parse("2026-09-26T02:00:00Z"), commit = "a".repeat(40);
 const env = {HELMUT_VORSTART_COMMIT:commit,GITHUB_SHA:commit,GITHUB_ACTIONS:"true",
@@ -68,6 +69,43 @@ function fixture() {
       if(art==="modell")d.build=async(p,o)=>{await o.beforeGenerate(p.id);return {available:false,reason:"lage-qualitaet"};};
       else d.gueltig=()=>false;
       const r=await T.einmallauf(cfg,d);assert.equal(r.ok,false);assert.equal(state.finished.status,"gestoppt");}
+  });
+  await test("Zeitauftrag hat feste eigene Quittung, Profil- und Alttextbindung",()=>{
+    const neu = T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"zeitbezug",
+      HELMUT_VORSTART_PROFIL:T.ZEITBEZUG.profilHash},commit,start);
+    assert.equal(neu.quittung,T.ZEITBEZUG.quittung);assert.notEqual(neu.quittung,cfg.quittung);
+    assert.equal(neu.altHash,T.ZEITBEZUG.altHash);assert.equal(neu.reparatur,true);
+    assert.throws(()=>T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"zeitbezug"},commit,start),/reparaturbindung/);
+    assert.throws(()=>T.konfiguration({...env,HELMUT_VORSTART_AUFTRAG:"erneut"},commit,start),/auftrag/);
+  });
+  const alt = {id:"bf-test",generated_at:"2026-09-26T01:00:00Z",payload:{qualitaet:false,text:"Unbelegter Tagesbezug"}};
+  const reparatur = {...cfg,reparatur:true,altHash:hash(alt.payload),quittung:T.ZEITBEZUG.quittung};
+  await test("Reparatur verlangt genau den fachlich ungueltigen Altstand",async()=>{
+    for(const variante of [null,{...alt,payload:{fremd:true}},alt]){
+      const {d,state,trace}=fixture();state.cache=variante;
+      if(variante===alt)d.gueltig=()=>true;
+      await assert.rejects(T.einmallauf(reparatur,d),/reparatur-altstand/);assert.deepEqual(trace,[]);
+    }
+  });
+  await test("Reparaturplan schreibt nichts; Erfolg erfordert vollstaendige Altsicherung",async()=>{
+    for(const mode of ["plan","korrekt","ohne-historie","teilhistorie"]){
+      const {d,state,trace}=fixture();state.cache=structuredClone(alt);d.execute=mode!=="plan";
+      const build=d.build;d.build=async(p,o)=>{
+        assert.equal(o.repairIncomplete,true);const r=await build(p,o);
+        if(mode==="korrekt")state.cache.payload.vorherigerStand=structuredClone(alt);
+        if(mode==="teilhistorie")state.cache.payload.vorherigerStand={payload:alt.payload};return r;
+      };
+      const r=await T.einmallauf(reparatur,d);assert.equal(r.ok,["plan","korrekt"].includes(mode));
+      if(mode==="plan")assert.deepEqual(trace,[]);
+      else assert.equal(state.finished.quittungsschluessel,T.ZEITBEZUG.quittung);
+    }
+  });
+  await test("Abweichender Altstand stoppt vor dem zweiten Modellaufruf",async()=>{
+    const {d,state,trace}=fixture();state.cache=structuredClone(alt);
+    d.build=async(p,o)=>{await o.beforeGenerate(p.id);trace.push("modell");
+      state.cache.generated_at="2026-09-26T03:00:00Z";await o.beforeGenerate(p.id);};
+    await assert.rejects(T.einmallauf(reparatur,d),/reparatur-konkurrenz/);
+    assert.equal(trace.filter(x=>x==="modell").length,1);assert.equal(state.finished.status,"gestoppt");
   });
   console.log(count+" Gruppen erfolgreich");
 })().catch(e=>{console.error(e);process.exitCode=1;});
