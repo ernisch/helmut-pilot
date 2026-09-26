@@ -69,7 +69,10 @@ async function main() {
       const lage = L.baueEingabe([{ vorgang_id: "vg-wahl" }], { "vg-wahl": [d] }, new Date("2030-04-01T09:00:00Z"));
       assert.equal(lage.length, 1);
       const lp = AI.buildLageBriefingPrompt(lage, {}, { briefingDatum: "2030-04-01" });
-      const rp = R.prompt([], lage, {}); contract(lp); contract(rp);
+      // Der Quellenreview transportiert seit PR596 nur die wirklich durch
+      // einen Absatz gebundenen Dokumente. Leere Absatzlisten waehlen keines.
+      const rp = R.prompt([{ text: c.text, vorgang_ids: ["vg-wahl"],
+        quelle_id: lage[0].quellenbelege[0].quelle_id }], lage, {}); contract(lp); contract(rp);
       assert.deepEqual(JSON.parse(rp.split("\n").find(l => l.startsWith("QUELLEN: ")).slice(9)), lage);
       const gebunden = JSON.parse(lp.split("\n").find(l => l.startsWith("[vg-wahl] ")).slice(10));
       assert.deepEqual(gebunden.quellenbelege, lage[0].quellenbelege);
