@@ -1,0 +1,81 @@
+{
+  "datum": "2026-09-27",
+  "version": 1,
+  "status": "Einzelfallquittung Dennis Rohde (Bundeshaushalt) vorbereitet; nicht importfreigegeben",
+  "umfang": 1,
+  "bilanz": {
+    "gesamt": 1,
+    "Bund": 1,
+    "Berlin": 0,
+    "Brandenburg": 0
+  },
+  "ergebnisse": [
+    {
+      "kennung": "bundestag-rohde-dennis-1046814",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "bindungsart": "amtsaufgabe",
+      "person": "Dennis Rohde",
+      "funktion": "Parlamentarischer Staatssekretär für Finanzen",
+      "funktionstext": "Parlamentarischer Staatssekretär für Finanzen",
+      "amt": "Parlamentarischer Staatssekretär beim Bundesminister der Finanzen",
+      "aufgabenbindung": "Parlamentarischer Staatssekretär beim Bundesminister der Finanzen; Unterstützung in Angelegenheiten des Bundeshaushalts",
+      "themen": [
+        "Bundeshaushalt"
+      ],
+      "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Parlamentarischer Staatssekretär beim Bundesminister der Finanzen; Unterstützung in Angelegenheiten des Bundeshaushalts; keine persönliche politische Position",
+      "amtsbeginn": null,
+      "amtsende": null,
+      "fachurteil": {
+        "methode": "Manuelle Sichtprüfung des gerenderten Originals, kein automatischer PDF-Parservertrag",
+        "seite": 1,
+        "position": "Oberste Amtsreihe, eigener Kasten unmittelbar rechts vom Minister, links von Staatsministerin Kaiser",
+        "rolleWortlaut": "Parlamentarischer Staatssekretär Dennis Rohde",
+        "aufgabeWortlaut": "Unterstützung des Ministers bei der Erfüllung seiner Regierungsaufgaben, insbesondere in Angelegenheiten des Bundeshaushalts",
+        "ausschluss": "Keine Geschäftsbereiche oder Abteilungen benachbarter beamteter Staatssekretäre übernehmen, keine Steuerpolitik aus Schrodis Kasten, keine Ostdeutschland-Zuständigkeit aus Kaisers Kasten."
+      },
+      "personenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/rohde_dennis-1046814",
+        "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/R/rohde_dennis-1046814",
+        "abgerufenAm": "2026-09-27T13:02:10.017842+00:00",
+        "sha256": "cb8e81edc22be280ea43c8df741db3dcd3c6ea03534c196c5bfeb6269c73b299",
+        "bytes": 273624,
+        "datei": "bundestag-rohde_dennis-1046814.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "quelle": {
+        "url": "https://www.bundesfinanzministerium.de/Content/DE/Downloads/Ministerium/organigramm.pdf?__blob=publicationFile&v=32",
+        "finalUrl": "https://www.bundesfinanzministerium.de/Content/DE/Downloads/Ministerium/organigramm.pdf?__blob=publicationFile&v=32",
+        "abgerufenAm": "2026-09-27T21:59:46.922875+00:00",
+        "sha256": "47d9e346b65ff73894888336d6ecafd2c4c6744de52342325783c90888108111",
+        "bytes": 234311,
+        "datei": "bmf-organigramm-v32-20260927.pdf",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "stand": "2026-08-03",
+        "seite": 1
+      },
+      "aktuelleVerlinkung": {
+        "url": "https://www.bundesfinanzministerium.de/Web/DE/Ministerium/Abteilungen/abteilungen.html",
+        "finalUrl": "https://www.bundesfinanzministerium.de/Web/DE/Ministerium/Abteilungen/abteilungen.html",
+        "abgerufenAm": "2026-09-27T21:59:24.504965+00:00",
+        "sha256": "f789cb3e8b3f55d09edda8d9aa235deb0d867e6b928c649bfab6c12b8d009a4a",
+        "bytes": 190879,
+        "datei": "bmf-abteilungen-20260927.html",
+        "http": 200,
+        "abrufStatus": "abgerufen",
+        "linktext": "Organisationsplan des Bundesministeriums der Finanzen (Stand: 3. August 2026)",
+        "href": "/Content/DE/Downloads/Ministerium/organigramm.pdf?__blob=publicationFile&v=32"
+      },
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/rohde_dennis-1046814",
+        "sha256": "cb8e81edc22be280ea43c8df741db3dcd3c6ea03534c196c5bfeb6269c73b299",
+        "abgerufenAm": "2026-09-27T13:02:10.017842+00:00"
+      },
+      "importfreigegeben": false
+    }
+  ],
+  "pruefung": "Ein einzelner, zuvor offener Fachachsenfall (Dennis Rohde) wird gesondert neu gebunden. Die bestehende Amtsfunktion 'Parlamentarischer Staatssekretär für Finanzen' aus der belegten 54er Rollenquittung bleibt unveraendert; sie hat im eigenen Funktionsabschnitt KEINE Datumsangabe, ein Amtsbeginn wird nicht (auch nicht aus der MdB-Role 2025-03-25) abgeleitet. Die kanonische Bundestags-Person wird separat ueber ihre echte H1, den eigenen aktuellen Funktionstext (genau ein geschlossener div.m-biography__function) und das ProfilePage-JSON-LD (genau eine echte Role 'Mitglied des Bundestages' mit startDate 2025-03-25 ohne endDate) gebunden. Das enge Thema 'Bundeshaushalt' stammt ausschliesslich aus genau Rohdes eigenem, klar umrandetem Kasten auf Seite 1 des amtlich verlinkten BMF-Organisationsplans (Stand 3. August 2026, v=32); die PDF-Originalbytes werden nur ueber Hash/Bytezahl/Stand/Seite gebunden, es gibt KEINEN automatischen PDF-Parser und keine erfundene Textextraktionsquelle. Der Kasten der Nachbarn (Schrodi Steuerpolitik, Kaiser Ostdeutschland) und die beamteten Staatssekretäre sowie Kanzleramtsgeschäftsbereiche werden nicht uebernommen. Die amtliche Landingpage muss genau den verlinkten v=32-Organigramm-Link mit dem datierten Linktext tragen; die Suchtreffer-Fassung v=41 ist nicht massgeblich und darf nicht als Linksziel erscheinen. Nur das eine Thema, der getrennte Herkunftshinweis und die amtliche PDF-Quelle entstehen; bestehende Funktionen und offizielle Quellen bleiben erhalten, keine persoenliche politische Position, keine Partei-/Mandatsartaenderung, keine Importfreigabe."
+}
