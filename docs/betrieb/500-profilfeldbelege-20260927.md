@@ -22,6 +22,7 @@ Quittung als Landesliste belegt.
 | [`docs/betrieb/500-profilfeldbelege-20260927.json`](500-profilfeldbelege-20260927.json) | erzeugte Feldbelege (500 Datensaetze) |
 | [`docs/betrieb/parteifeldpruefung-335-20260927.json`](parteifeldpruefung-335-20260927.json) | versionierte, gepruefte Ergaenzungsquittung der 335 zuvor offenen Parteifelder |
 | [`docs/betrieb/brandenburg-mandatsarten-20260927.json`](brandenburg-mandatsarten-20260927.json) | versionierte lokale Mandatsartenquittung (Landesliste) fuer vier Brandenburg-Profile; keine Importfreigabe |
+| [`docs/betrieb/profilrollen-54-20260927.json`](profilrollen-54-20260927.json) | vom Orchestrator gepruefte Rollenquittung der 54 fachlich offenen Profile (48 Rollen belegt, 6 offen); keine Importfreigabe |
 | [`scripts/profil-gremien-resolver.js`](../../scripts/profil-gremien-resolver.js) | Node-Helfer, der den vorhandenen Ausschuss-Resolver (`lib/helmut/profile-readiness.js`) fuer den Assembler befragt — keine zweite Sollmenge |
 | [`scripts/profil-feldbelege-500-test.js`](../../scripts/profil-feldbelege-500-test.js) | gezielter Offline-Test (kein Netz, keine DB, kein Modell) |
 | [`scripts/profil-feldbelege-500-unit.py`](../../scripts/profil-feldbelege-500-unit.py) | gezielte Gegenproben (Quelldrift, Fraktion-keine-Partei, Gremienrollen, unbekannter Ausschuss, Mandatsartenquittung, offen-bleibt-offen) |
@@ -391,3 +392,45 @@ Diese April-Angaben werden nicht als September-Bestaetigung importiert. Knodels
 XML-Wert `Plos` bleibt ohne eindeutige Begriffsdefinition offen. Die 74 offenen
 aktuellen Parteifelder werden hierdurch nicht reduziert. Lokale Gegenpruefung:
 `/private/tmp/helmut-xml-parteipruefung-ergebnis.json`.
+
+## Rollenquittung der 54 fachlich offenen Profile
+
+[`profilrollen-54-20260927.json`](profilrollen-54-20260927.json) ist die vom
+Orchestrator gepruefte, versionierte Rollenquittung fuer die 54 Profile ohne
+belegte fachliche Achse (48 Regierungs-/Amtsrollen belegt, 6 offen). Der
+Assembler bindet jede Kennung an die amtliche Quell-URL UND den Quellhash der
+Detailseite und uebernimmt ausschliesslich die dort freigegebenen
+`wortlaut`-Strings — **dedupliziert an bestehende `profil.funktionen`
+angehaengt; bestehende Gremienrollen bleiben erhalten.**
+
+Fail closed geprueft: unbekannter Status, offener Eintrag mit Rolle, belegter
+Eintrag ohne Rolle, fehlende/doppelte Kennung, Fremdkennung ausserhalb der 500
+Zielprofile, Quelldrift (URL/Hash), fehlender Abschnitt, ein `wortlaut`, der
+nicht durch das `zitat` gedeckt ist, und ein Zitat, das nicht woertlich im
+personengebundenen amtlichen Abschnitt steht. Der Bundestag belegt `Funktion`
+nur im `m-biography__function`-Block und `Biografie` nur im eigenen
+Biografiebereich; Navigation, Intro-/Fraktionskopf und JSON-LD gelten NICHT als
+Beleg. Berliner/Brandenburger Rollen sind auf den jeweiligen
+personengebundenen Abschnitt begrenzt.
+
+**Kein `regierungsrolle`-Schema, keine Themen, Schwerpunkte, Positionen oder
+Ausschussmitgliedschaften abgeleitet.** Die Rolle ist eine Amtsrolle, keine
+fachliche Achse: alle **54 Fachachsen bleiben offen**, alle 500 bleiben
+`aktiv: false` / `importfreigegeben: false`, der technische Importvertrag bleibt
+**443 akzeptiert / 57 offen**. Je Datensatz steht der Rollenbeleg in
+`profilrollenQuittung` (Datei, URL, sha256, Status, Zitat und Abschnitt).
+Assembler und Belegdatei wurden deterministisch neu erzeugt (byte-identisch).
+
+Die Integration und die gezielten Tests liefen ausschliesslich lokal/offline:
+kein Netz, keine DB und keine Production-Modellaufrufe in den Tests. Lokale
+Umsetzung durch DeepSeek Flash High, eigene Pruefung und zwei Schutzkorrekturen
+durch den Orchestrator: auch offene Quittungen an URL/Hash binden; Bundestags-
+Zitate exakt auf den geschlossenen Personenblock begrenzen. Keine Aktivierung
+und keine Importfreigabe.
+
+Zusaetzliche amtliche Quellen fuer Amthor, Hasselmann und Miersch sind separat
+gesichert und geprueft: `/private/tmp/helmut-rollen-zusatz3-geprueft.json`.
+Sie klaeren die aktuellen Rollen, sind aber noch nicht in die eingefrorene
+48er-Quittung oder den Assembler integriert. Keine Themenfreigabe daraus.
+Der naechste Schritt kann diese drei Nachweise nutzen, ohne die54er Recherche
+zu wiederholen.

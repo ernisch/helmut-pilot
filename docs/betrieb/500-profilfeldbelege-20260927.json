@@ -11,6 +11,7 @@
     "brandenburgParteipruefung": "docs/betrieb/brandenburg-parteipruefung-20260927.json",
     "parteifeldpruefung": "docs/betrieb/parteifeldpruefung-335-20260927.json (335 gepruefte Parteifelder: 261 belegt, 74 offen)",
     "mandatsartenquittung": "docs/betrieb/brandenburg-mandatsarten-20260927.json (amtliche Brandenburger Uebersicht; Landesliste fuer 4 Profile, URL + sha256 + Abrufzeit gebunden)",
+    "profilrollenQuittung": "docs/betrieb/profilrollen-54-20260927.json (vom Orchestrator geprueft; 48 Rollen fuer fachlich offene Profile an bestehende funktionen angehaengt, 6 bleiben offen; URL + sha256 + woertliches Zitat im personengebundenen Abschnitt gebunden)",
     "sonstigeGremien": "explizite Liste mit 15 amtlich belegten sonstigen Gremien des Bundestages (JSON-LD memberOf mit Original-Rolle und Original-URL); Sollmenge der staendigen Ausschuesse unveraendert aus lib/helmut/profile-readiness.resolveBundestagsausschuss",
     "eingangsverzeichnis": "/private/tmp/helmut-be-bb-start",
     "hinweis": "Detailseiten, Abrufe und Extraktionen sind lokale Arbeitsdateien ausserhalb des Repos; die Belegdatei bindet sie ueber URL und Quellhash."
@@ -27,6 +28,7 @@
     "Gremienrollen sind ordentlich/stellvertretend getrennt; beratende Rollen sind keine ordentliche Mitgliedschaft.",
     "Belegte sonstige Gremien des Bundestages (Beirat, Unterausschuss, Kommission, Kontrollgremium, Wahlausschuss, Rechnungspruefung) werden NICHT als staendige Ausschuesse gefuehrt: sie stehen als weitereGremien UND rollengetreu in funktionen. Nur die explizite Liste mit amtlicher JSON-LD-URL wird herausgeloest; unbekannte echte Ausschuesse bleiben gesperrt.",
     "Vier bislang offene Brandenburg-Mandatsarten sind ueber die versionierte lokale Quittung docs/betrieb/brandenburg-mandatsarten-20260927.json als Landesliste belegt (URL + Hash + Abrufzeit). Uebernommen werden NUR Mandatsart Landesliste und Region Brandenburg, NICHT Listenbeschriftung oder Listenplatz.",
+    "Fuer die 54 fachlich offenen Profile werden ueber die vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json ausschliesslich die freigegebenen wortlaut-Strings dedupliziert an BESTEHENDE funktionen angehaengt (48 belegt, 6 offen). Es entsteht KEIN regierungsrolle-Schema und KEINE fachliche Achse; bestehende Gremienrollen bleiben erhalten. Jede Kennung ist an URL, Quellhash, erlaubten Status und ein woertliches Zitat im personengebundenen amtlichen Abschnitt gebunden (Bundestag Funktion nur m-biography__function, Biografie nur eigener Biografiebereich; keine Navigation als Beleg).",
     "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
     "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe."
   ],
@@ -65,6 +67,14 @@
       "datei": "docs/betrieb/brandenburg-mandatsarten-20260927.json",
       "belege": 4,
       "verwendet": 4
+    },
+    "profilrollenQuittung": {
+      "datei": "docs/betrieb/profilrollen-54-20260927.json",
+      "geprueftGesamt": 54,
+      "belegt": 48,
+      "offen": 6,
+      "rollenVergeben": 48,
+      "deckungsgleichVerwendet": 54
     },
     "offeneFelder": {
       "weitereGremien": 137,
@@ -2129,6 +2139,9 @@
         "fraktion": "Bündnis 90/Die Grünen",
         "partei": "Bündnis 90/Die Grünen",
         "wahlkreis": "Wahlkreis 094: Köln III",
+        "funktionen": [
+          "Vorsitzende der Bundestagsfraktion Bündnis90/Die Grünen"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -2182,7 +2195,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash dc1ef5c59e46f64d1b0cc5416f27b7ed216ae5f6ec9d16a85e96d663a8785385)",
         "parteiWert": "seit 2000 Mitglied bei Bündnis 90/ Die Grünen.",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/D/droege_katharina-1044100 sha256 dc1ef5c59e46f64d1b0cc5416f27b7ed216ae5f6ec9d16a85e96d663a8785385"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/D/droege_katharina-1044100 sha256 dc1ef5c59e46f64d1b0cc5416f27b7ed216ae5f6ec9d16a85e96d663a8785385",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -2198,7 +2212,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/D/droege_katharina-1044100",
+        "sha256": "dc1ef5c59e46f64d1b0cc5416f27b7ed216ae5f6ec9d16a85e96d663a8785385",
+        "abgerufenAm": "2026-09-27T12:59:29.625525+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Vorsitzende der Bundestagsfraktion Bündnis90/Die Grünen",
+            "zitat": "seit Dezember 2021 Vorsitzende der Bundestagsfraktion Bündnis90/Die Grünen",
+            "abschnitt": "Biografie",
+            "zeitbeleg": "seit Dezember 2021"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-duering-deborah-1044118",
@@ -3775,7 +3805,16 @@
         "weitereGremien"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hasselmann_britta-1044778",
+        "sha256": "0750ba10353c7db1b54d6bf3d7d35161d526ee8f96a5c3159398d4674e7cfbea",
+        "abgerufenAm": "2026-09-27T12:59:36.772613+00:00",
+        "status": "offen",
+        "begruendung": "Keine neue eindeutig aktuelle Amtsrolle freigegeben. Vorhandene beratende Gremienrollen bleiben erhalten.",
+        "funktionen": []
+      }
     },
     {
       "kanonischeKennung": "bundestag-heitmann-linda-1044850",
@@ -7713,7 +7752,16 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/A/amthor_philipp-1043428",
+        "sha256": "e3e39200cca9a130552093ca0a8571574da491e2e777927da643a8bba210696c",
+        "abgerufenAm": "2026-09-27T12:59:55.092561+00:00",
+        "status": "offen",
+        "begruendung": "Amtlicher Funktionsabschnitt und Biografie nennen unterschiedliche Regierungsrollen. Vor einer Uebernahme aktuelle Zustaendigkeit gesondert klaeren.",
+        "funktionen": []
+      }
     },
     {
       "kanonischeKennung": "bundestag-asghari-reza-1086638",
@@ -8362,6 +8410,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CSU",
         "wahlkreis": "Wahlkreis 247: Bad Kissingen",
+        "funktionen": [
+          "Bundesministerin für Forschung, Technologie und Raumfahrt"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -8415,7 +8466,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 597be49ee747522777721df31c57a94a3ab69d81ca4d73682d58fd9559ac3519)",
         "parteiWert": "Eintritt in die CSU 1994",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/B/baer_dorothee-1043526 sha256 597be49ee747522777721df31c57a94a3ab69d81ca4d73682d58fd9559ac3519"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/B/baer_dorothee-1043526 sha256 597be49ee747522777721df31c57a94a3ab69d81ca4d73682d58fd9559ac3519",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -8431,7 +8483,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/baer_dorothee-1043526",
+        "sha256": "597be49ee747522777721df31c57a94a3ab69d81ca4d73682d58fd9559ac3519",
+        "abgerufenAm": "2026-09-27T12:59:57.956556+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Bundesministerin für Forschung, Technologie und Raumfahrt",
+            "zitat": "Bundesministerin für Forschung, Technologie und Raumfahrt",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-bareiss-thomas-1048368",
@@ -9189,7 +9257,8 @@
         "partei": "CDU",
         "wahlkreis": "Wahlkreis 265: Ludwigsburg",
         "funktionen": [
-          "Ordentliches Mitglied: Wahlausschuss"
+          "Ordentliches Mitglied: Wahlausschuss",
+          "Bundesminister für Verkehr"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -9247,7 +9316,7 @@
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 8cfd7dd1d6347c6fdb6ecbf9419e9ceca2058a47323ac7ca56adf5a6ed0ba969)",
         "parteiWert": "Seit 2011 Vorsitzender des CDU-Bezirksverbands Nordwürttemberg",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/B/bilger_steffen-1048434 sha256 8cfd7dd1d6347c6fdb6ecbf9419e9ceca2058a47323ac7ca56adf5a6ed0ba969",
-        "funktionen": "memberOf-Rollen der Bundestagsseite, roh als belegte Strings; beratende Rollen sind keine ordentliche Mitgliedschaft; Mitgliedschaften in belegten sonstigen Gremien bleiben rollengetreu als Funktion erhalten",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich memberOf-Rollen der Bundestagsseite bzw. Mitgliedschaften in belegten sonstigen Gremien rollengetreu als Funktion erhalten",
         "weitereGremien": "amtliches JSON-LD (ProfilePage.mainEntity.memberOf) mit Original-Rolle UND Original-URL; ausdruecklich NICHT als staendiger Ausschuss der laufenden Wahlperiode gefuehrt"
       },
       "weitereGremien": [
@@ -9275,7 +9344,23 @@
         "weitereGremien"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/bilger_steffen-1048434",
+        "sha256": "8cfd7dd1d6347c6fdb6ecbf9419e9ceca2058a47323ac7ca56adf5a6ed0ba969",
+        "abgerufenAm": "2026-09-27T13:00:01.066704+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Bundesminister für Verkehr",
+            "zitat": "Bundesminister für Verkehr",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-bilic-florian-1043708",
@@ -9865,6 +9950,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CDU",
         "wahlkreis": "Wahlkreis 173: Fulda",
+        "funktionen": [
+          "Parlamentarischer Staatssekretär für Bildung, Familie, Senioren, Frauen und Jugend"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -9918,7 +10006,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 89f55d82237f97a344b1bccac6f6c6baf4b113930c33660ad8aff489c41856c0)",
         "parteiWert": "Seit 1993 Mitglied der CDU.",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/B/brand_michael-1043790 sha256 89f55d82237f97a344b1bccac6f6c6baf4b113930c33660ad8aff489c41856c0"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/B/brand_michael-1043790 sha256 89f55d82237f97a344b1bccac6f6c6baf4b113930c33660ad8aff489c41856c0",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -9934,7 +10023,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/brand_michael-1043790",
+        "sha256": "89f55d82237f97a344b1bccac6f6c6baf4b113930c33660ad8aff489c41856c0",
+        "abgerufenAm": "2026-09-27T13:00:04.095968+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarischer Staatssekretär für Bildung, Familie, Senioren, Frauen und Jugend",
+            "zitat": "Parlamentarischer Staatssekretär für Bildung, Familie, Senioren, Frauen und Jugend",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-brandl-reinhard-1048450",
@@ -10066,6 +10171,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CDU",
         "wahlkreis": "Wahlkreis 032: Cloppenburg – Vechta",
+        "funktionen": [
+          "Parlamentarische Staatssekretärin für Landwirtschaft, Ernährung und Heimat"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -10119,7 +10227,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 204b7a1ed518270a4f6221955df35d6a110534b42fe7b2caa93fb236f469dbaa)",
         "parteiWert": "seit November 2019 stellvertretende Vorsitzende der CDU Deutschlands",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/B/breher_silvia-1043814 sha256 204b7a1ed518270a4f6221955df35d6a110534b42fe7b2caa93fb236f469dbaa"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/B/breher_silvia-1043814 sha256 204b7a1ed518270a4f6221955df35d6a110534b42fe7b2caa93fb236f469dbaa",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -10135,7 +10244,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/breher_silvia-1043814",
+        "sha256": "204b7a1ed518270a4f6221955df35d6a110534b42fe7b2caa93fb236f469dbaa",
+        "abgerufenAm": "2026-09-27T13:00:04.915794+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarische Staatssekretärin für Landwirtschaft, Ernährung und Heimat",
+            "zitat": "Parlamentarische Staatssekretärin für Landwirtschaft, Ernährung und Heimat",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-breilmann-michael-1183252",
@@ -11131,6 +11256,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CDU",
         "wahlkreis": "Wahlkreis 025: Unterems",
+        "funktionen": [
+          "Parlamentarische Staatssekretärin für Digitales und Staatsmodernisierung"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -11184,7 +11312,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 1da65d5d957df7be828728de8bdd9a61ad78bf308938a34ea9545e9ee89f76b3)",
         "parteiWert": "Seit 1996 Mitglied der CDU",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/C/connemann_gitta-1043962 sha256 1da65d5d957df7be828728de8bdd9a61ad78bf308938a34ea9545e9ee89f76b3"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/C/connemann_gitta-1043962 sha256 1da65d5d957df7be828728de8bdd9a61ad78bf308938a34ea9545e9ee89f76b3",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -11200,7 +11329,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/C/connemann_gitta-1043962",
+        "sha256": "1da65d5d957df7be828728de8bdd9a61ad78bf308938a34ea9545e9ee89f76b3",
+        "abgerufenAm": "2026-09-27T13:00:09.094300+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarische Staatssekretärin für Digitales und Staatsmodernisierung",
+            "zitat": "Parlamentarische Staatssekretärin für Digitales und Staatsmodernisierung",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-dahler-wolfgang-1048508",
@@ -11477,6 +11622,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CSU",
         "wahlkreis": "Wahlkreis 225: Weilheim",
+        "funktionen": [
+          "Bundesminister des Innern"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -11530,7 +11678,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 4ab8bf8a4c1f795eb509c4e9f48dfe4ad716376dce478c969097892eb76604fb)",
         "parteiWert": "seit 1990 Mitglied der CSU",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/D/dobrindt_alexander-1044072 sha256 4ab8bf8a4c1f795eb509c4e9f48dfe4ad716376dce478c969097892eb76604fb"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/D/dobrindt_alexander-1044072 sha256 4ab8bf8a4c1f795eb509c4e9f48dfe4ad716376dce478c969097892eb76604fb",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -11546,7 +11695,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/D/dobrindt_alexander-1044072",
+        "sha256": "4ab8bf8a4c1f795eb509c4e9f48dfe4ad716376dce478c969097892eb76604fb",
+        "abgerufenAm": "2026-09-27T13:00:10.703288+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Bundesminister des Innern",
+            "zitat": "Bundesminister des Innern",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-donth-michael-1048526",
@@ -12521,6 +12686,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CSU",
         "wahlkreis": "Wahlkreis 233: Schwandorf",
+        "funktionen": [
+          "Parlamentarische Staatssekretärin für Landwirtschaft, Ernährung und Heimat"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -12574,7 +12742,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 1bc3695dfcb87dba1909c02e0d29d8b0e21ab6477df9c9f5694feb5c77b9c88b)",
         "parteiWert": "seit Oktober 2023 Mitglied im CSU-Parteivorstand",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/E/englhardt_kopf_martina-1044208 sha256 1bc3695dfcb87dba1909c02e0d29d8b0e21ab6477df9c9f5694feb5c77b9c88b"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/E/englhardt_kopf_martina-1044208 sha256 1bc3695dfcb87dba1909c02e0d29d8b0e21ab6477df9c9f5694feb5c77b9c88b",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -12590,7 +12759,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/E/englhardt_kopf_martina-1044208",
+        "sha256": "1bc3695dfcb87dba1909c02e0d29d8b0e21ab6477df9c9f5694feb5c77b9c88b",
+        "abgerufenAm": "2026-09-27T13:00:14.885963+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarische Staatssekretärin für Landwirtschaft, Ernährung und Heimat",
+            "zitat": "Parlamentarische Staatssekretärin für Landwirtschaft, Ernährung und Heimat",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-erndl-thomas-1048566",
@@ -13214,6 +13399,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CDU",
         "wahlkreis": "Wahlkreis 286: Schwarzwald-Baar",
+        "funktionen": [
+          "Vorsitzender der CDU/CSU-Bundestagsfraktion"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -13267,7 +13455,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 098af37b685e3f841f3a2b9931ded3682dd7faab254e50334724a5be554c2ac3)",
         "parteiWert": "seit 2007 Stellvertretender Landesvorsitzender der CDU Baden-Württemberg",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/F/frei_thorsten-1044370 sha256 098af37b685e3f841f3a2b9931ded3682dd7faab254e50334724a5be554c2ac3"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/F/frei_thorsten-1044370 sha256 098af37b685e3f841f3a2b9931ded3682dd7faab254e50334724a5be554c2ac3",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -13283,7 +13472,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/F/frei_thorsten-1044370",
+        "sha256": "098af37b685e3f841f3a2b9931ded3682dd7faab254e50334724a5be554c2ac3",
+        "abgerufenAm": "2026-09-27T13:00:17.579040+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Vorsitzender der CDU/CSU-Bundestagsfraktion",
+            "zitat": "Seit Juli 2026 Vorsitzender der CDU/CSU-Bundestagsfraktion.",
+            "abschnitt": "Biografie",
+            "zeitbeleg": "seit Juli 2026"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-frieser-michael-1044396",
@@ -14309,6 +14514,9 @@
         "partei": "CDU",
         "listenmandat": true,
         "regionHinweis": "Landesliste Nordrhein-Westfalen",
+        "funktionen": [
+          "Staatsministerin im Auswärtigen Amt"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -14367,6 +14575,7 @@
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 84844e5064a140efc47e2a4648dbc47df341b774f6270038f91073cffe50e8cb)",
         "parteiWert": "2009 Eintritt in die CDU",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/G/gueler_serap-1044642 sha256 84844e5064a140efc47e2a4648dbc47df341b774f6270038f91073cffe50e8cb",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
       "weitereGremien": [],
@@ -14383,7 +14592,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/G/gueler_serap-1044642",
+        "sha256": "84844e5064a140efc47e2a4648dbc47df341b774f6270038f91073cffe50e8cb",
+        "abgerufenAm": "2026-09-27T13:00:22.926951+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Staatsministerin im Auswärtigen Amt",
+            "zitat": "Staatsministerin im Auswärtigen Amt",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-guenther-georg-1044652",
@@ -14873,6 +15098,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CSU",
         "wahlkreis": "Wahlkreis 220: München-Land",
+        "funktionen": [
+          "Staatsminister im Auswärtigen Amt"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -14926,7 +15154,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 6f3acbe390a7879d17ec3feee227b2764763ffde871b4201fe7ae28a77bc1b12)",
         "parteiWert": "seit 1992 Mitglied der CSU",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/H/hahn_florian-1044694 sha256 6f3acbe390a7879d17ec3feee227b2764763ffde871b4201fe7ae28a77bc1b12"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/H/hahn_florian-1044694 sha256 6f3acbe390a7879d17ec3feee227b2764763ffde871b4201fe7ae28a77bc1b12",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -14942,7 +15171,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hahn_florian-1044694",
+        "sha256": "6f3acbe390a7879d17ec3feee227b2764763ffde871b4201fe7ae28a77bc1b12",
+        "abgerufenAm": "2026-09-27T13:00:25.118341+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Staatsminister im Auswärtigen Amt",
+            "zitat": "Staatsminister im Auswärtigen Amt",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-hain-heiko-1044706",
@@ -15238,6 +15483,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CDU",
         "wahlkreis": "Wahlkreis 119: Essen III",
+        "funktionen": [
+          "Parlamentarischer Staatssekretär für Forschung, Technologie und Raumfahrt"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -15291,7 +15539,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 180f4f76103434b8c5d287bc8d0b0142e9b0e5ba7332cb374a29b8e5e4ba70b3)",
         "parteiWert": "1994 Eintritt in die CDU",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/H/hauer_matthias-1044780 sha256 180f4f76103434b8c5d287bc8d0b0142e9b0e5ba7332cb374a29b8e5e4ba70b3"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/H/hauer_matthias-1044780 sha256 180f4f76103434b8c5d287bc8d0b0142e9b0e5ba7332cb374a29b8e5e4ba70b3",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -15307,7 +15556,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hauer_matthias-1044780",
+        "sha256": "180f4f76103434b8c5d287bc8d0b0142e9b0e5ba7332cb374a29b8e5e4ba70b3",
+        "abgerufenAm": "2026-09-27T13:00:26.717047+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarischer Staatssekretär für Forschung, Technologie und Raumfahrt",
+            "zitat": "Parlamentarischer Staatssekretär für Forschung, Technologie und Raumfahrt",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-heil-mechthild-1044822",
@@ -16055,6 +16320,9 @@
         "partei": "CDU",
         "listenmandat": true,
         "regionHinweis": "Landesliste Thüringen",
+        "funktionen": [
+          "Parlamentarischer Staatssekretär für Verkehr"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -16113,6 +16381,7 @@
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 2ee9d4b1244966598964b66483cd843dc47e07af05f78c94cb09b918baf86894)",
         "parteiWert": "1995 Eintritt in die CDU",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/H/hirte_christian-1045006 sha256 2ee9d4b1244966598964b66483cd843dc47e07af05f78c94cb09b918baf86894",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
       "weitereGremien": [],
@@ -16129,7 +16398,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hirte_christian-1045006",
+        "sha256": "2ee9d4b1244966598964b66483cd843dc47e07af05f78c94cb09b918baf86894",
+        "abgerufenAm": "2026-09-27T13:00:30.493939+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarischer Staatssekretär für Verkehr",
+            "zitat": "Parlamentarischer Staatssekretär für Verkehr",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-hoffmann-alexander-1048720",
@@ -16161,7 +16446,8 @@
         "partei": "CSU",
         "wahlkreis": "Wahlkreis 248: Main-Spessart",
         "funktionen": [
-          "Ordentliches Mitglied: Wahlausschuss"
+          "Ordentliches Mitglied: Wahlausschuss",
+          "Vorsitzender der CSU-Landesgruppe im Bundestag und 1. Stellvertretender Vorsitzender der CDU/CSU-Fraktion im Bundestag"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -16219,7 +16505,7 @@
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 3c9b5716794f7a13785bbfa3ab32792d916a6dc3698f17d49927d4fb74fbddb1)",
         "parteiWert": "seit 2006 CSU-Mitglied",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/H/hoffmann_alexander-1048720 sha256 3c9b5716794f7a13785bbfa3ab32792d916a6dc3698f17d49927d4fb74fbddb1",
-        "funktionen": "memberOf-Rollen der Bundestagsseite, roh als belegte Strings; beratende Rollen sind keine ordentliche Mitgliedschaft; Mitgliedschaften in belegten sonstigen Gremien bleiben rollengetreu als Funktion erhalten",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich memberOf-Rollen der Bundestagsseite bzw. Mitgliedschaften in belegten sonstigen Gremien rollengetreu als Funktion erhalten",
         "weitereGremien": "amtliches JSON-LD (ProfilePage.mainEntity.memberOf) mit Original-Rolle UND Original-URL; ausdruecklich NICHT als staendiger Ausschuss der laufenden Wahlperiode gefuehrt"
       },
       "weitereGremien": [
@@ -16247,7 +16533,23 @@
         "weitereGremien"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hoffmann_alexander-1048720",
+        "sha256": "3c9b5716794f7a13785bbfa3ab32792d916a6dc3698f17d49927d4fb74fbddb1",
+        "abgerufenAm": "2026-09-27T13:00:30.701425+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Vorsitzender der CSU-Landesgruppe im Bundestag und 1. Stellvertretender Vorsitzender der CDU/CSU-Fraktion im Bundestag",
+            "zitat": "seit Mai 2025 Vorsitzender der CSU-Landesgruppe im Bundestag und 1. Stellvertretender Vorsitzender der CDU/CSU-Fraktion im Bundestag",
+            "abschnitt": "Biografie",
+            "zeitbeleg": "seit Mai 2025"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-hoffmann-philip-1045026",
@@ -16922,6 +17224,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CDU",
         "wahlkreis": "Wahlkreis 105: Düsseldorf I",
+        "funktionen": [
+          "Parlamentarischer Staatssekretär für Digitales und Staatmodernisierung"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -16975,7 +17280,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 45938f8b08cc606c046db3010243821cfdf068478c8ad0f66d51008112a23888)",
         "parteiWert": "Seit 2022 Mitglied des Bundesvorstands der CDU Deutschlands.",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/J/jarzombek_thomas-1045202 sha256 45938f8b08cc606c046db3010243821cfdf068478c8ad0f66d51008112a23888"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/J/jarzombek_thomas-1045202 sha256 45938f8b08cc606c046db3010243821cfdf068478c8ad0f66d51008112a23888",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -16991,7 +17297,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/J/jarzombek_thomas-1045202",
+        "sha256": "45938f8b08cc606c046db3010243821cfdf068478c8ad0f66d51008112a23888",
+        "abgerufenAm": "2026-09-27T13:00:33.704698+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarischer Staatssekretär für Digitales und Staatmodernisierung",
+            "zitat": "Parlamentarischer Staatssekretär für Digitales und Staatmodernisierung",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion; Biografie seit Mai 2025"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-jordan-alexander-1045230",
@@ -17577,6 +17899,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CDU",
         "wahlkreis": "Wahlkreis 090: Rhein-Erft-Kreis I",
+        "funktionen": [
+          "Parlamentarischer Staatssekretär für Gesundheit"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -17630,7 +17955,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 3860c81df63e36dffd70931b890b919fd09d326400a571ee8b08e238b9bc186c)",
         "parteiWert": "CDU-Mitglied seit 1980",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/K/kippels_georg-1045390 sha256 3860c81df63e36dffd70931b890b919fd09d326400a571ee8b08e238b9bc186c"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/K/kippels_georg-1045390 sha256 3860c81df63e36dffd70931b890b919fd09d326400a571ee8b08e238b9bc186c",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -17646,7 +17972,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/kippels_georg-1045390",
+        "sha256": "3860c81df63e36dffd70931b890b919fd09d326400a571ee8b08e238b9bc186c",
+        "abgerufenAm": "2026-09-27T13:00:36.656209+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarischer Staatssekretär für Gesundheit",
+            "zitat": "Parlamentarischer Staatssekretär für Gesundheit",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-klein-ottilie-1045410",
@@ -17787,7 +18129,8 @@
         "fraktion": "CDU/CSU",
         "wahlkreis": "Wahlkreis 200: Kreuznach",
         "funktionen": [
-          "Präsidentin: Der Ältestenrat"
+          "Präsidentin: Der Ältestenrat",
+          "Bundestagspräsidentin"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -17840,7 +18183,7 @@
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "bewusst NICHT abgeleitet: Bundestags-Fraktion ist keine Partei; kein Partei-String gesetzt",
-        "funktionen": "memberOf-Rollen der Bundestagsseite, roh als belegte Strings; beratende Rollen sind keine ordentliche Mitgliedschaft; Mitgliedschaften in belegten sonstigen Gremien bleiben rollengetreu als Funktion erhalten"
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich memberOf-Rollen der Bundestagsseite bzw. Mitgliedschaften in belegten sonstigen Gremien rollengetreu als Funktion erhalten"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -17858,7 +18201,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/kloeckner_julia-1045434",
+        "sha256": "f89405b0fa87c453503b83a0e7d0f3e2b4a5e8a6df41c9544a4e9bd796f74329",
+        "abgerufenAm": "2026-09-27T13:00:37.494520+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Bundestagspräsidentin",
+            "zitat": "Bundestagspräsidentin",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-knoerig-axel-1045462",
@@ -18834,6 +19193,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CDU",
         "wahlkreis": "Wahlkreis 279: Pforzheim",
+        "funktionen": [
+          "Staatsminister im Auswärtigen Amt"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -18887,7 +19249,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 5ebebff34fea0bfb60e0970f7fc41dc0a8fc2a9fe4cdf4a77e0392de0116d687)",
         "parteiWert": "1983 Eintritt in die CDU",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/K/krichbaum_gunther-1048828 sha256 5ebebff34fea0bfb60e0970f7fc41dc0a8fc2a9fe4cdf4a77e0392de0116d687"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/K/krichbaum_gunther-1048828 sha256 5ebebff34fea0bfb60e0970f7fc41dc0a8fc2a9fe4cdf4a77e0392de0116d687",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -18903,7 +19266,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/krichbaum_gunther-1048828",
+        "sha256": "5ebebff34fea0bfb60e0970f7fc41dc0a8fc2a9fe4cdf4a77e0392de0116d687",
+        "abgerufenAm": "2026-09-27T13:00:42.423556+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Staatsminister im Auswärtigen Amt",
+            "zitat": "Staatsminister im Auswärtigen Amt",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-krieger-lukas-1045624",
@@ -19267,6 +19646,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CSU",
         "wahlkreis": "Wahlkreis 253: Donau-Ries",
+        "funktionen": [
+          "Parlamentarischer Staatssekretär für Verkehr"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -19320,7 +19702,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 183b84105d6b28ae98ee11aa3dab3fd45b1c51f92925bc6a3ce6799c8f54575d)",
         "parteiWert": "seit 2013 Kreisvorsitzender der CSU Donau-Ries",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/L/lange_ulrich-1048862 sha256 183b84105d6b28ae98ee11aa3dab3fd45b1c51f92925bc6a3ce6799c8f54575d"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/L/lange_ulrich-1048862 sha256 183b84105d6b28ae98ee11aa3dab3fd45b1c51f92925bc6a3ce6799c8f54575d",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -19336,7 +19719,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/L/lange_ulrich-1048862",
+        "sha256": "183b84105d6b28ae98ee11aa3dab3fd45b1c51f92925bc6a3ce6799c8f54575d",
+        "abgerufenAm": "2026-09-27T13:00:44.946587+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarischer Staatssekretär für Verkehr",
+            "zitat": "Parlamentarischer Staatssekretär für Verkehr",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-laschet-armin-1045736",
@@ -19472,6 +19871,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CSU",
         "wahlkreis": "Wahlkreis 236: Bayreuth",
+        "funktionen": [
+          "Parlamentarische Staatssekretärin für Forschung, Technologie und Raumfahrt"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -19525,7 +19927,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 838e601967cd0189942fbec3ded5bad02052811ea3866fb0a8f12664af2fd41e)",
         "parteiWert": "Seit 2013 Mitglied im CSU-Parteivorstand",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/L/launert_silke-1045740 sha256 838e601967cd0189942fbec3ded5bad02052811ea3866fb0a8f12664af2fd41e"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/L/launert_silke-1045740 sha256 838e601967cd0189942fbec3ded5bad02052811ea3866fb0a8f12664af2fd41e",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -19541,7 +19944,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/L/launert_silke-1045740",
+        "sha256": "838e601967cd0189942fbec3ded5bad02052811ea3866fb0a8f12664af2fd41e",
+        "abgerufenAm": "2026-09-27T13:00:45.913447+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarische Staatssekretärin für Forschung, Technologie und Raumfahrt",
+            "zitat": "Parlamentarische Staatssekretärin für Forschung, Technologie und Raumfahrt",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-lehmann-jens-1045756",
@@ -19925,6 +20344,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CDU",
         "wahlkreis": "Wahlkreis 136: Paderborn",
+        "funktionen": [
+          "Bundesminister für Gesundheit"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -19978,7 +20400,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash fe56d4266745bfccbb87947b7776fa573cc076dbfc05e950592552d20fea1d00)",
         "parteiWert": "seit 2010 Mitglied im Landesvorstand der CDU Nordrhein-Westfalen",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/L/linnemann_carsten-1048896 sha256 fe56d4266745bfccbb87947b7776fa573cc076dbfc05e950592552d20fea1d00"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/L/linnemann_carsten-1048896 sha256 fe56d4266745bfccbb87947b7776fa573cc076dbfc05e950592552d20fea1d00",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -19994,7 +20417,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/L/linnemann_carsten-1048896",
+        "sha256": "fe56d4266745bfccbb87947b7776fa573cc076dbfc05e950592552d20fea1d00",
+        "abgerufenAm": "2026-09-27T13:00:47.810312+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Bundesminister für Gesundheit",
+            "zitat": "Bundesminister für Gesundheit",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-lips-patricia-1045854",
@@ -20259,6 +20698,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CSU",
         "wahlkreis": "Wahlkreis 221: Rosenheim",
+        "funktionen": [
+          "Parlamentarische Staatssekretärin des Innern"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -20312,7 +20754,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 34c9c00134b1439fccd19a9c48242d9939dd8355623ce7691c7463da3fc8b9b7)",
         "parteiWert": "1994 Beitritt CSU Ortsverband Kolbermoor",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/L/ludwig_daniela-1045886 sha256 34c9c00134b1439fccd19a9c48242d9939dd8355623ce7691c7463da3fc8b9b7"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/L/ludwig_daniela-1045886 sha256 34c9c00134b1439fccd19a9c48242d9939dd8355623ce7691c7463da3fc8b9b7",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -20328,7 +20771,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/L/ludwig_daniela-1045886",
+        "sha256": "34c9c00134b1439fccd19a9c48242d9939dd8355623ce7691c7463da3fc8b9b7",
+        "abgerufenAm": "2026-09-27T13:00:49.408312+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarische Staatssekretärin des Innern",
+            "zitat": "Parlamentarische Staatssekretärin des Innern",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-ludwig-saskia-1045888",
@@ -21090,6 +21549,9 @@
         "fraktion": "CDU/CSU",
         "partei": "CDU",
         "wahlkreis": "Wahlkreis 146: Hochsauerlandkreis",
+        "funktionen": [
+          "Bundeskanzler"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -21143,7 +21605,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 533711ffb50fca94e2bc01a6f26761a7909741aa7cb91a705a895701071baaf7)",
         "parteiWert": "seit Februar 2022 Vorsitzender der CDU-Deutschlands",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/M/merz_friedrich-1046080 sha256 533711ffb50fca94e2bc01a6f26761a7909741aa7cb91a705a895701071baaf7"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/M/merz_friedrich-1046080 sha256 533711ffb50fca94e2bc01a6f26761a7909741aa7cb91a705a895701071baaf7",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -21159,7 +21622,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/M/merz_friedrich-1046080",
+        "sha256": "533711ffb50fca94e2bc01a6f26761a7909741aa7cb91a705a895701071baaf7",
+        "abgerufenAm": "2026-09-27T13:00:52.405228+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Bundeskanzler",
+            "zitat": "Bundeskanzler",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-metzler-jan-1046086",
@@ -29230,6 +29709,9 @@
         "partei": "SPD",
         "listenmandat": true,
         "regionHinweis": "Landesliste Mecklenburg-Vorpommern",
+        "funktionen": [
+          "Bundesministerin für wirtschaftliche Zusammenarbeit und Entwicklung"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -29288,6 +29770,7 @@
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash d9d26417605ec59441ba35141afb225fe03a9141bb064d90cceeda862c349ab4)",
         "parteiWert": "Mitgliedschaften: Sozialdemokratische Partei Deutschlands (SPD)",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/A/alabali_radovan_reem-1043386 sha256 d9d26417605ec59441ba35141afb225fe03a9141bb064d90cceeda862c349ab4",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
       "weitereGremien": [],
@@ -29304,7 +29787,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/A/alabali_radovan_reem-1043386",
+        "sha256": "d9d26417605ec59441ba35141afb225fe03a9141bb064d90cceeda862c349ab4",
+        "abgerufenAm": "2026-09-27T13:01:30.735187+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Bundesministerin für wirtschaftliche Zusammenarbeit und Entwicklung",
+            "zitat": "Bundesministerin für wirtschaftliche Zusammenarbeit und Entwicklung",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-baldy-daniel-1043516",
@@ -29455,6 +29954,9 @@
         "fraktion": "SPD",
         "partei": "SPD",
         "wahlkreis": "Wahlkreis 170: Marburg",
+        "funktionen": [
+          "Parlamentarischer Staatssekretär für Wohnen, Stadtentwicklung und Bauwesen"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -29508,7 +30010,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash db8d5edad55e7cce43a6ba83e795696f4c6437ef15280ec32bf5c40154f649d1)",
         "parteiWert": "1990 Eintritt in die SPD",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/B/bartol_soeren-1043546 sha256 db8d5edad55e7cce43a6ba83e795696f4c6437ef15280ec32bf5c40154f649d1"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/B/bartol_soeren-1043546 sha256 db8d5edad55e7cce43a6ba83e795696f4c6437ef15280ec32bf5c40154f649d1",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -29524,7 +30027,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/bartol_soeren-1043546",
+        "sha256": "db8d5edad55e7cce43a6ba83e795696f4c6437ef15280ec32bf5c40154f649d1",
+        "abgerufenAm": "2026-09-27T13:01:31.688122+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarischer Staatssekretär für Wohnen, Stadtentwicklung und Bauwesen",
+            "zitat": "Parlamentarischer Staatssekretär für Wohnen, Stadtentwicklung und Bauwesen",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-bas-baerbel-1043554",
@@ -29555,6 +30074,9 @@
         "fraktion": "SPD",
         "partei": "SPD",
         "wahlkreis": "Wahlkreis 114: Duisburg I",
+        "funktionen": [
+          "Bundesministerin für Arbeit und Soziales"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -29608,7 +30130,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 8133191ca90cff374166ef6a77b9a6474048c007c6c222ed7ed013c535cbee92)",
         "parteiWert": "Seit Oktober 1988 Mitglied der SPD",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/B/bas_baerbel-1043554 sha256 8133191ca90cff374166ef6a77b9a6474048c007c6c222ed7ed013c535cbee92"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/B/bas_baerbel-1043554 sha256 8133191ca90cff374166ef6a77b9a6474048c007c6c222ed7ed013c535cbee92",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -29624,7 +30147,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/bas_baerbel-1043554",
+        "sha256": "8133191ca90cff374166ef6a77b9a6474048c007c6c222ed7ed013c535cbee92",
+        "abgerufenAm": "2026-09-27T13:01:32.582199+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Bundesministerin für Arbeit und Soziales",
+            "zitat": "Bundesministerin für Arbeit und Soziales",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-behrens-jens-1043618",
@@ -32288,6 +32827,9 @@
         "partei": "SPD",
         "listenmandat": true,
         "regionHinweis": "Landesliste Nordrhein-Westfalen",
+        "funktionen": [
+          "Parlamentarische Staatssekretärin für Arbeit und Soziales"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -32346,6 +32888,7 @@
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 93451fe964b7cbb9a223501b33c5405046b80be8605430cd462eea781a5ef2b3)",
         "parteiWert": "Seit 1986 Mitglied der SPD",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/G/griese_kerstin-1044602 sha256 93451fe964b7cbb9a223501b33c5405046b80be8605430cd462eea781a5ef2b3",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
       "weitereGremien": [],
@@ -32362,7 +32905,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/G/griese_kerstin-1044602",
+        "sha256": "93451fe964b7cbb9a223501b33c5405046b80be8605430cd462eea781a5ef2b3",
+        "abgerufenAm": "2026-09-27T13:01:44.645466+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarische Staatssekretärin für Arbeit und Soziales",
+            "zitat": "Parlamentarische Staatssekretärin für Arbeit und Soziales",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-hagedorn-bettina-1044684",
@@ -33479,6 +34038,9 @@
         "partei": "SPD",
         "listenmandat": true,
         "regionHinweis": "Landesliste Rheinland-Pfalz",
+        "funktionen": [
+          "Bundesministerin für Wohnen, Stadtentwicklung und Bauwesen"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -33537,6 +34099,7 @@
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 5b7f34a4e7cd146e4fbdbee4da34828816f2cd48b29fe3c74c3d2255a6d2a85f)",
         "parteiWert": "2010 Eintritt in die SPD.",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/H/hubertz_verena-1045124 sha256 5b7f34a4e7cd146e4fbdbee4da34828816f2cd48b29fe3c74c3d2255a6d2a85f",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
       "weitereGremien": [],
@@ -33553,7 +34116,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hubertz_verena-1045124",
+        "sha256": "5b7f34a4e7cd146e4fbdbee4da34828816f2cd48b29fe3c74c3d2255a6d2a85f",
+        "abgerufenAm": "2026-09-27T13:01:49.706971+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Bundesministerin für Wohnen, Stadtentwicklung und Bauwesen",
+            "zitat": "Bundesministerin für Wohnen, Stadtentwicklung und Bauwesen",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-kaczmarek-oliver-1045254",
@@ -33701,6 +34280,9 @@
         "partei": "SPD",
         "listenmandat": true,
         "regionHinweis": "Landesliste Thüringen",
+        "funktionen": [
+          "Beauftragte der Bundesregierung für Ostdeutschland"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -33759,6 +34341,7 @@
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash fbcd5c9040ac2592551f00af5a24d35061f2bd569ab6ad107003f1d3562db5a7)",
         "parteiWert": "Vorsitzende des SPD-Kreisverbandes Gera",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/K/kaiser_elisabeth-1045268 sha256 fbcd5c9040ac2592551f00af5a24d35061f2bd569ab6ad107003f1d3562db5a7",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
       "weitereGremien": [],
@@ -33775,7 +34358,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/kaiser_elisabeth-1045268",
+        "sha256": "fbcd5c9040ac2592551f00af5a24d35061f2bd569ab6ad107003f1d3562db5a7",
+        "abgerufenAm": "2026-09-27T13:01:50.798008+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Beauftragte der Bundesregierung für Ostdeutschland",
+            "zitat": "Beauftragte der Bundesregierung für Ostdeutschland",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-karaahmetoglu-macit-1045312",
@@ -34205,6 +34804,9 @@
         "fraktion": "SPD",
         "partei": "SPD",
         "wahlkreis": "Wahlkreis 035: Rotenburg I – Heidekreis",
+        "funktionen": [
+          "Bundesminister der Finanzen"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -34258,7 +34860,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 97655692490325409e242eb4f2a9a2d75bfe34e2697495abbd4280714f2bf989)",
         "parteiWert": "Mitgliedschaften: Sozialdemokratische Partei Deutschlands (SPD)",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/K/klingbeil_lars-1045428 sha256 97655692490325409e242eb4f2a9a2d75bfe34e2697495abbd4280714f2bf989"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/K/klingbeil_lars-1045428 sha256 97655692490325409e242eb4f2a9a2d75bfe34e2697495abbd4280714f2bf989",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -34274,7 +34877,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/klingbeil_lars-1045428",
+        "sha256": "97655692490325409e242eb4f2a9a2d75bfe34e2697495abbd4280714f2bf989",
+        "abgerufenAm": "2026-09-27T13:01:52.440771+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Bundesminister der Finanzen",
+            "zitat": "Bundesminister der Finanzen",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-klose-annika-1045438",
@@ -34529,6 +35148,9 @@
         "partei": "SPD",
         "listenmandat": true,
         "regionHinweis": "Landesliste Bayern",
+        "funktionen": [
+          "Parlamentarische Staatssekretärin für wirtschaftliche Zusammenarbeit und Entwicklung"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -34587,6 +35209,7 @@
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 74acc02af9dc035afbf55602502206aed11cd4cae01be90075440911a1398efb)",
         "parteiWert": "1991 Eintritt in die SPD",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/K/kofler_baerbel-1045482 sha256 74acc02af9dc035afbf55602502206aed11cd4cae01be90075440911a1398efb",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
       "weitereGremien": [],
@@ -34603,7 +35226,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/kofler_baerbel-1045482",
+        "sha256": "74acc02af9dc035afbf55602502206aed11cd4cae01be90075440911a1398efb",
+        "abgerufenAm": "2026-09-27T13:01:53.579022+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarische Staatssekretärin für wirtschaftliche Zusammenarbeit und Entwicklung",
+            "zitat": "Parlamentarische Staatssekretärin für wirtschaftliche Zusammenarbeit und Entwicklung",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-kramme-anette-1045582",
@@ -36113,6 +36752,9 @@
         "partei": "SPD",
         "listenmandat": true,
         "regionHinweis": "Landesliste Baden-Württemberg",
+        "funktionen": [
+          "Parlamentarische Staatssekretärin für Arbeit und Soziales"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -36171,6 +36813,7 @@
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash e35a4462ecd032bb24ed798c48f564f051bb065aa33262c6d58ee8c12b473714)",
         "parteiWert": "Mitglied der SPD seit 1994",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/M/mast_katja-1046000 sha256 e35a4462ecd032bb24ed798c48f564f051bb065aa33262c6d58ee8c12b473714",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
       "weitereGremien": [],
@@ -36187,7 +36830,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/M/mast_katja-1046000",
+        "sha256": "e35a4462ecd032bb24ed798c48f564f051bb065aa33262c6d58ee8c12b473714",
+        "abgerufenAm": "2026-09-27T13:02:00.435425+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarische Staatssekretärin für Arbeit und Soziales",
+            "zitat": "Parlamentarische Staatssekretärin für Arbeit und Soziales",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-michel-kathrin-1048962",
@@ -36456,7 +37115,16 @@
         "weitereGremien"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/M/miersch_matthias-1046120",
+        "sha256": "1964d6f86f4c5ee9fdece19ece9483e17197c776db4c3e52f21b92d965d6b902",
+        "abgerufenAm": "2026-09-27T13:02:01.522263+00:00",
+        "status": "offen",
+        "begruendung": "Biografie nennt seit 2024 kommissarischer Generalsekretaer; aktuelle Fraktions-/Amtsrolle nicht allein daraus ableiten.",
+        "funktionen": []
+      }
     },
     {
       "kanonischeKennung": "bundestag-mieves-matthias-1046124",
@@ -37500,6 +38168,9 @@
         "partei": "SPD",
         "listenmandat": true,
         "regionHinweis": "Landesliste Hessen",
+        "funktionen": [
+          "Staatsministerin und Beauftragte der Bundesregierung für Migration, Flüchtlinge und Integration"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -37558,6 +38229,7 @@
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash ac90fb0243ac6c470d85d6452c999c72e363900f9fcb88f0579b5bf9d3b6c349)",
         "parteiWert": "seit 2018 stellvertretende Vorsitzende der SPD Wetterau",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/P/pawlik_natalie-1046500 sha256 ac90fb0243ac6c470d85d6452c999c72e363900f9fcb88f0579b5bf9d3b6c349",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
       "weitereGremien": [],
@@ -37574,7 +38246,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/P/pawlik_natalie-1046500",
+        "sha256": "ac90fb0243ac6c470d85d6452c999c72e363900f9fcb88f0579b5bf9d3b6c349",
+        "abgerufenAm": "2026-09-27T13:02:06.343104+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Staatsministerin und Beauftragte der Bundesregierung für Migration, Flüchtlinge und Integration",
+            "zitat": "Staatsministerin und Beauftragte der Bundesregierung für Migration, Flüchtlinge und Integration",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-peick-jens-1046504",
@@ -37733,6 +38421,9 @@
         "bundesland": "Niedersachsen",
         "fraktion": "SPD",
         "wahlkreis": "Wahlkreis 042: Stadt Hannover II",
+        "funktionen": [
+          "Bundesminister der Verteidigung"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -37777,7 +38468,8 @@
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
-        "partei": "bewusst NICHT abgeleitet: Bundestags-Fraktion ist keine Partei; kein Partei-String gesetzt"
+        "partei": "bewusst NICHT abgeleitet: Bundestags-Fraktion ist keine Partei; kein Partei-String gesetzt",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -37795,7 +38487,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/P/pistorius_boris-1046550",
+        "sha256": "6ebba8fb601a27acf5b549b2db1d947ca10fb3e6ec6d60068fe1ed8117327939",
+        "abgerufenAm": "2026-09-27T13:02:07.414867+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Bundesminister der Verteidigung",
+            "zitat": "Bundesminister der Verteidigung",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-poschmann-sabine-1046592",
@@ -37826,6 +38534,9 @@
         "fraktion": "SPD",
         "partei": "SPD",
         "wahlkreis": "Wahlkreis 142: Dortmund II",
+        "funktionen": [
+          "Parlamentarische Staatssekretärin für Wohnen, Stadtentwicklung und Bauwesen"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -37879,7 +38590,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 8182a51ce2c15c0cd1e7e896843d9f4c4c99b455a45d0ae87b11ba4bea20da64)",
         "parteiWert": "1985 Eintritt in die SPD",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/P/poschmann_sabine-1046592 sha256 8182a51ce2c15c0cd1e7e896843d9f4c4c99b455a45d0ae87b11ba4bea20da64"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/P/poschmann_sabine-1046592 sha256 8182a51ce2c15c0cd1e7e896843d9f4c4c99b455a45d0ae87b11ba4bea20da64",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -37895,7 +38607,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/P/poschmann_sabine-1046592",
+        "sha256": "8182a51ce2c15c0cd1e7e896843d9f4c4c99b455a45d0ae87b11ba4bea20da64",
+        "abgerufenAm": "2026-09-27T13:02:07.612232+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarische Staatssekretärin für Wohnen, Stadtentwicklung und Bauwesen",
+            "zitat": "Parlamentarische Staatssekretärin für Wohnen, Stadtentwicklung und Bauwesen",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-rabanus-martin-1046646",
@@ -38328,6 +39056,9 @@
         "fraktion": "SPD",
         "partei": "SPD",
         "wahlkreis": "Wahlkreis 027: Oldenburg – Ammerland",
+        "funktionen": [
+          "Parlamentarischer Staatssekretär für Finanzen"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -38381,7 +39112,8 @@
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash cb8e81edc22be280ea43c8df741db3dcd3c6ea03534c196c5bfeb6269c73b299)",
         "parteiWert": "Mitglied der SPD seit 2002",
-        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/R/rohde_dennis-1046814 sha256 cb8e81edc22be280ea43c8df741db3dcd3c6ea03534c196c5bfeb6269c73b299"
+        "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/R/rohde_dennis-1046814 sha256 cb8e81edc22be280ea43c8df741db3dcd3c6ea03534c196c5bfeb6269c73b299",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -38397,7 +39129,23 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/R/rohde_dennis-1046814",
+        "sha256": "cb8e81edc22be280ea43c8df741db3dcd3c6ea03534c196c5bfeb6269c73b299",
+        "abgerufenAm": "2026-09-27T13:02:10.017842+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Parlamentarischer Staatssekretär für Finanzen",
+            "zitat": "Parlamentarischer Staatssekretär für Finanzen",
+            "abschnitt": "Funktion",
+            "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
+          }
+        ]
+      }
     },
     {
       "kanonischeKennung": "bundestag-roloff-sebastian-1046828",
@@ -38875,7 +39623,16 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/K/knodel_sieghard-1045460",
+        "sha256": "42a96cb4530a81c3400811b1f64303d2facb55546b156f7bacac6655f59ed5cf",
+        "abgerufenAm": "2026-09-27T13:02:11.977166+00:00",
+        "status": "offen",
+        "begruendung": "Keine neue eindeutig aktuelle Amtsrolle freigegeben. Vorhandene beratende Gremienrollen bleiben erhalten.",
+        "funktionen": []
+      }
     },
     {
       "kanonischeKennung": "bundestag-seidler-stefan-1047378",
@@ -38991,7 +39748,16 @@
         "fachlicheAchse"
       ],
       "importfreigegeben": false,
-      "aktiv": false
+      "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.bundestag.de/abgeordnete/biografien/S/seidler_stefan-1047378",
+        "sha256": "3ba866eab208e143651efc2c4fc72b0ab0e8508ef612db0f1b208bf9ad40c420",
+        "abgerufenAm": "2026-09-27T13:02:13.803330+00:00",
+        "status": "offen",
+        "begruendung": "Keine neue eindeutig aktuelle Amtsrolle freigegeben. Vorhandene beratende Gremienrollen bleiben erhalten.",
+        "funktionen": []
+      }
     },
     {
       "kanonischeKennung": "landtag-berlin-burkard-dregger",
@@ -41221,6 +41987,9 @@
         "fraktion": "CDU-Fraktion",
         "partei": "CDU",
         "wahlkreis": "Spandau, Wahlkreis 5",
+        "funktionen": [
+          "Regierender Bürgermeister von Berlin"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -41270,6 +42039,7 @@
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "parteiWert": "h1 der amtlichen Landtagsseite fuehrt Namen und Partei",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -41286,6 +42056,22 @@
       ],
       "importfreigegeben": false,
       "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.parlament-berlin.de/Abgeordnete/kai-wegner?groupStrategy=nachnamen",
+        "sha256": "435c232722686e07ff17e1a23e88d64f054f457544e523168058f10af6f6ca8e",
+        "abgerufenAm": "2026-09-27T12:35:42.293510+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Regierender Bürgermeister von Berlin",
+            "zitat": "Regierender Bürgermeister von Berlin",
+            "abschnitt": "Profilkopf (parlament-berlin.de)",
+            "zeitbeleg": "ohne Datumsangabe im Profilkopf"
+          }
+        ]
+      },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
     {
@@ -41317,6 +42103,9 @@
         "fraktion": "CDU-Fraktion",
         "partei": "CDU",
         "wahlkreis": "Marzahn-Hellersdorf, Wahlkreis 5",
+        "funktionen": [
+          "Senatorin für Bildung, Jugend und Familie"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -41366,6 +42155,7 @@
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "parteiWert": "h1 der amtlichen Landtagsseite fuehrt Namen und Partei",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -41382,6 +42172,22 @@
       ],
       "importfreigegeben": false,
       "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.parlament-berlin.de/Abgeordnete/katharina-gunther-wunsch?groupStrategy=nachnamen",
+        "sha256": "a13209a681959d95e2f42f6df8a4a153c6a85e3aaf6af7d4e31faa980bf908b9",
+        "abgerufenAm": "2026-09-27T12:35:42.630244+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Senatorin für Bildung, Jugend und Familie",
+            "zitat": "Senatorin für Bildung, Jugend und Familie seit 27. April 2023.",
+            "abschnitt": "Biografie (parlament-berlin.de)",
+            "zeitbeleg": "seit 27. April 2023"
+          }
+        ]
+      },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
     {
@@ -48724,6 +49530,9 @@
         "partei": "SPD",
         "listenmandat": true,
         "regionHinweis": "Neukölln",
+        "funktionen": [
+          "Bürgermeisterin und Senatorin für Wirtschaft, Energie und Betriebe"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -48773,6 +49582,7 @@
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "parteiWert": "h1 der amtlichen Landtagsseite fuehrt Namen und Partei",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -48789,6 +49599,22 @@
       ],
       "importfreigegeben": false,
       "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.parlament-berlin.de/Abgeordnete/franziska-giffey?groupStrategy=nachnamen",
+        "sha256": "374c38ce87c4605a45d5a459d256678e793dd74b78c5d457a0f82fae0dcf3726",
+        "abgerufenAm": "2026-09-27T12:36:39.237645+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Bürgermeisterin und Senatorin für Wirtschaft, Energie und Betriebe",
+            "zitat": "Seit 27. April 2023 Bürgermeisterin und Senatorin für Wirtschaft, Energie und Betriebe.",
+            "abschnitt": "Biografie (parlament-berlin.de)",
+            "zeitbeleg": "seit 27. April 2023"
+          }
+        ]
+      },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
     {
@@ -48821,6 +49647,9 @@
         "partei": "SPD",
         "listenmandat": true,
         "regionHinweis": "Steglitz-Zehlendorf",
+        "funktionen": [
+          "Senatorin für die Senatsverwaltung für Wissenschaft, Gesundheit und Pflege"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -48870,6 +49699,7 @@
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "parteiWert": "h1 der amtlichen Landtagsseite fuehrt Namen und Partei",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -48886,6 +49716,22 @@
       ],
       "importfreigegeben": false,
       "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.parlament-berlin.de/Abgeordnete/ina-czyborra?groupStrategy=nachnamen",
+        "sha256": "caaf21738731d4ba766f06c7f809100bb74ba05cef0100341eb2a23ee5085cef",
+        "abgerufenAm": "2026-09-27T12:36:39.883102+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Senatorin für die Senatsverwaltung für Wissenschaft, Gesundheit und Pflege",
+            "zitat": "1 a) Senatorin für die Senatsverwaltung für Wissenschaft, Gesundheit und Pflege (Stufe 4)",
+            "abschnitt": "Angaben zu den Verhaltensregeln gem. § 5a Landesabgeordnetengesetz",
+            "zeitbeleg": "ohne Datumsangabe"
+          }
+        ]
+      },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
     {
@@ -48918,6 +49764,9 @@
         "partei": "SPD",
         "listenmandat": true,
         "regionHinweis": "Marzahn-Hellersdorf",
+        "funktionen": [
+          "Senatorin für Inneres und Sport"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -48967,6 +49816,7 @@
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "parteiWert": "h1 der amtlichen Landtagsseite fuehrt Namen und Partei",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -48983,6 +49833,22 @@
       ],
       "importfreigegeben": false,
       "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.parlament-berlin.de/Abgeordnete/iris-spranger?groupStrategy=nachnamen",
+        "sha256": "2b62b9d5a48f5a2855df7985f063504d0e822c8f430b59d464f31b192cadf4c1",
+        "abgerufenAm": "2026-09-27T12:36:40.815709+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Senatorin für Inneres und Sport",
+            "zitat": "Seit Dezember 2021 Senatorin für Inneres, Digitalisierung und Sport, seit April 2023 Senatorin für Inneres und Sport.",
+            "abschnitt": "Biografie (parlament-berlin.de)",
+            "zeitbeleg": "seit April 2023"
+          }
+        ]
+      },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
     {
@@ -51880,6 +52746,9 @@
         "partei": "CDU",
         "listenmandat": true,
         "regionHinweis": "Brandenburg — Landesliste CDU-Fraktion, Platz 1",
+        "funktionen": [
+          "Stellvertretender Ministerpräsident und Minister für Inneres und Kommunales des Landes Brandenburg"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -51925,6 +52794,7 @@
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "partei": "docs/betrieb/brandenburg-parteipruefung-20260927.json (URL UND identischer Quellhash)",
         "parteiWert": "Seit 1999 Mitglied der CDU",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -51945,6 +52815,22 @@
       ],
       "importfreigegeben": false,
       "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.landtag.brandenburg.de/de/redmann_jan_(dr.)/11249",
+        "sha256": "560bb72f57c3e32c8017832f899c2f7595154f7ef6ad80c99658340c95cac455",
+        "abgerufenAm": "2026-09-27T12:37:11.371894+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Stellvertretender Ministerpräsident und Minister für Inneres und Kommunales des Landes Brandenburg",
+            "zitat": "Seit März 2026 Stellvertretender Ministerpräsident und Minister für Inneres und Kommunales des Landes Brandenburg",
+            "abschnitt": "Politische Laufbahn",
+            "zeitbeleg": "seit März 2026"
+          }
+        ]
+      },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
     {
@@ -52083,6 +52969,9 @@
         "partei": "CDU",
         "listenmandat": true,
         "regionHinweis": "Brandenburg — Landesliste CDU-Fraktion, Platz 3",
+        "funktionen": [
+          "Minister für Bildung, Jugend und Sport des Landes Brandenburg"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -52128,6 +53017,7 @@
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "partei": "docs/betrieb/brandenburg-parteipruefung-20260927.json (URL UND identischer Quellhash)",
         "parteiWert": "Seit 2004 Mitglied der CDU",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -52148,6 +53038,22 @@
       ],
       "importfreigegeben": false,
       "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.landtag.brandenburg.de/de/hoffmann_gordon/13035",
+        "sha256": "d7f5d8185722c6de1277f805fe4ec1ed4bb4b78b52e03e18b7c096b6831e522e",
+        "abgerufenAm": "2026-09-27T12:37:12.193333+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Minister für Bildung, Jugend und Sport des Landes Brandenburg",
+            "zitat": "Seit März 2026 Minister für Bildung, Jugend und Sport des Landes Brandenburg",
+            "abschnitt": "Politische Laufbahn",
+            "zeitbeleg": "seit März 2026"
+          }
+        ]
+      },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
     {
@@ -52907,6 +53813,9 @@
         "partei": "SPD",
         "listenmandat": true,
         "regionHinweis": "Brandenburg — Landesliste SPD-Fraktion, Platz 1",
+        "funktionen": [
+          "Ministerpräsident des Landes Brandenburg"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -52952,6 +53861,7 @@
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "partei": "docs/betrieb/brandenburg-parteipruefung-20260927.json (URL UND identischer Quellhash)",
         "parteiWert": "Seit 1993 Mitglied der SPD",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -52972,6 +53882,22 @@
       ],
       "importfreigegeben": false,
       "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.landtag.brandenburg.de/de/woidke_dietmar_(dr.)/11263",
+        "sha256": "86c879e54c79f873cffbf486c9ccc35ae6999b55a599046e79b371de2720fa36",
+        "abgerufenAm": "2026-09-27T12:37:15.982412+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Ministerpräsident des Landes Brandenburg",
+            "zitat": "Seit August 2013 Ministerpräsident des Landes Brandenburg",
+            "abschnitt": "Politische Laufbahn",
+            "zeitbeleg": "seit August 2013"
+          }
+        ]
+      },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
     {
@@ -53210,6 +54136,9 @@
         "fraktion": "SPD-Fraktion",
         "partei": "SPD",
         "wahlkreis": "Wahlkreis 22 (Potsdam II)",
+        "funktionen": [
+          "Minister der Finanzen des Landes Brandenburg"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -53254,6 +54183,7 @@
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "partei": "docs/betrieb/brandenburg-parteipruefung-20260927.json (URL UND identischer Quellhash)",
         "parteiWert": "Seit 2008 Mitglied der SPD",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -53271,6 +54201,22 @@
       ],
       "importfreigegeben": false,
       "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.landtag.brandenburg.de/de/keller_daniel/24173",
+        "sha256": "86e4eb295c9fab83cf6d3f450d6155d9eb7d0c54a855bcc518d182889ee2d495",
+        "abgerufenAm": "2026-09-27T12:37:17.175322+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Minister der Finanzen des Landes Brandenburg",
+            "zitat": "Seit März 2026 Minister der Finanzen des Landes Brandenburg",
+            "abschnitt": "Politische Laufbahn",
+            "zeitbeleg": "seit März 2026"
+          }
+        ]
+      },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
     {
@@ -54620,6 +55566,9 @@
         "partei": "SPD",
         "listenmandat": true,
         "regionHinweis": "Brandenburg — Landesliste SPD-Fraktion, Platz 12",
+        "funktionen": [
+          "Ministerin für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz des Landes Brandenburg"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -54665,6 +55614,7 @@
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "partei": "docs/betrieb/brandenburg-parteipruefung-20260927.json (URL UND identischer Quellhash)",
         "parteiWert": "Seit 2019 Mitglied der SPD",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -54685,6 +55635,22 @@
       ],
       "importfreigegeben": false,
       "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.landtag.brandenburg.de/de/mittelstaedt_hanka/33745",
+        "sha256": "084832a3db129b779ed737a6aeb1a4ca6efea356db10cea02cf25c4e97bc6625",
+        "abgerufenAm": "2026-09-27T12:37:23.205197+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Ministerin für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz des Landes Brandenburg",
+            "zitat": "Seit Dezember 2024 Ministerin für Land- und Ernährungswirtschaft, Umwelt und Verbraucherschutz des Landes Brandenburg",
+            "abschnitt": "Politische Laufbahn",
+            "zeitbeleg": "seit Dezember 2024"
+          }
+        ]
+      },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
     {
@@ -55023,6 +55989,9 @@
         "fraktion": "SPD-Fraktion",
         "partei": "SPD",
         "wahlkreis": "Wahlkreis 08 (Oberhavel II)",
+        "funktionen": [
+          "Minister der Justiz und für Digitalisierung des Landes Brandenburg"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -55067,6 +56036,7 @@
         "bundesland": "Landtagsmandat des jeweiligen Parlaments",
         "partei": "docs/betrieb/brandenburg-parteipruefung-20260927.json (URL UND identischer Quellhash)",
         "parteiWert": "Seit 2005 Mitglied der SPD",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -55084,6 +56054,22 @@
       ],
       "importfreigegeben": false,
       "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.landtag.brandenburg.de/de/grimm_benjamin_(dr.)/40591",
+        "sha256": "6c1ae1fb8b3d8b6ba206cc3440e3fbbd80034410ddf03b7e1bfecae002b28c32",
+        "abgerufenAm": "2026-09-27T12:37:24.862053+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Minister der Justiz und für Digitalisierung des Landes Brandenburg",
+            "zitat": "Seit Dezember 2024 Minister der Justiz und für Digitalisierung des Landes Brandenburg",
+            "abschnitt": "Politische Laufbahn",
+            "zeitbeleg": "seit Dezember 2024"
+          }
+        ]
+      },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
     {
@@ -55627,6 +56613,9 @@
         "fraktion": "SPD-Fraktion",
         "partei": "SPD",
         "wahlkreis": "Wahlkreis 21 (Potsdam I)",
+        "funktionen": [
+          "Ministerin für Wissenschaft, Forschung und Kultur des Landes Brandenburg"
+        ],
         "aktiv": false,
         "offizielleQuellen": [
           {
@@ -55670,6 +56659,7 @@
         "partei": "docs/betrieb/brandenburg-parteipruefung-20260927.json (URL UND identischer Quellhash)",
         "parteiWert": "Seit 1998 Mitglied der SPD",
         "region": "amtlicher Profilkopf (HTML), ausdrueckliche Angabe: gewählt als Direktkandidatin im Wahlkreis 21 (Potsdam I)",
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse",
         "mandatsartBelegt": "amtlicher Profilkopf (HTML); unveraendert uebernommen, nicht gedeutet"
       },
       "weitereGremien": [],
@@ -55688,6 +56678,22 @@
       ],
       "importfreigegeben": false,
       "aktiv": false,
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.landtag.brandenburg.de/de/schuele_manja_(dr.)/40597",
+        "sha256": "230cbb3c738eedb4c3f981c905d90e36b3ffaf489ae0895e525a6b619934e756",
+        "abgerufenAm": "2026-09-27T12:37:27.391139+00:00",
+        "status": "belegt",
+        "begruendung": "Aktuelle Amts-/Fraktionsrolle im personengebundenen amtlichen Profil. Nur diesen Wortlaut erhalten; keine Themen, Positionen oder ordentliche Ausschussmitgliedschaft ableiten.",
+        "funktionen": [
+          {
+            "wortlaut": "Ministerin für Wissenschaft, Forschung und Kultur des Landes Brandenburg",
+            "zitat": "Seit 2019 Mitglied der Landesregierung Brandenburg, Ministerin für Wissenschaft, Forschung und Kultur des Landes Brandenburg",
+            "abschnitt": "Politische Laufbahn",
+            "zeitbeleg": "seit 2019"
+          }
+        ]
+      },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     },
     {
@@ -56097,6 +57103,15 @@
         "sha256": "5c151150eab794686410d69491f339663c274bdf4e25d98a5871906af3a7988d",
         "profilPfad": "/de/skopec_oliver/40629",
         "zeileWortlaut": "Skopec, Oliver fraktionslos Landesliste fraktionslos, Platz 0"
+      },
+      "profilrollenQuittung": {
+        "datei": "docs/betrieb/profilrollen-54-20260927.json",
+        "url": "https://www.landtag.brandenburg.de/de/skopec_oliver/40629",
+        "sha256": "1dfed61452816f1460da49b55885dfeeb44df88c79c687b109d236100d42d4a0",
+        "abgerufenAm": "2026-09-27T12:37:30.018023+00:00",
+        "status": "offen",
+        "begruendung": "Keine neue eindeutig aktuelle Amtsrolle freigegeben. Vorhandene beratende Gremienrollen bleiben erhalten.",
+        "funktionen": []
       },
       "extraktionsstatus": "Automatische Extraktion; fachliche Einzelpruefung noch offen"
     }

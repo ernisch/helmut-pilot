@@ -30,6 +30,12 @@ Harte Grenzen dieses Werkzeugs:
     lokale Quittung ``docs/betrieb/brandenburg-mandatsarten-20260927.json`` als
     Landesliste belegt (URL + Hash + Abrufzeit); uebernommen werden nur
     Mandatsart und Region — NICHT Listenbeschriftung oder Listenplatz,
+  * fuer die 54 fachlich offenen Profile werden ueber die vom Orchestrator
+    gepruefte Quittung ``docs/betrieb/profilrollen-54-20260927.json`` nur die
+    freigegebenen ``wortlaut``-Strings dedupliziert an BESTEHENDE
+    ``profil.funktionen`` angehaengt (48 belegt, 6 offen). Es entsteht kein
+    ``regierungsrolle``-Schema und keine fachliche Achse; bestehende
+    Gremienrollen bleiben erhalten,
   * keine erfundenen Positionen, Themen, Rollen oder Biografien; uebernommen
     wird nur, was in der amtlichen Quelle belegt ist,
   * keine AfD-Zielprofile (die Auswahl ist bereits ohne AfD; zusaetzlich wird
@@ -55,6 +61,7 @@ import shutil
 import subprocess
 import sys
 import unicodedata
+from html.parser import HTMLParser
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -78,6 +85,20 @@ ERGAENZUNG_STATUS = ("belegt", "parteilos", "offen")
 MANDATSARTEN_BB = REPO_ROOT / "docs" / "betrieb" / "brandenburg-mandatsarten-20260927.json"
 MANDATSARTEN_BB_RESSOURCE = "docs/betrieb/brandenburg-mandatsarten-20260927.json"
 MANDATSARTEN_BB_REGION = "Brandenburg"
+
+# Versionierte, vom Orchestrator gepruefte Rollenquittung fuer die 54 fachlich
+# noch offenen Profile (48 belegt, 6 offen). Nur die ausdruecklich freigegebenen
+# ``wortlaut``-Strings werden an bestehende ``profil.funktionen`` dedupliziert
+# ANGEHAENGT; bestehende Gremienrollen bleiben unveraendert. Es entsteht KEIN
+# regierungsrolle-Schema und KEINE fachliche Achse. Jede Kennung ist an URL,
+# Quellhash, erlaubten Status und ein woertliches Zitat im personengebundenen
+# amtlichen Abschnitt gebunden. Abweichungen brechen fail closed ab.
+PROFILROLLEN = REPO_ROOT / "docs" / "betrieb" / "profilrollen-54-20260927.json"
+PROFILROLLEN_RESSOURCE = "docs/betrieb/profilrollen-54-20260927.json"
+PROFILROLLEN_GESAMT = 54
+PROFILROLLEN_BELEGT = 48
+PROFILROLLEN_OFFEN = 6
+PROFILROLLEN_STATUS = ("belegt", "offen")
 
 ABRUF_BUNDESTAG = "bundestagsprofile-330-abruf.json"
 ABRUF_LANDESPARLAMENTE = "landesprofile-170-abruf.json"
@@ -403,6 +424,207 @@ def _pruefe_mandatsarten_bb(eingang, quittung_pfad: Path = MANDATSARTEN_BB) -> d
     return belege
 
 
+# ── Versionierte Rollenquittung der 54 fachlich offenen Profile (fail closed) ─
+def _rollen_div(detail_html: str, klasse: str) -> str:
+    """Genau einen vollstaendig geschlossenen Personenblock lesen, nie den Footer."""
+    class Block(HTMLParser):
+        def __init__(self):
+            super().__init__(convert_charrefs=True)
+            self.tiefe = 0
+            self.bloecke = []
+            self.teile = []
+
+        def handle_starttag(self, tag, attrs):
+            if tag == "div":
+                if self.tiefe:
+                    self.tiefe += 1
+                elif klasse in dict(attrs).get("class", "").split():
+                    self.tiefe = 1
+                    self.teile = []
+
+        def handle_endtag(self, tag):
+            if tag == "div" and self.tiefe:
+                self.tiefe -= 1
+                if not self.tiefe:
+                    self.bloecke.append(" ".join(self.teile))
+
+        def handle_data(self, data):
+            if self.tiefe:
+                self.teile.append(_html.escape(data))
+
+    parser = Block()
+    parser.feed(detail_html)
+    parser.close()
+    if parser.tiefe or len(parser.bloecke) != 1:
+        raise AssemblerFehler(f"Profilrollen: Personenblock {klasse!r} fehlt, ist doppelt oder unvollstaendig.")
+    return parser.bloecke[0]
+
+
+def _rollen_abschnitt(parlament: str, detail_html: str, abschnitt: str) -> str:
+    """Personengebundener HTML-Abschnitt fuer den Wortlaut-/Zitatbeleg.
+
+    Bundestag: ``Funktion`` ausschliesslich aus dem eigenen
+    ``m-biography__function``-Block, ``Biografie`` ausschliesslich aus dem
+    eigenen ``m-biography__biography``-Block. Navigation, Intro-/Fraktionskopf
+    und JSON-LD gelten NICHT als Beleg. Landesprofile werden auf den jeweils
+    vorhandenen personengebundenen Abschnitt begrenzt (Berlin: Profilkopf,
+    Biografie oder Verhaltensregeln-Abschnitt; Brandenburg: Politische
+    Laufbahn). Ist der Abschnitt nicht eindeutig auffindbar, bricht der Lauf
+    fail closed ab.
+    """
+    if parlament == "bundestag":
+        marker = {
+            "Funktion": "m-biography__function",
+            "Biografie": "m-biography__biography",
+        }.get(abschnitt)
+        if marker is None:
+            raise AssemblerFehler(f"Profilrollen: unbekannter Bundestagsabschnitt {abschnitt!r}.")
+        return _rollen_div(detail_html, marker)
+    if parlament == "landtag-berlin":
+        if abschnitt.startswith("Profilkopf"):
+            start = detail_html.find('class="b-text-image')
+            ende = detail_html.find("</dl>", start)
+            if start < 0 or ende < 0:
+                raise AssemblerFehler("Profilrollen: Berliner Profilkopf nicht eindeutig auffindbar.")
+            return detail_html[start:ende]
+        if abschnitt.startswith("Biografie"):
+            kopf = detail_html.find('class="b-text-image')
+            kopf_ende = detail_html.find("</dl>", kopf)
+            start = detail_html.find('class="b-text', kopf_ende)
+            ende = detail_html.find("<section", start)
+            if kopf_ende < 0 or start < 0 or ende < 0:
+                raise AssemblerFehler("Profilrollen: Berliner Biografieabschnitt nicht eindeutig auffindbar.")
+            return detail_html[start:ende]
+        if abschnitt.startswith("Angaben zu den Verhaltensregeln"):
+            start = detail_html.find("Angaben zu den Verhaltensregeln")
+            ende = detail_html.find("</section>", start)
+            if start < 0 or ende < 0:
+                raise AssemblerFehler("Profilrollen: Verhaltensregeln-Abschnitt nicht eindeutig auffindbar.")
+            return detail_html[start:ende]
+        raise AssemblerFehler(f"Profilrollen: unbekannter Berliner Abschnitt {abschnitt!r}.")
+    if parlament == "landtag-brandenburg":
+        if abschnitt == "Politische Laufbahn":
+            start = detail_html.find("Politische Laufbahn")
+            if start < 0:
+                raise AssemblerFehler("Profilrollen: Abschnitt 'Politische Laufbahn' fehlt.")
+            naechster = detail_html.find("<h2", start + len("Politische Laufbahn"))
+            if naechster < 0:
+                raise AssemblerFehler("Profilrollen: Ende der politischen Laufbahn fehlt.")
+            return detail_html[start:naechster]
+        raise AssemblerFehler(f"Profilrollen: unbekannter Brandenburger Abschnitt {abschnitt!r}.")
+    raise AssemblerFehler(f"Profilrollen: unbekanntes Parlament {parlament!r}.")
+
+
+def _pruefe_rolleneintrag(kennung: str, ergebnis: dict, abruf: dict, detail_html: str) -> str:
+    """Prueft einen einzelnen Rolleneintrag gegen die amtliche Original-HTML.
+
+    Fail closed bei unerwartetem Status, offenem Eintrag mit Rolle, belegtem
+    Eintrag ohne Rolle, Quelldrift (URL/Hash), fehlendem Abschnitt, erfundenem
+    Wortlaut (``wortlaut`` nicht durch das ``zitat`` gedeckt) und einem Zitat,
+    das nicht woertlich im personengebundenen amtlichen Abschnitt steht.
+    Rueckgabe: der validierte Status (``belegt``/``offen``).
+    """
+    status = ergebnis.get("status")
+    if status not in PROFILROLLEN_STATUS:
+        raise AssemblerFehler(f"Profilrollenquittung: unerwarteter Status {status!r} bei {kennung}.")
+    funktionen = ergebnis.get("funktionen")
+    if not isinstance(funktionen, list):
+        raise AssemblerFehler(f"Profilrollenquittung: funktionen fehlt bei {kennung}.")
+    quelle = ergebnis.get("quelle") or {}
+    if quelle.get("url") != abruf["url"]:
+        raise AssemblerFehler(f"Profilrollenquittung: abweichende Quell-URL bei {kennung}.")
+    if quelle.get("sha256") != abruf["sha256"]:
+        raise AssemblerFehler(f"Profilrollenquittung: abweichender Quellhash bei {kennung}.")
+    if status == "offen":
+        # Ein offener Eintrag darf KEINE Rolle tragen — sonst waere der Status
+        # widerspruechlich (offen, aber doch eine Rolle).
+        if funktionen:
+            raise AssemblerFehler(f"Profilrollenquittung: offener Eintrag mit Rolle bei {kennung}.")
+        return status
+    if not funktionen:
+        raise AssemblerFehler(f"Profilrollenquittung: Status belegt ohne Rolle bei {kennung}.")
+    for funktion in funktionen:
+        wortlaut = str(funktion.get("wortlaut") or "").strip()
+        zitat = str(funktion.get("zitat") or "").strip()
+        abschnitt = str(funktion.get("abschnitt") or "").strip()
+        if not wortlaut or not zitat or not abschnitt:
+            raise AssemblerFehler(
+                f"Profilrollenquittung: unvollstaendige Rolle (wortlaut/zitat/abschnitt) bei {kennung}."
+            )
+        if _zitat_normalisiert(wortlaut) not in _zitat_normalisiert(zitat):
+            raise AssemblerFehler(
+                f"Profilrollenquittung: Wortlaut nicht durch das Zitat gedeckt (erfunden) bei {kennung}."
+            )
+        bereich = _text(_rollen_abschnitt(abruf["parlament"], detail_html, abschnitt))
+        if _zitat_normalisiert(zitat) not in _zitat_normalisiert(bereich):
+            raise AssemblerFehler(
+                f"Profilrollenquittung: Zitat nicht woertlich im Abschnitt {abschnitt!r} belegt ({kennung})."
+            )
+    return status
+
+
+def _pruefe_profilrollen(eingang, quittung=None) -> dict:
+    """Prueft die versionierte Rollenquittung und indexiert sie je Kennung.
+
+    Nur die dort freigegebenen ``wortlaut``-Strings werden spaeter an bestehende
+    ``profil.funktionen`` dedupliziert ANGEHAENGT. Fail closed bei fehlender
+    Quittung, falscher Bilanz, fehlender/doppelter Kennung, Fremdkennung
+    ausserhalb der 500 Zielprofile und jedem ungueltigen Einzeleintrag
+    (siehe ``_pruefe_rolleneintrag``).
+    """
+    quittung = getattr(eingang, "profilrollen", None) if quittung is None else quittung
+    if not isinstance(quittung, dict):
+        raise AssemblerFehler(f"Profilrollenquittung fehlt: {PROFILROLLEN_RESSOURCE}.")
+    ergebnisse = quittung.get("ergebnisse")
+    if not isinstance(ergebnisse, list) or len(ergebnisse) != PROFILROLLEN_GESAMT:
+        raise AssemblerFehler(
+            f"Profilrollenquittung: erwartet {PROFILROLLEN_GESAMT} Ergebnisse, "
+            f"gefunden {len(ergebnisse) if isinstance(ergebnisse, list) else 'n/a'}."
+        )
+    bilanz = quittung.get("bilanz") or {}
+    if (bilanz.get("gesamt"), bilanz.get("rollenbelegt"), bilanz.get("offen")) != (
+        PROFILROLLEN_GESAMT, PROFILROLLEN_BELEGT, PROFILROLLEN_OFFEN
+    ):
+        raise AssemblerFehler(f"Profilrollenquittung: unerwartete Bilanz {bilanz!r}.")
+
+    kennung_zu_abruf = {}
+    for eintrag in eingang.auswahl["auswahl"]:
+        abruf = eingang.abruf_by_url[eintrag["url"]]
+        kennung_zu_abruf[_slug(eintrag["parlament"], abruf["amtlicheKennung"])] = abruf
+    if len(kennung_zu_abruf) != len(eingang.auswahl["auswahl"]):
+        raise AssemblerFehler("Kanonische Kennungen der 500 Zielprofile sind nicht eindeutig.")
+
+    index = {}
+    belegt = 0
+    offen = 0
+    for ergebnis in ergebnisse:
+        kennung = str(ergebnis.get("kennung", "")).strip()
+        if not kennung:
+            raise AssemblerFehler("Profilrollenquittung: Eintrag ohne Kennung.")
+        if kennung in index:
+            raise AssemblerFehler(f"Profilrollenquittung: doppelte Kennung {kennung}.")
+        abruf = kennung_zu_abruf.get(kennung)
+        if abruf is None:
+            raise AssemblerFehler(
+                f"Profilrollenquittung: Kennung {kennung} gehoert nicht zu den 500 Zielprofilen."
+            )
+        detail_html = (eingang.detailseiten / abruf["datei"]).read_text(encoding="utf-8")
+        status = _pruefe_rolleneintrag(kennung, ergebnis, abruf, detail_html)
+        if status == "offen":
+            offen += 1
+        else:
+            belegt += 1
+        index[kennung] = ergebnis
+    if (belegt, offen) != (PROFILROLLEN_BELEGT, PROFILROLLEN_OFFEN):
+        raise AssemblerFehler(
+            f"Profilrollenquittung: erwartet {PROFILROLLEN_BELEGT} belegt / {PROFILROLLEN_OFFEN} offen, "
+            f"gefunden {belegt} / {offen}."
+        )
+    eingang.profilrollen_by_kennung = index
+    eingang.profilrollen_verwendet = set()
+    return index
+
+
 # ── Eingang laden und binden ──────────────────────────────────────────────────
 class Eingang:
     def __init__(self, verzeichnis: Path):
@@ -411,6 +633,10 @@ class Eingang:
         self.auswahl = _lies_json(NAMENSAUSWahl)
         self.brandenburg_partei = _lies_json(BRANDENBURG_PARTEI)
         self.parteifeldpruefung = _lies_json(PARTEIFELDPRUEFUNG)
+        try:
+            self.profilrollen = _lies_json(PROFILROLLEN)
+        except FileNotFoundError as fehler:
+            raise AssemblerFehler(f"Profilrollenquittung fehlt: {PROFILROLLEN_RESSOURCE}") from fehler
         self.abruf = _lies_json(verzeichnis / ABRUF_BUNDESTAG) + _lies_json(
             verzeichnis / ABRUF_LANDESPARLAMENTE
         )
@@ -971,6 +1197,40 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
     for eintrag_funktion in zusatz_funktionen:
         if eintrag_funktion not in funktionen:
             funktionen.append(eintrag_funktion)
+
+    # Versionierte Rollenquittung: nur die ausdruecklich freigegebenen
+    # ``wortlaut``-Strings an BESTEHENDE funktionen dedupliziert anhaengen.
+    # Bestehende Gremienrollen bleiben unveraendert; es entsteht kein neues
+    # Schema und keine fachliche Achse.
+    rollen_quittung = None
+    rollen_beleg = None
+    rollen_eintrag = (getattr(eingang, "profilrollen_by_kennung", None) or {}).get(mandatsId)
+    if rollen_eintrag is not None:
+        verwendet = getattr(eingang, "profilrollen_verwendet", None)
+        if verwendet is not None:
+            verwendet.add(mandatsId)
+        rollen_quittung = rollen_eintrag.get("quelle") or {}
+        rollen_beleg = {
+            "datei": PROFILROLLEN_RESSOURCE,
+            "url": rollen_quittung.get("url"),
+            "sha256": rollen_quittung.get("sha256"),
+            "abgerufenAm": rollen_quittung.get("abgerufenAm"),
+            "status": rollen_eintrag.get("status"),
+            "begruendung": rollen_eintrag.get("begruendung"),
+            "funktionen": [],
+        }
+        for funktion in rollen_eintrag.get("funktionen") or []:
+            wortlaut = str(funktion.get("wortlaut") or "").strip()
+            if not wortlaut:
+                continue
+            if wortlaut not in funktionen:
+                funktionen.append(wortlaut)
+            rollen_beleg["funktionen"].append({
+                "wortlaut": wortlaut,
+                "zitat": funktion.get("zitat"),
+                "abschnitt": funktion.get("abschnitt"),
+                "zeitbeleg": funktion.get("zeitbeleg"),
+            })
     if funktionen:
         profil["funktionen"] = funktionen
     profil["aktiv"] = False
@@ -1011,7 +1271,18 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"(amtliche Uebersicht, URL UND sha256 gebunden); nur Mandatsart Landesliste "
             f"und Region Brandenburg uebernommen — NICHT die Listenbeschriftung und NICHT der Listenplatz"
         )
-    if profil.get("funktionen"):
+    if rollen_beleg and rollen_beleg["funktionen"]:
+        feldbelege["funktionen"] = (
+            f"vom Orchestrator gepruefte Rollenquittung {PROFILROLLEN_RESSOURCE} "
+            f"(amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene "
+            f"Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
+        )
+        if profil_roh.get("funktionen") or zusatz_funktionen:
+            feldbelege["funktionen"] += (
+                "; zusaetzlich memberOf-Rollen der Bundestagsseite bzw. Mitgliedschaften in belegten "
+                "sonstigen Gremien rollengetreu als Funktion erhalten"
+            )
+    elif profil.get("funktionen"):
         feldbelege["funktionen"] = (
             "memberOf-Rollen der Bundestagsseite, roh als belegte Strings; beratende Rollen sind keine "
             "ordentliche Mitgliedschaft; Mitgliedschaften in belegten sonstigen Gremien bleiben "
@@ -1149,6 +1420,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
     }
     if mandatsart_quittung is not None:
         datensatz["mandatsartQuittung"] = mandatsart_quittung
+    if rollen_beleg is not None:
+        datensatz["profilrollenQuittung"] = rollen_beleg
     if "status" in extraktion:
         datensatz["extraktionsstatus"] = extraktion["status"]
     return datensatz
@@ -1160,6 +1433,7 @@ def assembliere(eingang: Eingang) -> dict:
     ergaenzung = _pruefe_ergaenzung(eingang)
     eingang.mandatsarten_bb = _pruefe_mandatsarten_bb(eingang)
     eingang.mandatsarten_verwendet = set()
+    profilrollen = _pruefe_profilrollen(eingang)
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
 
     # Die gepruefte Quittung muss die offenen Parteifelder DECKUNGSGLEICH abbilden:
@@ -1178,6 +1452,23 @@ def assembliere(eingang: Eingang) -> dict:
     if ungenutzte_mandate:
         raise AssemblerFehler(
             f"Mandatsartenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_mandate)}."
+        )
+
+    # Die Rollenquittung muss die 54 offenen Fachachsen DECKUNGSGLEICH abbilden:
+    # jede Kennung genau einmal verwendet, kein Eintrag fuer ein Profil mit
+    # belegter Ausschussachse, und keine offene Fachachse ohne Quittung.
+    ungenutzte_rollen = set(profilrollen) - eingang.profilrollen_verwendet
+    if ungenutzte_rollen:
+        raise AssemblerFehler(
+            f"Profilrollenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_rollen)}."
+        )
+    offene_achsen = {d["kanonischeKennung"] for d in datensaetze if "fachlicheAchse" in d["offeneFelder"]}
+    if offene_achsen != set(profilrollen):
+        fehlend = sorted(offene_achsen - set(profilrollen))
+        fremd = sorted(set(profilrollen) - offene_achsen)
+        raise AssemblerFehler(
+            "Profilrollenquittung deckt die offenen Fachachsen nicht genau ab "
+            f"(ohne Quittung: {fehlend[:5]}, nicht offen: {fremd[:5]})."
         )
 
     # Belegte sonstige Gremien duerfen NICHT in den Ausschussfeldern stehen: gegenprobe
@@ -1229,6 +1520,11 @@ def assembliere(eingang: Eingang) -> dict:
     ergaenzung_belegt = sum(1 for e in ergaenzung.values() if e["status"] == "belegt")
     ergaenzung_parteilos = sum(1 for e in ergaenzung.values() if e["status"] == "parteilos")
     ergaenzung_offen = sum(1 for e in ergaenzung.values() if e["status"] == "offen")
+    rollen_belegt = sum(1 for e in profilrollen.values() if e["status"] == "belegt")
+    rollen_offen = sum(1 for e in profilrollen.values() if e["status"] == "offen")
+    rollen_vergeben = sum(
+        len(d["profilrollenQuittung"]["funktionen"]) for d in datensaetze if d.get("profilrollenQuittung")
+    )
 
     return {
         "status": (
@@ -1251,6 +1547,11 @@ def assembliere(eingang: Eingang) -> dict:
             "mandatsartenquittung": (
                 f"{MANDATSARTEN_BB_RESSOURCE} (amtliche Brandenburger Uebersicht; Landesliste fuer "
                 f"{len(eingang.mandatsarten_bb)} Profile, URL + sha256 + Abrufzeit gebunden)"
+            ),
+            "profilrollenQuittung": (
+                f"{PROFILROLLEN_RESSOURCE} (vom Orchestrator geprueft; 48 Rollen fuer fachlich offene "
+                "Profile an bestehende funktionen angehaengt, 6 bleiben offen; URL + sha256 + woertliches "
+                "Zitat im personengebundenen Abschnitt gebunden)"
             ),
             "sonstigeGremien": (
                 f"explizite Liste mit {len(SONSTIGE_GREMIEN)} amtlich belegten sonstigen Gremien des "
@@ -1289,6 +1590,15 @@ def assembliere(eingang: Eingang) -> dict:
                 f"{MANDATSARTEN_BB_RESSOURCE} als Landesliste belegt (URL + Hash + Abrufzeit). Uebernommen "
                 "werden NUR Mandatsart Landesliste und Region Brandenburg, NICHT Listenbeschriftung oder Listenplatz."
             ),
+            (
+                "Fuer die 54 fachlich offenen Profile werden ueber die vom Orchestrator gepruefte "
+                f"Rollenquittung {PROFILROLLEN_RESSOURCE} ausschliesslich die freigegebenen wortlaut-Strings "
+                "dedupliziert an BESTEHENDE funktionen angehaengt (48 belegt, 6 offen). Es entsteht KEIN "
+                "regierungsrolle-Schema und KEINE fachliche Achse; bestehende Gremienrollen bleiben erhalten. "
+                "Jede Kennung ist an URL, Quellhash, erlaubten Status und ein woertliches Zitat im "
+                "personengebundenen amtlichen Abschnitt gebunden (Bundestag Funktion nur m-biography__function, "
+                "Biografie nur eigener Biografiebereich; keine Navigation als Beleg)."
+            ),
             "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
             "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe.",
         ],
@@ -1323,6 +1633,14 @@ def assembliere(eingang: Eingang) -> dict:
                 "datei": MANDATSARTEN_BB_RESSOURCE,
                 "belege": len(eingang.mandatsarten_bb),
                 "verwendet": len(eingang.mandatsarten_verwendet),
+            },
+            "profilrollenQuittung": {
+                "datei": PROFILROLLEN_RESSOURCE,
+                "geprueftGesamt": len(profilrollen),
+                "belegt": rollen_belegt,
+                "offen": rollen_offen,
+                "rollenVergeben": rollen_vergeben,
+                "deckungsgleichVerwendet": len(eingang.profilrollen_verwendet),
             },
             "offeneFelder": offene_felder,
         },
