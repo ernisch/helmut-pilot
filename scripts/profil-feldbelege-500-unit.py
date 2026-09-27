@@ -4,6 +4,7 @@ Nur lokal/offline. Prueft fail closed: Quelldrift, Fraktion-ist-keine-Partei,
 offene-bleiben-offen sowie Duplikat/Fremdkennung/unerwarteter Status/Konflikt.
 """
 import importlib.util
+import json
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
@@ -152,6 +153,142 @@ with tempfile.TemporaryDirectory() as tmp:
                  {erg_kennung: dict(ergebnis, status='parteilos', partei=None, beleg='parteilos')}), erg_auswahl),
         'parteilos ohne Quellenzitat')
 
+# ── 7 · Gremien-Trennung: sonstige Gremien sind keine staendigen Ausschuesse ─────────────
+WAHLAUSSCHUSS_URL = 'https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss'
+BEIRAT = 'Parlamentarischer Beirat für nachhaltige Entwicklung und Zukunftsfragen'
+BEIRAT_URL = 'https://www.bundestag.de/ausschuesse/weitere_gremien/pbnez'
+
+
+def _bt_html(mitgliedschaften, bio='Mitgliedschaften und Ehrenämter: Mitglied der SPD'):
+    ld = {
+        '@context': 'https://schema.org',
+        '@type': 'ProfilePage',
+        'mainEntity': {'@type': 'Person', 'name': 'Erika Muster', 'memberOf': mitgliedschaften},
+    }
+    return ('<h1>Erika Muster</h1>'
+            '<script type="application/ld+json">' + json.dumps(ld, ensure_ascii=False) + '</script>'
+            '<div class="m-biography__biography"><p>' + bio + '</p></div>')
+
+
+def _bt_rolle(name, url, rolle):
+    return {'@type': 'Role', 'memberOf': {'@type': 'Organization', 'name': name, 'url': url},
+            'roleName': rolle}
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    bt_url = 'https://www.bundestag.de/abgeordnete/biografien/M/muster_erika-2'
+    kennung = m._slug('bundestag', 'muster_erika-2')
+    parteiquittung = {kennung: dict(
+        kennung=kennung, status='belegt', partei='SPD', beleg='Mitglied der SPD',
+        abschnitt='Biografie / Mitgliedschaften und Ehrenämter', quelle={})}
+    bt_auswahl = dict(url=bt_url, text='Muster, Erika', fraktion='SPD',
+                      amtlicheKennung='muster_erika-2', parlament='bundestag')
+
+    def _bt_datensatz(mitgliedschaften, ausschuesse, stellvertretende=None, funktionen=None, dateiname='bt.html'):
+        (root / dateiname).write_text(_bt_html(mitgliedschaften), encoding='utf-8')
+        quelle = _quelle(root, dateiname, bt_url, 'muster_erika-2')
+        profil = dict(vollname='Erika Muster', bundesland='Berlin', fraktion='SPD',
+                      mandatsachsen=[dict(art='Wahlkreismandat', beleg='Wahlkreis 1: Berlin-Mitte, Berlin')],
+                      regionsangaben=['Berlin-Mitte'], ausschuesse=list(ausschuesse),
+                      stellvertretendeAusschuesse=list(stellvertretende or []),
+                      funktionen=list(funktionen or []))
+        extraktion = dict(profil=profil, quelle=quelle, offen=[], feldbelege={})
+        quittung = {kennung: dict(parteiquittung[kennung], quelle=dict(url=bt_url, sha256=quelle['sha256']))}
+        return m._baue_datensatz(_eingang(root, quelle, extraktion, quittung), bt_auswahl)
+
+    # 7a · Ordentliche UND stellvertretende Mitgliedschaft in einem sonstigen Gremium:
+    # Rolle bleibt in den Storage-Funktionen erhalten, der Ausschuss bleibt draussen.
+    datensatz = _bt_datensatz(
+        [_bt_rolle('Ausschuss für Gesundheit', 'https://www.bundestag.de/ausschuesse/gesundheit', 'Ordentliches Mitglied'),
+         _bt_rolle('Wahlausschuss', WAHLAUSSCHUSS_URL, 'Ordentliches Mitglied'),
+         _bt_rolle(BEIRAT, BEIRAT_URL, 'Stellvertretendes Mitglied')],
+        ['Ausschuss für Gesundheit', 'Wahlausschuss'], [BEIRAT])
+    assert datensatz['profil']['ausschuesse'] == ['Ausschuss für Gesundheit'], datensatz['profil']['ausschuesse']
+    assert 'stellvertretendeAusschuesse' not in datensatz['profil'], 'sonstiges Gremium darf keine Stellvertretung bleiben'
+    assert 'Wahlausschuss' not in datensatz['profil']['ausschuesse']
+    assert sorted(datensatz['weitereGremien']) == sorted(['Wahlausschuss', BEIRAT]), datensatz['weitereGremien']
+    rollen = set(datensatz['profil']['funktionen'])
+    assert 'Ordentliches Mitglied: Wahlausschuss' in rollen, rollen
+    assert f'Stellvertretendes Mitglied: {BEIRAT}' in rollen, rollen
+    assert 'fachlicheAchse' not in datensatz['offeneFelder'], datensatz['offeneFelder']
+    assert 'weitereGremien' in datensatz['offeneFelder']
+    for beleg in datensatz['weitereGremienBeleg']:
+        assert beleg['url'].startswith('https://www.bundestag.de/')
+        assert beleg['rolle'] in ('Ordentliches Mitglied', 'Stellvertretendes Mitglied')
+
+    # 7b · Unbekannter echter Ausschuss bleibt gesperrt (kein Umdrehen, keine Ausnahme).
+    unbekannt = _bt_datensatz(
+        [_bt_rolle('Ausschuss für Zauberei und Hexenwesen', 'https://www.bundestag.de/ausschuesse/zauberei', 'Ordentliches Mitglied')],
+        ['Ausschuss für Zauberei und Hexenwesen'], dateiname='bt-unbekannt.html')
+    assert unbekannt['profil']['ausschuesse'] == ['Ausschuss für Zauberei und Hexenwesen'], unbekannt['profil']['ausschuesse']
+    assert unbekannt['weitereGremien'] == [] and unbekannt['weitereGremienBeleg'] == []
+    assert 'fachlicheAchse' not in unbekannt['offeneFelder']
+
+    # 7c · Ein sonstiges Gremium mit abweichender amtlicher URL (Quelldrift) sperrt den Lauf.
+    _erwarte_fehler(lambda: _bt_datensatz(
+        [_bt_rolle('Wahlausschuss', WAHLAUSSCHUSS_URL + '-fremd', 'Ordentliches Mitglied')],
+        ['Wahlausschuss'], dateiname='bt-drift.html'),
+        'Quelldrift der amtlichen JSON-LD-URL')
+
+    # 7d · Leere fachliche Achse bleibt sichtbar offen (kein Themen- oder Rollenersatz).
+    leer = _bt_datensatz(
+        [_bt_rolle('Wahlausschuss', WAHLAUSSCHUSS_URL, 'Ordentliches Mitglied')],
+        ['Wahlausschuss'], dateiname='bt-leer.html')
+    assert 'ausschuesse' not in leer['profil'], 'sonstiges Gremium darf nicht als Ausschuss bleiben'
+    assert 'fachlicheAchse' in leer['offeneFelder'], leer['offeneFelder']
+    assert leer['profil']['funktionen'] == ['Ordentliches Mitglied: Wahlausschuss']
+
+# ── 8 · Mandatsartenquittung Brandenburg: Quelldrift und Fremdkennung fail closed ────────
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    roster = ('<table><tr><td><a href="/de/muster_erika/40777" class="profile">Muster, Erika </a></td>'
+              '<td>WfB-Gruppe</td><td>Landesliste WfB-Gruppe, Platz 0</td></tr></table>')
+    (root / 'roster.html').write_text(roster, encoding='utf-8')
+    quittung = dict(
+        quelle=dict(url='https://www.landtag.brandenburg.de/de/uebersicht/25777', datei='roster.html',
+                    sha256=m._sha256(root / 'roster.html'), bytes=(root / 'roster.html').stat().st_size,
+                    abgerufenAm='2026-09-27T14:33:29+00:00'),
+        belege=[dict(amtlicheKennung='40777', profilPfad='/de/muster_erika/40777',
+                     mandatsart='Landesliste', region='Brandenburg',
+                     zeileWortlaut='Muster, Erika WfB-Gruppe Landesliste WfB-Gruppe, Platz 0')])
+    quittung_pfad = root / 'quittung.json'
+    quittung_pfad.write_text(json.dumps(quittung, ensure_ascii=False), encoding='utf-8')
+    eingang = SimpleNamespace(verzeichnis=root, abruf=[
+        dict(url='https://www.landtag.brandenburg.de/de/muster_erika/40777',
+             amtlicheKennung='40777', parlament='landtag-brandenburg')])
+    belege = m._pruefe_mandatsarten_bb(eingang, quittung_pfad)
+    assert list(belege) == ['40777']
+    assert belege['40777']['zeileWortlaut'].endswith('Platz 0')
+
+    def _mit(quittung_aenderung, beleg_aenderung=None, datei_aenderung=None):
+        neu = json.loads(json.dumps(quittung))
+        if datei_aenderung:
+            datei_aenderung(neu)
+        if beleg_aenderung:
+            beleg_aenderung(neu['belege'][0])
+        if quittung_aenderung:
+            quittung_aenderung(neu)
+        pfad = root / 'quittung-aendern.json'
+        pfad.write_text(json.dumps(neu, ensure_ascii=False), encoding='utf-8')
+        return m._pruefe_mandatsarten_bb(eingang, pfad)
+
+    _erwarte_fehler(lambda: _mit(lambda q: q['quelle'].__setitem__('sha256', '0' * 64)), 'Quelldrift sha256')
+    _erwarte_fehler(lambda: _mit(None, lambda b: b.__setitem__('profilPfad', '/de/fremd/40777')), 'falscher Profillink')
+    _erwarte_fehler(lambda: _mit(None, lambda b: b.__setitem__('amtlicheKennung', '99999')), 'Fremdkennung')
+
+    # Hash/Groesse in der Quittung an die veraenderte Uebersicht anpassen, damit nur
+    # das fehlende Wort "Landesliste" geprueft wird.
+    (root / 'roster.html').write_text(roster.replace('Landesliste', 'Direktmandat'), encoding='utf-8')
+    neu = json.loads(json.dumps(quittung))
+    neu['quelle']['sha256'] = m._sha256(root / 'roster.html')
+    neu['quelle']['bytes'] = (root / 'roster.html').stat().st_size
+    neu['belege'][0]['zeileWortlaut'] = 'Muster, Erika WfB-Gruppe Direktmandat WfB-Gruppe, Platz 0'
+    pfad = root / 'quittung-ohne-landesliste.json'
+    pfad.write_text(json.dumps(neu, ensure_ascii=False), encoding='utf-8')
+    _erwarte_fehler(lambda: m._pruefe_mandatsarten_bb(eingang, pfad), 'fehlendes Wort Landesliste')
+
+
 if BUNDESTAG_NOURIPOUR.exists():
     html = BUNDESTAG_NOURIPOUR.read_text(encoding='utf-8')
     ohne_kopf = m.FRAKTIONSKOPF_MUSTER.sub(' ', html)
@@ -169,3 +306,7 @@ else:
 
 print('PASS: Fraktionslosigkeit erhaelt belegte Partei; abweichender Parteienwert gesperrt; '
       'Quelldrift/Fremdkennung/Duplikat/unerwarteter Status/Konflikt und offen-bleibt-offen gesperrt.')
+print('PASS: sonstige Gremien rollengetreu aus den Ausschuessen geloest (Ordentlich/Stellvertretend '
+      'bleiben in funktionen, nicht in committee); unbekannter Ausschuss bleibt gesperrt; '
+      'JSON-LD-URL-Drift, falscher Brandenburger Profillink, Fremdkennung, Hashdrift und fehlendes '
+      'Wort Landesliste sperren fail closed; leere Achse bleibt offen.')
