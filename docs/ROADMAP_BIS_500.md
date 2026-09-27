@@ -127,7 +127,7 @@ Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
 [500 Feldbelege](betrieb/500-profilfeldbelege-20260927.md) sind lokal zusammengestellt
 und hashgeprueft. Keine personenbezogenen Pflichtplaetze in der Auswahl.
 Naechster offener Teilschritt:die 74 Parteifelder und die verbleibenden Mandats-/
-Fachachsen einzeln belegen;477 technische Erfolge sind keine fachliche Importfreigabe.
+Fachachsen einzeln belegen;478 technische Erfolge sind keine fachliche Importfreigabe.
 Gremienrollen und vier BB-Listenmandate sind korrigiert. Der falsche Widerspruch
 SSW/fraktionslos ist mit PR661 ausgerollt und nachkontrolliert; Partei bleibt erhalten, AfD-Sperre unveraendert.
 Zwei bislang offene Berliner Mandatsarten sind ueber die amtliche
@@ -157,10 +157,15 @@ die gepruefte [BMWSB-Aufgabenquittung](betrieb/bmwsb-aufgaben-2-20260927.json)
 2 weitere mit den persoenlich zugewiesenen BMWSB-Unterbereichen (Sören Bartol
 Z I 3/W II/S I/B I/B II, Sabine Poschmann Z II/W I/S II/S III; kanonische
 v10-Adresse des amtlichen Organigramms, kein externer PDF-Parser, keine
-Hochstufung auf ganze Abteilungen); die54er
-Rollenquittung bleibt deckungsgleich,22 Achsen
-bleiben offen. Stand:477/23. Die separat belegten Amtsrollen
-Amthor/Haßelmann/Miersch bleiben unintegriert.
+Hochstufung auf ganze Abteilungen) und ueber die gesonderte gepruefte
+[Amthor-Einzelfallquittung](betrieb/amthor-aktuelles-amt-1-20260927.json) den
+einzeln offenen Rollenfall Philipp Amthor (aktuelle Kanzleramtsrolle seit29.Juli2026
+aus geschlossenem bpa-richtext-Lebenslauf, ein Thema Bund-Laender-Beziehungen aus
+genau einem echten li der Personalien-h2; der historische 54er-Eintrag bleibt offen,
+keine Rolllockerung); die54er
+Rollenquittung bleibt deckungsgleich,21 Achsen
+bleiben offen. Stand:478/22. Die separat belegten Amtsrollen
+Haßelmann/Miersch bleiben unintegriert.
 Naechster Fachschritt: verbleibende aktuelle Parteibelege, die letzte offene
 Berliner Mandatsart (Claudia Engelmann) und die restlichen Fachachsen.
 

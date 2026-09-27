@@ -1,0 +1,63 @@
+{
+  "datum": "2026-09-27",
+  "version": 1,
+  "status": "Vom Orchestrator geprueft; ein Einzelfall (Philipp Amthor) vorbereitet; nicht importfreigegeben",
+  "umfang": 1,
+  "bilanz": {
+    "gesamt": 1,
+    "Bund": 1,
+    "Berlin": 0,
+    "Brandenburg": 0
+  },
+  "ergebnisse": [
+    {
+      "kennung": "bundestag-amthor-philipp-1043428",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "bindungsart": "kanzleramt-aufgabe",
+      "person": "Philipp Amthor",
+      "funktion": "Staatsminister für Bund-Länder-Zusammenarbeit beim Bundeskanzler",
+      "amtsbeginn": "29. Juli 2026",
+      "rolleZitat": "Seit 29. Juli 2026 Staatsminister für Bund-Länder-Zusammenarbeit beim Bundeskanzler",
+      "vorherigeRolle": "2025 bis 2026 Parlamentarischer Staatssekretär beim Bundesminister für Digitales und Staatsmodernisierung",
+      "rolleAbschnitt": "Geschlossener eigener div.bpa-richtext-Lebenslauf der Bundesregierungs-Personenseite; eigener p-Absatz, ausdruecklich nicht Meta/Bildunterschrift",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/A/amthor_philipp-1043428",
+        "sha256": "e3e39200cca9a130552093ca0a8571574da491e2e777927da643a8bba210696c",
+        "abgerufenAm": "2026-09-27T12:59:55.092561+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskanzleramt/philipp-amthor-2448320",
+        "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskanzleramt/philipp-amthor-2448320",
+        "abgerufenAm": "2026-09-27T20:02:21.668104+00:00",
+        "sha256": "75bcb78966c83ab6c23d725a08e2418f1fc384c6c9c1c7de594f5274d0faf91e",
+        "bytes": 128940,
+        "datei": "amthor-breg-http-neubindung.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "aufgabenquelle": {
+        "url": "https://www.bundesregierung.de/breg-de/suche/merz-veraenderungen-im-kabinett--2448244",
+        "finalUrl": "https://www.bundesregierung.de/breg-de/suche/merz-veraenderungen-im-kabinett--2448244",
+        "abgerufenAm": "2026-09-27T18:42:39.203471+00:00",
+        "sha256": "be03d07df8b134c9d612f634c74cadaec7d5f754a8dd0b2ce67ac65bab2fa20c",
+        "bytes": 136311,
+        "datei": "amthor-aufgaben-kabinett-20260724.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "aufgabenH2": "Das sagte der Kanzler zu den neuen Personalien:",
+      "aufgabenStarke": "Staatsminister für die Bund-Länder-Beziehungen",
+      "aufgabenzitat": "die politische Zusammenarbeit und den Informationsfluss zwischen der Bundesregierung und den 16 Landesregierungen koordinieren.",
+      "quellpublikationsdatum": "2026-07-24",
+      "aufgabenbindung": "Staatsminister für Bund-Länder-Zusammenarbeit beim Bundeskanzler; Koordination der politischen Zusammenarbeit und des Informationsflusses zwischen der Bundesregierung und den 16 Landesregierungen",
+      "themen": [
+        "Bund-Länder-Beziehungen"
+      ],
+      "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Staatsminister für Bund-Länder-Zusammenarbeit beim Bundeskanzler; Koordination der politischen Zusammenarbeit und des Informationsflusses zwischen der Bundesregierung und den 16 Landesregierungen; keine persönliche politische Position",
+      "importfreigegeben": false
+    }
+  ],
+  "pruefung": "Ein einzelner, zuvor in der 54er Rollenquittung historisch offener Amtsrollenfall (Philipp Amthor) wird gesondert neu gebunden; die 54er Quittung bleibt unveraendert 48 belegt / 6 offen. Aktuelle Funktionsrolle ist ausschliesslich der geschlossene eigene div.bpa-richtext-Lebenslauf-p der Bundesregierungs-Personenseite mit 'Seit 29. Juli 2026' und 'Staatsminister für Bund-Länder-Zusammenarbeit beim Bundeskanzler' (nicht Meta/Bildunterschrift); das vorige PSts-Digitalamt 2025 bis 2026 steht ausdruecklich als historisch daneben. Das Thema Bund-Länder-Beziehungen stammt ausschliesslich aus genau einem echten li mit strong 'Staatsminister für die Bund-Länder-Beziehungen' und 'Philipp Amthor' unter der h2 'Das sagte der Kanzler zu den neuen Personalien:' der Ankuendigung vom 24. Juli 2026; gerade diese Ankuendigung belegt den Amtsantritt NICHT. Kanonische Person (Bundestags-Profilname/URL/Hash der 54er Quittung) und beide Zusatzquellen (Bundesregierungs-Personenseite, Ankuendigungsseite) sind an URL/finalUrl/sha256/Bytezahl/Abrufzeit/HTTP/Datei jeweils Original UND Metadatum gebunden. Kein weiteres Ministerportfolio, kein Digitalamt als aktuell, keine persoenliche politische Position, keine Importfreigabe."
+}

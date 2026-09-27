@@ -1,6 +1,6 @@
 {
   "status": "Offline-Feldbelege fuer exakt 500 Zielprofile (Bundestag/Berlin/Brandenburg); technische Zusammenstellung, KEINE fachliche Freigabe und kein Importmanifest",
-  "erstelltAm": "2026-09-27T19:30:00+00:00",
+  "erstelltAm": "2026-09-27T20:10:00+00:00",
   "vertragsformat": "helmut-mandatsprofil/1",
   "grundlage": {
     "namensauswahl": "docs/betrieb/500-namensauswahl-20260927.json",
@@ -38,7 +38,8 @@
     "Fuer 6 weitere dieser 54 Profile wird ueber die vom Orchestrator gepruefte Aufgabenquittung docs/betrieb/aufgabenachsen-6-20260927.json der ausdrueckliche Themenbegriff aus einem amtlich belegten personengebundenen Aufgabenbereich gesetzt (getrennter Herkunftshinweis in funktionen) und damit die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-aufgaben.py: Brand/Connemann/Pawlik nur Name UND ausdrueckliche Beauftragtenaufgabe, Themen nur innerhalb dieser Aufgabe (Connemann: Digitales ist keine Beauftragtenaufgabe); Kaiser ueber die belegte Amtsrolle und den ausdruecklichen Aufgabenabsatz; BMAS Person -> explizit genannte Abteilungsnummern -> deren Aufgabenabschnitt (Griese IV/V, Mast II/III; Mast erhaelt nie ein Griese-Thema). Jede Kennung ist eine bereits belegte Rolle der 54er Quittung, an deren Rollenquelle, an die amtliche Zusatzquelle (URL + sha256 + Abrufzeit + Datei + Bytezahl) und an woertliche Zitate im richtigen personengebundenen Aufgabenabschnitt gebunden. Keine persoenliche politische Position, keine erfundenen Themen; die disjunkte Vereinigung der 19 Ressort- mit den 6 Aufgabenachsen und den 29 verbleibend offenen ergibt weiter genau die 54er Rollenquittung.",
     "Fuer 2 weitere dieser 54 Profile wird ueber die vom Orchestrator gepruefte beratende Achsenquittung docs/betrieb/beratende-achsen-2-20260927.json die ausdrueckliche beratende Ausschussarbeit mit ihren Kurzthemen gesetzt (getrennter Ableitungshinweis in funktionen) und damit die fachliche Achse geschlossen. Die bestehende beratende Funktion bleibt erhalten; es entsteht NIE eine ordentliche/stellvertretende Ausschussmitgliedschaft und keine politische Position. Nur die zwei genehmigten Ausschuesse (Ausschuss fuer Landwirtschaft, Ernaehrung und Heimat; Haushaltsausschuss) sind erlaubt; jede Kennung ist an die kanonische Quelle (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + Datei), an das echte Original mit eindeutiger H1 und an die exakte Role 'Beratendes Mitglied' ohne endDate in ProfilePage.mainEntity.memberOf gebunden. Die disjunkte Vereinigung der 19 Ressort-, 6 Aufgaben- und 2 beratenden Achsen mit den 27 verbleibend offenen ergibt weiter genau die 54er Rollenquittung; diese 2 bleiben dort ausdruecklich offen (die beratende Funktion war bereits belegt, das ist KEIN Fehler).",
     "Fuer 3 weitere dieser 54 Profile wird ueber die vom Orchestrator gepruefte Zusatzaufgabenquittung docs/betrieb/zusaetzliche-aufgaben-3-20260927.json die ausdrueckliche amtliche Fachzustaendigkeit gesetzt (getrennter Ableitungshinweis in funktionen) und damit die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-zusatzaufgaben.py: Breher nur die aktuelle 'seit'-Rolle 'Beauftragte der Bundesregierung fuer Tierschutz' aus dem geschlossenen Biografieblock vor der Redaktionsnotiz (neue Funktionsrolle genau einmal, bestehende PSts-Rolle bleibt); Krichbaum nur die aktuelle AA-Seitenkopf-H1 'Staatsminister fuer Europa' (nicht die alte Sprecherrolle 2022-2025); Kippels das manuell am amtlichen BMG-Organisationsplan visuell abgenommene PDF-Fachurteil (Stand 03. September 2026, Seite 1, Personenkasten Abt. 1/4/5/6, getrennte woertliche Abteilungstitel, 12 Kurzthemen; kein externer PDF-Parser). Jede Kennung ist an die kanonische 54er Rolle und den kanonischen Bundestags-Profilnamen/URL/Hash gebunden und disjunkt zu den 19 Ressort-, 6 Aufgaben- und 2 beratenden Achsen. Die disjunkte Vereinigung mit den 2 BMWSB- und den 22 verbleibend offenen Achsen ergibt weiter genau die 54er Rollenquittung.",
-    "Fuer 2 weitere dieser 54 Profile wird ueber die vom Orchestrator gepruefte BMWSB-Aufgabenquittung docs/betrieb/bmwsb-aufgaben-2-20260927.json die ausdrueckliche personengebundene BMWSB-Aufgabenzustaendigkeit gesetzt (getrennter Ableitungshinweis in funktionen) und damit die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-bmwsb.py, das die sicheren Helfer des Zusatzaufgabenmoduls wiederverwendet: nur die persoenlich zugewiesenen Unterbereiche (Bartol Z I 3/W II/S I/B I/B II, Poschmann Z II/W I/S II/S III) und deren woertliche Titel aus dem manuell am amtlichen BMWSB-Organigramm (Stand 1. Juli 2026, Seite 1) visuell abgenommenen PDF-Fachurteil, KEINE Hochstufung auf ganze Abteilungen und kein externer PDF-Parser. Die kanonische Quelle ist die tatsaechlich verlinkte v10-Adresse (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + Datei, Original UND *.meta.json gebunden); die aktuelle Landingpage muss genau dieses PDF als echten aufgeloesten href tragen (kein Kommentar-/Skript-/Vorlagenanker und kein Textvorkommen). Jede Kennung ist an die kanonische 54er Rolle und den kanonischen Bundestags-Profilnamen/URL/Hash gebunden und disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden und 3 Zusatzaufgabenachsen. Die disjunkte Vereinigung mit den 22 verbleibend offenen Achsen ergibt weiter genau die 54er Rollenquittung.",
+    "Fuer 2 weitere dieser 54 Profile wird ueber die vom Orchestrator gepruefte BMWSB-Aufgabenquittung docs/betrieb/bmwsb-aufgaben-2-20260927.json die ausdrueckliche personengebundene BMWSB-Aufgabenzustaendigkeit gesetzt (getrennter Ableitungshinweis in funktionen) und damit die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-bmwsb.py, das die sicheren Helfer des Zusatzaufgabenmoduls wiederverwendet: nur die persoenlich zugewiesenen Unterbereiche (Bartol Z I 3/W II/S I/B I/B II, Poschmann Z II/W I/S II/S III) und deren woertliche Titel aus dem manuell am amtlichen BMWSB-Organigramm (Stand 1. Juli 2026, Seite 1) visuell abgenommenen PDF-Fachurteil, KEINE Hochstufung auf ganze Abteilungen und kein externer PDF-Parser. Die kanonische Quelle ist die tatsaechlich verlinkte v10-Adresse (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + Datei, Original UND *.meta.json gebunden); die aktuelle Landingpage muss genau dieses PDF als echten aufgeloesten href tragen (kein Kommentar-/Skript-/Vorlagenanker und kein Textvorkommen). Jede Kennung ist an die kanonische 54er Rolle und den kanonischen Bundestags-Profilnamen/URL/Hash gebunden und disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden und 3 Zusatzaufgabenachsen. Die disjunkte Vereinigung mit den damals 22 verbleibend offenen Achsen ergab weiter genau die 54er Rollenquittung.",
+    "Fuer den einzeln offenen Rollenfall Philipp Amthor wird ueber die vom Orchestrator gepruefte Einzelfallquittung docs/betrieb/amthor-aktuelles-amt-1-20260927.json die freigegebene aktuelle Funktionsrolle 'Staatsminister fuer Bund-Laender-Zusammenarbeit beim Bundeskanzler' (seit 29. Juli 2026) genau einmal an bestehende funktionen angehaengt und das eine amtlich abgeleitete Thema 'Bund-Laender-Beziehungen' gesetzt (getrennter Herkunftshinweis in funktionen); damit ist die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul scripts/profil-feldbelege-500-amthor.py, das die sicheren Helfer des Zusatzaufgabenmoduls wiederverwendet: die aktuelle Rolle stammt ausschliesslich aus dem geschlossenen eigenen div.bpa-richtext-Lebenslauf-p der Bundesregierungs-Personenseite (nicht Meta/Bildunterschrift), der vorige PSts-Digitalabsatz (2025 bis 2026) bleibt ausdruecklich historisch, das Thema ausschliesslich aus genau einem echten li mit strong 'Staatsminister fuer die Bund-Laender-Beziehungen' und 'Philipp Amthor' unter der Personalien-h2 der Ankuendigung (24. Juli 2026; die Ankuendigung belegt den Amtsantritt NICHT). Der 54er-Eintrag bleibt historisch offen (separate Neubindung, KEINE Lockerung des alten Rollenvalidators); Partei, Mandatsart und Gremien bleiben unveraendert. Jede Kennung ist an den kanonischen Bundestags-Profilnamen/URL/Hash der 54er Quittung und beide Zusatzquellen (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei, Original UND Metadaten) gebunden und disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden, 3 Zusatzaufgaben- und 2 BMWSB-Achsen. Kein Digitalamt als aktuell, keine persoenliche Position; es bleiben 21 Achsen offen.",
     "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
     "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe."
   ],
@@ -67,7 +68,7 @@
       "deckungsgleichVerwendet": 335
     },
     "mandatsartOffen": 1,
-    "fachlicheAchseOffen": 22,
+    "fachlicheAchseOffen": 21,
     "sonstigeGremien": {
       "expliziteListe": 15,
       "profileMitWeiterenGremien": 114,
@@ -102,7 +103,7 @@
       "themenGesetzt": 19,
       "deckungsgleichVerwendet": 19,
       "geschlosseneAchsen": 19,
-      "verbleibendOffeneAchsen": 22
+      "verbleibendOffeneAchsen": 21
     },
     "aufgabenachsenQuittung": {
       "datei": "docs/betrieb/aufgabenachsen-6-20260927.json",
@@ -144,10 +145,21 @@
       "deckungsgleichVerwendet": 2,
       "geschlosseneAchsen": 2
     },
+    "amthorQuittung": {
+      "datei": "docs/betrieb/amthor-aktuelles-amt-1-20260927.json",
+      "geprueftGesamt": 1,
+      "nachRegion": {
+        "Bund": 1
+      },
+      "themenGesetzt": 1,
+      "deckungsgleichVerwendet": 1,
+      "geschlosseneAchsen": 1,
+      "verbleibendOffeneAchsen": 21
+    },
     "offeneFelder": {
       "weitereGremien": 137,
       "partei": 74,
-      "fachlicheAchse": 22,
+      "fachlicheAchse": 21,
       "wahlbezirk": 1,
       "mandatsart": 1,
       "regionbezug": 28
@@ -7753,7 +7765,20 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/A/amthor_philipp-1043428",
             "abgerufenAm": "2026-09-27T12:59:55.092561+00:00",
             "sha256": "e3e39200cca9a130552093ca0a8571574da491e2e777927da643a8bba210696c"
+          },
+          {
+            "art": "kanzleramt-aufgabe",
+            "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskanzleramt/philipp-amthor-2448320",
+            "abgerufenAm": "2026-09-27T20:02:21.668104+00:00",
+            "sha256": "75bcb78966c83ab6c23d725a08e2418f1fc384c6c9c1c7de594f5274d0faf91e"
           }
+        ],
+        "themen": [
+          "Bund-Länder-Beziehungen"
+        ],
+        "funktionen": [
+          "Staatsminister für Bund-Länder-Zusammenarbeit beim Bundeskanzler",
+          "Aufgabenbindung Bund (amtlich abgeleitet): Staatsminister für Bund-Länder-Zusammenarbeit beim Bundeskanzler; Koordination der politischen Zusammenarbeit und des Informationsflusses zwischen der Bundesregierung und den 16 Landesregierungen; keine persönliche politische Position"
         ]
       },
       "mandatsnachweis": {
@@ -7800,10 +7825,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Amthor-Einzelfallquittung docs/betrieb/amthor-aktuelles-amt-1-20260927.json: das eine amtlich abgeleitete Thema aus genau einem echten li mit strong 'Staatsminister für die Bund-Länder-Beziehungen' und 'Philipp Amthor' unter der Personalien-h2 (Ankuendigung vom 2026-07-24); die aktuelle Funktionsrolle stammt ausschliesslich aus dem geschlossenen eigenen div.bpa-richtext-Lebenslauf-p (29. Juli 2026) und nicht aus Meta/Bildunterschrift; kein Digitalamt als aktuell, keine persoenliche politische Position, keine freie Themen-/Zitatzuordnung (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + Datei beider Zusatzquellen, Original UND Metadaten, gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash e3e39200cca9a130552093ca0a8571574da491e2e777927da643a8bba210696c)",
         "parteiWert": "Partei: Seit 2008 Mitglied der CDU",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/A/amthor_philipp-1043428 sha256 e3e39200cca9a130552093ca0a8571574da491e2e777927da643a8bba210696c",
+        "funktionen": "vom Orchestrator gepruefte Amthor-Einzelfallquittung docs/betrieb/amthor-aktuelles-amt-1-20260927.json: die freigegebene aktuelle Funktionsrolle 'Staatsminister für Bund-Länder-Zusammenarbeit beim Bundeskanzler' wurde genau einmal an bestehende funktionen angehaengt; der historische 54er-Eintrag bleibt unveraendert offen (KEINE Rolllockerung, separate Neubindung). Zusaetzlich der getrennte Herkunftshinweis zur amtlichen Aufgabenbindung; keine persoenliche politische Position, kein Digitalamt als aktuell (URL + sha256 + Abrufzeit + Datei beider Zusatzquellen, Original UND Metadaten, gebunden)",
         "wahlkreiskandidatur": "belegte Wahlkreiskandidatur; ausdruecklich KEIN Direktmandat"
       },
       "weitereGremien": [],
@@ -7813,12 +7840,8 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -7829,6 +7852,48 @@
         "status": "offen",
         "begruendung": "Amtlicher Funktionsabschnitt und Biografie nennen unterschiedliche Regierungsrollen. Vor einer Uebernahme aktuelle Zustaendigkeit gesondert klaeren.",
         "funktionen": []
+      },
+      "amthorQuittung": {
+        "datei": "docs/betrieb/amthor-aktuelles-amt-1-20260927.json",
+        "kennung": "bundestag-amthor-philipp-1043428",
+        "region": "Bund",
+        "bindungsart": "kanzleramt-aufgabe",
+        "person": "Philipp Amthor",
+        "funktion": "Staatsminister für Bund-Länder-Zusammenarbeit beim Bundeskanzler",
+        "amtsbeginn": "29. Juli 2026",
+        "rolleZitat": "Seit 29. Juli 2026 Staatsminister für Bund-Länder-Zusammenarbeit beim Bundeskanzler",
+        "vorherigeRolle": "2025 bis 2026 Parlamentarischer Staatssekretär beim Bundesminister für Digitales und Staatsmodernisierung",
+        "rolleAbschnitt": "Geschlossener eigener div.bpa-richtext-Lebenslauf der Bundesregierungs-Personenseite; eigener p-Absatz, ausdruecklich nicht Meta/Bildunterschrift",
+        "aufgabenH2": "Das sagte der Kanzler zu den neuen Personalien:",
+        "aufgabenStarke": "Staatsminister für die Bund-Länder-Beziehungen",
+        "aufgabenzitat": "die politische Zusammenarbeit und den Informationsfluss zwischen der Bundesregierung und den 16 Landesregierungen koordinieren.",
+        "quellpublikationsdatum": "2026-07-24",
+        "aufgabenbindung": "Staatsminister für Bund-Länder-Zusammenarbeit beim Bundeskanzler; Koordination der politischen Zusammenarbeit und des Informationsflusses zwischen der Bundesregierung und den 16 Landesregierungen",
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/A/amthor_philipp-1043428",
+          "sha256": "e3e39200cca9a130552093ca0a8571574da491e2e777927da643a8bba210696c",
+          "abgerufenAm": "2026-09-27T12:59:55.092561+00:00"
+        },
+        "quelle": {
+          "datei": "amthor-breg-http-neubindung.html",
+          "url": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskanzleramt/philipp-amthor-2448320",
+          "finalUrl": "https://www.bundesregierung.de/breg-de/bundesregierung/bundeskanzleramt/philipp-amthor-2448320",
+          "abgerufenAm": "2026-09-27T20:02:21.668104+00:00",
+          "sha256": "75bcb78966c83ab6c23d725a08e2418f1fc384c6c9c1c7de594f5274d0faf91e",
+          "bytes": 128940
+        },
+        "aufgabenquelle": {
+          "datei": "amthor-aufgaben-kabinett-20260724.html",
+          "url": "https://www.bundesregierung.de/breg-de/suche/merz-veraenderungen-im-kabinett--2448244",
+          "finalUrl": "https://www.bundesregierung.de/breg-de/suche/merz-veraenderungen-im-kabinett--2448244",
+          "abgerufenAm": "2026-09-27T18:42:39.203471+00:00",
+          "sha256": "be03d07df8b134c9d612f634c74cadaec7d5f754a8dd0b2ce67ac65bab2fa20c",
+          "bytes": 136311
+        },
+        "themen": [
+          "Bund-Länder-Beziehungen"
+        ],
+        "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Staatsminister für Bund-Länder-Zusammenarbeit beim Bundeskanzler; Koordination der politischen Zusammenarbeit und des Informationsflusses zwischen der Bundesregierung und den 16 Landesregierungen; keine persönliche politische Position"
       }
     },
     {

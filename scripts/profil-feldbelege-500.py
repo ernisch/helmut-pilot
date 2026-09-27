@@ -417,6 +417,55 @@ def _pruefe_bmwsb(eingang) -> dict:
     return index
 
 
+# Versionierte, vom Orchestrator gepruefte EINZELFALLQUITTUNG des zuvor einzeln
+# offenen Rollenfalls Philipp Amthor (Bundestag). Die fail-closed-Validierung liegt
+# im getrennten Modul ``profil-feldbelege-500-amthor.py`` (das die sicheren Helfer
+# des Zusatzaufgabenmoduls wiederverwendet); hier wird nur der gepruefte Index
+# angewendet. Der alte Rollenvalidator mit Pflichtstatus ``belegt`` wird bewusst
+# NICHT verwendet: der 54er-Eintrag bleibt historisch offen, die kanonische
+# Bundestags-Person wird separat neu gebunden. Es entstehen nur die freigegebene
+# aktuelle Funktionsrolle, das eine Thema und der getrennte Herkunftshinweis;
+# bestehende Felder (Partei, Mandatsart, Gremien) bleiben unveraendert.
+AMTHOR = REPO_ROOT / "docs" / "betrieb" / "amthor-aktuelles-amt-1-20260927.json"
+AMTHOR_RESSOURCE = "docs/betrieb/amthor-aktuelles-amt-1-20260927.json"
+AMTHOR_GESAMT = 1
+
+
+def _lade_amthormodul():
+    pfad = Path(__file__).with_name("profil-feldbelege-500-amthor.py")
+    vorher = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    spec = _importlib_util.spec_from_file_location("profil_feldbelege_500_amthor", pfad)
+    try:
+        modul = _importlib_util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        return modul
+    finally:
+        sys.dont_write_bytecode = vorher
+
+
+AMTHORMODUL = _lade_amthormodul()
+
+
+def _pruefe_amthor(eingang) -> dict:
+    """Prueft die versionierte Amthor-Einzelfallquittung ueber das getrennte Modul."""
+    try:
+        index = AMTHORMODUL.pruefe_amthor(
+            eingang,
+            quittung=getattr(eingang, "amthor", None),
+            ressortachsen_kennungen=set(getattr(eingang, "ressortachsen_by_kennung", None) or {}),
+            aufgabenachsen_kennungen=set(getattr(eingang, "aufgabenachsen_by_kennung", None) or {}),
+            beratendeachsen_kennungen=set(getattr(eingang, "beratendeachsen_by_kennung", None) or {}),
+            zusatzaufgaben_kennungen=set(getattr(eingang, "zusaetzlicheaufgaben_by_kennung", None) or {}),
+            bmwsb_kennungen=set(getattr(eingang, "bmwsb_by_kennung", None) or {}),
+        )
+    except AMTHORMODUL.AmthorFehler as fehler:
+        raise AssemblerFehler(str(fehler)) from fehler
+    eingang.amthor_by_kennung = index
+    eingang.amthor_verwendet = set()
+    return index
+
+
 ZUSATZQUELLEN = "zusatzquellen"
 
 ABRUF_BUNDESTAG = "bundestagsprofile-330-abruf.json"
@@ -1381,6 +1430,10 @@ class Eingang:
             self.beratendeachsen = _lies_json(BERATENDEACHSEN)
         except FileNotFoundError as fehler:
             raise AssemblerFehler(f"Beratende Achsenquittung fehlt: {BERATENDEACHSEN_RESSOURCE}") from fehler
+        try:
+            self.amthor = _lies_json(AMTHOR)
+        except FileNotFoundError as fehler:
+            raise AssemblerFehler(f"Amthor-Einzelfallquittung fehlt: {AMTHOR_RESSOURCE}") from fehler
         self.abruf = _lies_json(verzeichnis / ABRUF_BUNDESTAG) + _lies_json(
             verzeichnis / ABRUF_LANDESPARLAMENTE
         )
@@ -2301,6 +2354,80 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             bmwsb_beleg["aktuelleVerlinkung"] = dict(bmwsb_eintrag["aktuelleVerlinkung"])
         achsen_geschlossen = True
 
+    # Versionierte Amthor-Einzelfallquittung: fuer den zuvor einzeln offenen
+    # Rollenfall Philipp Amthor wird die freigegebene aktuelle Funktionsrolle
+    # (Staatsminister fuer Bund-Laender-Zusammenarbeit beim Bundeskanzler, seit
+    # 29. Juli 2026) genau einmal an bestehende funktionen angehaengt, das eine
+    # amtlich abgeleitete Thema gesetzt und damit die fachliche Achse geschlossen
+    # (Ausschuss ODER Thema). Bestehende Felder (Partei, Mandatsart, Gremien)
+    # bleiben unveraendert; der getrennte Herkunftshinweis steht in funktionen.
+    # Kein Digitalamt als aktuell, kein weiteres Ministerportfolio, keine
+    # persoenliche Position, keine freie Themen-/Zitatzuordnung. Die amtliche
+    # Zusatzquelle steht in ``profil.offizielleQuellen`` und im Belegabschnitt
+    # ``amthorQuittung``.
+    amthor_eintrag = (getattr(eingang, "amthor_by_kennung", None) or {}).get(mandatsId)
+    amthor_beleg = None
+    if amthor_eintrag is not None:
+        verwendet = getattr(eingang, "amthor_verwendet", None)
+        if verwendet is not None:
+            verwendet.add(mandatsId)
+        amthor_quelle = amthor_eintrag["quelle"]
+        profil["themen"] = list(amthor_eintrag["themen"])
+        hinweis = amthor_eintrag["ableitungsHinweis"]
+        profil.setdefault("funktionen", [])
+        neue_funktion = amthor_eintrag.get("funktion")
+        if neue_funktion and neue_funktion not in profil["funktionen"]:
+            profil["funktionen"].append(neue_funktion)
+        if hinweis not in profil["funktionen"]:
+            profil["funktionen"].append(hinweis)
+        profil["offizielleQuellen"].append({
+            "art": "kanzleramt-aufgabe",
+            "url": amthor_quelle["url"],
+            "abgerufenAm": amthor_quelle["abgerufenAm"],
+            "sha256": amthor_quelle["sha256"],
+        })
+        amthor_beleg = {
+            "datei": AMTHOR_RESSOURCE,
+            "kennung": amthor_eintrag["kennung"],
+            "region": amthor_eintrag["region"],
+            "bindungsart": amthor_eintrag["bindungsart"],
+            "person": amthor_eintrag["person"],
+            "funktion": amthor_eintrag["funktion"],
+            "amtsbeginn": amthor_eintrag["amtsbeginn"],
+            "rolleZitat": amthor_eintrag["rolleZitat"],
+            "vorherigeRolle": amthor_eintrag["vorherigeRolle"],
+            "rolleAbschnitt": amthor_eintrag["rolleAbschnitt"],
+            "aufgabenH2": amthor_eintrag["aufgabenH2"],
+            "aufgabenStarke": amthor_eintrag["aufgabenStarke"],
+            "aufgabenzitat": amthor_eintrag["aufgabenzitat"],
+            "quellpublikationsdatum": amthor_eintrag["quellpublikationsdatum"],
+            "aufgabenbindung": amthor_eintrag["aufgabenbindung"],
+            "rollenquelle": {
+                "url": amthor_eintrag["rollenquelle"].get("url"),
+                "sha256": amthor_eintrag["rollenquelle"].get("sha256"),
+                "abgerufenAm": amthor_eintrag["rollenquelle"].get("abgerufenAm"),
+            },
+            "quelle": {
+                "datei": amthor_quelle.get("datei"),
+                "url": amthor_quelle.get("url"),
+                "finalUrl": amthor_quelle.get("finalUrl"),
+                "abgerufenAm": amthor_quelle.get("abgerufenAm"),
+                "sha256": amthor_quelle.get("sha256"),
+                "bytes": amthor_quelle.get("bytes"),
+            },
+            "aufgabenquelle": {
+                "datei": amthor_eintrag["aufgabenquelle"].get("datei"),
+                "url": amthor_eintrag["aufgabenquelle"].get("url"),
+                "finalUrl": amthor_eintrag["aufgabenquelle"].get("finalUrl"),
+                "abgerufenAm": amthor_eintrag["aufgabenquelle"].get("abgerufenAm"),
+                "sha256": amthor_eintrag["aufgabenquelle"].get("sha256"),
+                "bytes": amthor_eintrag["aufgabenquelle"].get("bytes"),
+            },
+            "themen": list(amthor_eintrag["themen"]),
+            "ableitungsHinweis": hinweis,
+        }
+        achsen_geschlossen = True
+
     # ── Feldbelege (Herkunft je Feld) ─────────────────────────────────────────
     feldbelege = dict(extraktion.get("feldbelege", {}))
     feldbelege["mandatsId"] = "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert"
@@ -2343,6 +2470,18 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"politische Position; bestehende Rollen bleiben erhalten "
             f"(URL + finalUrl + sha256 + Bytezahl + Abrufzeit + Datei des amtlichen v10-Organs "
             f"und der aktuellen Landingpage gebunden)"
+        )
+    elif amthor_beleg is not None:
+        feldbelege["themen"] = (
+            f"vom Orchestrator gepruefte Amthor-Einzelfallquittung {AMTHOR_RESSOURCE}: das eine "
+            f"amtlich abgeleitete Thema aus genau einem echten li mit strong "
+            f"{amthor_beleg['aufgabenStarke']!r} und {amthor_beleg['person']!r} unter der Personalien-h2 "
+            f"(Ankuendigung vom {amthor_beleg['quellpublikationsdatum']}); die aktuelle Funktionsrolle "
+            f"stammt ausschliesslich aus dem geschlossenen eigenen div.bpa-richtext-Lebenslauf-p "
+            f"({amthor_beleg['amtsbeginn']}) und nicht aus Meta/Bildunterschrift; kein Digitalamt als "
+            f"aktuell, keine persoenliche politische Position, keine freie Themen-/Zitatzuordnung "
+            f"(URL + finalUrl + sha256 + Bytezahl + Abrufzeit + Datei beider Zusatzquellen, Original UND "
+            f"Metadaten, gebunden)"
         )
     feldbelege["bundesland"] = (
         "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)"
@@ -2418,6 +2557,15 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         feldbelege["funktionen"] += (
             "; zusaetzlich gekennzeichneter Ableitungshinweis zur beratenden Ausschussarbeit "
             "(keine ordentliche/stellvertretende Mitgliedschaft, keine persoenliche Position)"
+        )
+    if amthor_beleg is not None:
+        feldbelege["funktionen"] = (
+            f"vom Orchestrator gepruefte Amthor-Einzelfallquittung {AMTHOR_RESSOURCE}: die freigegebene "
+            f"aktuelle Funktionsrolle {amthor_beleg['funktion']!r} wurde genau einmal an bestehende "
+            f"funktionen angehaengt; der historische 54er-Eintrag bleibt unveraendert offen (KEINE "
+            f"Rolllockerung, separate Neubindung). Zusaetzlich der getrennte Herkunftshinweis zur amtlichen "
+            f"Aufgabenbindung; keine persoenliche politische Position, kein Digitalamt als aktuell "
+            f"(URL + sha256 + Abrufzeit + Datei beider Zusatzquellen, Original UND Metadaten, gebunden)"
         )
 
     # ── Offene Punkte explizit zusammentragen ─────────────────────────────────
@@ -2571,6 +2719,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         datensatz["zusaetzlicheaufgabenQuittung"] = zusatz_beleg
     if bmwsb_beleg is not None:
         datensatz["bmwsbQuittung"] = bmwsb_beleg
+    if amthor_beleg is not None:
+        datensatz["amthorQuittung"] = amthor_beleg
     if "status" in extraktion:
         datensatz["extraktionsstatus"] = extraktion["status"]
     return datensatz
@@ -2590,6 +2740,7 @@ def assembliere(eingang: Eingang) -> dict:
     beratendeachsen = _pruefe_beratendeachsen(eingang)
     zusatzaufgaben = _pruefe_zusatzaufgaben(eingang)
     bmwsb = _pruefe_bmwsb(eingang)
+    amthor = _pruefe_amthor(eingang)
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
 
     # Die gepruefte Quittung muss die offenen Parteifelder DECKUNGSGLEICH abbilden:
@@ -2652,6 +2803,11 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"BMWSB-Aufgabenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_bmwsb)}."
         )
+    ungenutzte_amthor = set(amthor) - eingang.amthor_verwendet
+    if ungenutzte_amthor:
+        raise AssemblerFehler(
+            f"Amthor-Einzelfallquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_amthor)}."
+        )
     ressort_geschlossen = set(eingang.ressortachsen_verwendet)
     if ressort_geschlossen != set(ressortachsen):
         raise AssemblerFehler(
@@ -2681,6 +2837,12 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"BMWSB-Aufgabenquittung deckt nicht genau ihre 2 Kennungen ab: "
             f"{sorted(set(bmwsb) ^ bmwsb_geschlossen)}."
+        )
+    amthor_geschlossen = set(eingang.amthor_verwendet)
+    if amthor_geschlossen != set(amthor):
+        raise AssemblerFehler(
+            f"Amthor-Einzelfallquittung deckt nicht genau ihre eine Kennung ab: "
+            f"{sorted(set(amthor) ^ amthor_geschlossen)}."
         )
     if ressort_geschlossen & aufgaben_geschlossen:
         raise AssemblerFehler(
@@ -2718,8 +2880,21 @@ def assembliere(eingang: Eingang) -> dict:
                 f"BMWSB-Aufgaben- und {name}achse gleichzeitig belegt: "
                 f"{sorted(bmwsb_geschlossen & andere)}."
             )
+    for andere, name in (
+        (ressort_geschlossen, "Ressort"),
+        (aufgaben_geschlossen, "Aufgaben"),
+        (beratende_geschlossen, "Beratende"),
+        (zusatz_geschlossen, "Zusatzaufgaben"),
+        (bmwsb_geschlossen, "BMWSB-Aufgaben"),
+    ):
+        if amthor_geschlossen & andere:
+            raise AssemblerFehler(
+                f"Amthor-Einzelfall- und {name}achse gleichzeitig belegt: "
+                f"{sorted(amthor_geschlossen & andere)}."
+            )
     geschlossene_achsen = (ressort_geschlossen | aufgaben_geschlossen
-                           | beratende_geschlossen | zusatz_geschlossen | bmwsb_geschlossen)
+                           | beratende_geschlossen | zusatz_geschlossen | bmwsb_geschlossen
+                           | amthor_geschlossen)
     if not geschlossene_achsen <= set(profilrollen):
         raise AssemblerFehler(
             "Geschlossene Achsen enthalten Kennungen ausserhalb der 54er Rollenquittung: "
@@ -2750,7 +2925,7 @@ def assembliere(eingang: Eingang) -> dict:
     for datensatz in datensaetze:
         if (datensatz.get("ressortachsenQuittung") or datensatz.get("aufgabenachsenQuittung")
                 or datensatz.get("beratendeachsenQuittung") or datensatz.get("zusaetzlicheaufgabenQuittung")
-                or datensatz.get("bmwsbQuittung")):
+                or datensatz.get("bmwsbQuittung") or datensatz.get("amthorQuittung")):
             if "fachlicheAchse" in datensatz["offeneFelder"]:
                 raise AssemblerFehler(
                     f"Geschlossene Fachachse bleibt offen: {datensatz['kanonischeKennung']}."
@@ -3005,8 +3180,29 @@ def assembliere(eingang: Eingang) -> dict:
                 "aufgeloesten href tragen (kein Kommentar-/Skript-/Vorlagenanker und kein Textvorkommen). Jede "
                 "Kennung ist an die kanonische 54er Rolle und den kanonischen Bundestags-Profilnamen/URL/Hash "
                 "gebunden und disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden und 3 Zusatzaufgabenachsen. "
-                "Die disjunkte Vereinigung mit den 22 verbleibend offenen Achsen ergibt weiter genau die 54er "
-                "Rollenquittung."
+                "Die disjunkte Vereinigung mit den damals 22 verbleibend offenen Achsen ergab weiter genau die "
+                "54er Rollenquittung."
+            ),
+            (
+                "Fuer den einzeln offenen Rollenfall Philipp Amthor wird ueber die vom Orchestrator gepruefte "
+                f"Einzelfallquittung {AMTHOR_RESSOURCE} die freigegebene aktuelle Funktionsrolle "
+                "'Staatsminister fuer Bund-Laender-Zusammenarbeit beim Bundeskanzler' (seit 29. Juli 2026) genau "
+                "einmal an bestehende funktionen angehaengt und das eine amtlich abgeleitete Thema "
+                "'Bund-Laender-Beziehungen' gesetzt (getrennter Herkunftshinweis in funktionen); damit ist die "
+                "fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul "
+                "scripts/profil-feldbelege-500-amthor.py, das die sicheren Helfer des Zusatzaufgabenmoduls "
+                "wiederverwendet: die aktuelle Rolle stammt ausschliesslich aus dem geschlossenen eigenen "
+                "div.bpa-richtext-Lebenslauf-p der Bundesregierungs-Personenseite (nicht Meta/Bildunterschrift), "
+                "der vorige PSts-Digitalabsatz (2025 bis 2026) bleibt ausdruecklich historisch, das Thema "
+                "ausschliesslich aus genau einem echten li mit strong 'Staatsminister fuer die "
+                "Bund-Laender-Beziehungen' und 'Philipp Amthor' unter der Personalien-h2 der Ankuendigung "
+                "(24. Juli 2026; die Ankuendigung belegt den Amtsantritt NICHT). Der 54er-Eintrag bleibt "
+                "historisch offen (separate Neubindung, KEINE Lockerung des alten Rollenvalidators); Partei, "
+                "Mandatsart und Gremien bleiben unveraendert. Jede Kennung ist an den kanonischen "
+                "Bundestags-Profilnamen/URL/Hash der 54er Quittung und beide Zusatzquellen (URL + finalUrl + "
+                "sha256 + Bytezahl + Abrufzeit + HTTP + Datei, Original UND Metadaten) gebunden und disjunkt zu "
+                "den 19 Ressort-, 6 Aufgaben-, 2 beratenden, 3 Zusatzaufgaben- und 2 BMWSB-Achsen. Kein "
+                "Digitalamt als aktuell, keine persoenliche Position; es bleiben 21 Achsen offen."
             ),
             "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
             "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe.",
@@ -3096,6 +3292,15 @@ def assembliere(eingang: Eingang) -> dict:
                 "themenGesetzt": sum(1 for d in datensaetze if d.get("bmwsbQuittung")),
                 "deckungsgleichVerwendet": len(eingang.bmwsb_verwendet),
                 "geschlosseneAchsen": len(bmwsb_geschlossen),
+            },
+            "amthorQuittung": {
+                "datei": AMTHOR_RESSOURCE,
+                "geprueftGesamt": len(amthor),
+                "nachRegion": {"Bund": len(amthor)},
+                "themenGesetzt": sum(1 for d in datensaetze if d.get("amthorQuittung")),
+                "deckungsgleichVerwendet": len(eingang.amthor_verwendet),
+                "geschlosseneAchsen": len(amthor_geschlossen),
+                "verbleibendOffeneAchsen": len(offene_achsen),
             },
             "offeneFelder": offene_felder,
         },
