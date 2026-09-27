@@ -168,3 +168,47 @@ von der konkreten Freigabe fuer Vorlage a umfasst. Neue konkrete Freigabe beim
 Betreiber angefragt; b wurde nicht uebertragen. Codekorrektur laeuft unabhaengig
 weiter. Laufquittung bleibt unbenutzt, Grenzen2 Aufrufe/240s/0,436USD sowie
 7USD insgesamt/6USD taeglich unveraendert. Kein Modell- oder500er Nachweis.
+
+
+## Freigabe b und bestandene Vorpruefung27.09.2026
+
+Der Betreiber bestaetigte Vorlage b ausdruecklich und beauftragte, die autonome
+Roadmap-Dauerfreigabe in AGENTS.md zu konkretisieren. Die oben dokumentierte
+Ablehnung ist damit fuer b erledigt. Keine Kosten- oder Schutzgrenze wurde
+angehoben. Vorlage a bleibt erhalten.
+
+PR647 ist nach beiden gruenen Pflichtpruefungen am Kopf2d586bd1 gemergt als
+`502ee5bc088dcecb22128862e10d28cb8d9e44de`,
+[Production READY](https://vercel.com/nohut/helmut-pilot/E2jDPfTKi4DE2VYi1WSciifqFDYS).
+Nachkontrolle09:28:23UTC:500 inaktiv/501 Identitaeten, volle Bestands-/Authhashes
+unveraendert,0 Jobs/Locks/Leases; keine error/fatal Logs im kontrollierten Fenster.
+
+Die exakt freigegebene Vorlage b wurde nach erfolgreicher Transaktionsprobe in
+Supabase ddckuvvpcytqbyfmbvie unter `bereichsurteil-vorlage-20260927-b` gespeichert.
+Unabhaengige Vollruecklesung: exakt eine Zeile, gesamter JSON-Inhalt identisch mit
+der freigegebenen Datei und dem oben dokumentierten Hash. Rueckweg: neue Vorlage
+unbenutzt lassen; keine bestehenden Fachausgaben oder Profile wurden ersetzt.
+
+[Plan36309700686](https://github.com/ernisch/helmut-pilot/actions/runs/36309700686)
+am Commit502ee5bc bestanden: korrekte Eingabe646504e2,4 Quellen,3 Vorgaenge,
+maximal2 Aufrufe/0,436USD/240s. Reiner Leseschritt09:32:43 bis09:33:16UTC,
+kein Modellzugang, keine Laufquittung verbraucht, kein fachlicher Gesamtnachweis.
+
+Die Ablaufpruefung zeigt ein Zeitrisiko vor dem ersten Modell: Der Urteilsimport
+baut fuer jede Frischekontrolle Original und Korrektur erneut auf. Bei der
+beobachteten Dauer der zwei Planaufnahmen koennten die vielen Einzelabfragen
+bereits die105s-Vorstartgrenze verbrauchen. Deshalb vor dem bezahlten Lauf ein
+eng aktivierter Stapelleser: nur der Bereichspaket-Builder verwendet ihn,
+25 Vorgangskennungen je Request, maximal8 Requests gleichzeitig und weiterhin
+40 nach ID geordnete Quellkanten je Vorgang. Danach dieselbe Publikationssortierung
+und derselbe Originaltextleser. Jede Frischepruefung liest erneut; kein Cache,
+keine ausgelassene Pruefung, keine vergroesserte Zeit- oder Kostengrenze.
+Dokumentiertes PostgREST-Verfahren: [Limit und Ordnung eingebetteter Ressourcen](https://docs.postgrest.org/en/v13/references/api/resource_embedding.html).
+
+Gezielter lokaler Nachweis gegen echte Storage-Leser:225 Eingaben vollstaendig
+identisch,9 statt225 HTTP-Anfragen, maximal8 parallel,40er Grenze je Vorgang und
+frische Quellenaenderung belegt; fehlende/fremde/doppelte Daten und Transportfehler
+sperren.12 Ablaufgruppen und6 bestehende Quellenlesepfade bestanden. Keine
+lokalen Modellkosten; kein zusaetzlicher Helfer wegen der engen Kostenreserve.
+Die neue Lesestrategie muss nach Deployment denselben Production-Eingabehash in
+der rein lesenden Vorpruefung bestaetigen, bevor der Modelllauf startet.
