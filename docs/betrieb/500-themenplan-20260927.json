@@ -1,0 +1,252 @@
+{
+  "version": "500-themenplan/1",
+  "eingabeHash": "468540ded9ac074b1a2d6d02d0798e728313a03c99eb5641aa35c2a3f7a61843",
+  "regelHash": "4f37eb483587b0d36bbda96160d386c3989c482e8d23f4ba0b1ee3eda5405ce6",
+  "abgeleitetHash": "43c28836a006eb57a91f8e11afcda38544960afb6a45e8d21650cb7ad4835886",
+  "rollen": [
+    {
+      "key": "wahlpruefung-immunitaet-geschaeftsordnung",
+      "name": "Ausschuss für Wahlprüfung, Immunität und Geschäftsordnung",
+      "beleg": "bundestag.de/resource/blob/1178498/to07.pdf (21. WP, 7. Sitzung); bundestag.de/go",
+      "topics": []
+    },
+    {
+      "key": "petitionen",
+      "name": "Petitionsausschuss",
+      "beleg": "Art. 45c GG; bundestag.de/petitionsausschuss (21. WP)",
+      "topics": []
+    },
+    {
+      "key": "auswaertiges",
+      "name": "Auswärtiger Ausschuss",
+      "beleg": "Art. 45a GG; bundestag.de/resource/blob/1194628/TO-27-08-07-2026.pdf (21. WP, 27. Sitzung)",
+      "topics": [
+        "Auswärtiges"
+      ]
+    },
+    {
+      "key": "inneres-heimat",
+      "name": "Innenausschuss",
+      "beleg": "bundestag.de/inneres (kanonische Ausschussseite 21. WP, Titel „Deutscher Bundestag - Innenausschuss“); bundestag.de/resource/blob/1188034/to037.pdf (21. WP, 37. Sitzung)",
+      "topics": [
+        "Inneres"
+      ]
+    },
+    {
+      "key": "sport-ehrenamt",
+      "name": "Ausschuss für Sport und Ehrenamt",
+      "beleg": "bundestag.de/resource/blob/1150374/to18.pdf (21. WP, 18. Sitzung)",
+      "topics": [
+        "Sport"
+      ]
+    },
+    {
+      "key": "recht-verbraucherschutz",
+      "name": "Ausschuss für Recht und Verbraucherschutz",
+      "beleg": "bundestag.de/resource/blob/1190632/to_042-pdf.pdf (21. WP, 42. Sitzung)",
+      "topics": [
+        "Recht"
+      ]
+    },
+    {
+      "key": "finanzen",
+      "name": "Finanzausschuss",
+      "beleg": "bundestag.de/finanzen (21. WP)",
+      "topics": [
+        "Finanzen"
+      ]
+    },
+    {
+      "key": "haushalt",
+      "name": "Haushaltsausschuss",
+      "beleg": "bundestag.de/resource/blob/1178354/to_010.pdf (21. WP, 10. Sitzung)",
+      "topics": [
+        "Haushalt"
+      ]
+    },
+    {
+      "key": "wirtschaft-energie",
+      "name": "Ausschuss für Wirtschaft und Energie",
+      "beleg": "bundestag.de/resource/blob/1193326/to_43_08-07-2026.pdf (21. WP, 43. Sitzung)",
+      "topics": [
+        "Wirtschaft"
+      ]
+    },
+    {
+      "key": "landwirtschaft-ernaehrung-heimat",
+      "name": "Ausschuss für Landwirtschaft, Ernährung und Heimat",
+      "beleg": "bundestag.de/resource/blob/1185078/TO_27_Sitzung_am_24_06_2026.pdf (21. WP, 27. Sitzung)",
+      "topics": [
+        "Ernährung und Landwirtschaft"
+      ]
+    },
+    {
+      "key": "arbeit-soziales",
+      "name": "Ausschuss für Arbeit und Soziales",
+      "beleg": "bundestag.de/resource/blob/1178496/TO_30-20-05-2026-Internet.pdf (21. WP, 30. Sitzung)",
+      "topics": [
+        "Arbeit und Soziales"
+      ]
+    },
+    {
+      "key": "verteidigung",
+      "name": "Verteidigungsausschuss",
+      "beleg": "Art. 45a GG; bundestag.de/verteidigung (21. WP)",
+      "topics": [
+        "Verteidigung"
+      ]
+    },
+    {
+      "key": "bildung-familie-senioren-frauen-jugend",
+      "name": "Ausschuss für Bildung, Familie, Senioren, Frauen und Jugend",
+      "beleg": "bundestag.de/resource/blob/1193316/a13-28-TO.pdf (21. WP, 28. Sitzung; Praefix a13 = Ausschuss Nr. 13)",
+      "topics": [
+        "Bildung",
+        "Familie"
+      ]
+    },
+    {
+      "key": "gesundheit",
+      "name": "Ausschuss für Gesundheit",
+      "beleg": "bundestag.de/resource/blob/1193358/to_052.pdf (21. WP, 52. Sitzung)",
+      "topics": [
+        "Gesundheit"
+      ]
+    },
+    {
+      "key": "verkehr",
+      "name": "Verkehrsausschuss",
+      "beleg": "bundestag.de/ausschuesse/verkehr (kanonische Ausschussseite 21. WP, Titel „Deutscher Bundestag - Verkehrsausschuss“); bundestag.de/resource/blob/1149142/21-Sitzung-23-02-2026.pdf (21. WP, 21. Sitzung)",
+      "topics": [
+        "Verkehr"
+      ]
+    },
+    {
+      "key": "umwelt-klimaschutz-naturschutz-nukleare-sicherheit",
+      "name": "Ausschuss für Umwelt, Klimaschutz, Naturschutz und nukleare Sicherheit",
+      "beleg": "bundestag.de/ausschuesse/umwelt; bundestag.de/resource/blob/1193498/to-40.pdf (21. WP, 40. Sitzung)",
+      "topics": [
+        "Umwelt"
+      ]
+    },
+    {
+      "key": "menschenrechte-humanitaere-hilfe",
+      "name": "Ausschuss für Menschenrechte und humanitäre Hilfe",
+      "beleg": "bundestag.de/resource/blob/1193250/to_27.pdf (21. WP, 27. Sitzung)",
+      "topics": [
+        "Menschenrechte"
+      ]
+    },
+    {
+      "key": "forschung-technologie-raumfahrt",
+      "name": "Ausschuss für Forschung, Technologie, Raumfahrt und Technikfolgenabschätzung",
+      "beleg": "bundestag.de/ausschuesse/forschung; bundestag.de/resource/blob/1150576/to16_04-03-2026.pdf (21. WP, 16. Sitzung)",
+      "topics": []
+    },
+    {
+      "key": "wirtschaftliche-zusammenarbeit-entwicklung",
+      "name": "Ausschuss für wirtschaftliche Zusammenarbeit und Entwicklung",
+      "beleg": "bundestag.de/resource/blob/1193788/11_Wortprotokoll_17-12-2025.pdf (21. WP, 11. Sitzung)",
+      "topics": [
+        "Entwicklung"
+      ]
+    },
+    {
+      "key": "europaeische-union",
+      "name": "Ausschuss für die Angelegenheiten der Europäischen Union",
+      "beleg": "Art. 45 GG; bundestag.de/resource/blob/1193210/28-Sitzung_08-07-2026.pdf (21. WP, 28. Sitzung)",
+      "topics": [
+        "Europa"
+      ]
+    },
+    {
+      "key": "digitales-staatsmodernisierung",
+      "name": "Ausschuss für Digitales und Staatsmodernisierung",
+      "beleg": "bundestag.de/resource/blob/1192024/TO-31-Sitzung.pdf (21. WP, 31. Sitzung)",
+      "topics": [
+        "Digitales"
+      ]
+    },
+    {
+      "key": "kultur-medien",
+      "name": "Ausschuss für Kultur und Medien",
+      "beleg": "bundestag.de/resource/blob/1139146/PA22_to14-pdf.pdf (21. WP, 14. Sitzung; Praefix PA22 = Ausschuss Nr. 22)",
+      "topics": [
+        "Kultur und Medien"
+      ]
+    },
+    {
+      "key": "tourismus",
+      "name": "Ausschuss für Tourismus",
+      "beleg": "bundestag.de/resource/blob/1190982/to32.pdf (21. WP, 32. Sitzung)",
+      "topics": [
+        "Tourismus"
+      ]
+    },
+    {
+      "key": "wohnen-stadtentwicklung-bauwesen-kommunen",
+      "name": "Ausschuss für Wohnen, Stadtentwicklung, Bauwesen und Kommunen",
+      "beleg": "bundestag.de/resource/blob/1193336/28-Sitzung-08-07-2026-TO.pdf (21. WP, 28. Sitzung)",
+      "topics": [
+        "Wohnen und Bau"
+      ]
+    }
+  ],
+  "zahlen": {
+    "gesamt": 500,
+    "synthetisch": 495,
+    "realeUnveraendert": 5,
+    "geaendert": 495,
+    "luecken": 123
+  },
+  "productionWrites": 0,
+  "aktivierungsfreigabe": false,
+  "themenProfile": {
+    "Recht": 42,
+    "Finanzen": 42,
+    "Auswärtiges": 41,
+    "Haushalt": 42,
+    "Inneres": 41,
+    "Wirtschaft": 42,
+    "Sport": 41,
+    "Ernährung und Landwirtschaft": 42,
+    "Arbeit und Soziales": 42,
+    "Verteidigung": 42,
+    "Bildung": 42,
+    "Familie": 42,
+    "Gesundheit": 42,
+    "Verkehr": 42,
+    "Umwelt": 41,
+    "Menschenrechte": 41,
+    "Entwicklung": 41,
+    "Europa": 41,
+    "Digitales": 40,
+    "Kultur und Medien": 40,
+    "Tourismus": 40,
+    "Wohnen und Bau": 40
+  },
+  "rollenuecken": {
+    "Ausschuss für Wahlprüfung, Immunität und Geschäftsordnung": 41,
+    "Petitionsausschuss": 41,
+    "Ausschuss für Forschung, Technologie, Raumfahrt und Technikfolgenabschätzung": 41
+  },
+  "gegenprobe": {
+    "runtimeCommit": "6d1dd7d10c55225ca05892025729206ec15f0986",
+    "baselineAt": [
+      "2026-09-27 00:06:33.295332+00",
+      "2026-09-27 00:06:39.62855+00",
+      "2026-09-27 00:06:43.431951+00",
+      "2026-09-27 00:06:47.790095+00",
+      "2026-09-27 00:06:52.887824+00"
+    ],
+    "baselineWithPrimary": 4,
+    "projectionWithPrimary": 4,
+    "projectionWithoutPrimary": 496,
+    "profileCount": 500
+  },
+  "privateBeleghashes": {
+    "plan.json": "41a6e6cd1e5a5f0e77b61d5497abac75f9f2830b228c568e89a5b55f31a89052",
+    "builder500-ergebnis.json": "3b35b7b19a430a58b7a6d6e1aa1df4b8930e507c45f011b5c1f40dabb004a2a5",
+    "builder500-ausgaben.json": "4f72121ec6188e5e8459f8f9c998ce3785c2b4936a612c1f91fe997611cc90e3"
+  }
+}
