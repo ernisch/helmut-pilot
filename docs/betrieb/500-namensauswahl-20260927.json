@@ -409,10 +409,10 @@
       "parlament": "bundestag"
     },
     {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/K/klein_ottilie-1045410",
-      "text": "Klein, Dr. Ottilie",
-      "fraktion": "CDU/CSU",
-      "amtlicheKennung": "klein_ottilie-1045410",
+      "url": "https://www.bundestag.de/abgeordnete/biografien/N/nouripour_omid-1046368",
+      "text": "Nouripour, Omid",
+      "fraktion": "Bündnis 90/Die Grünen",
+      "amtlicheKennung": "nouripour_omid-1046368",
       "parlament": "bundestag"
     },
     {
@@ -1053,6 +1053,13 @@
       "parlament": "bundestag"
     },
     {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/K/klein_ottilie-1045410",
+      "text": "Klein, Dr. Ottilie",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "klein_ottilie-1045410",
+      "parlament": "bundestag"
+    },
+    {
       "url": "https://www.bundestag.de/abgeordnete/biografien/K/kloeckner_julia-1045434",
       "text": "Klöckner, Julia",
       "fraktion": "CDU/CSU",
@@ -1403,10 +1410,10 @@
       "parlament": "bundestag"
     },
     {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/I/ince_cem-1045160",
-      "text": "Ince, Cem",
-      "fraktion": "Die Linke",
-      "amtlicheKennung": "ince_cem-1045160",
+      "url": "https://www.bundestag.de/abgeordnete/biografien/P/preisendanz_david-1049074",
+      "text": "Preisendanz, Dr. David",
+      "fraktion": "CDU/CSU",
+      "amtlicheKennung": "preisendanz_david-1049074",
       "parlament": "bundestag"
     },
     {
@@ -1620,6 +1627,13 @@
       "parlament": "bundestag"
     },
     {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/I/ince_cem-1045160",
+      "text": "Ince, Cem",
+      "fraktion": "Die Linke",
+      "amtlicheKennung": "ince_cem-1045160",
+      "parlament": "bundestag"
+    },
+    {
       "url": "https://www.bundestag.de/abgeordnete/biografien/K/kaminski_maren-1045282",
       "text": "Kaminski, Maren",
       "fraktion": "Die Linke",
@@ -1708,27 +1722,6 @@
       "text": "Özdemir, Cansu",
       "fraktion": "Die Linke",
       "amtlicheKennung": "oezdemir_cansu-1046452",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/K/kleebank_helmut-1045402",
-      "text": "Kleebank, Helmut",
-      "fraktion": "SPD",
-      "amtlicheKennung": "kleebank_helmut-1045402",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/K/klose_annika-1045438",
-      "text": "Klose, Annika",
-      "fraktion": "SPD",
-      "amtlicheKennung": "klose_annika-1045438",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/S/stuewe_ruppert-1047638",
-      "text": "Stüwe, Ruppert",
-      "fraktion": "SPD",
-      "amtlicheKennung": "stuewe_ruppert-1047638",
       "parlament": "bundestag"
     },
     {
@@ -2026,10 +2019,24 @@
       "parlament": "bundestag"
     },
     {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/K/kleebank_helmut-1045402",
+      "text": "Kleebank, Helmut",
+      "fraktion": "SPD",
+      "amtlicheKennung": "kleebank_helmut-1045402",
+      "parlament": "bundestag"
+    },
+    {
       "url": "https://www.bundestag.de/abgeordnete/biografien/K/klingbeil_lars-1045428",
       "text": "Klingbeil, Lars",
       "fraktion": "SPD",
       "amtlicheKennung": "klingbeil_lars-1045428",
+      "parlament": "bundestag"
+    },
+    {
+      "url": "https://www.bundestag.de/abgeordnete/biografien/K/klose_annika-1045438",
+      "text": "Klose, Annika",
+      "fraktion": "SPD",
+      "amtlicheKennung": "klose_annika-1045438",
       "parlament": "bundestag"
     },
     {
@@ -2296,13 +2303,6 @@
       "text": "Knodel, Sieghard",
       "fraktion": "fraktionslos",
       "amtlicheKennung": "knodel_sieghard-1045460",
-      "parlament": "bundestag"
-    },
-    {
-      "url": "https://www.bundestag.de/abgeordnete/biografien/S/schmidt_jan-1047146",
-      "text": "Schmidt, Jan Wenzel",
-      "fraktion": "fraktionslos",
-      "amtlicheKennung": "schmidt_jan-1047146",
       "parlament": "bundestag"
     },
     {
@@ -3508,53 +3508,63 @@
       {
         "fraktion": "Bündnis 90/Die Grünen",
         "verzeichnis": 85,
-        "ausgewaehlt": 58
+        "kandidatenNachBekanntenAusschluessen": 85,
+        "ausgewaehlt": 59
       },
       {
         "fraktion": "CDU/CSU",
         "verzeichnis": 208,
-        "ausgewaehlt": 142
+        "kandidatenNachBekanntenAusschluessen": 208,
+        "ausgewaehlt": 143
       },
       {
         "fraktion": "Die Linke",
         "verzeichnis": 64,
+        "kandidatenNachBekanntenAusschluessen": 64,
         "ausgewaehlt": 44
       },
       {
         "fraktion": "SPD",
         "verzeichnis": 120,
-        "ausgewaehlt": 83
+        "kandidatenNachBekanntenAusschluessen": 120,
+        "ausgewaehlt": 82
       },
       {
         "fraktion": "fraktionslos",
         "verzeichnis": 3,
-        "ausgewaehlt": 3
+        "kandidatenNachBekanntenAusschluessen": 2,
+        "ausgewaehlt": 2
       }
     ],
     "be": [
       {
         "fraktion": "CDU-Fraktion",
         "verzeichnis": 52,
+        "kandidatenNachBekanntenAusschluessen": 52,
         "ausgewaehlt": 43
       },
       {
         "fraktion": "Die Linke Fraktion",
         "verzeichnis": 20,
+        "kandidatenNachBekanntenAusschluessen": 20,
         "ausgewaehlt": 17
       },
       {
         "fraktion": "Fraktion Bündnis 90/Die Grünen",
         "verzeichnis": 33,
+        "kandidatenNachBekanntenAusschluessen": 33,
         "ausgewaehlt": 28
       },
       {
         "fraktion": "SPD-Fraktion",
         "verzeichnis": 36,
+        "kandidatenNachBekanntenAusschluessen": 36,
         "ausgewaehlt": 30
       },
       {
         "fraktion": "fraktionslos",
         "verzeichnis": 2,
+        "kandidatenNachBekanntenAusschluessen": 2,
         "ausgewaehlt": 2
       }
     ],
@@ -3562,26 +3572,31 @@
       {
         "fraktion": "BSW-Fraktion",
         "verzeichnis": 8,
+        "kandidatenNachBekanntenAusschluessen": 8,
         "ausgewaehlt": 7
       },
       {
         "fraktion": "CDU-Fraktion",
         "verzeichnis": 12,
+        "kandidatenNachBekanntenAusschluessen": 12,
         "ausgewaehlt": 10
       },
       {
         "fraktion": "SPD-Fraktion",
         "verzeichnis": 34,
+        "kandidatenNachBekanntenAusschluessen": 34,
         "ausgewaehlt": 29
       },
       {
         "fraktion": "WfB-Gruppe",
         "verzeichnis": 3,
+        "kandidatenNachBekanntenAusschluessen": 3,
         "ausgewaehlt": 3
       },
       {
         "fraktion": "fraktionslos",
         "verzeichnis": 1,
+        "kandidatenNachBekanntenAusschluessen": 1,
         "ausgewaehlt": 1
       }
     ]
@@ -3666,5 +3681,59 @@
     "Keine AfD-Zugehoerigkeit, auch nicht bei fraktionslosen Abgeordneten; ungeklärte Faelle nicht importieren",
     "Bestehende Testkennungen erst nach abgeschlossener Pruefung zuordnen; alle500 gleich pruefen und vor versehentlichen Aenderungen schuetzen; keine Aktivierung"
   ],
-  "gesamtbestandsregel": "Exakt500 gleich behandelte Testprofile, keine zusaetzliche oder bevorzugte Bestandsgruppe. Identitaetsabgleich und Bindung an bestehende Profilkennungen fuer alle500 vor dem Import."
+  "gesamtbestandsregel": "Exakt500 gleich behandelte Testprofile, keine zusaetzliche oder bevorzugte Bestandsgruppe. Identitaetsabgleich und Bindung an bestehende Profilkennungen fuer alle500 vor dem Import.",
+  "korrekturen": [
+    {
+      "am": "2026-09-27T13:51:31.991367+00:00",
+      "entfernt": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/S/schmidt_jan-1047146",
+        "text": "Schmidt, Jan Wenzel",
+        "fraktion": "fraktionslos",
+        "amtlicheKennung": "schmidt_jan-1047146",
+        "parlament": "bundestag"
+      },
+      "grund": "AfD-Parteieintritt amtlich belegt; nur Fraktionsausschluss, kein Parteiaustrittsbeleg. Daher keine Zulassung.",
+      "ersetztDurch": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/P/preisendanz_david-1049074",
+        "text": "Preisendanz, Dr. David",
+        "fraktion": "CDU/CSU",
+        "amtlicheKennung": "preisendanz_david-1049074",
+        "parlament": "bundestag"
+      },
+      "ersatzbeleg": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/P/preisendanz_david-1049074",
+        "abgerufenAm": "2026-09-27T13:51:31.991367+00:00",
+        "sha256": "725cbf48ba6b529d4fcd8f811b754f6bdf9253696bfe23688eda051649293552"
+      },
+      "ersatzgrund": "Freier Bundestagsplatz nach Ausschluss; CDU/CSU erhaelt zusaetzlichen Platz, amtliche CDU-Funktion und Direktmandat belegt. Keine Nachrichtenauswertung als Auswahlgrund."
+    },
+    {
+      "am": "2026-09-27T14:03:13.769206+00:00",
+      "grund": "Historische personenbezogene Pflichtplaetze vollstaendig entfernt; alle500 nach derselben Auswahlregel neu berechnet, vor Nachrichtenauswertung. Genau ein weiterer Austausch.",
+      "entfernt": [
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/S/stuewe_ruppert-1047638",
+          "text": "Stüwe, Ruppert",
+          "fraktion": "SPD",
+          "amtlicheKennung": "stuewe_ruppert-1047638",
+          "parlament": "bundestag"
+        }
+      ],
+      "hinzu": [
+        {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/N/nouripour_omid-1046368",
+          "text": "Nouripour, Omid",
+          "fraktion": "Bündnis 90/Die Grünen",
+          "amtlicheKennung": "nouripour_omid-1046368",
+          "parlament": "bundestag"
+        }
+      ],
+      "quellenbeleg": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/N/nouripour_omid-1046368",
+        "abgerufenAm": "2026-09-27T14:03:13.769206+00:00",
+        "sha256": "9ff98762c3eb781e27d0594e07e43c55bc277b794690f717343d5c6c9dedc476"
+      }
+    }
+  ],
+  "auswahlregel": "Je Fraktion/Gruppe ein Platz; restliche Plaetze proportional zu verbleibenden Kandidaten (groesste Reste), Gleichstand nach erster amtlicher Kennung. Innerhalb jeder Gruppe amtliche Kennung aufsteigend. Keine personenbezogenen Pflichtplaetze; bekannte Ausschlussfaelle zuvor entfernen. Ungeklaerte Parteifelder bleiben vor Import gesperrt."
 }

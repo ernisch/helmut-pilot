@@ -124,6 +124,10 @@ Die bisherige4/500-Auswahl ist kein Nachweis realistischer Personalisierung und
 kein Grund, nur auf neue Nachrichten zu warten. Erst Profil-/Ebenenluecken
 abgrenzen und korrigieren, dann die frische Versorgung unter Punkt3 nachweisen.
 Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
+[500 Feldbelege](betrieb/500-profilfeldbelege-20260927.md) sind lokal zusammengestellt
+und hashgeprueft. Keine personenbezogenen Pflichtplaetze in der Auswahl.
+Naechster offener Teilschritt:336 Parteifelder und die ausgewiesenen Mandats-/
+Fachachsen einzeln belegen;422 technische Erfolge sind keine fachliche Importfreigabe.
 
 1. Die gemeinsame semantische Trennung der tatsächlich sichtbaren Texte aus
    Briefing, Lage und Radar technisch absichern und mit echten Helmut Ausgaben
