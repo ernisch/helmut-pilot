@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "datum": "2026-09-27",
+  "status": "Vom Orchestrator eng geprueft; drei sonstige Gremien-Aufgabenachsen (Wahlausschuss) vorbereitet; nicht importfreigegeben",
+  "umfang": 3,
+  "bilanz": {
+    "gesamt": 3,
+    "Bund": 3,
+    "Berlin": 0,
+    "Brandenburg": 0
+  },
+  "gremium": "Wahlausschuss",
+  "gremienUrl": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+  "beschreibung": "Mitglied des 21. Deutschen Bundestages",
+  "themen": [
+    "Richter des Bundesverfassungsgerichts"
+  ],
+  "aufgabenbindung": "Wahlausschuss; Vorschlag der vom Bundestag zu berufenden Richter des Bundesverfassungsgerichts",
+  "aufgabenAbsatz": "Die 16 Richter des Bundesverfassungsgerichts werden jeweils zur Hälfte von Bundestag und Bundesrat gewählt (§ 5 Absatz 1 Satz 1 Bundesverfassungsgerichtsgesetz, BVerfGG). Die vom Bundestag zu berufenden Richter werden auf Vorschlag des Wahlausschusses durch das Plenum gewählt (§ 6 Absatz 1 Satz 1 BVerfGG). Der Wahlausschuss für die Richter des Bundesverfassungsgerichts wird zu Beginn jeder Wahlperiode eingesetzt. Seine 12 Mitglieder sind Abgeordnete der im Bundestag vertretenen Fraktionen und werden nach den Regeln der Verhältniswahl in den Wahlausschuss gewählt (§ 6 Absatz 2 BVerfGG). Die CDU/CSU-Fraktion stellt in der 21. Wahlperiode fünf Abgeordnete, die AfD-Fraktion drei, die SPD-Fraktion zwei, die Fraktionen Bündnis 90/Die Grünen und der Linken jeweils einen Abgeordneten.",
+  "abschnitt": "Aktueller Gremienaufgabenabsatz, eigener Inhaltsblock div.col-xs-12.col-sm-6.bt-standard-content im Tab-Panel #arbeit-und-aufgaben; genau ein eigener p mit vollstaendigem Wortlaut und ausdruecklicher 21. Wahlperiode. Kein Archiv-/18WP-Absatz, keine Navigation, kein Template.",
+  "quelle": {
+    "url": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+    "finalUrl": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+    "abgerufenAm": "2026-09-27T19:39:37.872399+00:00",
+    "sha256": "8e131046ee994e186873d8bbec7f84f90fd58057158a9080b06911826db26ed8",
+    "bytes": 270972,
+    "datei": "wahlausschuss-aktuell.html",
+    "http": 200,
+    "abrufStatus": "abgerufen"
+  },
+  "gegenquelle": {
+    "url": "https://www.bundestag.de/services/glossar/wahlaussch-245562",
+    "finalUrl": "https://www.bundestag.de/services/glossar/wahlaussch-245562",
+    "abgerufenAm": "2026-09-27T19:39:38.699822+00:00",
+    "sha256": "efcd65df01e32b3853de8bf32b92f0cd9643864f119b0e2a4897c94395796e73",
+    "bytes": 252836,
+    "datei": "wahlausschuss-glossar.html",
+    "http": 200,
+    "abrufStatus": "abgerufen"
+  },
+  "ergebnisse": [
+    {
+      "kennung": "bundestag-hasselmann-britta-1044778",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "person": "Britta Haßelmann",
+      "gremium": "Wahlausschuss",
+      "gremienUrl": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+      "roleName": "Ordentliches Mitglied",
+      "startDate": "2025-03-25",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hasselmann_britta-1044778",
+        "sha256": "0750ba10353c7db1b54d6bf3d7d35161d526ee8f96a5c3159398d4674e7cfbea",
+        "abgerufenAm": "2026-09-27T12:59:36.772613+00:00"
+      },
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-hoffmann-alexander-1048720",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "person": "Alexander Hoffmann",
+      "gremium": "Wahlausschuss",
+      "gremienUrl": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+      "roleName": "Ordentliches Mitglied",
+      "startDate": "2025-03-25",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/H/hoffmann_alexander-1048720",
+        "sha256": "3c9b5716794f7a13785bbfa3ab32792d916a6dc3698f17d49927d4fb74fbddb1",
+        "abgerufenAm": "2026-09-27T13:00:30.701425+00:00"
+      },
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-miersch-matthias-1046120",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "person": "Dr. Matthias Miersch",
+      "gremium": "Wahlausschuss",
+      "gremienUrl": "https://www.bundestag.de/ausschuesse/weitere_gremien/wahlausschuss",
+      "roleName": "Stellvertretendes Mitglied",
+      "startDate": "2025-03-25",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/M/miersch_matthias-1046120",
+        "sha256": "1964d6f86f4c5ee9fdece19ece9483e17197c776db4c3e52f21b92d965d6b902",
+        "abgerufenAm": "2026-09-27T13:02:01.522263+00:00"
+      },
+      "importfreigegeben": false
+    }
+  ],
+  "pruefung": "Drei sonstige Gremien-Aufgabenachsen (Wahlausschuss) des 21. Deutschen Bundestages werden eng am amtlichen Original gebunden. Die kanonische Person (H1/URL/Hash/Bytezahl/Abruf/HTTP) stammt aus der unveraenderten 54er Rollenquittung; die aktuelle Mitgliedschaft wird eigenstaendig aus genau EINEM ProfilePage.mainEntity (Typ Person, @id #mdb, Name, falls url vorhanden exakt die Quell-URL, description 'Mitglied des 21. Deutschen Bundestages') in genau EINER echten Role auf exakt Organization/Wahlausschuss/kanonische Gremien-URL mit dem exakten roleName, startDate <= Abrufzeit und ohne endDate geprueft. Das enge Thema 'Richter des Bundesverfassungsgerichts' stammt ausschliesslich aus dem geschlossenen aktuellen Gremienaufgabenabsatz unter #arbeit-und-aufgaben und .bt-standard-content (genau ein eigener p mit vollstaendigem Wortlaut und 21. Wahlperiode), mit getrenntem Herkunftshinweis. Das sonstige Gremium und die bisherigen ordentlichen/stellvertretenden Funktionen bleiben unveraendert; es wird NIE als regulaerer Ausschuss zurueckgeschrieben (PR660 bleibt richtig), keine Umdeklarierung, keine Fraktionsvorsitz-/Parteifeld-/Mandatsart-Aenderung, keine persoenliche politische Position. Die 54er Rollenquittung und alle bisherigen Quittungen bleiben unveraendert; Haßelmann/Miersch bleiben dort offen (kein Blocker dieser eigenstaendigen Mitgliedschaftsquelle). Keine Importfreigabe.",
+  "importfreigegeben": false
+}

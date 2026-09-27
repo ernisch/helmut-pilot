@@ -127,7 +127,7 @@ Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
 [500 Feldbelege](betrieb/500-profilfeldbelege-20260927.md) sind lokal zusammengestellt
 und hashgeprueft. Keine personenbezogenen Pflichtplaetze in der Auswahl.
 Naechster offener Teilschritt:die 74 Parteifelder und die verbleibenden Mandats-/
-Fachachsen einzeln belegen;478 technische Erfolge sind keine fachliche Importfreigabe.
+Fachachsen einzeln belegen;481 technische Erfolge sind keine fachliche Importfreigabe.
 Gremienrollen und vier BB-Listenmandate sind korrigiert. Der falsche Widerspruch
 SSW/fraktionslos ist mit PR661 ausgerollt und nachkontrolliert; Partei bleibt erhalten, AfD-Sperre unveraendert.
 Zwei bislang offene Berliner Mandatsarten sind ueber die amtliche
@@ -162,10 +162,17 @@ Hochstufung auf ganze Abteilungen) und ueber die gesonderte gepruefte
 einzeln offenen Rollenfall Philipp Amthor (aktuelle Kanzleramtsrolle seit29.Juli2026
 aus geschlossenem bpa-richtext-Lebenslauf, ein Thema Bund-Laender-Beziehungen aus
 genau einem echten li der Personalien-h2; der historische 54er-Eintrag bleibt offen,
-keine Rolllockerung); die54er
-Rollenquittung bleibt deckungsgleich,21 Achsen
-bleiben offen. Stand:478/22. Die separat belegten Amtsrollen
-Haßelmann/Miersch bleiben unintegriert.
+keine Rolllockerung) und ueber die eng gepruefte
+[Wahlausschuss-Aufgabenquittung](betrieb/wahlausschuss-drei-aufgaben-20260927.json)
+3 weitere sonstige Gremien-Aufgabenachsen (Haßelmann/Hoffmann/Miersch: die aktuelle
+Wahlausschuss-Mitgliedschaft eigenstaendig aus genau EINEM ProfilePage.mainEntity in
+genau EINER echten Role mit exaktem roleName/startDate ohne endDate, das enge Thema
+Richter des Bundesverfassungsgerichts aus dem geschlossenen aktuellen
+Gremienaufgabenabsatz mit 21. Wahlperiode; das sonstige Gremium und die bestehenden
+Funktionen unveraendert, kein regulaerer Ausschuss, keine Umdeklarierung,
+Haßelmann/Miersch bleiben in der 54er Quittung offen); die54er
+Rollenquittung bleibt deckungsgleich,18 Achsen
+bleiben offen. Stand:481/19.
 Naechster Fachschritt: verbleibende aktuelle Parteibelege, die letzte offene
 Berliner Mandatsart (Claudia Engelmann) und die restlichen Fachachsen.
 

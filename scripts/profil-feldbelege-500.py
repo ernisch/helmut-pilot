@@ -466,6 +466,59 @@ def _pruefe_amthor(eingang) -> dict:
     return index
 
 
+# Versionierte, vom Orchestrator eng gepruefte AUFGABENQUITTUNG der drei sonstigen
+# Gremien-Aufgabenachsen des Wahlausschusses (Britta Haßelmann, Alexander Hoffmann,
+# Dr. Matthias Miersch). Die fail-closed-Validierung liegt im getrennten Modul
+# ``profil-feldbelege-500-wahlausschuss.py`` (das die sicheren Helfer des
+# Zusatzaufgabenmoduls wiederverwendet); hier wird nur der gepruefte Index
+# angewendet. Die aktuelle Mitgliedschaft wird eigenstaendig aus genau EINEM
+# ProfilePage.mainEntity in genau EINER echten Role zum Wahlausschuss neu gebunden;
+# der alte Rollenvalidator mit Pflichtstatus ``belegt`` wird NICHT verwendet
+# (Haßelmann/Miersch bleiben dort offen, das ist kein Blocker). Es entstehen nur
+# das enge amtliche Thema und der getrennte Herkunftshinweis; das sonstige Gremium,
+# die bestehenden ordentlichen/stellvertretenden Funktionen, Partei und Mandatsart
+# bleiben unveraendert.
+WAHLAUSSCHUSS = REPO_ROOT / "docs" / "betrieb" / "wahlausschuss-drei-aufgaben-20260927.json"
+WAHLAUSSCHUSS_RESSOURCE = "docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json"
+WAHLAUSSCHUSS_GESAMT = 3
+
+
+def _lade_wahlausschussmodul():
+    pfad = Path(__file__).with_name("profil-feldbelege-500-wahlausschuss.py")
+    vorher = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    spec = _importlib_util.spec_from_file_location("profil_feldbelege_500_wahlausschuss", pfad)
+    try:
+        modul = _importlib_util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        return modul
+    finally:
+        sys.dont_write_bytecode = vorher
+
+
+WAHLAUSSCHUSSMODUL = _lade_wahlausschussmodul()
+
+
+def _pruefe_wahlausschuss(eingang) -> dict:
+    """Prueft die versionierte Wahlausschuss-Aufgabenquittung ueber das getrennte Modul."""
+    try:
+        index = WAHLAUSSCHUSSMODUL.pruefe_wahlausschuss(
+            eingang,
+            quittung=getattr(eingang, "wahlausschuss", None),
+            ressortachsen_kennungen=set(getattr(eingang, "ressortachsen_by_kennung", None) or {}),
+            aufgabenachsen_kennungen=set(getattr(eingang, "aufgabenachsen_by_kennung", None) or {}),
+            beratendeachsen_kennungen=set(getattr(eingang, "beratendeachsen_by_kennung", None) or {}),
+            zusatzaufgaben_kennungen=set(getattr(eingang, "zusaetzlicheaufgaben_by_kennung", None) or {}),
+            bmwsb_kennungen=set(getattr(eingang, "bmwsb_by_kennung", None) or {}),
+            amthor_kennungen=set(getattr(eingang, "amthor_by_kennung", None) or {}),
+        )
+    except WAHLAUSSCHUSSMODUL.WahlausschussFehler as fehler:
+        raise AssemblerFehler(str(fehler)) from fehler
+    eingang.wahlausschuss_by_kennung = index
+    eingang.wahlausschuss_verwendet = set()
+    return index
+
+
 ZUSATZQUELLEN = "zusatzquellen"
 
 ABRUF_BUNDESTAG = "bundestagsprofile-330-abruf.json"
@@ -1434,6 +1487,10 @@ class Eingang:
             self.amthor = _lies_json(AMTHOR)
         except FileNotFoundError as fehler:
             raise AssemblerFehler(f"Amthor-Einzelfallquittung fehlt: {AMTHOR_RESSOURCE}") from fehler
+        try:
+            self.wahlausschuss = _lies_json(WAHLAUSSCHUSS)
+        except FileNotFoundError as fehler:
+            raise AssemblerFehler(f"Wahlausschuss-Aufgabenquittung fehlt: {WAHLAUSSCHUSS_RESSOURCE}") from fehler
         self.abruf = _lies_json(verzeichnis / ABRUF_BUNDESTAG) + _lies_json(
             verzeichnis / ABRUF_LANDESPARLAMENTE
         )
@@ -2428,6 +2485,61 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         }
         achsen_geschlossen = True
 
+    # Versionierte Wahlausschuss-Aufgabenquittung: fuer die drei sonstigen
+    # Gremien-Aufgabenachsen des Wahlausschusses (Haßelmann/Hoffmann/Miersch) wird
+    # das enge amtlich abgeleitete Thema gesetzt (getrennter Herkunftshinweis in
+    # funktionen) und damit die fachliche Achse geschlossen. Das belegte sonstige
+    # Gremium (Wahlausschuss) und die bestehenden ordentlichen/stellvertretenden
+    # Funktionen bleiben unveraendert; es wird NIE als regulaerer Ausschuss
+    # zurueckgeschrieben, keine Umdeklarierung, keine Partei-/Mandatsartaenderung,
+    # keine persoenliche politische Position. Die aktuelle Mitgliedschaft wird
+    # eigenstaendig ueber ProfilePage.mainEntity.memberOf neu gebunden.
+    wahlausschuss_eintrag = (getattr(eingang, "wahlausschuss_by_kennung", None) or {}).get(mandatsId)
+    wahlausschuss_beleg = None
+    if wahlausschuss_eintrag is not None:
+        verwendet = getattr(eingang, "wahlausschuss_verwendet", None)
+        if verwendet is not None:
+            verwendet.add(mandatsId)
+        wahlausschuss_quelle = wahlausschuss_eintrag["quelle"]
+        profil["themen"] = list(wahlausschuss_eintrag["themen"])
+        hinweis = wahlausschuss_eintrag["ableitungsHinweis"]
+        profil.setdefault("funktionen", [])
+        if hinweis not in profil["funktionen"]:
+            profil["funktionen"].append(hinweis)
+        profil["offizielleQuellen"].append({
+            "art": "gremium-aufgabe",
+            "url": wahlausschuss_quelle["url"],
+            "abgerufenAm": wahlausschuss_quelle["abgerufenAm"],
+            "sha256": wahlausschuss_quelle["sha256"],
+        })
+        wahlausschuss_beleg = {
+            "datei": WAHLAUSSCHUSS_RESSOURCE,
+            "kennung": wahlausschuss_eintrag["kennung"],
+            "region": wahlausschuss_eintrag["region"],
+            "person": wahlausschuss_eintrag["person"],
+            "gremium": wahlausschuss_eintrag["gremium"],
+            "gremienUrl": wahlausschuss_eintrag["gremienUrl"],
+            "roleName": wahlausschuss_eintrag["roleName"],
+            "startDate": wahlausschuss_eintrag["startDate"],
+            "aufgabenbindung": wahlausschuss_eintrag["aufgabenbindung"],
+            "rollenquelle": {
+                "url": wahlausschuss_eintrag["rollenquelle"].get("url"),
+                "sha256": wahlausschuss_eintrag["rollenquelle"].get("sha256"),
+                "abgerufenAm": wahlausschuss_eintrag["rollenquelle"].get("abgerufenAm"),
+            },
+            "quelle": {
+                "datei": wahlausschuss_quelle.get("datei"),
+                "url": wahlausschuss_quelle.get("url"),
+                "finalUrl": wahlausschuss_quelle.get("finalUrl"),
+                "abgerufenAm": wahlausschuss_quelle.get("abgerufenAm"),
+                "sha256": wahlausschuss_quelle.get("sha256"),
+                "bytes": wahlausschuss_quelle.get("bytes"),
+            },
+            "themen": list(wahlausschuss_eintrag["themen"]),
+            "ableitungsHinweis": hinweis,
+        }
+        achsen_geschlossen = True
+
     # ── Feldbelege (Herkunft je Feld) ─────────────────────────────────────────
     feldbelege = dict(extraktion.get("feldbelege", {}))
     feldbelege["mandatsId"] = "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert"
@@ -2482,6 +2594,17 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"aktuell, keine persoenliche politische Position, keine freie Themen-/Zitatzuordnung "
             f"(URL + finalUrl + sha256 + Bytezahl + Abrufzeit + Datei beider Zusatzquellen, Original UND "
             f"Metadaten, gebunden)"
+        )
+    elif wahlausschuss_beleg is not None:
+        feldbelege["themen"] = (
+            f"vom Orchestrator gepruefte Wahlausschuss-Aufgabenquittung {WAHLAUSSCHUSS_RESSOURCE}: das enge "
+            f"amtlich abgeleitete Thema aus dem geschlossenen aktuellen Gremienaufgabenabsatz unter "
+            f"#arbeit-und-aufgaben und .bt-standard-content (genau ein eigener p mit vollstaendigem Wortlaut "
+            f"und 21. Wahlperiode); die aktuelle Mitgliedschaft stammt aus genau EINEM ProfilePage.mainEntity "
+            f"in genau EINER echten Role zum Wahlausschuss (exakter roleName, startDate <= Abrufzeit, kein "
+            f"endDate); das sonstige Gremium und die bestehenden Funktionen bleiben unveraendert, keine "
+            f"Umdeklarierung, keine persoenliche politische Position (URL + finalUrl + sha256 + Bytezahl + "
+            f"Abrufzeit + HTTP + Datei beider Quellen, Original UND Metadaten, gebunden)"
         )
     feldbelege["bundesland"] = (
         "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)"
@@ -2566,6 +2689,17 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"Rolllockerung, separate Neubindung). Zusaetzlich der getrennte Herkunftshinweis zur amtlichen "
             f"Aufgabenbindung; keine persoenliche politische Position, kein Digitalamt als aktuell "
             f"(URL + sha256 + Abrufzeit + Datei beider Zusatzquellen, Original UND Metadaten, gebunden)"
+        )
+    if wahlausschuss_beleg is not None:
+        feldbelege["funktionen"] = (
+            f"vom Orchestrator gepruefte Wahlausschuss-Aufgabenquittung {WAHLAUSSCHUSS_RESSOURCE}: das "
+            f"sonstige Gremium {wahlausschuss_beleg['gremium']!r} und die bestehenden ordentlichen/"
+            f"stellvertretenden Funktionen bleiben unveraendert erhalten (NIE als regulaerer Ausschuss); "
+            f"zusaetzlich nur der getrennte Herkunftshinweis zur amtlichen Aufgabenbindung; die aktuelle "
+            f"Mitgliedschaft ({wahlausschuss_beleg['roleName']}) stammt aus genau EINER echten Role in "
+            f"ProfilePage.mainEntity.memberOf, keine persoenliche politische Position "
+            f"(URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei beider Quellen, Original UND "
+            f"Metadaten, gebunden)"
         )
 
     # ── Offene Punkte explizit zusammentragen ─────────────────────────────────
@@ -2721,6 +2855,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         datensatz["bmwsbQuittung"] = bmwsb_beleg
     if amthor_beleg is not None:
         datensatz["amthorQuittung"] = amthor_beleg
+    if wahlausschuss_beleg is not None:
+        datensatz["wahlausschussQuittung"] = wahlausschuss_beleg
     if "status" in extraktion:
         datensatz["extraktionsstatus"] = extraktion["status"]
     return datensatz
@@ -2741,6 +2877,7 @@ def assembliere(eingang: Eingang) -> dict:
     zusatzaufgaben = _pruefe_zusatzaufgaben(eingang)
     bmwsb = _pruefe_bmwsb(eingang)
     amthor = _pruefe_amthor(eingang)
+    wahlausschuss = _pruefe_wahlausschuss(eingang)
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
 
     # Die gepruefte Quittung muss die offenen Parteifelder DECKUNGSGLEICH abbilden:
@@ -2808,6 +2945,11 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Amthor-Einzelfallquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_amthor)}."
         )
+    ungenutzte_wahlausschuss = set(wahlausschuss) - eingang.wahlausschuss_verwendet
+    if ungenutzte_wahlausschuss:
+        raise AssemblerFehler(
+            f"Wahlausschuss-Aufgabenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_wahlausschuss)}."
+        )
     ressort_geschlossen = set(eingang.ressortachsen_verwendet)
     if ressort_geschlossen != set(ressortachsen):
         raise AssemblerFehler(
@@ -2843,6 +2985,12 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Amthor-Einzelfallquittung deckt nicht genau ihre eine Kennung ab: "
             f"{sorted(set(amthor) ^ amthor_geschlossen)}."
+        )
+    wahlausschuss_geschlossen = set(eingang.wahlausschuss_verwendet)
+    if wahlausschuss_geschlossen != set(wahlausschuss):
+        raise AssemblerFehler(
+            f"Wahlausschuss-Aufgabenquittung deckt nicht genau ihre 3 Kennungen ab: "
+            f"{sorted(set(wahlausschuss) ^ wahlausschuss_geschlossen)}."
         )
     if ressort_geschlossen & aufgaben_geschlossen:
         raise AssemblerFehler(
@@ -2892,9 +3040,22 @@ def assembliere(eingang: Eingang) -> dict:
                 f"Amthor-Einzelfall- und {name}achse gleichzeitig belegt: "
                 f"{sorted(amthor_geschlossen & andere)}."
             )
+    for andere, name in (
+        (ressort_geschlossen, "Ressort"),
+        (aufgaben_geschlossen, "Aufgaben"),
+        (beratende_geschlossen, "Beratende"),
+        (zusatz_geschlossen, "Zusatzaufgaben"),
+        (bmwsb_geschlossen, "BMWSB-Aufgaben"),
+        (amthor_geschlossen, "Amthor-Einzelfall"),
+    ):
+        if wahlausschuss_geschlossen & andere:
+            raise AssemblerFehler(
+                f"Wahlausschuss-Aufgaben- und {name}achse gleichzeitig belegt: "
+                f"{sorted(wahlausschuss_geschlossen & andere)}."
+            )
     geschlossene_achsen = (ressort_geschlossen | aufgaben_geschlossen
                            | beratende_geschlossen | zusatz_geschlossen | bmwsb_geschlossen
-                           | amthor_geschlossen)
+                           | amthor_geschlossen | wahlausschuss_geschlossen)
     if not geschlossene_achsen <= set(profilrollen):
         raise AssemblerFehler(
             "Geschlossene Achsen enthalten Kennungen ausserhalb der 54er Rollenquittung: "
@@ -2925,7 +3086,8 @@ def assembliere(eingang: Eingang) -> dict:
     for datensatz in datensaetze:
         if (datensatz.get("ressortachsenQuittung") or datensatz.get("aufgabenachsenQuittung")
                 or datensatz.get("beratendeachsenQuittung") or datensatz.get("zusaetzlicheaufgabenQuittung")
-                or datensatz.get("bmwsbQuittung") or datensatz.get("amthorQuittung")):
+                or datensatz.get("bmwsbQuittung") or datensatz.get("amthorQuittung")
+                or datensatz.get("wahlausschussQuittung")):
             if "fachlicheAchse" in datensatz["offeneFelder"]:
                 raise AssemblerFehler(
                     f"Geschlossene Fachachse bleibt offen: {datensatz['kanonischeKennung']}."
@@ -3202,7 +3364,31 @@ def assembliere(eingang: Eingang) -> dict:
                 "Bundestags-Profilnamen/URL/Hash der 54er Quittung und beide Zusatzquellen (URL + finalUrl + "
                 "sha256 + Bytezahl + Abrufzeit + HTTP + Datei, Original UND Metadaten) gebunden und disjunkt zu "
                 "den 19 Ressort-, 6 Aufgaben-, 2 beratenden, 3 Zusatzaufgaben- und 2 BMWSB-Achsen. Kein "
-                "Digitalamt als aktuell, keine persoenliche Position; es bleiben 21 Achsen offen."
+                "Digitalamt als aktuell, keine persoenliche Position; damals blieben 21 Achsen offen."
+            ),
+            (
+                "Fuer 3 weitere dieser 54 Profile wird ueber die vom Orchestrator eng gepruefte "
+                f"Wahlausschuss-Aufgabenquittung {WAHLAUSSCHUSS_RESSOURCE} das enge amtlich abgeleitete "
+                "Thema 'Richter des Bundesverfassungsgerichts' gesetzt (getrennter Herkunftshinweis in "
+                "funktionen) und damit die fachliche Achse geschlossen. Die Validierung laeuft im getrennten "
+                "Modul scripts/profil-feldbelege-500-wahlausschuss.py, das die sicheren Helfer des "
+                "Zusatzaufgabenmoduls wiederverwendet: die kanonische Person (H1/URL/Hash/Bytezahl/Abruf/HTTP) "
+                "stammt aus der unveraenderten 54er Rollenquittung; die aktuelle Mitgliedschaft wird "
+                "eigenstaendig aus genau EINEM ProfilePage.mainEntity (Typ Person, '@id' #mdb, Name, falls "
+                "url vorhanden exakt die Quell-URL, description 'Mitglied des 21. Deutschen Bundestages') in "
+                "genau EINER echten Role auf exakt Organization/Wahlausschuss/kanonische Gremien-URL mit dem "
+                "exakten roleName, startDate <= Abrufzeit und OHNE endDate geprueft. Das enge Thema stammt "
+                "ausschliesslich aus dem geschlossenen aktuellen Gremienaufgabenabsatz unter "
+                "#arbeit-und-aufgaben und .bt-standard-content (genau ein eigener p mit vollstaendigem "
+                "Wortlaut und 21. Wahlperiode); Navigation, Template und fremde Absaetze sind kein Beleg. Das "
+                "sonstige Gremium und die bestehenden ordentlichen/stellvertretenden Funktionen bleiben "
+                "unveraendert, es wird NIE als regulaerer Ausschuss zurueckgeschrieben (PR660 bleibt richtig), "
+                "keine Umdeklarierung, keine Fraktionsvorsitz-/Parteifeld-/Mandatsartaenderung, keine "
+                "persoenliche politische Position. Die 54er Rollenquittung und alle bisherigen Quittungen "
+                "bleiben unveraendert (Haßelmann/Miersch bleiben dort offen, kein Blocker dieser "
+                "eigenstaendigen Mitgliedschaftsquelle). Jede Kennung ist disjunkt zu den 19 Ressort-, 6 "
+                "Aufgaben-, 2 beratenden, 3 Zusatzaufgaben-, 2 BMWSB- und 1 Amthor-Achse; die disjunkte "
+                "Vereinigung ergibt weiter genau die 54er Rollenquittung, es bleiben 18 Achsen offen."
             ),
             "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
             "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe.",
@@ -3300,6 +3486,15 @@ def assembliere(eingang: Eingang) -> dict:
                 "themenGesetzt": sum(1 for d in datensaetze if d.get("amthorQuittung")),
                 "deckungsgleichVerwendet": len(eingang.amthor_verwendet),
                 "geschlosseneAchsen": len(amthor_geschlossen),
+                "verbleibendOffeneAchsen": len(offene_achsen),
+            },
+            "wahlausschussQuittung": {
+                "datei": WAHLAUSSCHUSS_RESSOURCE,
+                "geprueftGesamt": len(wahlausschuss),
+                "nachRegion": {"Bund": len(wahlausschuss)},
+                "themenGesetzt": sum(1 for d in datensaetze if d.get("wahlausschussQuittung")),
+                "deckungsgleichVerwendet": len(eingang.wahlausschuss_verwendet),
+                "geschlosseneAchsen": len(wahlausschuss_geschlossen),
                 "verbleibendOffeneAchsen": len(offene_achsen),
             },
             "offeneFelder": offene_felder,
