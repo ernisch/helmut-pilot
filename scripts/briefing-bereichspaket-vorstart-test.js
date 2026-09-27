@@ -17,6 +17,17 @@ function harness(){
  return {cfg,d,s,p,counts,hooks,receipt:()=>receipt,time:t=>{time=t}};
 }
 (async()=>{
+ await test('Lesediagnose nennt Phase und Zeitgrenze ohne private Fehlermeldung oder Retry',async()=>{
+  let calls=0;
+  await A.rejects(M.leseSchritt('helmut_store',async()=>{calls++;const e=new Error('PRIVATE URL UND INHALTE');e.name='TimeoutError';throw e}),e=>e.message==='bereichspaket-lesezeit-abgelaufen'&&e.lesephase==='helmut_store');
+  A.equal(calls,1);
+  await A.rejects(M.leseSchritt('fachaufbau',async()=>{throw Error('PRIVATE INHALTE')}),e=>e.message==='bereichspaket-technischer-fehler'&&e.lesephase==='fachaufbau');
+  await A.rejects(M.leseSchritt('PRIVATE PHASE',async()=>{calls++}));A.equal(calls,1);
+ });
+ await test('Bekannte Fachablehnung bleibt negativ und wird getrennt vom Transport benannt',async()=>{
+  await A.rejects(M.leseSchritt('fachaufbau',async()=>{throw Error('briefing-korrektur-abweichend')}),e=>e.message==='briefing-korrektur-abweichend'&&e.lesephase==='fachaufbau');
+  A.equal(await M.leseSchritt('auth',async()=>42),42);
+ });
  await test('Runtime, Auftragstag, Profil und beide Urteilsbindungen sind fest',()=>{
   A.equal(M.konfiguration(env,commit,now).tag,'2026-09-27');
   for(const patch of [{GITHUB_SHA:'d'.repeat(40)},{GITHUB_REF:'refs/heads/fremd'},{GITHUB_RUN_ATTEMPT:'2'},{HELMUT_BEREICHSPAKET_PROFIL:'d'.repeat(64)},{HELMUT_BEREICHSPAKET_EINGABE:''},{HELMUT_BEREICHSPAKET_URTEIL:''}])A.throws(()=>M.konfiguration({...env,...patch},commit,now));

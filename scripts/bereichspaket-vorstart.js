@@ -22,8 +22,25 @@ const fordere = (ok, grund) => { if (!ok) throw new Error("bereichspaket-" + gru
 const bindung = p => hash({ id: p.id, profilHash: profilHash(p) });
 // Volle Reserve BEIDER moeglicher Aufrufe zusammen: 0,212 (3000) + 0,224 (6000).
 const volleReserveUsd = () => K.reservierungHoeheUsd(ENTWURF_TOKENS) + K.reservierungHoeheUsd(REVIEW_TOKENS);
+const FACHFEHLER = new Set(["briefing-korrektur-abweichend", "briefing-aussagen-kontext-abweichend",
+  "urteilsimport-payload-ungueltig", "urteilsimport-einzelurteil-abgelehnt",
+  "urteilsimport-aussagenfelder-abweichend", "urteilsimport-gesamturteil-abgelehnt"]);
+const LESEPHASEN = new Set(["helmut_store", "mandate_profiles", "profiles", "helmut_jobs",
+  "pipeline_locks", "helmut_verstehen_reservierungen", "process_runs", "auth", "tagessaetze", "fachaufbau", "kosten"]);
 const sichererGrund = error => /^bereichspaket-[a-z-]+$/.test(error?.message || "")
-  ? error.message : "bereichspaket-technischer-fehler";
+  ? error.message : FACHFEHLER.has(error?.message) ? error.message
+    : ["TimeoutError", "AbortError"].includes(error?.name) ? "bereichspaket-lesezeit-abgelaufen"
+      : "bereichspaket-technischer-fehler";
+// Nur feste Phasennamen und bekannte Fehlercodes; keine URL, IDs, Payloads
+// oder freien Fehlermeldungen. Keine Wiederholung und keine weichere Grenze.
+async function leseSchritt(phase, fn) {
+  fordere(LESEPHASEN.has(phase), "diagnosephase");
+  try { return await fn(); } catch (error) {
+    const safe = new Error(sichererGrund(error));
+    safe.lesephase = LESEPHASEN.has(error?.lesephase) ? error.lesephase : phase;
+    throw safe;
+  }
+}
 
 // Drei- bzw. vierseitige Laufbindung plus Tag, Profil und Eingabebindung.
 // Plan und Ausfuehrung verlangen dieselben bereits geprueften Hashbindungen.
@@ -145,7 +162,8 @@ async function einmallauf(cfg, d) {
       diagnose: require("../lib/helmut/lage-textqualitaet").sichereDiagnose(lage?.diagnose),
       lageHash: satz?.payload ? hash(satz.payload) : null,
       paketVollstaendig: paket?.vollstaendig === true, fachlichPositiv: false };
-  } catch (error) { out = { ...out, grund: sichererGrund(error) }; }
+  } catch (error) { out = { ...out, grund: sichererGrund(error),
+    lesephase: LESEPHASEN.has(error?.lesephase) ? error.lesephase : null }; }
   finally {
     let nach = null, kosten = null, laufkosten = null, abschlussFehler = null;
     try { await d.release(); } catch (error) { abschlussFehler = error; }
@@ -185,24 +203,24 @@ async function main(args = process.argv.slice(2), env = process.env) {
       && ai.isAiEnabled() && ai.aiProviderName() === "azure" && ai.understandingModelName() === "gpt-5-mini",
     "umgebung");
   }
-  const read = async (table, query) => {
+  const read = async (table, query) => leseSchritt(table, async () => {
     const r = await fetch(env.SUPABASE_URL.replace(/\/$/, "") + "/rest/v1/" + table + "?" + query,
       { redirect: "error", signal: AbortSignal.timeout(15000),
         headers: { apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: "Bearer " + env.SUPABASE_SERVICE_ROLE_KEY } });
     fordere(r.status === 200, "lesen"); const rows = await r.json();
     fordere(Array.isArray(rows), "leseformat"); return rows;
-  };
+  });
   const I = require("../lib/helmut/briefing-urteilsimport");
   const stage = await read("helmut_store", "select=data&id=eq.bereichsurteil-vorlage-20260927-a&limit=2");
   fordere(stage.length === 1 && hash(stage[0].data) === cfg.urteilHash, "urteilsvorlage");
   const urteil = stage[0].data;
-  const fachlicheEingabe = async p => {
+  const fachlicheEingabe = async p => leseSchritt("fachaufbau", async () => {
     const result = await buildV3(p, p.id, { aussagenEingabe: true, aussagenKorrektur: urteil.korrektur, now: new Date() });
     I.pruefeUrteil(result, urteil);
     require("../lib/helmut/briefing-urteilsauftrag").pruefeBeleg(
       require("../lib/helmut/briefing-urteilsauftrag").AUFTRAG, p.id, result);
     return result;
-  };
+  });
   const leseKontext = async id => {
     S.assertTenant(id, "bereichspaketKontext");
     const [m, p] = await Promise.all([read("mandate_profiles", "select=*&user_id=eq." + encodeURIComponent(id) + "&limit=2"),
@@ -227,14 +245,14 @@ async function main(args = process.argv.slice(2), env = process.env) {
       read("helmut_jobs", "select=id&or=(status.neq.erledigt,lease_expires_at.gt." + now + ")&limit=1"),
       read("pipeline_locks", "select=job_name&expires_at=gt." + now + "&limit=1"),
       read("helmut_verstehen_reservierungen", "select=vorgang_id&lease_bis=gt." + now + "&limit=1"),
-      S.readAuthStore(),
+      auth(),
       read("process_runs", "select=run_id&finished_at=is.null&started_at=gt."
         + encodeURIComponent(new Date(Date.now() - 30 * 60000).toISOString()) + "&limit=1")]);
     fordere(!j.length && !l.length && !c.length && !runs.length
       && !Object.values(a.pipelineLocks || {}).some(x => x?.expiresAt > Date.now()), "parallelbetrieb");
     return h;
   };
-  const auth = async () => S.readAuthStore();
+  const auth = async () => leseSchritt("auth", () => S.readAuthStore());
   const auftrag = async () => {
     try { return K.auftragsStand(await auth(), cfg.tag); } catch { return null; }
   };
@@ -249,12 +267,12 @@ async function main(args = process.argv.slice(2), env = process.env) {
         fordere(found.length === 1, "auswahl"); return found[0];
       },
       quittung: async () => (await read("helmut_store", "select=data&id=eq." + QUITTUNG + "&limit=1"))[0]?.data || null,
-      tagessatz: async id => ({
+      tagessatz: async id => leseSchritt("tagessaetze", async () => ({
         lage: await S.getRenderedBriefingV3(id, LAGE_SLOT, cfg.tag, { strict: true }),
         briefing: await S.getRenderedBriefingV3(id, Sp.SLOT, cfg.tag, { strict: true }),
-        urteil: await S.getRenderedBriefingV3(id, A.SLOT, cfg.tag, { strict: true }) }),
-      kosten: async () => K.pruefeStart(await auth(), cfg.tag,
-        await S.leseLlmTageszaehler(new Date().toISOString())),
+        urteil: await S.getRenderedBriefingV3(id, A.SLOT, cfg.tag, { strict: true }) })),
+      kosten: async () => leseSchritt("kosten", async () => K.pruefeStart(await auth(), cfg.tag,
+        await S.leseLlmTageszaehler(new Date().toISOString()))),
       laufkosten: () => (execute ? K.laufGebundenUsd(cfg.costRunId, { env }) : 0),
       fachlicheEingabe,
       importiere: async (p, gate) => {
@@ -283,10 +301,11 @@ async function main(args = process.argv.slice(2), env = process.env) {
 
 if (require.main === module) main().then(c => { process.exitCode = c; }).catch(e => {
   console.log(JSON.stringify({ ok: false, grund: sichererGrund(e), automatischeWiederholung: false,
+    lesephase: LESEPHASEN.has(e?.lesephase) ? e.lesephase : null,
     fachlichPositiv: false }));
   process.exitCode = 1;
 });
 
 module.exports = { QUITTUNG, PROFIL_HASH, FREIGABE, MAX_AUFRUFE, MAX_MS, MAX_USD,
   ENTWURF_TOKENS, REVIEW_TOKENS, konfiguration, pruefeKosten, pruefeAufruf, volleReserveUsd,
-  bindung, lesebeweis, pruefeSpeichern, einmallauf, main };
+  bindung, lesebeweis, pruefeSpeichern, einmallauf, main, leseSchritt };
