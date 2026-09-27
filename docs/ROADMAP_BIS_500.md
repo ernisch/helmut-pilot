@@ -147,10 +147,15 @@ BMAS-Abteilungen) und ueber die gepruefte
 [beratende Achsenquittung](betrieb/beratende-achsen-2-20260927.json) 2 weitere
 mit amtlich belegten beratenden Ausschussrollen (Knodel Landwirtschaft/
 Ernaehrung/Heimat, Seidler Haushalt; bestehende beratende Funktion erhalten,
-keine ordentliche/stellvertretende Mitgliedschaft); die 54er Rollenquittung
-bleibt deckungsgleich, 27 Achsen
-bleiben offen. Stand:472/28. Die drei separat geprueften Zusatzrollen
-bleiben weiter offen und sind nicht integriert.
+keine ordentliche/stellvertretende Mitgliedschaft) und ueber die gepruefte
+[Zusatzaufgabenquittung](betrieb/zusaetzliche-aufgaben-3-20260927.json) 3 weitere
+mit amtlich belegten Fachzustaendigkeiten (Breher Tierschutz mit neuer
+Funktionsrolle und erhaltener PSts-Rolle, Krichbaum Europa aus der aktuellen
+AA-Seitenkopf-H1, Kippels BMG-Abteilungen1/4/5/6 mit12 Kurzthemen aus dem
+manuell visuell abgenommenen PDF-Fachurteil, kein externer PDF-Parser); die54er
+Rollenquittung bleibt deckungsgleich,24 Achsen
+bleiben offen. Stand:475/25. Die separat belegten Amtsrollen
+Amthor/Haßelmann/Miersch bleiben unintegriert.
 Naechster Fachschritt: verbleibende aktuelle Parteibelege, die letzte offene
 Berliner Mandatsart (Claudia Engelmann) und die restlichen Fachachsen.
 

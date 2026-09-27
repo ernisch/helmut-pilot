@@ -323,6 +323,52 @@ def _pruefe_beratendeachsen(eingang) -> dict:
     return index
 
 
+# Versionierte, vom Orchestrator gepruefte Quittung der 3 ZUSAETZLICHEN
+# Fachzustaendigkeiten (alle Bundestag: Breher Tierschutz, Krichbaum Europa,
+# Kippels BMG-Abteilungen 1/4/5/6). Die fail-closed-Validierung liegt bewusst im
+# getrennten Modul ``profil-feldbelege-500-zusatzaufgaben.py``; hier wird nur der
+# gepruefte Index angewendet. Bestehende Rollen, Partei, Mandatsart, Gremien und
+# alle anderen Felder bleiben unveraendert; nur Breher erhaelt genau eine neue
+# Funktionsrolle, alle drei den getrennten Ableitungshinweis. Keine persoenliche
+# politische Position, keine freie Themen-/Zitatzuordnung.
+ZUSATZAUFGABEN = REPO_ROOT / "docs" / "betrieb" / "zusaetzliche-aufgaben-3-20260927.json"
+ZUSATZAUFGABEN_RESSOURCE = "docs/betrieb/zusaetzliche-aufgaben-3-20260927.json"
+ZUSATZAUFGABEN_GESAMT = 3
+
+
+def _lade_zusatzaufgabenmodul():
+    pfad = Path(__file__).with_name("profil-feldbelege-500-zusatzaufgaben.py")
+    vorher = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    spec = _importlib_util.spec_from_file_location("profil_feldbelege_500_zusatzaufgaben", pfad)
+    try:
+        modul = _importlib_util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        return modul
+    finally:
+        sys.dont_write_bytecode = vorher
+
+
+ZUSATZAUFGABENMODUL = _lade_zusatzaufgabenmodul()
+
+
+def _pruefe_zusatzaufgaben(eingang) -> dict:
+    """Prueft die versionierte Zusatzaufgabenquittung ueber das getrennte Modul."""
+    try:
+        index = ZUSATZAUFGABENMODUL.pruefe_zusatzaufgaben(
+            eingang,
+            quittung=getattr(eingang, "zusaetzlicheaufgaben", None),
+            ressortachsen_kennungen=set(getattr(eingang, "ressortachsen_by_kennung", None) or {}),
+            aufgabenachsen_kennungen=set(getattr(eingang, "aufgabenachsen_by_kennung", None) or {}),
+            beratendeachsen_kennungen=set(getattr(eingang, "beratendeachsen_by_kennung", None) or {}),
+        )
+    except ZUSATZAUFGABENMODUL.ZusatzaufgabenFehler as fehler:
+        raise AssemblerFehler(str(fehler)) from fehler
+    eingang.zusaetzlicheaufgaben_by_kennung = index
+    eingang.zusaetzlicheaufgaben_verwendet = set()
+    return index
+
+
 ZUSATZQUELLEN = "zusatzquellen"
 
 ABRUF_BUNDESTAG = "bundestagsprofile-330-abruf.json"
@@ -2087,6 +2133,70 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         }
         achsen_geschlossen = True
 
+    # Versionierte Zusatzaufgabenquittung: fuer die 3 freigegebenen Fachzustaendigkeiten
+    # (Breher Tierschutz, Krichbaum Europa, Kippels BMG-Abteilungen 1/4/5/6) werden die
+    # ausdruecklichen Kurzthemen gesetzt und damit die fachliche Achse geschlossen
+    # (Ausschuss ODER Thema). Nur Breher erhaelt genau EINE neue Funktionsrolle
+    # (dedupliziert); bestehende Rollen bleiben erhalten. Bestehende Amtsrollen, Partei,
+    # Mandatsart, Gremien und alle anderen Felder bleiben unveraendert; funktionen erhaelt
+    # den getrennten Ableitungshinweis. Keine persoenliche Position, keine freie
+    # Themen-/Zitatzuordnung. Die amtliche Zusatzquelle steht in ``profil.offizielleQuellen``
+    # und im Belegabschnitt ``zusaetzlicheaufgabenQuittung``.
+    zusatz_eintrag = (getattr(eingang, "zusaetzlicheaufgaben_by_kennung", None) or {}).get(mandatsId)
+    zusatz_beleg = None
+    if zusatz_eintrag is not None:
+        verwendet = getattr(eingang, "zusaetzlicheaufgaben_verwendet", None)
+        if verwendet is not None:
+            verwendet.add(mandatsId)
+        zusatz_quelle = zusatz_eintrag["quelle"]
+        profil["themen"] = list(zusatz_eintrag["themen"])
+        hinweis = zusatz_eintrag["ableitungsHinweis"]
+        profil.setdefault("funktionen", [])
+        neue_funktion = zusatz_eintrag.get("funktion")
+        if neue_funktion and neue_funktion not in profil["funktionen"]:
+            profil["funktionen"].append(neue_funktion)
+        if hinweis not in profil["funktionen"]:
+            profil["funktionen"].append(hinweis)
+        profil["offizielleQuellen"].append({
+            "art": "zusaetzliche-aufgaben-zustaendigkeit",
+            "url": zusatz_quelle["url"],
+            "abgerufenAm": zusatz_quelle["abgerufenAm"],
+            "sha256": zusatz_quelle["sha256"],
+        })
+        zusatz_beleg = {
+            "datei": ZUSATZAUFGABEN_RESSOURCE,
+            "kennung": zusatz_eintrag["kennung"],
+            "region": zusatz_eintrag["region"],
+            "bindungsart": zusatz_eintrag["bindungsart"],
+            "person": zusatz_eintrag["person"],
+            "funktion": zusatz_eintrag.get("funktion"),
+            "amt": zusatz_eintrag.get("amt"),
+            "aufgabenbindung": zusatz_eintrag.get("aufgabenbindung"),
+            "stand": zusatz_eintrag.get("stand"),
+            "seite": zusatz_eintrag.get("seite"),
+            "abteilungen": zusatz_eintrag.get("abteilungen"),
+            "zitat": zusatz_eintrag.get("zitat"),
+            "abschnitt": zusatz_eintrag.get("abschnitt"),
+            "rollenquelle": {
+                "url": zusatz_eintrag["rollenquelle"].get("url"),
+                "sha256": zusatz_eintrag["rollenquelle"].get("sha256"),
+                "abgerufenAm": zusatz_eintrag["rollenquelle"].get("abgerufenAm"),
+            },
+            "quelle": {
+                "datei": zusatz_quelle.get("datei"),
+                "url": zusatz_quelle.get("url"),
+                "finalUrl": zusatz_quelle.get("finalUrl"),
+                "abgerufenAm": zusatz_quelle.get("abgerufenAm"),
+                "sha256": zusatz_quelle.get("sha256"),
+                "bytes": zusatz_quelle.get("bytes"),
+            },
+            "themen": list(zusatz_eintrag["themen"]),
+            "ableitungsHinweis": hinweis,
+        }
+        if zusatz_eintrag.get("aktuelleVerlinkung"):
+            zusatz_beleg["aktuelleVerlinkung"] = dict(zusatz_eintrag["aktuelleVerlinkung"])
+        achsen_geschlossen = True
+
     # ── Feldbelege (Herkunft je Feld) ─────────────────────────────────────────
     feldbelege = dict(extraktion.get("feldbelege", {}))
     feldbelege["mandatsId"] = "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert"
@@ -2111,6 +2221,14 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"(amtlich abgeleitet) + Ableitungskennzeichnung; die beratende Rolle "
             f"({beratende_beleg['rolle']}) bleibt in funktionen, KEINE ordentliche/stellvertretende "
             f"Ausschussmitgliedschaft (URL + sha256 + Bytezahl + Abrufzeit der amtlichen Profilquelle gebunden)"
+        )
+    elif zusatz_beleg is not None:
+        feldbelege["themen"] = (
+            f"vom Orchestrator gepruefte Zusatzaufgabenquittung {ZUSATZAUFGABEN_RESSOURCE}: "
+            f"belegte Kurzthemen aus {zusatz_beleg['bindungsart']} der kanonischen Person "
+            f"{zusatz_beleg['person']} (amtlich abgeleitet) + Ableitungskennzeichnung; "
+            f"bestehende Rollen bleiben erhalten, keine persoenliche politische Position "
+            f"(URL + finalUrl + sha256 + Bytezahl + Abrufzeit + Datei der amtlichen Quelle gebunden)"
         )
     feldbelege["bundesland"] = (
         "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)"
@@ -2335,6 +2453,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         datensatz["aufgabenachsenQuittung"] = aufgaben_beleg
     if beratende_beleg is not None:
         datensatz["beratendeachsenQuittung"] = beratende_beleg
+    if zusatz_beleg is not None:
+        datensatz["zusaetzlicheaufgabenQuittung"] = zusatz_beleg
     if "status" in extraktion:
         datensatz["extraktionsstatus"] = extraktion["status"]
     return datensatz
@@ -2352,6 +2472,7 @@ def assembliere(eingang: Eingang) -> dict:
     ressortachsen = _pruefe_ressortachsen(eingang)
     aufgabenachsen = _pruefe_aufgabenachsen(eingang)
     beratendeachsen = _pruefe_beratendeachsen(eingang)
+    zusatzaufgaben = _pruefe_zusatzaufgaben(eingang)
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
 
     # Die gepruefte Quittung muss die offenen Parteifelder DECKUNGSGLEICH abbilden:
@@ -2404,6 +2525,11 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Beratende Achsenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_beratende)}."
         )
+    ungenutzte_zusatz = set(zusatzaufgaben) - eingang.zusaetzlicheaufgaben_verwendet
+    if ungenutzte_zusatz:
+        raise AssemblerFehler(
+            f"Zusatzaufgabenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_zusatz)}."
+        )
     ressort_geschlossen = set(eingang.ressortachsen_verwendet)
     if ressort_geschlossen != set(ressortachsen):
         raise AssemblerFehler(
@@ -2422,6 +2548,12 @@ def assembliere(eingang: Eingang) -> dict:
             f"Beratende Achsenquittung deckt nicht genau ihre 2 Kennungen ab: "
             f"{sorted(set(beratendeachsen) ^ beratende_geschlossen)}."
         )
+    zusatz_geschlossen = set(eingang.zusaetzlicheaufgaben_verwendet)
+    if zusatz_geschlossen != set(zusatzaufgaben):
+        raise AssemblerFehler(
+            f"Zusatzaufgabenquittung deckt nicht genau ihre 3 Kennungen ab: "
+            f"{sorted(set(zusatzaufgaben) ^ zusatz_geschlossen)}."
+        )
     if ressort_geschlossen & aufgaben_geschlossen:
         raise AssemblerFehler(
             "Ressort- und Aufgabenachse gleichzeitig belegt: "
@@ -2437,7 +2569,18 @@ def assembliere(eingang: Eingang) -> dict:
             "Aufgaben- und beratende Achse gleichzeitig belegt: "
             f"{sorted(beratende_geschlossen & aufgaben_geschlossen)}."
         )
-    geschlossene_achsen = ressort_geschlossen | aufgaben_geschlossen | beratende_geschlossen
+    for andere, name in (
+        (ressort_geschlossen, "Ressort"),
+        (aufgaben_geschlossen, "Aufgaben"),
+        (beratende_geschlossen, "Beratende"),
+    ):
+        if zusatz_geschlossen & andere:
+            raise AssemblerFehler(
+                f"Zusatzaufgaben- und {name}achse gleichzeitig belegt: "
+                f"{sorted(zusatz_geschlossen & andere)}."
+            )
+    geschlossene_achsen = (ressort_geschlossen | aufgaben_geschlossen
+                           | beratende_geschlossen | zusatz_geschlossen)
     if not geschlossene_achsen <= set(profilrollen):
         raise AssemblerFehler(
             "Geschlossene Achsen enthalten Kennungen ausserhalb der 54er Rollenquittung: "
@@ -2467,7 +2610,7 @@ def assembliere(eingang: Eingang) -> dict:
         )
     for datensatz in datensaetze:
         if (datensatz.get("ressortachsenQuittung") or datensatz.get("aufgabenachsenQuittung")
-                or datensatz.get("beratendeachsenQuittung")):
+                or datensatz.get("beratendeachsenQuittung") or datensatz.get("zusaetzlicheaufgabenQuittung")):
             if "fachlicheAchse" in datensatz["offeneFelder"]:
                 raise AssemblerFehler(
                     f"Geschlossene Fachachse bleibt offen: {datensatz['kanonischeKennung']}."
@@ -2691,6 +2834,22 @@ def assembliere(eingang: Eingang) -> dict:
                 "54er Rollenquittung; diese 2 bleiben dort ausdruecklich offen (die beratende Funktion war "
                 "bereits belegt, das ist KEIN Fehler)."
             ),
+            (
+                "Fuer 3 weitere dieser 54 Profile wird ueber die vom Orchestrator gepruefte "
+                f"Zusatzaufgabenquittung {ZUSATZAUFGABEN_RESSOURCE} die ausdrueckliche amtliche "
+                "Fachzustaendigkeit gesetzt (getrennter Ableitungshinweis in funktionen) und damit "
+                "die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul "
+                "scripts/profil-feldbelege-500-zusatzaufgaben.py: Breher nur die aktuelle 'seit'-Rolle "
+                "'Beauftragte der Bundesregierung fuer Tierschutz' aus dem geschlossenen Biografieblock "
+                "vor der Redaktionsnotiz (neue Funktionsrolle genau einmal, bestehende PSts-Rolle bleibt); "
+                "Krichbaum nur die aktuelle AA-Seitenkopf-H1 'Staatsminister fuer Europa' (nicht die alte "
+                "Sprecherrolle 2022-2025); Kippels das manuell am amtlichen BMG-Organisationsplan visuell "
+                "abgenommene PDF-Fachurteil (Stand 03. September 2026, Seite 1, Personenkasten Abt. 1/4/5/6, "
+                "getrennte woertliche Abteilungstitel, 12 Kurzthemen; kein externer PDF-Parser). Jede Kennung "
+                "ist an die kanonische 54er Rolle und den kanonischen Bundestags-Profilnamen/URL/Hash gebunden "
+                "und disjunkt zu den 19 Ressort-, 6 Aufgaben- und 2 beratenden Achsen. Die disjunkte Vereinigung "
+                "mit den 24 verbleibend offenen Achsen ergibt weiter genau die 54er Rollenquittung."
+            ),
             "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
             "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe.",
         ],
@@ -2763,6 +2922,14 @@ def assembliere(eingang: Eingang) -> dict:
                 "themenGesetzt": sum(1 for d in datensaetze if d.get("beratendeachsenQuittung")),
                 "deckungsgleichVerwendet": len(eingang.beratendeachsen_verwendet),
                 "geschlosseneAchsen": len(beratende_geschlossen),
+            },
+            "zusaetzlicheaufgabenQuittung": {
+                "datei": ZUSATZAUFGABEN_RESSOURCE,
+                "geprueftGesamt": len(zusatzaufgaben),
+                "nachRegion": {"Bund": len(zusatzaufgaben)},
+                "themenGesetzt": sum(1 for d in datensaetze if d.get("zusaetzlicheaufgabenQuittung")),
+                "deckungsgleichVerwendet": len(eingang.zusaetzlicheaufgaben_verwendet),
+                "geschlosseneAchsen": len(zusatz_geschlossen),
             },
             "offeneFelder": offene_felder,
         },

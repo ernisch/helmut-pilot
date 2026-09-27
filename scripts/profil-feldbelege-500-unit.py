@@ -1370,3 +1370,305 @@ print('PASS: Berliner Mandatsartenquittung — PDF-Beleg an Stand/Seite 204/link
       'Spalte, Transkription, Mandatsart, Duplikat, Fremdperson/-URL/-Datum, vertauschtes Ganzpaket, fehlender/'
       'verschobener H2 und fehlender H3 sowie Engelmann als Fremdkennung sperren fail closed; das gueltige '
       'synthetische 2er-Paket wird akzeptiert und die eingecheckte Quittung entspricht der Validator-Konstante.')
+
+
+# ── 12 · Zusatzaufgabenquittung der 3 geschlossenen Fachzustaendigkeiten ───────────────────
+# Synthetische, deckungsgleiche Fixtures OHNE /private/tmp-Originale. Das fixierte
+# PDF-Fachurteil (Kippels) wird ueber den injizierbaren ``erwartung``-Parameter
+# ersetzt; so bleiben die drei Faelle auch ohne die lokalen Originale lauffaehig.
+zm_spec = importlib.util.spec_from_file_location(
+    'zusa', Path(__file__).with_name('profil-feldbelege-500-zusatzaufgaben.py'))
+zm = importlib.util.module_from_spec(zm_spec)
+zm_spec.loader.exec_module(zm)
+
+
+def _erwarte_zusatz_fehler(fn, was):
+    try:
+        fn()
+    except zm.ZusatzaufgabenFehler:
+        return
+    raise AssertionError(f'Nicht gesperrt: {was}')
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    detail = root / 'detailseiten'
+    detail.mkdir()
+    zusatz = root / 'zusatzquellen'
+    zusatz.mkdir()
+    ABRUF = '2026-09-27T16:00:00+00:00'
+
+    def _meta(datei, url, meta_name=None):
+        pfad = zusatz / datei
+        sha = zm._sha256(pfad)
+        groesse = pfad.stat().st_size
+        meta = dict(url=url, finalUrl=url, abgerufenAm=ABRUF, sha256=sha, bytes=groesse,
+                    datei=datei, http=200)
+        (zusatz / (meta_name or f'{datei}.meta.json')).write_text(
+            json.dumps(meta, ensure_ascii=False), encoding='utf-8')
+        return dict(meta, abrufStatus='abgerufen')
+
+    # ── Breher: aktuelle 'seit'-Rolle im geschlossenen Biografieblock vor der Notiz ──
+    K_B, K_K, K_P = 'bundestag-test-breher-1', 'bundestag-test-krichbaum-2', 'bundestag-test-kippels-3'
+    person_b, person_k, person_p = 'Person Breher', 'Person Krichbaum', 'Person Kippels'
+    breher_zitat = 'seit September 2025 Beauftragte der Bundesregierung für Testtierschutz.'
+    breher_funktion = 'Beauftragte der Bundesregierung für Testtierschutz'
+    breher_datei = f'{K_B}.html'
+    (detail / breher_datei).write_text(
+        f'<h1>{person_b}</h1><div class="m-biography__biography"><span>Person Breher, seit September 2025 '
+        f'Beauftragte der Bundesregierung für Testtierschutz.</span><br/><span>[Anmerkung der Redaktion: Test]</span>'
+        f'</div>', encoding='utf-8')
+    breher_url = f'https://www.bundestag.de/abgeordnete/biografien/T/person-breher-test-breher-1'
+    quelle_b = dict(url=breher_url, finalUrl=breher_url, abgerufenAm=ABRUF,
+                    sha256=zm._sha256(detail / breher_datei), bytes=(detail / breher_datei).stat().st_size,
+                    datei=breher_datei, http=200, abrufStatus='abgerufen', amtlicheKennung='test-breher-1')
+
+    # ── Krichbaum: aktuelle AA-Seitenkopf-H1 (nicht die alte Sprecherrolle) ──
+    krich_amt = 'Staatsminister für Testeuropa'
+    krich_zitat = f'{krich_amt} {person_k}'
+    krich_datei = f'{K_K}.html'
+    (zusatz / krich_datei).write_text(
+        f'<h1 class="is-aural">Willkommen</h1><h1 class="heading__title">{krich_zitat}</h1><p>Alte Sprecherrolle 2022-2025</p>', encoding='utf-8')
+    krich_url = 'https://www.auswaertiges-amt.de/de/test-krichbaum'
+    quelle_k = _meta(krich_datei, krich_url)
+
+    # ── Kippels: manuell abgenommenes PDF-Urteil + amtlicher PDF-Link auf der Landingpage ──
+    pdf_datei, landing_datei = 'test-organisationsplan.pdf', 'test-landing.html'
+    (zusatz / pdf_datei).write_text('%PDF-1.4 synthetisches Testfixture', encoding='utf-8')
+    pdf_url = 'https://www.bundesgesundheitsministerium.de/fileadmin/test/Organisationsplan.pdf'
+    quelle_p = _meta(pdf_datei, pdf_url)
+    landing_url = 'https://www.bundesgesundheitsministerium.de/ministerium/test-organisationsplan'
+    (zusatz / landing_datei).write_text(
+        f'<a href="/fileadmin/test/Organisationsplan.pdf">Deutsch</a>'
+        f'<a href="/fileadmin/test/Organisationsplan_EN.pdf">Englisch</a>', encoding='utf-8')
+    verlinkung_p = _meta(landing_datei, landing_url)
+
+    kippels_abteilungen = {
+        '1': 'Arzneimittel, Medizinprodukte',
+        '4': 'Pflegeversicherung, Heilberufe',
+        '5': 'Digitalisierung',
+        '6': 'Gesundheitssicherheit, Internationales, Testeuropa',
+    }
+    kippels_themen = ['Arzneimittel', 'Medizinprodukte', 'Pflegeversicherung', 'Heilberufe',
+                      'Digitalisierung', 'Gesundheitssicherheit', 'Internationales', 'Testeuropa']
+    kippels_bindung = ('Parlamentarischer Staatssekretär im Bundesministerium für Testgesundheit; '
+                       'Geschäftsbereich Abteilungen 1, 4, 5 und 6')
+    erwartung = {
+        K_B: dict(bindungsart='beauftragtenrolle', region='Bund', person=person_b,
+                  funktion=breher_funktion, zitat=breher_zitat, abschnitt='Biografie', themen=['Testtierschutz']),
+        K_K: dict(bindungsart='amtshinweis', region='Bund', person=person_k, amt=krich_amt,
+                  zitat=krich_zitat, abschnitt='Aktueller Seitenkopf', themen=['Testeuropa']),
+        K_P: dict(bindungsart='abteilungszustaendigkeit', region='Bund', person=person_p,
+                  aufgabenbindung=kippels_bindung, stand='03. September 2026', seite=1,
+                  personblock=['Parlamentarischer Staatssekretär', person_p, 'MdB',
+                               'Geschäftsbereich: Abt. 1, 4, 5, 6'],
+                  abteilungen=kippels_abteilungen, themen=kippels_themen,
+                  quelle=quelle_p, aktuelleVerlinkung=verlinkung_p),
+    }
+    rollen_ref = {
+        K_B: dict(url=breher_url, sha256=quelle_b['sha256'], abgerufenAm=ABRUF),
+        K_K: dict(url=f'https://www.bundestag.de/abgeordnete/biografien/T/{K_K}', sha256='a' * 64, abgerufenAm=ABRUF),
+        K_P: dict(url=f'https://www.bundestag.de/abgeordnete/biografien/T/{K_P}', sha256='b' * 64, abgerufenAm=ABRUF),
+    }
+    kennung_zu_abruf = {
+        K_B: dict(quelle_b, parlament='bundestag'),
+        K_K: dict(quelle_b, url=rollen_ref[K_K]['url'], sha256=rollen_ref[K_K]['sha256'],
+                  datei=f'{K_K}.html', amtlicheKennung=K_K, abrufStatus='abgerufen', http=200,
+                  parlament='bundestag'),
+        K_P: dict(quelle_b, url=rollen_ref[K_P]['url'], sha256=rollen_ref[K_P]['sha256'],
+                  datei=f'{K_P}.html', amtlicheKennung=K_P, abrufStatus='abgerufen', http=200,
+                  parlament='bundestag'),
+    }
+    for key in (K_K, K_P):
+        (detail / f'{key}.html').write_text(f'<h1>{erwartung[key]["person"]}</h1>', encoding='utf-8')
+        kennung_zu_abruf[key]['sha256'] = zm._sha256(detail / f'{key}.html')
+        rollen_ref[key]['sha256'] = kennung_zu_abruf[key]['sha256']
+    profilrollen = {k: dict(status='belegt', quelle=dict(rollen_ref[k]),
+                            funktionen=[dict(wortlaut='Parlamentarischer Staatssekretär Test')]) for k in erwartung}
+    eintraege = [
+        dict(kennung=K_B, region='Bund', parlament='bundestag', status='belegt',
+             bindungsart='beauftragtenrolle', person=person_b, funktion=breher_funktion, zitat=breher_zitat,
+             abschnitt='Biografie', themen=['Testtierschutz'], rollenquelle=dict(rollen_ref[K_B]), quelle=quelle_b,
+             ableitungsHinweis=zm.HINWEIS_AMT.format(region='Bund', wert=breher_funktion), importfreigegeben=False),
+        dict(kennung=K_K, region='Bund', parlament='bundestag', status='belegt', bindungsart='amtshinweis',
+             person=person_k, amt=krich_amt, zitat=krich_zitat, abschnitt='Aktueller Seitenkopf',
+             themen=['Testeuropa'], rollenquelle=dict(rollen_ref[K_K]), quelle=quelle_k,
+             ableitungsHinweis=zm.HINWEIS_AMT.format(region='Bund', wert=krich_amt), importfreigegeben=False),
+        dict(kennung=K_P, region='Bund', parlament='bundestag', status='belegt', bindungsart='abteilungszustaendigkeit',
+             person=person_p, aufgabenbindung=kippels_bindung, stand='03. September 2026', seite=1,
+             personblock=['Parlamentarischer Staatssekretär', person_p, 'MdB', 'Geschäftsbereich: Abt. 1, 4, 5, 6'],
+             abteilungen=kippels_abteilungen, themen=kippels_themen, rollenquelle=dict(rollen_ref[K_P]),
+             quelle=quelle_p, aktuelleVerlinkung=verlinkung_p,
+             ableitungsHinweis=zm.HINWEIS_AUFGABE.format(region='Bund', wert=kippels_bindung), importfreigegeben=False),
+    ]
+    gueltige_quittung = dict(version=1, bilanz=dict(gesamt=3, Bund=3, Berlin=0, Brandenburg=0), ergebnisse=eintraege)
+    original_breher = (detail / breher_datei).read_text(encoding='utf-8')
+
+    def _setze_breher_html(html):
+        """Schreibt den Breher-Block neu und haelt alle Hashbindungen konsistent."""
+        (detail / breher_datei).write_text(html, encoding='utf-8')
+        sha = zm._sha256(detail / breher_datei)
+        groesse = (detail / breher_datei).stat().st_size
+        quelle_b['sha256'], quelle_b['bytes'] = sha, groesse
+        kennung_zu_abruf[K_B]['sha256'], kennung_zu_abruf[K_B]['bytes'] = sha, groesse
+        rollen_ref[K_B]['sha256'] = sha
+        profilrollen[K_B]['quelle']['sha256'] = sha
+        eintraege[0]['rollenquelle']['sha256'] = sha
+        return sha
+
+    def _zusa_eingang(quittung, ressort=None, aufgaben=None, beratende=None):
+        return SimpleNamespace(verzeichnis=root, detailseiten=detail, zusaetzlicheaufgaben=quittung,
+                               profilrollen_by_kennung=profilrollen, kennung_zu_abruf=kennung_zu_abruf,
+                               ressortachsen_by_kennung={k: {} for k in (ressort or [])},
+                               aufgabenachsen_by_kennung={k: {} for k in (aufgaben or [])},
+                               beratendeachsen_by_kennung={k: {} for k in (beratende or [])})
+
+    index = zm.pruefe_zusatzaufgaben(_zusa_eingang(gueltige_quittung), erwartung=erwartung)
+    assert len(index) == 3
+    assert sum(len(v['themen']) for v in index.values()) == 10
+    assert index[K_B]['funktion'] == breher_funktion
+
+    def _mit(mutation):
+        neu = json.loads(json.dumps(gueltige_quittung))
+        mutation(neu)
+        return zm.pruefe_zusatzaufgaben(_zusa_eingang(neu), erwartung=erwartung)
+
+    # Fehlende Quittung, falsche Bilanz, Duplikat, unbekannte Kennung.
+    _echter_pfad = zm.ZUSATZAUFGABEN
+    zm.ZUSATZAUFGABEN = root / 'fehlt.json'
+    try:
+        _erwarte_zusatz_fehler(lambda: zm.pruefe_zusatzaufgaben(
+            SimpleNamespace(verzeichnis=root, detailseiten=detail, profilrollen_by_kennung=profilrollen,
+                            kennung_zu_abruf=kennung_zu_abruf), erwartung=erwartung), 'fehlende Quittung')
+    finally:
+        zm.ZUSATZAUFGABEN = _echter_pfad
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['bilanz'].__setitem__('Bund', 2)), 'falsche Bilanz')
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][1].__setitem__(
+        'kennung', q['ergebnisse'][0]['kennung'])), 'doppelte Kennung')
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'kennung', 'bundestag-test-fremd-9')), 'unbekannte/Fremdkennung')
+    # Disjunktion zu den 19/6/2-Achsen.
+    _erwarte_zusatz_fehler(lambda: zm.pruefe_zusatzaufgaben(
+        _zusa_eingang(gueltige_quittung, ressort=[K_B]), erwartung=erwartung), 'Kennung bereits Ressortachse')
+    _erwarte_zusatz_fehler(lambda: zm.pruefe_zusatzaufgaben(
+        _zusa_eingang(gueltige_quittung, aufgaben=[K_K]), erwartung=erwartung), 'Kennung bereits Aufgabenachse')
+    _erwarte_zusatz_fehler(lambda: zm.pruefe_zusatzaufgaben(
+        _zusa_eingang(gueltige_quittung, beratende=[K_P]), erwartung=erwartung), 'Kennung bereits beratende Achse')
+    # Quelldrift (URL/finalUrl/Hash/Bytezahl/Abrufzeit/Datei) und Metadatum-Drift.
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][1]['quelle'].__setitem__(
+        'url', q['ergebnisse'][1]['quelle']['url'] + '-fremd')), 'Quell-URL-Drift')
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][1]['quelle'].__setitem__(
+        'finalUrl', 'https://www.auswaertiges-amt.de/x')), 'finalUrl-Drift')
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][1]['quelle'].__setitem__('sha256', '0' * 64)),
+                           'Quellhash-Drift')
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][1]['quelle'].__setitem__('bytes', 1)),
+                           'Quell-Bytezahl-Drift')
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][1]['quelle'].__setitem__(
+        'abgerufenAm', '2026-09-27T00:00:00+00:00')), 'Abrufzeit-Drift')
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][1]['quelle'].__setitem__('datei', 'fehlt.html')),
+                           'fehlende Zusatzquelle')
+    # Rollenquellen-Drift und kanonischer Personenname.
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['rollenquelle'].__setitem__(
+        'sha256', 'c' * 64)), 'Rollenquellen-Drift')
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'person', 'Fremdperson')), 'Fremdperson')
+    # Breher: Zitat ausserhalb des Biografieblocks, hinter der Redaktionsnotiz, keine 'seit'-Rolle,
+    # Funktion nicht im Zitat, Themen-/Hinweisdrift.
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'zitat', 'Tierschutzbeauftragte seit September 2025')), 'Zitat ausserhalb des Blocks/fixierten Urteils')
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'themen', ['Testtierschutz', 'Fremdthema'])), 'Breher-Themendrift')
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'ableitungsHinweis', 'Amtszuständigkeit Bund: irgendwas')), 'Breher-Hinweisdrift')
+    # Zitat erst HINTER der Redaktionsnotiz: kein geschlossener aktueller Beleg.
+    try:
+        _setze_breher_html(
+            f'<h1>{person_b}</h1><div class="m-biography__biography">'
+            f'<span>[Anmerkung der Redaktion: Test]</span><br/>'
+            f'<span>Person Breher, {breher_zitat}</span></div>')
+        _erwarte_zusatz_fehler(lambda: _mit(lambda q: None), 'Zitat hinter der Redaktionsnotiz')
+    finally:
+        _setze_breher_html(original_breher)
+    # Auch konsistent neu gehashter Skript-/Navigations-/Vorlagentext ist kein Personenbeleg.
+    try:
+        for tag in ('script', 'style', 'template', 'noscript', 'nav'):
+            _setze_breher_html(
+                f'<h1>{person_b}</h1><div class="m-biography__biography">'
+                f'<{tag}>{breher_zitat}</{tag}></div>')
+            _erwarte_zusatz_fehler(lambda: _mit(lambda q: None), f'Breher nur in {tag}')
+    finally:
+        _setze_breher_html(original_breher)
+    original_krich = (zusatz / krich_datei).read_text(encoding='utf-8')
+    korrekter_kopf = f'<h1 class="heading__title">{krich_zitat}</h1>'
+    falsche_koepfe = [
+        f'<h1>Fremde Person</h1><h1>{krich_zitat}</h1>',
+        f'<h1 class="heading__title">Fremde Person</h1>{korrekter_kopf}',
+        f'<!-- {korrekter_kopf} -->',
+        *[f'<{tag}>{korrekter_kopf}</{tag}>' for tag in ('script', 'template', 'noscript', 'nav')],
+    ]
+    try:
+        for html in falsche_koepfe:
+            (zusatz / krich_datei).write_text(html, encoding='utf-8')
+            eintraege[1]['quelle'] = _meta(krich_datei, krich_url)
+            _erwarte_zusatz_fehler(lambda: _mit(lambda q: None), 'Kein eindeutiger echter Inhaltskopf')
+    finally:
+        (zusatz / krich_datei).write_text(original_krich, encoding='utf-8')
+        eintraege[1]['quelle'] = _meta(krich_datei, krich_url)
+    # Krichbaum: Sprecherrolle statt aktueller H1, Amt-/Themendrift.
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][1].__setitem__(
+        'zitat', 'Sprecher für Testeuropa Person Krichbaum')), 'alte Sprecherrolle')
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][1].__setitem__(
+        'amt', 'Staatssekretär für Testeuropa')), 'Krichbaum-Amtdrift')
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][1].__setitem__(
+        'themen', ['Testeuropa', 'Sprecher'])), 'Krichbaum-Themendrift')
+    # Kippels: PDF-Stand/Seite/Personenkasten/Abteilung/Transkription, fremde Zustaendigkeit,
+    # fehlender/falscher PDF-Link.
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][2].__setitem__('stand', '01. Januar 2026')),
+                           'PDF-Stand-Drift')
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][2].__setitem__('seite', 2)), 'PDF-Seiten-Drift')
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][2]['abteilungen'].__setitem__(
+        '4', 'Pflegeversicherung, fremde Zustaendigkeit')), 'Abteilungstitel-Drift')
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][2].__setitem__(
+        'abteilungen', dict(kippels_abteilungen, **{'2': 'Fremdabteilung', '3': 'Fremdabteilung'}))),
+        'fremde Schenderlein-Abteilung')
+    _erwarte_zusatz_fehler(lambda: _mit(lambda q: q['ergebnisse'][2].__setitem__(
+        'themen', kippels_themen + ['Fremdthema'])), 'Kippels-Themendrift')
+    # Landingpage ohne den amtlichen PDF-Link (nur englisches PDF / nur Text) sperrt fail closed.
+    original_landing = (zusatz / landing_datei).read_text(encoding='utf-8')
+    try:
+        anker = '<a href="/fileadmin/test/Organisationsplan.pdf">Deutsch</a>'
+        falsche_links = [
+            '<a href="/fileadmin/test/Organisationsplan_EN.pdf">EN</a>',
+            pdf_url, f'<!-- {anker} -->',
+            *[f'<{tag}>{anker}</{tag}>' for tag in ('script', 'template', 'noscript')],
+        ]
+        for html in falsche_links:
+            (zusatz / landing_datei).write_text(html, encoding='utf-8')
+            neu_verlinkung = _meta(landing_datei, landing_url)
+            erwartung[K_P]['aktuelleVerlinkung'] = neu_verlinkung
+            eintraege[2]['aktuelleVerlinkung'] = neu_verlinkung
+            _erwarte_zusatz_fehler(lambda: zm.pruefe_zusatzaufgaben(
+                _zusa_eingang(dict(gueltige_quittung, ergebnisse=eintraege)), erwartung=erwartung),
+                'Landingpage ohne echten amtlichen PDF-Link')
+    finally:
+        (zusatz / landing_datei).write_text(original_landing, encoding='utf-8')
+        neu_meta = dict(verlinkung_p, sha256=zm._sha256(zusatz / landing_datei),
+                        bytes=(zusatz / landing_datei).stat().st_size)
+        (zusatz / f'{landing_datei}.meta.json').write_text(json.dumps(neu_meta, ensure_ascii=False), encoding='utf-8')
+        erwartung[K_P]['aktuelleVerlinkung'] = neu_meta
+        eintraege[2]['aktuelleVerlinkung'] = neu_meta
+    # Ganzes Quellenpaket vertauscht (Kennungen bleiben, Quellen wandern) sperrt.
+    def _tausch(neu):
+        neu['ergebnisse'][0]['quelle'], neu['ergebnisse'][1]['quelle'] = \
+            neu['ergebnisse'][1]['quelle'], neu['ergebnisse'][0]['quelle']
+    _erwarte_zusatz_fehler(lambda: _mit(_tausch), 'vertauschtes Quellenpaket')
+    # Das gueltige synthetische 3er-Paket wird akzeptiert.
+    assert len(zm.pruefe_zusatzaufgaben(_zusa_eingang(gueltige_quittung), erwartung=erwartung)) == 3
+
+print('PASS: Zusatzaufgabenquittung — fehlende Quittung/falsche Bilanz/Duplikat/Fremdkennung/'
+      'Disjunktion zu Ressort-/Aufgaben-/beratender Achse/Quelldrift (URL/finalUrl/Hash/Bytezahl/Abrufzeit/Datei)'
+      '/Rollenguellen-Drift/Fremdperson sperren fail closed; Breher nur die aktuelle seit-Rolle im geschlossenen '
+      'Biografieblock vor der Redaktionsnotiz (Themen-/Hinweisdrift), Krichbaum nur die aktuelle AA-Seitenkopf-H1 '
+      '(keine Sprecherrolle, Amts-/Themendrift), Kippels nur das fixierte PDF-Urteil (Stand/Seite/Abteilungen/'
+      'Themen, keine Schenderlein-Abteilung, Landingpage muss das amtliche PDF verlinken); das gueltige '
+      'synthetische 3er-Paket (Fixture ohne /private/tmp) wird akzeptiert.')
