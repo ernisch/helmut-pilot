@@ -24,7 +24,8 @@ const bindung = p => hash({ id: p.id, profilHash: profilHash(p) });
 const volleReserveUsd = () => K.reservierungHoeheUsd(ENTWURF_TOKENS) + K.reservierungHoeheUsd(REVIEW_TOKENS);
 const FACHFEHLER = new Set(["briefing-korrektur-abweichend", "briefing-aussagen-kontext-abweichend",
   "urteilsimport-payload-ungueltig", "urteilsimport-einzelurteil-abgelehnt",
-  "urteilsimport-aussagenfelder-abweichend", "urteilsimport-gesamturteil-abgelehnt"]);
+  "urteilsimport-aussagenfelder-abweichend", "urteilsimport-gesamturteil-abgelehnt",
+  "pruefquellen-eingabe", "pruefquellen-unvollstaendig", "pruefquellen-antwort", "pruefquellen-bindung"]);
 const LESEPHASEN = new Set(["helmut_store", "mandate_profiles", "profiles", "helmut_jobs",
   "pipeline_locks", "helmut_verstehen_reservierungen", "process_runs", "auth", "tagessaetze", "fachaufbau", "kosten"]);
 const sichererGrund = error => /^bereichspaket-[a-z-]+$/.test(error?.message || "")

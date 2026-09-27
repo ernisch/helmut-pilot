@@ -6,6 +6,7 @@ const { once } = require("node:events"), S = require("../lib/helmut/storage");
 (async () => {
   A.equal(process.env.HELMUT_LOKALER_SCHUTZ, "aktiv");
   const kos = Array.from({length:225}, (_,i) => ({id:`ko-vg-${i}`,vorgang_id:`vg-${i}`}));
+  kos[1] = {id:"ko-vg-für-äöß",vorgang_id:"vg-für-äöß"};
   const daten = Object.fromEntries(kos.map((k,i) => [k.id,Array.from({length:i===0?41:i===224?0:2},(_,j)=>({
     raw_document_id:`rd-${String(j).padStart(2,"0")}`,
     raw_documents:{id:`rd-${String(j).padStart(2,"0")}`,title:"Unveraenderter Originaltitel",
