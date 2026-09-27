@@ -29,12 +29,23 @@ Test vorher klar begrenzt ist.
 
 ## 1 · Eingefrorenes Produktziel
 
+**Verbindliche Zielgruppe: alle Parteien ausser AfD.** Keine AfD-zugehoerigen
+Bundestags-/Landtagsprofile importieren, anlegen, aktivieren oder beliefern;
+auch aus der500er Zielkohorte ausschliessen. Partei und Fraktion pruefen.
+AfD-Nachrichten bleiben fuer andere Profile als politische Informationen erlaubt.
+
 **Verbindliche Klarstellung des Betreibers vom 27.09.: Bundestag UND Landtage.**
 Die individuelle Versorgung beider Mandatsebenen ist Pflicht. Der 500er Nachweis
 muss beide Ebenen enthalten; ein ausschliesslicher Bundestagstest reicht nicht.
 Notwendige Korrekturen an Landesquellen, Profilzuordnung und Ebenenpruefungen
 sind direkte Nachweisblocker, kein auf spaeter verschiebbares Nebenprojekt.
 [Testvertrag und belegte Luecken](betrieb/bundestag-landtage-testvertrag-20260927.md).
+
+**Anschliessende Betreiberpriorisierung27.09.: Berlin und Brandenburg zuerst.**
+Erste Markt-/Nachweisetappe: Bundestag, Abgeordnetenhaus Berlin und Landtag
+Brandenburg. Die weiteren14 Laender folgen danach. Der erste500er Nachweis
+enthaelt beide Mandatsebenen dieser Etappe; er belegt keine deutschlandweite
+Landtagsversorgung. [Konkreter Startplan](betrieb/berlin-brandenburg-startplan-20260927.md).
 
 Bis zum 500er Nachweis wird die Grundstruktur nicht erneut umgebaut, außer ein
 belegter schwerer Produktfehler erzwingt es.
@@ -97,7 +108,8 @@ erzählen.
 
 **Aktueller vorgeschalteter Schritt:** Den bisherigen Platzhalterbestand durch
 einen vorab festgelegten, quellenbelegten Profil- und Pruefplan fuer Bundestag
-und Landtage ersetzen. Fuenf Bestandsprofile erhalten, fuer die495 Testabbilder
+und die priorisierten Landesparlamente Berlin/Brandenburg ersetzen. Die anderen
+Laender in diesem Sprint nicht vorziehen. Fuenf Bestandsprofile erhalten, fuer die495 Testabbilder
 reale oeffentliche Mandatsdaten recherchieren. Vor einem Import die genaue
 Mischung, vertretenen Landesparlamente, Parteien/Fraktionen, Rollen und Themen
 sowie Erwartungen je Profil festhalten; fehlende Unterstuetzung offen bilanzieren.

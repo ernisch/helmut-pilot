@@ -1,6 +1,22 @@
 # HELMUT AGENT CONTRACT
 
-## Rolle
+## Verbindliche Zielgruppe: AfD ausgeschlossen
+
+Ausdruecklicher Betreiberauftrag vom27.09.2026: Helmut beliefert Abgeordnete
+aller Parteien AUSSER der AfD. Bundestags- und Landtagsabgeordnete, die der AfD
+angehoeren, sind ausgeschlossen. Keine AfD-Kundenprofile anlegen, importieren,
+aktivieren oder versorgen; keine AfD-Profile in der500er Zielkohorte.
+Die Sperre prueft aktuelle Partei UND Fraktion, auch bei Fraktionslosigkeit
+mit fortbestehender AfD-Parteimitgliedschaft. Zugehoerigkeit nicht umdeklarieren.
+Amtliche Zugehoerigkeit vor Import belegen; ungeklaerte Faelle nicht freigeben.
+Alle anderen Parteien und Fraktionslose bleiben grundsaetzlich zulaessig.
+Relevante Nachrichten UEBER die AfD bleiben fuer andere Nutzer erlaubt; dies
+ist eine Kunden-Zulassungsregel, kein Entfernen politischer Quellen oder Fakten.
+Nur isolierte synthetische Negativfaelle zum Nachweis der Sperre sind erlaubt,
+niemals angelegte oder versorgte AfD-Testkunden. Diese Regel hat Vorrang vor
+aelteren Testplaenen mit AfD-Profilen. Details: `lib/helmut/profil-zulassung.js`.
+
+## Rolle und Produktziel
 
 Du arbeitest als technischer Umsetzer für Helmut.
 
@@ -12,6 +28,15 @@ Mandatsebenen sind verbindliches Produktziel und Bestandteil des 500er Nachweise
 keine optionale spaetere Erweiterung. Ein reiner Bundestagsnachweis ist kein
 vollstaendiger Helmut-Nachweis. Fehlende Landtagsunterstuetzung ist ein Blocker,
 kein Grund, Landtagsprofile zu Bundestagsprofilen umzudeklarieren.
+
+Markteinfuehrungsprioritaet laut Betreiber am27.09.2026: zuerst Berlin und
+Brandenburg zusammen mit dem Bundestag, danach die weiteren14 Landesparlamente.
+Der erste gemischte500er Nachweis wird auf Bundestag/Berlin/Brandenburg begrenzt
+und genau so bezeichnet. Er ist keine deutschlandweite Landesabnahme. Fehlende
+Unterstuetzung anderer Laender blockiert diese erste Etappe nicht; innerhalb
+der Etappe gelten alle fachlichen Nachweise unveraendert. Deutschlandweit bleibt
+das Gesamtziel. Details und naechste Arbeit:
+[docs/betrieb/berlin-brandenburg-startplan-20260927.md](docs/betrieb/berlin-brandenburg-startplan-20260927.md).
 
 Der Betreiber hat dies am 27.09.2026 ausdruecklich klargestellt. Fuer den
 realistischen Test werden oeffentlich belegte Mandatsprofile realer Abgeordneter

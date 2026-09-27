@@ -13,6 +13,21 @@ beschraenken, ist durch die ausdrueckliche Betreiberklarstellung ueberholt.
 Fehlende Unterstuetzung eines Landes wird als Luecke ausgewiesen; ein Nachweis
 fuer einzelne Laender darf nicht als Abnahme aller16 Landesparlamente gelten.
 
+Nachfolgende Betreiberpriorisierung desselben Tages: zuerst Berlin und Brandenburg,
+danach die restlichen Laender. Fuer die erste gemischte500er Etappe gelten deshalb
+Bundestag/Berlin/Brandenburg als konkreter Umfang. Die vorherige Chat-Zusage,
+schon diesen ersten Lauf mit allen16 Landesparlamenten zu besetzen, ist ueberholt.
+Alle fachlichen Kriterien gelten in der ersten Etappe vollstaendig; sie ersetzt
+keine spaetere Abnahme weiterer Laender. [Startplan](berlin-brandenburg-startplan-20260927.md).
+
+## Verbindlicher AfD-Ausschluss
+
+Betreiberpraezisierung27.09.: keine AfD-zugehoerigen Kunden oder Testzielprofile,
+auf Bundes- wie Landesebene. Die Auswahl umfasst alle anderen Parteien.
+Partei UND Fraktion belegen; fraktionslose AfD-Mitglieder sind ebenfalls
+ausgeschlossen. Nachrichten ueber die AfD bleiben fuer andere Mandate erlaubt.
+Die Zielverteilung ist jetzt330 Bundestag/120 Berlin/50 Brandenburg.
+
 ## Realistischer Profilbestand
 
 - Die fuenf Bestandsprofile bleiben erhalten und technisch geschuetzt.

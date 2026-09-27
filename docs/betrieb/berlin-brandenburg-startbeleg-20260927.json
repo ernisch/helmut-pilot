@@ -1,0 +1,463 @@
+{
+  "schema": "helmut-be-bb-startbeleg/1",
+  "runtimeCommit": "dc0540ae594f761f56c52c1dac46fb0d4e8bf753",
+  "production": [
+    {
+      "checked_at": "2026-09-27 12:15:02.707373+00",
+      "result": {
+        "paths": [
+          {
+            "id": "rp-bb-ausschuesse",
+            "url": "https://news.google.com/rss/search?q=Landtag%20Brandenburg%20Ausschuss&hl=de&gl=DE&ceid=DE:de",
+            "method": "googlenews_search",
+            "parser": "googlenews-batchexecute",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-bb-landesfraktionen",
+            "url": "https://news.google.com/rss/search?q=Landtag%20Brandenburg%20Fraktion&hl=de&gl=DE&ceid=DE:de",
+            "method": "googlenews_search",
+            "parser": "googlenews-batchexecute",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-bb-landesparlament",
+            "url": "https://news.google.com/rss/search?q=site:landtag.brandenburg.de&hl=de&gl=DE&ceid=DE:de",
+            "method": "googlenews_search",
+            "parser": "googlenews-batchexecute",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-bb-landesregierung",
+            "url": "https://news.google.com/rss/search?q=Landesregierung%20Brandenburg&hl=de&gl=DE&ceid=DE:de",
+            "method": "googlenews_search",
+            "parser": "googlenews-batchexecute",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-bb-ministerien",
+            "url": "https://news.google.com/rss/search?q=Ministerium%20Brandenburg&hl=de&gl=DE&ceid=DE:de",
+            "method": "googlenews_search",
+            "parser": "googlenews-batchexecute",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-bb-partei_pilot",
+            "url": "https://www.dielinke-brandenburg.de/nc/politik/aktuell/feed.rss",
+            "method": "rss",
+            "parser": "rss-regex",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-bb-plenum",
+            "url": "https://www.parlamentsdokumentation.brandenburg.de/opendata/exportWP8.xml",
+            "method": "structured_download",
+            "parser": "pardok-xml",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-bb-regionale_leitmedien",
+            "url": "https://news.google.com/rss/search?q=site:maz-online.de",
+            "method": "googlenews_search",
+            "parser": "googlenews-batchexecute",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-be-fraktion_pilot",
+            "url": "https://www.linksfraktion.berlin/aktuelles/presse/feed.rss",
+            "method": "rss",
+            "parser": "rss-regex",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-be-landesfraktionen",
+            "url": "https://news.google.com/rss/search?q=%22Abgeordnetenhaus%20Berlin%22%20Fraktion&hl=de&gl=DE&ceid=DE:de",
+            "method": "googlenews_search",
+            "parser": "googlenews-batchexecute",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-be-landesparlament",
+            "url": "https://news.google.com/rss/search?q=site:parlament-berlin.de&hl=de&gl=DE&ceid=DE:de",
+            "method": "googlenews_search",
+            "parser": "googlenews-batchexecute",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-be-landesregierung",
+            "url": "https://news.google.com/rss/search?q=Senat%20Berlin%20site:berlin.de&hl=de&gl=DE&ceid=DE:de",
+            "method": "googlenews_search",
+            "parser": "googlenews-batchexecute",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-be-partei_pilot",
+            "url": "https://www.dielinke.berlin/presse/feed.rss",
+            "method": "rss",
+            "parser": "rss-regex",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-be-person_pilot",
+            "url": "https://news.google.com/rss/search?q=%22Tobias%20Schulze%22%20Berlin",
+            "method": "googlenews_search",
+            "parser": "googlenews-batchexecute",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-be-plenum",
+            "url": "https://www.parlament-berlin.de/opendata/pardok-wp19.xml",
+            "method": "structured_download",
+            "parser": "pardok-xml",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-be-regionale_leitmedien",
+            "url": "https://www.tagesspiegel.de/contentexport/feed/berlin",
+            "method": "rss",
+            "parser": "rss-regex",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-be-staatskanzlei",
+            "url": "https://news.google.com/rss/search?q=Regierender%20B%C3%BCrgermeister%20Berlin%20Senatskanzlei&hl=de&gl=DE&ceid=DE:de",
+            "method": "googlenews_search",
+            "parser": "googlenews-batchexecute",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          },
+          {
+            "id": "rp-rbb24-politik",
+            "url": "https://www.rbb24.de/politik/index.xml/feed=rss.xml",
+            "method": "rss",
+            "parser": "rss-regex",
+            "status": "needs_review",
+            "activation_mode": "manual",
+            "last_success_at": null
+          }
+        ],
+        "active": 0,
+        "levels": [
+          {
+            "n": 500,
+            "politische_ebene": "bundestag"
+          }
+        ],
+        "packages": [
+          {
+            "id": "pkg-berlin-basis",
+            "key": "berlin-basis",
+            "paths": 7,
+            "status": "active"
+          },
+          {
+            "id": "pkg-brandenburg-basis",
+            "key": "brandenburg-basis",
+            "paths": 9,
+            "status": "prepared"
+          },
+          {
+            "id": "pkg-die-linke-berlin",
+            "key": "die-linke-berlin",
+            "paths": 3,
+            "status": "prepared"
+          },
+          {
+            "id": "pkg-die-linke-brandenburg",
+            "key": "die-linke-brandenburg",
+            "paths": 0,
+            "status": "prepared"
+          }
+        ],
+        "profiles": 500
+      }
+    }
+  ],
+  "budget": [
+    {
+      "checked_at": "2026-09-27 12:15:56.917996+00",
+      "auftrag": {
+        "id": "autonom-bis500-20260926",
+        "abTag": "2026-09-25",
+        "limit": 7000000,
+        "version": 3,
+        "externGebunden": 5192289
+      },
+      "tage": [
+        {
+          "tag": "2026-09-25",
+          "offen": 0,
+          "spent": 433563,
+          "offen_usd_micro": 0
+        },
+        {
+          "tag": "2026-09-26",
+          "offen": 0,
+          "spent": 740570,
+          "offen_usd_micro": 0
+        },
+        {
+          "tag": "2026-09-27",
+          "offen": 0,
+          "spent": 184859,
+          "offen_usd_micro": 0
+        }
+      ]
+    }
+  ],
+  "scope": "Nur lesend; keine Profile angelegt, geändert oder aktiviert; keine Modellaufrufe. Profilmanifest enthält Rechercheproben, keine finale 500er Kohorte.",
+  "profilQuellen": [
+    {
+      "id": "be-frank-balzer",
+      "url": "https://www.parlament-berlin.de/Abgeordnete/frank-balzer?groupStrategy=nachnamen",
+      "checkedAt": "2026-09-27T12:17:29.412172+00:00",
+      "http": 200,
+      "finalUrl": "https://www.parlament-berlin.de/Abgeordnete/frank-balzer?groupStrategy=nachnamen",
+      "contentType": "text/html; charset=UTF-8",
+      "bytes": 108724,
+      "complete": true,
+      "sha256": "dea94681df37d38ca97ee2c36df2a02bc9c47b17d03536577c59009cb2ee06f8"
+    },
+    {
+      "id": "bb-uwe-adler",
+      "url": "https://www.landtag.brandenburg.de/de/adler_uwe/24171",
+      "checkedAt": "2026-09-27T12:17:29.414051+00:00",
+      "http": 200,
+      "finalUrl": "https://www.landtag.brandenburg.de/de/adler_uwe/24171",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 94385,
+      "complete": true,
+      "sha256": "bd3492481d10dc5623c3cd5675779d4db413d8cd020c46fa3f68b25cd8550012"
+    },
+    {
+      "id": "bb-kristy-augustin",
+      "url": "https://www.landtag.brandenburg.de/de/augustin_kristy/13480",
+      "checkedAt": "2026-09-27T12:17:30.004920+00:00",
+      "http": 200,
+      "finalUrl": "https://www.landtag.brandenburg.de/de/augustin_kristy/13480",
+      "contentType": "text/html; charset=utf-8",
+      "bytes": 95317,
+      "complete": true,
+      "sha256": "5e13bbc8c0c8f8cfd3ec5a884ea9d516acf37bf35a84efd0757efafc6986f8f9"
+    }
+  ],
+  "profilPruefung": {
+    "pruefung": {
+      "ok": true,
+      "profile": 3,
+      "gueltig": 3,
+      "fehler": [],
+      "warnungen": [],
+      "ergebnisse": [
+        {
+          "index": 0,
+          "mandatsId": "recherche-be-frank-balzer",
+          "ok": true,
+          "fehler": [],
+          "warnungen": []
+        },
+        {
+          "index": 1,
+          "mandatsId": "recherche-bb-uwe-adler",
+          "ok": true,
+          "fehler": [],
+          "warnungen": []
+        },
+        {
+          "index": 2,
+          "mandatsId": "recherche-bb-kristy-augustin",
+          "ok": true,
+          "fehler": [],
+          "warnungen": []
+        }
+      ],
+      "zusammenfassung": {
+        "profile": 3,
+        "gueltig": 3,
+        "ungueltig": 0,
+        "nachParlament": {
+          "landtag-berlin": 1,
+          "landtag-brandenburg": 2
+        },
+        "alleAktivFalse": true
+      }
+    },
+    "zuordnung": [
+      {
+        "id": "recherche-be-frank-balzer",
+        "ebene": "landtag",
+        "aktiv": false,
+        "required": [
+          "bund-basis",
+          "berlin-basis"
+        ],
+        "requiredMissing": [],
+        "optional": [
+          "profil-recherche-be-frank-balzer"
+        ],
+        "all": [
+          "bund-basis",
+          "berlin-basis",
+          "profil-recherche-be-frank-balzer"
+        ]
+      },
+      {
+        "id": "recherche-bb-uwe-adler",
+        "ebene": "landtag",
+        "aktiv": false,
+        "required": [
+          "bund-basis",
+          "brandenburg-basis"
+        ],
+        "requiredMissing": [],
+        "optional": [
+          "profil-recherche-bb-uwe-adler"
+        ],
+        "all": [
+          "bund-basis",
+          "brandenburg-basis",
+          "profil-recherche-bb-uwe-adler"
+        ]
+      },
+      {
+        "id": "recherche-bb-kristy-augustin",
+        "ebene": "landtag",
+        "aktiv": false,
+        "required": [
+          "bund-basis",
+          "brandenburg-basis"
+        ],
+        "requiredMissing": [],
+        "optional": [
+          "profil-recherche-bb-kristy-augustin"
+        ],
+        "all": [
+          "bund-basis",
+          "brandenburg-basis",
+          "profil-recherche-bb-kristy-augustin"
+        ]
+      }
+    ]
+  },
+  "pardok": [
+    {
+      "land": "berlin",
+      "url": "https://www.parlament-berlin.de/opendata/pardok-wp19.xml",
+      "sha256": "8d03852fab1a2ed69767806c2e98eac6c94de4ef76b837ad51e9fd0d7771de93",
+      "gespeicherteBytes": 31860,
+      "teilabruf": true,
+      "maxRecords": 30,
+      "stats": {
+        "land": "berlin",
+        "rohRecords": 27,
+        "deleteStubs": 13,
+        "ohneDokument": 0,
+        "geparst": 36,
+        "mitTitel": 13,
+        "mitDatum": 36,
+        "mitExterneId": 36,
+        "platzhalter": 0,
+        "formatTitelVorhanden": 13,
+        "formatTitelErkannt": 13,
+        "kennungKonflikt": 0,
+        "mitVorgangsbezug": 34
+      },
+      "aeltestesDatum": "2021-08-17",
+      "juengstesDatum": "2022-12-01",
+      "shadow": {
+        "source_id": "be-plenum",
+        "land": "berlin",
+        "fehlerseite": false,
+        "rohRecords": 27,
+        "geparst": 36,
+        "mitTitel": 13,
+        "mitDatum": 36,
+        "mitExterneId": 36,
+        "dokumente": 36,
+        "mehrfachFundstellen": 0
+      },
+      "sichtbarePipelineItems": 0,
+      "gueltigkeit": "Lokale Teilprobe, keine Vollbestands- oder Frischeabnahme. Berlin mit vorhandenem fetchPardokText auf 30 Zähleinheiten/4 MiB begrenzt, 32483 Bytes empfangen; Brandenburg vollständiger Download, Parser auf 30 Records begrenzt."
+    },
+    {
+      "land": "brandenburg",
+      "url": "https://www.parlamentsdokumentation.brandenburg.de/opendata/exportWP8.xml",
+      "sha256": "6a8b0e9a2478942845cb57c4fb44e03659c71d22ee372460097f550b84906add",
+      "gespeicherteBytes": 13329337,
+      "teilabruf": false,
+      "maxRecords": 30,
+      "stats": {
+        "land": "brandenburg",
+        "rohRecords": 30,
+        "deleteStubs": 15,
+        "ohneDokument": 0,
+        "geparst": 46,
+        "mitTitel": 15,
+        "mitDatum": 46,
+        "mitExterneId": 46,
+        "platzhalter": 0,
+        "formatTitelVorhanden": 15,
+        "formatTitelErkannt": 15,
+        "kennungKonflikt": 0,
+        "mitVorgangsbezug": 46
+      },
+      "aeltestesDatum": "2024-10-17",
+      "juengstesDatum": "2026-03-18",
+      "shadow": {
+        "source_id": "bb-plenum",
+        "land": "brandenburg",
+        "fehlerseite": false,
+        "rohRecords": 30,
+        "geparst": 46,
+        "mitTitel": 15,
+        "mitDatum": 46,
+        "mitExterneId": 46,
+        "dokumente": 46,
+        "mehrfachFundstellen": 0
+      },
+      "sichtbarePipelineItems": 0,
+      "gueltigkeit": "Lokale Teilprobe, keine Vollbestands- oder Frischeabnahme. Berlin mit vorhandenem fetchPardokText auf 30 Zähleinheiten/4 MiB begrenzt, 32483 Bytes empfangen; Brandenburg vollständiger Download, Parser auf 30 Records begrenzt."
+    }
+  ],
+  "afdProductionNachkontrolle": {
+    "checkedAt": "2026-09-27T12:41:43.597763Z",
+    "profiles": 500,
+    "activeProfiles": 0,
+    "afdProfilesLautParteiOderFraktion": 0,
+    "mandateHash": "198f25ff81cf5ee4ad2645c1881a8191",
+    "seit12Uhr31Hashgleich": true
+  }
+}

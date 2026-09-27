@@ -4,8 +4,8 @@
 // Testmandate-Seed und Reparaturpaket. KEIN Netz, KEINE echte DB, deterministisch.
 //
 // Deckt die 21 geforderten Regressionsfälle des Auftrags ab (Phase 10) plus den
-// gemeinsamen Bestandstest mit elf Profilen (Phase 9). Synthetische Identitäten für
-// die Vertragsfälle; die fünf realen, DEAKTIVIERTEN Testmandate kommen aus dem
+// gemeinsamen Bestandstest mit zehn Profilen (Phase 9). Synthetische Identitäten für
+// die Vertragsfälle; die vier realen, DEAKTIVIERTEN Testmandate kommen aus dem
 // belegten Seed (seeds/bundestag-testmandate.js), die sechs Bestandsrepräsentationen
 // aus dem Reparaturpaket-Fixture (minimale politische Felder, kein Roh-Export).
 
@@ -178,12 +178,12 @@ const vollstaendig = Object.freeze({
   check("17. Bestandsprofil mit Mangel: weiter nutzbar (usable) und aktiv, nur Bereitschafts-Befund", v17.usable === true && !v17.disabled && e17.aktiv === true && e17.bereit === false);
   check("17b. Bewertung verändert das Profil nicht (kein Write, kein Mutieren)", bestandMitMangel.committees.length === 3 && bestandMitMangel.profileActive === true);
 
-  // ── (18) fünf neue Testmandate: Seed-Vertrag + Vollständigkeit ────────────
+  // ── (18) vier neue Testmandate: Seed-Vertrag + Vollständigkeit ────────────
   const seedCheck = validateTestmandate();
   check("18. Seed-Selbstschutz (Kennungen, deaktiviert, markiert, belegt, ohne Konto-Felder)", seedCheck.ok, seedCheck.fehler.join("; "));
-  check("18b. genau fünf Testmandate, alle fünf Fraktionen der 21. WP",
-    TESTMANDATE.length === 5 && new Set(TESTMANDATE.map((t) => t.faction)).size === 5);
-  check("18c. fünf verschiedene Bundesländer", new Set(TESTMANDATE.map((t) => t.state)).size === 5);
+  check("18b. genau vier Testmandate, vier zulaessige Fraktionen ohne AfD",
+    TESTMANDATE.length === 4 && new Set(TESTMANDATE.map((t) => t.faction)).size === 4);
+  check("18c. vier verschiedene Bundesländer", new Set(TESTMANDATE.map((t) => t.state)).size === 4);
   for (const t of TESTMANDATE) {
     const et = bewerteBundestagsprofil(t);
     check(`18d. ${t.id}: besteht den Vollständigkeitsvertrag (deaktiviert, inhaltlich bereit)`,
@@ -207,11 +207,6 @@ const vollstaendig = Object.freeze({
       funktionEnthaelt: ["Vizepräsidentin"], quelle: "lindholz_andrea-1045830", stand: "2026-08-04",
       nieInAusschussfeldern: ["Gemeinsamer Ausschuss"]
     },
-    "test-mdb-bernd-baumann": {
-      committees: ["Innenausschuss"], deputyCommittees: [],
-      funktionEnthaelt: ["Erster Parlamentarischer Geschäftsführer"], quelle: "baumann_bernd-1043568", stand: "2026-08-04",
-      nieInAusschussfeldern: ["Ältestenrat", "Aeltestenrat", "Gemeinsamer Ausschuss"]
-    },
     "test-mdb-ralf-stegner": {
       committees: ["Auswärtiger Ausschuss", "Ausschuss für Menschenrechte und humanitäre Hilfe"],
       deputyCommittees: ["Ausschuss für die Angelegenheiten der Europäischen Union", "Innenausschuss"],
@@ -230,7 +225,7 @@ const vollstaendig = Object.freeze({
     }
   };
   const sortiert = (a) => [...(a || [])].sort((x, y) => x.localeCompare(y, "de"));
-  check("18f. Soll-Tabelle deckt exakt die fünf Kennungen ab", JSON.stringify(Object.keys(AMTLICHE_SOLL_TESTMANDATE).sort()) === JSON.stringify(TESTMANDATE.map((t) => t.id).sort()));
+  check("18f. Soll-Tabelle deckt exakt die vier Kennungen ab", JSON.stringify(Object.keys(AMTLICHE_SOLL_TESTMANDATE).sort()) === JSON.stringify(TESTMANDATE.map((t) => t.id).sort()));
   for (const [id, soll] of Object.entries(AMTLICHE_SOLL_TESTMANDATE)) {
     const t = TESTMANDATE.find((x) => x.id === id);
     if (!t) { check(`18f. ${id}: im Seed vorhanden`, false); continue; }
@@ -262,11 +257,11 @@ const vollstaendig = Object.freeze({
       JSON.stringify({ abrufdatum: t.herkunft.abrufdatum }));
   }
 
-  // ── (19) gemeinsamer Bestand von elf Profilen ─────────────────────────────
+  // ── (19) gemeinsamer Bestand von zehn Profilen ─────────────────────────────
   const elf = [...BESTAND_IST, ...TESTMANDATE];
-  check("19. elf Profile mit eindeutigen Kennungen", new Set(elf.map((p) => p.id)).size === 11);
+  check("19. zehn Profile mit eindeutigen Kennungen", new Set(elf.map((p) => p.id)).size === 10);
   const b19 = bewerteProfilbestand(elf);
-  check("19b. alle elf als Bundestag klassifiziert, keine Ebenen-Vermischung", b19.bundestag.length === 11 && b19.landtag.length === 0 && b19.ohneEbene.length === 0);
+  check("19b. alle zehn als Bundestag klassifiziert, keine Ebenen-Vermischung", b19.bundestag.length === 10 && b19.landtag.length === 0 && b19.ohneEbene.length === 0);
   check("19c. Testmandate kollidieren nicht mit Bestand (ids + keine neuen Namensduplikate)",
     TESTMANDATE.every((t) => !BESTANDSMANDATE_IDS.includes(t.id))
     && b19.probleme.filter((p) => p.art === "personenname_doppelt").length === 1);
@@ -355,13 +350,13 @@ const vollstaendig = Object.freeze({
     const lauf = spawnSync(process.execPath, [path.join(__dirname, "profil-bereitschaft.js"), "--fixtures", fixtureDatei, "--json"], { encoding: "utf8", env: umgebung });
     check("21. Werkzeug läuft offline über Fixtures (Exit 2 wegen belegter Bestandsbefunde)", lauf.status === 2, `exit=${lauf.status} stderr=${(lauf.stderr || "").slice(0, 120)}`);
     const befund = JSON.parse(lauf.stdout);
-    check("21b. JSON-Ausgabe: 11 Profile, Bestandsblock vorhanden, keine Secrets-Felder", befund.profile.length === 11 && befund.bestand && !JSON.stringify(befund).includes("SUPABASE"));
+    check("21b. JSON-Ausgabe: 10 Profile, Bestandsblock vorhanden, keine Secrets-Felder", befund.profile.length === 10 && befund.bestand && !JSON.stringify(befund).includes("SUPABASE"));
     const lauf2 = spawnSync(process.execPath, [path.join(__dirname, "profil-bereitschaft.js"), "--fixtures", fixtureDatei, "--json"], { encoding: "utf8", env: umgebung });
     check("21c. Werkzeug-Ausgabe ist deterministisch (zwei Läufe byte-identisch)", lauf.stdout === lauf2.stdout);
     const nurFuenf = path.join(os.tmpdir(), `profil-bereitschaft-fixture5-${process.pid}.json`);
     fs.writeFileSync(nurFuenf, JSON.stringify({ profiles: TESTMANDATE, personalSources: [] }));
     const lauf3 = spawnSync(process.execPath, [path.join(__dirname, "profil-bereitschaft.js"), "--fixtures", nurFuenf], { encoding: "utf8", env: umgebung });
-    check("21d. fünf Testmandate allein: Exit 0 (bereit, keine Blocker)", lauf3.status === 0, `exit=${lauf3.status}`);
+    check("21d. vier Testmandate allein: Exit 0 (bereit, keine Blocker)", lauf3.status === 0, `exit=${lauf3.status}`);
     fs.unlinkSync(nurFuenf);
     const laufFehler = spawnSync(process.execPath, [path.join(__dirname, "profil-bereitschaft.js"), "--fixtures", "/nicht/vorhanden.json"], { encoding: "utf8", env: umgebung });
     check("21e. Ladefehler -> Exit 3", laufFehler.status === 3);

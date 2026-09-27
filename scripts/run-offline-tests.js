@@ -175,6 +175,8 @@ const DENYLIST = new Set([
 // Jede Zeile nennt den geschuetzten Vertrag. Aenderungen an dieser Liste sind die einzige
 // Stelle, an der ueber den Pflichtumfang entschieden wird.
 const STANDARD = new Set([
+  // Verbindlicher Kundenausschluss: Import/Write/Aktivierung/Verarbeitung sperren.
+  "profil-zulassung-test.js",
   // — Schutz, Sicherheit, Mandantentrennung, Secrets, Auth, CAS/Schreibschutz —
   "netzschutz-test.js",                     // lokaler Netz-/Production-Schutz (fail closed)
   "mandantentrennung-test.js",              // Mandantentrennung (user_id-Filter)
