@@ -1,0 +1,89 @@
+{
+  "datum": "2026-09-27",
+  "version": 1,
+  "status": "Vom Orchestrator geprueft; ein Einzelfall (Thomas Jarzombek) vorbereitet; nicht importfreigegeben",
+  "umfang": 1,
+  "bilanz": {
+    "gesamt": 1,
+    "Bund": 1,
+    "Berlin": 0,
+    "Brandenburg": 0
+  },
+  "ergebnisse": [
+    {
+      "kennung": "bundestag-jarzombek-thomas-1045202",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "bindungsart": "abteilungszustaendigkeit",
+      "person": "Thomas Jarzombek",
+      "funktion": "Parlamentarischer Staatssekretär für Digitales und Staatmodernisierung",
+      "amt": "Parlamentarischer Staatssekretär",
+      "stand": "2026-08-15",
+      "abteilungen": [
+        {
+          "pfad": "/organisations/0/organisations/1/organisations/2",
+          "id": "org-1-7",
+          "typ": "Abteilung",
+          "kennung": "DS",
+          "name": "Abteilung DS Deutschland-Stack"
+        },
+        {
+          "pfad": "/organisations/0/organisations/1/organisations/3",
+          "id": "org-1-8",
+          "typ": "Abteilung",
+          "kennung": "DI",
+          "name": "Abteilung DI Digitale Infrastrukturen"
+        },
+        {
+          "pfad": "/organisations/0/organisations/1/organisations/4",
+          "id": "org-1-9",
+          "typ": "Abteilung",
+          "kennung": "DW",
+          "name": "Abteilung DW Digitalpolitik und Wirtschaft"
+        }
+      ],
+      "themen": [
+        "Deutschland-Stack",
+        "Digitale Infrastrukturen",
+        "Digitalpolitik",
+        "Wirtschaft"
+      ],
+      "aufgabenbindung": "Parlamentarischer Staatssekretär im BMDS; Abteilungen DS (Deutschland-Stack), DI (Digitale Infrastrukturen), DW (Digitalpolitik und Wirtschaft)",
+      "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Parlamentarischer Staatssekretär im BMDS; Abteilungen DS (Deutschland-Stack), DI (Digitale Infrastrukturen), DW (Digitalpolitik und Wirtschaft); keine persönliche politische Position",
+      "karte": {
+        "id": "c5755",
+        "text": "Parlamentarischer Staatssekretär Thomas Jarzombek Abteilungen DS, DI, DW",
+        "ueberschrift": "Parlamentarischer Staatssekretär",
+        "personenlink": "https://bmds.bund.de/ministerium/leitung/parlamentarische-staatssekretaere/thomas-jarzombek"
+      },
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/J/jarzombek_thomas-1045202",
+        "sha256": "45938f8b08cc606c046db3010243821cfdf068478c8ad0f66d51008112a23888",
+        "abgerufenAm": "2026-09-27T13:00:33.704698+00:00"
+      },
+      "quelle": {
+        "url": "https://bmds.bund.de/ministerium/organisation",
+        "finalUrl": "https://bmds.bund.de/ministerium/organisation",
+        "abgerufenAm": "2026-09-27T20:13:14.558043+00:00",
+        "sha256": "8bd91026c73018b4b6a9af1f471d8d50f6b4a7cf34dbeb631c6617a23d71a61f",
+        "bytes": 262071,
+        "datei": "bmds-organisation-20260927.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "organigramm": {
+        "url": "https://bmds.bund.de/fileadmin/BMDS/Dokumente/Organigramm_15.08.2026.json",
+        "finalUrl": "https://bmds.bund.de/fileadmin/BMDS/Dokumente/Organigramm_15.08.2026.json",
+        "abgerufenAm": "2026-09-27T20:13:16.079278+00:00",
+        "sha256": "97a2b55f84e14b2fd2bad53749992dad07efbda393badbc1139c627bd1b6ed13",
+        "bytes": 70916,
+        "datei": "bmds-organigramm-20260927.json",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "importfreigegeben": false
+    }
+  ],
+  "pruefung": "Ein einzelner, zuvor offener Fachachsenfall (Thomas Jarzombek) wird gesondert neu gebunden; die 54er Rollenquittung bleibt unveraendert 48 belegt / 6 offen, und sein belegter PSts-Wortlaut bleibt erhalten. Die BMDS-Abteilungen DS/DI/DW stammen ausschliesslich aus genau EINER echten geschlossenen HTML-Karte article#c5755 des amtlichen BMDS-Organisationsauftritts mit genau einem H2-Personenlink auf exakt die kanonische Personen-URL; die Karte belegt NUR Jarzombek -> DS/DI/DW und traegt keinen fremden S/SB/L-Knoten. Die Abteilungskennungen/-titel kommen ausschliesslich aus dem amtlichen Organigramm-JSON (excludePersonalData=true, Stand 2026-08-15) mit genau den drei echten Abteilungsknoten DS/DI/DW; der echte aktuelle HTML-Link zeigt auf genau dieses JSON-Original. Kanonische 500er-Person (Name/H1/URL/Hash/Abrufzeit/Bytezahl/HTTP) und beide amtlichen BMDS-Quellen (Organisationsauftritt, Organigramm-JSON) sind an URL/finalUrl/sha256/Bytezahl/Abrufzeit/HTTP/Datei jeweils Original UND Metadatum gebunden. Nur die vier freigegebenen Themen und der getrennte Herkunftshinweis entstehen; keine persoenliche politische Position, keine Scheinausschuesse, keine Partei-/Mandatsartaenderung, keine Importfreigabe."
+}

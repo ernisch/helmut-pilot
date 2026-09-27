@@ -286,12 +286,13 @@ for (const e of ergebnis.ergebnisse) {
 // stellvertretender belegter Ausschuss NOCH ein belegtes Thema vorliegt. Ueber die
 // geprueften Ressort- (19), Aufgaben- (6), beratenden (2), Zusatzaufgaben- (3),
 // BMWSB-Aufgaben- (2), die Amthor-Einzelfallquittung (1) und die neue
-// Wahlausschuss-Aufgabenquittung (3) erhalten 36 zuvor offene Profile amtlich
-// abgeleitete Themen; ihre Achse schliesst sich ehrlich (54 -> 18). Vier
+// Wahlausschuss-Aufgabenquittung (3) sowie die neue Jarzombek-Abteilungsquittung (1)
+// erhalten 37 zuvor offene Profile amtlich
+// abgeleitete Themen; ihre Achse schliesst sich ehrlich (54 -> 17). Vier
 // Brandenburg- und zwei Berliner Mandate sind ueber die Mandatsartenquittungen
 // belegt (7 -> 1 region-fehlt; offen bleibt nur Engelmann).
-a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 18, "region-fehlt": 1 }, "offene Felder muessen genau die bekannten Luecken sein");
-a.equal(ergebnis.gueltig, 481, "481 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
+a.deepEqual(fehlercodes, { "schwerpunkt-fehlt": 17, "region-fehlt": 1 }, "offene Felder muessen genau die bekannten Luecken sein");
+a.equal(ergebnis.gueltig, 482, "482 Profile sind ohne offene Achse/Mandatsart technisch importierbar");
 
 // Einzelpruefung (pruefeProfil) muss dieselbe Sprache sprechen wie die Mengenpruefung.
 for (let i = 0; i < datensaetze.length; i += 1) {
@@ -359,7 +360,7 @@ const landtagWeitere = datensaetze.filter((d) => d.parlament !== "bundestag" && 
 a.equal(landtagWeitere.length, 23, "Landtags-Gremien bleiben unveraendert erhalten");
 a.equal(landtagWeitere.every((d) => (d.weitereGremienBeleg || []).length === 0), true, "Landtagsgremien sind kein Bundestags-JSON-LD-Beleg");
 const btAchseOffen = btSonstige.filter((d) => d.offeneFelder.includes("fachlicheAchse"));
-a.equal(btAchseOffen.length, 15, "44 Bundestagsprofile ohne belegte fachliche Achse, davon 9 ueber die Ressort-, 6 ueber die Aufgaben-, 2 ueber die beratenden, 3 ueber die Zusatzaufgaben-, 2 ueber die BMWSB-Aufgaben-, 1 ueber die Amthor-Einzelfall- und 3 ueber die Wahlausschuss-Aufgabenquittung geschlossen");
+a.equal(btAchseOffen.length, 14, "44 Bundestagsprofile urspruenglich ohne belegte fachliche Achse, davon 9 ueber die Ressort-, 6 ueber die Aufgaben-, 2 ueber die beratenden, 3 ueber die Zusatzaufgaben-, 2 ueber die BMWSB-Aufgaben-, 1 ueber die Amthor-Einzelfall-, 3 ueber die Wahlausschuss-Aufgaben- und 1 ueber die Jarzombek-Abteilungsquittung geschlossen");
 const btNurSonstigeGremien = btSonstige.filter((d) => (d.weitereGremienBeleg || []).length
   && (d.profil.ausschuesse || []).length === 0
   && (d.profil.stellvertretendeAusschuesse || []).length === 0);
@@ -391,20 +392,21 @@ for (const d of btSonstige) {
   for (const f of r.fehlend) btReadinessGruende[`fehlend:${f.feld}`] = (btReadinessGruende[`fehlend:${f.feld}`] || 0) + 1;
   for (const w of r.widersprueche) btReadinessGruende[`widerspruch:${w.feld}`] = (btReadinessGruende[`widerspruch:${w.feld}`] || 0) + 1;
 }
-// Sechsundzwanzig Bundestagsprofile mit zuvor offener fachlicher Achse schliessen sie ueber
+// Siebenundzwanzig Bundestagsprofile mit zuvor offener fachlicher Achse schliessen sie ueber
 // die geprueften Ressort- (9), Aufgaben- (6), beratenden (2), Zusatzaufgaben- (3),
-// BMWSB-Aufgaben- (2), die Amthor-Einzelfallquittung (1) und die
-// Wahlausschuss-Aufgabenquittung (3): 289 + 26 = 315 bereit, 44 - 26 = 15 nicht bereit.
-a.equal(btBereit, 315, "315 von 330 Bundestagsprofilen sind bereit (vorher 179)");
-a.equal(btNichtBereit, 15, "15 Bundestagsprofile bleiben nicht bereit");
+// BMWSB-Aufgaben- (2), die Amthor-Einzelfallquittung (1), die
+// Wahlausschuss-Aufgabenquittung (3) und die Jarzombek-Abteilungsquittung (1):
+// 316 von 330 bereit, 14 verbleiben ohne fachliche Achse.
+a.equal(btBereit, 316, "316 von 330 Bundestagsprofilen sind bereit (vorher 179)");
+a.equal(btNichtBereit, 14, "14 Bundestagsprofile bleiben nicht bereit");
 // Stefan Seidler (SSW, fraktionslos) wurde zuvor faelschlich als
 // Partei/Fraktionswiderspruch gezaehlt. Fraktionslosigkeit schliesst eine
 // Parteimitgliedschaft nicht aus; der Fix in profile-readiness entfernt nur diesen
-// Prueffehler. Seine beratende Achse ist inzwischen belegt; die 15 nicht-bereiten
+// Prueffehler. Seine beratende Achse ist inzwischen belegt; die 14 nicht-bereiten
 // Bundestagsprofile entstehen ausschliesslich aus offenen fachlichen Achsen.
 a.deepEqual(
   btReadinessGruende,
-  { "fehlend:schwerpunkt_oder_ausschuss": 15 },
+  { "fehlend:schwerpunkt_oder_ausschuss": 14 },
   "nur noch die offene fachliche Achse; der falsche Partei/Fraktionswiderspruch ist weg",
 );
 
@@ -540,6 +542,29 @@ for (const e of wahlausschuss.ergebnisse) {
   a.ok(!bmwsbByKennung.has(e.kennung), "Wahlausschuss muss disjunkt zur BMWSB-Achse sein");
   a.ok(!amthorByKennung.has(e.kennung), "Wahlausschuss muss disjunkt zur Amthor-Achse sein");
 }
+const jarzombek = JSON.parse(fs.readFileSync(path.join(ROOT, "docs", "betrieb", "jarzombek-bmds-abteilungen-1-20260927.json"), "utf8"));
+a.equal(jarzombek.umfang, 1, "Jarzombek-Abteilungsquittung muss genau 1 Fall umfassen");
+a.equal(jarzombek.bilanz.gesamt, 1, "Jarzombek-Abteilungsquittung: gesamt 1");
+a.equal(jarzombek.bilanz.Bund, 1, "der Jarzombek-Fall ist Bundestag");
+a.equal(jarzombek.ergebnisse.length, 1, "Jarzombek-Abteilungsquittung muss 1 Ergebnis tragen");
+const jarzombekByKennung = new Map(jarzombek.ergebnisse.map((e) => [e.kennung, e]));
+a.equal(jarzombekByKennung.size, 1, "Jarzombek-Abteilungsquittungskennung muss eindeutig sein");
+a.deepEqual(jarzombek.ergebnisse[0].themen, ["Deutschland-Stack", "Digitale Infrastrukturen", "Digitalpolitik", "Wirtschaft"], "genau die vier freigegebenen BMDS-Themen");
+a.equal(jarzombek.ergebnisse[0].stand, "2026-08-15", "Organigramm-Stand 2026-08-15");
+for (const e of jarzombek.ergebnisse) {
+  a.ok(rollenByKennung.has(e.kennung), "Jarzombek-Achse muss eine der 54 urspruenglich offenen Fachachsen sein");
+  // Sein 54er-Eintrag ist ausdruecklich belegt (die bestehende PSts-Rolle bleibt erhalten).
+  a.equal(rollenByKennung.get(e.kennung).status, "belegt", "Jarzombek bleibt in der 54er Quittung belegt");
+  a.equal(e.status, "belegt", "Jarzombek-Abteilungsachse muss belegt sein");
+  a.equal(e.importfreigegeben, false, "keine Importfreigabe");
+  a.ok(!ressortByKennung.has(e.kennung), "Jarzombek muss disjunkt zur Ressortachse sein");
+  a.ok(!aufgabenByKennung.has(e.kennung), "Jarzombek muss disjunkt zur Aufgabenachse sein");
+  a.ok(!beratendeByKennung.has(e.kennung), "Jarzombek muss disjunkt zur beratenden Achse sein");
+  a.ok(!zusatzByKennung.has(e.kennung), "Jarzombek muss disjunkt zur Zusatzaufgabenachse sein");
+  a.ok(!bmwsbByKennung.has(e.kennung), "Jarzombek muss disjunkt zur BMWSB-Achse sein");
+  a.ok(!amthorByKennung.has(e.kennung), "Jarzombek muss disjunkt zur Amthor-Achse sein");
+  a.ok(!wahlausschussByKennung.has(e.kennung), "Jarzombek muss disjunkt zur Wahlausschuss-Achse sein");
+}
 const ressortProfil = datensaetze.filter((d) => d.ressortachsenQuittung);
 const aufgabenProfil = datensaetze.filter((d) => d.aufgabenachsenQuittung);
 const beratendeProfil = datensaetze.filter((d) => d.beratendeachsenQuittung);
@@ -547,6 +572,7 @@ const zusatzProfil = datensaetze.filter((d) => d.zusaetzlicheaufgabenQuittung);
 const bmwsbProfil = datensaetze.filter((d) => d.bmwsbQuittung);
 const amthorProfil = datensaetze.filter((d) => d.amthorQuittung);
 const wahlausschussProfil = datensaetze.filter((d) => d.wahlausschussQuittung);
+const jarzombekProfil = datensaetze.filter((d) => d.jarzombekQuittung);
 const fachAchseOffen = datensaetze.filter((d) => d.offeneFelder.includes("fachlicheAchse"));
 a.equal(ressortProfil.length, 19, "19 Profile tragen eine Ressortachse");
 a.equal(aufgabenProfil.length, 6, "6 Profile tragen eine Aufgabenachse");
@@ -555,13 +581,14 @@ a.equal(zusatzProfil.length, 3, "3 Profile tragen eine Zusatzaufgabenachse");
 a.equal(bmwsbProfil.length, 2, "2 Profile tragen eine BMWSB-Aufgabenachse");
 a.equal(amthorProfil.length, 1, "1 Profil traegt die Amthor-Einzelfallquittung");
 a.equal(wahlausschussProfil.length, 3, "3 Profile tragen eine Wahlausschuss-Aufgabenachse");
-a.equal(fachAchseOffen.length, 18, "54 - 19 - 6 - 2 - 3 - 2 - 1 - 3 = 18 Fachachsen bleiben offen");
+a.equal(jarzombekProfil.length, 1, "1 Profil traegt die Jarzombek-Abteilungsquittung");
+a.equal(fachAchseOffen.length, 17, "54 - 19 - 6 - 2 - 3 - 2 - 1 - 3 - 1 = 17 Fachachsen bleiben offen");
 a.deepEqual(
-  new Set([...fachAchseOffen, ...ressortProfil, ...aufgabenProfil, ...beratendeProfil, ...zusatzProfil, ...bmwsbProfil, ...amthorProfil, ...wahlausschussProfil].map((d) => d.kanonischeKennung)),
+  new Set([...fachAchseOffen, ...ressortProfil, ...aufgabenProfil, ...beratendeProfil, ...zusatzProfil, ...bmwsbProfil, ...amthorProfil, ...wahlausschussProfil, ...jarzombekProfil].map((d) => d.kanonischeKennung)),
   new Set(rollenByKennung.keys()),
-  "disjunkte Vereinigung aus 18 offenen + 19 Ressort- + 6 Aufgaben- + 2 beratenden + 3 Zusatzaufgaben- + 2 BMWSB- + 1 Amthor- + 3 Wahlausschuss-Achse ergibt genau die 54er Quittung",
+  "disjunkte Vereinigung aus 17 offenen + 19 Ressort- + 6 Aufgaben- + 2 beratenden + 3 Zusatzaufgaben- + 2 BMWSB- + 1 Amthor- + 3 Wahlausschuss- + 1 Jarzombek-Achse ergibt genau die 54er Quittung",
 );
-a.ok(fachAchseOffen.every((d) => !d.ressortachsenQuittung && !d.aufgabenachsenQuittung && !d.beratendeachsenQuittung && !d.zusaetzlicheaufgabenQuittung && !d.bmwsbQuittung && !d.amthorQuittung && !d.wahlausschussQuittung), "offene Achse darf keine geschlossene Quittung tragen");
+a.ok(fachAchseOffen.every((d) => !d.ressortachsenQuittung && !d.aufgabenachsenQuittung && !d.beratendeachsenQuittung && !d.zusaetzlicheaufgabenQuittung && !d.bmwsbQuittung && !d.amthorQuittung && !d.wahlausschussQuittung && !d.jarzombekQuittung), "offene Achse darf keine geschlossene Quittung tragen");
 let rollenBelegt = 0;
 let rollenOffen = 0;
 const zuHelmutProfilRollen = zuHelmutProfil; // echter Import-/Storage-Pfad (bestehender Export)
@@ -579,7 +606,7 @@ for (const d of datensaetze) {
   a.equal(q.status, e.status, "Rollenstatus muss der Quittung entsprechen");
   // Eine Amtsrolle allein ist keine Ausschussachse. Die fachliche Achse ist genau dann
   // geschlossen, wenn die gepruefte Ressort- oder Aufgabenquittung belegte Themen setzt.
-  const achseGeschlossen = Boolean(d.ressortachsenQuittung || d.aufgabenachsenQuittung || d.beratendeachsenQuittung || d.zusaetzlicheaufgabenQuittung || d.bmwsbQuittung || d.amthorQuittung || d.wahlausschussQuittung);
+  const achseGeschlossen = Boolean(d.ressortachsenQuittung || d.aufgabenachsenQuittung || d.beratendeachsenQuittung || d.zusaetzlicheaufgabenQuittung || d.bmwsbQuittung || d.amthorQuittung || d.wahlausschussQuittung || d.jarzombekQuittung);
   a.equal(achseGeschlossen, !d.offeneFelder.includes("fachlicheAchse"),
     `Achse muss genau dann geschlossen sein, wenn eine gepruefte Quittung greift (${d.kanonischeKennung})`);
   if (e.status === "offen") {
@@ -1113,6 +1140,102 @@ for (const d of wahlausschussProfil) {
   );
 }
 
+// ── 6l · Jarzombek-Abteilungsquittung: vier Themen/Hinweis/Quelle verlustfrei, Rolle erhalten ──
+// Der zuvor offene Fachachsenfall Thomas Jarzombek wird ueber seine amtlich belegten
+// BMDS-Abteilungen DS/DI/DW geschlossen. Die Abteilungen stammen aus genau EINER echten
+// geschlossenen HTML-Karte article#c5755 (H2-Personenlink auf die kanonische Personen-URL)
+// und dem amtlichen Organigramm-JSON (excludePersonalData=true, Stand 2026-08-15); das JSON
+// belegt NUR Abteilungskennungen/-titel, NICHT die Person. Die bestehende aktuelle
+// PSts-Rolle aus der 54er Quittung und alle bestehenden Quellen bleiben unveraendert, es
+// entsteht keine neue Funktionsrolle und kein Scheinausschuss. Der echte Pfad zuHelmutProfil
+// -> toMandateProfileRow -> fromMandateProfileRow erhaelt Themen, Hinweis und Rolle und
+// bleibt aktiv=false. KEIN Netz, KEINE DB, KEIN Modell.
+a.equal(jarzombekProfil.length, 1, "genau ein Profil traegt die Jarzombek-Abteilungsquittung");
+const jarzombekDatensatz = jarzombekProfil[0];
+const jarzombekEintrag = jarzombekByKennung.get("bundestag-jarzombek-thomas-1045202");
+a.ok(jarzombekEintrag, "Jarzombek-Abteilungsquittung fehlt");
+const JARZOMBEK_THEMEN = ["Deutschland-Stack", "Digitale Infrastrukturen", "Digitalpolitik", "Wirtschaft"];
+const jarzombekHinweis = `Aufgabenbindung Bund (amtlich abgeleitet): ${jarzombekEintrag.aufgabenbindung}; keine persönliche politische Position`;
+a.equal(jarzombekDatensatz.kanonischeKennung, "bundestag-jarzombek-thomas-1045202");
+a.equal(jarzombekDatensatz.profil.partei, "CDU", "Partei bleibt unveraendert belegt");
+a.equal(jarzombekDatensatz.profil.wahlkreis, "Wahlkreis 105: Düsseldorf I", "Mandat/Wahlkreis bleibt unveraendert");
+a.deepEqual(jarzombekDatensatz.profil.themen, JARZOMBEK_THEMEN, "genau die vier freigegebenen Themen");
+a.ok(!jarzombekDatensatz.offeneFelder.includes("fachlicheAchse"), "Jarzombek-Abteilungsachse schliesst die fachliche Achse");
+a.equal(jarzombekDatensatz.profil.aktiv, false, "Jarzombek bleibt aktiv=false");
+a.equal(jarzombekDatensatz.importfreigegeben, false, "Jarzombek bleibt importfreigegeben=false");
+a.equal(jarzombekDatensatz.jarzombekQuittung.datei, "docs/betrieb/jarzombek-bmds-abteilungen-1-20260927.json");
+a.equal(jarzombekDatensatz.jarzombekQuittung.person, "Thomas Jarzombek");
+a.equal(jarzombekDatensatz.jarzombekQuittung.funktion, "Parlamentarischer Staatssekretär für Digitales und Staatmodernisierung");
+a.equal(jarzombekDatensatz.jarzombekQuittung.amt, "Parlamentarischer Staatssekretär");
+a.equal(jarzombekDatensatz.jarzombekQuittung.stand, "2026-08-15", "Organigramm-Stand 2026-08-15");
+a.deepEqual(
+  jarzombekDatensatz.jarzombekQuittung.abteilungen.map((a) => a.kennung),
+  ["DS", "DI", "DW"],
+  "nur die drei echten Abteilungsknoten DS/DI/DW",
+);
+a.equal(jarzombekDatensatz.jarzombekQuittung.karte.id, "c5755");
+a.equal(jarzombekDatensatz.jarzombekQuittung.karte.personenlink,
+  "https://bmds.bund.de/ministerium/leitung/parlamentarische-staatssekretaere/thomas-jarzombek",
+  "H2-Personenlink auf die kanonische Personen-URL");
+// Kanonische Person (54er Quittung) und beide amtlichen BMDS-Quellen sind gebunden.
+const jarzombekRollenEintrag = rollenByKennung.get("bundestag-jarzombek-thomas-1045202");
+a.equal(jarzombekRollenEintrag.status, "belegt", "die 54er Rolle bleibt belegt");
+a.equal(jarzombekDatensatz.jarzombekQuittung.rollenquelle.url, jarzombekRollenEintrag.quelle.url,
+  "Rollenquelle ist die kanonische Bundestags-Person");
+a.equal(jarzombekDatensatz.jarzombekQuittung.rollenquelle.sha256, jarzombekRollenEintrag.quelle.sha256);
+a.equal(jarzombekDatensatz.quelle.url, jarzombekRollenEintrag.quelle.url, "Quell-URL bleibt an die amtliche Personenquelle gebunden");
+a.equal(jarzombekDatensatz.jarzombekQuittung.quelle.url, "https://bmds.bund.de/ministerium/organisation");
+a.equal(jarzombekDatensatz.jarzombekQuittung.quelle.sha256, "8bd91026c73018b4b6a9af1f471d8d50f6b4a7cf34dbeb631c6617a23d71a61f");
+a.equal(jarzombekDatensatz.jarzombekQuittung.quelle.bytes, 262071);
+a.equal(jarzombekDatensatz.jarzombekQuittung.organigramm.url,
+  "https://bmds.bund.de/fileadmin/BMDS/Dokumente/Organigramm_15.08.2026.json");
+a.equal(jarzombekDatensatz.jarzombekQuittung.organigramm.sha256, "97a2b55f84e14b2fd2bad53749992dad07efbda393badbc1139c627bd1b6ed13");
+a.equal(jarzombekDatensatz.jarzombekQuittung.organigramm.bytes, 70916);
+// Die bestehende 54er-Amtsrolle bleibt unveraendert erhalten; der Hinweis steht genau einmal;
+// es entsteht KEINE neue Funktionsrolle (kein Scheinausschuss).
+for (const f of jarzombekRollenEintrag.funktionen) {
+  a.ok((jarzombekDatensatz.profil.funktionen || []).includes(f.wortlaut), `bestehende 54er-Rolle muss erhalten bleiben (${f.wortlaut})`);
+}
+a.equal((jarzombekDatensatz.profil.funktionen || []).filter((x) => x === jarzombekHinweis).length, 1,
+  "Jarzombek: Herkunftshinweis genau einmal");
+for (const wert of Object.values(jarzombekDatensatz.jarzombekQuittung.abteilungen)) {
+  a.ok(!(jarzombekDatensatz.profil.ausschuesse || []).includes(wert), "kein Scheinausschuss aus den Abteilungen");
+}
+for (const feld of ["ausschuesse", "stellvertretendeAusschuesse"]) {
+  for (const wert of jarzombekDatensatz.profil[feld] || []) {
+    a.ok(!/Abteilung (DS|DI|DW)/.test(String(wert)), `kein Scheinausschuss aus ${feld}: ${wert}`);
+  }
+}
+const jarzombekQuelle = (jarzombekDatensatz.profil.offizielleQuellen || []).find((x) => x.art === "bmds-abteilungszustaendigkeit");
+a.ok(jarzombekQuelle, "amtliche BMDS-Quelle fehlt in profil.offizielleQuellen");
+a.equal(jarzombekQuelle.url, jarzombekDatensatz.jarzombekQuittung.quelle.url);
+a.equal(jarzombekQuelle.sha256, jarzombekDatensatz.jarzombekQuittung.quelle.sha256);
+// Echter Verlustfreiheitspfad (keine DB, kein Netz): Themen, Rolle und Kennzeichnung.
+const gespeichertJarzombek = zuHelmutProfil(jarzombekDatensatz.profil);
+a.deepEqual(gespeichertJarzombek.focusTopics, JARZOMBEK_THEMEN, "Importpfad muss die vier Themen erhalten");
+a.ok(gespeichertJarzombek.function.includes(jarzombekHinweis), "Herkunftshinweis muss den Importpfad erreichen");
+for (const f of jarzombekRollenEintrag.funktionen) {
+  a.ok(gespeichertJarzombek.function.includes(f.wortlaut), "bestehende Rolle bleibt im Importpfad");
+}
+const zeileJarzombek = storage.toMandateProfileRow(gespeichertJarzombek);
+a.equal(zeileJarzombek.aktiv, false, "Storage-Zeile darf nicht aktivieren");
+const gelesenJarzombek = storage.fromMandateProfileRow({ id: jarzombekDatensatz.kanonischeKennung, name: jarzombekDatensatz.profil.vollname }, zeileJarzombek);
+a.deepEqual(gelesenJarzombek.focusTopics, JARZOMBEK_THEMEN, "Themen ueberstehen den Storage-Roundtrip");
+a.ok(gelesenJarzombek.function.includes(jarzombekHinweis), "Hinweis uebersteht den Storage-Roundtrip");
+a.equal(gelesenJarzombek.profileActive, false, "Round-Trip bleibt aktiv=false");
+{
+  const { proximityScore } = require("../lib/helmut/scoring");
+  for (const thema of JARZOMBEK_THEMEN) {
+    a.ok(proximityScore({ tags: [thema] }, { focusTopics: gelesenJarzombek.focusTopics }) > 0,
+      `exaktes BMDS-Thema muss treffen: ${thema}`);
+  }
+  // Negative Gegenproben: fremde Abteilungen / Nichtzustaendigkeiten duerfen NICHT treffen.
+  for (const fremd of ["Bürokratierückbau", "Staatsmodernisierung", "Verteidigung", "Landwirtschaft", "Arzneimittel"]) {
+    a.equal(proximityScore({ tags: [fremd] }, { focusTopics: gelesenJarzombek.focusTopics }), 0,
+      `fremdes Thema/Abteilung darf nicht treffen: ${fremd}`);
+  }
+}
+
 // ── 7 · Reproduzierbarkeit (nur mit lokalen Arbeitsdateien + python3) ────────────────────
 let reproduzierbar = "uebersprungen (lokale Eingangsdateien oder python3 fehlen)";
 const eingangVorhanden = fs.existsSync(path.join(STANDARD_EINGANG, "bundestagsprofile-330-abruf.json"))
@@ -1132,4 +1255,4 @@ if (eingangVorhanden && python) {
   reproduzierbar = "byte-identisch neu erzeugt";
 }
 
-console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder, echter Importvertrag (481 technisch importierbar, 19 offen), Gremien-Trennung (141 Mitgliedschaften in 15 sonstigen Gremien rollengetreu erhalten, 4 Scheinausschussachsen offen), Mandatsartenquittung Brandenburg (4 Landeslisten) und Berlin (2 Profile: Martin Bezirksliste Marzahn-Hellersdorf, Lux Landesliste; Handbuch-PDF Seite 204 linke Spalte, wörtliche Transkription, exakter H2/H3/Personlink, echter Import-/Storage-Roundtrip, Engelmann bleibt offen), Rollenquittung (48 Amtsrollen dedupliziert angehaengt, 6 offen), Ressortquittung (19 Fachachsen ueber amtliches Ressort geschlossen: 9 Bund/4 Berlin/6 Brandenburg, 39 Themenbegriffe und Herkunftshinweise verlustfrei), Aufgabenquittung (6 personengebundene Aufgabenachsen: Beauftragtenaufgaben + BMAS-Abteilungen, 14 Themenbegriffe und Herkunftshinweise verlustfrei, 14 exakte Themengegenproben, Mast disjunkt zu Griese), Beratende Achsenquittung (2 beratende Ausschussachsen: Knodel Landwirtschaft/Ernaehrung/Heimat + Seidler Haushalt, 4 Kurzthemen und getrennte Ableitungshinweise verlustfrei, bestehende beratende Funktion erhalten, keine ordentliche/stellvertretende Mitgliedschaft, keine endDate-Rolle), Zusatzaufgabenquittung (3 Fachzustaendigkeiten: Breher Tierschutz mit genau einer neuen Funktionsrolle + erhaltener PSts-Rolle, Krichbaum Europa aus der aktuellen AA-Seitenkopf-H1, Kippels BMG-Abteilungen 1/4/5/6 mit 12 Kurzthemen aus visuell abgenommenem PDF-Fachurteil; 14 Kurzthemen und getrennte Herkunftshinweise verlustfrei, Fremdthemen ohne Treffer), BMWSB-Aufgabenquittung (2 personengebundene BMWSB-Unterbereichsachsen: Bartol Z I 3/W II/S I/B I/B II, Poschmann Z II/W I/S II/S III; 18 Kurzthemen und getrennte Herkunftshinweise verlustfrei, kanonische v10-Adresse 669957 Bytes, bestehende PSts-Rolle erhalten, keine Hochstufung auf ganze Abteilungen, keine Scheinausschuesse, Fremdthemen der anderen Person ohne Treffer), Amthor-Einzelfallquittung (1 zuvor offener Rollenfall: aktuelle Rolle Staatsminister fuer Bund-Laender-Zusammenarbeit beim Bundeskanzler seit 29. Juli 2026 aus geschlossenem bpa-richtext-Lebenslauf, Thema Bund-Laender-Beziehungen aus genau einem echten li der Personalien-h2, historischer 54er-Eintrag bleibt offen, kein Digitalamt als aktuell, Fremdthema Digitalisierung ohne Treffer), Wahlausschuss-Aufgabenquittung (3 sonstige Gremien-Achsen: Haßelmann/Hoffmann/Miersch, aktuelle Wahlausschuss-Mitgliedschaft eigenstaendig aus genau einem ProfilePage.mainEntity in genau einer echten Role mit exaktem roleName/startDate ohne endDate, enges Thema Richter des Bundesverfassungsgerichts aus dem geschlossenen aktuellen Gremienaufgabenabsatz mit 21. Wahlperiode, sonstiges Gremium und bestehende Funktionen unveraendert, keine Scheinausschuesse, Fremdthemen ohne Treffer), Bundestags-Readiness (315/330 bereit; 18 Fachachsen bleiben offen), Reproduzierbarkeit: " + reproduzierbar);
+console.log("PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder, echter Importvertrag (482 technisch importierbar, 18 offen), Gremien-Trennung (141 Mitgliedschaften in 15 sonstigen Gremien rollengetreu erhalten, 4 Scheinausschussachsen offen), Mandatsartenquittung Brandenburg (4 Landeslisten) und Berlin (2 Profile: Martin Bezirksliste Marzahn-Hellersdorf, Lux Landesliste; Handbuch-PDF Seite 204 linke Spalte, wörtliche Transkription, exakter H2/H3/Personlink, echter Import-/Storage-Roundtrip, Engelmann bleibt offen), Rollenquittung (48 Amtsrollen dedupliziert angehaengt, 6 offen), Ressortquittung (19 Fachachsen ueber amtliches Ressort geschlossen: 9 Bund/4 Berlin/6 Brandenburg, 39 Themenbegriffe und Herkunftshinweise verlustfrei), Aufgabenquittung (6 personengebundene Aufgabenachsen: Beauftragtenaufgaben + BMAS-Abteilungen, 14 Themenbegriffe und Herkunftshinweise verlustfrei, 14 exakte Themengegenproben, Mast disjunkt zu Griese), Beratende Achsenquittung (2 beratende Ausschussachsen: Knodel Landwirtschaft/Ernaehrung/Heimat + Seidler Haushalt, 4 Kurzthemen und getrennte Ableitungshinweise verlustfrei, bestehende beratende Funktion erhalten, keine ordentliche/stellvertretende Mitgliedschaft, keine endDate-Rolle), Zusatzaufgabenquittung (3 Fachzustaendigkeiten: Breher Tierschutz mit genau einer neuen Funktionsrolle + erhaltener PSts-Rolle, Krichbaum Europa aus der aktuellen AA-Seitenkopf-H1, Kippels BMG-Abteilungen 1/4/5/6 mit 12 Kurzthemen aus visuell abgenommenem PDF-Fachurteil; 14 Kurzthemen und getrennte Herkunftshinweise verlustfrei, Fremdthemen ohne Treffer), BMWSB-Aufgabenquittung (2 personengebundene BMWSB-Unterbereichsachsen: Bartol Z I 3/W II/S I/B I/B II, Poschmann Z II/W I/S II/S III; 18 Kurzthemen und getrennte Herkunftshinweise verlustfrei, kanonische v10-Adresse 669957 Bytes, bestehende PSts-Rolle erhalten, keine Hochstufung auf ganze Abteilungen, keine Scheinausschuesse, Fremdthemen der anderen Person ohne Treffer), Amthor-Einzelfallquittung (1 zuvor offener Rollenfall: aktuelle Rolle Staatsminister fuer Bund-Laender-Zusammenarbeit beim Bundeskanzler seit 29. Juli 2026 aus geschlossenem bpa-richtext-Lebenslauf, Thema Bund-Laender-Beziehungen aus genau einem echten li der Personalien-h2, historischer 54er-Eintrag bleibt offen, kein Digitalamt als aktuell, Fremdthema Digitalisierung ohne Treffer), Wahlausschuss-Aufgabenquittung (3 sonstige Gremien-Achsen: Haßelmann/Hoffmann/Miersch, aktuelle Wahlausschuss-Mitgliedschaft eigenstaendig aus genau einem ProfilePage.mainEntity in genau einer echten Role mit exaktem roleName/startDate ohne endDate, enges Thema Richter des Bundesverfassungsgerichts aus dem geschlossenen aktuellen Gremienaufgabenabsatz mit 21. Wahlperiode, sonstiges Gremium und bestehende Funktionen unveraendert, keine Scheinausschuesse, Fremdthemen ohne Treffer), Jarzombek-Abteilungsquittung (1 zuvor offener Fachachsenfall: BMDS-Abteilungen DS/DI/DW aus genau EINER echten geschlossenen HTML-Karte article#c5755 mit exaktem H2-Personenlink auf die kanonische Personen-URL und dem amtlichen Organigramm-JSON excludePersonalData=true Stand 2026-08-15, das JSON belegt nur Abteilungskennungen/-titel, NICHT die Person; vier Themen Deutschland-Stack/Digitale Infrastrukturen/Digitalpolitik/Wirtschaft und getrennter Herkunftshinweis verlustfrei, bestehende 54er-PSts-Rolle und Quellen erhalten, keine neue Funktionsrolle, keine Scheinausschuesse, Fremdabteilungen ohne Treffer), Bundestags-Readiness (316/330 bereit; 17 Fachachsen bleiben offen), Reproduzierbarkeit: " + reproduzierbar);
