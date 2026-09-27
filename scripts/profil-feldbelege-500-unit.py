@@ -2705,3 +2705,340 @@ print('PASS: Wahlausschuss-Aufgabenquittung — fehlende Quittung/falsche Bilanz
       'doppelter ProfilePage/Zitat nur in Navigation, Template oder fremdem Absatz/falsche Wahlperiode '
       'sperren fail closed; die kontinuierliche Rolle wird rollengetreu gebunden; das gueltige synthetische '
       'Paket (Fixture ohne /private/tmp) wird akzeptiert.')
+
+
+# ── 16 · Jarzombek-Abteilungsquittung (BMDS DS/DI/DW, ein zuvor offener Fachachsenfall) ────
+# Synthetische, deckungsgleiche Fixtures OHNE /private/tmp-Originale. Das eng fixierte
+# Fachurteil wird ueber den injizierbaren ``erwartung``-Parameter ersetzt; so bleibt der Test
+# auch ohne die lokalen Originale lauffaehig. Das Modul verwendet die sicheren Helfer des
+# Zusatzaufgabenmoduls wieder und bindet die Abteilungen ausschliesslich ueber eine echte
+# geschlossene HTML-Karte article#c5755 und das amtliche Organigramm-JSON
+# (excludePersonalData=true). Der neue Host bmds.bund.de ist nur im eigenen Modul fuer genau
+# diese zwei kanonischen Quellen freigegeben.
+jz_spec = importlib.util.spec_from_file_location(
+    'jarzombek', Path(__file__).with_name('profil-feldbelege-500-jarzombek.py'))
+jz = importlib.util.module_from_spec(jz_spec)
+jz_spec.loader.exec_module(jz)
+
+
+def _erwarte_jz_fehler(fn, was, meldung=None):
+    try:
+        fn()
+    except jz.JarzombekFehler as fehler:
+        if meldung is not None:
+            assert meldung in str(fehler), f"Falscher Sperrgrund: {fehler}"
+        return
+    raise AssertionError(f'Nicht gesperrt: {was}')
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    detail = root / 'detailseiten'
+    detail.mkdir()
+    zusatz = root / 'zusatzquellen'
+    zusatz.mkdir()
+    ABRUF = '2026-09-27T20:13:00+00:00'
+    K = 'bundestag-test-jarzombek-1'
+    person = 'Person Jarzombek'
+    amt = 'Parlamentarischer Staatssekretär'
+    stand = '2026-08-15'
+    themen = ['Deutschland-Stack', 'Digitale Infrastrukturen', 'Digitalpolitik', 'Wirtschaft']
+    abteilungen = [
+        dict(pfad='/organisations/0/organisations/1/organisations/2', id='org-1-7',
+             typ='Abteilung', kennung='DS', name='Abteilung DS Deutschland-Stack'),
+        dict(pfad='/organisations/0/organisations/1/organisations/3', id='org-1-8',
+             typ='Abteilung', kennung='DI', name='Abteilung DI Digitale Infrastrukturen'),
+        dict(pfad='/organisations/0/organisations/1/organisations/4', id='org-1-9',
+             typ='Abteilung', kennung='DW', name='Abteilung DW Digitalpolitik und Wirtschaft'),
+    ]
+    aufgabenbindung = ('Parlamentarischer Staatssekretär im Test-BMDS; Abteilungen DS '
+                       '(Deutschland-Stack), DI (Digitale Infrastrukturen), DW (Digitalpolitik und Wirtschaft)')
+    personenlink = ('https://bmds.bund.de/ministerium/leitung/parlamentarische-staatssekretaere/'
+                    'test-jarzombek')
+    karten_text = f'{amt} {person} Abteilungen DS, DI, DW'
+
+    def _meta(datei, url):
+        pfad = zusatz / datei
+        meta = dict(url=url, finalUrl=url, abgerufenAm=ABRUF, sha256=jz.ZU._sha256(pfad),
+                    bytes=pfad.stat().st_size, datei=datei, http=200)
+        (zusatz / f'{datei}.meta.json').write_text(json.dumps(meta, ensure_ascii=False), encoding='utf-8')
+        return dict(meta, abrufStatus='abgerufen')
+
+    json_datei = 'test-organigramm.json'
+    json_url = 'https://bmds.bund.de/fileadmin/BMDS/Dokumente/Test_Organigramm_15.08.2026.json'
+    json_href = '/fileadmin/BMDS/Dokumente/Test_Organigramm_15.08.2026.json'
+    html_datei = 'test-organisation.html'
+    html_url = 'https://bmds.bund.de/ministerium/organisation'
+
+    def _org_json(abt=None, stand_wert=None, exclude=True, person_obj=False):
+        abt = abt if abt is not None else abteilungen
+        kinder = [dict(id=a['id'], type='Abteilung', altName=a['kennung'], name=a['name']) for a in abt]
+        if person_obj:
+            kinder[0]['positions'] = [dict(positionType='Abteilungsleitung', person=dict(name='Fremdperson'))]
+        return dict(
+            export=dict(excludePersonalData=exclude),
+            document=dict(version=stand_wert if stand_wert is not None else stand),
+            organisations=[dict(organisations=[dict(), dict(organisations=[dict(), dict()] + kinder)])],
+        )
+
+    def _schreibe_json(dokument):
+        (zusatz / json_datei).write_text(json.dumps(dokument, ensure_ascii=False), encoding='utf-8')
+        return _meta(json_datei, json_url)
+
+    def _karte_html(link=None, ueberschrift=amt, name=person, dept='Abteilungen DS, DI, DW',
+                    json_verweis=True, huelle='', karte=None, artikel_id='c5755'):
+        verweis = f'<a href="{json_href}">Organigramm (JSON)</a>' if json_verweis else ''
+        karte = karte or (
+            f'<article id="{artikel_id}"><div class="teaser-content">'
+            f'<h2 class=" "><a href="{link or personenlink}" class="teaser-link stretched-link">'
+            f'<span>{ueberschrift}</span></a></h2>'
+            f'<p class="lead">{name}</p><p class="text-center">{dept}</p></div></article>'
+        )
+        return f'<html><body>{verweis}{huelle}{karte}</body></html>'
+
+    def _schreibe_html(dokument):
+        (zusatz / html_datei).write_text(dokument, encoding='utf-8')
+        return _meta(html_datei, html_url)
+
+    quelle = _schreibe_html(_karte_html())
+    organigramm = _schreibe_json(_org_json())
+
+    (detail / f'{K}.html').write_text(f'<h1>{person}</h1>', encoding='utf-8')
+    rollen_ref = dict(url='https://www.bundestag.de/abgeordnete/biografien/T/test-jarzombek-1',
+                      sha256=jz.ZU._sha256(detail / f'{K}.html'), abgerufenAm=ABRUF)
+    kennung_zu_abruf = {K: dict(url=rollen_ref['url'], sha256=rollen_ref['sha256'], abgerufenAm=ABRUF,
+                                bytes=(detail / f'{K}.html').stat().st_size, http=200, abrufStatus='abgerufen',
+                                datei=f'{K}.html', amtlicheKennung=K, parlament='bundestag')}
+    profilrollen = {K: dict(status='belegt', funktionen=[dict(wortlaut='Parlamentarischer Staatssekretär Test')],
+                            quelle=dict(rollen_ref))}
+    karte_erwartet = dict(id='c5755', text=karten_text, ueberschrift=amt, personenlink=personenlink)
+    erwartung = {
+        K: dict(region='Bund', bindungsart='abteilungszustaendigkeit', person=person,
+                funktion='Parlamentarischer Staatssekretär Test', amt=amt, stand=stand,
+                aufgabenbindung=aufgabenbindung, themen=list(themen),
+                abteilungen=[dict(a) for a in abteilungen], karte=dict(karte_erwartet),
+                quelle=dict(quelle), organigramm=dict(organigramm)),
+    }
+    eintraege = [dict(
+        kennung=K, region='Bund', parlament='bundestag', status='belegt',
+        bindungsart='abteilungszustaendigkeit', person=person, funktion='Parlamentarischer Staatssekretär Test',
+        amt=amt, stand=stand, aufgabenbindung=aufgabenbindung, themen=list(themen),
+        abteilungen=[dict(a) for a in abteilungen], karte=dict(karte_erwartet),
+        ableitungsHinweis=jz.ZU.HINWEIS_AUFGABE.format(region='Bund', wert=aufgabenbindung),
+        rollenquelle=dict(rollen_ref), quelle=dict(quelle), organigramm=dict(organigramm), importfreigegeben=False,
+    )]
+    gueltige_quittung = dict(version=1, bilanz=dict(gesamt=1, Bund=1, Berlin=0, Brandenburg=0), ergebnisse=eintraege)
+
+    def _jz_eingang(quittung, ressort=None, aufgaben=None, beratende=None, zusatz_kennungen=None,
+                    bmwsb=None, amthor=None, wahlausschuss=None, rollen=None):
+        return SimpleNamespace(
+            verzeichnis=root, detailseiten=detail, jarzombek=quittung,
+            profilrollen_by_kennung=rollen or profilrollen, kennung_zu_abruf=kennung_zu_abruf,
+            ressortachsen_by_kennung={k: {} for k in (ressort or [])},
+            aufgabenachsen_by_kennung={k: {} for k in (aufgaben or [])},
+            beratendeachsen_by_kennung={k: {} for k in (beratende or [])},
+            zusaetzlicheaufgaben_by_kennung={k: {} for k in (zusatz_kennungen or [])},
+            bmwsb_by_kennung={k: {} for k in (bmwsb or [])},
+            amthor_by_kennung={k: {} for k in (amthor or [])},
+            wahlausschuss_by_kennung={k: {} for k in (wahlausschuss or [])})
+
+    index = jz.pruefe_jarzombek(_jz_eingang(gueltige_quittung), erwartung=erwartung)
+    assert len(index) == 1
+    assert index[K]['themen'] == themen
+    assert [a['kennung'] for a in index[K]['abteilungen']] == ['DS', 'DI', 'DW']
+    assert index[K]['karte'] == karte_erwartet
+    assert index[K]['ableitungsHinweis'] == jz.ZU.HINWEIS_AUFGABE.format(region='Bund', wert=aufgabenbindung)
+
+    def _mit(mutation, erwartung_override=None):
+        neu = json.loads(json.dumps(gueltige_quittung))
+        mutation(neu)
+        return jz.pruefe_jarzombek(_jz_eingang(neu), erwartung=erwartung_override or erwartung)
+
+    # Fehlende Quittung, falsche Bilanz, Duplikat, unbekannte Kennung.
+    echter_pfad = jz.JARZOMBEK
+    jz.JARZOMBEK = root / 'fehlt.json'
+    try:
+        _erwarte_jz_fehler(lambda: jz.pruefe_jarzombek(
+            SimpleNamespace(verzeichnis=root, detailseiten=detail, profilrollen_by_kennung=profilrollen,
+                            kennung_zu_abruf=kennung_zu_abruf), erwartung=erwartung), 'fehlende Quittung')
+    finally:
+        jz.JARZOMBEK = echter_pfad
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['bilanz'].__setitem__('Bund', 0)), 'falsche Bilanz')
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('kennung', 'bundestag-fremd-9')),
+                       'unbekannte/Fremdkennung')
+    # Disjunktion zu den 19/6/2/3/2/1/3-Achsen.
+    for feld in ('ressort', 'aufgaben', 'beratende'):
+        _erwarte_jz_fehler(lambda f=feld: jz.pruefe_jarzombek(
+            _jz_eingang(gueltige_quittung, **{f: [K]}), erwartung=erwartung), f'Kennung bereits {feld}')
+    for feld in ('zusatz_kennungen', 'bmwsb', 'amthor', 'wahlausschuss'):
+        _erwarte_jz_fehler(lambda f=feld: jz.pruefe_jarzombek(
+            _jz_eingang(gueltige_quittung, **{f: [K]}), erwartung=erwartung), f'Kennung bereits {feld}')
+    # Quelldrift (URL/finalUrl/Hash/Bytezahl/Abrufzeit/Datei/HTTP), Metadatum-Drift.
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'url', q['ergebnisse'][0]['quelle']['url'] + '-fremd')), 'Quell-URL-Drift')
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'finalUrl', 'https://bmds.bund.de/x')), 'finalUrl-Drift')
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__('sha256', '0' * 64)),
+                       'Quellhash-Drift')
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__('bytes', 1)),
+                       'Quell-Bytezahl-Drift')
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'abgerufenAm', '2026-09-27T00:00:00+00:00')), 'Abrufzeit-Drift')
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__('http', 404)),
+                       'HTTP-Drift')
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__('datei', 'fehlt.html')),
+                       'fehlende Quelle')
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['organigramm'].__setitem__('sha256', '0' * 64)),
+                       'Organigramm-Hash-Drift')
+    # Rollenquellen-Drift, fremde Person, falsche H1 bei konsistenten Hashes, nicht belegte 54er-Rolle.
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['rollenquelle'].__setitem__('sha256', 'c' * 64)),
+                       'Rollenquellen-Drift')
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('person', '')),
+                       'fehlende Personenidentitaet', 'Person weicht')
+    original_h1 = (detail / f'{K}.html').read_text(encoding='utf-8')
+    hashbindungen = [kennung_zu_abruf[K], rollen_ref, profilrollen[K]['quelle'], eintraege[0]['rollenquelle']]
+    original_hashes = [b['sha256'] for b in hashbindungen]
+    try:
+        (detail / f'{K}.html').write_text('<h1>Fremde Person</h1>', encoding='utf-8')
+        for b in hashbindungen:
+            b['sha256'] = jz.ZU._sha256(detail / f'{K}.html')
+        kennung_zu_abruf[K]['bytes'] = (detail / f'{K}.html').stat().st_size
+        _erwarte_jz_fehler(lambda: _mit(lambda q: None), 'falsche H1 bei konsistenten Hashes',
+                           'Person passt nicht zur kanonischen Kennung')
+    finally:
+        (detail / f'{K}.html').write_text(original_h1, encoding='utf-8')
+        for b, original_hash in zip(hashbindungen, original_hashes):
+            b['sha256'] = original_hash
+        kennung_zu_abruf[K]['bytes'] = (detail / f'{K}.html').stat().st_size
+    for inert in (f'<!-- {original_h1} -->', f'<template>{original_h1}</template>',
+                  f'<script type="text/plain">{original_h1}</script>'):
+        try:
+            (detail / f'{K}.html').write_text(inert, encoding='utf-8')
+            for b in hashbindungen:
+                b['sha256'] = jz.ZU._sha256(detail / f'{K}.html')
+            kennung_zu_abruf[K]['bytes'] = (detail / f'{K}.html').stat().st_size
+            _erwarte_jz_fehler(lambda: _mit(lambda q: None), 'inerte H1 bei konsistenten Hashes')
+        finally:
+            (detail / f'{K}.html').write_text(original_h1, encoding='utf-8')
+            for b, original_hash in zip(hashbindungen, original_hashes):
+                b['sha256'] = original_hash
+            kennung_zu_abruf[K]['bytes'] = (detail / f'{K}.html').stat().st_size
+    fremde_rolle = json.loads(json.dumps(profilrollen))
+    fremde_rolle[K]['funktionen'][0]['wortlaut'] = 'Fremdes Amt'
+    _erwarte_jz_fehler(lambda: jz.pruefe_jarzombek(
+        _jz_eingang(gueltige_quittung, rollen=fremde_rolle), erwartung=erwartung), 'fremde belegte Rolle')
+    alter_abruf = kennung_zu_abruf[K]['abgerufenAm']
+    try:
+        kennung_zu_abruf[K]['abgerufenAm'] = '2026-09-26T00:00:00+00:00'
+        _erwarte_jz_fehler(lambda: _mit(lambda q: None), 'Personenabrufzeit abweichend')
+    finally:
+        kennung_zu_abruf[K]['abgerufenAm'] = alter_abruf
+    rollen_offen = json.loads(json.dumps(profilrollen))
+    rollen_offen[K]['status'] = 'offen'
+    _erwarte_jz_fehler(lambda: jz.pruefe_jarzombek(
+        _jz_eingang(gueltige_quittung, rollen=rollen_offen), erwartung=erwartung), '54er-Rolle nicht belegt')
+    # Fixiertes Fachurteil: Stand/Themen/Amt/Hinweis/Abteilungen.
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('stand', '2026-08-16')),
+                       'Stand-Drift')
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'themen', q['ergebnisse'][0]['themen'] + ['Fremdthema'])), 'Themen-Drift')
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('amt', 'Staatssekretär')),
+                       'Amt-Drift')
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'ableitungsHinweis', 'Aufgabenbindung Bund (amtlich abgeleitet): irgendwas')), 'Hinweisdrift')
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['abteilungen'][0].__setitem__(
+        'name', 'Abteilung SB Staatsmodernisierung')), 'falscher Abteilungsname')
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['abteilungen'].__setitem__(
+        0, dict(q['ergebnisse'][0]['abteilungen'][0], kennung='S'))), 'fremde Abteilung S')
+
+    # HTML-Karte: nur echte geschlossene Elemente, genau eine Karte, Abschnitt nicht verlassen.
+    html_gegenproben = [
+        (f'<html><body><a href="{json_href}">Organigramm</a><section><article id="c5755">'
+         f'<h2><a href="{personenlink}">{amt}</a></h2><p>{person}</p></section>'
+         f'<p>Abteilungen DS, DI, DW</p></article></body></html>', 'Karte verlaesst umgebenden Abschnitt'),
+        (_karte_html(link='https://bmds.bund.de/ministerium/leitung/parlamentarische-staatssekretaere/fremd'),
+         'fremder H2-Personenlink'),
+        (_karte_html(name='Fremdperson'), 'fremder Kartenname'),
+        (_karte_html(dept='Abteilungen S, SB, L'), 'fremde Abteilungen in der Karte'),
+        (f'<html><body><article id="c5755"><div class="teaser-content"><h2><a href="{personenlink}">'
+         f'<span>{amt}</span></a></h2><p class="lead">{person}</p></div></article>'
+         f'<p>Abteilungen DS, DI, DW</p></body></html>', 'Abteilungen ausserhalb der Karte'),
+        (f'<html><body><a href="{json_href}">Organigramm</a><article id="c5755"><div class="teaser-content">'
+         f'<h2><a href="{personenlink}"><span>{amt}</span></a></h2><p class="lead">{person}</p>'
+         f'<p class="text-center">Abteilungen DS, DI, DW</p></div></article>'
+         f'<article id="c5755"><div class="teaser-content"><h2><a href="{personenlink}">'
+         f'<span>{amt}</span></a></h2><p class="lead">{person}</p></div></article></body></html>',
+         'doppelte Karte'),
+        (f'<html><body><a href="{json_href}">Organigramm</a><article id="c5755"><div class="teaser-content">'
+         f'<!-- <h2><a href="{personenlink}"><span>{amt}</span></a></h2> -->'
+         f'<p class="lead">{person}</p><p class="text-center">Abteilungen DS, DI, DW</p></div></article>'
+         f'</body></html>', 'Karte nur als Kommentar'),
+        (f'<html><body><article id="c5755"><div class="teaser-content"><h2><a href="{personenlink}">'
+         f'<span>{amt}</span></a></h2><p class="lead">{person}</p>'
+         f'<p class="text-center">Abteilungen DS, DI, DW</p></div></article></body></html>',
+         'HTML verlinkt das Organigramm-JSON nicht'),
+        (f'<html><body><a href="/fileadmin/BMDS/Dokumente/Andere.json">x</a>'
+         f'<article id="c5755"><div class="teaser-content"><h2><a href="{personenlink}"><span>{amt}</span></a>'
+         f'</h2><p class="lead">{person}</p><p class="text-center">Abteilungen DS, DI, DW</p></div></article>'
+         f'</body></html>', 'HTML verlinkt ein fremdes JSON'),
+    ]
+    for dokument, was in html_gegenproben:
+        neu_quelle = _schreibe_html(dokument)
+        erwartung[K]['quelle'] = dict(neu_quelle)
+        eintraege[0]['quelle'] = dict(neu_quelle)
+        _erwarte_jz_fehler(lambda: jz.pruefe_jarzombek(
+            _jz_eingang(dict(gueltige_quittung, ergebnisse=eintraege)), erwartung=erwartung), was)
+    # Gueltige Karte wiederherstellen.
+    quelle = _schreibe_html(_karte_html())
+    erwartung[K]['quelle'] = dict(quelle)
+    eintraege[0]['quelle'] = dict(quelle)
+    # Verschachtelte article-Karte sperrt fail closed.
+    _erwarte_jz_fehler(lambda: jz.pruefe_jarzombek(_jz_eingang(dict(
+        gueltige_quittung, ergebnisse=[dict(eintraege[0], quelle=dict(_schreibe_html(
+            f'<article id="c5755"><article id="c5755">{_karte_html()}</article></article>')))])),
+        erwartung=erwartung), 'verschachtelte Karte')
+    quelle = _schreibe_html(_karte_html())
+    erwartung[K]['quelle'] = dict(quelle)
+    eintraege[0]['quelle'] = dict(quelle)
+
+    # Organigramm-JSON: excludePersonalData, Personenbindung, Stand, doppelte/fremde Knoten.
+    json_gegenproben = [
+        (_org_json(exclude=False), 'ohne excludePersonalData=true'),
+        (_org_json(person_obj=True), 'JSON traegt eine Personenzuordnung'),
+        (_org_json(stand_wert='2025-01-01'), 'falscher Stand'),
+        (_org_json(abt=[abteilungen[0], abteilungen[0], abteilungen[2]]), 'doppelter/vertauschter Knoten'),
+        (_org_json(abt=[abteilungen[0], abteilungen[1]]), 'zu wenige Abteilungsknoten'),
+        (_org_json(abt=[dict(abteilungen[0], name='Abteilung S Service'), abteilungen[1], abteilungen[2]]),
+         'falscher Abteilungsname'),
+    ]
+    for dokument, was in json_gegenproben:
+        neu_org = _schreibe_json(dokument)
+        erwartung[K]['organigramm'] = dict(neu_org)
+        eintraege[0]['organigramm'] = dict(neu_org)
+        _erwarte_jz_fehler(lambda: jz.pruefe_jarzombek(
+            _jz_eingang(dict(gueltige_quittung, ergebnisse=eintraege)), erwartung=erwartung), was)
+    organigramm = _schreibe_json(_org_json())
+    erwartung[K]['organigramm'] = dict(organigramm)
+    eintraege[0]['organigramm'] = dict(organigramm)
+
+    # Vertauschtes/neu gebundenes Fremdpaket: konsistente Quellen, aber Abteilungen passen nicht.
+    erwartung_fremd = json.loads(json.dumps(erwartung))
+    erwartung_fremd[K]['abteilungen'][0]['name'] = 'Abteilung SB Staatsmodernisierung'
+    _erwarte_jz_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['abteilungen'].__setitem__(
+        0, dict(q['ergebnisse'][0]['abteilungen'][0], name='Abteilung SB Staatsmodernisierung',
+                kennung='SB')), erwartung_override=erwartung_fremd), 'konsistent neu gebundenes Fremdpaket')
+    # Das gueltige synthetische Paket wird akzeptiert.
+    assert len(jz.pruefe_jarzombek(_jz_eingang(gueltige_quittung), erwartung=erwartung)) == 1
+
+print('PASS: Jarzombek-Abteilungsquittung — fehlende Quittung/falsche Bilanz/Fremdkennung/'
+      'Disjunktion zu Ressort-/Aufgaben-/beratender/Zusatzaufgaben-/BMWSB-/Amthor-/Wahlausschuss-Achse/'
+      'Quelldrift (URL/finalUrl/Hash/Bytezahl/Abrufzeit/HTTP/Datei)/Organigramm-Hash-Drift/'
+      'Rollenquellen-Drift/fehlende Personenidentitaet/falsche H1 bei konsistenten Hashes/nicht belegte '
+      '54er-Rolle/Stand-/Themen-/Amt-/Hinweis-/Abteilungsnamens-Drift/fremde S-Abteilung sperren fail '
+      'closed; die Abteilungen stammen ausschliesslich aus genau EINER echten geschlossenen HTML-Karte '
+      'article#c5755 (fremder H2-Personenlink/fremder Kartenname/fremde Abteilungen/Abteilungen ausserhalb '
+      'der Karte/doppelte Karte/Karte nur als Kommentar/HTML verlinkt fremdes oder gar kein Organigramm-JSON/'
+      'verschachtelte Karte sperren) und dem amtlichen Organigramm-JSON (ohne excludePersonalData=true/'
+      'Personenzuordnung/falscher Stand/doppelte oder zu wenige Knoten/vertauschte Namen sperren); ein '
+      'konsistent neu gebundenes Fremdpaket wird gesperrt; das gueltige synthetische Paket (Fixture ohne '
+      '/private/tmp) wird akzeptiert.')

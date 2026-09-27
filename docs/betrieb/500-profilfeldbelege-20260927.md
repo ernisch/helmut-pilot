@@ -4,6 +4,12 @@
 Zielprofile. **Keine fachliche Freigabe, kein Importmanifest, keine Production-
 Aktion und kein 500er Nachweis.** Alle 500 Datensaetze sind `aktiv: false` und
 `importfreigegeben: false`.
+**Aktuelle Fortschreibung nach dem Jarzombek-Einzelfall:** 482 technisch akzeptiert,
+18 unvollstaendig; 316/330 Bundestagsprofile technisch bereit. 17 fachliche Achsen,
+74 Parteifelder und eine Berliner Mandatsart bleiben offen. Die nachfolgenden
+bisherigen Teilberichte enthalten ihre damaligen Zwischenstaende; massgeblich fuer
+die aktuelle Bilanz ist das [Feldbeleg-JSON](500-profilfeldbelege-20260927.json).
+
 Die 335 zuvor offenen Parteifelder sind ueber die von Sol gepruefte, versionierte
 Ergaenzungsquittung an URL UND Quellhash gebunden: 261 Parteien sind belegt
 (424 Parteibelege gesamt inkl. der 163 vorab belegten), 74 bleiben ausdruecklich
@@ -866,3 +872,23 @@ fachliche Importfreigabe, keine Production-Aenderung, keine Aktivierung und kein
 500er Test.
 
 Orchestrator-Gegenpruefung: Inerte ProfilePage-/H1-Scheinbelege (Kommentar, Vorlage, Navigation, Noscript), leeres/null `endDate`, explizit ungeklaerte Personen-URL, abweichende Personenabrufzeit und ein Aufgabenabsatz ausserhalb seines geschlossenen Abschnitts werden gesperrt. Originale und drei Profilinhalte unveraendert.
+
+## Jarzombek: persoenliche BMDS-Abteilungen
+
+Die [Einzelfallquittung](jarzombek-bmds-abteilungen-1-20260927.json) bindet Thomas
+Jarzombek an genau seine drei Abteilungen DS, DI und DW. Die aktuelle amtliche
+HTML-Karte nennt Person und Abteilungskennungen; das verlinkte Organigramm-JSON
+vom 15.08.2026 liefert ausschliesslich deren Titel, keine Personenbindung.
+Daraus folgen die vier kurzen Themen Deutschland-Stack, Digitale Infrastrukturen,
+Digitalpolitik und Wirtschaft. Die bestehende PSts-Rolle bleibt erhalten; der
+Herkunftshinweis steht getrennt in den Funktionen.
+
+Genau ein Datensatz geaendert, 499 unveraendert. Die 54er Rollenquittung bleibt
+48 belegt / 6 offen. Keine Partei-, Fraktions-, Mandatsart- oder Ausschussaenderung.
+Alle 500 bleiben inaktiv und ohne Importfreigabe.
+
+Geprueft: synthetische Quellen-/Personen-/Abteilungsgegenproben, einschliesslich
+konsistent neu gehashter falscher H1, inerter Vorlagen und eines aus seinem
+Abschnitt herausragenden Kartenbelegs; echter Import-/Storage-Roundtrip mit vier
+positiven Themenproben und negativen Fremdthemen; byte-identische Neuerzeugung.
+Keine Production-Datenaenderung und kein produktiver Versorgungsnachweis.

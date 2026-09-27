@@ -519,6 +519,60 @@ def _pruefe_wahlausschuss(eingang) -> dict:
     return index
 
 
+# Versionierte, vom Orchestrator eng gepruefte EINZELFALLQUITTUNG des zuvor offenen
+# Fachachsenfalls Thomas Jarzombek (Bundestag). Die fail-closed-Validierung liegt im
+# getrennten Modul ``profil-feldbelege-500-jarzombek.py`` (das die sicheren Helfer des
+# Zusatzaufgabenmoduls wiederverwendet); hier wird nur der gepruefte Index angewendet.
+# Die bestehende aktuelle PSts-Rolle stammt aus der 54er Rollenquittung (belegt) und
+# bleibt unveraendert; die BMDS-Abteilungen DS/DI/DW werden ausschliesslich ueber genau
+# eine echte geschlossene HTML-Karte article#c5755 samt kanonischem H2-Personenlink und
+# das amtliche Organigramm-JSON (excludePersonalData=true, Stand 2026-08-15) gebunden. Es
+# entstehen nur die vier freigegebenen Themen, der getrennte Herkunftshinweis und die
+# amtliche Quelle; keine persoenliche Position, keine Scheinausschuesse, keine
+# Partei-/Mandatsartaenderung. Der neue Host bmds.bund.de ist eng im eigenen Modul fuer
+# genau die zwei kanonischen Quellen freigegeben.
+JARZOMBEK = REPO_ROOT / "docs" / "betrieb" / "jarzombek-bmds-abteilungen-1-20260927.json"
+JARZOMBEK_RESSOURCE = "docs/betrieb/jarzombek-bmds-abteilungen-1-20260927.json"
+JARZOMBEK_GESAMT = 1
+
+
+def _lade_jarzombekmodul():
+    pfad = Path(__file__).with_name("profil-feldbelege-500-jarzombek.py")
+    vorher = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    spec = _importlib_util.spec_from_file_location("profil_feldbelege_500_jarzombek", pfad)
+    try:
+        modul = _importlib_util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        return modul
+    finally:
+        sys.dont_write_bytecode = vorher
+
+
+JARZOMBEKMODUL = _lade_jarzombekmodul()
+
+
+def _pruefe_jarzombek(eingang) -> dict:
+    """Prueft die versionierte Jarzombek-Einzelfallquittung ueber das getrennte Modul."""
+    try:
+        index = JARZOMBEKMODUL.pruefe_jarzombek(
+            eingang,
+            quittung=getattr(eingang, "jarzombek", None),
+            ressortachsen_kennungen=set(getattr(eingang, "ressortachsen_by_kennung", None) or {}),
+            aufgabenachsen_kennungen=set(getattr(eingang, "aufgabenachsen_by_kennung", None) or {}),
+            beratendeachsen_kennungen=set(getattr(eingang, "beratendeachsen_by_kennung", None) or {}),
+            zusatzaufgaben_kennungen=set(getattr(eingang, "zusaetzlicheaufgaben_by_kennung", None) or {}),
+            bmwsb_kennungen=set(getattr(eingang, "bmwsb_by_kennung", None) or {}),
+            amthor_kennungen=set(getattr(eingang, "amthor_by_kennung", None) or {}),
+            wahlausschuss_kennungen=set(getattr(eingang, "wahlausschuss_by_kennung", None) or {}),
+        )
+    except JARZOMBEKMODUL.JarzombekFehler as fehler:
+        raise AssemblerFehler(str(fehler)) from fehler
+    eingang.jarzombek_by_kennung = index
+    eingang.jarzombek_verwendet = set()
+    return index
+
+
 ZUSATZQUELLEN = "zusatzquellen"
 
 ABRUF_BUNDESTAG = "bundestagsprofile-330-abruf.json"
@@ -1491,6 +1545,10 @@ class Eingang:
             self.wahlausschuss = _lies_json(WAHLAUSSCHUSS)
         except FileNotFoundError as fehler:
             raise AssemblerFehler(f"Wahlausschuss-Aufgabenquittung fehlt: {WAHLAUSSCHUSS_RESSOURCE}") from fehler
+        try:
+            self.jarzombek = _lies_json(JARZOMBEK)
+        except FileNotFoundError as fehler:
+            raise AssemblerFehler(f"Jarzombek-Einzelfallquittung fehlt: {JARZOMBEK_RESSOURCE}") from fehler
         self.abruf = _lies_json(verzeichnis / ABRUF_BUNDESTAG) + _lies_json(
             verzeichnis / ABRUF_LANDESPARLAMENTE
         )
@@ -2540,6 +2598,70 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         }
         achsen_geschlossen = True
 
+    # Versionierte Jarzombek-Einzelfallquittung: fuer den zuvor offenen Fachachsenfall
+    # Thomas Jarzombek entstehen ausschliesslich die vier amtlich abgeleiteten Themen
+    # (BMDS-Abteilungen DS/DI/DW), der getrennte Herkunftshinweis und die amtliche
+    # BMDS-Quelle. Die bestehende aktuelle PSts-Rolle aus der 54er Rollenquittung und
+    # alle bestehenden offiziellen Quellen bleiben unveraendert erhalten; es entsteht
+    # KEINE neue Funktionsrolle, kein Scheinausschuss und keine Partei-/Mandatsartaenderung.
+    # Die Abteilungen stammen aus genau EINER echten geschlossenen HTML-Karte
+    # article#c5755 und dem amtlichen Organigramm-JSON.
+    jarzombek_eintrag = (getattr(eingang, "jarzombek_by_kennung", None) or {}).get(mandatsId)
+    jarzombek_beleg = None
+    if jarzombek_eintrag is not None:
+        verwendet = getattr(eingang, "jarzombek_verwendet", None)
+        if verwendet is not None:
+            verwendet.add(mandatsId)
+        jarzombek_quelle = jarzombek_eintrag["quelle"]
+        profil["themen"] = list(jarzombek_eintrag["themen"])
+        hinweis = jarzombek_eintrag["ableitungsHinweis"]
+        profil.setdefault("funktionen", [])
+        if hinweis not in profil["funktionen"]:
+            profil["funktionen"].append(hinweis)
+        profil["offizielleQuellen"].append({
+            "art": "bmds-abteilungszustaendigkeit",
+            "url": jarzombek_quelle["url"],
+            "abgerufenAm": jarzombek_quelle["abgerufenAm"],
+            "sha256": jarzombek_quelle["sha256"],
+        })
+        jarzombek_beleg = {
+            "datei": JARZOMBEK_RESSOURCE,
+            "kennung": jarzombek_eintrag["kennung"],
+            "region": jarzombek_eintrag["region"],
+            "bindungsart": jarzombek_eintrag["bindungsart"],
+            "person": jarzombek_eintrag["person"],
+            "funktion": jarzombek_eintrag["funktion"],
+            "amt": jarzombek_eintrag["amt"],
+            "stand": jarzombek_eintrag["stand"],
+            "aufgabenbindung": jarzombek_eintrag["aufgabenbindung"],
+            "abteilungen": [dict(k) for k in jarzombek_eintrag["abteilungen"]],
+            "karte": dict(jarzombek_eintrag["karte"]),
+            "rollenquelle": {
+                "url": jarzombek_eintrag["rollenquelle"].get("url"),
+                "sha256": jarzombek_eintrag["rollenquelle"].get("sha256"),
+                "abgerufenAm": jarzombek_eintrag["rollenquelle"].get("abgerufenAm"),
+            },
+            "quelle": {
+                "datei": jarzombek_quelle.get("datei"),
+                "url": jarzombek_quelle.get("url"),
+                "finalUrl": jarzombek_quelle.get("finalUrl"),
+                "abgerufenAm": jarzombek_quelle.get("abgerufenAm"),
+                "sha256": jarzombek_quelle.get("sha256"),
+                "bytes": jarzombek_quelle.get("bytes"),
+            },
+            "organigramm": {
+                "datei": jarzombek_eintrag["organigramm"].get("datei"),
+                "url": jarzombek_eintrag["organigramm"].get("url"),
+                "finalUrl": jarzombek_eintrag["organigramm"].get("finalUrl"),
+                "abgerufenAm": jarzombek_eintrag["organigramm"].get("abgerufenAm"),
+                "sha256": jarzombek_eintrag["organigramm"].get("sha256"),
+                "bytes": jarzombek_eintrag["organigramm"].get("bytes"),
+            },
+            "themen": list(jarzombek_eintrag["themen"]),
+            "ableitungsHinweis": hinweis,
+        }
+        achsen_geschlossen = True
+
     # ── Feldbelege (Herkunft je Feld) ─────────────────────────────────────────
     feldbelege = dict(extraktion.get("feldbelege", {}))
     feldbelege["mandatsId"] = "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert"
@@ -2605,6 +2727,18 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"endDate); das sonstige Gremium und die bestehenden Funktionen bleiben unveraendert, keine "
             f"Umdeklarierung, keine persoenliche politische Position (URL + finalUrl + sha256 + Bytezahl + "
             f"Abrufzeit + HTTP + Datei beider Quellen, Original UND Metadaten, gebunden)"
+        )
+    elif jarzombek_beleg is not None:
+        feldbelege["themen"] = (
+            f"vom Orchestrator gepruefte Jarzombek-Abteilungsquittung {JARZOMBEK_RESSOURCE}: die vier "
+            f"amtlich abgeleiteten Themen stammen aus genau EINER echten geschlossenen HTML-Karte "
+            f"article#{jarzombek_beleg['karte']['id']} des amtlichen BMDS-Organisationsauftritts "
+            f"(H2-Personenlink auf die kanonische Personen-URL) und den drei eindeutigen echten "
+            f"Abteilungsknoten DS/DI/DW des amtlichen Organigramm-JSON (Stand {jarzombek_beleg['stand']}, "
+            f"excludePersonalData=true); das JSON belegt NUR Abteilungskennungen/-titel, NICHT die Person; "
+            f"nur die vier freigegebenen Themen, keine Schemata/Fremdabteilungen, keine persoenliche "
+            f"politische Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei beider "
+            f"Quellen, Original UND Metadaten, gebunden)"
         )
     feldbelege["bundesland"] = (
         "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)"
@@ -2701,6 +2835,17 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"(URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei beider Quellen, Original UND "
             f"Metadaten, gebunden)"
         )
+    if jarzombek_beleg is not None:
+        vorher = feldbelege.get("funktionen")
+        zusatz = (
+            f"vom Orchestrator gepruefte Jarzombek-Abteilungsquittung {JARZOMBEK_RESSOURCE}: die "
+            f"bestehende aktuelle PSts-Rolle aus der 54er Rollenquittung und alle bestehenden Funktionen "
+            f"bleiben unveraendert erhalten (KEINE neue Funktionsrolle, kein Scheinausschuss); zusaetzlich "
+            f"nur der getrennte Herkunftshinweis zur amtlichen BMDS-Abteilungsbindung, keine persoenliche "
+            f"politische Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei beider "
+            f"Quellen, Original UND Metadaten, gebunden)"
+        )
+        feldbelege["funktionen"] = f"{vorher}; {zusatz}" if vorher else zusatz
 
     # ── Offene Punkte explizit zusammentragen ─────────────────────────────────
     offene_punkte = []
@@ -2857,6 +3002,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         datensatz["amthorQuittung"] = amthor_beleg
     if wahlausschuss_beleg is not None:
         datensatz["wahlausschussQuittung"] = wahlausschuss_beleg
+    if jarzombek_beleg is not None:
+        datensatz["jarzombekQuittung"] = jarzombek_beleg
     if "status" in extraktion:
         datensatz["extraktionsstatus"] = extraktion["status"]
     return datensatz
@@ -2878,6 +3025,7 @@ def assembliere(eingang: Eingang) -> dict:
     bmwsb = _pruefe_bmwsb(eingang)
     amthor = _pruefe_amthor(eingang)
     wahlausschuss = _pruefe_wahlausschuss(eingang)
+    jarzombek = _pruefe_jarzombek(eingang)
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
 
     # Die gepruefte Quittung muss die offenen Parteifelder DECKUNGSGLEICH abbilden:
@@ -2950,6 +3098,11 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Wahlausschuss-Aufgabenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_wahlausschuss)}."
         )
+    ungenutzte_jarzombek = set(jarzombek) - eingang.jarzombek_verwendet
+    if ungenutzte_jarzombek:
+        raise AssemblerFehler(
+            f"Jarzombek-Einzelfallquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_jarzombek)}."
+        )
     ressort_geschlossen = set(eingang.ressortachsen_verwendet)
     if ressort_geschlossen != set(ressortachsen):
         raise AssemblerFehler(
@@ -2991,6 +3144,12 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Wahlausschuss-Aufgabenquittung deckt nicht genau ihre 3 Kennungen ab: "
             f"{sorted(set(wahlausschuss) ^ wahlausschuss_geschlossen)}."
+        )
+    jarzombek_geschlossen = set(eingang.jarzombek_verwendet)
+    if jarzombek_geschlossen != set(jarzombek):
+        raise AssemblerFehler(
+            f"Jarzombek-Einzelfallquittung deckt nicht genau ihre eine Kennung ab: "
+            f"{sorted(set(jarzombek) ^ jarzombek_geschlossen)}."
         )
     if ressort_geschlossen & aufgaben_geschlossen:
         raise AssemblerFehler(
@@ -3053,9 +3212,23 @@ def assembliere(eingang: Eingang) -> dict:
                 f"Wahlausschuss-Aufgaben- und {name}achse gleichzeitig belegt: "
                 f"{sorted(wahlausschuss_geschlossen & andere)}."
             )
+    for andere, name in (
+        (ressort_geschlossen, "Ressort"),
+        (aufgaben_geschlossen, "Aufgaben"),
+        (beratende_geschlossen, "Beratende"),
+        (zusatz_geschlossen, "Zusatzaufgaben"),
+        (bmwsb_geschlossen, "BMWSB-Aufgaben"),
+        (amthor_geschlossen, "Amthor-Einzelfall"),
+        (wahlausschuss_geschlossen, "Wahlausschuss-Aufgaben"),
+    ):
+        if jarzombek_geschlossen & andere:
+            raise AssemblerFehler(
+                f"Jarzombek-Einzelfall- und {name}achse gleichzeitig belegt: "
+                f"{sorted(jarzombek_geschlossen & andere)}."
+            )
     geschlossene_achsen = (ressort_geschlossen | aufgaben_geschlossen
                            | beratende_geschlossen | zusatz_geschlossen | bmwsb_geschlossen
-                           | amthor_geschlossen | wahlausschuss_geschlossen)
+                           | amthor_geschlossen | wahlausschuss_geschlossen | jarzombek_geschlossen)
     if not geschlossene_achsen <= set(profilrollen):
         raise AssemblerFehler(
             "Geschlossene Achsen enthalten Kennungen ausserhalb der 54er Rollenquittung: "
@@ -3087,7 +3260,7 @@ def assembliere(eingang: Eingang) -> dict:
         if (datensatz.get("ressortachsenQuittung") or datensatz.get("aufgabenachsenQuittung")
                 or datensatz.get("beratendeachsenQuittung") or datensatz.get("zusaetzlicheaufgabenQuittung")
                 or datensatz.get("bmwsbQuittung") or datensatz.get("amthorQuittung")
-                or datensatz.get("wahlausschussQuittung")):
+                or datensatz.get("wahlausschussQuittung") or datensatz.get("jarzombekQuittung")):
             if "fachlicheAchse" in datensatz["offeneFelder"]:
                 raise AssemblerFehler(
                     f"Geschlossene Fachachse bleibt offen: {datensatz['kanonischeKennung']}."
@@ -3495,6 +3668,15 @@ def assembliere(eingang: Eingang) -> dict:
                 "themenGesetzt": sum(1 for d in datensaetze if d.get("wahlausschussQuittung")),
                 "deckungsgleichVerwendet": len(eingang.wahlausschuss_verwendet),
                 "geschlosseneAchsen": len(wahlausschuss_geschlossen),
+                "verbleibendOffeneAchsen": len(offene_achsen),
+            },
+            "jarzombekQuittung": {
+                "datei": JARZOMBEK_RESSOURCE,
+                "geprueftGesamt": len(jarzombek),
+                "nachRegion": {"Bund": len(jarzombek)},
+                "themenGesetzt": sum(1 for d in datensaetze if d.get("jarzombekQuittung")),
+                "deckungsgleichVerwendet": len(eingang.jarzombek_verwendet),
+                "geschlosseneAchsen": len(jarzombek_geschlossen),
                 "verbleibendOffeneAchsen": len(offene_achsen),
             },
             "offeneFelder": offene_felder,

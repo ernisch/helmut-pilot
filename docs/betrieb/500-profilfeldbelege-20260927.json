@@ -69,7 +69,7 @@
       "deckungsgleichVerwendet": 335
     },
     "mandatsartOffen": 1,
-    "fachlicheAchseOffen": 18,
+    "fachlicheAchseOffen": 17,
     "sonstigeGremien": {
       "expliziteListe": 15,
       "profileMitWeiterenGremien": 114,
@@ -104,7 +104,7 @@
       "themenGesetzt": 19,
       "deckungsgleichVerwendet": 19,
       "geschlosseneAchsen": 19,
-      "verbleibendOffeneAchsen": 18
+      "verbleibendOffeneAchsen": 17
     },
     "aufgabenachsenQuittung": {
       "datei": "docs/betrieb/aufgabenachsen-6-20260927.json",
@@ -155,7 +155,7 @@
       "themenGesetzt": 1,
       "deckungsgleichVerwendet": 1,
       "geschlosseneAchsen": 1,
-      "verbleibendOffeneAchsen": 18
+      "verbleibendOffeneAchsen": 17
     },
     "wahlausschussQuittung": {
       "datei": "docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json",
@@ -166,12 +166,23 @@
       "themenGesetzt": 3,
       "deckungsgleichVerwendet": 3,
       "geschlosseneAchsen": 3,
-      "verbleibendOffeneAchsen": 18
+      "verbleibendOffeneAchsen": 17
+    },
+    "jarzombekQuittung": {
+      "datei": "docs/betrieb/jarzombek-bmds-abteilungen-1-20260927.json",
+      "geprueftGesamt": 1,
+      "nachRegion": {
+        "Bund": 1
+      },
+      "themenGesetzt": 1,
+      "deckungsgleichVerwendet": 1,
+      "geschlosseneAchsen": 1,
+      "verbleibendOffeneAchsen": 17
     },
     "offeneFelder": {
       "weitereGremien": 137,
       "partei": 74,
-      "fachlicheAchse": 18,
+      "fachlicheAchse": 17,
       "wahlbezirk": 1,
       "mandatsart": 1,
       "regionbezug": 28
@@ -17653,7 +17664,8 @@
         "partei": "CDU",
         "wahlkreis": "Wahlkreis 105: Düsseldorf I",
         "funktionen": [
-          "Parlamentarischer Staatssekretär für Digitales und Staatmodernisierung"
+          "Parlamentarischer Staatssekretär für Digitales und Staatmodernisierung",
+          "Aufgabenbindung Bund (amtlich abgeleitet): Parlamentarischer Staatssekretär im BMDS; Abteilungen DS (Deutschland-Stack), DI (Digitale Infrastrukturen), DW (Digitalpolitik und Wirtschaft); keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -17662,7 +17674,19 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/J/jarzombek_thomas-1045202",
             "abgerufenAm": "2026-09-27T13:00:33.704698+00:00",
             "sha256": "45938f8b08cc606c046db3010243821cfdf068478c8ad0f66d51008112a23888"
+          },
+          {
+            "art": "bmds-abteilungszustaendigkeit",
+            "url": "https://bmds.bund.de/ministerium/organisation",
+            "abgerufenAm": "2026-09-27T20:13:14.558043+00:00",
+            "sha256": "8bd91026c73018b4b6a9af1f471d8d50f6b4a7cf34dbeb631c6617a23d71a61f"
           }
+        ],
+        "themen": [
+          "Deutschland-Stack",
+          "Digitale Infrastrukturen",
+          "Digitalpolitik",
+          "Wirtschaft"
         ]
       },
       "mandatsnachweis": {
@@ -17705,11 +17729,12 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Jarzombek-Abteilungsquittung docs/betrieb/jarzombek-bmds-abteilungen-1-20260927.json: die vier amtlich abgeleiteten Themen stammen aus genau EINER echten geschlossenen HTML-Karte article#c5755 des amtlichen BMDS-Organisationsauftritts (H2-Personenlink auf die kanonische Personen-URL) und den drei eindeutigen echten Abteilungsknoten DS/DI/DW des amtlichen Organigramm-JSON (Stand 2026-08-15, excludePersonalData=true); das JSON belegt NUR Abteilungskennungen/-titel, NICHT die Person; nur die vier freigegebenen Themen, keine Schemata/Fremdabteilungen, keine persoenliche politische Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei beider Quellen, Original UND Metadaten, gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "docs/betrieb/parteifeldpruefung-335-20260927.json (gepruefte Ergaenzung; URL UND identischer Quellhash 45938f8b08cc606c046db3010243821cfdf068478c8ad0f66d51008112a23888)",
         "parteiWert": "Seit 2022 Mitglied des Bundesvorstands der CDU Deutschlands.",
         "parteiQuelle": "docs/betrieb/parteifeldpruefung-335-20260927.json: https://www.bundestag.de/abgeordnete/biografien/J/jarzombek_thomas-1045202 sha256 45938f8b08cc606c046db3010243821cfdf068478c8ad0f66d51008112a23888",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse"
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; vom Orchestrator gepruefte Jarzombek-Abteilungsquittung docs/betrieb/jarzombek-bmds-abteilungen-1-20260927.json: die bestehende aktuelle PSts-Rolle aus der 54er Rollenquittung und alle bestehenden Funktionen bleiben unveraendert erhalten (KEINE neue Funktionsrolle, kein Scheinausschuss); zusaetzlich nur der getrennte Herkunftshinweis zur amtlichen BMDS-Abteilungsbindung, keine persoenliche politische Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei beider Quellen, Original UND Metadaten, gebunden)"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -17718,12 +17743,8 @@
         "Parteimitgliedschaft separat belegen",
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
-      "offenePunkte": [
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
-      ],
-      "offeneFelder": [
-        "fachlicheAchse"
-      ],
+      "offenePunkte": [],
+      "offeneFelder": [],
       "importfreigegeben": false,
       "aktiv": false,
       "profilrollenQuittung": {
@@ -17741,6 +17762,74 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion; Biografie seit Mai 2025"
           }
         ]
+      },
+      "jarzombekQuittung": {
+        "datei": "docs/betrieb/jarzombek-bmds-abteilungen-1-20260927.json",
+        "kennung": "bundestag-jarzombek-thomas-1045202",
+        "region": "Bund",
+        "bindungsart": "abteilungszustaendigkeit",
+        "person": "Thomas Jarzombek",
+        "funktion": "Parlamentarischer Staatssekretär für Digitales und Staatmodernisierung",
+        "amt": "Parlamentarischer Staatssekretär",
+        "stand": "2026-08-15",
+        "aufgabenbindung": "Parlamentarischer Staatssekretär im BMDS; Abteilungen DS (Deutschland-Stack), DI (Digitale Infrastrukturen), DW (Digitalpolitik und Wirtschaft)",
+        "abteilungen": [
+          {
+            "pfad": "/organisations/0/organisations/1/organisations/2",
+            "id": "org-1-7",
+            "typ": "Abteilung",
+            "kennung": "DS",
+            "name": "Abteilung DS Deutschland-Stack"
+          },
+          {
+            "pfad": "/organisations/0/organisations/1/organisations/3",
+            "id": "org-1-8",
+            "typ": "Abteilung",
+            "kennung": "DI",
+            "name": "Abteilung DI Digitale Infrastrukturen"
+          },
+          {
+            "pfad": "/organisations/0/organisations/1/organisations/4",
+            "id": "org-1-9",
+            "typ": "Abteilung",
+            "kennung": "DW",
+            "name": "Abteilung DW Digitalpolitik und Wirtschaft"
+          }
+        ],
+        "karte": {
+          "id": "c5755",
+          "text": "Parlamentarischer Staatssekretär Thomas Jarzombek Abteilungen DS, DI, DW",
+          "ueberschrift": "Parlamentarischer Staatssekretär",
+          "personenlink": "https://bmds.bund.de/ministerium/leitung/parlamentarische-staatssekretaere/thomas-jarzombek"
+        },
+        "rollenquelle": {
+          "url": "https://www.bundestag.de/abgeordnete/biografien/J/jarzombek_thomas-1045202",
+          "sha256": "45938f8b08cc606c046db3010243821cfdf068478c8ad0f66d51008112a23888",
+          "abgerufenAm": "2026-09-27T13:00:33.704698+00:00"
+        },
+        "quelle": {
+          "datei": "bmds-organisation-20260927.html",
+          "url": "https://bmds.bund.de/ministerium/organisation",
+          "finalUrl": "https://bmds.bund.de/ministerium/organisation",
+          "abgerufenAm": "2026-09-27T20:13:14.558043+00:00",
+          "sha256": "8bd91026c73018b4b6a9af1f471d8d50f6b4a7cf34dbeb631c6617a23d71a61f",
+          "bytes": 262071
+        },
+        "organigramm": {
+          "datei": "bmds-organigramm-20260927.json",
+          "url": "https://bmds.bund.de/fileadmin/BMDS/Dokumente/Organigramm_15.08.2026.json",
+          "finalUrl": "https://bmds.bund.de/fileadmin/BMDS/Dokumente/Organigramm_15.08.2026.json",
+          "abgerufenAm": "2026-09-27T20:13:16.079278+00:00",
+          "sha256": "97a2b55f84e14b2fd2bad53749992dad07efbda393badbc1139c627bd1b6ed13",
+          "bytes": 70916
+        },
+        "themen": [
+          "Deutschland-Stack",
+          "Digitale Infrastrukturen",
+          "Digitalpolitik",
+          "Wirtschaft"
+        ],
+        "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Parlamentarischer Staatssekretär im BMDS; Abteilungen DS (Deutschland-Stack), DI (Digitale Infrastrukturen), DW (Digitalpolitik und Wirtschaft); keine persönliche politische Position"
       }
     },
     {
