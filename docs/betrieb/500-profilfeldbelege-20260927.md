@@ -75,10 +75,17 @@ bleibt als historischer Lauf unveraendert. Keine Ableitung aus Fraktionslosigkei
 
 | Parlament | Datensaetze | Partei belegt | Partei offen | fachliche Achse offen | Mandatsart offen |
 |---|---:|---:|---:|---:|---:|
-| Bundestag | 330 | 0 | 330 | 59 | 0 |
+| Bundestag | 330 | 0 | 330 | 37 | 0 |
 | Landtag Berlin | 120 | 118 | 2 | 5 | 3 |
 | Landtag Brandenburg | 50 | 45 (+2 parteilos) | 3 | 8 | 4 |
-| **Gesamt** | **500** | **163 (+2 parteilos)** | **335** | **72** | **7** |
+| **Gesamt** | **500** | **163 (+2 parteilos)** | **335** | **50** | **7** |
+
+Die fachliche Achse gilt nur dann als offen, wenn WEDER eine ordentliche NOCH eine
+stellvertretende belegte Ausschusszuordnung vorliegt. 22 Bundestagsprofile tragen
+ausschliesslich amtlich belegte stellvertretende Mitgliedschaften; sie zaehlen
+damit zur fachlichen Achse (72 -> 50 offen). Die Mitgliedschaftsart bleibt dabei
+getrennt: eine Stellvertretung wird nicht zu einer ordentlichen Mitgliedschaft und
+erfindet keine Themen.
 
 Weitere offene Felder: `wahlbezirk` 1 (Berlin: Wahlkreisnummer ohne Bezirksnamen),
 `regionbezug` 28 (Brandenburg: nur grober regionaler Bezug),
@@ -94,17 +101,17 @@ Geprueft mit `pruefeImport`/`pruefeProfil` aus `lib/helmut/profil-import.js`,
 rein lokal, **ohne DB- oder Netzwerkzugriff**:
 
 ```
-Profile: 500 · gültig: 422 · ungültig: 78
+Profile: 500 · gültig: 444 · ungültig: 56
 Nach Parlament: bundestag=330 · landtag-berlin=120 · landtag-brandenburg=50
 Alle Datensaetze sind inaktiv: ja
 Globale Fehler: 0 · Warnungen: 0
-Fehlercodes: schwerpunkt-fehlt 72 · region-fehlt 7 (ein Datensatz mit beiden)
-gültig je Parlament: Bundestag 271/330 · Berlin 112/120 · Brandenburg 39/50
+Fehlercodes: schwerpunkt-fehlt 50 · region-fehlt 7 (ein Datensatz mit beiden)
+gültig je Parlament: Bundestag 293/330 · Berlin 112/120 · Brandenburg 39/50
 ERGEBNIS: NICHT importierbar (nur wegen der offen ausgewiesenen Felder)
 ```
 
-Das technische Ergebnis ist **keine** fachliche Freigabe. 422 Profile sind ohne
-offene Achse/Mandatsart technisch importierbar; 78 bleiben es bewusst nicht,
+Das technische Ergebnis ist **keine** fachliche Freigabe. 444 Profile sind ohne
+offene Achse/Mandatsart technisch importierbar; 56 bleiben es bewusst nicht,
 bis die offenen Felder fachlich belegt sind.
 
 ## Reproduzierbarkeit
@@ -116,7 +123,7 @@ Ergebnis des gezielten Tests:
 
 ```
 PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder,
-echter Importvertrag (422 technisch importierbar, 78 offen), Reproduzierbarkeit: byte-identisch neu erzeugt
+echter Importvertrag (444 technisch importierbar, 56 offen), Reproduzierbarkeit: byte-identisch neu erzeugt
 ```
 
 ## Ausfuehrung und Grenzen
@@ -135,8 +142,11 @@ Profilhash `198f25ff81cf5ee4ad2645c1881a8191`.
    Strukturfelder bezeichnen Fraktionen. Parteibelege in den amtlichen Biografien
    sind als naechster Schritt getrennt zu pruefen;
    keine Ableitung aus der Fraktion.
-2. **72 Profile ohne belegte fachliche Achse** (59 Bundestag, 5 Berlin,
-   8 Brandenburg) — Ausschuss/Thema fehlt; nicht durch Themen erfinden schliessen.
+2. **50 Profile ohne belegte fachliche Achse** (37 Bundestag, 5 Berlin,
+   8 Brandenburg) — weder ordentlicher noch stellvertretender Ausschuss belegt;
+   nicht durch Themen erfinden schliessen. 22 Bundestagsprofile sind ueber
+   ausschliesslich stellvertretende Mitgliedschaften abgedeckt (Mitgliedschaftsart
+   getrennt, keine Befoerderung zu ordentlich).
 3. **7 Profile ohne belegte Mandatsart** und **1 Berliner Wahlkreis ohne Bezirksnamen**.
 4. **28 Brandenburger Listenmandate** mit nur grobem regionalem Bezug.
 5. **23 Brandenburger Gremien** sind belegt, aber nicht als ordentliche
@@ -150,3 +160,18 @@ weiterhin ein eigenes Betreiber-GO.
 
 Keine Freigabe erforderlich (rein lokal/offline). Aktivierung und 500er Test sind
 ausdruecklich **nicht** Teil dieser Aufgabe.
+
+## Gezielte Integrationskorrektur: Stellvertretungen
+
+Der echte Pfad Import → Storage → Vollstaendigkeit/Readiness → Paketzuordnung
+und Scheduler beruecksichtigt belegte Stellvertretungen als eigene fachliche
+Achse. Ordentliche Mitgliedschaften haben beim Quellenfallback Vorrang; Rollen
+bleiben getrennt. Der gezielte Integrationstest besteht35/35, einschliesslich
+leerer/alter Ausschuesse und Rollenkonflikt. Der500er Beleg wurde byte-identisch
+reproduziert;444 technisch akzeptiert/56 offen sind keine fachliche Freigabe.
+
+PR657 wurde als `eaa67c7be21f60f7f7dd52a8baea8a64e843904d` gemergt;
+Vercel `dpl_DtDq9zqDgMBTfsfCfMjb8QLtqKC4` READY. Rein lesende Nachkontrolle
+am27.09.14:27:21UTC:500 Profile/0 aktiv, Hash
+`198f25ff81cf5ee4ad2645c1881a8191`; keine error/fatal-Logs im geprueften
+Fenster14:26:45–14:27:22UTC. Die Stellvertretungs-Codekorrektur folgt separat.

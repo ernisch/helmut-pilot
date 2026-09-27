@@ -272,6 +272,7 @@ const STANDARD = new Set([
   "offline-suite-auswahl-test.js",          // dieser Standard-/Extended-Vertrag
   "quellenpflicht-vertrag-test.js",         // Belegpflicht (jedes Element traegt Quelle)
   "quellenpflicht-faelle-test.js",          // Belegpflicht-Faelle
+  "profil-stellvertretung-integration-test.js", // nur stellvertretende Ausschuesse: Import->Storage->Reife->Pakete->Quellen (kein Rollenwechsel)
   "ki-antwortvertrag-test.js",              // zentrale KI-HTTP-Engstelle
   "contract-snapshot-test.js",              // Server->Frontend-Vertrag /api/app/start
   "jobqueue-vertrag-test.js",               // Warteschlangenvertrag
