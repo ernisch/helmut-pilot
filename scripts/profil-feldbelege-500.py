@@ -369,6 +369,54 @@ def _pruefe_zusatzaufgaben(eingang) -> dict:
     return index
 
 
+# Versionierte, vom Orchestrator gepruefte Quittung der 2 personengebundenen
+# BMWSB-Aufgabenachsen (beide Bundestag: Sören Bartol Z I 3/W II/S I/B I/B II,
+# Sabine Poschmann Z II/W I/S II/S III). Die fail-closed-Validierung liegt bewusst
+# im getrennten Modul ``profil-feldbelege-500-bmwsb.py`` (das die sicheren Helfer
+# des Zusatzaufgabenmoduls wiederverwendet); hier wird nur der gepruefte Index
+# angewendet. Bestehende Rollen, Partei, Mandatsart, Gremien und alle anderen
+# Felder bleiben unveraendert; es entstehen nur die freigegebenen Kurzthemen und
+# der getrennte Herkunftshinweis. Keine Hochstufung auf ganze Abteilungen, keine
+# persoenliche politische Position, keine freie Themen-/Zitatzuordnung.
+BMWSB = REPO_ROOT / "docs" / "betrieb" / "bmwsb-aufgaben-2-20260927.json"
+BMWSB_RESSOURCE = "docs/betrieb/bmwsb-aufgaben-2-20260927.json"
+BMWSB_GESAMT = 2
+
+
+def _lade_bmwsbmodul():
+    pfad = Path(__file__).with_name("profil-feldbelege-500-bmwsb.py")
+    vorher = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    spec = _importlib_util.spec_from_file_location("profil_feldbelege_500_bmwsb", pfad)
+    try:
+        modul = _importlib_util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        return modul
+    finally:
+        sys.dont_write_bytecode = vorher
+
+
+BMWSBMODUL = _lade_bmwsbmodul()
+
+
+def _pruefe_bmwsb(eingang) -> dict:
+    """Prueft die versionierte BMWSB-Aufgabenquittung ueber das getrennte Modul."""
+    try:
+        index = BMWSBMODUL.pruefe_bmwsb(
+            eingang,
+            quittung=getattr(eingang, "bmwsb", None),
+            ressortachsen_kennungen=set(getattr(eingang, "ressortachsen_by_kennung", None) or {}),
+            aufgabenachsen_kennungen=set(getattr(eingang, "aufgabenachsen_by_kennung", None) or {}),
+            beratendeachsen_kennungen=set(getattr(eingang, "beratendeachsen_by_kennung", None) or {}),
+            zusatzaufgaben_kennungen=set(getattr(eingang, "zusaetzlicheaufgaben_by_kennung", None) or {}),
+        )
+    except BMWSBMODUL.BmwsbFehler as fehler:
+        raise AssemblerFehler(str(fehler)) from fehler
+    eingang.bmwsb_by_kennung = index
+    eingang.bmwsb_verwendet = set()
+    return index
+
+
 ZUSATZQUELLEN = "zusatzquellen"
 
 ABRUF_BUNDESTAG = "bundestagsprofile-330-abruf.json"
@@ -2197,6 +2245,62 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             zusatz_beleg["aktuelleVerlinkung"] = dict(zusatz_eintrag["aktuelleVerlinkung"])
         achsen_geschlossen = True
 
+    # Versionierte BMWSB-Aufgabenquittung: fuer die 2 freigegebenen personengebundenen
+    # BMWSB-Aufgabenachsen (Sören Bartol Z I 3/W II/S I/B I/B II, Sabine Poschmann
+    # Z II/W I/S II/S III) werden die ausdruecklichen Kurzthemen gesetzt und damit die
+    # fachliche Achse geschlossen (Ausschuss ODER Thema). Bestehende Amtsrollen, Partei,
+    # Mandatsart, Gremien und alle anderen Felder bleiben unveraendert; funktionen erhaelt
+    # den getrennten Ableitungshinweis. Keine Hochstufung auf ganze Abteilungen, keine
+    # persoenliche Position, keine freie Themen-/Zitatzuordnung. Die amtliche BMWSB-Quelle
+    # steht in ``profil.offizielleQuellen`` und im Belegabschnitt ``bmwsbQuittung``.
+    bmwsb_eintrag = (getattr(eingang, "bmwsb_by_kennung", None) or {}).get(mandatsId)
+    bmwsb_beleg = None
+    if bmwsb_eintrag is not None:
+        verwendet = getattr(eingang, "bmwsb_verwendet", None)
+        if verwendet is not None:
+            verwendet.add(mandatsId)
+        bmwsb_quelle = bmwsb_eintrag["quelle"]
+        profil["themen"] = list(bmwsb_eintrag["themen"])
+        hinweis = bmwsb_eintrag["ableitungsHinweis"]
+        profil.setdefault("funktionen", [])
+        if hinweis not in profil["funktionen"]:
+            profil["funktionen"].append(hinweis)
+        profil["offizielleQuellen"].append({
+            "art": "bmwsb-aufgaben-zustaendigkeit",
+            "url": bmwsb_quelle["url"],
+            "abgerufenAm": bmwsb_quelle["abgerufenAm"],
+            "sha256": bmwsb_quelle["sha256"],
+        })
+        bmwsb_beleg = {
+            "datei": BMWSB_RESSOURCE,
+            "kennung": bmwsb_eintrag["kennung"],
+            "region": bmwsb_eintrag["region"],
+            "bindungsart": bmwsb_eintrag["bindungsart"],
+            "person": bmwsb_eintrag["person"],
+            "aufgabenbindung": bmwsb_eintrag.get("aufgabenbindung"),
+            "stand": bmwsb_eintrag.get("stand"),
+            "seite": bmwsb_eintrag.get("seite"),
+            "unterabteilungen": bmwsb_eintrag.get("unterabteilungen"),
+            "rollenquelle": {
+                "url": bmwsb_eintrag["rollenquelle"].get("url"),
+                "sha256": bmwsb_eintrag["rollenquelle"].get("sha256"),
+                "abgerufenAm": bmwsb_eintrag["rollenquelle"].get("abgerufenAm"),
+            },
+            "quelle": {
+                "datei": bmwsb_quelle.get("datei"),
+                "url": bmwsb_quelle.get("url"),
+                "finalUrl": bmwsb_quelle.get("finalUrl"),
+                "abgerufenAm": bmwsb_quelle.get("abgerufenAm"),
+                "sha256": bmwsb_quelle.get("sha256"),
+                "bytes": bmwsb_quelle.get("bytes"),
+            },
+            "themen": list(bmwsb_eintrag["themen"]),
+            "ableitungsHinweis": hinweis,
+        }
+        if bmwsb_eintrag.get("aktuelleVerlinkung"):
+            bmwsb_beleg["aktuelleVerlinkung"] = dict(bmwsb_eintrag["aktuelleVerlinkung"])
+        achsen_geschlossen = True
+
     # ── Feldbelege (Herkunft je Feld) ─────────────────────────────────────────
     feldbelege = dict(extraktion.get("feldbelege", {}))
     feldbelege["mandatsId"] = "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert"
@@ -2229,6 +2333,16 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"{zusatz_beleg['person']} (amtlich abgeleitet) + Ableitungskennzeichnung; "
             f"bestehende Rollen bleiben erhalten, keine persoenliche politische Position "
             f"(URL + finalUrl + sha256 + Bytezahl + Abrufzeit + Datei der amtlichen Quelle gebunden)"
+        )
+    elif bmwsb_beleg is not None:
+        feldbelege["themen"] = (
+            f"vom Orchestrator gepruefte BMWSB-Aufgabenquittung {BMWSB_RESSOURCE}: belegte "
+            f"Kurzthemen aus {bmwsb_beleg['bindungsart']} der kanonischen Person "
+            f"{bmwsb_beleg['person']} (amtlich abgeleitet), nur die persoenlich zugewiesenen "
+            f"Unterbereiche, keine Hochstufung auf ganze Abteilungen und keine persoenliche "
+            f"politische Position; bestehende Rollen bleiben erhalten "
+            f"(URL + finalUrl + sha256 + Bytezahl + Abrufzeit + Datei des amtlichen v10-Organs "
+            f"und der aktuellen Landingpage gebunden)"
         )
     feldbelege["bundesland"] = (
         "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)"
@@ -2455,6 +2569,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         datensatz["beratendeachsenQuittung"] = beratende_beleg
     if zusatz_beleg is not None:
         datensatz["zusaetzlicheaufgabenQuittung"] = zusatz_beleg
+    if bmwsb_beleg is not None:
+        datensatz["bmwsbQuittung"] = bmwsb_beleg
     if "status" in extraktion:
         datensatz["extraktionsstatus"] = extraktion["status"]
     return datensatz
@@ -2473,6 +2589,7 @@ def assembliere(eingang: Eingang) -> dict:
     aufgabenachsen = _pruefe_aufgabenachsen(eingang)
     beratendeachsen = _pruefe_beratendeachsen(eingang)
     zusatzaufgaben = _pruefe_zusatzaufgaben(eingang)
+    bmwsb = _pruefe_bmwsb(eingang)
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
 
     # Die gepruefte Quittung muss die offenen Parteifelder DECKUNGSGLEICH abbilden:
@@ -2530,6 +2647,11 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Zusatzaufgabenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_zusatz)}."
         )
+    ungenutzte_bmwsb = set(bmwsb) - eingang.bmwsb_verwendet
+    if ungenutzte_bmwsb:
+        raise AssemblerFehler(
+            f"BMWSB-Aufgabenquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_bmwsb)}."
+        )
     ressort_geschlossen = set(eingang.ressortachsen_verwendet)
     if ressort_geschlossen != set(ressortachsen):
         raise AssemblerFehler(
@@ -2553,6 +2675,12 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Zusatzaufgabenquittung deckt nicht genau ihre 3 Kennungen ab: "
             f"{sorted(set(zusatzaufgaben) ^ zusatz_geschlossen)}."
+        )
+    bmwsb_geschlossen = set(eingang.bmwsb_verwendet)
+    if bmwsb_geschlossen != set(bmwsb):
+        raise AssemblerFehler(
+            f"BMWSB-Aufgabenquittung deckt nicht genau ihre 2 Kennungen ab: "
+            f"{sorted(set(bmwsb) ^ bmwsb_geschlossen)}."
         )
     if ressort_geschlossen & aufgaben_geschlossen:
         raise AssemblerFehler(
@@ -2579,8 +2707,19 @@ def assembliere(eingang: Eingang) -> dict:
                 f"Zusatzaufgaben- und {name}achse gleichzeitig belegt: "
                 f"{sorted(zusatz_geschlossen & andere)}."
             )
+    for andere, name in (
+        (ressort_geschlossen, "Ressort"),
+        (aufgaben_geschlossen, "Aufgaben"),
+        (beratende_geschlossen, "Beratende"),
+        (zusatz_geschlossen, "Zusatzaufgaben"),
+    ):
+        if bmwsb_geschlossen & andere:
+            raise AssemblerFehler(
+                f"BMWSB-Aufgaben- und {name}achse gleichzeitig belegt: "
+                f"{sorted(bmwsb_geschlossen & andere)}."
+            )
     geschlossene_achsen = (ressort_geschlossen | aufgaben_geschlossen
-                           | beratende_geschlossen | zusatz_geschlossen)
+                           | beratende_geschlossen | zusatz_geschlossen | bmwsb_geschlossen)
     if not geschlossene_achsen <= set(profilrollen):
         raise AssemblerFehler(
             "Geschlossene Achsen enthalten Kennungen ausserhalb der 54er Rollenquittung: "
@@ -2610,7 +2749,8 @@ def assembliere(eingang: Eingang) -> dict:
         )
     for datensatz in datensaetze:
         if (datensatz.get("ressortachsenQuittung") or datensatz.get("aufgabenachsenQuittung")
-                or datensatz.get("beratendeachsenQuittung") or datensatz.get("zusaetzlicheaufgabenQuittung")):
+                or datensatz.get("beratendeachsenQuittung") or datensatz.get("zusaetzlicheaufgabenQuittung")
+                or datensatz.get("bmwsbQuittung")):
             if "fachlicheAchse" in datensatz["offeneFelder"]:
                 raise AssemblerFehler(
                     f"Geschlossene Fachachse bleibt offen: {datensatz['kanonischeKennung']}."
@@ -2848,7 +2988,25 @@ def assembliere(eingang: Eingang) -> dict:
                 "getrennte woertliche Abteilungstitel, 12 Kurzthemen; kein externer PDF-Parser). Jede Kennung "
                 "ist an die kanonische 54er Rolle und den kanonischen Bundestags-Profilnamen/URL/Hash gebunden "
                 "und disjunkt zu den 19 Ressort-, 6 Aufgaben- und 2 beratenden Achsen. Die disjunkte Vereinigung "
-                "mit den 24 verbleibend offenen Achsen ergibt weiter genau die 54er Rollenquittung."
+                "mit den 2 BMWSB- und den 22 verbleibend offenen Achsen ergibt weiter genau die 54er Rollenquittung."
+            ),
+            (
+                "Fuer 2 weitere dieser 54 Profile wird ueber die vom Orchestrator gepruefte "
+                f"BMWSB-Aufgabenquittung {BMWSB_RESSOURCE} die ausdrueckliche personengebundene "
+                "BMWSB-Aufgabenzustaendigkeit gesetzt (getrennter Ableitungshinweis in funktionen) und damit "
+                "die fachliche Achse geschlossen. Die Validierung laeuft im getrennten Modul "
+                "scripts/profil-feldbelege-500-bmwsb.py, das die sicheren Helfer des Zusatzaufgabenmoduls "
+                "wiederverwendet: nur die persoenlich zugewiesenen Unterbereiche (Bartol Z I 3/W II/S I/B I/B II, "
+                "Poschmann Z II/W I/S II/S III) und deren woertliche Titel aus dem manuell am amtlichen "
+                "BMWSB-Organigramm (Stand 1. Juli 2026, Seite 1) visuell abgenommenen PDF-Fachurteil, KEINE "
+                "Hochstufung auf ganze Abteilungen und kein externer PDF-Parser. Die kanonische Quelle ist die "
+                "tatsaechlich verlinkte v10-Adresse (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + Datei, "
+                "Original UND *.meta.json gebunden); die aktuelle Landingpage muss genau dieses PDF als echten "
+                "aufgeloesten href tragen (kein Kommentar-/Skript-/Vorlagenanker und kein Textvorkommen). Jede "
+                "Kennung ist an die kanonische 54er Rolle und den kanonischen Bundestags-Profilnamen/URL/Hash "
+                "gebunden und disjunkt zu den 19 Ressort-, 6 Aufgaben-, 2 beratenden und 3 Zusatzaufgabenachsen. "
+                "Die disjunkte Vereinigung mit den 22 verbleibend offenen Achsen ergibt weiter genau die 54er "
+                "Rollenquittung."
             ),
             "Leere fachliche Achsen und ungeklaerte Parteizugehoerigkeiten bleiben sichtbar OFFEN.",
             "Alle 500 Datensaetze sind aktiv=false und importfreigegeben=false; technisches OK ist keine fachliche Freigabe.",
@@ -2930,6 +3088,14 @@ def assembliere(eingang: Eingang) -> dict:
                 "themenGesetzt": sum(1 for d in datensaetze if d.get("zusaetzlicheaufgabenQuittung")),
                 "deckungsgleichVerwendet": len(eingang.zusaetzlicheaufgaben_verwendet),
                 "geschlosseneAchsen": len(zusatz_geschlossen),
+            },
+            "bmwsbQuittung": {
+                "datei": BMWSB_RESSOURCE,
+                "geprueftGesamt": len(bmwsb),
+                "nachRegion": {"Bund": len(bmwsb)},
+                "themenGesetzt": sum(1 for d in datensaetze if d.get("bmwsbQuittung")),
+                "deckungsgleichVerwendet": len(eingang.bmwsb_verwendet),
+                "geschlosseneAchsen": len(bmwsb_geschlossen),
             },
             "offeneFelder": offene_felder,
         },

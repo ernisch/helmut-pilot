@@ -127,7 +127,7 @@ Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
 [500 Feldbelege](betrieb/500-profilfeldbelege-20260927.md) sind lokal zusammengestellt
 und hashgeprueft. Keine personenbezogenen Pflichtplaetze in der Auswahl.
 Naechster offener Teilschritt:die 74 Parteifelder und die verbleibenden Mandats-/
-Fachachsen einzeln belegen;472 technische Erfolge sind keine fachliche Importfreigabe.
+Fachachsen einzeln belegen;477 technische Erfolge sind keine fachliche Importfreigabe.
 Gremienrollen und vier BB-Listenmandate sind korrigiert. Der falsche Widerspruch
 SSW/fraktionslos ist mit PR661 ausgerollt und nachkontrolliert; Partei bleibt erhalten, AfD-Sperre unveraendert.
 Zwei bislang offene Berliner Mandatsarten sind ueber die amtliche
@@ -152,9 +152,14 @@ keine ordentliche/stellvertretende Mitgliedschaft) und ueber die gepruefte
 mit amtlich belegten Fachzustaendigkeiten (Breher Tierschutz mit neuer
 Funktionsrolle und erhaltener PSts-Rolle, Krichbaum Europa aus der aktuellen
 AA-Seitenkopf-H1, Kippels BMG-Abteilungen1/4/5/6 mit12 Kurzthemen aus dem
-manuell visuell abgenommenen PDF-Fachurteil, kein externer PDF-Parser); die54er
-Rollenquittung bleibt deckungsgleich,24 Achsen
-bleiben offen. Stand:475/25. Die separat belegten Amtsrollen
+manuell visuell abgenommenen PDF-Fachurteil, kein externer PDF-Parser) und ueber
+die gepruefte [BMWSB-Aufgabenquittung](betrieb/bmwsb-aufgaben-2-20260927.json)
+2 weitere mit den persoenlich zugewiesenen BMWSB-Unterbereichen (Sören Bartol
+Z I 3/W II/S I/B I/B II, Sabine Poschmann Z II/W I/S II/S III; kanonische
+v10-Adresse des amtlichen Organigramms, kein externer PDF-Parser, keine
+Hochstufung auf ganze Abteilungen); die54er
+Rollenquittung bleibt deckungsgleich,22 Achsen
+bleiben offen. Stand:477/23. Die separat belegten Amtsrollen
 Amthor/Haßelmann/Miersch bleiben unintegriert.
 Naechster Fachschritt: verbleibende aktuelle Parteibelege, die letzte offene
 Berliner Mandatsart (Claudia Engelmann) und die restlichen Fachachsen.

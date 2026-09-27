@@ -1672,3 +1672,286 @@ print('PASS: Zusatzaufgabenquittung — fehlende Quittung/falsche Bilanz/Duplika
       '(keine Sprecherrolle, Amts-/Themendrift), Kippels nur das fixierte PDF-Urteil (Stand/Seite/Abteilungen/'
       'Themen, keine Schenderlein-Abteilung, Landingpage muss das amtliche PDF verlinken); das gueltige '
       'synthetische 3er-Paket (Fixture ohne /private/tmp) wird akzeptiert.')
+
+
+# ── 13 · BMWSB-Aufgabenquittung der 2 personengebundenen Unterbereichsachsen ──────────────
+# Synthetische, deckungsgleiche Fixtures OHNE /private/tmp-Originale. Das fixierte
+# PDF-Fachurteil (Unterbereiche/Stand/Seite) wird ueber den injizierbaren
+# ``erwartung``-Parameter ersetzt; so bleibt der Test auch ohne die lokalen
+# Originale lauffaehig. Das Modul verwendet die sicheren Helfer des
+# Zusatzaufgabenmoduls wieder (kein duplizierter 600-Zeilen-Block).
+bm_spec = importlib.util.spec_from_file_location(
+    'bmwsb', Path(__file__).with_name('profil-feldbelege-500-bmwsb.py'))
+bm = importlib.util.module_from_spec(bm_spec)
+bm_spec.loader.exec_module(bm)
+
+
+def _erwarte_bmwsb_fehler(fn, was, meldung=None):
+    try:
+        fn()
+    except bm.BmwsbFehler as fehler:
+        if meldung is not None:
+            assert meldung in str(fehler), f"Falscher Sperrgrund: {fehler}"
+        return
+    raise AssertionError(f'Nicht gesperrt: {was}')
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    detail = root / 'detailseiten'
+    detail.mkdir()
+    zusatz = root / 'zusatzquellen'
+    zusatz.mkdir()
+    ABRUF = '2026-09-27T19:30:00+00:00'
+
+    def _meta(datei, url, meta_name=None):
+        pfad = zusatz / datei
+        meta = dict(url=url, finalUrl=url, abgerufenAm=ABRUF, sha256=bm.ZU._sha256(pfad),
+                    bytes=pfad.stat().st_size, datei=datei, http=200)
+        (zusatz / (meta_name or f'{datei}.meta.json')).write_text(
+            json.dumps(meta, ensure_ascii=False), encoding='utf-8')
+        return dict(meta, abrufStatus='abgerufen')
+
+    K_A = 'bundestag-test-bartol-1'
+    K_P = 'bundestag-test-poschmann-2'
+    person_a, person_p = 'Person Bartol', 'Person Poschmann'
+
+    pdf_datei, landing_datei = 'test-organigramm-v10.pdf', 'test-landing.html'
+    (zusatz / pdf_datei).write_bytes(b'%PDF-1.4 synthetisches BMWSB-Testfixture\n')
+    pdf_url = 'https://www.bmwsb.bund.de/SharedDocs/downloads/DE/test/organigramm_deutsch.pdf?__blob=publicationFile&v=10'
+    quelle_pdf = _meta(pdf_datei, pdf_url)
+    landing_url = 'https://www.bmwsb.bund.de/DE/ministerium/das-bmwsb/abteilungen-aufgaben/abteilungen-und-aufgaben.html?nn=42910'
+    anker = (f'<a href="https://www.bmwsb.bund.de/SharedDocs/downloads/DE/test/'
+             f'organigramm_deutsch.pdf?__blob=publicationFile&amp;v=10">Organigramm (PDF)</a>')
+    (zusatz / landing_datei).write_text(f'<p>Organigramm</p>{anker}', encoding='utf-8')
+    verlinkung = _meta(landing_datei, landing_url)
+
+    unter_a = {'Z I 3': 'Haushalt, BfdH', 'W II': 'Wohneigentum, Mietrecht'}
+    unter_p = {'Z II': 'Grundsatzangelegenheiten', 'W I': 'Wohngeld, Stadtentwicklungsprogramme'}
+    bindung_a = ('Parlamentarischer Staatssekretär im Bundesministerium für Testwohnen; '
+                 'Geschäftsbereiche Z I 3, W II')
+    bindung_p = ('Parlamentarische Staatssekretärin im Bundesministerium für Testwohnen; '
+                 'Geschäftsbereich Z II, W I')
+    personblock_a = ['Parlamentarischer Staatssekretär', 'Geschäftsbereiche Z I 3, W II', person_a]
+    personblock_p = ['Parlamentarische Staatssekretärin', 'Geschäftsbereich Z II, W I', person_p]
+    erwartung = {
+        K_A: dict(bindungsart='unterabteilungszustaendigkeit', region='Bund', person=person_a,
+                  aufgabenbindung=bindung_a, stand='1. Juli 2026', seite=1, personblock=personblock_a,
+                  unterabteilungen=unter_a, themen=['Haushalt', 'Wohneigentum', 'Mietrecht'],
+                  quelle=quelle_pdf, aktuelleVerlinkung=verlinkung),
+        K_P: dict(bindungsart='unterabteilungszustaendigkeit', region='Bund', person=person_p,
+                  aufgabenbindung=bindung_p, stand='1. Juli 2026', seite=1, personblock=personblock_p,
+                  unterabteilungen=unter_p, themen=['Wohngeld', 'Stadtentwicklungsprogramme'],
+                  quelle=quelle_pdf, aktuelleVerlinkung=verlinkung),
+    }
+    rollen_ref = {
+        K_A: dict(url='https://www.bundestag.de/abgeordnete/biografien/T/test-bartol-1',
+                  sha256='a' * 64, abgerufenAm=ABRUF),
+        K_P: dict(url='https://www.bundestag.de/abgeordnete/biografien/T/test-poschmann-2',
+                  sha256='b' * 64, abgerufenAm=ABRUF),
+    }
+    kennung_zu_abruf = {}
+    for kennung, person in ((K_A, person_a), (K_P, person_p)):
+        (detail / f'{kennung}.html').write_text(f'<h1>{person}</h1>', encoding='utf-8')
+        sha = bm.ZU._sha256(detail / f'{kennung}.html')
+        rollen_ref[kennung]['sha256'] = sha
+        kennung_zu_abruf[kennung] = dict(url=rollen_ref[kennung]['url'], sha256=sha,
+                                         abgerufenAm=ABRUF, datei=f'{kennung}.html',
+                                         amtlicheKennung=kennung, parlament='bundestag')
+    profilrollen = {k: dict(status='belegt', quelle=dict(rollen_ref[k]),
+                            funktionen=[dict(wortlaut='Parlamentarischer Staatssekretär Test')])
+                    for k in erwartung}
+    eintraege = [
+        dict(kennung=K_A, region='Bund', parlament='bundestag', status='belegt',
+             bindungsart='unterabteilungszustaendigkeit', person=person_a, aufgabenbindung=bindung_a,
+             stand='1. Juli 2026', seite=1, personblock=list(personblock_a), unterabteilungen=dict(unter_a),
+             themen=list(erwartung[K_A]['themen']), rollenquelle=dict(rollen_ref[K_A]), quelle=dict(quelle_pdf),
+             aktuelleVerlinkung=dict(verlinkung),
+             ableitungsHinweis=bm.ZU.HINWEIS_AUFGABE.format(region='Bund', wert=bindung_a), importfreigegeben=False),
+        dict(kennung=K_P, region='Bund', parlament='bundestag', status='belegt',
+             bindungsart='unterabteilungszustaendigkeit', person=person_p, aufgabenbindung=bindung_p,
+             stand='1. Juli 2026', seite=1, personblock=list(personblock_p), unterabteilungen=dict(unter_p),
+             themen=list(erwartung[K_P]['themen']), rollenquelle=dict(rollen_ref[K_P]), quelle=dict(quelle_pdf),
+             aktuelleVerlinkung=dict(verlinkung),
+             ableitungsHinweis=bm.ZU.HINWEIS_AUFGABE.format(region='Bund', wert=bindung_p), importfreigegeben=False),
+    ]
+    gueltige_quittung = dict(version=1, bilanz=dict(gesamt=2, Bund=2, Berlin=0, Brandenburg=0), ergebnisse=eintraege)
+
+    def _bm_eingang(quittung, ressort=None, aufgaben=None, beratende=None, zusatz_kennungen=None):
+        return SimpleNamespace(verzeichnis=root, detailseiten=detail, bmwsb=quittung,
+                               profilrollen_by_kennung=profilrollen, kennung_zu_abruf=kennung_zu_abruf,
+                               ressortachsen_by_kennung={k: {} for k in (ressort or [])},
+                               aufgabenachsen_by_kennung={k: {} for k in (aufgaben or [])},
+                               beratendeachsen_by_kennung={k: {} for k in (beratende or [])},
+                               zusaetzlicheaufgaben_by_kennung={k: {} for k in (zusatz_kennungen or [])})
+
+    index = bm.pruefe_bmwsb(_bm_eingang(gueltige_quittung), erwartung=erwartung)
+    assert len(index) == 2
+    assert sum(len(v['themen']) for v in index.values()) == 5
+    assert index[K_A]['aufgabenbindung'] == bindung_a
+    assert index[K_A]['aktuelleVerlinkung'] == verlinkung
+
+    def _mit(mutation, erwartung_override=None):
+        neu = json.loads(json.dumps(gueltige_quittung))
+        mutation(neu)
+        return bm.pruefe_bmwsb(_bm_eingang(neu), erwartung=erwartung_override or erwartung)
+
+    # Fehlende Quittung, falsche Bilanz, Duplikat, unbekannte Kennung.
+    _echter_pfad = bm.BMWSB
+    bm.BMWSB = root / 'fehlt.json'
+    try:
+        _erwarte_bmwsb_fehler(lambda: bm.pruefe_bmwsb(
+            SimpleNamespace(verzeichnis=root, detailseiten=detail, profilrollen_by_kennung=profilrollen,
+                            kennung_zu_abruf=kennung_zu_abruf), erwartung=erwartung), 'fehlende Quittung')
+    finally:
+        bm.BMWSB = _echter_pfad
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['bilanz'].__setitem__('Bund', 1)), 'falsche Bilanz')
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][1].__setitem__(
+        'kennung', q['ergebnisse'][0]['kennung'])), 'doppelte Kennung')
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'kennung', 'bundestag-test-fremd-9')), 'unbekannte/Fremdkennung')
+    # Disjunktion zu den 19/6/2/3-Achsen.
+    _erwarte_bmwsb_fehler(lambda: bm.pruefe_bmwsb(
+        _bm_eingang(gueltige_quittung, ressort=[K_A]), erwartung=erwartung), 'Kennung bereits Ressortachse')
+    _erwarte_bmwsb_fehler(lambda: bm.pruefe_bmwsb(
+        _bm_eingang(gueltige_quittung, aufgaben=[K_P]), erwartung=erwartung), 'Kennung bereits Aufgabenachse')
+    _erwarte_bmwsb_fehler(lambda: bm.pruefe_bmwsb(
+        _bm_eingang(gueltige_quittung, beratende=[K_A]), erwartung=erwartung), 'Kennung bereits beratende Achse')
+    _erwarte_bmwsb_fehler(lambda: bm.pruefe_bmwsb(
+        _bm_eingang(gueltige_quittung, zusatz_kennungen=[K_P]), erwartung=erwartung),
+        'Kennung bereits Zusatzaufgabenachse')
+    # Quelldrift (URL/finalUrl/Hash/Bytezahl/Abrufzeit/Datei) und Metadatum-Drift.
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'url', q['ergebnisse'][0]['quelle']['url'] + '-fremd')), 'Quell-URL-Drift')
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'finalUrl', 'https://www.bmwsb.bund.de/x')), 'finalUrl-Drift')
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__('sha256', '0' * 64)),
+                          'Quellhash-Drift')
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__('bytes', 1)),
+                          'Quell-Bytezahl-Drift')
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'abgerufenAm', '2026-09-27T00:00:00+00:00')), 'Abrufzeit-Drift')
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__('datei', 'fehlt.pdf')),
+                          'fehlende Zusatzquelle')
+    # Rollenquellen-Drift, kanonischer Personenname, falsche H1, Rolle nicht belegt.
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['rollenquelle'].__setitem__(
+        'sha256', 'c' * 64)), 'Rollenquellen-Drift')
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('person', 'Fremdperson')),
+                          'Fremdperson')
+    original_h1 = (detail / f'{K_A}.html').read_text(encoding='utf-8')
+    hashbindungen = [kennung_zu_abruf[K_A], rollen_ref[K_A],
+                    profilrollen[K_A]['quelle'], eintraege[0]['rollenquelle']]
+    original_hashes = [bindung['sha256'] for bindung in hashbindungen]
+    try:
+        (detail / f'{K_A}.html').write_text('<h1>Fremde Person</h1>', encoding='utf-8')
+        # Konsistente Quellenhashes: der Personenabgleich selbst muss sperren.
+        for bindung in hashbindungen:
+            bindung['sha256'] = bm.ZU._sha256(detail / f'{K_A}.html')
+        _erwarte_bmwsb_fehler(lambda: _mit(lambda q: None), 'falsche H1 bei konsistenten Hashes',
+                              'Person passt nicht zur kanonischen Kennung')
+    finally:
+        (detail / f'{K_A}.html').write_text(original_h1, encoding='utf-8')
+        for bindung, original_hash in zip(hashbindungen, original_hashes):
+            bindung['sha256'] = original_hash
+    profilrollen_offen = json.loads(json.dumps(profilrollen))
+    profilrollen_offen[K_A]['status'] = 'offen'
+
+    def _bm_eingang_offen(quittung):
+        e = _bm_eingang(quittung)
+        e.profilrollen_by_kennung = profilrollen_offen
+        return e
+
+    _erwarte_bmwsb_fehler(lambda: bm.pruefe_bmwsb(_bm_eingang_offen(gueltige_quittung), erwartung=erwartung),
+                          '54er-Rolle nicht belegt')
+    # Fixiertes PDF-Fachurteil: Stand/Seite/Personenkasten/Unterbereiche/Themen/Hinweis.
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('stand', '01. Januar 2026')),
+                          'PDF-Stand-Drift')
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('seite', 2)), 'PDF-Seiten-Drift')
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['personblock'].__setitem__(
+        0, 'Fremdrolle')), 'Personenkasten-Drift')
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['unterabteilungen'].__setitem__(
+        'W II', 'fremder Titel')), 'Unterbereich-Titel-Drift')
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'themen', q['ergebnisse'][0]['themen'] + ['Fremdthema'])), 'Themen-Drift')
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'ableitungsHinweis', 'Aufgabenbindung Bund (amtlich abgeleitet): irgendwas')), 'Hinweisdrift')
+    # Hochstufung auf ganze Abteilungen sperrt fail closed.
+    _erwarte_bmwsb_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'unterabteilungen', {'Z': 'Haushalt', 'W': 'Wohnen'})), 'Hochstufung auf ganze Abteilungen')
+    erwartung_grob = json.loads(json.dumps(erwartung))
+    erwartung_grob[K_A]['unterabteilungen'] = {'Z': 'Haushalt, BfdH'}
+    erwartung_grob[K_A]['personblock'] = ['Parlamentarischer Staatssekretär', 'Geschäftsbereiche Z', person_a]
+    erwartung_grob[K_A]['aufgabenbindung'] = ('Parlamentarischer Staatssekretär im Bundesministerium für Testwohnen; '
+                                              'Geschäftsbereiche Z')
+    _erwarte_bmwsb_fehler(lambda: _mit(
+        lambda q: (q['ergebnisse'][0].__setitem__('unterabteilungen', {'Z': 'Haushalt, BfdH'}),
+                   q['ergebnisse'][0].__setitem__('personblock',
+                                                  ['Parlamentarischer Staatssekretär', 'Geschäftsbereiche Z', person_a]),
+                   q['ergebnisse'][0].__setitem__(
+                       'aufgabenbindung',
+                       'Parlamentarischer Staatssekretär im Bundesministerium für Testwohnen; Geschäftsbereiche Z'),
+                   q['ergebnisse'][0].__setitem__(
+                       'ableitungsHinweis',
+                       bm.ZU.HINWEIS_AUFGABE.format(
+                           region='Bund',
+                           wert='Parlamentarischer Staatssekretär im Bundesministerium für Testwohnen; Geschäftsbereiche Z'))),
+        erwartung_override=erwartung_grob), 'blosse Abteilung im Unterbereichsschluessel')
+    # Thema muss im Titel des Unterbereichs stehen (Titel-Bindung).
+    erwartung_titel = json.loads(json.dumps(erwartung))
+    erwartung_titel[K_A]['themen'] = erwartung_titel[K_A]['themen'] + ['Fremdthema']
+    _erwarte_bmwsb_fehler(lambda: _mit(
+        lambda q: q['ergebnisse'][0].__setitem__('themen', erwartung_titel[K_A]['themen']),
+        erwartung_override=erwartung_titel), 'Thema nicht im Unterbereichstitel')
+    # Falscher/versteckter PDF-Link: nur Kommentar-/Skript-/Vorlagenanker, nur EN oder v6.
+    original_landing = (zusatz / landing_datei).read_text(encoding='utf-8')
+    try:
+        falsche_links = [
+            f'<!-- {anker} -->',
+            *[f'<{tag}>{anker}</{tag}>' for tag in ('script', 'template', 'noscript')],
+            anker.replace('.pdf?', '_EN.pdf?'),
+            anker.replace('v=10', 'v=6'),
+            pdf_url,  # nur Textvorkommen, kein echter href
+        ]
+        for html in falsche_links:
+            (zusatz / landing_datei).write_text(html, encoding='utf-8')
+            neu = _meta(landing_datei, landing_url)
+            erwartung[K_A]['aktuelleVerlinkung'] = neu
+            erwartung[K_P]['aktuelleVerlinkung'] = neu
+            eintraege[0]['aktuelleVerlinkung'] = neu
+            eintraege[1]['aktuelleVerlinkung'] = neu
+            _erwarte_bmwsb_fehler(lambda: bm.pruefe_bmwsb(
+                _bm_eingang(dict(gueltige_quittung, ergebnisse=eintraege)), erwartung=erwartung),
+                'Landingpage ohne echten kanonischen v10-PDF-Link')
+    finally:
+        (zusatz / landing_datei).write_text(original_landing, encoding='utf-8')
+        neu_verlinkung = _meta(landing_datei, landing_url)
+        erwartung[K_A]['aktuelleVerlinkung'] = neu_verlinkung
+        erwartung[K_P]['aktuelleVerlinkung'] = neu_verlinkung
+        eintraege[0]['aktuelleVerlinkung'] = neu_verlinkung
+        eintraege[1]['aktuelleVerlinkung'] = neu_verlinkung
+    # Vertauschte Personennamen sperren.
+    def _tausch(neu):
+        neu['ergebnisse'][0]['person'], neu['ergebnisse'][1]['person'] = \
+            neu['ergebnisse'][1]['person'], neu['ergebnisse'][0]['person']
+    _erwarte_bmwsb_fehler(lambda: _mit(_tausch), 'vertauschtes Personenpaket')
+    # Vollstaendige Aufgabenpakete tauschen, kanonische Personen und Rollenquellen
+    # behalten. Auch die Namen im Personenkasten passen: Aufgabenbindung muss sperren.
+    def _aufgaben_tausch(neu):
+        a, p = neu['ergebnisse']
+        for feld in ('aufgabenbindung', 'personblock', 'unterabteilungen', 'themen', 'ableitungsHinweis'):
+            a[feld], p[feld] = p[feld], a[feld]
+        a['personblock'] = [person_a if zeile == person_p else zeile for zeile in a['personblock']]
+        p['personblock'] = [person_p if zeile == person_a else zeile for zeile in p['personblock']]
+    _erwarte_bmwsb_fehler(lambda: _mit(_aufgaben_tausch), 'vertauschte Aufgaben bei richtigen Personen',
+                          'weicht vom fixierten PDF-Urteil ab')
+    # Das gueltige synthetische 2er-Paket wird akzeptiert.
+    assert len(bm.pruefe_bmwsb(_bm_eingang(gueltige_quittung), erwartung=erwartung)) == 2
+
+print('PASS: BMWSB-Aufgabenquittung — fehlende Quittung/falsche Bilanz/Duplikat/Fremdkennung/'
+      'Disjunktion zu Ressort-/Aufgaben-/beratender/Zusatzaufgabenachse/Quelldrift (URL/finalUrl/Hash/'
+      'Bytezahl/Abrufzeit/Datei)/Rollenguellen-Drift/Fremdperson/falsche H1/nicht belegte 54er-Rolle '
+      'sperren fail closed; nur das fixierte PDF-Urteil (Stand/Seite/Personenkasten/Unterbereichstitel/'
+      'Themen/Hinweis), keine Hochstufung auf ganze Abteilungen, Themen nur in den Unterbereichstiteln und '
+      'die Landingpage muss den echten kanonischen v10-PDF-Link tragen (kein Kommentar-/Skript-/'
+      'Vorlagenanker, kein EN/v6-Fremdlink und kein blosses Textvorkommen); ein vertauschtes Personenpaket '
+      'wird gesperrt; das gueltige synthetische 2er-Paket (Fixture ohne /private/tmp) wird akzeptiert.')
