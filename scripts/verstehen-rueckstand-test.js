@@ -239,8 +239,8 @@ async function main() {
   abschnitt("§4 Auswahl: älteste zuerst, keine dauerhafte Verdrängung (P6)");
   {
     const storageSrc = src("lib/helmut/storage.js");
-    check("§4.1 die Reihenfolgen sind eine Whitelist (neueste=updated_at.desc, aelteste=created_at.asc)",
-      /KO_REIHENFOLGEN = Object\.freeze\(\{\s*\n\s*neueste: "updated_at\.desc",\s*\n\s*aelteste: "created_at\.asc"\s*\n\s*\}\)/.test(storageSrc));
+    check("§4.1 feste Reihenfolgen: neueste mit ID-Gleichstand, aelteste unveraendert",
+      /KO_REIHENFOLGEN = Object\.freeze\(\{\s*\n\s*neueste: "updated_at\.desc,id\.asc",\s*\n\s*aelteste: "created_at\.asc"\s*\n\s*\}\)/.test(storageSrc));
     // Gate-Arm 2026-08-31: die Durchreiche traegt zusaetzlich `ohneGateGeparkt: true`
     // (geparkte Vorgaenge serverseitig raus, sonst verdraengen sie das Fenster) —
     // die Reihenfolge-Durchreiche selbst ist unveraendert Vertragsinhalt.
