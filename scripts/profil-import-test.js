@@ -135,6 +135,14 @@ function main() {
       && gelesen.reportingTopics[0] === "Berufliche Weiterbildung");
     check("1b Listenmandat behaelt Region ohne erfundenen Direktwahlkreis",
       gelesen.listenmandat === true && gelesen.regionNote === "Beispielstadt" && !gelesen.constituency);
+    for (const partei of ["Beispielpartei", ""]) {
+      const p = gutesProfil({ partei, fraktion: "", fraktionslos: true });
+      const row = storage.toMandateProfileRow(IMPORT.zuHelmutProfil(p));
+      const read = storage.fromMandateProfileRow({ id: p.mandatsId, name: p.vollname }, row);
+      check(`1b Fraktionslos bleibt trotz Parteifallback erhalten (${partei || "ohne Partei"})`,
+        read.faction === "Fraktionslos" && read.fraktionslos === true
+        && (read.party || "") === partei && row.aktiv === false);
+    }
   }
 
   abschnitt("2 · Aus dem Profil entstehen echte, nutzbare Quellen");

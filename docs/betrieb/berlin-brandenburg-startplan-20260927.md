@@ -34,8 +34,15 @@ vollstaendig abdecken, etwa CDU und CSU innerhalb der Bundestagsfraktion.
 Direkt-/Listenmandate und unterschiedliche Wahlkreise beruecksichtigen.
 Keine Auswahl nach Nachrichtentreffern oder spaeterem Ergebnis.
 
-Der vollstaendige Namensbestand und seine Feldbelege sind noch offen. Die
-drei unten genannten Rechercheproben sind keine bereits festgelegte Teilkohorte.
+Ein [erster Namensentwurf mit500 Eintraegen](500-namensauswahl-20260927.json)
+liegt jetzt vor:300 Bundestag/120 Berlin/80 Brandenburg, darunter die fuenf
+Bestandsprofile. Grundlage:630 aktuell gefuehrte Bundestagsmitglieder nach
+Ausschluss von neun als ausgeschieden/verstorben markierten Eintraegen sowie
+159 Berliner und88 Brandenburger Verzeichniseintraege. Alle vorhandenen
+Fraktionen/Gruppen und Fraktionslose sind vertreten. Die Einzelprofil-Feldbelege
+und die zusaetzliche Parteien-/Rollenabdeckung sind noch offen; dies ist kein
+importierbarer Profilbestand. Die drei Rechercheproben unten wurden unabhaengig
+von dieser Namensauswahl fuer die Importpruefung verwendet.
 Vor Import aktuelle Mandatsinhaberschaft/Wahlperiode erneut pruefen; ein alter
 Export oder ein Wahlergebnis allein belegt kein aktuell ausgeuebtes Mandat.
 
@@ -70,7 +77,10 @@ auch das kanonische `parliamentType`. Ebenso werden stellvertretende Ausschuesse
 Berichterstatterthemen, Funktionen, Regierungsrolle, regionale Themen und
 Namensvarianten an die vorhandenen Speicherfelder weitergereicht; Listenmandat
 und Regionshinweis bleiben erhalten. Keine neue Spalte, Migration oder Aktivierung.
-Gezielter Test `node scripts/profil-import-test.js`:74/74 erfolgreich, darunter
+Auch der ausdrueckliche Status fraktionslos bleibt getrennt von einer etwaigen
+Parteimitgliedschaft erhalten; der bisherige Storage-Fallback darf daraus keine
+Fraktion erfinden. Fraktionslosigkeit wird nicht als Partei gespeichert.
+Gezielter Test `node scripts/profil-import-test.js`:76/76 erfolgreich, darunter
 die drei realen Proben plus Bundestag durch den echten Serializer und Leser;
 richtige Ebene, Landespakete und Inaktivitaet bleiben erhalten. Zusatzrollen mit
 explizit synthetischen Testwerten geprueft, keine erfundenen Rollen realer Personen.
