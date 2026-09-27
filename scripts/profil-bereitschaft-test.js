@@ -30,6 +30,8 @@ const provisioning = require("../lib/helmut/provisioning");
 const { validateProfile } = require("../lib/helmut/profile-validation");
 const { TESTMANDATE, BESTANDSMANDATE_IDS, validateTestmandate } = require("../lib/helmut/quellenarchitektur/seeds/bundestag-testmandate");
 const { BESTAND_IST, REPARATUREN, wendeReparaturAn } = require("./fixtures/profil-reparatur-2026-08-04");
+const { zuHelmutProfil } = require("../lib/helmut/profil-import");
+const { GRUND: AFD_GRUND } = require("../lib/helmut/profil-zulassung");
 
 let pass = 0, fail = 0;
 function check(name, cond, detail = "") {
@@ -332,6 +334,61 @@ const vollstaendig = Object.freeze({
     && !repStuewe.committees.includes("Rechnungsprüfungsausschuss")
     && !(repStuewe.deputyCommittees || []).includes("Rechnungsprüfungsausschuss")
     && !AUSSCHUSS_NAMEN.includes("Rechnungsprüfungsausschuss"));
+
+  // ── (23) Ausdrueckliche Fraktionslosigkeit ist KEIN Partei/Fraktions-Widerspruch ──
+  // Befund 27.09.2026: SSW (Stefan Seidler, fraktionslos) wurde faelschlich als
+  // Partei/Fraktionswiderspruch gewertet. Fraktionslosigkeit schliesst eine
+  // Parteimitgliedschaft nicht aus. Der Fix ist allgemein (keine SSW-Sonderregel)
+  // und erkennt NUR die ausdrueckliche Angabe — kein Teilstring-Treffer.
+  const e23a = bewerteBundestagsprofil({ ...vollstaendig, party: "SSW", faction: "Fraktionslos", fraktionslos: true });
+  check("23a. SSW + ausdruecklich fraktionslos: bereit, KEIN Partei/Fraktionswiderspruch",
+    e23a.bereit === true && e23a.widersprueche.length === 0,
+    JSON.stringify({ widersprueche: e23a.widersprueche, fehlend: e23a.fehlend }));
+  // Kanonische Importabbildung: zuHelmutProfil setzt faction = "Fraktionslos" + Flag.
+  const kanonisch = zuHelmutProfil({
+    mandatsId: "bt-ssw-muster", vollname: "Muster Fraktionslos", parlament: "bundestag",
+    bundesland: "Schleswig-Holstein", partei: "SSW", fraktionslos: true, aktiv: false,
+    offizielleQuellen: [], ausschuesse: ["Haushalt"], themen: ["Finanzen"]
+  });
+  const e23b = bewerteBundestagsprofil(kanonisch);
+  check("23b. kanonische Importabbildung (faction=Fraktionslos + Flag) wird bereit und ohne Widerspruch",
+    kanonisch.faction === "Fraktionslos" && kanonisch.fraktionslos === true
+    && e23b.bereit === true && e23b.widersprueche.length === 0,
+    JSON.stringify({ faction: kanonisch.faction, widersprueche: e23b.widersprueche }));
+  // Auch OHNE Flag, aber mit exakter Fraktionsangabe „Fraktionslos", kein Widerspruch.
+  const e23c = bewerteBundestagsprofil({ ...vollstaendig, party: "CDU", faction: "Fraktionslos" });
+  check("23c. exakte Fraktionsangabe „Fraktionslos“ allein genuegt (Partei bleibt erhalten)",
+    e23c.bereit === true && e23c.widersprueche.length === 0);
+  // Echter Widerspruch bleibt blockiert.
+  const e23d = bewerteBundestagsprofil({ ...vollstaendig, party: "CDU", faction: "SPD" });
+  check("23d. echter Widerspruch CDU/SPD bleibt blockiert",
+    e23d.bereit === false && e23d.widersprueche.some((w) => w.feld === "party/faction"));
+  // Unionsfraktion bleibt gueltig (kein Widerspruch).
+  const e23e = bewerteBundestagsprofil({ ...vollstaendig, party: "CSU", faction: "CDU/CSU" });
+  check("23e. Unionsfraktion (CSU / CDU/CSU) bleibt gueltig",
+    e23e.bereit === true && e23e.widersprueche.length === 0);
+  // Kein lockerer Teilstring: gemischte Angabe „Fraktionslos (parteilos)" ist NICHT
+  // die exakte ausdrueckliche Fraktionslosigkeit und bleibt ein Widerspruch.
+  const e23f = bewerteBundestagsprofil({ ...vollstaendig, party: "SSW", faction: "Fraktionslos (parteilos)" });
+  check("23f. gemischte Angabe „Fraktionslos (parteilos)“ wird NICHT als ausdruecklich fraktionslos gewertet",
+    e23f.widersprueche.some((w) => w.feld === "party/faction"),
+    JSON.stringify({ widersprueche: e23f.widersprueche }));
+  // AfD-Sperre bleibt unveraendert: Partei-AfD mit fraktionslos UND AfD-Fraktion.
+  const e23g = bewerteBundestagsprofil({ ...vollstaendig, party: "AfD", faction: "Fraktionslos", fraktionslos: true });
+  check("23g. AfD-Partei bleibt trotz fraktionslos ueber die Zulassung gesperrt",
+    e23g.bereit === false && e23g.ungueltig.some((u) => u.grund === AFD_GRUND));
+  const e23h = bewerteBundestagsprofil({ ...vollstaendig, party: "CDU", faction: "AfD-Fraktion" });
+  check("23h. AfD-Fraktion bleibt ueber die Zulassung gesperrt",
+    e23h.bereit === false && e23h.ungueltig.some((u) => u.grund === AFD_GRUND));
+
+  const e23i = bewerteBundestagsprofil({ ...vollstaendig, party: "CDU", faction: "SPD", fraktionslos: true });
+  check("23i. fraktionslos-Flag verdeckt keinen expliziten CDU/SPD-Widerspruch",
+    e23i.bereit === false && e23i.widersprueche.some((w) => w.feld === "party/faction"));
+  const e23j = bewerteBundestagsprofil({ ...vollstaendig, party: "SSW", faction: "Fraktionslos (parteilos)", fraktionslos: true });
+  check("23j. fraktionslos-Flag erlaubt keine gemischte Fraktionsangabe",
+    e23j.widersprueche.some((w) => w.feld === "party/faction"));
+  check("23k. Import erhaelt SSW-Mitgliedschaft neben Fraktionslosigkeit",
+    kanonisch.party === "SSW" && kanonisch.faction === "Fraktionslos");
 
   // ── (20) deterministische und stabile Fehlerausgabe ───────────────────────
   const chaotisch = { ...vollstaendig, committees: ["Zukunftsrat", "Bildung, Forschung und Technikfolgenabschätzung"], focusTopics: [], topicPriorities: {}, state: "", nameVariants: [], regionalInterests: [] };

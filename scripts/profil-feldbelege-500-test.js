@@ -320,10 +320,15 @@ for (const d of btSonstige) {
 }
 a.equal(btBereit, 289, "289 von 330 Bundestagsprofilen sind bereit (vorher 179)");
 a.equal(btNichtBereit, 41, "41 Bundestagsprofile bleiben nicht bereit");
+// Stefan Seidler (SSW, fraktionslos) wurde zuvor faelschlich als
+// Partei/Fraktionswiderspruch gezaehlt. Fraktionslosigkeit schliesst eine
+// Parteimitgliedschaft nicht aus; der Fix in profile-readiness entfernt nur diesen
+// Prueffehler. Seine fehlende fachliche Achse bleibt unabhaengig offen, deshalb
+// sinkt die Zahl der nicht-bereiten Profile NICHT (289/41 unveraendert).
 a.deepEqual(
   btReadinessGruende,
-  { "fehlend:schwerpunkt_oder_ausschuss": 41, "widerspruch:party/faction": 1 },
-  "nur offene fachliche Achse und ein bestehender Partei/Fraktions-Widerspruch",
+  { "fehlend:schwerpunkt_oder_ausschuss": 41 },
+  "nur noch die offene fachliche Achse; der falsche Partei/Fraktionswiderspruch ist weg",
 );
 
 // ── 7 · Reproduzierbarkeit (nur mit lokalen Arbeitsdateien + python3) ────────────────────
