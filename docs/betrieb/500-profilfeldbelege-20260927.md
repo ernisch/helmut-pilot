@@ -24,11 +24,15 @@ ueber die gepruefte [beratende Achsenquittung](beratende-achsen-2-20260927.json)
 (Breher Tierschutz mit neuer Funktionsrolle und erhaltener PSts-Rolle, Krichbaum
 Europa aus der aktuellen AA-Seitenkopf-H1, Kippels BMG-Abteilungen 1/4/5/6 mit 12
 Kurzthemen aus dem manuell visuell abgenommenen PDF-Fachurteil; kein externer
-PDF-Parser). 24 Achsen bleiben offen.
+PDF-Parser). Zwei weitere personengebundene BMWSB-Aufgabenachsen sind ueber die
+gepruefte [BMWSB-Aufgabenquittung](bmwsb-aufgaben-2-20260927.json) aus den
+persoenlich zugewiesenen Unterbereichen geschlossen (Sören Bartol Z I 3/W II/S I/
+B I/B II, Sabine Poschmann Z II/W I/S II/S III; kanonische v10-Adresse des
+BMWSB-Organigramms, kein externer PDF-Parser). 22 Achsen bleiben offen.
 Zwei bislang offene Berliner Mandatsarten sind ueber eine versionierte lokale
 Quittung belegt (Johannes Martin Bezirksliste Marzahn-Hellersdorf, Benedikt Lux
 Landesliste); Claudia Engelmann bleibt offen.
-475 Profile sind technisch importierbar.
+477 Profile sind technisch importierbar.
 
 ## Artefakte
 
@@ -43,9 +47,11 @@ Landesliste); Claudia Engelmann bleibt offen.
 | [`docs/betrieb/ressortachsen-19-20260927.json`](ressortachsen-19-20260927.json) | vom Orchestrator gepruefte Ressortquittung: 19 zuvor offene Fachachsen aus amtlich belegtem aktuellem Ressort geschlossen; keine Importfreigabe |
 | [`docs/betrieb/aufgabenachsen-6-20260927.json`](aufgabenachsen-6-20260927.json) | vom Orchestrator gepruefte Aufgabenquittung: 6 zuvor offene Fachachsen aus personengebundenen amtlichen Aufgabenbereichen geschlossen; keine Importfreigabe |
 | [`docs/betrieb/zusaetzliche-aufgaben-3-20260927.json`](zusaetzliche-aufgaben-3-20260927.json) | vom Orchestrator gepruefte Zusatzaufgabenquittung: 3 weitere Fachzustaendigkeiten geschlossen (Breher/Krichbaum/Kippels); keine Importfreigabe |
+| [`docs/betrieb/bmwsb-aufgaben-2-20260927.json`](bmwsb-aufgaben-2-20260927.json) | vom Orchestrator gepruefte BMWSB-Aufgabenquittung: 2 personengebundene Unterbereichsachsen geschlossen (Bartol/Poschmann) an die kanonische v10-Adresse; keine Importfreigabe |
 | [`scripts/profil-gremien-resolver.js`](../../scripts/profil-gremien-resolver.js) | Node-Helfer, der den vorhandenen Ausschuss-Resolver (`lib/helmut/profile-readiness.js`) fuer den Assembler befragt — keine zweite Sollmenge |
 | [`scripts/profil-feldbelege-500-aufgaben.py`](../../scripts/profil-feldbelege-500-aufgaben.py) | getrenntes, fail-closed Pruefmodul der 6 Aufgabenachsen (haelt den Assembler schlank) |
 | [`scripts/profil-feldbelege-500-zusatzaufgaben.py`](../../scripts/profil-feldbelege-500-zusatzaufgaben.py) | getrenntes, fail-closed Pruefmodul der 3 zusaetzlichen Fachzustaendigkeiten (fixiertes PDF-Fachurteil, injizierbare Testfixtures) |
+| [`scripts/profil-feldbelege-500-bmwsb.py`](../../scripts/profil-feldbelege-500-bmwsb.py) | getrenntes, fail-closed Pruefmodul der 2 BMWSB-Unterbereichsachsen; verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder, fixiertes PDF-Fachurteil, injizierbare Testfixtures |
 | [`scripts/profil-feldbelege-500-test.js`](../../scripts/profil-feldbelege-500-test.js) | gezielter Offline-Test (kein Netz, keine DB, kein Modell) |
 | [`scripts/profil-feldbelege-500-unit.py`](../../scripts/profil-feldbelege-500-unit.py) | gezielte Gegenproben (Quelldrift, Fraktion-keine-Partei, Gremienrollen, unbekannter Ausschuss, Mandatsartenquittung, offen-bleibt-offen) |
 
@@ -127,10 +133,10 @@ bleibt als historischer Lauf unveraendert. Keine Ableitung aus Fraktionslosigkei
 
 | Parlament | Datensaetze | Partei belegt | Partei offen | fachliche Achse offen | Mandatsart offen |
 |---|---:|---:|---:|---:|---:|
-| Bundestag | 330 | 259 | 71 | 21 | 0 |
+| Bundestag | 330 | 259 | 71 | 19 | 0 |
 | Landtag Berlin | 120 | 119 | 1 | 1 | 1 |
 | Landtag Brandenburg | 50 | 46 (+2 parteilos) | 2 | 2 | 0 |
-| **Gesamt** | **500** | **424 (+2 parteilos)** | **74** | **24** | **1** |
+| **Gesamt** | **500** | **424 (+2 parteilos)** | **74** | **22** | **1** |
 
 Mathematik der Parteibilanz: 424 belegt + 2 parteilos + 74 offen = 500. Die
 Parteiaenderung laesst die uebrigen Achsen unveraendert. Die Gremien-Trennung und
@@ -140,10 +146,11 @@ Scheinausschussachse), Mandatsart offen 7 -> 3 (vier Brandenburg-Mandate belegt)
 Die gepruefte Ressortquittung schliesst 19 dieser 54 Achsen ueber ein amtlich
 abgeleitetes Ressortthema und die gepruefte Aufgabenquittung 6 weitere ueber einen
 personengebundenen amtlichen Aufgabenbereich. Zwei beratende Ausschussachsen und
-drei zusaetzliche amtliche Fachzustaendigkeiten schliessen weitere Themenluecken:
-fachliche Achse offen 54 -> 24. Die Berliner
+drei zusaetzliche amtliche Fachzustaendigkeiten sowie zwei personengebundene
+BMWSB-Unterbereichsachsen schliessen weitere Themenluecken:
+fachliche Achse offen 54 -> 22. Die Berliner
 Mandatsartenquittung belegt zwei der drei offenen Berliner Mandate (Mandatsart
-offen 3 -> 1). Technischer Importvertrag: 475 akzeptiert / 25 offen.
+offen 3 -> 1). Technischer Importvertrag: 477 akzeptiert / 23 offen.
 
 Die fachliche Achse gilt nur dann als offen, wenn WEDER eine ordentliche NOCH eine
 stellvertretende belegte Ausschusszuordnung vorliegt. 22 Bundestagsprofile tragen
@@ -213,19 +220,19 @@ Geprueft mit `zuHelmutProfil` (`lib/helmut/profil-import.js`) und
 `bewerteBundestagsprofil` (`lib/helmut/profile-readiness.js`) fuer alle 330
 Bundestagsprofile:
 
-| Zustand | vor der Gremien-Trennung | danach (mit Ressort-, Aufgaben- und beratender Quittung) |
+| Zustand | vor der Gremien-Trennung | danach (mit Ressort-, Aufgaben-, beratender, Zusatzaufgaben- und BMWSB-Aufgabenquittung) |
 |---|---:|---:|
-| bereit | 179 | **306** |
-| nicht bereit | 151 | **24** |
+| bereit | 179 | **311** |
+| nicht bereit | 151 | **19** |
 | davon ungueltiger Ausschuss | 141 Eintraege (114 Profile) | **0** |
-| davon offene fachliche Achse | 37 | 24 |
+| davon offene fachliche Achse | 37 | 19 |
 | davon Partei/Fraktions-Widerspruch | 1 | 0 (Prueffehler behoben) |
 
 Die 110 zusaetzlich bereiten Profile entstehen allein dadurch, dass falsche
 Ausschussangaben verschwinden; vier Profile werden dafuer ehrlich wieder offen.
 Die gepruefte Ressortquittung schliesst zusaetzlich neun, die gepruefte
 Aufgabenquittung sechs, die beratende Quittung zwei und die Zusatzaufgabenquittung
-drei Bundestagsachsen, daher 289 -> 309 bereit. Kein Resolver,
+drei sowie die BMWSB-Aufgabenquittung zwei Bundestagsachsen, daher 289 -> 311 bereit. Kein Resolver,
 keine Schwelle und kein Produktcode wurde geaendert.
 
 ## Importpruefung (echter Importvertrag)
@@ -234,19 +241,19 @@ Geprueft mit `pruefeImport`/`pruefeProfil` aus `lib/helmut/profil-import.js`,
 rein lokal, **ohne DB- oder Netzwerkzugriff**:
 
 ```
-Profile: 500 · gültig: 475 · ungültig: 25
+Profile: 500 · gültig: 477 · ungültig: 23
 Nach Parlament: bundestag=330 · landtag-berlin=120 · landtag-brandenburg=50
 Alle Datensaetze sind inaktiv: ja
 Globale Fehler: 0 · Warnungen: 0
-Fehlercodes: schwerpunkt-fehlt 24 · region-fehlt 1
-gültig je Parlament: Bundestag 309/330 · Berlin 118/120 · Brandenburg 48/50
+Fehlercodes: schwerpunkt-fehlt 22 · region-fehlt 1
+gültig je Parlament: Bundestag 311/330 · Berlin 118/120 · Brandenburg 48/50
 ERGEBNIS: NICHT importierbar (nur wegen der offen ausgewiesenen Felder)
 ```
 
 Das technische Ergebnis ist **keine** fachliche Freigabe. Nach der Gremien-Trennung
-und der Mandatsarten-/Ressort-/Aufgaben-/beratenden-/Zusatzaufgabenquittung sind 475 Profile ohne offene
-Achse/Mandatsart technisch importierbar; 25 bleiben es bewusst nicht, bis die offenen
-Felder fachlich belegt sind. Die 30 geschlossenen Achsen schliessen die fachliche Freigabe NICHT:
+und der Mandatsarten-/Ressort-/Aufgaben-/beratenden-/Zusatzaufgaben-/BMWSB-Aufgabenquittung
+sind 477 Profile ohne offene Achse/Mandatsart technisch importierbar; 23 bleiben es
+bewusst nicht, bis die offenen Felder fachlich belegt sind. Die 32 geschlossenen Achsen schliessen die fachliche Freigabe NICHT:
 alle 500 bleiben `importfreigegeben: false` (74 Parteifelder und alle fachlich
 offenen Achsen bestehen weiter).
 
@@ -282,15 +289,17 @@ Ergebnis des gezielten Tests:
 
 ```
 PASS: 500 Feldbelege, 330/120/50, Hashbindung, AfD-Sperre, offene Felder,
-echter Importvertrag (475 technisch importierbar, 25 offen), Gremien-Trennung
+echter Importvertrag (477 technisch importierbar, 23 offen), Gremien-Trennung
 (141 Mitgliedschaften in 15 sonstigen Gremien rollengetreu erhalten, 4
 Scheinausschussachsen offen), Mandatsartenquittung (4 Brandenburg-Landeslisten),
 Rollenquittung (48 Amtsrollen, 6 offen), Ressortquittung (19 Fachachsen: 9 Bund/4
 Berlin/6 Brandenburg; Themen und Herkunftshinweis verlustfrei), Aufgabenquittung
 (6 personengebundene Aufgabenachsen: Beauftragtenaufgaben + BMAS-Abteilungen, 14
 Themenbegriffe und Herkunftshinweise verlustfrei, Mast disjunkt zu Griese),
-beratende Quittung (2 Profile, 4 Themen) und Zusatzaufgabenquittung (3 Profile:
-Breher/Krichbaum/Kippels, 14 Kurzthemen, 24 Achsen offen), Bundestags-Readiness (309/330 bereit), Reproduzierbarkeit:
+beratende Quittung (2 Profile, 4 Themen), Zusatzaufgabenquittung (3 Profile:
+Breher/Krichbaum/Kippels, 14 Kurzthemen) und BMWSB-Aufgabenquittung (2 Profile:
+Bartol Z I 3/W II/S I/B I/B II + Poschmann Z II/W I/S II/S III, 18 Kurzthemen,
+kanonische v10-Adresse, 22 Achsen offen), Bundestags-Readiness (311/330 bereit), Reproduzierbarkeit:
 byte-identisch neu erzeugt
 ```
 
@@ -336,11 +345,11 @@ kein bezahlter Modellaufruf, keine Production-Aktion, keine DB-Aenderung.
    die versionierte Ergaenzungsquittung an URL UND Quellhash gebunden; 424 sind
    belegt, 2 parteilos, 74 bleiben offen. Bundestagspartei wird weiterhin **nicht**
    aus `PoliticalParty`/Fraktion abgeleitet.
-2. **24 Profile ohne belegte fachliche Achse** (21 Bundestag, 1 Berlin,
+2. **22 Profile ohne belegte fachliche Achse** (19 Bundestag, 1 Berlin,
    2 Brandenburg) — weder ordentlicher noch stellvertretender Ausschuss noch
-   belegtes Thema; nicht durch Themen erfinden schliessen. 30 der urspruenglich 54
-   Achsen sind ueber die geprueften Ressort- (19), Aufgaben- (6), beratenden (2)
-   und Zusatzaufgabenquittungen (3) mit ausdruecklichen amtlich abgeleiteten
+   belegtes Thema; nicht durch Themen erfinden schliessen. 32 der urspruenglich 54
+   Achsen sind ueber die geprueften Ressort- (19), Aufgaben- (6), beratenden (2),
+   Zusatzaufgaben- (3) und BMWSB-Aufgabenquittungen (2) mit ausdruecklichen amtlich abgeleiteten
    Themen belegt (siehe unten). Die vier Bundestagsfaelle, die nur eine
    Scheinausschussachse (Wahlausschuss) hatten, sind teils ueber das Ressort
    geschlossen (Bilger), teils offen. 22 Bundestagsprofile sind ueber
@@ -468,10 +477,10 @@ personengebundenen Abschnitt begrenzt.
 Ausschussmitgliedschaften aus der Rolle abgeleitet.** Die Rolle selbst ist eine
 Amtsrolle, keine fachliche Achse: die 54 Fachachsen waren damit weiter offen. Die
 spaeter ergaenzten, separat geprueften Ressort- (19), Aufgaben- (6), beratenden (2)
-und Zusatzaufgabenquittungen (3) schliessen 30 davon ueber ein amtlich abgeleitetes
+Zusatzaufgaben- (3) und BMWSB-Aufgabenquittungen (2) schliessen 32 davon ueber ein amtlich abgeleitetes
 Thema (siehe unten), daher
-bleiben jetzt **24 Fachachsen offen** und der technische Importvertrag steht bei
-**475 akzeptiert / 25 offen**.
+bleiben jetzt **22 Fachachsen offen** und der technische Importvertrag steht bei
+**477 akzeptiert / 23 offen**.
 Alle 500 bleiben `aktiv: false` / `importfreigegeben: false`. Je Datensatz steht der Rollenbeleg in
 `profilrollenQuittung` (Datei, URL, sha256, Status, Zitat und Abschnitt).
 Assembler und Belegdatei wurden deterministisch neu erzeugt (byte-identisch).
@@ -555,8 +564,8 @@ falsche Bytezahlen, fremde Aufgabenabschnitte, zusammengesetzte Scheinzitate und
 fail closed ab. Kein Produktfilter oder Schwellenwert wurde geaendert.
 
 Die 54 urspruenglich offenen Achsen bleiben vollstaendig bilanziert: 19 Ressort-,
-6 Aufgaben-, 2 beratende und 3 Zusatzaufgabenachsen geschlossen, 24 offen. Technischer Importvertrag:475 akzeptiert/25
-offen; Bundestags-Readiness 309/330. Parteien, Mandatsarten, Auswahl und Gremien
+6 Aufgaben-, 2 beratende, 3 Zusatzaufgaben- und 2 BMWSB-Aufgabenachsen geschlossen, 22 offen. Technischer Importvertrag:477 akzeptiert/23
+offen; Bundestags-Readiness 311/330. Parteien, Mandatsarten, Auswahl und Gremien
 bleiben unveraendert. Alle500 bleiben inaktiv und ohne fachliche Importfreigabe;
 74 Parteifelder und1 Berliner Mandatsart sind weiterhin offen. Keine Production-Datenaenderung
 und kein500er Test.
@@ -649,3 +658,65 @@ sowie Statusgroesse4/4 erfolgreich. Flash High abgeschlossen,0,147047USD;
 Kostenbuch danach2,771621USD gebunden, davon1,175728USD weiterhin ungeklärt
 reserviert. Kein kostenpflichtiger Wiederholungsaufruf.
 Die separat belegten Amtsrollen Amthor/Haßelmann/Miersch bleiben unintegriert.
+
+## BMWSB-Aufgabenachsen: Bartol und Poschmann
+
+Die [gepruefte Zweierquittung](bmwsb-aufgaben-2-20260927.json) schliesst zwei
+personengebundene BMWSB-Aufgabenachsen. Grundlage ist das amtliche
+BMWSB-Organigramm, das die aktuelle Landingpage
+(`abteilungen-und-aufgaben.html`) als echten href auf die kanonische
+**v10-Adresse** verlinkt (Original UND `*.meta.json` an
+URL/finalUrl/sha256/Bytezahl/Abrufzeit/HTTP/Datei gebunden; 669957 Bytes, sha256
+`dffcb6fb…6205b8`). Nur ein echter, aufgeloester Anker zaehlt: Kommentar-, Skript-,
+Stil-, Vorlagen- und Navigationstexte sowie ein blosses URL-Textvorkommen oder ein
+fremder EN-/v6-Link werden abgewiesen.
+
+Das manuell am amtlichen Original visuell abgenommene PDF-Fachurteil (Stand
+1. Juli 2026, Seite 1) fixiert ausschliesslich die persoenlich zugewiesenen
+Unterbereiche, KEINE Hochstufung auf ganze Abteilungen:
+
+* **Sören Bartol** — Personenkasten obere Leitungsebene, Geschaeftsbereiche
+  `Z I 3, W II, S I, B I, B II`; 12 Kurzthemen (u. a. Haushalt, Wohneigentum,
+  Mietrecht, Wohnungslosigkeit, Stadtentwicklungspolitik, Planungsrecht, Baupolitik,
+  Klimaschutz, Nachhaltigkeit, Bundesbau, Wirtschaftliches Bauen, Bauwirtschaft).
+* **Sabine Poschmann** — Geschaeftsbereich `Z II, W I, S II, S III`; 6 Kurzthemen
+  (Sozialer Wohnungsbau, Wohngeld, Zukunft des Wohnens, Stadtentwicklungsprogramme,
+  Raumordnung, Regionalpolitik).
+
+Das getrennte Pruefmodul `scripts/profil-feldbelege-500-bmwsb.py` verwendet die
+sicheren Helfer des Zusatzaufgabenmoduls wieder (kein duplizierter 600-Zeilen-Block)
+und ist fail closed: es bindet jede Kennung an die kanonische 54er Rolle und den
+kanonischen Bundestags-Profilnamen/URL/Hash und prueft Unterbereichsschluessel,
+Personenkasten, Stand/Seite und die Themen nur in den woertlichen Unterbereichstiteln.
+Jede bloesse Abteilung (`Z`/`W`/`S`/`B`), ein fremder Link, ein abweichendes
+Unterbereichspaket oder eine vertauschte Person wird gesperrt; das fixierte Urteil
+ist fuer synthetische Testfixtures injizierbar.
+
+Je Profil steht der getrennte Hinweis
+`Aufgabenbindung Bund (amtlich abgeleitet): <Aufgabenbindung>; keine persoenliche
+politische Position` zusaetzlich im Funktionskontext; die amtliche BMWSB-Quelle
+(kanonische v10-Adresse + sha256) steht in `profil.offizielleQuellen`;
+`bmwsbQuittung` bindet zusaetzlich die Bytezahl und die Landingpage. Die bestehenden PSts-Amtsrollen bleiben
+wortgetreu erhalten; Partei, Fraktion, Mandatsart, Ausschuesse und Gremien werden
+nicht veraendert, und es entsteht keine ordentliche/stellvertretende
+Ausschussmitgliedschaft aus den Unterbereichen. Die 18 Kurzthemen und der Hinweis
+ueberstehen den echten Pfad `zuHelmutProfil -> toMandateProfileRow ->
+fromMandateProfileRow`; die Themen der jeweils anderen Person treffen nicht.
+
+Nur diese 2 Datensaetze aendern sich, 498 bleiben vollstaendig unveraendert.
+Ergebnis: **477 technisch akzeptiert / 23 unvollstaendig**, **311/330
+Bundestagsprofile bereit**, **22 Fachachsen offen**; die 74 Parteifelder und die eine
+Berliner Mandatsart (Claudia Engelmann) bleiben unveraendert offen. Gezielter
+Feldtest samt Python-Gegenproben (Quelldrift, falsche H1/Kennung/Rolle, vertauschte
+Personenpakete, Unterbereichs-/Titel-Drift, Hochstufung auf ganze Abteilungen,
+falscher/versteckter PDF-Link) und byte-identischer Neuerzeugung erfolgreich.
+Keine fachliche Importfreigabe, keine Production-Aenderung, keine Aktivierung und
+kein 500er Test.
+
+Eigene Gegenpruefung: falsche H1 auch bei konsistent erneuerten Quellenhashes
+gesperrt; vollstaendig vertauschte Aufgabenpakete trotz korrekter Personennamen
+und Rollenquellen gesperrt. Genau2 Datensaetze geaendert,498 byteinhaltlich
+identisch; Auswahl und bisherige Quittungen unveraendert. Statusgroesse4/4.
+Flash High erfolgreich beendet:0,118045USD bestaetigt; lokales Tageskostenbuch
+danach2,889666USD gebunden, davon1,175728USD weiterhin ungeklärt reserviert.
+Kein kostenpflichtiger Wiederholungsaufruf.

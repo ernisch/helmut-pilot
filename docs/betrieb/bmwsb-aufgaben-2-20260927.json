@@ -1,0 +1,136 @@
+{
+  "datum": "2026-09-27",
+  "version": 1,
+  "status": "Vom Orchestrator geprueft; zwei personengebundene BMWSB-Aufgabenachsen vorbereitet; nicht importfreigegeben",
+  "umfang": 2,
+  "bilanz": {
+    "gesamt": 2,
+    "Bund": 2,
+    "Berlin": 0,
+    "Brandenburg": 0
+  },
+  "ergebnisse": [
+    {
+      "kennung": "bundestag-bartol-soeren-1043546",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "bindungsart": "unterabteilungszustaendigkeit",
+      "person": "Sören Bartol",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/B/bartol_soeren-1043546",
+        "sha256": "db8d5edad55e7cce43a6ba83e795696f4c6437ef15280ec32bf5c40154f649d1",
+        "abgerufenAm": "2026-09-27T13:01:31.688122+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bmwsb.bund.de/SharedDocs/downloads/DE/veroeffentlichungen/service/organigramm_deutsch.pdf?__blob=publicationFile&v=10",
+        "finalUrl": "https://www.bmwsb.bund.de/SharedDocs/downloads/DE/veroeffentlichungen/service/organigramm_deutsch.pdf?__blob=publicationFile&v=10",
+        "abgerufenAm": "2026-09-27T19:03:21.520864+00:00",
+        "sha256": "dffcb6fbc28eb04ad64db8bfba9c3031eeccc5e2b33705c0070299f3c06205b8",
+        "bytes": 669957,
+        "datei": "bmwsb-organigramm-v10-aktuell.pdf",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "aktuelleVerlinkung": {
+        "url": "https://www.bmwsb.bund.de/DE/ministerium/das-bmwsb/abteilungen-aufgaben/abteilungen-und-aufgaben.html?nn=42910",
+        "finalUrl": "https://www.bmwsb.bund.de/DE/ministerium/das-bmwsb/abteilungen-aufgaben/abteilungen-und-aufgaben.html?nn=42910",
+        "abgerufenAm": "2026-09-27T19:02:11.947527+00:00",
+        "sha256": "76e4bf7bd715e4bf33d4b1877ce406d7d7f4ffcce85f84eb9212c74607f4a6d5",
+        "bytes": 180198,
+        "datei": "bmwsb-organigramm-landing-aktuell.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "seite": 1,
+      "stand": "1. Juli 2026",
+      "aufgabenbindung": "Parlamentarischer Staatssekretär im Bundesministerium für Wohnen, Stadtentwicklung und Bauwesen; Geschäftsbereiche Z I 3, W II, S I, B I, B II",
+      "personblock": [
+        "Parlamentarischer Staatssekretär",
+        "Geschäftsbereiche Z I 3, W II, S I, B I, B II",
+        "Sören Bartol"
+      ],
+      "unterabteilungen": {
+        "Z I 3": "Haushalt, BfdH",
+        "W II": "Wohnungspolitische Dialoge, Wohneigentum, Mietrecht und Wohnungslosigkeit",
+        "S I": "Stadtentwicklungspolitik, Planungsrecht",
+        "B I": "Baupolitik, Klimaschutz und Nachhaltigkeit, Bundesbau",
+        "B II": "Wirtschaftliches Bauen, Bauwirtschaft"
+      },
+      "themen": [
+        "Haushalt",
+        "Wohneigentum",
+        "Mietrecht",
+        "Wohnungslosigkeit",
+        "Stadtentwicklungspolitik",
+        "Planungsrecht",
+        "Baupolitik",
+        "Klimaschutz",
+        "Nachhaltigkeit",
+        "Bundesbau",
+        "Wirtschaftliches Bauen",
+        "Bauwirtschaft"
+      ],
+      "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Parlamentarischer Staatssekretär im Bundesministerium für Wohnen, Stadtentwicklung und Bauwesen; Geschäftsbereiche Z I 3, W II, S I, B I, B II; keine persönliche politische Position",
+      "importfreigegeben": false
+    },
+    {
+      "kennung": "bundestag-poschmann-sabine-1046592",
+      "region": "Bund",
+      "parlament": "bundestag",
+      "status": "belegt",
+      "bindungsart": "unterabteilungszustaendigkeit",
+      "person": "Sabine Poschmann",
+      "rollenquelle": {
+        "url": "https://www.bundestag.de/abgeordnete/biografien/P/poschmann_sabine-1046592",
+        "sha256": "8182a51ce2c15c0cd1e7e896843d9f4c4c99b455a45d0ae87b11ba4bea20da64",
+        "abgerufenAm": "2026-09-27T13:02:07.612232+00:00"
+      },
+      "quelle": {
+        "url": "https://www.bmwsb.bund.de/SharedDocs/downloads/DE/veroeffentlichungen/service/organigramm_deutsch.pdf?__blob=publicationFile&v=10",
+        "finalUrl": "https://www.bmwsb.bund.de/SharedDocs/downloads/DE/veroeffentlichungen/service/organigramm_deutsch.pdf?__blob=publicationFile&v=10",
+        "abgerufenAm": "2026-09-27T19:03:21.520864+00:00",
+        "sha256": "dffcb6fbc28eb04ad64db8bfba9c3031eeccc5e2b33705c0070299f3c06205b8",
+        "bytes": 669957,
+        "datei": "bmwsb-organigramm-v10-aktuell.pdf",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "aktuelleVerlinkung": {
+        "url": "https://www.bmwsb.bund.de/DE/ministerium/das-bmwsb/abteilungen-aufgaben/abteilungen-und-aufgaben.html?nn=42910",
+        "finalUrl": "https://www.bmwsb.bund.de/DE/ministerium/das-bmwsb/abteilungen-aufgaben/abteilungen-und-aufgaben.html?nn=42910",
+        "abgerufenAm": "2026-09-27T19:02:11.947527+00:00",
+        "sha256": "76e4bf7bd715e4bf33d4b1877ce406d7d7f4ffcce85f84eb9212c74607f4a6d5",
+        "bytes": 180198,
+        "datei": "bmwsb-organigramm-landing-aktuell.html",
+        "http": 200,
+        "abrufStatus": "abgerufen"
+      },
+      "seite": 1,
+      "stand": "1. Juli 2026",
+      "aufgabenbindung": "Parlamentarische Staatssekretärin im Bundesministerium für Wohnen, Stadtentwicklung und Bauwesen; Geschäftsbereich Z II, W I, S II, S III",
+      "personblock": [
+        "Parlamentarische Staatssekretärin",
+        "Geschäftsbereich Z II, W I, S II, S III",
+        "Sabine Poschmann"
+      ],
+      "unterabteilungen": {
+        "Z II": "Grundsatzangelegenheiten",
+        "W I": "Sozialer Wohnungsbau, Wohngeld und Zukunft des Wohnens",
+        "S II": "Stadtentwicklungsprogramme",
+        "S III": "Raumordnung, Regionalpolitik, europäische und internationale Stadt- und Raumentwicklung"
+      },
+      "themen": [
+        "Sozialer Wohnungsbau",
+        "Wohngeld",
+        "Zukunft des Wohnens",
+        "Stadtentwicklungsprogramme",
+        "Raumordnung",
+        "Regionalpolitik"
+      ],
+      "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Parlamentarische Staatssekretärin im Bundesministerium für Wohnen, Stadtentwicklung und Bauwesen; Geschäftsbereich Z II, W I, S II, S III; keine persönliche politische Position",
+      "importfreigegeben": false
+    }
+  ],
+  "pruefung": "Zwei personengebundene BMWSB-Aufgabenachsen (Sören Bartol, Sabine Poschmann) an die amtliche BMWSB-Quelle, an die kanonische 54er Rollenquittung und an die kanonischen Bundestags-Profilnamen/URL/Hashes gebunden. Quelle ist die tatsaechlich verlinkte kanonische v10-Adresse des BMWSB-Organigramms (Hash dffcb6fbc28eb04ad64db8bfba9c3031eeccc5e2b33705c0070299f3c06205b8, 669957 Bytes, Original UND .meta.json gebunden); die aktuelle Landingpage muss genau dieses PDF als echten aufgeloesten href tragen (kein Kommentar-/Skript-/Vorlagenanker und kein blosses Textvorkommen). Manuell am amtlichen Original visuell abgenommenes PDF-Fachurteil (Stand 1. Juli 2026, Seite 1): nur die persoenlich zugewiesenen Unterbereiche (Bartol Z I 3/W II/S I/B I/B II, Poschmann Z II/W I/S II/S III) und deren woertliche Titel, KEINE Hochstufung auf ganze Abteilungen und kein automatischer PDF-Parser. 12 bzw. 6 freigegebene Kurzthemen mit getrenntem Herkunftshinweis; bestehende Amtsrolle bleibt unveraendert. Keine Importfreigabe."
+}
