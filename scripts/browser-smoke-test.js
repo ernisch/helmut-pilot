@@ -260,7 +260,9 @@ function check(name, cond, detail = "") {
           !radarText.includes("Heute nicht öffentlich zuspitzen")
             && !radarText.includes("Die belegten Fakten gehoeren in die Lage."));
         check(`${label}: Radar hat einen Beobachtungsgrund und keine zweite Artikelliste`,
-          radarText.includes("persönlicher Erwähnung") && !radarText.includes("Alle relevanten Artikel"));
+          radarText.includes("nennt deinen Namen")
+            && radarText.includes("Eine Bewertung des Tons oder der Resonanz liegt nicht vor.")
+            && !radarText.includes("Alle relevanten Artikel"));
 
         // Der Verweis darf keine fachliche Luecke verstecken: abweichende
         // Begruendung bleibt sichtbar; ohne passenden Lagevorgang kein Blindlink.
