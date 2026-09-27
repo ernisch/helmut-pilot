@@ -128,6 +128,13 @@ Bereits bestandene eng begrenzte Bereichspruefungen nicht pauschal wiederholen.
 und hashgeprueft. Keine personenbezogenen Pflichtplaetze in der Auswahl.
 Naechster offener Teilschritt:die 74 Parteifelder und die verbleibenden Mandats-/
 Fachachsen einzeln belegen;485 technische Erfolge sind keine fachliche Importfreigabe.
+Fuer die Landesversorgung liegt ein enger Berliner Originalseiten-Leser vor:
+`lib/helmut/berlin-presseartikel.js` bindet amtliche URL, Titel, Publikationstag
+und vollstaendigen Artikeltext ohne erfundene Uhrzeit; die lokale Originalprobe
+vom25.09.2026 besteht. Der Leser ist noch nicht an Crawl, Speicher, Lage-Ausgabe
+oder ein freigegebenes Landesmodul angeschlossen. Naechster Versorgungsschritt:
+separaten Landes-Stand-/Speichervertrag mit tagesgenauer sichtbarer Ausgabe
+offline nachweisen; erst danach einen begrenzten Livepfad pruefen.
 Gremienrollen und vier BB-Listenmandate sind korrigiert. Der falsche Widerspruch
 SSW/fraktionslos ist mit PR661 ausgerollt und nachkontrolliert; Partei bleibt erhalten, AfD-Sperre unveraendert.
 Zwei bislang offene Berliner Mandatsarten sind ueber die amtliche
