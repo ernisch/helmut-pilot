@@ -1955,3 +1955,368 @@ print('PASS: BMWSB-Aufgabenquittung — fehlende Quittung/falsche Bilanz/Duplika
       'die Landingpage muss den echten kanonischen v10-PDF-Link tragen (kein Kommentar-/Skript-/'
       'Vorlagenanker, kein EN/v6-Fremdlink und kein blosses Textvorkommen); ein vertauschtes Personenpaket '
       'wird gesperrt; das gueltige synthetische 2er-Paket (Fixture ohne /private/tmp) wird akzeptiert.')
+
+
+# ── 14 · Amthor-Einzelfallquittung (ein zuvor offener Rollenfall) ──────────────────────────
+# Synthetische, deckungsgleiche Fixtures OHNE /private/tmp-Originale. Das eng fixierte
+# Fachurteil wird ueber den injizierbaren ``erwartung``-Parameter ersetzt; so bleibt der
+# Test auch ohne die lokalen Originale lauffaehig. Das Modul verwendet die sicheren Helfer
+# des Zusatzaufgabenmoduls wieder und bindet die zuvor offene 54er-Rolle SEPARAT neu (kein
+# belegt-Pflichtvalidator, keine Lockerung der anderen Eintraege).
+am_spec = importlib.util.spec_from_file_location(
+    'amthor', Path(__file__).with_name('profil-feldbelege-500-amthor.py'))
+am = importlib.util.module_from_spec(am_spec)
+am_spec.loader.exec_module(am)
+
+
+def _erwarte_am_fehler(fn, was, meldung=None):
+    try:
+        fn()
+    except am.AmthorFehler as fehler:
+        if meldung is not None:
+            assert meldung in str(fehler), f"Falscher Sperrgrund: {fehler}"
+        return
+    raise AssertionError(f'Nicht gesperrt: {was}')
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    detail = root / 'detailseiten'
+    detail.mkdir()
+    zusatz = root / 'zusatzquellen'
+    zusatz.mkdir()
+    ABRUF = '2026-09-27T20:00:00+00:00'
+    K = 'bundestag-test-amthor-1'
+    person = 'Person Amthor'
+    funktion = 'Staatsminister für Testkanzler-Zusammenarbeit beim Bundeskanzler'
+    vor_strong, vor_text = '2025 bis 2026', 'Parlamentarischer Staatssekretär beim Bundesminister für Testdigitales'
+    vorherige = f'{vor_strong} {vor_text}'
+    rolle_strong = 'Seit 29. Juli 2026'
+    rolle_zitat = f'{rolle_strong} {funktion}'
+    aufgaben_h2 = 'Das sagte der Kanzler zu den neuen Personalien:'
+    aufgaben_starke = 'Staatsminister für die Testkanzler-Beziehungen'
+    aufgabenzitat = 'die Zusammenarbeit zwischen der Testregierung und den 16 Testlaendern koordinieren.'
+    aufgabenbindung = (f'{funktion}; Koordination der Zusammenarbeit zwischen der Testregierung '
+                       f'und den 16 Testlaendern')
+    thema = 'Testkanzler-Beziehungen'
+
+    def _meta(datei, url):
+        pfad = zusatz / datei
+        meta = dict(url=url, finalUrl=url, abgerufenAm=ABRUF, sha256=am.ZU._sha256(pfad),
+                    bytes=pfad.stat().st_size, datei=datei, http=200)
+        (zusatz / f'{datei}.meta.json').write_text(json.dumps(meta, ensure_ascii=False), encoding='utf-8')
+        return dict(meta, abrufStatus='abgerufen')
+
+    rolle_datei = 'test-portrait.html'
+    rolle_url = 'https://www.bundesregierung.de/breg-de/test/philipp-amthor-test'
+    rolle_block = (f'<div class="bpa-richtext"><p><strong>{vor_strong}</strong><br/>{vor_text}</p>'
+                   f'<p><strong>{rolle_strong}</strong><br/>{funktion}</p></div>')
+
+    def _schreibe_rolle(dokument):
+        (zusatz / rolle_datei).write_text(f'<h1 class="bpa-accessibility">{person}</h1>' + dokument, encoding='utf-8')
+        return _meta(rolle_datei, rolle_url)
+
+    quelle = _schreibe_rolle(
+        f'<html><head><meta name="description" content="{rolle_zitat}"/></head><body>'
+        f'<figure><figcaption><p>{person} ist {funktion}.</p></figcaption></figure>{rolle_block}</body></html>')
+    aufgaben_datei = 'test-kabinett.html'
+    aufgaben_url = 'https://www.bundesregierung.de/breg-de/test/kabinett-umbildung'
+    aufgaben_liste = (f'<li><strong>Chefin des Testamtes</strong>: Mit Testperson wird das Testamt neu besetzt.</li>'
+                      f'<li><strong>{aufgaben_starke}</strong>: {person} wird die {aufgabenzitat} '
+                      f'Testdigitales bleibt eine Nebenbemerkung.</li>')
+
+    def _schreibe_aufgaben(html):
+        (zusatz / aufgaben_datei).write_text(
+            '<div id="rs_reading_area_header"><header class="bpa-article-header">'
+            '<ul><li class="bpa-collection-item">Freitag, 24. Juli 2026</li></ul></header></div>'
+            '<div id="rs_reading_area_content">' + html + '</div>', encoding='utf-8')
+        return _meta(aufgaben_datei, aufgaben_url)
+
+    aufgabenquelle = _schreibe_aufgaben(
+        f'<h2>{aufgaben_h2}</h2><ul class="rte--list">{aufgaben_liste}</ul>'
+        f'<p>Freitag, 24. Juli 2026</p>')
+
+    (detail / f'{K}.html').write_text(f'<h1>{person}</h1>', encoding='utf-8')
+    rollen_ref = dict(url='https://www.bundestag.de/abgeordnete/biografien/T/test-amthor-1',
+                      sha256=am.ZU._sha256(detail / f'{K}.html'), abgerufenAm=ABRUF)
+    kennung_zu_abruf = {K: dict(url=rollen_ref['url'], sha256=rollen_ref['sha256'], abgerufenAm=ABRUF,
+                                datei=f'{K}.html', amtlicheKennung=K, parlament='bundestag')}
+    profilrollen = {K: dict(status='offen', funktionen=[], quelle=dict(rollen_ref))}
+    erwartung = {
+        K: dict(region='Bund', bindungsart='kanzleramt-aufgabe', person=person, funktion=funktion,
+                amtsbeginn='29. Juli 2026', rolleZitat=rolle_zitat, vorherigeRolle=vorherige,
+                rolleAbschnitt='Testabschnitt', aufgabenH2=aufgaben_h2, aufgabenStarke=aufgaben_starke,
+                aufgabenzitat=aufgabenzitat, quellpublikationsdatum='2026-07-24',
+                aufgabenbindung=aufgabenbindung, themen=[thema],
+                quelle=dict(quelle), aufgabenquelle=dict(aufgabenquelle)),
+    }
+    eintraege = [dict(kennung=K, region='Bund', parlament='bundestag', status='belegt',
+                      bindungsart='kanzleramt-aufgabe', person=person, funktion=funktion,
+                      amtsbeginn='29. Juli 2026', rolleZitat=rolle_zitat, vorherigeRolle=vorherige,
+                      rolleAbschnitt='Testabschnitt', aufgabenH2=aufgaben_h2, aufgabenStarke=aufgaben_starke,
+                      aufgabenzitat=aufgabenzitat, quellpublikationsdatum='2026-07-24',
+                      aufgabenbindung=aufgabenbindung, themen=[thema],
+                      ableitungsHinweis=am.ZU.HINWEIS_AUFGABE.format(region='Bund', wert=aufgabenbindung),
+                      rollenquelle=dict(rollen_ref), quelle=dict(quelle), aufgabenquelle=dict(aufgabenquelle),
+                      importfreigegeben=False)]
+    gueltige_quittung = dict(version=1, bilanz=dict(gesamt=1, Bund=1, Berlin=0, Brandenburg=0),
+                             ergebnisse=eintraege)
+
+    def _am_eingang(quittung, profilrollen_override=None, **mengen):
+        return SimpleNamespace(
+            verzeichnis=root, detailseiten=detail, amthor=quittung,
+            profilrollen_by_kennung=profilrollen_override or profilrollen,
+            kennung_zu_abruf=kennung_zu_abruf,
+            ressortachsen_by_kennung={k: {} for k in mengen.get('ressort', [])},
+            aufgabenachsen_by_kennung={k: {} for k in mengen.get('aufgaben', [])},
+            beratendeachsen_by_kennung={k: {} for k in mengen.get('beratende', [])},
+            zusaetzlicheaufgaben_by_kennung={k: {} for k in mengen.get('zusatz', [])},
+            bmwsb_by_kennung={k: {} for k in mengen.get('bmwsb', [])})
+
+    index = am.pruefe_amthor(_am_eingang(gueltige_quittung), erwartung=erwartung)
+    assert len(index) == 1
+    assert index[K]['themen'] == [thema]
+    assert index[K]['funktion'] == funktion
+    assert index[K]['aufgabenbindung'] == aufgabenbindung
+
+    def _mit(mutation, erwartung_override=None, **mengen):
+        neu = json.loads(json.dumps(gueltige_quittung))
+        mutation(neu)
+        return am.pruefe_amthor(_am_eingang(neu, **mengen), erwartung=erwartung_override or erwartung)
+
+    # Fehlende Quittung, falsche Bilanz, Duplikat, unbekannte Kennung, Disjunktion.
+    _echter_pfad = am.AMTHOR
+    am.AMTHOR = root / 'fehlt.json'
+    try:
+        _erwarte_am_fehler(lambda: am.pruefe_amthor(
+            SimpleNamespace(verzeichnis=root, detailseiten=detail, profilrollen_by_kennung=profilrollen,
+                            kennung_zu_abruf=kennung_zu_abruf), erwartung=erwartung), 'fehlende Quittung')
+    finally:
+        am.AMTHOR = _echter_pfad
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['bilanz'].__setitem__('Bund', 0)), 'falsche Bilanz')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'].append(dict(q['ergebnisse'][0]))),
+                       'doppelte Kennung')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'kennung', 'bundestag-test-fremd-9')), 'unbekannte/Fremdkennung')
+    for feld, was in (('ressort', 'Kennung bereits eine Ressortachse'),
+                      ('aufgaben', 'Kennung bereits eine Aufgabenachse'),
+                      ('beratende', 'Kennung bereits eine beratende Achse'),
+                      ('zusatz', 'Kennung bereits eine Zusatzaufgabenachse'),
+                      ('bmwsb', 'Kennung bereits eine BMWSB-Achse')):
+        _erwarte_am_fehler(lambda feld=feld: am.pruefe_amthor(
+            _am_eingang(gueltige_quittung, **{feld: [K]}), erwartung=erwartung), was)
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('importfreigegeben', True)),
+                       'importfreigegeben true')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('status', 'offen')),
+                       'unerwarteter Status')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('bindungsart', 'amtshinweis')),
+                       'Bindungsart-Drift')
+    # Der alte belegt-Pflichtvalidator darf Amthor NICHT uebernehmen: die 54er Rolle
+    # muss historisch offen bleiben.
+    profilrollen_belegt = json.loads(json.dumps(profilrollen))
+    profilrollen_belegt[K]['status'] = 'belegt'
+    _erwarte_am_fehler(lambda: am.pruefe_amthor(
+        _am_eingang(gueltige_quittung, profilrollen_override=profilrollen_belegt), erwartung=erwartung),
+        '54er-Rolle nicht mehr offen')
+    # Fixiertes Urteil: Person/Rolle/Amtsbeginn/Thema/Hinweis/Aufgabenbindung.
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('person', 'Fremdperson')),
+                       'Fremdperson')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('funktion', 'Anderes Amt')),
+                       'Rollenwortlaut-Drift')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('amtsbeginn', '1. Januar 2026')),
+                       'Amtsbeginn-Drift')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('rolleZitat', 'Seit 2024 Amt')),
+                       'Rollenzitat-Drift')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'themen', [thema, 'Digitalisierung'])), 'Themen-Drift')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'themen', ['Digitalisierung'])), 'fremdes Digitalthema')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'ableitungsHinweis', 'Aufgabenbindung Bund (amtlich abgeleitet): irgendwas')), 'Hinweisdrift')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'aufgabenbindung', 'anderes')), 'Aufgabenbindungs-Drift')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'quellpublikationsdatum', '2026-09-27')), 'Publikationsdatums-Drift')
+    # Quelldrift (URL/finalUrl/Hash/Bytezahl/Abrufzeit/Datei) beider Zusatzquellen.
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'url', q['ergebnisse'][0]['quelle']['url'] + '-fremd')), 'Quell-URL-Drift')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'finalUrl', 'https://www.bundesregierung.de/x')), 'finalUrl-Drift')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__('sha256', '0' * 64)),
+                       'Quellhash-Drift')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__('bytes', 1)),
+                       'Quell-Bytezahl-Drift')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'abgerufenAm', '2026-09-27T00:00:00+00:00')), 'Abrufzeit-Drift')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(
+        'datei', 'fehlt.html')), 'fehlende Zusatzquelle')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__('http', 500)),
+                       'HTTP-Drift')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['aufgabenquelle'].__setitem__(
+        'sha256', '1' * 64)), 'Aufgabenquellen-Hash-Drift')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['aufgabenquelle'].__setitem__(
+        'bytes', 2)), 'Aufgabenquellen-Bytezahl-Drift')
+    _erwarte_am_fehler(lambda: _mit(lambda q: q['ergebnisse'][0]['rollenquelle'].__setitem__(
+        'sha256', 'c' * 64)), 'Rollenquellen-Drift')
+    # Metadatum-Abweichung der Zusatzquelle.
+    original_meta = json.loads((zusatz / f'{rolle_datei}.meta.json').read_text(encoding='utf-8'))
+    meta_kaputt = dict(original_meta)
+    meta_kaputt['url'] = rolle_url + '-meta-fremd'
+    (zusatz / f'{rolle_datei}.meta.json').write_text(json.dumps(meta_kaputt, ensure_ascii=False), encoding='utf-8')
+    _erwarte_am_fehler(lambda: _mit(lambda q: None), 'Metadatenabweichung', 'Metadatum url weicht ab')
+    (zusatz / f'{rolle_datei}.meta.json').write_text(json.dumps(original_meta, ensure_ascii=False), encoding='utf-8')
+    # Quellenpakete vertauscht.
+    def _tausch(neu):
+        neu['ergebnisse'][0]['quelle'], neu['ergebnisse'][0]['aufgabenquelle'] = \
+            neu['ergebnisse'][0]['aufgabenquelle'], neu['ergebnisse'][0]['quelle']
+    _erwarte_am_fehler(lambda: _mit(_tausch), 'vertauschte Quellenpakete', 'Quellenmetadaten weichen')
+    # Zukunftsbeginn: der fixierte Amtsbeginn liegt nach der Abrufzeit.
+    erwartung_zukunft = json.loads(json.dumps(erwartung))
+    erwartung_zukunft[K]['amtsbeginn'] = '1. Dezember 2026'
+    _erwarte_am_fehler(lambda: _mit(
+        lambda q: q['ergebnisse'][0].__setitem__('amtsbeginn', '1. Dezember 2026'),
+        erwartung_override=erwartung_zukunft), 'Zukunftsbeginn', 'liegt in der Zukunft')
+
+    # Falsche Person trotz konsistenter Hashes sperrt der Personenabgleich selbst.
+    original_detail = (detail / f'{K}.html').read_text(encoding='utf-8')
+    bindungen = [kennung_zu_abruf[K], rollen_ref, profilrollen[K]['quelle'], eintraege[0]['rollenquelle']]
+    original_hashes = [b['sha256'] for b in bindungen]
+    try:
+        (detail / f'{K}.html').write_text('<h1>Fremde Person</h1>', encoding='utf-8')
+        for b in bindungen:
+            b['sha256'] = am.ZU._sha256(detail / f'{K}.html')
+        _erwarte_am_fehler(lambda: _mit(lambda q: None), 'falsche Person bei konsistenten Hashes',
+                           'Person passt nicht zur kanonischen Kennung')
+    finally:
+        (detail / f'{K}.html').write_text(original_detail, encoding='utf-8')
+        for b, h in zip(bindungen, original_hashes):
+            b['sha256'] = h
+    # Rolle nur in Metadaten/Bildunterschrift (kein echter geschlossener Lebenslauf-p).
+    original_rolle = (zusatz / rolle_datei).read_text(encoding='utf-8')
+    try:
+        neu_quelle = _schreibe_rolle(
+            f'<html><head><meta name="description" content="{rolle_zitat}"/></head><body>'
+            f'<figure><figcaption><p>{person} ist {funktion}.</p></figcaption></figure>'
+            f'<div class="bpa-richtext"><p>Amtliche Angaben ohne Rollenabsatz.</p></div></body></html>')
+        erwartung[K]['quelle'], eintraege[0]['quelle'] = dict(neu_quelle), dict(neu_quelle)
+        _erwarte_am_fehler(lambda: _mit(lambda q: None), 'Rolle nur Metadaten/Bildunterschrift',
+                           'genau einem geschlossenen div.bpa-richtext')
+    finally:
+        (zusatz / rolle_datei).write_text(original_rolle, encoding='utf-8')
+        neu_quelle = _meta(rolle_datei, rolle_url)
+        erwartung[K]['quelle'], eintraege[0]['quelle'] = dict(neu_quelle), dict(neu_quelle)
+    # Historisches PSts-Amt als angebliche aktuelle Rolle.
+    erwartung_alt = json.loads(json.dumps(erwartung))
+    original_rolle = (zusatz / rolle_datei).read_text(encoding='utf-8')
+    try:
+        neu_quelle = _schreibe_rolle(
+            f'<div class="bpa-richtext"><p><strong>{vor_strong}</strong><br/>{vor_text}</p></div>')
+        erwartung_alt[K]['quelle'] = dict(neu_quelle)
+        erwartung_alt[K]['rolleZitat'] = vorherige
+        _erwarte_am_fehler(lambda: _mit(
+            lambda q: (q['ergebnisse'][0].__setitem__('quelle', dict(neu_quelle)),
+                       q['ergebnisse'][0].__setitem__('rolleZitat', vorherige)),
+            erwartung_override=erwartung_alt), 'historisches PSts-Amt als aktuell',
+            "historische 'bis'-Rolle")
+    finally:
+        (zusatz / rolle_datei).write_text(original_rolle, encoding='utf-8')
+        neu_quelle = _meta(rolle_datei, rolle_url)
+        erwartung[K]['quelle'], eintraege[0]['quelle'] = dict(neu_quelle), dict(neu_quelle)
+    # Fremder li trotz passendem globalem Wortlaut (Wortlaut in einer anderen Liste).
+    original_aufgaben = (zusatz / aufgaben_datei).read_text(encoding='utf-8')
+    try:
+        neu_aufgaben = _schreibe_aufgaben(
+            f'<h2>{aufgaben_h2}</h2><ul class="rte--list">'
+            f'<li><strong>Anderes Testamt</strong>: {person} ist {aufgaben_starke}.</li></ul>'
+            f'<h2>Weitere Personalien:</h2><ul class="rte--list">'
+            f'<li><strong>{aufgaben_starke}</strong>: {person} wird die {aufgabenzitat}</li></ul>'
+            f'<p>Freitag, 24. Juli 2026</p>')
+        erwartung[K]['aufgabenquelle'], eintraege[0]['aufgabenquelle'] = dict(neu_aufgaben), dict(neu_aufgaben)
+        _erwarte_am_fehler(lambda: _mit(lambda q: None), 'fremder li trotz passendem globalen Wortlaut',
+                           'nicht genau einen li')
+    finally:
+        (zusatz / aufgaben_datei).write_text(original_aufgaben, encoding='utf-8')
+        neu_aufgaben = _meta(aufgaben_datei, aufgaben_url)
+        erwartung[K]['aufgabenquelle'], eintraege[0]['aufgabenquelle'] = dict(neu_aufgaben), dict(neu_aufgaben)
+    # Scheinbeleg in Kommentar/Skript/Vorlage ist kein Beleg.
+    original_rolle = (zusatz / rolle_datei).read_text(encoding='utf-8')
+    original_aufgaben = (zusatz / aufgaben_datei).read_text(encoding='utf-8')
+    try:
+        for schein in (f'<!-- {rolle_block} -->', f'<script>{rolle_block}</script>', f'<template>{rolle_block}</template>'):
+            neu_quelle = _schreibe_rolle(f'<html><body>{schein}</body></html>')
+            erwartung[K]['quelle'], eintraege[0]['quelle'] = dict(neu_quelle), dict(neu_quelle)
+            _erwarte_am_fehler(lambda: _mit(lambda q: None), f'Scheinbeleg Rolle ({schein[:11]})',
+                               'genau einem geschlossenen div.bpa-richtext')
+        # Rolle wiederherstellen, bevor der Aufgaben-Scheinbeleg geprueft wird.
+        (zusatz / rolle_datei).write_text(original_rolle, encoding='utf-8')
+        neu_quelle = _meta(rolle_datei, rolle_url)
+        erwartung[K]['quelle'], eintraege[0]['quelle'] = dict(neu_quelle), dict(neu_quelle)
+        for schein in (f'<!-- {aufgaben_liste} -->', f'<script>{aufgaben_liste}</script>',
+                       f'<template><ul class="rte--list">{aufgaben_liste}</ul></template>'):
+            neu_aufgaben = _schreibe_aufgaben(f'<h2>{aufgaben_h2}</h2>{schein}<p>Freitag, 24. Juli 2026</p>')
+            erwartung[K]['aufgabenquelle'], eintraege[0]['aufgabenquelle'] = dict(neu_aufgaben), dict(neu_aufgaben)
+            _erwarte_am_fehler(lambda: _mit(lambda q: None), f'Scheinbeleg Aufgabe ({schein[:11]})',
+                               'nicht genau einen li')
+    finally:
+        (zusatz / rolle_datei).write_text(original_rolle, encoding='utf-8')
+        (zusatz / aufgaben_datei).write_text(original_aufgaben, encoding='utf-8')
+        neu_quelle = _meta(rolle_datei, rolle_url)
+        neu_aufgaben = _meta(aufgaben_datei, aufgaben_url)
+        erwartung[K]['quelle'], eintraege[0]['quelle'] = dict(neu_quelle), dict(neu_quelle)
+        erwartung[K]['aufgabenquelle'], eintraege[0]['aufgabenquelle'] = dict(neu_aufgaben), dict(neu_aufgaben)
+    # Eigenpruefung: Gegenbelege auch mit konsistent neu gebundenen Hashes.
+    def _quellgegenprobe(feld, dokument, grund, meldung=None):
+        datei = rolle_datei if feld == 'quelle' else aufgaben_datei
+        url = rolle_url if feld == 'quelle' else aufgaben_url
+        original = (zusatz / datei).read_text(encoding='utf-8')
+        try:
+            (zusatz / datei).write_text(dokument, encoding='utf-8')
+            neu = _meta(datei, url)
+            erwartung[K][feld], eintraege[0][feld] = dict(neu), dict(neu)
+            _erwarte_am_fehler(lambda: _mit(lambda q: None), grund, meldung)
+        finally:
+            (zusatz / datei).write_text(original, encoding='utf-8')
+            neu = _meta(datei, url)
+            erwartung[K][feld], eintraege[0][feld] = dict(neu), dict(neu)
+
+    rolle_original = (zusatz / rolle_datei).read_text(encoding='utf-8')
+    _quellgegenprobe('quelle', rolle_original.replace(
+        f'<p><strong>{rolle_strong}</strong><br/>{funktion}</p>',
+        f'<p>{rolle_strong}</p><p>{funktion}</p>'), 'Datum und Rolle in getrennten Absaetzen')
+    _quellgegenprobe('quelle', rolle_original.replace(
+        f'<h1 class="bpa-accessibility">{person}</h1>',
+        '<h1 class="bpa-accessibility">Fremde Person</h1>'), 'falsche BReg-Person bei konsistenten Hashes')
+    aufgaben_original = (zusatz / aufgaben_datei).read_text(encoding='utf-8')
+    _quellgegenprobe('aufgabenquelle', aufgaben_original.replace(
+        f'<h2>{aufgaben_h2}</h2>', f'<h2>{aufgaben_h2}</h2><h2>Andere Personalie</h2>'),
+        'andere H2 vor passender Liste')
+    _quellgegenprobe('aufgabenquelle', aufgaben_original.replace(
+        f'<h2>{aufgaben_h2}</h2>', f'<h2>{aufgaben_h2}</h2><h2>{aufgaben_h2}</h2>'),
+        'doppelte Personalien-H2')
+    _quellgegenprobe('aufgabenquelle', aufgaben_original.replace(
+        'id="rs_reading_area_content"', 'id="fremder-bereich"'), 'Liste ausserhalb des Artikelinhalts')
+    _quellgegenprobe('aufgabenquelle', aufgaben_original.replace(
+        '<li class="bpa-collection-item">Freitag, 24. Juli 2026</li>',
+        '<li class="bpa-collection-item">Freitag, 25. Juli 2026</li>') +
+        '<footer>Freitag, 24. Juli 2026</footer>', 'Datum nur in fremdem Absatz/Fusszeile')
+    meta_path = zusatz / f'{rolle_datei}.meta.json'
+    original_meta_text = meta_path.read_text(encoding='utf-8')
+    try:
+        meta = json.loads(original_meta_text)
+        del meta['http']
+        meta_path.write_text(json.dumps(meta), encoding='utf-8')
+        _erwarte_am_fehler(lambda: _mit(lambda q: None), 'fehlender beobachteter HTTP-Status')
+    finally:
+        meta_path.write_text(original_meta_text, encoding='utf-8')
+    # Das gueltige synthetische Paket wird akzeptiert.
+    assert len(am.pruefe_amthor(_am_eingang(gueltige_quittung), erwartung=erwartung)) == 1
+
+print('PASS: Amthor-Einzelfallquittung — fehlende Quittung/falsche Bilanz/Duplikat/Fremdkennung/'
+      'Disjunktion zu Ressort-/Aufgaben-/beratender/Zusatzaufgaben-/BMWSB-Achse/importfreigegeben/'
+      'Status/Bindungsart/Person/Rolle/Amtsbeginn/Rollenzitat/Themen/Fremdthema/Hinweis/'
+      'Aufgabenbindung/Publikationsdatum/Quelldrift (URL/finalUrl/Hash/Bytezahl/Abrufzeit/HTTP/'
+      'Datei/Metadatum) und vertauschte Quellenpakete/Fremdperson bei konsistenten Hashes/'
+      'Zukunftsbeginn/Rolle nur in Metadaten oder Bildunterschrift/historisches PSts-Amt/fremder li/'
+      'Scheinbeleg in Kommentar, Skript oder Vorlage sperren fail closed; die 54er Rolle muss '
+      'historisch offen bleiben; das gueltige synthetische Paket (Fixture ohne /private/tmp) wird '
+      'akzeptiert.')
