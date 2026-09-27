@@ -1,6 +1,7 @@
 "use strict";
 const A = require("node:assert/strict");
 const I = require("../lib/helmut/briefing-urteilsimport");
+const O = require("../lib/helmut/briefing-urteilsauftrag");
 const Q = require("../lib/helmut/briefing-aussagenbindung");
 const F = require("../lib/helmut/briefing-fachurteil");
 const S = require("../lib/helmut/storage");
@@ -9,12 +10,12 @@ const makeGesamt = require("./fixtures/briefing-fachurteil");
 const userId = "test-kohorte-b-055", day = "2026-09-11";
 const initialNow = "2026-09-11T12:00:00Z";
 const clone = structuredClone;
-function harness() {
+function harness(uid = userId) {
   let clock = new Date(initialNow), reads = 0, builds = 0, writes = 0, checks = 0, inserted = 0;
   const rows = new Map(), hooks = {};
-  const context = { profile: { id: userId, committees: ["Haushaltsausschuss"] },
-    identitaet: { id: userId, name: "Fiktive Testperson" },
-    mandat: { user_id: userId, aktiv: false, geloescht_at: null } };
+  const context = { profile: { id: uid, committees: ["Haushaltsausschuss"], profileActive: false },
+    identitaet: { id: uid, name: "Fiktive Testperson" },
+    mandat: { user_id: uid, aktiv: false, geloescht_at: null } };
   const kos = ["a", "b"].map(id => ({ id: "ko-" + id, vorgang_id: "vg-" + id,
     understanding_status: "complete", was_ist_passiert: "Der fiktive Ausschuss beraet einen fiktiven Entwurf." }));
   const sourcesByVorgang = Object.fromEntries(kos.map(k => [k.vorgang_id, [{ id: "rd-" + k.id,
@@ -23,7 +24,7 @@ function harness() {
   const briefing = { available: true, items: kos.map(k => ({ vorgangId: k.vorgang_id,
     title: sourcesByVorgang[k.vorgang_id][0].title })), currentHelmutState: { primaryVorgangId: "vg-a" } };
   const result = () => ({ briefing: clone(briefing), korrekturBasis: clone({ kos, sourcesByVorgang }),
-    eingabe: Q.baueEingabe({ briefing, profile: context.profile, userId, day, kos, sourcesByVorgang }) });
+    eingabe: Q.baueEingabe({ briefing, profile: context.profile, userId: uid, day, kos, sourcesByVorgang }) });
   const r = result(), urteil = { version: Q.VERSION, eingabeHash: r.eingabe.eingabeHash,
     ursprungHash: r.eingabe.eingabeHash, ausgelasseneVorgaenge: [], aussagen: r.eingabe.aussagen.map(a => ({
       pfad: a.pfad, text: a.text, sachlichGetragen: true, kontextGetragen: true, mandatsbezugGetragen: true,
@@ -31,17 +32,17 @@ function harness() {
       belege: [{ vorgangId: a.vorgangId, documentId: sourcesByVorgang[a.vorgangId][0].id,
         feld: "titel", text: a.text }] })) };
   urteil.gesamtpruefung = makeGesamt(r, urteil);
-  const freigabe = { version: 1, userId, tag: day, productionCommit: "a".repeat(40),
+  const freigabe = { version: 1, userId: uid, tag: day, productionCommit: "a".repeat(40),
     urteilHash: hash(urteil), eingabeHash: r.eingabe.eingabeHash, kontextHash: hash(context),
     maxNeuanlagen: 1, modellaufrufe: 0, gueltigBis: "2026-09-11T13:00:00Z" };
   const storage = { assertTenant: S.assertTenant,
     getRenderedBriefingV3: async (id, slot, tag, opts) => {
-      A.equal(id, userId); A.equal(slot, Q.SLOT); A.equal(tag, day); A.equal(opts.strict, true);
+      A.equal(id, uid); A.equal(slot, Q.SLOT); A.equal(tag, day); A.equal(opts.strict, true);
       return clone(rows.get(`bf-${id}-${slot}-${tag}`) || null);
     },
     insertBriefingFachurteil: async (entry, deps) => S.insertBriefingFachurteil(entry, { ...deps, bereit: true,
       request: async (url, opts) => {
-        writes++; A(url.includes("user_id=eq." + userId)); A(url.includes("on_conflict=id"));
+        writes++; A(url.includes("user_id=eq." + uid)); A(url.includes("on_conflict=id"));
         A.equal(opts.method, "POST"); A.equal(opts.headers.Prefer, "resolution=ignore-duplicates,return=representation");
         await hooks.beforeRequest?.();
         if (rows.has(entry.id)) return [];
@@ -51,7 +52,7 @@ function harness() {
         await hooks.afterInsert?.(entry);
         return [{ ...clone(entry), generated_at: stored.generated_at, created_at: stored.created_at }];
       } }) };
-  const args = { userId, urteil, freigabe, storage, now: () => new Date(clock),
+  const args = { userId: uid, urteil, freigabe, storage, now: () => new Date(clock),
     leseKontext: async () => { await hooks.context?.(++reads); return clone(context); },
     build: async () => { await hooks.build?.(++builds); return result(); },
     pruefeBetrieb: async commit => { A.equal(commit, freigabe.productionCommit); await hooks.gate?.(++checks); } };
@@ -240,6 +241,71 @@ const test = async (name, fn) => { await fn(); console.log("PASS " + name); coun
       storage: h.args.storage, build, now: new Date(initialNow) });
     A.deepEqual(read.lageEingabe.briefing.items.map(i => i.vorgangId), ["vg-a"]);
     A.equal(read.eingabeHash, result.eingabe.eingabeHash);
+  });
+  // v2: genau ein expliziter, fest gebundener Einzelauftrag. Kein weiterer
+  // Auftrag, keine Environment-Umgehung, kein Nachfolger.
+  function auftragsHarness() {
+    const h = harness();
+    h.args.freigabe = { version: 2, userId, tag: O.AUFTRAG.tag, productionCommit: "a".repeat(40),
+      urteilHash: hash(h.args.urteil), eingabeHash: h.args.urteil.eingabeHash, kontextHash: hash(h.context),
+      maxNeuanlagen: 1, modellaufrufe: 0, gueltigBis: `${O.AUFTRAG.tag}T13:00:00Z`,
+      auftrag: { ...O.AUFTRAG } };
+    h.setTime(`${O.AUFTRAG.tag}T09:00:00Z`);
+    return h;
+  }
+  await test("v2-Auftrag ist genau eine Kennung, ein Tag und eine feste Profilbindung", async () => {
+    A.equal(O.AUFTRAG.kennung, "bereichsurteil-20260927-a");
+    A.equal(O.AUFTRAG.tag, "2026-09-27");
+    A.equal(O.AUFTRAG.profilBindung, "0178727cc56dc0c9b8a0d17a655bfe434b0aecab80b92debed92e74175a4b869");
+    A.equal(O.istAuftrag({ ...O.AUFTRAG }), true);
+    for (const change of [{ kennung: "weitere" }, { tag: "2026-09-26" }, { profilBindung: "b".repeat(64) },
+      { extra: true }]) A.equal(O.istAuftrag({ ...O.AUFTRAG, ...change }), false);
+    A.equal(O.istAuftrag(undefined), false);
+  });
+  await test("v1 bleibt rein synthetisch: reale Kennung wird ohne Kohorte gesperrt", async () => {
+    const h = harness("reales-bestandsprofil"), r = await I.ausfuehren(h.args);
+    A.equal(r.grund, "urteilsimport-nur-synthetisch"); A.equal(r.schreibversuche, 0);
+    A.equal(h.counts().writes, 0);
+  });
+  await test("v2-Freigabe wird vor jedem Lesezugriff an Auftrag und Tag geprueft", async () => {
+    for (const mutate of [f => { f.auftrag.kennung = "weitere"; }, f => { f.auftrag.tag = "2026-09-26"; },
+      f => { f.auftrag.profilBindung = "b".repeat(64); }, f => { f.auftrag.extra = true; },
+      f => { delete f.auftrag; }, f => { f.tag = "2026-09-26"; }, f => { f.extra = true; }]) {
+      const h = auftragsHarness(); mutate(h.args.freigabe);
+      // Ein Lesezugriff wuerde den Grund veraendern; er darf hier nicht stattfinden.
+      h.hooks.context = () => { throw new Error("unerlaubter-kontext-lesezugriff"); };
+      const r = await I.ausfuehren(h.args);
+      A.equal(r.grund, "urteilsimport-auftrag-abweichend"); A.equal(r.schreibversuche, 0);
+      A.equal(h.counts().writes, 0);
+    }
+  });
+  await test("v2 schreibt nur bei inaktivem Bestandsprofil ohne Aktivierung", async () => {
+    for (const mutate of [h => { h.context.profile.profileActive = true; },
+      h => { h.context.mandat.aktiv = true; }]) {
+      const h = auftragsHarness(); mutate(h); h.args.freigabe.kontextHash = hash(h.context);
+      const r = await I.ausfuehren(h.args);
+      A.equal(r.grund, "urteilsimport-auftrag-profil-aktiv"); A.equal(r.schreibversuche, 0);
+      A.equal(h.counts().writes, 0);
+    }
+  });
+  await test("v2 bindet Writer und Reader neu an echte Profilbindung, Tag und Auftrag", async () => {
+    const h = auftragsHarness(), r = await I.ausfuehren(h.args);
+    A.equal(r.grund, "urteilsimport-auftrag-bindung-abweichend"); A.equal(r.schreibversuche, 0);
+    A.equal(h.counts().writes, 0);
+    const beleg = { version: 2, tag: O.AUFTRAG.tag, productionCommit: "a".repeat(40),
+      freigabeHash: "a".repeat(64), urteilHash: hash(h.args.urteil), kontextHash: "a".repeat(64),
+      auftrag: { ...O.AUFTRAG } };
+    const zeile = b => ({ id: `bf-${userId}-${Q.SLOT}-${beleg.tag}`, user_id: userId, slot: Q.SLOT,
+      generated_at: initialNow, payload: { urteil: h.args.urteil, importbeleg: b } });
+    for (const mutate of [b => { b.auftrag.kennung = "weitere"; },
+      b => { b.auftrag.tag = "2026-09-26"; }, b => { b.auftrag.profilBindung = "b".repeat(64); },
+      b => { b.extra = true; }, b => { delete b.auftrag; }]) {
+      const b = clone(beleg); mutate(b);
+      A.throws(() => I.pruefeZeile(zeile(b), h.result(), { gelesen: true }), /urteilsimport-/);
+    }
+    // Kein Nachfolger fuer v2, auch bei sonst gueltiger Zeile.
+    A.throws(() => I.pruefeZeile(zeile(clone(beleg)), h.result(), { gelesen: true, nachfolger: true }),
+      /urteilsimport-auftrag-nachfolger-gesperrt/);
   });
   console.log(`${count}/${count} Urteilsimportgruppen bestanden`);
 })().catch(e => { console.error(e); process.exitCode = 1; });

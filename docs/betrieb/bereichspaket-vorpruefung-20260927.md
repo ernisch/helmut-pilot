@@ -47,7 +47,7 @@ Die Auslassungen sind keine Bewertung der Vollversorgung und wurden nicht
 in Production geschrieben. Private Artefakte unter
 `/private/tmp/helmut-budget7/korrektur-*.json`.
 
-## Konkrete offene Schutzentscheidung
+## Importgrenze vor der Fortsetzung (historischer Stand07:18UTC)
 
 Der produktive Lagepfad verlangt bei gemeinsamer Briefingeingabe ein gueltiges
 Einzel- und Gesamturteil (`briefing-lagebindung.js`). Der vorhandene Import
@@ -77,3 +77,42 @@ ohne Inhalte ausgefuehrt. Die abgelehnte Abfrage wurde nicht umgangen.
 
 Budget und Profilschutz: [verifizierte7USD-Umstellung](auftragsgrenze-7usd-20260927.md).
 Keine Aktivierung, kein500er Test, keine externen Nachrichten.
+
+## Fortsetzung07:45UTC: enger Einzelauftrag und negative Fachvorpruefung
+
+Die technische Grenze wurde vom Orchestrator geprueft. Der neue v2-Vertrag
+bindet genau `bereichsurteil-20260927-a`, den27.09. und den oben genannten
+Profilhash. Writer und Reader rechnen die Bindung erneut; v1 bleibt rein
+synthetisch, v2 hat keinen Nachfolger. Beide Aktivmerkmale muessen false sein.
+Ein neuer Pruefsatz, keine Ueberschreibung, keine Profil-/Accountmutation,
+keine Aktivierung und keine Modellarbeit. Einzel-/Gesamturteil, Quellen-,
+Kontext-, Commit-, Zeit- und Betriebspruefungen bleiben erforderlich.
+Der Vertrag ist reine interne Logik; noch kein scharfer Runner oder Aufruf.
+
+Gezielte Pruefung:19/19 Gruppen in `briefing-urteilsimport-test.js`.
+Zusaetzlicher privater Integrationstest mit echtem gebundenem Profil,
+fiktiven Quellenaussagen und Speicher im Arbeitsspeicher: echter Insert-Writer
+und Nachlaufleser erfolgreich; Wiederholung ohne Schreibversuch gesperrt.
+0 Productionwrites und0 Modellaufrufe. Private Testdaten werden nicht in CI
+vorausgesetzt; kein bestandener Test wird bei fehlender Datei vorgetaeuscht.
+
+Flash High fuehrte zwei begrenzte lokale Auftraege aus: Importprotokoll und
+rein lesende Quellenpruefung. Der schreibende Lauf ueberschritt die3-Minuten-
+Grenze waehrend der Kontextfortsetzung und wurde um07:44UTC abgebrochen;
+Zwischenstand danach eigenstaendig geprueft und bereinigt. Der Leser endete
+innerhalb seiner2-Minuten-Grenze. Es gibt keine externe Rechnungsquittung;
+beide vorab gebundenen0,20USD bleiben voll reserviert. Tokenzaehler liefern
+bei den gelesenen Peakpreisen Obergrenzen unter diesen Reserven, keine Rechnung.
+Production-Ruecklesung07:44:39UTC: `externGebunden=5192289`, Auftragslimit7USD,
+Version3. Mit1,195303USD gebuchten Productionkosten:6,387592USD konservativ
+gebunden,0,612408USD frei. Tagesriegel unveraendert6USD. Ein spaeteres Paar bis
+0,436USD passt weiterhin; es wurde nicht gestartet.
+
+Die Quellenpruefung umfasst alle53 Aussagepfade in19 Textgruppen. Ergebnis
+negativ: Titel der eigenen Rede traegt weder Tonwert noch behauptete Resonanz;
+Datenstand26.09. muss sichtbar bleiben. Der Solidarprinzip-Vorgang ist fachlich
+naeher, seine Nichtanzeige braucht eine konkrete Erklaerung. Die Berliner
+Beschluesse muessen getrennt und auf die belegten Auszuege begrenzt bleiben.
+Der Orchestrator muss diese Befunde am unveraenderten Builder pruefen;
+keine positive Gesamtbewertung und kein Lageaufruf vor dieser Nacharbeit.
+Privater vollstaendiger Pruefbericht: `/private/tmp/helmut-budget7/flash-quellenpruefung.md`.
