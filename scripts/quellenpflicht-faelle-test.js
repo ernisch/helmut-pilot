@@ -190,7 +190,7 @@ console.log("— Fall 1+2+5: Radar-Leerzustaende —");
   check("Radar: Bereich 'Über dich' ohne oeffnbare Items zeigt seinen ehrlichen Leerhinweis",
     html2.includes("Heute wurden keine direkten Erwähnungen gefunden"));
   check("Radar: Bereich 'Neue Dynamiken' ohne oeffnbare Items zeigt seinen ehrlichen Leerhinweis",
-    html2.includes("Aktuell entsteht keine neue belegbare Dynamik"));
+    html2.includes("In dieser Ansicht werden keine belegten Dynamikhinweise angezeigt."));
 }
 
 console.log("— Fall 4: fehlende Veroeffentlichungsdaten bleiben leer —");
