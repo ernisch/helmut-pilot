@@ -4,6 +4,10 @@
 Zielprofile. **Keine fachliche Freigabe, kein Importmanifest, keine Production-
 Aktion und kein 500er Nachweis.** Alle 500 Datensaetze sind `aktiv: false` und
 `importfreigegeben: false`.
+Die 335 zuvor offenen Parteifelder sind ueber die von Sol gepruefte, versionierte
+Ergaenzungsquittung an URL UND Quellhash gebunden: 261 Parteien sind belegt
+(424 Parteibelege gesamt inkl. der 163 vorab belegten), 74 bleiben ausdruecklich
+offen, 2 sind amtlich parteilos.
 
 ## Artefakte
 
@@ -11,7 +15,9 @@ Aktion und kein 500er Nachweis.** Alle 500 Datensaetze sind `aktiv: false` und
 |---|---|
 | [`scripts/profil-feldbelege-500.py`](../../scripts/profil-feldbelege-500.py) | reproduzierbarer Offline-Assembler (nur Python-Standardbibliothek) |
 | [`docs/betrieb/500-profilfeldbelege-20260927.json`](500-profilfeldbelege-20260927.json) | erzeugte Feldbelege (500 Datensaetze) |
+| [`docs/betrieb/parteifeldpruefung-335-20260927.json`](parteifeldpruefung-335-20260927.json) | versionierte, gepruefte Ergaenzungsquittung der 335 zuvor offenen Parteifelder |
 | [`scripts/profil-feldbelege-500-test.js`](../../scripts/profil-feldbelege-500-test.js) | gezielter Offline-Test (kein Netz, keine DB, kein Modell) |
+| [`scripts/profil-feldbelege-500-unit.py`](../../scripts/profil-feldbelege-500-unit.py) | gezielte Gegenproben (Quelldrift, Fraktion-keine-Partei, offen-bleibt-offen) |
 
 Aufruf: `python3 scripts/profil-feldbelege-500.py`
 Test: `node scripts/lokal.js -- node scripts/profil-feldbelege-500-test.js`
@@ -52,7 +58,10 @@ Belegte Bindung (vom Assembler erzwungen, nicht behauptet):
 * Partei: Berlin aus der amtlichen h1; Brandenburg aus
   [`brandenburg-parteipruefung-20260927.json`](brandenburg-parteipruefung-20260927.json)
   nur bei **gleicher URL UND identischem Quellhash**; Bundestag **nicht** aus
-  `PoliticalParty`/Fraktion abgeleitet.
+  `PoliticalParty`/Fraktion abgeleitet. Bislang offene Parteifelder werden
+  ausschliesslich aus der geprueften Ergaenzungsquittung ergaenzt (siehe unten);
+  `status: offen` bleibt offen, und das Belegzitat muss woertlich in der
+  amtlichen HTML stehen (Bundestag ausserhalb des Fraktionskopfs).
 * Jeder Datensatz traegt `kanonischeKennung`, Quelle (URL/Abrufzeit/Hash), die
   vorhandenen oeffentlichen Mandatsfelder (`mandatsnachweis`), `feldbelege`,
   `offenePunkte` und `offeneFelder`.
@@ -75,10 +84,14 @@ bleibt als historischer Lauf unveraendert. Keine Ableitung aus Fraktionslosigkei
 
 | Parlament | Datensaetze | Partei belegt | Partei offen | fachliche Achse offen | Mandatsart offen |
 |---|---:|---:|---:|---:|---:|
-| Bundestag | 330 | 0 | 330 | 37 | 0 |
-| Landtag Berlin | 120 | 118 | 2 | 5 | 3 |
-| Landtag Brandenburg | 50 | 45 (+2 parteilos) | 3 | 8 | 4 |
-| **Gesamt** | **500** | **163 (+2 parteilos)** | **335** | **50** | **7** |
+| Bundestag | 330 | 259 | 71 | 37 | 0 |
+| Landtag Berlin | 120 | 119 | 1 | 5 | 3 |
+| Landtag Brandenburg | 50 | 46 (+2 parteilos) | 2 | 8 | 4 |
+| **Gesamt** | **500** | **424 (+2 parteilos)** | **74** | **50** | **7** |
+
+Mathematik der Parteibilanz: 424 belegt + 2 parteilos + 74 offen = 500. Die
+Parteiaenderung laesst die uebrigen Achsen unveraendert: fachliche Achse offen 50,
+Mandatsart offen 7, technischer Importvertrag 444 akzeptiert / 56 offen.
 
 Die fachliche Achse gilt nur dann als offen, wenn WEDER eine ordentliche NOCH eine
 stellvertretende belegte Ausschusszuordnung vorliegt. 22 Bundestagsprofile tragen
@@ -117,8 +130,16 @@ bis die offenen Felder fachlich belegt sind.
 ## Reproduzierbarkeit
 
 Der Test erzeugt die Belegdatei mit fixiertem `erstelltAm` erneut und vergleicht
-byteweise: **byte-identisch**. Zusaetzliche synthetische Gegenprobe: belegte Partei bleibt bei Fraktionslosigkeit
-erhalten; Widerspruch zwischen Berliner h1 und extrahierter Partei wird gesperrt.
+byteweise: **byte-identisch**. Zusaetzliche synthetische Gegenproben gegen die
+Parteifeldquittung: belegte Partei bleibt bei Fraktionslosigkeit erhalten; eine
+abweichende Berliner h1/Extraktions-Partei wird gesperrt; Fraktionsangabe wird
+**nicht** zur Partei; ohne Quittung bleibt ein offenes Bundestags-Parteifeld
+fail-closed; Quelldrift (sha256/URL), Fremdkennung, doppelte Kennung,
+unerwarteter Status und eine Belegt-ohne-Wert-Quittung werden gesperrt;
+`status: offen` bleibt offen; ein nicht woertlich belegtes Zitat wird gesperrt.
+Fuer Omid Nouripour wird zusaetzlich geprueft, dass das kurze Zitat
+„Bündnis 90/Die Grünen“ im ausdruecklichen Abschnitt „Mitgliedschaften und
+Ehrenämter“ steht und nicht aus dem Fraktionskopf stammt.
 Ergebnis des gezielten Tests:
 
 ```
@@ -136,12 +157,38 @@ abgerufen. Keine Production-Datenaenderung, Aktivierung oder500er Test.
 Production-Nurlesebeleg13:51:49UTC:500/0,
 Profilhash `198f25ff81cf5ee4ad2645c1881a8191`.
 
+## Parteifeld-Ergaenzung (gepruefte Quittung)
+
+`docs/betrieb/parteifeldpruefung-335-20260927.json` ist die von Sol gepruefte,
+versionierte Ergaenzungsquittung zu den 335 zuvor offenen Parteifeldern
+(330 Bundestag + 2 Berlin + 3 Brandenburg). Massgeblich sind die obersten
+geprueften Statusfelder; das Feld `vorschlag` bleibt als Audit unveraendert und
+wird **nicht** ausgewertet.
+
+Der Assembler bindet jede Kennung an die amtliche Quell-URL UND den Quellhash der
+Detailseite. Nur `status: belegt` oder `status: parteilos` wird uebernommen;
+`status: offen` bleibt offen. Fehlende Kennung, doppelte Kennung, Kennung
+ausserhalb der 500 Zielprofile, abweichende URL/Hash (Quelldrift), unerwarteter
+Status und Konflikt (Feld war bereits belegt/parteilos) brechen den Lauf
+fail-closed ab. Ein Belegt-Eintrag muss sein Belegzitat woertlich in der amtlichen
+HTML tragen; fuer den Bundestag wird der Fraktionskopf (Absatz
+`m-biography__introInfo`) ausgeschlossen, damit das Zitat aus der Biografie stammt
+und nicht aus der Fraktion. Es werden keine zusaetzlichen Personen- oder privaten
+Daten kopiert; die Quittung enthaelt nur oeffentliche, amtlich belegte Aussagen.
+
+Ergebnis: 261 belegt, 74 offen; mit den 163 vorab belegten Parteien 424 belegt,
+2 parteilos, 74 offen. Der Importvertrag meldet fuer zwei uebernommene Parteien
+(SSW im Bundestag, BSW in Berlin) die Warnung `fraktionslos-widerspruch`
+(Partei ohne Fraktionsstatus) — keine Fehler, kein Aktivieren.
+Die Integration und die gezielten Tests liefen ausschliesslich lokal/offline:
+kein bezahlter Modellaufruf, keine Production-Aktion, keine DB-Aenderung.
+
 ## Offene Probleme / naechster Schritt
 
-1. **Bundestags-Partei ist fuer alle330 noch ungeprueft** — die ausgewerteten
-   Strukturfelder bezeichnen Fraktionen. Parteibelege in den amtlichen Biografien
-   sind als naechster Schritt getrennt zu pruefen;
-   keine Ableitung aus der Fraktion.
+1. **Parteifelder sind geprueft.** Alle 335 zuvor offenen Parteifelder sind ueber
+   die versionierte Ergaenzungsquittung an URL UND Quellhash gebunden; 424 sind
+   belegt, 2 parteilos, 74 bleiben offen. Bundestagspartei wird weiterhin **nicht**
+   aus `PoliticalParty`/Fraktion abgeleitet.
 2. **50 Profile ohne belegte fachliche Achse** (37 Bundestag, 5 Berlin,
    8 Brandenburg) — weder ordentlicher noch stellvertretender Ausschuss belegt;
    nicht durch Themen erfinden schliessen. 22 Bundestagsprofile sind ueber
@@ -175,3 +222,10 @@ Vercel `dpl_DtDq9zqDgMBTfsfCfMjb8QLtqKC4` READY. Rein lesende Nachkontrolle
 am27.09.14:27:21UTC:500 Profile/0 aktiv, Hash
 `198f25ff81cf5ee4ad2645c1881a8191`; keine error/fatal-Logs im geprueften
 Fenster14:26:45–14:27:22UTC. Die Stellvertretungs-Codekorrektur folgt separat.
+
+Die Sol-Pruefung hat sieben zu weitgehende Flash-Vorschlaege offengelassen
+(Engagement, historische Parteiaemter oder fachliche Kommission allein reichen
+nicht). Acht Belegzitate wurden praezisiert. Bundestagszitate werden technisch
+im Biografieblock geprueft; Nouripours Parteieintrag ausschliesslich unter
+Mitgliedschaften und Ehrenaemter. Quelle/Hash/Kennung bleiben gebunden.
+Auch der Status parteilos benoetigt ein woertliches ausdrueckliches Quellenzitat.

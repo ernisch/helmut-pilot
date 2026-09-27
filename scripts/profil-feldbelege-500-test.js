@@ -86,34 +86,55 @@ a.ok(!datensaetze.some((d) => d.quelle.url.includes("schmidt_jan-1047146")), "ge
 a.ok(!datensaetze.some((d) => d.profil.vollname === "Schmidt, Jan Wenzel"), "gesperrter Name in der Zielauswahl");
 a.ok(datensaetze.some((d) => d.quelle.url.includes("preisendanz_david")), "Ersatzprofil fehlt");
 
-// ── 4 · Partei-/Fraktionsregeln ───────────────────────────────────────────────────────────
+// ── 4 · Partei-/Fraktionsregeln und gepruefte Ergaenzungsquittung ─────────────────────────
+// 335 vorher offene Parteifelder wurden von Sol an URL+sha256 geprueft (261 belegt,
+// 74 offen). Uebernommen wird nur status belegt/parteilos; offen bleibt offen.
+const ergaenzung = JSON.parse(fs.readFileSync(path.join(ROOT, "docs", "betrieb", "parteifeldpruefung-335-20260927.json"), "utf8"));
+a.equal(ergaenzung.umfang, 335, "Quittung muss 335 geprüfte Parteifelder umfassen");
+a.equal(ergaenzung.ergebnisse.length, 335, "Quittung muss 335 Ergebnisse tragen");
+const ergByKennung = new Map(ergaenzung.ergebnisse.map((e) => [e.kennung, e]));
+a.equal(ergByKennung.size, 335, "Quittungskennungen muessen eindeutig sein");
+a.equal(ergaenzung.ergebnisse.filter((e) => e.status === "belegt").length, 261, "261 belegte Parteibelege");
+a.equal(ergaenzung.ergebnisse.filter((e) => e.status === "offen").length, 74, "74 bleiben offen");
+for (const e of ergaenzung.ergebnisse) {
+  if (e.status !== "offen") continue;
+  a.equal(e.partei, null, "offene Quittung darf keinen Parteiwert tragen");
+}
+
 const parteiStatus = { belegt: 0, offen: 0, parteilos: 0 };
 for (const d of datensaetze) {
-  if (d.parlament === "bundestag") {
-    a.ok(!Object.prototype.hasOwnProperty.call(d.profil, "partei"), "Bundestag darf keine Partei aus Fraktion ableiten");
-    a.equal(d.parteiStatus, "offen", "Bundestag-Partei bleibt offen");
-  } else {
-    a.notEqual(d.profil.bundesland, undefined, "Landtagsprofil braucht ein Bundesland");
-    a.ok(["belegt", "offen", "parteilos"].includes(d.parteiStatus), `unbekannter Parteistatus ${d.parteiStatus}`);
-  }
+  const e = ergByKennung.get(d.kanonischeKennung);
+  a.notEqual(d.profil.bundesland, undefined, "Jedes Profil braucht ein Bundesland");
+  a.ok(["belegt", "offen", "parteilos"].includes(d.parteiStatus), `unbekannter Parteistatus ${d.parteiStatus}`);
   if (d.parteiStatus === "belegt") {
     a.ok(d.profil.partei, "belegter Parteistatus braucht einen Parteiwert");
     a.ok(d.feldbelege.partei && d.feldbelege.partei.length > 0, "Parteiherkunft muss belegt sein");
+    if (e) {
+      // Uebernommener Wert stammt woertlich aus der geprueften Quittung, gebunden an URL+sha256.
+      a.equal(e.status, "belegt");
+      a.equal(d.profil.partei, e.partei, "Parteiwert muss der geprueften Quittung entsprechen");
+      a.deepEqual(d.parteiBeleg.quelle, { datei: "docs/betrieb/parteifeldpruefung-335-20260927.json", url: d.quelle.url, sha256: d.quelle.sha256 });
+    } else {
+      // Ohne Quittung darf NUR die amtliche Landtags-h1/Parteipruefung eine Partei liefern —
+      // nie eine Bundestags-Fraktion.
+      a.notEqual(d.parlament, "bundestag", "Bundestags-Partei nur aus gepruefter Quittung, nie aus der Fraktion");
+    }
   } else {
     a.ok(!d.profil.partei, "offene bzw. parteilose Partei darf kein Feld setzen");
-    a.ok(d.offenePunkte.length > 0, "offene Partei muss als offener Punkt sichtbar sein");
+    a.ok(d.offenePunkte.length > 0, "offene/parteilose Partei muss als offener Punkt sichtbar sein");
+    if (e) a.equal(e.status, "offen", "wer offen bleibt, muss in der Quittung offen sein");
   }
   parteiStatus[d.parteiStatus] += 1;
 }
-a.equal(parteiStatus.offen, 335, "335 Profile ohne belegte Partei (330 Bundestag + 2 Berlin + 3 Brandenburg)");
-a.equal(parteiStatus.belegt, 163, "163 belegte Parteien (118 Berlin + 45 Brandenburg)");
+a.equal(parteiStatus.offen, 74, "74 Profile bleiben ohne belegte Partei");
+a.equal(parteiStatus.belegt, 424, "424 belegte Parteien (163 vorab + 261 aus der Quittung)");
 a.equal(parteiStatus.parteilos, 2, "zwei amtlich belegte parteilose Profile");
 
-// Brandenburg kommt aus der Parteipruefung: 45 Parteien, 3 offen, 2 parteilos.
+// Brandenburg kommt aus der Parteipruefung, ergaenzt um die Quittung: 46 belegt, 2 offen, 2 parteilos.
 const bb = datensaetze.filter((d) => d.parlament === "landtag-brandenburg");
 const bbStatus = {};
 for (const d of bb) bbStatus[d.parteiStatus] = (bbStatus[d.parteiStatus] || 0) + 1;
-a.deepEqual(bbStatus, { belegt: 45, offen: 3, parteilos: 2 }, "Brandenburg: 47 geklaert / 3 offen");
+a.deepEqual(bbStatus, { belegt: 46, offen: 2, parteilos: 2 }, "Brandenburg: 48 geklaert / 2 offen");
 
 // ── 5 · Mandatsachse: Wahlkreiskandidatur ist kein Direktmandat ───────────────────────────
 const btDirekt = datensaetze.filter((d) => d.parlament === "bundestag" && d.profil.wahlkreis).length;

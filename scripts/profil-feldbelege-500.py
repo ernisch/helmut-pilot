@@ -47,6 +47,12 @@ DEFAULT_AUSGANG = REPO_ROOT / "docs" / "betrieb" / "500-profilfeldbelege-2026092
 
 NAMENSAUSWahl = REPO_ROOT / "docs" / "betrieb" / "500-namensauswahl-20260927.json"
 BRANDENBURG_PARTEI = REPO_ROOT / "docs" / "betrieb" / "brandenburg-parteipruefung-20260927.json"
+# Versionierte, von Sol gepruefte Ergaenzungsquittung zu den vorher offenen
+# Parteifeldern (335 Ergebnisse: 261 belegt, 74 offen). Massgeblich sind die
+# obersten geprueften Statusfelder; das Feld ``vorschlag`` bleibt reines Audit.
+PARTEIFELDPRUEFUNG = REPO_ROOT / "docs" / "betrieb" / "parteifeldpruefung-335-20260927.json"
+PARTEIFELDPRUEFUNG_RESSOURCE = "docs/betrieb/parteifeldpruefung-335-20260927.json"
+ERGAENZUNG_STATUS = ("belegt", "parteilos", "offen")
 
 ABRUF_BUNDESTAG = "bundestagsprofile-330-abruf.json"
 ABRUF_LANDESPARLAMENTE = "landesprofile-170-abruf.json"
@@ -131,6 +137,7 @@ class Eingang:
         self.detailseiten = verzeichnis / DETAILSEITEN
         self.auswahl = _lies_json(NAMENSAUSWahl)
         self.brandenburg_partei = _lies_json(BRANDENBURG_PARTEI)
+        self.parteifeldpruefung = _lies_json(PARTEIFELDPRUEFUNG)
         self.abruf = _lies_json(verzeichnis / ABRUF_BUNDESTAG) + _lies_json(
             verzeichnis / ABRUF_LANDESPARLAMENTE
         )
@@ -293,6 +300,155 @@ def _parteinachweis(eingang: Eingang, eintrag: dict, extraktion: dict) -> dict:
             "herkunft": "bewusst NICHT abgeleitet: Bundestags-Fraktion ist keine Partei; kein Partei-String gesetzt",
         }
     raise AssemblerFehler(f"Unbekanntes Parlament: {parlament}")
+
+
+# ── Versionierte Ergaenzungsquittung der Parteifeldpruefung (fail closed) ─────
+# Der Absatz ``m-biography__introInfo`` ist der Fraktionskopf der
+# Bundestagsseite. Er nennt die Fraktion und darf nicht als Parteibeleg gelten.
+FRAKTIONSKOPF_MUSTER = re.compile(
+    r'<p\b[^>]*class="[^"]*m-biography__introInfo[^"]*"[^>]*>.*?</p>', re.S
+)
+
+
+def _zitat_normalisiert(wert: str) -> str:
+    ohne_tags = _text(wert)
+    return unicodedata.normalize("NFC", " ".join(ohne_tags.split()))
+
+
+def _pruefe_ergaenzung(eingang: "Eingang") -> dict:
+    """Prueft die versionierte Parteifeldquittung und indexiert sie je Kennung.
+
+    Fail closed bei fehlender Kennung, doppelter Kennung, Kennung ausserhalb der
+    500 Zielprofile, unerwartetem Status und leerem/degeneriertem Belegtext.
+    """
+    quelle = eingang.parteifeldpruefung
+    ergebnisse = quelle.get("ergebnisse") if isinstance(quelle, dict) else None
+    if not isinstance(ergebnisse, list) or not ergebnisse:
+        raise AssemblerFehler("Parteifeldpruefung enthaelt keine Ergebnisliste.")
+    if quelle.get("umfang") != len(ergebnisse):
+        raise AssemblerFehler("Parteifeldpruefung: umfang passt nicht zur Ergebniszahl.")
+    kennungen_500 = {
+        _slug(eintrag["parlament"], eingang.abruf_by_url[eintrag["url"]]["amtlicheKennung"]): eintrag
+        for eintrag in eingang.auswahl["auswahl"]
+    }
+    if len(kennungen_500) != len(eingang.auswahl["auswahl"]):
+        raise AssemblerFehler("Kanonische Kennungen der 500 Zielprofile sind nicht eindeutig.")
+    index = {}
+    for ergebnis in ergebnisse:
+        kennung = str(ergebnis.get("kennung", "")).strip()
+        if not kennung:
+            raise AssemblerFehler("Parteifeldpruefung: Eintrag ohne Kennung.")
+        if kennung in index:
+            raise AssemblerFehler(f"Parteifeldpruefung: doppelte Kennung {kennung}.")
+        if kennung not in kennungen_500:
+            raise AssemblerFehler(
+                f"Parteifeldpruefung: Kennung {kennung} gehoert nicht zu den 500 Zielprofilen."
+            )
+        status = ergebnis.get("status")
+        if status not in ERGAENZUNG_STATUS:
+            raise AssemblerFehler(f"Parteifeldpruefung: unerwarteter Status {status!r} bei {kennung}.")
+        partei = str(ergebnis.get("partei") or "").strip()
+        if status == "belegt" and not partei:
+            raise AssemblerFehler(f"Parteifeldpruefung: Status belegt ohne Parteiwert bei {kennung}.")
+        if status == "parteilos" and partei:
+            raise AssemblerFehler(f"Parteifeldpruefung: Status parteilos mit Parteiwert bei {kennung}.")
+        if status in ("belegt", "parteilos") and not _zitat_normalisiert(ergebnis.get("beleg") or ""):
+            raise AssemblerFehler(f"Parteifeldpruefung: Status belegt ohne Belegzitat bei {kennung}.")
+        index[kennung] = ergebnis
+    eingang.ergaenzung_by_kennung = index
+    eingang.ergaenzung_verwendet = set()
+    return index
+
+
+def _pruefe_woertliches_zitat(parlament: str, detail_html: str, zitat: str, kennung: str,
+                             abschnitt: str = "") -> None:
+    """Belegt das kurze Zitat woertlich in der amtlichen Original-HTML.
+
+    Bundestagsbelege muessen innerhalb des Biografieblocks stehen. Navigation,
+    Fraktionskopf und JSON-LD gelten nicht als Mitgliedschaftsnachweis.
+    """
+    zitat_norm = _zitat_normalisiert(zitat)
+    if not zitat_norm:
+        raise AssemblerFehler(f"Parteifeldpruefung: leeres Zitat bei {kennung}.")
+    quelle = detail_html
+    if parlament == "bundestag":
+        bio = re.search(r'<div\b[^>]*class="m-biography__biography"[^>]*>(.*?)</div>', detail_html, re.S)
+        if not bio:
+            raise AssemblerFehler(
+                f"Parteifeldpruefung: Biografieblock fehlt ({kennung})."
+            )
+        quelle = bio.group(1)
+        if abschnitt == "Biografie / Mitgliedschaften und Ehrenämter":
+            absatz = re.search(r'<p\b[^>]*>\s*Mitgliedschaften und Ehrenämter:(.*?)</p>', quelle, re.S)
+            if not absatz:
+                raise AssemblerFehler(f"Parteifeldpruefung: Mitgliedschaftsabschnitt fehlt ({kennung}).")
+            quelle = absatz.group(1)
+    if zitat_norm not in _zitat_normalisiert(quelle):
+        raise AssemblerFehler(
+            f"Parteifeldpruefung: woertliches Zitat nicht in der amtlichen HTML belegt ({kennung})."
+        )
+
+
+def _ergaenzung_partnachweis(eingang: "Eingang", parlament: str, abruf: dict, detail_html: str,
+                             kennung: str, nachweis: dict) -> dict:
+    """Ergaenzt ein bislang OFFENES Parteifeld aus der geprueften Quittung.
+
+    Nur ``belegt`` oder ``parteilos`` wird explizit uebernommen; ``offen`` bleibt
+    offen. Quelle wird je Kennung an URL UND sha256 gebunden. Fehlende Kennung,
+    abweichende URL/Hash, unerwarteter Status und Konflikt brechen den Lauf ab.
+    """
+    ergebnis = eingang.ergaenzung_by_kennung.get(kennung)
+    if ergebnis is None:
+        if nachweis["status"] == "offen":
+            raise AssemblerFehler(
+                f"Parteifeldpruefung: keine gepruefte Ergaenzung fuer offenes Parteifeld {kennung}."
+            )
+        return nachweis
+    eingang.ergaenzung_verwendet.add(kennung)
+    status = ergebnis["status"]
+    if nachweis["status"] != "offen":
+        raise AssemblerFehler(
+            f"Parteifeldpruefung: Konflikt bei {kennung} — bereits {nachweis['status']}, "
+            f"Quittung behauptet {status}."
+        )
+    quittung = ergebnis.get("quelle") or {}
+    if quittung.get("url") != abruf["url"]:
+        raise AssemblerFehler(f"Parteifeldpruefung: abweichende Quell-URL bei {kennung}.")
+    if quittung.get("sha256") != abruf["sha256"]:
+        raise AssemblerFehler(f"Parteifeldpruefung: abweichender Quellhash bei {kennung}.")
+    herkunft = (
+        f"{PARTEIFELDPRUEFUNG_RESSOURCE} (gepruefte Ergaenzung; URL UND identischer "
+        f"Quellhash {quittung['sha256']})"
+    )
+    if status == "offen":
+        # Offen bleibt offen — nichts wird abgeleitet oder "schoengerechnet".
+        return nachweis
+    _pruefe_woertliches_zitat(parlament, detail_html, ergebnis.get("beleg", ""), kennung,
+                             ergebnis.get("abschnitt", ""))
+    if status == "parteilos":
+        if not re.search(r"\bparteilos\b", ergebnis.get("beleg", ""), re.I):
+            raise AssemblerFehler(f"Parteifeldpruefung: parteilos nicht ausdruecklich belegt ({kennung}).")
+        return {
+            "status": "parteilos",
+            "partei": None,
+            "parteilos": True,
+            "beleg": ergebnis.get("beleg", ""),
+            "grund": ergebnis.get("grund", ""),
+            "abschnitt": ergebnis.get("abschnitt"),
+            "pruefung": ergebnis.get("pruefung"),
+            "quittung": quittung,
+            "herkunft": herkunft,
+        }
+    return {
+        "status": "belegt",
+        "partei": str(ergebnis["partei"]).strip(),
+        "beleg": ergebnis.get("beleg", ""),
+        "grund": ergebnis.get("grund", ""),
+        "abschnitt": ergebnis.get("abschnitt"),
+        "pruefung": ergebnis.get("pruefung"),
+        "quittung": quittung,
+        "herkunft": herkunft,
+    }
 
 
 def _bundestags_region(profil_roh: dict):
@@ -461,6 +617,9 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         raise AssemblerFehler(f"Kein belegtes Bundesland fuer {eintrag['url']} — nicht auf NULL normalisieren.")
 
     parteinachweis = _parteinachweis(eingang, eintrag, extraktion)
+    parteinachweis = _ergaenzung_partnachweis(
+        eingang, parlament, abruf, detail_html, mandatsId, parteinachweis
+    )
     fraktion = profil_roh.get("fraktion")
     fraktionslos = bool(profil_roh.get("fraktionslos")) or (fraktion or "").strip().lower() == "fraktionslos"
 
@@ -518,6 +677,11 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         feldbelege["parteiStatus"] = f"amtlich belegt parteilos, NICHT als Parteiname uebernommen: {parteinachweis['beleg']}"
     elif parteinachweis["status"] == "belegt":
         feldbelege["parteiWert"] = parteinachweis["beleg"]
+    if parteinachweis.get("quittung"):
+        feldbelege["parteiQuelle"] = (
+            f"{PARTEIFELDPRUEFUNG_RESSOURCE}: {parteinachweis['quittung']['url']} "
+            f"sha256 {parteinachweis['quittung']['sha256']}"
+        )
     if landtag_mandat and landtag_mandat.get("quelle") == "profilkopf" and landtag_mandat["art"] != "offen":
         feldbelege["region"] = (
             f"amtlicher Profilkopf (HTML), ausdrueckliche Angabe: {landtag_mandat.get('beleg', '')}"
@@ -543,7 +707,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             _merke(feld, fallback_punkt)
 
     if parlament == "bundestag":
-        _merke("partei", "Parteimitgliedschaft noch nicht gesondert geprueft; Strukturfeld PoliticalParty nennt hier die Fraktion")
+        if parteinachweis["status"] == "offen":
+            _merke("partei", "Parteimitgliedschaft in der amtlichen Biografie nicht belegt; NICHT aus der Fraktion abgeleitet")
     elif parlament == "landtag-berlin":
         if parteinachweis["status"] == "offen":
             _merke("partei", "Parteizugehoerigkeit nicht amtlich belegt (h1 ohne Parteiangabe)")
@@ -593,6 +758,21 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
     if weitere_gremien:
         _merke("weitereGremien", "Weitere belegte Gremien sind nicht als ordentliche Ausschussmitgliedschaft zugeordnet")
 
+    parteibeleg = {
+        "partei": parteinachweis.get("partei"),
+        "beleg": parteinachweis.get("beleg", ""),
+        "grund": parteinachweis.get("grund", ""),
+        "herkunft": parteinachweis["herkunft"],
+    }
+    if parteinachweis.get("quittung"):
+        parteibeleg["abschnitt"] = parteinachweis.get("abschnitt")
+        parteibeleg["pruefung"] = parteinachweis.get("pruefung")
+        parteibeleg["quelle"] = {
+            "datei": PARTEIFELDPRUEFUNG_RESSOURCE,
+            "url": parteinachweis["quittung"]["url"],
+            "sha256": parteinachweis["quittung"]["sha256"],
+        }
+
     datensatz = {
         "kanonischeKennung": mandatsId,
         "amtlicheKennung": abruf["amtlicheKennung"],
@@ -618,12 +798,7 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         "mandatsnachweis": profil_roh,
         "mandatsartBelegt": mandatsart_belegt,
         "parteiStatus": parteinachweis["status"],
-        "parteiBeleg": {
-            "partei": parteinachweis.get("partei"),
-            "beleg": parteinachweis.get("beleg", ""),
-            "grund": parteinachweis.get("grund", ""),
-            "herkunft": parteinachweis["herkunft"],
-        },
+        "parteiBeleg": parteibeleg,
         "feldbelege": feldbelege,
         "weitereGremien": weitere_gremien,
         "h1Abgleich": True,
@@ -640,7 +815,18 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
 
 def assembliere(eingang: Eingang) -> dict:
     bindung = _pruefe_eingangsbindung(eingang)
+    ergaenzung = _pruefe_ergaenzung(eingang)
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
+
+    # Die gepruefte Quittung muss die offenen Parteifelder DECKUNGSGLEICH abbilden:
+    # kein Eintrag darf ungenutzt bleiben (Konflikt/Fremdkennung/Quelldrift), und
+    # kein offenes Parteifeld darf ohne gepruefte Ergaenzung bleiben.
+    ungenutzt = set(ergaenzung) - eingang.ergaenzung_verwendet
+    if ungenutzt:
+        raise AssemblerFehler(
+            f"Parteifeldpruefung nicht deckungsgleich verwendet: {len(ungenutzt)} Eintraege ohne "
+            f"offenes Parteifeld (z. B. {sorted(ungenutzt)[:3]})."
+        )
 
     # ── Gesamtprueifungen (fail closed) ───────────────────────────────────────
     kennungen = [d["kanonischeKennung"] for d in datensaetze]
@@ -675,6 +861,14 @@ def assembliere(eingang: Eingang) -> dict:
     achse_offen = sum(1 for d in datensaetze if "fachlicheAchse" in d["offeneFelder"])
     if partei_belegt + partei_parteilos + partei_offen != len(datensaetze):
         raise AssemblerFehler("Parteibilanz deckt nicht alle 500 Datensaetze ab.")
+    if (partei_belegt, partei_parteilos, partei_offen) != (424, 2, 74):
+        raise AssemblerFehler(
+            "Parteibilanz weicht von der geprueften Quittung ab "
+            f"(belegt={partei_belegt}, parteilos={partei_parteilos}, offen={partei_offen})."
+        )
+    ergaenzung_belegt = sum(1 for e in ergaenzung.values() if e["status"] == "belegt")
+    ergaenzung_parteilos = sum(1 for e in ergaenzung.values() if e["status"] == "parteilos")
+    ergaenzung_offen = sum(1 for e in ergaenzung.values() if e["status"] == "offen")
 
     return {
         "status": (
@@ -690,6 +884,10 @@ def assembliere(eingang: Eingang) -> dict:
             "detailseiten": f"{DETAILSEITEN}/ (amtliche Original-HTML je Abruf)",
             "extraktionen": f"{EXTRAKTION_BUNDESTAG}, {EXTRAKTION_LANDESPARLAMENTE}",
             "brandenburgParteipruefung": "docs/betrieb/brandenburg-parteipruefung-20260927.json",
+            "parteifeldpruefung": (
+                f"{PARTEIFELDPRUEFUNG_RESSOURCE} (335 gepruefte Parteifelder: "
+                f"{ergaenzung_belegt} belegt, {ergaenzung_offen} offen)"
+            ),
             "eingangsverzeichnis": str(eingang.verzeichnis),
             "hinweis": (
                 "Detailseiten, Abrufe und Extraktionen sind lokale Arbeitsdateien ausserhalb des "
@@ -701,7 +899,13 @@ def assembliere(eingang: Eingang) -> dict:
             "Jede URL und jeder Quellhash wurde gegen die gespeicherte Original-HTML geprueft; Extraktion und Abruf muessen denselben Hash tragen.",
             "Brandenburg-Parteifelder stammen aus der Parteipruefung, uebernommen nur bei gleicher URL UND identischem Quellhash (46 belegt / 4 offen).",
             "Berlin-Parteifelder stammen aus der amtlichen h1 der Landtagsseite.",
-            "Bundestags-Partei wird NICHT aus PoliticalParty/Fraktion abgeleitet und bleibt offen.",
+            "Bundestags-Partei wird NICHT aus PoliticalParty/Fraktion abgeleitet; ohne gepruefte Quittung bleibt sie offen.",
+            (
+                "Bislang offene Parteifelder werden ausschliesslich aus der geprueften "
+                f"Ergaenzungsquittung {PARTEIFELDPRUEFUNG_RESSOURCE} ergaenzt; nur status=belegt/parteilos "
+                "wird uebernommen, status=offen bleibt offen. Jede Kennung ist an URL UND sha256 gebunden, "
+                "das Belegzitat muss woertlich (Bundestag ausserhalb des Fraktionskopfs) in der amtlichen HTML stehen."
+            ),
             "DIREKT nur bei belegtem Wahlkreismandat; eine Wahlkreiskandidatur ist kein Direktmandat.",
             "Landesliste wird als listenmandat + regionHinweis gefuehrt.",
             "Gremienrollen sind ordentlich/stellvertretend getrennt; beratende Rollen sind keine ordentliche Mitgliedschaft.",
@@ -720,6 +924,14 @@ def assembliere(eingang: Eingang) -> dict:
             "parteiBelegt": partei_belegt,
             "parteiParteilos": partei_parteilos,
             "parteiOffen": partei_offen,
+            "parteifeldpruefung": {
+                "datei": PARTEIFELDPRUEFUNG_RESSOURCE,
+                "geprueftGesamt": len(ergaenzung),
+                "belegt": ergaenzung_belegt,
+                "parteilos": ergaenzung_parteilos,
+                "offen": ergaenzung_offen,
+                "deckungsgleichVerwendet": len(eingang.ergaenzung_verwendet),
+            },
             "mandatsartOffen": mandatsart_offen,
             "fachlicheAchseOffen": achse_offen,
             "offeneFelder": offene_felder,
