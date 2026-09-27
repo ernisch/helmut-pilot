@@ -1,4 +1,4 @@
-# Frische3-Rest: begrenzter Dreierauftrag (Code bereit, nicht ausgefuehrt)
+# Frische3-Rest: Dreierauftrag ausgefuehrt, zwei Ergebnisse fachlich abgenommen
 
 Roadmap 3.3, autonomer [Betreiberauftrag](autonom-bis-500-starttor-20260926.md).
 Der gestoppte Fuenferlauf `verstehen5-36277841330` hat zwei Quellen gespeichert/
@@ -6,7 +6,8 @@ aktualisiert, den dritten Wadephul-KI-Artikel faelschlich an den alten
 Menschenrechtsrat-Vorgang gekoppelt und korrekt wegen Ebenenkonflikt gestoppt;
 zwei Quellen wurden nicht begonnen. Der Code bereitet die drei noch offenen Restquellen fuer einen eigenen
 Production-Auftrag vor. Er wurde bisher nur lokal geprueft; kein neuer Import
-und noch kein scharfer Dreierlauf.
+und noch kein scharfer Dreierlauf in diesem damaligen Vorbereitungsstand.
+Der spaetere ausgefuehrte Lauf und die abweichende fachliche Bilanz stehen unten.
 
 ## Bindung (hart, fail closed)
 
@@ -91,3 +92,42 @@ aktuellen Praefixbestand ergibt der echte Resolver jetzt3 neue Ereignisse.
 Zusaetzlich stoppt der konkrete Rest3-Vertrag vor jeder unerwarteten
 Bestandsbindung; sowohl alter unknown als auch ein anderer Bestand negativ
 geprueft. Neuer PR und erneuter rein lesender Plan nach READY erforderlich.
+
+## Nachlauf27.09. und eng begrenzte Qualitaetssperre
+
+PR638/`46a2bb7d137272860fcaa5ecd40f5aedd32fb0a0` ist READY
+(`dpl_8tKuqmcbzbWKstMvWr3VJBMRZxQr`,00:00:56UTC); beide Pflichtpruefungen
+36280461307 gruen. Plan36281227942 bestaetigt3 neue Ereignisse,0 Modellaufrufe.
+Einmallauf[36281285571](https://github.com/ernisch/helmut-pilot/actions/runs/36281285571)
+00:02:51–00:03:58UTC:3 Aufrufe,0,021170USD,3 neue Ergebnisse gespeichert.
+Die technische Quittung nennt `fachlichBestanden=true`; das ersetzt den
+folgenden redaktionellen Quellenabgleich ausdruecklich nicht.
+
+Wadephul-KI: internationale Forderung, Vertretung von Merz und Rahmenwerk
+quellenkonform; kein Menschenrechtsrat-Vorgang. EU710-Millionen: Ankuendigung,
+keine Auszahlung behauptet;7,5 Millionen Ebola-Hilfe als Teil des Pakets.
+Aegypten: Bericht und Dementi im Kerntext korrekt attribuiert, aber
+`warum_wichtig` behauptet Dementis mehrerer Regierungen. Der gebundene
+Originalabsatz nennt ausschliesslich das Buero Netanjahus. Deshalb wird das
+gesamte Aegypten-Ergebnis nicht fachlich abgenommen.
+
+Vorab definierte Production-Massnahme: nur
+`vg-terrorüberfall-20260926-fe3a51` mit Voll-KO/CAS/Links archivieren unter
+`quarantaene-aegypten-dementi-20260927-a`; danach allein
+`understanding_status=failed` und Aenderungszeit. Risiko: eine weitere Quelle
+steht vorlaeufig nicht fuer die Lage bereit. Rueckweg bei Fehler: Transaktion
+zurueckrollen; spaeter keine automatische Freigabe des falschen Texts, kein
+CAS-Reset und kein Retry. Vor-/Nachkontrolle: exakter KO-Hash, alle anderen
+Felder/CAS/Links identisch,500 inaktiv/501 Identitaeten mit gleichen Vollhashes,
+keine laufenden Jobs/Leases. Keine Modell- oder Profilaktion.
+
+Massnahme nach erfolgreicher Rollback-Probe ausgefuehrt. Unabhaengige Nachlesung
+27.09.,00:05:56UTC: Status`failed`, Archiv`fachlich-gesperrt`, alle anderen
+KO-Felder, CAS und Quellenlinks exakt gleich. Archiv-Vollhash (Postgres-JSONB):
+`f91994d89892cfb8adb5c175b4faa95131d862dedd429c5e01f249094be73535`.
+Somit technisch3/3 gespeichert, redaktionell2/3 abgenommen,1/3 gesperrt;
+0 fehlend,0 doppelt,0 unbekannte Ausgaenge. Keine Wiederholung gestartet.
+Profilnachlesung00:10:09UTC:500 inaktiv/501 Identitaeten mit identischen Vollhashes,
+0 Jobs/Locks/Leases/offene Reservierungen. Auftragsbindung00:06:19UTC
+5,287592USD inklusive58 Helfersessions und0,35USD Altreserve; Anbieterrechnung
+nicht behauptet, Tages-/Gesamtgrenze weiterhin je6USD.
