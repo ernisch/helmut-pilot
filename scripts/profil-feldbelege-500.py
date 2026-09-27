@@ -573,6 +573,64 @@ def _pruefe_jarzombek(eingang) -> dict:
     return index
 
 
+# Versionierte, vom Orchestrator eng gepruefte EINZELFALLQUITTUNG des zuvor offenen
+# Fachachsenfalls Julia Klöckner (Bundestag). Die fail-closed-Validierung liegt im
+# getrennten Modul ``profil-feldbelege-500-kloeckner.py`` (das die sicheren Helfer des
+# Zusatzaufgabenmoduls wiederverwendet); hier wird nur der gepruefte Index angewendet.
+# Die bestehende aktuelle Rolle stammt aus der 54er Rollenquittung (belegt) und bleibt
+# unveraendert; ihre kanonische Bundestags-Person wird separat neu gebunden (echte H1 +
+# eigener aktueller Funktionstext div.m-biography__function). Die Aufgaben stammen
+# ausschliesslich aus dem ZWEITEN eigenen Absatz des geschlossenen H2-Abschnitts "An der
+# Spitze der Bundestagsverwaltung" der amtlichen Praesidiumsseite; der erste Absatz,
+# sonstige Praesidiums-/Aeltestenratsarbeit, angrenzende Abschnitte und der
+# --hidden-Linkhilfetext sind keine Personenaufgaben. Es entstehen nur die zwei
+# freigegebenen Themen (Bundestagsverwaltung, Parteienfinanzierung), der getrennte
+# Herkunftshinweis und die amtliche Quelle; keine allgemeine Polizei-/Innenpolitik,
+# keine persoenliche politische Position, keine Scheinausschuesse, keine
+# Partei-/Mandatsartaenderung.
+KLOECKNER = REPO_ROOT / "docs" / "betrieb" / "kloeckner-praesidentinnen-aufgaben-1-20260927.json"
+KLOECKNER_RESSOURCE = "docs/betrieb/kloeckner-praesidentinnen-aufgaben-1-20260927.json"
+KLOECKNER_GESAMT = 1
+
+
+def _lade_kloecknermodul():
+    pfad = Path(__file__).with_name("profil-feldbelege-500-kloeckner.py")
+    vorher = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    spec = _importlib_util.spec_from_file_location("profil_feldbelege_500_kloeckner", pfad)
+    try:
+        modul = _importlib_util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        return modul
+    finally:
+        sys.dont_write_bytecode = vorher
+
+
+KLOECKNERMODUL = _lade_kloecknermodul()
+
+
+def _pruefe_kloeckner(eingang) -> dict:
+    """Prueft die versionierte Kloeckner-Einzelfallquittung ueber das getrennte Modul."""
+    try:
+        index = KLOECKNERMODUL.pruefe_kloeckner(
+            eingang,
+            quittung=getattr(eingang, "kloeckner", None),
+            ressortachsen_kennungen=set(getattr(eingang, "ressortachsen_by_kennung", None) or {}),
+            aufgabenachsen_kennungen=set(getattr(eingang, "aufgabenachsen_by_kennung", None) or {}),
+            beratendeachsen_kennungen=set(getattr(eingang, "beratendeachsen_by_kennung", None) or {}),
+            zusatzaufgaben_kennungen=set(getattr(eingang, "zusaetzlicheaufgaben_by_kennung", None) or {}),
+            bmwsb_kennungen=set(getattr(eingang, "bmwsb_by_kennung", None) or {}),
+            amthor_kennungen=set(getattr(eingang, "amthor_by_kennung", None) or {}),
+            wahlausschuss_kennungen=set(getattr(eingang, "wahlausschuss_by_kennung", None) or {}),
+            jarzombek_kennungen=set(getattr(eingang, "jarzombek_by_kennung", None) or {}),
+        )
+    except KLOECKNERMODUL.KloecknerFehler as fehler:
+        raise AssemblerFehler(str(fehler)) from fehler
+    eingang.kloeckner_by_kennung = index
+    eingang.kloeckner_verwendet = set()
+    return index
+
+
 ZUSATZQUELLEN = "zusatzquellen"
 
 ABRUF_BUNDESTAG = "bundestagsprofile-330-abruf.json"
@@ -1549,6 +1607,10 @@ class Eingang:
             self.jarzombek = _lies_json(JARZOMBEK)
         except FileNotFoundError as fehler:
             raise AssemblerFehler(f"Jarzombek-Einzelfallquittung fehlt: {JARZOMBEK_RESSOURCE}") from fehler
+        try:
+            self.kloeckner = _lies_json(KLOECKNER)
+        except FileNotFoundError as fehler:
+            raise AssemblerFehler(f"Kloeckner-Einzelfallquittung fehlt: {KLOECKNER_RESSOURCE}") from fehler
         self.abruf = _lies_json(verzeichnis / ABRUF_BUNDESTAG) + _lies_json(
             verzeichnis / ABRUF_LANDESPARLAMENTE
         )
@@ -2662,6 +2724,65 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         }
         achsen_geschlossen = True
 
+    # Versionierte Kloeckner-Einzelfallquittung: fuer den zuvor offenen Fachachsenfall
+    # Julia Klöckner entstehen ausschliesslich die zwei amtlich abgeleiteten Themen
+    # (Bundestagsverwaltung, Parteienfinanzierung), der getrennte Herkunftshinweis und die
+    # amtliche Praesidiums-Quelle. Die bestehende aktuelle Rolle aus der 54er
+    # Rollenquittung und alle bestehenden offiziellen Quellen bleiben unveraendert
+    # erhalten; es entsteht KEINE neue Funktionsrolle, kein Scheinausschuss und keine
+    # Partei-/Mandatsartaenderung. Die Aufgaben stammen aus genau dem ZWEITEN eigenen
+    # Absatz des geschlossenen H2-Abschnitts "An der Spitze der Bundestagsverwaltung".
+    kloeckner_eintrag = (getattr(eingang, "kloeckner_by_kennung", None) or {}).get(mandatsId)
+    kloeckner_beleg = None
+    if kloeckner_eintrag is not None:
+        verwendet = getattr(eingang, "kloeckner_verwendet", None)
+        if verwendet is not None:
+            verwendet.add(mandatsId)
+        kloeckner_quelle = kloeckner_eintrag["quelle"]
+        profil["themen"] = list(kloeckner_eintrag["themen"])
+        hinweis = kloeckner_eintrag["ableitungsHinweis"]
+        profil.setdefault("funktionen", [])
+        if hinweis not in profil["funktionen"]:
+            profil["funktionen"].append(hinweis)
+        profil["offizielleQuellen"].append({
+            "art": "praesidentinnen-aufgabe",
+            "url": kloeckner_quelle["url"],
+            "abgerufenAm": kloeckner_quelle["abgerufenAm"],
+            "sha256": kloeckner_quelle["sha256"],
+        })
+        kloeckner_beleg = {
+            "datei": KLOECKNER_RESSOURCE,
+            "kennung": kloeckner_eintrag["kennung"],
+            "region": kloeckner_eintrag["region"],
+            "bindungsart": kloeckner_eintrag["bindungsart"],
+            "person": kloeckner_eintrag["person"],
+            "funktion": kloeckner_eintrag["funktion"],
+            "funktionstext": kloeckner_eintrag["funktionstext"],
+            "abschnitt": kloeckner_eintrag["abschnitt"],
+            "ersterAbsatz": kloeckner_eintrag["ersterAbsatz"],
+            "absatz": kloeckner_eintrag["absatz"],
+            "aufgabenbindung": kloeckner_eintrag["aufgabenbindung"],
+            "personenquelle": {
+                "datei": kloeckner_eintrag["personenquelle"].get("datei"),
+                "url": kloeckner_eintrag["personenquelle"].get("url"),
+                "finalUrl": kloeckner_eintrag["personenquelle"].get("finalUrl"),
+                "abgerufenAm": kloeckner_eintrag["personenquelle"].get("abgerufenAm"),
+                "sha256": kloeckner_eintrag["personenquelle"].get("sha256"),
+                "bytes": kloeckner_eintrag["personenquelle"].get("bytes"),
+            },
+            "quelle": {
+                "datei": kloeckner_quelle.get("datei"),
+                "url": kloeckner_quelle.get("url"),
+                "finalUrl": kloeckner_quelle.get("finalUrl"),
+                "abgerufenAm": kloeckner_quelle.get("abgerufenAm"),
+                "sha256": kloeckner_quelle.get("sha256"),
+                "bytes": kloeckner_quelle.get("bytes"),
+            },
+            "themen": list(kloeckner_eintrag["themen"]),
+            "ableitungsHinweis": hinweis,
+        }
+        achsen_geschlossen = True
+
     # ── Feldbelege (Herkunft je Feld) ─────────────────────────────────────────
     feldbelege = dict(extraktion.get("feldbelege", {}))
     feldbelege["mandatsId"] = "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert"
@@ -2739,6 +2860,17 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"nur die vier freigegebenen Themen, keine Schemata/Fremdabteilungen, keine persoenliche "
             f"politische Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei beider "
             f"Quellen, Original UND Metadaten, gebunden)"
+        )
+    elif kloeckner_beleg is not None:
+        feldbelege["themen"] = (
+            f"vom Orchestrator gepruefte Kloeckner-Aufgabenquittung {KLOECKNER_RESSOURCE}: die zwei "
+            f"amtlich abgeleiteten Themen (Bundestagsverwaltung, Parteienfinanzierung) stammen aus genau "
+            f"dem ZWEITEN eigenen Absatz des geschlossenen H2-Abschnitts "
+            f"{kloeckner_beleg['abschnitt']!r} der amtlichen Praesidiumsseite; der erste Absatz, sonstige "
+            f"Praesidiums-/Aeltestenratsarbeit, angrenzende Abschnitte und der --hidden-Linkhilfetext sind "
+            f"keine Personenaufgaben, keine allgemeine Polizei-/Innenpolitik, keine persoenliche politische "
+            f"Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei der amtlichen Quelle, "
+            f"Original UND Metadaten, gebunden)"
         )
     feldbelege["bundesland"] = (
         "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)"
@@ -2844,6 +2976,21 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
             f"nur der getrennte Herkunftshinweis zur amtlichen BMDS-Abteilungsbindung, keine persoenliche "
             f"politische Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei beider "
             f"Quellen, Original UND Metadaten, gebunden)"
+        )
+        feldbelege["funktionen"] = f"{vorher}; {zusatz}" if vorher else zusatz
+    if kloeckner_beleg is not None:
+        vorher = feldbelege.get("funktionen")
+        zusatz = (
+            f"vom Orchestrator gepruefte Kloeckner-Aufgabenquittung {KLOECKNER_RESSOURCE}: die "
+            f"bestehende aktuelle Rolle aus der 54er Rollenquittung und alle bestehenden Funktionen "
+            f"bleiben unveraendert erhalten (KEINE neue Funktionsrolle, kein Scheinausschuss); die "
+            f"kanonische Bundestags-Person wird separat ueber ihre echte H1 und den eigenen aktuellen "
+            f"Funktionstext (div.m-biography__function) neu gebunden; zusaetzlich nur der getrennte "
+            f"Herkunftshinweis zur amtlichen Praesidentinnen-Aufgabenbindung aus dem zweiten eigenen "
+            f"Absatz des geschlossenen H2-Abschnitts {kloeckner_beleg['abschnitt']!r}, keine allgemeine "
+            f"Polizei-/Innenpolitik, keine persoenliche politische Position "
+            f"(URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei der amtlichen Quelle, "
+            f"Original UND Metadaten, gebunden)"
         )
         feldbelege["funktionen"] = f"{vorher}; {zusatz}" if vorher else zusatz
 
@@ -3004,6 +3151,8 @@ def _baue_datensatz(eingang: Eingang, eintrag: dict) -> dict:
         datensatz["wahlausschussQuittung"] = wahlausschuss_beleg
     if jarzombek_beleg is not None:
         datensatz["jarzombekQuittung"] = jarzombek_beleg
+    if kloeckner_beleg is not None:
+        datensatz["kloecknerQuittung"] = kloeckner_beleg
     if "status" in extraktion:
         datensatz["extraktionsstatus"] = extraktion["status"]
     return datensatz
@@ -3026,6 +3175,7 @@ def assembliere(eingang: Eingang) -> dict:
     amthor = _pruefe_amthor(eingang)
     wahlausschuss = _pruefe_wahlausschuss(eingang)
     jarzombek = _pruefe_jarzombek(eingang)
+    kloeckner = _pruefe_kloeckner(eingang)
     datensaetze = [_baue_datensatz(eingang, eintrag) for eintrag in eingang.auswahl["auswahl"]]
 
     # Die gepruefte Quittung muss die offenen Parteifelder DECKUNGSGLEICH abbilden:
@@ -3103,6 +3253,11 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Jarzombek-Einzelfallquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_jarzombek)}."
         )
+    ungenutzte_kloeckner = set(kloeckner) - eingang.kloeckner_verwendet
+    if ungenutzte_kloeckner:
+        raise AssemblerFehler(
+            f"Kloeckner-Einzelfallquittung nicht deckungsgleich verwendet: {sorted(ungenutzte_kloeckner)}."
+        )
     ressort_geschlossen = set(eingang.ressortachsen_verwendet)
     if ressort_geschlossen != set(ressortachsen):
         raise AssemblerFehler(
@@ -3150,6 +3305,12 @@ def assembliere(eingang: Eingang) -> dict:
         raise AssemblerFehler(
             f"Jarzombek-Einzelfallquittung deckt nicht genau ihre eine Kennung ab: "
             f"{sorted(set(jarzombek) ^ jarzombek_geschlossen)}."
+        )
+    kloeckner_geschlossen = set(eingang.kloeckner_verwendet)
+    if kloeckner_geschlossen != set(kloeckner):
+        raise AssemblerFehler(
+            f"Kloeckner-Einzelfallquittung deckt nicht genau ihre eine Kennung ab: "
+            f"{sorted(set(kloeckner) ^ kloeckner_geschlossen)}."
         )
     if ressort_geschlossen & aufgaben_geschlossen:
         raise AssemblerFehler(
@@ -3226,9 +3387,25 @@ def assembliere(eingang: Eingang) -> dict:
                 f"Jarzombek-Einzelfall- und {name}achse gleichzeitig belegt: "
                 f"{sorted(jarzombek_geschlossen & andere)}."
             )
+    for andere, name in (
+        (ressort_geschlossen, "Ressort"),
+        (aufgaben_geschlossen, "Aufgaben"),
+        (beratende_geschlossen, "Beratende"),
+        (zusatz_geschlossen, "Zusatzaufgaben"),
+        (bmwsb_geschlossen, "BMWSB-Aufgaben"),
+        (amthor_geschlossen, "Amthor-Einzelfall"),
+        (wahlausschuss_geschlossen, "Wahlausschuss-Aufgaben"),
+        (jarzombek_geschlossen, "Jarzombek-Einzelfall"),
+    ):
+        if kloeckner_geschlossen & andere:
+            raise AssemblerFehler(
+                f"Kloeckner-Einzelfall- und {name}achse gleichzeitig belegt: "
+                f"{sorted(kloeckner_geschlossen & andere)}."
+            )
     geschlossene_achsen = (ressort_geschlossen | aufgaben_geschlossen
                            | beratende_geschlossen | zusatz_geschlossen | bmwsb_geschlossen
-                           | amthor_geschlossen | wahlausschuss_geschlossen | jarzombek_geschlossen)
+                           | amthor_geschlossen | wahlausschuss_geschlossen | jarzombek_geschlossen
+                           | kloeckner_geschlossen)
     if not geschlossene_achsen <= set(profilrollen):
         raise AssemblerFehler(
             "Geschlossene Achsen enthalten Kennungen ausserhalb der 54er Rollenquittung: "
@@ -3260,7 +3437,8 @@ def assembliere(eingang: Eingang) -> dict:
         if (datensatz.get("ressortachsenQuittung") or datensatz.get("aufgabenachsenQuittung")
                 or datensatz.get("beratendeachsenQuittung") or datensatz.get("zusaetzlicheaufgabenQuittung")
                 or datensatz.get("bmwsbQuittung") or datensatz.get("amthorQuittung")
-                or datensatz.get("wahlausschussQuittung") or datensatz.get("jarzombekQuittung")):
+                or datensatz.get("wahlausschussQuittung") or datensatz.get("jarzombekQuittung")
+                or datensatz.get("kloecknerQuittung")):
             if "fachlicheAchse" in datensatz["offeneFelder"]:
                 raise AssemblerFehler(
                     f"Geschlossene Fachachse bleibt offen: {datensatz['kanonischeKennung']}."
@@ -3677,6 +3855,15 @@ def assembliere(eingang: Eingang) -> dict:
                 "themenGesetzt": sum(1 for d in datensaetze if d.get("jarzombekQuittung")),
                 "deckungsgleichVerwendet": len(eingang.jarzombek_verwendet),
                 "geschlosseneAchsen": len(jarzombek_geschlossen),
+                "verbleibendOffeneAchsen": len(offene_achsen),
+            },
+            "kloecknerQuittung": {
+                "datei": KLOECKNER_RESSOURCE,
+                "geprueftGesamt": len(kloeckner),
+                "nachRegion": {"Bund": len(kloeckner)},
+                "themenGesetzt": sum(1 for d in datensaetze if d.get("kloecknerQuittung")),
+                "deckungsgleichVerwendet": len(eingang.kloeckner_verwendet),
+                "geschlosseneAchsen": len(kloeckner_geschlossen),
                 "verbleibendOffeneAchsen": len(offene_achsen),
             },
             "offeneFelder": offene_felder,

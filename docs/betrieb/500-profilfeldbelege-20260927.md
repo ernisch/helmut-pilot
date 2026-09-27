@@ -4,9 +4,19 @@
 Zielprofile. **Keine fachliche Freigabe, kein Importmanifest, keine Production-
 Aktion und kein 500er Nachweis.** Alle 500 Datensaetze sind `aktiv: false` und
 `importfreigegeben: false`.
-**Aktuelle Fortschreibung nach dem Jarzombek-Einzelfall:** 482 technisch akzeptiert,
-18 unvollstaendig; 316/330 Bundestagsprofile technisch bereit. 17 fachliche Achsen,
-74 Parteifelder und eine Berliner Mandatsart bleiben offen. Die nachfolgenden
+**Aktuelle Fortschreibung nach dem Kloeckner-Einzelfall:** 483 technisch akzeptiert,
+17 unvollstaendig; 317/330 Bundestagsprofile technisch bereit. 16 fachliche Achsen,
+74 Parteifelder und eine Berliner Mandatsart bleiben offen. Der zuvor offene
+Fachachsenfall Julia Klöckner (Bundestagspraesidentin) ist ueber die amtlich belegten
+Aufgaben (Bundestagsverwaltung, Parteienfinanzierung) geschlossen: die kanonische
+Person wird separat ueber ihre echte H1 und den eigenen aktuellen Funktionstext
+(`div.m-biography__function`) neu gebunden, die Aufgaben stammen ausschliesslich aus
+dem ZWEITEN eigenen Absatz des geschlossenen H2-Abschnitts "An der Spitze der
+Bundestagsverwaltung" der amtlichen Praesidiumsseite (der `--hidden`-Linkhilfetext
+zaehlt nicht als Aufgabenprosa, der erste Absatz und angrenzende Abschnitte sind keine
+Personenaufgaben, sonstige Praesidiums-/Aeltestenratsarbeit wird nicht uebernommen);
+die 54er Rolle `Bundestagspräsidentin` bleibt byte-identisch erhalten, die Partei
+bleibt offen, nur ein Datensatz aendert sich (499 unveraendert). Die nachfolgenden
 bisherigen Teilberichte enthalten ihre damaligen Zwischenstaende; massgeblich fuer
 die aktuelle Bilanz ist das [Feldbeleg-JSON](500-profilfeldbelege-20260927.json).
 
@@ -55,11 +65,15 @@ Wahlperiode). Das sonstige Gremium und die bestehenden ordentlichen/
 stellvertretenden Funktionen bleiben unveraendert, es entsteht kein regulaerer
 Ausschuss (PR660 bleibt richtig); Haßelmann/Miersch bleiben in der 54er
 Rollenquittung offen (kein Blocker dieser eigenstaendigen Mitgliedschaftsquelle).
-18 Achsen bleiben offen.
+Der zuvor offene Fachachsenfall Julia Klöckner ist ueber die gepruefte
+[Kloeckner-Einzelfallquittung](kloeckner-praesidentinnen-aufgaben-1-20260927.json)
+geschlossen (zwei Themen Bundestagsverwaltung/Parteienfinanzierung aus dem zweiten
+eigenen Absatz des geschlossenen H2-Abschnitts, kanonische Person separat neu gebunden,
+54er-Rolle erhalten). 16 Achsen bleiben offen.
 Zwei bislang offene Berliner Mandatsarten sind ueber eine versionierte lokale
 Quittung belegt (Johannes Martin Bezirksliste Marzahn-Hellersdorf, Benedikt Lux
 Landesliste); Claudia Engelmann bleibt offen.
-481 Profile sind technisch importierbar.
+483 Profile sind technisch importierbar.
 
 ## Artefakte
 
@@ -83,6 +97,8 @@ Landesliste); Claudia Engelmann bleibt offen.
 | [`scripts/profil-feldbelege-500-bmwsb.py`](../../scripts/profil-feldbelege-500-bmwsb.py) | getrenntes, fail-closed Pruefmodul der 2 BMWSB-Unterbereichsachsen; verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder, fixiertes PDF-Fachurteil, injizierbare Testfixtures |
 | [`scripts/profil-feldbelege-500-amthor.py`](../../scripts/profil-feldbelege-500-amthor.py) | getrenntes, fail-closed Pruefmodul des Einzelfalls Amthor; verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder, bindet die zuvor offene 54er Rolle separiert neu, injizierbare Testfixtures |
 | [`scripts/profil-feldbelege-500-wahlausschuss.py`](../../scripts/profil-feldbelege-500-wahlausschuss.py) | getrenntes, fail-closed Pruefmodul der 3 Wahlausschuss-Aufgabenachsen; verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder, bindet die aktuelle Wahlausschuss-Rolle eigenstaendig aus ProfilePage.mainEntity, injizierbare Testfixtures |
+| [`docs/betrieb/kloeckner-praesidentinnen-aufgaben-1-20260927.json`](kloeckner-praesidentinnen-aufgaben-1-20260927.json) | vom Orchestrator eng gepruefte Einzelfallquittung Julia Klöckner: die zwei Themen Bundestagsverwaltung/Parteienfinanzierung stammen aus dem zweiten eigenen Absatz des geschlossenen H2-Abschnitts der amtlichen Praesidiumsseite, die kanonische Person wird separat ueber echte H1 + eigenen aktuellen Funktionstext neu gebunden; 54er-Rolle bleibt erhalten; keine Importfreigabe |
+| [`scripts/profil-feldbelege-500-kloeckner.py`](../../scripts/profil-feldbelege-500-kloeckner.py) | getrenntes, fail-closed Pruefmodul des Einzelfalls Klöckner; verwendet die sicheren Helfer des Zusatzaufgabenmoduls wieder, bindet die zuvor offene Rolle separiert neu (echte H1 + eigener Funktionstext), injizierbare Testfixtures |
 | [`scripts/profil-feldbelege-500-test.js`](../../scripts/profil-feldbelege-500-test.js) | gezielter Offline-Test (kein Netz, keine DB, kein Modell) |
 | [`scripts/profil-feldbelege-500-unit.py`](../../scripts/profil-feldbelege-500-unit.py) | gezielte Gegenproben (Quelldrift, Fraktion-keine-Partei, Gremienrollen, unbekannter Ausschuss, Mandatsartenquittung, offen-bleibt-offen) |
 
@@ -892,3 +908,42 @@ konsistent neu gehashter falscher H1, inerter Vorlagen und eines aus seinem
 Abschnitt herausragenden Kartenbelegs; echter Import-/Storage-Roundtrip mit vier
 positiven Themenproben und negativen Fremdthemen; byte-identische Neuerzeugung.
 Keine Production-Datenaenderung und kein produktiver Versorgungsnachweis.
+
+## Klöckner: Bundestagspraesidentin — Verwaltung und Parteienfinanzierung
+
+Die [Einzelfallquittung](kloeckner-praesidentinnen-aufgaben-1-20260927.json) bindet
+Julia Klöckner an ihre amtlich belegten Aufgaben als Bundestagspräsidentin. Die
+kanonische Person wird separat ueber ihre echte H1 und den eigenen aktuellen
+Funktionstext der amtlichen Bundestags-Profilseite (genau ein geschlossener
+`div.m-biography__function`) neu gebunden; die bestehende 54er Rolle
+`Bundestagspräsidentin` bleibt byte-identisch erhalten. Die Aufgaben stammen
+ausschliesslich aus dem ZWEITEN eigenen Absatz des geschlossenen H2-Abschnitts
+"An der Spitze der Bundestagsverwaltung" der amtlichen Praesidiumsseite. Der
+erste Absatz, sonstige Praesidiums-/Aeltestenratsarbeit und angrenzende
+Abschnitte sind ausdruecklich keine Personenaufgaben; der `--hidden`-
+Linkhilfetext zaehlt nicht als Aufgabenprosa. Daraus folgen genau die zwei
+Themen Bundestagsverwaltung und Parteienfinanzierung; der Herkunftshinweis steht
+getrennt in den Funktionen.
+
+Positiv geprueft: Rollen, Themen und Herkunftshinweis bleiben ueber den echten
+Pfad `zuHelmutProfil` -> `toMandateProfileRow` -> `fromMandateProfileRow`
+verlustfrei erhalten; zwei exakte Themenproben treffen, negative Fremdthemen
+(allgemeine Polizei-/Innenpolitik, Praesidiums-/Aeltestenratsarbeit, angrenzende
+Abschnitte und die erste Erklaerung) treffen nicht. Die amtliche Aufgabenquelle
+ist an URL/finalUrl/sha256/Bytezahl/Abrufzeit/HTTP/Datei gebunden, Original UND
+`*.meta.json`; die kanonische Personenquelle ist an die unveraenderte
+Bundestags-Detailseite gebunden. Gegenproben sperren fehlende/fremde H1,
+fremden Funktionstext bei konsistentem Hash, konsistent neu gehashte
+fremde Absaetze, Abschnittsleck, ungeschlossenen/verschobenen Absatz,
+Original-/Metadaten-Drift, vertauschte Pakete, doppelten H2-Abschnitt und
+`--hidden`-Aufgabenprosa.
+
+Genau ein Datensatz geaendert, 499 unveraendert. Die 54er Rollenquittung bleibt
+48 belegt / 6 offen. Die Partei bleibt unveraendert offen (das Amt beweist keine
+Partei). Keine Partei-, Fraktions-, Mandatsart- oder Ausschussaenderung. Alle
+500 bleiben inaktiv und ohne Importfreigabe.
+
+Eigene Abschlussgegenproben binden auch manipulierte Originale samt Metadaten und
+Hash konsistent neu: falsche oder versteckte H2, Absatz ausserhalb des
+Elternabschnitts und Funktionstext nach dessen Ende werden gesperrt. Die
+amtlichen Originale bleiben akzeptiert; Neuerzeugung byte-identisch.

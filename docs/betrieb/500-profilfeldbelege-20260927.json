@@ -69,7 +69,7 @@
       "deckungsgleichVerwendet": 335
     },
     "mandatsartOffen": 1,
-    "fachlicheAchseOffen": 17,
+    "fachlicheAchseOffen": 16,
     "sonstigeGremien": {
       "expliziteListe": 15,
       "profileMitWeiterenGremien": 114,
@@ -104,7 +104,7 @@
       "themenGesetzt": 19,
       "deckungsgleichVerwendet": 19,
       "geschlosseneAchsen": 19,
-      "verbleibendOffeneAchsen": 17
+      "verbleibendOffeneAchsen": 16
     },
     "aufgabenachsenQuittung": {
       "datei": "docs/betrieb/aufgabenachsen-6-20260927.json",
@@ -155,7 +155,7 @@
       "themenGesetzt": 1,
       "deckungsgleichVerwendet": 1,
       "geschlosseneAchsen": 1,
-      "verbleibendOffeneAchsen": 17
+      "verbleibendOffeneAchsen": 16
     },
     "wahlausschussQuittung": {
       "datei": "docs/betrieb/wahlausschuss-drei-aufgaben-20260927.json",
@@ -166,7 +166,7 @@
       "themenGesetzt": 3,
       "deckungsgleichVerwendet": 3,
       "geschlosseneAchsen": 3,
-      "verbleibendOffeneAchsen": 17
+      "verbleibendOffeneAchsen": 16
     },
     "jarzombekQuittung": {
       "datei": "docs/betrieb/jarzombek-bmds-abteilungen-1-20260927.json",
@@ -177,12 +177,23 @@
       "themenGesetzt": 1,
       "deckungsgleichVerwendet": 1,
       "geschlosseneAchsen": 1,
-      "verbleibendOffeneAchsen": 17
+      "verbleibendOffeneAchsen": 16
+    },
+    "kloecknerQuittung": {
+      "datei": "docs/betrieb/kloeckner-praesidentinnen-aufgaben-1-20260927.json",
+      "geprueftGesamt": 1,
+      "nachRegion": {
+        "Bund": 1
+      },
+      "themenGesetzt": 1,
+      "deckungsgleichVerwendet": 1,
+      "geschlosseneAchsen": 1,
+      "verbleibendOffeneAchsen": 16
     },
     "offeneFelder": {
       "weitereGremien": 137,
       "partei": 74,
-      "fachlicheAchse": 17,
+      "fachlicheAchse": 16,
       "wahlbezirk": 1,
       "mandatsart": 1,
       "regionbezug": 28
@@ -18723,7 +18734,8 @@
         "wahlkreis": "Wahlkreis 200: Kreuznach",
         "funktionen": [
           "Präsidentin: Der Ältestenrat",
-          "Bundestagspräsidentin"
+          "Bundestagspräsidentin",
+          "Aufgabenbindung Bund (amtlich abgeleitet): Bundestagspräsidentin; Spitze der Bundestagsverwaltung und jährliche Festsetzung der staatlichen Mittel zur Parteienfinanzierung; keine persönliche politische Position"
         ],
         "aktiv": false,
         "offizielleQuellen": [
@@ -18732,7 +18744,17 @@
             "url": "https://www.bundestag.de/abgeordnete/biografien/K/kloeckner_julia-1045434",
             "abgerufenAm": "2026-09-27T13:00:37.494520+00:00",
             "sha256": "f89405b0fa87c453503b83a0e7d0f3e2b4a5e8a6df41c9544a4e9bd796f74329"
+          },
+          {
+            "art": "praesidentinnen-aufgabe",
+            "url": "https://www.bundestag.de/parlament/praesidium/funktion_neu",
+            "abgerufenAm": "2026-09-27T20:42:16.429190+00:00",
+            "sha256": "d63f72c87b88a2b7d174386fe33137d45280707e311d779ede39136627d7c9cd"
           }
+        ],
+        "themen": [
+          "Bundestagsverwaltung",
+          "Parteienfinanzierung"
         ]
       },
       "mandatsnachweis": {
@@ -18774,9 +18796,10 @@
         "mandatsachsen": "m-biography__constituencyInfoItem; Wahlkreiskandidatur ist kein Direktmandat",
         "fraktion": "amtliches Verzeichnis; PoliticalParty-Objekte beschreiben hier Fraktionen, nicht zwingend Parteimitgliedschaft",
         "mandatsId": "Parlament + amtlicheKennung, in das ID-Muster von lib/helmut/profil-import.js normalisiert",
+        "themen": "vom Orchestrator gepruefte Kloeckner-Aufgabenquittung docs/betrieb/kloeckner-praesidentinnen-aufgaben-1-20260927.json: die zwei amtlich abgeleiteten Themen (Bundestagsverwaltung, Parteienfinanzierung) stammen aus genau dem ZWEITEN eigenen Absatz des geschlossenen H2-Abschnitts 'An der Spitze der Bundestagsverwaltung' der amtlichen Praesidiumsseite; der erste Absatz, sonstige Praesidiums-/Aeltestenratsarbeit, angrenzende Abschnitte und der --hidden-Linkhilfetext sind keine Personenaufgaben, keine allgemeine Polizei-/Innenpolitik, keine persoenliche politische Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei der amtlichen Quelle, Original UND Metadaten, gebunden)",
         "bundesland": "amtliche Mandatsachse der Bundestagsseite (ProfilePage.hasPart/Wahlkreissuche bzw. Landesliste)",
         "partei": "bewusst NICHT abgeleitet: Bundestags-Fraktion ist keine Partei; kein Partei-String gesetzt",
-        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich memberOf-Rollen der Bundestagsseite bzw. Mitgliedschaften in belegten sonstigen Gremien rollengetreu als Funktion erhalten"
+        "funktionen": "vom Orchestrator gepruefte Rollenquittung docs/betrieb/profilrollen-54-20260927.json (amtlicher Abschnitt, URL UND sha256 gebunden, Zitat woertlich); nur der freigegebene Wortlaut wurde an bestehende funktionen angefuegt — keine eigene fachliche Achse; zusaetzlich memberOf-Rollen der Bundestagsseite bzw. Mitgliedschaften in belegten sonstigen Gremien rollengetreu als Funktion erhalten; vom Orchestrator gepruefte Kloeckner-Aufgabenquittung docs/betrieb/kloeckner-praesidentinnen-aufgaben-1-20260927.json: die bestehende aktuelle Rolle aus der 54er Rollenquittung und alle bestehenden Funktionen bleiben unveraendert erhalten (KEINE neue Funktionsrolle, kein Scheinausschuss); die kanonische Bundestags-Person wird separat ueber ihre echte H1 und den eigenen aktuellen Funktionstext (div.m-biography__function) neu gebunden; zusaetzlich nur der getrennte Herkunftshinweis zur amtlichen Praesidentinnen-Aufgabenbindung aus dem zweiten eigenen Absatz des geschlossenen H2-Abschnitts 'An der Spitze der Bundestagsverwaltung', keine allgemeine Polizei-/Innenpolitik, keine persoenliche politische Position (URL + finalUrl + sha256 + Bytezahl + Abrufzeit + HTTP + Datei der amtlichen Quelle, Original UND Metadaten, gebunden)"
       },
       "weitereGremien": [],
       "weitereGremienBeleg": [],
@@ -18786,12 +18809,10 @@
         "Vollstaendige fachliche Einzelpruefung und Importabbildung"
       ],
       "offenePunkte": [
-        "Parteimitgliedschaft in der amtlichen Biografie nicht belegt; NICHT aus der Fraktion abgeleitet",
-        "Keine ordentliche oder stellvertretende Ausschusszuordnung belegt; fachliche Achse offen, keine Themen erfunden"
+        "Parteimitgliedschaft in der amtlichen Biografie nicht belegt; NICHT aus der Fraktion abgeleitet"
       ],
       "offeneFelder": [
-        "partei",
-        "fachlicheAchse"
+        "partei"
       ],
       "importfreigegeben": false,
       "aktiv": false,
@@ -18810,6 +18831,40 @@
             "zeitbeleg": "ohne Datumsangabe im Abschnitt Funktion"
           }
         ]
+      },
+      "kloecknerQuittung": {
+        "datei": "docs/betrieb/kloeckner-praesidentinnen-aufgaben-1-20260927.json",
+        "kennung": "bundestag-kloeckner-julia-1045434",
+        "region": "Bund",
+        "bindungsart": "amtsaufgabe",
+        "person": "Julia Klöckner",
+        "funktion": "Bundestagspräsidentin",
+        "funktionstext": "Bundestagspräsidentin",
+        "abschnitt": "An der Spitze der Bundestagsverwaltung",
+        "ersterAbsatz": "Die Aufgaben des Bundestagspräsidenten gehen über die neutrale und unparteiische Leitung der Plenarsitzungen weit hinaus. Als Repräsentant des ganzen Hauses vertritt er den Bundestag auch nach außen. Er wird zu Staatsempfängen eingeladen, hält Reden bei wichtigen politischen und gesellschaftlichen Anlässen und wahrt die Würde des Bundestages und die Rechte seiner Mitglieder.",
+        "absatz": "Der Präsident steht auch an der Spitze der Bundestagsverwaltung. Er ist der oberste Dienstherr der rund 3.000 Mitarbeiterinnen und Mitarbeiter des Bundestages und übt die Polizeigewalt und das Hausrecht in den Gebäuden des Parlaments aus. Zudem setzt der Präsident jährlich die Höhe der staatlichen Mittel zur Parteienfinanzierung fest. Das Parteiengesetz hat ihm diese Exekutivaufgabe übertragen.",
+        "aufgabenbindung": "Bundestagspräsidentin; Spitze der Bundestagsverwaltung und jährliche Festsetzung der staatlichen Mittel zur Parteienfinanzierung",
+        "personenquelle": {
+          "datei": "bundestag-kloeckner_julia-1045434.html",
+          "url": "https://www.bundestag.de/abgeordnete/biografien/K/kloeckner_julia-1045434",
+          "finalUrl": "https://www.bundestag.de/abgeordnete/biografien/K/kloeckner_julia-1045434",
+          "abgerufenAm": "2026-09-27T13:00:37.494520+00:00",
+          "sha256": "f89405b0fa87c453503b83a0e7d0f3e2b4a5e8a6df41c9544a4e9bd796f74329",
+          "bytes": 283248
+        },
+        "quelle": {
+          "datei": "praesidentin-aufgaben-20260927.html",
+          "url": "https://www.bundestag.de/parlament/praesidium/funktion_neu",
+          "finalUrl": "https://www.bundestag.de/parlament/praesidium/funktion_neu",
+          "abgerufenAm": "2026-09-27T20:42:16.429190+00:00",
+          "sha256": "d63f72c87b88a2b7d174386fe33137d45280707e311d779ede39136627d7c9cd",
+          "bytes": 257178
+        },
+        "themen": [
+          "Bundestagsverwaltung",
+          "Parteienfinanzierung"
+        ],
+        "ableitungsHinweis": "Aufgabenbindung Bund (amtlich abgeleitet): Bundestagspräsidentin; Spitze der Bundestagsverwaltung und jährliche Festsetzung der staatlichen Mittel zur Parteienfinanzierung; keine persönliche politische Position"
       }
     },
     {

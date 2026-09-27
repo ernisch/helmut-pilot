@@ -3042,3 +3042,308 @@ print('PASS: Jarzombek-Abteilungsquittung — fehlende Quittung/falsche Bilanz/F
       'Personenzuordnung/falscher Stand/doppelte oder zu wenige Knoten/vertauschte Namen sperren); ein '
       'konsistent neu gebundenes Fremdpaket wird gesperrt; das gueltige synthetische Paket (Fixture ohne '
       '/private/tmp) wird akzeptiert.')
+
+
+# ── 17 · Kloeckner-Aufgabenquittung (Bundestagspräsidentin, ein zuvor offener Fachachsenfall) ──
+# Synthetische, deckungsgleiche Fixtures OHNE /private/tmp-Originale. Das eng fixierte
+# Fachurteil wird ueber den injizierbaren ``erwartung``-Parameter ersetzt; so bleibt der Test
+# auch ohne die lokalen Originale lauffaehig. Das Modul verwendet die sicheren Helfer des
+# Zusatzaufgabenmoduls wieder und bindet die kanonische Person separat (echte H1 + eigener
+# aktueller Funktionstext div.m-biography__function) sowie die Aufgaben ausschliesslich aus
+# dem ZWEITEN eigenen Absatz des geschlossenen H2-Abschnitts der amtlichen Praesidiumsseite.
+kl_spec = importlib.util.spec_from_file_location(
+    'kloeckner', Path(__file__).with_name('profil-feldbelege-500-kloeckner.py'))
+kl = importlib.util.module_from_spec(kl_spec)
+kl_spec.loader.exec_module(kl)
+
+
+def _erwarte_kl_fehler(fn, was, meldung=None):
+    try:
+        fn()
+    except kl.KloecknerFehler as fehler:
+        if meldung is not None:
+            assert meldung in str(fehler), f"Falscher Sperrgrund: {fehler}"
+        return
+    raise AssertionError(f'Nicht gesperrt: {was}')
+
+
+with tempfile.TemporaryDirectory() as tmp:
+    root = Path(tmp)
+    detail = root / 'detailseiten'
+    detail.mkdir()
+    zusatz = root / 'zusatzquellen'
+    zusatz.mkdir()
+    ABRUF_AUFGABE = '2026-09-27T20:42:16+00:00'
+    ABRUF_PERSON = '2026-09-27T13:00:37+00:00'
+    K = 'bundestag-test-kloeckner-1'
+    person = 'Person Klöckner'
+    funktion = 'Testpräsidentin'
+    funktionstext = 'Testpräsidentin'
+    abschnitt = 'An der Spitze der Testverwaltung'
+    danach_abschnitt = 'Unterstützung durch Testgremien'
+    erster_absatz = 'Die Aufgaben der Testpräsidentin reichen über die Testleitung hinaus.'
+    zweiter_absatz = ('Die Testpräsidentin steht auch an der Spitze der Bundestagsverwaltung und setzt '
+                      'die staatlichen Mittel zur Parteienfinanzierung fest.')
+    themen = ['Bundestagsverwaltung', 'Parteienfinanzierung']
+    aufgabenbindung = ('Testpräsidentin; Spitze der Bundestagsverwaltung und Festsetzung der Mittel zur '
+                       'Parteienfinanzierung')
+    person_url = 'https://www.bundestag.de/abgeordnete/biografien/T/test-kloeckner-1'
+    aufgaben_url = 'https://www.bundestag.de/parlament/praesidium/test-funktion'
+    person_datei = f'{K}.html'
+    aufgaben_datei = 'test-praesidentin-aufgaben.html'
+    absatz_link = ('Die Testpräsidentin steht auch an der Spitze der Bundestagsverwaltung und setzt die '
+                   'staatlichen Mittel zur <a href="/x" class="a-link --inline">'
+                   '<span class="a-link__label">Parteienfinanzierung</span>'
+                   '<span class="a-link__label --hidden">(Interner Link)</span></a> fest.')
+
+    def _meta(datei, url, abruf):
+        pfad = zusatz / datei
+        meta = dict(url=url, finalUrl=url, abgerufenAm=abruf, sha256=kl.ZU._sha256(pfad),
+                    bytes=pfad.stat().st_size, datei=datei, http=200)
+        (zusatz / f'{datei}.meta.json').write_text(json.dumps(meta, ensure_ascii=False), encoding='utf-8')
+        return dict(meta, abrufStatus='abgerufen')
+
+    def _person_html(h1=person, funktion_wert=funktionstext, klassen='m-biography__function'):
+        return (f'<html><body><h1>{h1}</h1>'
+                f'<div class="{klassen}"><div><p>{funktion_wert}</p></div></div></body></html>')
+
+    def _aufgaben_html(titel=abschnitt, erster=erster_absatz, absatz=absatz_link, danach=danach_abschnitt,
+                       extra='', unvollstaendig=False):
+        schluss = '' if unvollstaendig else '</p>'
+        return (f'<html><body><h2>{titel}</h2><p>{erster}</p><p>{absatz}{schluss}{extra}'
+                f'<h2>{danach}</h2><p>Kein Beleg.</p></body></html>')
+
+    def _schreibe_person(dokument, abruf=ABRUF_PERSON):
+        (detail / person_datei).write_text(dokument, encoding='utf-8')
+        return dict(url=person_url, finalUrl=person_url, abgerufenAm=abruf,
+                    sha256=kl.ZU._sha256(detail / person_datei),
+                    bytes=(detail / person_datei).stat().st_size, datei=person_datei,
+                    http=200, abrufStatus='abgerufen')
+
+    def _schreibe_aufgaben(dokument, abruf=ABRUF_AUFGABE):
+        (zusatz / aufgaben_datei).write_text(dokument, encoding='utf-8')
+        return _meta(aufgaben_datei, aufgaben_url, abruf)
+
+    personenquelle = _schreibe_person(_person_html())
+    quelle = _schreibe_aufgaben(_aufgaben_html())
+    rollen_ref = dict(url=person_url, sha256=personenquelle['sha256'], abgerufenAm=ABRUF_PERSON)
+    kennung_zu_abruf = {K: dict(personenquelle, amtlicheKennung=K, parlament='bundestag')}
+    profilrollen = {K: dict(status='belegt', funktionen=[dict(wortlaut=funktion)], quelle=dict(rollen_ref))}
+    erwartung = {
+        K: dict(region='Bund', bindungsart='amtsaufgabe', person=person, funktion=funktion,
+                funktionstext=funktionstext, abschnitt=abschnitt, ersterAbsatz=erster_absatz,
+                absatz=zweiter_absatz, aufgabenbindung=aufgabenbindung, themen=list(themen),
+                personenquelle=dict(personenquelle), quelle=dict(quelle)),
+    }
+    eintrag = dict(
+        kennung=K, region='Bund', parlament='bundestag', status='belegt', bindungsart='amtsaufgabe',
+        person=person, funktion=funktion, funktionstext=funktionstext, abschnitt=abschnitt,
+        ersterAbsatz=erster_absatz, absatz=zweiter_absatz, aufgabenbindung=aufgabenbindung,
+        themen=list(themen), ableitungsHinweis=kl.ZU.HINWEIS_AUFGABE.format(region='Bund', wert=aufgabenbindung),
+        personenquelle=dict(personenquelle), quelle=dict(quelle), importfreigegeben=False,
+    )
+    gueltige_quittung = dict(version=1, bilanz=dict(gesamt=1, Bund=1, Berlin=0, Brandenburg=0), ergebnisse=[eintrag])
+
+    def _kl_eingang(quittung, ressort=None, aufgaben=None, beratende=None, zusatz_kennungen=None,
+                    bmwsb=None, amthor=None, wahlausschuss=None, jarzombek=None, rollen=None, abruf=None):
+        return SimpleNamespace(
+            verzeichnis=root, detailseiten=detail, kloeckner=quittung,
+            profilrollen_by_kennung=rollen or profilrollen,
+            kennung_zu_abruf=kennung_zu_abruf if abruf is None else abruf,
+            ressortachsen_by_kennung={k: {} for k in (ressort or [])},
+            aufgabenachsen_by_kennung={k: {} for k in (aufgaben or [])},
+            beratendeachsen_by_kennung={k: {} for k in (beratende or [])},
+            zusaetzlicheaufgaben_by_kennung={k: {} for k in (zusatz_kennungen or [])},
+            bmwsb_by_kennung={k: {} for k in (bmwsb or [])},
+            amthor_by_kennung={k: {} for k in (amthor or [])},
+            wahlausschuss_by_kennung={k: {} for k in (wahlausschuss or [])},
+            jarzombek_by_kennung={k: {} for k in (jarzombek or [])})
+
+    index = kl.pruefe_kloeckner(_kl_eingang(gueltige_quittung), erwartung=erwartung)
+    assert len(index) == 1
+    assert index[K]['themen'] == themen
+    # Der --hidden-Linkhilfetext zaehlt NICHT als Aufgabenprosa (sonst waere der Absatz
+    # nicht identisch mit dem fixierten zweiten Absatz).
+    assert index[K]['absatz'] == zweiter_absatz
+    assert '(Interner Link)' not in index[K]['absatz']
+    assert index[K]['ableitungsHinweis'] == kl.ZU.HINWEIS_AUFGABE.format(region='Bund', wert=aufgabenbindung)
+
+    def _mit(mutation, erwartung_override=None):
+        neu = json.loads(json.dumps(gueltige_quittung))
+        mutation(neu)
+        return kl.pruefe_kloeckner(_kl_eingang(neu), erwartung=erwartung_override or erwartung)
+
+    def _rebind_person(dokument, abruf=ABRUF_PERSON):
+        pq = _schreibe_person(dokument, abruf)
+        ref = dict(url=person_url, sha256=pq['sha256'], abgerufenAm=abruf)
+        rollen = {K: dict(status='belegt', funktionen=[dict(wortlaut=funktion)], quelle=dict(ref))}
+        abr = {K: dict(pq, amtlicheKennung=K, parlament='bundestag')}
+        return pq, rollen, abr
+
+    # Fehlende Quittung, falsche Bilanz, Duplikat/Fremdkennung.
+    echter_pfad = kl.KLOECKNER
+    kl.KLOECKNER = root / 'fehlt.json'
+    try:
+        _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(
+            SimpleNamespace(verzeichnis=root, detailseiten=detail, profilrollen_by_kennung=profilrollen,
+                            kennung_zu_abruf=kennung_zu_abruf), erwartung=erwartung), 'fehlende Quittung')
+    finally:
+        kl.KLOECKNER = echter_pfad
+    _erwarte_kl_fehler(lambda: _mit(lambda q: q['bilanz'].__setitem__('Bund', 0)), 'falsche Bilanz')
+    _erwarte_kl_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('kennung', 'bundestag-fremd-9')),
+                       'unbekannte/Fremdkennung')
+    # Disjunktion zu allen bisherigen Achsen.
+    _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(
+        _kl_eingang(gueltige_quittung, ressort=[K]), erwartung=erwartung), 'Kennung bereits Ressortachse')
+    _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(
+        _kl_eingang(gueltige_quittung, aufgaben=[K]), erwartung=erwartung), 'Kennung bereits Aufgabenachse')
+    _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(
+        _kl_eingang(gueltige_quittung, beratende=[K]), erwartung=erwartung), 'Kennung bereits beratende Achse')
+    _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(
+        _kl_eingang(gueltige_quittung, zusatz_kennungen=[K]), erwartung=erwartung), 'Kennung bereits Zusatzaufgabenachse')
+    _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(
+        _kl_eingang(gueltige_quittung, bmwsb=[K]), erwartung=erwartung), 'Kennung bereits BMWSB-Achse')
+    _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(
+        _kl_eingang(gueltige_quittung, amthor=[K]), erwartung=erwartung), 'Kennung bereits Amthor-Achse')
+    _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(
+        _kl_eingang(gueltige_quittung, wahlausschuss=[K]), erwartung=erwartung), 'Kennung bereits Wahlausschuss-Achse')
+    _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(
+        _kl_eingang(gueltige_quittung, jarzombek=[K]), erwartung=erwartung), 'Kennung bereits Jarzombek-Achse')
+    # Status/Region/Parlament/Bindungsart/Person/Importfreigabe.
+    _erwarte_kl_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('status', 'offen')), 'unerwarteter Status')
+    _erwarte_kl_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('region', 'Berlin')), 'falsche Region')
+    _erwarte_kl_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('parlament', 'landtag-berlin')), 'falsches Parlament')
+    _erwarte_kl_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('bindungsart', 'abteilungszustaendigkeit')), 'falsche Bindungsart')
+    _erwarte_kl_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('person', 'Fremde Person')), 'fremde Person')
+    _erwarte_kl_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__('importfreigegeben', True)), 'Importfreigabe gesetzt')
+    # Felddrift (Funktion/Funktionstext/Abschnitt/Absaetze/Aufgabenbindung/Themen/Hinweis).
+    for feld, wert in (('funktion', 'Fremdrolle'), ('funktionstext', 'Fremdrolle'), ('abschnitt', 'Fremdabschnitt'),
+                       ('ersterAbsatz', 'Fremdabsatz'), ('absatz', 'Fremdabsatz'),
+                       ('aufgabenbindung', 'Fremde Aufgabenbindung'), ('themen', ['Fremdthema']),
+                       ('ableitungsHinweis', 'Fremder Hinweis')):
+        _erwarte_kl_fehler(lambda f=feld, w=wert: _mit(lambda q: q['ergebnisse'][0].__setitem__(f, w)), f'Feld {feld} Drift')
+    # Nur die zwei freigegebenen Themen; allgemeine Polizei-/Innenpolitik ist gesperrt.
+    _erwarte_kl_fehler(lambda: kl._pruefe_themen(
+        dict(themen=['Polizeigewalt', 'Bundestagsverwaltung']),
+        'Die Polizeigewalt und die Bundestagsverwaltung.', K), 'allgemeines/fremdes Thema gesperrt')
+    _erwarte_kl_fehler(lambda: kl._pruefe_themen(
+        dict(themen=['Parteienfinanzierung', 'Innenpolitik']),
+        'Die Mittel zur Parteienfinanzierung in der Innenpolitik.', K), 'allgemeines/fremdes Thema gesperrt')
+    # Quellen-/Metadatendrift (Aufgabenquelle).
+    for feld, wert in (('url', 'https://www.bundestag.de/parlament/praesidium/fremd'),
+                       ('finalUrl', 'https://www.bundestag.de/parlament/praesidium/fremd'),
+                       ('sha256', '0' * 64), ('bytes', 1), ('abgerufenAm', '2026-01-01T00:00:00+00:00'),
+                       ('datei', 'fremd.html')):
+        _erwarte_kl_fehler(lambda f=feld, w=wert: _mit(lambda q: q['ergebnisse'][0]['quelle'].__setitem__(f, w)),
+                           f'Quelldrift {feld}')
+    (zusatz / f'{aufgaben_datei}.meta.json').write_text(
+        json.dumps(dict(quelle, sha256='0' * 64), ensure_ascii=False), encoding='utf-8')
+    _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(_kl_eingang(gueltige_quittung), erwartung=erwartung),
+                       'Metadatum-Hash-Drift')
+    quelle = _schreibe_aufgaben(_aufgaben_html())
+    erwartung[K]['quelle'] = dict(quelle)
+    eintrag['quelle'] = dict(quelle)
+    # Personenquellen-/Rollenquellen-Drift.
+    for feld, wert in (('url', 'https://www.bundestag.de/abgeordnete/biografien/T/fremd'),
+                       ('sha256', '0' * 64), ('bytes', 1),
+                       ('abgerufenAm', '2026-01-01T00:00:00+00:00'), ('datei', 'fremd.html')):
+        _erwarte_kl_fehler(lambda f=feld, w=wert: _mit(lambda q: q['ergebnisse'][0]['personenquelle'].__setitem__(f, w)),
+                           f'Personenquellen-Drift {feld}')
+    _erwarte_kl_fehler(lambda: _mit(lambda q: q['ergebnisse'][0].__setitem__(
+        'personenquelle', dict(quelle))), 'vertauschte Pakete')
+    # Nicht belegte / wortlautlose 54er-Rolle.
+    _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(_kl_eingang(
+        gueltige_quittung, rollen={K: dict(status='offen', funktionen=[], quelle=dict(rollen_ref))}),
+        erwartung=erwartung), 'nicht belegte 54er-Rolle')
+    _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(_kl_eingang(
+        gueltige_quittung, rollen={K: dict(status='belegt', funktionen=[], quelle=dict(rollen_ref))}),
+        erwartung=erwartung), '54er-Rolle ohne Wortlaut')
+    # Konsistent neu gehashte Fremdperson/-funktion, fehlende/fremde H1.
+    pq, rollen_neu, abruf_neu = _rebind_person(_person_html(funktion_wert='Fremdrolle'))
+    _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(_kl_eingang(
+        dict(gueltige_quittung, ergebnisse=[dict(eintrag, personenquelle=dict(pq))]), rollen=rollen_neu, abruf=abruf_neu),
+        erwartung=erwartung), 'fremder Funktionstext bei konsistentem Hash')
+    pq, rollen_neu, abruf_neu = _rebind_person('<html><body><div class="m-biography__function">'
+                                               '<div><p>Testpräsidentin</p></div></div></body></html>')
+    _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(_kl_eingang(
+        dict(gueltige_quittung, ergebnisse=[dict(eintrag, personenquelle=dict(pq))]), rollen=rollen_neu, abruf=abruf_neu),
+        erwartung=erwartung), 'fehlende H1')
+    pq, rollen_neu, abruf_neu = _rebind_person(_person_html(h1='Fremde Person'))
+    _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(_kl_eingang(
+        dict(gueltige_quittung, ergebnisse=[dict(eintrag, personenquelle=dict(pq))]), rollen=rollen_neu, abruf=abruf_neu),
+        erwartung=erwartung), 'fremde H1 bei konsistentem Hash')
+    # Gueltige Person wiederherstellen (identischer Inhalt -> identischer Hash).
+    personenquelle = _schreibe_person(_person_html())
+    # Konsistent neu gehashter Fremdabsatz.
+    fremd_quelle = _schreibe_aufgaben(_aufgaben_html(
+        absatz='Die Testpräsidentin kümmert sich um Verteidigung und Landwirtschaft.'))
+    _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(_kl_eingang(dict(
+        gueltige_quittung, ergebnisse=[dict(eintrag, quelle=dict(fremd_quelle))])), erwartung=erwartung),
+        'fremder Absatz bei konsistentem Hash')
+    quelle = _schreibe_aufgaben(_aufgaben_html())
+    erwartung[K]['quelle'] = dict(quelle)
+    eintrag['quelle'] = dict(quelle)
+    # Nur der ZWEITE eigene Absatz; erster Absatz, Abschnittsleck und ungeschlossener Absatz sperren.
+    _erwarte_kl_fehler(lambda: kl._pruefe_aufgabenabschnitt(
+        _aufgaben_html(erster=zweiter_absatz, absatz=erster_absatz), erwartung[K], K), 'erster Absatz als Aufgabe')
+    _erwarte_kl_fehler(lambda: kl._Abschnittsleser.lese(_aufgaben_html(extra='<p>Extra</p>'), abschnitt),
+                       'Abschnittsleck/zusaetzlicher Absatz')
+    _erwarte_kl_fehler(lambda: kl._Abschnittsleser.lese(_aufgaben_html(unvollstaendig=True), abschnitt),
+                       'ungeschlossener Absatz verlaesst den Abschnitt')
+    _erwarte_kl_fehler(lambda: kl._Abschnittsleser.lese(
+        _aufgaben_html() + f'<h2>{abschnitt}</h2><p>x</p>', abschnitt), 'doppelter H2-Abschnitt')
+    # Der --hidden-Linkhilfetext zaehlt nicht als Aufgabenprosa.
+    html_hidden = (f'<html><body><h2>{abschnitt}</h2><p>{erster_absatz}</p>'
+                   f'<p>Der Text nennt die <a href="/x">'
+                   f'<span class="a-link__label --hidden">Parteienfinanzierung</span></a>.</p>'
+                   f'<h2>{danach_abschnitt}</h2></body></html>')
+    assert 'Parteienfinanzierung' not in kl._Abschnittsleser.lese(html_hidden, abschnitt)[1]
+    # Eigene Orchestrator-Gegenproben: Quellen samt Metadaten und erwartetem Hash
+    # konsistent neu binden, damit tatsaechlich der Inhaltsparser sperren muss.
+    for dokument, sperrgrund in [
+        (f'<h3>{abschnitt}</h3><p>{erster_absatz}</p><p>{zweiter_absatz}</p>', 'geschlossenen H2-Abschnitt'),
+        (f'<section><h2>{abschnitt}</h2><p>{erster_absatz}</p></section>'
+         f'<section><p>{zweiter_absatz}</p></section>', 'zwei eigene Absaetze'),
+        (f'<section><h2>{abschnitt}</h2><p>{erster_absatz}</p><p></section>'
+         f'{zweiter_absatz}</p>', 'verlaesst den Abschnitt'),
+        (f'<h2 class="--hidden">{abschnitt}</h2><p>{erster_absatz}</p><p>{zweiter_absatz}</p>',
+         'geschlossenen H2-Abschnitt'),
+        (_aufgaben_html(absatz='Fremde Aufgaben'), 'zweite eigene Absatz'),
+    ]:
+        neu_quelle = _schreibe_aufgaben(dokument)
+        neu_erwartung = json.loads(json.dumps(erwartung))
+        neu_erwartung[K]['quelle'] = dict(neu_quelle)
+        _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(_kl_eingang(dict(
+            gueltige_quittung, ergebnisse=[dict(eintrag, quelle=dict(neu_quelle))])),
+            erwartung=neu_erwartung), 'konsistent neu gebundener Abschnittsfehler', sperrgrund)
+    quelle = _schreibe_aufgaben(_aufgaben_html())
+    for dokument, sperrgrund in [
+        (f'<h1>{person}</h1><div><section><div class="m-biography__function"></section>'
+         f'{funktionstext}</div>', 'Funktionstext verlaesst'),
+        (f'<!-- <h1>{person}</h1> --><div class="m-biography__function">{funktionstext}</div>',
+         'Person passt nicht'),
+        (f'<h1>{person}</h1><template><div class="m-biography__function">'
+         f'{funktionstext}</div></template>', 'Funktionstextblock fehlt'),
+    ]:
+        pq, rollen_neu, abruf_neu = _rebind_person(dokument)
+        neu_erwartung = json.loads(json.dumps(erwartung))
+        neu_erwartung[K]['personenquelle'] = dict(pq)
+        _erwarte_kl_fehler(lambda: kl.pruefe_kloeckner(_kl_eingang(dict(
+            gueltige_quittung, ergebnisse=[dict(eintrag, personenquelle=dict(pq))]),
+            rollen=rollen_neu, abruf=abruf_neu), erwartung=neu_erwartung),
+            'konsistent neu gebundener Personenblockfehler', sperrgrund)
+    personenquelle = _schreibe_person(_person_html())
+    # Das gueltige synthetische Paket wird akzeptiert.
+    assert len(kl.pruefe_kloeckner(_kl_eingang(gueltige_quittung), erwartung=erwartung)) == 1
+
+print('PASS: Kloeckner-Aufgabenquittung — fehlende Quittung/falsche Bilanz/Fremdkennung/'
+      'Disjunktion zu Ressort-/Aufgaben-/beratender/Zusatzaufgaben-/BMWSB-/Amthor-/Wahlausschuss-/'
+      'Jarzombek-Achse/importfreigegeben/Status/Region/Parlament/Bindungsart/Person/fremder '
+      'Funktionstext/fremde H1/fehlende Personenidentitaet bei konsistenten Hashes/Quelldrift '
+      '(URL/finalUrl/Hash/Bytezahl/Abrufzeit/Datei)/Original-Metadaten-Drift/Personenquellen-Drift/'
+      'vertauschte Pakete/nicht belegte oder wortlautlose 54er-Rolle/Themen-/Aufgabenbindungs-/'
+      'Hinweis-Drift/fremder Absatz sperren fail closed; die Aufgaben stammen ausschliesslich aus dem '
+      'ZWEITEN eigenen Absatz des geschlossenen H2-Abschnitts (der erste Absatz, zusaetzliche Absaetze '
+      'und ein ungeschlossener Absatz sperren, nur echte geschlossene Elemente zaehlen, der '
+      '--hidden-Linkhilfetext zaehlt nicht); das gueltige synthetische Paket (Fixture ohne /private/tmp) '
+      'wird akzeptiert.')
